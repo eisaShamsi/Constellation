@@ -113,6 +113,7 @@ c:adsorption-water	Noun	ar:الامتزاز	de:Adsorption	en:adsorption	es:adsor
 c:advection-fog	Noun	ar:ضباب الاندفاع	de:Advektionsnebel	en:advection fog	es:niebla de advección	fa:مه جابجایی	fr:brouillard d'advection	he:ערפל הסעה	hi:अभिवहन कोहरा	ja:移流霧	ko:이류안개	pt:nevoeiro de advecção	ru:адвективный туман	tr:adveksiyon sisi	ur:انتقالی دھند	zh:平流雾
 c:adventist	Noun	ar:الأدفنتست	de:Adventismus	en:Adventism	es:adventismo	fa:ادونتیسم	fr:adventisme	he:אדוונטיזם	hi:एडवेंटिस्ट	ja:アドベンチスト	ko:재림교회	pt:adventismo	ru:адвентизм	tr:Adventizm	ur:ایڈونٹسٹ	zh:复临信徒
 c:adventure-film	Noun	ar:فيلم مغامرة	de:Abenteuerfilm	en:adventure film	es:película de aventuras	fa:فیلم ماجراجویی	fr:film d'aventure	he:סרט הרפתקאות	hi:साहसिक फिल्म	ja:冒険映画	ko:모험 영화	pt:filme de aventura	ru:приключенческий фильм	tr:macera filmi	ur:ایڈونچر فلم	zh:冒险片
+c:adventure-game	Noun	ar:لعبة مغامرات	de:Abenteuerspiel	en:adventure game	es:juego de aventuras	fa:بازی ماجراجویی	fr:jeu d'aventure	he:משחק הרפתקאות	hi:साहसिक खेल	ja:アドベンチャーゲーム	ko:어드벤처 게임	pt:jogo de aventura	ru:приключенческая игра	tr:macera oyunu	ur:ایڈونچر گیم	zh:冒险游戏
 c:adverb	Noun	ar:ظرف,حال	de:Adverb,Umstandswort	en:adverb	es:adverbio	fa:قید	fr:adverbe	he:תואר הפועל	hi:क्रिया विशेषण	ja:副詞	ko:부사	pt:advérbio	ru:наречие	tr:zarf,belirteç	ur:متعلق فعل	zh:副词
 c:adverse-effect	Noun	ar:الأثر الجانبي	de:Nebenwirkung	en:adverse effect	es:efecto adverso	fa:اثر جانبی	fr:effet indésirable	he:תופעת לוואי	hi:प्रतिकूल प्रभाव	ja:副作用	ko:부작용	pt:efeito adverso	ru:побочный эффект	tr:yan etki	ur:مضر اثر	zh:不良反应
 c:adverse-selection	Noun	ar:الانتقاء العكسي	de:adverse Selektion	en:adverse selection	es:selección adversa	fa:گزینش نامساعد	fr:sélection adverse	he:ברירה שלילית	hi:विपरीत चयन	ja:逆選択	ko:역선택	pt:seleção adversa	ru:неблагоприятный отбор	tr:olumsuz seçim	ur:منفی انتخاب	zh:逆向选择
@@ -418,6 +419,7 @@ c:arc	Noun	ar:قوس	de:Bogen	en:arc	es:arco	fa:قوس	fr:arc	he:קשת	hi:च�
 c:arcade	Noun	ar:الرواق المقوس	de:Arkade	en:arcade	es:arcada	fa:دالان قوس دار	fr:arcade	he:ארקדה	hi:मेहराबदार दालान	ja:アーケード	ko:아케이드	pt:arcada	ru:аркада	tr:arkad	ur:مہرابی دالان	zh:拱廊
 c:arcade-commercial	Noun	ar:ممر تجاري	de:Einkaufspassage	en:shopping arcade	es:galería comercial	fa:پاساژ	fr:galerie marchande	he:ארקדה מסחרית	hi:शॉपिंग गैलरी	ja:商店街	ko:상가	pt:galeria comercial	ru:торговая галерея	tr:çarşı pasajı	ur:شاپنگ آرکیڈ	zh:商业街廊
 c:arcade-game	Noun	ar:لعبة الأركيد	de:Arcade-Spiel	en:arcade game	es:juego de arcade	fa:بازی آرکید	fr:jeu d'arcade	he:משחק ארקייד	hi:आर्केड गेम	ja:アーケードゲーム	ko:아케이드 게임	pt:jogo de arcade	ru:аркадная игра	tr:atari oyunu	ur:آرکیڈ گیم	zh:街机游戏
+c:arcade-game-type	Noun	ar:لعبة أركيد	de:Arcade-Spiel	en:arcade game	es:videojuego arcade	fa:بازی آرکید	fr:jeu d'arcade	he:משחק ארקייד	hi:आर्केड गेम	ja:アーケードゲーム	ko:아케이드 게임	pt:jogo de arcada	ru:аркадная игра	tr:arcade oyun	ur:آرکیڈ گیم	zh:街机游戏
 c:arch	Noun	ar:قوس,طاق	de:Bogen	en:arch	es:arco	fa:طاق	fr:arche,voûte	he:קשת	hi:मेहराब	ja:アーチ,拱門	ko:아치,홍예	pt:arco	ru:арка	tr:kemer	ur:محراب,طاق	zh:拱门
 c:archaic	Noun	ar:العصر العتيق,الحقبة الأثرية	de:archaische Zeit,Archaik	en:archaic period,archaic era	es:período arcaico,época arcaica	fa:دوره باستانی,دوره آرکائیک	fr:période archaïque,époque archaïque	he:התקופה הארכאית,תקופה ארכאית	hi:पुरातन काल,प्राचीनतम युग	ja:アルカイック期,古拙期	ko:아르카이크 시대,상고기	pt:período arcaico,época arcaica	ru:архаический период,архаика	tr:arkaik dönem	ur:کہن دور,قدیم ترین دور	zh:古风时期,远古时代
 c:archery	Noun	ar:الرماية بالقوس	de:Bogenschießen	en:archery	es:tiro con arco	fa:تیراندازی با کمان	fr:tir à l'arc	he:קשתות	hi:तीरंदाजी	ja:アーチェリー	ko:양궁	pt:tiro com arco	ru:стрельба из лука	tr:okçuluk	ur:تیر اندازی	zh:射箭
@@ -585,9 +587,11 @@ c:aztec-empire	Noun	ar:إمبراطورية الأزتيك	de:Aztekenreich	en:Az
 c:baby	Noun	ar:رضيع,طفل	de:Baby,Säugling	en:baby	es:bebé	fa:نوزاد	fr:bébé	he:תינוק	hi:शिशु	ja:赤ちゃん,赤ん坊	ko:아기	pt:bebê	ru:младенец	tr:bebek	ur:شیرخوار	zh:婴儿,宝宝
 c:babylon	Noun	ar:بابل	de:Babylon	en:Babylon	es:Babilonia	fa:بابل	fr:Babylone	he:בבל	hi:बेबीलोन	ja:バビロン	ko:바빌론	pt:Babilônia	ru:Вавилон	tr:Babil	ur:بابل	zh:巴比伦
 c:babylonian-empire	Noun	ar:الإمبراطورية البابلية	de:babylonisches Reich	en:Babylonian Empire	es:Imperio babilónico	fa:امپراتوری بابل	fr:Empire babylonien	he:האימפריה הבבלית	hi:बेबीलोन साम्राज्य	ja:バビロニア帝国	ko:바빌로니아 제국	pt:Império Babilônico	ru:Вавилонская империя	tr:Babil İmparatorluğu	ur:بابلی سلطنت	zh:巴比伦帝国
+c:baccarat	Noun	ar:باكارا	de:Baccarat	en:baccarat	es:bacará	fa:باکارا	fr:baccara	he:בקארה	hi:बकारत	ja:バカラ	ko:바카라	pt:bacará	ru:баккара	tr:bakara	ur:بکارا	zh:百家乐
 c:bachata	Noun	ar:رقص الباشاتا	de:Bachata	en:bachata	es:bachata	fa:باچاتا	fr:bachata	he:בצ׳אטה	hi:बचाता	ja:バチャータ	ko:바차타	pt:bachata	ru:бачата	tr:bachata	ur:باچاتا	zh:巴恰塔舞
 c:bachata-dance	Noun	ar:باتشاتا	de:Bachata	en:bachata	es:bachata	fa:باچاتا	fr:bachata	he:באצ'אטה	hi:बचाटा	ja:バチャータ	ko:바차타	pt:bachata	ru:бачата	tr:bachata	ur:بچاٹا	zh:巴恰塔
 c:back	Noun	ar:خلف,وراء	de:hinten,Rückseite	en:back	es:atrás,detrás	fa:پشت,عقب	fr:derrière,arrière	he:אחור,אחורה	hi:पीछे	ja:後ろ	ko:뒤	pt:trás,atrás	ru:зад	tr:arka	ur:پیچھے	zh:后
+c:backgammon	Noun	ar:طاولة الزهر	de:Backgammon	en:backgammon	es:backgammon	fa:تخته‌نرد	fr:jacquet	he:שש בש	hi:बैकगैमन	ja:バックギャモン	ko:백개먼	pt:gamão	ru:нарды	tr:tavla	ur:چوسر	zh:双陆棋
 c:backpropagation	Noun	ar:الانتشار الخلفي	de:Backpropagation	en:backpropagation	es:retropropagación	fa:پس‌انتشار	fr:rétropropagation	he:הפצה לאחור	hi:बैकप्रोपैगेशन	ja:逆伝播	ko:역전파	pt:retropropagação	ru:обратное распространение	tr:geri yayılım	ur:پس پھیلاو	zh:反向传播
 c:backup-data	Noun	ar:نسخة احتياطية	de:Datensicherung	en:backup	es:copia de seguridad	fa:پشتیبان‌گیری	fr:sauvegarde	he:גיבוי	hi:बैकअप	ja:バックアップ	ko:백업	pt:cópia de segurança	ru:резервная копия	tr:yedekleme	ur:بیک اپ	zh:备份
 c:backup-db	Noun	ar:نسخة احتياطية لقاعدة البيانات	de:Datenbanksicherung	en:database backup	es:copia de seguridad de base de datos	fa:پشتیبان پایگاه داده	fr:sauvegarde de base de données	he:גיבוי מסד נתונים	hi:डेटाबेस बैकअप	ja:データベースバックアップ	ko:데이터베이스 백업	pt:backup de banco de dados	ru:резервная копия базы данных	tr:veritabanı yedeği	ur:ڈیٹا بیس بیک اپ	zh:数据库备份
@@ -805,6 +809,7 @@ c:binary-star-astro	Noun	ar:نجم ثنائي	de:Doppelstern	en:binary star	es:e
 c:binary-tree	Noun	ar:شجرة ثنائية	de:Binärbaum	en:binary tree	es:árbol binario	fa:درخت دودویی	fr:arbre binaire	he:עץ בינארי	hi:द्विआधारी वृक्ष	ja:二分木	ko:이진 트리	pt:árvore binária	ru:двоичное дерево	tr:ikili ağaç	ur:دو جزوی درخت	zh:二叉树
 c:binary-tree-ds	Noun	ar:شجرة ثنائية	de:binärer Baum	en:binary tree	es:árbol binario	fa:درخت دودویی	fr:arbre binaire	he:עץ בינארי	hi:द्विआधारी वृक्ष	ja:二分木	ko:이진 트리	pt:árvore binária	ru:бинарное дерево	tr:ikili ağaç	ur:دوگانہ درخت	zh:二叉树
 c:binder-clip	Noun	ar:مشبك ربط	de:Foldback-Klammer	en:binder clip	es:pinza sujetapapeles	fa:گیره بایندر	fr:pince double	he:מהדק רחב	hi:बाइंडर क्लिप	ja:ダブルクリップ	ko:집게 클립	pt:prendedor de papel	ru:зажим для бумаг	tr:föy mandalı	ur:بائنڈر کلپ	zh:长尾夹
+c:bingo	Noun	ar:بينغو	de:Bingo	en:bingo	es:bingo	fa:بینگو	fr:bingo	he:בינגו	hi:बिंगो	ja:ビンゴ	ko:빙고	pt:bingo	ru:бинго	tr:bingo	ur:بنگو	zh:宾戈
 c:binomial	Noun	ar:ثنائي الحد	de:Binom	en:binomial	es:binomio	fa:دوجمله‌ای	fr:binôme	he:דו-איבר	hi:द्विपद	ja:二項式	ko:이항식	pt:binômio	ru:двучлен	tr:iki terimli	ur:دو رقمی	zh:二项式
 c:binomial-distribution	Noun	ar:توزيع ثنائي	de:Binomialverteilung	en:binomial distribution	es:distribución binomial	fa:توزیع دوجمله‌ای	fr:loi binomiale	he:התפלגות בינומית	hi:द्विपद बंटन	ja:二項分布	ko:이항 분포	pt:distribuição binomial	ru:биномиальное распределение	tr:binom dağılımı	ur:دو رقمی تقسیم	zh:二项分布
 c:bioaccumulation	Noun	ar:التراكم البيولوجي	de:Bioakkumulation	en:bioaccumulation	es:bioacumulación	fa:تجمع زیستی	fr:bioaccumulation	he:ביואקומולציה	hi:जैव संचय	ja:生物蓄積	ko:생물 농축	pt:bioacumulação	ru:биоаккумуляция	tr:biyobirikim	ur:حیاتی جمع	zh:生物积累
@@ -871,6 +876,7 @@ c:blackbird	Noun	ar:شحرور	de:Amsel	en:blackbird	es:mirlo	fa:مرغ سیاه
 c:blackboard	Noun	ar:سبورة,لوح	de:Tafel	en:blackboard,chalkboard	es:pizarra,pizarrón	fa:تخته سیاه	fr:tableau noir	he:לוח	hi:श्यामपट	ja:黒板	ko:칠판	pt:quadro-negro,lousa	ru:доска	tr:kara tahta	ur:تختہ سیاہ,بلیک بورڈ	zh:黑板
 c:blackbody	Noun	ar:جسم أسود	de:schwarzer Körper	en:blackbody	es:cuerpo negro	fa:جسم سیاه	fr:corps noir	he:גוף שחור	hi:कृष्णिका	ja:黒体	ko:흑체	pt:corpo negro	ru:абсолютно чёрное тело	tr:siyah cisim	ur:سیاہ جسم	zh:黑体
 c:blackbuck	Noun	ar:غزال الهند	de:Hirschziegenantilope	en:blackbuck	es:antílope cervicapra	fa:آنتلوپ سیاه	fr:antilope cervicapre	he:אנטילופה שחורה	hi:कृष्णमृग	ja:ブラックバック	ko:검은영양	pt:antílope-preto	ru:гарна	tr:kara antilop	ur:کالا ہرن	zh:印度黑羚
+c:blackjack	Noun	ar:بلاك جاك	de:Blackjack	en:blackjack	es:blackjack	fa:بلک‌جک	fr:blackjack	he:בלאקג'ק	hi:ब्लैकजैक	ja:ブラックジャック	ko:블랙잭	pt:blackjack	ru:блэкджек	tr:blackjack	ur:بلیک جیک	zh:二十一点
 c:blacksmith	Noun	ar:حداد	de:Schmied,Grobschmied	en:blacksmith,smith	es:herrero	fa:آهنگر	fr:forgeron	he:נפח	hi:लोहार	ja:鍛冶屋,鍛冶師	ko:대장장이,대장간 장인	pt:ferreiro	ru:кузнец	tr:demirci,nalbant	ur:لوہار	zh:铁匠
 c:bladder	Noun	ar:مثانة	de:Blase,Harnblase	en:bladder	es:vejiga	fa:مثانه	fr:vessie	he:שלפוחית	hi:मूत्राशय	ja:膀胱	ko:방광	pt:bexiga	ru:мочевой пузырь	tr:mesane	ur:مثانہ	zh:膀胱
 c:bland	Adjective	ar:بلا طعم,لا نكهة له	de:fad,geschmacksneutral	en:bland	es:soso,insípido	fa:بی مزه	fr:fade,insipide	he:תפל	hi:फीका	ja:味気ない	ko:싱거운	pt:sem graça,insosso	ru:пресный	tr:tatsız,yavan	ur:پھیکا	zh:清淡,乏味
@@ -907,6 +913,7 @@ c:blunt	Adjective	ar:كليل	de:stumpf	en:blunt	es:romo,desafilado	fa:کند	fr
 c:bmp-signaling	Noun	ar:إشارة البروتين العظمي المورفوجيني	de:BMP-Signalweg	en:BMP signaling	es:señalización BMP	fa:سیگنالینگ BMP	fr:signalisation BMP	he:איתות BMP	hi:BMP संकेतन	ja:BMPシグナル	ko:BMP 신호	pt:sinalização BMP	ru:сигнальный путь BMP	tr:BMP sinyali	ur:BMP اشارہ	zh:BMP信号
 c:boa	Noun	ar:ثعبان البواء	de:Boa	en:boa	es:boa	fa:بوا	fr:boa	he:בואה	hi:बोआ	ja:ボア	ko:보아뱀	pt:jiboia	ru:боа	tr:boa yılanı	ur:بوا	zh:蚺蛇
 c:board	Verb	ar:استقل,يستقل,صعد,يصعد	de:einsteigen	en:board	es:abordar,embarcar	fa:سوار شدن	fr:embarquer,monter	he:לעלות	hi:सवार होना	ja:搭乗する,乗り込む	ko:탑승하다	pt:embarcar	ru:садиться	tr:binmek	ur:سوار ہونا	zh:登机,登上
+c:board-game	Noun	ar:لعبة لوح	de:Brettspiel	en:board game	es:juego de tablero	fa:بازی تخته‌ای	fr:jeu de plateau	he:משחק לוח	hi:बोर्ड गेम	ja:ボードゲーム	ko:보드게임	pt:jogo de tabuleiro	ru:настольная игра доска	tr:kutu oyunu	ur:بورڈ گیم	zh:棋盘游戏
 c:board-of-directors	Noun	ar:مجلس الإدارة	de:Aufsichtsrat	en:board of directors	es:junta directiva	fa:هیئت مدیره	fr:conseil d'administration	he:דירקטוריון	hi:निदेशक मंडल	ja:取締役会	ko:이사회	pt:conselho de administração	ru:совет директоров	tr:yönetim kurulu	ur:بورڈ آف ڈائریکٹرز	zh:董事会
 c:boat	Noun	ar:قارب,زورق	de:Boot	en:boat	es:barca,bote	fa:قایق	fr:bateau,barque	he:סירה	hi:नाव,नौका	ja:ボート,小舟	ko:보트	pt:barco,bote	ru:лодка	tr:tekne,kayık	ur:کشتی,ناؤ	zh:小船
 c:bobcat	Noun	ar:القط الوشق الامريكي	de:Rotluchs	en:bobcat	es:lince rojo	fa:بابکت	fr:lynx roux	he:בובקט	hi:बॉबकैट	ja:ボブキャット	ko:밥캣	pt:lince-vermelho	ru:рыжая рысь	tr:kızıl vaşak	ur:باب کیٹ	zh:短尾猫
@@ -1195,6 +1202,7 @@ c:carbon-sequestration	Noun	ar:عزل الكربون	de:Kohlenstoffspeicherung	e
 c:carbon-sink	Noun	ar:مصرف الكربون	de:Kohlenstoffsenke	en:carbon sink	es:sumidero de carbono	fa:جذب‌کننده کربن	fr:puits de carbone	he:כיור פחמן	hi:कार्बन सिंक	ja:炭素吸収源	ko:탄소 흡수원	pt:sumidouro de carbono	ru:поглотитель углерода	tr:karbon yutağı	ur:کاربن جذب	zh:碳汇
 c:carbon-tax	Noun	ar:ضريبة الكربون	de:Kohlenstoffsteuer	en:carbon tax	es:impuesto al carbono	fa:مالیات کربنی	fr:taxe carbone	he:מס פחמן	hi:कार्बन कर	ja:炭素税	ko:탄소세	pt:imposto de carbono	ru:углеродный налог	tr:karbon vergisi	ur:کاربن ٹیکس	zh:碳税
 c:carboxylic-acid	Noun	ar:حمض كربوكسيلي	de:Carbonsäure	en:carboxylic acid	es:ácido carboxílico	fa:اسید کربوکسیلیک	fr:acide carboxylique	he:חומצה קרבוקסילית	hi:कार्बोक्सिलिक अम्ल	ja:カルボン酸	ko:카복실산	pt:ácido carboxílico	ru:карбоновая кислота	tr:karboksilik asit	ur:کاربوکسیلک تیزاب	zh:羧酸
+c:card-game	Noun	ar:لعبة ورق	de:Kartenspiel	en:card game	es:juego de cartas	fa:بازی کارتی	fr:jeu de cartes	he:משחק קלפים	hi:ताश का खेल	ja:カードゲーム	ko:카드 게임	pt:jogo de cartas	ru:карточная игра	tr:kart oyunu	ur:تاش گیم	zh:纸牌游戏
 c:cardamom	Noun	ar:هيل,حبهان	de:Kardamom	en:cardamom	es:cardamomo	fa:هل	fr:cardamome	he:הל	hi:इलायची	ja:カルダモン	ko:카다멈	pt:cardamomo	ru:кардамон	tr:kakule	ur:الائچی	zh:小豆蔻
 c:cardigan	Noun	ar:كارديغان	de:Strickjacke	en:cardigan	es:cárdigan	fa:کاردیگان	fr:cardigan	he:קרדיגן	hi:कार्डिगन	ja:カーディガン	ko:카디건	pt:cardigã	ru:кардиган	tr:hırka	ur:کارڈیگن	zh:开衫
 c:cardinal	Noun	ar:كاردينال	de:Kardinal	en:cardinal	es:cardenal	fa:کاردینال	fr:cardinal	he:קרדינל	hi:कार्डिनल	ja:枢機卿	ko:추기경	pt:cardeal	ru:кардинал	tr:kardinal	ur:کارڈینل	zh:红衣主教
@@ -1366,6 +1374,7 @@ c:chartreuse	Noun	ar:أخضر ليموني	de:Chartreuse	en:chartreuse	es:chartr
 c:chatbot	Noun	ar:روبوت محادثة,شات بوت	de:Chatbot	en:chatbot	es:chatbot,robot conversacional	fa:ربات گفتگو,چت بات	fr:agent conversationnel,chatbot	he:בוט שיחה,צ'אטבוט	hi:चैटबॉट	ja:チャットボット	ko:챗봇	pt:chatbot,bot de conversa	ru:чат бот	tr:sohbet robotu,chatbot	ur:چیٹ بوٹ	zh:聊天机器人
 c:check	Noun	ar:شيك	de:Scheck	en:check,cheque	es:cheque	fa:چک	fr:chèque	he:המחאה,צ'ק	hi:चेक	ja:小切手,チェック	ko:수표,체크	pt:cheque	ru:чек	tr:çek	ur:چیک	zh:支票
 c:checkers	Noun	ar:الداما	de:Dame-Spiel	en:checkers	es:damas	fa:بازی دام	fr:jeu de dames	he:דמקה	hi:चेकर्स	ja:チェッカー	ko:체커	pt:jogo de damas	ru:шашки	tr:dama	ur:چیکرز	zh:跳棋
+c:checkers-game	Noun	ar:داما	de:Dame	en:checkers	es:damas	fa:چکرز	fr:jeu de dames	he:דמקה	hi:चेकर्स	ja:チェッカー	ko:체커	pt:damas	ru:шашки	tr:dama	ur:چیکرز	zh:跳棋
 c:checkpoint-inhibitor	Noun	ar:مثبط نقطة التفتيش المناعية	de:Checkpoint-Inhibitor	en:checkpoint inhibitor	es:inhibidor de punto de control	fa:مهار کننده ایست بازرسی	fr:inhibiteur de point de contrôle	he:מעכב נקודת ביקורת	hi:चेकपॉइंट अवरोधक	ja:免疫チェックポイント阻害剤	ko:면역관문억제제	pt:inibidor de ponto de controle	ru:ингибитор иммунных контрольных точек	tr:kontrol noktası inhibitörü	ur:قوت مدافعت چوکی روکنے والا	zh:免疫检查点抑制剂
 c:checks-and-balances	Noun	ar:الضوابط والتوازنات	de:Gewaltenkontrolle	en:checks and balances	es:frenos y contrapesos	fa:نظارت و توازن	fr:contrôle et contrepoids	he:בלמים ואיזונים	hi:नियंत्रण और संतुलन	ja:抑制と均衡	ko:견제와 균형	pt:freios e contrapesos	ru:система сдержек и противовесов	tr:denetim ve denge	ur:ضوابط اور توازن	zh:制衡
 c:cheddar	Noun	ar:جبنة الشيدر	de:Cheddar	en:cheddar	es:queso cheddar	fa:چدر	fr:cheddar	he:צ'דר	hi:चेडर	ja:チェダー	ko:체다	pt:queijo cheddar	ru:чеддер	tr:çedar peyniri	ur:چیڈر	zh:切达奶酪
@@ -1384,6 +1393,7 @@ c:chengdu	Noun	ar:تشنغدو	de:Chengdu	en:Chengdu	es:Chengdu	fa:چنگدو	fr
 c:chennai	Noun	ar:تشيناي	de:Chennai	en:Chennai,Madras	es:Chennai,Madrás	fa:چنای	fr:Chennai,Madras	he:צ'נאי	hi:चेन्नई	ja:チェンナイ	ko:첸나이	pt:Chennai,Madras	ru:Ченнаи	tr:Çennai	ur:چنائی	zh:钦奈
 c:cherimoya	Noun	ar:شيريمويا	de:Cherimoya	en:cherimoya	es:chirimoya	fa:چریمویا	fr:chérimole	he:כרימויה	hi:चेरीमोया	ja:チェリモヤ	ko:체리모야	pt:cherimóia	ru:черимойя	tr:şekerli elma	ur:چیریمویا	zh:番荔枝
 c:cherry	Noun	ar:كرز	de:Kirsche	en:cherry	es:cereza	fa:گیلاس,آلبالو	fr:cerise	he:דובדבן	hi:चेरी	ja:さくらんぼ,チェリー	ko:체리,벚나무 열매	pt:cereja	ru:вишня,черешня	tr:kiraz,vişne	ur:چیری	zh:樱桃
+c:chess-game	Noun	ar:شطرنج	de:Schach	en:chess	es:ajedrez	fa:شطرنج	fr:échecs	he:שחמט	hi:शतरंज	ja:チェス	ko:체스	pt:xadrez	ru:шахматы	tr:satranç	ur:شطرنج	zh:国际象棋
 c:chess-set	Noun	ar:لعبة الشطرنج	de:Schachspiel	en:chess set	es:ajedrez	fa:مهره‌های شطرنج	fr:jeu d'échecs	he:שחמט	hi:शतरंज	ja:チェスセット	ko:체스 세트	pt:jogo de xadrez	ru:шахматы	tr:satranç takımı	ur:شطرنج	zh:国际象棋
 c:chest	Noun	ar:صدر	de:Brust,Brustkorb	en:chest	es:pecho	fa:سینه	fr:poitrine	he:חזה	hi:छाती	ja:胸	ko:가슴	pt:peito	ru:грудь	tr:göğüs	ur:سینہ	zh:胸,胸部
 c:chestnut	Noun	ar:الكستناء	de:Kastanie	en:chestnut	es:castaño	fa:شاه‌بلوط	fr:châtaignier	he:ערמון	hi:शाहबलूत	ja:栗	ko:밤나무	pt:castanheiro	ru:каштан	tr:kestane	ur:شاہ بلوط	zh:栗子
@@ -1768,6 +1778,7 @@ c:conservation-eco	Noun	ar:حفظ البيئة	de:Naturschutz	en:environmental c
 c:conservatism	Noun	ar:المحافظة السياسية	de:Konservatismus	en:conservatism	es:conservadurismo	fa:محافظه‌کاری	fr:conservatisme	he:שמרנות	hi:रूढ़िवाद	ja:保守主義	ko:보수주의	pt:conservadorismo	ru:консерватизм	tr:muhafazakarlık	ur:قدامت پسندی	zh:保守主义
 c:conservatism-phil	Noun	ar:المحافظة	de:Konservatismus	en:conservatism	es:conservadurismo	fa:محافظه‌کاری	fr:conservatisme	he:קונסרבטיזם	hi:रूढ़िवाद	ja:保守主義	ko:보수주의	pt:conservadorismo	ru:консерватизм	tr:muhafazakarlık	ur:قدامت پسندی	zh:保守主义
 c:consider	Verb	ar:اعتبر	de:betrachten,erwägen	en:consider	es:considerar	fa:در نظر گرفتن	fr:considérer	he:לשקול	hi:विचार करना	ja:考える,検討する	ko:고려하다	pt:considerar	ru:считать,рассматривать	tr:düşünmek,saymak	ur:غور کرنا	zh:考虑
+c:console-game	Noun	ar:لعبة كونسول	de:Konsolenspiel	en:console game	es:videojuego de consola	fa:بازی کنسول	fr:jeu console	he:משחק קונסולה	hi:कंसोल गेम	ja:コンソールゲーム	ko:콘솔 게임	pt:jogo de consola	ru:консольная игра	tr:konsol oyunu	ur:کنسول گیم	zh:主机游戏
 c:consonant	Noun	ar:حرف ساكن,صامت	de:Konsonant,Mitlaut	en:consonant	es:consonante	fa:همخوان,صامت	fr:consonne	he:עיצור	hi:व्यंजन	ja:子音	ko:자음	pt:consoante	ru:согласный,согласная	tr:ünsüz,konson	ur:ساکن,صامت	zh:辅音,子音
 c:constant-math	Noun	ar:ثابت رياضي	de:Konstante	en:constant	es:constante	fa:ثابت	fr:constante	he:קבוע	hi:स्थिरांक	ja:定数	ko:상수	pt:constante	ru:константа	tr:sabit	ur:ثابت	zh:常数
 c:constellation	Noun	ar:كوكبة,مجموعة نجمية	de:Sternbild,Konstellation	en:constellation	es:constelación	fa:صورت فلکی	fr:constellation	he:קבוצת כוכבים,מזל	hi:तारामंडल,नक्षत्र	ja:星座	ko:별자리	pt:constelação	ru:созвездие	tr:takımyıldız	ur:جھرمٹ	zh:星座
@@ -1939,6 +1950,7 @@ c:crane	Noun	ar:كركي,غرنوق	de:Kranich	en:crane	es:grulla	fa:درنا	fr
 c:crane-bird	Noun	ar:طائر الكركي	de:Kranich	en:crane	es:grulla	fa:درنا	fr:grue	he:עגור	hi:सारस	ja:ツル	ko:두루미	pt:grou	ru:журавль	tr:turna	ur:کرکی	zh:鹤
 c:crane-fly	Noun	ar:ذبابة الرافعة	de:Schnake	en:crane fly	es:típula	fa:مگس جرثقیل	fr:tipule	he:זבוב הגן	hi:क्रेन मक्खी	ja:ガガンボ	ko:각다귀	pt:tipula	ru:долгоножка	tr:uzun bacaklı sinek	ur:کرین مکھی	zh:大蚊
 c:crane-machine	Noun	ar:رافعة	de:Kran	en:crane	es:grúa	fa:جرثقیل	fr:grue	he:עגורן	hi:क्रेन	ja:クレーン	ko:크레인	pt:guindaste	ru:кран	tr:vinç	ur:کرین	zh:吊车
+c:craps	Noun	ar:كرابس	de:Craps	en:craps	es:craps	fa:کرپس	fr:craps	he:קראפס	hi:क्रैप्स	ja:クラップス	ko:크랩스	pt:craps	ru:крэпс	tr:craps	ur:کریپس	zh:骰宝
 c:crater	Noun	ar:فوهة بركانية	de:Krater	en:crater	es:cráter	fa:دهانه آتشفشان	fr:cratère	he:לוע,מכתש	hi:गड्ढा,क्रेटर	ja:クレーター,火口	ko:분화구	pt:cratera	ru:кратер	tr:krater	ur:دہانہ	zh:火山口
 c:crawl	Verb	ar:زحف	de:kriechen	en:crawl	es:gatear	fa:چهار دست و پا رفتن,خزیدن	fr:ramper	he:לזחול	hi:रेंगना	ja:這う	ko:기어가다	pt:engatinhar,rastejar	ru:ползти	tr:emeklemek,sürünmek	ur:رینگنا	zh:爬行
 c:crayfish	Noun	ar:كركند النهر,جراد الماء	de:Flusskrebs	en:crayfish,crawfish	es:cangrejo de río	fa:خرچنگ رودخانه	fr:écrevisse	he:סרטן נהרות	hi:नदी झींगा	ja:ザリガニ	ko:가재	pt:lagostim-do-rio	ru:речной рак	tr:tatlı su istakozu,kerevit	ur:دریائی جھینگا	zh:小龙虾
@@ -1985,6 +1997,7 @@ c:crossbow	Noun	ar:قوس مستعرض	de:Armbrust	en:crossbow	es:ballesta	fa:ک
 c:crossing-over	Noun	ar:العبور الجيني	de:Crossing-over	en:crossing over	es:entrecruzamiento	fa:تقاطع کروموزومی	fr:enjambement	he:קרוסינג-אובר	hi:क्रॉसिंग ओवर	ja:乗り換え	ko:교차	pt:crossing-over	ru:кроссинговер	tr:krossing-over	ur:کراسنگ اوور	zh:交叉互换
 c:crossover	Noun	ar:عبور وراثي	de:Crossing-over	en:genetic crossover	es:entrecruzamiento	fa:کراسینگ‌اور	fr:crossing-over	he:חציה גנטית	hi:जीन विनिमय	ja:乗換え	ko:교차	pt:recombinação	ru:кроссинговер	tr:krosover	ur:کراس اوور	zh:染色体交叉
 c:crosswalk	Noun	ar:ممر المشاة,معبر مشاة	de:Zebrastreifen,Fußgängerüberweg	en:crosswalk,zebra crossing,pedestrian crossing	es:paso de peatones,paso de cebra	fa:گذرگاه عابر پیاده	fr:passage piéton,passage clouté	he:מעבר חצייה	hi:पैदल पार पथ	ja:横断歩道	ko:횡단보도	pt:faixa de pedestres,passadeira	ru:пешеходный переход	tr:yaya geçidi	ur:زیبرا کراسنگ	zh:人行横道,斑马线
+c:crossword-puzzle	Noun	ar:كلمات متقاطعة	de:Kreuzworträtsel	en:crossword puzzle	es:crucigrama	fa:جدول کلمات متقاطع	fr:mots croisés	he:תשבץ	hi:क्रॉसवर्ड पहेली	ja:クロスワード	ko:크로스워드 퍼즐	pt:palavras cruzadas	ru:кроссворд	tr:bulmaca kare	ur:کراس ورڈ	zh:填字游戏
 c:crow	Noun	ar:غراب	de:Krähe	en:crow	es:cuervo	fa:کلاغ	fr:corneille	he:עורב	hi:कौआ	ja:カラス	ko:까마귀	pt:corvo	ru:ворона	tr:karga	ur:کوا	zh:乌鸦
 c:crowbar	Noun	ar:عتلة	de:Brechstange	en:crowbar	es:palanca	fa:کلنگ	fr:levier	he:מוט ברזל	hi:क्राउबार	ja:バール	ko:쇠지레	pt:pé-de-cabra	ru:монтировка	tr:levye	ur:کراؤبار	zh:撬棍
 c:crowbar-tool	Noun	ar:عتلة	de:Brecheisen	en:crowbar	es:palanca	fa:کلنگ	fr:pied-de-biche	he:ברזל שחרור	hi:क्राउबार	ja:バール	ko:쇠지레	pt:pé de cabra	ru:монтировка	tr:levye	ur:لوہے کا گز	zh:撬棍
@@ -2262,6 +2275,7 @@ c:diaspora	Noun	ar:شتات	de:Diaspora	en:diaspora	es:diáspora	fa:دیاسپو
 c:diatonic	Adjective	ar:ديانوتيكي	de:diatonisch	en:diatonic	es:diatónico	fa:دیاتونیک	fr:diatonique	he:דיאטוני	hi:डायटोनिक	ja:全音階的	ko:온음계	pt:diatônico	ru:диатонический	tr:diyatonik	ur:ڈایاٹونک	zh:全音阶
 c:diatonic-scale	Noun	ar:السلم الدياتوني	de:diatonische Tonleiter	en:diatonic scale	es:escala diatónica	fa:گام دیاتونیک	fr:gamme diatonique	he:סולם דיאטוני	hi:डायटोनिक स्केल	ja:全音階	ko:온음계	pt:escala diatónica	ru:диатоническая гамма	tr:diatonik skala	ur:ڈائیٹونک اسکیل	zh:自然音阶
 c:dibber	Noun	ar:أداة ثقب التربة	de:Pflanzholz	en:dibber	es:plantador	fa:گیاه‌کار	fr:plantoir	he:פלנטר	hi:छिद्रक	ja:球根植え器	ko:파종기	pt:plantadeira	ru:сажальный кол	tr:fide dikim aleti	ur:بیج کاشت اوزار	zh:移植棒
+c:dice-game	Noun	ar:لعبة نرد	de:Würfelspiel	en:dice game	es:juego de dados	fa:بازی تاس	fr:jeu de dés	he:משחק קוביות	hi:पासा खेल	ja:サイコロゲーム	ko:주사위 게임	pt:jogo de dados	ru:игра в кости	tr:zar oyunu	ur:پانسہ گیم	zh:骰子游戏
 c:dice-set	Noun	ar:طقم النرد	de:Würfelspiel	en:dice set	es:dados	fa:تاس	fr:jeu de dés	he:קוביות משחק	hi:पासे	ja:サイコロセット	ko:주사위 세트	pt:dados	ru:игральные кубики	tr:zar seti	ur:پانسے	zh:骰子
 c:diction	Noun	ar:الأسلوب اللفظي	de:Diktion	en:diction	es:dicción	fa:واژه‌گزینی	fr:diction	he:דיקציה	hi:शब्द-चयन	ja:語法	ko:어법	pt:dicção	ru:дикция	tr:diksiyon	ur:لفظ انتخاب	zh:措辞
 c:dictionary	Noun	ar:قاموس,معجم	de:Wörterbuch	en:dictionary	es:diccionario	fa:فرهنگ لغت,واژه نامه	fr:dictionnaire	he:מילון	hi:शब्दकोश	ja:辞書,辞典	ko:사전	pt:dicionário	ru:словарь	tr:sözlük	ur:لغت,لغت نامہ	zh:词典,字典
@@ -2373,6 +2387,7 @@ c:dominant	Noun	ar:النغمة السائدة	de:Dominante	en:dominant	es:domin
 c:dominant-allele	Noun	ar:أليل سائد	de:dominantes Allel	en:dominant allele	es:alelo dominante	fa:آلل غالب	fr:allèle dominant	he:אלל דומיננטי	hi:प्रभावी युग्मविकल्पी	ja:優性遺伝子	ko:우성 대립유전자	pt:alelo dominante	ru:доминантный аллель	tr:baskın alel	ur:غالب ایلیل	zh:显性等位基因
 c:dominant-music	Noun	ar:سائدة موسيقية	de:Dominante	en:dominant note	es:dominante	fa:دومینانت	fr:dominante	he:דומיננטה	hi:प्रबल स्वर	ja:属音	ko:딸림음	pt:dominante	ru:доминанта	tr:dominant	ur:غالب سر	zh:属音
 c:dominoes	Noun	ar:الدومينو	de:Domino	en:dominoes	es:dominó	fa:دومینو	fr:dominos	he:דומינו	hi:डोमिनोज़	ja:ドミノ	ko:도미노	pt:dominó	ru:домино	tr:domino	ur:ڈومینو	zh:多米诺骨牌
+c:dominoes-game	Noun	ar:دومينو	de:Domino	en:dominoes	es:dominó	fa:دومینو	fr:dominos	he:דומינו	hi:डोमिनोज़	ja:ドミノ	ko:도미노	pt:dominó	ru:домино	tr:domino	ur:ڈومینو	zh:多米诺骨牌
 c:don	Noun	ar:الدون,نهر الدون	de:Don	en:Don,Don River	es:Don,río Don	fa:دن,رود دن	fr:Don	he:דון,נהר הדון	hi:दोन नदी	ja:ドン川	ko:돈강	pt:Don,rio Don	ru:Дон	tr:Don,Don Nehri	ur:دریائے ڈان	zh:顿河
 c:don-river	Noun	ar:نهر الدون	de:Don	en:Don river	es:río Don	fa:رود دن	fr:Don	he:נהר הדון	hi:डॉन नदी	ja:ドン川	ko:돈강	pt:rio Don	ru:река Дон	tr:Don Nehri	ur:دریائے ڈان	zh:顿河
 c:dong	Noun	ar:دونغ	de:Dong	en:dong	es:dong	fa:دونگ	fr:dong	he:דונג	hi:डॉन्ग	ja:ドン	ko:동	pt:dong	ru:донг	tr:dong	ur:ڈونگ	zh:越南盾
@@ -2946,6 +2961,7 @@ c:field-db	Noun	ar:حقل بيانات	de:Datenfeld	en:field	es:campo	fa:فیل�
 c:field-strength	Noun	ar:قوة المجال المغناطيسي	de:Feldstärke	en:magnetic field strength	es:intensidad de campo magnético	fa:شدت میدان مغناطیسی	fr:intensité du champ magnétique	he:עוצמת שדה מגנטי	hi:चुम्बकीय क्षेत्र शक्ति	ja:磁場強度	ko:자기장 세기	pt:intensidade do campo magnético	ru:напряжённость магнитного поля	tr:manyetik alan gücü	ur:مقناطیسی میدانی طاقت	zh:磁场强度
 c:fieldwork	Noun	ar:عمل ميداني	de:Feldforschung	en:fieldwork	es:trabajo de campo	fa:کار میدانی	fr:travail de terrain	he:עבודת שדה	hi:क्षेत्र कार्य	ja:フィールドワーク	ko:현장 연구	pt:trabalho de campo	ru:полевая работа	tr:saha çalışması	ur:میدانی کام	zh:田野调查
 c:fig	Noun	ar:تين	de:Feige	en:fig	es:higo	fa:انجیر	fr:figue	he:תאנה	hi:अंजीर	ja:イチジク	ko:무화과	pt:figo	ru:инжир	tr:incir	ur:انجیر	zh:无花果
+c:fighting-game	Noun	ar:لعبة قتال	de:Kampfspiel	en:fighting game	es:juego de lucha	fa:بازی مبارزه	fr:jeu de combat	he:משחק לחימה	hi:लड़ाई का खेल	ja:格闘ゲーム	ko:격투 게임	pt:jogo de luta	ru:файтинг	tr:dövüş oyunu	ur:لڑائی گیم	zh:格斗游戏
 c:file	Noun	ar:ملف	de:Datei,File	en:file	es:archivo,fichero	fa:فایل,پرونده	fr:fichier	he:קובץ	hi:फ़ाइल	ja:ファイル	ko:파일	pt:arquivo,ficheiro	ru:файл	tr:dosya	ur:فائل	zh:文件,档案
 c:file-download	Noun	ar:تحميل ملف	de:Herunterladen	en:download	es:descarga	fa:بارگیری	fr:téléchargement	he:הורדה	hi:डाउनलोड	ja:ダウンロード	ko:다운로드	pt:download	ru:загрузка	tr:indirme	ur:ڈاؤن لوڈ	zh:下载
 c:file-folder	Noun	ar:مجلد ملفات	de:Aktenordner	en:file folder	es:carpeta de archivos	fa:پوشه پرونده	fr:dossier	he:תיקיית קבצים	hi:फाइल फोल्डर	ja:ファイルフォルダー	ko:파일 폴더	pt:pasta de arquivo	ru:папка для документов	tr:dosya klasörü	ur:فائل فولڈر	zh:文件夹
@@ -3388,6 +3404,7 @@ c:glycogen-sport	Noun	ar:الجليكوجين	de:Glykogen	en:glycogen	es:glucóg
 c:gnat	Noun	ar:بعوضة صغيرة,بعوض	de:Mücke,Kriebelmücke	en:gnat	es:jején,mosquito pequeño	fa:پشه کوچک	fr:moucheron	he:יתוש קטן,עמומית	hi:छोटा मच्छर,गनाट	ja:ブヨ,ユスリカ	ko:각다귀,깔따구	pt:mosquito pequeno,borrachudo	ru:мошка,мокрец	tr:tatarcık,küçük sivrisinek	ur:چھوٹا مچھر	zh:蚋,小蚊子
 c:gnp	Noun	ar:الناتج القومي الإجمالي	de:Bruttosozialprodukt	en:GNP	es:PNB	fa:تولید ناخالص ملی	fr:PNB	he:תוצר לאומי גולמי	hi:सकल राष्ट्रीय उत्पाद	ja:国民総生産	ko:국민 총생산	pt:PNB	ru:ВНП	tr:GSMH	ur:مجموعی قومی پیداوار	zh:国民生产总值
 c:go	Verb	ar:ذهب	de:gehen	en:go	es:ir	fa:رفتن	fr:aller	he:ללכת	hi:जाना	ja:行く	ko:가다	pt:ir	ru:идти,ходить	tr:gitmek	ur:جانا	zh:去
+c:go-game	Noun	ar:لعبة الغو	de:Go-Spiel	en:go	es:go juego	fa:گو بازی	fr:jeu de go	he:גו	hi:गो खेल	ja:囲碁	ko:바둑	pt:go jogo	ru:го	tr:go oyunu	ur:گو گیم	zh:围棋
 c:goal	Noun	ar:هدف,مرمى	de:Tor,Ziel	en:goal	es:gol,meta	fa:گل,دروازه	fr:but	he:שער	hi:गोल,लक्ष्य	ja:ゴール	ko:골,목표	pt:gol,meta	ru:гол,ворота	tr:gol,kale	ur:گول,مقصد	zh:进球,目标
 c:goat	Noun	ar:ماعز	de:Ziege	en:goat	es:cabra	fa:بز	fr:chèvre	he:עז	hi:बकरी	ja:山羊,ヤギ	ko:염소	pt:cabra	ru:коза	tr:keçi	ur:بکری	zh:山羊
 c:goat-cheese	Noun	ar:جبنة الماعز	de:Ziegenkäse	en:goat cheese	es:queso de cabra	fa:پنیر بز	fr:fromage de chèvre	he:גבינת עזים	hi:बकरी पनीर	ja:ゴートチーズ	ko:염소 치즈	pt:queijo de cabra	ru:козий сыр	tr:keçi peyniri	ur:بکری پنیر	zh:山羊奶酪
@@ -4205,6 +4222,7 @@ c:jewelry-craft	Noun	ar:صياغة المجوهرات	de:Schmuckherstellung	en:j
 c:jewelry-shop	Noun	ar:محل مجوهرات	de:Juweliergeschäft	en:jewelry shop	es:joyería	fa:جواهرفروشی	fr:bijouterie	he:חנות תכשיטים	hi:जौहरी की दुकान	ja:宝石店	ko:보석 가게	pt:joalheria	ru:ювелирный магазин	tr:kuyumcu	ur:زیور کی دکان	zh:珠宝店
 c:jigsaw	Noun	ar:منشار خطي	de:Stichsäge	en:jigsaw	es:sierra de calar	fa:اره مویی	fr:scie sauteuse	he:מסור פזמון	hi:जिगसॉ	ja:ジグソー	ko:직소	pt:serra tico-tico	ru:лобзик	tr:dekupaj testeresi	ur:جگسا	zh:线锯
 c:jigsaw-puzzle	Noun	ar:أحجية الصور المقطوعة,بازل	de:Puzzle	en:jigsaw puzzle	es:rompecabezas	fa:پازل	fr:puzzle	he:פאזל	hi:जिगसॉ पहेली	ja:ジグソーパズル	ko:직소 퍼즐	pt:quebra-cabeça	ru:пазл	tr:yapboz	ur:جگ سا پہیلی	zh:拼图
+c:jigsaw-puzzle-game	Noun	ar:لعبة تركيب الصور	de:Puzzle	en:jigsaw puzzle	es:rompecabezas	fa:پازل تکه‌ای	fr:puzzle	he:פאזל	hi:जिगसॉ पज़ल	ja:ジグソーパズル	ko:직소 퍼즐	pt:quebra-cabeças	ru:пазл	tr:yapboz	ur:جگساؤ پزل	zh:拼图
 c:jigsaw-saw	Noun	ar:منشار انتروي	de:Stichsäge	en:jigsaw	es:sierra de calar	fa:اره منحنی‌بر	fr:scie sauteuse	he:מסור חרב	hi:जिगसॉ	ja:ジグソー	ko:직소	pt:serra tico-tico	ru:лобзик	tr:dekupaj testeresi	ur:جگسا	zh:曲线锯
 c:jiu-jitsu	Noun	ar:جوجيتسو	de:Jiu-Jitsu	en:jiu-jitsu	es:jiu-jitsu	fa:جوجیتسو	fr:jiu-jitsu	he:ג'ו-ג'יטסו	hi:जिउ-जित्सु	ja:柔術	ko:주짓수	pt:jiu-jitsu	ru:джиу-джитсу	tr:jiu-jitsu	ur:جیو جیٹسو	zh:柔术
 c:jive	Noun	ar:رقص الجايف	de:Jive	en:jive	es:jive	fa:جایو	fr:jive	he:ג׳יו	hi:जाइव	ja:ジャイブ	ko:자이브	pt:jive	ru:джайв	tr:jive	ur:جائیو	zh:吉特巴舞
@@ -4676,6 +4694,7 @@ c:los-angeles	Noun	ar:لوس أنجلوس	de:Los Angeles	en:Los Angeles,LA	es:Lo
 c:loss	Noun	ar:خسارة	de:Verlust	en:loss	es:pérdida	fa:زیان,ضرر	fr:perte	he:הפסד	hi:हानि,नुकसान	ja:損失	ko:손실,손해	pt:perda,prejuízo	ru:убыток,потеря	tr:zarar,kayıp	ur:نقصان,خسارہ	zh:亏损,损失
 c:loss-aversion	Noun	ar:كره الخسارة	de:Verlustaversion	en:loss aversion	es:aversión a las pérdidas	fa:زیان‌گریزی	fr:aversion aux pertes	he:שנאת הפסד	hi:हानि विमुखता	ja:損失回避	ko:손실 회피	pt:aversão à perda	ru:неприятие потерь	tr:kayıptan kaçınma	ur:نقصان سے نفرت	zh:损失厌恶
 c:loss-biz	Noun	ar:خسارة تجارية	de:Verlust	en:loss	es:pérdida	fa:ضرر	fr:perte	he:הפסד	hi:हानि	ja:損失	ko:손실	pt:prejuízo	ru:убыток	tr:zarar	ur:نقصان	zh:亏损
+c:lottery-game	Noun	ar:يانصيب	de:Lotterie	en:lottery	es:lotería	fa:قرعه‌کشی	fr:loterie	he:לוטו	hi:लॉटरी	ja:宝くじ	ko:복권	pt:lotaria	ru:лотерея	tr:piyango	ur:لاٹری	zh:彩票
 c:lotus	Noun	ar:لوتس,نيلوفر	de:Lotus,Lotusblume	en:lotus	es:loto	fa:نیلوفر آبی,لوتوس	fr:lotus	he:לוטוס	hi:कमल	ja:ハス,蓮	ko:연꽃	pt:lótus	ru:лотос	tr:lotus,nilüfer	ur:کنول	zh:莲花,荷花
 c:loud	Adjective	ar:صاخب,عالي الصوت	de:laut	en:loud	es:ruidoso,alto	fa:بلند,پر سر و صدا	fr:fort,bruyant	he:רעש,קולני	hi:तेज़,ऊँचा	ja:騒がしい,大きな音の	ko:시끄러운	pt:alto,barulhento	ru:громкий	tr:gürültülü,sesli	ur:اونچی آواز والا	zh:响亮,大声
 c:loudness	Noun	ar:مستوى الصوت	de:Lautstärke	en:loudness	es:sonoridad	fa:بلندی صدا	fr:sonie	he:עוצמת קול	hi:प्रखरता	ja:ラウドネス	ko:음량	pt:sonoridade	ru:громкость	tr:ses şiddeti	ur:آواز کی بلندی	zh:响度
@@ -4739,6 +4758,7 @@ c:magnolia	Noun	ar:المغنوليا	de:Magnolie	en:magnolia	es:magnolia	fa:م�
 c:magpie	Noun	ar:عقعق	de:Elster	en:magpie	es:urraca	fa:زاغ	fr:pie	he:עקת	hi:मैगपाई	ja:カササギ	ko:까치	pt:pega	ru:сорока	tr:saksağan	ur:مگپائی	zh:喜鹊
 c:mahabharata	Noun	ar:المهابهاراتا	de:Mahabharata	en:Mahabharata	es:Mahabharata	fa:مهابهاراتا	fr:Mahabharata	he:מהאבהאראטה	hi:महाभारत	ja:マハーバーラタ	ko:마하바라타	pt:Mahabharata	ru:Махабхарата	tr:Mahabharata	ur:مہابھارت	zh:摩诃婆罗多
 c:mahayana	Noun	ar:ماهايانا البوذية	de:Mahayana	en:Mahayana Buddhism	es:budismo mahayana	fa:مهایانه	fr:bouddhisme mahāyāna	he:מהאיינה	hi:महायान बौद्ध धर्म	ja:大乗仏教	ko:대승 불교	pt:budismo mahayana	ru:махаяна	tr:Mahayana	ur:مہاین	zh:大乘佛教
+c:mahjong	Noun	ar:ماجونغ	de:Mahjong	en:mahjong	es:mahjong	fa:ماجونگ	fr:mahjong	he:מאג'ונג	hi:माजोंग	ja:麻雀	ko:마작	pt:mahjong	ru:маджонг	tr:mahjong	ur:ماہجونگ	zh:麻将
 c:maillard-reaction	Noun	ar:تفاعل ماياريد	de:Maillard-Reaktion	en:Maillard reaction	es:reacción de Maillard	fa:واکنش میلارد	fr:réaction de Maillard	he:תגובת מייאר	hi:मेलार्ड अभिक्रिया	ja:メイラード反応	ko:마이야르 반응	pt:reação de Maillard	ru:реакция Майяра	tr:Maillard reaksiyonu	ur:میلارڈ تعامل	zh:美拉德反应
 c:mainframe	Noun	ar:الحاسوب المركزي	de:Mainframe	en:mainframe	es:mainframe	fa:مین فریم	fr:ordinateur central	he:מחשב מסגרת	hi:मेनफ्रेम	ja:メインフレーム	ko:메인프레임	pt:mainframe	ru:мейнфрейм	tr:ana bilgisayar	ur:مین فریم	zh:大型机
 c:major-key	Noun	ar:مقام كبير	de:Dur-Tonart	en:major key	es:tonalidad mayor	fa:گام ماژور	fr:tonalité majeure	he:סולם מז'ור	hi:प्रमुख स्वरसप्तक	ja:長調	ko:장조	pt:tonalidade maior	ru:мажорная тональность	tr:majör ton	ur:بڑی کلید	zh:大调
@@ -5854,6 +5874,7 @@ c:partition-number	Noun	ar:تجزئة الاعداد الصحيحة	de:Partition
 c:partner	Noun	ar:شريك	de:Partner,Teilhaber	en:partner	es:socio	fa:شریک	fr:partenaire,associé	he:שותף	hi:साझेदार,पार्टनर	ja:共同経営者,パートナー	ko:파트너,동업자	pt:sócio,parceiro	ru:партнёр,компаньон	tr:ortak,partner	ur:شراکت دار,پارٹنر	zh:合伙人,伙伴
 c:partnership	Noun	ar:شراكة تجارية	de:Partnerschaft	en:partnership	es:sociedad	fa:مشارکت	fr:partenariat	he:שותפות	hi:साझेदारी	ja:パートナーシップ	ko:파트너십	pt:parceria	ru:партнёрство	tr:ortaklık	ur:شراکت	zh:合伙
 c:partridge	Noun	ar:حجل	de:Rebhuhn	en:partridge	es:perdiz	fa:کبک	fr:perdrix	he:קורא	hi:तीतर	ja:シャコ	ko:자고	pt:perdiz	ru:куропатка	tr:keklik	ur:تیتر	zh:石鸡
+c:party-game	Noun	ar:لعبة حفلة	de:Partyspiel	en:party game	es:juego de fiesta	fa:بازی مهمانی	fr:jeu de société	he:משחק חברתי	hi:पार्टी खेल	ja:パーティーゲーム	ko:파티 게임	pt:jogo de festa	ru:пати-гейм	tr:parti oyunu	ur:پارٹی گیم	zh:派对游戏
 c:pascal-unit	Noun	ar:باسكال	de:Pascal	en:pascal	es:pascal	fa:پاسکال	fr:pascal	he:פסקל	hi:पास्कल	ja:パスカル	ko:파스칼	pt:pascal	ru:паскаль	tr:pascal	ur:پاسکل	zh:帕斯卡
 c:paso-doble	Noun	ar:رقص الباسو دوبلي	de:Paso Doble	en:paso doble	es:pasodoble	fa:پاسو دوبله	fr:paso doble	he:פסו דובלה	hi:पासो डोबल	ja:パソドブレ	ko:파소도블레	pt:pasodoble	ru:пасодобль	tr:paso doble	ur:پاسو ڈبل	zh:斗牛舞
 c:passenger	Noun	ar:راكب,مسافر	de:Passagier,Fahrgast,Reisender	en:passenger	es:pasajero,viajero	fa:مسافر	fr:passager,voyageur	he:נוסע	hi:यात्री,सवारी	ja:乗客,旅客	ko:승객	pt:passageiro	ru:пассажир	tr:yolcu	ur:مسافر	zh:乘客,旅客
@@ -6087,6 +6108,7 @@ c:pillar	Noun	ar:ركن,دعامة	de:Pfeiler,Säule	en:pillar	es:pilar	fa:پا�
 c:pillow	Noun	ar:وسادة,مخدة	de:Kissen	en:pillow	es:almohada	fa:بالش,متکا	fr:oreiller	he:כרית	hi:तकिया	ja:枕	ko:베개	pt:travesseiro	ru:подушка	tr:yastık	ur:تکیہ	zh:枕头
 c:pilot	Noun	ar:طيار	de:Pilot,Pilotin	en:pilot	es:piloto	fa:خلبان	fr:pilote	he:טייס	hi:पायलट,विमान चालक	ja:パイロット,操縦士	ko:파일럿,조종사	pt:piloto	ru:пилот,лётчик	tr:pilot	ur:پائلٹ	zh:飞行员,驾驶员
 c:pilot-episode	Noun	ar:حلقة تجريبية	de:Pilotfolge	en:pilot episode	es:episodio piloto	fa:قسمت آزمایشی	fr:épisode pilote	he:פרק פיילוט	hi:पायलट एपिसोड	ja:パイロット版	ko:파일럿 에피소드	pt:episódio piloto	ru:пилотная серия	tr:pilot bölüm	ur:پائلٹ قسط	zh:试播集
+c:pinball	Noun	ar:بينبول	de:Flipper	en:pinball	es:máquina de pinball	fa:پینبال	fr:flipper pinball	he:פינבול	hi:पिनबॉल	ja:ピンボール	ko:핀볼	pt:pinball	ru:пинбол	tr:tilt oyunu	ur:پن بال	zh:弹球机
 c:pine	Noun	ar:صنوبر	de:Kiefer,Pinie	en:pine	es:pino	fa:کاج	fr:pin	he:אורן	hi:चीड़,देवदार	ja:松	ko:소나무	pt:pinheiro	ru:сосна	tr:çam	ur:صنوبر,چیڑ	zh:松树
 c:pine-nut	Noun	ar:بزر الصنوبر	de:Pinienkern	en:pine nut	es:piñón	fa:چلغوزه	fr:pignon	he:גרעין אורן	hi:चीड़ की गिरी	ja:松の実	ko:잣	pt:pinhão	ru:кедровый орех	tr:çam fıstığı	ur:چلغوزہ	zh:松子
 c:pineapple	Noun	ar:أناناس	de:Ananas	en:pineapple	es:piña,ananá	fa:آناناس	fr:ananas	he:אננס	hi:अनानास	ja:パイナップル	ko:파인애플	pt:abacaxi,ananás	ru:ананас	tr:ananas	ur:انناس	zh:菠萝,凤梨
@@ -6147,6 +6169,7 @@ c:plateau	Noun	ar:هضبة	de:Plateau,Hochebene	en:plateau	es:meseta,altiplano	f
 c:plateau-geo	Noun	ar:هضبة جغرافية	de:Hochebene	en:plateau	es:meseta	fa:فلات	fr:plateau géographique	he:רמה	hi:पठार	ja:高原	ko:고원	pt:planalto	ru:плато	tr:plato	ur:سطح مرتفع	zh:高原
 c:plateau-landform	Noun	ar:هضبة	de:Plateau,Hochebene	en:plateau,tableland	es:meseta	fa:فلات	fr:plateau	he:רמה	hi:पठार	ja:高原,台地	ko:고원	pt:planalto	ru:плато	tr:plato,yayla	ur:سطح مرتفع	zh:高原
 c:platelet	Noun	ar:صفيحة دموية	de:Blutplättchen	en:platelet	es:plaqueta	fa:پلاکت	fr:plaquette	he:טסית	hi:प्लेटलेट	ja:血小板	ko:혈소판	pt:plaqueta	ru:тромбоцит	tr:trombosit	ur:پلیٹلٹ	zh:血小板
+c:platformer	Noun	ar:لعبة منصات	de:Jump 'n' Run	en:platformer	es:juego de plataformas	fa:بازی پلتفرمر	fr:jeu de plateforme	he:משחק פלטפורמה	hi:प्लेटफ़ॉर्मर खेल	ja:プラットフォーマー	ko:플랫포머	pt:plataforma jogo	ru:платформер	tr:platform oyunu	ur:پلیٹ فارم گیم	zh:平台游戏
 c:platinum	Noun	ar:بلاتين	de:Platin	en:platinum	es:platino	fa:پلاتین	fr:platine	he:פלטינה	hi:प्लैटिनम	ja:プラチナ,白金	ko:백금,플래티넘	pt:platina	ru:платина	tr:platin	ur:پلاٹینم	zh:铂,白金
 c:platinum-color	Noun	ar:بلاتيني	de:Platinfarben	en:platinum	es:platino	fa:پلاتینی	fr:platine	he:פלטינה	hi:प्लैटिनम रंग	ja:プラチナ色	ko:플래티넘색	pt:platina	ru:платиновый	tr:platin rengi	ur:پلاٹینم رنگ	zh:铂金色
 c:platinum-metal	Noun	ar:بلاتين	de:Platin	en:platinum	es:platino	fa:پلاتین	fr:platine	he:פלטינה	hi:प्लेटिनम	ja:白金	ko:백금	pt:platina	ru:платина	tr:platin	ur:پلاٹینم	zh:铂
@@ -6191,6 +6214,7 @@ c:pointer	Noun	ar:مؤشر	de:Zeiger	en:pointer	es:puntero	fa:اشاره‌گر	
 c:pointer-prog	Noun	ar:مؤشر	de:Zeiger	en:pointer	es:puntero	fa:اشاره‌گر	fr:pointeur	he:מצביע	hi:पॉइंटर	ja:ポインタ	ko:포인터	pt:ponteiro	ru:указатель	tr:işaretçi	ur:پوائنٹر	zh:指针
 c:poison-dart-frog	Noun	ar:ضفدع السهم السام	de:Pfeilgiftfrosch	en:poison dart frog	es:rana venenosa,rana dardo	fa:قورباغه تیر سمی	fr:dendrobate	he:צפרדע חץ-רעל	hi:जहरीला मेंढक	ja:ヤドクガエル	ko:독화살개구리	pt:rã-venenosa	ru:ядовитая лягушка	tr:zehirli ok kurbağası	ur:زہریلا مینڈک	zh:箭毒蛙
 c:poisson-distribution	Noun	ar:توزيع بواسون	de:Poisson-Verteilung	en:Poisson distribution	es:distribución de Poisson	fa:توزیع پواسون	fr:loi de Poisson	he:התפלגות פואסון	hi:पॉइसन वितरण	ja:ポアソン分布	ko:푸아송 분포	pt:distribuição de Poisson	ru:распределение Пуассона	tr:Poisson dağılımı	ur:پوئسون تقسیم	zh:泊松分布
+c:poker-game	Noun	ar:بوكر	de:Poker	en:poker	es:póker	fa:پوکر	fr:poker	he:פוקר	hi:पोकर	ja:ポーカー	ko:포커	pt:póquer	ru:покер	tr:poker	ur:پوکر	zh:扑克
 c:poland	Noun	ar:بولندا	de:Polen	en:Poland	es:Polonia	fa:لهستان	fr:Pologne	he:פולין	hi:पोलैंड	ja:ポーランド	ko:폴란드	pt:Polônia,Polónia	ru:Польша	tr:Polonya	ur:پولینڈ	zh:波兰
 c:polar-cell	Noun	ar:الخلية القطبية	de:Polarwirbel-Zelle	en:polar cell	es:celda polar	fa:سلول قطبی	fr:cellule polaire	he:תא קוטבי	hi:ध्रुवीय सेल	ja:極循環	ko:극순환	pt:célula polar	ru:полярная ячейка	tr:polar hücre	ur:قطبی خلیہ	zh:极地环流
 c:polar-coordinates	Noun	ar:إحداثيات قطبية	de:Polarkoordinaten	en:polar coordinates	es:coordenadas polares	fa:مختصات قطبی	fr:coordonnées polaires	he:קואורדינטות קוטביות	hi:ध्रुवीय निर्देशांक	ja:極座標	ko:극좌표	pt:coordenadas polares	ru:полярные координаты	tr:kutupsal koordinatlar	ur:قطبی کوآرڈینیٹس	zh:极坐标
@@ -6517,6 +6541,7 @@ c:purgatory	Noun	ar:المطهر	de:Fegefeuer	en:purgatory	es:purgatorio	fa:بر
 c:purple	Adjective	ar:بنفسجي,أرجواني	de:lila,violett	en:purple,violet	es:morado,púrpura	fa:بنفش	fr:violet,pourpre	he:סגול	hi:बैंगनी	ja:紫	ko:보라,자주	pt:roxo,púrpura	ru:фиолетовый	tr:mor	ur:جامنی	zh:紫,紫色
 c:purpose	Noun	ar:غرض,غاية	de:Zweck	en:purpose	es:propósito,finalidad	fa:هدف,منظور	fr:but,finalité	he:מטרה,תכלית	hi:उद्देश्य,प्रयोजन	ja:目的	ko:목적,취지	pt:propósito,finalidade	ru:цель,назначение	tr:amaç,maksat	ur:مقصد,مراد	zh:目的,宗旨
 c:putty-knife	Noun	ar:سكين مصطكى	de:Spachtel	en:putty knife	es:espátula	fa:کاردک	fr:spatule	he:סכין לשפכטל	hi:पुट्टी चाकू	ja:パテナイフ	ko:퍼티 나이프	pt:espátula	ru:шпатель для шпаклёвки	tr:macun spatulası	ur:پٹی چاقو	zh:油灰刀
+c:puzzle-game	Noun	ar:لعبة ألغاز	de:Puzzlespiel	en:puzzle game	es:juego de puzzle	fa:بازی پازل	fr:jeu de puzzle	he:משחק פאזל	hi:पहेली खेल	ja:パズルゲーム	ko:퍼즐 게임	pt:jogo de puzzle	ru:головоломка игра	tr:bulmaca oyunu	ur:پہیلی گیم	zh:益智游戏
 c:pycnocline	Noun	ar:طبقة الكثافة	de:Pyknokline	en:pycnocline	es:picnoclina	fa:پیکنوکلاین	fr:pycnocline	he:פיקנוקליין	hi:पाइकनोक्लाइन	ja:密度躍層	ko:밀도약층	pt:picnoclina	ru:пикноклин	tr:piknoklin	ur:کثافت تبدیلی طبقہ	zh:密度跃层
 c:pyramid	Noun	ar:هرم	de:Pyramide	en:pyramid	es:pirámide	fa:هرم	fr:pyramide	he:פירמידה	hi:पिरामिड	ja:ピラミッド,角錐	ko:피라미드,각뿔	pt:pirâmide	ru:пирамида	tr:piramit	ur:اہرام	zh:金字塔,锥体
 c:pyrenees	Noun	ar:جبال البيرينيه,البيرينيه	de:Pyrenäen	en:Pyrenees	es:Pirineos	fa:پیرنه,کوه‌های پیرنه	fr:Pyrénées	he:הפירנאים	hi:पिरेनीज़	ja:ピレネー山脈	ko:피레네산맥	pt:Pirenéus,Pirineus	ru:Пиренеи	tr:Pireneler	ur:پیرینیز پہاڑ	zh:比利牛斯山脉
@@ -6598,6 +6623,7 @@ c:raccoon	Noun	ar:راكون	de:Waschbär	en:raccoon	es:mapache	fa:راکون	fr
 c:race	Noun	ar:سباق	de:Rennen,Wettlauf	en:race	es:carrera	fa:مسابقه,دو	fr:course	he:מרוץ	hi:दौड़,रेस	ja:レース,競走	ko:경주,레이스	pt:corrida	ru:гонка,забег	tr:yarış	ur:دوڑ,ریس	zh:赛跑,比赛
 c:race-social	Noun	ar:عرق اجتماعي	de:Rasse	en:race	es:raza	fa:نژاد	fr:race	he:גזע	hi:नस्ल	ja:人種	ko:인종	pt:raça	ru:раса	tr:ırk	ur:نسل	zh:种族
 c:race-society	Noun	ar:عرق	de:Rasse	en:race	es:raza	fa:نژاد	fr:race	he:גזע	hi:नस्ल	ja:人種	ko:인종	pt:raça	ru:раса	tr:ırk	ur:نسل	zh:种族
+c:racing-game	Noun	ar:لعبة سباق	de:Rennspiel	en:racing game	es:juego de carreras	fa:بازی مسابقه	fr:jeu de course	he:משחק מרוצים	hi:रेसिंग गेम	ja:レーシングゲーム	ko:레이싱 게임	pt:jogo de corridas	ru:гоночная игра	tr:yarış oyunu	ur:ریسنگ گیم	zh:竞速游戏
 c:rack	Noun	ar:رف الخوادم	de:Server-Rack	en:server rack	es:rack de servidores	fa:رک سرور	fr:rack de serveurs	he:מדף שרתים	hi:सर्वर रैक	ja:サーバーラック	ko:서버 랙	pt:rack de servidores	ru:стойка серверов	tr:sunucu rafı	ur:سرور ریک	zh:服务器机架
 c:radiation-detector	Noun	ar:كاشف الإشعاع	de:Strahlungsdetektor	en:radiation detector	es:detector de radiación	fa:آشکارساز تشعشع	fr:détecteur de rayonnement	he:גלאי קרינה	hi:विकिरण संसूचक	ja:放射線検出器	ko:방사선 감지기	pt:detector de radiação	ru:детектор радиации	tr:radyasyon dedektörü	ur:تابکاری پکڑنے والا	zh:辐射探测器
 c:radiation-dose	Noun	ar:جرعة الإشعاع	de:Strahlendosis	en:radiation dose	es:dosis de radiación	fa:دوز تشعشع	fr:dose de rayonnement	he:מינון קרינה	hi:विकिरण खुराक	ja:放射線量	ko:방사선 선량	pt:dose de radiação	ru:доза облучения	tr:radyasyon dozu	ur:تابکاری خوراک	zh:辐射剂量
@@ -6911,6 +6937,7 @@ c:rocking-horse	Noun	ar:حصان الهزاز	de:Schaukelpferd	en:rocking horse	
 c:rocky-mountains	Noun	ar:الجبال الصخرية	de:Rocky Mountains	en:Rocky Mountains	es:montañas Rocosas	fa:کوه‌های راکی	fr:montagnes Rocheuses	he:הרי הרוקי	hi:रॉकी पर्वत	ja:ロッキー山脈	ko:로키산맥	pt:montanhas Rochosas	ru:Скалистые горы	tr:Kayalık Dağlar	ur:چٹانی پہاڑ	zh:落基山脉
 c:rococo	Noun	ar:طراز روكوكو	de:Rokoko	en:Rococo	es:rococó	fa:روکوکو	fr:rococo	he:רוקוקו	hi:रोकोको	ja:ロココ	ko:로코코	pt:rococó	ru:рококо	tr:rokoko	ur:روکوکو	zh:洛可可
 c:rogue-wave	Noun	ar:الموجة الضالة	de:Riesenwelle	en:rogue wave	es:ola freak	fa:موج سرکش	fr:vague scélérate	he:גל סורר	hi:दुष्ट लहर	ja:異常波	ko:이상파	pt:onda gigante	ru:волна-убийца	tr:hileli dalga	ur:بدمعاش لہر	zh:畸形波
+c:role-playing-game	Noun	ar:لعبة تقمص أدوار	de:Rollenspiel	en:role-playing game	es:juego de rol	fa:بازی نقش‌آفرینی	fr:jeu de rôle	he:משחק תפקידים	hi:भूमिका निभाने वाला खेल	ja:ロールプレイングゲーム	ko:롤플레잉 게임	pt:jogo de interpretação	ru:ролевая игра	tr:rol yapma oyunu	ur:کردار نگاری گیم	zh:角色扮演游戏
 c:role-social	Noun	ar:دور اجتماعي	de:soziale Rolle	en:social role	es:rol social	fa:نقش اجتماعی	fr:rôle social	he:תפקיד חברתי	hi:सामाजिक भूमिका	ja:社会的役割	ko:사회적 역할	pt:papel social	ru:социальная роль	tr:toplumsal rol	ur:معاشرتی کردار	zh:社会角色
 c:roll	Verb	ar:تدحرج	de:rollen	en:roll	es:rodar	fa:غلتیدن	fr:rouler	he:להתגלגל	hi:लुढ़कना	ja:転がる	ko:구르다	pt:rolar	ru:катиться	tr:yuvarlanmak	ur:لڑھکنا	zh:滚动
 c:roll-axis	Noun	ar:محور الدوران	de:Rollachse	en:roll axis	es:eje de balanceo	fa:محور غلتش	fr:axe de roulis	he:ציר גלגול	hi:रोल अक्ष	ja:ロール軸	ko:롤 축	pt:eixo de rolagem	ru:ось крена	tr:yatış ekseni	ur:رول محور	zh:滚转轴
@@ -6946,6 +6973,7 @@ c:rotational-motion	Noun	ar:حركة دورانية	de:Rotationsbewegung	en:rota
 c:rotunda	Noun	ar:الردهة الدائرية	de:Rotunde	en:rotunda	es:rotonda	fa:فضای دایره ای	fr:rotonde	he:רוטונדה	hi:गोलाकार भवन	ja:ロタンダ	ko:원형 건물	pt:rotunda	ru:ротонда	tr:yuvarlak yapı	ur:گول عمارت	zh:圆形大厅
 c:rough	Adjective	ar:خشن	de:rau,grob	en:rough	es:áspero,rugoso	fa:زبر,خشن	fr:rugueux,rêche	he:גס,מחוספס	hi:खुरदरा	ja:粗い,ざらざら	ko:거친	pt:áspero,rugoso	ru:шершавый,грубый	tr:pürüzlü,kaba	ur:کھردرا	zh:粗糙
 c:rough-green-snake	Noun	ar:ثعبان اخضر خشن	de:Rauhe Grünschlange	en:rough green snake	es:culebra verde áspera	fa:مار سبز زبر	fr:couleuvre verte rugueuse	he:נחש ירוק מחוספס	hi:खुरदरा हरा सांप	ja:ミドリヘビ	ko:초록뱀	pt:cobra-verde-rugosa	ru:зелёная змея	tr:kaba yeşil yılan	ur:کھردرا سبز سانپ	zh:粗绿蛇
+c:roulette	Noun	ar:روليت	de:Roulette	en:roulette	es:ruleta	fa:رولت	fr:roulette	he:רולטה	hi:रूलेट	ja:ルーレット	ko:룰렛	pt:roleta	ru:рулетка	tr:rulet	ur:رولیٹ	zh:轮盘
 c:roundabout	Noun	ar:دوار	de:Kreisverkehr	en:roundabout,traffic circle,rotary	es:rotonda,glorieta	fa:میدان,دوربرگردان	fr:rond-point,giratoire	he:כיכר תנועה	hi:गोलचक्कर	ja:ラウンドアバウト,環状交差点	ko:로터리	pt:rotunda,rotatória	ru:кольцевая развязка	tr:döner kavşak	ur:گول چکر	zh:环岛,回转路
 c:router	Noun	ar:الموجه	de:Router	en:router	es:enrutador	fa:روتر	fr:routeur	he:נתב	hi:राउटर	ja:ルーター	ko:라우터	pt:roteador	ru:маршрутизатор	tr:yönlendirici	ur:روٹر	zh:路由器
 c:router-device	Noun	ar:موجه	de:Router	en:router	es:enrutador	fa:مسیریاب	fr:routeur	he:נתב	hi:राउटर	ja:ルーター	ko:라우터	pt:roteador	ru:маршрутизатор	tr:yönlendirici	ur:روٹر	zh:路由器
@@ -6956,6 +6984,7 @@ c:row	Noun	ar:صف بيانات	de:Zeile	en:row	es:fila	fa:ردیف	fr:ligne	he:
 c:rowing	Noun	ar:التجديف	de:Rudern	en:rowing	es:remo	fa:قایق رانی	fr:aviron	he:חתירה	hi:नौकायन	ja:ボート競技	ko:조정	pt:remo	ru:гребля	tr:kürek çekme	ur:کشتی رانی	zh:赛艇
 c:rowing-sport	Noun	ar:تجديف	de:Rudern	en:rowing	es:remo	fa:قایقرانی پارویی	fr:aviron	he:חתירה	hi:रोइंग	ja:ボート競技	ko:조정	pt:remo	ru:гребля	tr:kürek	ur:چپو چلانا	zh:划船
 c:royal-jelly	Noun	ar:غذاء ملكي	de:Gelée Royale	en:royal jelly	es:jalea real	fa:ژله رویال	fr:gelée royale	he:ג'לי רויאל	hi:रॉयल जेली	ja:ローヤルゼリー	ko:로열젤리	pt:geleia real	ru:маточное молочко	tr:arı sütü	ur:شاہی جیلی	zh:蜂王浆
+c:rpg-game	Noun	ar:آر بي جي	de:RPG	en:RPG	es:RPG	fa:آرپی‌جی	fr:RPG	he:RPG	hi:आरपीजी	ja:RPG	ko:RPG	pt:RPG	ru:РПГ	tr:RPG	ur:آر پی جی	zh:角色扮演
 c:rsa	Noun	ar:خوارزمية RSA	de:RSA	en:RSA	es:RSA	fa:RSA	fr:RSA	he:RSA	hi:आरएसए	ja:RSA	ko:RSA	pt:RSA	ru:RSA	tr:RSA	ur:آر ایس اے	zh:RSA算法
 c:rub-al-khali	Noun	ar:الربع الخالي	de:Rub al-Chali	en:Rub' al Khali	es:Rub al-Jali	fa:ربع‌الخالی	fr:Roub al-Khali	he:רובע אל-ח'אלי	hi:रुब अल खली	ja:ルブアルハリ砂漠	ko:룹알할리 사막	pt:Rub al-Khali	ru:Руб-эль-Хали	tr:Rub el Hali	ur:ربع الخالی	zh:鲁卜哈利沙漠
 c:rubaiyat	Noun	ar:رباعيات	de:Rubaiyat	en:rubaiyat	es:rubaiyat	fa:رباعیات	fr:rubaiyat	he:רובאיאת	hi:रुबाइयत	ja:ルバイヤート	ko:루바이야트	pt:rubaiyat	ru:рубайат	tr:rubai	ur:رباعیات	zh:鲁拜集
@@ -6964,6 +6993,7 @@ c:rubber-duck	Noun	ar:بطة مطاطية	de:Badeente	en:rubber duck	es:pato de 
 c:rubber-material	Noun	ar:مطاط	de:Kautschuk	en:rubber	es:caucho	fa:لاستیک	fr:caoutchouc	he:גומי	hi:रबड़	ja:ゴム	ko:고무	pt:borracha	ru:каучук	tr:kauçuk	ur:ربڑ	zh:橡胶
 c:rubber-stamp	Noun	ar:ختم مطاطي	de:Gummistempel	en:rubber stamp	es:sello de goma	fa:مهر لاستیکی	fr:tampon en caoutchouc	he:חותמת גומי	hi:रबर स्टांप	ja:ゴム印	ko:고무 도장	pt:carimbo	ru:резиновый штамп	tr:lastik damga	ur:ربڑ مہر	zh:橡皮图章
 c:rubidium	Noun	ar:روبيديوم	de:Rubidium	en:rubidium	es:rubidio	fa:روبیدیم	fr:rubidium	he:רובידיום	hi:रुबिडियम	ja:ルビジウム	ko:루비듐	pt:rubídio	ru:рубидий	tr:rubidyum	ur:روبیڈیم	zh:铷
+c:rubiks-cube	Noun	ar:مكعب روبيك	de:Zauberwürfel	en:Rubik's Cube	es:cubo de Rubik	fa:مکعب روبیک	fr:Rubik's Cube	he:קוביית רוביק	hi:रूबिक्स क्यूब	ja:ルービックキューブ	ko:루빅스 큐브	pt:cubo de Rubik	ru:кубик Рубика	tr:Rubik Küpü	ur:روبک کیوب	zh:魔方
 c:ruble	Noun	ar:روبل	de:Rubel	en:ruble,rouble	es:rublo	fa:روبل	fr:rouble	he:רובל	hi:रूबल	ja:ルーブル	ko:루블	pt:rublo	ru:рубль	tr:ruble	ur:روبل	zh:卢布
 c:ruby	Noun	ar:ياقوت,ياقوت أحمر	de:Rubin	en:ruby	es:rubí	fa:یاقوت سرخ,یاقوت	fr:rubis	he:אודם,רובי	hi:माणिक,रूबी	ja:ルビー,紅玉	ko:루비,홍옥	pt:rubi	ru:рубин	tr:yakut,rubi	ur:یاقوت,لعل	zh:红宝石,宝石红
 c:ruby-color	Noun	ar:ياقوتي	de:Rubinrot	en:ruby,ruby red	es:rojo rubí	fa:یاقوتی	fr:rouge rubis	he:אדום רובין	hi:माणिक लाल	ja:ルビー色	ko:루비색	pt:rubi	ru:рубиновый	tr:yakut kırmızısı	ur:یاقوتی	zh:宝石红,红宝石色
@@ -7332,6 +7362,7 @@ c:shirt	Noun	ar:قميص	de:Hemd	en:shirt	es:camisa	fa:پیراهن	fr:chemise	h
 c:shiva	Noun	ar:شيفا	de:Shiva	en:Shiva	es:Shivá	fa:شیوا	fr:Shiva	he:שיווה	hi:शिव	ja:シヴァ	ko:시바	pt:Shiva	ru:Шива	tr:Şiva	ur:شیو	zh:湿婆
 c:shoal	Noun	ar:الضحضاح	de:Untiefe	en:shoal	es:bajío	fa:کم عمق	fr:haut-fond	he:שרטון	hi:उथली जगह	ja:浅瀬	ko:여울목	pt:banco de areia	ru:мелководье	tr:sığlık	ur:کم گہرا پانی	zh:浅滩
 c:shoe	Noun	ar:حذاء	de:Schuh	en:shoe,shoes	es:zapato	fa:کفش	fr:chaussure,soulier	he:נעל	hi:जूता	ja:靴	ko:신발,구두	pt:sapato	ru:обувь,туфля	tr:ayakkabı	ur:جوتا	zh:鞋
+c:shooter-game	Noun	ar:لعبة إطلاق نار	de:Shooter	en:shooter game	es:juego de disparos	fa:بازی تیراندازی	fr:jeu de tir	he:משחק יריות	hi:शूटर गेम	ja:シューティングゲーム	ko:슈팅 게임	pt:jogo de tiro	ru:шутер	tr:nişancı oyun	ur:شوٹر گیم	zh:射击游戏
 c:shooting-sport	Noun	ar:رماية	de:Schießsport	en:shooting sport	es:tiro deportivo	fa:تیراندازی	fr:tir sportif	he:קליעה למטרה	hi:शूटिंग खेल	ja:射撃競技	ko:사격	pt:tiro esportivo	ru:стрелковый спорт	tr:atıcılık	ur:نشانہ بازی	zh:射击运动
 c:shop	Noun	ar:متجر,دكان	de:Laden,Geschäft	en:shop,store	es:tienda	fa:مغازه,فروشگاه	fr:boutique,magasin	he:חנות	hi:दुकान	ja:店,ショップ	ko:가게,상점	pt:loja	ru:магазин,лавка	tr:dükkan,mağaza	ur:دکان	zh:商店,店铺
 c:shopping-mall	Noun	ar:مركز تسوق	de:Einkaufszentrum	en:shopping mall	es:centro comercial	fa:مرکز خرید	fr:centre commercial	he:קניון	hi:शॉपिंग मॉल	ja:ショッピングモール	ko:쇼핑몰	pt:shopping center	ru:торговый центр	tr:alışveriş merkezi	ur:شاپنگ مال	zh:购物中心
@@ -7392,6 +7423,7 @@ c:simple	Adjective	ar:بسيط	de:einfach	en:simple	es:simple,sencillo	fa:ساد
 c:simple-harmonic	Noun	ar:حركة توافقية بسيطة	de:einfache harmonische Bewegung	en:simple harmonic motion	es:movimiento armónico simple	fa:حرکت هماهنگ ساده	fr:mouvement harmonique simple	he:תנועה הרמונית פשוטה	hi:सरल आवर्त गति	ja:単振動	ko:단순 조화 운동	pt:movimento harmônico simples	ru:простое гармоническое движение	tr:basit harmonik hareket	ur:سادہ ہم آہنگ حرکت	zh:简谐运动
 c:simplicial-complex	Noun	ar:المركب التبسيطي	de:Simplizialkomplex	en:simplicial complex	es:complejo simplicial	fa:مجتمع سادگانی	fr:complexe simplicial	he:קומפלקס סימפליציאלי	hi:सरलीय जटिल	ja:単体複体	ko:단체 복합체	pt:complexo simplicial	ru:симплициальный комплекс	tr:simpleks kompleks	ur:سادہ مجتمع	zh:单纯复形
 c:simpson-desert	Noun	ar:صحراء سيمبسون	de:Simpsonwüste	en:Simpson desert	es:desierto de Simpson	fa:صحرای سیمپسون	fr:désert de Simpson	he:מדבר סימפסון	hi:सिम्पसन रेगिस्तान	ja:シンプソン砂漠	ko:심슨 사막	pt:deserto de Simpson	ru:пустыня Симпсон	tr:Simpson çölü	ur:سمپسن صحرا	zh:辛普森沙漠
+c:simulation-game	Noun	ar:لعبة محاكاة	de:Simulationsspiel	en:simulation game	es:juego de simulación	fa:بازی شبیه‌سازی	fr:jeu de simulation	he:משחק סימולציה	hi:सिमुलेशन खेल	ja:シミュレーションゲーム	ko:시뮬레이션 게임	pt:jogo de simulação	ru:симулятор игра	tr:simülasyon oyunu	ur:سیمولیشن گیم	zh:模拟游戏
 c:sin	Noun	ar:ذنب,خطيئة	de:Sünde	en:sin	es:pecado	fa:گناه	fr:péché	he:חטא	hi:पाप	ja:罪	ko:죄	pt:pecado	ru:грех	tr:günah	ur:گناہ	zh:罪
 c:sine	Noun	ar:جيب	de:Sinus	en:sine	es:seno	fa:سینوس	fr:sinus	he:סינוס	hi:ज्या	ja:正弦	ko:사인	pt:seno	ru:синус	tr:sinüs	ur:سائن	zh:正弦
 c:sine-function	Noun	ar:دالة الجيب	de:Sinusfunktion	en:sine function	es:función seno	fa:تابع سینوس	fr:fonction sinus	he:פונקציית סינוס	hi:ज्या फलन	ja:サイン関数	ko:사인 함수	pt:função seno	ru:функция синуса	tr:sinüs fonksiyonu	ur:سائن تفاعل	zh:正弦函数
@@ -7542,6 +7574,7 @@ c:solid-state-drive	Noun	ar:محرك الحالة الصلبة	de:Solid-State-La
 c:solid-waste	Noun	ar:النفايات الصلبة	de:Festabfall	en:solid waste	es:residuos sólidos	fa:زباله جامد	fr:déchets solides	he:פסולת מוצקה	hi:ठोस अपशिष्ट	ja:固形廃棄物	ko:고형 폐기물	pt:resíduos sólidos	ru:твёрдые отходы	tr:katı atık	ur:ٹھوس فضلہ	zh:固体废物
 c:soliloquy	Noun	ar:مناجاة,خطاب منفرد	de:Selbstgespräch,Soliloquy	en:soliloquy	es:soliloquio	fa:مونولوگ درونی	fr:soliloque	he:מונולוג פנימי	hi:स्वगत संलाप,एकालाप	ja:独白	ko:독백	pt:solilóquio	ru:монолог,солилоквий	tr:iç monolog	ur:خود کلامی	zh:独白
 c:solipsism	Noun	ar:الأناوية	de:Solipsismus	en:solipsism	es:solipsismo	fa:تنهاانگاری	fr:solipsisme	he:סולפסיזם	hi:एकचेतनवाद	ja:独我論	ko:유아론	pt:solipsismo	ru:солипсизм	tr:benmerkezcilik	ur:خودمرکزیت	zh:唯我论
+c:solitaire	Noun	ar:سوليتير	de:Solitär	en:solitaire	es:solitario	fa:سولیتر	fr:solitaire	he:סוליטייר	hi:सॉलिटेयर	ja:ソリティア	ko:솔리테어	pt:paciência	ru:пасьянс	tr:solitaire	ur:سولیٹیر	zh:纸牌接龙
 c:soloist	Noun	ar:عازف منفرد,مؤدي منفرد	de:Solist	en:soloist	es:solista	fa:تکنواز,سولیست	fr:soliste	he:סולן	hi:एकल कलाकार,सोलोइस्ट	ja:独奏者,ソリスト	ko:독주자,솔리스트	pt:solista	ru:солист	tr:solist	ur:تنہا گلوکار,سولو اسٹ	zh:独奏者,独唱者
 c:solstice	Noun	ar:الانقلاب الشمسي	de:Sonnenwende	en:solstice	es:solsticio	fa:انقلاب	fr:solstice	he:היפוך השמש	hi:अयनांत	ja:至	ko:지점	pt:solstício	ru:солнцестояние	tr:gündönümü	ur:انقلاب	zh:至点
 c:solstice-festival	Noun	ar:احتفال الانقلاب الشمسي,عيد الانقلاب	de:Sonnwendfest,Sonnenwendfeier	en:solstice festival	es:fiesta del solsticio	fa:جشن انقلاب خورشیدی,یلدا	fr:fête du solstice	he:חג הסולסטיץ'	hi:संक्रांति उत्सव	ja:至祭,冬至祭	ko:동지 축제,하지 축제	pt:festa do solstício	ru:праздник солнцестояния	tr:gündönümü festivali	ur:سولسٹس تہوار	zh:至节,冬至节
@@ -7669,6 +7702,7 @@ c:sport-discipline	Noun	ar:رياضة	de:Sport	en:sport	es:deporte	fa:ورزش	f
 c:sport-injury	Noun	ar:إصابة رياضية	de:Sportverletzung	en:sport injury	es:lesión deportiva	fa:آسیب ورزشی	fr:blessure sportive	he:פציעת ספורט	hi:खेल चोट	ja:スポーツ外傷	ko:스포츠 부상	pt:lesão esportiva	ru:спортивная травма	tr:spor yaralanması	ur:کھیل چوٹ	zh:运动损伤
 c:sport-nutrition	Noun	ar:التغذية الرياضية	de:Sporternährung	en:sport nutrition	es:nutrición deportiva	fa:تغذیه ورزشی	fr:nutrition sportive	he:תזונת ספורט	hi:खेल पोषण	ja:スポーツ栄養学	ko:스포츠 영양학	pt:nutrição desportiva	ru:спортивное питание	tr:spor beslenmesi	ur:کھیل غذائیت	zh:运动营养学
 c:sport-psychology	Noun	ar:علم نفس الرياضة	de:Sportpsychologie	en:sport psychology	es:psicología deportiva	fa:روان‌شناسی ورزشی	fr:psychologie du sport	he:פסיכולוגיה של ספורט	hi:खेल मनोविज्ञान	ja:スポーツ心理学	ko:스포츠 심리학	pt:psicologia desportiva	ru:спортивная психология	tr:spor psikolojisi	ur:کھیل نفسیات	zh:运动心理学
+c:sports-game	Noun	ar:لعبة رياضة	de:Sportspiel	en:sports game	es:videojuego deportivo	fa:بازی ورزشی	fr:jeu de sport	he:משחק ספורט	hi:खेल खेल	ja:スポーツゲーム	ko:스포츠 게임	pt:jogo desportivo	ru:спортивная игра	tr:spor oyunu	ur:کھیل گیم	zh:体育游戏
 c:sprat	Noun	ar:سبرط	de:Sprotte	en:sprat	es:espadín	fa:اسپرت	fr:sprat	he:ספרט	hi:स्प्रेट	ja:スプラット	ko:청어류	pt:espadilha	ru:шпрот	tr:çaça	ur:سپریٹ	zh:小沙丁鱼
 c:spray-drying	Noun	ar:التجفيف بالرش	de:Sprühtrocknung	en:spray drying	es:secado por pulverización	fa:خشک‌کردن پاششی	fr:séchage par atomisation	he:ייבוש בספריי	hi:छिड़काव सुखाना	ja:噴霧乾燥	ko:분무 건조	pt:secagem por aspersão	ru:распылительная сушка	tr:püskürtmeli kurutma	ur:سپرے سے خشک	zh:喷雾干燥
 c:spring	Noun	ar:ربيع	de:Frühling,Frühjahr	en:spring	es:primavera	fa:بهار	fr:printemps	he:אביב	hi:वसंत,बसंत	ja:春	ko:봄	pt:primavera	ru:весна	tr:ilkbahar,bahar	ur:بہار,بسنت	zh:春,春季
@@ -7817,6 +7851,7 @@ c:straight-angle	Noun	ar:زاوية مستقيمة	de:gestreckter Winkel	en:stra
 c:strait	Noun	ar:مضيق	de:Meerenge,Straße	en:strait	es:estrecho	fa:تنگه	fr:détroit	he:מצר	hi:जलसंधि	ja:海峡	ko:해협	pt:estreito	ru:пролив	tr:boğaz	ur:آبنائے	zh:海峡
 c:strait-geo	Noun	ar:مضيق بحري	de:Meerenge	en:strait	es:estrecho	fa:تنگه	fr:détroit	he:מיצר	hi:जलसंधि	ja:海峡	ko:해협	pt:estreito	ru:пролив	tr:boğaz	ur:آبنائے	zh:海峡
 c:strait-of-gibraltar	Noun	ar:مضيق جبل طارق	de:Straße von Gibraltar	en:Strait of Gibraltar	es:Estrecho de Gibraltar	fa:تنگه جبل‌الطارق	fr:Détroit de Gibraltar	he:מיצר גיברלטר	hi:जिब्राल्टर जलडमरूमध्य	ja:ジブラルタル海峡	ko:지브롤터 해협	pt:Estreito de Gibraltar	ru:Гибралтарский пролив	tr:Cebelitarık Boğazı	ur:آبنائے جبل الطارق	zh:直布罗陀海峡
+c:strategy-game	Noun	ar:لعبة استراتيجية	de:Strategiespiel	en:strategy game	es:juego de estrategia	fa:بازی استراتژیک	fr:jeu de stratégie	he:משחק אסטרטגיה	hi:रणनीति खेल	ja:戦略ゲーム	ko:전략 게임	pt:jogo de estratégia	ru:стратегия игра	tr:strateji oyunu	ur:حکمت عملی گیم	zh:策略游戏
 c:stratification	Noun	ar:تطبق اجتماعي	de:soziale Schichtung	en:stratification	es:estratificación	fa:طبقه‌بندی اجتماعی	fr:stratification	he:שכבתיות	hi:स्तरीकरण	ja:社会的階層化	ko:사회 계층화	pt:estratificação	ru:стратификация	tr:tabakalaşma	ur:سماجی طبقاتی نظام	zh:社会分层
 c:stratification-socio	Noun	ar:التدرج الطبقي	de:Schichtung	en:social stratification	es:estratificación social	fa:قشربندی اجتماعی	fr:stratification sociale	he:ריבוד חברתי	hi:सामाजिक स्तरीकरण	ja:社会階層	ko:사회 계층화	pt:estratificação social	ru:социальная стратификация	tr:toplumsal tabakalaşma	ur:معاشرتی درجہ بندی	zh:社会分层
 c:stratopause	Noun	ar:الستراتوبوز	de:Stratopause	en:stratopause	es:estratopausa	fa:استراتوپوز	fr:stratopause	he:סטרטופאוז	hi:स्ट्रैटोपॉज	ja:成層圏界面	ko:성층권계면	pt:estratopausa	ru:стратопауза	tr:stratopoz	ur:اسٹراٹوپاز	zh:平流层顶
@@ -7880,6 +7915,7 @@ c:subway	Noun	ar:مترو الأنفاق,قطار الأنفاق	de:U-Bahn,Metro
 c:succession-eco	Noun	ar:تعاقب بيئي	de:Sukzession	en:ecological succession	es:sucesión ecológica	fa:توالی اکولوژیک	fr:succession écologique	he:רצף אקולוגי	hi:पारिस्थितिक अनुक्रमण	ja:遷移	ko:천이	pt:sucessão ecológica	ru:экологическая сукцессия	tr:ekolojik süksesyon	ur:ماحولیاتی تسلسل	zh:生态演替
 c:succession-ecology	Noun	ar:التعاقب البيئي	de:ökologische Sukzession	en:ecological succession	es:sucesión ecológica	fa:توالی اکولوژیک	fr:succession écologique	he:סוקצסיה אקולוגית	hi:पारिस्थितिक अनुक्रमण	ja:遷移	ko:생태적 천이	pt:sucessão ecológica	ru:экологическая сукцессия	tr:ekolojik sükseyon	ur:ماحولیاتی تسلسل	zh:生态演替
 c:succulent	Noun	ar:نبات عصاري	de:Sukkulente	en:succulent	es:planta suculenta	fa:گوشتی گیاه	fr:plante succulente	he:עסיסנית	hi:मांसल पादप	ja:多肉植物	ko:다육식물	pt:suculenta	ru:суккулент	tr:sukulent	ur:رسیلا پودا	zh:多肉植物
+c:sudoku-puzzle	Noun	ar:سودوكو	de:Sudoku	en:sudoku	es:sudoku	fa:سودوکو	fr:sudoku	he:סודוקו	hi:सुडोकु	ja:数独	ko:스도쿠	pt:sudoku	ru:судоку	tr:sudoku	ur:سوڈوکو	zh:数独
 c:suede	Noun	ar:السويدي	de:Wildleder	en:suede	es:gamuza	fa:جیر	fr:daim	he:זמש	hi:साबर	ja:スエード	ko:스웨이드	pt:camurça	ru:замша	tr:süet	ur:جیر	zh:绒面革
 c:suez-canal	Noun	ar:قناة السويس	de:Sueskanal	en:Suez Canal	es:Canal de Suez	fa:کانال سوئز	fr:Canal de Suez	he:תעלת סואץ	hi:स्वेज़ नहर	ja:スエズ運河	ko:수에즈 운하	pt:Canal de Suez	ru:Суэцкий канал	tr:Süveyş Kanalı	ur:نہر سویز	zh:苏伊士运河
 c:suffix	Noun	ar:لاحقة	de:Suffix,Nachsilbe	en:suffix	es:sufijo	fa:پسوند	fr:suffixe	he:סיומת	hi:प्रत्यय	ja:接尾辞	ko:접미사	pt:sufixo	ru:суффикс	tr:sonek	ur:لاحقہ	zh:后缀,词尾
@@ -8033,6 +8069,7 @@ c:table-of-contents	Noun	ar:جدول المحتويات,فهرس المحتوي�
 c:table-tennis	Noun	ar:تنس الطاولة	de:Tischtennis	en:table tennis	es:tenis de mesa	fa:پینگ پونگ	fr:tennis de table	he:פינג פונג	hi:टेबल टेनिस	ja:卓球	ko:탁구	pt:tênis de mesa	ru:настольный теннис	tr:masa tenisi	ur:ٹیبل ٹینس	zh:乒乓球
 c:tablet	Noun	ar:جهاز لوحي,تابلت	de:Tablet	en:tablet	es:tableta,tablet	fa:تبلت	fr:tablette	he:טאבלט	hi:टैबलेट	ja:タブレット	ko:태블릿	pt:tablet	ru:планшет	tr:tablet	ur:ٹیبلیٹ	zh:平板电脑
 c:tablet-device	Noun	ar:حاسوب لوحي	de:Tablet	en:tablet	es:tableta	fa:تبلت	fr:tablette	he:טאבלט	hi:टैबलेट	ja:タブレット	ko:태블릿	pt:tablet	ru:планшет	tr:tablet	ur:ٹیبلیٹ	zh:平板电脑
+c:tabletop-game	Noun	ar:لعبة طاولة	de:Tabletop-Spiel	en:tabletop game	es:juego de mesa grande	fa:بازی رومیزی	fr:jeu de table	he:משחק שולחן	hi:टेबलटॉप गेम	ja:テーブルトップゲーム	ko:테이블탑 게임	pt:jogo de tabuleiro grande	ru:настольная игра	tr:masa oyunu	ur:ٹیبل ٹاپ گیم	zh:桌面游戏
 c:taboo	Noun	ar:محرم,تابو	de:Tabu	en:taboo	es:tabú	fa:تابو,حرام	fr:tabou	he:טאבו	hi:वर्जना,टैबू	ja:タブー,禁忌	ko:금기,터부	pt:tabu	ru:табу	tr:tabu	ur:ممنوع,وارجت	zh:禁忌,塔布
 c:tachometer	Noun	ar:عداد الدورات	de:Drehzahlmesser	en:tachometer	es:tacómetro	fa:تاکومتر	fr:tachymètre	he:טכומטר	hi:टैकोमीटर	ja:回転計	ko:회전속도계	pt:tacômetro	ru:тахометр	tr:takometre	ur:ٹیکومیٹر	zh:转速计
 c:tacit-knowledge	Noun	ar:المعرفة الضمنية	de:implizites Wissen	en:tacit knowledge	es:conocimiento tácito	fa:دانش ضمنی	fr:connaissance tacite	he:ידע סמוי	hi:अंतर्निहित ज्ञान	ja:暗黙知	ko:암묵지	pt:conhecimento tácito	ru:неявное знание	tr:örtük bilgi	ur:ضمنی علم	zh:默会知识
@@ -8182,6 +8219,7 @@ c:test	Noun	ar:اختبار,فحص	de:Test	en:test	es:prueba,test	fa:آزمون,
 c:testator	Noun	ar:الموصي	de:Erblasser	en:testator	es:testador	fa:وصیت‌کننده	fr:testateur	he:מצווה	hi:वसीयतकर्ता	ja:遺言者	ko:유언자	pt:testador	ru:завещатель	tr:vasiyetçi	ur:وصیت کنندہ	zh:遗嘱人
 c:testimonial-injustice	Noun	ar:ظلم الشهادة	de:testimoniale Ungerechtigkeit	en:testimonial injustice	es:injusticia testimonial	fa:بی‌عدالتی گواهی	fr:injustice testimoniale	he:עוול עדות	hi:साक्ष्य अन्याय	ja:証言的不正義	ko:증언적 불의	pt:injustiça testemunhal	ru:свидетельская несправедливость	tr:tanıklık adaletsizliği	ur:شہادت ناانصافی	zh:证言不公
 c:testimony	Noun	ar:شهادة	de:Zeugnis,Aussage	en:testimony	es:testimonio	fa:شهادت,گواهی	fr:témoignage	he:עדות	hi:गवाही,साक्ष्य	ja:証言	ko:증언	pt:testemunho	ru:показание,свидетельство	tr:tanıklık,ifade	ur:گواہی,شہادت	zh:证词,证言
+c:tetris	Noun	ar:تتريس	de:Tetris	en:Tetris	es:Tetris	fa:تتریس	fr:Tetris	he:טטריס	hi:टेट्रिस	ja:テトリス	ko:테트리스	pt:Tetris	ru:Тетрис	tr:Tetris	ur:ٹیٹرس	zh:俄罗斯方块
 c:text-annotation	Noun	ar:تشريح النص	de:Textannotation	en:text annotation	es:anotación de texto	fa:حاشیه‌نویسی متن	fr:annotation de texte	he:הוספת הערות לטקסט	hi:पाठ टिप्पणी	ja:テキスト注釈	ko:텍스트 주석	pt:anotação de texto	ru:разметка текста	tr:metin açıklaması	ur:متن حاشیہ	zh:文本标注
 c:text-classification	Noun	ar:تصنيف النص	de:Textklassifikation	en:text classification	es:clasificación de texto	fa:طبقه‌بندی متن	fr:classification de texte	he:סיווג טקסט	hi:पाठ वर्गीकरण	ja:テキスト分類	ko:텍스트 분류	pt:classificação de texto	ru:классификация текста	tr:metin sınıflandırma	ur:متن درجہ بندی	zh:文本分类
 c:text-editor	Noun	ar:محرر نصوص	de:Texteditor	en:text editor	es:editor de texto	fa:ویرایشگر متن	fr:éditeur de texte	he:עורך טקסט	hi:टेक्स्ट एडिटर	ja:テキストエディタ	ko:텍스트 편집기	pt:editor de texto	ru:текстовый редактор	tr:metin düzenleyici	ur:ٹیکسٹ ایڈیٹر	zh:文本编辑器
@@ -8515,6 +8553,7 @@ c:trireme	Noun	ar:سفينة ثلاثية	de:Trireme	en:trireme	es:trirreme	fa:�
 c:triticale	Noun	ar:تريتيكالي	de:Triticale	en:triticale	es:triticale	fa:تریتیکاله	fr:triticale	he:טריטיקלה	hi:ट्रिटिकेल	ja:トリティカーレ	ko:트리티케일	pt:triticale	ru:тритикале	tr:triticale	ur:ٹریٹیکیل	zh:小黑麦
 c:triton-moon	Noun	ar:تريتون,قمر تريتون	de:Triton	en:Triton	es:Tritón	fa:تریتون	fr:Triton	he:טריטון	hi:ट्राइटन	ja:トリトン	ko:트리톤	pt:Tritão	ru:Тритон	tr:Triton	ur:ٹرائٹن	zh:海卫一
 c:trivia-game	Noun	ar:لعبة المعلومات العامة	de:Quizspiel	en:trivia game	es:juego de trivia	fa:بازی چیستان	fr:jeu de questions	he:משחק טריוויה	hi:ट्रिविया गेम	ja:クイズゲーム	ko:퀴즈 게임	pt:jogo de trivialidades	ru:викторина	tr:bilgi yarışması oyunu	ur:ٹریویا گیم	zh:问答游戏
+c:trivia-game-type	Noun	ar:لعبة معلومات عامة	de:Quizspiel	en:trivia game	es:juego de trivia	fa:بازی اطلاعات عمومی	fr:jeu de questions	he:משחק טריוויה	hi:सामान्य ज्ञान खेल	ja:トリビアゲーム	ko:트리비아 게임	pt:jogo de trivia	ru:викторина	tr:bilgi yarışması	ur:ٹریوا گیم	zh:益智问答游戏
 c:trocar	Noun	ar:مبزل	de:Trokar	en:trocar	es:trócar	fa:تروکار	fr:trocart	he:טרוקר	hi:ट्रोकार	ja:トロカール	ko:투관침	pt:trocarte	ru:троакар	tr:trokar	ur:ٹروکار	zh:套管针
 c:trojan	Adjective	ar:طروادي	de:trojanisch	en:Trojan	es:troyano	fa:تروایی	fr:troyen	he:טרויאני	hi:ट्रोजन	ja:トロイの	ko:트로이	pt:troiano	ru:троянский	tr:Truvalı	ur:ٹرویائی	zh:特洛伊
 c:trojan-horse-mal	Noun	ar:حصان طروادة	de:Trojaner	en:trojan horse	es:caballo de Troya	fa:تروجان	fr:cheval de Troie	he:סוס טרויאני	hi:ट्रोजन हॉर्स	ja:トロイの木馬	ko:트로이 목마	pt:cavalo de Troia	ru:троянский конь	tr:truva atı	ur:ٹروجن ہارس	zh:特洛伊木马
@@ -8746,6 +8785,7 @@ c:vibrato	Noun	ar:فيبراتو	de:Vibrato	en:vibrato	es:vibrato	fa:ویبرا�
 c:victorian-arch	Noun	ar:الطراز الفيكتوري	de:viktorianische Architektur	en:Victorian architecture	es:arquitectura victoriana	fa:معماری ویکتوریا	fr:architecture victorienne	he:אדריכלות ויקטוריאנית	hi:विक्टोरियन वास्तुकला	ja:ヴィクトリア建築	ko:빅토리아 건축	pt:arquitetura vitoriana	ru:викторианская архитектура	tr:Viktoryen mimarisi	ur:وکٹوریائی فن	zh:维多利亚建筑
 c:victorian-era	Noun	ar:العصر الفيكتوري	de:viktorianisches Zeitalter	en:Victorian era	es:era victoriana	fa:دوره ویکتوریا	fr:époque victorienne	he:התקופה הויקטוריאנית	hi:विक्टोरियन युग	ja:ヴィクトリア朝	ko:빅토리아 시대	pt:era vitoriana	ru:викторианская эпоха	tr:Viktorya çağı	ur:وکٹوریائی دور	zh:维多利亚时代
 c:victory	Noun	ar:نصر,انتصار	de:Sieg	en:victory	es:victoria	fa:پیروزی	fr:victoire	he:ניצחון	hi:विजय,जीत	ja:勝利	ko:승리	pt:vitória	ru:победа	tr:zafer,galibiyet	ur:فتح,کامیابی	zh:胜利
+c:video-game	Noun	ar:لعبة فيديو	de:Videospiel	en:video game	es:videojuego	fa:بازی ویدئویی	fr:jeu vidéo	he:משחק וידאו	hi:वीडियो गेम	ja:ビデオゲーム	ko:비디오 게임	pt:videojogo	ru:видеоигра	tr:video oyunu	ur:ویڈیو گیم	zh:电子游戏
 c:video-game-console	Noun	ar:وحدة الألعاب الإلكترونية	de:Spielekonsole	en:video game console	es:consola de videojuegos	fa:کنسول بازی ویدیویی	fr:console de jeux vidéo	he:קונסולת משחקים	hi:वीडियो गेम कंसोल	ja:ゲーム機	ko:비디오 게임 콘솔	pt:console de videogame	ru:игровая консоль	tr:oyun konsolu	ur:ویڈیو گیم کنسول	zh:游戏主机
 c:video-streaming	Noun	ar:بث مباشر	de:Video-Streaming	en:video streaming	es:transmisión de video	fa:پخش ویدیو	fr:diffusion vidéo	he:שידור וידאו	hi:वीडियो स्ट्रीमिंग	ja:動画ストリーミング	ko:동영상 스트리밍	pt:streaming de vídeo	ru:видеострим	tr:video akışı	ur:ویڈیو اسٹریمنگ	zh:视频流
 c:vienna-capital	Noun	ar:فيينا	de:Wien	en:Vienna	es:Viena	fa:وین	fr:Vienne	he:וינה	hi:वियना	ja:ウィーン	ko:빈	pt:Viena	ru:Вена	tr:Viyana	ur:ویانا	zh:维也纳
