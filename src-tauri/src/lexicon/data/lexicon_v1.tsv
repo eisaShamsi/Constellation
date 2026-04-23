@@ -513,6 +513,7 @@ c:atacama-desert	Noun	ar:صحراء أتاكاما	de:Atacama-Wüste	en:Atacama 
 c:atemoya	Noun	ar:اتيمويا	de:Atemoya	en:atemoya	es:atemoya	fa:آتموا	fr:atemoya	he:אטמויה	hi:एटेमोया	ja:アテモヤ	ko:아테모야	pt:atemoia	ru:атемойя	tr:atemoya	ur:ایٹیمویا	zh:凤梨释迦
 c:athens	Noun	ar:أثينا	de:Athen	en:Athens	es:Atenas	fa:آتن	fr:Athènes	he:אתונה	hi:एथेंस	ja:アテネ	ko:아테네	pt:Atenas	ru:Афины	tr:Atina	ur:ایتھنز	zh:雅典
 c:athens-capital	Noun	ar:أثينا	de:Athen	en:Athens	es:Atenas	fa:آتن	fr:Athènes	he:אתונה	hi:एथेंस	ja:アテネ	ko:아테네	pt:Atenas	ru:Афины	tr:Atina	ur:ایتھنز	zh:雅典
+c:athleisure	Noun	ar:ملابس رياضية كاجوال	de:Athleisure	en:athleisure	es:athleisure	fa:اتلیژر	fr:athleisure	he:אתליזור	hi:एथलीजर	ja:アスレジャー	ko:애슬레저	pt:athleisure	ru:атлежур	tr:athleisure	ur:ایتھلیژر	zh:运动休闲服
 c:athlete	Noun	ar:رياضي	de:Athlet,Sportler	en:athlete	es:atleta,deportista	fa:ورزشکار	fr:athlète,sportif	he:ספורטאי,אתלט	hi:खिलाड़ी,एथलीट	ja:選手,アスリート	ko:운동선수,선수	pt:atleta,esportista	ru:спортсмен,атлет	tr:sporcu,atlet	ur:کھلاڑی,ایتھلیٹ	zh:运动员
 c:atlantic	Noun	ar:المحيط الأطلسي	de:Atlantik,Atlantischer Ozean	en:Atlantic,Atlantic Ocean	es:Atlántico,Océano Atlántico	fa:اقیانوس اطلس	fr:Atlantique,Océan Atlantique	he:האוקיינוס האטלנטי	hi:अटलांटिक महासागर	ja:大西洋	ko:대서양	pt:Atlântico,Oceano Atlântico	ru:Атлантический океан	tr:Atlas Okyanusu	ur:بحر اوقیانوس	zh:大西洋
 c:atlantic-ocean	Noun	ar:المحيط الأطلسي	de:Atlantischer Ozean	en:Atlantic Ocean	es:océano Atlántico	fa:اقیانوس اطلس	fr:océan Atlantique	he:האוקיינוס האטלנטי	hi:अटलांटिक महासागर	ja:大西洋	ko:대서양	pt:oceano Atlântico	ru:Атлантический океан	tr:Atlantik Okyanusu	ur:بحر اوقیانوس	zh:大西洋
@@ -885,6 +886,7 @@ c:blast-search	Noun	ar:اداة البحث عن التشابه المحلي	de:B
 c:blastocyst	Noun	ar:الكيسة الجرثومية	de:Blastozyste	en:blastocyst	es:blastocisto	fa:بلاستوسیست	fr:blastocyste	he:בלסטוציסטה	hi:ब्लास्टोसिस्ट	ja:胚盤胞	ko:포배낭	pt:blastocisto	ru:бластоциста	tr:blastosist	ur:بلاسٹوسسٹ	zh:囊胚
 c:blastula	Noun	ar:البلاستولا	de:Blastula	en:blastula	es:blástula	fa:بلاستولا	fr:blastula	he:בלסטולה	hi:ब्लास्टुला	ja:胞胚	ko:포배	pt:blástula	ru:бластула	tr:blastula	ur:بلاسٹولا	zh:囊胚
 c:blazer	Noun	ar:بليزر	de:Blazer	en:blazer	es:blazer	fa:بلیزر	fr:blazer	he:בלייזר	hi:ब्लेज़र	ja:ブレザー	ko:블레이저	pt:blazer	ru:блейзер	tr:blazer	ur:بلیزر	zh:西装外套
+c:blazer-jacket	Noun	ar:بليزر	de:Blazer	en:blazer jacket	es:americana blazer	fa:بلیزر	fr:blazer	he:בלייזר	hi:ब्लेज़र	ja:ブレザー	ko:블레이저	pt:blazer	ru:блейзер	tr:blazer ceket	ur:بلیزر	zh:西装外套
 c:blender	Noun	ar:خلاط	de:Mixer,Standmixer	en:blender	es:licuadora,batidora	fa:مخلوط کن	fr:mixeur	he:בלנדר	hi:ब्लेंडर,मिक्सर	ja:ミキサー,ブレンダー	ko:믹서,블렌더	pt:liquidificador	ru:блендер	tr:blender	ur:بلینڈر	zh:搅拌机
 c:blessing	Noun	ar:بركة,نعمة	de:Segen	en:blessing	es:bendición	fa:برکت,نعمت	fr:bénédiction	he:ברכה	hi:आशीर्वाद	ja:祝福	ko:축복	pt:bênção	ru:благословение	tr:bereket,lütuf	ur:برکت,نعمت	zh:祝福
 c:bliss	Noun	ar:نعيم	de:Glückseligkeit	en:bliss	es:dicha	fa:نشاط	fr:félicité	he:אושר עילאי	hi:परमानंद	ja:至福	ko:지복	pt:bem-aventurança	ru:блаженство	tr:saadet	ur:سرور	zh:极乐
@@ -922,6 +924,7 @@ c:body	Noun	ar:جسم,بدن	de:Körper	en:body	es:cuerpo	fa:بدن	fr:corps	he:
 c:body-axis	Noun	ar:محور الجسم	de:Körperachse	en:body axis	es:eje corporal	fa:محور بدن	fr:axe corporel	he:ציר גוף	hi:शरीर अक्ष	ja:体軸	ko:체축	pt:eixo corporal	ru:ось тела	tr:vücut ekseni	ur:جسم محور	zh:体轴
 c:bodysuit	Noun	ar:بدلة ملاصقة	de:Bodysuit	en:bodysuit	es:body	fa:بادی سوت	fr:body	he:בודי	hi:बॉडीसूट	ja:ボディスーツ	ko:바디수트	pt:body	ru:боди	tr:body	ur:باڈی سوٹ	zh:连体衣
 c:bog	Noun	ar:مستنقع خثي	de:Moor,Hochmoor	en:bog,peat bog	es:turbera	fa:مرداب ذغالی	fr:tourbière	he:ביצת כבול	hi:दलदल,पीट दलदल	ja:泥炭地,湿原	ko:이탄지	pt:turfeira,brejo	ru:болото,торфяник	tr:turbalık	ur:کائی دار دلدل	zh:泥炭沼
+c:bohemian-style	Noun	ar:بوهيمي	de:Boho-Stil	en:bohemian style	es:estilo bohemio	fa:سبک بوهمی	fr:style bohème	he:סגנון בוהמי	hi:बोहेमियन शैली	ja:ボヘミアンスタイル	ko:보헤미안 스타일	pt:estilo boémio	ru:богемный стиль	tr:bohem tarz	ur:بوہیمیا طرز	zh:波希米亚风
 c:boil	Verb	ar:سلق,يسلق	de:kochen	en:boil	es:hervir	fa:جوشاندن	fr:bouillir	he:להרתיח,לבשל	hi:उबालना	ja:茹でる,煮る	ko:끓이다,삶다	pt:ferver	ru:варить,кипятить	tr:kaynatmak,haşlamak	ur:ابالنا	zh:煮,煮沸
 c:bok-choy	Noun	ar:باك تشوي	de:Pak Choi	en:bok choy	es:pak choi	fa:پاک چوی	fr:pak-choï	he:בוק צ'וי	hi:बोक चोय	ja:チンゲンサイ	ko:청경채	pt:pak choi	ru:пак-чой	tr:pak choi	ur:بوک چوئی	zh:小白菜
 c:bokeh	Noun	ar:بوكيه	de:Bokeh	en:bokeh	es:bokeh	fa:بوکه	fr:bokeh	he:בוקה	hi:बोकेह	ja:ボケ	ko:보케	pt:bokeh	ru:боке	tr:bokeh	ur:بوکیہ	zh:背景虚化
@@ -1086,6 +1089,7 @@ c:bus	Noun	ar:حافلة,باص,أوتوبيس	de:Bus,Omnibus	en:bus,coach	es:au
 c:busan	Noun	ar:بوسان	de:Busan	en:Busan,Pusan	es:Busan	fa:بوسان	fr:Busan	he:בוסאן	hi:बुसान	ja:釜山,プサン	ko:부산	pt:Busan	ru:Пусан	tr:Busan	ur:بوسان	zh:釜山
 c:bushmaster	Noun	ar:اكبر افعى سامة	de:Buschmeister	en:bushmaster	es:bushmaster	fa:مار بوته	fr:bushmaster	he:בושמסטר	hi:बुशमास्टर	ja:ブッシュマスター	ko:부시마스터	pt:surucucu	ru:бушмейстер	tr:bushmaster	ur:بش ماسٹر	zh:灌木响尾蛇
 c:business	Noun	ar:عمل,تجارة	de:Geschäft	en:business	es:negocio	fa:کسب و کار,تجارت	fr:entreprise,affaires	he:עסק	hi:व्यवसाय,धंधा	ja:商売,ビジネス	ko:사업,비즈니스	pt:negócio	ru:бизнес,дело	tr:iş,ticaret	ur:کاروبار,تجارت	zh:生意,商业
+c:business-attire	Noun	ar:ملابس عمل	de:Businesskleidung	en:business attire	es:ropa de negocios	fa:لباس اداری	fr:tenue professionnelle	he:לבוש עסקי	hi:व्यापारिक पोशाक	ja:ビジネスウェア	ko:비즈니스 정장	pt:traje profissional	ru:деловая одежда	tr:iş kıyafeti	ur:کاروباری لباس	zh:商务装
 c:business-card	Noun	ar:بطاقة عمل	de:Visitenkarte	en:business card	es:tarjeta de visita	fa:کارت ویزیت	fr:carte de visite	he:כרטיס ביקור	hi:विजिटिंग कार्ड	ja:名刺	ko:명함	pt:cartão de visita	ru:визитная карточка	tr:kartvizit	ur:وزٹنگ کارڈ	zh:名片
 c:business-management	Noun	ar:إدارة أعمال	de:Betriebswirtschaft	en:business management	es:gestión empresarial	fa:مدیریت کسب و کار	fr:gestion d'entreprise	he:ניהול עסקי	hi:व्यवसाय प्रबंधन	ja:経営管理	ko:경영 관리	pt:gestão empresarial	ru:управление бизнесом	tr:işletme yönetimi	ur:کاروباری انتظام	zh:商业管理
 c:business-park	Noun	ar:منطقة أعمال	de:Businesspark	en:business park	es:parque empresarial	fa:پارک تجاری	fr:parc d'affaires	he:פארק עסקים	hi:व्यावसायिक पार्क	ja:ビジネスパーク	ko:비즈니스 파크	pt:parque empresarial	ru:бизнес-парк	tr:iş parkı	ur:کاروباری پارک	zh:商业园区
@@ -1205,6 +1209,7 @@ c:carboxylic-acid	Noun	ar:حمض كربوكسيلي	de:Carbonsäure	en:carboxyli
 c:card-game	Noun	ar:لعبة ورق	de:Kartenspiel	en:card game	es:juego de cartas	fa:بازی کارتی	fr:jeu de cartes	he:משחק קלפים	hi:ताश का खेल	ja:カードゲーム	ko:카드 게임	pt:jogo de cartas	ru:карточная игра	tr:kart oyunu	ur:تاش گیم	zh:纸牌游戏
 c:cardamom	Noun	ar:هيل,حبهان	de:Kardamom	en:cardamom	es:cardamomo	fa:هل	fr:cardamome	he:הל	hi:इलायची	ja:カルダモン	ko:카다멈	pt:cardamomo	ru:кардамон	tr:kakule	ur:الائچی	zh:小豆蔻
 c:cardigan	Noun	ar:كارديغان	de:Strickjacke	en:cardigan	es:cárdigan	fa:کاردیگان	fr:cardigan	he:קרדיגן	hi:कार्डिगन	ja:カーディガン	ko:카디건	pt:cardigã	ru:кардиган	tr:hırka	ur:کارڈیگن	zh:开衫
+c:cardigan-knit	Noun	ar:سترة كارديغان	de:Strickjacke	en:cardigan	es:rebeca cardigan	fa:ژاکت کاردیگان	fr:cardigan	he:קרדיגן	hi:कार्डिगन	ja:カーディガン	ko:카디건	pt:casaco de malha	ru:кардиган	tr:hırka	ur:کارڈیگن	zh:开襟羊毛衫
 c:cardinal	Noun	ar:كاردينال	de:Kardinal	en:cardinal	es:cardenal	fa:کاردینال	fr:cardinal	he:קרדינל	hi:कार्डिनल	ja:枢機卿	ko:추기경	pt:cardeal	ru:кардинал	tr:kardinal	ur:کارڈینل	zh:红衣主教
 c:cardstock	Noun	ar:ورق مقوى	de:Tonkarton	en:cardstock	es:cartulina	fa:مقوا	fr:papier cartonné	he:בריסטול	hi:कार्डस्टॉक	ja:カードストック	ko:카드지	pt:papel cartão	ru:плотная бумага	tr:fotoblok kağıdı	ur:کارڈ اسٹاک	zh:卡纸
 c:cargo-ship	Noun	ar:سفينة شحن	de:Frachtschiff	en:cargo ship,freighter	es:buque de carga,carguero	fa:کشتی باری	fr:cargo,navire de charge	he:ספינת מטען	hi:मालवाहक जहाज़	ja:貨物船	ko:화물선	pt:navio de carga,cargueiro	ru:грузовое судно,грузовой корабль	tr:kargo gemisi	ur:مال بردار جہاز	zh:货船,货轮
@@ -1249,6 +1254,7 @@ c:caste	Noun	ar:طبقة اجتماعية,كاست	de:Kaste	en:caste	es:casta	fa
 c:caste-system	Noun	ar:نظام الطبقات	de:Kastensystem	en:caste system	es:sistema de castas	fa:نظام کاست	fr:système des castes	he:מערכת הקאסטות	hi:जाति प्रथा	ja:カースト制度	ko:카스트 제도	pt:sistema de castas	ru:кастовая система	tr:kast sistemi	ur:ذات پات نظام	zh:种姓制度
 c:casting-material	Noun	ar:الصب	de:Gießen	en:casting	es:fundición	fa:ریخته‌گری	fr:moulage	he:יציקה	hi:ढलाई	ja:鋳造	ko:주조	pt:fundição	ru:литьё	tr:döküm	ur:ڈھلائی	zh:铸造
 c:castle	Noun	ar:قلعة,حصن	de:Burg,Schloss	en:castle	es:castillo	fa:قلعه,دژ	fr:château	he:טירה,מבצר	hi:किला,दुर्ग	ja:城	ko:성	pt:castelo	ru:замок,крепость	tr:kale,şato	ur:قلعہ	zh:城堡
+c:casual-wear	Noun	ar:ملابس كاجوال	de:Freizeitkleidung	en:casual wear	es:ropa casual	fa:لباس غیررسمی	fr:vêtements décontractés	he:לבוש יומיומי	hi:आम पोशाक	ja:カジュアルウェア	ko:캐주얼 의류	pt:roupa casual	ru:повседневная одежда	tr:günlük giyim	ur:عام لباس	zh:休闲服
 c:cat	Noun	ar:قط,قطة	de:Katze	en:cat	es:gato	fa:گربه	fr:chat,chatte	he:חתול	hi:बिल्ली	ja:猫	ko:고양이	pt:gato	ru:кошка,кот	tr:kedi	ur:بلی	zh:猫
 c:catalyst	Noun	ar:حفاز,عامل حفاز	de:Katalysator	en:catalyst	es:catalizador	fa:کاتالیزور,کاتالیزگر	fr:catalyseur	he:זרז	hi:उत्प्रेरक	ja:触媒	ko:촉매	pt:catalisador	ru:катализатор	tr:katalizör	ur:اتپریرک,کیٹالسٹ	zh:催化剂
 c:catalyst-chem	Noun	ar:محفز	de:Katalysator	en:catalyst	es:catalizador	fa:کاتالیزور	fr:catalyseur	he:זרז	hi:उत्प्रेरक	ja:触媒	ko:촉매	pt:catalisador	ru:катализатор	tr:katalizör	ur:کیٹالسٹ	zh:催化剂
@@ -1560,6 +1566,7 @@ c:close	Verb	ar:أغلق	de:schließen	en:close,shut	es:cerrar	fa:بستن	fr:fe
 c:closed-set	Noun	ar:المجموعة المغلقة	de:abgeschlossene Menge	en:closed set	es:conjunto cerrado	fa:مجموعه بسته	fr:ensemble fermé	he:קבוצה סגורה	hi:बंद समुच्चय	ja:閉集合	ko:닫힌집합	pt:conjunto fechado	ru:замкнутое множество	tr:kapalı küme	ur:بند مجموعہ	zh:闭集
 c:cloth	Noun	ar:قماش,نسيج	de:Stoff,Tuch	en:cloth,fabric	es:tela,tejido	fa:پارچه	fr:tissu,étoffe	he:בד	hi:कपड़ा,वस्त्र	ja:布,生地	ko:천,직물	pt:tecido,pano	ru:ткань,полотно	tr:kumaş,bez	ur:کپڑا,پارچہ	zh:布,布料
 c:clothes	Noun	ar:ملابس,ثياب	de:Kleidung,Kleider	en:clothes,clothing	es:ropa	fa:لباس	fr:vêtements	he:בגדים	hi:कपड़े	ja:服,衣服	ko:옷,의복	pt:roupa	ru:одежда	tr:giysi,kıyafet	ur:کپڑے	zh:衣服
+c:clothing-apparel	Noun	ar:ملابس	de:Bekleidung	en:clothing	es:ropa	fa:پوشاک	fr:vêtement	he:ביגוד	hi:कपड़े	ja:衣類	ko:의류	pt:vestuário	ru:одежда	tr:giyim	ur:لباس	zh:服装
 c:clotted-cream	Noun	ar:القشدة المتخثرة	de:Clotted Cream	en:clotted cream	es:crema coagulada	fa:سرشیر	fr:crème clotted	he:שמנת מקורשת	hi:क्लॉटेड क्रीम	ja:クロテッドクリーム	ko:클로티드 크림	pt:nata coagulada	ru:топлёные сливки	tr:pıhtılaşmış krema	ur:کلاٹڈ کریم	zh:凝脂奶油
 c:cloud	Noun	ar:سحابة,غيمة	de:Wolke	en:cloud	es:nube	fa:ابر	fr:nuage	he:ענן	hi:बादल	ja:雲	ko:구름	pt:nuvem	ru:облако,туча	tr:bulut	ur:بادل	zh:云
 c:cloud-computing	Noun	ar:الحوسبة السحابية	de:Cloud Computing,Wolkencomputing	en:cloud computing	es:computación en la nube	fa:رایانش ابری	fr:informatique en nuage	he:מחשוב ענן	hi:क्लाउड कंप्यूटिंग	ja:クラウドコンピューティング	ko:클라우드 컴퓨팅	pt:computação em nuvem	ru:облачные вычисления	tr:bulut bilişim	ur:کلاؤڈ کمپیوٹنگ	zh:云计算
@@ -1597,6 +1604,7 @@ c:cockatoo	Noun	ar:كاكاتو	de:Kakadu	en:cockatoo	es:cacatúa	fa:کاکاد�
 c:cockpit	Noun	ar:قمرة القيادة	de:Cockpit	en:cockpit	es:cabina de mando	fa:کابین خلبان	fr:cockpit,poste de pilotage	he:תא טייס	hi:कॉकपिट	ja:操縦席	ko:조종석	pt:cabine de pilotagem	ru:кабина пилота	tr:kokpit	ur:کاک پٹ	zh:驾驶舱
 c:cockroach	Noun	ar:صرصور	de:Kakerlake,Schabe	en:cockroach,roach	es:cucaracha	fa:سوسک	fr:cafard,blatte	he:ג'וק,תיקן	hi:तिलचट्टा	ja:ゴキブリ	ko:바퀴벌레	pt:barata	ru:таракан	tr:hamamböceği	ur:لال بیگ	zh:蟑螂
 c:cocktail	Noun	ar:كوكتيل	de:Cocktail	en:cocktail	es:cóctel,coctel	fa:کوکتل	fr:cocktail	he:קוקטייל	hi:कॉकटेल	ja:カクテル	ko:칵테일	pt:coquetel,cocktail	ru:коктейль	tr:kokteyl	ur:کاک ٹیل	zh:鸡尾酒
+c:cocktail-dress	Noun	ar:فستان كوكتيل	de:Cocktailkleid	en:cocktail dress	es:vestido de cóctel	fa:لباس کوکتل	fr:robe de cocktail	he:שמלת קוקטייל	hi:कॉकटेल पोशाक	ja:カクテルドレス	ko:칵테일 드레스	pt:vestido de coquetel	ru:коктейльное платье	tr:kokteyl elbisesi	ur:کاک ٹیل لباس	zh:鸡尾酒礼服
 c:cocktail-drink	Noun	ar:كوكتيل	de:Cocktail	en:cocktail	es:cóctel	fa:کوکتل	fr:cocktail	he:קוקטייל	hi:कॉकटेल	ja:カクテル	ko:칵테일	pt:coquetel	ru:коктейль	tr:kokteyl	ur:کاک ٹیل	zh:鸡尾酒
 c:cocoa	Noun	ar:كاكاو	de:Kakao	en:cocoa	es:cacao	fa:کاکائو	fr:cacao	he:קקאו	hi:कोको	ja:ココア	ko:코코아	pt:cacau	ru:какао	tr:kakao	ur:کوکو	zh:可可
 c:coconut	Noun	ar:جوز الهند	de:Kokosnuss	en:coconut	es:coco	fa:نارگیل	fr:noix de coco	he:קוקוס	hi:नारियल	ja:ココナッツ	ko:코코넛	pt:coco	ru:кокос,кокосовый орех	tr:hindistan cevizi	ur:ناریل	zh:椰子
@@ -1913,6 +1921,7 @@ c:cosmonaut	Noun	ar:رائد فضاء روسي	de:Kosmonaut	en:cosmonaut	es:cosm
 c:cosmopolitanism	Noun	ar:الكوزموبوليتانية	de:Kosmopolitismus	en:cosmopolitanism	es:cosmopolitismo	fa:جهان‌شهری	fr:cosmopolitisme	he:קוסמופוליטיזם	hi:विश्वजनवाद	ja:コスモポリタニズム	ko:세계시민주의	pt:cosmopolitismo	ru:космополитизм	tr:kozmopolitizm	ur:جہان شہریت	zh:世界主义
 c:cosmos	Noun	ar:كون	de:Kosmos	en:cosmos	es:cosmos	fa:کیهان,گیتی	fr:cosmos	he:קוסמוס,יקום	hi:ब्रह्मांड,सृष्टि	ja:コスモス,宇宙	ko:코스모스,우주	pt:cosmos	ru:космос	tr:kozmos,evren	ur:کائنات	zh:宇宙
 c:cost	Noun	ar:تكلفة,كلفة	de:Kosten	en:cost	es:coste,costo	fa:هزینه	fr:coût	he:עלות	hi:लागत	ja:費用,コスト	ko:비용,원가	pt:custo	ru:стоимость,издержки	tr:maliyet	ur:لاگت	zh:成本,费用
+c:costume	Noun	ar:زي تنكري	de:Kostüm	en:costume	es:disfraz	fa:لباس مبدل	fr:costume déguisement	he:תחפושת	hi:पोशाक	ja:コスチューム	ko:의상	pt:fantasia	ru:костюм	tr:kostüm	ur:لباس خاص	zh:戏服
 c:cottage	Noun	ar:كوخ ريفي,بيت ريفي	de:Cottage,Landhaus	en:cottage	es:cabaña,casa de campo	fa:کلبه روستایی	fr:chaumière,cottage	he:בקתה כפרית,קוטג	hi:कुटी,कुटीर	ja:コテージ,田舎家	ko:코티지,시골집	pt:chalé,casa de campo	ru:коттедж,домик	tr:kulübe ev,köy evi	ur:کاٹج,دیہی گھر	zh:小别墅,乡村小屋
 c:cottage-cheese	Noun	ar:الجبن القريش	de:Hüttenkäse	en:cottage cheese	es:requesón	fa:پنیر دانه ای	fr:fromage cottage	he:גבינת קוטג	hi:कॉटेज चीज़	ja:カッテージチーズ	ko:코티지 치즈	pt:queijo cottage	ru:творог	tr:süzme peynir	ur:کاٹیج پنیر	zh:农家奶酪
 c:cotton	Noun	ar:قطن	de:Baumwolle	en:cotton	es:algodón	fa:پنبه	fr:coton	he:כותנה	hi:कपास,रुई	ja:綿,コットン	ko:면,솜	pt:algodão	ru:хлопок	tr:pamuk	ur:روئی,کپاس	zh:棉,棉花
@@ -2801,6 +2810,7 @@ c:evangelical	Noun	ar:الإنجيلية	de:Evangelikalismus	en:Evangelicalism	e
 c:evaporated-milk	Noun	ar:حليب مبخر	de:Verdampfte Milch	en:evaporated milk	es:leche evaporada	fa:شیر تبخیر شده	fr:lait évaporé	he:חלב מאודה	hi:वाष्पीकृत दूध	ja:エバミルク	ko:증발 우유	pt:leite evaporado	ru:сгущённое молоко без сахара	tr:evaporize süt	ur:بخاری دودھ	zh:淡炼乳
 c:evaporation	Noun	ar:تبخر	de:Verdunstung,Verdampfung	en:evaporation,vaporization	es:evaporación,vaporización	fa:تبخیر	fr:évaporation,vaporisation	he:אידוי,התאדות	hi:वाष्पीकरण	ja:蒸発	ko:증발	pt:evaporação,vaporização	ru:испарение	tr:buharlaşma	ur:تبخیر,بخارات	zh:蒸发,汽化
 c:evening	Noun	ar:مساء	de:Abend	en:evening	es:atardecer,noche	fa:عصر,غروب	fr:soir	he:ערב	hi:शाम	ja:夕方	ko:저녁	pt:tarde,noite	ru:вечер	tr:akşam	ur:شام	zh:晚上,傍晚
+c:evening-gown	Noun	ar:فستان سهرة	de:Abendkleid	en:evening gown	es:vestido de noche	fa:لباس شب	fr:robe de soirée	he:שמלת ערב	hi:शाम की पोशाक	ja:イブニングドレス	ko:이브닝 가운	pt:vestido de noite	ru:вечернее платье	tr:gece elbisesi	ur:شام کا لباس	zh:晚礼服
 c:event	Noun	ar:حدث	de:Ereignis,Veranstaltung	en:event	es:evento,suceso	fa:رویداد,اتفاق	fr:événement	he:אירוע	hi:घटना,आयोजन	ja:イベント,出来事	ko:행사,사건	pt:evento,acontecimento	ru:событие	tr:olay,etkinlik	ur:واقعہ	zh:事件,活动
 c:event-extraction	Noun	ar:استخراج الأحداث	de:Ereignisextraktion	en:event extraction	es:extracción de eventos	fa:استخراج رویداد	fr:extraction d'événements	he:חילוץ אירועים	hi:घटना निष्कर्षण	ja:イベント抽出	ko:이벤트 추출	pt:extração de eventos	ru:извлечение событий	tr:olay çıkarımı	ur:واقعہ نکاسی	zh:事件抽取
 c:event-horizon	Noun	ar:أفق الحدث	de:Ereignishorizont	en:event horizon	es:horizonte de sucesos	fa:افق رویداد	fr:horizon des événements	he:אופק אירועים	hi:घटना क्षितिज	ja:事象の地平線	ko:사건 지평선	pt:horizonte de eventos	ru:горизонт событий	tr:olay ufku	ur:واقعاتی افق	zh:事件视界
@@ -2894,6 +2904,7 @@ c:farm	Noun	ar:مزرعة	de:Bauernhof,Farm	en:farm	es:granja,finca	fa:مزرع�
 c:farmer	Noun	ar:مزارع,فلاح	de:Landwirt,Bauer	en:farmer	es:agricultor,granjero	fa:کشاورز,دهقان	fr:agriculteur,fermier	he:חקלאי,איכר	hi:किसान	ja:農家,農夫	ko:농부	pt:agricultor,fazendeiro	ru:фермер,крестьянин	tr:çiftçi	ur:کسان,زمیندار	zh:农民,农夫
 c:farro	Noun	ar:فارو	de:Farro	en:farro	es:farro	fa:فارو	fr:farro	he:פארו	hi:फारो	ja:ファッロ	ko:파로	pt:farro	ru:фарро	tr:farro	ur:فارو	zh:法罗小麦
 c:fascism	Noun	ar:فاشية	de:Faschismus	en:fascism	es:fascismo	fa:فاشیسم	fr:fascisme	he:פשיזם	hi:फासीवाद	ja:ファシズム	ko:파시즘	pt:fascismo	ru:фашизм	tr:faşizm	ur:فسطائیت	zh:法西斯主义
+c:fashion-style	Noun	ar:أزياء	de:Mode	en:fashion	es:moda	fa:مد	fr:mode	he:אופנה	hi:फैशन	ja:ファッション	ko:패션	pt:moda	ru:мода	tr:moda	ur:فیشن	zh:时尚
 c:fast	Adjective	ar:سريع	de:schnell	en:fast,quick	es:rápido	fa:سریع,تند	fr:rapide,vite	he:מהיר	hi:तेज़	ja:速い,早い	ko:빠른	pt:rápido	ru:быстрый	tr:hızlı	ur:تیز	zh:快
 c:fast-twitch	Noun	ar:الألياف العضلية سريعة الانقباض	de:schnelle Muskelfasern	en:fast-twitch muscle fiber	es:fibra muscular de contracción rápida	fa:فیبر عضلانی سریع	fr:fibre musculaire à contraction rapide	he:סיב שריר מהיר-כיווץ	hi:तेज-मरोड़ पेशी तंतु	ja:速筋繊維	ko:속근섬유	pt:fibra muscular de contração rápida	ru:быстрые мышечные волокна	tr:hızlı kasılan kas lifi	ur:تیز سکڑنے والی عضلات	zh:快肌纤维
 c:fasting	Noun	ar:صوم	de:Fasten	en:fasting	es:ayuno	fa:روزه	fr:jeûne	he:צום	hi:उपवास	ja:断食	ko:단식	pt:jejum	ru:пост	tr:oruç	ur:روزہ	zh:斋戒
@@ -3121,6 +3132,7 @@ c:forgiveness	Noun	ar:مغفرة,عفو	de:Vergebung	en:forgiveness	es:perdón	f
 c:forint	Noun	ar:فورنت	de:Forint	en:forint	es:forinto,forint	fa:فورینت	fr:forint	he:פורינט	hi:फ़ोरिन्त	ja:フォリント	ko:포린트	pt:forint,florim	ru:форинт	tr:forint	ur:فورنٹ	zh:福林
 c:fork	Noun	ar:شوكة	de:Gabel	en:fork	es:tenedor	fa:چنگال	fr:fourchette	he:מזלג	hi:कांटा	ja:フォーク	ko:포크	pt:garfo	ru:вилка	tr:çatal	ur:کانٹا	zh:叉子
 c:form	Noun	ar:شكل,صورة	de:Form,Gestalt	en:form,shape	es:forma	fa:شکل,صورت	fr:forme	he:צורה	hi:रूप,आकार	ja:形,形態	ko:형태,모양	pt:forma	ru:форма	tr:şekil,biçim,form	ur:شکل,صورت	zh:形式,形状
+c:formal-wear	Noun	ar:ملابس رسمية	de:Formelle Kleidung	en:formal wear	es:ropa formal	fa:لباس رسمی	fr:tenue de soirée	he:לבוש רשמי	hi:औपचारिक पोशाक	ja:フォーマルウェア	ko:정장	pt:traje formal	ru:деловой костюм	tr:resmi giyim	ur:رسمی لباس	zh:正装
 c:forte	Noun	ar:عزف قوي	de:Forte	en:forte	es:forte	fa:فورته	fr:forte	he:פורטה	hi:तेज़ी	ja:フォルテ	ko:포르테	pt:forte	ru:форте	tr:forte	ur:فورٹے	zh:强音
 c:fossil	Noun	ar:أحفورة	de:Fossil	en:fossil	es:fósil	fa:سنگواره	fr:fossile	he:מאובן	hi:जीवाश्म	ja:化石	ko:화석	pt:fóssil	ru:ископаемое	tr:fosil	ur:رکاز	zh:化石
 c:fossil-fuel	Noun	ar:وقود أحفوري	de:fossiler Brennstoff	en:fossil fuel	es:combustible fósil	fa:سوخت فسیلی	fr:combustible fossile	he:דלק מאובנים	hi:जीवाश्म ईंधन	ja:化石燃料	ko:화석 연료	pt:combustível fóssil	ru:ископаемое топливо	tr:fosil yakıt	ur:فوسل ایندھن	zh:化石燃料
@@ -3429,6 +3441,7 @@ c:goose	Noun	ar:إوزة	de:Gans	en:goose	es:ganso	fa:غاز	fr:oie	he:אווז	
 c:gooseberry	Noun	ar:عنب الثعلب	de:Stachelbeere	en:gooseberry	es:grosella espinosa	fa:خدنگ	fr:groseille à maquereau	he:דרדר-ים	hi:आंवला	ja:グースベリー	ko:구즈베리	pt:groselha-espinhosa	ru:крыжовник	tr:bektaşi üzümü	ur:آنولہ	zh:醋栗
 c:gorge	Noun	ar:مضيق جبلي	de:Schlucht	en:gorge	es:garganta	fa:تنگه کوهستانی	fr:gorge	he:נקיק	hi:दर्रा	ja:渓谷	ko:계곡	pt:desfiladeiro	ru:ущелье	tr:derin vadi	ur:گہرا درہ	zh:峡谷深
 c:gorilla	Noun	ar:غوريلا	de:Gorilla	en:gorilla	es:gorila	fa:گوریل	fr:gorille	he:גורילה	hi:गोरिल्ला	ja:ゴリラ	ko:고릴라	pt:gorila	ru:горилла	tr:goril	ur:گوریلا	zh:大猩猩
+c:goth-fashion	Noun	ar:قوطي	de:Gothic-Mode	en:goth fashion	es:moda gótica	fa:مد گاتیک	fr:mode gothique	he:אופנת גות'	hi:गॉथ फैशन	ja:ゴシックファッション	ko:고딕 패션	pt:moda gótica	ru:готическая мода	tr:gotik moda	ur:گوتھ فیشن	zh:哥特时尚
 c:gothic-arch	Noun	ar:طراز قوطي	de:Gotik	en:Gothic architecture	es:arquitectura gótica	fa:معماری گوتیک	fr:architecture gothique	he:סגנון גותי	hi:गॉथिक वास्तुकला	ja:ゴシック建築	ko:고딕 건축	pt:arquitetura gótica	ru:готика	tr:gotik mimari	ur:گوتھک فن تعمیر	zh:哥特式建筑
 c:gothic-art	Noun	ar:الفن القوطي	de:gotische Kunst	en:Gothic art	es:arte gótico	fa:هنر گوتیک	fr:art gothique	he:אמנות גותית	hi:गॉथिक कला	ja:ゴシック美術	ko:고딕 미술	pt:arte gótica	ru:готическое искусство	tr:Gotik sanat	ur:گوتھک فن	zh:哥特式艺术
 c:gothic-revival	Noun	ar:إحياء القوطي	de:Neugotik	en:Gothic Revival	es:neogótico	fa:احیای گوتیک	fr:néogothique	he:תחיית הגותיקה	hi:गॉथिक पुनर्जागरण	ja:ゴシックリバイバル	ko:고딕 부흥	pt:neogótico	ru:неоготика	tr:gotik canlanışı	ur:گوتھک احیاء	zh:哥特复兴式
@@ -3511,6 +3524,7 @@ c:grouse	Noun	ar:دجاج الجبل	de:Moorhuhn,Auerhuhn	en:grouse	es:urogallo	
 c:grovers-algorithm	Noun	ar:خوارزمية غروفر	de:Grover-Algorithmus	en:Grover's algorithm	es:algoritmo de Grover	fa:الگوریتم گراور	fr:algorithme de Grover	he:אלגוריתם גרובר	hi:ग्रोवर का एल्गोरिदम	ja:グローバーのアルゴリズム	ko:그로버 알고리즘	pt:algoritmo de Grover	ru:алгоритм Гровера	tr:Grover algoritması	ur:گراور الگورتھم	zh:格罗弗算法
 c:grow	Verb	ar:نما,كبر	de:wachsen	en:grow	es:crecer	fa:رشد کردن	fr:grandir,pousser	he:לגדול	hi:बढ़ना	ja:育つ,成長する	ko:자라다	pt:crescer	ru:расти	tr:büyümek	ur:بڑھنا	zh:长,成长
 c:growth-mindset	Noun	ar:عقلية النمو	de:Wachstumsmentalität	en:growth mindset	es:mentalidad de crecimiento	fa:ذهنیت رشد	fr:mentalité de croissance	he:גישת צמיחה	hi:विकास मानसिकता	ja:成長型マインドセット	ko:성장 마인드셋	pt:mentalidade de crescimento	ru:установка на рост	tr:gelişim zihniyeti	ur:ترقی کی ذہنیت	zh:成长型思维
+c:grunge-fashion	Noun	ar:غرنج	de:Grunge-Mode	en:grunge fashion	es:moda grunge	fa:مد گرانج	fr:mode grunge	he:אופנת גראנג'	hi:ग्रंज फैशन	ja:グランジファッション	ko:그런지 패션	pt:moda grunge	ru:гранж мода	tr:grunge moda	ur:گرنج فیشن	zh:垃圾摇滚风
 c:guangzhou	Noun	ar:قوانغتشو	de:Guangzhou,Kanton	en:Guangzhou,Canton	es:Cantón,Guangzhou	fa:گوانگژو	fr:Canton,Guangzhou	he:גואנגג'ואו	hi:गुआंगझोउ	ja:広州,グワンジョウ	ko:광저우	pt:Cantão,Guangzhou	ru:Гуанчжоу	tr:Guangzhou,Kanton	ur:گوانگژو	zh:广州
 c:guava	Noun	ar:جوافة	de:Guave	en:guava	es:guayaba	fa:گواوا	fr:goyave	he:גויאבה	hi:अमरूद	ja:グアバ	ko:구아바	pt:goiaba	ru:гуава	tr:guava	ur:امرود	zh:番石榴
 c:guess	Verb	ar:خمن	de:raten,vermuten	en:guess	es:adivinar	fa:حدس زدن	fr:deviner	he:לנחש	hi:अनुमान लगाना	ja:推測する,当てる	ko:추측하다	pt:adivinhar	ru:угадывать	tr:tahmin etmek	ur:اندازہ لگانا	zh:猜
@@ -3599,6 +3613,7 @@ c:hanuman	Noun	ar:هانومان	de:Hanuman	en:Hanuman	es:Hanuman	fa:هانوم�
 c:haploid	Adjective	ar:أحادي الصيغة	de:haploid	en:haploid	es:haploide	fa:هاپلوئید	fr:haploïde	he:האפלואיד	hi:अगुणित	ja:半数体	ko:반수체	pt:haploide	ru:гаплоидный	tr:haploid	ur:نصف گنا	zh:单倍体
 c:happiness	Noun	ar:سعادة	de:Glück	en:happiness	es:felicidad	fa:خوشبختی,خوشی	fr:bonheur	he:אושר	hi:खुशी	ja:幸せ,幸福	ko:행복	pt:felicidade	ru:счастье	tr:mutluluk	ur:خوشی	zh:幸福
 c:happy	Adjective	ar:سعيد	de:glücklich,froh	en:happy	es:feliz,contento	fa:خوشحال,شاد	fr:heureux,content	he:שמח,מאושר	hi:खुश,प्रसन्न	ja:幸せ,嬉しい	ko:행복한,기쁜	pt:feliz,contente	ru:счастливый	tr:mutlu	ur:خوش	zh:快乐,开心
+c:harajuku-fashion	Noun	ar:موضة هاراجوكو	de:Harajuku-Mode	en:Harajuku fashion	es:moda Harajuku	fa:مد هاراجوکو	fr:mode Harajuku	he:אופנת הראג'וקו	hi:हरajuकू फैशन	ja:原宿ファッション	ko:하라주쿠 패션	pt:moda Harajuku	ru:Харадзюку мода	tr:Harajuku moda	ur:ہاراجوکو فیشن	zh:原宿时尚
 c:harbor	Noun	ar:ميناء	de:Hafen	en:harbor,harbour	es:puerto	fa:لنگرگاه	fr:port	he:נמל	hi:बंदरगाह	ja:港	ko:항구	pt:porto	ru:гавань	tr:liman	ur:بندرگاہ	zh:港湾
 c:hard-difficult	Adjective	ar:صعب	de:schwer,schwierig	en:hard,difficult	es:difícil	fa:سخت,دشوار	fr:difficile,dur	he:קשה	hi:कठिन,मुश्किल	ja:難しい	ko:어려운	pt:difícil	ru:трудный,сложный	tr:zor,güç	ur:مشکل,دشوار	zh:难
 c:hard-drive	Noun	ar:القرص الصلب	de:Festplatte	en:hard drive	es:disco duro	fa:هارد دیسک	fr:disque dur	he:דיסק קשיח	hi:हार्ड ड्राइव	ja:ハードドライブ	ko:하드 드라이브	pt:disco rígido	ru:жёсткий диск	tr:sabit disk	ur:ہارڈ ڈسک	zh:硬盘
@@ -3629,6 +3644,7 @@ c:hat	Noun	ar:قبعة	de:Hut	en:hat	es:sombrero	fa:کلاه	fr:chapeau	he:כו�
 c:hate	Verb	ar:كره	de:hassen	en:hate	es:odiar	fa:متنفر بودن	fr:haïr,détester	he:לשנוא	hi:नफ़रत करना	ja:憎む,嫌う	ko:미워하다,싫어하다	pt:odiar	ru:ненавидеть	tr:nefret etmek	ur:نفرت کرنا	zh:恨,讨厌
 c:hatshepsut	Noun	ar:حتشبسوت	de:Hatschepsut	en:Hatshepsut	es:Hatshepsut	fa:حتشپسوت	fr:Hatchepsout	he:חתשפסות	hi:हत्शेप्सुत	ja:ハトシェプスト	ko:하트셉수트	pt:Hatshepsut	ru:Хатшепсут	tr:Hatşepsut	ur:حتشپسوت	zh:哈特谢普苏特
 c:hausdorff-space	Noun	ar:الفضاء الهاوسدورفي	de:Hausdorff-Raum	en:Hausdorff space	es:espacio de Hausdorff	fa:فضای هاوسدورف	fr:espace de Hausdorff	he:מרחב האוסדורף	hi:हाउसडोर्फ स्थान	ja:ハウスドルフ空間	ko:하우스도르프 공간	pt:espaço de Hausdorff	ru:пространство Хаусдорфа	tr:Hausdorff uzayı	ur:ہاؤسڈورف فضا	zh:豪斯多夫空间
+c:haute-couture	Noun	ar:أزياء راقية	de:Haute Couture	en:haute couture	es:alta costura	fa:هوت کوتور	fr:haute couture	he:הוט קוטור	hi:उच्च सिलाई	ja:オートクチュール	ko:오트 쿠튀르	pt:alta-costura	ru:высокая мода	tr:haute couture	ur:ہوٹ کوٹور	zh:高级定制
 c:hawk	Noun	ar:صقر	de:Habicht	en:hawk	es:halcón	fa:شاهین	fr:faucon	he:נץ	hi:बाज़	ja:鷹,タカ	ko:매	pt:gavião	ru:ястреб	tr:atmaca	ur:باز	zh:鹰
 c:hawksbill	Noun	ar:سلحفاة منقار الصقر	de:Echte Karettschildkröte	en:hawksbill turtle	es:tortuga carey	fa:لاک پشت منقار شاهین	fr:tortue imbriquée	he:צב ים	hi:हॉकसबिल कछुआ	ja:タイマイ	ko:매부리바다거북	pt:tartaruga-de-pente	ru:настоящая каретта	tr:şahin gagalı kaplumbağa	ur:باز منقار کچھوا	zh:玳瑁
 c:hay	Noun	ar:تبن	de:Heu	en:hay	es:heno	fa:علوفه	fr:foin	he:חציר	hi:सूखी घास	ja:干し草	ko:건초	pt:feno	ru:сено	tr:ot	ur:سوکھی گھاس	zh:干草
@@ -3749,9 +3765,11 @@ c:hinduism	Noun	ar:الهندوسية	de:Hinduismus	en:Hinduism	es:hinduismo	fa:
 c:hip	Noun	ar:ورك	de:Hüfte	en:hip	es:cadera	fa:لگن,باسن	fr:hanche	he:ירך	hi:कूल्हा	ja:ヒップ,腰回り	ko:엉덩이	pt:quadril,anca	ru:бедро	tr:kalça	ur:کولھا	zh:臀部,髋
 c:hip-hop	Noun	ar:رقص الهيب هوب	de:Hip-Hop	en:hip-hop	es:hip-hop	fa:هیپ هاپ	fr:hip-hop	he:היפ הופ	hi:हिप-हॉप	ja:ヒップホップ	ko:힙합	pt:hip-hop	ru:хип-хоп	tr:hip-hop	ur:ہپ ہاپ	zh:嘻哈舞
 c:hip-hop-dance	Noun	ar:رقص هيب هوب	de:Hip-Hop-Tanz	en:hip-hop dance	es:baile hip-hop	fa:رقص هیپ هاپ	fr:danse hip-hop	he:ריקוד היפ הופ	hi:हिप हॉप नृत्य	ja:ヒップホップダンス	ko:힙합 댄스	pt:dança hip-hop	ru:хип-хоп танец	tr:hip hop dansı	ur:ہپ ہاپ رقص	zh:嘻哈舞
+c:hip-hop-fashion	Noun	ar:موضة هيب هوب	de:Hip-Hop-Mode	en:hip-hop fashion	es:moda hip-hop	fa:مد هیپ هاپ	fr:mode hip-hop	he:אופנת היפ הופ	hi:हिप हॉप फैशन	ja:ヒップホップファッション	ko:힙합 패션	pt:moda hip-hop	ru:хип-хоп мода	tr:hip hop moda	ur:ہپ ہاپ فیشن	zh:嘻哈时尚
 c:hippocampus	Noun	ar:الحصين	de:Hippocampus	en:hippocampus	es:hipocampo	fa:هیپوکامپ	fr:hippocampe	he:היפוקמפוס	hi:हिप्पोकैम्पस	ja:海馬	ko:해마	pt:hipocampo	ru:гиппокамп	tr:hipokampüs	ur:دماغی گھوڑا	zh:海马体
 c:hippocrates	Noun	ar:أبقراط	de:Hippokrates	en:Hippocrates	es:Hipócrates	fa:بقراط	fr:Hippocrate	he:היפוקרטס	hi:हिप्पोक्रेट्स	ja:ヒポクラテス	ko:히포크라테스	pt:Hipócrates	ru:Гиппократ	tr:Hipokrat	ur:بقراط	zh:希波克拉底
 c:hippopotamus	Noun	ar:فرس النهر	de:Nilpferd,Flusspferd	en:hippopotamus,hippo	es:hipopótamo	fa:اسب آبی	fr:hippopotame	he:היפופוטם	hi:दरियाई घोड़ा	ja:カバ	ko:하마	pt:hipopótamo	ru:бегемот	tr:su aygırı	ur:دریائی گھوڑا	zh:河马
+c:hipster-style	Noun	ar:هيبستر	de:Hipster-Stil	en:hipster style	es:estilo hipster	fa:سبک هیپستر	fr:style hipster	he:סגנון היפסטר	hi:हिप्स्टर शैली	ja:ヒップスタースタイル	ko:힙스터 스타일	pt:estilo hipster	ru:хипстерский стиль	tr:hipster tarz	ur:ہپسٹر طرز	zh:嬉皮士风
 c:histogram	Noun	ar:مخطط بياني	de:Histogramm	en:histogram	es:histograma	fa:هیستوگرام	fr:histogramme	he:היסטוגרמה	hi:हिस्टोग्राम	ja:ヒストグラム	ko:히스토그램	pt:histograma	ru:гистограмма	tr:histogram	ur:ہسٹوگرام	zh:直方图
 c:histogram-chart	Noun	ar:رسم تكراري	de:Histogramm	en:histogram	es:histograma	fa:هیستوگرام	fr:histogramme	he:היסטוגרמה	hi:आयत चित्र	ja:ヒストグラム	ko:히스토그램	pt:histograma	ru:гистограмма	tr:histogram	ur:ہسٹوگرام	zh:直方图
 c:histone	Noun	ar:الهيستون	de:Histon	en:histone	es:histona	fa:هیستون	fr:histone	he:היסטון	hi:हिस्टोन	ja:ヒストン	ko:히스톤	pt:histona	ru:гистон	tr:histon	ur:ہسٹون	zh:组蛋白
@@ -3790,6 +3808,7 @@ c:honeysuckle	Noun	ar:زهر العسل,صريمة الجدي	de:Geißblatt	en:h
 c:hong-kong	Noun	ar:هونغ كونغ	de:Hongkong	en:Hong Kong	es:Hong Kong	fa:هنگ‌کنگ	fr:Hong Kong	he:הונג קונג	hi:हांगकांग	ja:香港,ホンコン	ko:홍콩	pt:Hong Kong	ru:Гонконг	tr:Hong Kong	ur:ہانگ کانگ	zh:香港
 c:honor	Noun	ar:شرف	de:Ehre	en:honor,honour	es:honor	fa:شرف,آبرو	fr:honneur	he:כבוד	hi:सम्मान,इज़्ज़त	ja:名誉	ko:명예	pt:honra	ru:честь	tr:onur,şeref	ur:عزت,شرف	zh:荣誉
 c:hoodie	Noun	ar:هودي,بلوزة بقلنسوة	de:Hoodie,Kapuzenpullover	en:hoodie	es:sudadera con capucha	fa:هودی	fr:sweat à capuche,hoodie	he:קפוצון	hi:हुडी	ja:パーカー	ko:후드티	pt:moletom com capuz	ru:худи	tr:kapşonlu	ur:ہوڈی	zh:连帽衫
+c:hoodie-garment	Noun	ar:هوديز	de:Hoodie	en:hoodie	es:sudadera con capucha	fa:هودی	fr:sweat à capuche	he:קפוצ'ון	hi:हुडी	ja:フーディー	ko:후드티	pt:camisola com capuz	ru:худи	tr:kapüşonlu	ur:ہوڈی	zh:连帽衫
 c:hook	Noun	ar:خطاف,كلاب	de:Haken	en:hook	es:gancho	fa:قلاب	fr:crochet	he:וו,קרס	hi:हुक,कांटा	ja:フック,鉤	ko:고리,훅	pt:gancho	ru:крюк,крючок	tr:kanca,çengel	ur:کنڈا,ہک	zh:钩子,挂钩
 c:hoop-earring	Noun	ar:قرط حلقي	de:Creole,Kreolring	en:hoop earring	es:aro,pendiente de aro	fa:گوشواره حلقه‌ای	fr:créole,anneau d'oreille	he:עגיל חישוק	hi:हूप बाली	ja:フープピアス	ko:후프 귀걸이	pt:argola	ru:серьга-кольцо	tr:halka küpe	ur:حلقے دار بالی	zh:圆圈耳环,耳圈
 c:hoopoe	Noun	ar:هدهد	de:Wiedehopf	en:hoopoe	es:abubilla	fa:هدهد	fr:huppe fasciée	he:דוכיפת	hi:हुदहुद	ja:ヤツガシラ	ko:후투티	pt:poupa	ru:удод	tr:ibibik	ur:ہدہد	zh:戴胜
@@ -4210,6 +4229,7 @@ c:jazz-dance	Noun	ar:رقص الجاز	de:Jazztanz	en:jazz dance	es:danza jazz	f
 c:jazz-dance-style	Noun	ar:رقص الجاز	de:Jazz-Tanz	en:jazz dance	es:baile jazz	fa:رقص جاز	fr:danse jazz	he:ריקוד ג'אז	hi:जैज़ नृत्य	ja:ジャズダンス	ko:재즈 댄스	pt:dança jazz	ru:джазовый танец	tr:jazz dansı	ur:جاز رقص	zh:爵士舞
 c:jealousy	Noun	ar:غيرة	de:Eifersucht	en:jealousy	es:celos	fa:حسادت	fr:jalousie	he:קנאה	hi:ईर्ष्या	ja:嫉妬	ko:질투	pt:ciúme	ru:ревность	tr:kıskançlık	ur:حسد	zh:嫉妒
 c:jeans	Noun	ar:جينز	de:Jeans	en:jeans	es:vaqueros,jeans	fa:شلوار جین	fr:jean	he:ג׳ינס	hi:जीन्स	ja:ジーンズ	ko:청바지	pt:jeans	ru:джинсы	tr:kot	ur:جینز	zh:牛仔裤
+c:jeans-clothing	Noun	ar:جينز	de:Jeans	en:jeans	es:vaqueros	fa:شلوار جین	fr:jean pantalon	he:ג'ינס	hi:जीन्स	ja:ジーンズ	ko:청바지	pt:jeans	ru:джинсы	tr:kot pantolon	ur:جینز	zh:牛仔裤
 c:jellyfish	Noun	ar:قنديل البحر	de:Qualle	en:jellyfish	es:medusa	fa:عروس دریایی	fr:méduse	he:מדוזה	hi:जेलीफिश,समुद्री जेली	ja:クラゲ	ko:해파리	pt:medusa,água-viva	ru:медуза	tr:denizanası	ur:جیلی فش	zh:水母
 c:jersey	Noun	ar:جيرسي	de:Jersey	en:jersey	es:jersey	fa:جرسی	fr:jersey	he:ג'רסי	hi:जर्सी	ja:ジャージー	ko:저지	pt:jérsei	ru:джерси	tr:jersey	ur:جرسی	zh:平针织物
 c:jerusalem	Noun	ar:القدس,أورشليم	de:Jerusalem	en:Jerusalem	es:Jerusalén	fa:اورشلیم,بیت المقدس	fr:Jérusalem	he:ירושלים	hi:यरुशलम	ja:エルサレム	ko:예루살렘	pt:Jerusalém	ru:Иерусалим	tr:Kudüs	ur:یروشلم,بیت المقدس	zh:耶路撒冷
@@ -4268,6 +4288,7 @@ c:justification-epistemic	Noun	ar:التبرير المعرفي	de:epistemische 
 c:justified-belief	Noun	ar:الاعتقاد المبرر	de:gerechtfertigte Überzeugung	en:justified belief	es:creencia justificada	fa:باور موجه	fr:croyance justifiée	he:אמונה מוצדקת	hi:उचित विश्वास	ja:正当化された信念	ko:정당화된 믿음	pt:crença justificada	ru:обоснованное убеждение	tr:gerekçeli inanç	ur:جائز عقیدہ	zh:有理据的信念
 c:jute	Noun	ar:الجوت	de:Jute	en:jute	es:yute	fa:جوت	fr:jute	he:יוטה	hi:जूट	ja:ジュート	ko:황마	pt:juta	ru:джут	tr:jüt	ur:پٹ سن	zh:黄麻
 c:jute-material	Noun	ar:جوت	de:Jute	en:jute	es:yute	fa:جوت	fr:jute	he:יוטה	hi:जूट	ja:ジュート	ko:황마	pt:juta	ru:джут	tr:jüt	ur:جوٹ	zh:黄麻
+c:k-pop-fashion	Noun	ar:موضة كي بوب	de:K-Pop-Mode	en:K-pop fashion	es:moda K-pop	fa:مد کاپاپ	fr:mode K-pop	he:אופנת K-pop	hi:के-पॉप फैशन	ja:K-POPファッション	ko:케이팝 패션	pt:moda K-pop	ru:K-pop мода	tr:K-pop moda	ur:کے پاپ فیشن	zh:韩流时尚
 c:k-space	Noun	ar:فضاء ك	de:k-Raum	en:k-space	es:espacio k	fa:فضای k	fr:espace k	he:מרחב k	hi:k-स्पेस	ja:k空間	ko:k-공간	pt:espaço k	ru:k-пространство	tr:k-uzayı	ur:K خلا	zh:k空间
 c:k2	Noun	ar:كي 2,تشوغوري	de:K2,Chogori	en:K2,Mount Godwin-Austen,Chogori	es:K2,Chogori	fa:کی ۲,چوگوری	fr:K2,Chogori	he:K2,צ'וגורי	hi:के 2,चोगोरी	ja:K2,ゴッドウィンオースティン山	ko:K2,초고리	pt:K2,Chogori	ru:K2,Чогори	tr:K2,Çogori	ur:کے ٹو,چوغوری	zh:乔戈里峰,K2峰
 c:k2-peak	Noun	ar:جبل كي 2	de:K2	en:K2	es:K2	fa:کی-2	fr:K2	he:K2	hi:के2	ja:K2	ko:K2	pt:K2	ru:К2	tr:K2	ur:کے ٹو	zh:乔戈里峰
@@ -4292,6 +4313,7 @@ c:karyotype-gen	Noun	ar:نمط نووي	de:Karyotyp	en:karyotype	es:cariotipo	fa
 c:katabatic	Adjective	ar:رياح كتاباتية	de:katabatischer Wind	en:katabatic wind	es:viento catabático	fa:باد فروکوهی	fr:vent catabatique	he:רוח קטבטית	hi:कटाबैटिक पवन	ja:下降風	ko:활강풍	pt:vento catabático	ru:катабатический ветер	tr:katapatik rüzgar	ur:ڈھلوانی ہوا	zh:下坡风
 c:kathak	Noun	ar:رقص كاثاك	de:Kathak	en:kathak	es:kathak	fa:کاتاک	fr:kathak	he:קאתאק	hi:कथक	ja:カタック	ko:카탁	pt:kathak	ru:катхак	tr:kathak	ur:کتھک	zh:卡塔克舞
 c:kathak-dance	Noun	ar:كاثاك	de:Kathak	en:Kathak	es:kathak	fa:کاتاک	fr:kathak	he:קטהאק	hi:कथक	ja:カタック	ko:카탁	pt:kathak	ru:катхак	tr:kathak	ur:کتھک	zh:卡塔克舞
+c:kawaii-fashion	Noun	ar:موضة كاواي	de:Kawaii-Mode	en:kawaii fashion	es:moda kawaii	fa:مد کاوایی	fr:mode kawaii	he:אופנת קוואי	hi:कावाई फैशन	ja:可愛いファッション	ko:카와이 패션	pt:moda kawaii	ru:каваий мода	tr:kawaii moda	ur:کاوائی فیشن	zh:可爱时尚
 c:kebab	Noun	ar:كباب	de:Kebab,Kebap	en:kebab	es:kebab,brocheta	fa:کباب	fr:kebab,brochette	he:קבב	hi:कबाब	ja:ケバブ	ko:케밥	pt:kebab,espetinho	ru:кебаб,шашлык	tr:kebap	ur:کباب	zh:烤肉串,卡巴
 c:kebab-food	Noun	ar:كباب	de:Kebab	en:kebab	es:kebab	fa:کباب	fr:kebab	he:קבב	hi:कबाब	ja:ケバブ	ko:케밥	pt:kebab	ru:кебаб	tr:kebap	ur:کباب	zh:烤肉串
 c:keep	Noun	ar:البرج الرئيسي	de:Bergfried	en:keep	es:torreón	fa:دژ اصلی	fr:donjon	he:מגדל מרכזי	hi:किले का मुख्य भाग	ja:天守閣	ko:주탑	pt:torre de menagem	ru:донжон	tr:kale kulesi	ur:قلعے کا مرکزی برج	zh:主楼
@@ -5063,6 +5085,7 @@ c:mineral-geo	Noun	ar:معدن أرضي	de:Mineral	en:geological mineral	es:mine
 c:ming-dynasty	Noun	ar:سلالة مينغ الصينية	de:Ming-Dynastie	en:Ming dynasty	es:dinastía Ming	fa:دودمان مینگ	fr:dynastie Ming	he:שושלת מינג	hi:मिंग राजवंश	ja:明王朝	ko:명나라	pt:dinastia Ming	ru:династия Мин	tr:Ming hanedanı	ur:منگ خاندان	zh:明朝
 c:minimal-pair	Noun	ar:زوج أصغري	de:Minimalpaar	en:minimal pair	es:par mínimo	fa:جفت کمینه	fr:paire minimale	he:זוג מינימלי	hi:न्यूनतम युग्म	ja:最小対	ko:최소 대립쌍	pt:par mínimo	ru:минимальная пара	tr:minimal çift	ur:کم سے کم جوڑا	zh:最小对立对
 c:minimalism-art	Noun	ar:التقليلية	de:Minimalismus	en:Minimalism	es:minimalismo	fa:مینیمالیسم	fr:minimalisme	he:מינימליזם	hi:न्यूनतमवाद	ja:ミニマリズム	ko:미니멀리즘	pt:minimalismo	ru:минимализм	tr:minimalizm	ur:کم سے کم پسندی	zh:简约主义
+c:minimalist-fashion	Noun	ar:موضة بسيطة	de:minimalistische Mode	en:minimalist fashion	es:moda minimalista	fa:مد مینیمالیست	fr:mode minimaliste	he:אופנה מינימליסטית	hi:न्यूनतम फैशन	ja:ミニマリストファッション	ko:미니멀리스트 패션	pt:moda minimalista	ru:минималистская мода	tr:minimalist moda	ur:منیملسٹ فیشن	zh:极简主义时尚
 c:miniseries	Noun	ar:مسلسل قصير,ميني سيريز	de:Miniserie	en:miniseries,limited series	es:miniserie	fa:مینی سریال	fr:minisérie	he:מיני-סדרה	hi:मिनीसीरीज	ja:ミニシリーズ	ko:미니시리즈	pt:minissérie	ru:мини-сериал	tr:mini dizi	ur:منی سیریز	zh:迷你剧
 c:miniseries-tv	Noun	ar:مسلسل قصير	de:Miniserie	en:miniseries	es:miniserie	fa:مینی‌سریال	fr:mini-série	he:מיני-סדרה	hi:लघु श्रृंखला	ja:ミニシリーズ	ko:미니시리즈	pt:minissérie	ru:мини-сериал	tr:mini dizi	ur:منی سیریز	zh:迷你剧
 c:minoan-civ	Noun	ar:حضارة المينويين	de:minoische Zivilisation	en:Minoan civilization	es:civilización minoica	fa:تمدن مینوسی	fr:civilisation minoenne	he:התרבות המינואית	hi:मिनोअन सभ्यता	ja:ミノア文明	ko:미노아 문명	pt:civilização minoica	ru:минойская цивилизация	tr:Minos uygarlığı	ur:مائنوئی تہذیب	zh:米诺斯文明
@@ -5105,6 +5128,7 @@ c:mobile-operating-system	Noun	ar:نظام تشغيل محمول	de:mobiles Betr
 c:mobility	Noun	ar:حراك اجتماعي	de:soziale Mobilität	en:social mobility	es:movilidad social	fa:تحرک اجتماعی	fr:mobilité sociale	he:ניידות חברתית	hi:सामाजिक गतिशीलता	ja:社会的移動	ko:사회 이동	pt:mobilidade social	ru:социальная мобильность	tr:sosyal hareketlilik	ur:سماجی نقل و حرکت	zh:社会流动
 c:mobius-strip	Noun	ar:شريط موبيوس	de:Möbiusband	en:Möbius strip	es:cinta de Möbius	fa:نوار موبیوس	fr:ruban de Möbius	he:רצועת מביוס	hi:मोबियस पट्टी	ja:メビウスの輪	ko:뫼비우스 띠	pt:fita de Möbius	ru:лист Мёбиуса	tr:Möbius şeridi	ur:موبیئس پٹی	zh:莫比乌斯带
 c:mocha	Noun	ar:موكا	de:Mokka	en:mocha	es:moca	fa:موکا	fr:moka	he:מוקה	hi:मोका	ja:モカ	ko:모카	pt:mocha	ru:мокко	tr:moka	ur:موکا	zh:摩卡
+c:mod-style	Noun	ar:موضة مود	de:Mod-Stil	en:mod style	es:estilo mod	fa:سبک ماد	fr:style mod	he:סגנון מוד	hi:मोड शैली	ja:モッドスタイル	ko:모드 스타일	pt:estilo mod	ru:мод стиль	tr:mod tarz	ur:ماڈ طرز	zh:摩德风
 c:modal-logic	Noun	ar:المنطق الرياضي	de:Modallogik	en:modal logic	es:lógica modal	fa:منطق وجهی	fr:logique modale	he:לוגיקה מודלית	hi:रूपात्मक तर्क	ja:様相論理	ko:양상논리	pt:lógica modal	ru:модальная логика	tr:kipsel mantık	ur:مودل منطق	zh:模态逻辑
 c:mode	Noun	ar:منوال	de:Modus	en:mode	es:moda	fa:نما	fr:mode	he:שכיח	hi:बहुलक	ja:最頻値	ko:최빈값	pt:moda	ru:мода	tr:tepe değer	ur:نما	zh:众数
 c:mode-stat	Noun	ar:منوال إحصائي	de:Modalwert	en:mode	es:moda	fa:مد	fr:mode	he:שכיח	hi:बहुलक	ja:最頻値	ko:최빈값	pt:moda	ru:мода	tr:mod	ur:عام	zh:众数
@@ -6361,6 +6385,7 @@ c:prelude	Noun	ar:بريليود	de:Präludium	en:prelude	es:preludio	fa:پرل�
 c:premiere-episode	Noun	ar:حلقة افتتاحية	de:Premierenfolge	en:premiere episode	es:estreno	fa:قسمت افتتاحیه	fr:première diffusion	he:פרק בכורה	hi:प्रीमियर एपिसोड	ja:プレミア	ko:첫방송	pt:estreia	ru:премьера	tr:prömiyer	ur:پہلی قسط	zh:首播集
 c:premise	Noun	ar:مقدمة منطقية,فرضية	de:Prämisse,Voraussetzung	en:premise	es:premisa	fa:مقدمه منطقی,فرض	fr:prémisse	he:הנחה,הנחת יסוד	hi:आधार,प्रतिज्ञा	ja:前提	ko:전제	pt:premissa	ru:посылка,предпосылка	tr:öncül,premis	ur:مقدمہ	zh:前提
 c:preposition	Noun	ar:حرف جر	de:Präposition,Verhältniswort	en:preposition	es:preposición	fa:حرف اضافه	fr:préposition	he:מילת יחס	hi:पूर्वसर्ग	ja:前置詞	ko:전치사	pt:preposição	ru:предлог	tr:edat,ilgeç	ur:حرف جر	zh:介词,前置词
+c:preppy-style	Noun	ar:بريبي	de:Preppy-Stil	en:preppy style	es:estilo preppy	fa:سبک پرپی	fr:style preppy	he:סגנון פרפי	hi:प्रेपी शैली	ja:プレッピースタイル	ko:프레피 스타일	pt:estilo preppy	ru:преппи стиль	tr:preppy tarz	ur:پرپی طرز	zh:学院风
 c:prequel-film	Noun	ar:فيلم سابق	de:Prequel	en:prequel	es:precuela	fa:پیش‌درآمد فیلم	fr:préquelle	he:פריקוול	hi:पूर्वदृश्य	ja:前日譚	ko:프리퀄	pt:prequela	ru:приквел	tr:öncü film	ur:پری کویل	zh:前传
 c:prescription	Noun	ar:وصفة طبية	de:Rezept	en:prescription	es:receta médica	fa:نسخه پزشکی	fr:ordonnance	he:מרשם	hi:नुस्खा	ja:処方箋	ko:처방전	pt:receita médica	ru:рецепт	tr:reçete	ur:نسخہ	zh:处方
 c:prescription-med	Noun	ar:وصفة طبية	de:Rezept	en:prescription	es:receta médica	fa:نسخه پزشکی	fr:ordonnance	he:מרשם	hi:नुस्खा	ja:処方箋	ko:처방전	pt:prescrição médica	ru:рецепт	tr:reçete	ur:نسخہ	zh:处方
@@ -6371,6 +6396,7 @@ c:president	Noun	ar:رئيس	de:Präsident	en:president	es:presidente	fa:رئی�
 c:pressure	Noun	ar:ضغط	de:Druck	en:pressure	es:presión	fa:فشار	fr:pression	he:לחץ	hi:दबाव,दाब	ja:圧力	ko:압력	pt:pressão	ru:давление	tr:basınç	ur:دباؤ,دباو	zh:压力,压强
 c:prestressed-concrete	Noun	ar:خرسانة مسبقة الإجهاد	de:Spannbeton	en:prestressed concrete	es:hormigón pretensado	fa:بتن پیش تنیده	fr:béton précontraint	he:בטון קדם-מתוח	hi:पूर्व-प्रतिबलित कंक्रीट	ja:プレストレストコンクリート	ko:프리스트레스트 콘크리트	pt:concreto protendido	ru:предварительно напряжённый бетон	tr:öngerilmeli beton	ur:پیش تناو کنکریٹ	zh:预应力混凝土
 c:presumption-of-innocence	Noun	ar:قرينة البراءة	de:Unschuldsvermutung	en:presumption of innocence	es:presunción de inocencia	fa:اصل برائت	fr:présomption d'innocence	he:חזקת חפות	hi:निर्दोषता की अनुमान	ja:無罪推定	ko:무죄 추정	pt:presunção de inocência	ru:презумпция невиновности	tr:masumiyet karinesi	ur:بے گناہی کا اصول	zh:无罪推定
+c:pret-a-porter	Noun	ar:بريت أ بورتيه	de:Prêt-à-porter	en:prêt-à-porter	es:prêt-à-porter	fa:پرت آ پورته	fr:prêt-à-porter	he:פרט-א-פורטה	hi:प्रेत ए पोर्ते	ja:プレタポルテ	ko:프레타포르테	pt:prêt-à-porter pt	ru:prêt-à-porter	tr:prêt-à-porter	ur:پرت ا پورتے	zh:高级成衣
 c:pretoria	Noun	ar:بريتوريا	de:Pretoria	en:Pretoria	es:Pretoria	fa:پرتوریا	fr:Pretoria	he:פרטוריה	hi:प्रिटोरिया	ja:プレトリア	ko:프리토리아	pt:Pretória	ru:Претория	tr:Pretoria	ur:پریٹوریا	zh:比勒陀利亚
 c:pretzel	Noun	ar:بريتسل	de:Brezel	en:pretzel	es:pretzel	fa:پرتزل	fr:bretzel	he:פרצל	hi:प्रेत्ज़ेल	ja:プレッツェル	ko:프레첼	pt:pretzel	ru:крендель	tr:pretzel	ur:پریٹزل	zh:椒盐卷饼
 c:prey	Noun	ar:فريسة	de:Beute	en:prey	es:presa	fa:طعمه	fr:proie	he:טרף	hi:शिकार	ja:獲物	ko:먹이	pt:presa	ru:добыча	tr:av	ur:شکار	zh:猎物
@@ -6531,6 +6557,7 @@ c:punctuation	Noun	ar:علامات الترقيم	de:Zeichensetzung,Interpunktio
 c:pungent	Adjective	ar:نفاذ,لاذع	de:stechend,beißend	en:pungent	es:acre,picante olor	fa:تند و تیز بوی,گزنده	fr:âcre,piquant	he:חריף ריח	hi:चरपरा,तीखी गंध	ja:刺激臭のある	ko:코를 찌르는	pt:acre,pungente	ru:едкий,острый на запах	tr:keskin kokulu	ur:تیز بو والا	zh:刺鼻,辛辣
 c:punishment	Noun	ar:عقاب,عقوبة	de:Strafe,Bestrafung	en:punishment	es:castigo	fa:مجازات,تنبیه	fr:punition,châtiment	he:עונש	hi:सज़ा,दंड	ja:罰,処罰	ko:처벌,벌	pt:castigo,punição	ru:наказание	tr:ceza	ur:سزا	zh:惩罚,处罚
 c:punjabi-language	Noun	ar:اللغة البنجابية	de:Punjabi	en:Punjabi language	es:idioma panyabí	fa:زبان پنجابی	fr:pendjabi	he:פנג'אבית	hi:पंजाबी भाषा	ja:パンジャブ語	ko:펀자브어	pt:língua punjabi	ru:панджаби	tr:Pencapça	ur:پنجابی زبان	zh:旁遮普语
+c:punk-fashion	Noun	ar:بانك	de:Punk-Mode	en:punk fashion	es:moda punk	fa:مد پانک	fr:mode punk	he:אופנת פאנק	hi:पंक फैशन	ja:パンクファッション	ko:펑크 패션	pt:moda punk	ru:панк мода	tr:punk moda	ur:پنک فیشن	zh:朋克时尚
 c:punnett-square	Noun	ar:مربع بونيت	de:Punnett-Quadrat	en:Punnett square	es:cuadro de Punnett	fa:مربع پانت	fr:échiquier de Punnett	he:ריבוע פאנט	hi:पन्नेट वर्ग	ja:パネットの方形	ko:퍼넷 사각형	pt:quadro de Punnett	ru:решётка Пеннета	tr:Punnett karesi	ur:پنٹ کا مربع	zh:旁氏方格
 c:pupa	Noun	ar:خادرة	de:Puppe	en:pupa	es:pupa	fa:شفیره	fr:nymphe	he:גולם	hi:प्यूपा	ja:さなぎ	ko:번데기	pt:pupa	ru:куколка	tr:pupa	ur:پیوپا	zh:蛹
 c:pupil	Noun	ar:تلميذ	de:Schüler	en:pupil	es:alumno,pupilo	fa:شاگرد	fr:élève	he:תלמיד	hi:छात्र,शिष्य	ja:生徒	ko:학동,학생	pt:aluno,pupilo	ru:ученик	tr:öğrenci,talebe	ur:شاگرد	zh:学生,小学生
@@ -6695,6 +6722,7 @@ c:reaction-rate	Noun	ar:معدل التفاعل	de:Reaktionsgeschwindigkeit	en:r
 c:reactive-agility	Noun	ar:الرشاقة التفاعلية	de:reaktive Agilität	en:reactive agility	es:agilidad reactiva	fa:چابکی واکنشی	fr:agilité réactive	he:זריזות תגובתית	hi:प्रतिक्रियाशील चपलता	ja:反応的敏捷性	ko:반응적 민첩성	pt:agilidade reativa	ru:реактивная ловкость	tr:reaktif çeviklik	ur:ردعملی چستی	zh:反应敏捷性
 c:read	Verb	ar:قرأ,يقرأ	de:lesen	en:read,reads	es:leer	fa:خواندن	fr:lire	he:לקרוא	hi:पढ़ना	ja:読む	ko:읽다	pt:ler	ru:читать	tr:okumak	ur:پڑھنا	zh:读
 c:read-mapping	Noun	ar:رسم خريطة القراءات	de:Read-Mapping	en:read mapping,read alignment	es:mapeo de lecturas	fa:نگاشت خواندنی	fr:alignement de lectures	he:מיפוי קריאות	hi:रीड मैपिंग	ja:リードマッピング	ko:리드 매핑	pt:mapeamento de leituras	ru:картирование ридов	tr:okuma haritalama	ur:ریڈ میپنگ	zh:读段比对
+c:ready-to-wear	Noun	ar:ملابس جاهزة	de:Konfektion	en:ready-to-wear	es:prêt-à-porter	fa:حاضرآماده	fr:prêt-à-porter en	he:מוכן ללבישה	hi:तैयार पोशाक	ja:既製服	ko:기성복	pt:prêt-à-porter	ru:прет-а-порте	tr:hazır giyim	ur:تیار پہننے	zh:成衣
 c:reagent	Noun	ar:كاشف	de:Reagenz	en:reagent	es:reactivo	fa:معرف	fr:réactif	he:ריאגנט	hi:अभिकर्मक	ja:試薬	ko:시약	pt:reagente	ru:реагент	tr:reaktif	ur:کاشف	zh:试剂
 c:real-currency	Noun	ar:ريال برازيلي,ريال	de:Real	en:real	es:real	fa:رئال برزیل	fr:réal	he:ריאל ברזילאי	hi:रियाल	ja:レアル	ko:헤알	pt:real	ru:реал	tr:real	ur:ریال برازیلی	zh:雷亚尔
 c:realism-philosophy	Noun	ar:الواقعية	de:Realismus	en:realism	es:realismo	fa:واقع‌گرایی	fr:réalisme	he:ריאליזם	hi:यथार्थवाद	ja:実在論	ko:실재론	pt:realismo	ru:реализм	tr:gerçekçilik	ur:حقیقت پسندی	zh:实在论
@@ -6853,6 +6881,7 @@ c:retina	Noun	ar:الشبكية	de:Netzhaut	en:retina	es:retina	fa:شبکیه	fr
 c:retirement	Noun	ar:تقاعد	de:Ruhestand,Rente	en:retirement	es:jubilación,retiro	fa:بازنشستگی	fr:retraite	he:פרישה	hi:सेवानिवृत्ति	ja:退職,引退	ko:퇴직,은퇴	pt:aposentadoria,reforma	ru:пенсия,выход на пенсию	tr:emeklilik	ur:ریٹائرمنٹ,سبکدوشی	zh:退休
 c:retractor	Noun	ar:شافع جراحي	de:Retraktor	en:retractor	es:retractor	fa:رتراکتور	fr:rétracteur	he:מרחיב	hi:रिट्रेक्टर	ja:開創器	ko:견인기	pt:retrator	ru:ретрактор	tr:retraktör	ur:ریٹریکٹر	zh:牵开器
 c:retreat	Verb	ar:انسحب,ينسحب	de:zurückziehen	en:retreat	es:retirarse	fa:عقب‌نشینی کردن	fr:battre en retraite,se retirer	he:לסגת	hi:पीछे हटना	ja:退却する	ko:퇴각하다	pt:retirar-se,recuar	ru:отступать	tr:geri çekilmek	ur:پیچھے ہٹنا	zh:撤退
+c:retro-fashion	Noun	ar:موضة ريترو	de:Retromode	en:retro fashion	es:moda retro	fa:مد رترو	fr:mode rétro	he:אופנה רטרו	hi:रेट्रो फैशन	ja:レトロファッション	ko:레트로 패션	pt:moda retro	ru:ретро-мода	tr:retro moda	ur:ریٹرو فیشن	zh:复古时尚
 c:return	Verb	ar:عاد,رجع	de:zurückkehren,zurückkommen	en:return	es:volver,regresar,retornar	fa:برگشت,بازگشت	fr:retourner,revenir,rentrer	he:חזר,שב	hi:लौटना,वापस आना	ja:帰る,戻る	ko:돌아가다,돌아오다	pt:voltar,regressar,retornar	ru:возвращаться	tr:dönmek	ur:واپس آنا,لوٹنا	zh:返回,回来,归来
 c:reuptake-inhibitor	Noun	ar:مثبط اعادة الامتصاص	de:Wiederaufnahmehemmer	en:reuptake inhibitor	es:inhibidor de recaptación	fa:مهارکننده بازجذب	fr:inhibiteur de recaptage	he:מעכב ספיגה חוזרת	hi:पुनः ग्रहण अवरोधक	ja:再取り込み阻害薬	ko:재흡수 억제제	pt:inibidor de recaptação	ru:ингибитор обратного захвата	tr:geri alım inhibitörü	ur:واپسی روکنے والا	zh:再摄取抑制剂
 c:revenue	Noun	ar:إيرادات,دخل	de:Einnahmen,Umsatz	en:revenue	es:ingreso,ingresos	fa:درآمد	fr:recette,revenu	he:הכנסה,פדיון	hi:राजस्व,आय	ja:収益,歳入	ko:수익,세입	pt:receita	ru:выручка,доход	tr:gelir,hasılat	ur:محصول,آمدنی	zh:收入,营收
@@ -6930,6 +6959,7 @@ c:rock-cycle	Noun	ar:دورة الصخور	de:Gesteinskreislauf	en:rock cycle	es
 c:rock-igneous	Noun	ar:صخرة نارية	de:magmatisches Gestein	en:igneous rock	es:roca ígnea	fa:سنگ آذرین	fr:roche ignée	he:סלע יסוד	hi:आग्नेय चट्टान	ja:火成岩	ko:화성암	pt:rocha ígnea	ru:магматическая порода	tr:magmatik kaya	ur:آتشی چٹان	zh:火成岩
 c:rock-metamorphic	Noun	ar:صخرة متحولة	de:metamorphes Gestein	en:metamorphic rock	es:roca metamórfica	fa:سنگ دگرگون	fr:roche métamorphique	he:סלע מטמורפי	hi:कायांतरित चट्टान	ja:変成岩	ko:변성암	pt:rocha metamórfica	ru:метаморфическая порода	tr:metamorfik kaya	ur:تبدیل شدہ چٹان	zh:变质岩
 c:rock-sedimentary	Noun	ar:صخرة رسوبية	de:Sedimentgestein	en:sedimentary rock	es:roca sedimentaria	fa:سنگ رسوبی	fr:roche sédimentaire	he:סלע משקע	hi:अवसादी चट्टान	ja:堆積岩	ko:퇴적암	pt:rocha sedimentar	ru:осадочная порода	tr:tortul kaya	ur:تلچھٹی چٹان	zh:沉积岩
+c:rockabilly	Noun	ar:روكابيلي	de:Rockabilly	en:rockabilly	es:rockabilly	fa:راکابیلی	fr:rockabilly	he:רוקאבילי	hi:रॉकबिली	ja:ロカビリー	ko:로카빌리	pt:rockabilly	ru:рокабилли	tr:rockabilly	ur:راکابلی	zh:洛卡比利
 c:rocket	Noun	ar:صاروخ	de:Rakete	en:rocket	es:cohete	fa:راکت,موشک	fr:fusée	he:טיל,רקטה	hi:रॉकेट,प्रक्षेपास्त्र	ja:ロケット	ko:로켓	pt:foguete,foguetão	ru:ракета	tr:roket,füze	ur:راکٹ	zh:火箭
 c:rocket-space	Noun	ar:صاروخ فضائي	de:Rakete	en:rocket	es:cohete	fa:موشک	fr:fusée	he:טיל חלל	hi:रॉकेट	ja:ロケット	ko:로켓	pt:foguete	ru:ракета	tr:roket	ur:راکٹ	zh:火箭
 c:rockies	Noun	ar:جبال روكي,الروكي	de:Rocky Mountains,Rockies	en:Rockies,Rocky Mountains	es:Rocosas,Montañas Rocosas	fa:راکی,کوه‌های راکی	fr:Rocheuses,montagnes Rocheuses	he:הרי הרוקי,רוקי	hi:रॉकीज़,रॉकी पर्वत	ja:ロッキー山脈	ko:로키산맥	pt:Rochosas,Montanhas Rochosas	ru:Скалистые горы	tr:Kayalık Dağlar	ur:راکی پہاڑ,کوہ راکی	zh:落基山脉
@@ -7449,6 +7479,7 @@ c:situated-cognition	Noun	ar:الإدراك الموضعي	de:situierte Kognitio
 c:six	Noun	ar:ستة	de:sechs	en:six	es:seis	fa:شش	fr:six	he:שישה	hi:छह	ja:六,ろく	ko:여섯,육	pt:seis	ru:шесть	tr:altı	ur:چھ	zh:六
 c:skateboarding	Noun	ar:التزلج على الالواح	de:Skateboarden	en:skateboarding	es:skateboarding	fa:اسکیت برد	fr:skateboard	he:סקייטבורד	hi:स्केटबोर्डिंग	ja:スケートボード	ko:스케이트보드	pt:skate	ru:скейтбординг	tr:kaykay	ur:اسکیٹ بورڈنگ	zh:滑板
 c:skateboarding-sport	Noun	ar:التزلج على اللوح	de:Skateboarden	en:skateboarding	es:skateboarding	fa:اسکیت‌بورد	fr:skateboard	he:סקייטבורד	hi:स्केटबोर्डिंग	ja:スケートボード	ko:스케이트보드	pt:skateboarding	ru:скейтбординг	tr:kaykay	ur:اسکیٹ بورڈنگ	zh:滑板
+c:skater-fashion	Noun	ar:موضة التزلج	de:Skater-Mode	en:skater fashion	es:moda skater	fa:مد اسکیتر	fr:mode skater	he:אופנת סקייט	hi:स्केटर फैशन	ja:スケーターファッション	ko:스케이터 패션	pt:moda skater	ru:скейтер-мода	tr:skater moda	ur:اسکیٹر فیشن	zh:滑板时尚
 c:skepticism	Noun	ar:الشكوكية,الشك الفلسفي	de:Skeptizismus	en:skepticism,scepticism	es:escepticismo	fa:شکاکیت	fr:scepticisme	he:סקפטיציזם	hi:संशयवाद	ja:懐疑主義	ko:회의주의	pt:ceticismo	ru:скептицизм	tr:şüphecilik,septisizm	ur:شکوکیت	zh:怀疑主义
 c:skepticism-phil	Noun	ar:الشكية	de:Skeptizismus	en:skepticism	es:escepticismo	fa:شک‌گرایی	fr:scepticisme	he:סקפטיציזם	hi:संशयवाद	ja:懐疑主義	ko:회의주의	pt:ceticismo	ru:скептицизм	tr:şüphecilik	ur:شک پسندی	zh:怀疑主义
 c:skewness	Noun	ar:التواء إحصائي	de:Schiefe	en:skewness	es:asimetría	fa:چولگی	fr:asymétrie	he:אסימטריה	hi:विषमता	ja:歪度	ko:왜도	pt:assimetria	ru:асимметрия	tr:çarpıklık	ur:ٹیڑھا پن	zh:偏度
@@ -7703,6 +7734,7 @@ c:sport-injury	Noun	ar:إصابة رياضية	de:Sportverletzung	en:sport injur
 c:sport-nutrition	Noun	ar:التغذية الرياضية	de:Sporternährung	en:sport nutrition	es:nutrición deportiva	fa:تغذیه ورزشی	fr:nutrition sportive	he:תזונת ספורט	hi:खेल पोषण	ja:スポーツ栄養学	ko:스포츠 영양학	pt:nutrição desportiva	ru:спортивное питание	tr:spor beslenmesi	ur:کھیل غذائیت	zh:运动营养学
 c:sport-psychology	Noun	ar:علم نفس الرياضة	de:Sportpsychologie	en:sport psychology	es:psicología deportiva	fa:روان‌شناسی ورزشی	fr:psychologie du sport	he:פסיכולוגיה של ספורט	hi:खेल मनोविज्ञान	ja:スポーツ心理学	ko:스포츠 심리학	pt:psicologia desportiva	ru:спортивная психология	tr:spor psikolojisi	ur:کھیل نفسیات	zh:运动心理学
 c:sports-game	Noun	ar:لعبة رياضة	de:Sportspiel	en:sports game	es:videojuego deportivo	fa:بازی ورزشی	fr:jeu de sport	he:משחק ספורט	hi:खेल खेल	ja:スポーツゲーム	ko:스포츠 게임	pt:jogo desportivo	ru:спортивная игра	tr:spor oyunu	ur:کھیل گیم	zh:体育游戏
+c:sportswear	Noun	ar:ملابس رياضية	de:Sportbekleidung	en:sportswear	es:ropa deportiva	fa:لباس ورزشی	fr:vêtement de sport	he:ביגוד ספורט	hi:खेलकूद परिधान	ja:スポーツウェア	ko:스포츠웨어	pt:roupa desportiva	ru:спортивная одежда	tr:spor giyim	ur:اسپورٹس ویئر	zh:运动服
 c:sprat	Noun	ar:سبرط	de:Sprotte	en:sprat	es:espadín	fa:اسپرت	fr:sprat	he:ספרט	hi:स्प्रेट	ja:スプラット	ko:청어류	pt:espadilha	ru:шпрот	tr:çaça	ur:سپریٹ	zh:小沙丁鱼
 c:spray-drying	Noun	ar:التجفيف بالرش	de:Sprühtrocknung	en:spray drying	es:secado por pulverización	fa:خشک‌کردن پاششی	fr:séchage par atomisation	he:ייבוש בספריי	hi:छिड़काव सुखाना	ja:噴霧乾燥	ko:분무 건조	pt:secagem por aspersão	ru:распылительная сушка	tr:püskürtmeli kurutma	ur:سپرے سے خشک	zh:喷雾干燥
 c:spring	Noun	ar:ربيع	de:Frühling,Frühjahr	en:spring	es:primavera	fa:بهار	fr:printemps	he:אביב	hi:वसंत,बसंत	ja:春	ko:봄	pt:primavera	ru:весна	tr:ilkbahar,bahar	ur:بہار,بسنت	zh:春,春季
@@ -7867,6 +7899,7 @@ c:streaming-service	Noun	ar:خدمة البث	de:Streamingdienst	en:streaming se
 c:streaming-service-tv	Noun	ar:خدمة بث	de:Streaming-Dienst	en:streaming service	es:servicio de streaming	fa:سرویس استریم	fr:service de streaming	he:שירות סטרימינג	hi:स्ट्रीमिंग सेवा	ja:ストリーミングサービス	ko:스트리밍 서비스	pt:serviço de streaming	ru:стриминговый сервис	tr:yayın hizmeti	ur:اسٹریمنگ سروس	zh:流媒体服务
 c:street	Noun	ar:شارع	de:Straße	en:street	es:calle	fa:خیابان	fr:rue	he:רחוב	hi:सड़क,गली	ja:通り	ko:거리	pt:rua	ru:улица	tr:sokak,cadde	ur:گلی,سڑک	zh:街道,街
 c:streetscape	Noun	ar:المشهد الشارعي	de:Straßenbild	en:streetscape	es:paisaje urbano	fa:منظر خیابانی	fr:paysage de rue	he:נוף רחוב	hi:सड़क परिदृश्य	ja:ストリートスケープ	ko:가로 경관	pt:paisagem de rua	ru:уличный пейзаж	tr:sokak manzarası	ur:سڑک کا منظر	zh:街道景观
+c:streetwear	Noun	ar:ملابس الشارع	de:Streetwear	en:streetwear	es:streetwear	fa:استریت‌ور	fr:streetwear	he:סטריטוור	hi:स्ट्रीटवियर	ja:ストリートウェア	ko:스트리트웨어	pt:streetwear	ru:стритвир	tr:sokak giyimi	ur:اسٹریٹ ویئر	zh:街头服饰
 c:strength-training	Noun	ar:تدريب القوة	de:Krafttraining	en:strength training	es:entrenamiento de fuerza	fa:تمرین قدرتی	fr:musculation	he:אימון כוח	hi:शक्ति प्रशिक्षण	ja:筋力トレーニング	ko:근력 훈련	pt:treinamento de força	ru:силовые тренировки	tr:kuvvet antrenmanı	ur:طاقت کی تربیت	zh:力量训练
 c:stress	Noun	ar:ضغط نفسي	de:Stress	en:stress	es:estrés	fa:استرس	fr:stress	he:מתח	hi:तनाव	ja:ストレス	ko:스트레스	pt:estresse	ru:стресс	tr:stres	ur:ذہنی تناو	zh:压力
 c:stress-phonetics	Noun	ar:نبر	de:Wortakzent	en:stress	es:acento prosódico	fa:تاکید	fr:accent tonique	he:הטעמה	hi:बलाघात	ja:強勢	ko:강세	pt:acento tônico	ru:ударение	tr:vurgu	ur:زور	zh:重音
@@ -7926,6 +7959,7 @@ c:sufism-tradition	Noun	ar:التصوف	de:Sufismus	en:Sufism	es:sufismo	fa:تص
 c:sugar	Noun	ar:سكر	de:Zucker	en:sugar	es:azúcar	fa:شکر,قند	fr:sucre	he:סוכר	hi:चीनी,शक्कर	ja:砂糖	ko:설탕	pt:açúcar	ru:сахар	tr:şeker	ur:چینی	zh:糖
 c:sugarcane	Noun	ar:قصب السكر	de:Zuckerrohr	en:sugarcane,sugar cane	es:caña de azúcar	fa:نیشکر	fr:canne à sucre	he:קנה סוכר	hi:गन्ना	ja:サトウキビ,砂糖黍	ko:사탕수수	pt:cana-de-açúcar	ru:сахарный тростник	tr:şeker kamışı	ur:گنا	zh:甘蔗
 c:suit	Noun	ar:بدلة	de:Anzug	en:suit	es:traje	fa:کت و شلوار	fr:costume	he:חליפה	hi:सूट	ja:スーツ	ko:양복,정장	pt:terno,fato	ru:костюм	tr:takım elbise	ur:سوٹ	zh:西装
+c:suit-attire	Noun	ar:بدلة أعمال	de:Anzug	en:business suit	es:traje de hombre	fa:کت و شلوار	fr:costume business	he:חליפה עסקית	hi:सूट पोशाक	ja:スーツ	ko:정장 수트	pt:fato masculino	ru:костюм тройка	tr:takım elbise	ur:سوٹ لباس	zh:套装
 c:sulfur	Noun	ar:كبريت	de:Schwefel	en:sulfur,sulphur	es:azufre	fa:گوگرد	fr:soufre	he:גופרית	hi:गंधक,सल्फर	ja:硫黄,サルファー	ko:황,유황	pt:enxofre	ru:сера	tr:kükürt,sülfür	ur:گندھک	zh:硫,硫磺
 c:sultan	Noun	ar:سلطان	de:Sultan	en:sultan	es:sultán	fa:سلطان	fr:sultan	he:סולטן	hi:सुल्तान	ja:スルタン	ko:술탄	pt:sultão	ru:султан	tr:sultan	ur:سلطان	zh:苏丹
 c:sum	Noun	ar:مجموع	de:Summe	en:sum,total	es:suma,total	fa:جمع,حاصل	fr:somme,total	he:סכום	hi:योग,जोड़	ja:合計,総和	ko:합,합계	pt:soma,total	ru:сумма	tr:toplam	ur:مجموعہ,جوڑ	zh:总和,总数
@@ -8003,6 +8037,7 @@ c:swan	Noun	ar:بجعة	de:Schwan	en:swan	es:cisne	fa:قو	fr:cygne	he:ברבו�
 c:swarm	Noun	ar:سرب	de:Schwarm	en:swarm	es:enjambre	fa:دسته	fr:essaim	he:נחיל	hi:झुंड	ja:群れ	ko:떼	pt:enxame	ru:рой	tr:sürü	ur:جھنڈ	zh:蜂群
 c:sway	Verb	ar:تمايل	de:schwanken,schaukeln	en:sway	es:mecerse,balancearse	fa:تاب خوردن,نوسان کردن	fr:se balancer,osciller	he:להתנועע	hi:झूमना	ja:揺れる	ko:흔들리다	pt:balançar-se	ru:раскачиваться	tr:salınmak	ur:جھومنا	zh:摇曳,摇晃
 c:sweater	Noun	ar:كنزة,سترة صوفية	de:Pullover,Pulli	en:sweater,jumper	es:suéter,jersey	fa:پلیور,ژاکت بافتنی	fr:pull,chandail	he:סוודר	hi:स्वेटर	ja:セーター	ko:스웨터	pt:suéter,camisola	ru:свитер	tr:kazak	ur:سویٹر	zh:毛衣
+c:sweater-knit	Noun	ar:كنزة صوفية	de:Pullover	en:sweater	es:suéter	fa:سوئیشرت	fr:pull	he:סוודר	hi:स्वेटर	ja:セーター	ko:스웨터	pt:camisola	ru:свитер	tr:kazak	ur:سویٹر	zh:毛衣
 c:sweden	Noun	ar:السويد	de:Schweden	en:Sweden	es:Suecia	fa:سوئد	fr:Suède	he:שוודיה	hi:स्वीडन	ja:スウェーデン	ko:스웨덴	pt:Suécia	ru:Швеция	tr:İsveç	ur:سویڈن	zh:瑞典
 c:swedish-language	Noun	ar:اللغة السويدية	de:Schwedisch	en:Swedish language	es:idioma sueco	fa:زبان سوئدی	fr:suédois	he:שוודית	hi:स्वीडिश भाषा	ja:スウェーデン語	ko:스웨덴어	pt:língua sueca	ru:шведский язык	tr:İsveççe	ur:سویڈش زبان	zh:瑞典语
 c:sweeping-broom	Noun	ar:مكنسة كنس	de:Kehrbesen,Besen	en:sweeping broom	es:escoba de barrer	fa:جاروی دستی	fr:balai de ménage	he:מטאטא ניקוי	hi:झाड़ू,सफाई की झाड़ू	ja:掃除用ほうき	ko:청소용 빗자루	pt:vassoura de varrer	ru:щётка для подметания	tr:süpürge	ur:جھاڑو	zh:扫地扫帚
@@ -8058,6 +8093,7 @@ c:systems-biology	Noun	ar:علم الانظمة الحيوية	de:Systembiologie
 c:syzygy	Noun	ar:تحالف فلكي	de:Syzygie	en:syzygy	es:sizigia	fa:همراستایی فلکی	fr:syzygie	he:סיזיגיה	hi:सहायुति	ja:朔望	ko:삭망	pt:sizígia	ru:сизигия	tr:sizyji	ur:فلکی ہم‌ترازی	zh:朔望
 c:t-cell-therapy	Noun	ar:العلاج بالخلايا التائية	de:T-Zell-Therapie	en:T cell therapy	es:terapia de células T	fa:درمان با سلول T	fr:thérapie par lymphocytes T	he:טיפול בתאי T	hi:T कोशिका चिकित्सा	ja:T細胞療法	ko:T 세포 치료	pt:terapia com células T	ru:T-клеточная терапия	tr:T hücre terapisi	ur:T خلیہ علاج	zh:T细胞疗法
 c:t-shirt	Noun	ar:تيشيرت	de:T-Shirt	en:t-shirt,tee	es:camiseta	fa:تیشرت	fr:t-shirt	he:טי שירט	hi:टी-शर्ट	ja:Tシャツ	ko:티셔츠	pt:camiseta	ru:футболка	tr:tişört	ur:ٹی شرٹ	zh:T恤
+c:t-shirt-clothing	Noun	ar:قميص تي شيرت	de:T-Shirt	en:t-shirt	es:camiseta	fa:تی‌شرت	fr:t-shirt	he:חולצת טי	hi:टी-शर्ट	ja:Tシャツ	ko:티셔츠	pt:camiseta t	ru:футболка	tr:tişört	ur:ٹی شرٹ	zh:T恤
 c:t-test	Noun	ar:اختبار تي	de:t-Test	en:t-test	es:prueba t	fa:آزمون تی	fr:test t	he:מבחן t	hi:टी-परीक्षण	ja:t検定	ko:t검정	pt:teste t	ru:t-критерий	tr:t testi	ur:ٹی ٹیسٹ	zh:t检验
 c:t1-weighted	Adjective	ar:T1-مرجح	de:T1-gewichtet	en:T1-weighted	es:ponderado en T1	fa:وزن‌دار T1	fr:pondéré en T1	he:משוקלל T1	hi:T1-भारित	ja:T1強調	ko:T1 강조	pt:ponderado em T1	ru:T1-взвешенный	tr:T1 ağırlıklı	ur:T1 وزنی	zh:T1加权
 c:t2-weighted	Adjective	ar:T2-مرجح	de:T2-gewichtet	en:T2-weighted	es:ponderado en T2	fa:وزن‌دار T2	fr:pondéré en T2	he:משוקלל T2	hi:T2-भारित	ja:T2強調	ko:T2 강조	pt:ponderado em T2	ru:T2-взвешенный	tr:T2 ağırlıklı	ur:T2 وزنی	zh:T2加权
@@ -8615,6 +8651,7 @@ c:turquoise	Noun	ar:فيروز	de:Türkis	en:turquoise	es:turquesa	fa:فیروز
 c:turquoise-gem	Noun	ar:فيروز	de:Türkis	en:turquoise	es:turquesa	fa:فیروزه	fr:turquoise	he:טורקיז	hi:फ़िरोज़ा	ja:トルコ石	ko:터키석	pt:turquesa	ru:бирюза	tr:turkuaz	ur:فیروزہ	zh:绿松石
 c:turret	Noun	ar:البرج الصغير	de:Türmchen	en:turret	es:torreta	fa:برج کوچک	fr:tourelle	he:מגדלון	hi:मीनार	ja:小塔	ko:작은 탑	pt:torreão	ru:башенка	tr:küçük kule	ur:چھوٹا برج	zh:角楼
 c:turtle	Noun	ar:سلحفاة	de:Schildkröte	en:turtle	es:tortuga	fa:لاک‌پشت	fr:tortue	he:צב	hi:कछुआ	ja:亀,カメ	ko:거북이	pt:tartaruga	ru:черепаха	tr:kaplumbağa	ur:کچھوا	zh:乌龟
+c:tuxedo	Noun	ar:بدلة سهرة	de:Smoking	en:tuxedo	es:esmoquin	fa:تاکسیدو	fr:smoking	he:טוקסידו	hi:टक्सीडो	ja:タキシード	ko:턱시도	pt:smoking	ru:смокинг	tr:smokin	ur:ٹکسیڈو	zh:燕尾服
 c:tv-network	Noun	ar:شبكة تلفزيونية	de:Fernsehsender Netz	en:TV network	es:cadena televisiva	fa:شبکه تلویزیونی	fr:chaîne de télévision	he:רשת טלוויזיה	hi:टीवी नेटवर्क	ja:テレビネットワーク	ko:TV 방송망	pt:rede de TV	ru:телесеть	tr:TV ağı	ur:ٹی وی نیٹ ورک	zh:电视网
 c:tv-remote	Noun	ar:ريموت تلفزيون	de:TV-Fernbedienung	en:TV remote	es:mando a distancia	fa:کنترل تلویزیون	fr:télécommande TV	he:שלט טלוויזיה	hi:टीवी रिमोट	ja:テレビリモコン	ko:TV 리모컨	pt:comando de TV	ru:пульт телевизора	tr:TV kumandası	ur:ٹی وی ریموٹ	zh:电视遥控器
 c:tv-series	Noun	ar:مسلسل تلفزيوني	de:Fernsehserie	en:TV series	es:serie de televisión	fa:سریال تلویزیونی	fr:série télévisée	he:סדרת טלוויזיה	hi:टीवी श्रृंखला	ja:テレビシリーズ	ko:TV 드라마	pt:série de TV	ru:телесериал	tr:TV dizisi	ur:ٹی وی سیریز	zh:电视剧
@@ -8663,6 +8700,7 @@ c:unemployment-econ	Noun	ar:بطالة	de:Arbeitslosigkeit	en:unemployment	es:de
 c:unicameral	Adjective	ar:أحادي الغرفة	de:einkameral	en:unicameral	es:unicameral	fa:تک‌مجلسی	fr:monocaméral	he:חד-קאמרלי	hi:एकसदनीय	ja:一院制	ko:단원제	pt:unicameral	ru:однопалатный	tr:tek meclisli	ur:یک ایوانی	zh:一院制
 c:unicorn	Noun	ar:وحيد القرن	de:Einhorn	en:unicorn	es:unicornio	fa:تک‌شاخ	fr:licorne	he:חד קרן	hi:यूनिकॉर्न	ja:ユニコーン	ko:유니콘	pt:unicórnio	ru:единорог	tr:tekboynuz	ur:وحیدالقرن	zh:独角兽
 c:uniform	Noun	ar:زي عسكري	de:Uniform	en:uniform	es:uniforme	fa:یونیفرم,لباس فرم	fr:uniforme	he:מדים	hi:वर्दी	ja:制服,軍服	ko:제복,군복	pt:uniforme,farda	ru:форма,мундир	tr:üniforma	ur:وردی	zh:制服,军服
+c:uniform-wear	Noun	ar:زي رسمي	de:Uniform	en:uniform	es:uniforme	fa:یونیفرم	fr:uniforme	he:מדים	hi:वर्दी	ja:制服	ko:유니폼	pt:uniforme	ru:униформа	tr:üniforma	ur:یونیفارم	zh:制服
 c:uniformitarianism	Noun	ar:المنتظمية	de:Uniformitarismus	en:uniformitarianism	es:uniformitarismo	fa:یکنواختی‌گرایی	fr:uniformitarisme	he:אחידנות	hi:एकरूपतावाद	ja:斉一説	ko:동일과정설	pt:uniformitarismo	ru:актуализм	tr:tekdüzecilik	ur:یکسانیت	zh:均变论
 c:unilateralism	Noun	ar:أحادية الجانب	de:Unilateralismus	en:unilateralism	es:unilateralismo	fa:یک‌جانبه‌گرایی	fr:unilatéralisme	he:חד-צדדיות	hi:एकपक्षवाद	ja:単独主義	ko:일방주의	pt:unilateralismo	ru:унилатерализм	tr:tek taraflılık	ur:یک طرفہ پالیسی	zh:单边主义
 c:union	Noun	ar:اتحاد	de:Vereinigung	en:union	es:unión	fa:اجتماع	fr:union	he:איחוד	hi:सर्वसंघ	ja:和集合	ko:합집합	pt:união	ru:объединение	tr:birleşim	ur:اشتراک	zh:并集
@@ -8808,6 +8846,7 @@ c:vine-snake	Noun	ar:ثعبان الكرمة	de:Peitschennatter	en:vine snake	es
 c:vinegaroon	Noun	ar:عقرب الخل	de:Geißelskopion	en:vinegaroon,whip scorpion	es:telífono,escorpión látigo	fa:اوریسینگی	fr:uropyge,télyphone	he:עקרב שוט	hi:विनेगरून	ja:ウデムシ	ko:채찍전갈	pt:uropígio,escorpião-chicote	ru:жгутоногие,телифон	tr:sirke akrebi	ur:سرکہ عقرب	zh:鞭蝎
 c:vineyard	Noun	ar:كرم	de:Weinberg	en:vineyard	es:viñedo	fa:تاکستان	fr:vignoble	he:כרם	hi:अंगूर का बाग़	ja:ブドウ園	ko:포도원	pt:vinhedo	ru:виноградник	tr:bağ	ur:انگور کا باغ	zh:葡萄园
 c:vinson-massif	Noun	ar:كتلة فنسون	de:Vinson-Massiv	en:Vinson Massif	es:macizo Vinson	fa:ماسیف وینسون	fr:massif Vinson	he:מאסיב וינסון	hi:विंसन मेसिफ़	ja:ヴィンソン・マシフ	ko:빈슨 매시프	pt:maciço Vinson	ru:массив Винсон	tr:Vinson Masifi	ur:ونسن ماسف	zh:文森山
+c:vintage-clothing	Noun	ar:ملابس عتيقة	de:Vintage-Kleidung	en:vintage clothing	es:ropa vintage	fa:لباس قدیمی	fr:vêtements vintage	he:ביגוד וינטג'	hi:विंटेज कपड़े	ja:ヴィンテージ服	ko:빈티지 의류	pt:roupa vintage	ru:винтажная одежда	tr:vintage giyim	ur:قدیمی لباس	zh:复古服装
 c:viola	Noun	ar:فيولا,كمان ألطو	de:Viola,Bratsche	en:viola	es:viola	fa:ویولا	fr:alto,viole	he:ויולה,אלט	hi:वायोला	ja:ヴィオラ,ビオラ	ko:비올라	pt:viola	ru:альт,виола	tr:viyola	ur:وایولا	zh:中提琴
 c:violet	Noun	ar:بنفسج	de:Veilchen	en:violet	es:violeta	fa:بنفشه	fr:violette	he:סיגלית	hi:बनफ़्शा	ja:スミレ,菫	ko:제비꽃	pt:violeta	ru:фиалка	tr:menekşe	ur:بنفشہ	zh:紫罗兰
 c:violin	Noun	ar:كمان	de:Geige,Violine	en:violin	es:violín	fa:ویولن	fr:violon	he:כינור	hi:वायलिन	ja:バイオリン	ko:바이올린	pt:violino	ru:скрипка	tr:keman	ur:وائلن	zh:小提琴
@@ -8968,6 +9007,7 @@ c:website-internet	Noun	ar:موقع إلكتروني	de:Webseite	en:website	es:s
 c:weddell-sea	Noun	ar:بحر ويديل	de:Weddellmeer	en:Weddell Sea	es:mar de Weddell	fa:دریای ودل	fr:mer de Weddell	he:ים ודל	hi:वेडेल सागर	ja:ウェッデル海	ko:웨들해	pt:mar de Weddell	ru:море Уэдделла	tr:Weddell Denizi	ur:ویڈل سمندر	zh:威德尔海
 c:wedding	Noun	ar:زفاف,عرس	de:Hochzeit	en:wedding	es:boda,casamiento	fa:عروسی,ازدواج	fr:mariage,noces	he:חתונה	hi:शादी,विवाह	ja:結婚式	ko:결혼식	pt:casamento	ru:свадьба	tr:düğün	ur:شادی,بیاہ	zh:婚礼
 c:wedding-band	Noun	ar:دبلة الزواج,خاتم الزواج	de:Ehering,Trauring	en:wedding band,wedding ring	es:alianza,anillo de boda	fa:حلقه ازدواج	fr:alliance,anneau de mariage	he:טבעת נישואין	hi:विवाह की अंगूठी	ja:結婚指輪	ko:결혼 반지	pt:aliança	ru:обручальное кольцо	tr:nikah yüzüğü,alyans	ur:شادی کی انگوٹھی	zh:婚戒,结婚戒指
+c:wedding-dress	Noun	ar:فستان زفاف	de:Hochzeitskleid	en:wedding dress	es:vestido de novia	fa:لباس عروس	fr:robe de mariée	he:שמלת כלה	hi:शादी का पोशाक	ja:ウェディングドレス	ko:웨딩 드레스	pt:vestido de noiva	ru:свадебное платье	tr:gelinlik	ur:شادی کا لباس	zh:婚纱
 c:weed	Noun	ar:عشب ضار,نبتة ضارة	de:Unkraut	en:weed	es:mala hierba,maleza	fa:علف هرز	fr:mauvaise herbe	he:עשב שוטה	hi:खरपतवार	ja:雑草	ko:잡초	pt:erva daninha	ru:сорняк	tr:yabani ot	ur:گھاس پھوس	zh:杂草
 c:weed-puller	Noun	ar:أداة نزع الأعشاب	de:Unkrautstecher	en:weed puller	es:desyerbador	fa:علف‌کش	fr:arrache-mauvaises herbes	he:עקירת עשבים	hi:खरपतवार हटाने वाला	ja:草引き	ko:잡초 제거기	pt:arrancador de ervas daninhas	ru:корнеизвлекатель	tr:yabani ot söküm aleti	ur:گھاس کا اکھاڑنے والا	zh:拔草器
 c:week	Noun	ar:أسبوع	de:Woche	en:week	es:semana	fa:هفته	fr:semaine	he:שבוע	hi:सप्ताह,हफ़्ता	ja:週	ko:주,주일	pt:semana	ru:неделя	tr:hafta	ur:ہفتہ	zh:星期,周
