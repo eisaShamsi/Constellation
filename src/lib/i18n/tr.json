@@ -929,7 +929,9 @@
     "colorByMaturityHint": "Not olgunluk durumuna göre renklendir",
     "noStratumData": "Henüz katman verisi yok — hesaplanmış katmanlara sahip bir kütüphanede Sky View'ı açın.",
     "noMaturityData": "Henüz olgunluk verisi yok — hesaplanmış olgunluğa sahip bir kütüphanede Sky View'ı açın.",
-    "noLegendData": "Veri yok."
+    "noLegendData": "Veri yok.",
+    "computeNow": "Şimdi hesapla",
+    "computing": "Hesaplanıyor…"
   },
   "libraries": {
     "searchPlaceholder": "Tüm kasalarda ara...",

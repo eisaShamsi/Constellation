@@ -966,7 +966,9 @@
     "colorByMaturityHint": "Color by note maturity state",
     "noStratumData": "No stratum data yet — open Sky View on a library with computed strata.",
     "noMaturityData": "No maturity data yet — open Sky View on a library with computed maturity.",
-    "noLegendData": "No data."
+    "noLegendData": "No data.",
+    "computeNow": "Compute now",
+    "computing": "Computing…"
   },
   "libraries": {
     "searchPlaceholder": "Search all libraries...",

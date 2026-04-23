@@ -929,7 +929,9 @@
     "colorByMaturityHint": "Nach Notizreifegrad einfärben",
     "noStratumData": "Noch keine Schichtdaten — Sky View in einer Bibliothek mit berechneten Schichten öffnen.",
     "noMaturityData": "Noch keine Reifedaten — Sky View in einer Bibliothek mit berechneter Reife öffnen.",
-    "noLegendData": "Keine Daten."
+    "noLegendData": "Keine Daten.",
+    "computeNow": "Jetzt berechnen",
+    "computing": "Berechne…"
   },
   "libraries": {
     "searchPlaceholder": "Alle Bibliotheken durchsuchen...",

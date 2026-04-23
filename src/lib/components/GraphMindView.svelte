@@ -53,6 +53,7 @@
 		libraryColorMap = {} as Record<string, string>,
 		searchMatchIds = null as Set<string> | null,
 		allNotes = [] as {name: string; path: string; libraryName: string}[],
+		onRequestEnrichment = undefined as (() => void | Promise<void>) | undefined,
 	}: {
 		nodes: SkyNode[];
 		links: SkyLink[];
@@ -67,7 +68,17 @@
 		lensCommunityAssignments?: Map<string, number> | null;
 		searchMatchIds?: Set<string> | null;
 		allNotes?: {name: string; path: string; libraryName: string}[];
+		/** Fired when the legend is in stratum/maturity mode but no
+		 *  enrichment data exists on any node. Parent should call
+		 *  enrichNodesBackground() (or equivalent) and update `nodes`
+		 *  so the legend populates. */
+		onRequestEnrichment?: () => void | Promise<void>;
 	} = $props();
+
+	// Local flag so the user can see "Computing…" while the parent runs
+	// the expensive strata/maturity pass, and the button is disabled
+	// during the request to prevent double-fire.
+	let enrichmentInFlight = $state(false);
 
 	// ─── Layer 1 state: UI only ─────────────────────────────
 	let settingsOpen = $state(false);
@@ -1098,11 +1109,24 @@
 				{#if Object.keys(activeColorMap).length === 0}
 					<div class="gm-legend-empty">
 						{#if colorBy === 'stratum'}
-							{$t('graphView.noStratumData') || 'No stratum data yet — open Sky View on a library with computed strata.'}
+							{$t('graphView.noStratumData') || 'No stratum data yet. Click below to compute.'}
 						{:else if colorBy === 'maturity'}
-							{$t('graphView.noMaturityData') || 'No maturity data yet — open Sky View on a library with computed maturity.'}
+							{$t('graphView.noMaturityData') || 'No maturity data yet. Click below to compute.'}
 						{:else}
 							{$t('graphView.noLegendData') || 'No data.'}
+						{/if}
+						{#if (colorBy === 'stratum' || colorBy === 'maturity') && onRequestEnrichment}
+							<button class="gm-legend-compute" disabled={enrichmentInFlight}
+								onclick={async () => {
+									if (enrichmentInFlight) return;
+									enrichmentInFlight = true;
+									try { await onRequestEnrichment?.(); }
+									finally { enrichmentInFlight = false; }
+								}}>
+								{enrichmentInFlight
+									? ($t('graphView.computing') || 'Computing…')
+									: ($t('graphView.computeNow') || 'Compute now')}
+							</button>
 						{/if}
 					</div>
 				{/if}
@@ -1372,7 +1396,20 @@
 		color: var(--text-muted);
 		line-height: 1.4;
 		text-align: center;
+		display: flex; flex-direction: column; gap: 8px; align-items: center;
 	}
+	.gm-legend-compute {
+		padding: 4px 10px;
+		font-size: 11px;
+		background: var(--interactive-accent);
+		color: white;
+		border: none;
+		border-radius: 4px;
+		cursor: pointer;
+		transition: opacity 120ms ease;
+	}
+	.gm-legend-compute:disabled { opacity: 0.6; cursor: default; }
+	.gm-legend-compute:not(:disabled):hover { opacity: 0.9; }
 	.gm-legend-clear {
 		width: 100%; border: none; background: transparent;
 		color: var(--interactive-accent, #7c3aed); font-size: 10px;

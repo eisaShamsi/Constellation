@@ -929,7 +929,9 @@
     "colorByMaturityHint": "צביעה לפי מצב הבשלות של הפתק",
     "noStratumData": "אין עדיין נתוני שכבה — פתח Sky View על ספרייה עם שכבות מחושבות.",
     "noMaturityData": "אין על נתוני בשלות — פתח Sky View על ספרייה עם בשלות מחושבת.",
-    "noLegendData": "אין נתונים."
+    "noLegendData": "אין נתונים.",
+    "computeNow": "חשב כעת",
+    "computing": "מחשב…"
   },
   "libraries": {
     "searchPlaceholder": "חפש בכל הכספות...",

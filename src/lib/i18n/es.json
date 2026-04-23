@@ -929,7 +929,9 @@
     "colorByMaturityHint": "Colorear por estado de madurez de la nota",
     "noStratumData": "Aún no hay datos de estrato — abre Sky View en una biblioteca con estratos calculados.",
     "noMaturityData": "Aún no hay datos de madurez — abre Sky View en una biblioteca con madurez calculada.",
-    "noLegendData": "Sin datos."
+    "noLegendData": "Sin datos.",
+    "computeNow": "Calcular ahora",
+    "computing": "Calculando…"
   },
   "libraries": {
     "searchPlaceholder": "Buscar en todas las bibliotecas...",

@@ -4571,6 +4571,18 @@
 					nodes={skyNodes}
 					links={skyLinks}
 					onNodeClick={handleSkyNodeClick}
+					onRequestEnrichment={async () => {
+						// Triggered from GraphMindView's legend empty-state
+						// when the user picks Stratum/Maturity but the data
+						// was never computed (per-boot compute removed for
+						// boot-perf — see enrichNodesBackground comment).
+						// Runs the full enrichment pass once on demand so
+						// the legend populates. skyNodes is mutated in-place;
+						// the svelte reactivity tripwire (skyVersion bump
+						// inside enrichNodesBackground's yield points) lets
+						// the graph reactive updates propagate.
+						await enrichNodesBackground($libraries);
+					}}
 					onNodeHover={(node) => {
 						if (!secondScreenOpen) return;
 						if (skyviewHoverTimer) clearTimeout(skyviewHoverTimer);

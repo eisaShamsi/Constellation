@@ -929,7 +929,9 @@
     "colorByMaturityHint": "Colorer par état de maturité de la note",
     "noStratumData": "Aucune donnée de strate encore — ouvrez Sky View sur une bibliothèque avec des strates calculées.",
     "noMaturityData": "Aucune donnée de maturité encore — ouvrez Sky View sur une bibliothèque avec maturité calculée.",
-    "noLegendData": "Aucune donnée."
+    "noLegendData": "Aucune donnée.",
+    "computeNow": "Calculer maintenant",
+    "computing": "Calcul…"
   },
   "libraries": {
     "searchPlaceholder": "Rechercher dans tous les coffres...",
