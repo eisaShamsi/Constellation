@@ -2543,10 +2543,45 @@
 
 				const libraryList = $libraries;
 				if (libraryList.length > 0 && graph.links.length > 0) {
-					const { nodes, links: gLinks } = buildSkyData(graph.links, allNotes);
-					skyNodes = nodes;
-					skyLinks = gLinks;
-					skyVersion++;
+					// MIG-001 Step 9: prefer the pre-shaped sky_* payload when
+					// the back-fill has completed (schema_versions.sky ready).
+					// Zero JS iteration over 232k edges, shape pre-built in
+					// Rust. Falls back to the legacy buildSkyData path on
+					// fresh installs where the back-fill hasn't stamped yet,
+					// so no user is left with an empty Sky View during the
+					// migration window. buildSkyData is still exported for
+					// this fallback and for rollback safety (keep one release
+					// before deleting).
+					let usedSkyTables = false;
+					try {
+						const sky = await invoke<{
+							nodes: SkyNode[];
+							links: SkyLink[];
+							isReady: boolean;
+							timingsMs: Array<[string, number]>;
+						}>('cache_boot_snapshot_sky');
+						// Trust the readiness flag — don't second-guess with a
+						// length check. A Universe with is_ready=true but zero
+						// sky_nodes is legitimately empty; falling back to
+						// buildSkyData would produce the same empty result.
+						if (sky.isReady) {
+							skyNodes = sky.nodes;
+							skyLinks = sky.links;
+							skyVersion++;
+							usedSkyTables = true;
+						}
+					} catch (err) {
+						// Surface IPC failures — during the MIG-001 window a
+						// silent catch would mask command removal, Rust
+						// panics, or serde shape drift. One warn per boot.
+						console.warn('[sky] cache_boot_snapshot_sky failed, falling back to buildSkyData:', err);
+					}
+					if (!usedSkyTables) {
+						const { nodes, links: gLinks } = buildSkyData(graph.links, allNotes);
+						skyNodes = nodes;
+						skyLinks = gLinks;
+						skyVersion++;
+					}
 				}
 
 				// Measure how long applying the graph to reactive state took.
