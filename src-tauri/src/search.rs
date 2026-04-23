@@ -534,6 +534,76 @@ fn init_db(path: &Path) -> Result<Connection, String> {
         END;
     ").map_err(|e| format!("Failed to create sky_link triggers: {}", e))?;
 
+    // ─── Sky-node triggers (MIG-001 Step 4) ─────────────────────────────
+    // Keep sky_nodes in lock-step with note_meta. Orphans are preserved
+    // intrinsically (Invariant 1): a row exists in sky_nodes for every
+    // row in note_meta regardless of whether note_links references it,
+    // because the trigger fires on note_meta writes directly.
+    //
+    // link_count / outgoing_count stay at 0 here. They're computed on
+    // the read side in Step 8's new IPC (COUNT(*) GROUP BY over
+    // sky_links) rather than maintained at write time. Per-link bumps
+    // would require cross-table triggers (note_links trigger also
+    // updating sky_nodes counters) that complicate the write path for
+    // data that a single SQL query can derive at read time cheaply.
+    // Enrichment columns (stratum, maturity, origin_type) land in
+    // Step 7 via a separate trigger on properties_json changes.
+    //
+    // Rename cascade: the AU trigger handles both path renames (note
+    // file moved) and name renames (display name changed). When path
+    // changes, the sky_nodes row's PK changes, so we DELETE-then-INSERT;
+    // sky_links.source_path is migrated to the new path. When name
+    // changes, sky_links.target_name is also migrated — cross-library
+    // name collisions are accepted per Invariant 3 (same behavior as
+    // existing note_links target_name resolution). Step 6 verifies
+    // this coverage end-to-end.
+    //
+    // The AU WHEN guard limits firing to structural changes
+    // (path / name / library_name). Frequent note saves that only
+    // touch modified / content_hash / body_text etc. don't cascade
+    // into sky_* unnecessarily — that's the typing-latency guardrail
+    // (Invariant 8).
+    conn.execute_batch("
+        CREATE TRIGGER IF NOT EXISTS note_meta_sky_ai
+        AFTER INSERT ON note_meta
+        BEGIN
+            INSERT OR REPLACE INTO sky_nodes (path, id, name, library_name, updated_at)
+            VALUES (NEW.path, LOWER(NEW.name), NEW.name, NEW.library_name, strftime('%s','now'));
+        END;
+
+        CREATE TRIGGER IF NOT EXISTS note_meta_sky_ad
+        AFTER DELETE ON note_meta
+        BEGIN
+            DELETE FROM sky_nodes WHERE path = OLD.path;
+            -- Cascade: outgoing edges sourced from the deleted note
+            -- must go too. Incoming edges (where this note was the
+            -- target) are left alone — the source notes still exist
+            -- and their note_links rows remain valid; the absent
+            -- target will resolve as an orphan/red wikilink.
+            DELETE FROM sky_links WHERE source_path = OLD.path;
+        END;
+
+        CREATE TRIGGER IF NOT EXISTS note_meta_sky_au
+        AFTER UPDATE ON note_meta
+        WHEN OLD.path IS NOT NEW.path
+          OR OLD.name IS NOT NEW.name
+          OR OLD.library_name IS NOT NEW.library_name
+        BEGIN
+            -- Replace the sky_nodes row (handles path change as a
+            -- delete+insert since path is the PK, and name/library
+            -- changes as an in-place upsert).
+            DELETE FROM sky_nodes WHERE path = OLD.path;
+            INSERT OR REPLACE INTO sky_nodes (path, id, name, library_name, updated_at)
+            VALUES (NEW.path, LOWER(NEW.name), NEW.name, NEW.library_name, strftime('%s','now'));
+
+            -- Migrate edges referencing the old identity.
+            UPDATE sky_links SET source_path = NEW.path
+                WHERE source_path = OLD.path AND OLD.path IS NOT NEW.path;
+            UPDATE sky_links SET target_name = NEW.name
+                WHERE target_name = OLD.name AND OLD.name IS NOT NEW.name;
+        END;
+    ").map_err(|e| format!("Failed to create sky_node triggers: {}", e))?;
+
     // ─── One-time FTS5 rebuild after tokenizer migration ─────────────
     // If we bumped past FTS_SCHEMA_VERSION above we dropped the old
     // `notes_fts` + `notes_vocab`. The `CREATE VIRTUAL TABLE IF NOT
