@@ -180,6 +180,7 @@ c:album	Noun	ar:ألبوم	de:Album	en:album	es:álbum	fa:آلبوم	fr:album	he
 c:alchemy	Noun	ar:الكيمياء	de:Alchemie	en:alchemy	es:alquimia	fa:کیمیاگری	fr:alchimie	he:אלכימיה	hi:कीमिया	ja:錬金術	ko:연금술	pt:alquimia	ru:алхимия	tr:simya	ur:کیمیا	zh:炼金术
 c:alcohol	Noun	ar:كحول	de:Alkohol	en:alcohol	es:alcohol	fa:الکل	fr:alcool	he:כוהל,אלכוהול	hi:एल्कोहल,मद्य	ja:アルコール	ko:알코올	pt:álcool	ru:спирт,алкоголь	tr:alkol	ur:الکحل,الکوحل	zh:醇,酒精
 c:aldehyde	Noun	ar:ألدهيد	de:Aldehyd	en:aldehyde	es:aldehído	fa:آلدئید	fr:aldéhyde	he:אלדהיד	hi:एल्डिहाइड	ja:アルデヒド	ko:알데하이드	pt:aldeído	ru:альдегид	tr:aldehit	ur:الڈیہائیڈ	zh:醛
+c:alder-tree	Noun	ar:الألدار	de:Erle	en:alder	es:aliso	fa:توسکا	fr:aulne	he:אלמון	hi:एल्डर	ja:ハンノキ	ko:오리나무	pt:amieiro	ru:ольха	tr:kızılağaç	ur:الڈر	zh:桤木
 c:alder-wood	Noun	ar:خشب الألدر	de:Erlenholz	en:alder wood	es:madera de aliso	fa:چوب توسکا	fr:bois d'aulne	he:עץ אלנוס	hi:एल्डर	ja:ハンノキ材	ko:오리나무	pt:madeira de amieiro	ru:ольха древесина	tr:kızılağaç	ur:ایلڈر	zh:赤杨
 c:alexandrite	Noun	ar:الإسكندريت	de:Alexandrit	en:alexandrite	es:alejandrita	fa:الکساندریت	fr:alexandrite	he:אלכסנדריט	hi:एलेग्जेंड्राइट	ja:アレキサンドライト	ko:알렉산드라이트	pt:alexandrita	ru:александрит	tr:aleksandrit	ur:الیکزینڈرائٹ	zh:变石
 c:algebra	Noun	ar:الجبر	de:Algebra	en:algebra	es:álgebra	fa:جبر	fr:algèbre	he:אלגברה	hi:बीजगणित	ja:代数	ko:대수학	pt:álgebra	ru:алгебра	tr:cebir	ur:الجبرا	zh:代数
@@ -424,6 +425,7 @@ c:appeal-law	Noun	ar:الاستئناف	de:Berufung	en:appeal	es:apelación	fa:�
 c:appeal-legal	Noun	ar:استئناف قضائي	de:Rechtsmittel	en:legal appeal	es:apelación	fa:تجدیدنظر	fr:appel judiciaire	he:ערעור	hi:अपील	ja:控訴	ko:항소	pt:apelação	ru:апелляция	tr:temyiz	ur:اپیل	zh:上诉
 c:appendix	Noun	ar:الزائدة الدودية	de:Blinddarm	en:appendix	es:apéndice	fa:آپاندیس	fr:appendice	he:תוספתן	hi:परिशिष्ट	ja:虫垂	ko:충수	pt:apêndice	ru:аппендикс	tr:apandis	ur:اپینڈکس	zh:阑尾
 c:apple	Noun	ar:تفاحة	de:Apfel	en:apple	es:manzana	fa:سیب	fr:pomme	he:תפוח	hi:सेब	ja:リンゴ,林檎	ko:사과	pt:maçã	ru:яблоко	tr:elma	ur:سیب	zh:苹果
+c:apple-tree	Noun	ar:شجرة التفاح	de:Apfelbaum	en:apple tree	es:manzano	fa:درخت سیب	fr:pommier	he:עץ תפוח	hi:सेब का पेड़	ja:リンゴの木	ko:사과나무	pt:macieira	ru:яблоня	tr:elma ağacı	ur:سیب کا درخت	zh:苹果树
 c:apple-var	Noun	ar:تفاح فاكهة	de:Apfel Frucht	en:apple fruit	es:manzana	fa:سیب میوه	fr:pomme fruit	he:תפוח פרי	hi:सेब फल	ja:リンゴ果実	ko:사과 과일	pt:maçã	ru:яблоко плод	tr:elma meyve	ur:سیب پھل	zh:苹果果
 c:application	Noun	ar:تطبيق	de:Anwendung,App	en:application,app	es:aplicación,app	fa:برنامه,اپلیکیشن	fr:application,appli	he:יישום,אפליקציה	hi:एप्लिकेशन,ऐप	ja:アプリケーション,アプリ	ko:애플리케이션,앱	pt:aplicação,aplicativo,app	ru:приложение	tr:uygulama	ur:ایپلی کیشن,ایپ	zh:应用程序,应用
 c:appreciation	Noun	ar:ارتفاع القيمة	de:Wertsteigerung	en:appreciation	es:apreciación	fa:افزایش ارزش	fr:appréciation	he:עלייה בערך	hi:मूल्यवृद्धि	ja:値上がり	ko:가치 상승	pt:valorização	ru:удорожание	tr:değer artışı	ur:قدر میں اضافہ	zh:升值
@@ -516,6 +518,7 @@ c:arugula-veg	Noun	ar:جرجير	de:Rucola	en:arugula	es:rúcula	fa:راکت	fr:
 c:ascension	Noun	ar:الصعود	de:Himmelfahrt	en:ascension	es:ascensión	fa:عروج	fr:ascension	he:עלייה לשמיים	hi:स्वर्गारोहण	ja:昇天	ko:승천	pt:ascensão	ru:вознесение	tr:yükseliş	ur:معراج	zh:升天
 c:asceticism	Noun	ar:الزهد,التقشف	de:Asketismus,Askese	en:asceticism	es:ascetismo	fa:زهد,ریاضت	fr:ascétisme	he:סגפנות,אסקזה	hi:तपस्या,वैराग्य	ja:禁欲主義,苦行	ko:금욕주의,고행	pt:ascetismo	ru:аскетизм	tr:çilecilik,zühd	ur:زہد,ریاضت	zh:禁欲主义,苦行
 c:ash	Noun	ar:رماد	de:Asche	en:ash	es:ceniza	fa:خاکستر	fr:cendre	he:אפר	hi:राख	ja:灰	ko:재	pt:cinza	ru:пепел	tr:kül	ur:راکھ	zh:灰,灰烬
+c:ash-tree	Noun	ar:دردار الجبل	de:Esche	en:ash tree	es:fresno	fa:زبان گنجشک	fr:frêne	he:מילה	hi:राख वृक्ष	ja:トネリコ	ko:물푸레나무	pt:freixo	ru:ясень	tr:dişbudak	ur:ایش درخت	zh:白蜡树
 c:ash-wood	Noun	ar:خشب الدردار	de:Eschenholz	en:ash wood	es:madera de fresno	fa:چوب زبان‌گنجشک	fr:bois de frêne	he:עץ מילה	hi:एश लकड़ी	ja:タモ材	ko:물푸레나무	pt:madeira de freixo	ru:ясень древесина	tr:dişbudak ağacı	ur:راکھ کی لکڑی	zh:白蜡木
 c:ashlar	Noun	ar:حجر منحوت	de:Quaderstein	en:ashlar	es:sillar	fa:سنگ تراشیده	fr:pierre de taille	he:אבן חצובה	hi:कटा पत्थर	ja:切石	ko:각돌	pt:silharia	ru:тёсаный камень	tr:yonu taş	ur:تراشا پتھر	zh:方石
 c:ashoka	Noun	ar:أشوكا	de:Ashoka	en:Ashoka	es:Asoka	fa:آشوکا	fr:Ashoka	he:אשוקה	hi:अशोक	ja:アショーカ王	ko:아소카	pt:Asoka	ru:Ашока	tr:Aşoka	ur:اشوک	zh:阿育王
@@ -524,6 +527,7 @@ c:ask	Verb	ar:سأل	de:fragen	en:ask	es:preguntar	fa:پرسیدن	fr:demander	h
 c:asparagus	Noun	ar:هليون	de:Spargel	en:asparagus	es:espárrago	fa:مارچوبه	fr:asperge	he:אספרגוס	hi:शतावरी	ja:アスパラガス	ko:아스파라거스	pt:espargo	ru:спаржа	tr:kuşkonmaz	ur:ہلیون	zh:芦笋
 c:asparagus-veg	Noun	ar:هليون	de:Spargel	en:asparagus	es:espárrago	fa:مارچوبه	fr:asperge	he:אספרגוס	hi:शतावरी	ja:アスパラガス	ko:아스파라거스	pt:espargos	ru:спаржа	tr:kuşkonmaz	ur:ایسپارگس	zh:芦笋
 c:aspect	Noun	ar:جهة الفعل	de:Aspekt	en:aspect	es:aspecto verbal	fa:وجه فعل	fr:aspect verbal	he:אספקט	hi:पक्ष	ja:アスペクト	ko:상	pt:aspecto verbal	ru:вид глагола	tr:eylem görünüşü	ur:فعل کا پہلو	zh:体
+c:aspen-tree	Noun	ar:الحور الرجراج	de:Espe	en:aspen	es:álamo temblón	fa:صنوبر لرزان	fr:tremble	he:צפצפה רועדת	hi:एस्पेन	ja:ヤマナラシ	ko:사시나무	pt:álamo-tremedor	ru:осина	tr:titrek kavak	ur:ایسپن	zh:颤杨
 c:aspirator	Noun	ar:شافط طبي	de:Aspirator	en:aspirator	es:aspirador médico	fa:آسپیراتور	fr:aspirateur médical	he:שואב	hi:एस्पिरेटर	ja:吸引器	ko:흡인기	pt:aspirador médico	ru:аспиратор	tr:aspiratör	ur:اسپیریٹر	zh:吸引器
 c:assassin-bug	Noun	ar:حشرة القاتلة	de:Raubwanze	en:assassin bug	es:chinche asesina	fa:سن قاتل	fr:réduves	he:חרק מתנקש	hi:हत्यारा खटमल	ja:サシガメ	ko:장님노린재	pt:percevejo-assassino	ru:хищнец	tr:suikastçı böceği	ur:قاتل کیڑا	zh:猎蝽
 c:assault	Noun	ar:اعتداء	de:Angriff,Körperverletzung	en:assault	es:agresión,asalto	fa:حمله,تعرض	fr:agression,assaut	he:תקיפה	hi:हमला	ja:暴行,襲撃	ko:폭행,공격	pt:agressão,assalto	ru:нападение,побои	tr:saldırı	ur:حملہ	zh:攻击,袭击
@@ -694,6 +698,7 @@ c:bamboo	Noun	ar:الخيزران,البامبو	de:Bambus	en:bamboo	es:bambú	f
 c:bamboo-material	Noun	ar:خيزران	de:Bambus	en:bamboo	es:bambú	fa:بامبو	fr:bambou	he:במבוק	hi:बांस	ja:竹	ko:대나무	pt:bambu	ru:бамбук	tr:bambu	ur:بانس	zh:竹子
 c:bamboo-material-type	Noun	ar:خشب الخيزران	de:Bambus-Material	en:bamboo material	es:bambú material	fa:چوب بامبو	fr:bambou matériau	he:עץ במבוק	hi:बांस पदार्थ	ja:竹材	ko:대나무 재료	pt:bambu material	ru:бамбук материал	tr:bambu malzeme	ur:بانس مواد	zh:竹材
 c:banana	Noun	ar:موز	de:Banane	en:banana	es:plátano,banana	fa:موز	fr:banane	he:בננה	hi:केला	ja:バナナ	ko:바나나	pt:banana	ru:банан	tr:muz	ur:کیلا	zh:香蕉
+c:banana-tree	Noun	ar:شجرة الموز	de:Bananenstaude	en:banana tree	es:bananero	fa:درخت موز	fr:bananier	he:עץ בננה	hi:केला का पेड़	ja:バナナの木	ko:바나나 나무	pt:bananeira	ru:банановое дерево	tr:muz ağacı	ur:کیلے کا درخت	zh:香蕉树
 c:bandage	Noun	ar:ضمادة	de:Verband,Bandage	en:bandage	es:vendaje,venda	fa:باند,پانسمان	fr:bandage,pansement	he:תחבושת	hi:पट्टी	ja:包帯	ko:붕대	pt:bandagem,atadura	ru:бинт,повязка	tr:bandaj,sargı	ur:پٹی	zh:绷带
 c:bandgap	Noun	ar:الفجوة الطاقية	de:Bandlücke	en:bandgap	es:banda prohibida	fa:شکاف نواری	fr:bande interdite	he:פס אסור	hi:बैंड अंतराल	ja:バンドギャップ	ko:밴드갭	pt:gap de banda	ru:запрещённая зона	tr:bant aralığı	ur:بینڈ خلا	zh:带隙
 c:bandwidth	Noun	ar:عرض النطاق الترددي	de:Bandbreite	en:bandwidth	es:ancho de banda	fa:پهنای باند	fr:bande passante,largeur de bande	he:רוחב פס	hi:बैंडविड्थ	ja:帯域幅	ko:대역폭	pt:largura de banda	ru:пропускная способность	tr:bant genişliği	ur:بینڈویڈتھ	zh:带宽,频宽
@@ -814,6 +819,7 @@ c:bee	Noun	ar:نحلة	de:Biene	en:bee	es:abeja	fa:زنبور	fr:abeille	he:דב
 c:bee-animal	Noun	ar:نحلة	de:Biene	en:bee	es:abeja	fa:زنبور عسل	fr:abeille	he:דבורה	hi:मधुमक्खी	ja:ミツバチ	ko:벌	pt:abelha	ru:пчела	tr:arı	ur:شہد کی مکھی	zh:蜜蜂
 c:bee-eater	Noun	ar:وروار	de:Bienenfresser	en:bee-eater	es:abejaruco	fa:زنبورخور	fr:guêpier	he:שלהב	hi:मधुभक्षी	ja:ハチクイ	ko:벌잡이새	pt:abelharuco	ru:щурка	tr:arı kuşu	ur:شہد خور	zh:蜂虎
 c:beech	Noun	ar:الزان	de:Buche	en:beech	es:haya	fa:راش	fr:hêtre	he:אשור	hi:बीच	ja:ブナ	ko:너도밤나무	pt:faia	ru:бук	tr:kayın	ur:بیچ	zh:山毛榉
+c:beech-tree	Noun	ar:زان	de:Buche	en:beech	es:haya	fa:راش	fr:hêtre	he:אשור	hi:बीच	ja:ブナ	ko:너도밤나무	pt:faia	ru:бук	tr:kayın	ur:بیچ	zh:山毛榉
 c:beech-wood	Noun	ar:خشب الزان	de:Buchenholz	en:beech wood	es:madera de haya	fa:چوب راش	fr:bois de hêtre	he:עץ אשור	hi:बीच की लकड़ी	ja:ブナ材	ko:너도밤나무	pt:madeira de faia	ru:бук древесина	tr:kayın ağacı	ur:بیچ کی لکڑی	zh:山毛榉
 c:beef	Noun	ar:لحم بقر	de:Rindfleisch	en:beef	es:carne de res	fa:گوشت گاو	fr:bœuf	he:בשר בקר	hi:गोमांस	ja:牛肉	ko:소고기	pt:carne de vaca	ru:говядина	tr:dana eti	ur:گائے کا گوشت	zh:牛肉
 c:beekeeper	Noun	ar:نحال	de:Imker	en:beekeeper	es:apicultor	fa:زنبوردار	fr:apiculteur	he:כוורן	hi:मधुमक्खी पालक	ja:養蜂家	ko:양봉가	pt:apicultor	ru:пчеловод	tr:arıcı	ur:شہد کی مکھیاں پالنے والا	zh:养蜂人
@@ -927,6 +933,7 @@ c:biosphere-eco	Noun	ar:غلاف حيوي	de:Biosphäre	en:biosphere	es:biosfera
 c:bipolar	Noun	ar:اضطراب ثنائي القطب	de:bipolare Störung,manisch-depressive Erkrankung	en:bipolar disorder,bipolar	es:trastorno bipolar	fa:اختلال دوقطبی	fr:trouble bipolaire	he:הפרעה דו קוטבית	hi:द्विध्रुवी विकार,बाइपोलर डिसऑर्डर	ja:双極性障害,躁うつ病	ko:양극성장애,조울증	pt:transtorno bipolar	ru:биполярное расстройство	tr:bipolar bozukluk,iki uçlu bozukluk	ur:ذہنی دو قطبی خرابی	zh:双相情感障碍,躁郁症
 c:bipolar-disorder	Noun	ar:اضطراب ثنائي القطب	de:bipolare Störung	en:bipolar disorder	es:trastorno bipolar	fa:اختلال دوقطبی	fr:trouble bipolaire	he:הפרעה דו-קוטבית	hi:बाइपोलर विकार	ja:双極性障害	ko:양극성 장애	pt:transtorno bipolar	ru:биполярное расстройство	tr:bipolar bozukluk	ur:دو قطبی عارضہ	zh:双相情感障碍
 c:birch	Noun	ar:البتولا,شجرة البتولا	de:Birke	en:birch	es:abedul	fa:توس	fr:bouleau	he:ליבנה	hi:भोजपत्र,बर्च	ja:カバノキ,樺	ko:자작나무	pt:bétula,vidoeiro	ru:берёза	tr:huş ağacı	ur:بھوج پتر	zh:桦树
+c:birch-tree	Noun	ar:قضبان	de:Birke	en:birch	es:abedul	fa:توس	fr:bouleau	he:לבנה	hi:भोज पत्र	ja:シラカバ	ko:자작나무	pt:vidoeiro	ru:берёза	tr:huş	ur:برچ	zh:桦树
 c:birch-wood	Noun	ar:خشب البتولا	de:Birkenholz	en:birch wood	es:madera de abedul	fa:چوب توس	fr:bois de bouleau	he:עץ ליבנה	hi:बर्च की लकड़ी	ja:カバ材	ko:자작나무	pt:madeira de bétula	ru:берёзовая древесина	tr:huş ağacı	ur:برچ کی لکڑی	zh:桦木
 c:bird	Noun	ar:طائر,طير	de:Vogel	en:bird	es:pájaro,ave	fa:پرنده	fr:oiseau	he:ציפור	hi:पक्षी,चिड़िया	ja:鳥	ko:새	pt:pássaro,ave	ru:птица	tr:kuş	ur:پرندہ,چڑیا	zh:鸟
 c:bird-animal	Noun	ar:طائر	de:Vogel	en:bird	es:ave	fa:پرنده	fr:oiseau	he:ציפור	hi:पक्षी	ja:鳥	ko:새	pt:ave	ru:птица	tr:kuş	ur:پرندہ	zh:鸟
@@ -1439,6 +1446,7 @@ c:cd-rom	Noun	ar:CD-ROM	de:CD-ROM	en:CD-ROM	es:CD-ROM	fa:CD-ROM	fr:CD-ROM	he:CD-
 c:cd4-t-cell	Noun	ar:خلية تائية مساعدة	de:CD4+-T-Zelle	en:CD4+ T cell	es:célula T CD4+	fa:سلول T کمکی	fr:lymphocyte T CD4+	he:תא T עוזר	hi:सहायक T कोशिका	ja:ヘルパーT細胞	ko:보조 T 세포	pt:célula T auxiliar	ru:Т-хелпер	tr:yardımcı T hücresi	ur:مددگار T خلیہ	zh:辅助性T细胞
 c:cd8-t-cell	Noun	ar:خلية تائية سامة	de:CD8+-T-Zelle	en:cytotoxic T cell	es:célula T citotóxica	fa:سلول T سمی	fr:lymphocyte T cytotoxique	he:תא T ציטוטוקסי	hi:साइटोटॉक्सिक T कोशिका	ja:細胞傷害性T細胞	ko:세포독성 T 세포	pt:célula T citotóxica	ru:цитотоксическая T-клетка	tr:sitotoksik T hücresi	ur:زہریلا T خلیہ	zh:细胞毒性T细胞
 c:cedar	Noun	ar:أرز	de:Zeder	en:cedar	es:cedro	fa:سدر	fr:cèdre	he:ארז	hi:देवदार	ja:スギ,杉	ko:삼나무	pt:cedro	ru:кедр	tr:sedir	ur:دیودار	zh:雪松
+c:cedar-tree	Noun	ar:أرز	de:Zeder	en:cedar	es:cedro	fa:سدر	fr:cèdre	he:ארז	hi:देवदार	ja:ヒマラヤスギ	ko:삼나무	pt:cedro	ru:кедр	tr:sedir	ur:دیار	zh:雪松
 c:cedar-wood	Noun	ar:خشب الأرز	de:Zedernholz	en:cedar wood	es:madera de cedro	fa:چوب سدر	fr:bois de cèdre	he:עץ ארז	hi:देवदार की लकड़ी	ja:杉材	ko:삼나무	pt:madeira de cedro	ru:кедр древесина	tr:sedir ağacı	ur:دیودار	zh:雪松
 c:ceiling	Noun	ar:سقف,سقيفة	de:Decke,Zimmerdecke	en:ceiling	es:techo,cielo raso	fa:سقف	fr:plafond	he:תקרה	hi:छत,चादर	ja:天井	ko:천장	pt:teto	ru:потолок	tr:tavan	ur:چھت	zh:天花板,顶棚
 c:celebrate	Verb	ar:احتفل,يحتفل	de:feiern	en:celebrate	es:celebrar,festejar	fa:جشن گرفتن	fr:célébrer,fêter	he:לחגוג	hi:मनाना	ja:祝う	ko:축하하다,기념하다	pt:celebrar,festejar	ru:праздновать,отмечать	tr:kutlamak	ur:منانا,جشن منانا	zh:庆祝,庆贺
@@ -1565,6 +1573,7 @@ c:chennai	Noun	ar:تشيناي	de:Chennai	en:Chennai,Madras	es:Chennai,Madrás	f
 c:cherimoya	Noun	ar:شيريمويا	de:Cherimoya	en:cherimoya	es:chirimoya	fa:چریمویا	fr:chérimole	he:כרימויה	hi:चेरीमोया	ja:チェリモヤ	ko:체리모야	pt:cherimóia	ru:черимойя	tr:şekerli elma	ur:چیریمویا	zh:番荔枝
 c:cherokee	Noun	ar:شيروكي	de:Cherokee	en:Cherokee	es:cheroquis	fa:چروکی	fr:cherokees	he:צ'רוקי	hi:चेरोकी	ja:チェロキー族	ko:체로키족	pt:cherokees	ru:чероки	tr:Çerokiler	ur:چیروکی	zh:切罗基人
 c:cherry	Noun	ar:كرز	de:Kirsche	en:cherry	es:cereza	fa:گیلاس,آلبالو	fr:cerise	he:דובדבן	hi:चेरी	ja:さくらんぼ,チェリー	ko:체리,벚나무 열매	pt:cereja	ru:вишня,черешня	tr:kiraz,vişne	ur:چیری	zh:樱桃
+c:cherry-tree	Noun	ar:شجرة الكرز	de:Kirschbaum	en:cherry tree	es:cerezo	fa:درخت گیلاس	fr:cerisier	he:עץ דובדבן	hi:चेरी का पेड़	ja:桜	ko:벚나무	pt:cerejeira	ru:вишня	tr:kiraz ağacı	ur:چیری کا درخت	zh:樱桃树
 c:cherry-var	Noun	ar:كرز	de:Kirsche Frucht	en:cherry fruit	es:cereza	fa:گیلاس میوه	fr:cerise	he:דובדבן	hi:चेरी	ja:サクランボ	ko:체리 과일	pt:cereja	ru:вишня плод	tr:kiraz meyve	ur:چیری	zh:樱桃
 c:cherry-wood	Noun	ar:خشب الكرز	de:Kirschholz	en:cherry wood	es:madera de cerezo	fa:چوب گیلاس	fr:bois de cerisier	he:עץ דובדבן	hi:चेरी की लकड़ी	ja:チェリー材	ko:체리 나무	pt:madeira de cerejeira	ru:вишнёвая древесина	tr:kiraz ağacı	ur:چیری کی لکڑی	zh:樱桃木
 c:chervil	Noun	ar:مقدونس	de:Kerbel	en:chervil	es:perifollo	fa:شرویل	fr:cerfeuil	he:צ'רוויל	hi:चर्विल	ja:チャービル	ko:처빌	pt:cerefólio	ru:кервель	tr:frenk maydanozu	ur:چرویل	zh:细叶芹
@@ -1573,6 +1582,7 @@ c:chess-set	Noun	ar:لعبة الشطرنج	de:Schachspiel	en:chess set	es:ajedr
 c:chest	Noun	ar:صدر	de:Brust,Brustkorb	en:chest	es:pecho	fa:سینه	fr:poitrine	he:חזה	hi:छाती	ja:胸	ko:가슴	pt:peito	ru:грудь	tr:göğüs	ur:سینہ	zh:胸,胸部
 c:chestnut	Noun	ar:الكستناء	de:Kastanie	en:chestnut	es:castaño	fa:شاه‌بلوط	fr:châtaignier	he:ערמון	hi:शाहबलूत	ja:栗	ko:밤나무	pt:castanheiro	ru:каштан	tr:kestane	ur:شاہ بلوط	zh:栗子
 c:chestnut-color	Noun	ar:كستنائي	de:Kastanienbraun	en:chestnut,chestnut brown	es:castaño	fa:شاه‌بلوطی	fr:châtaigne,marron châtaigne	he:ערמוני	hi:शाहबलूती	ja:栗色	ko:밤색	pt:castanho	ru:каштановый	tr:kestane rengi	ur:شاہ بلوطی	zh:栗棕色
+c:chestnut-tree	Noun	ar:كستناء	de:Kastanie	en:chestnut	es:castaño	fa:شاه‌بلوط	fr:châtaignier	he:ערמון	hi:चेस्टनट	ja:クリ	ko:밤나무	pt:castanheiro	ru:каштан	tr:kestane	ur:شاہ بلوط	zh:栗树
 c:chestnut-wood	Noun	ar:خشب الكستناء	de:Kastanienholz	en:chestnut wood	es:madera de castaño	fa:چوب شاه‌بلوط	fr:bois de châtaignier	he:עץ ערמון	hi:शाहबलूत	ja:栗材	ko:밤나무	pt:madeira de castanheiro	ru:каштан древесина	tr:kestane ağacı	ur:چیسٹ نٹ	zh:栗木
 c:chi-square	Noun	ar:اختبار كاي تربيع	de:Chi-Quadrat-Test	en:chi-square test	es:prueba chi-cuadrado	fa:آزمون کای اسکور	fr:test du khi-deux	he:מבחן חי בריבוע	hi:काई-वर्ग परीक्षण	ja:カイ二乗検定	ko:카이제곱 검정	pt:teste qui-quadrado	ru:критерий хи-квадрат	tr:ki kare testi	ur:کائی اسکوائر ٹیسٹ	zh:卡方检验
 c:chia-seed	Noun	ar:بذور الشيا	de:Chiasamen	en:chia seed	es:chía	fa:دانه چیا	fr:graine de chia	he:זרע צ'יה	hi:चिया बीज	ja:チアシード	ko:치아씨드	pt:semente de chia	ru:семена чиа	tr:chia tohumu	ur:چیا کے بیج	zh:奇异籽
@@ -1798,6 +1808,7 @@ c:cocktail-dress	Noun	ar:فستان كوكتيل	de:Cocktailkleid	en:cocktail dr
 c:cocktail-drink	Noun	ar:كوكتيل	de:Cocktail	en:cocktail	es:cóctel	fa:کوکتل	fr:cocktail	he:קוקטייל	hi:कॉकटेल	ja:カクテル	ko:칵테일	pt:coquetel	ru:коктейль	tr:kokteyl	ur:کاک ٹیل	zh:鸡尾酒
 c:cocoa	Noun	ar:كاكاو	de:Kakao	en:cocoa	es:cacao	fa:کاکائو	fr:cacao	he:קקאו	hi:कोको	ja:ココア	ko:코코아	pt:cacau	ru:какао	tr:kakao	ur:کوکو	zh:可可
 c:coconut	Noun	ar:جوز الهند	de:Kokosnuss	en:coconut	es:coco	fa:نارگیل	fr:noix de coco	he:קוקוס	hi:नारियल	ja:ココナッツ	ko:코코넛	pt:coco	ru:кокос,кокосовый орех	tr:hindistan cevizi	ur:ناریل	zh:椰子
+c:coconut-tree	Noun	ar:شجرة جوز الهند	de:Kokospalme	en:coconut tree	es:cocotero	fa:درخت نارگیل	fr:cocotier	he:עץ קוקוס	hi:नारियल पेड़	ja:ココヤシ	ko:코코넛 나무	pt:coqueiro	ru:кокосовая пальма	tr:hindistan cevizi ağacı	ur:ناریل کا درخت	zh:椰子树
 c:cocoon	Noun	ar:شرنقة الحرير	de:Kokon	en:cocoon	es:capullo	fa:پیله	fr:cocon	he:פקעת	hi:कोकून	ja:繭	ko:고치	pt:casulo	ru:кокон	tr:koza	ur:پیلہ	zh:茧
 c:cod	Noun	ar:سمك القد	de:Kabeljau,Dorsch	en:cod,codfish	es:bacalao	fa:ماهی کاد	fr:morue,cabillaud	he:בקלה	hi:कॉड मछली	ja:鱈	ko:대구	pt:bacalhau	ru:треска	tr:morina	ur:کاڈ مچھلی	zh:鳕鱼
 c:cod-fish	Noun	ar:قد	de:Dorsch	en:cod	es:bacalao	fa:ماهی روغن	fr:morue	he:בקלה	hi:कॉड	ja:タラ	ko:대구	pt:bacalhau	ru:треска	tr:morina balığı	ur:کاڈ مچھلی	zh:鳕鱼
@@ -2335,6 +2346,7 @@ c:cymbal	Noun	ar:صنج	de:Becken	en:cymbal	es:platillo	fa:سنج	fr:cymbale	he:
 c:cymbals	Noun	ar:صنوج,الصنوج	de:Becken,Zimbeln	en:cymbals	es:címbalos,platillos	fa:سنج	fr:cymbales	he:מצילתיים	hi:झांझ,मंजीरा	ja:シンバル	ko:심벌즈	pt:címbalos,pratos	ru:тарелки,цимбалы	tr:zil	ur:جھانجھ,سنج	zh:钹
 c:cyp450	Noun	ar:إنزيم السيتوكروم P450	de:Cytochrom P450	en:cytochrome P450	es:citocromo P450	fa:سیتوکروم P450	fr:cytochrome P450	he:ציטוכרום P450	hi:साइटोक्रोम P450	ja:シトクロムP450	ko:시토크롬 P450	pt:citocromo P450	ru:цитохром P450	tr:sitokrom P450	ur:سائٹوکروم P450	zh:细胞色素P450
 c:cypress	Noun	ar:سرو	de:Zypresse	en:cypress	es:ciprés	fa:سرو	fr:cyprès	he:ברוש	hi:सरो,सरू	ja:ヒノキ,糸杉	ko:사이프러스,노송나무	pt:cipreste	ru:кипарис	tr:servi	ur:سرو	zh:柏树
+c:cypress-tree	Noun	ar:سرو	de:Zypresse	en:cypress	es:ciprés	fa:سرو	fr:cyprès	he:ברוש	hi:सरू	ja:糸杉	ko:사이프러스	pt:cipreste	ru:кипарис	tr:servi	ur:سرو	zh:柏树
 c:cypress-wood	Noun	ar:خشب السرو	de:Zypressenholz	en:cypress wood	es:madera de ciprés	fa:چوب سرو	fr:bois de cyprès	he:עץ ברוש	hi:सरू की लकड़ी	ja:サイプレス材	ko:사이프러스	pt:madeira de cipreste	ru:кипарисовая древесина	tr:servi ağacı	ur:سرو کی لکڑی	zh:柏木
 c:cytokine-storm	Noun	ar:عاصفة السيتوكينات	de:Zytokinsturm	en:cytokine storm	es:tormenta de citocinas	fa:طوفان سایتوکاین	fr:tempête de cytokines	he:סערת ציטוקינים	hi:साइटोकाइन तूफान	ja:サイトカインストーム	ko:사이토카인 폭풍	pt:tempestade de citocinas	ru:цитокиновый шторм	tr:sitokin fırtınası	ur:سائٹوکائن طوفان	zh:细胞因子风暴
 c:cytokine-therapy	Noun	ar:العلاج بالسيتوكينات	de:Zytokin-Therapie	en:cytokine therapy	es:terapia con citocinas	fa:درمان با سایتوکاین	fr:thérapie par cytokines	he:טיפול בציטוקינים	hi:साइटोकाइन चिकित्सा	ja:サイトカイン療法	ko:사이토카인 치료	pt:terapia com citocinas	ru:цитокиновая терапия	tr:sitokin tedavisi	ur:سائٹوکائن علاج	zh:细胞因子疗法
@@ -2387,6 +2399,7 @@ c:database-storage	Noun	ar:قاعدة بيانات	de:Datenbank	en:database	es:b
 c:datacenter	Noun	ar:مركز بيانات	de:Rechenzentrum,Datenzentrum	en:datacenter,data center	es:centro de datos	fa:مرکز داده	fr:centre de données	he:מרכז נתונים	hi:डेटा केंद्र	ja:データセンター	ko:데이터 센터	pt:centro de dados	ru:центр обработки данных	tr:veri merkezi	ur:ڈیٹا سینٹر	zh:数据中心
 c:dataset	Noun	ar:مجموعة بيانات	de:Datensatz,Datenmenge	en:dataset	es:conjunto de datos	fa:مجموعه داده	fr:jeu de données,ensemble de données	he:מערך נתונים	hi:डेटासेट	ja:データセット	ko:데이터셋,데이터 집합	pt:conjunto de dados	ru:набор данных	tr:veri kümesi,veri seti	ur:ڈیٹا سیٹ	zh:数据集
 c:date-fruit	Noun	ar:تمر,بلح	de:Dattel	en:date	es:dátil	fa:خرما	fr:datte	he:תמר	hi:खजूर	ja:ナツメヤシ	ko:대추야자	pt:tâmara	ru:финик	tr:hurma	ur:کھجور	zh:枣,椰枣
+c:date-palm	Noun	ar:نخلة التمر	de:Dattelpalme	en:date palm	es:palmera datilera	fa:درخت خرما	fr:palmier-dattier	he:דקל תמר	hi:खजूर का पेड़	ja:ナツメヤシ	ko:대추야자나무	pt:tamareira	ru:финиковая пальма	tr:hurma ağacı	ur:کھجور کا درخت	zh:枣椰树
 c:daughter	Noun	ar:ابنة,بنت	de:Tochter	en:daughter	es:hija	fa:دختر	fr:fille	he:בת	hi:बेटी,पुत्री	ja:娘	ko:딸	pt:filha	ru:дочь	tr:kız	ur:بیٹی	zh:女儿
 c:dawn	Noun	ar:فجر	de:Morgendämmerung,Tagesanbruch	en:dawn,daybreak	es:alba,aurora	fa:سپیده‌دم,فجر	fr:aube,aurore	he:שחר	hi:भोर,उषा	ja:夜明け,暁	ko:새벽,여명	pt:alvorada,madrugada	ru:рассвет,заря	tr:şafak,tan	ur:فجر,پو پھٹنا	zh:黎明,拂晓
 c:day	Noun	ar:يوم	de:Tag	en:day	es:día	fa:روز	fr:jour	he:יום	hi:दिन	ja:日	ko:날	pt:dia	ru:день	tr:gün	ur:دن	zh:天
@@ -2652,6 +2665,7 @@ c:documentary-film	Noun	ar:فيلم وثائقي	de:Dokumentarfilm	en:documentar
 c:dog	Noun	ar:كلب	de:Hund	en:dog	es:perro	fa:سگ	fr:chien	he:כלב	hi:कुत्ता	ja:犬	ko:개	pt:cachorro,cão	ru:собака,пёс	tr:köpek	ur:کتا	zh:狗
 c:dog-animal	Noun	ar:كلب	de:Hund	en:dog	es:perro	fa:سگ	fr:chien	he:כלב	hi:कुत्ता	ja:犬	ko:개	pt:cachorro	ru:собака	tr:köpek	ur:کتا	zh:狗
 c:dogmatism-epistemic	Noun	ar:العقائدية المعرفية	de:epistemischer Dogmatismus	en:epistemic dogmatism	es:dogmatismo epistémico	fa:جزم‌اندیشی معرفتی	fr:dogmatisme épistémique	he:דוגמטיזם אפיסטמי	hi:ज्ञानमीमांसा कट्टरवाद	ja:認識的独断主義	ko:인식론적 독단주의	pt:dogmatismo epistêmico	ru:эпистемический догматизм	tr:epistemik dogmatizm	ur:معرفتی کٹرپن	zh:认识独断论
+c:dogwood-tree	Noun	ar:شجرة القرانيا	de:Hartriegel	en:dogwood	es:cornejo	fa:درخت زغال‌اخته	fr:cornouiller	he:קרנה	hi:डॉगवुड	ja:ハナミズキ	ko:층층나무	pt:corniso	ru:кизил	tr:kızılcık	ur:ڈاگ ووڈ	zh:山茱萸
 c:doldrums	Noun	ar:منطقة الهدوء الاستوائية	de:Kalmen	en:doldrums	es:calmas ecuatoriales	fa:منطقه ارام استوایی	fr:pot-au-noir	he:אזור השקט המשוואני	hi:डोलड्रम	ja:赤道無風帯	ko:무풍대	pt:calmarias equatoriais	ru:экваториальный штиль	tr:ekvator sakinliği	ur:خط استوا کا خاموش علاقہ	zh:赤道无风带
 c:dollar	Noun	ar:دولار	de:Dollar	en:dollar	es:dólar	fa:دلار	fr:dollar	he:דולר	hi:डॉलर	ja:ドル	ko:달러	pt:dólar	ru:доллар	tr:dolar	ur:ڈالر	zh:美元,元
 c:dollhouse	Noun	ar:بيت الدمى	de:Puppenhaus	en:dollhouse	es:casa de muñecas	fa:خانه عروسکی	fr:maison de poupée	he:בית בובות	hi:गुड़ियाघर	ja:ドールハウス	ko:인형의 집	pt:casa de bonecas	ru:кукольный домик	tr:oyuncak ev	ur:گڑیا گھر	zh:娃娃屋
@@ -2910,6 +2924,7 @@ c:elk-mammal	Noun	ar:أيل	de:Elch	en:elk	es:wapití	fa:گوزن شمالی	fr:
 c:ellipse	Noun	ar:قطع ناقص	de:Ellipse	en:ellipse	es:elipse	fa:بیضی	fr:ellipse	he:אליפסה	hi:दीर्घवृत्त	ja:楕円	ko:타원	pt:elipse	ru:эллипс	tr:elips	ur:بیضوی	zh:椭圆
 c:elliptic-curve-nt	Noun	ar:المنحنى الاهليلجي	de:elliptische Kurve	en:elliptic curve	es:curva elíptica	fa:منحنی بیضوی	fr:courbe elliptique	he:עקומה אליפטית	hi:दीर्घवृत्तीय वक्र	ja:楕円曲線	ko:타원 곡선	pt:curva elíptica	ru:эллиптическая кривая	tr:eliptik eğri	ur:بیضوی منحنی	zh:椭圆曲线
 c:elm	Noun	ar:دردار	de:Ulme	en:elm	es:olmo	fa:نارون	fr:orme	he:בוקיצה	hi:एल्म	ja:ニレ,楡	ko:느릅나무	pt:olmo	ru:вяз	tr:karaağaç	ur:نارون	zh:榆树
+c:elm-tree	Noun	ar:دردار	de:Ulme	en:elm	es:olmo	fa:نارون	fr:orme	he:בוקיצה	hi:एल्म	ja:ニレ	ko:느릅나무	pt:olmo	ru:вяз	tr:karaağaç	ur:الم	zh:榆树
 c:elm-wood	Noun	ar:خشب الدردار الإلم	de:Ulmenholz	en:elm wood	es:madera de olmo	fa:چوب نارون	fr:bois d'orme	he:עץ בוקיצה	hi:एल्म लकड़ी	ja:ニレ材	ko:느릅나무	pt:madeira de ulmeiro	ru:вяз древесина	tr:karaağaç	ur:ایلم کی لکڑی	zh:榆木
 c:elysium	Noun	ar:إيليسيوم	de:Elysium	en:Elysium	es:Elíseo	fa:الیزیوم	fr:Élysée	he:אליסיום	hi:एलीसियम	ja:エリュシオン	ko:엘리시움	pt:Elísio	ru:Элизиум	tr:Elysion	ur:الیسیم	zh:极乐岛
 c:email	Noun	ar:بريد إلكتروني,إيميل	de:E-Mail	en:email,e-mail	es:correo electrónico,email	fa:ایمیل,رایانامه	fr:courriel,email	he:מייל,דואר אלקטרוני	hi:ईमेल	ja:メール,電子メール	ko:이메일,전자우편	pt:email,correio eletrônico	ru:электронная почта,имейл	tr:e-posta,eposta	ur:ای میل	zh:电子邮件,邮件
@@ -3329,6 +3344,7 @@ c:finger-ring	Noun	ar:خاتم,دبلة	de:Fingerring,Ring	en:finger ring,ring	e
 c:fingerprint-sensor	Noun	ar:مستشعر البصمة	de:Fingerabdrucksensor	en:fingerprint sensor	es:sensor de huella dactilar	fa:حسگر اثر انگشت	fr:capteur d'empreinte digitale	he:חיישן טביעת אצבע	hi:फिंगरप्रिंट सेंसर	ja:指紋センサー	ko:지문 센서	pt:sensor de impressão digital	ru:сканер отпечатков пальцев	tr:parmak izi sensörü	ur:فنگر پرنٹ سنسر	zh:指纹传感器
 c:finial	Noun	ar:الزينة الذروية	de:Fiale	en:finial	es:pináculo	fa:تزئین بالایی	fr:fleuron	he:פינייל	hi:शिखर सजावट	ja:フィニアル	ko:꼭대기 장식	pt:pináculo	ru:финиаль	tr:tepe bezemesi	ur:چوٹی کی زینت	zh:尖顶饰
 c:finnish-language	Noun	ar:اللغة الفنلندية	de:Finnisch	en:Finnish language	es:idioma finés	fa:زبان فنلاندی	fr:finnois	he:פינית	hi:फिनिश भाषा	ja:フィンランド語	ko:핀란드어	pt:língua finlandesa	ru:финский язык	tr:Fince	ur:فنش زبان	zh:芬兰语
+c:fir-tree	Noun	ar:شجرة التنوب	de:Tanne	en:fir	es:abeto	fa:نراد	fr:sapin	he:אשוח	hi:देवदार	ja:モミ	ko:전나무	pt:abeto	ru:пихта	tr:köknar	ur:فر درخت	zh:冷杉
 c:fire	Noun	ar:نار	de:Feuer	en:fire	es:fuego	fa:آتش	fr:feu	he:אש	hi:आग	ja:火	ko:불	pt:fogo	ru:огонь	tr:ateş	ur:آگ	zh:火
 c:fire-salamander	Noun	ar:سمندل النار	de:Feuersalamander	en:fire salamander	es:salamandra común	fa:سمندر آتش	fr:salamandre tachetée	he:סלמנדרת אש	hi:अग्नि सैलामैंडर	ja:ファイアサラマンダー	ko:불도롱뇽	pt:salamandra-de-fogo	ru:огненная саламандра	tr:ateş semenderi	ur:آگ کا سمندر	zh:火蝾螈
 c:fire-truck	Noun	ar:شاحنة إطفاء	de:Feuerwehrauto	en:fire truck	es:camión de bomberos	fa:ماشین آتش‌نشانی	fr:camion de pompiers	he:משאית כיבוי	hi:दमकल	ja:消防車	ko:소방차	pt:caminhão de bombeiros	ru:пожарная машина	tr:itfaiye aracı	ur:فائر ٹرک	zh:消防车
@@ -4047,6 +4063,7 @@ c:hawksbill	Noun	ar:سلحفاة منقار الصقر	de:Echte Karettschildkrö
 c:hay	Noun	ar:تبن	de:Heu	en:hay	es:heno	fa:علوفه	fr:foin	he:חציר	hi:सूखी घास	ja:干し草	ko:건초	pt:feno	ru:сено	tr:ot	ur:سوکھی گھاس	zh:干草
 c:hazardous-waste	Noun	ar:نفايات خطرة	de:Sondermüll	en:hazardous waste	es:residuos peligrosos	fa:پسماند خطرناک	fr:déchets dangereux	he:פסולת מסוכנת	hi:खतरनाक अपशिष्ट	ja:有害廃棄物	ko:유해 폐기물	pt:resíduos perigosos	ru:опасные отходы	tr:tehlikeli atık	ur:خطرناک فضلہ	zh:有害废物
 c:haze	Noun	ar:الضباب الخفيف	de:Dunst	en:haze	es:neblina	fa:غبار	fr:brume	he:ערפל קל	hi:धुंध	ja:もや	ko:연무	pt:névoa	ru:дымка	tr:sis	ur:دھند	zh:霾
+c:hazel-tree	Noun	ar:بندق	de:Hasel	en:hazel	es:avellano	fa:فندق	fr:noisetier	he:לוז	hi:हेज़ल	ja:ハシバミ	ko:개암나무	pt:aveleira	ru:лещина	tr:fındık ağacı	ur:ہیزل	zh:榛树
 c:hazelnut	Noun	ar:بندق	de:Haselnuss	en:hazelnut	es:avellana	fa:فندق	fr:noisette	he:אגוזי לוז	hi:हेज़लनट	ja:ヘーゼルナッツ	ko:헤이즐넛	pt:avelã	ru:фундук	tr:fındık	ur:فندق	zh:榛子
 c:hdd	Noun	ar:قرص صلب	de:Festplatte	en:hard disk drive	es:disco duro	fa:دیسک سخت	fr:disque dur	he:כונן קשיח	hi:हार्ड डिस्क ड्राइव	ja:ハードディスクドライブ	ko:하드 디스크 드라이브	pt:disco rígido	ru:жёсткий диск	tr:sabit disk	ur:ہارڈ ڈسک ڈرائیو	zh:硬盘驱动器
 c:hdmi-port	Noun	ar:منفذ HDMI	de:HDMI-Anschluss	en:HDMI port	es:puerto HDMI	fa:پورت HDMI	fr:port HDMI	he:יציאת HDMI	hi:एचडीएमआई पोर्ट	ja:HDMIポート	ko:HDMI 포트	pt:porta HDMI	ru:HDMI-порт	tr:HDMI bağlantısı	ur:ایچ ڈی ایم آئی پورٹ	zh:HDMI接口
@@ -4109,6 +4126,7 @@ c:helper	Noun	ar:مساعد	de:Helfer,Assistent	en:helper,assistant	es:ayudante,
 c:helsinki-capital	Noun	ar:هلسنكي	de:Helsinki	en:Helsinki	es:Helsinki	fa:هلسینکی	fr:Helsinki	he:הלסינקי	hi:हेलसिंकी	ja:ヘルシンキ	ko:헬싱키	pt:Helsínquia	ru:Хельсинки	tr:Helsinki	ur:ہلسنکی	zh:赫尔辛基
 c:hematite-mineral	Noun	ar:هيماتيت	de:Hämatit	en:hematite	es:hematita	fa:هماتیت	fr:hématite	he:המטיט	hi:हेमेटाइट	ja:赤鉄鉱	ko:적철석	pt:hematita	ru:гематит	tr:hematit	ur:ہیماٹائٹ	zh:赤铁矿
 c:hemisphere	Noun	ar:نصف الكرة,نصف الكرة الأرضية	de:Halbkugel,Hemisphäre	en:hemisphere	es:hemisferio	fa:نیم کره	fr:hémisphère	he:חצי כדור	hi:गोलार्ध	ja:半球	ko:반구	pt:hemisfério	ru:полушарие	tr:yarımküre	ur:نصف کرہ	zh:半球
+c:hemlock-tree	Noun	ar:شجرة الشوكران	de:Hemlocktanne	en:hemlock	es:cicuta	fa:درخت شوکران	fr:tsuga	he:שומר	hi:हेमलॉक	ja:ツガ	ko:솔송나무	pt:cicuta	ru:тсуга	tr:baldıran ağacı	ur:ہیم لاک	zh:铁杉
 c:hemoglobin	Noun	ar:هيموغلوبين	de:Hämoglobin	en:hemoglobin	es:hemoglobina	fa:هموگلوبین	fr:hémoglobine	he:המוגלובין	hi:हीमोग्लोबिन	ja:ヘモグロビン	ko:헤모글로빈	pt:hemoglobina	ru:гемоглобин	tr:hemoglobin	ur:ہیموگلوبن	zh:血红蛋白
 c:hemp	Noun	ar:القنب	de:Hanf	en:hemp	es:cáñamo	fa:کنف	fr:chanvre	he:קנבוס	hi:भांग	ja:大麻	ko:대마	pt:cânhamo	ru:конопля	tr:kenevir	ur:بھنگ	zh:大麻布
 c:hemp-material	Noun	ar:قنب	de:Hanf	en:hemp	es:cáñamo	fa:شاهدانه	fr:chanvre	he:קנביס	hi:भांग	ja:麻	ko:대마	pt:cânhamo	ru:конопля	tr:kenevir	ur:بھنگ	zh:大麻纤维
@@ -4145,6 +4163,7 @@ c:hex-key	Noun	ar:مفتاح سداسي	de:Inbusschlüssel	en:hex key	es:llave A
 c:hexagon	Noun	ar:سداسي,شكل سداسي	de:Sechseck,Hexagon	en:hexagon	es:hexágono	fa:شش‌ضلعی	fr:hexagone	he:משושה	hi:षट्भुज	ja:六角形,ヘキサゴン	ko:육각형	pt:hexágono	ru:шестиугольник	tr:altıgen	ur:شش ضلعی	zh:六边形,六角形
 c:hi-hat	Noun	ar:هاي هات	de:Hi-Hat	en:hi-hat	es:hi-hat	fa:هایهت	fr:charleston	he:היי-האט	hi:हाई-हैट	ja:ハイハット	ko:하이햇	pt:chimbal	ru:хай-хэт	tr:hi-hat	ur:ہائی ہیٹ	zh:踩镲
 c:hibiscus	Noun	ar:الكركديه	de:Hibiskus	en:hibiscus	es:hibisco	fa:ختمی چینی	fr:hibiscus	he:היביסקוס	hi:गुड़हल	ja:ハイビスカス	ko:히비스커스	pt:hibisco	ru:гибискус	tr:hibiskus,amber çiçeği	ur:گڑھل	zh:木槿
+c:hickory-tree	Noun	ar:جوز الهيكور	de:Hickory	en:hickory	es:nogal americano	fa:هیکوری	fr:hickory	he:היקורי	hi:हिकरी	ja:ヒッコリー	ko:히코리	pt:nogueira-americana	ru:гикори	tr:hikori	ur:ہکوری	zh:山核桃
 c:hickory-wood	Noun	ar:خشب الهيكري	de:Hickoryholz	en:hickory wood	es:madera de nogal americano	fa:چوب هیکوری	fr:bois de caryer	he:עץ היקורי	hi:हिकॉरी	ja:ヒッコリー材	ko:히코리	pt:madeira de nogueira-americana	ru:гикори	tr:hikori ağacı	ur:ہکوری	zh:山核桃
 c:hide-and-seek	Noun	ar:الغميضة	de:Verstecken	en:hide and seek	es:escondite	fa:قایم موشک	fr:cache-cache	he:מחבואים	hi:आंखमिचौली	ja:かくれんぼ	ko:숨바꼭질	pt:esconde-esconde	ru:прятки	tr:saklambaç	ur:آنکھ مچولی	zh:捉迷藏
 c:hierarchy	Noun	ar:تسلسل هرمي,هرمية	de:Hierarchie	en:hierarchy	es:jerarquía	fa:سلسله مراتب	fr:hiérarchie	he:היררכיה	hi:पदक्रम,पदानुक्रम	ja:階層,ヒエラルキー	ko:계층,위계	pt:hierarquia	ru:иерархия	tr:hiyerarşi	ur:درجہ بندی,مراتب	zh:等级制度,层级
@@ -4718,6 +4737,7 @@ c:jumping-spider	Noun	ar:عنكبوت القافز	de:Springspinne	en:jumping sp
 c:jumpsuit	Noun	ar:بدلة كاملة	de:Overall	en:jumpsuit	es:mono	fa:لباس یک تکه	fr:combinaison	he:קומבינזון	hi:जम्पसूट	ja:ジャンプスーツ	ko:점프수트	pt:macacão	ru:комбинезон	tr:tulum	ur:جمپ سوٹ	zh:连体裤
 c:jungle	Noun	ar:أدغال	de:Dschungel	en:jungle	es:jungla,selva	fa:جنگل انبوه	fr:jungle	he:ג'ונגל	hi:जंगल	ja:ジャングル,密林	ko:정글,밀림	pt:selva,mata densa	ru:джунгли	tr:cengel,balta girmemiş orman	ur:جنگل	zh:丛林
 c:juniper	Noun	ar:العرعر	de:Wacholder	en:juniper	es:enebro	fa:اورس	fr:genévrier	he:ערער	hi:जुनिपर	ja:ジュニパー,杜松	ko:향나무	pt:zimbro	ru:можжевельник	tr:ardıç	ur:عرعر	zh:杜松
+c:juniper-tree	Noun	ar:عرعر	de:Wacholder	en:juniper	es:enebro	fa:اورس	fr:genévrier	he:ערער	hi:जुनिपर	ja:ジュニパー	ko:향나무	pt:zimbro	ru:можжевельник	tr:ardıç	ur:جونیپر	zh:刺柏
 c:junta	Noun	ar:المجلس العسكري	de:Junta	en:junta	es:junta	fa:هیئت نظامی	fr:junte	he:חונטה	hi:सैन्य परिषद	ja:軍事政権	ko:군사 정권	pt:junta	ru:хунта	tr:cunta	ur:فوجی کونسل	zh:军政府
 c:jupiter	Noun	ar:المشتري	de:Jupiter	en:Jupiter	es:Júpiter	fa:برجیس,مشتری	fr:Jupiter	he:צדק	hi:बृहस्पति,गुरु	ja:木星	ko:목성	pt:Júpiter	ru:Юпитер	tr:Jüpiter	ur:مشتری	zh:木星
 c:jurisdiction	Noun	ar:اختصاص قضائي	de:Gerichtsbarkeit	en:jurisdiction	es:jurisdicción	fa:صلاحیت قضایی	fr:juridiction	he:סמכות שיפוטית	hi:न्यायक्षेत्र	ja:管轄権	ko:관할권	pt:jurisdição	ru:юрисдикция	tr:yargı yetkisi	ur:دائرہ اختیار	zh:管辖权
@@ -4954,6 +4974,7 @@ c:laptop	Noun	ar:حاسوب محمول,لابتوب	de:Laptop,Notebook	en:laptop
 c:laptop-device	Noun	ar:حاسوب محمول	de:Laptop	en:laptop	es:portátil	fa:لپ‌تاپ	fr:ordinateur portable	he:מחשב נייד	hi:लैपटॉप	ja:ノートパソコン	ko:노트북	pt:laptop	ru:ноутбук	tr:dizüstü bilgisayar	ur:لیپ ٹاپ	zh:笔记本电脑
 c:lapwing	Noun	ar:طيطوى	de:Kiebitz	en:lapwing	es:avefría	fa:آتشک	fr:vanneau	he:טוטוי	hi:टिटिहरी	ja:タゲリ	ko:댕기물떼새	pt:abibe	ru:чибис	tr:kızkuşu	ur:ٹٹیہری	zh:凤头麦鸡
 c:larceny	Noun	ar:سرقة	de:Diebstahl	en:larceny	es:latrocinio	fa:دزدی	fr:vol	he:גניבה	hi:चोरी का अपराध	ja:窃盗	ko:절도	pt:latrocínio	ru:кража	tr:hırsızlık	ur:چوری	zh:盗窃罪
+c:larch-tree	Noun	ar:اللاريسيا	de:Lärche	en:larch	es:alerce	fa:کاج لاریکس	fr:mélèze	he:ערער לבנוני	hi:लार्च	ja:カラマツ	ko:낙엽송	pt:lariço	ru:лиственница	tr:melez çamı	ur:لارچ	zh:落叶松
 c:lardy-cake	Noun	ar:كعكة شحم	de:Schmalzkuchen	en:lardy cake	es:bizcocho de manteca	fa:کیک چربی	fr:gâteau au saindoux	he:עוגת שומן	hi:लार्डी केक	ja:ラードケーキ	ko:라드 케이크	pt:bolo de banha	ru:ларди-кейк	tr:iç yağ keki	ur:چربی کیک	zh:猪油蛋糕
 c:large-scale-structure	Noun	ar:البنية الكونية الكبرى	de:Großraumstruktur	en:large-scale structure	es:estructura a gran escala	fa:ساختار بزرگ‌مقیاس	fr:grande structure de l'univers	he:מבנה בקנה מידה גדול	hi:वृहत-पैमाने की संरचना	ja:大規模構造	ko:대규모 구조	pt:estrutura de grande escala	ru:крупномасштабная структура	tr:büyük ölçekli yapı	ur:بڑے پیمانے کی ساخت	zh:大尺度结构
 c:lark	Noun	ar:قبرة	de:Lerche	en:lark	es:alondra	fa:چکاوک	fr:alouette	he:עפרוני	hi:लार्क	ja:ヒバリ	ko:종다리	pt:cotovia	ru:жаворонок	tr:tarla kuşu	ur:لارک	zh:百灵
@@ -5103,6 +5124,7 @@ c:limousine	Noun	ar:ليموزين	de:Limousine	en:limousine	es:limusina	fa:لی
 c:limpopo	Noun	ar:ليمبوبو,نهر ليمبوبو	de:Limpopo	en:Limpopo,Limpopo River	es:Limpopo,río Limpopo	fa:لیمپوپو	fr:Limpopo	he:לימפופו	hi:लिम्पोपो नदी	ja:リンポポ川	ko:림포포강	pt:Limpopo,rio Limpopo	ru:Лимпопо	tr:Limpopo	ur:دریائے لیمپوپو	zh:林波波河
 c:limpopo-river	Noun	ar:نهر ليمبوبو	de:Limpopo	en:Limpopo river	es:río Limpopo	fa:رود لیمپوپو	fr:Limpopo	he:נהר הלימפופו	hi:लिम्पोपो नदी	ja:リンポポ川	ko:림포포강	pt:rio Limpopo	ru:река Лимпопо	tr:Limpopo Nehri	ur:دریائے لمپوپو	zh:林波波河
 c:lincoln	Noun	ar:لينكولن,أبراهام لينكولن	de:Lincoln,Abraham Lincoln	en:Lincoln,Abraham Lincoln	es:Lincoln	fa:لینکلن,آبراهام لینکلن	fr:Lincoln	he:לינקולן	hi:लिंकन	ja:リンカーン	ko:링컨	pt:Lincoln	ru:Линкольн	tr:Lincoln	ur:لنکن	zh:林肯
+c:linden-tree	Noun	ar:الزيزفون	de:Linde	en:linden	es:tilo	fa:درخت زیزفون	fr:tilleul	he:טיליה	hi:लिंडेन	ja:シナノキ	ko:보리수	pt:tília	ru:липа	tr:ıhlamur	ur:لنڈن	zh:椴树
 c:lindy-hop	Noun	ar:رقص ليندي هوب	de:Lindy Hop	en:Lindy Hop	es:Lindy Hop	fa:لیندی هاپ	fr:Lindy Hop	he:לינדי הופ	hi:लिंडी हॉप	ja:リンディホップ	ko:린디홉	pt:Lindy Hop	ru:линди-хоп	tr:Lindy Hop	ur:لنڈی ہاپ	zh:林迪舞
 c:lindy-hop-dance	Noun	ar:لندي هوب	de:Lindy Hop	en:Lindy Hop	es:Lindy Hop	fa:لیندی هاپ	fr:lindy hop	he:לינדי הופ	hi:लिंडी हॉप	ja:リンディホップ	ko:린디 합	pt:lindy hop	ru:линди-хоп	tr:lindy hop	ur:لنڈی ہاپ	zh:林迪舞
 c:line	Noun	ar:خط	de:Linie	en:line	es:línea	fa:خط	fr:ligne	he:קו	hi:रेखा,लाइन	ja:線,ライン	ko:선,줄	pt:linha	ru:линия	tr:çizgi	ur:لکیر,خط	zh:线,线条
@@ -5279,6 +5301,7 @@ c:magnesium-metal	Noun	ar:مغنيسيوم	de:Magnesium	en:magnesium	es:magnesio
 c:magnet	Noun	ar:مغناطيس	de:Magnet	en:magnet	es:imán	fa:آهنربا,مغناطیس	fr:aimant	he:מגנט	hi:चुम्बक	ja:磁石,マグネット	ko:자석,마그넷	pt:ímã,íman	ru:магнит	tr:mıknatıs,magnet	ur:مقناطیس	zh:磁铁,磁石
 c:magnetar	Noun	ar:نجم مغناطيسي	de:Magnetar	en:magnetar	es:magnetar	fa:مگنتار	fr:magnétar	he:מגנטר	hi:मैग्नेटार	ja:マグネター	ko:자기별	pt:magnetar	ru:магнетар	tr:magnetar	ur:مقناطیسی ستارہ	zh:磁星
 c:magnolia	Noun	ar:المغنوليا	de:Magnolie	en:magnolia	es:magnolia	fa:ماگنولیا	fr:magnolia	he:מגנוליה	hi:मैगनोलिया	ja:モクレン	ko:목련	pt:magnólia	ru:магнолия	tr:manolya	ur:مگنولیا	zh:玉兰
+c:magnolia-tree	Noun	ar:ماغنوليا	de:Magnolie	en:magnolia	es:magnolia	fa:ماگنولیا	fr:magnolia	he:מגנוליה	hi:मैगनोलिया	ja:モクレン	ko:목련	pt:magnólia	ru:магнолия	tr:manolya	ur:میگنولیا	zh:玉兰
 c:magpie	Noun	ar:عقعق	de:Elster	en:magpie	es:urraca	fa:زاغ	fr:pie	he:עקת	hi:मैगपाई	ja:カササギ	ko:까치	pt:pega	ru:сорока	tr:saksağan	ur:مگپائی	zh:喜鹊
 c:magpie-bird	Noun	ar:عقعق	de:Elster	en:magpie	es:urraca	fa:زاغی	fr:pie	he:עקעק	hi:नीलकंठ	ja:カササギ	ko:까치	pt:pega	ru:сорока	tr:saksağan	ur:نیل کنٹھ	zh:喜鹊
 c:mahabharata	Noun	ar:المهابهاراتا	de:Mahabharata	en:Mahabharata	es:Mahabharata	fa:مهابهاراتا	fr:Mahabharata	he:מהאבהאראטה	hi:महाभारत	ja:マハーバーラタ	ko:마하바라타	pt:Mahabharata	ru:Махабхарата	tr:Mahabharata	ur:مہابھارت	zh:摩诃婆罗多
@@ -5329,6 +5352,7 @@ c:mandolin	Noun	ar:ماندولين	de:Mandoline	en:mandolin	es:mandolina	fa:م�
 c:manganese	Noun	ar:منغنيز	de:Mangan	en:manganese	es:manganeso	fa:منگنز	fr:manganèse	he:מנגן	hi:मैंगनीज	ja:マンガン	ko:망가니즈	pt:manganês	ru:марганец	tr:mangan	ur:مینگنیز	zh:锰
 c:manganese-metal	Noun	ar:منغنيز	de:Mangan	en:manganese	es:manganeso	fa:منگنز	fr:manganèse	he:מנגן	hi:मैंगनीज	ja:マンガン	ko:망간	pt:manganês	ru:марганец	tr:mangan	ur:مینگنیز	zh:锰
 c:mango	Noun	ar:مانجو	de:Mango	en:mango	es:mango	fa:انبه	fr:mangue	he:מנגו	hi:आम	ja:マンゴー	ko:망고	pt:manga	ru:манго	tr:mango	ur:آم	zh:芒果
+c:mango-tree	Noun	ar:شجرة المانجو	de:Mangobaum	en:mango tree	es:árbol de mango	fa:درخت انبه	fr:manguier	he:עץ מנגו	hi:आम का पेड़	ja:マンゴーの木	ko:망고나무	pt:mangueira	ru:манговое дерево	tr:mango ağacı	ur:آم کا درخت	zh:芒果树
 c:mangosteen	Noun	ar:منجستين,مانجوستان	de:Mangostane	en:mangosteen	es:mangostán	fa:مانگوستین	fr:mangoustan	he:מנגוסטין	hi:मैंगोस्टीन	ja:マンゴスチン	ko:망고스틴	pt:mangostim	ru:мангостин	tr:manggis	ur:مانگوسٹین	zh:山竹
 c:mangosteen-var	Noun	ar:مانغوستين	de:Mangostan	en:mangosteen fruit	es:mangostán	fa:منگوستین	fr:mangoustan	he:מנגוסטין	hi:मैंगोस्टीन	ja:マンゴスチン	ko:망고스틴	pt:mangostão	ru:мангостин	tr:mangostan	ur:منگوسٹین	zh:山竹
 c:mangrove	Noun	ar:اشجار المانغروف	de:Mangrove	en:mangrove	es:manglar	fa:جنگل مانگرو	fr:mangrove	he:מנגרוב	hi:मैंग्रोव	ja:マングローブ	ko:맹그로브	pt:manguezal	ru:мангровые заросли	tr:mangrov	ur:مینگرو	zh:红树林
@@ -5356,6 +5380,7 @@ c:map	Noun	ar:خريطة	de:Karte,Landkarte	en:map	es:mapa	fa:نقشه	fr:carte,
 c:map-turtle	Noun	ar:سلحفاة الخريطة	de:Landkartenschildkröte	en:map turtle	es:tortuga mapa	fa:لاک پشت نقشه	fr:tortue géographique	he:צב מפה	hi:नक्शा कछुआ	ja:マップタートル	ko:지도거북	pt:tartaruga-mapa	ru:картографическая черепаха	tr:harita kaplumbağası	ur:نقشہ کچھوا	zh:地图龟
 c:maple	Noun	ar:قيقب	de:Ahorn	en:maple	es:arce	fa:افرا	fr:érable	he:אדר	hi:मेपल	ja:カエデ,楓	ko:단풍나무	pt:bordo	ru:клён	tr:akçaağaç	ur:میپل	zh:枫树
 c:maple-syrup	Noun	ar:شراب القيقب	de:Ahornsirup	en:maple syrup	es:jarabe de arce	fa:شهد افرا	fr:sirop d'érable	he:סירופ מייפל	hi:मेपल सिरप	ja:メープルシロップ	ko:메이플 시럽	pt:xarope de bordo	ru:кленовый сироп	tr:akçaağaç şurubu	ur:میپل شربت	zh:枫糖浆
+c:maple-tree	Noun	ar:قيقب	de:Ahorn	en:maple	es:arce	fa:افرا	fr:érable	he:אדר	hi:मेपल	ja:カエデ	ko:단풍나무	pt:bordo	ru:клён	tr:akçaağaç	ur:میپل	zh:枫树
 c:maple-wood	Noun	ar:خشب القيقب	de:Ahornholz	en:maple wood	es:madera de arce	fa:چوب افرا	fr:bois d'érable	he:עץ מייפל	hi:मेपल की लकड़ी	ja:メープル材	ko:단풍나무	pt:madeira de bordo	ru:кленовая древесина	tr:akçaağaç	ur:میپل کی لکڑی	zh:枫木
 c:mapping-class-group	Noun	ar:مجموعة فئة التصوير	de:Abbildungsklassengruppe	en:mapping class group	es:grupo de clases de aplicación	fa:گروه کلاس نگاشت	fr:groupe des classes d'homéomorphismes	he:קבוצת מחלקת מיפוי	hi:मैपिंग वर्ग समूह	ja:写像類群	ko:사상류군	pt:grupo de classes de mapeamento	ru:группа классов отображений	tr:eşleme sınıfı grubu	ur:نقشہ کلاس گروہ	zh:映射类群
 c:maracas	Noun	ar:ماراكاس,شخاليل	de:Maracas,Rasseln	en:maracas	es:maracas	fa:ماراکاس	fr:maracas	he:מרקס	hi:मराकस	ja:マラカス	ko:마라카스	pt:maracas	ru:маракасы	tr:marakas	ur:مراکس	zh:沙锤,玛拉卡斯
@@ -6145,6 +6170,7 @@ c:nyckelharpa	Noun	ar:نيكلهاربا	de:Nyckelharpa	en:nyckelharpa	es:nyckel
 c:nylon	Noun	ar:نايلون	de:Nylon	en:nylon	es:nylón	fa:نایلون	fr:nylon	he:ניילון	hi:नायलॉन	ja:ナイロン	ko:나일론	pt:nylon	ru:нейлон	tr:naylon	ur:نائلون	zh:尼龙
 c:nymph	Noun	ar:حورية	de:Nymphe	en:nymph	es:ninfa	fa:حوری	fr:nymphe	he:נימפה	hi:अप्सरा	ja:ニンフ	ko:님프	pt:ninfa	ru:нимфа	tr:nemfe	ur:حور	zh:仙女
 c:oak	Noun	ar:بلوط	de:Eiche	en:oak	es:roble	fa:بلوط	fr:chêne	he:אלון	hi:बलूत,ओक	ja:オーク,樫	ko:참나무,오크	pt:carvalho	ru:дуб	tr:meşe	ur:بلوط	zh:橡树,橡木
+c:oak-tree	Noun	ar:سنديان	de:Eiche	en:oak	es:roble	fa:بلوط	fr:chêne	he:אלון	hi:बलूत	ja:オーク	ko:참나무	pt:carvalho	ru:дуб	tr:meşe	ur:بلوط	zh:橡树
 c:oak-wood	Noun	ar:خشب البلوط	de:Eichenholz	en:oak wood	es:madera de roble	fa:چوب بلوط	fr:bois de chêne	he:עץ אלון	hi:ओक की लकड़ी	ja:オーク材	ko:오크 나무	pt:madeira de carvalho	ru:дубовая древесина	tr:meşe ağacı	ur:اوک کی لکڑی	zh:橡木
 c:oasis	Noun	ar:واحة	de:Oase	en:oasis	es:oasis	fa:واحه	fr:oasis	he:נווה מדבר	hi:नखलिस्तान	ja:オアシス	ko:오아시스	pt:oásis	ru:оазис	tr:vaha	ur:نخلستان,واحہ	zh:绿洲
 c:oat	Noun	ar:شوفان	de:Hafer	en:oat	es:avena	fa:جو دو سر	fr:avoine	he:שיבולת שועל	hi:जई	ja:エンバク	ko:귀리	pt:aveia	ru:овёс	tr:yulaf	ur:جئی	zh:燕麦
@@ -6269,6 +6295,7 @@ c:oracle-bone	Noun	ar:عظام الكهانة	de:Orakelknochen	en:oracle bone	es
 c:orange	Noun	ar:برتقال	de:Orange,Apfelsine	en:orange	es:naranja	fa:پرتقال	fr:orange	he:תפוז	hi:नारंगी,संतरा	ja:オレンジ,橙	ko:오렌지	pt:laranja	ru:апельсин	tr:portakal	ur:نارنگی,سنگترا	zh:橙子,橘子
 c:orange-color	Adjective	ar:برتقالي	de:orange	en:orange	es:naranja	fa:نارنجی	fr:orange	he:כתום	hi:नारंगी,संतरी	ja:オレンジ色,橙	ko:주황	pt:laranja	ru:оранжевый	tr:turuncu	ur:نارنجی	zh:橙色,橘色
 c:orange-river	Noun	ar:نهر الأورانج	de:Oranje	en:Orange river	es:río Orange	fa:رود اورنج	fr:Orange	he:נהר האורנג'	hi:ऑरेंज नदी	ja:オレンジ川	ko:오렌지강	pt:rio Orange	ru:река Оранжевая	tr:Orange Nehri	ur:دریائے اورنج	zh:橙河
+c:orange-tree	Noun	ar:شجرة البرتقال	de:Orangenbaum	en:orange tree	es:naranjo	fa:درخت پرتقال	fr:oranger	he:עץ תפוז	hi:संतरे का पेड़	ja:オレンジの木	ko:오렌지 나무	pt:laranjeira	ru:апельсиновое дерево	tr:portakal ağacı	ur:مالٹے کا درخت	zh:橙树
 c:orange-var	Noun	ar:برتقال فاكهة	de:Orange Frucht	en:orange fruit	es:naranja	fa:پرتقال میوه	fr:orange fruit	he:תפוז פרי	hi:संतरा फल	ja:オレンジ果実	ko:오렌지 과일	pt:laranja	ru:апельсин плод	tr:portakal meyve	ur:نارنگی پھل	zh:橙子果
 c:orangutan	Noun	ar:إنسان الغاب	de:Orang-Utan	en:orangutan	es:orangután	fa:اورانگوتان	fr:orang-outan	he:אורנגאוטן	hi:ओरंगुटान	ja:オランウータン	ko:오랑우탄	pt:orangotango	ru:орангутан	tr:orangutan	ur:اورنگوٹان	zh:猩猩
 c:orb-weaver	Noun	ar:عنكبوت نسج الدائري	de:Radnetzspinne	en:orb weaver,orb-weaving spider	es:araña tejedora de orbes	fa:عنکبوت تارتن	fr:araignée argiope,épeire	he:עכביש גלגל	hi:ओर्ब बुनकर मकड़ी	ja:コガネグモ,オニグモ	ko:원형거미	pt:aranha-de-jardim	ru:паук-крестовик	tr:çark ören örümcek	ur:گول جالا بنانے والی مکڑی	zh:圆蛛
@@ -6547,9 +6574,11 @@ c:pdl1	Noun	ar:الليغند 1 للموت المبرمج	de:PD-L1	en:PD-L1	es:P
 c:pea	Noun	ar:بازلاء	de:Erbse	en:pea	es:guisante,chícharo	fa:نخود فرنگی	fr:pois	he:אפונה	hi:मटर	ja:エンドウ豆	ko:완두콩	pt:ervilha	ru:горох	tr:bezelye	ur:مٹر	zh:豌豆
 c:peace	Noun	ar:سلام	de:Frieden	en:peace	es:paz	fa:صلح	fr:paix	he:שלום	hi:शांति	ja:平和	ko:평화	pt:paz	ru:мир	tr:barış	ur:امن	zh:和平
 c:peach	Noun	ar:خوخ,دراق	de:Pfirsich	en:peach	es:durazno,melocotón	fa:هلو	fr:pêche	he:אפרסק	hi:आड़ू	ja:桃,ピーチ	ko:복숭아	pt:pêssego	ru:персик	tr:şeftali	ur:آڑو	zh:桃,桃子
+c:peach-tree	Noun	ar:شجرة الخوخ	de:Pfirsichbaum	en:peach tree	es:duraznero	fa:درخت هلو	fr:pêcher	he:עץ אפרסק	hi:आड़ू का पेड़	ja:モモの木	ko:복숭아나무	pt:pessegueiro	ru:персик	tr:şeftali ağacı	ur:آڑو کا درخت	zh:桃树
 c:peacock	Noun	ar:طاووس	de:Pfau	en:peacock	es:pavo real	fa:طاووس	fr:paon	he:טווס	hi:मोर	ja:孔雀	ko:공작	pt:pavão	ru:павлин	tr:tavus kuşu	ur:مور	zh:孔雀
 c:peacock-bird	Noun	ar:طاووس	de:Pfau	en:peacock	es:pavo real	fa:طاووس	fr:paon	he:טווס	hi:मोर	ja:クジャク	ko:공작	pt:pavão	ru:павлин	tr:tavus kuşu	ur:مور	zh:孔雀
 c:peanut	Noun	ar:فول سوداني	de:Erdnuss	en:peanut	es:cacahuete,maní	fa:بادام زمینی	fr:arachide	he:בוטן	hi:मूंगफली	ja:ピーナッツ	ko:땅콩	pt:amendoim	ru:арахис	tr:yer fıstığı	ur:مونگ پھلی	zh:花生
+c:pear-tree	Noun	ar:شجرة الإجاص	de:Birnbaum	en:pear tree	es:peral	fa:درخت گلابی	fr:poirier	he:עץ אגס	hi:नाशपाती का पेड़	ja:ナシの木	ko:배나무	pt:pereira	ru:груша	tr:armut ağacı	ur:ناشپاتی کا درخت	zh:梨树
 c:pear-var	Noun	ar:كمثرى	de:Birne Frucht	en:pear fruit	es:pera	fa:گلابی	fr:poire	he:אגס	hi:नाशपाती	ja:梨	ko:배 과일	pt:pera	ru:груша	tr:armut	ur:ناشپاتی	zh:梨
 c:pearl	Noun	ar:لؤلؤة,لؤلؤ	de:Perle	en:pearl	es:perla	fa:مروارید	fr:perle	he:פנינה	hi:मोती	ja:真珠	ko:진주	pt:pérola	ru:жемчуг	tr:inci	ur:موتی	zh:珍珠
 c:pearl-color	Noun	ar:لؤلؤي	de:Perlmutt,Perlweiß	en:pearl,pearl white	es:perla	fa:مرواریدی	fr:nacré,perle	he:פנינה	hi:मोती रंग	ja:真珠色,パール	ko:진주색	pt:pérola	ru:жемчужный	tr:inci rengi	ur:موتی رنگ	zh:珍珠色
@@ -6764,6 +6793,7 @@ c:pilot-officer	Noun	ar:ملازم طيار	de:Pilotoffizier	en:pilot officer	es
 c:pinball	Noun	ar:بينبول	de:Flipper	en:pinball	es:máquina de pinball	fa:پینبال	fr:flipper pinball	he:פינבול	hi:पिनबॉल	ja:ピンボール	ko:핀볼	pt:pinball	ru:пинбол	tr:tilt oyunu	ur:پن بال	zh:弹球机
 c:pine	Noun	ar:صنوبر	de:Kiefer,Pinie	en:pine	es:pino	fa:کاج	fr:pin	he:אורן	hi:चीड़,देवदार	ja:松	ko:소나무	pt:pinheiro	ru:сосна	tr:çam	ur:صنوبر,چیڑ	zh:松树
 c:pine-nut	Noun	ar:بزر الصنوبر	de:Pinienkern	en:pine nut	es:piñón	fa:چلغوزه	fr:pignon	he:גרעין אורן	hi:चीड़ की गिरी	ja:松の実	ko:잣	pt:pinhão	ru:кедровый орех	tr:çam fıstığı	ur:چلغوزہ	zh:松子
+c:pine-tree	Noun	ar:صنوبر	de:Kiefer	en:pine	es:pino	fa:کاج	fr:pin	he:אורן	hi:चीड़	ja:松	ko:소나무	pt:pinheiro	ru:сосна	tr:çam	ur:چیڑ	zh:松树
 c:pine-wood	Noun	ar:خشب الصنوبر	de:Kiefernholz	en:pine wood	es:madera de pino	fa:چوب کاج	fr:bois de pin	he:עץ אורן	hi:पाइन की लकड़ी	ja:松材	ko:소나무	pt:madeira de pinho	ru:сосновая древесина	tr:çam ağacı	ur:صنوبر کی لکڑی	zh:松木
 c:pineapple	Noun	ar:أناناس	de:Ananas	en:pineapple	es:piña,ananá	fa:آناناس	fr:ananas	he:אננס	hi:अनानास	ja:パイナップル	ko:파인애플	pt:abacaxi,ananás	ru:ананас	tr:ananas	ur:انناس	zh:菠萝,凤梨
 c:ping-cmd	Noun	ar:أمر بينغ	de:Ping-Befehl	en:ping	es:ping	fa:پینگ	fr:ping	he:פינג	hi:पिंग	ja:ピング	ko:핑	pt:ping	ru:пинг	tr:ping	ur:پنگ	zh:ping命令
@@ -6847,6 +6877,7 @@ c:pliers-tool	Noun	ar:كماشة	de:Zange	en:pliers	es:alicates	fa:انبردس�
 c:plinth	Noun	ar:قاعدة العمود	de:Sockel	en:plinth	es:plinto	fa:پایه ستون	fr:plinthe	he:פלינת	hi:चौकी	ja:台座	ko:주각	pt:plinto	ru:плинт	tr:taban	ur:ستون کی بنیاد	zh:基座
 c:plot	Noun	ar:حبكة	de:Handlung,Plot	en:plot	es:trama,argumento	fa:طرح داستان	fr:intrigue,trame	he:עלילה	hi:कथानक	ja:プロット,筋	ko:줄거리,플롯	pt:enredo,trama	ru:сюжет	tr:olay örgüsü	ur:کہانی کا خاکہ	zh:情节
 c:plow	Noun	ar:محراث	de:Pflug	en:plow	es:arado	fa:خیش	fr:charrue	he:מחרשה	hi:हल	ja:鋤	ko:쟁기	pt:arado	ru:плуг	tr:saban	ur:ہل	zh:犁
+c:plum-tree	Noun	ar:شجرة البرقوق	de:Pflaumenbaum	en:plum tree	es:ciruelo	fa:درخت آلو	fr:prunier	he:עץ שזיף	hi:आलूबुखारा पेड़	ja:スモモの木	ko:자두나무	pt:ameixeira	ru:слива	tr:erik ağacı	ur:آلو بخارا کا درخت	zh:李树
 c:plum-var	Noun	ar:برقوق	de:Pflaume	en:plum	es:ciruela	fa:آلو	fr:prune	he:שזיף	hi:आलूबुखारा	ja:プラム	ko:자두	pt:ameixa	ru:слива	tr:erik	ur:آلو بخارا	zh:李子
 c:plumb-bob	Noun	ar:شاقول	de:Bleilot	en:plumb bob	es:plomada	fa:شاقول	fr:fil à plomb	he:שקולת	hi:साहुल	ja:下げ振り	ko:다림추	pt:fio de prumo	ru:отвес	tr:çekül	ur:شاقول	zh:铅锤
 c:plumb-bob-tool	Noun	ar:شاقول	de:Senklot	en:plumb bob	es:plomada	fa:شاقول	fr:fil à plomb	he:משקולת	hi:साहुल	ja:下げ振り	ko:다림추	pt:prumo	ru:отвес	tr:çekül	ur:شاقول	zh:铅锤
@@ -6937,6 +6968,7 @@ c:poor	Adjective	ar:فقير	de:arm	en:poor	es:pobre	fa:فقیر,تنگدست	fr
 c:pop-art	Noun	ar:فن البوب	de:Pop-Art	en:Pop Art	es:pop art	fa:هنر پاپ	fr:pop art	he:פופ ארט	hi:पॉप आर्ट	ja:ポップ・アート	ko:팝 아트	pt:pop art	ru:поп-арт	tr:pop art	ur:مقبول فن	zh:波普艺术
 c:pope	Noun	ar:بابا الكنيسة	de:Papst	en:pope	es:papa	fa:پاپ	fr:pape	he:אפיפיור	hi:पोप	ja:ローマ教皇	ko:교황	pt:papa	ru:папа римский	tr:papa	ur:پوپ	zh:教皇
 c:poplar	Noun	ar:الحور	de:Pappel	en:poplar	es:álamo	fa:سپیدار,تبریزی	fr:peuplier	he:צפצפה	hi:चिनार	ja:ポプラ	ko:포플러	pt:choupo,álamo	ru:тополь	tr:kavak	ur:سفیدار	zh:杨树
+c:poplar-tree	Noun	ar:الحور	de:Pappel	en:poplar	es:álamo	fa:سپیدار	fr:peuplier	he:צפצפה	hi:पॉपलर	ja:ポプラ	ko:포플러	pt:choupo	ru:тополь	tr:kavak	ur:پاپلر	zh:白杨
 c:poplar-wood	Noun	ar:خشب الحور	de:Pappelholz	en:poplar wood	es:madera de álamo	fa:چوب تبریزی	fr:bois de peuplier	he:עץ צפצפה	hi:पॉपलर	ja:ポプラ材	ko:포플러	pt:madeira de choupo	ru:тополь древесина	tr:kavak ağacı	ur:پاپلر	zh:杨木
 c:poplin	Noun	ar:البوبلين	de:Popeline	en:poplin	es:popelín	fa:پاپلین	fr:popeline	he:פופלין	hi:पॉपलिन	ja:ポプリン	ko:포플린	pt:popeline	ru:поплин	tr:poplin	ur:پاپلین	zh:府绸
 c:popping	Noun	ar:بوبينغ	de:Popping	en:popping dance	es:popping	fa:پاپینگ	fr:popping	he:פופינג	hi:पॉपिंग	ja:ポッピング	ko:팝핀	pt:popping	ru:поппинг	tr:popping	ur:پاپنگ	zh:机械舞
@@ -8055,6 +8087,7 @@ c:sequel-film	Noun	ar:فيلم تابع	de:Fortsetzungsfilm	en:sequel	es:secuela
 c:sequence	Noun	ar:متتالية	de:Folge	en:sequence	es:sucesión	fa:دنباله	fr:suite	he:סדרה	hi:अनुक्रम	ja:数列	ko:수열	pt:sequência	ru:последовательность	tr:dizi	ur:تسلسل	zh:数列
 c:sequence-alignment	Noun	ar:محاذاة التسلسل	de:Sequenzalignment	en:sequence alignment	es:alineamiento de secuencias	fa:هم‌ترازی توالی	fr:alignement de séquences	he:יישור רצפים	hi:अनुक्रम संरेखण	ja:配列アライメント	ko:서열 정렬	pt:alinhamento de sequências	ru:выравнивание последовательностей	tr:dizi hizalama	ur:تسلسل سیدھائی	zh:序列比对
 c:sequencing	Noun	ar:التسلسل الجيني	de:Sequenzierung	en:sequencing	es:secuenciación	fa:توالی‌یابی	fr:séquençage	he:ריצוף	hi:अनुक्रमण	ja:塩基配列決定	ko:염기 서열 분석	pt:sequenciamento	ru:секвенирование	tr:dizileme	ur:تسلسل	zh:测序
+c:sequoia-tree	Noun	ar:سيكويا	de:Mammutbaum	en:sequoia	es:secuoya	fa:سکویا	fr:séquoia	he:סקויה	hi:सिकोइया	ja:セコイア	ko:세쿼이아	pt:sequoia	ru:секвойя	tr:sekoya	ur:سیکویا	zh:红杉
 c:serbian-language	Noun	ar:اللغة الصربية	de:Serbisch	en:Serbian language	es:idioma serbio	fa:زبان صربی	fr:serbe	he:סרבית	hi:सर्बियाई भाषा	ja:セルビア語	ko:세르비아어	pt:língua sérvia	ru:сербский язык	tr:Sırpça	ur:سربیائی زبان	zh:塞尔维亚语
 c:serenity	Noun	ar:سكينة	de:Gelassenheit	en:serenity	es:serenidad	fa:آرامش	fr:sérénité	he:שלווה	hi:शांति	ja:平静	ko:평온	pt:serenidade	ru:безмятежность	tr:dinginlik	ur:سکون	zh:宁静
 c:serf	Noun	ar:قن	de:Leibeigener	en:serf	es:siervo	fa:رعیت	fr:serf	he:עבד אדמה	hi:भूदास	ja:農奴	ko:농노	pt:servo	ru:крепостной	tr:serf	ur:بندھوا مزدور	zh:农奴
@@ -8527,6 +8560,7 @@ c:springer	Noun	ar:حجر بداية القوس	de:Kämpferstein	en:springer	es:
 c:sprint	Verb	ar:ركض بسرعة قصوى	de:sprinten	en:sprint	es:esprintar	fa:دویدن سرعتی	fr:sprinter	he:לרוץ בזריזות,לספרינט	hi:तेज़ धावना	ja:全力疾走する	ko:전력 질주하다	pt:correr em disparada,esprintar	ru:бежать спринтом	tr:sprint atmak	ur:سپرنٹ کرنا	zh:冲刺
 c:sprint-sport	Noun	ar:سباق سرعة	de:Sprint	en:sprint	es:carrera de velocidad	fa:دو سرعت	fr:sprint	he:ספרינט	hi:स्प्रिंट	ja:短距離走	ko:단거리 경주	pt:sprint	ru:спринт	tr:sürat koşusu	ur:اسپرنٹ	zh:短跑
 c:spruce	Noun	ar:شوح,تنوب	de:Fichte	en:spruce	es:abeto,pícea	fa:صنوبر نروژی,کاج نروژی	fr:épicéa	he:אשוח	hi:स्प्रूस	ja:トウヒ	ko:가문비나무	pt:espruce,pícea	ru:ель	tr:ladin	ur:اسپروس	zh:云杉
+c:spruce-tree	Noun	ar:شجرة الراتينج	de:Fichte	en:spruce	es:pícea	fa:نوئل	fr:épicéa	he:אשוחית	hi:स्प्रूस	ja:トウヒ	ko:가문비나무	pt:espruce	ru:ель	tr:ladin	ur:اسپروس	zh:云杉
 c:spruce-wood	Noun	ar:خشب التنوب	de:Fichtenholz	en:spruce wood	es:madera de abeto	fa:چوب صنوبر	fr:bois d'épicéa	he:עץ אשוח	hi:स्प्रूस	ja:トウヒ材	ko:가문비나무	pt:madeira de abeto	ru:ель древесина	tr:ladin ağacı	ur:اسپروس	zh:云杉
 c:sputtering	Noun	ar:الرش	de:Sputtern	en:sputtering	es:pulverización catódica	fa:اسپاترینگ	fr:pulvérisation cathodique	he:ספאטרינג	hi:स्पटरिंग	ja:スパッタリング	ko:스퍼터링	pt:pulverização catódica	ru:распыление	tr:saçtırma	ur:چھٹکاو	zh:溅射
 c:spyware	Noun	ar:برامج التجسس	de:Spionagesoftware	en:spyware	es:programa espía	fa:جاسوس‌افزار	fr:logiciel espion	he:תוכנת ריגול	hi:स्पाइवेयर	ja:スパイウェア	ko:스파이웨어	pt:spyware	ru:шпионское ПО	tr:casus yazılım	ur:جاسوس سافٹ ویئر	zh:间谍软件
@@ -8878,6 +8912,7 @@ c:sword-weapon	Noun	ar:سيف	de:Schwert	en:sword	es:espada	fa:شمشیر	fr:ép
 c:swordfish	Noun	ar:ابو سيف,سمك السيف	de:Schwertfisch	en:swordfish	es:pez espada	fa:ماهی شمشیر	fr:espadon	he:חרבן	hi:स्वोर्डफिश	ja:メカジキ	ko:황새치	pt:peixe-espada	ru:меч-рыба	tr:kılıç balığı	ur:تلوار مچھلی	zh:剑鱼
 c:swordfish-fish	Noun	ar:سمك أبو سيف	de:Schwertfisch	en:swordfish	es:pez espada	fa:ماهی شمشیر	fr:espadon	he:דג חרב	hi:स्वोर्डफिश	ja:メカジキ	ko:황새치	pt:peixe-espada	ru:рыба-меч	tr:kılıç balığı	ur:ساورڈ فش	zh:剑鱼
 c:sycamore	Noun	ar:الجميز	de:Bergahorn	en:sycamore	es:sicómoro	fa:چنار	fr:sycomore	he:שקמה	hi:सिकैमोर	ja:スズカケノキ	ko:플라타너스	pt:sicômoro	ru:сикомор,явор	tr:çınar	ur:گولر	zh:梧桐
+c:sycamore-tree	Noun	ar:جميز	de:Platane	en:sycamore	es:sicómoro	fa:چنار	fr:sycomore	he:שקמה	hi:सिकमोर	ja:プラタナス	ko:양버즘나무	pt:plátano	ru:платан	tr:çınar	ur:سائیکمور	zh:悬铃木
 c:sycamore-wood	Noun	ar:خشب الجميز	de:Ahornplatane	en:sycamore wood	es:madera de sicómoro	fa:چوب چنار	fr:bois de sycomore	he:עץ שקמה	hi:गूलर	ja:プラタナス材	ko:시카모어	pt:madeira de sicômoro	ru:сикомор древесина	tr:çınar ağacı	ur:گولر	zh:梧桐木
 c:sydney	Noun	ar:سيدني	de:Sydney	en:Sydney	es:Sídney	fa:سیدنی	fr:Sydney	he:סידני	hi:सिडनी	ja:シドニー	ko:시드니	pt:Sydney	ru:Сидней	tr:Sidney	ur:سڈنی	zh:悉尼
 c:syllable	Noun	ar:مقطع صوتي,مقطع	de:Silbe	en:syllable	es:sílaba	fa:هجا	fr:syllabe	he:הברה	hi:अक्षर,शब्दांश	ja:音節	ko:음절	pt:sílaba	ru:слог	tr:hece	ur:حرف,ہجا	zh:音节
@@ -9415,9 +9450,11 @@ c:treaty	Noun	ar:معاهدة,اتفاقية	de:Vertrag,Abkommen	en:treaty	es:tr
 c:trebuchet	Noun	ar:منجنيق ضخم	de:Trebuchet	en:trebuchet	es:trabuco	fa:تربوشه	fr:trébuchet	he:טרבושה	hi:ट्रेबुचेट	ja:トレビュシェ	ko:트레뷰셋	pt:trabuco	ru:требушет	tr:ağır mancınık	ur:قدیم توپ	zh:投石机
 c:tree	Noun	ar:شجرة	de:Baum	en:tree,trees	es:árbol	fa:درخت	fr:arbre	he:עץ	hi:पेड़,वृक्ष	ja:木	ko:나무	pt:árvore	ru:дерево	tr:ağaç	ur:درخت	zh:树
 c:tree-frog	Noun	ar:ضفدع الشجر	de:Laubfrosch	en:tree frog	es:rana arbórea,ranita de árbol	fa:قورباغه درختی	fr:rainette	he:אילנית	hi:पेड़ का मेंढक	ja:アマガエル	ko:청개구리	pt:perereca	ru:квакша	tr:ağaç kurbağası	ur:درختی مینڈک	zh:树蛙
+c:tree-plant	Noun	ar:شجرة	de:Baum	en:tree	es:árbol	fa:درخت	fr:arbre	he:עץ	hi:पेड़	ja:木	ko:나무	pt:árvore	ru:дерево	tr:ağaç	ur:درخت	zh:树
 c:tree-ring	Noun	ar:حلقات الأشجار	de:Jahresring	en:tree ring	es:anillo de crecimiento	fa:حلقه سالانه درخت	fr:cerne annuel	he:טבעת גדילה	hi:वृक्ष-वलय	ja:年輪	ko:나이테	pt:anel de crescimento	ru:годичное кольцо	tr:yıllık halka	ur:درخت کی سالانہ حلقہ	zh:树轮
 c:treecreeper	Noun	ar:طائر متسلق الاشجار	de:Baumläufer	en:treecreeper	es:agateador	fa:پرنده درختی	fr:grimpereau	he:מטפס	hi:ट्रीक्रीपर	ja:キバシリ	ko:나무발발이	pt:trepadeira	ru:пищуха	tr:ağaç tırmanıcısı	ur:درخت پر چڑھنے والا	zh:旋木雀
 c:treehopper	Noun	ar:حشرة القافزة على الاشجار	de:Buckelzikade	en:treehopper	es:membracid	fa:جرجرک درختی	fr:membracide	he:קופץ עצים	hi:वृक्षकुदा	ja:ツノゼミ	ko:뿔매미	pt:membracídeo	ru:горбатка	tr:ağaç atlayıcısı	ur:درختی کودنے والا	zh:角蝉
+c:trees	Noun	ar:أشجار	de:Bäume	en:trees	es:árboles	fa:درختان	fr:arbres	he:עצים	hi:पेड़	ja:木々	ko:나무들	pt:árvores	ru:деревья	tr:ağaçlar	ur:درخت	zh:树木
 c:trellis	Noun	ar:شبكة تسلق النباتات	de:Rankhilfe	en:trellis	es:enrejado	fa:داربست گیاهی	fr:treillis	he:גדר שתי וערב	hi:जाली	ja:トレリス	ko:트렐리스	pt:treliça	ru:шпалера	tr:kafes destek	ur:جالی	zh:格架
 c:tremolo	Noun	ar:ترمولو	de:Tremolo	en:tremolo	es:trémolo	fa:ترمولو	fr:trémolo	he:טרמולו	hi:ट्रेमोलो	ja:トレモロ	ko:트레몰로	pt:tremolo	ru:тремоло	tr:tremolo	ur:ترمولو	zh:颤音
 c:tremor	Noun	ar:هزة	de:Erderschütterung,leichtes Beben	en:tremor	es:temblor	fa:لرزه	fr:secousse,tremblement	he:רעד	hi:झटका,भूकंपीय झटका	ja:揺れ,微震	ko:미진,떨림	pt:tremor	ru:подземный толчок	tr:sarsıntı	ur:جھٹکا	zh:震颤,微震
@@ -9800,6 +9837,7 @@ c:walkability	Noun	ar:قابلية المشي	de:Fußgängerfreundlichkeit	en:wa
 c:wall-calendar	Noun	ar:تقويم حائطي	de:Wandkalender	en:wall calendar	es:calendario de pared	fa:تقویم دیواری	fr:calendrier mural	he:לוח שנה קיר	hi:वॉल कैलेंडर	ja:壁掛けカレンダー	ko:벽걸이 달력	pt:calendário de parede	ru:настенный календарь	tr:duvar takvimi	ur:وال کیلنڈر	zh:挂历
 c:wall-clock	Noun	ar:ساعة حائط	de:Wanduhr	en:wall clock	es:reloj de pared	fa:ساعت دیواری	fr:horloge murale	he:שעון קיר	hi:दीवार घड़ी	ja:壁掛け時計	ko:벽시계	pt:relógio de parede	ru:настенные часы	tr:duvar saati	ur:دیوار گھڑی	zh:挂钟
 c:walnut	Noun	ar:جوز	de:Walnuss	en:walnut	es:nuez	fa:گردو	fr:noix	he:אגוז	hi:अखरोट	ja:クルミ	ko:호두	pt:noz	ru:грецкий орех	tr:ceviz	ur:اخروٹ	zh:核桃
+c:walnut-tree	Noun	ar:جوز	de:Walnussbaum	en:walnut tree	es:nogal	fa:گردو	fr:noyer	he:אגוז	hi:अखरोट	ja:クルミ	ko:호두나무	pt:nogueira	ru:грецкий орех	tr:ceviz	ur:اخروٹ	zh:核桃树
 c:walnut-wood	Noun	ar:خشب الجوز	de:Nussbaumholz	en:walnut wood	es:madera de nogal	fa:چوب گردو	fr:bois de noyer	he:עץ אגוז	hi:अखरोट की लकड़ी	ja:クルミ材	ko:호두나무	pt:madeira de nogueira	ru:ореховая древесина	tr:ceviz ağacı	ur:اخروٹ کی لکڑی	zh:胡桃木
 c:walrus	Noun	ar:فظ	de:Walross	en:walrus	es:morsa	fa:گراز دریایی	fr:morse	he:ניבתן	hi:वालरस	ja:セイウチ	ko:바다코끼리	pt:morsa	ru:морж	tr:mors	ur:والرس	zh:海象
 c:walrus-mammal	Noun	ar:فظ	de:Walross	en:walrus	es:morsa	fa:گراز دریایی	fr:morse	he:ניב-ים	hi:वालरस	ja:セイウチ	ko:바다코끼리	pt:morsa	ru:морж	tr:mors	ur:والرس	zh:海象
@@ -9961,6 +9999,7 @@ c:wildebeest	Noun	ar:نو	de:Gnu	en:wildebeest,gnu	es:ñu	fa:ولدبیست	fr:g
 c:wildfire	Noun	ar:حريق غابات	de:Waldbrand,Flächenbrand	en:wildfire,bushfire	es:incendio forestal	fa:آتش‌سوزی جنگل	fr:feu de forêt,incendie	he:שריפת יער	hi:जंगल की आग	ja:山火事,森林火災	ko:산불	pt:incêndio florestal	ru:лесной пожар	tr:orman yangını	ur:جنگل کی آگ	zh:野火,森林大火
 c:wildlife-corridor	Noun	ar:ممر الحياة البرية	de:Wildkorridor	en:wildlife corridor	es:corredor de vida silvestre	fa:کریدور حیات وحش	fr:couloir de biodiversité	he:מסדרון אקולוגי	hi:वन्यजीव गलियारा	ja:野生生物回廊	ko:야생동물 통로	pt:corredor ecológico	ru:экологический коридор	tr:yaban hayatı koridoru	ur:جنگلی حیات راہداری	zh:野生动物廊道
 c:willow	Noun	ar:صفصاف	de:Weide	en:willow	es:sauce	fa:بید	fr:saule	he:ערבה	hi:विलो,बेंत	ja:柳	ko:버드나무	pt:salgueiro	ru:ива	tr:söğüt	ur:بید	zh:柳树
+c:willow-tree	Noun	ar:صفصاف	de:Weide	en:willow	es:sauce	fa:بید	fr:saule	he:ערבה	hi:विलो	ja:柳	ko:버드나무	pt:salgueiro	ru:ива	tr:söğüt	ur:بید	zh:柳树
 c:willow-wood	Noun	ar:خشب الصفصاف	de:Weidenholz	en:willow wood	es:madera de sauce	fa:چوب بید	fr:bois de saule	he:עץ ערבה	hi:विलो	ja:柳材	ko:버드나무	pt:madeira de salgueiro	ru:ива древесина	tr:söğüt ağacı	ur:بید کی لکڑی	zh:柳木
 c:wind	Noun	ar:ريح	de:Wind	en:wind	es:viento	fa:باد	fr:vent	he:רוח	hi:हवा,पवन	ja:風	ko:바람	pt:vento	ru:ветер	tr:rüzgar	ur:ہوا	zh:风
 c:wind-chill	Noun	ar:تبريد الرياح	de:Windchill	en:wind chill	es:sensación térmica	fa:احساس سرما از باد	fr:refroidissement éolien	he:קירור רוח	hi:पवन शीतलता	ja:体感温度	ko:체감 온도	pt:sensação térmica	ru:ветроохлаждение	tr:rüzgar üşümesi	ur:ہوا سے ٹھنڈک	zh:风寒
@@ -10080,6 +10119,7 @@ c:yenisei	Noun	ar:ينيسي,نهر ينيسي	de:Jenissei	en:Yenisei,Yenisey	es
 c:yenisei-river	Noun	ar:نهر ينيسي	de:Jenissei	en:Yenisei river	es:río Yeniséi	fa:رود ینی‌سئی	fr:Ienisseï	he:נהר הייניסיי	hi:येनिसेई नदी	ja:エニセイ川	ko:예니세이강	pt:rio Yenisei	ru:река Енисей	tr:Yenisey Nehri	ur:دریائے ینیسی	zh:叶尼塞河
 c:yeoman	Noun	ar:فلاح حر	de:Freisasse	en:yeoman	es:yeoman	fa:کشاورز آزاد	fr:yeoman	he:יאומן	hi:यियोमन	ja:ヨーマン	ko:요먼	pt:yeoman	ru:йомен	tr:çiftçi	ur:آزاد کسان	zh:自耕农
 c:yesterday	Noun	ar:أمس,البارحة	de:gestern	en:yesterday	es:ayer	fa:دیروز	fr:hier	he:אתמול	hi:कल	ja:昨日	ko:어제	pt:ontem	ru:вчера	tr:dün	ur:کل	zh:昨天
+c:yew-tree	Noun	ar:الطقسوس	de:Eibe	en:yew	es:tejo	fa:سرخدار	fr:if	he:טקסוס	hi:यू वृक्ष	ja:イチイ	ko:주목	pt:teixo	ru:тис	tr:porsuk ağacı	ur:یو درخت	zh:紫杉
 c:yggdrasil	Noun	ar:يغدراسيل	de:Yggdrasil	en:Yggdrasil	es:Yggdrasil	fa:یگدراسیل	fr:Yggdrasil	he:יגדראסיל	hi:यग्दरसिल	ja:ユグドラシル	ko:위그드라실	pt:Yggdrasil	ru:Иггдрасиль	tr:Yggdrasil	ur:یگدراسل	zh:世界树
 c:yield	Noun	ar:العائد	de:Rendite	en:yield	es:rendimiento	fa:بازده	fr:rendement	he:תשואה	hi:यील्ड	ja:利回り	ko:수익률	pt:rendimento	ru:доходность	tr:getiri	ur:پیداوار	zh:收益率
 c:yield-strength	Noun	ar:قوة الخضوع	de:Streckgrenze	en:yield strength	es:límite elástico	fa:مقاومت تسلیم	fr:limite d'élasticité	he:גבול כניעה	hi:प्रवाह सामर्थ्य	ja:降伏強度	ko:항복 강도	pt:tensão de escoamento	ru:предел текучести	tr:akma dayanımı	ur:تسلیم قوت	zh:屈服强度
