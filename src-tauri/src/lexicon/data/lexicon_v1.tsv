@@ -30,6 +30,7 @@ c:abduction	Noun	ar:استنتاج افتراضي	de:Abduktion	en:abduction	es:a
 c:abductive-reasoning	Noun	ar:الاستدلال الاستنتاجي	de:Abduktion	en:abductive reasoning	es:razonamiento abductivo	fa:استنتاج بهترین تبیین	fr:raisonnement abductif	he:הסקת מסקנה	hi:अपहरणात्मक तर्क	ja:アブダクション	ko:가추법	pt:raciocínio abdutivo	ru:абдуктивное рассуждение	tr:abdüktif akıl yürütme	ur:بہترین وضاحت	zh:溯因推理
 c:abolition	Noun	ar:إلغاء العبودية,إلغاء الرق	de:Abschaffung der Sklaverei,Abolitionismus	en:abolition,abolition of slavery	es:abolición,abolición de la esclavitud	fa:لغو برده‌داری	fr:abolition,abolition de l'esclavage	he:ביטול העבדות	hi:दासता उन्मूलन,गुलामी का अंत	ja:奴隷制廃止	ko:노예제 폐지	pt:abolição,abolição da escravatura	ru:отмена рабства,аболиционизм	tr:kölelik kaldırma,kölelik lağvı	ur:خاتمۂ غلامی	zh:废除奴隶制,废奴
 c:abolitionism	Noun	ar:حركة إلغاء العبودية	de:Abolitionismus	en:abolitionism	es:abolicionismo	fa:لغو بردگی	fr:abolitionnisme	he:אבוליציוניזם	hi:उन्मूलनवाद	ja:奴隷制廃止論	ko:노예 폐지론	pt:abolicionismo	ru:аболиционизм	tr:kölelik karşıtlığı	ur:غلامی کی منسوخی	zh:废奴主义
+c:aboriginal-people	Noun	ar:سكان أصليون	de:Aborigines	en:Aboriginal people	es:aborígenes	fa:بومیان استرالیا	fr:aborigènes	he:אבוריג'ינים	hi:आदिवासी लोग	ja:アボリジニ	ko:원주민	pt:aborígenes	ru:аборигены	tr:Aborjinler	ur:مقامی باشندے	zh:原住民
 c:abreaction	Noun	ar:التفريغ الانفعالي	de:Abreagieren	en:abreaction	es:abreacción	fa:تخلیه عاطفی	fr:abréaction	he:אבריאקציה	hi:अभिक्रिया	ja:感情発散	ko:감정 발산	pt:ab-reação	ru:абреакция	tr:abreaksiyon	ur:جذباتی تخلیہ	zh:宣泄疗法
 c:absolute-advantage	Noun	ar:الميزة المطلقة	de:absoluter Vorteil	en:absolute advantage	es:ventaja absoluta	fa:مزیت مطلق	fr:avantage absolu	he:יתרון מוחלט	hi:पूर्ण लाभ	ja:絶対優位	ko:절대 우위	pt:vantagem absoluta	ru:абсолютное преимущество	tr:mutlak üstünlük	ur:مطلق فائدہ	zh:绝对优势
 c:absolute-value	Noun	ar:قيمة مطلقة	de:Absolutwert	en:absolute value	es:valor absoluto	fa:قدر مطلق	fr:valeur absolue	he:ערך מוחלט	hi:निरपेक्ष मान	ja:絶対値	ko:절댓값	pt:valor absoluto	ru:абсолютное значение	tr:mutlak değer	ur:مطلق قدر	zh:绝对值
@@ -387,6 +388,7 @@ c:anxiety-feeling	Noun	ar:قلق عاطفي	de:Angst Gefühl	en:anxiety	es:ansie
 c:anxiety-mental	Noun	ar:اضطراب القلق	de:Angststörung	en:anxiety disorder,clinical anxiety	es:trastorno de ansiedad	fa:اختلال اضطراب	fr:trouble anxieux	he:הפרעת חרדה	hi:चिंता विकार,एंग्जाइटी डिसऑर्डर	ja:不安症,不安障害	ko:불안장애	pt:transtorno de ansiedade	ru:тревожное расстройство	tr:kaygı bozukluğu,anksiyete bozukluğu	ur:اضطرابی عارضہ	zh:焦虑症,焦虑障碍
 c:anxiolytic	Noun	ar:مضاد القلق	de:Anxiolytikum	en:anxiolytic	es:ansiolítico	fa:داروی ضد اضطراب	fr:anxiolytique	he:תרופה אנקסיוליטית	hi:चिंताशामक	ja:抗不安薬	ko:항불안제	pt:ansiolítico	ru:анксиолитик	tr:anksiyolitik	ur:اضطراب مخالف دوا	zh:抗焦虑药
 c:aorta	Noun	ar:الشريان الابهر	de:Aorta	en:aorta	es:aorta	fa:آئورت	fr:aorte	he:אבי העורקים	hi:महाधमनी	ja:大動脈	ko:대동맥	pt:aorta	ru:аорта	tr:aort	ur:بڑی شریان	zh:主动脉
+c:apache	Noun	ar:أباتشي	de:Apachen	en:Apache	es:apaches	fa:آپاچی	fr:apaches	he:אפאצ'י	hi:अपाचे	ja:アパッチ族	ko:아파치족	pt:apaches	ru:апачи	tr:Apaçiler	ur:اپاچی	zh:阿帕奇人
 c:apartheid	Noun	ar:الفصل العنصري	de:Apartheid	en:apartheid	es:apartheid	fa:آپارتاید	fr:apartheid	he:אפרטהייד	hi:रंगभेद	ja:アパルトヘイト	ko:아파르트헤이트	pt:apartheid	ru:апартеид	tr:apartheid	ur:نسلی امتیاز	zh:种族隔离
 c:apartment	Noun	ar:شقة	de:Wohnung,Apartment	en:apartment	es:apartamento,piso	fa:آپارتمان	fr:appartement	he:דירה	hi:अपार्टमेंट,फ्लैट	ja:アパート,マンション	ko:아파트	pt:apartamento	ru:квартира	tr:daire,apartman	ur:اپارٹمنٹ,فلیٹ	zh:公寓
 c:apathy	Noun	ar:لامبالاة	de:Apathie,Teilnahmslosigkeit	en:apathy	es:apatía	fa:بی تفاوتی	fr:apathie	he:אפתיה,אדישות	hi:उदासीनता,विरक्ति	ja:無関心,アパシー	ko:무관심,무감동	pt:apatia	ru:апатия	tr:apati,ilgisizlik	ur:بے حسی	zh:冷漠,淡漠
@@ -432,6 +434,7 @@ c:arabian-sea	Noun	ar:بحر العرب	de:Arabisches Meer	en:Arabian Sea	es:Mar
 c:arabian-sea-body	Noun	ar:بحر العرب	de:Arabisches Meer	en:Arabian Sea	es:mar Arábigo	fa:دریای عرب	fr:mer d'Oman	he:ים ערב	hi:अरब सागर	ja:アラビア海	ko:아라비아해	pt:mar da Arábia	ru:Аравийское море	tr:Arap Denizi	ur:بحیرہ عرب	zh:阿拉伯海
 c:arabic-cuisine	Noun	ar:مطبخ عربي	de:arabische Küche	en:Arabic cuisine	es:cocina árabe	fa:آشپزی عربی	fr:cuisine arabe	he:מטבח ערבי	hi:अरबी भोजन	ja:アラブ料理	ko:아랍 요리	pt:culinária árabe	ru:арабская кухня	tr:Arap mutfağı	ur:عربی کھانا	zh:阿拉伯菜
 c:arabic-language	Noun	ar:اللغة العربية	de:Arabisch	en:Arabic language	es:idioma árabe	fa:زبان عربی	fr:arabe	he:ערבית	hi:अरबी भाषा	ja:アラビア語	ko:아랍어	pt:língua árabe	ru:арабский язык	tr:Arapça	ur:عربی زبان	zh:阿拉伯语
+c:arabs	Noun	ar:عرب	de:Araber	en:Arabs	es:árabes	fa:عرب‌ها	fr:arabes	he:ערבים	hi:अरब	ja:アラブ人	ko:아랍인	pt:árabes	ru:арабы	tr:Araplar	ur:عرب	zh:阿拉伯人
 c:arafura-sea	Noun	ar:بحر أرافورا	de:Arafurasee	en:Arafura Sea	es:mar de Arafura	fa:دریای آرافورا	fr:mer d'Arafura	he:ים ארפורה	hi:अराफुरा सागर	ja:アラフラ海	ko:아라푸라해	pt:mar de Arafura	ru:Арафурское море	tr:Arafura Denizi	ur:اراپورہ سمندر	zh:阿拉弗拉海
 c:aral-sea	Noun	ar:بحر الآرال	de:Aralsee	en:Aral Sea	es:Mar de Aral	fa:دریاچه آرال	fr:Mer d'Aral	he:ים אראל	hi:अरल सागर	ja:アラル海	ko:아랄해	pt:Mar de Aral	ru:Аральское море	tr:Aral Gölü	ur:بحیرہ ارال	zh:咸海
 c:aral-sea-lake	Noun	ar:بحر آرال	de:Aralsee	en:Aral Sea	es:mar de Aral	fa:دریاچه آرال	fr:mer d'Aral	he:ימת ארל	hi:अराल सागर	ja:アラル海	ko:아랄해	pt:mar de Aral	ru:Аральское море	tr:Aral Gölü	ur:جھیل ارال	zh:咸海
@@ -620,6 +623,7 @@ c:axolotl	Noun	ar:اكسولوتل	de:Axolotl	en:axolotl	es:ajolote,axolote	fa:�
 c:axon	Noun	ar:محور عصبي	de:Axon	en:axon	es:axón	fa:آکسون	fr:axone	he:אקסון	hi:तंत्रिका-अक्ष	ja:軸索	ko:축삭	pt:axônio	ru:аксон	tr:akson	ur:اعصابی محور	zh:轴突
 c:axumite	Noun	ar:مملكة أكسوم	de:Reich von Aksum	en:Kingdom of Aksum	es:reino de Aksum	fa:پادشاهی اکسوم	fr:royaume d'Aksoum	he:ממלכת אקסום	hi:अक्सुम राज्य	ja:アクスム王国	ko:악숨 왕국	pt:reino de Axum	ru:Аксумское царство	tr:Aksum krallığı	ur:اکسم سلطنت	zh:阿克苏姆王国
 c:ayyubid-dynasty	Noun	ar:السلالة الأيوبية	de:Ayyubiden	en:Ayyubid dynasty	es:dinastía ayubí	fa:ایوبیان	fr:dynastie ayyoubide	he:שושלת האיובים	hi:अय्यूबी वंश	ja:アイユーブ朝	ko:아이유브 왕조	pt:dinastia aiúbida	ru:Айюбиды	tr:Eyyubi hanedanı	ur:ایوبی خاندان	zh:阿尤布王朝
+c:aztec	Noun	ar:أزتيك	de:Azteken	en:Aztec	es:aztecas	fa:آزتک‌ها	fr:aztèques	he:אצטקים	hi:एज़टेक	ja:アステカ人	ko:아스텍족	pt:astecas	ru:ацтеки	tr:Aztekler	ur:ازتک	zh:阿兹特克人
 c:aztec-empire	Noun	ar:إمبراطورية الأزتيك	de:Aztekenreich	en:Aztec Empire	es:Imperio azteca	fa:امپراتوری آزتک	fr:Empire aztèque	he:האימפריה האצטקית	hi:एज़्टेक साम्राज्य	ja:アステカ帝国	ko:아즈텍 제국	pt:Império Asteca	ru:империя ацтеков	tr:Aztek İmparatorluğu	ur:ازٹیک سلطنت	zh:阿兹特克帝国
 c:baby	Noun	ar:رضيع,طفل	de:Baby,Säugling	en:baby	es:bebé	fa:نوزاد	fr:bébé	he:תינוק	hi:शिशु	ja:赤ちゃん,赤ん坊	ko:아기	pt:bebê	ru:младенец	tr:bebek	ur:شیرخوار	zh:婴儿,宝宝
 c:babylon	Noun	ar:بابل	de:Babylon	en:Babylon	es:Babilonia	fa:بابل	fr:Babylone	he:בבל	hi:बेबीलोन	ja:バビロン	ko:바빌론	pt:Babilônia	ru:Вавилон	tr:Babil	ur:بابل	zh:巴比伦
@@ -825,6 +829,7 @@ c:bengali-language	Noun	ar:اللغة البنغالية	de:Bengalisch	en:Bengal
 c:benthic	Adjective	ar:قاعي	de:benthisch	en:benthic	es:béntico	fa:بنتیک	fr:benthique	he:בנתי	hi:बेन्थिक	ja:底生	ko:저서	pt:bêntico	ru:бентический	tr:bentik	ur:تہ نشین	zh:底栖
 c:benthos	Noun	ar:قاعيات بحرية	de:Benthos	en:benthos	es:bentos	fa:بنتوس	fr:benthos	he:בנתוס	hi:तल जीव	ja:ベントス	ko:저서 생물	pt:bentos	ru:бентос	tr:bentos	ur:تہ نشین جاندار	zh:底栖生物
 c:benzodiazepine	Noun	ar:بنزوديازيبين	de:Benzodiazepin	en:benzodiazepine	es:benzodiazepina	fa:بنزودیازپین	fr:benzodiazépine	he:בנזודיאזפין	hi:बेंज़ोडायज़ेपीन	ja:ベンゾジアゼピン	ko:벤조디아제핀	pt:benzodiazepina	ru:бензодиазепин	tr:benzodiazepin	ur:بنزوڈائزیپائن	zh:苯二氮䓬类药物
+c:berbers	Noun	ar:بربر	de:Berber	en:Berbers	es:bereberes	fa:بربرها	fr:berbères	he:ברברים	hi:बर्बर	ja:ベルベル人	ko:베르베르인	pt:berberes	ru:берберы	tr:Berberiler	ur:بربر	zh:柏柏尔人
 c:beret	Noun	ar:قبعة باريه	de:Baskenmütze	en:beret	es:boina	fa:کلاه برت	fr:béret	he:כובע ברט	hi:बेरेट	ja:ベレー帽	ko:베레모	pt:boina	ru:берет	tr:bere şapka	ur:بیریٹ	zh:贝雷帽
 c:bering-sea	Noun	ar:بحر بيرنغ	de:Beringmeer	en:Bering Sea	es:Mar de Bering	fa:دریای برینگ	fr:Mer de Béring	he:ים ברינג	hi:बेरिंग सागर	ja:ベーリング海	ko:베링해	pt:Mar de Bering	ru:Берингово море	tr:Bering Denizi	ur:بحیرہ بیرنگ	zh:白令海
 c:bering-sea-body	Noun	ar:بحر بيرنغ	de:Beringmeer	en:Bering Sea	es:mar de Bering	fa:دریای برینگ	fr:mer de Béring	he:ים ברינג	hi:बेरिंग सागर	ja:ベーリング海	ko:베링해	pt:mar de Bering	ru:Берингово море	tr:Bering Denizi	ur:بیرنگ سمندر	zh:白令海
@@ -1170,6 +1175,7 @@ c:bureaucracy	Noun	ar:بيروقراطية	de:Bürokratie	en:bureaucracy	es:buro
 c:burette	Noun	ar:بيريت	de:Bürette	en:burette	es:bureta	fa:بورت	fr:burette	he:בורטה	hi:ब्यूरेट	ja:ビュレット	ko:뷰렛	pt:bureta	ru:бюретка	tr:büret	ur:بیورٹ	zh:滴定管
 c:burgundy	Noun	ar:خمري	de:Burgunderrot,Bordeauxrot	en:burgundy	es:borgoña	fa:بورگاندی	fr:bourgogne	he:בורדו	hi:बरगंडी	ja:バーガンディ	ko:버건디	pt:borgonha	ru:бордовый	tr:bordo	ur:برگنڈی	zh:勃艮第红
 c:burlap	Noun	ar:الخيش	de:Sackleinen	en:burlap	es:arpillera	fa:گونی	fr:toile de jute	he:קנבס גס	hi:टाट	ja:麻布	ko:황마 천	pt:estopa	ru:мешковина	tr:çuval bezi	ur:ٹاٹ	zh:粗麻布
+c:burmese	Noun	ar:بورميون	de:Birmanen	en:Burmese	es:birmanos	fa:برمه‌ای‌ها	fr:birmans	he:בורמים	hi:बर्मी	ja:ビルマ人	ko:버마족	pt:birmaneses	ru:бирманцы	tr:Birmanyalılar	ur:برمی	zh:缅族
 c:burrata	Noun	ar:بوراتا	de:Burrata	en:burrata	es:burrata	fa:بوراتا	fr:burrata	he:בוראטה	hi:बुरार्ता	ja:ブラータ	ko:부라타	pt:burrata	ru:буррата	tr:burrata	ur:بوراٹا	zh:布拉塔
 c:bus	Noun	ar:حافلة,باص,أوتوبيس	de:Bus,Omnibus	en:bus,coach	es:autobús,bus,ómnibus	fa:اتوبوس	fr:bus,autobus,autocar	he:אוטובוס	hi:बस	ja:バス	ko:버스	pt:ônibus,autocarro	ru:автобус	tr:otobüs	ur:بس	zh:公共汽车,巴士
 c:busan	Noun	ar:بوسان	de:Busan	en:Busan,Pusan	es:Busan	fa:بوسان	fr:Busan	he:בוסאן	hi:बुसान	ja:釜山,プサン	ko:부산	pt:Busan	ru:Пусан	tr:Busan	ur:بوسان	zh:釜山
@@ -1515,6 +1521,7 @@ c:chemotherapy-drug	Noun	ar:علاج كيماوي	de:Chemotherapie	en:chemothera
 c:chengdu	Noun	ar:تشنغدو	de:Chengdu	en:Chengdu	es:Chengdu	fa:چنگدو	fr:Chengdu	he:צ'נגדו	hi:चेंग्दू	ja:成都,チェンドゥ	ko:청두	pt:Chengdu	ru:Чэнду	tr:Çengdu	ur:چینگدو	zh:成都
 c:chennai	Noun	ar:تشيناي	de:Chennai	en:Chennai,Madras	es:Chennai,Madrás	fa:چنای	fr:Chennai,Madras	he:צ'נאי	hi:चेन्नई	ja:チェンナイ	ko:첸나이	pt:Chennai,Madras	ru:Ченнаи	tr:Çennai	ur:چنائی	zh:钦奈
 c:cherimoya	Noun	ar:شيريمويا	de:Cherimoya	en:cherimoya	es:chirimoya	fa:چریمویا	fr:chérimole	he:כרימויה	hi:चेरीमोया	ja:チェリモヤ	ko:체리모야	pt:cherimóia	ru:черимойя	tr:şekerli elma	ur:چیریمویا	zh:番荔枝
+c:cherokee	Noun	ar:شيروكي	de:Cherokee	en:Cherokee	es:cheroquis	fa:چروکی	fr:cherokees	he:צ'רוקי	hi:चेरोकी	ja:チェロキー族	ko:체로키족	pt:cherokees	ru:чероки	tr:Çerokiler	ur:چیروکی	zh:切罗基人
 c:cherry	Noun	ar:كرز	de:Kirsche	en:cherry	es:cereza	fa:گیلاس,آلبالو	fr:cerise	he:דובדבן	hi:चेरी	ja:さくらんぼ,チェリー	ko:체리,벚나무 열매	pt:cereja	ru:вишня,черешня	tr:kiraz,vişne	ur:چیری	zh:樱桃
 c:cherry-var	Noun	ar:كرز	de:Kirsche Frucht	en:cherry fruit	es:cereza	fa:گیلاس میوه	fr:cerise	he:דובדבן	hi:चेरी	ja:サクランボ	ko:체리 과일	pt:cereja	ru:вишня плод	tr:kiraz meyve	ur:چیری	zh:樱桃
 c:cherry-wood	Noun	ar:خشب الكرز	de:Kirschholz	en:cherry wood	es:madera de cerezo	fa:چوب گیلاس	fr:bois de cerisier	he:עץ דובדבן	hi:चेरी की लकड़ी	ja:チェリー材	ko:체리 나무	pt:madeira de cerejeira	ru:вишнёвая древесина	tr:kiraz ağacı	ur:چیری کی لکڑی	zh:樱桃木
@@ -2997,6 +3004,7 @@ c:ethics	Noun	ar:أخلاق	de:Ethik	en:ethics	es:ética	fa:اخلاق	fr:éthiq
 c:ethics-philo	Noun	ar:علم الأخلاق	de:Ethik	en:ethics	es:ética	fa:اخلاق‌شناسی	fr:éthique	he:אתיקה	hi:आचारशास्त्र	ja:倫理学	ko:윤리학	pt:ética	ru:этика	tr:etik	ur:اخلاقیات	zh:伦理学
 c:ethiopia	Noun	ar:إثيوبيا	de:Äthiopien	en:Ethiopia	es:Etiopía	fa:اتیوپی	fr:Éthiopie	he:אתיופיה	hi:इथियोपिया	ja:エチオピア	ko:에티오피아	pt:Etiópia	ru:Эфиопия	tr:Etiyopya	ur:ایتھوپیا	zh:埃塞俄比亚
 c:ethiopian-cuisine	Noun	ar:مطبخ إثيوبي	de:äthiopische Küche	en:Ethiopian cuisine	es:cocina etíope	fa:آشپزی اتیوپیایی	fr:cuisine éthiopienne	he:מטבח אתיופי	hi:इथियोपियाई भोजन	ja:エチオピア料理	ko:에티오피아 요리	pt:culinária etíope	ru:эфиопская кухня	tr:Etiyopya mutfağı	ur:ایتھوپیائی کھانا	zh:埃塞俄比亚菜
+c:ethnic-groups	Noun	ar:مجموعات عرقية	de:ethnische Gruppen	en:ethnic groups	es:grupos étnicos	fa:گروه‌های قومی	fr:groupes ethniques	he:קבוצות אתניות	hi:जातीय समूह	ja:民族集団	ko:민족 집단	pt:grupos étnicos	ru:этнические группы	tr:etnik gruplar	ur:نسلی گروہ	zh:民族群体
 c:ethnicity	Noun	ar:عرق,انتماء عرقي	de:Ethnie,ethnische Zugehörigkeit	en:ethnicity	es:etnia,etnicidad	fa:قومیت,نژاد	fr:ethnicité,ethnie	he:אתניות	hi:नृजातीयता,जातीयता	ja:民族性,エスニシティ	ko:민족성	pt:etnia,etnicidade	ru:этничность,этническая принадлежность	tr:etnisite,etnik köken	ur:نسل,قومیت	zh:族群,民族性
 c:ethnicity-socio	Noun	ar:عرقية اجتماعية	de:Ethnizität	en:ethnicity	es:etnicidad	fa:قومیت	fr:ethnicité	he:אתניות	hi:जातीयता	ja:民族性	ko:민족성	pt:etnicidade	ru:этничность	tr:etnisite	ur:نسلی گروہ	zh:族群
 c:ethnography	Noun	ar:الإثنوغرافيا	de:Ethnographie	en:ethnography	es:etnografía	fa:مردم‌نگاری	fr:ethnographie	he:אתנוגרפיה	hi:नृवंशविवरण	ja:民族誌	ko:민족지	pt:etnografia	ru:этнография	tr:etnografi	ur:قوم نگاری	zh:民族志
@@ -3214,6 +3222,7 @@ c:file-upload	Noun	ar:رفع ملف	de:Hochladen	en:upload	es:carga de archivos	
 c:filibuster	Noun	ar:المماطلة التشريعية	de:Filibuster	en:filibuster	es:filibusterismo	fa:مانع‌تراشی قانونگذاری	fr:obstruction parlementaire	he:פיליבסטר	hi:बाधाकारी भाषण	ja:議事妨害	ko:의사 진행 방해	pt:obstrução parlamentar	ru:фilibuster	tr:uzatmalı konuşma	ur:پارلیمانی رکاوٹ	zh:拖延战术
 c:filing-cabinet	Noun	ar:خزانة ملفات	de:Aktenschrank	en:filing cabinet	es:archivador	fa:کابینت پرونده	fr:classeur à tiroirs	he:ארון תיוק	hi:फाइलिंग कैबिनेट	ja:書類棚	ko:서류 캐비닛	pt:arquivo	ru:картотечный шкаф	tr:dosya dolabı	ur:فائلنگ کیبنٹ	zh:文件柜
 c:filipino-language	Noun	ar:اللغة الفلبينية	de:Filipino	en:Filipino language	es:idioma filipino	fa:زبان فیلیپینی	fr:filipino	he:פיליפינית	hi:फिलिपिनो भाषा	ja:フィリピン語	ko:필리핀어	pt:língua filipina	ru:филиппинский язык	tr:Filipince	ur:فلپائنی زبان	zh:菲律宾语
+c:filipinos	Noun	ar:فلبينيون	de:Filipinos	en:Filipinos	es:filipinos	fa:فیلیپینی‌ها	fr:philippins	he:פיליפינים	hi:फ़िलिपीनी	ja:フィリピン人	ko:필리핀인	pt:filipinos	ru:филиппинцы	tr:Filipinliler	ur:فلپائنی	zh:菲律宾人
 c:film	Noun	ar:فيلم	de:Film	en:film,movie	es:película,film	fa:فیلم	fr:film	he:סרט	hi:फिल्म	ja:映画,フィルム	ko:영화,필름	pt:filme	ru:фильм	tr:film	ur:فلم	zh:电影,影片
 c:film-actor	Noun	ar:ممثل,ممثل سينمائي	de:Filmschauspieler,Schauspieler	en:film actor,actor	es:actor de cine,actor	fa:بازیگر فیلم,بازیگر	fr:acteur de cinéma,acteur	he:שחקן קולנוע,שחקן	hi:फिल्म अभिनेता,अभिनेता	ja:映画俳優,俳優	ko:영화 배우,배우	pt:ator de cinema,ator	ru:киноактёр,актёр	tr:film oyuncusu,oyuncu	ur:فلم اداکار,اداکار	zh:电影演员,演员
 c:film-cinema	Noun	ar:سينما	de:Kino	en:cinema	es:cine	fa:سینما	fr:cinéma	he:קולנוע	hi:सिनेमा	ja:映画	ko:영화	pt:cinema	ru:кинематограф	tr:sinema	ur:سنیما	zh:电影
@@ -3458,6 +3467,7 @@ c:fuchsia	Noun	ar:فوشي	de:Fuchsia	en:fuchsia	es:fucsia	fa:فوشیا	fr:fuch
 c:fudge	Noun	ar:فودج	de:Fudge	en:fudge	es:fudge	fa:فاج	fr:fudge	he:פאדג'	hi:फ़ज	ja:ファッジ	ko:퍼지	pt:fudge	ru:фадж	tr:fudge	ur:فج	zh:软糖
 c:fuel	Noun	ar:وقود	de:Kraftstoff,Brennstoff,Treibstoff	en:fuel	es:combustible	fa:سوخت	fr:carburant,combustible	he:דלק	hi:ईंधन	ja:燃料	ko:연료	pt:combustível	ru:топливо,горючее	tr:yakıt	ur:ایندھن	zh:燃料
 c:fugue	Noun	ar:فوغا	de:Fuge	en:fugue	es:fuga	fa:فوگ	fr:fugue	he:פוגה	hi:फ्यूग	ja:フーガ	ko:푸가	pt:fuga	ru:фуга	tr:füg	ur:فوگ	zh:赋格
+c:fulani	Noun	ar:فولاني	de:Fulbe	en:Fulani	es:fulani	fa:فولانی	fr:peuls	he:פולאני	hi:फुलानी	ja:フラ人	ko:풀라족	pt:fulas	ru:фульбе	tr:Fulaniler	ur:فلانی	zh:富拉尼人
 c:full	Adjective	ar:ممتلئ,كامل	de:voll	en:full	es:lleno	fa:پر	fr:plein	he:מלא	hi:भरा	ja:満ちた,いっぱい	ko:가득 찬	pt:cheio	ru:полный	tr:dolu	ur:بھرا ہوا	zh:满
 c:full-moon	Noun	ar:بدر,قمر مكتمل	de:Vollmond	en:full moon	es:luna llena	fa:ماه کامل,بدر	fr:pleine lune	he:ירח מלא	hi:पूर्णिमा,पूर्णचंद्र	ja:満月	ko:보름달,만월	pt:lua cheia	ru:полнолуние	tr:dolunay	ur:پورا چاند,بدر	zh:满月
 c:function	Noun	ar:دالة	de:Funktion	en:function	es:función	fa:تابع	fr:fonction	he:פונקציה	hi:फलन	ja:関数	ko:함수	pt:função	ru:функция	tr:fonksiyon	ur:فنکشن	zh:函数
@@ -3877,6 +3887,7 @@ c:hammer-tool	Noun	ar:مطرقة	de:Hammer	en:hammer	es:martillo	fa:چکش	fr:ma
 c:hammerhead	Noun	ar:قرش المطرقة	de:Hammerhai	en:hammerhead shark	es:tiburón martillo	fa:کوسه چکشی	fr:requin marteau	he:כריש פטיש	hi:हैमरहेड शार्क	ja:シュモクザメ	ko:귀상어	pt:tubarão-martelo	ru:акула-молот	tr:çekiç başlı köpekbalığı	ur:ہتھوڑا شارک	zh:双髻鲨
 c:hammurabi	Noun	ar:حمورابي	de:Hammurabi	en:Hammurabi	es:Hammurabi	fa:حمورابی	fr:Hammurabi	he:חמורבי	hi:हम्मुराबी	ja:ハンムラビ	ko:함무라비	pt:Hamurábi	ru:Хаммурапи	tr:Hammurabi	ur:حمورابی	zh:汉谟拉比
 c:hamper	Noun	ar:سلة غسيل	de:Wäschekorb	en:hamper,laundry basket	es:cesto de la ropa sucia	fa:سبد رخت	fr:panier à linge	he:סל כביסה	hi:कपड़े धोने की टोकरी	ja:ランドリーバスケット,洗濯かご	ko:빨래 바구니	pt:cesto de roupa suja	ru:корзина для белья	tr:çamaşır sepeti	ur:لانڈری کی ٹوکری	zh:洗衣篮
+c:han-chinese	Noun	ar:هان الصينيون	de:Han-Chinesen	en:Han Chinese	es:han	fa:هان	fr:hans	he:האן	hi:हान चीनी	ja:漢民族	ko:한족	pt:han	ru:ханьцы	tr:Han Çinlileri	ur:ہان چینی	zh:汉族
 c:han-dynasty	Noun	ar:سلالة هان الصينية	de:Han-Dynastie	en:Han dynasty	es:dinastía Han	fa:دودمان هان	fr:dynastie Han	he:שושלת האן	hi:हान राजवंश	ja:漢王朝	ko:한나라	pt:dinastia Han	ru:династия Хань	tr:Han hanedanı	ur:ہان خاندان	zh:汉朝
 c:hand	Noun	ar:يد	de:Hand	en:hand,hands	es:mano	fa:دست	fr:main	he:יד	hi:हाथ	ja:手	ko:손	pt:mão	ru:рука	tr:el	ur:ہاتھ	zh:手
 c:hand-puppet	Noun	ar:دمية اليد	de:Handpuppe	en:hand puppet	es:títere de mano	fa:عروسک دستکشی	fr:marionnette à main	he:בובת יד	hi:हाथ की कठपुतली	ja:手袋人形	ko:손 인형	pt:fantoche de mão	ru:кукла-перчатка	tr:el kuklası	ur:ہاتھ کی کٹھ پتلی	zh:手偶
@@ -3928,8 +3939,10 @@ c:hat	Noun	ar:قبعة	de:Hut	en:hat	es:sombrero	fa:کلاه	fr:chapeau	he:כו�
 c:hate	Verb	ar:كره	de:hassen	en:hate	es:odiar	fa:متنفر بودن	fr:haïr,détester	he:לשנוא	hi:नफ़रत करना	ja:憎む,嫌う	ko:미워하다,싫어하다	pt:odiar	ru:ненавидеть	tr:nefret etmek	ur:نفرت کرنا	zh:恨,讨厌
 c:hate-emotion	Noun	ar:كراهية	de:Hass	en:hate	es:odio	fa:نفرت	fr:haine	he:שנאה	hi:नफ़रत	ja:憎しみ	ko:증오	pt:ódio	ru:ненависть	tr:nefret	ur:نفرت	zh:恨
 c:hatshepsut	Noun	ar:حتشبسوت	de:Hatschepsut	en:Hatshepsut	es:Hatshepsut	fa:حتشپسوت	fr:Hatchepsout	he:חתשפסות	hi:हत्शेप्सुत	ja:ハトシェプスト	ko:하트셉수트	pt:Hatshepsut	ru:Хатшепсут	tr:Hatşepsut	ur:حتشپسوت	zh:哈特谢普苏特
+c:hausa	Noun	ar:هوسا	de:Hausa	en:Hausa	es:hausa	fa:هوسا	fr:haoussa	he:האוסה	hi:हौसा	ja:ハウサ人	ko:하우사족	pt:haúça	ru:хауса	tr:Hausa	ur:ہوسا	zh:豪萨人
 c:hausdorff-space	Noun	ar:الفضاء الهاوسدورفي	de:Hausdorff-Raum	en:Hausdorff space	es:espacio de Hausdorff	fa:فضای هاوسدورف	fr:espace de Hausdorff	he:מרחב האוסדורף	hi:हाउसडोर्फ स्थान	ja:ハウスドルフ空間	ko:하우스도르프 공간	pt:espaço de Hausdorff	ru:пространство Хаусдорфа	tr:Hausdorff uzayı	ur:ہاؤسڈورف فضا	zh:豪斯多夫空间
 c:haute-couture	Noun	ar:أزياء راقية	de:Haute Couture	en:haute couture	es:alta costura	fa:هوت کوتور	fr:haute couture	he:הוט קוטור	hi:उच्च सिलाई	ja:オートクチュール	ko:오트 쿠튀르	pt:alta-costura	ru:высокая мода	tr:haute couture	ur:ہوٹ کوٹور	zh:高级定制
+c:hawaiians	Noun	ar:هاوايون	de:Hawaiianer	en:Hawaiians	es:hawaianos	fa:هاوایی‌ها	fr:hawaïens	he:הוואים	hi:हवाईयन	ja:ハワイ人	ko:하와이인	pt:havaianos	ru:гавайцы	tr:Havaililer	ur:ہوائی	zh:夏威夷人
 c:hawk	Noun	ar:صقر	de:Habicht	en:hawk	es:halcón	fa:شاهین	fr:faucon	he:נץ	hi:बाज़	ja:鷹,タカ	ko:매	pt:gavião	ru:ястреб	tr:atmaca	ur:باز	zh:鹰
 c:hawksbill	Noun	ar:سلحفاة منقار الصقر	de:Echte Karettschildkröte	en:hawksbill turtle	es:tortuga carey	fa:لاک پشت منقار شاهین	fr:tortue imbriquée	he:צב ים	hi:हॉकसबिल कछुआ	ja:タイマイ	ko:매부리바다거북	pt:tartaruga-de-pente	ru:настоящая каретта	tr:şahin gagalı kaplumbağa	ur:باز منقار کچھوا	zh:玳瑁
 c:hay	Noun	ar:تبن	de:Heu	en:hay	es:heno	fa:علوفه	fr:foin	he:חציר	hi:सूखी घास	ja:干し草	ko:건초	pt:feno	ru:сено	tr:ot	ur:سوکھی گھاس	zh:干草
@@ -4239,6 +4252,7 @@ c:identity-theft	Noun	ar:سرقة الهوية	de:Identitätsdiebstahl	en:identi
 c:ideology	Noun	ar:أيديولوجيا,نظرية فكرية	de:Ideologie	en:ideology	es:ideología	fa:ایدئولوژی,مرام	fr:idéologie	he:אידאולוגיה	hi:विचारधारा	ja:イデオロギー,思想体系	ko:이념,이데올로기	pt:ideologia	ru:идеология	tr:ideoloji	ur:نظریہ,آئیڈیالوجی	zh:意识形态,思想体系
 c:idiolect	Noun	ar:لهجة شخصية	de:Idiolekt	en:idiolect	es:idiolecto	fa:گونه فردی	fr:idiolecte	he:אידיולקט	hi:व्यक्तिभाषा	ja:個人語	ko:개인 방언	pt:idioleto	ru:идиолект	tr:idyolekt	ur:انفرادی بولی	zh:个人语言
 c:idiom	Noun	ar:تعبير اصطلاحي,مصطلح	de:Idiom,Redewendung	en:idiom	es:modismo,expresión idiomática	fa:اصطلاح,عبارت اصطلاحی	fr:idiome,expression idiomatique	he:ניב	hi:मुहावरा	ja:イディオム,慣用句	ko:관용어,숙어	pt:idiomatismo,expressão idiomática	ru:идиома	tr:deyim	ur:محاورہ	zh:习语,成语
+c:igbo	Noun	ar:إيغبو	de:Igbo	en:Igbo	es:igbo	fa:ایگبو	fr:igbos	he:איגבו	hi:इग्बो	ja:イボ人	ko:이그보족	pt:ibos	ru:игбо	tr:İgbo	ur:اگبو	zh:伊博人
 c:ignorance	Noun	ar:جهل	de:Unwissenheit	en:ignorance	es:ignorancia	fa:نادانی	fr:ignorance	he:בורות	hi:अज्ञानता	ja:無知	ko:무지	pt:ignorância	ru:невежество	tr:cahillik	ur:جہالت	zh:无知
 c:iguana	Noun	ar:ايغوانا	de:Leguan	en:iguana	es:iguana	fa:ایگوانا	fr:iguane	he:איגואנה	hi:इगुआना	ja:イグアナ	ko:이구아나	pt:iguana	ru:игуана	tr:iguana	ur:اگوانا	zh:鬣蜥
 c:ikat	Noun	ar:ايكات	de:Ikat	en:ikat	es:ikat	fa:ایکات	fr:ikat	he:איקאט	hi:इकत	ja:イカット	ko:이카트	pt:ikat	ru:икат	tr:ikat	ur:اکت	zh:扎染
@@ -4275,6 +4289,7 @@ c:impost	Noun	ar:قاعدة القوس	de:Kämpfer	en:impost	es:imposta	fa:تا�
 c:impressionism	Noun	ar:الانطباعية	de:Impressionismus	en:Impressionism	es:impresionismo	fa:امپرسیونیسم	fr:impressionnisme	he:אימפרסיוניזם	hi:प्रभाववाद	ja:印象主義	ko:인상주의	pt:impressionismo	ru:импрессионизм	tr:izlenimcilik	ur:تاثریت	zh:印象主义
 c:impulse	Noun	ar:دفع فيزيائي	de:Kraftstoß	en:impulse	es:impulso	fa:ضربه	fr:impulsion	he:דחף	hi:आवेग	ja:力積	ko:충격량	pt:impulso	ru:импульс силы	tr:itki	ur:دباؤ کی قوت	zh:冲量
 c:inattention-economics	Noun	ar:الإهمال الاقتصادي	de:ökonomische Unaufmerksamkeit	en:rational inattention	es:inatención racional	fa:بی‌توجهی عقلانی	fr:inattention rationnelle	he:חוסר תשומת לב רציונלי	hi:तर्कसंगत असावधानता	ja:合理的不注意	ko:합리적 무관심	pt:inatenção racional	ru:рациональная невнимательность	tr:rasyonel dikkatsizlik	ur:عقلی بے توجہی	zh:理性不注意
+c:inca	Noun	ar:إنكا	de:Inka	en:Inca	es:incas	fa:اینکاها	fr:incas	he:אינקה	hi:इंका	ja:インカ人	ko:잉카족	pt:incas	ru:инки	tr:İnkalar	ur:انکا	zh:印加人
 c:inca-empire	Noun	ar:إمبراطورية الإنكا	de:Inkareich	en:Inca Empire	es:Imperio inca	fa:امپراتوری اینکا	fr:Empire inca	he:האימפריה של האינקה	hi:इंका साम्राज्य	ja:インカ帝国	ko:잉카 제국	pt:Império Inca	ru:империя инков	tr:İnka İmparatorluğu	ur:انکا سلطنت	zh:印加帝国
 c:incarceration	Noun	ar:السجن	de:Inhaftierung	en:incarceration	es:encarcelamiento	fa:زندانی شدن	fr:incarcération	he:מאסר	hi:कारावास	ja:収監	ko:투옥	pt:encarceramento	ru:лишение свободы	tr:hapsedilme	ur:قید	zh:监禁
 c:incarnation	Noun	ar:التجسد	de:Inkarnation	en:incarnation	es:encarnación	fa:تجسد	fr:incarnation	he:התגלמות	hi:अवतार	ja:受肉	ko:성육신	pt:encarnação	ru:воплощение	tr:bedenleşme	ur:تجسد	zh:道成肉身
@@ -4421,6 +4436,7 @@ c:intron-gen	Noun	ar:إنترون	de:Intron	en:intron	es:intrón	fa:اینترو
 c:introspection-epistemic	Noun	ar:الاستبطان المعرفي	de:epistemische Introspektion	en:epistemic introspection	es:introspección epistémica	fa:درون‌نگری معرفتی	fr:introspection épistémique	he:אינטרוספקציה אפיסטמית	hi:ज्ञानमीमांसा अंतर्निरीक्षण	ja:認識的内省	ko:인식론적 내성	pt:introspecção epistêmica	ru:эпистемическая интроспекция	tr:epistemik iç gözlem	ur:معرفتی خود جائزہ	zh:认识内省
 c:introvert	Noun	ar:انطوائي,منطو	de:Introvertierter	en:introvert	es:introvertido	fa:درونگرا	fr:introverti	he:מופנם	hi:अंतर्मुखी	ja:内向型	ko:내향형,내향인	pt:introvertido	ru:интроверт	tr:içedönük	ur:انطوائی	zh:内向者,内向型
 c:intuition	Noun	ar:حدس,بصيرة	de:Intuition,Ahnung	en:intuition	es:intuición	fa:شهود,الهام	fr:intuition	he:אינטואיציה	hi:अंतर्ज्ञान,सहज बोध	ja:直観,直感	ko:직관,직감	pt:intuição	ru:интуиция	tr:sezgi	ur:بصیرت,وجدان	zh:直觉
+c:inuit	Noun	ar:إنويت	de:Inuit	en:Inuit	es:inuit	fa:اینوئیت‌ها	fr:inuits	he:אינואיטים	hi:इनुइट	ja:イヌイット	ko:이누이트	pt:inuítes	ru:инуиты	tr:İnuitler	ur:انوئٹ	zh:因纽特人
 c:invade	Verb	ar:غزا,يغزو	de:einmarschieren,eindringen	en:invade	es:invadir	fa:هجوم بردن	fr:envahir	he:לפלוש	hi:आक्रमण करना	ja:侵略する	ko:침략하다	pt:invadir	ru:вторгаться	tr:istila etmek	ur:یلغار کرنا	zh:入侵
 c:invasion	Noun	ar:غزو	de:Invasion,Einmarsch	en:invasion	es:invasión	fa:هجوم,تجاوز	fr:invasion	he:פלישה	hi:आक्रमण	ja:侵略	ko:침략	pt:invasão	ru:вторжение	tr:istila	ur:یلغار	zh:入侵
 c:invasive	Adjective	ar:الأنواع الغازية	de:invasiv	en:invasive	es:invasivo	fa:مهاجم	fr:invasif	he:פולשני	hi:आक्रामक	ja:外来種	ko:침입종	pt:invasivo	ru:инвазивный	tr:istilacı	ur:یلغاری	zh:入侵的
@@ -4525,10 +4541,12 @@ c:japan	Noun	ar:اليابان	de:Japan	en:Japan	es:Japón	fa:ژاپن	fr:Japon	
 c:japanese-arch	Noun	ar:العمارة اليابانية	de:japanische Architektur	en:Japanese architecture	es:arquitectura japonesa	fa:معماری ژاپنی	fr:architecture japonaise	he:אדריכלות יפנית	hi:जापानी वास्तुकला	ja:日本建築	ko:일본 건축	pt:arquitetura japonesa	ru:японская архитектура	tr:Japon mimarisi	ur:جاپانی فن	zh:日本建筑
 c:japanese-cuisine	Noun	ar:مطبخ ياباني	de:japanische Küche	en:Japanese cuisine	es:cocina japonesa	fa:آشپزی ژاپنی	fr:cuisine japonaise	he:מטבח יפני	hi:जापानी भोजन	ja:日本料理	ko:일본 요리	pt:culinária japonesa	ru:японская кухня	tr:Japon mutfağı	ur:جاپانی کھانا	zh:日本菜
 c:japanese-language	Noun	ar:اللغة اليابانية	de:Japanisch	en:Japanese language	es:idioma japonés	fa:زبان ژاپنی	fr:japonais	he:יפנית	hi:जापानी भाषा	ja:日本語	ko:일본어	pt:língua japonesa	ru:японский язык	tr:Japonca	ur:جاپانی زبان	zh:日语
+c:japanese-people	Noun	ar:يابانيون	de:Japaner	en:Japanese people	es:japoneses	fa:ژاپنی‌ها	fr:japonais	he:יפנים	hi:जापानी लोग	ja:日本人	ko:일본인	pt:japoneses	ru:японцы	tr:Japonlar	ur:جاپانی لوگ	zh:日本人
 c:jar	Noun	ar:برطمان,جرة	de:Glas,Einmachglas	en:jar	es:frasco,tarro	fa:شیشه,مرتبان	fr:bocal,pot	he:צנצנת	hi:जार,मर्तबान	ja:瓶	ko:병,단지	pt:pote,frasco	ru:банка	tr:kavanoz	ur:مرتبان	zh:罐子
 c:jasmine	Noun	ar:ياسمين	de:Jasmin	en:jasmine	es:jazmín	fa:یاسمین,یاسمن	fr:jasmin	he:יסמין	hi:चमेली,जूही	ja:ジャスミン,茉莉花	ko:재스민	pt:jasmim	ru:жасмин	tr:yasemin	ur:یاسمین	zh:茉莉,茉莉花
 c:jasmine-rice	Noun	ar:أرز الياسمين	de:Jasminreis	en:jasmine rice	es:arroz jazmín	fa:برنج یاس	fr:riz jasmin	he:אורז יסמין	hi:जैस्मिन चावल	ja:ジャスミン米	ko:자스민 쌀	pt:arroz jasmim	ru:жасминовый рис	tr:yasemin pirinci	ur:جیسمن چاول	zh:茉莉香米
 c:jasper-gem	Noun	ar:يشبة	de:Jaspis	en:jasper	es:jaspe	fa:یشپ	fr:jaspe	he:ישפה	hi:जैस्पर	ja:碧玉	ko:벽옥	pt:jaspe	ru:яшма	tr:yeşim taşı	ur:یشب	zh:碧玉
+c:javanese	Noun	ar:جاويون	de:Javaner	en:Javanese	es:javaneses	fa:جاوه‌ای‌ها	fr:javanais	he:יאווים	hi:जावानीज़	ja:ジャワ人	ko:자와족	pt:javaneses	ru:яванцы	tr:Cavalılar	ur:جاوی	zh:爪哇人
 c:javelin	Noun	ar:مزراق	de:Wurfspeer	en:javelin	es:jabalina	fa:زوبین	fr:javelot	he:כידון	hi:भाला फेंक	ja:投槍	ko:투창	pt:dardo militar	ru:дротик	tr:cirit	ur:نیزہ پھینکنے والا	zh:标枪
 c:javelin-throw	Noun	ar:رمي الرمح	de:Speerwurf	en:javelin throw	es:lanzamiento de jabalina	fa:پرتاب نیزه	fr:lancer du javelot	he:הטלת כידון	hi:भाला फेंक	ja:やり投げ	ko:창던지기	pt:lançamento do dardo	ru:метание копья	tr:cirit atma	ur:برچھا پھینک	zh:标枪
 c:jaw	Noun	ar:فك	de:Kiefer	en:jaw	es:mandíbula	fa:آرواره,فک	fr:mâchoire	he:לסת	hi:जबड़ा	ja:顎	ko:턱	pt:mandíbula,maxilar	ru:челюсть	tr:çene	ur:جبڑا	zh:颌,下巴
@@ -4653,6 +4671,7 @@ c:keystone-species	Noun	ar:الانواع المحورية	de:Schlüsselart	en:k
 c:keystone-species-eco	Noun	ar:نوع محوري	de:Schlüsselart	en:keystone species	es:especie clave	fa:گونه کلیدی	fr:espèce clé	he:מין מפתח	hi:कीस्टोन प्रजाति	ja:キーストーン種	ko:핵심종	pt:espécie-chave	ru:ключевой вид	tr:anahtar tür	ur:کلیدی نوع	zh:关键物种
 c:khaki	Noun	ar:كاكي	de:Khaki	en:khaki	es:caqui	fa:خاکی	fr:kaki	he:חאקי	hi:खाकी	ja:カーキ	ko:카키색	pt:cáqui	ru:хаки	tr:haki	ur:خاکی	zh:卡其色
 c:khamsin	Noun	ar:خماسين	de:Chamsin	en:khamsin	es:jamsín	fa:خمسین	fr:khamsin	he:חמסין	hi:खमसीन	ja:ハムシン	ko:함신	pt:khamsin	ru:хамсин	tr:hamsin	ur:خمسین	zh:喀新风
+c:khmer	Noun	ar:خمير	de:Khmer	en:Khmer	es:jemeres	fa:خمرها	fr:khmers	he:חמרים	hi:खमेर	ja:クメール人	ko:크메르인	pt:khmers	ru:кхмеры	tr:Kmerler	ur:خمیر	zh:高棉人
 c:khmer-empire	Noun	ar:إمبراطورية الخمير	de:Khmer-Reich	en:Khmer Empire	es:Imperio jemer	fa:امپراتوری خمر	fr:Empire khmer	he:האימפריה הקאמרית	hi:खमेर साम्राज्य	ja:クメール王朝	ko:크메르 제국	pt:Império Khmer	ru:Кхмерская империя	tr:Kmer İmparatorluğu	ur:خمیر سلطنت	zh:高棉帝国
 c:khwarazmian-empire	Noun	ar:الإمبراطورية الخوارزمية	de:Choresmien	en:Khwarazmian Empire	es:Imperio jorezmita	fa:امپراتوری خوارزمشاهیان	fr:Empire khwarezmien	he:האימפריה הכ'וורזמית	hi:ख्वारज्म साम्राज्य	ja:ホラズム・シャー朝	ko:호라즘 제국	pt:Império Corásmio	ru:Хорезмская империя	tr:Harzemşahlar	ur:خوارزمی سلطنت	zh:花剌子模王朝
 c:kick	Verb	ar:ركل	de:treten,kicken	en:kick,kicks,kicked,kicking	es:patear,dar una patada	fa:لگد زدن	fr:donner un coup de pied	he:לבעוט	hi:लात मारना,ठोकर मारना	ja:蹴る,キックする	ko:차다	pt:chutar	ru:пинать,ударять ногой	tr:tekmelemek	ur:لات مارنا	zh:踢
@@ -4699,6 +4718,7 @@ c:kookaburra	Noun	ar:كوكابورا	de:Kookaburra	en:kookaburra	es:cucaburra	f
 c:korean-cuisine	Noun	ar:مطبخ كوري	de:koreanische Küche	en:Korean cuisine	es:cocina coreana	fa:آشپزی کره‌ای	fr:cuisine coréenne	he:מטבח קוריאני	hi:कोरियाई भोजन	ja:韓国料理	ko:한국 요리	pt:culinária coreana	ru:корейская кухня	tr:Kore mutfağı	ur:کوریائی کھانا	zh:韩国菜
 c:korean-language	Noun	ar:اللغة الكورية	de:Koreanisch	en:Korean language	es:idioma coreano	fa:زبان کره‌ای	fr:coréen	he:קוריאנית	hi:कोरियाई भाषा	ja:韓国語	ko:한국어	pt:língua coreana	ru:корейский язык	tr:Korece	ur:کوریائی زبان	zh:韩语
 c:korean-war	Noun	ar:الحرب الكورية	de:Koreakrieg	en:Korean War	es:guerra de Corea	fa:جنگ کره	fr:guerre de Corée	he:מלחמת קוריאה	hi:कोरियाई युद्ध	ja:朝鮮戦争	ko:한국 전쟁	pt:guerra da Coreia	ru:Корейская война	tr:Kore Savaşı	ur:کوریائی جنگ	zh:朝鲜战争
+c:koreans	Noun	ar:كوريون	de:Koreaner	en:Koreans	es:coreanos	fa:کره‌ای‌ها	fr:coréens	he:קוריאנים	hi:कोरियाई	ja:朝鮮民族	ko:한민족	pt:coreanos	ru:корейцы	tr:Koreliler	ur:کوریائی	zh:朝鲜族
 c:koruna	Noun	ar:كرونة تشيكية	de:Krone,tschechische Krone	en:koruna	es:corona checa	fa:کرون چک	fr:couronne tchèque	he:כתר צ'כי	hi:कोरुना	ja:コルナ	ko:코루나	pt:coroa checa	ru:крона,чешская крона	tr:koruna	ur:کورونا	zh:捷克克朗
 c:kosher	Noun	ar:طعام كوشر	de:koscher	en:kosher food	es:comida kosher	fa:غذای کوشر	fr:nourriture casher	he:אוכל כשר	hi:कोषर भोजन	ja:コーシャー食	ko:코셔 음식	pt:comida kosher	ru:кошерная пища	tr:koşer yemek	ur:کوشر کھانا	zh:犹太洁食
 c:koto	Noun	ar:كوتو	de:Koto	en:koto	es:koto	fa:کوتو	fr:koto	he:קוטו	hi:कोतो	ja:箏,琴	ko:고토	pt:koto	ru:кото	tr:koto	ur:کوتو	zh:日本筝,箏
@@ -4718,6 +4738,7 @@ c:kuiper-belt-region	Noun	ar:حزام كايبر	de:Kuipergürtel	en:Kuiper belt
 c:kumquat	Noun	ar:كمكوات	de:Kumquat	en:kumquat	es:kumquat	fa:کامکوات	fr:kumquat	he:קומקואט	hi:कमक्वाट	ja:キンカン	ko:금귤	pt:cumquat	ru:кумкват	tr:kumkat	ur:کمکواٹ	zh:金橘
 c:kung-fu	Noun	ar:الكونغ فو	de:Kung-Fu	en:kung fu	es:kung fu	fa:کونگ فو	fr:kung-fu	he:קונג פו	hi:कुंग फू	ja:カンフー	ko:쿵푸	pt:kung fu	ru:кунг-фу	tr:kung fu	ur:کنگ فو	zh:功夫
 c:kung-fu-sport	Noun	ar:كونغ فو	de:Kung-Fu	en:kung fu	es:kung-fu	fa:کونگ‌فو	fr:kung-fu	he:קונג פו	hi:कुंग फू	ja:カンフー	ko:쿵후	pt:kung fu	ru:кунг-фу	tr:kung fu	ur:کنگ فو	zh:功夫
+c:kurds	Noun	ar:أكراد	de:Kurden	en:Kurds	es:kurdos	fa:کردها	fr:kurdes	he:כורדים	hi:कुर्द	ja:クルド人	ko:쿠르드인	pt:curdos	ru:курды	tr:Kürtler	ur:کرد	zh:库尔德人
 c:kurtosis	Noun	ar:تفرطح	de:Kurtosis	en:kurtosis	es:curtosis	fa:کشیدگی	fr:kurtosis	he:גבנוניות	hi:कर्टोसिस	ja:尖度	ko:첨도	pt:curtose	ru:эксцесс	tr:basıklık	ur:کارٹوسس	zh:峰度
 c:kushite	Noun	ar:مملكة كوش	de:Königreich Kusch	en:Kingdom of Kush	es:reino de Kush	fa:پادشاهی کوش	fr:royaume de Koush	he:ממלכת כוש	hi:कुश राज्य	ja:クシュ王国	ko:쿠시 왕국	pt:reino de Cuxe	ru:Кушанское царство	tr:Kuş krallığı	ur:کوش سلطنت	zh:库施王国
 c:kyoto	Noun	ar:كيوتو	de:Kyoto	en:Kyoto	es:Kioto	fa:کیوتو	fr:Kyoto	he:קיוטו	hi:क्योटो	ja:京都,きょうと	ko:교토	pt:Quioto	ru:Киото	tr:Kyoto	ur:کیوٹو	zh:京都
@@ -5142,6 +5163,7 @@ c:makalu	Noun	ar:ماكالو	de:Makalu	en:Makalu	es:Makalu	fa:ماکالو	fr:M
 c:makalu-peak	Noun	ar:ماكالو	de:Makalu	en:Makalu	es:Makalu	fa:ماکالو	fr:Makalu	he:מקאלו	hi:मकालू	ja:マカルー	ko:마칼루	pt:Makalu	ru:Макалу	tr:Makalu	ur:مکالو	zh:马卡鲁峰
 c:make	Verb	ar:صنع,عمل	de:machen	en:make	es:hacer	fa:ساختن	fr:faire	he:לעשות	hi:बनाना	ja:作る	ko:만들다	pt:fazer	ru:делать	tr:yapmak	ur:بنانا	zh:做,制造
 c:malachite-mineral	Noun	ar:ملكيت	de:Malachit	en:malachite	es:malaquita	fa:مالاکیت	fr:malachite	he:מלכיט	hi:मैलाकाइट	ja:孔雀石	ko:공작석	pt:malaquita	ru:малахит	tr:malakit	ur:مالاکائٹ	zh:孔雀石
+c:malay	Noun	ar:ملايو	de:Malaien	en:Malays	es:malayos	fa:مالایی‌ها	fr:malais	he:מלאים	hi:मलय	ja:マレー人	ko:말레이족	pt:malaios	ru:малайцы	tr:Malaylar	ur:ملائی	zh:马来人
 c:malay-language	Noun	ar:اللغة الملايوية	de:Malaiisch	en:Malay language	es:idioma malayo	fa:زبان مالایی	fr:malais	he:מלאית	hi:मलय भाषा	ja:マレー語	ko:말레이어	pt:língua malaia	ru:малайский язык	tr:Malayca	ur:ملائی زبان	zh:马来语
 c:malaysia	Noun	ar:ماليزيا	de:Malaysia	en:Malaysia	es:Malasia	fa:مالزی	fr:Malaisie	he:מלזיה	hi:मलेशिया	ja:マレーシア	ko:말레이시아	pt:Malásia	ru:Малайзия	tr:Malezya	ur:ملائیشیا	zh:马来西亚
 c:mali-empire	Noun	ar:إمبراطورية مالي	de:Malireich	en:Mali Empire	es:Imperio de Malí	fa:امپراتوری مالی	fr:Empire du Mali	he:אימפריית מאלי	hi:माली साम्राज्य	ja:マリ帝国	ko:말리 제국	pt:Império do Mali	ru:империя Мали	tr:Mali İmparatorluğu	ur:مالی سلطنت	zh:马里帝国
@@ -5163,6 +5185,7 @@ c:manager	Noun	ar:مدير	de:Manager,Leiter	en:manager	es:gerente,director	fa:�
 c:manaslu	Noun	ar:ماناسلو	de:Manaslu	en:Manaslu	es:Manaslu	fa:ماناسلو	fr:Manaslu	he:מנאסלו	hi:मनास्लु	ja:マナスル	ko:마나슬루	pt:Manaslu	ru:Манаслу	tr:Manaslu	ur:ماناسلو	zh:马纳斯卢峰
 c:manaslu-peak	Noun	ar:ماناسلو	de:Manaslu	en:Manaslu	es:Manaslu	fa:ماناسلو	fr:Manaslu	he:מנאסלו	hi:मनास्लू	ja:マナスル	ko:마나슬루	pt:Manaslu	ru:Манаслу	tr:Manaslu	ur:مناسلو	zh:马纳斯鲁峰
 c:manatee	Noun	ar:خروف البحر	de:Seekuh,Manati	en:manatee	es:manatí	fa:گاو دریایی	fr:lamantin	he:חזיר ים	hi:मनाटी	ja:マナティー	ko:매너티	pt:manatim,peixe-boi	ru:ламантин	tr:denizineği	ur:سمندری گائے	zh:海牛
+c:manchu	Noun	ar:مانشو	de:Mandschu	en:Manchu	es:manchúes	fa:مانچو	fr:mandchous	he:מנצ'ו	hi:मंचू	ja:満州族	ko:만주족	pt:manchus	ru:маньчжуры	tr:Mançular	ur:مانچو	zh:满族
 c:mandaean	Noun	ar:المندائية	de:Mandäer	en:Mandaeism	es:mandeísmo	fa:مندایی	fr:mandéisme	he:מנדעים	hi:मंडेयन	ja:マンダ教	ko:만다야교	pt:mandeísmo	ru:мандеизм	tr:Mandeizm	ur:منڈائی	zh:曼达安教
 c:mandala	Noun	ar:ماندالا	de:Mandala	en:mandala	es:mandala	fa:ماندالا	fr:mandala	he:מנדלה	hi:मंडल	ja:曼陀羅	ko:만다라	pt:mandala	ru:мандала	tr:mandala	ur:مندالا	zh:曼陀罗
 c:mandamus	Noun	ar:الأمر القضائي	de:Mandamus	en:mandamus	es:mandamus	fa:حکم قضایی	fr:injonction	he:מנדמוס	hi:परमादेश	ja:職務執行令状	ko:직무 집행 영장	pt:mandado de segurança	ru:мандамус	tr:görev emri	ur:حکم عدالت	zh:强制令
@@ -5196,6 +5219,7 @@ c:manure	Noun	ar:روث	de:Mist	en:manure	es:estiércol	fa:کود حیوانی	f
 c:manuscript	Noun	ar:مخطوطة	de:Manuskript,Handschrift	en:manuscript	es:manuscrito	fa:نسخه خطی,دستنوشته	fr:manuscrit	he:כתב יד	hi:पांडुलिपि,हस्तलेख	ja:原稿,写本	ko:원고,필사본	pt:manuscrito	ru:рукопись	tr:el yazması	ur:مخطوطہ	zh:手稿,原稿
 c:many	Adjective	ar:كثير	de:viele	en:many	es:muchos	fa:بسیاری,خیلی	fr:beaucoup,nombreux	he:הרבה	hi:बहुत,अनेक	ja:多い,たくさん	ko:많은	pt:muitos	ru:много,многие	tr:çok,birçok	ur:بہت,کثیر	zh:许多,很多
 c:maoi	Noun	ar:مثبط أكسيداز أحادي الأمين	de:MAO-Hemmer	en:MAOI	es:IMAO	fa:مهارکننده مونوآمین اکسیداز	fr:IMAO	he:MAOI	hi:एमएओआई	ja:モノアミン酸化酵素阻害薬	ko:모노아민 산화효소 억제제	pt:IMAO	ru:ингибитор МАО	tr:MAOI	ur:ایم اے او آئی	zh:单胺氧化酶抑制剂
+c:maori	Noun	ar:ماوري	de:Maori	en:Maori	es:maorí	fa:مائوری	fr:maoris	he:מאורי	hi:माओरी	ja:マオリ族	ko:마오리족	pt:maori	ru:маори	tr:Maoriler	ur:ماوری	zh:毛利人
 c:map	Noun	ar:خريطة	de:Karte,Landkarte	en:map	es:mapa	fa:نقشه	fr:carte,plan	he:מפה	hi:नक्शा,मानचित्र	ja:地図	ko:지도	pt:mapa	ru:карта	tr:harita	ur:نقشہ	zh:地图
 c:map-turtle	Noun	ar:سلحفاة الخريطة	de:Landkartenschildkröte	en:map turtle	es:tortuga mapa	fa:لاک پشت نقشه	fr:tortue géographique	he:צב מפה	hi:नक्शा कछुआ	ja:マップタートル	ko:지도거북	pt:tartaruga-mapa	ru:картографическая черепаха	tr:harita kaplumbağası	ur:نقشہ کچھوا	zh:地图龟
 c:maple	Noun	ar:قيقب	de:Ahorn	en:maple	es:arce	fa:افرا	fr:érable	he:אדר	hi:मेपल	ja:カエデ,楓	ko:단풍나무	pt:bordo	ru:клён	tr:akçaağaç	ur:میپل	zh:枫树
@@ -5237,6 +5261,7 @@ c:marshmallow	Noun	ar:مارشميلو	de:Marshmallow	en:marshmallow	es:malvavis
 c:martial-law	Noun	ar:الأحكام العرفية	de:Kriegsrecht	en:martial law	es:ley marcial	fa:حکومت نظامی	fr:loi martiale	he:משטר צבאי	hi:मार्शल लॉ	ja:戒厳令	ko:계엄령	pt:lei marcial	ru:военное положение	tr:sıkıyönetim	ur:مارشل لاء	zh:戒严
 c:marxism-pol	Noun	ar:الماركسية	de:Marxismus	en:Marxism	es:marxismo	fa:مارکسیسم	fr:marxisme	he:מרקסיזם	hi:मार्क्सवाद	ja:マルクス主義	ko:마르크스주의	pt:marxismo	ru:марксизм	tr:Marksizm	ur:مارکسزم	zh:马克思主义
 c:marzipan	Noun	ar:مارزيبان	de:Marzipan	en:marzipan	es:mazapán	fa:مارزیپان	fr:pâte d'amande	he:מרציפן	hi:मार्जिपन	ja:マジパン	ko:마지판	pt:maçapão	ru:марципан	tr:badem ezmesi	ur:مارزپان	zh:杏仁膏
+c:masai	Noun	ar:ماساي	de:Massai	en:Maasai	es:masái	fa:ماسای	fr:maasaï	he:מסאי	hi:मसाई	ja:マサイ族	ko:마사이족	pt:maasai	ru:масаи	tr:Masai	ur:ماسائی	zh:马赛人
 c:mascarpone	Noun	ar:ماسكاربوني	de:Mascarpone	en:mascarpone	es:mascarpone	fa:ماسکارپونه	fr:mascarpone	he:מסקרפונה	hi:मैस्कारपोन	ja:マスカルポーネ	ko:마스카포네	pt:mascarpone	ru:маскарпоне	tr:maskarpone	ur:ماسکارپون	zh:马斯卡彭
 c:mason	Noun	ar:بنّاء,حجّار	de:Maurer,Steinmetz	en:mason,stonemason	es:albañil,cantero	fa:بنّا,سنگ‌تراش	fr:maçon	he:בנאי	hi:राजमिस्त्री,मेसन	ja:石工,左官	ko:석공,미장이	pt:pedreiro,maçom	ru:каменщик	tr:duvarcı,taşçı	ur:معمار,سنگ تراش	zh:石匠,砌砖工
 c:masonry	Noun	ar:بناء بالحجر,بناء	de:Mauerwerk,Maurerhandwerk	en:masonry	es:albañilería,mampostería	fa:بنایی,سنگ‌کاری	fr:maçonnerie	he:בנאות	hi:राजगीरी,चिनाई	ja:石工術,石積み	ko:석조,돌쌓기	pt:alvenaria	ru:каменная кладка,каменное дело	tr:duvarcılık,taş işçiliği	ur:چنائی,سنگ کاری	zh:砌筑,石工
@@ -5266,6 +5291,7 @@ c:mausoleum	Noun	ar:الضريح	de:Mausoleum	en:mausoleum	es:mausoleo	fa:مقب
 c:mausoleum-tomb	Noun	ar:مقبرة	de:Mausoleum	en:mausoleum	es:mausoleo	fa:آرامگاه	fr:mausolée	he:מאוזוליאום	hi:समाधि	ja:霊廟	ko:묘지	pt:mausoléu	ru:мавзолей	tr:türbe	ur:مقبرہ	zh:陵墓
 c:mauve	Noun	ar:بنفسجي باهت,موف	de:Mauve,Malvenfarbig	en:mauve	es:malva	fa:یاسی کم‌رنگ	fr:mauve	he:סגלגל	hi:हल्का बैंगनी	ja:藤色,モーブ	ko:연보라색,모브	pt:malva	ru:лиловый	tr:leylak rengi	ur:ہلکا جامنی	zh:淡紫色
 c:maxwell-demon	Noun	ar:شيطان ماكسويل	de:Maxwells Dämon	en:Maxwell's demon	es:demonio de Maxwell	fa:شیطان ماکسول	fr:démon de Maxwell	he:השד של מקסוול	hi:मैक्सवेल का राक्षस	ja:マクスウェルの悪魔	ko:맥스웰의 도깨비	pt:demônio de Maxwell	ru:демон Максвелла	tr:Maxwell'in şeytanı	ur:میکسویل کا شیطان	zh:麦克斯韦妖
+c:maya-people	Noun	ar:شعب المايا	de:Maya-Volk	en:Maya people	es:pueblo maya	fa:مردم مایا	fr:peuple maya	he:עם המאיה	hi:माया लोग	ja:マヤ族	ko:마야족	pt:povo maia	ru:майя	tr:Mayalar	ur:مایا لوگ	zh:玛雅人
 c:mayan-civilization	Noun	ar:حضارة المايا	de:Maya-Zivilisation	en:Mayan civilization	es:civilización maya	fa:تمدن مایا	fr:civilisation maya	he:תרבות המאיה	hi:मायन सभ्यता	ja:マヤ文明	ko:마야 문명	pt:civilização maia	ru:цивилизация майя	tr:Maya uygarlığı	ur:مایا تہذیب	zh:玛雅文明
 c:mayfly	Noun	ar:ذبابة مايو,حشرة مايو	de:Eintagsfliege	en:mayfly	es:efímera	fa:مگس مه	fr:éphémère	he:יום-חי	hi:मई मक्खी	ja:蜉蝣,カゲロウ	ko:하루살이	pt:efeméride	ru:подёнка	tr:bireylik sineği,mayıssineği	ur:مئی مکھی	zh:蜉蝣
 c:mazurka	Noun	ar:مازوركا	de:Mazurka	en:mazurka	es:mazurca	fa:مازورکا	fr:mazurka	he:מזורקה	hi:मजुरका	ja:マズルカ	ko:마주르카	pt:mazurca	ru:мазурка	tr:mazurka	ur:مزورکا	zh:玛祖卡
@@ -5556,6 +5582,7 @@ c:monetary	Adjective	ar:نقدي	de:monetär	en:monetary	es:monetario	fa:پول�
 c:monetary-policy	Noun	ar:السياسة النقدية	de:Geldpolitik	en:monetary policy	es:política monetaria	fa:سیاست پولی	fr:politique monétaire	he:מדיניות מוניטרית	hi:मौद्रिक नीति	ja:金融政策	ko:통화 정책	pt:política monetária	ru:денежно-кредитная политика	tr:para politikası	ur:زری پالیسی	zh:货币政策
 c:monetary-policy-econ	Noun	ar:السياسة النقدية	de:Geldpolitik	en:monetary policy	es:política monetaria	fa:سیاست پولی	fr:politique monétaire	he:מדיניות מוניטרית	hi:मौद्रिक नीति	ja:金融政策	ko:통화 정책	pt:política monetária	ru:денежно-кредитная политика	tr:para politikası	ur:مانیٹری پالیسی	zh:货币政策
 c:money	Noun	ar:مال,نقود	de:Geld	en:money	es:dinero	fa:پول	fr:argent	he:כסף	hi:पैसा,धन	ja:お金,金	ko:돈	pt:dinheiro	ru:деньги	tr:para	ur:پیسہ,روپیہ	zh:钱
+c:mongol	Noun	ar:منغول	de:Mongolen	en:Mongols	es:mongoles	fa:مغول‌ها	fr:mongols	he:מונגולים	hi:मंगोल	ja:モンゴル人	ko:몽골족	pt:mongóis	ru:монголы	tr:Moğollar	ur:منگول	zh:蒙古族
 c:mongol-empire	Noun	ar:الإمبراطورية المغولية	de:mongolisches Reich	en:Mongol Empire	es:Imperio mongol	fa:امپراتوری مغول	fr:Empire mongol	he:האימפריה המונגולית	hi:मंगोल साम्राज्य	ja:モンゴル帝国	ko:몽골 제국	pt:Império Mongol	ru:Монгольская империя	tr:Moğol İmparatorluğu	ur:منگول سلطنت	zh:蒙古帝国
 c:mongoose	Noun	ar:نمس	de:Mungo	en:mongoose	es:mangosta	fa:منگوس	fr:mangouste	he:נמוס	hi:नेवला	ja:マングース	ko:몽구스	pt:mangusto	ru:мангуст	tr:firavun faresi	ur:نیولا	zh:獴
 c:monism	Noun	ar:الواحدية,الأحادية	de:Monismus	en:monism	es:monismo	fa:وحدت انگاری	fr:monisme	he:מוניזם	hi:अद्वैतवाद,एकत्ववाद	ja:一元論	ko:일원론	pt:monismo	ru:монизм	tr:tekçilik,monizm	ur:واحدیت	zh:一元论
@@ -5780,6 +5807,7 @@ c:naturalized-epistemology	Noun	ar:الإبستيمولوجيا الطبيعان
 c:naturphilosophie	Noun	ar:فلسفة الطبيعة	de:Naturphilosophie	en:Naturphilosophie	es:Naturphilosophie	fa:فلسفه طبیعت	fr:Naturphilosophie	he:פילוסופיית הטבע	hi:प्रकृति दर्शन	ja:自然哲学	ko:자연철학	pt:Naturphilosophie	ru:натурфилософия	tr:doğa felsefesi	ur:قدرتی فلسفہ	zh:自然哲学
 c:nautical-mile	Noun	ar:ميل بحري	de:Seemeile	en:nautical mile	es:milla náutica	fa:مایل دریایی	fr:mille marin	he:מייל ימי	hi:समुद्री मील	ja:海里	ko:해리	pt:milha náutica	ru:морская миля	tr:deniz mili	ur:بحری میل	zh:海里
 c:nautilus	Noun	ar:ناوتيلوس	de:Nautilus	en:nautilus	es:nautilo	fa:ناتیلوس	fr:nautile	he:נאוטילוס	hi:नॉटिलस	ja:オウムガイ	ko:앵무조개	pt:nautilo	ru:наутилус	tr:nautilus	ur:ناٹیلس	zh:鹦鹉螺
+c:navajo	Noun	ar:نافاهو	de:Navajo	en:Navajo	es:navajos	fa:ناواهو	fr:navajos	he:נבאחו	hi:नावाहो	ja:ナバホ族	ko:나바호족	pt:navajos	ru:навахо	tr:Navajolar	ur:نواہو	zh:纳瓦霍人
 c:naval-fleet-admiral	Noun	ar:أمير أسطول	de:Flottenadmiral	en:fleet admiral	es:almirante de flota	fa:فرمانده ناوگان	fr:amiral de la flotte	he:אדמירל צי	hi:फ्लीट एडमिरल	ja:元帥海軍	ko:해군 원수	pt:almirante de frota	ru:адмирал флота	tr:donanma amirali	ur:فلیٹ ایڈمرل	zh:海军元帅
 c:nave	Noun	ar:صحن الكنيسة	de:Kirchenschiff	en:nave	es:nave central	fa:شبستان کلیسا	fr:nef	he:ספינת הכנסייה	hi:चर्च का मुख्य हिस्सा	ja:身廊	ko:네이브	pt:nave	ru:неф	tr:kilise sahni	ur:کلیسا کا درمیانی حصہ	zh:中殿
 c:nave-church	Noun	ar:صحن الكنيسة	de:Kirchenschiff	en:nave	es:nave	fa:شبستان	fr:nef	he:ספינה	hi:गुफा	ja:身廊	ko:회중석	pt:nave	ru:неф	tr:ana bölüm	ur:کلیسا کا مرکزی حصہ	zh:中殿
@@ -6447,6 +6475,7 @@ c:persian-cuisine	Noun	ar:مطبخ فارسي	de:persische Küche	en:Persian cui
 c:persian-empire	Noun	ar:الإمبراطورية الفارسية	de:persisches Reich	en:Persian Empire	es:Imperio persa	fa:امپراتوری ایران	fr:Empire perse	he:האימפריה הפרסית	hi:फारसी साम्राज्य	ja:ペルシア帝国	ko:페르시아 제국	pt:Império Persa	ru:Персидская империя	tr:Pers İmparatorluğu	ur:ایرانی سلطنت	zh:波斯帝国
 c:persian-gulf	Noun	ar:الخليج العربي,الخليج الفارسي	de:Persischer Golf	en:Persian Gulf,Arabian Gulf	es:Golfo Pérsico	fa:خلیج فارس	fr:Golfe Persique	he:המפרץ הפרסי	hi:फारस की खाड़ी	ja:ペルシャ湾	ko:페르시아만	pt:Golfo Pérsico	ru:Персидский залив	tr:Basra Körfezi	ur:خلیج فارس	zh:波斯湾
 c:persian-language	Noun	ar:اللغة الفارسية	de:Persisch	en:Persian language	es:idioma persa	fa:زبان فارسی	fr:persan	he:פרסית	hi:फ़ारसी भाषा	ja:ペルシア語	ko:페르시아어	pt:língua persa	ru:персидский язык	tr:Farsça	ur:فارسی زبان	zh:波斯语
+c:persians	Noun	ar:فرس	de:Perser	en:Persians	es:persas	fa:ایرانیان	fr:perses	he:פרסים	hi:फ़ारसी	ja:ペルシア人	ko:페르시아인	pt:persas	ru:персы	tr:Persler	ur:فارسی	zh:波斯人
 c:persimmon	Noun	ar:الكاكي,فاكهة الكاكي	de:Kakipflaume	en:persimmon	es:caqui,persimón	fa:خرمالو	fr:kaki	he:אפרסמון	hi:पर्सिमन	ja:柿	ko:감	pt:caqui	ru:хурма	tr:hurma elması	ur:پرسمن	zh:柿子
 c:person	Noun	ar:شخص,إنسان	de:Person,Mensch	en:person,people	es:persona	fa:شخص,فرد	fr:personne	he:אדם	hi:व्यक्ति	ja:人	ko:사람	pt:pessoa	ru:человек,личность	tr:kişi,şahıs	ur:شخص	zh:人,人员
 c:persona-psychology	Noun	ar:القناع النفسي	de:Persona	en:persona	es:persona	fa:پرسونا	fr:persona	he:פרסונה	hi:पर्सोना	ja:ペルソナ	ko:페르소나	pt:persona	ru:персона	tr:persona	ur:شخصیت کا نقاب	zh:人格面具
@@ -6725,6 +6754,7 @@ c:polymerization	Noun	ar:بلمرة	de:Polymerisation	en:polymerization	es:polim
 c:polymerization-reaction	Noun	ar:بلمرة	de:Polymerisation	en:polymerization	es:polimerización	fa:بسپارش	fr:polymérisation	he:פולימריזציה	hi:बहुलकीकरण	ja:重合	ko:중합	pt:polimerização	ru:полимеризация	tr:polimerleşme	ur:پولیمرائزیشن	zh:聚合
 c:polymorphism	Noun	ar:تعدد الأشكال	de:Polymorphismus	en:polymorphism	es:polimorfismo	fa:چندشکلی	fr:polymorphisme	he:פולימורפיזם	hi:बहुरूपता	ja:ポリモーフィズム	ko:다형성	pt:polimorfismo	ru:полиморфизм	tr:çok biçimlilik	ur:کثیر الاشکالیت	zh:多态
 c:polymorphism-prog	Noun	ar:تعددية الأشكال	de:Polymorphismus	en:polymorphism	es:polimorfismo	fa:چندریختی	fr:polymorphisme	he:פולימורפיזם	hi:बहुरूपता	ja:ポリモーフィズム	ko:다형성	pt:polimorfismo	ru:полиморфизм	tr:çok biçimlilik	ur:کثیر الاشکال	zh:多态
+c:polynesians	Noun	ar:بولينيزيون	de:Polynesier	en:Polynesians	es:polinesios	fa:پلی‌نزیایی‌ها	fr:polynésiens	he:פולינזים	hi:पोलिनेशियाई	ja:ポリネシア人	ko:폴리네시아인	pt:polinésios	ru:полинезийцы	tr:Polinezyalılar	ur:پولینیشیائی	zh:波利尼西亚人
 c:polynomial	Noun	ar:متعدد الحدود	de:Polynom	en:polynomial	es:polinomio	fa:چندجمله‌ای	fr:polynôme	he:פולינום	hi:बहुपद	ja:多項式	ko:다항식	pt:polinômio	ru:многочлен	tr:polinom	ur:کثیر الحدود	zh:多项式
 c:polynomial-expr	Noun	ar:كثير حدود	de:Polynom	en:polynomial	es:polinomio	fa:چندجمله‌ای	fr:polynôme	he:פולינום	hi:बहुपद	ja:多項式	ko:다항식	pt:polinômio	ru:многочлен	tr:polinom	ur:کثیر رقمی	zh:多项式
 c:polypharmacy	Noun	ar:تعدد الأدوية	de:Polypharmazie	en:polypharmacy	es:polifarmacia	fa:پلی‌فارماسی	fr:polymédication	he:פוליפרמציה	hi:बहुदवाओं का उपयोग	ja:多剤投与	ko:다제 복용	pt:polifarmácia	ru:полипрагмазия	tr:çoklu ilaç kullanımı	ur:کثیر دوائی	zh:多重用药
@@ -7088,6 +7118,7 @@ c:quartz-mineral	Noun	ar:كوارتز	de:Quarz	en:quartz	es:cuarzo	fa:کوارت
 c:quasar	Noun	ar:كوازار	de:Quasar	en:quasar	es:cuásar	fa:کوازار	fr:quasar	he:קוואזר	hi:क्वेसर	ja:クエーサー	ko:퀘이사	pt:quasar	ru:квазар	tr:kuasar	ur:کوازار	zh:类星体
 c:quasar-astro	Noun	ar:نجم زائف	de:Quasar	en:quasar	es:cuásar	fa:اختروش	fr:quasar	he:קוואזר	hi:क्वासर	ja:クエーサー	ko:퀘이사	pt:quasar	ru:квазар	tr:kuasar	ur:کواسر	zh:类星体
 c:qubit	Noun	ar:البت الكمومي	de:Qubit	en:qubit	es:cúbit	fa:کیوبیت	fr:qubit	he:קיוביט	hi:क्यूबिट	ja:量子ビット	ko:큐비트	pt:qubit	ru:кубит	tr:kubit	ur:کوانٹم بٹ	zh:量子比特
+c:quechua	Noun	ar:كيتشوا	de:Quechua	en:Quechua	es:quechuas	fa:کچوآ	fr:quechuas	he:קצ'ואה	hi:क्वेचुआ	ja:ケチュア族	ko:케추아족	pt:quéchuas	ru:кечуа	tr:Keçualar	ur:کیچوا	zh:克丘亚人
 c:queen	Noun	ar:ملكة	de:Königin	en:queen	es:reina	fa:ملکه	fr:reine	he:מלכה	hi:रानी	ja:女王	ko:여왕	pt:rainha	ru:королева,царица	tr:kraliçe	ur:ملکہ	zh:女王,王后
 c:queen-anne	Noun	ar:طراز الملكة آن	de:Queen-Anne-Stil	en:Queen Anne style	es:estilo Reina Ana	fa:سبک ملکه آن	fr:style Queen Anne	he:סגנון המלכה אן	hi:रानी एन शैली	ja:クイーン・アン様式	ko:퀸 앤 양식	pt:estilo Rainha Ana	ru:стиль королевы Анны	tr:Kraliçe Anne tarzı	ur:ملکہ این طرز	zh:安妮女王式
 c:queen-bee	Noun	ar:ملكة النحل	de:Bienenkönigin	en:queen bee	es:abeja reina	fa:ملکه زنبور	fr:abeille reine	he:מלכת הדבורים	hi:रानी मधुमक्खी	ja:女王蜂	ko:여왕벌	pt:abelha rainha	ru:пчела-матка	tr:kraliçe arı	ur:ملکہ مکھی	zh:蜂王
@@ -7994,6 +8025,7 @@ c:singleton-pattern	Noun	ar:نمط المفرد	de:Singleton	en:singleton	es:sin
 c:singularity	Noun	ar:تفردية	de:Singularität	en:singularity	es:singularidad	fa:تکینگی	fr:singularité	he:סינגולריות	hi:विचित्रता	ja:特異点	ko:특이점	pt:singularidade	ru:сингулярность	tr:tekillik	ur:واحدیت	zh:奇点
 c:sintering	Noun	ar:التلبيد	de:Sintern	en:sintering	es:sinterización	fa:تف‌جوشی	fr:frittage	he:הלחמה	hi:सिंटरिंग	ja:焼結	ko:소결	pt:sinterização	ru:спекание	tr:sinterleme	ur:پختہ کاری	zh:烧结
 c:sintering-mat	Noun	ar:التلبيد	de:Sintern	en:sintering	es:sinterización	fa:تفجوشی	fr:frittage	he:סינטור	hi:सिंटरिंग	ja:焼結	ko:소결	pt:sinterização	ru:спекание	tr:sinterleme	ur:تپانا	zh:烧结
+c:sioux	Noun	ar:سيو	de:Sioux	en:Sioux	es:sioux	fa:سو	fr:sioux	he:סיו	hi:सिओक्स	ja:スー族	ko:수족	pt:sioux	ru:сиу	tr:Siular	ur:سو	zh:苏族
 c:siphonophore	Noun	ar:المستعمرات الهلامية	de:Siphonophore	en:siphonophore	es:sifonóforo	fa:سیفونوفور	fr:siphonophore	he:ספונופורה	hi:साइफनोफोर	ja:管クラゲ	ko:관해파리류	pt:sifonóforo	ru:сифонофора	tr:sifonfor	ur:سیفونوفور	zh:管水母目
 c:siren-amphibian	Noun	ar:السيرين البرمائي	de:Siren	en:siren	es:siren	fa:سایرن	fr:siren	he:סיירן	hi:साइरन	ja:サイレン	ko:사이렌 도롱뇽	pt:sirena	ru:сирена	tr:siren semender	ur:سائرن	zh:鳗螈
 c:siren-myth	Noun	ar:حورية البحر	de:Sirene	en:siren	es:sirena	fa:سیرن	fr:sirène	he:סיירנה	hi:सायरन	ja:セイレーン	ko:사이렌	pt:sereia	ru:сирена	tr:deniz kızı	ur:سائرن	zh:塞壬
@@ -8856,6 +8888,7 @@ c:textbook	Noun	ar:كتاب مدرسي	de:Lehrbuch,Schulbuch	en:textbook	es:libr
 c:textile-art	Noun	ar:فن النسيج	de:Textilkunst	en:textile art	es:arte textil	fa:هنر منسوجات	fr:art textile	he:אמנות טקסטיל	hi:वस्त्र कला	ja:織物芸術	ko:섬유 예술	pt:arte têxtil	ru:текстильное искусство	tr:tekstil sanatı	ur:کپڑے کا فن	zh:纺织艺术
 c:thai-cuisine	Noun	ar:مطبخ تايلاندي	de:thailändische Küche	en:Thai cuisine	es:cocina tailandesa	fa:آشپزی تایلندی	fr:cuisine thaïlandaise	he:מטבח תאילנדי	hi:थाई भोजन	ja:タイ料理	ko:태국 요리	pt:culinária tailandesa	ru:тайская кухня	tr:Tayland mutfağı	ur:تھائی کھانا	zh:泰国菜
 c:thai-language	Noun	ar:اللغة التايلاندية	de:Thai	en:Thai language	es:idioma tailandés	fa:زبان تایلندی	fr:thaï	he:תאית	hi:थाई भाषा	ja:タイ語	ko:태국어	pt:língua tailandesa	ru:тайский язык	tr:Tayca	ur:تھائی زبان	zh:泰语
+c:thai-people	Noun	ar:تايلانديون	de:Thais	en:Thai people	es:tailandeses	fa:تایلندی‌ها	fr:thaïlandais	he:תאילנדים	hi:थाई लोग	ja:タイ人	ko:태국인	pt:tailandeses	ru:тайцы	tr:Taylandlılar	ur:تھائی لوگ	zh:泰人
 c:thailand	Noun	ar:تايلاند	de:Thailand	en:Thailand	es:Tailandia	fa:تایلند	fr:Thaïlande	he:תאילנד	hi:थाईलैंड	ja:タイ	ko:태국	pt:Tailândia	ru:Таиланд	tr:Tayland	ur:تھائی لینڈ	zh:泰国
 c:thalamus	Noun	ar:المهاد	de:Thalamus	en:thalamus	es:tálamo	fa:تالاموس	fr:thalamus	he:תלמוס	hi:थैलेमस	ja:視床	ko:시상	pt:tálamo	ru:таламус	tr:talamus	ur:تھیلامس	zh:丘脑
 c:thames	Noun	ar:التايمز,نهر التايمز	de:Themse	en:Thames,River Thames	es:Támesis,río Támesis	fa:تیمز,رود تیمز	fr:Tamise	he:התמזה,נהר התמזה	hi:टेम्स नदी,टेम्स	ja:テムズ川	ko:템스강	pt:Tâmisa,rio Tâmisa	ru:Темза	tr:Thames,Thames Nehri	ur:دریائے ٹیمز	zh:泰晤士河
@@ -8967,6 +9000,7 @@ c:thymus	Noun	ar:الغدة الزعترية	de:Thymus	en:thymus	es:timo	fa:غد
 c:thyroid	Noun	ar:الغدة الدرقية	de:Schilddrüse	en:thyroid	es:tiroides	fa:غده تیروئید	fr:thyroïde	he:בלוטת התריס	hi:थायरॉइड	ja:甲状腺	ko:갑상선	pt:tireoide	ru:щитовидная железа	tr:tiroit	ur:تھائرائیڈ	zh:甲状腺
 c:tian-shan	Noun	ar:تيان شان	de:Tianshan	en:Tian Shan	es:Tian Shan	fa:تیان‌شان	fr:Tian Shan	he:הטיין שאן	hi:तियान शान	ja:天山山脈	ko:톈산산맥	pt:Tian Shan	ru:Тянь-Шань	tr:Tian Şan	ur:تیان شان	zh:天山
 c:tiara	Noun	ar:تاج صغير,إكليل	de:Diadem,Tiara	en:tiara	es:tiara	fa:تاج کوچک	fr:tiare,diadème	he:כתר,טיארה	hi:टियारा	ja:ティアラ	ko:티아라	pt:tiara	ru:тиара	tr:taç,tiaara	ur:ٹیارا	zh:头冠,小王冠
+c:tibetan	Noun	ar:تبتيون	de:Tibeter	en:Tibetans	es:tibetanos	fa:تبتی‌ها	fr:tibétains	he:טיבטים	hi:तिब्बती	ja:チベット人	ko:티베트인	pt:tibetanos	ru:тибетцы	tr:Tibetliler	ur:تبتی	zh:藏族
 c:tick	Noun	ar:قراد,حلمة	de:Zecke	en:tick	es:garrapata	fa:کنه	fr:tique	he:קרצייה	hi:किलनी,टिक	ja:ダニ,マダニ	ko:진드기,참진드기	pt:carrapato	ru:клещ	tr:kene	ur:چیچڑ	zh:蜱虫
 c:tick-insect	Noun	ar:قراد	de:Zecke	en:tick	es:garrapata	fa:کنه	fr:tique	he:קרצייה	hi:चिचड़	ja:マダニ	ko:진드기 큰	pt:carrapato	ru:клещ собачий	tr:kene	ur:چچڑ	zh:蜱虫
 c:ticket	Noun	ar:تذكرة	de:Ticket,Fahrkarte	en:ticket	es:billete,boleto,entrada,tique	fa:بلیط	fr:billet,ticket	he:כרטיס	hi:टिकट	ja:チケット,切符	ko:티켓,표	pt:bilhete,ingresso	ru:билет	tr:bilet	ur:ٹکٹ	zh:票,车票
@@ -9222,6 +9256,7 @@ c:truth	Noun	ar:حق,حقيقة	de:Wahrheit	en:truth	es:verdad	fa:حقیقت	fr:
 c:tsavorite	Noun	ar:تساڤوريت	de:Tsavorit	en:tsavorite	es:tsavorita	fa:تساوریت	fr:tsavorite	he:צאוורייט	hi:त्सावोराइट	ja:ツァボライト	ko:차보라이트	pt:tsavorita	ru:тсаворит	tr:tsavorit	ur:تساوورائٹ	zh:沙弗莱石
 c:tsunami	Noun	ar:تسونامي,موجة مدية	de:Tsunami	en:tsunami	es:tsunami,maremoto	fa:سونامی	fr:tsunami,raz-de-marée	he:צונאמי	hi:सुनामी	ja:津波	ko:쓰나미,해일	pt:tsunami,maremoto	ru:цунами	tr:tsunami	ur:سونامی	zh:海啸
 c:tsunami-wave	Noun	ar:تسونامي موجة	de:Tsunami	en:tsunami	es:tsunami	fa:سونامی	fr:tsunami	he:צונאמי	hi:सुनामी	ja:津波	ko:쓰나미	pt:tsunami	ru:цунами	tr:tsunami	ur:سونامی	zh:海啸
+c:tuareg	Noun	ar:طوارق	de:Tuareg	en:Tuareg	es:tuareg	fa:طوارق	fr:touaregs	he:טוארג	hi:तुआरेग	ja:トゥアレグ	ko:투아레그족	pt:tuaregues	ru:туареги	tr:Tuaregler	ur:طوارق	zh:图阿雷格人
 c:tuatara	Noun	ar:توتارا	de:Tuatara	en:tuatara	es:tuátara	fa:توآتارا	fr:tuatara	he:טואטארה	hi:टुआटारा	ja:ムカシトカゲ	ko:투아타라	pt:tuátara	ru:гаттерия	tr:tuatara	ur:ٹواٹارا	zh:楔齿蜥
 c:tuba	Noun	ar:توبا	de:Tuba	en:tuba	es:tuba	fa:توبا	fr:tuba	he:טובה	hi:ट्यूबा	ja:チューバ	ko:튜바	pt:tuba	ru:туба	tr:tuba	ur:ٹیوبا	zh:大号
 c:tuber	Noun	ar:درنة	de:Knolle	en:tuber	es:tubérculo	fa:غده	fr:tubercule	he:פקעת	hi:कंदिका	ja:塊茎	ko:괴경	pt:tubérculo	ru:клубень	tr:yumru	ur:گانٹھ	zh:块茎
@@ -9250,6 +9285,7 @@ c:turkey-country	Noun	ar:تركيا	de:Türkei	en:Turkey,Türkiye	es:Turquía	fa
 c:turkey-meat	Noun	ar:لحم ديك رومي	de:Putenfleisch	en:turkey meat	es:carne de pavo	fa:گوشت بوقلمون	fr:viande de dinde	he:בשר הודו	hi:टर्की का मांस	ja:七面鳥肉	ko:칠면조 고기	pt:carne de peru	ru:индейка мясо	tr:hindi eti	ur:ٹرکی گوشت	zh:火鸡肉
 c:turkish-cuisine	Noun	ar:مطبخ تركي	de:türkische Küche	en:Turkish cuisine	es:cocina turca	fa:آشپزی ترکی	fr:cuisine turque	he:מטבח טורקי	hi:तुर्की भोजन	ja:トルコ料理	ko:터키 요리	pt:culinária turca	ru:турецкая кухня	tr:Türk mutfağı	ur:ترکی کھانا	zh:土耳其菜
 c:turkish-language	Noun	ar:اللغة التركية	de:Türkisch	en:Turkish language	es:idioma turco	fa:زبان ترکی	fr:turc	he:טורקית	hi:तुर्की भाषा	ja:トルコ語	ko:터키어	pt:língua turca	ru:турецкий язык	tr:Türkçe	ur:ترکی زبان	zh:土耳其语
+c:turks	Noun	ar:أتراك	de:Türken	en:Turks	es:turcos	fa:ترک‌ها	fr:turcs	he:טורקים	hi:तुर्क	ja:トルコ人	ko:튀르크인	pt:turcos	ru:турки	tr:Türkler	ur:ترک	zh:突厥人
 c:turmeric	Noun	ar:كركم	de:Kurkuma	en:turmeric	es:cúrcuma	fa:زردچوبه	fr:curcuma	he:כורכום	hi:हल्दी	ja:ウコン	ko:강황	pt:açafrão-da-terra	ru:куркума	tr:zerdeçal	ur:ہلدی	zh:姜黄
 c:turmeric-spice	Noun	ar:كركم	de:Kurkuma	en:turmeric	es:cúrcuma	fa:زردچوبه	fr:curcuma	he:כורכום	hi:हल्दी	ja:ターメリック	ko:강황	pt:açafrão-da-índia	ru:куркума	tr:zerdeçal	ur:ہلدی	zh:姜黄
 c:turnip	Noun	ar:لفت	de:Rübe	en:turnip	es:nabo	fa:شلغم	fr:navet	he:לפת	hi:शलजम	ja:カブ	ko:순무	pt:nabo	ru:репа	tr:şalgam	ur:شلجم	zh:芜菁
@@ -9352,6 +9388,7 @@ c:usb-port	Noun	ar:منفذ USB	de:USB-Anschluss	en:USB port	es:puerto USB	fa:پ
 c:utilitarianism	Noun	ar:النفعية,المذهب النفعي	de:Utilitarismus	en:utilitarianism	es:utilitarismo	fa:سودگرایی	fr:utilitarisme	he:תועלתנות	hi:उपयोगितावाद	ja:功利主義	ko:공리주의	pt:utilitarismo	ru:утилитаризм	tr:yararcılık,faydacılık	ur:افادیت	zh:功利主义
 c:utilitarianism-phil	Noun	ar:النفعية	de:Utilitarismus	en:utilitarianism	es:utilitarismo	fa:فایده‌گرایی	fr:utilitarisme	he:תועלתנות	hi:उपयोगितावाद	ja:功利主義	ko:공리주의	pt:utilitarismo	ru:утилитаризм	tr:faydacılık	ur:افادیت پسندی	zh:功利主义
 c:utilitarianism-pol	Noun	ar:النفعية	de:Utilitarismus	en:utilitarianism	es:utilitarismo	fa:فایده‌گرایی	fr:utilitarisme	he:אוטיליטריאניזם	hi:उपयोगितावाद	ja:功利主義	ko:공리주의	pt:utilitarismo	ru:утилитаризм	tr:faydacılık	ur:افادیت پسندی	zh:功利主义
+c:uyghur	Noun	ar:أويغور	de:Uiguren	en:Uyghurs	es:uigures	fa:اویغورها	fr:ouïghours	he:אויגורים	hi:उइगुर	ja:ウイグル人	ko:위구르족	pt:uigures	ru:уйгуры	tr:Uygurlar	ur:اویغور	zh:维吾尔族
 c:vaccination	Noun	ar:التطعيم	de:Impfung	en:vaccination	es:vacunación	fa:واکسیناسیون	fr:vaccination	he:חיסון	hi:टीकाकरण	ja:予防接種	ko:예방 접종	pt:vacinação	ru:вакцинация	tr:aşılama	ur:ٹیکاکاری	zh:疫苗接种
 c:vaccine	Noun	ar:لقاح,تطعيم	de:Impfstoff	en:vaccine	es:vacuna	fa:واکسن	fr:vaccin	he:חיסון	hi:टीका,वैक्सीन	ja:ワクチン	ko:백신	pt:vacina	ru:вакцина	tr:aşı	ur:ویکسین	zh:疫苗
 c:vaccine-invention	Noun	ar:اختراع اللقاح	de:Impfstoff Erfindung	en:vaccine invention	es:invención de la vacuna	fa:اختراع واکسن	fr:invention du vaccin	he:המצאת החיסון	hi:टीका आविष्कार	ja:ワクチンの発明	ko:백신 발명	pt:invenção da vacina	ru:изобретение вакцины	tr:aşı icadı	ur:ویکسین ایجاد	zh:疫苗发明
@@ -9449,6 +9486,7 @@ c:vietnam	Noun	ar:فيتنام	de:Vietnam	en:Vietnam	es:Vietnam	fa:ویتنام	
 c:vietnam-war	Noun	ar:حرب فيتنام	de:Vietnamkrieg	en:Vietnam War	es:guerra de Vietnam	fa:جنگ ویتنام	fr:guerre du Vietnam	he:מלחמת וייטנאם	hi:वियतनाम युद्ध	ja:ベトナム戦争	ko:베트남 전쟁	pt:guerra do Vietnã	ru:Вьетнамская война	tr:Vietnam Savaşı	ur:ویتنام جنگ	zh:越南战争
 c:vietnamese-cuisine	Noun	ar:مطبخ فيتنامي	de:vietnamesische Küche	en:Vietnamese cuisine	es:cocina vietnamita	fa:آشپزی ویتنامی	fr:cuisine vietnamienne	he:מטבח וייטנאמי	hi:वियतनामी भोजन	ja:ベトナム料理	ko:베트남 요리	pt:culinária vietnamita	ru:вьетнамская кухня	tr:Vietnam mutfağı	ur:ویتنامی کھانا	zh:越南菜
 c:vietnamese-language	Noun	ar:اللغة الفيتنامية	de:Vietnamesisch	en:Vietnamese language	es:idioma vietnamita	fa:زبان ویتنامی	fr:vietnamien	he:וייטנאמית	hi:वियतनामी भाषा	ja:ベトナム語	ko:베트남어	pt:língua vietnamita	ru:вьетнамский язык	tr:Vietnamca	ur:ویتنامی زبان	zh:越南语
+c:vietnamese-people	Noun	ar:فيتناميون	de:Vietnamesen	en:Vietnamese people	es:vietnamitas	fa:ویتنامی‌ها	fr:vietnamiens	he:ויאטנמים	hi:वियतनामी लोग	ja:ベトナム人	ko:베트남인	pt:vietnamitas	ru:вьетнамцы	tr:Vietnamlılar	ur:ویتنامی لوگ	zh:越南人
 c:view-db	Noun	ar:عرض قاعدة بيانات	de:Datenbank-Sicht	en:database view	es:vista de base de datos	fa:نمای پایگاه داده	fr:vue de base de données	he:תצוגת מסד נתונים	hi:डेटाबेस व्यू	ja:データベースビュー	ko:데이터베이스 뷰	pt:visão de banco de dados	ru:представление базы данных	tr:veritabanı görünümü	ur:ڈیٹا بیس ویو	zh:数据库视图
 c:viewership	Noun	ar:عدد المشاهدين	de:Zuschauerschaft	en:viewership	es:número de espectadores	fa:مخاطبان	fr:téléspectateurs	he:צפייה	hi:दर्शकता	ja:視聴者数	ko:시청자 수	pt:audiência espectadores	ru:телеаудитория	tr:izleyici kitlesi	ur:ناظرین	zh:观众
 c:viewfinder	Noun	ar:مكشاف المنظر	de:Sucher	en:viewfinder	es:visor	fa:دریچه دید	fr:viseur	he:מסגרת צילום	hi:व्यूफाइंडर	ja:ファインダー	ko:뷰파인더	pt:visor	ru:видоискатель	tr:vizör	ur:ویوفائنڈر	zh:取景器
@@ -9813,6 +9851,7 @@ c:yoga	Noun	ar:اليوغا,اليوجا	de:Yoga	en:yoga	es:yoga	fa:یوگا	fr:
 c:yogurt	Noun	ar:زبادي,لبن رائب	de:Joghurt	en:yogurt,yoghurt	es:yogur	fa:ماست	fr:yaourt	he:יוגורט	hi:दही	ja:ヨーグルト	ko:요구르트,요거트	pt:iogurte	ru:йогурт	tr:yoğurt	ur:دہی	zh:酸奶,优格
 c:yogurt-dairy	Noun	ar:لبن زبادي	de:Joghurt	en:yogurt	es:yogur	fa:ماست	fr:yaourt	he:יוגורט	hi:दही	ja:ヨーグルト	ko:요구르트	pt:iogurte	ru:йогурт	tr:yoğurt	ur:دہی	zh:酸奶
 c:yokohama	Noun	ar:يوكوهاما	de:Yokohama	en:Yokohama	es:Yokohama	fa:یوکوهاما	fr:Yokohama	he:יוקוהאמה	hi:योकोहामा	ja:横浜,よこはま	ko:요코하마	pt:Iocoama	ru:Иокогама	tr:Yokohama	ur:یوکوہاما	zh:横滨
+c:yoruba	Noun	ar:يوروبا	de:Yoruba	en:Yoruba	es:yoruba	fa:یوروبا	fr:yoruba	he:יורובה	hi:योरूबा	ja:ヨルバ人	ko:요루바족	pt:iorubá	ru:йоруба	tr:Yoruba	ur:یوروبا	zh:约鲁巴人
 c:young	Adjective	ar:شاب,صغير السن	de:jung	en:young	es:joven	fa:جوان	fr:jeune	he:צעיר	hi:जवान,युवा	ja:若い	ko:젊은,어린	pt:jovem	ru:молодой	tr:genç	ur:جوان	zh:年轻
 c:youngs-modulus	Noun	ar:معامل يونج	de:Elastizitätsmodul	en:Young's modulus	es:módulo de Young	fa:مدول الاستیسیته	fr:module de Young	he:מודולוס של יאנג	hi:यंग का मापांक	ja:ヤング率	ko:영률	pt:módulo de Young	ru:модуль Юнга	tr:Young modülü	ur:ینگ ماڈیولس	zh:杨氏模量
 c:yttrium	Noun	ar:إيتريوم	de:Yttrium	en:yttrium	es:itrio	fa:ایتریم	fr:yttrium	he:איטריום	hi:इट्रियम	ja:イットリウム	ko:이트륨	pt:ítrio	ru:иттрий	tr:itriyum	ur:اٹریم	zh:钇
@@ -9850,6 +9889,7 @@ c:zoroastrianism	Noun	ar:الزرادشتية	de:Zoroastrismus	en:Zoroastrianism
 c:zouk	Noun	ar:رقص الزوك	de:Zouk	en:zouk	es:zouk	fa:زوک	fr:zouk	he:זוק	hi:ज़ूक	ja:ズーク	ko:주크	pt:zouk	ru:зук	tr:zouk	ur:زوک	zh:祖克舞
 c:zucchini	Noun	ar:كوسا	de:Zucchini	en:zucchini,courgette	es:calabacín	fa:کدوی سبز	fr:courgette	he:קישוא	hi:तोरई	ja:ズッキーニ	ko:주키니	pt:abobrinha	ru:кабачок	tr:kabak	ur:توری	zh:西葫芦
 c:zucchini-veg	Noun	ar:كوسا	de:Zucchini	en:zucchini	es:calabacín	fa:کدو سبز	fr:courgette	he:קישוא	hi:तोरी	ja:ズッキーニ	ko:애호박	pt:courgette	ru:цукини	tr:kabak	ur:توری	zh:西葫芦
+c:zulu	Noun	ar:زولو	de:Zulu	en:Zulu	es:zulúes	fa:زولو	fr:zoulous	he:זולו	hi:ज़ुलू	ja:ズールー人	ko:줄루족	pt:zulus	ru:зулусы	tr:Zulular	ur:زولو	zh:祖鲁人
 c:zumba	Noun	ar:زومبا	de:Zumba	en:zumba	es:zumba	fa:زومبا	fr:zumba	he:זומבה	hi:ज़ुम्बा	ja:ズンバ	ko:줌바	pt:zumba	ru:зумба	tr:zumba	ur:زومبا	zh:尊巴
 c:zwieback	Noun	ar:تسفيباك	de:Zwieback	en:zwieback	es:zwieback	fa:نان تست	fr:biscotte	he:צוויבק	hi:ज़्विबैक	ja:ツヴィーバック	ko:즈비백	pt:tosta twice-baked	ru:цвибак	tr:peksimet	ur:زوی بیک	zh:磨牙饼干
 c:zygote	Noun	ar:لاقحة,بيضة ملقحة	de:Zygote	en:zygote	es:cigoto,zigoto	fa:تخم,زیگوت	fr:zygote	he:זיגוטה	hi:युग्मनज	ja:接合子	ko:접합자	pt:zigoto	ru:зигота	tr:zigot	ur:زائگوٹ,تخم	zh:合子,受精卵
