@@ -926,7 +926,10 @@
     "colorByStratum": "계층",
     "colorByStratumHint": "지식 계층(1–8)에 따라 색상 지정",
     "colorByMaturity": "성숙도",
-    "colorByMaturityHint": "노트 성숙도 상태에 따라 색상 지정"
+    "colorByMaturityHint": "노트 성숙도 상태에 따라 색상 지정",
+    "noStratumData": "계층 데이터가 아직 없습니다 — 계산된 계층이 있는 라이브러리에서 Sky View를 여세요.",
+    "noMaturityData": "성숙도 데이터가 아직 없습니다 — 계산된 성숙도가 있는 라이브러리에서 Sky View를 여세요.",
+    "noLegendData": "데이터가 없습니다."
   },
   "libraries": {
     "searchPlaceholder": "모든 보관함 검색...",

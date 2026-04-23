@@ -926,7 +926,10 @@
     "colorByStratum": "تہ",
     "colorByStratumHint": "علم کی تہ کے مطابق رنگ کریں (1–8)",
     "colorByMaturity": "پختگی",
-    "colorByMaturityHint": "نوٹ کی پختگی کے مطابق رنگ کریں"
+    "colorByMaturityHint": "نوٹ کی پختگی کے مطابق رنگ کریں",
+    "noStratumData": "ابھی تہ ڈیٹا موجود نہیں — Sky View کو ایسی لائبریری پر کھولیں جہاں تہیں کا حساب لگایا گیا ہو۔",
+    "noMaturityData": "ابھی پختگی ڈیٹا موجود نہیں — Sky View کو ایسی لائبریری پر کھولیں جہاں پختگی کا حساب لگایا گیا ہو۔",
+    "noLegendData": "کوئی ڈیٹا نہیں۔"
   },
   "libraries": {
     "searchPlaceholder": "تمام خزانوں میں تلاش...",

@@ -926,7 +926,10 @@
     "colorByStratum": "שכבה",
     "colorByStratumHint": "צביעה לפי שכבת ידע (1–8)",
     "colorByMaturity": "בשלות",
-    "colorByMaturityHint": "צביעה לפי מצב הבשלות של הפתק"
+    "colorByMaturityHint": "צביעה לפי מצב הבשלות של הפתק",
+    "noStratumData": "אין עדיין נתוני שכבה — פתח Sky View על ספרייה עם שכבות מחושבות.",
+    "noMaturityData": "אין על נתוני בשלות — פתח Sky View על ספרייה עם בשלות מחושבת.",
+    "noLegendData": "אין נתונים."
   },
   "libraries": {
     "searchPlaceholder": "חפש בכל הכספות...",

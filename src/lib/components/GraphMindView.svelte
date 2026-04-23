@@ -1034,8 +1034,12 @@
 		{/if}
 	</div>
 
-	<!-- Legend (toggled by palette button in the right toolbar) -->
-	{#if legendVisible && Object.keys(activeColorMap).length > 0}
+	<!-- Legend (toggled by palette button in the right toolbar).
+	     Always renders when legendVisible: the header's mode buttons
+	     need to stay reachable even when the active mode has no data,
+	     otherwise picking Stratum on a universe with no computed strata
+	     would strand the user with no way back to Library. -->
+	{#if legendVisible}
 		<div class="gm-legend" dir="auto">
 			<div class="gm-legend-header">
 				<button class="gm-legend-toggle" class:active={colorBy === 'library'}
@@ -1091,6 +1095,17 @@
 						<span class="gm-legend-name" dir="auto" style:text-align={nameIsRTL ? 'right' : 'left'}>{name}</span>
 					</label>
 				{/each}
+				{#if Object.keys(activeColorMap).length === 0}
+					<div class="gm-legend-empty">
+						{#if colorBy === 'stratum'}
+							{$t('graphView.noStratumData') || 'No stratum data yet — open Sky View on a library with computed strata.'}
+						{:else if colorBy === 'maturity'}
+							{$t('graphView.noMaturityData') || 'No maturity data yet — open Sky View on a library with computed maturity.'}
+						{:else}
+							{$t('graphView.noLegendData') || 'No data.'}
+						{/if}
+					</div>
+				{/if}
 			</div>
 			{#if hiddenGroups.size > 0}
 				<button class="gm-legend-clear" onclick={() => { hiddenLibraries = new Set(); hiddenFolders = new Set(); }}>
@@ -1351,6 +1366,13 @@
 		accent-color: var(--interactive-accent, #7c3aed);
 	}
 	.gm-legend-name { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: start; }
+	.gm-legend-empty {
+		padding: 12px 10px;
+		font-size: 11px;
+		color: var(--text-muted);
+		line-height: 1.4;
+		text-align: center;
+	}
 	.gm-legend-clear {
 		width: 100%; border: none; background: transparent;
 		color: var(--interactive-accent, #7c3aed); font-size: 10px;

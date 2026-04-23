@@ -926,7 +926,10 @@
     "colorByStratum": "層",
     "colorByStratumHint": "知識層（1–8）で色分け",
     "colorByMaturity": "成營度",
-    "colorByMaturityHint": "ノートの成營度で色分け"
+    "colorByMaturityHint": "ノートの成營度で色分け",
+    "noStratumData": "ストラトゥムデータがまだありません — ストラトゥムが計算済みのライブラリで Sky View を開いてください。",
+    "noMaturityData": "成營度データがまだありません — 成營度が計算済みのライブラリで Sky View を開いてください。",
+    "noLegendData": "データなし。"
   },
   "libraries": {
     "searchPlaceholder": "すべての保管庫を検索...",

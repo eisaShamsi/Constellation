@@ -926,7 +926,10 @@
     "colorByStratum": "Schicht",
     "colorByStratumHint": "Nach Wissensschicht einfärben (1–8)",
     "colorByMaturity": "Reife",
-    "colorByMaturityHint": "Nach Notizreifegrad einfärben"
+    "colorByMaturityHint": "Nach Notizreifegrad einfärben",
+    "noStratumData": "Noch keine Schichtdaten — Sky View in einer Bibliothek mit berechneten Schichten öffnen.",
+    "noMaturityData": "Noch keine Reifedaten — Sky View in einer Bibliothek mit berechneter Reife öffnen.",
+    "noLegendData": "Keine Daten."
   },
   "libraries": {
     "searchPlaceholder": "Alle Bibliotheken durchsuchen...",

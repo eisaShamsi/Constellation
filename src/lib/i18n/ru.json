@@ -926,7 +926,10 @@
     "colorByStratum": "Страта",
     "colorByStratumHint": "Окрасить по страте знаний (1–8)",
     "colorByMaturity": "Зрелость",
-    "colorByMaturityHint": "Окрасить по состоянию зрелости заметки"
+    "colorByMaturityHint": "Окрасить по состоянию зрелости заметки",
+    "noStratumData": "Пока нет данных по стратам — откройте Sky View в библиотеке с рассчитанными стратами.",
+    "noMaturityData": "Пока нет данных о зрелости — откройте Sky View в библиотеке с рассчитанной зрелостью.",
+    "noLegendData": "Нет данных."
   },
   "libraries": {
     "searchPlaceholder": "Поиск по всем хранилищам...",

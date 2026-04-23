@@ -927,7 +927,10 @@
     "colorByStratum": "الطبقة",
     "colorByStratumHint": "التلوين حسب طبقة المعرفة (1–8)",
     "colorByMaturity": "النضج",
-    "colorByMaturityHint": "التلوين حسب حالة نضج الملاحظة"
+    "colorByMaturityHint": "التلوين حسب حالة نضج الملاحظة",
+    "noStratumData": "لا توجد بيانات طبقات بعد — افتح عرض السماء على مكتبة تحتوي على طبقات محسوبة.",
+    "noMaturityData": "لا توجد بيانات نضج بعد — افتح عرض السماء على مكتبة تحتوي على بيانات نضج محسوبة.",
+    "noLegendData": "لا توجد بيانات."
   },
   "libraries": {
     "searchPlaceholder": "البحث في جميع المكتبات...",

@@ -963,7 +963,10 @@
     "colorByStratum": "Stratum",
     "colorByStratumHint": "Color by knowledge stratum (1–8)",
     "colorByMaturity": "Maturity",
-    "colorByMaturityHint": "Color by note maturity state"
+    "colorByMaturityHint": "Color by note maturity state",
+    "noStratumData": "No stratum data yet — open Sky View on a library with computed strata.",
+    "noMaturityData": "No maturity data yet — open Sky View on a library with computed maturity.",
+    "noLegendData": "No data."
   },
   "libraries": {
     "searchPlaceholder": "Search all libraries...",

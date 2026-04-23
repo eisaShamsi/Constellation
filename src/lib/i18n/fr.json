@@ -926,7 +926,10 @@
     "colorByStratum": "Strate",
     "colorByStratumHint": "Colorer par strate de connaissance (1–8)",
     "colorByMaturity": "Maturité",
-    "colorByMaturityHint": "Colorer par état de maturité de la note"
+    "colorByMaturityHint": "Colorer par état de maturité de la note",
+    "noStratumData": "Aucune donnée de strate encore — ouvrez Sky View sur une bibliothèque avec des strates calculées.",
+    "noMaturityData": "Aucune donnée de maturité encore — ouvrez Sky View sur une bibliothèque avec maturité calculée.",
+    "noLegendData": "Aucune donnée."
   },
   "libraries": {
     "searchPlaceholder": "Rechercher dans tous les coffres...",

@@ -926,7 +926,10 @@
     "colorByStratum": "स्तर",
     "colorByStratumHint": "ज्ञान स्तर के अनुसार रंग (1–8)",
     "colorByMaturity": "परिपक्वता",
-    "colorByMaturityHint": "नोट परिपक्वता अवस्था के अनुसार रंग"
+    "colorByMaturityHint": "नोट परिपक्वता अवस्था के अनुसार रंग",
+    "noStratumData": "अभी तक स्तर डेटा नहीं — गणित स्तरों वाली लाइब्रेरी पर Sky View खोलें।",
+    "noMaturityData": "अभी तक परिपक्वता डेटा नहीं — गणित परिपक्वता वाली लाइब्रेरी पर Sky View खोलें।",
+    "noLegendData": "कोई डेटा नहीं।"
   },
   "libraries": {
     "searchPlaceholder": "सभी तिजोरियों में खोजें...",

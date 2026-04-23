@@ -926,7 +926,10 @@
     "colorByStratum": "层级",
     "colorByStratumHint": "按知识层级着色（1–8）",
     "colorByMaturity": "成熟度",
-    "colorByMaturityHint": "按笔记成熟度着色"
+    "colorByMaturityHint": "按笔记成熟度着色",
+    "noStratumData": "尚无层级数据 — 在已计算层级的库中打开 Sky View。",
+    "noMaturityData": "尚无成熟度数据 — 在已计算成熟度的库中打开 Sky View。",
+    "noLegendData": "无数据。"
   },
   "libraries": {
     "searchPlaceholder": "搜索所有仓库...",

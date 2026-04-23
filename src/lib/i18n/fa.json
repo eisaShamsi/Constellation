@@ -926,7 +926,10 @@
     "colorByStratum": "لایه",
     "colorByStratumHint": "رنگ‌آمیزی بر اساس لایه دانش (1–8)",
     "colorByMaturity": "بلوغ",
-    "colorByMaturityHint": "رنگ‌آمیزی بر اساس حالت بلوغ یادداشت"
+    "colorByMaturityHint": "رنگ‌آمیزی بر اساس حالت بلوغ یادداشت",
+    "noStratumData": "هنوز داده لایه‌ای وجود ندارد — Sky View را بر کتابخانه‌ای با لایه‌های محاسبه‌شده باز کنید.",
+    "noMaturityData": "هنوز داده بلوغ وجود ندارد — Sky View را بر کتابخانه‌ای با بلوغ محاسبه‌شده باز کنید.",
+    "noLegendData": "داده‌ای وجود ندارد."
   },
   "libraries": {
     "searchPlaceholder": "جستجوی همه کتابخانه‌ها...",
