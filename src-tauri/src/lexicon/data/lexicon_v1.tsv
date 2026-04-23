@@ -910,6 +910,7 @@ c:bahai-faith	Noun	ar:البهائية	de:Bahaitum	en:Bahá'í faith	es:fe bahá
 c:baharat	Noun	ar:بهارات	de:Baharat	en:baharat	es:baharat	fa:بهارات	fr:baharat	he:בהראט	hi:बहारात	ja:バハラート	ko:바하라트	pt:baharat	ru:бахарат	tr:baharat	ur:بہارات	zh:巴哈拉特
 c:bahmani-sultanate	Noun	ar:سلطنة بهمنية	de:Bahmaniden-Sultanat	en:Bahmani Sultanate	es:sultanato bahmaní	fa:سلطنت بهمنی	fr:sultanat bahmanide	he:סולטנות בהמני	hi:बहमनी सल्तनत	ja:バフマニー朝	ko:바흐마니 술탄국	pt:sultanato Bahmani	ru:Бахманидский султанат	tr:Behmeni Sultanlığı	ur:بہمنی سلطنت	zh:巴赫曼尼苏丹国
 c:baht	Noun	ar:بات	de:Baht	en:baht	es:baht	fa:بات	fr:baht	he:באט	hi:बहत,बाट	ja:バーツ	ko:바트	pt:baht	ru:бат	tr:baht	ur:بہات	zh:泰铢
+c:bai-juyi	ProperNoun	ar:باي جو يي	de:Bai Juyi	en:Bai Juyi	es:Bai Juyi	fa:بای جویی	fr:Bai Juyi	he:באי ג׳ויי	hi:बाई जूई	ja:白居易	ko:백거이	pt:Bai Juyi	ru:Бо Цзюйи	tr:Bai Juyi	ur:بائی جوئی	zh:白居易
 c:baidu-cloud	ProperNoun	ar:بايدو كلاود	de:Baidu Cloud	en:Baidu Cloud	es:Baidu Cloud	fa:بایدو کلاد	fr:Baidu Cloud	he:ביידו ענן	hi:बाइडू क्लाउड	ja:バイドゥクラウド	ko:바이두 클라우드	pt:Baidu Cloud	ru:Baidu Cloud	tr:Baidu Cloud	ur:بیدو کلاؤڈ	zh:百度云
 c:bail	Noun	ar:كفالة	de:Kaution	en:bail	es:fianza	fa:وثیقه,ضمانت	fr:caution	he:ערבות	hi:ज़मानत	ja:保釈,保釈金	ko:보석,보석금	pt:fiança	ru:залог	tr:kefalet	ur:ضمانت	zh:保释,保释金
 c:bail-law	Noun	ar:كفالة قانونية	de:Kaution	en:bail	es:fianza	fa:وثیقه	fr:caution	he:ערבות	hi:ज़मानत	ja:保釈	ko:보석	pt:fiança	ru:залог	tr:kefalet	ur:ضمانت	zh:保释
@@ -1843,6 +1844,8 @@ c:canvas-art	Noun	ar:قماش رسم	de:Leinwand	en:canvas	es:lienzo	fa:بوم �
 c:canyon	Noun	ar:وادي سحيق,أخدود	de:Schlucht,Canyon	en:canyon,gorge	es:cañón,desfiladero	fa:تنگه,دره عمیق	fr:canyon,gorge	he:קניון	hi:घाटी	ja:峡谷,キャニオン	ko:협곡	pt:cânion,desfiladeiro	ru:каньон,ущелье	tr:kanyon	ur:گھاٹی	zh:峡谷
 c:canyon-geo	Noun	ar:أخدود عميق	de:Canyon	en:canyon	es:cañón	fa:دره عمیق	fr:canyon	he:קניון	hi:घाटी कैनियन	ja:峡谷	ko:협곡	pt:cânion	ru:каньон	tr:kanyon	ur:کینین	zh:峡谷
 c:canyon-landform	Noun	ar:أخدود	de:Schlucht,Canyon	en:canyon,gorge	es:cañón	fa:کانیون,دره عمیق	fr:canyon	he:קניון	hi:कैन्यन,खड्ड	ja:峡谷,キャニオン	ko:협곡	pt:cânion	ru:каньон	tr:kanyon	ur:گھاٹی	zh:峡谷
+c:cao-cao	ProperNoun	ar:تساو تساو	de:Cao Cao	en:Cao Cao	es:Cao Cao	fa:تسائو تسائو	fr:Cao Cao	he:צ׳או צ׳או	hi:काओ काओ	ja:曹操	ko:조조	pt:Cao Cao	ru:Цао Цао	tr:Cao Cao	ur:تساؤ تساؤ	zh:曹操
+c:cao-xueqin	ProperNoun	ar:تساو شوي تشين	de:Cao Xueqin	en:Cao Xueqin	es:Cao Xueqin	fa:تسائو شوه‌چین	fr:Cao Xueqin	he:צ׳או שואה-צ׳ין	hi:काओ शुएकिन	ja:曹雪芹	ko:조설근	pt:Cao Xueqin	ru:Цао Сюэцинь	tr:Cao Xueqin	ur:تساؤ ژو چن	zh:曹雪芹
 c:cap	Noun	ar:قبعة	de:Kappe,Mütze	en:cap	es:gorra	fa:کلاه	fr:casquette	he:כובע מצחייה	hi:टोपी,कैप	ja:キャップ,帽子	ko:모자,캡	pt:boné	ru:кепка	tr:kep	ur:ٹوپی	zh:鸭舌帽
 c:cap-and-trade	Noun	ar:تحديد الانبعاثات والتداول	de:Emissionshandel	en:cap and trade	es:límite y comercio	fa:سقف و تجارت	fr:plafonnement et échange	he:מכסה ומסחר	hi:कैप और ट्रेड	ja:排出権取引	ko:배출권 거래	pt:limitação e comércio	ru:система торговли квотами	tr:emisyon ticareti	ur:حد اور تجارت	zh:限额与交易
 c:capacitor	Noun	ar:مكثف	de:Kondensator	en:capacitor	es:condensador	fa:خازن	fr:condensateur	he:קבל	hi:संधारित्र	ja:コンデンサ	ko:축전기	pt:capacitor	ru:конденсатор	tr:kondansatör	ur:خازن	zh:电容器
@@ -2223,6 +2226,7 @@ c:chestnut-wood	Noun	ar:خشب الكستناء	de:Kastanienholz	en:chestnut woo
 c:chevrolet-car	ProperNoun	ar:شيفروليه	de:Chevrolet	en:Chevrolet	es:Chevrolet	fa:شورلت	fr:Chevrolet	he:שברולט	hi:शेवरले	ja:シボレー	ko:쉐보레	pt:Chevrolet	ru:Chevrolet	tr:Chevrolet	ur:شیورلیٹ	zh:雪佛兰
 c:chi-square	Noun	ar:اختبار كاي تربيع	de:Chi-Quadrat-Test	en:chi-square test	es:prueba chi-cuadrado	fa:آزمون کای اسکور	fr:test du khi-deux	he:מבחן חי בריבוע	hi:काई-वर्ग परीक्षण	ja:カイ二乗検定	ko:카이제곱 검정	pt:teste qui-quadrado	ru:критерий хи-квадрат	tr:ki kare testi	ur:کائی اسکوائر ٹیسٹ	zh:卡方检验
 c:chia-seed	Noun	ar:بذور الشيا	de:Chiasamen	en:chia seed	es:chía	fa:دانه چیا	fr:graine de chia	he:זרע צ'יה	hi:चिया बीज	ja:チアシード	ko:치아씨드	pt:semente de chia	ru:семена чиа	tr:chia tohumu	ur:چیا کے بیج	zh:奇异籽
+c:chiang-kai-shek	ProperNoun	ar:تشيانغ كاي شيك	de:Chiang Kai-shek	en:Chiang Kai-shek	es:Chiang Kai-shek	fa:چیانگ کای‌شک	fr:Tchang Kaï-chek	he:צ׳יאנג קאי-שק	hi:च्यांग काई-शेक	ja:蔣介石	ko:장제스	pt:Chiang Kai-shek	ru:Чан Кайши	tr:Çan Kay-şek	ur:چیانگ کائی شیک	zh:蒋介石
 c:chianti-wine	ProperNoun	ar:كيانتي	de:Chianti	en:Chianti	es:Chianti	fa:کیانتی	fr:Chianti	he:קיאנטי	hi:चियांति	ja:キャンティ	ko:키안티	pt:Chianti	ru:Кьянти	tr:Chianti	ur:کیانٹی	zh:基安蒂
 c:chiaroscuro	Noun	ar:الكياروسكورو	de:Chiaroscuro	en:chiaroscuro	es:claroscuro	fa:کیاروسکورو	fr:clair-obscur	he:כיארוסקורו	hi:प्रकाश-छाया	ja:キアロスクーロ	ko:명암법	pt:chiaroscuro	ru:светотень	tr:ışık-gölge	ur:روشنی سایہ	zh:明暗对比法
 c:chicago	Noun	ar:شيكاغو	de:Chicago	en:Chicago	es:Chicago	fa:شیکاگو	fr:Chicago	he:שיקגו	hi:शिकागो	ja:シカゴ	ko:시카고	pt:Chicago	ru:Чикаго	tr:Şikago	ur:شکاگو	zh:芝加哥
@@ -2262,6 +2266,7 @@ c:chinese-checkers	ProperNoun	ar:الداما الصينية	de:Chinesisches Dam
 c:chinese-cuisine	Noun	ar:مطبخ صيني	de:chinesische Küche	en:Chinese cuisine	es:cocina china	fa:آشپزی چینی	fr:cuisine chinoise	he:מטבח סיני	hi:चीनी भोजन	ja:中国料理	ko:중국 요리	pt:culinária chinesa	ru:китайская кухня	tr:Çin mutfağı	ur:چینی کھانا	zh:中国菜
 c:chinese-language	Noun	ar:اللغة الصينية	de:Chinesisch	en:Chinese language	es:idioma chino	fa:زبان چینی	fr:chinois	he:סינית	hi:चीनी भाषा	ja:中国語	ko:중국어	pt:língua chinesa	ru:китайский язык	tr:Çince	ur:چینی زبان	zh:汉语
 c:chinese-remainder	Noun	ar:مبرهنة الباقي الصيني	de:chinesischer Restsatz	en:Chinese remainder theorem,CRT	es:teorema chino del resto	fa:قضیه باقی‌مانده چینی	fr:théorème chinois des restes	he:משפט השאריות הסיני	hi:चीनी अवशेष प्रमेय	ja:中国剰余定理	ko:중국인의 나머지 정리	pt:teorema chinês do resto	ru:китайская теорема об остатках	tr:Çin kalan teoremi	ur:چینی باقی نظریہ	zh:中国剩余定理
+c:chinese-thinkers	Noun	ar:مفكرون صينيون	de:chinesische Denker	en:Chinese thinkers	es:pensadores chinos	fa:متفکران چینی	fr:penseurs chinois	he:הוגים סינים	hi:चीनी विचारक	ja:中国の思想家	ko:중국 사상가들	pt:pensadores chineses	ru:китайские мыслители	tr:Çinli düşünürler	ur:چینی مفکرین	zh:中国思想家
 c:chinook	Noun	ar:رياح شينوك	de:Chinook	en:chinook	es:chinook	fa:چینوک	fr:chinook	he:צ'ינוק	hi:चिनूक	ja:チヌーク	ko:치누크	pt:chinook	ru:чинук	tr:çinuk	ur:چنوک	zh:钦诺克风
 c:chip-seq	Noun	ar:تقنية ChIP-Seq	de:ChIP-Sequenzierung	en:ChIP-Seq,chromatin immunoprecipitation sequencing	es:ChIP-Seq	fa:ChIP-Seq	fr:ChIP-Seq	he:ChIP-Seq	hi:ChIP-Seq	ja:ChIP-Seq	ko:ChIP-Seq	pt:ChIP-Seq	ru:ChIP-секвенирование	tr:ChIP-Seq	ur:ChIP-Seq	zh:ChIP-Seq
 c:chipotle	ProperNoun	ar:تشيبوتلي	de:Chipotle	en:Chipotle	es:Chipotle	fa:چیپوتلی	fr:Chipotle	he:צ'יפוטלה	hi:चिपोटले	ja:チポトレ	ko:치포틀레	pt:Chipotle	ru:Chipotle	tr:Chipotle	ur:چپوٹلے	zh:奇波雷
@@ -3361,6 +3366,7 @@ c:denali	Noun	ar:جبل ديناليي	de:Denali	en:Denali	es:Denali	fa:دنال
 c:denarius	Noun	ar:دينار روماني,ديناريوس	de:Denar,Denarius	en:denarius	es:denario	fa:دینار روم	fr:denier	he:דינר רומי,דינריוס	hi:डिनेरियस	ja:デナリウス	ko:데나리우스	pt:denário	ru:денарий	tr:denarius	ur:دیناریوس	zh:第纳里乌斯
 c:dendrite	Noun	ar:تغصن	de:Dendrit	en:dendrite	es:dendrita	fa:دندریت	fr:dendrite	he:דנדריט	hi:डेंड्राइट	ja:樹状突起	ko:수상돌기	pt:dendrito	ru:дендрит	tr:dendrit	ur:ڈینڈرائٹ	zh:树突
 c:dendritic-cell-therapy	Noun	ar:العلاج بالخلايا التغصنية	de:dendritische Zelltherapie	en:dendritic cell therapy	es:terapia de células dendríticas	fa:درمان با سلول دندریتیک	fr:thérapie par cellules dendritiques	he:טיפול בתאים דנדריטים	hi:डेंड्रिटिक कोशिका चिकित्सा	ja:樹状細胞療法	ko:수지상 세포 치료	pt:terapia com células dendríticas	ru:дендритноклеточная терапия	tr:dendritik hücre tedavisi	ur:ڈینڈرائٹک سیل علاج	zh:树突状细胞疗法
+c:deng-xiaoping	ProperNoun	ar:دينغ شياو بينغ	de:Deng Xiaoping	en:Deng Xiaoping	es:Deng Xiaoping	fa:دنگ شیائوپینگ	fr:Deng Xiaoping	he:דנג שיאופינג	hi:डेंग ज़्याओपिंग	ja:鄧小平	ko:덩샤오핑	pt:Deng Xiaoping	ru:Дэн Сяопин	tr:Deng Xiaoping	ur:ڈینگ ژیاؤپنگ	zh:邓小平
 c:dengue-fever	Noun	ar:حمى الضنك	de:Denguefieber	en:dengue fever	es:dengue	fa:تب دانگ	fr:dengue	he:קדחת דנגי	hi:डेंगू बुखार	ja:デング熱	ko:뎅기열	pt:dengue	ru:лихорадка денге	tr:dang humması	ur:ڈینگی بخار	zh:登革热
 c:denial	Noun	ar:إنكار	de:Verleugnung	en:denial	es:negación	fa:انکار	fr:déni	he:הכחשה	hi:अस्वीकृति	ja:否認	ko:부정	pt:negação	ru:отрицание	tr:inkâr	ur:انکار	zh:否认
 c:denim	Noun	ar:دنيم	de:Denim	en:denim	es:denim	fa:دنیم	fr:denim	he:ג'ינס	hi:डेनिम	ja:デニム	ko:데님	pt:denim	ru:деним	tr:denim	ur:ڈینم	zh:牛仔布
@@ -3743,6 +3749,7 @@ c:dry	Adjective	ar:جاف	de:trocken	en:dry	es:seco	fa:خشک	fr:sec	he:יבש	h
 c:dry-season	Noun	ar:موسم الجفاف	de:Trockenzeit	en:dry season	es:estación seca	fa:فصل خشک	fr:saison sèche	he:עונה יבשה	hi:शुष्क ऋतु	ja:乾季	ko:건기	pt:estação seca	ru:сухой сезон	tr:kurak mevsim	ur:خشک موسم	zh:旱季
 c:drying-food	Noun	ar:تجفيف طعام	de:Trocknen	en:food drying	es:secado de alimentos	fa:خشک کردن غذا	fr:séchage alimentaire	he:ייבוש מזון	hi:खाद्य सुखाना	ja:食品乾燥	ko:식품 건조	pt:secagem de alimentos	ru:сушка	tr:kurutma	ur:خشک کرنا	zh:干燥
 c:dslr	Noun	ar:كاميرا رقمية احترافية	de:Spiegelreflexkamera	en:DSLR	es:cámara réflex	fa:دوربین رفلکس دیجیتال	fr:appareil reflex numérique	he:מצלמה רפלקס	hi:डीएसएलआर	ja:デジタル一眼レフ	ko:DSLR 카메라	pt:câmera DSLR	ru:зеркальная камера	tr:dijital tek gözlü refleks kamera	ur:ڈی ایس ایل آر	zh:单反相机
+c:du-fu	ProperNoun	ar:دو فو	de:Du Fu	en:Du Fu	es:Du Fu	fa:دو فو	fr:Du Fu	he:דו פו	hi:दू फू	ja:杜甫	ko:두보	pt:Du Fu	ru:Ду Фу	tr:Du Fu	ur:دو فو	zh:杜甫
 c:dual-process	Noun	ar:نظرية العمليتين	de:Zwei-Prozess-Theorie	en:dual process theory	es:teoría de proceso dual	fa:نظریه پردازش دوگانه	fr:théorie du double processus	he:תיאוריית תהליכים כפולים	hi:द्विक प्रक्रिया सिद्धांत	ja:二重過程理論	ko:이중 과정 이론	pt:teoria de processo duplo	ru:теория двойного процесса	tr:çift süreç teorisi	ur:دوہری عمل نظریہ	zh:双过程理论
 c:dualism	Noun	ar:الثنائية	de:Dualismus	en:dualism	es:dualismo	fa:دوگانه انگاری	fr:dualisme	he:דואליזם	hi:द्वैतवाद	ja:二元論	ko:이원론	pt:dualismo	ru:дуализм	tr:ikicilik,dualizm	ur:ثنویت	zh:二元论
 c:dualism-phil	Noun	ar:الثنائية الفلسفية	de:Dualismus	en:dualism	es:dualismo	fa:دوگانه‌انگاری	fr:dualisme	he:דואליזם	hi:द्वैतवाद	ja:二元論	ko:이원론	pt:dualismo	ru:дуализм	tr:düalizm	ur:دوئی پسندی	zh:二元论
@@ -4015,6 +4022,7 @@ c:emotions-feelings	Noun	ar:عواطف	de:Gefühle	en:emotions	es:emociones	fa:�
 c:empathy	Noun	ar:تعاطف	de:Empathie,Einfühlungsvermögen	en:empathy	es:empatía	fa:همدلی	fr:empathie	he:אמפתיה	hi:सहानुभूति,समानुभूति	ja:共感,感情移入	ko:공감,감정이입	pt:empatia	ru:эмпатия,сопереживание	tr:empati	ur:ہمدردی	zh:同理心,共情
 c:empennage	Noun	ar:مؤخرة الطائرة	de:Leitwerk	en:empennage	es:empenaje	fa:دم هواپیما	fr:empennage	he:זנב המטוס	hi:एम्पेनेज	ja:尾翼	ko:꼬리날개	pt:empenagem	ru:хвостовое оперение	tr:kuyruk grubu	ur:دم پر	zh:尾翼
 c:emperor	Noun	ar:إمبراطور	de:Kaiser,Imperator	en:emperor	es:emperador	fa:امپراتور	fr:empereur	he:קיסר	hi:सम्राट	ja:皇帝,天皇	ko:황제	pt:imperador	ru:император	tr:imparator	ur:شہنشاہ,بادشاہ اعظم	zh:皇帝
+c:emperor-wu-han	ProperNoun	ar:الإمبراطور وو من هان	de:Han Wudi	en:Emperor Wu of Han	es:Emperador Wu de Han	fa:هان وو دی	fr:Empereur Wu des Han	he:הקיסר וו מהאן	hi:हान वू सम्राट	ja:漢武帝	ko:한 무제	pt:Imperador Wu de Han	ru:У-ди	tr:Han Wu Dili	ur:ہان ووڈی	zh:汉武帝
 c:emphysema	Noun	ar:انتفاخ الرئة	de:Lungenemphysem	en:emphysema	es:enfisema	fa:آمفیزم	fr:emphysème	he:אמפיזמה	hi:वातस्फीति	ja:肺気腫	ko:폐기종	pt:enfisema	ru:эмфизема	tr:amfizem	ur:پھیپھڑے کا انتفاخ	zh:肺气肿
 c:empire	Noun	ar:إمبراطورية,امبراطورية	de:Reich,Imperium	en:empire	es:imperio	fa:امپراتوری	fr:empire	he:אימפריה	hi:साम्राज्य	ja:帝国	ko:제국	pt:império	ru:империя	tr:imparatorluk	ur:سلطنت,شہنشاہیت	zh:帝国
 c:empire-state	ProperNoun	ar:مبنى إمباير ستيت	de:Empire State Building	en:Empire State Building	es:Empire State	fa:ساختمان امپایر استیت	fr:Empire State Building	he:אמפייר סטייט	hi:एम्पायर स्टेट बिल्डिंग	ja:エンパイアステートビル	ko:엠파이어 스테이트 빌딩	pt:Empire State Building	ru:Эмпайр-стейт-билдинг	tr:Empire State Binası	ur:امپائر اسٹیٹ عمارت	zh:帝国大厦
@@ -4441,6 +4449,7 @@ c:fencing	Noun	ar:المبارزة بالسيف	de:Fechten	en:fencing	es:esgrima
 c:fencing-sport	Noun	ar:مبارزة	de:Fechten	en:fencing	es:esgrima	fa:شمشیربازی	fr:escrime	he:סיוף	hi:तलवारबाज़ी	ja:フェンシング	ko:펜싱	pt:esgrima	ru:фехтование	tr:eskrim	ur:تلوار بازی	zh:击剑
 c:fendi-designer	ProperNoun	ar:فيندي	de:Fendi	en:Fendi	es:Fendi	fa:فندی	fr:Fendi	he:פנדי	hi:फेंडी	ja:フェンディ	ko:펜디	pt:Fendi	ru:Фенди	tr:Fendi	ur:فینڈی	zh:芬迪
 c:fenestration	Noun	ar:توزيع النوافذ	de:Fenstergestaltung	en:fenestration	es:abocinamiento	fa:پنجره‌بندی	fr:fenestration	he:חלון יצור	hi:खिड़की व्यवस्था	ja:窓配置	ko:창문 배치	pt:fenestragem	ru:расположение окон	tr:pencere düzeni	ur:کھڑکی کی ترتیب	zh:窗户布局
+c:feng-youlan	ProperNoun	ar:فنغ يو لان	de:Feng Youlan	en:Feng Youlan	es:Feng Youlan	fa:فنگ یولان	fr:Feng Youlan	he:פנג יו-לאן	hi:फेंग यूलान	ja:馮友蘭	ko:펑유란	pt:Feng Youlan	ru:Фэн Юлань	tr:Feng Youlan	ur:فینگ یو لن	zh:冯友兰
 c:fennel	Noun	ar:شمر	de:Fenchel	en:fennel	es:hinojo	fa:رازیانه	fr:fenouil	he:שומר	hi:सौंफ	ja:フェンネル	ko:펜넬	pt:funcho	ru:фенхель	tr:rezene	ur:سونف	zh:茴香
 c:fennel-seed	Noun	ar:بذور الشمر	de:Fenchelsamen	en:fennel seed	es:semilla de hinojo	fa:تخم رازیانه	fr:graine de fenouil	he:גרעין שומר	hi:सौंफ के बीज	ja:フェンネルシード	ko:회향씨	pt:semente de funcho	ru:семена фенхеля	tr:rezene tohumu	ur:سونف کے بیج	zh:茴香籽
 c:fennel-spice	Noun	ar:شمر	de:Fenchel	en:fennel	es:hinojo	fa:رازیانه	fr:fenouil	he:שומר	hi:सौंफ	ja:フェンネル	ko:회향	pt:funcho	ru:фенхель	tr:rezene	ur:سونف	zh:茴香
@@ -5355,6 +5364,7 @@ c:gru-ml	ProperNoun	ar:جي آر يو	de:GRU	en:GRU	es:GRU	fa:جی‌آر‌یو
 c:grunge-fashion	Noun	ar:غرنج	de:Grunge-Mode	en:grunge fashion	es:moda grunge	fa:مد گرانج	fr:mode grunge	he:אופנת גראנג'	hi:ग्रंज फैशन	ja:グランジファッション	ko:그런지 패션	pt:moda grunge	ru:гранж мода	tr:grunge moda	ur:گرنج فیشن	zh:垃圾摇滚风
 c:gruyere	Noun	ar:جروير	de:Gruyère	en:gruyère cheese	es:gruyère	fa:پنیر گرویر	fr:gruyère	he:גרוייר	hi:ग्रूयेर चीज़	ja:グリュイエール	ko:그뤼에르	pt:gruyère	ru:грюйер	tr:gruyere	ur:گرویئر	zh:格吕耶尔
 c:guacamole-sauce	Noun	ar:جواكامولي	de:Guacamole	en:guacamole	es:guacamole	fa:گواکاموله	fr:guacamole	he:גוואקמולה	hi:गुआकामोले	ja:ワカモレ	ko:과카몰레	pt:guacamole	ru:гуакамоле	tr:guakamole	ur:گواکاموولے	zh:鳄梨酱
+c:guan-yu	ProperNoun	ar:غوان يو	de:Guan Yu	en:Guan Yu	es:Guan Yu	fa:گوان یو	fr:Guan Yu	he:גואן יו	hi:ग्वान यू	ja:関羽	ko:관우	pt:Guan Yu	ru:Гуань Юй	tr:Guan Yu	ur:گوان یو	zh:关羽
 c:guangzhou	Noun	ar:قوانغتشو	de:Guangzhou,Kanton	en:Guangzhou,Canton	es:Cantón,Guangzhou	fa:گوانگژو	fr:Canton,Guangzhou	he:גואנגג'ואו	hi:गुआंगझोउ	ja:広州,グワンジョウ	ko:광저우	pt:Cantão,Guangzhou	ru:Гуанчжоу	tr:Guangzhou,Kanton	ur:گوانگژو	zh:广州
 c:guardian-news	ProperNoun	ar:الغارديان	de:Guardian	en:Guardian	es:The Guardian	fa:گاردین	fr:The Guardian	he:הגרדיאן	hi:द गार्डियन	ja:ガーディアン	ko:가디언	pt:The Guardian	ru:Гардиан	tr:Guardian	ur:گارجین	zh:卫报
 c:guava	Noun	ar:جوافة	de:Guave	en:guava	es:guayaba	fa:گواوا	fr:goyave	he:גויאבה	hi:अमरूद	ja:グアバ	ko:구아바	pt:goiaba	ru:гуава	tr:guava	ur:امرود	zh:番石榴
@@ -5468,6 +5478,7 @@ c:hamster-animal	Noun	ar:هامستر	de:Hamster	en:hamster	es:hámster	fa:هم�
 c:hamza-ibn-abd	ProperNoun	ar:حمزة بن عبد المطلب	de:Hamza ibn Abd al-Muttalib	en:Hamza ibn Abd al-Muttalib	es:Hamza ibn Abd al-Muttalib	fa:حمزه بن عبدالمطلب	fr:Hamza ibn Abd al-Muttalib	he:חמזה אבן עבד אל-מוטליב	hi:हम्ज़ा इब्न अब्दुल मुतलिब	ja:ハムザ・イブン・アブドゥルムッタリブ	ko:함자 이븐 압둘 무탈리브	pt:Hamza ibn Abd al-Muttalib	ru:Хамза ибн Абд аль-Мутталиб	tr:Hamza bin Abdülmuttalib	ur:حمزہ بن عبد المطلب	zh:哈姆扎
 c:han-chinese	Noun	ar:هان الصينيون	de:Han-Chinesen	en:Han Chinese	es:han	fa:هان	fr:hans	he:האן	hi:हान चीनी	ja:漢民族	ko:한족	pt:han	ru:ханьцы	tr:Han Çinlileri	ur:ہان چینی	zh:汉族
 c:han-dynasty	Noun	ar:سلالة هان الصينية	de:Han-Dynastie	en:Han dynasty	es:dinastía Han	fa:دودمان هان	fr:dynastie Han	he:שושלת האן	hi:हान राजवंश	ja:漢王朝	ko:한나라	pt:dinastia Han	ru:династия Хань	tr:Han hanedanı	ur:ہان خاندان	zh:汉朝
+c:han-feizi	ProperNoun	ar:هان فاي	de:Han Feizi	en:Han Feizi	es:Han Fei	fa:هان‌فی‌زی	fr:Han Feizi	he:האן פיי	hi:हान फेई	ja:韓非子	ko:한비자	pt:Han Feizi	ru:Хань Фэй	tr:Han Feizi	ur:ہان فی زی	zh:韩非子
 c:hanbok	Noun	ar:هانبوك	de:Hanbok	en:hanbok	es:hanbok	fa:هانبوک	fr:hanbok	he:האנבוק	hi:हानबोक	ja:ハンボク	ko:한복	pt:hanbok	ru:ханбок	tr:hanbok	ur:ہانبوک	zh:韩服
 c:hand	Noun	ar:يد	de:Hand	en:hand,hands	es:mano	fa:دست	fr:main	he:יד	hi:हाथ	ja:手	ko:손	pt:mão	ru:рука	tr:el	ur:ہاتھ	zh:手
 c:hand-puppet	Noun	ar:دمية اليد	de:Handpuppe	en:hand puppet	es:títere de mano	fa:عروسک دستکشی	fr:marionnette à main	he:בובת יד	hi:हाथ की कठपुतली	ja:手袋人形	ko:손 인형	pt:fantoche de mão	ru:кукла-перчатка	tr:el kuklası	ur:ہاتھ کی کٹھ پتلی	zh:手偶
@@ -5801,6 +5812,7 @@ c:honeycomb	Noun	ar:قرص العسل	de:Bienenwabe	en:honeycomb	es:panal	fa:ش�
 c:honeydew	Noun	ar:شمام العسل	de:Honigmelone	en:honeydew	es:melón dulce	fa:طالبی	fr:melon miel	he:מלון ירוק	hi:हनीड्यू	ja:ハネデューメロン	ko:허니듀	pt:melão-honeydew	ru:медовая дыня	tr:bal kavunu	ur:شہد خربوزہ	zh:蜜瓜
 c:honeysuckle	Noun	ar:زهر العسل,صريمة الجدي	de:Geißblatt	en:honeysuckle	es:madreselva	fa:پیچ امین‌الدوله	fr:chèvrefeuille	he:יערה	hi:हनीसकल	ja:スイカズラ	ko:인동덩굴	pt:madressilva	ru:жимолость	tr:hanımeli	ur:ہنی سکل	zh:忍冬
 c:hong-kong	Noun	ar:هونغ كونغ	de:Hongkong	en:Hong Kong	es:Hong Kong	fa:هنگ‌کنگ	fr:Hong Kong	he:הונג קונג	hi:हांगकांग	ja:香港,ホンコン	ko:홍콩	pt:Hong Kong	ru:Гонконг	tr:Hong Kong	ur:ہانگ کانگ	zh:香港
+c:hongwu-emperor	ProperNoun	ar:الإمبراطور هونغ وو	de:Hongwu-Kaiser	en:Hongwu Emperor	es:Emperador Hongwu	fa:امپراتور هونگ‌وو	fr:Empereur Hongwu	he:הקיסר הונגוו	hi:होंगवू सम्राट	ja:洪武帝	ko:홍무제	pt:Imperador Hongwu	ru:Хунъу	tr:Hongwu İmparatoru	ur:ہونگ وو	zh:明太祖
 c:honor	Noun	ar:شرف	de:Ehre	en:honor,honour	es:honor	fa:شرف,آبرو	fr:honneur	he:כבוד	hi:सम्मान,इज़्ज़त	ja:名誉	ko:명예	pt:honra	ru:честь	tr:onur,şeref	ur:عزت,شرف	zh:荣誉
 c:hood-car	Noun	ar:غطاء المحرك	de:Motorhaube	en:hood	es:capó	fa:کاپوت	fr:capot	he:מכסה מנוע	hi:हुड	ja:ボンネット	ko:후드	pt:capô	ru:капот	tr:kaput	ur:ہڈ	zh:车篷
 c:hoodie	Noun	ar:هودي,بلوزة بقلنسوة	de:Hoodie,Kapuzenpullover	en:hoodie	es:sudadera con capucha	fa:هودی	fr:sweat à capuche,hoodie	he:קפוצון	hi:हुडी	ja:パーカー	ko:후드티	pt:moletom com capuz	ru:худи	tr:kapşonlu	ur:ہوڈی	zh:连帽衫
@@ -5874,6 +5886,7 @@ c:http-cookie	Noun	ar:ملف تعريف الارتباط	de:Cookie	en:cookie	es:
 c:http-protocol	Noun	ar:بروتوكول HTTP	de:HTTP-Protokoll	en:HTTP	es:HTTP	fa:HTTP	fr:HTTP	he:פרוטוקול HTTP	hi:एचटीटीपी	ja:HTTP	ko:HTTP	pt:HTTP	ru:HTTP	tr:HTTP	ur:ایچ ٹی ٹی پی	zh:HTTP协议
 c:https	Noun	ar:بروتوكول النقل الآمن	de:HTTPS	en:HTTPS	es:HTTPS	fa:HTTPS	fr:HTTPS	he:HTTPS	hi:एचटीटीपीएस	ja:HTTPS	ko:HTTPS	pt:HTTPS	ru:HTTPS	tr:HTTPS	ur:ایچ ٹی ٹی پی ایس	zh:安全超文本传输协议
 c:https-protocol	Noun	ar:بروتوكول HTTPS	de:HTTPS	en:HTTPS	es:HTTPS	fa:HTTPS	fr:HTTPS	he:HTTPS	hi:एचटीटीपीएस	ja:HTTPS	ko:HTTPS	pt:HTTPS	ru:HTTPS	tr:HTTPS	ur:ایچ ٹی ٹی پی ایس	zh:HTTPS协议
+c:hu-shih	ProperNoun	ar:هو شيه	de:Hu Shih	en:Hu Shih	es:Hu Shih	fa:هو شی	fr:Hu Shih	he:הו שיה	hi:हू शिह	ja:胡適	ko:후스	pt:Hu Shih	ru:Ху Ши	tr:Hu Shih	ur:ہو شیہ	zh:胡适
 c:huawei-brand	ProperNoun	ar:هواوي	de:Huawei	en:Huawei	es:Huawei	fa:هواوی	fr:Huawei	he:וואווי	hi:हुआवेई	ja:ファーウェイ	ko:화웨이	pt:Huawei	ru:Huawei	tr:Huawei	ur:ہواوے	zh:华为
 c:hub-network	Noun	ar:محور شبكة	de:Netzwerk-Hub	en:network hub	es:concentrador de red	fa:هاب شبکه	fr:concentrateur	he:רכזת	hi:नेटवर्क हब	ja:ネットワークハブ	ko:네트워크 허브	pt:hub de rede	ru:сетевой концентратор	tr:ağ göbeği	ur:نیٹ ورک ہب	zh:网络集线器
 c:hubble	ProperNoun	ar:إدوين هابل	de:Edwin Hubble	en:Edwin Hubble	es:Edwin Hubble	fa:ادوین هابل	fr:Edwin Hubble	he:אדווין האבל	hi:एडविन हबल	ja:エドウィン・ハッブル	ko:에드윈 허블	pt:Edwin Hubble	ru:Эдвин Хаббл	tr:Edwin Hubble	ur:ہبل	zh:埃德温·哈勃
@@ -6524,6 +6537,7 @@ c:kale	Noun	ar:كرنب اخضر	de:Grünkohl	en:kale	es:col rizada	fa:کیل	fr
 c:kale-veg	Noun	ar:كرنب لاهاناصي	de:Grünkohl	en:kale	es:col rizada	fa:کلم پیچ	fr:chou frisé	he:קייל	hi:केल	ja:ケール	ko:케일	pt:couve-galega	ru:кале	tr:lahana siyah	ur:کیل	zh:羽衣甘蓝
 c:kali-god	ProperNoun	ar:كالي	de:Kali	en:Kali	es:Kali	fa:کالی	fr:Kali	he:קאלי	hi:काली	ja:カーリー	ko:칼리	pt:Kali	ru:Кали	tr:Kali	ur:کالی	zh:迦梨
 c:kandinsky-artist	ProperNoun	ar:كاندينسكي	de:Kandinsky	en:Kandinsky	es:Kandinsky	fa:کاندینسکی	fr:Kandinsky	he:קנדינסקי	hi:कैंडिंस्की	ja:カンディンスキー	ko:칸딘스키	pt:Kandinsky	ru:Кандинский	tr:Kandinsky	ur:کنڈنسکی	zh:康定斯基
+c:kang-youwei	ProperNoun	ar:كانغ يو وي	de:Kang Youwei	en:Kang Youwei	es:Kang Youwei	fa:کانگ یو‌وی	fr:Kang Youwei	he:קאנג יוו-ווי	hi:कांग यूवेई	ja:康有為	ko:캉유웨이	pt:Kang Youwei	ru:Кан Ювэй	tr:Kang Youwei	ur:کانگ یوئی	zh:康有为
 c:kangaroo	Noun	ar:كنغر	de:Känguru	en:kangaroo	es:canguro	fa:کانگورو	fr:kangourou	he:קנגורו	hi:कंगारू	ja:カンガルー	ko:캥거루	pt:canguru	ru:кенгуру	tr:kanguru	ur:کنگرو	zh:袋鼠
 c:kangaroo-mammal	Noun	ar:كنغر	de:Känguru	en:kangaroo	es:canguro	fa:کانگورو	fr:kangourou	he:קנגורו	hi:कंगारू	ja:カンガルー	ko:캥거루	pt:canguru	ru:кенгуру	tr:kanguru	ur:کنگرو	zh:袋鼠
 c:kangchenjunga	Noun	ar:كانشنجونغا	de:Kangchendzönga,Kanchenjunga	en:Kangchenjunga,Kanchenjunga	es:Kanchenjunga,Kangchenjunga	fa:کانچنجونگا	fr:Kangchenjunga,Kanchenjunga	he:קנגצ'נג'ונגה	hi:कंचनजंघा,कंचनजूंगा	ja:カンチェンジュンガ	ko:칸첸중가	pt:Kangchenjunga	ru:Канченджанга	tr:Kançencunga	ur:کنچنجنگا	zh:干城章嘉峰
@@ -6713,6 +6727,7 @@ c:krumping	Noun	ar:كرامبينغ	de:Krumping	en:krumping	es:krumping	fa:کر�
 c:krypton	Noun	ar:كريبتون	de:Krypton	en:krypton	es:kriptón	fa:کریپتون	fr:krypton	he:קריפטון	hi:क्रिप्टन	ja:クリプトン	ko:크립톤	pt:crípton	ru:криптон	tr:kripton	ur:کرپٹن	zh:氪
 c:kuala-lumpur	Noun	ar:كوالالمبور	de:Kuala Lumpur	en:Kuala Lumpur	es:Kuala Lumpur	fa:کوالالامپور	fr:Kuala Lumpur	he:קואלה לומפור	hi:कुआलालंपुर	ja:クアラルンプール	ko:쿠알라룸푸르	pt:Kuala Lumpur	ru:Куала-Лумпур	tr:Kuala Lumpur	ur:کوالا لمپور	zh:吉隆坡
 c:kubernetes	ProperNoun	ar:كوبرنيتس	de:Kubernetes	en:Kubernetes	es:Kubernetes	fa:کوبرنتیز	fr:Kubernetes	he:קוברנטיס	hi:कुबेरनेट्स	ja:クーバネティス	ko:쿠버네티스	pt:Kubernetes	ru:Kubernetes	tr:Kubernetes	ur:کبرنیٹس	zh:库伯内蒂斯
+c:kublai-khan	ProperNoun	ar:كوبلاي خان	de:Kublai Khan	en:Kublai Khan	es:Kublai Kan	fa:قوبلای خان	fr:Kubilai Khan	he:קובלאי חאן	hi:कुबलई खान	ja:フビライ・ハン	ko:쿠빌라이 칸	pt:Kublai Khan	ru:Хубилай	tr:Kubilay Han	ur:قبلائی خان	zh:忽必烈
 c:kubrick	ProperNoun	ar:ستانلي كوبريك	de:Stanley Kubrick	en:Stanley Kubrick	es:Stanley Kubrick	fa:استنلی کوبریک	fr:Stanley Kubrick	he:סטנלי קובריק	hi:स्टेनली क्यूब्रिक	ja:スタンリー・キューブリック	ko:스탠리 큐브릭	pt:Stanley Kubrick	ru:Стэнли Кубрик	tr:Stanley Kubrick	ur:اسٹینلی کیوبرک	zh:斯坦利·库布里克
 c:kudu	Noun	ar:كودو	de:Kudu	en:kudu	es:kudú	fa:کودو	fr:koudou	he:קודו	hi:कुडू	ja:クーズー	ko:쿠두	pt:cudu	ru:куду	tr:kudu	ur:کوڈو	zh:大角斑羚
 c:kuiper	ProperNoun	ar:كويبر	de:Gerard Kuiper	en:Gerard Kuiper	es:Gerard Kuiper	fa:جرارد کویپر	fr:Gerard Kuiper	he:ג׳רארד קויפר	hi:जेरार्ड कुइपर	ja:ジェラルド・カイパー	ko:제라르드 카이퍼	pt:Gerard Kuiper	ru:Джерард Койпер	tr:Gerard Kuiper	ur:کوئپر	zh:柯伊伯
@@ -6990,8 +7005,10 @@ c:lexicon	Noun	ar:معجم	de:Lexikon	en:lexicon	es:léxico	fa:فرهنگ واژ
 c:lg-brand	ProperNoun	ar:إل جي	de:LG	en:LG	es:LG	fa:ال‌جی	fr:LG	he:LG	hi:एलजी	ja:エルジー	ko:LG	pt:LG	ru:LG	tr:LG	ur:ایل جی	zh:LG
 c:lhotse	Noun	ar:لوتسي	de:Lhotse	en:Lhotse	es:Lhotse	fa:لوتسه	fr:Lhotse	he:לוטסה	hi:ल्होत्से	ja:ローツェ	ko:로체	pt:Lhotse	ru:Лхоцзе	tr:Lhotse	ur:لہوتسے	zh:洛子峰
 c:lhotse-peak	Noun	ar:لوتسي	de:Lhotse	en:Lhotse	es:Lhotse	fa:لوتسه	fr:Lhotse	he:לוטסה	hi:ल्होत्से	ja:ローツェ	ko:로체	pt:Lhotse	ru:Лхоцзе	tr:Lhotse	ur:لہوتسے	zh:洛子峰
+c:li-bai	ProperNoun	ar:لي باي	de:Li Bai	en:Li Bai	es:Li Bai	fa:لی بای	fr:Li Bai	he:לי באי	hi:ली बाई	ja:李白	ko:이백	pt:Li Bai	ru:Ли Бо	tr:Li Bai	ur:لی بائی	zh:李白
 c:liability	Noun	ar:التزام,خصوم	de:Verbindlichkeit,Passivum	en:liability	es:pasivo,obligación	fa:بدهی	fr:passif,dette	he:התחייבות,חוב	hi:देनदारी,दायित्व	ja:負債	ko:부채	pt:passivo,obrigação	ru:обязательство,пассив	tr:yükümlülük,pasif	ur:واجب الادا,دین	zh:负债
 c:liability-biz	Noun	ar:التزام مالي	de:Verbindlichkeit	en:liability	es:pasivo	fa:بدهی	fr:passif	he:התחייבות	hi:देयता	ja:負債	ko:부채	pt:passivo	ru:обязательство	tr:borç	ur:واجب الادا	zh:负债
+c:liang-qichao	ProperNoun	ar:ليانغ تشي تشاو	de:Liang Qichao	en:Liang Qichao	es:Liang Qichao	fa:لیانگ چی‌چائو	fr:Liang Qichao	he:ליאנג צ׳יצ׳או	hi:लिआंग किचाओ	ja:梁啓超	ko:량치차오	pt:Liang Qichao	ru:Лян Цичао	tr:Liang Qichao	ur:لیانگ چی چاؤ	zh:梁启超
 c:libel	Noun	ar:التشهير الكتابي	de:Verleumdung	en:libel	es:libelo	fa:افترای مکتوب	fr:libelle	he:הוצאת דיבה בכתב	hi:मानहानि लेख	ja:文書誹謗	ko:문서 명예훼손	pt:libelo	ru:письменная клевета	tr:yazılı iftira	ur:تحریری بہتان	zh:文字诽谤
 c:liberalism	Noun	ar:الليبرالية	de:Liberalismus	en:liberalism	es:liberalismo	fa:لیبرالیسم	fr:libéralisme	he:ליברליזם	hi:उदारवाद	ja:自由主義	ko:자유주의	pt:liberalismo	ru:либерализм	tr:liberalizm	ur:آزاد خیالی	zh:自由主义
 c:liberalism-phil	Noun	ar:الليبرالية	de:Liberalismus	en:liberalism	es:liberalismo	fa:لیبرالیسم	fr:libéralisme	he:ליברליזם	hi:उदारवाद	ja:自由主義	ko:자유주의	pt:liberalismo	ru:либерализм	tr:liberalizm	ur:آزادی پسندی	zh:自由主义
@@ -7112,6 +7129,8 @@ c:litigation	Noun	ar:التقاضي	de:Rechtsstreit	en:litigation	es:litigio	fa:
 c:little-mermaid	ProperNoun	ar:الحورية الصغيرة	de:Die kleine Meerjungfrau	en:Little Mermaid	es:Sirenita	fa:پری دریایی کوچک	fr:Petite Sirène	he:בת הים הקטנה	hi:नन्हीं जलपरी	ja:リトル・マーメイド	ko:인어공주	pt:Pequena Sereia	ru:Русалочка	tr:Küçük Denizkızı	ur:چھوٹی جل پری	zh:小美人鱼
 c:littoral	Adjective	ar:الساحلي	de:litoral	en:littoral	es:litoral	fa:ساحلی	fr:littoral	he:חופי	hi:तटवर्ती	ja:沿岸の	ko:연안의	pt:litoral	ru:литоральный	tr:kıyı	ur:ساحلی	zh:潮间带的
 c:liturgy	Noun	ar:الليتورجيا	de:Liturgie	en:liturgy	es:liturgia	fa:آیین عبادی	fr:liturgie	he:ליטורגיה	hi:धार्मिक अनुष्ठान	ja:典礼	ko:예전	pt:liturgia	ru:литургия	tr:liturji	ur:عبادت کا نظام	zh:礼仪
+c:liu-bang	ProperNoun	ar:ليو بانغ	de:Liu Bang	en:Liu Bang	es:Liu Bang	fa:لیو بانگ	fr:Liu Bang	he:ליו באנג	hi:लिउ बांग	ja:劉邦	ko:유방	pt:Liu Bang	ru:Лю Бан	tr:Liu Bang	ur:لیو بانگ	zh:刘邦
+c:liu-bei	ProperNoun	ar:ليو باي	de:Liu Bei	en:Liu Bei	es:Liu Bei	fa:لیو بی	fr:Liu Bei	he:ליו באי	hi:लिउ बेई	ja:劉備	ko:유비	pt:Liu Bei	ru:Лю Бэй	tr:Liu Bei	ur:لیو بی	zh:刘备
 c:liu-xiaobo	ProperNoun	ar:ليو شياو بو	de:Liu Xiaobo	en:Liu Xiaobo	es:Liu Xiaobo	fa:لیو شیائوبو	fr:Liu Xiaobo	he:ליו שיאובו	hi:लिउ शाओबो	ja:劉暁波	ko:류샤오보	pt:Liu Xiaobo	ru:Лю Сяобо	tr:Liu Xiaobo	ur:لیو شیاؤبو	zh:刘晓波
 c:livability	Noun	ar:قابلية السكن	de:Lebensqualität	en:livability	es:habitabilidad	fa:زیست‌پذیری	fr:habitabilité	he:ראויות למגורים	hi:रहने योग्यता	ja:住みやすさ	ko:살기 좋음	pt:habitabilidade	ru:комфортность проживания	tr:yaşanabilirlik	ur:رہائشی صلاحیت	zh:宜居性
 c:live	Verb	ar:عاش	de:leben	en:live	es:vivir	fa:زندگی کردن,زیستن	fr:vivre	he:לחיות	hi:जीना,रहना	ja:生きる,住む	ko:살다	pt:viver,morar	ru:жить	tr:yaşamak	ur:جینا,رہنا	zh:活,住
@@ -7221,6 +7240,7 @@ c:lowland	Noun	ar:أراضي منخفضة	de:Tiefland	en:lowland	es:tierras baja
 c:loyalty	Noun	ar:ولاء	de:Loyalität	en:loyalty	es:lealtad	fa:وفاداری	fr:loyauté	he:נאמנות	hi:वफादारी	ja:忠誠	ko:충성	pt:lealdade	ru:верность	tr:sadakat	ur:وفاداری	zh:忠诚
 c:lstm-ml	ProperNoun	ar:إل إس تي إم	de:LSTM	en:LSTM	es:LSTM	fa:ال‌اس‌تی‌ام	fr:LSTM	he:LSTM	hi:एलएसटीएम	ja:LSTM	ko:LSTM	pt:LSTM	ru:LSTM	tr:LSTM	ur:ایل ایس ٹی ایم	zh:长短期记忆
 c:ltp-neuro	Noun	ar:التقوية طويلة الامد	de:Langzeitpotenzierung	en:long-term potentiation,LTP	es:potenciación a largo plazo	fa:توان‌افزایی بلند مدت	fr:potentialisation à long terme	he:פוטנציאציה ארוכת טווח	hi:दीर्घकालीन शक्तिवर्धन	ja:長期増強	ko:장기 강화	pt:potenciação de longa duração	ru:долговременная потенциация	tr:uzun süreli güçlendirme	ur:طویل مدتی قوت بخشی	zh:长时程增强
+c:lu-xun	ProperNoun	ar:لو شون	de:Lu Xun	en:Lu Xun	es:Lu Xun	fa:لو شون	fr:Lu Xun	he:לו שון	hi:लू शुन	ja:魯迅	ko:루쉰	pt:Lu Xun	ru:Лу Синь	tr:Lu Xun	ur:لو شون	zh:鲁迅
 c:lua-lang	ProperNoun	ar:لوا	de:Lua	en:Lua	es:Lua	fa:لوآ	fr:Lua	he:לואה	hi:लुआ	ja:ルア	ko:루아	pt:Lua	ru:Lua	tr:Lua	ur:لوا	zh:卢阿
 c:lucas-econ	ProperNoun	ar:روبرت لوكاس	de:Robert Lucas	en:Robert Lucas Jr.	es:Robert Lucas	fa:رابرت لوکاس	fr:Robert Lucas	he:רוברט לוקאס	hi:रॉबर्ट लुकास	ja:ロバート・ルーカス	ko:로버트 루카스	pt:Robert Lucas	ru:Роберт Лукас	tr:Robert Lucas	ur:لوکاس	zh:罗伯特·卢卡斯
 c:ludo-game	ProperNoun	ar:لودو	de:Mensch ärgere dich nicht	en:Ludo	es:Parchís	fa:لودو	fr:Ludo	he:לודו	hi:लूडो	ja:ルード	ko:루도	pt:Ludo	ru:Людо	tr:Kızma Birader	ur:لڈو	zh:飞行棋
@@ -7413,6 +7433,7 @@ c:mantra	Noun	ar:مانترا	de:Mantra	en:mantra	es:mantra	fa:مانترا	fr:m
 c:manure	Noun	ar:روث	de:Mist	en:manure	es:estiércol	fa:کود حیوانی	fr:fumier	he:זבל	hi:गोबर	ja:堆肥	ko:거름	pt:esterco	ru:навоз	tr:hayvan gübresi	ur:گوبر	zh:粪肥
 c:manuscript	Noun	ar:مخطوطة	de:Manuskript,Handschrift	en:manuscript	es:manuscrito	fa:نسخه خطی,دستنوشته	fr:manuscrit	he:כתב יד	hi:पांडुलिपि,हस्तलेख	ja:原稿,写本	ko:원고,필사본	pt:manuscrito	ru:рукопись	tr:el yazması	ur:مخطوطہ	zh:手稿,原稿
 c:many	Adjective	ar:كثير	de:viele	en:many	es:muchos	fa:بسیاری,خیلی	fr:beaucoup,nombreux	he:הרבה	hi:बहुत,अनेक	ja:多い,たくさん	ko:많은	pt:muitos	ru:много,многие	tr:çok,birçok	ur:بہت,کثیر	zh:许多,很多
+c:mao-zedong	ProperNoun	ar:ماو تسي تونغ	de:Mao Zedong	en:Mao Zedong	es:Mao Zedong	fa:مائو تسه‌تونگ	fr:Mao Zedong	he:מאו דזה-דונג	hi:माओ ज़ेदोंग	ja:毛沢東	ko:마오쩌둥	pt:Mao Tsé-Tung	ru:Мао Цзэдун	tr:Mao Zedong	ur:ماؤ زے تنگ	zh:毛泽东
 c:maoi	Noun	ar:مثبط أكسيداز أحادي الأمين	de:MAO-Hemmer	en:MAOI	es:IMAO	fa:مهارکننده مونوآمین اکسیداز	fr:IMAO	he:MAOI	hi:एमएओआई	ja:モノアミン酸化酵素阻害薬	ko:모노아민 산화효소 억제제	pt:IMAO	ru:ингибитор МАО	tr:MAOI	ur:ایم اے او آئی	zh:单胺氧化酶抑制剂
 c:maori	Noun	ar:ماوري	de:Maori	en:Maori	es:maorí	fa:مائوری	fr:maoris	he:מאורי	hi:माओरी	ja:マオリ族	ko:마오리족	pt:maori	ru:маори	tr:Maoriler	ur:ماوری	zh:毛利人
 c:map	Noun	ar:خريطة	de:Karte,Landkarte	en:map	es:mapa	fa:نقشه	fr:carte,plan	he:מפה	hi:नक्शा,मानचित्र	ja:地図	ko:지도	pt:mapa	ru:карта	tr:harita	ur:نقشہ	zh:地图
@@ -7633,6 +7654,7 @@ c:memory	Noun	ar:ذاكرة,ذكرى	de:Erinnerung,Gedächtnis	en:memory	es:memo
 c:memory-epistemic	Noun	ar:إبستيمولوجيا الذاكرة	de:Erkenntnistheorie der Erinnerung	en:epistemology of memory	es:epistemología de la memoria	fa:معرفت‌شناسی حافظه	fr:épistémologie de la mémoire	he:אפיסטמולוגיה של הזיכרון	hi:स्मृति का ज्ञानमीमांसा	ja:記憶の認識論	ko:기억의 인식론	pt:epistemologia da memória	ru:эпистемология памяти	tr:bellek epistemolojisi	ur:یادداشت معرفیات	zh:记忆认识论
 c:memory-psych	Noun	ar:ذاكرة نفسية	de:Gedächtnis	en:memory	es:memoria	fa:حافظه	fr:mémoire	he:זיכרון	hi:स्मृति	ja:記憶	ko:기억	pt:memória	ru:память	tr:hafıza	ur:یادداشت	zh:记忆
 c:memory-ram	Noun	ar:ذاكرة الوصول العشوائي	de:Arbeitsspeicher	en:RAM	es:RAM	fa:رم	fr:RAM	he:זיכרון RAM	hi:रैम	ja:RAM	ko:램	pt:RAM	ru:оперативная память	tr:RAM	ur:رام	zh:内存
+c:mencius	ProperNoun	ar:منسيوس	de:Mengzi	en:Mencius	es:Mencio	fa:منسیوس	fr:Mencius	he:מנציוס	hi:मेन्सियस	ja:孟子	ko:맹자	pt:Mêncio	ru:Мэн-цзы	tr:Mencius	ur:مینسیس	zh:孟子
 c:mendel	ProperNoun	ar:مندل	de:Mendel	en:Mendel	es:Mendel	fa:مندل	fr:Mendel	he:מנדל	hi:मेंडल	ja:メンデル	ko:멘델	pt:Mendel	ru:Мендель	tr:Mendel	ur:مینڈل	zh:孟德尔
 c:mendel-law	Noun	ar:قوانين مندل	de:mendelsche Regeln	en:Mendel's laws	es:leyes de Mendel	fa:قوانین مندل	fr:lois de Mendel	he:חוקי מנדל	hi:मेंडल के नियम	ja:メンデルの法則	ko:멘델의 법칙	pt:leis de Mendel	ru:законы Менделя	tr:Mendel yasaları	ur:مینڈل کے قوانین	zh:孟德尔定律
 c:mendeleev	ProperNoun	ar:مندليف	de:Mendelejew	en:Mendeleev	es:Mendeléyev	fa:مندلیف	fr:Mendeleïev	he:מנדלייב	hi:मेंडलीफ	ja:メンデレーエフ	ko:멘델레예프	pt:Mendeleiev	ru:Менделеев	tr:Mendeleyev	ur:مینڈلیف	zh:门捷列夫
@@ -8035,6 +8057,7 @@ c:motive	Noun	ar:دافع,باعث	de:Motiv,Beweggrund	en:motive	es:motivo	fa:ا
 c:motor-learning	Noun	ar:التعلم الحركي	de:motorisches Lernen	en:motor learning	es:aprendizaje motor	fa:یادگیری حرکتی	fr:apprentissage moteur	he:למידה מוטורית	hi:गतिज अधिगम	ja:運動学習	ko:운동 학습	pt:aprendizagem motora	ru:моторное обучение	tr:motor öğrenme	ur:حرکی سیکھنا	zh:动作学习
 c:motor-unit	Noun	ar:الوحدة الحركية	de:motorische Einheit	en:motor unit	es:unidad motora	fa:واحد حرکتی	fr:unité motrice	he:יחידה מוטורית	hi:मोटर इकाई	ja:運動単位	ko:운동 단위	pt:unidade motora	ru:двигательная единица	tr:motor ünite	ur:حرکی اکائی	zh:运动单位
 c:motorcycle	Noun	ar:دراجة نارية	de:Motorrad	en:motorcycle,motorbike	es:motocicleta,moto	fa:موتورسیکلت,موتور	fr:motocyclette,moto	he:אופנוע	hi:मोटरसाइकिल	ja:オートバイ,バイク	ko:오토바이,모터사이클	pt:motocicleta,moto	ru:мотоцикл	tr:motosiklet	ur:موٹرسائیکل	zh:摩托车
+c:mou-zongsan	ProperNoun	ar:مو تسونغ سان	de:Mou Zongsan	en:Mou Zongsan	es:Mou Zongsan	fa:مو زونگ‌سان	fr:Mou Zongsan	he:מו דזונג-סאן	hi:मोउ ज़ोंगसान	ja:牟宗三	ko:모우쭝산	pt:Mou Zongsan	ru:Моу Цзунсань	tr:Mou Zongsan	ur:مو زونگ سان	zh:牟宗三
 c:mount-aconcagua	Noun	ar:أكونكاغوا	de:Aconcagua	en:Aconcagua,Mount Aconcagua	es:Aconcagua,cerro Aconcagua	fa:آکونکاگوا	fr:Aconcagua	he:אקונקגואה	hi:एकांकागुआ,एकोंकागुआ	ja:アコンカグア	ko:아콩카과산	pt:Aconcágua	ru:Аконкагуа	tr:Aconcagua	ur:اکانکاگوا	zh:阿空加瓜山
 c:mount-ararat	Noun	ar:جبل أرارات,أرارات	de:Ararat	en:Mount Ararat,Ararat	es:monte Ararat,Ararat	fa:کوه آرارات,آرارات	fr:mont Ararat,Ararat	he:הר אררט,אררט	hi:माउंट अरारात,अरारात	ja:アララト山	ko:아라라트산	pt:monte Ararat,Ararat	ru:Арарат	tr:Ağrı Dağı,Ararat	ur:ماؤنٹ ارارت,ارارت	zh:亚拉拉特山
 c:mount-blanc	Noun	ar:جبل بلان	de:Mont Blanc	en:Mont Blanc	es:Mont Blanc	fa:مون‌بلان	fr:mont Blanc	he:מון בלאן	hi:मॉन्ट ब्लांक	ja:モンブラン	ko:몽블랑	pt:Mont Blanc	ru:Монблан	tr:Mont Blanc	ur:مونٹ بلانک	zh:勃朗峰
@@ -8074,6 +8097,7 @@ c:movie-feature	Noun	ar:فيلم طويل	de:Spielfilm	en:feature film	es:largom
 c:mowgli	ProperNoun	ar:موغلي	de:Mowgli	en:Mowgli	es:Mowgli	fa:موگلی	fr:Mowgli	he:מוגלי	hi:मोगली	ja:モーグリ	ko:모글리	pt:Mowgli	ru:Маугли	tr:Mowgli	ur:موگلی	zh:毛克利
 c:mozart	Noun	ar:موتسارت,فولفغانغ أماديوس موتسارت	de:Mozart,Wolfgang Amadeus Mozart	en:Mozart,Wolfgang Amadeus Mozart	es:Mozart	fa:موتسارت	fr:Mozart	he:מוצרט	hi:मोज़ार्ट	ja:モーツァルト	ko:모차르트	pt:Mozart	ru:Моцарт	tr:Mozart	ur:موزارٹ	zh:莫扎特
 c:mozart-composer	ProperNoun	ar:موتسارت	de:Mozart	en:Mozart	es:Mozart	fa:موتزارت	fr:Mozart	he:מוצרט	hi:मोत्सार्ट	ja:モーツァルト	ko:모차르트	pt:Mozart	ru:Моцарт	tr:Mozart	ur:موزارٹ	zh:莫扎特
+c:mozi	ProperNoun	ar:موزي	de:Mozi	en:Mozi	es:Mozi	fa:موزی	fr:Mozi	he:מו דזה	hi:मोज़ी	ja:墨子	ko:묵자	pt:Mozi	ru:Мо-цзы	tr:Mozi	ur:موزی	zh:墨子
 c:mozzarella	Noun	ar:جبنة الموزاريلا	de:Mozzarella	en:mozzarella	es:mozzarella	fa:موزارلا	fr:mozzarella	he:מוצרלה	hi:मोज़ेरेला	ja:モッツァレラ	ko:모짜렐라	pt:mussarela	ru:моцарелла	tr:mozzarella	ur:موزریلا	zh:马苏里拉奶酪
 c:mozzarella-dairy	Noun	ar:موزاريلا	de:Mozzarella	en:mozzarella	es:mozzarella	fa:موزارلا	fr:mozzarella	he:מוצרלה	hi:मोज़रेला	ja:モッツァレラ	ko:모짜렐라	pt:mozarela	ru:моцарелла	tr:mozzarella	ur:موزریلا	zh:马苏里拉
 c:mp3-player	Noun	ar:مشغل إم بي 3	de:MP3-Player	en:MP3 player	es:reproductor MP3	fa:پخش‌کننده ام‌پی‌تری	fr:lecteur MP3	he:נגן MP3	hi:एमपी3 प्लेयर	ja:MP3プレーヤー	ko:MP3 플레이어	pt:leitor de MP3	ru:MP3-плеер	tr:MP3 çalar	ur:ایم پی 3 پلیئر	zh:MP3播放器
@@ -9913,6 +9937,7 @@ c:qantas	ProperNoun	ar:كوانتاس	de:Qantas	en:Qantas	es:Qantas	fa:کوان�
 c:qanun	Noun	ar:قانون	de:Kanun	en:qanun	es:qanun	fa:قانون	fr:kanoun	he:קנון	hi:कानून	ja:カーヌーン	ko:카눈	pt:qanun	ru:кануун	tr:kanun	ur:قانون	zh:卡侬琴
 c:qatar-airways	ProperNoun	ar:الخطوط الجوية القطرية	de:Qatar Airways	en:Qatar Airways	es:Qatar Airways	fa:قطر ایرویز	fr:Qatar Airways	he:קטאר איירווייז	hi:कतर एयरवेज़	ja:カタール航空	ko:카타르 항공	pt:Qatar Airways	ru:Катарские авиалинии	tr:Katar Havayolları	ur:قطر ایئرویز	zh:卡塔尔航空
 c:qianlong	ProperNoun	ar:تشيانلونغ	de:Qianlong	en:Qianlong Emperor	es:Emperador Qianlong	fa:چیان‌لونگ	fr:Qianlong	he:צ׳יאנלונג	hi:चियानलोंग	ja:乾隆帝	ko:건륭제	pt:Imperador Qianlong	ru:Цяньлун	tr:Qianlong	ur:چیان لونگ	zh:乾隆帝
+c:qin-shi-huang	ProperNoun	ar:تشين شي هوانغ	de:Qin Shihuangdi	en:Qin Shi Huang	es:Qin Shi Huang	fa:چین شی هوانگ	fr:Qin Shi Huang	he:צ׳ין שי-חואנג	hi:चिन शी हुआंग	ja:秦の始皇帝	ko:진시황제	pt:Qin Shi Huang	ru:Цинь Шихуанди	tr:Qin Shi Huang	ur:چن شی ہوانگ	zh:秦始皇
 c:qing-dynasty	Noun	ar:سلالة تشينغ الصينية	de:Qing-Dynastie	en:Qing dynasty	es:dinastía Qing	fa:دودمان چینگ	fr:dynastie Qing	he:שושלת צ'ינג	hi:छिंग राजवंश	ja:清王朝	ko:청나라	pt:dinastia Qing	ru:династия Цин	tr:Qing hanedanı	ur:چنگ خاندان	zh:清朝
 c:qipao	Noun	ar:تشيباو	de:Qipao	en:qipao	es:qipao	fa:چی‌پائو	fr:qipao	he:צ'יפאו	hi:क़िपाओ	ja:チーパオ	ko:치파오	pt:qipao	ru:ципао	tr:qipao	ur:کی پاؤ	zh:旗袍
 c:qkd	Noun	ar:توزيع المفتاح الكمومي	de:Quantenschlüsselverteilung	en:quantum key distribution	es:distribución de clave cuántica	fa:توزیع کلید کوانتومی	fr:distribution de clé quantique	he:הפצת מפתח קוונטית	hi:क्वांटम कुंजी वितरण	ja:量子鍵配送	ko:양자 키 분배	pt:distribuição quântica de chave	ru:квантовое распределение ключей	tr:kuantum anahtar dağıtımı	ur:کوانٹم کلید تقسیم	zh:量子密钥分发
@@ -11214,6 +11239,8 @@ c:silver-mineral	Noun	ar:خام الفضة	de:Silbererz	en:silver ore	es:mineral
 c:silverfish	Noun	ar:أبو أذنين,الفضية	de:Silberfischchen	en:silverfish	es:pececillo de plata,lepisma	fa:ماهی نقره‌ای,لپیسما	fr:poisson d'argent,lépisme	he:דג כסף	hi:सिल्वरफिश	ja:シミ	ko:좀	pt:traça-de-livro,peixinho-da-prata	ru:чешуйница,мокрица книжная	tr:gümüş balığı	ur:چاندی کی مچھلی	zh:衣鱼
 c:silversmith	Noun	ar:صائغ فضة	de:Silberschmied	en:silversmith	es:platero	fa:نقره‌کار,نقره‌ساز	fr:argentier	he:צורף כסף	hi:चांदी का कारीगर,रौप्यकार	ja:銀細工師	ko:은세공인	pt:prateiro	ru:серебряных дел мастер	tr:gümüş ustası	ur:چاندی کا کاریگر	zh:银匠
 c:sim-card	Noun	ar:شريحة SIM	de:SIM-Karte	en:SIM card	es:tarjeta SIM	fa:سیم‌کارت	fr:carte SIM	he:כרטיס SIM	hi:सिम कार्ड	ja:SIMカード	ko:SIM 카드	pt:cartão SIM	ru:SIM-карта	tr:SIM kart	ur:سم کارڈ	zh:SIM卡
+c:sima-guang	ProperNoun	ar:سيما غوانغ	de:Sima Guang	en:Sima Guang	es:Sima Guang	fa:سیما گوانگ	fr:Sima Guang	he:סימה גואנג	hi:सिमा गुआंग	ja:司馬光	ko:사마광	pt:Sima Guang	ru:Сыма Гуан	tr:Sima Guang	ur:سیما گوانگ	zh:司马光
+c:sima-qian	ProperNoun	ar:سيما تشيان	de:Sima Qian	en:Sima Qian	es:Sima Qian	fa:سیما چیان	fr:Sima Qian	he:סימה צ׳יאן	hi:सिमा कियान	ja:司馬遷	ko:사마천	pt:Sima Qian	ru:Сыма Цянь	tr:Sima Qian	ur:سیما چیان	zh:司马迁
 c:similar-triangles	Noun	ar:مثلثات متشابهة	de:ähnliche Dreiecke	en:similar triangles	es:triángulos semejantes	fa:مثلث‌های متشابه	fr:triangles semblables	he:משולשים דומים	hi:समरूप त्रिभुज	ja:相似三角形	ko:닮은 삼각형	pt:triângulos semelhantes	ru:подобные треугольники	tr:benzer üçgenler	ur:مشابہ مثلث	zh:相似三角形
 c:simile	Noun	ar:تشبيه	de:Vergleich,Gleichnis	en:simile	es:símil,comparación	fa:تشبیه	fr:comparaison	he:דימוי	hi:उपमा	ja:直喩,明喩	ko:직유,비유	pt:símile,comparação	ru:сравнение	tr:benzetme,teşbih	ur:تشبیہ	zh:明喻,比喻
 c:simmer	Verb	ar:طهى على نار هادئة	de:köcheln	en:simmer	es:cocer a fuego lento	fa:کم حرارت جوشاندن	fr:mijoter,frémir	he:לבשל על אש נמוכה	hi:धीमी आँच पर पकाना	ja:弱火で煮る	ko:약한 불로 끓이다	pt:cozinhar em fogo baixo	ru:томить,тушить	tr:hafif ateşte pişirmek	ur:دھیمی آنچ پر پکانا	zh:炖,慢煮
@@ -11910,6 +11937,7 @@ c:style	Noun	ar:أسلوب,طراز	de:Stil	en:style	es:estilo	fa:سبک,شیو�
 c:stylus-pen	Noun	ar:قلم لمسي	de:Eingabestift	en:stylus	es:lápiz táctil	fa:قلم لمسی	fr:stylet	he:עט סטיילוס	hi:स्टाइलस	ja:スタイラス	ko:스타일러스	pt:estilete digital	ru:стилус	tr:dokunmatik kalem	ur:ٹچ قلم	zh:触控笔
 c:styracosaurus	Noun	ar:ستيراكوصور	de:Styracosaurus	en:styracosaurus	es:estiracosaurio	fa:استیراکوزاروس	fr:styracosaure	he:סטירקוזאורוס	hi:स्टायराकोसॉरस	ja:スティラコサウルス	ko:스트라코사우루스	pt:estiracossauro	ru:стиракозавр	tr:strakozor	ur:سٹائراکوسارس	zh:戟龙
 c:su-57	ProperNoun	ar:سوخوي سو-57	de:Suchoi Su-57	en:Sukhoi Su-57	es:Sukhoi Su-57	fa:سوخوی سو-57	fr:Sukhoi Su-57	he:סוחוי Su-57	hi:सुखोई Su-57	ja:スホーイSu-57	ko:수호이 Su-57	pt:Sukhoi Su-57	ru:Су-57	tr:Sukhoi Su-57	ur:سو-57	zh:苏-57
+c:su-shi	ProperNoun	ar:سو شي	de:Su Shi	en:Su Shi	es:Su Shi	fa:سو شی	fr:Su Shi	he:סו שי	hi:सू शी	ja:蘇軾	ko:소식	pt:Su Shi	ru:Су Ши	tr:Su Shi	ur:سو شی	zh:苏轼
 c:subaltern	Noun	ar:المهمش	de:Subalterner	en:subaltern	es:subalterno	fa:فرودست	fr:subalterne	he:כפוף	hi:निम्नवर्गीय	ja:サバルタン	ko:피지배자	pt:subalterno	ru:субальтерн	tr:tabi	ur:ماتحت	zh:庶民
 c:subaru-car	ProperNoun	ar:سوبارو	de:Subaru	en:Subaru	es:Subaru	fa:سوبارو	fr:Subaru	he:סובארו	hi:सुबारू	ja:スバル	ko:스바루	pt:Subaru	ru:Subaru	tr:Subaru	ur:سبارو	zh:斯巴鲁
 c:subconscious	Noun	ar:باطن الوعي	de:Unterbewusstsein	en:subconscious	es:subconsciente	fa:ضمیر ناخودآگاه	fr:subconscient	he:תת מודע	hi:अवचेतन	ja:潜在意識,サブコンシャス	ko:잠재의식	pt:subconsciente	ru:подсознание	tr:bilinçaltı	ur:تحت الشعور	zh:潜意识
@@ -11966,6 +11994,7 @@ c:summer	Noun	ar:صيف	de:Sommer	en:summer	es:verano	fa:تابستان	fr:été
 c:sumo	Noun	ar:السومو	de:Sumo	en:sumo	es:sumo	fa:سومو	fr:sumo	he:סומו	hi:सूमो	ja:相撲	ko:스모	pt:sumô	ru:сумо	tr:sumo	ur:سومو	zh:相扑
 c:sun	Noun	ar:شمس	de:Sonne	en:sun	es:sol	fa:خورشید,آفتاب	fr:soleil	he:שמש	hi:सूर्य,सूरज	ja:太陽	ko:해,태양	pt:sol	ru:солнце	tr:güneş	ur:سورج	zh:太阳
 c:sun-tzu	ProperNoun	ar:صن تزو	de:Sunzi	en:Sun Tzu	es:Sun Tzu	fa:سون تزو	fr:Sun Tzu	he:סון דזה	hi:सुन त्ज़ू	ja:孫子	ko:손자	pt:Sun Tzu	ru:Сунь-цзы	tr:Sun Tzu	ur:سن زو	zh:孙子
+c:sun-yat-sen	ProperNoun	ar:صن يات سن	de:Sun Yat-sen	en:Sun Yat-sen	es:Sun Yat-sen	fa:سون یات‌سن	fr:Sun Yat-sen	he:סון יאט-סן	hi:सुन यत-सेन	ja:孫文	ko:쑨원	pt:Sun Yat-sen	ru:Сунь Ятсен	tr:Sun Yat-sen	ur:سن یات سین	zh:孙中山
 c:sunbird	Noun	ar:طائر الشمس	de:Nektarvogel	en:sunbird	es:suimanga	fa:پرنده آفتاب	fr:souimanga	he:צוף	hi:सनबर्ड	ja:タイヨウチョウ	ko:태양조	pt:suimanga	ru:нектарница	tr:güneş kuşu	ur:سن برڈ	zh:太阳鸟
 c:sunchoke	Noun	ar:خرشوف القدس	de:Topinambur	en:sunchoke,Jerusalem artichoke	es:tupinambo	fa:توپینامبو	fr:topinambour	he:שושנת-ירושלים	hi:सनचोक	ja:キクイモ	ko:뚱딴지	pt:tupinambô	ru:топинамбур	tr:yer elması	ur:سن چوک	zh:菊芋
 c:sundae	Noun	ar:صنداي	de:Sundae	en:sundae	es:sundae	fa:ساندی	fr:coupe glacée	he:סאנדיי	hi:संडे आइसक्रीम	ja:サンデー	ko:선데	pt:sundae	ru:санди	tr:sundae	ur:سنڈے	zh:圣代
@@ -12207,6 +12236,7 @@ c:tan-color	Noun	ar:أسمر فاتح	de:Hellbraun,Gerbfarben	en:tan	es:canela,t
 c:tanami-desert	Noun	ar:صحراء تانامي	de:Tanami-Wüste	en:Tanami desert	es:desierto de Tanami	fa:صحرای تانامی	fr:désert de Tanami	he:מדבר טנאמי	hi:तानामी रेगिस्तान	ja:タナミ砂漠	ko:타나미 사막	pt:deserto de Tanami	ru:пустыня Танами	tr:Tanami çölü	ur:تانامی صحرا	zh:塔纳米沙漠
 c:tang-dynasty	Noun	ar:أسرة تانغ,سلالة تانغ	de:Tang-Dynastie	en:tang dynasty	es:dinastía tang	fa:سلسله تانگ	fr:dynastie tang	he:שושלת טאנג	hi:तांग राजवंश	ja:唐,唐朝	ko:당나라,당 왕조	pt:dinastia tang	ru:династия тан	tr:tang hanedanı	ur:تانگ سلطنت	zh:唐朝,唐代
 c:tang-dynasty-china	Noun	ar:سلالة تانغ الصينية	de:Tang-Dynastie	en:Tang dynasty	es:dinastía Tang	fa:دودمان تانگ	fr:dynastie Tang	he:שושלת טאנג	hi:तांग राजवंश	ja:唐王朝	ko:당나라	pt:dinastia Tang	ru:династия Тан	tr:Tang hanedanı	ur:تانگ خاندان	zh:唐朝
+c:tang-taizong	ProperNoun	ar:تانغ تاي تسونغ	de:Tang Taizong	en:Emperor Taizong of Tang	es:Emperador Taizong de Tang	fa:تای تسونگ تانگ	fr:Tang Taizong	he:טאי-דזונג מטאנג	hi:तांग ताइज़ोंग	ja:唐太宗	ko:당 태종	pt:Imperador Taizong de Tang	ru:Тайцзун	tr:Tang Taizong	ur:تانگ تائی زونگ	zh:唐太宗
 c:tangent	Noun	ar:مماس	de:Tangente	en:tangent	es:tangente	fa:مماس	fr:tangente	he:משיק	hi:स्पर्शरेखा	ja:接線,タンジェント	ko:접선,탄젠트	pt:tangente	ru:касательная	tr:teğet	ur:مماس	zh:切线,正切
 c:tangent-function	Noun	ar:دالة الظل	de:Tangensfunktion	en:tangent function	es:función tangente	fa:تابع تانژانت	fr:fonction tangente	he:פונקציית טנגנס	hi:स्पर्शज्या फलन	ja:タンジェント関数	ko:탄젠트 함수	pt:função tangente	ru:функция тангенса	tr:tanjant fonksiyonu	ur:ٹینجنٹ تفاعل	zh:正切函数
 c:tangerine	Noun	ar:يوسفي	de:Tangerine	en:tangerine	es:mandarina tangerine	fa:نارنگی تانگرین	fr:mandarine tangerine	he:טנג'רין	hi:टेंजेरीन	ja:タンジェリン	ko:탠저린	pt:tangerina	ru:мандарин танжерин	tr:mandalina tangerin	ur:ٹانجرین	zh:橘子
@@ -13375,6 +13405,8 @@ c:waltz-dance	Noun	ar:فالس	de:Walzer	en:waltz	es:vals	fa:والس	fr:valse	h
 c:wan	Noun	ar:شبكة واسعة	de:Weitverkehrsnetz	en:wide area network	es:red de área amplia	fa:شبکه گسترده	fr:réseau étendu	he:רשת רחבה	hi:वाइड एरिया नेटवर्क	ja:ワイドエリアネットワーク	ko:광역 통신망	pt:rede de longa distância	ru:глобальная сеть	tr:geniş alan ağı	ur:وائڈ ایریا نیٹ ورک	zh:广域网
 c:wander	Verb	ar:تجول,هام	de:wandern,umherstreifen	en:wander	es:vagar,deambular	fa:سرگردان بودن,پرسه زدن	fr:errer,vagabonder	he:לנדוד	hi:भटकना	ja:さまよう	ko:헤매다,배회하다	pt:vagar	ru:блуждать,бродить	tr:dolaşmak,başıboş gezmek	ur:بھٹکنا	zh:漫游,徘徊
 c:wanderer-sea-fog	ProperNoun	ar:المتجول فوق بحر الضباب	de:Der Wanderer über dem Nebelmeer	en:Wanderer above the Sea of Fog	es:El caminante sobre el mar de nubes	fa:راهگردی بر فراز دریای مه	fr:Le Voyageur contemplant une mer de nuages	he:הנווד מעל ים הערפל	hi:वांडरर ऐबव द सी ऑफ फोग	ja:雲海の上の旅人	ko:안개 바다 위의 방랑자	pt:Caminhante sobre o mar de névoa	ru:Странник над морем тумана	tr:Sis Denizi Üzerindeki Gezgin	ur:سمندر مہ کے اوپر آوارہ گرد	zh:雾海上的流浪者
+c:wang-anshi	ProperNoun	ar:وانغ آن شي	de:Wang Anshi	en:Wang Anshi	es:Wang Anshi	fa:وانگ آن‌شی	fr:Wang Anshi	he:וואנג אנ-שי	hi:वांग अंशी	ja:王安石	ko:왕안석	pt:Wang Anshi	ru:Ван Аньши	tr:Wang Anshi	ur:وانگ این شی	zh:王安石
+c:wang-yangming	ProperNoun	ar:وانغ يانغ مينغ	de:Wang Yangming	en:Wang Yangming	es:Wang Yangming	fa:وانگ یانگ‌مینگ	fr:Wang Yangming	he:ואנג יאנג-מינג	hi:वांग यांगमिंग	ja:王陽明	ko:왕양명	pt:Wang Yangming	ru:Ван Янмин	tr:Wang Yangming	ur:وانگ یانگ منگ	zh:王阳明
 c:war	Noun	ar:حرب	de:Krieg	en:war	es:guerra	fa:جنگ	fr:guerre	he:מלחמה	hi:युद्ध	ja:戦争	ko:전쟁	pt:guerra	ru:война	tr:savaş	ur:جنگ	zh:战争
 c:war-crime	Noun	ar:جريمة حرب	de:Kriegsverbrechen	en:war crime	es:crimen de guerra	fa:جنایت جنگی	fr:crime de guerre	he:פשע מלחמה	hi:युद्ध अपराध	ja:戦争犯罪	ko:전쟁 범죄	pt:crime de guerra	ru:военное преступление	tr:savaş suçu	ur:جنگی جرم	zh:战争罪
 c:war-film	Noun	ar:فيلم حربي	de:Kriegsfilm	en:war film	es:película de guerra	fa:فیلم جنگی	fr:film de guerre	he:סרט מלחמה	hi:युद्ध फिल्म	ja:戦争映画	ko:전쟁 영화	pt:filme de guerra	ru:военный фильм	tr:savaş filmi	ur:جنگی فلم	zh:战争片
@@ -13718,6 +13750,7 @@ c:writing-desk	Noun	ar:مكتب كتابة	de:Schreibtisch	en:writing desk	es:es
 c:wrong	Adjective	ar:خاطئ	de:falsch	en:wrong,incorrect	es:incorrecto,equivocado	fa:اشتباه,غلط	fr:faux,incorrect	he:לא נכון,שגוי	hi:ग़लत	ja:間違い,誤り	ko:틀린,잘못된	pt:errado,incorreto	ru:неправильный,ошибочный	tr:yanlış	ur:غلط	zh:错,错误
 c:wrought-iron	Noun	ar:حديد مطروق	de:Schmiedeeisen	en:wrought iron	es:hierro forjado	fa:آهن تمیز	fr:fer forgé	he:ברזל מחוץ	hi:पिटवां लोहा	ja:錬鉄	ko:연철	pt:ferro forjado	ru:кованое железо	tr:dövme demir	ur:پٹوان لوہا	zh:熟铁
 c:wu-zetian	ProperNoun	ar:وو زيتيان	de:Wu Zetian	en:Wu Zetian	es:Wu Zetian	fa:وو زتیان	fr:Wu Zetian	he:וו זה-טיאן	hi:वू ज़ेतियान	ja:則天武后	ko:측천무후	pt:Wu Zetian	ru:У Цзэтянь	tr:Wu Zetian	ur:وو زیٹین	zh:武则天
+c:wudi-liang	ProperNoun	ar:ليانغ وو دي	de:Kaiser Wu von Liang	en:Emperor Wu of Liang	es:Emperador Wu de Liang	fa:لیانگ وو دی	fr:Empereur Wu des Liang	he:הקיסר וו מליאנג	hi:लिआंग वू	ja:梁武帝	ko:양 무제	pt:Imperador Wu de Liang	ru:Лян У-ди	tr:Liang Wu İmparatoru	ur:لیانگ وو	zh:梁武帝
 c:wundt	ProperNoun	ar:فيلهلم فونت	de:Wilhelm Wundt	en:Wilhelm Wundt	es:Wilhelm Wundt	fa:ویلهلم وونت	fr:Wilhelm Wundt	he:וילהלם וונדט	hi:विल्हेम वुंट	ja:ヴィルヘルム・ヴント	ko:빌헬름 분트	pt:Wilhelm Wundt	ru:Вильгельм Вундт	tr:Wilhelm Wundt	ur:ونٹ	zh:冯特
 c:wuthering-heights	ProperNoun	ar:مرتفعات ويذرينغ	de:Sturmhöhe	en:Wuthering Heights	es:Cumbres Borrascosas	fa:بلندی‌های بادگیر	fr:Les Hauts de Hurlevent	he:אנקת גבהים	hi:वुथरिंग हाइट्स	ja:嵐が丘	ko:폭풍의 언덕	pt:O Morro dos Ventos Uivantes	ru:Грозовой перевал	tr:Uğultulu Tepeler	ur:وتھرنگ ہائٹس	zh:呼啸山庄
 c:wyndham	ProperNoun	ar:ويندام	de:Wyndham	en:Wyndham	es:Wyndham	fa:ویندهام	fr:Wyndham	he:ווינדהאם	hi:विंडहैम	ja:ウィンダム	ko:윈덤	pt:Wyndham	ru:Wyndham	tr:Wyndham	ur:ونڈہم	zh:温德姆
@@ -13730,9 +13763,11 @@ c:xamarin	ProperNoun	ar:زامارين	de:Xamarin	en:Xamarin	es:Xamarin	fa:زا�
 c:xavier	ProperNoun	ar:القديس فرنسيس كزافييه	de:Franz Xaver	en:Francis Xavier	es:Francisco Javier	fa:فرانسیس خاویر	fr:François Xavier	he:פרנציסקוס חבייר	hi:फ्रांसिस ज़ेवियर	ja:フランシスコ・ザビエル	ko:프란시스코 사비에르	pt:Francisco Xavier	ru:Франциск Ксаверий	tr:Aziz Francis Xavier	ur:زیویئر	zh:方济各·沙勿略
 c:xenon	Noun	ar:زينون	de:Xenon	en:xenon	es:xenón	fa:زنون	fr:xénon	he:קסנון	hi:जेनन	ja:キセノン	ko:제논	pt:xénon	ru:ксенон	tr:ksenon	ur:زینون	zh:氙
 c:xerxes	ProperNoun	ar:زركسيس	de:Xerxes	en:Xerxes	es:Jerjes	fa:خشایار	fr:Xerxès	he:חשיארש	hi:ज़र्क्सीज़	ja:クセルクセス	ko:크세르크세스	pt:Xerxes	ru:Ксеркс	tr:Serhas	ur:زرکسیس	zh:薛西斯
+c:xi-jinping	ProperNoun	ar:شي جين بينغ	de:Xi Jinping	en:Xi Jinping	es:Xi Jinping	fa:شی جین‌پینگ	fr:Xi Jinping	he:שי ג׳ינפינג	hi:शी जिनपिंग	ja:習近平	ko:시진핑	pt:Xi Jinping	ru:Си Цзиньпин	tr:Şi Cinping	ur:شی جن پنگ	zh:习近平
 c:xiangqi	ProperNoun	ar:شيانغتشي	de:Xiangqi	en:Xiangqi	es:Xiangqi	fa:شیانگکی	fr:Xiangqi	he:שיאנגצ'י	hi:शियांग्की	ja:シャンチー	ko:샹치	pt:Xiangqi	ru:Сянци	tr:Xiangqi	ur:شیانگچی	zh:象棋
 c:xiaomi-brand	ProperNoun	ar:شاومي	de:Xiaomi	en:Xiaomi	es:Xiaomi	fa:شیائومی	fr:Xiaomi	he:שיאומי	hi:शाओमी	ja:シャオミ	ko:샤오미	pt:Xiaomi	ru:Xiaomi	tr:Xiaomi	ur:شیاؤمی	zh:小米
 c:xray-machine	Noun	ar:جهاز أشعة سينية	de:Röntgengerät	en:X-ray machine	es:máquina de rayos X	fa:دستگاه اشعه ایکس	fr:appareil à rayons X	he:מכשיר רנטגן	hi:एक्स-रे मशीन	ja:X線装置	ko:X선 기계	pt:máquina de raios-X	ru:рентгеновский аппарат	tr:röntgen cihazı	ur:ایکسرے مشین	zh:X光机
+c:xunzi	ProperNoun	ar:شونزي	de:Xunzi	en:Xunzi	es:Xun Kuang	fa:شون‌زی	fr:Xun Zi	he:שון דזה	hi:शुन्ज़ी	ja:荀子	ko:순자	pt:Xun Zi	ru:Сюнь-цзы	tr:Xunzi	ur:زون زی	zh:荀子
 c:xylem	Noun	ar:خشب النبات	de:Xylem	en:xylem	es:xilema	fa:چوب	fr:xylème	he:עצה	hi:जाइलम	ja:木部	ko:목부	pt:xilema	ru:ксилема	tr:odun borusu	ur:زائلم	zh:木质部
 c:xylophone	Noun	ar:إكسيليفون	de:Xylophon	en:xylophone	es:xilófono	fa:زایلوفون	fr:xylophone	he:קסילופון	hi:ज़ाइलोफोन	ja:シロフォン,木琴	ko:실로폰,목금	pt:xilofone	ru:ксилофон	tr:ksilofon	ur:زائلوفون	zh:木琴
 c:y-intercept	Noun	ar:تقاطع المحور الصادي	de:y-Achsenabschnitt	en:y-intercept	es:intercepto y	fa:عرض از مبدأ	fr:ordonnée à l'origine	he:נקודת חיתוך עם ציר y	hi:वाई-अंतःखंड	ja:y切片	ko:y절편	pt:intercepto y	ru:y-пересечение	tr:y kesim noktası	ur:وائی انٹرسیپٹ	zh:y轴截距
@@ -13781,6 +13816,7 @@ c:yogurt	Noun	ar:زبادي,لبن رائب	de:Joghurt	en:yogurt,yoghurt	es:yogu
 c:yogurt-dairy	Noun	ar:لبن زبادي	de:Joghurt	en:yogurt	es:yogur	fa:ماست	fr:yaourt	he:יוגורט	hi:दही	ja:ヨーグルト	ko:요구르트	pt:iogurte	ru:йогурт	tr:yoğurt	ur:دہی	zh:酸奶
 c:yohji-yamamoto	ProperNoun	ar:يوجي ياماموتو	de:Yohji Yamamoto	en:Yohji Yamamoto	es:Yohji Yamamoto	fa:یوجی یاماموتو	fr:Yohji Yamamoto	he:יוהג׳י יאמאמוטו	hi:योजी यामामोटो	ja:山本耀司	ko:요지 야마모토	pt:Yohji Yamamoto	ru:Ёдзи Ямамото	tr:Yohji Yamamoto	ur:یاماموتو	zh:山本耀司
 c:yokohama	Noun	ar:يوكوهاما	de:Yokohama	en:Yokohama	es:Yokohama	fa:یوکوهاما	fr:Yokohama	he:יוקוהאמה	hi:योकोहामा	ja:横浜,よこはま	ko:요코하마	pt:Iocoama	ru:Иокогама	tr:Yokohama	ur:یوکوہاما	zh:横滨
+c:yongle-emperor	ProperNoun	ar:إمبراطور يونغلي	de:Yongle-Kaiser	en:Yongle Emperor	es:Emperador Yongle	fa:یونگ‌له	fr:Empereur Yongle	he:הקיסר יונגלה	hi:योंगले सम्राट	ja:永楽帝	ko:영락제	pt:Imperador Yongle	ru:Чжу Ди	tr:Yongle İmparatoru	ur:یانگ لے	zh:明成祖
 c:yoruba	Noun	ar:يوروبا	de:Yoruba	en:Yoruba	es:yoruba	fa:یوروبا	fr:yoruba	he:יורובה	hi:योरूबा	ja:ヨルバ人	ko:요루바족	pt:iorubá	ru:йоруба	tr:Yoruba	ur:یوروبا	zh:约鲁巴人
 c:young	Adjective	ar:شاب,صغير السن	de:jung	en:young	es:joven	fa:جوان	fr:jeune	he:צעיר	hi:जवान,युवा	ja:若い	ko:젊은,어린	pt:jovem	ru:молодой	tr:genç	ur:جوان	zh:年轻
 c:youngs-modulus	Noun	ar:معامل يونج	de:Elastizitätsmodul	en:Young's modulus	es:módulo de Young	fa:مدول الاستیسیته	fr:module de Young	he:מודולוס של יאנג	hi:यंग का मापांक	ja:ヤング率	ko:영률	pt:módulo de Young	ru:модуль Юнга	tr:Young modülü	ur:ینگ ماڈیولس	zh:杨氏模量
@@ -13820,6 +13856,10 @@ c:zeta-function	Noun	ar:دالة زيتا لريمان	de:Riemannsche Zetafunkti
 c:zeus-god	ProperNoun	ar:زيوس	de:Zeus	en:Zeus	es:Zeus	fa:زئوس	fr:Zeus	he:זאוס	hi:ज़ीउस	ja:ゼウス	ko:제우스	pt:Zeus	ru:Зевс	tr:Zeus	ur:زیوس	zh:宙斯
 c:zewail	ProperNoun	ar:أحمد زويل	de:Ahmed Zewail	en:Ahmed Zewail	es:Ahmed Zewail	fa:احمد زویل	fr:Ahmed Zewail	he:אחמד זוויל	hi:अहमद ज़वेल	ja:アハメッド・ズウェイル	ko:아흐메드 즈웨일	pt:Ahmed Zewail	ru:Ахмед Зевейл	tr:Ahmed Zewail	ur:احمد زویل	zh:艾哈迈德·泽维尔
 c:zheng-he	ProperNoun	ar:تشنغ خه	de:Zheng He	en:Zheng He	es:Zheng He	fa:جنگ هه	fr:Zheng He	he:ג'נג חה	hi:ज़ेंग हे	ja:鄭和	ko:정화	pt:Zheng He	ru:Чжэн Хэ	tr:Zheng He	ur:ژنگ ہے	zh:郑和
+c:zhou-enlai	ProperNoun	ar:تشو إن لاي	de:Zhou Enlai	en:Zhou Enlai	es:Zhou Enlai	fa:چو ئن‌لای	fr:Zhou Enlai	he:ג׳ואו אנלאי	hi:चाओ एन-लाई	ja:周恩来	ko:저우언라이	pt:Zhou Enlai	ru:Чжоу Эньлай	tr:Zhou Enlai	ur:چو این لائی	zh:周恩来
+c:zhu-xi	ProperNoun	ar:تشو شي	de:Zhu Xi	en:Zhu Xi	es:Zhu Xi	fa:ژو شی	fr:Zhu Xi	he:ג׳ו שי	hi:झू शी	ja:朱熹	ko:주희	pt:Zhu Xi	ru:Чжу Си	tr:Zhu Xi	ur:ژو شی	zh:朱熹
+c:zhuangzi	ProperNoun	ar:تشوانغ تزو	de:Zhuangzi	en:Zhuangzi	es:Zhuang Zi	fa:جوانگ‌زی	fr:Zhuangzi	he:ג׳ואנג דזה	hi:ज़ुआंग ज़ी	ja:荘子	ko:장자	pt:Zhuangzi	ru:Чжуан-цзы	tr:Zhuangzi	ur:جوانگزی	zh:庄子
+c:zhuge-liang	ProperNoun	ar:تشوغه ليانغ	de:Zhuge Liang	en:Zhuge Liang	es:Zhuge Liang	fa:ژوگه لیانگ	fr:Zhuge Liang	he:ז׳וגה ליאנג	hi:झूगे लिआंग	ja:諸葛亮	ko:제갈량	pt:Zhuge Liang	ru:Чжугэ Лян	tr:Zhuge Liang	ur:جوگے لیانگ	zh:诸葛亮
 c:zidane	ProperNoun	ar:زيدان	de:Zidane	en:Zinedine Zidane	es:Zidane	fa:زیدان	fr:Zidane	he:זידאן	hi:जिदान	ja:ジダン	ko:지단	pt:Zidane	ru:Зидан	tr:Zidane	ur:زدان	zh:齐达内
 c:ziggurat	Noun	ar:الزقورة	de:Ziggurat	en:ziggurat	es:zigurat	fa:زیگورات	fr:ziggourat	he:זיגורט	hi:जिगुरात	ja:ジッグラト	ko:지구라트	pt:zigurate	ru:зиккурат	tr:ziggurat	ur:زیگورات	zh:神庙塔
 c:ziggurat-temple	Noun	ar:زقورة	de:Ziggurat	en:ziggurat	es:zigurat	fa:زیگورات	fr:ziggurat	he:זיגורט	hi:ज़िगुरात	ja:ジッグラト	ko:지구라트	pt:zigurate	ru:зиккурат	tr:ziggurat	ur:زگورات	zh:塔庙
