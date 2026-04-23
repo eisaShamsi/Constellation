@@ -42,12 +42,14 @@ const FTS_SCHEMA_VERSION: i64 = 1;
 /// |--------:|----------------------------------------------------------|
 /// |       0 | pre-MIG-001 — no sky_* tables; JS buildSkyData() path    |
 /// |       1 | sky_nodes + sky_links + triggers + back-fill populator   |
+/// |       2 | MIG-002 — note_meta.word_count + created_at; sky_nodes   |
+/// |         | enrichment (stratum/maturity/origin_type) populated via  |
+/// |         | SQL-native triggers + background worker for origin_type  |
 ///
-/// Bumping to 1 in Step 5 gates the back-fill: existing universes see
-/// `stored_sky_version < 1` on first boot after the upgrade, which
-/// triggers `sky_backfill::maybe_schedule` to populate the empty tables
-/// from `note_meta` / `note_links` on a background thread.
-pub(crate) const SKY_SCHEMA_VERSION: i64 = 1;
+/// Bumping the version gates `sky_backfill::maybe_schedule` to repopulate
+/// the derived surfaces on next boot. Columns added in v2 are nullable
+/// or defaulted so pre-MIG-002 binaries tolerate the wider schema.
+pub(crate) const SKY_SCHEMA_VERSION: i64 = 2;
 
 // ─── Types ─────────────────────────────────────────────────────
 
@@ -199,6 +201,35 @@ pub(crate) fn register_fts5_tokenizer(conn: &mut Connection) -> Result<(), Strin
     )
 }
 
+/// MIG-002: ensure `note_meta` has the `word_count` and `created_at`
+/// columns on DBs created by pre-v2 code. Idempotent — checks
+/// `PRAGMA table_info` before issuing ALTER TABLE. Safe to run every
+/// boot (no writes if columns are present).
+fn ensure_note_meta_mig002_columns(conn: &Connection) -> rusqlite::Result<()> {
+    let mut have_word_count = false;
+    let mut have_created_at = false;
+    {
+        let mut stmt = conn.prepare("PRAGMA table_info(note_meta)")?;
+        let rows = stmt.query_map([], |row| row.get::<_, String>(1))?;
+        for col in rows {
+            match col?.as_str() {
+                "word_count" => have_word_count = true,
+                "created_at" => have_created_at = true,
+                _ => {}
+            }
+        }
+    }
+    if !have_word_count {
+        conn.execute_batch(
+            "ALTER TABLE note_meta ADD COLUMN word_count INTEGER NOT NULL DEFAULT 0;",
+        )?;
+    }
+    if !have_created_at {
+        conn.execute_batch("ALTER TABLE note_meta ADD COLUMN created_at INTEGER;")?;
+    }
+    Ok(())
+}
+
 fn init_db(path: &Path) -> Result<Connection, String> {
     let mut conn = Connection::open(path).map_err(|e| format!("Failed to open search.db: {}", e))?;
 
@@ -269,7 +300,15 @@ fn init_db(path: &Path) -> Result<Connection, String> {
         ").map_err(|e| format!("Failed to drop old FTS chain during migration: {}", e))?;
     }
 
-    // Create metadata table
+    // Create metadata table.
+    //
+    // MIG-002 (v2): `word_count` and `created_at` columns are denormalized
+    // signals read by the SQL-native stratum + maturity triggers on
+    // sky_nodes. `word_count` is stamped by the Rust writer on every note
+    // save (see index_note); `created_at` is stamped on INSERT from
+    // fs::metadata, falling back to `modified` when the platform lacks a
+    // true creation timestamp (ReFS, FAT32). Back-fill populates both on
+    // existing rows via sky_backfill.rs.
     conn.execute_batch("
         CREATE TABLE IF NOT EXISTS note_meta (
             path TEXT PRIMARY KEY,
@@ -281,9 +320,17 @@ fn init_db(path: &Path) -> Result<Connection, String> {
             tags_json TEXT DEFAULT '[]',
             outgoing_links_json TEXT DEFAULT '[]',
             headings_json TEXT DEFAULT '[]',
-            body_text TEXT DEFAULT ''
+            body_text TEXT DEFAULT '',
+            word_count INTEGER NOT NULL DEFAULT 0,
+            created_at INTEGER
         );
     ").map_err(|e| format!("Failed to create note_meta: {}", e))?;
+
+    // MIG-002: idempotent ALTER for pre-v2 DBs. SQLite lacks IF NOT EXISTS
+    // on ADD COLUMN, so we probe table_info. Cheap (one row per column,
+    // runs once per boot).
+    ensure_note_meta_mig002_columns(&conn)
+        .map_err(|e| format!("Failed to ensure note_meta MIG-002 columns: {}", e))?;
 
     // Create embeddings table for semantic search (Phase 2)
     conn.execute_batch("
