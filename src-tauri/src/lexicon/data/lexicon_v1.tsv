@@ -558,6 +558,7 @@ c:baby	Noun	ar:رضيع,طفل	de:Baby,Säugling	en:baby	es:bebé	fa:نوزاد	
 c:babylon	Noun	ar:بابل	de:Babylon	en:Babylon	es:Babilonia	fa:بابل	fr:Babylone	he:בבל	hi:बेबीलोन	ja:バビロン	ko:바빌론	pt:Babilônia	ru:Вавилон	tr:Babil	ur:بابل	zh:巴比伦
 c:babylonian-empire	Noun	ar:الإمبراطورية البابلية	de:babylonisches Reich	en:Babylonian Empire	es:Imperio babilónico	fa:امپراتوری بابل	fr:Empire babylonien	he:האימפריה הבבלית	hi:बेबीलोन साम्राज्य	ja:バビロニア帝国	ko:바빌로니아 제국	pt:Império Babilônico	ru:Вавилонская империя	tr:Babil İmparatorluğu	ur:بابلی سلطنت	zh:巴比伦帝国
 c:bachata	Noun	ar:رقص الباشاتا	de:Bachata	en:bachata	es:bachata	fa:باچاتا	fr:bachata	he:בצ׳אטה	hi:बचाता	ja:バチャータ	ko:바차타	pt:bachata	ru:бачата	tr:bachata	ur:باچاتا	zh:巴恰塔舞
+c:bachata-dance	Noun	ar:باتشاتا	de:Bachata	en:bachata	es:bachata	fa:باچاتا	fr:bachata	he:באצ'אטה	hi:बचाटा	ja:バチャータ	ko:바차타	pt:bachata	ru:бачата	tr:bachata	ur:بچاٹا	zh:巴恰塔
 c:back	Noun	ar:خلف,وراء	de:hinten,Rückseite	en:back	es:atrás,detrás	fa:پشت,عقب	fr:derrière,arrière	he:אחור,אחורה	hi:पीछे	ja:後ろ	ko:뒤	pt:trás,atrás	ru:зад	tr:arka	ur:پیچھے	zh:后
 c:backpropagation	Noun	ar:الانتشار الخلفي	de:Backpropagation	en:backpropagation	es:retropropagación	fa:پس‌انتشار	fr:rétropropagation	he:הפצה לאחור	hi:बैकप्रोपैगेशन	ja:逆伝播	ko:역전파	pt:retropropagação	ru:обратное распространение	tr:geri yayılım	ur:پس پھیلاو	zh:反向传播
 c:backup-data	Noun	ar:نسخة احتياطية	de:Datensicherung	en:backup	es:copia de seguridad	fa:پشتیبان‌گیری	fr:sauvegarde	he:גיבוי	hi:बैकअप	ja:バックアップ	ko:백업	pt:cópia de segurança	ru:резервная копия	tr:yedekleme	ur:بیک اپ	zh:备份
@@ -592,8 +593,10 @@ c:ball-lightning	Noun	ar:البرق الكروي	de:Kugelblitz	en:ball lightning
 c:ball-python	Noun	ar:ثعبان الكرة	de:Königspython	en:ball python	es:pitón real	fa:پیتون کروی	fr:python royal	he:פייתון כדורי	hi:बॉल पाइथन	ja:ボールパイソン	ko:볼파이톤	pt:píton-real	ru:королевский питон	tr:top pitonu	ur:بال پیتھون	zh:球蟒
 c:ballad	Noun	ar:البالاد	de:Ballade	en:ballad	es:balada	fa:بالاد	fr:ballade	he:בלדה	hi:बैलाड	ja:バラッド	ko:발라드	pt:balada	ru:баллада	tr:balad	ur:بیلاڈ	zh:叙事诗
 c:ballet	Noun	ar:باليه	de:Ballett	en:ballet	es:ballet	fa:باله	fr:ballet	he:בלט	hi:बैले	ja:バレエ	ko:발레	pt:balé,ballet	ru:балет	tr:bale	ur:بیلے	zh:芭蕾舞,芭蕾
+c:ballet-dance	Noun	ar:باليه	de:Ballett	en:ballet	es:ballet	fa:باله	fr:ballet	he:בלט	hi:बैले	ja:バレエ	ko:발레	pt:balé	ru:балет	tr:bale	ur:بیلے	zh:芭蕾舞
 c:balloon	Noun	ar:بالون	de:Ballon,Luftballon	en:balloon	es:globo	fa:بادکنک	fr:ballon	he:בלון	hi:गुब्बारा	ja:風船,バルーン	ko:풍선	pt:balão	ru:шар,воздушный шар	tr:balon	ur:غبارہ	zh:气球
 c:ballpoint-pen	Noun	ar:قلم حبر جاف	de:Kugelschreiber	en:ballpoint pen	es:bolígrafo	fa:خودکار	fr:stylo à bille	he:עט כדורי	hi:बॉलपॉइंट पेन	ja:ボールペン	ko:볼펜	pt:caneta esferográfica	ru:шариковая ручка	tr:tükenmez kalem	ur:بال پین	zh:圆珠笔
+c:ballroom-dance	Noun	ar:رقص القاعة	de:Gesellschaftstanz	en:ballroom dance	es:baile de salón	fa:رقص سالنی	fr:danse de salon	he:ריקודים סלוניים	hi:बॉलरूम नृत्य	ja:社交ダンス	ko:볼룸 댄스	pt:dança de salão	ru:бальные танцы	tr:salon dansı	ur:بال روم رقص	zh:交谊舞
 c:baltic-sea	Noun	ar:بحر البلطيق	de:Ostsee,Baltisches Meer	en:Baltic Sea,Baltic	es:Mar Báltico	fa:دریای بالتیک	fr:Mer Baltique	he:הים הבלטי	hi:बाल्टिक सागर	ja:バルト海	ko:발트해	pt:Mar Báltico	ru:Балтийское море	tr:Baltık Denizi	ur:بحیرہ بالٹک	zh:波罗的海
 c:baltic-sea-body	Noun	ar:بحر البلطيق	de:Ostsee	en:Baltic Sea	es:mar Báltico	fa:دریای بالتیک	fr:mer Baltique	he:הים הבלטי	hi:बाल्टिक सागर	ja:バルト海	ko:발트해	pt:mar Báltico	ru:Балтийское море	tr:Baltık Denizi	ur:بحیرہ بالٹک	zh:波罗的海
 c:balustrade	Noun	ar:درابزين	de:Balustrade	en:balustrade	es:balaustrada	fa:نرده	fr:balustrade	he:מעקה	hi:रेलिंग	ja:バルストレード	ko:난간	pt:balaustrada	ru:балюстрада	tr:korkuluk	ur:جنگلہ	zh:栏杆
@@ -720,6 +723,7 @@ c:believe	Verb	ar:صدق,آمن	de:glauben	en:believe	es:creer	fa:باور کر�
 c:bell-state	Noun	ar:حالة بيل	de:Bell-Zustand	en:Bell state	es:estado de Bell	fa:حالت بل	fr:état de Bell	he:מצב של בל	hi:बेल अवस्था	ja:ベル状態	ko:벨 상태	pt:estado de Bell	ru:состояние Белла	tr:Bell durumu	ur:بیل حالت	zh:贝尔态
 c:bell-tower-church	Noun	ar:برج الأجراس	de:Glockenturm	en:bell tower	es:campanario	fa:برج زنگ	fr:clocher	he:מגדל פעמונים	hi:घंटाघर	ja:鐘楼	ko:종탑	pt:campanário	ru:колокольня	tr:çan kulesi	ur:گھنٹہ گھر	zh:钟楼
 c:belle-epoque	Noun	ar:العصر الذهبي الفرنسي	de:Belle Époque	en:Belle Époque	es:Belle Époque	fa:بل اپوک	fr:Belle Époque	he:בל אפוק	hi:बेल एपोक	ja:ベル・エポック	ko:벨 에포크	pt:Belle Époque	ru:Прекрасная эпоха	tr:Belle Époque	ur:بیل اپاک	zh:美好年代
+c:belly-dance	Noun	ar:رقص شرقي	de:Bauchtanz	en:belly dance	es:danza del vientre	fa:رقص شکم	fr:danse du ventre	he:ריקוד בטן	hi:बेली डांस	ja:ベリーダンス	ko:벨리 댄스	pt:dança do ventre	ru:танец живота	tr:oryantal dans	ur:بیلی ڈانس	zh:肚皮舞
 c:belt	Noun	ar:حزام	de:Gürtel	en:belt	es:cinturón	fa:کمربند	fr:ceinture	he:חגורה	hi:बेल्ट,पेटी	ja:ベルト	ko:벨트,허리띠	pt:cinto	ru:ремень,пояс	tr:kemer	ur:بیلٹ	zh:腰带
 c:beluga	Noun	ar:حوت ابيض	de:Belugawal	en:beluga	es:beluga	fa:بلوگا	fr:béluga	he:לווייתן לבן	hi:बेलुगा	ja:シロイルカ	ko:흰돌고래	pt:beluga	ru:белуха	tr:beluga	ur:سفید وھیل	zh:白鲸
 c:bending-moment	Noun	ar:عزم الانحناء	de:Biegemoment	en:bending moment	es:momento flector	fa:لنگر خمشی	fr:moment fléchissant	he:מומנט כפיפה	hi:नमन आघूर्ण	ja:曲げモーメント	ko:휨 모멘트	pt:momento fletor	ru:изгибающий момент	tr:eğilme momenti	ur:خمشی لمحہ	zh:弯矩
@@ -740,6 +744,7 @@ c:betelgeuse	Noun	ar:إبط الجوزاء,بيتلجوس	de:Beteigeuze	en:Betel
 c:beverage	Noun	ar:مشروب	de:Getränk	en:beverage	es:bebida	fa:نوشیدنی	fr:boisson	he:משקה	hi:पेय	ja:飲料	ko:음료	pt:bebida	ru:напиток	tr:içecek	ur:مشروب	zh:饮料
 c:bhangra	Noun	ar:رقص البانغرا	de:Bhangra	en:bhangra	es:bhangra	fa:بانگرا	fr:bhangra	he:בהאנגרה	hi:भांगड़ा	ja:バングラ	ko:방그라	pt:bhangra	ru:бхангра	tr:bhangra	ur:بھنگڑا	zh:旁遮普舞
 c:bharatanatyam	Noun	ar:رقص بهارتاناتيام	de:Bharatanatyam	en:bharatanatyam	es:bharatanatyam	fa:بهاراتاناتیام	fr:bharatanatyam	he:בהרטאנאטיאם	hi:भरतनाट्यम	ja:バラタナーティヤム	ko:바라타나티얌	pt:bharatanatyam	ru:бхаратанатьям	tr:bharatanatyam	ur:بھرت ناٹیم	zh:婆罗多舞
+c:bharatanatyam-dance	Noun	ar:بهاراتاناتيام	de:Bharatanatyam	en:Bharatanatyam	es:bharatanatyam	fa:بهاراتاناتیام	fr:bharatanatyam	he:בהרטנאטיאם	hi:भरतनाट्यम	ja:バラタナティヤム	ko:바라타나티얌	pt:bharatanatyam	ru:бхаратанатьям	tr:bharatanatyam	ur:بھرتناٹیم	zh:婆罗多舞
 c:bias-stat	Noun	ar:تحيز إحصائي	de:statistischer Bias	en:statistical bias	es:sesgo estadístico	fa:سوگیری آماری	fr:biais statistique	he:הטיה סטטיסטית	hi:सांख्यिकीय पूर्वाग्रह	ja:統計的偏り	ko:통계적 편향	pt:viés estatístico	ru:статистическое смещение	tr:istatistiksel yanlılık	ur:شماریاتی جانبداری	zh:统计偏差
 c:biathlon	Noun	ar:الثنائي الرياضي	de:Biathlon	en:biathlon	es:biatlón	fa:بیاتلون	fr:biathlon	he:ביאתלון	hi:बायथलॉन	ja:バイアスロン	ko:바이애슬론	pt:biatlo	ru:биатлон	tr:biatlon	ur:بیاتھلون	zh:冬季两项
 c:bibliography	Noun	ar:قائمة المراجع,ببليوغرافيا	de:Bibliografie,Literaturverzeichnis	en:bibliography	es:bibliografía	fa:کتابنامه,منابع	fr:bibliographie	he:ביבליוגרפיה,רשימת מקורות	hi:ग्रंथसूची	ja:参考文献,書誌	ko:참고문헌,서지	pt:bibliografia	ru:библиография,список литературы	tr:kaynakça,bibliyografya	ur:کتابیات	zh:参考书目,书目
@@ -871,9 +876,11 @@ c:bog	Noun	ar:مستنقع خثي	de:Moor,Hochmoor	en:bog,peat bog	es:turbera	fa
 c:boil	Verb	ar:سلق,يسلق	de:kochen	en:boil	es:hervir	fa:جوشاندن	fr:bouillir	he:להרתיח,לבשל	hi:उबालना	ja:茹でる,煮る	ko:끓이다,삶다	pt:ferver	ru:варить,кипятить	tr:kaynatmak,haşlamak	ur:ابالنا	zh:煮,煮沸
 c:bok-choy	Noun	ar:باك تشوي	de:Pak Choi	en:bok choy	es:pak choi	fa:پاک چوی	fr:pak-choï	he:בוק צ'וי	hi:बोक चोय	ja:チンゲンサイ	ko:청경채	pt:pak choi	ru:пак-чой	tr:pak choi	ur:بوک چوئی	zh:小白菜
 c:bokeh	Noun	ar:بوكيه	de:Bokeh	en:bokeh	es:bokeh	fa:بوکه	fr:bokeh	he:בוקה	hi:बोकेह	ja:ボケ	ko:보케	pt:bokeh	ru:боке	tr:bokeh	ur:بوکیہ	zh:背景虚化
+c:bolero-dance	Noun	ar:بوليرو	de:Bolero	en:bolero	es:bolero	fa:بولرو	fr:boléro	he:בולרו	hi:बोलेरो	ja:ボレロ	ko:볼레로	pt:bolero	ru:болеро	tr:bolero	ur:بولرو	zh:波莱罗
 c:bolide	Noun	ar:شهاب ضخم	de:Bolide	en:bolide	es:bólido	fa:شهاب آتشین	fr:bolide	he:בולידה	hi:बोलाइड	ja:火球	ko:화구	pt:bólido	ru:болид	tr:bolid	ur:آتشیں شہاب	zh:火流星
 c:bolivar	Noun	ar:بوليفار	de:Bolívar	en:bolivar	es:bolívar	fa:بولیوار	fr:bolivar	he:בוליבר	hi:बोलीवर	ja:ボリバル	ko:볼리바르	pt:bolívar	ru:боливар	tr:bolivar	ur:بولیوار	zh:玻利瓦尔
 c:bollywood-dance	Noun	ar:رقص بوليوود	de:Bollywoodtanz	en:Bollywood dance	es:danza de Bollywood	fa:رقص بالیوود	fr:danse de Bollywood	he:ריקוד בוליווד	hi:बॉलीवुड नृत्य	ja:ボリウッドダンス	ko:볼리우드 춤	pt:dança bollywood	ru:болливудский танец	tr:Bollywood dansı	ur:بالیوڈ ڈانس	zh:宝莱坞舞
+c:bollywood-dance-style	Noun	ar:رقص بوليوود	de:Bollywood-Tanz	en:Bollywood dance	es:baile bollywood	fa:رقص بالیوود	fr:danse bollywood	he:ריקוד בוליווד	hi:बॉलीवुड नृत्य	ja:ボリウッドダンス	ko:볼리우드 댄스	pt:dança bollywood	ru:болливудский танец	tr:Bollywood dansı	ur:بالی ووڈ رقص	zh:宝莱坞舞蹈
 c:bolt	Noun	ar:مسمار لولبي	de:Schraube	en:bolt	es:perno	fa:پیچ و مهره	fr:boulon	he:בורג	hi:बोल्ट	ja:ボルト	ko:볼트	pt:parafuso	ru:болт	tr:civata	ur:بولٹ	zh:螺栓
 c:bolt-cutter	Noun	ar:قاطعة مسامير	de:Bolzenschneider	en:bolt cutter	es:cizalla	fa:پیچ‌بر	fr:coupe-boulons	he:כלי חיתוך	hi:बोल्ट कटर	ja:ボルトカッター	ko:볼트 커터	pt:corta-pinos	ru:болторез	tr:cıvata kesici	ur:بولٹ کٹر	zh:断线钳
 c:boltzmann	Noun	ar:ثابت بولتزمان	de:Boltzmann-Konstante	en:Boltzmann constant	es:constante de Boltzmann	fa:ثابت بولتزمان	fr:constante de Boltzmann	he:קבוע בולצמן	hi:बोल्ट्ज़मान नियतांक	ja:ボルツマン定数	ko:볼츠만 상수	pt:constante de Boltzmann	ru:постоянная Больцмана	tr:Boltzmann sabiti	ur:بولٹزمان ثابت	zh:玻尔兹曼常数
@@ -949,6 +956,7 @@ c:brazil-nut	Noun	ar:جوز البرازيل	de:Paranuss	en:Brazil nut	es:nuez d
 c:brazilian-cuisine	Noun	ar:مطبخ برازيلي	de:brasilianische Küche	en:Brazilian cuisine	es:cocina brasileña	fa:آشپزی برزیلی	fr:cuisine brésilienne	he:מטבח ברזילאי	hi:ब्राज़ीलियाई भोजन	ja:ブラジル料理	ko:브라질 요리	pt:culinária brasileira	ru:бразильская кухня	tr:Brezilya mutfağı	ur:برازیلی کھانا	zh:巴西菜
 c:bread	Noun	ar:خبز	de:Brot	en:bread	es:pan	fa:نان	fr:pain	he:לחם	hi:रोटी	ja:パン	ko:빵	pt:pão	ru:хлеб	tr:ekmek	ur:روٹی	zh:面包
 c:breadfruit	Noun	ar:فاكهة الخبز	de:Brotfrucht	en:breadfruit	es:árbol del pan	fa:نان میوه	fr:fruit à pain	he:לחם-עץ	hi:ब्रेडफ्रूट	ja:パンノキ	ko:빵나무열매	pt:fruta-pão	ru:хлебное дерево	tr:ekmek ağacı meyvesi	ur:روٹی کا پھل	zh:面包果
+c:breakdance	Noun	ar:بريك دانس	de:Breakdance	en:breakdance	es:breakdance	fa:بریک‌دنس	fr:breakdance	he:ברייקדנס	hi:ब्रेक डांस	ja:ブレイクダンス	ko:브레이크 댄스	pt:breakdance	ru:брейк-данс	tr:breakdance	ur:بریک ڈانس	zh:霹雳舞
 c:breakdancing	Noun	ar:رقص البريك	de:Breakdance	en:breakdancing	es:breakdance	fa:بریک دنس	fr:breakdance	he:ברייקדאנס	hi:ब्रेकडांसिंग	ja:ブレイクダンス	ko:브레이크댄스	pt:breakdance	ru:брейк-данс	tr:breakdance	ur:بریک ڈانس	zh:霹雳舞
 c:breakfast	Noun	ar:فطور,إفطار	de:Frühstück	en:breakfast	es:desayuno	fa:صبحانه	fr:petit-déjeuner	he:ארוחת בוקר	hi:नाश्ता	ja:朝食,朝ごはん	ko:아침	pt:café da manhã	ru:завтрак	tr:kahvaltı	ur:ناشتہ	zh:早餐
 c:bream	Noun	ar:دنيس,سمك الدنيس	de:Brasse	en:bream	es:brema	fa:شاه کولی	fr:brème	he:בריאם	hi:ब्रीम	ja:ブリーム	ko:도미류	pt:brema	ru:лещ	tr:çipura	ur:بریم	zh:鲷鱼
@@ -1111,6 +1119,7 @@ c:capital-column	Noun	ar:تاج العمود	de:Kapitell	en:capital	es:capitel	f
 c:capital-econ	Noun	ar:رأس المال	de:Kapital	en:capital	es:capital	fa:سرمایه	fr:capital	he:הון	hi:पूंजी	ja:資本	ko:자본	pt:capital	ru:капитал	tr:sermaye	ur:سرمایہ	zh:资本
 c:capitalism	Noun	ar:رأسمالية	de:Kapitalismus	en:capitalism	es:capitalismo	fa:سرمایه داری	fr:capitalisme	he:קפיטליזם	hi:पूंजीवाद	ja:資本主義	ko:자본주의	pt:capitalismo	ru:капитализм	tr:kapitalizm	ur:سرمایہ داری	zh:资本主义
 c:capoeira	Noun	ar:كابويرا	de:Capoeira	en:capoeira	es:capoeira	fa:کاپویرا	fr:capoeira	he:קפוארה	hi:कापोएरा	ja:カポエイラ	ko:카포에이라	pt:capoeira	ru:капоэйра	tr:capoeira	ur:کیپویرا	zh:卡波耶拉
+c:capoeira-dance	Noun	ar:كابويرا	de:Capoeira	en:capoeira	es:capoeira	fa:کاپوئرا	fr:capoeira	he:קפוארה	hi:कैपोइरा	ja:カポエイラ	ko:카포에이라	pt:capoeira	ru:капоэйра	tr:capoeira	ur:کیپوئیرا	zh:卡波耶拉
 c:cappuccino	Noun	ar:كابتشينو	de:Cappuccino	en:cappuccino	es:capuchino	fa:کاپوچینو	fr:cappuccino	he:קפוצ'ינו	hi:कैप्पुचीनो	ja:カプチーノ	ko:카푸치노	pt:cappuccino	ru:капучино	tr:kapuçino	ur:کیپوچینو	zh:卡布奇诺
 c:capsule	Noun	ar:كبسولة فضائية	de:Kapsel	en:capsule	es:cápsula	fa:کپسول فضایی	fr:capsule	he:קפסולה	hi:कैप्सूल	ja:カプセル	ko:캡슐	pt:cápsula	ru:капсула	tr:kapsül	ur:کیپسول	zh:太空舱
 c:captain	Noun	ar:نقيب	de:Hauptmann	en:captain	es:capitán	fa:سروان	fr:capitaine	he:סרן	hi:कप्तान	ja:大尉	ko:대위	pt:capitão	ru:капитан	tr:yüzbaşı	ur:کپتان	zh:上尉
@@ -1269,6 +1278,7 @@ c:cetacean	Noun	ar:حوتيات	de:Wal	en:cetacean	es:cetáceo	fa:وال سان�
 c:ceteris-paribus	Adverb	ar:مع ثبات العوامل الأخرى	de:ceteris paribus	en:ceteris paribus	es:ceteris paribus	fa:با ثابت بودن سایر شرایط	fr:ceteris paribus	he:בשאר שווה	hi:अन्य बातें समान	ja:他の事情が等しければ	ko:다른 조건이 같다면	pt:ceteris paribus	ru:при прочих равных	tr:diğer koşullar eşit olduğunda	ur:دیگر حالات برابر	zh:其他条件不变
 c:cfo	Noun	ar:المدير المالي	de:Finanzvorstand	en:CFO	es:director financiero	fa:مدیر مالی	fr:directeur financier	he:סמנכ"ל כספים	hi:मुख्य वित्तीय अधिकारी	ja:最高財務責任者	ko:최고 재무 책임자	pt:diretor financeiro	ru:финансовый директор	tr:finans müdürü	ur:چیف فنانشل آفیسر	zh:首席财务官
 c:cha-cha	Noun	ar:رقص الشاشا	de:Cha-Cha-Cha	en:cha-cha	es:cha-cha	fa:چاچاچا	fr:cha-cha	he:צ׳ה-צ׳ה	hi:चा-चा	ja:チャチャチャ	ko:차차	pt:cha-cha	ru:ча-ча-ча	tr:cha-cha	ur:چا چا	zh:恰恰舞
+c:cha-cha-dance	Noun	ar:تشا تشا	de:Cha-Cha-Cha	en:cha-cha	es:cha-cha-cha	fa:چاچا	fr:cha-cha-cha	he:צ'ה צ'ה	hi:चाचा	ja:チャチャ	ko:차차차	pt:cha-cha-cha	ru:ча-ча-ча	tr:çaça	ur:چاچا	zh:恰恰舞
 c:chai-drink	Noun	ar:شاي هندي	de:Chai	en:chai	es:té chai	fa:چای ماسالا	fr:chai	he:צ'אי	hi:चाय मसाला	ja:チャイ	ko:차이	pt:chai	ru:чай масала	tr:chai	ur:چائے مسالہ	zh:印度奶茶
 c:chain	Noun	ar:سلسلة	de:Kette	en:chain	es:cadena	fa:زنجیر	fr:chaîne	he:שרשרת	hi:जंजीर,श्रृंखला	ja:鎖,チェーン	ko:사슬,체인	pt:corrente,cadeia	ru:цепь,цепочка	tr:zincir	ur:زنجیر	zh:链,链条
 c:chain-necklace	Noun	ar:سلسلة الرقبة	de:Halskette,Kette	en:chain necklace,chain	es:cadena,collar de cadena	fa:زنجیر گردن	fr:chaîne	he:שרשרת	hi:चेन	ja:チェーンネックレス	ko:체인 목걸이	pt:corrente,colar de corrente	ru:цепочка	tr:zincir kolye	ur:زنجیر	zh:链式项链,项链
@@ -1719,6 +1729,7 @@ c:consumer-surplus	Noun	ar:فائض المستهلك	de:Konsumentenrente	en:cons
 c:container-software	Noun	ar:حاوية برمجية	de:Softwarecontainer	en:container	es:contenedor	fa:کانتینر	fr:conteneur	he:מיכל	hi:कंटेनर	ja:コンテナ	ko:컨테이너	pt:contêiner	ru:контейнер	tr:konteyner	ur:کنٹینر	zh:容器
 c:contemplation	Noun	ar:تأمل عميق,تدبر	de:Kontemplation,Betrachtung	en:contemplation	es:contemplación	fa:تعمق,تفکر	fr:contemplation	he:התבוננות,הרהור	hi:चिंतन,मनन	ja:観想,黙想	ko:관조,묵상	pt:contemplação	ru:созерцание	tr:tefekkür,temaşa	ur:غور و فکر,تفکر	zh:沉思,冥思
 c:contemporary	Noun	ar:الرقص المعاصر	de:Contemporary	en:contemporary dance	es:danza contemporánea	fa:رقص معاصر	fr:danse contemporaine	he:מחול עכשווי	hi:समकालीन नृत्य	ja:コンテンポラリーダンス	ko:현대 무용	pt:dança contemporânea	ru:контемпорари	tr:çağdaş dans	ur:معاصر رقص	zh:当代舞
+c:contemporary-dance	Noun	ar:رقص معاصر	de:zeitgenössischer Tanz	en:contemporary dance	es:danza contemporánea	fa:رقص معاصر	fr:danse contemporaine	he:ריקוד עכשווי	hi:समकालीन नृत्य	ja:コンテンポラリーダンス	ko:현대 무용	pt:dança contemporânea	ru:современный танец	tr:çağdaş dans	ur:عصری رقص	zh:现代舞
 c:contemporary-era	Noun	ar:العصر المعاصر	de:zeitgenössische Ära	en:Contemporary era	es:era contemporánea	fa:عصر معاصر	fr:époque contemporaine	he:העת העכשווית	hi:समकालीन युग	ja:現代	ko:현대	pt:era contemporânea	ru:современная эпоха	tr:çağdaş dönem	ur:عصر حاضر	zh:当代
 c:contempt	Noun	ar:احتقار	de:Verachtung	en:contempt	es:desprecio	fa:تحقیر	fr:mépris	he:בוז	hi:तिरस्कार	ja:軽蔑	ko:경멸	pt:desprezo	ru:презрение	tr:küçümseme	ur:حقارت	zh:蔑视
 c:contempt-of-court	Noun	ar:ازدراء المحكمة	de:Missachtung des Gerichts	en:contempt of court	es:desacato al tribunal	fa:اهانت به دادگاه	fr:outrage au tribunal	he:בוז לבית משפט	hi:न्यायालय की अवमानना	ja:法廷侮辱	ko:법정 모욕	pt:desacato ao tribunal	ru:неуважение к суду	tr:mahkeme hakaret	ur:عدالت کی توہین	zh:藐视法庭
@@ -1743,6 +1754,7 @@ c:continental-slope	Noun	ar:الحضيض القاري	de:Kontinentalabhang	en:co
 c:continental-slope-ocean	Noun	ar:المنحدر القاري	de:Kontinentalhang	en:continental slope	es:talud continental	fa:شیب قاره	fr:talus continental	he:מדרון יבשת	hi:महाद्वीपीय ढलान	ja:大陸斜面	ko:대륙 사면	pt:talude continental	ru:континентальный склон	tr:kıta yamacı	ur:براعظمی ڈھلوان	zh:大陆坡
 c:contingency	Noun	ar:احتمال طارئ,طارئ	de:Kontingenz,Eventualität	en:contingency	es:contingencia,eventualidad	fa:پیشامد,امکان	fr:contingence,éventualité	he:מקריות,אפשרות	hi:आकस्मिकता	ja:偶発性,不測の事態	ko:우발성,만일의 사태	pt:contingência,eventualidade	ru:случайность,непредвиденность	tr:olasılık,beklenmedik durum	ur:ہنگامی صورتحال	zh:偶然性,应急
 c:continued-fraction	Noun	ar:الكسر المستمر	de:Kettenbruch	en:continued fraction	es:fracción continua	fa:کسر زنجیری	fr:fraction continue	he:שבר רצוף	hi:सतत भिन्न	ja:連分数	ko:연분수	pt:fração contínua	ru:цепная дробь	tr:sürekli kesir	ur:مسلسل کسر	zh:连分数
+c:contra-dance	Noun	ar:رقص كونترا	de:Contradance	en:contra dance	es:contradanza	fa:رقص کنترا	fr:contredanse	he:ריקוד קונטרה	hi:कांट्रा नृत्य	ja:コントラダンス	ko:콘트라 댄스	pt:contradança	ru:контрданс	tr:kontradans	ur:کنٹرا رقص	zh:对舞
 c:contrabassoon	Noun	ar:كونترا باسون	de:Kontrafagott	en:contrabassoon	es:contrafagot	fa:کنترافاگوت	fr:contrebasson	he:קונטרבסון	hi:कोन्ट्राबेसून	ja:コントラファゴット	ko:콘트라바순	pt:contrafagote	ru:контрафагот	tr:kontrafagot	ur:کانٹرا باسون	zh:低音大管
 c:contract	Noun	ar:عقد	de:Vertrag	en:contract	es:contrato	fa:قرارداد	fr:contrat	he:חוזה	hi:अनुबंध,कॉन्ट्रैक्ट	ja:契約	ko:계약,컨트랙트	pt:contrato	ru:контракт,договор	tr:sözleşme,kontrat	ur:معاہدہ,کانٹریکٹ	zh:合同,合约
 c:contract-law	Noun	ar:قانون العقود	de:Vertragsrecht	en:contract law	es:derecho contractual	fa:حقوق قراردادها	fr:droit des contrats	he:דיני חוזים	hi:अनुबंध कानून	ja:契約法	ko:계약법	pt:direito dos contratos	ru:договорное право	tr:sözleşme hukuku	ur:معاہدہ قانون	zh:合同法
@@ -1847,6 +1859,7 @@ c:counterpoint	Noun	ar:الكونترابوينت	de:Kontrapunkt	en:counterpoint
 c:counterpoint-music	Noun	ar:نقطة مقابلة	de:Kontrapunkt	en:counterpoint	es:contrapunto	fa:کنترپوآن	fr:contrepoint	he:קונטרפונקט	hi:प्रतिबिंदु	ja:対位法	ko:대위법	pt:contraponto	ru:контрапункт	tr:kontrpuan	ur:کاؤنٹرپوائنٹ	zh:对位法
 c:countertransference	Noun	ar:النقل العكسي	de:Gegenübertragung	en:countertransference	es:contratransferencia	fa:انتقال متقابل	fr:contre-transfert	he:העברה נגדית	hi:प्रतिस्थानांतरण	ja:逆転移	ko:역전이	pt:contratransferência	ru:контрперенос	tr:karşı aktarım	ur:جوابی منتقلی	zh:反移情
 c:country	Noun	ar:بلد,دولة	de:Land	en:country	es:país	fa:کشور	fr:pays	he:ארץ,מדינה	hi:देश	ja:国	ko:나라,국가	pt:país	ru:страна	tr:ülke	ur:ملک	zh:国家
+c:country-dance	Noun	ar:رقص ريفي	de:Country-Tanz	en:country dance	es:baile country	fa:رقص کانتری	fr:country dance	he:ריקוד כפרי	hi:कंट्री डांस	ja:カントリーダンス	ko:컨트리 댄스	pt:dança country	ru:кантри танец	tr:country dans	ur:کنٹری رقص	zh:乡村舞
 c:country-nation	Noun	ar:دولة	de:Land	en:country	es:país	fa:کشور	fr:pays	he:מדינה ארץ	hi:देश	ja:国	ko:나라	pt:país	ru:страна	tr:ülke	ur:ملک	zh:国家
 c:coup	Noun	ar:انقلاب	de:Staatsstreich	en:coup d'état	es:golpe de estado	fa:کودتا	fr:coup d'état	he:הפיכה	hi:सैन्य अधिग्रहण	ja:クーデター	ko:쿠데타	pt:golpe de estado	ru:государственный переворот	tr:darbe	ur:بغاوت	zh:政变
 c:coupon	Noun	ar:كوبون	de:Kupon	en:coupon	es:cupón	fa:کوپن	fr:coupon	he:קופון	hi:कूपन	ja:クーポン	ko:쿠폰	pt:cupom	ru:купон	tr:kupon	ur:کوپن	zh:票息
@@ -2222,6 +2235,7 @@ c:dirham	Noun	ar:درهم	de:Dirham	en:dirham	es:dírham	fa:درهم	fr:dirham	h
 c:dirty	Adjective	ar:قذر,وسخ	de:schmutzig	en:dirty	es:sucio	fa:کثیف	fr:sale	he:מלוכלך	hi:गंदा	ja:汚い	ko:더러운	pt:sujo	ru:грязный	tr:kirli	ur:گندا	zh:脏
 c:disaster	Noun	ar:كارثة	de:Katastrophe,Unglück	en:disaster	es:desastre	fa:فاجعه,بلا	fr:désastre	he:אסון	hi:आपदा	ja:災害	ko:재해,재난	pt:desastre	ru:бедствие	tr:felaket,afet	ur:آفت	zh:灾难
 c:discipline	Noun	ar:انضباط,تأديب	de:Disziplin	en:discipline	es:disciplina	fa:انضباط,نظم	fr:discipline	he:משמעת	hi:अनुशासन	ja:規律,訓練	ko:규율,훈련	pt:disciplina	ru:дисциплина	tr:disiplin	ur:نظم و ضبط,ڈسپلن	zh:纪律
+c:disco-dance	Noun	ar:رقص ديسكو	de:Disco-Tanz	en:disco dance	es:baile disco	fa:رقص دیسکو	fr:danse disco	he:ריקוד דיסקו	hi:डिस्को नृत्य	ja:ディスコダンス	ko:디스코 댄스	pt:dança disco	ru:диско танец	tr:disko dansı	ur:ڈسکو رقص	zh:迪斯科舞
 c:discount	Noun	ar:خصم,تخفيض	de:Rabatt,Nachlass	en:discount	es:descuento	fa:تخفیف	fr:remise,réduction	he:הנחה	hi:छूट,डिस्काउंट	ja:割引,ディスカウント	ko:할인,디스카운트	pt:desconto	ru:скидка	tr:indirim	ur:رعایت,ڈسکاؤنٹ	zh:折扣,优惠
 c:discourse	Noun	ar:خطاب	de:Diskurs	en:discourse	es:discurso	fa:گفتمان	fr:discours	he:שיח	hi:प्रवचन	ja:談話	ko:담화	pt:discurso	ru:дискурс	tr:söylem	ur:گفتگو	zh:话语
 c:discrete-logarithm	Noun	ar:اللوغاريتم المتقطع	de:diskreter Logarithmus	en:discrete logarithm	es:logaritmo discreto	fa:لگاریتم گسسته	fr:logarithme discret	he:לוגריתם דיסקרטי	hi:असतत लघुगणक	ja:離散対数	ko:이산로그	pt:logaritmo discreto	ru:дискретный логарифм	tr:ayrık logaritma	ur:منقطع لوگارتھم	zh:离散对数
@@ -2909,6 +2923,7 @@ c:fjord-landform	Noun	ar:مضيق بحري,فيورد	de:Fjord	en:fjord	es:fiord
 c:flagellum	Noun	ar:سوط خلوي	de:Geißel	en:flagellum	es:flagelo	fa:تاژک	fr:flagelle	he:שוטון	hi:कशाभ	ja:鞭毛	ko:편모	pt:flagelo	ru:жгутик	tr:kamçı	ur:ڈنک	zh:鞭毛
 c:flair	Noun	ar:تقنية فلير	de:FLAIR-Sequenz	en:FLAIR	es:FLAIR	fa:FLAIR	fr:FLAIR	he:FLAIR	hi:FLAIR	ja:FLAIR	ko:FLAIR	pt:FLAIR	ru:FLAIR	tr:FLAIR	ur:FLAIR	zh:液体衰减反转恢复
 c:flamenco	Noun	ar:فلامنكو	de:Flamenco	en:flamenco	es:flamenco	fa:فلامنکو	fr:flamenco	he:פלמנקו	hi:फ्लैमेन्को	ja:フラメンコ	ko:플라멩코	pt:flamenco	ru:фламенко	tr:flamenko	ur:فلیمنکو	zh:弗拉门戈
+c:flamenco-dance	Noun	ar:فلامنكو	de:Flamenco	en:flamenco	es:flamenco	fa:فلامنکو	fr:flamenco	he:פלמנקו	hi:फ्लेमेंको	ja:フラメンコ	ko:플라멩코	pt:flamenco	ru:фламенко	tr:flamenko	ur:فلامنکو	zh:弗拉门戈
 c:flamingo	Noun	ar:فلامنغو,نحام	de:Flamingo	en:flamingo	es:flamenco	fa:فلامینگو	fr:flamant	he:פלמינגו	hi:राजहंस	ja:フラミンゴ	ko:플라밍고	pt:flamingo	ru:фламинго	tr:flamingo	ur:فلیمنگو	zh:火烈鸟
 c:flannel	Noun	ar:الفلانيل	de:Flanell	en:flannel	es:franela	fa:فلانل	fr:flanelle	he:פלנל	hi:फ्लैनेल	ja:フランネル	ko:플란넬	pt:flanela	ru:фланель	tr:flanel	ur:فلانل	zh:法兰绒
 c:flap	Noun	ar:رفرف	de:Landeklappe	en:flap	es:flap	fa:فلپ	fr:volet	he:מפרש	hi:फ्लैप	ja:フラップ	ko:플랩	pt:flape	ru:закрылок	tr:kanat kapağı	ur:فلیپ	zh:襟翼
@@ -2965,6 +2980,7 @@ c:foldable-phone	Noun	ar:هاتف قابل للطي	de:Falt-Smartphone	en:foldab
 c:folder	Noun	ar:مجلد	de:Ordner	en:folder	es:carpeta	fa:پوشه	fr:dossier	he:תיקייה	hi:फ़ोल्डर	ja:フォルダ,フォルダー	ko:폴더	pt:pasta	ru:папка	tr:klasör	ur:فولڈر	zh:文件夹
 c:folk	Noun	ar:شعب,قوم	de:Volk	en:folk,folk-people	es:pueblo,gente común	fa:مردم,قوم	fr:peuple,gens du peuple	he:עם,פולק	hi:लोक,जनसाधारण	ja:民衆,フォーク	ko:민중,포크	pt:povo,gente	ru:народ	tr:halk	ur:عوام,قوم	zh:民众,民俗
 c:folk-dance	Noun	ar:رقصة شعبية,رقص شعبي	de:Volkstanz	en:folk dance,folk-dance	es:danza folclórica,baile folclórico	fa:رقص فولکلور,رقص محلی	fr:danse folklorique	he:ריקוד עם	hi:लोक नृत्य	ja:民族舞踊,フォークダンス	ko:민속 무용	pt:dança folclórica	ru:народный танец	tr:halk dansı,folklor	ur:لوک رقص	zh:民间舞,民族舞
+c:folk-dance-style	Noun	ar:رقص شعبي	de:Volkstanz	en:folk dance	es:danza folclórica	fa:رقص فولکلور	fr:danse folklorique	he:ריקוד עם	hi:लोक नृत्य	ja:民族舞踊	ko:민속 무용	pt:dança folclórica	ru:народный танец	tr:halk dansı	ur:لوک رقص	zh:民俗舞蹈
 c:folklore	Noun	ar:فولكلور,فنون شعبية	de:Folklore,Volkskunde	en:folklore	es:folclore,folklore	fa:فولکلور,فرهنگ عامه	fr:folklore	he:פולקלור	hi:लोककथा,लोक-साहित्य	ja:民俗,フォークロア	ko:민속,포크로어	pt:folclore	ru:фольклор	tr:folklor,halk bilimi	ur:لوک کہانی,لوک روایت	zh:民俗,民间传说
 c:folkway	Noun	ar:عرف شعبي	de:Volksbrauch	en:folkway	es:costumbre popular	fa:آداب عامه	fr:coutume populaire	he:מנהג עממי	hi:लोक रीति	ja:民間慣習	ko:민속 관습	pt:costume popular	ru:народный обычай	tr:halk geleneği	ur:عوامی رسم	zh:民俗
 c:food	Noun	ar:طعام	de:Essen,Nahrung	en:food	es:comida	fa:غذا	fr:nourriture,aliment	he:אוכל	hi:भोजन,खाना	ja:食べ物	ko:음식	pt:comida,alimento	ru:еда,пища	tr:yemek,gıda	ur:کھانا	zh:食物
@@ -3013,6 +3029,7 @@ c:four	Noun	ar:أربعة	de:vier	en:four	es:cuatro	fa:چهار	fr:quatre	he:א�
 c:fourth-wall	Noun	ar:الجدار الرابع	de:vierte Wand	en:fourth wall	es:cuarta pared	fa:دیوار چهارم	fr:quatrième mur	he:הקיר הרביעי	hi:चौथी दीवार	ja:第四の壁	ko:제4의 벽	pt:quarta parede	ru:четвёртая стена	tr:dördüncü duvar	ur:چوتھی دیوار	zh:第四堵墙
 c:fox	Noun	ar:ثعلب	de:Fuchs	en:fox	es:zorro	fa:روباه	fr:renard	he:שועל	hi:लोमड़ी	ja:狐,キツネ	ko:여우	pt:raposa	ru:лиса	tr:tilki	ur:لومڑی	zh:狐狸
 c:foxtrot	Noun	ar:رقص الفوكستروت	de:Foxtrott	en:foxtrot	es:foxtrot	fa:فاکستروت	fr:fox-trot	he:פוקסטרוט	hi:फॉक्सट्रॉट	ja:フォックストロット	ko:폭스트롯	pt:foxtrot	ru:фокстрот	tr:foxtrot	ur:فاکسٹروٹ	zh:狐步舞
+c:foxtrot-dance	Noun	ar:فوكستروت	de:Foxtrott	en:foxtrot	es:foxtrot	fa:فاکس‌تروت	fr:fox-trot	he:פוקסטרוט	hi:फॉक्सट्रॉट	ja:フォックストロット	ko:폭스트롯	pt:foxtrot	ru:фокстрот	tr:fokstrot	ur:فاکس ٹراٹ	zh:狐步舞
 c:fraction	Noun	ar:كسر	de:Bruch	en:fraction	es:fracción	fa:کسر	fr:fraction	he:שבר	hi:भिन्न	ja:分数	ko:분수	pt:fração	ru:дробь	tr:kesir	ur:کسر	zh:分数
 c:fractional-reserve	Noun	ar:الاحتياطي الجزئي	de:Mindestreservesystem	en:fractional reserve	es:reserva fraccionaria	fa:ذخیره کسری	fr:réserves fractionnaires	he:רזרבה חלקית	hi:आंशिक आरक्षित	ja:部分準備	ko:부분지급준비금	pt:reserva fracionária	ru:частичное резервирование	tr:kısmi rezerv	ur:جزوی ذخیرہ	zh:部分准备金
 c:fracture-mechanics	Noun	ar:ميكانيكا الكسر	de:Bruchmechanik	en:fracture mechanics	es:mecánica de fractura	fa:مکانیک شکست	fr:mécanique de la rupture	he:מכניקת שבר	hi:भंजन यांत्रिकी	ja:破壊力学	ko:파괴 역학	pt:mecânica da fratura	ru:механика разрушения	tr:kırılma mekaniği	ur:شکست میکانیات	zh:断裂力学
@@ -3614,6 +3631,7 @@ c:hindu-kush-range	Noun	ar:جبال هندوكش	de:Hindukusch	en:Hindu Kush	es:
 c:hinduism	Noun	ar:الهندوسية	de:Hinduismus	en:Hinduism	es:hinduismo	fa:هندوئیسم	fr:hindouisme	he:הינדואיזם	hi:हिंदू धर्म	ja:ヒンドゥー教	ko:힌두교	pt:hinduísmo	ru:индуизм	tr:Hinduizm	ur:ہندو مت	zh:印度教
 c:hip	Noun	ar:ورك	de:Hüfte	en:hip	es:cadera	fa:لگن,باسن	fr:hanche	he:ירך	hi:कूल्हा	ja:ヒップ,腰回り	ko:엉덩이	pt:quadril,anca	ru:бедро	tr:kalça	ur:کولھا	zh:臀部,髋
 c:hip-hop	Noun	ar:رقص الهيب هوب	de:Hip-Hop	en:hip-hop	es:hip-hop	fa:هیپ هاپ	fr:hip-hop	he:היפ הופ	hi:हिप-हॉप	ja:ヒップホップ	ko:힙합	pt:hip-hop	ru:хип-хоп	tr:hip-hop	ur:ہپ ہاپ	zh:嘻哈舞
+c:hip-hop-dance	Noun	ar:رقص هيب هوب	de:Hip-Hop-Tanz	en:hip-hop dance	es:baile hip-hop	fa:رقص هیپ هاپ	fr:danse hip-hop	he:ריקוד היפ הופ	hi:हिप हॉप नृत्य	ja:ヒップホップダンス	ko:힙합 댄스	pt:dança hip-hop	ru:хип-хоп танец	tr:hip hop dansı	ur:ہپ ہاپ رقص	zh:嘻哈舞
 c:hippocampus	Noun	ar:الحصين	de:Hippocampus	en:hippocampus	es:hipocampo	fa:هیپوکامپ	fr:hippocampe	he:היפוקמפוס	hi:हिप्पोकैम्पस	ja:海馬	ko:해마	pt:hipocampo	ru:гиппокамп	tr:hipokampüs	ur:دماغی گھوڑا	zh:海马体
 c:hippocrates	Noun	ar:أبقراط	de:Hippokrates	en:Hippocrates	es:Hipócrates	fa:بقراط	fr:Hippocrate	he:היפוקרטס	hi:हिप्पोक्रेट्स	ja:ヒポクラテス	ko:히포크라테스	pt:Hipócrates	ru:Гиппократ	tr:Hipokrat	ur:بقراط	zh:希波克拉底
 c:hippopotamus	Noun	ar:فرس النهر	de:Nilpferd,Flusspferd	en:hippopotamus,hippo	es:hipopótamo	fa:اسب آبی	fr:hippopotame	he:היפופוטם	hi:दरियाई घोड़ा	ja:カバ	ko:하마	pt:hipopótamo	ru:бегемот	tr:su aygırı	ur:دریائی گھوڑا	zh:河马
@@ -4060,6 +4078,7 @@ c:javelin-throw	Noun	ar:رمي الرمح	de:Speerwurf	en:javelin throw	es:lanza
 c:jaw	Noun	ar:فك	de:Kiefer	en:jaw	es:mandíbula	fa:آرواره,فک	fr:mâchoire	he:לסת	hi:जबड़ा	ja:顎	ko:턱	pt:mandíbula,maxilar	ru:челюсть	tr:çene	ur:جبڑا	zh:颌,下巴
 c:jay	Noun	ar:جياه,غراب الجياه	de:Eichelhäher	en:jay	es:arrendajo	fa:جی	fr:geai	he:עורב-ים	hi:जे	ja:カケス	ko:어치	pt:gaio	ru:сойка	tr:alakarga	ur:جے	zh:松鸦
 c:jazz-dance	Noun	ar:رقص الجاز	de:Jazztanz	en:jazz dance	es:danza jazz	fa:رقص جاز	fr:danse jazz	he:ריקוד ג׳אז	hi:जैज़ नृत्य	ja:ジャズダンス	ko:재즈 댄스	pt:dança jazz	ru:джазовый танец	tr:caz dansı	ur:جاز رقص	zh:爵士舞
+c:jazz-dance-style	Noun	ar:رقص الجاز	de:Jazz-Tanz	en:jazz dance	es:baile jazz	fa:رقص جاز	fr:danse jazz	he:ריקוד ג'אז	hi:जैज़ नृत्य	ja:ジャズダンス	ko:재즈 댄스	pt:dança jazz	ru:джазовый танец	tr:jazz dansı	ur:جاز رقص	zh:爵士舞
 c:jealousy	Noun	ar:غيرة	de:Eifersucht	en:jealousy	es:celos	fa:حسادت	fr:jalousie	he:קנאה	hi:ईर्ष्या	ja:嫉妬	ko:질투	pt:ciúme	ru:ревность	tr:kıskançlık	ur:حسد	zh:嫉妒
 c:jeans	Noun	ar:جينز	de:Jeans	en:jeans	es:vaqueros,jeans	fa:شلوار جین	fr:jean	he:ג׳ינס	hi:जीन्स	ja:ジーンズ	ko:청바지	pt:jeans	ru:джинсы	tr:kot	ur:جینز	zh:牛仔裤
 c:jellyfish	Noun	ar:قنديل البحر	de:Qualle	en:jellyfish	es:medusa	fa:عروس دریایی	fr:méduse	he:מדוזה	hi:जेलीफिश,समुद्री जेली	ja:クラゲ	ko:해파리	pt:medusa,água-viva	ru:медуза	tr:denizanası	ur:جیلی فش	zh:水母
@@ -4138,6 +4157,7 @@ c:karyotype	Noun	ar:النمط النووي	de:Karyotyp	en:karyotype	es:cariotip
 c:karyotype-gen	Noun	ar:نمط نووي	de:Karyotyp	en:karyotype	es:cariotipo	fa:کاریوتیپ	fr:caryotype	he:קריוטיפ	hi:कैरियोटाइप	ja:核型	ko:핵형	pt:cariótipo	ru:кариотип	tr:karyotip	ur:کیریوٹائپ	zh:核型
 c:katabatic	Adjective	ar:رياح كتاباتية	de:katabatischer Wind	en:katabatic wind	es:viento catabático	fa:باد فروکوهی	fr:vent catabatique	he:רוח קטבטית	hi:कटाबैटिक पवन	ja:下降風	ko:활강풍	pt:vento catabático	ru:катабатический ветер	tr:katapatik rüzgar	ur:ڈھلوانی ہوا	zh:下坡风
 c:kathak	Noun	ar:رقص كاثاك	de:Kathak	en:kathak	es:kathak	fa:کاتاک	fr:kathak	he:קאתאק	hi:कथक	ja:カタック	ko:카탁	pt:kathak	ru:катхак	tr:kathak	ur:کتھک	zh:卡塔克舞
+c:kathak-dance	Noun	ar:كاثاك	de:Kathak	en:Kathak	es:kathak	fa:کاتاک	fr:kathak	he:קטהאק	hi:कथक	ja:カタック	ko:카탁	pt:kathak	ru:катхак	tr:kathak	ur:کتھک	zh:卡塔克舞
 c:kebab	Noun	ar:كباب	de:Kebab,Kebap	en:kebab	es:kebab,brocheta	fa:کباب	fr:kebab,brochette	he:קבב	hi:कबाब	ja:ケバブ	ko:케밥	pt:kebab,espetinho	ru:кебаб,шашлык	tr:kebap	ur:کباب	zh:烤肉串,卡巴
 c:kebab-food	Noun	ar:كباب	de:Kebab	en:kebab	es:kebab	fa:کباب	fr:kebab	he:קבב	hi:कबाब	ja:ケバブ	ko:케밥	pt:kebab	ru:кебаб	tr:kebap	ur:کباب	zh:烤肉串
 c:keep	Noun	ar:البرج الرئيسي	de:Bergfried	en:keep	es:torreón	fa:دژ اصلی	fr:donjon	he:מגדל מרכזי	hi:किले का मुख्य भाग	ja:天守閣	ko:주탑	pt:torre de menagem	ru:донжон	tr:kale kulesi	ur:قلعے کا مرکزی برج	zh:主楼
@@ -4215,6 +4235,7 @@ c:krishna	Noun	ar:كريشنا	de:Krishna	en:Krishna	es:Krishna	fa:کریشنا	
 c:krona	Noun	ar:كرونا,كرونا سويدية	de:Krona,schwedische Krone	en:krona	es:corona sueca	fa:کرونا سوئد	fr:couronne suédoise	he:קרונה שוודית,כתר שוודי	hi:क्रोना	ja:クローナ	ko:크로나	pt:coroa sueca	ru:крона,шведская крона	tr:krona	ur:کرونا	zh:瑞典克朗
 c:krone	Noun	ar:كرونة دنماركية,كرونة	de:Krone	en:krone	es:corona danesa,corona	fa:کرون,کرون دانمارکی	fr:couronne	he:כתר דני,קרונה	hi:क्रोन	ja:クローネ	ko:크로네	pt:coroa	ru:крона,датская крона	tr:kron	ur:کرون	zh:克朗,丹麦克朗
 c:krump	Noun	ar:رقص الكرامب	de:Krump	en:krump	es:krump	fa:کرامپ	fr:krump	he:קראמפ	hi:क्रम्प	ja:クランプ	ko:크럼프	pt:krump	ru:крамп	tr:krump	ur:کرمپ	zh:克伦普舞
+c:krumping	Noun	ar:كرامبينغ	de:Krumping	en:krumping	es:krumping	fa:کرامپینگ	fr:krump	he:קרמפינג	hi:क्रंपिंग	ja:クランピング	ko:크럼핑	pt:krumping	ru:крампинг	tr:krumping	ur:کرمپنگ	zh:crumping
 c:krypton	Noun	ar:كريبتون	de:Krypton	en:krypton	es:kriptón	fa:کریپتون	fr:krypton	he:קריפטון	hi:क्रिप्टन	ja:クリプトン	ko:크립톤	pt:crípton	ru:криптон	tr:kripton	ur:کرپٹن	zh:氪
 c:kuala-lumpur	Noun	ar:كوالالمبور	de:Kuala Lumpur	en:Kuala Lumpur	es:Kuala Lumpur	fa:کوالالامپور	fr:Kuala Lumpur	he:קואלה לומפור	hi:कुआलालंपुर	ja:クアラルンプール	ko:쿠알라룸푸르	pt:Kuala Lumpur	ru:Куала-Лумпур	tr:Kuala Lumpur	ur:کوالا لمپور	zh:吉隆坡
 c:kudu	Noun	ar:كودو	de:Kudu	en:kudu	es:kudú	fa:کودو	fr:koudou	he:קודו	hi:कुडू	ja:クーズー	ko:쿠두	pt:cudu	ru:куду	tr:kudu	ur:کوڈو	zh:大角斑羚
@@ -4441,6 +4462,7 @@ c:limpopo	Noun	ar:ليمبوبو,نهر ليمبوبو	de:Limpopo	en:Limpopo,Lim
 c:limpopo-river	Noun	ar:نهر ليمبوبو	de:Limpopo	en:Limpopo river	es:río Limpopo	fa:رود لیمپوپو	fr:Limpopo	he:נהר הלימפופו	hi:लिम्पोपो नदी	ja:リンポポ川	ko:림포포강	pt:rio Limpopo	ru:река Лимпопо	tr:Limpopo Nehri	ur:دریائے لمپوپو	zh:林波波河
 c:lincoln	Noun	ar:لينكولن,أبراهام لينكولن	de:Lincoln,Abraham Lincoln	en:Lincoln,Abraham Lincoln	es:Lincoln	fa:لینکلن,آبراهام لینکلن	fr:Lincoln	he:לינקולן	hi:लिंकन	ja:リンカーン	ko:링컨	pt:Lincoln	ru:Линкольн	tr:Lincoln	ur:لنکن	zh:林肯
 c:lindy-hop	Noun	ar:رقص ليندي هوب	de:Lindy Hop	en:Lindy Hop	es:Lindy Hop	fa:لیندی هاپ	fr:Lindy Hop	he:לינדי הופ	hi:लिंडी हॉप	ja:リンディホップ	ko:린디홉	pt:Lindy Hop	ru:линди-хоп	tr:Lindy Hop	ur:لنڈی ہاپ	zh:林迪舞
+c:lindy-hop-dance	Noun	ar:لندي هوب	de:Lindy Hop	en:Lindy Hop	es:Lindy Hop	fa:لیندی هاپ	fr:lindy hop	he:לינדי הופ	hi:लिंडी हॉप	ja:リンディホップ	ko:린디 합	pt:lindy hop	ru:линди-хоп	tr:lindy hop	ur:لنڈی ہاپ	zh:林迪舞
 c:line	Noun	ar:خط	de:Linie	en:line	es:línea	fa:خط	fr:ligne	he:קו	hi:रेखा,लाइन	ja:線,ライン	ko:선,줄	pt:linha	ru:линия	tr:çizgi	ur:لکیر,خط	zh:线,线条
 c:linear-equation	Noun	ar:معادلة خطية	de:lineare Gleichung	en:linear equation	es:ecuación lineal	fa:معادله خطی	fr:équation linéaire	he:משוואה ליניארית	hi:रैखिक समीकरण	ja:一次方程式	ko:일차방정식	pt:equação linear	ru:линейное уравнение	tr:doğrusal denklem	ur:لکیری مساوات	zh:线性方程
 c:lined-paper	Noun	ar:ورق مسطر	de:liniertes Papier	en:lined paper	es:papel rayado	fa:کاغذ خط دار	fr:papier ligné	he:נייר שורות	hi:रेखांकित कागज	ja:罫線入り用紙	ko:줄 노트지	pt:papel pautado	ru:линованная бумага	tr:çizgili kağıt	ur:لائنڈ پیپر	zh:横线纸
@@ -4491,6 +4513,7 @@ c:lobster	Noun	ar:كركند	de:Hummer	en:lobster	es:langosta	fa:خرچنگ در
 c:location	Noun	ar:موقع	de:Position,Lage	en:location	es:ubicación	fa:موقعیت	fr:position,emplacement	he:מיקום	hi:स्थिति	ja:位置	ko:위치	pt:localização,posição	ru:положение,местоположение	tr:konum	ur:مقام,جگہ	zh:位置
 c:lock	Noun	ar:قفل	de:Schloss	en:lock	es:cerradura,candado	fa:قفل	fr:serrure,cadenas	he:מנעול	hi:ताला	ja:鍵,錠	ko:자물쇠,잠금장치	pt:fechadura,cadeado	ru:замок	tr:kilit	ur:تالا	zh:锁,锁头
 c:locket	Noun	ar:ميدالية صغيرة	de:Medaillon	en:locket	es:guardapelo,locket	fa:مدالیون	fr:médaillon	he:מדליון	hi:लॉकेट	ja:ロケット	ko:로켓	pt:medalhão	ru:медальон	tr:madalyon	ur:لاکٹ	zh:纪念盒坠,胸针盒
+c:locking	Noun	ar:لوكينغ	de:Locking	en:locking dance	es:locking	fa:لاکینگ	fr:locking	he:לוקינג	hi:लॉकिंग	ja:ロッキング	ko:락킹	pt:locking	ru:локинг	tr:locking	ur:لاکنگ	zh:锁舞
 c:locksmith	Noun	ar:صانع الأقفال	de:Schlosser	en:locksmith	es:cerrajero	fa:قفل‌ساز	fr:serrurier	he:מנעולן	hi:ताला बनाने वाला	ja:錠前屋,鍵師	ko:자물쇠 장인,열쇠공	pt:serralheiro	ru:слесарь,замочник	tr:çilingir	ur:تالا ساز	zh:锁匠
 c:locus	Noun	ar:الموضع الجيني	de:Genort	en:locus	es:locus	fa:جایگاه ژنی	fr:locus	he:לוקוס	hi:जीन स्थान	ja:遺伝子座	ko:유전자좌	pt:locus	ru:локус	tr:lokus	ur:جین مقام	zh:基因座
 c:locus-of-control	Noun	ar:مركز الضبط	de:Kontrollüberzeugung	en:locus of control	es:locus de control	fa:مرکز کنترل	fr:lieu de contrôle	he:מוקד שליטה	hi:नियंत्रण केंद्र	ja:統制の所在	ko:통제 소재	pt:locus de controle	ru:локус контроля	tr:kontrol odağı	ur:قابو کا مرکز	zh:控制点
@@ -4553,6 +4576,7 @@ c:lymphocyte	Noun	ar:خلية ليمفاوية	de:Lymphozyt	en:lymphocyte	es:lin
 c:lynx	Noun	ar:وشق	de:Luchs	en:lynx	es:lince	fa:سیاه گوش	fr:lynx	he:לינקס	hi:लिंक्स	ja:オオヤマネコ	ko:스라소니	pt:lince	ru:рысь	tr:vaşak	ur:وشق	zh:猞猁
 c:lyra	Noun	ar:السلياق,القيثارة	de:Leier	en:Lyra	es:Lira	fa:شلیاق	fr:Lyre	he:נבל	hi:लायरा	ja:こと座	ko:거문고자리	pt:Lira	ru:Лира	tr:Lir Takımyıldızı	ur:لائرا,قیثار	zh:天琴座
 c:lyric-poetry	Noun	ar:الشعر الغنائي	de:Lyrik	en:lyric poetry	es:poesía lírica	fa:شعر غنایی	fr:poésie lyrique	he:שירה לירית	hi:गीत काव्य	ja:叙情詩	ko:서정시	pt:poesia lírica	ru:лирическая поэзия	tr:lirik şiir	ur:غنائی شاعری	zh:抒情诗
+c:lyrical-dance	Noun	ar:رقص غنائي	de:lyrischer Tanz	en:lyrical dance	es:danza lírica	fa:رقص لیریک	fr:danse lyrique	he:ריקוד לירי	hi:गीतात्मक नृत्य	ja:リリカルダンス	ko:리리컬 댄스	pt:dança lírica	ru:лирический танец	tr:lirik dans	ur:لیریکل رقص	zh:抒情舞
 c:lysosome	Noun	ar:ليسوسوم	de:Lysosom	en:lysosome	es:lisosoma	fa:لیزوزوم	fr:lysosome	he:ליזוזום	hi:लाइसोसोम	ja:リソソーム	ko:리소좀	pt:lisossomo	ru:лизосома	tr:lizozom	ur:لائسوسوم	zh:溶酶体
 c:mac-address	Noun	ar:عنوان MAC	de:MAC-Adresse	en:MAC address	es:dirección MAC	fa:نشانی مک	fr:adresse MAC	he:כתובת MAC	hi:मैक पता	ja:MACアドレス	ko:MAC 주소	pt:endereço MAC	ru:MAC-адрес	tr:MAC adresi	ur:میک ایڈریس	zh:MAC地址
 c:macadamia	Noun	ar:ماكاداميا	de:Macadamia	en:macadamia	es:macadamia	fa:ماکادمیا	fr:noix de macadamia	he:מקדמיה	hi:मकाडामिया	ja:マカダミア	ko:마카다미아	pt:macadâmia	ru:макадамия	tr:makadamya	ur:ماکادیمیا	zh:澳洲坚果
@@ -4609,6 +4633,7 @@ c:malware	Noun	ar:برمجية خبيثة,برامج ضارة	de:Schadsoftware,M
 c:malware-security	Noun	ar:برامج ضارة	de:Schadsoftware	en:malware	es:malware	fa:بدافزار	fr:logiciel malveillant	he:תוכנה זדונית	hi:मालवेयर	ja:マルウェア	ko:악성 소프트웨어	pt:malware	ru:вредоносное ПО	tr:kötü amaçlı yazılım	ur:بدنیت سافٹ ویئر	zh:恶意软件
 c:malware-software	Noun	ar:برمجية خبيثة	de:Schadsoftware	en:malware	es:malware	fa:نرم‌افزار مخرب	fr:logiciel malveillant	he:תוכנה זדונית	hi:मैलवेयर	ja:マルウェア	ko:악성 소프트웨어	pt:malware	ru:вредоносное ПО	tr:kötü amaçlı yazılım	ur:مضر سافٹ ویئر	zh:恶意软件
 c:mamba	Noun	ar:ثعبان المامبا	de:Mamba	en:mamba	es:mamba	fa:مامبا	fr:mamba	he:מאמבה	hi:मांबा	ja:マンバ	ko:맘바	pt:mamba	ru:мамба	tr:mamba	ur:مامبا	zh:曼巴蛇
+c:mambo	Noun	ar:مامبو	de:Mambo	en:mambo	es:mambo	fa:مامبو	fr:mambo	he:מאמבו	hi:माम्बो	ja:マンボ	ko:맘보	pt:mambo	ru:мамбо	tr:mambo	ur:مامبو	zh:曼波
 c:mamey-sapote	Noun	ar:ماماي سابوت	de:Mamey-Sapote	en:mamey sapote	es:mamey	fa:مامی ساپوت	fr:mamey sapote	he:ממי ספוטה	hi:ममी सपोट	ja:マメイサポテ	ko:마메이 사포테	pt:mamey	ru:маме сапоте	tr:mamey sapote	ur:میمے سپوٹ	zh:大萨波特
 c:mamluk-sultanate	Noun	ar:السلطنة المملوكية	de:Mamlukensultanat	en:Mamluk Sultanate	es:sultanato mameluco	fa:سلطنت مملوکیان	fr:sultanat mamelouk	he:סולטנות הממלוכים	hi:मामलूक सल्तनत	ja:マムルーク朝	ko:맘루크 술탄국	pt:sultanato mameluco	ru:Мамлюкский султанат	tr:Memlük Sultanlığı	ur:مملوک سلطنت	zh:马穆鲁克苏丹国
 c:mammal	Noun	ar:ثديي	de:Säugetier	en:mammal	es:mamífero	fa:پستاندار	fr:mammifère	he:יונק	hi:स्तनपायी	ja:哺乳類	ko:포유류	pt:mamífero	ru:млекопитающее	tr:memeli	ur:پستاندار	zh:哺乳动物
@@ -4713,6 +4738,7 @@ c:mauve	Noun	ar:بنفسجي باهت,موف	de:Mauve,Malvenfarbig	en:mauve	es:m
 c:maxwell-demon	Noun	ar:شيطان ماكسويل	de:Maxwells Dämon	en:Maxwell's demon	es:demonio de Maxwell	fa:شیطان ماکسول	fr:démon de Maxwell	he:השד של מקסוול	hi:मैक्सवेल का राक्षस	ja:マクスウェルの悪魔	ko:맥스웰의 도깨비	pt:demônio de Maxwell	ru:демон Максвелла	tr:Maxwell'in şeytanı	ur:میکسویل کا شیطان	zh:麦克斯韦妖
 c:mayan-civilization	Noun	ar:حضارة المايا	de:Maya-Zivilisation	en:Mayan civilization	es:civilización maya	fa:تمدن مایا	fr:civilisation maya	he:תרבות המאיה	hi:मायन सभ्यता	ja:マヤ文明	ko:마야 문명	pt:civilização maia	ru:цивилизация майя	tr:Maya uygarlığı	ur:مایا تہذیب	zh:玛雅文明
 c:mayfly	Noun	ar:ذبابة مايو,حشرة مايو	de:Eintagsfliege	en:mayfly	es:efímera	fa:مگس مه	fr:éphémère	he:יום-חי	hi:मई मक्खी	ja:蜉蝣,カゲロウ	ko:하루살이	pt:efeméride	ru:подёнка	tr:bireylik sineği,mayıssineği	ur:مئی مکھی	zh:蜉蝣
+c:mazurka	Noun	ar:مازوركا	de:Mazurka	en:mazurka	es:mazurca	fa:مازورکا	fr:mazurka	he:מזורקה	hi:मजुरका	ja:マズルカ	ko:마주르카	pt:mazurca	ru:мазурка	tr:mazurka	ur:مزورکا	zh:玛祖卡
 c:md5	Noun	ar:تجزئة MD5	de:MD5	en:MD5	es:MD5	fa:MD5	fr:MD5	he:MD5	hi:एमडी5	ja:MD5	ko:MD5	pt:MD5	ru:MD5	tr:MD5	ur:ایم ڈی 5	zh:MD5算法
 c:mead	Noun	ar:نبيذ العسل	de:Met	en:mead	es:hidromiel	fa:شراب عسل	fr:hydromel	he:יין דבש	hi:मधु शराब	ja:ミード	ko:미드	pt:hidromel	ru:медовуха	tr:bal şarabı	ur:شہد شراب	zh:蜂蜜酒
 c:meadow	Noun	ar:مرج	de:Wiese	en:meadow	es:prado	fa:مرغزار,چمنزار	fr:pré,prairie	he:אחו	hi:घास का मैदान,चरागाह	ja:草地,牧草地	ko:초원,풀밭	pt:prado,campina	ru:луг	tr:çayır	ur:سبز میدان	zh:草地,牧场
@@ -4793,6 +4819,7 @@ c:mercury-metal	Noun	ar:زئبق	de:Quecksilber	en:mercury	es:mercurio	fa:جیو
 c:mercury-program	Noun	ar:برنامج ميركوري	de:Mercury-Programm	en:Mercury program	es:programa Mercury	fa:برنامه مرکوری	fr:programme Mercury	he:תוכנית מרקורי	hi:मरकरी कार्यक्रम	ja:マーキュリー計画	ko:머큐리 계획	pt:programa Mercury	ru:программа Меркурий	tr:Mercury programı	ur:مرکری پروگرام	zh:水星计划
 c:mercy	Noun	ar:رحمة	de:Barmherzigkeit,Gnade	en:mercy	es:misericordia,piedad	fa:رحمت,مهربانی	fr:miséricorde,pitié	he:רחמים,חסד	hi:दया,करुणा	ja:慈悲	ko:자비	pt:misericórdia,piedade	ru:милосердие	tr:merhamet	ur:رحم,رحمت	zh:怜悯,慈悲
 c:merengue	Noun	ar:رقص الميرنغ	de:Merengue	en:merengue	es:merengue	fa:مرنگ	fr:merengue	he:מרנגה	hi:मेरेंगे	ja:メレンゲ	ko:메렝게	pt:merengue	ru:меренге	tr:merengue	ur:مرنگو	zh:梅伦格舞
+c:merengue-dance	Noun	ar:مارنغي	de:Merengue	en:merengue	es:merengue	fa:مرنگه	fr:merengue	he:מרנגה	hi:मेरेंगे	ja:メレンゲ	ko:메렝게	pt:merengue	ru:меренге	tr:merengue	ur:مرنگے	zh:梅伦格
 c:merger	Noun	ar:اندماج	de:Fusion	en:merger	es:fusión	fa:ادغام	fr:fusion	he:מיזוג	hi:विलय	ja:合併	ko:합병	pt:fusão	ru:слияние	tr:birleşme	ur:ادغام	zh:合并
 c:merger-biz	Noun	ar:اندماج شركات	de:Fusion	en:merger	es:fusión	fa:ادغام شرکت	fr:fusion	he:מיזוג חברות	hi:विलय	ja:合併	ko:합병	pt:fusão	ru:слияние	tr:birleşme	ur:انضمام	zh:合并
 c:meringue	Noun	ar:مارانغ	de:Baiser	en:meringue	es:merengue	fa:مرنگ	fr:meringue	he:מרנג	hi:मेरिंग्यू	ja:メレンゲ	ko:머랭	pt:merengue	ru:безе	tr:beze	ur:مرینگ	zh:蛋白霜
@@ -4937,6 +4964,7 @@ c:mode-stat	Noun	ar:منوال إحصائي	de:Modalwert	en:mode	es:moda	fa:مد
 c:modeling-clay	Noun	ar:صلصال النمذجة	de:Modellierton	en:modeling clay	es:arcilla para modelar	fa:خمیر مدل‌سازی	fr:pâte à modeler	he:חימר לפיסול	hi:मॉडलिंग मिट्टी	ja:粘土	ko:클레이	pt:argila de modelar	ru:пластилин	tr:oyun hamuru	ur:ماڈلنگ مٹی	zh:橡皮泥
 c:modem	Noun	ar:المودم	de:Modem	en:modem	es:módem	fa:مودم	fr:modem	he:מודם	hi:मॉडेम	ja:モデム	ko:모뎀	pt:modem	ru:модем	tr:modem	ur:موڈم	zh:调制解调器
 c:modem-net	Noun	ar:مودم شبكة	de:Modem	en:modem	es:módem	fa:مودم	fr:modem	he:מודם	hi:मॉडेम	ja:モデム	ko:모뎀	pt:modem	ru:модем	tr:modem	ur:موڈیم	zh:调制解调器
+c:modern-dance	Noun	ar:رقص حديث	de:moderner Tanz	en:modern dance	es:danza moderna	fa:رقص مدرن	fr:danse moderne	he:ריקוד מודרני	hi:आधुनिक नृत्य	ja:モダンダンス	ko:현대 댄스	pt:dança moderna	ru:современный модерн танец	tr:modern dans	ur:جدید رقص	zh:现代舞蹈
 c:modern-era	Noun	ar:العصر الحديث	de:Neuzeit	en:Modern era	es:era moderna	fa:عصر مدرن	fr:époque moderne	he:העת החדשה	hi:आधुनिक युग	ja:近代	ko:근대	pt:era moderna	ru:новое время	tr:modern çağ	ur:جدید دور	zh:近代
 c:modernity	Noun	ar:الحداثة	de:Moderne,Neuzeit	en:modernity	es:modernidad	fa:مدرنیته,نوگرایی	fr:modernité	he:מודרנה,עידן המודרני	hi:आधुनिकता	ja:近代,モダニティ	ko:근대성,근대	pt:modernidade	ru:современность,модерн	tr:modernite,modernlik	ur:جدیدیت	zh:现代性,近代
 c:modernization	Noun	ar:تحديث اجتماعي	de:Modernisierung	en:modernization	es:modernización	fa:نوسازی	fr:modernisation	he:מודרניזציה	hi:आधुनिकीकरण	ja:近代化	ko:근대화	pt:modernização	ru:модернизация	tr:modernleşme	ur:جدیدیت	zh:现代化
@@ -6031,6 +6059,7 @@ c:political-obligation	Noun	ar:الالتزام السياسي	de:politische Pfl
 c:political-philosophy	Noun	ar:الفلسفة السياسية	de:politische Philosophie	en:political philosophy	es:filosofía política	fa:فلسفه سیاسی	fr:philosophie politique	he:פילוסופיה פוליטית	hi:राजनीतिक दर्शन	ja:政治哲学	ko:정치 철학	pt:filosofia política	ru:политическая философия	tr:siyaset felsefesi	ur:سیاسی فلسفہ	zh:政治哲学
 c:political-realism	Noun	ar:الواقعية السياسية	de:politischer Realismus	en:political realism,Realpolitik	es:realismo político	fa:واقع‌گرایی سیاسی	fr:réalisme politique	he:ריאליזם פוליטי	hi:राजनीतिक यथार्थवाद	ja:政治的リアリズム	ko:정치적 현실주의	pt:realismo político	ru:политический реализм	tr:siyasi realizm	ur:سیاسی حقیقت پسندی	zh:政治现实主义
 c:polka	Noun	ar:رقص البولكا	de:Polka	en:polka	es:polca	fa:پولکا	fr:polka	he:פולקה	hi:पोल्का	ja:ポルカ	ko:폴카	pt:polca	ru:полька	tr:polka	ur:پولکا	zh:波尔卡
+c:polka-dance	Noun	ar:بولكا	de:Polka	en:polka	es:polca	fa:پولکا	fr:polka	he:פולקה	hi:पोल्का	ja:ポルカ	ko:폴카	pt:polca	ru:полька	tr:polka	ur:پولکا	zh:波尔卡
 c:pollen	Noun	ar:حبوب اللقاح,لقاح	de:Pollen,Blütenstaub	en:pollen	es:polen	fa:گرده,گرده گل	fr:pollen	he:אבקה	hi:पराग	ja:花粉	ko:꽃가루	pt:pólen	ru:пыльца	tr:polen,çiçek tozu	ur:پولن,زرگل	zh:花粉
 c:pollination	Noun	ar:التلقيح	de:Bestäubung	en:pollination	es:polinización	fa:گرده‌افشانی	fr:pollinisation	he:האבקה	hi:परागण	ja:授粉	ko:수분	pt:polinização	ru:опыление	tr:tozlaşma	ur:زیر گیری	zh:授粉
 c:pollinator	Noun	ar:الملقح	de:Bestäuber	en:pollinator	es:polinizador	fa:گرده افشان	fr:pollinisateur	he:מאבק פרחים	hi:परागणकर्ता	ja:送粉者	ko:수분 매개체	pt:polinizador	ru:опылитель	tr:tozlaştırıcı	ur:پولینیٹر	zh:传粉者
@@ -6067,6 +6096,7 @@ c:pop-art	Noun	ar:فن البوب	de:Pop-Art	en:Pop Art	es:pop art	fa:هنر پ�
 c:pope	Noun	ar:بابا الكنيسة	de:Papst	en:pope	es:papa	fa:پاپ	fr:pape	he:אפיפיור	hi:पोप	ja:ローマ教皇	ko:교황	pt:papa	ru:папа римский	tr:papa	ur:پوپ	zh:教皇
 c:poplar	Noun	ar:الحور	de:Pappel	en:poplar	es:álamo	fa:سپیدار,تبریزی	fr:peuplier	he:צפצפה	hi:चिनार	ja:ポプラ	ko:포플러	pt:choupo,álamo	ru:тополь	tr:kavak	ur:سفیدار	zh:杨树
 c:poplin	Noun	ar:البوبلين	de:Popeline	en:poplin	es:popelín	fa:پاپلین	fr:popeline	he:פופלין	hi:पॉपलिन	ja:ポプリン	ko:포플린	pt:popeline	ru:поплин	tr:poplin	ur:پاپلین	zh:府绸
+c:popping	Noun	ar:بوبينغ	de:Popping	en:popping dance	es:popping	fa:پاپینگ	fr:popping	he:פופינג	hi:पॉपिंग	ja:ポッピング	ko:팝핀	pt:popping	ru:поппинг	tr:popping	ur:پاپنگ	zh:机械舞
 c:poppy	Noun	ar:الخشخاش	de:Mohn	en:poppy	es:amapola	fa:خشخاش,شقایق	fr:coquelicot,pavot	he:פרג	hi:खसखस,पॉपी	ja:ケシ	ko:양귀비	pt:papoula	ru:мак	tr:gelincik,haşhaş	ur:پوست	zh:罂粟
 c:poppy-seed	Noun	ar:بذور الخشخاش	de:Mohn	en:poppy seed	es:semilla de amapola	fa:خشخاش	fr:graine de pavot	he:פרג	hi:खसखस	ja:ケシの実	ko:양귀비씨	pt:semente de papoula	ru:мак	tr:haşhaş tohumu	ur:خشخاش	zh:罂粟子
 c:population-eco	Noun	ar:عشيرة بيئية	de:Population	en:population	es:población	fa:جمعیت اکولوژیکی	fr:population	he:אוכלוסייה אקולוגית	hi:पारिस्थितिक जनसंख्या	ja:個体群	ko:개체군	pt:população ecológica	ru:популяция	tr:popülasyon	ur:ماحولیاتی آبادی	zh:种群
@@ -6772,6 +6802,7 @@ c:ruler-tool	Noun	ar:مسطرة	de:Lineal	en:ruler	es:regla	fa:خط‌کش	fr:r�
 c:ruling	Noun	ar:قرار,حكم	de:Beschluss,Entscheidung	en:ruling	es:dictamen,resolución	fa:رای,تصمیم	fr:décision,arrêt	he:פסיקה,החלטה	hi:फ़ैसला,निर्णय	ja:裁定,決定	ko:판결,결정	pt:decisão,despacho	ru:постановление,решение	tr:karar,hüküm	ur:فیصلہ,حکم	zh:裁定,决定
 c:rum	Noun	ar:رم	de:Rum	en:rum	es:ron	fa:رم	fr:rhum	he:רום	hi:रम	ja:ラム酒	ko:럼	pt:rum	ru:ром	tr:rom	ur:رم	zh:朗姆酒
 c:rumba	Noun	ar:رقص الرومبا	de:Rumba	en:rumba	es:rumba	fa:رومبا	fr:rumba	he:רומבה	hi:रूम्बा	ja:ルンバ	ko:룸바	pt:rumba	ru:румба	tr:rumba	ur:رومبا	zh:伦巴舞
+c:rumba-dance	Noun	ar:رومبا	de:Rumba	en:rumba	es:rumba	fa:رومبا	fr:rumba	he:רומבה	hi:रूम्बा	ja:ルンバ	ko:룸바	pt:rumba	ru:румба	tr:rumba	ur:رومبا	zh:伦巴
 c:rumi	Noun	ar:جلال الدين الرومي,الرومي	de:Rumi	en:Rumi,Jalal al-Din Rumi	es:Rumi	fa:مولوی,جلال‌الدین محمد بلخی,مولانا	fr:Rûmî	he:רומי	hi:रूमी	ja:ルーミー	ko:루미	pt:Rumi	ru:Руми	tr:Mevlâna,Rumi	ur:مولانا رومی,جلال الدین رومی	zh:鲁米
 c:run	Verb	ar:ركض,جرى	de:rennen,laufen	en:run	es:correr	fa:دویدن	fr:courir	he:לרוץ	hi:दौड़ना	ja:走る	ko:달리다,뛰다	pt:correr	ru:бежать	tr:koşmak	ur:دوڑنا	zh:跑
 c:runoff	Noun	ar:الجريان السطحي	de:Oberflächenabfluss	en:runoff	es:escorrentía	fa:رواناب	fr:ruissellement	he:נגר עילי	hi:जलप्रवाह	ja:地表流	ko:지표유출	pt:escoamento superficial	ru:поверхностный сток	tr:yüzey akışı	ur:سطحی بہاو	zh:地表径流
@@ -6814,11 +6845,13 @@ c:salinity-water	Noun	ar:ملوحة الماء	de:Salzgehalt	en:salinity	es:sali
 c:salmon	Noun	ar:سلمون	de:Lachs	en:salmon	es:salmón	fa:ماهی آزاد	fr:saumon	he:סלמון	hi:सैल्मन	ja:鮭,サーモン	ko:연어	pt:salmão	ru:лосось	tr:somon	ur:سالمن مچھلی	zh:三文鱼,鲑鱼
 c:salmon-color	Noun	ar:سلموني,وردي سلموني	de:Lachsrosa,Lachsfarben	en:salmon,salmon pink	es:salmón	fa:گلبهی,ماهی‌آزادی	fr:saumon	he:סלמון	hi:सैल्मन रंग	ja:サーモンピンク	ko:연어색	pt:salmão	ru:лососёвый	tr:somon rengi	ur:سیمن رنگ	zh:鲑鱼色,三文鱼色
 c:salsa	Noun	ar:سالسا	de:Salsa	en:salsa	es:salsa	fa:سالسا	fr:salsa	he:סלסה	hi:साल्सा	ja:サルサ	ko:살사	pt:salsa	ru:сальса	tr:salsa	ur:سالسا	zh:萨尔萨
+c:salsa-dance	Noun	ar:رقص السالسا	de:Salsa-Tanz	en:salsa dance	es:baile salsa	fa:رقص سالسا	fr:danse salsa	he:סלסה	hi:साल्सा नृत्य	ja:サルサ	ko:살사	pt:dança salsa	ru:сальса	tr:salsa dansı	ur:سالسا رقص	zh:萨尔萨舞
 c:salt	Noun	ar:ملح	de:Salz	en:salt	es:sal	fa:نمک	fr:sel	he:מלח	hi:नमक	ja:塩	ko:소금	pt:sal	ru:соль	tr:tuz	ur:نمک	zh:盐
 c:salton-sea	Noun	ar:بحر سالتون	de:Saltonsee	en:Salton Sea	es:mar Salton	fa:دریاچه سالتون	fr:mer de Salton	he:ימת סולטון	hi:साल्टन सागर	ja:ソルトン湖	ko:솔턴호	pt:mar Salton	ru:озеро Солтон-Си	tr:Salton Gölü	ur:جھیل سالٹن	zh:索尔顿湖
 c:salty	Adjective	ar:مالح	de:salzig	en:salty	es:salado	fa:شور	fr:salé	he:מלוח	hi:नमकीन	ja:塩辛い	ko:짠	pt:salgado	ru:солёный	tr:tuzlu	ur:نمکین	zh:咸
 c:samanid	Noun	ar:الدولة السامانية	de:Samaniden	en:Samanid Empire	es:Imperio samánida	fa:امپراتوری سامانیان	fr:Empire samanide	he:האימפריה הסמנית	hi:सामानी साम्राज्य	ja:サーマーン朝	ko:사만 제국	pt:Império Samânida	ru:Саманидская империя	tr:Samanoğulları	ur:سامانی سلطنت	zh:萨曼王朝
 c:samba	Noun	ar:رقص السامبا	de:Samba	en:samba	es:samba	fa:سامبا	fr:samba	he:סמבה	hi:सांबा	ja:サンバ	ko:삼바	pt:samba	ru:самба	tr:samba	ur:سامبا	zh:桑巴舞
+c:samba-dance	Noun	ar:سامبا	de:Samba	en:samba	es:samba	fa:سامبا	fr:samba	he:סמבה	hi:साम्बा	ja:サンバ	ko:삼바	pt:samba	ru:самба	tr:samba	ur:سامبا	zh:桑巴
 c:sambo	Noun	ar:سامبو	de:Sambo	en:sambo	es:sambo	fa:سامبو	fr:sambo	he:סמבו	hi:सैम्बो	ja:サンボ	ko:삼보	pt:sambo	ru:самбо	tr:sambo	ur:سمبو	zh:桑搏
 c:sample-stat	Noun	ar:عينة إحصائية	de:Stichprobe	en:statistical sample	es:muestra estadística	fa:نمونه آماری	fr:échantillon statistique	he:מדגם	hi:प्रतिदर्श	ja:標本	ko:표본	pt:amostra estatística	ru:выборка	tr:istatistik örneklem	ur:شماریاتی نمونہ	zh:统计样本
 c:sampling-method	Noun	ar:طريقة أخذ العينات	de:Stichprobenverfahren	en:sampling method	es:método de muestreo	fa:روش نمونه‌گیری	fr:méthode d'échantillonnage	he:שיטת דגימה	hi:प्रतिचयन विधि	ja:サンプリング法	ko:표본 추출법	pt:método de amostragem	ru:метод выборки	tr:örnekleme yöntemi	ur:نمونہ گیری کا طریقہ	zh:抽样方法
@@ -7453,6 +7486,7 @@ c:squadron	Noun	ar:سرب	de:Staffel,Geschwader	en:squadron	es:escuadrón	fa:ا�
 c:squall	Noun	ar:عاصفة قصيرة,زوبعة مفاجئة	de:Sturmbö,Orkanbö	en:squall,wind squall	es:turbonada,borrasca	fa:توفان ناگهانی,تندباد مفاجئ	fr:grain,bourrasque	he:סערה קצרה,משב סוער	hi:आंधी,तूफानी झोंका	ja:スコール,突風雨	ko:스콜,강풍	pt:borrasca,tormenta breve	ru:шквал,шквальный ветер	tr:bora,ani fırtına	ur:طوفانی جھونکا,آندھی	zh:狂风,飑
 c:squall-line	Noun	ar:خط العواصف	de:Gewitterlinie	en:squall line	es:línea de tormenta	fa:خط طوفان	fr:ligne de grain	he:קו סערה	hi:स्क्वॉल लाइन	ja:スコールライン	ko:스콜 선	pt:linha de instabilidade	ru:линия шквала	tr:sağanak hattı	ur:طوفانی لائن	zh:飑线
 c:square	Noun	ar:مربع	de:Quadrat	en:square	es:cuadrado	fa:مربع	fr:carré	he:ריבוע	hi:वर्ग,चौकोर	ja:四角,正方形	ko:사각형,정사각형	pt:quadrado	ru:квадрат	tr:kare	ur:مربع	zh:正方形,方形
+c:square-dance	Noun	ar:رقص المربع	de:Square Dance	en:square dance	es:baile cuadrado	fa:رقص مربعی	fr:square dance	he:ריקוד הריבוע	hi:वर्ग नृत्य	ja:スクエアダンス	ko:스퀘어 댄스	pt:square dance	ru:кадриль	tr:kare dans	ur:اسکوائر رقص	zh:方块舞
 c:square-shape	Noun	ar:مربع	de:Quadrat	en:square	es:cuadrado	fa:مربع	fr:carré	he:ריבוע	hi:वर्ग,चौकोर	ja:正方形,四角	ko:정사각형,사각형	pt:quadrado	ru:квадрат	tr:kare	ur:مربع	zh:正方形,方形
 c:squash	Noun	ar:الاسكواش	de:Squash	en:squash	es:squash	fa:اسکواش	fr:squash	he:סקווש	hi:स्क्वैश	ja:スカッシュ	ko:스쿼시	pt:squash	ru:сквош	tr:squash	ur:اسکواش	zh:壁球
 c:squid	Noun	ar:حبار	de:Kalmar,Tintenfisch	en:squid	es:calamar	fa:ماهی مرکب,اسکویید	fr:calmar,calamar	he:דיונון	hi:स्क्विड	ja:イカ	ko:오징어	pt:lula	ru:кальмар	tr:kalamar	ur:اسکوڈ	zh:鱿鱼
@@ -7736,6 +7770,7 @@ c:swim	Verb	ar:سبح	de:schwimmen	en:swim	es:nadar	fa:شنا کرد	fr:nager	he
 c:swimming	Noun	ar:سباحة,عوم	de:Schwimmen	en:swimming	es:natación	fa:شنا	fr:natation	he:שחייה	hi:तैराकी	ja:水泳,スイミング	ko:수영	pt:natação	ru:плавание	tr:yüzme	ur:تیراکی	zh:游泳
 c:swimsuit	Noun	ar:ملابس سباحة	de:Badeanzug	en:swimsuit	es:traje de baño	fa:لباس شنا	fr:maillot de bain	he:בגד ים	hi:स्विमसूट	ja:水着	ko:수영복	pt:maiô	ru:купальник	tr:mayo	ur:تیراکی لباس	zh:泳衣
 c:swing	Noun	ar:رقص السوينغ	de:Swing	en:swing	es:swing	fa:سوینگ	fr:swing	he:סווינג	hi:स्विंग	ja:スウィング	ko:스윙	pt:swing	ru:свинг	tr:swing	ur:سوئنگ	zh:摇摆舞
+c:swing-dance	Noun	ar:سوينغ	de:Swing-Tanz	en:swing dance	es:baile swing	fa:رقص سوینگ	fr:danse swing	he:סווינג	hi:स्विंग नृत्य	ja:スウィングダンス	ko:스윙 댄스	pt:dança swing	ru:свинг	tr:swing dans	ur:سوئنگ رقص	zh:摇摆舞
 c:swing-set	Noun	ar:أرجوحة الملعب	de:Schaukelgestell	en:swing set	es:columpio	fa:تاب	fr:portique de balançoire	he:נדנדה	hi:झूला	ja:ブランコ	ko:그네 세트	pt:balanço	ru:качели	tr:salıncak seti	ur:جھولا	zh:秋千架
 c:switch-network	Noun	ar:محول شبكة	de:Netzwerk-Switch	en:network switch	es:conmutador de red	fa:سوئیچ شبکه	fr:commutateur réseau	he:מתג רשת	hi:नेटवर्क स्विच	ja:ネットワークスイッチ	ko:네트워크 스위치	pt:switch de rede	ru:сетевой коммутатор	tr:ağ anahtarı	ur:نیٹ ورک سوئچ	zh:网络交换机
 c:sword	Noun	ar:سيف	de:Schwert	en:sword	es:espada	fa:شمشیر	fr:épée	he:חרב	hi:तलवार	ja:剣,刀	ko:검,칼	pt:espada	ru:меч	tr:kılıç	ur:تلوار	zh:剑,刀
@@ -7820,6 +7855,7 @@ c:tang-dynasty-china	Noun	ar:سلالة تانغ الصينية	de:Tang-Dynastie
 c:tangent	Noun	ar:مماس	de:Tangente	en:tangent	es:tangente	fa:مماس	fr:tangente	he:משיק	hi:स्पर्शरेखा	ja:接線,タンジェント	ko:접선,탄젠트	pt:tangente	ru:касательная	tr:teğet	ur:مماس	zh:切线,正切
 c:tangent-function	Noun	ar:دالة الظل	de:Tangensfunktion	en:tangent function	es:función tangente	fa:تابع تانژانت	fr:fonction tangente	he:פונקציית טנגנס	hi:स्पर्शज्या फलन	ja:タンジェント関数	ko:탄젠트 함수	pt:função tangente	ru:функция тангенса	tr:tanjant fonksiyonu	ur:ٹینجنٹ تفاعل	zh:正切函数
 c:tango	Noun	ar:تانغو	de:Tango	en:tango	es:tango	fa:تانگو	fr:tango	he:טנגו	hi:टैंगो	ja:タンゴ	ko:탱고	pt:tango	ru:танго	tr:tango	ur:ٹینگو	zh:探戈
+c:tango-dance	Noun	ar:تانغو	de:Tango	en:tango	es:tango	fa:تانگو	fr:tango	he:טנגו	hi:टैंगो	ja:タンゴ	ko:탱고	pt:tango	ru:танго	tr:tango	ur:ٹینگو	zh:探戈
 c:tank	Noun	ar:دبابة	de:Panzer	en:tank	es:tanque	fa:تانک	fr:char,tank	he:טנק	hi:टैंक	ja:戦車	ko:탱크,전차	pt:tanque	ru:танк	tr:tank	ur:ٹینک	zh:坦克
 c:tank-top	Noun	ar:قميص بلا أكمام	de:Tanktop	en:tank top	es:camiseta de tirantes	fa:تانک تاپ	fr:débardeur	he:גופייה	hi:टैंक टॉप	ja:タンクトップ	ko:민소매	pt:regata	ru:майка	tr:atlet	ur:ٹینک ٹاپ	zh:背心
 c:tanner	Noun	ar:دبّاغ	de:Gerber	en:tanner	es:curtidor	fa:دباغ,پوست‌آرا	fr:tanneur	he:בורסקי	hi:चर्मकार,चमार	ja:皮なめし職人	ko:무두장이	pt:curtidor	ru:кожевник,дубильщик	tr:tabakcı,debbağ	ur:چرم ساز,دبّاغ	zh:制革工,皮匠
@@ -7828,6 +7864,7 @@ c:tanzanite-spessartite	Noun	ar:سبسارتيت	de:Spessartit	en:spessartite	es
 c:tao	Noun	ar:الطاو,التاو	de:Dao,Tao	en:tao,dao	es:tao	fa:تائو	fr:tao,dao	he:טאו,דאו	hi:ताओ	ja:道,タオ	ko:도,타오	pt:tao	ru:дао	tr:tao	ur:تاؤ	zh:道
 c:taoism	Noun	ar:الطاوية	de:Taoismus	en:Taoism	es:taoísmo	fa:تائوئیسم	fr:taoïsme	he:דאואיזם	hi:ताओ धर्म	ja:道教	ko:도교	pt:taoismo	ru:даосизм	tr:Taoizm	ur:تاؤ مت	zh:道教
 c:tap-dance	Noun	ar:رقص النقر	de:Stepptanz	en:tap dance	es:claqué	fa:رقص تپ	fr:claquettes	he:ריקוד טאפ	hi:टैप डांस	ja:タップダンス	ko:탭 댄스	pt:sapateado	ru:чечётка	tr:step dansı	ur:ٹیپ ڈانس	zh:踢踏舞
+c:tap-dance-style	Noun	ar:رقص النقر	de:Stepptanz	en:tap dance	es:claqué	fa:رقص تپ	fr:claquette	he:ריקוד טאפ	hi:टैप नृत्य	ja:タップダンス	ko:탭 댄스	pt:sapateado	ru:чечётка	tr:tap dansı	ur:ٹیپ رقص	zh:踢踏舞
 c:tape-measure	Noun	ar:شريط قياس	de:Maßband	en:tape measure	es:cinta métrica	fa:متر نواری	fr:mètre ruban	he:סרט מדידה	hi:टेप मेजर	ja:巻き尺	ko:줄자	pt:fita métrica	ru:рулетка	tr:şerit metre	ur:ٹیپ میجر	zh:卷尺
 c:tape-measure-tool	Noun	ar:شريط قياس	de:Maßband	en:tape measure	es:cinta métrica	fa:متر نواری	fr:ruban à mesurer	he:סרט מידה	hi:मापने का फीता	ja:巻き尺	ko:줄자	pt:fita métrica	ru:рулетка	tr:mezura	ur:پیمائشی فیتہ	zh:卷尺
 c:tapering	Noun	ar:التخفيض التدريجي للتدريب	de:Tapering	en:tapering	es:puesta a punto	fa:تیپرینگ	fr:affûtage	he:טייפרינג	hi:टेपरिंग	ja:テーパリング	ko:테이퍼링	pt:afunilamento	ru:подводка	tr:yükü azaltma	ur:تربیت کم کرنا	zh:减量训练
@@ -8527,6 +8564,7 @@ c:voc-pollution	Noun	ar:المركبات العضوية المتطايرة	de:fl
 c:vocabulary	Noun	ar:مفردات,معجم	de:Wortschatz,Vokabular	en:vocabulary	es:vocabulario	fa:واژگان	fr:vocabulaire	he:אוצר מילים	hi:शब्दावली	ja:語彙	ko:어휘	pt:vocabulário	ru:лексика,словарь	tr:kelime hazinesi,sözcük dağarcığı	ur:الفاظ,ذخیرۂ الفاظ	zh:词汇
 c:vodka	Noun	ar:فودكا	de:Wodka	en:vodka	es:vodka	fa:ودکا	fr:vodka	he:וודקה	hi:वोदका	ja:ウォッカ	ko:보드카	pt:vodka	ru:водка	tr:votka	ur:ووڈکا	zh:伏特加
 c:voguing	Noun	ar:رقص الفوغينغ	de:Voguing	en:voguing	es:voguing	fa:وگینگ	fr:voguing	he:ווגינג	hi:वोगिंग	ja:ヴォーギング	ko:보깅	pt:voguing	ru:вогинг	tr:voguing	ur:واگنگ	zh:时尚舞
+c:voguing-dance	Noun	ar:فوغينغ	de:Voguing	en:voguing	es:voguing	fa:وگینگ	fr:voguing	he:ווגינג	hi:वोगिंग	ja:ヴォーギング	ko:보깅	pt:voguing	ru:вогинг	tr:voguing	ur:ووگنگ	zh:Vogue舞
 c:voice	Noun	ar:صوت	de:Stimme	en:voice	es:voz	fa:صدا	fr:voix	he:קול	hi:आवाज़,स्वर	ja:声	ko:목소리	pt:voz	ru:голос	tr:ses	ur:آواز	zh:声音,嗓音
 c:voice-grammar	Noun	ar:صيغة الفعل	de:Genus verbi	en:grammatical voice	es:voz gramatical	fa:معلوم و مجهول	fr:voix grammaticale	he:בניין	hi:वाच्य	ja:態	ko:태	pt:voz verbal	ru:залог	tr:çatı	ur:فاعلی یا مفعولی	zh:语态
 c:void-cosmos	Noun	ar:الفراغ الكوني	de:kosmische Leere	en:cosmic void	es:vacío cósmico	fa:خلاء کیهانی	fr:vide cosmique	he:ריק קוסמי	hi:ब्रह्मांडीय शून्य	ja:宇宙の空洞	ko:우주 공동	pt:vazio cósmico	ru:войд	tr:kozmik boşluk	ur:کائناتی خلا	zh:宇宙空洞
@@ -8564,6 +8602,7 @@ c:wall-clock	Noun	ar:ساعة حائط	de:Wanduhr	en:wall clock	es:reloj de pare
 c:walnut	Noun	ar:جوز	de:Walnuss	en:walnut	es:nuez	fa:گردو	fr:noix	he:אגוז	hi:अखरोट	ja:クルミ	ko:호두	pt:noz	ru:грецкий орех	tr:ceviz	ur:اخروٹ	zh:核桃
 c:walrus	Noun	ar:فظ	de:Walross	en:walrus	es:morsa	fa:گراز دریایی	fr:morse	he:ניבתן	hi:वालरस	ja:セイウチ	ko:바다코끼리	pt:morsa	ru:морж	tr:mors	ur:والرس	zh:海象
 c:waltz	Noun	ar:فالس	de:Walzer	en:waltz	es:vals	fa:والس	fr:valse	he:ואלס	hi:वाल्ट्ज़	ja:ワルツ	ko:왈츠	pt:valsa	ru:вальс	tr:vals	ur:والٹز	zh:华尔兹
+c:waltz-dance	Noun	ar:فالس	de:Walzer	en:waltz	es:vals	fa:والس	fr:valse	he:ואלס	hi:वाल्ट्ज	ja:ワルツ	ko:왈츠	pt:valsa	ru:вальс	tr:vals	ur:والٹز	zh:华尔兹
 c:wan	Noun	ar:شبكة واسعة	de:Weitverkehrsnetz	en:wide area network	es:red de área amplia	fa:شبکه گسترده	fr:réseau étendu	he:רשת רחבה	hi:वाइड एरिया नेटवर्क	ja:ワイドエリアネットワーク	ko:광역 통신망	pt:rede de longa distância	ru:глобальная сеть	tr:geniş alan ağı	ur:وائڈ ایریا نیٹ ورک	zh:广域网
 c:wander	Verb	ar:تجول,هام	de:wandern,umherstreifen	en:wander	es:vagar,deambular	fa:سرگردان بودن,پرسه زدن	fr:errer,vagabonder	he:לנדוד	hi:भटकना	ja:さまよう	ko:헤매다,배회하다	pt:vagar	ru:блуждать,бродить	tr:dolaşmak,başıboş gezmek	ur:بھٹکنا	zh:漫游,徘徊
 c:war	Noun	ar:حرب	de:Krieg	en:war	es:guerra	fa:جنگ	fr:guerre	he:מלחמה	hi:युद्ध	ja:戦争	ko:전쟁	pt:guerra	ru:война	tr:savaş	ur:جنگ	zh:战争
@@ -8852,4 +8891,5 @@ c:zooplankton	Noun	ar:عوالق حيوانية	de:Zooplankton	en:zooplankton	es
 c:zoroastrianism	Noun	ar:الزرادشتية	de:Zoroastrismus	en:Zoroastrianism	es:zoroastrismo	fa:زرتشتی	fr:zoroastrisme	he:זורואסטריזם	hi:पारसी धर्म	ja:ゾロアスター教	ko:조로아스터교	pt:zoroastrismo	ru:зороастризм	tr:Zerdüştlük	ur:زرتشتی مذہب	zh:琐罗亚斯德教
 c:zouk	Noun	ar:رقص الزوك	de:Zouk	en:zouk	es:zouk	fa:زوک	fr:zouk	he:זוק	hi:ज़ूक	ja:ズーク	ko:주크	pt:zouk	ru:зук	tr:zouk	ur:زوک	zh:祖克舞
 c:zucchini	Noun	ar:كوسا	de:Zucchini	en:zucchini,courgette	es:calabacín	fa:کدوی سبز	fr:courgette	he:קישוא	hi:तोरई	ja:ズッキーニ	ko:주키니	pt:abobrinha	ru:кабачок	tr:kabak	ur:توری	zh:西葫芦
+c:zumba	Noun	ar:زومبا	de:Zumba	en:zumba	es:zumba	fa:زومبا	fr:zumba	he:זומבה	hi:ज़ुम्बा	ja:ズンバ	ko:줌바	pt:zumba	ru:зумба	tr:zumba	ur:زومبا	zh:尊巴
 c:zygote	Noun	ar:لاقحة,بيضة ملقحة	de:Zygote	en:zygote	es:cigoto,zigoto	fa:تخم,زیگوت	fr:zygote	he:זיגוטה	hi:युग्मनज	ja:接合子	ko:접합자	pt:zigoto	ru:зигота	tr:zigot	ur:زائگوٹ,تخم	zh:合子,受精卵
