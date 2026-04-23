@@ -215,7 +215,15 @@ export class GraphEngine {
 	private resizeObserver: ResizeObserver | null = null;
 
 	// 3D Camera
-	private camRotX: number = 0; // pitch (degrees)
+	// DEFAULT_PITCH is the resting camera tilt. With pitch=0 the scene is
+	// viewed head-on and auto-rotation around Y-axis appears flat (nodes
+	// just shift left/right in 2D). A small negative pitch tilts the
+	// "floor" of the universe away from the viewer so Y-rotation becomes
+	// a visible orbital motion — the universe rotates around an imaginary
+	// vertical axis through its center, like a spinning globe viewed from
+	// slightly above.
+	private static readonly DEFAULT_PITCH = -18; // degrees — tune to taste
+	private camRotX: number = GraphEngine.DEFAULT_PITCH; // pitch (degrees)
 	private camRotY: number = 0; // yaw (degrees)
 	private camRotZ: number = 0; // roll (degrees)
 	private camPosX: number = 0; // camera position in graph space
@@ -1039,13 +1047,16 @@ export class GraphEngine {
 	}
 
 	resetTilt(): void {
-		// Animate back to flat
+		// Animate back to the default orbital tilt (not flat zero — pitch=0
+		// would hide the Y-axis rotation and make the universe look like a
+		// flat fan). See DEFAULT_PITCH for the resting pose rationale.
 		const startX = this.camRotX;
 		const startY = this.camRotY;
 		const startZ = this.camRotZ;
 		const startPosX = this.camPosX;
 		const startPosY = this.camPosY;
 		const startPosZ = this.camPosZ;
+		const targetX = GraphEngine.DEFAULT_PITCH;
 		const frames = 20;
 		let frame = 0;
 
@@ -1053,7 +1064,7 @@ export class GraphEngine {
 			frame++;
 			const t = frame / frames;
 			const ease = t * t * (3 - 2 * t); // smoothstep
-			this.camRotX = startX * (1 - ease);
+			this.camRotX = startX + (targetX - startX) * ease;
 			this.camRotY = startY * (1 - ease);
 			this.camRotZ = startZ * (1 - ease);
 			this.camPosX = startPosX * (1 - ease);
@@ -1063,7 +1074,7 @@ export class GraphEngine {
 			if (frame < frames) {
 				requestAnimationFrame(animate);
 			} else {
-				this.camRotX = 0;
+				this.camRotX = targetX;
 				this.camRotY = 0;
 				this.camRotZ = 0;
 				this.camPosX = 0;
@@ -1076,7 +1087,12 @@ export class GraphEngine {
 	}
 
 	isRotated(): boolean {
-		return Math.abs(this.camRotX) > 1 || Math.abs(this.camRotY) > 1 || Math.abs(this.camRotZ) > 1;
+		// Treat the default orbital pitch as "at rest" so the axis-gizmo
+		// and reset button only appear once the user has moved the camera
+		// beyond that baseline.
+		return Math.abs(this.camRotX - GraphEngine.DEFAULT_PITCH) > 1
+			|| Math.abs(this.camRotY) > 1
+			|| Math.abs(this.camRotZ) > 1;
 	}
 
 	// ─── Layout Modes ──────────────────────────────────────────
