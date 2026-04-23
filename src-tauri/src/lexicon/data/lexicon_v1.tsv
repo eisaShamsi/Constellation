@@ -229,6 +229,7 @@ c:amplitude-amplification	Noun	ar:تضخيم السعة الكمومية	de:Ampl
 c:amplitude-sound	Noun	ar:سعة الصوت	de:Amplitude	en:amplitude	es:amplitud	fa:دامنه صدا	fr:amplitude	he:אמפליטודה	hi:आयाम	ja:振幅	ko:진폭	pt:amplitude	ru:амплитуда	tr:genlik	ur:دامنہ	zh:振幅
 c:amplitude-wave	Noun	ar:سعة الموجة	de:Amplitude	en:amplitude	es:amplitud	fa:دامنه موج	fr:amplitude	he:אמפליטודה	hi:आयाम	ja:振幅	ko:진폭	pt:amplitude	ru:амплитуда	tr:genlik	ur:وسعت	zh:振幅
 c:amsterdam	Noun	ar:أمستردام	de:Amsterdam	en:Amsterdam	es:Ámsterdam	fa:آمستردام	fr:Amsterdam	he:אמסטרדם	hi:एम्स्टर्डम	ja:アムステルダム	ko:암스테르담	pt:Amsterdã,Amesterdão	ru:Амстердам	tr:Amsterdam	ur:ایمسٹرڈیم	zh:阿姆斯特丹
+c:amsterdam-capital	Noun	ar:أمستردام	de:Amsterdam	en:Amsterdam	es:Ámsterdam	fa:آمستردام	fr:Amsterdam	he:אמסטרדם	hi:एम्स्टर्डम	ja:アムステルダム	ko:암스테르담	pt:Amsterdã	ru:Амстердам	tr:Amsterdam	ur:ایمسٹرڈیم	zh:阿姆斯特丹
 c:amulet	Noun	ar:تميمة,حرز	de:Amulett	en:amulet,charm	es:amuleto	fa:تعویذ	fr:amulette	he:קמע	hi:ताबीज	ja:お守り,アミュレット	ko:부적	pt:amuleto	ru:амулет	tr:muska	ur:تعویذ	zh:护身符,辟邪物
 c:amun	Noun	ar:آمون	de:Amun	en:Amun	es:Amón	fa:آمون	fr:Amon	he:אמון	hi:आमुन	ja:アメン	ko:아문	pt:Amon	ru:Амон	tr:Amun	ur:آمون	zh:阿蒙
 c:amur	Noun	ar:الأمور,نهر الأمور	de:Amur	en:Amur,Amur River	es:Amur,río Amur	fa:آمور,رود آمور	fr:Amour	he:אמור,נהר האמור	hi:अमूर नदी	ja:アムール川	ko:아무르강	pt:Amur,rio Amur	ru:Амур	tr:Amur,Amur Nehri	ur:دریائے آمور	zh:黑龙江,阿穆尔河
@@ -281,6 +282,7 @@ c:animated-film	Noun	ar:فيلم رسوم متحركة,فيلم كرتوني	de:
 c:animism	Noun	ar:الروحانية	de:Animismus	en:animism	es:animismo	fa:جان‌پرستی	fr:animisme	he:אנימיזם	hi:सर्वात्मवाद	ja:アニミズム	ko:정령 신앙	pt:animismo	ru:анимизм	tr:animizm	ur:روح پرستی	zh:万物有灵论
 c:anion	Noun	ar:أنيون	de:Anion	en:anion	es:anión	fa:آنیون	fr:anion	he:אניון	hi:ऋणायन	ja:陰イオン	ko:음이온	pt:ânion	ru:анион	tr:anyon	ur:انائن	zh:阴离子
 c:ankara	Noun	ar:أنقرة	de:Ankara	en:Ankara	es:Ankara	fa:آنکارا	fr:Ankara	he:אנקרה	hi:अंकारा	ja:アンカラ	ko:앙카라	pt:Ancara	ru:Анкара	tr:Ankara	ur:انقرہ	zh:安卡拉
+c:ankara-capital	Noun	ar:أنقرة	de:Ankara	en:Ankara	es:Ankara	fa:آنکارا	fr:Ankara	he:אנקרה	hi:अंकारा	ja:アンカラ	ko:앙카라	pt:Ancara	ru:Анкара	tr:Ankara	ur:انقرہ	zh:安卡拉
 c:ankh	Noun	ar:عنخ	de:Anch	en:ankh	es:ankh	fa:آنخ	fr:ankh	he:ענח	hi:अंख	ja:アンク	ko:앙크	pt:ankh	ru:анх	tr:ankh	ur:انخ	zh:安卡
 c:ankle	Noun	ar:كاحل	de:Knöchel,Fußgelenk	en:ankle	es:tobillo	fa:مچ پا	fr:cheville	he:קרסול	hi:टखना	ja:足首	ko:발목	pt:tornozelo	ru:лодыжка	tr:ayak bileği	ur:ٹخنہ	zh:脚踝,踝
 c:anklet	Noun	ar:خلخال,سوار الكاحل	de:Fußkettchen,Fußkette	en:anklet,ankle bracelet	es:tobillera	fa:پابند,خلخال	fr:bracelet de cheville	he:צמיד רגל	hi:पायल	ja:アンクレット	ko:발찌	pt:tornozeleira	ru:браслет на ногу,ножной браслет	tr:halhal,ayak bileziği	ur:پازیب	zh:脚链,脚镯
@@ -459,6 +461,7 @@ c:atac-seq	Noun	ar:تقنية ATAC-Seq	de:ATAC-Sequenzierung	en:ATAC-Seq	es:ATAC
 c:atacama-desert	Noun	ar:صحراء أتاكاما	de:Atacama-Wüste	en:Atacama desert	es:desierto de Atacama	fa:صحرای آتاکاما	fr:désert d'Atacama	he:מדבר אטקמה	hi:अटाकामा रेगिस्तान	ja:アタカマ砂漠	ko:아타카마 사막	pt:deserto do Atacama	ru:пустыня Атакама	tr:Atacama çölü	ur:اٹاکاما صحرا	zh:阿塔卡马沙漠
 c:atemoya	Noun	ar:اتيمويا	de:Atemoya	en:atemoya	es:atemoya	fa:آتموا	fr:atemoya	he:אטמויה	hi:एटेमोया	ja:アテモヤ	ko:아테모야	pt:atemoia	ru:атемойя	tr:atemoya	ur:ایٹیمویا	zh:凤梨释迦
 c:athens	Noun	ar:أثينا	de:Athen	en:Athens	es:Atenas	fa:آتن	fr:Athènes	he:אתונה	hi:एथेंस	ja:アテネ	ko:아테네	pt:Atenas	ru:Афины	tr:Atina	ur:ایتھنز	zh:雅典
+c:athens-capital	Noun	ar:أثينا	de:Athen	en:Athens	es:Atenas	fa:آتن	fr:Athènes	he:אתונה	hi:एथेंस	ja:アテネ	ko:아테네	pt:Atenas	ru:Афины	tr:Atina	ur:ایتھنز	zh:雅典
 c:athlete	Noun	ar:رياضي	de:Athlet,Sportler	en:athlete	es:atleta,deportista	fa:ورزشکار	fr:athlète,sportif	he:ספורטאי,אתלט	hi:खिलाड़ी,एथलीट	ja:選手,アスリート	ko:운동선수,선수	pt:atleta,esportista	ru:спортсмен,атлет	tr:sporcu,atlet	ur:کھلاڑی,ایتھلیٹ	zh:运动员
 c:atlantic	Noun	ar:المحيط الأطلسي	de:Atlantik,Atlantischer Ozean	en:Atlantic,Atlantic Ocean	es:Atlántico,Océano Atlántico	fa:اقیانوس اطلس	fr:Atlantique,Océan Atlantique	he:האוקיינוס האטלנטי	hi:अटलांटिक महासागर	ja:大西洋	ko:대서양	pt:Atlântico,Oceano Atlântico	ru:Атлантический океан	tr:Atlas Okyanusu	ur:بحر اوقیانوس	zh:大西洋
 c:atlantic-ocean	Noun	ar:المحيط الأطلسي	de:Atlantischer Ozean	en:Atlantic Ocean	es:océano Atlántico	fa:اقیانوس اطلس	fr:océan Atlantique	he:האוקיינוס האטלנטי	hi:अटलांटिक महासागर	ja:大西洋	ko:대서양	pt:oceano Atlântico	ru:Атлантический океан	tr:Atlantik Okyanusu	ur:بحر اوقیانوس	zh:大西洋
@@ -543,6 +546,7 @@ c:badminton	Noun	ar:بادمنتون	de:Badminton	en:badminton	es:bádminton	fa:
 c:bag	Noun	ar:حقيبة,كيس	de:Tasche	en:bag	es:bolsa	fa:کیف,ساک	fr:sac	he:תיק,שקית	hi:थैला,बैग	ja:鞄,バッグ	ko:가방	pt:saco,bolsa	ru:сумка	tr:çanta	ur:تھیلا,بیگ	zh:袋,包
 c:bagel	Noun	ar:بيغل	de:Bagel	en:bagel	es:bagel	fa:بیگل	fr:bagel	he:בייגל	hi:बेगल	ja:ベーグル	ko:베이글	pt:bagel	ru:бейгл	tr:bagel	ur:بیگل	zh:百吉饼
 c:baghdad	Noun	ar:بغداد	de:Bagdad	en:Baghdad	es:Bagdad	fa:بغداد	fr:Bagdad	he:בגדאד	hi:बगदाद	ja:バグダード,バグダッド	ko:바그다드	pt:Bagdá	ru:Багдад	tr:Bağdat	ur:بغداد	zh:巴格达
+c:baghdad-capital	Noun	ar:بغداد	de:Bagdad	en:Baghdad	es:Bagdad	fa:بغداد	fr:Bagdad	he:בגדאד	hi:बगदाद	ja:バグダード	ko:바그다드	pt:Bagdá	ru:Багдад	tr:Bağdat	ur:بغداد	zh:巴格达
 c:bagpipe	Noun	ar:قربة الموسيقى	de:Dudelsack	en:bagpipe	es:gaita	fa:نی انبان	fr:cornemuse	he:חליל השק	hi:बैगपाइप	ja:バグパイプ	ko:백파이프	pt:gaita de foles	ru:волынка	tr:gayda	ur:مشک باجا	zh:风笛
 c:bagpipes	Noun	ar:القربة,مزمار القربة	de:Dudelsack	en:bagpipes	es:gaita	fa:نی‌انبان	fr:cornemuse	he:חמת חלילים	hi:बैगपाइप,मशक बाजा	ja:バグパイプ	ko:백파이프	pt:gaita de foles	ru:волынка	tr:gayda,tulum	ur:مشکی بین,بیگ پائپ	zh:风笛,苏格兰风笛
 c:baguette	Noun	ar:باجيت	de:Baguette	en:baguette	es:baguete	fa:باگت	fr:baguette	he:באגט	hi:बैगेट	ja:バゲット	ko:바게트	pt:baguete	ru:багет	tr:baget	ur:باگٹ	zh:法棍
@@ -575,6 +579,7 @@ c:bandwidth	Noun	ar:عرض النطاق الترددي	de:Bandbreite	en:bandwidt
 c:bandwidth-internet	Noun	ar:عرض النطاق	de:Bandbreite	en:bandwidth	es:ancho de banda	fa:پهنای باند	fr:largeur de bande	he:רוחב פס	hi:बैंडविड्थ	ja:帯域幅	ko:대역폭	pt:largura de banda	ru:пропускная способность	tr:bant genişliği	ur:بینڈوتھ	zh:带宽
 c:bangalore	Noun	ar:بنغالور	de:Bangalore,Bengaluru	en:Bangalore,Bengaluru	es:Bangalore	fa:بنگلور	fr:Bangalore	he:בנגלור	hi:बंगलुरु	ja:バンガロール	ko:벵갈루루	pt:Bangalore	ru:Бангалор	tr:Bangalor	ur:بنگلور	zh:班加罗尔
 c:bangkok	Noun	ar:بانكوك	de:Bangkok	en:Bangkok	es:Bangkok	fa:بانکوک	fr:Bangkok	he:בנגקוק	hi:बैंकॉक	ja:バンコク	ko:방콕	pt:Bangkok,Banguecoque	ru:Бангкок	tr:Bangkok	ur:بنکاک	zh:曼谷
+c:bangkok-capital	Noun	ar:بانكوك	de:Bangkok	en:Bangkok	es:Bangkok	fa:بانکوک	fr:Bangkok	he:בנגקוק	hi:बैंकॉक	ja:バンコク	ko:방콕	pt:Banguecoque	ru:Бангкок	tr:Bangkok	ur:بنکاک	zh:曼谷
 c:bangladesh	Noun	ar:بنغلاديش	de:Bangladesch	en:Bangladesh	es:Bangladés,Bangladesh	fa:بنگلادش	fr:Bangladesh	he:בנגלדש	hi:बांग्लादेश	ja:バングラデシュ	ko:방글라데시	pt:Bangladesh	ru:Бангладеш	tr:Bangladeş	ur:بنگلہ دیش	zh:孟加拉国
 c:bangle	Noun	ar:سوار	de:Armreif	en:bangle,bangle bracelet	es:brazalete,pulsera rígida	fa:دستبند	fr:bracelet rigide,jonc	he:צמיד	hi:चूड़ी	ja:バングル	ko:뱅글	pt:pulseira rígida,bracelete	ru:браслет,обруч	tr:bilezik	ur:چوڑی	zh:手镯
 c:banjo	Noun	ar:بانجو	de:Banjo	en:banjo	es:banjo	fa:بانجو	fr:banjo	he:בנג'ו	hi:बैंजो	ja:バンジョー	ko:밴조	pt:banjo	ru:банджо	tr:banço	ur:بینجو	zh:班卓琴
@@ -676,6 +681,7 @@ c:behavior	Noun	ar:سلوك,تصرف	de:Verhalten	en:behavior,behaviour	es:compo
 c:behavioral-economics	Noun	ar:الاقتصاد السلوكي	de:Verhaltensökonomik	en:behavioral economics	es:economía conductual	fa:اقتصاد رفتاری	fr:économie comportementale	he:כלכלה התנהגותית	hi:व्यावहारिक अर्थशास्त्र	ja:行動経済学	ko:행동경제학	pt:economia comportamental	ru:поведенческая экономика	tr:davranışsal iktisat	ur:رویاتی معاشیات	zh:行为经济学
 c:beige	Noun	ar:بيج	de:Beige	en:beige	es:beige,beis	fa:بژ	fr:beige	he:בז'	hi:बेज	ja:ベージュ	ko:베이지색	pt:bege	ru:бежевый	tr:bej	ur:بیج	zh:米色
 c:beijing	Noun	ar:بكين	de:Peking,Beijing	en:Beijing,Peking	es:Pekín,Beijing	fa:پکن	fr:Pékin,Beijing	he:בייג'ינג	hi:बीजिंग	ja:北京,ペキン	ko:베이징,북경	pt:Pequim,Beijing	ru:Пекин	tr:Pekin	ur:بیجنگ	zh:北京
+c:beijing-capital	Noun	ar:بكين	de:Peking	en:Beijing	es:Pekín	fa:پکن	fr:Pékin	he:בייג'ינג	hi:बीजिंग	ja:北京	ko:베이징	pt:Pequim	ru:Пекин	tr:Pekin	ur:بیجنگ	zh:北京
 c:belfry	Noun	ar:برج الجرس	de:Glockenturm	en:belfry	es:beffroi	fa:جایگاه زنگ	fr:clocher	he:מגדל הפעמון	hi:घंटाघर	ja:鐘楼	ko:종각	pt:campanário	ru:звонница	tr:çan çatısı	ur:گھنٹے کا مینار	zh:钟亭
 c:belief	Noun	ar:اعتقاد,عقيدة	de:Überzeugung	en:belief	es:creencia	fa:باور,عقیده	fr:croyance	he:אמונה	hi:विश्वास,मान्यता	ja:信念	ko:신념,믿음	pt:crença	ru:убеждение	tr:inanç	ur:عقیدہ	zh:信念
 c:belief-perseverance	Noun	ar:ثبات المعتقد	de:Überzeugungsbeharrlichkeit	en:belief perseverance	es:perseverancia de creencias	fa:پافشاری بر باور	fr:persévérance des croyances	he:התמדת אמונות	hi:विश्वास दृढ़ता	ja:信念の固執	ko:신념 고수	pt:perseverança de crenças	ru:устойчивость убеждений	tr:inanç sebatı	ur:عقیدے کی پائیداری	zh:信念坚持
@@ -692,7 +698,9 @@ c:beret	Noun	ar:قبعة باريه	de:Baskenmütze	en:beret	es:boina	fa:کلا�
 c:bering-sea	Noun	ar:بحر بيرنغ	de:Beringmeer	en:Bering Sea	es:Mar de Bering	fa:دریای برینگ	fr:Mer de Béring	he:ים ברינג	hi:बेरिंग सागर	ja:ベーリング海	ko:베링해	pt:Mar de Bering	ru:Берингово море	tr:Bering Denizi	ur:بحیرہ بیرنگ	zh:白令海
 c:bering-sea-body	Noun	ar:بحر بيرنغ	de:Beringmeer	en:Bering Sea	es:mar de Bering	fa:دریای برینگ	fr:mer de Béring	he:ים ברינג	hi:बेरिंग सागर	ja:ベーリング海	ko:베링해	pt:mar de Bering	ru:Берингово море	tr:Bering Denizi	ur:بیرنگ سمندر	zh:白令海
 c:berlin	Noun	ar:برلين	de:Berlin	en:Berlin	es:Berlín	fa:برلین	fr:Berlin	he:ברלין	hi:बर्लिन	ja:ベルリン	ko:베를린	pt:Berlim	ru:Берлин	tr:Berlin	ur:برلن	zh:柏林
+c:berlin-capital	Noun	ar:برلين	de:Berlin	en:Berlin	es:Berlín	fa:برلین	fr:Berlin	he:ברלין	hi:बर्लिन	ja:ベルリン	ko:베를린	pt:Berlim	ru:Берлин	tr:Berlin	ur:برلن	zh:柏林
 c:berlin-wall-fall	Noun	ar:سقوط جدار برلين	de:Mauerfall	en:fall of the Berlin Wall	es:caída del Muro de Berlín	fa:سقوط دیوار برلین	fr:chute du mur de Berlin	he:נפילת חומת ברלין	hi:बर्लिन की दीवार का गिरना	ja:ベルリンの壁崩壊	ko:베를린 장벽 붕괴	pt:queda do Muro de Berlim	ru:падение Берлинской стены	tr:Berlin Duvarı'nın yıkılışı	ur:دیوار برلن کا گرنا	zh:柏林墙倒塌
+c:bern-capital	Noun	ar:برن	de:Bern	en:Bern	es:Berna	fa:برن	fr:Berne	he:ברן	hi:बर्न	ja:ベルン	ko:베른	pt:Berna	ru:Берн	tr:Bern	ur:برن	zh:伯尔尼
 c:bert-nlp	Noun	ar:نموذج بيرت	de:BERT-Modell	en:BERT model	es:modelo BERT	fa:مدل BERT	fr:modèle BERT	he:מודל BERT	hi:BERT मॉडल	ja:BERTモデル	ko:BERT 모델	pt:modelo BERT	ru:модель BERT	tr:BERT modeli	ur:BERT ماڈل	zh:BERT模型
 c:beryllium	Noun	ar:بيريليوم	de:Beryllium	en:beryllium	es:berilio	fa:بریلیم	fr:béryllium	he:בריליום	hi:बेरिलियम	ja:ベリリウム	ko:베릴륨	pt:berílio	ru:бериллий	tr:berilyum	ur:بیریلیم	zh:铍
 c:besiege	Verb	ar:حاصر,يحاصر	de:belagern	en:besiege	es:sitiar	fa:محاصره کردن	fr:assiéger	he:לצור	hi:घेराबंदी करना	ja:包囲する	ko:포위하다	pt:sitiar	ru:осаждать	tr:kuşatmak	ur:محاصرہ کرنا	zh:围攻
@@ -933,11 +941,14 @@ c:brownfield	Noun	ar:الأراضي الملوثة	de:Brachfläche	en:brownfield
 c:brownie	Noun	ar:براوني	de:Brownie	en:brownie	es:brownie	fa:براونی	fr:brownie	he:בראוני	hi:ब्राउनी	ja:ブラウニー	ko:브라우니	pt:brownie	ru:брауни	tr:brownie	ur:براؤنی	zh:布朗尼
 c:browser	Noun	ar:متصفح	de:Browser,Webbrowser	en:browser	es:navegador	fa:مرورگر	fr:navigateur	he:דפדפן	hi:ब्राउज़र	ja:ブラウザ,ウェブブラウザ	ko:브라우저,웹 브라우저	pt:navegador	ru:браузер,обозреватель	tr:tarayıcı,web tarayıcısı	ur:براؤزر	zh:浏览器
 c:brush	Noun	ar:فرشاة	de:Bürste,Pinsel	en:brush	es:cepillo,pincel	fa:برس,قلم مو	fr:brosse,pinceau	he:מברשת	hi:ब्रश	ja:ブラシ,刷毛	ko:브러시,솔	pt:escova,pincel	ru:щётка,кисть	tr:fırça	ur:برش	zh:刷子,毛刷
+c:brussels-capital	Noun	ar:بروكسل	de:Brüssel	en:Brussels	es:Bruselas	fa:بروکسل	fr:Bruxelles	he:בריסל	hi:ब्रसेल्स	ja:ブリュッセル	ko:브뤼셀	pt:Bruxelas	ru:Брюссель	tr:Brüksel	ur:برسلز	zh:布鲁塞尔
 c:brussels-sprouts	Noun	ar:براعم بروكسل	de:Rosenkohl	en:Brussels sprouts	es:coles de Bruselas	fa:کلم بروکسل	fr:chou de Bruxelles	he:נצרי בריסל	hi:ब्रसेल्स स्प्राउट	ja:芽キャベツ	ko:방울양배추	pt:couves-de-bruxelas	ru:брюссельская капуста	tr:Brüksel lahanası	ur:برسلز اسپراؤٹ	zh:抱子甘蓝
+c:bucharest-capital	Noun	ar:بوخارست	de:Bukarest	en:Bucharest	es:Bucarest	fa:بخارست	fr:Bucarest	he:בוקרשט	hi:बुखारेस्ट	ja:ブカレスト	ko:부쿠레슈티	pt:Bucareste	ru:Бухарест	tr:Bükreş	ur:بخارسٹ	zh:布加勒斯特
 c:bucket	Noun	ar:دلو	de:Eimer	en:bucket,pail	es:cubo,balde	fa:سطل	fr:seau	he:דלי	hi:बाल्टी	ja:バケツ	ko:양동이,버킷	pt:balde	ru:ведро	tr:kova	ur:بالٹی	zh:桶,水桶
 c:bucket-home	Noun	ar:دلو,سطل	de:Eimer	en:bucket,pail	es:cubo,balde	fa:سطل	fr:seau	he:דלי	hi:बाल्टी	ja:バケツ	ko:양동이	pt:balde	ru:ведро	tr:kova	ur:بالٹی	zh:水桶
 c:buckling-struct	Noun	ar:الانبعاج الهيكلي	de:Knickung	en:structural buckling	es:pandeo estructural	fa:کمانش سازه‌ای	fr:flambement	he:כיפוף אלסטי	hi:संरचनात्मक बकलिंग	ja:座屈	ko:좌굴	pt:flambagem estrutural	ru:потеря устойчивости	tr:burkulma	ur:ساختاری بکلنگ	zh:屈曲
 c:buckwheat	Noun	ar:الحنطة السوداء	de:Buchweizen	en:buckwheat	es:alforfón	fa:گندم سیاه	fr:sarrasin	he:כוסמת	hi:कुट्टू	ja:ソバ	ko:메밀	pt:trigo sarraceno	ru:гречиха	tr:karabuğday	ur:کٹو	zh:荞麦
+c:budapest-capital	Noun	ar:بودابست	de:Budapest	en:Budapest	es:Budapest	fa:بوداپست	fr:Budapest	he:בודפשט	hi:बुडापेस्ट	ja:ブダペスト	ko:부다페스트	pt:Budapeste	ru:Будапешт	tr:Budapeşte	ur:بوڈاپسٹ	zh:布达佩斯
 c:budgerigar	Noun	ar:بدغيغار,ببغاء استرالي	de:Wellensittich	en:budgerigar,budgie	es:periquito australiano	fa:مرغ عشق	fr:perruche ondulée	he:בודגריגר	hi:बजरीगर	ja:セキセイインコ	ko:사랑새	pt:periquito-australiano	ru:волнистый попугайчик	tr:muhabbet kuşu	ur:بجریگر	zh:虎皮鹦鹉
 c:budget	Noun	ar:ميزانية	de:Budget,Haushalt	en:budget	es:presupuesto	fa:بودجه	fr:budget	he:תקציב	hi:बजट	ja:予算	ko:예산	pt:orçamento	ru:бюджет	tr:bütçe	ur:بجٹ	zh:预算
 c:buenos-aires	Noun	ar:بوينس آيرس	de:Buenos Aires	en:Buenos Aires	es:Buenos Aires	fa:بوئنوس آیرس	fr:Buenos Aires	he:בואנוס איירס	hi:ब्यूनस आयर्स	ja:ブエノスアイレス	ko:부에노스아이레스	pt:Buenos Aires	ru:Буэнос-Айрес	tr:Buenos Aires	ur:بیونس آئرس	zh:布宜诺斯艾利斯
@@ -1001,6 +1012,7 @@ c:caecilian	Noun	ar:حيوان السيسيليان	de:Blindwühle	en:caecilian	
 c:caiman	Noun	ar:كايمان	de:Kaiman	en:caiman	es:caimán	fa:کایمان	fr:caïman	he:קיימן	hi:कैमान	ja:カイマン	ko:카이만	pt:jacaré	ru:кайман	tr:kayman	ur:کیمان	zh:凯门鳄
 c:caimito	Noun	ar:كايميتو,تفاح النجمة	de:Sternapfel	en:caimito,star apple	es:caimito	fa:سیب ستاره	fr:caïmite	he:תפוח כוכבים	hi:स्टार एपल	ja:スターアップル	ko:스타애플	pt:caimito	ru:каймито	tr:yıldız elması	ur:ستارہ سیب	zh:星苹果
 c:cairo	Noun	ar:القاهرة	de:Kairo	en:Cairo	es:El Cairo	fa:قاهره	fr:Le Caire	he:קהיר	hi:काहिरा	ja:カイロ	ko:카이로	pt:Cairo	ru:Каир	tr:Kahire	ur:قاہرہ	zh:开罗
+c:cairo-capital	Noun	ar:القاهرة	de:Kairo	en:Cairo	es:El Cairo	fa:قاهره	fr:Le Caire	he:קהיר	hi:काहिरा	ja:カイロ	ko:카이로	pt:Cairo	ru:Каир	tr:Kahire	ur:قاہرہ	zh:开罗
 c:cake	Noun	ar:كعكة,تورتة	de:Kuchen,Torte	en:cake	es:pastel,tarta	fa:کیک	fr:gâteau	he:עוגה	hi:केक	ja:ケーキ	ko:케이크	pt:bolo	ru:торт	tr:pasta,kek	ur:کیک	zh:蛋糕
 c:calcite-mineral	Noun	ar:كالسيت	de:Calcit	en:calcite	es:calcita	fa:کلسیت	fr:calcite	he:קלציט	hi:कैल्साइट	ja:方解石	ko:방해석	pt:calcita	ru:кальцит	tr:kalsit	ur:کیلسائٹ	zh:方解石
 c:calcium	Noun	ar:كالسيوم	de:Kalzium,Calcium	en:calcium	es:calcio	fa:کلسیم	fr:calcium	he:סידן	hi:कैल्शियम	ja:カルシウム	ko:칼슘	pt:cálcio	ru:кальций	tr:kalsiyum	ur:کیلشیم	zh:钙
@@ -1024,6 +1036,7 @@ c:campanile	Noun	ar:برج الاجراس	de:Campanile	en:campanile	es:campanari
 c:canada	Noun	ar:كندا	de:Kanada	en:Canada	es:Canadá	fa:کانادا	fr:Canada	he:קנדה	hi:कनाडा	ja:カナダ	ko:캐나다	pt:Canadá	ru:Канада	tr:Kanada	ur:کینیڈا	zh:加拿大
 c:canary	Noun	ar:كناري	de:Kanarienvogel	en:canary	es:canario	fa:قناری	fr:canari	he:כנרית	hi:कनारी	ja:カナリア	ko:카나리아	pt:canário	ru:канарейка	tr:kanarya	ur:کناری	zh:金丝雀
 c:canberra	Noun	ar:كانبرا	de:Canberra	en:Canberra	es:Canberra	fa:کانبرا	fr:Canberra	he:קנברה	hi:कैनबरा	ja:キャンベラ	ko:캔버라	pt:Camberra,Canberra	ru:Канберра	tr:Canberra	ur:کینبرا	zh:堪培拉
+c:canberra-capital	Noun	ar:كانبرا	de:Canberra	en:Canberra	es:Canberra	fa:کنبرا	fr:Canberra	he:קנברה	hi:कैनबरा	ja:キャンベラ	ko:캔버라	pt:Camberra	ru:Канберра	tr:Kanberra	ur:کینبرا	zh:堪培拉
 c:cancer-vaccine	Noun	ar:لقاح السرطان	de:Krebsimpfstoff	en:cancer vaccine	es:vacuna contra el cáncer	fa:واکسن سرطان	fr:vaccin contre le cancer	he:חיסון לסרטן	hi:कैंसर टीका	ja:がんワクチン	ko:암 백신	pt:vacina contra câncer	ru:противоопухолевая вакцина	tr:kanser aşısı	ur:سرطان ویکسین	zh:癌症疫苗
 c:canistel	Noun	ar:كانيستيل,تفاح المومياء	de:Canistel	en:canistel,egg fruit	es:canistel	fa:کانیستل	fr:canistel	he:קניסטל	hi:कनिस्टेल	ja:カニステル	ko:카니스텔	pt:canistel	ru:канистель	tr:canistel	ur:کنسٹل	zh:蛋黄果
 c:cannon	Noun	ar:مدفع	de:Kanone	en:cannon	es:cañón	fa:توپ	fr:canon	he:תותח	hi:तोप	ja:大砲	ko:대포	pt:canhão	ru:пушка	tr:top	ur:توپ	zh:大炮
@@ -1659,6 +1672,7 @@ c:cool-feel	Adjective	ar:بارد الملمس,منعش	de:kühl anfühlend	en:c
 c:cooling-fan	Noun	ar:مروحة التبريد	de:Lüfter	en:cooling fan	es:ventilador de refrigeración	fa:فن خنک کننده	fr:ventilateur de refroidissement	he:מאוורר קירור	hi:कूलिंग फैन	ja:冷却ファン	ko:냉각 팬	pt:ventoinha de arrefecimento	ru:кулер	tr:soğutma fanı	ur:کولنگ فین	zh:散热风扇
 c:cooper	Noun	ar:صانع البراميل	de:Küfer,Böttcher,Fassbinder	en:cooper,barrelmaker	es:tonelero	fa:بشکه‌ساز	fr:tonnelier	he:חבתן,חביתאי	hi:पीपा निर्माता	ja:桶職人,樽職人	ko:통 제조공,통장이	pt:tanoeiro	ru:бондарь,бочар	tr:fıçıcı	ur:پیپا ساز	zh:箍桶匠
 c:coordinate-system	Noun	ar:نظام الإحداثيات	de:Koordinatensystem	en:coordinate system	es:sistema de coordenadas	fa:دستگاه مختصات	fr:système de coordonnées	he:מערכת קואורדינטות	hi:निर्देशांक प्रणाली	ja:座標系	ko:좌표계	pt:sistema de coordenadas	ru:система координат	tr:koordinat sistemi	ur:کوآرڈینیٹ سسٹم	zh:坐标系
+c:copenhagen-capital	Noun	ar:كوبنهاغن	de:Kopenhagen	en:Copenhagen	es:Copenhague	fa:کپنهاگ	fr:Copenhague	he:קופנהגן	hi:कोपेनहेगन	ja:コペンハーゲン	ko:코펜하겐	pt:Copenhaga	ru:Копенгаген	tr:Kopenhag	ur:کوپن ہیگن	zh:哥本哈根
 c:copepod	Noun	ar:قشريات الكوبيبودا	de:Ruderfußkrebse	en:copepod	es:copépodo	fa:کوپه پود	fr:copépode	he:קופיפוד	hi:कोपेपॉड	ja:カイアシ類	ko:요각류	pt:copépode	ru:веслоногий рачок	tr:kürek ayaklı	ur:کوپی پاڈ	zh:桡足类
 c:copernicus	Noun	ar:كوبرنيكوس	de:Kopernikus	en:Copernicus	es:Copérnico	fa:کوپرنیک	fr:Copernic	he:קופרניקוס	hi:कॉपरनिकस	ja:コペルニクス	ko:코페르니쿠스	pt:Copérnico	ru:Коперник	tr:Kopernik	ur:کوپرنیکس	zh:哥白尼
 c:copier	Noun	ar:آلة نسخ	de:Kopierer	en:copier	es:fotocopiadora	fa:دستگاه کپی	fr:photocopieuse	he:מכונת צילום	hi:कॉपियर	ja:コピー機	ko:복사기	pt:copiadora	ru:копир	tr:fotokopi makinesi	ur:کاپی مشین	zh:复印机
@@ -2222,6 +2236,7 @@ c:dual-process	Noun	ar:نظرية العمليتين	de:Zwei-Prozess-Theorie	en:
 c:dualism	Noun	ar:الثنائية	de:Dualismus	en:dualism	es:dualismo	fa:دوگانه انگاری	fr:dualisme	he:דואליזם	hi:द्वैतवाद	ja:二元論	ko:이원론	pt:dualismo	ru:дуализм	tr:ikicilik,dualizm	ur:ثنویت	zh:二元论
 c:dubai	Noun	ar:دبي	de:Dubai	en:Dubai	es:Dubái	fa:دبی	fr:Dubaï	he:דובאי	hi:दुबई	ja:ドバイ	ko:두바이	pt:Dubai	ru:Дубай	tr:Dubai	ur:دبئی	zh:迪拜
 c:dubbing	Noun	ar:دبلجة	de:Synchronisation,Synchronfassung	en:dubbing,voice dubbing	es:doblaje	fa:دوبله	fr:doublage	he:סנכרון קול,דיבוב	hi:डबिंग	ja:吹き替え	ko:더빙	pt:dublagem	ru:дублирование,озвучка	tr:dublaj	ur:ڈبنگ	zh:配音,译制
+c:dublin-capital	Noun	ar:دبلن	de:Dublin	en:Dublin	es:Dublín	fa:دوبلین	fr:Dublin	he:דבלין	hi:डबलिन	ja:ダブリン	ko:더블린	pt:Dublin	ru:Дублин	tr:Dublin	ur:ڈبلن	zh:都柏林
 c:ducat	Noun	ar:دوكات,الدوكات	de:Dukaten	en:ducat	es:ducado	fa:دوکا	fr:ducat	he:דוקט	hi:डुकाट	ja:ダカット	ko:두카트	pt:ducado	ru:дукат	tr:duka	ur:ڈوکاٹ	zh:达克特
 c:duck	Noun	ar:بطة	de:Ente	en:duck	es:pato	fa:اردک	fr:canard	he:ברווז	hi:बत्तख	ja:アヒル	ko:오리	pt:pato	ru:утка	tr:ördek	ur:بطخ	zh:鸭
 c:ductility	Noun	ar:الطواعية	de:Duktilität	en:ductility	es:ductilidad	fa:شکل‌پذیری	fr:ductilité	he:דקטיליות	hi:तन्यता	ja:延性	ko:연성	pt:ductilidade	ru:пластичность	tr:sünek	ur:کشیدگی	zh:延展性
@@ -3257,6 +3272,7 @@ c:hangar	Noun	ar:حظيرة الطائرات	de:Hangar	en:hangar	es:hangar	fa:آ
 c:hanger	Noun	ar:علاقة ملابس,شماعة	de:Kleiderbügel	en:hanger,clothes hanger	es:percha	fa:چوب‌لباسی	fr:cintre	he:קולב	hi:हैंगर	ja:ハンガー	ko:옷걸이	pt:cabide	ru:вешалка	tr:askı,elbise askısı	ur:ہینگر	zh:衣架
 c:hanging-folder	Noun	ar:مجلد معلق	de:Hängeregistratur	en:hanging folder	es:carpeta colgante	fa:پوشه آویز	fr:dossier suspendu	he:תיקייה תלויה	hi:हैंगिंग फोल्डर	ja:吊り下げフォルダー	ko:걸이식 폴더	pt:pasta suspensa	ru:подвесная папка	tr:askılı dosya	ur:ہینگنگ فولڈر	zh:吊挂式文件夹
 c:hanoi	Noun	ar:هانوي	de:Hanoi	en:Hanoi	es:Hanói	fa:هانوی	fr:Hanoï	he:האנוי	hi:हनोई	ja:ハノイ	ko:하노이	pt:Hanói	ru:Ханой	tr:Hanoi	ur:ہنوئی	zh:河内
+c:hanoi-capital	Noun	ar:هانوي	de:Hanoi	en:Hanoi	es:Hanói	fa:هانوی	fr:Hanoï	he:האנוי	hi:हनोई	ja:ハノイ	ko:하노이	pt:Hanói	ru:Ханой	tr:Hanoi	ur:ہانوئی	zh:河内
 c:hanukkah	Noun	ar:حانوكا,عيد الأنوار	de:Chanukka	en:hanukkah,chanukah	es:janucá,hanukkah	fa:حانوکا	fr:hanoukka	he:חנוכה	hi:हनुक्का	ja:ハヌカー	ko:하누카	pt:hanucá	ru:ханука	tr:hanuka	ur:حنوکا	zh:光明节,哈努卡
 c:hanuman	Noun	ar:هانومان	de:Hanuman	en:Hanuman	es:Hanuman	fa:هانومان	fr:Hanuman	he:הנומאן	hi:हनुमान	ja:ハヌマーン	ko:하누만	pt:Hanuman	ru:Хануман	tr:Hanuman	ur:ہنومان	zh:哈努曼
 c:haploid	Adjective	ar:أحادي الصيغة	de:haploid	en:haploid	es:haploide	fa:هاپلوئید	fr:haploïde	he:האפלואיד	hi:अगुणित	ja:半数体	ko:반수체	pt:haploide	ru:гаплоидный	tr:haploid	ur:نصف گنا	zh:单倍体
@@ -3351,6 +3367,7 @@ c:helmet	Noun	ar:خوذة	de:Helm	en:helmet	es:casco	fa:کلاه ایمنی,کل
 c:helmholtz	Noun	ar:طاقة هيلمهولتز الحرة	de:Helmholtz-Energie	en:Helmholtz free energy	es:energía libre de Helmholtz	fa:انرژی آزاد هلمهولتز	fr:énergie libre de Helmholtz	he:אנרגיית הלמהולץ	hi:हेल्महोल्ट्ज़ मुक्त ऊर्जा	ja:ヘルムホルツ自由エネルギー	ko:헬름홀츠 자유 에너지	pt:energia livre de Helmholtz	ru:энергия Гельмгольца	tr:Helmholtz serbest enerjisi	ur:ہیلمہولٹز آزاد توانائی	zh:亥姆霍兹自由能
 c:help	Verb	ar:ساعد	de:helfen	en:help	es:ayudar	fa:کمک کردن	fr:aider	he:לעזור	hi:मदद करना	ja:助ける,手伝う	ko:돕다	pt:ajudar	ru:помогать,помочь	tr:yardım etmek	ur:مدد کرنا	zh:帮助,帮
 c:helper	Noun	ar:مساعد	de:Helfer,Assistent	en:helper,assistant	es:ayudante,asistente	fa:کمک,دستیار	fr:aide,assistant	he:עוזר	hi:सहायक,मददगार	ja:助手,アシスタント	ko:조수,도우미	pt:ajudante,assistente	ru:помощник,ассистент	tr:yardımcı,asistan	ur:مددگار,معاون	zh:助手,帮手
+c:helsinki-capital	Noun	ar:هلسنكي	de:Helsinki	en:Helsinki	es:Helsinki	fa:هلسینکی	fr:Helsinki	he:הלסינקי	hi:हेलसिंकी	ja:ヘルシンキ	ko:헬싱키	pt:Helsínquia	ru:Хельсинки	tr:Helsinki	ur:ہلسنکی	zh:赫尔辛基
 c:hematite-mineral	Noun	ar:هيماتيت	de:Hämatit	en:hematite	es:hematita	fa:هماتیت	fr:hématite	he:המטיט	hi:हेमेटाइट	ja:赤鉄鉱	ko:적철석	pt:hematita	ru:гематит	tr:hematit	ur:ہیماٹائٹ	zh:赤铁矿
 c:hemisphere	Noun	ar:نصف الكرة,نصف الكرة الأرضية	de:Halbkugel,Hemisphäre	en:hemisphere	es:hemisferio	fa:نیم کره	fr:hémisphère	he:חצי כדור	hi:गोलार्ध	ja:半球	ko:반구	pt:hemisfério	ru:полушарие	tr:yarımküre	ur:نصف کرہ	zh:半球
 c:hemoglobin	Noun	ar:هيموغلوبين	de:Hämoglobin	en:hemoglobin	es:hemoglobina	fa:هموگلوبین	fr:hémoglobine	he:המוגלובין	hi:हीमोग्लोबिन	ja:ヘモグロビン	ko:헤모글로빈	pt:hemoglobina	ru:гемоглобин	tr:hemoglobin	ur:ہیموگلوبن	zh:血红蛋白
@@ -3758,6 +3775,7 @@ c:irrigation-drip	Noun	ar:ري بالتنقيط	de:Tropfbewässerung	en:drip irr
 c:ishtar	Noun	ar:عشتار	de:Ischtar	en:Ishtar	es:Istar	fa:ایشتار	fr:Ishtar	he:עשתורת	hi:इश्तार	ja:イシュタル	ko:이슈타르	pt:Ishtar	ru:Иштар	tr:İştar	ur:اشتار	zh:伊什塔尔
 c:isis	Noun	ar:إيزيس	de:Isis	en:Isis	es:Isis	fa:ایزیس	fr:Isis	he:איזיס	hi:आइसिस	ja:イシス	ko:이시스	pt:Ísis	ru:Исида	tr:İsis	ur:ایسس	zh:伊西斯
 c:islamabad	Noun	ar:إسلام آباد	de:Islamabad	en:Islamabad	es:Islamabad	fa:اسلام‌آباد	fr:Islamabad	he:איסלאמאבאד	hi:इस्लामाबाद	ja:イスラマバード	ko:이슬라마바드	pt:Islamabad	ru:Исламабад	tr:İslamabad	ur:اسلام آباد	zh:伊斯兰堡
+c:islamabad-capital	Noun	ar:إسلام آباد	de:Islamabad	en:Islamabad	es:Islamabad	fa:اسلام‌آباد	fr:Islamabad	he:איסלמאבאד	hi:इस्लामाबाद	ja:イスラマバード	ko:이슬라마바드	pt:Islamabad	ru:Исламабад	tr:İslamabad	ur:اسلام آباد	zh:伊斯兰堡
 c:island	Noun	ar:جزيرة	de:Insel	en:island,isle	es:isla	fa:جزیره	fr:île	he:אי	hi:द्वीप	ja:島	ko:섬	pt:ilha	ru:остров	tr:ada	ur:جزیرہ	zh:岛,岛屿
 c:island-geo	Noun	ar:جزيرة جغرافية	de:Insel	en:island	es:isla	fa:جزیره	fr:île	he:אי	hi:द्वीप	ja:島	ko:섬	pt:ilha	ru:остров	tr:ada	ur:جزیرہ	zh:岛屿
 c:island-landform	Noun	ar:جزيرة	de:Insel	en:island	es:isla	fa:جزیره	fr:île	he:אי	hi:द्वीप	ja:島	ko:섬	pt:ilha	ru:остров	tr:ada	ur:جزیرہ	zh:岛,岛屿
@@ -3798,6 +3816,7 @@ c:jade-color	Noun	ar:يشمي	de:Jadegrün	en:jade,jade green	es:verde jade	fa:�
 c:jade-gem	Noun	ar:يشم	de:Jade	en:jade	es:jade	fa:یشم	fr:jade	he:ג'ייד	hi:जेड	ja:翡翠	ko:옥	pt:jade	ru:нефрит	tr:yeşim	ur:یشم	zh:翡翠
 c:jaguar	Noun	ar:يغور	de:Jaguar	en:jaguar	es:jaguar	fa:جگوار	fr:jaguar	he:יגואר	hi:जगुआर	ja:ジャガー	ko:재규어	pt:onça,jaguar	ru:ягуар	tr:jaguar	ur:جیگوار	zh:美洲豹
 c:jakarta	Noun	ar:جاكرتا	de:Jakarta	en:Jakarta	es:Yakarta	fa:جاکارتا	fr:Jakarta	he:ג'קרטה	hi:जकार्ता	ja:ジャカルタ	ko:자카르타	pt:Jacarta	ru:Джакарта	tr:Cakarta	ur:جکارتہ	zh:雅加达
+c:jakarta-capital	Noun	ar:جاكرتا	de:Jakarta	en:Jakarta	es:Yakarta	fa:جاکارتا	fr:Jakarta	he:ג'קרטה	hi:जकार्ता	ja:ジャカルタ	ko:자카르타	pt:Jacarta	ru:Джакарта	tr:Cakarta	ur:جکارتا	zh:雅加达
 c:jam	Noun	ar:مربى	de:Marmelade,Konfitüre	en:jam	es:mermelada	fa:مربا	fr:confiture	he:ריבה	hi:जैम,मुरब्बा	ja:ジャム	ko:잼	pt:geleia,doce	ru:варенье,джем	tr:reçel	ur:جام,مربہ	zh:果酱
 c:jamb	Noun	ar:عضادة	de:Türpfosten	en:jamb	es:jamba	fa:قاب در	fr:jambage	he:משקוף צד	hi:जम्ब	ja:柱	ko:문설주	pt:umbreira	ru:косяк	tr:kapı sövesi	ur:دروازے کا بازو	zh:门框
 c:james-webb	Noun	ar:تلسكوب جيمس ويب	de:James-Webb-Teleskop	en:James Webb telescope	es:telescopio James Webb	fa:تلسکوپ جیمز وب	fr:télescope James Webb	he:טלסקופ ג'יימס ווב	hi:जेम्स वेब टेलीस्कोप	ja:ジェームズ・ウェッブ宇宙望遠鏡	ko:제임스 웹 우주 망원경	pt:telescópio James Webb	ru:телескоп Джеймс Уэбб	tr:James Webb teleskobu	ur:جیمز ویب دوربین	zh:詹姆斯·韦伯望远镜
@@ -3863,6 +3882,7 @@ c:k-space	Noun	ar:فضاء ك	de:k-Raum	en:k-space	es:espacio k	fa:فضای k	fr
 c:k2	Noun	ar:كي 2,تشوغوري	de:K2,Chogori	en:K2,Mount Godwin-Austen,Chogori	es:K2,Chogori	fa:کی ۲,چوگوری	fr:K2,Chogori	he:K2,צ'וגורי	hi:के 2,चोगोरी	ja:K2,ゴッドウィンオースティン山	ko:K2,초고리	pt:K2,Chogori	ru:K2,Чогори	tr:K2,Çogori	ur:کے ٹو,چوغوری	zh:乔戈里峰,K2峰
 c:k2-peak	Noun	ar:جبل كي 2	de:K2	en:K2	es:K2	fa:کی-2	fr:K2	he:K2	hi:के2	ja:K2	ko:K2	pt:K2	ru:К2	tr:K2	ur:کے ٹو	zh:乔戈里峰
 c:kabbalah	Noun	ar:القبالاه	de:Kabbala	en:Kabbalah	es:cábala	fa:قبالا	fr:kabbale	he:קַבָּלָה	hi:कब्बाला	ja:カバラ	ko:카발라	pt:cabalá	ru:каббала	tr:kabala	ur:قبالہ	zh:卡巴拉
+c:kabul-capital	Noun	ar:كابول	de:Kabul	en:Kabul	es:Kabul	fa:کابل	fr:Kaboul	he:קאבול	hi:काबुल	ja:カブール	ko:카불	pt:Cabul	ru:Кабул	tr:Kabil	ur:کابل	zh:喀布尔
 c:kaftan	Noun	ar:قفطان	de:Kaftan	en:kaftan,caftan	es:caftán	fa:قفطان	fr:caftan	he:קפטן	hi:काफ़्तान	ja:カフタン	ko:카프탄	pt:cafetã	ru:кафтан	tr:kaftan	ur:قفطان	zh:长袍
 c:kalahari-desert	Noun	ar:صحراء كالاهاري	de:Kalahari	en:Kalahari desert	es:desierto del Kalahari	fa:صحرای کالاهاری	fr:désert du Kalahari	he:מדבר הקלהרי	hi:कालाहारी रेगिस्तान	ja:カラハリ砂漠	ko:칼라하리 사막	pt:deserto do Kalahari	ru:пустыня Калахари	tr:Kalahari çölü	ur:کالاہاری صحرا	zh:卡拉哈里沙漠
 c:kale	Noun	ar:كرنب اخضر	de:Grünkohl	en:kale	es:col rizada	fa:کیل	fr:chou frisé	he:כרוב קדרה	hi:केल	ja:ケール	ko:케일	pt:couve	ru:листовая капуста	tr:kıvırcık lahana	ur:کیل	zh:羽衣甘蓝
@@ -4188,6 +4208,7 @@ c:liquid-crystal	Noun	ar:البلور السائل	de:Flüssigkristall	en:liquid
 c:liquid-fuel	Noun	ar:وقود سائل	de:Flüssigtreibstoff	en:liquid fuel	es:combustible líquido	fa:سوخت مایع	fr:carburant liquide	he:דלק נוזלי	hi:तरल ईंधन	ja:液体燃料	ko:액체 연료	pt:combustível líquido	ru:жидкое топливо	tr:sıvı yakıt	ur:مائع ایندھن	zh:液体燃料
 c:liquidity	Noun	ar:سيولة	de:Liquidität	en:liquidity	es:liquidez	fa:نقدینگی	fr:liquidité	he:נזילות	hi:तरलता	ja:流動性	ko:유동성	pt:liquidez	ru:ликвидность	tr:likidite	ur:لیکویڈیٹی	zh:流动性
 c:lira-currency	Noun	ar:ليرة	de:Lira	en:lira	es:lira	fa:لیر	fr:lire	he:לירה	hi:लीरा	ja:リラ	ko:리라	pt:lira	ru:лира	tr:lira	ur:لیرہ	zh:里拉
+c:lisbon-capital	Noun	ar:لشبونة	de:Lissabon	en:Lisbon	es:Lisboa	fa:لیسبون	fr:Lisbonne	he:ליסבון	hi:लिस्बन	ja:リスボン	ko:리스본	pt:Lisboa	ru:Лиссабон	tr:Lizbon	ur:لشبن	zh:里斯本
 c:listen	Verb	ar:استمع,أصغى	de:zuhören,hören	en:listen	es:escuchar	fa:گوش دادن	fr:écouter	he:להקשיב	hi:सुनना	ja:聴く	ko:듣다	pt:escutar,ouvir	ru:слушать	tr:dinlemek	ur:سننا	zh:听
 c:literature	Noun	ar:أدب	de:Literatur	en:literature	es:literatura	fa:ادبیات	fr:littérature	he:ספרות	hi:साहित्य	ja:文学	ko:문학	pt:literatura	ru:литература	tr:edebiyat	ur:ادب,ادبیات	zh:文学
 c:lithium	Noun	ar:ليثيوم	de:Lithium	en:lithium	es:litio	fa:لیتیم	fr:lithium	he:ליתיום	hi:लिथियम	ja:リチウム	ko:리튬	pt:lítio	ru:литий	tr:lityum	ur:لیتھیم	zh:锂
@@ -4230,6 +4251,7 @@ c:loiter	Verb	ar:تسكع	de:herumlungern	en:loiter	es:merodear,holgazanear	fa:�
 c:loki	Noun	ar:لوكي	de:Loki	en:Loki	es:Loki	fa:لوکی	fr:Loki	he:לוקי	hi:लोकी	ja:ロキ	ko:로키	pt:Loki	ru:Локи	tr:Loki	ur:لوکی	zh:洛基
 c:lombard-kingdom	Noun	ar:مملكة اللومبارد	de:Langobardenreich	en:Lombard Kingdom	es:reino lombardo	fa:پادشاهی لومبارد	fr:royaume lombard	he:ממלכת הלומברדים	hi:लोंबार्ड राज्य	ja:ランゴバルド王国	ko:롬바르드 왕국	pt:reino lombardo	ru:Лангобардское королевство	tr:Lombard Krallığı	ur:لمبارڈ سلطنت	zh:伦巴第王国
 c:london	Noun	ar:لندن	de:London	en:London	es:Londres	fa:لندن	fr:Londres	he:לונדון	hi:लंदन	ja:ロンドン	ko:런던	pt:Londres	ru:Лондон	tr:Londra	ur:لندن	zh:伦敦
+c:london-capital	Noun	ar:لندن	de:London	en:London	es:Londres	fa:لندن	fr:Londres	he:לונדון	hi:लंदन	ja:ロンドン	ko:런던	pt:Londres	ru:Лондон	tr:Londra	ur:لندن	zh:伦敦
 c:long-jump	Noun	ar:القفز الطويل	de:Weitsprung	en:long jump	es:salto de longitud	fa:پرش طول	fr:saut en longueur	he:קפיצה לרוחק	hi:लंबी कूद	ja:走り幅跳び	ko:멀리뛰기	pt:salto em comprimento	ru:прыжки в длину	tr:uzun atlama	ur:لمبی چھلانگ	zh:跳远
 c:long-term-memory	Noun	ar:الذاكرة طويلة الأمد	de:Langzeitgedächtnis	en:long-term memory	es:memoria a largo plazo	fa:حافظه بلندمدت	fr:mémoire à long terme	he:זיכרון לטווח ארוך	hi:दीर्घकालीन स्मृति	ja:長期記憶	ko:장기 기억	pt:memória de longo prazo	ru:долговременная память	tr:uzun süreli bellek	ur:طویل مدتی یادداشت	zh:长时记忆
 c:long-term-potentiation	Noun	ar:التقوية طويلة الأمد	de:Langzeitpotenzierung	en:long-term potentiation	es:potenciación a largo plazo	fa:تقویت طولانی‌مدت	fr:potentialisation à long terme	he:חיזוק לטווח ארוך	hi:दीर्घकालीन प्रबलता	ja:長期増強	ko:장기 강화	pt:potenciação de longa duração	ru:долговременная потенциация	tr:uzun süreli potansiyasyon	ur:طویل مدتی تقویت	zh:长时程增强
@@ -4289,6 +4311,7 @@ c:macroeconomics	Noun	ar:الاقتصاد الكلي	de:Makroökonomie	en:macroe
 c:macrophage	Noun	ar:بلعمية	de:Makrophage	en:macrophage	es:macrófago	fa:ماکروفاژ	fr:macrophage	he:מקרופאג	hi:महाभक्षककोशिका	ja:マクロファージ	ko:대식세포	pt:macrófago	ru:макрофаг	tr:makrofaj	ur:میکروفیج	zh:巨噬细胞
 c:macrostate	Noun	ar:الحالة الكلية	de:Makrozustand	en:macrostate	es:macroestado	fa:کلان‌حالت	fr:macroétat	he:מאקרו-מצב	hi:स्थूल अवस्था	ja:マクロ状態	ko:거시 상태	pt:macroestado	ru:макросостояние	tr:makrodrum	ur:کبیر حالت	zh:宏观状态
 c:madrid	Noun	ar:مدريد	de:Madrid	en:Madrid	es:Madrid	fa:مادرید	fr:Madrid	he:מדריד	hi:मैड्रिड	ja:マドリード	ko:마드리드	pt:Madri,Madrid	ru:Мадрид	tr:Madrid	ur:میڈرڈ	zh:马德里
+c:madrid-capital	Noun	ar:مدريد	de:Madrid	en:Madrid	es:Madrid	fa:مادرید	fr:Madrid	he:מדריד	hi:मैड्रिड	ja:マドリード	ko:마드리드	pt:Madrid	ru:Мадрид	tr:Madrid	ur:میڈرڈ	zh:马德里
 c:magazine	Noun	ar:مجلة	de:Zeitschrift,Magazin	en:magazine	es:revista	fa:مجله	fr:magazine,revue	he:מגזין,כתב עת	hi:पत्रिका,मैगज़ीन	ja:雑誌	ko:잡지	pt:revista	ru:журнал	tr:dergi	ur:رسالہ,میگزین	zh:杂志
 c:magenta	Noun	ar:أُرجواني فاقع,ماجنتا	de:Magenta	en:magenta	es:magenta	fa:سرخابی	fr:magenta	he:מג'נטה	hi:मैजेंटा	ja:マゼンタ	ko:자홍색	pt:magenta	ru:пурпурный,маджента	tr:macenta	ur:میجنٹا	zh:品红
 c:magic	Noun	ar:سحر	de:Magie	en:magic	es:magia	fa:جادو	fr:magie	he:קסם	hi:जादू	ja:魔法	ko:마법	pt:magia	ru:магия	tr:büyü	ur:جادو	zh:魔法
@@ -4527,6 +4550,7 @@ c:metropolis	Noun	ar:حاضرة,مدينة كبرى	de:Metropole,Weltstadt	en:me
 c:metropolis-city	Noun	ar:حاضرة	de:Großstadt	en:metropolis	es:metrópolis	fa:کلان‌شهر	fr:métropole	he:מטרופולין	hi:महानगर	ja:大都市	ko:대도시	pt:metrópole	ru:мегаполис	tr:metropol	ur:کلاں شہر	zh:大都市
 c:mexico	Noun	ar:المكسيك	de:Mexiko	en:Mexico	es:México	fa:مکزیک	fr:Mexique	he:מקסיקו	hi:मेक्सिको	ja:メキシコ	ko:멕시코	pt:México	ru:Мексика	tr:Meksika	ur:میکسیکو	zh:墨西哥
 c:mexico-city	Noun	ar:مكسيكو سيتي	de:Mexiko-Stadt	en:Mexico City	es:Ciudad de México	fa:مکزیکوسیتی	fr:Mexico	he:מקסיקו סיטי	hi:मेक्सिको सिटी	ja:メキシコシティ	ko:멕시코시티	pt:Cidade do México	ru:Мехико	tr:Meksiko	ur:میکسیکو سٹی	zh:墨西哥城
+c:mexico-city-capital	Noun	ar:مدينة مكسيكو	de:Mexiko-Stadt	en:Mexico City	es:Ciudad de México	fa:مکزیکوسیتی	fr:Mexico	he:מקסיקו סיטי	hi:मेक्सिको सिटी	ja:メキシコシティ	ko:멕시코시티	pt:Cidade do México	ru:Мехико	tr:Meksiko	ur:میکسیکو سٹی	zh:墨西哥城
 c:mhc-complex	Noun	ar:معقد التوافق النسيجي الكبير	de:MHC-Komplex	en:major histocompatibility complex	es:complejo mayor de histocompatibilidad	fa:کمپلکس سازگاری بافتی	fr:complexe majeur d'histocompatibilité	he:קומפלקס HLA	hi:प्रमुख ऊतक-अनुकूलता परिसर	ja:主要組織適合性複合体	ko:주요조직적합성복합체	pt:complexo principal de histocompatibilidade	ru:главный комплекс гистосовместимости	tr:doku uyum kompleksi	ur:ہسٹوکمپیٹیبلٹی کمپلیکس	zh:主要组织相容性复合体
 c:miami	Noun	ar:ميامي	de:Miami	en:Miami	es:Miami	fa:میامی	fr:Miami	he:מיאמי	hi:मियामी	ja:マイアミ	ko:마이애미	pt:Miami	ru:Майами	tr:Miami	ur:میامی	zh:迈阿密
 c:miasma	Noun	ar:الميازما	de:Miasma	en:miasma	es:miasma	fa:میاسما	fr:miasme	he:מיאזמה	hi:मिआस्मा	ja:瘴気	ko:미아즈마	pt:miasma	ru:миазм	tr:miyazma	ur:فضائی آلودگی	zh:瘴气
@@ -4698,6 +4722,7 @@ c:mortgage	Noun	ar:رهن عقاري	de:Hypothek	en:mortgage	es:hipoteca	fa:وا
 c:mortise	Noun	ar:نقرة	de:Zapfenloch	en:mortise	es:mortaja	fa:خار	fr:mortaise	he:מורטייז	hi:मोर्टाइज	ja:ほぞ穴	ko:장부구멍	pt:malhete	ru:гнездо	tr:zıvana yuvası	ur:چول	zh:榫眼
 c:mosaic	Noun	ar:الفسيفساء	de:Mosaik	en:mosaic	es:mosaico	fa:موزاییک	fr:mosaïque	he:פסיפס	hi:मोज़ेक	ja:モザイク	ko:모자이크	pt:mosaico	ru:мозаика	tr:mozaik	ur:موزیک	zh:马赛克
 c:moscow	Noun	ar:موسكو	de:Moskau	en:Moscow	es:Moscú	fa:مسکو	fr:Moscou	he:מוסקבה	hi:मास्को	ja:モスクワ	ko:모스크바	pt:Moscou	ru:Москва	tr:Moskova	ur:ماسکو	zh:莫斯科
+c:moscow-capital	Noun	ar:موسكو	de:Moskau	en:Moscow	es:Moscú	fa:مسکو	fr:Moscou	he:מוסקבה	hi:मास्को	ja:モスクワ	ko:모스크바	pt:Moscou	ru:Москва	tr:Moskova	ur:ماسکو	zh:莫斯科
 c:mosque	Noun	ar:مسجد,جامع	de:Moschee	en:mosque	es:mezquita	fa:مسجد	fr:mosquée	he:מסגד	hi:मस्जिद	ja:モスク	ko:모스크,이슬람 사원	pt:mesquita	ru:мечеть	tr:cami,mescit	ur:مسجد	zh:清真寺
 c:mosque-building	Noun	ar:مسجد	de:Moschee	en:mosque	es:mezquita	fa:مسجد	fr:mosquée	he:מסגד	hi:मस्जिद	ja:モスク	ko:모스크	pt:mesquita	ru:мечеть	tr:cami	ur:مسجد	zh:清真寺
 c:mosquito	Noun	ar:بعوضة	de:Mücke,Moskito	en:mosquito	es:mosquito	fa:پشه	fr:moustique	he:יתוש	hi:मच्छर	ja:蚊	ko:모기	pt:mosquito,pernilongo	ru:комар	tr:sivrisinek	ur:مچھر	zh:蚊子
@@ -4906,6 +4931,7 @@ c:neutron-star	Noun	ar:نجم نيوتروني	de:Neutronenstern	en:neutron star
 c:neutron-star-astro	Noun	ar:نجم نيوتروني	de:Neutronenstern	en:neutron star	es:estrella de neutrones	fa:ستاره نوترونی	fr:étoile à neutrons	he:כוכב נייטרונים	hi:न्यूट्रॉन तारा	ja:中性子星	ko:중성자별	pt:estrela de nêutrons	ru:нейтронная звезда	tr:nötron yıldızı	ur:نیوٹرون ستارہ	zh:中子星
 c:new	Adjective	ar:جديد	de:neu	en:new	es:nuevo	fa:نو,جدید	fr:nouveau,nouvelle	he:חדש	hi:नया	ja:新しい	ko:새롭다	pt:novo	ru:новый	tr:yeni	ur:نیا	zh:新
 c:new-delhi	Noun	ar:نيودلهي	de:Neu-Delhi	en:New Delhi	es:Nueva Delhi	fa:دهلی نو	fr:New Delhi	he:ניו דלהי	hi:नई दिल्ली	ja:ニューデリー	ko:뉴델리	pt:Nova Deli	ru:Нью-Дели	tr:Yeni Delhi	ur:نئی دہلی	zh:新德里
+c:new-delhi-capital	Noun	ar:نيودلهي	de:Neu-Delhi	en:New Delhi	es:Nueva Delhi	fa:دهلی نو	fr:New Delhi	he:ניו דלהי	hi:नई दिल्ली	ja:ニューデリー	ko:뉴델리	pt:Nova Délhi	ru:Нью-Дели	tr:Yeni Delhi	ur:نئی دہلی	zh:新德里
 c:new-moon	Noun	ar:محاق,قمر جديد	de:Neumond	en:new moon	es:luna nueva	fa:ماه نو,هلال نو	fr:nouvelle lune	he:מולד	hi:अमावस्या,नया चांद	ja:新月	ko:신월,삭	pt:lua nova	ru:новолуние	tr:yeni ay	ur:نیا چاند	zh:新月
 c:new-urbanism	Noun	ar:العمران الجديد	de:Neuer Urbanismus	en:new urbanism	es:nuevo urbanismo	fa:شهرسازی نو	fr:nouvel urbanisme	he:עירוניות חדשה	hi:नई शहरी योजना	ja:ニューアーバニズム	ko:신도시주의	pt:novo urbanismo	ru:новый урбанизм	tr:yeni şehircilik	ur:نئی شہری تحریک	zh:新城市主义
 c:new-year	Noun	ar:رأس السنة,السنة الجديدة	de:Neujahr,Silvester	en:new year	es:año nuevo	fa:نوروز,سال نو	fr:nouvel an,jour de l'an	he:ראש השנה,שנה חדשה	hi:नया साल	ja:新年,正月	ko:새해,설날	pt:ano novo	ru:новый год	tr:yılbaşı,yeni yıl	ur:نیا سال	zh:新年,元旦
@@ -5165,6 +5191,7 @@ c:oscillation	Noun	ar:تذبذب,اهتزاز	de:Schwingung,Oszillation	en:oscil
 c:oscillation-phys	Noun	ar:اهتزاز فيزيائي	de:Schwingung	en:oscillation	es:oscilación	fa:نوسان	fr:oscillation	he:תנודה	hi:दोलन	ja:振動	ko:진동	pt:oscilação	ru:колебание	tr:salınım	ur:کمپن	zh:振荡
 c:oscilloscope	Noun	ar:راسم الذبذبات	de:Oszilloskop	en:oscilloscope	es:osciloscopio	fa:اسیلوسکوپ	fr:oscilloscope	he:אוסילוסקופ	hi:ऑसिलोस्कोप	ja:オシロスコープ	ko:오실로스코프	pt:osciloscópio	ru:осциллограф	tr:osiloskop	ur:آسیلوسکوپ	zh:示波器
 c:osiris	Noun	ar:أوزيريس	de:Osiris	en:Osiris	es:Osiris	fa:اوزیریس	fr:Osiris	he:אוזיריס	hi:ओसिरिस	ja:オシリス	ko:오시리스	pt:Osíris	ru:Осирис	tr:Osiris	ur:اوزیرس	zh:奥西里斯
+c:oslo-capital	Noun	ar:أوسلو	de:Oslo	en:Oslo	es:Oslo	fa:اسلو	fr:Oslo	he:אוסלו	hi:ओस्लो	ja:オスロ	ko:오슬로	pt:Oslo	ru:Осло	tr:Oslo	ur:اوسلو	zh:奥斯陆
 c:osmium-metal	Noun	ar:أوزميوم	de:Osmium	en:osmium	es:osmio	fa:اسمیم	fr:osmium	he:אוסמיום	hi:ऑस्मियम	ja:オスミウム	ko:오스뮴	pt:ósmio	ru:осмий	tr:osmiyum	ur:اوسمیم	zh:锇
 c:osmosis	Noun	ar:تناضح	de:Osmose	en:osmosis	es:ósmosis	fa:اسمز	fr:osmose	he:אוסמוזה	hi:परासरण	ja:浸透	ko:삼투	pt:osmose	ru:осмос	tr:ozmoz	ur:آسموسس	zh:渗透
 c:osprey	Noun	ar:عقاب السمك,نسر البحر	de:Fischadler	en:osprey	es:águila pescadora	fa:عقاب ماهیگیر	fr:balbuzard	he:עיט הנהרות	hi:ओस्प्री	ja:ミサゴ	ko:물수리	pt:águia-pescadora	ru:скопа	tr:balık kartalı	ur:اوسپری	zh:鱼鹰
@@ -5172,6 +5199,7 @@ c:ostrich	Noun	ar:نعامة	de:Strauß	en:ostrich	es:avestruz	fa:شترمرغ	f
 c:ostrogothic	Noun	ar:مملكة القوط الشرقيين	de:Ostgotenreich	en:Ostrogothic Kingdom	es:reino ostrogodo	fa:پادشاهی استروگوت	fr:royaume ostrogoth	he:ממלכת האוסטרוגותים	hi:ओस्ट्रोगोथ राज्य	ja:東ゴート王国	ko:동고트 왕국	pt:reino ostrogodo	ru:Остготское королевство	tr:Ostrogot Krallığı	ur:اوسٹروگوتھ سلطنت	zh:东哥特王国
 c:otoscope	Noun	ar:منظار الأذن	de:Otoskop	en:otoscope	es:otoscopio	fa:اتوسکوپ	fr:otoscope	he:אוטוסקופ	hi:ओटोस्कोप	ja:耳鏡	ko:이경	pt:otoscópio	ru:отоскоп	tr:otoskop	ur:کان کا آلہ	zh:耳镜
 c:ottawa	Noun	ar:أوتاوا	de:Ottawa	en:Ottawa	es:Ottawa	fa:اتاوا	fr:Ottawa	he:אוטווה	hi:ओटावा	ja:オタワ	ko:오타와	pt:Ottawa	ru:Оттава	tr:Ottawa	ur:اوٹاوا	zh:渥太华
+c:ottawa-capital	Noun	ar:أوتاوا	de:Ottawa	en:Ottawa	es:Ottawa	fa:اوتاوا	fr:Ottawa	he:אוטווה	hi:ओटावा	ja:オタワ	ko:오타와	pt:Otava	ru:Оттава	tr:Ottawa	ur:اوٹاوا	zh:渥太华
 c:otter	Noun	ar:ثعلب الماء,قضاعة	de:Otter	en:otter	es:nutria	fa:سمور آبی	fr:loutre	he:לוטרה	hi:ऊदबिलाव	ja:カワウソ	ko:수달	pt:lontra	ru:выдра	tr:su samuru	ur:اود بلاؤ	zh:水獭
 c:otto-cycle	Noun	ar:دورة أوتو	de:Otto-Kreisprozess	en:Otto cycle	es:ciclo Otto	fa:چرخه اوتو	fr:cycle Otto	he:מחזור אוטו	hi:ओटो चक्र	ja:オットーサイクル	ko:오토 사이클	pt:ciclo Otto	ru:цикл Отто	tr:Otto döngüsü	ur:اوٹو چکر	zh:奥托循环
 c:ottoman	Noun	ar:بَوف,مسند قدمين	de:Fußhocker,Polsterhocker	en:ottoman,footstool	es:otomana,puf	fa:پاف,زیرپایی	fr:pouf,ottomane	he:הדום	hi:ओटोमन,पायदान	ja:オットマン,足置き	ko:오토만,발받침	pt:otomana,pufe	ru:пуф	tr:puf	ur:پاؤں کا اسٹول	zh:搁脚凳
@@ -5289,6 +5317,7 @@ c:parent	Noun	ar:والد	de:Elternteil	en:parent,parents	es:padre,madre	fa:وا
 c:parhelion	Noun	ar:شمس مزيفة	de:Parhelie	en:parhelion	es:antelia	fa:خورشید کاذب	fr:parhélie	he:שמש שנייה	hi:परहेलियन	ja:幻日	ko:환일	pt:pare-hélio	ru:паргелий	tr:yalancı güneş	ur:جھوٹا سورج	zh:幻日
 c:parietal	Adjective	ar:الفص الجداري	de:parietal	en:parietal	es:parietal	fa:جداری	fr:pariétal	he:פריאטלי	hi:पार्श्विका	ja:頭頂葉	ko:두정엽	pt:parietal	ru:теменной	tr:parietal	ur:پیریٹل	zh:顶叶
 c:paris	Noun	ar:باريس	de:Paris	en:Paris	es:París	fa:پاریس	fr:Paris	he:פריז	hi:पेरिस	ja:パリ	ko:파리	pt:Paris	ru:Париж	tr:Paris	ur:پیرس	zh:巴黎
+c:paris-capital	Noun	ar:باريس	de:Paris	en:Paris	es:París	fa:پاریس	fr:Paris	he:פריז	hi:पेरिस	ja:パリ	ko:파리	pt:Paris	ru:Париж	tr:Paris	ur:پیرس	zh:巴黎
 c:park	Verb	ar:ركن,يركن	de:parken	en:park	es:estacionar,aparcar	fa:پارک کردن	fr:garer,stationner	he:לחנות	hi:खड़ी करना,पार्क करना	ja:駐車する	ko:주차하다	pt:estacionar	ru:парковать,парковаться	tr:park etmek	ur:کھڑا کرنا,پارک کرنا	zh:停车,停放
 c:park-planning	Noun	ar:تخطيط المتنزهات	de:Parkplanung	en:park planning	es:planificación de parques	fa:برنامه‌ریزی پارک	fr:planification des parcs	he:תכנון פארקים	hi:पार्क योजना	ja:公園計画	ko:공원 계획	pt:planejamento de parques	ru:планирование парков	tr:park planlaması	ur:پارک منصوبہ بندی	zh:公园规划
 c:parka	Noun	ar:باركا	de:Parka	en:parka	es:parka	fa:پارکا	fr:parka	he:פארקה	hi:पार्का	ja:パーカー	ko:파카	pt:parka	ru:парка	tr:parka	ur:پارکا	zh:派克大衣
@@ -5725,6 +5754,7 @@ c:pragmatics-nlp	Noun	ar:براغماتية اللغة	de:linguistische Pragmati
 c:pragmatism	Noun	ar:البراغماتية	de:Pragmatismus	en:pragmatism	es:pragmatismo	fa:عمل‌گرایی	fr:pragmatisme	he:פרגמטיזם	hi:व्यावहारिकवाद	ja:プラグマティズム	ko:실용주의	pt:pragmatismo	ru:прагматизм	tr:pragmatizm	ur:عملیت پسندی	zh:实用主义
 c:pragmatism-epistemic	Noun	ar:البراغماتية المعرفية	de:epistemischer Pragmatismus	en:epistemic pragmatism	es:pragmatismo epistémico	fa:عمل‌گرایی معرفتی	fr:pragmatisme épistémique	he:פרגמטיזם אפיסטמי	hi:ज्ञानमीमांसा व्यवहारवाद	ja:認識的プラグマティズム	ko:인식론적 실용주의	pt:pragmatismo epistêmico	ru:эпистемический прагматизм	tr:epistemik pragmatizm	ur:معرفتی عمل پسندی	zh:认识实用主义
 c:pragmatism-phil	Noun	ar:البراغماتية,الذرائعية	de:Pragmatismus	en:pragmatism	es:pragmatismo	fa:عمل گرایی,پراگماتیسم	fr:pragmatisme	he:פרגמטיזם	hi:व्यवहारवाद	ja:プラグマティズム,実用主義	ko:실용주의,프래그머티즘	pt:pragmatismo	ru:прагматизм	tr:pragmatizm,faydacılık	ur:عملیت پسندی	zh:实用主义,务实主义
+c:prague-capital	Noun	ar:براغ	de:Prag	en:Prague	es:Praga	fa:پراگ	fr:Prague	he:פראג	hi:प्राग	ja:プラハ	ko:프라하	pt:Praga	ru:Прага	tr:Prag	ur:پراگ	zh:布拉格
 c:prairie	Noun	ar:سهل عشبي	de:Prärie	en:prairie	es:pradera	fa:چمنزار,پریری	fr:prairie	he:פריירי,ערבה	hi:प्रेयरी,घास के मैदान	ja:プレーリー,大草原	ko:프레리,대초원	pt:pradaria	ru:прерия	tr:çayır,preri	ur:سبزہ زار	zh:北美大草原,普列里
 c:prawn	Noun	ar:قريدس,جمبري كبير	de:Riesengarnele,Große Garnele	en:prawn	es:langostino	fa:میگوی درشت	fr:crevette rose,gambas	he:שרימפ גדול	hi:बड़ा झींगा	ja:クルマエビ,大正海老	ko:대하	pt:lagostim,gamba	ru:креветка крупная	tr:iri karides	ur:بڑا جھینگا	zh:对虾
 c:prayer	Noun	ar:صلاة,دعاء	de:Gebet	en:prayer	es:oración,plegaria	fa:نماز,دعا	fr:prière	he:תפילה	hi:प्रार्थना	ja:祈り	ko:기도	pt:oração	ru:молитва	tr:dua,namaz	ur:دعا,نماز	zh:祈祷
@@ -6254,6 +6284,7 @@ c:river	Noun	ar:نهر	de:Fluss	en:river	es:río	fa:رودخانه	fr:fleuve,riv
 c:river-basin	Noun	ar:حوض نهري	de:Flussbecken	en:river basin	es:cuenca fluvial	fa:حوضه رودخانه	fr:bassin fluvial	he:אגן ניקוז	hi:नदी बेसिन	ja:河川流域	ko:하천 유역	pt:bacia fluvial	ru:речной бассейн	tr:nehir havzası	ur:دریائی طاس	zh:河流流域
 c:rivet-gun	Noun	ar:مسدس برشام	de:Nietzange	en:rivet gun	es:remachadora	fa:تفنگ پرچ	fr:riveteuse	he:אקדח מסמרות	hi:रिवेट गन	ja:リベットガン	ko:리벳건	pt:rebitadeira	ru:заклёпочник	tr:perçin tabancası	ur:ریوٹ گن	zh:铆钉枪
 c:riyadh	Noun	ar:الرياض	de:Riad	en:Riyadh	es:Riad	fa:ریاض	fr:Riyad	he:ריאד	hi:रियाद	ja:リヤド	ko:리야드	pt:Riade	ru:Эр-Рияд	tr:Riyad	ur:ریاض	zh:利雅得
+c:riyadh-capital	Noun	ar:الرياض	de:Riad	en:Riyadh	es:Riad	fa:ریاض	fr:Riyad	he:ריאד	hi:रियाद	ja:リヤド	ko:리야드	pt:Riad	ru:Эр-Рияд	tr:Riyad	ur:ریاض	zh:利雅得
 c:riyal	Noun	ar:ريال	de:Riyal	en:riyal,rial	es:riyal,rial	fa:ریال	fr:riyal,rial	he:ריאל	hi:रियाल	ja:リヤル	ko:리얄	pt:riyal	ru:риал,риял	tr:riyal	ur:ریال	zh:里亚尔
 c:rna	Noun	ar:الحمض النووي الريبي,رنا	de:RNA,Ribonukleinsäure	en:RNA,ribonucleic acid	es:ARN,ácido ribonucleico	fa:آر ان ای	fr:ARN,acide ribonucléique	he:רנ״א	hi:आरएनए	ja:RNA,リボ核酸	ko:RNA,리보핵산	pt:RNA,ARN	ru:РНК,рибонуклеиновая кислота	tr:RNA,ribonükleik asit	ur:آر این اے	zh:核糖核酸,RNA
 c:rna-polymerase	Noun	ar:إنزيم بوليمراز الحمض النووي الريبوزي	de:RNA-Polymerase	en:RNA polymerase	es:ARN polimerasa	fa:آران‌ای پلیمراز	fr:ARN polymérase	he:RNA פולימראז	hi:आरएनए पॉलीमरेज़	ja:RNAポリメラーゼ	ko:RNA 중합효소	pt:RNA polimerase	ru:РНК-полимераза	tr:RNA polimeraz	ur:آر این اے پولیمریز	zh:RNA聚合酶
@@ -6291,6 +6322,7 @@ c:romance-film	Noun	ar:فيلم رومانسي	de:Liebesfilm,Romanze	en:romance 
 c:romanesque-art	Noun	ar:الفن الروماني	de:romanische Kunst	en:Romanesque art	es:arte románico	fa:هنر رومانسک	fr:art roman	he:אמנות רומנסקית	hi:रोमानेस्क कला	ja:ロマネスク美術	ko:로마네스크 미술	pt:arte românica	ru:романское искусство	tr:Romanesk sanat	ur:رومانیسک فن	zh:罗马式艺术
 c:romanticism-art	Noun	ar:الرومانسية	de:Romantik	en:Romanticism	es:romanticismo	fa:رمانتیسیسم	fr:romantisme	he:רומנטיקה	hi:स्वच्छंदतावाद	ja:ロマン主義	ko:낭만주의	pt:romantismo	ru:романтизм	tr:romantizm	ur:رومانیت پسندی	zh:浪漫主义
 c:rome	Noun	ar:روما	de:Rom	en:Rome	es:Roma	fa:رم	fr:Rome	he:רומא	hi:रोम	ja:ローマ	ko:로마	pt:Roma	ru:Рим	tr:Roma	ur:روم	zh:罗马
+c:rome-capital	Noun	ar:روما	de:Rom	en:Rome	es:Roma	fa:رم	fr:Rome	he:רומא	hi:रोम	ja:ローマ	ko:로마	pt:Roma	ru:Рим	tr:Roma	ur:روم	zh:罗马
 c:romper	Noun	ar:ثوب طفل	de:Strampler	en:romper	es:pelele	fa:لباس بچه گانه	fr:barboteuse	he:רומפר	hi:रॉम्पर	ja:ロンパース	ko:롬퍼	pt:macacão curto	ru:ромпер	tr:tulum	ur:رومپر	zh:连体短裤
 c:rondo	Noun	ar:روندو	de:Rondo	en:rondo	es:rondó	fa:روندو	fr:rondo	he:רונדו	hi:रोंडो	ja:ロンド	ko:론도	pt:rondó	ru:рондо	tr:rondo	ur:رونڈو	zh:回旋曲
 c:room-acoustics	Noun	ar:صوتيات الغرفة	de:Raumakustik	en:room acoustics	es:acústica de sala	fa:آکوستیک اتاق	fr:acoustique des salles	he:אקוסטיקה של חדר	hi:कक्ष ध्वनिकी	ja:室内音響	ko:실내 음향	pt:acústica de sala	ru:комнатная акустика	tr:oda akustiği	ur:کمرے کی صوتیات	zh:室内声学
@@ -6583,6 +6615,7 @@ c:sensory-evaluation	Noun	ar:التقييم الحسي	de:sensorische Bewertung	
 c:sentence	Noun	ar:جملة	de:Satz	en:sentence	es:oración,frase	fa:جمله	fr:phrase	he:משפט	hi:वाक्य	ja:文	ko:문장	pt:frase,oração	ru:предложение	tr:cümle	ur:جملہ	zh:句子
 c:sentiment-analysis	Noun	ar:تحليل المشاعر	de:Stimmungsanalyse	en:sentiment analysis	es:análisis de sentimientos	fa:تحلیل احساسات	fr:analyse des sentiments	he:ניתוח סנטימנט	hi:भावना विश्लेषण	ja:感情分析	ko:감성 분석	pt:análise de sentimento	ru:анализ тональности	tr:duygu analizi	ur:جذبات تجزیہ	zh:情感分析
 c:seoul	Noun	ar:سيول	de:Seoul	en:Seoul	es:Seúl	fa:سئول	fr:Séoul	he:סיאול	hi:सियोल	ja:ソウル	ko:서울	pt:Seul	ru:Сеул	tr:Seul	ur:سیئول	zh:首尔,汉城
+c:seoul-capital	Noun	ar:سيول	de:Seoul	en:Seoul	es:Seúl	fa:سئول	fr:Séoul	he:סיאול	hi:सियोल	ja:ソウル	ko:서울	pt:Seul	ru:Сеул	tr:Seul	ur:سیئول	zh:首尔
 c:sepal	Noun	ar:كاس الزهرة	de:Kelchblatt	en:sepal	es:sépalo	fa:کاسبرگ	fr:sépale	he:עלה כותרת	hi:बाह्यदल	ja:萼片	ko:꽃받침	pt:sépala	ru:чашелистик	tr:çanak yaprağı	ur:پھول کا کاسہ	zh:萼片
 c:separation-of-powers	Noun	ar:الفصل بين السلطات	de:Gewaltenteilung	en:separation of powers	es:separación de poderes	fa:تفکیک قوا	fr:séparation des pouvoirs	he:הפרדת רשויות	hi:शक्तियों का पृथक्करण	ja:三権分立	ko:권력 분립	pt:separação de poderes	ru:разделение властей	tr:kuvvetler ayrılığı	ur:اختیارات کی علیحدگی	zh:三权分立
 c:sepia	Noun	ar:بني داكن,سيبيا	de:Sepia	en:sepia	es:sepia	fa:سپیا	fr:sépia	he:ספיה	hi:सीपिया	ja:セピア	ko:세피아	pt:sépia	ru:сепия	tr:sepya	ur:سیپیا	zh:深褐色,乌贼墨色
@@ -7072,6 +7105,7 @@ c:stimulant-drug	Noun	ar:المنشطات	de:Stimulanzium	en:stimulant	es:estimu
 c:stingray	Noun	ar:لخمة,شفنين لساع	de:Stechrochen	en:stingray	es:raya	fa:سفره ماهی	fr:raie pastenague	he:עקצנית	hi:स्टिंगरे	ja:アカエイ	ko:홍어	pt:arraia	ru:хвостокол	tr:vatoz	ur:سٹنگ رے	zh:黄貂鱼
 c:stock	Noun	ar:سهم,أسهم	de:Aktie	en:stock,share	es:acción	fa:سهام	fr:action	he:מניה	hi:शेयर,स्टॉक	ja:株式,株	ko:주식	pt:ação	ru:акция	tr:hisse senedi,hisse	ur:اسٹاک,حصہ	zh:股票,股份
 c:stockholm	Noun	ar:ستوكهولم	de:Stockholm	en:Stockholm	es:Estocolmo	fa:استکهلم	fr:Stockholm	he:שטוקהולם	hi:स्टॉकहोम	ja:ストックホルム	ko:스톡홀름	pt:Estocolmo	ru:Стокгольм	tr:Stockholm	ur:اسٹاک ہوم	zh:斯德哥尔摩
+c:stockholm-capital	Noun	ar:ستوكهولم	de:Stockholm	en:Stockholm	es:Estocolmo	fa:استکهلم	fr:Stockholm	he:שטוקהולם	hi:स्टॉकहोम	ja:ストックホルム	ko:스톡홀름	pt:Estocolmo	ru:Стокгольм	tr:Stockholm	ur:اسٹاک ہوم	zh:斯德哥尔摩
 c:stoichiometry	Noun	ar:قياس التفاعلات الكيميائية	de:Stöchiometrie	en:stoichiometry	es:estequiometría	fa:استوکیومتری	fr:stœchiométrie	he:סטויכיומטריה	hi:रससमीकरणमिति	ja:化学量論	ko:화학량론	pt:estequiometria	ru:стехиометрия	tr:stokiyometri	ur:کیمیائی تناسب	zh:化学计量学
 c:stoichiometry-chem	Noun	ar:حسابات كيميائية	de:Stöchiometrie	en:stoichiometry	es:estequiometría	fa:استوکیومتری	fr:stœchiométrie	he:סטוכיומטריה	hi:स्टॉइकियोमीट्री	ja:量論	ko:화학량론	pt:estequiometria	ru:стехиометрия	tr:stokiyometri	ur:اسٹوکیومیٹری	zh:化学计量学
 c:stoicism	Noun	ar:الرواقية	de:Stoizismus,Stoa	en:stoicism	es:estoicismo	fa:رواقی گری	fr:stoïcisme	he:סטואיות	hi:स्टोइकवाद	ja:ストア主義,ストア派	ko:스토아주의,스토아 학파	pt:estoicismo	ru:стоицизм	tr:stoacılık	ur:رواقیت	zh:斯多葛主义,斯多葛学派
@@ -7364,6 +7398,7 @@ c:teddy-bear	Noun	ar:دب أفلوش,دمية الدب	de:Teddybär	en:teddy bea
 c:teff	Noun	ar:تف	de:Teff	en:teff	es:tef	fa:تف	fr:teff	he:טף	hi:टेफ	ja:テフ	ko:테프	pt:tefe	ru:теф	tr:teff	ur:ٹیف	zh:苔麸
 c:tegus	Noun	ar:تيغوس	de:Teju	en:tegu	es:tegú	fa:تگو	fr:tégu	he:טגו	hi:टेगू	ja:テグー	ko:테구	pt:teiú	ru:тегу	tr:tegu	ur:تیگو	zh:巨蜥蜴
 c:tehran	Noun	ar:طهران	de:Teheran	en:Tehran	es:Teherán	fa:تهران	fr:Téhéran	he:טהרן	hi:तेहरान	ja:テヘラン	ko:테헤란	pt:Teerã,Teerão	ru:Тегеран	tr:Tahran	ur:تہران	zh:德黑兰
+c:tehran-capital	Noun	ar:طهران	de:Teheran	en:Tehran	es:Teherán	fa:تهران	fr:Téhéran	he:טהרן	hi:तेहरान	ja:テヘラン	ko:테헤란	pt:Teerã	ru:Тегеран	tr:Tahran	ur:تہران	zh:德黑兰
 c:teleconnection	Noun	ar:الترابط عن بعد	de:Telekonnektion	en:teleconnection	es:teleconexión	fa:دورپیوند	fr:téléconnexion	he:קישוריות מרחוק	hi:दूर-संबंध	ja:テレコネクション	ko:원격 연결	pt:teleconexão	ru:телесвязь	tr:uzak bağlantı	ur:بعید ربط	zh:遥相关
 c:telemetry	Noun	ar:قياس عن بعد	de:Telemetrie	en:telemetry	es:telemetría	fa:تله متری	fr:télémétrie	he:טלמטריה	hi:टेलीमेट्री	ja:テレメトリー	ko:원격 측정	pt:telemetria	ru:телеметрия	tr:telemetri	ur:ٹیلی میٹری	zh:遥测
 c:teleology	Noun	ar:علم الغايات	de:Teleologie	en:teleology	es:teleología	fa:غایت‌شناسی	fr:téléologie	he:טלאולוגיה	hi:लक्ष्यवाद	ja:目的論	ko:목적론	pt:teleologia	ru:телеология	tr:ereksellik	ur:غایتیات	zh:目的论
@@ -7594,6 +7629,7 @@ c:toga	Noun	ar:توغا	de:Toga	en:toga	es:toga	fa:توگا	fr:toge	he:טוגה	
 c:tokay	Noun	ar:وزغ التوكي	de:Tokeh	en:tokay gecko	es:gecko tokeh	fa:توکی	fr:gecko tokay	he:טוקי	hi:टोके छिपकली	ja:トッケイ	ko:토케이 도마뱀붙이	pt:lagartixa tokay	ru:токи	tr:toki geko	ur:توکی چھپکلی	zh:大壁虎
 c:tokenization	Noun	ar:الترميز	de:Tokenisierung	en:tokenization	es:tokenización	fa:نشانه‌گذاری	fr:tokenisation	he:טוקניזציה	hi:टोकनीकरण	ja:トークン化	ko:토큰화	pt:tokenização	ru:токенизация	tr:tokenizasyon	ur:ٹوکنائزیشن	zh:词元化
 c:tokyo	Noun	ar:طوكيو	de:Tokio	en:Tokyo	es:Tokio	fa:توکیو	fr:Tokyo	he:טוקיו	hi:टोक्यो	ja:東京,とうきょう	ko:도쿄,동경	pt:Tóquio	ru:Токио	tr:Tokyo	ur:ٹوکیو	zh:东京
+c:tokyo-capital	Noun	ar:طوكيو	de:Tokio	en:Tokyo	es:Tokio	fa:توکیو	fr:Tokyo	he:טוקיו	hi:टोक्यो	ja:東京	ko:도쿄	pt:Tóquio	ru:Токио	tr:Tokyo	ur:ٹوکیو	zh:东京
 c:tolerance-drug	Noun	ar:التحمل الدوائي	de:Arzneimitteltoleranz	en:drug tolerance	es:tolerancia farmacológica	fa:تحمل دارویی	fr:tolérance médicamenteuse	he:סבילות לתרופה	hi:दवा सहिष्णुता	ja:薬物耐性	ko:약물 내성	pt:tolerância farmacológica	ru:лекарственная толерантность	tr:ilaç toleransı	ur:دوائی برداشت	zh:药物耐受性
 c:toleration	Noun	ar:التسامح السياسي	de:Toleranz	en:toleration,political toleration	es:tolerancia política	fa:تساهل سیاسی	fr:tolérance politique	he:סובלנות פוליטית	hi:सहिष्णुता	ja:寛容	ko:관용	pt:tolerância política	ru:толерантность	tr:hoşgörü	ur:رواداری	zh:宽容
 c:toll	Noun	ar:رسوم المرور,رسم عبور	de:Maut	en:toll	es:peaje	fa:عوارض	fr:péage	he:אגרה	hi:टोल	ja:通行料	ko:통행료	pt:pedágio,portagem	ru:плата за проезд,пошлина	tr:geçiş ücreti	ur:ٹول	zh:过路费,通行费
@@ -7938,6 +7974,7 @@ c:victorian-era	Noun	ar:العصر الفيكتوري	de:viktorianisches Zeitalt
 c:victory	Noun	ar:نصر,انتصار	de:Sieg	en:victory	es:victoria	fa:پیروزی	fr:victoire	he:ניצחון	hi:विजय,जीत	ja:勝利	ko:승리	pt:vitória	ru:победа	tr:zafer,galibiyet	ur:فتح,کامیابی	zh:胜利
 c:video-game-console	Noun	ar:وحدة الألعاب الإلكترونية	de:Spielekonsole	en:video game console	es:consola de videojuegos	fa:کنسول بازی ویدیویی	fr:console de jeux vidéo	he:קונסולת משחקים	hi:वीडियो गेम कंसोल	ja:ゲーム機	ko:비디오 게임 콘솔	pt:console de videogame	ru:игровая консоль	tr:oyun konsolu	ur:ویڈیو گیم کنسول	zh:游戏主机
 c:video-streaming	Noun	ar:بث مباشر	de:Video-Streaming	en:video streaming	es:transmisión de video	fa:پخش ویدیو	fr:diffusion vidéo	he:שידור וידאו	hi:वीडियो स्ट्रीमिंग	ja:動画ストリーミング	ko:동영상 스트리밍	pt:streaming de vídeo	ru:видеострим	tr:video akışı	ur:ویڈیو اسٹریمنگ	zh:视频流
+c:vienna-capital	Noun	ar:فيينا	de:Wien	en:Vienna	es:Viena	fa:وین	fr:Vienne	he:וינה	hi:वियना	ja:ウィーン	ko:빈	pt:Viena	ru:Вена	tr:Viyana	ur:ویانا	zh:维也纳
 c:viennese-waltz	Noun	ar:رقص الفالس الفيينا	de:Wiener Walzer	en:Viennese waltz	es:vals vienés	fa:والس وینی	fr:valse viennoise	he:ולס וינאי	hi:वियनीस वाल्ट्ज	ja:ウィンナーワルツ	ko:비엔나 왈츠	pt:valsa vienense	ru:венский вальс	tr:Viyana valsı	ur:وینیز والٹز	zh:维也纳华尔兹
 c:vietnam	Noun	ar:فيتنام	de:Vietnam	en:Vietnam	es:Vietnam	fa:ویتنام	fr:Viêt Nam,Vietnam	he:וייטנאם	hi:वियतनाम	ja:ベトナム	ko:베트남	pt:Vietnã,Vietname	ru:Вьетнам	tr:Vietnam	ur:ویتنام	zh:越南
 c:vietnam-war	Noun	ar:حرب فيتنام	de:Vietnamkrieg	en:Vietnam War	es:guerra de Vietnam	fa:جنگ ویتنام	fr:guerre du Vietnam	he:מלחמת וייטנאם	hi:वियतनाम युद्ध	ja:ベトナム戦争	ko:베트남 전쟁	pt:guerra do Vietnã	ru:Вьетнамская война	tr:Vietnam Savaşı	ur:ویتنام جنگ	zh:越南战争
@@ -8033,9 +8070,11 @@ c:warm-front-weather	Noun	ar:جبهة دافئة	de:Warmfront	en:warm front	es:f
 c:warn	Verb	ar:حذر	de:warnen	en:warn	es:advertir	fa:هشدار دادن	fr:avertir,prévenir	he:להזהיר	hi:चेतावनी देना	ja:警告する	ko:경고하다	pt:avisar,advertir	ru:предупреждать	tr:uyarmak	ur:خبردار کرنا,تنبیہ کرنا	zh:警告
 c:warrant	Noun	ar:مذكرة,أمر قضائي	de:Haftbefehl,Durchsuchungsbefehl	en:warrant	es:orden,mandato	fa:حکم,مجوز	fr:mandat	he:צו	hi:वारंट,अधिपत्र	ja:令状	ko:영장	pt:mandado	ru:ордер	tr:müzekkere,emir	ur:وارنٹ,حکم	zh:令状,授权令
 c:warsaw	Noun	ar:وارسو	de:Warschau	en:Warsaw	es:Varsovia	fa:ورشو	fr:Varsovie	he:ורשה	hi:वारसॉ	ja:ワルシャワ	ko:바르샤바	pt:Varsóvia	ru:Варшава	tr:Varşova	ur:وارسا	zh:华沙
+c:warsaw-capital	Noun	ar:وارسو	de:Warschau	en:Warsaw	es:Varsovia	fa:ورشو	fr:Varsovie	he:ורשה	hi:वारसॉ	ja:ワルシャワ	ko:바르샤바	pt:Varsóvia	ru:Варшава	tr:Varşova	ur:وارسا	zh:华沙
 c:warsaw-pact	Noun	ar:حلف وارسو	de:Warschauer Pakt	en:Warsaw Pact	es:pacto de Varsovia	fa:پیمان ورشو	fr:pacte de Varsovie	he:ברית ורשה	hi:वारसॉ संधि	ja:ワルシャワ条約機構	ko:바르샤바 조약 기구	pt:pacto de Varsóvia	ru:Организация Варшавского договора	tr:Varşova Paktı	ur:وارسا معاہدہ	zh:华沙条约组织
 c:warthog	Noun	ar:خنزير الثالول	de:Warzenschwein	en:warthog	es:facóquero	fa:گراز ثالول	fr:phacochère	he:חזיר-יבלות	hi:वार्थॉग	ja:イボイノシシ	ko:혹멧돼지	pt:javali verrugoso	ru:бородавочник	tr:siğilli domuz	ur:وارتھوگ	zh:疣猪
 c:washington	Noun	ar:واشنطن	de:Washington	en:Washington,Washington D.C.	es:Washington	fa:واشینگتن	fr:Washington	he:וושינגטון	hi:वाशिंगटन	ja:ワシントン	ko:워싱턴	pt:Washington	ru:Вашингтон	tr:Washington	ur:واشنگٹن	zh:华盛顿
+c:washington-dc	Noun	ar:واشنطن العاصمة	de:Washington, D.C.	en:Washington, D.C.	es:Washington D. C.	fa:واشنگتن دی‌سی	fr:Washington	he:וושינגטון הבירה	hi:वाशिंगटन डी.सी.	ja:ワシントンD.C.	ko:워싱턴 D.C.	pt:Washington D.C.	ru:Вашингтон	tr:Washington D.C.	ur:واشنگٹن ڈی سی	zh:华盛顿哥伦比亚特区
 c:wasp	Noun	ar:زنبور	de:Wespe	en:wasp	es:avispa	fa:زنبور	fr:guêpe	he:צרעה	hi:ततैया	ja:スズメバチ,蜂	ko:말벌	pt:vespa	ru:оса	tr:yabanarısı,eşekarısı	ur:بھڑ	zh:黄蜂
 c:waste-management	Noun	ar:إدارة النفايات	de:Abfallwirtschaft	en:waste management	es:gestión de residuos	fa:مدیریت پسماند	fr:gestion des déchets	he:ניהול פסולת	hi:अपशिष्ट प्रबंधन	ja:廃棄物管理	ko:폐기물 관리	pt:gestão de resíduos	ru:обращение с отходами	tr:atık yönetimi	ur:فضلہ انتظام	zh:废物管理
 c:wastewater	Noun	ar:مياه الصرف الصحي	de:Abwasser	en:wastewater	es:aguas residuales	fa:فاضلاب	fr:eaux usées	he:שפכים	hi:अपशिष्ट जल	ja:廃水	ko:폐수	pt:águas residuais	ru:сточные воды	tr:atık su	ur:گندا پانی	zh:废水
@@ -8109,6 +8148,7 @@ c:weightlifting	Noun	ar:رفع الاثقال	de:Gewichtheben	en:weightlifting	e
 c:welding	Noun	ar:اللحام	de:Schweißen	en:welding	es:soldadura	fa:جوشکاری	fr:soudage	he:ריתוך	hi:वेल्डिंग	ja:溶接	ko:용접	pt:soldagem	ru:сварка	tr:kaynak	ur:ویلڈنگ	zh:焊接
 c:welding-torch	Noun	ar:مشعل لحام	de:Schweißbrenner	en:welding torch	es:soplete de soldadura	fa:مشعل جوشکاری	fr:chalumeau de soudage	he:לפיד ריתוך	hi:वेल्डिंग टॉर्च	ja:溶接トーチ	ko:용접 토치	pt:tocha de solda	ru:сварочная горелка	tr:kaynak üfleç	ur:ویلڈنگ ٹارچ	zh:焊枪
 c:welfare-state	Noun	ar:دولة الرفاه	de:Wohlfahrtsstaat	en:welfare state	es:estado de bienestar	fa:دولت رفاه	fr:État-providence	he:מדינת רווחה	hi:कल्याणकारी राज्य	ja:福祉国家	ko:복지 국가	pt:estado de bem-estar	ru:государство всеобщего благосостояния	tr:refah devleti	ur:فلاحی ریاست	zh:福利国家
+c:wellington-capital	Noun	ar:ويلينغتون	de:Wellington	en:Wellington	es:Wellington	fa:ولینگتون	fr:Wellington	he:וולינגטון	hi:वेलिंगटन	ja:ウェリントン	ko:웰링턴	pt:Wellington	ru:Веллингтон	tr:Wellington	ur:ویلنگٹن	zh:惠灵顿
 c:werewolf	Noun	ar:مستذئب	de:Werwolf	en:werewolf	es:hombre lobo	fa:گرگینه	fr:loup-garou	he:איש זאב	hi:भेड़िया मानव	ja:狼男	ko:늑대인간	pt:lobisomem	ru:оборотень	tr:kurt adam	ur:بھیڑیا انسان	zh:狼人
 c:west	Noun	ar:غرب	de:Westen	en:west	es:oeste,occidente	fa:غرب	fr:ouest	he:מערב	hi:पश्चिम	ja:西	ko:서쪽,서	pt:oeste,ocidente	ru:запад	tr:batı	ur:مغرب	zh:西
 c:westerlies	Noun	ar:الرياح الغربية	de:Westwinde	en:westerlies	es:vientos del oeste	fa:بادهای غربی	fr:vents d'ouest	he:רוחות מערביות	hi:पश्चिमी पवन	ja:偏西風	ko:편서풍	pt:ventos de oeste	ru:западные ветры	tr:batı rüzgarları	ur:مغربی ہوائیں	zh:西风带
