@@ -33,6 +33,7 @@ c:abductive-reasoning	Noun	ar:الاستدلال الاستنتاجي	de:Abdukti
 c:abolition	Noun	ar:إلغاء العبودية,إلغاء الرق	de:Abschaffung der Sklaverei,Abolitionismus	en:abolition,abolition of slavery	es:abolición,abolición de la esclavitud	fa:لغو برده‌داری	fr:abolition,abolition de l'esclavage	he:ביטול העבדות	hi:दासता उन्मूलन,गुलामी का अंत	ja:奴隷制廃止	ko:노예제 폐지	pt:abolição,abolição da escravatura	ru:отмена рабства,аболиционизм	tr:kölelik kaldırma,kölelik lağvı	ur:خاتمۂ غلامی	zh:废除奴隶制,废奴
 c:abolitionism	Noun	ar:حركة إلغاء العبودية	de:Abolitionismus	en:abolitionism	es:abolicionismo	fa:لغو بردگی	fr:abolitionnisme	he:אבוליציוניזם	hi:उन्मूलनवाद	ja:奴隷制廃止論	ko:노예 폐지론	pt:abolicionismo	ru:аболиционизм	tr:kölelik karşıtlığı	ur:غلامی کی منسوخی	zh:废奴主义
 c:aboriginal-people	Noun	ar:سكان أصليون	de:Aborigines	en:Aboriginal people	es:aborígenes	fa:بومیان استرالیا	fr:aborigènes	he:אבוריג'ינים	hi:आदिवासी लोग	ja:アボリジニ	ko:원주민	pt:aborígenes	ru:аборигены	tr:Aborjinler	ur:مقامی باشندے	zh:原住民
+c:above-location	Adverb	ar:فوق	de:oberhalb	en:above	es:encima	fa:بالای	fr:au-dessus	he:מעל	hi:ऊपर स्थान	ja:上方	ko:위에	pt:acima	ru:сверху	tr:yukarıda	ur:اوپر مقام	zh:上面
 c:abreaction	Noun	ar:التفريغ الانفعالي	de:Abreagieren	en:abreaction	es:abreacción	fa:تخلیه عاطفی	fr:abréaction	he:אבריאקציה	hi:अभिक्रिया	ja:感情発散	ko:감정 발산	pt:ab-reação	ru:абреакция	tr:abreaksiyon	ur:جذباتی تخلیہ	zh:宣泄疗法
 c:absolute-advantage	Noun	ar:الميزة المطلقة	de:absoluter Vorteil	en:absolute advantage	es:ventaja absoluta	fa:مزیت مطلق	fr:avantage absolu	he:יתרון מוחלט	hi:पूर्ण लाभ	ja:絶対優位	ko:절대 우위	pt:vantagem absoluta	ru:абсолютное преимущество	tr:mutlak üstünlük	ur:مطلق فائدہ	zh:绝对优势
 c:absolute-value	Noun	ar:قيمة مطلقة	de:Absolutwert	en:absolute value	es:valor absoluto	fa:قدر مطلق	fr:valeur absolue	he:ערך מוחלט	hi:निरपेक्ष मान	ja:絶対値	ko:절댓값	pt:valor absoluto	ru:абсолютное значение	tr:mutlak değer	ur:مطلق قدر	zh:绝对值
@@ -262,6 +263,7 @@ c:amino-acid	Noun	ar:حمض أميني	de:Aminosäure	en:amino acid	es:aminoáci
 c:ammeter	Noun	ar:مقياس التيار	de:Amperemeter	en:ammeter	es:amperímetro	fa:آمپرسنج	fr:ampèremètre	he:אמפרמטר	hi:एमीटर	ja:電流計	ko:전류계	pt:amperímetro	ru:амперметр	tr:ampermetre	ur:ایمپیر میٹر	zh:电流表
 c:amnesia	Noun	ar:فقدان الذاكرة	de:Amnesie,Gedächtnisverlust	en:amnesia	es:amnesia	fa:فراموشی	fr:amnésie	he:אמנזיה	hi:स्मृतिलोप	ja:健忘症,記憶喪失	ko:기억상실,건망증	pt:amnésia	ru:амнезия,потеря памяти	tr:amnezi,hafıza kaybı	ur:حافظے کا ضیاع	zh:失忆,健忘症
 c:amnesty	Noun	ar:العفو العام	de:Amnestie	en:amnesty	es:amnistía	fa:عفو عمومی	fr:amnistie	he:חנינה	hi:माफी	ja:恩赦	ko:사면	pt:anistia	ru:амнистия	tr:af	ur:عام معافی	zh:大赦
+c:among-location	Adverb	ar:وسط	de:inmitten	en:among	es:entre varios	fa:میان	fr:parmi	he:בקרב	hi:बीच में	ja:の中	ko:가운데	pt:entre vários	ru:среди	tr:arasında çoğul	ur:کے بیچ	zh:当中
 c:amorphous-material	Noun	ar:المادة الزجاجية	de:amorphes Material	en:amorphous material,amorphous solid	es:material amorfo	fa:ماده آمورف	fr:matériau amorphe	he:חומר אמורפי	hi:अनाकार सामग्री	ja:非晶質材料	ko:비정질 재료	pt:material amorfo	ru:аморфный материал	tr:amorf malzeme	ur:بے شکل مواد	zh:非晶态材料
 c:amortization	Noun	ar:إطفاء الدين	de:Amortisation	en:amortization	es:amortización	fa:استهلاک	fr:amortissement	he:פחת	hi:ऋणमुक्ति	ja:償却	ko:상각	pt:amortização	ru:амортизация	tr:amortisman	ur:قرض چکانا	zh:摊销
 c:ampa-receptor	Noun	ar:مستقبل AMPA	de:AMPA-Rezeptor	en:AMPA receptor	es:receptor AMPA	fa:گیرنده AMPA	fr:récepteur AMPA	he:קולטן AMPA	hi:AMPA रिसेप्टर	ja:AMPA受容体	ko:AMPA 수용체	pt:receptor AMPA	ru:AMPA-рецептор	tr:AMPA reseptörü	ur:AMPA گیرنده	zh:AMPA受体
@@ -407,6 +409,7 @@ c:anxiety-disorder	Noun	ar:اضطراب القلق	de:Angststörung	en:anxiety d
 c:anxiety-feeling	Noun	ar:قلق عاطفي	de:Angst Gefühl	en:anxiety	es:ansiedad	fa:اضطراب	fr:anxiété	he:חרדה	hi:चिंता	ja:不安	ko:불안	pt:ansiedade	ru:тревога	tr:endişe	ur:بے چینی	zh:焦虑
 c:anxiety-mental	Noun	ar:اضطراب القلق	de:Angststörung	en:anxiety disorder,clinical anxiety	es:trastorno de ansiedad	fa:اختلال اضطراب	fr:trouble anxieux	he:הפרעת חרדה	hi:चिंता विकार,एंग्जाइटी डिसऑर्डर	ja:不安症,不安障害	ko:불안장애	pt:transtorno de ansiedade	ru:тревожное расстройство	tr:kaygı bozukluğu,anksiyete bozukluğu	ur:اضطرابی عارضہ	zh:焦虑症,焦虑障碍
 c:anxiolytic	Noun	ar:مضاد القلق	de:Anxiolytikum	en:anxiolytic	es:ansiolítico	fa:داروی ضد اضطراب	fr:anxiolytique	he:תרופה אנקסיוליטית	hi:चिंताशामक	ja:抗不安薬	ko:항불안제	pt:ansiolítico	ru:анксиолитик	tr:anksiyolitik	ur:اضطراب مخالف دوا	zh:抗焦虑药
+c:anywhere	Adverb	ar:أي مكان	de:irgendwohin	en:anywhere	es:en cualquier lugar	fa:هر جا	fr:n'importe où	he:בכל מקום שהוא	hi:कहीं भी	ja:どこでも	ko:어디든	pt:em qualquer lugar	ru:куда-либо	tr:herhangi bir yer	ur:کہیں بھی	zh:任何地方
 c:aorta	Noun	ar:الشريان الابهر	de:Aorta	en:aorta	es:aorta	fa:آئورت	fr:aorte	he:אבי העורקים	hi:महाधमनी	ja:大動脈	ko:대동맥	pt:aorta	ru:аорта	tr:aort	ur:بڑی شریان	zh:主动脉
 c:apache	Noun	ar:أباتشي	de:Apachen	en:Apache	es:apaches	fa:آپاچی	fr:apaches	he:אפאצ'י	hi:अपाचे	ja:アパッチ族	ko:아파치족	pt:apaches	ru:апачи	tr:Apaçiler	ur:اپاچی	zh:阿帕奇人
 c:apartheid	Noun	ar:الفصل العنصري	de:Apartheid	en:apartheid	es:apartheid	fa:آپارتاید	fr:apartheid	he:אפרטהייד	hi:रंगभेद	ja:アパルトヘイト	ko:아파르트헤이트	pt:apartheid	ru:апартеид	tr:apartheid	ur:نسلی امتیاز	zh:种族隔离
@@ -662,10 +665,12 @@ c:baccarat	Noun	ar:باكارا	de:Baccarat	en:baccarat	es:bacará	fa:باکار
 c:bachata	Noun	ar:رقص الباشاتا	de:Bachata	en:bachata	es:bachata	fa:باچاتا	fr:bachata	he:בצ׳אטה	hi:बचाता	ja:バチャータ	ko:바차타	pt:bachata	ru:бачата	tr:bachata	ur:باچاتا	zh:巴恰塔舞
 c:bachata-dance	Noun	ar:باتشاتا	de:Bachata	en:bachata	es:bachata	fa:باچاتا	fr:bachata	he:באצ'אטה	hi:बचाटा	ja:バチャータ	ko:바차타	pt:bachata	ru:бачата	tr:bachata	ur:بچاٹا	zh:巴恰塔
 c:back	Noun	ar:خلف,وراء	de:hinten,Rückseite	en:back	es:atrás,detrás	fa:پشت,عقب	fr:derrière,arrière	he:אחור,אחורה	hi:पीछे	ja:後ろ	ko:뒤	pt:trás,atrás	ru:зад	tr:arka	ur:پیچھے	zh:后
+c:back-location	Noun	ar:الخلف	de:Rückseite	en:back	es:parte trasera	fa:پشت مکان	fr:arrière	he:אחור	hi:पीछे का भाग	ja:後面	ko:뒷면	pt:trás	ru:зад	tr:arka	ur:پشت	zh:后面
 c:backgammon	Noun	ar:طاولة الزهر	de:Backgammon	en:backgammon	es:backgammon	fa:تخته‌نرد	fr:jacquet	he:שש בש	hi:बैकगैमन	ja:バックギャモン	ko:백개먼	pt:gamão	ru:нарды	tr:tavla	ur:چوسر	zh:双陆棋
 c:backpropagation	Noun	ar:الانتشار الخلفي	de:Backpropagation	en:backpropagation	es:retropropagación	fa:پس‌انتشار	fr:rétropropagation	he:הפצה לאחור	hi:बैकप्रोपैगेशन	ja:逆伝播	ko:역전파	pt:retropropagação	ru:обратное распространение	tr:geri yayılım	ur:پس پھیلاو	zh:反向传播
 c:backup-data	Noun	ar:نسخة احتياطية	de:Datensicherung	en:backup	es:copia de seguridad	fa:پشتیبان‌گیری	fr:sauvegarde	he:גיבוי	hi:बैकअप	ja:バックアップ	ko:백업	pt:cópia de segurança	ru:резервная копия	tr:yedekleme	ur:بیک اپ	zh:备份
 c:backup-db	Noun	ar:نسخة احتياطية لقاعدة البيانات	de:Datenbanksicherung	en:database backup	es:copia de seguridad de base de datos	fa:پشتیبان پایگاه داده	fr:sauvegarde de base de données	he:גיבוי מסד נתונים	hi:डेटाबेस बैकअप	ja:データベースバックアップ	ko:데이터베이스 백업	pt:backup de banco de dados	ru:резервная копия базы данных	tr:veritabanı yedeği	ur:ڈیٹا بیس بیک اپ	zh:数据库备份
+c:backward-direction	Adverb	ar:خلف	de:rückwärts	en:backward	es:atrás	fa:عقب	fr:en arrière	he:אחורה	hi:पीछे	ja:後方	ko:뒤로	pt:para trás	ru:назад	tr:geri	ur:پیچھے	zh:向后
 c:bacon-meat	Noun	ar:بيكون لحم	de:Speck Bacon	en:bacon	es:bacon	fa:بیکن	fr:bacon	he:בייקון	hi:बेकन	ja:ベーコン	ko:베이컨	pt:bacon	ru:бекон	tr:domuz pastırması	ur:بیکن	zh:培根
 c:bacteria	Noun	ar:بكتيريا,جراثيم	de:Bakterien	en:bacteria,bacterium	es:bacteria	fa:باکتری	fr:bactérie	he:חיידקים	hi:बैक्टीरिया,जीवाणु	ja:細菌,バクテリア	ko:박테리아,세균	pt:bactéria	ru:бактерия	tr:bakteri	ur:بیکٹیریا,جراثیم	zh:细菌
 c:bacterium	Noun	ar:بكتيريا,جرثوم	de:Bakterium	en:bacterium	es:bacteria	fa:باکتری	fr:bactérie	he:חיידק	hi:जीवाणु,बैक्टीरिया	ja:細菌,バクテリア	ko:세균,박테리아	pt:bactéria	ru:бактерия	tr:bakteri	ur:جراثیم	zh:细菌
@@ -876,6 +881,7 @@ c:bell-state	Noun	ar:حالة بيل	de:Bell-Zustand	en:Bell state	es:estado de 
 c:bell-tower-church	Noun	ar:برج الأجراس	de:Glockenturm	en:bell tower	es:campanario	fa:برج زنگ	fr:clocher	he:מגדל פעמונים	hi:घंटाघर	ja:鐘楼	ko:종탑	pt:campanário	ru:колокольня	tr:çan kulesi	ur:گھنٹہ گھر	zh:钟楼
 c:belle-epoque	Noun	ar:العصر الذهبي الفرنسي	de:Belle Époque	en:Belle Époque	es:Belle Époque	fa:بل اپوک	fr:Belle Époque	he:בל אפוק	hi:बेल एपोक	ja:ベル・エポック	ko:벨 에포크	pt:Belle Époque	ru:Прекрасная эпоха	tr:Belle Époque	ur:بیل اپاک	zh:美好年代
 c:belly-dance	Noun	ar:رقص شرقي	de:Bauchtanz	en:belly dance	es:danza del vientre	fa:رقص شکم	fr:danse du ventre	he:ריקוד בטן	hi:बेली डांस	ja:ベリーダンス	ko:벨리 댄스	pt:dança do ventre	ru:танец живота	tr:oryantal dans	ur:بیلی ڈانس	zh:肚皮舞
+c:below-location	Adverb	ar:تحت	de:unterhalb	en:below	es:debajo	fa:زیر	fr:au-dessous	he:מתחת	hi:नीचे स्थान	ja:下方	ko:아래에	pt:abaixo	ru:снизу	tr:aşağıda	ur:نیچے مقام	zh:下面
 c:belt	Noun	ar:حزام	de:Gürtel	en:belt	es:cinturón	fa:کمربند	fr:ceinture	he:חגורה	hi:बेल्ट,पेटी	ja:ベルト	ko:벨트,허리띠	pt:cinto	ru:ремень,пояс	tr:kemer	ur:بیلٹ	zh:腰带
 c:beluga	Noun	ar:حوت ابيض	de:Belugawal	en:beluga	es:beluga	fa:بلوگا	fr:béluga	he:לווייתן לבן	hi:बेलुगा	ja:シロイルカ	ko:흰돌고래	pt:beluga	ru:белуха	tr:beluga	ur:سفید وھیل	zh:白鲸
 c:beluga-whale	Noun	ar:حوت البيلوغا	de:Beluga	en:beluga whale	es:beluga	fa:بلوگا	fr:béluga	he:בלוגה	hi:बेलुगा व्हेल	ja:シロイルカ	ko:벨루가	pt:beluga	ru:белуха	tr:beyaz balina	ur:بیلوگا	zh:白鲸
@@ -895,10 +901,12 @@ c:berlin-wall-fall	Noun	ar:سقوط جدار برلين	de:Mauerfall	en:fall of 
 c:bern-capital	Noun	ar:برن	de:Bern	en:Bern	es:Berna	fa:برن	fr:Berne	he:ברן	hi:बर्न	ja:ベルン	ko:베른	pt:Berna	ru:Берн	tr:Bern	ur:برن	zh:伯尔尼
 c:bert-nlp	Noun	ar:نموذج بيرت	de:BERT-Modell	en:BERT model	es:modelo BERT	fa:مدل BERT	fr:modèle BERT	he:מודל BERT	hi:BERT मॉडल	ja:BERTモデル	ko:BERT 모델	pt:modelo BERT	ru:модель BERT	tr:BERT modeli	ur:BERT ماڈل	zh:BERT模型
 c:beryllium	Noun	ar:بيريليوم	de:Beryllium	en:beryllium	es:berilio	fa:بریلیم	fr:béryllium	he:בריליום	hi:बेरिलियम	ja:ベリリウム	ko:베릴륨	pt:berílio	ru:бериллий	tr:berilyum	ur:بیریلیم	zh:铍
+c:beside-location	Adverb	ar:بجانب	de:neben	en:beside	es:al lado	fa:کنار	fr:à côté	he:ליד	hi:बगल में	ja:そば	ko:옆에	pt:ao lado	ru:рядом	tr:yanında	ur:کے ساتھ	zh:旁边
 c:besiege	Verb	ar:حاصر,يحاصر	de:belagern	en:besiege	es:sitiar	fa:محاصره کردن	fr:assiéger	he:לצור	hi:घेराबंदी करना	ja:包囲する	ko:포위하다	pt:sitiar	ru:осаждать	tr:kuşatmak	ur:محاصرہ کرنا	zh:围攻
 c:beta-blocker	Noun	ar:حاصرات بيتا	de:Betablocker	en:beta blocker	es:betabloqueante	fa:بتابلاکر	fr:bêta-bloquant	he:חוסם בטא	hi:बीटा अवरोधक	ja:β遮断薬	ko:베타 차단제	pt:betabloqueador	ru:бета-блокатор	tr:beta bloker	ur:بیٹا بلاکر	zh:β受体阻滞剂
 c:betelgeuse	Noun	ar:إبط الجوزاء,بيتلجوس	de:Beteigeuze	en:Betelgeuse	es:Betelgeuse	fa:ابط الجوزا	fr:Bételgeuse	he:ביטלגז'	hi:बेटेल्गयूज़	ja:ベテルギウス	ko:베텔게우스	pt:Betelgeuse	ru:Бетельгейзе	tr:Betelgeuse	ur:بیٹلجیوز	zh:参宿四
 c:betrayal	Noun	ar:خيانة	de:Verrat	en:betrayal	es:traición	fa:خیانت	fr:trahison	he:בגידה	hi:विश्वासघात	ja:裏切り	ko:배신	pt:traição	ru:предательство	tr:ihanet	ur:خیانت	zh:背叛
+c:between-location	Adverb	ar:بين	de:zwischen	en:between	es:entre	fa:بین	fr:entre	he:בין	hi:बीच	ja:間	ko:사이	pt:entre	ru:между	tr:arasında	ur:درمیان	zh:之间
 c:beverage	Noun	ar:مشروب	de:Getränk	en:beverage	es:bebida	fa:نوشیدنی	fr:boisson	he:משקה	hi:पेय	ja:飲料	ko:음료	pt:bebida	ru:напиток	tr:içecek	ur:مشروب	zh:饮料
 c:bhangra	Noun	ar:رقص البانغرا	de:Bhangra	en:bhangra	es:bhangra	fa:بانگرا	fr:bhangra	he:בהאנגרה	hi:भांगड़ा	ja:バングラ	ko:방그라	pt:bhangra	ru:бхангра	tr:bhangra	ur:بھنگڑا	zh:旁遮普舞
 c:bharatanatyam	Noun	ar:رقص بهارتاناتيام	de:Bharatanatyam	en:bharatanatyam	es:bharatanatyam	fa:بهاراتاناتیام	fr:bharatanatyam	he:בהרטאנאטיאם	hi:भरतनाट्यम	ja:バラタナーティヤム	ko:바라타나티얌	pt:bharatanatyam	ru:бхаратанатьям	tr:bharatanatyam	ur:بھرت ناٹیم	zh:婆罗多舞
@@ -1115,6 +1123,7 @@ c:boss	Noun	ar:رئيس,مدير	de:Chef,Chefin	en:boss	es:jefe,jefa	fa:رئیس
 c:boston	Noun	ar:بوسطن	de:Boston	en:Boston	es:Boston	fa:بوستون	fr:Boston	he:בוסטון	hi:बोस्टन	ja:ボストン	ko:보스턴	pt:Boston	ru:Бостон	tr:Boston	ur:بوسٹن	zh:波士顿
 c:bottle	Noun	ar:زجاجة,قارورة	de:Flasche	en:bottle	es:botella	fa:بطری	fr:bouteille	he:בקבוק	hi:बोतल	ja:瓶,ボトル	ko:병	pt:garrafa	ru:бутылка	tr:şişe	ur:بوتل	zh:瓶子
 c:bottleneck	Noun	ar:عنق الزجاجة الجيني	de:Flaschenhalseffekt	en:bottleneck effect	es:efecto cuello de botella	fa:اثر گلوگاه	fr:effet goulot	he:אפקט צוואר בקבוק	hi:बाधा प्रभाव	ja:ボトルネック効果	ko:병목 효과	pt:efeito gargalo	ru:эффект бутылочного горлышка	tr:darboğaz etkisi	ur:گلے کی رکاوٹ اثر	zh:瓶颈效应
+c:bottom-location	Noun	ar:قاع	de:Unterseite	en:bottom	es:fondo	fa:کف	fr:fond	he:תחתית	hi:तल	ja:底	ko:바닥	pt:fundo	ru:дно	tr:alt	ur:نیچا	zh:底部
 c:boubou	Noun	ar:بوبو	de:Boubou	en:boubou	es:boubou	fa:بوبو	fr:boubou	he:בובו	hi:बूबू	ja:ブブ	ko:부부	pt:boubou	ru:бубу	tr:boubou	ur:بوبو	zh:布布袍
 c:bougainvillea	Noun	ar:الجهنمية	de:Bougainvillea	en:bougainvillea	es:buganvilla	fa:کاغذ گل	fr:bougainvillée	he:בוגנוויליה	hi:बुगेनविलिया	ja:ブーゲンビリア	ko:부겐빌레아	pt:buganvília	ru:бугенвиллея	tr:begonvil	ur:بوگنویلیا	zh:九重葛
 c:bound	Verb	ar:وثب بقوة	de:hüpfen,springen	en:bound	es:brincar con ímpetu	fa:جست خیز کردن	fr:bondir	he:לנתר	hi:उछलना	ja:跳ね上がる	ko:뛰어오르다	pt:saltar ligeiro	ru:прыгать резко	tr:hoplayarak ilerlemek	ur:اچھلنا	zh:跳跃前进
@@ -1537,6 +1546,7 @@ c:cent	Noun	ar:سنت	de:Cent	en:cent	es:centavo,céntimo	fa:سنت	fr:cent,cent
 c:centaur	Noun	ar:قنطور	de:Kentaur	en:centaur	es:centauro	fa:کنتاور	fr:centaure	he:קנטאור	hi:सेंटॉर	ja:ケンタウロス	ko:켄타우로스	pt:centauro	ru:кентавр	tr:santor	ur:قنطورس	zh:半人马
 c:centaur-creature	Noun	ar:القنطور	de:Zentaur	en:centaur	es:centauro	fa:قنطورس	fr:centaure	he:קנטאור	hi:सेंटॉर	ja:ケンタウロス	ko:켄타우로스	pt:centauro	ru:кентавр	tr:kentaur	ur:سینٹار	zh:半人马
 c:center	Noun	ar:مركز	de:Zentrum,Mitte	en:center,centre	es:centro	fa:مرکز	fr:centre	he:מרכז	hi:केंद्र	ja:中心	ko:중심,센터	pt:centro	ru:центр	tr:merkez	ur:مرکز	zh:中心
+c:center-location	Noun	ar:مركز	de:Zentrum	en:center	es:centro	fa:مرکز	fr:centre	he:מרכז	hi:केंद्र	ja:中心	ko:중심	pt:centro	ru:центр	tr:merkez	ur:مرکز	zh:中心
 c:centipede	Noun	ar:حريش,أم أربعة وأربعين	de:Hundertfüßer,Tausendfuß	en:centipede	es:ciempiés	fa:هزارپا	fr:mille-pattes,scolopendre	he:נדל	hi:कनखजूरा	ja:ムカデ	ko:지네	pt:centopeia	ru:сколопендра,многоножка	tr:kırkayak	ur:کنکھجورا	zh:蜈蚣
 c:central-limit	Noun	ar:مبرهنة النهاية المركزية	de:zentraler Grenzwertsatz	en:central limit theorem	es:teorema central del límite	fa:قضیه حد مرکزی	fr:théorème central limite	he:משפט הגבול המרכזי	hi:केंद्रीय सीमा प्रमेय	ja:中心極限定理	ko:중심 극한 정리	pt:teorema central do limite	ru:центральная предельная теорема	tr:merkezi limit teoremi	ur:مرکزی حد کا نظریہ	zh:中心极限定理
 c:centrifugal-force	Noun	ar:قوة طاردة مركزية	de:Zentrifugalkraft	en:centrifugal force	es:fuerza centrífuga	fa:نیروی گریز از مرکز	fr:force centrifuge	he:כוח צנטריפוגלי	hi:अपकेन्द्रीय बल	ja:遠心力	ko:원심력	pt:força centrífuga	ru:центробежная сила	tr:merkezkaç kuvvet	ur:مرکز سے دور قوت	zh:离心力
@@ -2199,6 +2209,7 @@ c:corn-veg	Noun	ar:ذرة طعام	de:Mais	en:corn	es:maíz	fa:ذرت	fr:maïs	h
 c:cornbread	Noun	ar:خبز الذرة	de:Maisbrot	en:cornbread	es:pan de maíz	fa:نان ذرت	fr:pain de maïs	he:לחם תירס	hi:मकई की रोटी	ja:コーンブレッド	ko:콘브레드	pt:broa	ru:кукурузный хлеб	tr:mısır ekmeği	ur:مکئی کی روٹی	zh:玉米面包
 c:cornbread-var	Noun	ar:خبز ذرة أمريكي	de:amerikanisches Maisbrot	en:cornbread	es:cornbread	fa:کورن برد	fr:cornbread	he:קורן ברד	hi:कॉर्नब्रेड	ja:コーンブレッド2	ko:콘브레드	pt:cornbread	ru:корнбред	tr:cornbread	ur:کارن بریڈ	zh:玉米面包美式
 c:cornea	Noun	ar:القرنية	de:Hornhaut	en:cornea	es:córnea	fa:قرنیه	fr:cornée	he:קרנית	hi:कॉर्निया	ja:角膜	ko:각막	pt:córnea	ru:роговица	tr:kornea	ur:آنکھ کی جھلی	zh:角膜
+c:corner-location	Noun	ar:زاوية	de:Ecke	en:corner	es:esquina	fa:گوشه	fr:coin	he:פינה	hi:कोना	ja:角	ko:모서리	pt:canto	ru:угол	tr:köşe	ur:کونا	zh:角落
 c:cornet	Noun	ar:كورنيت	de:Kornett	en:cornet	es:corneta	fa:کرنت	fr:cornet à pistons	he:קורנט	hi:कॉर्नेट	ja:コルネット	ko:코넷	pt:corneta	ru:корнет	tr:kornet	ur:کارنٹ	zh:短号
 c:cornice	Noun	ar:إفريز علوي	de:Gesims	en:cornice	es:cornisa	fa:قرنیز	fr:corniche	he:קרניז	hi:कार्निस	ja:コーニス	ko:코니스	pt:cornija	ru:карниз	tr:korniz	ur:چھجہ	zh:飞檐
 c:cornmeal	Noun	ar:دقيق الذرة	de:Maismehl	en:cornmeal	es:harina de maíz	fa:آرد ذرت	fr:semoule de maïs	he:קמח תירס	hi:मक्के का आटा	ja:コーンミール	ko:옥수수가루	pt:farinha de milho	ru:кукурузная мука	tr:mısır unu	ur:مکئی کا آٹا	zh:玉米面
@@ -2709,6 +2720,7 @@ c:diploid	Adjective	ar:ثنائي الصيغة	de:diploid	en:diploid	es:diploide
 c:diploma	Noun	ar:دبلوم	de:Diplom	en:diploma	es:diploma	fa:دیپلم	fr:diplôme	he:דיפלומה,תעודה	hi:डिप्लोमा	ja:ディプロマ,卒業証書	ko:디플로마,졸업장	pt:diploma	ru:диплом	tr:diploma	ur:ڈپلوما	zh:文凭,毕业证书
 c:diplomacy	Noun	ar:دبلوماسية	de:Diplomatie	en:diplomacy	es:diplomacia	fa:دیپلماسی	fr:diplomatie	he:דיפלומטיה	hi:कूटनीति	ja:外交	ko:외교	pt:diplomacia	ru:дипломатия	tr:diplomasi	ur:سفارت کاری	zh:外交
 c:dipper-bird	Noun	ar:طائر الغطاس	de:Wasseramsel	en:dipper	es:mirlo acuático	fa:آبتاکی	fr:cincle	he:ציפור הצולל	hi:डिपर	ja:カワガラス	ko:물까마귀	pt:melro-d'água	ru:оляпка	tr:dere kuzgunu	ur:ڈوبنے والا پرندہ	zh:河乌
+c:directions-locations	Noun	ar:اتجاهات ومواقع	de:Richtungen und Positionen	en:directions and locations	es:direcciones y ubicaciones	fa:جهت‌ها و مکان‌ها	fr:directions et lieux	he:כיוונים ומיקומים	hi:दिशाएं और स्थान	ja:方向と位置	ko:방향과 위치	pt:direções e localizações	ru:направления и места	tr:yönler ve konumlar	ur:سمتیں اور مقامات	zh:方向与位置
 c:director	Noun	ar:مخرج	de:Regisseur,Filmregisseur	en:director,film director	es:director,director de cine	fa:کارگردان	fr:réalisateur,metteur en scène	he:במאי,מsutton	hi:निर्देशक	ja:監督,映画監督	ko:감독,영화감독	pt:diretor,realizador	ru:режиссёр	tr:yönetmen	ur:ہدایتکار	zh:导演
 c:director-role	Noun	ar:مخرج سينمائي	de:Regisseur	en:film director	es:director de cine	fa:کارگردان	fr:réalisateur	he:במאי	hi:निर्देशक	ja:映画監督	ko:영화 감독	pt:realizador	ru:кинорежиссёр	tr:yönetmen	ur:ہدایتکار	zh:导演
 c:dirham	Noun	ar:درهم	de:Dirham	en:dirham	es:dírham	fa:درهم	fr:dirham	he:דירהם	hi:दिरहम	ja:ディルハム	ko:디르함	pt:dirham	ru:дирхам	tr:dirhem	ur:درہم	zh:迪拉姆
@@ -2833,6 +2845,7 @@ c:dough	Noun	ar:عجين	de:Teig	en:dough	es:masa	fa:خمیر	fr:pâte	he:בצק
 c:dove	Noun	ar:يمامة	de:Taube	en:dove	es:paloma	fa:قمری	fr:colombe	he:יונה	hi:फाख्ता	ja:鳩	ko:비둘기	pt:pomba	ru:голубка	tr:kumru	ur:فاختہ	zh:鸽
 c:dove-bird	Noun	ar:يمامة	de:Turteltaube	en:dove	es:tórtola	fa:قمری	fr:tourterelle	he:תור	hi:फाख़्ता	ja:鳩	ko:멧비둘기	pt:rola	ru:горлица	tr:kumru	ur:فاختہ	zh:斑鸠
 c:down	Adverb	ar:تحت,أسفل	de:unten,runter	en:down	es:abajo	fa:پایین	fr:bas,en bas	he:למטה	hi:नीचे	ja:下	ko:아래,밑	pt:baixo,abaixo	ru:вниз	tr:aşağı	ur:نیچے	zh:下
+c:down-direction	Adverb	ar:أسفل	de:unten	en:down	es:abajo	fa:پایین	fr:en bas	he:למטה	hi:नीचे	ja:下	ko:아래	pt:para baixo	ru:вниз	tr:aşağı	ur:نیچے	zh:下
 c:downburst	Noun	ar:انفجار هوائي نازل	de:Downburst	en:downburst	es:ráfaga descendente	fa:دانبرست	fr:downburst	he:ירידת פתע	hi:अवप्रवाह विस्फोट	ja:ダウンバースト	ko:다운버스트	pt:downburst	ru:даунбёрст	tr:inipatlama	ur:ڈاون برسٹ	zh:下击暴流
 c:download	Verb	ar:نزل,حمل	de:herunterladen,downloaden	en:download	es:descargar,bajar	fa:دانلود کرد,بارگیری کرد	fr:télécharger	he:הוריד	hi:डाउनलोड करना	ja:ダウンロードする	ko:다운로드하다,내려받다	pt:baixar,descarregar	ru:скачивать,загружать	tr:indirmek	ur:ڈاؤن لوڈ کرنا	zh:下载
 c:downpour	Noun	ar:وابل,سيل منهمر	de:Wolkenbruch,Platzregen,Sturzregen	en:downpour,heavy rain,cloudburst	es:aguacero,chaparrón,chubasco	fa:رگبار,باران شدید	fr:averse,déluge,pluie battante	he:מבול,גשם שוטף	hi:मूसलाधार बारिश,जोरदार बारिश	ja:土砂降り,豪雨	ko:폭우,호우	pt:aguaceiro,chuva forte,tromba-d'água	ru:ливень,проливной дождь	tr:sağanak	ur:موسلا دھار بارش,تیز بارش	zh:倾盆大雨,暴雨
@@ -2959,6 +2972,7 @@ c:easement	Noun	ar:حق الارتفاق	de:Grunddienstbarkeit	en:easement	es:se
 c:east	Noun	ar:شرق	de:Osten	en:east	es:este,oriente	fa:شرق	fr:est	he:מזרח	hi:पूर्व	ja:東	ko:동쪽,동	pt:leste,oriente	ru:восток	tr:doğu	ur:مشرق	zh:东
 c:east-china-sea	Noun	ar:بحر الصين الشرقي	de:Ostchinesisches Meer	en:East China Sea	es:Mar de China Oriental	fa:دریای چین شرقی	fr:Mer de Chine orientale	he:ים סין המזרחי	hi:पूर्वी चीन सागर	ja:東シナ海	ko:동중국해	pt:Mar da China Oriental	ru:Восточно-Китайское море	tr:Doğu Çin Denizi	ur:بحیرہ مشرقی چین	zh:东海,东中国海
 c:east-china-sea-body	Noun	ar:بحر الصين الشرقي	de:Ostchinesisches Meer	en:East China Sea	es:mar de China Oriental	fa:دریای شرقی چین	fr:mer de Chine orientale	he:ים סין המזרחי	hi:पूर्व चीन सागर	ja:東シナ海	ko:동중국해	pt:mar da China Oriental	ru:Восточно-Китайское море	tr:Doğu Çin Denizi	ur:مشرقی بحیرہ چین	zh:东海
+c:east-direction	Noun	ar:شرق	de:Osten	en:east	es:este	fa:شرق	fr:est	he:מזרח	hi:पूर्व	ja:東	ko:동쪽	pt:leste	ru:восток	tr:doğu	ur:مشرق	zh:东
 c:easter	Noun	ar:عيد الفصح,عيد القيامة	de:Ostern	en:easter	es:pascua	fa:عید پاک	fr:pâques	he:חג הפסחא	hi:ईस्टर	ja:復活祭,イースター	ko:부활절	pt:páscoa	ru:пасха	tr:paskalya	ur:ایسٹر	zh:复活节
 c:eastern-roman-empire	Noun	ar:الإمبراطورية الرومانية الشرقية	de:oströmisches Reich	en:Eastern Roman Empire	es:Imperio romano de Oriente	fa:امپراتوری روم شرقی	fr:Empire romain d'Orient	he:האימפריה הרומית המזרחית	hi:पूर्वी रोमन साम्राज्य	ja:東ローマ帝国	ko:동로마 제국	pt:Império Romano do Oriente	ru:Восточная Римская империя	tr:Doğu Roma İmparatorluğu	ur:مشرقی رومی سلطنت	zh:东罗马帝国
 c:easy	Adjective	ar:سهل	de:einfach,leicht	en:easy	es:fácil	fa:آسان,ساده	fr:facile	he:קל	hi:आसान	ja:簡単,易しい	ko:쉬운	pt:fácil	ru:лёгкий,простой	tr:kolay	ur:آسان	zh:容易,简单
@@ -2989,6 +3003,7 @@ c:ectoderm	Noun	ar:الأديم الظاهر	de:Ektoderm	en:ectoderm	es:ectoderm
 c:ecumenism	Noun	ar:المسكونية	de:Ökumenismus	en:ecumenism	es:ecumenismo	fa:وحدت‌گرایی مسیحی	fr:œcuménisme	he:אקומניזם	hi:विश्वव्यापी ईसाई एकता	ja:エキュメニズム	ko:에큐메니즘	pt:ecumenismo	ru:экуменизм	tr:ekümenik hareket	ur:مسیحی وحدت	zh:普世基督教合一运动
 c:edge	Noun	ar:حافة,حرف	de:Rand,Kante	en:edge	es:borde	fa:لبه,کناره	fr:bord	he:קצה	hi:किनारा	ja:端,縁	ko:가장자리,끝	pt:borda	ru:край	tr:kenar	ur:کنارہ	zh:边,边缘
 c:edge-geometry	Noun	ar:حافة,ضلع	de:Kante	en:edge	es:arista	fa:یال,لبه	fr:arête	he:קצה,צלע	hi:कोर,किनारा	ja:辺,エッジ	ko:모서리,변	pt:aresta	ru:ребро,грань	tr:kenar	ur:کنارہ	zh:棱,边
+c:edge-location	Noun	ar:حافة	de:Rand	en:edge	es:borde	fa:لبه	fr:bord	he:קצה	hi:किनारा	ja:端	ko:가장자리	pt:borda	ru:край	tr:kenar	ur:کنارا	zh:边缘
 c:edition	Noun	ar:طبعة,اصدار	de:Auflage,Ausgabe	en:edition	es:edición	fa:چاپ,ویرایش	fr:édition	he:מהדורה	hi:संस्करण	ja:版,版次	ko:판,판본	pt:edição	ru:издание,выпуск	tr:baskı	ur:اشاعت	zh:版,版本
 c:editor	Noun	ar:محرر	de:Lektor,Redakteur	en:editor	es:editor	fa:ویراستار	fr:éditeur,rédacteur	he:עורך	hi:संपादक	ja:編集者	ko:편집자	pt:editor	ru:редактор	tr:editör,yayın yönetmeni	ur:مدیر	zh:编辑
 c:editorial	Noun	ar:افتتاحية	de:Leitartikel	en:editorial	es:editorial	fa:سرمقاله	fr:éditorial	he:מאמר מערכת	hi:संपादकीय	ja:社説	ko:사설	pt:editorial	ru:передовая статья	tr:başyazı	ur:اداریہ	zh:社论
@@ -3109,6 +3124,7 @@ c:encryption-security	Noun	ar:تشفير البيانات	de:Verschlüsselung	en
 c:enculturation	Noun	ar:التثقف	de:Enkulturation	en:enculturation	es:enculturación	fa:درون‌فرهنگی‌سازی	fr:enculturation	he:אנקולטורציה	hi:सांस्कृतिक ग्रहण	ja:文化化	ko:문화 학습	pt:enculturação	ru:инкультурация	tr:kültüre kazanım	ur:ثقافتی جذب	zh:文化化
 c:encyclopedia	Noun	ar:موسوعة	de:Enzyklopädie,Lexikon	en:encyclopedia	es:enciclopedia	fa:دانشنامه,دایرةالمعارف	fr:encyclopédie	he:אנציקלופדיה	hi:विश्वकोश	ja:百科事典	ko:백과사전	pt:enciclopédia	ru:энциклопедия	tr:ansiklopedi	ur:دائرۃ المعارف	zh:百科全书
 c:end	Noun	ar:نهاية,آخر	de:Ende	en:end	es:fin,final	fa:پایان,آخر	fr:fin	he:סוף	hi:अंत,समाप्ति	ja:終わり	ko:끝	pt:fim,final	ru:конец	tr:son	ur:اختتام,آخر	zh:结束,末
+c:end-location	Noun	ar:نهاية	de:Ende	en:end	es:final	fa:انتها	fr:fin	he:סוף	hi:अंत	ja:終わり	ko:끝	pt:fim	ru:конец	tr:son	ur:انتہا	zh:末端
 c:end-table	Noun	ar:طاولة طرفية	de:Ecktisch	en:end table	es:mesa de extremo	fa:میز گوشه	fr:table d'angle	he:שולחן קצה	hi:एंड टेबल	ja:エンドテーブル	ko:엔드 테이블	pt:mesa de canto	ru:столик для угла	tr:köşe masası	ur:اینڈ ٹیبل	zh:角桌
 c:endangered	Adjective	ar:مهدد بالانقراض	de:gefährdet	en:endangered	es:en peligro	fa:در معرض خطر	fr:menacé	he:בסכנת הכחדה	hi:संकटग्रस्त	ja:絶滅危惧	ko:멸종 위기	pt:ameaçado	ru:под угрозой	tr:tehlike altında	ur:خطرے میں	zh:濒危
 c:endangered-species	Noun	ar:نوع مهدد بالانقراض	de:bedrohte Art	en:endangered species	es:especie en peligro	fa:گونه در معرض انقراض	fr:espèce menacée	he:מין בסכנת הכחדה	hi:संकटग्रस्त प्रजाति	ja:絶滅危惧種	ko:멸종 위기종	pt:espécie ameaçada	ru:исчезающий вид	tr:nesli tükenmekte olan tür	ur:خطرے سے دوچار نوع	zh:濒危物种
@@ -3271,6 +3287,7 @@ c:event	Noun	ar:حدث	de:Ereignis,Veranstaltung	en:event	es:evento,suceso	fa:ر
 c:event-extraction	Noun	ar:استخراج الأحداث	de:Ereignisextraktion	en:event extraction	es:extracción de eventos	fa:استخراج رویداد	fr:extraction d'événements	he:חילוץ אירועים	hi:घटना निष्कर्षण	ja:イベント抽出	ko:이벤트 추출	pt:extração de eventos	ru:извлечение событий	tr:olay çıkarımı	ur:واقعہ نکاسی	zh:事件抽取
 c:event-horizon	Noun	ar:أفق الحدث	de:Ereignishorizont	en:event horizon	es:horizonte de sucesos	fa:افق رویداد	fr:horizon des événements	he:אופק אירועים	hi:घटना क्षितिज	ja:事象の地平線	ko:사건 지평선	pt:horizonte de eventos	ru:горизонт событий	tr:olay ufku	ur:واقعاتی افق	zh:事件视界
 c:evergreen	Adjective	ar:دائم الخضرة	de:immergrün	en:evergreen	es:perennifolio	fa:همیشه سبز	fr:persistant	he:ירוק עד	hi:सदाबहार	ja:常緑	ko:상록	pt:perenifólio	ru:вечнозелёный	tr:her dem yeşil	ur:سدا بہار	zh:常绿
+c:everywhere	Adverb	ar:في كل مكان	de:überall	en:everywhere	es:en todas partes	fa:همه جا	fr:partout	he:בכל מקום	hi:हर जगह	ja:どこにでも	ko:어디에나	pt:em todo lugar	ru:везде	tr:her yerde	ur:ہر جگہ	zh:到处
 c:evidence	Noun	ar:دليل,بينة	de:Beweis,Beweismaterial	en:evidence	es:evidencia,prueba	fa:مدرک,دلیل	fr:preuve	he:ראיה,הוכחה	hi:सबूत,प्रमाण	ja:証拠	ko:증거	pt:prova,evidência	ru:улика,доказательство	tr:kanıt,delil	ur:ثبوت,دلیل	zh:证据
 c:evidence-based	Adjective	ar:قائم على الأدلة	de:evidenzbasiert	en:evidence-based	es:basado en evidencia	fa:مبتنی بر شواهد	fr:fondé sur des preuves	he:מבוסס ראיות	hi:साक्ष्य-आधारित	ja:エビデンスベース	ko:증거 기반	pt:baseado em evidências	ru:доказательный	tr:kanıta dayalı	ur:شواہد پر مبنی	zh:循证
 c:evidence-law	Noun	ar:دليل قضائي	de:Beweis	en:evidence	es:prueba judicial	fa:شواهد	fr:preuve	he:ראיה	hi:साक्ष्य	ja:証拠	ko:증거	pt:prova	ru:доказательство	tr:kanıt	ur:ثبوت	zh:证据
@@ -3363,6 +3380,7 @@ c:famous-inventions	Noun	ar:اختراعات مشهورة	de:berühmte Erfindung
 c:fandango	Noun	ar:رقص الفاندانغو	de:Fandango	en:fandango	es:fandango	fa:فاندانگو	fr:fandango	he:פנדנגו	hi:फ़ैंडेंगो	ja:ファンダンゴ	ko:판당고	pt:fandango	ru:фанданго	tr:fandango	ur:فینڈانگو	zh:芳丹戈舞
 c:fantasy-film	Noun	ar:فيلم فانتازيا	de:Fantasyfilm	en:fantasy film	es:película de fantasía	fa:فیلم فانتزی	fr:film fantastique	he:סרט פנטזיה	hi:फंतासी फिल्म	ja:ファンタジー映画	ko:판타지 영화	pt:filme de fantasia	ru:фэнтези	tr:fantastik film	ur:فنتاسی فلم	zh:奇幻片
 c:far	Adverb	ar:بعيد	de:fern,weit	en:far	es:lejos	fa:دور	fr:loin	he:רחוק	hi:दूर	ja:遠い	ko:멀리,먼	pt:longe	ru:далеко	tr:uzak	ur:دور	zh:远
+c:far-location	Adverb	ar:بعيد	de:weit	en:far	es:lejos	fa:دور	fr:loin	he:רחוק	hi:दूर	ja:遠く	ko:멀리	pt:longe	ru:далеко	tr:uzak	ur:دور	zh:远处
 c:farey-sequence	Noun	ar:متتالية فيري	de:Farey-Folge	en:Farey sequence	es:secuencia de Farey	fa:دنباله فاری	fr:suite de Farey	he:סדרת פארי	hi:फेरे अनुक्रम	ja:ファレー数列	ko:파레 수열	pt:sequência de Farey	ru:ряд Фарея	tr:Farey dizisi	ur:فیری ترتیب	zh:法里数列
 c:farm	Noun	ar:مزرعة	de:Bauernhof,Farm	en:farm	es:granja,finca	fa:مزرعه	fr:ferme	he:חווה,משק	hi:खेत,फ़ार्म	ja:農場,ファーム	ko:농장	pt:fazenda,granja	ru:ферма,хозяйство	tr:çiftlik	ur:فارم,کھیت	zh:农场
 c:farm-animals	Noun	ar:حيوانات المزرعة	de:Nutztiere	en:farm animals	es:animales de granja	fa:حیوانات مزرعه	fr:animaux de ferme	he:חיות משק	hi:खेत के जानवर	ja:家畜	ko:농장 동물	pt:animais de fazenda	ru:домашний скот	tr:çiftlik hayvanları	ur:فارم کے جانور	zh:家畜
@@ -3645,6 +3663,7 @@ c:formal-wear	Noun	ar:ملابس رسمية	de:Formelle Kleidung	en:formal wear	
 c:forte	Noun	ar:عزف قوي	de:Forte	en:forte	es:forte	fa:فورته	fr:forte	he:פורטה	hi:तेज़ी	ja:フォルテ	ko:포르테	pt:forte	ru:форте	tr:forte	ur:فورٹے	zh:强音
 c:fortnight	Noun	ar:أسبوعان	de:zwei Wochen	en:fortnight	es:quincena	fa:دو هفته	fr:quinzaine	he:שבועיים	hi:पखवाड़ा	ja:二週間	ko:이 주	pt:quinzena	ru:две недели	tr:iki hafta	ur:پندرواڑہ	zh:两周
 c:fortress-building	Noun	ar:حصن	de:Festung	en:fortress	es:fortaleza	fa:دژ	fr:forteresse	he:מבצר	hi:किला	ja:要塞	ko:요새	pt:fortaleza	ru:крепость	tr:hisar	ur:قلعہ بند	zh:堡垒
+c:forward-direction	Adverb	ar:أمام	de:vorwärts	en:forward	es:adelante	fa:جلو	fr:en avant	he:קדימה	hi:आगे	ja:前方	ko:앞으로	pt:para frente	ru:вперёд	tr:ileri	ur:آگے	zh:向前
 c:fossil	Noun	ar:أحفورة	de:Fossil	en:fossil	es:fósil	fa:سنگواره	fr:fossile	he:מאובן	hi:जीवाश्म	ja:化石	ko:화석	pt:fóssil	ru:ископаемое	tr:fosil	ur:رکاز	zh:化石
 c:fossil-fuel	Noun	ar:وقود أحفوري	de:fossiler Brennstoff	en:fossil fuel	es:combustible fósil	fa:سوخت فسیلی	fr:combustible fossile	he:דלק מאובנים	hi:जीवाश्म ईंधन	ja:化石燃料	ko:화석 연료	pt:combustível fóssil	ru:ископаемое топливо	tr:fosil yakıt	ur:فوسل ایندھن	zh:化石燃料
 c:foundation	Noun	ar:أساس,قاعدة	de:Fundament,Grundmauer	en:foundation	es:cimiento,cimentación	fa:پی,بنیاد	fr:fondation	he:יסוד	hi:नींव,आधार	ja:基礎,土台	ko:기초,토대	pt:fundação,alicerce	ru:фундамент,основание	tr:temel	ur:بنیاد,اساس	zh:地基,基础
@@ -3718,6 +3737,7 @@ c:frog	Noun	ar:ضفدع	de:Frosch	en:frog	es:rana	fa:قورباغه	fr:grenouill
 c:frog-animal	Noun	ar:ضفدع	de:Frosch	en:frog	es:rana	fa:قورباغه	fr:grenouille	he:צפרדע	hi:मेंढक	ja:カエル	ko:개구리	pt:sapo	ru:лягушка	tr:kurbağa	ur:مینڈک	zh:青蛙
 c:frond	Noun	ar:سعف	de:Wedel	en:frond	es:fronde	fa:برگ سرخس	fr:fronde	he:עלה שרך	hi:पर्णांग पत्र	ja:葉状体	ko:엽상체	pt:fronde	ru:вайя	tr:yaprak	ur:پھنڈے کا پتہ	zh:叶状体
 c:front	Noun	ar:أمام	de:vorne,Vorderseite	en:front	es:frente,delante	fa:جلو	fr:devant,avant	he:חזית,קדמה	hi:आगे,सामने	ja:前	ko:앞	pt:frente	ru:перед	tr:ön	ur:سامنے,آگے	zh:前
+c:front-location	Noun	ar:الأمام	de:Vorderseite	en:front	es:frente	fa:جلو مکان	fr:devant	he:חזית	hi:सामने	ja:前面	ko:앞면	pt:frente	ru:перёд	tr:ön	ur:سامنے	zh:前面
 c:frontal-system	Noun	ar:نظام الجبهات الهوائية	de:Frontensystem	en:frontal system	es:sistema frontal	fa:سامانه جبهه‌ای	fr:système frontal	he:מערכת חזיתות	hi:अग्रीय तंत्र	ja:前線系	ko:전선 시스템	pt:sistema frontal	ru:фронтальная система	tr:cephe sistemi	ur:محاذ ہوائی نظام	zh:锋面系统
 c:frontier	Noun	ar:تخوم	de:Grenzgebiet	en:frontier	es:frontera pionera	fa:سرحد	fr:frontière pionnière	he:ספר	hi:सीमांत	ja:辺境	ko:변경	pt:fronteira pioneira	ru:рубеж	tr:sınır bölgesi	ur:سرحد	zh:边疆
 c:frost	Noun	ar:صقيع	de:Frost,Raureif	en:frost	es:escarcha	fa:یخ‌بندان,شبنم یخ زده	fr:gel,givre	he:כפור	hi:पाला	ja:霜	ko:서리	pt:geada	ru:иней	tr:kırağı,don	ur:پالا	zh:霜
@@ -4343,6 +4363,7 @@ c:herbivore	Noun	ar:آكل الأعشاب,عاشب	de:Pflanzenfresser,Herbivore	
 c:herbivore-eco	Noun	ar:آكل عشب	de:Pflanzenfresser	en:herbivore	es:herbívoro	fa:گیاه‌خوار	fr:herbivore	he:צמחוני	hi:शाकाहारी	ja:草食動物	ko:초식동물	pt:herbívoro	ru:травоядное	tr:otçul	ur:سبزی خور	zh:食草动物
 c:herd	Noun	ar:قطيع	de:Herde	en:herd	es:manada,rebaño	fa:گله	fr:troupeau	he:עדר	hi:झुंड	ja:群れ	ko:무리	pt:manada,rebanho	ru:стадо	tr:sürü	ur:ریوڑ	zh:兽群
 c:herd-behavior	Noun	ar:سلوك القطيع	de:Herdenverhalten	en:herd behavior	es:comportamiento de manada	fa:رفتار گله‌ای	fr:comportement grégaire	he:התנהגות עדר	hi:झुंड व्यवहार	ja:集団行動	ko:군중 행동	pt:comportamento de manada	ru:стадное поведение	tr:sürü davranışı	ur:ریوڑ رویہ	zh:从众行为
+c:here-location	Adverb	ar:هنا	de:hier	en:here	es:aquí	fa:اینجا	fr:ici	he:כאן	hi:यहां	ja:ここ	ko:여기	pt:aqui	ru:здесь	tr:burada	ur:یہاں	zh:这里
 c:heredity	Noun	ar:وراثة	de:Vererbung,Erblichkeit	en:heredity	es:herencia	fa:وراثت	fr:hérédité	he:תורשה	hi:वंशागति,आनुवंशिकता	ja:遺伝	ko:유전	pt:hereditariedade	ru:наследственность	tr:kalıtım	ur:وراثت	zh:遗传
 c:heredity-gen	Noun	ar:وراثة	de:Vererbung	en:heredity	es:herencia	fa:وراثت	fr:hérédité	he:תורשה	hi:आनुवंशिकता	ja:遺伝	ko:유전	pt:hereditariedade	ru:наследственность	tr:kalıtım	ur:وراثت	zh:遗传
 c:heresy	Noun	ar:هرطقة	de:Häresie	en:heresy	es:herejía	fa:بدعت	fr:hérésie	he:כפירה	hi:विधर्म	ja:異端	ko:이단	pt:heresia	ru:ересь	tr:sapkınlık	ur:کفر	zh:异端
@@ -4712,6 +4733,7 @@ c:inscribed-shape	Noun	ar:شكل محاط	de:einbeschriebene Figur	en:inscribed 
 c:insect	Noun	ar:حشرة	de:Insekt	en:insect	es:insecto	fa:حشره	fr:insecte	he:חרק	hi:कीट	ja:昆虫,虫	ko:곤충,벌레	pt:inseto	ru:насекомое	tr:böcek	ur:کیڑا	zh:昆虫
 c:insertion-gene	Noun	ar:إدراج جيني	de:Geninsertion	en:gene insertion	es:inserción génica	fa:درج ژنی	fr:insertion génique	he:הכנסה גנטית	hi:जीन सम्मिलन	ja:遺伝子挿入	ko:유전자 삽입	pt:inserção genética	ru:вставка гена	tr:gen eklenmesi	ur:جین کا اندراج	zh:基因插入
 c:inside	Noun	ar:داخل	de:innen,drinnen	en:inside	es:dentro,interior	fa:داخل,درون	fr:dedans,intérieur	he:פנים	hi:अंदर,भीतर	ja:中	ko:안,속	pt:dentro,interior	ru:внутри	tr:iç	ur:اندر,اندرون	zh:里,内
+c:inside-location	Adverb	ar:داخل	de:innerhalb	en:inside	es:dentro	fa:داخل	fr:à l'intérieur	he:בתוך	hi:अंदर	ja:内側	ko:안쪽	pt:dentro	ru:внутри	tr:içeride	ur:اندر	zh:里面
 c:insight	Noun	ar:بصيرة,استبصار	de:Einsicht,Erkenntnis	en:insight	es:perspicacia,percepción	fa:بینش,بصیرت	fr:perspicacité,pénétration	he:תובנה	hi:अंतर्दृष्टि	ja:洞察,洞察力	ko:통찰,통찰력	pt:percepção,discernimento	ru:прозрение,понимание	tr:kavrayış,içgörü	ur:بصیرت,فہم	zh:洞察,见解
 c:insight-cog	Noun	ar:الاستبصار	de:Einsicht	en:insight	es:introspección	fa:بینش	fr:insight	he:תובנה	hi:अंतर्दृष्टि	ja:洞察	ko:통찰	pt:insight	ru:инсайт	tr:içgörü	ur:بصیرت	zh:顿悟
 c:insolation	Noun	ar:الإشعاع الشمسي الواصل	de:Einstrahlung	en:insolation	es:insolación	fa:تابش خورشیدی	fr:insolation	he:קרינת שמש	hi:सूर्यातप	ja:日射量	ko:일사량	pt:insolação	ru:инсоляция	tr:güneş ışınımı	ur:شمسی تابش	zh:太阳辐射量
@@ -5281,6 +5303,7 @@ c:lederhosen	Noun	ar:ليدرهوزن	de:Lederhose	en:lederhosen	es:lederhosen	f
 c:leech	Noun	ar:علقة	de:Blutegel,Egel	en:leech	es:sanguijuela	fa:زالو	fr:sangsue	he:עלוקה	hi:जोंक	ja:ヒル,蛭	ko:거머리	pt:sanguessuga	ru:пиявка	tr:sülük	ur:جونک	zh:水蛭,蚂蟥
 c:leek	Noun	ar:كراث	de:Lauch,Porree	en:leek	es:puerro	fa:تره فرنگی	fr:poireau	he:כרישה	hi:लीक	ja:リーキ	ko:리크	pt:alho-porro	ru:лук-порей	tr:pırasa	ur:لیک	zh:韭葱
 c:leek-veg	Noun	ar:كراث	de:Lauch	en:leek	es:puerro	fa:تره فرنگی	fr:poireau	he:כרישה	hi:गांठ गोभी	ja:リーキ	ko:리크	pt:alho-poró	ru:лук-порей	tr:pırasa	ur:لیک	zh:韭葱
+c:left-direction	Adverb	ar:يسار	de:links	en:left	es:izquierda	fa:چپ	fr:gauche	he:שמאל	hi:बाएं	ja:左	ko:왼쪽	pt:esquerda	ru:влево	tr:sol	ur:بائیں	zh:左
 c:left-side	Noun	ar:يسار,شمال	de:links	en:left	es:izquierda	fa:چپ	fr:gauche	he:שמאל	hi:बायाँ	ja:左	ko:왼쪽	pt:esquerda	ru:лево	tr:sol	ur:بائیں	zh:左
 c:leg	Noun	ar:ساق,رجل	de:Bein	en:leg	es:pierna	fa:پا	fr:jambe	he:רגל	hi:टांग,पैर	ja:脚,足	ko:다리	pt:perna	ru:нога	tr:bacak	ur:ٹانگ	zh:腿
 c:legato	Adjective	ar:ليغاتو	de:Legato	en:legato	es:legato	fa:لگاتو	fr:legato	he:לגטו	hi:लेगाटो	ja:レガート	ko:레가토	pt:legato	ru:легато	tr:legato	ur:پیوستہ	zh:连奏
@@ -5881,6 +5904,7 @@ c:mid-ocean-ridge	Noun	ar:سلسلة وسط المحيط	de:Mittelozeanischer R�
 c:mid-ocean-ridge-feat	Noun	ar:حيد وسط المحيط	de:mittelozeanischer Rücken	en:mid-ocean ridge	es:dorsal oceánica	fa:پشته میان‌اقیانوسی	fr:dorsale océanique	he:רכס תת-ימי	hi:मध्य-समुद्र कटक	ja:中央海嶺	ko:중앙해령	pt:dorsal oceânica	ru:срединно-океанический хребет	tr:orta okyanus sırtı	ur:سمندری چوٹی	zh:大洋中脊
 c:midday-time	Noun	ar:منتصف النهار	de:Mittag	en:midday	es:mediodía	fa:ظهر	fr:midi	he:צהריים	hi:दोपहर	ja:正午	ko:정오	pt:meio-dia	ru:полдень	tr:öğle	ur:دوپہر	zh:正午
 c:middle	Noun	ar:وسط	de:Mitte	en:middle	es:medio	fa:وسط,میانه	fr:milieu	he:אמצע	hi:बीच,मध्य	ja:真ん中,中央	ko:중간,가운데	pt:meio	ru:середина	tr:orta	ur:درمیان,وسط	zh:中间
+c:middle-location	Noun	ar:الوسط	de:Mitte	en:middle	es:medio	fa:وسط	fr:milieu	he:אמצע	hi:मध्य	ja:真ん中	ko:중간	pt:meio	ru:середина	tr:orta	ur:درمیان مقام	zh:中间
 c:midge	Noun	ar:بعوضة صغيرة	de:Mücke	en:midge	es:jején	fa:پشه ریز	fr:moucheron	he:יתוש קטן	hi:मच्छर-मक्खी	ja:ユスリカ	ko:깔따구	pt:mosquito	ru:мошка	tr:tatarcık	ur:باریک مچھر	zh:蠓
 c:midnight-time	Noun	ar:منتصف الليل	de:Mitternacht	en:midnight	es:medianoche	fa:نیمه شب	fr:minuit	he:חצות	hi:मध्यरात्रि	ja:真夜中	ko:자정	pt:meia-noite	ru:полночь	tr:gece yarısı	ur:آدھی رات	zh:午夜
 c:midpoint	Noun	ar:نقطة المنتصف	de:Mittelpunkt	en:midpoint	es:punto medio	fa:نقطه میانی	fr:point milieu	he:נקודת אמצע	hi:मध्य बिंदु	ja:中点	ko:중점	pt:ponto médio	ru:середина	tr:orta nokta	ur:درمیانی نقطہ	zh:中点
@@ -6267,6 +6291,7 @@ c:navigate	Verb	ar:تنقل,يتنقل	de:navigieren	en:navigate	es:navegar	fa:�
 c:navy-blue	Noun	ar:كُحْلي,أزرق داكن	de:Marineblau	en:navy blue	es:azul marino	fa:سرمه‌ای	fr:bleu marine	he:כחול כהה	hi:गहरा नीला	ja:紺色,ネイビーブルー	ko:남색,네이비	pt:azul-marinho	ru:тёмно-синий	tr:lacivert	ur:گہرا نیلا	zh:藏青色,海军蓝
 c:navy-seaman	Noun	ar:بحار جندي	de:Matrose	en:seaman navy	es:marinero	fa:ملوان	fr:matelot	he:מלח	hi:नाविक	ja:水兵	ko:수병	pt:marinheiro	ru:моряк	tr:bahriyeli	ur:ملاح	zh:水兵
 c:near	Adverb	ar:قريب	de:nah,nahe	en:near,close	es:cerca	fa:نزدیک	fr:près,proche	he:קרוב	hi:पास,निकट	ja:近い	ko:가까이,가까운	pt:perto,próximo	ru:близко	tr:yakın	ur:قریب	zh:近
+c:near-location	Adverb	ar:قريب	de:nahe	en:near	es:cerca	fa:نزدیک	fr:près	he:קרוב	hi:पास	ja:近く	ko:가까이	pt:perto	ru:близко	tr:yakın	ur:قریب	zh:附近
 c:nebula	Noun	ar:سديم	de:Nebel	en:nebula	es:nebulosa	fa:سحابی	fr:nébuleuse	he:ערפילית	hi:निहारिका	ja:星雲	ko:성운	pt:nebulosa	ru:туманность	tr:bulutsu	ur:سحابیہ	zh:星云
 c:nebula-astro	Noun	ar:سديم	de:Nebel	en:nebula	es:nebulosa	fa:سحابی	fr:nébuleuse	he:ערפילית	hi:नीहारिका	ja:星雲	ko:성운	pt:nebulosa	ru:туманность	tr:bulutsu	ur:سحابیہ	zh:星云
 c:nebulizer	Noun	ar:جهاز البخار	de:Vernebler	en:nebulizer	es:nebulizador	fa:نبولایزر	fr:nébuliseur	he:מרסס	hi:नेब्युलाइज़र	ja:ネブライザー	ko:분무기	pt:nebulizador	ru:небулайзер	tr:nebülizatör	ur:نیبولائزر	zh:雾化器
@@ -6399,9 +6424,12 @@ c:normal-force	Noun	ar:قوة عمودية	de:Normalkraft	en:normal force	es:fue
 c:normalization	Noun	ar:التسوية	de:Normalisierung	en:normalization	es:normalización	fa:نرمال‌سازی	fr:normalisation	he:נורמליזציה	hi:सामान्यीकरण	ja:正規化	ko:정규화	pt:normalização	ru:нормализация	tr:normalleştirme	ur:معیاری بندی	zh:规范化
 c:normalization-db	Noun	ar:تطبيع قاعدة البيانات	de:Datenbanknormalisierung	en:normalization	es:normalización	fa:نرمال‌سازی پایگاه داده	fr:normalisation	he:נרמול	hi:सामान्यीकरण	ja:正規化	ko:정규화	pt:normalização	ru:нормализация	tr:normalizasyon	ur:نارملائزیشن	zh:规范化
 c:north	Noun	ar:شمال	de:Norden	en:north	es:norte	fa:شمال	fr:nord	he:צפון	hi:उत्तर	ja:北	ko:북쪽,북	pt:norte	ru:север	tr:kuzey	ur:شمال	zh:北
+c:north-direction	Noun	ar:شمال	de:Norden	en:north	es:norte	fa:شمال	fr:nord	he:צפון	hi:उत्तर	ja:北	ko:북쪽	pt:norte	ru:север	tr:kuzey	ur:شمال	zh:北
 c:north-sea	Noun	ar:بحر الشمال	de:Nordsee	en:North Sea	es:Mar del Norte	fa:دریای شمال	fr:Mer du Nord	he:הים הצפוני	hi:उत्तरी सागर	ja:北海	ko:북해	pt:Mar do Norte	ru:Северное море	tr:Kuzey Denizi	ur:بحیرہ شمال	zh:北海
 c:north-sea-body	Noun	ar:بحر الشمال	de:Nordsee	en:North Sea	es:mar del Norte	fa:دریای شمال	fr:mer du Nord	he:ים הצפוני	hi:उत्तरी सागर	ja:北海	ko:북해	pt:mar do Norte	ru:Северное море	tr:Kuzey Denizi	ur:شمالی سمندر	zh:北海
+c:northeast-direction	Noun	ar:شمال شرق	de:Nordosten	en:northeast	es:noreste	fa:شمال شرقی	fr:nord-est	he:צפון מזרח	hi:उत्तर पूर्व	ja:北東	ko:북동	pt:nordeste	ru:северо-восток	tr:kuzeydoğu	ur:شمال مشرق	zh:东北
 c:northeaster	Noun	ar:عاصفة شمالية شرقية	de:Nordoster	en:nor'easter	es:norte	fa:طوفان شمال شرقی	fr:nordet	he:נורדסטר	hi:उत्तर-पूर्वी तूफान	ja:北東嵐	ko:북동 폭풍	pt:nordestada	ru:норд-ост	tr:kuzeydoğu fırtınası	ur:شمال مشرقی طوفان	zh:东北风暴
+c:northwest-direction	Noun	ar:شمال غرب	de:Nordwesten	en:northwest	es:noroeste	fa:شمال غربی	fr:nord-ouest	he:צפון מערב	hi:उत्तर पश्चिम	ja:北西	ko:북서	pt:noroeste	ru:северо-запад	tr:kuzeybatı	ur:شمال مغرب	zh:西北
 c:norwegian-language	Noun	ar:اللغة النرويجية	de:Norwegisch	en:Norwegian language	es:idioma noruego	fa:زبان نروژی	fr:norvégien	he:נורווגית	hi:नॉर्वेजियन भाषा	ja:ノルウェー語	ko:노르웨이어	pt:língua norueguesa	ru:норвежский язык	tr:Norveççe	ur:نارویجی زبان	zh:挪威语
 c:norwegian-sea	Noun	ar:بحر النرويج	de:Europäisches Nordmeer,Norwegische See	en:Norwegian Sea	es:Mar de Noruega	fa:دریای نروژ	fr:Mer de Norvège	he:הים הנורווגי	hi:नॉर्वेजियन सागर	ja:ノルウェー海	ko:노르웨이해	pt:Mar da Noruega	ru:Норвежское море	tr:Norveç Denizi	ur:بحیرہ ناروے	zh:挪威海
 c:norwegian-sea-body	Noun	ar:بحر النرويج	de:Europäisches Nordmeer	en:Norwegian Sea	es:mar de Noruega	fa:دریای نروژ	fr:mer de Norvège	he:הים הנורבגי	hi:नॉर्वेजियन सागर	ja:ノルウェー海	ko:노르웨이해	pt:mar da Noruega	ru:Норвежское море	tr:Norveç Denizi	ur:ناروے کا سمندر	zh:挪威海
@@ -6429,6 +6457,7 @@ c:novel-genre	Noun	ar:رواية	de:Roman	en:novel	es:novela	fa:رمان	fr:roma
 c:novgorod-republic	Noun	ar:جمهورية نوفغورود	de:Republik Nowgorod	en:Novgorod Republic	es:República de Nóvgorod	fa:جمهوری نووگورود	fr:république de Novgorod	he:רפובליקת נובגורוד	hi:नोवगोरोद गणराज्य	ja:ノヴゴロド公国	ko:노브고로드 공국	pt:República de Novgorod	ru:Новгородская республика	tr:Novgorod Cumhuriyeti	ur:نوگورود جمہوریہ	zh:诺夫哥罗德共和国
 c:now	Adverb	ar:الآن	de:jetzt	en:now	es:ahora	fa:اکنون,الان	fr:maintenant	he:עכשיו	hi:अब	ja:今	ko:지금	pt:agora	ru:сейчас,теперь	tr:şimdi	ur:ابھی,اب	zh:现在
 c:nowadays	Adverb	ar:حاليا	de:heutzutage	en:nowadays	es:hoy en día	fa:امروزه	fr:de nos jours	he:כיום	hi:आजकल	ja:現代	ko:요즘	pt:atualmente	ru:в наши дни	tr:günümüzde	ur:آج کل	zh:如今
+c:nowhere	Adverb	ar:لا مكان	de:nirgendwo	en:nowhere	es:en ningún lugar	fa:هیچ جا	fr:nulle part	he:בשום מקום	hi:कहीं नहीं	ja:どこにも	ko:어디에도 없는	pt:em nenhum lugar	ru:нигде	tr:hiçbir yerde	ur:کہیں نہیں	zh:无处
 c:nox	Noun	ar:أكاسيد النيتروجين	de:Stickoxide	en:nitrogen oxides	es:óxidos de nitrógeno	fa:اکسیدهای نیتروژن	fr:oxydes d'azote	he:תחמוצות חנקן	hi:नाइट्रोजन ऑक्साइड	ja:窒素酸化物	ko:질소 산화물	pt:óxidos de nitrogênio	ru:оксиды азота	tr:azot oksitler	ur:نائٹروجن آکسائڈ	zh:氮氧化物
 c:nozzle	Noun	ar:فوهة	de:Düse	en:nozzle	es:tobera	fa:نازل	fr:tuyère	he:זרבובית	hi:नोज़ल	ja:ノズル	ko:노즐	pt:bocal	ru:сопло	tr:meme	ur:نوزل	zh:喷嘴
 c:nubian-desert	Noun	ar:الصحراء النوبية	de:nubische Wüste	en:Nubian desert	es:desierto de Nubia	fa:صحرای نوبه	fr:désert de Nubie	he:המדבר הנובי	hi:नूबियन रेगिस्तान	ja:ヌビア砂漠	ko:누비아 사막	pt:deserto da Núbia	ru:Нубийская пустыня	tr:Nubya çölü	ur:نوبیائی صحرا	zh:努比亚沙漠
@@ -6664,6 +6693,7 @@ c:oud	Noun	ar:عود	de:Oud,Oud-Laute	en:oud	es:oud,laúd árabe	fa:عود,بر�
 c:outbreak	Noun	ar:تفشي مرض	de:Ausbruch	en:disease outbreak	es:brote	fa:شیوع	fr:épidémie soudaine	he:התפרצות	hi:प्रकोप	ja:疾病発生	ko:질병 발생	pt:surto	ru:вспышка	tr:salgın	ur:وبا کا پھوٹ پڑنا	zh:爆发
 c:outlier	Noun	ar:قيمة شاذة	de:Ausreißer	en:outlier	es:valor atípico	fa:داده پرت	fr:valeur aberrante	he:ערך חריג	hi:बाह्य मान	ja:外れ値	ko:이상치	pt:valor atípico	ru:выброс	tr:aykırı değer	ur:غیر معمولی قدر	zh:离群值
 c:outside	Noun	ar:خارج	de:außen,draußen	en:outside	es:fuera,exterior	fa:بیرون,خارج	fr:dehors,extérieur	he:חוץ	hi:बाहर	ja:外	ko:밖,외부	pt:fora,exterior	ru:снаружи	tr:dış	ur:باہر	zh:外
+c:outside-location	Adverb	ar:خارج	de:außerhalb	en:outside	es:fuera	fa:بیرون	fr:à l'extérieur	he:בחוץ	hi:बाहर	ja:外側	ko:바깥쪽	pt:fora	ru:снаружи	tr:dışarıda	ur:باہر	zh:外面
 c:oval	Noun	ar:بيضاوي,شكل بيضاوي	de:Oval	en:oval	es:óvalo	fa:بیضی‌شکل	fr:ovale	he:אובל	hi:अंडाकार	ja:楕円形,オーバル	ko:타원형	pt:oval	ru:овал	tr:oval,yumurta biçimi	ur:بیضوی	zh:椭圆形,卵形
 c:oven	Noun	ar:فرن	de:Backofen,Ofen	en:oven	es:horno	fa:فر	fr:four	he:תנור	hi:ओवन,तंदूर	ja:オーブン	ko:오븐	pt:forno	ru:духовка	tr:fırın	ur:چولہا	zh:烤箱
 c:oven-cook	Noun	ar:طهي فرن	de:Ofengaren	en:oven cooking	es:cocción en horno	fa:پخت در فر	fr:cuisson au four fr	he:בישול בתנור	hi:तंदूर खाना	ja:オーブン調理	ko:오븐 요리	pt:cozinhar no forno	ru:печение в духовке	tr:fırın yemek	ur:تنور پکانا	zh:烤箱烹饪
@@ -7997,6 +8027,7 @@ c:rifle-weapon	Noun	ar:بندقية طويلة	de:Gewehr Langwaffe	en:rifle	es:r
 c:rift-zone	Noun	ar:منطقة الشق	de:Riftzone	en:rift zone	es:zona de rift	fa:منطقه گسترش	fr:zone de rift	he:אזור ריפט	hi:रिफ्ट क्षेत्र	ja:リフト帯	ko:열곡대	pt:zona de rifte	ru:рифтовая зона	tr:rift bölgesi	ur:دراڑ زون	zh:裂谷带
 c:rigel	Noun	ar:رجل الجبار,ريجل	de:Rigel	en:Rigel	es:Rigel	fa:رجل	fr:Rigel	he:ריגל	hi:रिजेल	ja:リゲル	ko:리겔	pt:Rigel	ru:Ригель	tr:Rigel	ur:رجل	zh:参宿七
 c:right	Adjective	ar:صحيح	de:richtig	en:right,correct	es:correcto	fa:درست,صحیح	fr:correct,juste	he:נכון	hi:सही	ja:正しい	ko:옳은,맞는	pt:correto,certo	ru:правильный	tr:doğru	ur:صحیح,درست	zh:对,正确
+c:right-direction	Adverb	ar:يمين	de:rechts	en:right	es:derecha	fa:راست	fr:droite	he:ימין	hi:दाएं	ja:右	ko:오른쪽	pt:direita	ru:вправо	tr:sağ	ur:دائیں	zh:右
 c:right-legal	Noun	ar:حق	de:Recht	en:right	es:derecho	fa:حق	fr:droit	he:זכות	hi:अधिकार	ja:権利	ko:권리	pt:direito	ru:право	tr:hak	ur:حق	zh:权利
 c:right-side	Noun	ar:يمين	de:rechts	en:right	es:derecha	fa:راست	fr:droite	he:ימין	hi:दायाँ	ja:右	ko:오른쪽	pt:direita	ru:право	tr:sağ	ur:دائیں	zh:右
 c:right-triangle	Noun	ar:مثلث قائم الزاوية	de:rechtwinkliges Dreieck	en:right triangle	es:triángulo rectángulo	fa:مثلث قائم‌الزاویه	fr:triangle rectangle	he:משולש ישר זווית	hi:समकोण त्रिभुज	ja:直角三角形	ko:직각삼각형	pt:triângulo retângulo	ru:прямоугольный треугольник	tr:dik üçgen	ur:قائم مثلث	zh:直角三角形
@@ -8588,6 +8619,7 @@ c:shrub	Noun	ar:شجيرة	de:Strauch	en:shrub,bush	es:arbusto	fa:بوته,در�
 c:shuka	Noun	ar:شوكا	de:Shuka	en:shuka	es:shuka	fa:شوکا	fr:shuka	he:שוקה	hi:शुका	ja:シューカ	ko:슈카	pt:shuka	ru:шука	tr:şuka	ur:شوکا	zh:马赛红毯
 c:shutter	Noun	ar:ستارة الغالق	de:Verschluss	en:shutter	es:obturador	fa:دریچه دوربین	fr:obturateur	he:תריס	hi:शटर	ja:シャッター	ko:셔터	pt:obturador	ru:затвор	tr:enstantane	ur:شٹر	zh:快门
 c:sickle	Noun	ar:منجل	de:Sichel	en:sickle	es:hoz	fa:داس	fr:faucille	he:מגל	hi:हंसिया	ja:鎌	ko:낫	pt:foice	ru:серп	tr:orak	ur:درانتی	zh:镰刀
+c:side-location	Noun	ar:جانب	de:Seite	en:side	es:lado	fa:طرف	fr:côté	he:צד	hi:पक्ष	ja:側面	ko:옆면	pt:lado	ru:сторона	tr:taraf	ur:طرف	zh:侧面
 c:side-table	Noun	ar:طاولة جانبية	de:Beistelltisch	en:side table	es:mesa auxiliar	fa:میز کناری	fr:table d'appoint	he:שולחן צד	hi:साइड टेबल	ja:サイドテーブル	ko:사이드 테이블	pt:mesa lateral	ru:прикроватный столик	tr:yan sehpa	ur:سائڈ میز	zh:边桌
 c:sideboard	Noun	ar:خزانة جانبية	de:Anrichte	en:sideboard	es:aparador	fa:بوفه	fr:buffet	he:מזנון	hi:साइडबोर्ड	ja:サイドボード	ko:사이드보드	pt:aparador	ru:сервант	tr:konsol	ur:سائڈ بورڈ	zh:餐具柜
 c:sidewalk	Noun	ar:رصيف	de:Gehweg,Bürgersteig	en:sidewalk,pavement	es:acera,banqueta	fa:پیاده‌رو	fr:trottoir	he:מדרכה	hi:फुटपाथ	ja:歩道	ko:인도,보도	pt:calçada,passeio	ru:тротуар	tr:kaldırım	ur:فٹ پاتھ	zh:人行道
@@ -8814,6 +8846,7 @@ c:solvency	Noun	ar:الملاءة المالية	de:Zahlungsfähigkeit	en:solven
 c:solvent	Noun	ar:مذيب	de:Lösungsmittel	en:solvent	es:disolvente,solvente	fa:حلال	fr:solvant	he:ממס	hi:विलायक	ja:溶媒,溶剤	ko:용매	pt:solvente,dissolvente	ru:растворитель	tr:çözücü,solvent	ur:محلل,سالوینٹ	zh:溶剂
 c:solvent-paint	Noun	ar:مذيب دهان	de:Lösungsmittel	en:paint solvent	es:disolvente	fa:حلال رنگ	fr:solvant	he:ממס צבע	hi:सॉल्वेंट	ja:溶剤	ko:용제	pt:solvente	ru:растворитель	tr:çözücü	ur:سالونٹ	zh:溶剂
 c:sombrero	Noun	ar:سومبريرو	de:Sombrero	en:sombrero	es:sombrero	fa:سامبرئو	fr:sombrero	he:סומבררו	hi:सोमब्रेरो	ja:ソンブレロ	ko:솜브레로	pt:sombreiro	ru:сомбреро	tr:sombrero	ur:سومبریرو	zh:宽边帽
+c:somewhere	Adverb	ar:في مكان ما	de:irgendwo	en:somewhere	es:en algún lugar	fa:جایی	fr:quelque part	he:איפשהו	hi:कहीं	ja:どこかに	ko:어딘가	pt:em algum lugar	ru:где-то	tr:bir yerde	ur:کہیں	zh:某处
 c:somite	Noun	ar:القطعة الجسدية	de:Somit	en:somite	es:somita	fa:سومیت	fr:somite	he:סומיט	hi:सोमाइट	ja:体節	ko:체절	pt:somito	ru:сомит	tr:somit	ur:سومیٹ	zh:体节
 c:son	Noun	ar:ابن	de:Sohn	en:son	es:hijo	fa:پسر	fr:fils	he:בן	hi:बेटा,पुत्र	ja:息子	ko:아들	pt:filho	ru:сын	tr:oğul	ur:بیٹا	zh:儿子
 c:sonar	Noun	ar:السونار	de:Sonar	en:sonar	es:sonar	fa:سونار	fr:sonar	he:סונר	hi:सोनार	ja:ソナー	ko:소나	pt:sonar	ru:гидролокатор	tr:sonar	ur:سونار	zh:声纳
@@ -8855,10 +8888,13 @@ c:south	Noun	ar:جنوب	de:Süden	en:south	es:sur	fa:جنوب	fr:sud	he:דרו�
 c:south-africa	Noun	ar:جنوب أفريقيا	de:Südafrika	en:South Africa	es:Sudáfrica	fa:آفریقای جنوبی	fr:Afrique du Sud	he:דרום אפריקה	hi:दक्षिण अफ्रीका	ja:南アフリカ	ko:남아프리카	pt:África do Sul	ru:Южная Африка,ЮАР	tr:Güney Afrika	ur:جنوبی افریقہ	zh:南非
 c:south-china-sea	Noun	ar:بحر الصين الجنوبي	de:Südchinesisches Meer	en:South China Sea	es:Mar de China Meridional	fa:دریای چین جنوبی	fr:Mer de Chine méridionale	he:ים סין הדרומי	hi:दक्षिण चीन सागर	ja:南シナ海	ko:남중국해	pt:Mar do Sul da China	ru:Южно-Китайское море	tr:Güney Çin Denizi	ur:بحیرہ جنوبی چین	zh:南海,南中国海
 c:south-china-sea-body	Noun	ar:بحر الصين الجنوبي	de:Südchinesisches Meer	en:South China Sea	es:mar de China Meridional	fa:دریای جنوبی چین	fr:mer de Chine méridionale	he:ים סין הדרומי	hi:दक्षिण चीन सागर	ja:南シナ海	ko:남중국해	pt:mar da China Meridional	ru:Южно-Китайское море	tr:Güney Çin Denizi	ur:جنوبی بحیرہ چین	zh:南海
+c:south-direction	Noun	ar:جنوب	de:Süden	en:south	es:sur	fa:جنوب	fr:sud	he:דרום	hi:दक्षिण	ja:南	ko:남쪽	pt:sul	ru:юг	tr:güney	ur:جنوب	zh:南
 c:south-korea	Noun	ar:كوريا الجنوبية	de:Südkorea	en:South Korea	es:Corea del Sur	fa:کره جنوبی	fr:Corée du Sud	he:דרום קוריאה	hi:दक्षिण कोरिया	ja:韓国,大韓民国	ko:한국,대한민국	pt:Coreia do Sul	ru:Южная Корея	tr:Güney Kore	ur:جنوبی کوریا	zh:韩国,南韩
+c:southeast-direction	Noun	ar:جنوب شرق	de:Südosten	en:southeast	es:sureste	fa:جنوب شرقی	fr:sud-est	he:דרום מזרח	hi:दक्षिण पूर्व	ja:南東	ko:남동	pt:sudeste	ru:юго-восток	tr:güneydoğu	ur:جنوب مشرق	zh:东南
 c:southern-cross	Noun	ar:الصليب الجنوبي	de:Kreuz des Südens	en:Southern Cross,Crux	es:Cruz del Sur	fa:صلیب جنوبی	fr:Croix du Sud	he:הצלב הדרומי	hi:दक्षिण क्रॉस	ja:南十字星	ko:남십자성	pt:Cruzeiro do Sul	ru:Южный Крест	tr:Güney Haçı	ur:جنوبی صلیب	zh:南十字座
 c:southern-ocean	Noun	ar:المحيط الجنوبي	de:Südlicher Ozean,Antarktischer Ozean	en:Southern Ocean,Antarctic Ocean	es:Océano Austral,Océano Antártico	fa:اقیانوس جنوبی	fr:Océan Austral,Océan Antarctique	he:האוקיינוס הדרומי	hi:दक्षिणी महासागर	ja:南極海,南氷洋	ko:남극해	pt:Oceano Austral,Oceano Antártico	ru:Южный океан	tr:Güney Okyanusu	ur:بحر جنوبی	zh:南冰洋,南大洋
 c:southern-ocean-body	Noun	ar:المحيط الجنوبي	de:Südlicher Ozean	en:Southern Ocean	es:océano Austral	fa:اقیانوس جنوبگان	fr:océan Austral	he:האוקיינוס הדרומי	hi:दक्षिणी महासागर	ja:南極海	ko:남극해	pt:oceano Antártico	ru:Южный океан	tr:Güney Okyanusu	ur:جنوبی بحر	zh:南冰洋
+c:southwest-direction	Noun	ar:جنوب غرب	de:Südwesten	en:southwest	es:suroeste	fa:جنوب غربی	fr:sud-ouest	he:דרום מערב	hi:दक्षिण पश्चिम	ja:南西	ko:남서	pt:sudoeste	ru:юго-запад	tr:güneybatı	ur:جنوب مغرب	zh:西南
 c:sovereignty	Noun	ar:سيادة	de:Souveränität	en:sovereignty	es:soberanía	fa:حاکمیت	fr:souveraineté	he:ריבונות	hi:संप्रभुता	ja:主権	ko:주권	pt:soberania	ru:суверенитет	tr:egemenlik	ur:خودمختاری	zh:主权
 c:sovereignty-pol	Noun	ar:السيادة	de:Souveränität	en:sovereignty	es:soberanía	fa:حاکمیت	fr:souveraineté	he:ריבונות	hi:संप्रभुता	ja:主権	ko:주권	pt:soberania	ru:суверенитет	tr:egemenlik	ur:حاکمیت	zh:主权
 c:soviet-dissolution	Noun	ar:تفكك الاتحاد السوفيتي	de:Zerfall der Sowjetunion	en:dissolution of the Soviet Union	es:disolución de la Unión Soviética	fa:فروپاشی اتحاد جماهیر شوروی	fr:dissolution de l'Union soviétique	he:פירוק ברית המועצות	hi:सोवियत संघ का विघटन	ja:ソビエト連邦の崩壊	ko:소련 해체	pt:dissolução da União Soviética	ru:распад Советского Союза	tr:Sovyetler Birliği'nin dağılması	ur:سوویت یونین کا خاتمہ	zh:苏联解体
@@ -9613,6 +9649,7 @@ c:therapy	Noun	ar:علاج	de:Therapie	en:therapy	es:terapia	fa:درمان	fr:th
 c:therapy-med	Noun	ar:معالجة طبية	de:Therapie	en:therapy	es:terapia	fa:درمان	fr:thérapie	he:תרפיה	hi:थेरेपी	ja:セラピー	ko:요법	pt:terapia	ru:терапия	tr:terapi	ur:تھراپی	zh:疗法
 c:therapy-psych	Noun	ar:علاج نفسي	de:Psychotherapie	en:psychotherapy	es:psicoterapia	fa:روان‌درمانی	fr:psychothérapie	he:פסיכותרפיה	hi:मनोचिकित्सा	ja:心理療法	ko:심리치료	pt:psicoterapia	ru:психотерапия	tr:psikoterapi	ur:نفسیاتی علاج	zh:心理治疗
 c:theravada	Noun	ar:ثيرافادا	de:Theravada	en:Theravada Buddhism	es:budismo theravada	fa:تروادا	fr:bouddhisme theravāda	he:תרוואדה	hi:थेरवाद बौद्ध धर्म	ja:上座部仏教	ko:상좌부 불교	pt:budismo teravada	ru:тхеравада	tr:Theravada	ur:تھیراواد	zh:上座部佛教
+c:there-location	Adverb	ar:هناك	de:dort	en:there	es:allí	fa:آنجا	fr:là	he:שם	hi:वहां	ja:そこ	ko:거기	pt:ali	ru:там	tr:orada	ur:وہاں	zh:那里
 c:theremin	Noun	ar:ثيريمين	de:Theremin	en:theremin	es:theremin	fa:ترمین	fr:thérémine	he:תרמין	hi:थेरेमिन	ja:テルミン	ko:테레민	pt:theremin	ru:терменвокс	tr:theremin	ur:تھیریمن	zh:特雷门琴
 c:thermal-conductivity	Noun	ar:الموصلية الحرارية	de:Wärmeleitfähigkeit	en:thermal conductivity	es:conductividad térmica	fa:هدایت حرارتی	fr:conductivité thermique	he:מוליכות חום	hi:ऊष्मीय चालकता	ja:熱伝導率	ko:열전도도	pt:condutividade térmica	ru:теплопроводность	tr:ısıl iletkenlik	ur:حرارتی چالکیت	zh:热导率
 c:thermal-energy	Noun	ar:طاقة حرارية	de:Wärmeenergie,thermische Energie	en:thermal energy,heat energy	es:energía térmica,energía calorífica	fa:انرژی گرمایی,انرژی حرارتی	fr:énergie thermique,énergie calorifique	he:אנרגיה תרמית,אנרגיית חום	hi:ऊष्मीय ऊर्जा,तापीय ऊर्जा	ja:熱エネルギー	ko:열에너지	pt:energia térmica	ru:тепловая энергия	tr:ısı enerjisi,termal enerji	ur:حرارتی توانائی	zh:热能
@@ -9776,6 +9813,7 @@ c:toothbrush	Noun	ar:فرشاة أسنان	de:Zahnbürste	en:toothbrush	es:cepil
 c:toothpaste	Noun	ar:معجون أسنان	de:Zahnpasta	en:toothpaste	es:pasta de dientes	fa:خمیر دندان	fr:dentifrice	he:משחת שיניים	hi:टूथपेस्ट	ja:歯磨き粉	ko:치약	pt:pasta de dente	ru:зубная паста	tr:diş macunu	ur:ٹوتھ پیسٹ	zh:牙膏
 c:toothpick	Noun	ar:عود أسنان	de:Zahnstocher	en:toothpick	es:palillo de dientes	fa:خلال دندان	fr:cure-dent	he:קיסם שיניים	hi:दांत का कुरेदनी	ja:つまようじ	ko:이쑤시개	pt:palito de dente	ru:зубочистка	tr:kürdan	ur:خلال	zh:牙签
 c:top-hat	Noun	ar:قبعة البرنيطة	de:Zylinder	en:top hat	es:sombrero de copa	fa:کلاه استوانه ای	fr:chapeau haut-de-forme	he:מגבעת	hi:टॉप हैट	ja:シルクハット	ko:실크해트	pt:cartola	ru:цилиндр	tr:silindir şapka	ur:ٹاپ ہیٹ	zh:大礼帽
+c:top-location	Noun	ar:قمة	de:Oberseite	en:top	es:cima	fa:بالا جایگاه	fr:sommet	he:ראש מקום	hi:शीर्ष	ja:頂上	ko:꼭대기	pt:topo	ru:верх	tr:üst	ur:چوٹی	zh:顶部
 c:topaz	Noun	ar:توباز,زبرجد	de:Topas	en:topaz	es:topacio	fa:توپاز,زبرجد	fr:topaze	he:טופז,פטדה	hi:पुखराज,टोपाज़	ja:トパーズ,黄玉	ko:토파즈,황옥	pt:topázio	ru:топаз	tr:topaz	ur:پکھراج	zh:黄玉,托帕石
 c:topaz-color	Noun	ar:توبازي	de:Topasgelb	en:topaz	es:topacio	fa:توپازی	fr:topaze	he:טופז	hi:पुखराज रंग	ja:トパーズ色	ko:토파즈색	pt:topázio	ru:топазовый	tr:topaz rengi	ur:پکھراج رنگ	zh:黄玉色
 c:topaz-gem	Noun	ar:توباز	de:Topas	en:topaz	es:topacio	fa:توپاز	fr:topaze	he:טופז	hi:पुखराज	ja:トパーズ	ko:토파즈	pt:topázio	ru:топаз	tr:topaz	ur:پخراج	zh:黄玉
@@ -10071,6 +10109,7 @@ c:university	Noun	ar:جامعة	de:Universität,Uni	en:university,college	es:uni
 c:university-building	Noun	ar:مبنى جامعة	de:Universitätsgebäude	en:university building	es:edificio universitario	fa:ساختمان دانشگاه	fr:bâtiment universitaire	he:בניין אוניברסיטה	hi:विश्वविद्यालय भवन	ja:大学棟	ko:대학교 건물	pt:edifício universitário	ru:университетское здание	tr:üniversite binası	ur:یونیورسٹی عمارت	zh:大学大楼
 c:unreliable-narrator	Noun	ar:الراوي غير الموثوق	de:unzuverlässiger Erzähler	en:unreliable narrator	es:narrador no fiable	fa:راوی نامطمئن	fr:narrateur non fiable	he:מספר לא אמין	hi:अविश्वसनीय कथाकार	ja:信頼できない語り手	ko:신뢰할 수 없는 화자	pt:narrador não confiável	ru:ненадёжный рассказчик	tr:güvenilmez anlatıcı	ur:غیر قابل اعتماد راوی	zh:不可靠叙述者
 c:up	Adverb	ar:فوق	de:oben,hoch	en:up	es:arriba	fa:بالا	fr:haut,en haut	he:למעלה	hi:ऊपर	ja:上	ko:위	pt:cima,acima	ru:вверх	tr:yukarı	ur:اوپر	zh:上
+c:up-direction	Adverb	ar:أعلى	de:oben	en:up	es:arriba	fa:بالا	fr:en haut	he:למעלה	hi:ऊपर	ja:上	ko:위	pt:para cima	ru:вверх	tr:yukarı	ur:اوپر	zh:上
 c:upload	Verb	ar:رفع	de:hochladen	en:upload	es:subir,cargar	fa:آپلود کرد,بارگذاری کرد	fr:téléverser	he:העלה	hi:अपलोड करना	ja:アップロードする	ko:업로드하다,올리다	pt:fazer upload,carregar	ru:загружать,заливать	tr:yüklemek	ur:اپ لوڈ کرنا	zh:上传
 c:upwelling	Noun	ar:صعود المياه العميقة	de:Auftrieb	en:upwelling	es:afloramiento	fa:بالا آمدن اب	fr:remontée d'eaux	he:עליית מים	hi:समुद्री उत्थान	ja:湧昇	ko:용승	pt:afloramento	ru:апвеллинг	tr:yükselen su	ur:سمندری ابال	zh:上升流
 c:upwelling-current	Noun	ar:ارتفاع التيار	de:Auftriebsströmung	en:upwelling	es:surgencia	fa:فراجوشش	fr:remontée d'eau	he:זרם עולה	hi:ऊर्ध्वधारा	ja:湧昇	ko:용승	pt:ressurgência	ru:апвеллинг	tr:yükselme akıntısı	ur:ابھرتی لہر	zh:上升流
@@ -10419,6 +10458,7 @@ c:welfare-state	Noun	ar:دولة الرفاه	de:Wohlfahrtsstaat	en:welfare stat
 c:wellington-capital	Noun	ar:ويلينغتون	de:Wellington	en:Wellington	es:Wellington	fa:ولینگتون	fr:Wellington	he:וולינגטון	hi:वेलिंगटन	ja:ウェリントン	ko:웰링턴	pt:Wellington	ru:Веллингтон	tr:Wellington	ur:ویلنگٹن	zh:惠灵顿
 c:werewolf	Noun	ar:مستذئب	de:Werwolf	en:werewolf	es:hombre lobo	fa:گرگینه	fr:loup-garou	he:איש זאב	hi:भेड़िया मानव	ja:狼男	ko:늑대인간	pt:lobisomem	ru:оборотень	tr:kurt adam	ur:بھیڑیا انسان	zh:狼人
 c:west	Noun	ar:غرب	de:Westen	en:west	es:oeste,occidente	fa:غرب	fr:ouest	he:מערב	hi:पश्चिम	ja:西	ko:서쪽,서	pt:oeste,ocidente	ru:запад	tr:batı	ur:مغرب	zh:西
+c:west-direction	Noun	ar:غرب	de:Westen	en:west	es:oeste	fa:غرب	fr:ouest	he:מערב	hi:पश्चिम	ja:西	ko:서쪽	pt:oeste	ru:запад	tr:batı	ur:مغرب	zh:西
 c:westerlies	Noun	ar:الرياح الغربية	de:Westwinde	en:westerlies	es:vientos del oeste	fa:بادهای غربی	fr:vents d'ouest	he:רוחות מערביות	hi:पश्चिमी पवन	ja:偏西風	ko:편서풍	pt:ventos de oeste	ru:западные ветры	tr:batı rüzgarları	ur:مغربی ہوائیں	zh:西风带
 c:western-film	Noun	ar:فيلم غربي	de:Western-Film	en:western film	es:película del oeste	fa:فیلم وسترن	fr:film western	he:סרט מערבון	hi:पश्चिमी फिल्म	ja:西部劇	ko:서부 영화	pt:filme de faroeste	ru:вестерн	tr:kovboy filmi	ur:مغربی فلم	zh:西部片
 c:western-roman-empire	Noun	ar:الإمبراطورية الرومانية الغربية	de:weströmisches Reich	en:Western Roman Empire	es:Imperio romano de Occidente	fa:امپراتوری روم غربی	fr:Empire romain d'Occident	he:האימפריה הרומית המערבית	hi:पश्चिमी रोमन साम्राज्य	ja:西ローマ帝国	ko:서로마 제국	pt:Império Romano do Ocidente	ru:Западная Римская империя	tr:Batı Roma İmparatorluğu	ur:مغربی رومی سلطنت	zh:西罗马帝国
