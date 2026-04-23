@@ -179,6 +179,23 @@ Universe (root)
 
 ---
 
+## The Migration Rule (major changes)
+
+Any change that touches **schema, core data flow, cross-surface invariants, or multiple subsystems** goes through the four-phase `/migration` workflow before any code is written:
+
+1. **Architect** — map the territory, enumerate design options with speed/effort/risk, list the invariants that must not break.
+2. **Plan** — phase-by-phase steps, each landable as one commit, each with a verification clause. User approves the plan.
+3. **Build** — implement step by step, verify after each step, commit tied to the plan. Run `/simplify` on the final diff.
+4. **Audit** — three agents in parallel check invariants, drift (new guards the system doesn't know about — see LL-023), and migration path (first-boot, schema mismatch, mid-backfill interrupt, rollback).
+
+The four phases are not ceremony. They are the verification protocol that keeps Constellation from shipping a regression that takes three sessions to undo. The cost of running them is ~30 minutes of agent time. The cost of skipping them is the entire iteration that built the feature that broke.
+
+Single-file refactors and local bug fixes do not need `/migration` — `/simplify` is sufficient. The rule of thumb: does the change cross subsystem boundaries (Rust ↔ Svelte, schema ↔ code, write path ↔ read path)? If yes, `/migration`. If no, don't.
+
+Definition and agent briefs: `.claude/skills/migration.md`.
+
+---
+
 ## Standing Order (SO)
 After every phase, step, or significant commit:
 1. Update `lab/reports/SESSION-LOG-YYYY-MM-DD.md` with: phase name, commit hash, test results, bugs fixed, open items.
