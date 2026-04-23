@@ -158,7 +158,7 @@ is now authoritative.
 | §84 | eab6aa9 | MIG-001 Step 10: audit-only, no second-screen swap needed |
 | §85 | 7685436 | MIG-001 Phase-4 HIGH fix: sky IPC used on graph-fail path |
 | §86 | ecacf4d | MIG-001 Phase-4 MED/LOW: dedupe const, txn finalize, relabel |
-| §87 | (pending) | MIG-001 Phase-4 audit section + closure |
+| §87 | 9009b5b | MIG-001 Phase-4 audit section + closure |
 
 ## § 72-78 — MIG-001 Steps 5-7 + Sky View legend redesign
 
