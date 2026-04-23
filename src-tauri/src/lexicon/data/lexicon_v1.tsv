@@ -146,12 +146,15 @@ c:affidavit	Noun	ar:إفادة خطية محلفة	de:eidesstattliche Erklärung
 c:affix	Noun	ar:لاحقة ولاحق	de:Affix	en:affix	es:afijo	fa:وند	fr:affixe	he:תחיליתית	hi:उपसर्ग-प्रत्यय	ja:接辞	ko:접사	pt:afixo	ru:аффикс	tr:ek	ur:سابقہ یا لاحقہ	zh:词缀
 c:affordable-housing	Noun	ar:الإسكان الميسور	de:erschwinglicher Wohnraum	en:affordable housing	es:vivienda asequible	fa:مسکن مقرون به صرفه	fr:logement abordable	he:דיור בהישג יד	hi:किफायती आवास	ja:低価格住宅	ko:저렴한 주택	pt:habitação acessível	ru:доступное жильё	tr:uygun fiyatlı konut	ur:سستی رہائش	zh:经济适用房
 c:afforestation	Noun	ar:تشجير جديد	de:Aufforstung	en:afforestation	es:aforestación	fa:جنگل‌کاری	fr:boisement	he:ייעור	hi:वनरोपण	ja:植林	ko:조림	pt:aforestação	ru:облесение	tr:ağaçlandırma	ur:نیا جنگل لگانا	zh:造林
+c:after-time	Adverb	ar:بعد	de:nach zeitlich	en:after	es:después	fa:بعد	fr:après	he:אחרי	hi:बाद में	ja:後	ko:이후	pt:após	ru:после	tr:sonra	ur:بعد	zh:之后
 c:afternoon	Noun	ar:بعد الظهر	de:Nachmittag	en:afternoon	es:tarde	fa:بعدازظهر	fr:après-midi	he:אחר הצהריים	hi:दोपहर	ja:午後	ko:오후	pt:tarde	ru:день	tr:öğleden sonra	ur:دوپہر	zh:下午
 c:aftershock	Noun	ar:هزة ارتدادية	de:Nachbeben	en:aftershock	es:réplica	fa:پس‌لرزه	fr:réplique	he:רעש משני	hi:पश्चघात,आफ़्टरशॉक	ja:余震	ko:여진	pt:réplica,abalo secundário	ru:афтершок,повторный толчок	tr:artçı sarsıntı,artçı deprem	ur:بعد کا جھٹکا	zh:余震
 c:agate-gem	Noun	ar:عقيق	de:Achat	en:agate	es:ágata	fa:عقیق	fr:agate	he:אחלמה	hi:अगेट	ja:瑪瑙	ko:마노	pt:ágata	ru:агат	tr:akik	ur:عقیق	zh:玛瑙
 c:age-of-discovery	Noun	ar:عصر الاكتشافات	de:Zeitalter der Entdeckungen	en:Age of Discovery	es:era de los descubrimientos	fa:عصر اکتشافات	fr:ère des grandes découvertes	he:עידן התגליות	hi:खोज का युग	ja:大航海時代	ko:대항해 시대	pt:era dos descobrimentos	ru:эпоха великих географических открытий	tr:keşifler çağı	ur:دریافتوں کا دور	zh:地理大发现
 c:age-of-enlightenment	Noun	ar:عصر التنوير	de:Aufklärung	en:Age of Enlightenment	es:Ilustración	fa:عصر روشنگری	fr:Lumières	he:עידן הנאורות	hi:प्रबोधन युग	ja:啓蒙時代	ko:계몽 시대	pt:Iluminismo	ru:эпоха Просвещения	tr:aydınlanma çağı	ur:دور روشن خیالی	zh:启蒙时代
+c:age-time	Noun	ar:عصر	de:Zeitalter	en:age	es:edad	fa:عصر	fr:âge	he:תקופה	hi:युग	ja:時代	ko:시대	pt:era temporal	ru:эпоха	tr:çağ	ur:دور	zh:时代
 c:agency-sociology	Noun	ar:الفاعلية	de:Handlungsfähigkeit	en:agency	es:agencia	fa:عاملیت	fr:agentivité	he:סוכנות	hi:अभिकर्मकता	ja:行為能力	ko:행위성	pt:agência	ru:субъектность	tr:öznelik	ur:فاعلیت	zh:能动性
+c:ago	Adverb	ar:منذ	de:vor	en:ago	es:hace	fa:پیش	fr:il y a	he:לפני	hi:पहले	ja:前に	ko:전에	pt:atrás	ru:тому назад	tr:önce	ur:پہلے	zh:以前
 c:agonist	Noun	ar:المحفز	de:Agonist	en:agonist	es:agonista	fa:آگونیست	fr:agoniste	he:אגוניסט	hi:एगोनिस्ट	ja:アゴニスト	ko:작용제	pt:agonista	ru:агонист	tr:agonist	ur:ایگونسٹ	zh:激动剂
 c:agora	Noun	ar:ساحة عامة	de:Agora	en:agora	es:ágora	fa:آگورا	fr:agora	he:אגורה	hi:अगोरा	ja:アゴラ	ko:아고라	pt:ágora	ru:агора	tr:agora	ur:ایگورا	zh:集市广场
 c:agriculture	Noun	ar:زراعة	de:Landwirtschaft	en:agriculture	es:agricultura	fa:کشاورزی	fr:agriculture	he:חקלאות	hi:कृषि	ja:農業	ko:농업	pt:agricultura	ru:сельское хозяйство	tr:tarım	ur:زراعت	zh:农业
@@ -855,6 +858,7 @@ c:beeswax	Noun	ar:شمع العسل	de:Bienenwachs	en:beeswax	es:cera de abejas	
 c:beet	Noun	ar:شمندر,بنجر	de:Rote Bete	en:beet,beetroot	es:remolacha	fa:چغندر	fr:betterave	he:סלק	hi:चुकंदर	ja:ビーツ	ko:비트	pt:beterraba	ru:свёкла	tr:pancar	ur:چقندر	zh:甜菜根
 c:beet-veg	Noun	ar:بنجر	de:Rote Bete	en:beet	es:remolacha	fa:چغندر	fr:betterave	he:סלק	hi:चुकंदर	ja:ビーツ	ko:비트	pt:beterraba	ru:свёкла	tr:pancar	ur:چقندر	zh:甜菜
 c:beetle	Noun	ar:خنفساء	de:Käfer	en:beetle	es:escarabajo	fa:سوسک	fr:scarabée,coléoptère	he:חיפושית	hi:भृंग	ja:甲虫,カブトムシ	ko:딱정벌레	pt:besouro	ru:жук	tr:kın kanatlı böcek	ur:بھنورا	zh:甲虫
+c:before-time	Adverb	ar:قبل	de:vor zeitlich	en:before	es:antes	fa:قبل	fr:avant	he:לפני זמני	hi:पहले समय	ja:以前	ko:이전	pt:antes	ru:до	tr:önce zaman	ur:پہلے وقت	zh:之前
 c:beginning	Noun	ar:بداية	de:Anfang,Beginn	en:beginning,start	es:comienzo,inicio	fa:آغاز,شروع	fr:début,commencement	he:התחלה	hi:शुरुआत,आरंभ	ja:始まり	ko:시작	pt:começo,início	ru:начало	tr:başlangıç	ur:آغاز,شروع	zh:开始,开端
 c:begonia	Noun	ar:بيجونيا	de:Begonie	en:begonia	es:begonia	fa:بگونیا	fr:bégonia	he:בגוניה	hi:बेगोनिया	ja:ベゴニア	ko:베고니아	pt:begônia	ru:бегония	tr:begonya	ur:بگونیا	zh:秋海棠
 c:behavior	Noun	ar:سلوك,تصرف	de:Verhalten	en:behavior,behaviour	es:comportamiento,conducta	fa:رفتار	fr:comportement,conduite	he:התנהגות	hi:व्यवहार,आचरण	ja:行動,行為	ko:행동,행위	pt:comportamento,conduta	ru:поведение	tr:davranış	ur:رویہ,سلوک	zh:行为
@@ -1279,6 +1283,7 @@ c:buttermilk-dairy	Noun	ar:لبن الزبدة	de:Buttermilch	en:buttermilk	es:s
 c:buttress	Noun	ar:الدعامة الجانبية	de:Strebepfeiler	en:buttress	es:contrafuerte	fa:پشت بند	fr:contrefort	he:סיוע	hi:दीवार का सहारा	ja:バットレス	ko:부벽	pt:contraforte	ru:контрфорс	tr:payanda	ur:دیوار کا سہارا	zh:扶壁
 c:buy	Verb	ar:اشترى	de:kaufen	en:buy	es:comprar	fa:خریدن	fr:acheter	he:לקנות	hi:खरीदना	ja:買う	ko:사다	pt:comprar	ru:покупать,купить	tr:satın almak	ur:خریدنا	zh:买
 c:buzzard	Noun	ar:بزار,صقر الفار	de:Bussard	en:buzzard	es:ratonero	fa:سرگنده	fr:buse	he:עיט עכבר	hi:बज़र्ड	ja:ノスリ	ko:말똥가리	pt:águia-de-asa-redonda	ru:канюк	tr:şahin	ur:بزرڈ	zh:鵟
+c:bygone	Adjective	ar:ماضي	de:vergangen	en:bygone	es:pasado	fa:گذشته	fr:passé	he:עבר	hi:बीता हुआ	ja:過ぎ去った	ko:과거의	pt:antigo passado	ru:былой	tr:geçmiş	ur:گزرا ہوا	zh:过去的
 c:byzantine-arch	Noun	ar:العمارة البيزنطية	de:byzantinische Architektur	en:Byzantine architecture	es:arquitectura bizantina	fa:معماری بیزانسی	fr:architecture byzantine	he:אדריכלות ביזנטית	hi:बीजान्टिन वास्तुकला	ja:ビザンティン建築	ko:비잔틴 건축	pt:arquitetura bizantina	ru:византийская архитектура	tr:Bizans mimarisi	ur:بازنطینی فن	zh:拜占庭建筑
 c:byzantine-art	Noun	ar:الفن البيزنطي	de:byzantinische Kunst	en:Byzantine art	es:arte bizantino	fa:هنر بیزانسی	fr:art byzantin	he:אמנות ביזנטית	hi:बीजान्टिन कला	ja:ビザンティン美術	ko:비잔틴 미술	pt:arte bizantina	ru:византийское искусство	tr:Bizans sanatı	ur:بازنطینی فن	zh:拜占庭艺术
 c:byzantine-era	Noun	ar:العصر البيزنطي,الإمبراطورية البيزنطية	de:Byzantinisches Reich,byzantinische Zeit	en:byzantine era,byzantine empire	es:era bizantina,imperio bizantino	fa:دوره بیزانس,امپراتوری بیزانس	fr:époque byzantine,empire byzantin	he:התקופה הביזנטית,האימפריה הביזנטית	hi:बीजान्टिन युग,बीजान्टिन साम्राज्य	ja:ビザンツ帝国,東ローマ帝国	ko:비잔틴 제국,비잔티움 제국	pt:era bizantina,império bizantino	ru:византийская эпоха,византийская империя	tr:bizans dönemi,bizans imparatorluğu	ur:بازنطینی دور,بازنطینی سلطنت	zh:拜占庭时代,拜占庭帝国
@@ -2501,7 +2506,10 @@ c:date-palm	Noun	ar:نخلة التمر	de:Dattelpalme	en:date palm	es:palmera d
 c:daughter	Noun	ar:ابنة,بنت	de:Tochter	en:daughter	es:hija	fa:دختر	fr:fille	he:בת	hi:बेटी,पुत्री	ja:娘	ko:딸	pt:filha	ru:дочь	tr:kız	ur:بیٹی	zh:女儿
 c:dawn	Noun	ar:فجر	de:Morgendämmerung,Tagesanbruch	en:dawn,daybreak	es:alba,aurora	fa:سپیده‌دم,فجر	fr:aube,aurore	he:שחר	hi:भोर,उषा	ja:夜明け,暁	ko:새벽,여명	pt:alvorada,madrugada	ru:рассвет,заря	tr:şafak,tan	ur:فجر,پو پھٹنا	zh:黎明,拂晓
 c:day	Noun	ar:يوم	de:Tag	en:day	es:día	fa:روز	fr:jour	he:יום	hi:दिन	ja:日	ko:날	pt:dia	ru:день	tr:gün	ur:دن	zh:天
+c:day-time	Noun	ar:يوم	de:Tag	en:day	es:día	fa:روز	fr:jour	he:יום	hi:दिन	ja:日	ko:일	pt:dia	ru:день	tr:gün	ur:دن	zh:天
 c:daybed	Noun	ar:أريكة نهارية	de:Tagesbett	en:daybed	es:sofá cama	fa:تخت روزانه	fr:méridienne	he:מיטת יום	hi:डेबेड	ja:デイベッド	ko:데이베드	pt:cama de dia	ru:кушетка дневная	tr:gündüz yatağı	ur:ڈے بیڈ	zh:沙发床
+c:daybreak	Noun	ar:فجر النهار	de:Tagesanbruch	en:daybreak	es:alba	fa:سپیده‌دم	fr:aube	he:שחר	hi:भोर	ja:夜明け	ko:새벽	pt:alvorada	ru:рассвет	tr:şafak	ur:صبح صادق	zh:破晓
+c:daylight	Noun	ar:ضوء النهار	de:Tageslicht	en:daylight	es:luz diurna	fa:روشنایی روز	fr:lumière du jour	he:אור יום	hi:दिन का उजाला	ja:日光	ko:낮 빛	pt:luz do dia	ru:дневной свет	tr:gün ışığı	ur:دن کی روشنی	zh:日光
 c:ddos	Noun	ar:هجوم حجب الخدمة	de:DDoS-Angriff	en:DDoS attack	es:ataque DDoS	fa:حمله منع سرویس توزیع‌شده	fr:attaque DDoS	he:מתקפת DDoS	hi:डीडीओएस हमला	ja:DDoS攻撃	ko:DDoS 공격	pt:ataque DDoS	ru:DDoS-атака	tr:DDoS saldırısı	ur:ڈی ڈاس حملہ	zh:分布式拒绝服务攻击
 c:de-novo-assembly	Noun	ar:التجميع من جديد	de:De-novo-Assemblierung	en:de novo assembly	es:ensamblaje de novo	fa:مونتاژ از ابتدا	fr:assemblage de novo	he:הרכבה de novo	hi:डी नोवो असेम्बली	ja:de novoアセンブリ	ko:드노보 조립	pt:montagem de novo	ru:сборка de novo	tr:de novo birleştirme	ur:از سر نو اجتماع	zh:从头组装
 c:dead-load	Noun	ar:الحمل الميت	de:Eigengewicht	en:dead load	es:carga permanente	fa:بار مرده	fr:charge permanente	he:עומס קבוע	hi:स्थायी भार	ja:固定荷重	ko:고정하중	pt:carga permanente	ru:постоянная нагрузка	tr:sabit yük	ur:مردہ بوجھ	zh:恒荷载
@@ -2515,6 +2523,7 @@ c:death-valley	Noun	ar:وادي الموت	de:Death Valley	en:Death Valley	es:Va
 c:debt	Noun	ar:دين	de:Schuld,Schulden	en:debt	es:deuda	fa:بدهی,قرض	fr:dette	he:חוב	hi:ऋण,कर्ज़	ja:借金,負債	ko:빚,부채	pt:dívida	ru:долг	tr:borç	ur:قرض	zh:债务,债
 c:debugger	Noun	ar:مصحح أخطاء	de:Debugger	en:debugger	es:depurador	fa:اشکال‌زدا	fr:débogueur	he:מאתר שגיאות	hi:डीबगर	ja:デバッガ	ko:디버거	pt:depurador	ru:отладчик	tr:hata ayıklayıcı	ur:ڈیبگر	zh:调试器
 c:debugger-sw	Noun	ar:مصحح الأخطاء	de:Debugger	en:debugger	es:depurador	fa:اشکال‌زدا	fr:débogueur	he:מנפה שגיאות	hi:डिबगर	ja:デバッガ	ko:디버거	pt:depurador	ru:отладчик	tr:hata ayıklayıcı	ur:ڈی بگر	zh:调试器
+c:decade	Noun	ar:عقد	de:Jahrzehnt	en:decade	es:década	fa:دهه	fr:décennie	he:עשור	hi:दशक	ja:十年	ko:십 년	pt:década	ru:десятилетие	tr:on yıl	ur:دہائی	zh:十年
 c:decagon	Noun	ar:عشاري,شكل عشاري	de:Zehneck,Dekagon	en:decagon	es:decágono	fa:ده‌ضلعی	fr:décagone	he:מעושר	hi:दशभुज	ja:十角形	ko:십각형	pt:decágono	ru:десятиугольник	tr:ongen	ur:دس ضلعی	zh:十边形,十角形
 c:decarbonization	Noun	ar:إزالة الكربون	de:Dekarbonisierung	en:decarbonization	es:descarbonización	fa:کربن‌زدایی	fr:décarbonation	he:דה-קרבוניזציה	hi:विकार्बनीकरण	ja:脱炭素化	ko:탈탄소화	pt:descarbonização	ru:декарбонизация	tr:dekarbonizasyon	ur:کاربن ختم کرنا	zh:脱碳
 c:deceit	Noun	ar:خداع	de:Täuschung	en:deceit	es:engaño	fa:فریب	fr:tromperie	he:הונאה	hi:धोखा	ja:欺き	ko:기만	pt:engano	ru:обман	tr:aldatma	ur:دھوکہ	zh:欺骗
@@ -3149,6 +3158,7 @@ c:environmental-refugee	Noun	ar:اللاجئ البيئي	de:Umweltflüchtling	e
 c:envy	Noun	ar:حسد	de:Neid	en:envy	es:envidia	fa:رشک	fr:envie	he:קנאה	hi:डाह	ja:羨望	ko:부러움	pt:inveja	ru:зависть	tr:gıpta	ur:رشک	zh:羡慕
 c:enzyme	Noun	ar:إنزيم,أنزيم	de:Enzym	en:enzyme,ferment	es:enzima	fa:آنزیم	fr:enzyme	he:אנזים	hi:एंज़ाइम	ja:酵素,エンザイム	ko:효소,엔자임	pt:enzima	ru:фермент,энзим	tr:enzim	ur:انزائم,خمیرہ	zh:酶,酵素
 c:enzyme-chem	Noun	ar:إنزيم حيوي	de:Enzym	en:enzyme	es:enzima	fa:آنزیم	fr:enzyme	he:אנזים	hi:एंजाइम	ja:酵素	ko:효소	pt:enzima	ru:фермент	tr:enzim	ur:انزائم	zh:酶
+c:eon	Noun	ar:دهر	de:Äon	en:eon	es:eón	fa:دوران	fr:éon	he:דור עולם	hi:युगांतर	ja:永劫	ko:영겁	pt:éon	ru:эон	tr:sonsuz zaman	ur:دہر	zh:宙
 c:epic	Noun	ar:ملحمة	de:Epos,Epik	en:epic	es:épica,epopeya	fa:حماسه	fr:épopée	he:אפוס	hi:महाकाव्य	ja:叙事詩,エピック	ko:서사시	pt:épico,epopeia	ru:эпос,эпопея	tr:destan,epik	ur:رزمیہ,ایپک	zh:史诗
 c:epic-film	Noun	ar:فيلم ملحمي	de:Epos-Film	en:epic film	es:película épica	fa:فیلم حماسی	fr:film épique	he:סרט אפי	hi:महाकाव्य फिल्म	ja:叙事詩映画	ko:서사 영화	pt:filme épico	ru:исторический эпос	tr:destansı film	ur:ایپک فلم	zh:史诗片
 c:epic-poem	Noun	ar:الملحمة	de:Epos	en:epic poem	es:epopeya	fa:حماسه	fr:épopée	he:אפוס	hi:महाकाव्य	ja:叙事詩	ko:서사시	pt:epopeia	ru:эпос	tr:destan	ur:رزمیہ	zh:史诗
@@ -3633,6 +3643,7 @@ c:forklift	Noun	ar:رافعة شوكية	de:Gabelstapler	en:forklift	es:carretil
 c:form	Noun	ar:شكل,صورة	de:Form,Gestalt	en:form,shape	es:forma	fa:شکل,صورت	fr:forme	he:צורה	hi:रूप,आकार	ja:形,形態	ko:형태,모양	pt:forma	ru:форма	tr:şekil,biçim,form	ur:شکل,صورت	zh:形式,形状
 c:formal-wear	Noun	ar:ملابس رسمية	de:Formelle Kleidung	en:formal wear	es:ropa formal	fa:لباس رسمی	fr:tenue de soirée	he:לבוש רשמי	hi:औपचारिक पोशाक	ja:フォーマルウェア	ko:정장	pt:traje formal	ru:деловой костюм	tr:resmi giyim	ur:رسمی لباس	zh:正装
 c:forte	Noun	ar:عزف قوي	de:Forte	en:forte	es:forte	fa:فورته	fr:forte	he:פורטה	hi:तेज़ी	ja:フォルテ	ko:포르테	pt:forte	ru:форте	tr:forte	ur:فورٹے	zh:强音
+c:fortnight	Noun	ar:أسبوعان	de:zwei Wochen	en:fortnight	es:quincena	fa:دو هفته	fr:quinzaine	he:שבועיים	hi:पखवाड़ा	ja:二週間	ko:이 주	pt:quinzena	ru:две недели	tr:iki hafta	ur:پندرواڑہ	zh:两周
 c:fortress-building	Noun	ar:حصن	de:Festung	en:fortress	es:fortaleza	fa:دژ	fr:forteresse	he:מבצר	hi:किला	ja:要塞	ko:요새	pt:fortaleza	ru:крепость	tr:hisar	ur:قلعہ بند	zh:堡垒
 c:fossil	Noun	ar:أحفورة	de:Fossil	en:fossil	es:fósil	fa:سنگواره	fr:fossile	he:מאובן	hi:जीवाश्म	ja:化石	ko:화석	pt:fóssil	ru:ископаемое	tr:fosil	ur:رکاز	zh:化石
 c:fossil-fuel	Noun	ar:وقود أحفوري	de:fossiler Brennstoff	en:fossil fuel	es:combustible fósil	fa:سوخت فسیلی	fr:combustible fossile	he:דלק מאובנים	hi:जीवाश्म ईंधन	ja:化石燃料	ko:화석 연료	pt:combustível fóssil	ru:ископаемое топливо	tr:fosil yakıt	ur:فوسل ایندھن	zh:化石燃料
@@ -4158,6 +4169,7 @@ c:hajj	Noun	ar:الحج	de:Hadsch	en:Hajj	es:haj	fa:حج	fr:hadj	he:חג'	hi:ह
 c:hake	Noun	ar:حك,سمك الحك	de:Seehecht	en:hake	es:merluza	fa:هیک	fr:merlu,colin	he:מרלוזה	hi:हेक	ja:ヘイク	ko:메를루사	pt:pescada	ru:хек	tr:hek balığı	ur:ہیک	zh:无须鳕
 c:halal-food	Noun	ar:طعام حلال	de:Halal-Essen	en:halal food	es:comida halal	fa:غذای حلال	fr:nourriture halal	he:אוכל חלאל	hi:हलाल भोजन	ja:ハラル食	ko:할랄 음식	pt:comida halal	ru:халяльная пища	tr:helal yemek	ur:حلال کھانا	zh:清真食品
 c:halberd	Noun	ar:هلبرد	de:Hellebarde	en:halberd	es:alabarda	fa:هال‌برد	fr:hallebarde	he:הלברד	hi:हलबर्ड	ja:ハルバード	ko:할버드	pt:alabarda	ru:алебарда	tr:teber	ur:ہالبرڈ	zh:戟
+c:half-hour	Noun	ar:نصف ساعة	de:halbe Stunde	en:half hour	es:media hora	fa:نیم ساعت	fr:demi-heure	he:חצי שעה	hi:आधा घंटा	ja:30分	ko:30분	pt:meia hora	ru:полчаса	tr:yarım saat	ur:آدھا گھنٹہ	zh:半小时
 c:half-life	Noun	ar:عمر النصف	de:Halbwertszeit	en:half-life	es:vida media	fa:نیمه‌عمر	fr:demi-vie	he:זמן מחצית חיים	hi:अर्ध-आयु	ja:半減期	ko:반감기	pt:meia-vida	ru:период полураспада	tr:yarı ömür	ur:نصف عمر	zh:半衰期
 c:half-life-drug	Noun	ar:عمر النصف للدواء	de:Halbwertszeit	en:drug half-life	es:vida media del fármaco	fa:نیمه عمر دارو	fr:demi-vie d'un médicament	he:זמן מחצית חיים של תרופה	hi:दवा अर्ध-आयु	ja:薬物の半減期	ko:약물 반감기	pt:meia-vida do fármaco	ru:период полувыведения	tr:ilaç yarı ömrü	ur:دوا کی نیم زندگی	zh:药物半衰期
 c:half-life-rad	Noun	ar:عمر النصف الإشعاعي	de:Halbwertszeit	en:radioactive half-life	es:vida media radiactiva	fa:نیمه عمر رادیواکتیو	fr:demi-vie radioactive	he:זמן מחצית חיים רדיואקטיבי	hi:रेडियोधर्मी अर्ध-आयु	ja:放射性半減期	ko:방사성 반감기	pt:meia-vida radioativa	ru:период полураспада	tr:radyoaktif yarı ömür	ur:تابکار نیم عمر	zh:放射性半衰期
@@ -4321,6 +4333,7 @@ c:hemp-material	Noun	ar:قنب	de:Hanf	en:hemp	es:cáñamo	fa:شاهدانه	fr:
 c:hemp-seed	Noun	ar:بذور القنب	de:Hanfsamen	en:hemp seed	es:semilla de cáñamo	fa:تخمه شاهدانه	fr:graine de chanvre	he:גרעין קנבוס	hi:भांग के बीज	ja:麻の実	ko:대마씨	pt:semente de cânhamo	ru:семя конопли	tr:kenevir tohumu	ur:بھنگ کے بیج	zh:火麻仁
 c:hen	Noun	ar:دجاجة	de:Henne	en:hen	es:gallina	fa:مرغ خانگی	fr:poule	he:תרנגולת	hi:मुर्गी	ja:雌鶏	ko:암탉	pt:galinha poedeira	ru:несушка	tr:tavuk	ur:مرغی	zh:母鸡
 c:hen-chicken	Noun	ar:دجاجة بياضة	de:Henne	en:hen	es:gallina ponedora	fa:مرغ ماده	fr:poule pondeuse	he:תרנגולת מטילה	hi:मुर्गी	ja:雌鶏	ko:암탉	pt:galinha	ru:несушка	tr:tavuk	ur:مرغی	zh:母鸡
+c:henceforth	Adverb	ar:من الآن فصاعدا	de:fortan	en:henceforth	es:de ahora en adelante	fa:از این پس	fr:désormais	he:מכאן ואילך	hi:अब से	ja:今後	ko:앞으로	pt:daqui em diante	ru:отныне	tr:bundan böyle	ur:آئندہ سے	zh:从此
 c:heptagon	Noun	ar:سباعي,شكل سباعي	de:Siebeneck,Heptagon	en:heptagon	es:heptágono	fa:هفت‌ضلعی	fr:heptagone	he:משובע	hi:सप्तभुज	ja:七角形	ko:칠각형	pt:heptágono	ru:семиугольник	tr:yedigen	ur:سات ضلعی	zh:七边形,七角形
 c:heraldry	Noun	ar:علم الشعارات	de:Heraldik	en:heraldry	es:heráldica	fa:علم نشان شناسی	fr:héraldique	he:הרלדיקה	hi:हेराल्ड्री	ja:紋章学	ko:문장학	pt:heráldica	ru:геральдика	tr:heraldik	ur:شعاریات	zh:纹章学
 c:herb	Noun	ar:عشب,نبات عطري	de:Kraut,Heilkraut	en:herb	es:hierba	fa:گیاه,علف	fr:herbe	he:עשב תיבול	hi:जड़ी-बूटी	ja:ハーブ,薬草	ko:허브,약초	pt:erva	ru:трава,пряная трава	tr:ot,bitki	ur:جڑی بوٹی,بوٹی	zh:草药,香草
@@ -4467,6 +4480,8 @@ c:hotel	Noun	ar:فندق	de:Hotel	en:hotel	es:hotel	fa:هتل	fr:hôtel	he:מל�
 c:hotel-building	Noun	ar:فندق	de:Hotel	en:hotel	es:hotel	fa:هتل	fr:hôtel	he:מלון	hi:होटल	ja:ホテル	ko:호텔	pt:hotel	ru:гостиница	tr:otel	ur:ہوٹل	zh:酒店
 c:hounsfield	Noun	ar:وحدة هاونسفيلد	de:Hounsfield-Einheit	en:Hounsfield unit	es:unidad Hounsfield	fa:واحد هاونسفیلد	fr:unité Hounsfield	he:יחידת האונספילד	hi:हाउंसफील्ड इकाई	ja:ハウンスフィールド値	ko:하운스필드 단위	pt:unidade Hounsfield	ru:единица Хаунсфилда	tr:Hounsfield birimi	ur:ہاونسفیلڈ اکائی	zh:亨氏单位
 c:hour	Noun	ar:ساعة	de:Stunde	en:hour	es:hora	fa:ساعت	fr:heure	he:שעה	hi:घंटा	ja:時間	ko:시간	pt:hora	ru:час	tr:saat	ur:گھنٹہ	zh:小时
+c:hour-time	Noun	ar:ساعة	de:Stunde	en:hour	es:hora	fa:ساعت	fr:heure	he:שעה	hi:घंटा	ja:時間	ko:시간	pt:hora	ru:час	tr:saat	ur:گھنٹہ	zh:小时
+c:hourglass	Noun	ar:ساعة رملية	de:Sanduhr	en:hourglass	es:reloj de arena	fa:ساعت شنی	fr:sablier	he:שעון חול	hi:रेत घड़ी	ja:砂時計	ko:모래시계	pt:ampulheta	ru:песочные часы	tr:kum saati	ur:ریت گھڑی	zh:沙漏
 c:house	Noun	ar:بيت,منزل	de:Haus	en:house,home	es:casa	fa:خانه	fr:maison	he:בית	hi:घर	ja:家	ko:집	pt:casa	ru:дом	tr:ev	ur:گھر	zh:房子
 c:house-building	Noun	ar:منزل	de:Haus	en:house	es:casa	fa:خانه	fr:maison	he:בית	hi:घर	ja:家	ko:집	pt:casa	ru:дом	tr:ev	ur:گھر	zh:房屋
 c:housefly	Noun	ar:ذبابة,ذبابة منزلية	de:Stubenfliege,Hausfliege	en:housefly,fly	es:mosca común	fa:مگس خانگی	fr:mouche domestique	he:זבוב הבית	hi:मक्खी,घरेलू मक्खी	ja:家蠅,イエバエ	ko:집파리	pt:mosca doméstica	ru:комнатная муха	tr:karasinek,evsineği	ur:مکھی,گھریلو مکھی	zh:家蝇
@@ -4705,6 +4720,7 @@ c:insomnia	Noun	ar:أرق	de:Schlaflosigkeit,Insomnie	en:insomnia	es:insomnio	fa
 c:inspiration	Noun	ar:إلهام	de:Inspiration	en:inspiration	es:inspiración	fa:الهام	fr:inspiration	he:השראה	hi:प्रेरणा	ja:インスピレーション,ひらめき	ko:영감	pt:inspiração	ru:вдохновение	tr:ilham	ur:الہام,ترغیب	zh:灵感
 c:installation-art	Noun	ar:فن التركيب	de:Installationskunst	en:installation art	es:arte de instalación	fa:هنر چیدمان	fr:art d'installation	he:אמנות הגדרה	hi:स्थापना कला	ja:インスタレーション	ko:설치미술	pt:arte de instalação	ru:инсталляция	tr:enstalasyon sanatı	ur:تنصیبی فن	zh:装置艺术
 c:installer	Noun	ar:برنامج التثبيت	de:Installationsprogramm	en:installer	es:instalador	fa:نصب‌کننده	fr:installateur	he:מתקין	hi:इंस्टॉलर	ja:インストーラー	ko:설치 프로그램	pt:instalador	ru:установщик	tr:yükleyici	ur:انسٹالر	zh:安装程序
+c:instant	Noun	ar:لحظة	de:Augenblick	en:instant	es:instante	fa:آن	fr:instant	he:רגע	hi:क्षण	ja:瞬間	ko:찰나	pt:instante	ru:мгновение	tr:an	ur:لمحہ	zh:瞬间
 c:instant-oats	Noun	ar:شوفان فوري	de:Instant-Hafer	en:instant oats	es:avena instantánea	fa:جو فوری	fr:avoine instantanée	he:קוואקר	hi:इंस्टेंट ओट्स	ja:インスタントオーツ	ko:인스턴트 오트	pt:aveia instantânea	ru:быстрый овёс	tr:hazır yulaf	ur:فوری اوٹس	zh:即食燕麦
 c:instar	Noun	ar:طور الحشرة	de:Instar	en:instar	es:instar	fa:مرحله لارو	fr:instar	he:שלב זחלי	hi:इन्स्टार	ja:齢	ko:령	pt:instar	ru:линочная стадия	tr:böcek larva dönemi	ur:کیڑے کا مرحلہ	zh:龄期
 c:instinct	Noun	ar:غريزة	de:Instinkt	en:instinct	es:instinto	fa:غریزه	fr:instinct	he:אינסטינקט,יצר	hi:प्रवृत्ति,सहजवृत्ति	ja:本能	ko:본능	pt:instinto	ru:инстинкт	tr:içgüdü,insiyak	ur:جبلت,غریزہ	zh:本能
@@ -5863,8 +5879,10 @@ c:microwave-kitchen	Noun	ar:ميكروويف	de:Mikrowelle	en:microwave	es:micro
 c:mictlan	Noun	ar:ميكتلان	de:Mictlan	en:Mictlan	es:Mictlán	fa:میکتلان	fr:Mictlan	he:מיקטלן	hi:मिक्टलान	ja:ミクトラン	ko:믹틀란	pt:Mictlán	ru:Миктлан	tr:Mictlan	ur:میکٹلان	zh:冥界
 c:mid-ocean-ridge	Noun	ar:سلسلة وسط المحيط	de:Mittelozeanischer Rücken	en:mid-ocean ridge	es:dorsal oceánica	fa:پشته میان اقیانوسی	fr:dorsale médio-océanique	he:רכס אמצע האוקיינוס	hi:मध्य-महासागरीय कटक	ja:中央海嶺	ko:중앙해령	pt:dorsal meso-oceânica	ru:срединно-океанический хребет	tr:orta okyanus sırtı	ur:وسط سمندر پہاڑی سلسلہ	zh:大洋中脊
 c:mid-ocean-ridge-feat	Noun	ar:حيد وسط المحيط	de:mittelozeanischer Rücken	en:mid-ocean ridge	es:dorsal oceánica	fa:پشته میان‌اقیانوسی	fr:dorsale océanique	he:רכס תת-ימי	hi:मध्य-समुद्र कटक	ja:中央海嶺	ko:중앙해령	pt:dorsal oceânica	ru:срединно-океанический хребет	tr:orta okyanus sırtı	ur:سمندری چوٹی	zh:大洋中脊
+c:midday-time	Noun	ar:منتصف النهار	de:Mittag	en:midday	es:mediodía	fa:ظهر	fr:midi	he:צהריים	hi:दोपहर	ja:正午	ko:정오	pt:meio-dia	ru:полдень	tr:öğle	ur:دوپہر	zh:正午
 c:middle	Noun	ar:وسط	de:Mitte	en:middle	es:medio	fa:وسط,میانه	fr:milieu	he:אמצע	hi:बीच,मध्य	ja:真ん中,中央	ko:중간,가운데	pt:meio	ru:середина	tr:orta	ur:درمیان,وسط	zh:中间
 c:midge	Noun	ar:بعوضة صغيرة	de:Mücke	en:midge	es:jején	fa:پشه ریز	fr:moucheron	he:יתוש קטן	hi:मच्छर-मक्खी	ja:ユスリカ	ko:깔따구	pt:mosquito	ru:мошка	tr:tatarcık	ur:باریک مچھر	zh:蠓
+c:midnight-time	Noun	ar:منتصف الليل	de:Mitternacht	en:midnight	es:medianoche	fa:نیمه شب	fr:minuit	he:חצות	hi:मध्यरात्रि	ja:真夜中	ko:자정	pt:meia-noite	ru:полночь	tr:gece yarısı	ur:آدھی رات	zh:午夜
 c:midpoint	Noun	ar:نقطة المنتصف	de:Mittelpunkt	en:midpoint	es:punto medio	fa:نقطه میانی	fr:point milieu	he:נקודת אמצע	hi:मध्य बिंदु	ja:中点	ko:중점	pt:ponto médio	ru:середина	tr:orta nokta	ur:درمیانی نقطہ	zh:中点
 c:midshipman	Noun	ar:ضابط بحري متدرب	de:Seekadett	en:midshipman	es:guardiamarina	fa:دانشجوی نیروی دریایی	fr:aspirant de marine	he:צוער ימי	hi:मिडशिपमैन	ja:海軍士官候補生	ko:해군 사관 후보생	pt:aspirante a oficial	ru:гардемарин	tr:deniz harbiye	ur:مڈشپ مین	zh:海军军校学员
 c:midwife-toad	Noun	ar:ضفدع القابلة	de:Geburtshelferkröte	en:midwife toad	es:sapo partero	fa:وزغ ماما	fr:alyte accoucheur	he:קרפדת מיילדת	hi:दाई मेंढक	ja:コモリガエル	ko:산파두꺼비	pt:sapo parteiro	ru:повитуха	tr:ebe kurbağası	ur:دائی مینڈک	zh:产婆蟾
@@ -5910,6 +5928,7 @@ c:mint	Noun	ar:النعناع	de:Minze	en:mint	es:menta	fa:نعناع	fr:menthe	
 c:mint-herb	Noun	ar:نعناع	de:Minze	en:mint	es:menta	fa:نعناع	fr:menthe	he:מנטה	hi:पुदीना	ja:ミント	ko:민트	pt:hortelã	ru:мята	tr:nane	ur:پودینہ	zh:薄荷
 c:minus	Noun	ar:ناقص,طرح	de:Minus	en:minus	es:menos	fa:منها,تفریق	fr:moins	he:מינוס,פחות	hi:घटाव,माइनस	ja:マイナス	ko:빼기,마이너스	pt:menos	ru:минус	tr:eksi	ur:منفی,مائنس	zh:减,减号
 c:minute	Noun	ar:دقيقة	de:Minute	en:minute	es:minuto	fa:دقیقه	fr:minute	he:דקה	hi:मिनट	ja:分	ko:분	pt:minuto	ru:минута	tr:dakika	ur:منٹ	zh:分钟
+c:minute-time	Noun	ar:دقيقة	de:Minute	en:minute	es:minuto	fa:دقیقه	fr:minute	he:דקה	hi:मिनट	ja:分	ko:분	pt:minuto	ru:минута	tr:dakika	ur:منٹ	zh:分钟
 c:miracle	Noun	ar:معجزة	de:Wunder	en:miracle	es:milagro	fa:معجزه	fr:miracle	he:נס	hi:चमत्कार	ja:奇跡	ko:기적	pt:milagre	ru:чудо	tr:mucize	ur:معجزہ	zh:奇迹
 c:miracle-berry	Noun	ar:توت معجزة	de:Wunderbeere	en:miracle berry	es:baya milagrosa	fa:توت معجزه	fr:baie miracle	he:פרי הפלא	hi:चमत्कार बेरी	ja:ミラクルフルーツ	ko:미라클 베리	pt:baga milagrosa	ru:чудо-ягода	tr:mucize meyve	ur:معجزاتی بیری	zh:神秘果
 c:mirage	Noun	ar:سراب	de:Fata Morgana	en:mirage	es:espejismo	fa:سراب	fr:mirage	he:אחיזת עיניים	hi:मरीचिका	ja:蜃気楼	ko:신기루	pt:miragem	ru:мираж	tr:serap	ur:سراب	zh:海市蜃楼
@@ -6024,6 +6043,7 @@ c:monsoon	Noun	ar:الرياح الموسمية,المنسون	de:Monsun	en:mons
 c:monsoon-season	Noun	ar:موسم الرياح الموسمية	de:Monsun	en:monsoon	es:monzón	fa:باد موسمی	fr:mousson	he:מונסון	hi:मानसून	ja:モンスーン	ko:몬순	pt:monção	ru:муссон	tr:muson	ur:مانسون	zh:季风
 c:mont-blanc	Noun	ar:مون بلان	de:Mont Blanc	en:Mont Blanc	es:Mont Blanc,Monte Blanco	fa:مون بلان	fr:mont Blanc	he:מון בלאן	hi:मोंट ब्लांक	ja:モンブラン	ko:몽블랑산	pt:Mont Blanc,monte Branco	ru:Монблан	tr:Mont Blanc	ur:مونٹ بلانک	zh:勃朗峰
 c:month	Noun	ar:شهر	de:Monat	en:month	es:mes	fa:ماه	fr:mois	he:חודש	hi:महीना,मास	ja:月	ko:달,월	pt:mês	ru:месяц	tr:ay	ur:مہینہ	zh:月
+c:month-time	Noun	ar:شهر	de:Monat	en:month	es:mes	fa:ماه	fr:mois	he:חודש	hi:महीना	ja:月	ko:달	pt:mês	ru:месяц	tr:ay	ur:مہینہ	zh:月
 c:montreal	Noun	ar:مونتريال	de:Montreal	en:Montreal	es:Montreal	fa:مونترال	fr:Montréal	he:מונטריאול	hi:मॉन्ट्रियल	ja:モントリオール	ko:몬트리올	pt:Montreal	ru:Монреаль	tr:Montreal	ur:مونٹریال	zh:蒙特利尔
 c:mood	Noun	ar:حالة مزاجية	de:Stimmung,Laune	en:mood	es:humor,estado de ánimo	fa:حال,حالت روحی	fr:humeur	he:מצב רוח	hi:मूड,मनोदशा	ja:気分,ムード	ko:기분,무드	pt:humor,estado de espírito	ru:настроение	tr:ruh hali,mod	ur:موڈ	zh:情绪,心情
 c:mood-stabilizer	Noun	ar:مثبت المزاج	de:Stimmungsstabilisator	en:mood stabilizer	es:estabilizador del estado de ánimo	fa:تثبیت‌کننده خلق	fr:régulateur de l'humeur	he:מייצב מצב רוח	hi:मनोदशा स्थिरक	ja:気分安定薬	ko:기분 안정제	pt:estabilizador de humor	ru:нормотимик	tr:duygudurum dengeleyici	ur:مزاج استحکام	zh:心境稳定剂
@@ -6043,6 +6063,7 @@ c:mores-society	Noun	ar:الأعراف الأخلاقية	de:Sitten	en:mores	es:
 c:morin-khuur	Noun	ar:مورين خور	de:Morin-Chuur	en:morin khuur	es:morin khuur	fa:مورین خور	fr:morin khuur	he:מורין חור	hi:मोरिन खुर	ja:馬頭琴	ko:마두금	pt:morin khuur	ru:морин хуур	tr:morin huur	ur:مورن خور	zh:马头琴
 c:mormon	Noun	ar:المورمون	de:Mormonen	en:Mormonism	es:mormonismo	fa:مورمون	fr:mormonisme	he:מורמונים	hi:मॉर्मन	ja:モルモン教	ko:모르몬교	pt:mormonismo	ru:мормонизм	tr:Mormonluk	ur:مورمن	zh:摩门教
 c:morning	Noun	ar:صباح	de:Morgen	en:morning	es:mañana	fa:صبح	fr:matin	he:בוקר	hi:सुबह	ja:朝	ko:아침	pt:manhã	ru:утро	tr:sabah	ur:صبح	zh:早上,早晨
+c:morning-time	Noun	ar:صباح	de:Morgen	en:morning	es:mañana	fa:صبح	fr:matin	he:בוקר	hi:सुबह	ja:朝	ko:아침	pt:manhã	ru:утро	tr:sabah	ur:صبح	zh:早晨
 c:moroccan-cuisine	Noun	ar:مطبخ مغربي	de:marokkanische Küche	en:Moroccan cuisine	es:cocina marroquí	fa:آشپزی مراکشی	fr:cuisine marocaine	he:מטבח מרוקאי	hi:मोरक्कन भोजन	ja:モロッコ料理	ko:모로코 요리	pt:culinária marroquina	ru:марокканская кухня	tr:Fas mutfağı	ur:مراکشی کھانا	zh:摩洛哥菜
 c:morocco	Noun	ar:المغرب	de:Marokko	en:Morocco	es:Marruecos	fa:مراکش	fr:Maroc	he:מרוקו	hi:मोरक्को	ja:モロッコ	ko:모로코	pt:Marrocos	ru:Марокко	tr:Fas	ur:مراکش	zh:摩洛哥
 c:morpheme	Noun	ar:صرفيم	de:Morphem	en:morpheme	es:morfema	fa:تکواژ	fr:morphème	he:מורפמה	hi:रूपिम	ja:形態素	ko:형태소	pt:morfema	ru:морфема	tr:morfem	ur:شکلیہ	zh:词素
@@ -6333,12 +6354,15 @@ c:niger	Noun	ar:النيجر,نهر النيجر	de:Niger	en:Niger,Niger River	e
 c:niger-river	Noun	ar:نهر النيجر	de:Niger	en:Niger river	es:río Níger	fa:رود نیجر	fr:Niger	he:נהר הניז'ר	hi:नाइजर नदी	ja:ニジェール川	ko:니제르강	pt:rio Níger	ru:река Нигер	tr:Nijer Nehri	ur:دریائے نائجر	zh:尼日尔河
 c:nigeria	Noun	ar:نيجيريا	de:Nigeria	en:Nigeria	es:Nigeria	fa:نیجریه	fr:Nigéria	he:ניגריה	hi:नाइजीरिया	ja:ナイジェリア	ko:나이지리아	pt:Nigéria	ru:Нигерия	tr:Nijerya	ur:نائیجیریا	zh:尼日利亚
 c:night	Noun	ar:ليل,ليلة	de:Nacht	en:night	es:noche	fa:شب	fr:nuit	he:לילה	hi:रात	ja:夜	ko:밤	pt:noite	ru:ночь	tr:gece	ur:رات	zh:夜
+c:night-time	Noun	ar:ليل	de:Nacht	en:night	es:noche	fa:شب	fr:nuit	he:לילה	hi:रात	ja:夜	ko:밤	pt:noite	ru:ночь	tr:gece	ur:رات	zh:夜晚
 c:nightclub	Noun	ar:ملهى ليلي	de:Nachtklub	en:nightclub	es:discoteca	fa:باشگاه شبانه	fr:boîte de nuit	he:מועדון לילה	hi:नाइटक्लब	ja:ナイトクラブ	ko:나이트클럽	pt:boate	ru:ночной клуб	tr:gece kulübü	ur:نائٹ کلب	zh:夜总会
+c:nightfall	Noun	ar:حلول الليل	de:Einbruch der Nacht	en:nightfall	es:anochecer	fa:سرشب	fr:tombée de la nuit	he:רדת הלילה	hi:रात होना	ja:日暮れ	ko:해질녘	pt:anoitecer	ru:наступление ночи	tr:gece vakti	ur:رات کا وقت	zh:夜幕降临
 c:nightgown	Noun	ar:قميص نوم	de:Nachthemd	en:nightgown	es:camisón	fa:لباس خواب	fr:chemise de nuit	he:כותונת לילה	hi:नाइटगाउन	ja:ネグリジェ	ko:잠옷 드레스	pt:camisola de dormir	ru:ночная рубашка	tr:gecelik	ur:نائٹ گاؤن	zh:睡裙
 c:nightingale	Noun	ar:بلبل	de:Nachtigall	en:nightingale	es:ruiseñor	fa:بلبل	fr:rossignol	he:זמיר	hi:बुलबुल	ja:ナイチンゲール	ko:나이팅게일	pt:rouxinol	ru:соловей	tr:bülbül	ur:بلبل	zh:夜莺
 c:nightingale-bird	Noun	ar:بلبل	de:Nachtigall	en:nightingale	es:ruiseñor	fa:بلبل	fr:rossignol	he:זמיר	hi:बुलबुल	ja:ナイチンゲール	ko:나이팅게일	pt:rouxinol	ru:соловей	tr:bülbül	ur:بلبل	zh:夜莺
 c:nightjar	Noun	ar:سبد الليل	de:Ziegenmelker	en:nightjar	es:chotacabras	fa:شب خور	fr:engoulevent	he:שעיר	hi:रातचर	ja:ヨタカ	ko:쏙독새	pt:noitibó	ru:козодой	tr:çobanaldatan	ur:رات چر پرندہ	zh:夜鹰
 c:nightstand	Noun	ar:طاولة جانبية للسرير,كومودينو	de:Nachttisch	en:nightstand,bedside table	es:mesita de noche	fa:میز کنار تخت,پاتختی	fr:table de chevet	he:שידת לילה	hi:नाइटस्टैंड,बेडसाइड टेबल	ja:ナイトテーブル,サイドテーブル	ko:협탁	pt:mesa de cabeceira	ru:прикроватная тумбочка	tr:komodin	ur:بیڈ سائیڈ میز	zh:床头柜
+c:nighttime	Noun	ar:وقت الليل	de:Nachtzeit	en:nighttime	es:tiempo nocturno	fa:شبانگاه	fr:la nuit	he:שעות הלילה	hi:रात का समय	ja:夜間	ko:밤 시간	pt:tempo noturno	ru:ночное время	tr:gece saatleri	ur:رات کا وقت رات	zh:夜间
 c:nihilism	Noun	ar:العدمية	de:Nihilismus	en:nihilism	es:nihilismo	fa:پوچ گرایی	fr:nihilisme	he:ניהיליזם,אפסנות	hi:शून्यवाद	ja:虚無主義,ニヒリズム	ko:허무주의,니힐리즘	pt:niilismo	ru:нигилизм	tr:nihilizm,hiççilik	ur:عدمیت	zh:虚无主义
 c:nihilism-phil	Noun	ar:العدمية	de:Nihilismus	en:nihilism	es:nihilismo	fa:نیست‌انگاری	fr:nihilisme	he:ניהיליזם	hi:शून्यवाद	ja:ニヒリズム	ko:허무주의	pt:niilismo	ru:нигилизм	tr:nihilizm	ur:نیست پسندی	zh:虚无主义
 c:nile	Noun	ar:النيل,نهر النيل	de:Nil	en:Nile,Nile River	es:Nilo,río Nilo	fa:نیل,رود نیل	fr:Nil	he:נילוס,נהר הנילוס	hi:नील नदी,नील	ja:ナイル川	ko:나일강	pt:Nilo,rio Nilo	ru:Нил	tr:Nil,Nil Nehri	ur:دریائے نیل,نیل	zh:尼罗河
@@ -6404,6 +6428,7 @@ c:novel	Noun	ar:رواية	de:Roman	en:novel	es:novela	fa:رمان	fr:roman	he:�
 c:novel-genre	Noun	ar:رواية	de:Roman	en:novel	es:novela	fa:رمان	fr:roman	he:רומן	hi:उपन्यास	ja:小説	ko:소설	pt:romance	ru:роман	tr:roman	ur:ناول	zh:小说
 c:novgorod-republic	Noun	ar:جمهورية نوفغورود	de:Republik Nowgorod	en:Novgorod Republic	es:República de Nóvgorod	fa:جمهوری نووگورود	fr:république de Novgorod	he:רפובליקת נובגורוד	hi:नोवगोरोद गणराज्य	ja:ノヴゴロド公国	ko:노브고로드 공국	pt:República de Novgorod	ru:Новгородская республика	tr:Novgorod Cumhuriyeti	ur:نوگورود جمہوریہ	zh:诺夫哥罗德共和国
 c:now	Adverb	ar:الآن	de:jetzt	en:now	es:ahora	fa:اکنون,الان	fr:maintenant	he:עכשיו	hi:अब	ja:今	ko:지금	pt:agora	ru:сейчас,теперь	tr:şimdi	ur:ابھی,اب	zh:现在
+c:nowadays	Adverb	ar:حاليا	de:heutzutage	en:nowadays	es:hoy en día	fa:امروزه	fr:de nos jours	he:כיום	hi:आजकल	ja:現代	ko:요즘	pt:atualmente	ru:в наши дни	tr:günümüzde	ur:آج کل	zh:如今
 c:nox	Noun	ar:أكاسيد النيتروجين	de:Stickoxide	en:nitrogen oxides	es:óxidos de nitrógeno	fa:اکسیدهای نیتروژن	fr:oxydes d'azote	he:תחמוצות חנקן	hi:नाइट्रोजन ऑक्साइड	ja:窒素酸化物	ko:질소 산화물	pt:óxidos de nitrogênio	ru:оксиды азота	tr:azot oksitler	ur:نائٹروجن آکسائڈ	zh:氮氧化物
 c:nozzle	Noun	ar:فوهة	de:Düse	en:nozzle	es:tobera	fa:نازل	fr:tuyère	he:זרבובית	hi:नोज़ल	ja:ノズル	ko:노즐	pt:bocal	ru:сопло	tr:meme	ur:نوزل	zh:喷嘴
 c:nubian-desert	Noun	ar:الصحراء النوبية	de:nubische Wüste	en:Nubian desert	es:desierto de Nubia	fa:صحرای نوبه	fr:désert de Nubie	he:המדבר הנובי	hi:नूबियन रेगिस्तान	ja:ヌビア砂漠	ko:누비아 사막	pt:deserto da Núbia	ru:Нубийская пустыня	tr:Nubya çölü	ur:نوبیائی صحرا	zh:努比亚沙漠
@@ -6515,6 +6540,7 @@ c:oil-paint	Noun	ar:دهان زيتي	de:Ölfarbe	en:oil paint	es:pintura al ól
 c:okra	Noun	ar:بامية	de:Okra	en:okra	es:quimbombó	fa:بامیه	fr:gombo	he:אוקרה	hi:भिंडी	ja:オクラ	ko:오크라	pt:quiabo	ru:окра	tr:bamya	ur:بھنڈی	zh:秋葵
 c:okra-veg	Noun	ar:بامية	de:Okra	en:okra	es:quimbombó	fa:بامیه	fr:gombo	he:במיה	hi:भिंडी	ja:オクラ	ko:오크라	pt:quiabo	ru:окра	tr:bamya	ur:بھنڈی	zh:秋葵
 c:old	Adjective	ar:قديم,عجوز	de:alt	en:old	es:viejo,antiguo	fa:کهنه,پیر	fr:vieux,ancien	he:ישן,זקן	hi:पुराना,बूढ़ा	ja:古い,老いた	ko:오래된,늙은	pt:velho,antigo	ru:старый	tr:eski,yaşlı	ur:پرانا,بوڑھا	zh:老,旧
+c:olden	Adjective	ar:قديم	de:alt ehemalig	en:olden	es:antiguo	fa:باستانی	fr:ancien	he:קדום	hi:पुराना	ja:昔の	ko:옛	pt:antigo	ru:стародавний	tr:eski zaman	ur:قدیم	zh:古老的
 c:oligarchy	Noun	ar:أوليغارشية	de:Oligarchie	en:oligarchy	es:oligarquía	fa:الیگارشی	fr:oligarchie	he:אוליגרכיה	hi:अल्पतंत्र	ja:寡頭政治	ko:과두제	pt:oligarquia	ru:олигархия	tr:oligarşi	ur:چند سری حکومت	zh:寡头政治
 c:oligodendrocyte	Noun	ar:خلية قليلة التغصنات	de:Oligodendrozyt	en:oligodendrocyte	es:oligodendrocito	fa:الیگودندروسیت	fr:oligodendrocyte	he:אוליגודנדרוציט	hi:ऑलिगोडेंड्रोसाइट	ja:オリゴデンドロサイト	ko:희소돌기아교세포	pt:oligodendrócito	ru:олигодендроцит	tr:oligodendrosit	ur:میلین خلیہ	zh:少突胶质细胞
 c:oligopoly	Noun	ar:احتكار القلة	de:Oligopol	en:oligopoly	es:oligopolio	fa:انحصار چند جانبه	fr:oligopole	he:אוליגופול	hi:अल्पाधिकार,कुलाधिकार	ja:寡占	ko:과점	pt:oligopólio	ru:олигополия	tr:oligopol	ur:گروہی اجارہ داری	zh:寡头垄断,寡占
@@ -6940,6 +6966,7 @@ c:pericardium	Noun	ar:التامور	de:Herzbeutel	en:pericardium	es:pericardio	
 c:peridot-gem	Noun	ar:زبرجد	de:Peridot	en:peridot	es:peridoto	fa:پریدوت	fr:péridot	he:פרידוט	hi:पेरिडॉट	ja:ペリドット	ko:페리도트	pt:peridoto	ru:перидот	tr:peridot	ur:زبرجد	zh:橄榄石
 c:perihelion	Noun	ar:الحضيض الشمسي	de:Perihel	en:perihelion	es:perihelio	fa:حضیض	fr:périhélie	he:פריהליון	hi:उपसौर	ja:近日点	ko:근일점	pt:periélio	ru:перигелий	tr:günyan	ur:حضیض شمسی	zh:近日点
 c:perimeter	Noun	ar:محيط	de:Umfang	en:perimeter	es:perímetro	fa:محیط	fr:périmètre	he:היקף	hi:परिमाप	ja:周,外周	ko:둘레	pt:perímetro	ru:периметр	tr:çevre	ur:احاطہ	zh:周长,周边
+c:period-time	Noun	ar:فترة	de:Zeitraum	en:period	es:período	fa:دوره	fr:période	he:תקופת זמן	hi:अवधि	ja:期間	ko:기간	pt:período	ru:период	tr:dönem	ur:مدت	zh:时期
 c:period-wave	Noun	ar:زمن دوري	de:Schwingungsdauer	en:wave period	es:período de onda	fa:دوره تناوب	fr:période	he:מחזור הגל	hi:तरंग आवर्तकाल	ja:周期	ko:주기	pt:período	ru:период	tr:periyot	ur:وقفہ موج	zh:周期
 c:periodic-table-hist	Noun	ar:الجدول الدوري	de:Periodensystem	en:periodic table	es:tabla periódica	fa:جدول تناوبی	fr:tableau périodique	he:הטבלה המחזורית	hi:आवर्त सारणी	ja:周期表	ko:주기율표	pt:tabela periódica	ru:периодическая таблица	tr:periyodik tablo	ur:دوری جدول	zh:元素周期表
 c:periodization	Noun	ar:التدوير التدريبي	de:Periodisierung	en:periodization	es:periodización	fa:دوره‌بندی تمرین	fr:périodisation	he:פריודיזציה	hi:आवधिकीकरण	ja:ピリオダイゼーション	ko:주기화	pt:periodização	ru:периодизация	tr:periyodizasyon	ur:تربیتی دور	zh:周期化训练
@@ -7630,6 +7657,7 @@ c:quantum-teleportation	Noun	ar:التلقين الكمومي	de:Quantenteleport
 c:quantum-walk	Noun	ar:المشي الكمومي	de:Quantenwanderung	en:quantum walk	es:caminata cuántica	fa:گردش کوانتومی	fr:marche quantique	he:הליכה קוונטית	hi:क्वांटम चाल	ja:量子ウォーク	ko:양자 보행	pt:caminhada quântica	ru:квантовое блуждание	tr:kuantum yürüyüşü	ur:کوانٹم چہل	zh:量子游走
 c:quarantine	Noun	ar:حجر صحي	de:Quarantäne	en:quarantine	es:cuarentena	fa:قرنطینه	fr:quarantaine	he:הסגר	hi:संगरोध	ja:検疫	ko:격리	pt:quarentena	ru:карантин	tr:karantina	ur:قرنطینہ	zh:隔离
 c:quark	Noun	ar:كوارك	de:Quark	en:quark	es:quark	fa:کوارک	fr:quark	he:קוורק	hi:क्वार्क	ja:クォーク	ko:쿼크	pt:quark	ru:кварк	tr:kuark	ur:کوارک	zh:夸克
+c:quarter-hour	Noun	ar:ربع ساعة	de:Viertelstunde	en:quarter hour	es:cuarto de hora	fa:ربع ساعت	fr:quart d'heure	he:רבע שעה	hi:पाव घंटा	ja:四半時間	ko:15분	pt:quarto de hora	ru:четверть часа	tr:çeyrek saat	ur:ربع گھنٹہ	zh:一刻钟
 c:quartet	Noun	ar:رباعي	de:Quartett	en:quartet	es:cuarteto	fa:کوارتت	fr:quatuor	he:רביעייה	hi:चौकड़ी,चतुष्क	ja:四重奏,カルテット	ko:사중주,콰르텟	pt:quarteto	ru:квартет	tr:kuartet,dörtlü	ur:چوکڑی,کوارٹٹ	zh:四重奏
 c:quartile	Noun	ar:ربيع إحصائي	de:Quartil	en:quartile	es:cuartil	fa:چارک	fr:quartile	he:רבעון	hi:चतुर्थक	ja:四分位	ko:사분위수	pt:quartil	ru:квартиль	tr:çeyreklik	ur:چوتھائی	zh:四分位数
 c:quartz	Noun	ar:كوارتز,مرو	de:Quarz	en:quartz	es:cuarzo	fa:کوارتز	fr:quartz	he:קוורץ	hi:क्वार्ट्ज़,स्फटिक	ja:石英,クォーツ	ko:석영,쿼츠	pt:quartzo	ru:кварц	tr:kuvars	ur:کوارٹز,سفاٹک	zh:石英,水晶
@@ -7767,6 +7795,7 @@ c:reason	Noun	ar:سبب	de:Grund	en:reason	es:razón	fa:دلیل	fr:raison	he:ס
 c:reboot-film	Noun	ar:إعادة إطلاق فيلم	de:Reboot	en:reboot	es:reinicio	fa:بازنگری فیلم	fr:redémarrage	he:ריבוט	hi:रीबूट	ja:リブート	ko:리부트	pt:reboot	ru:перезапуск	tr:yeniden başlatma	ur:ری بوٹ	zh:重启
 c:receipt	Noun	ar:إيصال,وصل	de:Quittung,Beleg	en:receipt	es:recibo	fa:رسید	fr:reçu	he:קבלה	hi:रसीद	ja:領収書,レシート	ko:영수증	pt:recibo	ru:квитанция,чек	tr:makbuz,fiş	ur:رسید	zh:收据,发票
 c:receiver-audio	Noun	ar:مستقبل صوتي	de:Receiver	en:audio receiver	es:receptor de audio	fa:گیرنده صوتی	fr:récepteur audio	he:רסיבר	hi:ऑडियो रिसीवर	ja:AVレシーバー	ko:리시버	pt:receptor	ru:ресивер	tr:ses alıcısı	ur:آڈیو ریسیور	zh:音频接收器
+c:recent	Adjective	ar:حديث	de:kürzlich	en:recent	es:reciente	fa:اخیر	fr:récent	he:אחרון	hi:हाल का	ja:最近の	ko:최근의	pt:recente	ru:недавний	tr:yakın zaman	ur:حالیہ	zh:最近的
 c:receptor	Noun	ar:مستقبل	de:Rezeptor	en:receptor	es:receptor	fa:گیرنده	fr:récepteur	he:קולטן	hi:ग्राही	ja:受容体	ko:수용체	pt:receptor	ru:рецептор	tr:reseptör	ur:وصول کنندہ	zh:受体
 c:receptor-antagonist	Noun	ar:المانع	de:Antagonist	en:antagonist	es:antagonista	fa:آنتاگونیست	fr:antagoniste	he:אנטגוניסט	hi:प्रतिरोधक	ja:アンタゴニスト	ko:길항제	pt:antagonista	ru:антагонист	tr:antagonist	ur:اینٹاگونسٹ	zh:拮抗剂
 c:receptor-binding	Noun	ar:الارتباط بالمستقبلات	de:Rezeptorbindung	en:receptor binding	es:unión al receptor	fa:اتصال به گیرنده	fr:liaison au récepteur	he:קישור לקולטן	hi:रिसेप्टर बाइंडिंग	ja:受容体結合	ko:수용체 결합	pt:ligação ao receptor	ru:связывание с рецептором	tr:reseptör bağlanması	ur:وصول گیرنده	zh:受体结合
@@ -8358,6 +8387,7 @@ c:search	Verb	ar:بحث	de:suchen	en:search	es:buscar	fa:جستجو کرد	fr:ch
 c:search-engine	Noun	ar:محرك بحث	de:Suchmaschine	en:search engine	es:motor de búsqueda	fa:موتور جستجو	fr:moteur de recherche	he:מנוע חיפוש	hi:खोज इंजन	ja:検索エンジン	ko:검색 엔진	pt:motor de pesquisa	ru:поисковая система	tr:arama motoru	ur:سرچ انجن	zh:搜索引擎
 c:seashell-material	Noun	ar:صدف	de:Muschel	en:shell	es:concha	fa:صدف	fr:coquillage	he:קונכייה	hi:सीप	ja:貝殻	ko:조개껍데기	pt:concha	ru:ракушка	tr:kabuk	ur:سیپی	zh:贝壳
 c:season-finale	Noun	ar:ختام الموسم	de:Staffelfinale	en:season finale	es:final de temporada	fa:قسمت پایانی فصل	fr:finale de saison	he:פרק סיום עונה	hi:सीज़न फिनाले	ja:シーズンフィナーレ	ko:시즌 피날레	pt:final de temporada	ru:финал сезона	tr:sezon finali	ur:سیزن فائنل	zh:季终
+c:season-time	Noun	ar:فصل	de:Jahreszeit	en:season	es:estación	fa:فصل	fr:saison	he:עונה	hi:मौसम	ja:季節	ko:계절	pt:estação	ru:сезон	tr:mevsim	ur:موسم	zh:季节
 c:season-tv	Noun	ar:موسم تلفزيوني	de:Staffel	en:TV season	es:temporada	fa:فصل سریال	fr:saison de TV	he:עונה טלוויזיונית	hi:सीज़न	ja:シーズン	ko:시즌	pt:temporada	ru:сезон	tr:sezon	ur:سیزن	zh:季
 c:seasoning-cook	Noun	ar:تتبيل توابل	de:Würzen	en:seasoning	es:condimentar	fa:چاشنی زدن	fr:assaisonner	he:תיבול	hi:मसाला डालना	ja:味付け	ko:양념	pt:temperar	ru:приправа	tr:baharatlama	ur:چیزنگ	zh:调味
 c:seatbelt	Noun	ar:حزام الأمان	de:Sicherheitsgurt,Anschnallgurt	en:seatbelt,safety belt	es:cinturón de seguridad	fa:کمربند ایمنی	fr:ceinture de sécurité	he:חגורת בטיחות	hi:सीट बेल्ट	ja:シートベルト	ko:안전벨트,시트벨트	pt:cinto de segurança	ru:ремень безопасности	tr:emniyet kemeri	ur:سیٹ بیلٹ	zh:安全带
@@ -8365,6 +8395,7 @@ c:seaweed	Noun	ar:أعشاب بحرية	de:Seetang	en:seaweed	es:alga marina	fa:
 c:second	Noun	ar:ثانية	de:Sekunde	en:second	es:segundo	fa:ثانیه	fr:seconde	he:שנייה	hi:सेकंड	ja:秒	ko:초	pt:segundo	ru:секунда	tr:saniye	ur:سیکنڈ	zh:秒
 c:second-lieutenant	Noun	ar:ملازم ثاني	de:Leutnant	en:second lieutenant	es:subteniente	fa:ستوان دوم	fr:sous-lieutenant	he:סגן משנה	hi:द्वितीय लेफ्टिनेंट	ja:少尉	ko:소위	pt:segundo-tenente	ru:младший лейтенант	tr:teğmen	ur:سیکنڈ لیفٹیننٹ	zh:少尉
 c:second-messenger	Noun	ar:المرسل الثانوي	de:Second Messenger	en:second messenger	es:segundo mensajero	fa:پیام‌رسان دوم	fr:second messager	he:שליח שני	hi:द्वितीय संदेशवाहक	ja:セカンドメッセンジャー	ko:2차 전령	pt:segundo mensageiro	ru:вторичный мессенджер	tr:ikinci haberci	ur:دوسرا پیغامبر	zh:第二信使
+c:second-time	Noun	ar:ثانية	de:Sekunde	en:second	es:segundo	fa:ثانیه	fr:seconde	he:שנייה	hi:सेकंड	ja:秒	ko:초	pt:segundo	ru:секунда	tr:saniye	ur:سیکنڈ	zh:秒
 c:secret	Noun	ar:سر	de:Geheimnis	en:secret	es:secreto	fa:راز	fr:secret	he:סוד	hi:राज़,रहस्य	ja:秘密	ko:비밀	pt:segredo	ru:секрет,тайна	tr:sır	ur:راز	zh:秘密
 c:secretary-bird	Noun	ar:طائر السكرتير	de:Sekretär	en:secretary bird	es:serpentario	fa:پرنده منشی	fr:serpentaire secrétaire	he:ציפור מזכיר	hi:सचिव पक्षी	ja:ヘビクイワシ	ko:비서새	pt:serpentário	ru:птица-секретарь	tr:sekreter kuşu	ur:سیکریٹری پرندہ	zh:蛇鹫
 c:sectional-sofa	Noun	ar:أريكة مقطعية	de:Ecksofa	en:sectional sofa	es:sofá seccional	fa:مبل ال	fr:canapé sectionnel	he:ספה מודולרית	hi:सेक्शनल सोफा	ja:セクショナルソファ	ko:섹셔널 소파	pt:sofá modular	ru:модульный диван	tr:modüler koltuk	ur:سیکشنل صوفہ	zh:组合沙发
@@ -9676,6 +9707,7 @@ c:timber-industry	Noun	ar:صناعة الأخشاب	de:Holzindustrie	en:timber i
 c:timbre	Noun	ar:الجرس	de:Klangfarbe	en:timbre	es:timbre sonoro	fa:رنگ آوا	fr:timbre	he:גוון צלילי	hi:स्वर-रंग	ja:音色	ko:음색	pt:timbre	ru:тембр	tr:tını	ur:آواز کا رنگ	zh:音色
 c:timbre-music	Noun	ar:طابع صوتي	de:Klangfarbe	en:timbre	es:timbre	fa:رنگ صدا	fr:timbre musical	he:גוון צליל	hi:स्वर गुण	ja:音色	ko:음색	pt:timbre	ru:тембр	tr:tını	ur:سر کا رنگ	zh:音色
 c:time	Noun	ar:وقت,زمن	de:Zeit	en:time	es:tiempo	fa:زمان	fr:temps	he:זמן	hi:समय	ja:時間	ko:시간	pt:tempo	ru:время	tr:zaman	ur:وقت	zh:时间
+c:time-measures	Noun	ar:مقاييس الزمن	de:Zeitmaße	en:time measures	es:medidas de tiempo	fa:واحدهای زمان	fr:mesures du temps	he:מידות זמן	hi:समय माप	ja:時間の単位	ko:시간 단위	pt:medidas de tempo	ru:единицы времени	tr:zaman ölçüleri	ur:وقت کی پیمائش	zh:时间度量
 c:time-preference	Noun	ar:التفضيل الزمني	de:Zeitpräferenz	en:time preference	es:preferencia temporal	fa:ترجیح زمانی	fr:préférence temporelle	he:העדפת זמן	hi:समय वरीयता	ja:時間選好	ko:시간 선호	pt:preferência temporal	ru:временное предпочтение	tr:zaman tercihi	ur:وقتی ترجیح	zh:时间偏好
 c:timelapse	Noun	ar:مسرعة زمنية	de:Zeitraffer	en:timelapse	es:lapso de tiempo	fa:تایم لپس	fr:time-lapse	he:תמונות מואצות	hi:टाइमलैप्स	ja:タイムラプス	ko:타임랩스	pt:timelapse	ru:таймлапс	tr:zaman atlamalı çekim	ur:ٹائم لیپس	zh:延时摄影
 c:timeslot	Noun	ar:فترة زمنية	de:Sendeplatz	en:timeslot	es:franja horaria	fa:بازه زمانی	fr:créneau horaire	he:רצועת זמן	hi:समय स्थान	ja:時間枠	ko:시간대	pt:horário TV	ru:временной слот	tr:zaman dilimi	ur:وقفہ وقت	zh:播出时段
@@ -9980,6 +10012,7 @@ c:tv-show	Noun	ar:برنامج تلفزيوني	de:Fernsehsendung	en:TV show	es:
 c:tv-station	Noun	ar:محطة تلفزيونية	de:Fernsehstation	en:TV station	es:estación de televisión	fa:ایستگاه تلویزیونی	fr:station de télévision	he:תחנת טלוויזיה	hi:टीवी स्टेशन	ja:テレビ局	ko:방송국	pt:estação de TV	ru:телестанция	tr:TV istasyonu	ur:ٹی وی اسٹیشن	zh:电视台
 c:tweed	Noun	ar:التويد	de:Tweed	en:tweed	es:tweed	fa:توید	fr:tweed	he:טוויד	hi:ट्वीड	ja:ツイード	ko:트위드	pt:tweed	ru:твид	tr:tüvit	ur:ٹوید	zh:粗花呢
 c:tweezers	Noun	ar:ملقط	de:Pinzette	en:tweezers	es:pinzas	fa:موچین	fr:pince à épiler	he:פינצטה	hi:चिमटी	ja:ピンセット	ko:핀셋	pt:pinça	ru:пинцет	tr:cımbız	ur:چمٹی	zh:镊子
+c:twilight	Noun	ar:الشفق	de:Dämmerung	en:twilight	es:crepúsculo	fa:گرگ و میش	fr:crépuscule	he:דמדומים	hi:गोधूलि	ja:黄昏	ko:황혼	pt:crepúsculo	ru:сумерки	tr:alacakaranlık	ur:شفق	zh:暮光
 c:twin-prime	Noun	ar:الاعداد الاولية التوامية	de:Primzahlzwilling	en:twin prime	es:primo gemelo	fa:اعداد اول دوقلو	fr:nombres premiers jumeaux	he:ראשוניים תאומים	hi:जुड़वाँ अभाज्य	ja:双子素数	ko:쌍둥이 소수	pt:primos gêmeos	ru:простые числа-близнецы	tr:ikiz asal	ur:جوڑواں اول عدد	zh:孪生素数
 c:twirl	Verb	ar:دار بخفة	de:wirbeln,pirouettieren	en:twirl	es:dar vueltas,girar con gracia	fa:چرخ زدن سریع	fr:tournoyer,faire des pirouettes	he:להסתחרר	hi:फिरकी लेना	ja:くるくる回る	ko:빙그르르 돌다	pt:rodopiar	ru:кружиться на месте	tr:fırıldak gibi dönmek	ur:گھرنی کی طرح گھومنا	zh:旋转打转
 c:two	Noun	ar:اثنان,اثنين	de:zwei	en:two	es:dos	fa:دو	fr:deux	he:שניים	hi:दो	ja:二,に	ko:둘,이	pt:dois	ru:два	tr:iki	ur:دو	zh:二,两
@@ -10373,6 +10406,9 @@ c:wedding-dress	Noun	ar:فستان زفاف	de:Hochzeitskleid	en:wedding dress	e
 c:weed	Noun	ar:عشب ضار,نبتة ضارة	de:Unkraut	en:weed	es:mala hierba,maleza	fa:علف هرز	fr:mauvaise herbe	he:עשב שוטה	hi:खरपतवार	ja:雑草	ko:잡초	pt:erva daninha	ru:сорняк	tr:yabani ot	ur:گھاس پھوس	zh:杂草
 c:weed-puller	Noun	ar:أداة نزع الأعشاب	de:Unkrautstecher	en:weed puller	es:desyerbador	fa:علف‌کش	fr:arrache-mauvaises herbes	he:עקירת עשבים	hi:खरपतवार हटाने वाला	ja:草引き	ko:잡초 제거기	pt:arrancador de ervas daninhas	ru:корнеизвлекатель	tr:yabani ot söküm aleti	ur:گھاس کا اکھاڑنے والا	zh:拔草器
 c:week	Noun	ar:أسبوع	de:Woche	en:week	es:semana	fa:هفته	fr:semaine	he:שבוע	hi:सप्ताह,हफ़्ता	ja:週	ko:주,주일	pt:semana	ru:неделя	tr:hafta	ur:ہفتہ	zh:星期,周
+c:week-time	Noun	ar:أسبوع	de:Woche	en:week	es:semana	fa:هفته	fr:semaine	he:שבוע	hi:सप्ताह	ja:週	ko:주	pt:semana	ru:неделя	tr:hafta	ur:ہفتہ	zh:周
+c:weekday	Noun	ar:يوم أسبوعي	de:Wochentag	en:weekday	es:día de semana	fa:روز هفته	fr:jour de semaine	he:יום חול	hi:सप्ताह का दिन	ja:平日の日	ko:주중	pt:dia de semana	ru:будний день	tr:hafta içi	ur:ہفتہ کا دن	zh:工作日平日
+c:weekend	Noun	ar:عطلة نهاية الأسبوع	de:Wochenende	en:weekend	es:fin de semana	fa:آخر هفته	fr:week-end	he:סוף שבוע	hi:सप्ताहांत	ja:週末	ko:주말	pt:fim de semana	ru:выходные	tr:hafta sonu	ur:ویک اینڈ	zh:周末
 c:weevil	Noun	ar:سوسة	de:Rüsselkäfer	en:weevil	es:gorgojo	fa:سرخرطومی	fr:charançon	he:חדקונית	hi:घुन	ja:ゾウムシ	ko:바구미	pt:gorgulho	ru:долгоносик	tr:hortumlu böcek	ur:سوسری	zh:象鼻虫
 c:weight	Noun	ar:وزن	de:Gewicht	en:weight	es:peso	fa:وزن	fr:poids	he:משקל	hi:भार,वज़न	ja:重さ,重量	ko:무게,중량	pt:peso	ru:вес	tr:ağırlık	ur:وزن,بھار	zh:重量
 c:weight-physics	Noun	ar:وزن	de:Gewicht	en:weight	es:peso	fa:وزن	fr:poids	he:משקל	hi:भार	ja:重さ	ko:무게	pt:peso	ru:вес	tr:ağırlık	ur:وزن	zh:重量
@@ -10498,6 +10534,7 @@ c:word-sense-disambiguation	Noun	ar:إزالة الغموض الدلالي	de:Wo
 c:work	Verb	ar:عمل,يعمل	de:arbeiten	en:work,works,worked	es:trabajar	fa:کار کردن	fr:travailler	he:לעבוד	hi:काम करना	ja:働く	ko:일하다	pt:trabalhar	ru:работать	tr:çalışmak	ur:کام کرنا	zh:工作
 c:work-energy	Noun	ar:الشغل الفيزيائي	de:mechanische Arbeit	en:physical work	es:trabajo mecánico	fa:کار مکانیکی	fr:travail mécanique	he:עבודה פיזיקלית	hi:भौतिक कार्य	ja:仕事	ko:일	pt:trabalho mecânico	ru:механическая работа	tr:mekanik iş	ur:طبعی کام	zh:功
 c:work-hardening	Noun	ar:التصلب بالتشكيل	de:Kaltverfestigung	en:work hardening	es:endurecimiento por deformación	fa:سخت‌کاری کرنشی	fr:écrouissage	he:ייצוב קר	hi:कार्य कठोरता	ja:加工硬化	ko:가공 경화	pt:encruamento	ru:наклёп	tr:pekleşme	ur:سخت کاری	zh:加工硬化
+c:workday	Noun	ar:يوم عمل	de:Werktag	en:workday	es:día laboral	fa:روز کاری	fr:jour ouvrable	he:יום עבודה	hi:कार्यदिवस	ja:平日	ko:평일	pt:dia útil	ru:рабочий день	tr:iş günü	ur:کام کا دن	zh:工作日
 c:worker	Noun	ar:عامل	de:Arbeiter,Arbeiterin	en:worker,laborer	es:trabajador,obrero	fa:کارگر	fr:travailleur,ouvrier	he:עובד,פועל	hi:मज़दूर,कामगार	ja:労働者	ko:노동자	pt:trabalhador,operário	ru:рабочий,работник	tr:işçi	ur:مزدور,کارکن	zh:工人,劳动者
 c:worker-bee	Noun	ar:نحلة عاملة	de:Arbeitsbiene	en:worker bee	es:abeja obrera	fa:زنبور کارگر	fr:abeille ouvrière	he:דבורת עובדת	hi:श्रमिक मधुमक्खी	ja:働き蜂	ko:일벌	pt:abelha operária	ru:рабочая пчела	tr:işçi arı	ur:کارکن مکھی	zh:工蜂
 c:working-memory	Noun	ar:الذاكرة العاملة	de:Arbeitsgedächtnis	en:working memory	es:memoria de trabajo	fa:حافظه کاری	fr:mémoire de travail	he:זיכרון עבודה	hi:कार्यशील स्मृति	ja:ワーキングメモリ	ko:작업 기억	pt:memória de trabalho	ru:рабочая память	tr:çalışma belleği	ur:کام کی یاداشت	zh:工作记忆
@@ -10521,6 +10558,7 @@ c:wrestling	Noun	ar:مصارعة	de:Ringen	en:wrestling	es:lucha libre,lucha	fa:
 c:wrestling-sport	Noun	ar:مصارعة	de:Ringen	en:wrestling	es:lucha libre	fa:کشتی	fr:lutte	he:היאבקות	hi:कुश्ती	ja:レスリング	ko:레슬링	pt:luta livre	ru:борьба	tr:güreş	ur:کشتی	zh:摔跤
 c:wrist	Noun	ar:معصم	de:Handgelenk	en:wrist	es:muñeca	fa:مچ	fr:poignet	he:פרק כף היד	hi:कलाई	ja:手首	ko:손목	pt:pulso	ru:запястье	tr:bilek	ur:کلائی	zh:手腕,腕
 c:wrist-body	Noun	ar:معصم	de:Handgelenk	en:wrist	es:muñeca	fa:مچ دست	fr:poignet	he:שורש כף היד	hi:कलाई	ja:手首	ko:손목	pt:pulso	ru:запястье	tr:bilek	ur:کلائی	zh:手腕
+c:wristwatch	Noun	ar:ساعة يد	de:Armbanduhr	en:wristwatch	es:reloj de pulsera	fa:ساعت مچی	fr:montre-bracelet	he:שעון יד	hi:कलाई घड़ी	ja:腕時計	ko:손목시계	pt:relógio de pulso	ru:наручные часы	tr:kol saati	ur:کلائی گھڑی	zh:腕表
 c:writ	Noun	ar:أمر قانوني	de:gerichtliche Verfügung	en:writ	es:auto judicial	fa:حکم قضایی	fr:ordonnance judiciaire	he:צו שיפוטי	hi:रिट	ja:令状	ko:영장	pt:mandado	ru:судебное предписание	tr:mahkeme emri	ur:رٹ	zh:令状
 c:write	Verb	ar:كتب,يكتب	de:schreiben	en:write,writes,wrote,writing	es:escribir	fa:نوشتن	fr:écrire	he:לכתוב	hi:लिखना	ja:書く	ko:쓰다	pt:escrever	ru:писать	tr:yazmak	ur:لکھنا	zh:写
 c:writer	Noun	ar:كاتب	de:Schriftsteller	en:writer	es:escritor	fa:نویسنده	fr:écrivain	he:סופר	hi:लेखक	ja:作家,ライター	ko:작가,라이터	pt:escritor	ru:писатель	tr:yazar	ur:لکھاری	zh:作家,作者
@@ -10544,6 +10582,7 @@ c:yarmulke	Noun	ar:كيباه	de:Kippa	en:yarmulke	es:kipá	fa:کیپا	fr:kippa
 c:yaw	Noun	ar:انحراف جانبي	de:Gieren	en:yaw	es:guiñada	fa:انحراف	fr:lacet	he:פיתול	hi:याव	ja:ヨー	ko:요	pt:guinada	ru:рыскание	tr:sapma	ur:یا	zh:偏航
 c:yazidi-faith	Noun	ar:الإيزيدية	de:Jesiden	en:Yazidism	es:yazidismo	fa:ایزدی	fr:yézidisme	he:יזידים	hi:यज़ीदी	ja:ヤズィーディー教	ko:야지디교	pt:yazidismo	ru:езидизм	tr:Yezidilik	ur:یزیدی	zh:雅兹迪教
 c:year	Noun	ar:سنة,عام	de:Jahr	en:year,years	es:año	fa:سال	fr:an,année	he:שנה	hi:वर्ष,साल	ja:年	ko:년,해	pt:ano	ru:год	tr:yıl,sene	ur:سال	zh:年
+c:year-time	Noun	ar:سنة	de:Jahr	en:year	es:año	fa:سال	fr:an	he:שנה	hi:वर्ष	ja:年	ko:년	pt:ano	ru:год	tr:yıl	ur:سال	zh:年
 c:yellow	Adjective	ar:أصفر	de:gelb	en:yellow	es:amarillo	fa:زرد	fr:jaune	he:צהוב	hi:पीला	ja:黄色,黄色い	ko:노란,노랑	pt:amarelo	ru:жёлтый	tr:sarı	ur:زرد,پیلا	zh:黄,黄色
 c:yellow-river	Noun	ar:النهر الأصفر,هوانغ خه	de:Gelber Fluss,Huang He	en:Yellow River,Huang He	es:río Amarillo,Huang He	fa:رود زرد,هوانگ‌هه	fr:fleuve Jaune,Huang He	he:הנהר הצהוב,חואנג הה	hi:पीली नदी,ह्वांग हो	ja:黄河	ko:황허,황하	pt:rio Amarelo,Huang He	ru:Хуанхэ	tr:Sarı Irmak,Huang He	ur:دریائے زرد,ہوانگ ہو	zh:黄河
 c:yellow-river-china	Noun	ar:النهر الأصفر	de:Gelber Fluss	en:Yellow river	es:río Amarillo	fa:رود زرد	fr:fleuve Jaune	he:הנהר הצהוב	hi:पीली नदी	ja:黄河	ko:황하	pt:rio Amarelo	ru:река Хуанхэ	tr:Sarı Nehir	ur:زرد دریا	zh:黄河
@@ -10555,6 +10594,7 @@ c:yenisei	Noun	ar:ينيسي,نهر ينيسي	de:Jenissei	en:Yenisei,Yenisey	es
 c:yenisei-river	Noun	ar:نهر ينيسي	de:Jenissei	en:Yenisei river	es:río Yeniséi	fa:رود ینی‌سئی	fr:Ienisseï	he:נהר הייניסיי	hi:येनिसेई नदी	ja:エニセイ川	ko:예니세이강	pt:rio Yenisei	ru:река Енисей	tr:Yenisey Nehri	ur:دریائے ینیسی	zh:叶尼塞河
 c:yeoman	Noun	ar:فلاح حر	de:Freisasse	en:yeoman	es:yeoman	fa:کشاورز آزاد	fr:yeoman	he:יאומן	hi:यियोमन	ja:ヨーマン	ko:요먼	pt:yeoman	ru:йомен	tr:çiftçi	ur:آزاد کسان	zh:自耕农
 c:yesterday	Noun	ar:أمس,البارحة	de:gestern	en:yesterday	es:ayer	fa:دیروز	fr:hier	he:אתמול	hi:कल	ja:昨日	ko:어제	pt:ontem	ru:вчера	tr:dün	ur:کل	zh:昨天
+c:yesteryear	Noun	ar:العام الماضي	de:vergangenes Jahr	en:yesteryear	es:antaño	fa:پارسال	fr:jadis	he:שנה שעברה	hi:पिछले वर्ष	ja:昨年	ko:작년	pt:antanho	ru:былые годы	tr:geçmiş yıllar	ur:گزشتہ سال	zh:往年
 c:yeti	Noun	ar:اليتي	de:Yeti	en:yeti	es:yeti	fa:یتی	fr:yéti	he:יטי	hi:येती	ja:イエティ	ko:예티	pt:yeti	ru:йети	tr:yeti	ur:یتی	zh:雪人
 c:yew-tree	Noun	ar:الطقسوس	de:Eibe	en:yew	es:tejo	fa:سرخدار	fr:if	he:טקסוס	hi:यू वृक्ष	ja:イチイ	ko:주목	pt:teixo	ru:тис	tr:porsuk ağacı	ur:یو درخت	zh:紫杉
 c:yggdrasil	Noun	ar:يغدراسيل	de:Yggdrasil	en:Yggdrasil	es:Yggdrasil	fa:یگدراسیل	fr:Yggdrasil	he:יגדראסיל	hi:यग्दरसिल	ja:ユグドラシル	ko:위그드라실	pt:Yggdrasil	ru:Иггдрасиль	tr:Yggdrasil	ur:یگدراسل	zh:世界树
