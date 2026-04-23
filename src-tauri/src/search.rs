@@ -408,6 +408,60 @@ fn init_db(path: &Path) -> Result<Connection, String> {
         DROP TABLE IF EXISTS index_meta;
     ").map_err(|e| format!("Failed to drop obsolete index tables: {}", e))?;
 
+    // ─── Sky View Write-Time Derivation (MIG-001 Step 2) ────────────────
+    // sky_nodes + sky_links are the persisted derived surface for the Sky
+    // View graph. Step 2 ships the schema only — the triggers that keep
+    // them synced with note_meta / note_links land in Steps 3–4, and the
+    // back-fill populator in Step 5. Until then these tables stay empty
+    // and the JS buildSkyData() path still drives the UI.
+    //
+    // Design notes:
+    // - sky_nodes keyed by `path` (stable across renames of the display
+    //   name) matches note_meta's PK. `id` is the lower-cased name that
+    //   the frontend uses as the join key to sky_links (Invariant 3 from
+    //   the Phase-1 doc — cross-library name collision accepted as-is).
+    // - sky_links.target_name is name-based (not path-based) because
+    //   wikilinks target names and the resolver lives elsewhere. Matches
+    //   the current SkyLink.target shape.
+    // - UNIQUE(source_path, target_name, link_type) is the dedup
+    //   invariant — duplicate wikilinks in a note collapse to one edge
+    //   (Invariant 2). `count` tracks the pre-dedup multiplicity so we
+    //   don't lose information.
+    // - No FOREIGN KEYs: back-fill order can insert links before nodes
+    //   during a chunked rebuild, and SQLite FK enforcement is off by
+    //   default. The triggers on note_meta / note_links maintain
+    //   integrity via the UNIQUE constraints plus ON DELETE cascades in
+    //   the trigger bodies (Steps 3–4).
+    conn.execute_batch("
+        CREATE TABLE IF NOT EXISTS sky_nodes (
+            path TEXT PRIMARY KEY,
+            id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            library_name TEXT NOT NULL,
+            link_count INTEGER NOT NULL DEFAULT 0,
+            outgoing_count INTEGER NOT NULL DEFAULT 0,
+            stratum TEXT,
+            maturity TEXT,
+            origin_type TEXT,
+            created_at INTEGER,
+            updated_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_sky_nodes_library ON sky_nodes(library_name);
+        CREATE INDEX IF NOT EXISTS idx_sky_nodes_id ON sky_nodes(id);
+
+        CREATE TABLE IF NOT EXISTS sky_links (
+            source_path TEXT NOT NULL,
+            target_name TEXT NOT NULL,
+            link_type TEXT NOT NULL DEFAULT '',
+            weight REAL NOT NULL DEFAULT 0,
+            count INTEGER NOT NULL DEFAULT 1,
+            UNIQUE(source_path, target_name, link_type)
+        );
+        CREATE INDEX IF NOT EXISTS idx_sky_links_source ON sky_links(source_path);
+        CREATE INDEX IF NOT EXISTS idx_sky_links_target ON sky_links(target_name);
+        CREATE INDEX IF NOT EXISTS idx_sky_links_type ON sky_links(link_type);
+    ").map_err(|e| format!("Failed to create sky_* tables: {}", e))?;
+
     // ─── One-time FTS5 rebuild after tokenizer migration ─────────────
     // If we bumped past FTS_SCHEMA_VERSION above we dropped the old
     // `notes_fts` + `notes_vocab`. The `CREATE VIRTUAL TABLE IF NOT
