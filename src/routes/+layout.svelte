@@ -2507,6 +2507,27 @@
 				};
 				const graphInvokeStart = performance.now();
 				const graphInvokeStartUnixMs = Date.now();
+				// MIG-001 Step 9 (parallel): kick off the pre-shaped sky_*
+				// payload invoke CONCURRENTLY with the classic graph IPC.
+				// SQLite WAL allows both read commands to hit their own
+				// dedicated connections without contention. Total wall time
+				// becomes max(graph_ipc, sky_ipc) instead of their sum — on
+				// the target universe this is bounded by the slower graph
+				// IPC (~7s) and makes the sky IPC effectively free.
+				type SkySnapshot = {
+					nodes: SkyNode[];
+					links: SkyLink[];
+					isReady: boolean;
+					timingsMs: Array<[string, number]>;
+				};
+				const skyPromise = (async (): Promise<SkySnapshot | null> => {
+					try {
+						return await invoke<SkySnapshot>('cache_boot_snapshot_sky');
+					} catch (err) {
+						console.warn('[sky] cache_boot_snapshot_sky failed, falling back to buildSkyData:', err);
+						return null;
+					}
+				})();
 				try {
 					graph = await invoke('cache_boot_snapshot_graph');
 				} catch {
@@ -2543,40 +2564,20 @@
 
 				const libraryList = $libraries;
 				if (libraryList.length > 0 && graph.links.length > 0) {
-					// MIG-001 Step 9: prefer the pre-shaped sky_* payload when
-					// the back-fill has completed (schema_versions.sky ready).
-					// Zero JS iteration over 232k edges, shape pre-built in
-					// Rust. Falls back to the legacy buildSkyData path on
-					// fresh installs where the back-fill hasn't stamped yet,
-					// so no user is left with an empty Sky View during the
-					// migration window. buildSkyData is still exported for
-					// this fallback and for rollback safety (keep one release
-					// before deleting).
-					let usedSkyTables = false;
-					try {
-						const sky = await invoke<{
-							nodes: SkyNode[];
-							links: SkyLink[];
-							isReady: boolean;
-							timingsMs: Array<[string, number]>;
-						}>('cache_boot_snapshot_sky');
-						// Trust the readiness flag — don't second-guess with a
-						// length check. A Universe with is_ready=true but zero
-						// sky_nodes is legitimately empty; falling back to
-						// buildSkyData would produce the same empty result.
-						if (sky.isReady) {
-							skyNodes = sky.nodes;
-							skyLinks = sky.links;
-							skyVersion++;
-							usedSkyTables = true;
-						}
-					} catch (err) {
-						// Surface IPC failures — during the MIG-001 window a
-						// silent catch would mask command removal, Rust
-						// panics, or serde shape drift. One warn per boot.
-						console.warn('[sky] cache_boot_snapshot_sky failed, falling back to buildSkyData:', err);
-					}
-					if (!usedSkyTables) {
+					// Resolve the parallel sky snapshot kicked off earlier.
+					// If the graph IPC took longer (common), this await is
+					// free — the sky payload is already in hand. Fallback
+					// to buildSkyData when the back-fill hasn't stamped
+					// schema_versions.sky yet or the IPC errored.
+					const sky = await skyPromise;
+					if (sky && sky.isReady) {
+						// Trust the readiness flag — a zero-node Universe
+						// with isReady=true is legitimately empty; falling
+						// back would produce the same empty result.
+						skyNodes = sky.nodes;
+						skyLinks = sky.links;
+						skyVersion++;
+					} else {
 						const { nodes, links: gLinks } = buildSkyData(graph.links, allNotes);
 						skyNodes = nodes;
 						skyLinks = gLinks;
