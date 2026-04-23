@@ -151,6 +151,16 @@
 	} = $props();
 
 	let titleValue = $state(title);
+	// Re-sync when the title prop changes from outside (rename from parent,
+	// frontmatter title edited elsewhere, second-screen update). Skip while
+	// the user is actively editing the input — we don't want to stomp
+	// their typing. Without this, titleValue was captured once at mount
+	// and subsequent renames displayed a stale title in the big heading
+	// even though Properties showed the correct current title.
+	$effect(() => {
+		if (titleEl && document.activeElement === titleEl) return;
+		if (titleValue !== title) titleValue = title;
+	});
 	let currentStage = $state(stage?.toLowerCase() ?? '');
 	// Stage sync: breadcrumb ← Properties panel via onstagechange callback (no $effect needed)
 	let titleEl: HTMLInputElement | undefined;

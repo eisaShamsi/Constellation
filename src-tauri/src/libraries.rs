@@ -838,6 +838,16 @@ pub fn rename_item(app: tauri::AppHandle, old_path: String, new_path: String) ->
         let old_title = extract_frontmatter_title(&content)
             .unwrap_or_else(|| old.file_stem().unwrap_or_default().to_string_lossy().to_string());
 
+        // Idempotency guard: if the frontmatter title already matches the
+        // requested new title, no write is needed. Without this, a stale
+        // titleValue in the frontend (display-sync bug) that fires a blur
+        // event would pass old_title == new_title to update_frontmatter_title,
+        // which would dutifully append the current title to its own aliases
+        // list — producing entries like [Untitled, TestBug001, TestBug001].
+        if old_title == new_title {
+            return Ok(old_path);
+        }
+
         let updated = update_frontmatter_title(&content, &new_title, &old_title);
         fs::write(old, &updated)
             .map_err(|e| format!("Failed to write note: {}", e))?;
