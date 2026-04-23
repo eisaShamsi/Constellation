@@ -366,6 +366,7 @@ c:archaic	Noun	ar:العصر العتيق,الحقبة الأثرية	de:archais
 c:archery	Noun	ar:الرماية بالقوس	de:Bogenschießen	en:archery	es:tiro con arco	fa:تیراندازی با کمان	fr:tir à l'arc	he:קשתות	hi:तीरंदाजी	ja:アーチェリー	ko:양궁	pt:tiro com arco	ru:стрельба из лука	tr:okçuluk	ur:تیر اندازی	zh:射箭
 c:archetype	Noun	ar:نموذج أولي	de:Archetyp	en:archetype	es:arquetipo	fa:کهن‌الگو	fr:archétype	he:ארכיטיפ	hi:मूलरूप	ja:元型	ko:원형	pt:arquétipo	ru:архетип	tr:arketip	ur:بنیادی نمونہ	zh:原型
 c:archipelago	Noun	ar:أرخبيل	de:Archipel	en:archipelago	es:archipiélago	fa:مجمع الجزایر	fr:archipel	he:ארכיפלג	hi:द्वीपसमूह	ja:群島	ko:군도	pt:arquipélago	ru:архипелаг	tr:takımadalar	ur:جزیرہ نما	zh:群岛
+c:archipelago-geo	Noun	ar:أرخبيل	de:Archipel	en:archipelago	es:archipiélago	fa:مجمع‌الجزایر	fr:archipel	he:ארכיפלג	hi:द्वीपसमूह	ja:諸島	ko:군도	pt:arquipélago	ru:архипелаг	tr:takımadalar	ur:جزائر	zh:群岛
 c:arctic	Noun	ar:القطب الشمالي,المنطقة القطبية الشمالية	de:Arktis	en:Arctic,the Arctic	es:Ártico	fa:قطب شمال,منطقه قطبی شمالی	fr:Arctique	he:ארקטי,האזור הארקטי	hi:आर्कटिक,उत्तरी ध्रुवीय क्षेत्र	ja:北極,北極圏	ko:북극,북극권	pt:Ártico	ru:Арктика	tr:Arktik,Kuzey Kutbu	ur:قطب شمالی,آرکٹک	zh:北极,北极地区
 c:arctic-ocean	Noun	ar:المحيط المتجمد الشمالي	de:Arktischer Ozean,Nordpolarmeer	en:Arctic Ocean	es:Océano Ártico,Océano Glacial Ártico	fa:اقیانوس منجمد شمالی	fr:Océan Arctique,Océan Glacial Arctique	he:האוקיינוס הארקטי	hi:आर्कटिक महासागर	ja:北極海	ko:북극해	pt:Oceano Ártico,Oceano Glacial Ártico	ru:Северный Ледовитый океан	tr:Kuzey Buz Denizi	ur:بحر منجمد شمالی	zh:北冰洋
 c:arcturus	Noun	ar:السماك الرامح,أركتوروس	de:Arkturus	en:Arcturus	es:Arturo	fa:سماک رامح	fr:Arcturus	he:ארקטורוס	hi:आर्कटुरस	ja:アークトゥルス	ko:아르크투루스	pt:Arcturo	ru:Арктур	tr:Arcturus	ur:آرکٹورس	zh:大角星
@@ -596,6 +597,7 @@ c:basilica	Noun	ar:بازيليكا	de:Basilika	en:basilica	es:basílica	fa:با
 c:basilica-church	Noun	ar:بازيليكا	de:Basilika	en:basilica	es:basílica	fa:بازیلیکا	fr:basilique	he:בזיליקה	hi:बेसिलिका	ja:バシリカ	ko:바실리카	pt:basílica	ru:базилика	tr:bazilika	ur:باسیلیکا	zh:大殿
 c:basilisk-lizard	Noun	ar:بازيليسك	de:Basilisk	en:basilisk lizard	es:basilisco	fa:بازیلیسک	fr:basilic	he:בזיליסק	hi:बेसिलिस्क	ja:バシリスク	ko:바실리스크	pt:basilisco	ru:василиск	tr:bazilisk kertenkele	ur:باسیلسک چھپکلی	zh:冠蜥
 c:basin	Noun	ar:حوض	de:Becken,Senke	en:basin	es:cuenca	fa:حوضه,گود	fr:bassin	he:אגן	hi:बेसिन,द्रोणी	ja:盆地	ko:분지	pt:bacia	ru:бассейн,котловина	tr:havza	ur:حوض	zh:盆地
+c:basin-geo	Noun	ar:حوض جغرافي	de:geografisches Becken	en:geographic basin	es:cuenca geográfica	fa:حوضه جغرافیایی	fr:bassin géographique	he:אגן גאוגרפי	hi:भौगोलिक बेसिन	ja:地形盆地	ko:지형 분지	pt:bacia geográfica	ru:географическая котловина	tr:coğrafi havza	ur:جغرافیائی طاس	zh:地理盆地
 c:basket	Noun	ar:سلة	de:Korb	en:basket	es:cesta,canasta	fa:سبد	fr:panier	he:סל	hi:टोकरी,बास्केट	ja:かご,バスケット	ko:바구니,바스켓	pt:cesta,cesto	ru:корзина,корзинка	tr:sepet,zembil	ur:ٹوکری	zh:篮子,筐
 c:basketball	Noun	ar:كرة السلة	de:Basketball	en:basketball	es:baloncesto,básquetbol	fa:بسکتبال	fr:basket-ball,basket	he:כדורסל	hi:बास्केटबॉल	ja:バスケットボール	ko:농구	pt:basquetebol,basquete	ru:баскетбол	tr:basketbol	ur:باسکٹ بال	zh:篮球
 c:bass	Noun	ar:باس,قاروص	de:Bass	en:bass	es:lubina	fa:باس	fr:bar,loup de mer	he:לברק	hi:बास	ja:スズキ	ko:베이스	pt:robalo	ru:басс	tr:levrek	ur:باس	zh:鲈
@@ -614,6 +616,7 @@ c:battery	Noun	ar:بطارية	de:Batterie,Akku	en:battery	es:batería,pila	fa:�
 c:battle	Noun	ar:معركة	de:Schlacht	en:battle	es:batalla	fa:نبرد	fr:bataille	he:קרב	hi:लड़ाई	ja:戦闘	ko:전투	pt:batalha	ru:битва,сражение	tr:muharebe	ur:لڑائی	zh:战斗
 c:battlement	Noun	ar:الشرفات الدفاعية	de:Zinnen	en:battlement	es:almena	fa:کنگره	fr:créneaux	he:חרך	hi:मोर्चेबंदी	ja:胸墻	ko:성가퀴	pt:ameia	ru:зубец	tr:mazgal	ur:کنگرہ	zh:垛口
 c:bay	Noun	ar:خليج صغير	de:Bucht	en:bay	es:bahía	fa:خلیج کوچک	fr:baie	he:מפרץ	hi:खाड़ी	ja:湾	ko:만	pt:baía	ru:залив	tr:koy	ur:خلیج	zh:海湾
+c:bay-geo	Noun	ar:خليج صغير	de:Bucht	en:bay	es:bahía	fa:خلیج کوچک	fr:baie	he:מפרץ	hi:खाड़ी	ja:湾	ko:만	pt:baía	ru:залив	tr:koy	ur:خلیج	zh:海湾
 c:bay-of-bengal	Noun	ar:خليج البنغال	de:Golf von Bengalen	en:Bay of Bengal	es:Golfo de Bengala	fa:خلیج بنگال	fr:Golfe du Bengale	he:מפרץ בנגל	hi:बंगाल की खाड़ी	ja:ベンガル湾	ko:벵골만	pt:Baía de Bengala,Golfo de Bengala	ru:Бенгальский залив	tr:Bengal Körfezi	ur:خلیج بنگال	zh:孟加拉湾
 c:bayesian	Adjective	ar:البايزي	de:Bayesianisch	en:Bayesian	es:bayesiano	fa:بیزی	fr:bayésien	he:בייזיאני	hi:बेयसियन	ja:ベイズ的	ko:베이즈의	pt:bayesiano	ru:байесовский	tr:Bayes'çi	ur:بیزین	zh:贝叶斯
 c:bayesian-epistemology	Noun	ar:الإبستيمولوجيا البيزية	de:Bayesianische Erkenntnistheorie	en:Bayesian epistemology	es:epistemología bayesiana	fa:معرفت‌شناسی بیزی	fr:épistémologie bayésienne	he:אפיסטמולוגיה בייזיאנית	hi:बेयसियन ज्ञानमीमांसा	ja:ベイズ認識論	ko:베이지안 인식론	pt:epistemologia bayesiana	ru:байесианская эпистемология	tr:Bayesci epistemoloji	ur:بیزیئن معرفیات	zh:贝叶斯认识论
@@ -825,6 +828,7 @@ c:boot-process	Noun	ar:عملية الإقلاع	de:Startvorgang	en:boot process
 c:boots	Noun	ar:حذاء طويل	de:Stiefel	en:boots	es:botas	fa:چکمه	fr:bottes	he:מגפיים	hi:बूट	ja:ブーツ	ko:부츠	pt:botas	ru:сапоги	tr:çizmeler	ur:بوٹ	zh:靴子
 c:bora	Noun	ar:ريح البورا	de:Bora	en:bora	es:bora	fa:بورا	fr:bora	he:בורה	hi:बोरा	ja:ボラ	ko:보라	pt:bora	ru:бора	tr:bora rüzgârı	ur:بورا ہوا	zh:布拉风
 c:border	Noun	ar:حدود,حد	de:Grenze	en:border,frontier,boundary	es:frontera,borde	fa:مرز	fr:frontière	he:גבול	hi:सीमा	ja:国境,境界	ko:국경,경계	pt:fronteira,borda	ru:граница	tr:sınır	ur:سرحد	zh:边界,边境
+c:border-geo	Noun	ar:حدود جغرافية	de:geografische Grenze	en:geographic border	es:frontera geográfica	fa:مرز جغرافیایی	fr:frontière géographique	he:גבול גאוגרפי	hi:भौगोलिक सीमा	ja:地理的境界	ko:지리적 국경	pt:fronteira geográfica	ru:географическая граница	tr:coğrafi sınır	ur:جغرافیائی سرحد	zh:地理边界
 c:boreal	Noun	ar:الغابة البوريالية	de:borealer Wald	en:boreal forest	es:bosque boreal	fa:جنگل بوریالی	fr:forêt boréale	he:יער בוריאלי	hi:बोरियल वन	ja:北方林	ko:북방림	pt:floresta boreal	ru:бореальный лес	tr:boreyal orman	ur:شمالی جنگل	zh:北方针叶林
 c:boredom	Noun	ar:ملل	de:Langeweile	en:boredom	es:aburrimiento	fa:کسالت	fr:ennui	he:שעמום	hi:ऊब	ja:退屈	ko:지루함	pt:tédio	ru:скука	tr:sıkıntı	ur:بوریت	zh:无聊
 c:boron	Noun	ar:بورون	de:Bor	en:boron	es:boro	fa:بور	fr:bore	he:בורון	hi:बोरॉन	ja:ホウ素	ko:붕소	pt:boro	ru:бор	tr:bor	ur:بورون	zh:硼
@@ -1003,6 +1007,7 @@ c:cantaloupe	Noun	ar:شمام,كانتالوب	de:Cantaloupe-Melone	en:cantaloup
 c:cantilever	Noun	ar:ذراع متدلية	de:Kragarm	en:cantilever	es:voladizo	fa:کنسول	fr:porte-à-faux	he:קנטיליבר	hi:कैंटिलीवर	ja:片持ち梁	ko:캔틸레버	pt:balanço	ru:консоль	tr:konsol	ur:لٹکی ہوئی سہارہ	zh:悬臂
 c:canvas	Noun	ar:كانفاس	de:Leinwand	en:canvas	es:lienzo	fa:کنواس	fr:toile	he:קנבס	hi:कैनवास	ja:キャンバス	ko:캔버스	pt:lona	ru:холст	tr:kanvas	ur:کینوس	zh:帆布
 c:canyon	Noun	ar:وادي سحيق,أخدود	de:Schlucht,Canyon	en:canyon,gorge	es:cañón,desfiladero	fa:تنگه,دره عمیق	fr:canyon,gorge	he:קניון	hi:घाटी	ja:峡谷,キャニオン	ko:협곡	pt:cânion,desfiladeiro	ru:каньон,ущелье	tr:kanyon	ur:گھاٹی	zh:峡谷
+c:canyon-geo	Noun	ar:أخدود عميق	de:Canyon	en:canyon	es:cañón	fa:دره عمیق	fr:canyon	he:קניון	hi:घाटी कैनियन	ja:峡谷	ko:협곡	pt:cânion	ru:каньон	tr:kanyon	ur:کینین	zh:峡谷
 c:canyon-landform	Noun	ar:أخدود	de:Schlucht,Canyon	en:canyon,gorge	es:cañón	fa:کانیون,دره عمیق	fr:canyon	he:קניון	hi:कैन्यन,खड्ड	ja:峡谷,キャニオン	ko:협곡	pt:cânion	ru:каньон	tr:kanyon	ur:گھاٹی	zh:峡谷
 c:cap	Noun	ar:قبعة	de:Kappe,Mütze	en:cap	es:gorra	fa:کلاه	fr:casquette	he:כובע מצחייה	hi:टोपी,कैप	ja:キャップ,帽子	ko:모자,캡	pt:boné	ru:кепка	tr:kep	ur:ٹوپی	zh:鸭舌帽
 c:cap-and-trade	Noun	ar:تحديد الانبعاثات والتداول	de:Emissionshandel	en:cap and trade	es:límite y comercio	fa:سقف و تجارت	fr:plafonnement et échange	he:מכסה ומסחר	hi:कैप और ट्रेड	ja:排出権取引	ko:배출권 거래	pt:limitação e comércio	ru:система торговли квотами	tr:emisyon ticareti	ur:حد اور تجارت	zh:限额与交易
@@ -1012,6 +1017,7 @@ c:capetian-dynasty	Noun	ar:سلالة كابيه	de:Kapetinger	en:Capetian dynas
 c:capillary	Noun	ar:الشعيرة الدموية	de:Kapillare	en:capillary	es:capilar	fa:مویرگ	fr:capillaire	he:נימה	hi:केशिका	ja:毛細血管	ko:모세혈관	pt:capilar	ru:капилляр	tr:kılcal damar	ur:خون کی نالی	zh:毛细血管
 c:capital	Noun	ar:رأس المال	de:Kapital	en:capital	es:capital	fa:سرمایه	fr:capital	he:הון	hi:पूंजी	ja:資本	ko:자본	pt:capital	ru:капитал	tr:sermaye,kapital	ur:سرمایہ	zh:资本
 c:capital-city	Noun	ar:عاصمة	de:Hauptstadt	en:capital,capital city	es:capital	fa:پایتخت	fr:capitale	he:בירה	hi:राजधानी	ja:首都	ko:수도	pt:capital	ru:столица	tr:başkent,başşehir	ur:دارالحکومت,راجدھانی	zh:首都
+c:capital-city-geo	Noun	ar:عاصمة البلد	de:Hauptstadt	en:capital city	es:ciudad capital	fa:پایتخت	fr:ville capitale	he:עיר הבירה	hi:राजधानी शहर	ja:首都	ko:수도	pt:capital	ru:столица	tr:başkent	ur:دار الحکومت	zh:首都
 c:capital-column	Noun	ar:تاج العمود	de:Kapitell	en:capital	es:capitel	fa:سر ستون	fr:chapiteau	he:כותרת עמוד	hi:स्तंभशीर्ष	ja:柱頭	ko:주두	pt:capitel	ru:капитель	tr:sütun başlığı	ur:ستون کا سر	zh:柱头
 c:capitalism	Noun	ar:رأسمالية	de:Kapitalismus	en:capitalism	es:capitalismo	fa:سرمایه داری	fr:capitalisme	he:קפיטליזם	hi:पूंजीवाद	ja:資本主義	ko:자본주의	pt:capitalismo	ru:капитализм	tr:kapitalizm	ur:سرمایہ داری	zh:资本主义
 c:capoeira	Noun	ar:كابويرا	de:Capoeira	en:capoeira	es:capoeira	fa:کاپویرا	fr:capoeira	he:קפוארה	hi:कापोएरा	ja:カポエイラ	ko:카포에이라	pt:capoeira	ru:капоэйра	tr:capoeira	ur:کیپویرا	zh:卡波耶拉
@@ -1381,6 +1387,7 @@ c:coalition	Noun	ar:ائتلاف	de:Koalition	en:coalition	es:coalición	fa:ائ
 c:coast	Noun	ar:ساحل	de:Küste	en:coast,coastline	es:costa	fa:ساحل	fr:côte	he:חוף	hi:तट	ja:海岸,沿岸	ko:해안,연안	pt:costa,litoral	ru:побережье	tr:sahil,kıyı	ur:ساحل	zh:海岸,海岸线
 c:coast-landform	Noun	ar:ساحل	de:Küste	en:coast,seacoast	es:costa	fa:ساحل	fr:côte,littoral	he:חוף ים	hi:तटवर्ती क्षेत्र,तट	ja:海岸	ko:해안	pt:costa,litoral	ru:побережье,берег	tr:sahil,kıyı	ur:سمندری ساحل	zh:海岸
 c:coastal-erosion	Noun	ar:تآكل ساحلي	de:Küstenerosion	en:coastal erosion	es:erosión costera	fa:فرسایش ساحلی	fr:érosion côtière	he:שחיקת חופים	hi:तटीय अपरदन	ja:海岸侵食	ko:해안 침식	pt:erosão costeira	ru:береговая эрозия	tr:kıyı erozyonu	ur:ساحلی کٹاؤ	zh:海岸侵蚀
+c:coastline	Noun	ar:خط الساحل	de:Küstenlinie	en:coastline	es:línea costera	fa:خط ساحلی	fr:littoral	he:קו החוף	hi:तटरेखा	ja:海岸線	ko:해안선	pt:linha costeira	ru:береговая линия	tr:kıyı şeridi	ur:ساحلی لکیر	zh:海岸线
 c:coat	Noun	ar:معطف	de:Mantel	en:coat	es:abrigo	fa:پالتو	fr:manteau	he:מעיל	hi:कोट	ja:コート,外套	ko:외투,코트	pt:casaco	ru:пальто	tr:palto,ceket	ur:کوٹ	zh:外套,大衣
 c:coat-of-arms	Noun	ar:شعار العائلة	de:Wappen	en:coat of arms	es:escudo de armas	fa:نشان خانوادگی	fr:armoiries	he:סמל משפחה	hi:कुलचिह्न	ja:紋章	ko:문장	pt:brasão de armas	ru:герб	tr:arma	ur:خاندانی نشان	zh:纹章
 c:coat-rack	Noun	ar:علاقة معاطف,مشجب	de:Garderobenständer	en:coat rack,coat stand	es:perchero	fa:جالباسی	fr:portemanteau	he:מתלה מעילים	hi:कोट रैक,कोट टांगने की रैक	ja:コート掛け	ko:코트 걸이	pt:cabideiro	ru:вешалка для пальто	tr:vestiyer,portmanto	ur:کوٹ رکھنے کا اسٹینڈ	zh:衣帽架
@@ -1574,6 +1581,13 @@ c:contentment	Noun	ar:رضا	de:Zufriedenheit	en:contentment	es:contento	fa:رض
 c:context-effect	Noun	ar:أثر السياق	de:Kontexteffekt	en:context effect	es:efecto de contexto	fa:اثر زمینه	fr:effet de contexte	he:אפקט הקשר	hi:संदर्भ प्रभाव	ja:文脈効果	ko:맥락 효과	pt:efeito de contexto	ru:контекстный эффект	tr:bağlam etkisi	ur:سیاق و سباق اثر	zh:情境效应
 c:contextualism-epistemic	Noun	ar:السياقية المعرفية	de:epistemischer Kontextualismus	en:epistemic contextualism	es:contextualismo epistémico	fa:زمینه‌گرایی معرفتی	fr:contextualisme épistémique	he:קונטקסטואליזם אפיסטמי	hi:ज्ञानमीमांसा संदर्भवाद	ja:認識的文脈主義	ko:인식론적 맥락주의	pt:contextualismo epistêmico	ru:эпистемический контекстуализм	tr:epistemik bağlamcılık	ur:معرفتی سیاق وسباق	zh:认识语境主义
 c:continent	Noun	ar:قارة	de:Kontinent,Erdteil	en:continent	es:continente	fa:قاره	fr:continent	he:יבשת	hi:महाद्वीप	ja:大陸	ko:대륙	pt:continente	ru:континент,материк	tr:kıta	ur:براعظم	zh:大陆,洲
+c:continent-africa	Noun	ar:قارة إفريقيا	de:Afrika	en:Africa	es:África	fa:آفریقا	fr:Afrique	he:אפריקה	hi:अफ्रीका	ja:アフリカ	ko:아프리카	pt:África	ru:Африка	tr:Afrika	ur:افریقہ	zh:非洲
+c:continent-antarctica	Noun	ar:قارة أنتاركتيكا	de:Antarktika	en:Antarctica	es:Antártida	fa:جنوبگان	fr:Antarctique	he:אנטארקטיקה	hi:अंटार्कटिका	ja:南極大陸	ko:남극 대륙	pt:Antártida	ru:Антарктида	tr:Antarktika	ur:انٹارکٹیکا	zh:南极洲
+c:continent-asia	Noun	ar:قارة آسيا	de:Asien	en:Asia	es:Asia	fa:آسیا	fr:Asie	he:אסיה	hi:एशिया	ja:アジア	ko:아시아	pt:Ásia	ru:Азия	tr:Asya	ur:ایشیا	zh:亚洲
+c:continent-australia	Noun	ar:قارة أستراليا	de:Australien	en:Australia continent	es:continente de Australia	fa:استرالیا قاره	fr:continent australien	he:יבשת אוסטרליה	hi:ऑस्ट्रेलिया महाद्वीप	ja:オーストラリア大陸	ko:오스트레일리아 대륙	pt:continente da Austrália	ru:Австралия материк	tr:Avustralya kıtası	ur:آسٹریلیا براعظم	zh:澳大利亚大陆
+c:continent-europe	Noun	ar:قارة أوروبا	de:Europa	en:Europe	es:Europa	fa:اروپا	fr:Europe	he:אירופה	hi:यूरोप	ja:ヨーロッパ	ko:유럽	pt:Europa	ru:Европа	tr:Avrupa	ur:یورپ	zh:欧洲
+c:continent-north-america	Noun	ar:أمريكا الشمالية	de:Nordamerika	en:North America	es:América del Norte	fa:آمریکای شمالی	fr:Amérique du Nord	he:צפון אמריקה	hi:उत्तर अमेरिका	ja:北アメリカ	ko:북아메리카	pt:América do Norte	ru:Северная Америка	tr:Kuzey Amerika	ur:شمالی امریکہ	zh:北美洲
+c:continent-south-america	Noun	ar:أمريكا الجنوبية	de:Südamerika	en:South America	es:América del Sur	fa:آمریکای جنوبی	fr:Amérique du Sud	he:דרום אמריקה	hi:दक्षिण अमेरिका	ja:南アメリカ	ko:남아메리카	pt:América do Sul	ru:Южная Америка	tr:Güney Amerika	ur:جنوبی امریکہ	zh:南美洲
 c:continental-climate	Noun	ar:مناخ قاري	de:Kontinentalklima	en:continental climate	es:clima continental	fa:اقلیم قاره‌ای	fr:climat continental	he:אקלים יבשתי	hi:महाद्वीपीय जलवायु	ja:大陸性気候	ko:대륙성 기후	pt:clima continental	ru:континентальный климат	tr:karasal iklim	ur:براعظمی موسم	zh:大陆性气候
 c:continental-drift	Noun	ar:انجراف القارات	de:Kontinentaldrift	en:continental drift	es:deriva continental	fa:رانش قاره‌ای	fr:dérive des continents	he:סחף יבשות	hi:महाद्वीपीय विचलन	ja:大陸移動説	ko:대륙 이동설	pt:deriva continental	ru:дрейф континентов	tr:kıta kayması	ur:براعظمی بہاو	zh:大陆漂移说
 c:continental-drift-geo	Noun	ar:انجراف قاري	de:Kontinentaldrift	en:continental drift	es:deriva continental	fa:رانش قاره‌ای	fr:dérive des continents	he:נדידת היבשות	hi:महाद्वीपीय विस्थापन	ja:大陸移動	ko:대륙 이동	pt:deriva continental	ru:дрейф материков	tr:kıta kayması	ur:براعظموں کی منتقلی	zh:大陆漂移
@@ -1679,6 +1693,7 @@ c:counseling	Noun	ar:استشارة نفسية,إرشاد نفسي	de:Beratung,p
 c:counterpoint	Noun	ar:الكونترابوينت	de:Kontrapunkt	en:counterpoint	es:contrapunto	fa:کنترپوان	fr:contrepoint	he:קונטרפונקט	hi:प्रतिस्वर	ja:対位法	ko:대위법	pt:contraponto	ru:контрапункт	tr:kontrpuan	ur:دو آوازی	zh:对位法
 c:countertransference	Noun	ar:النقل العكسي	de:Gegenübertragung	en:countertransference	es:contratransferencia	fa:انتقال متقابل	fr:contre-transfert	he:העברה נגדית	hi:प्रतिस्थानांतरण	ja:逆転移	ko:역전이	pt:contratransferência	ru:контрперенос	tr:karşı aktarım	ur:جوابی منتقلی	zh:反移情
 c:country	Noun	ar:بلد,دولة	de:Land	en:country	es:país	fa:کشور	fr:pays	he:ארץ,מדינה	hi:देश	ja:国	ko:나라,국가	pt:país	ru:страна	tr:ülke	ur:ملک	zh:国家
+c:country-nation	Noun	ar:دولة	de:Land	en:country	es:país	fa:کشور	fr:pays	he:מדינה ארץ	hi:देश	ja:国	ko:나라	pt:país	ru:страна	tr:ülke	ur:ملک	zh:国家
 c:coup	Noun	ar:انقلاب	de:Staatsstreich	en:coup d'état	es:golpe de estado	fa:کودتا	fr:coup d'état	he:הפיכה	hi:सैन्य अधिग्रहण	ja:クーデター	ko:쿠데타	pt:golpe de estado	ru:государственный переворот	tr:darbe	ur:بغاوت	zh:政变
 c:coupon	Noun	ar:كوبون	de:Kupon	en:coupon	es:cupón	fa:کوپن	fr:coupon	he:קופון	hi:कूपन	ja:クーポン	ko:쿠폰	pt:cupom	ru:купон	tr:kupon	ur:کوپن	zh:票息
 c:course	Noun	ar:دورة,مساق	de:Kurs,Lehrgang	en:course	es:curso	fa:دوره,درس	fr:cours	he:קורס	hi:पाठ्यक्रम,कोर्स	ja:コース,講座	ko:과정,코스	pt:curso	ru:курс	tr:ders,kurs	ur:کورس,نصاب	zh:课程
@@ -1903,6 +1918,7 @@ c:deletion-gene	Noun	ar:حذف جيني	de:Gendeletion	en:gene deletion	es:delec
 c:delhi-sultanate	Noun	ar:سلطنة دلهي	de:Sultanat von Delhi	en:Delhi Sultanate	es:sultanato de Delhi	fa:سلطنت دهلی	fr:sultanat de Delhi	he:סולטנות דלהי	hi:दिल्ली सल्तनत	ja:デリー・スルターン朝	ko:델리 술탄국	pt:sultanato de Délhi	ru:Делийский султанат	tr:Delhi Sultanlığı	ur:دہلی سلطنت	zh:德里苏丹国
 c:deliberative-democracy	Noun	ar:الديمقراطية التداولية	de:deliberative Demokratie	en:deliberative democracy	es:democracia deliberativa	fa:دموکراسی مشورتی	fr:démocratie délibérative	he:דמוקרטיה דיונית	hi:विचार-विमर्श लोकतंत्र	ja:熟議民主主義	ko:숙의 민주주의	pt:democracia deliberativa	ru:делиберативная демократия	tr:müzakereci demokrasi	ur:مشاورتی جمہوریت	zh:协商民主
 c:delta	Noun	ar:دلتا	de:Delta	en:delta	es:delta	fa:دلتا	fr:delta	he:דלתא	hi:डेल्टा	ja:三角州,デルタ	ko:삼각주,델타	pt:delta	ru:дельта	tr:delta	ur:ڈیلٹا	zh:三角洲
+c:delta-geo	Noun	ar:دلتا نهرية	de:Flussdelta	en:river delta	es:delta fluvial	fa:دلتای رودخانه	fr:delta fluvial	he:דלתת נהר	hi:नदी डेल्टा	ja:河川デルタ	ko:삼각주	pt:delta fluvial	ru:дельта реки	tr:nehir deltası	ur:دریا کا دہانہ	zh:河流三角洲
 c:delta-landform	Noun	ar:دلتا	de:Flussdelta,Delta	en:delta,river delta	es:delta	fa:دلتا	fr:delta	he:דלתה	hi:डेल्टा,नदीमुख	ja:三角州,デルタ	ko:삼각주	pt:delta	ru:дельта	tr:delta	ur:ڈیلٹا	zh:三角洲
 c:delusion	Noun	ar:وهم,ضلال ذهني	de:Wahn,Wahnvorstellung	en:delusion	es:delirio	fa:هذیان,خیال باطل	fr:délire	he:מחשבת שווא	hi:भ्रांति,मिथ्या विश्वास	ja:妄想	ko:망상	pt:delírio	ru:бред	tr:hezeyan	ur:ضلال ذہنی	zh:妄想
 c:demand	Noun	ar:طلب	de:Nachfrage	en:demand	es:demanda	fa:تقاضا	fr:demande	he:ביקוש	hi:मांग	ja:需要	ko:수요	pt:demanda,procura	ru:спрос	tr:talep	ur:طلب,مانگ	zh:需求
@@ -2649,6 +2665,7 @@ c:fitness-tracker	Noun	ar:متتبع اللياقة	de:Fitnesstracker	en:fitness
 c:five	Noun	ar:خمسة	de:fünf	en:five	es:cinco	fa:پنج	fr:cinq	he:חמישה	hi:पांच	ja:五,ご	ko:다섯,오	pt:cinco	ru:пять	tr:beş	ur:پانچ	zh:五
 c:fixation	Noun	ar:التثبيت	de:Fixierung	en:fixation	es:fijación	fa:تثبیت	fr:fixation	he:קיבעון	hi:स्थिरीकरण	ja:固着	ko:고착	pt:fixação	ru:фиксация	tr:takıntı	ur:تثبیت	zh:固着
 c:fjord	Noun	ar:مضيق	de:Fjord	en:fjord	es:fiordo	fa:فیورد	fr:fjord	he:פיורד	hi:फियोर्ड	ja:フィヨルド	ko:피오르	pt:fiorde	ru:фьорд	tr:fiyort	ur:فیورڈ	zh:峡湾
+c:fjord-geo	Noun	ar:مضيق فيوردي	de:Fjord	en:fjord	es:fiordo	fa:فیورد	fr:fjord	he:פיורד	hi:फियोर्ड	ja:フィヨルド	ko:피오르	pt:fiorde	ru:фьорд	tr:fiyort	ur:فیورڈ	zh:峡湾
 c:fjord-landform	Noun	ar:مضيق بحري,فيورد	de:Fjord	en:fjord	es:fiordo	fa:فیورد,خور	fr:fjord	he:פיורד	hi:फ़्योर्ड	ja:フィヨルド	ko:피오르	pt:fiorde	ru:фьорд	tr:fiyort	ur:فیورڈ	zh:峡湾
 c:flagellum	Noun	ar:سوط خلوي	de:Geißel	en:flagellum	es:flagelo	fa:تاژک	fr:flagelle	he:שוטון	hi:कशाभ	ja:鞭毛	ko:편모	pt:flagelo	ru:жгутик	tr:kamçı	ur:ڈنک	zh:鞭毛
 c:flair	Noun	ar:تقنية فلير	de:FLAIR-Sequenz	en:FLAIR	es:FLAIR	fa:FLAIR	fr:FLAIR	he:FLAIR	hi:FLAIR	ja:FLAIR	ko:FLAIR	pt:FLAIR	ru:FLAIR	tr:FLAIR	ur:FLAIR	zh:液体衰减反转恢复
@@ -2803,6 +2820,7 @@ c:frog	Noun	ar:ضفدع	de:Frosch	en:frog	es:rana	fa:قورباغه	fr:grenouill
 c:frond	Noun	ar:سعف	de:Wedel	en:frond	es:fronde	fa:برگ سرخس	fr:fronde	he:עלה שרך	hi:पर्णांग पत्र	ja:葉状体	ko:엽상체	pt:fronde	ru:вайя	tr:yaprak	ur:پھنڈے کا پتہ	zh:叶状体
 c:front	Noun	ar:أمام	de:vorne,Vorderseite	en:front	es:frente,delante	fa:جلو	fr:devant,avant	he:חזית,קדמה	hi:आगे,सामने	ja:前	ko:앞	pt:frente	ru:перед	tr:ön	ur:سامنے,آگے	zh:前
 c:frontal-system	Noun	ar:نظام الجبهات الهوائية	de:Frontensystem	en:frontal system	es:sistema frontal	fa:سامانه جبهه‌ای	fr:système frontal	he:מערכת חזיתות	hi:अग्रीय तंत्र	ja:前線系	ko:전선 시스템	pt:sistema frontal	ru:фронтальная система	tr:cephe sistemi	ur:محاذ ہوائی نظام	zh:锋面系统
+c:frontier	Noun	ar:تخوم	de:Grenzgebiet	en:frontier	es:frontera pionera	fa:سرحد	fr:frontière pionnière	he:ספר	hi:सीमांत	ja:辺境	ko:변경	pt:fronteira pioneira	ru:рубеж	tr:sınır bölgesi	ur:سرحد	zh:边疆
 c:frost	Noun	ar:صقيع	de:Frost,Raureif	en:frost	es:escarcha	fa:یخ‌بندان,شبنم یخ زده	fr:gel,givre	he:כפור	hi:पाला	ja:霜	ko:서리	pt:geada	ru:иней	tr:kırağı,don	ur:پالا	zh:霜
 c:frost-point	Noun	ar:نقطة الصقيع	de:Frostpunkt	en:frost point	es:punto de escarcha	fa:نقطه یخبندان	fr:point de givre	he:נקודת קיפאון	hi:पाला बिंदु	ja:霜点	ko:서리점	pt:ponto de geada	ru:точка инея	tr:kırağı noktası	ur:پالہ نقطہ	zh:霜点
 c:fruit	Noun	ar:فاكهة,ثمرة	de:Frucht,Obst	en:fruit	es:fruta	fa:میوه	fr:fruit	he:פרי	hi:फल	ja:果物	ko:과일	pt:fruta	ru:фрукт,плод	tr:meyve	ur:پھل	zh:水果,果
@@ -3024,6 +3042,7 @@ c:good	Adjective	ar:جيد,حسن	de:gut	en:good	es:bueno	fa:خوب	fr:bon,bonne
 c:goodness	Noun	ar:خير,صلاح	de:Güte	en:goodness	es:bondad	fa:نیکی,خوبی	fr:bonté	he:טוב	hi:भलाई,अच्छाई	ja:善	ko:선,선함	pt:bondade	ru:добро	tr:iyilik	ur:نیکی,بھلائی	zh:善,善良
 c:goose	Noun	ar:إوزة	de:Gans	en:goose	es:ganso	fa:غاز	fr:oie	he:אווז	hi:हंस	ja:ガチョウ	ko:거위	pt:ganso	ru:гусь	tr:kaz	ur:گوز	zh:鹅
 c:gooseberry	Noun	ar:عنب الثعلب	de:Stachelbeere	en:gooseberry	es:grosella espinosa	fa:خدنگ	fr:groseille à maquereau	he:דרדר-ים	hi:आंवला	ja:グースベリー	ko:구즈베리	pt:groselha-espinhosa	ru:крыжовник	tr:bektaşi üzümü	ur:آنولہ	zh:醋栗
+c:gorge	Noun	ar:مضيق جبلي	de:Schlucht	en:gorge	es:garganta	fa:تنگه کوهستانی	fr:gorge	he:נקיק	hi:दर्रा	ja:渓谷	ko:계곡	pt:desfiladeiro	ru:ущелье	tr:derin vadi	ur:گہرا درہ	zh:峡谷深
 c:gorilla	Noun	ar:غوريلا	de:Gorilla	en:gorilla	es:gorila	fa:گوریل	fr:gorille	he:גורילה	hi:गोरिल्ला	ja:ゴリラ	ko:고릴라	pt:gorila	ru:горилла	tr:goril	ur:گوریلا	zh:大猩猩
 c:gothic-art	Noun	ar:الفن القوطي	de:gotische Kunst	en:Gothic art	es:arte gótico	fa:هنر گوتیک	fr:art gothique	he:אמנות גותית	hi:गॉथिक कला	ja:ゴシック美術	ko:고딕 미술	pt:arte gótica	ru:готическое искусство	tr:Gotik sanat	ur:گوتھک فن	zh:哥特式艺术
 c:gouache	Noun	ar:غواش	de:Gouache	en:gouache	es:gouache	fa:گواش	fr:gouache	he:גואש	hi:गुआशे	ja:ガッシュ	ko:구아슈	pt:guache	ru:гуашь	tr:guaş	ur:گواش	zh:不透明水彩
@@ -3104,6 +3123,7 @@ c:guilt	Noun	ar:ذنب	de:Schuld	en:guilt	es:culpa	fa:گناه	fr:culpabilité	h
 c:guilty	Adjective	ar:مذنب	de:schuldig	en:guilty	es:culpable	fa:گناهکار,مقصر	fr:coupable	he:אשם	hi:दोषी,अपराधी	ja:有罪の	ko:유죄의,죄 있는	pt:culpado	ru:виновный	tr:suçlu	ur:مجرم,قصوروار	zh:有罪,有过错
 c:guitar	Noun	ar:غيتار	de:Gitarre	en:guitar	es:guitarra	fa:گیتار	fr:guitare	he:גיטרה	hi:गिटार	ja:ギター	ko:기타	pt:guitarra,violão	ru:гитара	tr:gitar	ur:گٹار	zh:吉他
 c:gulf	Noun	ar:خليج	de:Golf	en:gulf	es:golfo	fa:خلیج	fr:golfe	he:מפרץ	hi:खाड़ी	ja:湾,ガルフ	ko:만	pt:golfo	ru:залив	tr:körfez	ur:خلیج	zh:海湾
+c:gulf-geo	Noun	ar:خليج كبير	de:Golf	en:gulf	es:golfo	fa:خلیج بزرگ	fr:golfe	he:מפרץ גדול	hi:बड़ी खाड़ी	ja:大湾	ko:대만	pt:golfo	ru:большой залив	tr:körfez	ur:بڑی خلیج	zh:海湾大
 c:gulf-of-aden	Noun	ar:خليج عدن	de:Golf von Aden	en:Gulf of Aden	es:Golfo de Adén	fa:خلیج عدن	fr:Golfe d'Aden	he:מפרץ עדן	hi:अदन की खाड़ी	ja:アデン湾	ko:아덴만	pt:Golfo de Adém	ru:Аденский залив	tr:Aden Körfezi	ur:خلیج عدن	zh:亚丁湾
 c:gulf-of-mexico	Noun	ar:خليج المكسيك	de:Golf von Mexiko	en:Gulf of Mexico	es:Golfo de México	fa:خلیج مکزیک	fr:Golfe du Mexique	he:מפרץ מקסיקו	hi:मेक्सिको की खाड़ी	ja:メキシコ湾	ko:멕시코만	pt:Golfo do México	ru:Мексиканский залив	tr:Meksika Körfezi	ur:خلیج میکسیکو	zh:墨西哥湾
 c:gulf-war	Noun	ar:حرب الخليج	de:Golfkrieg	en:Gulf War	es:guerra del Golfo	fa:جنگ خلیج فارس	fr:guerre du Golfe	he:מלחמת המפרץ	hi:खाड़ी युद्ध	ja:湾岸戦争	ko:걸프 전쟁	pt:guerra do Golfo	ru:война в Персидском заливе	tr:Körfez Savaşı	ur:خلیجی جنگ	zh:海湾战争
@@ -3305,6 +3325,7 @@ c:high-jump	Noun	ar:القفز العالي	de:Hochsprung	en:high jump	es:salto 
 c:high-middle-ages	Noun	ar:أوج العصور الوسطى	de:Hochmittelalter	en:High Middle Ages	es:Plena Edad Media	fa:اوج قرون وسطی	fr:Moyen Âge central	he:שיא ימי הביניים	hi:उच्च मध्य युग	ja:盛期中世	ko:중세 전성기	pt:plena Idade Média	ru:расцвет Средневековья	tr:yüksek Orta Çağ	ur:بلند قرون وسطی	zh:中世纪盛期
 c:high-pressure-processing	Noun	ar:المعالجة بالضغط العالي	de:Hochdruckverarbeitung	en:high-pressure processing	es:procesamiento a alta presión	fa:پردازش فشار بالا	fr:traitement haute pression	he:עיבוד לחץ גבוה	hi:उच्च दाब प्रसंस्करण	ja:高圧食品加工	ko:초고압 처리	pt:processamento por alta pressão	ru:высокое давление	tr:yüksek basınç işleme	ur:اعلی دباو پروسیسنگ	zh:高压处理
 c:high-throughput-screening	Noun	ar:الفحص عالي الإنتاجية	de:Hochdurchsatz-Screening	en:high-throughput screening	es:cribado de alto rendimiento	fa:غربالگری پرتوان	fr:criblage à haut débit	he:סינון בתפוקה גבוהה	hi:उच्च-प्रवाह जांच	ja:ハイスループットスクリーニング	ko:고처리량 선별	pt:triagem de alto rendimento	ru:высокопроизводительный скрининг	tr:yüksek verimli tarama	ur:اعلی رفتار جانچ	zh:高通量筛选
+c:highland	Noun	ar:مرتفعات	de:Hochland	en:highland	es:tierras altas	fa:کوهستان	fr:hautes terres	he:ארץ גבוהה	hi:उच्चभूमि	ja:高地	ko:고지대	pt:terras altas	ru:нагорье	tr:yüksek arazi	ur:بلند زمین	zh:高地
 c:highway	Noun	ar:طريق سريع	de:Autobahn,Schnellstraße	en:highway,motorway,freeway	es:autopista,carretera	fa:بزرگراه,آزادراه	fr:autoroute	he:כביש מהיר	hi:राजमार्ग,हाईवे	ja:高速道路	ko:고속도로	pt:autoestrada,rodovia	ru:шоссе,автомагистраль	tr:otoyol,karayolu	ur:شاہراہ,ہائی وے	zh:高速公路
 c:hijab	Noun	ar:حجاب	de:Hidschab,Kopftuch	en:hijab	es:hiyab	fa:حجاب,روسری	fr:hijab	he:חיג׳אב	hi:हिजाब	ja:ヒジャブ	ko:히잡	pt:hijab	ru:хиджаб	tr:başörtüsü	ur:حجاب	zh:希贾布
 c:hildegard-of-bingen	Noun	ar:هيلدغارد فون بينغن	de:Hildegard von Bingen	en:Hildegard of Bingen,Hildegard	es:Hildegarda de Bingen	fa:هیلدگارد بینگنی	fr:Hildegarde de Bingen	he:הילדגרד מבינגן	hi:हिल्डेगार्ड ऑफ बिंगन	ja:ヒルデガルト・フォン・ビンゲン	ko:힐데가르트 폰 빙엔	pt:Hildegarda de Bingen	ru:Хильдегарда Бингенская	tr:Hildegard von Bingen	ur:ہلدیگارد فون بنگن	zh:宾根的希尔德加德
@@ -3664,6 +3685,7 @@ c:ishtar	Noun	ar:عشتار	de:Ischtar	en:Ishtar	es:Istar	fa:ایشتار	fr:Ish
 c:isis	Noun	ar:إيزيس	de:Isis	en:Isis	es:Isis	fa:ایزیس	fr:Isis	he:איזיס	hi:आइसिस	ja:イシス	ko:이시스	pt:Ísis	ru:Исида	tr:İsis	ur:ایسس	zh:伊西斯
 c:islamabad	Noun	ar:إسلام آباد	de:Islamabad	en:Islamabad	es:Islamabad	fa:اسلام‌آباد	fr:Islamabad	he:איסלאמאבאד	hi:इस्लामाबाद	ja:イスラマバード	ko:이슬라마바드	pt:Islamabad	ru:Исламабад	tr:İslamabad	ur:اسلام آباد	zh:伊斯兰堡
 c:island	Noun	ar:جزيرة	de:Insel	en:island,isle	es:isla	fa:جزیره	fr:île	he:אי	hi:द्वीप	ja:島	ko:섬	pt:ilha	ru:остров	tr:ada	ur:جزیرہ	zh:岛,岛屿
+c:island-geo	Noun	ar:جزيرة جغرافية	de:Insel	en:island	es:isla	fa:جزیره	fr:île	he:אי	hi:द्वीप	ja:島	ko:섬	pt:ilha	ru:остров	tr:ada	ur:جزیرہ	zh:岛屿
 c:island-landform	Noun	ar:جزيرة	de:Insel	en:island	es:isla	fa:جزیره	fr:île	he:אי	hi:द्वीप	ja:島	ko:섬	pt:ilha	ru:остров	tr:ada	ur:جزیرہ	zh:岛,岛屿
 c:iso	Noun	ar:حساسية الضوء	de:ISO-Wert	en:ISO	es:ISO	fa:حساسیت فیلم	fr:sensibilité ISO	he:רגישות ISO	hi:आईएसओ	ja:ISO感度	ko:ISO 감도	pt:ISO	ru:светочувствительность	tr:ISO değeri	ur:آئی ایس او	zh:ISO感光度
 c:isobar	Noun	ar:خط ضغط متساو	de:Isobare	en:isobar	es:isobara	fa:خط هم‌فشار	fr:isobare	he:איזובר	hi:समदाब रेखा	ja:等圧線	ko:등압선	pt:isobara	ru:изобара	tr:izobar	ur:ہم دباو خط	zh:等压线
@@ -3684,6 +3706,7 @@ c:israel	Noun	ar:إسرائيل	de:Israel	en:Israel	es:Israel	fa:اسرائیل	
 c:iss	Noun	ar:محطة الفضاء الدولية	de:Internationale Raumstation	en:International Space Station	es:Estación Espacial Internacional	fa:ایستگاه فضایی بین‌المللی	fr:Station spatiale internationale	he:תחנת החלל הבינלאומית	hi:अंतर्राष्ट्रीय अंतरिक्ष स्टेशन	ja:国際宇宙ステーション	ko:국제 우주 정거장	pt:Estação Espacial Internacional	ru:Международная космическая станция	tr:Uluslararası Uzay İstasyonu	ur:بین الاقوامی خلائی اسٹیشن	zh:国际空间站
 c:istanbul	Noun	ar:إسطنبول	de:Istanbul	en:Istanbul	es:Estambul	fa:استانبول	fr:Istanbul	he:איסטנבול	hi:इस्तांबुल	ja:イスタンブール	ko:이스탄불	pt:Istambul	ru:Стамбул	tr:İstanbul	ur:استنبول	zh:伊斯坦布尔
 c:isthmus	Noun	ar:برزخ	de:Landenge,Isthmus	en:isthmus	es:istmo	fa:تنگه خشکی,برزخ	fr:isthme	he:מצר יבשה	hi:भूडमरूमध्य,जलडमरूमध्य	ja:地峡	ko:지협	pt:istmo	ru:перешеек	tr:kıstak	ur:برزخ	zh:地峡
+c:isthmus-geo	Noun	ar:برزخ جغرافي	de:Landenge	en:isthmus	es:istmo	fa:زمین‌باریک	fr:isthme	he:מצר יבשה	hi:भूडमरूमध्य	ja:地峡	ko:지협	pt:istmo	ru:перешеек	tr:kıstak	ur:برصغیر	zh:地峡
 c:italy	Noun	ar:إيطاليا	de:Italien	en:Italy	es:Italia	fa:ایتالیا	fr:Italie	he:איטליה	hi:इटली	ja:イタリア	ko:이탈리아	pt:Itália	ru:Италия	tr:İtalya	ur:اٹلی	zh:意大利
 c:iv-drip	Noun	ar:تسريب وريدي	de:Infusionsständer	en:IV drip	es:gotero intravenoso	fa:سرم	fr:perfusion intraveineuse	he:עירוי תוך-ורידי	hi:आईवी ड्रिप	ja:点滴	ko:정맥 주사	pt:soro intravenoso	ru:капельница	tr:serum seti	ur:وریدی قطرہ	zh:静脉滴注
 c:ivory	Noun	ar:عاجي	de:Elfenbein,Elfenbeinfarben	en:ivory	es:marfil	fa:عاج‌فیل,عاجی	fr:ivoire	he:שנהב	hi:हाथीदाँत	ja:象牙色,アイボリー	ko:상아색	pt:marfim	ru:слоновая кость	tr:fildişi	ur:ہاتھی دانت	zh:象牙色
@@ -3874,6 +3897,7 @@ c:ladder-tool	Noun	ar:سلم	de:Leiter	en:ladder	es:escalera	fa:نردبان	fr:
 c:ladle	Noun	ar:مغرفة	de:Schöpfkelle	en:ladle	es:cucharón	fa:ملاقه	fr:louche	he:מצקת	hi:करछुल	ja:お玉,おたま	ko:국자	pt:concha	ru:половник	tr:kepçe	ur:کرچھا	zh:长柄勺
 c:ladybug	Noun	ar:خنفساء مرقطة,دعسوقة	de:Marienkäfer	en:ladybug,ladybird	es:mariquita	fa:کفشدوزک	fr:coccinelle	he:פרת משה רבנו	hi:सोनपंखी,लेडीबग	ja:テントウムシ	ko:무당벌레	pt:joaninha	ru:божья коровка	tr:uğurböceği,hanımböceği	ur:سونپنکھی	zh:瓢虫
 c:lagoon	Noun	ar:بحيرة شاطئية	de:Lagune	en:lagoon	es:laguna	fa:تالاب	fr:lagune	he:לגונה	hi:अनूप	ja:ラグーン	ko:석호	pt:lagoa	ru:лагуна	tr:lagün	ur:جھیل	zh:潟湖
+c:lagoon-geo	Noun	ar:بحيرة ساحلية	de:Lagune	en:lagoon	es:laguna	fa:تالاب ساحلی	fr:lagune	he:לגונה	hi:लैगून	ja:潟湖	ko:석호	pt:laguna	ru:лагуна	tr:lagün	ur:ساحلی جھیل	zh:潟湖
 c:lagoon-landform	Noun	ar:بحيرة شاطئية	de:Lagune	en:lagoon	es:laguna	fa:تالاب ساحلی	fr:lagune	he:לגונה	hi:लैगून,कच्छताल	ja:潟,ラグーン	ko:석호	pt:lagoa	ru:лагуна	tr:lagün	ur:ساحلی جھیل	zh:潟湖
 c:lagos	Noun	ar:لاغوس	de:Lagos	en:Lagos	es:Lagos	fa:لاگوس	fr:Lagos	he:לאגוס	hi:लागोस	ja:ラゴス	ko:라고스	pt:Lagos	ru:Лагос	tr:Lagos	ur:لاگوس	zh:拉各斯
 c:lagrange-point	Noun	ar:نقطة لاغرانج	de:Lagrange-Punkt	en:Lagrange point	es:punto de Lagrange	fa:نقطه لاگرانژ	fr:point de Lagrange	he:נקודת לגראנז'	hi:लाग्रांज बिंदु	ja:ラグランジュ点	ko:라그랑주점	pt:ponto de Lagrange	ru:точка Лагранжа	tr:Lagrange noktası	ur:لاگرانج پوائنٹ	zh:拉格朗日点
@@ -4110,6 +4134,7 @@ c:loudspeaker	Noun	ar:مكبر الصوت	de:Lautsprecher	en:loudspeaker	es:alta
 c:louse	Noun	ar:قملة	de:Laus	en:louse	es:piojo	fa:شپش	fr:pou	he:כינה	hi:जूँ	ja:虱,シラミ	ko:이	pt:piolho	ru:вошь	tr:bit	ur:جوں	zh:虱子
 c:love	Noun	ar:حب,محبة	de:Liebe	en:love	es:amor	fa:عشق	fr:amour	he:אהבה	hi:प्रेम	ja:愛	ko:사랑	pt:amor	ru:любовь	tr:aşk	ur:محبت	zh:爱
 c:low-resource-nlp	Noun	ar:معالجة اللغات منخفضة الموارد	de:Low-Resource-Sprachverarbeitung	en:low-resource NLP	es:PLN de bajos recursos	fa:پردازش زبان کم‌منبع	fr:TALN à faibles ressources	he:NLP עם משאבים מוגבלים	hi:कम संसाधन NLP	ja:低リソースNLP	ko:저자원 NLP	pt:PLN de baixos recursos	ru:обработка языков с малыми ресурсами	tr:düşük kaynaklı NLP	ur:کم وسائل NLP	zh:低资源NLP
+c:lowland	Noun	ar:أراضي منخفضة	de:Tiefland	en:lowland	es:tierras bajas	fa:زمین پست	fr:basses terres	he:ארץ נמוכה	hi:नीची भूमि	ja:低地	ko:저지대	pt:terras baixas	ru:низменность	tr:alçak arazi	ur:نشیبی زمین	zh:低地
 c:ltp-neuro	Noun	ar:التقوية طويلة الامد	de:Langzeitpotenzierung	en:long-term potentiation,LTP	es:potenciación a largo plazo	fa:توان‌افزایی بلند مدت	fr:potentialisation à long terme	he:פוטנציאציה ארוכת טווח	hi:दीर्घकालीन शक्तिवर्धन	ja:長期増強	ko:장기 강화	pt:potenciação de longa duração	ru:долговременная потенциация	tr:uzun süreli güçlendirme	ur:طویل مدتی قوت بخشی	zh:长时程增强
 c:luggage	Noun	ar:أمتعة,حقائب	de:Gepäck	en:luggage,baggage	es:equipaje	fa:بار,چمدان	fr:bagages	he:מטען,כבודה	hi:सामान,लगेज	ja:荷物,手荷物	ko:짐,수하물	pt:bagagem	ru:багаж	tr:bagaj	ur:سامان	zh:行李
 c:lunch	Noun	ar:غداء	de:Mittagessen	en:lunch	es:almuerzo	fa:ناهار	fr:déjeuner	he:ארוחת צהריים	hi:दोपहर का भोजन	ja:昼食,ランチ	ko:점심	pt:almoço	ru:обед	tr:öğle yemeği	ur:دوپہر کا کھانا	zh:午餐
@@ -4374,6 +4399,7 @@ c:method	Noun	ar:طريقة,منهج	de:Methode,Verfahren	en:method	es:método	f
 c:metope	Noun	ar:لوح بين الحوامل	de:Metope	en:metope	es:metopa	fa:میان‌ستون	fr:métope	he:מטופה	hi:मेटोप	ja:メトープ	ko:메토프	pt:métopa	ru:метопа	tr:metop	ur:میٹوپ	zh:间板
 c:metric-space	Noun	ar:الفضاء المتري	de:metrischer Raum	en:metric space	es:espacio métrico	fa:فضای متریک	fr:espace métrique	he:מרחב מטרי	hi:मेट्रिक स्थान	ja:距離空間	ko:거리 공간	pt:espaço métrico	ru:метрическое пространство	tr:metrik uzay	ur:میٹرک فضا	zh:度量空间
 c:metropolis	Noun	ar:حاضرة,مدينة كبرى	de:Metropole,Weltstadt	en:metropolis	es:metrópoli,metrópolis	fa:کلان شهر	fr:métropole	he:מטרופולין	hi:महानगर	ja:大都市,メトロポリス	ko:대도시,수도권	pt:metrópole	ru:мегаполис,метрополия	tr:metropol,büyükşehir	ur:بڑا شہر,میٹروپولیس	zh:大都会,大都市
+c:metropolis-city	Noun	ar:حاضرة	de:Großstadt	en:metropolis	es:metrópolis	fa:کلان‌شهر	fr:métropole	he:מטרופולין	hi:महानगर	ja:大都市	ko:대도시	pt:metrópole	ru:мегаполис	tr:metropol	ur:کلاں شہر	zh:大都市
 c:mexico	Noun	ar:المكسيك	de:Mexiko	en:Mexico	es:México	fa:مکزیک	fr:Mexique	he:מקסיקו	hi:मेक्सिको	ja:メキシコ	ko:멕시코	pt:México	ru:Мексика	tr:Meksika	ur:میکسیکو	zh:墨西哥
 c:mexico-city	Noun	ar:مكسيكو سيتي	de:Mexiko-Stadt	en:Mexico City	es:Ciudad de México	fa:مکزیکوسیتی	fr:Mexico	he:מקסיקו סיטי	hi:मेक्सिको सिटी	ja:メキシコシティ	ko:멕시코시티	pt:Cidade do México	ru:Мехико	tr:Meksiko	ur:میکسیکو سٹی	zh:墨西哥城
 c:mhc-complex	Noun	ar:معقد التوافق النسيجي الكبير	de:MHC-Komplex	en:major histocompatibility complex	es:complejo mayor de histocompatibilidad	fa:کمپلکس سازگاری بافتی	fr:complexe majeur d'histocompatibilité	he:קומפלקס HLA	hi:प्रमुख ऊतक-अनुकूलता परिसर	ja:主要組織適合性複合体	ko:주요조직적합성복합체	pt:complexo principal de histocompatibilidade	ru:главный комплекс гистосовместимости	tr:doku uyum kompleksi	ur:ہسٹوکمپیٹیبلٹی کمپلیکس	zh:主要组织相容性复合体
@@ -4575,6 +4601,7 @@ c:mount-vesuvius	Noun	ar:جبل فيزوف,فيزوف	de:Vesuv	en:Mount Vesuvius
 c:mount-whitney	Noun	ar:جبل ويتني	de:Mount Whitney	en:Mount Whitney	es:monte Whitney	fa:کوه ویتنی	fr:mont Whitney	he:הר ויטני	hi:माउंट व्हिटनी	ja:ホイットニー山	ko:휘트니산	pt:monte Whitney	ru:Уитни	tr:Whitney Dağı	ur:ماؤنٹ وٹنی	zh:惠特尼山
 c:mountain	Noun	ar:جبل	de:Berg	en:mountain	es:montaña	fa:کوه	fr:montagne	he:הר	hi:पर्वत,पहाड़	ja:山	ko:산	pt:montanha,serra	ru:гора	tr:dağ	ur:پہاڑ	zh:山
 c:mountain-building	Noun	ar:تكوين الجبال	de:Gebirgsbildung	en:mountain building	es:orogenia	fa:کوه‌زایی	fr:orogenèse	he:בניית הרים	hi:पर्वत निर्माण	ja:造山運動	ko:조산 운동	pt:orogênese	ru:горообразование	tr:orojenez	ur:پہاڑ کی تشکیل	zh:造山运动
+c:mountain-range	Noun	ar:سلسلة جبال	de:Gebirgskette	en:mountain range	es:cordillera	fa:رشته‌کوه	fr:chaîne de montagnes	he:רכס הרים	hi:पर्वत श्रृंखला	ja:山脈	ko:산맥	pt:cordilheira	ru:горный хребет	tr:dağ sırası	ur:پہاڑی سلسلہ	zh:山脉
 c:mouse	Noun	ar:فأر	de:Maus	en:mouse,mice	es:ratón	fa:موش	fr:souris	he:עכבר	hi:चूहा	ja:ネズミ	ko:쥐	pt:rato,camundongo	ru:мышь	tr:fare	ur:چوہا	zh:老鼠,鼠
 c:mouse-pad	Noun	ar:لوحة فأرة	de:Mauspad	en:mouse pad	es:alfombrilla	fa:ماوس پد	fr:tapis de souris	he:משטח עכבר	hi:माउस पैड	ja:マウスパッド	ko:마우스 패드	pt:mouse pad	ru:коврик для мыши	tr:mouse pedi	ur:ماؤس پیڈ	zh:鼠标垫
 c:mousse	Noun	ar:موس	de:Mousse	en:mousse	es:mousse	fa:موس	fr:mousse	he:מוס	hi:मूस	ja:ムース	ko:무스	pt:musse	ru:мусс	tr:mus	ur:موس	zh:慕斯
@@ -4666,6 +4693,7 @@ c:nas	Noun	ar:تخزين شبكي	de:Netzwerkspeicher	en:network-attached storag
 c:nasal-sound	Noun	ar:صوت أنفي	de:Nasal	en:nasal consonant	es:consonante nasal	fa:همخوان خیشومی	fr:nasale	he:עיצור אנפי	hi:नासिक्य	ja:鼻音	ko:비음	pt:consoante nasal	ru:носовой согласный	tr:genzel	ur:ناکی آواز	zh:鼻音
 c:nat	Noun	ar:ترجمة عنوان الشبكة	de:NAT	en:NAT	es:NAT	fa:NAT	fr:NAT	he:NAT	hi:एनएटी	ja:NAT	ko:NAT	pt:NAT	ru:NAT	tr:NAT	ur:این اے ٹی	zh:网络地址转换
 c:nation	Noun	ar:أمة	de:Nation	en:nation	es:nación	fa:ملت	fr:nation	he:אומה	hi:राष्ट्र	ja:国家,国民	ko:국가,민족	pt:nação	ru:нация	tr:millet,ulus	ur:قوم	zh:国家,民族
+c:nation-state	Noun	ar:أمة سياسية	de:Nation	en:nation	es:nación	fa:ملت	fr:nation	he:אומה	hi:राष्ट्र	ja:国家	ko:국가	pt:nação	ru:нация	tr:millet	ur:قوم	zh:民族国家
 c:nationalism	Noun	ar:قومية	de:Nationalismus	en:nationalism	es:nacionalismo	fa:ناسیونالیسم	fr:nationalisme	he:לאומיות	hi:राष्ट्रवाद	ja:ナショナリズム	ko:민족주의	pt:nacionalismo	ru:национализм	tr:milliyetçilik	ur:قوم پرستی	zh:民族主义
 c:nationalism-ideology	Noun	ar:قومية	de:Nationalismus	en:nationalism	es:nacionalismo	fa:ناسیونالیسم	fr:nationalisme	he:לאומיות	hi:राष्ट्रवाद	ja:ナショナリズム	ko:민족주의	pt:nacionalismo	ru:национализм	tr:milliyetçilik	ur:قوم پرستی	zh:民族主义
 c:nationalism-pol	Noun	ar:القومية	de:Nationalismus	en:nationalism	es:nacionalismo	fa:ناسیونالیسم	fr:nationalisme	he:לאומנות	hi:राष्ट्रवाद	ja:ナショナリズム	ko:민족주의	pt:nacionalismo	ru:национализм	tr:milliyetçilik	ur:قوم پرستی	zh:民族主义
@@ -5207,6 +5235,7 @@ c:pendulum	Noun	ar:بندول	de:Pendel	en:pendulum	es:péndulo	fa:آونگ	fr:p
 c:penetration-test	Noun	ar:اختبار الاختراق	de:Penetrationstest	en:penetration test	es:prueba de penetración	fa:آزمون نفوذ	fr:test d'intrusion	he:בדיקת חדירות	hi:प्रवेश परीक्षण	ja:ペネトレーションテスト	ko:모의 침투 테스트	pt:teste de penetração	ru:тест на проникновение	tr:sızma testi	ur:پیناٹریشن ٹیسٹ	zh:渗透测试
 c:penguin	Noun	ar:بطريق	de:Pinguin	en:penguin	es:pingüino	fa:پنگوئن	fr:pingouin,manchot	he:פינגווין	hi:पेंगुइन	ja:ペンギン	ko:펭귄	pt:pinguim	ru:пингвин	tr:penguen	ur:پینگوئن	zh:企鹅
 c:peninsula	Noun	ar:شبه جزيرة	de:Halbinsel	en:peninsula	es:península	fa:شبه جزیره	fr:péninsule,presqu'île	he:חצי אי	hi:प्रायद्वीप	ja:半島	ko:반도	pt:península	ru:полуостров	tr:yarımada	ur:جزیرہ نما	zh:半岛
+c:peninsula-geo	Noun	ar:شبه جزيرة	de:Halbinsel	en:peninsula	es:península	fa:شبه‌جزیره	fr:péninsule	he:חצי-אי	hi:प्रायद्वीप	ja:半島	ko:반도	pt:península	ru:полуостров	tr:yarımada	ur:جزیرہ نما	zh:半岛
 c:peninsula-landform	Noun	ar:شبه جزيرة	de:Halbinsel	en:peninsula	es:península	fa:شبه جزیره	fr:péninsule,presqu'île	he:חצי אי	hi:प्रायद्वीप	ja:半島	ko:반도	pt:península	ru:полуостров	tr:yarımada	ur:جزیرہ نما	zh:半岛
 c:penny	Noun	ar:بنس	de:Penny	en:penny	es:penique	fa:پنی	fr:penny	he:פני,פנס	hi:पेनी	ja:ペニー	ko:페니,페니화	pt:péni,penny	ru:пенни,пенс	tr:peni	ur:پینی	zh:便士
 c:pentagon	Noun	ar:خماسي,شكل خماسي	de:Fünfeck,Pentagon	en:pentagon	es:pentágono	fa:پنج‌ضلعی	fr:pentagone	he:מחומש	hi:पंचभुज	ja:五角形,ペンタゴン	ko:오각형	pt:pentágono	ru:пятиугольник	tr:beşgen	ur:پنج ضلعی	zh:五边形,五角形
@@ -5375,6 +5404,7 @@ c:plague	Noun	ar:طاعون	de:Pest	en:plague	es:plaga	fa:طاعون	fr:peste	he
 c:plaice	Noun	ar:سمك البلايس	de:Scholle	en:plaice	es:solla	fa:پلایس	fr:plie	he:פלייס	hi:प्लेइस	ja:ヒラメ	ko:넙치	pt:solha-das-pedras	ru:камбала-ёрш	tr:Avrupa pisisi	ur:پلیس مچھلی	zh:鲽鱼
 c:plain	Noun	ar:سهل	de:Ebene	en:plain	es:llanura	fa:دشت,جلگه	fr:plaine	he:מישור	hi:मैदान	ja:平原,平野	ko:평원,평야	pt:planície	ru:равнина	tr:ova	ur:میدان	zh:平原
 c:plain-landform	Noun	ar:سهل	de:Ebene	en:plain,flatland	es:llanura,llano	fa:دشت,جلگه	fr:plaine	he:מישור	hi:मैदान,समतल	ja:平原,平野	ko:평원	pt:planície	ru:равнина	tr:ova	ur:میدان	zh:平原
+c:plains-geo	Noun	ar:سهول	de:Ebene	en:plains	es:llanuras	fa:دشت	fr:plaines	he:מישורים	hi:मैदान	ja:平原	ko:평원	pt:planícies	ru:равнины	tr:ovalar	ur:میدان	zh:平原
 c:plaintiff	Noun	ar:مدعي	de:Kläger	en:plaintiff	es:demandante	fa:شاکی,مدعی	fr:plaignant,demandeur	he:תובע	hi:वादी,शिकायतकर्ता	ja:原告	ko:원고	pt:demandante,autor	ru:истец	tr:davacı	ur:مدعی,دعویدار	zh:原告
 c:plane-geometry	Noun	ar:الهندسة المستوية	de:ebene Geometrie	en:plane geometry	es:geometría plana	fa:هندسه صفحه	fr:géométrie plane	he:גאומטריה מישורית	hi:समतल ज्यामिति	ja:平面幾何	ko:평면 기하	pt:geometria plana	ru:планиметрия	tr:düzlem geometrisi	ur:ہموار ہندسہ	zh:平面几何
 c:planet	Noun	ar:كوكب	de:Planet	en:planet	es:planeta	fa:سیاره	fr:planète	he:כוכב לכת,פלנטה	hi:ग्रह	ja:惑星	ko:행성	pt:planeta	ru:планета	tr:gezegen	ur:سیارہ	zh:行星
@@ -5397,6 +5427,7 @@ c:plat	Noun	ar:مخطط الأرض	de:Parzellierungsplan	en:plat	es:plano de lot
 c:plate	Noun	ar:صحن,طبق	de:Teller	en:plate	es:plato	fa:بشقاب	fr:assiette	he:צלחת	hi:थाली,प्लेट	ja:皿	ko:접시	pt:prato	ru:тарелка	tr:tabak	ur:پلیٹ	zh:盘子
 c:plate-boundary	Noun	ar:حد الصفائح	de:Plattengrenze	en:plate boundary	es:límite de placas	fa:مرز صفحات	fr:limite de plaques	he:גבול לוחות	hi:प्लेट सीमा	ja:プレート境界	ko:판 경계	pt:limite de placas	ru:граница плит	tr:levha sınırı	ur:پلیٹ کی حد	zh:板块边界
 c:plateau	Noun	ar:هضبة	de:Plateau,Hochebene	en:plateau	es:meseta,altiplano	fa:فلات	fr:plateau	he:רמה	hi:पठार	ja:高原,台地	ko:고원	pt:planalto	ru:плато	tr:plato,yayla	ur:سطح مرتفع	zh:高原
+c:plateau-geo	Noun	ar:هضبة جغرافية	de:Hochebene	en:plateau	es:meseta	fa:فلات	fr:plateau géographique	he:רמה	hi:पठार	ja:高原	ko:고원	pt:planalto	ru:плато	tr:plato	ur:سطح مرتفع	zh:高原
 c:plateau-landform	Noun	ar:هضبة	de:Plateau,Hochebene	en:plateau,tableland	es:meseta	fa:فلات	fr:plateau	he:רמה	hi:पठार	ja:高原,台地	ko:고원	pt:planalto	ru:плато	tr:plato,yayla	ur:سطح مرتفع	zh:高原
 c:platelet	Noun	ar:صفيحة دموية	de:Blutplättchen	en:platelet	es:plaqueta	fa:پلاکت	fr:plaquette	he:טסית	hi:प्लेटलेट	ja:血小板	ko:혈소판	pt:plaqueta	ru:тромбоцит	tr:trombosit	ur:پلیٹلٹ	zh:血小板
 c:platinum	Noun	ar:بلاتين	de:Platin	en:platinum	es:platino	fa:پلاتین	fr:platine	he:פלטינה	hi:प्लैटिनम	ja:プラチナ,白金	ko:백금,플래티넘	pt:platina	ru:платина	tr:platin	ur:پلاٹینم	zh:铂,白金
@@ -5672,6 +5703,7 @@ c:protractor	Noun	ar:منقلة	de:Winkelmesser	en:protractor	es:transportador	f
 c:provenance	Noun	ar:مصدر العمل الفني	de:Provenienz	en:provenance	es:procedencia	fa:منشا اثر	fr:provenance	he:פרובנאנס	hi:उद्गम	ja:来歴	ko:출처	pt:proveniência	ru:провенанс	tr:köken	ur:ماخذ	zh:来源
 c:proverb	Noun	ar:مثل,حكمة	de:Sprichwort	en:proverb	es:proverbio,refrán	fa:ضرب المثل	fr:proverbe	he:פתגם	hi:कहावत,लोकोक्ति	ja:ことわざ,諺	ko:속담	pt:provérbio	ru:пословица	tr:atasözü	ur:کہاوت,ضرب المثل	zh:谚语
 c:province	Noun	ar:مقاطعة,إقليم	de:Provinz	en:province	es:provincia	fa:استان	fr:province	he:מחוז	hi:प्रांत	ja:州,省	ko:도,성	pt:província	ru:провинция	tr:il	ur:صوبہ	zh:省
+c:province-admin	Noun	ar:مقاطعة	de:Provinz	en:province	es:provincia	fa:استان	fr:province	he:מחוז	hi:प्रांत	ja:県	ko:주	pt:província	ru:провинция	tr:il	ur:صوبہ	zh:省
 c:proxima-centauri	Noun	ar:بروكسيما قنطورس	de:Proxima Centauri	en:Proxima Centauri	es:Próxima Centauri	fa:پروکسیما قنطورس	fr:Proxima du Centaure	he:פרוקסימה קנטאורי	hi:प्रॉक्सिमा सेंटॉरी	ja:プロキシマ・ケンタウリ	ko:프록시마 센타우리	pt:Próxima Centauri	ru:Проксима Центавра	tr:Proksima Centauri	ur:پروکسیما سنٹوری	zh:比邻星
 c:proxy-server	Noun	ar:خادم وكيل	de:Proxy-Server	en:proxy server	es:servidor proxy	fa:سرور پراکسی	fr:serveur proxy	he:שרת פרוקסי	hi:प्रॉक्सी सर्वर	ja:プロキシサーバー	ko:프록시 서버	pt:servidor proxy	ru:прокси-сервер	tr:proxy sunucusu	ur:پراکسی سرور	zh:代理服务器
 c:pruning-saw	Noun	ar:منشار تقليم	de:Astsäge	en:pruning saw	es:sierra de podar	fa:اره شاخه‌زن	fr:scie d'élagage	he:מסור גיזום	hi:छंटाई आरी	ja:剪定のこぎり	ko:전정 톱	pt:serrote de poda	ru:садовая пила	tr:budama testeresi	ur:تراش کی آری	zh:修枝锯
@@ -5942,6 +5974,7 @@ c:refugee	Noun	ar:لاجئ	de:Flüchtling	en:refugee	es:refugiado	fa:پناهن�
 c:regeneration-dev	Noun	ar:التجديد النسيجي	de:Geweberegeneration	en:tissue regeneration	es:regeneración tisular	fa:بازسازی بافت	fr:régénération tissulaire	he:התחדשות רקמה	hi:ऊतक पुनर्जनन	ja:組織再生	ko:조직 재생	pt:regeneração tecidual	ru:регенерация тканей	tr:doku rejenerasyonu	ur:بافت تجدید	zh:组织再生
 c:regiment	Noun	ar:فوج	de:Regiment	en:regiment	es:regimiento	fa:هنگ	fr:régiment	he:רגימנט	hi:रेजिमेंट	ja:連隊	ko:연대	pt:regimento	ru:полк	tr:alay	ur:رجمنٹ	zh:团
 c:region	Noun	ar:إقليم	de:Region	en:region	es:región	fa:منطقه	fr:région	he:אזור,חבל	hi:प्रदेश,क्षेत्र	ja:地方	ko:지방	pt:região	ru:регион	tr:bölge	ur:خطہ,علاقہ	zh:地区
+c:region-geo	Noun	ar:منطقة جغرافية	de:geografische Region	en:geographic region	es:región geográfica	fa:منطقه جغرافیایی	fr:région géographique	he:אזור גאוגרפי	hi:भौगोलिक क्षेत्र	ja:地理的地域	ko:지리적 지역	pt:região geográfica	ru:географический регион	tr:coğrafi bölge	ur:جغرافیائی علاقہ	zh:地理区域
 c:register	Noun	ar:مستوى اللغة	de:Register	en:register	es:registro	fa:سبک گفتار	fr:registre	he:רגיסטר	hi:भाषाशैली	ja:言語レジスター	ko:언어 변이	pt:registro	ru:регистр	tr:dil tonu	ur:زبانی سطح	zh:语域
 c:regression	Noun	ar:التراجع	de:Regression	en:regression	es:regresión	fa:پسرفت	fr:régression	he:רגרסיה	hi:प्रतिगमन	ja:退行	ko:퇴행	pt:regressão	ru:регрессия	tr:gerileme	ur:پسپائی	zh:退行
 c:regression-analysis	Noun	ar:تحليل الانحدار	de:Regressionsanalyse	en:regression analysis	es:análisis de regresión	fa:تحلیل رگرسیون	fr:analyse de régression	he:ניתוח רגרסיה	hi:प्रतीपगमन विश्लेषण	ja:回帰分析	ko:회귀 분석	pt:análise de regressão	ru:регрессионный анализ	tr:regresyon analizi	ur:انحدار تجزیہ	zh:回归分析
@@ -6060,6 +6093,7 @@ c:riparian	Adjective	ar:بيئة ضفاف الأنهار	de:riparian	en:riparian
 c:rites-of-passage	Noun	ar:طقوس العبور	de:Übergangsriten	en:rites of passage	es:ritos de paso	fa:آیین گذار	fr:rites de passage	he:טקסי מעבר	hi:संस्कार	ja:通過儀礼	ko:통과 의례	pt:ritos de passagem	ru:обряды перехода	tr:geçiş ritüelleri	ur:گذر کی رسومات	zh:成年礼
 c:ritual	Noun	ar:طقس,شعيرة	de:Ritual,Ritus	en:ritual,rite	es:ritual,rito	fa:آیین,مراسم	fr:rituel,rite	he:טקס,ריטואל	hi:अनुष्ठान,रीति	ja:儀式,儀礼	ko:의식,의례	pt:ritual,rito	ru:ритуал,обряд	tr:ritüel,ayin	ur:رسم,عبادی رسم	zh:仪式,典礼
 c:river	Noun	ar:نهر	de:Fluss	en:river	es:río	fa:رودخانه	fr:fleuve,rivière	he:נהר	hi:नदी	ja:川,河	ko:강	pt:rio	ru:река	tr:nehir,ırmak	ur:دریا,ندی	zh:河,江
+c:river-basin	Noun	ar:حوض نهري	de:Flussbecken	en:river basin	es:cuenca fluvial	fa:حوضه رودخانه	fr:bassin fluvial	he:אגן ניקוז	hi:नदी बेसिन	ja:河川流域	ko:하천 유역	pt:bacia fluvial	ru:речной бассейн	tr:nehir havzası	ur:دریائی طاس	zh:河流流域
 c:rivet-gun	Noun	ar:مسدس برشام	de:Nietzange	en:rivet gun	es:remachadora	fa:تفنگ پرچ	fr:riveteuse	he:אקדח מסמרות	hi:रिवेट गन	ja:リベットガン	ko:리벳건	pt:rebitadeira	ru:заклёпочник	tr:perçin tabancası	ur:ریوٹ گن	zh:铆钉枪
 c:riyadh	Noun	ar:الرياض	de:Riad	en:Riyadh	es:Riad	fa:ریاض	fr:Riyad	he:ריאד	hi:रियाद	ja:リヤド	ko:리야드	pt:Riade	ru:Эр-Рияд	tr:Riyad	ur:ریاض	zh:利雅得
 c:riyal	Noun	ar:ريال	de:Riyal	en:riyal,rial	es:riyal,rial	fa:ریال	fr:riyal,rial	he:ריאל	hi:रियाल	ja:リヤル	ko:리얄	pt:riyal	ru:риал,риял	tr:riyal	ur:ریال	zh:里亚尔
@@ -6823,6 +6857,7 @@ c:starling	Noun	ar:زرزور	de:Star	en:starling	es:estornino	fa:سار	fr:éto
 c:start	Verb	ar:بدأ	de:beginnen,anfangen,starten	en:start,begin	es:empezar,comenzar	fa:شروع کردن,آغاز کردن	fr:commencer	he:להתחיל	hi:शुरू करना	ja:始める	ko:시작하다	pt:começar,iniciar	ru:начинать,начать	tr:başlamak	ur:شروع کرنا	zh:开始
 c:state	Noun	ar:ولاية	de:Bundesland,Staat	en:state	es:estado	fa:ایالت	fr:état	he:מדינה	hi:राज्य	ja:州	ko:주	pt:estado	ru:штат	tr:eyalet	ur:ریاست	zh:州
 c:state-of-nature	Noun	ar:حالة الطبيعة	de:Naturzustand	en:state of nature	es:estado de naturaleza	fa:وضع طبیعی	fr:état de nature	he:מצב הטבע	hi:प्रकृति की अवस्था	ja:自然状態	ko:자연 상태	pt:estado de natureza	ru:естественное состояние	tr:doğa durumu	ur:فطری حالت	zh:自然状态
+c:state-political	Noun	ar:ولاية سياسية	de:Bundesstaat	en:political state	es:estado político	fa:ایالت	fr:état politique	he:מדינה פוליטית	hi:राजनीतिक राज्य	ja:政治的州	ko:주 정치	pt:estado político	ru:штат	tr:eyalet	ur:ریاست	zh:政治州
 c:station	Noun	ar:محطة	de:Station,Bahnhof	en:station	es:estación	fa:ایستگاه	fr:station,gare	he:תחנה	hi:स्टेशन	ja:駅,停車場	ko:역,정거장	pt:estação	ru:станция,вокзал	tr:istasyon,durak	ur:اسٹیشن	zh:站,车站
 c:stationary-front	Noun	ar:جبهة ثابتة	de:stationäre Front	en:stationary front	es:frente estacionario	fa:جبهه ثابت	fr:front stationnaire	he:חזית נייחת	hi:स्थिर वाताग्र	ja:停滞前線	ko:정체 전선	pt:frente estacionária	ru:стационарный фронт	tr:durağan cephe	ur:ساکن محاذ	zh:准静止锋
 c:statistical-significance	Noun	ar:الدلالة الإحصائية	de:statistische Signifikanz	en:statistical significance	es:significancia estadística	fa:معناداری آماری	fr:signification statistique	he:מובהקות סטטיסטית	hi:सांख्यिकीय महत्व	ja:統計的有意性	ko:통계적 유의성	pt:significância estatística	ru:статистическая значимость	tr:istatistiksel anlamlılık	ur:اعداد و شمار کی اہمیت	zh:统计显著性
@@ -6849,6 +6884,7 @@ c:stem-cell	Noun	ar:خلية جذعية	de:Stammzelle	en:stem cell	es:célula ma
 c:stem-cell-bio	Noun	ar:خلية جذعية	de:Stammzelle	en:stem cell	es:célula madre	fa:سلول بنیادی	fr:cellule souche	he:תא גזע	hi:स्टेम कोशिका	ja:幹細胞	ko:줄기세포	pt:célula-tronco	ru:стволовая клетка	tr:kök hücre	ur:بنیادی خلیہ	zh:干细胞
 c:stepladder	Noun	ar:سلم قابل للطي,سلم منزلي	de:Stehleiter,Klappleiter	en:stepladder	es:escalera de tijera	fa:نردبان تاشو	fr:escabeau	he:סולם מתקפל	hi:सीढ़ी,फोल्डिंग सीढ़ी	ja:脚立	ko:접이식 사다리	pt:escada dobrável	ru:стремянка	tr:katlanır merdiven	ur:تہہ ہونے والی سیڑھی	zh:折叠梯
 c:steppe	Noun	ar:سهب	de:Steppe	en:steppe	es:estepa	fa:استپ	fr:steppe	he:ערבת עשב	hi:स्तेपी,सप्तमी घास मैदान	ja:ステップ,草原	ko:스텝,초원	pt:estepe	ru:степь	tr:step,bozkır	ur:میدانی گھاس زمین	zh:草原,大草原
+c:steppe-geo	Noun	ar:سهوب	de:Steppe	en:steppe	es:estepa	fa:استپ	fr:steppe	he:ערבה	hi:स्टेपी	ja:ステップ	ko:스텝	pt:estepe	ru:степь	tr:step	ur:گھاس کا میدان	zh:草原
 c:stepstool	Noun	ar:كرسي درج,سلم قصير	de:Trittleiter,Tritthocker	en:stepstool,step stool	es:taburete escalera	fa:چهارپایه پلکانی	fr:marchepied	he:שרפרף מדרגות	hi:स्टेप स्टूल	ja:踏み台	ko:발판,스텝 스툴	pt:banqueta escada	ru:стремянка-табурет	tr:basamaklı tabure	ur:سیڑھی والا اسٹول	zh:踏脚凳
 c:sterling	Noun	ar:إسترليني	de:Sterling,Pfund Sterling	en:sterling	es:esterlina	fa:استرلینگ	fr:sterling	he:שטרלינג,לירה שטרלינג	hi:स्टर्लिंग	ja:スターリング	ko:스털링	pt:esterlino	ru:стерлинг	tr:sterlin	ur:سٹرلنگ	zh:英镑,斯特林
 c:stethoscope	Noun	ar:سماعة طبية	de:Stethoskop	en:stethoscope	es:estetoscopio	fa:گوشی پزشکی	fr:stéthoscope	he:סטטוסקופ	hi:स्टेथोस्कोप	ja:聴診器	ko:청진기	pt:estetoscópio	ru:стетоскоп	tr:stetoskop	ur:سٹیتھواسکوپ	zh:听诊器
@@ -6885,6 +6921,7 @@ c:storyboard	Noun	ar:لوحة قصصية	de:Storyboard	en:storyboard	es:guion gr
 c:stove	Noun	ar:موقد,بوتاجاز	de:Herd,Kochfeld	en:stove,cooker	es:estufa,cocina	fa:اجاق	fr:cuisinière	he:כיריים	hi:चूल्हा,स्टोव	ja:コンロ	ko:가스레인지,스토브	pt:fogão	ru:плита	tr:ocak	ur:چولہا	zh:炉灶
 c:straight-angle	Noun	ar:زاوية مستقيمة	de:gestreckter Winkel	en:straight angle	es:ángulo llano	fa:زاویه نیم‌صفحه	fr:angle plat	he:זווית שטוחה	hi:ऋजु कोण	ja:平角	ko:평각	pt:ângulo raso	ru:развёрнутый угол	tr:doğru açı	ur:سیدھا زاویہ	zh:平角
 c:strait	Noun	ar:مضيق	de:Meerenge,Straße	en:strait	es:estrecho	fa:تنگه	fr:détroit	he:מצר	hi:जलसंधि	ja:海峡	ko:해협	pt:estreito	ru:пролив	tr:boğaz	ur:آبنائے	zh:海峡
+c:strait-geo	Noun	ar:مضيق بحري	de:Meerenge	en:strait	es:estrecho	fa:تنگه	fr:détroit	he:מיצר	hi:जलसंधि	ja:海峡	ko:해협	pt:estreito	ru:пролив	tr:boğaz	ur:آبنائے	zh:海峡
 c:strait-of-gibraltar	Noun	ar:مضيق جبل طارق	de:Straße von Gibraltar	en:Strait of Gibraltar	es:Estrecho de Gibraltar	fa:تنگه جبل‌الطارق	fr:Détroit de Gibraltar	he:מיצר גיברלטר	hi:जिब्राल्टर जलडमरूमध्य	ja:ジブラルタル海峡	ko:지브롤터 해협	pt:Estreito de Gibraltar	ru:Гибралтарский пролив	tr:Cebelitarık Boğazı	ur:آبنائے جبل الطارق	zh:直布罗陀海峡
 c:stratification	Noun	ar:تطبق اجتماعي	de:soziale Schichtung	en:stratification	es:estratificación	fa:طبقه‌بندی اجتماعی	fr:stratification	he:שכבתיות	hi:स्तरीकरण	ja:社会的階層化	ko:사회 계층화	pt:estratificação	ru:стратификация	tr:tabakalaşma	ur:سماجی طبقاتی نظام	zh:社会分层
 c:stratopause	Noun	ar:الستراتوبوز	de:Stratopause	en:stratopause	es:estratopausa	fa:استراتوپوز	fr:stratopause	he:סטרטופאוז	hi:स्ट्रैटोपॉज	ja:成層圏界面	ko:성층권계면	pt:estratopausa	ru:стратопауза	tr:stratopoz	ur:اسٹراٹوپاز	zh:平流层顶
@@ -7194,6 +7231,7 @@ c:terrace	Noun	ar:تراس,شرفة مكشوفة	de:Terrasse	en:terrace	es:terra
 c:terracotta	Noun	ar:تيراكوتا	de:Terrakotta	en:terracotta	es:terracota	fa:ترراکوتا	fr:terre cuite	he:טראקוטה	hi:टेराकोटा	ja:テラコッタ	ko:테라코타	pt:terracota	ru:терракота	tr:terrakota	ur:ٹیرا کوٹا	zh:陶土
 c:terrapin	Noun	ar:سلحفاة المياه العذبة	de:Sumpfschildkröte	en:terrapin	es:galápago	fa:لاک پشت آب شیرین	fr:tortue d'eau douce	he:צב מים	hi:टेरापिन	ja:テラピン	ko:테라핀	pt:tartaruga de água doce	ru:пресноводная черепаха	tr:tatlısu kaplumbağası	ur:تازہ پانی کا کچھوا	zh:淡水龟
 c:territory	Noun	ar:إقليم,منطقة	de:Territorium,Gebiet	en:territory	es:territorio	fa:قلمرو,سرزمین	fr:territoire	he:שטח,טריטוריה	hi:क्षेत्र,प्रदेश	ja:領土,テリトリー	ko:영토	pt:território	ru:территория	tr:bölge,arazi	ur:علاقہ,سرزمین	zh:领土,地域
+c:territory-geo	Noun	ar:إقليم إداري	de:Gebiet	en:territory	es:territorio	fa:قلمرو	fr:territoire	he:טריטוריה	hi:क्षेत्र इलाका	ja:領土	ko:영토	pt:território	ru:территория	tr:bölge	ur:علاقہ	zh:领土
 c:terror	Noun	ar:رعب	de:Schrecken	en:terror	es:terror	fa:رعب	fr:terreur	he:אימה	hi:आतंक	ja:恐怖	ko:공포	pt:terror	ru:ужас	tr:dehşet	ur:دہشت	zh:恐怖
 c:terrycloth	Noun	ar:القماش الحلقي	de:Frottee	en:terrycloth	es:rizo	fa:حوله ای	fr:éponge	he:מגבת	hi:टेरी कपड़ा	ja:タオル地	ko:테리직	pt:atoalhado	ru:махровая ткань	tr:havlu kumaşı	ur:ٹیری کپڑا	zh:毛巾布
 c:test	Noun	ar:اختبار,فحص	de:Test	en:test	es:prueba,test	fa:آزمون,تست	fr:test,épreuve	he:מבחן,בדיקה	hi:परीक्षण,टेस्ट	ja:テスト,試験	ko:테스트,시험	pt:teste,prova	ru:тест,проверка	tr:test,deneme	ur:ٹیسٹ,جانچ	zh:测验,测试
@@ -7495,6 +7533,7 @@ c:triangle	Noun	ar:مثلث	de:Dreieck	en:triangle	es:triángulo	fa:مثلث	fr:
 c:triangle-shape	Noun	ar:مثلث	de:Dreieck	en:triangle	es:triángulo	fa:مثلث	fr:triangle	he:משולש	hi:त्रिभुज,त्रिकोण	ja:三角形,三角	ko:삼각형	pt:triângulo	ru:треугольник	tr:üçgen	ur:مثلث	zh:三角形,三角
 c:triathlon	Noun	ar:الثلاثي الرياضي	de:Triathlon	en:triathlon	es:triatlón	fa:تریاتلون	fr:triathlon	he:טריאתלון	hi:ट्रायथलन	ja:トライアスロン	ko:철인 3종 경기	pt:triatlo	ru:триатлон	tr:triatlon	ur:ٹرائی ایتھلون	zh:铁人三项
 c:tribe	Noun	ar:قبيلة	de:Stamm	en:tribe	es:tribu	fa:قبیله,ایل	fr:tribu	he:שבט	hi:जनजाति,कबीला	ja:部族	ko:부족,종족	pt:tribo	ru:племя	tr:kabile,boy	ur:قبیلہ	zh:部落,族
+c:tributary	Noun	ar:رافد نهري	de:Nebenfluss	en:tributary	es:afluente	fa:شاخه رود	fr:affluent	he:יובל	hi:सहायक नदी	ja:支流	ko:지류	pt:afluente	ru:приток	tr:kol ırmak	ur:معاون دریا	zh:支流
 c:triforium	Noun	ar:الغاليري الثلاثي	de:Triforium	en:triforium	es:triforio	fa:تریفوریوم	fr:triforium	he:טריפוריום	hi:ट्रिफोरियम	ja:トリフォリアム	ko:트리포리움	pt:trifório	ru:трифорий	tr:triforium	ur:تریفوریم	zh:三拱廊
 c:triglyph	Noun	ar:حجر ثلاثي الأخاديد	de:Triglyphe	en:triglyph	es:triglifo	fa:تری‌گلیف	fr:triglyphe	he:טריגליף	hi:ट्राइग्लिफ	ja:トリグリフ	ko:트리글리프	pt:tríglifo	ru:триглиф	tr:triglyf	ur:تین نالیوں والا پتھر	zh:三陇板
 c:trigonometry	Noun	ar:علم المثلثات	de:Trigonometrie	en:trigonometry	es:trigonometría	fa:مثلثات	fr:trigonométrie	he:טריגונומטריה	hi:त्रिकोणमिति	ja:三角法	ko:삼각법	pt:trigonometria	ru:тригонометрия	tr:trigonometri	ur:مثلثیات	zh:三角学
@@ -7823,6 +7862,7 @@ c:waterfall-landform	Noun	ar:شلال	de:Wasserfall	en:waterfall	es:cascada,cata
 c:watering-can	Noun	ar:بريق سقي	de:Gießkanne	en:watering can	es:regadera	fa:آبپاش	fr:arrosoir	he:כלי השקייה	hi:फव्वारा	ja:じょうろ	ko:물조리개	pt:regador	ru:лейка	tr:sulama kabı	ur:پانی کا بڑکا	zh:浇水壶
 c:watermelon	Noun	ar:بطيخ,دلاح	de:Wassermelone	en:watermelon	es:sandía	fa:هندوانه	fr:pastèque	he:אבטיח	hi:तरबूज	ja:スイカ	ko:수박	pt:melancia	ru:арбуз	tr:karpuz	ur:تربوز	zh:西瓜
 c:watershed	Noun	ar:حوض التصريف	de:Einzugsgebiet	en:watershed	es:cuenca hidrográfica	fa:حوضه آبریز	fr:bassin versant	he:אגן ניקוז	hi:जलसंभर	ja:流域	ko:유역	pt:bacia hidrográfica	ru:водораздел	tr:havza	ur:آبی حوض	zh:流域
+c:watershed-geo	Noun	ar:مستجمع مياه	de:Wasserscheide	en:watershed	es:cuenca hidrográfica	fa:حوضه آبریز	fr:bassin versant	he:פרשת מים	hi:जलप्रवाह क्षेत्र	ja:分水界	ko:분수계	pt:divisor de águas	ru:водораздел	tr:su havzası	ur:آبی تقسیم	zh:流域
 c:waterspout	Noun	ar:عمود مائي	de:Wasserhose	en:waterspout	es:tromba marina	fa:گردباد دریایی	fr:trombe marine	he:קרנית מים	hi:जलस्तंभ	ja:水上竜巻	ko:수상 회오리	pt:tromba-d'água	ru:смерч над водой	tr:hortum	ur:پانی کا بگولا	zh:水龙卷
 c:watt	Noun	ar:واط	de:Watt	en:watt	es:vatio,watt	fa:وات	fr:watt	he:ואט	hi:वाट	ja:ワット	ko:와트	pt:watt	ru:ватт	tr:watt,vat	ur:واٹ	zh:瓦特,瓦
 c:watt-unit	Noun	ar:واط	de:Watt	en:watt	es:vatio	fa:وات	fr:watt	he:וואט	hi:वाट	ja:ワット	ko:와트	pt:watt	ru:ватт	tr:watt	ur:واٹ	zh:瓦特
