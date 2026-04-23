@@ -469,22 +469,35 @@ fn read_sky_links_raw(
         let Some(&src_idx) = path_to_idx.get(&source_path) else {
             continue;
         };
-        let source = nodes_mut[src_idx].id.clone();
 
         // Outgoing count bumped here (by source).
         nodes_mut[src_idx].outgoing_count += 1;
 
-        // Incoming count: only bump if the target is a real note in
-        // the universe (name match). Otherwise it's an unresolved
-        // wikilink — still rendered as an edge to a ghost, but doesn't
-        // inflate link_count on any real node.
-        if let Some(&tgt_idx) = name_to_idx.get(&target_name) {
+        // Target resolution: if the target name matches a real note,
+        // reuse that node's pre-lowercased `id` (stored at insert time
+        // by the Step 4 trigger). Avoids a per-row to_lowercase() call
+        // — saves the bulk of the scan's allocation cost since most
+        // edges resolve. For unresolved wikilinks (pointing to notes
+        // that don't exist), fall back to an in-place ASCII downcase
+        // if possible, otherwise pay the unicode lowercase.
+        let target = if let Some(&tgt_idx) = name_to_idx.get(&target_name) {
             nodes_mut[tgt_idx].link_count += 1;
-        }
+            nodes_mut[tgt_idx].id.clone()
+        } else if target_name.is_ascii() {
+            let mut s = target_name;
+            s.make_ascii_lowercase();
+            s
+        } else {
+            target_name.to_lowercase()
+        };
 
-        // Lowercase the target name here (cheap — done inline in the
-        // Rust loop instead of a per-row LOWER() SQL call).
-        let target = target_name.to_lowercase();
+        // Source id clone: same pattern — use the pre-lowercased id.
+        // One String alloc per edge (clone of an existing ~32-byte
+        // String). The ~232k edges on the target universe = ~7MB of
+        // cloning, vs. ~7MB + 232k unicode-aware lowercase calls with
+        // the naive loop.
+        let source = nodes_mut[src_idx].id.clone();
+
         out.push(SkyLinkOut {
             source,
             target,
