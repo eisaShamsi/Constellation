@@ -815,7 +815,7 @@ pub fn create_folder(app: tauri::AppHandle, parent_path: String, folder_name: St
 
 /// Rename a file or folder.
 #[tauri::command]
-pub fn rename_item(app: tauri::AppHandle, old_path: String, new_path: String) -> Result<(), String> {
+pub fn rename_item(app: tauri::AppHandle, old_path: String, new_path: String) -> Result<String, String> {
     validate_path_in_any_library(&app, &old_path)?;
     let old = Path::new(&old_path);
     if !old.exists() {
@@ -853,8 +853,11 @@ pub fn rename_item(app: tauri::AppHandle, old_path: String, new_path: String) ->
             }
         }
 
-        // The file stays at old_path — canonical filename doesn't change
-        Ok(())
+        // The file stays at old_path — canonical filename doesn't change.
+        // Return the effective path so the frontend knows not to rewrite
+        // tab.path to a non-existent location (would later create a phantom
+        // file on the next write_note call — BUG-001 root cause).
+        Ok(old_path)
     } else {
         // Legacy behavior: actually rename the file/folder
         validate_path_in_any_library(&app, &new_path)?;
@@ -863,7 +866,8 @@ pub fn rename_item(app: tauri::AppHandle, old_path: String, new_path: String) ->
             return Err("An item with this name already exists.".to_string());
         }
         fs::rename(old, new_p)
-            .map_err(|e| format!("Failed to rename: {}", e))
+            .map_err(|e| format!("Failed to rename: {}", e))?;
+        Ok(new_path)
     }
 }
 

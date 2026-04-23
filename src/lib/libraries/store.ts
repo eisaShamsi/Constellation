@@ -1494,21 +1494,31 @@ export async function createFolder(parentPath: string, folderName: string): Prom
 	return newPath;
 }
 
-export async function renameItem(oldPath: string, newPath: string): Promise<void> {
-	await invoke('rename_item', { oldPath, newPath });
-	// Update any open tabs that reference the old path
+export async function renameItem(oldPath: string, newPath: string): Promise<string> {
+	// Rust returns the EFFECTIVE path. For canonical notes, rename updates
+	// the frontmatter title in-place and the file stays at oldPath — so the
+	// returned path equals oldPath even though we requested newPath. Trusting
+	// the requested newPath would point the tab at a non-existent file and
+	// the next write_note call would create a phantom duplicate (BUG-001).
+	const effectivePath = await invoke<string>('rename_item', { oldPath, newPath });
+	const derivedName =
+		newPath.split(/[\\/]/).pop()?.replace(/\.md$/, '') ?? '';
+	// Update any open tabs that reference the old path.
 	openTabs.update(tabs => tabs.map(t => {
 		if (t.path === oldPath) {
-			const newName = newPath.split(/[\\/]/).pop()?.replace('.md', '') ?? t.name;
-			return { ...t, path: newPath, name: newName };
+			// Path comes from Rust (may equal oldPath for canonical files).
+			// Display name follows the user's intent — for canonical files
+			// the title changed even though the filename didn't.
+			return { ...t, path: effectivePath, name: derivedName || t.name };
 		}
 		// If a folder was renamed, update paths that start with the old folder path
 		if (t.path.startsWith(oldPath + '/') || t.path.startsWith(oldPath + '\\')) {
 			const relative = t.path.substring(oldPath.length);
-			return { ...t, path: newPath + relative };
+			return { ...t, path: effectivePath + relative };
 		}
 		return t;
 	}));
+	return effectivePath;
 }
 
 export async function moveItem(sourcePath: string, targetFolder: string): Promise<string> {
