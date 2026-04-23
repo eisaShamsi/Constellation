@@ -281,6 +281,8 @@ c:amaranth-grain	Noun	ar:قطيفة	de:Amaranth	en:amaranth	es:amaranto	fa:تا�
 c:amaterasu	Noun	ar:أماتيراسو	de:Amaterasu	en:Amaterasu	es:Amaterasu	fa:آماتراسو	fr:Amaterasu	he:אמטרסו	hi:अमातेरासु	ja:天照	ko:아마테라스	pt:Amaterasu	ru:Аматэрасу	tr:Amaterasu	ur:امیٹراسو	zh:天照大神
 c:amazon	Noun	ar:الأمازون,نهر الأمازون	de:Amazonas	en:Amazon,Amazon River	es:Amazonas,río Amazonas	fa:آمازون,رود آمازون	fr:Amazone	he:אמזונס,נהר האמזונס	hi:अमेज़न,अमेज़न नदी	ja:アマゾン川	ko:아마존강	pt:Amazonas,rio Amazonas	ru:Амазонка	tr:Amazon,Amazon Nehri	ur:دریائے ایمیزون,ایمیزون	zh:亚马逊河
 c:amazon-brand	ProperNoun	ar:أمازون	de:Amazon	en:Amazon	es:Amazon	fa:آمازون	fr:Amazon	he:אמזון	hi:अमेज़न	ja:アマゾン	ko:아마존	pt:Amazon	ru:Amazon	tr:Amazon	ur:ایمازون	zh:亚马逊
+c:amazon-music	ProperNoun	ar:أمازون ميوزك	de:Amazon Music	en:Amazon Music	es:Amazon Music	fa:آمازون موزیک	fr:Amazon Music	he:אמזון מיוזיק	hi:अमेज़न म्यूजिक	ja:Amazon Music	ko:아마존 뮤직	pt:Amazon Music	ru:Amazon Music	tr:Amazon Music	ur:ایمازون میوزک	zh:亚马逊音乐
+c:amazon-prime	ProperNoun	ar:أمازون برايم	de:Amazon Prime	en:Amazon Prime	es:Amazon Prime	fa:آمازون پرایم	fr:Amazon Prime	he:אמזון פריים	hi:अमेज़न प्राइम	ja:アマゾンプライム	ko:아마존 프라임	pt:Amazon Prime	ru:Amazon Prime	tr:Amazon Prime	ur:ایمازون پرائم	zh:亚马逊Prime
 c:amazon-river	Noun	ar:نهر الأمازون	de:Amazonas	en:Amazon river	es:río Amazonas	fa:رود آمازون	fr:Amazone	he:נהר האמזונס	hi:अमेज़न नदी	ja:アマゾン川	ko:아마존강	pt:rio Amazonas	ru:река Амазонка	tr:Amazon Nehri	ur:دریائے ایمازون	zh:亚马逊河
 c:amber	Noun	ar:كهرمان,عنبر	de:Bernstein	en:amber	es:ámbar	fa:کهربا	fr:ambre	he:ענבר	hi:अंबर,कहरुआ	ja:琥珀	ko:호박,앰버	pt:âmbar	ru:янтарь	tr:kehribar,amber	ur:کہربا,عنبر	zh:琥珀
 c:amber-color	Noun	ar:كهرماني	de:Bernsteinfarben	en:amber	es:ámbar	fa:کهربایی	fr:ambre	he:ענברי	hi:अम्बर रंग	ja:琥珀色,アンバー	ko:호박색	pt:âmbar	ru:янтарный	tr:kehribar rengi	ur:کہربائی	zh:琥珀色
@@ -503,7 +505,10 @@ c:appeal-legal	Noun	ar:استئناف قضائي	de:Rechtsmittel	en:legal appeal
 c:appendix	Noun	ar:الزائدة الدودية	de:Blinddarm	en:appendix	es:apéndice	fa:آپاندیس	fr:appendice	he:תוספתן	hi:परिशिष्ट	ja:虫垂	ko:충수	pt:apêndice	ru:аппендикс	tr:apandis	ur:اپینڈکس	zh:阑尾
 c:apple	Noun	ar:تفاحة	de:Apfel	en:apple	es:manzana	fa:سیب	fr:pomme	he:תפוח	hi:सेब	ja:リンゴ,林檎	ko:사과	pt:maçã	ru:яблоко	tr:elma	ur:سیب	zh:苹果
 c:apple-brand	ProperNoun	ar:آبل	de:Apple	en:Apple	es:Apple	fa:اپل	fr:Apple	he:אפל	hi:एप्पल	ja:アップル	ko:애플	pt:Apple	ru:Apple	tr:Apple	ur:ایپل	zh:苹果
+c:apple-music	ProperNoun	ar:آبل ميوزك	de:Apple Music	en:Apple Music	es:Apple Music	fa:اپل موزیک	fr:Apple Music	he:אפל מיוזיק	hi:एप्पल म्यूजिक	ja:Apple Music	ko:애플 뮤직	pt:Apple Music	ru:Apple Music	tr:Apple Music	ur:ایپل میوزک	zh:苹果音乐
 c:apple-tree	Noun	ar:شجرة التفاح	de:Apfelbaum	en:apple tree	es:manzano	fa:درخت سیب	fr:pommier	he:עץ תפוח	hi:सेब का पेड़	ja:リンゴの木	ko:사과나무	pt:macieira	ru:яблоня	tr:elma ağacı	ur:سیب کا درخت	zh:苹果树
+c:apple-tv	ProperNoun	ar:آبل تي في	de:Apple TV	en:Apple TV	es:Apple TV	fa:اپل تی‌وی	fr:Apple TV	he:אפל טי.וי	hi:एप्पल टीवी	ja:Apple TV	ko:애플 TV	pt:Apple TV	ru:Apple TV	tr:Apple TV	ur:ایپل ٹی وی	zh:苹果TV
+c:apple-tv-device	ProperNoun	ar:آبل تي في جهاز	de:Apple TV Gerät	en:Apple TV device	es:dispositivo Apple TV	fa:دستگاه اپل تی‌وی	fr:appareil Apple TV	he:מכשיר Apple TV	hi:एप्पल टीवी डिवाइस	ja:Apple TVデバイス	ko:애플 TV 기기	pt:dispositivo Apple TV	ru:Apple TV устройство	tr:Apple TV cihazı	ur:ایپل ٹی وی ڈیوائس	zh:苹果电视设备
 c:apple-var	Noun	ar:تفاح فاكهة	de:Apfel Frucht	en:apple fruit	es:manzana	fa:سیب میوه	fr:pomme fruit	he:תפוח פרי	hi:सेब फल	ja:リンゴ果実	ko:사과 과일	pt:maçã	ru:яблоко плод	tr:elma meyve	ur:سیب پھل	zh:苹果果
 c:applebee-brand	ProperNoun	ar:أبلبيز	de:Applebee's	en:Applebee's	es:Applebee's	fa:اپل‌بیز	fr:Applebee's	he:אפלביז	hi:एप्पलबीज़	ja:アップルビーズ	ko:애플비스	pt:Applebee's	ru:Applebee's	tr:Applebee's	ur:ایپل بیز	zh:苹果蜂
 c:application	Noun	ar:تطبيق	de:Anwendung,App	en:application,app	es:aplicación,app	fa:برنامه,اپلیکیشن	fr:application,appli	he:יישום,אפליקציה	hi:एप्लिकेशन,ऐप	ja:アプリケーション,アプリ	ko:애플리케이션,앱	pt:aplicação,aplicativo,app	ru:приложение	tr:uygulama	ur:ایپلی کیشن,ایپ	zh:应用程序,应用
@@ -701,6 +706,7 @@ c:attic	Noun	ar:علية,سطيحة	de:Dachboden,Speicher	en:attic,loft	es:átic
 c:attorney	Noun	ar:محامي,وكيل قانوني	de:Anwalt,Rechtsanwalt	en:attorney	es:abogado	fa:وکیل	fr:avocat	he:עורך דין	hi:वकील	ja:弁護士	ko:변호사	pt:advogado,procurador	ru:адвокат,поверенный	tr:avukat,vekil	ur:وکیل	zh:律师,代理人
 c:auction-house	Noun	ar:دار مزاد	de:Auktionshaus	en:auction house	es:casa de subastas	fa:خانه حراج	fr:maison de vente aux enchères	he:בית מכירות	hi:नीलाम घर	ja:競売場	ko:경매장	pt:leiloeira	ru:аукционный дом	tr:müzayede evi	ur:نیلام گھر	zh:拍卖行
 c:audi-car	ProperNoun	ar:أودي	de:Audi	en:Audi	es:Audi	fa:آئودی	fr:Audi	he:אאודי	hi:ऑडी	ja:アウディ	ko:아우디	pt:Audi	ru:Audi	tr:Audi	ur:آڈی	zh:奥迪
+c:audible	ProperNoun	ar:أوديبل	de:Audible	en:Audible	es:Audible	fa:آدیبل	fr:Audible	he:אודיבל	hi:ऑडिबल	ja:オーディブル	ko:오디블	pt:Audible	ru:Audible	tr:Audible	ur:آڈیبل	zh:Audible
 c:audiobook	Noun	ar:كتاب صوتي	de:Hörbuch	en:audiobook	es:audiolibro	fa:کتاب صوتی	fr:livre audio,audiolivre	he:ספר מוקלט,ספר שמע	hi:ऑडियोबुक	ja:オーディオブック	ko:오디오북	pt:audiolivro,livro em áudio	ru:аудиокнига	tr:sesli kitap	ur:سمعی کتاب	zh:有声书,有声读物
 c:audit	Noun	ar:مراجعة حسابات	de:Prüfung	en:audit	es:auditoría	fa:حسابرسی	fr:audit	he:ביקורת חשבונות	hi:ऑडिट	ja:監査	ko:감사	pt:auditoria	ru:аудит	tr:denetim	ur:آڈٹ	zh:审计
 c:auditorium	Noun	ar:قاعة المحاضرات,مدرج	de:Auditorium,Hörsaal	en:auditorium	es:auditorio	fa:تالار,سالن سخنرانی	fr:auditorium,salle de conférence	he:אודיטוריום	hi:सभागार	ja:講堂,ホール	ko:강당,대강당	pt:auditório	ru:аудитория,зал	tr:konferans salonu,oditoryum	ur:آڈیٹوریم,سبھاگار	zh:礼堂,观众厅
@@ -835,6 +841,7 @@ c:banana	Noun	ar:موز	de:Banane	en:banana	es:plátano,banana	fa:موز	fr:bana
 c:banana-tree	Noun	ar:شجرة الموز	de:Bananenstaude	en:banana tree	es:bananero	fa:درخت موز	fr:bananier	he:עץ בננה	hi:केला का पेड़	ja:バナナの木	ko:바나나 나무	pt:bananeira	ru:банановое дерево	tr:muz ağacı	ur:کیلے کا درخت	zh:香蕉树
 c:bancha	Noun	ar:بانتشا	de:Bancha	en:bancha	es:bancha	fa:بانچا	fr:bancha	he:בנצ'ה	hi:बांचा	ja:番茶	ko:반차	pt:bancha	ru:банча	tr:bancha	ur:بنچا	zh:番茶
 c:bandage	Noun	ar:ضمادة	de:Verband,Bandage	en:bandage	es:vendaje,venda	fa:باند,پانسمان	fr:bandage,pansement	he:תחבושת	hi:पट्टी	ja:包帯	ko:붕대	pt:bandagem,atadura	ru:бинт,повязка	tr:bandaj,sargı	ur:پٹی	zh:绷带
+c:bandcamp	ProperNoun	ar:باند كامب	de:Bandcamp	en:Bandcamp	es:Bandcamp	fa:بند‌کمپ	fr:Bandcamp	he:בנדקמפ	hi:बैंडकैंप	ja:バンドキャンプ	ko:밴드캠프	pt:Bandcamp	ru:Bandcamp	tr:Bandcamp	ur:بینڈ کیمپ	zh:Bandcamp
 c:bandgap	Noun	ar:الفجوة الطاقية	de:Bandlücke	en:bandgap	es:banda prohibida	fa:شکاف نواری	fr:bande interdite	he:פס אסור	hi:बैंड अंतराल	ja:バンドギャップ	ko:밴드갭	pt:gap de banda	ru:запрещённая зона	tr:bant aralığı	ur:بینڈ خلا	zh:带隙
 c:bandwidth	Noun	ar:عرض النطاق الترددي	de:Bandbreite	en:bandwidth	es:ancho de banda	fa:پهنای باند	fr:bande passante,largeur de bande	he:רוחב פס	hi:बैंडविड्थ	ja:帯域幅	ko:대역폭	pt:largura de banda	ru:пропускная способность	tr:bant genişliği	ur:بینڈویڈتھ	zh:带宽,频宽
 c:bandwidth-internet	Noun	ar:عرض النطاق	de:Bandbreite	en:bandwidth	es:ancho de banda	fa:پهنای باند	fr:largeur de bande	he:רוחב פס	hi:बैंडविड्थ	ja:帯域幅	ko:대역폭	pt:largura de banda	ru:пропускная способность	tr:bant genişliği	ur:بینڈوتھ	zh:带宽
@@ -1074,6 +1081,7 @@ c:bilabial	Adjective	ar:شفهي	de:bilabial	en:bilabial	es:bilabial	fa:دولب
 c:bilateral-symmetry	Noun	ar:التماثل الثنائي	de:bilaterale Symmetrie	en:bilateral symmetry	es:simetría bilateral	fa:تقارن دوطرفه	fr:symétrie bilatérale	he:סימטריה דו-צדדית	hi:द्विपार्श्व सममिति	ja:左右相称	ko:좌우 대칭	pt:simetria bilateral	ru:билатеральная симметрия	tr:iki taraflı simetri	ur:دو طرفہ توازن	zh:两侧对称
 c:bildungsroman	Noun	ar:رواية النشأة	de:Bildungsroman	en:Bildungsroman	es:novela de aprendizaje	fa:رمان تکوین	fr:roman d'apprentissage	he:רומן עלייה	hi:बिल्डुंगस्रोमान	ja:教養小説	ko:성장소설	pt:bildungsroman	ru:роман воспитания	tr:oluşum romanı	ur:کردار سازی ناول	zh:成长小说
 c:bile-duct	Noun	ar:القناة الصفراوية	de:Gallengang	en:bile duct	es:conducto biliar	fa:مجرای صفراوی	fr:canal biliaire	he:צינור המרה	hi:पित्त नली	ja:胆管	ko:담관	pt:ducto biliar	ru:желчный проток	tr:safra kanalı	ur:پت کی نالی	zh:胆管
+c:bilibili	ProperNoun	ar:بيليبيلي	de:Bilibili	en:Bilibili	es:Bilibili	fa:بیلی‌بیلی	fr:Bilibili	he:ביליבילי	hi:बिलिबिलि	ja:ビリビリ	ko:빌리빌리	pt:Bilibili	ru:Bilibili	tr:Bilibili	ur:بلی بلی	zh:哔哩哔哩
 c:bill	Noun	ar:فاتورة	de:Rechnung	en:bill,invoice	es:factura	fa:صورتحساب,فاکتور	fr:facture	he:חשבון,חשבונית	hi:बिल,चालान	ja:請求書,勘定書	ko:청구서,계산서	pt:fatura,conta	ru:счёт	tr:fatura,hesap	ur:بل,فیکٹر	zh:账单,发票
 c:binary-file	Noun	ar:ملف ثنائي	de:Binärdatei	en:binary file	es:archivo binario	fa:فایل دودویی	fr:fichier binaire	he:קובץ בינארי	hi:बाइनरी फ़ाइल	ja:バイナリファイル	ko:이진 파일	pt:arquivo binário	ru:двоичный файл	tr:ikili dosya	ur:بائنری فائل	zh:二进制文件
 c:binary-star	Noun	ar:نجم ثنائي	de:Doppelstern	en:binary star	es:estrella binaria	fa:ستاره دوتایی	fr:étoile binaire	he:כוכב כפול	hi:युगल तारा	ja:連星	ko:쌍성	pt:estrela binária	ru:двойная звезда	tr:çift yıldız	ur:جوڑا ستارہ	zh:双星
@@ -2015,6 +2023,7 @@ c:chromatic-scale	Noun	ar:السلم اللوني	de:chromatische Tonleiter	en:c
 c:chromatography	Noun	ar:كروماتوغرافيا	de:Chromatographie	en:chromatography	es:cromatografía	fa:کروماتوگرافی	fr:chromatographie	he:כרומטוגרפיה	hi:वर्णलेखन	ja:クロマトグラフィー	ko:크로마토그래피	pt:cromatografia	ru:хроматография	tr:kromatografi	ur:رنگ نگاری	zh:色谱法
 c:chromatography-chem	Noun	ar:كروماتوغرافيا	de:Chromatographie	en:chromatography	es:cromatografía	fa:کروماتوگرافی	fr:chromatographie	he:כרומטוגרפיה	hi:वर्णलेखन	ja:クロマトグラフィー	ko:크로마토그래피	pt:cromatografia	ru:хроматография	tr:kromatografi	ur:کروماٹوگرافی	zh:色谱法
 c:chrome-browser	ProperNoun	ar:كروم	de:Chrome	en:Chrome	es:Chrome	fa:کروم	fr:Chrome	he:כרום	hi:क्रोम	ja:クローム	ko:크롬	pt:Chrome	ru:Chrome	tr:Chrome	ur:کروم	zh:铬
+c:chromecast	ProperNoun	ar:كروم كاست	de:Chromecast	en:Chromecast	es:Chromecast	fa:کروم‌کست	fr:Chromecast	he:כרומקאסט	hi:क्रोमकास्ट	ja:クロームキャスト	ko:크롬캐스트	pt:Chromecast	ru:Chromecast	tr:Chromecast	ur:کروم کاسٹ	zh:Chromecast
 c:chromeos	ProperNoun	ar:كروم أو إس	de:ChromeOS	en:ChromeOS	es:ChromeOS	fa:کروم‌اواس	fr:ChromeOS	he:ChromeOS	hi:क्रोम ओएस	ja:クロームOS	ko:크롬OS	pt:ChromeOS	ru:ChromeOS	tr:ChromeOS	ur:کروم او ایس	zh:铬OS
 c:chromium	Noun	ar:كروم	de:Chrom	en:chromium	es:cromo	fa:کروم	fr:chrome	he:כרום	hi:क्रोमियम	ja:クロム	ko:크로뮴	pt:cromo	ru:хром	tr:krom	ur:کرومیم	zh:铬
 c:chromium-browser	ProperNoun	ar:كروميوم	de:Chromium	en:Chromium	es:Chromium	fa:کرومیوم	fr:Chromium	he:כרומיום	hi:क्रोमियम	ja:クロミウム	ko:크로미움	pt:Chromium	ru:Chromium	tr:Chromium	ur:کرومیم	zh:铬核
@@ -2825,6 +2834,7 @@ c:dagger-weapon	Noun	ar:خنجر	de:Dolch	en:dagger	es:daga	fa:خنجر	fr:dague
 c:dahlia	Noun	ar:داليا	de:Dahlie	en:dahlia	es:dalia	fa:کوکب	fr:dahlia	he:דליה	hi:डाहलिया	ja:ダリア	ko:달리아	pt:dália	ru:георгин	tr:dalya	ur:ڈالیا	zh:大丽花
 c:daikon	Noun	ar:الفجل الياباني,داكون	de:Daikon	en:daikon	es:daikon	fa:تربچه ژاپنی	fr:daïkon	he:דייקון	hi:दाइकोन	ja:大根	ko:무	pt:daikon	ru:дайкон	tr:Japon turbu	ur:ڈیکن	zh:白萝卜
 c:daily-mail	ProperNoun	ar:ديلي ميل	de:Daily Mail	en:Daily Mail	es:Daily Mail	fa:دیلی میل	fr:Daily Mail	he:דיילי מייל	hi:डेली मेल	ja:デイリーメール	ko:데일리 메일	pt:Daily Mail	ru:Daily Mail	tr:Daily Mail	ur:ڈیلی میل	zh:每日邮报
+c:dailymotion	ProperNoun	ar:ديلي موشن	de:Dailymotion	en:Dailymotion	es:Dailymotion	fa:دیلی‌موشن	fr:Dailymotion	he:דיילימושן	hi:डेलीमोशन	ja:デイリーモーション	ko:데일리모션	pt:Dailymotion	ru:Dailymotion	tr:Dailymotion	ur:ڈیلی موشن	zh:Dailymotion
 c:daiquiri	Noun	ar:دايكيري	de:Daiquiri	en:daiquiri	es:daiquirí	fa:دایکری	fr:daiquiri	he:דייקירי	hi:डाइक्वीरी	ja:ダイキリ	ko:다이키리	pt:daiquiri	ru:дайкири	tr:daiquiri	ur:ڈائکیری	zh:大吉利
 c:dairy-products	Noun	ar:منتجات الألبان	de:Milchprodukte	en:dairy products	es:productos lácteos	fa:محصولات لبنی	fr:produits laitiers	he:מוצרי חלב	hi:डेयरी उत्पाद	ja:乳製品	ko:유제품	pt:laticínios	ru:молочные продукты	tr:süt ürünleri	ur:ڈیری مصنوعات	zh:乳制品
 c:dairy-queen	ProperNoun	ar:ديري كوين	de:Dairy Queen	en:Dairy Queen	es:Dairy Queen	fa:دری کوئین	fr:Dairy Queen	he:דיירי קווין	hi:डेयरी क्वीन	ja:デイリークイーン	ko:데어리 퀸	pt:Dairy Queen	ru:Dairy Queen	tr:Dairy Queen	ur:ڈیری کوئن	zh:冰雪皇后
@@ -2936,6 +2946,7 @@ c:deep-learning	Noun	ar:التعلم العميق	de:tiefes Lernen,Deep Learning
 c:deep-sea	Noun	ar:أعماق البحار	de:Tiefsee	en:deep sea	es:mar profundo	fa:ژرفای دریا	fr:grand fond	he:מעמקי הים	hi:गहरा समुद्र	ja:深海	ko:심해	pt:mar profundo	ru:глубоководье	tr:derin deniz	ur:گہرا سمندر	zh:深海
 c:deer	Noun	ar:غزال	de:Hirsch	en:deer	es:ciervo	fa:گوزن	fr:cerf	he:צבי	hi:हिरण	ja:鹿,シカ	ko:사슴	pt:veado,cervo	ru:олень	tr:geyik	ur:ہرن	zh:鹿
 c:deer-mammal	Noun	ar:غزال	de:Hirsch	en:deer	es:ciervo	fa:گوزن	fr:cerf	he:צבי	hi:हिरन	ja:鹿	ko:사슴	pt:veado	ru:олень	tr:geyik	ur:ہرن	zh:鹿
+c:deezer	ProperNoun	ar:ديزر	de:Deezer	en:Deezer	es:Deezer	fa:دیزر	fr:Deezer	he:דיזר	hi:डीज़र	ja:ディーザー	ko:디저	pt:Deezer	ru:Deezer	tr:Deezer	ur:ڈیزر	zh:Deezer
 c:defamation	Noun	ar:تشهير	de:Diffamierung	en:defamation	es:difamación	fa:افترا	fr:diffamation	he:לשון הרע	hi:मानहानि	ja:名誉毀損	ko:명예훼손	pt:difamação	ru:диффамация	tr:hakaret	ur:بہتان	zh:诽谤
 c:default-effect	Noun	ar:أثر الخيار الافتراضي	de:Standardeinstellungseffekt	en:default effect	es:efecto del predeterminado	fa:اثر پیش‌فرض	fr:effet de l'option par défaut	he:אפקט ברירת המחדל	hi:डिफ़ॉल्ट प्रभाव	ja:デフォルト効果	ko:기본값 효과	pt:efeito padrão	ru:эффект умолчания	tr:varsayılan etki	ur:ابتدائی اثر	zh:默认效应
 c:defeat	Noun	ar:هزيمة,خسارة	de:Niederlage	en:defeat,loss	es:derrota	fa:شکست	fr:défaite	he:תבוסה,הפסד	hi:हार,पराजय	ja:敗北	ko:패배	pt:derrota	ru:поражение	tr:yenilgi,mağlubiyet	ur:شکست,ہار	zh:失败
@@ -3149,6 +3160,7 @@ c:dishwasher	Noun	ar:غسالة أطباق	de:Geschirrspüler	en:dishwasher	es:l
 c:disinfection-water	Noun	ar:تطهير المياه	de:Wasserdesinfektion	en:water disinfection	es:desinfección del agua	fa:ضدعفونی آب	fr:désinfection de l'eau	he:חיטוי מים	hi:जल निर्जंतुकीकरण	ja:水の消毒	ko:물 소독	pt:desinfecção de água	ru:обеззараживание воды	tr:su dezenfeksiyonu	ur:پانی کی صفائی	zh:水消毒
 c:dislocation	Noun	ar:الإزاحة البلورية	de:Versetzung	en:dislocation	es:dislocación	fa:نابجایی	fr:dislocation	he:נקע	hi:विस्थापन	ja:転位	ko:전위	pt:discordância	ru:дислокация	tr:kayma düzlemi	ur:کرسٹل بے جائی	zh:位错
 c:dislocation-mat	Noun	ar:الانزياح البلوري	de:Versetzung	en:dislocation	es:dislocación	fa:نابجایی بلوری	fr:dislocation	he:ניתוק	hi:विस्थापन	ja:転位	ko:전위	pt:deslocação	ru:дислокация	tr:dislokasyon	ur:کرسٹل نقص	zh:位错
+c:disney-plus	ProperNoun	ar:ديزني بلس	de:Disney+	en:Disney+	es:Disney+	fa:دیزنی‌پلاس	fr:Disney+	he:דיסני+	hi:डिज़्नी+	ja:ディズニープラス	ko:디즈니+	pt:Disney+	ru:Disney+	tr:Disney+	ur:ڈزنی پلس	zh:迪士尼+
 c:displacement	Noun	ar:إزاحة	de:Verschiebung,Versetzung	en:displacement	es:desplazamiento	fa:جابجایی	fr:déplacement	he:העתק,תזוזה	hi:विस्थापन	ja:変位	ko:변위	pt:deslocamento	ru:перемещение,смещение	tr:yer değiştirme,deplasman	ur:بے گھری,منتقلی	zh:位移
 c:displacement-phys	Noun	ar:إزاحة	de:Verschiebung	en:displacement	es:desplazamiento	fa:جابه‌جایی	fr:déplacement	he:העתק	hi:विस्थापन	ja:変位	ko:변위	pt:deslocamento	ru:перемещение	tr:yer değiştirme	ur:مقام تبدیلی	zh:位移
 c:display-cabinet	Noun	ar:خزانة عرض	de:Schauvitrine	en:display cabinet	es:vitrina de exhibición	fa:ویترین نمایش	fr:vitrine d'exposition	he:ארון תצוגה	hi:डिस्प्ले कैबिनेट	ja:展示キャビネット	ko:진열장	pt:vitrine de exposição	ru:выставочный шкаф	tr:sergi dolabı	ur:ڈسپلے کیبنٹ	zh:展示柜
@@ -3180,6 +3192,7 @@ c:django-framework	ProperNoun	ar:دجانغو	de:Django	en:Django	es:Django	fa:�
 c:djellaba	Noun	ar:جلابة	de:Djellaba	en:djellaba	es:chilaba	fa:جلابا	fr:djellaba	he:ג'לבה	hi:जलाबा	ja:ジェラバ	ko:젤라바	pt:jelaba	ru:джеллаба	tr:cellabiye	ur:جلابہ	zh:长袍吉拉巴
 c:djembe	Noun	ar:جيمبي	de:Djembe	en:djembe	es:yembe,djembé	fa:جمبه	fr:djembé	he:ג'מבה	hi:जेम्बे	ja:ジェンベ	ko:젬베	pt:djembé	ru:джембе	tr:cembe	ur:جمبے	zh:金贝鼓
 c:djinn-creature	Noun	ar:جني	de:Dschinn	en:djinn	es:yinn	fa:جن	fr:djinn	he:ג'ין	hi:जिन्न	ja:ジン	ko:진	pt:djinn	ru:джинн	tr:cin	ur:جن	zh:镇尼
+c:dlive	ProperNoun	ar:دي لايف	de:DLive	en:DLive	es:DLive	fa:دی‌لایو	fr:DLive	he:DLive	hi:डीलाइव	ja:DLive	ko:DLive	pt:DLive	ru:DLive	tr:DLive	ur:ڈی لائیو	zh:DLive
 c:dna	Noun	ar:الحمض النووي,دنا	de:DNA,Desoxyribonukleinsäure	en:DNA,deoxyribonucleic acid	es:ADN,ácido desoxirribonucleico	fa:دی ان ای,دزوکسی ریبونوکلئیک اسید	fr:ADN,acide désoxyribonucléique	he:דנ״א	hi:डीएनए	ja:DNA,デオキシリボ核酸	ko:DNA,디옥시리보핵산	pt:DNA,ADN	ru:ДНК,дезоксирибонуклеиновая кислота	tr:DNA,deoksiribonükleik asit	ur:ڈی این اے	zh:脱氧核糖核酸,DNA
 c:dna-discovery	Noun	ar:اكتشاف الحمض النووي	de:DNA-Entdeckung	en:DNA discovery	es:descubrimiento del ADN	fa:کشف دی‌ان‌ای	fr:découverte de l'ADN	he:גילוי ה-DNA	hi:डीएनए की खोज	ja:DNAの発見	ko:DNA 발견	pt:descoberta do DNA	ru:открытие ДНК	tr:DNA'nın keşfi	ur:ڈی این اے دریافت	zh:DNA发现
 c:dna-polymerase	Noun	ar:إنزيم بوليمراز الحمض النووي	de:DNA-Polymerase	en:DNA polymerase	es:ADN polimerasa	fa:دی‌ان‌ای پلیمراز	fr:ADN polymérase	he:DNA פולימראז	hi:डीएनए पॉलीमरेज़	ja:DNAポリメラーゼ	ko:DNA 중합효소	pt:DNA polimerase	ru:ДНК-полимераза	tr:DNA polimeraz	ur:ڈی این اے پولیمریز	zh:DNA聚合酶
@@ -3367,6 +3380,7 @@ c:duty	Noun	ar:واجب	de:Pflicht	en:duty	es:deber	fa:وظیفه	fr:devoir	he:�
 c:duvet	Noun	ar:لحاف ريشي	de:Bettdecke,Daunendecke	en:duvet,comforter	es:edredón nórdico	fa:لحاف پر	fr:couette	he:שמיכת פוך	hi:ड्यूवे	ja:羽毛布団	ko:이불,듀벳	pt:edredão	ru:пуховое одеяло	tr:yorgan,kuştüyü yorgan	ur:رضائی	zh:羽绒被
 c:dvd-player	Noun	ar:مشغل دي في دي	de:DVD-Player	en:DVD player	es:reproductor DVD	fa:پخش‌کننده دی‌وی‌دی	fr:lecteur DVD	he:נגן DVD	hi:डीवीडी प्लेयर	ja:DVDプレーヤー	ko:DVD 플레이어	pt:leitor de DVD	ru:DVD-плеер	tr:DVD oynatıcı	ur:ڈی وی ڈی پلیئر	zh:DVD播放机
 c:dvd-rom	Noun	ar:DVD-ROM	de:DVD-ROM	en:DVD-ROM	es:DVD-ROM	fa:DVD-ROM	fr:DVD-ROM	he:DVD-ROM	hi:डीवीडी-रॉम	ja:DVD-ROM	ko:DVD-ROM	pt:DVD-ROM	ru:DVD-ROM	tr:DVD-ROM	ur:ڈی وی ڈی روم	zh:DVD光盘
+c:dvr	Noun	ar:مسجل رقمي	de:DVR	en:DVR	es:DVR	fa:دی‌وی‌آر	fr:DVR	he:DVR	hi:डीवीआर	ja:DVR	ko:DVR	pt:DVR	ru:DVR	tr:DVR	ur:ڈی وی آر	zh:DVR数字录像
 c:dwarf-creature	Noun	ar:قزم خرافي	de:Zwerg	en:dwarf	es:enano	fa:کوتوله افسانه‌ای	fr:nain	he:גמד	hi:बौना	ja:ドワーフ	ko:드워프	pt:anão	ru:гном	tr:cüce	ur:بونا	zh:矮人
 c:dwarf-planet	Noun	ar:كوكب قزم	de:Zwergplanet	en:dwarf planet	es:planeta enano	fa:سیاره کوتوله	fr:planète naine	he:כוכב לכת ננסי	hi:वामन ग्रह	ja:準惑星	ko:왜행성	pt:planeta anão	ru:карликовая планета	tr:cüce gezegen	ur:بونا سیارہ	zh:矮行星
 c:dye-color	Noun	ar:صبغة اللون	de:Farbstoff Farbe	en:color dye	es:colorante	fa:رنگ شیمیایی	fr:colorant	he:צובע	hi:रंजक	ja:色素染料	ko:염색염료	pt:corante de cor	ru:красящий состав	tr:boyar madde	ur:رنگ کا ڈائی	zh:着色剂
@@ -4012,6 +4026,7 @@ c:fire	Noun	ar:نار	de:Feuer	en:fire	es:fuego	fa:آتش	fr:feu	he:אש	hi:आ�
 c:fire-salamander	Noun	ar:سمندل النار	de:Feuersalamander	en:fire salamander	es:salamandra común	fa:سمندر آتش	fr:salamandre tachetée	he:סלמנדרת אש	hi:अग्नि सैलामैंडर	ja:ファイアサラマンダー	ko:불도롱뇽	pt:salamandra-de-fogo	ru:огненная саламандра	tr:ateş semenderi	ur:آگ کا سمندر	zh:火蝾螈
 c:fire-sign	Noun	ar:برج ناري	de:Feuerzeichen	en:fire sign	es:signo de fuego	fa:نشان آتش	fr:signe de feu	he:מזל אש	hi:अग्नि राशि	ja:火の星座	ko:불의 별자리	pt:signo de fogo	ru:огненный знак	tr:ateş burcu	ur:آتشی برج	zh:火象星座
 c:fire-truck	Noun	ar:شاحنة إطفاء	de:Feuerwehrauto	en:fire truck	es:camión de bomberos	fa:ماشین آتش‌نشانی	fr:camion de pompiers	he:משאית כיבוי	hi:दमकल	ja:消防車	ko:소방차	pt:caminhão de bombeiros	ru:пожарная машина	tr:itfaiye aracı	ur:فائر ٹرک	zh:消防车
+c:fire-tv	ProperNoun	ar:فاير تي في	de:Fire TV	en:Fire TV	es:Fire TV	fa:فایر تی‌وی	fr:Fire TV	he:פיירטי.וי	hi:फायर टीवी	ja:Fire TV	ko:파이어 TV	pt:Fire TV	ru:Fire TV	tr:Fire TV	ur:فائر ٹی وی	zh:火电视
 c:firebase-db	ProperNoun	ar:فاير بيس	de:Firebase	en:Firebase	es:Firebase	fa:فایربیس	fr:Firebase	he:פיירבייס	hi:फायरबेस	ja:ファイアベース	ko:파이어베이스	pt:Firebase	ru:Firebase	tr:Firebase	ur:فائر بیس	zh:火焰基地
 c:firefly	Noun	ar:يراعة,حباحب	de:Glühwürmchen,Leuchtkäfer	en:firefly,lightning bug	es:luciérnaga	fa:کرم شب‌تاب	fr:luciole	he:גחליל	hi:जुगनू	ja:蛍,ホタル	ko:반딧불이	pt:vaga-lume,pirilampo	ru:светлячок	tr:ateşböceği	ur:جگنو	zh:萤火虫
 c:firefox-browser	ProperNoun	ar:فايرفوكس	de:Firefox	en:Firefox	es:Firefox	fa:فایرفاکس	fr:Firefox	he:פיירפוקס	hi:फ़ायरफ़ॉक्स	ja:ファイアフォックス	ko:파이어폭스	pt:Firefox	ru:Firefox	tr:Firefox	ur:فائر فاکس	zh:火狐
@@ -4896,6 +4911,7 @@ c:hazel-tree	Noun	ar:بندق	de:Hasel	en:hazel	es:avellano	fa:فندق	fr:noise
 c:hazelnut	Noun	ar:بندق	de:Haselnuss	en:hazelnut	es:avellana	fa:فندق	fr:noisette	he:אגוזי לוז	hi:हेज़लनट	ja:ヘーゼルナッツ	ko:헤이즐넛	pt:avelã	ru:фундук	tr:fındık	ur:فندق	zh:榛子
 c:hazelnuts-snack	Noun	ar:بندق للأكل	de:Haselnüsse	en:hazelnuts	es:avellanas	fa:فندق خوراکی	fr:noisettes	he:אגוזי לוז	hi:हेज़लनट	ja:ヘーゼルナッツ	ko:헤이즐넛	pt:avelãs	ru:фундук	tr:fındık iç	ur:ہیزل نٹ	zh:榛子
 c:hbase-db	ProperNoun	ar:إتش بيس	de:HBase	en:HBase	es:HBase	fa:اچ‌بیس	fr:HBase	he:HBase	hi:एचबेस	ja:エイチベース	ko:에이치베이스	pt:HBase	ru:HBase	tr:HBase	ur:ایچ بیس	zh:H基
+c:hbo-max	ProperNoun	ar:إتش بي أو ماكس	de:HBO Max	en:HBO Max	es:HBO Max	fa:اچ‌بی‌او مکس	fr:HBO Max	he:HBO מקס	hi:एचबीओ मैक्स	ja:HBOマックス	ko:HBO 맥스	pt:HBO Max	ru:HBO Max	tr:HBO Max	ur:ایچ بی او میکس	zh:HBO Max
 c:hdd	Noun	ar:قرص صلب	de:Festplatte	en:hard disk drive	es:disco duro	fa:دیسک سخت	fr:disque dur	he:כונן קשיח	hi:हार्ड डिस्क ड्राइव	ja:ハードディスクドライブ	ko:하드 디스크 드라이브	pt:disco rígido	ru:жёсткий диск	tr:sabit disk	ur:ہارڈ ڈسک ڈرائیو	zh:硬盘驱动器
 c:hdmi-port	Noun	ar:منفذ HDMI	de:HDMI-Anschluss	en:HDMI port	es:puerto HDMI	fa:پورت HDMI	fr:port HDMI	he:יציאת HDMI	hi:एचडीएमआई पोर्ट	ja:HDMIポート	ko:HDMI 포트	pt:porta HDMI	ru:HDMI-порт	tr:HDMI bağlantısı	ur:ایچ ڈی ایم آئی پورٹ	zh:HDMI接口
 c:head	Noun	ar:رأس	de:Kopf,Haupt	en:head	es:cabeza	fa:سر	fr:tête	he:ראש	hi:सिर	ja:頭	ko:머리	pt:cabeça	ru:голова	tr:baş,kafa	ur:سر	zh:头
@@ -5172,6 +5188,7 @@ c:hula	Noun	ar:رقص الهولا	de:Hula	en:hula	es:hula	fa:هولا	fr:hula	h
 c:hula-hoop	Noun	ar:حلقة الهولا هوب	de:Hula-Hoop-Reifen	en:hula hoop	es:aro hula hula	fa:حلقه هولاهوپ	fr:hula hoop	he:חישוק	hi:हुला हूप	ja:フラフープ	ko:훌라후프	pt:bambolê	ru:хула-хуп	tr:hula hoop	ur:ہولا ہوپ	zh:呼啦圈
 c:hulk-hero	ProperNoun	ar:هالك	de:Hulk	en:Hulk	es:Hulk	fa:هالک	fr:Hulk	he:הענק הירוק	hi:हल्क	ja:ハルク	ko:헐크	pt:Hulk	ru:Халк	tr:Hulk	ur:ہلک	zh:浩克
 c:hulled-grain	Noun	ar:حبوب مقشورة بدائية	de:geschälter Reis	en:hulled grain	es:grano descascarillado	fa:غلات پوست‌کنده	fr:grain décortiqué	he:דגן מקולף	hi:छिलका उतारा अनाज	ja:殻をむいた穀物	ko:탈곡 곡물	pt:grão descascado	ru:шелушёное зерно	tr:kabuksuz tahıl	ur:چھلکا اترا اناج	zh:去壳谷物
+c:hulu	ProperNoun	ar:هولو	de:Hulu	en:Hulu	es:Hulu	fa:هولو	fr:Hulu	he:הולו	hi:हुलू	ja:フールー	ko:훌루	pt:Hulu	ru:Hulu	tr:Hulu	ur:ہولو	zh:葫芦
 c:human-actions	Noun	ar:أفعال بشرية	de:menschliche Handlungen	en:human actions	es:acciones humanas	fa:اعمال انسانی	fr:actions humaines	he:פעולות אנושיות	hi:मानव क्रियाएं	ja:人間の行動	ko:인간 행동	pt:ações humanas	ru:человеческие действия	tr:insan eylemleri	ur:انسانی افعال	zh:人类行为
 c:human-resources	Noun	ar:الموارد البشرية	de:Personalwesen	en:human resources	es:recursos humanos	fa:منابع انسانی	fr:ressources humaines	he:משאבי אנוש	hi:मानव संसाधन	ja:人事	ko:인사	pt:recursos humanos	ru:человеческие ресурсы	tr:insan kaynakları	ur:انسانی وسائل	zh:人力资源
 c:human-rights	Noun	ar:حقوق الإنسان	de:Menschenrechte	en:human rights	es:derechos humanos	fa:حقوق بشر	fr:droits de l'homme	he:זכויות אדם	hi:मानवाधिकार	ja:人権	ko:인권	pt:direitos humanos	ru:права человека	tr:insan hakları	ur:انسانی حقوق	zh:人权
@@ -5286,6 +5303,7 @@ c:igbo	Noun	ar:إيغبو	de:Igbo	en:Igbo	es:igbo	fa:ایگبو	fr:igbos	he:אי
 c:ignorance	Noun	ar:جهل	de:Unwissenheit	en:ignorance	es:ignorancia	fa:نادانی	fr:ignorance	he:בורות	hi:अज्ञानता	ja:無知	ko:무지	pt:ignorância	ru:невежество	tr:cahillik	ur:جہالت	zh:无知
 c:iguana	Noun	ar:ايغوانا	de:Leguan	en:iguana	es:iguana	fa:ایگوانا	fr:iguane	he:איגואנה	hi:इगुआना	ja:イグアナ	ko:이구아나	pt:iguana	ru:игуана	tr:iguana	ur:اگوانا	zh:鬣蜥
 c:iguanodon	Noun	ar:إغوانودون	de:Iguanodon	en:iguanodon	es:iguanodonte	fa:ایگوانودون	fr:iguanodon	he:איגואנודון	hi:इगुआनोडॉन	ja:イグアノドン	ko:이구아노돈	pt:iguanodonte	ru:игуанодон	tr:iguanodon	ur:اگوانوڈون	zh:禽龙
+c:iheartradio	ProperNoun	ar:آي هارت راديو	de:iHeartRadio	en:iHeartRadio	es:iHeartRadio	fa:آی‌هارت رادیو	fr:iHeartRadio	he:iHeartRadio	hi:आईहार्ट रेडियो	ja:アイハートラジオ	ko:아이하트라디오	pt:iHeartRadio	ru:iHeartRadio	tr:iHeartRadio	ur:آئی ہارٹ ریڈیو	zh:iHeartRadio
 c:ihop	ProperNoun	ar:آي هوب	de:IHOP	en:IHOP	es:IHOP	fa:آی‌هاپ	fr:IHOP	he:IHOP	hi:आईहॉप	ja:IHOP	ko:IHOP	pt:IHOP	ru:IHOP	tr:IHOP	ur:آئی ہاپ	zh:国际煎饼屋
 c:ikat	Noun	ar:ايكات	de:Ikat	en:ikat	es:ikat	fa:ایکات	fr:ikat	he:איקאט	hi:इकत	ja:イカット	ko:이카트	pt:ikat	ru:икат	tr:ikat	ur:اکت	zh:扎染
 c:illness	Noun	ar:مرض,علة	de:Krankheit	en:illness,sickness	es:enfermedad	fa:بیماری	fr:maladie	he:מחלה	hi:बीमारी	ja:病気	ko:병,질병	pt:doença	ru:болезнь	tr:hastalık	ur:بیماری	zh:疾病,病
@@ -5777,6 +5795,7 @@ c:khmer-empire	Noun	ar:إمبراطورية الخمير	de:Khmer-Reich	en:Khmer
 c:khwarazmian-empire	Noun	ar:الإمبراطورية الخوارزمية	de:Choresmien	en:Khwarazmian Empire	es:Imperio jorezmita	fa:امپراتوری خوارزمشاهیان	fr:Empire khwarezmien	he:האימפריה הכ'וורזמית	hi:ख्वारज्म साम्राज्य	ja:ホラズム・シャー朝	ko:호라즘 제국	pt:Império Corásmio	ru:Хорезмская империя	tr:Harzemşahlar	ur:خوارزمی سلطنت	zh:花剌子模王朝
 c:kia-car	ProperNoun	ar:كيا	de:Kia	en:Kia	es:Kia	fa:کیا	fr:Kia	he:קיה	hi:किया	ja:キア	ko:기아	pt:Kia	ru:Kia	tr:Kia	ur:کیا	zh:起亚
 c:kick	Verb	ar:ركل	de:treten,kicken	en:kick,kicks,kicked,kicking	es:patear,dar una patada	fa:لگد زدن	fr:donner un coup de pied	he:לבעוט	hi:लात मारना,ठोकर मारना	ja:蹴る,キックする	ko:차다	pt:chutar	ru:пинать,ударять ногой	tr:tekmelemek	ur:لات مارنا	zh:踢
+c:kick-stream	ProperNoun	ar:كيك	de:Kick	en:Kick streaming	es:Kick	fa:کیک	fr:Kick	he:קיק	hi:किक	ja:Kick	ko:킥	pt:Kick	ru:Kick	tr:Kick	ur:کک	zh:Kick
 c:kid-goat	Noun	ar:جدي	de:Zicklein	en:kid	es:cabrito	fa:بزغاله	fr:chevreau	he:גדי	hi:बकरी का बच्चा	ja:子ヤギ	ko:새끼 염소	pt:cabrito	ru:козлёнок	tr:oğlak	ur:بکری کا بچہ	zh:小山羊
 c:kidney	Noun	ar:كلية	de:Niere	en:kidney	es:riñón	fa:کلیه	fr:rein	he:כליה	hi:गुर्दा,वृक्क	ja:腎臓	ko:신장,콩팥	pt:rim	ru:почка	tr:böbrek	ur:گردہ	zh:肾,肾脏
 c:kidney-meat	Noun	ar:كلى لحم	de:Nieren Fleisch	en:kidney meat	es:riñón	fa:قلوه	fr:rognon	he:כליות בשר	hi:किडनी	ja:腎臓肉	ko:콩팥 고기	pt:rim	ru:почки мясо	tr:böbrek et	ur:گردے کا گوشت	zh:腰子
@@ -6212,6 +6231,7 @@ c:live	Verb	ar:عاش	de:leben	en:live	es:vivir	fa:زندگی کردن,زیست�
 c:live-load	Noun	ar:الحمل الحي	de:Verkehrslast	en:live load	es:carga variable	fa:بار زنده	fr:charge variable	he:עומס משתנה	hi:चल भार	ja:積載荷重	ko:활하중	pt:carga variável	ru:временная нагрузка	tr:hareketli yük	ur:زندہ بوجھ	zh:活荷载
 c:liver	Noun	ar:كبد	de:Leber	en:liver	es:hígado	fa:جگر,کبد	fr:foie	he:כבד	hi:जिगर,यकृत	ja:肝臓	ko:간	pt:fígado	ru:печень	tr:karaciğer	ur:جگر	zh:肝,肝脏
 c:liver-meat	Noun	ar:لحم كبد	de:Leber Fleisch	en:liver meat	es:hígado	fa:جگر گوشت	fr:foie viande	he:בשר כבד	hi:कलेजी	ja:レバー肉	ko:간고기	pt:fígado	ru:печень мясо	tr:ciğer et	ur:کلیجی	zh:肝脏
+c:livestream	Noun	ar:بث مباشر	de:Livestream	en:livestream	es:transmisión en vivo	fa:لایو استریم	fr:diffusion en direct	he:שידור חי	hi:लाइवस्ट्रीम	ja:ライブ配信	ko:라이브 스트림	pt:transmissão ao vivo	ru:прямая трансляция	tr:canlı yayın	ur:لائیو اسٹریم	zh:直播流
 c:lizard	Noun	ar:سحلية	de:Eidechse	en:lizard	es:lagarto,lagartija	fa:مارمولک	fr:lézard	he:לטאה	hi:छिपकली	ja:蜥蜴,トカゲ	ko:도마뱀	pt:lagarto,lagartixa	ru:ящерица	tr:kertenkele	ur:چھپکلی	zh:蜥蜴
 c:llama-animal	Noun	ar:لاما	de:Lama	en:llama	es:llama	fa:لاما	fr:lama	he:למה	hi:लामा	ja:ラマ	ko:라마	pt:lhama	ru:лама	tr:lama	ur:لاما	zh:美洲驼
 c:llm-ml	Noun	ar:نموذج لغوي كبير	de:großes Sprachmodell	en:large language model	es:gran modelo de lenguaje	fa:مدل زبانی بزرگ	fr:grand modèle de langue	he:מודל שפה גדול	hi:बड़ा भाषा मॉडल	ja:大規模言語モデル	ko:대규모 언어 모델	pt:grande modelo de linguagem	ru:большая языковая модель	tr:büyük dil modeli	ur:بڑا زبان ماڈل	zh:大语言模型
@@ -7224,6 +7244,7 @@ c:net-neutrality	Noun	ar:حياد الشبكة	de:Netzneutralität	en:net neutra
 c:net-zero	Noun	ar:الصافي الصفري	de:Netto-Null	en:net zero	es:cero neto	fa:صفر خالص	fr:zéro émission nette	he:נטו אפס	hi:शुद्ध शून्य	ja:ネットゼロ	ko:넷제로	pt:emissão zero	ru:углеродная нейтральность	tr:net sıfır	ur:خالص صفر	zh:净零排放
 c:netadmin	Noun	ar:مدير الشبكة	de:Netzwerkadministrator	en:network administrator	es:administrador de red	fa:مدیر شبکه	fr:administrateur réseau	he:מנהל רשת	hi:नेटवर्क प्रशासक	ja:ネットワーク管理者	ko:네트워크 관리자	pt:administrador de rede	ru:сетевой администратор	tr:ağ yöneticisi	ur:نیٹ ورک ایڈمنسٹریٹر	zh:网络管理员
 c:netbsd	ProperNoun	ar:نت بي إس دي	de:NetBSD	en:NetBSD	es:NetBSD	fa:نت‌بی‌اس‌دی	fr:NetBSD	he:נט BSD	hi:नेटबीएसडी	ja:ネットBSD	ko:넷BSD	pt:NetBSD	ru:NetBSD	tr:NetBSD	ur:نیٹ بی ایس ڈی	zh:网BSD
+c:netflix-service	ProperNoun	ar:نتفليكس	de:Netflix	en:Netflix	es:Netflix	fa:نتفلیکس	fr:Netflix	he:נטפליקס	hi:नेटफ्लिक्स	ja:ネットフリックス	ko:넷플릭스	pt:Netflix	ru:Netflix	tr:Netflix	ur:نیٹ فلکس	zh:奈飞
 c:netherlands	Noun	ar:هولندا	de:Niederlande	en:Netherlands,Holland	es:Países Bajos,Holanda	fa:هلند	fr:Pays-Bas,Hollande	he:הולנד	hi:नीदरलैंड्स	ja:オランダ	ko:네덜란드	pt:Países Baixos,Holanda	ru:Нидерланды,Голландия	tr:Hollanda	ur:نیدرلینڈز	zh:荷兰
 c:netlify	ProperNoun	ar:نتليفاي	de:Netlify	en:Netlify	es:Netlify	fa:نت‌لیفای	fr:Netlify	he:נטליפי	hi:नेटलिफाई	ja:ネットリファイ	ko:넷리파이	pt:Netlify	ru:Netlify	tr:Netlify	ur:نیٹ لفائی	zh:网络化
 c:netscape-browser	ProperNoun	ar:نيت سكيب	de:Netscape	en:Netscape	es:Netscape	fa:نت‌اسکیپ	fr:Netscape	he:נטסקייפ	hi:नेटस्केप	ja:ネットスケープ	ko:넷스케이프	pt:Netscape	ru:Netscape	tr:Netscape	ur:نیٹ اسکیپ	zh:网景
@@ -7289,6 +7310,7 @@ c:nichrome-alloy	Noun	ar:نيكروم	de:Nickelchrom	en:nichrome	es:nicromo	fa:�
 c:nickel	Noun	ar:نيكل	de:Nickel	en:nickel	es:níquel	fa:نیکل	fr:nickel	he:ניקל	hi:निकेल	ja:ニッケル	ko:니켈	pt:níquel	ru:никель	tr:nikel	ur:نکل	zh:镍
 c:nickel-coin	Noun	ar:قطعة نيكل,عملة النيكل	de:Nickel,Fünfcentstück	en:nickel	es:moneda de cinco centavos,níquel	fa:سکه نیکل,سکه پنج سنتی	fr:pièce de cinq cents,nickel	he:מטבע ניקל,ניקל	hi:निकेल सिक्का	ja:ニッケル硬貨,5セント硬貨	ko:니켈 동전,5센트 동전	pt:moeda de cinco centavos,níquel	ru:никель,пятицентовая монета	tr:nikel parası,beş sentlik	ur:نکل سکہ	zh:五分硬币,镍币
 c:nickel-metal	Noun	ar:نيكل	de:Nickel	en:nickel	es:níquel	fa:نیکل	fr:nickel	he:ניקל	hi:निकेल	ja:ニッケル	ko:니켈	pt:níquel	ru:никель	tr:nikel	ur:نکل	zh:镍
+c:niconico	ProperNoun	ar:نيكو نيكو	de:Niconico	en:Niconico	es:Niconico	fa:نیکو‌نیکو	fr:Niconico	he:ניקו ניקו	hi:निकोनिको	ja:ニコニコ動画	ko:니코니코	pt:Niconico	ru:Niconico	tr:Niconico	ur:نیکو نیکو	zh:niconico动画
 c:niger	Noun	ar:النيجر,نهر النيجر	de:Niger	en:Niger,Niger River	es:Níger,río Níger	fa:نیجر,رود نیجر	fr:Niger,fleuve Niger	he:ניז'ר,נהר הניז'ר	hi:नाइजर नदी	ja:ニジェール川	ko:니제르강	pt:Níger,rio Níger	ru:Нигер	tr:Nijer,Nijer Nehri	ur:دریائے نائجر	zh:尼日尔河
 c:niger-river	Noun	ar:نهر النيجر	de:Niger	en:Niger river	es:río Níger	fa:رود نیجر	fr:Niger	he:נהר הניז'ר	hi:नाइजर नदी	ja:ニジェール川	ko:니제르강	pt:rio Níger	ru:река Нигер	tr:Nijer Nehri	ur:دریائے نائجر	zh:尼日尔河
 c:nigeria	Noun	ar:نيجيريا	de:Nigeria	en:Nigeria	es:Nigeria	fa:نیجریه	fr:Nigéria	he:ניגריה	hi:नाइजीरिया	ja:ナイジェリア	ko:나이지리아	pt:Nigéria	ru:Нигерия	tr:Nijerya	ur:نائیجیریا	zh:尼日利亚
@@ -7412,6 +7434,7 @@ c:nutrient-density	Noun	ar:كثافة العناصر الغذائية	de:Nährst
 c:nuwa	Noun	ar:نوا	de:Nüwa	en:Nüwa	es:Nüwa	fa:نووا	fr:Nüwa	he:נוּ-וָא	hi:नुवा	ja:女媧	ko:여와	pt:Nüwa	ru:Нюйва	tr:Nüwa	ur:نووا	zh:女娲
 c:nuxtjs	ProperNoun	ar:نكست جي إس للفيو	de:Nuxt.js	en:Nuxt.js	es:Nuxt.js	fa:ناکست جی‌اس	fr:Nuxt.js	he:נאקסט ג'יאס	hi:नक्स्ट जेएस	ja:ナクストJS	ko:넉스트JS	pt:Nuxt.js	ru:Nuxt.js	tr:Nuxt.js	ur:نکسٹ جے ایس	zh:纳克斯特JS
 c:nvidia-brand	ProperNoun	ar:إنفيديا	de:Nvidia	en:Nvidia	es:Nvidia	fa:انویدیا	fr:Nvidia	he:אנבידיה	hi:एनवीडिया	ja:エヌビディア	ko:엔비디아	pt:Nvidia	ru:Nvidia	tr:Nvidia	ur:اینودیا	zh:英伟达
+c:nvidia-shield	ProperNoun	ar:إنفيديا شيلد	de:Nvidia Shield	en:Nvidia Shield	es:Nvidia Shield	fa:انویدیا شیلد	fr:Nvidia Shield	he:אנבידיה שילד	hi:एनवीडिया शील्ड	ja:エヌビディアシールド	ko:엔비디아 쉴드	pt:Nvidia Shield	ru:Nvidia Shield	tr:Nvidia Shield	ur:اینودیا شیلڈ	zh:英伟达Shield
 c:nyala	Noun	ar:نيالا	de:Nyala	en:nyala	es:nyala	fa:نیالا	fr:nyala	he:ניאלה	hi:नयाला	ja:ニアラ	ko:나이알라	pt:niala	ru:ньяла	tr:nyala	ur:نیالا	zh:林羚
 c:nyckelharpa	Noun	ar:نيكلهاربا	de:Nyckelharpa	en:nyckelharpa	es:nyckelharpa	fa:نیکل هارپا	fr:nyckelharpa	he:ניקלהרפה	hi:नाइकेलहार्पा	ja:ニッケルハルパ	ko:니켈하르파	pt:nyckelharpa	ru:никельхарпа	tr:nyckelharpa	ur:نیکل ہارپا	zh:尼科哈帕
 c:nylon	Noun	ar:نايلون	de:Nylon	en:nylon	es:nylón	fa:نایلون	fr:nylon	he:ניילון	hi:नायलॉन	ja:ナイロン	ko:나일론	pt:nylon	ru:нейлон	tr:naylon	ur:نائلون	zh:尼龙
@@ -7480,6 +7503,7 @@ c:odin	Noun	ar:أودين	de:Odin	en:Odin	es:Odín	fa:اودین	fr:Odin	he:או
 c:odin-god	ProperNoun	ar:أودين	de:Odin	en:Odin	es:Odín	fa:اودین	fr:Odin	he:אודין	hi:ओडिन	ja:オーディン	ko:오딘	pt:Odin	ru:Один	tr:Odin	ur:اوڈن	zh:奥丁
 c:odissi	Noun	ar:رقص أوديسي	de:Odissi	en:odissi	es:odissi	fa:اودیسی	fr:odissi	he:אודיסי	hi:ओडिसी	ja:オディッシー	ko:오디시	pt:odissi	ru:одисси	tr:odissi	ur:اودسی	zh:奥迪西舞
 c:odometer	Noun	ar:عداد المسافة	de:Kilometerzähler	en:odometer	es:odómetro	fa:مسافت‌سنج	fr:odomètre	he:מד מרחק	hi:ओडोमीटर	ja:走行距離計	ko:주행 거리계	pt:odômetro	ru:одометр	tr:kilometre sayacı	ur:اوڈومیٹر	zh:里程计
+c:odysee	ProperNoun	ar:أوديسي	de:Odysee	en:Odysee	es:Odysee	fa:اودیسی	fr:Odysee	he:אודיסי	hi:ओडिसी	ja:オディシー	ko:오디시	pt:Odysee	ru:Odysee	tr:Odysee	ur:اوڈیسی	zh:Odysee
 c:offense	Noun	ar:مخالفة,جنحة	de:Vergehen,Straftat	en:offense,offence	es:delito,ofensa	fa:تخلف,جرم	fr:infraction,délit	he:עבירה	hi:अपराध,उल्लंघन	ja:犯罪,違反	ko:범죄,위반	pt:delito,infração	ru:правонарушение,проступок	tr:suç,ihlal	ur:جرم,خلاف ورزی	zh:罪行,违法行为
 c:office	Noun	ar:مكتب	de:Büro	en:office	es:oficina	fa:دفتر	fr:bureau	he:משרד	hi:कार्यालय,ऑफिस,दफ़्तर	ja:事務所,オフィス	ko:사무실	pt:escritório	ru:офис,контора	tr:ofis,büro	ur:دفتر,آفس	zh:办公室
 c:office-building	Noun	ar:مبنى مكاتب	de:Bürogebäude	en:office building	es:edificio de oficinas	fa:ساختمان اداری	fr:immeuble de bureaux	he:בניין משרדים	hi:कार्यालय भवन	ja:オフィスビル	ko:사무용 건물	pt:edifício de escritórios	ru:офисное здание	tr:ofis binası	ur:دفتری عمارت	zh:写字楼
@@ -7748,6 +7772,7 @@ c:panda	Noun	ar:باندا	de:Panda	en:panda	es:panda	fa:پاندا	fr:panda	he:
 c:panda-bear	Noun	ar:باندا	de:Panda	en:panda	es:panda	fa:پاندا	fr:panda	he:פנדה	hi:पांडा	ja:パンダ	ko:판다	pt:panda	ru:панда	tr:panda	ur:پانڈا	zh:熊猫
 c:panda-express	ProperNoun	ar:باندا إكسبريس	de:Panda Express	en:Panda Express	es:Panda Express	fa:پاندا اکسپرس	fr:Panda Express	he:פנדה אקספרס	hi:पांडा एक्सप्रेस	ja:パンダエクスプレス	ko:판다 익스프레스	pt:Panda Express	ru:Panda Express	tr:Panda Express	ur:پانڈا ایکسپریس	zh:熊猫快餐
 c:pandemic	Noun	ar:جائحة	de:Pandemie	en:pandemic	es:pandemia	fa:پاندمی	fr:pandémie	he:פנדמיה	hi:विश्वमारी	ja:パンデミック	ko:팬데믹	pt:pandemia	ru:пандемия	tr:pandemi	ur:وبائی مرض	zh:大流行病
+c:pandora-music	ProperNoun	ar:باندورا	de:Pandora	en:Pandora Music	es:Pandora	fa:پاندورا	fr:Pandora	he:פנדורה	hi:पेंडोरा	ja:パンドラ	ko:판도라	pt:Pandora	ru:Pandora	tr:Pandora	ur:پنڈورا	zh:潘多拉
 c:paneer	Noun	ar:بانير	de:Paneer	en:paneer	es:paneer	fa:پنیر هندی	fr:paneer	he:פנאיר	hi:पनीर	ja:パニール	ko:파니르	pt:paneer	ru:панир	tr:paneer	ur:پنیر ہندی	zh:印度干酪
 c:panettone	Noun	ar:بانيتوني	de:Panettone	en:panettone	es:panettone	fa:پانه‌تونه	fr:panettone	he:פנטונה	hi:पैनेटोने	ja:パネットーネ	ko:파네토네	pt:panetone	ru:панеттоне	tr:panettone	ur:پنتون	zh:潘娜托尼
 c:pangea	Noun	ar:بانجيا	de:Pangäa	en:Pangea	es:Pangea	fa:پانگه‌آ	fr:Pangée	he:פנגיאה	hi:पैंजिया	ja:パンゲア大陸	ko:판게아	pt:Pangeia	ru:Пангея	tr:Pangaea	ur:پینگیا	zh:盘古大陆
@@ -7788,6 +7813,7 @@ c:parallel-lines	Noun	ar:خطوط متوازية	de:parallele Geraden	en:paralle
 c:parallelogram	Noun	ar:متوازي أضلاع	de:Parallelogramm	en:parallelogram	es:paralelogramo	fa:متوازی‌الاضلاع	fr:parallélogramme	he:מקבילית	hi:समांतर चतुर्भुज	ja:平行四辺形	ko:평행사변형	pt:paralelogramo	ru:параллелограмм	tr:paralelkenar	ur:متوازی الاضلاع	zh:平行四边形
 c:paralog	Noun	ar:الجين المتوازي	de:Paralog	en:paralog	es:parálogo	fa:پارالوگ	fr:paralogue	he:פרלוג	hi:पैरालॉग	ja:パラログ	ko:파라로그	pt:parálogo	ru:паралог	tr:paralog	ur:پیراکاگ	zh:旁系同源物
 c:paramedic	Noun	ar:مسعف طبي	de:Sanitäter	en:paramedic	es:paramédico	fa:پیراپزشک	fr:ambulancier	he:חובש	hi:पैरामेडिक	ja:救急救命士	ko:구급대원	pt:paramédico	ru:парамедик	tr:paramedik	ur:پیرامیڈک	zh:护理人员
+c:paramount-plus	ProperNoun	ar:بارامونت بلس	de:Paramount+	en:Paramount+	es:Paramount+	fa:پارامونت پلاس	fr:Paramount+	he:פרמאונט+	hi:पैरामाउंट+	ja:パラマウントプラス	ko:파라마운트+	pt:Paramount+	ru:Paramount+	tr:Paramount+	ur:پیراماؤنٹ پلس	zh:派拉蒙+
 c:parana	Noun	ar:بارانا,نهر بارانا	de:Paraná	en:Parana,Paraná,Parana River	es:Paraná,río Paraná	fa:پارانا	fr:Paraná	he:פרנה,נהר הפרנה	hi:पराना नदी	ja:パラナ川	ko:파라나강	pt:Paraná,rio Paraná	ru:Парана	tr:Parana,Parana Nehri	ur:دریائے پرانا	zh:巴拉那河
 c:paranoia	Noun	ar:بارانويا,جنون الارتياب	de:Paranoia	en:paranoia	es:paranoia	fa:پارانویا	fr:paranoïa	he:פרנויה	hi:पैरानोया	ja:偏執症,パラノイア	ko:편집증,파라노이아	pt:paranoia	ru:паранойя	tr:paranoya	ur:پیراونیا	zh:偏执狂,妄想症
 c:parapet	Noun	ar:الشرفة الدفاعية	de:Brüstung	en:parapet	es:parapeto	fa:دیوارک	fr:parapet	he:מעקה	hi:मुंडेर	ja:パラペット	ko:흉벽	pt:parapeito	ru:парапет	tr:siper duvarı	ur:منڈیر	zh:护墙
@@ -7901,6 +7927,7 @@ c:peach	Noun	ar:خوخ,دراق	de:Pfirsich	en:peach	es:durazno,melocotón	fa:ه
 c:peach-tree	Noun	ar:شجرة الخوخ	de:Pfirsichbaum	en:peach tree	es:duraznero	fa:درخت هلو	fr:pêcher	he:עץ אפרסק	hi:आड़ू का पेड़	ja:モモの木	ko:복숭아나무	pt:pessegueiro	ru:персик	tr:şeftali ağacı	ur:آڑو کا درخت	zh:桃树
 c:peacock	Noun	ar:طاووس	de:Pfau	en:peacock	es:pavo real	fa:طاووس	fr:paon	he:טווס	hi:मोर	ja:孔雀	ko:공작	pt:pavão	ru:павлин	tr:tavus kuşu	ur:مور	zh:孔雀
 c:peacock-bird	Noun	ar:طاووس	de:Pfau	en:peacock	es:pavo real	fa:طاووس	fr:paon	he:טווס	hi:मोर	ja:クジャク	ko:공작	pt:pavão	ru:павлин	tr:tavus kuşu	ur:مور	zh:孔雀
+c:peacock-tv	ProperNoun	ar:بيكوك	de:Peacock	en:Peacock	es:Peacock	fa:پیکاک	fr:Peacock	he:פיקוק	hi:पीकॉक	ja:ピーコック	ko:피콕	pt:Peacock	ru:Peacock	tr:Peacock	ur:پیکاک	zh:孔雀
 c:peanut	Noun	ar:فول سوداني	de:Erdnuss	en:peanut	es:cacahuete,maní	fa:بادام زمینی	fr:arachide	he:בוטן	hi:मूंगफली	ja:ピーナッツ	ko:땅콩	pt:amendoim	ru:арахис	tr:yer fıstığı	ur:مونگ پھلی	zh:花生
 c:peanuts-snack	Noun	ar:فول سوداني	de:Erdnüsse	en:peanuts	es:cacahuetes	fa:بادام زمینی	fr:cacahuètes	he:בוטנים	hi:मूंगफली	ja:ピーナッツ	ko:땅콩	pt:amendoim	ru:арахис	tr:yer fıstığı	ur:مونگ پھلی	zh:花生
 c:pear-tree	Noun	ar:شجرة الإجاص	de:Birnbaum	en:pear tree	es:peral	fa:درخت گلابی	fr:poirier	he:עץ אגס	hi:नाशपाती का पेड़	ja:ナシの木	ko:배나무	pt:pereira	ru:груша	tr:armut ağacı	ur:ناشپاتی کا درخت	zh:梨树
@@ -9223,6 +9250,7 @@ c:rocky-mountains	Noun	ar:الجبال الصخرية	de:Rocky Mountains	en:Rock
 c:rococo	Noun	ar:طراز روكوكو	de:Rokoko	en:Rococo	es:rococó	fa:روکوکو	fr:rococo	he:רוקוקו	hi:रोकोको	ja:ロココ	ko:로코코	pt:rococó	ru:рококо	tr:rokoko	ur:روکوکو	zh:洛可可
 c:roe	Noun	ar:بيض السمك	de:Fischrogen	en:fish roe	es:huevas de pescado	fa:تخم ماهی	fr:œufs de poisson	he:ביצי דגים	hi:मछली के अंडे	ja:魚卵	ko:어란	pt:ovas de peixe	ru:икра рыбы	tr:balık yumurtası	ur:مچھلی کے انڈے	zh:鱼卵
 c:rogue-wave	Noun	ar:الموجة الضالة	de:Riesenwelle	en:rogue wave	es:ola freak	fa:موج سرکش	fr:vague scélérate	he:גל סורר	hi:दुष्ट लहर	ja:異常波	ko:이상파	pt:onda gigante	ru:волна-убийца	tr:hileli dalga	ur:بدمعاش لہر	zh:畸形波
+c:roku	ProperNoun	ar:روكو	de:Roku	en:Roku	es:Roku	fa:روکو	fr:Roku	he:רוקו	hi:रोकू	ja:ロク	ko:로쿠	pt:Roku	ru:Roku	tr:Roku	ur:روکو	zh:Roku
 c:role-playing-game	Noun	ar:لعبة تقمص أدوار	de:Rollenspiel	en:role-playing game	es:juego de rol	fa:بازی نقش‌آفرینی	fr:jeu de rôle	he:משחק תפקידים	hi:भूमिका निभाने वाला खेल	ja:ロールプレイングゲーム	ko:롤플레잉 게임	pt:jogo de interpretação	ru:ролевая игра	tr:rol yapma oyunu	ur:کردار نگاری گیم	zh:角色扮演游戏
 c:role-social	Noun	ar:دور اجتماعي	de:soziale Rolle	en:social role	es:rol social	fa:نقش اجتماعی	fr:rôle social	he:תפקיד חברתי	hi:सामाजिक भूमिका	ja:社会的役割	ko:사회적 역할	pt:papel social	ru:социальная роль	tr:toplumsal rol	ur:معاشرتی کردار	zh:社会角色
 c:roll	Verb	ar:تدحرج	de:rollen	en:roll	es:rodar	fa:غلتیدن	fr:rouler	he:להתגלגל	hi:लुढ़कना	ja:転がる	ko:구르다	pt:rolar	ru:катиться	tr:yuvarlanmak	ur:لڑھکنا	zh:滚动
@@ -9322,6 +9350,7 @@ c:rum	Noun	ar:رم	de:Rum	en:rum	es:ron	fa:رم	fr:rhum	he:רום	hi:रम	ja:�
 c:rum-runner	Noun	ar:روم رانر	de:Rum Runner	en:Rum Runner	es:Rum Runner	fa:رام رانر	fr:Rum Runner	he:רם ראנר	hi:रम रनर	ja:ラムランナー	ko:럼 러너	pt:Rum Runner	ru:Ром Раннер	tr:Rum Runner	ur:رم رنر	zh:朗姆跑者
 c:rumba	Noun	ar:رقص الرومبا	de:Rumba	en:rumba	es:rumba	fa:رومبا	fr:rumba	he:רומבה	hi:रूम्बा	ja:ルンバ	ko:룸바	pt:rumba	ru:румба	tr:rumba	ur:رومبا	zh:伦巴舞
 c:rumba-dance	Noun	ar:رومبا	de:Rumba	en:rumba	es:rumba	fa:رومبا	fr:rumba	he:רומבה	hi:रूम्बा	ja:ルンバ	ko:룸바	pt:rumba	ru:румба	tr:rumba	ur:رومبا	zh:伦巴
+c:rumble	ProperNoun	ar:رامبل	de:Rumble	en:Rumble	es:Rumble	fa:رامبل	fr:Rumble	he:ראמבל	hi:रम्बल	ja:ランブル	ko:럼블	pt:Rumble	ru:Rumble	tr:Rumble	ur:رمبل	zh:Rumble
 c:rumi	Noun	ar:جلال الدين الرومي,الرومي	de:Rumi	en:Rumi,Jalal al-Din Rumi	es:Rumi	fa:مولوی,جلال‌الدین محمد بلخی,مولانا	fr:Rûmî	he:רומי	hi:रूमी	ja:ルーミー	ko:루미	pt:Rumi	ru:Руми	tr:Mevlâna,Rumi	ur:مولانا رومی,جلال الدین رومی	zh:鲁米
 c:rumpelstiltskin	ProperNoun	ar:رامبلستيلتسكين	de:Rumpelstilzchen	en:Rumpelstiltskin	es:Rumpelstiltskin	fa:رامپل‌استیلتزکین	fr:Rumpelstiltskin	he:רומפלשטילצכן	hi:रंपेलस्टिल्ट्सकिन	ja:ルンペルシュティルツヒェン	ko:룸펠슈틸츠헨	pt:Rumpelstiltskin	ru:Румпельштильцхен	tr:Rumpelstiltskin	ur:رمپل اسٹلٹسکن	zh:侏儒怪
 c:run	Verb	ar:ركض,جرى	de:rennen,laufen	en:run	es:correr	fa:دویدن	fr:courir	he:לרוץ	hi:दौड़ना	ja:走る	ko:달리다,뛰다	pt:correr	ru:бежать	tr:koşmak	ur:دوڑنا	zh:跑
@@ -9967,6 +9996,7 @@ c:small	Adjective	ar:صغير	de:klein	en:small,little	es:pequeño	fa:کوچک	f
 c:smallpox	Noun	ar:الجدري	de:Pocken	en:smallpox	es:viruela	fa:آبله	fr:variole	he:אבעבועות שחורות	hi:चेचक	ja:天然痘	ko:천연두	pt:varíola	ru:оспа	tr:çiçek hastalığı	ur:چیچک	zh:天花
 c:smart-city	Noun	ar:المدينة الذكية	de:Smart City	en:smart city	es:ciudad inteligente	fa:شهر هوشمند	fr:ville intelligente	he:עיר חכמה	hi:स्मार्ट शहर	ja:スマートシティ	ko:스마트 시티	pt:cidade inteligente	ru:умный город	tr:akıllı şehir	ur:ذہین شہر	zh:智慧城市
 c:smart-speaker	Noun	ar:مكبر صوت ذكي	de:intelligenter Lautsprecher	en:smart speaker	es:altavoz inteligente	fa:بلندگوی هوشمند	fr:enceinte intelligente	he:רמקול חכם	hi:स्मार्ट स्पीकर	ja:スマートスピーカー	ko:스마트 스피커	pt:alto-falante inteligente	ru:умная колонка	tr:akıllı hoparlör	ur:سمارٹ اسپیکر	zh:智能音箱
+c:smart-tv	Noun	ar:تلفاز ذكي	de:Smart-TV	en:smart TV	es:televisor inteligente	fa:تلویزیون هوشمند	fr:téléviseur intelligent	he:טלוויזיה חכמה	hi:स्मार्ट टीवी	ja:スマートテレビ	ko:스마트 TV	pt:TV inteligente	ru:умный телевизор	tr:akıllı televizyon	ur:سمارٹ ٹی وی	zh:智能电视
 c:smartphone	Noun	ar:هاتف ذكي	de:Smartphone	en:smartphone	es:teléfono inteligente,smartphone	fa:گوشی هوشمند	fr:smartphone,téléphone intelligent	he:סמארטפון	hi:स्मार्टफोन	ja:スマートフォン,スマホ	ko:스마트폰	pt:smartphone	ru:смартфон	tr:akıllı telefon	ur:اسمارٹ فون	zh:智能手机
 c:smartphone-device	Noun	ar:هاتف ذكي	de:Smartphone	en:smartphone	es:teléfono inteligente	fa:گوشی هوشمند	fr:smartphone	he:סמארטפון	hi:स्मार्टफोन	ja:スマートフォン	ko:스마트폰	pt:smartphone	ru:смартфон	tr:akıllı telefon	ur:سمارٹ فون	zh:智能手机
 c:smartphone-invention	Noun	ar:اختراع الهاتف الذكي	de:Smartphone Erfindung	en:smartphone invention	es:invención del smartphone	fa:اختراع تلفن هوشمند	fr:invention du smartphone	he:המצאת הסמארטפון	hi:स्मार्टफोन आविष्कार	ja:スマートフォンの発明	ko:스마트폰 발명	pt:invenção do smartphone	ru:изобретение смартфона	tr:akıllı telefon icadı	ur:اسمارٹ فون ایجاد	zh:智能手机发明
@@ -10115,6 +10145,7 @@ c:sound-isolation	Noun	ar:عزل الصوت	de:Schalldämmung	en:sound isolation
 c:sound-level-meter	Noun	ar:مقياس مستوى الصوت	de:Schallpegelmessgerät	en:sound level meter	es:sonómetro	fa:دب‌سنج	fr:sonomètre	he:מד עוצמת קול	hi:ध्वनि स्तर मापी	ja:騒音計	ko:소음계	pt:decibelímetro	ru:шумомер	tr:ses seviyesi ölçer	ur:آواز سطح ناپ	zh:噪声计
 c:sound-pressure	Noun	ar:ضغط الصوت	de:Schalldruck	en:sound pressure	es:presión sonora	fa:فشار صدا	fr:pression acoustique	he:לחץ קול	hi:ध्वनि दाब	ja:音圧	ko:음압	pt:pressão sonora	ru:звуковое давление	tr:ses basıncı	ur:آواز کا دباو	zh:声压
 c:sound-wave	Noun	ar:موجة صوتية	de:Schallwelle	en:sound wave	es:onda sonora	fa:موج صوتی	fr:onde sonore	he:גל קול	hi:ध्वनि तरंग	ja:音波	ko:음파	pt:onda sonora	ru:звуковая волна	tr:ses dalgası	ur:صوتی موج	zh:声波
+c:soundcloud	ProperNoun	ar:ساوند كلاود	de:SoundCloud	en:SoundCloud	es:SoundCloud	fa:ساوند‌کلاود	fr:SoundCloud	he:סאונדקלאוד	hi:साउंडक्लाउड	ja:サウンドクラウド	ko:사운드클라우드	pt:SoundCloud	ru:SoundCloud	tr:SoundCloud	ur:ساؤنڈ کلاؤڈ	zh:声云
 c:soundtrack	Noun	ar:موسيقى تصويرية	de:Filmmusik	en:soundtrack	es:banda sonora	fa:موسیقی متن	fr:bande originale	he:פסקול	hi:साउंडट्रैक	ja:サウンドトラック	ko:사운드트랙	pt:trilha sonora	ru:саундтрек	tr:film müziği	ur:ساؤنڈ ٹریک	zh:原声带
 c:soup	Noun	ar:حساء,شوربة	de:Suppe	en:soup	es:sopa	fa:سوپ	fr:soupe,potage	he:מרק	hi:सूप,शोरबा	ja:スープ,汁	ko:수프,국	pt:sopa	ru:суп	tr:çorba	ur:سوپ,شوربہ	zh:汤
 c:sour	Adjective	ar:حامض	de:sauer	en:sour	es:agrio,ácido	fa:ترش	fr:aigre,acide	he:חמוץ	hi:खट्टा	ja:酸っぱい	ko:신	pt:azedo	ru:кислый	tr:ekşi	ur:کھٹا	zh:酸
@@ -10245,6 +10276,7 @@ c:sports-equipment	Noun	ar:معدات رياضية	de:Sportausrüstung	en:sports
 c:sports-game	Noun	ar:لعبة رياضة	de:Sportspiel	en:sports game	es:videojuego deportivo	fa:بازی ورزشی	fr:jeu de sport	he:משחק ספורט	hi:खेल खेल	ja:スポーツゲーム	ko:스포츠 게임	pt:jogo desportivo	ru:спортивная игра	tr:spor oyunu	ur:کھیل گیم	zh:体育游戏
 c:sports-medicine	Noun	ar:طب الرياضة	de:Sportmedizin	en:sports medicine	es:medicina deportiva	fa:پزشکی ورزشی	fr:médecine du sport	he:רפואת ספורט	hi:खेल चिकित्सा	ja:スポーツ医学	ko:스포츠 의학	pt:medicina esportiva	ru:спортивная медицина	tr:spor hekimliği	ur:اسپورٹس میڈیسن	zh:运动医学
 c:sportswear	Noun	ar:ملابس رياضية	de:Sportbekleidung	en:sportswear	es:ropa deportiva	fa:لباس ورزشی	fr:vêtement de sport	he:ביגוד ספורט	hi:खेलकूद परिधान	ja:スポーツウェア	ko:스포츠웨어	pt:roupa desportiva	ru:спортивная одежда	tr:spor giyim	ur:اسپورٹس ویئر	zh:运动服
+c:spotify	ProperNoun	ar:سبوتيفاي	de:Spotify	en:Spotify	es:Spotify	fa:اسپاتیفای	fr:Spotify	he:ספוטיפיי	hi:स्पॉटिफ़ाई	ja:スポティファイ	ko:스포티파이	pt:Spotify	ru:Spotify	tr:Spotify	ur:اسپاٹیفائی	zh:声田
 c:sprat	Noun	ar:سبرط	de:Sprotte	en:sprat	es:espadín	fa:اسپرت	fr:sprat	he:ספרט	hi:स्प्रेट	ja:スプラット	ko:청어류	pt:espadilha	ru:шпрот	tr:çaça	ur:سپریٹ	zh:小沙丁鱼
 c:spray-drying	Noun	ar:التجفيف بالرش	de:Sprühtrocknung	en:spray drying	es:secado por pulverización	fa:خشک‌کردن پاششی	fr:séchage par atomisation	he:ייבוש בספריי	hi:छिड़काव सुखाना	ja:噴霧乾燥	ko:분무 건조	pt:secagem por aspersão	ru:распылительная сушка	tr:püskürtmeli kurutma	ur:سپرے سے خشک	zh:喷雾干燥
 c:spray-paint	Noun	ar:بخاخ طلاء	de:Sprühfarbe	en:spray paint	es:pintura en aerosol	fa:اسپری رنگ	fr:peinture en aérosol	he:צבע ספריי	hi:स्प्रे पेंट	ja:スプレー塗料	ko:스프레이 페인트	pt:tinta spray	ru:аэрозольная краска	tr:sprey boya	ur:اسپرے پینٹ	zh:喷漆
@@ -10459,6 +10491,7 @@ c:strawberry	Noun	ar:فراولة,فريز	de:Erdbeere	en:strawberry	es:fresa,fr
 c:stream-of-consciousness	Noun	ar:تيار الوعي	de:Bewusstseinsstrom	en:stream of consciousness	es:corriente de conciencia	fa:جریان آگاهی	fr:flux de conscience	he:זרם התודעה	hi:चेतना-प्रवाह	ja:意識の流れ	ko:의식의 흐름	pt:fluxo de consciência	ru:поток сознания	tr:bilinç akışı	ur:شعور کا بہاو	zh:意识流
 c:streaming-service	Noun	ar:خدمة البث	de:Streamingdienst	en:streaming service,streaming platform	es:servicio de streaming,plataforma de streaming	fa:سرویس پخش آنلاین	fr:service de streaming,plateforme de streaming	he:שירות סטרימינג	hi:स्ट्रीमिंग सेवा	ja:ストリーミングサービス	ko:스트리밍 서비스	pt:serviço de streaming	ru:стриминговый сервис	tr:yayın akışı hizmeti	ur:اسٹریمنگ سروس	zh:流媒体服务
 c:streaming-service-tv	Noun	ar:خدمة بث	de:Streaming-Dienst	en:streaming service	es:servicio de streaming	fa:سرویس استریم	fr:service de streaming	he:שירות סטרימינג	hi:स्ट्रीमिंग सेवा	ja:ストリーミングサービス	ko:스트리밍 서비스	pt:serviço de streaming	ru:стриминговый сервис	tr:yayın hizmeti	ur:اسٹریمنگ سروس	zh:流媒体服务
+c:streaming-services	Noun	ar:خدمات البث	de:Streaming-Dienste	en:streaming services	es:servicios de streaming	fa:سرویس‌های استریمینگ	fr:services de streaming	he:שירותי סטרימינג	hi:स्ट्रीमिंग सेवाएं	ja:ストリーミングサービス	ko:스트리밍 서비스	pt:serviços de streaming	ru:стриминговые сервисы	tr:yayın hizmetleri	ur:سٹریمنگ سروسز	zh:流媒体服务
 c:street	Noun	ar:شارع	de:Straße	en:street	es:calle	fa:خیابان	fr:rue	he:רחוב	hi:सड़क,गली	ja:通り	ko:거리	pt:rua	ru:улица	tr:sokak,cadde	ur:گلی,سڑک	zh:街道,街
 c:streetscape	Noun	ar:المشهد الشارعي	de:Straßenbild	en:streetscape	es:paisaje urbano	fa:منظر خیابانی	fr:paysage de rue	he:נוף רחוב	hi:सड़क परिदृश्य	ja:ストリートスケープ	ko:가로 경관	pt:paisagem de rua	ru:уличный пейзаж	tr:sokak manzarası	ur:سڑک کا منظر	zh:街道景观
 c:streetwear	Noun	ar:ملابس الشارع	de:Streetwear	en:streetwear	es:streetwear	fa:استریت‌ور	fr:streetwear	he:סטריטוור	hi:स्ट्रीटवियर	ja:ストリートウェア	ko:스트리트웨어	pt:streetwear	ru:стритвир	tr:sokak giyimi	ur:اسٹریٹ ویئر	zh:街头服饰
@@ -11079,6 +11112,7 @@ c:ticket	Noun	ar:تذكرة	de:Ticket,Fahrkarte	en:ticket	es:billete,boleto,entr
 c:tidal-current	Noun	ar:تيار مدي	de:Gezeitenstrom	en:tidal current	es:corriente de marea	fa:جریان جزر و مدی	fr:courant de marée	he:זרם גאות	hi:ज्वारीय धारा	ja:潮流	ko:조류	pt:corrente de maré	ru:приливное течение	tr:gel-git akıntısı	ur:مدوجزر روانی	zh:潮流
 c:tidal-flat	Noun	ar:المسطح المدي	de:Watt	en:tidal flat	es:marisma intermareal	fa:کفه جزرومدی	fr:estran vaseux	he:שטח גאות	hi:ज्वारीय मैदान	ja:干潟	ko:갯벌	pt:planície intermareal	ru:осушка	tr:gel-git düzlüğü	ur:مدوجزر میدان	zh:潮滩
 c:tidal-force	Noun	ar:قوة المد والجزر	de:Gezeitenkraft	en:tidal force	es:fuerza mareal	fa:نیروی جزر و مدی	fr:force de marée	he:כוח גאות	hi:ज्वारीय बल	ja:潮汐力	ko:조석력	pt:força de maré	ru:приливная сила	tr:gel-git kuvveti	ur:مدوجزر قوت	zh:潮汐力
+c:tidal-music	ProperNoun	ar:تايدال	de:Tidal	en:Tidal	es:Tidal	fa:تایدال	fr:Tidal	he:טיידל	hi:टाइडल	ja:タイダル	ko:타이달	pt:Tidal	ru:Tidal	tr:Tidal	ur:ٹائڈل	zh:Tidal
 c:tide	Noun	ar:مد وجزر	de:Gezeiten	en:tide	es:marea	fa:جزر و مد	fr:marée	he:גאות ושפל	hi:ज्वार	ja:潮	ko:조수	pt:maré	ru:прилив	tr:gelgit	ur:جوار بھاٹا	zh:潮汐
 c:tide-ocean	Noun	ar:مد وجزر	de:Gezeiten	en:tide	es:marea	fa:جزر و مد	fr:marée	he:גאות ושפל	hi:ज्वार	ja:潮汐	ko:조석	pt:maré	ru:прилив	tr:gelgit	ur:جوار	zh:潮汐
 c:tide-pool	Noun	ar:برك المد والجزر	de:Gezeitentümpel	en:tide pool	es:poza mareal	fa:حوضچه جزر و مدی	fr:mare de marée	he:בריכת גאות	hi:ज्वार-भाटा ताल	ja:潮だまり	ko:조수웅덩이	pt:poça de maré	ru:приливная ванночка	tr:gelgit havuzu	ur:مدوجزر کا تالاب	zh:潮池
@@ -11137,6 +11171,7 @@ c:tithing	Noun	ar:العشور	de:Zehnter	en:tithing	es:diezmo	fa:عشریه	fr:
 c:title	Noun	ar:عنوان	de:Titel	en:title	es:título	fa:عنوان	fr:titre	he:כותרת	hi:शीर्षक	ja:題,タイトル	ko:제목,타이틀	pt:título	ru:название,заглавие	tr:başlık,unvan	ur:عنوان	zh:标题,题目
 c:titration	Noun	ar:معايرة	de:Titration	en:titration	es:titulación	fa:تیتراسیون	fr:titration	he:טיטרציה	hi:अनुमापन	ja:滴定	ko:적정	pt:titulação	ru:титрование	tr:titrasyon	ur:ٹائٹریشن	zh:滴定
 c:titration-method	Noun	ar:معايرة كيميائية	de:Titration	en:titration	es:valoración	fa:تیتراسیون	fr:titrage	he:טיטרציה	hi:अनुमापन	ja:滴定	ko:적정	pt:titulação	ru:титрование	tr:titrasyon	ur:ٹائٹریشن	zh:滴定
+c:tivo	ProperNoun	ar:تيفو	de:TiVo	en:TiVo	es:TiVo	fa:تیوو	fr:TiVo	he:TiVo	hi:टिवो	ja:ティーヴォ	ko:티보	pt:TiVo	ru:TiVo	tr:TiVo	ur:ٹی وو	zh:TiVo
 c:tizen	ProperNoun	ar:تايزن	de:Tizen	en:Tizen	es:Tizen	fa:تایزن	fr:Tizen	he:טייזן	hi:टाइज़न	ja:タイゼン	ko:타이젠	pt:Tizen	ru:Tizen	tr:Tizen	ur:ٹائزن	zh:泰泽
 c:tlr-agonist	Noun	ar:ناهض مستقبلات النمط	de:TLR-Agonist	en:TLR agonist	es:agonista de TLR	fa:آگونیست TLR	fr:agoniste des récepteurs TLR	he:אגוניסט TLR	hi:TLR उत्तेजक	ja:TLRアゴニスト	ko:TLR 작용제	pt:agonista de TLR	ru:агонист TLR	tr:TLR agonisti	ur:TLR تحریک کار	zh:TLR激动剂
 c:tls	Noun	ar:أمان طبقة النقل	de:TLS	en:TLS	es:TLS	fa:TLS	fr:TLS	he:TLS	hi:टीएलएस	ja:TLS	ko:TLS	pt:TLS	ru:TLS	tr:TLS	ur:ٹی ایل ایس	zh:传输层安全
@@ -11374,6 +11409,7 @@ c:trough-wave	Noun	ar:حضيض الموجة	de:Wellental	en:wave trough	es:valle
 c:trousers	Noun	ar:بنطال	de:Hose	en:trousers	es:pantalones	fa:شلوار	fr:pantalon	he:מכנסיים	hi:पतलून	ja:ズボン	ko:바지	pt:calças	ru:брюки	tr:pantolon	ur:پتلون	zh:裤子
 c:trout	Noun	ar:سلمون مرقط	de:Forelle	en:trout	es:trucha	fa:قزل‌آلا	fr:truite	he:פורל	hi:ट्राउट	ja:マス	ko:송어	pt:truta	ru:форель	tr:alabalık	ur:ٹراؤٹ	zh:鳟鱼
 c:trout-fish	Noun	ar:تراوت	de:Forelle	en:trout	es:trucha	fa:قزل‌آلا	fr:truite	he:פורל	hi:ट्राउट	ja:マス	ko:송어	pt:truta	ru:форель	tr:alabalık	ur:ٹراؤٹ	zh:鳟鱼
+c:trovo	ProperNoun	ar:تروفو	de:Trovo	en:Trovo	es:Trovo	fa:تروو	fr:Trovo	he:טרובו	hi:ट्रोवो	ja:トロボ	ko:트로보	pt:Trovo	ru:Trovo	tr:Trovo	ur:ٹروو	zh:Trovo
 c:trowel	Noun	ar:مالج	de:Kelle	en:trowel	es:llana	fa:ماله	fr:truelle	he:מגרפה	hi:करनी	ja:コテ	ko:흙손	pt:colher de pedreiro	ru:шпатель	tr:mala	ur:ترول	zh:泥铲
 c:trowel-tool	Noun	ar:مالج	de:Kelle	en:trowel	es:llana	fa:ماله	fr:truelle	he:מגרפה	hi:करनी	ja:コテ	ko:흙손	pt:colher de pedreiro	ru:мастерок	tr:mala	ur:کرنی	zh:抹刀
 c:truck	Noun	ar:شاحنة	de:Lastwagen,Laster,LKW	en:truck,lorry	es:camión	fa:کامیون	fr:camion	he:משאית	hi:ट्रक,लॉरी	ja:トラック	ko:트럭	pt:caminhão,camião	ru:грузовик	tr:kamyon	ur:ٹرک	zh:卡车,货车
@@ -11453,6 +11489,7 @@ c:twilight	Noun	ar:الشفق	de:Dämmerung	en:twilight	es:crepúsculo	fa:گرگ
 c:twin-prime	Noun	ar:الاعداد الاولية التوامية	de:Primzahlzwilling	en:twin prime	es:primo gemelo	fa:اعداد اول دوقلو	fr:nombres premiers jumeaux	he:ראשוניים תאומים	hi:जुड़वाँ अभाज्य	ja:双子素数	ko:쌍둥이 소수	pt:primos gêmeos	ru:простые числа-близнецы	tr:ikiz asal	ur:جوڑواں اول عدد	zh:孪生素数
 c:twirl	Verb	ar:دار بخفة	de:wirbeln,pirouettieren	en:twirl	es:dar vueltas,girar con gracia	fa:چرخ زدن سریع	fr:tournoyer,faire des pirouettes	he:להסתחרר	hi:फिरकी लेना	ja:くるくる回る	ko:빙그르르 돌다	pt:rodopiar	ru:кружиться на месте	tr:fırıldak gibi dönmek	ur:گھرنی کی طرح گھومنا	zh:旋转打转
 c:twitch-platform	ProperNoun	ar:توتش	de:Twitch	en:Twitch	es:Twitch	fa:توییچ	fr:Twitch	he:טוויץ'	hi:ट्विच	ja:ツイッチ	ko:트위치	pt:Twitch	ru:Twitch	tr:Twitch	ur:ٹوئچ	zh:抽搐
+c:twitch-stream	ProperNoun	ar:تويتش بث	de:Twitch Streaming	en:Twitch streaming	es:streaming Twitch	fa:استریم توییچ	fr:streaming Twitch	he:סטרימינג טוויץ'	hi:ट्विच स्ट्रीमिंग	ja:ツイッチ配信	ko:트위치 스트리밍	pt:streaming Twitch	ru:Twitch стриминг	tr:Twitch yayın	ur:ٹوئچ اسٹریمنگ	zh:抽搐直播
 c:twitter-platform	ProperNoun	ar:تويتر	de:Twitter	en:Twitter	es:Twitter	fa:توییتر	fr:Twitter	he:טוויטר	hi:ट्विटर	ja:ツイッター	ko:트위터	pt:Twitter	ru:Twitter	tr:Twitter	ur:ٹوئٹر	zh:推特
 c:twix	ProperNoun	ar:تويكس	de:Twix	en:Twix	es:Twix	fa:توئکس	fr:Twix	he:טוויקס	hi:ट्विक्स	ja:ツイックス	ko:트윅스	pt:Twix	ru:Twix	tr:Twix	ur:ٹوکس	zh:特趣
 c:two	Noun	ar:اثنان,اثنين	de:zwei	en:two	es:dos	fa:دو	fr:deux	he:שניים	hi:दो	ja:二,に	ko:둘,이	pt:dois	ru:два	tr:iki	ur:دو	zh:二,两
@@ -11698,6 +11735,7 @@ c:vijayanagara-empire	Noun	ar:إمبراطورية فيجاياناغارا	de:V
 c:village	Noun	ar:قرية	de:Dorf	en:village	es:aldea,pueblo	fa:روستا,دهکده	fr:village	he:כפר	hi:गाँव	ja:村	ko:마을	pt:aldeia,vila	ru:деревня	tr:köy	ur:گاؤں	zh:村,村庄
 c:villain	Noun	ar:شرير	de:Schurke	en:villain	es:villano	fa:شرور	fr:méchant	he:נבל	hi:खलनायक	ja:悪役	ko:악당	pt:vilão	ru:злодей	tr:kötü adam	ur:ولن	zh:反派
 c:villanelle	Noun	ar:فيلانيل	de:Villanelle	en:villanelle	es:vilanela	fa:ویلانل	fr:villanelle	he:וילאנל	hi:विलानेल	ja:ヴィラネル	ko:빌라넬	pt:vilanela	ru:вилланель	tr:villanelle	ur:ویلنیلے	zh:维拉内拉诗
+c:vimeo	ProperNoun	ar:فيميو	de:Vimeo	en:Vimeo	es:Vimeo	fa:ویمیو	fr:Vimeo	he:וימאו	hi:विमियो	ja:ヴィメオ	ko:비메오	pt:Vimeo	ru:Vimeo	tr:Vimeo	ur:ویمیو	zh:Vimeo
 c:vinaigrette	Noun	ar:فينيغريت	de:Vinaigrette	en:vinaigrette	es:vinagreta	fa:سرکه سالاد	fr:vinaigrette	he:ויניגרט	hi:विनेग्रेट	ja:ビネグレット	ko:비네그레트	pt:vinagrete	ru:винегрет заправка	tr:vinaigrette	ur:ونیگریٹ	zh:油醋汁
 c:vine	Noun	ar:كرمة,دالية	de:Rebe,Weinrebe	en:vine	es:vid,parra	fa:تاک,مو	fr:vigne,liane	he:גפן	hi:बेल,लता	ja:つる,蔓	ko:덩굴	pt:videira	ru:лоза	tr:asma	ur:بیل	zh:藤,藤蔓
 c:vine-snake	Noun	ar:ثعبان الكرمة	de:Peitschennatter	en:vine snake	es:serpiente látigo	fa:مار تاک	fr:serpent fouet	he:נחש גפן	hi:बेल सांप	ja:ムチヘビ	ko:포도나무뱀	pt:cobra-cipó	ru:лозовая змея	tr:çırpı yılan	ur:انگور مار	zh:藤蛇
@@ -12160,7 +12198,9 @@ c:yokohama	Noun	ar:يوكوهاما	de:Yokohama	en:Yokohama	es:Yokohama	fa:یو�
 c:yoruba	Noun	ar:يوروبا	de:Yoruba	en:Yoruba	es:yoruba	fa:یوروبا	fr:yoruba	he:יורובה	hi:योरूबा	ja:ヨルバ人	ko:요루바족	pt:iorubá	ru:йоруба	tr:Yoruba	ur:یوروبا	zh:约鲁巴人
 c:young	Adjective	ar:شاب,صغير السن	de:jung	en:young	es:joven	fa:جوان	fr:jeune	he:צעיר	hi:जवान,युवा	ja:若い	ko:젊은,어린	pt:jovem	ru:молодой	tr:genç	ur:جوان	zh:年轻
 c:youngs-modulus	Noun	ar:معامل يونج	de:Elastizitätsmodul	en:Young's modulus	es:módulo de Young	fa:مدول الاستیسیته	fr:module de Young	he:מודולוס של יאנג	hi:यंग का मापांक	ja:ヤング率	ko:영률	pt:módulo de Young	ru:модуль Юнга	tr:Young modülü	ur:ینگ ماڈیولس	zh:杨氏模量
+c:youtube-music	ProperNoun	ar:يوتيوب ميوزك	de:YouTube Music	en:YouTube Music	es:YouTube Music	fa:یوتیوب موزیک	fr:YouTube Music	he:יוטיוב מיוזיק	hi:यूट्यूब म्यूजिक	ja:YouTube Music	ko:유튜브 뮤직	pt:YouTube Music	ru:YouTube Music	tr:YouTube Music	ur:یوٹیوب میوزک	zh:油管音乐
 c:youtube-platform	ProperNoun	ar:يوتيوب	de:YouTube	en:YouTube	es:YouTube	fa:یوتیوب	fr:YouTube	he:יוטיוב	hi:यूट्यूब	ja:ユーチューブ	ko:유튜브	pt:YouTube	ru:YouTube	tr:YouTube	ur:یوٹیوب	zh:油管
+c:youtube-tv	ProperNoun	ar:يوتيوب تي في	de:YouTube TV	en:YouTube TV	es:YouTube TV	fa:یوتیوب تی‌وی	fr:YouTube TV	he:יוטיוב טי.וי	hi:यूट्यूब टीवी	ja:YouTube TV	ko:유튜브 TV	pt:YouTube TV	ru:YouTube TV	tr:YouTube TV	ur:یوٹیوب ٹی وی	zh:油管TV
 c:yttrium	Noun	ar:إيتريوم	de:Yttrium	en:yttrium	es:itrio	fa:ایتریم	fr:yttrium	he:איטריום	hi:इट्रियम	ja:イットリウム	ko:이트륨	pt:ítrio	ru:иттрий	tr:itriyum	ur:اٹریم	zh:钇
 c:yuan	Noun	ar:يوان	de:Yuan,Renminbi	en:yuan,renminbi	es:yuan	fa:یوان	fr:yuan,renminbi	he:יואן	hi:युआन	ja:元,人民元	ko:위안	pt:yuan,renminbi	ru:юань	tr:yuan	ur:یوآن	zh:元,人民币
 c:yukata	Noun	ar:يوكاتا	de:Yukata	en:yukata	es:yukata	fa:یوکاتا	fr:yukata	he:יוקטה	hi:युकाता	ja:浴衣	ko:유카타	pt:yukata	ru:юката	tr:yukata	ur:یوکاتا	zh:浴衣
