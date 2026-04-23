@@ -143,13 +143,40 @@ is now authoritative.
 | §69 | 39cc387 | MIG-001 Step 4: note_meta triggers |
 | §70 | 26ba6aa | BUG-001 fix: phantom-duplicate on rename |
 | §71 | 68f24ea | BUG-002/003 fix: title sync + alias idempotency |
+| §72 | cfc3382 | MIG-001 Step 5: resumable sky_* back-fill populator |
+| §73 | 4c8a974 | MIG-001 Step 6: rename cascade hardening + docs |
+| §74 | c52b3f2 | MIG-001 Step 7: enrichment scope decision (defer MIG-002) |
+| §75 | ae062f6 | SV: legend toggle + dead-code cleanup |
+| §76 | b99b856 | SV: Stratum + Maturity color modes with legend |
+| §77 | 6be6ee9 | BUG-004 fix: legend hides when mode has no data |
+| §78 | 2f9a4c5 | SV: Compute-now button for on-demand enrichment |
+
+## § 72-78 — MIG-001 Steps 5-7 + Sky View legend redesign
+
+See individual commits for full context. High notes:
+
+- **Step 5 (§72)**: Resumable back-fill populator on a background
+  thread. 7,600 sky_nodes + 232,461 sky_links populated on first
+  boot. Cursor table allows resume on crash. Subsequent boots
+  skip via schema_versions.sky stamp. ✅ Tested.
+- **Step 6 (§73)**: Rename cascade end-to-end — the actual chain
+  is AD+AI fires (not AU) because index_note does DELETE+INSERT.
+  INSERT OR IGNORE safety for back-fill race. ✅ Tested.
+- **Step 7 (§74)**: Audit found enrichment is compute-on-demand,
+  not persisted. Decision: defer enrichment WTD to MIG-002 to
+  keep scope disciplined. ✅ No regression.
+- **§75 Legend toggle**: Palette button to hide/show legend drawer.
+- **§76 Stratum + Maturity modes**: New color modes pulled from
+  ConstellationMap palettes; enrichment already flows via
+  existing compute_note_strata / compute_note_maturity IPCs.
+- **§77 BUG-004 fix**: Legend disappeared entirely when mode had
+  no data, trapping user. Legend now always renders when visible.
+- **§78 Compute-now**: Empty state exposes a button to trigger
+  enrichNodesBackground on demand. Persistence deferred to MIG-002.
 
 ### Still pending (MIG-001)
 
-- Step 5: resumable back-fill populator (next)
-- Step 6: rename cascade (with /simplify)
-- Step 7: strata enrichment triggers
-- Step 8: new IPC `cache_boot_snapshot_sky`
+- Step 8: new IPC `cache_boot_snapshot_sky` (next)
 - Step 9: frontend swap main window (with /simplify)
 - Step 10: frontend swap second-screen
 - Step 11: Phase-4 audit + cleanup
@@ -157,3 +184,4 @@ is now authoritative.
 ### Non-MIG pending
 
 - Functional Panel Placement test walkthrough
+- MIG-002: persist enrichment (stratum/maturity/origin_type) to sky_nodes
