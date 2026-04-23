@@ -296,6 +296,7 @@ c:answer	Verb	ar:أجاب,رد	de:antworten	en:answer,reply	es:responder,contest
 c:ant	Noun	ar:نملة	de:Ameise	en:ant	es:hormiga	fa:مورچه	fr:fourmi	he:נמלה	hi:चींटी	ja:蟻,アリ	ko:개미	pt:formiga	ru:муравей	tr:karınca	ur:چیونٹی	zh:蚂蚁
 c:antagonist	Noun	ar:شرير القصة,الخصم الرئيسي	de:Antagonist,Gegenspieler	en:antagonist	es:antagonista	fa:ضد قهرمان,دشمن اصلی	fr:antagoniste	he:אנטגוניסט	hi:खलनायक,प्रतिनायक	ja:悪役,アンタゴニスト	ko:악당,반주인공	pt:antagonista	ru:антагонист,злодей	tr:antagonist,karşı kahraman	ur:ولن,مخالف کردار	zh:反派,对手
 c:antarctic	Noun	ar:القطب الجنوبي,المنطقة القطبية الجنوبية	de:Antarktis	en:Antarctic,the Antarctic	es:Antártico,Antártida	fa:قطب جنوب,منطقه قطبی جنوبی	fr:Antarctique	he:אנטארקטי,האזור האנטארקטי	hi:अंटार्कटिक,दक्षिणी ध्रुवीय क्षेत्र	ja:南極,南極圏	ko:남극,남극권	pt:Antártico,Antártica	ru:Антарктика	tr:Antarktika,Güney Kutbu	ur:قطب جنوبی,انٹارکٹک	zh:南极,南极地区
+c:antarctic-desert	Noun	ar:صحراء أنتاركتيكا	de:antarktische Wüste	en:Antarctic desert	es:desierto antártico	fa:صحرای قطب جنوب	fr:désert antarctique	he:מדבר אנטארקטיקה	hi:अंटार्कटिक रेगिस्तान	ja:南極砂漠	ko:남극 사막	pt:deserto antártico	ru:Антарктическая пустыня	tr:Antarktika çölü	ur:انٹارکٹک صحرا	zh:南极沙漠
 c:antares	Noun	ar:قلب العقرب,أنتاريس	de:Antares	en:Antares	es:Antares	fa:قلب العقرب	fr:Antarès	he:אנטארס	hi:एंटारेस	ja:アンタレス	ko:안타레스	pt:Antares	ru:Антарес	tr:Antares	ur:انطارس	zh:心宿二
 c:antenna	Noun	ar:هوائي,أنتنا	de:Antenne	en:antenna,aerial	es:antena	fa:آنتن	fr:antenne	he:אנטנה	hi:एंटीना	ja:アンテナ	ko:안테나	pt:antena	ru:антенна	tr:anten	ur:اینٹینا	zh:天线
 c:anthem	Noun	ar:نشيد	de:Hymne	en:anthem	es:himno	fa:سرود	fr:hymne	he:המנון	hi:गान,राष्ट्रगान	ja:国歌,賛歌	ko:찬가,국가	pt:hino	ru:гимн	tr:marş,ilahi	ur:ترانہ,قومی ترانہ	zh:国歌,颂歌
@@ -361,6 +362,7 @@ c:aquamarine-gem	Noun	ar:زبرجد مائي	de:Aquamarin	en:aquamarine	es:aguam
 c:aqueduct	Noun	ar:قناة مائية	de:Aquädukt	en:aqueduct	es:acueducto	fa:آب‌راه	fr:aqueduc	he:אמת מים	hi:जलसेतु	ja:水道橋	ko:수도교	pt:aqueduto	ru:акведук	tr:su kemeri	ur:آبی نہر	zh:水道桥
 c:aquifer	Noun	ar:الطبقة الحاملة للمياه	de:Grundwasserleiter	en:aquifer	es:acuífero	fa:آبخوان	fr:aquifère	he:אקוויפר	hi:जलभृत	ja:帯水層	ko:대수층	pt:aquífero	ru:водоносный горизонт	tr:akifer	ur:آبی طبقہ	zh:含水层
 c:arab-spring	Noun	ar:الربيع العربي	de:Arabischer Frühling	en:Arab Spring	es:primavera árabe	fa:بهار عربی	fr:printemps arabe	he:האביב הערבי	hi:अरब वसंत	ja:アラブの春	ko:아랍의 봄	pt:Primavera Árabe	ru:арабская весна	tr:Arap Baharı	ur:عرب بہار	zh:阿拉伯之春
+c:arabian-desert	Noun	ar:الصحراء العربية	de:arabische Wüste	en:Arabian desert	es:desierto arábigo	fa:صحرای عربستان	fr:désert d'Arabie	he:המדבר הערבי	hi:अरबी रेगिस्तान	ja:アラビア砂漠	ko:아라비아 사막	pt:deserto da Arábia	ru:Аравийская пустыня	tr:Arap çölü	ur:عربی صحرا	zh:阿拉伯沙漠
 c:arabian-sea	Noun	ar:بحر العرب	de:Arabisches Meer	en:Arabian Sea	es:Mar Arábigo	fa:دریای عرب	fr:Mer d'Arabie	he:הים הערבי	hi:अरब सागर	ja:アラビア海	ko:아라비아해	pt:Mar Arábigo,Mar da Arábia	ru:Аравийское море	tr:Arap Denizi	ur:بحیرہ عرب	zh:阿拉伯海
 c:aral-sea	Noun	ar:بحر الآرال	de:Aralsee	en:Aral Sea	es:Mar de Aral	fa:دریاچه آرال	fr:Mer d'Aral	he:ים אראל	hi:अरल सागर	ja:アラル海	ko:아랄해	pt:Mar de Aral	ru:Аральское море	tr:Aral Gölü	ur:بحیرہ ارال	zh:咸海
 c:arbitrage	Noun	ar:مراجحة	de:Arbitrage	en:arbitrage	es:arbitraje	fa:آربیتراژ	fr:arbitrage	he:ארביטראז	hi:आर्बिट्राज	ja:裁定取引	ko:차익거래	pt:arbitragem	ru:арбитраж	tr:arbitraj	ur:آربیٹریج	zh:套利
@@ -376,6 +378,7 @@ c:archetype	Noun	ar:نموذج أولي	de:Archetyp	en:archetype	es:arquetipo	fa
 c:archipelago	Noun	ar:أرخبيل	de:Archipel	en:archipelago	es:archipiélago	fa:مجمع الجزایر	fr:archipel	he:ארכיפלג	hi:द्वीपसमूह	ja:群島	ko:군도	pt:arquipélago	ru:архипелаг	tr:takımadalar	ur:جزیرہ نما	zh:群岛
 c:archipelago-geo	Noun	ar:أرخبيل	de:Archipel	en:archipelago	es:archipiélago	fa:مجمع‌الجزایر	fr:archipel	he:ארכיפלג	hi:द्वीपसमूह	ja:諸島	ko:군도	pt:arquipélago	ru:архипелаг	tr:takımadalar	ur:جزائر	zh:群岛
 c:arctic	Noun	ar:القطب الشمالي,المنطقة القطبية الشمالية	de:Arktis	en:Arctic,the Arctic	es:Ártico	fa:قطب شمال,منطقه قطبی شمالی	fr:Arctique	he:ארקטי,האזור הארקטי	hi:आर्कटिक,उत्तरी ध्रुवीय क्षेत्र	ja:北極,北極圏	ko:북극,북극권	pt:Ártico	ru:Арктика	tr:Arktik,Kuzey Kutbu	ur:قطب شمالی,آرکٹک	zh:北极,北极地区
+c:arctic-desert	Noun	ar:صحراء القطب الشمالي	de:arktische Wüste	en:Arctic desert	es:desierto ártico	fa:صحرای قطب شمال	fr:désert arctique	he:מדבר ארקטי	hi:आर्कटिक रेगिस्तान	ja:北極砂漠	ko:북극 사막	pt:deserto ártico	ru:Арктическая пустыня	tr:Arktik çölü	ur:آرکٹک صحرا	zh:北极沙漠
 c:arctic-ocean	Noun	ar:المحيط المتجمد الشمالي	de:Arktischer Ozean,Nordpolarmeer	en:Arctic Ocean	es:Océano Ártico,Océano Glacial Ártico	fa:اقیانوس منجمد شمالی	fr:Océan Arctique,Océan Glacial Arctique	he:האוקיינוס הארקטי	hi:आर्कटिक महासागर	ja:北極海	ko:북극해	pt:Oceano Ártico,Oceano Glacial Ártico	ru:Северный Ледовитый океан	tr:Kuzey Buz Denizi	ur:بحر منجمد شمالی	zh:北冰洋
 c:arcturus	Noun	ar:السماك الرامح,أركتوروس	de:Arkturus	en:Arcturus	es:Arturo	fa:سماک رامح	fr:Arcturus	he:ארקטורוס	hi:आर्कटुरस	ja:アークトゥルス	ko:아르크투루스	pt:Arcturo	ru:Арктур	tr:Arcturus	ur:آرکٹورس	zh:大角星
 c:area	Noun	ar:منطقة	de:Gebiet,Bereich	en:area	es:área,zona	fa:منطقه,ناحیه	fr:zone,aire	he:אזור	hi:क्षेत्र,इलाक़ा	ja:地域,エリア	ko:지역,구역	pt:área,zona	ru:область,зона	tr:alan,bölge	ur:علاقہ	zh:地区,区域
@@ -446,6 +449,7 @@ c:asymmetric-information	Noun	ar:المعلومات غير المتماثلة	de
 c:asymptote	Noun	ar:مقارب	de:Asymptote	en:asymptote	es:asíntota	fa:مجانب	fr:asymptote	he:אסימפטוטה	hi:अनंतस्पर्शी	ja:漸近線	ko:점근선	pt:assíntota	ru:асимптота	tr:asimptot	ur:مجانب	zh:渐近线
 c:asymptote-curve	Noun	ar:خط مقارب	de:Asymptote	en:asymptote	es:asíntota	fa:مجانب	fr:asymptote	he:אסימפטוטה	hi:अनंतस्पर्शी	ja:漸近線	ko:점근선	pt:assíntota	ru:асимптота	tr:asimptot	ur:ایسمپٹوٹ	zh:渐近线
 c:atac-seq	Noun	ar:تقنية ATAC-Seq	de:ATAC-Sequenzierung	en:ATAC-Seq	es:ATAC-Seq	fa:ATAC-Seq	fr:ATAC-Seq	he:ATAC-Seq	hi:ATAC-Seq	ja:ATAC-Seq	ko:ATAC-Seq	pt:ATAC-Seq	ru:ATAC-секвенирование	tr:ATAC-Seq	ur:ATAC-Seq	zh:ATAC-Seq
+c:atacama-desert	Noun	ar:صحراء أتاكاما	de:Atacama-Wüste	en:Atacama desert	es:desierto de Atacama	fa:صحرای آتاکاما	fr:désert d'Atacama	he:מדבר אטקמה	hi:अटाकामा रेगिस्तान	ja:アタカマ砂漠	ko:아타카마 사막	pt:deserto do Atacama	ru:пустыня Атакама	tr:Atacama çölü	ur:اٹاکاما صحرا	zh:阿塔卡马沙漠
 c:atemoya	Noun	ar:اتيمويا	de:Atemoya	en:atemoya	es:atemoya	fa:آتموا	fr:atemoya	he:אטמויה	hi:एटेमोया	ja:アテモヤ	ko:아테모야	pt:atemoia	ru:атемойя	tr:atemoya	ur:ایٹیمویا	zh:凤梨释迦
 c:athens	Noun	ar:أثينا	de:Athen	en:Athens	es:Atenas	fa:آتن	fr:Athènes	he:אתונה	hi:एथेंस	ja:アテネ	ko:아테네	pt:Atenas	ru:Афины	tr:Atina	ur:ایتھنز	zh:雅典
 c:athlete	Noun	ar:رياضي	de:Athlet,Sportler	en:athlete	es:atleta,deportista	fa:ورزشکار	fr:athlète,sportif	he:ספורטאי,אתלט	hi:खिलाड़ी,एथलीट	ja:選手,アスリート	ko:운동선수,선수	pt:atleta,esportista	ru:спортсмен,атлет	tr:sporcu,atlet	ur:کھلاڑی,ایتھلیٹ	zh:运动员
@@ -484,6 +488,7 @@ c:auk	Noun	ar:طائر الالق	de:Alk	en:auk	es:alcidé	fa:اوک	fr:alcidé	
 c:aurora	Noun	ar:شفق قطبي	de:Polarlicht,Nordlicht	en:aurora,northern lights	es:aurora,aurora boreal	fa:شفق قطبی	fr:aurore polaire,aurore boréale	he:זוהר קוטבי	hi:ध्रुवीय ज्योति	ja:オーロラ,極光	ko:오로라,극광	pt:aurora polar,aurora boreal	ru:полярное сияние	tr:kutup ışığı	ur:قطبی شفق	zh:极光
 c:austerity	Noun	ar:التقشف	de:Austerität	en:austerity	es:austeridad	fa:ریاضت اقتصادی	fr:austérité	he:צנע	hi:मितव्ययिता	ja:緊縮財政	ko:긴축	pt:austeridade	ru:режим жёсткой экономии	tr:kemer sıkma	ur:کفایت شعاری	zh:紧缩政策
 c:australia	Noun	ar:أستراليا	de:Australien	en:Australia	es:Australia	fa:استرالیا	fr:Australie	he:אוסטרליה	hi:ऑस्ट्रेलिया	ja:オーストラリア	ko:호주,오스트레일리아	pt:Austrália	ru:Австралия	tr:Avustralya	ur:آسٹریلیا	zh:澳大利亚,澳洲
+c:australian-desert	Noun	ar:الصحراء الأسترالية	de:australische Wüste	en:Australian desert	es:desierto australiano	fa:صحرای استرالیا	fr:désert australien	he:המדבר האוסטרלי	hi:ऑस्ट्रेलियाई रेगिस्तान	ja:オーストラリア砂漠	ko:오스트레일리아 사막	pt:deserto australiano	ru:Австралийская пустыня	tr:Avustralya çölü	ur:آسٹریلین صحرا	zh:澳大利亚沙漠
 c:authentication	Noun	ar:المصادقة	de:Authentifizierung	en:authentication	es:autenticación	fa:احراز هویت	fr:authentification	he:אימות	hi:प्रमाणीकरण	ja:認証	ko:인증	pt:autenticação	ru:аутентификация	tr:kimlik doğrulama	ur:تصدیق	zh:认证
 c:authentication-security	Noun	ar:مصادقة	de:Authentifizierung	en:authentication	es:autenticación	fa:احراز هویت	fr:authentification	he:אימות	hi:प्रमाणीकरण	ja:認証	ko:인증	pt:autenticação	ru:аутентификация	tr:kimlik doğrulama	ur:تصدیق	zh:认证
 c:author	Noun	ar:مؤلف,كاتب	de:Autor,Verfasser	en:author	es:autor	fa:نویسنده,مؤلف	fr:auteur	he:מחבר	hi:लेखक,रचयिता	ja:著者,作家	ko:저자,작가	pt:autor	ru:автор	tr:yazar,müellif	ur:مصنف	zh:作者
@@ -1240,6 +1245,7 @@ c:chicken	Noun	ar:دجاج	de:Huhn	en:chicken	es:pollo	fa:مرغ	fr:poulet	he:ע
 c:chickpea	Noun	ar:حمص	de:Kichererbse	en:chickpea	es:garbanzo	fa:نخود	fr:pois chiche	he:חומוס	hi:चना	ja:ひよこ豆	ko:병아리콩	pt:grão-de-bico	ru:нут	tr:nohut	ur:چنا	zh:鹰嘴豆
 c:chiefdom	Noun	ar:مشيخة	de:Häuptlingstum	en:chiefdom	es:jefatura	fa:سرداری	fr:chefferie	he:שבטנות	hi:सरदारी	ja:首長制	ko:수장제	pt:chefia	ru:вождество	tr:aşiret yönetimi	ur:سرداری	zh:酋邦
 c:chiffon	Noun	ar:شيفون	de:Chiffon	en:chiffon	es:chifón	fa:شیفون	fr:chiffon	he:שיפון	hi:शिफॉन	ja:シフォン	ko:쉬폰	pt:chiffon	ru:шифон	tr:şifon	ur:شفون	zh:雪纺
+c:chihuahuan-desert	Noun	ar:صحراء تشيواوا	de:Chihuahua-Wüste	en:Chihuahuan desert	es:desierto de Chihuahua	fa:صحرای چیواوا	fr:désert de Chihuahua	he:מדבר צ'יוואווה	hi:चिवावन रेगिस्तान	ja:チワワ砂漠	ko:치와와 사막	pt:deserto de Chihuahua	ru:пустыня Чиуауа	tr:Chihuahuan çölü	ur:چیواوان صحرا	zh:奇瓦瓦沙漠
 c:child	Noun	ar:طفل,ولد	de:Kind	en:child,children	es:niño,hijo	fa:بچه,کودک	fr:enfant	he:ילד	hi:बच्चा	ja:子供,子	ko:아이,어린이	pt:criança,filho	ru:ребёнок,дитя	tr:çocuk	ur:بچہ	zh:孩子,儿童
 c:chili-pepper	Noun	ar:فلفل حار,شطة	de:Chili,Chilischote	en:chili pepper,chilli	es:chile,guindilla	fa:فلفل تند	fr:piment	he:צ'ילי,פלפל חריף	hi:मिर्च,लाल मिर्च	ja:唐辛子,チリペッパー	ko:고추	pt:pimenta,pimenta-malagueta	ru:перец чили,острый перец	tr:acı biber,kırmızı biber	ur:مرچ,ہری مرچ	zh:辣椒
 c:chimera	Noun	ar:كيميرا	de:Chimäre	en:chimera	es:quimera	fa:کایمرا	fr:chimère	he:כימרה	hi:काइमेरा	ja:キメラ	ko:키메라	pt:quimera	ru:химера	tr:kimera	ur:کائمرہ	zh:奇美拉
@@ -1398,6 +1404,7 @@ c:coal-material	Noun	ar:فحم	de:Kohle	en:coal	es:carbón	fa:زغال سنگ	fr
 c:coalition	Noun	ar:ائتلاف	de:Koalition	en:coalition	es:coalición	fa:ائتلاف	fr:coalition	he:קואליציה	hi:गठबंधन	ja:連立	ko:연립	pt:coalizão	ru:коалиция	tr:koalisyon	ur:اتحاد	zh:联合政府
 c:coast	Noun	ar:ساحل	de:Küste	en:coast,coastline	es:costa	fa:ساحل	fr:côte	he:חוף	hi:तट	ja:海岸,沿岸	ko:해안,연안	pt:costa,litoral	ru:побережье	tr:sahil,kıyı	ur:ساحل	zh:海岸,海岸线
 c:coast-landform	Noun	ar:ساحل	de:Küste	en:coast,seacoast	es:costa	fa:ساحل	fr:côte,littoral	he:חוף ים	hi:तटवर्ती क्षेत्र,तट	ja:海岸	ko:해안	pt:costa,litoral	ru:побережье,берег	tr:sahil,kıyı	ur:سمندری ساحل	zh:海岸
+c:coastal-desert	Noun	ar:صحراء ساحلية	de:Küstenwüste	en:coastal desert	es:desierto costero	fa:صحرای ساحلی	fr:désert côtier	he:מדבר חופי	hi:तटीय रेगिस्तान	ja:海岸砂漠	ko:해안 사막	pt:deserto costeiro	ru:прибрежная пустыня	tr:kıyı çölü	ur:ساحلی صحرا	zh:海岸沙漠
 c:coastal-erosion	Noun	ar:تآكل ساحلي	de:Küstenerosion	en:coastal erosion	es:erosión costera	fa:فرسایش ساحلی	fr:érosion côtière	he:שחיקת חופים	hi:तटीय अपरदन	ja:海岸侵食	ko:해안 침식	pt:erosão costeira	ru:береговая эрозия	tr:kıyı erozyonu	ur:ساحلی کٹاؤ	zh:海岸侵蚀
 c:coastline	Noun	ar:خط الساحل	de:Küstenlinie	en:coastline	es:línea costera	fa:خط ساحلی	fr:littoral	he:קו החוף	hi:तटरेखा	ja:海岸線	ko:해안선	pt:linha costeira	ru:береговая линия	tr:kıyı şeridi	ur:ساحلی لکیر	zh:海岸线
 c:coat	Noun	ar:معطف	de:Mantel	en:coat	es:abrigo	fa:پالتو	fr:manteau	he:מעיל	hi:कोट	ja:コート,外套	ko:외투,코트	pt:casaco	ru:пальто	tr:palto,ceket	ur:کوٹ	zh:外套,大衣
@@ -1441,6 +1448,7 @@ c:cohomology	Noun	ar:التماثلات المساعدة	de:Kohomologie	en:cohom
 c:coin	Noun	ar:قطعة نقدية,عملة معدنية	de:Münze	en:coin	es:moneda	fa:سکه	fr:pièce,pièce de monnaie	he:מטבע	hi:सिक्का	ja:硬貨,コイン	ko:동전,코인	pt:moeda	ru:монета	tr:madeni para,bozuk para	ur:سکہ	zh:硬币
 c:coir-material	Noun	ar:ليف جوز الهند	de:Kokosfaser	en:coir	es:coco fibra	fa:نارگیل الیاف	fr:coco fibre	he:ליפ קוקוס	hi:नारियल रेशे	ja:ヤシ繊維	ko:야자 섬유	pt:fibra de coco	ru:кокосовое волокно	tr:hindistan cevizi lifi	ur:ناریل ریشہ	zh:椰壳纤维
 c:cold	Adjective	ar:بارد	de:kalt	en:cold	es:frío	fa:سرد	fr:froid	he:קר	hi:ठंडा	ja:寒い,冷たい	ko:추운,차가운	pt:frio	ru:холодный	tr:soğuk	ur:ٹھنڈا	zh:冷
+c:cold-desert	Noun	ar:صحراء باردة	de:Kältewüste	en:cold desert	es:desierto frío	fa:صحرای سرد	fr:désert froid	he:מדבר קר	hi:शीत रेगिस्तान	ja:寒冷砂漠	ko:추운 사막	pt:deserto frio	ru:холодная пустыня	tr:soğuk çöl	ur:سرد صحرا	zh:寒漠
 c:cold-frame	Noun	ar:إطار بارد	de:Frühbeetkasten	en:cold frame	es:marco frío	fa:کادر سرد	fr:châssis froid	he:מסגרת קרה	hi:कोल्ड फ्रेम	ja:コールドフレーム	ko:냉상	pt:moldura fria	ru:холодный парник	tr:soğuk çerçeve	ur:سرد فریم	zh:冷床
 c:cold-front	Noun	ar:جبهة باردة	de:Kaltfront	en:cold front	es:frente frío	fa:جبهه سرد	fr:front froid	he:חזית קרה	hi:शीत मोर्चा	ja:寒冷前線	ko:한랭전선	pt:frente fria	ru:холодный фронт	tr:soğuk cephe	ur:سرد محاذ	zh:冷锋
 c:cold-front-weather	Noun	ar:جبهة باردة	de:Kaltfront	en:cold front	es:frente frío	fa:جبهه سرد	fr:front froid	he:חזית קרה	hi:शीत मोर्चा	ja:寒冷前線	ko:한랭 전선	pt:frente fria	ru:холодный фронт	tr:soğuk cephe	ur:سرد محاذ	zh:冷锋
@@ -1892,6 +1900,7 @@ c:deadlock	Noun	ar:الإغلاق الميت	de:Deadlock	en:deadlock	es:interblo
 c:deadweight-loss	Noun	ar:الخسارة الميتة	de:Wohlfahrtsverlust	en:deadweight loss	es:pérdida irrecuperable	fa:زیان مرده	fr:perte sèche	he:הפסד עודף	hi:मृत भार हानि	ja:死荷重損失	ko:경제적 순손실	pt:perda de peso morto	ru:безвозвратные потери	tr:ölü ağırlık kaybı	ur:بے فائدہ نقصان	zh:无谓损失
 c:death	Noun	ar:موت,وفاة	de:Tod	en:death	es:muerte	fa:مرگ	fr:mort	he:מוות	hi:मृत्यु,मौत	ja:死	ko:죽음,사망	pt:morte	ru:смерть	tr:ölüm	ur:موت	zh:死亡
 c:death-adder	Noun	ar:افعى الموت	de:Todesotter	en:death adder	es:áspid de la muerte	fa:افعی مرگ	fr:aspic de la mort	he:כרוזן המוות	hi:मृत्यु सांप	ja:デスアダー	ko:데스애더	pt:áspide da morte	ru:смертельная змея	tr:ölüm engereği	ur:موت کا سانپ	zh:死亡蝰蛇
+c:death-valley	Noun	ar:وادي الموت	de:Death Valley	en:Death Valley	es:Valle de la Muerte	fa:دره مرگ	fr:vallée de la Mort	he:עמק המוות	hi:डेथ वैली	ja:デスバレー	ko:데스밸리	pt:Vale da Morte	ru:Долина Смерти	tr:Ölüm Vadisi	ur:وادی موت	zh:死亡谷
 c:debt	Noun	ar:دين	de:Schuld,Schulden	en:debt	es:deuda	fa:بدهی,قرض	fr:dette	he:חוב	hi:ऋण,कर्ज़	ja:借金,負債	ko:빚,부채	pt:dívida	ru:долг	tr:borç	ur:قرض	zh:债务,债
 c:debugger	Noun	ar:مصحح أخطاء	de:Debugger	en:debugger	es:depurador	fa:اشکال‌زدا	fr:débogueur	he:מאתר שגיאות	hi:डीबगर	ja:デバッガ	ko:디버거	pt:depurador	ru:отладчик	tr:hata ayıklayıcı	ur:ڈیبگر	zh:调试器
 c:debugger-sw	Noun	ar:مصحح الأخطاء	de:Debugger	en:debugger	es:depurador	fa:اشکال‌زدا	fr:débogueur	he:מנפה שגיאות	hi:डिबगर	ja:デバッガ	ko:디버거	pt:depurador	ru:отладчик	tr:hata ayıklayıcı	ur:ڈی بگر	zh:调试器
@@ -1974,7 +1983,9 @@ c:desalination	Noun	ar:تحلية المياه	de:Entsalzung	en:desalination	es:
 c:descendant	Noun	ar:سليل,حفيد	de:Nachkomme,Abkömmling	en:descendant	es:descendiente	fa:نواده,فرزند	fr:descendant	he:צאצא	hi:वंशज	ja:子孫	ko:자손,후손	pt:descendente	ru:потомок	tr:torun,soydan gelen	ur:اولاد,نسل	zh:后裔,子孙
 c:describe	Verb	ar:وصف	de:beschreiben	en:describe	es:describir	fa:توصیف کردن	fr:décrire	he:לתאר	hi:वर्णन करना	ja:描写する,説明する	ko:묘사하다,설명하다	pt:descrever	ru:описывать	tr:tanımlamak,betimlemek	ur:بیان کرنا	zh:描述
 c:desert	Noun	ar:صحراء	de:Wüste	en:desert	es:desierto	fa:بیابان,صحرا	fr:désert	he:מדבר	hi:रेगिस्तान,मरुस्थल	ja:砂漠	ko:사막	pt:deserto	ru:пустыня	tr:çöl	ur:صحرا,ریگستان	zh:沙漠
+c:desert-dune	Noun	ar:كثيب رملي	de:Sanddüne	en:sand dune	es:duna de arena	fa:تپه ماسه‌ای	fr:dune de sable	he:דיונת חול	hi:रेत का टीला	ja:砂丘	ko:모래 언덕	pt:duna de areia	ru:песчаная дюна	tr:kum tepesi	ur:ریت کا ٹیلہ	zh:沙丘
 c:desert-landform	Noun	ar:صحراء	de:Wüste	en:desert	es:desierto	fa:بیابان,صحرا	fr:désert	he:מדבר	hi:रेगिस्तान,मरुस्थल	ja:砂漠	ko:사막	pt:deserto	ru:пустыня	tr:çöl	ur:صحرا,ریگستان	zh:沙漠
+c:desert-oasis	Noun	ar:واحة صحراوية	de:Wüstenoase	en:desert oasis	es:oasis desértico	fa:واحه صحرایی	fr:oasis désertique	he:נווה מדבר	hi:रेगिस्तानी नखलिस्तान	ja:砂漠のオアシス	ko:사막 오아시스	pt:oásis	ru:оазис	tr:çöl vahası	ur:صحرا کا نخلستان	zh:沙漠绿洲
 c:desertification	Noun	ar:التصحر	de:Wüstenbildung	en:desertification	es:desertificación	fa:بیابان زایی	fr:désertification	he:מדבור	hi:मरुस्थलीकरण	ja:砂漠化	ko:사막화	pt:desertificação	ru:опустынивание	tr:çölleşme	ur:صحرا کاری	zh:荒漠化
 c:desertification-env	Noun	ar:تصحر	de:Wüstenbildung	en:desertification	es:desertificación	fa:بیابان‌زایی	fr:désertification	he:מדבור	hi:मरुस्थलीकरण	ja:砂漠化	ko:사막화	pt:desertificação	ru:опустынивание	tr:çölleşme	ur:صحرا بننا	zh:荒漠化
 c:design	Noun	ar:تصميم	de:Design,Entwurf	en:design	es:diseño	fa:طرح,طراحی	fr:design,conception	he:עיצוב	hi:डिज़ाइन,रूपरेखा	ja:デザイン,設計	ko:디자인,설계	pt:design,desenho	ru:дизайн	tr:tasarım	ur:ڈیزائن,خاکہ	zh:设计
@@ -3052,6 +3063,7 @@ c:go	Verb	ar:ذهب	de:gehen	en:go	es:ir	fa:رفتن	fr:aller	he:ללכת	hi:ज
 c:goal	Noun	ar:هدف,مرمى	de:Tor,Ziel	en:goal	es:gol,meta	fa:گل,دروازه	fr:but	he:שער	hi:गोल,लक्ष्य	ja:ゴール	ko:골,목표	pt:gol,meta	ru:гол,ворота	tr:gol,kale	ur:گول,مقصد	zh:进球,目标
 c:goat	Noun	ar:ماعز	de:Ziege	en:goat	es:cabra	fa:بز	fr:chèvre	he:עז	hi:बकरी	ja:山羊,ヤギ	ko:염소	pt:cabra	ru:коза	tr:keçi	ur:بکری	zh:山羊
 c:goat-cheese	Noun	ar:جبنة الماعز	de:Ziegenkäse	en:goat cheese	es:queso de cabra	fa:پنیر بز	fr:fromage de chèvre	he:גבינת עזים	hi:बकरी पनीर	ja:ゴートチーズ	ko:염소 치즈	pt:queijo de cabra	ru:козий сыр	tr:keçi peyniri	ur:بکری پنیر	zh:山羊奶酪
+c:gobi-desert	Noun	ar:صحراء جوبي	de:Wüste Gobi	en:Gobi desert	es:desierto de Gobi	fa:صحرای گبی	fr:désert de Gobi	he:מדבר הגובי	hi:गोबी रेगिस्तान	ja:ゴビ砂漠	ko:고비 사막	pt:deserto de Gobi	ru:пустыня Гоби	tr:Gobi çölü	ur:گوبی صحرا	zh:戈壁沙漠
 c:god	Noun	ar:إله,الله	de:Gott	en:god	es:dios	fa:خدا	fr:dieu	he:אלוהים	hi:ईश्वर,भगवान	ja:神	ko:신,하나님	pt:deus	ru:бог	tr:tanrı,allah	ur:خدا,اللہ	zh:神,上帝
 c:goddess	Noun	ar:إلهة	de:Göttin	en:goddess	es:diosa	fa:الهه	fr:déesse	he:אלה	hi:देवी	ja:女神	ko:여신	pt:deusa	ru:богиня	tr:tanrıça	ur:دیوی	zh:女神
 c:godwit	Noun	ar:طائر الاصطياف	de:Uferschnepfe	en:godwit	es:aguja	fa:گاد وایت	fr:barge	he:בצית	hi:गॉडविट	ja:オオソリハシシギ	ko:큰뒷부리도요	pt:maçarico-de-bico-direito	ru:веретенник	tr:uzun gagalı kuş	ur:گاڈوٹ پرندہ	zh:塍鹬
@@ -3112,8 +3124,12 @@ c:gravity-force	Noun	ar:قوة الجاذبية	de:Schwerkraft	en:gravity	es:gra
 c:gray	Adjective	ar:رمادي	de:grau	en:gray,grey	es:gris	fa:خاکستری	fr:gris	he:אפור	hi:धूसर,स्लेटी	ja:灰色,グレー	ko:회색	pt:cinza,cinzento	ru:серый	tr:gri	ur:خاکستری	zh:灰,灰色
 c:graze	Verb	ar:رعى,يرعى	de:weiden	en:graze	es:pastar	fa:چرا کردن	fr:paître	he:רעה	hi:चरना	ja:放牧する	ko:풀을 뜯다	pt:pastar	ru:пастись	tr:otlamak	ur:چرنا	zh:放牧
 c:greasy	Adjective	ar:دهني,دسم	de:fettig,ölig	en:greasy	es:grasiento	fa:چرب	fr:gras,graisseux	he:שמנוני	hi:चिकना,तैलीय	ja:脂っこい	ko:기름진	pt:gorduroso,engordurado	ru:жирный	tr:yağlı	ur:چکنا	zh:油腻
+c:great-basin-desert	Noun	ar:صحراء الحوض العظيم	de:Great Basin Wüste	en:Great Basin desert	es:desierto del Gran Lago Salado	fa:صحرای بزرگ بیسن	fr:désert du Grand Bassin	he:מדבר האגן הגדול	hi:ग्रेट बेसिन रेगिस्तान	ja:グレートベースン砂漠	ko:그레이트베이슨 사막	pt:deserto da Grande Bacia	ru:пустыня Большой Бассейн	tr:Büyük Havza çölü	ur:گریٹ بیسن صحرا	zh:大盆地沙漠
 c:great-depression	Noun	ar:الكساد الكبير	de:Große Depression	en:Great Depression	es:Gran Depresión	fa:رکود بزرگ	fr:Grande Dépression	he:השפל הגדול	hi:महामंदी	ja:世界恐慌	ko:대공황	pt:Grande Depressão	ru:Великая депрессия	tr:Büyük Buhran	ur:عظیم کساد بازاری	zh:大萧条
 c:great-dividing-range	Noun	ar:سلسلة التقسيم الكبرى	de:Great Dividing Range	en:Great Dividing Range	es:Gran Cordillera Divisoria	fa:رشته‌کوه بزرگ تقسیم	fr:grande chaîne de partage	he:הרכס המחלק הגדול	hi:महान विभाजन श्रृंखला	ja:グレートディバイディングレンジ	ko:그레이트디바이딩산맥	pt:Grande Cordilheira Divisória	ru:Большой Водораздельный хребет	tr:Büyük Bölücü Dağlar	ur:عظیم تقسیم کار سلسلہ	zh:大分水岭
+c:great-salt-desert	Noun	ar:دشت كوير	de:große Salzwüste	en:Dasht-e Kavir	es:gran desierto salado	fa:دشت کویر	fr:Dasht-e Kavir	he:דשת כביר	hi:दश्त-ए कविर	ja:ダシュテ・キャビール	ko:다슈테카비르	pt:Dasht-e Kavir	ru:Деште-Кевир	tr:Büyük Tuz çölü	ur:دشت کویر	zh:卡维尔盐漠
+c:great-sandy-desert	Noun	ar:الصحراء الرملية الكبرى	de:Große Sandwüste	en:Great Sandy desert	es:Gran Desierto Arenoso	fa:صحرای بزرگ شنی	fr:grand désert de Sable	he:המדבר הגדול החולי	hi:ग्रेट सैंडी रेगिस्तान	ja:グレートサンディー砂漠	ko:그레이트샌디 사막	pt:Grande Deserto de Areia	ru:Большая Песчаная пустыня	tr:Büyük Kumlu çölü	ur:گریٹ سینڈی صحرا	zh:大沙沙漠
+c:great-victoria-desert	Noun	ar:صحراء فكتوريا الكبرى	de:Große Victoria-Wüste	en:Great Victoria desert	es:Gran Desierto Victoria	fa:صحرای بزرگ ویکتوریا	fr:grand désert de Victoria	he:מדבר ויקטוריה הגדול	hi:ग्रेट विक्टोरिया रेगिस्तान	ja:グレートビクトリア砂漠	ko:그레이트빅토리아 사막	pt:Grande Deserto de Vitória	ru:Большая пустыня Виктория	tr:Büyük Victoria çölü	ur:گریٹ وکٹوریا صحرا	zh:大维多利亚沙漠
 c:greatest-common-divisor	Noun	ar:القاسم المشترك الاكبر	de:größter gemeinsamer Teiler	en:greatest common divisor,GCD	es:máximo común divisor	fa:بزرگترین مقسوم‌علیه مشترک	fr:plus grand commun diviseur	he:המחלק המשותף הגדול ביותר	hi:महत्तम समापवर्तक	ja:最大公約数	ko:최대공약수	pt:máximo divisor comum	ru:наибольший общий делитель	tr:en büyük ortak bölen	ur:سب سے بڑا مشترک قسمہ	zh:最大公因数
 c:greece	Noun	ar:اليونان	de:Griechenland	en:Greece	es:Grecia	fa:یونان	fr:Grèce	he:יוון	hi:यूनान,ग्रीस	ja:ギリシャ	ko:그리스	pt:Grécia	ru:Греция	tr:Yunanistan	ur:یونان	zh:希腊
 c:green	Adjective	ar:أخضر	de:grün	en:green	es:verde	fa:سبز	fr:vert	he:ירוק	hi:हरा	ja:緑,緑色	ko:초록,녹색	pt:verde	ru:зелёный	tr:yeşil	ur:ہرا,سبز	zh:绿,绿色
@@ -3425,6 +3441,7 @@ c:hospital	Noun	ar:مستشفى	de:Krankenhaus,Spital	en:hospital	es:hospital	fa
 c:host	Noun	ar:مضيف	de:Gastgeber	en:host	es:anfitrión,anfitriona	fa:میزبان	fr:hôte	he:מארח	hi:मेज़बान,आतिथेय	ja:ホスト,主催者	ko:주인,호스트	pt:anfitrião	ru:хозяин	tr:ev sahibi,mihmandar	ur:میزبان	zh:主人,东道主
 c:hot	Adjective	ar:حار,ساخن	de:heiß	en:hot	es:caliente	fa:داغ,گرم	fr:chaud,brûlant	he:חם	hi:गरम	ja:熱い	ko:뜨거운	pt:quente	ru:горячий	tr:sıcak	ur:گرم	zh:热
 c:hot-cold-empathy	Noun	ar:فجوة التعاطف الحار البارد	de:Hot-Cold-Empathy-Gap	en:hot-cold empathy gap	es:brecha de empatía caliente-fría	fa:شکاف همدلی گرم-سرد	fr:biais chaud-froid	he:פערי אמפתיה חם-קר	hi:गर्म-ठंडा सहानुभूति अंतर	ja:冷熱共感格差	ko:뜨겁고 차가운 공감 격차	pt:lacuna de empatia quente-fria	ru:разрыв горячей и холодной эмпатии	tr:sıcak-soğuk empati boşluğu	ur:گرم سرد ہمدردی فرق	zh:冷热同理心差距
+c:hot-desert	Noun	ar:صحراء حارة	de:Heißwüste	en:hot desert	es:desierto cálido	fa:صحرای گرم	fr:désert chaud	he:מדבר חם	hi:गर्म रेगिस्तान	ja:熱砂漠	ko:뜨거운 사막	pt:deserto quente	ru:жаркая пустыня	tr:sıcak çöl	ur:گرم صحرا	zh:热漠
 c:hot-spring	Noun	ar:ينبوع حار	de:heiße Quelle,Thermalquelle	en:hot spring,thermal spring	es:aguas termales,fuente termal	fa:چشمه آب گرم	fr:source chaude,source thermale	he:מעיין חם	hi:गर्म झरना	ja:温泉	ko:온천	pt:fonte termal	ru:горячий источник	tr:kaplıca,sıcak su kaynağı	ur:گرم چشمہ	zh:温泉
 c:hotel	Noun	ar:فندق	de:Hotel	en:hotel	es:hotel	fa:هتل	fr:hôtel	he:מלון	hi:होटल	ja:ホテル	ko:호텔	pt:hotel	ru:отель,гостиница	tr:otel	ur:ہوٹل	zh:酒店,饭店,旅馆
 c:hotel-building	Noun	ar:فندق	de:Hotel	en:hotel	es:hotel	fa:هتل	fr:hôtel	he:מלון	hi:होटल	ja:ホテル	ko:호텔	pt:hotel	ru:гостиница	tr:otel	ur:ہوٹل	zh:酒店
@@ -3699,6 +3716,7 @@ c:ipv4	Noun	ar:بروتوكول الإنترنت الإصدار الرابع	de:
 c:ipv6	Noun	ar:بروتوكول الإنترنت الإصدار السادس	de:IPv6	en:IPv6	es:IPv6	fa:IPv6	fr:IPv6	he:IPv6	hi:आईपीवी6	ja:IPv6	ko:IPv6	pt:IPv6	ru:IPv6	tr:IPv6	ur:آئی پی وی 6	zh:IPv6协议
 c:iran	Noun	ar:إيران	de:Iran	en:Iran	es:Irán	fa:ایران	fr:Iran	he:איראן	hi:ईरान	ja:イラン	ko:이란	pt:Irã,Irão	ru:Иран	tr:İran	ur:ایران	zh:伊朗
 c:iran-iraq-war	Noun	ar:الحرب العراقية الإيرانية	de:Iran-Irak-Krieg	en:Iran-Iraq War	es:guerra Irán-Irak	fa:جنگ ایران و عراق	fr:guerre Iran-Irak	he:מלחמת איראן-עיראק	hi:ईरान-इराक युद्ध	ja:イラン・イラク戦争	ko:이란-이라크 전쟁	pt:guerra Irã-Iraque	ru:Ирано-иракская война	tr:İran-Irak Savaşı	ur:ایران عراق جنگ	zh:两伊战争
+c:iranian-desert	Noun	ar:صحراء إيران	de:iranische Wüste	en:Iranian desert	es:desierto iraní	fa:کویر ایران	fr:désert iranien	he:מדבר איראני	hi:ईरानी रेगिस्तान	ja:イラン砂漠	ko:이란 사막	pt:deserto iraniano	ru:иранская пустыня	tr:İran çölü	ur:ایرانی صحرا	zh:伊朗沙漠
 c:iraq	Noun	ar:العراق	de:Irak	en:Iraq	es:Irak,Iraq	fa:عراق	fr:Irak	he:עיראק	hi:इराक	ja:イラク	ko:이라크	pt:Iraque	ru:Ирак	tr:Irak	ur:عراق	zh:伊拉克
 c:iridescent	Adjective	ar:متقزح الألوان	de:schillernd,irisierend	en:iridescent	es:iridiscente,tornasolado	fa:رنگین کمانی,رنگارنگ	fr:irisé,opalescent	he:מתחלף בצבעים	hi:इंद्रधनुषी	ja:玉虫色の	ko:무지갯빛의	pt:iridescente	ru:переливчатый	tr:yanar döner	ur:قوس قزح رنگ	zh:虹彩,彩虹般
 c:iridium-metal	Noun	ar:إيريديوم	de:Iridium	en:iridium	es:iridio	fa:ایریدیوم	fr:iridium	he:אירידיום	hi:इरीडियम	ja:イリジウム	ko:이리듐	pt:irídio	ru:иридий	tr:iridyum	ur:اریڈیم	zh:铱
@@ -3820,6 +3838,7 @@ c:k2	Noun	ar:كي 2,تشوغوري	de:K2,Chogori	en:K2,Mount Godwin-Austen,Chogo
 c:k2-peak	Noun	ar:جبل كي 2	de:K2	en:K2	es:K2	fa:کی-2	fr:K2	he:K2	hi:के2	ja:K2	ko:K2	pt:K2	ru:К2	tr:K2	ur:کے ٹو	zh:乔戈里峰
 c:kabbalah	Noun	ar:القبالاه	de:Kabbala	en:Kabbalah	es:cábala	fa:قبالا	fr:kabbale	he:קַבָּלָה	hi:कब्बाला	ja:カバラ	ko:카발라	pt:cabalá	ru:каббала	tr:kabala	ur:قبالہ	zh:卡巴拉
 c:kaftan	Noun	ar:قفطان	de:Kaftan	en:kaftan,caftan	es:caftán	fa:قفطان	fr:caftan	he:קפטן	hi:काफ़्तान	ja:カフタン	ko:카프탄	pt:cafetã	ru:кафтан	tr:kaftan	ur:قفطان	zh:长袍
+c:kalahari-desert	Noun	ar:صحراء كالاهاري	de:Kalahari	en:Kalahari desert	es:desierto del Kalahari	fa:صحرای کالاهاری	fr:désert du Kalahari	he:מדבר הקלהרי	hi:कालाहारी रेगिस्तान	ja:カラハリ砂漠	ko:칼라하리 사막	pt:deserto do Kalahari	ru:пустыня Калахари	tr:Kalahari çölü	ur:کالاہاری صحرا	zh:卡拉哈里沙漠
 c:kale	Noun	ar:كرنب اخضر	de:Grünkohl	en:kale	es:col rizada	fa:کیل	fr:chou frisé	he:כרוב קדרה	hi:केल	ja:ケール	ko:케일	pt:couve	ru:листовая капуста	tr:kıvırcık lahana	ur:کیل	zh:羽衣甘蓝
 c:kangaroo	Noun	ar:كنغر	de:Känguru	en:kangaroo	es:canguro	fa:کانگورو	fr:kangourou	he:קנגורו	hi:कंगारू	ja:カンガルー	ko:캥거루	pt:canguru	ru:кенгуру	tr:kanguru	ur:کنگرو	zh:袋鼠
 c:kangchenjunga	Noun	ar:كانشنجونغا	de:Kangchendzönga,Kanchenjunga	en:Kangchenjunga,Kanchenjunga	es:Kanchenjunga,Kangchenjunga	fa:کانچنجونگا	fr:Kangchenjunga,Kanchenjunga	he:קנגצ'נג'ונגה	hi:कंचनजंघा,कंचनजूंगा	ja:カンチェンジュンガ	ko:칸첸중가	pt:Kangchenjunga	ru:Канченджанга	tr:Kançencunga	ur:کنچنجنگا	zh:干城章嘉峰
@@ -3827,6 +3846,7 @@ c:kangchenjunga-peak	Noun	ar:كانشنجونغا	de:Kangchendzönga	en:Kangchen
 c:kantele	Noun	ar:كانتيله	de:Kantele	en:kantele	es:kantele	fa:کانتله	fr:kantélé	he:קנטלה	hi:कांतेले	ja:カンテレ	ko:칸텔레	pt:kantele	ru:кантеле	tr:kantele	ur:کانتیلے	zh:坎特勒
 c:karachi	Noun	ar:كراتشي	de:Karatschi	en:Karachi	es:Karachi	fa:کراچی	fr:Karachi	he:קראצ'י	hi:कराची	ja:カラチ	ko:카라치	pt:Carachi	ru:Карачи	tr:Karaçi	ur:کراچی	zh:卡拉奇
 c:karakoram	Noun	ar:جبال قراقرم,قراقرم	de:Karakorum	en:Karakoram,Karakorum	es:Karakórum,cordillera del Karakórum	fa:قراقروم,رشته‌کوه قراقروم	fr:Karakoram	he:קרקורם	hi:काराकोरम	ja:カラコルム山脈	ko:카라코람산맥	pt:Karakoram,Caracórum	ru:Каракорум	tr:Karakurum Dağları	ur:قراقرم,سلسلہ قراقرم	zh:喀喇昆仑山脉
+c:karakum-desert	Noun	ar:صحراء كاراكوم	de:Karakum	en:Karakum desert	es:desierto de Karakum	fa:صحرای قره‌قوم	fr:désert du Karakoum	he:מדבר קרקום	hi:काराकुम रेगिस्तान	ja:カラクム砂漠	ko:카라쿰 사막	pt:deserto de Karakum	ru:Каракумы	tr:Karakum çölü	ur:قراقم صحرا	zh:卡拉库姆沙漠
 c:karate	Noun	ar:كاراتيه	de:Karate	en:karate	es:kárate	fa:کاراته	fr:karaté	he:קראטה	hi:कराटे	ja:空手	ko:가라테	pt:caratê	ru:карате	tr:karate	ur:کراٹے	zh:空手道
 c:karma	Noun	ar:الكارما,قانون الكارما	de:Karma	en:karma	es:karma	fa:کارما	fr:karma	he:קארמה	hi:कर्म	ja:業,カルマ	ko:업,카르마	pt:carma,karma	ru:карма	tr:karma	ur:کرما	zh:业力,羯磨
 c:karyotype	Noun	ar:النمط النووي	de:Karyotyp	en:karyotype	es:cariotipo	fa:کاریوتیپ	fr:caryotype	he:קריוטיפ	hi:कैरियोटाइप	ja:核型	ko:핵형	pt:cariótipo	ru:кариотип	tr:karyotip	ur:ہسیاتی ترتیب	zh:核型
@@ -3914,6 +3934,7 @@ c:kung-fu	Noun	ar:الكونغ فو	de:Kung-Fu	en:kung fu	es:kung fu	fa:کونگ
 c:kurtosis	Noun	ar:تفرطح	de:Kurtosis	en:kurtosis	es:curtosis	fa:کشیدگی	fr:kurtosis	he:גבנוניות	hi:कर्टोसिस	ja:尖度	ko:첨도	pt:curtose	ru:эксцесс	tr:basıklık	ur:کارٹوسس	zh:峰度
 c:kushite	Noun	ar:مملكة كوش	de:Königreich Kusch	en:Kingdom of Kush	es:reino de Kush	fa:پادشاهی کوش	fr:royaume de Koush	he:ממלכת כוש	hi:कुश राज्य	ja:クシュ王国	ko:쿠시 왕국	pt:reino de Cuxe	ru:Кушанское царство	tr:Kuş krallığı	ur:کوش سلطنت	zh:库施王国
 c:kyoto	Noun	ar:كيوتو	de:Kyoto	en:Kyoto	es:Kioto	fa:کیوتو	fr:Kyoto	he:קיוטו	hi:क्योटो	ja:京都,きょうと	ko:교토	pt:Quioto	ru:Киото	tr:Kyoto	ur:کیوٹو	zh:京都
+c:kyzylkum-desert	Noun	ar:صحراء كيزيلكوم	de:Kysylkum	en:Kyzylkum desert	es:desierto de Kyzylkum	fa:صحرای قزل‌قوم	fr:désert du Kyzylkoum	he:מדבר קיזילקום	hi:क्यज़िलकुम रेगिस्तान	ja:キジルクム砂漠	ko:키질쿰 사막	pt:deserto de Kyzylkum	ru:Кызылкум	tr:Kızılkum çölü	ur:قیزل قم صحرا	zh:克孜勒库姆沙漠
 c:l-function	Noun	ar:الدالة-L	de:L-Funktion	en:L-function,Dirichlet L-function	es:función L	fa:تابع-L	fr:fonction L	he:פונקציית L	hi:एल-फलन	ja:L関数	ko:L함수	pt:função L	ru:L-функция	tr:L-fonksiyonu	ur:ایل فنکشن	zh:L函数
 c:la-nina	Noun	ar:ظاهرة النينا	de:La Niña	en:La Niña	es:La Niña	fa:لانینا	fr:La Niña	he:לה ניניה	hi:ला नीना	ja:ラニーニャ	ko:라니냐	pt:La Niña	ru:Ла-Нинья	tr:La Nina	ur:لانینا	zh:拉尼娜
 c:la-nina-pattern	Noun	ar:ظاهرة اللانينا	de:La Niña	en:La Niña	es:La Niña	fa:لانینا	fr:La Niña	he:לה נינה	hi:ला निना	ja:ラニーニャ	ko:라니냐	pt:La Niña	ru:Ла-Нинья	tr:La Niña	ur:لا نینا	zh:拉尼娜现象
@@ -4055,6 +4076,7 @@ c:libertarianism	Noun	ar:الليبرتارية	de:Libertarismus	en:libertariani
 c:liberty	Noun	ar:حرية	de:Freiheit	en:liberty	es:libertad	fa:آزادی	fr:liberté	he:חירות	hi:स्वतंत्रता,आज़ादी	ja:自由,リバティ	ko:자유,리버티	pt:liberdade	ru:свобода	tr:özgürlük,hürriyet	ur:آزادی	zh:自由
 c:library	Noun	ar:مكتبة	de:Bibliothek	en:library	es:biblioteca	fa:کتابخانه	fr:bibliothèque	he:ספרייה	hi:पुस्तकालय	ja:図書館	ko:도서관	pt:biblioteca	ru:библиотека	tr:kütüphane	ur:لائبریری,کتب خانہ	zh:图书馆
 c:library-software	Noun	ar:مكتبة برمجية	de:Programmbibliothek	en:software library	es:biblioteca de software	fa:کتابخانه نرم‌افزاری	fr:bibliothèque logicielle	he:ספריית תוכנה	hi:सॉफ़्टवेयर लाइब्रेरी	ja:ソフトウェアライブラリ	ko:소프트웨어 라이브러리	pt:biblioteca de software	ru:программная библиотека	tr:yazılım kütüphanesi	ur:سافٹ ویئر لائبریری	zh:软件库
+c:libyan-desert	Noun	ar:الصحراء الليبية	de:libysche Wüste	en:Libyan desert	es:desierto de Libia	fa:صحرای لیبی	fr:désert libyque	he:המדבר הלובי	hi:लीबियाई रेगिस्तान	ja:リビア砂漠	ko:리비아 사막	pt:deserto da Líbia	ru:Ливийская пустыня	tr:Libya çölü	ur:لیبیائی صحرا	zh:利比亚沙漠
 c:lice	Noun	ar:قمل	de:Läuse	en:lice	es:piojos	fa:شپش	fr:poux	he:כינים	hi:जूं	ja:シラミ	ko:이	pt:piolhos	ru:вши	tr:bit	ur:جوئیں	zh:虱子
 c:lie-falsehood	Noun	ar:كذبة	de:Lüge	en:lie	es:mentira	fa:دروغ	fr:mensonge	he:שקר	hi:झूठ	ja:嘘	ko:거짓말	pt:mentira	ru:ложь	tr:yalan	ur:جھوٹ	zh:谎言,谎话
 c:lien	Noun	ar:حق الامتياز	de:Pfandrecht	en:lien	es:gravamen	fa:حق وثیقه	fr:privilège	he:שעבוד	hi:ग्रहणाधिकार	ja:留置権	ko:유치권	pt:penhora	ru:залог	tr:haciz	ur:قبضہ حق	zh:留置权
@@ -4546,6 +4568,7 @@ c:modus-tollens	Noun	ar:قياس نفي التالي	de:Modus tollens	en:modus t
 c:mohair	Noun	ar:موهير	de:Mohair	en:mohair	es:mohair	fa:موهر	fr:mohair	he:מוהר	hi:मोहेयर	ja:モヘア	ko:모헤어	pt:mohair	ru:мохер	tr:moher	ur:موہیر	zh:马海毛
 c:moisture-meter	Noun	ar:مقياس الرطوبة	de:Feuchtigkeitsmesser	en:moisture meter	es:medidor de humedad	fa:رطوبت‌سنج	fr:humidimètre	he:מד לחות	hi:नमी मापी	ja:水分計	ko:수분계	pt:medidor de umidade	ru:влагомер	tr:nem ölçer	ur:نمی ناپ	zh:水分仪
 c:moisture-transport	Noun	ar:نقل الرطوبة	de:Feuchtigkeitstransport	en:moisture transport	es:transporte de humedad	fa:انتقال رطوبت	fr:transport d'humidité	he:הובלת לחות	hi:नमी परिवहन	ja:水蒸気輸送	ko:수분 수송	pt:transporte de umidade	ru:перенос влаги	tr:nem taşınımı	ur:نمی نقل و حمل	zh:水汽输送
+c:mojave-desert	Noun	ar:صحراء موهافي	de:Mojave-Wüste	en:Mojave desert	es:desierto de Mojave	fa:صحرای موهاوی	fr:désert des Mojaves	he:מדבר המוחאווי	hi:मोजावे रेगिस्तान	ja:モハーヴェ砂漠	ko:모하비 사막	pt:deserto de Mojave	ru:пустыня Мохаве	tr:Mojave çölü	ur:موہاوی صحرا	zh:莫哈韦沙漠
 c:moksha	Noun	ar:الموكشا	de:Moksha	en:moksha	es:moksha	fa:موکشا	fr:moksha	he:מוקשה	hi:मोक्ष	ja:解脱	ko:목샤	pt:moksha	ru:мокша	tr:moksha	ur:موکشا	zh:解脱
 c:molar-mass	Noun	ar:كتلة مولية	de:molare Masse	en:molar mass	es:masa molar	fa:جرم مولی	fr:masse molaire	he:מסה מולרית	hi:मोलर द्रव्यमान	ja:モル質量	ko:몰 질량	pt:massa molar	ru:молярная масса	tr:molar kütle	ur:مولر کمیت	zh:摩尔质量
 c:molarity	Noun	ar:مولارية	de:Molarität	en:molarity	es:molaridad	fa:مولاریته	fr:molarité	he:מולריות	hi:मोलरता	ja:モル濃度	ko:몰 농도	pt:molaridade	ru:молярность	tr:molarite	ur:مولاریتی	zh:摩尔浓度
@@ -4728,6 +4751,7 @@ c:naive-rationality	Noun	ar:العقلانية الساذجة	de:naiver Rational
 c:name	Noun	ar:اسم	de:Name	en:name	es:nombre	fa:نام,اسم	fr:nom	he:שם	hi:नाम	ja:名前,名	ko:이름,성명	pt:nome	ru:имя	tr:ad,isim	ur:نام	zh:名字,名
 c:name-tag	Noun	ar:بطاقة اسم	de:Namensschild	en:name tag	es:etiqueta con nombre	fa:برچسب نام	fr:badge nominatif	he:תגית שם	hi:नेम टैग	ja:ネームタグ	ko:이름표	pt:crachá	ru:именной бейдж	tr:isim etiketi	ur:نیم ٹیگ	zh:姓名牌
 c:named-entity-recognition	Noun	ar:التعرف على الكيانات المسماة	de:Eigennamenerkennung	en:named entity recognition	es:reconocimiento de entidades nombradas	fa:تشخیص موجودیت نامدار	fr:reconnaissance d'entités nommées	he:זיהוי ישויות בשמות	hi:नामित इकाई पहचान	ja:固有表現認識	ko:개체명 인식	pt:reconhecimento de entidades nomeadas	ru:распознавание именованных сущностей	tr:adlandırılmış varlık tanıma	ur:نامی ادارہ پہچان	zh:命名实体识别
+c:namib-desert	Noun	ar:صحراء ناميب	de:Namib	en:Namib desert	es:desierto del Namib	fa:صحرای نامیب	fr:désert du Namib	he:מדבר הנמיב	hi:नामीब रेगिस्तान	ja:ナミブ砂漠	ko:나미브 사막	pt:deserto do Namibe	ru:пустыня Намиб	tr:Namib çölü	ur:نامیب صحرا	zh:纳米布沙漠
 c:nanga-parbat	Noun	ar:نانغا باربات	de:Nanga Parbat	en:Nanga Parbat	es:Nanga Parbat	fa:نانگا پربت	fr:Nanga Parbat	he:ננגה פרבט	hi:नंगा पर्वत	ja:ナンガ・パルバット	ko:낭가파르바트	pt:Nanga Parbat	ru:Нанга Парбат	tr:Nanga Parbat	ur:نانگا پربت	zh:南迦帕尔巴特峰
 c:nanga-parbat-peak	Noun	ar:نانغا باربات	de:Nanga Parbat	en:Nanga Parbat	es:Nanga Parbat	fa:نانگا پاربات	fr:Nanga Parbat	he:נאנגה פרבט	hi:नंगा पर्वत	ja:ナンガ・パルバット	ko:낭가파르바트	pt:Nanga Parbat	ru:Нангапарбат	tr:Nanga Parbat	ur:نانگا پربت	zh:南迦帕尔巴特峰
 c:nanocomposite	Noun	ar:النانو مركب	de:Nanokomposit	en:nanocomposite	es:nanocompuesto	fa:نانو مرکب	fr:nanocomposite	he:ננוקומפוזיט	hi:नैनो समग्र	ja:ナノコンポジット	ko:나노복합체	pt:nanocompósito	ru:нанокомпозит	tr:nanokompozit	ur:نانو مرکب	zh:纳米复合材料
@@ -4902,6 +4926,7 @@ c:novgorod-republic	Noun	ar:جمهورية نوفغورود	de:Republik Nowgorod
 c:now	Adverb	ar:الآن	de:jetzt	en:now	es:ahora	fa:اکنون,الان	fr:maintenant	he:עכשיו	hi:अब	ja:今	ko:지금	pt:agora	ru:сейчас,теперь	tr:şimdi	ur:ابھی,اب	zh:现在
 c:nox	Noun	ar:أكاسيد النيتروجين	de:Stickoxide	en:nitrogen oxides	es:óxidos de nitrógeno	fa:اکسیدهای نیتروژن	fr:oxydes d'azote	he:תחמוצות חנקן	hi:नाइट्रोजन ऑक्साइड	ja:窒素酸化物	ko:질소 산화물	pt:óxidos de nitrogênio	ru:оксиды азота	tr:azot oksitler	ur:نائٹروجن آکسائڈ	zh:氮氧化物
 c:nozzle	Noun	ar:فوهة	de:Düse	en:nozzle	es:tobera	fa:نازل	fr:tuyère	he:זרבובית	hi:नोज़ल	ja:ノズル	ko:노즐	pt:bocal	ru:сопло	tr:meme	ur:نوزل	zh:喷嘴
+c:nubian-desert	Noun	ar:الصحراء النوبية	de:nubische Wüste	en:Nubian desert	es:desierto de Nubia	fa:صحرای نوبه	fr:désert de Nubie	he:המדבר הנובי	hi:नूबियन रेगिस्तान	ja:ヌビア砂漠	ko:누비아 사막	pt:deserto da Núbia	ru:Нубийская пустыня	tr:Nubya çölü	ur:نوبیائی صحرا	zh:努比亚沙漠
 c:nubian-kingdom	Noun	ar:مملكة النوبة	de:Königreich Nubien	en:Nubian kingdom	es:reino nubio	fa:پادشاهی نوبه	fr:royaume nubien	he:ממלכת נוביה	hi:नुबियन राज्य	ja:ヌビア王国	ko:누비아 왕국	pt:reino da Núbia	ru:Нубийское царство	tr:Nubya krallığı	ur:نوبیائی مملکت	zh:努比亚王国
 c:nuclear-energy	Noun	ar:طاقة نووية	de:Kernenergie,Atomenergie	en:nuclear energy,atomic energy	es:energía nuclear,energía atómica	fa:انرژی هسته‌ای,انرژی اتمی	fr:énergie nucléaire,énergie atomique	he:אנרגיה גרעינית	hi:परमाणु ऊर्जा,नाभिकीय ऊर्जा	ja:原子力,核エネルギー	ko:핵에너지,원자력	pt:energia nuclear,energia atômica	ru:ядерная энергия,атомная энергия	tr:nükleer enerji,atom enerjisi	ur:جوہری توانائی,نیوکلیائی توانائی	zh:核能,原子能
 c:nuclear-force	Noun	ar:قوة نووية	de:Kernkraft	en:nuclear force	es:fuerza nuclear	fa:نیروی هسته‌ای	fr:force nucléaire	he:כוח גרעיני	hi:नाभिकीय बल	ja:核力	ko:핵력	pt:força nuclear	ru:ядерная сила	tr:nükleer kuvvet	ur:جوہری قوت	zh:核力
@@ -5053,6 +5078,7 @@ c:orchid	Noun	ar:أوركيد,السحلب	de:Orchidee	en:orchid	es:orquídea	fa
 c:order	Noun	ar:نظام,ترتيب	de:Ordnung,Reihenfolge	en:order	es:orden	fa:نظم,ترتیب	fr:ordre	he:סדר	hi:क्रम,व्यवस्था	ja:秩序,順序	ko:질서,순서	pt:ordem	ru:порядок	tr:düzen,sıra	ur:ترتیب,نظم	zh:秩序,顺序
 c:order-bio	Noun	ar:رتبة	de:Ordnung	en:order	es:orden	fa:راسته	fr:ordre	he:סדרה	hi:गण	ja:目	ko:목	pt:ordem	ru:отряд,порядок	tr:takım	ur:ترتیب,رتبہ	zh:目
 c:ordinance	Noun	ar:مرسوم بلدي	de:Verordnung	en:ordinance	es:ordenanza	fa:آیین نامه	fr:ordonnance	he:פקודה	hi:अध्यादेश	ja:条例	ko:조례	pt:portaria	ru:ордонанс	tr:yönetmelik	ur:آرڈیننس	zh:条例
+c:ordos-desert	Noun	ar:صحراء أوردوس	de:Ordos-Wüste	en:Ordos desert	es:desierto de Ordos	fa:صحرای اردوس	fr:désert d'Ordos	he:מדבר אורדוס	hi:ओर्दोस रेगिस्तान	ja:オルドス砂漠	ko:오르도스 사막	pt:deserto de Ordos	ru:пустыня Ордос	tr:Ordos çölü	ur:اوردوس صحرا	zh:鄂尔多斯沙漠
 c:oregano	Noun	ar:اوريغانو	de:Oregano	en:oregano	es:orégano	fa:مرزنجوش	fr:origan	he:אורגנו	hi:ओरेगानो	ja:オレガノ	ko:오레가노	pt:orégão	ru:орегано	tr:mercanköşk	ur:اوریگانو	zh:牛至
 c:organ-biology	Noun	ar:عضو حيوي	de:Organ	en:biological organ	es:órgano	fa:اندام زیستی	fr:organe	he:איבר	hi:अंग	ja:器官	ko:기관	pt:órgão	ru:орган	tr:organ	ur:عضو	zh:器官
 c:organ-system	Noun	ar:جهاز عضوي	de:Organsystem	en:organ system	es:sistema de órganos	fa:دستگاه اندام	fr:système d'organes	he:מערכת איברים	hi:अंग तंत्र	ja:器官系	ko:기관계	pt:sistema de órgãos	ru:система органов	tr:organ sistemi	ur:اعضاء کا نظام	zh:器官系统
@@ -5239,6 +5265,7 @@ c:pasteurization	Noun	ar:البسترة	de:Pasteurisierung	en:pasteurization	es:
 c:pastiche-lit	Noun	ar:التقليد الأدبي	de:Pastiche	en:pastiche	es:pastiche	fa:پاستیش	fr:pastiche	he:פסטיש	hi:पैस्टिश	ja:パスティーシュ	ko:패스티시	pt:pastiche	ru:пастиш	tr:pastiş	ur:ادبی نقل	zh:拼贴
 c:pasture	Noun	ar:مرعى	de:Weide	en:pasture	es:pasto	fa:مرتع	fr:pâturage	he:מרעה	hi:चरागाह	ja:牧草地	ko:목초지	pt:pasto	ru:пастбище	tr:mera	ur:چراگاہ	zh:牧场
 c:pasture-landform	Noun	ar:مرعى	de:Weide,Weideland	en:pasture,pastureland	es:pastizal,pasto	fa:مرتع,چراگاه	fr:pâturage	he:מרעה	hi:चारागाह	ja:牧場,放牧地	ko:목초지	pt:pastagem	ru:пастбище	tr:mera,otlak	ur:چراگاہ	zh:牧场,牧地
+c:patagonian-desert	Noun	ar:صحراء باتاغونيا	de:patagonische Wüste	en:Patagonian desert	es:desierto patagónico	fa:صحرای پاتاگونی	fr:désert de Patagonie	he:מדבר פטגוניה	hi:पेटागोनियन रेगिस्तान	ja:パタゴニア砂漠	ko:파타고니아 사막	pt:deserto da Patagônia	ru:Патагонская пустыня	tr:Patagonya çölü	ur:پیٹاگونیا صحرا	zh:巴塔哥尼亚沙漠
 c:patch-update	Noun	ar:رقعة برمجية	de:Patch	en:patch	es:parche	fa:وصله	fr:correctif	he:טלאי	hi:पैच	ja:パッチ	ko:패치	pt:correção	ru:патч	tr:yama	ur:پیچ	zh:补丁
 c:patent	Noun	ar:براءة اختراع	de:Patent	en:patent	es:patente	fa:حق اختراع	fr:brevet	he:פטנט	hi:पेटेंट	ja:特許	ko:특허	pt:patente	ru:патент	tr:patent	ur:پیٹنٹ	zh:专利
 c:path	Noun	ar:مسار,درب	de:Pfad	en:path,trail	es:sendero,senda	fa:مسیر	fr:sentier	he:שביל,נתיב	hi:पगडंडी	ja:小道	ko:오솔길	pt:trilha	ru:тропа,тропинка	tr:patika	ur:پگڈنڈی	zh:小路,小径
@@ -6221,6 +6248,7 @@ c:row	Noun	ar:صف بيانات	de:Zeile	en:row	es:fila	fa:ردیف	fr:ligne	he:
 c:rowing	Noun	ar:التجديف	de:Rudern	en:rowing	es:remo	fa:قایق رانی	fr:aviron	he:חתירה	hi:नौकायन	ja:ボート競技	ko:조정	pt:remo	ru:гребля	tr:kürek çekme	ur:کشتی رانی	zh:赛艇
 c:royal-jelly	Noun	ar:غذاء ملكي	de:Gelée Royale	en:royal jelly	es:jalea real	fa:ژله رویال	fr:gelée royale	he:ג'לי רויאל	hi:रॉयल जेली	ja:ローヤルゼリー	ko:로열젤리	pt:geleia real	ru:маточное молочко	tr:arı sütü	ur:شاہی جیلی	zh:蜂王浆
 c:rsa	Noun	ar:خوارزمية RSA	de:RSA	en:RSA	es:RSA	fa:RSA	fr:RSA	he:RSA	hi:आरएसए	ja:RSA	ko:RSA	pt:RSA	ru:RSA	tr:RSA	ur:آر ایس اے	zh:RSA算法
+c:rub-al-khali	Noun	ar:الربع الخالي	de:Rub al-Chali	en:Rub' al Khali	es:Rub al-Jali	fa:ربع‌الخالی	fr:Roub al-Khali	he:רובע אל-ח'אלי	hi:रुब अल खली	ja:ルブアルハリ砂漠	ko:룹알할리 사막	pt:Rub al-Khali	ru:Руб-эль-Хали	tr:Rub el Hali	ur:ربع الخالی	zh:鲁卜哈利沙漠
 c:rubber	Noun	ar:مطاط	de:Gummi,Kautschuk	en:rubber	es:goma,caucho	fa:لاستیک	fr:caoutchouc	he:גומי	hi:रबर	ja:ゴム	ko:고무	pt:borracha	ru:резина	tr:kauçuk,lastik	ur:ربڑ	zh:橡胶
 c:rubber-duck	Noun	ar:بطة مطاطية	de:Badeente	en:rubber duck	es:pato de goma	fa:اردک لاستیکی	fr:canard en caoutchouc	he:ברווז גומי	hi:रबर की बत्तख	ja:ゴムのアヒル	ko:고무 오리	pt:patinho de borracha	ru:резиновая уточка	tr:kauçuk ördek	ur:ربڑ کی بطخ	zh:橡皮鸭
 c:rubber-material	Noun	ar:مطاط	de:Kautschuk	en:rubber	es:caucho	fa:لاستیک	fr:caoutchouc	he:גומי	hi:रबड़	ja:ゴム	ko:고무	pt:borracha	ru:каучук	tr:kauçuk	ur:ربڑ	zh:橡胶
@@ -6263,6 +6291,8 @@ c:saffron	Noun	ar:زعفران	de:Safran	en:saffron	es:azafrán	fa:زعفران	
 c:saga	Noun	ar:ملحمة,حكاية طويلة	de:Saga	en:saga	es:saga	fa:سرگذشت,سگا	fr:saga	he:סאגה	hi:गाथा,सगा	ja:サーガ,大河物語	ko:사가,대하소설	pt:saga	ru:сага	tr:saga,destansı anlatı	ur:داستان,گاتھا	zh:萨迦,英雄传说
 c:sage	Noun	ar:المريمية,القويسة	de:Salbei	en:sage	es:salvia	fa:مریم‌گلی	fr:sauge	he:מרווה	hi:सेज	ja:セージ	ko:세이지	pt:sálvia	ru:шалфей	tr:adaçayı	ur:سیج	zh:鼠尾草
 c:sagittarius-constellation	Noun	ar:القوس,كوكبة القوس	de:Schütze	en:Sagittarius	es:Sagitario	fa:قوس	fr:Sagittaire	he:קשת	hi:धनु राशि	ja:いて座	ko:궁수자리	pt:Sagitário	ru:Стрелец	tr:Yay Burcu	ur:قوس	zh:人马座,射手座
+c:sahara-desert	Noun	ar:الصحراء الكبرى	de:Sahara	en:Sahara desert	es:desierto del Sahara	fa:صحرای بزرگ آفریقا	fr:Sahara	he:מדבר הסהרה	hi:सहारा रेगिस्तान	ja:サハラ砂漠	ko:사하라 사막	pt:deserto do Saara	ru:пустыня Сахара	tr:Sahra çölü	ur:صحارا صحرا	zh:撒哈拉沙漠
+c:sahel-region	Noun	ar:منطقة الساحل الأفريقي	de:Sahel	en:Sahel region	es:Sahel	fa:ناحیه ساحل	fr:Sahel	he:הסאהל	hi:साहेल क्षेत्र	ja:サヘル	ko:사헬 지역	pt:Sahel	ru:Сахель	tr:Sahel bölgesi	ur:ساحل علاقہ	zh:萨赫勒地区
 c:sail	Verb	ar:أبحر	de:segeln	en:sail	es:navegar	fa:کشتی‌رانی کرد,دریانوردی کرد	fr:naviguer	he:הפליג	hi:नौकायन करना	ja:航海する	ko:항해하다	pt:navegar	ru:плыть,плавать	tr:yelken açmak	ur:جہاز رانی کرنا	zh:航行,航海
 c:sailboat	Noun	ar:قارب شراعي	de:Segelboot	en:sailboat,sailing boat	es:velero	fa:قایق بادبانی	fr:voilier	he:סירת מפרש	hi:पाल वाली नाव	ja:帆船	ko:돛단배,범선	pt:veleiro	ru:парусник,парусная лодка	tr:yelkenli	ur:بادبانی کشتی	zh:帆船
 c:saint-lawrence	Noun	ar:سانت لورنس,نهر سانت لورنس	de:Sankt-Lorenz-Strom	en:Saint Lawrence,St. Lawrence River	es:San Lorenzo,río San Lorenzo	fa:سنت لارنس	fr:Saint-Laurent,fleuve Saint-Laurent	he:סנט לורנס	hi:सेंट लॉरेंस नदी	ja:セントローレンス川	ko:세인트로렌스강	pt:São Lourenço,rio São Lourenço	ru:Святого Лаврентия	tr:Aziz Lawrence Nehri	ur:دریائے سینٹ لارنس	zh:圣劳伦斯河
@@ -6292,6 +6322,7 @@ c:san-francisco	Noun	ar:سان فرانسيسكو	de:San Francisco	en:San Franci
 c:sanctions-politics	Noun	ar:عقوبات دولية	de:Sanktionen	en:sanctions	es:sanciones	fa:تحریم‌ها	fr:sanctions	he:סנקציות	hi:प्रतिबंध	ja:制裁	ko:제재	pt:sanções	ru:санкции	tr:yaptırımlar	ur:پابندیاں	zh:制裁
 c:sanctuary-inner	Noun	ar:قدس الأقداس	de:Heiligtum	en:sanctuary	es:santuario	fa:بارگاه	fr:sanctuaire	he:מקלט	hi:अभयारण्य	ja:聖域	ko:성소	pt:santuário	ru:святилище	tr:kutsal alan	ur:مقدس مقام	zh:圣所
 c:sand	Noun	ar:رمل	de:Sand	en:sand	es:arena	fa:شن,ماسه	fr:sable	he:חול	hi:रेत,बालू	ja:砂	ko:모래	pt:areia	ru:песок	tr:kum	ur:ریت	zh:沙,沙子
+c:sand-desert	Noun	ar:صحراء رملية	de:Sandwüste	en:sand desert	es:desierto arenoso	fa:صحرای شنی	fr:désert de sable	he:מדבר חולי	hi:रेतीला रेगिस्तान	ja:砂漠砂	ko:모래 사막	pt:deserto arenoso	ru:песчаная пустыня	tr:kum çölü	ur:ریتیلا صحرا	zh:沙质沙漠
 c:sand-material	Noun	ar:رمل	de:Sand	en:sand	es:arena	fa:شن	fr:sable	he:חול	hi:रेत	ja:砂	ko:모래	pt:areia	ru:песок	tr:kum	ur:ریت	zh:沙子
 c:sandal	Noun	ar:صندل	de:Sandale	en:sandal	es:sandalia	fa:صندل	fr:sandale	he:סנדל	hi:चप्पल,सैंडल	ja:サンダル	ko:샌들	pt:sandália	ru:сандалия	tr:sandalet	ur:سینڈل	zh:凉鞋
 c:sandals	Noun	ar:صنادل	de:Sandalen	en:sandals	es:sandalias	fa:صندل	fr:sandales	he:סנדלים	hi:सैंडल	ja:サンダル	ko:샌들	pt:sandálias	ru:сандалии	tr:sandaletler	ur:سینڈل	zh:凉鞋
@@ -6604,6 +6635,7 @@ c:simmer	Verb	ar:طهى على نار هادئة	de:köcheln	en:simmer	es:cocer 
 c:simple	Adjective	ar:بسيط	de:einfach	en:simple	es:simple,sencillo	fa:ساده	fr:simple	he:פשוט	hi:सरल	ja:簡単,シンプル	ko:간단하다	pt:simples	ru:простой	tr:basit	ur:سادہ	zh:简单
 c:simple-harmonic	Noun	ar:حركة توافقية بسيطة	de:einfache harmonische Bewegung	en:simple harmonic motion	es:movimiento armónico simple	fa:حرکت هماهنگ ساده	fr:mouvement harmonique simple	he:תנועה הרמונית פשוטה	hi:सरल आवर्त गति	ja:単振動	ko:단순 조화 운동	pt:movimento harmônico simples	ru:простое гармоническое движение	tr:basit harmonik hareket	ur:سادہ ہم آہنگ حرکت	zh:简谐运动
 c:simplicial-complex	Noun	ar:المركب التبسيطي	de:Simplizialkomplex	en:simplicial complex	es:complejo simplicial	fa:مجتمع سادگانی	fr:complexe simplicial	he:קומפלקס סימפליציאלי	hi:सरलीय जटिल	ja:単体複体	ko:단체 복합체	pt:complexo simplicial	ru:симплициальный комплекс	tr:simpleks kompleks	ur:سادہ مجتمع	zh:单纯复形
+c:simpson-desert	Noun	ar:صحراء سيمبسون	de:Simpsonwüste	en:Simpson desert	es:desierto de Simpson	fa:صحرای سیمپسون	fr:désert de Simpson	he:מדבר סימפסון	hi:सिम्पसन रेगिस्तान	ja:シンプソン砂漠	ko:심슨 사막	pt:deserto de Simpson	ru:пустыня Симпсон	tr:Simpson çölü	ur:سمپسن صحرا	zh:辛普森沙漠
 c:sin	Noun	ar:ذنب,خطيئة	de:Sünde	en:sin	es:pecado	fa:گناه	fr:péché	he:חטא	hi:पाप	ja:罪	ko:죄	pt:pecado	ru:грех	tr:günah	ur:گناہ	zh:罪
 c:sine	Noun	ar:جيب	de:Sinus	en:sine	es:seno	fa:سینوس	fr:sinus	he:סינוס	hi:ज्या	ja:正弦	ko:사인	pt:seno	ru:синус	tr:sinüs	ur:سائن	zh:正弦
 c:sine-function	Noun	ar:دالة الجيب	de:Sinusfunktion	en:sine function	es:función seno	fa:تابع سینوس	fr:fonction sinus	he:פונקציית סינוס	hi:ज्या फलन	ja:サイン関数	ko:사인 함수	pt:função seno	ru:функция синуса	tr:sinüs fonksiyonu	ur:سائن تفاعل	zh:正弦函数
@@ -6754,6 +6786,7 @@ c:sonata	Noun	ar:سوناتا	de:Sonate	en:sonata	es:sonata	fa:سوناتا	fr:s
 c:song	Noun	ar:أغنية	de:Lied	en:song	es:canción	fa:آهنگ,ترانه	fr:chanson	he:שיר	hi:गीत,गाना	ja:歌,ソング	ko:노래	pt:canção,música	ru:песня	tr:şarkı	ur:گیت,گانا	zh:歌,歌曲
 c:song-dynasty	Noun	ar:سلالة سونغ الصينية	de:Song-Dynastie	en:Song dynasty	es:dinastía Song	fa:دودمان سونگ	fr:dynastie Song	he:שושלת סונג	hi:सोंग राजवंश	ja:宋王朝	ko:송나라	pt:dinastia Song	ru:династия Сун	tr:Song hanedanı	ur:سونگ خاندان	zh:宋朝
 c:sonnet	Noun	ar:السونيتة	de:Sonett	en:sonnet	es:soneto	fa:سونت	fr:sonnet	he:סונטה	hi:सोनेट	ja:ソネット	ko:소네트	pt:soneto	ru:сонет	tr:sone	ur:سونٹ	zh:十四行诗
+c:sonoran-desert	Noun	ar:صحراء سونورا	de:Sonora-Wüste	en:Sonoran desert	es:desierto de Sonora	fa:صحرای سونورا	fr:désert de Sonora	he:מדבר סונורה	hi:सोनोरन रेगिस्तान	ja:ソノラ砂漠	ko:소노라 사막	pt:deserto de Sonora	ru:пустыня Сонора	tr:Sonora çölü	ur:سونورا صحرا	zh:索诺拉沙漠
 c:sorbet	Noun	ar:سوربيه	de:Sorbet	en:sorbet	es:sorbete	fa:شربت یخی	fr:sorbet	he:סורבה	hi:सॉर्बे	ja:シャーベット	ko:소르베	pt:sorvete de fruta	ru:сорбет	tr:sorbe	ur:سوربے	zh:冰沙
 c:sorcerer	Noun	ar:مشعوذ	de:Hexenmeister	en:sorcerer	es:hechicero	fa:ساحر	fr:sorcier	he:מכשף	hi:जादूगर	ja:呪術師	ko:주술사	pt:feiticeiro	ru:чародей	tr:sihirbaz	ur:ساحر	zh:术士
 c:sorghum	Noun	ar:ذرة بيضاء	de:Sorghum	en:sorghum	es:sorgo	fa:سورگوم	fr:sorgho	he:סורגום	hi:ज्वार	ja:モロコシ	ko:수수	pt:sorgo	ru:сорго	tr:süpürge darısı	ur:جوار	zh:高粱
@@ -6971,6 +7004,7 @@ c:stolon	Noun	ar:ساق رابية	de:Ausläufer	en:stolon	es:estolón	fa:روی
 c:stomach	Noun	ar:معدة	de:Magen	en:stomach	es:estómago	fa:معده	fr:estomac	he:קיבה	hi:पेट,उदर	ja:胃	ko:위	pt:estômago	ru:желудок	tr:mide	ur:معدہ	zh:胃
 c:stone	Noun	ar:حجر	de:Stein	en:stone	es:piedra	fa:سنگ	fr:pierre	he:אבן	hi:पत्थर	ja:石	ko:돌	pt:pedra	ru:камень	tr:taş	ur:پتھر	zh:石,石头
 c:stone-age	Noun	ar:العصر الحجري	de:Steinzeit	en:stone age	es:edad de piedra	fa:عصر سنگ	fr:âge de la pierre,âge de pierre	he:תקופת האבן	hi:पाषाण युग	ja:石器時代	ko:석기시대	pt:idade da pedra	ru:каменный век	tr:taş devri,taş çağı	ur:پتھر کا زمانہ,سنگی دور	zh:石器时代
+c:stone-desert	Noun	ar:صحراء حجرية	de:Steinwüste	en:stone desert	es:desierto pedregoso	fa:صحرای سنگی	fr:désert de pierre	he:מדבר אבן	hi:पथरीला रेगिस्तान	ja:石漠	ko:돌 사막	pt:deserto pedregoso	ru:каменистая пустыня	tr:taş çölü	ur:پتھریلا صحرا	zh:石漠
 c:stone-material	Noun	ar:حجر	de:Stein	en:stone	es:piedra	fa:سنگ	fr:pierre	he:אבן	hi:पत्थर	ja:石	ko:돌	pt:pedra	ru:камень	tr:taş	ur:پتھر	zh:石材
 c:stonecutter	Noun	ar:نحّات حجر,قاطع الحجارة	de:Steinhauer,Steinmetz	en:stonecutter,stone carver	es:cantero,tallador de piedra	fa:سنگ‌تراش	fr:tailleur de pierre	he:סתת	hi:संगतराश,पत्थर काटने वाला	ja:石切職人,石彫り師	ko:석재공,돌 자르는 사람	pt:canteiro,talhador de pedra	ru:каменотёс	tr:taşçı,taş ustası	ur:سنگ تراش	zh:石匠,采石工
 c:stonefly	Noun	ar:ذبابة الحجر	de:Steinfliege	en:stonefly	es:mosca de piedra,plecóptero	fa:سنگ‌پرواز	fr:perle,plécoptère	he:זבוב האבן	hi:स्टोनफ्लाई	ja:カワゲラ	ko:강도래	pt:perlídeo,mosca-de-pedra	ru:веснянка	tr:taş sineği	ur:پتھر مکھی	zh:石蝇
@@ -7040,6 +7074,7 @@ c:subpoena	Noun	ar:أمر استدعاء	de:Vorladung	en:subpoena	es:citación j
 c:subsidy	Noun	ar:إعانة,دعم حكومي	de:Subvention	en:subsidy	es:subsidio,subvención	fa:یارانه,سوبسید	fr:subvention	he:סובסידיה	hi:सब्सिडी,अनुदान	ja:補助金	ko:보조금	pt:subsídio,subvenção	ru:субсидия,дотация	tr:sübvansiyon,destekleme	ur:سبسڈی,امدادی رقم	zh:补贴,津贴
 c:substance	Noun	ar:مادة,جوهر	de:Substanz,Stoff	en:substance,matter	es:sustancia,substancia	fa:ماده	fr:substance,matière	he:חומר	hi:पदार्थ,द्रव्य	ja:物質	ko:물질	pt:substância,matéria	ru:вещество,субстанция	tr:madde	ur:مادہ,جوہر	zh:物质
 c:subtitle	Noun	ar:ترجمة مكتوبة,ترجمة نصية	de:Untertitel	en:subtitle	es:subtítulo	fa:زیرنویس	fr:sous-titre	he:כתובית	hi:उपशीर्षक	ja:字幕	ko:자막	pt:legenda	ru:субтитр	tr:altyazı	ur:سب ٹائٹل	zh:字幕
+c:subtropical-desert	Noun	ar:صحراء شبه مدارية	de:subtropische Wüste	en:subtropical desert	es:desierto subtropical	fa:صحرای نیمه‌گرمسیری	fr:désert subtropical	he:מדבר סובטרופי	hi:उपोष्णकटिबंधीय रेगिस्तान	ja:亜熱帯砂漠	ko:아열대 사막	pt:deserto subtropical	ru:субтропическая пустыня	tr:subtropik çöl	ur:نیم اشنکٹبندی صحرا	zh:亚热带沙漠
 c:suburbanization	Noun	ar:التضاحي	de:Suburbanisierung	en:suburbanization	es:suburbanización	fa:حومه‌نشینی	fr:suburbanisation	he:פרבּוּר	hi:उपनगरीकरण	ja:郊外化	ko:교외화	pt:suburbanização	ru:субурбанизация	tr:banliyöleşme	ur:مضافاتی پھیلاو	zh:郊区化
 c:subway	Noun	ar:مترو الأنفاق,قطار الأنفاق	de:U-Bahn,Metro	en:subway,metro,underground	es:metro	fa:مترو	fr:métro	he:רכבת תחתית	hi:भूमिगत रेल,मेट्रो	ja:地下鉄	ko:지하철	pt:metrô,metro	ru:метро	tr:metro	ur:زیر زمین ریل,میٹرو	zh:地铁
 c:succession-eco	Noun	ar:تعاقب بيئي	de:Sukzession	en:ecological succession	es:sucesión ecológica	fa:توالی اکولوژیک	fr:succession écologique	he:רצף אקולוגי	hi:पारिस्थितिक अनुक्रमण	ja:遷移	ko:천이	pt:sucessão ecológica	ru:экологическая сукцессия	tr:ekolojik süksesyon	ur:ماحولیاتی تسلسل	zh:生态演替
@@ -7163,6 +7198,7 @@ c:synthesis	Noun	ar:تركيب,توليف	de:Synthese	en:synthesis	es:síntesis	
 c:synthesis-reaction	Noun	ar:تفاعل تخليق	de:Synthesereaktion	en:synthesis reaction	es:reacción de síntesis	fa:واکنش ترکیبی	fr:réaction de synthèse	he:תגובת סינתזה	hi:संश्लेषण अभिक्रिया	ja:合成反応	ko:합성 반응	pt:reação de síntese	ru:реакция синтеза	tr:sentez tepkimesi	ur:ترکیب کا ردعمل	zh:合成反应
 c:synthesizer	Noun	ar:مركب صوتي,سينثيسايزر	de:Synthesizer	en:synthesizer	es:sintetizador	fa:سینتی‌سایزر	fr:synthétiseur	he:סינתיסייזר,סינתיזייזר	hi:सिंथेसाइज़र	ja:シンセサイザー	ko:신시사이저	pt:sintetizador	ru:синтезатор	tr:sentezleyici	ur:سنتھسائزر	zh:合成器
 c:synthetic	Adjective	ar:تركيبي	de:synthetisch	en:synthetic	es:sintético	fa:ترکیبی	fr:synthétique	he:סינתטי	hi:संश्लेषणात्मक	ja:綜合的	ko:종합적	pt:sintético	ru:синтетический	tr:sentetik	ur:ترکیبی	zh:综合的
+c:syrian-desert	Noun	ar:بادية الشام	de:syrische Wüste	en:Syrian desert	es:desierto de Siria	fa:صحرای شام	fr:désert syrien	he:מדבר סוריה	hi:सीरियन रेगिस्तान	ja:シリア砂漠	ko:시리아 사막	pt:deserto sírio	ru:Сирийская пустыня	tr:Suriye çölü	ur:شامی صحرا	zh:叙利亚沙漠
 c:system	Noun	ar:نظام	de:System	en:system	es:sistema	fa:سیستم,نظام	fr:système	he:מערכת	hi:प्रणाली,तंत्र	ja:システム,体系	ko:시스템,체계	pt:sistema	ru:система	tr:sistem,dizge	ur:نظام,سسٹم	zh:系统,体系
 c:system-equations	Noun	ar:نظام معادلات	de:Gleichungssystem	en:system of equations	es:sistema de ecuaciones	fa:دستگاه معادلات	fr:système d'équations	he:מערכת משוואות	hi:समीकरण प्रणाली	ja:連立方程式	ko:연립방정식	pt:sistema de equações	ru:система уравнений	tr:denklem sistemi	ur:مساواتوں کا نظام	zh:方程组
 c:systems-biology	Noun	ar:علم الانظمة الحيوية	de:Systembiologie	en:systems biology	es:biología de sistemas	fa:زیست‌شناسی سیستم‌ها	fr:biologie des systèmes	he:ביולוגיה של מערכות	hi:तंत्र जीव विज्ञान	ja:システム生物学	ko:시스템 생물학	pt:biologia de sistemas	ru:системная биология	tr:sistemler biyolojisi	ur:نظاماتی حیاتیات	zh:系统生物学
@@ -7196,6 +7232,7 @@ c:taipan	Noun	ar:تايبان	de:Taipan	en:taipan	es:taipán	fa:تایپان	fr:
 c:taipei	Noun	ar:تايبيه	de:Taipeh	en:Taipei	es:Taipéi	fa:تایپه	fr:Taipei	he:טאיפיי	hi:ताइपे	ja:台北,タイペイ	ko:타이베이	pt:Taipé	ru:Тайбэй	tr:Taipei	ur:تائپے	zh:台北
 c:taka	Noun	ar:تاكا	de:Taka	en:taka	es:taka	fa:تاکا	fr:taka	he:טאקה	hi:टका	ja:タカ	ko:타카	pt:taka	ru:така	tr:taka	ur:ٹکا	zh:塔卡
 c:take	Verb	ar:أخذ	de:nehmen	en:take	es:tomar,coger	fa:گرفتن	fr:prendre	he:לקחת	hi:लेना	ja:取る	ko:잡다,가지다	pt:pegar,tomar	ru:брать,взять	tr:almak	ur:لینا	zh:拿,取
+c:taklamakan-desert	Noun	ar:صحراء تاكلامكان	de:Taklamakan-Wüste	en:Taklamakan desert	es:desierto de Taklamakán	fa:صحرای تاکلامکان	fr:désert du Taklamakan	he:מדבר טקלמקן	hi:ताक्लामकान रेगिस्तान	ja:タクラマカン砂漠	ko:타클라마칸 사막	pt:deserto de Taklamakan	ru:пустыня Такла-Макан	tr:Taklamakan çölü	ur:تاکلامکان صحرا	zh:塔克拉玛干沙漠
 c:talisman	Noun	ar:طلسم	de:Talisman	en:talisman	es:talismán	fa:طلسم	fr:talisman	he:טליסמן,קמע	hi:तावीज़	ja:タリスマン	ko:탈리스만	pt:talismã	ru:талисман	tr:tılsım	ur:طلسم	zh:护符,幸运符
 c:talk-show	Noun	ar:برنامج حواري,برنامج نقاش	de:Talkshow	en:talk show,chat show	es:programa de entrevistas,talk show	fa:برنامه گفتگو	fr:talk-show,émission de débat	he:תוכנית שיחה	hi:टॉक शो	ja:トークショー	ko:토크쇼	pt:talk show	ru:ток-шоу	tr:konuşma programı	ur:ٹاک شو	zh:脱口秀,访谈节目
 c:tall	Adjective	ar:طويل	de:groß	en:tall	es:alto	fa:بلند	fr:grand	he:גבוה	hi:लंबा	ja:背が高い,高い	ko:키 큰	pt:alto	ru:высокий	tr:uzun,boylu	ur:لمبا	zh:高
@@ -7203,6 +7240,7 @@ c:talmud	Noun	ar:التلمود	de:Talmud	en:Talmud	es:Talmud	fa:تلمود	fr:T
 c:tamarind	Noun	ar:تمر هندي	de:Tamarinde	en:tamarind	es:tamarindo	fa:تمر هندی	fr:tamarin	he:טמרינד	hi:इमली	ja:タマリンド	ko:타마린드	pt:tamarindo	ru:тамаринд	tr:demirhindi	ur:املی	zh:罗望子
 c:tambourine	Noun	ar:دف,رق	de:Tamburin,Schellentrommel	en:tambourine	es:pandereta	fa:دف,دایره	fr:tambourin,tambour de basque	he:תוף מרים	hi:डफ,तंबूरीन	ja:タンバリン	ko:탬버린	pt:pandeireta	ru:бубен,тамбурин	tr:tef	ur:دف	zh:铃鼓
 c:tan-color	Noun	ar:أسمر فاتح	de:Hellbraun,Gerbfarben	en:tan	es:canela,tostado	fa:برنزه	fr:fauve,brun clair	he:שזוף	hi:हल्का भूरा	ja:タン,黄褐色	ko:황갈색,탠	pt:castanho-claro	ru:светло-коричневый	tr:açık kahverengi	ur:ہلکا بھورا	zh:棕褐色
+c:tanami-desert	Noun	ar:صحراء تانامي	de:Tanami-Wüste	en:Tanami desert	es:desierto de Tanami	fa:صحرای تانامی	fr:désert de Tanami	he:מדבר טנאמי	hi:तानामी रेगिस्तान	ja:タナミ砂漠	ko:타나미 사막	pt:deserto de Tanami	ru:пустыня Танами	tr:Tanami çölü	ur:تانامی صحرا	zh:塔纳米沙漠
 c:tang-dynasty	Noun	ar:أسرة تانغ,سلالة تانغ	de:Tang-Dynastie	en:tang dynasty	es:dinastía tang	fa:سلسله تانگ	fr:dynastie tang	he:שושלת טאנג	hi:तांग राजवंश	ja:唐,唐朝	ko:당나라,당 왕조	pt:dinastia tang	ru:династия тан	tr:tang hanedanı	ur:تانگ سلطنت	zh:唐朝,唐代
 c:tang-dynasty-china	Noun	ar:سلالة تانغ الصينية	de:Tang-Dynastie	en:Tang dynasty	es:dinastía Tang	fa:دودمان تانگ	fr:dynastie Tang	he:שושלת טאנג	hi:तांग राजवंश	ja:唐王朝	ko:당나라	pt:dinastia Tang	ru:династия Тан	tr:Tang hanedanı	ur:تانگ خاندان	zh:唐朝
 c:tangent	Noun	ar:مماس	de:Tangente	en:tangent	es:tangente	fa:مماس	fr:tangente	he:משיק	hi:स्पर्शरेखा	ja:接線,タンジェント	ko:접선,탄젠트	pt:tangente	ru:касательная	tr:teğet	ur:مماس	zh:切线,正切
@@ -7282,6 +7320,7 @@ c:tench	Noun	ar:سمك التنش,تنش	de:Schleie	en:tench	es:tenca	fa:تنچ	
 c:tenderness	Noun	ar:حنان	de:Zärtlichkeit	en:tenderness	es:ternura	fa:مهربانی	fr:tendresse	he:רוך	hi:कोमलता	ja:優しさ	ko:부드러움	pt:ternura	ru:нежность	tr:şefkat	ur:نرمی	zh:温柔
 c:tendon	Noun	ar:وتر	de:Sehne	en:tendon	es:tendón	fa:تاندون,زردپی	fr:tendon	he:גיד	hi:कंडरा	ja:腱	ko:힘줄	pt:tendão	ru:сухожилие	tr:kiriş,tendon	ur:پٹھے کا رباط	zh:腱
 c:tendril	Noun	ar:خيط تسلق	de:Ranke	en:tendril	es:zarcillo	fa:پیچک	fr:vrille	he:קנוקנת	hi:प्रतान	ja:巻きひげ	ko:덩굴손	pt:gavinha	ru:усик	tr:sarmaşık kıvrımı	ur:بیل کا پنجہ	zh:卷须
+c:tenere-desert	Noun	ar:صحراء تينيري	de:Ténéré	en:Ténéré desert	es:desierto del Ténéré	fa:صحرای تنره	fr:Ténéré	he:מדבר טנרה	hi:तेनेरे रेगिस्तान	ja:テネレ砂漠	ko:테네레 사막	pt:deserto de Ténéré	ru:пустыня Тенере	tr:Tenere çölü	ur:ٹینیری صحرا	zh:泰内雷沙漠
 c:tennis	Noun	ar:تنس	de:Tennis	en:tennis	es:tenis	fa:تنیس	fr:tennis	he:טניס	hi:टेनिस	ja:テニス	ko:테니스	pt:tênis,ténis	ru:теннис	tr:tenis	ur:ٹینس	zh:网球
 c:tenon	Noun	ar:نتوء	de:Zapfen	en:tenon	es:espiga	fa:زبانه	fr:tenon	he:ניב	hi:टेनन	ja:ほぞ	ko:장부	pt:espiga	ru:шип	tr:zıvana	ur:کیلا	zh:榫头
 c:tense	Noun	ar:زمن الفعل	de:Tempus	en:tense	es:tiempo verbal	fa:زمان فعل	fr:temps verbal	he:זמן פועל	hi:काल	ja:時制	ko:시제	pt:tempo verbal	ru:время глагола	tr:zaman kipi	ur:فعل کا زمانہ	zh:时态
@@ -7319,6 +7358,7 @@ c:thames	Noun	ar:التايمز,نهر التايمز	de:Themse	en:Thames,River 
 c:thames-river	Noun	ar:نهر التيمز	de:Themse	en:Thames river	es:río Támesis	fa:رود تیمز	fr:Tamise	he:נהר התמזה	hi:थेम्स नदी	ja:テムズ川	ko:템스강	pt:rio Tâmisa	ru:река Темза	tr:Thames Nehri	ur:دریائے ٹیمز	zh:泰晤士河
 c:thank	Verb	ar:شكر	de:danken	en:thank	es:agradecer	fa:تشکر کردن	fr:remercier	he:להודות	hi:धन्यवाद देना,आभार व्यक्त करना	ja:感謝する	ko:감사하다	pt:agradecer	ru:благодарить	tr:teşekkür etmek	ur:شکریہ ادا کرنا,شکر کرنا	zh:感谢,谢
 c:thanksgiving	Noun	ar:عيد الشكر	de:Erntedankfest,Thanksgiving	en:thanksgiving	es:día de acción de gracias	fa:روز شکرگزاری	fr:action de grâce,thanksgiving	he:חג ההודיה	hi:थैंक्सगिविंग,धन्यवाद दिवस	ja:感謝祭	ko:추수감사절	pt:ação de graças	ru:день благодарения	tr:şükran günü	ur:یوم تشکر,تھینکس گیونگ	zh:感恩节
+c:thar-desert	Noun	ar:صحراء تار	de:Thar-Wüste	en:Thar desert	es:desierto del Thar	fa:صحرای تار	fr:désert du Thar	he:מדבר הת'ר	hi:थार रेगिस्तान	ja:タール砂漠	ko:타르 사막	pt:deserto do Thar	ru:пустыня Тар	tr:Tar çölü	ur:تھر صحرا	zh:塔尔沙漠
 c:thatch	Noun	ar:حشائش للتسقيف	de:Reet	en:thatch	es:paja de techo	fa:حصیر	fr:chaume	he:גגון	hi:खपरैल	ja:茅葺き	ko:짚 지붕	pt:colmo	ru:солома для кровли	tr:sazdan çatı	ur:پھوس	zh:茅草
 c:thaw	Noun	ar:ذوبان,إذابة الجليد	de:Tauwetter,Auftauen	en:thaw,thawing	es:deshielo,descongelación	fa:ذوب,گدازش	fr:dégel,fonte	he:הפשרה,המסה	hi:पिघलना,गलन	ja:雪解け,融雪	ko:해빙,융설	pt:degelo	ru:оттепель,таяние	tr:erime,çözülme	ur:پگھلاؤ,برف پگھلنا	zh:解冻,融化
 c:theater	Noun	ar:مسرح	de:Theater	en:theater,theatre	es:teatro	fa:تئاتر	fr:théâtre	he:תיאטרון	hi:रंगमंच,थिएटर	ja:劇場,シアター	ko:극장,연극	pt:teatro	ru:театр	tr:tiyatro	ur:تھیٹر	zh:剧院,戏剧
