@@ -726,6 +726,7 @@ c:baptismal-font	Noun	ar:حوض العماد	de:Taufbecken	en:baptismal font	es:
 c:baptist	Noun	ar:المعمدانية	de:Baptismus	en:Baptist	es:bautismo	fa:باپتیست	fr:baptisme	he:בפטיסטים	hi:बैप्टिस्ट	ja:バプテスト	ko:침례교	pt:batismo	ru:баптизм	tr:Baptizm	ur:بپٹسٹ	zh:浸信宗
 c:baptistery-building	Noun	ar:معمودية	de:Baptisterium	en:baptistery	es:baptisterio	fa:غسل تعمید	fr:baptistère	he:בפטיסטריום	hi:बपतिस्मा स्थल	ja:洗礼堂	ko:세례당	pt:batistério	ru:баптистерий	tr:vaftiz yeri	ur:بپتسمہ گاہ	zh:洗礼堂
 c:bar-chart	Noun	ar:مخطط أعمدة	de:Balkendiagramm	en:bar chart	es:gráfico de barras	fa:نمودار میله‌ای	fr:diagramme en barres	he:תרשים עמודות	hi:दंड चित्र	ja:棒グラフ	ko:막대 그래프	pt:gráfico de barras	ru:столбчатая диаграмма	tr:çubuk grafik	ur:بار چارٹ	zh:条形图
+c:bar-stool	Noun	ar:مقعد بار	de:Barhocker	en:bar stool	es:taburete de bar	fa:چهارپایه بار	fr:tabouret de bar	he:שרפרף בר	hi:बार स्टूल	ja:バースツール	ko:바 스툴	pt:banqueta de bar	ru:барный стул	tr:bar taburesi	ur:بار اسٹول	zh:吧台凳
 c:barbecue-cook	Noun	ar:شواء مشوي	de:Barbecue	en:barbecue	es:barbacoa	fa:باربیکیو	fr:barbecue	he:ברביקיו	hi:बारबेक्यू	ja:バーベキュー	ko:바베큐	pt:churrasco	ru:барбекю	tr:barbekü	ur:باربی کیو	zh:烧烤
 c:barbershop	Noun	ar:حلاقة	de:Friseurladen	en:barbershop	es:barbería	fa:آرایشگاه مردانه	fr:salon de coiffure	he:מספרה	hi:नाई की दुकान	ja:理髪店	ko:이발소	pt:barbearia	ru:парикмахерская	tr:berber	ur:نائی کی دکان	zh:理发店
 c:barbican	Noun	ar:البربكان	de:Barbakane	en:barbican	es:barbacana	fa:بربکان	fr:barbacane	he:פתח ירי	hi:बाह्य किला	ja:バービカン	ko:바르비칸	pt:barbacã	ru:барбакан	tr:dış kule	ur:بیرونی قلعہ	zh:瓮城
@@ -820,6 +821,7 @@ c:beaux-arts	Noun	ar:بوزار	de:Beaux-Arts	en:Beaux-Arts	es:Bellas Artes	fa:�
 c:beaver	Noun	ar:قندس	de:Biber	en:beaver	es:castor	fa:سگ آبی	fr:castor	he:בונה	hi:ऊदबिलाव	ja:ビーバー	ko:비버	pt:castor	ru:бобр	tr:kunduz	ur:اود	zh:海狸
 c:beaver-mammal	Noun	ar:قندس	de:Biber	en:beaver	es:castor	fa:سگ آبی	fr:castor	he:בונה	hi:ऊदबिलाव	ja:ビーバー	ko:비버	pt:castor	ru:бобр	tr:kunduz	ur:قندس	zh:河狸
 c:bed	Noun	ar:سرير	de:Bett	en:bed	es:cama	fa:تخت,تختخواب	fr:lit	he:מיטה	hi:बिस्तर	ja:ベッド,寝床	ko:침대	pt:cama	ru:кровать	tr:yatak	ur:بستر	zh:床
+c:bed-furniture	Noun	ar:سرير	de:Bett	en:bed	es:cama	fa:تخت	fr:lit	he:מיטה	hi:पलंग	ja:ベッド	ko:침대	pt:cama	ru:кровать	tr:yatak	ur:بستر	zh:床
 c:bedbug	Noun	ar:بق الفراش,بق	de:Bettwanze	en:bedbug	es:chinche de cama,chinche	fa:ساس تختخواب,ساس	fr:punaise de lit	he:פשפש המיטה,פשפש	hi:खटमल	ja:トコジラミ	ko:빈대	pt:percevejo de cama,percevejo	ru:постельный клоп,клоп	tr:tahtakurusu	ur:کھٹمل	zh:床虫,臭虫
 c:bedsheet	Noun	ar:ملاءة,شرشف	de:Bettlaken	en:bedsheet,sheet	es:sábana	fa:ملحفه	fr:drap	he:סדין	hi:चादर,बिछौना	ja:シーツ	ko:침대 시트	pt:lençol	ru:простыня	tr:çarşaf	ur:چادر	zh:床单
 c:bee	Noun	ar:نحلة	de:Biene	en:bee	es:abeja	fa:زنبور	fr:abeille	he:דבורה	hi:मधुमक्खी	ja:蜂,ミツバチ	ko:벌,꿀벌	pt:abelha	ru:пчела	tr:arı	ur:شہد کی مکھی	zh:蜜蜂
@@ -856,6 +858,7 @@ c:belly-dance	Noun	ar:رقص شرقي	de:Bauchtanz	en:belly dance	es:danza del v
 c:belt	Noun	ar:حزام	de:Gürtel	en:belt	es:cinturón	fa:کمربند	fr:ceinture	he:חגורה	hi:बेल्ट,पेटी	ja:ベルト	ko:벨트,허리띠	pt:cinto	ru:ремень,пояс	tr:kemer	ur:بیلٹ	zh:腰带
 c:beluga	Noun	ar:حوت ابيض	de:Belugawal	en:beluga	es:beluga	fa:بلوگا	fr:béluga	he:לווייתן לבן	hi:बेलुगा	ja:シロイルカ	ko:흰돌고래	pt:beluga	ru:белуха	tr:beluga	ur:سفید وھیل	zh:白鲸
 c:beluga-whale	Noun	ar:حوت البيلوغا	de:Beluga	en:beluga whale	es:beluga	fa:بلوگا	fr:béluga	he:בלוגה	hi:बेलुगा व्हेल	ja:シロイルカ	ko:벨루가	pt:beluga	ru:белуха	tr:beyaz balina	ur:بیلوگا	zh:白鲸
+c:bench-furniture	Noun	ar:مقعد طويل	de:Bank	en:bench	es:banco	fa:نیمکت	fr:banc	he:ספסל	hi:बेंच	ja:ベンチ	ko:벤치	pt:banco	ru:скамейка	tr:bank	ur:بینچ	zh:长凳
 c:bending-moment	Noun	ar:عزم الانحناء	de:Biegemoment	en:bending moment	es:momento flector	fa:لنگر خمشی	fr:moment fléchissant	he:מומנט כפיפה	hi:नमन आघूर्ण	ja:曲げモーメント	ko:휨 모멘트	pt:momento fletor	ru:изгибающий момент	tr:eğilme momenti	ur:خمشی لمحہ	zh:弯矩
 c:bengali-language	Noun	ar:اللغة البنغالية	de:Bengalisch	en:Bengali language	es:idioma bengalí	fa:زبان بنگالی	fr:bengali	he:בנגלית	hi:बंगाली भाषा	ja:ベンガル語	ko:벵골어	pt:língua bengali	ru:бенгальский язык	tr:Bengalce	ur:بنگالی زبان	zh:孟加拉语
 c:benthic	Adjective	ar:قاعي	de:benthisch	en:benthic	es:béntico	fa:بنتیک	fr:benthique	he:בנתי	hi:बेन्थिक	ja:底生	ko:저서	pt:bêntico	ru:бентический	tr:bentik	ur:تہ نشین	zh:底栖
@@ -1216,6 +1219,7 @@ c:bullfrog	Noun	ar:ضفدع الثور	de:Ochsenfrosch	en:bullfrog	es:rana toro	
 c:bumblebee	Noun	ar:دبور,نحلة كبيرة	de:Hummel	en:bumblebee	es:abejorro	fa:زنبور بزرگ,زنبور عسل بزرگ	fr:bourdon	he:דבורת פרא,דבשון	hi:भौंरा	ja:マルハナバチ	ko:뒤영벌	pt:mamangaba,abelhão	ru:шмель	tr:yaban arısı,bumblebee	ur:بھونرا	zh:熊蜂
 c:bumper	Noun	ar:مصد	de:Stoßstange,Stoßfänger	en:bumper,fender	es:parachoques	fa:سپر	fr:pare-chocs	he:פגוש	hi:बम्पर	ja:バンパー	ko:범퍼	pt:para-choques	ru:бампер	tr:tampon	ur:بمپر	zh:保险杠
 c:bungalow	Noun	ar:بنغالو	de:Bungalow	en:bungalow	es:bungaló,bungalow	fa:بنگله,خانه یک طبقه	fr:bungalow	he:בנגלו	hi:बँगला	ja:バンガロー,平屋	ko:방갈로	pt:bangalô	ru:бунгало	tr:bungalov	ur:بنگلہ	zh:平房
+c:bunk-bed	Noun	ar:سرير طابقين	de:Etagenbett	en:bunk bed	es:litera	fa:تخت دو طبقه	fr:lit superposé	he:מיטת קומותיים	hi:बंक बेड	ja:二段ベッド	ko:이층침대	pt:beliche	ru:двухъярусная кровать	tr:ranza	ur:بنک بیڈ	zh:双层床
 c:bunting	Noun	ar:درسة	de:Ammer	en:bunting	es:escribano	fa:زردپره	fr:bruant	he:גבתון	hi:बंटिंग	ja:ホオジロ	ko:멧새	pt:escrevedeira	ru:овсянка	tr:kirazkuşu	ur:بنٹنگ	zh:鹀
 c:buoyancy	Noun	ar:قوة الطفو	de:Auftrieb	en:buoyancy	es:flotabilidad	fa:نیروی شناوری	fr:poussée d'Archimède	he:כוח עילוי	hi:उत्प्लावन	ja:浮力	ko:부력	pt:empuxo	ru:выталкивающая сила	tr:kaldırma kuvveti	ur:ابھاؤ قوت	zh:浮力
 c:burden-of-proof	Noun	ar:عبء الإثبات	de:Beweislast	en:burden of proof	es:carga de la prueba	fa:بار اثبات	fr:charge de la preuve	he:נטל ההוכחה	hi:साक्ष्य का भार	ja:立証責任	ko:입증 책임	pt:ônus da prova	ru:бремя доказывания	tr:ispat yükü	ur:ثبوت کا بوجھ	zh:举证责任
@@ -1315,6 +1319,7 @@ c:cannula	Noun	ar:قنية	de:Kanüle	en:cannula	es:cánula	fa:کانول	fr:can
 c:canoe	Noun	ar:كانو	de:Kanu	en:canoe	es:canoa	fa:کانو	fr:canoë	he:קאנו	hi:डोंगी	ja:カヌー	ko:카누	pt:canoa	ru:каноэ	tr:kano	ur:کینو	zh:独木舟
 c:canonization	Noun	ar:التقديس	de:Heiligsprechung	en:canonization	es:canonización	fa:قدیس شناختن	fr:canonisation	he:קנוניזציה	hi:संतीकरण	ja:列聖	ko:시성	pt:canonização	ru:канонизация	tr:aziz ilan etme	ur:ولایت کا اعلان	zh:封圣
 c:canopic-jar	Noun	ar:جرة كانوبية	de:Kanope	en:canopic jar	es:vasija canópica	fa:جار کانوپیک	fr:vase canope	he:צנצנת קנופית	hi:कैनोपिक जार	ja:カノポス壺	ko:카노포스 항아리	pt:vaso canópico	ru:канопа	tr:kanopik kavanoz	ur:کنوپک برتن	zh:卡诺匹克罐
+c:canopy-bed	Noun	ar:سرير بمظلة	de:Betthimmel	en:canopy bed	es:cama con dosel	fa:تخت سایبان‌دار	fr:lit à ciel de lit	he:מיטת חופה	hi:चंदवा बिस्तर	ja:天蓋付きベッド	ko:캐노피 침대	pt:cama com baldaquim	ru:кровать с пологом	tr:sayvanlı yatak	ur:سائبان والا بستر	zh:华盖床
 c:cantaloupe	Noun	ar:شمام,كانتالوب	de:Cantaloupe-Melone	en:cantaloupe	es:cantalupo	fa:خربزه	fr:cantaloup	he:קנטלופ	hi:खरबूजा	ja:カンタローブ	ko:칸탈루프	pt:cantalupo	ru:дыня	tr:kavun	ur:خربوزہ	zh:哈密瓜
 c:cantilever	Noun	ar:ذراع متدلية	de:Kragarm	en:cantilever	es:voladizo	fa:کنسول	fr:porte-à-faux	he:קנטיליבר	hi:कैंटिलीवर	ja:片持ち梁	ko:캔틸레버	pt:balanço	ru:консоль	tr:konsol	ur:لٹکی ہوئی سہارہ	zh:悬臂
 c:canvas	Noun	ar:كانفاس	de:Leinwand	en:canvas	es:lienzo	fa:کنواس	fr:toile	he:קנבס	hi:कैनवास	ja:キャンバス	ko:캔버스	pt:lona	ru:холст	tr:kanvas	ur:کینوس	zh:帆布
@@ -1528,6 +1533,8 @@ c:chain	Noun	ar:سلسلة	de:Kette	en:chain	es:cadena	fa:زنجیر	fr:chaîne	
 c:chain-necklace	Noun	ar:سلسلة الرقبة	de:Halskette,Kette	en:chain necklace,chain	es:cadena,collar de cadena	fa:زنجیر گردن	fr:chaîne	he:שרשרת	hi:चेन	ja:チェーンネックレス	ko:체인 목걸이	pt:corrente,colar de corrente	ru:цепочка	tr:zincir kolye	ur:زنجیر	zh:链式项链,项链
 c:chainmail	Noun	ar:زرد حديد	de:Kettenhemd	en:chainmail	es:cota de malla	fa:زره حلقه‌ای	fr:cotte de mailles	he:שריון רשת	hi:जंजीर कवच	ja:鎖帷子	ko:사슬 갑옷	pt:cota de malha	ru:кольчуга	tr:zincir zırh	ur:چین میل	zh:锁子甲
 c:chair	Noun	ar:كرسي	de:Stuhl	en:chair	es:silla	fa:صندلی	fr:chaise	he:כיסא	hi:कुर्सी	ja:椅子	ko:의자	pt:cadeira	ru:стул	tr:sandalye	ur:کرسی	zh:椅子
+c:chair-furniture	Noun	ar:كرسي	de:Stuhl	en:chair	es:silla	fa:صندلی	fr:chaise	he:כיסא	hi:कुर्सी	ja:椅子	ko:의자	pt:cadeira	ru:стул	tr:sandalye	ur:کرسی	zh:椅子
+c:chaise-lounge	Noun	ar:كرسي استلقاء	de:Chaiselongue	en:chaise lounge	es:chaise longue	fa:شزلون	fr:chaise longue	he:שזלונג	hi:लाउंज कुर्सी	ja:シェーズロング	ko:셰이즈 라운지	pt:chaise longue	ru:шезлонг	tr:şezlong	ur:آرام کرسی	zh:贵妃椅
 c:chalcolithic	Noun	ar:العصر النحاسي	de:Kupferzeit	en:Chalcolithic period	es:período calcolítico	fa:دوره مس‌سنگی	fr:chalcolithique	he:התקופה הכלקוליתית	hi:ताम्रपाषाण काल	ja:銅石器時代	ko:동석기 시대	pt:período calcolítico	ru:энеолит	tr:kalkolitik dönem	ur:تانبے کا دور	zh:铜石并用时代
 c:chalk-line	Noun	ar:خيط طباشير	de:Schlagschnur	en:chalk line	es:línea de tiza	fa:ریسمان گچی	fr:cordeau à craie	he:חוט גיר	hi:चॉक लाइन	ja:墨壺	ko:먹줄	pt:linha de giz	ru:меловой шнур	tr:tebeşir ipi	ur:چاک لائن	zh:粉线
 c:chalk-line-tool	Noun	ar:خيط طباشير	de:Schlagschnur	en:chalk line	es:cordel de tiza	fa:گچ خط	fr:cordeau à craie	he:חוט גיר	hi:चाक लाइन	ja:墨壺	ko:먹줄	pt:cordel de giz	ru:меловая нить	tr:tebeşir ipi	ur:چاک لائن	zh:弹线
@@ -1596,6 +1603,7 @@ c:chervil	Noun	ar:مقدونس	de:Kerbel	en:chervil	es:perifollo	fa:شرویل	f
 c:chess-game	Noun	ar:شطرنج	de:Schach	en:chess	es:ajedrez	fa:شطرنج	fr:échecs	he:שחמט	hi:शतरंज	ja:チェス	ko:체스	pt:xadrez	ru:шахматы	tr:satranç	ur:شطرنج	zh:国际象棋
 c:chess-set	Noun	ar:لعبة الشطرنج	de:Schachspiel	en:chess set	es:ajedrez	fa:مهره‌های شطرنج	fr:jeu d'échecs	he:שחמט	hi:शतरंज	ja:チェスセット	ko:체스 세트	pt:jogo de xadrez	ru:шахматы	tr:satranç takımı	ur:شطرنج	zh:国际象棋
 c:chest	Noun	ar:صدر	de:Brust,Brustkorb	en:chest	es:pecho	fa:سینه	fr:poitrine	he:חזה	hi:छाती	ja:胸	ko:가슴	pt:peito	ru:грудь	tr:göğüs	ur:سینہ	zh:胸,胸部
+c:chest-drawer	Noun	ar:خزانة ذات أدراج	de:Kommode	en:chest of drawers	es:cómoda	fa:کمد کشویی	fr:commode	he:שידת מגירות	hi:दराज़ वाली अलमारी	ja:整理ダンス	ko:서랍장	pt:cômoda	ru:комод	tr:çekmeceli dolap	ur:دراز الماری	zh:抽屉柜
 c:chestnut	Noun	ar:الكستناء	de:Kastanie	en:chestnut	es:castaño	fa:شاه‌بلوط	fr:châtaignier	he:ערמון	hi:शाहबलूत	ja:栗	ko:밤나무	pt:castanheiro	ru:каштан	tr:kestane	ur:شاہ بلوط	zh:栗子
 c:chestnut-color	Noun	ar:كستنائي	de:Kastanienbraun	en:chestnut,chestnut brown	es:castaño	fa:شاه‌بلوطی	fr:châtaigne,marron châtaigne	he:ערמוני	hi:शाहबलूती	ja:栗色	ko:밤색	pt:castanho	ru:каштановый	tr:kestane rengi	ur:شاہ بلوطی	zh:栗棕色
 c:chestnut-tree	Noun	ar:كستناء	de:Kastanie	en:chestnut	es:castaño	fa:شاه‌بلوط	fr:châtaignier	he:ערמון	hi:चेस्टनट	ja:クリ	ko:밤나무	pt:castanheiro	ru:каштан	tr:kestane	ur:شاہ بلوط	zh:栗树
@@ -1623,6 +1631,7 @@ c:chimpanzee	Noun	ar:شمبانزي	de:Schimpanse	en:chimpanzee	es:chimpancé	fa
 c:chimu-civ	Noun	ar:حضارة الشيمو	de:Chimú-Zivilisation	en:Chimú civilization	es:civilización chimú	fa:تمدن چیمو	fr:civilisation chimú	he:תרבות הצ'ימו	hi:चिमू सभ्यता	ja:チムー文明	ko:치무 문명	pt:civilização chimú	ru:цивилизация Чиму	tr:Çimu uygarlığı	ur:چمو تہذیب	zh:奇穆文明
 c:chin	Noun	ar:ذقن	de:Kinn	en:chin	es:barbilla,mentón	fa:چانه	fr:menton	he:סנטר	hi:ठोड़ी	ja:顎	ko:턱	pt:queixo	ru:подбородок	tr:çene	ur:ٹھوڑی	zh:下巴,颏
 c:china	Noun	ar:الصين	de:China	en:China	es:China	fa:چین	fr:Chine	he:סין	hi:चीन	ja:中国	ko:중국	pt:China	ru:Китай	tr:Çin	ur:چین	zh:中国,中华人民共和国
+c:china-cabinet	Noun	ar:خزانة الصيني	de:Vitrine	en:china cabinet	es:vitrina de porcelana	fa:ویترین چینی	fr:vaisselier	he:ויטרינה	hi:चीन कैबिनेट	ja:食器棚	ko:도자기 장식장	pt:armário de louça	ru:сервант для посуды	tr:porselen dolabı	ur:چائنا کیبنٹ	zh:瓷器柜
 c:chinese-arch	Noun	ar:العمارة الصينية	de:chinesische Architektur	en:Chinese architecture	es:arquitectura china	fa:معماری چینی	fr:architecture chinoise	he:אדריכלות סינית	hi:चीनी वास्तुकला	ja:中国建築	ko:중국 건축	pt:arquitetura chinesa	ru:китайская архитектура	tr:Çin mimarisi	ur:چینی فن	zh:中国建筑
 c:chinese-cuisine	Noun	ar:مطبخ صيني	de:chinesische Küche	en:Chinese cuisine	es:cocina china	fa:آشپزی چینی	fr:cuisine chinoise	he:מטבח סיני	hi:चीनी भोजन	ja:中国料理	ko:중국 요리	pt:culinária chinesa	ru:китайская кухня	tr:Çin mutfağı	ur:چینی کھانا	zh:中国菜
 c:chinese-language	Noun	ar:اللغة الصينية	de:Chinesisch	en:Chinese language	es:idioma chino	fa:زبان چینی	fr:chinois	he:סינית	hi:चीनी भाषा	ja:中国語	ko:중국어	pt:língua chinesa	ru:китайский язык	tr:Çince	ur:چینی زبان	zh:汉语
@@ -1778,6 +1787,7 @@ c:cloister	Noun	ar:الرواق الديري	de:Kreuzgang	en:cloister	es:claustr
 c:cloister-court	Noun	ar:رواق ديري	de:Kreuzgang	en:cloister	es:claustro	fa:دیرگاه	fr:cloître	he:מחלון	hi:मठ प्रांगण	ja:回廊	ko:수도원 회랑	pt:claustro	ru:клуатр	tr:manastır avlusu	ur:خانقاہ صحن	zh:回廊
 c:close	Verb	ar:أغلق	de:schließen	en:close,shut	es:cerrar	fa:بستن	fr:fermer	he:לסגור	hi:बंद करना	ja:閉める	ko:닫다	pt:fechar	ru:закрывать,закрыть	tr:kapatmak	ur:بند کرنا	zh:关
 c:closed-set	Noun	ar:المجموعة المغلقة	de:abgeschlossene Menge	en:closed set	es:conjunto cerrado	fa:مجموعه بسته	fr:ensemble fermé	he:קבוצה סגורה	hi:बंद समुच्चय	ja:閉集合	ko:닫힌집합	pt:conjunto fechado	ru:замкнутое множество	tr:kapalı küme	ur:بند مجموعہ	zh:闭集
+c:closet-furniture	Noun	ar:خزانة ملابس	de:Schrank	en:closet	es:armario	fa:کمد	fr:placard	he:ארון	hi:अलमारी	ja:クローゼット	ko:벽장	pt:armário	ru:шкаф	tr:gardırop	ur:الماری	zh:衣橱
 c:cloth	Noun	ar:قماش,نسيج	de:Stoff,Tuch	en:cloth,fabric	es:tela,tejido	fa:پارچه	fr:tissu,étoffe	he:בד	hi:कपड़ा,वस्त्र	ja:布,生地	ko:천,직물	pt:tecido,pano	ru:ткань,полотно	tr:kumaş,bez	ur:کپڑا,پارچہ	zh:布,布料
 c:clothes	Noun	ar:ملابس,ثياب	de:Kleidung,Kleider	en:clothes,clothing	es:ropa	fa:لباس	fr:vêtements	he:בגדים	hi:कपड़े	ja:服,衣服	ko:옷,의복	pt:roupa	ru:одежда	tr:giysi,kıyafet	ur:کپڑے	zh:衣服
 c:clothing-apparel	Noun	ar:ملابس	de:Bekleidung	en:clothing	es:ropa	fa:پوشاک	fr:vêtement	he:ביגוד	hi:कपड़े	ja:衣類	ko:의류	pt:vestuário	ru:одежда	tr:giyim	ur:لباس	zh:服装
@@ -1840,6 +1850,7 @@ c:coefficient-math	Noun	ar:معامل	de:Koeffizient	en:coefficient	es:coeficien
 c:coevolution	Noun	ar:التطور المشترك	de:Koevolution	en:coevolution	es:coevolución	fa:همتکاملی	fr:coévolution	he:קואבולוציה	hi:सहविकास	ja:共進化	ko:공진화	pt:coevolução	ru:коэволюция	tr:birlikte evrim	ur:باہمی ارتقاء	zh:协同进化
 c:coffee	Noun	ar:قهوة	de:Kaffee	en:coffee	es:café	fa:قهوه	fr:café	he:קפה	hi:कॉफ़ी	ja:コーヒー,珈琲	ko:커피	pt:café	ru:кофе	tr:kahve	ur:کافی	zh:咖啡
 c:coffee-drink	Noun	ar:قهوة	de:Kaffee	en:coffee	es:café	fa:قهوه	fr:café	he:קפה	hi:कॉफी	ja:コーヒー	ko:커피	pt:café	ru:кофе	tr:kahve	ur:کافی	zh:咖啡
+c:coffee-table	Noun	ar:طاولة قهوة	de:Couchtisch	en:coffee table	es:mesa de café	fa:میز قهوه	fr:table basse	he:שולחן קפה	hi:कॉफ़ी टेबल	ja:コーヒーテーブル	ko:커피 테이블	pt:mesa de centro	ru:кофейный столик	tr:sehpa	ur:کافی میز	zh:茶几
 c:cognac	Noun	ar:كونياك	de:Cognac	en:cognac	es:coñac	fa:کنیاک	fr:cognac	he:קוניאק	hi:कॉग्नेक	ja:コニャック	ko:코냑	pt:cognac	ru:коньяк	tr:konyak	ur:کونیاک	zh:干邑
 c:cognate	Noun	ar:كلمة مشتركة الأصل	de:Kognate	en:cognate	es:cognado	fa:هم‌ریشه	fr:cognate	he:בן-שורש	hi:समूल	ja:同源語	ko:동원어	pt:cognato	ru:когнат	tr:akraba sözcük	ur:ہم اصل	zh:同源词
 c:cognition	Noun	ar:إدراك	de:Kognition,Erkenntnis	en:cognition	es:cognición	fa:شناخت	fr:cognition	he:קוגניציה,הכרה	hi:अनुभूति,संज्ञान	ja:認知,認識	ko:인지,인식	pt:cognição	ru:познание,когниция	tr:biliş,idrak	ur:ادراک,شناخت	zh:认知,认识
@@ -2018,6 +2029,7 @@ c:conservatism	Noun	ar:المحافظة السياسية	de:Konservatismus	en:co
 c:conservatism-phil	Noun	ar:المحافظة	de:Konservatismus	en:conservatism	es:conservadurismo	fa:محافظه‌کاری	fr:conservatisme	he:קונסרבטיזם	hi:रूढ़िवाद	ja:保守主義	ko:보수주의	pt:conservadorismo	ru:консерватизм	tr:muhafazakarlık	ur:قدامت پسندی	zh:保守主义
 c:consider	Verb	ar:اعتبر	de:betrachten,erwägen	en:consider	es:considerar	fa:در نظر گرفتن	fr:considérer	he:לשקול	hi:विचार करना	ja:考える,検討する	ko:고려하다	pt:considerar	ru:считать,рассматривать	tr:düşünmek,saymak	ur:غور کرنا	zh:考虑
 c:console-game	Noun	ar:لعبة كونسول	de:Konsolenspiel	en:console game	es:videojuego de consola	fa:بازی کنسول	fr:jeu console	he:משחק קונסולה	hi:कंसोल गेम	ja:コンソールゲーム	ko:콘솔 게임	pt:jogo de consola	ru:консольная игра	tr:konsol oyunu	ur:کنسول گیم	zh:主机游戏
+c:console-table	Noun	ar:طاولة كونسول	de:Konsolentisch	en:console table	es:mesa consola	fa:میز کنسول	fr:table console	he:שולחן קונסולה	hi:कंसोल टेबल	ja:コンソールテーブル	ko:콘솔 테이블	pt:mesa de consola	ru:консольный столик	tr:konsol masası	ur:کنسول میز	zh:玄关桌
 c:consonant	Noun	ar:حرف ساكن,صامت	de:Konsonant,Mitlaut	en:consonant	es:consonante	fa:همخوان,صامت	fr:consonne	he:עיצור	hi:व्यंजन	ja:子音	ko:자음	pt:consoante	ru:согласный,согласная	tr:ünsüz,konson	ur:ساکن,صامت	zh:辅音,子音
 c:constant-math	Noun	ar:ثابت رياضي	de:Konstante	en:constant	es:constante	fa:ثابت	fr:constante	he:קבוע	hi:स्थिरांक	ja:定数	ko:상수	pt:constante	ru:константа	tr:sabit	ur:ثابت	zh:常数
 c:constellation	Noun	ar:كوكبة,مجموعة نجمية	de:Sternbild,Konstellation	en:constellation	es:constelación	fa:صورت فلکی	fr:constellation	he:קבוצת כוכבים,מזל	hi:तारामंडल,नक्षत्र	ja:星座	ko:별자리	pt:constelação	ru:созвездие	tr:takımyıldız	ur:جھرمٹ	zh:星座
@@ -2178,6 +2190,7 @@ c:cotton-material	Noun	ar:قطن	de:Baumwolle	en:cotton	es:algodón	fa:پنبه	
 c:cottonmouth	Noun	ar:افعى قطنية الفم	de:Wassermokassin	en:cottonmouth	es:mocasín de agua	fa:مار دهن پنبه	fr:mocassin d'eau	he:כרוזן מים	hi:कॉटनमाउथ	ja:ヌママムシ	ko:면화뱀	pt:mocassim-d'água	ru:водяной щитомордник	tr:su moccasin	ur:روئی منہ سانپ	zh:棉口蛇
 c:cottonwood	Noun	ar:خشب القطن	de:Pappel Baumwolle	en:cottonwood	es:álamo algodonero	fa:چوب پنبه	fr:peuplier cotonnier	he:עץ כותנה	hi:कॉटनवुड	ja:コットンウッド	ko:미루나무	pt:choupo-branco	ru:тополь хлопковый	tr:pamuk ağacı	ur:کاٹن ووڈ	zh:棉白杨
 c:cotyledon	Noun	ar:فلقة	de:Keimblatt	en:cotyledon	es:cotiledón	fa:لپه	fr:cotylédon	he:פסיגה	hi:बीजपत्र	ja:子葉	ko:떡잎	pt:cotilédone	ru:семядоля	tr:çenek	ur:بیج پتی	zh:子叶
+c:couch-furniture	Noun	ar:كنبة	de:Couch	en:couch	es:diván	fa:کاناپه	fr:divan	he:ספה ארוכה	hi:काउच	ja:カウチ	ko:카우치	pt:divã	ru:кушетка	tr:divan	ur:کاؤچ	zh:长沙发
 c:cough	Noun	ar:سعال,كحة	de:Husten	en:cough	es:tos	fa:سرفه	fr:toux	he:שיעול	hi:खांसी	ja:咳	ko:기침	pt:tosse	ru:кашель	tr:öksürük	ur:کھانسی	zh:咳嗽
 c:coulomb	Noun	ar:كولوم	de:Coulomb	en:coulomb	es:culombio	fa:کولن	fr:coulomb	he:קולון	hi:कूलम्ब	ja:クーロン	ko:쿨롬	pt:coulomb	ru:кулон	tr:coulomb	ur:کولمب	zh:库仑
 c:counseling	Noun	ar:استشارة نفسية,إرشاد نفسي	de:Beratung,psychologische Beratung	en:counseling,counselling	es:asesoramiento,orientación psicológica	fa:مشاوره	fr:conseil psychologique,counseling	he:ייעוץ,ייעוץ פסיכולוגי	hi:परामर्श,काउंसलिंग	ja:カウンセリング,心理相談	ko:상담,카운슬링	pt:aconselhamento,orientação psicológica	ru:консультирование,консультация	tr:danışmanlık,psikolojik danışmanlık	ur:مشاورت,کونسلنگ	zh:咨询,心理咨询
@@ -2211,6 +2224,7 @@ c:coyote	Noun	ar:ذئب قيوط	de:Kojote	en:coyote	es:coyote	fa:کایوت	fr:
 c:crab	Noun	ar:سرطان البحر,كابوريا	de:Krabbe	en:crab	es:cangrejo	fa:خرچنگ	fr:crabe	he:סרטן	hi:केकड़ा	ja:カニ	ko:게	pt:caranguejo	ru:краб	tr:yengeç	ur:کیکڑا	zh:螃蟹
 c:crab-animal	Noun	ar:سرطان البحر	de:Krabbe	en:crab	es:cangrejo	fa:خرچنگ	fr:crabe	he:סרטן	hi:केकड़ा	ja:カニ	ko:게	pt:caranguejo	ru:краб	tr:yengeç	ur:کیکڑا	zh:螃蟹
 c:crab-sea	Noun	ar:سرطان بحري	de:Krabbe	en:crab	es:cangrejo	fa:خرچنگ	fr:crabe	he:סרטן	hi:केकड़ा	ja:カニ	ko:게	pt:caranguejo	ru:краб	tr:yengeç	ur:کیکڑا	zh:螃蟹
+c:cradle-furniture	Noun	ar:مهد	de:Wiege	en:cradle	es:cuna mecedora	fa:گهواره	fr:berceau à bascule	he:עריסה מתנדנדת	hi:झूला पालना	ja:揺りかご	ko:요람	pt:berço de balanço	ru:колыбель	tr:beşik	ur:جھولا	zh:摇篮
 c:craft	Noun	ar:حرفة	de:Handwerk	en:craft	es:artesanía,oficio	fa:صنعت,پیشه	fr:artisanat,métier	he:מלאכה	hi:शिल्प,कला	ja:工芸,技	ko:공예,기술	pt:artesanato,ofício	ru:ремесло	tr:el sanatı,zanaat	ur:فن,دستکاری	zh:工艺,手工
 c:craftsman-style	Noun	ar:طراز الحرفيين	de:Craftsman-Stil	en:Craftsman style	es:estilo Craftsman	fa:سبک کرفتسمن	fr:style Craftsman	he:סגנון קרפטסמן	hi:क्राफ्ट्समैन शैली	ja:クラフツマン様式	ko:크래프트맨 양식	pt:estilo Craftsman	ru:стиль Крафтсмен	tr:Craftsman tarzı	ur:کرافٹ سمین طرز	zh:工艺美术式
 c:cranberry-var	Noun	ar:توت بري	de:Preiselbeere	en:cranberry	es:arándano rojo	fa:کرن بری	fr:canneberge	he:חמוציות	hi:क्रैनबेरी	ja:クランベリー	ko:크랜베리	pt:airela	ru:клюква	tr:yaban mersini kızıl	ur:کرین بیری	zh:蔓越莓
@@ -2232,6 +2246,7 @@ c:cream-dairy	Noun	ar:قشطة	de:Sahne	en:cream	es:crema	fa:خامه	fr:crème	
 c:cream-fraiche	Noun	ar:كريم فريش	de:Crème fraîche	en:crème fraîche	es:crème fraîche	fa:کرم فرش	fr:crème fraîche fr	he:קרם פראש	hi:क्रेम फ्रेश	ja:クレームフレーシュ	ko:크렘 프레슈	pt:crème fraîche pt	ru:крем-фреш	tr:krem fresh	ur:کریم فریش	zh:法式酸奶油
 c:creatine	Noun	ar:الكرياتين	de:Kreatin	en:creatine	es:creatina	fa:کراتین	fr:créatine	he:קריאטין	hi:क्रिएटिन	ja:クレアチン	ko:크레아틴	pt:creatina	ru:креатин	tr:kreatin	ur:کریاٹین	zh:肌酸
 c:creation	Noun	ar:إبداع,خلق	de:Schöpfung,Kreation	en:creation	es:creación	fa:خلق,آفرینش	fr:création	he:יצירה	hi:रचना,सृष्टि	ja:創造,創作	ko:창조,창작	pt:criação	ru:создание,творение	tr:yaratılış,yaratım	ur:تخلیق	zh:创造,创作
+c:credenza	Noun	ar:كريدنزا	de:Kredenz	en:credenza	es:credenza	fa:کردنزا	fr:crédence	he:קרדנזה	hi:क्रेडेंज़ा	ja:クレデンザ	ko:크레덴자	pt:credência	ru:кредензa	tr:büfe	ur:کریڈنزا	zh:矮柜
 c:credit	Noun	ar:ائتمان	de:Kredit	en:credit	es:crédito	fa:اعتبار	fr:crédit	he:אשראי	hi:क्रेडिट,उधार	ja:信用,クレジット	ko:신용,크레딧	pt:crédito	ru:кредит	tr:kredi	ur:کریڈٹ,ادھار	zh:信用,信贷
 c:credit-rating	Noun	ar:تصنيف ائتماني	de:Kreditrating	en:credit rating	es:calificación crediticia	fa:رتبه بندی اعتباری	fr:notation de crédit	he:דירוג אשראי	hi:क्रेडिट रेटिंग	ja:信用格付け	ko:신용 등급	pt:classificação de crédito	ru:кредитный рейтинг	tr:kredi notu	ur:کریڈٹ ریٹنگ	zh:信用评级
 c:creep	Verb	ar:تسلل,دب ببطء	de:schleichen	en:creep	es:deslizarse sigilosamente	fa:دزدکی رفتن,خزیدن آرام	fr:se glisser furtivement	he:להתגנב	hi:चुपके से सरकना	ja:忍び寄る	ko:살금살금 기다	pt:mover-se furtivamente	ru:красться	tr:sinsice ilerlemek	ur:دبے پاؤں چلنا	zh:悄悄爬行
@@ -2251,6 +2266,7 @@ c:crescendo-music	Noun	ar:ازدياد صوتي	de:Crescendo	en:crescendo	es:cre
 c:crescent	Noun	ar:هلال	de:Mondsichel,Halbmond	en:crescent	es:luna creciente,creciente	fa:هلال	fr:croissant	he:סהר	hi:अर्धचंद्र,हिलाल	ja:三日月	ko:초승달	pt:crescente,lua crescente	ru:полумесяц	tr:hilal	ur:ہلال	zh:新月,月牙
 c:crescent-shape	Noun	ar:هلال	de:Halbmond,Sichel	en:crescent	es:creciente,media luna	fa:هلال	fr:croissant	he:סהר	hi:अर्धचंद्र	ja:三日月形	ko:초승달 모양	pt:crescente	ru:полумесяц	tr:hilal	ur:ہلال	zh:新月形,月牙形
 c:crest-wave	Noun	ar:قمة الموجة	de:Wellenberg	en:wave crest	es:cresta de onda	fa:قله موج	fr:crête d'onde	he:פסגת גל	hi:तरंग शिखर	ja:波の頂	ko:파고	pt:crista de onda	ru:гребень волны	tr:dalga tepesi	ur:موج کی چوٹی	zh:波峰
+c:crib-furniture	Noun	ar:سرير أطفال	de:Kinderbett	en:crib	es:cuna	fa:تختخواب کودک	fr:berceau	he:עריסה	hi:पालना	ja:ベビーベッド	ko:아기침대	pt:berço	ru:детская кроватка	tr:bebek karyolası	ur:پالنا	zh:婴儿床
 c:cricket	Noun	ar:كريكيت	de:Cricket,Kricket	en:cricket	es:críquet	fa:کریکت	fr:cricket	he:קריקט	hi:क्रिकेट	ja:クリケット	ko:크리켓	pt:críquete	ru:крикет	tr:kriket	ur:کرکٹ	zh:板球
 c:cricket-game	Noun	ar:كريكيت	de:Cricket	en:cricket	es:críquet	fa:کریکت	fr:cricket	he:קריקט	hi:क्रिकेट	ja:クリケット	ko:크리켓	pt:críquete	ru:крикет	tr:kriket	ur:کرکٹ	zh:板球
 c:cricket-insect	Noun	ar:صرصور الليل,صرار الليل	de:Grille,Heimchen	en:cricket	es:grillo	fa:جیرجیرک	fr:grillon	he:צרצר	hi:झींगुर	ja:コオロギ	ko:귀뚜라미	pt:grilo	ru:сверчок	tr:cırcır böceği	ur:جھینگر	zh:蟋蟀
@@ -2333,6 +2349,7 @@ c:curd	Noun	ar:لبن خاثر	de:Quark	en:curd	es:cuajada	fa:کشک	fr:caillé	
 c:cure	Noun	ar:شفاء,علاج	de:Heilung,Heilmittel	en:cure,remedy	es:cura,remedio	fa:درمان,شفا	fr:remède,guérison	he:מרפא,ריפוי	hi:इलाज,उपाय	ja:治癒	ko:치유	pt:cura,remédio	ru:лекарство,исцеление	tr:çare,tedavi	ur:علاج,شفا	zh:治愈
 c:curette	Noun	ar:مكشطة	de:Kürette	en:curette	es:cureta	fa:کورت	fr:curette	he:קורטה	hi:क्यूरेट	ja:キュレット	ko:소파기	pt:cureta	ru:кюретка	tr:küret	ur:کیورٹ	zh:刮匙
 c:curing-food	Noun	ar:معالجة الطعام	de:Pökeln	en:food curing	es:curado de alimentos	fa:عمل‌آوری غذا	fr:saumurage	he:כיבוש מזון	hi:खाद्य उपचार	ja:キュアリング	ko:큐어링	pt:cura de alimentos	ru:посол	tr:kürleme	ur:کورنگ	zh:腌制
+c:curio-cabinet	Noun	ar:خزانة تحف	de:Sammlervitrine	en:curio cabinet	es:vitrina curiosidades	fa:ویترین کنجکاوی	fr:vitrine à curiosités	he:ארון מוצגים	hi:कुरियो कैबिनेट	ja:飾り棚	ko:장식장	pt:vitrine de curiosidades	ru:витрина для сувениров	tr:biblo dolabı	ur:عجائبات کیبنٹ	zh:古玩柜
 c:curiosity	Noun	ar:فضول	de:Neugier	en:curiosity	es:curiosidad	fa:کنجکاوی	fr:curiosité	he:סקרנות	hi:जिज्ञासा,कौतूहल	ja:好奇心	ko:호기심	pt:curiosidade	ru:любопытство,любознательность	tr:merak	ur:تجسس,شوق	zh:好奇心
 c:curlew-bird	Noun	ar:طائر الكروان	de:Brachvogel	en:curlew	es:zarapito	fa:قره واز	fr:courlis	he:עקוב	hi:कर्ल्यू	ja:ダイシャクシギ	ko:마도요	pt:maçarico	ru:кроншнеп	tr:sürmeli	ur:کیو	zh:杓鹬
 c:currant	Noun	ar:كشمش	de:Johannisbeere	en:currant	es:grosella	fa:انگور فرنگی	fr:groseille	he:דומדמנית	hi:करंट	ja:カラント	ko:까치밥나무	pt:groselha	ru:смородина	tr:frenk üzümü	ur:کشمش	zh:醋栗
@@ -2426,6 +2443,7 @@ c:date-palm	Noun	ar:نخلة التمر	de:Dattelpalme	en:date palm	es:palmera d
 c:daughter	Noun	ar:ابنة,بنت	de:Tochter	en:daughter	es:hija	fa:دختر	fr:fille	he:בת	hi:बेटी,पुत्री	ja:娘	ko:딸	pt:filha	ru:дочь	tr:kız	ur:بیٹی	zh:女儿
 c:dawn	Noun	ar:فجر	de:Morgendämmerung,Tagesanbruch	en:dawn,daybreak	es:alba,aurora	fa:سپیده‌دم,فجر	fr:aube,aurore	he:שחר	hi:भोर,उषा	ja:夜明け,暁	ko:새벽,여명	pt:alvorada,madrugada	ru:рассвет,заря	tr:şafak,tan	ur:فجر,پو پھٹنا	zh:黎明,拂晓
 c:day	Noun	ar:يوم	de:Tag	en:day	es:día	fa:روز	fr:jour	he:יום	hi:दिन	ja:日	ko:날	pt:dia	ru:день	tr:gün	ur:دن	zh:天
+c:daybed	Noun	ar:أريكة نهارية	de:Tagesbett	en:daybed	es:sofá cama	fa:تخت روزانه	fr:méridienne	he:מיטת יום	hi:डेबेड	ja:デイベッド	ko:데이베드	pt:cama de dia	ru:кушетка дневная	tr:gündüz yatağı	ur:ڈے بیڈ	zh:沙发床
 c:ddos	Noun	ar:هجوم حجب الخدمة	de:DDoS-Angriff	en:DDoS attack	es:ataque DDoS	fa:حمله منع سرویس توزیع‌شده	fr:attaque DDoS	he:מתקפת DDoS	hi:डीडीओएस हमला	ja:DDoS攻撃	ko:DDoS 공격	pt:ataque DDoS	ru:DDoS-атака	tr:DDoS saldırısı	ur:ڈی ڈاس حملہ	zh:分布式拒绝服务攻击
 c:de-novo-assembly	Noun	ar:التجميع من جديد	de:De-novo-Assemblierung	en:de novo assembly	es:ensamblaje de novo	fa:مونتاژ از ابتدا	fr:assemblage de novo	he:הרכבה de novo	hi:डी नोवो असेम्बली	ja:de novoアセンブリ	ko:드노보 조립	pt:montagem de novo	ru:сборка de novo	tr:de novo birleştirme	ur:از سر نو اجتماع	zh:从头组装
 c:dead-load	Noun	ar:الحمل الميت	de:Eigengewicht	en:dead load	es:carga permanente	fa:بار مرده	fr:charge permanente	he:עומס קבוע	hi:स्थायी भार	ja:固定荷重	ko:고정하중	pt:carga permanente	ru:постоянная нагрузка	tr:sabit yük	ur:مردہ بوجھ	zh:恒荷载
@@ -2541,6 +2559,7 @@ c:design	Noun	ar:تصميم	de:Design,Entwurf	en:design	es:diseño	fa:طرح,ط�
 c:desire	Noun	ar:رغبة	de:Verlangen	en:desire	es:deseo	fa:میل	fr:désir	he:תשוקה	hi:इच्छा	ja:欲望	ko:욕망	pt:desejo	ru:желание	tr:arzu	ur:خواہش	zh:渴望
 c:desk	Noun	ar:مكتب,طاولة	de:Schreibtisch,Pult	en:desk	es:escritorio,pupitre	fa:میز	fr:bureau,pupitre	he:שולחן כתיבה	hi:डेस्क,मेज़	ja:机	ko:책상	pt:escrivaninha,mesa	ru:парта,письменный стол	tr:sıra,masa	ur:میز,ڈیسک	zh:书桌,课桌
 c:desk-calendar	Noun	ar:تقويم مكتبي	de:Tischkalender	en:desk calendar	es:calendario de escritorio	fa:تقویم رومیزی	fr:calendrier de bureau	he:לוח שנה שולחני	hi:डेस्क कैलेंडर	ja:卓上カレンダー	ko:탁상 달력	pt:calendário de mesa	ru:настольный календарь	tr:masa takvimi	ur:ڈیسک کیلنڈر	zh:桌历
+c:desk-furniture	Noun	ar:مكتب	de:Schreibtisch	en:desk	es:escritorio	fa:میز کار	fr:bureau	he:שולחן עבודה	hi:डेस्क	ja:机	ko:책상	pt:escrivaninha	ru:письменный стол	tr:yazı masası	ur:میز	zh:书桌
 c:desk-lamp	Noun	ar:مصباح مكتب	de:Schreibtischlampe	en:desk lamp	es:lámpara de escritorio	fa:چراغ میز	fr:lampe de bureau	he:מנורת שולחן	hi:डेस्क लैंप	ja:デスクランプ	ko:탁상 스탠드	pt:luminária de mesa	ru:настольная лампа	tr:masa lambası	ur:ڈیسک لیمپ	zh:台灯
 c:desk-organizer	Noun	ar:منظم مكتب	de:Schreibtischorganizer	en:desk organizer	es:organizador de escritorio	fa:سازمان دهنده میز	fr:organiseur de bureau	he:מארגן שולחן	hi:डेस्क ऑर्गनाइज़र	ja:デスクオーガナイザー	ko:데스크 정리함	pt:organizador de mesa	ru:органайзер для стола	tr:masa düzenleyici	ur:ڈیسک آرگنائزر	zh:桌面收纳盒
 c:despair	Noun	ar:يأس	de:Verzweiflung	en:despair	es:desesperación	fa:نومیدی	fr:désespoir	he:ייאוש	hi:निराशा	ja:絶望	ko:절망	pt:desespero	ru:отчаяние	tr:umutsuzluk	ur:مایوسی	zh:绝望
@@ -2611,6 +2630,7 @@ c:dill-herb	Noun	ar:شبت	de:Dill	en:dill	es:eneldo	fa:شوید	fr:aneth	he:ש�
 c:dim	Adjective	ar:خافت,معتم	de:gedämpft,trübe	en:dim	es:tenue,mortecino	fa:کم نور,تیره	fr:faible,terne	he:עמום	hi:धुंधला,मंद	ja:薄暗い	ko:희미한	pt:tênue,fraco	ru:тусклый	tr:loş	ur:دھندلا	zh:昏暗
 c:diminuendo	Noun	ar:تناقص صوتي	de:Diminuendo	en:diminuendo	es:diminuendo	fa:دیمینوئندو	fr:diminuendo	he:דימינואנדו	hi:डिमिन्यूएंडो	ja:ディミヌエンド	ko:디미누엔도	pt:diminuendo	ru:диминуэндо	tr:diminuendo	ur:ڈیمینیوینڈو	zh:渐弱
 c:dinar	Noun	ar:دينار	de:Dinar	en:dinar	es:dinar	fa:دینار	fr:dinar	he:דינר	hi:दीनार	ja:ディナール	ko:디나르	pt:dinar	ru:динар	tr:dinar	ur:دینار	zh:第纳尔
+c:dining-table	Noun	ar:طاولة طعام	de:Esstisch	en:dining table	es:mesa de comedor	fa:میز ناهارخوری	fr:table à manger	he:שולחן אוכל	hi:डाइनिंग टेबल	ja:ダイニングテーブル	ko:식탁	pt:mesa de jantar	ru:обеденный стол	tr:yemek masası	ur:ڈائننگ میز	zh:餐桌
 c:dinner	Noun	ar:عشاء	de:Abendessen	en:dinner,supper	es:cena	fa:شام	fr:dîner	he:ארוחת ערב	hi:रात का खाना	ja:夕食,ディナー	ko:저녁	pt:jantar	ru:ужин	tr:akşam yemeği	ur:رات کا کھانا	zh:晚餐,晚饭
 c:diode	Noun	ar:صمام ثنائي	de:Diode	en:diode	es:diodo	fa:دیود	fr:diode	he:דיודה	hi:डायोड	ja:ダイオード	ko:다이오드	pt:diodo	ru:диод	tr:diyot	ur:ڈائیوڈ	zh:二极管
 c:diophantine-equation	Noun	ar:معادلة ديوفانتية	de:diophantische Gleichung	en:Diophantine equation	es:ecuación diofántica	fa:معادله دیوفانتی	fr:équation diophantienne	he:משוואה דיופנטית	hi:डायोफेंटाइन समीकरण	ja:ディオファントス方程式	ko:디오판토스 방정식	pt:equação diofantina	ru:диофантово уравнение	tr:Diofant denklemi	ur:ڈیوفینٹائن مساوات	zh:丢番图方程
@@ -2645,6 +2665,7 @@ c:dislocation	Noun	ar:الإزاحة البلورية	de:Versetzung	en:dislocati
 c:dislocation-mat	Noun	ar:الانزياح البلوري	de:Versetzung	en:dislocation	es:dislocación	fa:نابجایی بلوری	fr:dislocation	he:ניתוק	hi:विस्थापन	ja:転位	ko:전위	pt:deslocação	ru:дислокация	tr:dislokasyon	ur:کرسٹل نقص	zh:位错
 c:displacement	Noun	ar:إزاحة	de:Verschiebung,Versetzung	en:displacement	es:desplazamiento	fa:جابجایی	fr:déplacement	he:העתק,תזוזה	hi:विस्थापन	ja:変位	ko:변위	pt:deslocamento	ru:перемещение,смещение	tr:yer değiştirme,deplasman	ur:بے گھری,منتقلی	zh:位移
 c:displacement-phys	Noun	ar:إزاحة	de:Verschiebung	en:displacement	es:desplazamiento	fa:جابه‌جایی	fr:déplacement	he:העתק	hi:विस्थापन	ja:変位	ko:변위	pt:deslocamento	ru:перемещение	tr:yer değiştirme	ur:مقام تبدیلی	zh:位移
+c:display-cabinet	Noun	ar:خزانة عرض	de:Schauvitrine	en:display cabinet	es:vitrina de exhibición	fa:ویترین نمایش	fr:vitrine d'exposition	he:ארון תצוגה	hi:डिस्प्ले कैबिनेट	ja:展示キャビネット	ko:진열장	pt:vitrine de exposição	ru:выставочный шкаф	tr:sergi dolabı	ur:ڈسپلے کیبنٹ	zh:展示柜
 c:display-port	Noun	ar:منفذ العرض	de:DisplayPort	en:DisplayPort	es:DisplayPort	fa:دیسپلی پورت	fr:DisplayPort	he:יציאת DisplayPort	hi:डिस्प्लेपोर्ट	ja:DisplayPort	ko:디스플레이포트	pt:DisplayPort	ru:DisplayPort	tr:DisplayPort	ur:ڈسپلے پورٹ	zh:DP接口
 c:dissection	Noun	ar:التشريح	de:Sektion	en:dissection	es:disección	fa:کالبدشکافی	fr:dissection	he:ניתוח גופות	hi:विच्छेदन	ja:解剖	ko:해부	pt:dissecação	ru:вскрытие	tr:teşrih	ur:تشریح	zh:解剖
 c:dissolution	Noun	ar:إذابة	de:Auflösung	en:dissolution	es:disolución	fa:انحلال	fr:dissolution	he:המסה	hi:विघटन-विलयन	ja:溶解	ko:용해	pt:dissolução	ru:растворение	tr:çözünme	ur:حل ہونا	zh:溶解
@@ -2763,6 +2784,7 @@ c:drawing-compass	Noun	ar:بركار	de:Zirkel	en:drawing compass	es:compás	fa:
 c:dream	Noun	ar:حلم	de:Traum	en:dream	es:sueño	fa:رویا,خواب	fr:rêve	he:חלום	hi:सपना,स्वप्न	ja:夢	ko:꿈	pt:sonho	ru:сон,мечта	tr:rüya,düş	ur:خواب,سپنا	zh:梦
 c:dress	Noun	ar:فستان	de:Kleid	en:dress,frock	es:vestido	fa:پیراهن زنانه	fr:robe	he:שמלה	hi:पोशाक,ड्रेस	ja:ドレス,ワンピース	ko:드레스,원피스	pt:vestido	ru:платье	tr:elbise	ur:لباس	zh:连衣裙
 c:dresser	Noun	ar:خزانة أدراج	de:Kommode	en:dresser,chest of drawers	es:cómoda	fa:کشودار	fr:commode	he:שידה	hi:ड्रेसर,दराज़ वाली अलमारी	ja:たんす,ドレッサー	ko:서랍장	pt:cômoda	ru:комод	tr:şifonyer	ur:دراز دار الماری	zh:五斗柜
+c:dressing-table	Noun	ar:تسريحة	de:Ankleidetisch	en:dressing table	es:tocador dormitorio	fa:میز توالت	fr:table de toilette	he:שולחן איפור גדול	hi:ड्रेसिंग टेबल	ja:ドレッシングテーブル	ko:화장테이블	pt:penteadeira grande	ru:туалетный стол	tr:tuvalet masası	ur:ڈریسنگ ٹیبل	zh:梳妆桌
 c:drift	Verb	ar:انجرف	de:treiben,driften	en:drift	es:ir a la deriva	fa:شناور بودن,دراندازی آرام	fr:dériver	he:להיסחף	hi:बहना	ja:漂う	ko:표류하다	pt:ir à deriva	ru:дрейфовать	tr:sürüklenmek	ur:بہنا	zh:漂流,漂移
 c:drill	Noun	ar:مثقب	de:Bohrer,Bohrmaschine	en:drill	es:taladro	fa:مته,دریل	fr:perceuse,foreuse	he:מקדחה	hi:ड्रिल	ja:ドリル	ko:드릴	pt:furadeira,broca	ru:дрель,сверло	tr:matkap	ur:ڈرل,برما	zh:电钻,钻
 c:drill-tool	Noun	ar:مثقاب	de:Bohrmaschine	en:drill	es:taladro	fa:دریل	fr:perceuse	he:מקדחה	hi:ड्रिल	ja:ドリル	ko:드릴	pt:furadeira	ru:дрель	tr:matkap	ur:ڈرل	zh:钻机
@@ -3003,6 +3025,7 @@ c:encryption-security	Noun	ar:تشفير البيانات	de:Verschlüsselung	en
 c:enculturation	Noun	ar:التثقف	de:Enkulturation	en:enculturation	es:enculturación	fa:درون‌فرهنگی‌سازی	fr:enculturation	he:אנקולטורציה	hi:सांस्कृतिक ग्रहण	ja:文化化	ko:문화 학습	pt:enculturação	ru:инкультурация	tr:kültüre kazanım	ur:ثقافتی جذب	zh:文化化
 c:encyclopedia	Noun	ar:موسوعة	de:Enzyklopädie,Lexikon	en:encyclopedia	es:enciclopedia	fa:دانشنامه,دایرةالمعارف	fr:encyclopédie	he:אנציקלופדיה	hi:विश्वकोश	ja:百科事典	ko:백과사전	pt:enciclopédia	ru:энциклопедия	tr:ansiklopedi	ur:دائرۃ المعارف	zh:百科全书
 c:end	Noun	ar:نهاية,آخر	de:Ende	en:end	es:fin,final	fa:پایان,آخر	fr:fin	he:סוף	hi:अंत,समाप्ति	ja:終わり	ko:끝	pt:fim,final	ru:конец	tr:son	ur:اختتام,آخر	zh:结束,末
+c:end-table	Noun	ar:طاولة طرفية	de:Ecktisch	en:end table	es:mesa de extremo	fa:میز گوشه	fr:table d'angle	he:שולחן קצה	hi:एंड टेबल	ja:エンドテーブル	ko:엔드 테이블	pt:mesa de canto	ru:столик для угла	tr:köşe masası	ur:اینڈ ٹیبل	zh:角桌
 c:endangered	Adjective	ar:مهدد بالانقراض	de:gefährdet	en:endangered	es:en peligro	fa:در معرض خطر	fr:menacé	he:בסכנת הכחדה	hi:संकटग्रस्त	ja:絶滅危惧	ko:멸종 위기	pt:ameaçado	ru:под угрозой	tr:tehlike altında	ur:خطرے میں	zh:濒危
 c:endangered-species	Noun	ar:نوع مهدد بالانقراض	de:bedrohte Art	en:endangered species	es:especie en peligro	fa:گونه در معرض انقراض	fr:espèce menacée	he:מין בסכנת הכחדה	hi:संकटग्रस्त प्रजाति	ja:絶滅危惧種	ko:멸종 위기종	pt:espécie ameaçada	ru:исчезающий вид	tr:nesli tükenmekte olan tür	ur:خطرے سے دوچار نوع	zh:濒危物种
 c:endemic	Adjective	ar:مستوطن	de:endemisch	en:endemic	es:endémico	fa:بومی	fr:endémique	he:אנדמי	hi:स्थानीय	ja:固有	ko:고유종	pt:endémico	ru:эндемичный	tr:endemik	ur:مقامی	zh:特有的
@@ -3530,6 +3553,7 @@ c:foundationalism	Noun	ar:الأسسية	de:Fundamentalismus	en:foundationalism	
 c:founder-effect	Noun	ar:تأثير المؤسس	de:Gründereffekt	en:founder effect	es:efecto fundador	fa:اثر بنیان‌گذار	fr:effet fondateur	he:אפקט מייסד	hi:संस्थापक प्रभाव	ja:創始者効果	ko:창시자 효과	pt:efeito fundador	ru:эффект основателя	tr:kurucu etkisi	ur:بانی اثر	zh:奠基者效应
 c:fountain	Noun	ar:نافورة,ينبوع	de:Brunnen,Springbrunnen	en:fountain	es:fuente	fa:فواره,چشمه	fr:fontaine	he:מזרקה	hi:फव्वारा	ja:噴水	ko:분수,분수대	pt:fonte,chafariz	ru:фонтан	tr:çeşme,fıskiye	ur:فوارہ	zh:喷泉
 c:four	Noun	ar:أربعة	de:vier	en:four	es:cuatro	fa:چهار	fr:quatre	he:ארבעה	hi:चार	ja:四,よん	ko:넷,사	pt:quatro	ru:четыре	tr:dört	ur:چار	zh:四
+c:four-poster-bed	Noun	ar:سرير ذو أربعة أعمدة	de:Himmelbett	en:four-poster bed	es:cama de cuatro postes	fa:تخت چهار ستونه	fr:lit à baldaquin	he:מיטת אפיריון	hi:चारपोस्टर बिस्तर	ja:四柱ベッド	ko:사주식 침대	pt:cama de dossel	ru:кровать с балдахином	tr:gölgelikli yatak	ur:چار ستونہ بستر	zh:四柱床
 c:fourth-wall	Noun	ar:الجدار الرابع	de:vierte Wand	en:fourth wall	es:cuarta pared	fa:دیوار چهارم	fr:quatrième mur	he:הקיר הרביעי	hi:चौथी दीवार	ja:第四の壁	ko:제4의 벽	pt:quarta parede	ru:четвёртая стена	tr:dördüncü duvar	ur:چوتھی دیوار	zh:第四堵墙
 c:fox	Noun	ar:ثعلب	de:Fuchs	en:fox	es:zorro	fa:روباه	fr:renard	he:שועל	hi:लोमड़ी	ja:狐,キツネ	ko:여우	pt:raposa	ru:лиса	tr:tilki	ur:لومڑی	zh:狐狸
 c:fox-mammal	Noun	ar:ثعلب	de:Fuchs	en:fox	es:zorro	fa:روباه	fr:renard	he:שועל	hi:लोमड़ी	ja:キツネ	ko:여우	pt:raposa	ru:лиса	tr:tilki	ur:لومڑی	zh:狐狸
@@ -3621,9 +3645,11 @@ c:fundamental-group	Noun	ar:المجموعة الأساسية	de:Fundamentalgrup
 c:funeral	Noun	ar:جنازة,مأتم	de:Beerdigung,Begräbnis	en:funeral	es:funeral,entierro	fa:مراسم تدفین,تشییع	fr:funérailles,obsèques	he:הלוויה	hi:अंतिम संस्कार	ja:葬式,葬儀	ko:장례식	pt:funeral	ru:похороны	tr:cenaze	ur:جنازہ,تدفین	zh:葬礼,丧礼
 c:fungus	Noun	ar:فطر,فطريات	de:Pilz	en:fungus	es:hongo	fa:قارچ	fr:champignon	he:פטרייה	hi:कवक,फफूंद	ja:菌類,真菌	ko:균류,진균	pt:fungo	ru:гриб	tr:mantar	ur:پھپھوندی	zh:真菌,菌类
 c:fur	Noun	ar:الفرو	de:Pelz	en:fur	es:piel	fa:خز	fr:fourrure	he:פרווה	hi:फर	ja:毛皮	ko:모피	pt:pele	ru:мех	tr:kürk	ur:پشم	zh:皮草
+c:furniture-generic	Noun	ar:أثاث	de:Möbel	en:furniture	es:mueble	fa:مبلمان	fr:meuble	he:רהיט	hi:फर्नीचर	ja:家具	ko:가구	pt:móvel	ru:мебель	tr:mobilya	ur:فرنیچر	zh:家具
 c:fury	Noun	ar:سخط	de:Raserei	en:fury	es:furia	fa:خشم شدید	fr:fureur	he:חמה	hi:उग्र क्रोध	ja:激憤	ko:격노	pt:fúria	ru:неистовство	tr:hiddet	ur:قہر	zh:盛怒
 c:fuselage	Noun	ar:هيكل الطائرة	de:Rumpf	en:fuselage	es:fuselaje	fa:بدنه هواپیما	fr:fuselage	he:גוף המטוס	hi:धड़	ja:胴体	ko:동체	pt:fuselagem	ru:фюзеляж	tr:gövde	ur:دھڑ	zh:机身
 c:fusion	Noun	ar:اندماج نووي	de:Kernfusion	en:nuclear fusion	es:fusión nuclear	fa:همجوشی هسته‌ای	fr:fusion nucléaire	he:היתוך גרעיני	hi:नाभिकीय संलयन	ja:核融合	ko:핵융합	pt:fusão nuclear	ru:ядерный синтез	tr:nükleer füzyon	ur:جوہری ادغام	zh:核聚变
+c:futon	Noun	ar:فوتون	de:Futon	en:futon	es:futón	fa:فوتن	fr:futon	he:פוטון	hi:फ्यूटन	ja:布団	ko:후통	pt:futon	ru:футон	tr:futon	ur:فوٹون	zh:蒲团
 c:future	Noun	ar:مستقبل	de:Zukunft	en:future	es:futuro	fa:آینده	fr:futur,avenir	he:עתיד	hi:भविष्य	ja:未来	ko:미래	pt:futuro	ru:будущее	tr:gelecek	ur:مستقبل	zh:未来
 c:futures	Noun	ar:عقود آجلة	de:Futures	en:futures	es:contratos de futuros	fa:قرارداد آتی	fr:contrats à terme	he:חוזים עתידיים	hi:फ्यूचर्स	ja:先物	ko:선물	pt:futuros	ru:фьючерсы	tr:vadeli işlemler	ur:فیوچرز	zh:期货
 c:g-protein-coupled-receptor	Noun	ar:مستقبل مقترن بالبروتين G	de:G-Protein-gekoppelter Rezeptor	en:G-protein coupled receptor,GPCR	es:receptor acoplado a proteína G	fa:گیرنده جفت‌شده با پروتئین G	fr:récepteur couplé aux protéines G	he:קולטן מצומד G-חלבון	hi:G-प्रोटीन युग्मित रिसेप्टर	ja:Gタンパク質共役受容体	ko:G단백질 연결 수용체	pt:receptor acoplado à proteína G	ru:рецептор, сопряжённый с G-белком	tr:G-proteini bağlı reseptör	ur:جی پروٹین ریسیپٹر	zh:G蛋白偶联受体
@@ -4044,6 +4070,7 @@ c:hammer	Noun	ar:مطرقة	de:Hammer	en:hammer	es:martillo	fa:چکش	fr:marteau
 c:hammer-tool	Noun	ar:مطرقة	de:Hammer	en:hammer	es:martillo	fa:چکش	fr:marteau	he:פטיש	hi:हथौड़ा	ja:ハンマー	ko:망치	pt:martelo	ru:молоток	tr:çekiç	ur:ہتھوڑا	zh:锤子
 c:hammerhead	Noun	ar:قرش المطرقة	de:Hammerhai	en:hammerhead shark	es:tiburón martillo	fa:کوسه چکشی	fr:requin marteau	he:כריש פטיש	hi:हैमरहेड शार्क	ja:シュモクザメ	ko:귀상어	pt:tubarão-martelo	ru:акула-молот	tr:çekiç başlı köpekbalığı	ur:ہتھوڑا شارک	zh:双髻鲨
 c:hammerhead-shark	Noun	ar:قرش المطرقة	de:Hammerhai	en:hammerhead shark	es:tiburón martillo	fa:کوسه چکشی	fr:requin-marteau	he:כריש פטיש	hi:हैमरहेड शार्क	ja:シュモクザメ	ko:귀상어	pt:tubarão-martelo	ru:акула-молот	tr:çekiç köpekbalığı	ur:ہیمر ہیڈ شارک	zh:双髻鲨
+c:hammock	Noun	ar:أرجوحة شبكية	de:Hängematte	en:hammock	es:hamaca	fa:ننو	fr:hamac	he:ערסל	hi:हैमॉक	ja:ハンモック	ko:해먹	pt:rede	ru:гамак	tr:hamak	ur:ہیمک	zh:吊床
 c:hammurabi	Noun	ar:حمورابي	de:Hammurabi	en:Hammurabi	es:Hammurabi	fa:حمورابی	fr:Hammurabi	he:חמורבי	hi:हम्मुराबी	ja:ハンムラビ	ko:함무라비	pt:Hamurábi	ru:Хаммурапи	tr:Hammurabi	ur:حمورابی	zh:汉谟拉比
 c:hamper	Noun	ar:سلة غسيل	de:Wäschekorb	en:hamper,laundry basket	es:cesto de la ropa sucia	fa:سبد رخت	fr:panier à linge	he:סל כביסה	hi:कपड़े धोने की टोकरी	ja:ランドリーバスケット,洗濯かご	ko:빨래 바구니	pt:cesto de roupa suja	ru:корзина для белья	tr:çamaşır sepeti	ur:لانڈری کی ٹوکری	zh:洗衣篮
 c:hamster-animal	Noun	ar:هامستر	de:Hamster	en:hamster	es:hámster	fa:همستر	fr:hamster	he:אוגר	hi:हैम्स्टर	ja:ハムスター	ko:햄스터	pt:hamster	ru:хомяк	tr:hamster	ur:ہیمسٹر	zh:仓鼠
@@ -4223,6 +4250,7 @@ c:high-jump-sport	Noun	ar:قفز عالي	de:Hochsprung	en:high jump	es:salto de
 c:high-middle-ages	Noun	ar:أوج العصور الوسطى	de:Hochmittelalter	en:High Middle Ages	es:Plena Edad Media	fa:اوج قرون وسطی	fr:Moyen Âge central	he:שיא ימי הביניים	hi:उच्च मध्य युग	ja:盛期中世	ko:중세 전성기	pt:plena Idade Média	ru:расцвет Средневековья	tr:yüksek Orta Çağ	ur:بلند قرون وسطی	zh:中世纪盛期
 c:high-pressure-processing	Noun	ar:المعالجة بالضغط العالي	de:Hochdruckverarbeitung	en:high-pressure processing	es:procesamiento a alta presión	fa:پردازش فشار بالا	fr:traitement haute pression	he:עיבוד לחץ גבוה	hi:उच्च दाब प्रसंस्करण	ja:高圧食品加工	ko:초고압 처리	pt:processamento por alta pressão	ru:высокое давление	tr:yüksek basınç işleme	ur:اعلی دباو پروسیسنگ	zh:高压处理
 c:high-throughput-screening	Noun	ar:الفحص عالي الإنتاجية	de:Hochdurchsatz-Screening	en:high-throughput screening	es:cribado de alto rendimiento	fa:غربالگری پرتوان	fr:criblage à haut débit	he:סינון בתפוקה גבוהה	hi:उच्च-प्रवाह जांच	ja:ハイスループットスクリーニング	ko:고처리량 선별	pt:triagem de alto rendimento	ru:высокопроизводительный скрининг	tr:yüksek verimli tarama	ur:اعلی رفتار جانچ	zh:高通量筛选
+c:highchair	Noun	ar:كرسي أطفال مرتفع	de:Hochstuhl	en:highchair	es:silla alta	fa:صندلی کودک بلند	fr:chaise haute	he:כיסא אוכל לתינוק	hi:ऊंची कुर्सी	ja:ハイチェア	ko:하이체어	pt:cadeirão alto	ru:стульчик для кормления	tr:mama sandalyesi	ur:اونچی کرسی	zh:高脚椅
 c:highland	Noun	ar:مرتفعات	de:Hochland	en:highland	es:tierras altas	fa:کوهستان	fr:hautes terres	he:ארץ גבוהה	hi:उच्चभूमि	ja:高地	ko:고지대	pt:terras altas	ru:нагорье	tr:yüksek arazi	ur:بلند زمین	zh:高地
 c:highway	Noun	ar:طريق سريع	de:Autobahn,Schnellstraße	en:highway,motorway,freeway	es:autopista,carretera	fa:بزرگراه,آزادراه	fr:autoroute	he:כביש מהיר	hi:राजमार्ग,हाईवे	ja:高速道路	ko:고속도로	pt:autoestrada,rodovia	ru:шоссе,автомагистраль	tr:otoyol,karayolu	ur:شاہراہ,ہائی وے	zh:高速公路
 c:hijab	Noun	ar:حجاب	de:Hidschab,Kopftuch	en:hijab	es:hiyab	fa:حجاب,روسری	fr:hijab	he:חיג׳אב	hi:हिजाब	ja:ヒジャブ	ko:히잡	pt:hijab	ru:хиджаб	tr:başörtüsü	ur:حجاب	zh:希贾布
@@ -4326,6 +4354,7 @@ c:hour	Noun	ar:ساعة	de:Stunde	en:hour	es:hora	fa:ساعت	fr:heure	he:שעה
 c:house	Noun	ar:بيت,منزل	de:Haus	en:house,home	es:casa	fa:خانه	fr:maison	he:בית	hi:घर	ja:家	ko:집	pt:casa	ru:дом	tr:ev	ur:گھر	zh:房子
 c:house-building	Noun	ar:منزل	de:Haus	en:house	es:casa	fa:خانه	fr:maison	he:בית	hi:घर	ja:家	ko:집	pt:casa	ru:дом	tr:ev	ur:گھر	zh:房屋
 c:housefly	Noun	ar:ذبابة,ذبابة منزلية	de:Stubenfliege,Hausfliege	en:housefly,fly	es:mosca común	fa:مگس خانگی	fr:mouche domestique	he:זבוב הבית	hi:मक्खी,घरेलू मक्खी	ja:家蠅,イエバエ	ko:집파리	pt:mosca doméstica	ru:комнатная муха	tr:karasinek,evsineği	ur:مکھی,گھریلو مکھی	zh:家蝇
+c:household-items	Noun	ar:أدوات منزلية	de:Haushaltsgegenstände	en:household items	es:artículos domésticos	fa:لوازم خانگی	fr:articles ménagers	he:פריטים ביתיים	hi:घरेलू वस्तुएं	ja:家庭用品	ko:가정용품	pt:itens domésticos	ru:предметы быта	tr:ev eşyaları	ur:گھریلو اشیاء	zh:家居用品
 c:housing-policy	Noun	ar:سياسة الإسكان	de:Wohnungspolitik	en:housing policy	es:política de vivienda	fa:سیاست مسکن	fr:politique du logement	he:מדיניות דיור	hi:आवास नीति	ja:住宅政策	ko:주택 정책	pt:política habitacional	ru:жилищная политика	tr:konut politikası	ur:رہائش پالیسی	zh:住房政策
 c:houston	Noun	ar:هيوستن	de:Houston	en:Houston	es:Houston	fa:هیوستون	fr:Houston	he:יוסטון	hi:ह्यूस्टन	ja:ヒューストン	ko:휴스턴	pt:Houston	ru:Хьюстон	tr:Houston	ur:ہیوسٹن	zh:休斯顿
 c:hover	Verb	ar:حام في الهواء	de:schweben	en:hover	es:sobrevolar estático	fa:معلق ماندن,چرخیدن در هوا	fr:planer sur place	he:לרחף	hi:मंडराना	ja:ホバリングする	ko:공중에 맴돌다	pt:pairar no ar	ru:зависать в воздухе	tr:havada asılı durmak	ur:فضا میں ٹھہرنا	zh:盘旋
@@ -5307,6 +5336,7 @@ c:loudspeaker	Noun	ar:مكبر الصوت	de:Lautsprecher	en:loudspeaker	es:alta
 c:louse	Noun	ar:قملة	de:Laus	en:louse	es:piojo	fa:شپش	fr:pou	he:כינה	hi:जूँ	ja:虱,シラミ	ko:이	pt:piolho	ru:вошь	tr:bit	ur:جوں	zh:虱子
 c:love	Noun	ar:حب,محبة	de:Liebe	en:love	es:amor	fa:عشق	fr:amour	he:אהבה	hi:प्रेम	ja:愛	ko:사랑	pt:amor	ru:любовь	tr:aşk	ur:محبت	zh:爱
 c:love-emotion	Noun	ar:حب شعور	de:Liebe Gefühl	en:love	es:amor	fa:عشق	fr:amour	he:אהבה	hi:प्यार	ja:愛	ko:사랑	pt:amor	ru:любовь	tr:sevgi	ur:محبت	zh:爱
+c:loveseat	Noun	ar:أريكة ثنائية	de:Zweisitzer	en:loveseat	es:sofá de dos plazas	fa:مبل دو نفره	fr:causeuse	he:ספת אהבה	hi:दो सीट वाला सोफा	ja:ラブシート	ko:러브시트	pt:sofá de dois lugares	ru:двухместный диван	tr:iki kişilik koltuk	ur:دو نشستی صوفہ	zh:双人沙发
 c:low-resource-nlp	Noun	ar:معالجة اللغات منخفضة الموارد	de:Low-Resource-Sprachverarbeitung	en:low-resource NLP	es:PLN de bajos recursos	fa:پردازش زبان کم‌منبع	fr:TALN à faibles ressources	he:NLP עם משאבים מוגבלים	hi:कम संसाधन NLP	ja:低リソースNLP	ko:저자원 NLP	pt:PLN de baixos recursos	ru:обработка языков с малыми ресурсами	tr:düşük kaynaklı NLP	ur:کم وسائل NLP	zh:低资源NLP
 c:lowland	Noun	ar:أراضي منخفضة	de:Tiefland	en:lowland	es:tierras bajas	fa:زمین پست	fr:basses terres	he:ארץ נמוכה	hi:नीची भूमि	ja:低地	ko:저지대	pt:terras baixas	ru:низменность	tr:alçak arazi	ur:نشیبی زمین	zh:低地
 c:loyalty	Noun	ar:ولاء	de:Loyalität	en:loyalty	es:lealtad	fa:وفاداری	fr:loyauté	he:נאמנות	hi:वफादारी	ja:忠誠	ko:충성	pt:lealdade	ru:верность	tr:sadakat	ur:وفاداری	zh:忠诚
@@ -6434,6 +6464,7 @@ c:ottoman	Noun	ar:بَوف,مسند قدمين	de:Fußhocker,Polsterhocker	en:ot
 c:ottoman-arch	Noun	ar:العمارة العثمانية	de:osmanische Architektur	en:Ottoman architecture	es:arquitectura otomana	fa:معماری عثمانی	fr:architecture ottomane	he:אדריכלות עות'מאנית	hi:ऑटोमन वास्तुकला	ja:オスマン建築	ko:오스만 건축	pt:arquitetura otomana	ru:османская архитектура	tr:Osmanlı mimarisi	ur:عثمانی فن	zh:奥斯曼建筑
 c:ottoman-era	Noun	ar:العصر العثماني,الدولة العثمانية	de:Osmanisches Reich,osmanische Zeit	en:ottoman era,ottoman empire	es:era otomana,imperio otomano	fa:دوره عثمانی,امپراتوری عثمانی	fr:époque ottomane,empire ottoman	he:התקופה העות'מאנית,האימפריה העות'מאנית	hi:ओटोमन युग,उस्मानी साम्राज्य	ja:オスマン帝国,オスマン時代	ko:오스만 제국,오스만 시대	pt:era otomana,império otomano	ru:османская эпоха,османская империя	tr:osmanlı dönemi,osmanlı imparatorluğu	ur:عثمانی دور,سلطنت عثمانیہ	zh:奥斯曼时代,奥斯曼帝国
 c:ottoman-era-period	Noun	ar:العصر العثماني	de:osmanische Ära	en:Ottoman era	es:era otomana	fa:دوره عثمانی	fr:ère ottomane	he:התקופה העות'מאנית	hi:ओटोमन युग	ja:オスマン帝国時代	ko:오스만 시대	pt:era otomana	ru:османская эпоха	tr:Osmanlı dönemi	ur:عثمانی دور	zh:奥斯曼时代
+c:ottoman-furniture	Noun	ar:عثماني	de:Fußbank	en:ottoman	es:otomana	fa:اتومان	fr:pouf	he:הדום	hi:ओटोमन	ja:オットマン	ko:오토만	pt:otomana	ru:оттоманка	tr:puf	ur:عثمانی پھڑی	zh:脚凳
 c:oud	Noun	ar:عود	de:Oud,Oud-Laute	en:oud	es:oud,laúd árabe	fa:عود,بربت	fr:oud	he:עוד	hi:ऊद	ja:ウード	ko:우드	pt:oud,alaúde árabe	ru:уд	tr:ud	ur:عود	zh:乌德琴
 c:outbreak	Noun	ar:تفشي مرض	de:Ausbruch	en:disease outbreak	es:brote	fa:شیوع	fr:épidémie soudaine	he:התפרצות	hi:प्रकोप	ja:疾病発生	ko:질병 발생	pt:surto	ru:вспышка	tr:salgın	ur:وبا کا پھوٹ پڑنا	zh:爆发
 c:outlier	Noun	ar:قيمة شاذة	de:Ausreißer	en:outlier	es:valor atípico	fa:داده پرت	fr:valeur aberrante	he:ערך חריג	hi:बाह्य मान	ja:外れ値	ko:이상치	pt:valor atípico	ru:выброс	tr:aykırı değer	ur:غیر معمولی قدر	zh:离群值
@@ -7780,6 +7811,7 @@ c:rocket-space	Noun	ar:صاروخ فضائي	de:Rakete	en:rocket	es:cohete	fa:م
 c:rocket-vehicle	Noun	ar:صاروخ فضائي	de:Rakete	en:rocket	es:cohete	fa:موشک فضایی	fr:fusée	he:רקטה	hi:रॉकेट	ja:ロケット	ko:로켓	pt:foguete	ru:ракета	tr:roket	ur:راکٹ	zh:火箭
 c:rocket-weapon	Noun	ar:صاروخ عسكري	de:Rakete Militär	en:rocket weapon	es:cohete militar	fa:موشک نظامی	fr:roquette militaire	he:רקטה צבאית	hi:सैन्य रॉकेट	ja:軍用ロケット	ko:군용 로켓	pt:foguete militar	ru:ракета военная	tr:askeri roket	ur:فوجی راکٹ	zh:军用火箭
 c:rockies	Noun	ar:جبال روكي,الروكي	de:Rocky Mountains,Rockies	en:Rockies,Rocky Mountains	es:Rocosas,Montañas Rocosas	fa:راکی,کوه‌های راکی	fr:Rocheuses,montagnes Rocheuses	he:הרי הרוקי,רוקי	hi:रॉकीज़,रॉकी पर्वत	ja:ロッキー山脈	ko:로키산맥	pt:Rochosas,Montanhas Rochosas	ru:Скалистые горы	tr:Kayalık Dağlar	ur:راکی پہاڑ,کوہ راکی	zh:落基山脉
+c:rocking-chair	Noun	ar:كرسي هزاز	de:Schaukelstuhl	en:rocking chair	es:mecedora	fa:صندلی گهواره‌ای	fr:chaise à bascule	he:כיסא נדנדה	hi:हिंडोला कुर्सी	ja:ロッキングチェア	ko:흔들의자	pt:cadeira de balanço	ru:кресло-качалка	tr:sallanan sandalye	ur:جھولنے والی کرسی	zh:摇椅
 c:rocking-horse	Noun	ar:حصان الهزاز	de:Schaukelpferd	en:rocking horse	es:caballito de madera	fa:اسب گهواره‌ای	fr:cheval à bascule	he:סוס נדנדה	hi:झूलता घोड़ा	ja:木馬	ko:흔들 목마	pt:cavalo de balanço	ru:лошадь-качалка	tr:sallanan at	ur:جھولتا گھوڑا	zh:摇摆木马
 c:rocky-mountains	Noun	ar:الجبال الصخرية	de:Rocky Mountains	en:Rocky Mountains	es:montañas Rocosas	fa:کوه‌های راکی	fr:montagnes Rocheuses	he:הרי הרוקי	hi:रॉकी पर्वत	ja:ロッキー山脈	ko:로키산맥	pt:montanhas Rochosas	ru:Скалистые горы	tr:Kayalık Dağlar	ur:چٹانی پہاڑ	zh:落基山脉
 c:rococo	Noun	ar:طراز روكوكو	de:Rokoko	en:Rococo	es:rococó	fa:روکوکو	fr:rococo	he:רוקוקו	hi:रोकोको	ja:ロココ	ko:로코코	pt:rococó	ru:рококо	tr:rokoko	ur:روکوکو	zh:洛可可
@@ -8119,6 +8151,7 @@ c:second-lieutenant	Noun	ar:ملازم ثاني	de:Leutnant	en:second lieutenant
 c:second-messenger	Noun	ar:المرسل الثانوي	de:Second Messenger	en:second messenger	es:segundo mensajero	fa:پیام‌رسان دوم	fr:second messager	he:שליח שני	hi:द्वितीय संदेशवाहक	ja:セカンドメッセンジャー	ko:2차 전령	pt:segundo mensageiro	ru:вторичный мессенджер	tr:ikinci haberci	ur:دوسرا پیغامبر	zh:第二信使
 c:secret	Noun	ar:سر	de:Geheimnis	en:secret	es:secreto	fa:راز	fr:secret	he:סוד	hi:राज़,रहस्य	ja:秘密	ko:비밀	pt:segredo	ru:секрет,тайна	tr:sır	ur:راز	zh:秘密
 c:secretary-bird	Noun	ar:طائر السكرتير	de:Sekretär	en:secretary bird	es:serpentario	fa:پرنده منشی	fr:serpentaire secrétaire	he:ציפור מזכיר	hi:सचिव पक्षी	ja:ヘビクイワシ	ko:비서새	pt:serpentário	ru:птица-секретарь	tr:sekreter kuşu	ur:سیکریٹری پرندہ	zh:蛇鹫
+c:sectional-sofa	Noun	ar:أريكة مقطعية	de:Ecksofa	en:sectional sofa	es:sofá seccional	fa:مبل ال	fr:canapé sectionnel	he:ספה מודולרית	hi:सेक्शनल सोफा	ja:セクショナルソファ	ko:섹셔널 소파	pt:sofá modular	ru:модульный диван	tr:modüler koltuk	ur:سیکشنل صوفہ	zh:组合沙发
 c:secularization	Noun	ar:علمنة	de:Säkularisierung	en:secularization	es:secularización	fa:عرفی‌سازی	fr:sécularisation	he:חילון	hi:धर्मनिरपेक्षीकरण	ja:世俗化	ko:세속화	pt:secularização	ru:секуляризация	tr:sekülerleşme	ur:سیکولرائزیشن	zh:世俗化
 c:security-audit	Noun	ar:تدقيق أمني	de:Sicherheitsaudit	en:security audit	es:auditoría de seguridad	fa:ممیزی امنیتی	fr:audit de sécurité	he:ביקורת אבטחה	hi:सुरक्षा ऑडिट	ja:セキュリティ監査	ko:보안 감사	pt:auditoria de segurança	ru:аудит безопасности	tr:güvenlik denetimi	ur:سیکیورٹی آڈٹ	zh:安全审计
 c:sedan-vehicle	Noun	ar:سيدان	de:Limousine	en:sedan	es:sedán	fa:سدان	fr:berline	he:סדאן	hi:सेडान	ja:セダン	ko:세단	pt:sedã	ru:седан	tr:sedan	ur:سیڈان	zh:轿车
@@ -8298,6 +8331,8 @@ c:shrine-structure	Noun	ar:ضريح	de:Schrein	en:shrine	es:santuario	fa:آست�
 c:shrub	Noun	ar:شجيرة	de:Strauch	en:shrub,bush	es:arbusto	fa:بوته,درختچه	fr:arbuste,buisson	he:שיח	hi:झाड़ी	ja:低木,潅木	ko:관목	pt:arbusto	ru:куст,кустарник	tr:çalı	ur:جھاڑی	zh:灌木
 c:shutter	Noun	ar:ستارة الغالق	de:Verschluss	en:shutter	es:obturador	fa:دریچه دوربین	fr:obturateur	he:תריס	hi:शटर	ja:シャッター	ko:셔터	pt:obturador	ru:затвор	tr:enstantane	ur:شٹر	zh:快门
 c:sickle	Noun	ar:منجل	de:Sichel	en:sickle	es:hoz	fa:داس	fr:faucille	he:מגל	hi:हंसिया	ja:鎌	ko:낫	pt:foice	ru:серп	tr:orak	ur:درانتی	zh:镰刀
+c:side-table	Noun	ar:طاولة جانبية	de:Beistelltisch	en:side table	es:mesa auxiliar	fa:میز کناری	fr:table d'appoint	he:שולחן צד	hi:साइड टेबल	ja:サイドテーブル	ko:사이드 테이블	pt:mesa lateral	ru:прикроватный столик	tr:yan sehpa	ur:سائڈ میز	zh:边桌
+c:sideboard	Noun	ar:خزانة جانبية	de:Anrichte	en:sideboard	es:aparador	fa:بوفه	fr:buffet	he:מזנון	hi:साइडबोर्ड	ja:サイドボード	ko:사이드보드	pt:aparador	ru:сервант	tr:konsol	ur:سائڈ بورڈ	zh:餐具柜
 c:sidewalk	Noun	ar:رصيف	de:Gehweg,Bürgersteig	en:sidewalk,pavement	es:acera,banqueta	fa:پیاده‌رو	fr:trottoir	he:מדרכה	hi:फुटपाथ	ja:歩道	ko:인도,보도	pt:calçada,passeio	ru:тротуар	tr:kaldırım	ur:فٹ پاتھ	zh:人行道
 c:sidewinder	Noun	ar:افعى الرمل الملتوية	de:Seitenwinder	en:sidewinder	es:cascabel cornuda	fa:افعی جانب خز	fr:crotalus céraste	he:נחש הצד	hi:साइडवाइंडर	ja:サイドワインダー	ko:사이드와인더	pt:cascavel-cornuda	ru:боковой гремучник	tr:yandan kayan çıngıraklı yılan	ur:سائیڈ وائنڈر	zh:角响尾蛇
 c:siege	Noun	ar:حصار	de:Belagerung	en:siege	es:asedio	fa:محاصره	fr:siège	he:מצור	hi:घेराबंदी	ja:包囲	ko:포위	pt:cerco	ru:осада	tr:kuşatma	ur:محاصرہ	zh:围攻,围困
@@ -8470,6 +8505,7 @@ c:socrates	Noun	ar:سقراط	de:Sokrates	en:Socrates	es:Sócrates	fa:سقراط
 c:soda	Noun	ar:مشروب غازي	de:Limonade	en:soda	es:refresco	fa:نوشابه گازدار	fr:soda	he:סודה	hi:सोडा	ja:ソーダ	ko:탄산음료	pt:refrigerante	ru:газировка	tr:gazoz	ur:مشروب گیس دار	zh:汽水
 c:sodium	Noun	ar:صوديوم	de:Natrium	en:sodium	es:sodio	fa:سدیم	fr:sodium	he:נתרן	hi:सोडियम	ja:ナトリウム,ソジウム	ko:나트륨,소디움	pt:sódio	ru:натрий	tr:sodyum	ur:سوڈیم	zh:钠
 c:sofa	Noun	ar:أريكة,كنبة	de:Sofa,Couch	en:sofa,couch	es:sofá	fa:مبل,کاناپه	fr:canapé	he:ספה	hi:सोफ़ा	ja:ソファ	ko:소파	pt:sofá	ru:диван	tr:kanepe	ur:صوفہ	zh:沙发
+c:sofa-furniture	Noun	ar:أريكة	de:Sofa	en:sofa	es:sofá	fa:مبل	fr:canapé	he:ספה	hi:सोफ़ा	ja:ソファ	ko:소파	pt:sofá	ru:диван	tr:koltuk	ur:صوفہ	zh:沙发
 c:soffit	Noun	ar:سقيفة	de:Untersicht	en:soffit	es:sofito	fa:زیرطاق	fr:soffit	he:פית	hi:सॉफिट	ja:天井面	ko:소핏	pt:sófito	ru:потолок	tr:tavan yüzeyi	ur:نیچی سطح	zh:天花板
 c:soft	Adjective	ar:طري,ناعم	de:weich	en:soft	es:blando,suave	fa:نرم	fr:mou,doux	he:רך	hi:नरम,मुलायम	ja:柔らかい	ko:부드러운	pt:macio,mole	ru:мягкий	tr:yumuşak	ur:نرم,ملائم	zh:柔软
 c:soft-power	Noun	ar:القوة الناعمة	de:Soft Power	en:soft power	es:poder blando	fa:قدرت نرم	fr:puissance douce	he:כוח רך	hi:सौम्य शक्ति	ja:ソフトパワー	ko:소프트 파워	pt:poder brando	ru:мягкая сила	tr:yumuşak güç	ur:نرم قوت	zh:软实力
@@ -8802,6 +8838,7 @@ c:stone-material	Noun	ar:حجر	de:Stein	en:stone	es:piedra	fa:سنگ	fr:pierre	
 c:stonecutter	Noun	ar:نحّات حجر,قاطع الحجارة	de:Steinhauer,Steinmetz	en:stonecutter,stone carver	es:cantero,tallador de piedra	fa:سنگ‌تراش	fr:tailleur de pierre	he:סתת	hi:संगतराश,पत्थर काटने वाला	ja:石切職人,石彫り師	ko:석재공,돌 자르는 사람	pt:canteiro,talhador de pedra	ru:каменотёс	tr:taşçı,taş ustası	ur:سنگ تراش	zh:石匠,采石工
 c:stonefly	Noun	ar:ذبابة الحجر	de:Steinfliege	en:stonefly	es:mosca de piedra,plecóptero	fa:سنگ‌پرواز	fr:perle,plécoptère	he:זבוב האבן	hi:स्टोनफ्लाई	ja:カワゲラ	ko:강도래	pt:perlídeo,mosca-de-pedra	ru:веснянка	tr:taş sineği	ur:پتھر مکھی	zh:石蝇
 c:stool	Noun	ar:كرسي بلا ظهر,مقعد صغير	de:Hocker	en:stool	es:taburete	fa:چارپایه	fr:tabouret	he:שרפרף	hi:स्टूल,तिपाई	ja:スツール,腰掛け	ko:등 없는 의자,스툴	pt:banqueta	ru:табурет	tr:tabure	ur:اسٹول,تپائی	zh:凳子
+c:stool-furniture	Noun	ar:مقعد	de:Hocker	en:stool	es:taburete	fa:چهارپایه	fr:tabouret	he:שרפרף	hi:स्टूल	ja:スツール	ko:스툴	pt:banqueta	ru:табурет	tr:tabure	ur:اسٹول	zh:凳子
 c:stop	Verb	ar:توقف	de:stoppen,anhalten,aufhören	en:stop	es:parar,detener	fa:ایستادن,متوقف کردن	fr:arrêter	he:לעצור	hi:रुकना,बंद करना	ja:止める	ko:멈추다	pt:parar	ru:останавливать,остановить	tr:durmak	ur:رکنا	zh:停
 c:stop-consonant	Noun	ar:صوت انفجاري	de:Plosiv	en:stop consonant	es:consonante oclusiva	fa:همخوان انسدادی	fr:occlusive	he:עצור	hi:स्पर्श व्यंजन	ja:破裂音	ko:파열음	pt:oclusiva	ru:смычный согласный	tr:patlayıcı	ur:انفجاری آواز	zh:塞音
 c:stopwatch	Noun	ar:ساعة إيقاف	de:Stoppuhr	en:stopwatch	es:cronómetro	fa:کرنومتر	fr:chronomètre	he:שעון עצור	hi:स्टॉपवॉच	ja:ストップウォッチ	ko:초시계	pt:cronômetro	ru:секундомер	tr:kronometre	ur:سٹاپ واچ	zh:秒表
@@ -9060,6 +9097,7 @@ c:tabernacle-sacred	Noun	ar:هيكل	de:Tabernakel	en:tabernacle	es:tabernáculo
 c:tabla	Noun	ar:طبلة,تبلا	de:Tabla	en:tabla	es:tabla	fa:طبلا	fr:tabla	he:טבלה	hi:तबला	ja:タブラ	ko:타블라	pt:tabla	ru:табла	tr:tabla	ur:طبلہ	zh:塔布拉鼓
 c:table	Noun	ar:طاولة,مائدة	de:Tisch	en:table	es:mesa	fa:میز	fr:table	he:שולחן	hi:मेज़	ja:テーブル,机	ko:탁자,테이블	pt:mesa	ru:стол	tr:masa	ur:میز	zh:桌子
 c:table-db	Noun	ar:جدول بيانات	de:Datenbanktabelle	en:table	es:tabla	fa:جدول پایگاه داده	fr:table	he:טבלה	hi:तालिका	ja:テーブル	ko:테이블	pt:tabela	ru:таблица	tr:tablo	ur:ٹیبل	zh:表
+c:table-furniture	Noun	ar:طاولة	de:Tisch	en:table	es:mesa	fa:میز	fr:table	he:שולחן	hi:मेज़	ja:テーブル	ko:테이블	pt:mesa	ru:стол	tr:masa	ur:میز	zh:桌子
 c:table-of-contents	Noun	ar:جدول المحتويات,فهرس المحتويات	de:Inhaltsverzeichnis	en:table of contents	es:tabla de contenidos,índice	fa:فهرست مطالب	fr:table des matières	he:תוכן עניינים	hi:विषय-सूची	ja:目次	ko:목차	pt:sumário,índice	ru:оглавление,содержание	tr:içindekiler	ur:فہرست مضامین	zh:目录
 c:table-tennis	Noun	ar:تنس الطاولة	de:Tischtennis	en:table tennis	es:tenis de mesa	fa:پینگ پونگ	fr:tennis de table	he:פינג פונג	hi:टेबल टेनिस	ja:卓球	ko:탁구	pt:tênis de mesa	ru:настольный теннис	tr:masa tenisi	ur:ٹیبل ٹینس	zh:乒乓球
 c:tablet	Noun	ar:جهاز لوحي,تابلت	de:Tablet	en:tablet	es:tableta,tablet	fa:تبلت	fr:tablette	he:טאבלט	hi:टैबलेट	ja:タブレット	ko:태블릿	pt:tablet	ru:планшет	tr:tablet	ur:ٹیبلیٹ	zh:平板电脑
@@ -9796,6 +9834,7 @@ c:vandal-kingdom	Noun	ar:مملكة الفاندال	de:Vandalenreich	en:Vandal 
 c:vanilla	Noun	ar:فانيليا	de:Vanille	en:vanilla	es:vainilla	fa:وانیل	fr:vanille	he:וניל	hi:वनीला	ja:バニラ	ko:바닐라	pt:baunilha	ru:ваниль	tr:vanilya	ur:ونیلا	zh:香草
 c:vanilla-spice	Noun	ar:فانيليا	de:Vanille	en:vanilla	es:vainilla	fa:وانیل	fr:vanille	he:וניל	hi:वनीला	ja:バニラ	ko:바닐라	pt:baunilha	ru:ваниль	tr:vanilya	ur:ونیلا	zh:香草
 c:vanity	Noun	ar:عجب بالنفس	de:Eitelkeit	en:vanity	es:vanidad	fa:خودپسندی	fr:vanité	he:שחצנות	hi:अहंकार	ja:虚栄心	ko:허영심	pt:vaidade	ru:тщеславие	tr:kendini beğenmişlik	ur:خود پسندی	zh:虚荣
+c:vanity-table	Noun	ar:طاولة زينة	de:Frisiertisch	en:vanity table	es:tocador	fa:میز آرایش	fr:coiffeuse	he:שולחן איפור	hi:श्रृंगार मेज	ja:化粧台	ko:화장대	pt:penteadeira	ru:туалетный столик	tr:makyaj masası	ur:بنائو سنگار میز	zh:梳妆台
 c:variable-math	Noun	ar:متغير رياضي	de:Variable	en:variable	es:variable	fa:متغیر	fr:variable	he:משתנה	hi:चर	ja:変数	ko:변수	pt:variável	ru:переменная	tr:değişken	ur:متغیر	zh:变量
 c:variable-prog	Noun	ar:متغير	de:Variable	en:variable	es:variable	fa:متغیر	fr:variable	he:משתנה	hi:चर	ja:変数	ko:변수	pt:variável	ru:переменная	tr:değişken	ur:متغیر	zh:变量
 c:variance	Noun	ar:تباين	de:Varianz	en:variance	es:varianza	fa:واریانس	fr:variance	he:שונות	hi:प्रसरण	ja:分散	ko:분산	pt:variância	ru:дисперсия	tr:varyans	ur:تغیر	zh:方差
@@ -9999,6 +10038,7 @@ c:water-monitor	Noun	ar:ورل مائي	de:Bindenwaran	en:water monitor	es:varan
 c:water-pollution	Noun	ar:تلوث المياه	de:Wasserverschmutzung	en:water pollution	es:contaminación del agua	fa:آلودگی آب	fr:pollution de l'eau	he:זיהום מים	hi:जल प्रदूषण	ja:水質汚染	ko:수질 오염	pt:poluição da água	ru:загрязнение воды	tr:su kirliliği	ur:پانی کی آلودگی	zh:水污染
 c:water-polo	Noun	ar:كرة الماء	de:Wasserball	en:water polo	es:waterpolo	fa:واترپلو	fr:water-polo	he:כדור-מים	hi:वाटर पोलो	ja:水球	ko:수구	pt:polo aquático	ru:водное поло	tr:su topu	ur:واٹر پولو	zh:水球
 c:water-strider	Noun	ar:حشرة الساقية,عداء الماء	de:Wasserläufer	en:water strider,pond skater	es:patinador de agua,zapatero	fa:آب‌آور	fr:gerris,araignée d'eau	he:מחליק מים	hi:जल धावक	ja:アメンボ	ko:소금쟁이	pt:patinador-da-água	ru:водомерка	tr:su yüzücüsü	ur:پانی پر چلنے والا	zh:水黾
+c:waterbed	Noun	ar:سرير مائي	de:Wasserbett	en:waterbed	es:cama de agua	fa:تخت آبی	fr:lit à eau	he:מיטת מים	hi:वाटरबेड	ja:ウォーターベッド	ko:물침대	pt:cama de água	ru:водяная кровать	tr:su yatağı	ur:پانی کا بستر	zh:水床
 c:waterbuck	Noun	ar:الظبي المائي	de:Wasserbock	en:waterbuck	es:cobo	fa:آنتلوپ آبی	fr:cobe	he:ווטרבאק	hi:वाटरबक	ja:ウォーターバック	ko:물영양	pt:cobo	ru:водяной козёл	tr:su antilobu	ur:واٹر بک	zh:水羚
 c:watercress	Noun	ar:جرجير مائي	de:Brunnenkresse	en:watercress	es:berro	fa:شاهی آبی	fr:cresson	he:כרשה	hi:जलकुंभी	ja:クレソン	ko:물냉이	pt:agrião	ru:водяной кресс	tr:su teresi	ur:آبی جرجیر	zh:豆瓣菜
 c:waterfall	Noun	ar:شلال	de:Wasserfall	en:waterfall,cascade	es:cascada,catarata	fa:آبشار	fr:cascade,chute d'eau	he:מפל	hi:झरना	ja:滝	ko:폭포	pt:cachoeira,queda d'água	ru:водопад	tr:şelale	ur:آبشار	zh:瀑布
