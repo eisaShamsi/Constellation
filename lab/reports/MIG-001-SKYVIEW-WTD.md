@@ -70,6 +70,34 @@ Proceed with C. Accept risks 1–8 with the listed mitigations.
 
 Full plan: see commit message of §64 and the Plan agent return.
 
+## Step 10 — Second-screen scope correction
+
+Phase-1 Plan step 10 was scoped as "Frontend swap: second-screen
+parity — same swap as step 9. Must ship in the same release as
+step 9 per Invariant 5 / Risk 6."
+
+**Audit finding**: incorrect premise. SecondScreenPage.svelte has
+three `buildSkyData` call sites (L310, L431, L497), all three
+operating on ego-network computation:
+
+- Input: per-library link set from `scanLibraryLinks(libraryPath)`
+  (typically 1-5k edges, not the full 232k-edge universe graph).
+- Output: small ego neighborhood around a specific note, filtered
+  to its immediate connections.
+
+The second screen renders `LocalSkyView`, never `GraphMindView` —
+the full-universe SV only exists on the main window, which Step 9
+already swapped to `cache_boot_snapshot_sky`.
+
+**Invariant 5 (second-screen parity)** is about visual consistency
+when both screens display SV for the same note. That's satisfied
+by the shared note-level data contract (allNotes, libraries), not
+by the graph pipeline. There's nothing to migrate.
+
+**Decision**: Step 10 is closed as an audit-only step. No code
+change. Risk 6 (second-screen drift) was a false flag from an
+imprecise Phase-1 audit.
+
 ## Step 7 — Enrichment scope decision
 
 Audited strata.rs / maturity.rs / provenance.rs: all three are pure
