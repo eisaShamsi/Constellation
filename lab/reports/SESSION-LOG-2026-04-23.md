@@ -150,6 +150,12 @@ is now authoritative.
 | §76 | b99b856 | SV: Stratum + Maturity color modes with legend |
 | §77 | 6be6ee9 | BUG-004 fix: legend hides when mode has no data |
 | §78 | 2f9a4c5 | SV: Compute-now button for on-demand enrichment |
+| §79 | 5b0c305 | MIG-001 Step 8: cache_boot_snapshot_sky IPC |
+| §80 | e2434ba | MIG-001 Step 8 perf: drop SQL JOINs, aggregate in Rust |
+| §81 | 60b03a8 | MIG-001 Step 8 perf round 2: reuse pre-lowercased id |
+| §82 | 0bf99d8 | MIG-001 Step 9: frontend swap to cache_boot_snapshot_sky |
+| §83 | cf59401 | MIG-001 Step 9 fix: parallelize sky IPC with graph IPC |
+| §84 | eab6aa9 | MIG-001 Step 10: audit-only, no second-screen swap needed |
 
 ## § 72-78 — MIG-001 Steps 5-7 + Sky View legend redesign
 
@@ -174,12 +180,48 @@ See individual commits for full context. High notes:
 - **§78 Compute-now**: Empty state exposes a button to trigger
   enrichNodesBackground on demand. Persistence deferred to MIG-002.
 
-### Still pending (MIG-001)
+## § 79-84 — MIG-001 Steps 8-10
 
-- Step 8: new IPC `cache_boot_snapshot_sky` (next)
-- Step 9: frontend swap main window (with /simplify)
-- Step 10: frontend swap second-screen
-- Step 11: Phase-4 audit + cleanup
+- **Step 8 (§79-81)**: `cache_boot_snapshot_sky` IPC reads sky_nodes +
+  sky_links directly from SQLite. Perf pass 1 dropped SQL JOINs in
+  favor of Rust HashMap aggregation (7.7s → 2.8s debug). Pass 2
+  reuses the pre-lowercased `id` column instead of re-lowercasing
+  per edge. Byte-diff identical to legacy buildSkyData output.
+- **Step 9 (§82-83)**: Frontend swap in `+layout.svelte`. First cut
+  (§82) ran sky IPC serially after graph IPC — regressed boot. §83
+  parallelized via Promise.all so skyPromise kicks off before the
+  graph await. ✅ Tested, user approved boot times.
+- **Step 10 (§84)**: Audit-only close. SecondScreenPage's three
+  buildSkyData sites operate on per-library ego networks, not the
+  full universe graph. Invariant 5 (second-screen parity) is about
+  the shared note data contract, which is unchanged. No code change.
+
+## § Pending — MIG-001 Phase-4 Audit (Step 11)
+
+Phase-4 audit launched 3 agents in parallel per /migration skill.
+All three returned findings; **nothing committed yet**.
+
+Release build completed (task `b7afncku9`, exit 0). Boot-perf
+numbers not yet captured from output file.
+
+**HIGH fixes pending**:
+1. `+layout.svelte:2566` — graph-failure path skips sky assignment
+   even when sky IPC succeeded. Guard needs `|| (sky && sky.isReady)`.
+2. `cache_boot_snapshot_sky` — no gate on back-fill completion;
+   users can see partial graph mid-migration. Gate on
+   `schema_versions.sky = TARGET`; `isReady=false` → frontend falls
+   back to buildSkyData, not partial render.
+
+**MED/LOW fixes pending**:
+3. Dedupe hand-synced SKY_SCHEMA_VERSION between `search.rs` and
+   `sky_backfill.rs:41`.
+4. Wrap `sky_backfill.rs` `finalize()` in one transaction.
+5. Relabel "Compute now" button → "Compute for this session" (15
+   i18n files).
+
+Next session: apply HIGH #1 + #2 first commit, MED/LOW second
+commit, capture boot-perf from release build output, write Phase-4
+section in `MIG-001-SKYVIEW-WTD.md`, final MIG-001 closure commit.
 
 ### Non-MIG pending
 
