@@ -107,6 +107,7 @@ c:adiabatic	Adjective	ar:الأديباتي	de:adiabatisch	en:adiabatic	es:adiab
 c:adjective	Noun	ar:صفة,نعت	de:Adjektiv,Eigenschaftswort	en:adjective	es:adjetivo	fa:صفت	fr:adjectif	he:שם תואר	hi:विशेषण	ja:形容詞	ko:형용사	pt:adjetivo	ru:прилагательное	tr:sıfat,önad	ur:صفت	zh:形容词
 c:admiral	Noun	ar:أميرال	de:Admiral	en:admiral	es:almirante	fa:دریاسالار	fr:amiral	he:אדמירל	hi:एडमिरल	ja:提督	ko:제독	pt:almirante	ru:адмирал	tr:amiral	ur:ایڈمرل	zh:海军上将
 c:admiration	Noun	ar:إعجاب	de:Bewunderung	en:admiration	es:admiración	fa:تحسین	fr:admiration	he:הערצה	hi:प्रशंसा	ja:感嘆	ko:감탄	pt:admiração	ru:восхищение	tr:hayranlık	ur:تعریف	zh:钦佩
+c:admiration-emotion	Noun	ar:إعجاب	de:Bewunderung	en:admiration	es:admiración	fa:تحسین	fr:admiration	he:הערצה	hi:प्रशंसा	ja:称賛	ko:감탄	pt:admiração	ru:восхищение	tr:hayranlık	ur:تعریف	zh:仰慕
 c:adoptive-cell	Noun	ar:العلاج بنقل الخلايا	de:adoptive Zelltherapie	en:adoptive cell therapy	es:terapia celular adoptiva	fa:درمان سلولی انتقالی	fr:thérapie cellulaire adoptive	he:טיפול תאי אדופטיבי	hi:दत्तक कोशिका चिकित्सा	ja:養子細胞療法	ko:입양 세포 치료	pt:terapia celular adotiva	ru:адоптивная клеточная терапия	tr:adoptif hücre tedavisi	ur:گود لیا سیل علاج	zh:过继性细胞疗法
 c:adrenal-gland	Noun	ar:الغدة الكظرية	de:Nebenniere	en:adrenal gland	es:glándula suprarrenal	fa:غده فوق کلیه	fr:glande surrénale	he:בלוטת יותרת הכליה	hi:अधिवृक्क ग्रंथि	ja:副腎	ko:부신	pt:glândula suprarrenal	ru:надпочечник	tr:böbrek üstü bezi	ur:گردے کے اوپر کی غدہ	zh:肾上腺
 c:adrenaline	Noun	ar:أدرينالين	de:Adrenalin	en:adrenaline	es:adrenalina	fa:آدرنالین	fr:adrénaline	he:אדרנלין	hi:एड्रेनालाईन	ja:アドレナリン	ko:아드레날린	pt:adrenalina	ru:адреналин	tr:adrenalin	ur:ایڈرینالین	zh:肾上腺素
@@ -132,6 +133,7 @@ c:aesthetics	Noun	ar:علم الجمال,الإستطيقا	de:Ästhetik	en:aest
 c:aesthetics-phil	Noun	ar:علم الجمال	de:Ästhetik	en:aesthetics	es:estética	fa:زیبایی‌شناسی	fr:esthétique	he:אסתטיקה	hi:सौंदर्यशास्त्र	ja:美学	ko:미학	pt:estética	ru:эстетика	tr:estetik	ur:جمالیات	zh:美学
 c:aether-theory	Noun	ar:نظرية الأثير	de:Äthertheorie	en:luminiferous aether	es:éter luminífero	fa:اثیر نوری	fr:éther luminifère	he:אתר לומינפרוס	hi:प्रकाशमान ईथर	ja:光のエーテル	ko:광성 에테르	pt:éter luminífero	ru:световой эфир	tr:ışınlı eter	ur:نورانی ایتھر	zh:发光以太
 c:affection	Noun	ar:مودة	de:Zuneigung	en:affection	es:afecto	fa:محبت	fr:affection	he:חיבה	hi:स्नेह	ja:愛情	ko:애정	pt:afeto	ru:привязанность	tr:sevgi	ur:پیار	zh:爱意
+c:affection-feeling	Noun	ar:مودة	de:Zuneigung	en:affection	es:afecto	fa:مهربانی	fr:affection	he:חיבה	hi:स्नेह	ja:愛情	ko:애정	pt:afeto	ru:привязанность	tr:sevgi şefkat	ur:لگاؤ	zh:情感
 c:afferent	Adjective	ar:وارد	de:afferent	en:afferent	es:aferente	fa:آوران	fr:afférent	he:אפרנטי	hi:अभिवाही	ja:求心性	ko:구심성	pt:aferente	ru:афферентный	tr:afferent	ur:ورودی	zh:传入的
 c:affidavit	Noun	ar:إفادة خطية محلفة	de:eidesstattliche Erklärung	en:affidavit	es:declaración jurada	fa:سوگندنامه کتبی	fr:déclaration sous serment	he:תצהיר	hi:हलफनामा	ja:宣誓供述書	ko:선서 진술서	pt:declaração juramentada	ru:письменное показание под присягой	tr:yemin beyanı	ur:حلف نامہ	zh:宣誓书
 c:affix	Noun	ar:لاحقة ولاحق	de:Affix	en:affix	es:afijo	fa:وند	fr:affixe	he:תחיליתית	hi:उपसर्ग-प्रत्यय	ja:接辞	ko:접사	pt:afixo	ru:аффикс	tr:ek	ur:سابقہ یا لاحقہ	zh:词缀
@@ -257,6 +259,7 @@ c:amulet	Noun	ar:تميمة,حرز	de:Amulett	en:amulet,charm	es:amuleto	fa:تع
 c:amun	Noun	ar:آمون	de:Amun	en:Amun	es:Amón	fa:آمون	fr:Amon	he:אמון	hi:आमुन	ja:アメン	ko:아문	pt:Amon	ru:Амон	tr:Amun	ur:آمون	zh:阿蒙
 c:amur	Noun	ar:الأمور,نهر الأمور	de:Amur	en:Amur,Amur River	es:Amur,río Amur	fa:آمور,رود آمور	fr:Amour	he:אמור,נהר האמור	hi:अमूर नदी	ja:アムール川	ko:아무르강	pt:Amur,rio Amur	ru:Амур	tr:Amur,Amur Nehri	ur:دریائے آمور	zh:黑龙江,阿穆尔河
 c:amur-river	Noun	ar:نهر الأمور	de:Amur	en:Amur river	es:río Amur	fa:رود آمور	fr:Amour	he:נהר האמור	hi:अमूर नदी	ja:アムール川	ko:아무르강	pt:rio Amur	ru:река Амур	tr:Amur Nehri	ur:دریائے آمور	zh:黑龙江
+c:amusement	Noun	ar:تسلية	de:Belustigung	en:amusement	es:diversión	fa:سرگرمی	fr:amusement	he:שעשוע	hi:मनोरंजन	ja:楽しみ	ko:재미	pt:divertimento	ru:веселье	tr:eğlence	ur:تفریح	zh:娱乐
 c:amygdala	Noun	ar:اللوزة الدماغية	de:Amygdala	en:amygdala	es:amígdala	fa:آمیگدال	fr:amygdale	he:אמיגדלה	hi:अमिग्डाला	ja:扁桃体	ko:편도체	pt:amígdala	ru:миндалина	tr:amigdala	ur:بادامی غدہ	zh:杏仁核
 c:anabatic	Adjective	ar:رياح أنابية	de:anabatischer Wind	en:anabatic wind	es:viento anabático	fa:باد بالاکوهی	fr:vent anabatique	he:רוח אנבטית	hi:अनाबैटिक पवन	ja:上昇風	ko:상승풍	pt:vento anabático	ru:анабатический ветер	tr:anapatik rüzgar	ur:چڑھاو ہوا	zh:上坡风
 c:anaconda	Noun	ar:اناكوندا	de:Anakonda	en:anaconda	es:anaconda	fa:آناکوندا	fr:anaconda	he:אנקונדה	hi:अनाकोंडा	ja:アナコンダ	ko:아나콘다	pt:anaconda	ru:анаконда	tr:anakonda	ur:اناکونڈا	zh:水蚺
@@ -374,12 +377,14 @@ c:anubis	Noun	ar:أنوبيس	de:Anubis	en:Anubis	es:Anubis	fa:آنوبیس	fr:A
 c:anvil	Noun	ar:سندان	de:Amboss	en:anvil	es:yunque	fa:سندان	fr:enclume	he:סדן	hi:निहाई	ja:金床,かなとこ	ko:모루	pt:bigorna	ru:наковальня	tr:örs	ur:نہائی,سندان	zh:铁砧,砧
 c:anxiety	Noun	ar:قلق	de:Angst	en:anxiety	es:ansiedad	fa:اضطراب	fr:anxiété	he:חרדה	hi:चिंता	ja:不安	ko:불안	pt:ansiedade	ru:тревога	tr:kaygı,anksiyete	ur:بے چینی	zh:焦虑
 c:anxiety-disorder	Noun	ar:اضطراب القلق	de:Angststörung	en:anxiety disorder	es:trastorno de ansiedad	fa:اختلال اضطراب	fr:trouble anxieux	he:הפרעת חרדה	hi:चिंता विकार	ja:不安障害	ko:불안 장애	pt:transtorno de ansiedade	ru:тревожное расстройство	tr:anksiyete bozukluğu	ur:بے چینی کا عارضہ	zh:焦虑症
+c:anxiety-feeling	Noun	ar:قلق عاطفي	de:Angst Gefühl	en:anxiety	es:ansiedad	fa:اضطراب	fr:anxiété	he:חרדה	hi:चिंता	ja:不安	ko:불안	pt:ansiedade	ru:тревога	tr:endişe	ur:بے چینی	zh:焦虑
 c:anxiety-mental	Noun	ar:اضطراب القلق	de:Angststörung	en:anxiety disorder,clinical anxiety	es:trastorno de ansiedad	fa:اختلال اضطراب	fr:trouble anxieux	he:הפרעת חרדה	hi:चिंता विकार,एंग्जाइटी डिसऑर्डर	ja:不安症,不安障害	ko:불안장애	pt:transtorno de ansiedade	ru:тревожное расстройство	tr:kaygı bozukluğu,anksiyete bozukluğu	ur:اضطرابی عارضہ	zh:焦虑症,焦虑障碍
 c:anxiolytic	Noun	ar:مضاد القلق	de:Anxiolytikum	en:anxiolytic	es:ansiolítico	fa:داروی ضد اضطراب	fr:anxiolytique	he:תרופה אנקסיוליטית	hi:चिंताशामक	ja:抗不安薬	ko:항불안제	pt:ansiolítico	ru:анксиолитик	tr:anksiyolitik	ur:اضطراب مخالف دوا	zh:抗焦虑药
 c:aorta	Noun	ar:الشريان الابهر	de:Aorta	en:aorta	es:aorta	fa:آئورت	fr:aorte	he:אבי העורקים	hi:महाधमनी	ja:大動脈	ko:대동맥	pt:aorta	ru:аорта	tr:aort	ur:بڑی شریان	zh:主动脉
 c:apartheid	Noun	ar:الفصل العنصري	de:Apartheid	en:apartheid	es:apartheid	fa:آپارتاید	fr:apartheid	he:אפרטהייד	hi:रंगभेद	ja:アパルトヘイト	ko:아파르트헤이트	pt:apartheid	ru:апартеид	tr:apartheid	ur:نسلی امتیاز	zh:种族隔离
 c:apartment	Noun	ar:شقة	de:Wohnung,Apartment	en:apartment	es:apartamento,piso	fa:آپارتمان	fr:appartement	he:דירה	hi:अपार्टमेंट,फ्लैट	ja:アパート,マンション	ko:아파트	pt:apartamento	ru:квартира	tr:daire,apartman	ur:اپارٹمنٹ,فلیٹ	zh:公寓
 c:apathy	Noun	ar:لامبالاة	de:Apathie,Teilnahmslosigkeit	en:apathy	es:apatía	fa:بی تفاوتی	fr:apathie	he:אפתיה,אדישות	hi:उदासीनता,विरक्ति	ja:無関心,アパシー	ko:무관심,무감동	pt:apatia	ru:апатия	tr:apati,ilgisizlik	ur:بے حسی	zh:冷漠,淡漠
+c:apathy-feeling	Noun	ar:لا مبالاة	de:Apathie	en:apathy	es:apatía	fa:بی‌احساسی	fr:apathie	he:אפתיה	hi:उदासीनता	ja:無関心	ko:무관심	pt:apatia	ru:апатия	tr:kayıtsızlık	ur:بے حسی	zh:冷漠
 c:ape	Noun	ar:قرد عظيم	de:Menschenaffe	en:ape	es:simio	fa:میمون انسان‌نما	fr:grand singe,singe anthropoïde	he:קוף אדם	hi:वनमानुष	ja:類人猿	ko:유인원	pt:símio	ru:человекообразная обезьяна	tr:insansı maymun	ur:جنگلی بندر	zh:类人猿,猿
 c:apennines-range	Noun	ar:جبال الأبينين	de:Apennin	en:Apennines	es:Apeninos	fa:کوه‌های آپنین	fr:Apennins	he:האפנינים	hi:एपिनाइन पर्वत	ja:アペニン山脈	ko:아펜니노산맥	pt:Apeninos	ru:Апеннины	tr:Apenin Dağları	ur:اپینی پہاڑ	zh:亚平宁山脉
 c:aperture	Noun	ar:فتحة العدسة	de:Blende	en:aperture	es:apertura	fa:دیافراگم	fr:ouverture	he:צמצם	hi:एपर्चर	ja:絞り	ko:조리개	pt:abertura	ru:диафрагма	tr:diyafram	ur:روزنہ	zh:光圈
@@ -592,6 +597,7 @@ c:avocado-fruit	Noun	ar:أفوكادو	de:Avocado	en:avocado	es:aguacate	fa:آو
 c:avocet	Noun	ar:طائر الرشاقة	de:Säbelschnäbler	en:avocet	es:avoceta	fa:اووست	fr:avocette	he:אבוצט	hi:एवोसेट	ja:ソリハシセイタカシギ	ko:뒷부리도요	pt:alfaiate	ru:шилоклювка	tr:kılıçgaga	ur:ایووسٹ	zh:反嘴鹬
 c:avogadro-number	Noun	ar:عدد أفوغادرو	de:Avogadro-Zahl	en:Avogadro's number	es:número de Avogadro	fa:عدد آووگادرو	fr:nombre d'Avogadro	he:מספר אבוגדרו	hi:आवोगाद्रो संख्या	ja:アボガドロ定数	ko:아보가드로 수	pt:número de Avogadro	ru:число Авогадро	tr:Avogadro sayısı	ur:آووگاڈرو نمبر	zh:阿伏伽德罗常数
 c:awareness	Noun	ar:وعي,إدراك	de:Bewusstsein,Gewahrsein	en:awareness	es:conciencia,consciencia	fa:آگاهی	fr:conscience,prise de conscience	he:מודעות	hi:जागरूकता,चेतना	ja:自覚,意識	ko:자각,인식	pt:consciência,percepção	ru:осознание,осведомлённость	tr:farkındalık,bilinç	ur:آگہی,شعور	zh:意识,觉察
+c:awe	Noun	ar:رهبة	de:Ehrfurcht	en:awe	es:asombro	fa:حیرت	fr:stupéfaction	he:יראת כבוד	hi:विस्मय	ja:畏敬	ko:경외	pt:temor reverencial	ru:благоговение	tr:huşu	ur:دبدبہ	zh:敬畏
 c:axe	Noun	ar:فأس	de:Axt,Beil	en:axe,ax	es:hacha	fa:تبر	fr:hache	he:גרזן	hi:कुल्हाड़ी	ja:斧	ko:도끼	pt:machado	ru:топор	tr:balta	ur:کلہاڑی	zh:斧头,斧
 c:axial-load	Noun	ar:حمل محوري	de:Normalkraft	en:axial load	es:carga axial	fa:بار محوری	fr:charge axiale	he:עומס צירי	hi:अक्षीय भार	ja:軸力	ko:축력	pt:carga axial	ru:осевая нагрузка	tr:eksenel yük	ur:محوری بوجھ	zh:轴向荷载
 c:axiom	Noun	ar:بديهية,مسلمة	de:Axiom	en:axiom	es:axioma	fa:اصل موضوعه,بدیهیات	fr:axiome	he:אקסיומה	hi:स्वयंसिद्ध	ja:公理	ko:공리	pt:axioma	ru:аксиома	tr:aksiyom,belit	ur:بدیہی,مسلمہ	zh:公理
@@ -1868,6 +1874,7 @@ c:confounding	Noun	ar:التشويش	de:Konfundierung	en:confounding	es:confusi�
 c:confucianism	Noun	ar:الكونفوشيوسية	de:Konfuzianismus	en:Confucianism	es:confucianismo	fa:کنفوسیوس‌گرایی	fr:confucianisme	he:קונפוציאניזם	hi:कन्फ्यूशियस धर्म	ja:儒教	ko:유교	pt:confucionismo	ru:конфуцианство	tr:Konfüçyüsçülük	ur:کنفیوشس مت	zh:儒教
 c:confucius	Noun	ar:كونفوشيوس	de:Konfuzius	en:Confucius	es:Confucio	fa:کنفوسیوس	fr:Confucius	he:קונפוציוס	hi:कन्फ्यूशियस	ja:孔子,こうし	ko:공자	pt:Confúcio	ru:Конфуций	tr:Konfüçyüs	ur:کنفیوشس	zh:孔子,孔夫子
 c:confusion	Noun	ar:ارتباك	de:Verwirrung	en:confusion	es:confusión	fa:سردرگمی	fr:confusion	he:בלבול	hi:भ्रम	ja:混乱	ko:혼란	pt:confusão	ru:смущение,путаница	tr:kafa karışıklığı	ur:الجھن	zh:混乱,困惑
+c:confusion-emotion	Noun	ar:حيرة	de:Verwirrung	en:confusion	es:confusión	fa:گیجی	fr:confusion	he:בלבול	hi:भ्रम	ja:混乱	ko:혼란	pt:confusão	ru:замешательство	tr:kafa karışıklığı	ur:الجھن	zh:困惑
 c:conga	Noun	ar:كونغا	de:Conga	en:conga	es:conga	fa:کونگا	fr:conga	he:קונגה	hi:कोंगा	ja:コンガ	ko:콩가	pt:conga	ru:конга	tr:conga	ur:کونگا	zh:康加鼓
 c:congas	Noun	ar:كونغا	de:Conga,Congas	en:conga,congas	es:conga,congas	fa:کونگا	fr:conga,congas	he:קונגה	hi:कोंगा	ja:コンガ	ko:콩가	pt:conga,congas	ru:конга	tr:konga	ur:کونگا	zh:康加鼓
 c:congo	Noun	ar:الكونغو,نهر الكونغو	de:Kongo	en:Congo,Congo River	es:Congo,río Congo	fa:کنگو,رود کنگو	fr:Congo,fleuve Congo	he:קונגו,נהר הקונגו	hi:कांगो नदी,कांगो	ja:コンゴ川	ko:콩고강	pt:Congo,rio Congo	ru:Конго	tr:Kongo,Kongo Nehri	ur:دریائے کانگو	zh:刚果河
@@ -1893,6 +1900,7 @@ c:console-game	Noun	ar:لعبة كونسول	de:Konsolenspiel	en:console game	es
 c:consonant	Noun	ar:حرف ساكن,صامت	de:Konsonant,Mitlaut	en:consonant	es:consonante	fa:همخوان,صامت	fr:consonne	he:עיצור	hi:व्यंजन	ja:子音	ko:자음	pt:consoante	ru:согласный,согласная	tr:ünsüz,konson	ur:ساکن,صامت	zh:辅音,子音
 c:constant-math	Noun	ar:ثابت رياضي	de:Konstante	en:constant	es:constante	fa:ثابت	fr:constante	he:קבוע	hi:स्थिरांक	ja:定数	ko:상수	pt:constante	ru:константа	tr:sabit	ur:ثابت	zh:常数
 c:constellation	Noun	ar:كوكبة,مجموعة نجمية	de:Sternbild,Konstellation	en:constellation	es:constelación	fa:صورت فلکی	fr:constellation	he:קבוצת כוכבים,מזל	hi:तारामंडल,नक्षत्र	ja:星座	ko:별자리	pt:constelação	ru:созвездие	tr:takımyıldız	ur:جھرمٹ	zh:星座
+c:consternation	Noun	ar:ذعر	de:Bestürzung	en:consternation	es:consternación	fa:حیرت و ترس	fr:consternation	he:חרדה ודאגה	hi:घबराहट	ja:狼狽	ko:당혹	pt:consternação	ru:смятение	tr:şaşkınlık	ur:ہیجان خوف	zh:惊愕
 c:constituency-parsing	Noun	ar:التحليل المكوناتي	de:Phrasensatzanalyse	en:constituency parsing	es:análisis de constituyentes	fa:تجزیه سازه‌ای	fr:analyse en constituants	he:ניתוח רכיבים	hi:संघटक पार्सिंग	ja:句構造解析	ko:구성요소 구문 분석	pt:análise de constituintes	ru:анализ структуры фразы	tr:bileşen ayrıştırma	ur:ساختی تجزیہ	zh:成分句法分析
 c:constitution	Noun	ar:دستور	de:Verfassung	en:constitution	es:constitución	fa:قانون اساسی	fr:constitution	he:חוקה	hi:संविधान	ja:憲法	ko:헌법	pt:constituição	ru:конституция	tr:anayasa	ur:آئین,دستور	zh:宪法
 c:constitution-law	Noun	ar:دستور قانوني	de:Verfassung	en:constitution	es:constitución	fa:قانون اساسی	fr:constitution	he:חוקה	hi:संविधान	ja:憲法	ko:헌법	pt:constituição	ru:конституция	tr:anayasa	ur:آئین	zh:宪法
@@ -1911,6 +1919,7 @@ c:contemporary	Noun	ar:الرقص المعاصر	de:Contemporary	en:contemporary
 c:contemporary-dance	Noun	ar:رقص معاصر	de:zeitgenössischer Tanz	en:contemporary dance	es:danza contemporánea	fa:رقص معاصر	fr:danse contemporaine	he:ריקוד עכשווי	hi:समकालीन नृत्य	ja:コンテンポラリーダンス	ko:현대 무용	pt:dança contemporânea	ru:современный танец	tr:çağdaş dans	ur:عصری رقص	zh:现代舞
 c:contemporary-era	Noun	ar:العصر المعاصر	de:zeitgenössische Ära	en:Contemporary era	es:era contemporánea	fa:عصر معاصر	fr:époque contemporaine	he:העת העכשווית	hi:समकालीन युग	ja:現代	ko:현대	pt:era contemporânea	ru:современная эпоха	tr:çağdaş dönem	ur:عصر حاضر	zh:当代
 c:contempt	Noun	ar:احتقار	de:Verachtung	en:contempt	es:desprecio	fa:تحقیر	fr:mépris	he:בוז	hi:तिरस्कार	ja:軽蔑	ko:경멸	pt:desprezo	ru:презрение	tr:küçümseme	ur:حقارت	zh:蔑视
+c:contempt-feeling	Noun	ar:احتقار	de:Verachtung	en:contempt	es:desprecio	fa:تحقیر	fr:mépris	he:בוז	hi:तिरस्कार	ja:軽蔑	ko:경멸	pt:desprezo	ru:презрение	tr:küçümseme	ur:حقارت	zh:蔑视
 c:contempt-of-court	Noun	ar:ازدراء المحكمة	de:Missachtung des Gerichts	en:contempt of court	es:desacato al tribunal	fa:اهانت به دادگاه	fr:outrage au tribunal	he:בוז לבית משפט	hi:न्यायालय की अवमानना	ja:法廷侮辱	ko:법정 모욕	pt:desacato ao tribunal	ru:неуважение к суду	tr:mahkeme hakaret	ur:عدالت کی توہین	zh:藐视法庭
 c:contentment	Noun	ar:رضا	de:Zufriedenheit	en:contentment	es:contento	fa:رضایت	fr:contentement	he:שביעות רצון	hi:संतोष	ja:満足	ko:만족	pt:contentamento	ru:удовлетворённость	tr:hoşnutluk	ur:اطمینان	zh:满足
 c:context-effect	Noun	ar:أثر السياق	de:Kontexteffekt	en:context effect	es:efecto de contexto	fa:اثر زمینه	fr:effet de contexte	he:אפקט הקשר	hi:संदर्भ प्रभाव	ja:文脈効果	ko:맥락 효과	pt:efeito de contexto	ru:контекстный эффект	tr:bağlam etkisi	ur:سیاق و سباق اثر	zh:情境效应
@@ -2381,11 +2390,13 @@ c:desert-oasis	Noun	ar:واحة صحراوية	de:Wüstenoase	en:desert oasis	es
 c:desertification	Noun	ar:التصحر	de:Wüstenbildung	en:desertification	es:desertificación	fa:بیابان زایی	fr:désertification	he:מדבור	hi:मरुस्थलीकरण	ja:砂漠化	ko:사막화	pt:desertificação	ru:опустынивание	tr:çölleşme	ur:صحرا کاری	zh:荒漠化
 c:desertification-env	Noun	ar:تصحر	de:Wüstenbildung	en:desertification	es:desertificación	fa:بیابان‌زایی	fr:désertification	he:מדבור	hi:मरुस्थलीकरण	ja:砂漠化	ko:사막화	pt:desertificação	ru:опустынивание	tr:çölleşme	ur:صحرا بننا	zh:荒漠化
 c:design	Noun	ar:تصميم	de:Design,Entwurf	en:design	es:diseño	fa:طرح,طراحی	fr:design,conception	he:עיצוב	hi:डिज़ाइन,रूपरेखा	ja:デザイン,設計	ko:디자인,설계	pt:design,desenho	ru:дизайн	tr:tasarım	ur:ڈیزائن,خاکہ	zh:设计
+c:desire	Noun	ar:رغبة	de:Verlangen	en:desire	es:deseo	fa:میل	fr:désir	he:תשוקה	hi:इच्छा	ja:欲望	ko:욕망	pt:desejo	ru:желание	tr:arzu	ur:خواہش	zh:渴望
 c:desk	Noun	ar:مكتب,طاولة	de:Schreibtisch,Pult	en:desk	es:escritorio,pupitre	fa:میز	fr:bureau,pupitre	he:שולחן כתיבה	hi:डेस्क,मेज़	ja:机	ko:책상	pt:escrivaninha,mesa	ru:парта,письменный стол	tr:sıra,masa	ur:میز,ڈیسک	zh:书桌,课桌
 c:desk-calendar	Noun	ar:تقويم مكتبي	de:Tischkalender	en:desk calendar	es:calendario de escritorio	fa:تقویم رومیزی	fr:calendrier de bureau	he:לוח שנה שולחני	hi:डेस्क कैलेंडर	ja:卓上カレンダー	ko:탁상 달력	pt:calendário de mesa	ru:настольный календарь	tr:masa takvimi	ur:ڈیسک کیلنڈر	zh:桌历
 c:desk-lamp	Noun	ar:مصباح مكتب	de:Schreibtischlampe	en:desk lamp	es:lámpara de escritorio	fa:چراغ میز	fr:lampe de bureau	he:מנורת שולחן	hi:डेस्क लैंप	ja:デスクランプ	ko:탁상 스탠드	pt:luminária de mesa	ru:настольная лампа	tr:masa lambası	ur:ڈیسک لیمپ	zh:台灯
 c:desk-organizer	Noun	ar:منظم مكتب	de:Schreibtischorganizer	en:desk organizer	es:organizador de escritorio	fa:سازمان دهنده میز	fr:organiseur de bureau	he:מארגן שולחן	hi:डेस्क ऑर्गनाइज़र	ja:デスクオーガナイザー	ko:데스크 정리함	pt:organizador de mesa	ru:органайзер для стола	tr:masa düzenleyici	ur:ڈیسک آرگنائزر	zh:桌面收纳盒
 c:despair	Noun	ar:يأس	de:Verzweiflung	en:despair	es:desesperación	fa:نومیدی	fr:désespoir	he:ייאוש	hi:निराशा	ja:絶望	ko:절망	pt:desespero	ru:отчаяние	tr:umutsuzluk	ur:مایوسی	zh:绝望
+c:despair-emotion	Noun	ar:يأس	de:Verzweiflung	en:despair	es:desesperación	fa:یأس	fr:désespoir	he:ייאוש	hi:हताश	ja:絶望	ko:절망	pt:desespero	ru:отчаяние	tr:umutsuzluk	ur:مایوسی یاس	zh:绝望
 c:dessert	Noun	ar:حلوى,تحلية	de:Dessert,Nachtisch	en:dessert	es:postre	fa:دسر	fr:dessert	he:קינוח	hi:मिठाई,डेज़र्ट	ja:デザート	ko:디저트,후식	pt:sobremesa	ru:десерт	tr:tatlı	ur:میٹھائی	zh:甜点,甜品
 c:desserts-sweets	Noun	ar:حلويات	de:Süßspeise	en:dessert	es:postre	fa:دسر	fr:dessert	he:קינוח	hi:मिठाई	ja:デザート	ko:디저트	pt:sobremesa	ru:десерт	tr:tatlı	ur:میٹھا	zh:甜点
 c:destiny	Noun	ar:قدر,مصير	de:Schicksal,Bestimmung	en:destiny	es:destino	fa:سرنوشت,تقدیر	fr:destin,destinée	he:גורל,ייעוד	hi:भाग्य,नियति	ja:運命	ko:운명	pt:destino	ru:судьба	tr:kader,yazgı	ur:قسمت,تقدیر	zh:命运
@@ -2401,6 +2412,7 @@ c:devaluation	Noun	ar:تخفيض قيمة العملة	de:Abwertung	en:devaluati
 c:developmental-psychology	Noun	ar:علم نفس النمو	de:Entwicklungspsychologie	en:developmental psychology	es:psicología del desarrollo	fa:روانشناسی رشد	fr:psychologie du développement	he:פסיכולוגיה התפתחותית	hi:विकास मनोविज्ञान	ja:発達心理学	ko:발달 심리학	pt:psicologia do desenvolvimento	ru:психология развития	tr:gelişim psikolojisi	ur:ترقیاتی نفسیات	zh:发展心理学
 c:deviance	Noun	ar:انحراف اجتماعي	de:Devianz	en:deviance	es:desviación	fa:کجروی	fr:déviance	he:סטייה חברתית	hi:विचलन	ja:逸脱	ko:일탈	pt:desvio	ru:девиантность	tr:sapkınlık	ur:سماجی انحراف	zh:越轨
 c:devil	Noun	ar:إبليس	de:Teufel	en:devil	es:diablo	fa:شیطان	fr:diable	he:שטן	hi:शैतान	ja:デビル	ko:악마	pt:diabo	ru:дьявол	tr:iblis	ur:ابلیس	zh:魔鬼
+c:devotion	Noun	ar:إخلاص	de:Hingabe	en:devotion	es:devoción	fa:ارادت	fr:dévotion	he:מסירות	hi:भक्ति	ja:献身	ko:헌신	pt:devoção	ru:преданность	tr:bağlılık	ur:عقیدت	zh:奉献
 c:dew	Noun	ar:ندى	de:Tau	en:dew	es:rocío	fa:شبنم	fr:rosée	he:טל	hi:ओस	ja:露	ko:이슬	pt:orvalho	ru:роса	tr:çiy	ur:شبنم	zh:露水
 c:dew-point	Noun	ar:نقطة الندى	de:Taupunkt	en:dew point	es:punto de rocío	fa:نقطه شبنم	fr:point de rosée	he:נקודת הטל	hi:ओसांक	ja:露点	ko:이슬점	pt:ponto de orvalho	ru:точка росы	tr:çiy noktası	ur:شبنم نقطہ	zh:露点
 c:dew-point-weather	Noun	ar:نقطة الندى	de:Taupunkt	en:dew point	es:punto de rocío	fa:نقطه شبنم	fr:point de rosée	he:נקודת הטל	hi:ओसांक	ja:露点	ko:이슬점	pt:ponto de orvalho	ru:точка росы	tr:çiy noktası	ur:شبنم نقطہ	zh:露点
@@ -2462,6 +2474,7 @@ c:director	Noun	ar:مخرج	de:Regisseur,Filmregisseur	en:director,film director
 c:director-role	Noun	ar:مخرج سينمائي	de:Regisseur	en:film director	es:director de cine	fa:کارگردان	fr:réalisateur	he:במאי	hi:निर्देशक	ja:映画監督	ko:영화 감독	pt:realizador	ru:кинорежиссёр	tr:yönetmen	ur:ہدایتکار	zh:导演
 c:dirham	Noun	ar:درهم	de:Dirham	en:dirham	es:dírham	fa:درهم	fr:dirham	he:דירהם	hi:दिरहम	ja:ディルハム	ko:디르함	pt:dirham	ru:дирхам	tr:dirhem	ur:درہم	zh:迪拉姆
 c:dirty	Adjective	ar:قذر,وسخ	de:schmutzig	en:dirty	es:sucio	fa:کثیف	fr:sale	he:מלוכלך	hi:गंदा	ja:汚い	ko:더러운	pt:sujo	ru:грязный	tr:kirli	ur:گندا	zh:脏
+c:disappointment	Noun	ar:خيبة أمل	de:Enttäuschung	en:disappointment	es:decepción	fa:دل‌زدگی	fr:déception	he:אכזבה	hi:निराशा	ja:失望	ko:실망	pt:desapontamento	ru:разочарование	tr:hayal kırıklığı feeling	ur:مایوسی شدید	zh:失望
 c:disaster	Noun	ar:كارثة	de:Katastrophe,Unglück	en:disaster	es:desastre	fa:فاجعه,بلا	fr:désastre	he:אסון	hi:आपदा	ja:災害	ko:재해,재난	pt:desastre	ru:бедствие	tr:felaket,afet	ur:آفت	zh:灾难
 c:discipline	Noun	ar:انضباط,تأديب	de:Disziplin	en:discipline	es:disciplina	fa:انضباط,نظم	fr:discipline	he:משמעת	hi:अनुशासन	ja:規律,訓練	ko:규율,훈련	pt:disciplina	ru:дисциплина	tr:disiplin	ur:نظم و ضبط,ڈسپلن	zh:纪律
 c:disco-dance	Noun	ar:رقص ديسكو	de:Disco-Tanz	en:disco dance	es:baile disco	fa:رقص دیسکو	fr:danse disco	he:ריקוד דיסקו	hi:डिस्को नृत्य	ja:ディスコダンス	ko:디스코 댄스	pt:dança disco	ru:диско танец	tr:disko dansı	ur:ڈسکو رقص	zh:迪斯科舞
@@ -2472,6 +2485,7 @@ c:discriminant	Noun	ar:مميز	de:Diskriminante	en:discriminant	es:discriminant
 c:discrimination	Noun	ar:تمييز اجتماعي	de:Diskriminierung	en:discrimination	es:discriminación	fa:تبعیض	fr:discrimination	he:אפליה	hi:भेदभाव	ja:差別	ko:차별	pt:discriminação	ru:дискриминация	tr:ayrımcılık	ur:امتیازی سلوک	zh:歧视
 c:discus-throw	Noun	ar:رمي القرص	de:Diskuswurf	en:discus throw	es:lanzamiento de disco	fa:پرتاب دیسک	fr:lancer du disque	he:הטלת דיסקוס	hi:चक्का फेंक	ja:円盤投げ	ko:원반던지기	pt:lançamento do disco	ru:метание диска	tr:disk atma	ur:چکی پھینک	zh:铁饼
 c:discuss	Verb	ar:ناقش	de:diskutieren,besprechen	en:discuss	es:discutir,debatir	fa:بحث کردن,گفتگو کردن	fr:discuter	he:לדון	hi:चर्चा करना	ja:討論する,議論する	ko:토론하다,논의하다	pt:discutir,debater	ru:обсуждать	tr:tartışmak,görüşmek	ur:بحث کرنا,گفتگو کرنا	zh:讨论
+c:disdain	Noun	ar:ازدراء	de:Geringschätzung	en:disdain	es:desdén	fa:خوارشمری	fr:dédain	he:זלזול	hi:घृणा	ja:侮蔑	ko:경시	pt:desdém	ru:пренебрежение	tr:hor görme	ur:حقارت نفرت	zh:鄙视
 c:disease	Noun	ar:داء,مرض	de:Krankheit,Erkrankung	en:disease	es:enfermedad,dolencia	fa:بیماری,مرض	fr:maladie	he:מחלה	hi:रोग,व्याधि	ja:病,疾患	ko:질환,병	pt:doença	ru:заболевание,болезнь	tr:hastalık,rahatsızlık	ur:بیماری,مرض	zh:疾病
 c:disease-health	Noun	ar:مرض صحي	de:Krankheit	en:disease	es:enfermedad	fa:بیماری	fr:maladie	he:מחלה	hi:बीमारी	ja:疾病	ko:질병	pt:doença	ru:болезнь	tr:hastalık	ur:بیماری	zh:疾病
 c:disgust	Noun	ar:اشمئزاز	de:Ekel	en:disgust	es:asco	fa:انزجار	fr:dégoût	he:גועל	hi:घृणा	ja:嫌悪	ko:혐오	pt:nojo	ru:отвращение	tr:iğrenme	ur:نفرت	zh:厌恶
@@ -2562,6 +2576,7 @@ c:dosimetry	Noun	ar:قياس الجرعة الإشعاعية	de:Dosimetrie	en:do
 c:double-bass	Noun	ar:كونترباص,الكمان الأجهر	de:Kontrabass	en:double bass,contrabass	es:contrabajo	fa:کنترباس	fr:contrebasse	he:קונטרבס	hi:डबल बास,कॉन्ट्राबास	ja:コントラバス,ダブルベース	ko:콘트라베이스,더블베이스	pt:contrabaixo	ru:контрабас	tr:kontrbas	ur:ڈبل باس	zh:低音提琴,倍大提琴
 c:double-blind	Adjective	ar:مزدوج التعمية	de:doppelblind	en:double-blind	es:doble ciego	fa:دو سوکور	fr:double aveugle	he:כפול עיוור	hi:द्विांध	ja:二重盲検	ko:이중 맹검	pt:duplo-cego	ru:двойное слепое	tr:çift kör	ur:دوہری انجانی	zh:双盲
 c:doubt	Verb	ar:شك	de:zweifeln	en:doubt	es:dudar	fa:شک کردن	fr:douter	he:לפקפק	hi:शक करना,संदेह करना	ja:疑う	ko:의심하다	pt:duvidar	ru:сомневаться	tr:şüphelenmek	ur:شک کرنا	zh:怀疑
+c:doubt-feeling	Noun	ar:شك	de:Zweifel	en:doubt	es:duda	fa:شک	fr:doute	he:ספק	hi:संदेह	ja:疑い	ko:의심	pt:dúvida	ru:сомнение	tr:şüphe	ur:شک	zh:怀疑
 c:dough	Noun	ar:عجين	de:Teig	en:dough	es:masa	fa:خمیر	fr:pâte	he:בצק	hi:आटा,गूँथा हुआ आटा	ja:生地	ko:반죽	pt:massa	ru:тесто	tr:hamur	ur:آٹا	zh:面团
 c:dove	Noun	ar:يمامة	de:Taube	en:dove	es:paloma	fa:قمری	fr:colombe	he:יונה	hi:फाख्ता	ja:鳩	ko:비둘기	pt:pomba	ru:голубка	tr:kumru	ur:فاختہ	zh:鸽
 c:down	Adverb	ar:تحت,أسفل	de:unten,runter	en:down	es:abajo	fa:پایین	fr:bas,en bas	he:למטה	hi:नीचे	ja:下	ko:아래,밑	pt:baixo,abaixo	ru:вниз	tr:aşağı	ur:نیچے	zh:下
@@ -2658,6 +2673,7 @@ c:dwarf-planet	Noun	ar:كوكب قزم	de:Zwergplanet	en:dwarf planet	es:planeta
 c:dynamic-range-audio	Noun	ar:النطاق الديناميكي	de:Dynamikbereich	en:dynamic range	es:rango dinámico	fa:دامنه دینامیکی	fr:plage dynamique	he:טווח דינמי	hi:गतिशील परास	ja:ダイナミックレンジ	ko:다이나믹 레인지	pt:alcance dinâmico	ru:динамический диапазон	tr:dinamik aralık	ur:متحرک حد	zh:动态范围
 c:dynamics	Noun	ar:ديناميكيات الصوت	de:Dynamik	en:dynamics	es:dinámica musical	fa:دینامیک موسیقی	fr:nuances	he:דינמיקה	hi:संगीत गतिकी	ja:強弱	ko:다이내믹	pt:dinâmica	ru:динамика	tr:dinamik	ur:آواز کی طاقت	zh:力度
 c:dynasty	Noun	ar:سلالة,أسرة حاكمة	de:Dynastie	en:dynasty	es:dinastía	fa:دودمان,سلسله	fr:dynastie	he:שושלת	hi:राजवंश	ja:王朝	ko:왕조	pt:dinastia	ru:династия	tr:hanedan	ur:خاندان شاہی,سلسلہ	zh:王朝,朝代
+c:eagerness	Noun	ar:شوق	de:Eifer	en:eagerness	es:entusiasmo	fa:اشتیاق	fr:empressement	he:להיטות	hi:उत्सुकता	ja:熱意	ko:열의	pt:empolgação	ru:рвение	tr:istek	ur:جوش	zh:热切
 c:eagle	Noun	ar:نسر,عقاب	de:Adler	en:eagle	es:águila	fa:عقاب	fr:aigle	he:נשר	hi:बाज़,चील	ja:鷲,ワシ	ko:독수리	pt:águia	ru:орёл	tr:kartal	ur:عقاب	zh:鹰
 c:ear	Noun	ar:أذن	de:Ohr	en:ear,ears	es:oreja,oído	fa:گوش	fr:oreille	he:אוזן	hi:कान	ja:耳	ko:귀	pt:orelha,ouvido	ru:ухо	tr:kulak	ur:کان	zh:耳,耳朵
 c:ear-cuff	Noun	ar:كليب الأذن	de:Ohrmanschette,Ear Cuff	en:ear cuff,ear clip	es:clip de oreja	fa:کلیپ گوش	fr:manchette d'oreille	he:אטב אוזן	hi:कान कफ	ja:イヤーカフ	ko:이어 커프	pt:clip de orelha	ru:кафф	tr:kulak klibi	ur:کان کلپ	zh:耳骨夹,耳扣
@@ -2743,6 +2759,7 @@ c:elasticity	Noun	ar:المرونة الاقتصادية	de:Elastizität	en:elas
 c:elasticity-econ	Noun	ar:مرونة السعر	de:Elastizität	en:economic elasticity	es:elasticidad	fa:کشش اقتصادی	fr:élasticité	he:גמישות	hi:लोच	ja:弾力性	ko:탄력성	pt:elasticidade	ru:эластичность	tr:esneklik	ur:لچک	zh:弹性
 c:elastography	Noun	ar:قياس المرونة	de:Elastographie	en:elastography	es:elastografía	fa:الاستوگرافی	fr:élastographie	he:אלסטוגרפיה	hi:इलास्टोग्राफी	ja:エラストグラフィー	ko:탄성 영상	pt:elastografia	ru:эластография	tr:elastografi	ur:لچک پیمائی	zh:弹性成像
 c:elastomer	Noun	ar:المطاط	de:Elastomer	en:elastomer	es:elastómero	fa:الاستومر	fr:élastomère	he:אלסטומר	hi:इलास्टोमर	ja:エラストマー	ko:엘라스토머	pt:elastômero	ru:эластомер	tr:elastomer	ur:لچکدار مواد	zh:弹性体
+c:elation	Noun	ar:بهجة	de:Hochstimmung	en:elation	es:júbilo	fa:شادمانی	fr:allégresse	he:רוממות רוח	hi:हर्ष	ja:有頂天	ko:의기양양	pt:júbilo	ru:восторг возбуждение	tr:neşe	ur:خوشی زبردست	zh:欢欣
 c:elbe	Noun	ar:الإلبه,نهر الإلبه	de:Elbe	en:Elbe,Elbe River	es:Elba,río Elba	fa:الب,رود الب	fr:Elbe	he:אלבה,נהר האלבה	hi:एल्बे नदी	ja:エルベ川	ko:엘베강	pt:Elba,rio Elba	ru:Эльба	tr:Elbe,Elbe Nehri	ur:دریائے ایلبے	zh:易北河
 c:elbe-river	Noun	ar:نهر الإلبه	de:Elbe	en:Elbe river	es:río Elba	fa:رود البه	fr:Elbe	he:נהר האלבה	hi:एल्बे नदी	ja:エルベ川	ko:엘베강	pt:rio Elba	ru:река Эльба	tr:Elbe Nehri	ur:دریائے ایلبے	zh:易北河
 c:elbow	Noun	ar:مرفق,كوع	de:Ellbogen,Ellenbogen	en:elbow	es:codo	fa:آرنج	fr:coude	he:מרפק	hi:कोहनी	ja:肘	ko:팔꿈치	pt:cotovelo	ru:локоть	tr:dirsek	ur:کہنی	zh:肘,肘部
@@ -2795,6 +2812,7 @@ c:emmer	Noun	ar:قمح الايمر	de:Emmer	en:emmer wheat	es:trigo farro	fa:ا
 c:emotion	Noun	ar:عاطفة	de:Emotion	en:emotion	es:emoción	fa:احساس	fr:émotion	he:רגש	hi:भावना	ja:感情	ko:감정	pt:emoção	ru:эмоция	tr:duygu	ur:جذبہ	zh:情感
 c:emotion-psych	Noun	ar:عاطفة نفسية	de:Emotion	en:emotion	es:emoción	fa:احساس هیجان	fr:émotion	he:רגש	hi:भावना	ja:感情	ko:정서	pt:emoção	ru:эмоция	tr:duygu	ur:جذبہ	zh:情感
 c:emotion-regulation	Noun	ar:تنظيم المشاعر	de:Emotionsregulation	en:emotion regulation	es:regulación emocional	fa:تنظیم هیجان	fr:régulation émotionnelle	he:ויסות רגשי	hi:भावना नियमन	ja:感情調節	ko:감정 조절	pt:regulação emocional	ru:регуляция эмоций	tr:duygu düzenleme	ur:جذبات کا ضبط	zh:情绪调节
+c:emotions-feelings	Noun	ar:عواطف	de:Gefühle	en:emotions	es:emociones	fa:احساسات	fr:émotions	he:רגשות	hi:भावनाएं	ja:感情	ko:감정	pt:emoções	ru:эмоции	tr:duygular	ur:جذبات	zh:情感
 c:empathy	Noun	ar:تعاطف	de:Empathie,Einfühlungsvermögen	en:empathy	es:empatía	fa:همدلی	fr:empathie	he:אמפתיה	hi:सहानुभूति,समानुभूति	ja:共感,感情移入	ko:공감,감정이입	pt:empatia	ru:эмпатия,сопереживание	tr:empati	ur:ہمدردی	zh:同理心,共情
 c:empennage	Noun	ar:مؤخرة الطائرة	de:Leitwerk	en:empennage	es:empenaje	fa:دم هواپیما	fr:empennage	he:זנב המטוס	hi:एम्पेनेज	ja:尾翼	ko:꼬리날개	pt:empenagem	ru:хвостовое оперение	tr:kuyruk grubu	ur:دم پر	zh:尾翼
 c:emperor	Noun	ar:إمبراطور	de:Kaiser,Imperator	en:emperor	es:emperador	fa:امپراتور	fr:empereur	he:קיסר	hi:सम्राट	ja:皇帝,天皇	ko:황제	pt:imperador	ru:император	tr:imparator	ur:شہنشاہ,بادشاہ اعظم	zh:皇帝
@@ -2951,6 +2969,7 @@ c:euler-totient	Noun	ar:دالة اويلر للاعداد الاولية الن
 c:euphemism	Noun	ar:التلطف اللغوي	de:Euphemismus	en:euphemism	es:eufemismo	fa:کنایه	fr:euphémisme	he:לשון נקייה	hi:व्यंजना	ja:婉曲表現	ko:완곡어	pt:eufemismo	ru:эвфемизм	tr:örtmece	ur:ملائم الفاظ	zh:委婉语
 c:euphonium	Noun	ar:يوفونيوم	de:Euphonium	en:euphonium	es:eufonio	fa:یوفونیوم	fr:euphonium	he:אאופוניום	hi:यूफोनियम	ja:ユーフォニアム	ko:유포니엄	pt:euphonium	ru:эуфониум	tr:öfonyum	ur:یوفونیم	zh:上低音号
 c:euphoria	Noun	ar:نشوة,ابتهاج	de:Euphorie	en:euphoria	es:euforia	fa:سرخوشی	fr:euphorie	he:אופוריה	hi:उल्लास,आनंदातिरेक	ja:多幸感,ユーフォリア	ko:행복감,유포리아	pt:euforia	ru:эйфория	tr:öfori,coşku	ur:کیف,سرشاری	zh:欣快感,欣快
+c:euphoria-state	Noun	ar:نشوة سعادة	de:Euphorie Zustand	en:euphoria state	es:euforia	fa:شیدایی	fr:euphorie	he:אופוריה	hi:उत्साह	ja:幸福感	ko:행복감	pt:euforia	ru:эйфория	tr:öfori	ur:خوشی شدید	zh:欣快感
 c:euphrates	Noun	ar:الفرات,نهر الفرات	de:Euphrat	en:Euphrates,Euphrates River	es:Éufrates,río Éufrates	fa:فرات,رود فرات	fr:Euphrate	he:פרת,נהר הפרת	hi:यूफ्रेट्स नदी,फुरात	ja:ユーフラテス川	ko:유프라테스강	pt:Eufrates,rio Eufrates	ru:Евфрат	tr:Fırat,Fırat Nehri	ur:دریائے فرات,فرات	zh:幼发拉底河
 c:euphrates-river	Noun	ar:نهر الفرات	de:Euphrat	en:Euphrates river	es:río Éufrates	fa:رود فرات	fr:Euphrate	he:נהר פרת	hi:फ़रात नदी	ja:ユーフラテス川	ko:유프라테스강	pt:rio Eufrates	ru:река Евфрат	tr:Fırat Nehri	ur:دریائے فرات	zh:幼发拉底河
 c:euro	Noun	ar:يورو	de:Euro	en:euro	es:euro	fa:یورو	fr:euro	he:יורו	hi:यूरो	ja:ユーロ	ko:유로	pt:euro	ru:евро	tr:avro,euro	ur:یورو	zh:欧元
@@ -2986,6 +3005,7 @@ c:executive-branch	Noun	ar:السلطة التنفيذية	de:Exekutive	en:execu
 c:executive-function	Noun	ar:الوظيفة التنفيذية	de:Exekutivfunktionen	en:executive function	es:función ejecutiva	fa:کارکردهای اجرایی	fr:fonctions exécutives	he:תפקוד מנהלי	hi:कार्यकारी कार्य	ja:実行機能	ko:실행 기능	pt:função executiva	ru:управляющие функции	tr:yürütücü işlev	ur:عملی صلاحیت	zh:执行功能
 c:exercise	Noun	ar:تمرين,رياضة	de:Übung,Sport	en:exercise	es:ejercicio	fa:ورزش,تمرین	fr:exercice	he:תרגיל,אימון	hi:व्यायाम	ja:運動	ko:운동	pt:exercício	ru:упражнение	tr:egzersiz	ur:ورزش	zh:运动,锻炼
 c:exergy	Noun	ar:الإكسرجي	de:Exergie	en:exergy	es:exergía	fa:اکسرژی	fr:exergie	he:אקסרגיה	hi:एक्सर्जी	ja:エクセルギー	ko:엑서지	pt:exergia	ru:эксергия	tr:ekserji	ur:توانائی کارایی	zh:㶲
+c:exhilaration	Noun	ar:فرح جامح	de:Hochgefühl	en:exhilaration	es:regocijo	fa:شور	fr:exaltation	he:התרוממות רוח	hi:उत्तेजना	ja:爽快感	ko:기쁨 상쾌	pt:exaltação	ru:возбуждение	tr:heyecan	ur:شدید مسرت	zh:兴奋
 c:existence	Noun	ar:وجود	de:Existenz,Dasein	en:existence	es:existencia	fa:وجود,هستی	fr:existence	he:קיום	hi:अस्तित्व	ja:存在	ko:존재	pt:existência	ru:существование	tr:varoluş,var olma	ur:وجود	zh:存在
 c:existentialism	Noun	ar:الوجودية	de:Existenzialismus,Existentialismus	en:existentialism	es:existencialismo	fa:اگزیستانسیالیسم	fr:existentialisme	he:אקזיסטנציאליזם	hi:अस्तित्ववाद	ja:実存主義	ko:실존주의	pt:existencialismo	ru:экзистенциализм	tr:varoluşçuluk,egzistansiyalizm	ur:وجودیت	zh:存在主义
 c:existentialism-phil	Noun	ar:الوجودية	de:Existenzialismus	en:existentialism	es:existencialismo	fa:اگزیستانسیالیسم	fr:existentialisme	he:אקזיסטנציאליזם	hi:अस्तित्ववाद	ja:実存主義	ko:실존주의	pt:existencialismo	ru:экзистенциализм	tr:varoluşçuluk	ur:وجودیت	zh:存在主义
@@ -3059,6 +3079,7 @@ c:farm	Noun	ar:مزرعة	de:Bauernhof,Farm	en:farm	es:granja,finca	fa:مزرع�
 c:farmer	Noun	ar:مزارع,فلاح	de:Landwirt,Bauer	en:farmer	es:agricultor,granjero	fa:کشاورز,دهقان	fr:agriculteur,fermier	he:חקלאי,איכר	hi:किसान	ja:農家,農夫	ko:농부	pt:agricultor,fazendeiro	ru:фермер,крестьянин	tr:çiftçi	ur:کسان,زمیندار	zh:农民,农夫
 c:farro	Noun	ar:فارو	de:Farro	en:farro	es:farro	fa:فارو	fr:farro	he:פארו	hi:फारो	ja:ファッロ	ko:파로	pt:farro	ru:фарро	tr:farro	ur:فارو	zh:法罗小麦
 c:farro-grain	Noun	ar:فارو	de:Farro	en:farro	es:farro	fa:فارو	fr:farro	he:פארו	hi:फारो	ja:ファロ	ko:파로	pt:farro	ru:фарро	tr:farro	ur:فارو	zh:法罗
+c:fascination	Noun	ar:افتتان	de:Faszination	en:fascination	es:fascinación	fa:شیفتگی	fr:fascination	he:קסם	hi:मोहना	ja:魅惑	ko:매혹	pt:fascínio	ru:очарование	tr:hayranlık büyülenme	ur:کشش	zh:迷恋
 c:fascism	Noun	ar:فاشية	de:Faschismus	en:fascism	es:fascismo	fa:فاشیسم	fr:fascisme	he:פשיזם	hi:फासीवाद	ja:ファシズム	ko:파시즘	pt:fascismo	ru:фашизм	tr:faşizm	ur:فسطائیت	zh:法西斯主义
 c:fashion-style	Noun	ar:أزياء	de:Mode	en:fashion	es:moda	fa:مد	fr:mode	he:אופנה	hi:फैशन	ja:ファッション	ko:패션	pt:moda	ru:мода	tr:moda	ur:فیشن	zh:时尚
 c:fast	Adjective	ar:سريع	de:schnell	en:fast,quick	es:rápido	fa:سریع,تند	fr:rapide,vite	he:מהיר	hi:तेज़	ja:速い,早い	ko:빠른	pt:rápido	ru:быстрый	tr:hızlı	ur:تیز	zh:快
@@ -3069,6 +3090,7 @@ c:fate	Noun	ar:قدر,مصير	de:Schicksal	en:fate	es:destino,sino	fa:تقدی�
 c:fate-map	Noun	ar:خريطة المصير	de:Schicksalskarte	en:fate map	es:mapa de destino	fa:نقشه سرنوشت	fr:carte de destin	he:מפת גורל	hi:भाग्य मानचित्र	ja:予定運命図	ko:운명 지도	pt:mapa de destino	ru:карта судеб	tr:kaderi haritası	ur:مقدر نقشہ	zh:命运图
 c:father	Noun	ar:أب,والد	de:Vater	en:father,dad	es:padre,papá	fa:پدر	fr:père,papa	he:אב,אבא	hi:पिता,बाप	ja:父,お父さん	ko:아버지,아빠	pt:pai	ru:отец,папа	tr:baba,peder	ur:باپ,والد	zh:父亲,爸爸
 c:fathers-day	Noun	ar:عيد الأب	de:Vatertag	en:father's day,fathers day	es:día del padre	fa:روز پدر	fr:fête des pères	he:יום האב	hi:पितृ दिवस	ja:父の日	ko:아버지의 날	pt:dia dos pais	ru:день отца	tr:babalar günü	ur:یوم پدر	zh:父亲节
+c:fatigue-emotion	Noun	ar:إرهاق نفسي	de:Ermüdung	en:emotional fatigue	es:fatiga emocional	fa:خستگی عاطفی	fr:fatigue émotionnelle	he:עייפות רגשית	hi:भावनात्मक थकान	ja:感情的疲労	ko:감정적 피로	pt:fadiga emocional	ru:эмоциональная усталость	tr:duygusal yorgunluk	ur:جذباتی تھکاوٹ	zh:情绪疲劳
 c:fatigue-mat	Noun	ar:اجهاد المواد	de:Materialermüdung	en:material fatigue	es:fatiga de materiales	fa:خستگی مواد	fr:fatigue des matériaux	he:עייפות חומר	hi:पदार्थ थकान	ja:材料疲労	ko:재료 피로	pt:fadiga de materiais	ru:усталость материала	tr:malzeme yorgunluğu	ur:مواد تھکان	zh:材料疲劳
 c:fatigue-material	Noun	ar:الإجهاد المتكرر	de:Materialermüdung	en:material fatigue	es:fatiga de materiales	fa:خستگی مواد	fr:fatigue des matériaux	he:עייפות חומר	hi:सामग्री थकान	ja:材料疲労	ko:재료 피로	pt:fadiga de materiais	ru:усталость материала	tr:malzeme yorulması	ur:مادے کی تھکن	zh:材料疲劳
 c:fatigue-struct	Noun	ar:إجهاد الخستة الهيكلية	de:Materialermüdung	en:structural fatigue	es:fatiga estructural	fa:خستگی سازه‌ای	fr:fatigue structurelle	he:עייפות מבנית	hi:संरचनात्मक थकान	ja:疲労破壊	ko:구조 피로	pt:fadiga estrutural	ru:усталость конструкции	tr:yapısal yorulma	ur:ساختاری تھکاوٹ	zh:结构疲劳
@@ -3263,6 +3285,7 @@ c:folk-dance	Noun	ar:رقصة شعبية,رقص شعبي	de:Volkstanz	en:folk da
 c:folk-dance-style	Noun	ar:رقص شعبي	de:Volkstanz	en:folk dance	es:danza folclórica	fa:رقص فولکلور	fr:danse folklorique	he:ריקוד עם	hi:लोक नृत्य	ja:民族舞踊	ko:민속 무용	pt:dança folclórica	ru:народный танец	tr:halk dansı	ur:لوک رقص	zh:民俗舞蹈
 c:folklore	Noun	ar:فولكلور,فنون شعبية	de:Folklore,Volkskunde	en:folklore	es:folclore,folklore	fa:فولکلور,فرهنگ عامه	fr:folklore	he:פולקלור	hi:लोककथा,लोक-साहित्य	ja:民俗,フォークロア	ko:민속,포크로어	pt:folclore	ru:фольклор	tr:folklor,halk bilimi	ur:لوک کہانی,لوک روایت	zh:民俗,民间传说
 c:folkway	Noun	ar:عرف شعبي	de:Volksbrauch	en:folkway	es:costumbre popular	fa:آداب عامه	fr:coutume populaire	he:מנהג עממי	hi:लोक रीति	ja:民間慣習	ko:민속 관습	pt:costume popular	ru:народный обычай	tr:halk geleneği	ur:عوامی رسم	zh:民俗
+c:fondness	Noun	ar:محبة	de:Vorliebe	en:fondness	es:cariño	fa:علاقه	fr:tendresse	he:חיבה עדינה	hi:लगाव	ja:愛情 優しさ	ko:애정 호감	pt:carinho	ru:привязанность ласка	tr:sevgi hoşlanma	ur:پیار	zh:喜爱
 c:food	Noun	ar:طعام	de:Essen,Nahrung	en:food	es:comida	fa:غذا	fr:nourriture,aliment	he:אוכל	hi:भोजन,खाना	ja:食べ物	ko:음식	pt:comida,alimento	ru:еда,пища	tr:yemek,gıda	ur:کھانا	zh:食物
 c:food-additive	Noun	ar:المضاف الغذائي	de:Lebensmittelzusatzstoff	en:food additive	es:aditivo alimentario	fa:افزودنی غذایی	fr:additif alimentaire	he:תוסף מזון	hi:खाद्य योज्य	ja:食品添加物	ko:식품 첨가물	pt:aditivo alimentar	ru:пищевая добавка	tr:gıda katkı maddesi	ur:غذائی اضافی	zh:食品添加剂
 c:food-allergen	Noun	ar:مسبب الحساسية الغذائية	de:Lebensmittelallergen	en:food allergen	es:alérgeno alimentario	fa:آلرژن غذایی	fr:allergène alimentaire	he:אלרגן מזון	hi:खाद्य एलर्जन	ja:食物アレルゲン	ko:식품 알레르겐	pt:alérgeno alimentar	ru:пищевой аллерген	tr:gıda alerjeni	ur:غذائی الرجن	zh:食物过敏原
@@ -3295,6 +3318,7 @@ c:forge	Noun	ar:مصهر,فرن الحدادة	de:Schmiede,Esse	en:forge	es:frag
 c:forget	Verb	ar:نسي	de:vergessen	en:forget	es:olvidar	fa:فراموش کردن	fr:oublier	he:לשכוח	hi:भूलना	ja:忘れる	ko:잊다	pt:esquecer	ru:забывать,забыть	tr:unutmak	ur:بھولنا	zh:忘,忘记
 c:forging	Noun	ar:الطرق	de:Schmieden	en:forging	es:forja	fa:آهنگری	fr:forgeage	he:חישול	hi:फोर्जिंग	ja:鍛造	ko:단조	pt:forjamento	ru:ковка	tr:dövme	ur:پٹائی	zh:锻造
 c:forgiveness	Noun	ar:مغفرة,عفو	de:Vergebung	en:forgiveness	es:perdón	fa:بخشش,عفو	fr:pardon	he:סליחה,מחילה	hi:क्षमा	ja:許し	ko:용서	pt:perdão	ru:прощение	tr:af,bağışlama	ur:معافی,بخشش	zh:宽恕,原谅
+c:forgiveness-feeling	Noun	ar:غفران	de:Vergebung	en:forgiveness	es:perdón	fa:بخشش	fr:pardon	he:סליחה	hi:क्षमा	ja:許し	ko:용서	pt:perdão	ru:прощение	tr:affetme	ur:معافی	zh:宽恕
 c:forint	Noun	ar:فورنت	de:Forint	en:forint	es:forinto,forint	fa:فورینت	fr:forint	he:פורינט	hi:फ़ोरिन्त	ja:フォリント	ko:포린트	pt:forint,florim	ru:форинт	tr:forint	ur:فورنٹ	zh:福林
 c:fork	Noun	ar:شوكة	de:Gabel	en:fork	es:tenedor	fa:چنگال	fr:fourchette	he:מזלג	hi:कांटा	ja:フォーク	ko:포크	pt:garfo	ru:вилка	tr:çatal	ur:کانٹا	zh:叉子
 c:form	Noun	ar:شكل,صورة	de:Form,Gestalt	en:form,shape	es:forma	fa:شکل,صورت	fr:forme	he:צורה	hi:रूप,आकार	ja:形,形態	ko:형태,모양	pt:forma	ru:форма	tr:şekil,biçim,form	ur:شکل,صورت	zh:形式,形状
@@ -3372,6 +3396,7 @@ c:frost	Noun	ar:صقيع	de:Frost,Raureif	en:frost	es:escarcha	fa:یخ‌بند�
 c:frost-point	Noun	ar:نقطة الصقيع	de:Frostpunkt	en:frost point	es:punto de escarcha	fa:نقطه یخبندان	fr:point de givre	he:נקודת קיפאון	hi:पाला बिंदु	ja:霜点	ko:서리점	pt:ponto de geada	ru:точка инея	tr:kırağı noktası	ur:پالہ نقطہ	zh:霜点
 c:fruit	Noun	ar:فاكهة,ثمرة	de:Frucht,Obst	en:fruit	es:fruta	fa:میوه	fr:fruit	he:פרי	hi:फल	ja:果物	ko:과일	pt:fruta	ru:фрукт,плод	tr:meyve	ur:پھل	zh:水果,果
 c:fruits-varieties	Noun	ar:أصناف فواكه	de:Obstsorten	en:fruit varieties	es:variedades de frutas	fa:انواع میوه	fr:variétés de fruits	he:זני פירות	hi:फलों की किस्में	ja:果物の品種	ko:과일 품종	pt:variedades de frutas	ru:сорта фруктов	tr:meyve çeşitleri	ur:پھلوں کی اقسام	zh:水果品种
+c:frustration	Noun	ar:إحباط	de:Frustration	en:frustration	es:frustración	fa:ناکامی	fr:frustration	he:תסכול	hi:हताशा	ja:欲求不満	ko:좌절	pt:frustração	ru:разочарование	tr:hayal kırıklığı	ur:مایوسی	zh:沮丧
 c:fry	Verb	ar:قلى,يقلي	de:braten,frittieren	en:fry	es:freír	fa:سرخ کردن	fr:frire	he:לטגן	hi:तलना	ja:揚げる,炒める	ko:튀기다,부치다	pt:fritar	ru:жарить	tr:kızartmak	ur:تلنا	zh:煎,炸
 c:fry-cook	Noun	ar:قلي	de:Braten Fett	en:frying	es:freír	fa:سرخ کردن	fr:friture	he:טיגון	hi:तलना	ja:揚げる	ko:튀기기	pt:fritar	ru:жарение	tr:kızartma yağlı	ur:تلنا	zh:油炸
 c:ftp	Noun	ar:بروتوكول نقل الملفات	de:FTP	en:FTP	es:FTP	fa:FTP	fr:FTP	he:FTP	hi:एफटीपी	ja:FTP	ko:FTP	pt:FTP	ru:FTP	tr:FTP	ur:ایف ٹی پی	zh:文件传输协议
@@ -3548,6 +3573,7 @@ c:ghee-dairy	Noun	ar:سمن	de:Ghee	en:ghee	es:ghee	fa:روغن حیوانی	fr:
 c:ghost	Noun	ar:شبح	de:Geist	en:ghost	es:fantasma	fa:روح	fr:fantôme	he:רוח רפאים	hi:भूत	ja:幽霊	ko:유령	pt:fantasma	ru:призрак	tr:hayalet	ur:بھوت	zh:鬼
 c:ghurid-dynasty	Noun	ar:السلالة الغورية	de:Ghuriden	en:Ghurid dynasty	es:dinastía gúrida	fa:غوریان	fr:dynastie ghouride	he:שושלת הע'ורים	hi:ग़ोर वंश	ja:ゴール朝	ko:구르 왕조	pt:dinastia Gúrida	ru:династия Гуридов	tr:Gurlular	ur:غوری خاندان	zh:廓尔王朝
 c:gibbs	Noun	ar:طاقة جيبس الحرة	de:Gibbs-Energie	en:Gibbs free energy	es:energía libre de Gibbs	fa:انرژی آزاد گیبس	fr:énergie libre de Gibbs	he:אנרגיית גיבס	hi:गिब्स मुक्त ऊर्जा	ja:ギブズ自由エネルギー	ko:깁스 자유 에너지	pt:energia livre de Gibbs	ru:энергия Гиббса	tr:Gibbs serbest enerjisi	ur:گبز آزاد توانائی	zh:吉布斯自由能
+c:giddiness	Noun	ar:دوار من الفرح	de:Schwindelgefühl	en:giddiness	es:atolondramiento	fa:شادی سبک‌سر	fr:étourdissement	he:סחרחורת רוח	hi:चक्कर आना खुशी	ja:浮かれ	ko:들뜸	pt:atordoamento	ru:головокружение	tr:başı dönme neşeli	ur:بے ہودہ خوشی	zh:眩晕
 c:gift	Noun	ar:هدية,عطية	de:Geschenk,Gabe	en:gift,present	es:regalo,obsequio	fa:هدیه,کادو	fr:cadeau,présent	he:מתנה	hi:उपहार,तोहफ़ा	ja:贈り物,ギフト	ko:선물	pt:presente,dádiva	ru:подарок	tr:hediye	ur:تحفہ,ہدیہ	zh:礼物,礼品
 c:gila-monster	Noun	ar:وحش خيلا	de:Gilaechse	en:Gila monster	es:monstruo de Gila	fa:مانستر گیلا	fr:monstre de Gila	he:גילה-מונסטר	hi:गिला मॉन्स्टर	ja:ドクトカゲ	ko:힐라몬스터	pt:monstro-de-gila	ru:ядозуб	tr:gila canavarı	ur:گیلا مانسٹر	zh:希拉毒蜥
 c:gilded-age	Noun	ar:العصر المذهب	de:Gilded Age	en:Gilded Age	es:era dorada	fa:دوره طلایی آمریکا	fr:âge doré	he:תקופת הזהב	hi:स्वर्ण युग	ja:金ぴか時代	ko:도금 시대	pt:era dourada	ru:позолоченный век	tr:altın çağ ABD	ur:سنہرا دور	zh:镀金时代
@@ -3569,6 +3595,7 @@ c:glass	Noun	ar:زجاج	de:Glas	en:glass	es:vidrio,cristal	fa:شیشه	fr:verre
 c:glass-frog	Noun	ar:ضفدع زجاجي	de:Glasfrosch	en:glass frog	es:rana de cristal	fa:قورباغه شیشه ای	fr:grenouille de verre	he:צפרדע זכוכית	hi:काँच मेंढक	ja:ガラスガエル	ko:유리개구리	pt:rã de vidro	ru:стеклянная лягушка	tr:cam kurbağa	ur:شیشے کا مینڈک	zh:玻璃蛙
 c:glassblower	Noun	ar:نافخ زجاج,صانع الزجاج	de:Glasbläser	en:glassblower	es:soplador de vidrio	fa:شیشه‌گر	fr:souffleur de verre	he:מנפח זכוכית	hi:कांच का कारीगर,कांच शिल्पी	ja:ガラス吹き職人	ko:유리 부는 사람,유리 공예가	pt:soprador de vidro	ru:стеклодув	tr:cam üfleyicisi,cam ustası	ur:شیشہ ساز	zh:玻璃工,吹玻璃匠
 c:glassware-art	Noun	ar:فن الزجاج	de:Glaskunst	en:glass art	es:arte del vidrio	fa:هنر شیشه	fr:art verrier	he:אמנות הזכוכית	hi:कांच कला	ja:ガラス工芸	ko:유리 공예	pt:arte em vidro	ru:художественное стекло	tr:cam sanatı	ur:شیشہ کا فن	zh:玻璃艺术
+c:glee	Noun	ar:ابتهاج	de:Fröhlichkeit	en:glee	es:alegría	fa:شادی	fr:allégresse joie	he:שמחה	hi:खुशी बड़ी	ja:歓喜	ko:기쁨 환희	pt:alegria	ru:веселье ликование	tr:sevinç	ur:خوشی بڑی	zh:欢乐
 c:glial	Adjective	ar:خلية دبقية	de:glial	en:glial	es:glial	fa:گلیال	fr:glial	he:גליאלי	hi:ग्लियल	ja:グリア	ko:신경교의	pt:glial	ru:глиальный	tr:glial	ur:گلیائی	zh:神经胶质
 c:glide	Verb	ar:انزلق,حلق دون رفرفة	de:gleiten	en:glide	es:planear,deslizarse	fa:سر خوردن,پرواز بی بال زدن	fr:planer,glisser	he:לדאות,להחליק	hi:सरकना,विमान चलाना	ja:滑空する	ko:활공하다	pt:planar,deslizar	ru:скользить,планировать	tr:süzülmek	ur:نرمی سے سرکنا	zh:滑翔
 c:global-justice	Noun	ar:العدالة العالمية	de:globale Gerechtigkeit	en:global justice	es:justicia global	fa:عدالت جهانی	fr:justice mondiale	he:צדק גלובלי	hi:वैश्विक न्याय	ja:グローバル正義	ko:세계 정의	pt:justiça global	ru:глобальная справедливость	tr:küresel adalet	ur:عالمی انصاف	zh:全球正义
@@ -3577,6 +3604,7 @@ c:global-warming-env	Noun	ar:الاحتباس الحراري	de:globale Erwärmu
 c:globalization	Noun	ar:عولمة	de:Globalisierung	en:globalization	es:globalización	fa:جهانی‌سازی	fr:mondialisation	he:גלובליזציה	hi:वैश्वीकरण	ja:グローバル化	ko:세계화	pt:globalização	ru:глобализация	tr:küreselleşme	ur:گلوبلائزیشن	zh:全球化
 c:globe	Noun	ar:كرة أرضية	de:Globus	en:globe	es:globo,globo terráqueo	fa:کره زمین,گوی	fr:globe	he:גלובוס	hi:ग्लोब,भूगोल	ja:地球儀	ko:지구본,구	pt:globo	ru:глобус	tr:küre	ur:گلوب,کرۂ ارض	zh:地球仪
 c:glockenspiel	Noun	ar:غلوكنشبيل	de:Glockenspiel	en:glockenspiel	es:carillón	fa:گلوکن اشپیل	fr:glockenspiel	he:גלוקנשפיל	hi:ग्लोकेंस्पील	ja:グロッケンシュピール	ko:글로켄슈필	pt:glockenspiel	ru:глокеншпиль	tr:glockenspiel	ur:گلوکن شپیل	zh:钟琴
+c:gloom	Noun	ar:كآبة	de:Düsterkeit	en:gloom	es:melancolía profunda	fa:غمگینی	fr:morosité	he:עגמומיות	hi:उदासी	ja:憂うつ	ko:우울	pt:melancolia	ru:уныние	tr:kasvet	ur:ماتم	zh:忧郁
 c:gloss	Noun	ar:شرح لغوي	de:Glosse	en:gloss	es:glosa	fa:توضیح	fr:glose	he:גלוסה	hi:व्याख्या	ja:注釈	ko:주석	pt:glosa	ru:глосса	tr:açıklama	ur:لغوی تشریح	zh:注释
 c:glossy	Adjective	ar:لامع,مصقول	de:glänzend,hochglanz	en:glossy	es:lustroso,brillante	fa:براق	fr:brillant,lustré	he:מבריק	hi:चमकदार	ja:つやつやした,光沢のある	ko:광택이 나는	pt:lustroso,brilhante	ru:глянцевый	tr:parlak,cilalı	ur:چمک دار	zh:光亮,有光泽
 c:glove	Noun	ar:قفاز	de:Handschuh	en:glove	es:guante	fa:دستکش	fr:gant	he:כפפה	hi:दस्ताना	ja:手袋	ko:장갑	pt:luva	ru:перчатка	tr:eldiven	ur:دستانہ	zh:手套
@@ -3692,6 +3720,7 @@ c:greenhouse-gas	Noun	ar:غاز الاحتباس الحراري	de:Treibhausgas	
 c:greenhouse-structure	Noun	ar:بيت زجاجي	de:Gewächshaus	en:greenhouse	es:invernadero	fa:گلخانه	fr:serre	he:חממה	hi:ग्रीनहाउस	ja:温室	ko:온실	pt:estufa	ru:теплица	tr:sera	ur:گرین ہاؤس	zh:温室
 c:grenade	Noun	ar:قنبلة يدوية	de:Granate,Handgranate	en:grenade	es:granada	fa:نارنجک	fr:grenade	he:רימון	hi:हथगोला	ja:手榴弾	ko:수류탄	pt:granada	ru:граната	tr:el bombası	ur:دستی بم	zh:手榴弹
 c:grid	Noun	ar:شبكة	de:Gitter,Raster	en:grid	es:cuadrícula,rejilla	fa:شبکه,گرید	fr:grille	he:רשת	hi:जालक,ग्रिड	ja:格子,グリッド	ko:격자,그리드	pt:grade,grelha	ru:сетка	tr:ızgara,kafes	ur:جالی	zh:网格,格子
+c:grief	Noun	ar:حزن عميق	de:Trauer	en:grief	es:duelo	fa:اندوه	fr:chagrin	he:אבל	hi:शोक	ja:悲嘆	ko:비탄	pt:luto	ru:горе	tr:keder	ur:غم	zh:悲痛
 c:griffin	Noun	ar:جريفون	de:Greif	en:griffin,gryphon	es:grifo	fa:گریفین	fr:griffon	he:גריפון	hi:ग्रिफिन	ja:グリフォン	ko:그리핀	pt:grifo	ru:грифон	tr:grifon	ur:گریفن	zh:狮鹫
 c:grill	Verb	ar:شوى على الشواية	de:grillen	en:grill	es:asar a la parrilla	fa:کباب کردن	fr:griller	he:לצלות על גריל	hi:ग्रिल करना	ja:グリルする	ko:그릴에 굽다	pt:grelhar	ru:жарить на гриле	tr:ızgara yapmak	ur:گرل کرنا	zh:烧烤
 c:grill-cook	Noun	ar:شواء	de:Grillen	en:grilling	es:asar a la parrilla	fa:کباب کردن	fr:grillade	he:צלייה על גריל	hi:ग्रिल करना	ja:グリル	ko:그릴	pt:grelhar	ru:жарка на гриле	tr:ızgara	ur:گرل	zh:烧烤
@@ -3832,6 +3861,7 @@ c:hashing	Noun	ar:تجزئة البيانات	de:Hashfunktion	en:hashing	es:hash
 c:hasten	Verb	ar:أسرع	de:eilen,beschleunigen	en:hasten	es:apresurar	fa:تسریع کردن,شتاباندن	fr:hâter,se hâter	he:להחיש	hi:शीघ्रता करना	ja:急がせる,急ぐ	ko:서두르게 하다	pt:apressar-se	ru:спешить	tr:acele ettirmek	ur:تیز تر کرنا	zh:催促,加速
 c:hat	Noun	ar:قبعة	de:Hut	en:hat	es:sombrero	fa:کلاه	fr:chapeau	he:כובע	hi:टोपी	ja:帽子	ko:모자	pt:chapéu	ru:шляпа	tr:şapka	ur:ٹوپی	zh:帽子
 c:hate	Verb	ar:كره	de:hassen	en:hate	es:odiar	fa:متنفر بودن	fr:haïr,détester	he:לשנוא	hi:नफ़रत करना	ja:憎む,嫌う	ko:미워하다,싫어하다	pt:odiar	ru:ненавидеть	tr:nefret etmek	ur:نفرت کرنا	zh:恨,讨厌
+c:hate-emotion	Noun	ar:كراهية	de:Hass	en:hate	es:odio	fa:نفرت	fr:haine	he:שנאה	hi:नफ़रत	ja:憎しみ	ko:증오	pt:ódio	ru:ненависть	tr:nefret	ur:نفرت	zh:恨
 c:hatshepsut	Noun	ar:حتشبسوت	de:Hatschepsut	en:Hatshepsut	es:Hatshepsut	fa:حتشپسوت	fr:Hatchepsout	he:חתשפסות	hi:हत्शेप्सुत	ja:ハトシェプスト	ko:하트셉수트	pt:Hatshepsut	ru:Хатшепсут	tr:Hatşepsut	ur:حتشپسوت	zh:哈特谢普苏特
 c:hausdorff-space	Noun	ar:الفضاء الهاوسدورفي	de:Hausdorff-Raum	en:Hausdorff space	es:espacio de Hausdorff	fa:فضای هاوسدورف	fr:espace de Hausdorff	he:מרחב האוסדורף	hi:हाउसडोर्फ स्थान	ja:ハウスドルフ空間	ko:하우스도르프 공간	pt:espaço de Hausdorff	ru:пространство Хаусдорфа	tr:Hausdorff uzayı	ur:ہاؤسڈورف فضا	zh:豪斯多夫空间
 c:haute-couture	Noun	ar:أزياء راقية	de:Haute Couture	en:haute couture	es:alta costura	fa:هوت کوتور	fr:haute couture	he:הוט קוטור	hi:उच्च सिलाई	ja:オートクチュール	ko:오트 쿠튀르	pt:alta-costura	ru:высокая мода	tr:haute couture	ur:ہوٹ کوٹور	zh:高级定制
@@ -4006,6 +4036,7 @@ c:hoop-earring	Noun	ar:قرط حلقي	de:Creole,Kreolring	en:hoop earring	es:ar
 c:hoopoe	Noun	ar:هدهد	de:Wiedehopf	en:hoopoe	es:abubilla	fa:هدهد	fr:huppe fasciée	he:דוכיפת	hi:हुदहुद	ja:ヤツガシラ	ko:후투티	pt:poupa	ru:удод	tr:ibibik	ur:ہدہد	zh:戴胜
 c:hop	Verb	ar:قفز قصير	de:hopsen	en:hop	es:saltar a la pata coja	fa:لی لی کردن	fr:sautiller,cloche-pied	he:לקפץ	hi:कूदना	ja:ぴょんと跳ぶ	ko:깡충 뛰다	pt:saltar num pé	ru:прыгать на одной ноге,подпрыгивать	tr:sıçramak	ur:ایک پاؤں پر اچھلنا	zh:单脚跳
 c:hope	Noun	ar:أمل,رجاء	de:Hoffnung	en:hope	es:esperanza	fa:امید	fr:espoir,espérance	he:תקווה	hi:आशा,उम्मीद	ja:希望	ko:희망	pt:esperança	ru:надежда	tr:umut	ur:امید	zh:希望
+c:hope-feeling	Noun	ar:أمل	de:Hoffnung	en:hope	es:esperanza	fa:امید	fr:espoir	he:תקווה	hi:आशा	ja:希望	ko:희망	pt:esperança	ru:надежда	tr:umut	ur:امید	zh:希望
 c:hopscotch	Noun	ar:لعبة الحجلة	de:Himmel und Hölle	en:hopscotch	es:rayuela	fa:لی لی	fr:marelle	he:קפיצות	hi:साठा-साट	ja:けんけんぱ	ko:사방치기	pt:amarelinha	ru:классики	tr:seksek	ur:ستارے کا کھیل	zh:跳房子
 c:horizon	Noun	ar:أفق	de:Horizont	en:horizon	es:horizonte	fa:افق	fr:horizon	he:אופק	hi:क्षितिज	ja:地平線,水平線	ko:지평선,수평선	pt:horizonte	ru:горизонт	tr:ufuk	ur:افق	zh:地平线,天际
 c:horizon-problem	Noun	ar:مشكلة الافق الكوني	de:Horizont-Problem	en:horizon problem	es:problema del horizonte	fa:مشکل افق	fr:problème de l'horizon	he:בעיית האופק	hi:क्षितिज समस्या	ja:地平線問題	ko:지평선 문제	pt:problema do horizonte	ru:проблема горизонта	tr:ufuk sorunu	ur:افق مسئلہ	zh:视界问题
@@ -4063,8 +4094,10 @@ c:humanitarian-law	Noun	ar:القانون الإنساني الدولي	de:human
 c:humidity	Noun	ar:رطوبة	de:Luftfeuchtigkeit,Feuchte	en:humidity	es:humedad	fa:رطوبت	fr:humidité	he:לחות	hi:आर्द्रता,नमी	ja:湿度,湿気	ko:습도	pt:umidade,humidade	ru:влажность	tr:nem,rutubet	ur:نمی,رطوبت	zh:湿度
 c:humidity-weather	Noun	ar:رطوبة الجو	de:Luftfeuchtigkeit	en:humidity	es:humedad	fa:رطوبت	fr:humidité	he:לחות	hi:नमी	ja:湿度	ko:습도	pt:umidade	ru:влажность	tr:nem	ur:نمی	zh:湿度
 c:humiliation	Noun	ar:إذلال	de:Demütigung	en:humiliation	es:humillación	fa:خواری	fr:humiliation	he:השפלה	hi:अपमान	ja:屈辱	ko:굴욕	pt:humilhação	ru:унижение	tr:aşağılanma	ur:ذلت	zh:羞辱
+c:humility	Noun	ar:تواضع	de:Demut	en:humility	es:humildad	fa:فروتنی	fr:humilité	he:צניעות	hi:नम्रता	ja:謙虚	ko:겸손	pt:humildade	ru:смирение	tr:alçakgönüllülük	ur:عاجزی	zh:谦逊
 c:hummingbird	Noun	ar:طائر طنان,طنان	de:Kolibri	en:hummingbird	es:colibrí	fa:مرغ مگسخوار	fr:colibri	he:יונק דבש	hi:हमिंगबर्ड	ja:ハチドリ	ko:벌새	pt:beija-flor	ru:колибри	tr:sinek kuşu	ur:ہمنگ برڈ	zh:蜂鸟
 c:hummus	Noun	ar:حمص	de:Hummus	en:hummus	es:hummus	fa:حمص	fr:houmous	he:חומוס	hi:हम्मस	ja:フムス	ko:후무스	pt:húmus	ru:хумус	tr:humus	ur:حمص	zh:鹰嘴豆泥
+c:humor-feeling	Noun	ar:فكاهة	de:Humor	en:humor	es:humor	fa:شوخ‌طبعی	fr:humour	he:הומור	hi:हास्य	ja:ユーモア	ko:유머	pt:humor	ru:юмор	tr:mizah	ur:مزاح	zh:幽默
 c:humorism	Noun	ar:نظرية الأخلاط	de:Humoralpathologie	en:humorism	es:humorismo	fa:نظریه اخلاط	fr:théorie humorale	he:תורת הלחות	hi:रस सिद्धांत	ja:体液説	ko:체액설	pt:humorismo	ru:гуморализм	tr:humoral teori	ur:اخلاطی نظریہ	zh:体液学说
 c:humpback	Noun	ar:حوت الاحدب	de:Buckelwal	en:humpback whale	es:ballena jorobada	fa:نهنگ گوژپشت	fr:baleine à bosse	he:לווייתן גבנוני	hi:हंपबैक व्हेल	ja:ザトウクジラ	ko:혹등고래	pt:baleia jubarte	ru:горбатый кит	tr:kambur balina	ur:کوہان دار وھیل	zh:座头鲸
 c:hundred	Noun	ar:مائة,مئة	de:hundert	en:hundred	es:cien,ciento	fa:صد	fr:cent	he:מאה	hi:सौ	ja:百,ひゃく	ko:백	pt:cem,cento	ru:сто	tr:yüz	ur:سو	zh:百
@@ -4193,6 +4226,7 @@ c:indian-ocean-body	Noun	ar:المحيط الهندي	de:Indischer Ozean	en:Indi
 c:indictment	Noun	ar:لائحة اتهام	de:Anklage	en:indictment	es:acusación formal	fa:کیفرخواست	fr:mise en accusation	he:כתב אישום	hi:आरोप-पत्र	ja:起訴状	ko:기소장	pt:acusação formal	ru:обвинительное заключение	tr:iddianame	ur:فرد جرم	zh:起诉书
 c:indie-film	Noun	ar:فيلم مستقل	de:Independentfilm	en:indie film	es:película independiente	fa:فیلم مستقل	fr:film indépendant	he:סרט עצמאי	hi:स्वतंत्र फिल्म	ja:インディーズ映画	ko:독립 영화	pt:filme independente	ru:независимое кино	tr:bağımsız film	ur:آزاد فلم	zh:独立电影
 c:indigenous	Noun	ar:شعوب أصلية,سكان أصليون	de:Ureinwohner,indigene Völker	en:indigenous people,native people	es:pueblos indígenas,indígenas	fa:بومیان,مردم بومی	fr:peuples autochtones,indigènes	he:ילידים,אוכלוסייה ילידית	hi:आदिवासी,मूल निवासी	ja:先住民,原住民	ko:토착민,원주민	pt:povos indígenas,indígenas	ru:коренные народы,туземцы	tr:yerli halklar,otokton	ur:مقامی باشندے,قدیم باشندے	zh:原住民,土著
+c:indignation	Noun	ar:سخط	de:Empörung	en:indignation	es:indignación	fa:خشم اخلاقی	fr:indignation	he:זעם מוסרי	hi:रोष	ja:憤慨	ko:분개	pt:indignação	ru:негодование	tr:öfke ahlaki	ur:اخلاقی غصہ	zh:愤慨
 c:indigo	Noun	ar:نيلي	de:Indigo	en:indigo	es:añil,índigo	fa:نیلی	fr:indigo	he:אינדיגו	hi:नील	ja:藍色,インディゴ	ko:남색	pt:índigo,anil	ru:индиго	tr:çivit mavisi	ur:نیل	zh:靛蓝
 c:indium	Noun	ar:إنديوم	de:Indium	en:indium	es:indio	fa:ایندیم	fr:indium	he:אינדיום	hi:इंडियम	ja:インジウム	ko:인듐	pt:índio	ru:индий	tr:indiyum	ur:انڈیم	zh:铟
 c:individualism	Noun	ar:فردية اجتماعية	de:Individualismus	en:individualism	es:individualismo	fa:فردگرایی	fr:individualisme	he:אינדיבידואליזם	hi:व्यक्तिवाद	ja:個人主義	ko:개인주의	pt:individualismo	ru:индивидуализм	tr:bireycilik	ur:انفرادیت	zh:个人主义
@@ -4359,6 +4393,7 @@ c:iron-metal	Noun	ar:حديد	de:Eisen	en:iron	es:hierro	fa:آهن	fr:fer	he:ב�
 c:irony	Noun	ar:سخرية,مفارقة	de:Ironie	en:irony	es:ironía	fa:طعنه,کنایه	fr:ironie	he:אירוניה	hi:व्यंग्य	ja:皮肉,アイロニー	ko:아이러니,반어	pt:ironia	ru:ирония	tr:ironi,alaycılık	ur:طنز	zh:反讽,讽刺
 c:irreversibility	Noun	ar:اللارجعية	de:Irreversibilität	en:irreversibility	es:irreversibilidad	fa:برگشت‌ناپذیری	fr:irréversibilité	he:אי-הפיכות	hi:अनुत्क्रमणीयता	ja:非可逆性	ko:비가역성	pt:irreversibilidade	ru:необратимость	tr:geri dönüşsüzlük	ur:ناقابل واپسی	zh:不可逆性
 c:irrigation-drip	Noun	ar:ري بالتنقيط	de:Tropfbewässerung	en:drip irrigation	es:riego por goteo	fa:آبیاری قطره‌ای	fr:irrigation goutte-à-goutte	he:השקיה טפטוף	hi:ड्रिप सिंचाई	ja:点滴灌漑	ko:점적 관개	pt:irrigação por gotejamento	ru:капельное орошение	tr:damla sulama	ur:قطرہ آبپاشی	zh:滴灌
+c:irritation	Noun	ar:انزعاج	de:Ärger	en:irritation	es:irritación	fa:ناراحتی	fr:irritation	he:עצבנות	hi:चिढ़	ja:いらだち	ko:짜증	pt:irritação	ru:раздражение	tr:sinirlenme	ur:جھنجھلاہٹ	zh:恼怒
 c:ishtar	Noun	ar:عشتار	de:Ischtar	en:Ishtar	es:Istar	fa:ایشتار	fr:Ishtar	he:עשתורת	hi:इश्तार	ja:イシュタル	ko:이슈타르	pt:Ishtar	ru:Иштар	tr:İştar	ur:اشتار	zh:伊什塔尔
 c:isis	Noun	ar:إيزيس	de:Isis	en:Isis	es:Isis	fa:ایزیس	fr:Isis	he:איזיס	hi:आइसिस	ja:イシス	ko:이시스	pt:Ísis	ru:Исида	tr:İsis	ur:ایسس	zh:伊西斯
 c:islam	Noun	ar:الإسلام	de:Islam	en:Islam	es:islam	fa:اسلام	fr:islam	he:אסלאם	hi:इस्लाम	ja:イスラム教	ko:이슬람교	pt:islamismo	ru:ислам	tr:İslam	ur:اسلام	zh:伊斯兰教
@@ -4916,6 +4951,7 @@ c:loki	Noun	ar:لوكي	de:Loki	en:Loki	es:Loki	fa:لوکی	fr:Loki	he:לוקי	
 c:lombard-kingdom	Noun	ar:مملكة اللومبارد	de:Langobardenreich	en:Lombard Kingdom	es:reino lombardo	fa:پادشاهی لومبارد	fr:royaume lombard	he:ממלכת הלומברדים	hi:लोंबार्ड राज्य	ja:ランゴバルド王国	ko:롬바르드 왕국	pt:reino lombardo	ru:Лангобардское королевство	tr:Lombard Krallığı	ur:لمبارڈ سلطنت	zh:伦巴第王国
 c:london	Noun	ar:لندن	de:London	en:London	es:Londres	fa:لندن	fr:Londres	he:לונדון	hi:लंदन	ja:ロンドン	ko:런던	pt:Londres	ru:Лондон	tr:Londra	ur:لندن	zh:伦敦
 c:london-capital	Noun	ar:لندن	de:London	en:London	es:Londres	fa:لندن	fr:Londres	he:לונדון	hi:लंदन	ja:ロンドン	ko:런던	pt:Londres	ru:Лондон	tr:Londra	ur:لندن	zh:伦敦
+c:loneliness	Noun	ar:وحدة	de:Einsamkeit	en:loneliness	es:soledad	fa:تنهایی	fr:solitude	he:בדידות	hi:अकेलापन	ja:孤独	ko:외로움	pt:solidão	ru:одиночество	tr:yalnızlık	ur:تنہائی	zh:孤独
 c:long-grain	Noun	ar:أرز طويل الحبة	de:Langkornreis	en:long-grain rice	es:arroz de grano largo	fa:برنج دانه بلند	fr:riz long grain	he:אורז דגנים ארוכים	hi:लंबे दाने चावल	ja:長粒米	ko:장립미	pt:arroz de grão longo	ru:длиннозерный рис	tr:uzun taneli pirinç	ur:لمبے دانے چاول	zh:长粒米
 c:long-jump	Noun	ar:القفز الطويل	de:Weitsprung	en:long jump	es:salto de longitud	fa:پرش طول	fr:saut en longueur	he:קפיצה לרוחק	hi:लंबी कूद	ja:走り幅跳び	ko:멀리뛰기	pt:salto em comprimento	ru:прыжки в длину	tr:uzun atlama	ur:لمبی چھلانگ	zh:跳远
 c:long-jump-sport	Noun	ar:قفز طويل	de:Weitsprung	en:long jump	es:salto de longitud	fa:پرش طول	fr:saut en longueur	he:קפיצה למרחק	hi:लंबी कूद	ja:走幅跳	ko:멀리뛰기	pt:salto em comprimento	ru:прыжок в длину	tr:uzun atlama	ur:لمبی چھلانگ	zh:跳远
@@ -4944,6 +4980,7 @@ c:loudness	Noun	ar:مستوى الصوت	de:Lautstärke	en:loudness	es:sonoridad
 c:loudspeaker	Noun	ar:مكبر الصوت	de:Lautsprecher	en:loudspeaker	es:altavoz	fa:بلندگو	fr:haut-parleur	he:רמקול	hi:लाउडस्पीकर	ja:スピーカー	ko:확성기	pt:alto-falante	ru:громкоговоритель	tr:hoparlör	ur:لاوڈسپیکر	zh:扬声器
 c:louse	Noun	ar:قملة	de:Laus	en:louse	es:piojo	fa:شپش	fr:pou	he:כינה	hi:जूँ	ja:虱,シラミ	ko:이	pt:piolho	ru:вошь	tr:bit	ur:جوں	zh:虱子
 c:love	Noun	ar:حب,محبة	de:Liebe	en:love	es:amor	fa:عشق	fr:amour	he:אהבה	hi:प्रेम	ja:愛	ko:사랑	pt:amor	ru:любовь	tr:aşk	ur:محبت	zh:爱
+c:love-emotion	Noun	ar:حب شعور	de:Liebe Gefühl	en:love	es:amor	fa:عشق	fr:amour	he:אהבה	hi:प्यार	ja:愛	ko:사랑	pt:amor	ru:любовь	tr:sevgi	ur:محبت	zh:爱
 c:low-resource-nlp	Noun	ar:معالجة اللغات منخفضة الموارد	de:Low-Resource-Sprachverarbeitung	en:low-resource NLP	es:PLN de bajos recursos	fa:پردازش زبان کم‌منبع	fr:TALN à faibles ressources	he:NLP עם משאבים מוגבלים	hi:कम संसाधन NLP	ja:低リソースNLP	ko:저자원 NLP	pt:PLN de baixos recursos	ru:обработка языков с малыми ресурсами	tr:düşük kaynaklı NLP	ur:کم وسائل NLP	zh:低资源NLP
 c:lowland	Noun	ar:أراضي منخفضة	de:Tiefland	en:lowland	es:tierras bajas	fa:زمین پست	fr:basses terres	he:ארץ נמוכה	hi:नीची भूमि	ja:低地	ko:저지대	pt:terras baixas	ru:низменность	tr:alçak arazi	ur:نشیبی زمین	zh:低地
 c:ltp-neuro	Noun	ar:التقوية طويلة الامد	de:Langzeitpotenzierung	en:long-term potentiation,LTP	es:potenciación a largo plazo	fa:توان‌افزایی بلند مدت	fr:potentialisation à long terme	he:פוטנציאציה ארוכת טווח	hi:दीर्घकालीन शक्तिवर्धन	ja:長期増強	ko:장기 강화	pt:potenciação de longa duração	ru:долговременная потенциация	tr:uzun süreli güçlendirme	ur:طویل مدتی قوت بخشی	zh:长时程增强
@@ -7019,6 +7056,7 @@ c:range-finder	Noun	ar:مقياس المسافة	de:Entfernungsmesser	en:range f
 c:range-math	Noun	ar:مدى الدالة	de:Wertebereich	en:range	es:rango	fa:برد	fr:image	he:טווח	hi:परिसर	ja:値域	ko:치역	pt:imagem	ru:область значений	tr:görüntü kümesi	ur:رینج	zh:值域
 c:rankine	Noun	ar:دورة رانكين	de:Rankine-Kreisprozess	en:Rankine cycle	es:ciclo Rankine	fa:چرخه رنکین	fr:cycle de Rankine	he:מחזור רנקין	hi:रैंकिन चक्र	ja:ランキンサイクル	ko:랭킨 사이클	pt:ciclo Rankine	ru:цикл Ренкина	tr:Rankine döngüsü	ur:رینکن چکر	zh:朗肯循环
 c:ransomware	Noun	ar:برامج الفدية	de:Erpressungssoftware	en:ransomware	es:ransomware	fa:باج‌افزار	fr:rançongiciel	he:תוכנת כופר	hi:रैंसमवेयर	ja:ランサムウェア	ko:랜섬웨어	pt:ransomware	ru:программа-вымогатель	tr:fidye yazılımı	ur:تاوان طلب سافٹ ویئر	zh:勒索软件
+c:rapture	Noun	ar:نشوة	de:Entzückung	en:rapture	es:éxtasis rapture	fa:سرخوشی	fr:ravissement	he:התפעמות	hi:उन्माद	ja:恍惚	ko:황홀	pt:êxtase	ru:восторг	tr:coşku	ur:وجد	zh:狂喜
 c:rashtrakuta	Noun	ar:سلالة راشتراكوتا	de:Rashtrakuta-Dynastie	en:Rashtrakuta dynasty	es:dinastía Rashtrakuta	fa:دودمان راشتراکوتا	fr:dynastie Rashtrakuta	he:שושלת ראשטראקוטה	hi:राष्ट्रकूट राजवंश	ja:ラーシュトラクータ朝	ko:라슈트라쿠타 왕조	pt:dinastia Rashtrakuta	ru:династия Раштракутов	tr:Raştrakuta hanedanı	ur:راشٹرکوٹ خاندان	zh:罗湿陀罗拘陀王朝
 c:raspberry-var	Noun	ar:توت العليق	de:Himbeere	en:raspberry	es:frambuesa	fa:تمشک	fr:framboise	he:פטל	hi:रसभरी	ja:ラズベリー	ko:라즈베리	pt:framboesa	ru:малина	tr:ahududu	ur:رسبری	zh:覆盆子
 c:rat	Noun	ar:جرذ,فأر كبير	de:Ratte	en:rat	es:rata	fa:موش صحرایی	fr:rat	he:חולדה	hi:चूहा	ja:ネズミ,ラット	ko:쥐	pt:rato,ratazana	ru:крыса	tr:sıçan	ur:چوہا	zh:老鼠
@@ -7996,6 +8034,7 @@ c:sorbet-dessert	Noun	ar:سوربيه	de:Sorbet	en:sorbet	es:sorbete	fa:شربت
 c:sorcerer	Noun	ar:مشعوذ	de:Hexenmeister	en:sorcerer	es:hechicero	fa:ساحر	fr:sorcier	he:מכשף	hi:जादूगर	ja:呪術師	ko:주술사	pt:feiticeiro	ru:чародей	tr:sihirbaz	ur:ساحر	zh:术士
 c:sorghum	Noun	ar:ذرة بيضاء	de:Sorghum	en:sorghum	es:sorgo	fa:سورگوم	fr:sorgho	he:סורגום	hi:ज्वार	ja:モロコシ	ko:수수	pt:sorgo	ru:сорго	tr:süpürge darısı	ur:جوار	zh:高粱
 c:sorghum-grain	Noun	ar:ذرة رفيعة	de:Sorghum	en:sorghum	es:sorgo	fa:سورگوم	fr:sorgho	he:סורגום	hi:ज्वार	ja:モロコシ	ko:수수	pt:sorgo	ru:сорго	tr:sorgum	ur:جوار	zh:高粱
+c:sorrow	Noun	ar:أسى	de:Kummer	en:sorrow	es:tristeza profunda	fa:غم	fr:tristesse	he:צער	hi:दुख	ja:哀しみ	ko:슬픔	pt:tristeza	ru:печаль	tr:hüzün	ur:افسوس	zh:忧伤
 c:sorting	Noun	ar:الفرز	de:Sortierung	en:sorting	es:ordenamiento	fa:مرتب‌سازی	fr:tri	he:מיון	hi:छँटाई	ja:ソート	ko:정렬	pt:ordenação	ru:сортировка	tr:sıralama	ur:ترتیب بندی	zh:排序
 c:soteriology	Noun	ar:علم الخلاص	de:Soteriologie	en:soteriology	es:soteriología	fa:نجات‌شناسی	fr:sotériologie	he:סוטריולוגיה	hi:मोक्षशास्त्र	ja:救済論	ko:구원론	pt:soteriologia	ru:сотериология	tr:kurtuluş teolojisi	ur:نجات کا علم	zh:救世论
 c:souffle	Noun	ar:سوفليه	de:Soufflé	en:soufflé	es:suflé	fa:سوفله	fr:soufflé	he:סופלה	hi:सूफले	ja:スフレ	ko:수플레	pt:suflê	ru:суфле	tr:sufle	ur:سوفلے	zh:舒芙蕾
@@ -8412,6 +8451,7 @@ c:surinam-toad	Noun	ar:ضفدع سورينام	de:Wabenkröte	en:Surinam toad	es
 c:surplus	Noun	ar:فائض	de:Überschuss	en:surplus	es:excedente,superávit	fa:مازاد	fr:excédent,surplus	he:עודף	hi:अधिशेष,अतिरिक्त	ja:余剰,黒字	ko:잉여,흑자	pt:excedente,superávit	ru:излишек,профицит	tr:fazla,fazlalık	ur:زائد,فاضل	zh:剩余,盈余
 c:surplus-budget	Noun	ar:فائض الميزانية	de:Haushaltsüberschuss	en:budget surplus	es:superávit presupuestario	fa:مازاد بودجه	fr:excédent budgétaire	he:עודף תקציבי	hi:बजट अधिशेष	ja:財政黒字	ko:재정 흑자	pt:superávit orçamental	ru:бюджетный профицит	tr:bütçe fazlası	ur:بجٹ فاضل	zh:预算盈余
 c:surprise	Noun	ar:مفاجأة	de:Überraschung	en:surprise	es:sorpresa	fa:تعجب,شگفتی	fr:surprise	he:הפתעה	hi:आश्चर्य	ja:驚き	ko:놀람	pt:surpresa	ru:удивление	tr:sürpriz,şaşkınlık	ur:حیرت	zh:惊讶,惊奇
+c:surprise-emotion	Noun	ar:دهشة عاطفية	de:Überraschung	en:surprise	es:sorpresa	fa:غافلگیری	fr:surprise	he:הפתעה	hi:आश्चर्य	ja:驚き	ko:놀라움	pt:surpresa	ru:удивление	tr:sürpriz	ur:حیرت	zh:惊讶
 c:surrealism-art	Noun	ar:السريالية	de:Surrealismus	en:Surrealism	es:surrealismo	fa:سوررئالیسم	fr:surréalisme	he:סוריאליזם	hi:अतियथार्थवाद	ja:シュルレアリスム	ko:초현실주의	pt:surrealismo	ru:сюрреализм	tr:sürrealizm	ur:مافوق الحقیقت پسندی	zh:超现实主义
 c:surrender	Verb	ar:استسلم,يستسلم	de:sich ergeben,kapitulieren	en:surrender	es:rendirse	fa:تسلیم شدن	fr:se rendre,capituler	he:להיכנע	hi:आत्मसमर्पण करना	ja:降伏する	ko:항복하다	pt:render-se,capitular	ru:сдаваться,капитулировать	tr:teslim olmak	ur:ہتھیار ڈالنا	zh:投降
 c:surrogate-endpoint	Noun	ar:نقطة النهاية البديلة	de:Surrogat-Endpunkt	en:surrogate endpoint	es:criterio de valoración sustituto	fa:نقطه پایانی جایگزین	fr:critère de substitution	he:נקודת קצה תחלופית	hi:सरोगेट एंडपॉइंट	ja:代替エンドポイント	ko:대리 종료점	pt:critério de avaliação substituto	ru:суррогатная конечная точка	tr:vekil son nokta	ur:نائب آخری نقطہ	zh:替代终点
