@@ -734,6 +734,7 @@ c:baccarat	Noun	ar:باكارا	de:Baccarat	en:baccarat	es:bacará	fa:باکار
 c:bacchus	ProperNoun	ar:باخوس	de:Bacchus	en:Bacchus	es:Baco	fa:باخوس	fr:Bacchus	he:בכחוס	hi:बैकस	ja:バッカス	ko:바쿠스	pt:Baco	ru:Вакх	tr:Bakkhüs	ur:بیکس	zh:巴克斯
 c:bachata	Noun	ar:رقص الباشاتا	de:Bachata	en:bachata	es:bachata	fa:باچاتا	fr:bachata	he:בצ׳אטה	hi:बचाता	ja:バチャータ	ko:바차타	pt:bachata	ru:бачата	tr:bachata	ur:باچاتا	zh:巴恰塔舞
 c:bachata-dance	Noun	ar:باتشاتا	de:Bachata	en:bachata	es:bachata	fa:باچاتا	fr:bachata	he:באצ'אטה	hi:बचाटा	ja:バチャータ	ko:바차타	pt:bachata	ru:бачата	tr:bachata	ur:بچاٹا	zh:巴恰塔
+c:baci-chocolate	ProperNoun	ar:باتشي	de:Baci	en:Baci	es:Baci	fa:باچی	fr:Baci	he:באצ'י	hi:बाची	ja:バーチ	ko:바치	pt:Baci	ru:Бачи	tr:Baci	ur:باچی	zh:巴奇
 c:back	Noun	ar:خلف,وراء	de:hinten,Rückseite	en:back	es:atrás,detrás	fa:پشت,عقب	fr:derrière,arrière	he:אחור,אחורה	hi:पीछे	ja:後ろ	ko:뒤	pt:trás,atrás	ru:зад	tr:arka	ur:پیچھے	zh:后
 c:back-location	Noun	ar:الخلف	de:Rückseite	en:back	es:parte trasera	fa:پشت مکان	fr:arrière	he:אחור	hi:पीछे का भाग	ja:後面	ko:뒷면	pt:trás	ru:зад	tr:arka	ur:پشت	zh:后面
 c:backbone	ProperNoun	ar:باك بون	de:Backbone	en:Backbone	es:Backbone	fa:بک‌بون	fr:Backbone	he:בקבון	hi:बैकबोन	ja:バックボーン	ko:백본	pt:Backbone	ru:Backbone	tr:Backbone	ur:بیک بون	zh:骨干
@@ -1099,6 +1100,7 @@ c:bispecific-antibody	Noun	ar:الجسم المضاد ثنائي النوعية	
 c:bit-depth	Noun	ar:عمق البت	de:Bittiefe	en:bit depth	es:profundidad de bits	fa:عمق بیت	fr:résolution en bits	he:עומק סיביות	hi:बिट गहराई	ja:ビット深度	ko:비트 깊이	pt:profundidade de bits	ru:битовая глубина	tr:bit derinliği	ur:بٹ گہرائی	zh:位深度
 c:bitcoin	Noun	ar:بيتكوين	de:Bitcoin	en:bitcoin	es:bitcoin	fa:بیت کوین	fr:bitcoin	he:ביטקוין	hi:बिटकॉइन	ja:ビットコイン	ko:비트코인	pt:bitcoin	ru:биткоин	tr:bitcoin	ur:بٹ کوائن	zh:比特币
 c:bitter	Adjective	ar:مر	de:bitter	en:bitter	es:amargo	fa:تلخ	fr:amer	he:מר	hi:कड़वा	ja:苦い	ko:쓴	pt:amargo	ru:горький	tr:acı	ur:کڑوا	zh:苦
+c:bittersweet-chocolate	Noun	ar:شوكولاتة حلوة مرة	de:Zartbitterschokolade	en:bittersweet chocolate	es:chocolate agridulce	fa:شکلات تلخ و شیرین	fr:chocolat amer doux	he:שוקולד מריר מתוק	hi:कड़वी मीठी चॉकलेट	ja:ビタースイートチョコ	ko:비터스위트 초콜릿	pt:chocolate amargo doce	ru:горько-сладкий шоколад	tr:acı tatlı çikolata	ur:بٹر سوئیٹ چاکلیٹ	zh:苦甜巧克力
 c:biwa	Noun	ar:بيوا	de:Biwa	en:biwa	es:biwa	fa:بیوا	fr:biwa	he:ביווה	hi:बिवा	ja:琵琶	ko:비파	pt:biwa	ru:бива	tr:biwa	ur:بیوا	zh:日本琵琶
 c:black	Adjective	ar:أسود	de:schwarz	en:black	es:negro	fa:سیاه,مشکی	fr:noir	he:שחור	hi:काला	ja:黒,黒い	ko:검은,검정	pt:preto,negro	ru:чёрный	tr:siyah,kara	ur:کالا	zh:黑,黑色
 c:black-box	Noun	ar:صندوق أسود	de:Flugschreiber	en:black box,flight recorder	es:caja negra	fa:جعبه سیاه	fr:boîte noire	he:קופסה שחורה	hi:ब्लैक बॉक्स	ja:ブラックボックス	ko:블랙박스	pt:caixa preta	ru:чёрный ящик	tr:kara kutu	ur:بلیک باکس	zh:黑匣子
@@ -1203,6 +1205,7 @@ c:boltzmann	Noun	ar:ثابت بولتزمان	de:Boltzmann-Konstante	en:Boltzman
 c:bomb	Noun	ar:قنبلة	de:Bombe	en:bomb	es:bomba	fa:بمب	fr:bombe	he:פצצה	hi:बम	ja:爆弾	ko:폭탄	pt:bomba	ru:бомба	tr:bomba	ur:بم	zh:炸弹
 c:bomb-weapon	Noun	ar:قنبلة	de:Bombe	en:bomb	es:bomba	fa:بمب	fr:bombe	he:פצצה	hi:बम	ja:爆弾	ko:폭탄	pt:bomba	ru:бомба	tr:bomba	ur:بم	zh:炸弹
 c:bomber-aircraft	Noun	ar:قاذفة	de:Bomber	en:bomber aircraft	es:bombardero	fa:بمب‌افکن	fr:bombardier	he:מפציץ	hi:बमवर्षक विमान	ja:爆撃機	ko:폭격기	pt:bombardeiro	ru:бомбардировщик	tr:bombardıman uçağı	ur:بمبار طیارہ	zh:轰炸机
+c:bonbon-chocolate	Noun	ar:بونبون	de:Bonbon	en:bonbon	es:bombón	fa:بن‌بن	fr:bonbon	he:בונבון	hi:बॉन्बन	ja:ボンボン	ko:봉봉	pt:bombom	ru:бонбон	tr:bonbon	ur:بون بون	zh:糖果
 c:bond	Noun	ar:سند	de:Anleihe,Obligation	en:bond	es:bono,obligación	fa:اوراق قرضه	fr:obligation	he:אגרת חוב	hi:बांड,ऋणपत्र	ja:債券	ko:채권	pt:título,obrigação	ru:облигация	tr:tahvil	ur:بانڈ	zh:债券
 c:bond-financial	Noun	ar:سند مالي	de:Anleihe	en:bond	es:bono	fa:اوراق قرضه	fr:obligation	he:איגרת חוב	hi:बांड	ja:債券	ko:채권	pt:obrigação	ru:облигация	tr:tahvil	ur:بانڈ	zh:债券
 c:bone	Noun	ar:عظم	de:Knochen	en:bone	es:hueso	fa:استخوان	fr:os	he:עצם	hi:हड्डी	ja:骨	ko:뼈	pt:osso	ru:кость	tr:kemik	ur:ہڈی	zh:骨,骨头
@@ -1345,6 +1348,7 @@ c:brown-dwarf	Noun	ar:قزم بني	de:brauner Zwerg	en:brown dwarf	es:enana mar
 c:brown-rice	Noun	ar:أرز بني	de:brauner Reis	en:brown rice	es:arroz integral	fa:برنج قهوه‌ای	fr:riz brun	he:אורז חום	hi:भूरा चावल	ja:玄米	ko:현미	pt:arroz integral	ru:коричневый рис	tr:esmer pirinç	ur:بھورا چاول	zh:糙米
 c:brownfield	Noun	ar:الأراضي الملوثة	de:Brachfläche	en:brownfield	es:terreno contaminado	fa:زمین قهوه‌ای	fr:friche industrielle	he:קרקע מזוהמת	hi:ब्राउनफील्ड	ja:ブラウンフィールド	ko:오염 부지	pt:terreno contaminado	ru:промышленная пустошь	tr:kirli arazi	ur:آلودہ زمین	zh:棕地
 c:brownie	Noun	ar:براوني	de:Brownie	en:brownie	es:brownie	fa:براونی	fr:brownie	he:בראוני	hi:ब्राउनी	ja:ブラウニー	ko:브라우니	pt:brownie	ru:брауни	tr:brownie	ur:براؤنی	zh:布朗尼
+c:brownie-chocolate	Noun	ar:براوني	de:Brownie	en:brownie	es:brownie	fa:براونی	fr:brownie	he:בראוני	hi:ब्राउनी	ja:ブラウニー	ko:브라우니	pt:brownie	ru:брауни	tr:brownie	ur:براؤنی	zh:布朗尼
 c:brownie-dessert	Noun	ar:براوني	de:Brownie	en:brownie	es:brownie	fa:براونی	fr:brownie	he:בראוני	hi:ब्राउनी	ja:ブラウニー	ko:브라우니	pt:brownie	ru:брауни	tr:brownie	ur:براونی	zh:布朗尼
 c:browser	Noun	ar:متصفح	de:Browser,Webbrowser	en:browser	es:navegador	fa:مرورگر	fr:navigateur	he:דפדפן	hi:ब्राउज़र	ja:ブラウザ,ウェブブラウザ	ko:브라우저,웹 브라우저	pt:navegador	ru:браузер,обозреватель	tr:tarayıcı,web tarayıcısı	ur:براؤزر	zh:浏览器
 c:bruschetta	Noun	ar:بروشيتا	de:Bruschetta	en:bruschetta	es:bruschetta	fa:بروسکتا	fr:bruschetta	he:ברוסקטה	hi:ब्रूसकेटा	ja:ブルスケッタ	ko:브루스케타	pt:bruschetta	ru:брускетта	tr:bruschetta	ur:بروسکیٹا	zh:意式烤面包
@@ -1443,6 +1447,7 @@ c:cable-stayed	Noun	ar:الجسر المعلق بالكابلات	de:Schrägseil
 c:cable-structure	Noun	ar:الهيكل الكابلي	de:Seilkonstruktion	en:cable structure	es:estructura de cable	fa:سازه کابلی	fr:structure à câbles	he:מבנה כבלים	hi:केबल संरचना	ja:ケーブル構造	ko:케이블 구조	pt:estrutura de cabos	ru:вантовая конструкция	tr:kablo yapısı	ur:کیبل ڈھانچہ	zh:索结构
 c:cable-tv	Noun	ar:تلفزيون كابل	de:Kabelfernsehen	en:cable television	es:televisión por cable	fa:تلویزیون کابلی	fr:télévision par câble	he:טלוויזיה בכבלים	hi:केबल टीवी	ja:ケーブルテレビ	ko:케이블 TV	pt:televisão por cabo	ru:кабельное телевидение	tr:kablolu TV	ur:کیبل ٹی وی	zh:有线电视
 c:cacao	Noun	ar:كاكاو	de:Kakao	en:cacao	es:cacao	fa:کاکائو	fr:cacao	he:קקאו	hi:काकाओ	ja:カカオ	ko:카카오	pt:cacau	ru:какао	tr:kakao	ur:کیکائو	zh:可可
+c:cacao-bean	Noun	ar:حبة الكاكاو الخام	de:Cacao-Bohne	en:cacao bean	es:grano de cacao crudo	fa:دانه کاکائوی خام	fr:fève de cacao cru	he:פולי קקאו גולמי	hi:कच्चा काकाओ बीन	ja:生カカオ豆	ko:생 카카오 빈	pt:grão de cacau cru	ru:сырой какао-боб	tr:çiğ kakao çekirdeği	ur:کچا کاکاو بین	zh:生可可豆
 c:cache	Noun	ar:ذاكرة التخزين المؤقت	de:Cache	en:cache	es:caché	fa:حافظه نهان	fr:cache	he:מטמון	hi:कैश	ja:キャッシュ	ko:캐시	pt:cache	ru:кэш	tr:önbellek	ur:کیش	zh:缓存
 c:cache-memory	Noun	ar:ذاكرة الوصول السريع	de:Cache	en:cache	es:caché	fa:حافظه نهان	fr:cache	he:מטמון	hi:कैश	ja:キャッシュ	ko:캐시	pt:cache	ru:кэш	tr:önbellek	ur:کیش	zh:缓存
 c:cache-prog	Noun	ar:ذاكرة مؤقتة	de:Cache	en:cache	es:caché	fa:حافظه پنهان	fr:cache	he:מטמון	hi:कैश	ja:キャッシュ	ko:캐시	pt:cache	ru:кэш	tr:önbellek	ur:کیش	zh:缓存
@@ -1901,6 +1906,18 @@ c:cho-oyu	Noun	ar:تشو أويو	de:Cho Oyu	en:Cho Oyu	es:Cho Oyu	fa:چو او�
 c:cho-oyu-peak	Noun	ar:تشو أويو	de:Cho Oyu	en:Cho Oyu	es:Cho Oyu	fa:چو اویو	fr:Cho Oyu	he:צ'ו אויו	hi:चो ओयू	ja:チョ・オユー	ko:초오유	pt:Cho Oyu	ru:Чо-Ойю	tr:Cho Oyu	ur:چو اویو	zh:卓奥友峰
 c:chocolate	Noun	ar:شوكولاتة,شوكولا	de:Schokolade	en:chocolate	es:chocolate	fa:شکلات	fr:chocolat	he:שוקולד	hi:चॉकलेट	ja:チョコレート	ko:초콜릿	pt:chocolate	ru:шоколад	tr:çikolata	ur:چاکلیٹ	zh:巧克力
 c:chocolate-bar	Noun	ar:لوح شوكولاتة	de:Schokoriegel	en:chocolate bar	es:barra de chocolate	fa:بار شکلات	fr:barre chocolatée	he:חטיף שוקולד	hi:चॉकलेट बार	ja:チョコレートバー	ko:초콜릿 바	pt:barra de chocolate	ru:шоколадный батончик	tr:çikolata bar	ur:چاکلیٹ بار	zh:巧克力棒
+c:chocolate-bark	Noun	ar:لحاء الشوكولاتة	de:Schokoladenrinde	en:chocolate bark	es:corteza de chocolate	fa:پوست شکلات	fr:écorce de chocolat	he:קליפת שוקולד	hi:चॉकलेट बार्क	ja:チョコレートバーク	ko:초콜릿 바크	pt:casca de chocolate	ru:шоколадная кора	tr:çikolata kabuğu	ur:چاکلیٹ بارک	zh:巧克力皮
+c:chocolate-box	Noun	ar:علبة شوكولاتة	de:Pralinenschachtel	en:chocolate box	es:caja de chocolates	fa:جعبه شکلات	fr:boîte de chocolats	he:קופסת שוקולד	hi:चॉकलेट बॉक्स	ja:チョコレートボックス	ko:초콜릿 박스	pt:caixa de chocolates	ru:коробка шоколада	tr:çikolata kutusu	ur:چاکلیٹ باکس	zh:巧克力盒
+c:chocolate-cake	Noun	ar:كيك الشوكولاتة	de:Schokoladenkuchen	en:chocolate cake	es:pastel de chocolate	fa:کیک شکلاتی	fr:gâteau au chocolat	he:עוגת שוקולד	hi:चॉकलेट केक	ja:チョコケーキ	ko:초콜릿 케이크	pt:bolo de chocolate	ru:шоколадный торт	tr:çikolatalı pasta	ur:چاکلیٹ کیک	zh:巧克力蛋糕
+c:chocolate-chip	Noun	ar:رقائق الشوكولاتة	de:Schokoladenchip	en:chocolate chip	es:chip de chocolate	fa:چیپس شکلاتی	fr:pépite de chocolat	he:שבב שוקולד	hi:चॉकलेट चिप	ja:チョコチップ	ko:초콜릿 칩	pt:gota de chocolate	ru:шоколадные капли	tr:çikolata parçası	ur:چاکلیٹ چپس	zh:巧克力豆
+c:chocolate-cluster	Noun	ar:تجمع الشوكولاتة	de:Schokoladenkluster	en:chocolate cluster	es:clúster de chocolate	fa:خوشه شکلاتی	fr:cluster de chocolat	he:אשכול שוקולד	hi:चॉकलेट क्लस्टर	ja:チョコクラスター	ko:초콜릿 클러스터	pt:aglomerado de chocolate	ru:шоколадный кластер	tr:çikolata topağı	ur:چاکلیٹ کلسٹر	zh:巧克力团
+c:chocolate-coating	Noun	ar:طلاء شوكولاتي	de:Schokoladenüberzug	en:chocolate coating	es:cobertura de chocolate	fa:پوشش شکلاتی	fr:enrobage chocolat	he:ציפוי שוקולד	hi:चॉकलेट कोटिंग	ja:チョコレートコーティング	ko:초콜릿 코팅	pt:cobertura de chocolate	ru:шоколадное покрытие	tr:çikolata kaplama	ur:چاکلیٹ کوٹنگ	zh:巧克力涂层
+c:chocolate-cookie	Noun	ar:كوكيز الشوكولاتة	de:Schokoladenkeks	en:chocolate cookie	es:galleta de chocolate	fa:کلوچه شکلاتی	fr:biscuit au chocolat	he:עוגיית שוקולד	hi:चॉकलेट कुकी	ja:チョコクッキー	ko:초콜릿 쿠키	pt:biscoito de chocolate	ru:шоколадное печенье	tr:çikolatalı kurabiye	ur:چاکلیٹ کوکی	zh:巧克力饼干
+c:chocolate-covered	Adjective	ar:مغطى بالشوكولاتة	de:schokoladenüberzogen	en:chocolate-covered	es:cubierto de chocolate	fa:پوشیده با شکلات	fr:enrobé de chocolat	he:מצופה שוקולד	hi:चॉकलेट कवर्ड	ja:チョコレートコーティングされた	ko:초콜릿 코팅된	pt:coberto com chocolate	ru:покрытый шоколадом	tr:çikolata kaplı	ur:چاکلیٹ کورڈ	zh:巧克力覆盖的
+c:chocolate-drop	Noun	ar:قطرة شوكولاتة	de:Schokoladentropfen	en:chocolate drop	es:gota de chocolate	fa:قطره شکلات	fr:goutte de chocolat	he:טיפת שוקולד	hi:चॉकलेट बूंद	ja:チョコドロップ	ko:초콜릿 드롭	pt:pingo de chocolate	ru:шоколадная капля	tr:çikolata damlası	ur:چاکلیٹ قطرہ	zh:巧克力滴
+c:chocolate-fudge	Noun	ar:فادج الشوكولاتة	de:Schokoladenfudge	en:chocolate fudge	es:fudge de chocolate	fa:فاج شکلات	fr:fudge au chocolat	he:פאדג' שוקולד	hi:चॉकलेट फज	ja:チョコレートファッジ	ko:초콜릿 퍼지	pt:fudge de chocolate	ru:шоколадный фадж	tr:çikolata fadge	ur:چاکلیٹ فج	zh:巧克力软糖
+c:chocolate-mousse	Noun	ar:موس الشوكولاتة	de:Schokoladenmousse	en:chocolate mousse	es:mousse de chocolate	fa:موس شکلات	fr:mousse au chocolat	he:מוס שוקולד	hi:चॉकलेट मूस	ja:チョコムース	ko:초콜릿 무스	pt:mousse de chocolate	ru:шоколадный мусс	tr:çikolatalı mus	ur:چاکلیٹ موس	zh:巧克力慕斯
+c:chocolate-varieties	Noun	ar:أنواع الشوكولاتة	de:Schokoladensorten	en:chocolate varieties	es:variedades de chocolate	fa:انواع شکلات	fr:variétés de chocolat	he:סוגי שוקולד	hi:चॉकलेट के प्रकार	ja:チョコレートの種類	ko:초콜릿 종류	pt:variedades de chocolate	ru:виды шоколада	tr:çikolata çeşitleri	ur:چاکلیٹ کی اقسام	zh:巧克力品种
 c:choice-architecture	Noun	ar:هندسة الاختيار	de:Entscheidungsarchitektur	en:choice architecture	es:arquitectura de elecciones	fa:معماری انتخاب	fr:architecture de choix	he:ארכיטקטורת בחירה	hi:विकल्प वास्तुकला	ja:選択アーキテクチャ	ko:선택 설계	pt:arquitetura de escolha	ru:архитектура выбора	tr:seçim mimarisi	ur:انتخاب فن تعمیر	zh:选择架构
 c:choir	Noun	ar:جوقة,كورال	de:Chor	en:choir	es:coro	fa:گروه کر,کر	fr:chœur,chorale	he:מקהלה	hi:गाना मंडली,कोरस	ja:合唱団,コーラス	ko:합창단	pt:coro,coral	ru:хор	tr:koro	ur:گلوکاروں کا گروہ	zh:合唱团
 c:chokeberry	Noun	ar:توت الأرونيا	de:Aronia	en:chokeberry	es:aronia	fa:آرونیا	fr:aronie	he:ארוניה	hi:चोकबेरी	ja:アロニア	ko:아로니아	pt:aronia	ru:арония	tr:aronya	ur:چوک بیری	zh:野樱莓
@@ -2109,6 +2126,8 @@ c:cocktail-drink	Noun	ar:كوكتيل	de:Cocktail	en:cocktail	es:cóctel	fa:کو
 c:cocktail-sauce	Noun	ar:صلصة الكوكتيل	de:Cocktailsauce	en:cocktail sauce	es:salsa cóctel	fa:سس کوکتل	fr:sauce cocktail	he:רוטב קוקטייל	hi:कॉकटेल सॉस	ja:カクテルソース	ko:칵테일 소스	pt:molho coquetel	ru:коктейль-соус	tr:kokteyl sos	ur:کاک ٹیل ساس	zh:鸡尾酒酱
 c:cocktails	Noun	ar:كوكتيلات	de:Cocktails	en:cocktails	es:cócteles	fa:کوکتیل‌ها	fr:cocktails	he:קוקטיילים	hi:कॉकटेल	ja:カクテル	ko:칵테일	pt:coquetéis	ru:коктейли	tr:kokteyller	ur:کاک ٹیلز	zh:鸡尾酒
 c:cocoa	Noun	ar:كاكاو	de:Kakao	en:cocoa	es:cacao	fa:کاکائو	fr:cacao	he:קקאו	hi:कोको	ja:ココア	ko:코코아	pt:cacau	ru:какао	tr:kakao	ur:کوکو	zh:可可
+c:cocoa-bean	Noun	ar:حبة الكاكاو	de:Kakaobohne	en:cocoa bean	es:grano de cacao	fa:دانه کاکائو	fr:fève de cacao	he:פולי קקאו	hi:कोको बीन	ja:カカオ豆	ko:코코아 빈	pt:grão de cacau	ru:какао-боб	tr:kakao çekirdeği	ur:کوکو بین	zh:可可豆
+c:cocoa-powder	Noun	ar:مسحوق الكاكاو	de:Kakaopulver	en:cocoa powder	es:cacao en polvo	fa:پودر کاکائو	fr:cacao en poudre	he:אבקת קקאו	hi:कोको पाउडर	ja:ココアパウダー	ko:코코아 분말	pt:cacau em pó	ru:какао-порошок	tr:kakao tozu	ur:کوکو پاؤڈر	zh:可可粉
 c:coconut	Noun	ar:جوز الهند	de:Kokosnuss	en:coconut	es:coco	fa:نارگیل	fr:noix de coco	he:קוקוס	hi:नारियल	ja:ココナッツ	ko:코코넛	pt:coco	ru:кокос,кокосовый орех	tr:hindistan cevizi	ur:ناریل	zh:椰子
 c:coconut-tree	Noun	ar:شجرة جوز الهند	de:Kokospalme	en:coconut tree	es:cocotero	fa:درخت نارگیل	fr:cocotier	he:עץ קוקוס	hi:नारियल पेड़	ja:ココヤシ	ko:코코넛 나무	pt:coqueiro	ru:кокосовая пальма	tr:hindistan cevizi ağacı	ur:ناریل کا درخت	zh:椰子树
 c:cocoon	Noun	ar:شرنقة الحرير	de:Kokon	en:cocoon	es:capullo	fa:پیله	fr:cocon	he:פקעת	hi:कोकून	ja:繭	ko:고치	pt:casulo	ru:кокон	tr:koza	ur:پیلہ	zh:茧
@@ -2745,6 +2764,7 @@ c:darjeeling-tea	Noun	ar:شاي دارجلينغ	de:Darjeeling	en:Darjeeling tea
 c:dark-age-cosmos	Noun	ar:العصور الكونية المظلمة	de:kosmisches dunkles Zeitalter	en:cosmic dark age	es:era oscura cósmica	fa:عصر تاریک کیهانی	fr:âge sombre cosmique	he:עידן החשוך הקוסמי	hi:ब्रह्मांडीय अंधकार युग	ja:宇宙の暗黒時代	ko:우주 암흑 시대	pt:era escura cósmica	ru:тёмные века вселенной	tr:kozmik karanlık çağ	ur:کائناتی تاریک دور	zh:宇宙黑暗时代
 c:dark-ages	Noun	ar:العصور المظلمة	de:Dunkle Jahrhunderte	en:Dark Ages	es:Edad Oscura	fa:قرون تاریک	fr:âges sombres	he:ימי הביניים החשוכים	hi:अंधकार युग	ja:暗黒時代	ko:암흑 시대	pt:Idades das Trevas	ru:тёмные века	tr:karanlık çağ	ur:تاریک دور	zh:黑暗时代
 c:dark-and-stormy	Noun	ar:دارك آند ستورمي	de:Dark and Stormy	en:Dark and Stormy	es:Dark and Stormy	fa:دارک اند استورمی	fr:Dark and Stormy	he:דארק אנד סטורמי	hi:डार्क एंड स्टॉर्मी	ja:ダークアンドストーミー	ko:다크 앤 스토미	pt:Dark and Stormy	ru:Дарк энд Стормы	tr:Dark and Stormy	ur:ڈارک اینڈ سٹورمی	zh:黑暗风暴
+c:dark-chocolate	Noun	ar:شوكولاتة داكنة	de:Bitterschokolade	en:dark chocolate	es:chocolate negro	fa:شکلات تلخ	fr:chocolat noir	he:שוקולד מריר	hi:डार्क चॉकलेट	ja:ダークチョコレート	ko:다크 초콜릿	pt:chocolate amargo	ru:тёмный шоколад	tr:bitter çikolata	ur:ڈارک چاکلیٹ	zh:黑巧克力
 c:dark-energy	Noun	ar:الطاقة المظلمة	de:Dunkle Energie	en:dark energy	es:energía oscura	fa:انرژی تاریک	fr:énergie sombre	he:אנרגיה אפלה	hi:श्याम ऊर्जा	ja:暗黒エネルギー	ko:암흑 에너지	pt:energia escura	ru:тёмная энергия	tr:karanlık enerji	ur:تاریک توانائی	zh:暗能量
 c:dark-energy-astro	Noun	ar:طاقة مظلمة	de:dunkle Energie	en:dark energy	es:energía oscura	fa:انرژی تاریک	fr:énergie noire	he:אנרגיה אפלה	hi:श्याम ऊर्जा	ja:暗黒エネルギー	ko:암흑 에너지	pt:energia escura	ru:тёмная энергия	tr:karanlık enerji	ur:تاریک توانائی	zh:暗能量
 c:dark-matter	Noun	ar:مادة مظلمة	de:dunkle Materie	en:dark matter	es:materia oscura	fa:ماده تاریک	fr:matière noire	he:חומר אפל	hi:डार्क मैटर,अदृश्य पदार्थ	ja:暗黒物質	ko:암흑 물질	pt:matéria escura	ru:тёмная материя	tr:karanlık madde	ur:تاریک مادہ	zh:暗物质
@@ -3805,6 +3825,7 @@ c:fermenting-food	Noun	ar:تخمر طعام	de:Fermentieren	en:fermenting	es:fer
 c:fermion	Noun	ar:فيرميون	de:Fermion	en:fermion	es:fermión	fa:فرمیون	fr:fermion	he:פרמיון	hi:फर्मियन	ja:フェルミオン	ko:페르미온	pt:férmion	ru:фермион	tr:fermiyon	ur:فرمیون	zh:费米子
 c:fern	Noun	ar:سرخس	de:Farn	en:fern	es:helecho	fa:سرخس	fr:fougère	he:שרך	hi:फ़र्न	ja:シダ,羊歯	ko:고사리,양치류	pt:samambaia,feto	ru:папоротник	tr:eğrelti otu	ur:سرخس	zh:蕨类植物,蕨
 c:ferrel-cell	Noun	ar:خلية فيريل	de:Ferrel-Zelle	en:Ferrel cell	es:celda de Ferrel	fa:سلول فرل	fr:cellule de Ferrel	he:תא פרל	hi:फेरेल सेल	ja:フェレル循環	ko:페렐 순환	pt:célula de Ferrel	ru:ячейка Феррела	tr:Ferrel hücresi	ur:فیرل خلیہ	zh:费雷尔环流
+c:ferrero-rocher	ProperNoun	ar:فيريرو روشيه	de:Ferrero Rocher	en:Ferrero Rocher	es:Ferrero Rocher	fa:فررو روشر	fr:Ferrero Rocher	he:פררו רושה	hi:फ़रेरो रोचर	ja:フェレロロシェ	ko:페레로 로쉐	pt:Ferrero Rocher	ru:Ферреро Роше	tr:Ferrero Rocher	ur:فریرو روچر	zh:费列罗
 c:ferroelectric	Adjective	ar:كهرحديدي	de:ferroelektrisch	en:ferroelectric	es:ferroeléctrico	fa:فروالکتریک	fr:ferroélectrique	he:פרואלקטרי	hi:फेरोइलेक्ट्रिक	ja:強誘電体	ko:강유전체	pt:ferroeléctrico	ru:сегнетоэлектрик	tr:feroelektrik	ur:فیرو برقی	zh:铁电体
 c:ferromagnet	Noun	ar:المغناطيسية الحديدية	de:Ferromagnetismus	en:ferromagnetism	es:ferromagnetismo	fa:آهن‌ربایی	fr:ferromagnétisme	he:פרומגנטיזם	hi:लौह-चुंबकत्व	ja:強磁性	ko:강자성	pt:ferromagnetismo	ru:ферромагнетизм	tr:ferromanyetizm	ur:لوہائی مقناطیسیت	zh:铁磁性
 c:ferry	Noun	ar:عبارة	de:Fähre	en:ferry	es:transbordador,ferry	fa:کشتی عبور	fr:ferry,bac	he:מעבורת	hi:नौका,फ़ेरी	ja:フェリー,連絡船	ko:페리,연락선	pt:balsa,ferry	ru:паром	tr:feribot	ur:فیری,کشتی	zh:渡轮
@@ -4211,6 +4232,7 @@ c:game-show	Noun	ar:برنامج مسابقات	de:Spielshow	en:game show	es:con
 c:gamete	Noun	ar:مشيج,خلية تناسلية	de:Gamet,Keimzelle	en:gamete	es:gameto	fa:گامت	fr:gamète	he:גמטה,תא רבייה	hi:युग्मक	ja:配偶子	ko:생식세포,배우자	pt:gameta	ru:гамета	tr:gamet	ur:تولیدی خلیہ	zh:配子
 c:gamma-ray	Noun	ar:أشعة غاما	de:Gammastrahlung	en:gamma ray	es:rayo gamma	fa:پرتو گاما	fr:rayon gamma	he:קרני גמא	hi:गामा किरण	ja:ガンマ線	ko:감마선	pt:raio gama	ru:гамма-излучение	tr:gama ışını	ur:گاما کرن	zh:伽马射线
 c:gamma-ray-burst	Noun	ar:انفجار أشعة غاما	de:Gammastrahlenausbruch	en:gamma-ray burst	es:destello de rayos gamma	fa:انفجار پرتو گاما	fr:sursaut gamma	he:פרץ קרני גמא	hi:गामा-किरण विस्फोट	ja:ガンマ線バースト	ko:감마선 폭발	pt:explosão de raios gama	ru:гамма-всплеск	tr:gama ışını patlaması	ur:گاما شعاعی دھماکہ	zh:伽马射线暴
+c:ganache	Noun	ar:غاناش	de:Ganache	en:ganache	es:ganache	fa:گاناش	fr:ganache	he:גנאש	hi:गनाश	ja:ガナッシュ	ko:가나슈	pt:ganache	ru:ганаш	tr:ganaj	ur:گناش	zh:巧克力甘纳许
 c:gandhi	Noun	ar:غاندي,المهاتما غاندي	de:Gandhi,Mahatma Gandhi	en:Gandhi,Mahatma Gandhi	es:Gandhi	fa:گاندی,مهاتما گاندی	fr:Gandhi	he:גנדי	hi:गांधी,महात्मा गांधी	ja:ガンディー,ガンジー	ko:간디	pt:Gandhi	ru:Ганди	tr:Gandhi	ur:گاندھی,مہاتما گاندھی	zh:甘地
 c:ganesha	Noun	ar:غانيشا	de:Ganesha	en:Ganesha	es:Ganesha	fa:گانشا	fr:Ganesh	he:גאנשה	hi:गणेश	ja:ガネーシャ	ko:가네샤	pt:Ganesha	ru:Ганеша	tr:Ganesha	ur:گنیش	zh:象头神
 c:ganges	Noun	ar:الغانج,نهر الغانج	de:Ganges	en:Ganges,Ganges River	es:Ganges,río Ganges	fa:گنگ,رود گنگ	fr:Gange	he:גנגס,נהר הגנגס	hi:गंगा,गंगा नदी	ja:ガンジス川	ko:갠지스강	pt:Ganges,rio Ganges	ru:Ганг	tr:Ganj,Ganj Nehri	ur:دریائے گنگا,گنگا	zh:恒河
@@ -4350,6 +4372,7 @@ c:ghost	Noun	ar:شبح	de:Geist	en:ghost	es:fantasma	fa:روح	fr:fantôme	he:ר
 c:ghost-creature	Noun	ar:شبح	de:Geist	en:ghost	es:fantasma	fa:روح	fr:fantôme	he:רוח רפאים	hi:भूत	ja:幽霊	ko:유령	pt:fantasma	ru:призрак	tr:hayalet	ur:بھوت	zh:鬼魂
 c:ghurid-dynasty	Noun	ar:السلالة الغورية	de:Ghuriden	en:Ghurid dynasty	es:dinastía gúrida	fa:غوریان	fr:dynastie ghouride	he:שושלת הע'ורים	hi:ग़ोर वंश	ja:ゴール朝	ko:구르 왕조	pt:dinastia Gúrida	ru:династия Гуридов	tr:Gurlular	ur:غوری خاندان	zh:廓尔王朝
 c:gi-uniform	Noun	ar:زي جي	de:Gi	en:gi	es:gi	fa:گی	fr:gi	he:גי	hi:गी	ja:道着	ko:도복	pt:quimono de artes marciais	ru:ги	tr:gi	ur:جی وردی	zh:道服
+c:gianduja	Noun	ar:جياندوجا	de:Gianduja	en:gianduja	es:gianduja	fa:جیاندوجا	fr:gianduja	he:ג'יאנדוז'ה	hi:जियानदुजा	ja:ジャンドゥーヤ	ko:지안두야	pt:gianduja	ru:джандуйя	tr:gianduja	ur:گیانڈویا	zh:榛果巧克力
 c:giant-creature	Noun	ar:عملاق	de:Riese	en:giant	es:gigante	fa:غول	fr:géant	he:ענק	hi:राक्षस	ja:巨人	ko:거인	pt:gigante	ru:великан	tr:dev	ur:دیو	zh:巨人
 c:gibbs	Noun	ar:طاقة جيبس الحرة	de:Gibbs-Energie	en:Gibbs free energy	es:energía libre de Gibbs	fa:انرژی آزاد گیبس	fr:énergie libre de Gibbs	he:אנרגיית גיבס	hi:गिब्स मुक्त ऊर्जा	ja:ギブズ自由エネルギー	ko:깁스 자유 에너지	pt:energia livre de Gibbs	ru:энергия Гиббса	tr:Gibbs serbest enerjisi	ur:گبز آزاد توانائی	zh:吉布斯自由能
 c:giddiness	Noun	ar:دوار من الفرح	de:Schwindelgefühl	en:giddiness	es:atolondramiento	fa:شادی سبک‌سر	fr:étourdissement	he:סחרחורת רוח	hi:चक्कर आना खुशी	ja:浮かれ	ko:들뜸	pt:atordoamento	ru:головокружение	tr:başı dönme neşeli	ur:بے ہودہ خوشی	zh:眩晕
@@ -4428,6 +4451,7 @@ c:goblin-creature	Noun	ar:الغول	de:Kobold	en:goblin	es:duende	fa:گابلی
 c:gochugaru	Noun	ar:غوتشوغارو	de:Gochugaru	en:gochugaru	es:gochugaru	fa:گچوگارو	fr:gochugaru	he:גוצ'וגארו	hi:गोचुगारू	ja:コチュガル	ko:고춧가루	pt:gochugaru	ru:кочукару	tr:gochugaru	ur:گوچوگارو	zh:韩式辣椒粉
 c:god	Noun	ar:إله,الله	de:Gott	en:god	es:dios	fa:خدا	fr:dieu	he:אלוהים	hi:ईश्वर,भगवान	ja:神	ko:신,하나님	pt:deus	ru:бог	tr:tanrı,allah	ur:خدا,اللہ	zh:神,上帝
 c:goddess	Noun	ar:إلهة	de:Göttin	en:goddess	es:diosa	fa:الهه	fr:déesse	he:אלה	hi:देवी	ja:女神	ko:여신	pt:deusa	ru:богиня	tr:tanrıça	ur:دیوی	zh:女神
+c:godiva-chocolate	ProperNoun	ar:غوديفا	de:Godiva	en:Godiva	es:Godiva	fa:گودیوا	fr:Godiva	he:גודיבה	hi:गोडिवा	ja:ゴディバ	ko:고디바	pt:Godiva	ru:Godiva	tr:Godiva	ur:گوڈیوا	zh:歌帝梵
 c:gods-deities	Noun	ar:آلهة	de:Götter	en:gods and deities	es:dioses y deidades	fa:خدایان	fr:dieux et déités	he:אלים	hi:देवता	ja:神々	ko:신들	pt:deuses e divindades	ru:боги	tr:tanrılar	ur:دیوتا	zh:神祇
 c:godwit	Noun	ar:طائر الاصطياف	de:Uferschnepfe	en:godwit	es:aguja	fa:گاد وایت	fr:barge	he:בצית	hi:गॉडविट	ja:オオソリハシシギ	ko:큰뒷부리도요	pt:maçarico-de-bico-direito	ru:веретенник	tr:uzun gagalı kuş	ur:گاڈوٹ پرندہ	zh:塍鹬
 c:goji-berry	Noun	ar:غوجي بيري	de:Goji-Beere	en:goji berry	es:baya de goji	fa:توت گوجی	fr:baie de goji	he:פרי גוג'י	hi:गोजी बेरी	ja:クコの実	ko:구기자	pt:goji	ru:годжи	tr:goji berry	ur:گوجی بیری	zh:枸杞
@@ -4843,6 +4867,8 @@ c:heron	Noun	ar:مالك الحزين	de:Reiher	en:heron	es:garza	fa:حواصی�
 c:heron-bird	Noun	ar:بلشون	de:Reiher	en:heron	es:garza	fa:حواصیل	fr:héron	he:אנפה	hi:बगुला	ja:サギ	ko:왜가리	pt:garça	ru:цапля	tr:balıkçıl	ur:بگلا	zh:鹭
 c:herring	Noun	ar:رنجة	de:Hering	en:herring	es:arenque	fa:شاه ماهی	fr:hareng	he:דג מלוח	hi:हेरिंग	ja:鰊	ko:청어	pt:arenque	ru:сельдь	tr:ringa	ur:ہیرنگ	zh:鲱鱼
 c:herring-fish	Noun	ar:رنجة	de:Hering	en:herring	es:arenque	fa:شاه‌ماهی	fr:hareng	he:דג מלוח	hi:हेरिंग	ja:ニシン	ko:청어	pt:arenque	ru:сельдь	tr:ringa	ur:ہیرنگ	zh:鲱鱼
+c:hershey-chocolate	ProperNoun	ar:هيرشي	de:Hershey	en:Hershey	es:Hershey	fa:هرشی	fr:Hershey	he:הרשי	hi:हर्शी	ja:ハーシー	ko:허쉬	pt:Hershey	ru:Hershey	tr:Hershey	ur:ہرشی	zh:好时
+c:hershey-kiss	ProperNoun	ar:قبلة هيرشي	de:Hershey Kiss	en:Hershey's Kiss	es:Hershey Kiss	fa:بوسه هرشی	fr:Hershey Kiss	he:הרשי קיס	hi:हर्शी किस	ja:ハーシーキス	ko:허쉬 키스	pt:Hershey Kiss	ru:Hershey's Kiss	tr:Hershey Kiss	ur:ہرشی کس	zh:好时之吻
 c:hertz	Noun	ar:هرتز	de:Hertz	en:hertz	es:hercio,hertz	fa:هرتز	fr:hertz	he:הרץ	hi:हर्ट्ज़	ja:ヘルツ	ko:헤르츠	pt:hertz	ru:герц	tr:hertz	ur:ہرٹز	zh:赫兹,赫
 c:hestia-god	ProperNoun	ar:هيستيا	de:Hestia	en:Hestia	es:Hestia	fa:هستیا	fr:Hestia	he:הסטיה	hi:हेस्टिया	ja:ヘスティア	ko:헤스티아	pt:Héstia	ru:Гестия	tr:Hestia	ur:ہستیا	zh:赫斯提亚
 c:heterozygous	Noun	ar:متغاير اللواقح	de:heterozygot	en:heterozygous	es:heterocigoto	fa:هتروزیگوت	fr:hétérozygote	he:הטרוזיגוט	hi:विषमयुग्मजी	ja:ヘテロ接合	ko:이형 접합	pt:heterozigoto	ru:гетерозигота	tr:heterozigot	ur:ہیٹروزائیگوس	zh:杂合子
@@ -5598,6 +5624,7 @@ c:kiln	Noun	ar:فرن خزف,أتون	de:Brennofen,Ofen	en:kiln	es:horno de cocc
 c:kilt	Noun	ar:كيلت	de:Kilt	en:kilt	es:kilt	fa:کیلت	fr:kilt	he:קילט	hi:किल्ट	ja:キルト	ko:킬트	pt:kilt	ru:килт	tr:kilt	ur:کلٹ	zh:苏格兰裙
 c:kimchi	Noun	ar:كيمتشي	de:Kimchi	en:kimchi	es:kimchi	fa:کیمچی	fr:kimchi	he:קימצ'י	hi:किमची	ja:キムチ	ko:김치	pt:kimchi	ru:кимчи	tr:kimchi	ur:کمچی	zh:泡菜
 c:kimono	Noun	ar:كيمونو	de:Kimono	en:kimono	es:kimono	fa:کیمونو	fr:kimono	he:קימונו	hi:किमोनो	ja:着物	ko:기모노	pt:quimono	ru:кимоно	tr:kimono	ur:کیمونو	zh:和服
+c:kinder-chocolate	ProperNoun	ar:كيندر	de:Kinder Schokolade	en:Kinder chocolate	es:Kinder	fa:کیندر	fr:Kinder	he:קינדר	hi:किंडर	ja:キンダー	ko:킨더	pt:Kinder	ru:Kinder	tr:Kinder	ur:کنڈر	zh:健达
 c:kindness	Noun	ar:لطف	de:Freundlichkeit	en:kindness	es:amabilidad	fa:مهربانی	fr:gentillesse	he:חסד	hi:दयालुता	ja:親切	ko:친절	pt:bondade	ru:доброта	tr:iyilik	ur:مہربانی	zh:善良
 c:kinetic	Adjective	ar:طاقة حركية	de:kinetische Energie	en:kinetic energy	es:energía cinética	fa:انرژی جنبشی	fr:énergie cinétique	he:אנרגיה קינטית	hi:गतिज ऊर्जा	ja:運動エネルギー	ko:운동 에너지	pt:energia cinética	ru:кинетическая энергия	tr:kinetik enerji	ur:حرکی توانائی	zh:动能
 c:kinetic-energy	Noun	ar:طاقة حركية	de:kinetische Energie,Bewegungsenergie	en:kinetic energy	es:energía cinética	fa:انرژی جنبشی	fr:énergie cinétique	he:אנרגיה קינטית	hi:गतिज ऊर्जा	ja:運動エネルギー	ko:운동에너지	pt:energia cinética	ru:кинетическая энергия	tr:kinetik enerji	ur:حرکی توانائی	zh:动能
@@ -5611,6 +5638,7 @@ c:kir-royale	Noun	ar:كير رويال	de:Kir Royale	en:Kir Royale	es:Kir Royale
 c:kitchen-items	Noun	ar:أدوات مطبخ	de:Küchenartikel	en:kitchen items	es:artículos de cocina	fa:لوازم آشپزخانه	fr:articles de cuisine	he:פריטי מטבח	hi:रसोई के सामान	ja:キッチン用品	ko:주방용품	pt:artigos de cozinha	ru:кухонные принадлежности	tr:mutfak eşyaları	ur:کچن کا سامان	zh:厨房用品
 c:kitchenware	Noun	ar:أواني المطبخ	de:Küchenausrüstung	en:kitchenware	es:menaje de cocina	fa:ظروف آشپزخانه	fr:ustensiles de cuisine	he:כלי מטבח	hi:रसोई के बर्तन	ja:キッチンウェア	ko:주방 용기	pt:utensílios de cozinha	ru:кухонная посуда	tr:mutfak gereçleri	ur:کچن ویئر	zh:厨房用具
 c:kite	Noun	ar:طائرة ورقية	de:Drachen	en:kite	es:cometa	fa:بادبادک	fr:cerf-volant	he:עפיפון	hi:पतंग	ja:凧	ko:연	pt:pipa	ru:воздушный змей	tr:uçurtma	ur:پتنگ	zh:风筝
+c:kitkat	ProperNoun	ar:كت كات	de:KitKat	en:KitKat	es:KitKat	fa:کیت‌کت	fr:KitKat	he:קיטקט	hi:किटकैट	ja:キットカット	ko:킷캣	pt:KitKat	ru:КитКат	tr:KitKat	ur:کٹ کیٹ	zh:奇巧
 c:kitsune	Noun	ar:الكيتسوني	de:Kitsune	en:kitsune	es:kitsune	fa:کیتسونه	fr:kitsune	he:קיצונה	hi:कित्सुने	ja:狐	ko:키츠네	pt:kitsune	ru:кицунэ	tr:kitsune	ur:کتسونی	zh:狐仙
 c:kitten	Noun	ar:هريرة	de:Kätzchen	en:kitten	es:gatito	fa:بچه گربه	fr:chaton	he:חתלתול	hi:बिल्ली का बच्चा	ja:子猫	ko:새끼 고양이	pt:gatinho	ru:котёнок	tr:yavru kedi	ur:بلی کا بچہ	zh:小猫
 c:kitten-animal	Noun	ar:قط صغير	de:Kätzchen	en:kitten	es:gatito	fa:بچه گربه	fr:chaton	he:גור חתולים	hi:बिल्ली का बच्चा	ja:子猫	ko:새끼 고양이	pt:gatinho	ru:котёнок	tr:kedi yavrusu	ur:بلی کا بچہ	zh:小猫
@@ -5952,6 +5980,7 @@ c:limpopo	Noun	ar:ليمبوبو,نهر ليمبوبو	de:Limpopo	en:Limpopo,Lim
 c:limpopo-river	Noun	ar:نهر ليمبوبو	de:Limpopo	en:Limpopo river	es:río Limpopo	fa:رود لیمپوپو	fr:Limpopo	he:נהר הלימפופו	hi:लिम्पोपो नदी	ja:リンポポ川	ko:림포포강	pt:rio Limpopo	ru:река Лимпопо	tr:Limpopo Nehri	ur:دریائے لمپوپو	zh:林波波河
 c:lincoln	Noun	ar:لينكولن,أبراهام لينكولن	de:Lincoln,Abraham Lincoln	en:Lincoln,Abraham Lincoln	es:Lincoln	fa:لینکلن,آبراهام لینکلن	fr:Lincoln	he:לינקולן	hi:लिंकन	ja:リンカーン	ko:링컨	pt:Lincoln	ru:Линкольн	tr:Lincoln	ur:لنکن	zh:林肯
 c:linden-tree	Noun	ar:الزيزفون	de:Linde	en:linden	es:tilo	fa:درخت زیزفون	fr:tilleul	he:טיליה	hi:लिंडेन	ja:シナノキ	ko:보리수	pt:tília	ru:липа	tr:ıhlamur	ur:لنڈن	zh:椴树
+c:lindt-chocolate	ProperNoun	ar:ليندت	de:Lindt	en:Lindt	es:Lindt	fa:لیندت	fr:Lindt	he:לינדט	hi:लिंड्ट	ja:リンツ	ko:린트	pt:Lindt	ru:Lindt	tr:Lindt	ur:لنڈٹ	zh:瑞士莲
 c:lindy-hop	Noun	ar:رقص ليندي هوب	de:Lindy Hop	en:Lindy Hop	es:Lindy Hop	fa:لیندی هاپ	fr:Lindy Hop	he:לינדי הופ	hi:लिंडी हॉप	ja:リンディホップ	ko:린디홉	pt:Lindy Hop	ru:линди-хоп	tr:Lindy Hop	ur:لنڈی ہاپ	zh:林迪舞
 c:lindy-hop-dance	Noun	ar:لندي هوب	de:Lindy Hop	en:Lindy Hop	es:Lindy Hop	fa:لیندی هاپ	fr:lindy hop	he:לינדי הופ	hi:लिंडी हॉप	ja:リンディホップ	ko:린디 합	pt:lindy hop	ru:линди-хоп	tr:lindy hop	ur:لنڈی ہاپ	zh:林迪舞
 c:line	Noun	ar:خط	de:Linie	en:line	es:línea	fa:خط	fr:ligne	he:קו	hi:रेखा,लाइन	ja:線,ライン	ko:선,줄	pt:linha	ru:линия	tr:çizgi	ur:لکیر,خط	zh:线,线条
@@ -6295,6 +6324,7 @@ c:marlin	Noun	ar:مارلن	de:Marlin	en:marlin	es:marlín,aguja	fa:مارلین
 c:maronite	Noun	ar:الموارنة	de:Maroniten	en:Maronite Church	es:iglesia maronita	fa:مارونی	fr:maronites	he:מרונים	hi:मैरोनाइट	ja:マロン教会	ko:마로니파	pt:maronitas	ru:маронитская церковь	tr:Maruni kilisesi	ur:مارونی	zh:马龙尼礼教会
 c:maroon	Noun	ar:عنابي	de:Kastanienbraun	en:maroon	es:granate	fa:خرمایی سرخ	fr:marron	he:חום אדמדם	hi:मैरून	ja:栗色,マルーン	ko:밤색,마룬	pt:castanho-avermelhado	ru:тёмно-бордовый	tr:koyu kestane	ur:گہرا بھورا	zh:栗色
 c:mars	Noun	ar:المريخ	de:Mars	en:Mars	es:Marte	fa:بهرام,مریخ	fr:Mars	he:מאדים	hi:मंगल	ja:火星	ko:화성	pt:Marte	ru:Марс	tr:Mars	ur:مریخ	zh:火星
+c:mars-chocolate	ProperNoun	ar:مارس	de:Mars	en:Mars chocolate	es:Mars	fa:مارس	fr:Mars	he:מארס	hi:मार्स	ja:マーズ	ko:마스	pt:Mars	ru:Mars	tr:Mars	ur:مارس چاکلیٹ	zh:火星巧克力
 c:mars-god	ProperNoun	ar:مارس إله	de:Mars Gott	en:Mars god	es:Marte	fa:مارس	fr:Mars	he:מארס	hi:मार्स	ja:マールス	ko:마르스	pt:Marte	ru:Марс	tr:Mars	ur:مارس دیوتا	zh:马尔斯
 c:marsala-wine	Noun	ar:مارسالا	de:Marsala	en:marsala	es:marsala	fa:مارسالا	fr:marsala	he:מרסלה	hi:मार्साला	ja:マルサラ	ko:마르살라	pt:marsala	ru:марсала	tr:marsala	ur:مارسالا	zh:马尔萨拉
 c:marseille	Noun	ar:مرسيليا	de:Marseille	en:Marseille	es:Marsella	fa:مارسی	fr:Marseille	he:מרסיי	hi:मार्सिले	ja:マルセイユ	ko:마르세유	pt:Marselha	ru:Марсель	tr:Marsilya	ur:مارسی	zh:马赛
@@ -6548,6 +6578,7 @@ c:milan	Noun	ar:ميلانو	de:Mailand	en:Milan	es:Milán	fa:میلان	fr:Mila
 c:milankovitch	Noun	ar:دورات ميلانكوفيتش	de:Milankovitch-Zyklen	en:Milankovitch cycles	es:ciclos de Milankovitch	fa:چرخه‌های میلانکوویچ	fr:cycles de Milankovitch	he:מחזורי מילנקוביץ	hi:मिलानकोविच चक्र	ja:ミランコビッチ・サイクル	ko:밀란코비치 주기	pt:ciclos de Milankovitch	ru:циклы Миланковича	tr:Milankovitch döngüleri	ur:ملانکووچ چکر	zh:米兰科维奇循环
 c:military-ranks	Noun	ar:رتب عسكرية	de:militärische Ränge	en:military ranks	es:rangos militares	fa:درجات نظامی	fr:grades militaires	he:דרגות צבאיות	hi:सैन्य रैंक	ja:軍の階級	ko:군 계급	pt:patentes militares	ru:воинские звания	tr:askeri rütbeler	ur:فوجی عہدے	zh:军衔
 c:milk	Noun	ar:حليب,لبن	de:Milch	en:milk	es:leche	fa:شیر	fr:lait	he:חלב	hi:दूध	ja:牛乳,ミルク	ko:우유	pt:leite	ru:молоко	tr:süt	ur:دودھ	zh:牛奶
+c:milk-chocolate	Noun	ar:شوكولاتة بالحليب	de:Milchschokolade	en:milk chocolate	es:chocolate con leche	fa:شکلات شیری	fr:chocolat au lait	he:שוקולד חלב	hi:दूध चॉकलेट	ja:ミルクチョコレート	ko:밀크 초콜릿	pt:chocolate ao leite	ru:молочный шоколад	tr:sütlü çikolata	ur:دودھ چاکلیٹ	zh:牛奶巧克力
 c:milk-dairy	Noun	ar:حليب لبن	de:Milch	en:cow milk	es:leche de vaca	fa:شیر گاو	fr:lait de vache	he:חלב פרה	hi:गाय का दूध	ja:牛乳乳製品	ko:우유 유제품	pt:leite de vaca	ru:коровье молоко	tr:inek sütü	ur:گائے کا دودھ	zh:牛奶乳品
 c:milk-drink	Noun	ar:حليب شرب	de:Trinkmilch	en:milk	es:leche	fa:شیر نوشیدنی	fr:lait	he:חלב	hi:दूध	ja:牛乳	ko:우유	pt:leite	ru:молоко	tr:süt	ur:دودھ	zh:牛奶
 c:milk-tea	Noun	ar:شاي بالحليب	de:Milchtee	en:milk tea	es:té con leche	fa:چای شیر	fr:thé au lait	he:תה חלב	hi:दूध वाली चाय	ja:ミルクティー	ko:밀크티	pt:chá com leite	ru:чай с молоком	tr:sütlü çay	ur:دودھ والی چائے	zh:奶茶
@@ -6987,6 +7018,7 @@ c:neptune	Noun	ar:نبتون	de:Neptun	en:Neptune	es:Neptuno	fa:نپتون	fr:Ne
 c:neptune-god	ProperNoun	ar:نبتون إله	de:Neptun Gott	en:Neptune god	es:Neptuno	fa:نپتون	fr:Neptune	he:נפטון	hi:नेपच्यून	ja:ネプトゥーヌス	ko:넵투누스	pt:Netuno	ru:Нептун	tr:Neptün	ur:نیپچون دیوتا	zh:涅普顿
 c:nerve	Noun	ar:عصب	de:Nerv	en:nerve	es:nervio	fa:عصب	fr:nerf	he:עצב	hi:तंत्रिका,नस	ja:神経	ko:신경	pt:nervo	ru:нерв	tr:sinir	ur:عصب	zh:神经
 c:nestjs	ProperNoun	ar:نست جي إس	de:NestJS	en:NestJS	es:NestJS	fa:نست‌جی‌اس	fr:NestJS	he:נסטג'יאס	hi:नेस्ट जेएस	ja:ネストJS	ko:네스트JS	pt:NestJS	ru:NestJS	tr:NestJS	ur:نیسٹ جے ایس	zh:巢JS
+c:nestle-chocolate	ProperNoun	ar:نستله	de:Nestlé	en:Nestlé	es:Nestlé	fa:نستله	fr:Nestlé	he:נסטלה	hi:नेस्ले	ja:ネスレ	ko:네슬레	pt:Nestlé	ru:Нестле	tr:Nestlé	ur:نسلے	zh:雀巢
 c:net-neutrality	Noun	ar:حياد الشبكة	de:Netzneutralität	en:net neutrality	es:neutralidad de la red	fa:بی‌طرفی اینترنت	fr:neutralité du net	he:ניטרליות הרשת	hi:नेट न्यूट्रैलिटी	ja:ネット中立性	ko:망 중립성	pt:neutralidade da rede	ru:сетевой нейтралитет	tr:net tarafsızlığı	ur:نیٹ نیوٹریلٹی	zh:网络中立性
 c:net-zero	Noun	ar:الصافي الصفري	de:Netto-Null	en:net zero	es:cero neto	fa:صفر خالص	fr:zéro émission nette	he:נטו אפס	hi:शुद्ध शून्य	ja:ネットゼロ	ko:넷제로	pt:emissão zero	ru:углеродная нейтральность	tr:net sıfır	ur:خالص صفر	zh:净零排放
 c:netadmin	Noun	ar:مدير الشبكة	de:Netzwerkadministrator	en:network administrator	es:administrador de red	fa:مدیر شبکه	fr:administrateur réseau	he:מנהל רשת	hi:नेटवर्क प्रशासक	ja:ネットワーク管理者	ko:네트워크 관리자	pt:administrador de rede	ru:сетевой администратор	tr:ağ yöneticisi	ur:نیٹ ورک ایڈمنسٹریٹر	zh:网络管理员
@@ -8181,6 +8213,7 @@ c:prague-capital	Noun	ar:براغ	de:Prag	en:Prague	es:Praga	fa:پراگ	fr:Prag
 c:prairie	Noun	ar:سهل عشبي	de:Prärie	en:prairie	es:pradera	fa:چمنزار,پریری	fr:prairie	he:פריירי,ערבה	hi:प्रेयरी,घास के मैदान	ja:プレーリー,大草原	ko:프레리,대초원	pt:pradaria	ru:прерия	tr:çayır,preri	ur:سبزہ زار	zh:北美大草原,普列里
 c:prairie-style	Noun	ar:طراز البراري	de:Prärie-Stil	en:Prairie Style	es:estilo Pradera	fa:سبک پریری	fr:style Prairie	he:סגנון הפררייה	hi:प्रेयरी शैली	ja:プレーリー様式	ko:프레리 양식	pt:estilo Prairie	ru:стиль прерий	tr:Prairie tarzı	ur:پریری طرز	zh:草原式
 c:praline	Noun	ar:برالين	de:Praline	en:praline	es:praliné	fa:پرالین	fr:praline	he:פרלין	hi:प्रालिन	ja:プラリネ	ko:프랄린	pt:praliné	ru:пралине	tr:praline	ur:پرالین	zh:果仁糖
+c:praline-chocolate	Noun	ar:برالين	de:Praline	en:praline	es:praliné	fa:پرالین	fr:praline	he:פרלינה	hi:प्रलीन	ja:プラリネ	ko:프랄린	pt:pralina	ru:пралине	tr:praline	ur:پریلین	zh:果仁糖
 c:prawn	Noun	ar:قريدس,جمبري كبير	de:Riesengarnele,Große Garnele	en:prawn	es:langostino	fa:میگوی درشت	fr:crevette rose,gambas	he:שרימפ גדול	hi:बड़ा झींगा	ja:クルマエビ,大正海老	ko:대하	pt:lagostim,gamba	ru:креветка крупная	tr:iri karides	ur:بڑا جھینگا	zh:对虾
 c:prawn-animal	Noun	ar:قريدس	de:Garnele	en:prawn	es:langostino	fa:میگوی درشت	fr:gambas	he:חסילון	hi:बड़ा झींगा	ja:クルマエビ	ko:대하	pt:lagostim	ru:креветка крупная	tr:büyük karides	ur:بڑا جھینگا	zh:对虾
 c:prawn-sea	Noun	ar:قريدس	de:Garnelen	en:prawn	es:langostino	fa:میگو بزرگ	fr:gambas	he:שרימפס גדול	hi:बड़ा झींगा	ja:クルマエビ	ko:큰새우	pt:gamba	ru:крупная креветка	tr:iri karides	ur:بڑا جھینگا	zh:对虾
@@ -9018,6 +9051,7 @@ c:rubidium	Noun	ar:روبيديوم	de:Rubidium	en:rubidium	es:rubidio	fa:روب
 c:rubiks-cube	Noun	ar:مكعب روبيك	de:Zauberwürfel	en:Rubik's Cube	es:cubo de Rubik	fa:مکعب روبیک	fr:Rubik's Cube	he:קוביית רוביק	hi:रूबिक्स क्यूब	ja:ルービックキューブ	ko:루빅스 큐브	pt:cubo de Rubik	ru:кубик Рубика	tr:Rubik Küpü	ur:روبک کیوب	zh:魔方
 c:ruble	Noun	ar:روبل	de:Rubel	en:ruble,rouble	es:rublo	fa:روبل	fr:rouble	he:רובל	hi:रूबल	ja:ルーブル	ko:루블	pt:rublo	ru:рубль	tr:ruble	ur:روبل	zh:卢布
 c:ruby	Noun	ar:ياقوت,ياقوت أحمر	de:Rubin	en:ruby	es:rubí	fa:یاقوت سرخ,یاقوت	fr:rubis	he:אודם,רובי	hi:माणिक,रूबी	ja:ルビー,紅玉	ko:루비,홍옥	pt:rubi	ru:рубин	tr:yakut,rubi	ur:یاقوت,لعل	zh:红宝石,宝石红
+c:ruby-chocolate	Noun	ar:شوكولاتة روبي	de:Ruby-Schokolade	en:ruby chocolate	es:chocolate rubí	fa:شکلات روبی	fr:chocolat ruby	he:שוקולד רובי	hi:रूबी चॉकलेट	ja:ルビーチョコレート	ko:루비 초콜릿	pt:chocolate rubi	ru:рубиновый шоколад	tr:ruby çikolata	ur:روبی چاکلیٹ	zh:红宝石巧克力
 c:ruby-color	Noun	ar:ياقوتي	de:Rubinrot	en:ruby,ruby red	es:rojo rubí	fa:یاقوتی	fr:rouge rubis	he:אדום רובין	hi:माणिक लाल	ja:ルビー色	ko:루비색	pt:rubi	ru:рубиновый	tr:yakut kırmızısı	ur:یاقوتی	zh:宝石红,红宝石色
 c:ruby-gem	Noun	ar:ياقوت أحمر	de:Rubin	en:ruby	es:rubí	fa:یاقوت سرخ	fr:rubis	he:אודם	hi:माणिक	ja:ルビー	ko:루비	pt:rubi	ru:рубин	tr:yakut	ur:یاقوت	zh:红宝石
 c:ruby-lang	ProperNoun	ar:روبي	de:Ruby	en:Ruby	es:Ruby	fa:روبی	fr:Ruby	he:רובי	hi:रूबी	ja:ルビー	ko:루비	pt:Ruby	ru:Ruby	tr:Ruby	ur:روبی	zh:鲁比
@@ -9371,6 +9405,7 @@ c:semiconductor	Noun	ar:شبه موصل	de:Halbleiter	en:semiconductor	es:semico
 c:semiconductor-mat	Noun	ar:شبه الموصل	de:Halbleiter	en:semiconductor	es:semiconductor	fa:نیم‌رسانا	fr:semi-conducteur	he:מוליך למחצה	hi:अर्धचालक	ja:半導体	ko:반도체	pt:semicondutor	ru:полупроводник	tr:yarı iletken	ur:نیم موصل	zh:半导体
 c:semiconductor-material	Noun	ar:أشباه الموصلات	de:Halbleiter	en:semiconductor	es:semiconductor	fa:نیمه‌رسانا	fr:semiconducteur	he:מוליך למחצה	hi:अर्धचालक	ja:半導体	ko:반도체	pt:semicondutor	ru:полупроводник	tr:yarıiletken	ur:نیم موصل	zh:半导体
 c:semiotics	Noun	ar:علم الدلالة	de:Semiotik	en:semiotics	es:semiótica	fa:نشانه‌شناسی	fr:sémiotique	he:סמיוטיקה	hi:चिह्नशास्त्र	ja:記号論	ko:기호학	pt:semiótica	ru:семиотика	tr:semiyotik	ur:علامت شناسی	zh:符号学
+c:semisweet-chocolate	Noun	ar:شوكولاتة نصف حلوة	de:halbsüße Schokolade	en:semisweet chocolate	es:chocolate semidulce	fa:شکلات نیمه‌شیرین	fr:chocolat mi-sucré	he:שוקולד חצי מתוק	hi:अर्ध मीठी चॉकलेट	ja:セミスイートチョコ	ko:세미스위트 초콜릿	pt:chocolate meio amargo	ru:полусладкий шоколад	tr:yarı tatlı çikolata	ur:نیم میٹھی چاکلیٹ	zh:半甜巧克力
 c:semitone	Noun	ar:نصف تون	de:Halbton	en:semitone	es:semitono	fa:نیم‌پرده	fr:demi-ton	he:חצי טון	hi:अर्धस्वर	ja:半音	ko:반음	pt:semitom	ru:полутон	tr:yarım ton	ur:نصف سر	zh:半音
 c:semitone-music	Noun	ar:نصف درجة صوتية	de:Halbton	en:semitone	es:semitono	fa:نیم‌پرده	fr:demi-ton	he:חצי טון	hi:अर्ध-स्वर	ja:半音	ko:반음	pt:semitom	ru:полутон	tr:yarım ses	ur:نیم سر	zh:半音
 c:semolina	Noun	ar:سميد	de:Grieß	en:semolina	es:sémola	fa:سمولینا	fr:semoule	he:סולת	hi:सूजी	ja:セモリナ	ko:세몰리나	pt:sêmola	ru:манная крупа	tr:irmik	ur:سوجی	zh:粗粒小麦粉
@@ -9694,6 +9729,7 @@ c:snare-drum	Noun	ar:الطبلة الحبلية	de:Snaredrum	en:snare drum	es:c
 c:sneaker	Noun	ar:حذاء رياضي	de:Sneaker,Turnschuh	en:sneaker,trainer	es:zapatilla deportiva,tenis	fa:کفش ورزشی,کتانی	fr:basket,tennis	he:נעל ספורט	hi:स्नीकर	ja:スニーカー	ko:스니커즈,운동화	pt:tênis	ru:кроссовки	tr:spor ayakkabı	ur:جوگر	zh:运动鞋
 c:sneakers	Noun	ar:حذاء رياضي	de:Turnschuhe	en:sneakers	es:zapatillas	fa:کتانی	fr:baskets	he:נעלי ספורט	hi:स्नीकर्स	ja:スニーカー	ko:운동화	pt:tênis	ru:кроссовки	tr:spor ayakkabı	ur:سنیکرز	zh:运动鞋
 c:snell-law	Noun	ar:قانون سنيل	de:snelliussches Gesetz	en:Snell's law	es:ley de Snell	fa:قانون اسنل	fr:loi de Snell	he:חוק סנל	hi:स्नेल का नियम	ja:スネルの法則	ko:스넬 법칙	pt:lei de Snell	ru:закон Снелла	tr:Snell yasası	ur:سنیل کا قانون	zh:斯涅尔定律
+c:snickers-chocolate	ProperNoun	ar:سنيكرز	de:Snickers	en:Snickers	es:Snickers	fa:اسنیکرز	fr:Snickers	he:סניקרס	hi:स्निकर्स	ja:スニッカーズ	ko:스니커즈	pt:Snickers	ru:Сникерс	tr:Snickers	ur:سنکرز	zh:士力架
 c:sniper-rifle	Noun	ar:بندقية قنص	de:Scharfschützengewehr	en:sniper rifle	es:rifle de francotirador	fa:تفنگ تک‌تیرانداز	fr:fusil de sniper	he:רובה צלפים	hi:स्नाइपर राइफल	ja:狙撃銃	ko:저격총	pt:rifle de precisão	ru:снайперская винтовка	tr:keskin nişancı tüfeği	ur:سنائپر رائفل	zh:狙击步枪
 c:snow	Noun	ar:ثلج	de:Schnee	en:snow	es:nieve	fa:برف	fr:neige	he:שלג	hi:बर्फ़,हिम	ja:雪	ko:눈	pt:neve	ru:снег	tr:kar	ur:برف	zh:雪
 c:snow-leopard	Noun	ar:نمر الثلج	de:Schneeleopard	en:snow leopard	es:leopardo de las nieves	fa:پلنگ برفی	fr:léopard des neiges	he:נמר שלגים	hi:हिम तेंदुआ	ja:ユキヒョウ	ko:설표	pt:leopardo-das-neves	ru:снежный барс,ирбис	tr:kar leoparı	ur:برفانی چیتا	zh:雪豹
@@ -10816,6 +10852,7 @@ c:toad	Noun	ar:علجوم,ضفدع طيني	de:Kröte	en:toad	es:sapo	fa:وزغ	
 c:toast	Noun	ar:نخب,نخب الشرف	de:Toast,Trinkspruch	en:toast	es:brindis	fa:نوش,به سلامتی	fr:toast	he:הרמת כוסית	hi:टोस्ट,जयकार	ja:乾杯	ko:건배	pt:brinde	ru:тост	tr:kadeh kaldırma,tost	ur:ٹوسٹ,جام صحت	zh:祝酒,敬酒
 c:toaster	Noun	ar:محمصة	de:Toaster	en:toaster	es:tostadora	fa:توستر	fr:grille-pain	he:מצנם	hi:टोस्टर	ja:トースター	ko:토스터	pt:torradeira	ru:тостер	tr:tost makinesi	ur:ٹوسٹر	zh:烤面包机
 c:toaster-kitchen	Noun	ar:محمصة	de:Toaster	en:toaster	es:tostadora	fa:توستر	fr:grille-pain	he:מצנם	hi:टोस्टर	ja:トースター	ko:토스터	pt:torradeira	ru:тостер	tr:ekmek kızartma makinesi	ur:ٹوسٹر	zh:烤面包机
+c:toblerone-chocolate	ProperNoun	ar:توبليرون	de:Toblerone	en:Toblerone	es:Toblerone	fa:توبلرون	fr:Toblerone	he:טובלרון	hi:तोबलेरोन	ja:トブラローネ	ko:토블론	pt:Toblerone	ru:Тоблерон	tr:Toblerone	ur:ٹوبلیرون	zh:三角巧克力
 c:today	Adverb	ar:اليوم	de:heute	en:today	es:hoy	fa:امروز	fr:aujourd'hui	he:היום	hi:आज	ja:今日	ko:오늘	pt:hoje	ru:сегодня	tr:bugün	ur:آج	zh:今天
 c:toe	Noun	ar:إصبع قدم	de:Zehe	en:toe	es:dedo del pie	fa:انگشت پا	fr:orteil	he:בוהן	hi:पैर की उंगली	ja:つま先,足指	ko:발가락	pt:dedo do pé	ru:палец ноги	tr:ayak parmağı	ur:پاؤں کی انگلی	zh:脚趾
 c:toe-body	Noun	ar:إصبع قدم	de:Zeh	en:toe	es:dedo del pie	fa:انگشت پا	fr:orteil	he:אצבע רגל	hi:पैर की उंगली	ja:足指	ko:발가락	pt:dedo do pé	ru:палец ноги	tr:ayak parmağı	ur:پاؤں کی انگلی	zh:脚趾
@@ -11046,6 +11083,7 @@ c:trowel	Noun	ar:مالج	de:Kelle	en:trowel	es:llana	fa:ماله	fr:truelle	he:
 c:trowel-tool	Noun	ar:مالج	de:Kelle	en:trowel	es:llana	fa:ماله	fr:truelle	he:מגרפה	hi:करनी	ja:コテ	ko:흙손	pt:colher de pedreiro	ru:мастерок	tr:mala	ur:کرنی	zh:抹刀
 c:truck	Noun	ar:شاحنة	de:Lastwagen,Laster,LKW	en:truck,lorry	es:camión	fa:کامیون	fr:camion	he:משאית	hi:ट्रक,लॉरी	ja:トラック	ko:트럭	pt:caminhão,camião	ru:грузовик	tr:kamyon	ur:ٹرک	zh:卡车,货车
 c:truck-vehicle	Noun	ar:شاحنة	de:Lastwagen	en:truck	es:camión	fa:کامیون	fr:camion	he:משאית	hi:ट्रक	ja:トラック	ko:트럭	pt:caminhão	ru:грузовик	tr:kamyon	ur:ٹرک	zh:卡车
+c:truffle-chocolate	Noun	ar:كمأة الشوكولاتة	de:Schokoladentrüffel	en:chocolate truffle	es:trufa de chocolate	fa:ترافل شکلات	fr:truffe au chocolat	he:טראפלים שוקולד	hi:चॉकलेट ट्रफल	ja:チョコレートトリュフ	ko:초콜릿 트러플	pt:trufa de chocolate	ru:шоколадный трюфель	tr:çikolata trüf	ur:چاکلیٹ ٹرفل	zh:巧克力松露
 c:truffle-dessert	Noun	ar:كرات الشوكولاتة	de:Schokoladentrüffel	en:chocolate truffle	es:trufa de chocolate	fa:ترافل شکلاتی	fr:truffe au chocolat	he:טראפל שוקולד	hi:चॉकलेट ट्रफल	ja:チョコレートトリュフ	ko:초콜릿 트러플	pt:trufa de chocolate	ru:шоколадный трюфель	tr:çikolata trüf	ur:چاکلیٹ ٹرفل	zh:巧克力松露
 c:trumpet	Noun	ar:بوق,ترومبيت	de:Trompete	en:trumpet	es:trompeta	fa:ترومپت,شیپور	fr:trompette	he:חצוצרה	hi:तुरही,ट्रम्पेट	ja:トランペット	ko:트럼펫	pt:trompete	ru:труба	tr:trompet,borazan	ur:بگل,ترمپٹ	zh:小号
 c:trunk	Noun	ar:جذع	de:Stamm,Baumstamm	en:trunk	es:tronco	fa:تنه,تنه درخت	fr:tronc	he:גזע	hi:तना,धड़	ja:幹	ko:줄기,나무줄기	pt:tronco	ru:ствол	tr:gövde,ağaç gövdesi	ur:تنا	zh:树干
@@ -11120,6 +11158,7 @@ c:twin-prime	Noun	ar:الاعداد الاولية التوامية	de:Primzahlz
 c:twirl	Verb	ar:دار بخفة	de:wirbeln,pirouettieren	en:twirl	es:dar vueltas,girar con gracia	fa:چرخ زدن سریع	fr:tournoyer,faire des pirouettes	he:להסתחרר	hi:फिरकी लेना	ja:くるくる回る	ko:빙그르르 돌다	pt:rodopiar	ru:кружиться на месте	tr:fırıldak gibi dönmek	ur:گھرنی کی طرح گھومنا	zh:旋转打转
 c:twitch-platform	ProperNoun	ar:توتش	de:Twitch	en:Twitch	es:Twitch	fa:توییچ	fr:Twitch	he:טוויץ'	hi:ट्विच	ja:ツイッチ	ko:트위치	pt:Twitch	ru:Twitch	tr:Twitch	ur:ٹوئچ	zh:抽搐
 c:twitter-platform	ProperNoun	ar:تويتر	de:Twitter	en:Twitter	es:Twitter	fa:توییتر	fr:Twitter	he:טוויטר	hi:ट्विटर	ja:ツイッター	ko:트위터	pt:Twitter	ru:Twitter	tr:Twitter	ur:ٹوئٹر	zh:推特
+c:twix	ProperNoun	ar:تويكس	de:Twix	en:Twix	es:Twix	fa:توئکس	fr:Twix	he:טוויקס	hi:ट्विक्स	ja:ツイックス	ko:트윅스	pt:Twix	ru:Twix	tr:Twix	ur:ٹوکس	zh:特趣
 c:two	Noun	ar:اثنان,اثنين	de:zwei	en:two	es:dos	fa:دو	fr:deux	he:שניים	hi:दो	ja:二,に	ko:둘,이	pt:dois	ru:два	tr:iki	ur:دو	zh:二,两
 c:two-factor-auth	Noun	ar:المصادقة الثنائية	de:Zwei-Faktor-Authentifizierung	en:two-factor authentication	es:autenticación de dos factores	fa:احراز هویت دومرحله‌ای	fr:authentification à deux facteurs	he:אימות דו-שלבי	hi:दो-चरण प्रमाणीकरण	ja:二要素認証	ko:이중 인증	pt:autenticação de dois fatores	ru:двухфакторная аутентификация	tr:iki faktörlü kimlik doğrulama	ur:دو عنصری تصدیق	zh:双重认证
 c:two-factor-authentication	Noun	ar:مصادقة ثنائية العامل	de:Zwei-Faktor-Authentisierung	en:two-factor authentication	es:autenticación de dos factores	fa:احراز هویت دو عاملی	fr:authentification à deux facteurs	he:אימות דו-שלבי	hi:दो-कारक प्रमाणीकरण	ja:二要素認証	ko:이중 인증	pt:autenticação de dois fatores	ru:двухфакторная аутентификация	tr:iki faktörlü kimlik doğrulama	ur:دو عنصری تصدیق	zh:双重认证
@@ -11621,6 +11660,7 @@ c:whistle-sport	Noun	ar:صافرة رياضية	de:Trillerpfeife	en:sports whist
 c:white	Adjective	ar:أبيض	de:weiß	en:white	es:blanco	fa:سفید	fr:blanc	he:לבן	hi:सफ़ेद	ja:白,白い	ko:흰,하얀	pt:branco	ru:белый	tr:beyaz	ur:سفید	zh:白,白色
 c:white-balance	Noun	ar:توازن اللون الأبيض	de:Weißabgleich	en:white balance	es:balance de blancos	fa:تعادل سفیدی	fr:balance des blancs	he:איזון לבן	hi:श्वेत संतुलन	ja:ホワイトバランス	ko:화이트 밸런스	pt:balanço de branco	ru:баланс белого	tr:beyaz dengesi	ur:سفیدی توازن	zh:白平衡
 c:white-bread	Noun	ar:خبز أبيض	de:Weißbrot	en:white bread	es:pan blanco	fa:نان سفید	fr:pain blanc	he:לחם לבן	hi:सफेद रोटी	ja:白パン	ko:흰 빵	pt:pão branco	ru:белый хлеб	tr:beyaz ekmek	ur:سفید روٹی	zh:白面包
+c:white-chocolate	Noun	ar:شوكولاتة بيضاء	de:weiße Schokolade	en:white chocolate	es:chocolate blanco	fa:شکلات سفید	fr:chocolat blanc	he:שוקולד לבן	hi:सफेद चॉकलेट	ja:ホワイトチョコレート	ko:화이트 초콜릿	pt:chocolate branco	ru:белый шоколад	tr:beyaz çikolata	ur:سفید چاکلیٹ	zh:白巧克力
 c:white-dwarf	Noun	ar:قزم أبيض	de:Weißer Zwerg	en:white dwarf	es:enana blanca	fa:کوتوله سفید	fr:naine blanche	he:ננסה לבנה	hi:श्वेत वामन	ja:白色矮星	ko:백색왜성	pt:anã branca	ru:белый карлик	tr:beyaz cüce	ur:سفید بونا ستارہ	zh:白矮星
 c:white-dwarf-astro	Noun	ar:قزم أبيض	de:weißer Zwerg	en:white dwarf	es:enana blanca	fa:کوتوله سفید	fr:naine blanche	he:ננס לבן	hi:श्वेत वामन	ja:白色矮星	ko:백색왜성	pt:anã branca	ru:белый карлик	tr:beyaz cüce	ur:سفید بونا	zh:白矮星
 c:white-tea	Noun	ar:شاي أبيض	de:weißer Tee	en:white tea	es:té blanco	fa:چای سفید	fr:thé blanc	he:תה לבן	hi:सफेद चाय	ja:白茶	ko:백차	pt:chá branco	ru:белый чай	tr:beyaz çay	ur:سفید چائے	zh:白茶
