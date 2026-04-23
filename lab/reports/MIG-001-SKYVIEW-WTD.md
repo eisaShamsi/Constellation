@@ -119,3 +119,69 @@ the SkyNode TypeScript interface, so MIG-002 can flip NULL → populated
 without a schema change.
 
 **Next**: Phase 3 — Build, starting with Step 1.
+
+## Phase 4 — Audit
+
+Three agents ran in parallel per `/migration` skill: invariant check,
+drift check (LL-023), migration-path check (first-boot, schema
+mismatch, mid-backfill interrupt, rollback). Findings triaged and
+addressed in §85–86.
+
+### HIGH
+
+1. **`+layout.svelte:2566` graph-failure path skipped sky assignment.**
+   Guard was `graph.links.length > 0`; when the graph IPC errored
+   (`graph = { links: [], tags: {} }`), Sky View was left empty even
+   if the sky IPC had returned a ready payload. Fixed in §85: guard
+   now `graph.links.length > 0 || (sky && sky.isReady)`, sky data wins
+   inside.
+2. **`cache_boot_snapshot_sky` readiness gate** — audit flagged
+   concern about partial-render during mid-backfill. **Already
+   addressed** in §79 (Step 8): `cache.rs:359` gates `is_ready` on
+   `schema_versions.sky >= SKY_SCHEMA_VERSION`. When absent, the IPC
+   returns empty + `isReady=false` and the frontend falls through to
+   `buildSkyData`. No code change needed; closing the finding.
+
+### MED / LOW (§86)
+
+3. **`SKY_SCHEMA_VERSION` was duplicated.** `sky_backfill.rs` had its
+   own `TARGET_SKY_VERSION` const kept in sync by hand-edit. Now
+   imports `SKY_SCHEMA_VERSION` from `search.rs` directly — one source
+   of truth, can't drift.
+4. **`finalize()` was two statements, not a transaction.** A crash
+   between the version stamp and the cursor delete could leave a
+   completed back-fill with a live cursor row, tricking the next boot
+   into thinking it was interrupted. Wrapped in `conn.transaction()`
+   so both land or neither.
+5. **"Compute now" button was misleading.** The label implied
+   persistence; the IPC (compute_note_strata / compute_note_maturity)
+   computes in-memory and is lost on relaunch (full persistence is
+   MIG-002). Relabeled to "Compute for this session" across the
+   component fallback + 15 i18n locales.
+
+### Boot-perf numbers
+
+Release build (`cargo tauri build`, commit 8a37aa8) completed exit 0;
+MSI and NSIS installers produced. Runtime boot-perf capture (warm
+vs cold, IPC wall times, frontend assign deltas) is **not yet
+collected** — the release output file only contained tail lines
+confirming build success. User-side capture deferred; will be
+appended once a release-run trace is in hand.
+
+The debug-build numbers from §80-81 stand as the internal perf
+benchmark:
+- `cache_boot_snapshot_sky` wall time: 7.7 s → 2.8 s after SQL-JOIN
+  drop (§80) → further reduction after id-reuse (§81) on a 7,600-
+  node / 232,461-link universe.
+- Frontend assign: was dominated by the 217k-edge JS iteration in
+  `buildSkyData`; now zero JS iteration — direct assign of pre-shaped
+  `SkyNode[]` / `SkyLink[]` arrays from the IPC.
+
+### Closure
+
+MIG-001 closes with five HIGH/MED/LOW findings triaged (two already
+addressed, three fixed in §85–86), plus the original 11-step plan
+landed. Enrichment persistence (stratum/maturity/origin_type → NULL
+columns reserved in sky_nodes) deferred to MIG-002 per §74 (Step 7)
+decision. Release-run boot-perf capture is the one remaining item and
+gets filed when a trace is taken.

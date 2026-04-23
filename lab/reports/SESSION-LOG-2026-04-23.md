@@ -156,6 +156,9 @@ is now authoritative.
 | §82 | 0bf99d8 | MIG-001 Step 9: frontend swap to cache_boot_snapshot_sky |
 | §83 | cf59401 | MIG-001 Step 9 fix: parallelize sky IPC with graph IPC |
 | §84 | eab6aa9 | MIG-001 Step 10: audit-only, no second-screen swap needed |
+| §85 | 7685436 | MIG-001 Phase-4 HIGH fix: sky IPC used on graph-fail path |
+| §86 | ecacf4d | MIG-001 Phase-4 MED/LOW: dedupe const, txn finalize, relabel |
+| §87 | (pending) | MIG-001 Phase-4 audit section + closure |
 
 ## § 72-78 — MIG-001 Steps 5-7 + Sky View legend redesign
 
@@ -196,34 +199,43 @@ See individual commits for full context. High notes:
   full universe graph. Invariant 5 (second-screen parity) is about
   the shared note data contract, which is unchanged. No code change.
 
-## § Pending — MIG-001 Phase-4 Audit (Step 11)
+## § 85-87 — MIG-001 Phase-4 Audit closure (Step 11)
 
-Phase-4 audit launched 3 agents in parallel per /migration skill.
-All three returned findings; **nothing committed yet**.
+Phase-4 audit ran 3 agents in parallel per /migration skill. Findings
+triaged:
 
-Release build completed (task `b7afncku9`, exit 0). Boot-perf
-numbers not yet captured from output file.
+- **§85 (7685436)** — HIGH #1: `+layout.svelte` graph-failure path
+  skipped sky assignment. Guard extended to `graph.links.length > 0
+  || (sky && sky.isReady)` so sky IPC still drives Sky View when the
+  graph IPC returns empty/fails.
+- **HIGH #2** — readiness gate on `cache_boot_snapshot_sky`. **Already
+  addressed** in §79 (Step 8) at `cache.rs:359`. Audit flag was stale;
+  closed with no code change.
+- **§86 (ecacf4d)** — MED/LOW bundle:
+  - Deduped `SKY_SCHEMA_VERSION` (import from `search.rs` instead of
+    parallel `TARGET_SKY_VERSION` const in `sky_backfill.rs`).
+  - Wrapped `finalize()` stamp + cursor delete in one transaction
+    (crash between them would fake an interrupted back-fill on next
+    boot).
+  - Relabeled "Compute now" → "Compute for this session" in
+    `GraphMindView.svelte` + 15 i18n locales (label now matches the
+    compute-in-memory-only behavior; full persistence is MIG-002).
+- **§87 (this commit)** — Phase 4 audit section appended to
+  `MIG-001-SKYVIEW-WTD.md`; MIG-001 closed.
 
-**HIGH fixes pending**:
-1. `+layout.svelte:2566` — graph-failure path skips sky assignment
-   even when sky IPC succeeded. Guard needs `|| (sky && sky.isReady)`.
-2. `cache_boot_snapshot_sky` — no gate on back-fill completion;
-   users can see partial graph mid-migration. Gate on
-   `schema_versions.sky = TARGET`; `isReady=false` → frontend falls
-   back to buildSkyData, not partial render.
-
-**MED/LOW fixes pending**:
-3. Dedupe hand-synced SKY_SCHEMA_VERSION between `search.rs` and
-   `sky_backfill.rs:41`.
-4. Wrap `sky_backfill.rs` `finalize()` in one transaction.
-5. Relabel "Compute now" button → "Compute for this session" (15
-   i18n files).
-
-Next session: apply HIGH #1 + #2 first commit, MED/LOW second
-commit, capture boot-perf from release build output, write Phase-4
-section in `MIG-001-SKYVIEW-WTD.md`, final MIG-001 closure commit.
+**Release-run boot-perf capture not collected.** The Tauri build
+(task `b7afncku9`) completed exit 0 and produced the MSI + NSIS
+installers, but the output file only retained tail lines. Runtime
+trace (warm vs cold, IPC wall times) stays on deck until a release
+run is taken. The debug numbers from §80-81 stand as the working
+benchmark (~2.8 s sky IPC on 7.6k/232k universe; zero JS iteration).
 
 ### Non-MIG pending
 
 - Functional Panel Placement test walkthrough
 - MIG-002: persist enrichment (stratum/maturity/origin_type) to sky_nodes
+- buildSkyData JS fallback cleanup — **not deleted**. The fallback is
+  load-bearing in two places: `+layout.svelte` uses it when
+  `sky.isReady=false` (mid-backfill), and SecondScreenPage's three
+  per-library ego-network call sites per §84. Deletion requires a
+  separate migration, not a MIG-001 closure item.
