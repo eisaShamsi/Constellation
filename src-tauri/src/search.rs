@@ -434,6 +434,21 @@ fn init_db(path: &Path) -> Result<Connection, String> {
     //   default. The triggers on note_meta / note_links maintain
     //   integrity via the UNIQUE constraints plus ON DELETE cascades in
     //   the trigger bodies (Steps 3–4).
+    // MIG-001 Step 7 audit finding: stratum/maturity/origin_type are
+    // compute-on-demand in the current architecture — strata.rs,
+    // maturity.rs, and provenance.rs are pure filesystem scanners that
+    // return results to the frontend without persisting them anywhere.
+    // There's no existing write path that could feed a WTD trigger.
+    //
+    // Decision: keep the columns as forward-compat placeholders (so the
+    // shape of sky_nodes matches the SkyNode TypeScript type and a
+    // future MIG-002 can flip them to WTD without a schema change), but
+    // leave them NULL for MIG-001 v1. Frontend continues calling
+    // compute_note_strata / compute_note_maturity separately after the
+    // new cache_boot_snapshot_sky IPC (Step 8) returns the base graph.
+    // Scope discipline per LL-023: enrichment migration is orthogonal
+    // to Sky View's primary perf pain (node+edge serialization) and
+    // belongs in its own MIG-002.
     conn.execute_batch("
         CREATE TABLE IF NOT EXISTS sky_nodes (
             path TEXT PRIMARY KEY,
@@ -442,6 +457,7 @@ fn init_db(path: &Path) -> Result<Connection, String> {
             library_name TEXT NOT NULL,
             link_count INTEGER NOT NULL DEFAULT 0,
             outgoing_count INTEGER NOT NULL DEFAULT 0,
+            -- Enrichment columns: reserved for MIG-002. NULL until then.
             stratum TEXT,
             maturity TEXT,
             origin_type TEXT,

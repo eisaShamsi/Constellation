@@ -70,4 +70,24 @@ Proceed with C. Accept risks 1–8 with the listed mitigations.
 
 Full plan: see commit message of §64 and the Plan agent return.
 
+## Step 7 — Enrichment scope decision
+
+Audited strata.rs / maturity.rs / provenance.rs: all three are pure
+filesystem scanners that compute on demand and return to the frontend.
+No existing persistence path; the Phase-1 assumption of an
+`UPDATE note_meta SET properties_json=...` write-side hook was wrong.
+
+Decision: keep the enrichment columns (stratum/maturity/origin_type)
+as forward-compat placeholders in sky_nodes, leave them NULL for
+MIG-001 v1. Frontend continues calling the compute commands
+separately after Step 8's new IPC returns the base graph. Enrichment
+WTD migration deferred to future MIG-002 as its own focused task.
+
+Rationale: per LL-023, enrichment is orthogonal to Sky View's primary
+perf pain (node + edge serialization across IPC). Expanding MIG-001
+to include enrichment would triple the trigger surface and invite
+the scope-creep failure mode. The shape of sky_nodes already matches
+the SkyNode TypeScript interface, so MIG-002 can flip NULL → populated
+without a schema change.
+
 **Next**: Phase 3 — Build, starting with Step 1.
