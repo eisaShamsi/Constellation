@@ -92,6 +92,44 @@ back nodes recede.
 **Status**: ✅ User-approved.
 **Commit**: `87fb8b8`
 
+## § 68. MIG-001 Step 3 — note_links triggers
+
+AFTER INSERT/UPDATE/DELETE on `note_links` maintaining `sky_links`.
+/simplify v2 findings applied before commit: WHEN guard on AU for
+metadata-only writes, weight 1.0 default, plain INSERT, dropped
+non-selective link_type index.
+
+**Commit**: `03c21b4`
+
+## § 69. MIG-001 Step 4 — note_meta triggers
+
+AFTER INSERT/UPDATE/DELETE on `note_meta` maintaining `sky_nodes`.
+AU WHEN guard limits fire to structural changes (path/name/library);
+AD cascades outgoing sky_links. Orphan preservation intrinsic.
+link_count/outgoing_count deferred to Step 8 read-time computation.
+
+**Commit**: `39cc387`
+
+## § 70. BUG-001 fix — phantom-duplicate on rename
+
+Found during Step 4 verification. Rename of canonical note left a
+second file on disk with stale content. Root cause: Rust's in-place
+frontmatter rewrite kept the file at old_path but frontend assumed
+the move happened. Fix: `rename_item` returns effective path; Rust
+is now authoritative.
+
+**Commit**: `26ba6aa`
+
+## § 71. BUG-002/003 fix — title display + alias idempotency
+
+- BUG-002: NotePane titleValue stuck at mount; added `$effect` to
+  sync when title prop changes externally.
+- BUG-003: Stale titleValue triggered rename with old==new, which
+  appended current title to its own aliases. Added equality guard
+  in `rename_item`.
+
+**Commit**: `68f24ea`
+
 ## Session Summary — 2026-04-23
 
 | § | Commit | Change |
@@ -101,12 +139,14 @@ back nodes recede.
 | §65 | 0e3e72c | MIG-001 Step 1: SKY_SCHEMA_VERSION infra |
 | §66 | 81e7143 | MIG-001 Step 2: sky_* tables (empty) |
 | §67 | 87fb8b8 | SV: default camera pitch for orbital rotation |
+| §68 | 03c21b4 | MIG-001 Step 3: note_links triggers |
+| §69 | 39cc387 | MIG-001 Step 4: note_meta triggers |
+| §70 | 26ba6aa | BUG-001 fix: phantom-duplicate on rename |
+| §71 | 68f24ea | BUG-002/003 fix: title sync + alias idempotency |
 
 ### Still pending (MIG-001)
 
-- Step 3: triggers on `note_links` → `sky_links` (next, with /simplify)
-- Step 4: triggers on `note_meta` → `sky_nodes`
-- Step 5: resumable back-fill populator
+- Step 5: resumable back-fill populator (next)
 - Step 6: rename cascade (with /simplify)
 - Step 7: strata enrichment triggers
 - Step 8: new IPC `cache_boot_snapshot_sky`
