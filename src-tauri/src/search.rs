@@ -31,6 +31,22 @@ use tauri::Manager;
 /// |       1 | custom Constellation tokenizer (Arabic Light10 + bigrams)    |
 const FTS_SCHEMA_VERSION: i64 = 1;
 
+/// Sky View Write-Time Derivation (MIG-001) schema version.
+///
+/// Tracks the shape of the `sky_nodes` / `sky_links` tables and their
+/// triggers on `note_meta` / `note_links`. Stored in the generic
+/// `schema_versions` table rather than `PRAGMA user_version` so it can
+/// evolve independently from the FTS version ledger.
+///
+/// | version | change                                                   |
+/// |--------:|----------------------------------------------------------|
+/// |       0 | pre-MIG-001 — no sky_* tables; JS buildSkyData() path    |
+/// |       1 | (future) sky_nodes + sky_links + triggers                |
+///
+/// Step 1 ships the version infrastructure only — the tables land in
+/// Step 2, so the constant is still 0 for now.
+const SKY_SCHEMA_VERSION: i64 = 0;
+
 // ─── Types ─────────────────────────────────────────────────────
 
 #[derive(Debug, Deserialize)]
@@ -214,6 +230,33 @@ fn init_db(path: &Path) -> Result<Connection, String> {
         stored_version,
         FTS_SCHEMA_VERSION,
         if needs_fts_rebuild { "NEEDED (dropping notes_fts/notes_vocab)" } else { "skipped (already current)" },
+    ));
+
+    // Generic module version ledger — lives alongside the FTS
+    // `PRAGMA user_version` slot so additional WTD surfaces (MIG-001
+    // Sky View, future Sight/Map/counts) can evolve their schema
+    // independently of the FTS tokenizer version. Rows are tiny; this
+    // table is pure metadata.
+    conn.execute_batch("
+        CREATE TABLE IF NOT EXISTS schema_versions (
+            module TEXT PRIMARY KEY,
+            version INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+        );
+    ").map_err(|e| format!("Failed to create schema_versions: {}", e))?;
+    let stored_sky_version: i64 = conn
+        .query_row(
+            "SELECT version FROM schema_versions WHERE module = 'sky'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap_or(0);
+    let needs_sky_rebuild = stored_sky_version < SKY_SCHEMA_VERSION;
+    diag_log(path, &format!(
+        "[search] init_db: schema_versions.sky={} (target {}) — sky {}",
+        stored_sky_version,
+        SKY_SCHEMA_VERSION,
+        if needs_sky_rebuild { "REBUILD NEEDED (MIG-001 Step 2+)" } else { "current" },
     ));
     if needs_fts_rebuild {
         // Drop notes_vocab first (it depends on notes_fts). IF EXISTS so
