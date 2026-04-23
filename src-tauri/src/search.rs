@@ -41,11 +41,13 @@ const FTS_SCHEMA_VERSION: i64 = 1;
 /// | version | change                                                   |
 /// |--------:|----------------------------------------------------------|
 /// |       0 | pre-MIG-001 — no sky_* tables; JS buildSkyData() path    |
-/// |       1 | (future) sky_nodes + sky_links + triggers                |
+/// |       1 | sky_nodes + sky_links + triggers + back-fill populator   |
 ///
-/// Step 1 ships the version infrastructure only — the tables land in
-/// Step 2, so the constant is still 0 for now.
-const SKY_SCHEMA_VERSION: i64 = 0;
+/// Bumping to 1 in Step 5 gates the back-fill: existing universes see
+/// `stored_sky_version < 1` on first boot after the upgrade, which
+/// triggers `sky_backfill::maybe_schedule` to populate the empty tables
+/// from `note_meta` / `note_links` on a background thread.
+pub(crate) const SKY_SCHEMA_VERSION: i64 = 1;
 
 // ─── Types ─────────────────────────────────────────────────────
 
@@ -2198,11 +2200,17 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
         let _ = std::fs::remove_file(&path);
     }
     let conn = init_db(&path)?;
-    let mut db = state.db.lock().map_err(|e| e.to_string())?;
-    *db = Some(conn);
+    {
+        let mut db = state.db.lock().map_err(|e| e.to_string())?;
+        *db = Some(conn);
+    }
     if needs_rebuild {
         let _ = std::fs::write(&version_path, current_version);
     }
+    // MIG-001 Step 5: schedule the Sky View back-fill on a background
+    // thread. No-op if schema_versions.sky is already at target. Returns
+    // immediately so this doesn't extend boot time.
+    crate::sky_backfill::maybe_schedule(app.clone());
     Ok(())
 }
 
