@@ -34,11 +34,7 @@ use std::thread;
 use std::time::Duration;
 use tauri::Manager;
 
-use crate::search::SearchState;
-
-/// Matches search.rs::SKY_SCHEMA_VERSION. Kept in sync by hand — flip both
-/// when the shape of sky_nodes / sky_links / their triggers changes.
-const TARGET_SKY_VERSION: i64 = 1;
+use crate::search::{SearchState, SKY_SCHEMA_VERSION};
 
 /// Batch size for each transaction. Tuned for:
 /// - ~1-2 ms per note in the hot path (trigger-free bulk insert)
@@ -97,7 +93,7 @@ fn is_needed(conn: &Connection) -> bool {
             |row| row.get(0),
         )
         .unwrap_or(0);
-    stored_version < TARGET_SKY_VERSION
+    stored_version < SKY_SCHEMA_VERSION
 }
 
 /// The back-fill loop. Takes the app handle so we can re-lock the DB
@@ -249,15 +245,20 @@ fn process_batch(
 }
 
 fn finalize(db: &Mutex<Option<Connection>>) -> Result<(), String> {
-    let guard = db.lock().map_err(|e| e.to_string())?;
-    let conn = guard.as_ref().ok_or("DB not initialized")?;
-    conn.execute_batch(&format!(
-        "INSERT OR REPLACE INTO schema_versions (module, version)
-         VALUES ('sky', {});
-         DELETE FROM sky_backfill_cursor;",
-        TARGET_SKY_VERSION
-    ))
-    .map_err(|e| format!("finalize: {}", e))?;
+    let mut guard = db.lock().map_err(|e| e.to_string())?;
+    let conn = guard.as_mut().ok_or("DB not initialized")?;
+    // Wrap version stamp + cursor clear in one transaction so a crash
+    // between them can't leave a completed back-fill with a live cursor
+    // row (which would make the next boot think it was interrupted).
+    let tx = conn.transaction().map_err(|e| format!("finalize begin: {}", e))?;
+    tx.execute(
+        "INSERT OR REPLACE INTO schema_versions (module, version) VALUES ('sky', ?1)",
+        params![SKY_SCHEMA_VERSION],
+    )
+    .map_err(|e| format!("finalize stamp: {}", e))?;
+    tx.execute("DELETE FROM sky_backfill_cursor", [])
+        .map_err(|e| format!("finalize cursor: {}", e))?;
+    tx.commit().map_err(|e| format!("finalize commit: {}", e))?;
     Ok(())
 }
 

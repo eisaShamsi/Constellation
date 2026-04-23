@@ -930,7 +930,7 @@
     "noStratumData": "ストラトゥムデータがまだありません — ストラトゥムが計算済みのライブラリで Sky View を開いてください。",
     "noMaturityData": "成營度データがまだありません — 成營度が計算済みのライブラリで Sky View を開いてください。",
     "noLegendData": "データなし。",
-    "computeNow": "今すぐ計算",
+    "computeNow": "このセッションで計算",
     "computing": "計算中…"
   },
   "libraries": {

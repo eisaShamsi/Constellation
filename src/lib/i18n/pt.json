@@ -930,7 +930,7 @@
     "noStratumData": "Sem dados de estrato ainda — abra Sky View em uma biblioteca com estratos calculados.",
     "noMaturityData": "Sem dados de maturidade ainda — abra Sky View em uma biblioteca com maturidade calculada.",
     "noLegendData": "Sem dados.",
-    "computeNow": "Calcular agora",
+    "computeNow": "Calcular para esta sessão",
     "computing": "Calculando…"
   },
   "libraries": {

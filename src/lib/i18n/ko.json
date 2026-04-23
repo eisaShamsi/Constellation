@@ -930,7 +930,7 @@
     "noStratumData": "계층 데이터가 아직 없습니다 — 계산된 계층이 있는 라이브러리에서 Sky View를 여세요.",
     "noMaturityData": "성숙도 데이터가 아직 없습니다 — 계산된 성숙도가 있는 라이브러리에서 Sky View를 여세요.",
     "noLegendData": "데이터가 없습니다.",
-    "computeNow": "지금 계산",
+    "computeNow": "이 세션에 대해 계산",
     "computing": "계산 중…"
   },
   "libraries": {

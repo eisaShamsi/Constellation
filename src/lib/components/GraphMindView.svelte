@@ -1125,7 +1125,7 @@
 								}}>
 								{enrichmentInFlight
 									? ($t('graphView.computing') || 'Computing…')
-									: ($t('graphView.computeNow') || 'Compute now')}
+									: ($t('graphView.computeNow') || 'Compute for this session')}
 							</button>
 						{/if}
 					</div>

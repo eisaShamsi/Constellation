@@ -930,7 +930,7 @@
     "noStratumData": "Henüz katman verisi yok — hesaplanmış katmanlara sahip bir kütüphanede Sky View'ı açın.",
     "noMaturityData": "Henüz olgunluk verisi yok — hesaplanmış olgunluğa sahip bir kütüphanede Sky View'ı açın.",
     "noLegendData": "Veri yok.",
-    "computeNow": "Şimdi hesapla",
+    "computeNow": "Bu oturum için hesapla",
     "computing": "Hesaplanıyor…"
   },
   "libraries": {

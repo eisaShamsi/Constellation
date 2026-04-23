@@ -967,7 +967,7 @@
     "noStratumData": "No stratum data yet — open Sky View on a library with computed strata.",
     "noMaturityData": "No maturity data yet — open Sky View on a library with computed maturity.",
     "noLegendData": "No data.",
-    "computeNow": "Compute now",
+    "computeNow": "Compute for this session",
     "computing": "Computing…"
   },
   "libraries": {
