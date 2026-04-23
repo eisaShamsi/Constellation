@@ -272,6 +272,195 @@ pub fn cache_boot_snapshot_graph(app: tauri::AppHandle) -> Result<BootSnapshotGr
     Ok(BootSnapshotGraph { links, tags, timings_ms: timings, server_return_unix_ms, server_start_unix_ms })
 }
 
+// ─── MIG-001 Step 8: pre-shaped Sky View payload ──────────────────────
+// `cache_boot_snapshot_sky` reads sky_nodes + sky_links directly and
+// returns a pre-shaped `{ nodes, links }` payload that the frontend can
+// feed to GraphMindView without running buildSkyData(). Kills the 217k-
+// edge JS iteration the old path paid on every boot.
+//
+// Gate: is_ready = schema_versions.sky >= SKY_SCHEMA_VERSION. The Step 5
+// back-fill stamps this on completion. If the stamp is absent (mid-back-
+// fill, or the user is on a fresh install where the back-fill hasn't
+// finished yet), is_ready=false and the frontend falls back to the old
+// buildSkyData path. Triggers continue populating sky_* for new writes
+// so the back-fill and the new path coexist cleanly.
+
+/// Shape matches the TypeScript `SkyNode` interface exactly so the
+/// frontend can assign the response directly to `skyNodes` without a
+/// transform step. `serde(rename_all = "camelCase")` handles the
+/// snake_case → camelCase translation at serialize time.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SkyNodeOut {
+    pub id: String,
+    pub name: String,
+    pub path: String,
+    pub library_name: String,
+    pub link_count: u32,
+    pub outgoing_count: u32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub stratum: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub maturity: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub origin_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<i64>,
+}
+
+/// Matches TypeScript `SkyLink`. `source` and `target` are lowercase
+/// names — same as what `buildSkyData` produced from the old path, so
+/// downstream consumers (ego filter, Louvain, highlight) see the exact
+/// same shape after the frontend swap in Step 9.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SkyLinkOut {
+    pub source: String,
+    pub target: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub link_type: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BootSnapshotSky {
+    pub nodes: Vec<SkyNodeOut>,
+    pub links: Vec<SkyLinkOut>,
+    /// False when schema_versions.sky hasn't reached SKY_SCHEMA_VERSION
+    /// yet — the frontend should fall back to buildSkyData() in that
+    /// case. Happens mid-back-fill on first boot after the upgrade.
+    pub is_ready: bool,
+    pub timings_ms: Vec<(String, u64)>,
+}
+
+/// Sky View snapshot from the persisted sky_* tables. Linear in rows,
+/// no JS-side iteration, no IPC re-serialization of raw note_links.
+#[tauri::command]
+pub fn cache_boot_snapshot_sky(app: tauri::AppHandle) -> Result<BootSnapshotSky, String> {
+    let mut timings: Vec<(String, u64)> = Vec::new();
+
+    let t0 = Instant::now();
+    let _ = crate::search::ensure_search_db_ready(&app);
+    timings.push(("ensure_db".into(), t0.elapsed().as_millis() as u64));
+
+    let t1 = Instant::now();
+    let conn = open_reader(&app)?;
+    timings.push(("open_reader".into(), t1.elapsed().as_millis() as u64));
+
+    // Readiness gate. If the back-fill hasn't stamped yet, return empty
+    // + is_ready=false so the frontend falls back to the legacy path.
+    let stored_version: i64 = conn
+        .query_row(
+            "SELECT version FROM schema_versions WHERE module = 'sky'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap_or(0);
+    let is_ready = stored_version >= crate::search::SKY_SCHEMA_VERSION;
+    if !is_ready {
+        return Ok(BootSnapshotSky {
+            nodes: Vec::new(),
+            links: Vec::new(),
+            is_ready,
+            timings_ms: timings,
+        });
+    }
+
+    // Nodes + aggregate counts in one SQL pass. LEFT JOINs on GROUP BY
+    // subqueries — SQLite optimizes these with the sky_links indexes on
+    // source_path and target_name (both idx_sky_links_*).
+    let t2 = Instant::now();
+    let nodes = read_sky_nodes(&conn)?;
+    timings.push(("read_nodes".into(), t2.elapsed().as_millis() as u64));
+
+    let t3 = Instant::now();
+    let links = read_sky_links(&conn)?;
+    timings.push(("read_links".into(), t3.elapsed().as_millis() as u64));
+
+    Ok(BootSnapshotSky { nodes, links, is_ready, timings_ms: timings })
+}
+
+fn read_sky_nodes(conn: &Connection) -> Result<Vec<SkyNodeOut>, String> {
+    let mut stmt = conn
+        .prepare(
+            "SELECT
+                n.id,
+                n.name,
+                n.path,
+                n.library_name,
+                COALESCE(inc.cnt, 0) AS link_count,
+                COALESCE(outc.cnt, 0) AS outgoing_count,
+                n.stratum,
+                n.maturity,
+                n.origin_type,
+                n.created_at
+             FROM sky_nodes n
+             LEFT JOIN (
+                 SELECT target_name, COUNT(*) AS cnt
+                 FROM sky_links
+                 GROUP BY target_name
+             ) inc ON inc.target_name = n.name
+             LEFT JOIN (
+                 SELECT source_path, COUNT(*) AS cnt
+                 FROM sky_links
+                 GROUP BY source_path
+             ) outc ON outc.source_path = n.path",
+        )
+        .map_err(|e| format!("prepare nodes: {}", e))?;
+    let rows = stmt
+        .query_map([], |row| {
+            Ok(SkyNodeOut {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                path: row.get(2)?,
+                library_name: row.get(3)?,
+                link_count: row.get::<_, i64>(4)? as u32,
+                outgoing_count: row.get::<_, i64>(5)? as u32,
+                stratum: row.get::<_, Option<i64>>(6)?,
+                maturity: row.get::<_, Option<String>>(7)?,
+                origin_type: row.get::<_, Option<String>>(8)?,
+                created_at: row.get::<_, Option<i64>>(9)?,
+            })
+        })
+        .map_err(|e| format!("query nodes: {}", e))?;
+    let mut out = Vec::new();
+    for r in rows {
+        out.push(r.map_err(|e| format!("row nodes: {}", e))?);
+    }
+    Ok(out)
+}
+
+fn read_sky_links(conn: &Connection) -> Result<Vec<SkyLinkOut>, String> {
+    // source/target are lowercase names to match the frontend's existing
+    // SkyLink shape. We resolve source_path → name via the sky_nodes
+    // join (that's where the name lives); target is already a name in
+    // sky_links and we lowercase it here.
+    let mut stmt = conn
+        .prepare(
+            "SELECT LOWER(n.name), LOWER(sl.target_name), sl.link_type
+             FROM sky_links sl
+             JOIN sky_nodes n ON n.path = sl.source_path",
+        )
+        .map_err(|e| format!("prepare links: {}", e))?;
+    let rows = stmt
+        .query_map([], |row| {
+            let lt: String = row.get(2)?;
+            Ok(SkyLinkOut {
+                source: row.get(0)?,
+                target: row.get(1)?,
+                // Match the TS shape: omit empty string so the field
+                // serializes as absent rather than linkType: "".
+                link_type: if lt.is_empty() { None } else { Some(lt) },
+            })
+        })
+        .map_err(|e| format!("query links: {}", e))?;
+    let mut out = Vec::new();
+    for r in rows {
+        out.push(r.map_err(|e| format!("row links: {}", e))?);
+    }
+    Ok(out)
+}
+
 /// Back-compat shim — merges `cache_boot_snapshot_core` + `_graph` into the
 /// original single-response shape. Kept so ambient callers (second screen,
 /// tests, any external invocation) keep working; no longer on the boot

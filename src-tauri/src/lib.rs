@@ -312,6 +312,7 @@ pub fn run() {
             cache::cache_boot_snapshot,
             cache::cache_boot_snapshot_core,
             cache::cache_boot_snapshot_graph,
+            cache::cache_boot_snapshot_sky,
             cache::cache_is_populated,
             cache::cache_reconcile,
             cache::write_boot_perf_report,
