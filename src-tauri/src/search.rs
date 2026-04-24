@@ -410,6 +410,26 @@ fn init_db(path: &Path) -> Result<Connection, String> {
     // Enable WAL mode for concurrent reads
     conn.execute_batch("PRAGMA journal_mode=WAL;").map_err(|e| e.to_string())?;
 
+    // MIG-002 §6: enable recursive triggers.
+    //
+    // SQLite defaults `recursive_triggers = OFF` for backwards compat.
+    // With it off, when a trigger body writes to another table, that
+    // write's triggers are silently skipped. In our case MIG-001's
+    // note_meta_sky_ai writes into sky_nodes — and then SQLite refuses
+    // to fire the subsequent AFTER INSERT ON note_meta triggers that
+    // §4 / §5 added (stratum_ai, maturity_ai). Observed empirically:
+    // edit-save on a note leaves stratum + maturity NULL on the new
+    // row, while the earlier note_links_sky_stratum_ai / _maturity_ai
+    // triggers (which fire from a separate INSERT on note_links that
+    // isn't nested inside another trigger) work fine.
+    //
+    // Turning this ON makes chained trigger semantics match the
+    // intuitive model: every AFTER INSERT trigger on note_meta fires
+    // for every note_meta INSERT, regardless of whether an earlier
+    // trigger in the chain already wrote to some other table.
+    conn.execute_batch("PRAGMA recursive_triggers=ON;")
+        .map_err(|e| format!("recursive_triggers pragma: {}", e))?;
+
     // ─── Register the custom FTS5 tokenizer ──────────────────────────
     // Must happen BEFORE any `CREATE VIRTUAL TABLE ... tokenize='constellation'`
     // so SQLite can resolve the tokenizer name. Safe to call on a
@@ -997,6 +1017,11 @@ fn init_db(path: &Path) -> Result<Connection, String> {
         DROP TRIGGER IF EXISTS note_links_sky_stratum_ad;
         DROP TRIGGER IF EXISTS note_links_sky_stratum_au;
     ").map_err(|e| format!("Failed to drop old stratum triggers: {}", e))?;
+
+    // Drop the §98 diagnostic trigger (if it exists on upgrade from the
+    // BUG-011 investigation binary). No functional effect — just hygiene.
+    conn.execute_batch("DROP TRIGGER IF EXISTS note_meta_sky_stratum_ai_DIAG;")
+        .map_err(|e| format!("drop diag trigger: {}", e))?;
 
     conn.execute_batch(&format!("
         -- note_meta insert: compute stratum for the fresh sky_nodes row.
@@ -2790,7 +2815,7 @@ pub fn reconcile_filesystem(app: &tauri::AppHandle) -> Result<SearchIndexStats, 
     // time. WAL mode (set in init_db) is what makes this safe.
     let mut walk_conn = Connection::open(&path)
         .map_err(|e| format!("Failed to open search.db for reconcile: {}", e))?;
-    walk_conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;")
+    walk_conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL; PRAGMA recursive_triggers=ON;")
         .map_err(|e| e.to_string())?;
     // Reconcile writes to note_meta; the FTS5 AFTER-INSERT/UPDATE
     // triggers tokenize body_text through the 'constellation' tokenizer.
