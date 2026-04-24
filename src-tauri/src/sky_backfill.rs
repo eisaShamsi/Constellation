@@ -267,6 +267,12 @@ fn process_batch(
     {
         let mut guard = db.lock().map_err(|e| e.to_string())?;
         let conn = guard.as_mut().ok_or("DB not initialized")?;
+        // Wait up to 30s on writer-lock contention with cache_reconcile's
+        // dedicated connection. SQLite's default busy_handler returns
+        // SQLITE_BUSY immediately; without this, BUG-008 symptom was a
+        // transient error mid-back-fill on a busy first-boot DB.
+        conn.busy_timeout(Duration::from_secs(30))
+            .map_err(|e| format!("busy_timeout: {}", e))?;
         let tx = conn.transaction().map_err(|e| format!("begin C: {}", e))?;
         {
             let mut upd = tx
