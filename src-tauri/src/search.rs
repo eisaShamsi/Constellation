@@ -1021,6 +1021,19 @@ fn index_note(conn: &Connection, note_path: &str, library_name: &str) -> Result<
     let links_json = serde_json::to_string(&wikilinks).unwrap_or_default();
     let headings_json = serde_json::to_string(&headings).unwrap_or_default();
 
+    // MIG-002: denormalize signals for SQL-native stratum/maturity triggers.
+    // word_count uses the frontmatter-stripped body (matches strata.rs
+    // semantics — count whitespace-separated tokens including markdown
+    // syntax). created_at falls back to `modified` when the filesystem
+    // lacks a true creation timestamp (ReFS, FAT32, some Linux FS).
+    let word_count = body.split_whitespace().count() as i64;
+    let created_at: i64 = std::fs::metadata(path)
+        .ok()
+        .and_then(|m| m.created().ok())
+        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+        .map(|d| d.as_secs() as i64)
+        .unwrap_or(modified as i64);
+
     // Extract typed links for the living link system
     let typed_links = extract_typed_links(&content);
     let now = chrono::Utc::now().to_rfc3339();
@@ -1031,9 +1044,9 @@ fn index_note(conn: &Connection, note_path: &str, library_name: &str) -> Result<
         conn.execute("DELETE FROM note_meta WHERE path = ?1", params![note_path])
             .map_err(|e| e.to_string())?;
         conn.execute(
-            "INSERT INTO note_meta (path, name, library_name, modified, properties_json, tags_json, outgoing_links_json, headings_json, body_text)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
-            params![note_path, name, library_name, modified, props_json, tags_json, links_json, headings_json, plain_body],
+            "INSERT INTO note_meta (path, name, library_name, modified, properties_json, tags_json, outgoing_links_json, headings_json, body_text, word_count, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+            params![note_path, name, library_name, modified, props_json, tags_json, links_json, headings_json, plain_body, word_count, created_at],
         ).map_err(|e| format!("Failed to index note {}: {}", note_path, e))?;
 
         // Populate note_links — preserve existing weight/traversal data on re-index
