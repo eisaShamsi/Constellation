@@ -248,11 +248,19 @@ fn ensure_sky_nodes_mig002_columns(conn: &Connection) -> rusqlite::Result<()> {
     }
     if !have_enrichment_dirty {
         conn.execute_batch(
-            "ALTER TABLE sky_nodes ADD COLUMN enrichment_dirty INTEGER NOT NULL DEFAULT 1;
-             CREATE INDEX IF NOT EXISTS idx_sky_nodes_enrichment_dirty
-                 ON sky_nodes(enrichment_dirty) WHERE enrichment_dirty = 1;",
+            "ALTER TABLE sky_nodes ADD COLUMN enrichment_dirty INTEGER NOT NULL DEFAULT 1;",
         )?;
     }
+    // Always (re)create the partial index — runs after the ALTER on upgrade
+    // path, and covers fresh DBs where the CREATE TABLE above already
+    // included the column. IF NOT EXISTS makes it idempotent. Partial
+    // index on dirty=1 rows only keeps the worker's drain query O(dirty)
+    // instead of O(total_nodes); non-dirty rows (steady state) are
+    // invisible so the index stays tiny.
+    conn.execute_batch(
+        "CREATE INDEX IF NOT EXISTS idx_sky_nodes_enrichment_dirty
+             ON sky_nodes(enrichment_dirty) WHERE enrichment_dirty = 1;",
+    )?;
     Ok(())
 }
 
@@ -550,12 +558,12 @@ fn init_db(path: &Path) -> Result<Connection, String> {
         );
         CREATE INDEX IF NOT EXISTS idx_sky_nodes_library ON sky_nodes(library_name);
         CREATE INDEX IF NOT EXISTS idx_sky_nodes_id ON sky_nodes(id);
-        -- enrichment_dirty index: partial index on dirty=1 rows only
-        -- keeps the worker's drain query (SELECT ... WHERE dirty=1) O(dirty)
-        -- instead of O(total_nodes). Non-dirty rows (steady state) are
-        -- invisible to the index, so it stays tiny.
-        CREATE INDEX IF NOT EXISTS idx_sky_nodes_enrichment_dirty
-            ON sky_nodes(enrichment_dirty) WHERE enrichment_dirty = 1;
+        -- NOTE: the idx_sky_nodes_enrichment_dirty partial index is created
+        -- inside ensure_sky_nodes_mig002_columns below, not here. On DBs
+        -- upgraded from MIG-001 v1 the column does not exist yet when
+        -- this batch runs (CREATE TABLE IF NOT EXISTS is a no-op on
+        -- existing tables), and referencing it in a CREATE INDEX would
+        -- abort the whole execute_batch with a missing-column error.
 
         CREATE TABLE IF NOT EXISTS sky_links (
             source_path TEXT NOT NULL,
