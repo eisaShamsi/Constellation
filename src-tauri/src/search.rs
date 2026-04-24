@@ -50,11 +50,13 @@ const FTS_SCHEMA_VERSION: i64 = 1;
 /// |       5 | MIG-002 §4 fix (BUG-010) — stratum formula now matches  |
 /// |         | inbound on sky_nodes.id (lowercase) instead of .name;    |
 /// |         | all stratum values recomputed with correct inbound count |
+/// |       6 | MIG-002 §5 — SQL-native maturity triggers + one-shot     |
+/// |         | back-fill of sky_nodes.maturity for existing rows        |
 ///
 /// Bumping the version gates `sky_backfill::maybe_schedule` to repopulate
 /// the derived surfaces on next boot. Columns added in v2/v3 are nullable
 /// or defaulted so pre-MIG-002 binaries tolerate the wider schema.
-pub(crate) const SKY_SCHEMA_VERSION: i64 = 5;
+pub(crate) const SKY_SCHEMA_VERSION: i64 = 6;
 
 /// MIG-002 §4 — SQL fragment that computes sky_nodes.stratum (1–8) from
 /// the same five signals as strata.rs::compute_stratum:
@@ -107,6 +109,86 @@ pub(crate) const STRATUM_SQL_EXPR: &str = "
                          AND status = 'active') >= 3
                 THEN 1 ELSE 0 END)
     ))
+";
+
+/// MIG-002 §5 — SQL fragment that computes sky_nodes.maturity from the
+/// same three signals as maturity.rs::compute_state:
+///
+///   inbound                  — active links targeting this note
+///   days_since_created       — (now - note_meta.created_at) / 86400
+///   days_since_modified      — (now - note_meta.modified)    / 86400
+///
+/// States (order-sensitive — first match wins):
+///
+///   canonical — inbound ≥ 10 AND days_since_modified ≥ 30
+///   wilting   — inbound ≥ 4  AND days_since_created ≥ 7 AND days_since_modified ≥ 90
+///   evergreen — inbound ≥ 4  AND days_since_created ≥ 7
+///   sapling   — inbound ≥ 1  OR  days_since_created ≥ 2
+///   seed      — default
+///
+/// The expression is correlated on `sky_nodes.path` / `sky_nodes.id` so
+/// it works inside any `UPDATE sky_nodes SET maturity = (…)` context.
+/// Shared between the §5 triggers in init_db and the back-fill in
+/// sky_backfill.rs — single source of truth, cannot drift.
+///
+/// NOTE on created_at fallback: §89's writer stamps created_at from
+/// fs::metadata(..).created() and falls back to `modified` on platforms
+/// without a true creation timestamp. On ghost rows (path in DB, file
+/// missing) the back-fill leaves created_at NULL; COALESCE to `modified`
+/// keeps the arithmetic well-defined (days_since_created becomes 0).
+pub(crate) const MATURITY_SQL_EXPR: &str = "
+    CASE
+        -- canonical: 10+ inbound, untouched 30+ days (authoritative)
+        WHEN ((SELECT COUNT(*) FROM note_links
+                 WHERE target_name = sky_nodes.id
+                   AND status = 'active') >= 10)
+         AND ((strftime('%s','now') -
+               COALESCE((SELECT modified FROM note_meta WHERE path = sky_nodes.path), 0))
+              / 86400 >= 30)
+        THEN 'canonical'
+
+        -- wilting: evergreen-level but untouched 90+ days
+        WHEN ((SELECT COUNT(*) FROM note_links
+                 WHERE target_name = sky_nodes.id
+                   AND status = 'active') >= 4)
+         AND ((strftime('%s','now') -
+               COALESCE(
+                   (SELECT created_at FROM note_meta WHERE path = sky_nodes.path),
+                   (SELECT modified   FROM note_meta WHERE path = sky_nodes.path),
+                   strftime('%s','now')))
+              / 86400 >= 7)
+         AND ((strftime('%s','now') -
+               COALESCE((SELECT modified FROM note_meta WHERE path = sky_nodes.path), 0))
+              / 86400 >= 90)
+        THEN 'wilting'
+
+        -- evergreen: 4+ inbound, created 7+ days ago
+        WHEN ((SELECT COUNT(*) FROM note_links
+                 WHERE target_name = sky_nodes.id
+                   AND status = 'active') >= 4)
+         AND ((strftime('%s','now') -
+               COALESCE(
+                   (SELECT created_at FROM note_meta WHERE path = sky_nodes.path),
+                   (SELECT modified   FROM note_meta WHERE path = sky_nodes.path),
+                   strftime('%s','now')))
+              / 86400 >= 7)
+        THEN 'evergreen'
+
+        -- sapling: 1+ inbound OR created 2+ days ago
+        WHEN ((SELECT COUNT(*) FROM note_links
+                 WHERE target_name = sky_nodes.id
+                   AND status = 'active') >= 1)
+          OR ((strftime('%s','now') -
+               COALESCE(
+                   (SELECT created_at FROM note_meta WHERE path = sky_nodes.path),
+                   (SELECT modified   FROM note_meta WHERE path = sky_nodes.path),
+                   strftime('%s','now')))
+              / 86400 >= 2)
+        THEN 'sapling'
+
+        -- seed: default (fresh + isolated note)
+        ELSE 'seed'
+    END
 ";
 
 // ─── Types ─────────────────────────────────────────────────────
@@ -912,19 +994,82 @@ fn init_db(path: &Path) -> Result<Connection, String> {
     ", expr = STRATUM_SQL_EXPR))
     .map_err(|e| format!("Failed to create stratum triggers: {}", e))?;
 
-    // The one-shot stratum back-fill for existing sky_nodes rows runs in
-    // sky_backfill.rs on a background thread — NOT here. Two reasons:
+    // ─── MIG-002 §5: SQL-native maturity triggers ───────────────────────
     //
-    // 1. On a 7.6k-note universe the UPDATE takes ~15s (the correlated
-    //    subqueries fan out to ~230k note_links rows each, six times
-    //    per row). Running on the main thread would freeze boot paint.
-    // 2. sky_backfill already has the schema-version gate + resumable
-    //    cursor pattern. Extending it is cheaper than building a parallel
-    //    gate here.
+    // Mirrors §4 stratum shape. Five triggers keep sky_nodes.maturity in
+    // sync with the three signals that drive it: inbound count,
+    // days_since_created, days_since_modified. See MATURITY_SQL_EXPR for
+    // the CASE chain that maps those to seed / sapling / evergreen /
+    // canonical / wilting.
     //
-    // Bumping SKY_SCHEMA_VERSION 3 → 4 forces sky_backfill::maybe_schedule
-    // to re-run on next boot, where the extended process_batch computes
-    // stratum per batch using the same SQL expression as the triggers.
+    // DROP first (same pattern as §4 / §96) so formula changes on
+    // version bumps pick up the new body.
+    conn.execute_batch("
+        DROP TRIGGER IF EXISTS note_meta_sky_maturity_ai;
+        DROP TRIGGER IF EXISTS note_meta_sky_maturity_au;
+        DROP TRIGGER IF EXISTS note_links_sky_maturity_ai;
+        DROP TRIGGER IF EXISTS note_links_sky_maturity_ad;
+        DROP TRIGGER IF EXISTS note_links_sky_maturity_au;
+    ").map_err(|e| format!("Failed to drop old maturity triggers: {}", e))?;
+
+    conn.execute_batch(&format!("
+        -- note_meta insert: stamp maturity on the fresh sky_nodes row.
+        CREATE TRIGGER IF NOT EXISTS note_meta_sky_maturity_ai
+        AFTER INSERT ON note_meta
+        BEGIN
+            UPDATE sky_nodes SET maturity = ({expr}) WHERE path = NEW.path;
+        END;
+
+        -- note_meta update: recompute when `modified` or `created_at`
+        -- changes. `modified` changes on every save by definition, so
+        -- this trigger fires with every note edit — cheap (one UPDATE
+        -- of one row using the maturity CASE chain).
+        CREATE TRIGGER IF NOT EXISTS note_meta_sky_maturity_au
+        AFTER UPDATE ON note_meta
+        WHEN NEW.modified IS NOT OLD.modified
+          OR NEW.created_at IS NOT OLD.created_at
+        BEGIN
+            UPDATE sky_nodes SET maturity = ({expr}) WHERE path = NEW.path;
+        END;
+
+        -- note_links insert: a new active edge changes the target's
+        -- inbound count → recompute target's maturity. Source maturity
+        -- does NOT depend on outgoing edges; skip the source update.
+        CREATE TRIGGER IF NOT EXISTS note_links_sky_maturity_ai
+        AFTER INSERT ON note_links
+        WHEN NEW.status = 'active'
+        BEGIN
+            UPDATE sky_nodes SET maturity = ({expr}) WHERE id = NEW.target_name;
+        END;
+
+        -- note_links delete: symmetric — deletion drops target's inbound.
+        CREATE TRIGGER IF NOT EXISTS note_links_sky_maturity_ad
+        AFTER DELETE ON note_links
+        WHEN OLD.status = 'active'
+        BEGIN
+            UPDATE sky_nodes SET maturity = ({expr}) WHERE id = OLD.target_name;
+        END;
+
+        -- note_links update: covers archive toggle (status) and rename
+        -- cascade (target_name changed via §6). Only target-side is
+        -- relevant for maturity; no source updates. Both OLD and NEW
+        -- target identities are touched.
+        CREATE TRIGGER IF NOT EXISTS note_links_sky_maturity_au
+        AFTER UPDATE ON note_links
+        WHEN OLD.status IS NOT NEW.status
+          OR OLD.target_name IS NOT NEW.target_name
+        BEGIN
+            UPDATE sky_nodes SET maturity = ({expr}) WHERE id = OLD.target_name;
+            UPDATE sky_nodes SET maturity = ({expr}) WHERE id = NEW.target_name;
+        END;
+    ", expr = MATURITY_SQL_EXPR))
+    .map_err(|e| format!("Failed to create maturity triggers: {}", e))?;
+
+    // The one-shot stratum + maturity back-fill for existing sky_nodes
+    // rows runs in sky_backfill.rs on a background thread — NOT here.
+    // Same reasons as §4: boot-paint-blocking cost + reuse of the
+    // resumable cursor. Bumping SKY_SCHEMA_VERSION (now v6) forces
+    // sky_backfill::maybe_schedule to re-run.
 
     // ─── One-time FTS5 rebuild after tokenizer migration ─────────────
     // If we bumped past FTS_SCHEMA_VERSION above we dropped the old

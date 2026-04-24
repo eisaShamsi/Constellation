@@ -116,19 +116,19 @@ fn run(app: &tauri::AppHandle) -> Result<u64, String> {
     // six subqueries each fanned out across the full 232k-row note_links
     // table. ~2ms per row with stats vs ~450ms without = 200× speedup.
     //
-    // Clear stratum column too — the back-fill's per-batch Phase D uses
-    // `WHERE stratum IS NULL` to pick up rows for recomputation. Without
-    // this wipe, schema-version bumps that only change the stratum
-    // FORMULA (like v4 → v5 for BUG-010) would leave old values in place
-    // because no rows would match the IS NULL guard.
+    // Clear stratum + maturity columns too — the back-fill's per-batch
+    // Phase D uses `WHERE <col> IS NULL` to pick up rows for
+    // recomputation. Without this wipe, schema-version bumps that only
+    // change the formula (like v4 → v5 for BUG-010) would leave old
+    // values in place because no rows would match the IS NULL guard.
     {
         let guard = state.db.lock().map_err(|e| e.to_string())?;
         let conn = guard.as_ref().ok_or("DB not initialized")?;
         conn.execute_batch(
             "ANALYZE;
-             UPDATE sky_nodes SET stratum = NULL;",
+             UPDATE sky_nodes SET stratum = NULL, maturity = NULL;",
         )
-        .map_err(|e| format!("ANALYZE + stratum clear: {}", e))?;
+        .map_err(|e| format!("ANALYZE + stratum/maturity clear: {}", e))?;
     }
 
     let mut last_path = read_cursor(&state.db)?;
@@ -314,14 +314,13 @@ fn process_batch(
         tx.commit().map_err(|e| format!("commit C: {}", e))?;
     }
 
-    // ── Phase D: back-fill sky_nodes.stratum for this batch ───────────
-    // MIG-002 §4. Single UPDATE, scoped by path range from this batch.
-    // The expression is kept in lockstep with the triggers defined in
-    // search.rs::init_db — if either changes, both must change, and the
-    // /simplify pass at §6 will factor the shared fragment into a const.
+    // ── Phase D: back-fill sky_nodes.stratum + .maturity for this batch
+    // MIG-002 §4 (stratum) + §5 (maturity). Two UPDATEs, both scoped by
+    // path range from this batch. Expressions kept in lockstep with the
+    // triggers defined in search.rs::init_db via pub(crate) constants.
     //
     // Scoped to paths in [after_path, last_path] so we don't re-touch
-    // every sky_nodes row on every batch. WHERE stratum IS NULL makes it
+    // every sky_nodes row on every batch. WHERE <col> IS NULL makes it
     // idempotent — rows already stamped by the triggers stay put.
     {
         let mut guard = db.lock().map_err(|e| e.to_string())?;
@@ -340,6 +339,17 @@ fn process_batch(
             params![after_path, last_path.clone()],
         )
         .map_err(|e| format!("upd stratum: {}", e))?;
+        tx.execute(
+            &format!(
+                "UPDATE sky_nodes SET maturity = ({expr})
+                   WHERE maturity IS NULL
+                     AND path > ?1
+                     AND path <= ?2",
+                expr = crate::search::MATURITY_SQL_EXPR,
+            ),
+            params![after_path, last_path.clone()],
+        )
+        .map_err(|e| format!("upd maturity: {}", e))?;
         tx.commit().map_err(|e| format!("commit D: {}", e))?;
     }
 
