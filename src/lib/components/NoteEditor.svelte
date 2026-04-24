@@ -132,7 +132,17 @@
 		markRecentWrite(filePath);
 		const content = buildFullContent(props, text);
 		writeNote(filePath, content)
-			.then(() => { broadcastNoteSaved(filePath); })
+			.then(() => {
+				broadcastNoteSaved(filePath);
+				// Reindex for search (non-blocking) — updates FTS5, tags, links,
+				// and (MIG-002) word_count / created_at / enrichment. Without this
+				// call, body edits never re-run index_note: the DB row stays at
+				// whatever shape was indexed on initial file creation.
+				invoke('constellation_search_reindex', {
+					notePath: filePath,
+					libraryName: tab.libraryName,
+				}).catch(() => {});
+			})
 			.catch(() => {})
 			.finally(() => { saving = false; });
 	}
@@ -152,7 +162,16 @@
 		if (needsDiskSave) {
 			markRecentWrite(filePath);
 			writeNote(filePath, content)
-				.then(() => { clearWriteAhead(filePath); broadcastNoteSaved(filePath); })
+				.then(() => {
+					clearWriteAhead(filePath);
+					broadcastNoteSaved(filePath);
+					// Same reindex call as handleSave — flush paths (tab close,
+					// window unload, visibility change) must also trigger reindex.
+					invoke('constellation_search_reindex', {
+						notePath: filePath,
+						libraryName: tab.libraryName,
+					}).catch(() => {});
+				})
 				.catch(() => {});
 		}
 	}
