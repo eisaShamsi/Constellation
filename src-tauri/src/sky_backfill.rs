@@ -161,74 +161,81 @@ fn write_cursor(db: &Mutex<Option<Connection>>, last_path: &str) -> Result<(), S
     Ok(())
 }
 
-/// One transactional batch. Reads up to BATCH_SIZE rows from note_meta
-/// beyond `after_path`, inserts corresponding sky_nodes rows, then
-/// inserts sky_links rows for any note_links whose source_path lies in
-/// the same batch window. `INSERT OR IGNORE` makes it idempotent — rows
-/// populated by triggers during a concurrent write don't cause errors.
+/// One batch, three phases — the DB lock is released during filesystem
+/// I/O so the main thread's IPC queries don't queue behind us.
+///
+/// Phase A (under lock): pull the next batch of paths from note_meta,
+/// insert sky_nodes + sky_links rows in one transaction. Fast — pure
+/// SQL, no disk reads of note files.
+///
+/// Phase B (no lock): read each note file, compute word_count +
+/// created_at via `compute_word_count_and_created_at`. This is the
+/// expensive step — up to BATCH_SIZE file reads. Running it outside
+/// the mutex means frontend queries stay responsive on boot.
+///
+/// Phase C (under lock): UPDATE note_meta with the precomputed values
+/// in a second transaction. Single prepared statement, parameterised.
+///
+/// `INSERT OR IGNORE` in Phase A makes the sky_* inserts idempotent —
+/// rows populated by triggers during a concurrent write don't error.
+/// The `WHERE word_count = 0 OR created_at IS NULL` guard in Phase C
+/// preserves any values the writer stamped in between our phases.
 fn process_batch(
     db: &Mutex<Option<Connection>>,
     after_path: &str,
 ) -> Result<(usize, String), String> {
-    let mut guard = db.lock().map_err(|e| e.to_string())?;
-    let conn = guard.as_mut().ok_or("DB not initialized")?;
+    // ── Phase A: path query + sky_* inserts under lock ─────────────────
+    let (paths, last_path) = {
+        let mut guard = db.lock().map_err(|e| e.to_string())?;
+        let conn = guard.as_mut().ok_or("DB not initialized")?;
+        let tx = conn.transaction().map_err(|e| format!("begin: {}", e))?;
 
-    let tx = conn.transaction().map_err(|e| format!("begin: {}", e))?;
-
-    // Pull the next window of notes, ordered by path so the cursor
-    // advances deterministically.
-    let mut paths: Vec<(String, String, String)> = Vec::with_capacity(BATCH_SIZE);
-    {
-        let mut stmt = tx
-            .prepare(
-                "SELECT path, name, library_name
-                 FROM note_meta
-                 WHERE path > ?1
-                 ORDER BY path
-                 LIMIT ?2",
-            )
-            .map_err(|e| format!("prepare nodes: {}", e))?;
-        let rows = stmt
-            .query_map(params![after_path, BATCH_SIZE as i64], |row| {
-                Ok((
-                    row.get::<_, String>(0)?,
-                    row.get::<_, String>(1)?,
-                    row.get::<_, String>(2)?,
-                ))
-            })
-            .map_err(|e| format!("query nodes: {}", e))?;
-        for r in rows {
-            paths.push(r.map_err(|e| format!("row nodes: {}", e))?);
+        let mut paths: Vec<(String, String, String)> = Vec::with_capacity(BATCH_SIZE);
+        {
+            let mut stmt = tx
+                .prepare(
+                    "SELECT path, name, library_name
+                     FROM note_meta
+                     WHERE path > ?1
+                     ORDER BY path
+                     LIMIT ?2",
+                )
+                .map_err(|e| format!("prepare nodes: {}", e))?;
+            let rows = stmt
+                .query_map(params![after_path, BATCH_SIZE as i64], |row| {
+                    Ok((
+                        row.get::<_, String>(0)?,
+                        row.get::<_, String>(1)?,
+                        row.get::<_, String>(2)?,
+                    ))
+                })
+                .map_err(|e| format!("query nodes: {}", e))?;
+            for r in rows {
+                paths.push(r.map_err(|e| format!("row nodes: {}", e))?);
+            }
         }
-    }
 
-    if paths.is_empty() {
-        tx.commit().map_err(|e| format!("commit empty: {}", e))?;
-        return Ok((0, after_path.to_string()));
-    }
-
-    let last_path = paths.last().map(|p| p.0.clone()).unwrap_or_default();
-
-    // Insert sky_nodes. OR IGNORE in case a trigger already populated
-    // the path during this batch window.
-    {
-        let mut ins = tx
-            .prepare(
-                "INSERT OR IGNORE INTO sky_nodes
-                    (path, id, name, library_name, updated_at)
-                 VALUES (?1, LOWER(?2), ?2, ?3, strftime('%s','now'))",
-            )
-            .map_err(|e| format!("prepare ins node: {}", e))?;
-        for (p, name, lib) in &paths {
-            ins.execute(params![p, name, lib])
-                .map_err(|e| format!("exec ins node: {}", e))?;
+        if paths.is_empty() {
+            tx.commit().map_err(|e| format!("commit empty: {}", e))?;
+            return Ok((0, after_path.to_string()));
         }
-    }
 
-    // Insert sky_links for any active note_links whose source_path lies
-    // in this batch window. Bounded by [after_path, last_path] so we
-    // don't re-scan the whole note_links table on each batch.
-    {
+        let last_path = paths.last().map(|p| p.0.clone()).unwrap_or_default();
+
+        {
+            let mut ins = tx
+                .prepare(
+                    "INSERT OR IGNORE INTO sky_nodes
+                        (path, id, name, library_name, updated_at)
+                     VALUES (?1, LOWER(?2), ?2, ?3, strftime('%s','now'))",
+                )
+                .map_err(|e| format!("prepare ins node: {}", e))?;
+            for (p, name, lib) in &paths {
+                ins.execute(params![p, name, lib])
+                    .map_err(|e| format!("exec ins node: {}", e))?;
+            }
+        }
+
         tx.execute(
             "INSERT OR IGNORE INTO sky_links (source_path, target_name, link_type, weight)
              SELECT source_path, target_name, link_type, COALESCE(weight, 1.0)
@@ -239,37 +246,46 @@ fn process_batch(
             params![after_path, last_path.clone()],
         )
         .map_err(|e| format!("ins links: {}", e))?;
-    }
 
-    // MIG-002: back-fill word_count + created_at on note_meta for each
-    // path in this batch. Only touches rows where word_count = 0 (fresh
-    // column default) AND/OR created_at IS NULL so that rows already
-    // stamped by the writer stay put — idempotent, safe to re-run.
-    //
-    // Cost: one file read per row in the batch. Bounded by BATCH_SIZE
-    // and amortized by the inter-batch sleep. On the 7.6k-note target
-    // universe: ~8 batches × up to 1000 file reads each, interleaved.
+        tx.commit().map_err(|e| format!("commit A: {}", e))?;
+        (paths, last_path)
+    };
+    // Lock released here — Phase B runs free.
+
+    // ── Phase B: file reads WITHOUT lock ───────────────────────────────
+    // Each tuple = (path, word_count, created_at). Bounded by BATCH_SIZE
+    // rows so memory footprint is trivial.
+    let computed: Vec<(String, i64, Option<i64>)> = paths
+        .iter()
+        .map(|(p, _, _)| {
+            let (wc, ca) = compute_word_count_and_created_at(Path::new(p));
+            (p.clone(), wc, ca)
+        })
+        .collect();
+
+    // ── Phase C: UPDATE note_meta under lock ──────────────────────────
     {
-        let mut upd = tx
-            .prepare(
-                "UPDATE note_meta
-                    SET word_count = ?1,
-                        created_at = COALESCE(created_at, ?2)
-                  WHERE path = ?3
-                    AND (word_count = 0 OR created_at IS NULL)",
-            )
-            .map_err(|e| format!("prepare upd word_count: {}", e))?;
-        for (p, _, _) in &paths {
-            let (wc, created_at) = compute_word_count_and_created_at(Path::new(p));
-            // `created_at` is Option<i64>. COALESCE keeps any existing
-            // non-null DB value; the bound value only wins when the DB
-            // side is NULL. None maps to NULL which COALESCE skips.
-            upd.execute(params![wc, created_at, p])
-                .map_err(|e| format!("exec upd word_count: {}", e))?;
+        let mut guard = db.lock().map_err(|e| e.to_string())?;
+        let conn = guard.as_mut().ok_or("DB not initialized")?;
+        let tx = conn.transaction().map_err(|e| format!("begin C: {}", e))?;
+        {
+            let mut upd = tx
+                .prepare(
+                    "UPDATE note_meta
+                        SET word_count = ?1,
+                            created_at = COALESCE(created_at, ?2)
+                      WHERE path = ?3
+                        AND (word_count = 0 OR created_at IS NULL)",
+                )
+                .map_err(|e| format!("prepare upd word_count: {}", e))?;
+            for (p, wc, created_at) in &computed {
+                upd.execute(params![wc, created_at, p])
+                    .map_err(|e| format!("exec upd word_count: {}", e))?;
+            }
         }
+        tx.commit().map_err(|e| format!("commit C: {}", e))?;
     }
 
-    tx.commit().map_err(|e| format!("commit: {}", e))?;
     Ok((paths.len(), last_path))
 }
 
