@@ -1302,6 +1302,7 @@ c:baltic-sea	Noun	ar:بحر البلطيق	de:Ostsee,Baltisches Meer	en:Baltic S
 c:baltic-sea-body	Noun	ar:بحر البلطيق	de:Ostsee	en:Baltic Sea	es:mar Báltico	fa:دریای بالتیک	fr:mer Baltique	he:הים הבלטי	hi:बाल्टिक सागर	ja:バルト海	ko:발트해	pt:mar Báltico	ru:Балтийское море	tr:Baltık Denizi	ur:بحیرہ بالٹک	zh:波罗的海
 c:baltika	ProperNoun	ar:بالتيكا	de:Baltika	en:Baltika	es:Báltika	fa:بالتیکا	fr:Baltika	he:בלטיקה	hi:बाल्तिका	ja:バルティカ	ko:발티카	pt:Baltika	ru:Балтика	tr:Baltika	ur:بالٹیکا	zh:波罗的海啤酒
 c:baltimore-harbor-tunnel	ProperNoun	ar:نفق ميناء بالتيمور	de:Baltimore Harbor Tunnel	en:Baltimore Harbor Tunnel	es:Túnel del Puerto de Baltimore	fa:تونل بندر بالتیمور	fr:Tunnel du port de Baltimore	he:מנהרת נמל בולטימור	hi:बाल्टीमोर हार्बर सुरंग	ja:ボルティモア港トンネル	ko:볼티모어 항구 터널	pt:Túnel do Porto de Baltimore	ru:Балтиморский тоннель	tr:Baltimore Limanı Tüneli	ur:بالٹیمور بندرگاہ ٹنل	zh:巴尔的摩港隧道
+c:balto	ProperNoun	ar:بالتو	de:Balto	en:Balto	es:Balto	fa:بالتو	fr:Balto	he:בלטו	hi:बाल्टो	ja:バルト	ko:발토	pt:Balto	ru:Балто	tr:Balto	ur:بالٹو	zh:波顿
 c:baltoro-glacier	ProperNoun	ar:بالتورو	de:Baltoro-Gletscher	en:Baltoro Glacier	es:Glaciar Baltoro	fa:یخچال بالتورو	fr:Glacier du Baltoro	he:קרחון בלטורו	hi:बाल्टोरो हिमनद	ja:バルトロ氷河	ko:발토로 빙하	pt:Glaciar Baltoro	ru:Ледник Балторо	tr:Baltoro Buzulu	ur:بلتورو گلیشیر	zh:巴尔托洛冰川
 c:balustrade	Noun	ar:درابزين	de:Balustrade	en:balustrade	es:balaustrada	fa:نرده	fr:balustrade	he:מעקה	hi:रेलिंग	ja:バルストレード	ko:난간	pt:balaustrada	ru:балюстрада	tr:korkuluk	ur:جنگلہ	zh:栏杆
 c:balvenie	ProperNoun	ar:بالفيني	de:Balvenie	en:Balvenie	es:Balvenie	fa:بلوینی	fr:Balvenie	he:בלבני	hi:बालवेनी	ja:バルヴェニー	ko:발베니	pt:Balvenie	ru:Балвени	tr:Balvenie	ur:بلوینی	zh:百富
@@ -1309,6 +1310,7 @@ c:balzac	ProperNoun	ar:بلزاك	de:Balzac	en:Balzac	es:Balzac	fa:بالزاک	
 c:bamboo	Noun	ar:الخيزران,البامبو	de:Bambus	en:bamboo	es:bambú	fa:بامبو	fr:bambou	he:במבוק	hi:बाँस	ja:竹	ko:대나무	pt:bambu	ru:бамбук	tr:bambu	ur:بانس	zh:竹
 c:bamboo-material	Noun	ar:خيزران	de:Bambus	en:bamboo	es:bambú	fa:بامبو	fr:bambou	he:במבוק	hi:बांस	ja:竹	ko:대나무	pt:bambu	ru:бамбук	tr:bambu	ur:بانس	zh:竹子
 c:bamboo-material-type	Noun	ar:خشب الخيزران	de:Bambus-Material	en:bamboo material	es:bambú material	fa:چوب بامبو	fr:bambou matériau	he:עץ במבוק	hi:बांस पदार्थ	ja:竹材	ko:대나무 재료	pt:bambu material	ru:бамбук материал	tr:bambu malzeme	ur:بانس مواد	zh:竹材
+c:bamse	ProperNoun	ar:بامسي	de:Bamse	en:Bamse	es:Bamse	fa:بامسه	fr:Bamse	he:במסה	hi:बामसे	ja:バムセ	ko:밤세	pt:Bamse	ru:Бамсе	tr:Bamse	ur:بامسے	zh:邦瑟
 c:ban-gu	ProperNoun	ar:بان جو	de:Ban Gu	en:Ban Gu	es:Ban Gu	fa:بان گو	fr:Ban Gu	he:באן גו	hi:बान गू	ja:班固	ko:반고	pt:Ban Gu	ru:Бань Гу	tr:Ban Gu	ur:بان گو	zh:班固
 c:banach	ProperNoun	ar:ستيفان باناخ	de:Stefan Banach	en:Stefan Banach	es:Stefan Banach	fa:استفان باناخ	fr:Stefan Banach	he:סטפן באנך	hi:स्टेफ़ान बनाख	ja:ステファン・バナフ	ko:스테판 바나흐	pt:Stefan Banach	ru:Стефан Банах	tr:Stefan Banach	ur:بناخ	zh:巴拿赫
 c:banach-tarski	ProperNoun	ar:مفارقة باناخ تارسكي	de:Banach-Tarski-Paradoxon	en:Banach-Tarski Paradox	es:Paradoja de Banach-Tarski	fa:پارادوکس باناخ-تارسکی	fr:Paradoxe de Banach-Tarski	he:פרדוקס בנך-טרסקי	hi:बानाख-तार्स्की विरोधाभास	ja:バナッハ・タルスキーのパラドックス	ko:바나흐-타르스키 역설	pt:Paradoxo Banach-Tarski	ru:Парадокс Банаха-Тарского	tr:Banach-Tarski Paradoksu	ur:باناخ تارسکی پیراڈوکس	zh:巴拿赫-塔斯基悖论
@@ -1378,6 +1380,7 @@ c:barley-grain	Noun	ar:شعير	de:Gerste	en:barley	es:cebada	fa:جو	fr:orge	he
 c:barn	Noun	ar:حظيرة	de:Scheune	en:barn	es:granero	fa:انبار غله	fr:grange	he:אסם	hi:खलिहान	ja:納屋	ko:헛간	pt:celeiro	ru:амбар	tr:samanlık	ur:باڑا	zh:谷仓
 c:barn-building	Noun	ar:حظيرة	de:Scheune	en:barn	es:granero	fa:انبار علوفه	fr:grange	he:אסם	hi:खलिहान	ja:納屋	ko:헛간	pt:celeiro	ru:амбар	tr:ahır	ur:کھتا	zh:谷仓
 c:barnacle	Noun	ar:بلح البحر العالق,دبق البحر	de:Seepocke,Entenmuschel	en:barnacle	es:percebe,bellota de mar	fa:کشتی‌چسب	fr:bernacle,anatife	he:דילעה	hi:बार्नेकल	ja:フジツボ	ko:따개비	pt:craca,percebe	ru:морской жёлудь,усоногий рак	tr:deniz palamutu	ur:سمندری سپ	zh:藤壶
+c:barney-dog	ProperNoun	ar:بارني	de:Barney	en:Barney	es:Barney	fa:بارنی	fr:Barney	he:בארני	hi:बार्नी	ja:バーニー	ko:바니	pt:Barney	ru:Барни	tr:Barney	ur:بارنی	zh:巴尼
 c:barnum-brown	ProperNoun	ar:بارنوم براون	de:Barnum Brown	en:Barnum Brown	es:Barnum Brown	fa:بارنوم براون	fr:Barnum Brown	he:ברנום בראון	hi:बार्नम ब्राउन	ja:バーナム・ブラウン	ko:바넘 브라운	pt:Barnum Brown	ru:Барнум Браун	tr:Barnum Brown	ur:بارنم براؤن	zh:巴纳姆·布朗
 c:barolo-wine	ProperNoun	ar:بارولو	de:Barolo	en:Barolo	es:Barolo	fa:بارولو	fr:Barolo	he:ברולו	hi:बरोलो	ja:バローロ	ko:바롤로	pt:Barolo	ru:Бароло	tr:Barolo	ur:بارولو	zh:巴罗洛
 c:barometer	Noun	ar:مقياس الضغط الجوي,بارومتر	de:Barometer,Luftdruckmesser	en:barometer	es:barómetro	fa:فشارسنج,بارومتر	fr:baromètre	he:ברומטר,מד-לחץ	hi:बैरोमीटर,वायुदाब मापी	ja:気圧計,バロメーター	ko:기압계,바로미터	pt:barômetro	ru:барометр	tr:barometre,basınçölçer	ur:بیرومیٹر,فشار پیما	zh:气压计
@@ -1571,6 +1574,7 @@ c:beeswax	Noun	ar:شمع العسل	de:Bienenwachs	en:beeswax	es:cera de abejas	
 c:beet	Noun	ar:شمندر,بنجر	de:Rote Bete	en:beet,beetroot	es:remolacha	fa:چغندر	fr:betterave	he:סלק	hi:चुकंदर	ja:ビーツ	ko:비트	pt:beterraba	ru:свёкла	tr:pancar	ur:چقندر	zh:甜菜根
 c:beet-veg	Noun	ar:بنجر	de:Rote Bete	en:beet	es:remolacha	fa:چغندر	fr:betterave	he:סלק	hi:चुकंदर	ja:ビーツ	ko:비트	pt:beterraba	ru:свёкла	tr:pancar	ur:چقندر	zh:甜菜
 c:beethoven-composer	ProperNoun	ar:بيتهوفن	de:Beethoven	en:Beethoven	es:Beethoven	fa:بتهوون	fr:Beethoven	he:בטהובן	hi:बीथोवेन	ja:ベートーヴェン	ko:베토벤	pt:Beethoven	ru:Бетховен	tr:Beethoven	ur:بیتھوون	zh:贝多芬
+c:beethoven-dog	ProperNoun	ar:بيتهوفن	de:Beethoven	en:Beethoven	es:Beethoven	fa:بتهوون	fr:Beethoven	he:בטהובן	hi:बीथोवन	ja:ベートーベン	ko:베토벤	pt:Beethoven	ru:Бетховен	tr:Beethoven	ur:بیتھون	zh:贝多芬
 c:beetle	Noun	ar:خنفساء	de:Käfer	en:beetle	es:escarabajo	fa:سوسک	fr:scarabée,coléoptère	he:חיפושית	hi:भृंग	ja:甲虫,カブトムシ	ko:딱정벌레	pt:besouro	ru:жук	tr:kın kanatlı böcek	ur:بھنورا	zh:甲虫
 c:before-time	Adverb	ar:قبل	de:vor zeitlich	en:before	es:antes	fa:قبل	fr:avant	he:לפני זמני	hi:पहले समय	ja:以前	ko:이전	pt:antes	ru:до	tr:önce zaman	ur:پہلے وقت	zh:之前
 c:begging-question	ProperNoun	ar:المصادرة على المطلوب	de:Petitio principii	en:Begging the Question	es:Petición de Principio	fa:مصادره به مطلوب	fr:Pétition de principe	he:משאלת הסוגיה	hi:प्रश्न की भीख	ja:先決問題要求の虚偽	ko:선결문제 요구	pt:Petição de Princípio	ru:Предвосхищение основания	tr:İstenileni Peşinen Kabul	ur:سوال کی بھیک	zh:乞题
@@ -1947,6 +1951,7 @@ c:bmp-signaling	Noun	ar:إشارة البروتين العظمي المورفو�
 c:bmw-car	ProperNoun	ar:بي إم دبليو	de:BMW	en:BMW	es:BMW	fa:بی‌ام‌و	fr:BMW	he:במוו	hi:बीएमडब्ल्यू	ja:BMW	ko:BMW	pt:BMW	ru:BMW	tr:BMW	ur:بی ایم ڈبلیو	zh:宝马
 c:bmw-m3	ProperNoun	ar:بي إم دبليو M3	de:BMW M3	en:BMW M3	es:BMW M3	fa:بی‌ام‌و M3	fr:BMW M3	he:BMW M3	hi:बीएमडब्ल्यू M3	ja:BMW M3	ko:BMW M3	pt:BMW M3	ru:BMW M3	tr:BMW M3	ur:بی ایم ڈبلیو M3	zh:宝马M3
 c:bnd	ProperNoun	ar:جهاز الاستخبارات الألماني	de:BND	en:BND	es:BND	fa:ب‌ان‌د	fr:BND	he:BND	hi:बीएनडी	ja:BND	ko:BND	pt:BND	ru:БНД	tr:BND	ur:بی این ڈی	zh:联邦情报局
+c:bo-obama-dog	ProperNoun	ar:بو أوباما	de:Bo Obama	en:Bo Obama	es:Bo Obama	fa:بو اوباما	fr:Bo Obama	he:בו אובמה	hi:बो ओबामा	ja:ボー・オバマ	ko:보 오바마	pt:Bo Obama	ru:Бо Обама	tr:Bo Obama	ur:بو اوباما	zh:博·奥巴马
 c:boa	Noun	ar:ثعبان البواء	de:Boa	en:boa	es:boa	fa:بوا	fr:boa	he:בואה	hi:बोआ	ja:ボア	ko:보아뱀	pt:jiboia	ru:боа	tr:boa yılanı	ur:بوا	zh:蚺蛇
 c:boa-singer	ProperNoun	ar:بوا	de:BoA	en:BoA	es:BoA	fa:بوآ	fr:BoA	he:BoA	hi:बोआ	ja:BoA	ko:보아	pt:BoA	ru:BoA	tr:BoA	ur:بوآ	zh:BoA
 c:board	Verb	ar:استقل,يستقل,صعد,يصعد	de:einsteigen	en:board	es:abordar,embarcar	fa:سوار شدن	fr:embarquer,monter	he:לעלות	hi:सवार होना	ja:搭乗する,乗り込む	ko:탑승하다	pt:embarcar	ru:садиться	tr:binmek	ur:سوار ہونا	zh:登机,登上
@@ -2004,6 +2009,7 @@ c:bolshevik-revolution	ProperNoun	ar:الثورة البلشفية	de:Bolschewis
 c:bolsonaro	ProperNoun	ar:جائير بولسونارو	de:Jair Bolsonaro	en:Jair Bolsonaro	es:Jair Bolsonaro	fa:جائر بولسونارو	fr:Jair Bolsonaro	he:ז׳איר בולסונארו	hi:जैर बोल्सोनारो	ja:ジャイル・ボルソナーロ	ko:자이르 보우소나루	pt:Jair Bolsonaro	ru:Жаир Болсонару	tr:Jair Bolsonaro	ur:بولسونارو	zh:博尔索纳罗
 c:bolt	Noun	ar:مسمار لولبي	de:Schraube	en:bolt	es:perno	fa:پیچ و مهره	fr:boulon	he:בורג	hi:बोल्ट	ja:ボルト	ko:볼트	pt:parafuso	ru:болт	tr:civata	ur:بولٹ	zh:螺栓
 c:bolt-cutter	Noun	ar:قاطعة مسامير	de:Bolzenschneider	en:bolt cutter	es:cizalla	fa:پیچ‌بر	fr:coupe-boulons	he:כלי חיתוך	hi:बोल्ट कटर	ja:ボルトカッター	ko:볼트 커터	pt:corta-pinos	ru:болторез	tr:cıvata kesici	ur:بولٹ کٹر	zh:断线钳
+c:bolt-dog	ProperNoun	ar:بولت	de:Bolt	en:Bolt	es:Bolt	fa:بولت	fr:Bolt	he:בולט	hi:बोल्ट	ja:ボルト	ko:볼트	pt:Bolt	ru:Болт	tr:Bolt	ur:بولٹ	zh:闪电狗
 c:boltzmann	Noun	ar:ثابت بولتزمان	de:Boltzmann-Konstante	en:Boltzmann constant	es:constante de Boltzmann	fa:ثابت بولتزمان	fr:constante de Boltzmann	he:קבוע בולצמן	hi:बोल्ट्ज़मान नियतांक	ja:ボルツマン定数	ko:볼츠만 상수	pt:constante de Boltzmann	ru:постоянная Больцмана	tr:Boltzmann sabiti	ur:بولٹزمان ثابت	zh:玻尔兹曼常数
 c:boltzmann-brain	ProperNoun	ar:دماغ بولتزمان	de:Boltzmann-Gehirn	en:Boltzmann Brain	es:Cerebro de Boltzmann	fa:مغز بولتزمان	fr:Cerveau de Boltzmann	he:מוח בולצמן	hi:बोल्ट्ज़मैन मस्तिष्क	ja:ボルツマン脳	ko:볼츠만 뇌	pt:Cérebro de Boltzmann	ru:Мозг Больцмана	tr:Boltzmann Beyni	ur:بولٹزمین دماغ	zh:玻尔兹曼大脑
 c:boltzmann-equation	ProperNoun	ar:معادلة بولتزمان	de:Boltzmann-Gleichung	en:Boltzmann Equation	es:Ecuación de Boltzmann	fa:معادله بولتزمن	fr:Équation de Boltzmann	he:משוואת בולצמן	hi:बोल्ट्ज़मैन समीकरण	ja:ボルツマン方程式	ko:볼츠만 방정식	pt:Equação de Boltzmann	ru:Уравнение Больцмана	tr:Boltzmann Denklemi	ur:بولٹزمین مساوات	zh:玻尔兹曼方程
@@ -2037,6 +2043,7 @@ c:bookshelf	Noun	ar:رف كتب,مكتبة	de:Bücherregal	en:bookshelf,bookcase
 c:bookstore	Noun	ar:مكتبة	de:Buchhandlung	en:bookstore	es:librería	fa:کتابفروشی	fr:librairie	he:חנות ספרים	hi:किताबों की दुकान	ja:書店	ko:서점	pt:livraria	ru:книжный магазин	tr:kitabevi	ur:کتاب کی دکان	zh:书店
 c:boole	ProperNoun	ar:جورج بول	de:George Boole	en:George Boole	es:George Boole	fa:جرج بول	fr:George Boole	he:ג׳ורג׳ בול	hi:जॉर्ज बूल	ja:ジョージ・ブール	ko:조지 불	pt:George Boole	ru:Джордж Буль	tr:George Boole	ur:جارج بول	zh:乔治·布尔
 c:boombox	Noun	ar:بومبوكس	de:Ghettoblaster	en:boombox	es:radiocasete portátil	fa:بومباکس	fr:ghettoblaster	he:בומבוקס	hi:बूमबॉक्स	ja:ラジカセ	ko:붐박스	pt:rádio portátil	ru:магнитола	tr:taşınabilir radyo	ur:بوم بکس	zh:手提音响
+c:boomer-dog	ProperNoun	ar:بومر	de:Boomer	en:Boomer	es:Boomer	fa:بومر	fr:Boomer	he:בומר	hi:बूमर	ja:ブーマー	ko:부머	pt:Boomer	ru:Бумер	tr:Boomer	ur:بومر	zh:Boomer
 c:boomerang-nebula	ProperNoun	ar:سديم البوميرانغ	de:Bumerang-Nebel	en:Boomerang Nebula	es:Nebulosa Bumerán	fa:سحابی بومرنگ	fr:Nébuleuse du Boomerang	he:ערפילית הבומרנג	hi:बूमरैंग नीहारिका	ja:ブーメラン星雲	ko:부메랑 성운	pt:Nebulosa Bumerangue	ru:Бумеранг (туманность)	tr:Bumerang Nebulası	ur:بومرینگ نبیولا	zh:回力棒星云
 c:boomslang	Noun	ar:افعى بومسلانج	de:Boomslang	en:boomslang	es:boomslang	fa:بومسلنگ	fr:boomslang	he:בומסלנג	hi:बूमस्लांग	ja:ブームスラング	ko:붐슬랑	pt:cobra-árvore	ru:бумсланг	tr:boomslang	ur:بوم سلانگ	zh:非洲树蛇
 c:booster	Noun	ar:صاروخ دافع	de:Booster	en:booster	es:cohete auxiliar	fa:بوستر	fr:booster	he:מאיץ	hi:बूस्टर	ja:ブースター	ko:부스터	pt:foguete auxiliar	ru:ускоритель	tr:kuvvetlendirici	ur:بوسٹر	zh:助推器
@@ -2275,6 +2282,7 @@ c:bucatini	Noun	ar:بوكاتيني	de:Bucatini	en:bucatini	es:bucatini	fa:بو�
 c:bucephalus	ProperNoun	ar:بوسيفالوس	de:Bukephalos	en:Bucephalus	es:Bucéfalo	fa:بوسفالوس	fr:Bucéphale	he:בוקפלוס	hi:बुकेफ़ालुस	ja:ブケファラス	ko:부케팔로스	pt:Bucéfalo	ru:Буцефал	tr:Bukefalos	ur:بیوسی فالس	zh:布西发拉斯
 c:buchanan	ProperNoun	ar:بوكانان	de:Buchanan	en:Buchanan	es:Buchanan	fa:بیوکنن	fr:Buchanan	he:ביוקנן	hi:बुकानन	ja:ブキャナン	ko:뷰캐넌	pt:Buchanan	ru:Бьюкенен	tr:Buchanan	ur:بیوکنن	zh:布坎南
 c:bucharest-capital	Noun	ar:بوخارست	de:Bukarest	en:Bucharest	es:Bucarest	fa:بخارست	fr:Bucarest	he:בוקרשט	hi:बुखारेस्ट	ja:ブカレスト	ko:부쿠레슈티	pt:Bucareste	ru:Бухарест	tr:Bükreş	ur:بخارسٹ	zh:布加勒斯特
+c:buck-dog	ProperNoun	ar:باك	de:Buck	en:Buck	es:Buck	fa:باک	fr:Buck	he:באק	hi:बक	ja:バック	ko:벅	pt:Buck	ru:Бэк	tr:Buck	ur:بک	zh:巴克
 c:bucket	Noun	ar:دلو	de:Eimer	en:bucket,pail	es:cubo,balde	fa:سطل	fr:seau	he:דלי	hi:बाल्टी	ja:バケツ	ko:양동이,버킷	pt:balde	ru:ведро	tr:kova	ur:بالٹی	zh:桶,水桶
 c:bucket-home	Noun	ar:دلو,سطل	de:Eimer	en:bucket,pail	es:cubo,balde	fa:سطل	fr:seau	he:דלי	hi:बाल्टी	ja:バケツ	ko:양동이	pt:balde	ru:ведро	tr:kova	ur:بالٹی	zh:水桶
 c:buckingham-fountain	ProperNoun	ar:نافورة باكنغهام	de:Buckingham-Brunnen	en:Buckingham Fountain	es:Fuente Buckingham	fa:فواره باکینگهام	fr:Fontaine Buckingham	he:מזרקת בקינגהם	hi:बकिंघम फव्वारा	ja:バッキンガム噴水	ko:버킹엄 분수	pt:Fonte Buckingham	ru:Букингемский фонтан	tr:Buckingham Çeşmesi	ur:بکنگھم فوارہ	zh:白金汉喷泉
@@ -2287,6 +2295,7 @@ c:budapest-gambit	ProperNoun	ar:جامبي بودابست	de:Budapester Gambit	e
 c:budapest-zoo	ProperNoun	ar:حديقة حيوان بودابست	de:Budapester Zoo	en:Budapest Zoo	es:Zoo de Budapest	fa:باغ‌وحش بوداپست	fr:Zoo de Budapest	he:גן החיות של בודפשט	hi:बुडापेस्ट चिड़ियाघर	ja:ブダペスト動物園	ko:부다페스트 동물원	pt:Zoo de Budapeste	ru:Будапештский зоопарк	tr:Budapeşte Hayvanat Bahçesi	ur:بوڈاپیسٹ چڑیا گھر	zh:布达佩斯动物园
 c:buddha-philosopher	ProperNoun	ar:بوذا	de:Buddha	en:Buddha	es:Buda	fa:بودا	fr:Bouddha	he:בודהה	hi:बुद्ध	ja:仏陀	ko:부처	pt:Buda	ru:Будда	tr:Buda	ur:بدھا	zh:佛陀
 c:buddhism	Noun	ar:البوذية	de:Buddhismus	en:Buddhism	es:budismo	fa:بودایی	fr:bouddhisme	he:בודהיזם	hi:बौद्ध धर्म	ja:仏教	ko:불교	pt:budismo	ru:буддизм	tr:Budizm	ur:بدھ مت	zh:佛教
+c:buddy-blue-dog	ProperNoun	ar:بادي	de:Buddy	en:Buddy	es:Buddy	fa:بادی	fr:Buddy	he:באדי	hi:बडी	ja:バディ	ko:버디	pt:Buddy	ru:Бадди	tr:Buddy	ur:بڈی	zh:巴迪
 c:buddy-rich	ProperNoun	ar:بادي ريتش	de:Buddy Rich	en:Buddy Rich	es:Buddy Rich	fa:بادی ریچ	fr:Buddy Rich	he:באדי ריץ'	hi:बडी रिच	ja:バディ・リッチ	ko:버디 리치	pt:Buddy Rich	ru:Бадди Рич	tr:Buddy Rich	ur:بڈی رچ	zh:巴迪·瑞奇
 c:budgerigar	Noun	ar:بدغيغار,ببغاء استرالي	de:Wellensittich	en:budgerigar,budgie	es:periquito australiano	fa:مرغ عشق	fr:perruche ondulée	he:בודגריגר	hi:बजरीगर	ja:セキセイインコ	ko:사랑새	pt:periquito-australiano	ru:волнистый попугайчик	tr:muhabbet kuşu	ur:بجریگر	zh:虎皮鹦鹉
 c:budget	Noun	ar:ميزانية	de:Budget,Haushalt	en:budget	es:presupuesto	fa:بودجه	fr:budget	he:תקציב	hi:बजट	ja:予算	ko:예산	pt:orçamento	ru:бюджет	tr:bütçe	ur:بجٹ	zh:预算
@@ -3002,6 +3011,7 @@ c:chazelle	ProperNoun	ar:دامين شازيل	de:Damien Chazelle	en:Damien Chaz
 c:che-guevara	ProperNoun	ar:تشي غيفارا	de:Che Guevara	en:Che Guevara	es:Che Guevara	fa:چه گوارا	fr:Che Guevara	he:צ׳ה גווארה	hi:चे ग्वेरा	ja:チェ・ゲバラ	ko:체 게바라	pt:Che Guevara	ru:Че Гевара	tr:Che Guevara	ur:چی گویرا	zh:切·格瓦拉
 c:check	Noun	ar:شيك	de:Scheck	en:check,cheque	es:cheque	fa:چک	fr:chèque	he:המחאה,צ'ק	hi:चेक	ja:小切手,チェック	ko:수표,체크	pt:cheque	ru:чек	tr:çek	ur:چیک	zh:支票
 c:checkers	Noun	ar:الداما	de:Dame-Spiel	en:checkers	es:damas	fa:بازی دام	fr:jeu de dames	he:דמקה	hi:चेकर्स	ja:チェッカー	ko:체커	pt:jogo de damas	ru:шашки	tr:dama	ur:چیکرز	zh:跳棋
+c:checkers-dog	ProperNoun	ar:تشيكرز	de:Checkers	en:Checkers	es:Checkers	fa:چکرز	fr:Checkers	he:צ'קרס	hi:चेकर्स	ja:チェッカーズ	ko:체커스	pt:Checkers	ru:Чекерс	tr:Checkers	ur:چیکرز	zh:跳棋
 c:checkers-game	Noun	ar:داما	de:Dame	en:checkers	es:damas	fa:چکرز	fr:jeu de dames	he:דמקה	hi:चेकर्स	ja:チェッカー	ko:체커	pt:damas	ru:шашки	tr:dama	ur:چیکرز	zh:跳棋
 c:checkmate-ballet	ProperNoun	ar:كش ملك	de:Schachmatt	en:Checkmate (ballet)	es:Jaque mate	fa:کیش و مات	fr:Échec et mat	he:שחמט	hi:चेकमेट	ja:チェックメイト	ko:체크메이트	pt:Xeque-mate	ru:Шах и мат	tr:Şahmat	ur:چیک میٹ	zh:将死
 c:checkout-vcs	Noun	ar:تبديل	de:Checkout	en:checkout	es:checkout	fa:چکاوت	fr:checkout	he:צ'קאאוט	hi:चेकआउट	ja:チェックアウト	ko:체크아웃	pt:checkout	ru:переключение	tr:checkout	ur:چیک آؤٹ	zh:检出
@@ -3136,6 +3146,7 @@ c:chinook-helicopter	ProperNoun	ar:شينوك مروحية	de:CH-47 Chinook	en:C
 c:chinua-achebe	ProperNoun	ar:تشينوا أتشيبي	de:Chinua Achebe	en:Chinua Achebe	es:Chinua Achebe	fa:چینوا آچبه	fr:Chinua Achebe	he:צ׳ינואה אצ׳בה	hi:चिनुआ अचेबे	ja:チヌア・アチェベ	ko:치누아 아체베	pt:Chinua Achebe	ru:Чинуа Ачебе	tr:Chinua Achebe	ur:اچیبے	zh:阿契贝
 c:chip-seq	Noun	ar:تقنية ChIP-Seq	de:ChIP-Sequenzierung	en:ChIP-Seq,chromatin immunoprecipitation sequencing	es:ChIP-Seq	fa:ChIP-Seq	fr:ChIP-Seq	he:ChIP-Seq	hi:ChIP-Seq	ja:ChIP-Seq	ko:ChIP-Seq	pt:ChIP-Seq	ru:ChIP-секвенирование	tr:ChIP-Seq	ur:ChIP-Seq	zh:ChIP-Seq
 c:chipotle	ProperNoun	ar:تشيبوتلي	de:Chipotle	en:Chipotle	es:Chipotle	fa:چیپوتلی	fr:Chipotle	he:צ'יפוטלה	hi:चिपोटले	ja:チポトレ	ko:치포틀레	pt:Chipotle	ru:Chipotle	tr:Chipotle	ur:چپوٹلے	zh:奇波雷
+c:chips-dog	ProperNoun	ar:تشيبس	de:Chips	en:Chips	es:Chips	fa:چیپس	fr:Chips	he:צ'יפס	hi:चिप्स	ja:チップス	ko:칩스	pt:Chips	ru:Чипс	tr:Chips	ur:چپس	zh:奇普斯
 c:chips-snack	Noun	ar:رقائق	de:Chips	en:chips	es:papas fritas	fa:چیپس	fr:chips	he:צ'יפס	hi:चिप्स	ja:チップス	ko:칩스	pt:batatas fritas	ru:чипсы	tr:cips	ur:چپس	zh:薯片
 c:chipset	Noun	ar:مجموعة الشرائح	de:Chipsatz	en:chipset	es:chipset	fa:چیپ ست	fr:chipset	he:ערכת שבבים	hi:चिपसेट	ja:チップセット	ko:칩셋	pt:chipset	ru:чипсет	tr:yonga seti	ur:چپ سیٹ	zh:芯片组
 c:chiral	Adjective	ar:يدوي	de:chiral	en:chiral	es:quiral	fa:کایرال	fr:chiral	he:כיראלי	hi:काइरल	ja:キラル	ko:카이랄	pt:quiral	ru:хиральный	tr:kiral	ur:کائرل	zh:手性
@@ -3373,6 +3384,7 @@ c:client-biz	Noun	ar:عميل تجاري	de:Kunde	en:client	es:cliente	fa:مشت
 c:cliff	Noun	ar:جرف,منحدر	de:Klippe,Felswand	en:cliff	es:acantilado	fa:صخره,پرتگاه	fr:falaise	he:צוק	hi:चट्टान	ja:崖	ko:절벽	pt:penhasco,falésia	ru:утёс,скала	tr:uçurum,yar	ur:چٹان	zh:悬崖,峭壁
 c:cliff-landform	Noun	ar:جرف,منحدر صخري	de:Klippe,Kliff	en:cliff	es:acantilado	fa:صخره,پرتگاه	fr:falaise	he:צוק	hi:खड़ी चट्टान,चट्टान	ja:崖,絶壁	ko:절벽	pt:penhasco,falésia	ru:утёс,скала	tr:uçurum	ur:کھڑی چٹان	zh:悬崖
 c:clifford	Noun	ar:مجموعة كليفورد	de:Clifford-Gruppe	en:Clifford group	es:grupo de Clifford	fa:گروه کلیفورد	fr:groupe de Clifford	he:קבוצת קליפורד	hi:क्लिफोर्ड समूह	ja:クリフォード群	ko:클리퍼드 군	pt:grupo de Clifford	ru:группа Клиффорда	tr:Clifford grubu	ur:کلیفورڈ گروپ	zh:克利福德群
+c:clifford-big-dog	ProperNoun	ar:كليفورد	de:Clifford	en:Clifford	es:Clifford	fa:کلیفورد	fr:Clifford	he:קליפורד	hi:क्लिफोर्ड	ja:クリフォード	ko:클리포드	pt:Clifford	ru:Клиффорд	tr:Clifford	ur:کلفورڈ	zh:大红狗
 c:clifford-brown	ProperNoun	ar:كليفورد براون	de:Clifford Brown	en:Clifford Brown	es:Clifford Brown	fa:کلیفورد براون	fr:Clifford Brown	he:קליפורד בראון	hi:क्लिफ़ोर्ड ब्राउन	ja:クリフォード・ブラウン	ko:클리퍼드 브라운	pt:Clifford Brown	ru:Клиффорд Браун	tr:Clifford Brown	ur:کلفورڈ براؤن	zh:克利福德·布朗
 c:clifford-geertz	ProperNoun	ar:كليفورد جيرتز	de:Clifford Geertz	en:Clifford Geertz	es:Clifford Geertz	fa:کلیفورد گرتز	fr:Clifford Geertz	he:קליפורד גירץ	hi:क्लिफ़र्ड गीर्ट्ज़	ja:クリフォード・ギアツ	ko:클리퍼드 기어츠	pt:Clifford Geertz	ru:Клиффорд Гирц	tr:Clifford Geertz	ur:کلفرڈ گیرٹز	zh:克利福德·格尔茨
 c:clifford-irving	ProperNoun	ar:كليفورد إيرفينغ	de:Clifford Irving	en:Clifford Irving	es:Clifford Irving	fa:کلیفورد ایروینگ	fr:Clifford Irving	he:קליפורד אירווינג	hi:क्लिफ़र्ड इरविंग	ja:クリフォード・アーヴィング	ko:클리포드 어빙	pt:Clifford Irving	ru:Клиффорд Ирвинг	tr:Clifford Irving	ur:کلفورڈ ارونگ	zh:克利福德·艾文
@@ -5223,6 +5235,7 @@ c:eileen-collins	ProperNoun	ar:إيلين كولينز	de:Eileen Collins	en:Eile
 c:ein-volk-eine-rede	ProperNoun	ar:شعب واحد	de:Ein Volk, ein Reich	en:Ein Volk Ein Reich	es:Un pueblo, un imperio	fa:یک ملت یک امپراتوری	fr:Un peuple, un empire	he:עם אחד, אימפריה אחת	hi:एक लोग एक साम्राज्य	ja:一つの民族、一つの帝国	ko:하나의 민족 하나의 제국	pt:Um povo, um império	ru:Один народ, одна империя	tr:Tek Halk Tek İmparatorluk	ur:ایک قوم ایک سلطنت	zh:一个民族，一个帝国
 c:einkorn-grain	Noun	ar:قمح آينكورن	de:Einkorn	en:einkorn wheat	es:trigo einkorn	fa:گندم آینکورن	fr:engrain	he:חיטה חד-ספון	hi:आइन्कॉर्न गेहूं	ja:アインコーン小麦	ko:아인콘 밀	pt:trigo einkorn	ru:эйнкорн	tr:einkorn buğdayı	ur:آئنکورن گندم	zh:小粒小麦
 c:einstein	Noun	ar:أينشتاين,ألبرت أينشتاين	de:Einstein,Albert Einstein	en:Einstein,Albert Einstein	es:Einstein	fa:اینشتین,آلبرت اینشتین	fr:Einstein	he:איינשטיין	hi:आइंस्टीन	ja:アインシュタイン	ko:아인슈타인	pt:Einstein	ru:Эйнштейн	tr:Einstein	ur:آئن سٹائن	zh:爱因斯坦
+c:einstein-dog	ProperNoun	ar:أينشتاين	de:Einstein	en:Einstein	es:Einstein	fa:انیشتین	fr:Einstein	he:איינשטיין	hi:आइंस्टीन	ja:アインシュタイン	ko:아인슈타인	pt:Einstein	ru:Эйнштейн	tr:Einstein	ur:آئن سٹائن	zh:爱因斯坦
 c:einstein-field-equations	ProperNoun	ar:معادلات أينشتاين	de:Einsteinsche Feldgleichungen	en:Einstein Field Equations	es:Ecuaciones de Campo de Einstein	fa:معادلات میدان اینشتین	fr:Équations de champ d'Einstein	he:משוואות השדה של איינשטיין	hi:आइंस्टीन क्षेत्र समीकरण	ja:アインシュタイン方程式	ko:아인슈타인 장방정식	pt:Equações de Campo de Einstein	ru:Уравнения Эйнштейна	tr:Einstein Alan Denklemleri	ur:آئن اسٹائن فیلڈ مساوات	zh:爱因斯坦场方程
 c:einstein-scientist	ProperNoun	ar:أينشتاين	de:Einstein	en:Einstein	es:Einstein	fa:اینشتین	fr:Einstein	he:איינשטיין	hi:आइंस्टाइन	ja:アインシュタイン	ko:아인슈타인	pt:Einstein	ru:Эйнштейн	tr:Einstein	ur:آئن اسٹائن	zh:爱因斯坦
 c:einstein-telescope	ProperNoun	ar:تلسكوب أينشتاين	de:Einstein-Teleskop	en:Einstein Telescope	es:Telescopio Einstein	fa:تلسکوپ اینشتین	fr:Télescope Einstein	he:טלסקופ איינשטיין	hi:आइंस्टीन टेलीस्कोप	ja:アインシュタイン望遠鏡	ko:아인슈타인 망원경	pt:Telescópio Einstein	ru:Телескоп Эйнштейна	tr:Einstein Teleskobu	ur:آئن اسٹائن ٹیلی سکوپ	zh:爱因斯坦望远镜
@@ -5798,6 +5811,7 @@ c:faisal-mosque	ProperNoun	ar:مسجد فيصل	de:Faisal-Moschee	en:Faisal Mosq
 c:faith	Noun	ar:إيمان	de:Glaube	en:faith	es:fe	fa:ایمان	fr:foi	he:אמונה	hi:विश्वास,आस्था	ja:信仰	ko:믿음,신앙	pt:fé	ru:вера	tr:iman,inanç	ur:ایمان,عقیدہ	zh:信仰
 c:fajita-seasoning	Noun	ar:توابل الفاهيتا	de:Fajita-Gewürz	en:fajita seasoning	es:condimento fajita	fa:ادویه فاهیتا	fr:assaisonnement fajita	he:תיבול פחיטה	hi:फजीता मसाला	ja:ファヒータシーズニング	ko:파히타 시즈닝	pt:tempero fajita	ru:фахита приправа	tr:fajita baharat	ur:فاہیتا مسالہ	zh:法士达调料
 c:fake-sheikh	ProperNoun	ar:الشيخ المزيف	de:Falscher Scheich	en:Fake Sheikh	es:Falso Jeque	fa:شیخ جعلی	fr:Faux Cheikh	he:השייח המזויף	hi:नकली शेख़	ja:偽シェイク	ko:가짜 셰이크	pt:Falso Xeque	ru:Фальшивый шейх	tr:Sahte Şeyh	ur:جعلی شیخ	zh:假酋长
+c:fala	ProperNoun	ar:فالا	de:Fala	en:Fala	es:Fala	fa:فالا	fr:Fala	he:פאלה	hi:फ़ला	ja:ファラ	ko:팔라	pt:Fala	ru:Фала	tr:Fala	ur:فالا	zh:法拉
 c:falafel	Noun	ar:فلافل	de:Falafel	en:falafel	es:falafel	fa:فلافل	fr:falafel	he:פלאפל	hi:फलाफेल	ja:ファラフェル	ko:팔라펠	pt:falafel	ru:фалафель	tr:falafel	ur:فلافل	zh:炸鹰嘴豆饼
 c:falcon	Noun	ar:صقر الشاهين	de:Falke	en:falcon	es:halcón peregrino	fa:شاهین	fr:faucon pèlerin	he:בז	hi:बाज	ja:隼,ハヤブサ	ko:송골매	pt:falcão	ru:сокол	tr:şahin,doğan	ur:شاہین	zh:隼
 c:falcon-bird	Noun	ar:صقر	de:Falke	en:falcon	es:halcón peregrino	fa:شاهباز	fr:faucon pèlerin	he:בז	hi:सकरा	ja:隼	ko:송골매	pt:falcão	ru:сокол	tr:şahin	ur:باز	zh:隼
@@ -5851,6 +5865,7 @@ c:famous-dams	Noun	ar:سدود مشهورة	de:berühmte Talsperren	en:famous da
 c:famous-diamonds	Noun	ar:ألماسات مشهورة	de:berühmte Diamanten	en:famous diamonds	es:diamantes famosos	fa:الماس‌های مشهور	fr:diamants célèbres	he:יהלומים מפורסמים	hi:प्रसिद्ध हीरे	ja:有名なダイヤモンド	ko:유명한 다이아몬드	pt:diamantes famosos	ru:известные алмазы	tr:ünlü elmaslar	ur:مشہور ہیرے	zh:著名钻石
 c:famous-directors	Noun	ar:مخرجون مشهورون	de:berühmte Regisseure	en:famous directors	es:directores famosos	fa:کارگردانان مشهور	fr:réalisateurs célèbres	he:במאים מפורסמים	hi:प्रसिद्ध निर्देशक	ja:有名な監督	ko:유명한 감독들	pt:diretores famosos	ru:известные режиссёры	tr:ünlü yönetmenler	ur:مشہور ہدایت کار	zh:著名导演
 c:famous-dishes	Noun	ar:أطباق شهيرة	de:berühmte Gerichte	en:famous dishes	es:platos famosos	fa:غذاهای معروف	fr:plats célèbres	he:מנות מפורסמות	hi:प्रसिद्ध व्यंजन	ja:有名料理	ko:유명 요리	pt:pratos famosos	ru:знаменитые блюда	tr:ünlü yemekler	ur:مشہور کھانے	zh:名菜
+c:famous-dogs	Noun	ar:كلاب مشهورة	de:berühmte Hunde	en:famous dogs	es:perros famosos	fa:سگ‌های مشهور	fr:chiens célèbres	he:כלבים מפורסמים	hi:प्रसिद्ध कुत्ते	ja:有名な犬	ko:유명한 개	pt:cães famosos	ru:знаменитые собаки	tr:ünlü köpekler	ur:مشہور کتے	zh:著名的狗
 c:famous-economists	Noun	ar:اقتصاديون مشهورون	de:berühmte Ökonomen	en:famous economists	es:economistas famosos	fa:اقتصاددانان مشهور	fr:économistes célèbres	he:כלכלנים מפורסמים	hi:प्रसिद्ध अर्थशास्त्री	ja:有名な経済学者	ko:유명한 경제학자들	pt:economistas famosos	ru:известные экономисты	tr:ünlü iktisatçılar	ur:مشہور ماہرین اقتصادیات	zh:著名经济学家
 c:famous-emperors	Noun	ar:أباطرة مشهورون	de:berühmte Kaiser	en:famous emperors	es:emperadores famosos	fa:امپراتوران مشهور	fr:empereurs célèbres	he:קיסרים מפורסמים	hi:प्रसिद्ध सम्राट	ja:有名な皇帝	ko:유명한 황제들	pt:imperadores famosos	ru:известные императоры	tr:ünlü imparatorlar	ur:مشہور شہنشاہ	zh:著名皇帝
 c:famous-explorers	Noun	ar:مستكشفون مشهورون	de:berühmte Entdecker	en:famous explorers	es:exploradores famosos	fa:کاشفان مشهور	fr:explorateurs célèbres	he:חוקרים מפורסמים	hi:प्रसिद्ध अन्वेषक	ja:有名な探検家	ko:유명한 탐험가	pt:exploradores famosos	ru:известные исследователи	tr:ünlü kaşifler	ur:مشہور کھوجی	zh:著名探险家
@@ -5915,6 +5930,7 @@ c:fan-chung	ProperNoun	ar:فان تشونغ	de:Fan Chung	en:Fan Chung	es:Fan Chu
 c:fanciulla-west	ProperNoun	ar:فتاة الغرب	de:Das Mädchen aus dem goldenen Westen	en:La fanciulla del West	es:La fanciulla del West	fa:دختر غرب	fr:La fanciulla del West	he:נערת המערב	hi:ला फ़ांचुल्ला डेल वेस्ट	ja:西部の娘	ko:서부의 아가씨	pt:La fanciulla del West	ru:Девушка с Запада	tr:Batılı Kız	ur:مغربی لڑکی	zh:西部女郎
 c:fandango	Noun	ar:رقص الفاندانغو	de:Fandango	en:fandango	es:fandango	fa:فاندانگو	fr:fandango	he:פנדנגו	hi:फ़ैंडेंगो	ja:ファンダンゴ	ko:판당고	pt:fandango	ru:фанданго	tr:fandango	ur:فینڈانگو	zh:芳丹戈舞
 c:fanfare-ballet	ProperNoun	ar:فانفار	de:Fanfare	en:Fanfare (ballet)	es:Fanfare	fa:فانفر باله	fr:Fanfare	he:פנפר	hi:फैनफेयर	ja:ファンファーレ	ko:팬페어	pt:Fanfare	ru:Фанфара	tr:Fanfare	ur:فان فیئر	zh:号角
+c:fang-dog	ProperNoun	ar:فانغ	de:Fang	en:Fang	es:Fang	fa:فنگ	fr:Crockdur	he:פאנג	hi:फैंग	ja:ファング	ko:팽	pt:Fangue	ru:Клык	tr:Fang	ur:فینگ	zh:牙牙
 c:fangio	ProperNoun	ar:خوان مانويل فانجيو	de:Juan Manuel Fangio	en:Juan Manuel Fangio	es:Juan Manuel Fangio	fa:خوان مانوئل فانخیو	fr:Juan Manuel Fangio	he:חואן מנואל פאנג׳יו	hi:जुआन फैंजियो	ja:ファン・マヌエル・ファンジオ	ko:후안 마누엘 판지오	pt:Juan Manuel Fangio	ru:Хуан Мануэль Фанхио	tr:Juan Manuel Fangio	ur:فانجیو	zh:方吉奥
 c:fanta-brand	ProperNoun	ar:فانتا	de:Fanta	en:Fanta	es:Fanta	fa:فانتا	fr:Fanta	he:פנטה	hi:फैंटा	ja:ファンタ	ko:환타	pt:Fanta	ru:Fanta	tr:Fanta	ur:فینٹا	zh:芬达
 c:fantasy-film	Noun	ar:فيلم فانتازيا	de:Fantasyfilm	en:fantasy film	es:película de fantasía	fa:فیلم فانتزی	fr:film fantastique	he:סרט פנטזיה	hi:फंतासी फिल्म	ja:ファンタジー映画	ko:판타지 영화	pt:filme de fantasia	ru:фэнтези	tr:fantastik film	ur:فنتاسی فلم	zh:奇幻片
@@ -7059,6 +7075,7 @@ c:good-girl-perfume	ProperNoun	ar:غود غيرل	de:Good Girl	en:Good Girl	es:G
 c:goodfellas	ProperNoun	ar:الأصدقاء الطيبون	de:GoodFellas	en:Goodfellas	es:Uno de los nuestros	fa:رفقای خوب	fr:Les Affranchis	he:החברים של ג'ימי	hi:गुडफेलाज़	ja:グッドフェローズ	ko:좋은 친구들	pt:Os Bons Companheiros	ru:Славные парни	tr:Sıkı Dostlar	ur:گڈ فیلاز	zh:好家伙
 c:goodness	Noun	ar:خير,صلاح	de:Güte	en:goodness	es:bondad	fa:نیکی,خوبی	fr:bonté	he:טוב	hi:भलाई,अच्छाई	ja:善	ko:선,선함	pt:bondade	ru:добро	tr:iyilik	ur:نیکی,بھلائی	zh:善,善良
 c:goodyear	ProperNoun	ar:غوديير	de:Charles Goodyear	en:Charles Goodyear	es:Charles Goodyear	fa:گودییر	fr:Charles Goodyear	he:צ׳ארלס גודייר	hi:चार्ल्स गुडइयर	ja:チャールズ・グッドイヤー	ko:찰스 굿이어	pt:Charles Goodyear	ru:Чарльз Гудьир	tr:Charles Goodyear	ur:گڈیئر	zh:查尔斯·固特异
+c:goofy-dog	ProperNoun	ar:غوفي	de:Goofy	en:Goofy	es:Goofy	fa:گافی	fr:Dingo	he:גופי	hi:गूफ़ी	ja:グーフィー	ko:구피	pt:Pateta	ru:Гуфи	tr:Goofy	ur:گوفی	zh:高飞
 c:google-brand	ProperNoun	ar:جوجل	de:Google	en:Google	es:Google	fa:گوگل	fr:Google	he:גוגל	hi:गूगल	ja:グーグル	ko:구글	pt:Google	ru:Google	tr:Google	ur:گوگل	zh:谷歌
 c:goose	Noun	ar:إوزة	de:Gans	en:goose	es:ganso	fa:غاز	fr:oie	he:אווז	hi:हंस	ja:ガチョウ	ko:거위	pt:ganso	ru:гусь	tr:kaz	ur:گوز	zh:鹅
 c:goose-bird	Noun	ar:إوزة	de:Gans	en:goose	es:ganso	fa:غاز	fr:oie	he:אווז	hi:हंस	ja:ガチョウ	ko:거위	pt:ganso	ru:гусь	tr:kaz	ur:ہنس	zh:鹅
@@ -7219,6 +7236,7 @@ c:grenade	Noun	ar:قنبلة يدوية	de:Granate,Handgranate	en:grenade	es:gra
 c:grenade-weapon	Noun	ar:قنبلة يدوية	de:Granate	en:grenade	es:granada	fa:نارنجک	fr:grenade	he:רימון	hi:हथगोला	ja:手榴弾	ko:수류탄	pt:granada	ru:граната	tr:el bombası	ur:ہینڈ گرنیڈ	zh:手榴弹
 c:greta-gerwig	ProperNoun	ar:غريتا غيرويغ	de:Greta Gerwig	en:Greta Gerwig	es:Greta Gerwig	fa:گرتا گرویگ	fr:Greta Gerwig	he:גרטה גרוויג	hi:ग्रेटा गेरविग	ja:グレタ・ガーウィグ	ko:그레타 거윅	pt:Greta Gerwig	ru:Грета Гервиг	tr:Greta Gerwig	ur:گریٹا گرویگ	zh:格蕾塔·葛韦格
 c:grey-glacier	ProperNoun	ar:غراي	de:Grey-Gletscher	en:Grey Glacier	es:Glaciar Grey	fa:یخچال گری	fr:Glacier Grey	he:קרחון גריי	hi:ग्रे हिमनद	ja:グレイ氷河	ko:그레이 빙하	pt:Glaciar Grey	ru:Ледник Грей	tr:Grey Buzulu	ur:گرے گلیشیر	zh:格雷冰川
+c:greyfriars-bobby	ProperNoun	ar:بوبي غريفرايرز	de:Greyfriars Bobby	en:Greyfriars Bobby	es:Bobby de Greyfriars	fa:بابی گری‌فریارز	fr:Greyfriars Bobby	he:בובי גריפריארס	hi:ग्रेफ्रायर्स बॉबी	ja:グレイフライアーズ・ボビー	ko:그레이프라이어스 바비	pt:Greyfriars Bobby	ru:Грейфрайарс Бобби	tr:Greyfriars Bobby	ur:گرے فرائرز بوبی	zh:灰衣修士巴比
 c:greyhound	Noun	ar:غراي هاوند	de:Greyhound	en:Greyhound	es:Galgo inglés	fa:گری‌هاند	fr:Lévrier anglais	he:גריהאונד	hi:ग्रेहाउंड	ja:グレーハウンド	ko:그레이하운드	pt:Galgo	ru:грейхаунд	tr:Greyhound	ur:گرے ہاؤنڈ	zh:灵缇犬
 c:grid	Noun	ar:شبكة	de:Gitter,Raster	en:grid	es:cuadrícula,rejilla	fa:شبکه,گرید	fr:grille	he:רשת	hi:जालक,ग्रिड	ja:格子,グリッド	ko:격자,그리드	pt:grade,grelha	ru:сетка	tr:ızgara,kafes	ur:جالی	zh:网格,格子
 c:grief	Noun	ar:حزن عميق	de:Trauer	en:grief	es:duelo	fa:اندوه	fr:chagrin	he:אבל	hi:शोक	ja:悲嘆	ko:비탄	pt:luto	ru:горе	tr:keder	ur:غم	zh:悲痛
@@ -7339,6 +7357,7 @@ c:habitus	Noun	ar:الهابيتوس	de:Habitus	en:habitus	es:habitus	fa:منش	
 c:haboob	Noun	ar:هبوب	de:Haboob	en:haboob	es:haboob	fa:هبوب	fr:haboob	he:הבוב	hi:हबूब	ja:ハブーブ	ko:하붑	pt:haboob	ru:хабуб	tr:haboob	ur:ہبوب	zh:哈布沙暴
 c:habsburg-dynasty	Noun	ar:سلالة هابسبورغ	de:Haus Habsburg	en:House of Habsburg	es:dinastía de los Habsburgo	fa:دودمان هابسبورگ	fr:maison de Habsbourg	he:בית הבסבורג	hi:हाब्सबर्ग राजवंश	ja:ハプスブルク家	ko:합스부르크 왕가	pt:casa de Habsburgo	ru:Габсбурги	tr:Habsburg hanedanı	ur:ہبسبرگ خاندان	zh:哈布斯堡王朝
 c:haccp	Noun	ar:تحليل المخاطر ونقاط التحكم الحرجة	de:HACCP	en:HACCP	es:APPCC	fa:HACCP	fr:HACCP	he:HACCP	hi:एचएसीसीपी	ja:HACCP	ko:HACCP	pt:APPCC	ru:ХАССП	tr:HACCP	ur:ہیکپ	zh:危害分析关键控制点
+c:hachiko	ProperNoun	ar:هاتشيكو	de:Hachikō	en:Hachikō	es:Hachikō	fa:هاچیکو	fr:Hachikō	he:הצ'יקו	hi:हाचिको	ja:ハチ公	ko:하치코	pt:Hachikō	ru:Хатико	tr:Hachikō	ur:ہاچیکو	zh:八公
 c:hachiko-statue	ProperNoun	ar:تمثال هاتشيكو	de:Hachikō-Statue	en:Hachikō Statue	es:Estatua de Hachikō	fa:مجسمه هاچیکو	fr:Statue de Hachikō	he:פסל האצ׳יקו	hi:हाचिको मूर्ति	ja:忠犬ハチ公像	ko:하치코 동상	pt:Estátua de Hachikō	ru:Статуя Хатико	tr:Hachikō Heykeli	ur:ہاچیکو مجسمہ	zh:忠犬八公像
 c:hacker	Noun	ar:قرصان إلكتروني,هاكر	de:Hacker	en:hacker	es:hacker,pirata informático	fa:هکر	fr:pirate informatique,hacker	he:האקר,פצחן	hi:हैकर	ja:ハッカー	ko:해커	pt:hacker,pirata informático	ru:хакер	tr:bilgisayar korsanı,hacker	ur:ہیکر	zh:黑客,骇客
 c:hacksaw	Noun	ar:منشار معادن	de:Metallsäge	en:hacksaw	es:sierra para metales	fa:اره آهن بر	fr:scie à métaux	he:מסור מתכת	hi:हैकसॉ	ja:弓ノコ	ko:쇠톱	pt:serra de arco	ru:ножовка по металлу	tr:demir testeresi	ur:ہیکسا	zh:钢锯
@@ -8898,6 +8917,7 @@ c:judiciary-law	Noun	ar:السلطة القضائية	de:Judikative	en:judiciary
 c:judit-polgar	ProperNoun	ar:يوديت بولغار	de:Judit Polgár	en:Judit Polgár	es:Judit Polgár	fa:یودیت پولگار	fr:Judit Polgár	he:יודית פולגר	hi:जूडित पोलगार	ja:ユディット・ポルガー	ko:유디트 폴가르	pt:Judit Polgár	ru:Юдит Полгар	tr:Judit Polgár	ur:پولگار	zh:尤迪特·波尔加
 c:judo	Noun	ar:جودو	de:Judo	en:judo	es:judo	fa:جودو	fr:judo	he:ג'ודו	hi:जूडो	ja:柔道	ko:유도	pt:judô	ru:дзюдо	tr:judo	ur:جوڈو	zh:柔道
 c:judo-sport	Noun	ar:جودو	de:Judo	en:judo	es:judo	fa:جودو	fr:judo	he:ג'ודו	hi:जूडो	ja:柔道	ko:유도	pt:judo	ru:дзюдо	tr:judo	ur:جوڈو	zh:柔道
+c:judy-dog	ProperNoun	ar:جودي	de:Judy	en:Judy	es:Judy	fa:جودی	fr:Judy	he:ג'ודי	hi:जूडी	ja:ジュディ	ko:주디	pt:Judy	ru:Джуди	tr:Judy	ur:جوڈی	zh:朱迪
 c:juice	Noun	ar:عصير	de:Saft	en:juice	es:jugo,zumo	fa:آبمیوه	fr:jus	he:מיץ	hi:रस	ja:ジュース	ko:주스	pt:suco,sumo	ru:сок	tr:meyve suyu	ur:رس	zh:果汁
 c:juice-drink	Noun	ar:عصير	de:Saft	en:juice	es:jugo	fa:آبمیوه	fr:jus	he:מיץ	hi:रस	ja:ジュース	ko:주스	pt:suco	ru:сок	tr:meyve suyu	ur:جوس	zh:果汁
 c:juicer	Noun	ar:عصارة	de:Entsafter	en:juicer	es:exprimidor	fa:آب‌میوه‌گیری	fr:presse-fruits	he:מסחטה	hi:जूसर	ja:ジューサー	ko:주서	pt:espremedor	ru:соковыжималка	tr:meyve sıkacağı	ur:جوسر	zh:榨汁机
@@ -9391,6 +9411,7 @@ c:lagrange	ProperNoun	ar:لاغرانج	de:Joseph-Louis Lagrange	en:Joseph-Louis
 c:lagrange-point	Noun	ar:نقطة لاغرانج	de:Lagrange-Punkt	en:Lagrange point	es:punto de Lagrange	fa:نقطه لاگرانژ	fr:point de Lagrange	he:נקודת לגראנז'	hi:लाग्रांज बिंदु	ja:ラグランジュ点	ko:라그랑주점	pt:ponto de Lagrange	ru:точка Лагранжа	tr:Lagrange noktası	ur:لاگرانج پوائنٹ	zh:拉格朗日点
 c:lagunitas	ProperNoun	ar:لاغونيتاس	de:Lagunitas	en:Lagunitas	es:Lagunitas	fa:لاگونیتاس	fr:Lagunitas	he:לגוניטס	hi:लगुनिटास	ja:ラグニタス	ko:라구니타스	pt:Lagunitas	ru:Лагунитас	tr:Lagunitas	ur:لاگونٹاس	zh:拉古尼塔斯
 c:lahore	Noun	ar:لاهور	de:Lahore	en:Lahore	es:Lahore	fa:لاهور	fr:Lahore	he:לאהור	hi:लाहौर	ja:ラホール	ko:라호르	pt:Lahore	ru:Лахор	tr:Lahor	ur:لاہور	zh:拉合尔
+c:laika	ProperNoun	ar:لايكا	de:Laika	en:Laika	es:Laika	fa:لایکا	fr:Laïka	he:לאיקה	hi:लाइका	ja:ライカ	ko:라이카	pt:Laika	ru:Лайка	tr:Layka	ur:لائیکا	zh:莱卡
 c:laissez-faire	Noun	ar:دع الأمور تسير	de:Laissez-faire	en:laissez-faire	es:laissez-faire	fa:بگذار بگذرد	fr:laissez-faire	he:לסה-פר	hi:अहस्तक्षेप	ja:自由放任主義	ko:자유방임주의	pt:laissez-faire	ru:невмешательство	tr:laissez-faire	ur:غیر مداخلت	zh:自由放任
 c:laity	Noun	ar:العلمانيون	de:Laienschaft	en:laity	es:laicado	fa:مردم عادی	fr:laïcs	he:הדיוטות	hi:साधारण जन	ja:俗人	ko:평신도	pt:leigos	ru:миряне	tr:din adamı olmayan	ur:عوام	zh:平信徒
 c:lake	Noun	ar:بحيرة	de:See	en:lake	es:lago	fa:دریاچه	fr:lac	he:אגם	hi:झील	ja:湖	ko:호수	pt:lago	ru:озеро	tr:göl	ur:جھیل	zh:湖,湖泊
@@ -9514,6 +9535,7 @@ c:laser-level	Noun	ar:ميزان الليزر	de:Laserwasserwaage	en:laser level
 c:laser-pointer	Noun	ar:مؤشر ليزر	de:Laserpointer	en:laser pointer	es:puntero láser	fa:اشاره‌گر لیزری	fr:pointeur laser	he:מצביע לייזר	hi:लेज़र पॉइंटर	ja:レーザーポインター	ko:레이저 포인터	pt:apontador a laser	ru:лазерная указка	tr:lazer işaretçi	ur:لیزر پوائنٹر	zh:激光笔
 c:lasker	ProperNoun	ar:لاسكر	de:Emanuel Lasker	en:Emanuel Lasker	es:Emanuel Lasker	fa:امانوئل لاسکر	fr:Emanuel Lasker	he:עמנואל לסקר	hi:इमानुएल लास्कर	ja:エマヌエル・ラスカー	ko:에마누엘 라스커	pt:Emanuel Lasker	ru:Эмануил Ласкер	tr:Emanuel Lasker	ur:لاسکر	zh:拉斯克
 c:lassa-fever	ProperNoun	ar:حمى لاسا	de:Lassa-Fieber	en:Lassa Fever	es:Fiebre de Lassa	fa:تب لاسا	fr:Fièvre de Lassa	he:קדחת לאסה	hi:लासा बुखार	ja:ラッサ熱	ko:라사열	pt:Febre de Lassa	ru:Лихорадка Ласса	tr:Lassa Humması	ur:لاسا بخار	zh:拉沙热
+c:lassie	ProperNoun	ar:لاسي	de:Lassie	en:Lassie	es:Lassie	fa:لسی	fr:Lassie	he:לאסי	hi:लैसी	ja:名犬ラッシー	ko:래시	pt:Lassie	ru:Лесси	tr:Lassie	ur:لیسی	zh:灵犬莱西
 c:last-of-us	ProperNoun	ar:لاست أوف أس	de:The Last of Us	en:The Last of Us	es:The Last of Us	fa:لست آو آس	fr:The Last of Us	he:דה לאסט אוף אס	hi:द लास्ट ऑफ़ अस	ja:ラスト・オブ・アス	ko:라스트 오브 어스	pt:The Last of Us	ru:The Last of Us	tr:The Last of Us	ur:لاسٹ آف اس	zh:最后生还者
 c:last-supper	ProperNoun	ar:العشاء الأخير	de:Das Abendmahl	en:The Last Supper	es:La Última Cena	fa:شام آخر	fr:La Cène	he:הסעודה האחרונה	hi:अंतिम भोज	ja:最後の晩餐	ko:최후의 만찬	pt:A Última Ceia	ru:Тайная вечеря	tr:Son Akşam Yemeği	ur:آخری عشائیہ	zh:最后的晚餐
 c:late-antiquity	Noun	ar:أواخر العصور القديمة	de:Spätantike	en:Late Antiquity	es:antigüedad tardía	fa:اواخر دوران باستان	fr:antiquité tardive	he:העת העתיקה המאוחרת	hi:उत्तर पुरातनता	ja:古代末期	ko:고대 후기	pt:antiguidade tardia	ru:поздняя античность	tr:geç antik çağ	ur:آخری قدیم دور	zh:古典晚期
@@ -10421,6 +10443,7 @@ c:marketing-biz	Noun	ar:تسويق تجاري	de:Marketing	en:marketing	es:merca
 c:marketplace	Noun	ar:سوق	de:Marktplatz	en:marketplace	es:mercado	fa:بازار	fr:marché	he:שוק	hi:बाज़ार	ja:市場	ko:시장	pt:mercado	ru:рынок	tr:çarşı	ur:بازار	zh:市场
 c:markhor	Noun	ar:مرخور	de:Markhor	en:markhor	es:markhor	fa:مارخور	fr:markhor	he:מרקור	hi:मार्कहोर	ja:マルコール	ko:마르코르	pt:markhor	ru:мархор	tr:markhor	ur:مارخور	zh:螺角山羊
 c:marking-gauge	Noun	ar:مقياس تعليم	de:Streichmaß	en:marking gauge	es:gramil	fa:خط کش نشان گذار	fr:trusquin	he:מד סימון	hi:मार्किंग गेज	ja:墨付けゲージ	ko:긋기 게이지	pt:graminho	ru:рейсмус	tr:çizgi kalıbı	ur:مارکنگ گیج	zh:划线规
+c:marley-dog	ProperNoun	ar:مارلي	de:Marley	en:Marley	es:Marley	fa:مارلی	fr:Marley	he:מארלי	hi:मार्ली	ja:マーリー	ko:말리	pt:Marley	ru:Марли	tr:Marley	ur:مارلی	zh:马利
 c:marlin	Noun	ar:مارلن	de:Marlin	en:marlin	es:marlín,aguja	fa:مارلین	fr:marlin	he:מרלין	hi:मार्लिन	ja:カジキ	ko:청새치	pt:marlim	ru:марлин	tr:marlin	ur:مارلن	zh:旗鱼
 c:maronite	Noun	ar:الموارنة	de:Maroniten	en:Maronite Church	es:iglesia maronita	fa:مارونی	fr:maronites	he:מרונים	hi:मैरोनाइट	ja:マロン教会	ko:마로니파	pt:maronitas	ru:маронитская церковь	tr:Maruni kilisesi	ur:مارونی	zh:马龙尼礼教会
 c:maroon	Noun	ar:عنابي	de:Kastanienbraun	en:maroon	es:granate	fa:خرمایی سرخ	fr:marron	he:חום אדמדם	hi:मैरून	ja:栗色,マルーン	ko:밤색,마룬	pt:castanho-avermelhado	ru:тёмно-бордовый	tr:koyu kestane	ur:گہرا بھورا	zh:栗色
@@ -10932,6 +10955,7 @@ c:miller-beer	ProperNoun	ar:ميلر	de:Miller	en:Miller	es:Miller	fa:میلر	f
 c:millet	Noun	ar:دخن	de:Hirse	en:millet	es:mijo	fa:ارزن	fr:millet	he:דוחן	hi:बाजरा	ja:キビ	ko:기장	pt:milho miúdo	ru:просо	tr:darı	ur:باجرا	zh:小米
 c:millet-grain	Noun	ar:دخن	de:Hirse	en:millet	es:mijo	fa:ارزن	fr:millet	he:דוחן	hi:बाजरा	ja:雑穀	ko:기장	pt:milhete	ru:просо	tr:darı	ur:باجرہ	zh:小米
 c:milli-vanilli	ProperNoun	ar:ميلي فانيلي	de:Milli Vanilli	en:Milli Vanilli	es:Milli Vanilli	fa:میلی وانیلی	fr:Milli Vanilli	he:מילי ונילי	hi:मिल्ली वनिल्ली	ja:ミリ・ヴァニリ	ko:밀리 바닐리	pt:Milli Vanilli	ru:Милли Ванилли	tr:Milli Vanilli	ur:ملی ونیلی	zh:米利瓦尼利
+c:millie-dog	ProperNoun	ar:ميلي	de:Millie	en:Millie	es:Millie	fa:میلی	fr:Millie	he:מילי	hi:मिली	ja:ミリー	ko:밀리	pt:Millie	ru:Милли	tr:Millie	ur:ملی	zh:米莉
 c:millikan	ProperNoun	ar:روبرت ميليكان	de:Robert Millikan	en:Robert Millikan	es:Robert Millikan	fa:رابرت میلیکان	fr:Robert Andrews Millikan	he:רוברט מיליקן	hi:रॉबर्ट मिलिकन	ja:ロバート・ミリカン	ko:로버트 밀리컨	pt:Robert Millikan	ru:Роберт Милликен	tr:Robert Millikan	ur:ملیکن	zh:密立根
 c:millipede	Noun	ar:أم ألف قدم,دودة الألف قدم	de:Tausendfüßer,Doppelfüßer	en:millipede	es:milpiés	fa:هزارپای حقیقی	fr:iule,mille-pattes	he:רב-רגל	hi:सहस्रपाद,मिलिपीड	ja:ヤスデ	ko:노래기	pt:milípede,embuá	ru:кивсяк	tr:kırkkırkayak,cıvık	ur:ہزار ٹانگ	zh:马陆
 c:milton-caniff	ProperNoun	ar:ميلتون كانيف	de:Milton Caniff	en:Milton Caniff	es:Milton Caniff	fa:میلتون کانیف	fr:Milton Caniff	he:מילטון קניף	hi:मिल्टन कैनिफ	ja:ミルトン・カニフ	ko:밀턴 캐니프	pt:Milton Caniff	ru:Милтон Канифф	tr:Milton Caniff	ur:ملٹن کینف	zh:米尔顿·卡尼夫
@@ -11594,6 +11618,7 @@ c:neil-smelser	ProperNoun	ar:نيل سميلسر	de:Neil Smelser	en:Neil Smelser
 c:neiman-marcus	ProperNoun	ar:نيمان ماركوس	de:Neiman Marcus	en:Neiman Marcus	es:Neiman Marcus	fa:نیمن مارکوس	fr:Neiman Marcus	he:ניימן מרקוס	hi:नीमन मार्कस	ja:ナイマンマーカス	ko:니먼 마커스	pt:Neiman Marcus	ru:Нейман Маркус	tr:Neiman Marcus	ur:نیمن مارکس	zh:尼曼马库斯
 c:nekton	Noun	ar:العوالق السابحة	de:Nekton	en:nekton	es:necton	fa:نکتون	fr:necton	he:נקטון	hi:नेक्टन	ja:ネクトン	ko:유영 생물	pt:nécton	ru:нектон	tr:nekton	ur:نیکٹون	zh:游泳生物
 c:nelson-piquet	ProperNoun	ar:نيلسون بيكيه	de:Nelson Piquet	en:Nelson Piquet	es:Nelson Piquet	fa:نلسون پیکه	fr:Nelson Piquet	he:נלסון פיקה	hi:नेल्सन पिकेट	ja:ネルソン・ピケ	ko:넬슨 피케	pt:Nelson Piquet	ru:Нельсон Пике	tr:Nelson Piquet	ur:پکیٹ	zh:皮奎特
+c:nemo-dog	ProperNoun	ar:نيمو	de:Nemo	en:Nemo	es:Nemo	fa:نمو	fr:Nemo	he:נמו	hi:नीमो	ja:ニモ	ko:니모	pt:Nemo	ru:Немо	tr:Nemo	ur:نمو	zh:尼莫
 c:neo-crypto	ProperNoun	ar:نيو كوين	de:Neo (Kryptowährung)	en:Neo (cryptocurrency)	es:NEO	fa:نئو	fr:NEO	he:Neo	hi:NEO	ja:NEO	ko:NEO	pt:NEO	ru:NEO	tr:NEO	ur:نیو کوائن	zh:小蚁币
 c:neo-matrix	ProperNoun	ar:نيو	de:Neo	en:Neo (Matrix)	es:Neo (Matrix)	fa:نئو ماتریکس	fr:Neo (Matrix)	he:ניאו (מטריקס)	hi:नियो (मैट्रिक्स)	ja:ネオ (マトリックス)	ko:네오 (매트릭스)	pt:Neo (Matrix)	ru:Нео (Матрица)	tr:Neo (Matrix)	ur:نیو (میٹرکس)	zh:尼奥 (黑客帝国)
 c:neo4j-db	ProperNoun	ar:نيو فور جيه	de:Neo4j	en:Neo4j	es:Neo4j	fa:نئو فور جی	fr:Neo4j	he:ניאו4ג'יי	hi:नियो4जे	ja:ネオフォージェイ	ko:네오4j	pt:Neo4j	ru:Neo4j	tr:Neo4j	ur:نیو فور جے	zh:尼奥四J
@@ -12043,6 +12068,7 @@ c:old-fashioned	Noun	ar:أولد فاشن	de:Old Fashioned	en:old fashioned	es:o
 c:old-man-sea	ProperNoun	ar:العجوز والبحر	de:Der alte Mann und das Meer	en:The Old Man and the Sea	es:El viejo y el mar	fa:پیرمرد و دریا	fr:Le Vieil Homme et la Mer	he:הזקן והים	hi:द ओल्ड मैन एंड द सी	ja:老人と海	ko:노인과 바다	pt:O Velho e o Mar	ru:Старик и море	tr:İhtiyar Adam ve Deniz	ur:بوڑھا اور سمندر	zh:老人与海
 c:old-town-square-prague	ProperNoun	ar:ميدان البلدة القديمة براغ	de:Altstädter Ring	en:Old Town Square	es:Plaza de la Ciudad Vieja	fa:میدان شهر قدیم پراگ	fr:Place de la Vieille-Ville	he:כיכר העיר העתיקה	hi:ओल्ड टाउन स्क्वायर प्राग	ja:旧市街広場	ko:구시가지 광장	pt:Praça da Cidade Velha	ru:Староместская площадь	tr:Eski Şehir Meydanı	ur:اولڈ ٹاؤن چوک	zh:布拉格旧城广场
 c:old-trafford	ProperNoun	ar:أولد ترافورد	de:Old Trafford	en:Old Trafford	es:Old Trafford	fa:اولد ترافورد	fr:Old Trafford	he:אולד טראפורד	hi:ओल्ड ट्रैफर्ड	ja:オールド・トラッフォード	ko:올드 트래퍼드	pt:Old Trafford	ru:Олд Траффорд	tr:Old Trafford	ur:اولڈ ٹریفرڈ	zh:老特拉福德
+c:old-yeller	ProperNoun	ar:أولد يلر	de:Old Yeller	en:Old Yeller	es:Old Yeller	fa:اولد یلر	fr:Old Yeller	he:אולד ילר	hi:ओल्ड येलर	ja:オールドイエラー	ko:올드 옐러	pt:Old Yeller	ru:Old Yeller	tr:Old Yeller	ur:اولڈ ییلر	zh:老黄狗
 c:olden	Adjective	ar:قديم	de:alt ehemalig	en:olden	es:antiguo	fa:باستانی	fr:ancien	he:קדום	hi:पुराना	ja:昔の	ko:옛	pt:antigo	ru:стародавний	tr:eski zaman	ur:قدیم	zh:古老的
 c:oldenburg-horse	Noun	ar:أولدنبورغ	de:Oldenburger	en:Oldenburg horse	es:Oldenburg	fa:اولدنبورگ	fr:Oldenbourg	he:אולדנבורג	hi:ओल्डनबर्ग	ja:オルデンブルク	ko:올덴부르크	pt:Oldenburg	ru:ольденбургская	tr:Oldenburg	ur:اولڈنبرگ	zh:奥尔登堡马
 c:olduvai-gorge	ProperNoun	ar:وادي أولدوفاي	de:Olduvai-Schlucht	en:Olduvai Gorge	es:Garganta de Olduvai	fa:تنگه اولدووای	fr:Gorges d'Olduvai	he:נקיק אולדוואי	hi:ओल्डुवाई गॉर्ज	ja:オルドバイ渓谷	ko:올두바이 협곡	pt:Garganta de Olduvai	ru:Олдувай	tr:Olduvai Geçidi	ur:اولڈوائی گارج	zh:奥杜瓦伊峡谷
@@ -12945,6 +12971,7 @@ c:piazza-san-marco	ProperNoun	ar:ساحة سان ماركو	de:Markusplatz	en:Pi
 c:picasso-artist	ProperNoun	ar:بيكاسو	de:Picasso	en:Picasso	es:Picasso	fa:پیکاسو	fr:Picasso	he:פיקאסו	hi:पिकासो	ja:ピカソ	ko:피카소	pt:Picasso	ru:Пикассо	tr:Picasso	ur:پکاسو	zh:毕加索
 c:piccolo	Noun	ar:بيكولو	de:Piccolo	en:piccolo	es:flautín	fa:پیکولو	fr:piccolo	he:פיקולו	hi:पिकोलो	ja:ピッコロ	ko:피콜로	pt:flautim	ru:пикколо	tr:pikolo	ur:پیکولو	zh:短笛
 c:pickaxe-tool	Noun	ar:فأس مزدوج	de:Spitzhacke	en:pickaxe	es:pico	fa:کلنگ	fr:pioche	he:מכוש	hi:कुदाल	ja:つるはし	ko:곡괭이	pt:picareta	ru:кирка	tr:kazma	ur:کدال	zh:镐
+c:pickles-dog	ProperNoun	ar:بيكلز	de:Pickles	en:Pickles	es:Pickles	fa:پیکلز	fr:Pickles	he:פיקלס	hi:पिकल्स	ja:ピクルス	ko:피클스	pt:Pickles	ru:Пиклс	tr:Pickles	ur:پکلز	zh:皮克斯
 c:pickling-food	Noun	ar:تخليل	de:Einlegen	en:pickling	es:encurtido	fa:ترشی‌گذاری	fr:marinage vinaigre	he:כבישה	hi:आचार बनाना	ja:ピクルス	ko:피클링	pt:conservar em vinagre	ru:маринование	tr:turşu	ur:اچار بنانا	zh:腌渍
 c:pico-de-gallo	Noun	ar:بيكو دي غالو	de:Pico de Gallo	en:pico de gallo	es:pico de gallo	fa:پیکو دی گالو	fr:pico de gallo	he:פיקו דה גאיו	hi:पिको डे गैलो	ja:ピコ・デ・ガヨ	ko:피코 데 가요	pt:pico de gallo	ru:пико-де-гальо	tr:pico de gallo	ur:پیکو ڈی گالو	zh:皮科德加洛
 c:picos-europa-gorge	ProperNoun	ar:بيكوس دي يوروبا	de:Picos de Europa Schlucht	en:Picos de Europa Gorge	es:Garganta Picos de Europa	fa:تنگه پیکوس د اروپا	fr:Gorges des Picos de Europa	he:פיקוס דה אירופה	hi:पीकोस दे यूरोपा	ja:ピコス・デ・エウロパ渓谷	ko:피코스 데 에우로파 협곡	pt:Garganta Picos de Europa	ru:Пикос-де-Эуропа ущелье	tr:Picos de Europa Kanyonu	ur:پیکوس ڈی یوروپا گارج	zh:欧洲之巅峡谷
@@ -13163,6 +13190,7 @@ c:pluripotent	Adjective	ar:متعدد القدرات	de:pluripotent	en:pluripote
 c:plus	Noun	ar:زائد,جمع	de:Plus	en:plus	es:más	fa:به‌علاوه,جمع	fr:plus	he:פלוס,ועוד	hi:जोड़,प्लस	ja:プラス	ko:더하기,플러스	pt:mais	ru:плюс	tr:artı	ur:جمع,پلس	zh:加,加号
 c:plutarch	ProperNoun	ar:بلوتارخ	de:Plutarch	en:Plutarch	es:Plutarco	fa:پلوتارک	fr:Plutarque	he:פלוטרכוס	hi:प्लूटार्क	ja:プルタルコス	ko:플루타르코스	pt:Plutarco	ru:Плутарх	tr:Plutarkhos	ur:پلوٹارک	zh:普鲁塔克
 c:pluto	Noun	ar:بلوتو	de:Pluto	en:Pluto	es:Plutón	fa:پلوتون	fr:Pluton	he:פלוטו	hi:प्लूटो	ja:冥王星	ko:명왕성	pt:Plutão	ru:Плутон	tr:Plüton	ur:پلوٹو	zh:冥王星
+c:pluto-dog	ProperNoun	ar:بلوتو	de:Pluto	en:Pluto	es:Pluto	fa:پلوتو	fr:Pluto	he:פלוטו	hi:प्लूटो	ja:プルート	ko:플루토	pt:Pluto	ru:Плуто	tr:Pluto	ur:پلوٹو	zh:布鲁托
 c:pluto-god	ProperNoun	ar:بلوتو إله	de:Pluto Gott	en:Pluto god	es:Plutón	fa:پلوتو	fr:Pluton	he:פלוטו	hi:प्लूटो	ja:プルートー	ko:플루토	pt:Plutão	ru:Плутон	tr:Plüton	ur:پلوٹو دیوتا	zh:普路托
 c:plyometrics	Noun	ar:التدريبات البليومترية	de:Plyometrie	en:plyometrics	es:pliometría	fa:پلیومتریک	fr:pliométrie	he:פליומטריקס	hi:प्लायोमेट्रिक्स	ja:プライオメトリクス	ko:플라이오메트릭스	pt:pliometria	ru:плиометрия	tr:pliometri	ur:پلیومیٹرکس	zh:增强式训练
 c:plywood	Noun	ar:خشب أبلكاج	de:Sperrholz	en:plywood	es:contrachapado	fa:چندلایی	fr:contreplaqué	he:דיקט	hi:प्लाईवुड	ja:合板	ko:합판	pt:contraplacado	ru:фанера	tr:kontrplak	ur:پلائی ووڈ	zh:胶合板
@@ -14253,6 +14281,7 @@ c:revolution-historical	Noun	ar:ثورة	de:Revolution	en:revolution	es:revoluci
 c:revolution-social	Noun	ar:ثورة اجتماعية	de:soziale Revolution	en:social revolution	es:revolución social	fa:انقلاب اجتماعی	fr:révolution sociale	he:מהפכה חברתית	hi:सामाजिक क्रांति	ja:社会革命	ko:사회 혁명	pt:revolução social	ru:социальная революция	tr:toplumsal devrim	ur:معاشرتی انقلاب	zh:社会革命
 c:revolver-weapon	Noun	ar:مسدس دوار	de:Revolver	en:revolver	es:revólver	fa:هفت‌تیر	fr:revolver	he:אקדח תוף	hi:रिवॉल्वर	ja:リボルバー	ko:리볼버	pt:revólver	ru:револьвер	tr:revolver	ur:ریوالور	zh:左轮手枪
 c:rewilding	Noun	ar:إعادة التوحش	de:Rewilding	en:rewilding	es:rewilding	fa:بازوحشی‌سازی	fr:réensauvagement	he:חידוש הטבע	hi:पुनर्वनीकरण	ja:再野生化	ko:재야생화	pt:recampestrização	ru:ревайлдинг	tr:yeniden vahşileştirme	ur:قدرتی بحالی	zh:再野化
+c:rex-dog	ProperNoun	ar:ريكس	de:Rex	en:Rex	es:Rex	fa:رکس	fr:Rex	he:רקס	hi:रेक्स	ja:レックス	ko:렉스	pt:Rex	ru:Рекс	tr:Rex	ur:ریکس	zh:雷克斯
 c:rey-mysterio	ProperNoun	ar:ري ميستيريو	de:Rey Mysterio	en:Rey Mysterio	es:Rey Misterio	fa:ری میستریو	fr:Rey Mysterio	he:ריי מיסטריו	hi:रे मिस्टेरियो	ja:レイ・ミステリオ	ko:레이 미스테리오	pt:Rey Mysterio	ru:Рей Мистерио	tr:Rey Mysterio	ur:رے مسٹیریو	zh:雷·米斯特里奥
 c:rhenium-metal	Noun	ar:رينيوم	de:Rhenium	en:rhenium	es:renio	fa:رنیم	fr:rhénium	he:רניום	hi:रेनियम	ja:レニウム	ko:레늄	pt:rênio	ru:рений	tr:renyum	ur:رینیم	zh:铼
 c:rheology-geo	Noun	ar:الريولوجيا الجيولوجية	de:Gesteinsrheologie	en:geological rheology	es:reología geológica	fa:رئولوژی زمین‌شناسی	fr:rhéologie géologique	he:ריאולוגיה גאולוגית	hi:भूवैज्ञानिक रियोलॉजी	ja:地質学的レオロジー	ko:지질 유변학	pt:reologia geológica	ru:геологическая реология	tr:jeolojik reoloji	ur:ارضیاتی بہاؤ	zh:地质流变学
@@ -14336,6 +14365,7 @@ c:rilke	ProperNoun	ar:ريلكه	de:Rainer Maria Rilke	en:Rainer Maria Rilke	es:
 c:rimbaud	ProperNoun	ar:رامبو	de:Arthur Rimbaud	en:Arthur Rimbaud	es:Arthur Rimbaud	fa:آرتور رمبو	fr:Arthur Rimbaud	he:ארתור רמבו	hi:आर्थर रिम्बॉड	ja:アルチュール・ランボー	ko:아르튀르 랭보	pt:Arthur Rimbaud	ru:Артюр Рембо	tr:Arthur Rimbaud	ur:رمبو	zh:兰波
 c:rime	Noun	ar:صقيع جمد	de:Raureif	en:rime ice	es:escarcha blanca	fa:یخ ریمه	fr:givre	he:קרח כד	hi:तुहिन जमाव	ja:霧氷	ko:상고대	pt:gelo de rime	ru:иней	tr:kırağı	ur:شبنمی برف	zh:雾凇
 c:rimsky-korsakov	ProperNoun	ar:ريمسكي كورساكوف	de:Rimski-Korsakow	en:Rimsky-Korsakov	es:Rimsky-Korsakov	fa:ریمسکی کورساکوف	fr:Rimski-Korsakov	he:רימסקי קורסקוב	hi:रिम्स्की-कोर्साकोव	ja:リムスキー・コルサコフ	ko:림스키코르사코프	pt:Rimsky-Korsakov	ru:Римский-Корсаков	tr:Rimski-Korsakov	ur:رمسکی کورسیکوف	zh:里姆斯基-科萨科夫
+c:rin-tin-tin	ProperNoun	ar:رين تين تين	de:Rin Tin Tin	en:Rin Tin Tin	es:Rin Tin Tin	fa:رین تین تین	fr:Rintintin	he:רין טין טין	hi:रिन टिन टिन	ja:リンティンティン	ko:린 틴 틴	pt:Rin Tin Tin	ru:Рин Тин Тин	tr:Rin Tin Tin	ur:رن ٹن ٹن	zh:任丁丁
 c:ring	Noun	ar:خاتم	de:Ring	en:ring	es:anillo,sortija	fa:انگشتر,حلقه	fr:bague,anneau	he:טבעת	hi:अंगूठी	ja:指輪,リング	ko:반지	pt:anel	ru:кольцо	tr:yüzük	ur:انگوٹھی	zh:戒指
 c:ring-binder	Noun	ar:مجلد حلقي	de:Ringbuch	en:ring binder	es:carpeta de anillas	fa:زونکن حلقه ای	fr:classeur à anneaux	he:קלסר טבעות	hi:रिंग बाइंडर	ja:リングバインダー	ko:링 바인더	pt:fichário de argolas	ru:кольцевой скоросшиватель	tr:halkalı klasör	ur:رنگ بائنڈر	zh:活页夹
 c:ring-cycle	ProperNoun	ar:حلقة النيبلونغ	de:Der Ring des Nibelungen	en:Der Ring des Nibelungen	es:El anillo del nibelungo	fa:حلقه نیبلونگ	fr:L'Anneau du Nibelung	he:טבעת הניבלונגים	hi:द रिंग ऑफ़ द निबेलुंग	ja:ニーベルングの指環	ko:니벨룽의 반지	pt:O Anel do Nibelungo	ru:Кольцо нибелунга	tr:Nibelung'un Yüzüğü	ur:نیبلنگ کا حلقہ	zh:尼伯龙根的指环
@@ -14988,6 +15018,7 @@ c:scissors	Noun	ar:مقص	de:Schere	en:scissors	es:tijeras	fa:قیچی	fr:ciseau
 c:scissors-office	Noun	ar:مقص	de:Schere	en:scissors	es:tijeras	fa:قیچی	fr:ciseaux	he:מספריים	hi:कैंची	ja:はさみ	ko:가위	pt:tesoura	ru:ножницы	tr:makas	ur:قینچی	zh:剪刀
 c:scone	Noun	ar:سكون	de:Scone	en:scone	es:scone	fa:اسکون	fr:scone	he:סקון	hi:स्कोन	ja:スコーン	ko:스콘	pt:scone	ru:скон	tr:scone	ur:اسکون	zh:司康
 c:scone-bread	Noun	ar:سكون	de:Scone	en:scone	es:scone	fa:اسکون	fr:scone	he:סקון	hi:स्कोन	ja:スコーン	ko:스콘	pt:scone	ru:скон	tr:scone	ur:اسکون	zh:司康饼
+c:scooby-doo	ProperNoun	ar:سكوبي دو	de:Scooby-Doo	en:Scooby-Doo	es:Scooby-Doo	fa:اسکوبی-دو	fr:Scooby-Doo	he:סקובי-דו	hi:स्कूबी डू	ja:スクービー・ドゥー	ko:스쿠비 두	pt:Scooby-Doo	ru:Скуби-Ду	tr:Scooby-Doo	ur:اسکوبی ڈو	zh:史酷比
 c:scooter	Noun	ar:سكوتر,دراجة بخارية صغيرة	de:Roller,Motorroller	en:scooter	es:patinete,motoneta	fa:اسکوتر	fr:scooter,trottinette	he:קטנוע	hi:स्कूटर	ja:スクーター	ko:스쿠터	pt:patinete,lambreta	ru:скутер,самокат	tr:skuter,motosiklet	ur:سکوٹر	zh:踏板车,滑板车
 c:scooter-vehicle	Noun	ar:سكوتر	de:Roller	en:scooter	es:escúter	fa:اسکوتر	fr:scooter	he:קטנוע	hi:स्कूटर	ja:スクーター	ko:스쿠터	pt:scooter	ru:самокат	tr:skuter	ur:سکوٹر	zh:踏板车
 c:scopes-trial	ProperNoun	ar:محاكمة سكوبس	de:Scopes-Prozess	en:Scopes Trial	es:Juicio de Scopes	fa:محاکمه اسکوپس	fr:Procès Scopes	he:משפט סקופס	hi:स्कोप्स ट्रायल	ja:スコープス裁判	ko:스코프스 재판	pt:Julgamento de Scopes	ru:Обезьяний процесс	tr:Scopes Davası	ur:اسکوپس مقدمہ	zh:斯科普斯猴子审判
@@ -15204,6 +15235,7 @@ c:serf	Noun	ar:قن	de:Leibeigener	en:serf	es:siervo	fa:رعیت	fr:serf	he:עב
 c:sergeant	Noun	ar:رقيب	de:Feldwebel	en:sergeant	es:sargento	fa:گروهبان	fr:sergent	he:סמל	hi:सार्जेंट	ja:軍曹	ko:중사,상사	pt:sargento	ru:сержант	tr:çavuş	ur:سارجنٹ	zh:中士
 c:sergeant-major	Noun	ar:رئيس رقباء	de:Stabsfeldwebel	en:sergeant major	es:sargento mayor	fa:گروهبان یکم	fr:adjudant-chef	he:רב-סמל ראשון	hi:सार्जेंट मेजर	ja:先任軍曹	ko:원사	pt:sargento-mor	ru:старший сержант	tr:başgedikli	ur:سرجنٹ میجر	zh:军士长
 c:sergeant-mil	Noun	ar:رقيب	de:Feldwebel	en:sergeant	es:sargento	fa:گروهبان	fr:sergent	he:סמל	hi:सार्जेंट	ja:軍曹	ko:중사	pt:sargento	ru:сержант	tr:çavuş	ur:سرجنٹ	zh:中士
+c:sergeant-reckless	ProperNoun	ar:الرقيبة ريكلس	de:Sergeant Reckless	en:Sergeant Reckless	es:Sargento Reckless	fa:گروهبان رکلس	fr:Sergent Reckless	he:סמל רקלס	hi:सार्जेंट रेकलेस	ja:レックレス軍曹	ko:상사 레클리스	pt:Sargento Reckless	ru:Сержант Реклесс	tr:Çavuş Reckless	ur:سارجنٹ ریکلس	zh:鲁莽中士
 c:sergei-polunin	ProperNoun	ar:سيرجي بولونين	de:Sergei Polunin	en:Sergei Polunin	es:Sergei Polunin	fa:سرگئی پلونین	fr:Sergueï Polounine	he:סרגיי פולונין	hi:सर्गेई पोलुनिन	ja:セルゲイ・ポルーニン	ko:세르게이 폴루닌	pt:Sergei Polunin	ru:Сергей Полунин	tr:Sergey Polunin	ur:سرگئی پولونن	zh:谢尔盖·波卢宁
 c:sergey-brin	ProperNoun	ar:سيرغي برين	de:Sergey Brin	en:Sergey Brin	es:Sergey Brin	fa:سرگئی برین	fr:Sergey Brin	he:סרגיי ברין	hi:सर्गेई ब्रिन	ja:セルゲイ・ブリン	ko:세르게이 브린	pt:Sergey Brin	ru:Сергей Брин	tr:Sergey Brin	ur:سرگئی برن	zh:谢尔盖·布林
 c:sergio-perez	ProperNoun	ar:سيرجيو بيريز	de:Sergio Pérez	en:Sergio Pérez	es:Sergio Pérez	fa:سرخیو پرس	fr:Sergio Pérez	he:סרחיו פרס	hi:सर्जियो पेरेज़	ja:セルジオ・ペレス	ko:세르히오 페레스	pt:Sergio Pérez	ru:Серхио Перес	tr:Sergio Pérez	ur:پیریز	zh:佩雷兹
@@ -15247,6 +15279,7 @@ c:sextant	Noun	ar:سدس الدائرة	de:Sextant	en:sextant	es:sextante	fa:س�
 c:sextile	Noun	ar:تسديس	de:Sextil	en:sextile	es:sextil	fa:تسدیس	fr:sextile	he:שישי	hi:षष्ठक	ja:セクスタイル	ko:섹스타일	pt:sextil	ru:секстиль	tr:sekstil	ur:سکسٹائل	zh:六分相
 c:sexual-selection	ProperNoun	ar:الانتقاء الجنسي	de:Sexuelle Selektion	en:Sexual Selection	es:Selección Sexual	fa:انتخاب جنسی	fr:Sélection sexuelle	he:ברירה מינית	hi:लैंगिक चयन	ja:性選択	ko:성선택	pt:Seleção Sexual	ru:Половой отбор	tr:Cinsel Seleksiyon	ur:جنسی انتخاب	zh:性选择
 c:sfumato	Noun	ar:سفوماتو	de:Sfumato	en:sfumato	es:sfumato	fa:سفوماتو	fr:sfumato	he:ספומטו	hi:स्फूमातो	ja:スフマート	ko:스푸마토	pt:sfumato	ru:сфумато	tr:sfumato	ur:دھندلا پن	zh:晕涂法
+c:sgt-stubby	ProperNoun	ar:الرقيب ستبي	de:Sergeant Stubby	en:Sergeant Stubby	es:Sargento Stubby	fa:گروهبان استابی	fr:Sergent Stubby	he:סמל סטאבי	hi:सार्जेंट स्टब्बी	ja:スタビー軍曹	ko:스터비 상병	pt:Sargento Stubby	ru:Сержант Стабби	tr:Çavuş Stubby	ur:سارجنٹ سٹبی	zh:斯塔比中士
 c:sha256	Noun	ar:تجزئة SHA-256	de:SHA-256	en:SHA-256	es:SHA-256	fa:SHA-256	fr:SHA-256	he:SHA-256	hi:एसएचए-256	ja:SHA-256	ko:SHA-256	pt:SHA-256	ru:SHA-256	tr:SHA-256	ur:ایس ایچ اے 256	zh:SHA-256算法
 c:shackleton	ProperNoun	ar:شاكلتون	de:Shackleton	en:Shackleton	es:Shackleton	fa:شاکلتون	fr:Shackleton	he:שקלטון	hi:शैकलटन	ja:シャクルトン	ko:섀클턴	pt:Shackleton	ru:Шеклтон	tr:Shackleton	ur:شیکلٹن	zh:沙克尔顿
 c:shade	Noun	ar:ظل,فيء	de:Schatten	en:shade,shadow	es:sombra	fa:سایه	fr:ombre,ombrage	he:צל	hi:छाया,छाँव	ja:日陰,陰	ko:그늘,응달	pt:sombra	ru:тень,затенение	tr:gölge	ur:سایہ,چھاؤں	zh:阴凉,荫
@@ -15508,6 +15541,7 @@ c:simulation-hypothesis	ProperNoun	ar:فرضية المحاكاة	de:Simulations
 c:simvastatin	Noun	ar:سيمفاستاتين	de:Simvastatin	en:simvastatin	es:simvastatina	fa:سیمواستاتین	fr:simvastatine	he:סימבסטטין	hi:सिम्वास्टेटिन	ja:シンバスタチン	ko:심바스타틴	pt:sinvastatina	ru:симвастатин	tr:simvastatin	ur:سمواسٹاٹن	zh:辛伐他汀
 c:sin	Noun	ar:ذنب,خطيئة	de:Sünde	en:sin	es:pecado	fa:گناه	fr:péché	he:חטא	hi:पाप	ja:罪	ko:죄	pt:pecado	ru:грех	tr:günah	ur:گناہ	zh:罪
 c:sinaloa-cartel	ProperNoun	ar:كارتل سينالوا	de:Sinaloa-Kartell	en:Sinaloa Cartel	es:Cartel de Sinaloa	fa:کارتل سینالوا	fr:Cartel de Sinaloa	he:קרטל סינלואה	hi:सिनालोआ कार्टेल	ja:シナロア・カルテル	ko:시날로아 카르텔	pt:Cartel de Sinaloa	ru:Картель Синалоа	tr:Sinaloa Karteli	ur:سینالوا کارٹیل	zh:锡那罗亚贩毒集团
+c:sinbad-dog	ProperNoun	ar:سندباد	de:Sinbad	en:Sinbad	es:Sinbad	fa:سندباد	fr:Sinbad	he:סינדבד	hi:सिनबाद	ja:シンドバッド	ko:신드바드	pt:Sinbad	ru:Синдбад	tr:Sinbad	ur:سندباد	zh:辛巴达
 c:sine	Noun	ar:جيب	de:Sinus	en:sine	es:seno	fa:سینوس	fr:sinus	he:סינוס	hi:ज्या	ja:正弦	ko:사인	pt:seno	ru:синус	tr:sinüs	ur:سائن	zh:正弦
 c:sine-function	Noun	ar:دالة الجيب	de:Sinusfunktion	en:sine function	es:función seno	fa:تابع سینوس	fr:fonction sinus	he:פונקציית סינוס	hi:ज्या फलन	ja:サイン関数	ko:사인 함수	pt:função seno	ru:функция синуса	tr:sinüs fonksiyonu	ur:سائن تفاعل	zh:正弦函数
 c:sinews-of-peace	ProperNoun	ar:أعصاب السلام	de:Sehnen des Friedens	en:Sinews of Peace	es:Tendones de la Paz	fa:اعصاب صلح	fr:Les Nerfs de la Paix	he:גידי שלום	hi:सायन्यूज़ ऑफ़ पीस	ja:平和の腱	ko:평화의 힘줄	pt:Tendões da Paz	ru:Сухожилия мира	tr:Barışın Sinirleri	ur:سنیوز آف پیس	zh:和平的力量
@@ -15645,6 +15679,7 @@ c:smog-env	Noun	ar:ضباب دخاني	de:Smog	en:smog	es:smog	fa:مه‌دود	
 c:smoke	Noun	ar:دخان	de:Rauch	en:smoke	es:humo	fa:دود	fr:fumée	he:עשן	hi:धुआँ	ja:煙	ko:연기	pt:fumaça,fumo	ru:дым	tr:duman	ur:دھواں	zh:烟
 c:smoke-cook	Noun	ar:تدخين طعام	de:Räuchern	en:smoking food	es:ahumar	fa:دودی کردن	fr:fumage	he:עישון	hi:धूम्र कुकिंग	ja:燻製	ko:훈연	pt:defumar	ru:копчение	tr:tütsüleme	ur:دھواں دینا	zh:烟熏
 c:smoking-food	Noun	ar:تدخين بارد	de:Kalträuchern	en:cold smoking	es:ahumado en frío	fa:دودی کردن سرد	fr:fumage à froid	he:עישון קר	hi:ठंडा धूम्र	ja:冷燻	ko:찬 훈제	pt:defumação a frio	ru:холодное копчение	tr:soğuk tütsüleme	ur:ٹھنڈا دھواں	zh:冷熏
+c:smoky-dog	ProperNoun	ar:سموكي	de:Smoky	en:Smoky	es:Smoky	fa:اسموکی	fr:Smoky	he:סמוקי	hi:स्मोकी	ja:スモーキー	ko:스모키	pt:Smoky	ru:Смоки	tr:Smoky	ur:سموکی	zh:斯莫基
 c:smooth	Adjective	ar:ناعم,أملس	de:glatt	en:smooth	es:liso,suave	fa:صاف,نرم	fr:lisse,doux	he:חלק	hi:चिकना,समतल	ja:滑らか	ko:매끄러운	pt:liso,macio	ru:гладкий	tr:pürüzsüz,düz	ur:ہموار,چکنا	zh:光滑
 c:smoothie	Noun	ar:سموذي	de:Smoothie	en:smoothie	es:batido	fa:اسموتی	fr:smoothie	he:סמוזי	hi:स्मूदी	ja:スムージー	ko:스무디	pt:smoothie	ru:смузи	tr:smoothie	ur:سموتھی	zh:奶昔
 c:smtp	Noun	ar:بروتوكول نقل البريد البسيط	de:SMTP	en:SMTP	es:SMTP	fa:SMTP	fr:SMTP	he:SMTP	hi:एसएमटीपी	ja:SMTP	ko:SMTP	pt:SMTP	ru:SMTP	tr:SMTP	ur:ایس ایم ٹی پی	zh:简单邮件传输协议
@@ -15664,6 +15699,7 @@ c:sneakers	Noun	ar:حذاء رياضي	de:Turnschuhe	en:sneakers	es:zapatillas	f
 c:snell-law	Noun	ar:قانون سنيل	de:snelliussches Gesetz	en:Snell's law	es:ley de Snell	fa:قانون اسنل	fr:loi de Snell	he:חוק סנל	hi:स्नेल का नियम	ja:スネルの法則	ko:스넬 법칙	pt:lei de Snell	ru:закон Снелла	tr:Snell yasası	ur:سنیل کا قانون	zh:斯涅尔定律
 c:snickers-chocolate	ProperNoun	ar:سنيكرز	de:Snickers	en:Snickers	es:Snickers	fa:اسنیکرز	fr:Snickers	he:סניקרס	hi:स्निकर्स	ja:スニッカーズ	ko:스니커즈	pt:Snickers	ru:Сникерс	tr:Snickers	ur:سنکرز	zh:士力架
 c:sniper-rifle	Noun	ar:بندقية قنص	de:Scharfschützengewehr	en:sniper rifle	es:rifle de francotirador	fa:تفنگ تک‌تیرانداز	fr:fusil de sniper	he:רובה צלפים	hi:स्नाइपर राइफल	ja:狙撃銃	ko:저격총	pt:rifle de precisão	ru:снайперская винтовка	tr:keskin nişancı tüfeği	ur:سنائپر رائفل	zh:狙击步枪
+c:snoopy	ProperNoun	ar:سنوبي	de:Snoopy	en:Snoopy	es:Snoopy	fa:اسنوپی	fr:Snoopy	he:סנופי	hi:स्नूपी	ja:スヌーピー	ko:스누피	pt:Snoopy	ru:Снупи	tr:Snoopy	ur:سنوپی	zh:史努比
 c:snow	Noun	ar:ثلج	de:Schnee	en:snow	es:nieve	fa:برف	fr:neige	he:שלג	hi:बर्फ़,हिम	ja:雪	ko:눈	pt:neve	ru:снег	tr:kar	ur:برف	zh:雪
 c:snow-beer	ProperNoun	ar:سنو بيير	de:Snow Beer	en:Snow Beer	es:Snow Beer	fa:آبجو اسنو	fr:Bière Snow	he:סנואו בירה	hi:स्नो बीयर	ja:雪花ビール	ko:쉬에화 맥주	pt:Snow Beer	ru:Сноу Бир	tr:Snow Bira	ur:سنو بیئر	zh:雪花啤酒
 c:snow-leopard	Noun	ar:نمر الثلج	de:Schneeleopard	en:snow leopard	es:leopardo de las nieves	fa:پلنگ برفی	fr:léopard des neiges	he:נמר שלגים	hi:हिम तेंदुआ	ja:ユキヒョウ	ko:설표	pt:leopardo-das-neves	ru:снежный барс,ирбис	tr:kar leoparı	ur:برفانی چیتا	zh:雪豹
@@ -15676,6 +15712,7 @@ c:snowflake	Noun	ar:ندفة ثلج	de:Schneeflocke	en:snowflake	es:copo de niev
 c:snowflake-db	ProperNoun	ar:سنوفليك	de:Snowflake	en:Snowflake	es:Snowflake	fa:اسنوفلیک	fr:Snowflake	he:סנואפלייק	hi:स्नोफ्लेक	ja:スノーフレーク	ko:스노우플레이크	pt:Snowflake	ru:Snowflake	tr:Snowflake	ur:سنو فلیک	zh:雪花
 c:snowshoe-cat	Noun	ar:الأحذية الثلجية	de:Snowshoe	en:Snowshoe cat	es:Snowshoe	fa:اسنوشو	fr:Snowshoe	he:סנושו	hi:स्नोशू	ja:スノーシュー	ko:스노우슈	pt:Snowshoe	ru:сноу-шу	tr:Snowshoe	ur:سنو شو	zh:雪靴猫
 c:snowstorm	Noun	ar:عاصفة ثلجية	de:Schneesturm	en:snowstorm	es:tormenta de nieve	fa:توفان برف	fr:tempête de neige	he:סופת שלגים	hi:हिम तूफ़ान	ja:吹雪	ko:눈보라	pt:tempestade de neve	ru:снежная буря	tr:kar fırtınası	ur:برفانی طوفان	zh:暴风雪
+c:snowy-tintin	ProperNoun	ar:ميلو	de:Struppi	en:Snowy	es:Milú	fa:میلو	fr:Milou	he:מילו	hi:स्नोवी	ja:スノーウィ	ko:스노위	pt:Milu	ru:Милу	tr:Milou	ur:سنووی	zh:米卢
 c:snp	Noun	ar:تعدد الأشكال النيوكليوتيدي	de:SNP	en:SNP	es:polimorfismo de nucleótido único	fa:تک‌نوکلئوتیدی	fr:SNP	he:פולימורפיזם	hi:एसएनपी	ja:SNP	ko:단일 염기 다형성	pt:polimorfismo de nucleotídeo único	ru:полиморфизм нуклеотида	tr:tekli nükleotid polimorfizmi	ur:واحد نوکلیوٹائیڈ	zh:单核苷酸多态性
 c:snp-calling	Noun	ar:تنميط تعدد النيوكليوتيدات المفردة	de:SNP-Genotypisierung	en:SNP genotyping,SNP calling	es:genotipado de SNP	fa:ژنوتیپ‌بندی SNP	fr:génotypage des SNP	he:גנוטיפינג SNP	hi:SNP जीनोटाइपिंग	ja:SNPジェノタイピング	ko:SNP 유전자형 분석	pt:genotipagem de SNP	ru:генотипирование SNP	tr:SNP genotipleme	ur:SNP جینوٹائپنگ	zh:SNP基因分型
 c:snp-pharmacogenomics	Noun	ar:التعدد الشكلي النقطي الفردي	de:Einzelnukleotid-Polymorphismus	en:single nucleotide polymorphism	es:polimorfismo de nucleótido único	fa:چندشکلی تک نوکلئوتیدی	fr:polymorphisme nucléotidique simple	he:פולימורפיזם חד-נוקלאוטידי	hi:एकल न्यूक्लियोटाइड बहुरूपता	ja:一塩基多型	ko:단일염기다형성	pt:polimorfismo de nucleotídeo único	ru:однонуклеотидный полиморфизм	tr:tek nükleotid polimorfizmi	ur:واحد نیوکلیوٹائڈ تغیر	zh:单核苷酸多态性
@@ -17300,6 +17337,7 @@ c:toffee	Noun	ar:توفي	de:Toffee	en:toffee	es:toffee	fa:تافی	fr:caramel m
 c:tofu	Noun	ar:توفو	de:Tofu	en:tofu	es:tofu	fa:توفو	fr:tofu	he:טופו	hi:टोफू	ja:豆腐	ko:두부	pt:tofu	ru:тофу	tr:tofu	ur:ٹوفو	zh:豆腐
 c:toga	Noun	ar:توغا	de:Toga	en:toga	es:toga	fa:توگا	fr:toge	he:טוגה	hi:टोगा	ja:トーガ	ko:토가	pt:toga	ru:тога	tr:toga	ur:توگا	zh:托加袍
 c:togarashi	Noun	ar:توغاراشي	de:Togarashi	en:togarashi	es:togarashi	fa:توگاراشی	fr:togarashi	he:טוגראשי	hi:टोगाराशी	ja:唐辛子	ko:도가라시	pt:togarashi	ru:тогараси	tr:togarashi	ur:توگاراشی	zh:唐辛子
+c:togo-sled-dog	ProperNoun	ar:توغو	de:Togo	en:Togo	es:Togo	fa:توگو	fr:Togo	he:טוגו	hi:टोगो	ja:トーゴ	ko:토고	pt:Togo	ru:Того	tr:Togo	ur:ٹوگو	zh:多哥
 c:toilet-bath	Noun	ar:مرحاض	de:Toilette	en:toilet	es:inodoro	fa:توالت	fr:toilettes	he:אסלה	hi:शौचालय	ja:トイレ	ko:변기	pt:vaso sanitário	ru:унитаз	tr:klozet	ur:ٹوائلٹ	zh:马桶
 c:toilet-paper	Noun	ar:ورق المرحاض	de:Toilettenpapier	en:toilet paper	es:papel higiénico	fa:دستمال توالت	fr:papier toilette	he:נייר טואלט	hi:टॉयलेट पेपर	ja:トイレットペーパー	ko:휴지	pt:papel higiênico	ru:туалетная бумага	tr:tuvalet kâğıdı	ur:ٹوائلٹ پیپر	zh:卫生纸
 c:tokay	Noun	ar:وزغ التوكي	de:Tokeh	en:tokay gecko	es:gecko tokeh	fa:توکی	fr:gecko tokay	he:טוקי	hi:टोके छिपकली	ja:トッケイ	ko:토케이 도마뱀붙이	pt:lagartixa tokay	ru:токи	tr:toki geko	ur:توکی چھپکلی	zh:大壁虎
@@ -17405,6 +17443,7 @@ c:toshiba-brand	ProperNoun	ar:توشيبا	de:Toshiba	en:Toshiba	es:Toshiba	fa:�
 c:totalitarianism	Noun	ar:شمولية	de:Totalitarismus	en:totalitarianism	es:totalitarismo	fa:توتالیتاریسم	fr:totalitarisme	he:טוטליטריזם	hi:सर्वाधिकारवाद	ja:全体主義	ko:전체주의	pt:totalitarismo	ru:тоталитаризм	tr:totalitarizm	ur:مطلق العنانیت	zh:极权主义
 c:totem	Noun	ar:طوطم	de:Totem	en:totem	es:tótem	fa:توتم	fr:totem	he:טוטם	hi:टोटेम	ja:トーテム	ko:토템	pt:totem	ru:тотем	tr:totem	ur:ٹوٹم	zh:图腾
 c:totipotent	Adjective	ar:كامل القدرة التفاضلية	de:totipotent	en:totipotent	es:totipotente	fa:همه‌توان	fr:totipotent	he:טוטיפוטנטי	hi:सर्वशक्तिमान	ja:全能性	ko:전능성	pt:totipotente	ru:тотипотентный	tr:totipotent	ur:کلی قدرت	zh:全能性
+c:toto-dog	ProperNoun	ar:توتو	de:Toto	en:Toto	es:Toto	fa:توتو	fr:Toto	he:טוטו	hi:टोटो	ja:トト	ko:토토	pt:Toto	ru:Тото	tr:Toto	ur:ٹوٹو	zh:托托
 c:totoro	ProperNoun	ar:جاري توتورو	de:Mein Nachbar Totoro	en:My Neighbor Totoro	es:Mi vecino Totoro	fa:همسایه من توتورو	fr:Mon voisin Totoro	he:השכן שלי טוטורו	hi:मेरा पड़ोसी टोटोरो	ja:となりのトトロ	ko:이웃집 토토로	pt:Meu Amigo Totoro	ru:Мой сосед Тоторо	tr:Komşum Totoro	ur:میرا پڑوسی ٹوٹورو	zh:龙猫
 c:toucan	Noun	ar:طوقان	de:Tukan	en:toucan	es:tucán	fa:توکان	fr:toucan	he:טוקן	hi:टूकन	ja:オオハシ	ko:큰부리새	pt:tucano	ru:тукан	tr:tukan	ur:ٹوکان	zh:巨嘴鸟
 c:toucan-bird	Noun	ar:توكان	de:Tukan	en:toucan	es:tucán	fa:توکان	fr:toucan	he:טוקאן	hi:टूकेन	ja:オオハシ	ko:큰부리새	pt:tucano	ru:тукан	tr:tukan	ur:ٹوکن	zh:巨嘴鸟
@@ -18562,6 +18601,7 @@ c:white-bread	Noun	ar:خبز أبيض	de:Weißbrot	en:white bread	es:pan blanco	
 c:white-chocolate	Noun	ar:شوكولاتة بيضاء	de:weiße Schokolade	en:white chocolate	es:chocolate blanco	fa:شکلات سفید	fr:chocolat blanc	he:שוקולד לבן	hi:सफेद चॉकलेट	ja:ホワイトチョコレート	ko:화이트 초콜릿	pt:chocolate branco	ru:белый шоколад	tr:beyaz çikolata	ur:سفید چاکلیٹ	zh:白巧克力
 c:white-dwarf	Noun	ar:قزم أبيض	de:Weißer Zwerg	en:white dwarf	es:enana blanca	fa:کوتوله سفید	fr:naine blanche	he:ננסה לבנה	hi:श्वेत वामन	ja:白色矮星	ko:백색왜성	pt:anã branca	ru:белый карлик	tr:beyaz cüce	ur:سفید بونا ستارہ	zh:白矮星
 c:white-dwarf-astro	Noun	ar:قزم أبيض	de:weißer Zwerg	en:white dwarf	es:enana blanca	fa:کوتوله سفید	fr:naine blanche	he:ננס לבן	hi:श्वेत वामन	ja:白色矮星	ko:백색왜성	pt:anã branca	ru:белый карлик	tr:beyaz cüce	ur:سفید بونا	zh:白矮星
+c:white-fang	ProperNoun	ar:وايت فانغ	de:Wolfsblut	en:White Fang	es:Colmillo Blanco	fa:کولاک سفید	fr:Croc-Blanc	he:ניב לבן	hi:व्हाइट फैंग	ja:白牙	ko:하얀 송곳니	pt:Presas Brancas	ru:Белый Клык	tr:Beyaz Diş	ur:وائٹ فینگ	zh:白牙
 c:white-house	ProperNoun	ar:البيت الأبيض	de:Weißes Haus	en:White House	es:Casa Blanca	fa:کاخ سفید	fr:Maison-Blanche	he:הבית הלבן	hi:व्हाइट हाउस	ja:ホワイトハウス	ko:백악관	pt:Casa Branca	ru:Белый дом	tr:Beyaz Saray	ur:وائٹ ہاؤس	zh:白宫
 c:white-rabbit	ProperNoun	ar:الأرنب الأبيض	de:Weißes Kaninchen	en:White Rabbit	es:Conejo Blanco	fa:خرگوش سفید	fr:Lapin Blanc	he:הארנב הלבן	hi:सफेद खरगोश	ja:白ウサギ	ko:하얀 토끼	pt:Coelho Branco	ru:Белый Кролик	tr:Beyaz Tavşan	ur:سفید خرگوش	zh:白兔先生
 c:white-tea	Noun	ar:شاي أبيض	de:weißer Tee	en:white tea	es:té blanco	fa:چای سفید	fr:thé blanc	he:תה לבן	hi:सफेद चाय	ja:白茶	ko:백차	pt:chá branco	ru:белый чай	tr:beyaz çay	ur:سفید چائے	zh:白茶
