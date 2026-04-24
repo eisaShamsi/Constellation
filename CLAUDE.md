@@ -219,6 +219,16 @@ After each successful milestone:
 
 ---
 
+## Working Agreement (ground rules, non-negotiable)
+
+1. **Do the work yourself. Don't offload it to the user.** If you can run a command, query a DB, read a log, diagnose a bug, or write a test — do it. The user is the Boss, not the lab assistant. The only thing you ask of them is what genuinely requires a human: interacting with the running Constellation GUI (create a note, click a button), making design decisions, approving a plan, confirming a release is ready. Everything else — SQL queries, file inspection, log greps, schema checks, build verification — is your job. If you catch yourself writing "please run this query and tell me the result," stop and run it yourself via Bash + sqlite3 (or equivalent).
+
+2. **One location: `E:\مشاريع كلاود\Constellation` on branch `main`.** This is the root for every read, write, commit, build, and test — now and in the future. It is the de-facto "main" working directory. Do not introduce worktrees, alternate checkouts, or parallel paths. If a session starts somewhere else (e.g. a `.claude/worktrees/` subfolder), operate via absolute paths into the primary location — never have the user switch directories to compensate for a session-spawn quirk. Commits land here, pushes come from here, builds run here.
+
+3. **The user is a non-technical IT Boss.** Explanations default to plain language: what it does, why it matters, what's going to happen next. No internal component names, no assumed familiarity with Rust / Svelte / SQLite internals, no "just run this SQL and report back" busywork. Test instructions follow the Testing Instructions Rule above — define the feature first, then walk through interaction by interaction. Technical detail is available on request, not pushed by default.
+
+---
+
 ## Don't
 - Don't use preview/screenshot tools unless essential.
 - Don't add unnecessary abstractions or over-engineer.
