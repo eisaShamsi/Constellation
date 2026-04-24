@@ -29,6 +29,7 @@
 //! boot detects the stamp and skips the back-fill.
 
 use rusqlite::{params, Connection};
+use std::path::Path;
 use std::sync::Mutex;
 use std::thread;
 use std::time::Duration;
@@ -240,8 +241,66 @@ fn process_batch(
         .map_err(|e| format!("ins links: {}", e))?;
     }
 
+    // MIG-002: back-fill word_count + created_at on note_meta for each
+    // path in this batch. Only touches rows where word_count = 0 (fresh
+    // column default) AND/OR created_at IS NULL so that rows already
+    // stamped by the writer stay put — idempotent, safe to re-run.
+    //
+    // Cost: one file read per row in the batch. Bounded by BATCH_SIZE
+    // and amortized by the inter-batch sleep. On the 7.6k-note target
+    // universe: ~8 batches × up to 1000 file reads each, interleaved.
+    {
+        let mut upd = tx
+            .prepare(
+                "UPDATE note_meta
+                    SET word_count = ?1,
+                        created_at = COALESCE(created_at, ?2)
+                  WHERE path = ?3
+                    AND (word_count = 0 OR created_at IS NULL)",
+            )
+            .map_err(|e| format!("prepare upd word_count: {}", e))?;
+        for (p, _, _) in &paths {
+            let (wc, created_at) = compute_word_count_and_created_at(Path::new(p));
+            // `created_at` is Option<i64>. COALESCE keeps any existing
+            // non-null DB value; the bound value only wins when the DB
+            // side is NULL. None maps to NULL which COALESCE skips.
+            upd.execute(params![wc, created_at, p])
+                .map_err(|e| format!("exec upd word_count: {}", e))?;
+        }
+    }
+
     tx.commit().map_err(|e| format!("commit: {}", e))?;
     Ok((paths.len(), last_path))
+}
+
+/// Read a .md file and return (word_count, created_at_epoch_seconds).
+/// Mirrors the writer-side stamping in `search::index_note` so back-
+/// filled rows agree with newly-written rows to the byte.
+///
+/// - word_count = whitespace-separated token count of the body (post-
+///   frontmatter strip). Matches body.split_whitespace().count() in
+///   search::index_note.
+/// - created_at = fs::metadata(path).created() epoch seconds. None when
+///   the platform lacks a true creation timestamp (ReFS, FAT32, some
+///   Linux filesystems); caller uses COALESCE to preserve the existing
+///   DB value (which may already be stamped to `modified`).
+///
+/// A missing / unreadable file yields (0, None) — the UPDATE then
+/// writes `word_count = 0` with COALESCE keeping any prior created_at.
+fn compute_word_count_and_created_at(path: &Path) -> (i64, Option<i64>) {
+    let Ok(content) = std::fs::read_to_string(path) else {
+        return (0, None);
+    };
+    // Single source of truth for frontmatter slicing — search.rs owns
+    // the strip shape so back-fill and writer agree byte-for-byte.
+    let body = crate::search::body_after_frontmatter(&content);
+    let wc = body.split_whitespace().count() as i64;
+    let created_at: Option<i64> = std::fs::metadata(path)
+        .ok()
+        .and_then(|m| m.created().ok())
+        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+        .map(|d| d.as_secs() as i64);
+    (wc, created_at)
 }
 
 fn finalize(db: &Mutex<Option<Connection>>) -> Result<(), String> {

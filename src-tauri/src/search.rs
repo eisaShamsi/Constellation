@@ -42,14 +42,14 @@ const FTS_SCHEMA_VERSION: i64 = 1;
 /// |--------:|----------------------------------------------------------|
 /// |       0 | pre-MIG-001 — no sky_* tables; JS buildSkyData() path    |
 /// |       1 | sky_nodes + sky_links + triggers + back-fill populator   |
-/// |       2 | MIG-002 — note_meta.word_count + created_at; sky_nodes   |
-/// |         | enrichment (stratum/maturity/origin_type) populated via  |
-/// |         | SQL-native triggers + background worker for origin_type  |
+/// |       2 | MIG-002 §1 — note_meta.word_count + created_at columns   |
+/// |       3 | MIG-002 §3 — sky_nodes.enrichment_dirty + back-fill of   |
+/// |         | word_count / created_at on existing note_meta rows       |
 ///
 /// Bumping the version gates `sky_backfill::maybe_schedule` to repopulate
-/// the derived surfaces on next boot. Columns added in v2 are nullable
+/// the derived surfaces on next boot. Columns added in v2/v3 are nullable
 /// or defaulted so pre-MIG-002 binaries tolerate the wider schema.
-pub(crate) const SKY_SCHEMA_VERSION: i64 = 2;
+pub(crate) const SKY_SCHEMA_VERSION: i64 = 3;
 
 // ─── Types ─────────────────────────────────────────────────────
 
@@ -226,6 +226,32 @@ fn ensure_note_meta_mig002_columns(conn: &Connection) -> rusqlite::Result<()> {
     }
     if !have_created_at {
         conn.execute_batch("ALTER TABLE note_meta ADD COLUMN created_at INTEGER;")?;
+    }
+    Ok(())
+}
+
+/// MIG-002: ensure `sky_nodes` has the `enrichment_dirty` column plus
+/// its partial index on DBs created by MIG-001 v1 code. Idempotent.
+///
+/// Default = 1 means every pre-existing sky_nodes row is flagged dirty
+/// on ALTER — the §7 enrichment_worker will drain them on first run.
+fn ensure_sky_nodes_mig002_columns(conn: &Connection) -> rusqlite::Result<()> {
+    let mut have_enrichment_dirty = false;
+    {
+        let mut stmt = conn.prepare("PRAGMA table_info(sky_nodes)")?;
+        let rows = stmt.query_map([], |row| row.get::<_, String>(1))?;
+        for col in rows {
+            if col?.as_str() == "enrichment_dirty" {
+                have_enrichment_dirty = true;
+            }
+        }
+    }
+    if !have_enrichment_dirty {
+        conn.execute_batch(
+            "ALTER TABLE sky_nodes ADD COLUMN enrichment_dirty INTEGER NOT NULL DEFAULT 1;
+             CREATE INDEX IF NOT EXISTS idx_sky_nodes_enrichment_dirty
+                 ON sky_nodes(enrichment_dirty) WHERE enrichment_dirty = 1;",
+        )?;
     }
     Ok(())
 }
@@ -504,15 +530,32 @@ fn init_db(path: &Path) -> Result<Connection, String> {
             library_name TEXT NOT NULL,
             link_count INTEGER NOT NULL DEFAULT 0,
             outgoing_count INTEGER NOT NULL DEFAULT 0,
-            -- Enrichment columns: reserved for MIG-002. NULL until then.
+            -- Enrichment columns — populated in MIG-002.
+            -- stratum / maturity are computed SQL-natively by triggers
+            -- installed in §4 / §5. origin_type requires a recursive
+            -- derives-from chain walk and is populated by
+            -- enrichment_worker.rs (§7) off the enrichment_dirty flag.
             stratum TEXT,
             maturity TEXT,
             origin_type TEXT,
+            -- enrichment_dirty: 1 = origin_type needs recomputation by
+            -- the background worker. Set to 1 by (a) row insert (fresh
+            -- row = origin unknown), (b) note_links triggers on any
+            -- derives-from edge change affecting this row (§8),
+            -- (c) rename of a note participating in any derives-from
+            -- edge (§6 rename AU). Cleared by the worker after write.
+            enrichment_dirty INTEGER NOT NULL DEFAULT 1,
             created_at INTEGER,
             updated_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
         );
         CREATE INDEX IF NOT EXISTS idx_sky_nodes_library ON sky_nodes(library_name);
         CREATE INDEX IF NOT EXISTS idx_sky_nodes_id ON sky_nodes(id);
+        -- enrichment_dirty index: partial index on dirty=1 rows only
+        -- keeps the worker's drain query (SELECT ... WHERE dirty=1) O(dirty)
+        -- instead of O(total_nodes). Non-dirty rows (steady state) are
+        -- invisible to the index, so it stays tiny.
+        CREATE INDEX IF NOT EXISTS idx_sky_nodes_enrichment_dirty
+            ON sky_nodes(enrichment_dirty) WHERE enrichment_dirty = 1;
 
         CREATE TABLE IF NOT EXISTS sky_links (
             source_path TEXT NOT NULL,
@@ -529,6 +572,12 @@ fn init_db(path: &Path) -> Result<Connection, String> {
         -- source_path or target_name (covered above) with link_type as payload.
         -- Reinstate if a pure `WHERE link_type=?` query ever shows up.
     ").map_err(|e| format!("Failed to create sky_* tables: {}", e))?;
+
+    // MIG-002: idempotent ALTER for pre-v2 DBs that already have
+    // sky_nodes from MIG-001. Adds enrichment_dirty column + partial
+    // index. No-op on fresh DBs (column already in CREATE TABLE).
+    ensure_sky_nodes_mig002_columns(&conn)
+        .map_err(|e| format!("Failed to ensure sky_nodes MIG-002 columns: {}", e))?;
 
     // ─── Sky-link triggers (MIG-001 Step 3) ─────────────────────────────
     // Keep sky_links in lock-step with note_links. Triggers fire on every
@@ -750,6 +799,22 @@ fn init_db(path: &Path) -> Result<Connection, String> {
 
 // ─── Indexing Pipeline ─────────────────────────────────────────
 
+/// Locate the body slice of a note — everything after the closing
+/// `---` of the YAML frontmatter, or the full content if there is no
+/// frontmatter block. Zero-copy. Shared by `parse_frontmatter` (which
+/// needs to parse properties/tags from the frontmatter) and
+/// `sky_backfill::compute_word_count_and_created_at` (which only needs
+/// the body for word counting). Single source of truth for the strip
+/// shape so back-fill and writer agree byte-for-byte.
+pub(crate) fn body_after_frontmatter(content: &str) -> &str {
+    if content.starts_with("---") {
+        if let Some(end) = content[3..].find("---") {
+            return &content[3 + end + 3..];
+        }
+    }
+    content
+}
+
 /// Parse frontmatter properties from YAML block.
 fn parse_frontmatter(content: &str) -> (HashMap<String, String>, Vec<String>, String) {
     let mut properties = HashMap::new();
@@ -759,7 +824,7 @@ fn parse_frontmatter(content: &str) -> (HashMap<String, String>, Vec<String>, St
     if content.starts_with("---") {
         if let Some(end) = content[3..].find("---") {
             let fm = &content[3..3 + end];
-            body = content[3 + end + 3..].trim().to_string();
+            body = body_after_frontmatter(content).trim().to_string();
 
             let mut in_tags = false;
             for line in fm.lines() {
