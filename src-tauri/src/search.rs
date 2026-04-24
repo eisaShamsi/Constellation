@@ -47,11 +47,14 @@ const FTS_SCHEMA_VERSION: i64 = 1;
 /// |         | word_count / created_at on existing note_meta rows       |
 /// |       4 | MIG-002 §4 — SQL-native stratum triggers + one-shot      |
 /// |         | back-fill of sky_nodes.stratum for pre-§4 rows           |
+/// |       5 | MIG-002 §4 fix (BUG-010) — stratum formula now matches  |
+/// |         | inbound on sky_nodes.id (lowercase) instead of .name;    |
+/// |         | all stratum values recomputed with correct inbound count |
 ///
 /// Bumping the version gates `sky_backfill::maybe_schedule` to repopulate
 /// the derived surfaces on next boot. Columns added in v2/v3 are nullable
 /// or defaulted so pre-MIG-002 binaries tolerate the wider schema.
-pub(crate) const SKY_SCHEMA_VERSION: i64 = 4;
+pub(crate) const SKY_SCHEMA_VERSION: i64 = 5;
 
 /// MIG-002 §4 — SQL fragment that computes sky_nodes.stratum (1–8) from
 /// the same five signals as strata.rs::compute_stratum:
@@ -86,7 +89,7 @@ pub(crate) const STRATUM_SQL_EXPR: &str = "
                          AND status = 'active') >= 3
                 THEN 1 ELSE 0 END)
         + (CASE WHEN (SELECT COUNT(*) FROM note_links
-                       WHERE target_name = sky_nodes.name
+                       WHERE target_name = sky_nodes.id
                          AND status = 'active') >= 5
                 THEN 1 ELSE 0 END)
         + (CASE WHEN EXISTS(SELECT 1 FROM note_links
@@ -100,7 +103,7 @@ pub(crate) const STRATUM_SQL_EXPR: &str = "
                                AND status = 'active')
                 THEN 1 ELSE 0 END)
         + (CASE WHEN (SELECT COUNT(DISTINCT source_path) FROM note_links
-                       WHERE target_name = sky_nodes.name
+                       WHERE target_name = sky_nodes.id
                          AND status = 'active') >= 3
                 THEN 1 ELSE 0 END)
     ))
@@ -829,10 +832,23 @@ fn init_db(path: &Path) -> Result<Connection, String> {
     // fresh on every write to note_meta (body / word_count changes) and
     // note_links (edge changes affecting source or target).
     //
-    // Expression is correlated on sky_nodes.path / sky_nodes.name so the
-    // same SQL fragment works whether the trigger updates by path or by
-    // name. Shared via STRATUM_SQL_EXPR with the one-shot back-fill in
-    // sky_backfill.rs — single source of truth.
+    // Expression is correlated on sky_nodes.path / sky_nodes.id (NOT
+    // .name — note_links.target_name is stored lowercase, and sky_nodes.id
+    // is LOWER(name). BUG-010 caught this: the v4 formula matched on
+    // .name and got 0 inbound for every non-lowercase note). Shared via
+    // STRATUM_SQL_EXPR with the one-shot back-fill in sky_backfill.rs —
+    // single source of truth.
+    //
+    // DROP first so schema-version bumps that change the trigger body
+    // (like v4 → v5 for BUG-010) pick up the new formula. CREATE TRIGGER
+    // IF NOT EXISTS alone would silently keep the old body on upgrade.
+    conn.execute_batch("
+        DROP TRIGGER IF EXISTS note_meta_sky_stratum_ai;
+        DROP TRIGGER IF EXISTS note_meta_sky_stratum_au;
+        DROP TRIGGER IF EXISTS note_links_sky_stratum_ai;
+        DROP TRIGGER IF EXISTS note_links_sky_stratum_ad;
+        DROP TRIGGER IF EXISTS note_links_sky_stratum_au;
+    ").map_err(|e| format!("Failed to drop old stratum triggers: {}", e))?;
 
     conn.execute_batch(&format!("
         -- note_meta insert: compute stratum for the fresh sky_nodes row.
@@ -864,7 +880,7 @@ fn init_db(path: &Path) -> Result<Connection, String> {
         WHEN NEW.status = 'active'
         BEGIN
             UPDATE sky_nodes SET stratum = ({expr}) WHERE path = NEW.source_path;
-            UPDATE sky_nodes SET stratum = ({expr}) WHERE name = NEW.target_name;
+            UPDATE sky_nodes SET stratum = ({expr}) WHERE id = NEW.target_name;
         END;
 
         -- note_links delete: symmetric to insert — the lost edge changes
@@ -874,7 +890,7 @@ fn init_db(path: &Path) -> Result<Connection, String> {
         WHEN OLD.status = 'active'
         BEGIN
             UPDATE sky_nodes SET stratum = ({expr}) WHERE path = OLD.source_path;
-            UPDATE sky_nodes SET stratum = ({expr}) WHERE name = OLD.target_name;
+            UPDATE sky_nodes SET stratum = ({expr}) WHERE id = OLD.target_name;
         END;
 
         -- note_links update: covers re-type (link_type changed), archive
@@ -890,8 +906,8 @@ fn init_db(path: &Path) -> Result<Connection, String> {
         BEGIN
             UPDATE sky_nodes SET stratum = ({expr}) WHERE path = OLD.source_path;
             UPDATE sky_nodes SET stratum = ({expr}) WHERE path = NEW.source_path;
-            UPDATE sky_nodes SET stratum = ({expr}) WHERE name = OLD.target_name;
-            UPDATE sky_nodes SET stratum = ({expr}) WHERE name = NEW.target_name;
+            UPDATE sky_nodes SET stratum = ({expr}) WHERE id = OLD.target_name;
+            UPDATE sky_nodes SET stratum = ({expr}) WHERE id = NEW.target_name;
         END;
     ", expr = STRATUM_SQL_EXPR))
     .map_err(|e| format!("Failed to create stratum triggers: {}", e))?;

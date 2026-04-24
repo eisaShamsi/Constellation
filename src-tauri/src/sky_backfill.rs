@@ -115,11 +115,20 @@ fn run(app: &tauri::AppHandle) -> Result<u64, String> {
     // (non-selective — all links are 'active') and the stratum formula's
     // six subqueries each fanned out across the full 232k-row note_links
     // table. ~2ms per row with stats vs ~450ms without = 200× speedup.
+    //
+    // Clear stratum column too — the back-fill's per-batch Phase D uses
+    // `WHERE stratum IS NULL` to pick up rows for recomputation. Without
+    // this wipe, schema-version bumps that only change the stratum
+    // FORMULA (like v4 → v5 for BUG-010) would leave old values in place
+    // because no rows would match the IS NULL guard.
     {
         let guard = state.db.lock().map_err(|e| e.to_string())?;
         let conn = guard.as_ref().ok_or("DB not initialized")?;
-        conn.execute_batch("ANALYZE")
-            .map_err(|e| format!("ANALYZE: {}", e))?;
+        conn.execute_batch(
+            "ANALYZE;
+             UPDATE sky_nodes SET stratum = NULL;",
+        )
+        .map_err(|e| format!("ANALYZE + stratum clear: {}", e))?;
     }
 
     let mut last_path = read_cursor(&state.db)?;
