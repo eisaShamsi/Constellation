@@ -859,6 +859,18 @@ fn init_db(path: &Path) -> Result<Connection, String> {
     // touch modified / content_hash / body_text etc. don't cascade
     // into sky_* unnecessarily — that's the typing-latency guardrail
     // (Invariant 8).
+    // MIG-002 §6: drop note_meta_sky_au before recreating it.
+    // The pre-§6 form used DELETE + INSERT OR REPLACE on sky_nodes,
+    // which silently wiped the enrichment columns (stratum, maturity,
+    // origin_type, enrichment_dirty) every time a note was renamed.
+    // With those columns now carrying real values (§4 / §5), that
+    // DELETE+INSERT became a correctness regression.
+    //
+    // CREATE TRIGGER IF NOT EXISTS below would keep the old body on
+    // upgrade paths. DROP IF EXISTS flushes it.
+    conn.execute_batch("DROP TRIGGER IF EXISTS note_meta_sky_au;")
+        .map_err(|e| format!("Failed to drop pre-§6 note_meta_sky_au: {}", e))?;
+
     conn.execute_batch("
         CREATE TRIGGER IF NOT EXISTS note_meta_sky_ai
         AFTER INSERT ON note_meta
@@ -879,24 +891,78 @@ fn init_db(path: &Path) -> Result<Connection, String> {
             DELETE FROM sky_links WHERE source_path = OLD.path;
         END;
 
+        -- MIG-002 §6: UPDATE-preserving rename trigger.
+        --
+        -- The fields that change on a rename (path / name / library_name)
+        -- do NOT change the structural inputs to stratum or maturity —
+        -- word count, link counts, link types, timestamps all stay put.
+        -- So their VALUES are provably unchanged and we preserve them
+        -- instead of recomputing (faster + no transient NULL window).
+        --
+        -- origin_type is preserved too for the renamed note itself,
+        -- but any DESCENDANT note (linked to this one via derives-from)
+        -- has its origin_type invalidated: when an ancestor renames, the
+        -- chain walk that produced the descendant's origin_type now
+        -- operates on a changed identity. We stamp enrichment_dirty=1
+        -- on those descendants so the §7 background worker recomputes
+        -- them on next drain. The EXISTS subquery checks whether this
+        -- rename affects any derives-from edge; if not, no stamping is
+        -- needed and the maximum-work branch is skipped entirely.
         CREATE TRIGGER IF NOT EXISTS note_meta_sky_au
         AFTER UPDATE ON note_meta
         WHEN OLD.path IS NOT NEW.path
           OR OLD.name IS NOT NEW.name
           OR OLD.library_name IS NOT NEW.library_name
         BEGIN
-            -- Replace the sky_nodes row (handles path change as a
-            -- delete+insert since path is the PK, and name/library
-            -- changes as an in-place upsert).
-            DELETE FROM sky_nodes WHERE path = OLD.path;
-            INSERT OR REPLACE INTO sky_nodes (path, id, name, library_name, updated_at)
-            VALUES (NEW.path, LOWER(NEW.name), NEW.name, NEW.library_name, strftime('%s','now'));
+            -- Rewrite sky_nodes in place. UPDATE preserves stratum,
+            -- maturity, origin_type, enrichment_dirty. path is the PK
+            -- so a path change updates the row's PK; SQLite allows this
+            -- as long as the new path doesn't collide (it won't — notes
+            -- have unique paths by filesystem invariant).
+            UPDATE sky_nodes
+               SET path = NEW.path,
+                   id = LOWER(NEW.name),
+                   name = NEW.name,
+                   library_name = NEW.library_name,
+                   updated_at = strftime('%s','now')
+             WHERE path = OLD.path;
 
-            -- Migrate edges referencing the old identity.
-            UPDATE sky_links SET source_path = NEW.path
-                WHERE source_path = OLD.path AND OLD.path IS NOT NEW.path;
-            UPDATE sky_links SET target_name = NEW.name
-                WHERE target_name = OLD.name AND OLD.name IS NOT NEW.name;
+            -- Migrate edges referencing the old identity. target_name
+            -- match uses LOWER(OLD.name) because note_links stores
+            -- target_name pre-lowercased (all 232k rows on the target
+            -- universe confirm this — see BUG-010).
+            UPDATE sky_links
+               SET source_path = NEW.path
+             WHERE source_path = OLD.path
+               AND OLD.path IS NOT NEW.path;
+            UPDATE sky_links
+               SET target_name = LOWER(NEW.name)
+             WHERE target_name = LOWER(OLD.name)
+               AND LOWER(OLD.name) IS NOT LOWER(NEW.name);
+
+            -- Conditional origin_type dirty cascade. Scoped to the set
+            -- of notes affected by a derives-from edge touching the
+            -- renamed note:
+            --   (a) this note itself, if it has a derives-from edge in
+            --       or out (self's ancestry may resolve differently now)
+            --   (b) descendants: notes that link to this one with
+            --       link_type='derives-from' (they walk their chain
+            --       through this node, which just changed identity)
+            -- The OR-split on the WHERE keeps the subqueries narrow.
+            -- enrichment_dirty=1 is idempotent; if already 1, no-op.
+            UPDATE sky_nodes SET enrichment_dirty = 1
+             WHERE path = NEW.path
+               AND EXISTS(
+                   SELECT 1 FROM note_links
+                    WHERE (source_path = NEW.path OR source_path = OLD.path)
+                      AND link_type = 'derives-from'
+                      AND status = 'active');
+            UPDATE sky_nodes SET enrichment_dirty = 1
+             WHERE path IN (
+                   SELECT source_path FROM note_links
+                    WHERE (target_name = LOWER(OLD.name) OR target_name = LOWER(NEW.name))
+                      AND link_type = 'derives-from'
+                      AND status = 'active');
         END;
     ").map_err(|e| format!("Failed to create sky_node triggers: {}", e))?;
 
