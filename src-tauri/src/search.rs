@@ -879,24 +879,29 @@ fn init_db(path: &Path) -> Result<Connection, String> {
     // touch modified / content_hash / body_text etc. don't cascade
     // into sky_* unnecessarily — that's the typing-latency guardrail
     // (Invariant 8).
-    // MIG-002 §6: drop note_meta_sky_au before recreating it.
-    // The pre-§6 form used DELETE + INSERT OR REPLACE on sky_nodes,
-    // which silently wiped the enrichment columns (stratum, maturity,
-    // origin_type, enrichment_dirty) every time a note was renamed.
-    // With those columns now carrying real values (§4 / §5), that
-    // DELETE+INSERT became a correctness regression.
-    //
-    // CREATE TRIGGER IF NOT EXISTS below would keep the old body on
-    // upgrade paths. DROP IF EXISTS flushes it.
-    conn.execute_batch("DROP TRIGGER IF EXISTS note_meta_sky_au;")
-        .map_err(|e| format!("Failed to drop pre-§6 note_meta_sky_au: {}", e))?;
-
+    // MIG-002 §6 + §99/BUG-011: drop note_meta_sky_au AND note_meta_sky_ai
+    // so their bodies can be rewritten for §6 (UPDATE-preserving AU) and
+    // BUG-011 (merged AI with inline stratum + maturity).
     conn.execute_batch("
+        DROP TRIGGER IF EXISTS note_meta_sky_au;
+        DROP TRIGGER IF EXISTS note_meta_sky_ai;
+    ").map_err(|e| format!("Failed to drop pre-§6/§99 sky triggers: {}", e))?;
+
+    conn.execute_batch(&format!("
+        -- BUG-011 workaround: inline stratum + maturity computation in
+        -- the INSERT trigger body. On this SQLite build, keeping them
+        -- as separate AFTER INSERT triggers resulted in silent skipping
+        -- — only the first AI trigger (which does INSERT OR REPLACE on
+        -- sky_nodes) executed. Merging the sky_nodes INSERT and the
+        -- stratum + maturity UPDATE into one trigger body sidesteps
+        -- the multi-trigger dispatch issue entirely.
         CREATE TRIGGER IF NOT EXISTS note_meta_sky_ai
         AFTER INSERT ON note_meta
         BEGIN
             INSERT OR REPLACE INTO sky_nodes (path, id, name, library_name, updated_at)
             VALUES (NEW.path, LOWER(NEW.name), NEW.name, NEW.library_name, strftime('%s','now'));
+            UPDATE sky_nodes SET stratum = ({stratum_expr}) WHERE path = NEW.path;
+            UPDATE sky_nodes SET maturity = ({maturity_expr}) WHERE path = NEW.path;
         END;
 
         CREATE TRIGGER IF NOT EXISTS note_meta_sky_ad
@@ -984,7 +989,8 @@ fn init_db(path: &Path) -> Result<Connection, String> {
                       AND link_type = 'derives-from'
                       AND status = 'active');
         END;
-    ").map_err(|e| format!("Failed to create sky_node triggers: {}", e))?;
+    ", stratum_expr = STRATUM_SQL_EXPR, maturity_expr = MATURITY_SQL_EXPR))
+    .map_err(|e| format!("Failed to create sky_node triggers: {}", e))?;
 
     // ─── MIG-002 §4: SQL-native stratum triggers ────────────────────────
     //
@@ -1018,23 +1024,25 @@ fn init_db(path: &Path) -> Result<Connection, String> {
         DROP TRIGGER IF EXISTS note_links_sky_stratum_au;
     ").map_err(|e| format!("Failed to drop old stratum triggers: {}", e))?;
 
-    // Drop the §98 diagnostic trigger (if it exists on upgrade from the
-    // BUG-011 investigation binary). No functional effect — just hygiene.
-    conn.execute_batch("DROP TRIGGER IF EXISTS note_meta_sky_stratum_ai_DIAG;")
-        .map_err(|e| format!("drop diag trigger: {}", e))?;
+    // Drop diagnostic + any prior separate stratum AI / AU triggers.
+    // BUG-011 investigation uncovered that on this SQLite build,
+    // multiple separate AFTER INSERT triggers on note_meta silently
+    // skip the later ones in the chain once an earlier trigger body
+    // has written to another table (recursive_triggers=ON did not
+    // help). Workaround: inline the stratum + maturity UPDATE into
+    // the existing MIG-001 note_meta_sky_ai body so it's one trigger,
+    // one body, no multi-trigger dispatch.
+    conn.execute_batch("
+        DROP TRIGGER IF EXISTS note_meta_sky_stratum_ai_DIAG;
+        DROP TRIGGER IF EXISTS note_meta_sky_stratum_ai;
+        DROP TRIGGER IF EXISTS note_meta_sky_stratum_au;
+    ").map_err(|e| format!("drop AI/AU legacy stratum: {}", e))?;
 
     conn.execute_batch(&format!("
-        -- note_meta insert: compute stratum for the fresh sky_nodes row.
-        -- Fires AFTER note_meta_sky_ai (alphabetical order) so the
-        -- sky_nodes row is already present when we UPDATE it.
-        CREATE TRIGGER IF NOT EXISTS note_meta_sky_stratum_ai
-        AFTER INSERT ON note_meta
-        BEGIN
-            UPDATE sky_nodes SET stratum = ({expr}) WHERE path = NEW.path;
-        END;
-
         -- note_meta update: recompute only when word_count actually
-        -- changes. Most UPDATEs (metadata-only, touch-save) won't.
+        -- changes. AU triggers don't seem to have the same skip issue
+        -- as AI chains (§6's note_meta_sky_au is the sole AU writer
+        -- to sky_nodes). Keeping this AU as a separate trigger.
         CREATE TRIGGER IF NOT EXISTS note_meta_sky_stratum_au
         AFTER UPDATE ON note_meta
         WHEN NEW.word_count IS NOT OLD.word_count
@@ -1104,12 +1112,10 @@ fn init_db(path: &Path) -> Result<Connection, String> {
     ").map_err(|e| format!("Failed to drop old maturity triggers: {}", e))?;
 
     conn.execute_batch(&format!("
-        -- note_meta insert: stamp maturity on the fresh sky_nodes row.
-        CREATE TRIGGER IF NOT EXISTS note_meta_sky_maturity_ai
-        AFTER INSERT ON note_meta
-        BEGIN
-            UPDATE sky_nodes SET maturity = ({expr}) WHERE path = NEW.path;
-        END;
+        -- note_meta insert: maturity AI is INLINED into note_meta_sky_ai
+        -- above (BUG-011 workaround — multiple AFTER INSERT triggers on
+        -- note_meta don't all fire on this SQLite build). The separate
+        -- trigger is intentionally NOT recreated here.
 
         -- note_meta update: recompute when `modified` or `created_at`
         -- changes. `modified` changes on every save by definition, so
