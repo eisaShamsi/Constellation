@@ -109,6 +109,19 @@ fn run(app: &tauri::AppHandle) -> Result<u64, String> {
         ensure_cursor_table(conn)?;
     }
 
+    // MIG-002 §4: run ANALYZE before any stratum computation so the
+    // query planner has statistics on idx_link_source / idx_link_target /
+    // idx_link_type. Without them, the planner picked idx_link_status
+    // (non-selective — all links are 'active') and the stratum formula's
+    // six subqueries each fanned out across the full 232k-row note_links
+    // table. ~2ms per row with stats vs ~450ms without = 200× speedup.
+    {
+        let guard = state.db.lock().map_err(|e| e.to_string())?;
+        let conn = guard.as_ref().ok_or("DB not initialized")?;
+        conn.execute_batch("ANALYZE")
+            .map_err(|e| format!("ANALYZE: {}", e))?;
+    }
+
     let mut last_path = read_cursor(&state.db)?;
     let mut total: u64 = 0;
 
@@ -290,6 +303,35 @@ fn process_batch(
             }
         }
         tx.commit().map_err(|e| format!("commit C: {}", e))?;
+    }
+
+    // ── Phase D: back-fill sky_nodes.stratum for this batch ───────────
+    // MIG-002 §4. Single UPDATE, scoped by path range from this batch.
+    // The expression is kept in lockstep with the triggers defined in
+    // search.rs::init_db — if either changes, both must change, and the
+    // /simplify pass at §6 will factor the shared fragment into a const.
+    //
+    // Scoped to paths in [after_path, last_path] so we don't re-touch
+    // every sky_nodes row on every batch. WHERE stratum IS NULL makes it
+    // idempotent — rows already stamped by the triggers stay put.
+    {
+        let mut guard = db.lock().map_err(|e| e.to_string())?;
+        let conn = guard.as_mut().ok_or("DB not initialized")?;
+        conn.busy_timeout(Duration::from_secs(30))
+            .map_err(|e| format!("busy_timeout: {}", e))?;
+        let tx = conn.transaction().map_err(|e| format!("begin D: {}", e))?;
+        tx.execute(
+            &format!(
+                "UPDATE sky_nodes SET stratum = ({expr})
+                   WHERE stratum IS NULL
+                     AND path > ?1
+                     AND path <= ?2",
+                expr = crate::search::STRATUM_SQL_EXPR,
+            ),
+            params![after_path, last_path.clone()],
+        )
+        .map_err(|e| format!("upd stratum: {}", e))?;
+        tx.commit().map_err(|e| format!("commit D: {}", e))?;
     }
 
     Ok((paths.len(), last_path))

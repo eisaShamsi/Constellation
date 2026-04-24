@@ -45,11 +45,66 @@ const FTS_SCHEMA_VERSION: i64 = 1;
 /// |       2 | MIG-002 §1 — note_meta.word_count + created_at columns   |
 /// |       3 | MIG-002 §3 — sky_nodes.enrichment_dirty + back-fill of   |
 /// |         | word_count / created_at on existing note_meta rows       |
+/// |       4 | MIG-002 §4 — SQL-native stratum triggers + one-shot      |
+/// |         | back-fill of sky_nodes.stratum for pre-§4 rows           |
 ///
 /// Bumping the version gates `sky_backfill::maybe_schedule` to repopulate
 /// the derived surfaces on next boot. Columns added in v2/v3 are nullable
 /// or defaulted so pre-MIG-002 binaries tolerate the wider schema.
-pub(crate) const SKY_SCHEMA_VERSION: i64 = 3;
+pub(crate) const SKY_SCHEMA_VERSION: i64 = 4;
+
+/// MIG-002 §4 — SQL fragment that computes sky_nodes.stratum (1–8) from
+/// the same five signals as strata.rs::compute_stratum:
+///
+///   base = 1 when note_meta.word_count ≤ 50
+///          2 when ≤ 200
+///          3 otherwise
+///   +1   if outgoing active edges ≥ 3
+///   +1   if inbound active edges ≥ 5
+///   +1   if any outgoing 'generalizes' edge
+///   +1   if any outgoing 'causes' or 'supports' edge
+///   +1   if distinct inbound sources ≥ 3
+///   clamp to [1, 8]
+///
+/// The expression is correlated on `sky_nodes.path` / `sky_nodes.name`
+/// so it works inside any `UPDATE sky_nodes SET stratum = (…)` context.
+/// Shared between the §4 triggers in init_db and the one-shot back-fill
+/// in sky_backfill.rs — single source of truth, cannot drift.
+pub(crate) const STRATUM_SQL_EXPR: &str = "
+    MIN(8, MAX(1,
+        COALESCE(
+            (SELECT CASE
+                WHEN word_count <= 50 THEN 1
+                WHEN word_count <= 200 THEN 2
+                ELSE 3
+             END
+             FROM note_meta WHERE path = sky_nodes.path),
+            1
+        )
+        + (CASE WHEN (SELECT COUNT(*) FROM note_links
+                       WHERE source_path = sky_nodes.path
+                         AND status = 'active') >= 3
+                THEN 1 ELSE 0 END)
+        + (CASE WHEN (SELECT COUNT(*) FROM note_links
+                       WHERE target_name = sky_nodes.name
+                         AND status = 'active') >= 5
+                THEN 1 ELSE 0 END)
+        + (CASE WHEN EXISTS(SELECT 1 FROM note_links
+                             WHERE source_path = sky_nodes.path
+                               AND link_type = 'generalizes'
+                               AND status = 'active')
+                THEN 1 ELSE 0 END)
+        + (CASE WHEN EXISTS(SELECT 1 FROM note_links
+                             WHERE source_path = sky_nodes.path
+                               AND link_type IN ('causes','supports')
+                               AND status = 'active')
+                THEN 1 ELSE 0 END)
+        + (CASE WHEN (SELECT COUNT(DISTINCT source_path) FROM note_links
+                       WHERE target_name = sky_nodes.name
+                         AND status = 'active') >= 3
+                THEN 1 ELSE 0 END)
+    ))
+";
 
 // ─── Types ─────────────────────────────────────────────────────
 
@@ -759,6 +814,101 @@ fn init_db(path: &Path) -> Result<Connection, String> {
                 WHERE target_name = OLD.name AND OLD.name IS NOT NEW.name;
         END;
     ").map_err(|e| format!("Failed to create sky_node triggers: {}", e))?;
+
+    // ─── MIG-002 §4: SQL-native stratum triggers ────────────────────────
+    //
+    // Stratum (1–8) is a function of five signals all derivable in SQL:
+    //   base        — note_meta.word_count bucket
+    //   +1          — outgoing link count ≥ 3
+    //   +1          — inbound link count ≥ 5
+    //   +1          — outgoing has a 'generalizes' edge
+    //   +1          — outgoing has a 'causes' or 'supports' edge
+    //   +1          — distinct inbound source count ≥ 3
+    //
+    // Identical to strata.rs::compute_stratum. Triggers keep the value
+    // fresh on every write to note_meta (body / word_count changes) and
+    // note_links (edge changes affecting source or target).
+    //
+    // Expression is correlated on sky_nodes.path / sky_nodes.name so the
+    // same SQL fragment works whether the trigger updates by path or by
+    // name. Shared via STRATUM_SQL_EXPR with the one-shot back-fill in
+    // sky_backfill.rs — single source of truth.
+
+    conn.execute_batch(&format!("
+        -- note_meta insert: compute stratum for the fresh sky_nodes row.
+        -- Fires AFTER note_meta_sky_ai (alphabetical order) so the
+        -- sky_nodes row is already present when we UPDATE it.
+        CREATE TRIGGER IF NOT EXISTS note_meta_sky_stratum_ai
+        AFTER INSERT ON note_meta
+        BEGIN
+            UPDATE sky_nodes SET stratum = ({expr}) WHERE path = NEW.path;
+        END;
+
+        -- note_meta update: recompute only when word_count actually
+        -- changes. Most UPDATEs (metadata-only, touch-save) won't.
+        CREATE TRIGGER IF NOT EXISTS note_meta_sky_stratum_au
+        AFTER UPDATE ON note_meta
+        WHEN NEW.word_count IS NOT OLD.word_count
+        BEGIN
+            UPDATE sky_nodes SET stratum = ({expr}) WHERE path = NEW.path;
+        END;
+
+        -- note_links insert: new active edge changes source's outgoing
+        -- count + target's inbound count. Archived links (status != active)
+        -- don't contribute to the stratum formula — skip the trigger body
+        -- via WHEN. target_name match updates ALL sky_nodes sharing that
+        -- lowercased name (expected behavior — inbound_count is name-
+        -- scoped in strata.rs).
+        CREATE TRIGGER IF NOT EXISTS note_links_sky_stratum_ai
+        AFTER INSERT ON note_links
+        WHEN NEW.status = 'active'
+        BEGIN
+            UPDATE sky_nodes SET stratum = ({expr}) WHERE path = NEW.source_path;
+            UPDATE sky_nodes SET stratum = ({expr}) WHERE name = NEW.target_name;
+        END;
+
+        -- note_links delete: symmetric to insert — the lost edge changes
+        -- source's outgoing count + target's inbound count.
+        CREATE TRIGGER IF NOT EXISTS note_links_sky_stratum_ad
+        AFTER DELETE ON note_links
+        WHEN OLD.status = 'active'
+        BEGIN
+            UPDATE sky_nodes SET stratum = ({expr}) WHERE path = OLD.source_path;
+            UPDATE sky_nodes SET stratum = ({expr}) WHERE name = OLD.target_name;
+        END;
+
+        -- note_links update: covers re-type (link_type changed), archive
+        -- toggle (status changed), and rename cascade (source_path or
+        -- target_name changed via §6). Touches both OLD and NEW identities
+        -- so stratum is correct for both sides.
+        CREATE TRIGGER IF NOT EXISTS note_links_sky_stratum_au
+        AFTER UPDATE ON note_links
+        WHEN OLD.status IS NOT NEW.status
+          OR OLD.link_type IS NOT NEW.link_type
+          OR OLD.source_path IS NOT NEW.source_path
+          OR OLD.target_name IS NOT NEW.target_name
+        BEGIN
+            UPDATE sky_nodes SET stratum = ({expr}) WHERE path = OLD.source_path;
+            UPDATE sky_nodes SET stratum = ({expr}) WHERE path = NEW.source_path;
+            UPDATE sky_nodes SET stratum = ({expr}) WHERE name = OLD.target_name;
+            UPDATE sky_nodes SET stratum = ({expr}) WHERE name = NEW.target_name;
+        END;
+    ", expr = STRATUM_SQL_EXPR))
+    .map_err(|e| format!("Failed to create stratum triggers: {}", e))?;
+
+    // The one-shot stratum back-fill for existing sky_nodes rows runs in
+    // sky_backfill.rs on a background thread — NOT here. Two reasons:
+    //
+    // 1. On a 7.6k-note universe the UPDATE takes ~15s (the correlated
+    //    subqueries fan out to ~230k note_links rows each, six times
+    //    per row). Running on the main thread would freeze boot paint.
+    // 2. sky_backfill already has the schema-version gate + resumable
+    //    cursor pattern. Extending it is cheaper than building a parallel
+    //    gate here.
+    //
+    // Bumping SKY_SCHEMA_VERSION 3 → 4 forces sky_backfill::maybe_schedule
+    // to re-run on next boot, where the extended process_batch computes
+    // stratum per batch using the same SQL expression as the triggers.
 
     // ─── One-time FTS5 rebuild after tokenizer migration ─────────────
     // If we bumped past FTS_SCHEMA_VERSION above we dropped the old
