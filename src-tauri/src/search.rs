@@ -1350,6 +1350,90 @@ fn extract_wikilinks(content: &str) -> Vec<String> {
     links
 }
 
+/// MIG-004 §2: extract YAML `aliases:` from a note's frontmatter.
+///
+/// Handles all three shapes Constellation accepts:
+///
+/// ```yaml
+/// aliases: foo                  # scalar
+/// aliases: [foo, bar]           # inline array
+/// aliases:                      # YAML list
+///   - foo
+///   - bar
+/// ```
+///
+/// Each alias goes through the same normalization as `extract_wikilinks`
+/// (lowercase + Arabic) so the resulting `alias_lower` values match
+/// `note_links.target_name` byte-for-byte. That's what makes the
+/// alias-aware inbound JOINs in MIG-004 §6/§7 a direct equality.
+///
+/// Block-aware: tracks "are we currently inside the `aliases:` list
+/// block" so a `-` line item that follows `tags:` or another list
+/// field is NOT mistakenly consumed as an alias. The pre-existing
+/// `libraries.rs::has_alias` lacks this guard; this implementation
+/// fixes that latent bug.
+pub(crate) fn extract_aliases(content: &str) -> Vec<String> {
+    if !content.starts_with("---") {
+        return Vec::new();
+    }
+    let Some(end) = content[3..].find("\n---") else {
+        return Vec::new();
+    };
+    let frontmatter = &content[3..3 + end];
+
+    let mut aliases: Vec<String> = Vec::new();
+    let mut in_aliases_block = false;
+
+    for line in frontmatter.lines() {
+        let trimmed = line.trim_start();
+
+        // `aliases:` opener — handles inline and block forms.
+        if trimmed.starts_with("aliases:") {
+            in_aliases_block = true;
+            let value = trimmed["aliases:".len()..].trim();
+            if value.starts_with('[') && value.ends_with(']') {
+                let inner = &value[1..value.len() - 1];
+                for raw in inner.split(',') {
+                    push_alias(&mut aliases, raw);
+                }
+                in_aliases_block = false;
+            } else if !value.is_empty() {
+                push_alias(&mut aliases, value);
+                in_aliases_block = false;
+            }
+            continue;
+        }
+
+        // While inside the block, accept `- value` items.
+        if in_aliases_block {
+            if let Some(rest) = trimmed.strip_prefix("- ") {
+                push_alias(&mut aliases, rest);
+                continue;
+            }
+            // Any non-list-item line ends the block (next field, blank, etc.).
+            if !trimmed.is_empty() {
+                in_aliases_block = false;
+            }
+        }
+    }
+    aliases
+}
+
+fn push_alias(out: &mut Vec<String>, raw: &str) {
+    let cleaned = raw
+        .trim()
+        .trim_matches('"')
+        .trim_matches('\'')
+        .trim();
+    if cleaned.is_empty() {
+        return;
+    }
+    let normalized = normalize_arabic_for_search(&cleaned.to_lowercase());
+    if !normalized.is_empty() && !out.contains(&normalized) {
+        out.push(normalized);
+    }
+}
+
 /// A typed link extracted from note content.
 #[derive(Debug, Clone)]
 struct TypedLink {
@@ -1569,6 +1653,25 @@ fn index_note(conn: &Connection, note_path: &str, library_name: &str) -> Result<
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
             params![note_path, name, library_name, modified, props_json, tags_json, links_json, headings_json, plain_body, word_count, created_at],
         ).map_err(|e| format!("Failed to index note {}: {}", note_path, e))?;
+
+        // MIG-004 §2: clear+repopulate frontmatter-sourced aliases for
+        // this path. The DELETE is partitioned by `source` so any
+        // 'rename'-stamped or 'import'-stamped aliases stay put — they
+        // have a different lifecycle than the user's `aliases:` list.
+        conn.execute(
+            "DELETE FROM note_aliases WHERE path = ?1 AND source = 'frontmatter'",
+            params![note_path],
+        ).map_err(|e| format!("Failed to clear frontmatter aliases: {}", e))?;
+        let aliases = extract_aliases(&content);
+        if !aliases.is_empty() {
+            let mut ins = conn.prepare(
+                "INSERT OR IGNORE INTO note_aliases (path, alias_lower, source) VALUES (?1, ?2, 'frontmatter')"
+            ).map_err(|e| format!("prepare alias insert: {}", e))?;
+            for a in &aliases {
+                ins.execute(params![note_path, a])
+                    .map_err(|e| format!("insert alias: {}", e))?;
+            }
+        }
 
         // Populate note_links — preserve existing weight/traversal data on re-index
         // Step 1: Snapshot existing traversal data before deleting
