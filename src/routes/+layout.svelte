@@ -611,6 +611,11 @@
 
 	// Library data caches
 	let allLibraryLinks = $state<NoteLink[]>([]);
+	// MIG-004 §9: path → aliases[] map populated from cache_boot_snapshot_graph.
+	// Used by getBacklinks to resolve wikilinks targeting an alias (rename'd
+	// or frontmatter) to the canonical note. Also useful for any future
+	// frontend code that needs to know a note's full identity set.
+	let notePathToAliases = $state<Map<string, string[]>>(new Map());
 
 	/** P5 deferred: after a user contests/force-promotes a link's confidence,
 	 *  mirror the DB write into the in-memory NoteLink so the right-click
@@ -1080,8 +1085,9 @@
 				halfLifeDays: lifecycle?.halfLifeDays ?? 60,
 				decayEnabled: lifecycle?.decayEnabled ?? true,
 			};
-			// Backlinks
-			currentBacklinks = getBacklinks(effectiveLibraryLinks, tab.name, decayCfg);
+			// Backlinks (MIG-004 §9: alias-aware via notePathToAliases lookup).
+			const aliasesForActive = notePathToAliases.get(tab.path) ?? [];
+			currentBacklinks = getBacklinks(effectiveLibraryLinks, tab.name, decayCfg, aliasesForActive);
 			// CE Phase 5: Provenance fetched on tab click only (not here — no IPC on typing path)
 			// Outgoing links
 			currentOutgoing = getOutgoingLinks(effectiveLibraryLinks, tab.path, decayCfg);
@@ -2556,6 +2562,20 @@
 
 				allLibraryLinks = graph.links;
 				allLibraryTags = graph.tags;
+				// MIG-004 §9: build path → aliases[] map for alias-aware
+				// Backlinks / Outgoing / Map / Sight queries. Frontend
+				// consumers look up the active note's aliases by path
+				// and pass them to getBacklinks (and similar). ~1.4k
+				// entries on the reference universe; insertion is
+				// <1ms total.
+				notePathToAliases = new Map();
+				if (Array.isArray((graph as any).aliases)) {
+					for (const a of (graph as any).aliases as { path: string; aliasLower: string }[]) {
+						const list = notePathToAliases.get(a.path) ?? [];
+						list.push(a.aliasLower);
+						notePathToAliases.set(a.path, list);
+					}
+				}
 				// Boot graph carries the canonical counts from the DB, which
 				// already absorbed every traversal that was fired since the
 				// last fetch — drop our optimistic bumps so they don't add

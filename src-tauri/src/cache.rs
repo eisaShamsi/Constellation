@@ -124,10 +124,25 @@ pub struct BootSnapshotCore {
 /// table never blocks first paint on large Universes. Only consumed by Sky
 /// View, backlinks panel, tag browser, and the Lens — none of which are on
 /// the initial paint path.
+/// MIG-004 §9: alias mapping carried in the graph snapshot so the
+/// frontend Backlinks / Outgoing / Map / Sight panels can resolve a
+/// wikilink targeting an alias to the renamed note's current path.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NoteAliasOut {
+    pub path: String,
+    pub alias_lower: String,
+}
+
 #[derive(Debug, Serialize)]
 pub struct BootSnapshotGraph {
     pub links: Vec<NoteLink>,
     pub tags: HashMap<String, u32>,
+    /// MIG-004 §9: full alias table snapshot. Frontend builds an
+    /// `alias_lower → path` map and an inverse `path → aliases[]` map.
+    /// ~1.4k entries on the reference universe; trivial payload size.
+    #[serde(default)]
+    pub aliases: Vec<NoteAliasOut>,
     /// Per-phase Rust-side wall-clock timings for graph-phase attribution.
     /// Same purpose / shape as `BootSnapshotCore::timings_ms`.
     pub timings_ms: Vec<(String, u64)>,
@@ -233,6 +248,7 @@ pub fn cache_boot_snapshot_graph(app: tauri::AppHandle) -> Result<BootSnapshotGr
                 .map(|d| d.as_millis())
                 .unwrap_or(0);
             return Ok(BootSnapshotGraph {
+                aliases: Vec::new(),
                 links: Vec::new(),
                 tags: HashMap::new(),
                 timings_ms: timings,
@@ -265,11 +281,34 @@ pub fn cache_boot_snapshot_graph(app: tauri::AppHandle) -> Result<BootSnapshotGr
     let tags = read_tags(&conn)?;
     timings.push(("read_tags".into(), t4.elapsed().as_millis() as u64));
 
+    // MIG-004 §9: include the full alias table in the graph snapshot.
+    // Sub-millisecond on the reference universe (~1.4k rows).
+    let t_alias = Instant::now();
+    let aliases = read_aliases(&conn)?;
+    timings.push(("read_aliases".into(), t_alias.elapsed().as_millis() as u64));
+
     let server_return_unix_ms = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_millis())
         .unwrap_or(0);
-    Ok(BootSnapshotGraph { links, tags, timings_ms: timings, server_return_unix_ms, server_start_unix_ms })
+    Ok(BootSnapshotGraph { links, tags, aliases, timings_ms: timings, server_return_unix_ms, server_start_unix_ms })
+}
+
+fn read_aliases(conn: &Connection) -> Result<Vec<NoteAliasOut>, String> {
+    let mut stmt = conn
+        .prepare("SELECT path, alias_lower FROM note_aliases")
+        .map_err(|e| format!("prepare aliases: {}", e))?;
+    let rows = stmt
+        .query_map([], |row| Ok(NoteAliasOut {
+            path: row.get(0)?,
+            alias_lower: row.get(1)?,
+        }))
+        .map_err(|e| format!("query aliases: {}", e))?;
+    let mut out = Vec::new();
+    for r in rows {
+        out.push(r.map_err(|e| format!("row aliases: {}", e))?);
+    }
+    Ok(out)
 }
 
 // ─── MIG-001 Step 8: pre-shaped Sky View payload ──────────────────────

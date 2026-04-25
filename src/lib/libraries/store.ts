@@ -1754,9 +1754,24 @@ function sortWeight(link: NoteLink, cfg?: LinkDecayConfig): number {
 	return effectiveLinkWeight(link, cfg.nowMs, cfg.halfLifeDays, cfg.decayEnabled);
 }
 
-export function getBacklinks(allLinks: NoteLink[], noteName: string, decay?: LinkDecayConfig) {
+export function getBacklinks(
+	allLinks: NoteLink[],
+	noteName: string,
+	decay?: LinkDecayConfig,
+	noteAliases?: string[],
+) {
+	// MIG-004 §9: alias-aware backlinks. A wikilink targeting any of
+	// the active note's aliases (frontmatter or rename-stamped) counts
+	// as a backlink. Aliases are pre-lowercased + Arabic-normalized
+	// in the DB; pass them through as-is.
 	const target = noteName.toLowerCase();
-	const linked = allLinks.filter(l => l.target.toLowerCase() === target && l.status !== 'archived');
+	const targets = new Set<string>([target]);
+	if (noteAliases) {
+		for (const a of noteAliases) {
+			if (a) targets.add(a.toLowerCase());
+		}
+	}
+	const linked = allLinks.filter(l => targets.has(l.target.toLowerCase()) && l.status !== 'archived');
 	// Sort by Living Link weight (desc), decayed if caller opted in. Ties
 	// break alphabetically by source name so fresh vaults (all weights == 1)
 	// stay in a stable order across boots.
