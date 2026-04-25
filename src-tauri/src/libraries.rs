@@ -3523,12 +3523,20 @@ pub fn quick_capture(app: tauri::AppHandle, library_path: String, inbox_folder: 
 #[tauri::command]
 pub fn update_links_on_rename(app: tauri::AppHandle, library_path: String, old_name: String, new_name: String) -> Result<u32, String> {
     validate_path_in_any_library(&app, &library_path)?;
+    // §2: compile the regex once per cascade, reuse it across every file
+    // visited. `regex::escape` keeps titles with metacharacters safe
+    // (`§2 Round3`, `Foo (bar)`, `a.b`, etc.).
+    let pattern = format!(r"\[\[({})(\]\]|\|)", regex::escape(&old_name));
+    let re = match regex::Regex::new(&pattern) {
+        Ok(r) => r,
+        Err(e) => return Err(format!("Failed to build cascade regex: {}", e)),
+    };
     let mut count = 0u32;
-    update_links_recursive(Path::new(&library_path), &old_name, &new_name, &mut count);
+    update_links_recursive(Path::new(&library_path), &re, &new_name, &mut count);
     Ok(count)
 }
 
-fn update_links_recursive(dir: &Path, old_name: &str, new_name: &str, count: &mut u32) {
+fn update_links_recursive(dir: &Path, re: &regex::Regex, new_name: &str, count: &mut u32) {
     let read_dir = match fs::read_dir(dir) {
         Ok(rd) => rd,
         Err(_) => return,
@@ -3538,24 +3546,143 @@ fn update_links_recursive(dir: &Path, old_name: &str, new_name: &str, count: &mu
         let name = entry.file_name().to_string_lossy().to_string();
         if name.starts_with('.') { continue; }
         if path.is_dir() {
-            update_links_recursive(&path, old_name, new_name, count);
+            update_links_recursive(&path, re, new_name, count);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             if let Ok(content) = fs::read_to_string(&path) {
-                let old_link = format!("[[{}]]", old_name);
-                let new_link = format!("[[{}]]", new_name);
-                if content.contains(&old_link) {
-                    let updated = content.replace(&old_link, &new_link);
-                    // Also handle [[old_name|display]]
-                    let old_pipe = format!("[[{}|", old_name);
-                    let new_pipe = format!("[[{}|", new_name);
-                    let updated = updated.replace(&old_pipe, &new_pipe);
-                    if updated != content {
-                        let _ = fs::write(&path, updated);
-                        *count += 1;
-                    }
+                let updated = rewrite_wikilinks_in_text(&content, re, new_name);
+                if updated != content {
+                    let _ = fs::write(&path, updated);
+                    *count += 1;
                 }
             }
         }
+    }
+}
+
+/// MIG-006 §2 — regex-based wikilink rewrite.
+///
+/// Matches `[[old]]` and `[[old|...]]` (display, link-type, alias-pipe-type
+/// combos). Leading `!` for embeds is untouched because the regex anchors
+/// on `[[` — `![[X]]` rewrites cleanly. The trailing delimiter (`]]` or `|`)
+/// is captured and re-emitted so we never alter `|display`, `|link-type`,
+/// or `|alias|link-type` tails.
+///
+/// Prefix-collision safety: `[[Foo]]` rename to `Bar` does NOT touch
+/// `[[Foo Bar]]` or `[[Foo_v2]]` — the delimiter alternation `(\]\]|\|)`
+/// requires the next char after the title to be either `]]` or `|`,
+/// nothing else.
+fn rewrite_wikilinks_in_text(content: &str, re: &regex::Regex, new_name: &str) -> String {
+    re.replace_all(content, |caps: &regex::Captures| {
+        let delim = caps.get(2).map(|m| m.as_str()).unwrap_or("]]");
+        format!("[[{}{}", new_name, delim)
+    })
+    .into_owned()
+}
+
+#[cfg(test)]
+fn rewrite_for_test(content: &str, old_name: &str, new_name: &str) -> String {
+    let pattern = format!(r"\[\[({})(\]\]|\|)", regex::escape(old_name));
+    let re = regex::Regex::new(&pattern).unwrap();
+    rewrite_wikilinks_in_text(content, &re, new_name)
+}
+
+#[cfg(test)]
+mod cascade_walker_tests {
+    use super::rewrite_for_test;
+
+    #[test]
+    fn bare_wikilink_rewrites() {
+        let out = rewrite_for_test("see [[Old Title]] here", "Old Title", "New Title");
+        assert_eq!(out, "see [[New Title]] here");
+    }
+
+    #[test]
+    fn piped_display_preserves_tail() {
+        let out = rewrite_for_test("see [[Old|the display]]", "Old", "New");
+        assert_eq!(out, "see [[New|the display]]");
+    }
+
+    #[test]
+    fn piped_link_type_preserves_tail() {
+        let out = rewrite_for_test("see [[Old|supports]]", "Old", "New");
+        assert_eq!(out, "see [[New|supports]]");
+    }
+
+    #[test]
+    fn piped_alias_and_link_type_preserves_tail() {
+        let out = rewrite_for_test("see [[Old|alias text|supports]]", "Old", "New");
+        assert_eq!(out, "see [[New|alias text|supports]]");
+    }
+
+    #[test]
+    fn embed_transclude_rewrites() {
+        let out = rewrite_for_test("![[Old]] inline", "Old", "New");
+        assert_eq!(out, "![[New]] inline");
+    }
+
+    #[test]
+    fn prefix_collision_is_not_rewritten() {
+        // [[Foo]] rename to [[Bar]] must not touch [[Foo Bar]] or [[Foo_v2]].
+        let out = rewrite_for_test(
+            "yes [[Foo]] no [[Foo Bar]] no [[Foo_v2]] yes [[Foo|x]]",
+            "Foo",
+            "Bar",
+        );
+        assert_eq!(
+            out,
+            "yes [[Bar]] no [[Foo Bar]] no [[Foo_v2]] yes [[Bar|x]]"
+        );
+    }
+
+    #[test]
+    fn regex_metachars_in_title_are_escaped() {
+        let out = rewrite_for_test(
+            "see [[a.b (c)]] and [[a.b (c)|note]]",
+            "a.b (c)",
+            "x.y (z)",
+        );
+        assert_eq!(out, "see [[x.y (z)]] and [[x.y (z)|note]]");
+    }
+
+    #[test]
+    fn no_match_returns_unchanged() {
+        let input = "no wikilinks here, just [[Different]] and [[Foo Bar]]";
+        let out = rewrite_for_test(input, "Foo", "Bar");
+        assert_eq!(out, input);
+    }
+
+    #[test]
+    fn multiple_occurrences_all_rewritten() {
+        let out = rewrite_for_test(
+            "[[Old]] then [[Old]] then [[Old|x]] done",
+            "Old",
+            "New",
+        );
+        assert_eq!(out, "[[New]] then [[New]] then [[New|x]] done");
+    }
+
+    #[test]
+    fn arabic_title_rewrites() {
+        let out = rewrite_for_test(
+            "انظر [[الفاطميون]] في [[الفاطميون|الدولة]]",
+            "الفاطميون",
+            "الفاطميون_جديد",
+        );
+        assert_eq!(
+            out,
+            "انظر [[الفاطميون_جديد]] في [[الفاطميون_جديد|الدولة]]"
+        );
+    }
+
+    #[test]
+    fn unicode_section_marker_title_rewrites() {
+        // The exact case that drove the §1 verification.
+        let out = rewrite_for_test(
+            "Link me to [[§2 Round3_v3]]",
+            "§2 Round3_v3",
+            "§2 Round3_v4",
+        );
+        assert_eq!(out, "Link me to [[§2 Round3_v4]]");
     }
 }
 
