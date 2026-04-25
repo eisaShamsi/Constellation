@@ -852,6 +852,37 @@ pub fn rename_item(app: tauri::AppHandle, old_path: String, new_path: String) ->
         fs::write(old, &updated)
             .map_err(|e| format!("Failed to write note: {}", e))?;
 
+        // MIG-004 §3: stamp OLD title as a 'rename' alias for this path
+        // BEFORE the reindex runs. update_frontmatter_title also appends
+        // old_title to the note's `aliases:` list, which §2's writer
+        // would pick up — but that path depends on the user not later
+        // editing aliases away. The 'rename' row is the durable
+        // safety net: source=partition keeps it independent of any
+        // frontmatter edits, so a wikilink targeting the old title
+        // resolves to this note for as long as the path exists.
+        //
+        // Runs before reindex so the alias is already present when the
+        // §2 writer's DELETE-by-source-frontmatter clears stale rows.
+        // INSERT OR IGNORE handles rename-back-to-prior-name
+        // idempotently.
+        {
+            use tauri::Manager;
+            let search_state = app.state::<crate::search::SearchState>();
+            let note_path = old.to_string_lossy().to_string();
+            let normalized = crate::search::normalize_alias_for_match(&old_title);
+            if !normalized.is_empty() {
+                let db_lock = search_state.db.lock();
+                if let Ok(guard) = db_lock {
+                    if let Some(conn) = guard.as_ref() {
+                        let _ = conn.execute(
+                            "INSERT OR IGNORE INTO note_aliases (path, alias_lower, source) VALUES (?1, ?2, 'rename')",
+                            rusqlite::params![note_path, normalized],
+                        );
+                    }
+                }
+            }
+        }
+
         // Trigger search reindex for this note so the new title is reflected
         {
             use tauri::Manager;

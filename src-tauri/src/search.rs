@@ -1420,18 +1420,30 @@ pub(crate) fn extract_aliases(content: &str) -> Vec<String> {
 }
 
 fn push_alias(out: &mut Vec<String>, raw: &str) {
+    let normalized = normalize_alias_for_match(raw);
+    if !normalized.is_empty() && !out.contains(&normalized) {
+        out.push(normalized);
+    }
+}
+
+/// MIG-004 §3 helper — normalize an alias string for storage in
+/// `note_aliases.alias_lower` so it matches `note_links.target_name`
+/// byte-for-byte. Trim quoting, lowercase, Arabic-normalize. Empty
+/// returns empty (caller's job to skip empties).
+///
+/// Exposed pub(crate) so the rename writer in `libraries.rs` can
+/// produce the same byte representation when stamping a 'rename'
+/// alias row, without re-implementing the trim+normalize chain.
+pub(crate) fn normalize_alias_for_match(raw: &str) -> String {
     let cleaned = raw
         .trim()
         .trim_matches('"')
         .trim_matches('\'')
         .trim();
     if cleaned.is_empty() {
-        return;
+        return String::new();
     }
-    let normalized = normalize_arabic_for_search(&cleaned.to_lowercase());
-    if !normalized.is_empty() && !out.contains(&normalized) {
-        out.push(normalized);
-    }
+    normalize_arabic_for_search(&cleaned.to_lowercase())
 }
 
 /// A typed link extracted from note content.
