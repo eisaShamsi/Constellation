@@ -395,12 +395,40 @@ pub fn cache_boot_snapshot_sky(app: tauri::AppHandle) -> Result<BootSnapshotSky,
         name_to_idx.insert(n.name.clone(), i);
     }
 
+    // MIG-004 §8: load the alias resolution map. alias_lower → path so
+    // an inbound link targeting an aliased name still resolves to the
+    // renamed note's current row. ~1.4k entries on the reference
+    // universe (~80 KB heap). One scan, no per-row queries.
+    let t_alias = Instant::now();
+    let mut alias_to_path: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
+    {
+        let mut stmt = conn
+            .prepare("SELECT alias_lower, path FROM note_aliases")
+            .map_err(|e| format!("prepare aliases: {}", e))?;
+        let rows = stmt
+            .query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)))
+            .map_err(|e| format!("query aliases: {}", e))?;
+        for r in rows {
+            let (alias, path) = r.map_err(|e| format!("row aliases: {}", e))?;
+            // First insert wins on collision — matches the FS resolver's
+            // path-sort tiebreak intent (deterministic; can refine later
+            // if it needs to match `find_note_by_name_or_alias` exactly).
+            alias_to_path.entry(alias).or_insert(path);
+        }
+    }
+    timings.push(("scan_aliases".into(), t_alias.elapsed().as_millis() as u64));
+
     let t3 = Instant::now();
     // Scan 2: links, flat — no JOIN. Same loop resolves source
     // (path → id) and accumulates both link_count (incoming, by target
     // name) and outgoing_count (by source path). One pass = one set of
     // counts + the final link list ready for serialization.
-    let links = read_sky_links_raw(&conn, &path_to_idx, &name_to_idx, &mut nodes)?;
+    //
+    // MIG-004 §8: when target_name doesn't match any current note name,
+    // try the alias map before giving up. Fixes the rename-drops-edges
+    // symptom in the Sky View boot payload.
+    let links = read_sky_links_raw(&conn, &path_to_idx, &name_to_idx, &alias_to_path, &mut nodes)?;
     timings.push(("scan_links_and_counts".into(), t3.elapsed().as_millis() as u64));
 
     Ok(BootSnapshotSky { nodes, links, is_ready, timings_ms: timings })
@@ -441,6 +469,7 @@ fn read_sky_links_raw(
     conn: &Connection,
     path_to_idx: &std::collections::HashMap<String, usize>,
     name_to_idx: &std::collections::HashMap<String, usize>,
+    alias_to_path: &std::collections::HashMap<String, String>,
     nodes_mut: &mut [SkyNodeOut],
 ) -> Result<Vec<SkyLinkOut>, String> {
     let mut stmt = conn
@@ -473,16 +502,35 @@ fn read_sky_links_raw(
         // Outgoing count bumped here (by source).
         nodes_mut[src_idx].outgoing_count += 1;
 
-        // Target resolution: if the target name matches a real note,
-        // reuse that node's pre-lowercased `id` (stored at insert time
-        // by the Step 4 trigger). Avoids a per-row to_lowercase() call
-        // — saves the bulk of the scan's allocation cost since most
-        // edges resolve. For unresolved wikilinks (pointing to notes
-        // that don't exist), fall back to an in-place ASCII downcase
-        // if possible, otherwise pay the unicode lowercase.
+        // Target resolution (3-tier):
+        //   1. name_to_idx hit  — wikilink targets the current name.
+        //      Use the pre-lowercased `id` and bump link_count.
+        //   2. alias_to_path hit (MIG-004 §8) — wikilink targets an
+        //      alias. Resolve to canonical path → path_to_idx → id.
+        //      Bumps link_count on the canonical row.
+        //   3. Unresolved — orphan wikilink, target doesn't exist as a
+        //      note or any alias. Fall back to an in-place ASCII
+        //      downcase if possible, else unicode lowercase.
+        //
+        // The alias step is the rename fix: after a note renames,
+        // wikilinks in other notes still target the OLD name (or any
+        // historical alias). The alias table maps that old name back
+        // to the renamed note's current path so the edge attaches to
+        // the right node and link_count stays correct.
         let target = if let Some(&tgt_idx) = name_to_idx.get(&target_name) {
             nodes_mut[tgt_idx].link_count += 1;
             nodes_mut[tgt_idx].id.clone()
+        } else if let Some(canonical_path) = alias_to_path.get(&target_name) {
+            if let Some(&tgt_idx) = path_to_idx.get(canonical_path) {
+                nodes_mut[tgt_idx].link_count += 1;
+                nodes_mut[tgt_idx].id.clone()
+            } else if target_name.is_ascii() {
+                let mut s = target_name;
+                s.make_ascii_lowercase();
+                s
+            } else {
+                target_name.to_lowercase()
+            }
         } else if target_name.is_ascii() {
             let mut s = target_name;
             s.make_ascii_lowercase();
