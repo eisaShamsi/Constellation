@@ -392,3 +392,89 @@ Arabic docx, "note as organism" editor redesign (design-only).
   clean.
 - Standing Order #5 added (this record) to make state-of-standing
   snapshots a recurring discipline, not an ad-hoc rescue.
+
+---
+
+## §116 — Revert §115 (BUG-015 corruption vector removed from main)
+
+**Commit**: `5afe0c2`
+**Files**: 5 changed, 16 insertions, 272 deletions (exact inverse
+of `3c4732d`).
+
+`main` is back at §114 source state. 11 cascade_walker_tests still
+pass. The "rename target while source is visible" UX scenario
+regresses to BUG-013 (must switch tabs first for cascade to be
+reliable) — documented limitation; user data integrity wins over
+in-place rewrite UX.
+
+Rejected the alternative path of stripping just the racing pieces
+of §115 because the value-prop → CM6 doc sync $effect was too
+entangled with reactivity + {#key} lifecycle to characterize
+statically with confidence. Per Working Agreement #4 (newly
+installed), revert is the lower-validation-cost path to safe main.
+
+---
+
+## §117 — Top principal rule + SO #5 + state-of-standing record
+
+**Commit**: `2ce787e`
+**Files**: CLAUDE.md (+2 lines net into Working Agreement #4 + SO
+section); SESSION-LOG-2026-04-25.md (state-of-standing record +
+§114 / §115 entries); lab/forensics/ (BUG-015 forensic snapshots,
+2 files).
+
+No code in this commit. Documentation + records only. The forensic
+snapshots capture the corrupted disk state of NOTE_531D and
+NOTE_EE1E exactly as observed before §116 reverted the corrupting
+code. Future sessions can compare against those snapshots if a
+similar incident recurs.
+
+---
+
+## §118 — Disk recovery (BUG-015 collateral)
+
+**No commit** — these are user-data file changes inside the active
+Universe `E:\Constellation Universes\Eisa Cognitive Knowledge\`,
+not in the Constellation source repo. Recorded here for trail.
+
+Direction set by user: "fix the essential first." Step 1 (§116 +
+§117) cleaned the source. Step 2 (this) cleans the disk.
+
+### What was done
+
+1. **`20260424T063440Z_NOTE_531D.md`** (target "§2 Round3_vEisa3")
+   — already cleaned by user earlier in the session. Body is the
+   placeholder `TARGET ORIGINAL BODY — DO NOT TOUCH`. Title +
+   frontmatter healthy. **No action.**
+2. **`20260424T092445Z_NOTE_EE1E.md`** (source "§2 Round5") —
+   orphan `cid_cn` repaired:
+     - Before: `cid_cn: 20260424T063440Z_NOTE_531D` (target's cid)
+     - After:  `cid_cn: 20260424T092445Z_NOTE_EE1E` (its own
+       canonical id derived from filename).
+   Body and other frontmatter fields untouched. Closes BUG-014.
+3. **`20260425T155820Z_NOTE_3C57.md`** (Source Note v1, used in
+   BUG-015 reproduction) — deleted.
+4. **`20260425T155901Z_NOTE_0E19.md`** (Target Note v1 → v2, used
+   in BUG-015 reproduction) — deleted.
+
+### Index reconciliation
+
+The library's SQLite index (`note_meta`, `notes_fts`, `note_links`,
+`note_aliases`, `sky_nodes`, `sky_links`) is briefly out of sync
+with disk after these changes. Constellation's file watcher catches
+external changes and re-indexes; the next launch will reconcile.
+
+### Closes
+
+- BUG-014 (orphan cid_cn).
+- Step 2 of "fix the essential first."
+- All disk-corruption collateral from BUG-015 cleared.
+
+### State after §118
+
+- Source `main` clean at §117.
+- 11 cascade_walker_tests pass.
+- Universe disk state clean.
+- Forensic snapshots preserved in `lab/forensics/` for posterity.
+- All MIG-006 §3-expanded code removed; cascade reverted to §114
+  regex walker.
