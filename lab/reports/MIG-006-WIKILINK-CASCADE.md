@@ -80,7 +80,7 @@ Mitigation: reindex runs in batches of 25 with `busy_timeout=30s`, the same shap
 |---|------|-----------|--------|
 | 1 | Lift `oldName` from frontmatter title, not filename | — | Cascade fires with `oldName="§2 Round3"` not the canonical stem |
 | 2 | Walker correctness pass: regex-based, transclude-aware, link-type-preserving | — | Unit test covers all 5 wikilink shapes |
-| 3 | Rust-side `recent_writes` suppression for the file watcher | — | Tab autosave doesn't race with cascade rewrite |
+| 3 | Open-editor coherence: flush-before-cascade + reload-after-cascade + `recent_writes` watcher suppression | — | "Edit source, rename target without switching tabs" works; cascade rewrite survives the next autosave |
 | 4 | Reindex each rewritten source via `index_note` | — | `note_links.target_name` shows new title post-cascade |
 | 5 | `/simplify` checkpoint | ✔ | Empty diff or one focused refactor |
 | 6 | Pre-flight count + sync/async dispatch | — | 200-inbound rename keeps UI responsive |
@@ -130,18 +130,61 @@ Step 11 invokes `/migration` audit (invariant / drift / migration-path agents) p
 
 ---
 
-### §3 — Rust-side `recent_writes` suppression
+### §3 — Open-editor coherence (expanded)
 
-**What**
-- Add `pub static RECENT_WRITES: Lazy<Mutex<HashMap<PathBuf, Instant>>>` in `lib.rs` (or a new `watcher_suppress.rs` module). Two helpers: `mark(path)` and `was_recent(path) -> bool` with 2500 ms TTL. Wire the cascade walker to call `mark` before each `fs::write`. Wire the existing watcher's emit path to early-return when `was_recent` is true.
+**Why this is bigger than the original §3.** §1 verification (2026-04-25, BUG-013 diagnostic) exposed a class of failure the original §3 plan didn't cover. Three races, not one:
 
-**Why** — Invariants 5, 14.
+1. **Pre-cascade staleness.** Source tab is open and dirty; user renames the target before the source's debounced autosave fires. Walker reads disk → misses (or worse, rewrites a stale text the user has since edited).
+2. **Post-cascade stomp.** Walker rewrites source on disk; the source tab's NEXT autosave (with its still-pre-cascade in-memory copy) overwrites the cascade's rewrite, silently undoing it.
+3. **Watcher loop.** Walker's `fs::write` bubbles back through the file watcher as an "external edit," racing the editor's read-back.
 
-**Verification** — Open a source note in tab A, rename its target while typing. Tab's autosave should not be interrupted; source's body should reflect the cascade rewrite next time the user opens it.
+The original §3 only addressed (3). All three must be solved or the cascade is unreliable whenever the source is open — i.e. for the most realistic usage pattern.
 
-**Risk** — TTL too short → watcher fires anyway. Mitigation: 2500 ms covers two debounced autosave cycles + safety margin.
+**What — three coordinated changes:**
 
-**Rollback** — Revert; `mark` becomes a no-op.
+**(a) Flush-before-cascade (frontend).** In `+layout.svelte::handleRenameComplete`, before calling `updateLinksOnRename`, force-flush every open tab in the affected library:
+
+```typescript
+import { flushAllTabsInLibrary } from '$lib/libraries/store';
+// new helper: iterate openTabs, call doFlush() on each tab whose path
+// startsWith(libraryPath). Awaits all writes + reindex.
+await flushAllTabsInLibrary(lib.path);
+await updateLinksOnRename(lib.path, oldName, newName);
+```
+
+`flushAllTabsInLibrary` is a new exported helper that walks `get(openTabs)`, picks tabs in the library, and resolves their `setWriteAhead → writeNote` chain. Awaits completion. After this returns, every dirty tab in the library is on disk and the walker reads a consistent state.
+
+**(b) Reload-after-cascade (Rust → event → frontend).** Cascade's IPC return value already carries `count: u32`. Extend it to a struct:
+
+```rust
+pub struct CascadeResult {
+    pub rewritten: Vec<String>,  // absolute paths
+    pub failed: Vec<(String, String)>,
+}
+```
+
+After the cascade completes, the Rust side emits a Tauri event `cascade:rewrote { paths: Vec<String> }`. Frontend listener in `+layout.svelte` receives it and, for each rewritten path that's currently in `openTabs`, re-reads its content from disk and patches the tab's in-memory `content` field while preserving `cursorPos` / `scrollTop` / `historyIndex`. The editor's `{#key}` binding doesn't change because tab.id/path stay the same; the new content propagates via the `body = $derived(parseFrontmatter(tab.content).body)` chain. Specifically, `NotePane`'s `value` prop changes, and the existing prop-change handler (already used for second-screen sync) updates the CM6 doc via `view.dispatch({ changes: { ... } })` while preserving the selection.
+
+This eliminates race (2): after reload, the tab's in-memory content equals the post-cascade disk content, so the next autosave is a no-op (or merges new user typing on top of the rewrite, never reverts it).
+
+**(c) Watcher suppression (Rust).** Add `pub static RECENT_WRITES: Lazy<Mutex<HashMap<PathBuf, Instant>>>` in a new `watcher_suppress.rs` module. Two helpers: `mark(path)` and `was_recent(path) -> bool` with 2500 ms TTL. Cascade walker calls `mark` immediately before each `fs::write`. The watcher's emit path early-returns when `was_recent` is true, so the cascade's rewrites don't bubble back as "external" change events that would re-trigger our own reload logic.
+
+**Input-block during cascade.** Between flush start and reload completion, the affected tabs' editors set `view.dispatch({ effects: EditorView.editable.of(false) })` to block keystrokes. Released on `cascade:rewrote` (or after a 5 s timeout for safety). Cascade is a deliberate user action; a brief input block is acceptable, and prevents any keystroke landing in the flush→write→reload window from being lost.
+
+**Why** — Invariants 5, 14, plus the new "open-editor coherence" requirement.
+
+**Verification (the test that has to pass):**
+1. Open `§2 Round5`. Edit body to `Link me to [[<targetCurrentTitle>]]`. Don't switch tabs.
+2. From the file tree (with focus still on `§2 Round5`'s editor), rename the target to a new title.
+3. **Without clicking anywhere**, the editor's wikilink visibly updates to `[[<newTitle>]]`. Cursor and scroll position unchanged. No second autosave reverts it.
+4. Close and reopen Constellation. Confirm the rewrite persisted.
+
+**Risk**
+- **Flush failure mid-batch**: one tab's flush throws → cascade aborts, surfaces error. No partial damage (renameItem already ran, but cascade gracefully short-circuits with toast: "Rename succeeded but link cascade was skipped — retry?").
+- **Reload races user typing**: covered by input-block.
+- **TTL too short for slow disks**: 2500 ms covers two debounced autosave cycles + safety margin; bench on a 7600-note universe before locking the constant.
+
+**Rollback** — Revert the §3 commit. (a), (b), (c) ship as one cohesive commit since they only make sense together.
 
 ---
 
