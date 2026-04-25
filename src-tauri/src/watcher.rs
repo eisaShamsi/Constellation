@@ -1,7 +1,8 @@
 use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use std::collections::HashMap;
-use std::path::PathBuf;
-use std::sync::Mutex;
+use std::path::{Path, PathBuf};
+use std::sync::{Mutex, OnceLock};
+use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter, Manager};
 
 pub struct WatcherState {
@@ -13,6 +14,55 @@ impl WatcherState {
         Self {
             watchers: Mutex::new(HashMap::new()),
         }
+    }
+}
+
+/// MIG-006 §3 — Rust-side recent-writes suppression for the file watcher.
+///
+/// Cascades and other intentional Rust-side writes (`fs::write` from the
+/// wikilink rename walker, frontmatter title rewrites, etc.) call
+/// `mark_recent_write(path)` immediately before writing. The watcher
+/// closure then drops any change event whose paths are all `was_recent`,
+/// so our own writes don't bubble back through the `library-changed`
+/// channel as "external edits" and race the editor's read-back.
+///
+/// TTL is 2500 ms — covers two debounced autosave cycles plus margin,
+/// short enough that a genuine external edit landing on the same path
+/// shortly after our write isn't permanently masked.
+const RECENT_WRITE_TTL: Duration = Duration::from_millis(2500);
+
+fn recent_writes() -> &'static Mutex<HashMap<PathBuf, Instant>> {
+    static CELL: OnceLock<Mutex<HashMap<PathBuf, Instant>>> = OnceLock::new();
+    CELL.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+/// Mark `path` as a self-write. The watcher will skip emit for any change
+/// event on this path within the TTL window.
+pub fn mark_recent_write(path: &Path) {
+    let now = Instant::now();
+    if let Ok(mut map) = recent_writes().lock() {
+        // Opportunistic cleanup — drop entries older than 2× the TTL.
+        let cutoff = now - RECENT_WRITE_TTL * 2;
+        map.retain(|_, &mut t| t > cutoff);
+        map.insert(path.to_path_buf(), now);
+    }
+}
+
+/// Returns true if `path` was recently marked by `mark_recent_write` and
+/// is still within the TTL window. Stale entries are removed on read.
+fn was_recent(path: &Path) -> bool {
+    let now = Instant::now();
+    if let Ok(mut map) = recent_writes().lock() {
+        match map.get(path).copied() {
+            Some(t) if now.duration_since(t) < RECENT_WRITE_TTL => true,
+            Some(_) => {
+                map.remove(path);
+                false
+            }
+            None => false,
+        }
+    } else {
+        false
     }
 }
 
@@ -69,6 +119,11 @@ pub fn watch_library(app: AppHandle, library_id: String, library_path: String) -
                             .map(|e| e == "md")
                             .unwrap_or(false)
                 })
+                // §3: drop paths Rust just wrote itself (cascade, in-place
+                // frontmatter rewrites). Without this, the cascade's own
+                // `fs::write` round-trips back through this channel as an
+                // "external edit," fighting the editor's read-back.
+                .filter(|p| !was_recent(p))
                 .map(|p| p.to_string_lossy().to_string())
                 .collect();
 
