@@ -52,11 +52,15 @@ const FTS_SCHEMA_VERSION: i64 = 1;
 /// |         | all stratum values recomputed with correct inbound count |
 /// |       6 | MIG-002 §5 — SQL-native maturity triggers + one-shot     |
 /// |         | back-fill of sky_nodes.maturity for existing rows        |
+/// |       7 | MIG-004 §1 — note_aliases table; alias-aware inbound    |
+/// |         | resolution so renames don't drop link counts in stratum |
+/// |         | / maturity / map / cache. Back-fill of frontmatter      |
+/// |         | aliases for existing rows lands in MIG-004 §5.          |
 ///
 /// Bumping the version gates `sky_backfill::maybe_schedule` to repopulate
-/// the derived surfaces on next boot. Columns added in v2/v3 are nullable
+/// the derived surfaces on next boot. Columns added in v2+ are nullable
 /// or defaulted so pre-MIG-002 binaries tolerate the wider schema.
-pub(crate) const SKY_SCHEMA_VERSION: i64 = 6;
+pub(crate) const SKY_SCHEMA_VERSION: i64 = 7;
 
 /// MIG-002 §4 — SQL fragment that computes sky_nodes.stratum (1–8) from
 /// the same five signals as strata.rs::compute_stratum:
@@ -746,6 +750,42 @@ fn init_db(path: &Path) -> Result<Connection, String> {
     // index. No-op on fresh DBs (column already in CREATE TABLE).
     ensure_sky_nodes_mig002_columns(&conn)
         .map_err(|e| format!("Failed to ensure sky_nodes MIG-002 columns: {}", e))?;
+
+    // ─── MIG-004 §1: note_aliases table ─────────────────────────────────
+    //
+    // Persists every alias under which a note can be addressed by an
+    // inbound wikilink. Three sources feed the table:
+    //
+    //   'frontmatter' — the note's own `aliases:` YAML list, repopulated
+    //                   by index_note on every save (DELETE-by-source +
+    //                   INSERT, partition isolates from other sources)
+    //   'rename'      — the prior display name of a note, stamped here
+    //                   when the user renames so old wikilinks still
+    //                   resolve (the central fix this migration delivers)
+    //   'import'      — Obsidian-imported aliases, distinct provenance
+    //                   for any future audit / migration tools
+    //
+    // alias_lower is Arabic-normalized + lowercased at insert time —
+    // matches `extract_wikilinks` normalization so the inbound JOIN
+    // against `note_links.target_name` is a direct equality with no
+    // per-row work.
+    //
+    // Composite PK = idempotent (path, alias_lower) inserts via
+    // INSERT OR IGNORE. idx_note_aliases_lookup is the hot path —
+    // every alias-aware inbound subquery in MIG-004 §6/§7 hits it.
+    conn.execute_batch("
+        CREATE TABLE IF NOT EXISTS note_aliases (
+            path        TEXT NOT NULL,
+            alias_lower TEXT NOT NULL,
+            added_at    INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+            source      TEXT NOT NULL,
+            PRIMARY KEY (path, alias_lower)
+        );
+        CREATE INDEX IF NOT EXISTS idx_note_aliases_lookup
+            ON note_aliases(alias_lower);
+        CREATE INDEX IF NOT EXISTS idx_note_aliases_path
+            ON note_aliases(path);
+    ").map_err(|e| format!("Failed to create note_aliases: {}", e))?;
 
     // ─── Sky-link triggers (MIG-001 Step 3) ─────────────────────────────
     // Keep sky_links in lock-step with note_links. Triggers fire on every
