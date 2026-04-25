@@ -3519,19 +3519,9 @@ pub fn quick_capture(app: tauri::AppHandle, library_path: String, inbox_folder: 
     Ok(file_path.to_string_lossy().to_string())
 }
 
-/// MIG-006 §3 — cascade returns the list of rewritten files so the
-/// frontend can reload each open tab in place. `failed[]` carries any
-/// per-file write errors (cascade is best-effort, not transactional
-/// across files).
-#[derive(Debug, Clone, serde::Serialize)]
-pub struct CascadeResult {
-    pub rewritten: Vec<String>,
-    pub failed: Vec<(String, String)>,
-}
-
 /// Update all links in a library when a note is renamed.
 #[tauri::command]
-pub fn update_links_on_rename(app: tauri::AppHandle, library_path: String, old_name: String, new_name: String) -> Result<CascadeResult, String> {
+pub fn update_links_on_rename(app: tauri::AppHandle, library_path: String, old_name: String, new_name: String) -> Result<u32, String> {
     validate_path_in_any_library(&app, &library_path)?;
     // §2: compile the regex once per cascade, reuse it across every file
     // visited. `regex::escape` keeps titles with metacharacters safe
@@ -3541,22 +3531,12 @@ pub fn update_links_on_rename(app: tauri::AppHandle, library_path: String, old_n
         Ok(r) => r,
         Err(e) => return Err(format!("Failed to build cascade regex: {}", e)),
     };
-    let mut result = CascadeResult { rewritten: Vec::new(), failed: Vec::new() };
-    update_links_recursive(Path::new(&library_path), &re, &new_name, &mut result);
-
-    // §3: notify the frontend about every file we rewrote so the open
-    // tabs (if any) can reload their in-memory copies in place. Without
-    // this, the editor's next autosave (with its still-pre-cascade
-    // content) overwrites the cascade's update — race #2 in the §3
-    // expansion.
-    if !result.rewritten.is_empty() {
-        use tauri::Emitter;
-        let _ = app.emit("cascade:rewrote", &result.rewritten);
-    }
-    Ok(result)
+    let mut count = 0u32;
+    update_links_recursive(Path::new(&library_path), &re, &new_name, &mut count);
+    Ok(count)
 }
 
-fn update_links_recursive(dir: &Path, re: &regex::Regex, new_name: &str, result: &mut CascadeResult) {
+fn update_links_recursive(dir: &Path, re: &regex::Regex, new_name: &str, count: &mut u32) {
     let read_dir = match fs::read_dir(dir) {
         Ok(rd) => rd,
         Err(_) => return,
@@ -3566,19 +3546,13 @@ fn update_links_recursive(dir: &Path, re: &regex::Regex, new_name: &str, result:
         let name = entry.file_name().to_string_lossy().to_string();
         if name.starts_with('.') { continue; }
         if path.is_dir() {
-            update_links_recursive(&path, re, new_name, result);
+            update_links_recursive(&path, re, new_name, count);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             if let Ok(content) = fs::read_to_string(&path) {
                 let updated = rewrite_wikilinks_in_text(&content, re, new_name);
                 if updated != content {
-                    // §3: mark BEFORE the write so a watcher event arriving
-                    // mid-fs::write (Windows can fire before flush) still
-                    // sees the suppression entry.
-                    crate::watcher::mark_recent_write(&path);
-                    match fs::write(&path, updated) {
-                        Ok(_) => result.rewritten.push(path.to_string_lossy().into_owned()),
-                        Err(e) => result.failed.push((path.to_string_lossy().into_owned(), e.to_string())),
-                    }
+                    let _ = fs::write(&path, updated);
+                    *count += 1;
                 }
             }
         }

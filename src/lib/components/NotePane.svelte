@@ -7,7 +7,7 @@
 	 */
 	import { onMount, onDestroy } from 'svelte';
 	import { t } from '$lib/i18n';
-	import { appSettings, getEffectiveScriptFonts, cascadeInProgress } from '$lib/libraries/store';
+	import { appSettings, getEffectiveScriptFonts } from '$lib/libraries/store';
 	import type { FrontmatterProperty } from '$lib/libraries/store';
 	import PropertyEditor from './PropertyEditor.svelte';
 	import { EditorView, keymap, drawSelection, Decoration, type DecorationSet } from '@codemirror/view';
@@ -176,12 +176,6 @@
 	let linkClickHandler: EventListener | null = null;
 	const dirCompartment = new Compartment();
 	const livePreviewCompartment = new Compartment();
-	// MIG-006 §3 — editor input-block compartment. Reconfigured to
-	// EditorView.editable.of(false) while a wikilink-rename cascade is
-	// in flight (cascadeInProgress store), preventing keystrokes from
-	// landing in the flush→write→reload window where they'd be lost
-	// (the in-memory copy is about to be replaced from disk).
-	const editableCompartment = new Compartment();
 	let livePreviewEnabled = $state(true);
 
 	/* ─── Table toolbar state ─── */
@@ -390,7 +384,6 @@
 					...defaultKeymap, ...historyKeymap, ...($appSettings.autoPairBrackets ? closeBracketsKeymap : []), ...searchKeymap,
 				]),
 				dirCompartment.of(EditorView.editorAttributes.of({ dir: dir || 'auto' })),
-				editableCompartment.of(EditorView.editable.of(true)),
 				EditorView.contentAttributes.of({ dir: 'auto' }),
 				EditorView.lineWrapping,
 				EditorView.updateListener.of((update) => {
@@ -775,64 +768,6 @@
 				effects: livePreviewCompartment.reconfigure(
 					livePreviewEnabled ? [livePreviewPlugin, livePreviewTheme, calloutPlugin, calloutTheme] : []
 				)
-			});
-		}
-	});
-
-	/* MIG-006 §3 — value-prop → doc sync.
-	 *
-	 * Pre-§3, NotePane snapshotted `value` only at mount. The {#key tab.id |
-	 * tab.path}` block in NoteEditor remounts the pane when the user
-	 * navigates to a different note, but for an in-place content swap (file
-	 * rewritten on disk by the cascade walker, then `tab.content` updated
-	 * in-place via openTabs.update), the path doesn't change so {#key}
-	 * doesn't fire — and the editor kept showing the pre-cascade text.
-	 *
-	 * This $effect dispatches a doc-replacing transaction whenever the
-	 * `value` prop diverges from `view.state.doc.toString()`. Cursor and
-	 * scroll are best-effort preserved: cursor clamped to new doc length,
-	 * scroll position carried verbatim.
-	 *
-	 * Guarded against echo loops: `latestText` tracks the last value the
-	 * editor itself produced. If the prop change matches that snapshot, the
-	 * dispatch is skipped — that's just the parent's `body = $derived(...)`
-	 * round-tripping our own keystrokes back to us, not an external rewrite.
-	 */
-	$effect(() => {
-		if (!view) return;
-		const incoming = value ?? '';
-		const current = view.state.doc.toString();
-		if (incoming === current) return;
-		// Echo guard: incoming matches what we just emitted upstream.
-		if (incoming === latestText) return;
-		const sel = view.state.selection.main;
-		const newLen = incoming.length;
-		const anchor = Math.min(sel.anchor, newLen);
-		const head = Math.min(sel.head, newLen);
-		view.dispatch({
-			changes: { from: 0, to: current.length, insert: incoming },
-			selection: { anchor, head },
-			// Mark this as a non-user transaction so the docChanged
-			// branch in updateListener doesn't kick off an autosave
-			// for content the editor didn't author.
-			annotations: [],
-		});
-		latestText = incoming;
-		dirty = false;
-	});
-
-	/* MIG-006 §3 — editor input-block while cascade is in flight.
-	 * Subscribes to the global `cascadeInProgress` store and flips
-	 * EditorView.editable on/off. Without this, a keystroke landing
-	 * between the flush-before and reload-after phases would be lost
-	 * (the in-memory copy is about to be replaced from disk). */
-	let prevCascadeBusy = false;
-	$effect(() => {
-		const busy = $cascadeInProgress;
-		if (view && busy !== prevCascadeBusy) {
-			prevCascadeBusy = busy;
-			view.dispatch({
-				effects: editableCompartment.reconfigure(EditorView.editable.of(!busy))
 			});
 		}
 	});

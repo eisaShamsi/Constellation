@@ -2042,54 +2042,9 @@ export async function getDailyNotePath(libraryPath: string, format = '%Y-%m-%d',
 }
 
 // ─── Link update on rename ───
-/** Result of the cascade walker. `rewritten` holds absolute paths whose body
- *  was rewritten; `failed` carries (path, error) tuples for files that matched
- *  but couldn't be written (locked, permission, disk full). Cascade is
- *  best-effort, not transactional across files. */
-export interface CascadeResult {
-	rewritten: string[];
-	failed: [string, string][];
-}
-export async function updateLinksOnRename(libraryPath: string, oldName: string, newName: string): Promise<CascadeResult> {
+export async function updateLinksOnRename(libraryPath: string, oldName: string, newName: string): Promise<number> {
 	return await invoke('update_links_on_rename', { libraryPath, oldName, newName });
 }
-
-/** §3: flush every dirty open tab whose path is inside `libraryPath`.
- *  Awaits all writes so the cascade walker reads a consistent disk snapshot.
- *
- *  The flush is per-tab via `setWriteAhead → writeNote`. We do NOT call
- *  reindex here — the cascade itself triggers reindex via its post-rewrite
- *  hook (§4 in the plan). For tabs that aren't dirty, this is a no-op.
- *
- *  Errors from individual flushes are swallowed (best-effort) so one
- *  stuck tab can't block the cascade for the rest of the library. The
- *  caller should treat this as a barrier, not a transaction. */
-export async function flushAllTabsInLibrary(libraryPath: string): Promise<void> {
-	const norm = (p: string) => p.replace(/\\/g, '/').toLowerCase();
-	const libNorm = norm(libraryPath).replace(/\/+$/, '');
-	const tabs = get(openTabs);
-	const flushes: Promise<void>[] = [];
-	for (const t of tabs) {
-		if (!t.path) continue;
-		const tNorm = norm(t.path);
-		if (tNorm !== libNorm && !tNorm.startsWith(libNorm + '/')) continue;
-		// Only flush tabs that have content (skip the placeholder "New tab").
-		if (!t.content) continue;
-		flushes.push(
-			writeNote(t.path, t.content)
-				.then(() => { clearWriteAhead(t.path); })
-				.catch(() => { /* best-effort — let the cascade proceed */ })
-		);
-	}
-	await Promise.all(flushes);
-}
-
-/** §3: writable signal that the cascade is mid-flight. Editors subscribe
- *  to flip into non-editable mode between flush-start and reload-complete,
- *  preventing keystrokes from landing in the flush→write→reload window
- *  where they'd be lost (the in-memory copy is about to be replaced from
- *  disk). Auto-released after a 5s safety timeout. */
-export const cascadeInProgress = writable<boolean>(false);
 
 // ─── Quick Capture ───
 export async function quickCapture(libraryPath: string, inboxFolder: string): Promise<string> {

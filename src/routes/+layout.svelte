@@ -24,8 +24,7 @@
 		scanLibraryLinks, scanLibraryTags, getBacklinks, getOutgoingLinks, scanUnlinkedMentions,
 		scanLibraryIndex, readIndexEntries, readTermMentions, readCooccurringTerms,
 		buildSkyData, readNotePreview,
-		getDailyNotePath, updateLinksOnRename, getOldTitleForCascade,
-		flushAllTabsInLibrary, cascadeInProgress, readNote, quickCapture,
+		getDailyNotePath, updateLinksOnRename, getOldTitleForCascade, quickCapture,
 		loadBookmarks, addBookmark, removeBookmark, isBookmarked, bookmarks,
 		loadSettings, updateSettings, appSettings, DEFAULT_SETTINGS,
 		loadWorkspaces, workspaces,
@@ -2076,37 +2075,6 @@
 		// Listen for file change events from the watcher
 		let pendingTreeRefresh: Set<string> = new Set();
 		let pendingTabReloads: Set<string> = new Set();
-		// MIG-006 §3 — cascade:rewrote listener.
-		// When the wikilink-rename walker rewrites a source file on disk,
-		// any tab currently open on that file holds a pre-cascade copy in
-		// memory. Its next autosave would silently overwrite the cascade's
-		// update. This listener re-reads each rewritten path and patches
-		// the open tab's `content` in place, preserving cursorPos /
-		// scrollTop / history so the editor view picks up the new wikilink
-		// without losing the user's place. After all reloads land, clears
-		// `cascadeInProgress` so editors return to editable mode.
-		const unlistenCascadeRewrote = await listen<string[]>('cascade:rewrote', async (event) => {
-			const paths = event.payload || [];
-			if (!paths.length) { cascadeInProgress.set(false); return; }
-			const tabs = get(openTabs);
-			const reloads: Promise<void>[] = [];
-			for (const p of paths) {
-				const tab = tabs.find(t => t.path === p);
-				if (!tab) continue;
-				reloads.push(
-					readNote(p)
-						.then(content => {
-							openTabs.update(ts => ts.map(t =>
-								t.path === p ? { ...t, content } : t
-							));
-						})
-						.catch(() => { /* file might have been deleted */ })
-				);
-			}
-			await Promise.all(reloads);
-			cascadeInProgress.set(false);
-		});
-
 		const unlistenWatcher = await listen<{ libraryId: string; paths: string[] }>('library-changed', (event) => {
 			const { libraryId, paths } = event.payload;
 			pendingTreeRefresh.add(libraryId);
@@ -2217,7 +2185,6 @@
 		cleanupFns.push(
 			() => document.removeEventListener('keydown', handleGlobalKeydown, true),
 			unlistenWatcher,
-			unlistenCascadeRewrote,
 			unlistenScreenNote,
 			unlistenScreenClosed,
 			unlistenNoteSaved,
@@ -3832,45 +3799,13 @@
 				? (oldPath.split(/[\\/]/).pop() ?? '')
 				: await getOldTitleForCascade(oldPath);
 
-			const lib = $libraryStats.find(v => oldPath.startsWith(v.path));
-			// MIG-006 §3 — open-editor coherence:
-			//  (a) flush every dirty tab in this library BEFORE the rename
-			//      and cascade. The walker reads disk, and a dirty source tab
-			//      whose autosave hasn't fired yet would otherwise leave a
-			//      stale `[[old_title]]` on disk that the walker rewrites
-			//      while the editor still holds the un-flushed text — racing
-			//      autosave to overwrite the cascade.
-			//  (b) flip `cascadeInProgress` so editors enter non-editable
-			//      mode for the duration. The cascade:rewrote listener
-			//      clears it when the reloaded tabs have absorbed the new
-			//      content; a 5 s safety timeout below clears it
-			//      unconditionally as a backstop.
-			let safetyTimer: ReturnType<typeof setTimeout> | null = null;
-			if (lib && $appSettings.autoUpdateLinks && !isDir) {
-				cascadeInProgress.set(true);
-				safetyTimer = setTimeout(() => cascadeInProgress.set(false), 5000);
-				try { await flushAllTabsInLibrary(lib.path); } catch { /* best-effort */ }
-			}
 			await renameItem(oldPath, newPath);
+			const lib = $libraryStats.find(v => oldPath.startsWith(v.path));
 			if (lib) {
 				await refreshLibraryTree(lib.library_id);
+				// Auto-update links
 				if ($appSettings.autoUpdateLinks && !isDir) {
-					try {
-						const result = await updateLinksOnRename(lib.path, oldName, newName);
-						// Zero-rewrite case: no cascade:rewrote event fires,
-						// so the listener never clears the flag. Clear here.
-						if (!result.rewritten.length) {
-							if (safetyTimer) { clearTimeout(safetyTimer); safetyTimer = null; }
-							cascadeInProgress.set(false);
-						}
-					} catch {
-						// Cascade IPC errored — release the editors.
-						if (safetyTimer) { clearTimeout(safetyTimer); safetyTimer = null; }
-						cascadeInProgress.set(false);
-					}
-				} else {
-					// Cascade not invoked (autoUpdateLinks off or dir rename)
-					// — flag was never set; nothing to clear.
+					await updateLinksOnRename(lib.path, oldName, newName);
 				}
 			}
 		} catch (e) {
