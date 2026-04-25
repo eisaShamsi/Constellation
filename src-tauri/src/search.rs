@@ -59,11 +59,14 @@ const FTS_SCHEMA_VERSION: i64 = 1;
 /// |         | existing rows. Phase E in sky_backfill::process_batch   |
 /// |         | reads each note's `aliases:` YAML list during the same  |
 /// |         | file-read pass that produced word_count + created_at.   |
+/// |       9 | MIG-004 §6 — STRATUM_SQL_EXPR rewritten to JOIN through |
+/// |         | note_aliases on inbound counts. All stratum values      |
+/// |         | recomputed under the new formula.                       |
 ///
 /// Bumping the version gates `sky_backfill::maybe_schedule` to repopulate
 /// the derived surfaces on next boot. Columns added in v2+ are nullable
 /// or defaulted so pre-MIG-002 binaries tolerate the wider schema.
-pub(crate) const SKY_SCHEMA_VERSION: i64 = 8;
+pub(crate) const SKY_SCHEMA_VERSION: i64 = 9;
 
 /// MIG-002 §4 — SQL fragment that computes sky_nodes.stratum (1–8) from
 /// the same five signals as strata.rs::compute_stratum:
@@ -98,8 +101,10 @@ pub(crate) const STRATUM_SQL_EXPR: &str = "
                          AND status = 'active') >= 3
                 THEN 1 ELSE 0 END)
         + (CASE WHEN (SELECT COUNT(*) FROM note_links
-                       WHERE target_name = sky_nodes.id
-                         AND status = 'active') >= 5
+                       WHERE status = 'active'
+                         AND (target_name = sky_nodes.id
+                              OR target_name IN (SELECT alias_lower FROM note_aliases
+                                                  WHERE path = sky_nodes.path))) >= 5
                 THEN 1 ELSE 0 END)
         + (CASE WHEN EXISTS(SELECT 1 FROM note_links
                              WHERE source_path = sky_nodes.path
@@ -112,8 +117,10 @@ pub(crate) const STRATUM_SQL_EXPR: &str = "
                                AND status = 'active')
                 THEN 1 ELSE 0 END)
         + (CASE WHEN (SELECT COUNT(DISTINCT source_path) FROM note_links
-                       WHERE target_name = sky_nodes.id
-                         AND status = 'active') >= 3
+                       WHERE status = 'active'
+                         AND (target_name = sky_nodes.id
+                              OR target_name IN (SELECT alias_lower FROM note_aliases
+                                                  WHERE path = sky_nodes.path))) >= 3
                 THEN 1 ELSE 0 END)
     ))
 ";
