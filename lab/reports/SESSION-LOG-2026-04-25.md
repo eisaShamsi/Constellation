@@ -178,3 +178,217 @@ tab the user happens to be looking at.
 - Cosmetic: relocate "Auto-update links on rename" toggle from
   Sky View & Links to Knowledge Management.
 - Cosmetic: sidebar active-item sync lag.
+
+---
+
+## §114 — MIG-006 §2: regex-based walker correctness pass
+
+**Commit**: `37ee40d`
+**Files**: `src-tauri/src/libraries.rs` (+142 / −15)
+
+Replaced `String::contains` + `replace` in `update_links_recursive`
+with a single compiled regex `\[\[(escaped_old)(\]\]|\|)`. Trailing
+delimiter (`]]` or `|`) captured and re-emitted, preserving every
+tail (`|display`, `|link-type`, `|alias|link-type`). Embeds
+(`![[X]]`) flow through naturally because the regex anchors on
+`[[` — the leading `!` is never matched. `regex::escape(&old_name)`
+keeps titles with metacharacters safe (`§2 Round3`, `Foo (bar)`,
+`a.b`). Regex compiled once per cascade, threaded down into the
+recursion.
+
+11 unit tests pinned in `cascade_walker_tests` covering all five
+wikilink shapes, prefix collisions (`Foo` vs `Foo Bar`),
+metachars-in-title, Arabic titles, the §1 verification corpus.
+All pass. GUI-untested for transcludes / typed-link tails on real
+notes (covered only by unit tests).
+
+---
+
+## §115 — MIG-006 §3 expanded: open-editor coherence — INTRODUCED BUG-015
+
+**Commit**: `3c4732d` (on `main`)
+**Status**: ⚠️ **Carries data-corruption vector. Do not pull this build.**
+
+Three coordinated changes shipped as one commit:
+1. `RECENT_WRITES` watcher suppression in `watcher.rs` (2500 ms TTL).
+2. `update_links_on_rename` returns `CascadeResult { rewritten,
+   failed }` and emits `cascade:rewrote { paths }` Tauri event.
+3. Frontend: `flushAllEditorsInLibrary` registry, `cascadeInProgress`
+   input-block, `cascade:rewrote` listener that reloads each
+   rewritten path's `tab.content`, **and a value-prop → doc sync
+   `$effect` in NotePane** that dispatched a CM6 doc-replace
+   transaction whenever the parent's `body = $derived(parseFrontmatter(tab.content)).body`
+   changed without a tab-path change.
+
+The value-sync `$effect` raced with `{#key tab.id+'|'+tab.path}`
+onDestroy during ordinary tab navigation. When the user clicked
+from source to target in the file tree, `tab.content` updated to
+target's content; reactivity propagated `body` to target_body;
+the OLD source NotePane's value-sync $effect fired BEFORE its
+onDestroy, replacing its own CM6 doc with target_body; then
+{#key} ran destroy → doFlush() read the swapped doc → handleFlush
+wrote target_body to source path (or vice versa depending on
+direction). The bail guard `filePath !== tab.path` did not catch
+it because the captured `mountedFilePath` matched the snapshot
+but the doc had been swapped between source and target via the
+$effect.
+
+Real symptom observed: typing `qux` in source `§2 Round5`, then
+clicking target in tree, then renaming target via right-click →
+both files end up with identical bodies on disk. Confirmed via
+`%TEMP%\bug015.log` instrumentation.
+
+---
+
+## §STATE-OF-STANDING — 2026-04-25 evening
+
+This record is mandated by Standing Order #5 (CLAUDE.md). Future
+sessions reading this should rely on this snapshot as the
+authoritative state at this point in time.
+
+### A — Top principal rule installed
+
+`CLAUDE.md` Working Agreement #4: **never ship changes whose
+architectural blast radius hasn't been validated.** Before any
+code change touching write paths / lifecycle / reactivity / IPC
+contract: spawn parallel review agents (Explore, Plan,
+code-reviewer) to map call graph + consumers + invariants, write
+the impact in advance, surface unmappable risk to the user and
+stop. Speed never overrides preservation. The MIG-006
+§3-expanded → BUG-015 incident is the canonical violation this
+rule prevents. Memory entry: `feedback_secure_dont_muddle.md`.
+
+### B — Verified-shipped & protected (do not muddle with)
+
+- **Cognitive Engine Layer 1** Phases 1–11 (typed links, strata,
+  maturity, tension built-pending-large-test, provenance,
+  externalization, review pulse, trails, multi-lens views,
+  expression forge, sense-making canvas).
+- **Living Link Architecture** P0–P5 (dual-layer storage, 7
+  cognitive operators in 15 locales, traversal tracking,
+  confidence levels, weight + 6-stage lifecycle, formulation
+  queries, knowledge-health dashboard, archive/unarchive,
+  annotation display, lifecycle decay knob).
+- **Constellation Arabic Engine** M3 / M3-baker / M5 / M6 / M7 /
+  M8 / M8b / M8c / M9 / M10 / M11-infra / M12 / M12-detect /
+  M12-bench / M13 / M14 — all shipped + tested.
+- **M11-data v1 + v2 Producer** — v2 reached 20 K target per user
+  (499 shards in `lab/m11-data/concepts/`).
+- **MIG-001 Sky View Write-Time Derivation** — closed.
+- **MIG-004 Alias-Aware Resolution** — closed.
+- **MIG-006 §1 (oldName from frontmatter)** — verified.
+- **§112 BUG-012 fix (title-leak)** — verified.
+- **§114 MIG-006 §2 (regex walker)** — shipped, 11 unit tests
+  pass, GUI edge cases untested.
+- **Boot Performance** Criteria 1 + 2 — verified production
+  (`5cb4f94` boot bundle, 1 s paint / 8 s hydrated).
+- **Panel Placement Tier 1 + 1b** — shipped.
+- **WTD audit closures** — Sky View, Backlinks/Outgoing, Tag
+  browser.
+
+### C — At-risk / in-flight / uncommitted
+
+- **`§115 / 3c4732d` is on `main` and carries BUG-015.** Anyone
+  pulling `main` inherits the corruption vector.
+- **Worktree (`E:\مشاريع كلاود\Constellation\.claude\worktrees\frosty-stonebraker-75c9bf`)
+  has uncommitted strip changes** that remove the value-sync
+  `$effect`, `cascade:rewrote` listener, and BUG-015
+  instrumentation. Untracked files: `src/lib/editor/flushRegistry.ts`,
+  `lab/forensics/BUG-015-*-snapshot.md`, `dev/`. The strip
+  preserves the watcher suppression, flush registry, and
+  `cascadeInProgress` input-block as the safe pieces of §115.
+- **The strip is unverified** — never built, never user-tested.
+
+### D — Known-broken (bugs identified, not yet fixed)
+
+- **BUG-013** open-editor cascade race — re-opened by BUG-015's
+  strip; effectively unresolved. The "rename target while
+  source is visible" scenario will require switching tabs first
+  for the cascade to be reliable.
+- **BUG-014** orphaned `cid_cn` in `NOTE_EE1E` (collateral from
+  BUG-012's manual recovery). Cosmetic.
+- **BUG-015** target-body corruption from §115's value-sync
+  `$effect`. Root-caused via `bug015.log`. Strip exists in
+  worktree but uncommitted.
+- **Title-heading rename gap**: `NoteEditor.handleTitleChange`
+  does not call `updateLinksOnRename`. Only file-tree rename
+  triggers the cascade.
+- **Cosmetic**: "Auto-update links on rename" toggle is in Sky
+  View & Links section (should be Knowledge Management).
+- **Cosmetic**: sidebar active-item highlight lags ~10 s after
+  wikilink navigation.
+
+### E — Real disk corruption (collateral from BUG-015)
+
+- `E:\Constellation Universes\Eisa Cognitive Knowledge\20260424T063440Z_NOTE_531D.md`
+  (target "§2 Round3_vEisa2") — body replaced with source's
+  body. No pre-corruption snapshot.
+- `E:\Constellation Universes\Eisa Cognitive Knowledge\20260424T092445Z_NOTE_EE1E.md`
+  (source "§2 Round5") — orphan `cid_cn` from BUG-012 manual fix
+  (cosmetic).
+- User's `Source Note v1` / `Target Note v1` test notes — same
+  corruption from BUG-015 reproduction. Can be deleted.
+
+Forensic snapshots saved to `lab/forensics/`.
+
+### F — Pending / not started
+
+**Cognitive Engine Layer 3 (5 phases):** 12 Hidden Pattern
+Discovery / 13 Blind Spot Detection / 14 Cross-Domain Insights
+/ 15 Socratic Challenger / 16 Worldview Synthesis.
+
+**Migrations:** MIG-002 §7–§10 (enrichment_worker drain loop +
+derives-from triggers + frontend swap + audit). MIG-003
+human-name filenames (not started; canonical-stem readability
+pain reported by user). MIG-005 alias-aware in-memory inbound
+consumers (deferred from MIG-004 audit 4B-1, 4B-2). MIG-006
+§3 expanded redo / §4–§11.
+
+**Boot performance:** Criterion 4 (post-UI sync sweep),
+Criterion 5 (kill-mid-index recovery), stats persistence,
+Settings → Rebuild Index button, CHANGELOG entry, version bump
+to 0.4.0, help docs, release-run boot-perf trace, Settings →
+Debug Boot Performance scorecard UI.
+
+**Panel Placement:** Tier 2 (drag-and-drop), Tier 3 (detachable
+multi-window), functional walkthrough.
+
+**WTD audit follow-ons:** Sight dashboard (ConstellationSight2
+recomputes on each toggleLens), sidebar star counts, Map.
+
+**Arabic Engine perf follow-ons** (queued from M9): string-intern
+`pattern_label`, mmap FST bytes, trim per-call `Arc::clone` on
+`ACTIVE_STORE`. Aspirational throughput ≥ 200 K w/s (today
+~130 K), aspirational cache ≤ 10 MiB at 7K-root scale (projected
+~90 MiB today).
+
+**M11-data follow-ons:** synonyms (sense-tagged in-language
+near-equivalents), domains (science / philosophy / arts / Islamic
+studies / medicine packs).
+
+**Misc:** `__navTrace` instrumentation dev-gate, isolated
+throttle stress-test helper, RTL alignment verification on
+Arabic docx, "note as organism" editor redesign (design-only).
+
+### G — Documentation drift
+
+- `docs/cognitive-engine-roadmap.md` Phases 6–11 listed twice
+  with conflicting status (clean rows on top, "🔲 Not started"
+  rows below).
+- `lab/m11-data/README.md:3` Status field still says "v2
+  (in-flight, scaling toward 20K)" — corpus has reached 20K.
+- No central project-wide tracker. Status spread across
+  cognitive-engine-roadmap, per-MIG plans, per-component READMEs,
+  per-session logs. Recommend `lab/reports/STATUS.md` as the
+  one-stop pointer.
+
+### H — Direction set by user this session
+
+- Top principal rule installed.
+- "Fix the essential first" — interpreted as: **address
+  Section C (BUG-015 / `3c4732d` on main) and Section E
+  (corrupted notes) before any new work.**
+- All other priorities (Section F) deferred until C + E are
+  clean.
+- Standing Order #5 added (this record) to make state-of-standing
+  snapshots a recurring discipline, not an ad-hoc rescue.
