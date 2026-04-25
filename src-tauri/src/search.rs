@@ -795,6 +795,15 @@ fn init_db(path: &Path) -> Result<Connection, String> {
     // Composite PK = idempotent (path, alias_lower) inserts via
     // INSERT OR IGNORE. idx_note_aliases_lookup is the hot path —
     // every alias-aware inbound subquery in MIG-004 §6/§7 hits it.
+    //
+    // NOTE on `source`: informational only. Composite PK + INSERT OR
+    // IGNORE means the FIRST writer wins permanently — if §3 stamps
+    // ('rename') and the user then adds the same alias to frontmatter
+    // (§2 / §5 source='frontmatter'), the row keeps source='rename'.
+    // Resolution semantics in §6/§7/§8/§9 do NOT filter by source —
+    // they match `alias_lower` regardless of source. Future code that
+    // expects "frontmatter rows mirror current YAML" should consult
+    // the file's frontmatter directly, not this column.
     conn.execute_batch("
         CREATE TABLE IF NOT EXISTS note_aliases (
             path        TEXT NOT NULL,

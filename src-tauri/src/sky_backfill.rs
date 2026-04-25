@@ -116,19 +116,32 @@ fn run(app: &tauri::AppHandle) -> Result<u64, String> {
     // six subqueries each fanned out across the full 232k-row note_links
     // table. ~2ms per row with stats vs ~450ms without = 200× speedup.
     //
-    // Clear stratum + maturity columns too — the back-fill's per-batch
-    // Phase D uses `WHERE <col> IS NULL` to pick up rows for
-    // recomputation. Without this wipe, schema-version bumps that only
-    // change the formula (like v4 → v5 for BUG-010) would leave old
-    // values in place because no rows would match the IS NULL guard.
+    // MIG-004 §10 audit-fix (4C-1, HIGH): scope the stratum/maturity
+    // wipe to `path > last_path`. On a fresh back-fill `last_path = ""`
+    // so the WHERE matches every row — same as the old unconditional
+    // wipe. On RESUME after an interrupt, `last_path` reflects how far
+    // the previous run had drained; rows at or below that path were
+    // already recomputed under the new formula, so we MUST NOT wipe
+    // them again — otherwise Phase D's path-range scope leaves them
+    // stranded at NULL forever.
+    //
+    // Also: busy_timeout(30s) on this connection so the wipe contends
+    // gracefully with cache_reconcile's parallel writes (§99 / BUG-008
+    // class). Previously this block was the one back-fill phase that
+    // ran without an explicit timeout.
+    let last_path_for_wipe = read_cursor(&state.db)?;
     {
         let guard = state.db.lock().map_err(|e| e.to_string())?;
         let conn = guard.as_ref().ok_or("DB not initialized")?;
-        conn.execute_batch(
-            "ANALYZE;
-             UPDATE sky_nodes SET stratum = NULL, maturity = NULL;",
+        conn.busy_timeout(Duration::from_secs(30))
+            .map_err(|e| format!("busy_timeout: {}", e))?;
+        conn.execute_batch("ANALYZE")
+            .map_err(|e| format!("ANALYZE: {}", e))?;
+        conn.execute(
+            "UPDATE sky_nodes SET stratum = NULL, maturity = NULL WHERE path > ?1",
+            params![last_path_for_wipe],
         )
-        .map_err(|e| format!("ANALYZE + stratum/maturity clear: {}", e))?;
+        .map_err(|e| format!("stratum/maturity wipe: {}", e))?;
     }
 
     let mut last_path = read_cursor(&state.db)?;

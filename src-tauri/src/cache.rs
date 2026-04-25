@@ -295,8 +295,12 @@ pub fn cache_boot_snapshot_graph(app: tauri::AppHandle) -> Result<BootSnapshotGr
 }
 
 fn read_aliases(conn: &Connection) -> Result<Vec<NoteAliasOut>, String> {
+    // MIG-004 §10 audit-fix (4A-MED): ORDER BY path keeps the
+    // serialized payload stable across boots. Frontend can rely on
+    // ordering for any future deterministic-merge logic; with ~1.4k
+    // rows the ORDER BY is sub-millisecond.
     let mut stmt = conn
-        .prepare("SELECT path, alias_lower FROM note_aliases")
+        .prepare("SELECT path, alias_lower FROM note_aliases ORDER BY path")
         .map_err(|e| format!("prepare aliases: {}", e))?;
     let rows = stmt
         .query_map([], |row| Ok(NoteAliasOut {
@@ -442,17 +446,22 @@ pub fn cache_boot_snapshot_sky(app: tauri::AppHandle) -> Result<BootSnapshotSky,
     let mut alias_to_path: std::collections::HashMap<String, String> =
         std::collections::HashMap::new();
     {
+        // MIG-004 §10 audit-fix (4A-MED): ORDER BY path makes the
+        // first-insert-wins behavior deterministic on alias collisions.
+        // Without explicit ordering, SQLite's emission order is
+        // implementation-defined (stable in practice, not guaranteed).
+        // Path-sort matches the FS resolver's tiebreak in
+        // libraries.rs::find_note_by_name_or_alias.
         let mut stmt = conn
-            .prepare("SELECT alias_lower, path FROM note_aliases")
+            .prepare("SELECT alias_lower, path FROM note_aliases ORDER BY path")
             .map_err(|e| format!("prepare aliases: {}", e))?;
         let rows = stmt
             .query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)))
             .map_err(|e| format!("query aliases: {}", e))?;
         for r in rows {
             let (alias, path) = r.map_err(|e| format!("row aliases: {}", e))?;
-            // First insert wins on collision — matches the FS resolver's
-            // path-sort tiebreak intent (deterministic; can refine later
-            // if it needs to match `find_note_by_name_or_alias` exactly).
+            // First insert wins on collision — deterministic via the
+            // ORDER BY path above. Matches FS resolver tiebreak.
             alias_to_path.entry(alias).or_insert(path);
         }
     }
