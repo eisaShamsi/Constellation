@@ -540,6 +540,36 @@ export async function writeNote(filePath: string, content: string): Promise<void
 	await invoke('write_note', { filePath, content });
 }
 
+/**
+ * MIG-006 §1: resolve the OLD human title for a note about to be renamed,
+ * so the wikilink cascade can search source bodies for `[[old_title]]`
+ * instead of `[[<canonical-filename-stem>]]`.
+ *
+ * Strategy:
+ *   1. If the note is open in a tab, use `tab.name` directly — it was
+ *      set from frontmatter `title:` by `index_note` and is exactly the
+ *      string the cascade walker needs to scan for. Zero IPC.
+ *   2. Otherwise (right-click rename in the file tree), call the
+ *      `read_note_title` IPC to peek the file's frontmatter without
+ *      indexing.
+ *   3. If neither produces a title, fall back to the filename stem — for
+ *      legacy human-named notes that don't carry a `title:` field, the
+ *      filename IS the display name.
+ *
+ * Must be awaited BEFORE `renameItem` runs, because (a) for canonical
+ * files the rename mutates frontmatter (so reading after-the-fact gives
+ * the NEW title) and (b) for legacy files the filename itself changes.
+ */
+export async function getOldTitleForCascade(oldPath: string): Promise<string> {
+	const tab = get(openTabs).find(t => t.path === oldPath);
+	if (tab && tab.name) return tab.name;
+	try {
+		const t = await invoke<string | null>('read_note_title', { filePath: oldPath });
+		if (t && t.length > 0) return t;
+	} catch { /* fall through to filename stem */ }
+	return oldPath.split(/[\\/]/).pop()?.replace(/\.md$/, '') ?? '';
+}
+
 export function updateTabContent(tabId: string, newContent: string) {
 	const tabs = get(openTabs);
 	const tab = tabs.find(t => t.id === tabId);

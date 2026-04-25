@@ -3304,6 +3304,28 @@ fn extract_frontmatter_title_quick(path: &Path) -> Option<String> {
     extract_frontmatter_title(&content)
 }
 
+/// MIG-006 §1: read just the human title from a `.md` file's
+/// frontmatter without indexing. Used by the rename flow to pick
+/// up the OLD display name BEFORE the rename mutates the file —
+/// so the wikilink cascade can search for `[[old_title]]` in source
+/// notes, not for `[[20260424T063440Z_NOTE_531D]]` (the canonical
+/// filename stem, which the L3788 derivation was using and which
+/// silently killed the cascade for every canonical note).
+///
+/// Returns `Ok(Some(title))` if the file has a frontmatter `title:`
+/// field, `Ok(None)` if the file has no title (caller falls back to
+/// filename stem for legacy human-named notes), `Err` if the path is
+/// outside any registered library or unreadable.
+#[tauri::command]
+pub fn read_note_title(app: tauri::AppHandle, file_path: String) -> Result<Option<String>, String> {
+    validate_path_in_any_library(&app, &file_path)?;
+    let path = Path::new(&file_path);
+    if !path.exists() {
+        return Err("File does not exist.".to_string());
+    }
+    Ok(extract_frontmatter_title_quick(path))
+}
+
 /// Collect all notes with rich metadata (name, path, modified, size, preview, tags, folder).
 /// Used by the Notebook Navigator for fast file listing without N+1 calls.
 #[tauri::command]

@@ -24,7 +24,7 @@
 		scanLibraryLinks, scanLibraryTags, getBacklinks, getOutgoingLinks, scanUnlinkedMentions,
 		scanLibraryIndex, readIndexEntries, readTermMentions, readCooccurringTerms,
 		buildSkyData, readNotePreview,
-		getDailyNotePath, updateLinksOnRename, quickCapture,
+		getDailyNotePath, updateLinksOnRename, getOldTitleForCascade, quickCapture,
 		loadBookmarks, addBookmark, removeBookmark, isBookmarked, bookmarks,
 		loadSettings, updateSettings, appSettings, DEFAULT_SETTINGS,
 		loadWorkspaces, workspaces,
@@ -3784,8 +3784,20 @@
 			const isDir = !oldPath.endsWith('.md');
 			const newPath = parentDir + (oldPath.includes('\\') ? '\\' : '/') + (isDir ? newName : newName + '.md');
 
-			// Get old note name for link updates
-			const oldName = oldPath.split(/[\\/]/).pop()?.replace('.md', '') ?? '';
+			// MIG-006 §1: resolve the OLD human title BEFORE the rename.
+			// Pre-§1, this line was `oldPath.split(...).pop()?.replace('.md','')`,
+			// which for canonical-filename notes (e.g. `20260424T054559Z_NOTE_C3A4.md`)
+			// produced the canonical stem — NEVER the human title — and the
+			// downstream `update_links_on_rename` walker would silently match
+			// nothing in any source body. The cascade has been dead for every
+			// canonical-named note since canonical filenames shipped.
+			//
+			// Now: pull from the open tab if present (zero IPC), fall back to
+			// the new `read_note_title` IPC for closed notes, fall back to the
+			// filename stem only for legacy human-named notes without `title:`.
+			const oldName = isDir
+				? (oldPath.split(/[\\/]/).pop() ?? '')
+				: await getOldTitleForCascade(oldPath);
 
 			await renameItem(oldPath, newPath);
 			const lib = $libraryStats.find(v => oldPath.startsWith(v.path));

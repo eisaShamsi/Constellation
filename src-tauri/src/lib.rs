@@ -262,6 +262,7 @@ pub fn run() {
             libraries::remove_library,
             libraries::read_library_tree,
             libraries::read_note,
+            libraries::read_note_title,
             libraries::get_note_headings,
             libraries::write_note,
             libraries::pick_folder,
