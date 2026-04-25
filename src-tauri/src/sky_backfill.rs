@@ -277,12 +277,9 @@ fn process_batch(
     // ── Phase B: file reads WITHOUT lock ───────────────────────────────
     // Each tuple = (path, word_count, created_at). Bounded by BATCH_SIZE
     // rows so memory footprint is trivial.
-    let computed: Vec<(String, i64, Option<i64>)> = paths
+    let computed: Vec<(String, NoteSignals)> = paths
         .iter()
-        .map(|(p, _, _)| {
-            let (wc, ca) = compute_word_count_and_created_at(Path::new(p));
-            (p.clone(), wc, ca)
-        })
+        .map(|(p, _, _)| (p.clone(), read_note_signals(Path::new(p))))
         .collect();
 
     // ── Phase C: UPDATE note_meta under lock ──────────────────────────
@@ -306,12 +303,41 @@ fn process_batch(
                         AND (word_count = 0 OR created_at IS NULL)",
                 )
                 .map_err(|e| format!("prepare upd word_count: {}", e))?;
-            for (p, wc, created_at) in &computed {
-                upd.execute(params![wc, created_at, p])
+            for (p, sig) in &computed {
+                upd.execute(params![sig.word_count, sig.created_at, p])
                     .map_err(|e| format!("exec upd word_count: {}", e))?;
             }
         }
         tx.commit().map_err(|e| format!("commit C: {}", e))?;
+    }
+
+    // ── Phase E: back-fill note_aliases (frontmatter source) ──────────
+    // MIG-004 §5. INSERT OR IGNORE per (path, alias) pair so existing
+    // 'rename' / 'import' rows for the same alias stay put — composite
+    // PK + IGNORE makes us idempotent and resilient to re-run mid-fill.
+    // Skips paths that contributed zero aliases (most legacy notes
+    // without `aliases:` frontmatter).
+    {
+        let mut guard = db.lock().map_err(|e| e.to_string())?;
+        let conn = guard.as_mut().ok_or("DB not initialized")?;
+        conn.busy_timeout(Duration::from_secs(30))
+            .map_err(|e| format!("busy_timeout: {}", e))?;
+        let tx = conn.transaction().map_err(|e| format!("begin E: {}", e))?;
+        {
+            let mut ins = tx
+                .prepare(
+                    "INSERT OR IGNORE INTO note_aliases (path, alias_lower, source)
+                     VALUES (?1, ?2, 'frontmatter')",
+                )
+                .map_err(|e| format!("prepare ins alias: {}", e))?;
+            for (p, sig) in &computed {
+                for alias in &sig.aliases {
+                    ins.execute(params![p, alias])
+                        .map_err(|e| format!("exec ins alias: {}", e))?;
+                }
+            }
+        }
+        tx.commit().map_err(|e| format!("commit E: {}", e))?;
     }
 
     // ── Phase D: back-fill sky_nodes.stratum + .maturity for this batch
@@ -356,34 +382,50 @@ fn process_batch(
     Ok((paths.len(), last_path))
 }
 
-/// Read a .md file and return (word_count, created_at_epoch_seconds).
-/// Mirrors the writer-side stamping in `search::index_note` so back-
-/// filled rows agree with newly-written rows to the byte.
+/// Signals extracted from a single note file during back-fill.
+/// Lets Phase B do one fs::read_to_string per note and feed all of
+/// the back-fill's downstream phases (word_count for §C, aliases for
+/// MIG-004 §E) without re-reading.
+struct NoteSignals {
+    word_count: i64,
+    created_at: Option<i64>,
+    aliases: Vec<String>,
+}
+
+/// Read a .md file and return its back-fill signals. Mirrors the
+/// writer-side stamping in `search::index_note` byte-for-byte:
 ///
-/// - word_count = whitespace-separated token count of the body (post-
-///   frontmatter strip). Matches body.split_whitespace().count() in
-///   search::index_note.
-/// - created_at = fs::metadata(path).created() epoch seconds. None when
-///   the platform lacks a true creation timestamp (ReFS, FAT32, some
-///   Linux filesystems); caller uses COALESCE to preserve the existing
-///   DB value (which may already be stamped to `modified`).
+/// - word_count: whitespace-separated tokens of the body (post-
+///   frontmatter strip), via `search::body_after_frontmatter`.
+/// - created_at: fs::metadata(path).created() epoch seconds. None on
+///   filesystems without a true creation timestamp (ReFS, FAT32,
+///   some Linux FS); the UPDATE in Phase C uses COALESCE to keep
+///   any value previously stamped via `modified` fallback.
+/// - aliases: frontmatter `aliases:` entries, via
+///   `search::extract_aliases`. Each is already lowercased + Arabic-
+///   normalized so it matches `note_links.target_name` byte-for-byte.
 ///
-/// A missing / unreadable file yields (0, None) — the UPDATE then
-/// writes `word_count = 0` with COALESCE keeping any prior created_at.
-fn compute_word_count_and_created_at(path: &Path) -> (i64, Option<i64>) {
+/// A missing / unreadable file yields zero/empty signals — the
+/// downstream UPDATEs / INSERTs become no-ops via their guards.
+fn read_note_signals(path: &Path) -> NoteSignals {
     let Ok(content) = std::fs::read_to_string(path) else {
-        return (0, None);
+        return NoteSignals {
+            word_count: 0,
+            created_at: None,
+            aliases: Vec::new(),
+        };
     };
     // Single source of truth for frontmatter slicing — search.rs owns
     // the strip shape so back-fill and writer agree byte-for-byte.
     let body = crate::search::body_after_frontmatter(&content);
-    let wc = body.split_whitespace().count() as i64;
+    let word_count = body.split_whitespace().count() as i64;
     let created_at: Option<i64> = std::fs::metadata(path)
         .ok()
         .and_then(|m| m.created().ok())
         .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
         .map(|d| d.as_secs() as i64);
-    (wc, created_at)
+    let aliases = crate::search::extract_aliases(&content);
+    NoteSignals { word_count, created_at, aliases }
 }
 
 fn finalize(db: &Mutex<Option<Connection>>) -> Result<(), String> {

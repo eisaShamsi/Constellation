@@ -54,13 +54,16 @@ const FTS_SCHEMA_VERSION: i64 = 1;
 /// |         | back-fill of sky_nodes.maturity for existing rows        |
 /// |       7 | MIG-004 §1 — note_aliases table; alias-aware inbound    |
 /// |         | resolution so renames don't drop link counts in stratum |
-/// |         | / maturity / map / cache. Back-fill of frontmatter      |
-/// |         | aliases for existing rows lands in MIG-004 §5.          |
+/// |         | / maturity / map / cache. Schema only.                  |
+/// |       8 | MIG-004 §5 — back-fill of frontmatter aliases for       |
+/// |         | existing rows. Phase E in sky_backfill::process_batch   |
+/// |         | reads each note's `aliases:` YAML list during the same  |
+/// |         | file-read pass that produced word_count + created_at.   |
 ///
 /// Bumping the version gates `sky_backfill::maybe_schedule` to repopulate
 /// the derived surfaces on next boot. Columns added in v2+ are nullable
 /// or defaulted so pre-MIG-002 binaries tolerate the wider schema.
-pub(crate) const SKY_SCHEMA_VERSION: i64 = 7;
+pub(crate) const SKY_SCHEMA_VERSION: i64 = 8;
 
 /// MIG-002 §4 — SQL fragment that computes sky_nodes.stratum (1–8) from
 /// the same five signals as strata.rs::compute_stratum:
