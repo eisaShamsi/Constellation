@@ -62,11 +62,15 @@ const FTS_SCHEMA_VERSION: i64 = 1;
 /// |       9 | MIG-004 §6 — STRATUM_SQL_EXPR rewritten to JOIN through |
 /// |         | note_aliases on inbound counts. All stratum values      |
 /// |         | recomputed under the new formula.                       |
+/// |      10 | MIG-004 §7 — MATURITY_SQL_EXPR rewritten through        |
+/// |         | note_aliases on all 4 inbound-count gates (canonical /  |
+/// |         | wilting / evergreen / sapling). All maturity values     |
+/// |         | recomputed under the new formula.                       |
 ///
 /// Bumping the version gates `sky_backfill::maybe_schedule` to repopulate
 /// the derived surfaces on next boot. Columns added in v2+ are nullable
 /// or defaulted so pre-MIG-002 binaries tolerate the wider schema.
-pub(crate) const SKY_SCHEMA_VERSION: i64 = 9;
+pub(crate) const SKY_SCHEMA_VERSION: i64 = 10;
 
 /// MIG-002 §4 — SQL fragment that computes sky_nodes.stratum (1–8) from
 /// the same five signals as strata.rs::compute_stratum:
@@ -154,8 +158,10 @@ pub(crate) const MATURITY_SQL_EXPR: &str = "
     CASE
         -- canonical: 10+ inbound, untouched 30+ days (authoritative)
         WHEN ((SELECT COUNT(*) FROM note_links
-                 WHERE target_name = sky_nodes.id
-                   AND status = 'active') >= 10)
+                 WHERE status = 'active'
+                   AND (target_name = sky_nodes.id
+                        OR target_name IN (SELECT alias_lower FROM note_aliases
+                                            WHERE path = sky_nodes.path))) >= 10)
          AND ((strftime('%s','now') -
                COALESCE((SELECT modified FROM note_meta WHERE path = sky_nodes.path), 0))
               / 86400 >= 30)
@@ -163,8 +169,10 @@ pub(crate) const MATURITY_SQL_EXPR: &str = "
 
         -- wilting: evergreen-level but untouched 90+ days
         WHEN ((SELECT COUNT(*) FROM note_links
-                 WHERE target_name = sky_nodes.id
-                   AND status = 'active') >= 4)
+                 WHERE status = 'active'
+                   AND (target_name = sky_nodes.id
+                        OR target_name IN (SELECT alias_lower FROM note_aliases
+                                            WHERE path = sky_nodes.path))) >= 4)
          AND ((strftime('%s','now') -
                COALESCE(
                    (SELECT created_at FROM note_meta WHERE path = sky_nodes.path),
@@ -178,8 +186,10 @@ pub(crate) const MATURITY_SQL_EXPR: &str = "
 
         -- evergreen: 4+ inbound, created 7+ days ago
         WHEN ((SELECT COUNT(*) FROM note_links
-                 WHERE target_name = sky_nodes.id
-                   AND status = 'active') >= 4)
+                 WHERE status = 'active'
+                   AND (target_name = sky_nodes.id
+                        OR target_name IN (SELECT alias_lower FROM note_aliases
+                                            WHERE path = sky_nodes.path))) >= 4)
          AND ((strftime('%s','now') -
                COALESCE(
                    (SELECT created_at FROM note_meta WHERE path = sky_nodes.path),
@@ -190,8 +200,10 @@ pub(crate) const MATURITY_SQL_EXPR: &str = "
 
         -- sapling: 1+ inbound OR created 2+ days ago
         WHEN ((SELECT COUNT(*) FROM note_links
-                 WHERE target_name = sky_nodes.id
-                   AND status = 'active') >= 1)
+                 WHERE status = 'active'
+                   AND (target_name = sky_nodes.id
+                        OR target_name IN (SELECT alias_lower FROM note_aliases
+                                            WHERE path = sky_nodes.path))) >= 1)
           OR ((strftime('%s','now') -
                COALESCE(
                    (SELECT created_at FROM note_meta WHERE path = sky_nodes.path),
