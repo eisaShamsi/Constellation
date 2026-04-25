@@ -1005,6 +1005,26 @@ fn init_db(path: &Path) -> Result<Connection, String> {
              WHERE target_name = LOWER(OLD.name)
                AND LOWER(OLD.name) IS NOT LOWER(NEW.name);
 
+            -- MIG-004 §4: cascade alias rows on path change. Only
+            -- triggered when path actually moves — a name-only or
+            -- library-only rename leaves the path PK untouched, so
+            -- alias rows for the original path are still correct.
+            -- Note: this AU path is rare in practice (index_note uses
+            -- DELETE+INSERT, which fires AD+AI not AU); the cascade is
+            -- defensive coverage for direct-UPDATE writers (test code,
+            -- future migrations).
+            --
+            -- Deliberately NOT extending note_meta_sky_ad to also
+            -- DELETE alias rows — that AD fires on every save's
+            -- DELETE+INSERT cycle and would clobber 'rename' / 'import'
+            -- rows that §3 worked to make durable. Orphaned alias rows
+            -- (path no longer in note_meta) are harmless: nothing
+            -- JOINs to them, queries that filter by path stay correct.
+            UPDATE note_aliases
+               SET path = NEW.path
+             WHERE path = OLD.path
+               AND OLD.path IS NOT NEW.path;
+
             -- Conditional origin_type dirty cascade. Scoped to the set
             -- of notes affected by a derives-from edge touching the
             -- renamed note:
