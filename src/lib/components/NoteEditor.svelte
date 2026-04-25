@@ -176,15 +176,23 @@
 		}
 	}
 
-	async function handleTitleChange(newTitle: string) {
+	async function handleTitleChange(newTitle: string, filePath: string) {
 		if (!newTitle || !tab.path) return;
+		// Same staleness guard as handleSave/handleFlush. If the title-blur
+		// event arrives from a NotePane whose mounted file no longer matches
+		// the current tab, the tab has been swapped (e.g. by a wikilink
+		// click). Firing renameItem with `tab.path` (now the TARGET) and
+		// `newTitle` (still the SOURCE's stale title) would rewrite the
+		// target's frontmatter title to the source's — the title-leak data
+		// corruption bug. Bail in that case.
+		if (!filePath || filePath !== tab.path) return;
 		const currentName = tab.name.replace(/\.md$/, '');
 		if (newTitle === currentName) return;
 
 		// Skip rename if the file doesn't exist (e.g., during initial load)
-		const newPath = tab.path.replace(/[^/\\]+$/, newTitle + '.md');
+		const newPath = filePath.replace(/[^/\\]+$/, newTitle + '.md');
 		try {
-			await renameItem(tab.path, newPath);
+			await renameItem(filePath, newPath);
 		} catch (e) {
 			// Rename failed — log but don't disrupt the user
 			if (String(e).includes('does not exist')) {

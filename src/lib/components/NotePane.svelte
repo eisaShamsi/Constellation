@@ -133,7 +133,7 @@
 		onchange?: (value: string) => void;
 		onsave?: (value: string, filePath: string) => void;
 		onflush?: (text: string, needsDiskSave: boolean, cursorPos: number, scrollTop: number, filePath: string) => void;
-		ontitlechange?: (newTitle: string) => void;
+		ontitlechange?: (newTitle: string, filePath: string) => void;
 		onnavigateback?: () => void;
 		onnavigateforward?: () => void;
 		onmoreaction?: (action: string) => void;
@@ -780,7 +780,14 @@
 			// The title comes from the filename (compatible mode) or frontmatter (canonical mode).
 			titleValue = title || filePath.split(/[\\/]/).pop()?.replace(/\.(md|base)$/, '') || $t('actions.untitled');
 		}
-		if (titleValue !== title) ontitlechange?.(titleValue);
+		// Pass `mountedFilePath` (snapshotted at mount) so the parent can detect
+		// a swapped tab. When a wikilink click reuses the active tab, the OLD
+		// NotePane is destroyed; a final blur on its title input could otherwise
+		// fire ontitlechange with a stale source-tab title while `tab.path`
+		// already points to the target — corrupting the target's frontmatter
+		// title via rename_item (canonical mode). The same staleness guard
+		// pattern protects body saves via mountedFilePath in doSave/doFlush.
+		if (titleValue !== title) ontitlechange?.(titleValue, mountedFilePath);
 	}
 	function handleTitleKeydown(e: KeyboardEvent) {
 		if (e.key === 'Enter') { e.preventDefault(); view?.focus(); }
