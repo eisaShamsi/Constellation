@@ -32,7 +32,7 @@ v1.2 closes the §17 unread list. Significant additions:
 - **§9.3** (NEW): boot-bundle (10 IPCs → 1 round-trip) for early-boot data.
 - **§11** LL list now grounded in verbatim text.
 - **§12** drift list refreshed: `autoUpdateLinks` toggle is **correctly under "Sky View & Links"** (v1.0 misclaimed it as misplaced); `IPC-CONTRACT.md` still 4 weeks stale.
-- **§13** badge taxonomy resolved: **T/C/P/S/W confirmed** (W = Wikilink, owner-confirmed 2026-04-15); **#, ∅, M and LT/LF/⇄/LB/LA also defined** in `ConstellationMap.svelte:80-84`. **Only M letter meaning remains unresolved** (no doc found; honest).
+- **§13** badge taxonomy now lives in the canonical reference [`docs/Badge-Taxonomy.md`](Badge-Taxonomy.md). T/C/P/S/W/#/∅/LT/LF/⇄/LB/LA all confirmed; **M only** remains pending owner clarification. **G** is deprecated (superseded by **#**). Both `ConstellationMap.svelte:80-84` and `ConstellationSight2.svelte:79-83` ship the same map and must stay in sync.
 - **§13** auto-update-links toggle confirmed at Settings → **Sky View & Links** (not "Files" as v1.0 wrongly suggested).
 - **§14** corrected `lib.rs:233-432` line range.
 - **§15.3** (NEW): collision tiebreak — name wins over alias; identical-alias multi-target is **first-write-wins, undefined order**.
@@ -786,23 +786,18 @@ A new session reads only the highest-version file. But the trail behind it is du
 | Title-heading rename gap | **CONFIRMED**: [`NoteEditor.svelte:179-204`](src/lib/components/NoteEditor.svelte:179) handler calls `renameItem(filePath, newPath)` only — does **NOT** call `updateLinksOnRename`. The cascade is gated only by file-tree rename ([+layout.svelte:3807-3808](src/routes/+layout.svelte:3807) — conditional on `$appSettings.autoUpdateLinks && !isDir`). |
 | Sidebar active-item highlight ~10 s lag | **Origin unresolved.** No reactive source / debounce / async refresh found that accounts for the 10 s; further forensics needed when it next reproduces. |
 
-### 13.1 Badge taxonomy ([`ConstellationMap.svelte:80-84`](src/lib/components/ConstellationMap.svelte:80))
+### 13.1 Badge taxonomy
 
-**Resolved**:
-- **T** = Title (blue `#3b82f6`)
-- **C** = Content (green `#16a34a`)
-- **P** = Property (amber `#f59e0b`)
-- **S** = Semantic (purple `#7c3aed`)
-- **W** = Wikilink (grey `#94a3b8`) — confirmed by project owner 2026-04-15
-- **#** = Tag/Hashtag (pink `#f472b6`) — superseded the earlier `G` badge for the same meaning. `G` is deprecated and not present in the current code.
-- **∅** = Empty/Null (slate `#64748b`)
-- **LT** = Link Type (green `#16a34a`)
-- **LF** = Link From (red `#ef4444`)
-- **⇄** = Bidirectional (violet `#8b5cf6`)
-- **LB** = Link Back (light blue `#0ea5e9`)
-- **LA** = Link Alias (pink `#d946ef`)
+**Canonical reference: [`docs/Badge-Taxonomy.md`](Badge-Taxonomy.md).**
 
-**Unresolved** (defined in code with colors but no doc found): **M** (cyan `#06b6d4`). Honestly unknown. To be confirmed by the project owner when next clarifying badge semantics.
+Quick summary (full table, source-of-truth invariants, deprecation history, and "how to add a new badge" all live in the canonical doc):
+
+- Confirmed letters: **T** Title · **C** Content · **P** Property · **S** Semantic · **W** Wikilink · **#** Tag · **∅** Empty.
+- Link badges: **LT** Link Target · **LF** Link From · **⇄** Bidirectional · **LB** Link Back · **LA** Link Alias.
+- Pending owner clarification: **M** (cyan `#06b6d4`).
+- Deprecated: **G** — superseded by **#** for Tag.
+
+Defined in **two** files that must stay in sync: `src/lib/components/ConstellationMap.svelte:80-84` and `src/lib/components/ConstellationSight2.svelte:79-83`.
 
 ### 13.2 Filter chips on Constellation Map ([`ConstellationMap.svelte:114-125`](src/lib/components/ConstellationMap.svelte:114))
 
