@@ -206,11 +206,29 @@ After every phase, step, or significant commit:
 
 **PCS = Push + Commit + SO** — always includes help files and user manual updates.
 
-## Testing Instructions Rule
-When asking the user to test ANY feature (new, updated, or fixed):
-1. **Define the feature first** — explain what it is, why it exists, and why it matters (as it would appear in the help files / User Manual)
-2. **Then walk through step by step** — explain every click, every field, every expected result in plain language
-Never assume the user knows internal syntax, component names, or can set up test scenarios from brief descriptions. The user is a human, not an AI.
+## Testing Instructions Rule (top principal)
+
+**Every test instruction is a tutorial.** When asking the user to test ANY feature — new, updated, or fixed — the message must read like a help-file entry the user could hand to someone unfamiliar with Constellation:
+
+1. **Define the feature first.** What it is, why it exists, why it matters in plain language. This is the same paragraph that would appear in `docs/help.uConstellation.World/` or `docs/User Manual.md`. If the test is for a fix, define what the user-visible behavior was broken, what it now does, and why the fix matters.
+2. **Then walk through it click by click.** Every navigation step ("In the sidebar, right-click the file you renamed → choose Rename"), every field ("type the new title — for this test, use `Foo v2`"), every expected result ("the file's body now shows `[[Foo v2]]` where it previously said `[[Foo]]`"), every observable cue ("you'll briefly see the cursor stop blinking — that's the cascade running"). Plain language only. No internal component names (`NotePane`, `+layout.svelte`, `handleRenameComplete`) unless the user asks for technical detail.
+3. **Pre-state, action, post-state.** Each step has a known starting point, a single action, and a single expected outcome. The user should never have to guess "what was supposed to happen here?" If a step has multiple observable outcomes, list them.
+4. **Failure modes spelled out.** "If you see X instead, that means Y is broken." This lets the user report meaningfully rather than just "it didn't work."
+
+The user is a human, not an AI. They are the Boss, not a developer in your team. They should never have to read source, parse internal jargon, or set up test scenarios from a sentence-long description.
+
+This rule sits at the same tier as Working Agreement #4 (validate before shipping) and Standing Order #5 (state-of-standing record). It overrides terseness and overrides delivery pressure.
+
+## Plan Approval = Build Approval (top principal)
+
+Once the user approves a plan (a `/migration` Phase 2 plan, or any explicitly-laid-out step sequence), Claude cascades through the build steps autonomously. Claude does NOT seek per-step approval; doing so wastes the user's time and signals a lack of confidence in the plan that was already approved.
+
+Stops happen only at:
+1. **User-testable verification clauses.** Every step that produces something the user can test must pause for testing, articulated per the Testing Instructions Rule above.
+2. **Genuine architectural surprise.** If during build a step reveals an unmapped invariant or a contract change not in the plan, stop and surface it. The user may approve a deviation; they should not be ambushed.
+3. **Plan completion.** At the end of the cascade, summarize what shipped + the next decision point.
+
+The Standing Order session-log discipline still applies between steps — log each `§NNN` commit as it lands. But that's record-keeping, not approval-seeking.
 
 ## Backup Routine
 After each successful milestone:

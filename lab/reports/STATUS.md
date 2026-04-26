@@ -26,7 +26,7 @@
 | **MIG-002** Enrichment Persistence | `lab/reports/MIG-002-ENRICHMENT-PERSISTENCE.md` | ⏳ §1–§6 shipped + tested. §7–§10 🔲 pending: `enrichment_worker.rs` drain loop, derives-from triggers, frontend swap, Phase-4 audit. |
 | **MIG-003** Human-Name Filenames | (no plan doc yet — design in `docs/CANONICAL-FILENAME-ARCHITECTURE.md`) | 🔲 Not started. User-flagged readability pain (canonical stems shown in Explorer). |
 | **MIG-004** Alias-Aware Resolution | `lab/reports/MIG-004-ALIAS-AWARE-RESOLUTION.md` | ✅ Closed (all 4 phases). Audit deferrals (4B-1, 4B-2) folded into MIG-005. |
-| **MIG-005** Alias-aware in-memory inbound consumers | (no plan doc yet) | 🔲 Not started. Scope: `strata.rs` / `maturity.rs` / `tension.rs` / `inspector360.rs` / `map.rs` / `LinkDashboard.svelte`. Read-side only. |
+| **MIG-005** Alias-aware in-memory inbound consumers | `lab/reports/MIG-005-ALIAS-AWARE-INMEMORY.md` | ⏳ Phase 1 Architect complete (Option A approved). 8-step Phase 2 plan accepted, build in flight. Surfaces: 5 Rust commands (map / strata / maturity / tension / inspector360) + LinkDashboard.svelte. Read-side only. |
 | **MIG-006** Wikilink Rename Cascade | `lab/reports/MIG-006-WIKILINK-CASCADE.md` | §1 ✅ verified. §2 ✅ shipped (regex walker, 11 unit tests). §3 expanded shipped at `3c4732d` then **reverted at `5afe0c2`** (BUG-015). §3 redo + §4–§11 🔲 pending. The "rename target while source visible" UX gap (BUG-013) is documented; user must switch tabs first. |
 
 ## Boot performance
