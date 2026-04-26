@@ -515,3 +515,41 @@ foundation before resuming MIG-005 tutorial).
 
 **Next:** Resume MIG-005 tutorial rewrite (Steps 1-3 already shipped at
 §121-§123, GUI verification still pending).
+
+---
+
+## §86 — Orientation v1.1 + v1.2 + SO#6 rule corrected (PCS)
+
+**Bundle landing in one commit:**
+
+1. `CLAUDE.md` — SO#6 rule corrected: previous orientation versions are
+   **NEVER** deleted on bump. Each new version is written as a NEW file
+   alongside the existing ones, so the project owner has a durable
+   historical record of how architectural understanding evolved.
+2. `docs/Constellation Orientation & Onboarding v1.1.md` — restored.
+   Initially landed in v1.0→v1.1 bump under the prior (incorrect) rule
+   that renamed the file in place. Project owner kept a copy and
+   restored it.
+3. `docs/Constellation Orientation & Onboarding v1.2.md` — new file.
+   Closes the §17 "unread" list from v1.1: every Rust module, every CM6
+   plugin, every major Svelte component, +layout.svelte structural map
+   (155 $state / 29 $effect / 1 $derived today vs. 77/17/19 in LL-002),
+   store.ts write-ahead buffer, secondScreen.ts event API, 24 help
+   topics, 14 translated User Manuals (parity confirmed), 20 session
+   logs digested, badge taxonomy resolved (T/C/P/S + #/∅/LT/LF/⇄/LB/LA;
+   W/M honestly unresolved), memmap2 wire-through confirmed at
+   fst_bake.rs:323, no panic-handler plugin (just std::panic::set_hook),
+   alias-collision tiebreak documented, title-heading rename gap
+   confirmed, autoUpdateLinks toggle correctly placed (v1.0 §13 was
+   wrong — corrected in v1.2 §12).
+
+**Versions now stacked in `docs/`**: v1.0, v1.1, v1.2.
+
+**Closes:** awareness-pass cycle. Every subsystem the project has is
+read at least at module-doc level. Outstanding "unknowns" reduced to
+two: badge letters W and M (defined in code but undocumented), and the
+sidebar active-item highlight ~10 s lag origin (no reactive source
+isolated).
+
+**Next:** Resume MIG-005 tutorial rewrite (Steps 1-3 already shipped at
+§121-§123, GUI verification still pending).
