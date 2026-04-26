@@ -14,8 +14,54 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
+use tauri::Manager;
 
 use crate::strata::strip_frontmatter_pub;
+
+/// MIG-005 §1: read the `note_aliases` table into an in-memory
+/// `alias_lower → canonical_path` map. Used by inbound-link aggregators so
+/// a wikilink targeting a renamed note's old title (or any historical
+/// alias) is counted toward the renamed note instead of being lost as a
+/// broken link.
+///
+/// Failures (DB lock contended, table missing on first boot before MIG-004
+/// schema upgrade, query error) all degrade to an empty map — the caller
+/// sees pre-MIG-005 alias-blind behavior, which is correct for an empty
+/// alias table anyway.
+///
+/// Mirrors the SELECT shape used by `cache.rs::cache_boot_snapshot_sky`
+/// (MIG-004 §8), including the `ORDER BY path` deterministic-collision
+/// tiebreak: when two notes legitimately share an alias, the
+/// lexicographically-first path wins (same as the boot snapshot).
+fn load_alias_map(app: &tauri::AppHandle) -> HashMap<String, String> {
+    let mut map = HashMap::new();
+    let state = app.state::<crate::search::SearchState>();
+    let guard = match state.db.lock() {
+        Ok(g) => g,
+        Err(_) => return map,
+    };
+    let conn = match guard.as_ref() {
+        Some(c) => c,
+        None => return map,
+    };
+    let mut stmt = match conn
+        .prepare("SELECT alias_lower, path FROM note_aliases ORDER BY path")
+    {
+        Ok(s) => s,
+        Err(_) => return map,
+    };
+    let rows = match stmt.query_map([], |r| {
+        Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
+    }) {
+        Ok(rs) => rs,
+        Err(_) => return map,
+    };
+    for r in rows.flatten() {
+        // First-write-wins on collision (matches cache.rs §8 / §110).
+        map.entry(r.0).or_insert(r.1);
+    }
+    map
+}
 
 /// A node in the Map tree — universe, child_universe, library, folder, or note.
 #[derive(Debug, Clone, Serialize)]
@@ -68,17 +114,41 @@ pub fn constellation_map_data(
     let mut all_notes: Vec<NoteRecord> = Vec::new();
     collect_notes_recursive(root, &mut all_notes);
 
-    // Build inbound link count map: target_name_lower → count
-    let mut inbound_map: HashMap<String, usize> = HashMap::new();
+    // MIG-005 §1: load the alias resolution map once for this command.
+    // Renamed notes still have wikilinks under their old titles in other
+    // notes; without this lookup those wikilinks are silently dropped from
+    // the renamed note's inbound count and the bubble shrinks visibly.
+    let alias_to_path = load_alias_map(&app);
+
     // Build note name → path map for link resolution
     let mut name_to_path: HashMap<String, String> = HashMap::new();
+    let mut path_to_name: HashMap<String, String> = HashMap::new();
     for note in &all_notes {
-        let key = note.name.to_lowercase();
-        name_to_path.insert(key, note.path.clone());
+        let name_lower = note.name.to_lowercase();
+        name_to_path.insert(name_lower.clone(), note.path.clone());
+        path_to_name.insert(note.path.clone(), name_lower);
     }
+
+    // Build inbound link count map keyed by canonical lowercased note name.
+    // 3-tier resolution per cache.rs::read_sky_links_raw (MIG-004 §8):
+    //   1. target is a current note name → count toward that name.
+    //   2. target is an alias of a current note → resolve to canonical
+    //      path → look up canonical name → count toward THAT name.
+    //   3. unresolved (broken link) → skip; don't pollute inbound_map.
+    let mut inbound_map: HashMap<String, usize> = HashMap::new();
     for note in &all_notes {
         for target in &note.outgoing_links {
-            *inbound_map.entry(target.clone()).or_insert(0) += 1;
+            let canonical_name = if name_to_path.contains_key(target) {
+                target.clone()
+            } else if let Some(canonical_path) = alias_to_path.get(target) {
+                match path_to_name.get(canonical_path) {
+                    Some(n) => n.clone(),
+                    None => continue,
+                }
+            } else {
+                continue;
+            };
+            *inbound_map.entry(canonical_name).or_insert(0) += 1;
         }
     }
 
@@ -118,17 +188,46 @@ pub fn constellation_map_data(
 }
 
 /// Build a library MapNode from a library path — reusable for both top-level and child universe libs.
-fn build_library_node(lib_path: &str, lib_name: &str, depth_limit: u32) -> Option<MapNode> {
+///
+/// `alias_to_path` is loaded once per command at the call-site (universe-
+/// level entry point) and threaded down so every library inherits the
+/// same alias view — see MIG-005 §1.
+fn build_library_node(
+    lib_path: &str,
+    lib_name: &str,
+    depth_limit: u32,
+    alias_to_path: &HashMap<String, String>,
+) -> Option<MapNode> {
     let root = Path::new(lib_path);
     if !root.is_dir() { return None; }
 
     let mut all_notes: Vec<NoteRecord> = Vec::new();
     collect_notes_recursive(root, &mut all_notes);
 
+    // Build name ↔ path maps for 3-tier alias resolution (mirrors
+    // constellation_map_data above).
+    let mut name_to_path: HashMap<String, String> = HashMap::new();
+    let mut path_to_name: HashMap<String, String> = HashMap::new();
+    for note in &all_notes {
+        let name_lower = note.name.to_lowercase();
+        name_to_path.insert(name_lower.clone(), note.path.clone());
+        path_to_name.insert(note.path.clone(), name_lower);
+    }
+
     let mut inbound_map: HashMap<String, usize> = HashMap::new();
     for note in &all_notes {
         for target in &note.outgoing_links {
-            *inbound_map.entry(target.clone()).or_insert(0) += 1;
+            let canonical_name = if name_to_path.contains_key(target) {
+                target.clone()
+            } else if let Some(canonical_path) = alias_to_path.get(target) {
+                match path_to_name.get(canonical_path) {
+                    Some(n) => n.clone(),
+                    None => continue,
+                }
+            } else {
+                continue;
+            };
+            *inbound_map.entry(canonical_name).or_insert(0) += 1;
         }
     }
 
@@ -199,6 +298,11 @@ pub fn constellation_map_universe(
     let libraries = crate::libraries::load_all_libraries(&app);
     let depth_limit = max_depth.unwrap_or(5);
 
+    // MIG-005 §1: load the alias resolution map once for the whole
+    // universe walk. Threaded down into every per-library
+    // build_library_node call so they all see the same alias view.
+    let alias_to_path = load_alias_map(&app);
+
     // Get child universes
     let child_universes = crate::universe::get_child_universes(app.clone()).unwrap_or_default();
 
@@ -227,7 +331,7 @@ pub fn constellation_map_universe(
 
         for lib in &cu_libs {
             child_lib_paths.insert(lib.path.replace('\\', "/").to_lowercase());
-            if let Some(node) = build_library_node(&lib.path, &lib.name, depth_limit) {
+            if let Some(node) = build_library_node(&lib.path, &lib.name, depth_limit, &alias_to_path) {
                 cu_weight += node.weight;
                 cu_notes += node.note_count;
                 cu_words += node.word_count;
@@ -268,7 +372,7 @@ pub fn constellation_map_universe(
         let key = lib.path.replace('\\', "/").to_lowercase();
         if child_lib_paths.contains(&key) { continue; }
 
-        if let Some(node) = build_library_node(&lib.path, &lib.name, depth_limit) {
+        if let Some(node) = build_library_node(&lib.path, &lib.name, depth_limit, &alias_to_path) {
             total_weight += node.weight;
             total_notes += node.note_count;
             total_words += node.word_count;
