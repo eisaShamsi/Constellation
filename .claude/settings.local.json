@@ -414,7 +414,20 @@
       "Bash(tasklist //FI \"IMAGENAME eq constellation*.exe\")",
       "PowerShell($file = \"E:\\\\مشاريع كلاود\\\\Constellation\\\\.claude\\\\worktrees\\\\upbeat-proskuriakova\\\\src\\\\routes\\\\+layout.svelte\"; $bytes = [System.IO.File]::ReadAllBytes\\($file\\); $text = [System.Text.Encoding]::UTF8.GetString\\($bytes\\); if\\($text -match \"`r`n\"\\){Write-Output \"CRLF\"} else {Write-Output \"LF\"}; Write-Output \\(\"Total length: \" + $text.Length\\))",
       "Bash(find src *)",
-      "Bash(find \"E:\\\\مشاريع كلاود\\\\Constellation\\\\src\" -type f \\\\\\( -name \"*.ts\" -o -name \"*.svelte\" \\\\\\) -exec grep -l \"^[[:space:]]*//\" {} \\\\;)"
+      "Bash(find \"E:\\\\مشاريع كلاود\\\\Constellation\\\\src\" -type f \\\\\\( -name \"*.ts\" -o -name \"*.svelte\" \\\\\\) -exec grep -l \"^[[:space:]]*//\" {} \\\\;)",
+      "Bash(powershell -Command \"[System.TimeZoneInfo]::ConvertTimeBySystemTimeZoneId\\([datetime]::UtcNow, 'Arabian Standard Time'\\)\")",
+      "PowerShell([System.TimeZoneInfo]::ConvertTimeBySystemTimeZoneId\\([datetime]::UtcNow, \"Arabian Standard Time\"\\))",
+      "Bash(Arabian Standard Time\"\\) | Select-Object -ExpandProperty Hour)",
+      "mcp__scheduled-tasks__list_scheduled_tasks",
+      "mcp__scheduled-tasks__update_scheduled_task",
+      "Bash(git -C \"/e/مشاريع كلاود/Constellation\" diff --cached --name-only)",
+      "Bash(git -C \"/e/مشاريع كلاود/Constellation\" status --porcelain -- src-tauri/src/lexicon/data/lexicon_v1.tsv lab/m11-data/)",
+      "Bash(awk -F'\"' '{print $4}')",
+      "Bash(sort -u wc -l /tmp/existing_ids.txt)",
+      "Bash(git -C \"/e/مشاريع كلاود/Constellation\" log --oneline --all --grep=\"M11-data v2: +\")",
+      "Bash(Arabian Standard Time\"\\))",
+      "Bash(bash regenerate.sh)",
+      "Bash(grep -v \"^$\")"
     ]
   }
 }

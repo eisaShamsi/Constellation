@@ -32,7 +32,7 @@ v1.2 closes the §17 unread list. Significant additions:
 - **§9.3** (NEW): boot-bundle (10 IPCs → 1 round-trip) for early-boot data.
 - **§11** LL list now grounded in verbatim text.
 - **§12** drift list refreshed: `autoUpdateLinks` toggle is **correctly under "Sky View & Links"** (v1.0 misclaimed it as misplaced); `IPC-CONTRACT.md` still 4 weeks stale.
-- **§13** badge taxonomy resolved: **T/C/P/S confirmed**; **#, ∅, W, M and LT/LF/⇄/LB/LA also defined** in `ConstellationMap.svelte:80-84`. **W and M letter meanings remain unresolved** (no doc found; honest).
+- **§13** badge taxonomy resolved: **T/C/P/S/W confirmed** (W = Wikilink, owner-confirmed 2026-04-15); **#, ∅, M and LT/LF/⇄/LB/LA also defined** in `ConstellationMap.svelte:80-84`. **Only M letter meaning remains unresolved** (no doc found; honest).
 - **§13** auto-update-links toggle confirmed at Settings → **Sky View & Links** (not "Files" as v1.0 wrongly suggested).
 - **§14** corrected `lib.rs:233-432` line range.
 - **§15.3** (NEW): collision tiebreak — name wins over alias; identical-alias multi-target is **first-write-wins, undefined order**.
@@ -793,6 +793,7 @@ A new session reads only the highest-version file. But the trail behind it is du
 - **C** = Content (green `#16a34a`)
 - **P** = Property (amber `#f59e0b`)
 - **S** = Semantic (purple `#7c3aed`)
+- **W** = Wikilink (grey `#94a3b8`) — confirmed by project owner 2026-04-15
 - **#** = Tag/Hashtag (pink `#f472b6`)
 - **∅** = Empty/Null (slate `#64748b`)
 - **LT** = Link Type (green `#16a34a`)
@@ -801,7 +802,7 @@ A new session reads only the highest-version file. But the trail behind it is du
 - **LB** = Link Back (light blue `#0ea5e9`)
 - **LA** = Link Alias (pink `#d946ef`)
 
-**Unresolved** (defined in code with colors but no doc found): **W** (grey `#94a3b8`), **M** (cyan `#06b6d4`). Honestly unknown. To be confirmed by the project owner when next clarifying badge semantics.
+**Unresolved** (defined in code with colors but no doc found): **M** (cyan `#06b6d4`). Honestly unknown. To be confirmed by the project owner when next clarifying badge semantics.
 
 ### 13.2 Filter chips on Constellation Map ([`ConstellationMap.svelte:114-125`](src/lib/components/ConstellationMap.svelte:114))
 
