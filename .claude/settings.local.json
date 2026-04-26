@@ -427,7 +427,8 @@
       "Bash(git -C \"/e/مشاريع كلاود/Constellation\" log --oneline --all --grep=\"M11-data v2: +\")",
       "Bash(Arabian Standard Time\"\\))",
       "Bash(bash regenerate.sh)",
-      "Bash(grep -v \"^$\")"
+      "Bash(grep -v \"^$\")",
+      "Bash(git rm *)"
     ]
   }
 }

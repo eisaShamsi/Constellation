@@ -794,7 +794,7 @@ A new session reads only the highest-version file. But the trail behind it is du
 - **P** = Property (amber `#f59e0b`)
 - **S** = Semantic (purple `#7c3aed`)
 - **W** = Wikilink (grey `#94a3b8`) — confirmed by project owner 2026-04-15
-- **#** = Tag/Hashtag (pink `#f472b6`)
+- **#** = Tag/Hashtag (pink `#f472b6`) — superseded the earlier `G` badge for the same meaning. `G` is deprecated and not present in the current code.
 - **∅** = Empty/Null (slate `#64748b`)
 - **LT** = Link Type (green `#16a34a`)
 - **LF** = Link From (red `#ef4444`)

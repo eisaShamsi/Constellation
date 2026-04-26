@@ -32,3 +32,6 @@ Desktop.ini
 # Logs
 *.log
 npm-debug.log*
+
+# Claude Code worktrees (per-agent isolation directories — never commit)
+.claude/worktrees/
