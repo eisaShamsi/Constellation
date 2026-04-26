@@ -478,3 +478,40 @@ external changes and re-indexes; the next launch will reconcile.
 - Forensic snapshots preserved in `lab/forensics/` for posterity.
 - All MIG-006 §3-expanded code removed; cascade reverted to §114
   regex walker.
+
+---
+
+## §85 — Orientation doc v1.0 + BASIC RULE + SO#6 (PCS)
+
+**Bundle landing in one commit:**
+
+1. `CLAUDE.md` — adds BASIC RULE ("Don't make things up") at top of all
+   rules; Working Agreement #4 (architectural validation); Standing
+   Order #5 (state-of-standing record before pivots); Standing Order #6
+   (maintain orientation doc, with versioned filename convention);
+   Testing Instructions Rule (top principal, tutorial style); Plan
+   Approval = Build Approval (top principal).
+2. `docs/Constellation Orientation & Onboarding v1.0.md` — new 639-line
+   onboarding doc. First file every new Claude session reads. 17
+   sections covering architecture, hierarchy, Cognitive Engine status,
+   Arabic Engine, canonical filenames, editor parity, active migrations,
+   boot perf, standing rules, LL-001..023, doc drift, outstanding bugs,
+   where to read what, session-start protocol, SO#6, "what I have NOT
+   read in detail."
+
+**Filename versioning rule** (per user, mid-PCS): orientation doc
+filename always carries its version suffix. v1.0 → v1.0.md, v1.1 →
+v1.1.md. Rename the file in the same commit that bumps the version.
+SO#6 codifies this.
+
+**Why this bundle ships now:** the BASIC RULE was triggered by the
+T/C/P fabrication incident (2026-04-26 — see
+`feedback_dont_make_things_up.md`). The orientation doc exists so a
+fresh Claude session does not re-fabricate facts about subsystems it
+never read. Both must land before any further code work.
+
+**Closes:** Step 1 of "fix the essential first" (orient + secure
+foundation before resuming MIG-005 tutorial).
+
+**Next:** Resume MIG-005 tutorial rewrite (Steps 1-3 already shipped at
+§121-§123, GUI verification still pending).

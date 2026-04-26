@@ -203,6 +203,7 @@ After every phase, step, or significant commit:
 3. This is the safety net — if the session is cleared or restarted, the next session can pick up exactly where this one left off.
 4. The SO also includes running `/simplify` (code review) after each phase.
 5. **State-of-standing record before any pivot or major triage.** When the user says "where do we stand?", "let's regroup", asks for a backlog/inventory, or asks to redirect priorities: write a snapshot record into the current day's session log capturing (a) what's verified-shipped and protected, (b) what's at-risk / in-flight / uncommitted in the worktree, (c) what's known-broken, (d) what's pending but not started, and (e) any documentation drift. Never proceed to the new direction until that record is written. The record lets a fresh session — or a fresh you — pick up the exact state without rediscovering it from git log + screenshots.
+6. **Maintain `docs/Constellation Orientation & Onboarding vX.Y.md` as the canonical onboarding document.** The filename always carries its version suffix (e.g. `Constellation Orientation & Onboarding v1.0.md`, `... v1.1.md`). When bumping the version, rename the file in the same commit — never leave a versionless or stale-version filename in the docs folder. This is the FIRST file every new Claude session reads — it conveys architectural fluency in one read so a fresh AI doesn't rediscover the project from `git log` + screenshots. When any of these change, update the orientation doc in the same commit that lands the change: a migration starts/ships/closes; a top-principal rule is added or reworded; a BUG-NNN opens or closes; a doc-drift item from §12 of the orientation is fixed; a Lessons-Learned entry is added; a boot-perf criterion changes; a version bumps; a subsystem ships a major feature; a help topic ships or restructures. Bump the version (1.0 → 1.1) on structural changes, date-stamp section updates. Keep it readable in one pass — if it grows past ~1500 lines, split into `docs/orientation/` sub-documents. The doc itself enumerates §17 "what Claude has NOT read in detail" — keep that list honest; remove items when verified, add items when new files appear unread.
 
 **PCS = Push + Commit + SO** — always includes help files and user manual updates.
 
@@ -237,6 +238,23 @@ After each successful milestone:
 3. To restore: `git checkout milestone/<name>` or unzip the archive.
 
 ---
+
+## BASIC RULE — Don't Make Things Up (top of all rules)
+
+**If I don't have a clue or information, I say "I don't know."**
+
+I do not invent file paths, line numbers, function names, badge taxonomies, prior-art summaries, or any other factual claim. I do not "fill in" plausible-sounding detail because the framing of a tutorial / explanation / status report seems to demand a confident answer. Confident filler is fabrication, and fabrication is the worst class of error I can deliver to this user — worse than a slow build, worse than a missed bug, worse than a regression. Bugs are recoverable; trust isn't.
+
+When I don't know:
+- Say so plainly: **"I don't know."**
+- Then either look it up (grep the repo, read the docs, read the commit history, read the session logs, ask the user), or note that the answer is unknown and proceed without it.
+- Never paper over the gap with invention.
+
+When I'm tempted to add a "side note" / "for context" / "by the way" — I must check whether every claim in it is sourced. If any claim isn't, the entire side note is cut.
+
+This rule sits at the top of every other rule. It overrides terseness, overrides delivery pressure, overrides the desire to seem authoritative, overrides the user's own framing if their question presupposes a fact I don't actually know.
+
+Canonical violation prevented: the 2026-04-26 tutorial side note that claimed `T C P` badges meant "Theory / Concept / Proposition" stratum tiers. The user designed those badges (T = Title, C = Content, P = Property, with S = Semantic etc.). I had never read the design and had no basis for the claim. I made it up. That cannot happen again.
 
 ## Working Agreement (ground rules, non-negotiable)
 
