@@ -18,6 +18,41 @@ use serde::Serialize;
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::Path;
+use tauri::Manager;
+
+/// MIG-005 §2: read `note_aliases` into an in-memory `alias_lower → path`
+/// map. See `map.rs::load_alias_map` for the canonical comment — same
+/// shape repeated here per Option A's per-surface discipline (no shared
+/// helper module). Failure paths degrade to an empty map (pre-MIG-005
+/// alias-blind behavior).
+fn load_alias_map(app: &tauri::AppHandle) -> HashMap<String, String> {
+    let mut map = HashMap::new();
+    let state = app.state::<crate::search::SearchState>();
+    let guard = match state.db.lock() {
+        Ok(g) => g,
+        Err(_) => return map,
+    };
+    let conn = match guard.as_ref() {
+        Some(c) => c,
+        None => return map,
+    };
+    let mut stmt = match conn
+        .prepare("SELECT alias_lower, path FROM note_aliases ORDER BY path")
+    {
+        Ok(s) => s,
+        Err(_) => return map,
+    };
+    let rows = match stmt.query_map([], |r| {
+        Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
+    }) {
+        Ok(rs) => rs,
+        Err(_) => return map,
+    };
+    for r in rows.flatten() {
+        map.entry(r.0).or_insert(r.1);
+    }
+    map
+}
 
 /// Per-note stratum result returned to the frontend.
 #[derive(Debug, Clone, Serialize)]
@@ -67,16 +102,34 @@ pub fn compute_note_strata(
 
     // Phase 2: Build inbound map
     let note_names: HashSet<String> = notes.keys().cloned().collect();
+
+    // MIG-005 §2: load alias map + path→name lookup so renamed targets
+    // count toward the renamed note. 3-tier resolution mirrors
+    // cache.rs::read_sky_links_raw (MIG-004 §8).
+    let alias_to_path = load_alias_map(&app);
+    let path_to_name: HashMap<String, String> = notes
+        .values()
+        .map(|n| (n.path.clone(), n.name.to_lowercase()))
+        .collect();
+
     // Collect inbound data first (can't borrow notes mutably while iterating)
     let mut inbound_data: HashMap<String, (usize, HashSet<String>)> = HashMap::new();
     for record in notes.values() {
         for target_name in &record.outgoing {
             let target_lower = target_name.to_lowercase();
-            if note_names.contains(&target_lower) {
-                let entry = inbound_data.entry(target_lower).or_insert((0, HashSet::new()));
-                entry.0 += 1;
-                entry.1.insert(record.name.clone());
-            }
+            let canonical = if note_names.contains(&target_lower) {
+                target_lower
+            } else if let Some(canonical_path) = alias_to_path.get(&target_lower) {
+                match path_to_name.get(canonical_path) {
+                    Some(n) => n.clone(),
+                    None => continue,
+                }
+            } else {
+                continue;
+            };
+            let entry = inbound_data.entry(canonical).or_insert((0, HashSet::new()));
+            entry.0 += 1;
+            entry.1.insert(record.name.clone());
         }
     }
     for (name, (count, sources)) in inbound_data {
