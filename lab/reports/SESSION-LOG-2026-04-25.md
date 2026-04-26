@@ -553,3 +553,28 @@ isolated).
 
 **Next:** Resume MIG-005 tutorial rewrite (Steps 1-3 already shipped at
 §121-§123, GUI verification still pending).
+
+---
+
+## §87 — Orientation v1.3 + Badge-Taxonomy.md under git (PCS)
+
+**Bundle landing in one commit:**
+
+1. `docs/Badge-Taxonomy.md` — canonical badge reference (created
+   2026-04-15, predates orientation v1.0). Brought under git on this
+   branch for the first time.
+2. `docs/Constellation Orientation & Onboarding v1.3.md` — new file
+   alongside v1.0/v1.1/v1.2 per the corrected SO#6 versions-stack rule.
+   Folds badge corrections from Badge-Taxonomy.md:
+   - **W** = Wikilink (was "unresolved" in v1.2).
+   - **LT** = Link **Target** (was "Link Type" in v1.2 — wrong).
+   - **G** = deprecated, superseded by **#** (added).
+   - Render sites: BOTH ConstellationMap.svelte:80-84 AND
+     ConstellationSight2.svelte:79-83 (was only Map in v1.2).
+   - §14 index row points to Badge-Taxonomy.md.
+   - §17 unknowns: W removed; M still pending owner clarification.
+
+**Versions in `docs/`**: v1.0, v1.1, v1.2, v1.3.
+
+**Next:** Resume MIG-005 tutorial rewrite (Steps 1-3 already shipped
+at §121-§123, GUI verification still pending).
