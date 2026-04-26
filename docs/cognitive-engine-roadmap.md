@@ -58,12 +58,6 @@ LAYER 3 — AI Discovery (reads Layer 1 + 2 structures)
 | 9 | Multi-Lens Views | ✅ GO — user tested | `4b72c0c` | 2026-04-03 |
 | 10 | Expression Forge | ✅ GO — user tested | `e6e4966` | 2026-04-03 |
 | 11 | Sense-Making Canvas | ✅ GO — user tested | `bec8e3d` | 2026-04-03 |
-| 6 | Externalization Engine | 🔲 Not started | — | — |
-| 7 | Review Pulse | 🔲 Not started | — | — |
-| 8 | Trails | 🔲 Not started | — | — |
-| 9 | Multi-Lens Views | 🔲 Not started | — | — |
-| 10 | Expression Forge | 🔲 Not started | — | — |
-| 11 | Sense-Making Canvas | 🔲 Not started | — | — |
 | 12 | Hidden Pattern Discovery | 🔲 Not started | — | — |
 | 13 | Blind Spot Detection | 🔲 Not started | — | — |
 | 14 | Cross-Domain Insights | 🔲 Not started | — | — |

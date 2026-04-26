@@ -1,6 +1,6 @@
 # M11-data — Constellation Lexicon corpus
 
-**Status**: v2 (in-flight, scaling toward 20K concepts via thematic shards).
+**Status**: v2 Producer **complete** — corpus reached the ~20K-concept target across 499 thematic shards in `concepts/`. Continued growth (additional shards, sense-tagged synonyms, domain packs) is captured under "Follow-ons" below as discrete future work.
 **Output**: `src-tauri/src/lexicon/data/lexicon_v1.tsv`
 **Parser**: `src-tauri/src/lexicon/parse.rs` (unchanged from M10).
 
