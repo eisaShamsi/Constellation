@@ -2603,7 +2603,13 @@
 						skyLinks = sky.links;
 						skyVersion++;
 					} else {
-						const { nodes, links: gLinks } = buildSkyData(graph.links, allNotes);
+						// MIG-005-PARITY: pass notePathToAliases so the
+						// buildSkyData fallback can resolve renamed-target
+						// wikilinks via the alias map — same alias-aware
+						// resolution the cache_boot_snapshot_sky path
+						// performs server-side. Without this, the fallback
+						// silently drops every edge whose target was renamed.
+						const { nodes, links: gLinks } = buildSkyData(graph.links, allNotes, notePathToAliases);
 						skyNodes = nodes;
 						skyLinks = gLinks;
 						skyVersion++;

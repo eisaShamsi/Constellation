@@ -1995,28 +1995,64 @@ export interface SkyLink {
 	linkType?: string;
 }
 
-export function buildSkyData(allLinks: NoteLink[], allNotes: { name: string; path: string; libraryName: string }[]) {
+export function buildSkyData(
+	allLinks: NoteLink[],
+	allNotes: { name: string; path: string; libraryName: string }[],
+	notePathToAliases?: Map<string, string[]>
+) {
 	const nodeMap = new Map<string, SkyNode>();
+	// path → current note name lowercase. Used by the alias-fallback below.
+	const pathToCurrentName = new Map<string, string>();
 	// Add all notes as nodes
 	for (const note of allNotes) {
-		nodeMap.set(note.name.toLowerCase(), {
-			id: note.name.toLowerCase(),
+		const id = note.name.toLowerCase();
+		nodeMap.set(id, {
+			id,
 			name: note.name,
 			path: note.path,
 			libraryName: note.libraryName,
 			linkCount: 0,
 			outgoingCount: 0
 		});
+		pathToCurrentName.set(note.path, id);
 	}
+
+	// MIG-005-PARITY: Build alias_lower → current note id (lowercased name) so
+	// a wikilink targeting a renamed note's old title still resolves to the
+	// renamed note. Mirrors the 3-tier resolution in
+	// `cache.rs::read_sky_links_raw` (MIG-004 §8). Without this, the
+	// buildSkyData fallback path silently drops every edge whose target was
+	// renamed since the wikilink was last reindexed — exactly the
+	// "renaming-shrinks-the-bubble" symptom MIG-005 is meant to eliminate.
+	const aliasToCurrentId = new Map<string, string>();
+	if (notePathToAliases) {
+		for (const [path, aliases] of notePathToAliases) {
+			const currentId = pathToCurrentName.get(path);
+			if (!currentId) continue;
+			for (const alias of aliases) {
+				if (!aliasToCurrentId.has(alias)) {
+					aliasToCurrentId.set(alias, currentId);
+				}
+			}
+		}
+	}
+
+	const resolveTarget = (raw: string): string | undefined => {
+		if (nodeMap.has(raw)) return raw;
+		const viaAlias = aliasToCurrentId.get(raw);
+		if (viaAlias && nodeMap.has(viaAlias)) return viaAlias;
+		return undefined;
+	};
 
 	const links: SkyLink[] = [];
 	const seen = new Set<string>();
 
 	for (const link of allLinks) {
 		const sourceId = link.source_name.toLowerCase();
-		const targetId = link.target.toLowerCase();
-
-		if (!nodeMap.has(sourceId) || !nodeMap.has(targetId)) continue;
+		const targetCandidate = link.target.toLowerCase();
+		if (!nodeMap.has(sourceId)) continue;
+		const targetId = resolveTarget(targetCandidate);
+		if (!targetId) continue;
 
 		// Include link_type in key so typed links with different types are kept as distinct edges
 		const key = `${sourceId}->${targetId}:${link.link_type ?? ''}`;

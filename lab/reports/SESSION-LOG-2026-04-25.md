@@ -578,3 +578,64 @@ isolated).
 
 **Next:** Resume MIG-005 tutorial rewrite (Steps 1-3 already shipped
 at §121-§123, GUI verification still pending).
+
+---
+
+## §88 — buildSkyData fallback now alias-aware (Sky View edge regression closed)
+
+**Symptom:** During MIG-005 Tutorial #1 testing on 2026-04-27, Sky View
+showed Apple Tree Fruit (a renamed note with five accumulated rename
+aliases) as an isolated bubble with zero incoming edges, despite the
+Backlinks panel correctly resolving 4 incoming mentions and the SQL
+state being fully correct (verified end-to-end via direct sqlite3
+inspection).
+
+**Root cause:** Two parallel code paths populate skyNodes/skyLinks at
+boot:
+
+1. **Alias-aware path** — `cache_boot_snapshot_sky` (cache.rs:516+,
+   3-tier resolution per MIG-004 §8). Honors note_aliases.
+2. **Legacy fallback** — `buildSkyData` (store.ts:1998), used when the
+   sky IPC errors or returns isReady=false. Pure name-equality match.
+   No alias awareness.
+
+The user's binary (built 2026-04-26 10:23, contains all of
+MIG-001/004/005) was hitting the legacy fallback for reasons not yet
+isolated. Once in fallback, every wikilink whose target was a renamed
+note's old title got dropped because the lookup `nodeMap.has(targetId)`
+fails for stale target_names that haven't been reindexed yet.
+
+**Fix:** Added optional third parameter `notePathToAliases` to
+buildSkyData. When provided (always at the +layout.svelte:2606 call
+site, since notePathToAliases is already populated from graph.aliases
+per MIG-004 §9), the function builds an `aliasToCurrentId` map and
+uses it as Tier 2 fallback during target resolution. Mirrors the
+3-tier shape of cache.rs::read_sky_links_raw.
+
+**Files:**
+- `src/lib/libraries/store.ts` — buildSkyData signature + alias resolver.
+- `src/routes/+layout.svelte:2606` — pass notePathToAliases at call site.
+
+**Defensive value:** Even if the alias-aware sky snapshot path is also
+fixed later (the original mystery — why is the user's binary hitting
+the fallback when MIG-001 is closed?), this fix removes the failure
+mode of the fallback path entirely. Both paths are now alias-correct.
+
+**User-verified:** Apple Tree Fruit now displays its incoming edges
+from Salad Recipe, Lunch Plan, and Banana in Sky View
+(2026-04-27 ~16:00).
+
+**Open:** SecondScreenPage.svelte has 3 buildSkyData call sites that
+still pass only 2 args (no alias map). They keep their previous
+alias-blind behavior. To be threaded in a follow-up — second-screen
+Sky View companion will exhibit the same rename-drops-edges symptom
+until done.
+
+**Open architectural mystery:** Why is the binary hitting the
+buildSkyData fallback at all? cache_boot_snapshot_sky should succeed
+given schema_versions.sky=10=SKY_SCHEMA_VERSION. Filed as a follow-up
+investigation. The defensive fix above removes user-visible impact
+in the meantime.
+
+**Next:** Resume staged MIG-005 Tutorial #1. Stage 1 (basic alias
+resolution) verified shipped. Stage 2 testing pending user direction.
