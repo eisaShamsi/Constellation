@@ -27,8 +27,19 @@
 		return `${Math.floor(days / 365)}y ago`;
 	}
 
+	// `linkTypes` is the post-dedupe array of distinct typed-link badges
+	// for a single source note. `linkType` is kept as a back-compat
+	// optional (some legacy callers haven't updated to the deduped shape
+	// yet) — the template prefers `linkTypes` when present.
+	type BacklinkRow = {
+		name: string; path: string; context: string; libraryName: string;
+		linkType?: string;
+		linkTypes?: string[];
+		traversalCount?: number; lastTraversed?: string; tier?: string;
+		confidence?: LinkConfidence; annotation?: string;
+	};
 	let {
-		backlinks = [] as { name: string; path: string; context: string; libraryName: string; linkType?: string; traversalCount?: number; lastTraversed?: string; tier?: string; confidence?: LinkConfidence; annotation?: string }[],
+		backlinks = [] as BacklinkRow[],
 		unlinkedMentions = [] as { name: string; path: string; context: string; libraryName: string }[],
 		activeNoteName = '',
 		activeNotePath = '',
@@ -36,7 +47,7 @@
 		onConfidenceChange = undefined as undefined | ((sourcePath: string, targetName: string, confidence: LinkConfidence) => void),
 		onArchive = undefined as undefined | ((sourcePath: string, targetName: string) => void),
 	}: {
-		backlinks: { name: string; path: string; context: string; libraryName: string; linkType?: string; traversalCount?: number; lastTraversed?: string; tier?: string; confidence?: LinkConfidence; annotation?: string }[];
+		backlinks: BacklinkRow[];
 		unlinkedMentions: { name: string; path: string; context: string; libraryName: string }[];
 		activeNoteName?: string;
 		activeNotePath?: string;
@@ -44,6 +55,13 @@
 		onConfidenceChange?: (sourcePath: string, targetName: string, confidence: LinkConfidence) => void;
 		onArchive?: (sourcePath: string, targetName: string) => void;
 	} = $props();
+
+	/** Resolve the row's link-type list — prefers the post-dedupe
+	 *  `linkTypes[]`; falls back to wrapping a single `linkType`. */
+	function rowLinkTypes(bl: BacklinkRow): string[] {
+		if (bl.linkTypes && bl.linkTypes.length > 0) return bl.linkTypes;
+		return bl.linkType ? [bl.linkType] : [];
+	}
 
 	// Confidence popover state. Opened via right-click on a backlink row.
 	// Position is absolute-positioned relative to the viewport (fixed).
@@ -136,13 +154,13 @@
 							<span class="bl-library-dot" style="background:{getLibraryColor(bl.libraryName)}"></span>
 						{/if}
 						<span class="bl-name">{bl.name}</span>
-						{#if bl.linkType}
-							{@const fill = LINK_TYPE_COLORS[bl.linkType] ?? '#888'}
-							{@const txt = LINK_TYPE_TEXT[bl.linkType] ?? '#ffffff'}
+						{#each rowLinkTypes(bl) as lt (lt)}
+							{@const fill = LINK_TYPE_COLORS[lt] ?? '#888'}
+							{@const txt = LINK_TYPE_TEXT[lt] ?? '#ffffff'}
 							<span class="bl-link-type-badge"
 								style="color:{txt};background:{fill};border-color:{fill}"
-							>{$t(`linkTypes.${bl.linkType}`) || bl.linkType}</span>
-						{/if}
+							>{$t(`linkTypes.${lt}`) || lt}</span>
+						{/each}
 						{#if (bl.traversalCount ?? 0) > 0}
 							{@const ltLabel = fmtTraversed(bl.lastTraversed ?? '')}
 							<span class="bl-traversal-chip bl-tier-{bl.tier ?? 'emerging'}"

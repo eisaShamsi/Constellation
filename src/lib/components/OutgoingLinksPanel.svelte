@@ -23,21 +23,38 @@
 		return `${Math.floor(days / 365)}y ago`;
 	}
 
+	// `linkTypes` is the post-dedupe array of distinct typed-link badges
+	// for the same target. `linkType` kept as a back-compat optional —
+	// the template prefers `linkTypes` when present.
+	type OutgoingRow = {
+		target: string; context: string;
+		traversalCount?: number; lastTraversed?: string;
+		linkType?: string;
+		linkTypes?: string[];
+		tier?: string;
+		confidence?: LinkConfidence;
+		annotation?: string;
+	};
 	let {
-		outgoingLinks = [] as { target: string; context: string; traversalCount?: number; lastTraversed?: string; linkType?: string; tier?: string; confidence?: LinkConfidence; annotation?: string }[],
+		outgoingLinks = [] as OutgoingRow[],
 		activeNotePath = '',
 		libraryPath = '',
 		libraryColorMap = {} as Record<string, string>,
 		onConfidenceChange = undefined as undefined | ((sourcePath: string, targetName: string, confidence: LinkConfidence) => void),
 		onArchive = undefined as undefined | ((sourcePath: string, targetName: string) => void),
 	}: {
-		outgoingLinks: { target: string; context: string; traversalCount?: number; lastTraversed?: string; linkType?: string; tier?: string; confidence?: LinkConfidence; annotation?: string }[];
+		outgoingLinks: OutgoingRow[];
 		activeNotePath?: string;
 		libraryPath?: string;
 		libraryColorMap?: Record<string, string>;
 		onConfidenceChange?: (sourcePath: string, targetName: string, confidence: LinkConfidence) => void;
 		onArchive?: (sourcePath: string, targetName: string) => void;
 	} = $props();
+
+	function rowLinkTypes(link: OutgoingRow): string[] {
+		if (link.linkTypes && link.linkTypes.length > 0) return link.linkTypes;
+		return link.linkType ? [link.linkType] : [];
+	}
 
 	let showOutgoing = $state(true);
 
@@ -99,13 +116,13 @@
 				title={$t('linkConfidence.rightClickHint') || 'Right-click to set confidence'}>
 				<span class="ol-target-row">
 					<span class="ol-target">{link.target}</span>
-					{#if link.linkType}
-						{@const fill = LINK_TYPE_COLORS[link.linkType] ?? '#888'}
-						{@const txt = LINK_TYPE_TEXT[link.linkType] ?? '#ffffff'}
+					{#each rowLinkTypes(link) as lt (lt)}
+						{@const fill = LINK_TYPE_COLORS[lt] ?? '#888'}
+						{@const txt = LINK_TYPE_TEXT[lt] ?? '#ffffff'}
 						<span class="ol-link-type-badge"
 							style="color:{txt};background:{fill};border-color:{fill}"
-						>{$t(`linkTypes.${link.linkType}`) || link.linkType}</span>
-					{/if}
+						>{$t(`linkTypes.${lt}`) || lt}</span>
+					{/each}
 					{#if (link.traversalCount ?? 0) > 0}
 						{@const ltLabel = fmtTraversed(link.lastTraversed ?? '')}
 						<span class="ol-traversal-chip ol-tier-{link.tier ?? 'emerging'}"

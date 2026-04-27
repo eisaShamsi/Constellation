@@ -1766,6 +1766,24 @@ function displayLinkType(l: NoteLink): string | undefined {
 	return undefined;
 }
 
+/**
+ * The annotation field doubles as a typed-link slot when the user writes
+ * `[[Note|supports]]`: the parser stores "supports" in `annotation`, and
+ * `displayLinkType` promotes it to the rendered badge. In that case the
+ * annotation is already on screen as the badge — rendering it again as
+ * italic prose underneath is pure redundancy. Suppress it here so the
+ * panel's `{#if bl.annotation}` block never fires for typed-link-only
+ * annotations. Real prose annotations like
+ * `[[Note|supports my health goal]]` survive — they're not in
+ * KNOWN_LINK_TYPES and so won't equal `displayedType`.
+ */
+function displayAnnotation(l: NoteLink, displayedType: string | undefined): string {
+	const ann = (l.annotation ?? '').trim();
+	if (!ann) return '';
+	if (displayedType && ann.toLowerCase() === displayedType) return '';
+	return ann;
+}
+
 export async function scanLibraryLinks(libraryPath: string, libraryName: string): Promise<NoteLink[]> {
 	return await invoke('scan_library_links', { libraryPath, libraryName });
 }
@@ -1782,6 +1800,86 @@ export interface LinkDecayConfig {
 function sortWeight(link: NoteLink, cfg?: LinkDecayConfig): number {
 	if (!cfg) return link.weight ?? 1;
 	return effectiveLinkWeight(link, cfg.nowMs, cfg.halfLifeDays, cfg.decayEnabled);
+}
+
+/**
+ * Group an array of per-link rows by a caller-chosen key (source path for
+ * backlinks, target name for outgoing) so a single source/target with
+ * multiple distinct link types collapses to ONE row whose `linkTypes`
+ * array carries every type-badge that should render.
+ *
+ * Why this exists: a note like Lunch Plan can contain BOTH `[[X]]`
+ * (regular wikilink) AND `[[X|supports]]` (typed link) targeting the
+ * same note. Each becomes a separate `note_links` row server-side.
+ * Without this dedupe the Backlinks / Outgoing Links panels render
+ * the same source twice — once with no type badge and once with a
+ * `supports` badge — distorting the user's count of how many notes
+ * actually engage with the active note.
+ *
+ * Merging rules:
+ * - `linkTypes`: union of distinct, non-empty link types across grouped rows.
+ * - `traversalCount`: sum (total engagement from this source/target).
+ * - `lastTraversed`: most recent ISO timestamp.
+ * - `tier`: highest tier (load-bearing > established > emerging; stale beats
+ *   nothing). The first non-`emerging` value seen wins because tier is
+ *   already monotonic in traversal count + recency.
+ * - `confidence`: strongest tier wins (`established` > `evidence` >
+ *   `hypothesis`). `contested` is preserved if any row has it (it's a
+ *   user-set override, never auto-overwritten).
+ * - Other fields (name, path, context, etc.): kept from the first row.
+ */
+type DedupableRow = {
+	linkType?: string;
+	traversalCount?: number;
+	lastTraversed?: string;
+	tier?: LinkLifecycle;
+	confidence?: LinkConfidence;
+	annotation?: string;
+};
+
+function dedupeBySource<T extends DedupableRow>(
+	rows: T[],
+	keyFn: (row: T) => string,
+): Array<T & { linkTypes: string[] }> {
+	const CONFIDENCE_RANK: Record<LinkConfidence, number> = {
+		hypothesis: 1,
+		evidence: 2,
+		established: 3,
+		contested: 4,
+	};
+	const TIER_RANK: Record<LinkLifecycle, number> = {
+		emerging: 1,
+		established: 2,
+		'load-bearing': 3,
+		stale: 0,
+	};
+	const map = new Map<string, T & { linkTypes: string[] }>();
+	for (const row of rows) {
+		const key = keyFn(row);
+		const existing = map.get(key);
+		if (existing) {
+			if (row.linkType && !existing.linkTypes.includes(row.linkType)) {
+				existing.linkTypes.push(row.linkType);
+			}
+			existing.traversalCount = (existing.traversalCount ?? 0) + (row.traversalCount ?? 0);
+			if (row.lastTraversed && (!existing.lastTraversed || row.lastTraversed > existing.lastTraversed)) {
+				existing.lastTraversed = row.lastTraversed;
+			}
+			if (row.tier && (!existing.tier || (TIER_RANK[row.tier] ?? 0) > (TIER_RANK[existing.tier] ?? 0))) {
+				existing.tier = row.tier;
+			}
+			if (row.confidence && (!existing.confidence ||
+				(CONFIDENCE_RANK[row.confidence] ?? 0) > (CONFIDENCE_RANK[existing.confidence] ?? 0))) {
+				existing.confidence = row.confidence;
+			}
+			if (row.annotation && !existing.annotation) {
+				existing.annotation = row.annotation;
+			}
+		} else {
+			map.set(key, { ...row, linkTypes: row.linkType ? [row.linkType] : [] });
+		}
+	}
+	return Array.from(map.values());
 }
 
 export function getBacklinks(
@@ -1811,21 +1909,28 @@ export function getBacklinks(
 		return a.source_name.localeCompare(b.source_name);
 	});
 	const nowMs = decay?.nowMs ?? Date.now();
-	return linked.map(l => ({
-		name: l.source_name,
-		path: l.source_path,
-		context: l.context,
-		libraryName: l.library_name,
-		linkType: displayLinkType(l),
-		traversalCount: l.traversal_count ?? 0,
-		/** ISO-8601 timestamp of last traversal — empty string if never traversed. */
-		lastTraversed: l.last_traversed ?? '',
-		// P5 slice 3: precompute the lifecycle tier here so panels don't
-		// need to import / re-derive on every row render.
-		tier: linkLifecycle(l, nowMs) as LinkLifecycle,
-		confidence: (l.confidence ?? 'hypothesis') as LinkConfidence,
-		annotation: l.annotation ?? '',
-	}));
+	const rows = linked.map(l => {
+		const dt = displayLinkType(l);
+		return {
+			name: l.source_name,
+			path: l.source_path,
+			context: l.context,
+			libraryName: l.library_name,
+			linkType: dt,
+			traversalCount: l.traversal_count ?? 0,
+			/** ISO-8601 timestamp of last traversal — empty string if never traversed. */
+			lastTraversed: l.last_traversed ?? '',
+			// P5 slice 3: precompute the lifecycle tier here so panels don't
+			// need to import / re-derive on every row render.
+			tier: linkLifecycle(l, nowMs) as LinkLifecycle,
+			confidence: (l.confidence ?? 'hypothesis') as LinkConfidence,
+			annotation: displayAnnotation(l, dt),
+		};
+	});
+	// Group by source path so the same source-note never appears twice
+	// because it has both a regular wikilink and a typed wikilink to the
+	// active note. Type badges accumulate into `linkTypes`.
+	return dedupeBySource(rows, r => r.path);
 }
 
 export function getOutgoingLinks(allLinks: NoteLink[], notePath: string, decay?: LinkDecayConfig) {
@@ -1837,17 +1942,24 @@ export function getOutgoingLinks(allLinks: NoteLink[], notePath: string, decay?:
 		return a.target.localeCompare(b.target);
 	});
 	const nowMs = decay?.nowMs ?? Date.now();
-	return outgoing.map(l => ({
-		target: l.target,
-		context: l.context,
-		linkType: displayLinkType(l),
-		traversalCount: l.traversal_count ?? 0,
-		/** ISO-8601 timestamp of last traversal — empty string if never traversed. */
-		lastTraversed: l.last_traversed ?? '',
-		tier: linkLifecycle(l, nowMs) as LinkLifecycle,
-		confidence: (l.confidence ?? 'hypothesis') as LinkConfidence,
-		annotation: l.annotation ?? '',
-	}));
+	const rows = outgoing.map(l => {
+		const dt = displayLinkType(l);
+		return {
+			target: l.target,
+			context: l.context,
+			libraryName: l.library_name,
+			linkType: dt,
+			traversalCount: l.traversal_count ?? 0,
+			/** ISO-8601 timestamp of last traversal — empty string if never traversed. */
+			lastTraversed: l.last_traversed ?? '',
+			tier: linkLifecycle(l, nowMs) as LinkLifecycle,
+			confidence: (l.confidence ?? 'hypothesis') as LinkConfidence,
+			annotation: displayAnnotation(l, dt),
+		};
+	});
+	// Group by target name so a source note with both `[[X]]` and `[[X|type]]`
+	// shows X once with both type chips, not twice.
+	return dedupeBySource(rows, r => r.target);
 }
 
 export async function scanUnlinkedMentions(noteName: string, notePath: string): Promise<{ name: string; path: string; context: string; libraryName: string }[]> {

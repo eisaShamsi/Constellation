@@ -38,12 +38,7 @@ These appear when a result is matched **by virtue of how it links to / from** an
 | **⇄** | Bidirectional (mutual link in both directions) | Violet | `#8b5cf6` |
 | **LB** | Link Back (backlink hit) | Light blue | `#0ea5e9` |
 | **LA** | Link Alias (matched via the link's display alias rather than its target) | Pink | `#d946ef` |
-
-## Unresolved
-
-| Badge | Color in code | Status |
-|---|---|---|
-| **M** | Cyan `#06b6d4` | Defined in `CAT_COLORS` of both components but no design doc found. **Pending owner clarification.** |
+| **M** | Mutual link (the queried note links *to* the source AND the source links *back*) | Cyan | `#06b6d4` |
 
 ## Deprecated / superseded
 
@@ -69,3 +64,4 @@ When introducing a new badge:
 ## Provenance
 
 - 2026-04-15: Document created. T/C/P/S/W/#/∅/LT/LF/⇄/LB/LA confirmed by project owner. **W** clarified as Wikilink (was unresolved). **G** confirmed deprecated in favor of **#**. **M** remains pending.
+- 2026-04-27: **M = Mutual link** confirmed by project owner. Moved out of Unresolved into the Link-relationship badges table. No more pending letters.
