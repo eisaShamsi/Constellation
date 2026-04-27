@@ -60,3 +60,50 @@ single-row result.
 
 **Open / next**: SecondScreenPage.svelte buildSkyData still alias-blind
 (2-arg form) — pending. Snapshot-path bypass forensics — pending.
+
+---
+
+## §90 — Unlinked Mentions: strip wikilinks + frontmatter-title label
+
+**User-visible bugs closed (item 6 of the option-(e) backlog):**
+
+1. Apple Tree Fruit's UNLINKED MENTIONS row showing
+   `20260426T140940Z_NOTE_1...` with preview
+   `My eating choices [[Apple Tree Fruit|supports]] my health go...`
+   was a false positive. The scanner was matching "Apple Tree Fruit"
+   inside the typed wikilink markup because the legacy
+   "skip if `[[NoteName]]` substring is present" check matched only
+   the bare wikilink form, missing every typed (`|supports`) /
+   alias / embed form.
+2. The same row showed the canonical filename instead of the human
+   title because source_name fell straight to `path.file_stem()`.
+
+**Implementation:**
+
+- `src-tauri/src/libraries.rs::scan_unlinked_recursive` now
+  strips ALL wikilinks (`!?\[\[[^\]]*\]\]`) from content before
+  applying the plain-text word regex. Side-effect: every form of
+  wikilink — regular, typed, alias-target, embed — is correctly
+  excluded from "unlinked" classification.
+- Source label now reads `extract_frontmatter_title(content)` first,
+  falls back to `file_stem()` only when title is missing. Same helper
+  the rename path (libraries.rs:838) already uses, so canonical
+  notes display "Lunch Plan" instead of `20260426T140940Z_NOTE_11B4`.
+- No frontend changes required — `BacklinksPanel.svelte`'s Unlinked
+  section consumes the corrected data verbatim.
+
+**Verification (2026-04-27 ~18:00):** user reported "Pass" for both
+the no-false-positive and human-title-label expected behaviors.
+
+**Doc bump**: `docs/Constellation Orientation & Onboarding v1.5.md`
+written alongside v1.0..v1.4 per SO #6 versions-stack rule. v1.5
+changelog at top notes §90 closure of item 6.
+
+**Backlog items remaining** (unchanged from v1.4 except item 6):
+- MIG-007 — Links Settings tab.
+- Constellation Map perf / tooltip / search backlog
+  (canonical-filename label there is still pending — Map uses a
+  different code path, not `scan_unlinked_mentions`).
+- SecondScreenPage.svelte buildSkyData alias threading.
+- Snapshot-path bypass forensics.
+- MIG-005 Steps 4-8 (alias-aware tension/inspector360/LinkDashboard).

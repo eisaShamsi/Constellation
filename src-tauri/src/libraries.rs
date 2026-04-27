@@ -1661,6 +1661,22 @@ fn scan_links_recursive(dir: &Path, re: &regex::Regex, links: &mut Vec<NoteLink>
 
 /// Scan for unlinked mentions of a note name across all libraries.
 /// Returns notes that mention the name as plain text but don't have a [[wikilink]] to it.
+///
+/// Bug-fix history (2026-04-27 — item 6 of the panel-dedup pass):
+///   1. The previous "skip if `[[NoteName]]` substring is present" check
+///      was too narrow: it missed every typed-link form
+///      `[[NoteName|supports]]` and every alias form `[[OldTitle]]`,
+///      so those wikilinks were correctly indexed as backlinks AND
+///      *also* counted here as unlinked mentions. The fix: strip ALL
+///      wikilinks (`![[...]]` for embeds, `[[...]]` for normal links)
+///      from the body before searching for the plain-text title. After
+///      stripping, the only surviving occurrences are genuinely outside
+///      any wikilink markup.
+///   2. The source label was always derived from `path.file_stem()`,
+///      which for a canonical filename like `20260426T140940Z_NOTE_11B4`
+///      produced an unreadable id instead of the human title. The fix:
+///      read the frontmatter `title:` field first, fall back to
+///      `file_stem()` only when title is missing.
 #[tauri::command]
 pub fn scan_unlinked_mentions(
     app: tauri::AppHandle,
@@ -1669,12 +1685,16 @@ pub fn scan_unlinked_mentions(
     library_paths: Vec<(String, String)>, // (library_name, library_path)
 ) -> Result<Vec<NoteLink>, String> {
     let registered = load_all_libraries(&app);
-    let wikilink_pattern = format!("[[{}]]", &note_name);
-    let wikilink_pattern_lower = wikilink_pattern.to_lowercase();
     let word_re = match regex::Regex::new(&format!(r"(?i)\b{}\b", regex::escape(&note_name))) {
         Ok(r) => r,
         Err(_) => return Ok(Vec::new()),
     };
+    // Matches `[[anything]]` and `![[anything]]`. Non-greedy on `[^\]]*`
+    // so adjacent wikilinks `[[A]] [[B]]` strip as two separate matches,
+    // not one super-match that swallows the gap. `unwrap` is safe — the
+    // pattern is a static literal verified at compile time by the
+    // regex crate's parser.
+    let wikilink_strip_re = regex::Regex::new(r"!?\[\[[^\]]*\]\]").unwrap();
 
     let mut results = Vec::new();
     let cap = 50usize;
@@ -1685,7 +1705,7 @@ pub fn scan_unlinked_mentions(
             Path::new(library_path),
             &note_path,
             &word_re,
-            &wikilink_pattern_lower,
+            &wikilink_strip_re,
             library_name,
             &mut results,
             cap,
@@ -1701,7 +1721,7 @@ fn scan_unlinked_recursive(
     dir: &Path,
     note_path: &str,
     word_re: &regex::Regex,
-    wikilink_lower: &str,
+    wikilink_strip_re: &regex::Regex,
     library_name: &str,
     results: &mut Vec<NoteLink>,
     cap: usize,
@@ -1720,25 +1740,33 @@ fn scan_unlinked_recursive(
         if entry.file_type().map(|ft| ft.is_symlink()).unwrap_or(false) { continue; }
 
         if path.is_dir() {
-            scan_unlinked_recursive(&path, note_path, word_re, wikilink_lower, library_name, results, cap, depth + 1);
+            scan_unlinked_recursive(&path, note_path, word_re, wikilink_strip_re, library_name, results, cap, depth + 1);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             // Skip self
             if path.to_string_lossy() == note_path { continue; }
 
             if let Ok(content) = fs::read_to_string(&path) {
-                let content_lower = content.to_lowercase();
-                // Skip if already has a wikilink to this note
-                if content_lower.contains(wikilink_lower) { continue; }
+                // Strip every wikilink (regular and embed) before searching
+                // so an active-note title that appears INSIDE wikilink
+                // markup — e.g. `[[Apple Tree Fruit|supports]]` or
+                // `[[Apple Tree Fruit]]` — is not counted as an unlinked
+                // mention. Only occurrences outside any wikilink survive.
+                let stripped = wikilink_strip_re.replace_all(&content, "");
 
-                // Check for plain text mention
-                if let Some(m) = word_re.find(&content) {
+                if let Some(m) = word_re.find(&stripped) {
                     let pos = m.start();
-                    let line_start = content[..pos].rfind('\n').map(|i| i + 1).unwrap_or(0);
-                    let line_end = content[pos..].find('\n').map(|i| pos + i).unwrap_or(content.len());
-                    let context = safe_truncate(&content[line_start..line_end], 120);
-                    let source_name = path.file_stem()
-                        .and_then(|s| s.to_str())
-                        .unwrap_or("").to_string();
+                    let line_start = stripped[..pos].rfind('\n').map(|i| i + 1).unwrap_or(0);
+                    let line_end = stripped[pos..].find('\n').map(|i| pos + i).unwrap_or(stripped.len());
+                    let context = safe_truncate(&stripped[line_start..line_end], 120);
+
+                    // Prefer frontmatter title over file stem so canonical
+                    // filenames (`20260426T140940Z_NOTE_11B4`) display as
+                    // their human title (`Lunch Plan`) in the panel.
+                    let source_name = extract_frontmatter_title(&content)
+                        .unwrap_or_else(|| path.file_stem()
+                            .and_then(|s| s.to_str())
+                            .unwrap_or("")
+                            .to_string());
                     results.push(NoteLink {
                         source_path: path.to_string_lossy().to_string(),
                         source_name,
