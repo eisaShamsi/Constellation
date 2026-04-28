@@ -1,11 +1,59 @@
 # Canonical Filename Architecture — Design Document
 
-**Status**: Design  
-**Date**: 2026-04-10
+**Status**: Historical — see § 0 below for the post-MIG-003 architecture (active 2026-04-28)
+**Original Date**: 2026-04-10
+**Inverted**: 2026-04-28 (MIG-003)
 
 ---
 
-## 1. Overview
+## 0. Post-MIG-003 (2026-04-28) — Architecture Inverted
+
+> **Read this section first. The rest of this document describes the original v1 design, kept here as historical record.**
+
+The original design treated the **canonical filename** (`YYYYMMDDTHHMMSSZ_KIND_XXXX.ext`) as the immutable primary key on disk. That property is now carried by an internal id (`cid_cn`, "Constellation Node id") stored in each file's frontmatter, **not** in the filename. Filenames are human-readable, derived from the note's title, and they change when the user renames the note.
+
+### What changed
+
+| Concern | Original (pre-MIG-003) | Current (post-MIG-003) |
+|---|---|---|
+| **On-disk filename** | Canonical: `20260415T135029Z_NOTE_EA7F.md` | Human: `الروابط الوصلية.md` |
+| **Immutable identity** | Filename | Frontmatter `cid_cn:` field |
+| **Primary key on note_meta** | `path` | `path` (still) — `cid_cn` is the universal correlation id |
+| **`cid_cn` UNIQUE index** | n/a | `idx_note_meta_cid_cn` enforced |
+| **Dependent tables (note_links / sky_nodes / note_aliases / note_embeddings)** | Keyed by path only | Keyed by path **and** carry a `cid_cn` column |
+| **Rename flow** | Canonical filename never changed; only frontmatter title was edited | Filename is renamed; frontmatter title is updated; old title is appended to `aliases:`; cascade walker rewrites `[[OldTitle]]` → `[[NewTitle]]` in source notes |
+| **New note creation** | Canonical filename generated; full frontmatter written | Filename derived from user-supplied title (auto-resolved on collision: `Untitled` → `Untitled 1.md`); frontmatter has `cid_cn`, `title`, `kind`, `created` |
+
+### Why we inverted
+
+The original design solved a real problem (rename safety, link rot resistance) but at the cost of presenting opaque timestamp filenames to anyone outside Constellation. External sync, backup audit, command-line `ls` or `grep`, and any tool that expects to read the file by its visible name all became second-class. The Constellation Boss's ground rule — **"either the constellation file system/file tree or any OS file system will use the canonical naming system as 'file name'. No, it should handle it as a human naming style"** — required filenames to look like what they describe.
+
+Inverting the architecture preserves the original safety properties (every file still has a stable internal id; renames don't break wikilinks; aliases preserve old names) while letting the filesystem look human.
+
+### MIG-003 commit trail
+
+| § | Commit | What landed |
+|---|---|---|
+| §85 | MIG-003 Step 1 | `cid_cn` column on `note_meta` + UNIQUE index + backfill from frontmatter |
+| §86 | MIG-003 Step 2 | `cid_cn` columns on `note_links` / `sky_nodes` / `note_aliases` / `note_embeddings` + backfill |
+| §87 | MIG-003 Step 3 | Writer-side `cid_cn` population + `note_meta_sky_ai` trigger update + boot-time soft re-backfill |
+| §88 | MIG-003 Step 4 | Filesystem rename canonical → human, per-library transaction, audit log to `.constellation/mig003-step4-renames.tsv` |
+| §89 | MIG-003 Step 5 | Unified `create_note` + `rename_item` flows (no more native/canonical mode branching; rename actually renames the file on disk and cascades) |
+
+Step 6 (promote `cid_cn` to formal PRIMARY KEY of `note_meta`, drop redundant path columns from dependent tables) was deliberately **skipped**. The path columns are still load-bearing for filesystem operations; the dual-keyed schema is not a defect, and rebuilding 232k+ rows for a structural cleanup with no user-visible benefit was judged not worth the risk.
+
+### What's still true from the original design
+
+The original document below remains accurate for these aspects:
+- The 12 file kinds (NOTE, BASE, TMPL, LINK, IMG, AUD, VID, ATT, CANVAS, DRAW, MARK, CLIP) are still recognized and the registry mechanism (§ 2) is unchanged.
+- The classification engine (§ 3) — extension → kind → frontmatter — still applies for incoming files.
+- The canonical generator (§ 4) is still the source of fresh `cid_cn` values, and is called by `create_note` (§ 89) at note creation time. The `cid_cn` is now written to frontmatter, not used as a filename.
+- The frontmatter contract (§ 5) is updated: `cid_cn:` replaces the older `cid:` field name. Both are tolerated on read (legacy files); only `cid_cn:` is written going forward.
+- The import pipeline (§ 7) still classifies and stamps imported files; only the on-disk filename it writes is now human (when a frontmatter title exists) instead of canonical.
+
+---
+
+## 1. Overview *(historical — pre-MIG-003)*
 
 Every file Constellation manages — notes, images, attachments, links, templates, and any future type — receives a **canonical filename** that serves as its immutable primary key. Users never see or type these filenames; Constellation presents human-chosen titles everywhere.
 
