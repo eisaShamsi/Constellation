@@ -625,69 +625,50 @@ pub fn create_note(app: tauri::AppHandle, folder_path: String, file_name: String
         return Err("Folder does not exist.".to_string());
     }
 
-    let mode = get_library_mode(&app, &folder_path);
+    // MIG-003 Step 5 — human filenames everywhere. The previous
+    // native/compatible branching is gone: every new note lands on
+    // disk under a sanitized version of the user-supplied title.
+    // Collisions are resolved automatically (`Untitled` →
+    // `Untitled 1.md` → `Untitled 2.md`, etc.). cid_cn lives in
+    // frontmatter as the immutable internal id.
     let dt = chrono::Utc::now();
+    let display_name = file_name.trim_end_matches(".md");
+    let safe_stem = note_display_filename(display_name);
+    let final_filename = resolve_filename_collision(folder, &safe_stem, ".md", true)
+        .map_err(|e| format!("Failed to resolve filename: {}", e))?;
+    let file_path = folder.join(&final_filename);
 
-    if mode == "native" || mode == "canonical" {
-        // Canonical: structured filename + full frontmatter
-        let canonical = crate::canonical::generate_canonical("NOTE", &dt, "md", Some(folder));
-        let file_path = folder.join(&canonical.full);
-        let display_name = file_name.trim_end_matches(".md");
+    let canonical = crate::canonical::generate_canonical("NOTE", &dt, "md", None);
 
-        let mut fm_lines: Vec<String> = Vec::new();
-        fm_lines.push(format!("title: \"{}\"", display_name.replace('"', "\\\"")));
-        fm_lines.push(format!("cid: {}", canonical.stem));
-        fm_lines.push("kind: note".to_string());
-        fm_lines.push(format!("created: {}", dt.to_rfc3339()));
+    let mut fm_lines: Vec<String> = Vec::new();
+    // Display title in frontmatter still tracks the user-typed name —
+    // that's what shows in the tab + sidebar. The filename's stem will
+    // match it verbatim in the common case but may diverge for
+    // collision-resolved files (`Untitled` vs `Untitled 1.md`).
+    fm_lines.push(format!("title: \"{}\"", display_name.replace('"', "\\\"")));
+    fm_lines.push(format!("cid_cn: {}", canonical.stem));
+    fm_lines.push("kind: note".to_string());
+    fm_lines.push(format!("created: {}", dt.to_rfc3339()));
 
-        if let Some(ref extra) = initial_frontmatter {
-            for line in extra.lines() {
-                let trimmed = line.trim();
-                if !trimmed.starts_with("title:") && !trimmed.starts_with("cid:")
-                    && !trimmed.starts_with("kind:") && !trimmed.starts_with("created:")
-                    && !trimmed.is_empty()
-                {
-                    fm_lines.push(trimmed.to_string());
-                }
+    if let Some(ref extra) = initial_frontmatter {
+        for line in extra.lines() {
+            let trimmed = line.trim();
+            if !trimmed.starts_with("title:")
+                && !trimmed.starts_with("cid_cn:")
+                && !trimmed.starts_with("cid:")
+                && !trimmed.starts_with("kind:")
+                && !trimmed.starts_with("created:")
+                && !trimmed.is_empty()
+            {
+                fm_lines.push(trimmed.to_string());
             }
         }
-
-        let content = format!("---\n{}\n---\n\n", fm_lines.join("\n"));
-        fs::write(&file_path, &content)
-            .map_err(|e| format!("Failed to create note: {}", e))?;
-        Ok(file_path.to_string_lossy().to_string())
-    } else {
-        // Compatible: human-readable filename + only cid in frontmatter
-        let safe_name = sanitize_name(&file_name)?;
-        let name = if safe_name.ends_with(".md") { safe_name } else { format!("{}.md", safe_name) };
-        let file_path = folder.join(&name);
-        if file_path.exists() {
-            return Err("A file with this name already exists.".to_string());
-        }
-
-        // Generate a cid without renaming
-        let canonical = crate::canonical::generate_canonical("NOTE", &dt, "md", None);
-        let mut fm_lines: Vec<String> = Vec::new();
-        fm_lines.push(format!("cid: {}", canonical.stem));
-
-        if let Some(ref extra) = initial_frontmatter {
-            for line in extra.lines() {
-                let trimmed = line.trim();
-                if !trimmed.starts_with("cid:") && !trimmed.is_empty() {
-                    fm_lines.push(trimmed.to_string());
-                }
-            }
-        }
-
-        let content = if fm_lines.is_empty() {
-            "---\n---\n\n".to_string()
-        } else {
-            format!("---\n{}\n---\n\n", fm_lines.join("\n"))
-        };
-        fs::write(&file_path, &content)
-            .map_err(|e| format!("Failed to create note: {}", e))?;
-        Ok(file_path.to_string_lossy().to_string())
     }
+
+    let content = format!("---\n{}\n---\n\n", fm_lines.join("\n"));
+    fs::write(&file_path, &content)
+        .map_err(|e| format!("Failed to create note: {}", e))?;
+    Ok(file_path.to_string_lossy().to_string())
 }
 
 /// Check if a library has been canonicalized. Delegates to canonical module.
@@ -814,6 +795,26 @@ pub fn create_folder(app: tauri::AppHandle, parent_path: String, folder_name: St
 }
 
 /// Rename a file or folder.
+///
+/// MIG-003 Step 5 — unified rename flow. For .md files, this performs:
+///   1. Read the current frontmatter title (for alias preservation).
+///   2. Update the frontmatter title to match the new filename and
+///      append the old title to the file's `aliases:` list.
+///   3. fs::rename the file from old_path → new_path.
+///   4. Cascade the path change across every DB table (note_meta +
+///      dependent tables note_links / note_aliases / note_embeddings;
+///      sky_nodes / sky_links cascade automatically via the
+///      note_meta_sky_au trigger).
+///   5. Stamp a 'rename' alias row keyed to the new path so any
+///      external reference to the old title still resolves via lookup.
+///   6. Reindex the note so name / tags / outgoing links are picked
+///      up under the new path.
+///   7. Frontend cascades `[[OldTitle]]` → `[[NewTitle]]` in source
+///      notes' bodies via the existing `update_links_on_rename`
+///      command — no change needed here.
+///
+/// For folders, the legacy fs::rename-only flow stays in place (folder
+/// rename DB cascade is its own concern; pre-existing behavior).
 #[tauri::command]
 pub fn rename_item(app: tauri::AppHandle, old_path: String, new_path: String) -> Result<String, String> {
     validate_path_in_any_library(&app, &old_path)?;
@@ -822,94 +823,117 @@ pub fn rename_item(app: tauri::AppHandle, old_path: String, new_path: String) ->
         return Err("Item does not exist.".to_string());
     }
 
-    // Check if this is a canonical .md file — if so, rename = update frontmatter title, NOT the filename
-    if old.extension().map(|e| e == "md").unwrap_or(false)
-        && crate::canonical::is_canonical_filename(old)
-    {
-        let new_title = Path::new(&new_path)
-            .file_stem()
-            .unwrap_or_default()
-            .to_string_lossy()
-            .to_string();
-
-        // Read content and extract current title from frontmatter
-        let content = fs::read_to_string(old)
-            .map_err(|e| format!("Failed to read note: {}", e))?;
-        let old_title = extract_frontmatter_title(&content)
-            .unwrap_or_else(|| old.file_stem().unwrap_or_default().to_string_lossy().to_string());
-
-        // Idempotency guard: if the frontmatter title already matches the
-        // requested new title, no write is needed. Without this, a stale
-        // titleValue in the frontend (display-sync bug) that fires a blur
-        // event would pass old_title == new_title to update_frontmatter_title,
-        // which would dutifully append the current title to its own aliases
-        // list — producing entries like [Untitled, TestBug001, TestBug001].
-        if old_title == new_title {
-            return Ok(old_path);
-        }
-
-        let updated = update_frontmatter_title(&content, &new_title, &old_title);
-        fs::write(old, &updated)
-            .map_err(|e| format!("Failed to write note: {}", e))?;
-
-        // MIG-004 §3: stamp OLD title as a 'rename' alias for this path
-        // BEFORE the reindex runs. update_frontmatter_title also appends
-        // old_title to the note's `aliases:` list, which §2's writer
-        // would pick up — but that path depends on the user not later
-        // editing aliases away. The 'rename' row is the durable
-        // safety net: source=partition keeps it independent of any
-        // frontmatter edits, so a wikilink targeting the old title
-        // resolves to this note for as long as the path exists.
-        //
-        // Runs before reindex so the alias is already present when the
-        // §2 writer's DELETE-by-source-frontmatter clears stale rows.
-        // INSERT OR IGNORE handles rename-back-to-prior-name
-        // idempotently.
-        {
-            use tauri::Manager;
-            let search_state = app.state::<crate::search::SearchState>();
-            let note_path = old.to_string_lossy().to_string();
-            let normalized = crate::search::normalize_alias_for_match(&old_title);
-            if !normalized.is_empty() {
-                let db_lock = search_state.db.lock();
-                if let Ok(guard) = db_lock {
-                    if let Some(conn) = guard.as_ref() {
-                        let _ = conn.execute(
-                            "INSERT OR IGNORE INTO note_aliases (path, alias_lower, source, cid_cn) VALUES (?1, ?2, 'rename', COALESCE((SELECT cid_cn FROM note_meta WHERE path = ?1), ''))",
-                            rusqlite::params![note_path, normalized],
-                        );
-                    }
-                }
-            }
-        }
-
-        // Trigger search reindex for this note so the new title is reflected
-        {
-            use tauri::Manager;
-            let search_state = app.state::<crate::search::SearchState>();
-            let note_path = old.to_string_lossy().to_string();
-            let libs = load_all_libraries(&app);
-            if let Some(lib) = libs.iter().find(|l| note_path.starts_with(&l.path)) {
-                let _ = crate::search::reindex_single_note(&search_state, &note_path, &lib.name);
-            }
-        }
-
-        // The file stays at old_path — canonical filename doesn't change.
-        // Return the effective path so the frontend knows not to rewrite
-        // tab.path to a non-existent location (would later create a phantom
-        // file on the next write_note call — BUG-001 root cause).
-        Ok(old_path)
-    } else {
-        // Legacy behavior: actually rename the file/folder
+    // Folder rename — legacy fs::rename-only path. DB cascade for
+    // recursively-renamed notes is out of scope for MIG-003 Step 5.
+    if !old.extension().map(|e| e == "md").unwrap_or(false) {
         validate_path_in_any_library(&app, &new_path)?;
         let new_p = Path::new(&new_path);
         if new_p.exists() {
             return Err("An item with this name already exists.".to_string());
         }
-        fs::rename(old, new_p)
-            .map_err(|e| format!("Failed to rename: {}", e))?;
-        Ok(new_path)
+        fs::rename(old, new_p).map_err(|e| format!("Failed to rename: {}", e))?;
+        return Ok(new_path);
     }
+
+    // .md file rename — unified cascade flow.
+    validate_path_in_any_library(&app, &new_path)?;
+    let new_p = Path::new(&new_path);
+    if new_p.exists() && new_p != old {
+        return Err("A file with this name already exists.".to_string());
+    }
+
+    let new_title = new_p
+        .file_stem()
+        .unwrap_or_default()
+        .to_string_lossy()
+        .to_string();
+
+    let content = fs::read_to_string(old)
+        .map_err(|e| format!("Failed to read note: {}", e))?;
+    let old_title = extract_frontmatter_title(&content).unwrap_or_else(|| {
+        old.file_stem()
+            .unwrap_or_default()
+            .to_string_lossy()
+            .to_string()
+    });
+
+    // Idempotency guard: same title AND same path — nothing to do.
+    // Without this, a stale `titleValue` in the frontend (display-sync
+    // bug) firing a blur event would pass old_title == new_title to
+    // update_frontmatter_title, which would append the title to its
+    // own aliases list — producing entries like
+    // [Untitled, TestBug001, TestBug001].
+    if old_title == new_title && old == new_p {
+        return Ok(old_path);
+    }
+
+    // Step 1+2: update frontmatter title (and append old title to
+    // aliases). Skipped when title is unchanged but file is being
+    // moved.
+    if old_title != new_title {
+        let updated = update_frontmatter_title(&content, &new_title, &old_title);
+        fs::write(old, &updated)
+            .map_err(|e| format!("Failed to write frontmatter: {}", e))?;
+    }
+
+    // Step 3: rename on disk.
+    if old != new_p {
+        fs::rename(old, new_p).map_err(|e| format!("Failed to rename file: {}", e))?;
+    }
+
+    // Steps 4+5: DB cascade + 'rename' alias stamp.
+    {
+        use tauri::Manager;
+        let search_state = app.state::<crate::search::SearchState>();
+        let db_lock = search_state.db.lock();
+        if let Ok(guard) = db_lock {
+            if let Some(conn) = guard.as_ref() {
+                if old_path != new_path {
+                    let _ = conn.execute(
+                        "UPDATE note_meta SET path = ?2 WHERE path = ?1",
+                        rusqlite::params![&old_path, &new_path],
+                    );
+                    let _ = conn.execute(
+                        "UPDATE note_links SET source_path = ?2 WHERE source_path = ?1",
+                        rusqlite::params![&old_path, &new_path],
+                    );
+                    let _ = conn.execute(
+                        "UPDATE note_links SET target_path = ?2 WHERE target_path = ?1",
+                        rusqlite::params![&old_path, &new_path],
+                    );
+                    let _ = conn.execute(
+                        "UPDATE note_aliases SET path = ?2 WHERE path = ?1",
+                        rusqlite::params![&old_path, &new_path],
+                    );
+                    let _ = conn.execute(
+                        "UPDATE note_embeddings SET path = ?2 WHERE path = ?1",
+                        rusqlite::params![&old_path, &new_path],
+                    );
+                }
+                // 'rename' alias — durable safety net for old title
+                // lookups regardless of any later frontmatter edits.
+                let normalized = crate::search::normalize_alias_for_match(&old_title);
+                if !normalized.is_empty() && old_title != new_title {
+                    let _ = conn.execute(
+                        "INSERT OR IGNORE INTO note_aliases (path, alias_lower, source, cid_cn) VALUES (?1, ?2, 'rename', COALESCE((SELECT cid_cn FROM note_meta WHERE path = ?1), ''))",
+                        rusqlite::params![&new_path, normalized],
+                    );
+                }
+            }
+        }
+    }
+
+    // Step 6: reindex at new path.
+    {
+        use tauri::Manager;
+        let search_state = app.state::<crate::search::SearchState>();
+        let libs = load_all_libraries(&app);
+        if let Some(lib) = libs.iter().find(|l| new_path.starts_with(&l.path)) {
+            let _ = crate::search::reindex_single_note(&search_state, &new_path, &lib.name);
+        }
+    }
+
+    Ok(new_path)
 }
 
 /// MIG-003 Step 0 — Convert a note title into a safe filename
