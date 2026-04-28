@@ -166,3 +166,48 @@ drift now also missing constellation_sight_* rename).
 - Constellation Map perf / search-highlight — pending.
 - IPC-CONTRACT.md ~5 weeks stale.
 - Rename-collision popup UX (wanted; Stage 5 finding).
+
+
+---
+
+## Handover to next session — state-of-standing 2026-04-28 end of day
+
+**This is the snapshot a fresh Claude session reads to pick up exactly where this one left off** (per CLAUDE.md Standing Order #5).
+
+### What is verified, shipped, and protected
+
+- MIG-003 fully closed. §85–§90 pushed; tagged `milestone/mig-003-closed`. The Boss-directed architecture inversion (cid_cn = immutable internal id in frontmatter; filename = human-readable, mutable) is live. 7,611 note_meta rows verified, zero canonical filenames remaining on disk.
+- Backups intact: `E:/Backups/Constellation/Constellation-mig-003-step3-20260428.zip` (codebase), `E:/Backups/Constellation/universe-config-mig-003-step3-20260428/` (config snapshot), git tag `milestone/mig-003-step3` (pre-Step-4 codebase state).
+- Orientation v1.7 written, in main `docs/`. § 6 fully rewritten; § 8 migration table marks MIG-003 closed.
+
+### What is at-risk / in-flight / uncommitted
+
+Nothing. Working tree is clean (the binary at `src-tauri/target/release/constellation.exe` is the live MIG-003-closed build dated 2026-04-28 18:19; nothing in the staging area; everything pushed).
+
+### What is known-broken or pending decision
+
+- **CE Phase 9 Multi-Lens** — `lenses.rs::apply_lens` is dead code, zero frontend callers. Settings can still create + save lens definitions but they are never applied. Boss decision needed: delete or re-wire.
+- **CE Phase 12 360° Inspector** — status unclear. Boss decision needed: re-enable or withdraw.
+- **Constellation Map** — perf/memory leak, search doesn't highlight matched arcs. Tooltip-shows-canonical-filename was fixed by MIG-003 (notes now have human filenames; the bug it was a symptom of is gone).
+- **MIG-006 §3 redo** — Wikilink Rename Cascade open-editor coherence piece was reverted at §116 after BUG-015 corrupted target body content. Plan exists at `lab/reports/MIG-006-WIKILINK-CASCADE.md`; needs careful redesign per lessons from §115/§116.
+- **MIG-005 Steps 4–8** — alias-aware tension/inspector360/LinkDashboard. Steps 1–3 shipped (§121–§123). Tutorial paused mid-flight after the fabrication incident.
+- **MIG-002 §7–§10** — enrichment persistence remaining steps.
+- **Sky View** — displayed 7,309 of 7,617 notes during Stage 2 verification. Pre-existing filter (likely archived/hidden notes). Worth investigating but not a regression.
+
+### Documentation drift acknowledged
+
+- **User Manual + 14 i18n manual translations** — not yet updated for MIG-003. Small visible change ("rename now actually renames the file"; "filenames look like titles"); separate doc-only commit when convenient.
+- **IPC-CONTRACT.md** — ~5 weeks stale; missing recent additions (cache_boot_snapshot_sky, sight rename, MIG-003 cascade hooks).
+- **Rename-collision popup UX** — wanted feature recorded in `project_rename_collision_popup_wanted.md`. Backend already returns the right error string on collision; frontend needs a modal dialog with Override / Rename / Cancel options.
+
+### Recommended start for next session
+
+Before any code, the Boss should make the two pending decisions:
+1. CE Phase 9 Multi-Lens — delete the dead code path or re-wire it?
+2. CE Phase 12 360° Inspector — re-enable or withdraw?
+
+Once those are resolved, the highest-impact remaining work is **MIG-006 §3 redo** — the open-editor coherence problem is a real user-visible gap (rename a note in another tab while it is open elsewhere, the open tab does not update). The §115 attempt corrupted body content because a value-prop → CM6 doc sync `$effect` raced with `{#key}` onDestroy; the redo MUST validate against NotePane spec §2.6 (which forbade exactly that pattern) and run Working Agreement #4 architectural-impact review before shipping.
+
+### Lessons recorded today
+
+Five regressions caught + fixed mid-flight before user-visible damage. The pattern across all of them: **a write path was added without walking through what it would do row-by-row on the actual data shape**. Saved as `feedback_walk_through_writes.md` for future sessions. The cost of the walk-through is 5 minutes; the cost of skipping it ranges from an 8-minute hang to silent false-stamping of a migration as complete when it never ran.
