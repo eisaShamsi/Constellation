@@ -789,6 +789,135 @@ fn ensure_sky_nodes_mig002_columns(conn: &Connection) -> rusqlite::Result<()> {
     Ok(())
 }
 
+// ─── MIG-003 Step 2 — cid_cn columns on dependent tables ────────────────
+// Bumped when a fresh re-backfill is required (e.g. trigger fixed).
+pub(crate) const DEPENDENT_TABLES_MIG003_VERSION: i64 = 1;
+
+fn column_exists(conn: &Connection, table: &str, column: &str) -> rusqlite::Result<bool> {
+    let mut stmt = conn.prepare(&format!("PRAGMA table_info({})", table))?;
+    let rows = stmt.query_map([], |row| row.get::<_, String>(1))?;
+    for col in rows {
+        if col?.as_str() == column {
+            return Ok(true);
+        }
+    }
+    Ok(false)
+}
+
+/// MIG-003 Step 2 — ensure `note_links` has `source_cid_cn` and
+/// `target_cid_cn` columns. Both nullable (target can be unresolved;
+/// source could in principle be orphaned). NOT NULL constraint is a
+/// Step 6 concern after we're sure backfill leaves no holes.
+fn ensure_note_links_mig003_columns(conn: &Connection) -> rusqlite::Result<()> {
+    if !column_exists(conn, "note_links", "source_cid_cn")? {
+        conn.execute_batch("ALTER TABLE note_links ADD COLUMN source_cid_cn TEXT;")?;
+    }
+    if !column_exists(conn, "note_links", "target_cid_cn")? {
+        conn.execute_batch("ALTER TABLE note_links ADD COLUMN target_cid_cn TEXT;")?;
+    }
+    Ok(())
+}
+
+/// MIG-003 Step 2 — ensure `sky_nodes` has the `cid_cn` column.
+fn ensure_sky_nodes_mig003_columns(conn: &Connection) -> rusqlite::Result<()> {
+    if !column_exists(conn, "sky_nodes", "cid_cn")? {
+        conn.execute_batch("ALTER TABLE sky_nodes ADD COLUMN cid_cn TEXT;")?;
+    }
+    Ok(())
+}
+
+/// MIG-003 Step 2 — ensure `note_aliases` has the `cid_cn` column.
+/// Default '' so existing rows satisfy the NOT NULL constraint; real
+/// values come from the backfill.
+fn ensure_note_aliases_mig003_columns(conn: &Connection) -> rusqlite::Result<()> {
+    if !column_exists(conn, "note_aliases", "cid_cn")? {
+        conn.execute_batch(
+            "ALTER TABLE note_aliases ADD COLUMN cid_cn TEXT NOT NULL DEFAULT '';",
+        )?;
+    }
+    Ok(())
+}
+
+/// MIG-003 Step 2 — ensure `note_embeddings` has the `cid_cn` column.
+fn ensure_note_embeddings_mig003_columns(conn: &Connection) -> rusqlite::Result<()> {
+    if !column_exists(conn, "note_embeddings", "cid_cn")? {
+        conn.execute_batch("ALTER TABLE note_embeddings ADD COLUMN cid_cn TEXT;")?;
+    }
+    Ok(())
+}
+
+/// MIG-003 Step 2 — single-transaction back-fill of cid_cn on every
+/// dependent table by JOINing on the existing `path` columns. Orphan
+/// rows (path with no matching note_meta entry) leave cid_cn at its
+/// default (NULL or ''). Subsequent steps tighten this.
+pub(crate) fn mig003_step2_backfill(
+    conn: &mut Connection,
+    db_dir: &Path,
+) -> rusqlite::Result<()> {
+    use std::time::Instant;
+    let t = Instant::now();
+    let tx = conn.transaction()?;
+    let nl_src = tx.execute(
+        "UPDATE note_links \
+         SET source_cid_cn = (SELECT cid_cn FROM note_meta WHERE note_meta.path = note_links.source_path) \
+         WHERE (source_cid_cn IS NULL OR source_cid_cn = '') \
+           AND EXISTS (SELECT 1 FROM note_meta WHERE note_meta.path = note_links.source_path)",
+        [],
+    )?;
+    let nl_tgt = tx.execute(
+        "UPDATE note_links \
+         SET target_cid_cn = (SELECT cid_cn FROM note_meta WHERE note_meta.path = note_links.target_path) \
+         WHERE target_path IS NOT NULL \
+           AND (target_cid_cn IS NULL OR target_cid_cn = '') \
+           AND EXISTS (SELECT 1 FROM note_meta WHERE note_meta.path = note_links.target_path)",
+        [],
+    )?;
+    let sn = tx.execute(
+        "UPDATE sky_nodes \
+         SET cid_cn = (SELECT cid_cn FROM note_meta WHERE note_meta.path = sky_nodes.path) \
+         WHERE (cid_cn IS NULL OR cid_cn = '') \
+           AND EXISTS (SELECT 1 FROM note_meta WHERE note_meta.path = sky_nodes.path)",
+        [],
+    )?;
+    let na = tx.execute(
+        "UPDATE note_aliases \
+         SET cid_cn = (SELECT cid_cn FROM note_meta WHERE note_meta.path = note_aliases.path) \
+         WHERE cid_cn = '' \
+           AND EXISTS (SELECT 1 FROM note_meta WHERE note_meta.path = note_aliases.path)",
+        [],
+    )?;
+    let ne = tx.execute(
+        "UPDATE note_embeddings \
+         SET cid_cn = (SELECT cid_cn FROM note_meta WHERE note_meta.path = note_embeddings.path) \
+         WHERE (cid_cn IS NULL OR cid_cn = '') \
+           AND EXISTS (SELECT 1 FROM note_meta WHERE note_meta.path = note_embeddings.path)",
+        [],
+    )?;
+    tx.commit()?;
+    diag_log(db_dir, &format!(
+        "[search] mig003_step2_backfill: note_links src={} tgt={}, sky_nodes={}, note_aliases={}, note_embeddings={} — elapsed={:?}",
+        nl_src, nl_tgt, sn, na, ne, t.elapsed(),
+    ));
+    Ok(())
+}
+
+/// MIG-003 Step 2 — indexes on the new cid_cn columns. UNIQUE where the
+/// row-cardinality is one-to-one with note_meta (sky_nodes,
+/// note_embeddings). Plain index for note_links (one source has many
+/// outgoing edges) and note_aliases (one note has many aliases).
+/// SQLite UNIQUE indexes accept multiple NULLs by default, so partial
+/// rows (orphan path with no cid_cn) don't block creation.
+fn ensure_dependent_tables_mig003_indexes(conn: &Connection) -> rusqlite::Result<()> {
+    conn.execute_batch(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_sky_nodes_cid_cn ON sky_nodes(cid_cn);
+         CREATE UNIQUE INDEX IF NOT EXISTS idx_note_embeddings_cid_cn ON note_embeddings(cid_cn);
+         CREATE INDEX IF NOT EXISTS idx_note_links_source_cid_cn ON note_links(source_cid_cn);
+         CREATE INDEX IF NOT EXISTS idx_note_links_target_cid_cn ON note_links(target_cid_cn);
+         CREATE INDEX IF NOT EXISTS idx_note_aliases_cid_cn ON note_aliases(cid_cn);",
+    )?;
+    Ok(())
+}
+
 fn init_db(path: &Path) -> Result<Connection, String> {
     let mut conn = Connection::open(path).map_err(|e| format!("Failed to open search.db: {}", e))?;
 
@@ -1714,6 +1843,51 @@ fn init_db(path: &Path) -> Result<Connection, String> {
         diag_log(path, &format!(
             "[search] notes_fts rebuilt with 'constellation' tokenizer in {} ms",
             rebuild_ms
+        ));
+    }
+
+    // ─── MIG-003 Step 2 — cid_cn columns on dependent tables ────────────
+    // Idempotent ALTERs first; then a one-shot back-fill gated on
+    // schema_versions.dependent_tables_mig003. Triggers that maintain
+    // these columns on subsequent writes land in Step 3.
+    ensure_note_links_mig003_columns(&conn)
+        .map_err(|e| format!("Failed to ensure note_links MIG-003 columns: {}", e))?;
+    ensure_sky_nodes_mig003_columns(&conn)
+        .map_err(|e| format!("Failed to ensure sky_nodes MIG-003 column: {}", e))?;
+    ensure_note_aliases_mig003_columns(&conn)
+        .map_err(|e| format!("Failed to ensure note_aliases MIG-003 column: {}", e))?;
+    ensure_note_embeddings_mig003_columns(&conn)
+        .map_err(|e| format!("Failed to ensure note_embeddings MIG-003 column: {}", e))?;
+    let stored_dep_version: i64 = conn
+        .query_row(
+            "SELECT version FROM schema_versions WHERE module = 'dependent_tables_mig003'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap_or(0);
+    if stored_dep_version < DEPENDENT_TABLES_MIG003_VERSION {
+        diag_log(path, &format!(
+            "[search] init_db: schema_versions.dependent_tables_mig003={} (target {}) — Step 2 backfill needed",
+            stored_dep_version,
+            DEPENDENT_TABLES_MIG003_VERSION,
+        ));
+        mig003_step2_backfill(&mut conn, path)
+            .map_err(|e| format!("Failed to backfill cid_cn on dependent tables: {}", e))?;
+        ensure_dependent_tables_mig003_indexes(&conn)
+            .map_err(|e| format!("Failed to add cid_cn indexes on dependent tables: {}", e))?;
+        conn.execute(
+            "INSERT OR REPLACE INTO schema_versions (module, version, updated_at) VALUES ('dependent_tables_mig003', ?1, strftime('%s','now'))",
+            rusqlite::params![DEPENDENT_TABLES_MIG003_VERSION],
+        ).map_err(|e| format!("Failed to stamp schema_versions.dependent_tables_mig003: {}", e))?;
+        diag_log(path, &format!(
+            "[search] init_db: schema_versions.dependent_tables_mig003 stamped to {} after MIG-003 Step 2 backfill",
+            DEPENDENT_TABLES_MIG003_VERSION,
+        ));
+    } else {
+        diag_log(path, &format!(
+            "[search] init_db: schema_versions.dependent_tables_mig003={} (target {}) — Step 2 backfill skipped (already done)",
+            stored_dep_version,
+            DEPENDENT_TABLES_MIG003_VERSION,
         ));
     }
 
