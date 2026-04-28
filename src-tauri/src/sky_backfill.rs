@@ -339,8 +339,8 @@ fn process_batch(
         {
             let mut ins = tx
                 .prepare(
-                    "INSERT OR IGNORE INTO note_aliases (path, alias_lower, source)
-                     VALUES (?1, ?2, 'frontmatter')",
+                    "INSERT OR IGNORE INTO note_aliases (path, alias_lower, source, cid_cn)
+                     VALUES (?1, ?2, 'frontmatter', COALESCE((SELECT cid_cn FROM note_meta WHERE path = ?1), ''))",
                 )
                 .map_err(|e| format!("prepare ins alias: {}", e))?;
             for (p, sig) in &computed {

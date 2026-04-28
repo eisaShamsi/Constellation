@@ -234,7 +234,7 @@ pub fn constellation_embed_notes(
                 let bytes: Vec<u8> = embedding.iter().flat_map(|f| f.to_le_bytes()).collect();
                 let dims = embedding.len() as i32;
                 conn.execute(
-                    "INSERT OR REPLACE INTO note_embeddings (path, embedding, dimensions, model_id) VALUES (?1, ?2, ?3, ?4)",
+                    "INSERT OR REPLACE INTO note_embeddings (path, embedding, dimensions, model_id, cid_cn) VALUES (?1, ?2, ?3, ?4, (SELECT cid_cn FROM note_meta WHERE path = ?1))",
                     params![note.path, bytes, dims, "multilingual-e5-small"],
                 ).map_err(|e| format!("DB write failed: {}", e))?;
                 count += 1;

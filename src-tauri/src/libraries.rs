@@ -875,7 +875,7 @@ pub fn rename_item(app: tauri::AppHandle, old_path: String, new_path: String) ->
                 if let Ok(guard) = db_lock {
                     if let Some(conn) = guard.as_ref() {
                         let _ = conn.execute(
-                            "INSERT OR IGNORE INTO note_aliases (path, alias_lower, source) VALUES (?1, ?2, 'rename')",
+                            "INSERT OR IGNORE INTO note_aliases (path, alias_lower, source, cid_cn) VALUES (?1, ?2, 'rename', COALESCE((SELECT cid_cn FROM note_meta WHERE path = ?1), ''))",
                             rusqlite::params![note_path, normalized],
                         );
                     }

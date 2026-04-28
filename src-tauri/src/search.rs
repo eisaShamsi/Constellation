@@ -846,6 +846,71 @@ fn ensure_note_embeddings_mig003_columns(conn: &Connection) -> rusqlite::Result<
     Ok(())
 }
 
+/// MIG-003 Step 3 — boot-time soft re-backfill. Cheap UPDATE that
+/// finds 0 rows in steady state (every writer site populates cid_cn
+/// directly per Step 3) but repairs any row that escaped — e.g. a
+/// dependent-table row written by a path the indexer hadn't reached
+/// yet, or a note_meta row whose frontmatter cid_cn was missing at
+/// index time. Idempotent and free when there's nothing to do.
+pub(crate) fn mig003_step3_soft_rebackfill(
+    conn: &mut Connection,
+    db_dir: &Path,
+) -> rusqlite::Result<()> {
+    use std::time::Instant;
+    let t = Instant::now();
+    let nm = conn.execute(
+        "UPDATE note_meta \
+         SET cid_cn = COALESCE((SELECT NULLIF(json_extract(properties_json, '$.cid_cn'), '')), cid_cn) \
+         WHERE cid_cn IS NULL OR cid_cn = ''",
+        [],
+    ).unwrap_or(0);
+    let nl_src = conn.execute(
+        "UPDATE note_links \
+         SET source_cid_cn = (SELECT cid_cn FROM note_meta WHERE note_meta.path = note_links.source_path) \
+         WHERE (source_cid_cn IS NULL OR source_cid_cn = '') \
+           AND EXISTS (SELECT 1 FROM note_meta WHERE note_meta.path = note_links.source_path)",
+        [],
+    ).unwrap_or(0);
+    // NOTE: target_cid_cn re-backfill DELIBERATELY OMITTED here. The
+    // resolver `LOWER(note_meta.name) = LOWER(target_name)` has no
+    // supporting index — running it across 232k+ link rows × 7600+
+    // notes was a multi-billion-comparison hang on first boot. New
+    // links written after Step 3 ship populate target_cid_cn at INSERT
+    // time. Bulk back-fill of pre-existing target_cid_cn=NULL rows
+    // is deferred to a later step that builds the necessary index
+    // first (or batches with a path-keyed predicate).
+    let nl_tgt = 0usize;
+    let sn = conn.execute(
+        "UPDATE sky_nodes \
+         SET cid_cn = (SELECT cid_cn FROM note_meta WHERE note_meta.path = sky_nodes.path) \
+         WHERE (cid_cn IS NULL OR cid_cn = '') \
+           AND EXISTS (SELECT 1 FROM note_meta WHERE note_meta.path = sky_nodes.path)",
+        [],
+    ).unwrap_or(0);
+    let na = conn.execute(
+        "UPDATE note_aliases \
+         SET cid_cn = (SELECT cid_cn FROM note_meta WHERE note_meta.path = note_aliases.path) \
+         WHERE cid_cn = '' \
+           AND EXISTS (SELECT 1 FROM note_meta WHERE note_meta.path = note_aliases.path)",
+        [],
+    ).unwrap_or(0);
+    let ne = conn.execute(
+        "UPDATE note_embeddings \
+         SET cid_cn = (SELECT cid_cn FROM note_meta WHERE note_meta.path = note_embeddings.path) \
+         WHERE (cid_cn IS NULL OR cid_cn = '') \
+           AND EXISTS (SELECT 1 FROM note_meta WHERE note_meta.path = note_embeddings.path)",
+        [],
+    ).unwrap_or(0);
+    let total = nm + nl_src + nl_tgt + sn + na + ne;
+    if total > 0 {
+        diag_log(db_dir, &format!(
+            "[search] mig003_step3_soft_rebackfill: repaired note_meta={} note_links src={} tgt={} sky_nodes={} note_aliases={} note_embeddings={} — elapsed={:?}",
+            nm, nl_src, nl_tgt, sn, na, ne, t.elapsed(),
+        ));
+    }
+    Ok(())
+}
+
 /// MIG-003 Step 2 — single-transaction back-fill of cid_cn on every
 /// dependent table by JOINing on the existing `path` columns. Orphan
 /// rows (path with no matching note_meta entry) leave cid_cn at its
@@ -1511,11 +1576,12 @@ fn init_db(path: &Path) -> Result<Connection, String> {
         -- sky_nodes) executed. Merging the sky_nodes INSERT and the
         -- stratum + maturity UPDATE into one trigger body sidesteps
         -- the multi-trigger dispatch issue entirely.
+        DROP TRIGGER IF EXISTS note_meta_sky_ai;
         CREATE TRIGGER IF NOT EXISTS note_meta_sky_ai
         AFTER INSERT ON note_meta
         BEGIN
-            INSERT OR REPLACE INTO sky_nodes (path, id, name, library_name, updated_at)
-            VALUES (NEW.path, LOWER(NEW.name), NEW.name, NEW.library_name, strftime('%s','now'));
+            INSERT OR REPLACE INTO sky_nodes (path, id, name, library_name, cid_cn, updated_at)
+            VALUES (NEW.path, LOWER(NEW.name), NEW.name, NEW.library_name, NEW.cid_cn, strftime('%s','now'));
             UPDATE sky_nodes SET stratum = ({stratum_expr}) WHERE path = NEW.path;
             UPDATE sky_nodes SET maturity = ({maturity_expr}) WHERE path = NEW.path;
         END;
@@ -1891,6 +1957,12 @@ fn init_db(path: &Path) -> Result<Connection, String> {
         ));
     }
 
+    // MIG-003 Step 3 — boot-time soft re-backfill. Repairs any cid_cn
+    // hole left by a writer that didn't include cid_cn (e.g. external
+    // sync drop, mid-flight indexer interruption). Cheap when nothing
+    // to fix; logs only when it actually repairs rows.
+    let _ = mig003_step3_soft_rebackfill(&mut conn, path);
+
     Ok(conn)
 }
 
@@ -2259,6 +2331,15 @@ fn index_note(conn: &Connection, note_path: &str, library_name: &str) -> Result<
         .cloned()
         .unwrap_or_else(|| file_stem.clone());
 
+    // MIG-003 Step 3: cid_cn from frontmatter — already injected by
+    // canonical::ensure_cid_cn during note creation. Falls back to ''
+    // (the schema default) for any legacy file that escaped the
+    // backfill; the boot-time soft re-backfill in init_db will repair
+    // such rows on the next launch.
+    let cid_cn = properties.get("cid_cn")
+        .cloned()
+        .unwrap_or_default();
+
     // Arabic normalization for FTS body text.
     //
     // **Tashkeel + tatweel only** — we no longer fold ة/ه, ى/ي, or
@@ -2302,9 +2383,9 @@ fn index_note(conn: &Connection, note_path: &str, library_name: &str) -> Result<
         conn.execute("DELETE FROM note_meta WHERE path = ?1", params![note_path])
             .map_err(|e| e.to_string())?;
         conn.execute(
-            "INSERT INTO note_meta (path, name, library_name, modified, properties_json, tags_json, outgoing_links_json, headings_json, body_text, word_count, created_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
-            params![note_path, name, library_name, modified, props_json, tags_json, links_json, headings_json, plain_body, word_count, created_at],
+            "INSERT INTO note_meta (path, name, library_name, modified, properties_json, tags_json, outgoing_links_json, headings_json, body_text, word_count, created_at, cid_cn)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
+            params![note_path, name, library_name, modified, props_json, tags_json, links_json, headings_json, plain_body, word_count, created_at, cid_cn],
         ).map_err(|e| format!("Failed to index note {}: {}", note_path, e))?;
 
         // MIG-004 §2: clear+repopulate frontmatter-sourced aliases for
@@ -2318,10 +2399,10 @@ fn index_note(conn: &Connection, note_path: &str, library_name: &str) -> Result<
         let aliases = extract_aliases(&content);
         if !aliases.is_empty() {
             let mut ins = conn.prepare(
-                "INSERT OR IGNORE INTO note_aliases (path, alias_lower, source) VALUES (?1, ?2, 'frontmatter')"
+                "INSERT OR IGNORE INTO note_aliases (path, alias_lower, source, cid_cn) VALUES (?1, ?2, 'frontmatter', ?3)"
             ).map_err(|e| format!("prepare alias insert: {}", e))?;
             for a in &aliases {
-                ins.execute(params![note_path, a])
+                ins.execute(params![note_path, a, cid_cn])
                     .map_err(|e| format!("insert alias: {}", e))?;
             }
         }
@@ -2361,17 +2442,26 @@ fn index_note(conn: &Connection, note_path: &str, library_name: &str) -> Result<
             .map_err(|e| e.to_string())?;
         for tl in &typed_links {
             let key = format!("{}::{}", tl.link_type, tl.target);
+            // MIG-003 Step 3: target_cid_cn looked up via note_meta.name
+            // (case-folded against the wikilink target). NULL when the
+            // target is unresolved — caller is responsible for treating
+            // unresolved links as orphans, same as before.
+            let target_cid_cn: Option<String> = conn.query_row(
+                "SELECT cid_cn FROM note_meta WHERE LOWER(name) = LOWER(?1) LIMIT 1",
+                params![tl.target],
+                |row| row.get(0),
+            ).ok();
             if let Some((w, lt, tc, conf, created)) = preserved.get(&key) {
                 conn.execute(
-                    "INSERT OR IGNORE INTO note_links (source_path, source_name, target_name, link_type, annotation, confidence, weight, created, last_traversed, traversal_count, library_name, status)
-                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, 'active')",
-                    params![note_path, name, tl.target, tl.link_type, tl.annotation, conf, w, created, lt, tc, library_name],
+                    "INSERT OR IGNORE INTO note_links (source_path, source_name, target_name, link_type, annotation, confidence, weight, created, last_traversed, traversal_count, library_name, status, source_cid_cn, target_cid_cn)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, 'active', ?12, ?13)",
+                    params![note_path, name, tl.target, tl.link_type, tl.annotation, conf, w, created, lt, tc, library_name, cid_cn, target_cid_cn],
                 ).map_err(|e| format!("Failed to index link: {}", e))?;
             } else {
                 conn.execute(
-                    "INSERT OR IGNORE INTO note_links (source_path, source_name, target_name, link_type, annotation, confidence, weight, created, last_traversed, traversal_count, library_name, status)
-                     VALUES (?1, ?2, ?3, ?4, ?5, 'hypothesis', 1.0, ?6, ?6, 0, ?7, 'active')",
-                    params![note_path, name, tl.target, tl.link_type, tl.annotation, now, library_name],
+                    "INSERT OR IGNORE INTO note_links (source_path, source_name, target_name, link_type, annotation, confidence, weight, created, last_traversed, traversal_count, library_name, status, source_cid_cn, target_cid_cn)
+                     VALUES (?1, ?2, ?3, ?4, ?5, 'hypothesis', 1.0, ?6, ?6, 0, ?7, 'active', ?8, ?9)",
+                    params![note_path, name, tl.target, tl.link_type, tl.annotation, now, library_name, cid_cn, target_cid_cn],
                 ).map_err(|e| format!("Failed to index link: {}", e))?;
             }
         }
@@ -3954,7 +4044,7 @@ pub fn constellation_search_store_embedding(
         // Convert f32 vec to blob (little-endian bytes)
         let blob: Vec<u8> = embedding.iter().flat_map(|f| f.to_le_bytes()).collect();
         conn.execute(
-            "INSERT OR REPLACE INTO note_embeddings (path, embedding, dimensions) VALUES (?1, ?2, ?3)",
+            "INSERT OR REPLACE INTO note_embeddings (path, embedding, dimensions, cid_cn) VALUES (?1, ?2, ?3, (SELECT cid_cn FROM note_meta WHERE path = ?1))",
             params![note_path, blob, dimensions],
         ).map_err(|e| format!("Failed to store embedding: {}", e))?;
     }
