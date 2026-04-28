@@ -1963,6 +1963,51 @@ fn init_db(path: &Path) -> Result<Connection, String> {
     // to fix; logs only when it actually repairs rows.
     let _ = mig003_step3_soft_rebackfill(&mut conn, path);
 
+    // MIG-003 Step 4 — canonical → human filename migration. One-shot,
+    // gated by schema_versions.mig003_step4. Walks every library,
+    // renames every canonical-named .md to its title-derived name,
+    // cascades the path change to every dependent table inside a
+    // per-library transaction. Audit log written to
+    // .constellation/mig003-step4-renames.tsv. Idempotent on restart.
+    let stored_step4_version: i64 = conn
+        .query_row(
+            "SELECT version FROM schema_versions WHERE module = 'mig003_step4'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap_or(0);
+    if stored_step4_version < crate::mig003_step4::MIG003_STEP4_VERSION {
+        diag_log(path, &format!(
+            "[search] init_db: schema_versions.mig003_step4={} (target {}) — Step 4 rename pass starting",
+            stored_step4_version,
+            crate::mig003_step4::MIG003_STEP4_VERSION,
+        ));
+        match crate::mig003_step4::run(&mut conn, path) {
+            Ok(()) => {
+                conn.execute(
+                    "INSERT OR REPLACE INTO schema_versions (module, version, updated_at) VALUES ('mig003_step4', ?1, strftime('%s','now'))",
+                    rusqlite::params![crate::mig003_step4::MIG003_STEP4_VERSION],
+                ).map_err(|e| format!("Failed to stamp schema_versions.mig003_step4: {}", e))?;
+                diag_log(path, &format!(
+                    "[search] init_db: schema_versions.mig003_step4 stamped to {} after Step 4 rename pass",
+                    crate::mig003_step4::MIG003_STEP4_VERSION,
+                ));
+            }
+            Err(e) => {
+                diag_log(path, &format!(
+                    "[search] init_db: MIG-003 Step 4 returned an error (no stamp; will retry next boot): {}",
+                    e,
+                ));
+            }
+        }
+    } else {
+        diag_log(path, &format!(
+            "[search] init_db: schema_versions.mig003_step4={} (target {}) — Step 4 already done",
+            stored_step4_version,
+            crate::mig003_step4::MIG003_STEP4_VERSION,
+        ));
+    }
+
     Ok(conn)
 }
 

@@ -13,6 +13,7 @@ mod fts5_tokenizer;
 mod inspector360;
 mod importers;
 mod libraries;
+mod mig003_step4;
 mod sight;
 mod lenses;
 mod lexicon;
