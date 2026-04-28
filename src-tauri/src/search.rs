@@ -72,6 +72,12 @@ const FTS_SCHEMA_VERSION: i64 = 1;
 /// or defaulted so pre-MIG-002 binaries tolerate the wider schema.
 pub(crate) const SKY_SCHEMA_VERSION: i64 = 10;
 
+/// MIG-003 Step 1 — `note_meta` schema version. Bumped to 1 when the
+/// `cid_cn` column was added and backfilled from frontmatter. Subsequent
+/// MIG-003 steps (FK columns on `note_links`/`sky_nodes`/`note_aliases`,
+/// PRIMARY-KEY promotion in Step 6) bump this further.
+pub(crate) const NOTE_META_SCHEMA_VERSION: i64 = 1;
+
 /// MIG-002 §4 — SQL fragment that computes sky_nodes.stratum (1–8) from
 /// the same five signals as strata.rs::compute_stratum:
 ///
@@ -396,6 +402,359 @@ fn ensure_note_meta_mig002_columns(conn: &Connection) -> rusqlite::Result<()> {
     Ok(())
 }
 
+/// MIG-003 Step 1 — ensure `note_meta` has the `cid_cn` column.
+/// Idempotent: probes `PRAGMA table_info` and ALTERs only if missing.
+/// The column starts as `TEXT NOT NULL DEFAULT ''` so existing rows
+/// don't violate the constraint. Real `cid_cn` values are populated
+/// by `mig003_backfill_cid_cn` (called separately from `init_db`).
+/// The UNIQUE index on `cid_cn` is created AFTER the backfill so
+/// every row has a real, distinct value when the constraint is
+/// applied.
+fn ensure_note_meta_mig003_column(conn: &Connection) -> rusqlite::Result<()> {
+    let mut have_cid_cn = false;
+    {
+        let mut stmt = conn.prepare("PRAGMA table_info(note_meta)")?;
+        let rows = stmt.query_map([], |row| row.get::<_, String>(1))?;
+        for col in rows {
+            if col?.as_str() == "cid_cn" {
+                have_cid_cn = true;
+            }
+        }
+    }
+    if !have_cid_cn {
+        conn.execute_batch(
+            "ALTER TABLE note_meta ADD COLUMN cid_cn TEXT NOT NULL DEFAULT '';",
+        )?;
+    }
+    Ok(())
+}
+
+/// MIG-003 Step 1 — Walk every row in `note_meta`, read the file's
+/// frontmatter, ensure `cid_cn:` is present (injecting it via
+/// `canonical::ensure_cid_cn` for files that lack it), and populate
+/// the `note_meta.cid_cn` column from that value.
+///
+/// Called at app boot when `schema_versions.note_meta < 1`. Slow on
+/// first launch (one disk read per note + a write for every note that
+/// lacks `cid_cn:` in frontmatter — could be most of them on a legacy
+/// human-named library). Subsequent boots are no-ops because
+/// `schema_versions.note_meta` is already at target.
+///
+/// After this completes successfully, a `CREATE UNIQUE INDEX` on
+/// `cid_cn` is added (no duplicates possible because each generated
+/// cid_cn embeds a unique timestamp+hex suffix).
+///
+/// Reports diagnostics via `diag_log` for visibility into long
+/// first-launch migrations.
+///
+/// **Pre-flight cleanup** (handles state from a buggy first run):
+///   1. Drop `note_meta` rows pointing at files that no longer exist
+///      on disk. Zombie rows from prior deletions/moves.
+///   2. Reset any `cid_cn` value that doesn't match the canonical
+///      pattern (`YYYYMMDDTHHMMSSZ_KIND_HEX`). Earlier buggy versions
+///      of this function stored entire frontmatter blocks into the
+///      column; resetting them lets the corrected logic repopulate
+///      cleanly.
+///
+/// **Duplicate handling**: a `cid_cn` collision (two files with the
+/// same id, e.g., from File-Explorer copy-paste of a note) blocks the
+/// UNIQUE index. On detection, the LATER-modified file gets a fresh
+/// cid_cn injected (write + update DB); the earlier-modified file
+/// keeps its original cid_cn.
+pub(crate) fn mig003_backfill_cid_cn(
+    conn: &mut Connection,
+    db_dir: &Path,
+) -> rusqlite::Result<()> {
+    use std::time::Instant;
+    let t_start = Instant::now();
+
+    // Canonical-id pattern: YYYYMMDDTHHMMSSZ_KIND_HEX. Used to validate
+    // that a cid_cn value looks like an id (vs garbage from the
+    // pre-fix bug where entire frontmatter was stored).
+    let cid_cn_re = match regex::Regex::new(r"^\d{8}T\d{6}Z_[A-Z0-9]+_[0-9A-F]+$") {
+        Ok(r) => r,
+        Err(_) => return Ok(()), // unreachable for a valid static pattern
+    };
+
+    // ── Snapshot every row's (path, current_cid_cn) BEFORE the heavy
+    //    work. Single SELECT outside any transaction. Cheap. ──────
+    struct Row {
+        path: String,
+        current_cid_cn: String,
+    }
+    let mut rows: Vec<Row> = Vec::new();
+    {
+        let mut stmt = conn.prepare("SELECT path, cid_cn FROM note_meta")?;
+        let mapped = stmt.query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))?;
+        for r in mapped {
+            let (path, cid_cn) = r?;
+            rows.push(Row { path, current_cid_cn: cid_cn });
+        }
+    }
+    diag_log(db_dir, &format!(
+        "[search] mig003_backfill_cid_cn: snapshot {} note_meta row(s) in {:?}",
+        rows.len(),
+        t_start.elapsed(),
+    ));
+
+    // ── Phase A: classify rows + read frontmatter for those that need
+    //    backfill. NO database writes yet — just gather what we'll do. ─
+    enum Plan {
+        Skip,                                  // current cid_cn already valid; no DB write
+        Delete,                                // file missing on disk
+        SetCidCn { new_cid_cn: String },       // populate / repopulate
+        Error,                                 // unrecoverable for this row; leave alone
+    }
+    let mut plans: Vec<(Row, Plan, u64)> = Vec::with_capacity(rows.len());
+    let mut pending_for_dedup: Vec<usize> = Vec::new();
+
+    for row in rows {
+        let path = Path::new(&row.path);
+
+        // File missing → mark for delete.
+        if !path.exists() {
+            plans.push((row, Plan::Delete, 0));
+            continue;
+        }
+
+        let mtime = std::fs::metadata(path)
+            .and_then(|m| m.modified())
+            .ok()
+            .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+            .map(|d| d.as_secs())
+            .unwrap_or(0);
+
+        // Current cid_cn already valid → skip.
+        if cid_cn_re.is_match(&row.current_cid_cn) {
+            plans.push((row, Plan::Skip, mtime));
+            continue;
+        }
+
+        // Need to read the file to find the real cid_cn.
+        let content = match std::fs::read_to_string(path) {
+            Ok(c) => c,
+            Err(_) => {
+                plans.push((row, Plan::Error, mtime));
+                continue;
+            }
+        };
+
+        let pre_existing = extract_frontmatter_cid_cn(&content);
+        let new_cid_cn = match pre_existing {
+            Some(c) if cid_cn_re.is_match(&c) => c,
+            _ => {
+                // Inject via canonical helper. Returns updated content;
+                // we extract the new cid_cn from it.
+                match crate::canonical::ensure_cid_cn(path, &content) {
+                    Ok(updated) => match extract_frontmatter_cid_cn(&updated) {
+                        Some(c) if cid_cn_re.is_match(&c) => c,
+                        _ => {
+                            plans.push((row, Plan::Error, mtime));
+                            continue;
+                        }
+                    },
+                    Err(_) => {
+                        plans.push((row, Plan::Error, mtime));
+                        continue;
+                    }
+                }
+            }
+        };
+        let idx = plans.len();
+        plans.push((row, Plan::SetCidCn { new_cid_cn }, mtime));
+        pending_for_dedup.push(idx);
+    }
+
+    let phase_a_elapsed = t_start.elapsed();
+    diag_log(db_dir, &format!(
+        "[search] mig003_backfill_cid_cn: Phase A (classify + read) done in {:?}; {} need backfill",
+        phase_a_elapsed,
+        pending_for_dedup.len(),
+    ));
+
+    // ── Phase B: detect cid_cn collisions across ALL plans (Skip +
+    //    SetCidCn). A prior partial run could have populated DB rows
+    //    with colliding ids — all show as Skip on the next boot, so
+    //    we must scan every populated cid_cn, not just newly-set
+    //    ones. The latest-modified file (or lex-larger path on tie)
+    //    regenerates and is promoted to SetCidCn so Phase C writes
+    //    the new id to the DB. ─────────────────────────────────────
+    let mut groups: std::collections::HashMap<String, Vec<usize>> =
+        std::collections::HashMap::new();
+    for (i, (row, plan, _mtime)) in plans.iter().enumerate() {
+        let cid = match plan {
+            Plan::Skip => row.current_cid_cn.clone(),
+            Plan::SetCidCn { new_cid_cn } => new_cid_cn.clone(),
+            _ => continue,
+        };
+        groups.entry(cid).or_default().push(i);
+    }
+
+    let mut duplicates_resolved = 0usize;
+    for (_cid, idxs) in groups.into_iter() {
+        if idxs.len() < 2 {
+            continue;
+        }
+        // Winner = smallest mtime; tiebreak smaller path. Losers
+        // regenerate.
+        let mut sorted = idxs.clone();
+        sorted.sort_by(|&a, &b| {
+            let ma = plans[a].2;
+            let mb = plans[b].2;
+            ma.cmp(&mb).then_with(|| plans[a].0.path.cmp(&plans[b].0.path))
+        });
+        let winner = sorted[0];
+        for &loser_idx in &sorted[1..] {
+            let loser_path = plans[loser_idx].0.path.clone();
+            let path_obj = Path::new(&loser_path);
+            let content = match std::fs::read_to_string(path_obj) {
+                Ok(c) => c,
+                Err(_) => {
+                    plans[loser_idx].1 = Plan::Error;
+                    continue;
+                }
+            };
+            let stripped = strip_cid_cn_line(&content);
+            if std::fs::write(path_obj, &stripped).is_err() {
+                plans[loser_idx].1 = Plan::Error;
+                continue;
+            }
+            let regenerated = match crate::canonical::ensure_cid_cn(path_obj, &stripped) {
+                Ok(updated) => match extract_frontmatter_cid_cn(&updated) {
+                    Some(c) if cid_cn_re.is_match(&c) => c,
+                    _ => {
+                        plans[loser_idx].1 = Plan::Error;
+                        continue;
+                    }
+                },
+                Err(_) => {
+                    plans[loser_idx].1 = Plan::Error;
+                    continue;
+                }
+            };
+            plans[loser_idx].1 = Plan::SetCidCn { new_cid_cn: regenerated };
+            duplicates_resolved += 1;
+        }
+        let _ = winner; // winner stays as-is; no DB write needed
+    }
+
+    let phase_b_elapsed = t_start.elapsed();
+    diag_log(db_dir, &format!(
+        "[search] mig003_backfill_cid_cn: Phase B (dedup) done in {:?}; {} duplicates resolved",
+        phase_b_elapsed,
+        duplicates_resolved,
+    ));
+
+    // ── Phase C: apply all DB changes inside ONE transaction. The
+    //    triggers on note_meta cascade per-row, but a single fsync at
+    //    COMMIT time is the difference between 30 seconds and 30
+    //    minutes on a 7,600-note Universe. ─────────────────────────
+    let tx = conn.transaction()?;
+    let mut deleted = 0usize;
+    let mut updated_skip = 0usize;
+    let mut updated_set = 0usize;
+    let mut errored = 0usize;
+    {
+        let mut delete_stmt = tx.prepare("DELETE FROM note_meta WHERE path = ?1")?;
+        let mut update_stmt = tx.prepare("UPDATE note_meta SET cid_cn = ?1 WHERE path = ?2")?;
+        for (row, plan, _mtime) in &plans {
+            match plan {
+                Plan::Skip => { updated_skip += 1; }
+                Plan::Delete => {
+                    if delete_stmt.execute(rusqlite::params![row.path]).is_ok() {
+                        deleted += 1;
+                    } else {
+                        errored += 1;
+                    }
+                }
+                Plan::SetCidCn { new_cid_cn } => {
+                    if update_stmt.execute(rusqlite::params![new_cid_cn, row.path]).is_ok() {
+                        updated_set += 1;
+                    } else {
+                        errored += 1;
+                    }
+                }
+                Plan::Error => { errored += 1; }
+            }
+        }
+    }
+    tx.commit()?;
+
+    diag_log(db_dir, &format!(
+        "[search] mig003_backfill_cid_cn: Phase C (commit) — total={} skipped_already_valid={} backfilled={} deleted_zombies={} duplicates_resolved={} errored={} elapsed={:?}",
+        plans.len(),
+        updated_skip,
+        updated_set,
+        deleted,
+        duplicates_resolved,
+        errored,
+        t_start.elapsed(),
+    ));
+
+    Ok(())
+}
+
+/// MIG-003 Step 1 helper — strip a `cid_cn: ...` line from the YAML
+/// frontmatter at the start of file content. Used by the duplicate
+/// regeneration path: when two files share a cid_cn, we strip the
+/// id from one and let `ensure_cid_cn` re-inject a fresh one. Returns
+/// the content unmodified if there's no frontmatter or no cid_cn line.
+fn strip_cid_cn_line(content: &str) -> String {
+    let trimmed = content.trim_start();
+    if !trimmed.starts_with("---") {
+        return content.to_string();
+    }
+    let leading_offset = content.len() - trimmed.len();
+    let after = &trimmed[3..];
+    let end = match after.find("\n---") {
+        Some(e) => e,
+        None => return content.to_string(),
+    };
+    let fm = &after[..end];
+    let body = &after[end..]; // includes the leading `\n---`
+    let fm_filtered: String = fm
+        .lines()
+        .filter(|l| !l.trim().starts_with("cid_cn:"))
+        .collect::<Vec<_>>()
+        .join("\n");
+    format!(
+        "{}---{}{}",
+        &content[..leading_offset],
+        fm_filtered,
+        body,
+    )
+}
+
+/// MIG-003 Step 1 — extract `cid_cn:` from a YAML frontmatter block
+/// at the start of file content. Returns None if frontmatter is
+/// absent / malformed / lacks the field. Mirrors the simple style of
+/// `libraries::extract_frontmatter_title`.
+fn extract_frontmatter_cid_cn(content: &str) -> Option<String> {
+    let trimmed = content.trim_start();
+    if !trimmed.starts_with("---") { return None; }
+    let after = &trimmed[3..];
+    let end = after.find("\n---")?;
+    let fm = &after[..end];
+    for line in fm.lines() {
+        let t = line.trim();
+        if let Some(rest) = t.strip_prefix("cid_cn:") {
+            let val = rest.trim().trim_matches('"').trim_matches('\'');
+            if !val.is_empty() { return Some(val.to_string()); }
+        }
+    }
+    None
+}
+
+/// MIG-003 Step 1 — Add the UNIQUE index on `note_meta.cid_cn` after
+/// the backfill has populated every row. Idempotent — `IF NOT EXISTS`
+/// makes re-running safe across boots.
+fn ensure_note_meta_mig003_unique_index(conn: &Connection) -> rusqlite::Result<()> {
+    conn.execute_batch(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_note_meta_cid_cn ON note_meta(cid_cn);",
+    )?;
+    Ok(())
+}
+
 /// MIG-002: ensure `sky_nodes` has the `enrichment_dirty` column plus
 /// its partial index on DBs created by MIG-001 v1 code. Idempotent.
 ///
@@ -552,6 +911,46 @@ fn init_db(path: &Path) -> Result<Connection, String> {
     ensure_note_meta_mig002_columns(&conn)
         .map_err(|e| format!("Failed to ensure note_meta MIG-002 columns: {}", e))?;
 
+    // MIG-003 Step 1 — `cid_cn` column on `note_meta`. Idempotent
+    // schema add; the actual cid_cn values are populated by the
+    // backfill below (one-shot, gated by schema_versions.note_meta).
+    ensure_note_meta_mig003_column(&conn)
+        .map_err(|e| format!("Failed to ensure note_meta MIG-003 column: {}", e))?;
+    let stored_note_meta_version: i64 = conn
+        .query_row(
+            "SELECT version FROM schema_versions WHERE module = 'note_meta'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap_or(0);
+    if stored_note_meta_version < NOTE_META_SCHEMA_VERSION {
+        diag_log(path, &format!(
+            "[search] init_db: schema_versions.note_meta={} (target {}) — MIG-003 backfill needed",
+            stored_note_meta_version,
+            NOTE_META_SCHEMA_VERSION,
+        ));
+        mig003_backfill_cid_cn(&mut conn, path)
+            .map_err(|e| format!("Failed to backfill cid_cn for MIG-003: {}", e))?;
+        // Add UNIQUE index now that every row has a real cid_cn.
+        ensure_note_meta_mig003_unique_index(&conn)
+            .map_err(|e| format!("Failed to add UNIQUE index on cid_cn: {}", e))?;
+        // Stamp completion. Future boots short-circuit the backfill.
+        conn.execute(
+            "INSERT OR REPLACE INTO schema_versions (module, version, updated_at) VALUES ('note_meta', ?1, strftime('%s','now'))",
+            rusqlite::params![NOTE_META_SCHEMA_VERSION],
+        ).map_err(|e| format!("Failed to stamp schema_versions.note_meta: {}", e))?;
+        diag_log(path, &format!(
+            "[search] init_db: schema_versions.note_meta stamped to {} after MIG-003 Step 1 backfill",
+            NOTE_META_SCHEMA_VERSION,
+        ));
+    } else {
+        diag_log(path, &format!(
+            "[search] init_db: schema_versions.note_meta={} (target {}) — MIG-003 backfill skipped (already done)",
+            stored_note_meta_version,
+            NOTE_META_SCHEMA_VERSION,
+        ));
+    }
+
     // Create embeddings table for semantic search (Phase 2)
     conn.execute_batch("
         CREATE TABLE IF NOT EXISTS note_embeddings (
@@ -585,7 +984,20 @@ fn init_db(path: &Path) -> Result<Connection, String> {
         );
     ").map_err(|e| format!("Failed to create notes_fts: {}", e))?;
 
-    // Triggers to keep FTS in sync with note_meta
+    // MIG-003 Step 1 hardening: drop the pre-MIG-003 `note_meta_au`
+    // trigger so the WHEN-clause-gated version below replaces it on
+    // existing DBs. Without this, an existing user database keeps the
+    // old trigger with no WHEN clause, defeating the gate. Pure no-op
+    // on a fresh DB.
+    conn.execute_batch("DROP TRIGGER IF EXISTS note_meta_au;")
+        .map_err(|e| format!("Failed to drop pre-MIG-003 note_meta_au trigger: {}", e))?;
+
+    // Triggers to keep FTS in sync with note_meta. The AU trigger
+    // is gated on `name` or `body_text` actually changing — without
+    // the gate, a column-add migration like MIG-003 (which only
+    // changes `cid_cn`) would force full FTS5 retokenization for
+    // every note in the library, hanging Phase C indefinitely on
+    // a 7,000-note Universe.
     conn.execute_batch("
         CREATE TRIGGER IF NOT EXISTS note_meta_ai AFTER INSERT ON note_meta BEGIN
             INSERT INTO notes_fts(rowid, name, body_text) VALUES (new.rowid, new.name, new.body_text);
@@ -593,7 +1005,11 @@ fn init_db(path: &Path) -> Result<Connection, String> {
         CREATE TRIGGER IF NOT EXISTS note_meta_ad AFTER DELETE ON note_meta BEGIN
             INSERT INTO notes_fts(notes_fts, rowid, name, body_text) VALUES('delete', old.rowid, old.name, old.body_text);
         END;
-        CREATE TRIGGER IF NOT EXISTS note_meta_au AFTER UPDATE ON note_meta BEGIN
+        CREATE TRIGGER IF NOT EXISTS note_meta_au
+        AFTER UPDATE ON note_meta
+        WHEN OLD.name IS NOT NEW.name
+          OR OLD.body_text IS NOT NEW.body_text
+        BEGIN
             INSERT INTO notes_fts(notes_fts, rowid, name, body_text) VALUES('delete', old.rowid, old.name, old.body_text);
             INSERT INTO notes_fts(rowid, name, body_text) VALUES (new.rowid, new.name, new.body_text);
         END;

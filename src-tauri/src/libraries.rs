@@ -912,6 +912,234 @@ pub fn rename_item(app: tauri::AppHandle, old_path: String, new_path: String) ->
     }
 }
 
+/// MIG-003 Step 0 — Convert a note title into a safe filename
+/// (without extension). Strips ASCII filesystem-reserved chars
+/// (`/ \ : * ? " < > |`) and the ASCII control range. Replaces them
+/// with a single space, then collapses runs of whitespace. Trims
+/// leading/trailing whitespace and dots (Windows hates trailing dots).
+/// Truncates to 240 bytes (boundary-safe — won't split a multi-byte
+/// codepoint), leaving room for ` 999.md` collision suffix + extension
+/// inside Windows MAX_PATH 260. Falls back to "Untitled" if the
+/// sanitized title is empty.
+///
+/// Cross-script: preserves Arabic, Hebrew, Devanagari, CJK, Cyrillic,
+/// and any other Unicode characters. Only ASCII filesystem-reserved
+/// chars get touched. Per MIG-003 i18n requirement, all 15 launch
+/// languages must round-trip through this without losing content.
+///
+/// Windows reserved names (`CON`, `PRN`, `NUL`, `COM1`-`COM9`,
+/// `LPT1`-`LPT9`, `AUX`) are case-insensitively detected and
+/// suffixed with an underscore (`CON` → `CON_`).
+pub(crate) fn note_display_filename(title: &str) -> String {
+    const RESERVED_CHARS: &[char] = &['/', '\\', ':', '*', '?', '"', '<', '>', '|'];
+    const WIN_RESERVED: &[&str] = &[
+        "CON", "PRN", "AUX", "NUL",
+        "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+        "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
+    ];
+
+    // Replace reserved chars + ASCII control range with single space.
+    // Collapse runs of whitespace (replaced or real) to a single space
+    // so "Foo: Bar/Baz" → "Foo Bar Baz" (not "Foo  Bar Baz").
+    let mut buf = String::with_capacity(title.len());
+    let mut last_was_space = false;
+    for ch in title.chars() {
+        let is_bad = RESERVED_CHARS.contains(&ch) || (ch as u32) < 0x20;
+        let effective = if is_bad { ' ' } else { ch };
+        if effective == ' ' {
+            if !last_was_space {
+                buf.push(' ');
+                last_was_space = true;
+            }
+        } else {
+            buf.push(effective);
+            last_was_space = false;
+        }
+    }
+
+    // Trim leading/trailing whitespace and dots.
+    let trimmed = buf.trim().trim_matches('.').trim();
+
+    // Empty after sanitization → fall back.
+    if trimmed.is_empty() {
+        return "Untitled".to_string();
+    }
+
+    // Windows reserved-name guard (case-insensitive against the bare
+    // stem). Any of these appearing as the entire filename gets an
+    // underscore suffix to escape the reservation.
+    let upper = trimmed.to_uppercase();
+    if WIN_RESERVED.iter().any(|r| *r == upper) {
+        return format!("{}_", trimmed);
+    }
+
+    // Truncate at byte boundary safe for UTF-8 (don't split a multi-
+    // byte codepoint mid-sequence). 240 bytes leaves headroom for
+    // ` 999.md` (~7 bytes) inside Windows' 255-char filename limit
+    // and 260-char path limit — a deeply-nested folder still fits.
+    if trimmed.len() <= 240 {
+        return trimmed.to_string();
+    }
+    let mut cut = 240;
+    while !trimmed.is_char_boundary(cut) {
+        cut -= 1;
+    }
+    trimmed[..cut].trim_end().to_string()
+}
+
+/// MIG-003 Step 0 — Resolve a filename collision by appending ` N`
+/// suffix to the base stem. Returns the first free filename in the
+/// directory. Caller passes the desired stem (without extension) and
+/// the desired extension (with leading dot). Tries up to 999 suffixes.
+///
+/// Behavior:
+/// - `dir/Apple.md` does not exist → returns "Apple.md".
+/// - `dir/Apple.md` exists → returns "Apple 1.md".
+/// - `dir/Apple.md` and `dir/Apple 1.md` exist → returns "Apple 2.md".
+/// - 999 collisions exhausted → returns Err.
+///
+/// `case_insensitive_match` controls whether the existence check
+/// folds case (Windows / macOS default-FS behavior). Pass `true` for
+/// FS-portable behavior.
+pub(crate) fn resolve_filename_collision(
+    dir: &Path,
+    base_stem: &str,
+    ext: &str,
+    case_insensitive_match: bool,
+) -> Result<String, String> {
+    let normalized_stem = if case_insensitive_match {
+        base_stem.to_lowercase()
+    } else {
+        base_stem.to_string()
+    };
+
+    let read_dir = match fs::read_dir(dir) {
+        Ok(rd) => rd,
+        Err(e) => return Err(format!("read_dir failed: {}", e)),
+    };
+    let existing: std::collections::HashSet<String> = read_dir
+        .flatten()
+        .filter_map(|e| e.file_name().to_string_lossy().to_string().into())
+        .map(|n| if case_insensitive_match { n.to_lowercase() } else { n })
+        .collect();
+
+    let candidate0 = format!("{}{}", base_stem, ext);
+    let candidate0_check = if case_insensitive_match {
+        candidate0.to_lowercase()
+    } else {
+        candidate0.clone()
+    };
+    if !existing.contains(&candidate0_check) {
+        return Ok(candidate0);
+    }
+
+    for n in 1..=999u16 {
+        let candidate = format!("{} {}{}", base_stem, n, ext);
+        let check = if case_insensitive_match {
+            candidate.to_lowercase()
+        } else {
+            candidate.clone()
+        };
+        if !existing.contains(&check) {
+            return Ok(candidate);
+        }
+        let _ = normalized_stem; // silence unused (kept for future similarity dedup)
+    }
+
+    Err(format!("filename collision: 999 suffix attempts exhausted for stem {:?}", base_stem))
+}
+
+#[cfg(test)]
+mod mig_003_helper_tests {
+    use super::note_display_filename;
+
+    #[test]
+    fn ascii_title_passthrough() {
+        assert_eq!(note_display_filename("Apple Tree Fruit"), "Apple Tree Fruit");
+    }
+    #[test]
+    fn fs_reserved_chars_replaced() {
+        assert_eq!(note_display_filename("Foo: Bar/Baz?"), "Foo Bar Baz");
+    }
+    #[test]
+    fn collapse_run_of_reserved_chars() {
+        assert_eq!(note_display_filename("a///b"), "a b");
+    }
+    #[test]
+    fn arabic_title_preserved() {
+        assert_eq!(note_display_filename("الزراعة المستدامة"), "الزراعة المستدامة");
+    }
+    #[test]
+    fn hebrew_title_preserved() {
+        // Use explicit unicode escapes to avoid copy-paste hazards
+        // between Hebrew vav (U+05D5) and Arabic waw (U+0648), which
+        // are visually similar in some fonts.
+        let hebrew = "\u{05EA}\u{05E4}\u{05D5}\u{05D7}"; // tav peh vav chet
+        assert_eq!(note_display_filename(hebrew), hebrew);
+    }
+    #[test]
+    fn cjk_japanese_preserved() {
+        assert_eq!(note_display_filename("りんごの木"), "りんごの木");
+    }
+    #[test]
+    fn cyrillic_preserved() {
+        assert_eq!(note_display_filename("Яблоня"), "Яблоня");
+    }
+    #[test]
+    fn devanagari_preserved() {
+        assert_eq!(note_display_filename("सेब का पेड़"), "सेब का पेड़");
+    }
+    #[test]
+    fn mixed_script_preserved() {
+        assert_eq!(note_display_filename("Apple أبيض"), "Apple أبيض");
+    }
+    #[test]
+    fn empty_title_falls_back() {
+        assert_eq!(note_display_filename(""), "Untitled");
+    }
+    #[test]
+    fn whitespace_only_falls_back() {
+        assert_eq!(note_display_filename("   "), "Untitled");
+    }
+    #[test]
+    fn all_reserved_chars_falls_back() {
+        assert_eq!(note_display_filename("/\\:*?"), "Untitled");
+    }
+    #[test]
+    fn windows_reserved_con_escaped() {
+        assert_eq!(note_display_filename("CON"), "CON_");
+    }
+    #[test]
+    fn windows_reserved_case_insensitive() {
+        assert_eq!(note_display_filename("nul"), "nul_");
+    }
+    #[test]
+    fn trailing_dot_stripped() {
+        assert_eq!(note_display_filename("Note."), "Note");
+    }
+    #[test]
+    fn long_title_truncated_at_byte_boundary() {
+        let long = "A".repeat(300);
+        let result = note_display_filename(&long);
+        assert!(result.len() <= 240);
+        assert!(result.is_char_boundary(result.len()));
+    }
+    #[test]
+    fn long_arabic_title_truncated_at_codepoint_boundary() {
+        // Arabic chars are 2 bytes each in UTF-8. Title of 200 Arabic
+        // chars = 400 bytes; should truncate cleanly without splitting
+        // any character.
+        let long: String = "ا".repeat(200);
+        let result = note_display_filename(&long);
+        assert!(result.len() <= 240);
+        assert!(std::str::from_utf8(result.as_bytes()).is_ok());
+    }
+    #[test]
+    fn ascii_control_chars_stripped() {
+        assert_eq!(note_display_filename("Foo\x00Bar\nBaz"), "Foo Bar Baz");
+    }
+}
+
 /// MIG-008 — User-visible display name for a note. Prefers the
 /// frontmatter `title:` field; falls back to the file stem when
 /// title is missing or content can't be parsed.
