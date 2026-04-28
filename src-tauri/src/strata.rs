@@ -179,9 +179,11 @@ fn scan_notes_recursive(
             scan_notes_recursive(&path, re, notes);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             if let Ok(content) = fs::read_to_string(&path) {
-                let note_name = path.file_stem()
-                    .map(|s| s.to_string_lossy().to_string())
-                    .unwrap_or_default();
+                // MIG-008 Step 3: stratum results use the frontmatter title
+                // as the note's display name so panels reading
+                // `compute_note_strata` output show "Apple Tree Fruit"
+                // instead of "20260426T140737Z_NOTE_E561".
+                let note_name = crate::libraries::note_display_name(&path, Some(&content));
 
                 // Strip YAML frontmatter for word count
                 let body = strip_frontmatter(&content);

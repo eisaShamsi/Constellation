@@ -84,10 +84,13 @@ pub fn get_360_view(
     let link_re = regex::Regex::new(r"\[\[([^\]|]+?)(?:\|([^\]]+?))?\]\]").map_err(|e| e.to_string())?;
     let tag_re = regex::Regex::new(r"(?:^|\s)#([a-zA-Z\p{Arabic}][\w\p{Arabic}/\-]*)").map_err(|e| e.to_string())?;
 
-    let note_name = Path::new(&note_path)
-        .file_stem()
-        .map(|s| s.to_string_lossy().to_string())
-        .unwrap_or_default();
+    // MIG-008 Step 2: derive the active note's display name from
+    // frontmatter `title:` (with file_stem fallback). For canonical
+    // notes (`20260426T140737Z_NOTE_E561.md`) the title is the only
+    // value that matches incoming wikilinks like `[[Apple Tree Fruit]]`,
+    // so this is also a correctness fix — not just a label fix.
+    let note_path_p = Path::new(&note_path);
+    let note_name = crate::libraries::note_display_name(note_path_p, None);
     let note_lower = note_name.to_lowercase();
 
     // Scan all notes in the library
@@ -263,7 +266,10 @@ fn scan_all_notes(
             scan_all_notes(&path, link_re, tag_re, notes);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             if let Ok(content) = fs::read_to_string(&path) {
-                let note_name = path.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
+                // MIG-008 Step 2: prefer frontmatter title for the scanned
+                // note's name so neighbor labels in the 360° view show
+                // human titles, not canonical filenames.
+                let note_name = crate::libraries::note_display_name(&path, Some(&content));
                 let body = crate::strata::strip_frontmatter_pub(&content);
                 let word_count = body.split_whitespace().count();
 
@@ -428,9 +434,10 @@ fn scan_trails_for_note(dir: &Path, note_name: &str, link_re: &regex::Regex, tra
                 if crate::trails::is_trail_file_pub(&content) {
                     for cap in link_re.captures_iter(&content) {
                         if cap[1].trim().eq_ignore_ascii_case(note_name) {
-                            let trail_name = path.file_stem()
-                                .map(|s| s.to_string_lossy().to_string())
-                                .unwrap_or_default();
+                            // MIG-008 Step 2: trail label uses frontmatter
+                            // title so canonical-named trails read as
+                            // their human title in the inspector.
+                            let trail_name = crate::libraries::note_display_name(&path, Some(&content));
                             if !trails.contains(&trail_name) {
                                 trails.push(trail_name);
                             }

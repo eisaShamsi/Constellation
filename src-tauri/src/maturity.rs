@@ -154,9 +154,11 @@ fn scan_notes_recursive(
         if path.is_dir() {
             scan_notes_recursive(&path, re, notes, now_secs);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
-            let note_name = path.file_stem()
-                .map(|s| s.to_string_lossy().to_string())
-                .unwrap_or_default();
+            // MIG-008 Step 3: read the content once and derive both the
+            // display name (frontmatter title with file_stem fallback)
+            // and the outgoing-link list from the same string.
+            let content_opt = fs::read_to_string(&path).ok();
+            let note_name = crate::libraries::note_display_name(&path, content_opt.as_deref());
 
             // File metadata
             let meta = fs::metadata(&path).ok();
@@ -176,8 +178,8 @@ fn scan_notes_recursive(
 
             // Parse outgoing links
             let mut outgoing_targets: Vec<String> = Vec::new();
-            if let Ok(content) = fs::read_to_string(&path) {
-                for cap in re.captures_iter(&content) {
+            if let Some(content) = &content_opt {
+                for cap in re.captures_iter(content) {
                     outgoing_targets.push(cap[1].trim().to_string());
                 }
             }

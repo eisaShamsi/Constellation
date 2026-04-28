@@ -158,7 +158,11 @@ pub fn constellation_map_data(
         .unwrap_or_default()
         .as_secs();
 
-    let mut note_meta: HashMap<String, (u32, u32, String, Option<u8>, u64)> = HashMap::new();
+    // MIG-008 Step 1: trailing String is the display name (frontmatter title
+    // with file_stem fallback) that build_tree threads into MapNode.name so
+    // the sunburst's hover/breadcrumb labels never expose the canonical
+    // filename to the user.
+    let mut note_meta: HashMap<String, (u32, u32, String, Option<u8>, u64, String)> = HashMap::new();
     for note in &all_notes {
         let key = note.path.replace('\\', "/").to_lowercase();
         let inbound = *inbound_map.get(&note.name.to_lowercase()).unwrap_or(&0);
@@ -177,6 +181,7 @@ pub fn constellation_map_data(
             maturity,
             Some(stratum),
             note.modified,
+            note.name.clone(),
         ));
     }
 
@@ -236,7 +241,11 @@ fn build_library_node(
         .unwrap_or_default()
         .as_secs();
 
-    let mut note_meta: HashMap<String, (u32, u32, String, Option<u8>, u64)> = HashMap::new();
+    // MIG-008 Step 1: trailing String is the display name (frontmatter title
+    // with file_stem fallback) that build_tree threads into MapNode.name so
+    // the sunburst's hover/breadcrumb labels never expose the canonical
+    // filename to the user.
+    let mut note_meta: HashMap<String, (u32, u32, String, Option<u8>, u64, String)> = HashMap::new();
     for note in &all_notes {
         let key = note.path.replace('\\', "/").to_lowercase();
         let inbound = *inbound_map.get(&note.name.to_lowercase()).unwrap_or(&0);
@@ -250,6 +259,7 @@ fn build_library_node(
             maturity,
             Some(stratum),
             note.modified,
+            note.name.clone(),
         ));
     }
 
@@ -419,9 +429,10 @@ fn collect_notes_recursive(dir: &Path, notes: &mut Vec<NoteRecord>) {
             collect_notes_recursive(&path, notes);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             if let Ok(content) = fs::read_to_string(&path) {
-                let note_name = path.file_stem()
-                    .map(|s| s.to_string_lossy().to_string())
-                    .unwrap_or_default();
+                // MIG-008 Step 1: prefer the human title over the canonical
+                // filename so the Map's hover labels read "Apple Tree Fruit"
+                // instead of "20260426T140737Z_NOTE_E561".
+                let note_name = crate::libraries::note_display_name(&path, Some(&content));
 
                 // Strip frontmatter for word counting
                 let body = strip_frontmatter_pub(&content);
@@ -463,9 +474,15 @@ fn collect_notes_recursive(dir: &Path, notes: &mut Vec<NoteRecord>) {
 }
 
 /// Build the recursive MapNode tree from the filesystem.
+///
+/// MIG-008 Step 1: the trailing `String` in each note_meta tuple is the
+/// display name produced by `note_display_name` at scan time (frontmatter
+/// title with file_stem fallback). Used for `MapNode.name` so the
+/// Constellation Map never shows raw canonical filenames in tooltips or
+/// breadcrumbs.
 fn build_tree(
     dir: &Path,
-    note_meta: &HashMap<String, (u32, u32, String, Option<u8>, u64)>,
+    note_meta: &HashMap<String, (u32, u32, String, Option<u8>, u64, String)>,
     depth: u32,
     max_depth: u32,
 ) -> MapNode {
@@ -505,11 +522,9 @@ fn build_tree(
                     }
                 } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
                     let key = path.to_string_lossy().replace('\\', "/").to_lowercase();
-                    let note_name = path.file_stem()
-                        .map(|s| s.to_string_lossy().to_string())
-                        .unwrap_or_default();
 
-                    if let Some((wc, lc, maturity, stratum, modified)) = note_meta.get(&key) {
+                    if let Some((wc, lc, maturity, stratum, modified, note_name)) = note_meta.get(&key) {
+                        let note_name = note_name.clone();
                         let weight = compute_weight(*wc, *lc, *modified);
                         total_weight += weight;
                         total_notes += 1;

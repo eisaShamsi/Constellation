@@ -3232,7 +3232,7 @@
 			// 1. Compute centrality in Rust
 			const libPaths = $libraries.map(l => [l.path, l.name] as [string, string]);
 			const result = await invoke<{ centrality: Record<string, number>; node_count: number; edge_count: number }>(
-				'constellation_lens_centrality', { libraryPaths: libPaths }
+				'constellation_sight_centrality', { libraryPaths: libPaths }
 			);
 			lensCentrality = new Map(Object.entries(result.centrality));
 

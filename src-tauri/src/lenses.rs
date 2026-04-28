@@ -183,7 +183,8 @@ fn scan_property_recursive(
         if path.is_dir() {
             scan_property_recursive(&path, property, groups, unclassified);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
-            let note_name = path.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
+            // MIG-008 Step 4: lens groupings show frontmatter title.
+            let note_name = crate::libraries::note_display_name(&path, None);
             let note = LensNote { name: note_name, path: path.to_string_lossy().to_string() };
 
             if let Ok(content) = fs::read_to_string(&path) {
@@ -216,9 +217,11 @@ fn scan_tags_lens_recursive(
         if path.is_dir() {
             scan_tags_lens_recursive(&path, tag_re, root_filter, groups, untagged);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
-            let note_name = path.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
-
             if let Ok(content) = fs::read_to_string(&path) {
+                // MIG-008 Step 4: tag-lens groupings show frontmatter title.
+                // Pass already-read content so canonical detection short-
+                // circuits to the title field directly.
+                let note_name = crate::libraries::note_display_name(&path, Some(&content));
                 let mut found_tags: Vec<String> = Vec::new();
                 for cap in tag_re.captures_iter(&content) {
                     let tag = cap[1].to_string();

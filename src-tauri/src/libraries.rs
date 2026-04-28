@@ -912,6 +912,53 @@ pub fn rename_item(app: tauri::AppHandle, old_path: String, new_path: String) ->
     }
 }
 
+/// MIG-008 — User-visible display name for a note. Prefers the
+/// frontmatter `title:` field; falls back to the file stem when
+/// title is missing or content can't be parsed.
+///
+/// Why this exists: every CE Layer 1 phase scanner (strata, maturity,
+/// provenance, review, lenses, tasks, canvas, bases, inspector360)
+/// and the Constellation Map walks the filesystem directly and used
+/// to derive the note label from `path.file_stem()`. For canonical
+/// filenames (`20260426T140909Z_NOTE_D9A3.md`), that produced
+/// unreadable labels. This helper standardizes the
+/// "title-with-stem-fallback" lookup across every such surface.
+///
+/// Caller passes already-read file content if available — every
+/// scanner reads content for other reasons (word_count, link extraction,
+/// frontmatter parsing), so this is a sub-millisecond regex over the
+/// same string, not new I/O. When content is not yet read, pass `None`
+/// and the helper performs the read itself (used by the entry-point of
+/// `inspector360.rs` where only the path is known initially).
+///
+/// SQLite-backed surfaces (Sky View via `note_meta.name`, Backlinks
+/// via `note_links.source_name`, search results, etc.) use the same
+/// rule at INDEX time in `search.rs::index_note:1665-1670`, so they
+/// already display correctly without calling this helper.
+pub(crate) fn note_display_name(path: &Path, content: Option<&str>) -> String {
+    if let Some(c) = content {
+        if let Some(title) = extract_frontmatter_title(c) {
+            return title;
+        }
+    } else if crate::canonical::is_canonical_filename(path) {
+        // Only read the file when the filename is canonical
+        // (`20260426T140737Z_NOTE_E561.md`) — there's no human title
+        // recoverable from `file_stem` in that case. For human-named
+        // files (`Apple Tree Fruit.md`), the file stem IS the title,
+        // so skip the read entirely. This keeps callers like
+        // `review::scan_due_recursive` cheap on non-canonical
+        // libraries while still rescuing canonical-filename libraries.
+        if let Ok(c) = fs::read_to_string(path) {
+            if let Some(title) = extract_frontmatter_title(&c) {
+                return title;
+            }
+        }
+    }
+    path.file_stem()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_default()
+}
+
 /// Extract the `title:` value from a note's frontmatter.
 fn extract_frontmatter_title(content: &str) -> Option<String> {
     let trimmed = content.trim_start();
@@ -2909,9 +2956,11 @@ fn scan_index_words_recursive(
             scan_index_words_recursive(&path, md_strip, stopwords, index, bigrams);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             if let Ok(content) = fs::read_to_string(&path) {
-                let note_name = path.file_stem()
-                    .map(|s| s.to_string_lossy().to_string())
-                    .unwrap_or_default();
+                // MIG-008 Step 6: legacy index-words tokenizer also derives
+                // a per-note label that surfaces in the Index panel via
+                // tokenize_note_body — use frontmatter title with stem
+                // fallback so canonical-named notes show their human title.
+                let note_name = note_display_name(&path, Some(&content));
                 let note_path = path.to_string_lossy().to_string();
 
                 // Strip YAML frontmatter

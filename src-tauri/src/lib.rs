@@ -13,7 +13,7 @@ mod fts5_tokenizer;
 mod inspector360;
 mod importers;
 mod libraries;
-mod lens;
+mod sight;
 mod lenses;
 mod lexicon;
 mod search;
@@ -307,8 +307,8 @@ pub fn run() {
             trails::read_trail,
             canvas::list_canvases,
             inspector360::get_360_view,
-            lens::constellation_lens_centrality,
-            lens::constellation_lens_tag_edges,
+            sight::constellation_sight_centrality,
+            sight::constellation_sight_tag_edges,
             boot_bundle::constellation_boot_bundle,
             cache::cache_boot_snapshot,
             cache::cache_boot_snapshot_core,

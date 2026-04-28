@@ -1460,9 +1460,10 @@ fn collect_templates_recursive(dir: &Path, templates: &mut Vec<TemplateEntry>) {
         if path.is_dir() {
             collect_templates_recursive(&path, templates);
         } else if path.extension().map_or(false, |ext| ext == "md") {
-            let name = path.file_stem()
-                .map(|s| s.to_string_lossy().to_string())
-                .unwrap_or_default();
+            // MIG-008 Step 6: template picker labels use frontmatter title
+            // so a canonical-named template ("20260426T...NOTE_XXXX.md")
+            // shows its human title in the picker.
+            let name = crate::libraries::note_display_name(&path, None);
             templates.push(TemplateEntry {
                 name,
                 path: path.to_string_lossy().to_string(),

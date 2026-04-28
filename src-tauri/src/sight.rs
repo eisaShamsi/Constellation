@@ -1,9 +1,16 @@
-//! Constellation Lens — CE Layer 3: Network Analysis Engine.
+//! Constellation Sight — CE Layer 3: Network Analysis Engine.
+//!
+//! (File renamed from `lens.rs` to `sight.rs` 2026-04-27 per MIG-009 to
+//! match the user-facing surface name. The `Lens*` type names below
+//! are internal Rust-side identifiers; renaming them too would churn
+//! the wire format unnecessarily — they're only ever consumed by the
+//! `+layout.svelte` `toggleLens()` flow as a typed JSON payload.)
 //!
 //! Applies graph algorithms to the user's knowledge graph:
 //! - Betweenness centrality (Brandes' algorithm) — finds bridge notes
 //! - Shared-tag edges — implicit connections between notes sharing tags
-//! - Returns per-note centrality scores for the frontend to overlay on GraphMind
+//! - Returns per-note centrality scores for the frontend to overlay on
+//!   the Constellation Sight visualization (PIXI / GraphMind engine).
 //!
 //! The frontend handles community detection (Louvain, already in clusterEngine.ts),
 //! structural gap detection, entropy, and universe health scoring.
@@ -45,7 +52,7 @@ pub struct LensCentralityData {
 /// Uses Brandes' algorithm (O(VE)) on an undirected graph built from wikilinks.
 /// Node IDs are lowercase note names (matching StarNode.id in the frontend).
 #[tauri::command]
-pub fn constellation_lens_centrality(
+pub fn constellation_sight_centrality(
     app: tauri::AppHandle,
     library_paths: Vec<(String, String)>, // (library_path, library_name) pairs
 ) -> Result<LensCentralityData, String> {
@@ -310,7 +317,7 @@ pub struct TagEdge {
 /// Compute shared-tag edges across all libraries.
 /// Returns note pairs that share tags, with the shared tags and a weight.
 #[tauri::command]
-pub fn constellation_lens_tag_edges(
+pub fn constellation_sight_tag_edges(
     app: tauri::AppHandle,
     library_paths: Vec<(String, String)>,
 ) -> Result<Vec<TagEdge>, String> {

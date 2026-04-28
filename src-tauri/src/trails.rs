@@ -211,8 +211,16 @@ fn find_note_recursive(dir: &Path, note_name: &str) -> Option<String> {
                 return Some(found);
             }
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
-            let stem = path.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
-            if stem.eq_ignore_ascii_case(note_name) {
+            // MIG-008 Step 6 — correctness fix, not just a label fix.
+            // The caller passes `note_name` derived from a wikilink's
+            // target text (a title like "Apple Tree Fruit"). Comparing
+            // it to `path.file_stem()` would never match for canonical
+            // notes whose stem is `20260426T...`. The helper short-
+            // circuits to the title field for canonical files so the
+            // wikilink-to-path resolution actually works on Universes
+            // that have run through canonical naming.
+            let display = crate::libraries::note_display_name(&path, None);
+            if display.eq_ignore_ascii_case(note_name) {
                 return Some(path.to_string_lossy().to_string());
             }
         }

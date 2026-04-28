@@ -239,10 +239,8 @@ fn scan_tasks_recursive(
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             if let Ok(content) = fs::read_to_string(&path) {
                 let file_path_str = path.to_string_lossy().to_string();
-                let file_name = path
-                    .file_stem()
-                    .map(|s| s.to_string_lossy().to_string())
-                    .unwrap_or_default();
+                // MIG-008 Step 4: task source labels use frontmatter title.
+                let file_name = crate::libraries::note_display_name(&path, Some(&content));
                 for (i, line) in content.lines().enumerate() {
                     if let Some(task) = parse_task_line(
                         line,
@@ -281,10 +279,10 @@ fn scan_dates_recursive(
             scan_dates_recursive(&path, library_name, entries);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             let file_path_str = path.to_string_lossy().to_string();
-            let file_name = path
-                .file_stem()
-                .map(|s| s.to_string_lossy().to_string())
-                .unwrap_or_default();
+            // MIG-008 Step 4: scan_library_note_dates label uses frontmatter
+            // title. None form here — the helper reads the file only when
+            // the filename is canonical, otherwise file_stem is the title.
+            let file_name = crate::libraries::note_display_name(&path, None);
 
             // Get modified date from filesystem
             if let Ok(meta) = fs::metadata(&path) {
@@ -379,10 +377,8 @@ pub fn scan_note_tasks(
     let path = Path::new(&file_path);
     if path.exists() && path.extension().and_then(|e| e.to_str()) == Some("md") {
         if let Ok(content) = fs::read_to_string(path) {
-            let file_name = path
-                .file_stem()
-                .map(|s| s.to_string_lossy().to_string())
-                .unwrap_or_default();
+            // MIG-008 Step 4: scan_note_tasks label uses frontmatter title.
+            let file_name = crate::libraries::note_display_name(path, Some(&content));
             for (i, line) in content.lines().enumerate() {
                 if let Some(task) = parse_task_line(
                     line,

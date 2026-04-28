@@ -205,9 +205,11 @@ fn scan_due_recursive(
             scan_due_recursive(&path, pulse, today, today_days, tag_re, due);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             let path_str = path.to_string_lossy().to_string();
-            let note_name = path.file_stem()
-                .map(|s| s.to_string_lossy().to_string())
-                .unwrap_or_default();
+            // MIG-008 Step 4: review-pulse "due notes" use the human title.
+            // Helper reads the file ONLY for canonical-named notes (skipped
+            // for human-named ones), so non-canonical libraries pay no
+            // extra cost; canonical libraries pay one read per note.
+            let note_name = crate::libraries::note_display_name(&path, None);
 
             // Skip dismissed notes
             if pulse.dismissed.contains(&path_str) { continue; }

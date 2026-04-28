@@ -57,10 +57,11 @@ pub fn get_provenance_chain(
     let mut notes: HashMap<String, NoteInfo> = HashMap::new();
     scan_notes_recursive(Path::new(&library_path), &link_re, &mut notes);
 
-    let note_name = Path::new(&note_path)
-        .file_stem()
-        .map(|s| s.to_string_lossy().to_string())
-        .unwrap_or_default();
+    // MIG-008 Step 3: derive the active note's display name from
+    // frontmatter `title:` so the provenance chain matches incoming
+    // wikilinks like `[[Apple Tree Fruit]]` for canonical-named notes.
+    // Correctness fix, not just a label fix.
+    let note_name = crate::libraries::note_display_name(Path::new(&note_path), None);
     let name_lower = note_name.to_lowercase();
 
     // Walk the chain
@@ -155,9 +156,10 @@ fn scan_notes_recursive(
             scan_notes_recursive(&path, link_re, notes);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             if let Ok(content) = fs::read_to_string(&path) {
-                let note_name = path.file_stem()
-                    .map(|s| s.to_string_lossy().to_string())
-                    .unwrap_or_default();
+                // MIG-008 Step 3: scanned-note display name from frontmatter
+                // title so the ancestor/descendant lists in the provenance
+                // chain show human titles.
+                let note_name = crate::libraries::note_display_name(&path, Some(&content));
 
                 // Parse derives-from links
                 let mut derives_from: Vec<String> = Vec::new();

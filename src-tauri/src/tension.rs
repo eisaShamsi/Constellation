@@ -235,9 +235,10 @@ fn scan_notes_recursive(
             scan_notes_recursive(&path, link_re, tag_re, notes);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             if let Ok(content) = fs::read_to_string(&path) {
-                let note_name = path.file_stem()
-                    .map(|s| s.to_string_lossy().to_string())
-                    .unwrap_or_default();
+                // MIG-008 Step 5: tension contradictions / orphans / SPOFs
+                // / structural-gap rows show frontmatter title so users
+                // can recognize the notes flagged.
+                let note_name = crate::libraries::note_display_name(&path, Some(&content));
 
                 let body = crate::strata::strip_frontmatter_pub(&content);
                 let word_count = body.split_whitespace().count();
