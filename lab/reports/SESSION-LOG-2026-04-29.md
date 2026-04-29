@@ -128,3 +128,35 @@ Three reviewers (reuse / quality / efficiency) ran in parallel against the §93 
 - `lab/reports/SESSION-LOG-2026-04-29.md` — this entry.
 
 No store.ts changes.
+
+---
+
+## §95 — CE Phase 12 docs: orientation v1.8 + help + User Manual
+
+Per Standing Order #2 (update help files + User Manual on user-facing changes) and Standing Order #6 (maintain orientation, write a NEW versioned file alongside existing ones).
+
+**Orientation `Constellation Orientation & Onboarding v1.8.md`** written as a new file alongside v1.0..v1.7. Targeted edits from v1.7:
+
+- Header bumped to **Version 1.8 | 2026-04-29**.
+- Top-of-file "What changed in v1.8" note covers (1) MIG-003 fast-forward integration to main + binary-mtime parity restoration, (2) CE Phase 12 360° Inspector re-enabled with §93 wiring + §94 /simplify pass, (3) CE Phase 9 Multi-Lens approved for re-wire on Path B (queued after MIG-006 §3 redo).
+- v1.7 changelog moved into a new `### v1.7 changelog (vs v1.6)` subsection at the head of the changelog list, including a clear note that v1.7's "MIG-003 closed" claim was correct only on the side branch — the main-line integration arrived in v1.8.
+- §4.2 row 12 (Inspector 360) updated to mark **✅ enabled v1.8 §93** with the explicit Rule-8 violation acknowledged (1–3 s read-time aggregation per fetch, MIG-010 candidate).
+- §17 unknowns gained two new entries: actual `get_360_view` latency on the 7,600-note Universe (not measured, awaiting Boss tutorial test) and whether the first-fetch empty-state UX feels jarring during the 1–3 s wait.
+- File-end signature corrected from `End of v1.6` to `End of v1.8`.
+
+**Help file `docs/help.uConstellation.World/Cognitive Engine/Cognitive Engine.md`** — new "Feature 12: 360° Inspector" section inserted before the existing "Coming Soon (Layer 2)" section. Covers what it is (synthesis surface for all CE features per-note), why it matters (gap detector via dimmed/dashed sectors for unused link types), how to use it (compact sidebar tab + full-window dock button with three viz modes), where the data comes from (each panel maps to a CE feature 1–9), what is being measured (1–3 s first-fetch on large libraries; cached after), and what the empty state means.
+
+**User Manual `docs/User Manual.md`** — section 18.10 "360° Inspector" added (numbering follows the existing 18.x scheme inside chapter 21). Brief description with the same structural sections as other CE features (What it is / Why it matters / How to use it / Where you see it / Tips). Layer 1 feature count updated from "Nine tools" / "All nine" → "Ten tools" / "All ten" at lines 1193 and 1197.
+
+**Doc-debts logged for follow-up** (intentionally NOT addressed in §95):
+
+- 14 translated User Manuals (`docs/help.{ar,de,es,fa,fr,he,hi,ja,ko,pt,ru,tr,ur,zh}/`) — Inspector 360 entry not added to non-English locales. Same deferral pattern as MIG-003's 14-locale update; the Boss's normal i18n flow will pick this up.
+- `ribbon.inspector360` not added to any of the 15 locale JSONs. The dock button's title falls back to `inspector360.title` (which exists in all 15 locales as "360.3D" or its localised equivalent), so this is not a user-visible regression — but adding the explicit ribbon-namespaced key is the right convention. Trivial when batched with the User Manual i18n round.
+- The 12-site mutual-exclusivity inline-reset pattern (close-other-modes) — extract `closeAllFullPageExcept(keep)` helper before the next full-page surface lands. Logged in §94 entry; not blocking.
+- Multi-Lens Views section (User Manual §18.9) currently describes Multi-Lens as if it works. It does not — `apply_lens` is dead code today. Correction deferred until CE Phase 9 Path B (MIG-010) ships; at that point §18.9 gets rewritten to reflect the real Rule-8-compliant behaviour.
+
+**Files changed**:
+- `docs/Constellation Orientation & Onboarding v1.8.md` (new file).
+- `docs/help.uConstellation.World/Cognitive Engine/Cognitive Engine.md` (Inspector 360 section added).
+- `docs/User Manual.md` (§18.10 added + Layer 1 feature count updated from nine to ten).
+- `lab/reports/SESSION-LOG-2026-04-29.md` (this entry).

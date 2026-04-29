@@ -1190,11 +1190,11 @@ After opening a note from the Map, a "Return to Map" button appears in the tab b
 
 The Cognitive Engine is a two-layer architecture that transforms Constellation from a note-taking app into a knowledge cognition instrument. Most note apps help you store and retrieve information. The Cognitive Engine goes further: it helps you understand what your knowledge actually means, where it comes from, how mature it is, and where the gaps lie.
 
-**Layer 1 — Structural Cognition** (zero AI dependency): Nine tools that analyze your notes' structure, connections, and metadata to surface insights. Everything runs locally on your machine, fully offline, with no AI dependency. The engine reads the shape of your library — word counts, link counts, link types, and graph topology — to tell you things about your knowledge that you cannot easily see yourself.
+**Layer 1 — Structural Cognition** (zero AI dependency): Ten tools that analyze your notes' structure, connections, and metadata to surface insights. Everything runs locally on your machine, fully offline, with no AI dependency. The engine reads the shape of your library — word counts, link counts, link types, and graph topology — to tell you things about your knowledge that you cannot easily see yourself.
 
 **Layer 2 — AI Discovery** (coming soon): AI will read Layer 1's structures to find patterns you cannot see from inside your own knowledge.
 
-All nine Cognitive Engine features require no configuration. They activate automatically as your library grows. You do not need to enable them or install anything extra.
+All ten Cognitive Engine features require no configuration. They activate automatically as your library grows. You do not need to enable them or install anything extra.
 
 ---
 
@@ -1547,6 +1547,38 @@ Folder structures impose a single hierarchy, but knowledge does not fit one tree
 - "By Topic" is useful for large libraries where related notes are scattered across folders.
 - Custom lenses can group by any frontmatter property: `project`, `status`, `priority`, etc.
 - No notes are duplicated or moved. Lenses are purely virtual views.
+
+---
+
+### 18.10 360° Inspector
+
+**What it is**
+
+The 360° Inspector is the synthesis surface of the Cognitive Engine. Every other CE feature (Strata, Maturity, Tension, Provenance, Stage, Review, Trails, Lenses) shows you one slice of a single note. The 360° Inspector shows you all of them at once — for one note, in one visual frame. The note sits at the centre of a sphere; its connected notes orbit around it, coloured by typed-link relationship and arranged in concentric depth rings (direct neighbours close to the centre, second-order links further out). Side panels report the note's stratum, maturity, origin type, trust depth, stage, review status, trail memberships, and lens groupings. A bottom HUD summarises the structural facts: outbound count, inbound count, word count, orphan flag, fragility flag, and link-type gap count.
+
+**Why it matters**
+
+A note's value is not just its content — it is its place in your knowledge. The Inspector makes that place visible. It also flags gaps: the seven typed-link directions appear as sectors; directions you have used appear bright, directions you have not appear dimmed and dashed. A note with five `supports` links and zero `contradicts` links shows immediately as one-sided thinking — the visual cue prompts the question "have I considered the counter-evidence?" The Inspector does not answer for you, but it makes the question hard to miss.
+
+**How to use it**
+
+There are two ways to open the Inspector for whichever note you have active.
+
+1. **Compact widget in the right sidebar (always-on glance)**: in the right sidebar tab strip, click the **360° Inspector tab** (icon: a small reticle — circle with centre dot and four spokes). A small spherical visualisation appears. As you switch notes in the editor, the widget updates to follow.
+
+2. **Full-window mode (deliberate study)**: in the left ribbon (dock), click the **360° Inspector dock button** (same reticle icon, larger). The editor area is replaced by the full inspector with side panels, a bottom HUD, and three switchable visualisation modes (Atmospheric Rings, Neural Web, Cosmic Sphere — selectable from the inspector's header dropdown). To leave full-window mode, click the **×** in the top-right corner, or click any orbiting node to navigate to that note.
+
+**Where you see it**
+
+- **Right sidebar tab**: the compact widget at 280×280 pixels, alongside Backlinks / Outgoing / Tasks / Calendar / Health / Provenance / Review / Links.
+- **Ribbon dock button**: opens the full-window mode.
+
+**Tips**
+
+- The compact widget is for ambient awareness as you write. The full-window mode is for deliberate study of a single note.
+- The three full-window visualisation modes show the same data from different angles. Try each — different modes reveal different patterns.
+- On large libraries (thousands of notes), the first open of the Inspector for a given note takes one to three seconds while it computes the synthesis. Subsequent opens are faster (cached). If the wait is consistently long on your library, that is information for the project — please report.
+- The "Open a note to see its 360° view" empty state means the Inspector is open but no note is in focus. Open any note (or click in your library) and the visualisation will fill in.
 
 ---
 

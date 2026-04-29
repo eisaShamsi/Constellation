@@ -647,6 +647,72 @@ Below these thresholds, the UI stays clean and simple. As your library grows, th
 
 ---
 
+## Feature 12: 360° Inspector
+
+### What it is
+
+The 360° Inspector is the synthesis surface of the Cognitive Engine. Every other CE feature shows you one slice of a note: Strata shows its altitude, Maturity shows its lifecycle stage, Tension shows its contradictions, Provenance shows its origins. The 360° Inspector shows you **all of them at once** — for a single note, in one visual frame.
+
+The note you are studying sits at the centre of a sphere. Around it, in concentric rings, the inspector arranges every other note that connects to it — by typed-link relationship, by depth (direct neighbour vs second-order vs third-order), by colour (per link type). Side panels report the note's stratum level, maturity state, origin type, trust depth, current stage, recent review status, trail memberships, and lens groupings. A bottom HUD summarises the structural facts: how many outbound links, how many inbound, word count, whether the note is an orphan, whether it is structurally fragile (single point of failure), and how many gaps exist in its link-type coverage.
+
+In one glance, you see what a note is, where it lives in your knowledge, and what it is missing.
+
+### Why it matters
+
+A note's value is not just its content — it is its **place**. A brilliant note nobody links to might as well not exist. A note linked from many places but with no outbound connections is a sink. A note with twenty inbound links but no `derives-from` chain is a structural single point of failure. The 360° Inspector exists to make these properties of a note visible the moment you ask "where am I?"
+
+It is also a **gap detector**. The inspector lights up the seven typed-link directions (supports, contradicts, causes, derives-from, generalizes, exemplifies, part-of) as sectors. The directions you have used appear bright; the directions you have not appear dimmed and dashed. A note with five `supports` links and zero `contradicts` links shows immediately as one-sided thinking. The visual cue prompts you to ask: am I missing the counter-evidence? Have I considered what would refute this? The inspector does not answer that question for you, but it makes the question visible.
+
+### How to use it
+
+There are two ways to open the Inspector for the note you are currently editing or viewing.
+
+**Way 1 — Compact widget in the right sidebar (always-on glance)**
+
+In the **right sidebar**, click the **360° Inspector tab** (its icon is a small reticle: a circle with a centre dot and four short spokes). A small spherical visualisation appears, showing the note at the centre and its connected notes orbiting around it. As you navigate between notes in the editor, the widget updates to reflect whichever note is currently active.
+
+Click any orbiting node in the widget to open that connected note in the editor.
+
+**Way 2 — Full-window mode (deliberate study)**
+
+In the **left ribbon (dock)**, click the **360° Inspector dock button** (same reticle icon, larger). The editor area is replaced by a full-window inspector showing the same data with much more detail: the spherical visualisation expands to fill the canvas, the side panels appear, the bottom HUD reports stats, and the link-type sectors are labelled.
+
+A dropdown in the inspector's header lets you switch between three visualisation modes:
+
+- **Atmospheric Rings** — concentric depth rings with a slow ambient rotation. Best for understanding depth structure.
+- **Neural Web** — synaptic-style connections without rigid rings, with second-order branching lines. Best for seeing how connections cluster organically.
+- **Cosmic Sphere** — clean orbital paths with sector labels at the rim. Best for reading "what link types am I using vs missing?"
+
+To leave the full-window inspector and return to the editor, click the **×** close button in the inspector's top-right corner, or click any node in the inspector to navigate to that note (which closes the inspector and opens that note in the editor).
+
+### Where the data comes from
+
+The Inspector reads everything from your note files and your existing link graph. Nothing is invented. Each piece of information is a direct view into a different CE feature:
+
+- **The seven coloured sectors** are the seven typed-link relationships you defined in your wikilinks (Feature 1: Typed Links).
+- **Stratum (L0–L7)** comes from the Knowledge Strata feature (Feature 2).
+- **Maturity colour** comes from the Maturity Lifecycle feature (Feature 3).
+- **Contradictions count** comes from the Tension Detector (Feature 4).
+- **Origin type and trust depth** come from the Provenance Chain (Feature 5).
+- **Stage** comes from the Externalization Engine (Feature 6).
+- **Last reviewed / due** comes from the Review Pulse (Feature 7).
+- **Trail memberships** come from the Trails feature (Feature 8).
+- **Lens groups** come from the Multi-Lens Views feature (Feature 9).
+
+### What is being measured
+
+The Inspector currently re-reads your library each time it opens for a note. On a small library (a few hundred notes) this is instant. On a very large library (thousands of notes), the first open of the inspector for a given note may take a moment — typically one to three seconds — while the inspector reads each note's links and computes the synthesis. After that, switching between recently-viewed notes is fast because the inspector remembers what it has already computed.
+
+If the inspector ever feels noticeably slow on your library, that is information for the project — please report the size of the library and the apparent wait time. There is a planned optimisation (caching the inspector's view at write time, the same way the Sky View graph is cached) that will be prioritised based on how much of an issue the read-time cost actually proves to be.
+
+### What the empty state means
+
+When you open the inspector before opening any note — or when you open the inspector for a note that has no outbound or inbound links — you will see "Open a note to see its 360° view" or a near-empty visualisation. This is not a bug. The 360° Inspector is **per-note**: it has nothing meaningful to show until you give it a note that participates in your knowledge network.
+
+To populate the inspector, click on a note in your library, then re-open the inspector. The visualisation will fill in.
+
+---
+
 ## Coming Soon (Layer 2)
 
 The current Cognitive Engine is **Layer 1** — structural intelligence built from your note topology. No AI is involved. Every computation reads wikilinks, word counts, frontmatter, and file metadata. Nothing more.
