@@ -362,3 +362,47 @@ Each typed-link sector now occupies a fixed 50° angular range centred on its se
 - 2C: side panels + HUD legible at 2× scale.
 - 2D: full-window back-nav (Return to N from full-window header).
 - 2E (deferred): viz mode distinctness — only triaged if Boss flags it again after seeing the new sectoring.
+
+---
+
+## §101 — Multi-ring stacking within sector (Stage 2A finding)
+
+**Stage 2A retest result (2026-04-29 ~17:50)**: dock-button tooltip ✅ (now shows "360.3D" instead of "ribbon.inspector360"); full-window opens cleanly ✅. **New finding from the retest screenshot**: high-count typed-link sectors (e.g. derives-from with 15+ depth-1 notes) pile up onto a single ring, creating cramped clusters where adjacent nodes overlap. Boss directive: "spread the nodes by group/type equally around the sphere".
+
+**Root cause of the pile-up**: §100's spread formula:
+```javascript
+const offset = n > 1 ? (i / (n - 1) - 0.5) * SECTOR_WIDTH : 0;
+const ring = note.depth <= 1 ? 0 : note.depth <= 2 ? 1 : 2;
+```
+When a sector has 15 depth-1 notes, all 15 land on `rings[0]` (radius 180), spread across 50° at the depth-1 ring → 3.3° between adjacent notes. With node radius 11 px on a 180-radius arc, adjacent nodes overlap by ~13 px (arc-length 9.4 px, diameters 22 px each).
+
+**Fix**: when a sector exceeds `MAX_PER_RING = 8`, spill notes onto multiple rings WITHIN the same sector (still bounded to `SECTOR_WIDTH = 50°`, so they don't leak into neighbouring sectors). Notes are sorted by depth ascending, so closer notes (more relevant) occupy the inner ring first; overflow goes outward.
+
+**New formula**:
+```javascript
+const sorted = [...noteList].sort((a, b) => a.depth - b.depth);
+const numRings = Math.min(3, Math.max(1, Math.ceil(n / MAX_PER_RING)));
+const perRing = Math.ceil(n / numRings);
+for each note at index i:
+  ringNum = Math.min(numRings - 1, Math.floor(i / perRing));
+  indexInRing = i - ringNum * perRing;
+  countInRing = Math.min(perRing, n - ringNum * perRing);
+  offset = countInRing > 1 ? (indexInRing / (countInRing - 1) - 0.5) * SECTOR_WIDTH : 0;
+  pos = polarToXY(cx, cy, info.angle + offset, rings[ringNum]);
+```
+
+**Effect on the screenshot example**: a sector with 15 notes now uses 2 rings (8 + 7), each ring spreading ~7 nodes across 50° → ~7° between adjacent nodes per ring. Adjacent-node arc length on 290-radius outer ring ≈ 35 px, well clear of the 22 px diameters. Sector occupies a 2-ring radial column in its angular wedge instead of a 1-ring overflow pile-up.
+
+**Trade-off**: depth-based ring assignment is replaced with count-based ring assignment. The previous "depth-1 always on inner ring, depth-2 on middle, depth-3 on outer" semantic is lost in dense sectors — instead, the inner ring carries the LOWEST-DEPTH 8 nodes and outer rings carry the rest. Sparse sectors (≤8 notes total) still use the inner ring, so the typical case looks the same as before.
+
+**Untyped links unchanged**: still scattered around the full circle on depth-based rings. They form the outer scatter ring and don't compete with typed sectors for sector-wedge real estate.
+
+**SECTOR_MAP unchanged**: the asymmetric layout (supports↔contradicts at 180° opposition, causes↔derives-from at 180° opposition, etc.) is preserved. The 90° gap between contradicts (180°) and derives-from (270°) on the bottom-left is by design — opposing the 0–180° dense side. If Boss later wants equal angular distribution (all 7 sectors at 51.4° apart, losing the 180° oppositions), that's a separate redesign.
+
+**Build verification**: `npm run check` clean of new errors.
+
+**Files changed**:
+- `src/lib/components/Inspector360.svelte` (the `allNodes = $derived.by(...)` block).
+- `lab/reports/SESSION-LOG-2026-04-29.md` (this entry).
+
+**Stage 2B retest will follow once the §101 binary builds.** Just visualisation/sectoring focus per the staged-tests rule — panels + HUD (2C) and back-nav (2D) come later.

@@ -68,30 +68,40 @@
 
 	// Collect all nodes with positions for current viz.
 	// Each typed-link sector clusters within a bounded angular range
-	// (SECTOR_WIDTH degrees centered on the sector's angle). High-count
-	// sectors stack onto inner/outer rings to avoid label collision.
+	// (SECTOR_WIDTH degrees centered on the sector's angle). When a
+	// sector has more notes than fit cleanly on one ring (>MAX_PER_RING),
+	// the notes spill onto additional rings within the same sector — so
+	// dense sectors stack outward instead of overlapping into pile-ups.
 	const allNodes = $derived.by(() => {
 		if (!data) return [];
 		const nodes: Array<{ name: string; path: string; x: number; y: number; color: string; type: string; depth: number; r: number }> = [];
 		const VB = 1200; const cx = VB / 2; const cy = 400;
 		const rings = [180, 290, 400];
 		const SECTOR_WIDTH = 50; // degrees per typed-link sector
+		const MAX_PER_RING = 8;  // node count threshold before spilling to next ring
 
 		for (const [type, noteList] of Object.entries(data.typed_links)) {
 			const info = SECTOR_MAP[type];
 			if (!info) continue;
 			const n = noteList.length;
-			for (let i = 0; i < n; i++) {
-				const note = noteList[i];
-				// Cluster within sector: normalized [-0.5, 0.5] mapped to ±(SECTOR_WIDTH/2)
-				const offset = n > 1 ? (i / (n - 1) - 0.5) * SECTOR_WIDTH : 0;
-				const ring = note.depth <= 1 ? 0 : note.depth <= 2 ? 1 : 2;
-				const pos = polarToXY(cx, cy, info.angle + offset, rings[ring]);
+			// Sort by depth so closer notes occupy the inner rings.
+			const sorted = [...noteList].sort((a, b) => a.depth - b.depth);
+			const numRings = Math.min(3, Math.max(1, Math.ceil(n / MAX_PER_RING)));
+			const perRing = Math.ceil(n / numRings);
+			for (let i = 0; i < sorted.length; i++) {
+				const note = sorted[i];
+				const ringNum = Math.min(numRings - 1, Math.floor(i / perRing));
+				const indexInRing = i - ringNum * perRing;
+				const countInRing = Math.min(perRing, n - ringNum * perRing);
+				const offset = countInRing > 1
+					? (indexInRing / (countInRing - 1) - 0.5) * SECTOR_WIDTH
+					: 0;
+				const pos = polarToXY(cx, cy, info.angle + offset, rings[ringNum]);
 				const r = note.depth <= 1 ? 11 : note.depth <= 2 ? 8 : 5;
 				nodes.push({ ...note, x: pos.x, y: pos.y, color: info.color, type, r });
 			}
 		}
-		// Untyped links scattered around the full circle, avoiding typed sectors.
+		// Untyped links scattered around the full circle.
 		const untyped = data.untyped_links.slice(0, 20);
 		for (let i = 0; i < untyped.length; i++) {
 			const note = untyped[i];
