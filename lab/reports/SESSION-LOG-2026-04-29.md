@@ -261,3 +261,46 @@ Boss reran Stage 1 against the §96 binary (built 2026-04-29 13:36). All five ch
 - `src/lib/components/Inspector360.svelte` (props + back-bar markup + CSS).
 - `src/routes/+layout.svelte` (state + universe-switch reset + compact mount onNoteClick / onBack wiring).
 - `lab/reports/SESSION-LOG-2026-04-29.md` (this entry).
+
+---
+
+## §99 — Multi-hop back-nav stack (Boss request)
+
+**Boss-reported during Stage 1.7+1.9 retest (2026-04-29 ~14:25)**: width fix ✅, back button works ✅, but the single-step semantics are insufficient. The Boss wants the back chain to walk **all the way back to the original note**, not just one hop.
+
+**Scope change**: replace the single-step `inspector360PreviousPath` / `inspector360PreviousName` pair with a stack of `{path, name}` entries. Each forward node-click pushes the current note onto the stack; each back click pops one entry.
+
+**Implementation**:
+
+- Replaced the two `$state` vars with a single `inspector360BackStack: $state<Array<{path: string; name: string}>>`. Initial value `[]`.
+- The compact mount's `onNoteClick` now pushes `{path: sidebarTab.path, name: sidebarTab.name}` onto the stack via spread (`= [...stack, entry]`) for proper Svelte 5 reactivity.
+- The compact mount's `onBack` pops the top entry via spread + pop (`const next = [...stack]; const target = next.pop()`), navigates to `target.path`, and reassigns the (now-shorter) stack.
+- The `previousNoteName` prop reads `stack[stack.length - 1]?.name` so the back-bar always shows the immediate predecessor's name.
+- Universe-switch reset clears the stack to `[]`.
+
+**Mental model**:
+
+- A → click B → stack `[A]`, on B, bar shows "← A".
+- A → click B → click C → stack `[A, B]`, on C, bar shows "← B".
+- … click back → pop B, stack `[A]`, on B, bar shows "← A".
+- … click back → pop A, stack `[]`, on A, bar hidden.
+- A → click B → click C → click back → click D from B → stack `[A, B]`, on D, bar shows "← B". (Stack rewrites correctly when the user re-branches.)
+
+**Edge cases handled**:
+
+- Empty-stack back click → no-op (button hidden anyway).
+- Loop nav (A → B → A): stack `[A, B]`, bar shows "← B" — back unwinds correctly.
+- Universe switch resets the stack to `[]`.
+- Tab close / sidebar tab change keeps the stack (no clear) — opening the inspector tab again still shows the back chain. Acceptable for v1; if Boss wants stack to clear when inspector tab is left, that's a one-line follow-up.
+
+**Stack growth**: unbounded by design — long traversals make a long stack, but each entry is just two strings, so memory is negligible. No cap added; if Boss wants one (e.g. "max 50"), trivial follow-up.
+
+**Multi-hop doesn't replace Alt+Left/Alt+Right**: those still work as the global navigation history across all of Constellation (not just the inspector). The inspector's back stack is independent — it tracks only inspector-driven navigation. So Alt+Left still walks across all kinds of nav (wikilink clicks, tab clicks, inspector clicks); the inspector's "←" only walks inspector clicks.
+
+**Build verification**: `npm run check` clean of new errors.
+
+**Files changed**:
+- `src/routes/+layout.svelte` (back-state replaced with stack; onNoteClick / onBack rewritten; universe-switch reset updated).
+- `lab/reports/SESSION-LOG-2026-04-29.md` (this entry).
+
+No `Inspector360.svelte` change — the component's prop contract (`previousNoteName?: string | null` + `onBack?: () => void`) didn't change. The mount site computes `previousNoteName` from the stack and provides the popping `onBack` handler. Component agnostic to single-step vs multi-hop semantics.

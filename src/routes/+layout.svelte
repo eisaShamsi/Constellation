@@ -390,9 +390,11 @@
 	let inspector360FetchTimer: ReturnType<typeof setTimeout> | null = null;
 	let inspector360RequestSeq = 0;
 	let lastFetchedInspectorKey: string | null = null;
-	// Single-step back nav from the compact widget (§98).
-	let inspector360PreviousPath = $state<string | null>(null);
-	let inspector360PreviousName = $state<string | null>(null);
+	// Multi-hop back-nav stack from the compact widget (§98 single-step,
+	// upgraded to multi-hop in §99 per Boss request). Each forward node-
+	// click pushes the current note onto the stack; each back click pops
+	// one entry. Click-back walks all the way to the original source.
+	let inspector360BackStack = $state<Array<{path: string; name: string}>>([]);
 	let trailIndex = $state(0); // CE Phase 8: current note index in trail
 	let tensionReport = $state<any>(null); // CE Phase 4: TensionReport
 	let provenanceChain = $state<any>(null); // CE Phase 5: ProvenanceChain
@@ -1986,8 +1988,7 @@
 		orgChartEverOpened = false;
 		inspector360EverOpened = false;
 		inspector360Data = null;
-		inspector360PreviousPath = null;
-		inspector360PreviousName = null;
+		inspector360BackStack = [];
 		mapFocusNode = null;
 
 		// Reset cache guard so refreshLibraryCaches can run for the new universe
@@ -5490,22 +5491,21 @@
 						<Inspector360
 							data={inspector360Data}
 							compact={true}
-							previousNoteName={inspector360PreviousName}
+							previousNoteName={inspector360BackStack.length > 0 ? inspector360BackStack[inspector360BackStack.length - 1].name : null}
 							onNoteClick={(path, name) => {
 								if (sidebarTab?.path && sidebarTab?.name) {
-									inspector360PreviousPath = sidebarTab.path;
-									inspector360PreviousName = sidebarTab.name;
+									inspector360BackStack = [...inspector360BackStack, { path: sidebarTab.path, name: sidebarTab.name }];
 								}
 								const lib = $libraryStats.find(l => path.startsWith(l.path));
 								if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
 							}}
 							onBack={() => {
-								if (!inspector360PreviousPath) return;
-								const path = inspector360PreviousPath;
-								const lib = $libraryStats.find(l => path.startsWith(l.path));
-								inspector360PreviousPath = null;
-								inspector360PreviousName = null;
-								if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
+								if (inspector360BackStack.length === 0) return;
+								const next = [...inspector360BackStack];
+								const target = next.pop()!;
+								inspector360BackStack = next;
+								const lib = $libraryStats.find(l => target.path.startsWith(l.path));
+								if (lib) openNoteTab(target.path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
 							}}
 						/>
 					</div>
