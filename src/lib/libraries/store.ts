@@ -2437,7 +2437,8 @@ export type PanelId =
 	| 'health'
 	| 'provenance'
 	| 'review'
-	| 'links';
+	| 'links'
+	| 'inspector360';
 
 export type PanelSlot =
 	| 'left-of-note'    // inside editor area, logical-left flanking column
@@ -2619,6 +2620,7 @@ export interface AppSettings {
 		constellationMap: boolean;
 		constellationSight: boolean;
 		emojiIconPicker: boolean;
+		inspector360: boolean;
 	};
 	/** AI/LLM integration preferences */
 	ai?: {
@@ -2729,6 +2731,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
 		constellationMap: false,
 		constellationSight: true,
 		emojiIconPicker: true,
+		inspector360: true,
 	},
 	customShortcuts: {},
 	linkPills: {
@@ -2773,6 +2776,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
 		provenance: 'right-sidebar',
 		review:     'right-sidebar',
 		links:      'right-sidebar',
+		inspector360: 'right-sidebar',
 	},
 	leftOfNoteWidth: 280,
 	rightOfNoteWidth: 280,

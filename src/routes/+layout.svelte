@@ -81,7 +81,7 @@
 	import ExpressionForge from '$lib/components/ExpressionForge.svelte';
 	import SenseMakingCanvas from '$lib/components/SenseMakingCanvas.svelte';
 	import ConstellationMap from '$lib/components/ConstellationMap.svelte';
-	// import Inspector360 from '$lib/components/Inspector360.svelte'; // CE Phase 12: disabled — revisit later
+	import Inspector360 from '$lib/components/Inspector360.svelte';
 	import { scanNoteTasks, toggleTask, scanLibraryNoteDates } from '$lib/tasks/store';
 	import type { TaskItem } from '$lib/tasks/types';
 	import PropertyEditor from '$lib/components/PropertyEditor.svelte';
@@ -328,7 +328,7 @@
 
 	// Right sidebar
 	let rightSidebarOpen = $state(false);
-	let rightSidebarTab = $state<'properties' | 'backlinks' | 'tags' | 'star' | 'tasks' | 'calendar' | 'health' | 'provenance' | 'review' | 'links'>('properties');
+	let rightSidebarTab = $state<'properties' | 'backlinks' | 'tags' | 'star' | 'tasks' | 'calendar' | 'health' | 'provenance' | 'review' | 'links' | 'inspector360'>('properties');
 
 	// ── Sidebar overlay snapshots ───────────────────────────────────────────
 	// Every overlay mode that takes over the editor area (full-page view,
@@ -383,7 +383,13 @@
 	let searchHubMatchIds = $state<Set<string> | null>(null);
 	let searchHubReturnPending = $state(false);
 	let searchHubInitialQuery = $state('');
-	// let inspector360Data = $state<any>(null); // CE Phase 12: disabled — revisit later
+	// CE Phase 12 — 360° Inspector. Re-enabled 2026-04-29 (compact sidebar tab + full-window overlay).
+	let showInspector360 = $state(false);
+	let inspector360EverOpened = $state(false); // LL-022 lazy-mount sticky flag
+	let inspector360Data = $state<any>(null);    // Note360View
+	let inspector360Loading = $state(false);
+	let inspector360FetchTimer: ReturnType<typeof setTimeout> | null = null;
+	let inspector360RequestSeq = 0;
 	let trailIndex = $state(0); // CE Phase 8: current note index in trail
 	let tensionReport = $state<any>(null); // CE Phase 4: TensionReport
 	let provenanceChain = $state<any>(null); // CE Phase 5: ProvenanceChain
@@ -570,6 +576,42 @@
 	let orgChartEverOpened = $state(false);
 	$effect(() => { if (showConstellationMap) mapEverOpened = true; });
 	$effect(() => { if (showOrgChart) orgChartEverOpened = true; });
+	$effect(() => { if (showInspector360) inspector360EverOpened = true; });
+
+	// CE Phase 12 — fetch Note360View when Inspector 360 surface is visible
+	// AND a note is in focus. Runs whenever (a) the user toggles into the
+	// inspector, or (b) the active note changes while the inspector surface
+	// is open (compact sidebar tab, since full-window hides the sidebar
+	// anyway). Debounced 200 ms to absorb rapid tab navigation; sequence
+	// number guards against stale-result writes when fetches overlap.
+	$effect(() => {
+		const compactVisible = rightSidebarOpen && rightSidebarTab === 'inspector360';
+		const fullVisible = showInspector360;
+		const shouldFetch = compactVisible || fullVisible;
+		const path = sidebarTab?.path;
+		const libPath = sidebarTab?.libraryPath;
+		if (!shouldFetch || !path || !libPath) {
+			if (!shouldFetch) inspector360Data = null;
+			return;
+		}
+		const seq = ++inspector360RequestSeq;
+		if (inspector360FetchTimer) clearTimeout(inspector360FetchTimer);
+		inspector360FetchTimer = setTimeout(async () => {
+			inspector360Loading = true;
+			try {
+				const data = await invoke('get_360_view', { libraryPath: libPath, notePath: path });
+				if (seq === inspector360RequestSeq) inspector360Data = data;
+			} catch (e) {
+				console.error('Inspector 360 fetch failed:', e);
+				if (seq === inspector360RequestSeq) inspector360Data = null;
+			} finally {
+				if (seq === inspector360RequestSeq) inspector360Loading = false;
+			}
+		}, 200);
+		return () => {
+			if (inspector360FetchTimer) clearTimeout(inspector360FetchTimer);
+		};
+	});
 
 	// Tasks sidebar data
 	let sidebarTasks = $state<TaskItem[]>([]);
@@ -977,7 +1019,7 @@
 	const isHome = $derived(page.url.pathname === '/');
 	const isDashboardVisible = $derived(isHome && !$activeTab && $libraries.length > 0 && $appSettings.showDashboard);
 	/** True when any full-page function is active — disables sidebars and split pane */
-	const fullPageActive = $derived(showSkyView || showGlobalTasks || showIndex || showExpressionForge || showSenseMakingCanvas || showConstellationMap || showOrgChart || showKnowledgeHealth || lensActive || showSearchHub || isDashboardVisible);
+	const fullPageActive = $derived(showSkyView || showGlobalTasks || showIndex || showExpressionForge || showSenseMakingCanvas || showConstellationMap || showOrgChart || showKnowledgeHealth || lensActive || showSearchHub || showInspector360 || isDashboardVisible);
 
 	// Shared disable/title logic for the three layout-bar buttons (left sidebar,
 	// split-view, right sidebar). Any overlay mode that takes over the editor
@@ -1595,11 +1637,11 @@
 			{ id: 'quick-capture', name: $t('commands.quickCapture'), shortcut: sc('quick-capture'), icon: '⚡', action: handleQuickCapture, category: 'File' },
 			{ id: 'new-base', name: $t('commands.newBase'), shortcut: sc('new-base'), icon: '▦', action: handleNewBase, category: 'File' },
 			{ id: 'quick-switch', name: $t('commands.quickSwitcher'), shortcut: sc('quick-switch'), icon: '🔍', action: () => { showCommandPalette = false; showQuickSwitcher = true; }, category: 'Navigation' },
-			{ id: 'search', name: $t('commands.searchLibrary'), shortcut: sc('search'), icon: '🔎', action: () => { showSearchHub = true; searchHubInitialQuery = ''; showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; /* fullPageActive $effect handles sidebar snapshot */ }, category: 'Navigation' },
+			{ id: 'search', name: $t('commands.searchLibrary'), shortcut: sc('search'), icon: '🔎', action: () => { showSearchHub = true; searchHubInitialQuery = ''; showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; showInspector360 = false; /* fullPageActive $effect handles sidebar snapshot */ }, category: 'Navigation' },
 			{ id: 'daily-note', name: $t('commands.dailyNote'), shortcut: sc('daily-note'), icon: '📅', action: handleOpenDailyNote, category: 'Daily Notes' },
 			{ id: 'toggle-edit', name: $t('commands.toggleEdit'), shortcut: sc('toggle-edit'), icon: '✏️', action: () => { const tab = get(focusedTab); if (tab) toggleEditMode(tab.id); }, category: 'Editor' },
 			{ id: 'star-view', name: $t('commands.skyView'), shortcut: sc('star-view'), icon: '🕸️', action: () => { showSkyView = !showSkyView; showConstellationMap = false; }, category: 'View' },
-			{ id: 'global-tasks', name: $t('commands.globalTasks'), shortcut: sc('global-tasks'), icon: '☑️', action: () => { showGlobalTasks = !showGlobalTasks; showSkyView = false; showConstellationMap = false; }, category: 'View' },
+			{ id: 'global-tasks', name: $t('commands.globalTasks'), shortcut: sc('global-tasks'), icon: '☑️', action: () => { showGlobalTasks = !showGlobalTasks; showSkyView = false; showConstellationMap = false; showInspector360 = false; }, category: 'View' },
 			{ id: 'insert-template', name: $t('commands.insertTemplate'), shortcut: sc('insert-template'), icon: '📋', action: () => { templatePickerMode = 'insert'; refreshTemplates(); showTemplatePicker = true; }, category: 'Templates' },
 			{ id: 'toggle-bold', name: $t('commands.toggleBold'), shortcut: sc('toggle-bold'), icon: '𝐁', action: () => {}, category: 'Editor' },
 			{ id: 'toggle-italic', name: $t('commands.toggleItalic'), shortcut: sc('toggle-italic'), icon: '𝐼', action: () => {}, category: 'Editor' },
@@ -1619,7 +1661,7 @@
 			{ id: 'nav-back', name: $t('commands.navBack'), shortcut: sc('nav-back'), icon: '←', action: navigateBack, category: 'Navigation' },
 			{ id: 'nav-forward', name: $t('commands.navForward'), shortcut: sc('nav-forward'), icon: '→', action: navigateForward, category: 'Navigation' },
 			{ id: 'workspaces', name: $t('commands.workspaces'), shortcut: sc('workspaces'), icon: '🗂️', action: () => { showCommandPalette = false; showWorkspaces = true; }, category: 'View' },
-			{ id: 'index', name: $t('commands.index'), shortcut: sc('index'), icon: '📖', action: () => { showCommandPalette = false; showIndex = !showIndex; showSkyView = false; showGlobalTasks = false; showConstellationMap = false; indexReturnPending = false; }, category: 'Navigation' },
+			{ id: 'index', name: $t('commands.index'), shortcut: sc('index'), icon: '📖', action: () => { showCommandPalette = false; showIndex = !showIndex; showSkyView = false; showGlobalTasks = false; showConstellationMap = false; showInspector360 = false; indexReturnPending = false; }, category: 'Navigation' },
 			{ id: 'review-pulse', name: $t('commands.reviewDueNotes') || 'Review due notes', icon: '📋', action: () => { showCommandPalette = false; rightSidebarOpen = true; rightSidebarTab = 'review'; const lib = get(libraries)[0]; if (lib) invoke<any[]>('get_due_notes', { libraryPath: lib.path }).then(notes => { dueNotes = notes; }).catch(() => {}); }, category: 'View' },
 			{ id: 'open-trail', name: $t('commands.openTrail') || 'Open Trail', icon: '🛤️', action: async () => {
 				showCommandPalette = false;
@@ -1638,9 +1680,9 @@
 				} catch {}
 			}, category: 'Navigation' },
 			{ id: 'create-lens', name: $t('commands.createLens') || 'Create Lens', icon: '🔍', action: () => { showCommandPalette = false; showSettings = true; }, category: 'View' },
-			{ id: 'expression-forge', name: $t('commands.expressionForge') || 'Expression Forge', icon: '✨', action: () => { showCommandPalette = false; showExpressionForge = !showExpressionForge; showSkyView = false; showGlobalTasks = false; showIndex = false; showSenseMakingCanvas = false; showConstellationMap = false; }, category: 'View' },
-			...($appSettings.enabledFeatures?.constellationMap === true ? [{ id: 'constellation-map', name: $t('commands.constellationMap') || 'Constellation Map', icon: '🗺️', action: () => { showCommandPalette = false; showConstellationMap = !showConstellationMap; showSkyView = false; showGlobalTasks = false; showIndex = false; showExpressionForge = false; showSenseMakingCanvas = false; mapReturnPending = false; }, category: 'View' }] : []),
-			{ id: 'sense-making-canvas', name: $t('commands.senseMakingCanvas') || 'Sense-Making Canvas', icon: '🎨', action: () => { showCommandPalette = false; showSenseMakingCanvas = !showSenseMakingCanvas; showSkyView = false; showGlobalTasks = false; showIndex = false; showExpressionForge = false; showConstellationMap = false; }, category: 'View' },
+			{ id: 'expression-forge', name: $t('commands.expressionForge') || 'Expression Forge', icon: '✨', action: () => { showCommandPalette = false; showExpressionForge = !showExpressionForge; showSkyView = false; showGlobalTasks = false; showIndex = false; showSenseMakingCanvas = false; showConstellationMap = false; showInspector360 = false; }, category: 'View' },
+			...($appSettings.enabledFeatures?.constellationMap === true ? [{ id: 'constellation-map', name: $t('commands.constellationMap') || 'Constellation Map', icon: '🗺️', action: () => { showCommandPalette = false; showConstellationMap = !showConstellationMap; showSkyView = false; showGlobalTasks = false; showIndex = false; showExpressionForge = false; showSenseMakingCanvas = false; showInspector360 = false; mapReturnPending = false; }, category: 'View' }] : []),
+			{ id: 'sense-making-canvas', name: $t('commands.senseMakingCanvas') || 'Sense-Making Canvas', icon: '🎨', action: () => { showCommandPalette = false; showSenseMakingCanvas = !showSenseMakingCanvas; showSkyView = false; showGlobalTasks = false; showIndex = false; showExpressionForge = false; showConstellationMap = false; showInspector360 = false; }, category: 'View' },
 			{ id: 'knowledge-health', name: 'Knowledge Health', icon: '🧠', action: () => { showCommandPalette = false; showKnowledgeHealth = true; }, category: 'View' },
 			{ id: 'import-notes', name: $t('commands.importNotes'), shortcut: sc('import-notes'), icon: '📥', action: () => { showCommandPalette = false; showImporter = true; }, category: 'App' },
 			{ id: 'settings', name: $t('commands.settings'), shortcut: sc('settings'), icon: '⚙️', action: () => { showCommandPalette = false; showSettings = true; }, category: 'App' },
@@ -1934,6 +1976,8 @@
 		// this reset the user would see stale data from the prior Universe.
 		mapEverOpened = false;
 		orgChartEverOpened = false;
+		inspector360EverOpened = false;
+		inspector360Data = null;
 		mapFocusNode = null;
 
 		// Reset cache guard so refreshLibraryCaches can run for the new universe
@@ -3416,7 +3460,7 @@
 	function handleTagClick(tag: string) {
 		searchHubInitialQuery = `#${tag}`;
 		showSearchHub = true;
-		showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false;
+		showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; showInspector360 = false;
 		/* fullPageActive $effect handles sidebar snapshot */
 	}
 
@@ -3905,7 +3949,7 @@
 				showSearchHub = !showSearchHub;
 				if (showSearchHub) {
 					searchHubInitialQuery = '';
-					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false;
+					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; showInspector360 = false;
 				}
 				searchHubReturnPending = false;
 				/* fullPageActive $effect handles sidebar snapshot on entry/exit */
@@ -3917,7 +3961,7 @@
 				showOrgChart = !showOrgChart;
 				orgChartReturnPending = false;
 				if (showOrgChart) {
-					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false;
+					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showInspector360 = false;
 				}
 				/* fullPageActive $effect handles sidebar snapshot */
 			}} title={$t('navigator.orgChart') || 'Organization Chart'}>
@@ -3927,7 +3971,7 @@
 			<button class="dock-btn" class:active={showKnowledgeHealth} onclick={() => {
 				showKnowledgeHealth = !showKnowledgeHealth;
 				if (showKnowledgeHealth) {
-					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false;
+					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showInspector360 = false;
 				}
 			}} title={$t('ribbon.knowledgeHealth') || 'Knowledge Health'}>
 				<SlotIcon slot="dock.knowledgeHealth">
@@ -3942,7 +3986,7 @@
 				</SlotIcon>
 			</button>
 			{#if $appSettings.enabledFeatures?.skyView !== false}
-			<button class="dock-btn" class:active={showSkyView} onclick={() => { showSkyView = !showSkyView; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showKnowledgeHealth = false; }} title={$t('ribbon.graphView') || 'Sky View'}>
+			<button class="dock-btn" class:active={showSkyView} onclick={() => { showSkyView = !showSkyView; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showKnowledgeHealth = false; showInspector360 = false; }} title={$t('ribbon.graphView') || 'Sky View'}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><circle cx="18" cy="6" r="3"/><path d="M6 9v6M9 6h6M15 18h-6"/></svg>
 			</button>
 			{/if}
@@ -3957,25 +4001,38 @@
 			</a>
 			{/if}
 			{#if $appSettings.enabledFeatures?.index !== false}
-			<button class="dock-btn" class:active={showIndex} onclick={() => { showIndex = !showIndex; showSkyView = false; showGlobalTasks = false; showConstellationMap = false; indexReturnPending = false; }} title={$t('ribbon.index')}>
+			<button class="dock-btn" class:active={showIndex} onclick={() => { showIndex = !showIndex; showSkyView = false; showGlobalTasks = false; showConstellationMap = false; showInspector360 = false; indexReturnPending = false; }} title={$t('ribbon.index')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M8 7h6"/><path d="M8 11h8"/></svg>
 			</button>
 			{/if}
 			{#if $appSettings.enabledFeatures?.constellationMap === true}
-			<button class="dock-btn" class:active={showConstellationMap} onclick={() => { showConstellationMap = !showConstellationMap; showSkyView = false; showGlobalTasks = false; showIndex = false; mapReturnPending = false; }} title={$t('ribbon.constellationMap') || 'Constellation Map'}>
+			<button class="dock-btn" class:active={showConstellationMap} onclick={() => { showConstellationMap = !showConstellationMap; showSkyView = false; showGlobalTasks = false; showIndex = false; showInspector360 = false; mapReturnPending = false; }} title={$t('ribbon.constellationMap') || 'Constellation Map'}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
 			</button>
 			{/if}
 			{#if $appSettings.enabledFeatures?.constellationSight !== false}
 			<button class="dock-btn" class:active={lensActive} onclick={() => {
 				if (!lensActive) {
-					toggleLens(); showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensReturnPending = false;
+					toggleLens(); showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showInspector360 = false; lensReturnPending = false;
 				} else {
 					lensActive = false;
 				}
 				/* fullPageActive $effect handles sidebar snapshot */
 			}} title={$t('lens.title') || 'Constellation Sight'}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+			</button>
+			{/if}
+			{#if $appSettings.enabledFeatures?.inspector360 !== false}
+			<button class="dock-btn" class:active={showInspector360} onclick={() => {
+				showInspector360 = !showInspector360;
+				if (showInspector360) {
+					showSkyView = false; showGlobalTasks = false; showIndex = false;
+					showConstellationMap = false; showOrgChart = false; lensActive = false;
+					showKnowledgeHealth = false; showSearchHub = false;
+					showExpressionForge = false; showSenseMakingCanvas = false;
+				}
+			}} title={$t('ribbon.inspector360') || $t('inspector360.title') || '360° Inspector'}>
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="3" x2="12" y2="9"/><line x1="12" y1="15" x2="12" y2="21"/><line x1="3" y1="12" x2="9" y2="12"/><line x1="15" y1="12" x2="21" y2="12"/></svg>
 			</button>
 			{/if}
 		</div>
@@ -4358,7 +4415,7 @@
 				</button>
 			{/if}
 			{#if searchHubReturnPending}
-				<button class="index-return-btn" onclick={() => { showSearchHub = true; searchHubReturnPending = false; showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; }}>
+				<button class="index-return-btn" onclick={() => { showSearchHub = true; searchHubReturnPending = false; showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; showInspector360 = false; }}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
 					{$t('searchHub.title')}
 				</button>
@@ -4552,6 +4609,22 @@
 			</div>
 		{/if}
 
+		<!-- 360° Inspector overlay — lazy-mounted (LL-022). CE Phase 12. -->
+		{#if inspector360EverOpened}
+			<div class="inspector360-overlay" class:inspector360-visible={showInspector360}>
+				<Inspector360
+					data={inspector360Data}
+					compact={false}
+					onNoteClick={(path, name) => {
+						const lib = $libraryStats.find(l => path.startsWith(l.path));
+						if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
+						showInspector360 = false;
+					}}
+					onClose={() => { showInspector360 = false; }}
+				/>
+			</div>
+		{/if}
+
 		<!-- OrgChart overlay — lazy-mounted (LL-022). -->
 		{#if orgChartEverOpened}
 			<div class="orgchart-overlay" class:orgchart-visible={showOrgChart}>
@@ -4633,7 +4706,7 @@
 		</div>
 
 		<!-- Content -->
-		<div class="content-area" class:content-hidden={showIndex || showConstellationMap || showOrgChart || lensActive || showSearchHub} onmouseover={handleWikilinkHover} onmouseout={handleWikilinkLeave}>
+		<div class="content-area" class:content-hidden={showIndex || showConstellationMap || showOrgChart || lensActive || showSearchHub || showInspector360} onmouseover={handleWikilinkHover} onmouseout={handleWikilinkLeave}>
 			{#if showSkyView}
 				<div class="star-fullscreen">
 					<div class="star-header">
@@ -5218,6 +5291,11 @@
 						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
 					</button>
 				{/if}
+				{#if ($appSettings.panelPlacements?.inspector360 ?? 'right-sidebar') === 'right-sidebar'}
+					<button class="rs-tab" class:active={rightSidebarTab === 'inspector360'} onclick={() => rightSidebarTab = 'inspector360'} title={$t('panels.inspector360') || $t('inspector360.title') || '360° Inspector'}>
+						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="3" x2="12" y2="9"/><line x1="12" y1="15" x2="12" y2="21"/><line x1="3" y1="12" x2="9" y2="12"/><line x1="15" y1="12" x2="21" y2="12"/></svg>
+					</button>
+				{/if}
 			</div>
 
 			{#if isHome && sidebarTab}
@@ -5394,6 +5472,17 @@
 							visible={rightSidebarOpen && rightSidebarTab === 'links'}
 							onNoteClick={(path, libraryName) => {
 								openNoteTab(path, libraryName, libraryColorMap[libraryName] || '#7c3aed');
+							}}
+						/>
+					</div>
+				{:else if rightSidebarTab === 'inspector360'}
+					<div class="rs-section rs-full-height">
+						<Inspector360
+							data={inspector360Data}
+							compact={true}
+							onNoteClick={(path, name) => {
+								const lib = $libraryStats.find(l => path.startsWith(l.path));
+								if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
 							}}
 						/>
 					</div>
@@ -6448,12 +6537,12 @@
 		overflow: hidden;
 	}
 
-	.index-overlay, .map-overlay, .orgchart-overlay {
+	.index-overlay, .map-overlay, .orgchart-overlay, .inspector360-overlay {
 		display: none; flex: 1; overflow: hidden;
 		background: var(--background-primary, #fff);
 		min-height: 0;
 	}
-	.index-overlay.index-visible, .map-overlay.map-visible, .orgchart-overlay.orgchart-visible { display: flex; flex-direction: column; }
+	.index-overlay.index-visible, .map-overlay.map-visible, .orgchart-overlay.orgchart-visible, .inspector360-overlay.inspector360-visible { display: flex; flex-direction: column; }
 
 	.index-return-btn {
 		display: flex; align-items: center; gap: 4px;
