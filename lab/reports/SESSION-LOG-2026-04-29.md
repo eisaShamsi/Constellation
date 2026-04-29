@@ -304,3 +304,61 @@ Boss reran Stage 1 against the §96 binary (built 2026-04-29 13:36). All five ch
 - `lab/reports/SESSION-LOG-2026-04-29.md` (this entry).
 
 No `Inspector360.svelte` change — the component's prop contract (`previousNoteName?: string | null` + `onBack?: () => void`) didn't change. The mount site computes `previousNoteName` from the stack and provides the popping `onBack` handler. Component agnostic to single-step vs multi-hop semantics.
+
+---
+
+## §100 — Stage 2 Boss findings: tooltip + sizing + sector grouping + full-window back-nav
+
+**Boss-reported during Stage 2 testing (2026-04-29 ~17:00)**, with the explicit reminder that long tutorials should be split into stages going forward. Acknowledged: the Stage 2 tutorial bundled 2.1–2.7 in one message, which violates `feedback_staged_tests.md`. Future stages go out one sub-stage at a time.
+
+Five concrete findings, all addressed in this commit:
+
+**Finding 1 — Dock button tooltip leaks the i18n key (`ribbon.inspector360`).** The chain `$t('ribbon.inspector360') || $t('inspector360.title') || '360° Inspector'` doesn't fall through because `$t()` returns the key name as a non-empty string when the key is missing. `ribbon.inspector360` was never added to any of the 15 locales (intentionally deferred to a future i18n round per §93 notes), so the chain returned "ribbon.inspector360" verbatim and rendered as the tooltip. **Fix**: dropped `$t('ribbon.inspector360')` from the fallback chain. The dock button now uses `$t('inspector360.title') || '360° Inspector'`, which resolves to the localised "360.3D" (or its translated equivalent) in all 15 locales. The English fallback `'360° Inspector'` is reachable only if every locale's `inspector360.title` is missing, which is not the case.
+
+**Finding 2 — Visualisation does not fill the available canvas (2.1.5).** The `.i360-viz` rule had `max-width: 1400px; max-height: 900px;` which capped the SVG even on monitors much larger than that. Result: the visualisation rendered small in the centre of the dark canvas with vast empty space around it. **Fix**: removed both max-* constraints. The SVG now fills the canvas to 100% / 100% of `.i360-canvas`. Ring radii bumped slightly (`rings = [180, 290, 400]` from `[160, 270, 380]`) to occupy the additional space proportionally.
+
+**Finding 3 — Side panels and HUD undersized (2.3.13/14, 2.4.16).** Original sizes were tuned for the compact-view aesthetic that Boss chose to discard for full-window. **Fix**: doubled padding, font-size, and key dimensions across:
+- `.i360-header`: padding 18px 32px (was 10px 20px), gap 16px.
+- `.i360-header-icon`: 28px (was 18px).
+- `.i360-header-label`: 16px (was 11px).
+- `.i360-header-name`: 26px (was 18px).
+- `.i360-mode-select`: 16px font, padding 8px 16px (was 12px / 5px 10px).
+- `.i360-close`: 48px × 48px (was 36×36), font 28px (was 20px).
+- `.i360-panel`: 18px font, padding 18px 22px, max-width 380px, line-height 1.7 (were 11px / 10px 14px / 200px / 1.8). Position offset 100px / 32px (was 60px / 20px).
+- `.i360-panel-title`: 18px font, margin-bottom 10px (were 11px / 4px).
+- `.i360-panel-item` gap 10px (was 6px). Item color rgba 0.6 (was 0.5) for legibility at scale.
+- `.i360-dot`: 14px × 14px (was 8×8).
+- `.i360-hud`: padding 18px 36px (was 10px 24px).
+- `.i360-hud-item`: 18px font, gap 8px, color rgba 0.55 (were 11px / 4px / 0.4).
+- `.i360-hud-left/-right` gap 28px (was 16px).
+- Node radii bumped: depth 1 = 11px (was 9), depth 2 = 8px (was 7), depth 3 = 5px (was 4).
+
+**Finding 4 — Nodes scattered without clear typed-link grouping (2.2.11, image 5).** The previous spread formula `(i - (n - 1) / 2) * 15` used a fixed 15° per-note step regardless of total count. A sector with 10 notes spread to 150°, overlapping neighbouring sectors. **Fix**: replaced with a normalised-and-bounded formula:
+```javascript
+const SECTOR_WIDTH = 50; // degrees per typed-link sector
+const offset = n > 1 ? (i / (n - 1) - 0.5) * SECTOR_WIDTH : 0;
+```
+Each typed-link sector now occupies a fixed 50° angular range centred on its sector angle, regardless of how many notes it contains. High-density sectors pack more tightly within their 50° wedge instead of spilling into neighbours. Visually: nodes cluster cleanly at the seven sector positions (supports/contradicts/causes/derives-from/generalizes/exemplifies/part-of) instead of forming a continuous ring around the centre. This also makes the Cosmic Sphere mode's labelled sector wedges (the rim labels in the §93 implementation) actually align with the nodes they represent.
+
+**Finding 5 — Full-window auto-closes on node click; Boss wants "Return to 360.3D" (2.5.17).** The §93 design auto-closed the inspector when an orbiting node was clicked — that's contrary to the back-nav model the Boss wants. **Fix**:
+- Removed `showInspector360 = false;` from the full-window mount's `onNoteClick`. The full-window now stays open after node click, refetches the new note's view, and walks the back stack like compact mode.
+- Added the back-stack push to the full-window mount's `onNoteClick` (same shape as compact).
+- Wired the `onBack` and `previousNoteName` props to the full-window mount (same expressions as compact).
+- Added a "Return to {previous}" button in the full-window header's left cluster, conditional on `previousNoteName && onBack`. Styled as a pill button (white-08 background, 16px font, hover state).
+- The back stack is shared between compact and full-window — clicking a node in compact, then opening full-window, sees the same back history. Clicking back in full-window pops the same stack compact uses.
+
+**One finding deferred (2.2.9 — viz modes look identical).** Boss observed Atmospheric Rings and Neural Web are visually indistinguishable. Speculation: the previous crowding obscured the differences. With Finding 4's tighter sector grouping, the modes may now show their distinct character (Atmospheric: rotating ellipses + per-link synaptic lines; Neural: organic web with second-order branching; Cosmic: orbital paths with sector labels). If they still look the same after the §100 build, that's a follow-up (likely a more aggressive design pass on each mode's signature look). Boss explicitly accepted this for now via "All Pass, considering my remarks".
+
+**Build verification**: `npm run check` clean of new errors.
+
+**Files changed**:
+- `src/lib/components/Inspector360.svelte` (sector formula + full-window back button + sizing pass).
+- `src/routes/+layout.svelte` (dock-button tooltip + full-window mount: back-nav props, onNoteClick refactor without auto-close).
+- `lab/reports/SESSION-LOG-2026-04-29.md` (this entry).
+
+**Stage 2 retest plan** (split into sub-stages per Boss directive):
+- 2A: dock-button tooltip + full-window opens + sized correctly.
+- 2B: visualisation fills canvas + nodes grouped by typed-link sector.
+- 2C: side panels + HUD legible at 2× scale.
+- 2D: full-window back-nav (Return to N from full-window header).
+- 2E (deferred): viz mode distinctness — only triaged if Boss flags it again after seeing the new sectoring.

@@ -4042,7 +4042,7 @@
 					showKnowledgeHealth = false; showSearchHub = false;
 					showExpressionForge = false; showSenseMakingCanvas = false;
 				}
-			}} title={$t('ribbon.inspector360') || $t('inspector360.title') || '360° Inspector'}>
+			}} title={$t('inspector360.title') || '360° Inspector'}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="3" x2="12" y2="9"/><line x1="12" y1="15" x2="12" y2="21"/><line x1="3" y1="12" x2="9" y2="12"/><line x1="15" y1="12" x2="21" y2="12"/></svg>
 			</button>
 			{/if}
@@ -4626,10 +4626,21 @@
 				<Inspector360
 					data={inspector360Data}
 					compact={false}
+					previousNoteName={inspector360BackStack.length > 0 ? inspector360BackStack[inspector360BackStack.length - 1].name : null}
 					onNoteClick={(path, name) => {
+						if (sidebarTab?.path && sidebarTab?.name) {
+							inspector360BackStack = [...inspector360BackStack, { path: sidebarTab.path, name: sidebarTab.name }];
+						}
 						const lib = $libraryStats.find(l => path.startsWith(l.path));
 						if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
-						showInspector360 = false;
+					}}
+					onBack={() => {
+						if (inspector360BackStack.length === 0) return;
+						const next = [...inspector360BackStack];
+						const target = next.pop()!;
+						inspector360BackStack = next;
+						const lib = $libraryStats.find(l => target.path.startsWith(l.path));
+						if (lib) openNoteTab(target.path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
 					}}
 					onClose={() => { showInspector360 = false; }}
 				/>

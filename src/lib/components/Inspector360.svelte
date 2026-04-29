@@ -66,32 +66,39 @@
 		return name.length > max ? name.slice(0, max - 1) + '\u2026' : name;
 	}
 
-	// Collect all nodes with positions for current viz
+	// Collect all nodes with positions for current viz.
+	// Each typed-link sector clusters within a bounded angular range
+	// (SECTOR_WIDTH degrees centered on the sector's angle). High-count
+	// sectors stack onto inner/outer rings to avoid label collision.
 	const allNodes = $derived.by(() => {
 		if (!data) return [];
 		const nodes: Array<{ name: string; path: string; x: number; y: number; color: string; type: string; depth: number; r: number }> = [];
 		const VB = 1200; const cx = VB / 2; const cy = 400;
-		const rings = [160, 270, 380];
+		const rings = [180, 290, 400];
+		const SECTOR_WIDTH = 50; // degrees per typed-link sector
 
 		for (const [type, noteList] of Object.entries(data.typed_links)) {
 			const info = SECTOR_MAP[type];
 			if (!info) continue;
-			for (let i = 0; i < noteList.length; i++) {
+			const n = noteList.length;
+			for (let i = 0; i < n; i++) {
 				const note = noteList[i];
-				const spread = noteList.length > 1 ? (i - (noteList.length - 1) / 2) * 15 : 0;
+				// Cluster within sector: normalized [-0.5, 0.5] mapped to ±(SECTOR_WIDTH/2)
+				const offset = n > 1 ? (i / (n - 1) - 0.5) * SECTOR_WIDTH : 0;
 				const ring = note.depth <= 1 ? 0 : note.depth <= 2 ? 1 : 2;
-				const pos = polarToXY(cx, cy, info.angle + spread, rings[ring]);
-				const r = note.depth <= 1 ? 9 : note.depth <= 2 ? 7 : 4;
+				const pos = polarToXY(cx, cy, info.angle + offset, rings[ring]);
+				const r = note.depth <= 1 ? 11 : note.depth <= 2 ? 8 : 5;
 				nodes.push({ ...note, x: pos.x, y: pos.y, color: info.color, type, r });
 			}
 		}
-		// Untyped links scattered
-		for (let i = 0; i < Math.min(data.untyped_links.length, 20); i++) {
-			const note = data.untyped_links[i];
-			const angle = (i / Math.max(data.untyped_links.length, 1)) * 360;
+		// Untyped links scattered around the full circle, avoiding typed sectors.
+		const untyped = data.untyped_links.slice(0, 20);
+		for (let i = 0; i < untyped.length; i++) {
+			const note = untyped[i];
+			const angle = (i / Math.max(untyped.length, 1)) * 360;
 			const ring = note.depth <= 1 ? 0 : note.depth <= 2 ? 1 : 2;
 			const pos = polarToXY(cx, cy, angle, rings[ring]);
-			nodes.push({ ...note, x: pos.x, y: pos.y, color: '#666', type: 'untyped', r: 4 });
+			nodes.push({ ...note, x: pos.x, y: pos.y, color: '#666', type: 'untyped', r: 5 });
 		}
 		return nodes;
 	});
@@ -166,6 +173,12 @@
 			<!-- Header bar -->
 			<div class="i360-header">
 				<div class="i360-header-left">
+					{#if previousNoteName && onBack}
+						<button class="i360-back-full" onclick={onBack} title={`Return to ${previousNoteName}`}>
+							<span class="i360-back-arrow">{'\u2190'}</span>
+							<span class="i360-back-name" dir="auto">{truncName(previousNoteName, 24)}</span>
+						</button>
+					{/if}
 					<span class="i360-header-icon">{'\u{1F9E0}'}</span>
 					<span class="i360-header-label">{$t('inspector360.title') || '360.3D'}</span>
 					<span class="i360-header-name" dir="auto">{data.note_name}</span>
@@ -549,40 +562,60 @@
 	.i360-empty-icon-lg { font-size: 4rem; margin-bottom: 16px; opacity: 0.5; }
 	.i360-empty-text-lg { font-size: 1.1rem; color: rgba(255,255,255,0.3); }
 
-	/* Header */
+	/* Header — full-window. Sized 2x for the deliberate-study surface. */
 	.i360-header {
 		display: flex; align-items: center; justify-content: space-between;
-		padding: 10px 20px;
+		padding: 18px 32px;
 		background: linear-gradient(180deg, rgba(6,6,18,0.95), transparent);
 		z-index: 20; position: relative;
+		gap: 16px;
 	}
-	.i360-header-left { display: flex; align-items: center; gap: 10px; }
-	.i360-header-icon { font-size: 18px; }
+	.i360-header-left { display: flex; align-items: center; gap: 16px; flex: 1; min-width: 0; }
+	.i360-header-icon { font-size: 28px; }
 	.i360-header-label {
-		font-size: 11px; color: #7c3aed; font-weight: 700;
+		font-size: 16px; color: #7c3aed; font-weight: 700;
 		letter-spacing: 2px; text-transform: uppercase;
 	}
-	.i360-header-name { font-size: 18px; font-weight: 700; color: #f0f0f0; }
-	.i360-header-right { display: flex; align-items: center; gap: 10px; }
+	.i360-header-name {
+		font-size: 26px; font-weight: 700; color: #f0f0f0;
+		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+	}
+	.i360-header-right { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
 	.i360-mode-select {
 		background: rgba(255,255,255,0.06);
 		border: 1px solid rgba(255,255,255,0.12);
-		border-radius: 8px; padding: 5px 10px;
-		color: #ccc; font-size: 12px;
+		border-radius: 10px; padding: 8px 16px;
+		color: #ccc; font-size: 16px;
 		cursor: pointer; outline: none;
 	}
 	.i360-mode-select:hover { background: rgba(255,255,255,0.1); }
 	.i360-mode-select option { background: #1a1a3a; color: #ccc; }
 	.i360-close {
-		width: 36px; height: 36px; border-radius: 50%;
+		width: 48px; height: 48px; border-radius: 50%;
 		border: 1px solid rgba(255,255,255,0.1);
 		background: rgba(255,255,255,0.03);
-		color: #888; font-size: 20px; cursor: pointer;
+		color: #888; font-size: 28px; cursor: pointer;
 		display: flex; align-items: center; justify-content: center;
+		flex-shrink: 0;
 	}
 	.i360-close:hover { background: rgba(255,255,255,0.08); color: #fff; }
+	/* Full-window back button — "Return to {previous note}". */
+	.i360-back-full {
+		display: flex; align-items: center; gap: 8px;
+		padding: 8px 16px; border-radius: 10px;
+		background: rgba(255,255,255,0.06);
+		border: 1px solid rgba(255,255,255,0.14);
+		color: #ddd; font-size: 16px;
+		cursor: pointer; flex-shrink: 0;
+		max-width: 320px;
+	}
+	.i360-back-full:hover { background: rgba(255,255,255,0.12); color: #fff; }
+	.i360-back-full .i360-back-arrow { font-size: 20px; line-height: 1; flex-shrink: 0; }
+	.i360-back-full .i360-back-name {
+		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+	}
 
-	/* Canvas area */
+	/* Canvas area — fills the available viewport (2.1.5: take advantage of available space). */
 	.i360-canvas {
 		flex: 1; position: relative;
 		background: radial-gradient(ellipse at 50% 45%, #0e0e28 0%, #060612 70%);
@@ -590,50 +623,49 @@
 	}
 	.i360-viz {
 		width: 100%; height: 100%;
-		max-width: 1400px; max-height: 900px;
 	}
 
 	/* Node hover effect */
 	.i360-node:hover circle { opacity: 1 !important; }
 
-	/* Floating panels */
+	/* Floating panels — sized 2x. */
 	.i360-panel {
 		position: absolute; z-index: 15;
-		padding: 10px 14px; border-radius: 12px;
+		padding: 18px 22px; border-radius: 14px;
 		background: rgba(12,12,30,0.8);
 		border: 1px solid rgba(255,255,255,0.06);
 		backdrop-filter: blur(10px);
-		font-size: 11px; line-height: 1.8;
-		max-width: 200px;
+		font-size: 18px; line-height: 1.7;
+		max-width: 380px;
 	}
-	.i360-panel-tr { top: 60px; right: 20px; }
-	.i360-panel-bl { bottom: 50px; left: 20px; }
+	.i360-panel-tr { top: 100px; right: 32px; }
+	.i360-panel-bl { bottom: 96px; left: 32px; }
 	.i360-panel-title {
-		font-weight: 700; font-size: 11px; color: #a78bfa;
-		margin-bottom: 4px; letter-spacing: 0.5px;
+		font-weight: 700; font-size: 18px; color: #a78bfa;
+		margin-bottom: 10px; letter-spacing: 0.5px;
 	}
 	.i360-panel-item {
-		display: flex; align-items: center; gap: 6px;
-		color: rgba(255,255,255,0.5);
+		display: flex; align-items: center; gap: 10px;
+		color: rgba(255,255,255,0.6);
 	}
 	.i360-panel-warn { color: #ef4444; }
 	.i360-dot {
-		width: 8px; height: 8px; border-radius: 50%;
+		width: 14px; height: 14px; border-radius: 50%;
 		display: inline-block; flex-shrink: 0;
 	}
 
-	/* Bottom HUD */
+	/* Bottom HUD — sized 2x. */
 	.i360-hud {
 		position: absolute; bottom: 0; left: 0; right: 0;
-		padding: 10px 24px;
+		padding: 18px 36px;
 		display: flex; justify-content: space-between;
 		z-index: 20;
 		background: linear-gradient(0deg, rgba(6,6,18,0.95), transparent);
 	}
-	.i360-hud-left, .i360-hud-right { display: flex; gap: 16px; }
+	.i360-hud-left, .i360-hud-right { display: flex; gap: 28px; }
 	.i360-hud-item {
-		font-size: 11px; color: rgba(255,255,255,0.4);
-		display: flex; align-items: center; gap: 4px;
+		font-size: 18px; color: rgba(255,255,255,0.55);
+		display: flex; align-items: center; gap: 8px;
 	}
 	.i360-hud-warn { color: #ef4444; }
 </style>
