@@ -180,3 +180,44 @@ Per Standing Order #2 (update help files + User Manual on user-facing changes) a
 - `lab/reports/SESSION-LOG-2026-04-29.md` (this entry).
 
 **Stage 1 retest gate**: Boss to retry the Stage 1 walkthrough after the §96 binary builds. If the click now routes to the Inspector 360 widget with the spherical visualisation, Stage 1 ✅. Stage 2 (full-window mode) follows.
+
+---
+
+## §96b — Stage 1 verified by Boss + two findings
+
+Boss reran Stage 1 against the §96 binary (built 2026-04-29 13:36). All five checks PASS:
+
+- Reticle icon appears in the right sidebar — ✅
+- Clicking it shows the spherical visualisation — ✅
+- First-open latency: **almost instantly** (much faster than the 1–3 s estimate I'd anchored from reading `inspector360.rs`)
+- Navigating between notes updates the visualisation — ✅
+- Clicking an orbiting dot navigates to that note — ✅
+
+**Perf finding** (significant): the actual `get_360_view` cost on the 7,600-note Universe is far below my theoretical 1–3 s estimate. Possible explanations: (a) OS file cache warm from prior navigation, (b) the inbound-iteration O(n²) wasn't the bottleneck on this dataset, (c) my estimate was simply pessimistic. Whatever the cause, **MIG-010 (Rule-8-compliant cached `note_360_view` table) priority drops to LOW** based on Boss's lived experience. Keep the option in the backlog but stop treating it as a near-term blocker. The orientation v1.8 §17 unknown about "actual latency on the 7,600-note Universe" is now resolved — fold the answer into §17 in a future bump.
+
+**Two findings to address**:
+
+**1. Right-sidebar tab strip clipping** (Boss-attached screenshot): the new 360° Inspector tab icon at the right edge of the rs-tabs strip is partially cut off — the strip overflows the sidebar's content area at the default 340 px width. With 11 tabs (now: properties, backlinks, tags, star, tasks, calendar, health, provenance, review, links, inspector360), the default browser button padding plus the 16 px icon plus tab margins exceeds available width even at `flex: 1`. The 11th tab is rendered but visually clipped. Boss-clickable still (verified — Stage 1 worked), but the visual presentation is wrong. **Fix in §97 below.**
+
+**2. Back-navigation from Inspector**: Boss wants to "return to the previous note" after clicking an orbiting dot in the inspector. The default Constellation navigation history (`navigateBack` / `navigateForward`, bound to Alt+Left and Alt+Right) DOES preserve the prior note — pressing Alt+Left from the new note reverts to the source note. But the request seems to be for an explicit in-context back affordance inside the Inspector itself, not a global keyboard shortcut. Three possible implementations: (A) a small back button in the Inspector full-window header (compact mode has no header to host one), (B) breadcrumbs showing the path A → B → C, (C) hold-Shift-click on a node to "open in new tab" instead of replacing. Decision deferred to Boss; logged for §98 candidate.
+
+---
+
+## §97 — rs-tabs strip overflow fix
+
+**Boss-reported during Stage 1.7 retest (2026-04-29, screenshot showed partial-clip of the inspector reticle icon at the sidebar's right edge).**
+
+**Root cause**: `.rs-tab` had `flex: 1` (allowing infinite shrink in theory) but inherited the browser's default `<button>` padding (~6–12 px each side) which set an effective minimum width per tab. Eleven tabs × (~16 px icon + ~16 px button padding) ≈ 350 px just for the tab strip, exceeding the 340 px sidebar default minus scrollbar. The 11th tab rendered past the sidebar's right edge.
+
+**Fix** (single CSS rule edit in `+layout.svelte`):
+
+- `.rs-tabs`: added `flex-wrap: wrap` so any future tab beyond the sidebar's capacity gracefully wraps to a second row instead of clipping.
+- `.rs-tab`: replaced `flex: 1` with `flex: 1 1 28px; min-width: 24px;` — the explicit basis + min-width gives the wrap algorithm sensible breakpoints. Added `padding: 0` to remove default browser button padding.
+
+**Effect**: at the default 340 px width, all 11 tabs fit on a single row with even spacing. If a future migration adds a 12th sidebar tab, or if the user resizes the sidebar narrower than ~290 px, the strip wraps to a second row instead of clipping. No JavaScript involved; pure CSS.
+
+**Build verification**: `npm run check` clean of new errors (the 1 remaining error in store.ts:1850 LinkLifecycle missing 'fresh' is pre-existing).
+
+**Files changed**:
+- `src/routes/+layout.svelte` (`.rs-tabs` + `.rs-tab` CSS).
+- `lab/reports/SESSION-LOG-2026-04-29.md` (this entry + Stage 1 verification + back-nav decision queue).

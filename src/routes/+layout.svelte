@@ -6834,13 +6834,16 @@
 	}
 
 	.rs-tabs {
-		display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0;
+		display: flex; flex-wrap: wrap;
+		border-bottom: 1px solid var(--border); flex-shrink: 0;
 		background: var(--rs-tabs-bg, var(--right-sidebar-bg, var(--bg-secondary)));
 		position: sticky; top: 0; z-index: 3;
 	}
 	.rs-tab {
-		flex: 1; display: flex; align-items: center; justify-content: center;
+		flex: 1 1 28px; min-width: 24px;
+		display: flex; align-items: center; justify-content: center;
 		height: var(--rs-tab-height, 30px);
+		padding: 0;
 		border: none; background: none;
 		color: var(--rs-tab-color, var(--text-muted));
 		cursor: pointer;
