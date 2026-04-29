@@ -390,6 +390,9 @@
 	let inspector360FetchTimer: ReturnType<typeof setTimeout> | null = null;
 	let inspector360RequestSeq = 0;
 	let lastFetchedInspectorKey: string | null = null;
+	// Single-step back nav from the compact widget (§98).
+	let inspector360PreviousPath = $state<string | null>(null);
+	let inspector360PreviousName = $state<string | null>(null);
 	let trailIndex = $state(0); // CE Phase 8: current note index in trail
 	let tensionReport = $state<any>(null); // CE Phase 4: TensionReport
 	let provenanceChain = $state<any>(null); // CE Phase 5: ProvenanceChain
@@ -1983,6 +1986,8 @@
 		orgChartEverOpened = false;
 		inspector360EverOpened = false;
 		inspector360Data = null;
+		inspector360PreviousPath = null;
+		inspector360PreviousName = null;
 		mapFocusNode = null;
 
 		// Reset cache guard so refreshLibraryCaches can run for the new universe
@@ -5485,8 +5490,21 @@
 						<Inspector360
 							data={inspector360Data}
 							compact={true}
+							previousNoteName={inspector360PreviousName}
 							onNoteClick={(path, name) => {
+								if (sidebarTab?.path && sidebarTab?.name) {
+									inspector360PreviousPath = sidebarTab.path;
+									inspector360PreviousName = sidebarTab.name;
+								}
 								const lib = $libraryStats.find(l => path.startsWith(l.path));
+								if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
+							}}
+							onBack={() => {
+								if (!inspector360PreviousPath) return;
+								const path = inspector360PreviousPath;
+								const lib = $libraryStats.find(l => path.startsWith(l.path));
+								inspector360PreviousPath = null;
+								inspector360PreviousName = null;
 								if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
 							}}
 						/>

@@ -21,11 +21,15 @@
 		compact = false,
 		onNoteClick,
 		onClose,
+		previousNoteName = null,
+		onBack,
 	}: {
 		data?: Note360View | null;
 		compact?: boolean;
 		onNoteClick?: (path: string, name: string) => void;
 		onClose?: () => void;
+		previousNoteName?: string | null;
+		onBack?: () => void;
 	} = $props();
 
 	// Visualization mode: user preference
@@ -99,6 +103,12 @@
 {#if compact}
 	<!-- ===== COMPACT SIDEBAR MODE ===== -->
 	<div class="i360 compact">
+		{#if previousNoteName && onBack}
+			<button class="i360-back-bar" onclick={onBack} title={`Back to ${previousNoteName}`}>
+				<span class="i360-back-arrow">{'←'}</span>
+				<span class="i360-back-name" dir="auto">{truncName(previousNoteName, 22)}</span>
+			</button>
+		{/if}
 		{#if !data}
 			<div class="i360-empty">
 				<div class="i360-empty-icon">{'\u{1F52E}'}</div>
@@ -498,6 +508,24 @@
 	/* ===== COMPACT SIDEBAR ===== */
 	.i360.compact { display: flex; flex-direction: column; align-items: center; padding: 4px; }
 	.i360-svg { width: 100%; max-width: 280px; height: auto; }
+	.i360-back-bar {
+		align-self: stretch;
+		display: flex; align-items: center; gap: 6px;
+		padding: 4px 8px; margin-bottom: 4px;
+		background: rgba(127,127,127,0.06);
+		border: 1px solid rgba(127,127,127,0.18);
+		border-radius: 6px;
+		color: var(--text-muted, #888);
+		font-size: 0.78rem;
+		cursor: pointer;
+		text-align: start;
+	}
+	.i360-back-bar:hover {
+		background: rgba(127,127,127,0.14);
+		color: var(--text, inherit);
+	}
+	.i360-back-arrow { font-size: 0.9rem; line-height: 1; flex-shrink: 0; }
+	.i360-back-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.i360-empty { text-align: center; padding: 24px; }
 	.i360-empty-icon { font-size: 2rem; margin-bottom: 8px; }
 	.i360-empty-text { font-size: 0.82rem; color: var(--text-muted, #999); }

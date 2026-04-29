@@ -221,3 +221,43 @@ Boss reran Stage 1 against the §96 binary (built 2026-04-29 13:36). All five ch
 **Files changed**:
 - `src/routes/+layout.svelte` (`.rs-tabs` + `.rs-tab` CSS).
 - `lab/reports/SESSION-LOG-2026-04-29.md` (this entry + Stage 1 verification + back-nav decision queue).
+
+---
+
+## §98 — Inspector 360 back-nav button (compact mode, single-step)
+
+**Boss decision (2026-04-29)**: option (A) — explicit back affordance inside the 360.3D function sidebar (compact mode). Wired as a small back-bar above the SVG that shows the previous note's name and navigates back when clicked.
+
+**Scope chosen**: single-step back, compact mode only. Full-window mode unchanged (it auto-closes on node click in §93, so a back button there would be invisible). If Boss later wants full-window back-nav, the props are already there — only the mount-site call needs to opt in.
+
+**State added** (`+layout.svelte:~390`):
+- `inspector360PreviousPath: string | null = $state(null)`
+- `inspector360PreviousName: string | null = $state(null)`
+
+**Compact mount onNoteClick now saves before navigating**: when the user clicks an orbiting node, the current `sidebarTab.path` + `sidebarTab.name` are captured into the previous-state vars, then `openNoteTab` runs to navigate. The IPC `$effect` re-fires for the new note, the visualisation updates, and the back-bar appears showing "← {previousName}".
+
+**onBack handler**: clears the previous-state vars and calls `openNoteTab` for the saved previous path. Single-step semantics — once back is clicked, the back state is empty until the next forward navigation. This matches the simple-back mental model (not a multi-hop history).
+
+**Universe-switch reset extended**: the existing block that clears `mapEverOpened` / `orgChartEverOpened` / `inspector360EverOpened` / `inspector360Data` now also clears `inspector360PreviousPath` and `inspector360PreviousName`. So switching to a different Universe always resets back-state.
+
+**Inspector360.svelte component changes**:
+- Two new optional props: `previousNoteName?: string | null` and `onBack?: () => void`.
+- When both are set AND in compact mode, a small back-bar renders above the SVG: `← {truncated previousNoteName}`. Subtle styling (light grey background, hover effect).
+- Full-window mode does NOT render the back-bar regardless of props (kept the auto-close UX from §93). If we later want a full-window header back button, that's a follow-up.
+
+**Mental model**:
+- A → click B in inspector → on B, "← A" visible in compact widget.
+- Click "← A" → on A, back-bar hidden.
+- A → click B → click C → on C, "← B" visible (single-step, A is forgotten).
+- Alt+Left and Alt+Right still work as the global multi-hop history; the inspector's back-bar is independent.
+
+**Interaction with §97 layout**: the back-bar uses `align-self: stretch` so it fills the compact widget's available width regardless of the rs-tabs strip width. Padding `4px 8px`, font 0.78rem — small but readable.
+
+**Build verification**: `npm run check` clean of new errors. The 1 remaining error in store.ts:1850 (LinkLifecycle missing 'fresh') is pre-existing.
+
+**Rebuild required**: the §97 rebuild that completed at ~13:53 does NOT include this §98 change. A fresh `npm run tauri build` runs after this commit lands so the Boss test picks up both fixes together.
+
+**Files changed**:
+- `src/lib/components/Inspector360.svelte` (props + back-bar markup + CSS).
+- `src/routes/+layout.svelte` (state + universe-switch reset + compact mount onNoteClick / onBack wiring).
+- `lab/reports/SESSION-LOG-2026-04-29.md` (this entry).
