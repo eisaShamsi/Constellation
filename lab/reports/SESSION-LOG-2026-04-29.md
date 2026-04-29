@@ -457,3 +457,30 @@ If they still look too similar after this rebuild, that's the deferred 2E (mode 
 - `lab/reports/SESSION-LOG-2026-04-29.md` (this entry).
 
 **Stage 2B retest will resume against the §102 binary** — same scope (sectoring + viz fill), just judging the new ring-per-group layout instead of §101's multi-ring-within-sector.
+
+---
+
+## §103 — Minimised nodes + hover-only labels
+
+**Boss-reported during the §102 Stage 2B retest (2026-04-29 ~18:40)**: two visual remarks on the new ring-per-group layout — (1) minimise the nodes (smaller dots), (2) take out the always-visible note titles next to nodes; show them only when the user hovers (or via search later).
+
+**Node radii reduced** from §102's 10/7/4 to **6/4/3** (depth 1 / 2 / 3). With 8 rings between minRadius 110 and maxRadius 380 (gap ≈ 30 px), the diameter-12 depth-1 nodes fit cleanly with ~18 px clearance between rings — visually quieter, less label-collision risk on inner rings, more breathing room around the type-name labels at each ring's top.
+
+**Always-on node labels removed** in all three viz modes:
+- **Atmospheric**: previously showed labels for `node.depth <= 2`. Now only when `hoveredNode === node.path`.
+- **Neural Web**: same change.
+- **Cosmic Sphere**: previously showed for `hoveredNode === node.path || node.depth <= 1`. Now only on hover.
+
+**Hover-label styling upgraded** (since it's now the only way to see a node's name): font 13 px, weight 600, white at 0.95 alpha, with a 3 px black SVG stroke beneath the fill (`paint-order: stroke; stroke-width: 3px`) — gives the label a soft outline so it stays legible against any ring color. Positioned above the node at `y - node.r - 8`.
+
+**Hit-area expanded** (so smaller nodes stay easy to mouse-over): each `<g class="i360-node">` now contains an invisible `<circle r={node.r + 6} fill="transparent" pointer-events="all">` as the hit target. The visible circles are `pointer-events="none"` so they don't compete for hover events. Net effect: a 6 px → 12 px hit-radius depending on depth, easy to land the cursor on.
+
+**Pulse-animation amplitude** reduced (`r → r + 1` instead of `r → r + 1.5`) so the gentle breathing on depth-1 nodes is proportionally smaller now that nodes are smaller.
+
+**Build verification**: `npm run check` clean of new errors.
+
+**Files changed**:
+- `src/lib/components/Inspector360.svelte` (node radii in `allNodes`; per-mode node rendering blocks).
+- `lab/reports/SESSION-LOG-2026-04-29.md` (this entry).
+
+**Stage 2B retest unblocked** once the §103 binary builds. Same scope; just judging the new (smaller, quieter) layout.

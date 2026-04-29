@@ -117,7 +117,8 @@
 					angle = (reservedTop / 2) + i * ((360 - reservedTop) / (n - 1));
 				}
 				const pos = polarToXY(cx, cy, angle, ring.radius);
-				const r = note.depth <= 1 ? 10 : note.depth <= 2 ? 7 : 4;
+				// Minimised node radii (§103). Names are revealed on hover, not always-on.
+				const r = note.depth <= 1 ? 6 : note.depth <= 2 ? 4 : 3;
 				nodes.push({ ...note, x: pos.x, y: pos.y, color: ring.color, type: ring.type, r });
 			}
 		}
@@ -286,18 +287,24 @@
 								onmouseenter={() => hoveredNode = node.path}
 								onmouseleave={() => hoveredNode = null}
 								onclick={() => onNoteClick?.(node.path, node.name)}>
+								<!-- Invisible hit-area expands the click target so smaller
+								     visible nodes stay easy to mouse-over. -->
+								<circle cx={node.x} cy={node.y} r={node.r + 6} fill="transparent" pointer-events="all"/>
 								{#if node.depth <= 2}
-									<circle cx={node.x} cy={node.y} r={node.r + 6} fill={node.color} opacity="0.15" filter="url(#glow-b)"/>
+									<circle cx={node.x} cy={node.y} r={node.r + 4} fill={node.color} opacity="0.15" filter="url(#glow-b)" pointer-events="none"/>
 								{/if}
-								<circle cx={node.x} cy={node.y} r={node.r} fill={node.color} opacity={node.depth <= 1 ? 0.8 : node.depth <= 2 ? 0.6 : 0.3}>
+								<circle cx={node.x} cy={node.y} r={node.r} fill={node.color}
+									opacity={node.depth <= 1 ? 0.8 : node.depth <= 2 ? 0.6 : 0.3}
+									pointer-events="none">
 									{#if node.depth <= 1}
-										<animate attributeName="r" values="{node.r};{node.r + 1.5};{node.r}" dur="{3 + node.r * 0.2}s" repeatCount="indefinite"/>
+										<animate attributeName="r" values="{node.r};{node.r + 1};{node.r}" dur="{3 + node.r * 0.2}s" repeatCount="indefinite"/>
 									{/if}
 								</circle>
-								{#if node.depth <= 2}
-									<text x={node.x} y={node.y - node.r - 5} text-anchor="middle" font-size="8"
-										fill="rgba(255,255,255,{node.depth <= 1 ? 0.5 : 0.3})">
-										{truncName(node.name, 18)}
+								{#if hoveredNode === node.path}
+									<text x={node.x} y={node.y - node.r - 8} text-anchor="middle" font-size="13" font-weight="600"
+										fill="rgba(255,255,255,0.95)" pointer-events="none"
+										style="paint-order: stroke; stroke: rgba(0,0,0,0.85); stroke-width: 3px; stroke-linejoin: round;">
+										{truncName(node.name, 32)}
 									</text>
 								{/if}
 							</g>
@@ -375,17 +382,20 @@
 								onmouseenter={() => hoveredNode = node.path}
 								onmouseleave={() => hoveredNode = null}
 								onclick={() => onNoteClick?.(node.path, node.name)}>
+								<circle cx={node.x} cy={node.y} r={node.r + 6} fill="transparent" pointer-events="all"/>
 								<circle cx={node.x} cy={node.y} r={node.r} fill={node.color}
 									opacity={node.depth <= 1 ? 0.8 : node.depth <= 2 ? 0.7 : 0.3}
-									filter={node.depth <= 2 ? "url(#n-glow)" : undefined}>
+									filter={node.depth <= 2 ? "url(#n-glow)" : undefined}
+									pointer-events="none">
 									{#if node.depth <= 1}
-										<animate attributeName="r" values="{node.r};{node.r + 1};{node.r}" dur="{2.5 + node.r * 0.3}s" repeatCount="indefinite"/>
+										<animate attributeName="r" values="{node.r};{node.r + 0.6};{node.r}" dur="{2.5 + node.r * 0.3}s" repeatCount="indefinite"/>
 									{/if}
 								</circle>
-								{#if node.depth <= 2}
-									<text x={node.x} y={node.y - node.r - 5} text-anchor="middle" font-size="8"
-										fill="rgba(255,255,255,{node.depth <= 1 ? 0.5 : 0.4})">
-										{truncName(node.name, 16)}
+								{#if hoveredNode === node.path}
+									<text x={node.x} y={node.y - node.r - 8} text-anchor="middle" font-size="13" font-weight="600"
+										fill="rgba(255,255,255,0.95)" pointer-events="none"
+										style="paint-order: stroke; stroke: rgba(0,0,0,0.85); stroke-width: 3px; stroke-linejoin: round;">
+										{truncName(node.name, 32)}
 									</text>
 								{/if}
 							</g>
@@ -472,13 +482,16 @@
 								onmouseenter={() => hoveredNode = node.path}
 								onmouseleave={() => hoveredNode = null}
 								onclick={() => onNoteClick?.(node.path, node.name)}>
+								<circle cx={node.x} cy={node.y} r={node.r + 6} fill="transparent" pointer-events="all"/>
 								<circle cx={node.x} cy={node.y} r={node.r}
 									fill={node.color} opacity={node.depth <= 1 ? 0.85 : node.depth <= 2 ? 0.6 : 0.3}
-									filter={node.depth <= 1 ? "url(#c-glow)" : undefined} />
-								{#if hoveredNode === node.path || node.depth <= 1}
-									<text x={node.x} y={node.y + node.r + 12} text-anchor="middle"
-										font-size="8" fill="rgba(255,255,255,0.6)">
-										{truncName(node.name, 18)}
+									filter={node.depth <= 1 ? "url(#c-glow)" : undefined}
+									pointer-events="none" />
+								{#if hoveredNode === node.path}
+									<text x={node.x} y={node.y - node.r - 8} text-anchor="middle"
+										font-size="13" font-weight="600" fill="rgba(255,255,255,0.95)" pointer-events="none"
+										style="paint-order: stroke; stroke: rgba(0,0,0,0.85); stroke-width: 3px; stroke-linejoin: round;">
+										{truncName(node.name, 32)}
 									</text>
 								{/if}
 							</g>
