@@ -387,9 +387,9 @@
 	let showInspector360 = $state(false);
 	let inspector360EverOpened = $state(false); // LL-022 lazy-mount sticky flag
 	let inspector360Data = $state<any>(null);    // Note360View
-	let inspector360Loading = $state(false);
 	let inspector360FetchTimer: ReturnType<typeof setTimeout> | null = null;
 	let inspector360RequestSeq = 0;
+	let lastFetchedInspectorKey: string | null = null;
 	let trailIndex = $state(0); // CE Phase 8: current note index in trail
 	let tensionReport = $state<any>(null); // CE Phase 4: TensionReport
 	let provenanceChain = $state<any>(null); // CE Phase 5: ProvenanceChain
@@ -577,41 +577,9 @@
 	$effect(() => { if (showConstellationMap) mapEverOpened = true; });
 	$effect(() => { if (showOrgChart) orgChartEverOpened = true; });
 	$effect(() => { if (showInspector360) inspector360EverOpened = true; });
-
-	// CE Phase 12 — fetch Note360View when Inspector 360 surface is visible
-	// AND a note is in focus. Runs whenever (a) the user toggles into the
-	// inspector, or (b) the active note changes while the inspector surface
-	// is open (compact sidebar tab, since full-window hides the sidebar
-	// anyway). Debounced 200 ms to absorb rapid tab navigation; sequence
-	// number guards against stale-result writes when fetches overlap.
-	$effect(() => {
-		const compactVisible = rightSidebarOpen && rightSidebarTab === 'inspector360';
-		const fullVisible = showInspector360;
-		const shouldFetch = compactVisible || fullVisible;
-		const path = sidebarTab?.path;
-		const libPath = sidebarTab?.libraryPath;
-		if (!shouldFetch || !path || !libPath) {
-			if (!shouldFetch) inspector360Data = null;
-			return;
-		}
-		const seq = ++inspector360RequestSeq;
-		if (inspector360FetchTimer) clearTimeout(inspector360FetchTimer);
-		inspector360FetchTimer = setTimeout(async () => {
-			inspector360Loading = true;
-			try {
-				const data = await invoke('get_360_view', { libraryPath: libPath, notePath: path });
-				if (seq === inspector360RequestSeq) inspector360Data = data;
-			} catch (e) {
-				console.error('Inspector 360 fetch failed:', e);
-				if (seq === inspector360RequestSeq) inspector360Data = null;
-			} finally {
-				if (seq === inspector360RequestSeq) inspector360Loading = false;
-			}
-		}, 200);
-		return () => {
-			if (inspector360FetchTimer) clearTimeout(inspector360FetchTimer);
-		};
-	});
+	// Inspector 360 IPC-fetch $effect is co-located with `sidebarTab`'s
+	// declaration further down the file (TDZ); see "CE Phase 12 — fetch"
+	// block.
 
 	// Tasks sidebar data
 	let sidebarTasks = $state<TaskItem[]>([]);
@@ -1071,6 +1039,42 @@
 
 	// Sidebar data: derived from focused tab (whichever pane has focus)
 	const sidebarTab = $derived($focusedTab);
+
+	// CE Phase 12 — fetch Note360View when Inspector 360 is visible.
+	// Read through $derived string values so identity-change of sidebarTab
+	// on tab-content updates doesn't re-fire the IPC effect. Debounce
+	// 200 ms; sequence number discards stale results when fetches overlap;
+	// last-key guard skips re-fetching the same note across tab toggles.
+	const inspector360Path = $derived(sidebarTab?.path ?? '');
+	const inspector360LibPath = $derived(sidebarTab?.libraryPath ?? '');
+	$effect(() => {
+		const shouldFetch = (rightSidebarOpen && rightSidebarTab === 'inspector360') || showInspector360;
+		const path = inspector360Path;
+		const libPath = inspector360LibPath;
+		if (!shouldFetch || !path || !libPath) {
+			if (!shouldFetch && inspector360Data !== null) inspector360Data = null;
+			return;
+		}
+		const key = `${libPath}::${path}`;
+		if (key === lastFetchedInspectorKey && inspector360Data) return;
+		const seq = ++inspector360RequestSeq;
+		if (inspector360FetchTimer) clearTimeout(inspector360FetchTimer);
+		inspector360FetchTimer = setTimeout(async () => {
+			try {
+				const data = await invoke('get_360_view', { libraryPath: libPath, notePath: path });
+				if (seq === inspector360RequestSeq) {
+					inspector360Data = data;
+					lastFetchedInspectorKey = key;
+				}
+			} catch (e) {
+				console.error('Inspector 360 fetch failed:', e);
+				if (seq === inspector360RequestSeq) inspector360Data = null;
+			}
+		}, 200);
+		return () => {
+			if (inspector360FetchTimer) clearTimeout(inspector360FetchTimer);
+		};
+	});
 	const sidebarParsed = $derived(sidebarTab ? parseFrontmatter(sidebarTab.content) : null);
 	const sidebarProperties = $derived<FrontmatterProperty[]>(sidebarParsed?.properties ?? []);
 	const sidebarBody = $derived(sidebarParsed?.body ?? '');

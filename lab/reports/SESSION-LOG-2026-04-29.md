@@ -94,7 +94,37 @@
 - `lab/reports/SESSION-LOG-2026-04-29.md` (this entry)
 
 **Pending after §93**:
-- §94: orientation v1.8 + help files + User Manual + `ribbon.inspector360` to all 15 locales.
-- /simplify on the §93 diff.
-- Boss tutorial test (separate from §94 since the test is the verification gate).
+- §94: /simplify pass on the §93 diff.
+- §95: orientation v1.8 + help files + User Manual + `ribbon.inspector360` to all 15 locales.
+- Boss tutorial test (separate from §95 since the test is the verification gate).
 - Perf gate result feeds back into MIG-006 §3 redo prioritization.
+
+---
+
+## §94 — CE Phase 12 /simplify pass
+
+Three reviewers (reuse / quality / efficiency) ran in parallel against the §93 diff. Findings + fixes:
+
+**Reuse** — clean. No duplications, the new patterns (debounce + sequence guard, mutual-exclusivity inline resets, right-sidebar tab gating, panel-placement check) match conventions already in the file. No reusable helpers exist for the IPC fetch or the close-other-modes pattern; introducing them would be premature abstraction.
+
+**Quality — must-fix #1: dead `inspector360Loading`.** Declared on line 390, written `true`/`false` in three places inside the IPC `$effect`, never read. No UI surface consumed it (Inspector360.svelte has no `loading` prop). Deleted the declaration and the three writes. Component shows its own "Open a note to see its 360° view" empty state during the first fetch — that's the Stage-1 UX. If first-load latency proves jarring during Boss testing, a dedicated loading prop on the component is a follow-up.
+
+**Quality — nice-to-have: trim block comment.** The 6-line comment before the IPC `$effect` partly enumerated WHAT (when it runs — re-narrating the boolean guard) instead of just WHY. Trimmed to 3-line WHY-only ("Debounce 200 ms; sequence number discards stale results; last-key guard skips re-fetching same note").
+
+**Quality — follow-up logged for §95+**: 12 mutual-exclusivity sites duplicate a "close other full-page modes" pattern. Lists differ slightly between sites, so it's not pure copy-paste, but extracting `closeAllFullPageExcept(keep)` is the right move before the next full-page surface lands. Tracked as a backlog item; not a §94 blocker.
+
+**Efficiency — critical: $effect re-fired on every keystroke.** The original $effect read `sidebarTab?.path` directly. `sidebarTab = $derived($focusedTab)` and `$focusedTab` derives from `openTabs`, which `updateTabContent` (`store.ts:578`) replaces with `{ ...t, content: newContent }` on every save. So `sidebarTab` got a new identity each typing-debounce tick → the $effect re-ran → cleared and re-scheduled the 200 ms timer. The fetch was starved while typing (the timer kept resetting). **Fix**: read paths through `$derived` string values (`inspector360Path`, `inspector360LibPath`). Strings compare by value in Svelte 5's equality check, so identity-change of the parent `sidebarTab` no longer publishes to the $effect when the underlying strings haven't changed. **Required relocating both new `$derived` lines and the IPC $effect from line ~580 to immediately after `const sidebarTab = $derived($focusedTab)` at line ~1075** to satisfy TypeScript's TDZ check (the helpers can't reference `sidebarTab` before it is declared).
+
+**Efficiency — high: no last-fetched-key dedup.** Clicking tab A → tab B → back to tab A re-fired `get_360_view` for A even though `inspector360Data` already held A's view. **Fix**: added `lastFetchedInspectorKey: string | null` (plain `let`, not `$state` — no reactive consumer needed). Compose `key = ${libPath}::${path}`. Skip fetch when `key === lastFetchedInspectorKey && inspector360Data` is truthy. Set `lastFetchedInspectorKey` only on successful fetch.
+
+**Efficiency — medium: unnecessary null-write.** When `!shouldFetch`, the original code unconditionally wrote `inspector360Data = null`. On a layout-level reactive tick this could fire repeatedly even when `inspector360Data` was already null. Svelte 5 might still schedule downstream effect re-checks. **Fix**: guarded — only write `null` when the value is actually about to change.
+
+**Efficiency — confirmed safe**: cleanup function correctly cancels in-flight timers on $effect re-run; sequence guard discards stale invoke results when the timer already fired before cleanup; `fullPageActive` adding one OR is negligible; the 12 mutual-exclusivity additions are each one synchronous boolean write — negligible.
+
+**Build verification**: `npm run check` clean of new errors. The 1 remaining error (store.ts:1850 LinkLifecycle missing `'fresh'`) pre-dates this cascade.
+
+**Files changed**:
+- `src/routes/+layout.svelte` — IPC $effect relocated + rewritten with $derived key + last-fetched guard + null-write guard. `inspector360Loading` deleted. Block comment trimmed.
+- `lab/reports/SESSION-LOG-2026-04-29.md` — this entry.
+
+No store.ts changes.
