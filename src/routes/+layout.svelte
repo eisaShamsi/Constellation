@@ -1267,10 +1267,11 @@
 			provenance: inSidebar('provenance'),
 			review:     inSidebar('review'),
 			links:      inSidebar('links'),
+			inspector360: inSidebar('inspector360'),
 		};
 
 		if (!tabVisible[rightSidebarTab]) {
-			const order = ['properties', 'backlinks', 'tags', 'star', 'tasks', 'calendar', 'health', 'provenance', 'review', 'links'] as const;
+			const order = ['properties', 'backlinks', 'tags', 'star', 'tasks', 'calendar', 'health', 'provenance', 'review', 'links', 'inspector360'] as const;
 			const first = order.find(tab => tabVisible[tab]);
 			rightSidebarTab = (first ?? 'properties') as typeof rightSidebarTab;
 		}

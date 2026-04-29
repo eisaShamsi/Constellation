@@ -160,3 +160,23 @@ Per Standing Order #2 (update help files + User Manual on user-facing changes) a
 - `docs/help.uConstellation.World/Cognitive Engine/Cognitive Engine.md` (Inspector 360 section added).
 - `docs/User Manual.md` (§18.10 added + Layer 1 feature count updated from nine to ten).
 - `lab/reports/SESSION-LOG-2026-04-29.md` (this entry).
+
+---
+
+## §96 — Stage 1 hotfix: missing inspector360 entry in tabVisible safety map
+
+**Boss-reported during Stage 1.6 testing (2026-04-29 ~13:00)**: clicking the new 360° Inspector tab icon in the right sidebar tab strip routed the user to the **Properties** panel instead of the Inspector 360 panel. The new icon was rendered correctly; the click handler set `rightSidebarTab = 'inspector360'`; but immediately after, a safety $effect at `+layout.svelte:1255–1276` reset `rightSidebarTab` back to `'properties'`.
+
+**Root cause**: that $effect maintains a `tabVisible: Record<string, boolean>` map listing every known sidebar tab and a corresponding `order` array used to find a fallback when the active tab is no longer visible. The map covered `properties / backlinks / tags / star / tasks / calendar / health / provenance / review / links` — **`inspector360` was not in either structure**. So when the user clicked the new tab, the $effect read `!tabVisible['inspector360']` (undefined → falsy → truthy negation), concluded the tab was invisible, and force-reset to the first visible tab. That first tab was `properties`, hence the symptom.
+
+**Fix**: added `inspector360: inSidebar('inspector360')` to the `tabVisible` map (uses the existing helper that reads `panelPlacements?.inspector360 ?? 'right-sidebar'` — the default I'd already wired in store.ts) and appended `'inspector360'` to the `order` array.
+
+**Working Agreement #4 self-audit**: this is the exact miss WA#4 is supposed to prevent. Before shipping §93 I walked the call graph for `showInspector360` (dock buttons, command palette, mutual-exclusivity sites, full-window overlay, content-area class) but did NOT walk the call graph for `rightSidebarTab`. The safety $effect at line 1255 is a write site for `rightSidebarTab` and should have been on the audit list. Reaffirming the rule from `feedback_walk_through_writes.md`: before any reactive-state change, enumerate every read AND every write of the affected variable.
+
+**Build verification**: `npm run check` clean of new errors. The 1 remaining error in store.ts:1850 (LinkLifecycle missing 'fresh') is pre-existing.
+
+**Files changed**:
+- `src/routes/+layout.svelte` — added `inspector360` to `tabVisible` map (line 1269) and to `order` array (line 1273).
+- `lab/reports/SESSION-LOG-2026-04-29.md` (this entry).
+
+**Stage 1 retest gate**: Boss to retry the Stage 1 walkthrough after the §96 binary builds. If the click now routes to the Inspector 360 widget with the spherical visualisation, Stage 1 ✅. Stage 2 (full-window mode) follows.
