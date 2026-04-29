@@ -66,49 +66,60 @@
 		return name.length > max ? name.slice(0, max - 1) + '\u2026' : name;
 	}
 
-	// Collect all nodes with positions for current viz.
-	// Each typed-link sector clusters within a bounded angular range
-	// (SECTOR_WIDTH degrees centered on the sector's angle). When a
-	// sector has more notes than fit cleanly on one ring (>MAX_PER_RING),
-	// the notes spill onto additional rings within the same sector — so
-	// dense sectors stack outward instead of overlapping into pile-ups.
-	const allNodes = $derived.by(() => {
-		if (!data) return [];
-		const nodes: Array<{ name: string; path: string; x: number; y: number; color: string; type: string; depth: number; r: number }> = [];
-		const VB = 1200; const cx = VB / 2; const cy = 400;
-		const rings = [180, 290, 400];
-		const SECTOR_WIDTH = 50; // degrees per typed-link sector
-		const MAX_PER_RING = 8;  // node count threshold before spilling to next ring
+	// Ring-per-group layout (§102). Each typed-link group occupies its own
+	// concentric ring around the core. Groups are sorted by note count
+	// ascending: smaller groups on inner rings (closer to the core),
+	// larger groups on outer rings (more circumference for many nodes).
+	// Untyped links are treated as one additional group on whichever ring
+	// their count places them. Within a ring, nodes are spread evenly
+	// around the full 360°.
+	const ringsLayout = $derived.by(() => {
+		if (!data) return [] as Array<{ type: string; color: string; labelKey: string; radius: number; notes: LinkedNote[] }>;
+		type Group = { type: string; color: string; labelKey: string; radius: number; notes: LinkedNote[] };
+		const groups: Group[] = [];
 
 		for (const [type, noteList] of Object.entries(data.typed_links)) {
 			const info = SECTOR_MAP[type];
-			if (!info) continue;
-			const n = noteList.length;
-			// Sort by depth so closer notes occupy the inner rings.
-			const sorted = [...noteList].sort((a, b) => a.depth - b.depth);
-			const numRings = Math.min(3, Math.max(1, Math.ceil(n / MAX_PER_RING)));
-			const perRing = Math.ceil(n / numRings);
-			for (let i = 0; i < sorted.length; i++) {
-				const note = sorted[i];
-				const ringNum = Math.min(numRings - 1, Math.floor(i / perRing));
-				const indexInRing = i - ringNum * perRing;
-				const countInRing = Math.min(perRing, n - ringNum * perRing);
-				const offset = countInRing > 1
-					? (indexInRing / (countInRing - 1) - 0.5) * SECTOR_WIDTH
-					: 0;
-				const pos = polarToXY(cx, cy, info.angle + offset, rings[ringNum]);
-				const r = note.depth <= 1 ? 11 : note.depth <= 2 ? 8 : 5;
-				nodes.push({ ...note, x: pos.x, y: pos.y, color: info.color, type, r });
-			}
+			if (!info || noteList.length === 0) continue;
+			groups.push({ type, color: info.color, labelKey: info.labelKey, radius: 0, notes: noteList });
 		}
-		// Untyped links scattered around the full circle.
-		const untyped = data.untyped_links.slice(0, 20);
-		for (let i = 0; i < untyped.length; i++) {
-			const note = untyped[i];
-			const angle = (i / Math.max(untyped.length, 1)) * 360;
-			const ring = note.depth <= 1 ? 0 : note.depth <= 2 ? 1 : 2;
-			const pos = polarToXY(cx, cy, angle, rings[ring]);
-			nodes.push({ ...note, x: pos.x, y: pos.y, color: '#666', type: 'untyped', r: 5 });
+		if (data.untyped_links.length > 0) {
+			groups.push({ type: 'untyped', color: '#888', labelKey: 'untyped', radius: 0, notes: data.untyped_links.slice(0, 30) });
+		}
+
+		// Smaller groups inner, larger groups outer.
+		groups.sort((a, b) => a.notes.length - b.notes.length);
+
+		const minRadius = 110;
+		const maxRadius = 380;
+		const n = groups.length;
+		for (let g = 0; g < n; g++) {
+			groups[g].radius = n === 1
+				? (minRadius + maxRadius) / 2
+				: minRadius + (maxRadius - minRadius) * (g / (n - 1));
+		}
+		return groups;
+	});
+
+	const allNodes = $derived.by(() => {
+		const nodes: Array<{ name: string; path: string; x: number; y: number; color: string; type: string; depth: number; r: number }> = [];
+		const cx = 600; const cy = 400;
+		// Reserve a 30° clear gap at the top of each ring for the type label.
+		const reservedTop = 30;
+		for (const ring of ringsLayout) {
+			const n = ring.notes.length;
+			for (let i = 0; i < n; i++) {
+				const note = ring.notes[i];
+				let angle: number;
+				if (n === 1) {
+					angle = 180; // single node sits at bottom, well clear of the top label
+				} else {
+					angle = (reservedTop / 2) + i * ((360 - reservedTop) / (n - 1));
+				}
+				const pos = polarToXY(cx, cy, angle, ring.radius);
+				const r = note.depth <= 1 ? 10 : note.depth <= 2 ? 7 : 4;
+				nodes.push({ ...note, x: pos.x, y: pos.y, color: ring.color, type: ring.type, r });
+			}
 		}
 		return nodes;
 	});
@@ -238,10 +249,16 @@
 							<animateTransform attributeName="transform" type="rotate" from="0 600 400" to="360 600 400" dur="150s" repeatCount="indefinite"/>
 						</ellipse>
 
-						<!-- Depth ring labels -->
-						<text x="715" y="398" font-size="7" fill="rgba(255,255,255,0.08)">depth 1</text>
-						<text x="805" y="398" font-size="7" fill="rgba(255,255,255,0.06)">depth 2</text>
-						<text x="905" y="398" font-size="7" fill="rgba(255,255,255,0.04)">depth 3</text>
+						<!-- Ring labels — each ring carries one typed-link group's name + count. -->
+						{#each ringsLayout as ring}
+							{@const labelText = ring.type === 'untyped'
+								? ($t('inspector360.untyped') || 'untyped')
+								: ($t(`inspector360.${ring.labelKey}`) || ring.type)}
+							<text x="600" y={400 - ring.radius - 10} text-anchor="middle" font-size="13" font-weight="600"
+								fill={ring.color} opacity="0.78" letter-spacing="1">
+								{labelText.toUpperCase()} ({ring.notes.length})
+							</text>
+						{/each}
 
 						<!-- Connection lines (synaptic) -->
 						{#each allNodes as node}
@@ -309,7 +326,7 @@
 						<!-- Center glow -->
 						<circle cx="600" cy="400" r="120" fill="url(#neural-grad)" filter="url(#n-center)"/>
 
-						<!-- Neural connections (synaptic lines — organic, no rings) -->
+						<!-- Neural connections (synaptic lines — organic) -->
 						{#each allNodes as node}
 							<line x1="600" y1="400" x2={node.x} y2={node.y}
 								stroke={node.color}
@@ -317,23 +334,26 @@
 								opacity={node.depth <= 1 ? 0.3 : node.depth <= 2 ? 0.2 : 0.1} />
 						{/each}
 
-						<!-- Second-order branching lines (node-to-node within same type) -->
-						{#each Object.entries(data.typed_links) as [type, notes]}
-							{@const info = SECTOR_MAP[type]}
-							{#if info && notes.length > 1}
-								{#each notes.slice(1) as note, i}
-									{@const prevNote = notes[i]}
-									{@const prevSpread = notes.length > 1 ? (i - (notes.length - 1) / 2) * 15 : 0}
-									{@const currSpread = notes.length > 1 ? ((i + 1) - (notes.length - 1) / 2) * 15 : 0}
-									{@const prevRing = prevNote.depth <= 1 ? 0 : prevNote.depth <= 2 ? 1 : 2}
-									{@const currRing = note.depth <= 1 ? 0 : note.depth <= 2 ? 1 : 2}
-									{@const prevPos = polarToXY(600, 400, info.angle + prevSpread, [160, 270, 380][prevRing])}
-									{@const currPos = polarToXY(600, 400, info.angle + currSpread, [160, 270, 380][currRing])}
-									<line x1={prevPos.x} y1={prevPos.y} x2={currPos.x} y2={currPos.y}
-										stroke={info.color} stroke-width="0.5" opacity="0.1" />
-								{/each}
-							{/if}
+						<!-- Ring outlines (faint) — each ring is one typed-link group. -->
+						{#each ringsLayout as ring}
+							<circle cx="600" cy="400" r={ring.radius} fill="none"
+								stroke={ring.color} stroke-width="0.6" opacity="0.18" stroke-dasharray="2,4"/>
 						{/each}
+
+						<!-- Ring labels — each ring carries one typed-link group's name + count. -->
+						{#each ringsLayout as ring}
+							{@const labelText = ring.type === 'untyped'
+								? ($t('inspector360.untyped') || 'untyped')
+								: ($t(`inspector360.${ring.labelKey}`) || ring.type)}
+							<text x="600" y={400 - ring.radius - 10} text-anchor="middle" font-size="13" font-weight="600"
+								fill={ring.color} opacity="0.78" letter-spacing="1">
+								{labelText.toUpperCase()} ({ring.notes.length})
+							</text>
+						{/each}
+
+						<!-- (Former second-order branching block removed in §102 — it
+						     used the old sector-based positioning; under ring-per-group
+						     the lines would be disconnected from actual node positions.) -->
 
 						<!-- Gap zones (dashed circles in empty directions) -->
 						{#each data.missing_link_types as gapType}
@@ -347,10 +367,6 @@
 							{/if}
 						{/each}
 
-						<!-- Depth ring hints (very subtle, no solid rings) -->
-						<circle cx="600" cy="400" r="160" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="0.5"/>
-						<circle cx="600" cy="400" r="270" fill="none" stroke="rgba(255,255,255,0.02)" stroke-width="0.5"/>
-						<circle cx="600" cy="400" r="380" fill="none" stroke="rgba(255,255,255,0.015)" stroke-width="0.5" stroke-dasharray="2,4"/>
 
 						<!-- Neural nodes (bright, pulsing) -->
 						{#each allNodes as node}
@@ -402,10 +418,22 @@
 							<circle cx={sx} cy={sy} r={0.5 + (i % 3) * 0.3} fill="rgba(255,255,255,{0.1 + (i % 5) * 0.06})" />
 						{/each}
 
-						<!-- Concentric rings (solid, like orbital paths) -->
-						<circle cx="600" cy="400" r="160" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-						<circle cx="600" cy="400" r="270" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="0.8"/>
-						<circle cx="600" cy="400" r="380" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="0.5"/>
+						<!-- Per-group orbital rings — one solid ring per typed-link group. -->
+						{#each ringsLayout as ring}
+							<circle cx="600" cy="400" r={ring.radius} fill="none"
+								stroke={ring.color} stroke-width="0.9" opacity="0.32"/>
+						{/each}
+
+						<!-- Ring labels — type name + count at top of each ring. -->
+						{#each ringsLayout as ring}
+							{@const labelText = ring.type === 'untyped'
+								? ($t('inspector360.untyped') || 'untyped')
+								: ($t(`inspector360.${ring.labelKey}`) || ring.type)}
+							<text x="600" y={400 - ring.radius - 10} text-anchor="middle" font-size="13" font-weight="600"
+								fill={ring.color} opacity="0.8" letter-spacing="1">
+								{labelText.toUpperCase()} ({ring.notes.length})
+							</text>
+						{/each}
 
 						<!-- Sector lines — solid for active, dashed for gaps -->
 						{#each Object.entries(SECTOR_MAP) as [type, info]}

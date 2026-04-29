@@ -406,3 +406,54 @@ for each note at index i:
 - `lab/reports/SESSION-LOG-2026-04-29.md` (this entry).
 
 **Stage 2B retest will follow once the §101 binary builds.** Just visualisation/sectoring focus per the staged-tests rule — panels + HUD (2C) and back-nav (2D) come later.
+
+---
+
+## §102 — Ring-per-group layout (Boss redesign of §101 multi-ring stacking)
+
+**Boss-reported during Stage 2B retest (2026-04-29 ~18:00, screenshot of Abu Bakr in Atmospheric Rings)**: §101's multi-ring stacking helped readability but Boss observed the layout was still uneven — each typed-link group was confined to a 50° wedge regardless of count, so heavily-populated groups stacked outward in a column shape inside their wedge while the rest of the sphere felt empty. New design directive: **each type/group gets its own complete concentric circle around the core, sorted by count (smaller groups inner, larger groups outer)**.
+
+This is a fundamental layout change, not a tuning of §101.
+
+**The design**:
+
+- Each typed-link group with ≥1 note is a "ring" in `ringsLayout`. Untyped links (if any) form an additional ring.
+- Rings are sorted by `notes.length` ascending. The group with the fewest notes gets the innermost ring; the largest group gets the outermost ring.
+- Ring radii are evenly distributed between `minRadius = 110` and `maxRadius = 380` (so for 5 groups the radii are 110, 177, 245, 312, 380).
+- Within each ring, nodes spread evenly around the full 360° — but with a 30° angular gap reserved at the top of each ring so the type label has clear space.
+  - For `n ≥ 2`: `angle = (reservedTop / 2) + i * ((360 - reservedTop) / (n - 1))`. First node at 15°, last at 345°.
+  - For `n = 1`: single node placed at angle 180° (bottom of its ring) so it stays well clear of the top label.
+- Node radii reduced from §101's 11/8/5 to 10/7/4 to fit cleanly within tighter ring spacing (8 rings × 30 px gap is still workable).
+
+**Ring labels added**: each ring gets a 13 px text label at its topmost edge showing `{TYPE} ({count})` in the group's color. So at a glance: top of innermost ring says `GENERALIZES (1)` in violet, next ring says `EXEMPLIFIES (4)` in green, and so on outward to `SUPPORTS (28)` on the largest ring in blue. Boss can identify which type sits on which ring without hovering.
+
+**Per-mode visual decoration adjustments**:
+
+- **Atmospheric Rings**: replaced the misleading "depth 1 / depth 2 / depth 3" labels (which referenced the old depth-based ring assignment that no longer exists) with the new ring-type labels. Animated background ellipses kept for the "live, breathing" feel. Gap-zone indicators (dashed circles at SECTOR_MAP angles for missing types) kept — they semantically still represent "this typed-link direction is unused".
+- **Neural Web**: removed the second-order branching code (it computed positions from the old SECTOR_MAP angle + spread formula; under ring-per-group those positions don't match actual nodes — would have drawn lines connecting nothing). Added faint dashed ring outlines (0.6 stroke, 0.18 opacity) so the user can see the orbital structure beneath the synaptic lines. Added the ring-type labels.
+- **Cosmic Sphere**: replaced the three fixed-radius decorative rings (160 / 270 / 380) with one solid ring per actual data group (in the group's color, 0.32 opacity). Removed the depth-ring hints in the same mode for the same reason. Added ring-type labels. Kept the SECTOR_MAP-based sector lines + rim labels — they're now decorative semantic reference (showing the 7 typed-link directions) rather than positional indicators, but still meaningful.
+
+**Mode distinguishability**: with §102 each mode still has its signature look:
+- Atmospheric: tilted rotating ellipses (animated background) + ring labels + ambient center glow.
+- Neural: faint dashed ring outlines + bright glowing nodes (n-glow filter) + organic synaptic connections.
+- Cosmic: per-group solid orbital rings + crisp sector lines + rim labels + sparser node opacity. Stars background.
+
+If they still look too similar after this rebuild, that's the deferred 2E (mode distinctness) item — needs a more aggressive design pass for each mode's signature visual. Not blocking.
+
+**Trade-offs**:
+
+- **The 7 typed-link directions are no longer at fixed compass positions for node placement.** This means the Cosmic Sphere's rim labels (which sit at SECTOR_MAP angles) describe "the 7 dimensions" semantically rather than "where the nodes for that type are". A user looking for the supports cluster can no longer say "they're at the top" — they have to find the supports ring by its label or by the blue color.
+- **Depth-1 / depth-2 / depth-3 are no longer represented by ring distance.** Depth is now encoded only in node SIZE (depth 1 = r 10, depth 2 = r 7, depth 3 = r 4). Visual signal preserved, just relocated.
+- **Many-group views may feel busy.** With 8 groups (7 typed + 1 untyped) you'd see 8 concentric labelled rings. Probably manageable; if Boss flags it, the next iteration can collapse small groups (count ≤ 1) into a single "minor" ring or fold untyped into a side panel rather than a ring.
+
+**Build verification**: `npm run check` clean of new errors.
+
+**Files changed**:
+- `src/lib/components/Inspector360.svelte`:
+  - Replaced `allNodes = $derived.by(...)` with `ringsLayout = $derived.by(...)` + `allNodes = $derived.by(...)` (which now reads from `ringsLayout`).
+  - Atmospheric mode: depth labels → ring-type labels.
+  - Neural Web mode: removed second-order branching block; added faint dashed ring outlines + ring-type labels.
+  - Cosmic Sphere mode: replaced fixed concentric rings with per-group rings; replaced depth ring hints likewise; added ring-type labels.
+- `lab/reports/SESSION-LOG-2026-04-29.md` (this entry).
+
+**Stage 2B retest will resume against the §102 binary** — same scope (sectoring + viz fill), just judging the new ring-per-group layout instead of §101's multi-ring-within-sector.
