@@ -140,7 +140,11 @@
 		return { cells, colTotals, rowTotals };
 	});
 
-	// Compact scorecard bars: per-type counts normalized to the biggest one.
+	// Compact scorecard bars: per-type **share of total** so the visual signal
+	// reads as proportion regardless of magnitude. With one count dominating
+	// (e.g. 6107 untyped vs 101 supports) max-normalisation collapsed every
+	// typed bar to <2 % width and made them invisible. Percent-of-total keeps
+	// the same widths but the readable signal moves to the percent text.
 	const compactBars = $derived.by(() => {
 		if (!data) return null;
 		const counts: Record<LinkType, number> = { supports: 0, contradicts: 0, causes: 0, 'derives-from': 0, generalizes: 0, exemplifies: 0, 'part-of': 0, untyped: 0 };
@@ -149,14 +153,52 @@
 			counts[type as LinkType] = notes.length;
 		}
 		counts.untyped = data.untyped_links.length;
-		let max = 0;
-		for (const t of TYPE_ORDER) if (counts[t] > max) max = counts[t];
-		return { counts, max };
+		let total = 0;
+		for (const t of TYPE_ORDER) total += counts[t];
+		return { counts, total };
 	});
 
-	// Hover shows the neighbour's name in a fixed top-right tooltip — doesn't
-	// follow the mouse and doesn't pop arbitrary chrome on dense rows.
-	let hoveredName = $state<string | null>(null);
+	// Hover state for the floating tooltip that follows the dot.
+	// We store the dot's screen-space rect so the tooltip can sit above
+	// it (position: fixed) regardless of the matrix's overflow / scroll.
+	let hoveredDot = $state<{ name: string; cx: number; top: number } | null>(null);
+
+	function showDotHover(e: MouseEvent, name: string) {
+		const target = e.currentTarget as HTMLElement | null;
+		if (!target) return;
+		const rect = target.getBoundingClientRect();
+		hoveredDot = {
+			name,
+			cx: rect.left + rect.width / 2,
+			top: rect.top,
+		};
+	}
+	function hideDotHover() {
+		hoveredDot = null;
+	}
+
+	// §113: per-type display labels. 'untyped' is hardcoded because
+	// `$t('inspector360.untyped')` returns the literal key when missing
+	// from the locale (truthy ⇒ the OR fallback never fires) — same
+	// regression §104 closed before the §112 rewrite re-introduced it.
+	// For typed directions we still read $t inside the derived so locale
+	// switches are picked up. (Loop variable is `lt` instead of `t`
+	// because the imported i18n store is `t` and shadowing it breaks the
+	// $-auto-subscription.)
+	const typeLabels: Record<LinkType, string> = $derived.by(() => {
+		const m: Record<LinkType, string> = {
+			supports: 'Supports', contradicts: 'Contradicts', causes: 'Causes',
+			'derives-from': 'Derives From', generalizes: 'Generalizes',
+			exemplifies: 'Exemplifies', 'part-of': 'Part Of', untyped: 'Untyped',
+		};
+		for (const lt of TYPE_ORDER) {
+			if (lt === 'untyped') continue;
+			const key = `inspector360.${TYPE_LABEL_KEYS[lt]}`;
+			const tr = $t(key);
+			if (tr && tr !== key) m[lt] = tr;
+		}
+		return m;
+	});
 
 	const MAX_DOTS_PER_CELL = 16;
 </script>
@@ -191,13 +233,13 @@
 				<div class="i360-bars">
 					{#each TYPE_ORDER as type}
 						{@const count = compactBars.counts[type]}
-						{@const pct = compactBars.max > 0 ? (count / compactBars.max) * 100 : 0}
+						{@const pct = compactBars.total > 0 ? (count / compactBars.total) * 100 : 0}
 						<div class="i360-bar-row" class:gap-row={count === 0}>
-							<span class="i360-bar-label">{$t(`inspector360.${TYPE_LABEL_KEYS[type]}`) || type}</span>
+							<span class="i360-bar-label">{typeLabels[type]}</span>
 							<div class="i360-bar-track">
 								<div class="i360-bar-fill" style="width: {pct}%; background: {TYPE_COLORS[type]}"></div>
 							</div>
-							<span class="i360-bar-count">{count || '—'}</span>
+							<span class="i360-bar-count">{count === 0 ? '—' : `${pct.toFixed(1)}%`}</span>
 						</div>
 					{/each}
 				</div>
@@ -243,7 +285,7 @@
 			<div class="i360-strip">
 				<div class="i360-strip-cell">
 					<span class="i360-strip-label">Stratum</span>
-					<span class="i360-strip-value" style="color: #a78bfa">L{activeStratum} {STRATUM_NAMES[activeStratum]}</span>
+					<span class="i360-strip-value accent">L{activeStratum} {STRATUM_NAMES[activeStratum]}</span>
 				</div>
 				<div class="i360-strip-cell">
 					<span class="i360-strip-label">Maturity</span>
@@ -288,7 +330,7 @@
 						</div>
 						{#each TYPE_ORDER as type}
 							<div class="i360-col-header" style="--col-color: {TYPE_COLORS[type]}">
-								<div class="i360-col-name">{(($t(`inspector360.${TYPE_LABEL_KEYS[type]}`) || type)).toUpperCase()}</div>
+								<div class="i360-col-name">{typeLabels[type].toUpperCase()}</div>
 								<div class="i360-col-count">{matrix.colTotals[type]}</div>
 							</div>
 						{/each}
@@ -316,8 +358,8 @@
 										<button class="i360-dot-btn"
 											style="--dot-color: {TYPE_COLORS[type]}"
 											aria-label={note.name}
-											onmouseenter={() => hoveredName = note.name}
-											onmouseleave={() => hoveredName = null}
+											onmouseenter={(e) => showDotHover(e, note.name)}
+											onmouseleave={hideDotHover}
 											onclick={() => onNoteClick?.(note.path, note.name)}>
 										</button>
 									{/each}
@@ -330,12 +372,17 @@
 						{/each}
 					</div>
 
-					<!-- Floating hover label (fixed top-right of canvas) -->
-					{#if hoveredName}
-						<div class="i360-hover-label" dir="auto">{hoveredName}</div>
-					{/if}
 				</div>
 			</div>
+
+			<!-- Floating hover tooltip — sits directly above the hovered dot. -->
+			{#if hoveredDot}
+				<div class="i360-dot-tooltip"
+					style="left: {hoveredDot.cx}px; top: {hoveredDot.top}px;"
+					dir="auto">
+					{hoveredDot.name}
+				</div>
+			{/if}
 
 			<!-- Bottom HUD -->
 			<div class="i360-hud">
@@ -356,273 +403,308 @@
 {/if}
 
 <style>
-	/* ===== COMPACT SIDEBAR ===== */
-	.i360.compact { display: flex; flex-direction: column; padding: 8px; gap: 8px; }
+	/* §113: theme-aware colours via Constellation's CSS variable system.
+	 * The matrix lived in a hardcoded dark surface (#060612 / #0a0a1c / etc.)
+	 * and looked wrong against a light interface. Now: backgrounds, text and
+	 * accents come from the theme; only the link-type dot colours stay literal
+	 * because they're semantic. Sizes doubled per Boss directive on S1.1 + S1.2.
+	 */
+
+	/* ===== COMPACT SIDEBAR — scorecard ===== */
+	.i360.compact { display: flex; flex-direction: column; padding: 12px; gap: 14px; }
 	.i360-back-bar {
-		display: flex; align-items: center; gap: 6px;
-		padding: 4px 8px;
-		background: rgba(127,127,127,0.06);
-		border: 1px solid rgba(127,127,127,0.18);
-		border-radius: 6px;
-		color: var(--text-muted, #888);
-		font-size: 0.78rem;
+		display: flex; align-items: center; gap: 8px;
+		padding: 8px 12px;
+		background: var(--background-secondary);
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 8px;
+		color: var(--text-muted);
+		font-size: 1.4rem;
 		cursor: pointer;
 		text-align: start;
 	}
-	.i360-back-bar:hover { background: rgba(127,127,127,0.14); color: var(--text, inherit); }
-	.i360-back-arrow { font-size: 0.9rem; line-height: 1; flex-shrink: 0; }
+	.i360-back-bar:hover {
+		background: var(--background-modifier-hover);
+		color: var(--text-normal);
+	}
+	.i360-back-arrow { font-size: 1.6rem; line-height: 1; flex-shrink: 0; }
 	.i360-back-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.i360-empty { text-align: center; padding: 24px; }
-	.i360-empty-icon { font-size: 2rem; margin-bottom: 8px; }
-	.i360-empty-text { font-size: 0.82rem; color: var(--text-muted, #999); }
+	.i360-empty { text-align: center; padding: 32px 16px; }
+	.i360-empty-icon { font-size: 3.5rem; margin-bottom: 12px; }
+	.i360-empty-text { font-size: 1.5rem; color: var(--text-muted); }
 
-	.i360-card { display: flex; flex-direction: column; gap: 8px; }
+	.i360-card { display: flex; flex-direction: column; gap: 14px; }
 	.i360-card-name {
-		font-size: 0.95rem; font-weight: 700; color: var(--text, #ddd);
+		font-size: 1.85rem; font-weight: 700; color: var(--text-normal);
 		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 	}
-	.i360-card-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+	.i360-card-meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 	.i360-stratum-pill {
-		padding: 2px 8px; border-radius: 4px;
-		background: rgba(167,139,250,0.15); color: #a78bfa;
-		font-size: 0.72rem; font-weight: 600;
+		padding: 4px 12px; border-radius: 6px;
+		background: color-mix(in srgb, var(--text-accent) 15%, transparent);
+		color: var(--text-accent);
+		font-size: 1.4rem; font-weight: 600;
 	}
 	.i360-pill {
-		padding: 2px 8px; border-radius: 4px;
-		font-size: 0.72rem; font-weight: 600;
+		padding: 4px 12px; border-radius: 6px;
+		font-size: 1.4rem; font-weight: 600;
 	}
 	.i360-pill-soft {
-		padding: 2px 8px; border-radius: 4px;
-		background: rgba(127,127,127,0.12);
-		color: var(--text-muted, #aaa);
-		font-size: 0.72rem;
+		padding: 4px 12px; border-radius: 6px;
+		background: var(--background-secondary);
+		color: var(--text-muted);
+		font-size: 1.4rem;
 	}
 	.i360-card-counts {
-		display: flex; gap: 10px;
-		font-size: 0.74rem; color: var(--text-muted, #aaa);
+		display: flex; gap: 16px;
+		font-size: 1.45rem; color: var(--text-muted);
 	}
-	.i360-bars { display: flex; flex-direction: column; gap: 3px; }
+	.i360-bars { display: flex; flex-direction: column; gap: 6px; }
 	.i360-bar-row {
 		display: grid;
-		grid-template-columns: 90px 1fr 28px;
+		grid-template-columns: 130px 1fr 60px;
 		align-items: center;
-		gap: 6px;
-		font-size: 0.72rem;
+		gap: 10px;
+		font-size: 1.4rem;
 	}
 	.i360-bar-row.gap-row { opacity: 0.5; }
 	.i360-bar-label {
-		color: var(--text-muted, #aaa);
+		color: var(--text-muted);
 		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 	}
 	.i360-bar-track {
-		height: 8px; border-radius: 4px;
-		background: rgba(255,255,255,0.06);
+		height: 14px; border-radius: 7px;
+		background: var(--background-secondary);
 		overflow: hidden;
 	}
 	.i360-bar-fill {
-		height: 100%; border-radius: 4px;
+		height: 100%; border-radius: 7px;
+		min-width: 2px;
 		transition: width 0.3s ease;
 	}
 	.i360-bar-count {
 		text-align: end;
-		color: var(--text-muted, #aaa);
+		color: var(--text-muted);
 		font-weight: 600;
 		font-variant-numeric: tabular-nums;
 	}
 	.i360-card-flags {
-		display: flex; flex-wrap: wrap; gap: 6px;
-		font-size: 0.72rem;
+		display: flex; flex-wrap: wrap; gap: 8px;
+		font-size: 1.4rem;
 	}
-	.i360-warn { color: #ef4444; font-weight: 600; }
+	.i360-warn { color: var(--text-error, #ef4444); font-weight: 600; }
 
-	/* ===== FULL-WINDOW ===== */
+	/* ===== FULL-WINDOW — Stratification Matrix ===== */
 	.i360-full {
 		position: relative;
 		width: 100%; height: 100%;
-		background: #060612;
-		color: #e0e0e0;
+		background: var(--background-primary);
+		color: var(--text-normal);
 		display: flex; flex-direction: column;
 		overflow: hidden;
 	}
 	.i360-empty-full {
 		flex: 1; display: flex; flex-direction: column;
 		align-items: center; justify-content: center;
-		background: radial-gradient(ellipse at 50% 45%, #0e0e28, #060612);
+		background: var(--background-primary);
 	}
-	.i360-empty-icon-lg { font-size: 4rem; margin-bottom: 16px; opacity: 0.5; }
-	.i360-empty-text-lg { font-size: 1.1rem; color: rgba(255,255,255,0.3); }
+	.i360-empty-icon-lg { font-size: 8rem; margin-bottom: 24px; opacity: 0.5; }
+	.i360-empty-text-lg { font-size: 2.2rem; color: var(--text-muted); }
 
 	/* Header */
 	.i360-header {
 		display: flex; align-items: center; justify-content: space-between;
-		padding: 18px 32px;
-		background: linear-gradient(180deg, rgba(6,6,18,0.95), transparent);
+		padding: 24px 40px;
+		background: var(--background-primary-alt);
+		border-bottom: 1px solid var(--background-modifier-border);
 		z-index: 20; position: relative;
-		gap: 16px;
+		gap: 24px;
 		flex-shrink: 0;
 	}
-	.i360-header-left { display: flex; align-items: center; gap: 16px; flex: 1; min-width: 0; }
-	.i360-header-icon { font-size: 28px; }
+	.i360-header-left { display: flex; align-items: center; gap: 24px; flex: 1; min-width: 0; }
+	.i360-header-icon { font-size: 56px; }
 	.i360-header-label {
-		font-size: 16px; color: #7c3aed; font-weight: 700;
-		letter-spacing: 2px; text-transform: uppercase;
+		font-size: 32px; color: var(--text-accent); font-weight: 700;
+		letter-spacing: 4px; text-transform: uppercase;
 	}
 	.i360-header-name {
-		font-size: 26px; font-weight: 700; color: #f0f0f0;
+		font-size: 44px; font-weight: 700; color: var(--text-normal);
 		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 	}
-	.i360-header-right { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+	.i360-header-right { display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
 	.i360-close {
-		width: 48px; height: 48px; border-radius: 50%;
-		border: 1px solid rgba(255,255,255,0.1);
-		background: rgba(255,255,255,0.03);
-		color: #888; font-size: 28px; cursor: pointer;
+		width: 64px; height: 64px; border-radius: 50%;
+		border: 1px solid var(--background-modifier-border);
+		background: var(--background-secondary);
+		color: var(--text-muted); font-size: 36px; cursor: pointer;
 		display: flex; align-items: center; justify-content: center;
 		flex-shrink: 0;
 	}
-	.i360-close:hover { background: rgba(255,255,255,0.08); color: #fff; }
-	.i360-back-full {
-		display: flex; align-items: center; gap: 8px;
-		padding: 8px 16px; border-radius: 10px;
-		background: rgba(255,255,255,0.06);
-		border: 1px solid rgba(255,255,255,0.14);
-		color: #ddd; font-size: 16px;
-		cursor: pointer; flex-shrink: 0;
-		max-width: 320px;
+	.i360-close:hover {
+		background: var(--background-modifier-hover);
+		color: var(--text-normal);
 	}
-	.i360-back-full:hover { background: rgba(255,255,255,0.12); color: #fff; }
-	.i360-back-full .i360-back-arrow { font-size: 20px; line-height: 1; flex-shrink: 0; }
+	.i360-back-full {
+		display: flex; align-items: center; gap: 12px;
+		padding: 12px 22px; border-radius: 12px;
+		background: var(--background-secondary);
+		border: 1px solid var(--background-modifier-border);
+		color: var(--text-normal); font-size: 22px;
+		cursor: pointer; flex-shrink: 0;
+		max-width: 420px;
+	}
+	.i360-back-full:hover {
+		background: var(--background-modifier-hover);
+	}
+	.i360-back-full .i360-back-arrow { font-size: 30px; line-height: 1; flex-shrink: 0; }
 	.i360-back-full .i360-back-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 	/* Dimensions strip */
 	.i360-strip {
-		display: flex; gap: 32px; padding: 0 32px 14px;
+		display: flex; gap: 48px; padding: 16px 40px 24px;
 		flex-wrap: wrap; flex-shrink: 0;
 	}
 	.i360-strip-cell {
-		display: flex; flex-direction: column; gap: 4px;
+		display: flex; flex-direction: column; gap: 6px;
 	}
 	.i360-strip-label {
-		font-size: 11px; color: rgba(255,255,255,0.4);
-		text-transform: uppercase; letter-spacing: 1px;
+		font-size: 22px; color: var(--text-faint);
+		text-transform: uppercase; letter-spacing: 2px;
 	}
 	.i360-strip-value {
-		font-size: 16px; color: #ddd;
-		display: inline-flex; align-items: center; gap: 6px;
+		font-size: 30px; color: var(--text-normal);
+		display: inline-flex; align-items: center; gap: 10px;
 	}
+	.i360-strip-value.accent { color: var(--text-accent); }
 	.i360-dot {
-		width: 10px; height: 10px; border-radius: 50%;
+		width: 18px; height: 18px; border-radius: 50%;
 		display: inline-block; flex-shrink: 0;
 	}
 
 	/* Canvas (matrix container) */
 	.i360-canvas {
 		flex: 1; position: relative;
-		padding: 8px 32px 92px;
+		padding: 12px 40px 110px;
 		overflow: auto;
 		display: flex; align-items: stretch; justify-content: center;
 	}
 	.i360-matrix-wrap {
 		position: relative;
 		flex: 1;
-		max-width: 1400px;
+		max-width: 1800px;
 		display: flex; flex-direction: column;
 	}
 	.i360-matrix {
 		display: grid;
-		grid-template-columns: 200px repeat(8, minmax(80px, 1fr)) 64px;
-		grid-auto-rows: minmax(72px, 1fr);
+		grid-template-columns: 280px repeat(8, minmax(120px, 1fr)) 100px;
+		grid-auto-rows: minmax(110px, 1fr);
 		gap: 1px;
-		background: rgba(255,255,255,0.06);
-		border-radius: 12px;
+		background: var(--background-modifier-border);
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 16px;
 		overflow: hidden;
 		flex: 1;
 	}
 
 	.i360-corner,
 	.i360-rowtot-header {
-		background: #060614;
+		background: var(--background-secondary);
 		display: flex; align-items: center; justify-content: center;
-		gap: 8px;
-		font-size: 12px;
-		color: rgba(255,255,255,0.45);
-		padding: 4px 8px;
+		gap: 10px;
+		font-size: 22px;
+		color: var(--text-muted);
+		padding: 8px 12px;
 	}
 	.i360-corner { flex-direction: column; }
-	.i360-corner-stratum { color: #a78bfa; font-weight: 600; }
-	.i360-corner-type { color: #4A9EFF; font-weight: 600; }
+	.i360-corner-stratum { color: var(--text-accent); font-weight: 600; }
+	.i360-corner-type { color: var(--color-blue); font-weight: 600; }
+	.i360-rowtot-header { font-size: 30px; font-weight: 700; }
 
 	.i360-col-header {
 		display: flex; flex-direction: column; align-items: center; justify-content: center;
-		padding: 10px 4px;
-		gap: 4px;
+		padding: 14px 6px;
+		gap: 6px;
 		background:
 			linear-gradient(180deg,
-				color-mix(in srgb, var(--col-color, #fff) 18%, transparent),
-				#0a0a1c 90%);
-		border-bottom: 2px solid var(--col-color, #fff);
+				color-mix(in srgb, var(--col-color, currentColor) 22%, transparent),
+				var(--background-primary-alt) 90%);
+		border-bottom: 3px solid var(--col-color, currentColor);
 	}
 	.i360-col-name {
-		font-size: 10px; font-weight: 700; letter-spacing: 1px;
-		color: var(--col-color, #fff);
+		font-size: 18px; font-weight: 700; letter-spacing: 1.5px;
+		color: var(--col-color, currentColor);
 		text-align: center;
 		text-transform: uppercase;
 		line-height: 1.2;
 	}
 	.i360-col-count {
-		font-size: 14px; font-weight: 700;
-		color: var(--col-color, #fff);
+		font-size: 26px; font-weight: 700;
+		color: var(--col-color, currentColor);
 		font-variant-numeric: tabular-nums;
 	}
 
 	.i360-row-header {
-		background: #0a0a1c;
-		display: flex; align-items: center; gap: 8px;
-		padding: 6px 14px;
-		border-right: 2px solid rgba(167,139,250,0.18);
+		background: var(--background-primary-alt);
+		display: flex; align-items: center; gap: 12px;
+		padding: 10px 18px;
+		border-right: 3px solid color-mix(in srgb, var(--text-accent) 25%, transparent);
 	}
 	.i360-row-header.active {
-		background: linear-gradient(90deg, rgba(167,139,250,0.22), rgba(167,139,250,0.04));
-		border-right-color: #a78bfa;
+		background:
+			linear-gradient(90deg,
+				color-mix(in srgb, var(--text-accent) 28%, var(--background-primary-alt)),
+				color-mix(in srgb, var(--text-accent) 6%, var(--background-primary-alt)));
+		border-right-color: var(--text-accent);
 	}
 	.i360-row-header.empty-row { opacity: 0.45; }
 	.i360-row-num {
-		color: #a78bfa; font-weight: 700; font-size: 13px;
-		width: 28px; flex-shrink: 0;
+		color: var(--text-accent); font-weight: 700; font-size: 26px;
+		width: 50px; flex-shrink: 0;
 	}
 	.i360-row-name {
-		color: rgba(255,255,255,0.7); font-size: 13px;
+		color: var(--text-normal); font-size: 24px;
 		flex-shrink: 0;
 	}
 	.i360-active-chip {
 		margin-inline-start: auto;
-		padding: 2px 8px; border-radius: 4px;
-		background: #a78bfa; color: #060612;
-		font-size: 11px; font-weight: 700;
+		padding: 4px 12px; border-radius: 6px;
+		background: var(--text-accent); color: var(--background-primary);
+		font-size: 20px; font-weight: 700;
 		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-		max-width: 110px;
+		max-width: 160px;
 	}
 
 	.i360-cell {
-		background: #0a0a1c;
+		background: var(--background-primary-alt);
 		display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
-		padding: 6px 4px;
-		gap: 4px;
+		padding: 10px 6px;
+		gap: 6px;
 		position: relative;
 	}
 	.i360-cell.active-row {
-		background: rgba(167,139,250,0.06);
+		background: color-mix(in srgb, var(--text-accent) 8%, var(--background-primary-alt));
 	}
 	.i360-cell.empty-cell {
-		background: repeating-linear-gradient(45deg, #0a0a1c, #0a0a1c 5px, rgba(255,255,255,0.025) 5px, rgba(255,255,255,0.025) 10px);
+		background:
+			repeating-linear-gradient(45deg,
+				var(--background-primary-alt) 0,
+				var(--background-primary-alt) 6px,
+				color-mix(in srgb, var(--text-muted) 8%, var(--background-primary-alt)) 6px,
+				color-mix(in srgb, var(--text-muted) 8%, var(--background-primary-alt)) 12px);
 	}
 	.i360-cell.active-row.empty-cell {
 		background:
-			linear-gradient(rgba(167,139,250,0.06), rgba(167,139,250,0.06)),
-			repeating-linear-gradient(45deg, #0a0a1c, #0a0a1c 5px, rgba(255,255,255,0.04) 5px, rgba(255,255,255,0.04) 10px);
+			linear-gradient(
+				color-mix(in srgb, var(--text-accent) 8%, transparent),
+				color-mix(in srgb, var(--text-accent) 8%, transparent)),
+			repeating-linear-gradient(45deg,
+				var(--background-primary-alt) 0,
+				var(--background-primary-alt) 6px,
+				color-mix(in srgb, var(--text-muted) 12%, var(--background-primary-alt)) 6px,
+				color-mix(in srgb, var(--text-muted) 12%, var(--background-primary-alt)) 12px);
 	}
 	.i360-dot-btn {
-		width: 11px; height: 11px; border-radius: 50%;
+		width: 16px; height: 16px; border-radius: 50%;
 		background: var(--dot-color, #888);
 		border: none;
 		padding: 0;
@@ -631,57 +713,64 @@
 		opacity: 0.85;
 	}
 	.i360-dot-btn:hover {
-		transform: scale(1.6);
-		box-shadow: 0 0 10px var(--dot-color, #888);
+		transform: scale(1.7);
+		box-shadow: 0 0 14px var(--dot-color, #888);
 		opacity: 1;
 		z-index: 5;
 	}
 	.i360-overflow {
-		font-size: 10px; color: rgba(255,255,255,0.55);
-		font-weight: 600; padding: 0 2px;
+		font-size: 18px; color: var(--text-muted);
+		font-weight: 600; padding: 0 4px;
 	}
 
 	.i360-rowtot {
-		background: #0a0a1c;
+		background: var(--background-primary-alt);
 		display: flex; align-items: center; justify-content: center;
-		color: rgba(255,255,255,0.4); font-size: 14px;
+		color: var(--text-muted); font-size: 28px;
 		font-variant-numeric: tabular-nums;
 	}
 	.i360-rowtot.active {
-		color: #a78bfa; font-weight: 700;
-		background: rgba(167,139,250,0.06);
+		color: var(--text-accent); font-weight: 700;
+		background: color-mix(in srgb, var(--text-accent) 8%, var(--background-primary-alt));
 	}
 
-	.i360-hover-label {
-		position: absolute;
-		top: 12px; right: 12px;
-		padding: 6px 12px;
-		background: rgba(0,0,0,0.85);
-		border: 1px solid rgba(255,255,255,0.15);
-		border-radius: 6px;
-		color: #fff; font-size: 13px;
+	/* §113: floating tooltip — sits directly above the hovered dot via
+	 * `position: fixed` so it escapes `overflow: hidden` on the matrix and
+	 * doesn't depend on cell layout. JS sets left/top to the dot's centre-x
+	 * and top-y; the transform shifts it above-and-centred. */
+	.i360-dot-tooltip {
+		position: fixed;
+		transform: translate(-50%, calc(-100% - 12px));
+		padding: 8px 16px;
+		background: color-mix(in srgb, var(--background-secondary) 92%, var(--text-normal));
+		border: 1px solid var(--background-modifier-border-focus);
+		border-radius: 8px;
+		color: var(--text-normal); font-size: 22px;
+		font-weight: 500;
 		pointer-events: none;
-		z-index: 30;
-		max-width: 320px;
+		z-index: 9999;
+		max-width: 480px;
 		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 	}
 
 	/* Bottom HUD */
 	.i360-hud {
 		position: absolute; bottom: 0; left: 0; right: 0;
-		padding: 16px 36px;
+		padding: 22px 48px;
 		display: flex; justify-content: space-between;
 		z-index: 20;
-		background: linear-gradient(0deg, rgba(6,6,18,0.95), transparent);
-		flex-wrap: wrap; gap: 8px;
+		background: var(--background-primary-alt);
+		border-top: 1px solid var(--background-modifier-border);
+		flex-wrap: wrap; gap: 12px;
 	}
 	.i360-hud-left, .i360-hud-right {
-		display: flex; gap: 24px;
+		display: flex; gap: 32px;
 		flex-wrap: wrap;
 	}
 	.i360-hud-item {
-		font-size: 16px; color: rgba(255,255,255,0.55);
-		display: flex; align-items: center; gap: 6px;
+		font-size: 28px; color: var(--text-muted);
+		display: flex; align-items: center; gap: 10px;
 	}
-	.i360-hud-warn { color: #ef4444; }
+	.i360-hud-warn { color: var(--text-error, #ef4444); }
 </style>

@@ -899,3 +899,56 @@ Orientation **v1.15** created as a NEW file alongside v1.14. v1.14's content dem
 - Stage 2C retest deferred until tutorial-tested.
 - MIG-006 §3 redo (queued).
 - CE Phase 9 Path B / MIG-010 scale (queued after MIG-006 §3).
+
+---
+
+## §113 — Stage 1 tutorial fixes (matrix refinements, frontend-only)
+
+Boss walked the full Stage 1 tutorial for §112 (S1.1 → S1.6) over a single sitting on 2026-04-30. All six sub-stages PASSED structurally. Seven refinements logged across S1.1 + S1.2 + S1.3; bundled into one rebuild as §113.
+
+**Process violation logged at S1.2**: I sent the Stage 1 tutorial as a single message containing S1.1 through S1.6 numbered sequentially. Boss flagged the violation: "You haven't committed yourself to staging the tests/tutorials." The remaining sub-stages (S1.2, S1.3, S1.4, S1.5, S1.6) were sent **one at a time**, waiting for Boss's pass/fail before sending the next. `feedback_staged_tests.md` interpretation tightened: one focused test per turn, never a numbered list.
+
+### Findings (recorded across S1.1, S1.2, S1.3)
+
+**S1.1 (compact scorecard)**:
+1. Untyped row label rendered as `inspector360.unty…` — i18n-key leak. The §104 fix had been preserved across the spherical line until §112 reverted it. `$t('inspector360.untyped')` returns the key string when missing (truthy ⇒ OR fallback never fires).
+2. Bar widths unreadable when one count dominates. Boss's "Abu Bakr" had Untyped=6,107 vs Supports=101; max-normalisation collapsed every typed bar to <2 % width.
+3. Fonts and figures need to be doubled.
+
+**S1.2 (full-window matrix)**:
+1. Background hardcoded `#060612` / `#0a0a1c` / etc. — clashes with the rest of the interface in light mode. Should follow the theme.
+2. `360.3D` header label needs to be doubled.
+3. General text + figure sizes need to be doubled.
+4. Same `INSPECTOR360.UNTYPED` i18n-key leak in the column header (covered by S1.1.1 fix).
+
+**S1.3 (hover label)**:
+1. Top-right placement of the hover tooltip is wrong; should appear directly above the hovered dot. The "doesn't follow mouse, doesn't pop chrome" justification I'd written into §112 traded a real-eye-tracking problem for an imaginary chrome-collision one.
+
+### Code changes
+
+`src/lib/components/Inspector360.svelte` — frontend only.
+
+1. **Untyped label hardcode**. New `typeLabels: Record<LinkType, string>` derived map. For typed directions, reads `$t(\`inspector360.${TYPE_LABEL_KEYS[lt]}\`)` and only uses the translation when it differs from the key (catching the i18n-miss-returns-key case). For `untyped`, hardcoded `'Untyped'`. Loop variable renamed `t → lt` to avoid shadowing the `t` store import (the shadowing was what the original `$derived.by` build error pointed at — Svelte 5 strict scoping).
+2. **Compact bars: percent-of-total**. `compactBars` derives `{ counts, total }` instead of `{ counts, max }`. Bar fill width = `(count / total) * 100`. Right-side text shows `${pct.toFixed(1)}%` (or `—` for zero). `min-width: 2px` on `.i360-bar-fill` so non-zero typed counts stay visible even at sub-1 % share.
+3. **Compact scorecard 2×**. Selected sizes: card name 0.95rem → 1.85rem, pills 0.72rem → 1.4rem, counts row 0.74rem → 1.45rem, bar font 0.72rem → 1.4rem, bar height 8 px → 14 px. Bar grid columns 90 px → 130 px label, 28 px → 60 px count (fits `100.0%`). Padding 8 px → 12 px, gap 8 px → 14 px.
+4. **Theme-aware CSS**. Hardcoded colours replaced with: `var(--background-primary)`, `var(--background-primary-alt)`, `var(--background-secondary)`, `var(--background-modifier-border)`, `var(--background-modifier-hover)`, `var(--text-normal)`, `var(--text-muted)`, `var(--text-faint)`, `var(--text-accent)`, `var(--text-error)`, `var(--color-blue)`. Active-row purple uses `color-mix(in srgb, var(--text-accent) X%, var(--background-primary-alt))` so the accent picks up whatever the theme defines (configurable via `--accent-h`/`--accent-s`/`--accent-l`).
+5. **Full-window 2×**. `360.3D` label 16 px → 32 px. Brain icon 28 px → 56 px. Active-note name 26 px → 44 px. Strip labels 11 px → 22 px, values 16 px → 30 px. Column headers 10 px → 18 px name, 14 px → 26 px count. Row labels 13 px → 24-26 px. Active chip 11 px → 20 px. HUD font 16 px → 28 px. Cell row height `minmax(72px, 1fr)` → `minmax(110px, 1fr)`. Row-label column 200 px → 280 px. Row-total column 64 px → 100 px. Column min 80 px → 120 px. Dot size kept smaller (11 px → 16 px, not 22 px) so 16 dots still fit per cell at typical column widths.
+6. **Floating tooltip**. State `hoveredName: string | null` replaced with `hoveredDot: { name, cx, top } | null`. `showDotHover(e, name)` reads the dot's `getBoundingClientRect()` and stores the centre-x + top-y. Tooltip renders as `position: fixed; transform: translate(-50%, calc(-100% - 12px))` so it sits centred above the hovered dot in viewport space. Escapes `overflow: hidden` on the matrix, doesn't depend on cell layout, doesn't follow the mouse but does follow the dot. `z-index: 9999` keeps it above HUD and header chrome.
+
+### Verification
+
+- `cargo check`: not re-run (no Rust change).
+- `node node_modules/svelte-check/dist/src/index.js --tsconfig ./tsconfig.json --threshold error`: 1 error (pre-existing `store.ts:1850` LinkLifecycle 'fresh', out of scope). Zero errors in `Inspector360.svelte`.
+- Initial $derived.by build hit a Svelte 5 "store-not-at-top-level" error because the loop variable was named `t`, shadowing the imported `t` store; renamed to `lt` and the error cleared.
+- Release build: pending.
+
+### SO #6
+
+Orientation **v1.16** created as a NEW file alongside v1.15. v1.15's content demoted to its own subsection. The §113 callout at the top of v1.16 enumerates all seven fixes with rationale.
+
+### Pending after §113
+
+- Boss tutorial re-test: Stage 1 sub-stages 1.1, 1.2, 1.3 specifically (the three that surfaced findings). Other sub-stages already passed structurally — the §113 changes don't touch click navigation, back-stack, or close behaviour.
+- Stage 2 (denser cases — notes with very few connections, very many) — to be drafted after Stage 1 retest is settled.
+- MIG-006 §3 redo (queued).
+- CE Phase 9 Path B / MIG-010 scale (queued after MIG-006 §3).
