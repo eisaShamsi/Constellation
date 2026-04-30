@@ -145,35 +145,39 @@
 		let idx = 0;
 
 		if (layoutMode === 'sector') {
-			// §107 single-ring sector layout: ALL nodes on ONE ring at
-			// SECTOR_RADIUS. Typed groups clustered at SECTOR_MAP compass
-			// angles with the widget's `(i - (n-1)/2) * 8` per-node spread.
-			// Untyped distributed evenly around the full circle with a
-			// half-step offset so they don't line up exactly with sector
-			// centres. Depth is encoded only in node radius (not ring shift).
-			const SECTOR_RADIUS = 290;
+			// §109 restored depth-based sector layout (matches the compact
+			// widget's `[56, 89.6, 123.2]` rings, scaled up to full-window
+			// `[160, 270, 380]`). Each typed group at SECTOR_MAP compass
+			// angle with the widget's 8°-per-node spread. Depth determines
+			// which of three concentric rings a node lands on. Untyped
+			// nodes scatter around the full 360° on depth-based rings too.
+			// §107's single-ring approach is reverted; the "one circle"
+			// directive applied to ring-per-group, not to depth rings.
+			// uniqueId per node preserved from §107 so hover label stays
+			// keyed to a unique value (path can be empty for unresolved
+			// outbound targets).
+			const sectorRings = [160, 270, 380];
 			const PER_NODE_SPREAD = 8;
 			for (const ring of ringsLayout) {
-				if (ring.type === 'untyped') continue;
-				const info = SECTOR_MAP[ring.type];
-				if (!info) continue;
 				const n = ring.notes.length;
-				for (let i = 0; i < n; i++) {
-					const note = ring.notes[i];
-					const offset = n > 1 ? (i - (n - 1) / 2) * PER_NODE_SPREAD : 0;
-					const pos = polarToXY(cx, cy, info.angle + offset, SECTOR_RADIUS);
-					nodes.push({ ...note, x: pos.x, y: pos.y, color: info.color, type: ring.type, r: radiusFor(note.depth), uniqueId: `n${idx++}` });
-				}
-			}
-			const untypedGroup = ringsLayout.find(r => r.type === 'untyped');
-			if (untypedGroup) {
-				const n = untypedGroup.notes.length;
-				for (let i = 0; i < n; i++) {
-					const note = untypedGroup.notes[i];
-					// Half-step offset reduces alignment with typed sector centres.
-					const angle = ((i + 0.5) / Math.max(n, 1)) * 360;
-					const pos = polarToXY(cx, cy, angle, SECTOR_RADIUS);
-					nodes.push({ ...note, x: pos.x, y: pos.y, color: untypedGroup.color, type: 'untyped', r: radiusFor(note.depth), uniqueId: `n${idx++}` });
+				if (ring.type === 'untyped') {
+					for (let i = 0; i < n; i++) {
+						const note = ring.notes[i];
+						const angle = (i / Math.max(n, 1)) * 360;
+						const ringIndex = note.depth <= 1 ? 0 : note.depth <= 2 ? 1 : 2;
+						const pos = polarToXY(cx, cy, angle, sectorRings[ringIndex]);
+						nodes.push({ ...note, x: pos.x, y: pos.y, color: ring.color, type: ring.type, r: radiusFor(note.depth), uniqueId: `n${idx++}` });
+					}
+				} else {
+					const info = SECTOR_MAP[ring.type];
+					if (!info) continue;
+					for (let i = 0; i < n; i++) {
+						const note = ring.notes[i];
+						const offset = n > 1 ? (i - (n - 1) / 2) * PER_NODE_SPREAD : 0;
+						const ringIndex = note.depth <= 1 ? 0 : note.depth <= 2 ? 1 : 2;
+						const pos = polarToXY(cx, cy, info.angle + offset, sectorRings[ringIndex]);
+						nodes.push({ ...note, x: pos.x, y: pos.y, color: info.color, type: ring.type, r: radiusFor(note.depth), uniqueId: `n${idx++}` });
+					}
 				}
 			}
 		} else {

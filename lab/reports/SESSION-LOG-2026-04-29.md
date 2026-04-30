@@ -706,3 +706,33 @@ I'd been treating SO #6 as "phase-internal patches stay in v1.9; only subsystem-
 - `lab/reports/SESSION-LOG-2026-04-29.md` (this entry).
 
 **Post-§108, Stage 2B retest** is unblocked against the §107 binary (Apr 30 build that completed during my §108 doc-restructure). Same retest plan as in §107: verify single-ring layout for "1902" and one-label-per-hover on Abu Bakr.
+
+---
+
+## §109 — Restore depth-based sector rings (Stage 2B retest of §107)
+
+**Boss-reported during the §107 Stage 2B retest (2026-04-30 ~12:30)**: "Divide them into groups (type-based). It is clear that the nodes are still overlapping. Again, follow the widget layout. Hovering is OK now."
+
+The §107 single-ring layout at radius 290 had typed clusters (e.g. supports at top spread across 120°) and untyped (30 nodes evenly around the full 360°) sharing the same radius, so wherever an untyped angle landed inside a typed sector's angular spread, the two nodes drew at the same x,y → visual overlap.
+
+**Re-reading the §107 directive** ("Distribute all nodes in one circle. Make sure that nodes are not overlapped"): the "one circle" rule applied to avoiding **ring-per-group's** full concentric rings (one ring per group, ring count grows with type-count). It did NOT mean to flatten the **depth-based** ring system that the compact widget itself uses (`[56, 89.6, 123.2]` in the widget's 280×280 viewBox).
+
+**Fix in §109**: restore depth-based sector rings. Each typed group still clusters at its SECTOR_MAP compass angle with the widget's 8°-per-node spread; ring radius now comes from note depth (1 / 2 / 3 → 160 / 270 / 380). Untyped nodes scatter around the full 360° on the same depth-based rings. The §107 uniqueId hover key is preserved (fixes the path-collision bug independently from layout).
+
+For "1902" (15 supports + 1 derives-from + 30 untyped, mostly depth 1):
+- Supports cluster at top inner ring 160 (~120° angular span).
+- Derives-from single node at left inner ring 160.
+- Untyped distributed across all three rings based on their IPC-reported depth (mostly depth 2 from second-order connections → middle ring 270; some depth 1 → inner ring 160; some depth 3 → outer 380).
+
+**Known residual risk**: untyped depth-1 nodes can collide with typed depth-1 clusters at the same angle on inner ring 160. Common case: untyped contains direct wikilinks (depth 1) that overlap angularly with typed direct connections. If Boss reports visible overlap on §109 retest, next iteration adds **gap-filling**: untyped angles only outside the angular ranges occupied by typed sectors of the same depth ring.
+
+**SO #6 enforced (per-commit bump)**: orientation v1.12 created as a NEW file alongside v1.11. v1.11's content demoted to `### v1.11 changelog (vs v1.10)` subsection, with a note that v1.11's single-ring approach was over-corrected and §109 reverted that part (uniqueId fix preserved).
+
+**Build verification**: `npm run check` clean of new errors.
+
+**Files changed**:
+- `src/lib/components/Inspector360.svelte` (sector-mode `allNodes` block restored to depth-based rings; uniqueId preserved).
+- `docs/Constellation Orientation & Onboarding v1.12.md` (new file, state after §109).
+- `lab/reports/SESSION-LOG-2026-04-29.md` (this entry).
+
+**Stage 2B retest after §109 binary builds**: re-open "1902" → expect clusters at compass positions with depth-based ring distribution (matching widget's multi-ring look), and verify that the overlap visible in §107 image 1 is gone (or at least limited to depth-1 untyped collisions, which is the known residual case for gap-filling follow-up).
