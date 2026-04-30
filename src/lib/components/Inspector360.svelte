@@ -72,19 +72,38 @@
 	// larger groups on outer rings (more circumference for many nodes).
 	// Untyped links are treated as one additional group on whichever ring
 	// their count places them. Within a ring, nodes are spread evenly
-	// around the full 360°.
+	// around the full 360°. §104: dedupe by path within each group — the
+	// IPC returns the same note from outbound + inbound + second-order
+	// sources, which would otherwise render the same dot multiple times.
 	const ringsLayout = $derived.by(() => {
 		if (!data) return [] as Array<{ type: string; color: string; labelKey: string; radius: number; notes: LinkedNote[] }>;
 		type Group = { type: string; color: string; labelKey: string; radius: number; notes: LinkedNote[] };
 		const groups: Group[] = [];
 
+		const dedupeByPath = (notes: LinkedNote[]): LinkedNote[] => {
+			const seen = new Set<string>();
+			const unique: LinkedNote[] = [];
+			for (const note of notes) {
+				const key = note.path || note.name;
+				if (seen.has(key)) continue;
+				seen.add(key);
+				unique.push(note);
+			}
+			return unique;
+		};
+
 		for (const [type, noteList] of Object.entries(data.typed_links)) {
 			const info = SECTOR_MAP[type];
-			if (!info || noteList.length === 0) continue;
-			groups.push({ type, color: info.color, labelKey: info.labelKey, radius: 0, notes: noteList });
+			if (!info) continue;
+			const unique = dedupeByPath(noteList);
+			if (unique.length === 0) continue;
+			groups.push({ type, color: info.color, labelKey: info.labelKey, radius: 0, notes: unique });
 		}
 		if (data.untyped_links.length > 0) {
-			groups.push({ type: 'untyped', color: '#888', labelKey: 'untyped', radius: 0, notes: data.untyped_links.slice(0, 30) });
+			const unique = dedupeByPath(data.untyped_links).slice(0, 30);
+			if (unique.length > 0) {
+				groups.push({ type: 'untyped', color: '#888', labelKey: 'untyped', radius: 0, notes: unique });
+			}
 		}
 
 		// Smaller groups inner, larger groups outer.
@@ -101,25 +120,74 @@
 		return groups;
 	});
 
+	// §104: layout mode is hybrid. When every typed-link group fits cleanly
+	// in its sector (largest typed group ≤ SECTOR_THRESHOLD), use the
+	// original compass-position sector design with smaller nodes. Above the
+	// threshold, fall back to the ring-per-group layout (§102) so dense
+	// groups don't pile into pile-ups inside a 50° wedge.
+	const SECTOR_THRESHOLD = 8;
+	const layoutMode = $derived.by((): 'sector' | 'rings' => {
+		let maxTypedCount = 0;
+		for (const ring of ringsLayout) {
+			if (ring.type !== 'untyped' && ring.notes.length > maxTypedCount) {
+				maxTypedCount = ring.notes.length;
+			}
+		}
+		return maxTypedCount <= SECTOR_THRESHOLD ? 'sector' : 'rings';
+	});
+
 	const allNodes = $derived.by(() => {
 		const nodes: Array<{ name: string; path: string; x: number; y: number; color: string; type: string; depth: number; r: number }> = [];
 		const cx = 600; const cy = 400;
-		// Reserve a 30° clear gap at the top of each ring for the type label.
-		const reservedTop = 30;
-		for (const ring of ringsLayout) {
-			const n = ring.notes.length;
-			for (let i = 0; i < n; i++) {
-				const note = ring.notes[i];
-				let angle: number;
-				if (n === 1) {
-					angle = 180; // single node sits at bottom, well clear of the top label
+		// Minimised node radii (§103). Names are revealed on hover, not always-on.
+		const radiusFor = (depth: number) => depth <= 1 ? 6 : depth <= 2 ? 4 : 3;
+
+		if (layoutMode === 'sector') {
+			// Sector layout: typed groups at SECTOR_MAP compass angles, depth
+			// determines which of the three ring radii a node lands on, spread
+			// within a 50° wedge per sector. Untyped nodes scatter around the
+			// full circle on depth-based rings.
+			const sectorRings = [160, 270, 380];
+			const SECTOR_WIDTH = 50;
+			for (const ring of ringsLayout) {
+				const n = ring.notes.length;
+				if (ring.type === 'untyped') {
+					for (let i = 0; i < n; i++) {
+						const note = ring.notes[i];
+						const angle = (i / Math.max(n, 1)) * 360;
+						const ringIndex = note.depth <= 1 ? 0 : note.depth <= 2 ? 1 : 2;
+						const pos = polarToXY(cx, cy, angle, sectorRings[ringIndex]);
+						nodes.push({ ...note, x: pos.x, y: pos.y, color: ring.color, type: ring.type, r: radiusFor(note.depth) });
+					}
 				} else {
-					angle = (reservedTop / 2) + i * ((360 - reservedTop) / (n - 1));
+					const info = SECTOR_MAP[ring.type];
+					if (!info) continue;
+					for (let i = 0; i < n; i++) {
+						const note = ring.notes[i];
+						const offset = n > 1 ? (i / (n - 1) - 0.5) * SECTOR_WIDTH : 0;
+						const ringIndex = note.depth <= 1 ? 0 : note.depth <= 2 ? 1 : 2;
+						const pos = polarToXY(cx, cy, info.angle + offset, sectorRings[ringIndex]);
+						nodes.push({ ...note, x: pos.x, y: pos.y, color: info.color, type: ring.type, r: radiusFor(note.depth) });
+					}
 				}
-				const pos = polarToXY(cx, cy, angle, ring.radius);
-				// Minimised node radii (§103). Names are revealed on hover, not always-on.
-				const r = note.depth <= 1 ? 6 : note.depth <= 2 ? 4 : 3;
-				nodes.push({ ...note, x: pos.x, y: pos.y, color: ring.color, type: ring.type, r });
+			}
+		} else {
+			// Ring-per-group layout. Reserve a 30° clear gap at the top of each
+			// ring for the type label.
+			const reservedTop = 30;
+			for (const ring of ringsLayout) {
+				const n = ring.notes.length;
+				for (let i = 0; i < n; i++) {
+					const note = ring.notes[i];
+					let angle: number;
+					if (n === 1) {
+						angle = 180;
+					} else {
+						angle = (reservedTop / 2) + i * ((360 - reservedTop) / (n - 1));
+					}
+					const pos = polarToXY(cx, cy, angle, ring.radius);
+					nodes.push({ ...note, x: pos.x, y: pos.y, color: ring.color, type: ring.type, r: radiusFor(note.depth) });
+				}
 			}
 		}
 		return nodes;
@@ -250,16 +318,33 @@
 							<animateTransform attributeName="transform" type="rotate" from="0 600 400" to="360 600 400" dur="150s" repeatCount="indefinite"/>
 						</ellipse>
 
-						<!-- Ring labels — each ring carries one typed-link group's name + count. -->
-						{#each ringsLayout as ring}
-							{@const labelText = ring.type === 'untyped'
-								? ($t('inspector360.untyped') || 'untyped')
-								: ($t(`inspector360.${ring.labelKey}`) || ring.type)}
-							<text x="600" y={400 - ring.radius - 10} text-anchor="middle" font-size="13" font-weight="600"
-								fill={ring.color} opacity="0.78" letter-spacing="1">
-								{labelText.toUpperCase()} ({ring.notes.length})
-							</text>
-						{/each}
+						<!-- Group labels — ring labels in rings mode; sector rim labels in sector mode. -->
+						{#if layoutMode === 'rings'}
+							{#each ringsLayout as ring}
+								{@const labelText = ring.type === 'untyped'
+									? 'Untyped'
+									: ($t(`inspector360.${ring.labelKey}`) || ring.type)}
+								<text x="600" y={400 - ring.radius - 10} text-anchor="middle" font-size="13" font-weight="600"
+									fill={ring.color} opacity="0.78" letter-spacing="1">
+									{labelText.toUpperCase()} ({ring.notes.length})
+								</text>
+							{/each}
+						{:else}
+							{#each ringsLayout as ring}
+								{#if ring.type !== 'untyped'}
+									{@const sectorInfo = SECTOR_MAP[ring.type]}
+									{#if sectorInfo}
+										{@const labelPos = polarToXY(600, 400, sectorInfo.angle, 415)}
+										{@const labelText = $t(`inspector360.${ring.labelKey}`) || ring.type}
+										<text x={labelPos.x} y={labelPos.y} text-anchor="middle" dominant-baseline="central"
+											font-size="13" font-weight="600" letter-spacing="1"
+											fill={ring.color} opacity="0.78">
+											{labelText.toUpperCase()} ({ring.notes.length})
+										</text>
+									{/if}
+								{/if}
+							{/each}
+						{/if}
 
 						<!-- Connection lines (synaptic) -->
 						{#each allNodes as node}
@@ -341,22 +426,37 @@
 								opacity={node.depth <= 1 ? 0.3 : node.depth <= 2 ? 0.2 : 0.1} />
 						{/each}
 
-						<!-- Ring outlines (faint) — each ring is one typed-link group. -->
-						{#each ringsLayout as ring}
-							<circle cx="600" cy="400" r={ring.radius} fill="none"
-								stroke={ring.color} stroke-width="0.6" opacity="0.18" stroke-dasharray="2,4"/>
-						{/each}
-
-						<!-- Ring labels — each ring carries one typed-link group's name + count. -->
-						{#each ringsLayout as ring}
-							{@const labelText = ring.type === 'untyped'
-								? ($t('inspector360.untyped') || 'untyped')
-								: ($t(`inspector360.${ring.labelKey}`) || ring.type)}
-							<text x="600" y={400 - ring.radius - 10} text-anchor="middle" font-size="13" font-weight="600"
-								fill={ring.color} opacity="0.78" letter-spacing="1">
-								{labelText.toUpperCase()} ({ring.notes.length})
-							</text>
-						{/each}
+						<!-- Ring outlines + group labels — only meaningful in rings mode. -->
+						{#if layoutMode === 'rings'}
+							{#each ringsLayout as ring}
+								<circle cx="600" cy="400" r={ring.radius} fill="none"
+									stroke={ring.color} stroke-width="0.6" opacity="0.18" stroke-dasharray="2,4"/>
+							{/each}
+							{#each ringsLayout as ring}
+								{@const labelText = ring.type === 'untyped'
+									? 'Untyped'
+									: ($t(`inspector360.${ring.labelKey}`) || ring.type)}
+								<text x="600" y={400 - ring.radius - 10} text-anchor="middle" font-size="13" font-weight="600"
+									fill={ring.color} opacity="0.78" letter-spacing="1">
+									{labelText.toUpperCase()} ({ring.notes.length})
+								</text>
+							{/each}
+						{:else}
+							{#each ringsLayout as ring}
+								{#if ring.type !== 'untyped'}
+									{@const sectorInfo = SECTOR_MAP[ring.type]}
+									{#if sectorInfo}
+										{@const labelPos = polarToXY(600, 400, sectorInfo.angle, 415)}
+										{@const labelText = $t(`inspector360.${ring.labelKey}`) || ring.type}
+										<text x={labelPos.x} y={labelPos.y} text-anchor="middle" dominant-baseline="central"
+											font-size="13" font-weight="600" letter-spacing="1"
+											fill={ring.color} opacity="0.78">
+											{labelText.toUpperCase()} ({ring.notes.length})
+										</text>
+									{/if}
+								{/if}
+							{/each}
+						{/if}
 
 						<!-- (Former second-order branching block removed in §102 — it
 						     used the old sector-based positioning; under ring-per-group
@@ -428,22 +528,26 @@
 							<circle cx={sx} cy={sy} r={0.5 + (i % 3) * 0.3} fill="rgba(255,255,255,{0.1 + (i % 5) * 0.06})" />
 						{/each}
 
-						<!-- Per-group orbital rings — one solid ring per typed-link group. -->
-						{#each ringsLayout as ring}
-							<circle cx="600" cy="400" r={ring.radius} fill="none"
-								stroke={ring.color} stroke-width="0.9" opacity="0.32"/>
-						{/each}
-
-						<!-- Ring labels — type name + count at top of each ring. -->
-						{#each ringsLayout as ring}
-							{@const labelText = ring.type === 'untyped'
-								? ($t('inspector360.untyped') || 'untyped')
-								: ($t(`inspector360.${ring.labelKey}`) || ring.type)}
-							<text x="600" y={400 - ring.radius - 10} text-anchor="middle" font-size="13" font-weight="600"
-								fill={ring.color} opacity="0.8" letter-spacing="1">
-								{labelText.toUpperCase()} ({ring.notes.length})
-							</text>
-						{/each}
+						<!-- Orbital rings — per-group in rings mode, three fixed in sector mode. -->
+						{#if layoutMode === 'rings'}
+							{#each ringsLayout as ring}
+								<circle cx="600" cy="400" r={ring.radius} fill="none"
+									stroke={ring.color} stroke-width="0.9" opacity="0.32"/>
+							{/each}
+							{#each ringsLayout as ring}
+								{@const labelText = ring.type === 'untyped'
+									? 'Untyped'
+									: ($t(`inspector360.${ring.labelKey}`) || ring.type)}
+								<text x="600" y={400 - ring.radius - 10} text-anchor="middle" font-size="13" font-weight="600"
+									fill={ring.color} opacity="0.8" letter-spacing="1">
+									{labelText.toUpperCase()} ({ring.notes.length})
+								</text>
+							{/each}
+						{:else}
+							<circle cx="600" cy="400" r="160" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+							<circle cx="600" cy="400" r="270" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="0.8"/>
+							<circle cx="600" cy="400" r="380" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="0.5"/>
+						{/if}
 
 						<!-- Sector lines — solid for active, dashed for gaps -->
 						{#each Object.entries(SECTOR_MAP) as [type, info]}

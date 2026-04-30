@@ -484,3 +484,76 @@ If they still look too similar after this rebuild, that's the deferred 2E (mode 
 - `lab/reports/SESSION-LOG-2026-04-29.md` (this entry).
 
 **Stage 2B retest unblocked** once the §103 binary builds. Same scope; just judging the new (smaller, quieter) layout.
+
+---
+
+## §104 — Dedupe nodes by path + fix Untyped label i18n leak (Stage 2B finding)
+
+**Boss-reported during the §103 Stage 2B retest (2026-04-30 ~05:55, screenshot of Abu Bakr in Atmospheric Rings)**: two new findings.
+
+**1. Repeated nodes**: "Arabian Peninsula" appeared 3–4 times on the SUPPORTS ring (and similar duplications elsewhere). All were the same note — hovering one of them lit up multiple labels because `hoveredNode === node.path` matched every node sharing that path.
+
+**Root cause**: `inspector360.rs::get_360_view` collects each connected note from three sources — outbound links from the active note, inbound links to the active note, and second-order connections. A note that is BOTH outbound and inbound (e.g. AP supports Abu Bakr AND Abu Bakr supports AP) gets pushed onto the same `typed_links[type]` list twice. Second-order can also re-add notes that are already direct neighbours. The IPC response is faithful to the link graph, but for the 360° visualisation the same dot drawn N times is just clutter.
+
+**Frontend fix**: in the `ringsLayout` derivation, dedupe each group's note list by path before assigning radii or counting:
+
+```typescript
+const dedupeByPath = (notes: LinkedNote[]): LinkedNote[] => {
+    const seen = new Set<string>();
+    const unique: LinkedNote[] = [];
+    for (const note of notes) {
+        const key = note.path || note.name;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        unique.push(note);
+    }
+    return unique;
+};
+```
+
+Applied per-typed-link-group AND to untyped. The displayed counts in ring labels (`SUPPORTS (101)`) will drop to unique counts after this commit; that's intentional and correct.
+
+**Cross-group dedup NOT applied**: if "Arabian Peninsula" appears in both `supports` and `untyped`, both rings will still show a node for it. That can be valid (different relationships, different types) and the user can see both. If Boss flags cross-group duplicates as confusing later, that's a follow-up.
+
+**Backend semantic dedup is the deeper architectural fix**: `inspector360.rs::get_360_view` should arguably merge in/out direction at the IPC boundary, returning a clean per-note view with a "directions" list per note. That's a bigger change touching Rust + the Note360View shape. Punted to a follow-up; for §104 the frontend dedup is sufficient and unblocks Stage 2 testing.
+
+**2. "INSPECTOR360.UNTYPED" label leak**: the `inspector360.untyped` i18n key doesn't exist. The OR fallback chain `$t('inspector360.untyped') || 'untyped'` doesn't fall through because `$t` returns the literal key string when missing — same bug pattern as the dock-button tooltip in §100.
+
+**Fix**: hardcoded `'Untyped'` for the untyped ring in all three viz modes' label rendering. Skip the i18n call entirely. (Adding `inspector360.untyped` to all 15 locales is the principled long-term fix, but it's three lines of locale-file edits per locale and not blocking.)
+
+**Build verification**: `npm run check` clean of new errors.
+
+**Files changed**:
+- `src/lib/components/Inspector360.svelte` (`ringsLayout` dedupe + Untyped label hardcode in all three viz modes).
+- `lab/reports/SESSION-LOG-2026-04-29.md` (this entry).
+
+**Stage 2B retest unblocked** against the §104 binary. Same scope; just verifying the dedup count matches reality and the Untyped label reads cleanly.
+
+### §104 also: hybrid layout (Boss directive)
+
+**Boss-reported during the §104 dedup discussion (2026-04-30 ~06:05)**: ring-per-group is the right design WHEN node counts force it; below that threshold, prefer the original compass-position sector layout (each typed-link group at its `SECTOR_MAP` angle, like the very first §93/§100 design) — but with the §103 minimal node sizes and hover labels.
+
+**Implementation**:
+
+- New `SECTOR_THRESHOLD = 8` (max typed-link group count below which sector layout kicks in).
+- New `layoutMode` derived: returns `'sector'` if the largest typed group (post-dedupe) has ≤ 8 notes, else `'rings'`.
+- `allNodes` switches on `layoutMode`:
+  - **Sector** (low-count): nodes positioned at `SECTOR_MAP[type].angle + offset` on three depth-based ring radii (160 / 270 / 380), with a 50° wedge per sector. Untyped scatter around the full circle on depth-based rings.
+  - **Rings** (high-count): per-group concentric ring as in §102, sorted by count.
+- Group labels switch with the layout:
+  - **Rings mode**: top-of-ring labels (existing).
+  - **Sector mode**: rim labels at the SECTOR_MAP compass angle (radius 415), per used type. Untyped has no compass angle → no rim label.
+- Mode-specific decorations also switch:
+  - Neural Web's faint dashed ring outlines: shown only in rings mode.
+  - Cosmic Sphere's per-group solid orbital rings: shown only in rings mode. In sector mode, falls back to the original three fixed concentric rings (160 / 270 / 380, white at decreasing opacity) as backdrop.
+- Atmospheric's rotating ellipses are unchanged (they're decorative background, not data-driven, so they work in both modes).
+
+**Threshold rationale**: 8 notes per typed sector × 50° wedge = ~6° between adjacent nodes, which on the 380-radius outer ring gives ~40 px arc length per node — comfortably more than the diameter-12 depth-1 nodes. Above 8 the spacing tightens to the point where the older "everything in one sector wedge" design starts to overlap. The threshold can be retuned by editing the `SECTOR_THRESHOLD` constant; if Boss reports the layout flipping at the wrong time, adjust.
+
+**What the Boss sees**: most ordinary notes (under-50-link) will render in sector mode (familiar compass cluster around the active note). Only dense hubs (Abu Bakr-class, hundreds of links) trigger ring-per-group. The mode change is automatic — no UI control needed.
+
+**Build verification**: `npm run check` clean of new errors.
+
+**Files changed**:
+- `src/lib/components/Inspector360.svelte` (`layoutMode` derived + `allNodes` switch + per-mode label/ring blocks made conditional in all three viz modes).
+- `lab/reports/SESSION-LOG-2026-04-29.md` (this entry).
