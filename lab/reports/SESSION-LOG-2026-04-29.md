@@ -666,3 +666,43 @@ Boss hovered "arabic" on the Abu Bakr ring-per-group view and saw many other not
 
 - Re-open "1902" → expect **one circle** with all 46 nodes on it, typed clustered at compass positions, untyped scattered in between, no overlap.
 - Hover any node on Abu Bakr → expect exactly **one label** to appear (the hovered node's name), no leaks to other nodes.
+
+---
+
+## §108 — Standing Order #6 catch-up: v1.10 + v1.11 (per-commit version bumps)
+
+**Boss-flagged process violation (2026-04-30 ~12:00)**: "Why are you stuck with orientation v1.9. It should be pumped with every update."
+
+I'd been treating SO #6 as "phase-internal patches stay in v1.9; only subsystem-crossing changes bump version" — that was wrong. SO #6 says **every code commit gets its own version bump**. §106 (sector spread + threshold) should have been v1.10. §107 (single-ring + uniqueId hover) should have been v1.11. Both shipped as inline patches in v1.9 instead.
+
+**Catch-up performed in this commit**:
+
+1. **v1.9 restored** to its post-§105 state. The inline `§106` and `§107` patch addenda I'd added to v1.9's top note (in the §106 and §107 commits) are removed. v1.9 is now the historical record of what closed §96–§104 and nothing more.
+2. **v1.10 created** (`docs/Constellation Orientation & Onboarding v1.10.md`) as a NEW file alongside v1.9, capturing the state at the end of §106:
+   - Header bumped to **Version 1.10 | 2026-04-30**.
+   - Top "What changed in v1.10" describes ONLY §106 (sector spread switched to widget formula `(i - (n-1)/2) * 8`; SECTOR_THRESHOLD raised 8 → 30).
+   - v1.9's top-note content moved into a `### v1.9 changelog (vs v1.8)` subsection.
+   - File-end signature `End of v1.10`.
+3. **v1.11 created** (`docs/Constellation Orientation & Onboarding v1.11.md`) as a NEW file alongside v1.10, capturing the state at the end of §107:
+   - Header bumped to **Version 1.11 | 2026-04-30**.
+   - Top "What changed in v1.11" describes ONLY §107 (single-ring sector layout at SECTOR_RADIUS=290; uniqueId hover key replacing path-based hover).
+   - v1.10's content moved into a `### v1.10 changelog (vs v1.9)` subsection.
+   - v1.9's content also present as a `### v1.9 changelog (vs v1.8)` subsection (preserved from v1.10).
+   - File-end signature `End of v1.11`.
+
+**Going forward, SO #6 enforcement clarified**:
+
+- Every code commit gets its own version bump and its own NEW file alongside the existing ones.
+- No more "patch entries inline in the latest version's top note". The orientation versions are write-once, read-only history.
+- The next code commit (whether tooling, tuning, fix, or feature) gets a NEW v1.X file dated for its commit day, with its top note describing only that commit's changes and previous versions demoted to `### vX.Y changelog` subsections.
+- Catch-up commits like §108 (pure docs, no code) DO NOT need their own version bump — they fix prior bookkeeping.
+
+**Build verification**: no code change in §108. `npm run check` was run against the §107 binary still; clean of new errors.
+
+**Files changed**:
+- `docs/Constellation Orientation & Onboarding v1.9.md` (restored to §105 state).
+- `docs/Constellation Orientation & Onboarding v1.10.md` (new file, state after §106).
+- `docs/Constellation Orientation & Onboarding v1.11.md` (new file, state after §107).
+- `lab/reports/SESSION-LOG-2026-04-29.md` (this entry).
+
+**Post-§108, Stage 2B retest** is unblocked against the §107 binary (Apr 30 build that completed during my §108 doc-restructure). Same retest plan as in §107: verify single-ring layout for "1902" and one-label-per-hover on Abu Bakr.

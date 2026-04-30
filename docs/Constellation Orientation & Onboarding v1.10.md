@@ -1,29 +1,15 @@
 # Constellation — Orientation & Onboarding
 
-**Version 1.9 | 2026-04-30**
+**Version 1.10 | 2026-04-30**
 
-> **What changed in v1.9**: a **CE Phase 12 hardening / refinement bump** (commits §96–§104, ten commits since v1.8 closed). Phase 12 became user-testable on 2026-04-29; Boss tutorial-tested it across Stage 1 and Stage 2 over two days, and every iteration rolled into a fix-and-rebuild loop. Net result: the 360° Inspector surface that v1.8 announced as "enabled" is now the surface the Boss is actually using.
+> **What changed in v1.10**: a tuning bump for the Stage 2B sector layout (commit §106). Boss reported during Stage 2B retest that the §104 sector mode rendered the test note "1902" (15 supports + 1 derives-from + 30 untyped) too sparsely — the §100/§104 50°-bounded normalised spread `(i / (n-1) - 0.5) * 50` packs nodes within a tight wedge, but at the full-window canvas scale the empty space between adjacent nodes is visible (the compact widget hides it via small absolute size). Boss directive: "It has to be similar to the widget."
 >
-> **Highlights** (full per-§ detail in `lab/reports/SESSION-LOG-2026-04-29.md`):
+> **Two changes in §106**:
 >
-> 1. **Stage 1 hotfix (§96)** — clicking the new right-sidebar 360° tab routed the user back to Properties because a safety `$effect` (`+layout.svelte:1255`) was force-resetting `rightSidebarTab` to the first known visible tab. The `tabVisible` map and fallback `order` array missed `inspector360`. Fixed; tab now sticks.
-> 2. **rs-tabs strip overflow fix (§97)** — adding the 11th tab pushed past the default 340 px sidebar width; the new tab clipped at the right edge. Pure CSS: replaced default `<button>` padding with explicit `padding: 0; flex: 1 1 28px; min-width: 24px; flex-wrap: wrap;`. Tabs now wrap to a second row instead of clipping if the strip overflows.
-> 3. **Compact-mode back-nav (§98 → §99)** — Boss requested a "back to source note" affordance inside the compact widget. Started as single-step (§98) then upgraded to a **multi-hop stack** (§99) per Boss directive: walks all the way back through any chain. State: `inspector360BackStack: $state<Array<{path, name}>>`. Universe switch resets the stack to `[]`.
-> 4. **Stage 2 omnibus (§100)** — five Stage 2 findings in one commit:
->    - Dock-button tooltip leaking the literal `ribbon.inspector360` key string (svelte-i18n `$t()` returns the key on miss; `||` doesn't fall through). Fixed by dropping the missing key from the fallback chain.
->    - Visualisation didn't fill the available canvas. Removed `max-width: 1400px; max-height: 900px;` from `.i360-viz`. Bumped ring radii [160,270,380] → [180,290,400].
->    - Side panels + HUD doubled in size: header padding 18 px / icon 28 px / name 26 px / panel font 18 px / HUD font 18 px / close button 48×48 / mode-select 16 px / dot 14 px etc.
->    - Tighter sector grouping for v1 layout (`(i / (n-1) - 0.5) * 50` instead of `(i - (n-1)/2) * 15`) — bounded each typed-link wedge to 50° regardless of count.
->    - Full-window auto-close removed; full-window now stays open after node click and shares the same back stack as compact mode. "Return to {previous}" button in the full-window header.
-> 5. **Sector → ring-per-group → hybrid (§101 → §102 → §104)** — three iterations on visualisation layout: §101 stacked dense sectors onto multiple rings within their wedge; §102 redesigned to per-group full concentric rings (Boss directive: "give each type/group its own circle"); §104 made the choice automatic — sector layout when max typed-group count ≤ `SECTOR_THRESHOLD = 8`, ring-per-group when above. Most ordinary notes now render in compass-position sector mode; only dense hubs (Abu Bakr-class) trigger ring-per-group. Mode switch is automatic, no UI control.
-> 6. **Minimised nodes + hover-only labels (§103)** — Boss directive. Node radii reduced 10/7/4 → **6/4/3** (depth 1 / 2 / 3). Always-on labels removed in all three viz modes; replaced with hover-only labels (font 13 px / weight 600 / 0.95 alpha white / 3 px black SVG stroke for legibility against any colour). Invisible 6 px hit-area expansion ensures the smaller targets stay easy to click.
-> 7. **Dedupe by path + Untyped label fix (§104)** — `inspector360.rs::get_360_view` returns the same note from outbound + inbound + second-order sources, which used to render as duplicate dots. Frontend dedup applied per-group in `ringsLayout`. The `inspector360.untyped` i18n key was missing from all 15 locales — same OR-fallback-doesn't-fall-through bug as the dock-button tooltip; hardcoded `'Untyped'`.
+> 1. **Sector spread formula switched** from §100's normalised cap to **the compact widget's exact formula** `(i - (n-1)/2) * 8` (degrees per node, no per-sector cap — the widget code uses this verbatim at `Inspector360.svelte::compact-mode SVG`). Full-window now matches the widget's compass-cluster pattern at any zoom level. Trade-off: large sectors bleed past their 50° semantic slot into adjacent compass directions (e.g. 25 nodes × 8° = 200° span). The widget shows this already; Boss accepted as the desired aesthetic.
+> 2. **`SECTOR_THRESHOLD` raised** from 8 → **30**. Notes with up to 30 typed-link connections per group now use the widget-style sector layout instead of ring-per-group. Abu Bakr-class hubs (max ≥ 100) still trigger ring-per-group because sector design at that density would overlap heavily.
 >
-> **Boss's perf verdict on Phase 12** (collected during Stage 1 testing): first-fetch is "almost instantly" — well below the 1–3 s estimate from reading the Rust code. **MIG-010 priority dropped to LOW** based on lived experience.
->
-> **What's still on the queue after v1.9**: Stage 2C (panels + HUD legibility verification), Stage 2D (full-window back-nav verification), then the deferred 2E (visualisation-mode distinctness) only if Boss flags it. Then **MIG-006 §3 redo** as the next migration.
->
-> **Process violations recorded for the day**: (a) the over-long Stage 2 tutorial bundled 2.1–2.7 in one message — `feedback_staged_tests.md` rule. (b) Standing Order #6 violation: §96–§104 shipped without bumping the orientation in the same commit. **v1.9 is the catch-up bump.** Both noted; reaffirming the rules going forward.
+> **No other code or behaviour changes** between v1.9 and v1.10 — pure spread-formula and threshold tuning.
 
 **Author of facts: Eisa ALSHAMSI (project owner, designer, IT Boss).**
 **Maintainer: Claude (consultant / engineer / SME).**
@@ -39,6 +25,24 @@
 **This document is grounded.** Every claim cites the authoritative source (file:line, commit hash, or session log section). When two project documents disagree, I name both and don't pick a winner unless code-reading resolves it. When I don't know something, I say so explicitly in §17.
 
 **Hard rule for every reader (human or AI) of this file**: if you find this document contradicts the actual codebase or a more recent session log, **trust the code and the session log first**, then update this file in the same session.
+
+### v1.9 changelog (vs v1.8)
+
+v1.9 was a **CE Phase 12 hardening / refinement bump** (commits §96–§104, ten commits since v1.8 closed) on 2026-04-30. Phase 12 became user-testable on 2026-04-29; Boss tutorial-tested it across Stage 1 and Stage 2 over two days, and every iteration rolled into a fix-and-rebuild loop. Net result: the 360° Inspector surface that v1.8 announced as "enabled" is now the surface the Boss is actually using.
+
+Highlights:
+
+1. **Stage 1 hotfix (§96)** — clicking the new right-sidebar 360° tab routed the user back to Properties because a safety `$effect` (`+layout.svelte:1255`) was force-resetting `rightSidebarTab` to the first known visible tab. The `tabVisible` map and fallback `order` array missed `inspector360`. Fixed; tab now sticks.
+2. **rs-tabs strip overflow fix (§97)** — adding the 11th tab pushed past the default 340 px sidebar width; the new tab clipped at the right edge. Pure CSS: replaced default `<button>` padding with explicit `padding: 0; flex: 1 1 28px; min-width: 24px; flex-wrap: wrap;`. Tabs now wrap to a second row instead of clipping.
+3. **Compact-mode back-nav (§98 → §99)** — Boss requested a "back to source note" affordance inside the compact widget. Started as single-step (§98) then upgraded to a **multi-hop stack** (§99) per Boss directive: walks all the way back through any chain. State: `inspector360BackStack: $state<Array<{path, name}>>`. Universe switch resets the stack to `[]`.
+4. **Stage 2 omnibus (§100)** — five Stage 2 findings: dock-button tooltip i18n leak (`ribbon.inspector360` key returned verbatim because `$t()` returns the key on miss); viz didn't fill canvas (removed `max-width: 1400px; max-height: 900px;` from `.i360-viz`); side panels + HUD doubled in size; tighter sector grouping `(i / (n-1) - 0.5) * 50`; full-window auto-close removed in favour of "Return to {previous}" header button.
+5. **Sector → ring-per-group → hybrid (§101 → §102 → §104)** — three iterations on visualisation layout. §104 made the choice automatic: sector layout when max typed-group count ≤ `SECTOR_THRESHOLD = 8`, ring-per-group when above.
+6. **Minimised nodes + hover-only labels (§103)** — node radii reduced 10/7/4 → 6/4/3. Always-on labels removed; hover-only with 13 px font + 3 px black SVG stroke. 6 px invisible hit-area expansion.
+7. **Dedupe by path + Untyped label fix (§104)** — frontend dedup per-group in `ringsLayout` (the IPC returns the same note from outbound + inbound + second-order). Untyped label hardcoded `'Untyped'` to skip the broken i18n fallback.
+
+**Boss's perf verdict on Phase 12**: first-fetch "almost instantly". **MIG-010 priority dropped to LOW** based on lived experience.
+
+**Process violations recorded for the day**: (a) the over-long Stage 2 tutorial bundled 2.1–2.7 in one message — `feedback_staged_tests.md` rule. (b) Standing Order #6 violation: §96–§104 shipped without bumping the orientation in the same commit. **v1.9 was the catch-up bump.**
 
 ### v1.8 changelog (vs v1.7)
 
@@ -1154,4 +1158,4 @@ This list is mandated by the BASIC RULE. If you need certainty on a claim that t
 
 ---
 
-*End of v1.9. Maintained per Standing Order #6.*
+*End of v1.10. Maintained per Standing Order #6.*
