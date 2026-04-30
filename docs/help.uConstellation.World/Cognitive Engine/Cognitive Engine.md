@@ -671,7 +671,9 @@ There are two ways to open the Inspector for the note you are currently editing 
 
 In the **right sidebar**, click the **360° Inspector tab** (its icon is a small reticle: a circle with a centre dot and four short spokes). A small spherical visualisation appears, showing the note at the centre and its connected notes orbiting around it. As you navigate between notes in the editor, the widget updates to reflect whichever note is currently active.
 
-Click any orbiting node in the widget to open that connected note in the editor.
+Click any orbiting node in the widget to open that connected note in the editor. When you do, a **back-bar** appears at the top of the widget showing `← {previous note}`. Click it to walk back through your inspector navigation chain — single-step, multi-hop, or all the way back to the original starting note. The chain rewrites correctly if you re-branch from any midpoint. The back-bar disappears when there's nothing left to go back to.
+
+The note names are not always visible. **Hover over any node** to reveal its name as a small label above the dot.
 
 **Way 2 — Full-window mode (deliberate study)**
 
@@ -683,7 +685,13 @@ A dropdown in the inspector's header lets you switch between three visualisation
 - **Neural Web** — synaptic-style connections without rigid rings, with second-order branching lines. Best for seeing how connections cluster organically.
 - **Cosmic Sphere** — clean orbital paths with sector labels at the rim. Best for reading "what link types am I using vs missing?"
 
-To leave the full-window inspector and return to the editor, click the **×** close button in the inspector's top-right corner, or click any node in the inspector to navigate to that note (which closes the inspector and opens that note in the editor).
+**Click any node in the inspector** to refocus the inspector on that note — the visualisation re-centres on the clicked note and shows its 360° view. The inspector does **not** close automatically; instead a `← {previous note}` button appears in the inspector's header. Click that to walk back through your navigation chain. Click the **×** close button in the top-right corner to leave the inspector entirely and return to the editor (showing whichever note is the most recent in your navigation chain).
+
+The same back stack is shared between the compact widget and the full-window mode. If you navigate from note A to note B via the compact widget, then open the full-window mode, the back chain is preserved.
+
+**Visualisation layout — automatic.** The inspector picks the right layout based on your note's link counts. For most notes (where no single link type has more than 8 connections), nodes cluster at compass positions per their typed-link direction (supports at top, contradicts at bottom, etc.) — like reading a compass for the active note. For dense hubs (notes with very many connections of one type), the inspector switches to a **ring-per-group** layout: each link type gets its own complete concentric circle, smaller groups innermost, larger outermost, each ring labelled with its type and unique-note count. The mode change is automatic — there's no control to toggle it.
+
+**Note names appear on hover.** Move the mouse over any node to see its name. Names are not always visible to keep the visualisation uncluttered.
 
 ### Where the data comes from
 
