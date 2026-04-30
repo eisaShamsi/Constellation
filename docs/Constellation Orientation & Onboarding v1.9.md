@@ -24,6 +24,10 @@
 > **What's still on the queue after v1.9**: Stage 2C (panels + HUD legibility verification), Stage 2D (full-window back-nav verification), then the deferred 2E (visualisation-mode distinctness) only if Boss flags it. Then **MIG-006 §3 redo** as the next migration.
 >
 > **Process violations recorded for the day**: (a) the over-long Stage 2 tutorial bundled 2.1–2.7 in one message — `feedback_staged_tests.md` rule. (b) Standing Order #6 violation: §96–§104 shipped without bumping the orientation in the same commit. **v1.9 is the catch-up bump.** Both noted; reaffirming the rules going forward.
+>
+> **v1.9 patch addendum**:
+>
+> - **§106** (2026-04-30 retest finding): the §104 sector layout rendered note "1902" (typed counts: 15 supports, 1 derives-from + 30 untyped) too sparsely on the full-window canvas — the §100/§104 50°-bounded normalised spread `(i / (n-1) - 0.5) * 50` packs nodes within a tight wedge, but the full-window scale leaves visible empty space between adjacent nodes that the small compact widget naturally hides. Boss directive: "It has to be similar to the widget." Two changes: **(1)** the sector spread formula in `allNodes` switched to **the compact widget's exact formula** `(i - (n-1)/2) * 8` (degrees per node, no per-sector cap — the widget code uses this verbatim at `Inspector360.svelte::compact-mode SVG`). **(2)** `SECTOR_THRESHOLD` raised from 8 → **30** so notes with up to 30 typed-link connections per group (well above the "1902" case) trigger the widget-style sector layout instead of ring-per-group. Abu Bakr-class hubs (max ≥ 100) still trigger ring-per-group because sector design at that density would overlap heavily.
 
 **Author of facts: Eisa ALSHAMSI (project owner, designer, IT Boss).**
 **Maintainer: Claude (consultant / engineer / SME).**

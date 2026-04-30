@@ -120,12 +120,13 @@
 		return groups;
 	});
 
-	// §104: layout mode is hybrid. When every typed-link group fits cleanly
-	// in its sector (largest typed group ≤ SECTOR_THRESHOLD), use the
-	// original compass-position sector design with smaller nodes. Above the
-	// threshold, fall back to the ring-per-group layout (§102) so dense
-	// groups don't pile into pile-ups inside a 50° wedge.
-	const SECTOR_THRESHOLD = 8;
+	// §104 + §106: layout mode is hybrid. When every typed-link group fits
+	// in its sector (largest typed group ≤ SECTOR_THRESHOLD), use the same
+	// compass-position sector design as the compact widget. Above the
+	// threshold, fall back to ring-per-group (§102). §106 raised the
+	// threshold from 8 → 30 because the widget renders that count cleanly
+	// and Boss explicitly directed full-window to match the widget look.
+	const SECTOR_THRESHOLD = 30;
 	const layoutMode = $derived.by((): 'sector' | 'rings' => {
 		let maxTypedCount = 0;
 		for (const ring of ringsLayout) {
@@ -143,12 +144,13 @@
 		const radiusFor = (depth: number) => depth <= 1 ? 6 : depth <= 2 ? 4 : 3;
 
 		if (layoutMode === 'sector') {
-			// Sector layout: typed groups at SECTOR_MAP compass angles, depth
-			// determines which of the three ring radii a node lands on, spread
-			// within a 50° wedge per sector. Untyped nodes scatter around the
-			// full circle on depth-based rings.
+			// Sector layout matches the compact widget's spacing exactly:
+			// each typed-link group at its SECTOR_MAP compass angle with
+			// `(i - (n-1)/2) * PER_NODE_SPREAD` degrees per node (no 50° cap),
+			// and depth-based ring assignment for the three rings. Untyped
+			// nodes scatter around the full circle on depth-based rings.
 			const sectorRings = [160, 270, 380];
-			const SECTOR_WIDTH = 50;
+			const PER_NODE_SPREAD = 8; // degrees per node, matches the compact widget
 			for (const ring of ringsLayout) {
 				const n = ring.notes.length;
 				if (ring.type === 'untyped') {
@@ -164,7 +166,7 @@
 					if (!info) continue;
 					for (let i = 0; i < n; i++) {
 						const note = ring.notes[i];
-						const offset = n > 1 ? (i / (n - 1) - 0.5) * SECTOR_WIDTH : 0;
+						const offset = n > 1 ? (i - (n - 1) / 2) * PER_NODE_SPREAD : 0;
 						const ringIndex = note.depth <= 1 ? 0 : note.depth <= 2 ? 1 : 2;
 						const pos = polarToXY(cx, cy, info.angle + offset, sectorRings[ringIndex]);
 						nodes.push({ ...note, x: pos.x, y: pos.y, color: info.color, type: ring.type, r: radiusFor(note.depth) });

@@ -597,3 +597,26 @@ Applied per-typed-link-group AND to untyped. The displayed counts in ring labels
 - `lab/reports/SESSION-LOG-2026-04-29.md` (this entry).
 
 **No code changes** in §105. Pure docs catch-up.
+
+---
+
+## §106 — Sector layout: match the compact widget exactly (Stage 2B retest follow-up)
+
+**Boss-reported during the §104 Stage 2B retest (2026-04-30 ~10:35)**: note "1902" (counts: 15 supports + 1 derives-from + 30 untyped) rendered with `layoutMode === 'rings'` because max-typed-count = 15 > `SECTOR_THRESHOLD = 8`. Boss compared the result to the compact widget for "Dome" (clearly sector-style, dense clustered arcs at compass positions) and said "It has to be similar to the widget."
+
+**Two issues identified**:
+
+1. **Threshold too low.** The widget renders ~25 derives-from notes in sector style cleanly. With `SECTOR_THRESHOLD = 8`, "1902" (max=15) wrongly fell into ring-per-group. **Fix**: raised `SECTOR_THRESHOLD` from 8 → **30**. Notes with up to 30 typed-link connections per group now use sector design; only Abu Bakr-class hubs (100+ supports) trigger ring-per-group.
+
+2. **Sector spread formula didn't match the widget.** Compact mode (in `Inspector360.svelte::compact-mode SVG`) uses `(i - (n-1)/2) * 8` — fixed 8° per node, no per-sector cap. My §100 introduced a 50°-bounded normalised formula `(i / (n-1) - 0.5) * 50` which packs all of a sector's nodes within a 50° wedge. At full-window scale that 50° pack creates visible gaps between adjacent nodes that the compact widget hides via its small absolute size. **Fix**: switched `allNodes` sector mode to the compact widget's exact formula `(i - (n-1)/2) * 8`. With this, full-window now renders the same compass-cluster pattern as the widget at any zoom level.
+
+**Trade-off accepted**: with no per-sector cap, very large sectors (e.g. 25 nodes × 8° = 200° span) bleed past their semantic compass slot into neighbouring sectors. The widget makes this visually OK because the canvas is small; full-window allows much more room, so the spillover is more visible. Boss accepted this as the desired aesthetic since the widget already does it. If Boss reports bleeding-into-neighbours as a problem at the boundary (e.g. a 25-node sector visually conflicting with an adjacent 5-node sector), the fix is to raise the per-node degree (8 → 6 or 5) without re-introducing a hard cap.
+
+**Build verification**: `npm run check` clean of new errors.
+
+**Files changed**:
+- `src/lib/components/Inspector360.svelte` (`SECTOR_THRESHOLD = 30` and the sector-mode `allNodes` spread formula).
+- `docs/Constellation Orientation & Onboarding v1.9.md` (new "v1.9 patch addendum" entry under the top note, per the SO #6 enforcement commitment from §105).
+- `lab/reports/SESSION-LOG-2026-04-29.md` (this entry).
+
+**Stage 2B retest** unblocked once the §106 binary builds.
