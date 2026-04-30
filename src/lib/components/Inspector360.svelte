@@ -138,39 +138,42 @@
 	});
 
 	const allNodes = $derived.by(() => {
-		const nodes: Array<{ name: string; path: string; x: number; y: number; color: string; type: string; depth: number; r: number }> = [];
+		const nodes: Array<{ name: string; path: string; x: number; y: number; color: string; type: string; depth: number; r: number; uniqueId: string }> = [];
 		const cx = 600; const cy = 400;
 		// Minimised node radii (§103). Names are revealed on hover, not always-on.
 		const radiusFor = (depth: number) => depth <= 1 ? 6 : depth <= 2 ? 4 : 3;
+		let idx = 0;
 
 		if (layoutMode === 'sector') {
-			// Sector layout matches the compact widget's spacing exactly:
-			// each typed-link group at its SECTOR_MAP compass angle with
-			// `(i - (n-1)/2) * PER_NODE_SPREAD` degrees per node (no 50° cap),
-			// and depth-based ring assignment for the three rings. Untyped
-			// nodes scatter around the full circle on depth-based rings.
-			const sectorRings = [160, 270, 380];
-			const PER_NODE_SPREAD = 8; // degrees per node, matches the compact widget
+			// §107 single-ring sector layout: ALL nodes on ONE ring at
+			// SECTOR_RADIUS. Typed groups clustered at SECTOR_MAP compass
+			// angles with the widget's `(i - (n-1)/2) * 8` per-node spread.
+			// Untyped distributed evenly around the full circle with a
+			// half-step offset so they don't line up exactly with sector
+			// centres. Depth is encoded only in node radius (not ring shift).
+			const SECTOR_RADIUS = 290;
+			const PER_NODE_SPREAD = 8;
 			for (const ring of ringsLayout) {
+				if (ring.type === 'untyped') continue;
+				const info = SECTOR_MAP[ring.type];
+				if (!info) continue;
 				const n = ring.notes.length;
-				if (ring.type === 'untyped') {
-					for (let i = 0; i < n; i++) {
-						const note = ring.notes[i];
-						const angle = (i / Math.max(n, 1)) * 360;
-						const ringIndex = note.depth <= 1 ? 0 : note.depth <= 2 ? 1 : 2;
-						const pos = polarToXY(cx, cy, angle, sectorRings[ringIndex]);
-						nodes.push({ ...note, x: pos.x, y: pos.y, color: ring.color, type: ring.type, r: radiusFor(note.depth) });
-					}
-				} else {
-					const info = SECTOR_MAP[ring.type];
-					if (!info) continue;
-					for (let i = 0; i < n; i++) {
-						const note = ring.notes[i];
-						const offset = n > 1 ? (i - (n - 1) / 2) * PER_NODE_SPREAD : 0;
-						const ringIndex = note.depth <= 1 ? 0 : note.depth <= 2 ? 1 : 2;
-						const pos = polarToXY(cx, cy, info.angle + offset, sectorRings[ringIndex]);
-						nodes.push({ ...note, x: pos.x, y: pos.y, color: info.color, type: ring.type, r: radiusFor(note.depth) });
-					}
+				for (let i = 0; i < n; i++) {
+					const note = ring.notes[i];
+					const offset = n > 1 ? (i - (n - 1) / 2) * PER_NODE_SPREAD : 0;
+					const pos = polarToXY(cx, cy, info.angle + offset, SECTOR_RADIUS);
+					nodes.push({ ...note, x: pos.x, y: pos.y, color: info.color, type: ring.type, r: radiusFor(note.depth), uniqueId: `n${idx++}` });
+				}
+			}
+			const untypedGroup = ringsLayout.find(r => r.type === 'untyped');
+			if (untypedGroup) {
+				const n = untypedGroup.notes.length;
+				for (let i = 0; i < n; i++) {
+					const note = untypedGroup.notes[i];
+					// Half-step offset reduces alignment with typed sector centres.
+					const angle = ((i + 0.5) / Math.max(n, 1)) * 360;
+					const pos = polarToXY(cx, cy, angle, SECTOR_RADIUS);
+					nodes.push({ ...note, x: pos.x, y: pos.y, color: untypedGroup.color, type: 'untyped', r: radiusFor(note.depth), uniqueId: `n${idx++}` });
 				}
 			}
 		} else {
@@ -188,15 +191,18 @@
 						angle = (reservedTop / 2) + i * ((360 - reservedTop) / (n - 1));
 					}
 					const pos = polarToXY(cx, cy, angle, ring.radius);
-					nodes.push({ ...note, x: pos.x, y: pos.y, color: ring.color, type: ring.type, r: radiusFor(note.depth) });
+					nodes.push({ ...note, x: pos.x, y: pos.y, color: ring.color, type: ring.type, r: radiusFor(note.depth), uniqueId: `n${idx++}` });
 				}
 			}
 		}
 		return nodes;
 	});
 
-	// Hover state
-	let hoveredNode = $state<string | null>(null);
+	// Hover state — keyed on a unique-per-render id, NOT on `path`. The IPC
+	// returns `path: ""` for outbound links to notes outside the library;
+	// keying on path would highlight every empty-path node simultaneously
+	// (Stage 2B finding §107).
+	let hoveredId = $state<string | null>(null);
 </script>
 
 {#if compact}
@@ -371,8 +377,8 @@
 						{#each allNodes as node}
 							<!-- svelte-ignore a11y_no_static_element_interactions -->
 							<g class="i360-node" style="cursor:pointer"
-								onmouseenter={() => hoveredNode = node.path}
-								onmouseleave={() => hoveredNode = null}
+								onmouseenter={() => hoveredId = node.uniqueId}
+								onmouseleave={() => hoveredId = null}
 								onclick={() => onNoteClick?.(node.path, node.name)}>
 								<!-- Invisible hit-area expands the click target so smaller
 								     visible nodes stay easy to mouse-over. -->
@@ -387,7 +393,7 @@
 										<animate attributeName="r" values="{node.r};{node.r + 1};{node.r}" dur="{3 + node.r * 0.2}s" repeatCount="indefinite"/>
 									{/if}
 								</circle>
-								{#if hoveredNode === node.path}
+								{#if hoveredId === node.uniqueId}
 									<text x={node.x} y={node.y - node.r - 8} text-anchor="middle" font-size="13" font-weight="600"
 										fill="rgba(255,255,255,0.95)" pointer-events="none"
 										style="paint-order: stroke; stroke: rgba(0,0,0,0.85); stroke-width: 3px; stroke-linejoin: round;">
@@ -481,8 +487,8 @@
 						{#each allNodes as node}
 							<!-- svelte-ignore a11y_no_static_element_interactions -->
 							<g class="i360-node" style="cursor:pointer"
-								onmouseenter={() => hoveredNode = node.path}
-								onmouseleave={() => hoveredNode = null}
+								onmouseenter={() => hoveredId = node.uniqueId}
+								onmouseleave={() => hoveredId = null}
 								onclick={() => onNoteClick?.(node.path, node.name)}>
 								<circle cx={node.x} cy={node.y} r={node.r + 6} fill="transparent" pointer-events="all"/>
 								<circle cx={node.x} cy={node.y} r={node.r} fill={node.color}
@@ -493,7 +499,7 @@
 										<animate attributeName="r" values="{node.r};{node.r + 0.6};{node.r}" dur="{2.5 + node.r * 0.3}s" repeatCount="indefinite"/>
 									{/if}
 								</circle>
-								{#if hoveredNode === node.path}
+								{#if hoveredId === node.uniqueId}
 									<text x={node.x} y={node.y - node.r - 8} text-anchor="middle" font-size="13" font-weight="600"
 										fill="rgba(255,255,255,0.95)" pointer-events="none"
 										style="paint-order: stroke; stroke: rgba(0,0,0,0.85); stroke-width: 3px; stroke-linejoin: round;">
@@ -585,15 +591,15 @@
 						{#each allNodes as node}
 							<!-- svelte-ignore a11y_no_static_element_interactions -->
 							<g class="i360-node" style="cursor:pointer"
-								onmouseenter={() => hoveredNode = node.path}
-								onmouseleave={() => hoveredNode = null}
+								onmouseenter={() => hoveredId = node.uniqueId}
+								onmouseleave={() => hoveredId = null}
 								onclick={() => onNoteClick?.(node.path, node.name)}>
 								<circle cx={node.x} cy={node.y} r={node.r + 6} fill="transparent" pointer-events="all"/>
 								<circle cx={node.x} cy={node.y} r={node.r}
 									fill={node.color} opacity={node.depth <= 1 ? 0.85 : node.depth <= 2 ? 0.6 : 0.3}
 									filter={node.depth <= 1 ? "url(#c-glow)" : undefined}
 									pointer-events="none" />
-								{#if hoveredNode === node.path}
+								{#if hoveredId === node.uniqueId}
 									<text x={node.x} y={node.y - node.r - 8} text-anchor="middle"
 										font-size="13" font-weight="600" fill="rgba(255,255,255,0.95)" pointer-events="none"
 										style="paint-order: stroke; stroke: rgba(0,0,0,0.85); stroke-width: 3px; stroke-linejoin: round;">

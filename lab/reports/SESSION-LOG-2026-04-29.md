@@ -620,3 +620,49 @@ Applied per-typed-link-group AND to untyped. The displayed counts in ring labels
 - `lab/reports/SESSION-LOG-2026-04-29.md` (this entry).
 
 **Stage 2B retest** unblocked once the §106 binary builds.
+
+---
+
+## §107 — Single-ring sector layout + uniqueId hover (Stage 2B retest findings on §106)
+
+**Boss-reported during the §106 Stage 2B retest (2026-04-30 ~11:00)**: two findings.
+
+### Finding 1 — too many circles
+
+The §106 sector layout used three depth-based rings (160 / 270 / 380), so even at low counts the visualisation showed multiple concentric rings. Note "1902" with 15 supports + 1 derives-from + 30 untyped rendered with typed clusters on inner ring 160 and untyped scattered on outer rings 270/380. Boss directive: "Distribute all nodes in one circle. Make sure that nodes are not overlapped (touching adjacent nodes or on top of each other)."
+
+**Fix**: replaced sector mode in `allNodes` with **single-ring layout** at `SECTOR_RADIUS = 290`. Typed groups still cluster at SECTOR_MAP compass angles with the widget's 8°-per-node spread `(i - (n-1)/2) * 8`. Untyped distributed evenly around the full circle with a half-step offset `((i + 0.5) / n) * 360` to reduce alignment with sector centres. Depth is encoded only in node radius (6/4/3 from §103); no longer in ring distance.
+
+**Trade-off**: at heavy untyped counts (30+) and dense typed sectors, untyped angles can still overlap with typed sector spreads. Half-step offset minimises but doesn't eliminate. If Boss reports actual visible overlap, next iteration is gap-filling untyped placement (compute typed-sector ranges, distribute untyped only in gaps).
+
+### Finding 2 — hover labels leaking
+
+Boss hovered "arabic" on the Abu Bakr ring-per-group view and saw many other note labels appear at the same time. Root cause traced through:
+- `inspector360.rs::get_360_view` resolves outbound link target paths via `all_notes.get(target).map(|n| n.path.clone()).unwrap_or_default()`. When the target is a wikilink to a note outside the library (or otherwise unresolved), the path is `""` (empty string).
+- The frontend dedupe in §104 already used `note.path || note.name` as the key, so duplicates with the same name still got deduped.
+- BUT the rendered hover state keyed on `node.path` directly. With multiple nodes still having `path === ""`, hovering any one of them set `hoveredNode = ""`, which matched every empty-path node — so every empty-path node's label rendered simultaneously.
+
+**Fix**: each rendered node now carries a `uniqueId: string` (`n${idx++}` per `allNodes` render). Hover state renamed `hoveredNode → hoveredId`. The mouseenter/leave handlers and the label condition `{#if ... === node.path}` → `{#if hoveredId === node.uniqueId}` updated in all three viz modes (Atmospheric, Neural Web, Cosmic Sphere).
+
+`node.path` is preserved on the rendered node for the click handler — `onNoteClick(path, name)` still receives the original path so navigation works (or fails gracefully when path is empty — that's a separate, pre-existing bug for unresolved targets).
+
+**Why this bug was invisible before §107**: with the v1.8 §93 always-on labels (since removed in §103), every depth-1/depth-2 node showed its label regardless of hover, so the bug couldn't manifest. After §103 made labels hover-only, the bug was latent until Boss tested a note with many empty-path outbound nodes (Abu Bakr).
+
+### Build verification
+
+`npm run check` clean of new errors.
+
+### Files changed
+
+- `src/lib/components/Inspector360.svelte`:
+  - `hoveredNode` renamed to `hoveredId`; type and comment updated.
+  - `allNodes` now generates `uniqueId: 'n${idx++}'` per node.
+  - Sector mode rewritten: single-ring at `SECTOR_RADIUS = 290`, typed at compass angles, untyped at half-step offsets around full circle.
+  - All three viz modes' `onmouseenter` / `onmouseleave` / label `{#if}` updated to use `hoveredId === node.uniqueId`.
+- `docs/Constellation Orientation & Onboarding v1.9.md` (§107 patch addendum entry).
+- `lab/reports/SESSION-LOG-2026-04-29.md` (this entry).
+
+### Stage 2B retest plan after §107
+
+- Re-open "1902" → expect **one circle** with all 46 nodes on it, typed clustered at compass positions, untyped scattered in between, no overlap.
+- Hover any node on Abu Bakr → expect exactly **one label** to appear (the hovered node's name), no leaks to other nodes.
