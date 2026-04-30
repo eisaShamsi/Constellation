@@ -145,39 +145,49 @@
 		let idx = 0;
 
 		if (layoutMode === 'sector') {
-			// §109 restored depth-based sector layout (matches the compact
-			// widget's `[56, 89.6, 123.2]` rings, scaled up to full-window
-			// `[160, 270, 380]`). Each typed group at SECTOR_MAP compass
-			// angle with the widget's 8°-per-node spread. Depth determines
-			// which of three concentric rings a node lands on. Untyped
-			// nodes scatter around the full 360° on depth-based rings too.
-			// §107's single-ring approach is reverted; the "one circle"
-			// directive applied to ring-per-group, not to depth rings.
-			// uniqueId per node preserved from §107 so hover label stays
-			// keyed to a unique value (path can be empty for unresolved
-			// outbound targets).
+			// §110: count-based ring assignment for the sector layout.
+			// Depth-based rings (§109) didn't help "1902"-style data because
+			// `inspector360.rs::get_360_view` always stamps outbound/inbound
+			// links with depth=1, so typed and untyped depth-1 nodes piled
+			// onto the inner ring at the same angles → overlap. Count-based
+			// gives three reliably distinct rings:
+			//   - Typed groups sorted by count, distributed inner→middle
+			//     (avoids outer ring; smallest typed inner, largest typed
+			//     middle).
+			//   - Untyped always on the outer ring, regardless of count.
+			// Each typed group still clusters at its SECTOR_MAP compass
+			// angle with the widget's 8°-per-node spread. Depth is used
+			// only for node radius (size), not ring placement.
 			const sectorRings = [160, 270, 380];
 			const PER_NODE_SPREAD = 8;
-			for (const ring of ringsLayout) {
+
+			const typedGroups = ringsLayout.filter(r => r.type !== 'untyped');
+			const untypedGroup = ringsLayout.find(r => r.type === 'untyped');
+			const typedSorted = [...typedGroups].sort((a, b) => a.notes.length - b.notes.length);
+			const numTyped = typedSorted.length;
+
+			for (let g = 0; g < numTyped; g++) {
+				const ring = typedSorted[g];
+				const info = SECTOR_MAP[ring.type];
+				if (!info) continue;
+				// Map rank to inner (0) or middle (1); skip outer (untyped owns it).
+				const ringIdx = numTyped <= 1 ? 0 : Math.min(1, Math.floor(g * 2 / numTyped));
+				const radius = sectorRings[ringIdx];
 				const n = ring.notes.length;
-				if (ring.type === 'untyped') {
-					for (let i = 0; i < n; i++) {
-						const note = ring.notes[i];
-						const angle = (i / Math.max(n, 1)) * 360;
-						const ringIndex = note.depth <= 1 ? 0 : note.depth <= 2 ? 1 : 2;
-						const pos = polarToXY(cx, cy, angle, sectorRings[ringIndex]);
-						nodes.push({ ...note, x: pos.x, y: pos.y, color: ring.color, type: ring.type, r: radiusFor(note.depth), uniqueId: `n${idx++}` });
-					}
-				} else {
-					const info = SECTOR_MAP[ring.type];
-					if (!info) continue;
-					for (let i = 0; i < n; i++) {
-						const note = ring.notes[i];
-						const offset = n > 1 ? (i - (n - 1) / 2) * PER_NODE_SPREAD : 0;
-						const ringIndex = note.depth <= 1 ? 0 : note.depth <= 2 ? 1 : 2;
-						const pos = polarToXY(cx, cy, info.angle + offset, sectorRings[ringIndex]);
-						nodes.push({ ...note, x: pos.x, y: pos.y, color: info.color, type: ring.type, r: radiusFor(note.depth), uniqueId: `n${idx++}` });
-					}
+				for (let i = 0; i < n; i++) {
+					const note = ring.notes[i];
+					const offset = n > 1 ? (i - (n - 1) / 2) * PER_NODE_SPREAD : 0;
+					const pos = polarToXY(cx, cy, info.angle + offset, radius);
+					nodes.push({ ...note, x: pos.x, y: pos.y, color: info.color, type: ring.type, r: radiusFor(note.depth), uniqueId: `n${idx++}` });
+				}
+			}
+			if (untypedGroup) {
+				const n = untypedGroup.notes.length;
+				for (let i = 0; i < n; i++) {
+					const note = untypedGroup.notes[i];
+					const angle = (i / Math.max(n, 1)) * 360;
+					const pos = polarToXY(cx, cy, angle, sectorRings[2]); // Outer ring
+					nodes.push({ ...note, x: pos.x, y: pos.y, color: untypedGroup.color, type: 'untyped', r: radiusFor(note.depth), uniqueId: `n${idx++}` });
 				}
 			}
 		} else {

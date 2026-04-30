@@ -736,3 +736,52 @@ For "1902" (15 supports + 1 derives-from + 30 untyped, mostly depth 1):
 - `lab/reports/SESSION-LOG-2026-04-29.md` (this entry).
 
 **Stage 2B retest after §109 binary builds**: re-open "1902" → expect clusters at compass positions with depth-based ring distribution (matching widget's multi-ring look), and verify that the overlap visible in §107 image 1 is gone (or at least limited to depth-1 untyped collisions, which is the known residual case for gap-filling follow-up).
+
+---
+
+## §110 — Count-based ring assignment (Boss: "Nothing changed!" retest of §109)
+
+**Boss-reported during the §109 Stage 2B retest (2026-04-30 ~13:00)**: "Nothing changed! And yes, it is build (Apr 30 12:19)." Boss confirmed they're running the post-§109 binary, but the visualisation looks identical to §107.
+
+**Why §109 didn't help**: traced to `inspector360.rs::get_360_view` — every outbound and inbound link is stamped with `depth = 1` (`let linked = LinkedNote { ..., depth: 1 };` at the IPC). Only second-order links get `depth = 2`, and those are pushed onto `untyped_links`, never `typed_links`. So:
+
+- Every TYPED link in `typed_links[any]` has depth 1.
+- UNTYPED links have depth 1 (direct) or depth 2 (second-order). Never depth 3.
+
+§109's depth-based ring assignment (`note.depth <= 1 ? 0 : note.depth <= 2 ? 1 : 2`) put:
+- All typed nodes on inner ring 160 (since all are depth 1).
+- Untyped depth 1 also on inner ring 160 — **same ring as typed, same angles as typed clusters** → visual collision.
+- Untyped depth 2 on middle ring 270.
+- Outer ring 380 unused (no depth 3 in real data).
+
+For "1902": 15 supports (all depth 1, top of inner) + 1 derives-from (depth 1, left of inner) + ~? untyped depth 1 (scattered on inner) + ~? untyped depth 2 (scattered on middle). Inner ring 160 has supports cluster + untyped scatter at potentially the same angles → overlap.
+
+§107's single-ring at 290 had the same pattern, just shifted to a different radius. Hence Boss's "nothing changed" — they were comparing the §109 layout to the §107 layout and seeing the same overlap structure (typed cluster + untyped scatter at the same radius).
+
+**Fix in §110**: replace depth-based ring assignment with **count-based ring assignment**.
+
+- **Typed groups** sorted by count ascending, distributed across **inner ring 160 and middle ring 270** only. Smallest typed group → inner; largest typed group → middle. Multiple groups share a ring when there are 4+ types, but they're at different compass angles so no visual collision.
+- **Untyped** always on **outer ring 380**, regardless of count or depth.
+- Depth is now used **only for node size** (radius via `radiusFor(depth)`), not ring placement.
+
+**Result for "1902"** (3 groups):
+- derives-from (1 note, smallest) → ring 0 (160) at left compass.
+- supports (15 notes, largest typed) → ring 1 (270) at top compass.
+- untyped (30 notes) → ring 2 (380) full 360°.
+
+**Three reliably distinct rings**, each with at most one type group on it. No typed/untyped collision because untyped is always one ring out from any typed group. Matches the widget's 3-ring visual.
+
+**For notes with more typed groups** (e.g. 4 typed + untyped), the inner-two-ring split uses `Math.floor(g * 2 / numTyped)` to roughly half-and-half typed across rings 0 and 1. Multiple typed on the same ring sit at distinct compass angles → still no collision.
+
+**Trade-off**: depth information is no longer encoded in ring radius (only in node size). Boss accepted this implicitly — the widget's depth-based ring assignment doesn't help when the data lacks depth variation, and Boss's directive is to match the widget's VISUAL output, not its mechanism.
+
+**SO #6 enforced**: orientation v1.13 created as a NEW file alongside v1.12. v1.12's content demoted to `### v1.12 changelog (vs v1.11)` subsection with a note explaining why §109 was insufficient and §110 corrected it.
+
+**Build verification**: `npm run check` clean of new errors.
+
+**Files changed**:
+- `src/lib/components/Inspector360.svelte` (sector-mode `allNodes` block: typed sorted by count + distributed inner/middle; untyped forced to outer ring).
+- `docs/Constellation Orientation & Onboarding v1.13.md` (new file, state after §110).
+- `lab/reports/SESSION-LOG-2026-04-29.md` (this entry).
+
+**Stage 2B retest after §110 binary builds**: re-open "1902" → expect THREE distinct rings, with derives-from inner-left, supports middle-top, untyped on the outer ring fully encircling. No typed/untyped overlap.
