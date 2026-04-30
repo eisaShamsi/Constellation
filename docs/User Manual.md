@@ -1550,35 +1550,55 @@ Folder structures impose a single hierarchy, but knowledge does not fit one tree
 
 ---
 
-### 18.10 360° Inspector
+### 18.10 360.3D Inspector — Stratification Matrix
 
 **What it is**
 
-The 360° Inspector is the synthesis surface of the Cognitive Engine. Every other CE feature (Strata, Maturity, Tension, Provenance, Stage, Review, Trails, Lenses) shows you one slice of a single note. The 360° Inspector shows you all of them at once — for one note, in one visual frame. The note sits at the centre of a sphere; its connected notes orbit around it, coloured by typed-link relationship and arranged in concentric depth rings (direct neighbours close to the centre, second-order links further out). Side panels report the note's stratum, maturity, origin type, trust depth, stage, review status, trail memberships, and lens groupings. A bottom HUD summarises the structural facts: outbound count, inbound count, word count, orphan flag, fragility flag, and link-type gap count.
+The 360.3D Inspector is the synthesis surface of the Cognitive Engine. Every other CE feature (Strata, Maturity, Tension, Provenance, Stage, Review, Trails, Lenses) shows you one slice of a single note. The Inspector shows you all of them at once, for one note, in one visual frame. It answers exactly one question, deeply:
+
+> **Where does this note stand in my Cognitive Knowledge?**
+
+The Inspector renders that standing as a **Stratification Matrix** — an 8 × 8 grid where the **vertical axis is stratum** (the 8 levels of intellectual altitude: Worldview at the top → Datum at the bottom) and the **horizontal axis is link direction** (the 7 typed link types — supports, contradicts, causes, derives-from, generalizes, exemplifies, part-of — plus an Untyped column).
+
+Each connected note appears as a coloured dot in the cell at the intersection of its own stratum and the typed direction it shares with the active note. Your active note's row is highlighted in purple; its name appears as a chip on the right edge of that row. Empty cells render as faint diagonal stripes — gaps are shown as deliberately as connections.
 
 **Why it matters**
 
-A note's value is not just its content — it is its place in your knowledge. The Inspector makes that place visible. It also flags gaps: the seven typed-link directions appear as sectors; directions you have used appear bright, directions you have not appear dimmed and dashed. A note with five `supports` links and zero `contradicts` links shows immediately as one-sided thinking — the visual cue prompts the question "have I considered the counter-evidence?" The Inspector does not answer for you, but it makes the question hard to miss.
+A note's value is not just its content — it is its place in your knowledge. The matrix makes that place visible at a glance:
+
+- **Vertical position** tells you the note's intellectual altitude. A note at L4 with all its connections at L1–L2 is sitting on raw data; the same note at L4 with connections at L5–L7 is reaching upward toward principle and theory. You can see the difference without reading a single name.
+- **Horizontal spread** tells you whether your thinking around the note is balanced. A row that is full under `supports` and empty under `contradicts` is one-sided thinking, visible at a glance. The Inspector does not answer for you, but it makes the question hard to miss.
+- **Empty cells** are first-class. Five blind spots in a row are five questions you have not asked yet.
+
+Below the matrix, a dimensions strip surfaces the note's non-spatial facts (maturity, origin type with trust depth, stage, review status, trail memberships, lens groupings). A bottom HUD summarises structural facts: outbound count, inbound count, word count, orphan flag, fragility flag, blind-spots count, and tensions count.
 
 **How to use it**
 
 There are two ways to open the Inspector for whichever note you have active.
 
-1. **Compact widget in the right sidebar (always-on glance)**: in the right sidebar tab strip, click the **360° Inspector tab** (icon: a small reticle — circle with centre dot and four spokes). A small spherical visualisation appears. As you switch notes in the editor, the widget updates to follow.
+1. **Compact scorecard in the right sidebar (always-on glance)**: in the right sidebar tab strip, click the **360.3D Inspector tab** (icon: a small reticle — circle with centre dot and four spokes). A scorecard appears: the note's name, a stratum pill (e.g. `L4 Concept`), a maturity pill, your outbound / inbound / word counts, and a per-direction bar chart with explicit em-dash markers for blind spots. The scorecard updates as you switch notes in the editor.
 
-2. **Full-window mode (deliberate study)**: in the left ribbon (dock), click the **360° Inspector dock button** (same reticle icon, larger). The editor area is replaced by the full inspector with side panels, a bottom HUD, and three switchable visualisation modes (Atmospheric Rings, Neural Web, Cosmic Sphere — selectable from the inspector's header dropdown). To leave full-window mode, click the **×** in the top-right corner, or click any orbiting node to navigate to that note.
+2. **Full-window matrix (deliberate study)**: in the left ribbon (dock), click the **360.3D Inspector dock button** (same reticle icon, larger). The editor area is replaced by the full matrix.
+
+**Reading the matrix**
+
+- **Hover any dot** to reveal the connected note's name in a tooltip at the top-right of the matrix. The tooltip stays in place — it does not chase the mouse — so you can read it while looking at other rows.
+- **Click any dot** to navigate the Inspector to that note. The matrix re-fetches and redraws around the new note as the active centre. A back-button bar appears at the top of the Inspector.
+- **Click the back-button** ( ← {previous note name} ) to step back one note in your trail. It walks all the way back through any chain of clicks until you reach the note you started from.
+- **Close the full-window** with the **×** in the top-right corner.
 
 **Where you see it**
 
-- **Right sidebar tab**: the compact widget at 280×280 pixels, alongside Backlinks / Outgoing / Tasks / Calendar / Health / Provenance / Review / Links.
-- **Ribbon dock button**: opens the full-window mode.
+- **Right sidebar tab**: the compact scorecard widget, alongside Backlinks / Outgoing / Tasks / Calendar / Health / Provenance / Review / Links.
+- **Ribbon dock button**: opens the full-window matrix.
 
 **Tips**
 
-- The compact widget is for ambient awareness as you write. The full-window mode is for deliberate study of a single note.
-- The three full-window visualisation modes show the same data from different angles. Try each — different modes reveal different patterns.
-- On large libraries (thousands of notes), the first open of the Inspector for a given note takes one to three seconds while it computes the synthesis. Subsequent opens are faster (cached). If the wait is consistently long on your library, that is information for the project — please report.
-- The "Open a note to see its 360° view" empty state means the Inspector is open but no note is in focus. Open any note (or click in your library) and the visualisation will fill in.
+- The compact scorecard is for ambient awareness as you write. The full-window matrix is for deliberate study of a single note.
+- The matrix's strength is at-a-glance pattern reading. Don't try to memorise individual dots — read the shape of each row, each column, and the empty regions.
+- A row that is fully empty (no connections at that stratum) is a stratum your thinking has not reached. A column that is fully empty (no connections of that type) is a typed direction you have never used for this note.
+- The "Open a note to see its 360.3D view" empty state means the Inspector is open but no note is in focus. Open any note in the editor (or click in your library) and the matrix will fill in.
+- On large libraries (thousands of notes), the first open of the Inspector for a given note takes a moment while it computes. Subsequent opens are faster.
 
 ---
 
