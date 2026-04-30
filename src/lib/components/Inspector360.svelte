@@ -177,6 +177,24 @@
 		hoveredDot = null;
 	}
 
+	// §114: typed-cell overflow is click-to-expand. Boss directive — clicking
+	// `+N` on a typed cell shows every hidden dot in-place by growing the
+	// cell. Untyped is excluded because cells like Abu Bakr's L7-Untyped (282
+	// hidden) would balloon the matrix beyond useful proportions.
+	let expandedCells = $state<Set<string>>(new Set());
+
+	function toggleCellExpand(stratum: number, type: LinkType) {
+		if (type === 'untyped') return;
+		const key = `${stratum}-${type}`;
+		const next = new Set(expandedCells);
+		if (next.has(key)) next.delete(key); else next.add(key);
+		expandedCells = next;
+	}
+
+	function isCellExpanded(stratum: number, type: LinkType): boolean {
+		return expandedCells.has(`${stratum}-${type}`);
+	}
+
 	// §113: per-type display labels. 'untyped' is hardcoded because
 	// `$t('inspector360.untyped')` returns the literal key when missing
 	// from the locale (truthy ⇒ the OR fallback never fires) — same
@@ -350,11 +368,14 @@
 							{#each TYPE_ORDER as type}
 								{@const cellNotes = matrix.cells[stratum][type]}
 								{@const cellEmpty = cellNotes.length === 0}
+								{@const expanded = isCellExpanded(stratum, type)}
+								{@const visibleNotes = expanded ? cellNotes : cellNotes.slice(0, MAX_DOTS_PER_CELL)}
 								<div class="i360-cell"
 									class:active-row={isActive}
 									class:empty-cell={cellEmpty}
+									class:expanded
 									style="--col-color: {TYPE_COLORS[type]}">
-									{#each cellNotes.slice(0, MAX_DOTS_PER_CELL) as note}
+									{#each visibleNotes as note}
 										<button class="i360-dot-btn"
 											style="--dot-color: {TYPE_COLORS[type]}"
 											aria-label={note.name}
@@ -363,8 +384,18 @@
 											onclick={() => onNoteClick?.(note.path, note.name)}>
 										</button>
 									{/each}
-									{#if cellNotes.length > MAX_DOTS_PER_CELL}
-										<span class="i360-overflow" title={`${cellNotes.length - MAX_DOTS_PER_CELL} more`}>+{cellNotes.length - MAX_DOTS_PER_CELL}</span>
+									{#if cellNotes.length > MAX_DOTS_PER_CELL && !expanded}
+										{#if type === 'untyped'}
+											<span class="i360-overflow" title={`${cellNotes.length - MAX_DOTS_PER_CELL} more`}>+{cellNotes.length - MAX_DOTS_PER_CELL}</span>
+										{:else}
+											<button class="i360-overflow-btn"
+												onclick={() => toggleCellExpand(stratum, type)}
+												title={`Show all ${cellNotes.length}`}>+{cellNotes.length - MAX_DOTS_PER_CELL}</button>
+										{/if}
+									{:else if expanded && type !== 'untyped'}
+										<button class="i360-overflow-btn collapse"
+											onclick={() => toggleCellExpand(stratum, type)}
+											title="Collapse">−</button>
 									{/if}
 								</div>
 							{/each}
@@ -508,35 +539,35 @@
 		align-items: center; justify-content: center;
 		background: var(--background-primary);
 	}
-	.i360-empty-icon-lg { font-size: 8rem; margin-bottom: 24px; opacity: 0.5; }
-	.i360-empty-text-lg { font-size: 2.2rem; color: var(--text-muted); }
+	.i360-empty-icon-lg { font-size: 6rem; margin-bottom: 20px; opacity: 0.5; }
+	.i360-empty-text-lg { font-size: 1.6rem; color: var(--text-muted); }
 
-	/* Header */
+	/* Header — §114: scaled down ~25 % from §113's 2× so the full matrix fits. */
 	.i360-header {
 		display: flex; align-items: center; justify-content: space-between;
-		padding: 24px 40px;
+		padding: 16px 32px;
 		background: var(--background-primary-alt);
 		border-bottom: 1px solid var(--background-modifier-border);
 		z-index: 20; position: relative;
-		gap: 24px;
+		gap: 20px;
 		flex-shrink: 0;
 	}
-	.i360-header-left { display: flex; align-items: center; gap: 24px; flex: 1; min-width: 0; }
-	.i360-header-icon { font-size: 56px; }
+	.i360-header-left { display: flex; align-items: center; gap: 18px; flex: 1; min-width: 0; }
+	.i360-header-icon { font-size: 40px; }
 	.i360-header-label {
-		font-size: 32px; color: var(--text-accent); font-weight: 700;
-		letter-spacing: 4px; text-transform: uppercase;
+		font-size: 24px; color: var(--text-accent); font-weight: 700;
+		letter-spacing: 3px; text-transform: uppercase;
 	}
 	.i360-header-name {
-		font-size: 44px; font-weight: 700; color: var(--text-normal);
+		font-size: 32px; font-weight: 700; color: var(--text-normal);
 		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 	}
-	.i360-header-right { display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+	.i360-header-right { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
 	.i360-close {
-		width: 64px; height: 64px; border-radius: 50%;
+		width: 48px; height: 48px; border-radius: 50%;
 		border: 1px solid var(--background-modifier-border);
 		background: var(--background-secondary);
-		color: var(--text-muted); font-size: 36px; cursor: pointer;
+		color: var(--text-muted); font-size: 26px; cursor: pointer;
 		display: flex; align-items: center; justify-content: center;
 		flex-shrink: 0;
 	}
@@ -545,63 +576,67 @@
 		color: var(--text-normal);
 	}
 	.i360-back-full {
-		display: flex; align-items: center; gap: 12px;
-		padding: 12px 22px; border-radius: 12px;
+		display: flex; align-items: center; gap: 10px;
+		padding: 8px 16px; border-radius: 10px;
 		background: var(--background-secondary);
 		border: 1px solid var(--background-modifier-border);
-		color: var(--text-normal); font-size: 22px;
+		color: var(--text-normal); font-size: 17px;
 		cursor: pointer; flex-shrink: 0;
-		max-width: 420px;
+		max-width: 360px;
 	}
 	.i360-back-full:hover {
 		background: var(--background-modifier-hover);
 	}
-	.i360-back-full .i360-back-arrow { font-size: 30px; line-height: 1; flex-shrink: 0; }
+	.i360-back-full .i360-back-arrow { font-size: 22px; line-height: 1; flex-shrink: 0; }
 	.i360-back-full .i360-back-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 	/* Dimensions strip */
 	.i360-strip {
-		display: flex; gap: 48px; padding: 16px 40px 24px;
+		display: flex; gap: 36px; padding: 12px 32px 16px;
 		flex-wrap: wrap; flex-shrink: 0;
 	}
 	.i360-strip-cell {
-		display: flex; flex-direction: column; gap: 6px;
+		display: flex; flex-direction: column; gap: 4px;
 	}
 	.i360-strip-label {
-		font-size: 22px; color: var(--text-faint);
-		text-transform: uppercase; letter-spacing: 2px;
+		font-size: 16px; color: var(--text-faint);
+		text-transform: uppercase; letter-spacing: 1.5px;
 	}
 	.i360-strip-value {
-		font-size: 30px; color: var(--text-normal);
-		display: inline-flex; align-items: center; gap: 10px;
+		font-size: 22px; color: var(--text-normal);
+		display: inline-flex; align-items: center; gap: 8px;
 	}
 	.i360-strip-value.accent { color: var(--text-accent); }
 	.i360-dot {
-		width: 18px; height: 18px; border-radius: 50%;
+		width: 14px; height: 14px; border-radius: 50%;
 		display: inline-block; flex-shrink: 0;
 	}
 
-	/* Canvas (matrix container) */
+	/* Canvas (matrix container) — §114: row min reduced from 110px → 78px so
+	 * all 8 stratum rows fit in a typical 1080p viewport. The previous
+	 * `flex: 1` + `overflow: hidden` combination was clipping the bottom
+	 * rows when 8 × 110 + header exceeded canvas height. */
 	.i360-canvas {
 		flex: 1; position: relative;
-		padding: 12px 40px 110px;
+		padding: 8px 32px 88px;
 		overflow: auto;
 		display: flex; align-items: stretch; justify-content: center;
 	}
 	.i360-matrix-wrap {
 		position: relative;
 		flex: 1;
-		max-width: 1800px;
+		max-width: 1600px;
 		display: flex; flex-direction: column;
+		min-height: 0;
 	}
 	.i360-matrix {
 		display: grid;
-		grid-template-columns: 280px repeat(8, minmax(120px, 1fr)) 100px;
-		grid-auto-rows: minmax(110px, 1fr);
+		grid-template-columns: 220px repeat(8, minmax(96px, 1fr)) 76px;
+		grid-auto-rows: minmax(78px, 1fr);
 		gap: 1px;
 		background: var(--background-modifier-border);
 		border: 1px solid var(--background-modifier-border);
-		border-radius: 16px;
+		border-radius: 12px;
 		overflow: hidden;
 		flex: 1;
 	}
@@ -610,20 +645,20 @@
 	.i360-rowtot-header {
 		background: var(--background-secondary);
 		display: flex; align-items: center; justify-content: center;
-		gap: 10px;
-		font-size: 22px;
+		gap: 8px;
+		font-size: 16px;
 		color: var(--text-muted);
-		padding: 8px 12px;
+		padding: 6px 10px;
 	}
 	.i360-corner { flex-direction: column; }
 	.i360-corner-stratum { color: var(--text-accent); font-weight: 600; }
 	.i360-corner-type { color: var(--color-blue); font-weight: 600; }
-	.i360-rowtot-header { font-size: 30px; font-weight: 700; }
+	.i360-rowtot-header { font-size: 22px; font-weight: 700; }
 
 	.i360-col-header {
 		display: flex; flex-direction: column; align-items: center; justify-content: center;
-		padding: 14px 6px;
-		gap: 6px;
+		padding: 10px 4px;
+		gap: 4px;
 		background:
 			linear-gradient(180deg,
 				color-mix(in srgb, var(--col-color, currentColor) 22%, transparent),
@@ -631,22 +666,22 @@
 		border-bottom: 3px solid var(--col-color, currentColor);
 	}
 	.i360-col-name {
-		font-size: 18px; font-weight: 700; letter-spacing: 1.5px;
+		font-size: 14px; font-weight: 700; letter-spacing: 1px;
 		color: var(--col-color, currentColor);
 		text-align: center;
 		text-transform: uppercase;
 		line-height: 1.2;
 	}
 	.i360-col-count {
-		font-size: 26px; font-weight: 700;
+		font-size: 20px; font-weight: 700;
 		color: var(--col-color, currentColor);
 		font-variant-numeric: tabular-nums;
 	}
 
 	.i360-row-header {
 		background: var(--background-primary-alt);
-		display: flex; align-items: center; gap: 12px;
-		padding: 10px 18px;
+		display: flex; align-items: center; gap: 10px;
+		padding: 8px 14px;
 		border-right: 3px solid color-mix(in srgb, var(--text-accent) 25%, transparent);
 	}
 	.i360-row-header.active {
@@ -658,27 +693,27 @@
 	}
 	.i360-row-header.empty-row { opacity: 0.45; }
 	.i360-row-num {
-		color: var(--text-accent); font-weight: 700; font-size: 26px;
-		width: 50px; flex-shrink: 0;
+		color: var(--text-accent); font-weight: 700; font-size: 20px;
+		width: 38px; flex-shrink: 0;
 	}
 	.i360-row-name {
-		color: var(--text-normal); font-size: 24px;
+		color: var(--text-normal); font-size: 18px;
 		flex-shrink: 0;
 	}
 	.i360-active-chip {
 		margin-inline-start: auto;
-		padding: 4px 12px; border-radius: 6px;
+		padding: 3px 10px; border-radius: 5px;
 		background: var(--text-accent); color: var(--background-primary);
-		font-size: 20px; font-weight: 700;
+		font-size: 15px; font-weight: 700;
 		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-		max-width: 160px;
+		max-width: 140px;
 	}
 
 	.i360-cell {
 		background: var(--background-primary-alt);
 		display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
-		padding: 10px 6px;
-		gap: 6px;
+		padding: 8px 6px;
+		gap: 5px;
 		position: relative;
 	}
 	.i360-cell.active-row {
@@ -704,7 +739,7 @@
 				color-mix(in srgb, var(--text-muted) 12%, var(--background-primary-alt)) 12px);
 	}
 	.i360-dot-btn {
-		width: 16px; height: 16px; border-radius: 50%;
+		width: 13px; height: 13px; border-radius: 50%;
 		background: var(--dot-color, #888);
 		border: none;
 		padding: 0;
@@ -714,19 +749,39 @@
 	}
 	.i360-dot-btn:hover {
 		transform: scale(1.7);
-		box-shadow: 0 0 14px var(--dot-color, #888);
+		box-shadow: 0 0 12px var(--dot-color, #888);
 		opacity: 1;
 		z-index: 5;
 	}
 	.i360-overflow {
-		font-size: 18px; color: var(--text-muted);
-		font-weight: 600; padding: 0 4px;
+		font-size: 14px; color: var(--text-muted);
+		font-weight: 600; padding: 0 3px;
+	}
+	.i360-overflow-btn {
+		font-size: 14px; font-weight: 600;
+		color: var(--text-muted);
+		background: var(--background-secondary);
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 6px;
+		padding: 2px 8px;
+		cursor: pointer;
+		font-variant-numeric: tabular-nums;
+		transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+	}
+	.i360-overflow-btn:hover {
+		background: var(--background-modifier-hover);
+		color: var(--text-normal);
+		border-color: var(--col-color, var(--background-modifier-border-focus));
+	}
+	.i360-overflow-btn.collapse {
+		font-size: 16px; line-height: 1;
+		padding: 2px 10px;
 	}
 
 	.i360-rowtot {
 		background: var(--background-primary-alt);
 		display: flex; align-items: center; justify-content: center;
-		color: var(--text-muted); font-size: 28px;
+		color: var(--text-muted); font-size: 22px;
 		font-variant-numeric: tabular-nums;
 	}
 	.i360-rowtot.active {
@@ -740,37 +795,37 @@
 	 * and top-y; the transform shifts it above-and-centred. */
 	.i360-dot-tooltip {
 		position: fixed;
-		transform: translate(-50%, calc(-100% - 12px));
-		padding: 8px 16px;
+		transform: translate(-50%, calc(-100% - 10px));
+		padding: 6px 12px;
 		background: color-mix(in srgb, var(--background-secondary) 92%, var(--text-normal));
 		border: 1px solid var(--background-modifier-border-focus);
-		border-radius: 8px;
-		color: var(--text-normal); font-size: 22px;
+		border-radius: 7px;
+		color: var(--text-normal); font-size: 17px;
 		font-weight: 500;
 		pointer-events: none;
 		z-index: 9999;
-		max-width: 480px;
+		max-width: 420px;
 		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+		box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
 	}
 
 	/* Bottom HUD */
 	.i360-hud {
 		position: absolute; bottom: 0; left: 0; right: 0;
-		padding: 22px 48px;
+		padding: 16px 36px;
 		display: flex; justify-content: space-between;
 		z-index: 20;
 		background: var(--background-primary-alt);
 		border-top: 1px solid var(--background-modifier-border);
-		flex-wrap: wrap; gap: 12px;
+		flex-wrap: wrap; gap: 10px;
 	}
 	.i360-hud-left, .i360-hud-right {
-		display: flex; gap: 32px;
+		display: flex; gap: 26px;
 		flex-wrap: wrap;
 	}
 	.i360-hud-item {
-		font-size: 28px; color: var(--text-muted);
-		display: flex; align-items: center; gap: 10px;
+		font-size: 21px; color: var(--text-muted);
+		display: flex; align-items: center; gap: 8px;
 	}
 	.i360-hud-warn { color: var(--text-error, #ef4444); }
 </style>

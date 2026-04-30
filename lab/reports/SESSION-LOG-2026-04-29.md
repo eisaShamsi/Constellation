@@ -952,3 +952,39 @@ Orientation **v1.16** created as a NEW file alongside v1.15. v1.15's content dem
 - Stage 2 (denser cases — notes with very few connections, very many) — to be drafted after Stage 1 retest is settled.
 - MIG-006 §3 redo (queued).
 - CE Phase 9 Path B / MIG-010 scale (queued after MIG-006 §3).
+
+---
+
+## §114 — Stage 1.2 retest follow-up: scale down + fix bottom-row clipping
+
+**Boss S1.2 retest finding**: "Minimize by 1, L1 missing, L2 cutted." Two issues from one screenshot:
+
+1. The §113 "2× sizes" directive overshot for the full-window matrix. Header label, dimension strip, column / row labels, HUD all visibly too big.
+2. **L1 (Datum) row missing entirely; L2 (Information) cut at the bottom.** The matrix's grid was 8 × `minmax(110px, 1fr)` = 880 px minimum, plus column header (~80 px) — total ~960 px. Combined with the matrix's `flex: 1` + `overflow: hidden`, anything above the canvas height got clipped instead of scrolled. On Boss's display the bottom two rows fell outside.
+
+**Fix shipped in §114** (frontend-only, full-window only):
+
+- Full-window text sizes scaled to ~75 % of §113's. Specifically: `360.3D` label 32 → 24 px, brain icon 56 → 40 px, header name 44 → 32 px, close button 64 px → 48 px, back-button text 22 → 17 px, strip label 22 → 16 px, strip value 30 → 22 px, column name 18 → 14 px, column count 26 → 20 px, row num 26 → 20 px, row name 24 → 18 px, active chip 20 → 15 px, dot 16 → 13 px, overflow chip 18 → 14 px, row total 28 → 22 px, dot tooltip 22 → 17 px, HUD item 28 → 21 px. Paddings reduced proportionally.
+- Cell row min: `minmax(110px, 1fr)` → `minmax(78px, 1fr)`. 8 rows × 78 = 624 px + column header ~70 px = ~694 px, comfortably under 1080p screen height even with the dimension strip + header + HUD chrome.
+- Column min: `minmax(120px, 1fr)` → `minmax(96px, 1fr)`.
+- Row-label column: 280 px → 220 px. Row-total column: 100 px → 76 px.
+- `min-height: 0` on `.i360-matrix-wrap` so it can shrink rather than overflow when the canvas is tight (interaction with `flex: 1` chains).
+
+**Compact scorecard untouched.** Boss explicitly passed S1.1 at the §113 sizes; only the full-window matrix needed scaling down.
+
+### Verification
+
+- `cargo check`: not re-run (no Rust change).
+- `node node_modules/svelte-check/dist/src/index.js --tsconfig ./tsconfig.json --threshold error`: 1 error (pre-existing `store.ts:1850`, out of scope). Zero in `Inspector360.svelte`.
+- Release build: pending.
+
+### SO #6
+
+Orientation **v1.17** created alongside v1.16. v1.16's content demoted to its own subsection. The §114 callout enumerates the size deltas inline so a future reader can diff §113 → §114 without trawling git.
+
+### Pending after §114
+
+- Boss S1.2 retest with the new scaled-down matrix. If sizes are right, S1.3 (floating tooltip) retest follows. S1.4–S1.6 already passed and don't need re-verification.
+- Stage 2 drafted after Stage 1 settles.
+- MIG-006 §3 redo (queued).
+- CE Phase 9 Path B / MIG-010 scale (queued after MIG-006 §3).
