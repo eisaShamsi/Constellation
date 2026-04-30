@@ -17,6 +17,7 @@ pub struct LinkedNote {
     pub name: String,
     pub path: String,
     pub depth: usize, // 1 = direct, 2 = second-order, 3 = third-order
+    pub stratum: u8,  // 1..=8, the connected note's CE stratum
 }
 
 /// Complete 360° view of a single note.
@@ -97,6 +98,15 @@ pub fn get_360_view(
     let mut all_notes: HashMap<String, NoteInfo> = HashMap::new();
     scan_all_notes(Path::new(&library_path), &link_re, &tag_re, &mut all_notes);
 
+    // §112: Pre-compute stratum for every note in the library so each
+    // LinkedNote can carry its source/target's stratum (the matrix
+    // visualisation needs this for vertical positioning). One pass over
+    // the link graph builds inbound_counts + unique_sources_count per
+    // note; another pass computes stratum from those + the existing
+    // word_count / outgoing inputs. Total cost: O(N + total_links),
+    // not O(N²).
+    let strata: HashMap<String, u8> = precompute_all_strata(&all_notes);
+
     let target_info = all_notes.get(&note_lower);
 
     // ─── Phase 1: Typed links ───
@@ -114,6 +124,7 @@ pub fn get_360_view(
                 name: all_notes.get(target).map(|n| n.name.clone()).unwrap_or(target.clone()),
                 path: all_notes.get(target).map(|n| n.path.clone()).unwrap_or_default(),
                 depth: 1,
+                stratum: strata.get(target).copied().unwrap_or(1),
             };
             if let Some(lt) = link_type {
                 used_types.insert(lt.clone());
@@ -125,7 +136,7 @@ pub fn get_360_view(
     }
 
     // Inbound links to this note
-    for (_, info) in &all_notes {
+    for (source_lower, info) in &all_notes {
         for (target, link_type) in &info.outgoing {
             if target == &note_lower {
                 total_inbound += 1;
@@ -133,6 +144,7 @@ pub fn get_360_view(
                     name: info.name.clone(),
                     path: info.path.clone(),
                     depth: 1,
+                    stratum: strata.get(source_lower).copied().unwrap_or(1),
                 };
                 if let Some(lt) = link_type {
                     used_types.insert(lt.clone());
@@ -159,6 +171,7 @@ pub fn get_360_view(
                         name: all_notes.get(target).map(|n| n.name.clone()).unwrap_or(target.clone()),
                         path: all_notes.get(target).map(|n| n.path.clone()).unwrap_or_default(),
                         depth: 2,
+                        stratum: strata.get(target).copied().unwrap_or(1),
                     });
                 }
             }
@@ -335,6 +348,59 @@ fn extract_stage(content: &str) -> Option<String> {
         } else { break; }
     }
     None
+}
+
+/// §112: Pre-compute stratum for every note. Builds inbound counts and
+/// unique-sources counts from a single pass over the link graph, then
+/// computes each note's stratum using the existing rule set without
+/// re-scanning all_notes per note.
+fn precompute_all_strata(all_notes: &HashMap<String, NoteInfo>) -> HashMap<String, u8> {
+    // Pass 1: inbound counts + unique source-note sets per target.
+    let mut inbound_counts: HashMap<String, usize> = HashMap::new();
+    let mut sources_of: HashMap<String, HashSet<String>> = HashMap::new();
+    for (_, info) in all_notes {
+        for (target_lower, _) in &info.outgoing {
+            *inbound_counts.entry(target_lower.clone()).or_insert(0) += 1;
+            sources_of
+                .entry(target_lower.clone())
+                .or_insert_with(HashSet::new)
+                .insert(info.name.clone());
+        }
+    }
+
+    // Pass 2: per-note stratum from the existing rule set.
+    let mut strata: HashMap<String, u8> = HashMap::with_capacity(all_notes.len());
+    for (name_lower, info) in all_notes {
+        let inbound = inbound_counts.get(name_lower).copied().unwrap_or(0);
+        let sources_count = sources_of.get(name_lower).map(|s| s.len()).unwrap_or(0);
+        let base: u8 = if info.word_count <= 50 {
+            1
+        } else if info.word_count <= 200 {
+            2
+        } else {
+            3
+        };
+        let mut bonus: u8 = 0;
+        if info.outgoing.len() >= 3 {
+            bonus += 1;
+        }
+        if inbound >= 5 {
+            bonus += 1;
+        }
+        let types_used: HashSet<&str> =
+            info.outgoing.iter().filter_map(|(_, t)| t.as_deref()).collect();
+        if types_used.contains("generalizes") {
+            bonus += 1;
+        }
+        if types_used.contains("causes") || types_used.contains("supports") {
+            bonus += 1;
+        }
+        if sources_count >= 3 {
+            bonus += 1;
+        }
+        strata.insert(name_lower.clone(), (base + bonus).clamp(1, 8));
+    }
+    strata
 }
 
 fn compute_stratum_for_note(info: Option<&NoteInfo>, inbound: usize, all_notes: &HashMap<String, NoteInfo>, note_lower: &str) -> u8 {

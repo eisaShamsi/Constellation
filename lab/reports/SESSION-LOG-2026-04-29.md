@@ -820,3 +820,82 @@ For "1902": 15 supports (all depth 1, top of inner) + 1 derives-from (depth 1, l
 - Boss pick of redesign visualisation from a proposal slate.
 - Then §112: implement the chosen design (Inspector360.svelte rewrite).
 - Stage 2C / 2D retests deferred until the new visualisation lands.
+
+---
+
+## §112 — Stratification Matrix (clean-slate redesign lands)
+
+**Boss approval of concept paper + design proposal (2026-04-30)**: "All Approved. Proceed."
+
+**Concept Paper §1–§7 confirmed.** §8 owner questions answered implicitly by approving the redesign:
+- The question 360.3D answers IS "Where does this note stand in my Cognitive Knowledge?" ✓
+- The ten cognitive dimensions are the right set ✓
+- The three outputs (Position / Connection Profile / Absence) are the right framing ✓
+- The eight design principles are the right constraints ✓
+- Stratum-as-primary-axis IS the right starting point ✓
+
+**Design chosen**: **Stratification Matrix**. 8 × 8 grid; vertical axis = stratum (L8 top → L1 bottom); horizontal axis = link direction (7 typed + Untyped). Each connected note becomes a dot in the (its-stratum, type-shared-with-active) cell. Active note's row highlighted. Empty cells render diagonal stripes — gaps as first-class signal. Compact mode is a scorecard (not the matrix — 280 px is too narrow); full-window is the matrix.
+
+### Backend changes ([`inspector360.rs`](src-tauri/src/inspector360.rs))
+
+1. `LinkedNote` struct gains `stratum: u8` field (1..=8). Default 1 if unknown.
+2. New helper `precompute_all_strata(all_notes)` → `HashMap<String, u8>`. One pass to build inbound counts + sources-of map for the whole library; one pass to apply the existing `compute_stratum_for_note`-equivalent rule set to every note. O(N + total_links). The active-note-only computation is unchanged.
+3. All three `LinkedNote` creation sites (outbound, inbound, second-order) stamp `stratum` from the precomputed map.
+4. `cargo check` clean (only pre-existing warnings).
+
+### Frontend changes ([`Inspector360.svelte`](src/lib/components/Inspector360.svelte))
+
+**Wholesale rewrite** — old file 849 lines → new file 687 lines. Diff is `1099 changed (-631 / +536)`.
+
+**Dropped permanently**:
+- `vizMode` state + dropdown (Atmospheric / Neural / Cosmic).
+- `SECTOR_MAP` angular table.
+- `polarToXY` helper.
+- `ringsLayout`, `layoutMode`, `allNodes` derived state.
+- `SECTOR_THRESHOLD` hybrid switch.
+- All three SVG visualisation blocks.
+- Mode-specific decorations (rotating ellipses, glowing rings, star background, etc.).
+
+**New, kept**:
+- Constants `TYPE_ORDER` (8), `TYPE_COLORS` (matching the old palette), `TYPE_LABEL_KEYS`, `STRATA = [8..1]`, `STRATUM_NAMES`.
+- `matrix` `$derived.by()` builds `cells[stratum][type]` deduped per cell by path; computes `colTotals` + `rowTotals`.
+- `compactBars` `$derived.by()` builds the per-type counts + max for the scorecard bar chart.
+- `activeStratum` `$derived` clamps `data.stratum` to 1..=8.
+
+**Compact mode (scorecard)**:
+- Note name + stratum pill (`L4 Concept`) + maturity pill + stage chip.
+- ↑outbound / ↓inbound / word-count line.
+- Per-type horizontal bar chart (8 bars). Empty rows shown at 50 % opacity with `—` count. Bars normalized to the largest count.
+- Flags row: orphan, fragile, gap count, due-for-review.
+
+**Full-window mode (matrix)**:
+- HTML/CSS Grid (no SVG). Columns: 200 px row-label, 8 × `minmax(80px, 1fr)`, 64 px row-totals.
+- Header row: corner indicator + 8 column headers (gradient tinted by type colour, bottom border in type colour, name + count) + Σ.
+- 8 data rows. Each row: row header (L# + name; active note has bold purple band + truncated active-note chip on the right) + 8 cells + row total.
+- Cells: empty → diagonal stripes; non-empty → up to 16 type-coloured 11 px dot-buttons + `+N` overflow chip. Hover scales the dot 1.6× with a coloured glow.
+- Floating hover label (top-right of canvas, fixed position) reveals the hovered dot's note name. Doesn't follow the mouse.
+- Click a dot → `onNoteClick(path, name)` → push current to back stack → re-fetch IPC for the new note.
+- Multi-hop back-stack preserved from §99. Universe switch resets to `[]`.
+
+**Dimensions strip** under the header surfaces the non-spatial dimensions: Stratum, Maturity, Origin + trust depth, Stage, Review (date or "Due"), Trails, Lenses (last two only if non-empty).
+
+**Bottom HUD** keeps the existing summary: outbound / inbound / word count + warning chips (orphan, fragile, blind spots, tensions).
+
+**Hover-only labels (preserved from §107)**: the per-dot `aria-label`, hover-name state, and per-render uniqueness via the `(stratum, type, index)` key all match the §107 fix that closed the empty-path collision.
+
+### Verification
+
+- `cargo check`: clean (only pre-existing warnings).
+- `node node_modules/svelte-check/dist/src/index.js --tsconfig ./tsconfig.json --threshold error`: 1 error (`store.ts:1850` LinkLifecycle 'fresh' missing — pre-existing, out of scope per §93 review note). Zero errors in `Inspector360.svelte`.
+- Release build: pending.
+
+### SO #6
+
+Orientation **v1.15** created as a NEW file alongside v1.14. v1.14's content demoted to `### v1.14 changelog (vs v1.13)` subsection. §4.2 row 12 (Phase 12) updated: line count 445 → 517, status "redesigned v1.15 §112 (Stratification Matrix)". The "Frontend Inspector 360 surface" subsection rewritten end-to-end. §5.5 Other Rust modules entry updated to "(517, post-§112)".
+
+### Pending after §112
+
+- Boss tutorial test: open Inspector via dock button, verify matrix renders, verify scorecard renders in sidebar, verify hover labels, verify click-to-navigate, verify back-stack.
+- Stage 2C retest deferred until tutorial-tested.
+- MIG-006 §3 redo (queued).
+- CE Phase 9 Path B / MIG-010 scale (queued after MIG-006 §3).
