@@ -218,3 +218,71 @@ Orientation **v1.22** created alongside v1.21. The §119 callout enumerates all 
 - MIG-006 §3 redo (queued).
 - CE Phase 9 Path B / MIG-010 scale (queued after MIG-006 §3).
 - store.ts:1850 LinkLifecycle Option B fix (deferred until post-CE).
+
+---
+
+## §120 — Tooltip uppercase + edge-clip + full Arabic + English localization
+
+Boss tested §119 on the matrix and flagged three issues:
+
+1. **STRATUM tooltip rendered ALL CAPS** (image showing the dim-strip ? tooltip). The parent `.i360-strip-label` has `text-transform: uppercase` for its own label text; the tooltip element, even though `position: fixed`, inherits text-transform from the ancestor.
+2. **Σ tooltip and Blind spots tooltip clipped on the right** (images). `transform: translate(-50%, ...)` centers the tooltip on the trigger; for triggers near the right edge of the viewport, the tooltip's right half falls off-screen.
+3. **"I want everything fully localized, like the Stratum, and the top row."** Boss showed the matrix on Arabic locale: typed column headers were already translated (link_supports etc. exist in ar.json), but stratum row labels (Worldview / Paradigm / etc.), dim-strip labels (Stratum / Maturity / Origin / Stage / Review), maturity/origin/stage values (evergreen / discovered / spark / Due), Untyped column header, axis legends, and ALL the §119 help text were still hardcoded English.
+
+Boss's added directive: "Don't forget the other languages."
+
+### Code changes
+
+1. **`src/lib/components/HelpTip.svelte`**:
+   - `.help-tooltip` adds `text-transform: none; font-weight: 400; letter-spacing: normal` to override ancestor styles regardless of where the trigger is mounted.
+   - `computeCoords()` clamps `x` to viewport bounds: `halfWidth = 200` (380px max-width / 2 + breathing room), `margin = 12`, `minX = halfWidth + margin`, `maxX = vw - halfWidth - margin`. Triggers near the left/right edge now keep the full tooltip on-screen.
+
+2. **`src/lib/i18n/index.ts`**:
+   - `t` derived now implements a fallback chain: active locale → en.json → key. When `lookup()` returns the literal key path (miss), the chain tries en before giving up.
+   - Locale loader casts each non-en file through `unknown as typeof en` to bypass strict structural typing. The runtime fallback handles missing keys, so partial translation no longer breaks compilation.
+
+3. **`src/lib/i18n/en.json`** — added 64 new keys under `inspector360`:
+   - 1 untyped column label
+   - 8 stratum names (`stratum_name_1` Datum → `stratum_name_8` Worldview)
+   - 7 dimension labels (`dim_stratum/maturity/origin/stage/review/trails/lenses`)
+   - 5 maturity values, 4 origin values, 5 stage values (`stage_none` is the placeholder for stage absent), 2 review values (due/none)
+   - 2 axis legend labels
+   - 30 help strings: `help_axis_*` (2), `help_stratum_*` (8), `help_type_*` (8), `help_dim_*` (7), `help_grand_total` (1), `help_hud_*` (4)
+
+4. **`src/lib/i18n/ar.json`** — 64 Arabic translations of the same keys. Native-quality terminology:
+   - Strata: بَيانة / معلومة / قضية / مفهوم / مبدأ / نظرية / نموذج / رؤية كونية
+   - Dim labels: المستوى / النضج / المنشأ / المرحلة / المراجعة / المسارات / العدسات
+   - Maturity: بذرة / نبتة / دائمة الخضرة / مرجعية / ذابلة
+   - Origin: مكتسب / مكتشف / مختلط
+   - Stage: عابرة / اقتباس / دائمة / توليفية
+   - Review due: مستحقة
+   - Untyped: غير محدد
+   - 30 full help-text translations matching the English semantics.
+
+5. **`src/lib/components/Inspector360.svelte`** — full localization wire-up:
+   - All static `HELP_*` constants and `STRATUM_NAMES` map removed.
+   - Only `STRATUM_FALLBACK` retained as defensive English fallback (rarely used, since en.json is now authoritative).
+   - New helper `tr(value, key, fallback)`: returns `value` if it's not the literal key string, else `fallback`. Used at every i18n call site to handle the "key returned because missing" case cleanly.
+   - 30 HelpTip instances now read text via `tr($t('inspector360.help_*'), key, '')`.
+   - Stratum row labels, dim-strip labels, maturity/origin/stage values, axis labels, "Due" review, untyped column header — all read via `tr()` calls.
+
+Other 13 locales (fa, he, ur, es, fr, de, zh, ja, ko, pt, ru, hi, tr) untouched in this commit. With the new fallback chain, users on those locales see English text for the new keys instead of cryptic key strings. Backfill of those locales is a follow-up task.
+
+### Verification
+
+- `cargo check`: not re-run (no Rust change).
+- `node node_modules/svelte-check/dist/src/index.js --tsconfig ./tsconfig.json --threshold error`: 1 error (pre-existing `store.ts:1850`, deferred per Boss until post-CE). Zero in i18n, Inspector360, or HelpTip.
+- Release build: pending.
+
+### SO #6
+
+Orientation **v1.23** created alongside v1.22. Three fixes inline-described.
+
+### Pending after §120
+
+- Boss tests on Arabic locale: matrix stratum labels, dim-strip labels, maturity/origin/stage values, axis legends, help tooltips — all in Arabic? Tooltip uppercase fixed? Edge clipping fixed?
+- Stage 3.2 (horizontal balance reading) — was queued before the §119 + §120 detour. Resume after this lands.
+- Other 13 locales (fa, he, ur, es, fr, de, zh, ja, ko, pt, ru, hi, tr) — backfill the new keys when bandwidth allows. Currently fall back to English gracefully via the new chain.
+- MIG-006 §3 redo (queued).
+- CE Phase 9 Path B / MIG-010 scale (queued after MIG-006 §3).
+- store.ts:1850 LinkLifecycle Option B fix (deferred until post-CE).

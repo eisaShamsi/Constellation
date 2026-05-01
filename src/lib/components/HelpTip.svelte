@@ -32,8 +32,19 @@
 	function computeCoords() {
 		if (!triggerEl) return;
 		const rect = triggerEl.getBoundingClientRect();
+		// Clamp x to the viewport so the tooltip's transform: translate(-50%)
+		// doesn't push the right or left edge off-screen. Use the tooltip's
+		// max-width (380 px from CSS) as the conservative half-width.
+		const halfWidth = 200; // 380 / 2 + a touch of breathing room
+		const margin = 12;
+		const vw = typeof window !== 'undefined' ? window.innerWidth : 1920;
+		let x = rect.left + rect.width / 2;
+		const minX = halfWidth + margin;
+		const maxX = vw - halfWidth - margin;
+		if (x < minX) x = minX;
+		if (x > maxX) x = maxX;
 		coords = {
-			x: rect.left + rect.width / 2,
+			x,
 			y: position === 'top' ? rect.top : rect.bottom,
 		};
 	}
@@ -133,7 +144,10 @@
 		border-radius: 8px;
 		color: var(--text-normal);
 		font-size: 14px;
+		font-weight: 400;
 		line-height: 1.55;
+		letter-spacing: normal;
+		text-transform: none; /* override any uppercase from ancestor labels */
 		max-width: 380px;
 		min-width: 240px;
 		z-index: 9999;

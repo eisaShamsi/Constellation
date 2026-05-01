@@ -39,12 +39,26 @@ export const SUPPORTED_LOCALES: { code: Locale; label: string }[] = [
 
 const RTL_LOCALES = new Set<Locale>(['ar', 'fa', 'he', 'ur']);
 
+// §120: cast each non-en locale through `unknown` to bypass strict structural
+// matching. The runtime fallback chain in `t` (active locale → en → key) handles
+// the missing-key case gracefully; TypeScript's structural check would otherwise
+// require every locale to include every key from en.json the moment one is added.
 const translations: Record<Locale, typeof en> = {
-	en, ar, fa: fa as typeof en, he: he as typeof en, ur: ur as typeof en,
-	es: es as typeof en, fr: fr as typeof en, de: de as typeof en,
-	zh: zh as typeof en, ja: ja as typeof en, ko: ko as typeof en,
-	pt: pt as typeof en, ru: ru as typeof en, hi: hi as typeof en,
-	tr: tr as typeof en,
+	en,
+	ar: ar as unknown as typeof en,
+	fa: fa as unknown as typeof en,
+	he: he as unknown as typeof en,
+	ur: ur as unknown as typeof en,
+	es: es as unknown as typeof en,
+	fr: fr as unknown as typeof en,
+	de: de as unknown as typeof en,
+	zh: zh as unknown as typeof en,
+	ja: ja as unknown as typeof en,
+	ko: ko as unknown as typeof en,
+	pt: pt as unknown as typeof en,
+	ru: ru as unknown as typeof en,
+	hi: hi as unknown as typeof en,
+	tr: tr as unknown as typeof en,
 };
 
 const STORAGE_KEY = 'constellation-locale';
@@ -104,10 +118,25 @@ function lookup(obj: Record<string, unknown>, path: string, params?: Record<stri
  * Reactive translation store with interpolation support.
  * Usage in Svelte: $t('app.tagline')
  * With params: $t('dialogs.confirmDelete', { name: 'My Note' })
+ *
+ * §120: falls back to en.json when the active locale is missing a key.
+ * Previously, missing keys returned the literal path ("inspector360.untyped"),
+ * which broke `$t(key) || fallback` chains because the literal is truthy
+ * — the same bug that forced the Untyped label hardcode in §104/§113.
+ * With the fallback chain, missing keys in non-en locales display the
+ * English string instead of the key, and partial localization stays
+ * graceful while translators backfill.
  */
 export const t = derived(locale, ($locale) => {
-	return (key: string, params?: Record<string, string>): string =>
-		lookup(translations[$locale] ?? translations.en, key, params);
+	return (key: string, params?: Record<string, string>): string => {
+		const localeResult = lookup(translations[$locale] ?? translations.en, key, params);
+		if (localeResult !== key) return localeResult;
+		if ($locale !== 'en') {
+			const enResult = lookup(translations.en, key, params);
+			if (enResult !== key) return enResult;
+		}
+		return key;
+	};
 });
 
 export function setLocale(newLocale: Locale) {
