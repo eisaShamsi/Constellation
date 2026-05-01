@@ -582,6 +582,23 @@
 	$effect(() => { if (showConstellationMap) mapEverOpened = true; });
 	$effect(() => { if (showOrgChart) orgChartEverOpened = true; });
 	$effect(() => { if (showInspector360) inspector360EverOpened = true; });
+
+	// Sky View inspect-mode lockout recovery. When the user clicks an SV node,
+	// the SV-opened note becomes a tab with skyViewInspectMode=true and both
+	// sidebars hidden. The intended exit is the "Return to Sky View" pill or
+	// its `×` dismiss button — both of which only render while `$activeTab?.path`
+	// is truthy. If instead the user closes the note tab via the tab's own ×,
+	// `$activeTabId` goes null while skyViewInspectMode stays true: the
+	// dismiss pill disappears with the tab, and the sidebar toggles are gated
+	// behind `!skyViewInspectMode` (lines ~1660-1661) so they refuse to open
+	// either flank. Result: app locked until restart. Recovery: mirror the
+	// dismiss-pill cleanup when the active tab disappears mid-inspect.
+	$effect(() => {
+		if (skyViewInspectMode && $activeTabId === null) {
+			popSidebars('skyInspect');
+			skyViewInspectMode = false;
+		}
+	});
 	// Inspector 360 IPC-fetch $effect is co-located with `sidebarTab`'s
 	// declaration further down the file (TDZ); see "CE Phase 12 — fetch"
 	// block.

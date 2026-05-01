@@ -121,3 +121,56 @@ Orientation **v1.20** created alongside v1.19. Single callout for the one-liner.
 - If still too tinted, drop to 3 % or 0 (text colour + bottom border alone carry the type signal).
 - After Check 2 settles, all of Stage 1 + Stage 2 + Verifications A and B are closed.
 - Stage 3 plan (matrix interpretation) — TBD.
+
+---
+
+## §118 — Sky View inspect-mode lockout recovery
+
+**Bug Boss reported (2026-05-01)**: In Sky View, click a node → app opens that note as a tab. Close the tab via its own × button (instead of the dismiss pill). Result: every panel locked. Sidebar toggle buttons no longer open the file tree or any other panel. Editor area shows the empty "Select a note from the sidebar" state. Only recovery is restarting the app.
+
+### Root cause
+
+`handleSkyNodeClick` ([+layout.svelte:3429](src/routes/+layout.svelte:3429)) does three things when entering inspect mode:
+1. Snapshots the current sidebar state via `pushSidebars('skyInspect', ...)`.
+2. Hides both sidebars: `sidebarOpen = false; rightSidebarOpen = false;`.
+3. Sets `skyViewInspectMode = true`.
+
+The intended exit is the "Return to Sky View" pill at [+layout.svelte:4439-4453](src/routes/+layout.svelte:4439). Clicking its body returns to Sky View; clicking the `×` dismiss button calls `popSidebars('skyInspect')` and `skyViewInspectMode = false` — restoring the pre-SV sidebar layout.
+
+**The trap**: that pill only renders while `$activeTab?.path` is truthy (`{:else if skyViewInspectMode && $activeTab?.path && ...}`). And the global sidebar toggles are guarded by `!skyViewInspectMode` ([+layout.svelte:1660-1661](src/routes/+layout.svelte:1660)).
+
+If the user closes the tab via its own × button (which calls `closeTab()` in `store.ts:540`), `$activeTabId` becomes `null` (when the closed tab was the only active one). The pill disappears with the tab. `skyViewInspectMode` stays `true`. Sidebar toggles ignore clicks. Lockout.
+
+### Fix
+
+Single `$effect` added in [+layout.svelte:586-590](src/routes/+layout.svelte:586), right after the existing sticky-flag effects (`mapEverOpened`, etc):
+
+```js
+$effect(() => {
+    if (skyViewInspectMode && $activeTabId === null) {
+        popSidebars('skyInspect');
+        skyViewInspectMode = false;
+    }
+});
+```
+
+When the active tab goes null mid-inspect, mirror the dismiss pill's cleanup. Both reactive reads (`skyViewInspectMode` and `$activeTabId`) are dependencies; on the next change, the effect re-runs with `skyViewInspectMode === false` and the if-condition fails, so no infinite loop.
+
+The dismiss pill itself is unchanged for users who use the intended exit path.
+
+### Verification
+
+- `cargo check`: not re-run (no Rust change).
+- `node node_modules/svelte-check/dist/src/index.js --tsconfig ./tsconfig.json --threshold error`: 1 error (pre-existing `store.ts:1850`, out of scope). Zero new errors in `+layout.svelte`.
+- Release build: pending.
+
+### SO #6
+
+Orientation **v1.21** created alongside v1.20. Bug + root cause + fix described inline so a future reader can match the symptom (locked sidebars after closing an SV-opened tab) to the fix without trawling git.
+
+### Pending after §118
+
+- Boss reproduces the original lockout sequence on the §118 binary, then confirms tab-close-via-× now exits inspect mode cleanly.
+- Stage 3 of the matrix tutorial — moving from "matrix renders / matrix reads" to "matrix interpretation" — once this bug is closed.
+- MIG-006 §3 redo (queued).
+- CE Phase 9 Path B / MIG-010 scale (queued after MIG-006 §3).
