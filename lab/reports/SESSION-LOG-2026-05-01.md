@@ -82,3 +82,42 @@ Orientation **v1.19** created alongside v1.18. Session log §116 entry appended 
 - Boss verification re-run on §116 binary: confirm cells collapse on navigation + Untyped now expandable.
 - Verification B (chip removed, header contrast, grand total visible) — still owed.
 - Stage 3 plan (TBD).
+
+---
+
+## §117 — Column header tint 10 % → 5 % (Verification B Check-2 follow-up)
+
+Boss tested §115's column-header contrast fix via Verification B. Check 1 (chip removed) and Check 3 (grand total visible) passed. Check 2 (column header text contrast): "Lower the tinted background more."
+
+§115 had reduced tint from §113's 22 % to 10 %. §117 lowers it again to 5 %. Text colour (`color-mix(--col-color 55%, --text-normal)`) and the full-strength bottom border kept as-is — those carry the type-coding signal.
+
+### Code change
+
+`src/lib/components/Inspector360.svelte` — single-line CSS:
+
+```diff
+ .i360-col-header {
+     background:
+         linear-gradient(180deg,
+-            color-mix(in srgb, var(--col-color, currentColor) 10%, transparent),
++            color-mix(in srgb, var(--col-color, currentColor) 5%, transparent),
+             var(--background-primary-alt) 90%);
+ }
+```
+
+### Verification
+
+- `cargo check`: not re-run.
+- `node node_modules/svelte-check/dist/src/index.js --tsconfig ./tsconfig.json --threshold error`: not re-run for a 1-line CSS change; structurally identical AST.
+- Release build: pending.
+
+### SO #6
+
+Orientation **v1.20** created alongside v1.19. Single callout for the one-liner.
+
+### Pending after §117
+
+- Boss re-test Check 2 specifically: does the column-header text now read clearly against the 5 %-tinted background?
+- If still too tinted, drop to 3 % or 0 (text colour + bottom border alone carry the type signal).
+- After Check 2 settles, all of Stage 1 + Stage 2 + Verifications A and B are closed.
+- Stage 3 plan (matrix interpretation) — TBD.

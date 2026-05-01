@@ -689,16 +689,17 @@
 		line-height: 1;
 	}
 
-	/* §115: column header — softened background tint (22→10%) and text colour
-	 * mixed with --text-normal for contrast against the tinted gradient.
-	 * The colored bottom border still carries the type-coding signal. */
+	/* §115/§117: column header — softened background tint
+	 * (22→10→5%) and text colour mixed with --text-normal for contrast
+	 * against the tinted gradient. The coloured bottom border still
+	 * carries the type-coding signal. */
 	.i360-col-header {
 		display: flex; flex-direction: column; align-items: center; justify-content: center;
 		padding: 10px 4px;
 		gap: 4px;
 		background:
 			linear-gradient(180deg,
-				color-mix(in srgb, var(--col-color, currentColor) 10%, transparent),
+				color-mix(in srgb, var(--col-color, currentColor) 5%, transparent),
 				var(--background-primary-alt) 90%);
 		border-bottom: 3px solid var(--col-color, currentColor);
 	}
