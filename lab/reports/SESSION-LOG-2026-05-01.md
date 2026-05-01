@@ -45,3 +45,40 @@ Orientation **v1.18** created alongside v1.17. v1.17's content demoted to its ow
 - Stage 3 plan (TBD) — moving from "matrix renders, matrix reads" to "matrix interpretation" once the visual is settled.
 - MIG-006 §3 redo (queued).
 - CE Phase 9 Path B / MIG-010 scale (queued after MIG-006 §3).
+
+---
+
+## §116 — Verification A retest fixes (nav-reset + Untyped expandable)
+
+Boss tested the §115 list-of-titles via Verification A. Three findings:
+
+- Step 1 (expand) = Pass.
+- Step 2 (click navigates) = Pass, but: "when we move to the clicked node, the list is still expanded in the new node, which is not logical. It should collapse by default when we move to another node."
+- Step 3 (× collapse) finding tied to Step 2: "When we are back, it should collapse automatically."
+- Step 4 (Untyped not expandable) = "Let's have the 'untyped' expandable like the other type."
+
+The two underlying behaviours collapsed into two fixes.
+
+### Code changes
+
+`src/lib/components/Inspector360.svelte` — frontend only.
+
+1. **Auto-reset cell expansion on note navigation.** New `$effect` watches `data?.note_path`; when it changes (forward navigation via title-click → parent's `onNoteClick` fires → +layout updates `data`; or backward via back-bar → onBack restores prior `data`), the effect resets `expandedCells = new Set()`. The current expansion state thus belongs to the active note alone.
+
+2. **Untyped exclusion removed.** `toggleCellExpand` no longer early-returns on `type === 'untyped'`. The template `{#if expanded}` branch is the same for typed and untyped. The collapsed `+N` overflow indicator is now a `i360-overflow-btn` clickable button uniformly; the previous `i360-overflow` non-clickable text span path was removed. The expanded list-of-titles renders identically — Untyped just uses the dark-grey colour for its bullets and benefits from the same `max-height: 240px` scroll cap.
+
+### Verification
+
+- `cargo check`: not re-run.
+- `node node_modules/svelte-check/dist/src/index.js --tsconfig ./tsconfig.json --threshold error`: 1 error (pre-existing `store.ts:1850`, out of scope). Zero in `Inspector360.svelte`.
+- Release build: pending.
+
+### SO #6
+
+Orientation **v1.19** created alongside v1.18. Session log §116 entry appended (this entry).
+
+### Pending after §116
+
+- Boss verification re-run on §116 binary: confirm cells collapse on navigation + Untyped now expandable.
+- Verification B (chip removed, header contrast, grand total visible) — still owed.
+- Stage 3 plan (TBD).

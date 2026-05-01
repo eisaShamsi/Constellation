@@ -179,14 +179,22 @@
 		hoveredDot = null;
 	}
 
-	// §114: typed-cell overflow is click-to-expand. Boss directive — clicking
-	// `+N` on a typed cell shows every hidden dot in-place by growing the
-	// cell. Untyped is excluded because cells like Abu Bakr's L7-Untyped (282
-	// hidden) would balloon the matrix beyond useful proportions.
+	// §114: cell-expand state for `+N` overflow. §115 reworked the expanded
+	// view from "more dots" to "list of note titles" with internal scroll, so
+	// §116 the original Untyped exclusion no longer applies — expanded
+	// Untyped renders the same scrollable title list. State auto-clears
+	// whenever the active note changes (forward via title-click or back via
+	// the back-bar) — Boss S1.3.5 retest finding: persisting the expanded
+	// state across navigation is illogical.
 	let expandedCells = $state<Set<string>>(new Set());
 
+	$effect(() => {
+		// Read note_path so the effect re-runs on navigation; reset state.
+		void data?.note_path;
+		expandedCells = new Set();
+	});
+
 	function toggleCellExpand(stratum: number, type: LinkType) {
-		if (type === 'untyped') return;
 		const key = `${stratum}-${type}`;
 		const next = new Set(expandedCells);
 		if (next.has(key)) next.delete(key); else next.add(key);
@@ -376,10 +384,10 @@
 									class:empty-cell={cellEmpty}
 									class:expanded
 									style="--col-color: {TYPE_COLORS[type]}">
-									{#if expanded && type !== 'untyped'}
-										<!-- §115: expanded typed cell renders as a vertical list of
-										     note titles instead of more dots — Boss directive on
-										     S1.3.5 retest. Untyped excluded (typically 100s of dots). -->
+									{#if expanded}
+										<!-- §115/§116: expanded cell renders as a vertical list of
+										     note titles. §116 removed the Untyped exclusion — the
+										     scrollable list handles 800+ items without ballooning. -->
 										<button class="i360-list-collapse"
 											onclick={() => toggleCellExpand(stratum, type)}
 											title="Collapse">×</button>
@@ -404,13 +412,9 @@
 											</button>
 										{/each}
 										{#if cellNotes.length > MAX_DOTS_PER_CELL}
-											{#if type === 'untyped'}
-												<span class="i360-overflow" title={`${cellNotes.length - MAX_DOTS_PER_CELL} more`}>+{cellNotes.length - MAX_DOTS_PER_CELL}</span>
-											{:else}
-												<button class="i360-overflow-btn"
-													onclick={() => toggleCellExpand(stratum, type)}
-													title={`Show all ${cellNotes.length}`}>+{cellNotes.length - MAX_DOTS_PER_CELL}</button>
-											{/if}
+											<button class="i360-overflow-btn"
+												onclick={() => toggleCellExpand(stratum, type)}
+												title={`Show all ${cellNotes.length}`}>+{cellNotes.length - MAX_DOTS_PER_CELL}</button>
 										{/if}
 									{/if}
 								</div>
