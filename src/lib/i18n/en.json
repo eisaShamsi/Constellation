@@ -1195,6 +1195,7 @@
     "stage_literature": "literature",
     "stage_permanent": "permanent",
     "stage_synthesis": "synthesis",
+    "stage_spark": "spark",
     "stage_none": "none",
     "axis_stratum_label": "Stratum",
     "axis_type_label": "Type",

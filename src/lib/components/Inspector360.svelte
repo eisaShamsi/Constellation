@@ -212,14 +212,15 @@
 		return expandedCells.has(`${stratum}-${type}`);
 	}
 
-	// §113: per-type display labels. 'untyped' is hardcoded because
-	// `$t('inspector360.untyped')` returns the literal key when missing
-	// from the locale (truthy ⇒ the OR fallback never fires) — same
-	// regression §104 closed before the §112 rewrite re-introduced it.
-	// For typed directions we still read $t inside the derived so locale
-	// switches are picked up. (Loop variable is `lt` instead of `t`
-	// because the imported i18n store is `t` and shadowing it breaks the
-	// $-auto-subscription.)
+	// §121: per-type display labels. The §113 hardcode for 'untyped' was
+	// originally needed because `$t('inspector360.untyped')` returned the
+	// literal key (truthy ⇒ OR fallback never fired). With the §120 i18n
+	// fallback chain (active locale → en.json → key), `inspector360.untyped`
+	// resolves correctly in every locale that has the key, falling back to
+	// English when missing. The loop now treats untyped uniformly; the
+	// hardcoded English values stay as the final defensive fallback.
+	// (Loop variable is `lt` instead of `t` because the imported i18n store
+	// is `t` and shadowing it breaks $-auto-subscription.)
 	const typeLabels: Record<LinkType, string> = $derived.by(() => {
 		const m: Record<LinkType, string> = {
 			supports: 'Supports', contradicts: 'Contradicts', causes: 'Causes',
@@ -227,8 +228,7 @@
 			exemplifies: 'Exemplifies', 'part-of': 'Part Of', untyped: 'Untyped',
 		};
 		for (const lt of TYPE_ORDER) {
-			if (lt === 'untyped') continue;
-			const key = `inspector360.${TYPE_LABEL_KEYS[lt]}`;
+			const key = lt === 'untyped' ? 'inspector360.untyped' : `inspector360.${TYPE_LABEL_KEYS[lt]}`;
 			const tr = $t(key);
 			if (tr && tr !== key) m[lt] = tr;
 		}

@@ -286,3 +286,52 @@ Orientation **v1.23** created alongside v1.22. Three fixes inline-described.
 - MIG-006 §3 redo (queued).
 - CE Phase 9 Path B / MIG-010 scale (queued after MIG-006 §3).
 - store.ts:1850 LinkLifecycle Option B fix (deferred until post-CE).
+
+---
+
+## §121 — Untyped column localized + stage_spark + Arabic stratum corrections
+
+Boss tested §120 on the Arabic locale and found three remaining issues:
+
+1. **`UNTYPED` column header still in English** (image). The `typeLabels` derived in `Inspector360.svelte` was skipping untyped via `if (lt === 'untyped') continue` — a leftover guard from when the §113 fix had to hardcode `'Untyped'` because `$t('inspector360.untyped')` returned the literal key when missing. With the §120 fallback chain, that workaround is unnecessary.
+2. **Stage value `spark` displayed raw** (image showing المرحلة → spark). Stage values are read verbatim from each note's YAML frontmatter (`extract_stage()` in `inspector360.rs:333`), so they aren't a fixed enum. Boss's library uses `spark` as a stage. The four canonical i18n keys (fleeting/literature/permanent/synthesis) don't cover it.
+3. **Arabic terminology corrections**:
+   - L3: قضية → **رأي** (opinion/proposition — Boss's preferred term)
+   - L7: نموذج → **منظور** (perspective/paradigm — Boss's preferred term; also resolves clash with the Settings UI's existing usage of نموذج for "model")
+   - L8: رؤية كونية → **رؤية شاملة** (comprehensive vision/worldview — Boss's preferred term)
+
+### Code changes
+
+1. **`src/lib/components/Inspector360.svelte`** — `typeLabels` derived: removed the `if (lt === 'untyped') continue` skip. The loop now reads `inspector360.untyped` for the untyped case (and `inspector360.${TYPE_LABEL_KEYS[lt]}` for typed). The §120 fallback chain handles the `inspector360.untyped` lookup gracefully across all locales.
+
+2. **`src/lib/i18n/en.json`** — added `stage_spark: "spark"`.
+
+3. **`src/lib/i18n/ar.json`** — six edits:
+   - `stratum_name_3`: قضية → رأي
+   - `stratum_name_7`: نموذج → منظور
+   - `stratum_name_8`: رؤية كونية → رؤية شاملة
+   - `stage_spark: "شرارة"` (new)
+   - `help_stratum_3` text: قضية → رأي (and minor agreement adjustments)
+   - `help_stratum_7` text: نموذج → منظور (twice in the body)
+   - `help_stratum_8` text: رؤية كونية → رؤية شاملة
+   - `help_axis_stratum` text: رؤية كونية → رؤية شاملة (in the L8 ceiling reference)
+   - `help_dim_stratum` text: رؤية كونية → رؤية شاملة (in the L8 ceiling reference)
+
+### Verification
+
+- `cargo check`: not re-run (no Rust change).
+- `node node_modules/svelte-check/dist/src/index.js --tsconfig ./tsconfig.json --threshold error`: 1 error (pre-existing `store.ts:1850`, deferred per Boss). Zero in inspector / i18n.
+- Release build: pending.
+
+### SO #6
+
+Orientation **v1.24** created alongside v1.23. The §121 callout enumerates the three fixes inline.
+
+### Pending after §121
+
+- Boss re-tests Arabic locale: Untyped column localized? `spark` reads as شرارة? L3 / L7 / L8 names + their tooltips use the corrected terminology?
+- Stage 3.2 (horizontal balance reading) — was queued before the §119/§120/§121 detour. Resume after Boss closes §121.
+- Other 13 locales (fa, he, ur, es, fr, de, zh, ja, ko, pt, ru, hi, tr) — backfill the new keys when bandwidth allows.
+- MIG-006 §3 redo (queued).
+- CE Phase 9 Path B / MIG-010 scale (queued after MIG-006 §3).
+- store.ts:1850 LinkLifecycle Option B fix (deferred until post-CE).
