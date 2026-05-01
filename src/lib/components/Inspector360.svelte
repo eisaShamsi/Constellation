@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
+	import HelpTip from './HelpTip.svelte';
 
 	interface LinkedNote { name: string; path: string; depth: number; stratum: number; }
 	interface Note360View {
@@ -77,6 +78,49 @@
 		7: 'Paradigm',
 		8: 'Worldview',
 	};
+
+	// §119: explanations surfaced via the HelpTip `?` affordance. First-time
+	// readers of the matrix don't know what each stratum, type, or dimension
+	// means; these tooltips make every element self-teaching without
+	// pushing the explanations into the visual itself.
+	const HELP_STRATUM: Record<number, string> = {
+		8: 'Worldview — the deepest layer of your thinking. Foundational beliefs and paradigm-spanning principles. The lens through which all other thinking is filtered. A note here is something you would defend at the level of identity.',
+		7: 'Paradigm — an established framework of thinking. A coherent system of principles that organizes how you approach a domain (your model of physics, your theory of leadership, your practice of Islam). One step below Worldview.',
+		6: 'Theory — a structured explanation that connects multiple principles into a model. A theory both predicts and explains; a principle on its own does not.',
+		5: 'Principle — a general law or rule abstracted from concepts. "Power corrupts." "Compounding rewards patience." Principles are reusable across domains.',
+		4: 'Concept — an abstract idea or category. Concepts name a pattern across many specific instances. A note at L4 has been refined enough to stand on its own as a defined idea.',
+		3: 'Proposition — a specific claim or assertion. Stronger than information (it has a stance), weaker than a principle (it is not yet generalized).',
+		2: 'Information — processed data with meaning. Information is what data becomes after you have made sense of it, but before you have drawn a claim from it.',
+		1: 'Datum — a single fact, observation, or quote. The atomic unit of knowledge. A date, a number, a passage transcribed verbatim.',
+	};
+	const HELP_TYPE: Record<LinkType, string> = {
+		supports:       'Supports — this note backs up another note’s claim. Annotated as [[target|supports]]. Use when the target’s argument is strengthened by what this note contains.',
+		contradicts:    'Contradicts — this note disputes or challenges another note’s claim. [[target|contradicts]]. Tracking contradictions is intellectual honesty: every Supports without a Contradicts is one-sided thinking.',
+		causes:         'Causes — this note describes a causal relationship. A leads to B. [[target|causes]]. Use when there is a directional cause-and-effect, not just correlation.',
+		'derives-from': 'Derives From — this note’s reasoning is based on another note. The target is the source. [[target|derives-from]]. The trust depth (e.g. d11) in the dimension strip counts how deep this chain runs to reach a root.',
+		generalizes:    'Generalizes — this note draws a broader pattern from specific examples. [[target|generalizes]]. Use when this note abstracts upward from the target.',
+		exemplifies:    'Exemplifies — this note is an instance or example of a broader idea in the target. [[target|exemplifies]]. The opposite direction of Generalizes.',
+		'part-of':      'Part Of — this note is a component of a larger idea, system, or hierarchy in the target. [[target|part-of]]. Structural composition rather than logical relationship.',
+		untyped:        'Untyped — plain wikilinks without a relationship type, written as [[target]]. The link exists but you have not yet committed to what it means. Untyped is a starting state; mature thinking moves links toward typed forms over time.',
+	};
+	const HELP_DIM = {
+		stratum:  'Stratum — the note’s intellectual altitude on the 8-level hierarchy from L1 Datum to L8 Worldview. Computed from word count, inbound links, source depth, and the typed-link directions you have used. The matrix highlights this row in purple.',
+		maturity: 'Maturity — the note’s lifecycle state: Seed → Sapling → Evergreen → Canonical → Wilting. Tracks whether the note is raw, growing, established, locked, or decaying.',
+		origin:   'Origin — where the note came from: Received (read from a source), Discovered (your own thinking), or Mixed. The depth number (e.g. d11) is how far the source chain runs through derives-from links to reach a root.',
+		stage:    'Stage — how formally the idea is committed: Fleeting (quick capture), Literature (notes from a source), Permanent (refined and standalone), Synthesis (cross-source consolidation).',
+		review:   'Review — when this note was last intentionally reviewed. Shows the date or "Due" if the next review is past. Tracked by the Cognitive Engine’s Review Pulse so old notes do not decay silently.',
+		trails:   'Trails — the number of sequenced narratives this note participates in. Trails are paths through your library that you create in the Trails feature.',
+		lenses:   'Lenses — the number of Multi-Lens groups this note belongs to. Lenses are thematic groupings (e.g. all notes tagged with a project or color).',
+	};
+	const HELP_GRAND = 'Grand total — the count of every (deduped) connection to this note across all strata and link types. Equals the sum of the 8 column totals at the top, and equals the sum of the 8 row Σ totals on the right. If those three numbers diverge, the matrix derivation has a bug.';
+	const HELP_HUD = {
+		orphan:     'Orphan — this note has zero inbound links. Nothing in your library references it. Orphans are not always wrong, but they signal possible unintentional isolation.',
+		fragile:    'Fragile — many notes link TO this one, but it has few derives-from links of its own. The note is load-bearing on a thin foundation. If you ever change or remove it, many dependents shake.',
+		blindSpots: 'Blind spots — typed link directions you have not used for this note. With 7 typed directions available, having 5 blind spots means only 2 of the seven directions of reasoning have been declared for this note.',
+		tensions:   'Tensions — active disagreements with this note (Contradicts links pointing at it). Tensions are not problems to fix; they are knowledge to develop. A note with multiple tensions is a note where your thinking is alive.',
+	};
+	const HELP_AXIS_STRATUM = 'Vertical axis — stratum. The 8 rows from L1 Datum at the bottom to L8 Worldview at the top represent intellectual altitude. The active note’s row is highlighted in purple. Dots above your row are connections at higher altitudes (more abstract); dots below are at lower altitudes (more concrete).';
+	const HELP_AXIS_TYPE = 'Horizontal axis — link type. The 8 columns are the 7 typed link directions plus Untyped. Each connected note becomes a coloured dot in the cell where its stratum meets the typed direction it shares with the active note. Diagonal stripes mean the cell is empty — a blind spot at that (stratum, type) intersection.';
 
 	const MATURITY_COLORS: Record<string, string> = {
 		seed: '#9ca3af', sapling: '#4ade80', evergreen: '#16a34a', canonical: '#f59e0b', wilting: '#16a34a80',
@@ -312,36 +356,36 @@
 			<!-- Non-spatial dimension strip -->
 			<div class="i360-strip">
 				<div class="i360-strip-cell">
-					<span class="i360-strip-label">Stratum</span>
+					<span class="i360-strip-label">Stratum <HelpTip tooltip={HELP_DIM.stratum} position="bottom" /></span>
 					<span class="i360-strip-value accent">L{activeStratum} {STRATUM_NAMES[activeStratum]}</span>
 				</div>
 				<div class="i360-strip-cell">
-					<span class="i360-strip-label">Maturity</span>
+					<span class="i360-strip-label">Maturity <HelpTip tooltip={HELP_DIM.maturity} position="bottom" /></span>
 					<span class="i360-strip-value"><span class="i360-dot" style="background: {MATURITY_COLORS[data.maturity] ?? '#999'}"></span>{data.maturity}</span>
 				</div>
 				<div class="i360-strip-cell">
-					<span class="i360-strip-label">Origin</span>
+					<span class="i360-strip-label">Origin <HelpTip tooltip={HELP_DIM.origin} position="bottom" /></span>
 					<span class="i360-strip-value"><span class="i360-dot" style="background: {ORIGIN_COLORS[data.origin_type] ?? '#999'}"></span>{data.origin_type} {'·'} {$t('inspector360.depth') || 'd'}{data.trust_depth}</span>
 				</div>
 				<div class="i360-strip-cell">
-					<span class="i360-strip-label">Stage</span>
+					<span class="i360-strip-label">Stage <HelpTip tooltip={HELP_DIM.stage} position="bottom" /></span>
 					<span class="i360-strip-value">{STAGE_ICONS[data.stage] || ''} {data.stage || 'none'}</span>
 				</div>
 				<div class="i360-strip-cell">
-					<span class="i360-strip-label">Review</span>
+					<span class="i360-strip-label">Review <HelpTip tooltip={HELP_DIM.review} position="bottom" /></span>
 					<span class="i360-strip-value">
 						{#if data.is_due}<span class="i360-warn">Due</span>{:else if data.last_reviewed}{data.last_reviewed.slice(0, 10)}{:else}{'—'}{/if}
 					</span>
 				</div>
 				{#if data.trails.length > 0}
 					<div class="i360-strip-cell">
-						<span class="i360-strip-label">Trails</span>
+						<span class="i360-strip-label">Trails <HelpTip tooltip={HELP_DIM.trails} position="bottom" /></span>
 						<span class="i360-strip-value">{'\u{1F6E4}️'} {data.trails.length}</span>
 					</div>
 				{/if}
 				{#if data.lens_groups.length > 0}
 					<div class="i360-strip-cell">
-						<span class="i360-strip-label">Lenses</span>
+						<span class="i360-strip-label">Lenses <HelpTip tooltip={HELP_DIM.lenses} position="bottom" /></span>
 						<span class="i360-strip-value">{'\u{1F3F7}️'} {data.lens_groups.length}</span>
 					</div>
 				{/if}
@@ -353,17 +397,20 @@
 					<div class="i360-matrix">
 						<!-- Header row: corner + 8 column headers + row-total header -->
 						<div class="i360-corner">
-							<span class="i360-corner-stratum">{'▲'} Stratum</span>
-							<span class="i360-corner-type">Type {'→'}</span>
+							<span class="i360-corner-stratum">{'▲'} Stratum <HelpTip tooltip={HELP_AXIS_STRATUM} position="bottom" /></span>
+							<span class="i360-corner-type">Type {'→'} <HelpTip tooltip={HELP_AXIS_TYPE} position="bottom" /></span>
 						</div>
 						{#each TYPE_ORDER as type}
 							<div class="i360-col-header" style="--col-color: {TYPE_COLORS[type]}">
-								<div class="i360-col-name">{typeLabels[type].toUpperCase()}</div>
+								<div class="i360-col-name">
+									{typeLabels[type].toUpperCase()}
+									<HelpTip tooltip={HELP_TYPE[type]} position="bottom" />
+								</div>
 								<div class="i360-col-count">{matrix.colTotals[type]}</div>
 							</div>
 						{/each}
 						<div class="i360-rowtot-header">
-							<span class="i360-grand-symbol">{'Σ'}</span>
+							<span class="i360-grand-symbol">{'Σ'} <HelpTip tooltip={HELP_GRAND} position="bottom" /></span>
 							<span class="i360-grand-value">{matrix.grandTotal}</span>
 						</div>
 
@@ -374,6 +421,7 @@
 							<div class="i360-row-header" class:active={isActive} class:empty-row={isEmptyRow && !isActive}>
 								<span class="i360-row-num">L{stratum}</span>
 								<span class="i360-row-name">{STRATUM_NAMES[stratum]}</span>
+								<HelpTip tooltip={HELP_STRATUM[stratum]} position="top" />
 							</div>
 							{#each TYPE_ORDER as type}
 								{@const cellNotes = matrix.cells[stratum][type]}
@@ -443,10 +491,10 @@
 					<span class="i360-hud-item">{'\u{1F4DD}'} {data.word_count.toLocaleString()} {$t('inspector360.words') || 'words'}</span>
 				</div>
 				<div class="i360-hud-right">
-					{#if data.is_orphan}<span class="i360-hud-item i360-hud-warn">{'⚠'} {$t('inspector360.orphan') || 'Orphan'}</span>{/if}
-					{#if data.single_point_of_failure}<span class="i360-hud-item i360-hud-warn">{'⚠'} {$t('inspector360.fragile') || 'Fragile'}</span>{/if}
-					{#if data.missing_link_types.length > 0}<span class="i360-hud-item i360-hud-warn">{'⚠'} {data.missing_link_types.length} {$t('inspector360.blindSpots') || 'blind spots'}</span>{/if}
-					{#if data.contradictions.length > 0}<span class="i360-hud-item i360-hud-warn">{'⚡'} {data.contradictions.length} {$t('inspector360.tensions') || 'tensions'}</span>{/if}
+					{#if data.is_orphan}<span class="i360-hud-item i360-hud-warn">{'⚠'} {$t('inspector360.orphan') || 'Orphan'} <HelpTip tooltip={HELP_HUD.orphan} position="top" /></span>{/if}
+					{#if data.single_point_of_failure}<span class="i360-hud-item i360-hud-warn">{'⚠'} {$t('inspector360.fragile') || 'Fragile'} <HelpTip tooltip={HELP_HUD.fragile} position="top" /></span>{/if}
+					{#if data.missing_link_types.length > 0}<span class="i360-hud-item i360-hud-warn">{'⚠'} {data.missing_link_types.length} {$t('inspector360.blindSpots') || 'blind spots'} <HelpTip tooltip={HELP_HUD.blindSpots} position="top" /></span>{/if}
+					{#if data.contradictions.length > 0}<span class="i360-hud-item i360-hud-warn">{'⚡'} {data.contradictions.length} {$t('inspector360.tensions') || 'tensions'} <HelpTip tooltip={HELP_HUD.tensions} position="top" /></span>{/if}
 				</div>
 			</div>
 		{/if}

@@ -174,3 +174,47 @@ Orientation **v1.21** created alongside v1.20. Bug + root cause + fix described 
 - Stage 3 of the matrix tutorial — moving from "matrix renders / matrix reads" to "matrix interpretation" — once this bug is closed.
 - MIG-006 §3 redo (queued).
 - CE Phase 9 Path B / MIG-010 scale (queued after MIG-006 §3).
+
+---
+
+## §119 — First-time-user (?) help affordances on the matrix
+
+Stage 3.1 finding from Boss (2026-05-01) testing the matrix on their note إسماعيل: "What the matrix provides me is a hint about where my knowledge stands and what I need to do to connect the dots. But for the first-time user, we need to help them figure out what this matrix is all about. We need to explain each stratum, type, and/or every bit of detail within the 360.3D. By adding a (?) with each one of those elements."
+
+Boss approved: hover + click-to-pin behaviour, Claude writes the explanation text, all 30 markers in one commit.
+
+### Code changes
+
+1. **New component** `src/lib/components/HelpTip.svelte` — reusable `?` affordance:
+   - Hover trigger → tooltip floats at `position: fixed` above (or below, configurable) the icon, no delay.
+   - Click trigger → toggles a "pinned" mode that survives mouseleave; outside-click dismisses (effect attaches a `document` click listener while pinned, removes it on cleanup).
+   - Computes coords from `getBoundingClientRect()` so the tooltip escapes any matrix `overflow: hidden`.
+   - Theme-aware: `var(--background-secondary)`, `var(--background-modifier-border-focus)`, `var(--text-normal)`, `var(--text-accent)` for the trigger and pinned border.
+
+2. **30 markers added to `Inspector360.svelte`**:
+   - **Corner cell (2)**: HelpTip on `▲ Stratum` (vertical-axis legend) and `Type →` (horizontal-axis legend). The vertical legend explains the L1→L8 hierarchy and the active-row purple highlight; the horizontal legend explains the 7+1 typed columns and what the diagonal stripes mean.
+   - **Column headers (8)**: one per typed direction + Untyped. Each tooltip describes what that typed link asserts and shows the `[[target|type]]` wikilink syntax.
+   - **Stratum row labels (8)**: one per L1–L8. Each tooltip describes what kind of note lives at that altitude.
+   - **Dimension strip (5 base + 2 conditional)**: Stratum, Maturity, Origin (with depth note), Stage, Review; Trails and Lenses when present.
+   - **Grand total Σ (1)**: in the corner row-totals header. Explains the matrix-level cross-check.
+   - **HUD warnings (4)**: Orphan, Fragile, Blind spots, Tensions — when each fires + what it means cognitively.
+
+3. **Explanation text** in three constants in `Inspector360.svelte`: `HELP_STRATUM`, `HELP_TYPE`, `HELP_DIM`, plus singletons `HELP_GRAND`, `HELP_HUD`, `HELP_AXIS_STRATUM`, `HELP_AXIS_TYPE`. English-only for first ship; i18n keys deferred (same pattern the type labels use).
+
+### Verification
+
+- `node node_modules/svelte-check/dist/src/index.js --tsconfig ./tsconfig.json --threshold error`: 1 error (pre-existing `store.ts:1850`, deferred per Boss). Zero in `Inspector360.svelte` or `HelpTip.svelte`.
+- `cargo check`: not re-run (no Rust change).
+- Release build: pending.
+
+### SO #6
+
+Orientation **v1.22** created alongside v1.21. The §119 callout enumerates all 30 markers + describes the HelpTip component briefly.
+
+### Pending after §119
+
+- Boss tests the help affordances on a fresh first-time-reading session: do the explanations actually answer the questions a new user would have?
+- Stage 3.2 (horizontal balance reading) — was queued before the §119 detour. Resume after §119 lands.
+- MIG-006 §3 redo (queued).
+- CE Phase 9 Path B / MIG-010 scale (queued after MIG-006 §3).
+- store.ts:1850 LinkLifecycle Option B fix (deferred until post-CE).
