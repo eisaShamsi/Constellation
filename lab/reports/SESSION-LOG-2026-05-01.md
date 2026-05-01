@@ -1,0 +1,47 @@
+# Session Log — 2026-05-01
+
+Continuation of the §92-onward Inspector 360.3D arc that started in `SESSION-LOG-2026-04-29.md`. New file because the calendar date has rolled over.
+
+---
+
+## §115 — Stage 1 + Stage 2 retest follow-ups bundled
+
+Boss walked Stage 1 (S1.1 → S1.6) and Stage 2 (S2.1 → S2.6) of the matrix tutorial in sequence. All sub-stages PASSED structurally. Six refinements surfaced across the walk; bundled into one rebuild as §115 per Boss's "implement after we finish the test" directive.
+
+### Findings collected
+
+**Stage 1**:
+- S1.3.5 — "It cannot manage a higher number of dots, and you can't collapse back. I think the practical way is, instead of displaying more untitled dots, to display a list of the respective note titles in that box."
+
+**Stage 2**:
+- S2.3 (general) — "It belongs to S1. Since the note title is already visible at the top, we don't need to have it again within the respective Stratum."
+- S2.5 (general) — "The Type Row text is hard to read because of its background color."
+- S2.6 — "We need to make the Grand total number visible."
+
+### Code changes
+
+`src/lib/components/Inspector360.svelte` — frontend only.
+
+1. **Expanded typed cell now renders as a list of titles.** Cell switches layout from `flex-wrap center` (dots) to `flex-direction: column` (list). Each item is a clickable button: dot bullet (type-coloured) + truncated note name. Click navigates to that note via `onNoteClick`. Untyped column still excluded — typically 100s of connections, would balloon the matrix.
+2. **Always-visible `×` collapse button** absolutely-positioned at top-right of the expanded list. Replaces §114's `−` chip placed at the end of the dots, which was hard to find when the cell had scrolled. New placement: `position: absolute; top: 4px; inset-inline-end: 4px; z-index: 3`.
+3. **`max-height: 240px` + `overflow-y: auto`** on the inner list-scroll container. Cells with 49 connections at one (stratum, type) intersection no longer push the matrix row past the canvas. List scrolls inside the cell.
+4. **Active-note chip removed from row label.** Was: row header showed `L7 Paradigm [Abu Bakr]` chip. Now: just `L7 Paradigm`. The active row's purple highlight and accented row number still signal "this is the active stratum"; the note's name is in the matrix header where it always was.
+5. **Column header contrast fix.** Background gradient tint reduced from 22 % type-colour to 10 %. Text colour switched from full type colour to `color-mix(in srgb, var(--col-color) 55%, var(--text-normal))` so type-coding remains while contrast against the tinted background improves. Bottom border keeps full-strength colour as the type signal.
+6. **Grand total displayed in top-right corner.** `matrix` derived now also returns `grandTotal` (sum across the deduped cells matrix). Top-right cell — formerly just `Σ` — now shows `Σ` stacked over the grand-total number (e.g. `Σ` / `926`). Layout: `flex-direction: column; align-items: center; gap: 2px`. Confirms at a glance that column-totals sum equals row-totals sum equals this grand total (fail signal: any of the three diverge).
+
+### Verification
+
+- `cargo check`: not re-run (no Rust change).
+- `node node_modules/svelte-check/dist/src/index.js --tsconfig ./tsconfig.json --threshold error`: 1 error (pre-existing `store.ts:1850`, out of scope). Zero in `Inspector360.svelte`.
+- Release build: pending.
+
+### SO #6
+
+Orientation **v1.18** created alongside v1.17. v1.17's content demoted to its own subsection. The §115 callout enumerates the six fixes inline with Boss's exact phrasing where applicable.
+
+### Pending after §115
+
+- Boss verification round on the §115 binary: re-test S1.3.5 (list-of-titles), spot-check S2.3 (chip removed), S2.5 (column header contrast), S2.6 (grand total visible).
+- Stage 3 plan (TBD) — moving from "matrix renders, matrix reads" to "matrix interpretation" once the visual is settled.
+- MIG-006 §3 redo (queued).
+- CE Phase 9 Path B / MIG-010 scale (queued after MIG-006 §3).

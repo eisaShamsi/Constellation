@@ -129,15 +129,17 @@
 
 		const colTotals: Record<LinkType, number> = { supports: 0, contradicts: 0, causes: 0, 'derives-from': 0, generalizes: 0, exemplifies: 0, 'part-of': 0, untyped: 0 };
 		const rowTotals: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0 };
+		let grandTotal = 0;
 		for (const s of STRATA) {
 			for (const t of TYPE_ORDER) {
 				const c = cells[s][t].length;
 				colTotals[t] += c;
 				rowTotals[s] += c;
+				grandTotal += c;
 			}
 		}
 
-		return { cells, colTotals, rowTotals };
+		return { cells, colTotals, rowTotals, grandTotal };
 	});
 
 	// Compact scorecard bars: per-type **share of total** so the visual signal
@@ -352,7 +354,10 @@
 								<div class="i360-col-count">{matrix.colTotals[type]}</div>
 							</div>
 						{/each}
-						<div class="i360-rowtot-header">{'Σ'}</div>
+						<div class="i360-rowtot-header">
+							<span class="i360-grand-symbol">{'Σ'}</span>
+							<span class="i360-grand-value">{matrix.grandTotal}</span>
+						</div>
 
 						<!-- Data rows -->
 						{#each STRATA as stratum}
@@ -361,41 +366,52 @@
 							<div class="i360-row-header" class:active={isActive} class:empty-row={isEmptyRow && !isActive}>
 								<span class="i360-row-num">L{stratum}</span>
 								<span class="i360-row-name">{STRATUM_NAMES[stratum]}</span>
-								{#if isActive}
-									<span class="i360-active-chip" dir="auto" title={data.note_name}>{truncName(data.note_name, 16)}</span>
-								{/if}
 							</div>
 							{#each TYPE_ORDER as type}
 								{@const cellNotes = matrix.cells[stratum][type]}
 								{@const cellEmpty = cellNotes.length === 0}
 								{@const expanded = isCellExpanded(stratum, type)}
-								{@const visibleNotes = expanded ? cellNotes : cellNotes.slice(0, MAX_DOTS_PER_CELL)}
 								<div class="i360-cell"
 									class:active-row={isActive}
 									class:empty-cell={cellEmpty}
 									class:expanded
 									style="--col-color: {TYPE_COLORS[type]}">
-									{#each visibleNotes as note}
-										<button class="i360-dot-btn"
-											style="--dot-color: {TYPE_COLORS[type]}"
-											aria-label={note.name}
-											onmouseenter={(e) => showDotHover(e, note.name)}
-											onmouseleave={hideDotHover}
-											onclick={() => onNoteClick?.(note.path, note.name)}>
-										</button>
-									{/each}
-									{#if cellNotes.length > MAX_DOTS_PER_CELL && !expanded}
-										{#if type === 'untyped'}
-											<span class="i360-overflow" title={`${cellNotes.length - MAX_DOTS_PER_CELL} more`}>+{cellNotes.length - MAX_DOTS_PER_CELL}</span>
-										{:else}
-											<button class="i360-overflow-btn"
-												onclick={() => toggleCellExpand(stratum, type)}
-												title={`Show all ${cellNotes.length}`}>+{cellNotes.length - MAX_DOTS_PER_CELL}</button>
-										{/if}
-									{:else if expanded && type !== 'untyped'}
-										<button class="i360-overflow-btn collapse"
+									{#if expanded && type !== 'untyped'}
+										<!-- §115: expanded typed cell renders as a vertical list of
+										     note titles instead of more dots — Boss directive on
+										     S1.3.5 retest. Untyped excluded (typically 100s of dots). -->
+										<button class="i360-list-collapse"
 											onclick={() => toggleCellExpand(stratum, type)}
-											title="Collapse">−</button>
+											title="Collapse">×</button>
+										<div class="i360-list-scroll">
+											{#each cellNotes as note}
+												<button class="i360-list-item"
+													onclick={() => onNoteClick?.(note.path, note.name)}
+													title={note.name}>
+													<span class="i360-list-bullet" style="background: {TYPE_COLORS[type]}"></span>
+													<span class="i360-list-name" dir="auto">{note.name}</span>
+												</button>
+											{/each}
+										</div>
+									{:else}
+										{#each cellNotes.slice(0, MAX_DOTS_PER_CELL) as note}
+											<button class="i360-dot-btn"
+												style="--dot-color: {TYPE_COLORS[type]}"
+												aria-label={note.name}
+												onmouseenter={(e) => showDotHover(e, note.name)}
+												onmouseleave={hideDotHover}
+												onclick={() => onNoteClick?.(note.path, note.name)}>
+											</button>
+										{/each}
+										{#if cellNotes.length > MAX_DOTS_PER_CELL}
+											{#if type === 'untyped'}
+												<span class="i360-overflow" title={`${cellNotes.length - MAX_DOTS_PER_CELL} more`}>+{cellNotes.length - MAX_DOTS_PER_CELL}</span>
+											{:else}
+												<button class="i360-overflow-btn"
+													onclick={() => toggleCellExpand(stratum, type)}
+													title={`Show all ${cellNotes.length}`}>+{cellNotes.length - MAX_DOTS_PER_CELL}</button>
+											{/if}
+										{/if}
 									{/if}
 								</div>
 							{/each}
@@ -641,40 +657,57 @@
 		flex: 1;
 	}
 
-	.i360-corner,
-	.i360-rowtot-header {
+	.i360-corner {
 		background: var(--background-secondary);
 		display: flex; align-items: center; justify-content: center;
-		gap: 8px;
+		gap: 6px;
 		font-size: 16px;
 		color: var(--text-muted);
 		padding: 6px 10px;
+		flex-direction: column;
 	}
-	.i360-corner { flex-direction: column; }
 	.i360-corner-stratum { color: var(--text-accent); font-weight: 600; }
 	.i360-corner-type { color: var(--color-blue); font-weight: 600; }
-	.i360-rowtot-header { font-size: 22px; font-weight: 700; }
 
+	/* §115: top-right corner shows the matrix grand total (Σ + count). */
+	.i360-rowtot-header {
+		background: var(--background-secondary);
+		display: flex; flex-direction: column; align-items: center; justify-content: center;
+		gap: 2px;
+		padding: 6px 8px;
+	}
+	.i360-grand-symbol {
+		font-size: 16px; color: var(--text-faint); font-weight: 600;
+	}
+	.i360-grand-value {
+		font-size: 22px; color: var(--text-accent); font-weight: 700;
+		font-variant-numeric: tabular-nums;
+		line-height: 1;
+	}
+
+	/* §115: column header — softened background tint (22→10%) and text colour
+	 * mixed with --text-normal for contrast against the tinted gradient.
+	 * The colored bottom border still carries the type-coding signal. */
 	.i360-col-header {
 		display: flex; flex-direction: column; align-items: center; justify-content: center;
 		padding: 10px 4px;
 		gap: 4px;
 		background:
 			linear-gradient(180deg,
-				color-mix(in srgb, var(--col-color, currentColor) 22%, transparent),
+				color-mix(in srgb, var(--col-color, currentColor) 10%, transparent),
 				var(--background-primary-alt) 90%);
 		border-bottom: 3px solid var(--col-color, currentColor);
 	}
 	.i360-col-name {
 		font-size: 14px; font-weight: 700; letter-spacing: 1px;
-		color: var(--col-color, currentColor);
+		color: color-mix(in srgb, var(--col-color, currentColor) 55%, var(--text-normal));
 		text-align: center;
 		text-transform: uppercase;
 		line-height: 1.2;
 	}
 	.i360-col-count {
 		font-size: 20px; font-weight: 700;
-		color: var(--col-color, currentColor);
+		color: color-mix(in srgb, var(--col-color, currentColor) 55%, var(--text-normal));
 		font-variant-numeric: tabular-nums;
 	}
 
@@ -699,14 +732,6 @@
 	.i360-row-name {
 		color: var(--text-normal); font-size: 18px;
 		flex-shrink: 0;
-	}
-	.i360-active-chip {
-		margin-inline-start: auto;
-		padding: 3px 10px; border-radius: 5px;
-		background: var(--text-accent); color: var(--background-primary);
-		font-size: 15px; font-weight: 700;
-		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-		max-width: 140px;
 	}
 
 	.i360-cell {
@@ -773,9 +798,83 @@
 		color: var(--text-normal);
 		border-color: var(--col-color, var(--background-modifier-border-focus));
 	}
-	.i360-overflow-btn.collapse {
+
+	/* §115: expanded typed cell renders a vertical list of titles. Cell layout
+	 * switches from `flex-wrap center` (dots) to `flex-column stretch` (list).
+	 * `×` collapse button is absolutely-positioned at the top-right and
+	 * always visible regardless of how long the list grows. The scroll
+	 * container caps height so very large cells (e.g. 49 supports) don't
+	 * balloon the row past the canvas. */
+	.i360-cell.expanded {
+		align-items: stretch;
+		justify-content: flex-start;
+		flex-wrap: nowrap;
+		flex-direction: column;
+		padding: 6px 4px 4px;
+		gap: 0;
+	}
+	.i360-list-collapse {
+		position: absolute;
+		top: 4px;
+		inset-inline-end: 4px;
+		width: 22px; height: 22px;
+		background: var(--background-secondary);
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 5px;
+		color: var(--text-muted);
+		cursor: pointer;
 		font-size: 16px; line-height: 1;
-		padding: 2px 10px;
+		display: flex; align-items: center; justify-content: center;
+		z-index: 3;
+		flex-shrink: 0;
+		padding: 0;
+	}
+	.i360-list-collapse:hover {
+		background: var(--background-modifier-hover);
+		color: var(--text-normal);
+		border-color: var(--col-color, var(--background-modifier-border-focus));
+	}
+	.i360-list-scroll {
+		display: flex;
+		flex-direction: column;
+		gap: 1px;
+		overflow-y: auto;
+		max-height: 240px;
+		padding-top: 26px;
+		padding-inline-end: 2px;
+		width: 100%;
+	}
+	.i360-list-item {
+		display: flex;
+		align-items: center;
+		gap: 7px;
+		background: transparent;
+		border: none;
+		border-radius: 4px;
+		padding: 3px 6px;
+		text-align: start;
+		cursor: pointer;
+		font-size: 13px;
+		color: var(--text-normal);
+		transition: background 0.15s ease;
+		width: 100%;
+		min-width: 0;
+	}
+	.i360-list-item:hover {
+		background: color-mix(in srgb, var(--col-color, var(--text-accent)) 12%, transparent);
+	}
+	.i360-list-bullet {
+		width: 8px; height: 8px;
+		border-radius: 50%;
+		flex-shrink: 0;
+	}
+	.i360-list-name {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		flex: 1;
+		min-width: 0;
+		line-height: 1.4;
 	}
 
 	.i360-rowtot {
