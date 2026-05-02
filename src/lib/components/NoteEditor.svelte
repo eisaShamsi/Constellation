@@ -37,6 +37,11 @@
 		historyIndex?: number;
 		history?: string[];
 		highlightTerm?: string;
+		/** §3-redo.4 — incremented by reloadTabFromDisk after the cascade
+		 *  rewrites this tab's file. Folded into the `{#key}` so NotePane
+		 *  destroys + remounts with fresh disk content. Per Concept Paper
+		 *  D6, recreate is the safe primitive against BUG-015. */
+		reloadVersion?: number;
 	}
 
 	let {
@@ -249,7 +254,7 @@
 	}
 </script>
 
-{#key tab.id + '|' + tab.path}
+{#key tab.id + '|' + tab.path + '|' + (tab.reloadVersion ?? 0)}
 <NotePane
 	value={body}
 	title={tab.name.replace(/\.md$/, '')}

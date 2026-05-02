@@ -61,6 +61,12 @@ export interface OpenTab {
 	cursorPos?: number;
 	scrollTop?: number;
 	pinned?: boolean;
+	/** §3-redo.4 — incremented by `reloadTabFromDisk` after the cascade
+	 *  rewrites this tab's file. Used in NoteEditor's `{#key}` to force
+	 *  NotePane to destroy + remount with fresh disk content. Per Concept
+	 *  Paper D6, recreate is the safe primitive — `$effect`-driven
+	 *  view.dispatch is forbidden. */
+	reloadVersion?: number;
 }
 
 export type PropertyType = 'text' | 'number' | 'date' | 'datetime' | 'list' | 'link' | 'checkbox';
@@ -193,6 +199,44 @@ export function clearWriteAhead(filePath: string) {
 		delete all[filePath];
 		localStorage.setItem(key, JSON.stringify(all));
 	} catch {}
+}
+
+/** §3-redo.4 — re-read a tab's file from disk and bump its reloadVersion.
+ *  Called by the `cascade:rewrote` event handler for each affected open tab.
+ *  The bump on `reloadVersion` flips NoteEditor's `{#key}` so NotePane
+ *  destroys and remounts with the fresh `tab.content` — the recreate
+ *  primitive (Option A) chosen by Boss in the §3-redo Architect. Per
+ *  Concept Paper D6, this is the only safe way to push new body content
+ *  into a CodeMirror EditorView from a parent reactive system —
+ *  `$effect`-driven `view.dispatch` is forbidden because it races
+ *  `{#key}` `onDestroy` and corrupts target body content with source
+ *  body content (BUG-015).
+ *
+ *  Called once per affected path. Skips paths that aren't currently in
+ *  any open tab. Errors are logged, not thrown — a failed reload on one
+ *  tab does not block the cascade for the rest.
+ */
+export async function reloadTabFromDisk(filePath: string): Promise<void> {
+	const tabs = get(openTabs);
+	const tab = tabs.find(t => t.path === filePath);
+	if (!tab) return;
+	try {
+		const content = await readNote(filePath);
+		openTabs.update(ts => ts.map(t => {
+			if (t.id !== tab.id) return t;
+			return {
+				...t,
+				content,
+				reloadVersion: (t.reloadVersion ?? 0) + 1,
+			};
+		}));
+		// Clear any in-flight write-ahead buffer for this path — the
+		// cascade just authored the canonical disk content; the buffered
+		// pre-cascade edits are no longer relevant.
+		clearWriteAhead(filePath);
+	} catch (err) {
+		console.error('[reloadTabFromDisk] failed for', filePath, err);
+	}
 }
 
 /** §3-redo.1 — flush every dirty tab in the affected library to disk

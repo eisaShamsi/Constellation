@@ -24,7 +24,7 @@
 		scanLibraryLinks, scanLibraryTags, getBacklinks, getOutgoingLinks, scanUnlinkedMentions,
 		scanLibraryIndex, readIndexEntries, readTermMentions, readCooccurringTerms,
 		buildSkyData, readNotePreview,
-		getDailyNotePath, updateLinksOnRename, getOldTitleForCascade, quickCapture,
+		getDailyNotePath, updateLinksOnRename, getOldTitleForCascade, reloadTabFromDisk, quickCapture,
 		loadBookmarks, addBookmark, removeBookmark, isBookmarked, bookmarks,
 		loadSettings, updateSettings, appSettings, DEFAULT_SETTINGS,
 		loadWorkspaces, workspaces,
@@ -2186,6 +2186,22 @@
 				cacheRefreshDebounce = setTimeout(() => refreshLibraryCaches(), 5000);
 			}, 300);
 		});
+
+		// §3-redo.4 — wikilink rename cascade reload listener.
+		// The watcher_suppress map (§3-redo.2) keeps the cascade's fs::write
+		// from re-firing as a `library-changed` event, so the cascade has its
+		// own dedicated event. For each rewritten path: re-read disk, update
+		// tab.content, bump tab.reloadVersion. The bump flips NoteEditor's
+		// {#key} so NotePane destroys + remounts with fresh content. Per
+		// Concept Paper D6, recreate is the chosen primitive — no $effect on
+		// value/editBody (BUG-015's class).
+		const unlistenCascadeRewrote = await listen<{ paths: string[] }>('cascade:rewrote', async (event) => {
+			const paths = event.payload?.paths ?? [];
+			for (const p of paths) {
+				await reloadTabFromDisk(p);
+			}
+		});
+		cleanupFns.push(() => { try { unlistenCascadeRewrote(); } catch {} });
 
 		if ($libraryStats.length === 1) {
 			await toggleLibrary($libraryStats[0]);
