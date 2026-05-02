@@ -531,6 +531,59 @@ export async function postProcessRenderedContent(container: HTMLElement) {
 	}
 }
 
+/**
+ * §137 — migrate every entry in a path-keyed Map from `oldPath` to `newPath`.
+ *
+ * Rule 8 (Write-Time Derivation): when a path mutates — file rename, folder
+ * rename — every reactive Map keyed by that path must follow it in the same
+ * transaction. Without this, derived UI surfaces (file-tree stage emoji,
+ * tab-strip maturity dot, alias index, etc.) silently fall out of sync the
+ * moment the user renames anything; the symptom is "the icon disappeared
+ * after I renamed it" and the cause is a stale Map keyed on the old path.
+ *
+ * Handles three cases atomically:
+ *   - Direct file rename: `/lib/foo.md` → `/lib/foo v2.md`
+ *   - Folder rename: every key under `/lib/folder/` rekeyed under the new prefix
+ *   - No-op (oldKey === newKey, e.g. canonical-file rename where only the
+ *     frontmatter title changed and the disk path stayed the same): returns
+ *     `null` so the caller can skip the store update entirely.
+ *
+ * Returns `null` when no entry was migrated (no allocation; caller's `$state`
+ * stays referentially equal so Svelte doesn't fire spurious reactivity).
+ * Returns a fresh `Map<string, V>` when at least one entry migrated.
+ *
+ * Path normalisation: backslash → forward-slash + lowercase, matching the
+ * canonical key shape used by `stageMap` / `maturityMap` / etc. in
+ * `+layout.svelte`. Callers that key on a different shape must pre-normalise.
+ */
+export function migratePathKeyedMap<V>(
+	map: Map<string, V>,
+	oldPath: string,
+	newPath: string,
+): Map<string, V> | null {
+	const norm = (p: string) => p.replace(/\\/g, '/').toLowerCase();
+	const oldKey = norm(oldPath);
+	const newKey = norm(newPath);
+	if (oldKey === newKey) return null;
+	if (map.size === 0) return null;
+
+	const prefix = oldKey + '/';
+	let mutated = false;
+	const next = new Map<string, V>();
+	for (const [key, val] of map) {
+		if (key === oldKey) {
+			next.set(newKey, val);
+			mutated = true;
+		} else if (key.startsWith(prefix)) {
+			next.set(newKey + key.substring(oldKey.length), val);
+			mutated = true;
+		} else {
+			next.set(key, val);
+		}
+	}
+	return mutated ? next : null;
+}
+
 /** Collect all wikilink targets from markdown text */
 export function extractWikilinks(md: string): string[] {
 	const links: string[] = [];

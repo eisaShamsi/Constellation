@@ -41,7 +41,7 @@
 	import { generateStyleSettingsCSS } from '$lib/theme/styleSettings';
 	import { CORE_BLOCK_IDS, getEffectiveStyleBlocks } from '$lib/theme/constellationStyleSettings';
 	import { get } from 'svelte/store';
-	import { detectDir, eventToShortcut, normalizeShortcut, getResolvedShortcut, formatShortcut } from '$lib/utils';
+	import { detectDir, eventToShortcut, normalizeShortcut, getResolvedShortcut, formatShortcut, migratePathKeyedMap } from '$lib/utils';
 	import { createBase, saveBaseFile, listWorkspaceBases, createWorkspaceBase, saveWorkspaceBase, deleteWorkspaceBase } from '$lib/bases/store';
 	import type { WorkspaceBaseEntry } from '$lib/bases/store';
 	import type { BaseDefinition } from '$lib/bases/types';
@@ -3901,7 +3901,23 @@
 				? (oldPath.split(/[\\/]/).pop() ?? '')
 				: await getOldTitleForCascade(oldPath);
 
-			await renameItem(oldPath, newPath);
+			const effectivePath = await renameItem(oldPath, newPath);
+			// §137 (Rule 8 — Write-Time Derivation): every reactive Map keyed
+			// by a file path must follow that path in the same transaction as
+			// the rename. Without this, derived UI surfaces (file-tree stage
+			// emoji + maturity dot, alias index, search-hub link counts) fall
+			// out of sync — the symptom is "the stage icon disappeared after I
+			// renamed it." `migratePathKeyedMap` returns null for no-op renames
+			// (canonical-file path-stable case) so we skip the store update
+			// entirely and don't fire spurious reactivity.
+			const stageNext = migratePathKeyedMap(stageMap, oldPath, effectivePath);
+			if (stageNext) stageMap = stageNext;
+			const matNext = migratePathKeyedMap(maturityMap, oldPath, effectivePath);
+			if (matNext) maturityMap = matNext;
+			const aliasNext = migratePathKeyedMap(notePathToAliases, oldPath, effectivePath);
+			if (aliasNext) notePathToAliases = aliasNext;
+			const linkCountNext = migratePathKeyedMap(searchLinkCounts, oldPath, effectivePath);
+			if (linkCountNext) searchLinkCounts = linkCountNext;
 			const lib = $libraryStats.find(v => oldPath.startsWith(v.path));
 			if (lib) {
 				await refreshLibraryTree(lib.library_id);
