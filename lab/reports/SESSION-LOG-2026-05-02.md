@@ -161,3 +161,84 @@ Orientation **v1.27** created alongside v1.26.
 - CE Phase 9 Path B / MIG-010 scale (queued after MIG-006 §3).
 - store.ts:1850 LinkLifecycle Option B fix (deferred until post-CE).
 - Other 13 locales — backfill the §120 inspector360 keys.
+
+---
+
+## §126 — 360.3D Matrix Reading Guide (v1.0)
+
+Boss S3.4.3 directive: "We need to develop a Guidance to learn how to read/interpret the 360.3D Matrix (you will develop it when we are done with the 360.3D)." With Stage 3 closed (S3.6 الإدريسي test pass; Boss declared the matrix "rich evaluation tool"), wrote `docs/360.3D-Matrix-Reading-Guide-v1.0.md` — 13-section teaching guide. Three reads (Position / Profile / Absence), 22 mental shapes catalogued (Lone Pillar, Pyramid Inverted, Empty Quadrant, Spine, …), two worked examples (الإدريسي + Al-Tabari) walking the reader cell by cell from "what do I see" to "what do I do next."
+
+## §127 — Rename Function Concept Paper (v1.0) + §3-redo Architect plan
+
+Boss directive: "Before we proceed. Under what function does MIG-006 §3 redo fall? Go to the basics to understand what this function is all about. Does it have a guidance manual (Like the 360.3D)?" — and approved Path 2 (write both docs together).
+
+`docs/Rename-Function-Concept-Paper-v1.0.md` — defines Rename as a system-wide function (not a tree-row UI affordance): P1–P8 invariants, D1–D8 design principles (D6 codifies the BUG-015 prohibition: no `$effect`-driven `view.dispatch` from a parent reactive system), F1–F11 failure modes with class signatures, 6 open questions.
+
+`lab/reports/MIG-006-3-REDO-ARCHITECT.md` — three reload-mechanism options laid out with speed/effort/risk:
+- **Option A**: tab-key invalidation via `{#key}` bump (recreate primitive — D6-compliant by construction).
+- **Option B**: imperative `view.dispatch` via component ref (in-place update; faster but D6 trap territory).
+- **Option C**: close + reopen tab (cleanest semantic but loses tab position / split layout).
+
+Boss approved Option A. Cascade through Phase 2 build per Plan Approval = Build Approval.
+
+## §128 — §3-redo.1 — flushAllTabsInLibrary helper
+
+`store.ts` — exported `flushAllTabsInLibrary(libraryPath)`: walks every open tab whose path is under the given library, finds dirty ones via `writeAheadBuffer`, writes each one to disk via `writeNote` with `markRecentWrite` to suppress the watcher echo. Closes Concept Paper F2 pre-cascade-staleness: the cascade walker reads the file from disk; without flushing first, typed-but-unsaved buffers were silently overwritten.
+
+## §129 — §3-redo.2 — watcher_suppress module + cascade integration
+
+New Rust module `src-tauri/src/watcher_suppress.rs` — `Mutex<HashMap<PathBuf, Instant>>` with 2.5-second TTL. `mark` is called by the cascade walker before each `fs::write`; `was_recent` is checked by `watcher.rs`'s emit path. Wired through `lib.rs` registration. Closes F3 watcher-loop: the cascade's `fs::write` no longer bubbles back as a `library-changed` event and re-triggers reload → cascade infinitely.
+
+## §130 — §3-redo.3 — CascadeResult struct + cascade:rewrote event
+
+`libraries.rs::update_links_on_rename` — refactored to return a `CascadeResult { rewritten: Vec<String>, failed: Vec<(String, String)> }` instead of `()`. Walker now records every successful rewrite into `result.rewritten`; failures go into `result.failed` with the error string. After the walk, the function emits `cascade:rewrote { paths: [...] }` so the frontend knows exactly which paths to reload. TS-side `CascadeResult` interface added to `store.ts`.
+
+## §131 — §3-redo.4 — cascade:rewrote listener + tab-key reload
+
+`+layout.svelte` — `listen('cascade:rewrote', ...)` registered alongside the existing `library-changed` listener; for each path it calls `reloadTabFromDisk` which re-reads the file, updates the matching tab's `content`, and bumps a new `reloadVersion` field on the tab. `NoteEditor.svelte` — `{#key tab.id + '|' + tab.path + '|' + (tab.reloadVersion ?? 0)}` so a `reloadVersion` change destroys NotePane and remounts it with the fresh `tab.content`. This is Option A (recreate primitive); per Concept Paper D6 it is the only safe way to push new content into an EditorView from a parent.
+
+## §132 — §3-redo.5 — handleRenameComplete orchestration + cascade flag
+
+`store.ts` — added `cascadingPaths` `Set<string>` (paths currently being rewritten) plus `markCascading` / `clearCascading` / `isCascading` helpers. `NoteEditor.svelte` — `handleSave` and `handleFlush` bail out when `isCascading(filePath)` returns true; without this gate, the `{#key}` bump's destroy-time `doFlush` would write the editor's pre-cascade content back, undoing the cascade (F2 post-cascade-stomp). `+layout.svelte::handleRenameComplete` — orchestrates the cascade in order: (a) mark every tab in the library as cascading, (b) `flushAllTabsInLibrary`, (c) `updateLinksOnRename`, (d) wait 1 s for the listener's reloads to settle, (e) `clearCascading` for every marked path in `finally`.
+
+## §133 — §3-redo.6 — /simplify checkpoint: 4 cleanups
+
+Three review agents flagged: parallel `cascade:rewrote` reload (was sequential `await`s), conditional `setTimeout` only when something rewrote (was always 1 s even on no-op renames), `was_recent` opportunistic full-map GC, normalised path comparison for the `flushAllTabsInLibrary` library-membership check (Windows path-separator mismatch).
+
+## §134 — §3-redo.7 — Phase 4 audit closure + orientation v1.28
+
+Three review agents (invariants / drift / migration-path) walked §128–§133:
+- **HIGH drift**: PropertyEditor's `saveTabContent` direct call bypassed the `isCascading` gate. Frontmatter property edits during the cascade window would stomp the rewrite. Added the gate at the top of `saveTabContent`.
+- **MEDIUM drift**: `cascadingPaths` Set leaked across Universe switches. Added `clearAllCascading()` helper, called from `handleUniverseSwitch`.
+- **DEGRADED**: concurrent renames in the same library (deferred per architect plan); typing-during-cascade keystroke loss (Concept Paper accepts the trade per D6).
+
+Orientation v1.28 created alongside v1.27 documenting the full §128–§134 closure.
+
+Commit: `2e029b3`.
+
+## §135 — /simplify checkpoint: 7 cleanups
+
+Three review agents (reuse / quality / efficiency) walked §128–§134 with the additional focus areas Boss specified: lifecycle correctness (refcount cascadingPaths so spam-renames don't pop each other's marks), 1 s settle window racing the listener, watcher_suppress TTL eviction, CascadeResult tuple serde, reuse opportunities.
+
+Real bugs fixed:
+- `cascadingPaths` Set → Map with refcounting. Spam-rename race closed.
+- Killed the 1 s magic timeout. Orchestrator now `await`s `reloadTabsFromDisk(result.rewritten)` directly. Real completion signal, no listener race, no wall-clock penalty on single-file renames.
+- Extracted `tabsInLibrary(libraryPath)` helper with separator-bounded prefix check (`/Foo/Bar` no longer matches `/Foo/Bar2`). Both `flushAllTabsInLibrary` and the orchestrator use it.
+
+Efficiency wins:
+- `reloadTabsFromDisk` batched + idempotent (parallel reads, single `openTabs.update`, skip version-bump when content unchanged).
+- `watcher_suppress::was_recent` cheap-path lookup + opportunistic 256-threshold sweep. Steady-state O(1) again.
+- `CascadeResult.failed` capped at 100 entries with `failed_truncated` counter.
+- Consolidated `isCascading` WHY-comments at the three gate sites into one canonical docstring.
+
+Removed: now-unused single-path `reloadTabFromDisk` wrapper.
+
+Commit: `fe9bf9e`. **MIG-006 §3 redo fully closed.**
+
+### Pending after §135
+
+- **Test §128–§135 with Boss** (next step).
+- MIG-006 §4–§11: reindex via `index_note`, sync/async dispatch, atomic per-file writes via tempfile, pre-MIG-006 backfill command.
+- CE Phase 9 Path B / MIG-010 scale.
+- store.ts:1850 LinkLifecycle Option B (deferred until post-CE).
+- Other 13 locales — backfill §120 inspector360 keys.
