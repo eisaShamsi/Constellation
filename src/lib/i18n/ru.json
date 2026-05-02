@@ -778,6 +778,7 @@
     "propertyKey": "Ключ",
     "propertyValue": "Значение",
     "promote": "Повысить",
+    "demote": "Понизить",
     "stage": {
       "fleeting": "Мимолётная",
       "literature": "Литература",

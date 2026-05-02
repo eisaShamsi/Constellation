@@ -778,6 +778,7 @@
     "propertyKey": "Anahtar",
     "propertyValue": "Değer",
     "promote": "Yükselt",
+    "demote": "İndir",
     "stage": {
       "fleeting": "Geçici",
       "literature": "Literatür",

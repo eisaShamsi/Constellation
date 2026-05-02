@@ -95,6 +95,10 @@
 	}
 
 	function handlePromote(nextStage: string) {
+		// Stage promote/demote writes to disk via writeNote like saveTabContent
+		// does, so the same F2 post-cascade-stomp gate applies here too.
+		// See `isCascading` for the full rationale.
+		if (isCascading(tab.path)) return;
 		const props = freshProps();
 		const bd = freshBody();
 		let newProps: FrontmatterProperty[];

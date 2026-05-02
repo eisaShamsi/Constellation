@@ -778,6 +778,7 @@
     "propertyKey": "Clé",
     "propertyValue": "Valeur",
     "promote": "Promouvoir",
+    "demote": "Rétrograder",
     "stage": {
       "fleeting": "Éphémère",
       "literature": "Littérature",

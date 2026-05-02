@@ -778,6 +778,7 @@
     "propertyKey": "键",
     "propertyValue": "值",
     "promote": "提升",
+    "demote": "降级",
     "stage": {
       "fleeting": "闪念",
       "literature": "文献",

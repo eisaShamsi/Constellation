@@ -915,22 +915,39 @@
 		<span class="e-bc-lib">{libraryName}</span>
 		<span class="e-bc-sep">/</span>
 		<span class="e-bc-note">{title}</span>
-		<div class="e-bc-stage-wrap">
-			<select class="e-bc-stage-select" value={currentStage}
-				onmousedown={(e) => e.stopPropagation()}
-				onchange={(e) => {
-					const val = (e.target as HTMLSelectElement).value;
-					currentStage = val;
-					onpromote?.(val);
-					view?.focus();
-				}}>
-				<option value="">{$t('notePane.noteStage')}</option>
-				<option value="fleeting">🌱 {$t('notePane.stage.fleeting')}</option>
-				<option value="literature">📖 {$t('notePane.stage.literature')}</option>
-				<option value="permanent">🔗 {$t('notePane.stage.permanent')}</option>
-				<option value="synthesis">✨ {$t('notePane.stage.synthesis')}</option>
-			</select>
-		</div>
+		{#if currentStage}
+			{@const stageOrder = ['fleeting', 'literature', 'permanent', 'synthesis']}
+			{@const idx = stageOrder.indexOf(currentStage)}
+			{@const stageEmoji = currentStage === 'fleeting' ? '🌱' : currentStage === 'literature' ? '📖' : currentStage === 'permanent' ? '🔗' : currentStage === 'synthesis' ? '✨' : ''}
+			<div class="e-bc-stage-wrap">
+				{#if idx > 0}
+					<button class="e-bc-demote"
+						title={$t('notePane.demote')}
+						aria-label={$t('notePane.demote')}
+						onmousedown={(e) => e.preventDefault()}
+						onclick={() => {
+							const prev = stageOrder[idx - 1];
+							currentStage = prev;
+							onpromote?.(prev);
+							view?.focus();
+						}}>←</button>
+				{/if}
+				<span class="e-bc-stage-badge" title={$t(`notePane.stage.${currentStage}`)}>
+					{stageEmoji} {$t(`notePane.stage.${currentStage}`)}
+				</span>
+				{#if idx >= 0 && idx < stageOrder.length - 1}
+					<button class="e-bc-promote"
+						title={$t('notePane.promote')}
+						onmousedown={(e) => e.preventDefault()}
+						onclick={() => {
+							const next = stageOrder[idx + 1];
+							currentStage = next;
+							onpromote?.(next);
+							view?.focus();
+						}}>{$t('notePane.promote')} →</button>
+				{/if}
+			</div>
+		{/if}
 		{#if trail}
 			<div class="e-bc-trail">
 				<span class="e-bc-trail-label">🛤️ {trail}</span>
@@ -1128,15 +1145,34 @@
 	.e-bc-lib { color: var(--text-muted); }
 	.e-bc-sep { margin: 0 4px; color: var(--background-modifier-border-focus); }
 	.e-bc-note { color: var(--text-normal); }
-	.e-bc-stage-wrap { margin-inline-start: 6px; }
-	.e-bc-stage-select {
-		font-size: 0.72rem; color: var(--text-muted); background: none;
-		border: 1px solid var(--background-modifier-border); border-radius: 4px;
-		padding: 1px 4px; cursor: pointer; font-family: inherit;
-		outline: none;
+	/* §136 — bidirectional stage controls (CE-spec Phase 6, post-revision).
+	 * Promote → is the canonical forward verb (prominent, accent border).
+	 * ← Demote is the legitimate-but-occasional revision verb (subdued, no
+	 * border). Visual asymmetry encodes the frequency asymmetry: forward
+	 * is the expected direction, backward is permitted when new evidence
+	 * requires revisiting an earlier stage. */
+	.e-bc-stage-wrap {
+		display: flex; align-items: center; gap: 4px;
+		margin-inline-start: 6px;
 	}
-	.e-bc-stage-select:hover { border-color: var(--interactive-accent); color: var(--text-normal); }
-	.e-bc-stage-select:focus { border-color: var(--interactive-accent); }
+	.e-bc-stage-badge {
+		font-size: 0.72rem; color: var(--text-muted);
+		padding: 1px 6px; border-radius: 4px;
+		background: var(--background-secondary);
+		font-family: inherit; white-space: nowrap;
+	}
+	.e-bc-promote {
+		font-size: 0.68rem; color: var(--interactive-accent); background: none;
+		border: 1px solid var(--interactive-accent); border-radius: 4px;
+		padding: 1px 6px; cursor: pointer; font-family: inherit;
+	}
+	.e-bc-promote:hover { background: var(--interactive-accent); color: var(--text-on-accent, #fff); }
+	.e-bc-demote {
+		font-size: 0.85rem; line-height: 1; color: var(--text-faint);
+		background: none; border: none; cursor: pointer; font-family: inherit;
+		padding: 0 4px;
+	}
+	.e-bc-demote:hover { color: var(--text-muted); }
 	.e-bc-trail {
 		display: flex; align-items: center; gap: 4px; margin-inline-start: 8px;
 		font-size: 0.72rem; color: var(--text-muted);

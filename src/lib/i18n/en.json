@@ -815,6 +815,7 @@
     "propertyKey": "Key",
     "propertyValue": "Value",
     "promote": "Promote",
+    "demote": "Demote",
     "stage": {
       "fleeting": "Fleeting",
       "literature": "Literature",

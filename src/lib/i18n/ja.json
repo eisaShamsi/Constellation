@@ -778,6 +778,7 @@
     "propertyKey": "キー",
     "propertyValue": "値",
     "promote": "昇格",
+    "demote": "降格",
     "stage": {
       "fleeting": "一時的",
       "literature": "文献",

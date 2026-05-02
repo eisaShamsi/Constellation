@@ -446,10 +446,12 @@ Default: no `stage:` property = unclassified (backward compatible).
 
 ### UI
 - **File tree**: subtle stage icon next to note name (🌱 fleeting, 📖 literature, 🔗 permanent, ✨ synthesis)
-- **NotePane header**: stage indicator + one-click promote button ("Promote to Literature →")
+- **NotePane header**: stage badge (current stage) + one-click `Promote →` button (forward by one stage) + subtle `←` demote control (backward by one stage). Promote is the canonical, prominent verb. Demote is the legitimate-but-occasional revision verb (visually subdued, no border) for cases where new evidence requires revisiting an earlier stage.
 - **FocusPane**: "Promote to NotePane as Permanent" button on save
-- Stage progression is one-way: fleeting → literature → permanent → synthesis (no demotion needed)
-- Not mandatory. Notes without a stage are just notes.
+- Stage progression flows forward through the pipeline (Fleeting → Literature → Permanent → Synthesis) as the canonical maturation direction. Demotion is permitted via an explicit, visually subdued affordance — knowledge revision is part of real research and the pipeline encodes the *expected* direction, not a forbidden one.
+- Removal of the stage property entirely happens via the property panel (the breadcrumb verbs are pipeline-only; un-staging is a property administration action).
+- Not mandatory. Notes without a stage are just notes; the breadcrumb shows nothing and the user assigns an initial stage from the property panel (or from FocusPane → Promote to Permanent).
+- §136 (2026-05-02): Replaced the brief 2026-04-02 dropdown experiment (commit `6cbe87c`) with this design. The dropdown silently turned the workflow verb into a property selector and introduced the dual-control redundancy critique; this revision restores the verb-distinct design and adds the demote affordance.
 
 ### Alignment with Maturity (Phase 3)
 Stage and Maturity are independent but correlated:

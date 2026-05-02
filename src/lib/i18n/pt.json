@@ -778,6 +778,7 @@
     "propertyKey": "Chave",
     "propertyValue": "Valor",
     "promote": "Promover",
+    "demote": "Rebaixar",
     "stage": {
       "fleeting": "Fugaz",
       "literature": "Literatura",

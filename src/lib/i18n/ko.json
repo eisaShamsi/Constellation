@@ -778,6 +778,7 @@
     "propertyKey": "키",
     "propertyValue": "값",
     "promote": "승격",
+    "demote": "강등",
     "stage": {
       "fleeting": "순간",
       "literature": "문헌",
