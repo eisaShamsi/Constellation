@@ -373,6 +373,9 @@
 								class:tensions-flag={isTensionsCol}
 								class:fragile-flag={isFragileCol}
 								style="--col-color: {TYPE_COLORS[type]}">
+								{#if isBlindSpot}<div class="i360-col-warn warn-blind" title="Blind spot — typed direction not used">{'⚠'}</div>{/if}
+								{#if isTensionsCol}<div class="i360-col-warn warn-tensions" title="Tensions — active contradicts pointing here">{'⚡'}</div>{/if}
+								{#if isFragileCol}<div class="i360-col-warn warn-fragile" title="Fragile — load-bearing on thin foundation">{'⚠'}</div>{/if}
 								<div class="i360-col-name">
 									{typeLabels[type].toUpperCase()}
 									<HelpTip tooltip={tr($t(typeHelpKey), typeHelpKey, '')} position="bottom" />
@@ -734,15 +737,22 @@
 				var(--background-primary-alt) 90%);
 		border-bottom-color: var(--text-error, #ef4444);
 	}
-	/* §124: column-header overlays for the other HUD warnings. A 3-px top
-	 * border in the warning's distinct colour, sitting above the existing
-	 * type-colour bottom border. Rendered only when the corresponding flag
-	 * is set AND the column is not already a blind-spot (red dominates).
-	 *  - Tensions (Contradicts): brown — Boss directive
-	 *  - Fragile (Derives From): yellow
-	 * Orphan has no natural column counterpart — HUD chip alone.
-	 * Brown isn't in the theme palette, so we hardcode two values and pick
-	 * via the .theme-dark cascade for visibility on both themes. */
+	/* §124/§125: column-header warning treatment.
+	 *
+	 * §124 originally added a 3-px coloured top border per warning, but the
+	 * matrix's `border-radius: 12px` + `overflow: hidden` clips the top
+	 * border on the leftmost / rightmost column headers and makes a 3 px
+	 * stripe hard to see even on middle columns. §125 keeps the top border
+	 * as a secondary cue and adds an inline icon above the column name as
+	 * the primary signal — same icon as the corresponding HUD chip so
+	 * the visual line from chip to column is direct.
+	 *
+	 *  - Blind spot:   ⚠ red    (also full red column treatment from §122)
+	 *  - Fragile:      ⚠ yellow (Derives From column)
+	 *  - Tensions:     ⚡ brown  (Contradicts column)
+	 *
+	 * Brown isn't in the theme palette, so it's hardcoded with a
+	 * .theme-dark cascade override for visibility on both themes. */
 	.i360-col-header.tensions-flag {
 		border-top: 3px solid #8b4513;
 	}
@@ -752,6 +762,16 @@
 	.i360-col-header.fragile-flag {
 		border-top: 3px solid var(--color-yellow, #e0ac00);
 	}
+	.i360-col-warn {
+		font-size: 18px;
+		line-height: 1;
+		font-weight: 700;
+		text-align: center;
+	}
+	.i360-col-warn.warn-blind { color: var(--text-error, #ef4444); }
+	.i360-col-warn.warn-fragile { color: var(--color-yellow, #e0ac00); }
+	.i360-col-warn.warn-tensions { color: #8b4513; }
+	:global(.theme-dark) .i360-col-warn.warn-tensions { color: #c89875; }
 	.i360-col-name {
 		font-size: 14px; font-weight: 700; letter-spacing: 1px;
 		color: color-mix(in srgb, var(--col-color, currentColor) 55%, var(--text-normal));

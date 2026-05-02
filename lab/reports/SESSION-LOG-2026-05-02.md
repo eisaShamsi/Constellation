@@ -113,3 +113,51 @@ Orientation **v1.26** created alongside v1.25.
 - CE Phase 9 Path B / MIG-010 scale (queued after MIG-006 §3).
 - store.ts:1850 LinkLifecycle Option B fix (deferred until post-CE).
 - Other 13 locales — backfill the §120 inspector360 keys.
+
+---
+
+## §125 — Inline warning icons in matrix column headers
+
+Boss tested §124 on Abu Bakr and found the brown tensions border invisible: "It is easy to identify the blind spot, but not the tensions. Is it in the Causes?" Diagnosis: the matrix's `border-radius: 12px` + `overflow: hidden` clips the column header's top border, especially on the leftmost / rightmost columns. Boss's fix proposal (option a): "Maybe if we add the warning icons in their place, it will be easier."
+
+### Code changes
+
+`src/lib/components/Inspector360.svelte` — column header rendering:
+
+1. Added a conditional icon row above the column name. Same icon as the corresponding HUD chip:
+   - Blind spot column: `⚠` in red (`var(--text-error)`).
+   - Fragile column (Derives From only, when `single_point_of_failure` is set and not also blind-spot): `⚠` in yellow (`var(--color-yellow)`).
+   - Tensions column (Contradicts only, when `contradictions.length > 0` and not also blind-spot): `⚡` in brown (`#8b4513` light / `#c89875` dark via the `:global(.theme-dark)` cascade).
+2. CSS: new `.i360-col-warn` class (font-size 18px, weight 700, line-height 1) plus three colour-variant classes `warn-blind / warn-fragile / warn-tensions`.
+3. The §124 top border treatment retained as a secondary cue. Visible on middle columns even when the rounded corners clip the edges.
+
+### Stage 3 status
+
+S3.4 closed cleanly with Boss's three findings:
+- 3.4.1 paragraph: "Al-Tabari stands at L7, supportive / derives-from / exemplifies populated, no balance with contradicts/generalizes, gap from L1 to L4."
+- 3.4.2 action: "Study the opposite side, link other general sources, check development steps for solidity vs hasty jumps."
+- 3.4.3 timing: ~1 minute to find gaps; "to interpret the matrix, you need a trained eye." All three concept-paper outputs validated (Position / Profile / Absence + integrated Synthesis read).
+
+Boss's new requirement saved to project memory: `project_360_3d_matrix_guidance_doc.md` — write a Matrix Reading Guide after 360.3D Inspector work closes.
+
+S3.5 (comparative) being skipped per the proposed order. S3.6 (surprise test — does the matrix reveal something Boss didn't already know about a deeply-known note) is the closing test for Stage 3.
+
+### Verification
+
+- `cargo check`: not re-run (no Rust change).
+- `node node_modules/svelte-check/dist/src/index.js --tsconfig ./tsconfig.json --threshold error`: 1 error (pre-existing `store.ts:1850`, deferred per Boss). Zero in Inspector360.
+- Release build: pending.
+
+### SO #6
+
+Orientation **v1.27** created alongside v1.26.
+
+### Pending after §125
+
+- Boss tests §125 binary: ⚡ visible above Contradicts when there are tensions; ⚠ visible above Derives From when fragile; ⚠ visible above any blind-spot column.
+- S3.6 (surprise test) — Stage 3 closing test.
+- Then: Matrix Guidance Doc (queued via project memory) — write after 360.3D closes.
+- MIG-006 §3 redo (queued).
+- CE Phase 9 Path B / MIG-010 scale (queued after MIG-006 §3).
+- store.ts:1850 LinkLifecycle Option B fix (deferred until post-CE).
+- Other 13 locales — backfill the §120 inspector360 keys.
