@@ -365,7 +365,8 @@
 						</div>
 						{#each TYPE_ORDER as type}
 							{@const typeHelpKey = `inspector360.help_type_${TYPE_LABEL_KEYS[type].replace(/^link_/, '')}`}
-							<div class="i360-col-header" style="--col-color: {TYPE_COLORS[type]}">
+							{@const isBlindSpot = type !== 'untyped' && matrix.colTotals[type] === 0}
+							<div class="i360-col-header" class:blind-spot={isBlindSpot} style="--col-color: {TYPE_COLORS[type]}">
 								<div class="i360-col-name">
 									{typeLabels[type].toUpperCase()}
 									<HelpTip tooltip={tr($t(typeHelpKey), typeHelpKey, '')} position="bottom" />
@@ -715,6 +716,18 @@
 				var(--background-primary-alt) 90%);
 		border-bottom: 3px solid var(--col-color, currentColor);
 	}
+	/* §122: blind-spot column header — typed direction with zero connections
+	 * for this note. Warning tint (theme-aware via --text-error) + amber
+	 * bottom border + amber count colour replace the type-colour scheme so
+	 * the gap is undeniable at a glance. Untyped excluded (it's the absence
+	 * of typing, not a typed direction). */
+	.i360-col-header.blind-spot {
+		background:
+			linear-gradient(180deg,
+				color-mix(in srgb, var(--text-error, #ef4444) 14%, transparent),
+				var(--background-primary-alt) 90%);
+		border-bottom-color: var(--text-error, #ef4444);
+	}
 	.i360-col-name {
 		font-size: 14px; font-weight: 700; letter-spacing: 1px;
 		color: color-mix(in srgb, var(--col-color, currentColor) 55%, var(--text-normal));
@@ -722,10 +735,16 @@
 		text-transform: uppercase;
 		line-height: 1.2;
 	}
+	.i360-col-header.blind-spot .i360-col-name {
+		color: var(--text-error, #ef4444);
+	}
 	.i360-col-count {
 		font-size: 20px; font-weight: 700;
 		color: color-mix(in srgb, var(--col-color, currentColor) 55%, var(--text-normal));
 		font-variant-numeric: tabular-nums;
+	}
+	.i360-col-header.blind-spot .i360-col-count {
+		color: var(--text-error, #ef4444);
 	}
 
 	.i360-row-header {
