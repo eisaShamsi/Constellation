@@ -3611,6 +3611,45 @@
 				const tree: FileEntry[] = await invoke('read_library_tree', { path: lib.path, maxDepth: 4 });
 				libraryTrees[id] = tree;
 				libraryTrees = { ...libraryTrees };
+				// §138 (Rule 8 — Write-Time Derivation): load this library's
+				// stage + maturity metadata so the file tree shows the stage
+				// emoji 🌱📖🔗✨ + maturity dot ● immediately. enrichNodesBackground
+				// was removed from boot for boot-perf (zero boot-time walks);
+				// before §138 the only path that populated stageMap / maturityMap
+				// was the Sky View legend's onRequestEnrichment, so the file
+				// tree never showed indicators on a normal boot. Library expand
+				// is user-action-triggered (respects the boot-perf discipline)
+				// and natural — the user is showing they want this library's
+				// contents. Fire-and-forget; the maps are reactive `$state`,
+				// so the file tree re-renders when each scan returns. Failures
+				// are silent — a missing emoji is preferable to blocking the
+				// expand.
+				invoke<[string, string][]>('scan_note_stages', { libraryPath: lib.path })
+					.then((stages) => {
+						if (stages.length === 0) return;
+						const next = new Map(stageMap);
+						let mutated = false;
+						for (const [path, stage] of stages) {
+							const key = path.replace(/\\/g, '/').toLowerCase();
+							if (next.get(key) !== stage) { next.set(key, stage); mutated = true; }
+						}
+						if (mutated) stageMap = next;
+					})
+					.catch(() => {});
+				invoke<{ note_path: string; state: string }[]>(
+					'compute_note_maturity', { libraryPath: lib.path, libraryName: lib.name }
+				)
+					.then((maturities) => {
+						if (maturities.length === 0) return;
+						const next = new Map(maturityMap);
+						let mutated = false;
+						for (const m of maturities) {
+							const key = m.note_path.replace(/\\/g, '/').toLowerCase();
+							if (next.get(key) !== m.state) { next.set(key, m.state); mutated = true; }
+						}
+						if (mutated) maturityMap = next;
+					})
+					.catch(() => {});
 			}
 			expandedLibraries.add(id);
 			expandedLibraries = new Set(expandedLibraries);
