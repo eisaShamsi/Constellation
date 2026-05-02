@@ -366,7 +366,13 @@
 						{#each TYPE_ORDER as type}
 							{@const typeHelpKey = `inspector360.help_type_${TYPE_LABEL_KEYS[type].replace(/^link_/, '')}`}
 							{@const isBlindSpot = type !== 'untyped' && matrix.colTotals[type] === 0}
-							<div class="i360-col-header" class:blind-spot={isBlindSpot} style="--col-color: {TYPE_COLORS[type]}">
+							{@const isTensionsCol = type === 'contradicts' && data.contradictions.length > 0 && !isBlindSpot}
+							{@const isFragileCol = type === 'derives-from' && data.single_point_of_failure && !isBlindSpot}
+							<div class="i360-col-header"
+								class:blind-spot={isBlindSpot}
+								class:tensions-flag={isTensionsCol}
+								class:fragile-flag={isFragileCol}
+								style="--col-color: {TYPE_COLORS[type]}">
 								<div class="i360-col-name">
 									{typeLabels[type].toUpperCase()}
 									<HelpTip tooltip={tr($t(typeHelpKey), typeHelpKey, '')} position="bottom" />
@@ -456,10 +462,10 @@
 					<span class="i360-hud-item">{'\u{1F4DD}'} {data.word_count.toLocaleString()} {$t('inspector360.words') || 'words'}</span>
 				</div>
 				<div class="i360-hud-right">
-					{#if data.is_orphan}<span class="i360-hud-item i360-hud-warn">{'⚠'} {$t('inspector360.orphan') || 'Orphan'} <HelpTip tooltip={tr($t('inspector360.help_hud_orphan'), 'inspector360.help_hud_orphan', '')} position="top" /></span>{/if}
-					{#if data.single_point_of_failure}<span class="i360-hud-item i360-hud-warn">{'⚠'} {$t('inspector360.fragile') || 'Fragile'} <HelpTip tooltip={tr($t('inspector360.help_hud_fragile'), 'inspector360.help_hud_fragile', '')} position="top" /></span>{/if}
-					{#if data.missing_link_types.length > 0}<span class="i360-hud-item i360-hud-warn">{'⚠'} {data.missing_link_types.length} {$t('inspector360.blindSpots') || 'blind spots'} <HelpTip tooltip={tr($t('inspector360.help_hud_blind_spots'), 'inspector360.help_hud_blind_spots', '')} position="top" /></span>{/if}
-					{#if data.contradictions.length > 0}<span class="i360-hud-item i360-hud-warn">{'⚡'} {data.contradictions.length} {$t('inspector360.tensions') || 'tensions'} <HelpTip tooltip={tr($t('inspector360.help_hud_tensions'), 'inspector360.help_hud_tensions', '')} position="top" /></span>{/if}
+					{#if data.is_orphan}<span class="i360-hud-item i360-hud-warn-orphan">{'⚠'} {$t('inspector360.orphan') || 'Orphan'} <HelpTip tooltip={tr($t('inspector360.help_hud_orphan'), 'inspector360.help_hud_orphan', '')} position="top" /></span>{/if}
+					{#if data.single_point_of_failure}<span class="i360-hud-item i360-hud-warn-fragile">{'⚠'} {$t('inspector360.fragile') || 'Fragile'} <HelpTip tooltip={tr($t('inspector360.help_hud_fragile'), 'inspector360.help_hud_fragile', '')} position="top" /></span>{/if}
+					{#if data.missing_link_types.length > 0}<span class="i360-hud-item i360-hud-warn-blind">{'⚠'} {data.missing_link_types.length} {$t('inspector360.blindSpots') || 'blind spots'} <HelpTip tooltip={tr($t('inspector360.help_hud_blind_spots'), 'inspector360.help_hud_blind_spots', '')} position="top" /></span>{/if}
+					{#if data.contradictions.length > 0}<span class="i360-hud-item i360-hud-warn-tensions">{'⚡'} {data.contradictions.length} {$t('inspector360.tensions') || 'tensions'} <HelpTip tooltip={tr($t('inspector360.help_hud_tensions'), 'inspector360.help_hud_tensions', '')} position="top" /></span>{/if}
 				</div>
 			</div>
 		{/if}
@@ -717,8 +723,8 @@
 		border-bottom: 3px solid var(--col-color, currentColor);
 	}
 	/* §122: blind-spot column header — typed direction with zero connections
-	 * for this note. Warning tint (theme-aware via --text-error) + amber
-	 * bottom border + amber count colour replace the type-colour scheme so
+	 * for this note. Warning tint (theme-aware via --text-error) + red
+	 * bottom border + red count colour replace the type-colour scheme so
 	 * the gap is undeniable at a glance. Untyped excluded (it's the absence
 	 * of typing, not a typed direction). */
 	.i360-col-header.blind-spot {
@@ -727,6 +733,24 @@
 				color-mix(in srgb, var(--text-error, #ef4444) 14%, transparent),
 				var(--background-primary-alt) 90%);
 		border-bottom-color: var(--text-error, #ef4444);
+	}
+	/* §124: column-header overlays for the other HUD warnings. A 3-px top
+	 * border in the warning's distinct colour, sitting above the existing
+	 * type-colour bottom border. Rendered only when the corresponding flag
+	 * is set AND the column is not already a blind-spot (red dominates).
+	 *  - Tensions (Contradicts): brown — Boss directive
+	 *  - Fragile (Derives From): yellow
+	 * Orphan has no natural column counterpart — HUD chip alone.
+	 * Brown isn't in the theme palette, so we hardcode two values and pick
+	 * via the .theme-dark cascade for visibility on both themes. */
+	.i360-col-header.tensions-flag {
+		border-top: 3px solid #8b4513;
+	}
+	:global(.theme-dark) .i360-col-header.tensions-flag {
+		border-top-color: #c89875;
+	}
+	.i360-col-header.fragile-flag {
+		border-top: 3px solid var(--color-yellow, #e0ac00);
 	}
 	.i360-col-name {
 		font-size: 14px; font-weight: 700; letter-spacing: 1px;
@@ -963,4 +987,19 @@
 		display: flex; align-items: center; gap: 8px;
 	}
 	.i360-hud-warn { color: var(--text-error, #ef4444); }
+	/* §124: per-warning HUD chip colors so each warning is visually
+	 * distinguishable. Red was overloaded across all four; now each
+	 * warning carries its own semantic colour:
+	 *  - Orphan (no inbound): orange — isolation
+	 *  - Fragile (load-bearing on thin foundation): yellow — caution
+	 *  - Blind spots (typed directions unused): red — serious gap
+	 *  - Tensions (active contradicts): brown — clash / disagreement
+	 * Each chip's HelpTip ? icon inherits the chip's colour via CSS
+	 * cascade since the ? button uses currentColor for its border.
+	 * Brown isn't in the theme palette; we hardcode + override per theme. */
+	.i360-hud-warn-orphan   { color: var(--color-orange, #ea580c); }
+	.i360-hud-warn-fragile  { color: var(--color-yellow, #e0ac00); }
+	.i360-hud-warn-blind    { color: var(--text-error, #ef4444); }
+	.i360-hud-warn-tensions { color: #8b4513; }
+	:global(.theme-dark) .i360-hud-warn-tensions { color: #c89875; }
 </style>
