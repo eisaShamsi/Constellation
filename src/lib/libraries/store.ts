@@ -228,6 +228,10 @@ function normPath(p: string): string {
 export function markCascading(path: string) { cascadingPaths.add(normPath(path)); }
 export function clearCascading(path: string) { cascadingPaths.delete(normPath(path)); }
 export function isCascading(path: string): boolean { return cascadingPaths.has(normPath(path)); }
+/** §3-redo.7 (drift fix) — clear every cascading path. Used by the
+ *  Universe-switch path so a cascade-in-flight in the previous Universe
+ *  doesn't leave stale entries that gate edits in the new Universe. */
+export function clearAllCascading() { cascadingPaths.clear(); }
 
 /** §3-redo.4 — re-read a tab's file from disk and bump its reloadVersion.
  *  Called by the `cascade:rewrote` event handler for each affected open tab.
@@ -320,6 +324,13 @@ export async function saveTabContent(
 	body: string
 ): Promise<void> {
 	if (saveLocks.get(tabId)) return;
+	// §3-redo.7 (drift fix): bail during a wikilink rename cascade window.
+	// PropertyEditor calls saveTabContent directly when the user edits a
+	// frontmatter property; without this gate, a property edit during the
+	// cascade window would stomp the cascade's wikilink rewrite (the same
+	// F2 post-cascade-stomp pattern NoteEditor's handleSave/handleFlush
+	// already gate against).
+	if (isCascading(filePath)) return;
 	saveLocks.set(tabId, true);
 	try {
 		// Auto-update the "updated" / "حُدث" property if it exists

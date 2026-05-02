@@ -25,7 +25,7 @@
 		scanLibraryIndex, readIndexEntries, readTermMentions, readCooccurringTerms,
 		buildSkyData, readNotePreview,
 		getDailyNotePath, updateLinksOnRename, getOldTitleForCascade, reloadTabFromDisk,
-		flushAllTabsInLibrary, markCascading, clearCascading, quickCapture,
+		flushAllTabsInLibrary, markCascading, clearCascading, clearAllCascading, quickCapture,
 		loadBookmarks, addBookmark, removeBookmark, isBookmarked, bookmarks,
 		loadSettings, updateSettings, appSettings, DEFAULT_SETTINGS,
 		loadWorkspaces, workspaces,
@@ -1983,6 +1983,12 @@
 		$activeTabId = null;
 		$focusedTabId = null;
 		workspaceBases = [];
+		// §3-redo.7 (drift fix): a wikilink rename cascade in flight in the
+		// previous Universe could leave entries in cascadingPaths that, on
+		// the new Universe, would silently gate edits to any tab whose path
+		// happened to collide. Clear unconditionally on Universe switch so
+		// the new Universe starts with a clean cascade-state slate.
+		clearAllCascading();
 
 		// Clear library stores so sidebar resets
 		libraries.set([]);
