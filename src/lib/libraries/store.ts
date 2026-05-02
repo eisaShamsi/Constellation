@@ -195,6 +195,45 @@ export function clearWriteAhead(filePath: string) {
 	} catch {}
 }
 
+/** §3-redo.1 — flush every dirty tab in the affected library to disk
+ *  before a wikilink rename cascade walks them. Tabs are "dirty" if
+ *  they have a writeAheadBuffer entry. Without this, the cascade reads
+ *  stale disk state for tabs that haven't autosaved their current
+ *  edits yet — the F2-pre-cascade-staleness failure mode defined in
+ *  the Rename Function Concept Paper (P4 / D2).
+ *
+ *  Reads from writeAheadBuffer (the canonical in-flight state, fed by
+ *  the editor on every keystroke) and writes via writeNote. Bypasses
+ *  the property-auto-update logic from saveTabContent — that's
+ *  acceptable for flush-before-cascade because the next legitimate
+ *  edit refreshes the modified date.
+ *
+ *  Errors are logged, not thrown. A failed flush on one tab does not
+ *  block the cascade for the rest; the user sees cascade results in
+ *  the toast, and any flush failures are recorded for forensics.
+ *
+ *  `markRecentWrite` is called for each path to suppress the file
+ *  watcher's external-edit emit during the write.
+ */
+export async function flushAllTabsInLibrary(libraryPath: string): Promise<void> {
+	const tabs = get(openTabs);
+	const writes: Promise<void>[] = [];
+	for (const tab of tabs) {
+		if (!tab.path || !tab.path.startsWith(libraryPath)) continue;
+		const wab = getWriteAhead(tab.path);
+		if (!wab) continue; // not dirty — nothing to flush
+		markRecentWrite(tab.path);
+		writes.push(
+			writeNote(tab.path, wab.content)
+				.then(() => clearWriteAhead(tab.path))
+				.catch((err) => {
+					console.error('[flushAllTabsInLibrary] write failed for', tab.path, err);
+				})
+		);
+	}
+	await Promise.all(writes);
+}
+
 export async function saveTabContent(
 	tabId: string,
 	filePath: string,
