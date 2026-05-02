@@ -4,6 +4,8 @@ use std::path::PathBuf;
 use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, Manager};
 
+use crate::watcher_suppress;
+
 pub struct WatcherState {
     watchers: Mutex<HashMap<String, RecommendedWatcher>>,
 }
@@ -69,6 +71,11 @@ pub fn watch_library(app: AppHandle, library_id: String, library_path: String) -
                             .map(|e| e == "md")
                             .unwrap_or(false)
                 })
+                // §3-redo.2: skip paths just written by the wikilink rename
+                // cascade. Without this, the cascade's fs::write bubbles back
+                // as an external edit, the frontend reloads the file, and the
+                // cascade and watcher loop. See watcher_suppress.rs.
+                .filter(|p| !watcher_suppress::was_recent(p))
                 .map(|p| p.to_string_lossy().to_string())
                 .collect();
 

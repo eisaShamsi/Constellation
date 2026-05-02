@@ -3880,6 +3880,12 @@ fn update_links_recursive(dir: &Path, re: &regex::Regex, new_name: &str, count: 
             if let Ok(content) = fs::read_to_string(&path) {
                 let updated = rewrite_wikilinks_in_text(&content, re, new_name);
                 if updated != content {
+                    // §3-redo.2 — mark the path as recent-write before fs::write
+                    // so the file watcher's emit path skips it. Without this the
+                    // cascade's writes bubble back as external-edit events and
+                    // re-trigger reload, which re-triggers cascade. Closes
+                    // F3-watcher-loop in the Rename Function Concept Paper.
+                    crate::watcher_suppress::mark(&path);
                     let _ = fs::write(&path, updated);
                     *count += 1;
                 }

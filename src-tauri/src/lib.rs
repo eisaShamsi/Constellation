@@ -30,6 +30,7 @@ mod trails;
 mod tasks;
 mod universe;
 mod watcher;
+mod watcher_suppress;
 
 use tauri::{Emitter, Manager};
 
