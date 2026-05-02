@@ -2229,7 +2229,18 @@ export async function getDailyNotePath(libraryPath: string, format = '%Y-%m-%d',
 }
 
 // ─── Link update on rename ───
-export async function updateLinksOnRename(libraryPath: string, oldName: string, newName: string): Promise<number> {
+/** §3-redo.3 — what the cascade walker returns. `rewritten` is the list of
+ *  absolute paths the walker successfully rewrote; `failed` is `[path, error]`
+ *  pairs for files that couldn't be written. The frontend uses `rewritten`
+ *  to drive the §3-redo.4 reload of affected open tabs. The cascade also
+ *  emits a `cascade:rewrote` Tauri event with the same paths array, so
+ *  frontend listeners can react without awaiting the full IPC return. */
+export interface CascadeResult {
+	rewritten: string[];
+	failed: Array<[string, string]>;
+}
+
+export async function updateLinksOnRename(libraryPath: string, oldName: string, newName: string): Promise<CascadeResult> {
 	return await invoke('update_links_on_rename', { libraryPath, oldName, newName });
 }
 

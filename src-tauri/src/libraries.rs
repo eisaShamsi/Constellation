@@ -3848,9 +3848,23 @@ pub fn quick_capture(app: tauri::AppHandle, library_path: String, inbox_folder: 
     Ok(file_path.to_string_lossy().to_string())
 }
 
+/// §3-redo.3 — what the cascade walker returns to the frontend after all
+/// rewrites complete. `rewritten` carries absolute paths of every file the
+/// walker successfully rewrote (used by the frontend to know which open tabs
+/// need a reload). `failed` carries `(path, error)` pairs for files the
+/// walker tried to rewrite but couldn't (locked, permission denied, etc.) —
+/// the cascade is per-file atomic but not transactional across files
+/// (Concept Paper D3).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CascadeResult {
+    pub rewritten: Vec<String>,
+    pub failed: Vec<(String, String)>,
+}
+
 /// Update all links in a library when a note is renamed.
 #[tauri::command]
-pub fn update_links_on_rename(app: tauri::AppHandle, library_path: String, old_name: String, new_name: String) -> Result<u32, String> {
+pub fn update_links_on_rename(app: tauri::AppHandle, library_path: String, old_name: String, new_name: String) -> Result<CascadeResult, String> {
+    use tauri::Emitter;
     validate_path_in_any_library(&app, &library_path)?;
     // §2: compile the regex once per cascade, reuse it across every file
     // visited. `regex::escape` keeps titles with metacharacters safe
@@ -3860,12 +3874,24 @@ pub fn update_links_on_rename(app: tauri::AppHandle, library_path: String, old_n
         Ok(r) => r,
         Err(e) => return Err(format!("Failed to build cascade regex: {}", e)),
     };
-    let mut count = 0u32;
-    update_links_recursive(Path::new(&library_path), &re, &new_name, &mut count);
-    Ok(count)
+    let mut result = CascadeResult { rewritten: Vec::new(), failed: Vec::new() };
+    update_links_recursive(Path::new(&library_path), &re, &new_name, &mut result);
+
+    // §3-redo.3 — emit the cascade:rewrote event so the frontend can reload
+    // each affected open tab. Per Concept Paper D6, the reload mechanism on
+    // the frontend MUST NOT use a $effect on value/editBody; the §3-redo.4
+    // step uses tab-key invalidation ({#key} bump) instead.
+    if !result.rewritten.is_empty() {
+        let _ = app.emit(
+            "cascade:rewrote",
+            serde_json::json!({ "paths": &result.rewritten }),
+        );
+    }
+
+    Ok(result)
 }
 
-fn update_links_recursive(dir: &Path, re: &regex::Regex, new_name: &str, count: &mut u32) {
+fn update_links_recursive(dir: &Path, re: &regex::Regex, new_name: &str, result: &mut CascadeResult) {
     let read_dir = match fs::read_dir(dir) {
         Ok(rd) => rd,
         Err(_) => return,
@@ -3875,7 +3901,7 @@ fn update_links_recursive(dir: &Path, re: &regex::Regex, new_name: &str, count: 
         let name = entry.file_name().to_string_lossy().to_string();
         if name.starts_with('.') { continue; }
         if path.is_dir() {
-            update_links_recursive(&path, re, new_name, count);
+            update_links_recursive(&path, re, new_name, result);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             if let Ok(content) = fs::read_to_string(&path) {
                 let updated = rewrite_wikilinks_in_text(&content, re, new_name);
@@ -3886,8 +3912,13 @@ fn update_links_recursive(dir: &Path, re: &regex::Regex, new_name: &str, count: 
                     // re-trigger reload, which re-triggers cascade. Closes
                     // F3-watcher-loop in the Rename Function Concept Paper.
                     crate::watcher_suppress::mark(&path);
-                    let _ = fs::write(&path, updated);
-                    *count += 1;
+                    match fs::write(&path, updated) {
+                        Ok(()) => result.rewritten.push(path.to_string_lossy().to_string()),
+                        Err(e) => result.failed.push((
+                            path.to_string_lossy().to_string(),
+                            e.to_string(),
+                        )),
+                    }
                 }
             }
         }
