@@ -2198,9 +2198,13 @@
 		// value/editBody (BUG-015's class).
 		const unlistenCascadeRewrote = await listen<{ paths: string[] }>('cascade:rewrote', async (event) => {
 			const paths = event.payload?.paths ?? [];
-			for (const p of paths) {
-				await reloadTabFromDisk(p);
-			}
+			// §3-redo.6: parallel reloads. Each reloadTabFromDisk is a single
+			// read_note IPC + a synchronous store update. Sequential awaits
+			// cost N × IPC roundtrip; Promise.all collapses that to ~1
+			// roundtrip wall-clock time. Multiple `reloadVersion` bumps in
+			// rapid succession are fine — Svelte batches the resulting
+			// `{#key}` re-evaluations within a microtask tick.
+			await Promise.all(paths.map(p => reloadTabFromDisk(p)));
 		});
 		cleanupFns.push(() => { try { unlistenCascadeRewrote(); } catch {} });
 
@@ -3930,8 +3934,16 @@
 					for (const t of tabsInLibrary) markCascading(t.path);
 					try {
 						await flushAllTabsInLibrary(lib.path);
-						await updateLinksOnRename(lib.path, oldName, newName);
-						await new Promise((resolve) => setTimeout(resolve, 1000));
+						const result = await updateLinksOnRename(lib.path, oldName, newName);
+						// §3-redo.6: the settle wait only matters when the cascade
+						// actually rewrote something — that's when the listener
+						// has paths to process. If nothing was rewritten, no
+						// `cascade:rewrote` event fires and there's no listener
+						// work to settle for; the 1 s wait would just delay the
+						// rename UX for nothing. Conditional gate.
+						if (result.rewritten.length > 0) {
+							await new Promise((resolve) => setTimeout(resolve, 1000));
+						}
 					} finally {
 						for (const t of tabsInLibrary) clearCascading(t.path);
 					}

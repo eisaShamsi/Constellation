@@ -44,20 +44,19 @@ pub fn mark(path: &Path) {
     }
 }
 
-/// True if `path` was marked within the TTL window. Lazily evicts stale
-/// entries when checked, so the map doesn't grow unbounded across long
-/// sessions.
+/// True if `path` was marked within the TTL window.
+///
+/// §3-redo.6: opportunistic full-map GC on every call — `retain` evicts
+/// every stale entry while we hold the lock, not just the queried one.
+/// Without the sweep, an entry whose path was marked but never followed
+/// by a `was_recent` lookup (e.g. the file was deleted before the OS
+/// emitted a notify event) would persist forever; long sessions with
+/// many cascades could accumulate stale entries unbounded.
 pub fn was_recent(path: &Path) -> bool {
     let Ok(mut guard) = map().lock() else { return false };
     let now = Instant::now();
-    if let Some(stamp) = guard.get(path).copied() {
-        if now.duration_since(stamp) < TTL {
-            return true;
-        }
-        // Stale — evict.
-        guard.remove(path);
-    }
-    false
+    guard.retain(|_, stamp| now.duration_since(*stamp) < TTL);
+    guard.contains_key(path)
 }
 
 #[cfg(test)]

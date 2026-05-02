@@ -213,11 +213,21 @@ export function clearWriteAhead(filePath: string) {
  *  `flushAllTabsInLibrary` + `updateLinksOnRename`, and cleared after
  *  a settle window that lets the cascade:rewrote listener finish its
  *  per-path reload loop.
+ *
+ *  §3-redo.6: paths are normalised to forward-slash form before insertion
+ *  / lookup. Without this, a Windows tab path written `C:\Foo\bar.md` (as
+ *  emitted by Rust `PathBuf::to_string_lossy`) would not match a tab path
+ *  written `C:/Foo/bar.md` (as it might travel through the JS layer), and
+ *  `isCascading` would silently miss the gate — triggering the very
+ *  post-cascade stomp this Set exists to prevent.
  */
 const cascadingPaths = new Set<string>();
-export function markCascading(path: string) { cascadingPaths.add(path); }
-export function clearCascading(path: string) { cascadingPaths.delete(path); }
-export function isCascading(path: string): boolean { return cascadingPaths.has(path); }
+function normPath(p: string): string {
+	return p.replace(/\\/g, '/');
+}
+export function markCascading(path: string) { cascadingPaths.add(normPath(path)); }
+export function clearCascading(path: string) { cascadingPaths.delete(normPath(path)); }
+export function isCascading(path: string): boolean { return cascadingPaths.has(normPath(path)); }
 
 /** §3-redo.4 — re-read a tab's file from disk and bump its reloadVersion.
  *  Called by the `cascade:rewrote` event handler for each affected open tab.
@@ -279,9 +289,16 @@ export async function reloadTabFromDisk(filePath: string): Promise<void> {
  */
 export async function flushAllTabsInLibrary(libraryPath: string): Promise<void> {
 	const tabs = get(openTabs);
+	// §3-redo.6: normalise both sides before comparing. tab.path may travel
+	// through the JS layer with forward-slashes while libraryPath comes
+	// from $libraryStats with platform-native separators (backslash on
+	// Windows). Compare on the normalised form so the prefix check is
+	// reliable on both platforms.
+	const libNorm = libraryPath.replace(/\\/g, '/');
 	const writes: Promise<void>[] = [];
 	for (const tab of tabs) {
-		if (!tab.path || !tab.path.startsWith(libraryPath)) continue;
+		if (!tab.path) continue;
+		if (!tab.path.replace(/\\/g, '/').startsWith(libNorm)) continue;
 		const wab = getWriteAhead(tab.path);
 		if (!wab) continue; // not dirty — nothing to flush
 		markRecentWrite(tab.path);
