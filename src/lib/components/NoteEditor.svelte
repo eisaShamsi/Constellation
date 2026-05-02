@@ -15,6 +15,7 @@
 		renameItem, openTabs, openNoteTab,
 		resolveWikilinkCrossLibrary,
 		createNote, buildDefaultFrontmatter, appSettings, libraries,
+		isCascading,
 		type FrontmatterProperty
 	} from '$lib/libraries/store';
 	import { broadcastNoteSaved } from '$lib/secondScreen';
@@ -132,6 +133,11 @@
 	function handleSave(text: string, filePath: string) {
 		if (saving) return;
 		if (!filePath || filePath !== tab.path) return;
+		// §3-redo.5 — bail during a wikilink rename cascade window. The
+		// cascade just rewrote this file on disk; writing the editor's
+		// pre-cascade doc back would silently undo the cascade. Concept
+		// Paper P4 / D2 / F2 (post-cascade-stomp).
+		if (isCascading(filePath)) return;
 		saving = true;
 		const props = freshProps();
 		markRecentWrite(filePath);
@@ -154,6 +160,13 @@
 
 	function handleFlush(text: string, needsDiskSave: boolean, cursorPos: number, scrollTop: number, filePath: string) {
 		if (!filePath || filePath !== tab.path) return;
+		// §3-redo.5 — bail during a wikilink rename cascade window. Flush
+		// happens on tab close, visibility change, and {#key}-bump destroy.
+		// During the cascade window the {#key} bump triggers destroy, and
+		// without this guard the destroy's flush would write the editor's
+		// pre-cascade doc back to disk and silently undo the cascade.
+		// Concept Paper P4 / D2 / F2 (post-cascade-stomp).
+		if (isCascading(filePath)) return;
 		const props = freshProps();
 		const content = buildFullContent(props, text);
 		// Update store tab if present

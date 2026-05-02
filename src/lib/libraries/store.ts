@@ -201,6 +201,24 @@ export function clearWriteAhead(filePath: string) {
 	} catch {}
 }
 
+/** §3-redo.5 — paths that are currently inside a wikilink rename cascade
+ *  window. While a path is marked here, NoteEditor's handleSave and
+ *  handleFlush bail out — they do not write the editor's current doc to
+ *  disk. This closes the post-cascade-stomp failure mode (Concept Paper
+ *  P4 / D2 / F2): without the flag, the {#key}-bump's destroy → doFlush
+ *  → handleFlush chain would write the editor's pre-cascade doc back to
+ *  disk, undoing the cascade.
+ *
+ *  The flag is set by `handleRenameComplete` before
+ *  `flushAllTabsInLibrary` + `updateLinksOnRename`, and cleared after
+ *  a settle window that lets the cascade:rewrote listener finish its
+ *  per-path reload loop.
+ */
+const cascadingPaths = new Set<string>();
+export function markCascading(path: string) { cascadingPaths.add(path); }
+export function clearCascading(path: string) { cascadingPaths.delete(path); }
+export function isCascading(path: string): boolean { return cascadingPaths.has(path); }
+
 /** §3-redo.4 — re-read a tab's file from disk and bump its reloadVersion.
  *  Called by the `cascade:rewrote` event handler for each affected open tab.
  *  The bump on `reloadVersion` flips NoteEditor's `{#key}` so NotePane

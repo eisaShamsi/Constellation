@@ -24,7 +24,8 @@
 		scanLibraryLinks, scanLibraryTags, getBacklinks, getOutgoingLinks, scanUnlinkedMentions,
 		scanLibraryIndex, readIndexEntries, readTermMentions, readCooccurringTerms,
 		buildSkyData, readNotePreview,
-		getDailyNotePath, updateLinksOnRename, getOldTitleForCascade, reloadTabFromDisk, quickCapture,
+		getDailyNotePath, updateLinksOnRename, getOldTitleForCascade, reloadTabFromDisk,
+		flushAllTabsInLibrary, markCascading, clearCascading, quickCapture,
 		loadBookmarks, addBookmark, removeBookmark, isBookmarked, bookmarks,
 		loadSettings, updateSettings, appSettings, DEFAULT_SETTINGS,
 		loadWorkspaces, workspaces,
@@ -3897,9 +3898,43 @@
 			const lib = $libraryStats.find(v => oldPath.startsWith(v.path));
 			if (lib) {
 				await refreshLibraryTree(lib.library_id);
-				// Auto-update links
+				// Auto-update links — wikilink rename cascade.
 				if ($appSettings.autoUpdateLinks && !isDir) {
-					await updateLinksOnRename(lib.path, oldName, newName);
+					// §3-redo.5: orchestrate the cascade with full open-editor
+					// coherence per Rename Function Concept Paper P4 / D2 / D6.
+					// (a) Mark every open tab in the affected library as
+					//     "cascading" so handleSave/handleFlush in NoteEditor
+					//     bail out for the duration. Without this gate, the
+					//     reload's {#key}-bump destroy would call doFlush →
+					//     handleFlush → writeNote with the editor's
+					//     pre-cascade doc, undoing the cascade (BUG-015's
+					//     post-cascade-stomp class, F2).
+					// (b) flushAllTabsInLibrary writes any in-flight buffered
+					//     edits to disk so the walker reads consistent state
+					//     (closes F2 pre-cascade-staleness). Bypasses the
+					//     handleFlush gate by writing the writeAheadBuffer
+					//     directly (it's a coordinator step, not a user save).
+					// (c) updateLinksOnRename runs the cascade walker and emits
+					//     `cascade:rewrote { paths }`. The §3-redo.4 listener
+					//     handles each path's reloadTabFromDisk asynchronously.
+					// (d) Wait a 1 s settle window — the listener processes
+					//     paths sequentially via reloadTabFromDisk, each with
+					//     a single read_note IPC roundtrip. 1 s is generous
+					//     for typical cases (1-5 affected tabs); doubles as
+					//     a safety upper bound.
+					// (e) Clear the cascading flags in `finally` so a thrown
+					//     error doesn't leave editors permanently silenced.
+					const tabsInLibrary = get(openTabs).filter(
+						(t) => t.path && t.path.startsWith(lib.path)
+					);
+					for (const t of tabsInLibrary) markCascading(t.path);
+					try {
+						await flushAllTabsInLibrary(lib.path);
+						await updateLinksOnRename(lib.path, oldName, newName);
+						await new Promise((resolve) => setTimeout(resolve, 1000));
+					} finally {
+						for (const t of tabsInLibrary) clearCascading(t.path);
+					}
 				}
 			}
 		} catch (e) {
