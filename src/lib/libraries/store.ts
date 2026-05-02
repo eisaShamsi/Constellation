@@ -61,7 +61,7 @@ export interface OpenTab {
 	cursorPos?: number;
 	scrollTop?: number;
 	pinned?: boolean;
-	/** §3-redo.4 — incremented by `reloadTabFromDisk` after the cascade
+	/** §3-redo.4 — incremented by `reloadTabsFromDisk` after the cascade
 	 *  rewrites this tab's file. Used in NoteEditor's `{#key}` to force
 	 *  NotePane to destroy + remount with fresh disk content. Per Concept
 	 *  Paper D6, recreate is the safe primitive — `$effect`-driven
@@ -201,74 +201,114 @@ export function clearWriteAhead(filePath: string) {
 	} catch {}
 }
 
-/** §3-redo.5 — paths that are currently inside a wikilink rename cascade
- *  window. While a path is marked here, NoteEditor's handleSave and
- *  handleFlush bail out — they do not write the editor's current doc to
- *  disk. This closes the post-cascade-stomp failure mode (Concept Paper
- *  P4 / D2 / F2): without the flag, the {#key}-bump's destroy → doFlush
- *  → handleFlush chain would write the editor's pre-cascade doc back to
- *  disk, undoing the cascade.
+/** §3-redo.5 — paths currently inside a wikilink rename cascade window.
+ *  Refcounted (Map<path, count>) so overlapping cascades — e.g. the user
+ *  spam-renames two notes in the same library — don't pop each other's
+ *  marks: `markCascading` increments, `clearCascading` decrements, the
+ *  entry is dropped only when the count reaches zero.
  *
- *  The flag is set by `handleRenameComplete` before
- *  `flushAllTabsInLibrary` + `updateLinksOnRename`, and cleared after
- *  a settle window that lets the cascade:rewrote listener finish its
- *  per-path reload loop.
- *
- *  §3-redo.6: paths are normalised to forward-slash form before insertion
- *  / lookup. Without this, a Windows tab path written `C:\Foo\bar.md` (as
- *  emitted by Rust `PathBuf::to_string_lossy`) would not match a tab path
- *  written `C:/Foo/bar.md` (as it might travel through the JS layer), and
- *  `isCascading` would silently miss the gate — triggering the very
- *  post-cascade stomp this Set exists to prevent.
+ *  Paths are normalised to forward-slash form on insert / lookup so a
+ *  Windows tab path that travels through the JS layer with mixed
+ *  separators (`C:\Foo\bar.md` vs `C:/Foo/bar.md`) still matches.
  */
-const cascadingPaths = new Set<string>();
+const cascadingPaths = new Map<string, number>();
 function normPath(p: string): string {
 	return p.replace(/\\/g, '/');
 }
-export function markCascading(path: string) { cascadingPaths.add(normPath(path)); }
-export function clearCascading(path: string) { cascadingPaths.delete(normPath(path)); }
-export function isCascading(path: string): boolean { return cascadingPaths.has(normPath(path)); }
-/** §3-redo.7 (drift fix) — clear every cascading path. Used by the
- *  Universe-switch path so a cascade-in-flight in the previous Universe
- *  doesn't leave stale entries that gate edits in the new Universe. */
+export function markCascading(path: string) {
+	const key = normPath(path);
+	cascadingPaths.set(key, (cascadingPaths.get(key) ?? 0) + 1);
+}
+export function clearCascading(path: string) {
+	const key = normPath(path);
+	const n = cascadingPaths.get(key);
+	if (n === undefined) return;
+	if (n <= 1) cascadingPaths.delete(key);
+	else cascadingPaths.set(key, n - 1);
+}
+/** §3-redo.5 — true if `path` is currently being rewritten by a wikilink
+ *  rename cascade. NoteEditor's handleSave / handleFlush and the
+ *  saveTabContent gate bail out when this returns true — writing the
+ *  editor's pre-cascade doc back during the cascade window would silently
+ *  undo the cascade rewrite (Concept Paper P4 / D2 / F2 post-cascade-stomp).
+ *  Cheap O(1) early-exit on the steady-state empty map skips the path
+ *  normalisation cost on the keystroke flush hot path. */
+export function isCascading(path: string): boolean {
+	if (cascadingPaths.size === 0) return false;
+	return cascadingPaths.has(normPath(path));
+}
+/** §3-redo.7 — clear every cascading entry. Used by the Universe-switch
+ *  path so a cascade in flight in the previous Universe doesn't leave
+ *  stale entries that gate edits in the new Universe. */
 export function clearAllCascading() { cascadingPaths.clear(); }
 
-/** §3-redo.4 — re-read a tab's file from disk and bump its reloadVersion.
- *  Called by the `cascade:rewrote` event handler for each affected open tab.
- *  The bump on `reloadVersion` flips NoteEditor's `{#key}` so NotePane
+/** §3-redo.7 — open tabs whose path lies under `libraryPath`. Both sides
+ *  are normalised to forward-slash form, and the prefix match enforces a
+ *  separator boundary so a sibling library with a shared name prefix
+ *  (e.g. `/Foo/Bar` vs `/Foo/Bar2`) does not falsely match. Used by the
+ *  cascade-orchestration path (mark + clear cascading) and by
+ *  `flushAllTabsInLibrary`. */
+export function tabsInLibrary(libraryPath: string): OpenTab[] {
+	const libNorm = normPath(libraryPath).replace(/\/+$/, '');
+	return get(openTabs).filter((t) => {
+		if (!t.path) return false;
+		const tabNorm = normPath(t.path);
+		return tabNorm === libNorm || tabNorm.startsWith(libNorm + '/');
+	});
+}
+
+/** §3-redo.4 — re-read each path from disk and bump the matching tab's
+ *  `reloadVersion`. The bump flips NoteEditor's `{#key}` so NotePane
  *  destroys and remounts with the fresh `tab.content` — the recreate
  *  primitive (Option A) chosen by Boss in the §3-redo Architect. Per
- *  Concept Paper D6, this is the only safe way to push new body content
- *  into a CodeMirror EditorView from a parent reactive system —
- *  `$effect`-driven `view.dispatch` is forbidden because it races
- *  `{#key}` `onDestroy` and corrupts target body content with source
- *  body content (BUG-015).
+ *  Concept Paper D6, recreate is the only safe way to push new body
+ *  content into a CodeMirror EditorView from a parent reactive system;
+ *  `$effect`-driven `view.dispatch` is forbidden (it races `{#key}`
+ *  `onDestroy` and corrupts target body content — BUG-015).
  *
- *  Called once per affected path. Skips paths that aren't currently in
- *  any open tab. Errors are logged, not thrown — a failed reload on one
- *  tab does not block the cascade for the rest.
+ *  Reads run in parallel; the resulting store update is batched into a
+ *  single `openTabs.update` so N affected tabs cost one subscription
+ *  notification, not N. Idempotent: if disk content already matches the
+ *  tab's content (e.g. orchestrator already reloaded before the
+ *  `cascade:rewrote` listener fires), no version bump and no store
+ *  notification. Per-path read failures are logged and skipped — a
+ *  single bad read does not block reloads for the rest. The recreate
+ *  primitive loses CodeMirror undo history for the affected tabs; that
+ *  trade is accepted by Concept Paper D6.
  */
-export async function reloadTabFromDisk(filePath: string): Promise<void> {
+export async function reloadTabsFromDisk(filePaths: string[]): Promise<void> {
+	if (filePaths.length === 0) return;
 	const tabs = get(openTabs);
-	const tab = tabs.find(t => t.path === filePath);
-	if (!tab) return;
-	try {
-		const content = await readNote(filePath);
-		openTabs.update(ts => ts.map(t => {
-			if (t.id !== tab.id) return t;
-			return {
-				...t,
-				content,
-				reloadVersion: (t.reloadVersion ?? 0) + 1,
-			};
-		}));
-		// Clear any in-flight write-ahead buffer for this path — the
-		// cascade just authored the canonical disk content; the buffered
-		// pre-cascade edits are no longer relevant.
-		clearWriteAhead(filePath);
-	} catch (err) {
-		console.error('[reloadTabFromDisk] failed for', filePath, err);
-	}
+	const targets = filePaths.filter((fp) => tabs.some((t) => t.path === fp));
+	if (targets.length === 0) return;
+
+	const reads = await Promise.all(
+		targets.map((fp) =>
+			readNote(fp)
+				.then((content) => ({ fp, content }) as const)
+				.catch((err) => {
+					console.error('[reloadTabsFromDisk] read failed for', fp, err);
+					return null;
+				})
+		)
+	);
+	const byPath = new Map<string, string>();
+	for (const r of reads) if (r) byPath.set(r.fp, r.content);
+	if (byPath.size === 0) return;
+
+	openTabs.update((ts) => {
+		let mutated = false;
+		const next = ts.map((t) => {
+			const newContent = byPath.get(t.path);
+			if (newContent === undefined || newContent === t.content) return t;
+			mutated = true;
+			return { ...t, content: newContent, reloadVersion: (t.reloadVersion ?? 0) + 1 };
+		});
+		return mutated ? next : ts;
+	});
+	// The cascade just authored canonical disk content; any in-flight
+	// write-ahead buffer for these paths is now stale.
+	for (const fp of byPath.keys()) clearWriteAhead(fp);
 }
 
 /** §3-redo.1 — flush every dirty tab in the affected library to disk
@@ -292,17 +332,8 @@ export async function reloadTabFromDisk(filePath: string): Promise<void> {
  *  watcher's external-edit emit during the write.
  */
 export async function flushAllTabsInLibrary(libraryPath: string): Promise<void> {
-	const tabs = get(openTabs);
-	// §3-redo.6: normalise both sides before comparing. tab.path may travel
-	// through the JS layer with forward-slashes while libraryPath comes
-	// from $libraryStats with platform-native separators (backslash on
-	// Windows). Compare on the normalised form so the prefix check is
-	// reliable on both platforms.
-	const libNorm = libraryPath.replace(/\\/g, '/');
 	const writes: Promise<void>[] = [];
-	for (const tab of tabs) {
-		if (!tab.path) continue;
-		if (!tab.path.replace(/\\/g, '/').startsWith(libNorm)) continue;
+	for (const tab of tabsInLibrary(libraryPath)) {
 		const wab = getWriteAhead(tab.path);
 		if (!wab) continue; // not dirty — nothing to flush
 		markRecentWrite(tab.path);
@@ -324,12 +355,9 @@ export async function saveTabContent(
 	body: string
 ): Promise<void> {
 	if (saveLocks.get(tabId)) return;
-	// §3-redo.7 (drift fix): bail during a wikilink rename cascade window.
-	// PropertyEditor calls saveTabContent directly when the user edits a
-	// frontmatter property; without this gate, a property edit during the
-	// cascade window would stomp the cascade's wikilink rewrite (the same
-	// F2 post-cascade-stomp pattern NoteEditor's handleSave/handleFlush
-	// already gate against).
+	// PropertyEditor's frontmatter edits land here directly, so the same
+	// F2 post-cascade-stomp gate NoteEditor uses must apply here too. See
+	// `isCascading` for the full rationale.
 	if (isCascading(filePath)) return;
 	saveLocks.set(tabId, true);
 	try {
@@ -2321,13 +2349,17 @@ export async function getDailyNotePath(libraryPath: string, format = '%Y-%m-%d',
 // ─── Link update on rename ───
 /** §3-redo.3 — what the cascade walker returns. `rewritten` is the list of
  *  absolute paths the walker successfully rewrote; `failed` is `[path, error]`
- *  pairs for files that couldn't be written. The frontend uses `rewritten`
- *  to drive the §3-redo.4 reload of affected open tabs. The cascade also
- *  emits a `cascade:rewrote` Tauri event with the same paths array, so
- *  frontend listeners can react without awaiting the full IPC return. */
+ *  pairs for files that couldn't be written, capped at the Rust-side limit
+ *  (see `MAX_FAILED_REPORTED` in libraries.rs); `failed_truncated` is the
+ *  count of additional failures dropped past that cap. The frontend uses
+ *  `rewritten` to drive the §3-redo.4 reload of affected open tabs. The
+ *  cascade also emits a `cascade:rewrote` Tauri event with the same paths
+ *  array, so frontend listeners can react without awaiting the full IPC
+ *  return. */
 export interface CascadeResult {
 	rewritten: string[];
 	failed: Array<[string, string]>;
+	failed_truncated: number;
 }
 
 export async function updateLinksOnRename(libraryPath: string, oldName: string, newName: string): Promise<CascadeResult> {

@@ -26,6 +26,12 @@ use std::time::{Duration, Instant};
 /// know not to lower it without verifying the autosave-vs-cascade interaction.
 const TTL: Duration = Duration::from_millis(2_500);
 
+/// Threshold at which `mark` and `was_recent` run an opportunistic full-map
+/// sweep. Below this, both functions stay O(1) on the steady state — and
+/// since every watcher event hits `was_recent`, that O(1) matters: a 256-entry
+/// cap keeps the sweep amortized cost negligible while still bounding growth.
+const SWEEP_THRESHOLD: usize = 256;
+
 fn map() -> &'static Mutex<HashMap<PathBuf, Instant>> {
     static CELL: OnceLock<Mutex<HashMap<PathBuf, Instant>>> = OnceLock::new();
     CELL.get_or_init(|| Mutex::new(HashMap::new()))
@@ -38,25 +44,42 @@ fn map() -> &'static Mutex<HashMap<PathBuf, Instant>> {
 /// only happens if a thread panics while holding the lock) silently
 /// no-ops; the watcher will then emit a spurious external-edit event,
 /// which is no worse than the pre-§3 state.
+///
+/// Opportunistic GC: when the map has grown past `SWEEP_THRESHOLD` we evict
+/// expired entries before inserting. This bounds growth even when many marks
+/// happen with no intervening `was_recent` call (e.g. cascade rewrites a
+/// file the OS coalesces or the user deletes before the notify event fires).
 pub fn mark(path: &Path) {
     if let Ok(mut guard) = map().lock() {
+        if guard.len() >= SWEEP_THRESHOLD {
+            let now = Instant::now();
+            guard.retain(|_, stamp| now.duration_since(*stamp) < TTL);
+        }
         guard.insert(path.to_path_buf(), Instant::now());
     }
 }
 
 /// True if `path` was marked within the TTL window.
 ///
-/// §3-redo.6: opportunistic full-map GC on every call — `retain` evicts
-/// every stale entry while we hold the lock, not just the queried one.
-/// Without the sweep, an entry whose path was marked but never followed
-/// by a `was_recent` lookup (e.g. the file was deleted before the OS
-/// emitted a notify event) would persist forever; long sessions with
-/// many cascades could accumulate stale entries unbounded.
+/// Hot path — runs on every watcher event. The cheap path is the common one
+/// (path was never marked by the cascade): a single `HashMap::get` returns
+/// `None` and we exit. Only when we find an expired entry do we drop it; the
+/// full-map sweep runs only when the map has grown past `SWEEP_THRESHOLD`,
+/// keeping the steady-state cost O(1) while still bounding the map size.
 pub fn was_recent(path: &Path) -> bool {
     let Ok(mut guard) = map().lock() else { return false };
+    let Some(stamp) = guard.get(path).copied() else {
+        return false;
+    };
     let now = Instant::now();
-    guard.retain(|_, stamp| now.duration_since(*stamp) < TTL);
-    guard.contains_key(path)
+    let fresh = now.duration_since(stamp) < TTL;
+    if !fresh {
+        guard.remove(path);
+        if guard.len() >= SWEEP_THRESHOLD {
+            guard.retain(|_, s| now.duration_since(*s) < TTL);
+        }
+    }
+    fresh
 }
 
 #[cfg(test)]

@@ -24,8 +24,9 @@
 		scanLibraryLinks, scanLibraryTags, getBacklinks, getOutgoingLinks, scanUnlinkedMentions,
 		scanLibraryIndex, readIndexEntries, readTermMentions, readCooccurringTerms,
 		buildSkyData, readNotePreview,
-		getDailyNotePath, updateLinksOnRename, getOldTitleForCascade, reloadTabFromDisk,
-		flushAllTabsInLibrary, markCascading, clearCascading, clearAllCascading, quickCapture,
+		getDailyNotePath, updateLinksOnRename, getOldTitleForCascade, reloadTabsFromDisk,
+		flushAllTabsInLibrary, markCascading, clearCascading, clearAllCascading,
+		tabsInLibrary, quickCapture,
 		loadBookmarks, addBookmark, removeBookmark, isBookmarked, bookmarks,
 		loadSettings, updateSettings, appSettings, DEFAULT_SETTINGS,
 		loadWorkspaces, workspaces,
@@ -1983,11 +1984,9 @@
 		$activeTabId = null;
 		$focusedTabId = null;
 		workspaceBases = [];
-		// §3-redo.7 (drift fix): a wikilink rename cascade in flight in the
-		// previous Universe could leave entries in cascadingPaths that, on
-		// the new Universe, would silently gate edits to any tab whose path
-		// happened to collide. Clear unconditionally on Universe switch so
-		// the new Universe starts with a clean cascade-state slate.
+		// A cascade in flight in the previous Universe could leave entries
+		// in cascadingPaths that gate edits in the new one if any path
+		// happens to collide — start the new Universe with a clean slate.
 		clearAllCascading();
 
 		// Clear library stores so sidebar resets
@@ -2197,20 +2196,18 @@
 		// §3-redo.4 — wikilink rename cascade reload listener.
 		// The watcher_suppress map (§3-redo.2) keeps the cascade's fs::write
 		// from re-firing as a `library-changed` event, so the cascade has its
-		// own dedicated event. For each rewritten path: re-read disk, update
-		// tab.content, bump tab.reloadVersion. The bump flips NoteEditor's
-		// {#key} so NotePane destroys + remounts with fresh content. Per
-		// Concept Paper D6, recreate is the chosen primitive — no $effect on
-		// value/editBody (BUG-015's class).
+		// own dedicated event. The orchestration path in handleRenameComplete
+		// already awaits reloadTabsFromDisk directly, so for the rename
+		// cascade this listener is defence-in-depth: reloadTabsFromDisk is
+		// idempotent (no-ops when disk content already matches the tab),
+		// so the second pass costs one parallel batch of read_note IPCs and
+		// no store update. The listener exists so any future Rust path that
+		// emits cascade:rewrote (without going through update_links_on_rename
+		// from the frontend) still triggers the recreate-primitive reload —
+		// per Concept Paper D6, $effect on value/editBody is forbidden
+		// (BUG-015's class).
 		const unlistenCascadeRewrote = await listen<{ paths: string[] }>('cascade:rewrote', async (event) => {
-			const paths = event.payload?.paths ?? [];
-			// §3-redo.6: parallel reloads. Each reloadTabFromDisk is a single
-			// read_note IPC + a synchronous store update. Sequential awaits
-			// cost N × IPC roundtrip; Promise.all collapses that to ~1
-			// roundtrip wall-clock time. Multiple `reloadVersion` bumps in
-			// rapid succession are fine — Svelte batches the resulting
-			// `{#key}` re-evaluations within a microtask tick.
-			await Promise.all(paths.map(p => reloadTabFromDisk(p)));
+			await reloadTabsFromDisk(event.payload?.paths ?? []);
 		});
 		cleanupFns.push(() => { try { unlistenCascadeRewrote(); } catch {} });
 
@@ -3912,46 +3909,30 @@
 				if ($appSettings.autoUpdateLinks && !isDir) {
 					// §3-redo.5: orchestrate the cascade with full open-editor
 					// coherence per Rename Function Concept Paper P4 / D2 / D6.
-					// (a) Mark every open tab in the affected library as
-					//     "cascading" so handleSave/handleFlush in NoteEditor
-					//     bail out for the duration. Without this gate, the
-					//     reload's {#key}-bump destroy would call doFlush →
-					//     handleFlush → writeNote with the editor's
-					//     pre-cascade doc, undoing the cascade (BUG-015's
-					//     post-cascade-stomp class, F2).
+					// (a) Mark every open tab in the library as "cascading"
+					//     so NoteEditor's handleSave/handleFlush and
+					//     saveTabContent bail out for the duration. Without
+					//     this gate, the reload's {#key}-bump destroy would
+					//     call doFlush → handleFlush → writeNote with the
+					//     editor's pre-cascade doc, undoing the cascade
+					//     (BUG-015's F2 post-cascade-stomp class).
 					// (b) flushAllTabsInLibrary writes any in-flight buffered
 					//     edits to disk so the walker reads consistent state
-					//     (closes F2 pre-cascade-staleness). Bypasses the
-					//     handleFlush gate by writing the writeAheadBuffer
-					//     directly (it's a coordinator step, not a user save).
-					// (c) updateLinksOnRename runs the cascade walker and emits
-					//     `cascade:rewrote { paths }`. The §3-redo.4 listener
-					//     handles each path's reloadTabFromDisk asynchronously.
-					// (d) Wait a 1 s settle window — the listener processes
-					//     paths sequentially via reloadTabFromDisk, each with
-					//     a single read_note IPC roundtrip. 1 s is generous
-					//     for typical cases (1-5 affected tabs); doubles as
-					//     a safety upper bound.
-					// (e) Clear the cascading flags in `finally` so a thrown
-					//     error doesn't leave editors permanently silenced.
-					const tabsInLibrary = get(openTabs).filter(
-						(t) => t.path && t.path.startsWith(lib.path)
-					);
-					for (const t of tabsInLibrary) markCascading(t.path);
+					//     (closes F2 pre-cascade-staleness).
+					// (c) updateLinksOnRename runs the cascade walker.
+					// (d) reloadTabsFromDisk re-reads + batch-updates every
+					//     rewritten tab. Awaiting it gives a real completion
+					//     signal — no magic timeout, no listener race.
+					// (e) Clear cascading marks in `finally` so an error
+					//     anywhere above doesn't leave editors silenced.
+					const tabs = tabsInLibrary(lib.path);
+					for (const t of tabs) markCascading(t.path);
 					try {
 						await flushAllTabsInLibrary(lib.path);
 						const result = await updateLinksOnRename(lib.path, oldName, newName);
-						// §3-redo.6: the settle wait only matters when the cascade
-						// actually rewrote something — that's when the listener
-						// has paths to process. If nothing was rewritten, no
-						// `cascade:rewrote` event fires and there's no listener
-						// work to settle for; the 1 s wait would just delay the
-						// rename UX for nothing. Conditional gate.
-						if (result.rewritten.length > 0) {
-							await new Promise((resolve) => setTimeout(resolve, 1000));
-						}
+						await reloadTabsFromDisk(result.rewritten);
 					} finally {
-						for (const t of tabsInLibrary) clearCascading(t.path);
+						for (const t of tabs) clearCascading(t.path);
 					}
 				}
 			}

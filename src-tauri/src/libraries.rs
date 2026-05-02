@@ -3859,7 +3859,17 @@ pub fn quick_capture(app: tauri::AppHandle, library_path: String, inbox_folder: 
 pub struct CascadeResult {
     pub rewritten: Vec<String>,
     pub failed: Vec<(String, String)>,
+    /// Count of additional failures dropped past the `MAX_FAILED_REPORTED`
+    /// cap. Defensive against a pathological cascade (e.g. a whole library
+    /// stuck on a permission boundary) bloating the IPC payload — the user
+    /// only needs to see "many failed", not every path.
+    pub failed_truncated: usize,
 }
+
+/// Cap on the number of `failed` entries serialised back to the frontend.
+/// 100 is plenty for the toast UX; anything beyond that is summarised in
+/// `failed_truncated`.
+const MAX_FAILED_REPORTED: usize = 100;
 
 /// Update all links in a library when a note is renamed.
 #[tauri::command]
@@ -3874,7 +3884,11 @@ pub fn update_links_on_rename(app: tauri::AppHandle, library_path: String, old_n
         Ok(r) => r,
         Err(e) => return Err(format!("Failed to build cascade regex: {}", e)),
     };
-    let mut result = CascadeResult { rewritten: Vec::new(), failed: Vec::new() };
+    let mut result = CascadeResult {
+        rewritten: Vec::new(),
+        failed: Vec::new(),
+        failed_truncated: 0,
+    };
     update_links_recursive(Path::new(&library_path), &re, &new_name, &mut result);
 
     // §3-redo.3 — emit the cascade:rewrote event so the frontend can reload
@@ -3914,10 +3928,16 @@ fn update_links_recursive(dir: &Path, re: &regex::Regex, new_name: &str, result:
                     crate::watcher_suppress::mark(&path);
                     match fs::write(&path, updated) {
                         Ok(()) => result.rewritten.push(path.to_string_lossy().to_string()),
-                        Err(e) => result.failed.push((
-                            path.to_string_lossy().to_string(),
-                            e.to_string(),
-                        )),
+                        Err(e) => {
+                            if result.failed.len() < MAX_FAILED_REPORTED {
+                                result.failed.push((
+                                    path.to_string_lossy().to_string(),
+                                    e.to_string(),
+                                ));
+                            } else {
+                                result.failed_truncated += 1;
+                            }
+                        }
                     }
                 }
             }
