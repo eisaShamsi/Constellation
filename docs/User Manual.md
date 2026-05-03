@@ -216,9 +216,10 @@ A **Library** is a folder on your computer containing Markdown (`.md`) files. Yo
 
 ### Managing Libraries
 
-- **Add a library**: Settings > Libraries > Add Library, or drag a folder into the app
-- **Remove a library**: Settings > Libraries > click the remove button next to the library name
-- **Library settings**: Each library can have its own appearance settings (fonts, colors)
+- **Create a new library**: click **+ Library** in the sidebar toolbar, the welcome screen, or the Library Manager. The Create dialog asks for a location (click *Pick…* to choose any folder on disk) and a name (pre-filled with *My Library* and pre-selected — just type the name you want). Click *Create* and the new library appears in the sidebar.
+- **Link an existing library**: open the Library Manager and choose *Link existing library*, or use Mission Control (`Ctrl+P`) → *Add library*. A folder picker opens; pick a folder that's already on disk (e.g. an Obsidian vault) and Constellation registers it without copying or moving any files.
+- **Remove a library**: open the Library Manager and click the trash icon next to the library. Your files are not deleted — Constellation only forgets about the library.
+- **Library settings**: Each library can have its own appearance settings (fonts, colors).
 
 ### Universe Notes Folder
 
@@ -255,11 +256,20 @@ The universe folder structure follows the Obsidian model: notes go directly in t
 
 ### Creating a Note
 
+Every "create" affordance in Constellation — for notes, folders, bases, and libraries — opens the same modal **Create dialog**, so the experience is consistent across the app.
+
 | Method | Action |
 |--------|--------|
-| **Keyboard** | `Ctrl+N` |
-| **File Tree** | Right-click a folder > New Note |
-| **Mission Control** | `Ctrl+P` > "New note" |
+| **Keyboard** | `Ctrl+N` (or `Ctrl+P` → *New note*) |
+| **Sidebar toolbar** | Click **+ Note** |
+| **File Tree right-click** | Right-click a folder → *New note*. The folder you clicked is pre-filled as the location. |
+| **Library row right-click** | Right-click a library row in the sidebar → *New note*. The library's root is pre-filled as the location. |
+
+In the dialog, the name field is pre-filled with the default (*Untitled*) and pre-selected — start typing to replace it. Press **Enter** to create, **Escape** to cancel. The new note opens in a tab and switches to edit mode automatically.
+
+If a folder template is configured for the parent folder, it is applied to the new note no matter how you invoked the create. Earlier versions skipped templates on the right-click path; that inconsistency is fixed.
+
+The same dialog handles **New Folder**, **New Base**, and **New Library** — invoke them via the corresponding `+` toolbar buttons, the right-click menus, or Mission Control. New Library additionally shows a *Pick…* button so you can choose where the library folder lives on disk; New Base in workspace mode hides the location and shows a multi-select for which libraries the base will query.
 
 ### Editor
 

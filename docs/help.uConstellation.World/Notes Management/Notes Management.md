@@ -24,11 +24,66 @@ The top row of the sidebar always shows the **Elements toolbar** with quick-acti
 
 | Button | Action |
 |--------|--------|
-| **New Note** | Create a new note in the selected folder |
-| **New Base** | Create a new base (structured data note) |
-| **New Folder** | Create a new folder in the selected library |
+| **New Note** | Open the Create dialog to make a new note |
+| **New Base** | Open the Create dialog to make a new base (structured data note) |
+| **New Folder** | Open the Create dialog to make a new folder |
+| **New Library** | Open the Create dialog to make a new library |
 
 These buttons are always visible regardless of which mode tab is active.
+
+---
+
+## The Create dialog
+
+Every "create" affordance in Constellation — the toolbar buttons above, the right-click menu on a folder or library, and the "+ New …" command-palette entries — opens the same modal dialog. This is intentional: you name the new item **before** it lands on disk, and validation happens upfront, so the typical operating-system create flow is preserved across the whole app.
+
+### What you see
+
+When you click any "create" affordance, a dialog appears with these fields:
+
+| Field | Behavior |
+|-------|----------|
+| **Title** | Identifies what's being created — *New Note*, *New Folder*, *New Base*, or *New Library*. |
+| **Location** | The parent folder. **Read-only** when you invoked the create from a context that already knows the location (right-clicking a folder, or the toolbar button which uses the active library's root). **Pickable** for *New Library* — a *Pick…* button next to the field opens an OS folder picker so you can choose where the library lives. **Hidden** for *New Base* in the workspace (workspace bases always live in the workspace folder; there is no location to pick). |
+| **Name** | Pre-filled with a sensible default (e.g. *New Folder*, *Untitled*, *Untitled Base*, *My Library*) and pre-selected so a single keystroke replaces it. Type the name you actually want. |
+| **Libraries to query** | *(New Base only, workspace flow)* A multi-select list of libraries the base will read from. *All libraries* is the default. |
+| **Create** / **Cancel** | Buttons at the bottom. *Create* commits; *Cancel* closes without side effect. |
+
+### Keyboard
+
+| Key | Behavior |
+|-----|----------|
+| **Enter** | Same as clicking *Create*. |
+| **Escape** | Same as clicking *Cancel*. Closes the dialog without creating anything. |
+| **Click outside the dialog** | Same as Escape. |
+| **Tab** | Moves focus between Location, Name, Libraries, Cancel, Create. |
+
+The Name field has focus when the dialog opens, with the default name pre-selected — so you can start typing immediately.
+
+### Validation
+
+The dialog won't let you click *Create* with a name that won't work on disk:
+
+- **Empty name** — *Create* is disabled. The dialog shows "Name cannot be empty."
+- **Illegal characters** — `\`, `/`, `:`, `*`, `?`, `"`, `<`, `>`, `|` are blocked at the input. The dialog shows the full character list inline. *Create* is disabled until you remove them.
+- **Folder/file already exists at the location** — when you click *Create*, the system reports the conflict back into the dialog's error region. The dialog stays open so you can rename and try again.
+
+> [!info]
+> The dialog also blocks names containing `..` (parent-directory escapes) — this is enforced both in the dialog and in the create operation itself, so a slip of the keyboard cannot accidentally place a folder outside the location you picked.
+
+### Right-click affordances in the sidebar
+
+Right-clicking surfaces the same dialog from these surfaces:
+
+| Right-click on | Menu shows | What happens |
+|----------------|------------|--------------|
+| **A folder in the file tree** | New Note · New Folder · New Base · Rename · Delete | The first three open the Create dialog with that folder pre-filled as Location. |
+| **A library row** (the universe-notes header, an own library, or a child-universe library) | New Note · New Folder · New Base | Opens the Create dialog with that library's root pre-filled as Location. Library rows do not offer Rename or Delete here — those operations live in the Library Manager. |
+| **A note in the file tree** | Rename · Delete | Notes don't host children, so no "create new" options are offered. |
+
+### Templates apply uniformly
+
+When you create a new note, Constellation looks up any folder template configured for the parent folder and applies it. **This now happens regardless of how you invoked the create** — the toolbar button, the right-click menu, and the command palette all run the same path. Earlier versions skipped templates on the right-click path; that inconsistency is fixed.
 
 ---
 

@@ -14,18 +14,36 @@ Constellation is a multi-library reader that lets you work with multiple Markdow
 
 ## Adding a library
 
-There are several ways to add a Markdown library:
+There are two distinct operations:
 
-1. **Welcome screen**: Click **+ Add Library** on the welcome screen when no libraries are registered.
-2. **Sidebar**: Click **+ Add library** in the sidebar when the file explorer shows "No libraries yet".
-3. **Library dropdown**: Click the **Constellation** footer in the sidebar, then click **+ Open library**.
-4. **Library manager**: Open **Manage libraries** and click **+ Add library** at the bottom.
-5. **Mission Control**: Press Ctrl+P and select **Add library**.
+1. **Create a new library** — Constellation builds a fresh library folder at a location you choose, then registers it.
+2. **Link an existing library** — you point Constellation at a folder that's already on disk (your Obsidian vault, an old notes folder, a synced Dropbox directory, etc.), and Constellation registers it without modifying any files.
 
-All methods open a folder picker dialog. Navigate to your Markdown library folder and select it. Constellation will index the library and display its notes in the sidebar.
+Both operations are reachable from the same set of surfaces:
+
+- **Welcome screen** when no libraries are registered yet.
+- **Sidebar toolbar** — the **+ Library** button.
+- **Library Manager** screen — **Create new library** and **Link existing library** cards side by side.
+- **Mission Control** (`Ctrl+P`) — *New library* and *Add library* commands.
+
+### Create a new library
+
+When you choose *New library* from any of those surfaces, the **Create dialog** opens. It contains:
+
+- A **Location** field showing the parent folder where the library will be created. Click **Pick…** to open an OS folder picker (Explorer / Finder / Files) and choose any folder on your computer.
+- A **Name** field pre-filled with *My Library* and pre-selected — start typing to replace it.
+- **Cancel** and **Create** buttons.
+
+The dialog blocks empty names, names with illegal characters (`\ / : * ? " < > |`), and parent-directory escapes (`..`) before the operation reaches your filesystem. If a folder with that name already exists at the location, Constellation tells you and the dialog stays open so you can rename and try again.
+
+After Create, the new library appears in the sidebar with its own color, ready to receive notes.
+
+### Link an existing library
+
+When you choose *Link existing library*, an OS folder picker opens directly. Navigate to the folder you want to register and select it. Constellation indexes its Markdown files and displays them in the sidebar.
 
 > [!tip]
-> Constellation reads your library files directly from their original location. It does not copy or move any files.
+> Linking does not copy or move any files. Constellation reads your library files directly from their original location. If you also use Obsidian, you can link an Obsidian vault and both apps will work on the same files.
 
 ---
 
