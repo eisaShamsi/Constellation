@@ -117,7 +117,47 @@ Every Concept Paper failure mode verified end-to-end by Boss test cycle:
 
 Plus all four user-visible follow-ups (§136–§139) PASSED in production-binary testing.
 
-## Pending after §139
+## §140 — Cross-note content corruption via stale writeAheadBuffer
+
+Boss reported a serious data corruption bug during normal Constellation use: "Sometimes, when switching between notes after renaming or creating notes, I discover that a note replicates its contents, title, and cid_cn into another note. The victim note keeps its title in the file tree, but when I click it, it shows the culprit note (title, content, and properties)."
+
+Investigation pinpointed `writeAheadBuffer` (in-memory `Map<filePath, V>` + `localStorage` backup that survives app restarts). When a note is flushed, the editor's content is stashed under its file path so a later `openNoteTab` can substitute it for a disk read. **`renameItem` / `moveItem` / `deleteItem` migrate `openTabs.path` correctly but never touched the buffer.** When a path was reused after a rename or delete (trivial with human-named notes), `openNoteTab` hit the stale buffer entry and loaded the OLD note's content (cid_cn, title, body) into the new tab. The file tree kept showing the new note's correct title (driven by `display_title` from disk frontmatter — disk was correct) while the tab held the old note's content (in-memory only, until the user typed and triggered a `handleSave` that committed the corruption to disk).
+
+Direct violation of Rule 8 (Write-Time Derivation) — same gap §137 closed for stage/maturity, except corruption-class severity (the BUG-015 lineage).
+
+Three-part fix:
+- New helpers `migratePathKeyedAuxStateOnRename` and `clearPathKeyedAuxStateOnDelete` in `store.ts` migrate / drop wab + recentWrites entries (in-memory + localStorage backup), with folder-prefix support for folder rename / delete.
+- Wired into `renameItem`, `moveItem`, `deleteItem`.
+- Defense-in-depth in `openNoteTab`: when a wab entry hits, also read disk and compare the `cid_cn` signature; on mismatch, prefer disk and clear the stale buffer. Self-healing for users with stale localStorage from prior sessions before the fix landed.
+
+Boss tested the §140 production binary and confirmed PASS — reproduction (rename Foo v2 → Foo v3, create new Foo v2, click new Foo v2) now correctly shows the new note's content with its own cid_cn.
+
+Commit: `2d40ccf`.
+
+## §141 — /simplify checkpoint over §137-§140
+
+Three review agents (reuse / quality / efficiency) walked the §137-§140 diff. Aggregated findings shipped as fixes:
+
+**Reuse:**
+- `normalizePathKey(p)` exported from `src/lib/utils.ts`. The `(p) => p.replace(/\\/g, '/').toLowerCase()` function was duplicated 7+ times across utils, store, +layout. Single source of truth for the path-key contract used by every reactive Map.
+- `WAB_LS_KEY = 'constellation-wab'` constant in store.ts (was hard-coded in 5 places).
+- Single `walkAuxStatePaths` walker shared by the §140 rename + delete helpers. Walker passes the ORIGINAL key to the decide callback so folder-rename suffix preservation works on case-mixed Windows paths.
+
+**Quality:**
+- `openNoteTab`'s wab/disk choice extracted to `resolveNoteContent(filePath)` helper. Returns `{content, cursorPos, scrollTop}`: when wab is stale, drops the wab cursor/scroll too (subtle correctness improvement the §140 inline code missed).
+- `handleStageChanged(path, stage)` hoisted in +layout.svelte (3-line callback was inlined twice).
+
+**Efficiency:**
+- `extractCidCn` regex bounded to the first `---…---` frontmatter block (was scanning full body — material win for large notes).
+
+**Style:**
+- Stripped `// §139:` / `// §140:` inline anchor comments where they narrated what the code obviously does. Kept docstrings on function declarations.
+
+Skipped: `migratePathKeyedMap` vs `migratePathKeyedMapInPlace` unification (two-API surface stays for clarity), toggleLibrary scan-merge unification (shapes differ enough), `<svelte:self>` 11-prop spread (explicit forwarding IS the documentation).
+
+Commit: `42e9693`. Production rebuild kicks off after this commit.
+
+## Pending after §141
 
 - **MIG-006 §4–§11**: reindex via `index_note` (closes the stale `outgoing_links_json` gap Boss surfaced in Stage 1 — Outgoing Links panel still shows old target names after a cascade), sync/async dispatch + progress events (P6 — hub-rename UX), atomic per-file writes via tempfile (P5 — kill-mid-cascade integrity), pre-MIG-006 backfill command for stale wikilinks. **§4 is the natural next item.**
 - CE Phase 9 Path B / MIG-010 scale.
