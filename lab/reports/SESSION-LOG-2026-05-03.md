@@ -157,7 +157,45 @@ Skipped: `migratePathKeyedMap` vs `migratePathKeyedMapInPlace` unification (two-
 
 Commit: `42e9693`. Production rebuild kicks off after this commit.
 
-## Pending after §141
+## §142 (MIG-006 §4) — Reindex rewritten sources after cascade
+
+Original gap from §3-redo Stage 1: after rename, Outgoing Links panel kept showing the OLD target name (`foo`, lowercased) because the body cascade didn't trigger reindex of the affected source notes. `note_meta.outgoing_links_json` and `note_links.target_name` stayed stale until the user touched the source again.
+
+§142 plugs the Rust side: after `update_links_recursive` returns, the IPC opens the search-state connection and calls `reindex_single_note` for each rewritten path. Per-call transactions (`index_note` already wraps in `BEGIN IMMEDIATE`/COMMIT). Best-effort: per-file failures logged + skipped — the cascade rewrite is on disk, alias-aware reads from MIG-004 keep correctness intact, the IPC must not fail back over a reindex glitch.
+
+IPC signature change: `update_links_on_rename(library_path, library_name, old_name, new_name)` — added `library_name` parameter (required by `index_note`). TS wrapper + +layout caller updated.
+
+Commit: `d40e587`.
+
+## §143 — Targeted in-place update of allLibraryLinks (the almost-fix)
+
+§142 fixed Rust SQLite, but Boss tested and reported "Nothing changed" — Outgoing Links panel still showed stale name. Diagnosis: `allLibraryLinks` is a frontend `$state<NoteLink[]>` loaded ONCE at boot via `cache_boot_snapshot_graph` and never re-fetched. SQLite is correct; the in-memory snapshot the panel reads is stale.
+
+§143 attempted a targeted in-place update: walk allLibraryLinks for entries where `source_path ∈ result.rewritten` AND `target.toLowerCase() === oldName.toLowerCase()`, rewrite `target` to `newName.toLowerCase()`. Same shape as §137's path-keyed migration applied to the link's target field.
+
+But Boss tested again and reported "Nothing changed" on the §143 binary too. Root cause: after several renames in a single session (Hub v4 → v5 → v6 → v7 → v8), the in-memory state held `hub v4` from the boot snapshot, while subsequent renames passed `Hub v6` / `Hub v7` as `oldName`. The targeted match never fired — the in-memory state had drifted further than any single rename's `oldName`. So §143 walked allLibraryLinks correctly but skipped every entry.
+
+Commit: `d119201`. Superseded by §144 (kept in history for archaeology).
+
+## §144 — Re-fetch graph snapshot after cascade
+
+Replaced §143's targeted update with the simpler drift-resistant fix: after `await updateLinksOnRename` returns, call `cache_boot_snapshot_graph` and replace `allLibraryLinks` + `notePathToAliases` wholesale. Catches not just the just-rewritten target but ANY drift accumulated in the session.
+
+Cost: same as boot's graph fetch — `low-millis` per the cache.rs comments on the reference 7600-note Universe. Acceptable because rename is already a multi-step user-initiated action.
+
+Boss tested PASS — Outgoing Links panel now updates immediately after rename. Closes the original Stage 1 observation.
+
+Commit: `dcd5490`.
+
+## Side discovery during §144 testing — pre-§140 corruption + Unlinked Mentions alias bleed
+
+While testing §144 Boss observed two non-§144 issues:
+
+1. **Tab title / content / cid_cn mismatch**: SourceA test note had `title: Hub v6` in frontmatter AND a duplicate `cid_cn` matching Hub v8. This is the §140 corruption class but the file was already corrupted from BEFORE §140's fix landed — §140 prevents NEW path-reuse contamination but can't retroactively heal already-corrupted files. Boss self-healed by delete + recreate. Logged for future sessions: existing libraries may carry pre-§140 cid_cn collisions; need manual recovery or a one-time scrub utility (queued).
+
+2. **Unlinked Mentions panel matches frontmatter alias entries**: the scanner reads full file content (frontmatter + body) so YAML alias entries (`- "Hub v6"` from rename history) surface as "unlinked mentions". Should split on the closing `---` fence. Logged in project memory `project_unlinked_mentions_alias_bleed.md`. Pair with `project_unlinked_mentions_double_count.md` in a single Unlinked Mentions cleanup MIG.
+
+## Pending after §144
 
 - **Standard OS-style create dialog for Folder / Note / Base / Library** (Boss directive 2026-05-03). Currently auto-creates with default names ("New Folder", "Untitled") and expects in-place rename. Should behave like Explorer / Finder: modal with name input + location picker + Cancel/Create. Applies to all four create surfaces. Logged in project memory as `project_create_dialog_standardize.md`. Likely composes with the planned filename-collision popup (`project_rename_collision_popup_wanted.md`).
 - **MIG-006 §4–§11**: reindex via `index_note` (closes the stale `outgoing_links_json` gap Boss surfaced in Stage 1 — Outgoing Links panel still shows old target names after a cascade), sync/async dispatch + progress events (P6 — hub-rename UX), atomic per-file writes via tempfile (P5 — kill-mid-cascade integrity), pre-MIG-006 backfill command for stale wikilinks. **§4 is the natural next item if Boss wants to continue the rename-cascade arc.**
