@@ -29,6 +29,7 @@
 		kind,
 		parentPath = '',
 		defaultName,
+		hideLocation = false,
 		extras,
 		onClose,
 		onCreate,
@@ -36,10 +37,14 @@
 		open: boolean;
 		kind: CreateKind;
 		/** Parent location. Empty string → user must pick (Library / no-context invocations).
-		 *  Non-empty → location shown read-only (right-click context already knows it). */
+		 *  Non-empty → location shown read-only (right-click context already knows it).
+		 *  Ignored when `hideLocation` is true. */
 		parentPath?: string;
 		/** Override the kind's default name. If absent, the kind's i18n default is used. */
 		defaultName?: string;
+		/** Hide the location field entirely (workspace bases — always live in the workspace
+		 *  directory, no location for the user to pick or confirm). */
+		hideLocation?: boolean;
 		/** Optional kind-specific extras (e.g. Base's library multi-select). Snippet pattern. */
 		extras?: Snippet;
 		onClose: () => void;
@@ -107,7 +112,13 @@
 		return '';
 	});
 
-	let canCreate = $derived(!submitting && !validationError && (kind !== 'library' || location.trim() !== ''));
+	// Location is required only when it's user-pickable (not when hidden, not
+	// when shown read-only — those are already known/valid by construction).
+	let canCreate = $derived(
+		!submitting
+		&& !validationError
+		&& (hideLocation || parentPath !== '' || location.trim() !== '')
+	);
 
 	async function handleCreate() {
 		if (!canCreate) return;
@@ -158,34 +169,36 @@
 		<div class="dialog" role="dialog" aria-modal="true" aria-labelledby="cd-title" onclick={(e) => e.stopPropagation()}>
 			<h2 class="dialog-title" id="cd-title">{titleForKind(kind)}</h2>
 
-			<!-- Location -->
-			<div class="dialog-field">
-				<label class="dialog-label" for="cd-location">{$t('createDialog.locationLabel') || 'Location'}</label>
-				{#if kind === 'library' || !parentPath}
-					<div class="dialog-location-pick">
+			<!-- Location (omitted entirely when hideLocation; e.g. workspace bases) -->
+			{#if !hideLocation}
+				<div class="dialog-field">
+					<label class="dialog-label" for="cd-location">{$t('createDialog.locationLabel') || 'Location'}</label>
+					{#if !parentPath}
+						<div class="dialog-location-pick">
+							<input
+								id="cd-location"
+								class="dialog-input dialog-input-readonly"
+								type="text"
+								readonly
+								value={location || ($t('createDialog.locationPlaceholder') || '— pick a location —')}
+								aria-readonly="true"
+							/>
+							<button class="dialog-pick-btn" type="button" onclick={pickLocation}>
+								{$t('createDialog.pickLocationButton') || 'Pick…'}
+							</button>
+						</div>
+					{:else}
 						<input
 							id="cd-location"
 							class="dialog-input dialog-input-readonly"
 							type="text"
 							readonly
-							value={location || ($t('createDialog.locationPlaceholder') || '— pick a location —')}
+							value={location}
 							aria-readonly="true"
 						/>
-						<button class="dialog-pick-btn" type="button" onclick={pickLocation}>
-							{$t('createDialog.pickLocationButton') || 'Pick…'}
-						</button>
-					</div>
-				{:else}
-					<input
-						id="cd-location"
-						class="dialog-input dialog-input-readonly"
-						type="text"
-						readonly
-						value={location}
-						aria-readonly="true"
-					/>
-				{/if}
-			</div>
+					{/if}
+				</div>
+			{/if}
 
 			<!-- Name -->
 			<div class="dialog-field">

@@ -3053,8 +3053,20 @@
 		}
 	}
 
-	async function handleNewBase() {
-		showNewBaseDialog = true;
+	// MIG-008 §Build.4 — workspace base creation. Opens the shared dialog with
+	// hideLocation (workspace bases always live in the workspace dir, no parent
+	// to pick) and the library multi-select rendered via the extras snippet.
+	function handleNewBase() {
+		baseSelectedLibraries = []; // reset to "all libraries"
+		createDialog = {
+			kind: 'base',
+			parentPath: '',
+			hideLocation: true,
+			extrasKind: 'baseLibraryPicker',
+			onCreate: async ({ name }) => {
+				await createWorkspaceBaseWithLibraries(name, baseSelectedLibraries);
+			},
+		};
 	}
 
 	async function createWorkspaceBaseWithLibraries(
@@ -3816,8 +3828,25 @@
 		kind: CreateKind;
 		parentPath: string;
 		defaultName?: string;
+		hideLocation?: boolean;
+		/** When `kind === 'base'` workspace, this is `'baseLibraryPicker'` so
+		 *  the template renders the library multi-select snippet. Other kinds
+		 *  leave it undefined. */
+		extrasKind?: 'baseLibraryPicker';
 		onCreate: (args: { name: string; location: string }) => Promise<boolean | void>;
 	} | null>(null);
+
+	// MIG-008 §Build.4: state for Base's library multi-select extras.
+	// Reset on each base-create open. Empty list means "all libraries"
+	// (matching the pre-MIG-008 NewBaseDialog behaviour).
+	let baseSelectedLibraries = $state<string[]>([]);
+	function toggleBaseLibrary(name: string) {
+		if (baseSelectedLibraries.includes(name)) {
+			baseSelectedLibraries = baseSelectedLibraries.filter(v => v !== name);
+		} else {
+			baseSelectedLibraries = [...baseSelectedLibraries, name];
+		}
+	}
 	let renamingPath = $state('');
 
 	function handleContextMenu(entry: FileEntry, x: number, y: number, libraryId: string) {
@@ -3895,31 +3924,23 @@
 		};
 	}
 
-	async function handleCreateBase(folderPath: string, libraryId: string) {
-		try {
-			const baseName = $t('bases.untitled');
-			let name = baseName;
-			let newPath: string | null = null;
-
-			for (let i = 0; i < 100; i++) {
-				try {
-					newPath = await createBase(folderPath, name);
-					break;
-				} catch {
-					name = `${baseName} ${i + 1}`;
+	// MIG-008 §Build.4 — folder-based base creation (right-click on a folder).
+	// Library is implicit from the parent folder, so no library multi-select.
+	function handleCreateBase(folderPath: string, libraryId: string) {
+		const lib = $libraries.find(v => v.id === libraryId);
+		createDialog = {
+			kind: 'base',
+			parentPath: folderPath,
+			onCreate: async ({ name, location }) => {
+				const newPath = await createBase(location, name);
+				if (!newPath) return;
+				await refreshLibraryTree(libraryId);
+				if (lib) {
+					const libraryColor = libraryColorMap[lib.name] ?? '#7c3aed';
+					await openNoteTab(newPath, lib.name, libraryColor);
 				}
-			}
-			if (!newPath) return;
-
-			await refreshLibraryTree(libraryId);
-			const lib = $libraries.find(v => v.id === libraryId);
-			if (lib) {
-				const libraryColor = libraryColorMap[lib.name] ?? '#7c3aed';
-				await openNoteTab(newPath, lib.name, libraryColor);
-			}
-		} catch (e) {
-			console.error('Failed to create base:', e);
-		}
+			},
+		};
 	}
 
 	// MIG-008 §Build.2 — opens the shared create-dialog with the right-clicked
@@ -5955,13 +5976,10 @@
 		/>
 	{/if}
 
-	{#if showNewBaseDialog}
-		<NewBaseDialog
-			colorMap={libraryColorMap}
-			onCreate={(_lib, name, selectedLibraries) => createWorkspaceBaseWithLibraries(name, selectedLibraries)}
-			onClose={() => showNewBaseDialog = false}
-		/>
-	{/if}
+	<!-- §Build.4 — NewBaseDialog removed; base creation now uses the shared
+	     CreateItemDialog above with the library multi-select snippet. The
+	     `showNewBaseDialog` state is now unused; cleaned in §Build.6. -->
+
 
 	{#if contextMenu}
 		<ContextMenu
@@ -5982,12 +6000,41 @@
 		/>
 	{/if}
 
+	{#snippet baseLibraryPickerExtras()}
+		<div class="cd-base-libs">
+			<div class="cd-base-libs-label">{$t('bases.source.librariesLabel') || 'Libraries to query'}</div>
+			<div class="cd-base-libs-list">
+				<label class="cd-base-libs-item" class:cd-base-libs-active={baseSelectedLibraries.length === 0}>
+					<input
+						type="checkbox"
+						checked={baseSelectedLibraries.length === 0}
+						onchange={() => baseSelectedLibraries = []}
+					/>
+					<span>{$t('bases.source.allLibraries') || 'All libraries'}</span>
+				</label>
+				{#each $libraries as v}
+					<label class="cd-base-libs-item" class:cd-base-libs-active={baseSelectedLibraries.includes(v.name)}>
+						<input
+							type="checkbox"
+							checked={baseSelectedLibraries.length === 0 || baseSelectedLibraries.includes(v.name)}
+							onchange={() => toggleBaseLibrary(v.name)}
+						/>
+						<span class="cd-base-libs-dot" style="background: {libraryColorMap[v.name] || '#7c3aed'}"></span>
+						<span>{v.name}</span>
+					</label>
+				{/each}
+			</div>
+		</div>
+	{/snippet}
+
 	{#if createDialog}
 		<CreateItemDialog
 			open={true}
 			kind={createDialog.kind}
 			parentPath={createDialog.parentPath}
 			defaultName={createDialog.defaultName}
+			hideLocation={createDialog.hideLocation}
+			extras={createDialog.extrasKind === 'baseLibraryPicker' ? baseLibraryPickerExtras : undefined}
 			onClose={() => createDialog = null}
 			onCreate={createDialog.onCreate}
 		/>
@@ -7199,4 +7246,30 @@
 	:global(body.focus-active) .tab-bar { display: none !important; }
 	:global(body.focus-active) .status-bar { display: none !important; }
 	:global(body.focus-active) .wiw-overlay { display: none !important; }
+
+	/* MIG-008 §Build.4 — Base library multi-select extras inside CreateItemDialog */
+	.cd-base-libs { display: flex; flex-direction: column; gap: 6px; }
+	.cd-base-libs-label {
+		font-size: 0.78rem;
+		color: var(--text-muted);
+		font-weight: 500;
+	}
+	.cd-base-libs-list {
+		display: flex; flex-direction: column; gap: 2px;
+		max-height: 160px; overflow-y: auto;
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 5px; padding: 4px;
+	}
+	.cd-base-libs-item {
+		display: flex; align-items: center; gap: 8px;
+		padding: 4px 6px; border-radius: 4px;
+		font-size: 0.82rem; color: var(--text-muted);
+		cursor: pointer;
+	}
+	.cd-base-libs-item:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+	.cd-base-libs-item.cd-base-libs-active { color: var(--text-normal); }
+	.cd-base-libs-item input[type="checkbox"] { cursor: pointer; accent-color: var(--interactive-accent); }
+	.cd-base-libs-dot {
+		width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+	}
 </style>
