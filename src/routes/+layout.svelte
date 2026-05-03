@@ -4006,6 +4006,31 @@
 						await flushAllTabsInLibrary(lib.path);
 						const result = await updateLinksOnRename(lib.path, lib.name, oldName, newName);
 						await reloadTabsFromDisk(result.rewritten);
+						// §143 (Rule 8 — Write-Time Derivation, frontend side):
+						// §142 reindexed `note_links` on disk so SQLite is fresh,
+						// but `allLibraryLinks` is loaded ONCE at boot via
+						// `cache_boot_snapshot_graph` and never re-fetched during
+						// a session. Without this update, the right-sidebar
+						// Outgoing Links / Backlinks panels render stale target
+						// names after every rename. Walk the snapshot for
+						// rewritten paths and rewrite the matching `target` in
+						// place — same shape as §137's path-keyed migration,
+						// applied to the link's target field. `note_links`
+						// stores `target_name` lowercased (see search.rs
+						// extract_typed_links), so we compare + write lowercased.
+						if (result.rewritten.length > 0) {
+							const rewrittenSet = new Set(result.rewritten);
+							const oldNameLower = oldName.toLowerCase();
+							const newNameLower = newName.toLowerCase();
+							let mutated = false;
+							const next = allLibraryLinks.map(l => {
+								if (!rewrittenSet.has(l.source_path)) return l;
+								if (l.target.toLowerCase() !== oldNameLower) return l;
+								mutated = true;
+								return { ...l, target: newNameLower };
+							});
+							if (mutated) allLibraryLinks = next;
+						}
 					} finally {
 						for (const t of tabs) clearCascading(t.path);
 					}
