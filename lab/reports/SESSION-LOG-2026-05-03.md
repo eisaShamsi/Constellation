@@ -195,7 +195,32 @@ While testing §144 Boss observed two non-§144 issues:
 
 2. **Unlinked Mentions panel matches frontmatter alias entries**: the scanner reads full file content (frontmatter + body) so YAML alias entries (`- "Hub v6"` from rename history) surface as "unlinked mentions". Should split on the closing `---` fence. Logged in project memory `project_unlinked_mentions_alias_bleed.md`. Pair with `project_unlinked_mentions_double_count.md` in a single Unlinked Mentions cleanup MIG.
 
-## Pending after §144
+## MIG-008 Phase 1 — Create-Dialog Standardization (Architect)
+
+Boss directive 2026-05-03: "Whenever I created a folder it is created in the respective location under the name 'New Folder'. It shouldn't work this way. What I want it to do is to follow the standard way of any file system. A popup dialog box should emerge to name the new folder and to choose the location. Same thing should happen when creating new note, base or library."
+
+Inventory (via Explore agent) found four inconsistent create flows:
+- **Folder** — auto-named "New Folder", rejects on collision, no dialog
+- **Note** — auto-named "Untitled", auto-increments on collision (Rust), no dialog
+- **Base** — auto-named "Untitled Base", auto-increments via 100-iter frontend loop, has its own `NewBaseDialog`
+- **Library** — auto-named "My Library", rejects on collision, has folder picker only
+
+Architect plan defined 11 invariants (I1–I11): single dialog entry point, pre-filled + pre-selected default name, location shown vs picked, Esc/Enter parity with OS dialogs, validation, post-create UX preserved, RTL, a11y, kind-driven specialization, i18n in 15 locales.
+
+Three options enumerated:
+- **(A)** Single shared `<CreateItemDialog>` component, kind-driven, modal — recommended
+- **(B)** Inline tree-row input (Finder-style) — doesn't fit Library/Base
+- **(C)** Modal + template/properties picker — overkill
+
+**Boss approved Option A.** Cascading through Phase 2 Build per Plan Approval = Build Approval.
+
+Build plan: 8 steps (§Build.1–.8) — build component → wire 4 affordances → drop orphaned handlers → /simplify → audit. Each step pauses for Boss-testable verification clause.
+
+Architect doc: `lab/reports/MIG-008-CREATE-DIALOG-ARCHITECT.md`. Commit: `22839d4`.
+
+Out of scope for MIG-008: filename-collision popup (separate `project_rename_collision_popup_wanted.md`), template/properties picker, inline-tree gesture, default-frontmatter changes.
+
+## Pending after MIG-008 Phase 1
 
 - **Standard OS-style create dialog for Folder / Note / Base / Library** (Boss directive 2026-05-03). Currently auto-creates with default names ("New Folder", "Untitled") and expects in-place rename. Should behave like Explorer / Finder: modal with name input + location picker + Cancel/Create. Applies to all four create surfaces. Logged in project memory as `project_create_dialog_standardize.md`. Likely composes with the planned filename-collision popup (`project_rename_collision_popup_wanted.md`).
 - **MIG-006 §4–§11**: reindex via `index_note` (closes the stale `outgoing_links_json` gap Boss surfaced in Stage 1 — Outgoing Links panel still shows old target names after a cascade), sync/async dispatch + progress events (P6 — hub-rename UX), atomic per-file writes via tempfile (P5 — kill-mid-cascade integrity), pre-MIG-006 backfill command for stale wikilinks. **§4 is the natural next item if Boss wants to continue the rename-cascade arc.**
