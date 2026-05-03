@@ -3809,7 +3809,7 @@
 	}
 
 	// ─── Context menu state ───
-	let contextMenu = $state<{ x: number; y: number; entry: FileEntry; libraryId: string } | null>(null);
+	let contextMenu = $state<{ x: number; y: number; entry: FileEntry; libraryId: string; isLibraryRoot?: boolean } | null>(null);
 	let confirmDelete = $state<{ path: string; name: string } | null>(null);
 
 	// MIG-008 §Build.1: shared create dialog state. Single component for
@@ -3847,7 +3847,36 @@
 		contextMenu = { x, y, entry, libraryId };
 	}
 
-	function getContextMenuItems(entry: FileEntry, libraryId: string) {
+	// MIG-008 §Build.6 follow-up — library/universe row right-click handler.
+	// Suppresses the WebView's default context menu (Back/Refresh/Save as/Print)
+	// and shows a Constellation menu with the create affordances (New Note /
+	// New Folder / New Base) at the library root. The synthetic FileEntry
+	// gives downstream handlers the library's path + name; isLibraryRoot=true
+	// tells `getContextMenuItems` to suppress Rename/Delete (which would be
+	// nonsensical at the library level — those operations live in Library
+	// Manager / command palette).
+	function handleLibraryHeaderContextMenu(
+		e: MouseEvent,
+		lib: { library_id: string; name: string; path: string },
+	) {
+		e.preventDefault();
+		const synthetic = {
+			path: lib.path,
+			name: lib.name,
+			is_dir: true,
+			children: undefined,
+			display_title: lib.name,
+		} as unknown as FileEntry;
+		contextMenu = {
+			x: e.clientX,
+			y: e.clientY,
+			entry: synthetic,
+			libraryId: lib.library_id,
+			isLibraryRoot: true,
+		};
+	}
+
+	function getContextMenuItems(entry: FileEntry, libraryId: string, isLibraryRoot = false) {
 		const items: { label: string; icon?: string; action: () => void; danger?: boolean }[] = [];
 
 		// Workspace bases have a simplified context menu
@@ -3857,6 +3886,32 @@
 				icon: '🗑️',
 				action: () => handleDeleteWorkspaceBase(entry.path),
 				danger: true,
+			});
+			return items;
+		}
+
+		// MIG-008 §Build.6 follow-up — library/universe root right-click was
+		// falling through to the WebView default context menu (Back/Refresh/
+		// Save as/Print) because no oncontextmenu was wired. Now wired via
+		// `handleLibraryHeaderContextMenu`; we render a slim version of the
+		// folder menu (New Note / New Folder / New Base — the create
+		// affordances) but suppress Rename/Delete since library-management
+		// operations live elsewhere (Library Manager, command palette).
+		if (isLibraryRoot) {
+			items.push({
+				label: $t('actions.newNote'),
+				icon: '📄',
+				action: () => handleCreateNote(entry.path, libraryId),
+			});
+			items.push({
+				label: $t('actions.newFolder'),
+				icon: '📁',
+				action: () => handleCreateFolder(entry.path, libraryId),
+			});
+			items.push({
+				label: $t('actions.newBase'),
+				icon: '▦',
+				action: () => handleCreateBase(entry.path, libraryId),
 			});
 			return items;
 		}
@@ -3871,6 +3926,16 @@
 				label: $t('actions.newFolder'),
 				icon: '📁',
 				action: () => handleCreateFolder(entry.path, libraryId)
+			});
+			// MIG-008 §Build.6 follow-up — New Base was missing from the folder
+			// context menu (Boss flagged during §Build verification). Folder-based
+			// bases are a real flow but had no right-click affordance, only the
+			// command palette / sidebar toolbar. Adding here for parity with the
+			// other create operations.
+			items.push({
+				label: $t('actions.newBase'),
+				icon: '▦',
+				action: () => handleCreateBase(entry.path, libraryId)
 			});
 		}
 		items.push({
@@ -4404,7 +4469,7 @@
 					<!-- Universe Notes — folder named after the universe, shown above everything -->
 					{#if universeNotesStats}
 						<div class="library-section">
-							<button class="library-header universe-notes-item" onclick={() => toggleLibrary(universeNotesStats)}>
+							<button class="library-header universe-notes-item" onclick={() => toggleLibrary(universeNotesStats)} oncontextmenu={(e) => handleLibraryHeaderContextMenu(e, universeNotesStats)}>
 								<svg class="v-chev" class:expanded={expandedLibraries.has(universeNotesStats.library_id)} width="8" height="8" viewBox="0 0 10 10">
 									<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
 								</svg>
@@ -4466,7 +4531,7 @@
 								<div class="child-universe-libs">
 									{#each getChildUniverseLibs(child.path) as lib}
 										<div class="library-section library-section-nested">
-											<button class="library-header" onclick={() => toggleLibrary(lib)}>
+											<button class="library-header" onclick={() => toggleLibrary(lib)} oncontextmenu={(e) => handleLibraryHeaderContextMenu(e, lib)}>
 												<svg class="v-chev" class:expanded={expandedLibraries.has(lib.library_id)} width="8" height="8" viewBox="0 0 10 10">
 													<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
 												</svg>
@@ -4500,7 +4565,7 @@
 					<!-- Own Libraries — only libraries NOT belonging to a child universe -->
 					{#each ownLibraries as lib}
 						<div class="library-section">
-							<button class="library-header" onclick={() => toggleLibrary(lib)}>
+							<button class="library-header" onclick={() => toggleLibrary(lib)} oncontextmenu={(e) => handleLibraryHeaderContextMenu(e, lib)}>
 								<svg class="v-chev" class:expanded={expandedLibraries.has(lib.library_id)} width="8" height="8" viewBox="0 0 10 10">
 									<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
 								</svg>
@@ -5949,7 +6014,7 @@
 		<ContextMenu
 			x={contextMenu.x}
 			y={contextMenu.y}
-			items={getContextMenuItems(contextMenu.entry, contextMenu.libraryId)}
+			items={getContextMenuItems(contextMenu.entry, contextMenu.libraryId, contextMenu.isLibraryRoot)}
 			onClose={() => contextMenu = null}
 		/>
 	{/if}
