@@ -53,6 +53,7 @@
 	import FocusPane from '$lib/components/FocusPane.svelte';
 	import ContextMenu from '$lib/components/ContextMenu.svelte';
 	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
+	import CreateItemDialog, { type CreateKind } from '$lib/components/CreateItemDialog.svelte';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
 	import QuickSwitcher from '$lib/components/QuickSwitcher.svelte';
 	import TemplatePicker from '$lib/components/TemplatePicker.svelte';
@@ -3133,27 +3134,25 @@
 		} catch (e) { console.error('[Library] Create failed:', e); }
 	}
 
-	async function createFolderInLibrary(lib: { id: string; name: string; path: string }) {
-		try {
-			const baseName = $t('actions.newFolder');
-			let name = baseName;
-			for (let i = 0; i < 100; i++) {
-				try {
-					await createFolder(lib.path, name);
-					break;
-				} catch {
-					name = `${baseName} ${i + 1}`;
+	// MIG-008 §Build.2 — sidebar "+ New Folder" toolbar button (and the
+	// library-picker fallback when multiple libraries are present) opens the
+	// shared create-dialog with the library root pre-filled as the parent.
+	// Pre-MIG-008 this auto-incremented "New Folder", "New Folder 1", … via
+	// a 100-iter loop. Now the user names it upfront; collisions surface as
+	// the IPC error in the dialog's inline error region.
+	function createFolderInLibrary(lib: { id: string; name: string; path: string }) {
+		createDialog = {
+			kind: 'folder',
+			parentPath: lib.path,
+			onCreate: async ({ name, location }) => {
+				await createFolder(location, name);
+				await refreshLibraryTree(lib.id);
+				if (!expandedLibraries.has(lib.id)) {
+					expandedLibraries.add(lib.id);
+					expandedLibraries = new Set(expandedLibraries);
 				}
-			}
-			await refreshLibraryTree(lib.id);
-			// Expand the library if not already
-			if (!expandedLibraries.has(lib.id)) {
-				expandedLibraries.add(lib.id);
-				expandedLibraries = new Set(expandedLibraries);
-			}
-		} catch (e) {
-			console.error('Failed to create folder:', e);
-		}
+			},
+		};
 	}
 
 	function cycleSortOrder() {
@@ -3810,6 +3809,19 @@
 	// ─── Context menu state ───
 	let contextMenu = $state<{ x: number; y: number; entry: FileEntry; libraryId: string } | null>(null);
 	let confirmDelete = $state<{ path: string; name: string } | null>(null);
+
+	// MIG-008 §Build.1: shared create dialog state. Single component for
+	// Folder / Note / Base / Library so the four flows don't drift.
+	// Each affordance handler sets this and the template renders the
+	// dialog when non-null. The `onCreate` callback is the affordance's
+	// per-kind commit logic (createFolder + refresh, createNote + open
+	// tab, etc.) — passed in so the dialog stays kind-agnostic.
+	let createDialog = $state<{
+		kind: CreateKind;
+		parentPath: string;
+		defaultName?: string;
+		onCreate: (args: { name: string; location: string }) => Promise<boolean | void>;
+	} | null>(null);
 	let renamingPath = $state('');
 
 	function handleContextMenu(entry: FileEntry, x: number, y: number, libraryId: string) {
@@ -3911,14 +3923,18 @@
 		}
 	}
 
-	async function handleCreateFolder(parentPath: string, libraryId: string) {
-		try {
-			const name = $t('actions.newFolder');
-			await createFolder(parentPath, name);
-			await refreshLibraryTree(libraryId);
-		} catch (e) {
-			console.error('Failed to create folder:', e);
-		}
+	// MIG-008 §Build.2 — opens the shared create-dialog with the right-clicked
+	// folder pre-filled as the parent location. Replaces the pre-MIG-008 inline
+	// auto-create-as-"New Folder" flow per Boss directive 2026-05-03.
+	function handleCreateFolder(parentPath: string, libraryId: string) {
+		createDialog = {
+			kind: 'folder',
+			parentPath,
+			onCreate: async ({ name, location }) => {
+				await createFolder(location, name);
+				await refreshLibraryTree(libraryId);
+			},
+		};
 	}
 
 	async function handleDeleteConfirm() {
@@ -5964,6 +5980,17 @@
 			cancelLabel={$t('dialogs.cancel')}
 			onConfirm={handleDeleteConfirm}
 			onCancel={() => confirmDelete = null}
+		/>
+	{/if}
+
+	{#if createDialog}
+		<CreateItemDialog
+			open={true}
+			kind={createDialog.kind}
+			parentPath={createDialog.parentPath}
+			defaultName={createDialog.defaultName}
+			onClose={() => createDialog = null}
+			onCreate={createDialog.onCreate}
 		/>
 	{/if}
 
