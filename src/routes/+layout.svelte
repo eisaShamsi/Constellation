@@ -2948,97 +2948,93 @@
 		}
 	}
 
-	async function createNoteInLibrary(lib: { id: string; name: string; path: string }) {
-		try {
-			const baseName = $t('actions.untitled');
-			let name = baseName;
-			let newPath: string | null = null;
+	// MIG-008 §Build.3 — sidebar "+ New Note" toolbar opens the shared
+	// create-dialog with the library root pre-filled as the parent. Pre-MIG-008
+	// this auto-incremented "Untitled", "Untitled 1", … via a 100-iter loop;
+	// the user now names it upfront. Template + frontmatter + edit-mode logic
+	// preserved unchanged inside the onCreate callback.
+	function createNoteInLibrary(lib: { id: string; name: string; path: string }) {
+		createDialog = {
+			kind: 'note',
+			parentPath: lib.path,
+			onCreate: async ({ name, location }) => {
+				// Build default frontmatter with auto-dates + user defaults
+				const defaultFM = buildDefaultFrontmatter($appSettings);
 
-			// Build default frontmatter with auto-dates + user defaults
-			const defaultFM = buildDefaultFrontmatter($appSettings);
+				// Template will be resolved after path is determined (for folder templates)
+				let templateBody = '';
 
-			// Template will be resolved after path is determined (for folder templates)
-			let templateBody = '';
+				const newPath = await createNote(location, name, defaultFM);
+				if (!newPath) return;
 
-			for (let i = 0; i < 100; i++) {
-				try {
-					newPath = await createNote(lib.path, name, defaultFM);
-					break;
-				} catch {
-					name = `${baseName} ${i + 1}`;
+				// Resolve template: check folder templates first, then default.md
+				if ($appSettings.enabledFeatures?.templates) {
+					try {
+						const tplDir: string = await invoke('get_templates_dir');
+						const noteFolder = newPath.replace(/\\/g, '/').split('/').slice(0, -1).join('/');
+
+						// Check folder templates (deepest match wins)
+						const folderTpls = $appSettings.folderTemplates || {};
+						let matchedTpl = '';
+						let matchDepth = -1;
+						for (const [folder, tplName] of Object.entries(folderTpls)) {
+							const normFolder = folder.replace(/\\/g, '/');
+							if (noteFolder.includes(normFolder) || noteFolder.endsWith(normFolder)) {
+								const depth = normFolder.split('/').length;
+								if (depth > matchDepth) {
+									matchDepth = depth;
+									matchedTpl = tplName;
+								}
+							}
+						}
+
+						const tplFile = matchedTpl || 'default';
+						const tplPath = `${tplDir}/${tplFile.endsWith('.md') ? tplFile : tplFile + '.md'}`;
+						const tpl: string = await invoke('read_note', { filePath: tplPath });
+						if (tpl) {
+							const tplParsed = parseFrontmatter(tpl);
+							templateBody = tplParsed.body;
+						}
+					} catch { /* no template — OK */ }
 				}
-			}
-			if (!newPath) return;
 
-			// Resolve template: check folder templates first, then default.md
-			if ($appSettings.enabledFeatures?.templates) {
-				try {
-					const tplDir: string = await invoke('get_templates_dir');
-					const noteFolder = newPath.replace(/\\/g, '/').split('/').slice(0, -1).join('/');
-
-					// Check folder templates (deepest match wins)
-					const folderTpls = $appSettings.folderTemplates || {};
-					let matchedTpl = '';
-					let matchDepth = -1;
-					for (const [folder, tplName] of Object.entries(folderTpls)) {
-						const normFolder = folder.replace(/\\/g, '/');
-						if (noteFolder.includes(normFolder) || noteFolder.endsWith(normFolder)) {
-							const depth = normFolder.split('/').length;
-							if (depth > matchDepth) {
-								matchDepth = depth;
-								matchedTpl = tplName;
+				// Apply template if found — preserve canonical frontmatter fields (cid, kind, title)
+				if (templateBody.trim()) {
+					try {
+						// Read back the canonical frontmatter that create_note injected
+						const noteContent: string = await invoke('read_note', { filePath: newPath });
+						const canonicalFields: string[] = [];
+						const fmMatch = noteContent.match(/^---\n([\s\S]*?)\n---/);
+						if (fmMatch) {
+							for (const line of fmMatch[1].split('\n')) {
+								const tt = line.trim();
+								if (tt.startsWith('title:') || tt.startsWith('cid:') || tt.startsWith('kind:')) {
+									canonicalFields.push(tt);
+								}
 							}
 						}
-					}
 
-					const tplFile = matchedTpl || 'default';
-					const tplPath = `${tplDir}/${tplFile.endsWith('.md') ? tplFile : tplFile + '.md'}`;
-					const tpl: string = await invoke('read_note', { filePath: tplPath });
-					if (tpl) {
-						const tplParsed = parseFrontmatter(tpl);
-						templateBody = tplParsed.body;
-					}
-				} catch { /* no template — OK */ }
-			}
+						const noteFolder = newPath.replace(/\\/g, '/').split('/').slice(-2, -1)[0] || '';
+						const ctx = { title: name, folder: noteFolder, library: lib.name, filePath: newPath };
+						const result = await processTemplateAsync(templateBody, ctx, buildTemplateCallbacks());
+						// Merge: canonical fields first, then user defaults (skip duplicates)
+						const mergedFM = [...canonicalFields, ...defaultFM.split('\n').filter(l => {
+							const key = l.split(':')[0]?.trim();
+							return key && !canonicalFields.some(cf => cf.startsWith(key + ':'));
+						})].join('\n');
+						const fullContent = `---\n${mergedFM}\n---\n${result.content}`;
+						await invoke('write_note', { filePath: newPath, content: fullContent });
+					} catch { /* template write failed — note still created */ }
+				}
 
-			// Apply template if found — preserve canonical frontmatter fields (cid, kind, title)
-			if (templateBody.trim()) {
-				try {
-					// Read back the canonical frontmatter that create_note injected
-					const noteContent: string = await invoke('read_note', { filePath: newPath });
-					const canonicalFields: string[] = [];
-					const fmMatch = noteContent.match(/^---\n([\s\S]*?)\n---/);
-					if (fmMatch) {
-						for (const line of fmMatch[1].split('\n')) {
-							const t = line.trim();
-							if (t.startsWith('title:') || t.startsWith('cid:') || t.startsWith('kind:')) {
-								canonicalFields.push(t);
-							}
-						}
-					}
-
-					const noteFolder = newPath.replace(/\\/g, '/').split('/').slice(-2, -1)[0] || '';
-					const ctx = { title: name, folder: noteFolder, library: lib.name, filePath: newPath };
-					const result = await processTemplateAsync(templateBody, ctx, buildTemplateCallbacks());
-					// Merge: canonical fields first, then user defaults (skip duplicates)
-					const mergedFM = [...canonicalFields, ...defaultFM.split('\n').filter(l => {
-						const key = l.split(':')[0]?.trim();
-						return key && !canonicalFields.some(cf => cf.startsWith(key + ':'));
-					})].join('\n');
-					const fullContent = `---\n${mergedFM}\n---\n${result.content}`;
-					await invoke('write_note', { filePath: newPath, content: fullContent });
-				} catch { /* template write failed — note still created */ }
-			}
-
-			await refreshLibraryTree(lib.id);
-			const libraryColor = libraryColorMap[lib.name] ?? '#7c3aed';
-			await openNoteTab(newPath, lib.name, libraryColor);
-			// Auto-enter edit mode
-			const tab = get(focusedTab);
-			if (tab) toggleEditMode(tab.id);
-		} catch (e) {
-			console.error('Failed to create note:', e);
-		}
+				await refreshLibraryTree(lib.id);
+				const libraryColor = libraryColorMap[lib.name] ?? '#7c3aed';
+				await openNoteTab(newPath, lib.name, libraryColor);
+				// Auto-enter edit mode
+				const tab = get(focusedTab);
+				if (tab) toggleEditMode(tab.id);
+			},
+		};
 	}
 
 	async function handleQuickCapture() {
@@ -3881,19 +3877,22 @@
 		}
 	}
 
-	async function handleCreateNote(folderPath: string, libraryId: string) {
-		try {
-			const name = $t('actions.untitled');
-			const newPath = await createNote(folderPath, name);
-			await refreshLibraryTree(libraryId);
-			const lib = $libraries.find(v => v.id === libraryId);
-			if (lib) {
-				const libraryColor = libraryColorMap[lib.name] ?? '#7c3aed';
-				await openNoteTab(newPath, lib.name, libraryColor);
-			}
-		} catch (e) {
-			console.error('Failed to create note:', e);
-		}
+	// MIG-008 §Build.3 — sidebar right-click "+ New Note" opens the shared
+	// create-dialog with the right-clicked folder pre-filled as the parent.
+	function handleCreateNote(folderPath: string, libraryId: string) {
+		const lib = $libraries.find(v => v.id === libraryId);
+		createDialog = {
+			kind: 'note',
+			parentPath: folderPath,
+			onCreate: async ({ name, location }) => {
+				const newPath = await createNote(location, name);
+				await refreshLibraryTree(libraryId);
+				if (lib) {
+					const libraryColor = libraryColorMap[lib.name] ?? '#7c3aed';
+					await openNoteTab(newPath, lib.name, libraryColor);
+				}
+			},
+		};
 	}
 
 	async function handleCreateBase(folderPath: string, libraryId: string) {
