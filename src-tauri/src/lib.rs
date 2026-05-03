@@ -269,6 +269,7 @@ pub fn run() {
             libraries::write_note,
             libraries::pick_folder,
             libraries::create_new_library,
+            libraries::create_new_library_at,
             libraries::get_all_library_stats,
             libraries::search_stars,
             libraries::search_by_property,

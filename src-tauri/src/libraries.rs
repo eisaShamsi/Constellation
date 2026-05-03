@@ -1710,6 +1710,28 @@ pub async fn create_new_library(app: tauri::AppHandle, name: String) -> Result<O
     Ok(Some(library))
 }
 
+/// MIG-008 §Build.5 — create a library at an explicit parent path. Used by
+/// the shared `CreateItemDialog` which collects the parent location via its
+/// own "Pick…" affordance (calls `pick_folder` IPC) so the user sees the
+/// chosen location IN the dialog before confirming. The pre-MIG-008 flow
+/// (`create_new_library`) opens its own folder picker AFTER the user clicks
+/// Create — kept for backward compatibility but no longer the primary path.
+#[tauri::command]
+pub fn create_new_library_at(
+    app: tauri::AppHandle,
+    parent_path: String,
+    name: String,
+) -> Result<LibraryInfo, String> {
+    let library_dir = Path::new(&parent_path).join(&name);
+    if library_dir.exists() {
+        return Err(format!("Folder '{}' already exists at that location", name));
+    }
+    fs::create_dir_all(&library_dir)
+        .map_err(|e| format!("Failed to create library folder: {}", e))?;
+    let path_str = library_dir.to_string_lossy().to_string();
+    add_library(app, path_str)
+}
+
 /// Extract the `status` value from a markdown file's YAML frontmatter.
 /// Reads only the first 512 bytes for performance.
 fn extract_frontmatter_status(path: &Path) -> Option<String> {

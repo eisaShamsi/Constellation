@@ -1278,6 +1278,19 @@ export async function createNewLibrary(name: string): Promise<LibraryInfo | null
 	return library;
 }
 
+/**
+ * MIG-008 §Build.5 — create a library at an explicit parent path. Used by
+ * the shared `CreateItemDialog` which collects the parent location via its
+ * own "Pick…" affordance (so the user sees the location IN the dialog
+ * before confirming). Refreshes libraries + stats on success.
+ */
+export async function createNewLibraryAt(parentPath: string, name: string): Promise<LibraryInfo> {
+	const library: LibraryInfo = await invoke('create_new_library_at', { parentPath, name });
+	await loadLibraries();
+	await loadAllStats();
+	return library;
+}
+
 /** Remove a library (does NOT delete files). */
 export async function removeLibrary(libraryId: string) {
 	await invoke('remove_library', { libraryId });

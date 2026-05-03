@@ -10,7 +10,7 @@
 		libraries, libraryStats, totalStars, libraryCount,
 		activeTab, openTabs, activeTabId,
 		splitActive, splitDirection, focusedTabId, focusedTab,
-		loadLibraries, loadAllStats, addLibrary, createNewLibrary,
+		loadLibraries, loadAllStats, addLibrary, createNewLibrary, createNewLibraryAt,
 		initSearchIndex,
 		type ConstellationSearchResult,
 		openNoteTab, closeTab, switchTab, reorderTab, closeNote, createEmptyTab,
@@ -3124,22 +3124,24 @@
 		}
 	}
 
+	// MIG-008 §Build.5 — sidebar "+ New Library" toolbar button (and the
+	// command palette item) opens the shared create-dialog with empty
+	// parentPath, which surfaces the dialog's "Pick…" affordance for
+	// location. The user picks the parent folder + types the name in
+	// one place; on Create, the new `create_new_library_at` IPC builds
+	// the library at the chosen path. Pre-MIG-008 this toggled an inline
+	// dropdown in the sidebar that took just the name then the Rust
+	// IPC opened its own folder picker AFTER Create.
 	function handleNewLibrary() {
-		showNewLibraryDropdown = !showNewLibraryDropdown;
-		newLibName = '';
-	}
-
-	async function handleCreateNewLib() {
-		if (!newLibName.trim()) return;
-		showNewLibraryDropdown = false;
-		try {
-			await createNewLibrary(newLibName.trim());
-			await loadLibraries();
-			await refreshLibraryCaches();
-			// Rebuild search index to include new library's notes
-			initSearchIndex().then(() => { searchEngineReady = true; }).catch(() => {});
-			newLibName = '';
-		} catch (e) { console.error('[Library] Create failed:', e); }
+		createDialog = {
+			kind: 'library',
+			parentPath: '',
+			onCreate: async ({ name, location }) => {
+				await createNewLibraryAt(location, name);
+				await refreshLibraryCaches();
+				initSearchIndex().then(() => { searchEngineReady = true; }).catch(() => {});
+			},
+		};
 	}
 
 	// MIG-008 §Build.2 — sidebar "+ New Folder" toolbar button (and the
@@ -4297,30 +4299,12 @@
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M12 10v4"/><path d="M10 12h4"/></svg>
 					</button>
 
-					<!-- New Library dropdown -->
-					{#if showNewLibraryDropdown}
-						<div class="new-lib-drop">
-							<div class="nld-option">
-								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-								<div class="nld-text">
-									<span class="nld-title">{$t('libraries.newLibrary')}</span>
-									<div class="nld-input-row">
-										<input class="nld-input" type="text" dir="auto" placeholder={$t('libraries.newLibrary')}
-											bind:value={newLibName}
-											onkeydown={(e) => { if (e.key === 'Enter') handleCreateNewLib(); if (e.key === 'Escape') showNewLibraryDropdown = false; }} />
-										<button class="nld-create" onclick={handleCreateNewLib}>+</button>
-									</div>
-								</div>
-							</div>
-							<button class="nld-option" onclick={async () => { showNewLibraryDropdown = false; await handleAddLibrary(); }}>
-								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-								<div class="nld-text">
-									<span class="nld-title">{$t('libraries.linkLibrary')}</span>
-									<span class="nld-desc">{$t('libraries.linkLibraryDesc')}</span>
-								</div>
-							</button>
-						</div>
-					{/if}
+					<!-- §Build.5 — New Library dropdown removed; the toolbar "+ Library"
+					     button now opens the shared CreateItemDialog directly via
+					     handleNewLibrary. "Link existing library" remains reachable
+					     via the command palette (id 'add-library') and the Library
+					     Manager screen. -->
+
 				</div>
 				<!-- Row 2: Notes Management — always visible, even during search -->
 				<div class="toolbar-modes notes-management">
