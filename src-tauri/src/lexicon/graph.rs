@@ -65,11 +65,11 @@ use std::sync::OnceLock;
 /// deterministically for the cache filename. Parallel to
 /// `arabic::roots::seed_tsv()`.
 ///
-/// As of M11-data this returns `lexicon_v1.tsv` (49 hand-curated
-/// concepts, 100% Constellation-original content, 15 languages every
-/// row). The legacy M10 seed (`seed_v1.tsv`, 15 concepts) stays on
-/// disk as the regression fixture for `real_seed_bundle_*` and is
-/// reachable via [`legacy_seed_tsv`].
+/// As of M11-data v2 this returns `lexicon_v1.tsv` (~20K concepts
+/// across 499 shards in `lab/m11-data/concepts/`, 100% Constellation-
+/// original content, 15 languages every row). The legacy M10 seed
+/// (`seed_v1.tsv`, 15 concepts) stays on disk as the regression fixture
+/// for `real_seed_bundle_*` and is reachable via [`legacy_seed_tsv`].
 pub fn seed_tsv() -> &'static str {
     include_str!("data/lexicon_v1.tsv")
 }

@@ -2549,7 +2549,7 @@ fn lexical_search(conn: &Connection, query: &str, limit: u32) -> Vec<SearchResul
     // corpus, we get a phrase-quoted OR-joined expression that pulls in
     // translations and synonyms. Otherwise we fall back to the original
     // prefix-match — that preserves today's behavior for proper nouns,
-    // code, rare words, and anything outside our ~49-concept seed.
+    // code, rare words, and anything outside our ~20K-concept corpus.
     //
     // M13 badge: when the expanded path fires, the returned
     // `LexicalExpansion` also carries the set of non-source-language
@@ -4902,8 +4902,8 @@ mod tests_m12 {
     fn proper_noun_not_in_corpus_falls_back() {
         // Any well-formed English word not mapped to a concept returns
         // None and falls through to prefix matching. The corpus has
-        // scaled well past its original 49-concept seed (now 2,500+
-        // concepts across 63 shards), so these assertions use proper
+        // scaled well past its original 49-concept seed (now ~20K
+        // concepts across 499 shards), so these assertions use proper
         // nouns and invented strings guaranteed to stay out of the
         // natural-language lexicon: "Anthropic" (company name, not a
         // concept) and "Xzyqwop" (invented, zero-collision).

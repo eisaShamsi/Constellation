@@ -145,10 +145,6 @@ impl ExpansionResult {
         out
     }
 
-    /// Total count of expansion terms (including the source lemma itself).
-    pub fn total(&self) -> usize {
-        self.flat_terms().len()
-    }
 }
 
 #[cfg(test)]
