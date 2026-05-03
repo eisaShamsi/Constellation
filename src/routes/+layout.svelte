@@ -42,7 +42,7 @@
 	import { CORE_BLOCK_IDS, getEffectiveStyleBlocks } from '$lib/theme/constellationStyleSettings';
 	import { get } from 'svelte/store';
 	import { SvelteMap } from 'svelte/reactivity';
-	import { detectDir, eventToShortcut, normalizeShortcut, getResolvedShortcut, formatShortcut, migratePathKeyedMap, migratePathKeyedMapInPlace } from '$lib/utils';
+	import { detectDir, eventToShortcut, normalizeShortcut, getResolvedShortcut, formatShortcut, migratePathKeyedMap, migratePathKeyedMapInPlace, normalizePathKey } from '$lib/utils';
 	import { createBase, saveBaseFile, listWorkspaceBases, createWorkspaceBase, saveWorkspaceBase, deleteWorkspaceBase } from '$lib/bases/store';
 	import type { WorkspaceBaseEntry } from '$lib/bases/store';
 	import type { BaseDefinition } from '$lib/bases/types';
@@ -765,6 +765,14 @@
 	// reassignment didn't always reach the FileTree's template binding.
 	let maturityMap = new SvelteMap<string, string>(); // path → maturity state (CE Phase 3)
 	let stageMap = new SvelteMap<string, string>(); // path → stage (CE Phase 6)
+	/** §141 — single onStageChanged handler shared by every NoteEditor instance
+	 *  (main, split, second-screen). Mutates the SvelteMap directly so the file
+	 *  tree's stage emoji updates reactively for every consumer. */
+	function handleStageChanged(path: string, stage: string) {
+		const key = normalizePathKey(path);
+		if (stage) stageMap.set(key, stage);
+		else stageMap.delete(key);
+	}
 	// Star data is passed to SkyView as plain arrays.
 	// We avoid $state/$derived for large arrays (1885+ nodes) because Svelte 5 proxies
 	// make iteration extremely slow. Instead, skyVersion ($state) triggers re-render
@@ -3638,13 +3646,14 @@
 				// so the file tree re-renders when each scan returns. Failures
 				// are silent — a missing emoji is preferable to blocking the
 				// expand.
+				// SvelteMap mutations are reactive at the .set() level; the
+				// file tree re-renders the moment a key changes. The per-key
+				// `if (… !== stage)` guard skips no-op writes so unchanged
+				// entries don't fire spurious reactivity.
 				invoke<[string, string][]>('scan_note_stages', { libraryPath: lib.path })
 					.then((stages) => {
-						// §139: SvelteMap — direct .set() is reactive at the
-						// operation level. File tree re-renders for each entry
-						// added.
 						for (const [path, stage] of stages) {
-							const key = path.replace(/\\/g, '/').toLowerCase();
+							const key = normalizePathKey(path);
 							if (stageMap.get(key) !== stage) stageMap.set(key, stage);
 						}
 					})
@@ -3654,7 +3663,7 @@
 				)
 					.then((maturities) => {
 						for (const m of maturities) {
-							const key = m.note_path.replace(/\\/g, '/').toLowerCase();
+							const key = normalizePathKey(m.note_path);
 							if (maturityMap.get(key) !== m.state) maturityMap.set(key, m.state);
 						}
 					})
@@ -5014,11 +5023,7 @@
 									{linkTraversalMap}
 									onnavigateback={() => { setFocusedTab(tab.id); navigateBack(); }}
 									onnavigateforward={() => { setFocusedTab(tab.id); navigateForward(); }}
-									onStageChanged={(path, stage) => {
-										// §139: SvelteMap — direct mutation is reactive.
-										const key = path.replace(/\\/g, '/').toLowerCase();
-										if (stage) { stageMap.set(key, stage); } else { stageMap.delete(key); }
-									}}
+									onStageChanged={handleStageChanged}
 								/>
 							{:else}
 								<div class="new-tab-screen"><p>{$t('tabs.newTab')}</p></div>
@@ -5181,11 +5186,7 @@
 								}}
 								onnavigateback={() => navigateBack()}
 								onnavigateforward={() => navigateForward()}
-								onStageChanged={(path, stage) => {
-									// §139: SvelteMap — direct mutation is reactive.
-									const key = path.replace(/\\/g, '/').toLowerCase();
-									if (stage) { stageMap.set(key, stage); } else { stageMap.delete(key); }
-								}}
+								onStageChanged={handleStageChanged}
 								onmoreaction={async (action) => {
 									switch (action) {
 										case 'rename': {

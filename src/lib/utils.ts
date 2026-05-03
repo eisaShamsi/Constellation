@@ -532,6 +532,19 @@ export async function postProcessRenderedContent(container: HTMLElement) {
 }
 
 /**
+ * §141 — canonical normalisation for path keys used by every reactive
+ * `Map<filePath, V>` in the app (`stageMap`, `maturityMap`,
+ * `writeAheadBuffer`, `recentWrites`, the localStorage backups, etc.).
+ * Forward-slash + lowercase. Defined ONCE so the semantic contract is in
+ * one place — if a future filesystem change demands a different rule
+ * (e.g. case-sensitive volumes, NFC normalisation) the entire app picks
+ * it up from a single edit.
+ */
+export function normalizePathKey(p: string): string {
+	return p.replace(/\\/g, '/').toLowerCase();
+}
+
+/**
  * §137 — migrate every entry in a path-keyed Map from `oldPath` to `newPath`.
  *
  * Rule 8 (Write-Time Derivation): when a path mutates — file rename, folder
@@ -561,9 +574,8 @@ export function migratePathKeyedMap<V>(
 	oldPath: string,
 	newPath: string,
 ): Map<string, V> | null {
-	const norm = (p: string) => p.replace(/\\/g, '/').toLowerCase();
-	const oldKey = norm(oldPath);
-	const newKey = norm(newPath);
+	const oldKey = normalizePathKey(oldPath);
+	const newKey = normalizePathKey(newPath);
 	if (oldKey === newKey) return null;
 	if (map.size === 0) return null;
 
@@ -599,9 +611,8 @@ export function migratePathKeyedMapInPlace<V>(
 	oldPath: string,
 	newPath: string,
 ): boolean {
-	const norm = (p: string) => p.replace(/\\/g, '/').toLowerCase();
-	const oldKey = norm(oldPath);
-	const newKey = norm(newPath);
+	const oldKey = normalizePathKey(oldPath);
+	const newKey = normalizePathKey(newPath);
 	if (oldKey === newKey) return false;
 	if (map.size === 0) return false;
 
