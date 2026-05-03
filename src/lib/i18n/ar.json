@@ -549,6 +549,22 @@
     "rename": "إعادة تسمية",
     "delete": "حذف"
   },
+  "createDialog": {
+    "titleFolder": "مجلد جديد",
+    "titleNote": "ملاحظة جديدة",
+    "titleBase": "قاعدة جديدة",
+    "titleLibrary": "مكتبة جديدة",
+    "nameLabel": "الاسم",
+    "locationLabel": "الموقع",
+    "locationPlaceholder": "— اختر موقعًا —",
+    "pickLocationButton": "اختر…",
+    "create": "إنشاء",
+    "creating": "جاري الإنشاء…",
+    "cancel": "إلغاء",
+    "errorEmpty": "لا يمكن أن يكون الاسم فارغًا",
+    "errorIllegalChars": "يحتوي الاسم على رموز غير مسموح بها: \\ / : * ? \" < > |",
+    "defaultLibrary": "مكتبتي"
+  },
   "ribbon": {
     "fileExplorer": "المستكشف",
     "search": "بحث",

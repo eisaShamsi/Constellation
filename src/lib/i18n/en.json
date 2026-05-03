@@ -546,6 +546,22 @@
     "rename": "Rename",
     "delete": "Delete"
   },
+  "createDialog": {
+    "titleFolder": "New Folder",
+    "titleNote": "New Note",
+    "titleBase": "New Base",
+    "titleLibrary": "New Library",
+    "nameLabel": "Name",
+    "locationLabel": "Location",
+    "locationPlaceholder": "— pick a location —",
+    "pickLocationButton": "Pick…",
+    "create": "Create",
+    "creating": "Creating…",
+    "cancel": "Cancel",
+    "errorEmpty": "Name cannot be empty",
+    "errorIllegalChars": "Name contains illegal characters: \\ / : * ? \" < > |",
+    "defaultLibrary": "My Library"
+  },
   "ribbon": {
     "fileExplorer": "File explorer",
     "search": "Search",
