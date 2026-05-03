@@ -159,7 +159,8 @@ Commit: `42e9693`. Production rebuild kicks off after this commit.
 
 ## Pending after §141
 
-- **MIG-006 §4–§11**: reindex via `index_note` (closes the stale `outgoing_links_json` gap Boss surfaced in Stage 1 — Outgoing Links panel still shows old target names after a cascade), sync/async dispatch + progress events (P6 — hub-rename UX), atomic per-file writes via tempfile (P5 — kill-mid-cascade integrity), pre-MIG-006 backfill command for stale wikilinks. **§4 is the natural next item.**
+- **Standard OS-style create dialog for Folder / Note / Base / Library** (Boss directive 2026-05-03). Currently auto-creates with default names ("New Folder", "Untitled") and expects in-place rename. Should behave like Explorer / Finder: modal with name input + location picker + Cancel/Create. Applies to all four create surfaces. Logged in project memory as `project_create_dialog_standardize.md`. Likely composes with the planned filename-collision popup (`project_rename_collision_popup_wanted.md`).
+- **MIG-006 §4–§11**: reindex via `index_note` (closes the stale `outgoing_links_json` gap Boss surfaced in Stage 1 — Outgoing Links panel still shows old target names after a cascade), sync/async dispatch + progress events (P6 — hub-rename UX), atomic per-file writes via tempfile (P5 — kill-mid-cascade integrity), pre-MIG-006 backfill command for stale wikilinks. **§4 is the natural next item if Boss wants to continue the rename-cascade arc.**
 - CE Phase 9 Path B / MIG-010 scale.
 - store.ts:1850 LinkLifecycle Option B fix (deferred until post-CE).
 - Other 13 locales — backfill §120 inspector360 keys.
