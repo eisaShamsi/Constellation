@@ -96,8 +96,6 @@
 	import LibrarySwitcher from '$lib/components/LibrarySwitcher.svelte';
 	import LibraryManager from '$lib/components/LibraryManager.svelte';
 	import LibraryPicker from '$lib/components/LibraryPicker.svelte';
-	// MIG-008 §Build.6 — NewBaseDialog import removed; superseded by the
-	// shared CreateItemDialog (see §Build.4).
 	import OutgoingLinksPanel from '$lib/components/OutgoingLinksPanel.svelte';
 	import IndexPanel from '$lib/components/IndexPanel.svelte';
 	import UniverseSetup from '$lib/components/UniverseSetup.svelte';
@@ -2955,87 +2953,79 @@
 	// this auto-incremented "Untitled", "Untitled 1", … via a 100-iter loop;
 	// the user now names it upfront. Template + frontmatter + edit-mode logic
 	// preserved unchanged inside the onCreate callback.
+	// §152 — single helper that BOTH right-click and toolbar paths invoke. Boss
+	// directive 2026-05-03 (right-click should respect folder templates the
+	// same way toolbar does). Pre-§152 right-click did createNote+open only;
+	// toolbar did create + template + frontmatter merge + open + edit-mode.
+	// Now both paths apply templates uniformly. The location parameter is
+	// the parent folder (the dialog's chosen location).
+	async function createNoteWithTemplate(
+		lib: { id: string; name: string; path: string },
+		location: string,
+		name: string,
+	): Promise<void> {
+		const defaultFM = buildDefaultFrontmatter($appSettings);
+		const newPath = await createNote(location, name, defaultFM);
+		if (!newPath) return;
+
+		// Resolve template: check folder templates first, then default.md.
+		let templateBody = '';
+		if ($appSettings.enabledFeatures?.templates) {
+			try {
+				const tplDir: string = await invoke('get_templates_dir');
+				const noteFolder = newPath.replace(/\\/g, '/').split('/').slice(0, -1).join('/');
+				const folderTpls = $appSettings.folderTemplates || {};
+				let matchedTpl = '';
+				let matchDepth = -1;
+				for (const [folder, tplName] of Object.entries(folderTpls)) {
+					const normFolder = folder.replace(/\\/g, '/');
+					if (noteFolder.includes(normFolder) || noteFolder.endsWith(normFolder)) {
+						const depth = normFolder.split('/').length;
+						if (depth > matchDepth) { matchDepth = depth; matchedTpl = tplName; }
+					}
+				}
+				const tplFile = matchedTpl || 'default';
+				const tplPath = `${tplDir}/${tplFile.endsWith('.md') ? tplFile : tplFile + '.md'}`;
+				const tpl: string = await invoke('read_note', { filePath: tplPath });
+				if (tpl) templateBody = parseFrontmatter(tpl).body;
+			} catch { /* no template — OK */ }
+		}
+
+		// Apply template if found — preserve canonical frontmatter fields (cid_cn, kind, title).
+		// §152 — uses parseFrontmatter (canonical YAML reader) instead of the prior
+		// hand-rolled regex, eliminating drift surface.
+		if (templateBody.trim()) {
+			try {
+				const noteContent: string = await invoke('read_note', { filePath: newPath });
+				const parsed = parseFrontmatter(noteContent);
+				const canonicalKeys = new Set(['title', 'cid', 'cid_cn', 'kind']);
+				const canonicalFields: string[] = parsed.properties
+					.filter(p => canonicalKeys.has(p.key.toLowerCase()))
+					.map(p => `${p.key}: ${p.value}`);
+				const noteFolder = newPath.replace(/\\/g, '/').split('/').slice(-2, -1)[0] || '';
+				const ctx = { title: name, folder: noteFolder, library: lib.name, filePath: newPath };
+				const result = await processTemplateAsync(templateBody, ctx, buildTemplateCallbacks());
+				const mergedFM = [...canonicalFields, ...defaultFM.split('\n').filter(l => {
+					const key = l.split(':')[0]?.trim();
+					return key && !canonicalFields.some(cf => cf.startsWith(key + ':'));
+				})].join('\n');
+				const fullContent = `---\n${mergedFM}\n---\n${result.content}`;
+				await invoke('write_note', { filePath: newPath, content: fullContent });
+			} catch { /* template write failed — note still created */ }
+		}
+
+		await refreshLibraryTree(lib.id);
+		const libraryColor = libraryColorMap[lib.name] ?? '#7c3aed';
+		await openNoteTab(newPath, lib.name, libraryColor);
+		const tab = get(focusedTab);
+		if (tab) toggleEditMode(tab.id);
+	}
+
 	function createNoteInLibrary(lib: { id: string; name: string; path: string }) {
 		createDialog = {
 			kind: 'note',
 			parentPath: lib.path,
-			onCreate: async ({ name, location }) => {
-				// Build default frontmatter with auto-dates + user defaults
-				const defaultFM = buildDefaultFrontmatter($appSettings);
-
-				// Template will be resolved after path is determined (for folder templates)
-				let templateBody = '';
-
-				const newPath = await createNote(location, name, defaultFM);
-				if (!newPath) return;
-
-				// Resolve template: check folder templates first, then default.md
-				if ($appSettings.enabledFeatures?.templates) {
-					try {
-						const tplDir: string = await invoke('get_templates_dir');
-						const noteFolder = newPath.replace(/\\/g, '/').split('/').slice(0, -1).join('/');
-
-						// Check folder templates (deepest match wins)
-						const folderTpls = $appSettings.folderTemplates || {};
-						let matchedTpl = '';
-						let matchDepth = -1;
-						for (const [folder, tplName] of Object.entries(folderTpls)) {
-							const normFolder = folder.replace(/\\/g, '/');
-							if (noteFolder.includes(normFolder) || noteFolder.endsWith(normFolder)) {
-								const depth = normFolder.split('/').length;
-								if (depth > matchDepth) {
-									matchDepth = depth;
-									matchedTpl = tplName;
-								}
-							}
-						}
-
-						const tplFile = matchedTpl || 'default';
-						const tplPath = `${tplDir}/${tplFile.endsWith('.md') ? tplFile : tplFile + '.md'}`;
-						const tpl: string = await invoke('read_note', { filePath: tplPath });
-						if (tpl) {
-							const tplParsed = parseFrontmatter(tpl);
-							templateBody = tplParsed.body;
-						}
-					} catch { /* no template — OK */ }
-				}
-
-				// Apply template if found — preserve canonical frontmatter fields (cid, kind, title)
-				if (templateBody.trim()) {
-					try {
-						// Read back the canonical frontmatter that create_note injected
-						const noteContent: string = await invoke('read_note', { filePath: newPath });
-						const canonicalFields: string[] = [];
-						const fmMatch = noteContent.match(/^---\n([\s\S]*?)\n---/);
-						if (fmMatch) {
-							for (const line of fmMatch[1].split('\n')) {
-								const tt = line.trim();
-								if (tt.startsWith('title:') || tt.startsWith('cid:') || tt.startsWith('kind:')) {
-									canonicalFields.push(tt);
-								}
-							}
-						}
-
-						const noteFolder = newPath.replace(/\\/g, '/').split('/').slice(-2, -1)[0] || '';
-						const ctx = { title: name, folder: noteFolder, library: lib.name, filePath: newPath };
-						const result = await processTemplateAsync(templateBody, ctx, buildTemplateCallbacks());
-						// Merge: canonical fields first, then user defaults (skip duplicates)
-						const mergedFM = [...canonicalFields, ...defaultFM.split('\n').filter(l => {
-							const key = l.split(':')[0]?.trim();
-							return key && !canonicalFields.some(cf => cf.startsWith(key + ':'));
-						})].join('\n');
-						const fullContent = `---\n${mergedFM}\n---\n${result.content}`;
-						await invoke('write_note', { filePath: newPath, content: fullContent });
-					} catch { /* template write failed — note still created */ }
-				}
-
-				await refreshLibraryTree(lib.id);
-				const libraryColor = libraryColorMap[lib.name] ?? '#7c3aed';
-				await openNoteTab(newPath, lib.name, libraryColor);
-				// Auto-enter edit mode
-				const tab = get(focusedTab);
-				if (tab) toggleEditMode(tab.id);
-			},
+			onCreate: ({ name, location }) => createNoteWithTemplate(lib, location, name),
 		};
 	}
 
@@ -3821,21 +3811,23 @@
 	let createDialog = $state<{
 		kind: CreateKind;
 		parentPath: string;
-		defaultName?: string;
 		hideLocation?: boolean;
-		/** When `kind === 'base'` workspace, this is `'baseLibraryPicker'` so
-		 *  the template renders the library multi-select snippet. Other kinds
-		 *  leave it undefined. */
+		/** When `kind === 'base'` workspace, this is `'baseLibraryPicker'` so the
+		 *  template renders the library multi-select snippet (snippets are
+		 *  template-scoped in Svelte 5; this discriminator is the bridge from
+		 *  state to the template's snippet table). Other kinds leave it undefined. */
 		extrasKind?: 'baseLibraryPicker';
 		onCreate: (args: { name: string; location: string }) => Promise<boolean | void>;
 	} | null>(null);
 
-	// MIG-008 §Build.4: state for Base's library multi-select extras.
-	// Reset on each base-create open. Empty list means "all libraries"
-	// (matching the pre-MIG-008 NewBaseDialog behaviour).
+	// State for Base's library multi-select extras. Reset on each base-create
+	// open. Empty list means "all libraries". `baseSelectedSet` is a $derived
+	// O(1)-lookup view used by the snippet's per-library `class:active` and
+	// `checked` bindings — avoids O(N²) `.includes` at federation scale.
 	let baseSelectedLibraries = $state<string[]>([]);
+	let baseSelectedSet = $derived(new Set(baseSelectedLibraries));
 	function toggleBaseLibrary(name: string) {
-		if (baseSelectedLibraries.includes(name)) {
+		if (baseSelectedSet.has(name)) {
 			baseSelectedLibraries = baseSelectedLibraries.filter(v => v !== name);
 		} else {
 			baseSelectedLibraries = [...baseSelectedLibraries, name];
@@ -3967,19 +3959,17 @@
 
 	// MIG-008 §Build.3 — sidebar right-click "+ New Note" opens the shared
 	// create-dialog with the right-clicked folder pre-filled as the parent.
+	// §152 — Boss-approved: right-click now ALSO applies folder templates
+	// (via the shared `createNoteWithTemplate` helper). Pre-§152 the
+	// right-click path skipped templates while toolbar applied them — that
+	// inconsistency is closed.
 	function handleCreateNote(folderPath: string, libraryId: string) {
 		const lib = $libraries.find(v => v.id === libraryId);
+		if (!lib) return;
 		createDialog = {
 			kind: 'note',
 			parentPath: folderPath,
-			onCreate: async ({ name, location }) => {
-				const newPath = await createNote(location, name);
-				await refreshLibraryTree(libraryId);
-				if (lib) {
-					const libraryColor = libraryColorMap[lib.name] ?? '#7c3aed';
-					await openNoteTab(newPath, lib.name, libraryColor);
-				}
-			},
+			onCreate: ({ name, location }) => createNoteWithTemplate(lib, location, name),
 		};
 	}
 
@@ -6030,22 +6020,20 @@
 	{/if}
 
 	{#snippet baseLibraryPickerExtras()}
+		{@const allSelected = baseSelectedLibraries.length === 0}
 		<div class="cd-base-libs">
 			<div class="cd-base-libs-label">{$t('bases.source.librariesLabel') || 'Libraries to query'}</div>
 			<div class="cd-base-libs-list">
-				<label class="cd-base-libs-item" class:cd-base-libs-active={baseSelectedLibraries.length === 0}>
-					<input
-						type="checkbox"
-						checked={baseSelectedLibraries.length === 0}
-						onchange={() => baseSelectedLibraries = []}
-					/>
+				<label class="cd-base-libs-item" class:cd-base-libs-active={allSelected}>
+					<input type="checkbox" checked={allSelected} onchange={() => baseSelectedLibraries = []} />
 					<span>{$t('bases.source.allLibraries') || 'All libraries'}</span>
 				</label>
 				{#each $libraries as v}
-					<label class="cd-base-libs-item" class:cd-base-libs-active={baseSelectedLibraries.includes(v.name)}>
+					{@const isSelected = baseSelectedSet.has(v.name)}
+					<label class="cd-base-libs-item" class:cd-base-libs-active={isSelected}>
 						<input
 							type="checkbox"
-							checked={baseSelectedLibraries.length === 0 || baseSelectedLibraries.includes(v.name)}
+							checked={allSelected || isSelected}
 							onchange={() => toggleBaseLibrary(v.name)}
 						/>
 						<span class="cd-base-libs-dot" style="background: {libraryColorMap[v.name] || '#7c3aed'}"></span>
@@ -6061,7 +6049,6 @@
 			open={true}
 			kind={createDialog.kind}
 			parentPath={createDialog.parentPath}
-			defaultName={createDialog.defaultName}
 			hideLocation={createDialog.hideLocation}
 			extras={createDialog.extrasKind === 'baseLibraryPicker' ? baseLibraryPickerExtras : undefined}
 			onClose={() => createDialog = null}

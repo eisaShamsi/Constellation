@@ -548,6 +548,22 @@
     "rename": "Renombrar",
     "delete": "Eliminar"
   },
+  "createDialog": {
+    "titleFolder": "Nueva carpeta",
+    "titleNote": "Nueva nota",
+    "titleBase": "Nueva base",
+    "titleLibrary": "Nueva biblioteca",
+    "nameLabel": "Nombre",
+    "locationLabel": "Ubicación",
+    "locationPlaceholder": "— elija una ubicación —",
+    "pickLocationButton": "Elegir…",
+    "create": "Crear",
+    "creating": "Creando…",
+    "cancel": "Cancelar",
+    "errorEmpty": "El nombre no puede estar vacío",
+    "errorIllegalChars": "El nombre contiene caracteres no permitidos: \\ / : * ? \" < > |",
+    "defaultLibrary": "Mi biblioteca"
+  },
   "ribbon": {
     "fileExplorer": "Explorador de archivos",
     "search": "Búsqueda",

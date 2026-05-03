@@ -548,6 +548,22 @@
     "rename": "이름 변경",
     "delete": "삭제"
   },
+  "createDialog": {
+    "titleFolder": "새 폴더",
+    "titleNote": "새 노트",
+    "titleBase": "새 베이스",
+    "titleLibrary": "새 라이브러리",
+    "nameLabel": "이름",
+    "locationLabel": "위치",
+    "locationPlaceholder": "— 위치를 선택하세요 —",
+    "pickLocationButton": "선택…",
+    "create": "만들기",
+    "creating": "만드는 중…",
+    "cancel": "취소",
+    "errorEmpty": "이름은 비워둘 수 없습니다",
+    "errorIllegalChars": "이름에 허용되지 않는 문자가 포함되어 있습니다: \\ / : * ? \" < > |",
+    "defaultLibrary": "내 라이브러리"
+  },
   "ribbon": {
     "fileExplorer": "파일 탐색기",
     "search": "검색",

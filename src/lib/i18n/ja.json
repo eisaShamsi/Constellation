@@ -548,6 +548,22 @@
     "rename": "名前を変更",
     "delete": "削除"
   },
+  "createDialog": {
+    "titleFolder": "新規フォルダ",
+    "titleNote": "新規ノート",
+    "titleBase": "新規ベース",
+    "titleLibrary": "新規ライブラリ",
+    "nameLabel": "名前",
+    "locationLabel": "場所",
+    "locationPlaceholder": "— 場所を選択 —",
+    "pickLocationButton": "選択…",
+    "create": "作成",
+    "creating": "作成中…",
+    "cancel": "キャンセル",
+    "errorEmpty": "名前を空にすることはできません",
+    "errorIllegalChars": "名前に使用できない文字が含まれています: \\ / : * ? \" < > |",
+    "defaultLibrary": "マイライブラリ"
+  },
   "ribbon": {
     "fileExplorer": "ファイルエクスプローラー",
     "search": "検索",

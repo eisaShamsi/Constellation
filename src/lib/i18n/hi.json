@@ -548,6 +548,22 @@
     "rename": "नाम बदलें",
     "delete": "हटाएँ"
   },
+  "createDialog": {
+    "titleFolder": "नया फ़ोल्डर",
+    "titleNote": "नया नोट",
+    "titleBase": "नया बेस",
+    "titleLibrary": "नई लाइब्रेरी",
+    "nameLabel": "नाम",
+    "locationLabel": "स्थान",
+    "locationPlaceholder": "— एक स्थान चुनें —",
+    "pickLocationButton": "चुनें…",
+    "create": "बनाएँ",
+    "creating": "बनाया जा रहा है…",
+    "cancel": "रद्द करें",
+    "errorEmpty": "नाम खाली नहीं हो सकता",
+    "errorIllegalChars": "नाम में अमान्य अक्षर हैं: \\ / : * ? \" < > |",
+    "defaultLibrary": "मेरी लाइब्रेरी"
+  },
   "ribbon": {
     "fileExplorer": "फ़ाइल एक्सप्लोरर",
     "search": "खोज",

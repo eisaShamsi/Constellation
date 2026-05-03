@@ -548,6 +548,22 @@
     "rename": "Yeniden Adlandır",
     "delete": "Sil"
   },
+  "createDialog": {
+    "titleFolder": "Yeni Klasör",
+    "titleNote": "Yeni Not",
+    "titleBase": "Yeni Temel",
+    "titleLibrary": "Yeni Kitaplık",
+    "nameLabel": "Ad",
+    "locationLabel": "Konum",
+    "locationPlaceholder": "— bir konum seçin —",
+    "pickLocationButton": "Seç…",
+    "create": "Oluştur",
+    "creating": "Oluşturuluyor…",
+    "cancel": "İptal",
+    "errorEmpty": "Ad boş olamaz",
+    "errorIllegalChars": "Ad geçersiz karakterler içeriyor: \\ / : * ? \" < > |",
+    "defaultLibrary": "Kitaplığım"
+  },
   "ribbon": {
     "fileExplorer": "Dosya gezgini",
     "search": "Arama",

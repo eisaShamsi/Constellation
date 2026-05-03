@@ -548,6 +548,22 @@
     "rename": "Переименовать",
     "delete": "Удалить"
   },
+  "createDialog": {
+    "titleFolder": "Новая папка",
+    "titleNote": "Новая заметка",
+    "titleBase": "Новая база",
+    "titleLibrary": "Новая библиотека",
+    "nameLabel": "Имя",
+    "locationLabel": "Расположение",
+    "locationPlaceholder": "— выберите расположение —",
+    "pickLocationButton": "Выбрать…",
+    "create": "Создать",
+    "creating": "Создание…",
+    "cancel": "Отмена",
+    "errorEmpty": "Имя не может быть пустым",
+    "errorIllegalChars": "Имя содержит недопустимые символы: \\ / : * ? \" < > |",
+    "defaultLibrary": "Моя библиотека"
+  },
   "ribbon": {
     "fileExplorer": "Проводник файлов",
     "search": "Поиск",

@@ -548,6 +548,22 @@
     "rename": "تغییر نام",
     "delete": "حذف"
   },
+  "createDialog": {
+    "titleFolder": "پوشه جدید",
+    "titleNote": "یادداشت جدید",
+    "titleBase": "پایگاه جدید",
+    "titleLibrary": "کتابخانه جدید",
+    "nameLabel": "نام",
+    "locationLabel": "مکان",
+    "locationPlaceholder": "— مکانی را انتخاب کنید —",
+    "pickLocationButton": "انتخاب…",
+    "create": "ایجاد",
+    "creating": "در حال ایجاد…",
+    "cancel": "لغو",
+    "errorEmpty": "نام نمی‌تواند خالی باشد",
+    "errorIllegalChars": "نام شامل نویسه‌های غیرمجاز است: \\ / : * ? \" < > |",
+    "defaultLibrary": "کتابخانه من"
+  },
   "ribbon": {
     "fileExplorer": "مرورگر فایل",
     "search": "جستجو",

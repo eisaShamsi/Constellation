@@ -28,7 +28,6 @@
 		open,
 		kind,
 		parentPath = '',
-		defaultName,
 		hideLocation = false,
 		extras,
 		onClose,
@@ -36,73 +35,51 @@
 	}: {
 		open: boolean;
 		kind: CreateKind;
-		/** Parent location. Empty string → user must pick (Library / no-context invocations).
-		 *  Non-empty → location shown read-only (right-click context already knows it).
-		 *  Ignored when `hideLocation` is true. */
+		/** Parent location. Empty string → user must pick (Library / no-context
+		 *  invocations). Non-empty → location shown read-only. Ignored when
+		 *  `hideLocation` is true. */
 		parentPath?: string;
-		/** Override the kind's default name. If absent, the kind's i18n default is used. */
-		defaultName?: string;
-		/** Hide the location field entirely (workspace bases — always live in the workspace
-		 *  directory, no location for the user to pick or confirm). */
+		/** Hide the location field entirely (workspace bases). */
 		hideLocation?: boolean;
-		/** Optional kind-specific extras (e.g. Base's library multi-select). Snippet pattern. */
+		/** Optional kind-specific extras snippet (e.g. Base's library multi-select). */
 		extras?: Snippet;
 		onClose: () => void;
-		/** Caller commits the create on disk + runs post-create UX.
-		 *  Receives the validated name + location.
-		 *  Returns true on success (dialog closes), false on failure (dialog stays open).
-		 *  May throw — message will be displayed as the inline error. */
+		/** Caller commits the create on disk + runs post-create UX. Returns
+		 *  `true`/void on success (dialog closes), `false` to keep dialog open.
+		 *  May throw — message displayed as inline error. */
 		onCreate: (args: { name: string; location: string }) => Promise<boolean | void> | boolean | void;
 	} = $props();
 
-	// ─── State ───
-	let name = $state('');
-	let location = $state('');
+	// §152 — single per-kind label table. Replaces the two switch statements
+	// (titleForKind, defaultNameForKind) with one lookup, keeps the i18n key
+	// pairing co-located so adding a new kind is a single-row edit.
+	const KIND_LABELS: Record<CreateKind, { titleKey: string; defaultNameKey: string; titleFallback: string; defaultFallback: string }> = {
+		folder: { titleKey: 'createDialog.titleFolder', defaultNameKey: 'actions.newFolder', titleFallback: 'New Folder', defaultFallback: 'New Folder' },
+		note: { titleKey: 'createDialog.titleNote', defaultNameKey: 'actions.untitled', titleFallback: 'New Note', defaultFallback: 'Untitled' },
+		base: { titleKey: 'createDialog.titleBase', defaultNameKey: 'bases.untitled', titleFallback: 'New Base', defaultFallback: 'Untitled Base' },
+		library: { titleKey: 'createDialog.titleLibrary', defaultNameKey: 'createDialog.defaultLibrary', titleFallback: 'New Library', defaultFallback: 'My Library' },
+	};
+
+	// §152 — `{#if createDialog}` re-mounts this component on each open, so
+	// `$state` initializers run once per invocation. Replaces the §Build.1
+	// `lastOpenState + $effect` dance with the simpler init-on-mount pattern.
+	const labels = KIND_LABELS[kind];
+	let name = $state($t(labels.defaultNameKey) || labels.defaultFallback);
+	let location = $state(parentPath);
 	let inlineError = $state('');
 	let submitting = $state(false);
 	let inputEl: HTMLInputElement | undefined = $state();
-	let lastOpenState = false;
 
-	// Reset state on each open (capture defaults). Pre-select the name so
-	// overtype-from-empty is one keystroke (I2).
+	// Pre-select the name on mount so overtype-from-default is one keystroke (I2).
 	$effect(() => {
-		if (open && !lastOpenState) {
-			name = defaultName ?? defaultNameForKind(kind);
-			location = parentPath;
-			inlineError = '';
-			submitting = false;
-			// Focus + select on next microtask so the input element is mounted
-			queueMicrotask(() => {
-				inputEl?.focus();
-				inputEl?.select();
-			});
-		}
-		lastOpenState = open;
+		queueMicrotask(() => {
+			inputEl?.focus();
+			inputEl?.select();
+		});
 	});
 
-	function defaultNameForKind(k: CreateKind): string {
-		switch (k) {
-			case 'folder': return $t('actions.newFolder') || 'New Folder';
-			case 'note': return $t('actions.untitled') || 'Untitled';
-			case 'base': return $t('bases.untitled') || 'Untitled Base';
-			case 'library': return $t('createDialog.defaultLibrary') || 'My Library';
-		}
-	}
-
-	function titleForKind(k: CreateKind): string {
-		switch (k) {
-			case 'folder': return $t('createDialog.titleFolder') || 'New Folder';
-			case 'note': return $t('createDialog.titleNote') || 'New Note';
-			case 'base': return $t('createDialog.titleBase') || 'New Base';
-			case 'library': return $t('createDialog.titleLibrary') || 'New Library';
-		}
-	}
-
 	// I5 — validation. Empty → disabled. Illegal chars → inline error + disabled.
-	// Collision is checked at IPC time (caller surfaces errors via thrown message
-	// or false return) — until the planned filename-collision popup lands.
 	const ILLEGAL_CHARS_RE = /[\\/:*?"<>|]/;
-
 	let validationError = $derived.by(() => {
 		const trimmed = name.trim();
 		if (!trimmed) return $t('createDialog.errorEmpty') || 'Name cannot be empty';
@@ -112,12 +89,9 @@
 		return '';
 	});
 
-	// Location is required only when it's user-pickable (not when hidden, not
-	// when shown read-only — those are already known/valid by construction).
+	// Location is required only when user-pickable (not hidden, not pre-filled read-only).
 	let canCreate = $derived(
-		!submitting
-		&& !validationError
-		&& (hideLocation || parentPath !== '' || location.trim() !== '')
+		!submitting && !validationError && (hideLocation || parentPath !== '' || location.trim() !== '')
 	);
 
 	async function handleCreate() {
@@ -129,7 +103,7 @@
 			const result = await onCreate({ name: trimmed, location });
 			if (result === false) {
 				submitting = false;
-				return; // caller decided to keep dialog open (e.g. validation failure)
+				return;
 			}
 			onClose();
 		} catch (e) {
@@ -144,6 +118,11 @@
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
+		// §152 — IME composition guard. During Arabic / CJK / any IME composition,
+		// Enter commits the candidate to the input — it MUST NOT also submit the
+		// dialog. Both browser flags are checked because some browsers only set
+		// one (`isComposing` is the spec; `keyCode === 229` is the legacy fallback).
+		if (e.isComposing || e.keyCode === 229) return;
 		if (e.key === 'Escape') {
 			e.preventDefault();
 			handleCancel();
@@ -154,11 +133,10 @@
 	}
 
 	async function pickLocation() {
-		// Library invocation flow — pick a parent folder via the Rust folder picker.
 		try {
 			const picked: string | null = await invoke('pick_folder');
 			if (picked) location = picked;
-		} catch { /* user cancelled or picker error — leave location unchanged */ }
+		} catch { /* user cancelled */ }
 	}
 </script>
 
@@ -167,7 +145,7 @@
 	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<div class="dialog-overlay" onclick={handleCancel} onkeydown={handleKeydown}>
 		<div class="dialog" role="dialog" aria-modal="true" aria-labelledby="cd-title" onclick={(e) => e.stopPropagation()}>
-			<h2 class="dialog-title" id="cd-title">{titleForKind(kind)}</h2>
+			<h2 class="dialog-title" id="cd-title">{$t(labels.titleKey) || labels.titleFallback}</h2>
 
 			<!-- Location (omitted entirely when hideLocation; e.g. workspace bases) -->
 			{#if !hideLocation}

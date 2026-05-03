@@ -548,6 +548,22 @@
     "rename": "שנה שם",
     "delete": "מחק"
   },
+  "createDialog": {
+    "titleFolder": "תיקייה חדשה",
+    "titleNote": "פתק חדש",
+    "titleBase": "בסיס חדש",
+    "titleLibrary": "ספרייה חדשה",
+    "nameLabel": "שם",
+    "locationLabel": "מיקום",
+    "locationPlaceholder": "— בחר מיקום —",
+    "pickLocationButton": "בחר…",
+    "create": "צור",
+    "creating": "יוצר…",
+    "cancel": "ביטול",
+    "errorEmpty": "השם לא יכול להיות ריק",
+    "errorIllegalChars": "השם מכיל תווים לא חוקיים: \\ / : * ? \" < > |",
+    "defaultLibrary": "הספרייה שלי"
+  },
   "ribbon": {
     "fileExplorer": "סייר קבצים",
     "search": "חיפוש",

@@ -548,6 +548,22 @@
     "rename": "نام تبدیل کریں",
     "delete": "حذف کریں"
   },
+  "createDialog": {
+    "titleFolder": "نیا فولڈر",
+    "titleNote": "نیا نوٹ",
+    "titleBase": "نیا بیس",
+    "titleLibrary": "نئی لائبریری",
+    "nameLabel": "نام",
+    "locationLabel": "مقام",
+    "locationPlaceholder": "— ایک مقام منتخب کریں —",
+    "pickLocationButton": "منتخب کریں…",
+    "create": "بنائیں",
+    "creating": "بنایا جا رہا ہے…",
+    "cancel": "منسوخ",
+    "errorEmpty": "نام خالی نہیں ہو سکتا",
+    "errorIllegalChars": "نام میں ناقابل قبول حروف ہیں: \\ / : * ? \" < > |",
+    "defaultLibrary": "میری لائبریری"
+  },
   "ribbon": {
     "fileExplorer": "فائل ایکسپلورر",
     "search": "تلاش",

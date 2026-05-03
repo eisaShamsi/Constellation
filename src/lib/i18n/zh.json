@@ -548,6 +548,22 @@
     "rename": "重命名",
     "delete": "删除"
   },
+  "createDialog": {
+    "titleFolder": "新建文件夹",
+    "titleNote": "新建笔记",
+    "titleBase": "新建数据库",
+    "titleLibrary": "新建库",
+    "nameLabel": "名称",
+    "locationLabel": "位置",
+    "locationPlaceholder": "— 选择一个位置 —",
+    "pickLocationButton": "选择…",
+    "create": "创建",
+    "creating": "正在创建…",
+    "cancel": "取消",
+    "errorEmpty": "名称不能为空",
+    "errorIllegalChars": "名称包含非法字符: \\ / : * ? \" < > |",
+    "defaultLibrary": "我的库"
+  },
   "ribbon": {
     "fileExplorer": "文件浏览器",
     "search": "搜索",

@@ -548,6 +548,22 @@
     "rename": "Umbenennen",
     "delete": "Löschen"
   },
+  "createDialog": {
+    "titleFolder": "Neuer Ordner",
+    "titleNote": "Neue Notiz",
+    "titleBase": "Neue Basis",
+    "titleLibrary": "Neue Bibliothek",
+    "nameLabel": "Name",
+    "locationLabel": "Speicherort",
+    "locationPlaceholder": "— Speicherort wählen —",
+    "pickLocationButton": "Wählen…",
+    "create": "Erstellen",
+    "creating": "Wird erstellt…",
+    "cancel": "Abbrechen",
+    "errorEmpty": "Name darf nicht leer sein",
+    "errorIllegalChars": "Name enthält ungültige Zeichen: \\ / : * ? \" < > |",
+    "defaultLibrary": "Meine Bibliothek"
+  },
   "ribbon": {
     "fileExplorer": "Datei-Explorer",
     "search": "Suche",

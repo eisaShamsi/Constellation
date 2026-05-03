@@ -1687,6 +1687,10 @@ pub async fn pick_folder() -> Result<Option<String>, String> {
 /// Pick a parent folder, create a named subfolder, and register it as a library.
 #[tauri::command]
 pub async fn create_new_library(app: tauri::AppHandle, name: String) -> Result<Option<LibraryInfo>, String> {
+    // §152 hardening: validate the user-supplied name BEFORE touching the
+    // filesystem. Blocks `..`, `/`, `\` — same rule as `create_folder`.
+    let safe_name = sanitize_name(&name)?;
+
     // 1. Pick parent location
     let parent = rfd::FileDialog::new()
         .set_title("Choose location for new library")
@@ -1697,9 +1701,9 @@ pub async fn create_new_library(app: tauri::AppHandle, name: String) -> Result<O
     };
 
     // 2. Create the library folder
-    let library_dir = parent_path.join(&name);
+    let library_dir = parent_path.join(&safe_name);
     if library_dir.exists() {
-        return Err(format!("Folder '{}' already exists at that location", name));
+        return Err(format!("Folder '{}' already exists at that location", safe_name));
     }
     fs::create_dir_all(&library_dir)
         .map_err(|e| format!("Failed to create library folder: {}", e))?;
@@ -1716,15 +1720,23 @@ pub async fn create_new_library(app: tauri::AppHandle, name: String) -> Result<O
 /// chosen location IN the dialog before confirming. The pre-MIG-008 flow
 /// (`create_new_library`) opens its own folder picker AFTER the user clicks
 /// Create — kept for backward compatibility but no longer the primary path.
-#[tauri::command]
+///
+/// `(async)` per §152 — the work is `create_dir_all` + `add_library` which
+/// touches the filesystem AND writes the libraries config; sync would block
+/// the WebView UI thread on slow disk / network shares (per the watcher.rs
+/// rationale at watch_library).
+#[tauri::command(async)]
 pub fn create_new_library_at(
     app: tauri::AppHandle,
     parent_path: String,
     name: String,
 ) -> Result<LibraryInfo, String> {
-    let library_dir = Path::new(&parent_path).join(&name);
+    // §152 hardening: validate the user-supplied name BEFORE touching the
+    // filesystem. Blocks `..`, `/`, `\`.
+    let safe_name = sanitize_name(&name)?;
+    let library_dir = Path::new(&parent_path).join(&safe_name);
     if library_dir.exists() {
-        return Err(format!("Folder '{}' already exists at that location", name));
+        return Err(format!("Folder '{}' already exists at that location", safe_name));
     }
     fs::create_dir_all(&library_dir)
         .map_err(|e| format!("Failed to create library folder: {}", e))?;

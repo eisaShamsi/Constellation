@@ -5,17 +5,21 @@
 	import { marked } from 'marked';
 	import {
 		libraries, libraryStats, selectedNote, searchResults, appSettings,
-		loadLibraries, loadAllStats, addLibrary, createNewLibrary, removeLibrary,
+		loadLibraries, loadAllStats, addLibrary, createNewLibraryAt, removeLibrary,
 		searchAllStars, closeNote, timeAgo, openNoteTab
 	} from '$lib/libraries/store';
 	import type { LibraryStats, FileEntry } from '$lib/libraries/store';
 	import { getChildUniverses, type ChildUniverseInfo } from '$lib/universe/store';
 	import FileTree from '$lib/components/FileTree.svelte';
+	import CreateItemDialog from '$lib/components/CreateItemDialog.svelte';
 
 	let error = $state('');
 	let adding = $state(false);
-	let creatingNew = $state(false);
-	let newLibraryName = $state('');
+	// MIG-008 §152 — `creatingNew` / `newLibraryName` removed; the inline
+	// "Create new library" form on this Library Manager screen now opens the
+	// shared CreateItemDialog (kind='library') for consistency with the rest
+	// of the create surfaces (sidebar, command palette, welcome card).
+	let createLibraryOpen = $state(false);
 	let searchQuery = $state('');
 	let searchTimeout: ReturnType<typeof setTimeout>;
 
@@ -115,15 +119,12 @@
 		adding = false;
 	}
 
-	async function handleCreateNew() {
-		const name = newLibraryName.trim() || 'My Library';
-		creatingNew = true;
+	// MIG-008 §152 — opens the shared CreateItemDialog. The dialog handles
+	// name + location collection + validation; on commit it invokes
+	// `createNewLibraryAt(parentPath, name)`.
+	function handleCreateNew() {
 		error = '';
-		try {
-			await createNewLibrary(name);
-			newLibraryName = '';
-		} catch (e) { error = String(e); }
-		creatingNew = false;
+		createLibraryOpen = true;
 	}
 
 	async function handleRemove(e: Event, id: string) {
@@ -299,18 +300,9 @@
 							<div class="option-icon">📁</div>
 							<h3>{$t('libraries.newLibrary')}</h3>
 							<p>{$t('libraries.newLibraryDesc')}</p>
-							<div class="new-lib-form">
-								<input
-									type="text"
-									class="lib-name-input"
-									placeholder="My Library"
-									bind:value={newLibraryName}
-									onkeydown={(e) => e.key === 'Enter' && handleCreateNew()}
-								/>
-								<button class="option-btn primary" onclick={handleCreateNew} disabled={creatingNew}>
-									{creatingNew ? '...' : '+ Create'}
-								</button>
-							</div>
+							<button class="option-btn primary" onclick={handleCreateNew}>
+								+ {$t('libraries.newLibrary')}
+							</button>
 						</div>
 
 						<!-- Option 2: Link Existing -->
@@ -345,6 +337,19 @@
 		{/if}
 	</main>
 </div>
+
+{#if createLibraryOpen}
+	<CreateItemDialog
+		open={true}
+		kind="library"
+		parentPath=""
+		onClose={() => createLibraryOpen = false}
+		onCreate={async ({ name, location }) => {
+			await createNewLibraryAt(location, name);
+			await loadAllStats();
+		}}
+	/>
+{/if}
 
 <style>
 	.workspace-layout {
