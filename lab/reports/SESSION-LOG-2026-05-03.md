@@ -220,7 +220,57 @@ Architect doc: `lab/reports/MIG-008-CREATE-DIALOG-ARCHITECT.md`. Commit: `22839d
 
 Out of scope for MIG-008: filename-collision popup (separate `project_rename_collision_popup_wanted.md`), template/properties picker, inline-tree gesture, default-frontmatter changes.
 
-## Pending after MIG-008 Phase 1
+## MIG-008 §Build.1–§Build.6 (§145–§150)
+
+Cascaded through the architect plan:
+- §145 — CreateItemDialog component + i18n keys (en + ar)
+- §146 — Wire New Folder (right-click + library-toolbar)
+- §147 — Wire New Note (right-click + library-toolbar + command palette)
+- §148 — Wire New Base (workspace + folder-context); kind-specific extras snippet for library multi-select
+- §149 — Wire New Library + new Rust IPC `create_new_library_at(parent_path, name)` (async per §152)
+- §150 — Orphan sweep: removed 5 state vars + 2 functions + welcome-screen inline form; deleted `NewBaseDialog.svelte`
+
+## §151 — Boss-flagged context-menu gaps
+
+After Boss tested the §150 binary, two findings:
+1. Folder right-click was missing "New Base" — added.
+2. Library / Universe row right-click fell through to browser-default menu — wired `oncontextmenu` on all three library-header sites with a slim menu (New Note / New Folder / New Base; Rename + Delete suppressed at library level).
+
+Boss tested §151 binary: 4/4 PASS.
+
+## §152 (Build.7) — /simplify checkpoint
+
+Three review agents (reuse / quality / efficiency) walked §145–§151. Tier 1+2+3 fixes shipped + four Boss-approved adds:
+
+**Closure-blockers**: i18n backfill 13 locales (de/es/fa/fr/he/hi/ja/ko/pt/ru/tr/ur/zh); `create_new_library_at` switched to `(async)`; IME composition guard in dialog keydown handler.
+
+**Component cleanups**: `KIND_LABELS` lookup table (replaces 2 switch statements); dropped `defaultName` prop + `lastOpenState + $effect` (re-mount on each `{#if}` open is enough); `parseFrontmatter` replaces hand-rolled regex (which was missing `cid_cn`); `baseSelectedSet` $derived for O(1) lookup.
+
+**Boss-approved adds**: right-click "New note" applies folder templates uniformly via shared `createNoteWithTemplate` helper; `/libraries` route migrated to CreateItemDialog (last surface using inline-input pattern); path-traversal hardening on `create_new_library` and `create_new_library_at` via `sanitize_name`.
+
+**Style**: removed NewBaseDialog tombstone comment.
+
+Production rebuild + Boss verified all four §152-specific scenarios PASS.
+
+## §Build.8 — Phase 4 Audit
+
+`lab/reports/MIG-008-AUDIT.md` documents the audit. All 11 invariants (I1–I11) verified PASS against shipped code + Boss tests. No unintended drift. Migration path: no action needed (pure UX change). Code reduction: net negative LOC (shared component absorbed enough variation to come out smaller than the four pre-MIG-008 inconsistent flows combined).
+
+## SO #2 — Help files + User Manual
+
+Updated per Boss directive:
+- `docs/help.uConstellation.World/Notes Management/Notes Management.md` — Elements toolbar table updated; new "The Create dialog" section with full UX walkthrough.
+- `docs/help.uConstellation.World/Libraries/Library management.md` — "Adding a library" rewritten to distinguish Create-new vs Link-existing.
+- `docs/User Manual.md` — §2 (Managing Libraries) and §3 (Creating a Note) rewritten.
+- `docs/help.ar/User Manual.md` — same updates in Arabic (Boss's daily language).
+
+13 other locale User Manuals queued via `project_user_manual_13_locales_backfill.md`.
+
+## MIG-008 closed
+
+Project memory `project_create_dialog_standardize.md` marked SHIPPED. Orientation v1.30 → v1.31 with the closure callout.
+
+## Pending after MIG-008
 
 - **Standard OS-style create dialog for Folder / Note / Base / Library** (Boss directive 2026-05-03). Currently auto-creates with default names ("New Folder", "Untitled") and expects in-place rename. Should behave like Explorer / Finder: modal with name input + location picker + Cancel/Create. Applies to all four create surfaces. Logged in project memory as `project_create_dialog_standardize.md`. Likely composes with the planned filename-collision popup (`project_rename_collision_popup_wanted.md`).
 - **MIG-006 §4–§11**: reindex via `index_note` (closes the stale `outgoing_links_json` gap Boss surfaced in Stage 1 — Outgoing Links panel still shows old target names after a cascade), sync/async dispatch + progress events (P6 — hub-rename UX), atomic per-file writes via tempfile (P5 — kill-mid-cascade integrity), pre-MIG-006 backfill command for stale wikilinks. **§4 is the natural next item if Boss wants to continue the rename-cascade arc.**
