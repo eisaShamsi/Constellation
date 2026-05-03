@@ -96,7 +96,8 @@
 	import LibrarySwitcher from '$lib/components/LibrarySwitcher.svelte';
 	import LibraryManager from '$lib/components/LibraryManager.svelte';
 	import LibraryPicker from '$lib/components/LibraryPicker.svelte';
-	import NewBaseDialog from '$lib/components/NewBaseDialog.svelte';
+	// MIG-008 §Build.6 — NewBaseDialog import removed; superseded by the
+	// shared CreateItemDialog (see §Build.4).
 	import OutgoingLinksPanel from '$lib/components/OutgoingLinksPanel.svelte';
 	import IndexPanel from '$lib/components/IndexPanel.svelte';
 	import UniverseSetup from '$lib/components/UniverseSetup.svelte';
@@ -628,9 +629,10 @@
 	let showLibrarySwitcher = $state(false);
 	let showLibraryManager = $state(false);
 	let showLibraryPicker = $state(false);
-	let showNewBaseDialog = $state(false);
-	let showNewLibraryDropdown = $state(false);
-	let newLibName = $state('');
+	// MIG-008 §Build.6 — orphaned state vars from pre-MIG-008 dropdowns and
+	// dialogs removed: `showNewBaseDialog` (NewBaseDialog block deleted in
+	// §Build.4), `showNewLibraryDropdown` + `newLibName` (sidebar inline
+	// dropdown UI deleted in §Build.5).
 
 	// Lock screen
 	let isLocked = $state(false);
@@ -1022,8 +1024,9 @@
 
 	let error = $state('');
 	let adding = $state(false);
-	let creatingNew = $state(false);
-	let newLibraryName = $state('');
+	// MIG-008 §Build.6 — orphaned state vars from welcome screen's pre-MIG-008
+	// inline create form removed: `creatingNew`, `newLibraryName`. The card
+	// now opens the shared CreateItemDialog which manages its own state.
 
 	const isHome = $derived(page.url.pathname === '/');
 	const isDashboardVisible = $derived(isHome && !$activeTab && $libraries.length > 0 && $appSettings.showDashboard);
@@ -2896,7 +2899,6 @@
 
 		// Escape always closes overlays (not remappable)
 		if (e.key === 'Escape') {
-			if (showNewLibraryDropdown) { showNewLibraryDropdown = false; newLibName = ''; return; }
 			if (showCommandPalette) { showCommandPalette = false; return; }
 			if (showQuickSwitcher) { showQuickSwitcher = false; return; }
 			if (showSkyView) { showSkyView = false; return; }
@@ -3731,19 +3733,9 @@
 		adding = false;
 	}
 
-	async function handleCreateNewLibrary() {
-		const name = newLibraryName.trim() || 'My Library';
-		creatingNew = true;
-		error = '';
-		try {
-			await createNewLibrary(name);
-			newLibraryName = '';
-			await loadAllStats();
-			await refreshLibraryCaches();
-			initSearchIndex().then(() => { searchEngineReady = true; }).catch(() => {});
-		} catch (e) { error = String(e); }
-		creatingNew = false;
-	}
+	// MIG-008 §Build.6 — handleCreateNewLibrary removed; the welcome screen's
+	// "Create new library" card now invokes handleNewLibrary (opens the shared
+	// CreateItemDialog). The dialog handles its own submitting/disabled state.
 
 	/** Reload everything after a child universe is added/removed. */
 	async function handleChildUniverseChanged() {
@@ -5357,18 +5349,9 @@
 								<div class="w-option-icon">📁</div>
 								<p class="w-option-title">{$t('libraries.newLibrary')}</p>
 								<p class="w-option-desc">{$t('libraries.newLibraryDesc')}</p>
-								<div class="w-option-form">
-									<input
-										type="text"
-										class="w-option-input"
-										placeholder="My Library"
-										bind:value={newLibraryName}
-										onkeydown={(e) => e.key === 'Enter' && handleCreateNewLibrary()}
-									/>
-									<button class="w-option-btn primary" onclick={handleCreateNewLibrary} disabled={creatingNew}>
-										{creatingNew ? '...' : '+ Create'}
-									</button>
-								</div>
+								<button class="w-option-btn primary" onclick={handleNewLibrary}>
+									+ {$t('libraries.newLibrary')}
+								</button>
 							</div>
 
 							<!-- Option 2: Link Existing -->
@@ -5960,9 +5943,6 @@
 		/>
 	{/if}
 
-	<!-- §Build.4 — NewBaseDialog removed; base creation now uses the shared
-	     CreateItemDialog above with the library multi-select snippet. The
-	     `showNewBaseDialog` state is now unused; cleaned in §Build.6. -->
 
 
 	{#if contextMenu}
