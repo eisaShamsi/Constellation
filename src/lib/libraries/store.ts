@@ -2554,8 +2554,8 @@ export interface CascadeResult {
 	failed_truncated: number;
 }
 
-export async function updateLinksOnRename(libraryPath: string, oldName: string, newName: string): Promise<CascadeResult> {
-	return await invoke('update_links_on_rename', { libraryPath, oldName, newName });
+export async function updateLinksOnRename(libraryPath: string, libraryName: string, oldName: string, newName: string): Promise<CascadeResult> {
+	return await invoke('update_links_on_rename', { libraryPath, libraryName, oldName, newName });
 }
 
 // ─── Quick Capture ───

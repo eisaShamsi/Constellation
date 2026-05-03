@@ -4004,7 +4004,7 @@
 					for (const t of tabs) markCascading(t.path);
 					try {
 						await flushAllTabsInLibrary(lib.path);
-						const result = await updateLinksOnRename(lib.path, oldName, newName);
+						const result = await updateLinksOnRename(lib.path, lib.name, oldName, newName);
 						await reloadTabsFromDisk(result.rewritten);
 					} finally {
 						for (const t of tabs) clearCascading(t.path);

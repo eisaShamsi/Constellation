@@ -3873,7 +3873,13 @@ const MAX_FAILED_REPORTED: usize = 100;
 
 /// Update all links in a library when a note is renamed.
 #[tauri::command]
-pub fn update_links_on_rename(app: tauri::AppHandle, library_path: String, old_name: String, new_name: String) -> Result<CascadeResult, String> {
+pub fn update_links_on_rename(
+    app: tauri::AppHandle,
+    library_path: String,
+    library_name: String,
+    old_name: String,
+    new_name: String,
+) -> Result<CascadeResult, String> {
     use tauri::Emitter;
     validate_path_in_any_library(&app, &library_path)?;
     // §2: compile the regex once per cascade, reuse it across every file
@@ -3890,6 +3896,33 @@ pub fn update_links_on_rename(app: tauri::AppHandle, library_path: String, old_n
         failed_truncated: 0,
     };
     update_links_recursive(Path::new(&library_path), &re, &new_name, &mut result);
+
+    // §4 — reindex each rewritten source so `note_meta.outgoing_links_json`
+    // and `note_links.target_name` reflect the new wikilink targets. Without
+    // this, Outgoing Links / Backlinks / Index panels render stale `target_name`
+    // values until the user touches the source again (Invariant 15 from the
+    // MIG-006 plan; the symptom Boss surfaced in §3-redo Stage 1 testing where
+    // the Outgoing Links panel still showed `foo` after Foo → Foo v2 cascade).
+    //
+    // Best-effort: per-file reindex failures are logged and skipped. The
+    // cascade rewrite is already on disk; alias-aware reads from MIG-004
+    // keep correctness intact for any path whose reindex didn't land. The
+    // IPC must not fail back to the frontend over a reindex glitch — the
+    // frontend's `result.rewritten` already drove its own reload pipeline
+    // via `cascade:rewrote`.
+    //
+    // Per-call transactions: `index_note` already wraps each call in
+    // `BEGIN IMMEDIATE`/COMMIT. Wrapping a batch transaction here would
+    // collide. WAL stays bounded by the per-file commit cycles.
+    if !result.rewritten.is_empty() {
+        use tauri::Manager;
+        let search_state = app.state::<crate::search::SearchState>();
+        for path in &result.rewritten {
+            if let Err(e) = crate::search::reindex_single_note(&search_state, path, &library_name) {
+                eprintln!("[update_links_on_rename] reindex skipped path={} err={}", path, e);
+            }
+        }
+    }
 
     // §3-redo.3 — emit the cascade:rewrote event so the frontend can reload
     // each affected open tab. Per Concept Paper D6, the reload mechanism on
