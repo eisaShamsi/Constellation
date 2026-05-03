@@ -201,6 +201,133 @@ export function clearWriteAhead(filePath: string) {
 	} catch {}
 }
 
+/**
+ * §140 — extract `cid_cn` from a note's frontmatter, or `null` if absent.
+ * Used as a cheap "same logical note" signature for the openNoteTab
+ * write-ahead-buffer freshness check (see `openNoteTab` for the why).
+ */
+function extractCidCn(content: string): string | null {
+	if (!content.startsWith('---')) return null;
+	const match = content.match(/^---[\s\S]*?^cid_cn:\s*"?([^"\s\n]+)"?/m);
+	return match?.[1] ?? null;
+}
+
+/**
+ * §140 — path-keyed maps that follow files across rename/move and clean up
+ * on delete. The write-ahead buffer (in-memory + localStorage backup) and
+ * the recent-writes map are both `Map<filePath, V>`. Without these helpers,
+ * a buffer entry under `oldPath` survives a rename/delete, and a later
+ * note created at the same path hits the stale entry on `openNoteTab` —
+ * tab loads with the old note's content, title, and cid_cn (the corruption
+ * Boss reported in §140's discovery turn). Same Rule 8 / write-time
+ * derivation discipline §137 applied to `stageMap` / `maturityMap`.
+ *
+ * Path matching is normalised (forward-slash + case-insensitive) so a
+ * buffer key written under `C:\Foo.md` migrates correctly when the rename
+ * target is `C:/Foo v2.md` (mixed separators across the JS layer). Folder
+ * renames migrate every descendant via prefix match.
+ */
+function migratePathKeyedAuxStateOnRename(oldPath: string, newPath: string): void {
+	if (oldPath === newPath) return;
+	const norm = (p: string) => p.replace(/\\/g, '/').toLowerCase();
+	const oldNorm = norm(oldPath);
+	const newNorm = norm(newPath);
+	if (oldNorm === newNorm) return;
+	const prefix = oldNorm + '/';
+
+	// In-memory writeAheadBuffer — collect moves first, mutate after
+	const wabMoves: Array<[string, string, { content: string; cursorPos: number; scrollTop: number }]> = [];
+	for (const [key, val] of writeAheadBuffer) {
+		const keyNorm = norm(key);
+		if (keyNorm === oldNorm) {
+			wabMoves.push([key, newPath, val]);
+		} else if (keyNorm.startsWith(prefix)) {
+			wabMoves.push([key, newPath + key.substring(oldPath.length), val]);
+		}
+	}
+	for (const [oldK, newK, val] of wabMoves) {
+		writeAheadBuffer.delete(oldK);
+		writeAheadBuffer.set(newK, val);
+	}
+
+	// In-memory recentWrites
+	const rwMoves: Array<[string, string, number]> = [];
+	for (const [key, ts] of recentWrites) {
+		const keyNorm = norm(key);
+		if (keyNorm === oldNorm) {
+			rwMoves.push([key, newPath, ts]);
+		} else if (keyNorm.startsWith(prefix)) {
+			rwMoves.push([key, newPath + key.substring(oldPath.length), ts]);
+		}
+	}
+	for (const [oldK, newK, ts] of rwMoves) {
+		recentWrites.delete(oldK);
+		recentWrites.set(newK, ts);
+	}
+
+	// localStorage write-ahead backup — same migration
+	try {
+		const lsKey = 'constellation-wab';
+		const all = JSON.parse(localStorage.getItem(lsKey) || '{}');
+		const lsMoves: Array<[string, string]> = [];
+		for (const k of Object.keys(all)) {
+			const knorm = norm(k);
+			if (knorm === oldNorm) {
+				lsMoves.push([k, newPath]);
+			} else if (knorm.startsWith(prefix)) {
+				lsMoves.push([k, newPath + k.substring(oldPath.length)]);
+			}
+		}
+		if (lsMoves.length > 0) {
+			for (const [oldK, newK] of lsMoves) {
+				all[newK] = all[oldK];
+				delete all[oldK];
+			}
+			localStorage.setItem(lsKey, JSON.stringify(all));
+		}
+	} catch {}
+}
+
+/**
+ * §140 — drop write-ahead-buffer + recent-writes entries for a deleted
+ * file (or every descendant under a deleted folder). Without this,
+ * a future note created at the same path hits the dead entry on
+ * `openNoteTab` and shows the deleted note's content.
+ */
+function clearPathKeyedAuxStateOnDelete(path: string): void {
+	const norm = (p: string) => p.replace(/\\/g, '/').toLowerCase();
+	const targetNorm = norm(path);
+	const prefix = targetNorm + '/';
+
+	const wabDel: string[] = [];
+	for (const k of writeAheadBuffer.keys()) {
+		const knorm = norm(k);
+		if (knorm === targetNorm || knorm.startsWith(prefix)) wabDel.push(k);
+	}
+	for (const k of wabDel) writeAheadBuffer.delete(k);
+
+	const rwDel: string[] = [];
+	for (const k of recentWrites.keys()) {
+		const knorm = norm(k);
+		if (knorm === targetNorm || knorm.startsWith(prefix)) rwDel.push(k);
+	}
+	for (const k of rwDel) recentWrites.delete(k);
+
+	try {
+		const lsKey = 'constellation-wab';
+		const all = JSON.parse(localStorage.getItem(lsKey) || '{}');
+		let lsMutated = false;
+		for (const k of Object.keys(all)) {
+			const knorm = norm(k);
+			if (knorm === targetNorm || knorm.startsWith(prefix)) {
+				delete all[k];
+				lsMutated = true;
+			}
+		}
+		if (lsMutated) localStorage.setItem(lsKey, JSON.stringify(all));
+	} catch {}
+}
+
 /** §3-redo.5 — paths currently inside a wikilink rename cascade window.
  *  Refcounted (Map<path, count>) so overlapping cascades — e.g. the user
  *  spam-renames two notes in the same library — don't pop each other's
@@ -855,12 +982,43 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 	const _fromNotePath = fromNotePath;
 
 	/* Check write-ahead buffer first — it has the latest content if the
-	   async disk write from a previous close hasn't completed yet. */
+	   async disk write from a previous close hasn't completed yet.
+	   §140: defense-in-depth — if a wab entry hits, also read disk and
+	   compare the cid_cn signature. A mismatch means the wab is stale (the
+	   path was reused after a rename/delete; renameItem/deleteItem now
+	   migrate/clear the buffer prospectively, but historical entries in
+	   localStorage from before the §140 fix can still hit). On mismatch,
+	   prefer disk and clear the stale wab. The disk read costs one extra
+	   IPC per wab-hit tab open — negligible against the corruption it
+	   prevents. */
 	const wab = getWriteAhead(filePath);
 	let content: string;
 	if (wab) {
-		content = wab.content;
-		clearWriteAhead(filePath);
+		let diskContent: string | null = null;
+		try {
+			diskContent = await invoke<string>('read_note', { filePath });
+		} catch { /* disk unreachable; fall back to wab below */ }
+		if (diskContent !== null) {
+			const wabCid = extractCidCn(wab.content);
+			const diskCid = extractCidCn(diskContent);
+			if (wabCid && diskCid && wabCid !== diskCid) {
+				// Stale wab — buffer is for a different (deleted/renamed-away)
+				// note that previously occupied this path. Disk is the truth.
+				console.warn('[openNoteTab] stale write-ahead-buffer for', filePath, '— preferring disk');
+				content = diskContent;
+				clearWriteAhead(filePath);
+			} else {
+				// Either cid_cn matches (wab is for the same logical note —
+				// trust it for unsaved cursor/scroll/in-flight edits) or one
+				// side has no cid_cn (legacy / pre-injection note — trust wab
+				// since it represents the user's most recent edits).
+				content = wab.content;
+				clearWriteAhead(filePath);
+			}
+		} else {
+			content = wab.content;
+			clearWriteAhead(filePath);
+		}
 	} else {
 		try {
 			content = await invoke('read_note', { filePath });
@@ -1688,6 +1846,12 @@ export async function renameItem(oldPath: string, newPath: string): Promise<stri
 	// the requested newPath would point the tab at a non-existent file and
 	// the next write_note call would create a phantom duplicate (BUG-001).
 	const effectivePath = await invoke<string>('rename_item', { oldPath, newPath });
+	// §140: migrate write-ahead-buffer + recent-writes from oldPath to
+	// effectivePath. Without this, a stale wab entry under oldPath survives
+	// the rename and a future note created at the same path on
+	// `openNoteTab` hits the stale entry and loads the OLD note's content
+	// (cid_cn, title, body) — the corruption Boss reported.
+	migratePathKeyedAuxStateOnRename(oldPath, effectivePath);
 	const derivedName =
 		newPath.split(/[\\/]/).pop()?.replace(/\.md$/, '') ?? '';
 	// Update any open tabs that reference the old path.
@@ -1710,6 +1874,8 @@ export async function renameItem(oldPath: string, newPath: string): Promise<stri
 
 export async function moveItem(sourcePath: string, targetFolder: string): Promise<string> {
 	const newPath = await invoke<string>('move_item', { sourcePath, targetFolder });
+	// §140: same path-keyed migration as renameItem — buffer follows file.
+	migratePathKeyedAuxStateOnRename(sourcePath, newPath);
 	// Update any open tabs that reference the old path
 	openTabs.update(tabs => tabs.map(t => {
 		if (t.path === sourcePath) {
@@ -1728,6 +1894,10 @@ export async function moveItem(sourcePath: string, targetFolder: string): Promis
 
 export async function deleteItem(path: string, permanent = false): Promise<void> {
 	await invoke('delete_item', { path, permanent });
+	// §140: drop the path's wab + recentWrites entries (and any descendants
+	// for a folder delete). Without this, a future note created at the same
+	// path hits the dead entry and loads the deleted note's content.
+	clearPathKeyedAuxStateOnDelete(path);
 	// Close any tabs with this path or under this folder
 	openTabs.update(tabs => tabs.filter(t => {
 		if (t.path === path) return false;
