@@ -4006,30 +4006,45 @@
 						await flushAllTabsInLibrary(lib.path);
 						const result = await updateLinksOnRename(lib.path, lib.name, oldName, newName);
 						await reloadTabsFromDisk(result.rewritten);
-						// §143 (Rule 8 — Write-Time Derivation, frontend side):
-						// §142 reindexed `note_links` on disk so SQLite is fresh,
-						// but `allLibraryLinks` is loaded ONCE at boot via
-						// `cache_boot_snapshot_graph` and never re-fetched during
-						// a session. Without this update, the right-sidebar
-						// Outgoing Links / Backlinks panels render stale target
-						// names after every rename. Walk the snapshot for
-						// rewritten paths and rewrite the matching `target` in
-						// place — same shape as §137's path-keyed migration,
-						// applied to the link's target field. `note_links`
-						// stores `target_name` lowercased (see search.rs
-						// extract_typed_links), so we compare + write lowercased.
+						// §144 (supersedes §143's targeted update — the targeted
+						// approach only worked when the in-memory link's target
+						// matched the rename's oldName exactly. After several
+						// renames in a session (Hub v4 → v5 → v6 → v7), the
+						// in-memory snapshot held v4 while subsequent renames
+						// passed v6/v7 as oldName — so the targeted update kept
+						// missing. §142 made SQLite the truth; the simplest
+						// way to push that truth into the frontend is to
+						// re-fetch the graph snapshot. Cost: same as boot's
+						// graph fetch (~10-50ms per the cache.rs timings on
+						// the reference Universe). Acceptable because rename
+						// is already a multi-step user-initiated action.
+						//
+						// Catches: not just the just-renamed target's links,
+						// but ANY drift accumulated during the session
+						// (since allLibraryLinks isn't refreshed between
+						// boots and renames before §144 left silent staleness
+						// behind every time).
 						if (result.rewritten.length > 0) {
-							const rewrittenSet = new Set(result.rewritten);
-							const oldNameLower = oldName.toLowerCase();
-							const newNameLower = newName.toLowerCase();
-							let mutated = false;
-							const next = allLibraryLinks.map(l => {
-								if (!rewrittenSet.has(l.source_path)) return l;
-								if (l.target.toLowerCase() !== oldNameLower) return l;
-								mutated = true;
-								return { ...l, target: newNameLower };
-							});
-							if (mutated) allLibraryLinks = next;
+							try {
+								const graph = await invoke<{
+									links: NoteLink[];
+									tags: Record<string, number>;
+									aliases: Array<{ note_path: string; alias: string }>;
+								}>('cache_boot_snapshot_graph');
+								allLibraryLinks = graph.links;
+								// Refresh the alias index too — renames stamp a
+								// new alias entry on the renamed file, which the
+								// alias-aware Backlinks reader needs to see.
+								const nextAliases = new Map<string, string[]>();
+								for (const a of graph.aliases ?? []) {
+									const existing = nextAliases.get(a.note_path);
+									if (existing) existing.push(a.alias);
+									else nextAliases.set(a.note_path, [a.alias]);
+								}
+								notePathToAliases = nextAliases;
+							} catch (e) {
+								console.error('[handleRenameComplete] graph re-fetch failed:', e);
+							}
 						}
 					} finally {
 						for (const t of tabs) clearCascading(t.path);
