@@ -99,7 +99,7 @@
 						{/if}
 					</summary>
 					{#if entry.children && entry.children.length > 0}
-						<svelte:self entries={entry.children} depth={depth + 1} {libraryId} {libraryName} {color} {onNoteClick} {onFolderClick} {onContextMenu} {renamingPath} {onRenameComplete} {allExpanded} />
+						<svelte:self entries={entry.children} depth={depth + 1} {libraryId} {libraryName} {color} {onNoteClick} {onFolderClick} {onContextMenu} {renamingPath} {onRenameComplete} {allExpanded} {maturityMap} {stageMap} />
 					{/if}
 				</details>
 			{:else}

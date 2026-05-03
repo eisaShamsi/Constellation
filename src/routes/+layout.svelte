@@ -41,7 +41,8 @@
 	import { generateStyleSettingsCSS } from '$lib/theme/styleSettings';
 	import { CORE_BLOCK_IDS, getEffectiveStyleBlocks } from '$lib/theme/constellationStyleSettings';
 	import { get } from 'svelte/store';
-	import { detectDir, eventToShortcut, normalizeShortcut, getResolvedShortcut, formatShortcut, migratePathKeyedMap } from '$lib/utils';
+	import { SvelteMap } from 'svelte/reactivity';
+	import { detectDir, eventToShortcut, normalizeShortcut, getResolvedShortcut, formatShortcut, migratePathKeyedMap, migratePathKeyedMapInPlace } from '$lib/utils';
 	import { createBase, saveBaseFile, listWorkspaceBases, createWorkspaceBase, saveWorkspaceBase, deleteWorkspaceBase } from '$lib/bases/store';
 	import type { WorkspaceBaseEntry } from '$lib/bases/store';
 	import type { BaseDefinition } from '$lib/bases/types';
@@ -755,8 +756,15 @@
 	// browser) can read this flag to flip to the full UI when it arrives.
 	let graphReady = $state(false);
 	let searchLinkCounts = $state(new Map<string, { incoming: number }>());
-	let maturityMap = $state(new Map<string, string>()); // path → maturity state (CE Phase 3)
-	let stageMap = $state(new Map<string, string>()); // path → stage (CE Phase 6)
+	// §139: SvelteMap (Svelte 5 explicitly-reactive Map). Mutations like
+	// .set() / .delete() trigger reactivity at the operation level — no
+	// reassign-to-force-identity dance required. The Rule 8 derived views
+	// (file-tree stage emoji + maturity dot) re-render the moment the map
+	// mutates. Replaces the prior `$state(new Map())` pattern, which had
+	// a prop-propagation quirk visible after promote/demote: the parent's
+	// reassignment didn't always reach the FileTree's template binding.
+	let maturityMap = new SvelteMap<string, string>(); // path → maturity state (CE Phase 3)
+	let stageMap = new SvelteMap<string, string>(); // path → stage (CE Phase 6)
 	// Star data is passed to SkyView as plain arrays.
 	// We avoid $state/$derived for large arrays (1885+ nodes) because Svelte 5 proxies
 	// make iteration extremely slow. Instead, skyVersion ($state) triggers re-render
@@ -2793,7 +2801,11 @@
 			} catch { /* skip */ }
 			await yieldToUI();
 		}
-		maturityMap = newMatMap;
+		// §139: SvelteMap — replace contents in-place. Mutations are
+		// reactive at the operation level, so the file tree re-renders
+		// for each .set() / .delete().
+		maturityMap.clear();
+		for (const [k, v] of newMatMap) maturityMap.set(k, v);
 		// Origins
 		for (let i = 0; i < libPaths.length; i++) {
 			try {
@@ -2820,7 +2832,9 @@
 			} catch { /* skip */ }
 			await yieldToUI();
 		}
-		stageMap = newStageMap;
+		// §139: SvelteMap — replace contents in-place (see maturityMap above).
+		stageMap.clear();
+		for (const [k, v] of newStageMap) stageMap.set(k, v);
 		// Lenses + tensions (cheap, once)
 		try { availableLenses = await invoke('list_lenses'); } catch { availableLenses = []; }
 		try {
@@ -3626,28 +3640,23 @@
 				// expand.
 				invoke<[string, string][]>('scan_note_stages', { libraryPath: lib.path })
 					.then((stages) => {
-						if (stages.length === 0) return;
-						const next = new Map(stageMap);
-						let mutated = false;
+						// §139: SvelteMap — direct .set() is reactive at the
+						// operation level. File tree re-renders for each entry
+						// added.
 						for (const [path, stage] of stages) {
 							const key = path.replace(/\\/g, '/').toLowerCase();
-							if (next.get(key) !== stage) { next.set(key, stage); mutated = true; }
+							if (stageMap.get(key) !== stage) stageMap.set(key, stage);
 						}
-						if (mutated) stageMap = next;
 					})
 					.catch(() => {});
 				invoke<{ note_path: string; state: string }[]>(
 					'compute_note_maturity', { libraryPath: lib.path, libraryName: lib.name }
 				)
 					.then((maturities) => {
-						if (maturities.length === 0) return;
-						const next = new Map(maturityMap);
-						let mutated = false;
 						for (const m of maturities) {
 							const key = m.note_path.replace(/\\/g, '/').toLowerCase();
-							if (next.get(key) !== m.state) { next.set(key, m.state); mutated = true; }
+							if (maturityMap.get(key) !== m.state) maturityMap.set(key, m.state);
 						}
-						if (mutated) maturityMap = next;
 					})
 					.catch(() => {});
 			}
@@ -3949,10 +3958,12 @@
 			// renamed it." `migratePathKeyedMap` returns null for no-op renames
 			// (canonical-file path-stable case) so we skip the store update
 			// entirely and don't fire spurious reactivity.
-			const stageNext = migratePathKeyedMap(stageMap, oldPath, effectivePath);
-			if (stageNext) stageMap = stageNext;
-			const matNext = migratePathKeyedMap(maturityMap, oldPath, effectivePath);
-			if (matNext) maturityMap = matNext;
+			// §139: stageMap + maturityMap are SvelteMap — in-place mutation
+			// is reactive at the operation level. notePathToAliases +
+			// searchLinkCounts are still $state(new Map()) so they need the
+			// reassign-to-fresh-Map pattern to fire reactivity.
+			migratePathKeyedMapInPlace(stageMap, oldPath, effectivePath);
+			migratePathKeyedMapInPlace(maturityMap, oldPath, effectivePath);
 			const aliasNext = migratePathKeyedMap(notePathToAliases, oldPath, effectivePath);
 			if (aliasNext) notePathToAliases = aliasNext;
 			const linkCountNext = migratePathKeyedMap(searchLinkCounts, oldPath, effectivePath);
@@ -5004,10 +5015,9 @@
 									onnavigateback={() => { setFocusedTab(tab.id); navigateBack(); }}
 									onnavigateforward={() => { setFocusedTab(tab.id); navigateForward(); }}
 									onStageChanged={(path, stage) => {
+										// §139: SvelteMap — direct mutation is reactive.
 										const key = path.replace(/\\/g, '/').toLowerCase();
-										const nm = new Map(stageMap);
-										if (stage) { nm.set(key, stage); } else { nm.delete(key); }
-										stageMap = nm;
+										if (stage) { stageMap.set(key, stage); } else { stageMap.delete(key); }
 									}}
 								/>
 							{:else}
@@ -5172,10 +5182,9 @@
 								onnavigateback={() => navigateBack()}
 								onnavigateforward={() => navigateForward()}
 								onStageChanged={(path, stage) => {
+									// §139: SvelteMap — direct mutation is reactive.
 									const key = path.replace(/\\/g, '/').toLowerCase();
-									const nm = new Map(stageMap);
-									if (stage) { nm.set(key, stage); } else { nm.delete(key); }
-									stageMap = nm;
+									if (stage) { stageMap.set(key, stage); } else { stageMap.delete(key); }
 								}}
 								onmoreaction={async (action) => {
 									switch (action) {

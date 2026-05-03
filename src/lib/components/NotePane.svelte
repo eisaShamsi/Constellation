@@ -919,6 +919,7 @@
 			{@const stageOrder = ['fleeting', 'literature', 'permanent', 'synthesis']}
 			{@const idx = stageOrder.indexOf(currentStage)}
 			{@const stageEmoji = currentStage === 'fleeting' ? '🌱' : currentStage === 'literature' ? '📖' : currentStage === 'permanent' ? '🔗' : currentStage === 'synthesis' ? '✨' : ''}
+			{@const isRTL = dir === 'rtl'}
 			<div class="e-bc-stage-wrap">
 				{#if idx > 0}
 					<button class="e-bc-demote"
@@ -930,7 +931,7 @@
 							currentStage = prev;
 							onpromote?.(prev);
 							view?.focus();
-						}}>←</button>
+						}}>{isRTL ? '→' : '←'}</button>
 				{/if}
 				<span class="e-bc-stage-badge" title={$t(`notePane.stage.${currentStage}`)}>
 					{stageEmoji} {$t(`notePane.stage.${currentStage}`)}
@@ -944,7 +945,7 @@
 							currentStage = next;
 							onpromote?.(next);
 							view?.focus();
-						}}>{$t('notePane.promote')} →</button>
+						}}>{$t('notePane.promote')} {isRTL ? '←' : '→'}</button>
 				{/if}
 			</div>
 		{/if}

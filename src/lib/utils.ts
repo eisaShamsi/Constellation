@@ -584,6 +584,44 @@ export function migratePathKeyedMap<V>(
 	return mutated ? next : null;
 }
 
+/**
+ * §139 — same migration as `migratePathKeyedMap`, but mutates the map
+ * in place instead of returning a fresh Map. Use this when the consumer
+ * map is a `SvelteMap` (or any container whose mutations are inherently
+ * reactive) — no reassignment needed.
+ *
+ * Returns `true` if at least one entry moved, `false` otherwise. Consumer
+ * can use the return value to decide whether to fire any post-migration
+ * side-effects (rare).
+ */
+export function migratePathKeyedMapInPlace<V>(
+	map: Map<string, V>,
+	oldPath: string,
+	newPath: string,
+): boolean {
+	const norm = (p: string) => p.replace(/\\/g, '/').toLowerCase();
+	const oldKey = norm(oldPath);
+	const newKey = norm(newPath);
+	if (oldKey === newKey) return false;
+	if (map.size === 0) return false;
+
+	const prefix = oldKey + '/';
+	const moves: Array<[string, string, V]> = [];
+	for (const [key, val] of map) {
+		if (key === oldKey) {
+			moves.push([key, newKey, val]);
+		} else if (key.startsWith(prefix)) {
+			moves.push([key, newKey + key.substring(oldKey.length), val]);
+		}
+	}
+	if (moves.length === 0) return false;
+	for (const [oldK, newK, val] of moves) {
+		map.delete(oldK);
+		map.set(newK, val);
+	}
+	return true;
+}
+
 /** Collect all wikilink targets from markdown text */
 export function extractWikilinks(md: string): string[] {
 	const links: string[] = [];
