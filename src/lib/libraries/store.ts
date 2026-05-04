@@ -2540,6 +2540,19 @@ export interface TermEmbedProgress {
 	cancelled: boolean;
 }
 
+/** Module-scoped store carrying the latest term-embedding job state.
+ *  Components subscribe via `$termEmbedProgress` and render a progress
+ *  UI from anywhere; Settings, status bar, IndexPanel can each read the
+ *  same source of truth. Lives outside any component so the job survives
+ *  modal mount/unmount cycles — the user can close Settings while the
+ *  embed-all loop runs and reopen later to see current progress.
+ *
+ *  null means: no job has run this session, OR the last job's "done"
+ *  payload was cleared after the brief post-completion display window.
+ *  Set by the SettingsModal $effect that fires on toggle-on and listens
+ *  for the Tauri event. (MIG-012 Build.7-fix-1) */
+export const termEmbedProgress = writable<TermEmbedProgress | null>(null);
+
 // ─── MIG-012 — Index search history ───
 
 /** One row from `read_index_history`. */

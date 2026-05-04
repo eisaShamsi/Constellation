@@ -5,7 +5,9 @@
 	import { check } from '@tauri-apps/plugin-updater';
 	import { relaunch } from '@tauri-apps/plugin-process';
 	import { t, locale, setLocale, SUPPORTED_LOCALES, type Locale } from '$lib/i18n';
-	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats, SCRIPT_UNICODE_RANGES, SCRIPT_LABELS, SCRIPT_SAMPLES, getAllFontSets, getFontSetById, type FontSet, TYPEWRITER_FONTS, BUILTIN_THEMES, type ConstellationTheme, LINK_TYPE_NAMES, DEFAULT_SETTINGS, backfillLinkConfidence, type PanelId, type PanelSlot, clearIndexHistory } from '$lib/libraries/store';
+	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats, SCRIPT_UNICODE_RANGES, SCRIPT_LABELS, SCRIPT_SAMPLES, getAllFontSets, getFontSetById, type FontSet, TYPEWRITER_FONTS, BUILTIN_THEMES, type ConstellationTheme, LINK_TYPE_NAMES, DEFAULT_SETTINGS, backfillLinkConfidence, type PanelId, type PanelSlot, clearIndexHistory, initTermEmbeddings, cancelTermEmbeddings, termEmbeddingStatus, termEmbedProgress, type TermEmbedProgress } from '$lib/libraries/store';
+	import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+	import { untrack } from 'svelte';
 	import ObsidianThemeBrowser from './ObsidianThemeBrowser.svelte';
 	import StyleSettingsPanel from './StyleSettingsPanel.svelte';
 	import { getEffectiveStyleBlocks } from '$lib/theme/constellationStyleSettings';
@@ -40,6 +42,87 @@
 		danger?: boolean;
 		onConfirm: () => void;
 	}>(null);
+
+	// MIG-012 §Build.7-fix-1 — auto-trigger the term-embedding job when
+	// the semantic-search toggle flips ON for the first time. Listens for
+	// the `term-embedding-progress` Tauri event and writes to the
+	// module-scoped `termEmbedProgress` store so progress survives modal
+	// open/close. The job itself runs in the Rust thread pool — closing
+	// Settings doesn't kill it.
+	//
+	// Edge cases handled:
+	//   - Toggle on but term_embeddings already populated → skip the IPC.
+	//   - Toggle on, listener attaches, then user toggles off → unlisten +
+	//     fire cancel_term_embeddings. The Rust worker breaks at next term.
+	//   - User toggles off then on again partway → resumable: init skips
+	//     already-embedded terms via the existence check.
+	let semanticUnlisten: UnlistenFn | null = null;
+	let semanticToggleSeen = false; // ignore the initial $effect run on mount
+
+	async function maybeStartSemanticInit() {
+		try {
+			const count = await termEmbeddingStatus();
+			if (count > 0) {
+				// Already populated; no init needed. Clear any stale progress
+				// state (from a prior session that completed).
+				termEmbedProgress.set(null);
+				return;
+			}
+		} catch (e) {
+			console.error('[Settings] termEmbeddingStatus failed:', e);
+			return;
+		}
+		// Set up listener BEFORE firing init so we don't miss early events.
+		try {
+			semanticUnlisten = await listen<TermEmbedProgress>('term-embedding-progress', (event) => {
+				termEmbedProgress.set(event.payload);
+				if (event.payload.done) {
+					semanticUnlisten?.();
+					semanticUnlisten = null;
+					// Keep the final payload visible briefly so the user sees
+					// "✓ Done" or "Cancelled", then clear.
+					setTimeout(() => { termEmbedProgress.set(null); }, 4000);
+				}
+			});
+		} catch (e) {
+			console.error('[Settings] event listen failed:', e);
+			return;
+		}
+		// Fire the init job (fire-and-forget; events drive the UI).
+		initTermEmbeddings(false).catch((err) => {
+			console.error('[Settings] initTermEmbeddings failed:', err);
+			semanticUnlisten?.();
+			semanticUnlisten = null;
+			termEmbedProgress.set(null);
+		});
+	}
+
+	function stopSemanticInit() {
+		// Toggle just flipped off — cancel the running job + unlisten +
+		// clear progress UI.
+		cancelTermEmbeddings().catch(() => {});
+		semanticUnlisten?.();
+		semanticUnlisten = null;
+		// Don't immediately null the store — let the cancelled-event flush
+		// through so the user sees "Cancelled" briefly. The 4-sec setTimeout
+		// in the listener handles cleanup after the worker emits its final
+		// done+cancelled event.
+	}
+
+	$effect(() => {
+		const enabled = $appSettings.index.semanticSearchEnabled;
+		if (!semanticToggleSeen) {
+			semanticToggleSeen = true;
+			return; // skip the initial reactive read on mount
+		}
+		untrack(() => {
+			if (enabled) {
+				void maybeStartSemanticInit();
+			} else {
+				stopSemanticInit();
+			}
+		});
+	});
 
 	// Theme editor state
 	let editingTheme = $state<ConstellationTheme | null>(null);
@@ -1854,7 +1937,7 @@
 					<div class="setting-item">
 						<div class="setting-info">
 							<div class="setting-name">{$t('settings.index.semanticSearch.label') || 'Semantic search'}</div>
-							<div class="setting-desc">{$t('settings.index.semanticSearch.description') || 'When you type in the Index filter, also find conceptually-related terms via embeddings — typing "thinking" can surface "cognition", "reflection", etc., even when there\'s no direct lexical match. First-time activation builds the embedding index (~10–20 min for a 7,600-note library); progress shows in the Index panel. Off by default.'}</div>
+							<div class="setting-desc">{$t('settings.index.semanticSearch.description') || 'When you type in the Index filter, also find conceptually-related terms via embeddings — typing "thinking" can surface "cognition", "reflection", etc., even when there\'s no direct lexical match. First-time activation builds the embedding index (~10–20 min for a 7,600-note library); progress shows below. Off by default.'}</div>
 						</div>
 						<label class="toggle">
 							<input type="checkbox"
@@ -1863,6 +1946,35 @@
 							<span class="toggle-slider"></span>
 						</label>
 					</div>
+
+					<!-- MIG-012 §Build.7-fix-1 — embedding progress indicator -->
+					{#if $termEmbedProgress}
+						{@const p = $termEmbedProgress}
+						{@const pct = p.total > 0 ? Math.min(100, Math.round((p.processed / p.total) * 100)) : 0}
+						<div class="semantic-progress" dir="auto">
+							<div class="semantic-progress-row">
+								<span class="semantic-progress-label">
+									{#if p.done && p.cancelled}
+										{$t('settings.index.semanticSearch.cancelled') || 'Cancelled'}
+									{:else if p.done}
+										{$t('settings.index.semanticSearch.done') || 'Done'}
+									{:else}
+										{($t('settings.index.semanticSearch.progress') || 'Embedding terms: {processed} / {total}')
+											.replace('{processed}', String(p.processed))
+											.replace('{total}', String(p.total))}
+									{/if}
+								</span>
+								{#if !p.done}
+									<button class="setting-btn semantic-progress-cancel" onclick={() => { stopSemanticInit(); }}>
+										{$t('common.cancel') || 'Cancel'}
+									</button>
+								{/if}
+							</div>
+							<div class="semantic-progress-bar">
+								<div class="semantic-progress-fill" class:done={p.done} class:cancelled={p.cancelled} style="width: {pct}%"></div>
+							</div>
+						</div>
+					{/if}
 
 					<!-- MIG-012 — Search history -->
 					<div class="setting-item">
@@ -2724,6 +2836,44 @@
 		background: var(--background-modifier-border); padding: 2px 6px;
 		border-radius: 3px; font-size: 0.75rem; color: var(--text-normal);
 	}
+
+	/* MIG-012 §Build.7-fix-1 — semantic embedding progress indicator. */
+	.semantic-progress {
+		margin-top: -4px;
+		margin-bottom: 12px;
+		padding: 8px 12px;
+		background: var(--background-secondary);
+		border-radius: 6px;
+		border: 1px solid var(--background-modifier-border);
+	}
+	.semantic-progress-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		margin-bottom: 6px;
+	}
+	.semantic-progress-label {
+		font-size: 0.78rem;
+		color: var(--text-muted);
+	}
+	.semantic-progress-cancel {
+		font-size: 0.72rem;
+		padding: 3px 10px;
+	}
+	.semantic-progress-bar {
+		height: 4px;
+		background: var(--background-modifier-border);
+		border-radius: 2px;
+		overflow: hidden;
+	}
+	.semantic-progress-fill {
+		height: 100%;
+		background: var(--interactive-accent);
+		transition: width 0.2s ease;
+	}
+	.semantic-progress-fill.done { background: var(--color-green, #16a34a); }
+	.semantic-progress-fill.cancelled { background: var(--text-faint); }
 
 	/* Toggle Switch.
 	   Off-state uses a clearly muted gray (background-modifier-border) so

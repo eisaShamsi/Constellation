@@ -501,7 +501,10 @@
       },
       "semanticSearch": {
         "label": "Semantic search",
-        "description": "When you type in the Index filter, also find conceptually-related terms via embeddings — typing \"thinking\" can surface \"cognition\", \"reflection\", etc., even when there's no direct lexical match. First-time activation builds the embedding index (~10–20 min for a 7,600-note library); progress shows in the Index panel. Off by default."
+        "description": "When you type in the Index filter, also find conceptually-related terms via embeddings — typing \"thinking\" can surface \"cognition\", \"reflection\", etc., even when there's no direct lexical match. First-time activation builds the embedding index (~10–20 min for a 7,600-note library); progress shows in the Index panel. Off by default.",
+        "progress": "Embedding terms: {processed} / {total}",
+        "done": "✓ Embedding complete",
+        "cancelled": "Cancelled"
       },
       "searchHistory": {
         "label": "Search history",
