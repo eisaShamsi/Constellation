@@ -3763,6 +3763,112 @@ fn collect_stem(
     }
 }
 
+// ─── MIG-012 — Index search history IPCs ─────────────────────
+
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct IndexHistoryEntry {
+    pub query: String,
+    pub last_used: i64,
+    pub use_count: i64,
+}
+
+/// Read the user's most-recent Index filter queries, sorted by
+/// `last_used` desc. Returns at most `limit` rows (default 20, max 200).
+/// Empty when history toggle has never been used or after a clear.
+#[tauri::command]
+pub fn read_index_history(
+    app: tauri::AppHandle,
+    limit: Option<u32>,
+) -> Result<Vec<IndexHistoryEntry>, String> {
+    use rusqlite::{Connection, OpenFlags};
+    let limit = limit.unwrap_or(20).max(1).min(200);
+
+    let db_path = crate::search::db_path(&app)?;
+    let flags = OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX;
+    let conn = Connection::open_with_flags(&db_path, flags)
+        .map_err(|e| format!("Failed to open search.db: {}", e))?;
+
+    let mut stmt = conn
+        .prepare(
+            "SELECT query, last_used, use_count FROM index_search_history \
+             ORDER BY last_used DESC LIMIT ?1",
+        )
+        .map_err(|e| e.to_string())?;
+    let rows = stmt
+        .query_map(rusqlite::params![limit as i64], |row| {
+            Ok(IndexHistoryEntry {
+                query: row.get(0)?,
+                last_used: row.get(1)?,
+                use_count: row.get(2)?,
+            })
+        })
+        .map_err(|e| e.to_string())?;
+    Ok(rows.flatten().collect())
+}
+
+/// Persist a filter query the user just ran. UPSERT semantics: bumps
+/// `use_count` + `last_used` if the query is already in history.
+/// FIFO eviction at 200 rows so a long session doesn't grow unbounded.
+/// Empty / whitespace-only queries are silently ignored.
+#[tauri::command]
+pub fn write_index_history_entry(
+    app: tauri::AppHandle,
+    query: String,
+) -> Result<(), String> {
+    use rusqlite::{Connection, OpenFlags};
+    let trimmed = query.trim();
+    if trimmed.is_empty() {
+        return Ok(());
+    }
+
+    let db_path = crate::search::db_path(&app)?;
+    let flags = OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_NO_MUTEX;
+    let conn = Connection::open_with_flags(&db_path, flags)
+        .map_err(|e| format!("Failed to open search.db: {}", e))?;
+
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs() as i64)
+        .unwrap_or(0);
+
+    // UPSERT — match on the unique `query` index. SQLite's
+    // ON CONFLICT(query) DO UPDATE is the SQLite-native UPSERT shape.
+    conn.execute(
+        "INSERT INTO index_search_history (query, last_used, use_count) \
+         VALUES (?1, ?2, 1) \
+         ON CONFLICT(query) DO UPDATE SET \
+           last_used = excluded.last_used, \
+           use_count = use_count + 1",
+        rusqlite::params![trimmed, now],
+    )
+    .map_err(|e| e.to_string())?;
+
+    // FIFO eviction. Subquery picks the rows older than the 200-row
+    // threshold by last_used; DELETE removes them. No-op when count <=200.
+    conn.execute(
+        "DELETE FROM index_search_history WHERE id IN \
+           (SELECT id FROM index_search_history ORDER BY last_used DESC LIMIT -1 OFFSET 200)",
+        [],
+    )
+    .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+/// Wipe all rows from index_search_history. Used by Settings → Clear
+/// search history. Idempotent.
+#[tauri::command]
+pub fn clear_index_history(app: tauri::AppHandle) -> Result<(), String> {
+    use rusqlite::{Connection, OpenFlags};
+    let db_path = crate::search::db_path(&app)?;
+    let flags = OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_NO_MUTEX;
+    let conn = Connection::open_with_flags(&db_path, flags)
+        .map_err(|e| format!("Failed to open search.db: {}", e))?;
+    conn.execute("DELETE FROM index_search_history", [])
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
 /// Collect all note names in a library (for autocomplete).
 #[tauri::command]
 pub fn collect_library_notes(app: tauri::AppHandle, library_path: String) -> Result<Vec<serde_json::Value>, String> {
