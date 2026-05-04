@@ -431,7 +431,13 @@
         "description": "When you type in the Index filter, also find conceptually-related terms via embeddings — typing \"thinking\" can surface \"cognition\", \"reflection\", etc., even when there's no direct lexical match. First-time activation builds the embedding index (~10–20 min for a 7,600-note library); progress shows in the Index panel. Off by default.",
         "progress": "Embedding terms: {processed} / {total}",
         "done": "✓ Embedding complete",
-        "cancelled": "Cancelled"
+        "cancelled": "Cancelled",
+        "indexed": "✓ {count} terms indexed",
+        "notBuilt": "Index not built yet",
+        "rebuild": "Rebuild",
+        "build": "Build now",
+        "rebuildConfirm": "Rebuild the semantic index from scratch? This re-embeds every Index term and takes ~10–20 minutes on a 7,600-note library.",
+        "buildConfirm": "Build the semantic index now? This embeds every Index term and takes ~10–20 minutes on a 7,600-note library."
       },
       "searchHistory": {
         "label": "Search history",

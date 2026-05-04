@@ -59,12 +59,37 @@
 	let semanticUnlisten: UnlistenFn | null = null;
 	let semanticToggleSeen = false; // ignore the initial $effect run on mount
 
+	// MIG-012 §Build.7-fix-2 — visible diagnostic for the term-embedding
+	// state. Production Tauri builds have DevTools disabled, so the only
+	// way the user can answer "is my semantic index built?" is via UI.
+	// `null` = haven't queried yet; `number` = current row count from
+	// term_embeddings. Refreshed on mount, on toggle on, and after the
+	// embed job completes.
+	let semanticIndexedCount = $state<number | null>(null);
+
+	async function refreshSemanticCount() {
+		try {
+			semanticIndexedCount = await termEmbeddingStatus();
+		} catch (e) {
+			console.error('[Settings] termEmbeddingStatus failed:', e);
+			semanticIndexedCount = null;
+		}
+	}
+
+	// Eager refresh on Settings mount so the user sees the current state
+	// immediately when they navigate to Index.
+	$effect(() => {
+		untrack(() => { void refreshSemanticCount(); });
+	});
+
 	async function maybeStartSemanticInit() {
 		try {
 			const count = await termEmbeddingStatus();
+			semanticIndexedCount = count;
 			if (count > 0) {
 				// Already populated; no init needed. Clear any stale progress
-				// state (from a prior session that completed).
+				// state (from a prior session that completed). The status
+				// line below the toggle shows "✓ N terms indexed".
 				termEmbedProgress.set(null);
 				return;
 			}
@@ -72,6 +97,11 @@
 			console.error('[Settings] termEmbeddingStatus failed:', e);
 			return;
 		}
+		// Empty table → fire init.
+		await runEmbedJob(false);
+	}
+
+	async function runEmbedJob(force: boolean) {
 		// Set up listener BEFORE firing init so we don't miss early events.
 		try {
 			semanticUnlisten = await listen<TermEmbedProgress>('term-embedding-progress', (event) => {
@@ -79,6 +109,9 @@
 				if (event.payload.done) {
 					semanticUnlisten?.();
 					semanticUnlisten = null;
+					// Refresh the count so the status line reflects reality
+					// post-job (cancelled jobs may have embedded some terms).
+					void refreshSemanticCount();
 					// Keep the final payload visible briefly so the user sees
 					// "✓ Done" or "Cancelled", then clear.
 					setTimeout(() => { termEmbedProgress.set(null); }, 4000);
@@ -88,8 +121,7 @@
 			console.error('[Settings] event listen failed:', e);
 			return;
 		}
-		// Fire the init job (fire-and-forget; events drive the UI).
-		initTermEmbeddings(false).catch((err) => {
+		initTermEmbeddings(force).catch((err) => {
 			console.error('[Settings] initTermEmbeddings failed:', err);
 			semanticUnlisten?.();
 			semanticUnlisten = null;
@@ -1974,6 +2006,43 @@
 								<div class="semantic-progress-fill" class:done={p.done} class:cancelled={p.cancelled} style="width: {pct}%"></div>
 							</div>
 						</div>
+					{:else if $appSettings.index.semanticSearchEnabled && semanticIndexedCount !== null}
+						<!-- MIG-012 §Build.7-fix-2 — visible diagnostic + manual rebuild -->
+						<div class="semantic-status" dir="auto">
+							<span class="semantic-status-label">
+								{#if semanticIndexedCount > 0}
+									{($t('settings.index.semanticSearch.indexed') || '✓ {count} terms indexed')
+										.replace('{count}', String(semanticIndexedCount))}
+								{:else}
+									{$t('settings.index.semanticSearch.notBuilt') || 'Index not built'}
+								{/if}
+							</span>
+							<button class="setting-btn semantic-status-rebuild" onclick={() => {
+								confirmDialog = {
+									message: semanticIndexedCount && semanticIndexedCount > 0
+										? ($t('settings.index.semanticSearch.rebuildConfirm') || 'Rebuild the semantic index from scratch? This re-embeds every Index term and takes ~10–20 minutes on a 7,600-note library.')
+										: ($t('settings.index.semanticSearch.buildConfirm') || 'Build the semantic index now? This embeds every Index term and takes ~10–20 minutes on a 7,600-note library.'),
+									confirmLabel: semanticIndexedCount && semanticIndexedCount > 0
+										? ($t('settings.index.semanticSearch.rebuild') || 'Rebuild')
+										: ($t('settings.index.semanticSearch.build') || 'Build now'),
+									cancelLabel: $t('common.cancel') || 'Cancel',
+									danger: false,
+									onConfirm: () => {
+										// force=true on rebuild; force=false on first build
+										// (incremental, skips already-embedded terms — but
+										// table is empty so no skip happens).
+										const force = (semanticIndexedCount ?? 0) > 0;
+										void runEmbedJob(force);
+									},
+								};
+							}}>
+								{#if semanticIndexedCount > 0}
+									{$t('settings.index.semanticSearch.rebuild') || 'Rebuild'}
+								{:else}
+									{$t('settings.index.semanticSearch.build') || 'Build now'}
+								{/if}
+							</button>
+						</div>
 					{/if}
 
 					<!-- MIG-012 — Search history -->
@@ -2874,6 +2943,30 @@
 	}
 	.semantic-progress-fill.done { background: var(--color-green, #16a34a); }
 	.semantic-progress-fill.cancelled { background: var(--text-faint); }
+
+	/* MIG-012 §Build.7-fix-2 — index status + manual rebuild row.
+	   Shown when the toggle is on AND no embed job is in progress.
+	   Distinguishes "✓ N terms indexed" (ready) from "Index not built". */
+	.semantic-status {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		margin-top: -4px;
+		margin-bottom: 12px;
+		padding: 8px 12px;
+		background: var(--background-secondary);
+		border-radius: 6px;
+		border: 1px solid var(--background-modifier-border);
+	}
+	.semantic-status-label {
+		font-size: 0.78rem;
+		color: var(--text-muted);
+	}
+	.semantic-status-rebuild {
+		font-size: 0.72rem;
+		padding: 3px 10px;
+	}
 
 	/* Toggle Switch.
 	   Off-state uses a clearly muted gray (background-modifier-border) so
