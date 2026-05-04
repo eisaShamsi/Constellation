@@ -23,7 +23,8 @@
       "arabicOverrides": "Surcharges arabes",
       "panels": "Panneaux",
       "iconOverrides": "Icônes de l'app",
-      "debug": "Débogage"
+      "debug": "Débogage",
+      "index": "Index"
     },
     "general": {
       "language": "Langue",
@@ -491,6 +492,13 @@
       "coreSnapshot": "Instantané principal (notes)",
       "graphSnapshot": "Instantané du graphe (liens + tags)",
       "fanout": "Distribution fire-and-forget"
+    },
+    "index": {
+      "intro": "Configure how the Index panel surfaces your library's vocabulary.",
+      "expandCrossLanguage": {
+        "label": "Expand mentions cross-language",
+        "description": "When you click a term in the Index panel, also surface notes containing its translations from the Lexical Bridge. Off by default — turning it on adds a \"via {lemma}\" badge to each cross-language match so you can always tell which mentions are direct vs. bridged."
+      }
     }
   },
   "commands": {

@@ -23,7 +23,8 @@
       "arabicOverrides": "아랍어 재정의",
       "panels": "패널",
       "iconOverrides": "앱 아이콘",
-      "debug": "디버그"
+      "debug": "디버그",
+      "index": "색인"
     },
     "general": {
       "language": "언어",
@@ -491,6 +492,13 @@
       "coreSnapshot": "핵심 스냅샷 (노트)",
       "graphSnapshot": "그래프 스냅샷 (링크 + 태그)",
       "fanout": "파이어앤드포겟 팬아웃"
+    },
+    "index": {
+      "intro": "Configure how the Index panel surfaces your library's vocabulary.",
+      "expandCrossLanguage": {
+        "label": "Expand mentions cross-language",
+        "description": "When you click a term in the Index panel, also surface notes containing its translations from the Lexical Bridge. Off by default — turning it on adds a \"via {lemma}\" badge to each cross-language match so you can always tell which mentions are direct vs. bridged."
+      }
     }
   },
   "commands": {

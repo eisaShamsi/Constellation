@@ -2949,6 +2949,18 @@ export interface AppSettings {
 		halfLifeDays: number;
 	};
 
+	// Index panel preferences. New nested block (vs flat keys) so future
+	// Index settings — term-exclusion list migration from localStorage,
+	// script-filter defaults, etc. — land here without re-architecting.
+	// MIG-010 introduces only the cross-language expansion toggle.
+	index: {
+		/** When true, clicking a term in the Index panel surfaces notes in
+		 *  other languages too via the M11 Lexical Bridge, with a
+		 *  "via {lemma}" badge per cross-language row. Off by default to
+		 *  preserve pre-MIG-010 exact-match behaviour. */
+		expandCrossLanguage: boolean;
+	};
+
 	// Sky View graph settings
 	skyView: {
 		nodeSize: number;
@@ -3075,6 +3087,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
 		lockPinHash: '',
 		apiKeyProtection: false,
 	},
+	index: {
+		expandCrossLanguage: false,
+	},
 	skyView: {
 		nodeSize: 1.5,
 		labelVisibility: 'hover' as const,
@@ -3181,6 +3196,7 @@ export async function loadSettings() {
 				...DEFAULT_SETTINGS,
 				...(parsed as Partial<AppSettings>),
 				skyView: { ...DEFAULT_SETTINGS.skyView, ...savedSkyView },
+				index: { ...DEFAULT_SETTINGS.index, ...((parsed.index as Record<string, unknown>) || {}) },
 				security: { ...DEFAULT_SETTINGS.security, ...((parsed.security as Record<string, unknown>) || {}) },
 				enabledFeatures: { ...DEFAULT_SETTINGS.enabledFeatures, ...((parsed.enabledFeatures as Record<string, boolean>) ?? (parsed.enabledPlugins as Record<string, boolean>) ?? {}) },
 				customShortcuts: { ...((parsed.customShortcuts as Record<string, string>) || {}) },

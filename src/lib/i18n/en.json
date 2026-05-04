@@ -23,7 +23,8 @@
       "knowledge": "Knowledge Management",
       "arabicOverrides": "Arabic Overrides",
       "debug": "Debug",
-      "panels": "Panels"
+      "panels": "Panels",
+      "index": "Index"
     },
     "dashboard": {
       "libraries": "Libraries",
@@ -418,6 +419,13 @@
       "verifyConnection": "Verify your connection settings",
       "testing": "Testing...",
       "test": "Test"
+    },
+    "index": {
+      "intro": "Configure how the Index panel surfaces your library's vocabulary.",
+      "expandCrossLanguage": {
+        "label": "Expand mentions cross-language",
+        "description": "When you click a term in the Index panel, also surface notes containing its translations from the Lexical Bridge. Off by default — turning it on adds a \"via {lemma}\" badge to each cross-language match so you can always tell which mentions are direct vs. bridged."
+      }
     },
     "knowledge": {
       "intro": "Configure how your knowledge is organized, viewed, and analyzed.",

@@ -23,7 +23,8 @@
       "arabicOverrides": "अरबी ओवरराइड",
       "panels": "पैनल",
       "iconOverrides": "ऐप आइकन",
-      "debug": "डीबग"
+      "debug": "डीबग",
+      "index": "अनुक्रमणिका"
     },
     "general": {
       "language": "भाषा",
@@ -491,6 +492,13 @@
       "coreSnapshot": "कोर स्नैपशॉट (नोट्स)",
       "graphSnapshot": "ग्राफ स्नैपशॉट (लिंक + टैग)",
       "fanout": "फायर-एंड-फॉरगेट फैनआउट"
+    },
+    "index": {
+      "intro": "Configure how the Index panel surfaces your library's vocabulary.",
+      "expandCrossLanguage": {
+        "label": "Expand mentions cross-language",
+        "description": "When you click a term in the Index panel, also surface notes containing its translations from the Lexical Bridge. Off by default — turning it on adds a \"via {lemma}\" badge to each cross-language match so you can always tell which mentions are direct vs. bridged."
+      }
     }
   },
   "commands": {

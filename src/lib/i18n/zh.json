@@ -23,7 +23,8 @@
       "arabicOverrides": "阿拉伯语覆盖",
       "panels": "面板",
       "iconOverrides": "应用图标",
-      "debug": "调试"
+      "debug": "调试",
+      "index": "索引"
     },
     "general": {
       "language": "语言",
@@ -491,6 +492,13 @@
       "coreSnapshot": "核心快照（笔记）",
       "graphSnapshot": "图谱快照（链接 + 标签）",
       "fanout": "Fire-and-forget 扇出"
+    },
+    "index": {
+      "intro": "Configure how the Index panel surfaces your library's vocabulary.",
+      "expandCrossLanguage": {
+        "label": "Expand mentions cross-language",
+        "description": "When you click a term in the Index panel, also surface notes containing its translations from the Lexical Bridge. Off by default — turning it on adds a \"via {lemma}\" badge to each cross-language match so you can always tell which mentions are direct vs. bridged."
+      }
     }
   },
   "commands": {

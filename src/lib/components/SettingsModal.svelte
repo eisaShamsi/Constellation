@@ -207,6 +207,7 @@
 		{ id: 'intelligence', label: $t('settings.sections.intelligence'), icon: 'bot' },
 		{ id: 'security', label: $t('settings.sections.security'), icon: 'shield' },
 		{ id: 'knowledge', label: $t('settings.sections.knowledge') || 'Knowledge Management', icon: 'brain' },
+		{ id: 'index', label: $t('settings.sections.index') || 'Index', icon: 'list' },
 		{ id: 'panels', label: $t('settings.sections.panels') || 'Panels', icon: 'layout' },
 		{ id: 'appearance', label: $t('settings.sections.appearance'), icon: 'palette' },
 		{ id: 'stylesettings', label: $t('settings.sections.styleSettings') || 'Style Settings', icon: 'sliders' },
@@ -1817,6 +1818,23 @@
 							</div>
 						{/if}
 					{/if}
+
+				<!-- ═══ INDEX ═══ -->
+				{:else if activeSection === 'index'}
+					<p class="section-intro">{$t('settings.index.intro') || 'Configure how the Index panel surfaces your library\'s vocabulary.'}</p>
+
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.index.expandCrossLanguage.label') || 'Expand mentions cross-language'}</div>
+							<div class="setting-desc">{$t('settings.index.expandCrossLanguage.description') || 'When you click a term in the Index panel, also surface notes containing its translations from the Lexical Bridge. Off by default — turning it on adds a "via {lemma}" badge to each cross-language match so you can always tell which mentions are direct vs. bridged.'}</div>
+						</div>
+						<label class="toggle">
+							<input type="checkbox"
+								checked={$appSettings.index.expandCrossLanguage}
+								onchange={() => updateSettings({ index: { ...$appSettings.index, expandCrossLanguage: !$appSettings.index.expandCrossLanguage } })} />
+							<span class="toggle-slider"></span>
+						</label>
+					</div>
 
 				<!-- ═══ PANELS ═══ -->
 				{:else if activeSection === 'panels'}
