@@ -4813,6 +4813,8 @@
 							loadMentions={(term) => readTermMentions(term, 500, $appSettings.index.expandCrossLanguage)}
 							cacheKey={$appSettings.index.expandCrossLanguage}
 							bridgeFilterEnabled={$appSettings.index.expandCrossLanguage}
+							semanticSearchEnabled={$appSettings.index.semanticSearchEnabled}
+							searchHistoryEnabled={$appSettings.index.searchHistoryEnabled}
 							loadCooccurrence={(term) => readCooccurringTerms(term)}
 							onNoteHover={handleIndexNoteHover}
 							onNoteLeave={handleIndexNoteLeave}

@@ -5,7 +5,7 @@
 	import { check } from '@tauri-apps/plugin-updater';
 	import { relaunch } from '@tauri-apps/plugin-process';
 	import { t, locale, setLocale, SUPPORTED_LOCALES, type Locale } from '$lib/i18n';
-	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats, SCRIPT_UNICODE_RANGES, SCRIPT_LABELS, SCRIPT_SAMPLES, getAllFontSets, getFontSetById, type FontSet, TYPEWRITER_FONTS, BUILTIN_THEMES, type ConstellationTheme, LINK_TYPE_NAMES, DEFAULT_SETTINGS, backfillLinkConfidence, type PanelId, type PanelSlot } from '$lib/libraries/store';
+	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats, SCRIPT_UNICODE_RANGES, SCRIPT_LABELS, SCRIPT_SAMPLES, getAllFontSets, getFontSetById, type FontSet, TYPEWRITER_FONTS, BUILTIN_THEMES, type ConstellationTheme, LINK_TYPE_NAMES, DEFAULT_SETTINGS, backfillLinkConfidence, type PanelId, type PanelSlot, clearIndexHistory } from '$lib/libraries/store';
 	import ObsidianThemeBrowser from './ObsidianThemeBrowser.svelte';
 	import StyleSettingsPanel from './StyleSettingsPanel.svelte';
 	import { getEffectiveStyleBlocks } from '$lib/theme/constellationStyleSettings';
@@ -1834,6 +1834,49 @@
 								onchange={() => updateSettings({ index: { ...$appSettings.index, expandCrossLanguage: !$appSettings.index.expandCrossLanguage } })} />
 							<span class="toggle-slider"></span>
 						</label>
+					</div>
+
+					<!-- MIG-012 — Semantic search -->
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.index.semanticSearch.label') || 'Semantic search'}</div>
+							<div class="setting-desc">{$t('settings.index.semanticSearch.description') || 'When you type in the Index filter, also find conceptually-related terms via embeddings — typing "thinking" can surface "cognition", "reflection", etc., even when there\'s no direct lexical match. First-time activation builds the embedding index (~10–20 min for a 7,600-note library); progress shows in the Index panel. Off by default.'}</div>
+						</div>
+						<label class="toggle">
+							<input type="checkbox"
+								checked={$appSettings.index.semanticSearchEnabled}
+								onchange={() => updateSettings({ index: { ...$appSettings.index, semanticSearchEnabled: !$appSettings.index.semanticSearchEnabled } })} />
+							<span class="toggle-slider"></span>
+						</label>
+					</div>
+
+					<!-- MIG-012 — Search history -->
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.index.searchHistory.label') || 'Search history'}</div>
+							<div class="setting-desc">{$t('settings.index.searchHistory.description') || 'Remember Index filter queries within this Universe. On focus / down-arrow the filter shows recent queries. Capped at 200 entries with FIFO eviction. Off by default; storage is per-Universe in SQLite.'}</div>
+						</div>
+						<label class="toggle">
+							<input type="checkbox"
+								checked={$appSettings.index.searchHistoryEnabled}
+								onchange={() => updateSettings({ index: { ...$appSettings.index, searchHistoryEnabled: !$appSettings.index.searchHistoryEnabled } })} />
+							<span class="toggle-slider"></span>
+						</label>
+					</div>
+
+					<!-- MIG-012 — Clear search history button -->
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.index.clearHistory.label') || 'Clear search history'}</div>
+							<div class="setting-desc">{$t('settings.index.clearHistory.description') || 'Permanently remove all stored Index filter queries from this Universe. Cannot be undone.'}</div>
+						</div>
+						<button class="setting-btn" onclick={async () => {
+							if (confirm($t('settings.index.clearHistory.confirm') || 'Permanently delete all Index search history for this Universe?')) {
+								try {
+									await clearIndexHistory();
+								} catch (e) { console.error('[Settings] clearIndexHistory failed:', e); }
+							}
+						}}>{$t('settings.index.clearHistory.button') || 'Clear'}</button>
 					</div>
 
 				<!-- ═══ PANELS ═══ -->

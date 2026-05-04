@@ -498,6 +498,20 @@
       "expandCrossLanguage": {
         "label": "Expand mentions cross-language",
         "description": "When you click a term in the Index panel, also surface notes containing its translations from the Lexical Bridge. Off by default — turning it on adds a \"via {lemma}\" badge to each cross-language match so you can always tell which mentions are direct vs. bridged."
+      },
+      "semanticSearch": {
+        "label": "Semantic search",
+        "description": "When you type in the Index filter, also find conceptually-related terms via embeddings — typing \"thinking\" can surface \"cognition\", \"reflection\", etc., even when there's no direct lexical match. First-time activation builds the embedding index (~10–20 min for a 7,600-note library); progress shows in the Index panel. Off by default."
+      },
+      "searchHistory": {
+        "label": "Search history",
+        "description": "Remember Index filter queries within this Universe. On focus / down-arrow the filter shows recent queries. Capped at 200 entries with FIFO eviction. Off by default; storage is per-Universe in SQLite."
+      },
+      "clearHistory": {
+        "label": "Clear search history",
+        "description": "Permanently remove all stored Index filter queries from this Universe. Cannot be undone.",
+        "button": "Clear",
+        "confirm": "Permanently delete all Index search history for this Universe?"
       }
     }
   },
@@ -856,7 +870,10 @@
     "alsoAppearsWith": "同时出现",
     "viaLemma": "通过 {lemma}",
     "viaLemmaTooltip": "通过词汇桥的跨语言匹配",
-    "returnToIndex": "返回索引"
+    "returnToIndex": "返回索引",
+    "recentSearches": "Recent searches",
+    "semanticMatch": "≈ similar",
+    "semanticMatchTooltip": "Semantic match — conceptually related to your query"
   },
   "workspacesPanel": {
     "title": "工作区",

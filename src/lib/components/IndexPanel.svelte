@@ -9,8 +9,11 @@
 		type CooccurringTerm,
 		type FilterExpansion,
 		type TermSimilarity,
+		type IndexHistoryEntry,
 		lexiconExpandForFilter,
 		searchTermsSemantic,
+		readIndexHistory,
+		writeIndexHistoryEntry,
 	} from '$lib/libraries/store';
 	import VirtualList from '$lib/components/VirtualList.svelte';
 
@@ -32,6 +35,7 @@
 		cacheKey,
 		bridgeFilterEnabled = false,
 		semanticSearchEnabled = false,
+		searchHistoryEnabled = false,
 	}: {
 		entries: IndexEntry[];
 		isLoading?: boolean;
@@ -67,7 +71,19 @@
 		 *  no semantic IPC fires (default). Toggle source:
 		 *  `$appSettings.index.semanticSearchEnabled`. */
 		semanticSearchEnabled?: boolean;
+		/** MIG-012: when true, the filter input shows a dropdown of
+		 *  recently-used queries on focus / down-arrow, AND saves each
+		 *  committed query to history. When false, no read or write —
+		 *  total opt-out. Toggle source:
+		 *  `$appSettings.index.searchHistoryEnabled`. */
+		searchHistoryEnabled?: boolean;
 	} = $props();
+
+	// Hoisted top-level state — read by effects and downstream derivations.
+	// Originally lower in the file; moved up so the MIG-012 semantic / history
+	// effects (which read `filterQuery`) don't trip the "used before declaration"
+	// TS error. Other state stays where it was for now.
+	let filterQuery = $state('');
 
 	// Per-term mentions cache — populated on demand when the user expands a term.
 	// Keeps the initial IPC payload tiny (terms only; no mentions pre-loaded).
@@ -140,6 +156,53 @@
 			}, 300);
 			return () => clearTimeout(handle);
 		});
+	});
+
+	// ─── MIG-012 — search history state ───
+	//
+	// History is loaded on filter-input focus when the toggle is on,
+	// and saved when the user commits a non-empty query (Enter or
+	// blur with content). The dropdown shows when the input is focused
+	// AND filterQuery is empty AND history exists. Typing dismisses it
+	// (substring/lexical/semantic results take over).
+	let searchHistory = $state<IndexHistoryEntry[]>([]);
+	let filterFocused = $state(false);
+	let historyDropdownOpen = $derived(
+		searchHistoryEnabled
+		&& filterFocused
+		&& filterQuery.trim() === ''
+		&& searchHistory.length > 0
+	);
+	let lastSavedQuery = '';
+
+	async function loadSearchHistory() {
+		if (!searchHistoryEnabled) {
+			searchHistory = [];
+			return;
+		}
+		try {
+			searchHistory = await readIndexHistory(20);
+		} catch (err) {
+			console.error('[IndexPanel] readIndexHistory failed:', err);
+			searchHistory = [];
+		}
+	}
+
+	function commitSearchToHistory(query: string) {
+		if (!searchHistoryEnabled) return;
+		const trimmed = query.trim();
+		if (!trimmed || trimmed === lastSavedQuery) return;
+		lastSavedQuery = trimmed;
+		// Fire-and-forget — don't block the filter UX waiting on the write.
+		writeIndexHistoryEntry(trimmed)
+			.then(() => loadSearchHistory())
+			.catch(err => console.error('[IndexPanel] writeIndexHistoryEntry failed:', err));
+	}
+
+	$effect(() => {
+		// Refresh history when toggle flips on (or initial mount with toggle on).
+		void searchHistoryEnabled;
+		untrack(() => { void loadSearchHistory(); });
 	});
 
 	$effect(() => {
@@ -241,7 +304,7 @@
 		}
 	}
 
-	let filterQuery = $state('');
+	// (filterQuery hoisted to top — see comment above mentionsCache.)
 	let expandedTerms = $state<Set<string>>(new Set());
 	let activeScript = $state<string>('all');
 	let activeLetter = $state<string | null>(null);
@@ -955,9 +1018,36 @@
 				type="text"
 				placeholder={$t('indexPanel.filterPlaceholder')}
 				bind:value={filterQuery}
+				onfocus={() => filterFocused = true}
+				onblur={() => {
+					// Delay clearing so click-on-dropdown-item can fire first.
+					setTimeout(() => { filterFocused = false; }, 150);
+					commitSearchToHistory(filterQuery);
+				}}
+				onkeydown={(e) => {
+					if (e.key === 'Enter') commitSearchToHistory(filterQuery);
+				}}
 			/>
 			{#if filterQuery}
 				<button class="gp-clear" onclick={() => filterQuery = ''}>×</button>
+			{/if}
+			<!-- MIG-012 — search history dropdown -->
+			{#if historyDropdownOpen}
+				<div class="gp-history-dropdown" dir="auto">
+					<div class="gp-history-header">{$t('indexPanel.recentSearches') || 'Recent searches'}</div>
+					{#each searchHistory as h}
+						<button class="gp-history-item" dir="auto"
+							onmousedown={(e) => {
+								// onmousedown not onclick — fires before onblur clears focus
+								e.preventDefault();
+								filterQuery = h.query;
+							}}
+							title={h.query}>
+							<span class="gp-history-q">{h.query}</span>
+							<span class="gp-history-count">{h.use_count}×</span>
+						</button>
+					{/each}
+				</div>
 			{/if}
 		</div>
 		<div class="gp-actions">
@@ -1217,6 +1307,7 @@
 		gap: 4px;
 	}
 	.gp-search {
+		position: relative; /* anchor for .gp-history-dropdown (MIG-012) */
 		display: flex;
 		align-items: center;
 		gap: 4px;
@@ -1245,6 +1336,62 @@
 		color: var(--text-faint);
 		font-size: 0.9rem;
 		padding: 0 2px;
+	}
+	/* MIG-012 — search history dropdown. Floats below the filter input
+	   when the toggle is on, the input is focused, and the query is
+	   empty. Mousedown (not click) handler on items so onblur doesn't
+	   dismiss before the selection lands. */
+	.gp-history-dropdown {
+		position: absolute;
+		top: 100%;
+		inset-inline-start: 0;
+		inset-inline-end: 0;
+		margin-top: 2px;
+		background: var(--background-primary);
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 4px;
+		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+		z-index: 100;
+		max-height: 280px;
+		overflow-y: auto;
+		padding: 4px 0;
+	}
+	.gp-history-header {
+		padding: 4px 12px;
+		font-size: 0.65rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: var(--text-faint);
+	}
+	.gp-history-item {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 8px;
+		width: 100%;
+		padding: 6px 12px;
+		background: none;
+		border: none;
+		text-align: start;
+		cursor: pointer;
+		font-size: 0.78rem;
+		color: var(--text-normal);
+	}
+	.gp-history-item:hover {
+		background: var(--background-modifier-hover);
+	}
+	.gp-history-q {
+		flex: 1;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.gp-history-count {
+		flex-shrink: 0;
+		font-size: 0.65rem;
+		color: var(--text-faint);
 	}
 	.gp-actions {
 		display: flex;

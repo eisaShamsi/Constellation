@@ -2540,6 +2540,27 @@ export interface TermEmbedProgress {
 	cancelled: boolean;
 }
 
+// ─── MIG-012 — Index search history ───
+
+/** One row from `read_index_history`. */
+export interface IndexHistoryEntry {
+	query: string;
+	last_used: number;
+	use_count: number;
+}
+
+export async function readIndexHistory(limit?: number): Promise<IndexHistoryEntry[]> {
+	return await invoke('read_index_history', { limit: limit ?? null });
+}
+
+export async function writeIndexHistoryEntry(query: string): Promise<void> {
+	return await invoke('write_index_history_entry', { query });
+}
+
+export async function clearIndexHistory(): Promise<void> {
+	return await invoke('clear_index_history');
+}
+
 // ─── Navigator data ───
 export interface NoteWithMeta {
 	name: string;
@@ -3066,6 +3087,15 @@ export interface AppSettings {
 		 *  "via {lemma}" badge per cross-language row. Off by default to
 		 *  preserve pre-MIG-010 exact-match behaviour. */
 		expandCrossLanguage: boolean;
+		/** MIG-012 — when true, the Index filter ALSO does semantic search
+		 *  over `term_embeddings`, surfacing conceptually-related terms
+		 *  with a `≈ similar` badge. First-time on triggers an embed-all
+		 *  job (~10–20 min on a 7,600-note Universe). Off by default. */
+		semanticSearchEnabled: boolean;
+		/** MIG-012 — when true, the Index filter box shows a dropdown of
+		 *  recently-used queries on focus + saves each committed query.
+		 *  Per-Universe storage in SQLite. Off by default. */
+		searchHistoryEnabled: boolean;
 	};
 
 	// Sky View graph settings
@@ -3196,6 +3226,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
 	},
 	index: {
 		expandCrossLanguage: false,
+		semanticSearchEnabled: false,
+		searchHistoryEnabled: false,
 	},
 	skyView: {
 		nodeSize: 1.5,
