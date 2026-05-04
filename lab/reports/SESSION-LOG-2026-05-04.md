@@ -222,3 +222,50 @@ Added to orientation v1.34 §Standing rules.
 - **Index function**: genuinely complete now — toggle works, status visible, rebuild manual, three retrieval layers compose, RTL clean, bilingual tested.
 
 **MIG-012 closes here, this time for real. End of day.**
+
+---
+
+# Even-later cascade: MIG-012 Build.7-fix-3 + threshold discovery
+
+After Boss confirmed fix-2 visibility ("✓ 18,200 terms indexed"), Boss tested the manual Rebuild button. Click → confirm → **no progress strip appeared** for several seconds. In a production-Tauri build with no DevTools, that looked like silent failure.
+
+## Diagnosis
+
+The gap between click-confirm and the first Rust progress event is ~2-5 seconds when the embedding model needs to lazy-load (`ensure_engine` blocks the function). During that window, `$termEmbedProgress` stays null, the strip doesn't render, and the user sees nothing.
+
+## fix-3 (`ff18208`)
+
+Three repairs in one commit:
+
+1. **Pre-populate** `termEmbedProgress` IMMEDIATELY in `runEmbedJob` with `{processed: 0, total: 0, done: false, cancelled: false}` so the strip flips visible on click. Real Rust events overwrite the store on arrival.
+
+2. **Template "Starting…" state**: when the pre-populated payload is `total === 0 && processed === 0 && !done`, the strip shows a shimmer-fill animated bar (200% gradient, 1.4s linear-infinite) and "Starting…" label. Switches to the counted view as real progress events arrive.
+
+3. **Error state**: new `semanticErrorMessage` $state surfaces any throw from `listen()` or `initTermEmbeddings()` in a red-bordered strip with a Dismiss button. Previously errors only went to console (invisible without DevTools — exactly what LL-026 warned about). Now visible AND dismissible.
+
+3 new i18n keys × 15 locales (semanticSearch.starting + .error + common.dismiss). en+ar full, 13 placeholders.
+
+Boss verified PASS — Rebuild click now shows shimmer "Starting…" immediately, transitions to real counter `Embedding terms: 3450 / 573364`.
+
+## Discovery during the test: term-selection threshold too loose
+
+Boss's screenshot showed **573,364 terms** total — 30× the 18,200 shown by fix-2's status line yesterday. Investigation:
+
+- `init_term_embeddings` SELECT uses `WHERE LENGTH(term) >= 2 AND cnt >= 5` — same as `read_index_entries`.
+- **SQLite's `LENGTH()` counts UTF-8 BYTES, not characters.** 1-character Arabic terms = 2 bytes → pass the filter. Single-char noise + partial bigram fragments inflate the corpus 30× on multi-script libraries.
+- The 18,200 from yesterday was a partial/cancelled embed job — yesterday's session caught the first 18K terms before MIG-012 G2 PASS was confirmed.
+
+At ~50 ms/term × 573K, the rebuild on Boss's hardware would take ~8 hours. Boss correctly cancelled. Logged for follow-up:
+
+`project_term_embeddings_threshold_too_loose.md` — **MIG-012-fix-4** when picked up. Recommended fix: bump `cnt >= 20` for the embed-all path specifically (browse path stays at `cnt >= 5`). Drops corpus to ~30-50K, ~30-min rebuild. Settings knob for power users is the v2 answer.
+
+LL-026 in action: the count being visible (fix-2) is what surfaced this discovery. Without the visible status line + strip, Boss would have started a force-rebuild and not noticed for 8 hours.
+
+## State of standing — final-final close
+
+- **Verified-shipped today**: 41 commits across MIG-010 / MIG-011 / MIG-012 / Build.7-fix-1 / fix-2 / fix-3 / Phase F / Phase F-2.
+- **Branch state**: `main` ahead of `origin/main` by these commits + this fix-3 close (about to push).
+- **Net Index function**: substring + lexical-bridge + semantic + history + visible status + manual rebuild + visible Starting/error states. All Boss-tested PASS in Arabic interface.
+- **One follow-up logged**: `project_term_embeddings_threshold_too_loose.md` — tighten `cnt` threshold to drop the embed corpus from 573K to a tractable size. Becomes MIG-012-fix-4 when picked up.
+
+**Three closed MIGs + 4 fix iterations + 1 logged follow-up. Genuinely end of day.**
