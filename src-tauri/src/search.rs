@@ -2634,14 +2634,14 @@ fn lexical_search(conn: &Connection, query: &str, limit: u32) -> Vec<SearchResul
 /// `En` out so "tree" matching a note containing "trees" (same lang,
 /// plural inflection) doesn't get badged as a translation. Only true
 /// cross-lingual hits show the badge.
-struct LexicalExpansion {
+pub(crate) struct LexicalExpansion {
     /// FTS5 MATCH clause, e.g. `"tree" OR "trees" OR "شجرة" OR "árbol"`.
-    match_expr: String,
+    pub(crate) match_expr: String,
     /// Lowercased non-source-language lemmas from the expansion.
     /// Empty when expansion only produced same-language terms
     /// (`lexical_search` still takes the expanded path in that case
     /// but no row can earn a badge).
-    bridge_terms_lower: Vec<String>,
+    pub(crate) bridge_terms_lower: Vec<String>,
 }
 
 /// Try to produce a cross-language FTS5 MATCH expression for `normalized`
@@ -2659,7 +2659,7 @@ struct LexicalExpansion {
 /// recall versus today's `word*` prefix query. Requiring the " OR "
 /// bridge means we only take the expanded path when there's an actual
 /// cross-lingual or cross-synonym win.
-fn expanded_match_query(normalized: &str) -> Option<LexicalExpansion> {
+pub(crate) fn expanded_match_query(normalized: &str) -> Option<LexicalExpansion> {
     let source_lang = crate::lexicon::detect_source_lang(normalized)?;
     let result = crate::lexicon::expand(
         normalized,
@@ -2704,16 +2704,29 @@ fn expanded_match_query(normalized: &str) -> Option<LexicalExpansion> {
 ///   - The caller passed an empty `bridge_terms_lower` (the expansion
 ///     didn't produce cross-language terms, so no badge is possible).
 fn find_match_via(snippet: &str, bridge_terms_lower: &[String]) -> Option<String> {
+    find_match_via_marked(snippet, bridge_terms_lower, "<mark>", "</mark>")
+}
+
+/// Generalized form of [`find_match_via`] that accepts the open/close
+/// delimiter pair surrounding marked regions. The lexical-search path
+/// uses `<mark>…</mark>` (HTML-escaped on the way out); the Index path
+/// (`libraries::read_term_mentions`) uses `CHAR(2)…CHAR(3)` (STX/ETX
+/// sentinels) to avoid letting user content inject DOM. Same scan
+/// semantics either way — only the delimiters differ.
+pub(crate) fn find_match_via_marked(
+    snippet: &str,
+    bridge_terms_lower: &[String],
+    mark_open: &str,
+    mark_close: &str,
+) -> Option<String> {
     if bridge_terms_lower.is_empty() {
         return None;
     }
-    const MARK_OPEN: &str = "<mark>";
-    const MARK_CLOSE: &str = "</mark>";
     let mut cursor = 0;
-    while let Some(open_rel) = snippet[cursor..].find(MARK_OPEN) {
-        let content_start = cursor + open_rel + MARK_OPEN.len();
+    while let Some(open_rel) = snippet[cursor..].find(mark_open) {
+        let content_start = cursor + open_rel + mark_open.len();
         let tail = &snippet[content_start..];
-        let Some(close_rel) = tail.find(MARK_CLOSE) else {
+        let Some(close_rel) = tail.find(mark_close) else {
             break;
         };
         let marked = &tail[..close_rel];
@@ -2723,7 +2736,7 @@ fn find_match_via(snippet: &str, bridge_terms_lower: &[String]) -> Option<String
                 return Some(term.clone());
             }
         }
-        cursor = content_start + close_rel + MARK_CLOSE.len();
+        cursor = content_start + close_rel + mark_close.len();
     }
     None
 }
