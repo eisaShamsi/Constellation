@@ -807,7 +807,13 @@
       "fleeting": "عارضی",
       "literature": "ادب",
       "permanent": "مستقل",
-      "synthesis": "ترکیب"
+      "synthesis": "ترکیب",
+      "spark": "Spark",
+      "birth": "Birth",
+      "growth": "Growth",
+      "maturity": "Maturity",
+      "dormancy": "Dormancy",
+      "archival": "Archival"
     },
     "noteStage": "— مرحلہ —"
   },
@@ -849,7 +855,8 @@
     "selectedTerms": "منتخب اصطلاحات",
     "alsoAppearsWith": "کے ساتھ بھی آتا ہے",
     "viaLemma": "{lemma} کے ذریعے",
-    "viaLemmaTooltip": "لیکسیکل برج کے ذریعے بین اللسانی مطابقت"
+    "viaLemmaTooltip": "لیکسیکل برج کے ذریعے بین اللسانی مطابقت",
+    "returnToIndex": "اشاریہ پر واپس جائیں"
   },
   "workspacesPanel": {
     "title": "ورک اسپیسز",

@@ -807,7 +807,13 @@
       "fleeting": "חולף",
       "literature": "ספרות",
       "permanent": "קבוע",
-      "synthesis": "סינתזה"
+      "synthesis": "סינתזה",
+      "spark": "Spark",
+      "birth": "Birth",
+      "growth": "Growth",
+      "maturity": "Maturity",
+      "dormancy": "Dormancy",
+      "archival": "Archival"
     },
     "noteStage": "— שלב —"
   },
@@ -849,7 +855,8 @@
     "selectedTerms": "המונחים שנבחרו",
     "alsoAppearsWith": "מופיע גם עם",
     "viaLemma": "דרך {lemma}",
-    "viaLemmaTooltip": "התאמה בין-שפתית דרך הגשר הלקסיקלי"
+    "viaLemmaTooltip": "התאמה בין-שפתית דרך הגשר הלקסיקלי",
+    "returnToIndex": "חזרה לאינדקס"
   },
   "workspacesPanel": {
     "title": "סביבות עבודה",

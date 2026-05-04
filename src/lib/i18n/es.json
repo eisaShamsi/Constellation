@@ -807,7 +807,13 @@
       "fleeting": "Fugaz",
       "literature": "Literatura",
       "permanent": "Permanente",
-      "synthesis": "Síntesis"
+      "synthesis": "Síntesis",
+      "spark": "Spark",
+      "birth": "Birth",
+      "growth": "Growth",
+      "maturity": "Maturity",
+      "dormancy": "Dormancy",
+      "archival": "Archival"
     },
     "noteStage": "— Etapa —"
   },
@@ -849,7 +855,8 @@
     "selectedTerms": "términos seleccionados",
     "alsoAppearsWith": "También aparece con",
     "viaLemma": "vía {lemma}",
-    "viaLemmaTooltip": "Coincidencia entre idiomas a través del Puente Léxico"
+    "viaLemmaTooltip": "Coincidencia entre idiomas a través del Puente Léxico",
+    "returnToIndex": "Volver al índice"
   },
   "workspacesPanel": {
     "title": "Espacios de trabajo",

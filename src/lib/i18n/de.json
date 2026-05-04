@@ -807,7 +807,13 @@
       "fleeting": "Flüchtig",
       "literature": "Literatur",
       "permanent": "Permanent",
-      "synthesis": "Synthese"
+      "synthesis": "Synthese",
+      "spark": "Spark",
+      "birth": "Birth",
+      "growth": "Growth",
+      "maturity": "Maturity",
+      "dormancy": "Dormancy",
+      "archival": "Archival"
     },
     "noteStage": "— Stufe —"
   },
@@ -849,7 +855,8 @@
     "selectedTerms": "ausgewählten Begriffe",
     "alsoAppearsWith": "Kommt auch vor mit",
     "viaLemma": "über {lemma}",
-    "viaLemmaTooltip": "Sprachübergreifende Übereinstimmung über die Lexical Bridge"
+    "viaLemmaTooltip": "Sprachübergreifende Übereinstimmung über die Lexical Bridge",
+    "returnToIndex": "Zurück zum Index"
   },
   "workspacesPanel": {
     "title": "Arbeitsbereiche",

@@ -807,7 +807,13 @@
       "fleeting": "一時的",
       "literature": "文献",
       "permanent": "永続",
-      "synthesis": "統合"
+      "synthesis": "統合",
+      "spark": "Spark",
+      "birth": "Birth",
+      "growth": "Growth",
+      "maturity": "Maturity",
+      "dormancy": "Dormancy",
+      "archival": "Archival"
     },
     "noteStage": "— 段階 —"
   },
@@ -849,7 +855,8 @@
     "selectedTerms": "個の選択された用語",
     "alsoAppearsWith": "同時に出現する語",
     "viaLemma": "{lemma} 経由",
-    "viaLemmaTooltip": "Lexical Bridge による言語横断マッチ"
+    "viaLemmaTooltip": "Lexical Bridge による言語横断マッチ",
+    "returnToIndex": "インデックスに戻る"
   },
   "workspacesPanel": {
     "title": "ワークスペース",

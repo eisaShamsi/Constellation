@@ -807,7 +807,13 @@
       "fleeting": "क्षणिक",
       "literature": "साहित्य",
       "permanent": "स्थायी",
-      "synthesis": "संश्लेषण"
+      "synthesis": "संश्लेषण",
+      "spark": "Spark",
+      "birth": "Birth",
+      "growth": "Growth",
+      "maturity": "Maturity",
+      "dormancy": "Dormancy",
+      "archival": "Archival"
     },
     "noteStage": "— चरण —"
   },
@@ -849,7 +855,8 @@
     "selectedTerms": "चयनित शब्द",
     "alsoAppearsWith": "साथ भी दिखाई देता है",
     "viaLemma": "{lemma} के माध्यम से",
-    "viaLemmaTooltip": "लेक्सिकल ब्रिज के माध्यम से क्रॉस-भाषा मिलान"
+    "viaLemmaTooltip": "लेक्सिकल ब्रिज के माध्यम से क्रॉस-भाषा मिलान",
+    "returnToIndex": "अनुक्रमणिका पर लौटें"
   },
   "workspacesPanel": {
     "title": "वर्कस्पेस",

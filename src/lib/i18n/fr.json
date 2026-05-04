@@ -807,7 +807,13 @@
       "fleeting": "Éphémère",
       "literature": "Littérature",
       "permanent": "Permanent",
-      "synthesis": "Synthèse"
+      "synthesis": "Synthèse",
+      "spark": "Spark",
+      "birth": "Birth",
+      "growth": "Growth",
+      "maturity": "Maturity",
+      "dormancy": "Dormancy",
+      "archival": "Archival"
     },
     "noteStage": "— Étape —"
   },
@@ -849,7 +855,8 @@
     "selectedTerms": "termes sélectionnés",
     "alsoAppearsWith": "Apparaît aussi avec",
     "viaLemma": "via {lemma}",
-    "viaLemmaTooltip": "Correspondance multilingue via le Pont Lexical"
+    "viaLemmaTooltip": "Correspondance multilingue via le Pont Lexical",
+    "returnToIndex": "Retour à l'index"
   },
   "workspacesPanel": {
     "title": "Espaces de travail",

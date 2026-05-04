@@ -807,7 +807,13 @@
       "fleeting": "Geçici",
       "literature": "Literatür",
       "permanent": "Kalıcı",
-      "synthesis": "Sentez"
+      "synthesis": "Sentez",
+      "spark": "Spark",
+      "birth": "Birth",
+      "growth": "Growth",
+      "maturity": "Maturity",
+      "dormancy": "Dormancy",
+      "archival": "Archival"
     },
     "noteStage": "— Aşama —"
   },
@@ -849,7 +855,8 @@
     "selectedTerms": "seçili terim",
     "alsoAppearsWith": "Birlikte görünür",
     "viaLemma": "{lemma} üzerinden",
-    "viaLemmaTooltip": "Lexical Bridge üzerinden diller arası eşleşme"
+    "viaLemmaTooltip": "Lexical Bridge üzerinden diller arası eşleşme",
+    "returnToIndex": "Dizine dön"
   },
   "workspacesPanel": {
     "title": "Çalışma Alanları",

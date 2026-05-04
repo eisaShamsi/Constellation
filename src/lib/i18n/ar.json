@@ -808,7 +808,13 @@
       "fleeting": "عابرة",
       "literature": "مرجعية",
       "permanent": "دائمة",
-      "synthesis": "تركيبية"
+      "synthesis": "تركيبية",
+      "spark": "شرارة",
+      "birth": "ولادة",
+      "growth": "نمو",
+      "maturity": "نضج",
+      "dormancy": "سُبات",
+      "archival": "أرشفة"
     },
     "noteStage": "— المرحلة —"
   },
@@ -850,7 +856,8 @@
     "selectedTerms": "المصطلحات المحددة",
     "alsoAppearsWith": "يظهر أيضًا مع",
     "viaLemma": "عبر {lemma}",
-    "viaLemmaTooltip": "مطابقة عبر اللغات بواسطة الجسر المعجمي"
+    "viaLemmaTooltip": "مطابقة عبر اللغات بواسطة الجسر المعجمي",
+    "returnToIndex": "العودة إلى الفهرس"
   },
   "workspacesPanel": {
     "title": "مساحات العمل",

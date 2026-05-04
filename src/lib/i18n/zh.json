@@ -807,7 +807,13 @@
       "fleeting": "闪念",
       "literature": "文献",
       "permanent": "永久",
-      "synthesis": "综合"
+      "synthesis": "综合",
+      "spark": "Spark",
+      "birth": "Birth",
+      "growth": "Growth",
+      "maturity": "Maturity",
+      "dormancy": "Dormancy",
+      "archival": "Archival"
     },
     "noteStage": "— 阶段 —"
   },
@@ -849,7 +855,8 @@
     "selectedTerms": "个选定术语",
     "alsoAppearsWith": "同时出现",
     "viaLemma": "通过 {lemma}",
-    "viaLemmaTooltip": "通过词汇桥的跨语言匹配"
+    "viaLemmaTooltip": "通过词汇桥的跨语言匹配",
+    "returnToIndex": "返回索引"
   },
   "workspacesPanel": {
     "title": "工作区",

@@ -844,7 +844,13 @@
       "fleeting": "Fleeting",
       "literature": "Literature",
       "permanent": "Permanent",
-      "synthesis": "Synthesis"
+      "synthesis": "Synthesis",
+      "spark": "Spark",
+      "birth": "Birth",
+      "growth": "Growth",
+      "maturity": "Maturity",
+      "dormancy": "Dormancy",
+      "archival": "Archival"
     },
     "noteStage": "— Stage —"
   },
@@ -886,7 +892,8 @@
     "selectedTerms": "selected terms",
     "alsoAppearsWith": "Also appears with",
     "viaLemma": "via {lemma}",
-    "viaLemmaTooltip": "Cross-language match via the Lexical Bridge"
+    "viaLemmaTooltip": "Cross-language match via the Lexical Bridge",
+    "returnToIndex": "Return to Index"
   },
   "workspacesPanel": {
     "title": "Workspaces",

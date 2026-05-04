@@ -807,7 +807,13 @@
       "fleeting": "순간",
       "literature": "문헌",
       "permanent": "영구",
-      "synthesis": "종합"
+      "synthesis": "종합",
+      "spark": "Spark",
+      "birth": "Birth",
+      "growth": "Growth",
+      "maturity": "Maturity",
+      "dormancy": "Dormancy",
+      "archival": "Archival"
     },
     "noteStage": "— 단계 —"
   },
@@ -849,7 +855,8 @@
     "selectedTerms": "개 선택된 용어",
     "alsoAppearsWith": "함께 나타나는 단어",
     "viaLemma": "{lemma} 통해",
-    "viaLemmaTooltip": "Lexical Bridge를 통한 교차 언어 일치"
+    "viaLemmaTooltip": "Lexical Bridge를 통한 교차 언어 일치",
+    "returnToIndex": "색인으로 돌아가기"
   },
   "workspacesPanel": {
     "title": "작업 공간",

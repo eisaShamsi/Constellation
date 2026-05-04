@@ -807,7 +807,13 @@
       "fleeting": "Мимолётная",
       "literature": "Литература",
       "permanent": "Постоянная",
-      "synthesis": "Синтез"
+      "synthesis": "Синтез",
+      "spark": "Spark",
+      "birth": "Birth",
+      "growth": "Growth",
+      "maturity": "Maturity",
+      "dormancy": "Dormancy",
+      "archival": "Archival"
     },
     "noteStage": "— Этап —"
   },
@@ -849,7 +855,8 @@
     "selectedTerms": "выбранных терминов",
     "alsoAppearsWith": "Также встречается с",
     "viaLemma": "через {lemma}",
-    "viaLemmaTooltip": "Межъязыковое совпадение через Lexical Bridge"
+    "viaLemmaTooltip": "Межъязыковое совпадение через Lexical Bridge",
+    "returnToIndex": "Вернуться к указателю"
   },
   "workspacesPanel": {
     "title": "Рабочие пространства",

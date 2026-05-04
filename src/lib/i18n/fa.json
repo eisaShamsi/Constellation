@@ -807,7 +807,13 @@
       "fleeting": "گذرا",
       "literature": "ادبیات",
       "permanent": "دائمی",
-      "synthesis": "ترکیب"
+      "synthesis": "ترکیب",
+      "spark": "Spark",
+      "birth": "Birth",
+      "growth": "Growth",
+      "maturity": "Maturity",
+      "dormancy": "Dormancy",
+      "archival": "Archival"
     },
     "noteStage": "— مرحله —"
   },
@@ -849,7 +855,8 @@
     "selectedTerms": "اصطلاح انتخاب‌شده",
     "alsoAppearsWith": "همچنین ظاهر می‌شود با",
     "viaLemma": "از طریق {lemma}",
-    "viaLemmaTooltip": "تطابق میان‌زبانی از طریق پل واژگانی"
+    "viaLemmaTooltip": "تطابق میان‌زبانی از طریق پل واژگانی",
+    "returnToIndex": "بازگشت به فهرست"
   },
   "workspacesPanel": {
     "title": "فضاهای کاری",
