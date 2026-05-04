@@ -175,3 +175,50 @@ Boss verified PASS at G2: Stage 1 (history) ✅, Stage 2 (semantic) ✅, Stage 3
 - **Pre-existing backlog unchanged**: reserved-Windows-name hardening, collision popup, pre-§140 cid_cn scrub, Outgoing Links display case, Unlinked Mentions cleanups, `LinkLifecycle 'fresh'` Boss-deferred TS error, Rebuild Index button (deferred per Rule 8).
 
 **The Index function — formerly "92% shipped" per scoping at start of day — is now genuinely complete: substring + lexical-bridge + semantic, all toggle-able, all RTL-clean, all bilingual-tested. End-of-day close.**
+
+---
+
+# Late-late-day cascade: MIG-012 Build.7-fix-1 + fix-2
+
+After the formal close of MIG-012 (audit shipped, MIG marked ready-to-close), Boss said "Proceed with the next queued." Of the queue I listed, **auto-trigger semantic-init on toggle ON** was the most user-facing gap remaining — without it, the toggle was inert without DevTools knowledge.
+
+## fix-1 (`91356b1`)
+
+`$effect` in SettingsModal watches `$appSettings.index.semanticSearchEnabled`. On ON-flip → calls `termEmbeddingStatus()` → if count is 0, attaches `term-embedding-progress` Tauri event listener and fires `init_term_embeddings(false)`. New module-scoped `termEmbedProgress` writable store carries the live state so the progress UI persists across modal mount/unmount.
+
+On OFF-flip while running: `cancel_term_embeddings()` → unlisten → store clears after the cancelled-event flush.
+
+3 new i18n keys × 15 locales (progress / done / cancelled).
+
+## fix-2 (`dd3b2e5`)
+
+Boss's feedback after fix-1 testing: with the embeddings table already populated from yesterday's MIG-012 session, flipping the toggle ON correctly skipped the IPC — but the UI gave NO visible feedback, so Boss couldn't tell "ready" from "silently broken." Production Tauri builds disable DevTools, so even the diagnostic snippet I tried to give Boss was unusable.
+
+Added a visible status line under the Semantic toggle:
+- `✓ {N} terms indexed` when populated
+- `Index not built yet` when empty
+- A Rebuild / Build now button next to it (with confirm dialog) for manual triggers.
+
+The status line answers "is my semantic index built?" at a glance. The button gives an escape valve for forced re-embed (useful when models change, plus as a manual trigger if the auto-trigger ever fails for any reason).
+
+6 new i18n keys × 15 locales (indexed, notBuilt, rebuild, build, rebuildConfirm, buildConfirm).
+
+## Boss verification
+
+`✓ 18,200 terms indexed` shown on the Universe where yesterday's MIG-012 G2 session embedded. Confirms BOTH:
+- fix-1 correctly skips re-init when populated (no progress UI fires; consistent with Stage 4 of the original test plan).
+- fix-2 surfaces the truth visibly so the user can confirm without DevTools.
+
+## Lesson logged — LL-026: production builds need visible state
+
+**Standing migration checklist now requires**: any MIG introducing a long-running background job that affects user-visible feature state MUST also include (a) a UI status indicator visible without DevTools AND (b) a manual trigger affordance (Rebuild / Force / Run-now button). The Tauri-disables-DevTools-in-release reality means all diagnostic surfaces must be in-app, not console-only.
+
+Added to orientation v1.34 §Standing rules.
+
+## State of standing — final close
+
+- **Verified-shipped today** (full day, two cascades): 38 commits from the original cascade + 2 fix commits + this Phase F-2 close = **40 commits** across MIG-010 / MIG-011 / MIG-012 / MIG-012 fixes.
+- **Branch state**: `main` ahead of `origin/main` by these commits + Phase F-2 docs (about to push).
+- **Index function**: genuinely complete now — toggle works, status visible, rebuild manual, three retrieval layers compose, RTL clean, bilingual tested.
+
+**MIG-012 closes here, this time for real. End of day.**
