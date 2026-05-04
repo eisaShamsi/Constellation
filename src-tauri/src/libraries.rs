@@ -2266,6 +2266,20 @@ pub struct IndexMention {
     /// against a note with empty body). The Index panel omits the context
     /// line in that case.
     pub snippet: Option<String>,
+    /// Cross-language bridge lemma that caused this row to surface, when
+    /// `read_term_mentions` was called with `expand_cross_language: true`
+    /// and the matched token in the snippet is a non-source-language
+    /// equivalent of the queried term. Renders in the UI as a small
+    /// "via {lemma}" badge on the row. `None` for direct matches (the
+    /// queried term itself appears in the note) and for all rows when
+    /// expansion is off.
+    ///
+    /// Source: `crate::search::find_match_via_marked` scans the snippet's
+    /// STX/ETX-marked regions against the M11 Lexical Bridge expansion's
+    /// `bridge_terms_lower` set. Matches the same M13 search-side badge
+    /// logic; see `MIG-010-INDEX-LEXICAL-BRIDGE-ARCHITECT.md`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub via_lemma: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -2947,7 +2961,7 @@ pub fn scan_library_index(app: tauri::AppHandle, library_path: String) -> Result
                 .into_iter()
                 // Legacy walker doesn't produce FTS5 snippets — the
                 // FTS5-backed `read_term_mentions` is the modern source.
-                .map(|(note_path, note_name)| IndexMention { note_path, note_name, snippet: None })
+                .map(|(note_path, note_name)| IndexMention { note_path, note_name, snippet: None, via_lemma: None })
                 .collect();
             IndexEntry { term, count, mentions, is_compound: false }
         })
@@ -2960,7 +2974,7 @@ pub fn scan_library_index(app: tauri::AppHandle, library_path: String) -> Result
         .map(|(term, count, sources)| {
             let mentions: Vec<IndexMention> = sources
                 .into_iter()
-                .map(|(note_path, note_name)| IndexMention { note_path, note_name, snippet: None })
+                .map(|(note_path, note_name)| IndexMention { note_path, note_name, snippet: None, via_lemma: None })
                 .collect();
             IndexEntry { term, count, mentions, is_compound: true }
         })
@@ -3383,21 +3397,69 @@ pub fn read_index_entries(app: tauri::AppHandle) -> Result<Vec<IndexEntry>, Stri
     Ok(entries)
 }
 
+/// Build the FTS5 MATCH clause to fetch mentions for an Index term, plus
+/// the optional [`crate::search::LexicalExpansion`] used to badge rows
+/// with their cross-language bridge lemma.
+///
+/// Returns `(match_expression, expansion)`:
+///   - `match_expression` is what gets bound as `?1` in the MATCH query.
+///   - `expansion` is `Some` only when `expand_cross_language` was true
+///     AND the M11 Lexical Bridge produced a real cross-language OR
+///     expansion (term in corpus, at least one foreign-language lemma).
+///     When `Some`, callers walk each row's snippet through
+///     [`crate::search::find_match_via_marked`] to populate `via_lemma`.
+///
+/// The exact-phrase fallback path (no expansion) is byte-identical to
+/// the pre-MIG-010 behaviour: phrase-quoted, doubled `"` for FTS5
+/// quoted-string escaping. This is what guarantees Invariant I1 in
+/// `MIG-010-INDEX-LEXICAL-BRIDGE-ARCHITECT.md`.
+fn build_term_match_clause(
+    term: &str,
+    expand_cross_language: bool,
+) -> (String, Option<crate::search::LexicalExpansion>) {
+    if expand_cross_language {
+        // Same normalization the search-side bridge uses, so a term
+        // from the Index dictionary (already FTS5-tokenized) hits the
+        // lexicon FST consistently with how `lexical_search` would
+        // route the same query.
+        let normalized = crate::arabic::normalizer::normalize_stripped(term);
+        if let Some(expansion) = crate::search::expanded_match_query(&normalized) {
+            // Use the expansion's OR-joined phrase MATCH directly. It's
+            // already FTS5-quoted per phrase, so we don't re-wrap.
+            let match_expr = expansion.match_expr.clone();
+            return (match_expr, Some(expansion));
+        }
+    }
+    // Exact-phrase fallback (default behaviour, pre-MIG-010).
+    let phrase = format!("\"{}\"", term.replace('"', "\"\""));
+    (phrase, None)
+}
+
 /// Lazy-load the list of notes mentioning a given term. Called when the
 /// user expands a term in the Index panel. Uses FTS5 `MATCH` — an O(log n)
 /// term-dictionary lookup followed by a linear scan of the postings list,
 /// joined to `note_meta` for display names.
 ///
 /// Returns up to `limit` (default 200) mentions, ordered by note name.
+///
+/// `expand_cross_language` (default false): when true, expand the queried
+/// term across languages via the M11 Lexical Bridge — clicking "knowledge"
+/// also surfaces notes containing "معرفة", "connaissance", etc., with each
+/// cross-language row carrying `via_lemma` so the UI can render a
+/// "via {lemma}" badge. See `MIG-010-INDEX-LEXICAL-BRIDGE-ARCHITECT.md`.
+/// When false, behaviour is byte-identical to pre-MIG-010 — exact phrase
+/// match only, every row's `via_lemma` is `None`.
 #[tauri::command]
 pub fn read_term_mentions(
     app: tauri::AppHandle,
     term: String,
     limit: Option<u32>,
+    expand_cross_language: Option<bool>,
 ) -> Result<Vec<IndexMention>, String> {
     use rusqlite::{Connection, OpenFlags};
 
     let limit = limit.unwrap_or(200).max(1).min(5000);
+    let expand = expand_cross_language.unwrap_or(false);
 
     let db_path = crate::search::db_path(&app)?;
     let flags = OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX;
@@ -3412,9 +3474,7 @@ pub fn read_term_mentions(
     // tokenizer: constellation".
     crate::search::register_fts5_tokenizer(&mut conn)?;
 
-    // Bind as a phrase so FTS5 treats the input literally.
-    // Quotes must be doubled per FTS5 quoted-string syntax.
-    let phrase = format!("\"{}\"", term.replace('"', "\"\""));
+    let (match_expr, expansion) = build_term_match_clause(&term, expand);
 
     // `snippet(notes_fts, -1, CHAR(2), CHAR(3), '…', 12)` returns a single
     // line of surrounding text with the matched tokens wrapped in STX/ETX
@@ -3423,7 +3483,9 @@ pub fn read_term_mentions(
     // (column 1) both get a useful preview. `12` tokens ≈ one line of
     // context; longer snippets waste vertical space in the expanded row.
     // STX/ETX are used (not `<mark>`) so literal HTML in user notes
-    // cannot be injected into the DOM at render time.
+    // cannot be injected into the DOM at render time. The cross-language
+    // badge scan below uses the same delimiters via
+    // `find_match_via_marked`.
     let mut stmt = conn.prepare(
         "SELECT nm.path, nm.name,
                 snippet(notes_fts, -1, CHAR(2), CHAR(3), '…', 12)
@@ -3434,14 +3496,27 @@ pub fn read_term_mentions(
          LIMIT ?2"
     ).map_err(|e| e.to_string())?;
 
-    let rows = stmt.query_map(rusqlite::params![phrase, limit as i64], |row| {
+    let bridge_terms_lower: &[String] = expansion
+        .as_ref()
+        .map(|e| e.bridge_terms_lower.as_slice())
+        .unwrap_or(&[]);
+
+    let rows = stmt.query_map(rusqlite::params![match_expr, limit as i64], |row| {
         let note_path: String = row.get(0)?;
         let note_name: String = row.get(1)?;
         // snippet() returns TEXT; SQLite can hand us NULL in edge cases
         // (very short/empty content columns), so tolerate both.
         let snippet_raw: Option<String> = row.get(2).ok();
         let snippet = snippet_raw.and_then(|s| if s.is_empty() { None } else { Some(s) });
-        Ok(IndexMention { note_path, note_name, snippet })
+        // Per-row badge: scan the snippet's STX/ETX-marked regions
+        // against the bridge terms. `None` when expansion is off, when
+        // the snippet has no marks (title-only hit), or when the marked
+        // token is the source-language term itself (M13 same-language
+        // filter).
+        let via_lemma = snippet.as_deref().and_then(|s| {
+            crate::search::find_match_via_marked(s, bridge_terms_lower, "\u{0002}", "\u{0003}")
+        });
+        Ok(IndexMention { note_path, note_name, snippet, via_lemma })
     }).map_err(|e| e.to_string())?;
 
     Ok(rows.flatten().collect())
@@ -4427,5 +4502,63 @@ mod tests {
         // critically the stem must NOT be Arabic-pipeline output.
         assert!(stem.is_ascii(), "english must not be routed to arabic pipeline");
         assert_eq!(norm, "running");
+    }
+
+    // ─── MIG-010 §Build.2 — read_term_mentions cross-language expansion ───
+    //
+    // Tests on the testable inner helper `build_term_match_clause`. The
+    // outer `read_term_mentions` IPC requires SQLite + AppHandle + a
+    // populated FTS index, which doesn't fit a unit-test scope. Boss
+    // verifies end-to-end at G3 (after §Build.4).
+
+    /// Invariant I1 (default unchanged): with `expand_cross_language: false`,
+    /// the helper produces a phrase-quoted MATCH clause and zero expansion
+    /// state — byte-identical to pre-MIG-010 behaviour.
+    #[test]
+    fn build_term_match_clause_no_expand_returns_phrase_only() {
+        let (clause, expansion) = build_term_match_clause("knowledge", false);
+        assert_eq!(clause, "\"knowledge\"");
+        assert!(expansion.is_none());
+    }
+
+    /// Phrase quoting must double-escape literal `"` per FTS5 syntax,
+    /// even on the no-expand path. Pre-MIG-010 invariant preserved.
+    #[test]
+    fn build_term_match_clause_no_expand_doubles_quotes() {
+        let (clause, expansion) = build_term_match_clause(r#"a"b"#, false);
+        assert_eq!(clause, r#""a""b""#);
+        assert!(expansion.is_none());
+    }
+
+    /// Invariant I3 (out-of-corpus fall-through): toggle ON, but the
+    /// queried term isn't in the M11 lexicon — `expanded_match_query`
+    /// returns None, helper falls through to the exact-phrase path.
+    /// No expansion state, no badges possible.
+    #[test]
+    fn build_term_match_clause_expand_out_of_corpus_falls_back() {
+        let (clause, expansion) = build_term_match_clause("Xzyqwop", true);
+        assert_eq!(clause, "\"Xzyqwop\"");
+        assert!(expansion.is_none(),
+            "out-of-corpus terms must fall back to exact phrase, not expansion");
+    }
+
+    /// Invariant I3 (in-corpus expansion): toggle ON, term in corpus
+    /// with cross-language equivalents — helper returns the OR-joined
+    /// expansion clause AND the LexicalExpansion struct so the caller
+    /// can scan snippets for bridge lemmas.
+    #[test]
+    fn build_term_match_clause_expand_in_corpus_returns_expansion() {
+        let (clause, expansion) = build_term_match_clause("tree", true);
+        // The corpus has "tree" with cross-language equivalents; the
+        // expanded clause must contain " OR " (otherwise expansion
+        // would be a degenerate single-phrase and the helper would
+        // have fallen back per `expanded_match_query`'s own filter).
+        assert!(clause.contains(" OR "),
+            "in-corpus expansion must produce OR-joined phrases, got: {clause}");
+        let exp = expansion.expect("in-corpus term must produce LexicalExpansion");
+        assert!(!exp.bridge_terms_lower.is_empty(),
+            "in-corpus cross-language term must produce ≥1 bridge term");
+        // Bridge terms are pre-lowercased (M13 invariant).
+        assert!(exp.bridge_terms_lower.iter().all(|t| t == &t.to_lowercase()));
     }
 }
