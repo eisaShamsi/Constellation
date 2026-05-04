@@ -419,9 +419,18 @@
 			for (const { q, stem } of prepared) {
 				if (lower.includes(q)) return true;
 				if (stem && lower.includes(stem)) return true;
-				// Comma mode also matches in reverse: a short query like
-				// "ai" matches an indexed term "ai-safety" AND vice-versa.
-				if (hasComma && q.includes(lower)) return true;
+				// Bidirectional substring (always, not just on comma mode):
+				// the FTS5 index stores STEMS, which are often shorter than
+				// the surface form a user types. E.g., user types "معرفة"
+				// (5 chars) but the stored term is the CAE-produced stem
+				// "معرف" (4 chars). `term.includes(query)` fails when the
+				// term is shorter than the query. The reverse — does the
+				// query contain the (shorter) term as substring? — finds
+				// it. Same applies to English: "running" finds stem "run".
+				// Pre-fix this only ran in comma mode, hiding stem matches
+				// for plain queries. This was the root of the "type Arabic
+				// in 'All' filter, get zero results" bug.
+				if (q.includes(lower)) return true;
 			}
 			return false;
 		});
@@ -440,6 +449,19 @@
 	$effect(() => {
 		if (activeScript !== 'all' && !availableScripts.includes(activeScript as ScriptKey)) {
 			activeScript = 'all';
+		}
+	});
+
+	// Same shape for the letter filter: when the active filter query produces
+	// no entries matching the active letter (e.g. user clicked "K" then typed
+	// an Arabic search), drop the letter filter automatically. Without this,
+	// the letter filter silently persists and hides every result that doesn't
+	// start with that letter — the "type Arabic in 'All' returns 0 until you
+	// bounce through 'عربي'" bug. The بounce was clearing activeLetter via
+	// the activeScript-tracking effect; this makes the clearing automatic.
+	$effect(() => {
+		if (activeLetter && !filteredEntries.some(e => getIndexInfo(e.term).letter === activeLetter)) {
+			activeLetter = null;
 		}
 	});
 
