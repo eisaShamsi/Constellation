@@ -357,6 +357,7 @@ pub fn run() {
             libraries::read_index_entries,
             libraries::read_term_mentions,
             libraries::read_cooccurring_terms,
+            lexicon::lexicon_expand_for_filter,
             watcher::watch_library,
             watcher::unwatch_library,
             bases::parse_base_file,

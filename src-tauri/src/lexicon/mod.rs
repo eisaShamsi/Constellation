@@ -319,6 +319,126 @@ pub fn expand_to_match_expr_via(
     fts::build_match_expr(&r)
 }
 
+// ─── MIG-011 — frontend filter bridge IPC ────────────────────────────
+
+/// One cross-language lemma surfaced by the Index filter bridge.
+/// Carries the lemma (pre-lowercased for substring matching against
+/// the Index entries) and the language tag so the frontend can scope
+/// which entries the lemma should annotate as cross-language matches.
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct FilterLemma {
+    pub lemma_lower: String,
+    pub lang: Lang,
+}
+
+/// Result of `lexicon_expand_for_filter` — the source the user typed
+/// (echoed back lowercased so the frontend can render the badge as
+/// "via {source_lemma}") and the cross-language lemma set.
+///
+/// `lemmas` is filtered to **non-source-language** lemmas only — the
+/// same M13-style same-language exclusion the mentions-side bridge
+/// uses. We don't want a French user typing "tree" to see English
+/// "tree" or "trees" tagged as a cross-language match — those are
+/// substring matches and don't earn a "via" badge.
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct FilterExpansion {
+    pub source_lemma: String,
+    pub source_lang: Lang,
+    pub lemmas: Vec<FilterLemma>,
+}
+
+/// Tauri command — frontend filter bridge IPC for MIG-011.
+///
+/// Given a user's filter-box query, returns `Some(FilterExpansion)`
+/// if (a) the query is in the M11 corpus AND (b) at least one
+/// non-source-language equivalent exists. Otherwise `None`. The
+/// frontend uses the lemmas to substring-match Index entries and
+/// annotate cross-language hits with a `via {source_lemma}` badge.
+///
+/// Per-keystroke debounced (300ms) on the frontend side. The backend
+/// call itself is sub-millisecond (lexicon FST lookup + expansion
+/// flatten); the IPC round-trip dominates at ~1ms.
+#[tauri::command]
+pub fn lexicon_expand_for_filter(query: String) -> Result<Option<FilterExpansion>, String> {
+    let normalized = crate::arabic::normalizer::normalize_stripped(&query);
+    if normalized.trim().is_empty() {
+        return Ok(None);
+    }
+    let Some(source_lang) = detect_source_lang(&normalized) else {
+        return Ok(None);
+    };
+    let result = expand(&normalized, source_lang, &ExpansionOptions::default());
+    let lemmas: Vec<FilterLemma> = result
+        .flat_terms()
+        .into_iter()
+        .filter(|(lang, _)| *lang != source_lang)
+        .map(|(lang, term)| FilterLemma {
+            lemma_lower: term.to_lowercase(),
+            lang,
+        })
+        .collect();
+    if lemmas.is_empty() {
+        return Ok(None);
+    }
+    Ok(Some(FilterExpansion {
+        source_lemma: normalized.to_lowercase(),
+        source_lang,
+        lemmas,
+    }))
+}
+
+#[cfg(test)]
+mod tests_mig011_filter {
+    //! MIG-011 §Build.1 — lexicon_expand_for_filter unit tests.
+    //! Out-of-corpus → None. In-corpus → FilterExpansion with
+    //! non-source-language lemmas, all pre-lowercased.
+
+    use super::lexicon_expand_for_filter;
+
+    #[test]
+    fn filter_expand_out_of_corpus_returns_none() {
+        let r = lexicon_expand_for_filter("Xzyqwop".to_string()).unwrap();
+        assert!(r.is_none(),
+            "out-of-corpus terms must return None, not a degenerate FilterExpansion");
+    }
+
+    #[test]
+    fn filter_expand_empty_query_returns_none() {
+        let r = lexicon_expand_for_filter(String::new()).unwrap();
+        assert!(r.is_none());
+        let r = lexicon_expand_for_filter("   ".to_string()).unwrap();
+        assert!(r.is_none());
+    }
+
+    #[test]
+    fn filter_expand_english_in_corpus_returns_non_english_lemmas() {
+        let r = lexicon_expand_for_filter("tree".to_string())
+            .unwrap()
+            .expect("'tree' is in the corpus and must produce a FilterExpansion");
+        assert_eq!(r.source_lemma, "tree");
+        assert!(!r.lemmas.is_empty(), "must produce ≥1 cross-language lemma");
+        // Same-language exclusion: English source, no English in lemmas.
+        assert!(r.lemmas.iter().all(|l| !matches!(l.lang, crate::arabic::Lang::En)),
+            "English source must not produce English lemmas; got: {:?}",
+            r.lemmas);
+        // All lemmas pre-lowercased.
+        assert!(r.lemmas.iter().all(|l| l.lemma_lower == l.lemma_lower.to_lowercase()));
+    }
+
+    #[test]
+    fn filter_expand_arabic_in_corpus_returns_non_arabic_lemmas() {
+        let r = lexicon_expand_for_filter("شجرة".to_string())
+            .unwrap()
+            .expect("'شجرة' is in the corpus and must produce a FilterExpansion");
+        assert!(matches!(r.source_lang, crate::arabic::Lang::Ar));
+        assert!(!r.lemmas.is_empty());
+        // Same-language exclusion: Arabic source, no Arabic in lemmas.
+        assert!(r.lemmas.iter().all(|l| !matches!(l.lang, crate::arabic::Lang::Ar)),
+            "Arabic source must not produce Arabic lemmas; got: {:?}",
+            r.lemmas);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
