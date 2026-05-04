@@ -463,42 +463,61 @@
 	// ═══════════════════════════════════════════════
 	// ─── Derived State ───
 	// ═══════════════════════════════════════════════
-	const filteredEntries = $derived.by(() => {
+	// MIG-011: filter-pass result — both the matched entries AND a
+	// parallel Map<term, viaLemma> for cross-language bridge annotations.
+	// The Map is populated only for entries that matched ONLY because of
+	// a bridge lemma (not a direct substring); direct matches don't earn
+	// badges (M13 same-language exclusion rule, applied to the filter).
+	const filteredResult = $derived.by(() => {
 		const raw = filterQuery.trim();
 		let result = entries;
 		if (!showHidden) {
 			result = result.filter(e => !excludedTerms.has(e.term.toLowerCase()));
 		}
-		if (!raw) return result;
+		const annotations = new Map<string, string>();
+		if (!raw) return { entries: result, annotations };
 		const hasComma = /[،,؛;]/.test(raw);
 		const rawQueries = hasComma
 			? raw.split(/[،,؛;]/).map(t => t.trim().toLowerCase()).filter(Boolean)
 			: [raw.toLowerCase()];
-		if (rawQueries.length === 0) return result;
+		if (rawQueries.length === 0) return { entries: result, annotations };
 		// Prepare each sub-query ONCE — ARABIC_RE.test + stemming run per
 		// filter pass, not per entry. The inner loop is then pure .includes.
 		const prepared = rawQueries.map(prepareQuery);
-		return result.filter(e => {
+		const bridge = bridgeExpansion; // snapshot; effect updates this
+		const matched: IndexEntry[] = [];
+		for (const e of result) {
 			const lower = e.term.toLowerCase();
+			let direct = false;
 			for (const { q, stem } of prepared) {
-				if (lower.includes(q)) return true;
-				if (stem && lower.includes(stem)) return true;
-				// Bidirectional substring (always, not just on comma mode):
-				// the FTS5 index stores STEMS, which are often shorter than
-				// the surface form a user types. E.g., user types "معرفة"
-				// (5 chars) but the stored term is the CAE-produced stem
-				// "معرف" (4 chars). `term.includes(query)` fails when the
-				// term is shorter than the query. The reverse — does the
-				// query contain the (shorter) term as substring? — finds
-				// it. Same applies to English: "running" finds stem "run".
-				// Pre-fix this only ran in comma mode, hiding stem matches
-				// for plain queries. This was the root of the "type Arabic
-				// in 'All' filter, get zero results" bug.
-				if (q.includes(lower)) return true;
+				if (lower.includes(q)) { direct = true; break; }
+				if (stem && lower.includes(stem)) { direct = true; break; }
+				// Bidirectional substring — see MIG-010-fix justification:
+				// FTS5 stores STEMS (shorter than surface). `term.includes(
+				// query)` fails when term is shorter; reverse check catches.
+				if (q.includes(lower)) { direct = true; break; }
 			}
-			return false;
-		});
+			if (direct) {
+				matched.push(e);
+				continue;
+			}
+			// MIG-011: no direct hit — try the cross-language bridge.
+			if (bridge && bridge.lemmas.length > 0) {
+				for (const { lemma_lower } of bridge.lemmas) {
+					// Same bidirectional shape as the substring path.
+					if (lower.includes(lemma_lower) || lemma_lower.includes(lower)) {
+						matched.push(e);
+						annotations.set(e.term, bridge.source_lemma);
+						break;
+					}
+				}
+			}
+		}
+		return { entries: matched, annotations };
 	});
+
+	const filteredEntries = $derived(filteredResult.entries);
+	const bridgeFilterAnnotations = $derived(filteredResult.annotations);
 
 	const availableScripts = $derived.by(() => {
 		const scripts = new Set<ScriptKey>();
