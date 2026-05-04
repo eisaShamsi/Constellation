@@ -716,6 +716,21 @@ When the Second Screen is open:
 - **Click a term** → Second Screen shows all notes containing that term in a split view (note list + editor)
 - **Ctrl+Click multiple terms** → Second Screen shows compare mode with each term in its own column
 
+### Cross-language Mentions (M11 Lexical Bridge)
+
+Constellation's Lexical Bridge knows that "knowledge" in English, "معرفة" / "علم" in Arabic, "connaissance" in French, and "知识" in Chinese all refer to the same concept — across 20,000 concepts × 15 languages, baked into the app.
+
+By default, clicking a term in the Index shows only notes that contain that **literal word**. If you want the Index to also surface notes about the **same concept in other languages**, turn on the toggle:
+
+- Open **Settings → Index → Expand mentions cross-language**
+- Click any term in the Index — the mentions list now includes notes in other languages too
+- Each cross-language match carries a small **"via {lemma}"** badge after the note name (e.g. "via شجرة" on an English-titled note when you clicked "tree", or "via knowledge" on an Arabic-titled note when you clicked "معرفة")
+- Direct same-language matches still appear with no badge
+
+The toggle is **off by default** to preserve the literal-only Index behaviour for users who want it strictly per-language. When on, it composes with everything else — frequency sort, letter filter, script tabs, second screen.
+
+What about the **filter box** at the top of the Index? Today it does plain substring matching — typing "knowledge" only finds index terms that literally contain those letters. Cross-language filtering (typing "knowledge" surfacing the term "معرفة" too) is a planned next step, not yet shipped.
+
 ---
 
 ## 8. Constellation Sight
