@@ -1155,6 +1155,37 @@ fn init_db(path: &Path) -> Result<Connection, String> {
         );
     ").map_err(|e| format!("Failed to create note_embeddings: {}", e))?;
 
+    // MIG-012 — Index Search Engine: term-level embeddings for semantic
+    // filter search. Each row is one Index vocabulary term embedded with
+    // the same multilingual-e5-small model used for note_embeddings.
+    // `last_built` lets us detect stale embeddings if the model changes
+    // (Boss-deferred — see MIG-012 Architect §6 risk register).
+    // Populated lazily on first semantic-search-toggle-on
+    // (Boss-approved Q2.C) by the `init_term_embeddings` IPC.
+    conn.execute_batch("
+        CREATE TABLE IF NOT EXISTS term_embeddings (
+            term TEXT PRIMARY KEY,
+            embedding BLOB NOT NULL,
+            dimensions INTEGER NOT NULL DEFAULT 384,
+            model_id TEXT DEFAULT 'multilingual-e5-small',
+            last_built INTEGER NOT NULL DEFAULT (CAST(strftime('%s','now') AS INTEGER))
+        );
+    ").map_err(|e| format!("Failed to create term_embeddings: {}", e))?;
+
+    // MIG-012 — Search history. Per-Universe (this database is per-
+    // Universe). Boss-approved Q3.B. Capped at 200 rows by application
+    // logic on each write (FIFO eviction).
+    conn.execute_batch("
+        CREATE TABLE IF NOT EXISTS index_search_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            query TEXT NOT NULL UNIQUE,
+            last_used INTEGER NOT NULL,
+            use_count INTEGER NOT NULL DEFAULT 1
+        );
+        CREATE INDEX IF NOT EXISTS idx_index_search_history_last_used
+            ON index_search_history (last_used DESC);
+    ").map_err(|e| format!("Failed to create index_search_history: {}", e))?;
+
     // Create FTS5 virtual table for full-text search.
     //
     // Uses the custom 'constellation' tokenizer (registered above) so
