@@ -7,6 +7,8 @@
 		type IndexEntry,
 		type IndexMention,
 		type CooccurringTerm,
+		type FilterExpansion,
+		lexiconExpandForFilter,
 	} from '$lib/libraries/store';
 	import VirtualList from '$lib/components/VirtualList.svelte';
 
@@ -26,6 +28,7 @@
 		loadMentions,
 		loadCooccurrence,
 		cacheKey,
+		bridgeFilterEnabled = false,
 	}: {
 		entries: IndexEntry[];
 		isLoading?: boolean;
@@ -49,6 +52,12 @@
 		 *  the IPC returns. Doesn't need a stable type; reference change
 		 *  is the signal. The semantic meaning lives in the parent. */
 		cacheKey?: unknown;
+		/** MIG-011: when true, the filter box ALSO queries the M11
+		 *  Lexical Bridge per-keystroke (debounced) and merges cross-
+		 *  language matches into the result list with `via {lemma}`
+		 *  badges. When false, filter is pure substring (default).
+		 *  Toggle source: `$appSettings.index.expandCrossLanguage`. */
+		bridgeFilterEnabled?: boolean;
 	} = $props();
 
 	// Per-term mentions cache — populated on demand when the user expands a term.
@@ -65,6 +74,61 @@
 		untrack(() => {
 			if (mentionsCache.size > 0) mentionsCache = new Map();
 			if (loadingMentions.size > 0) loadingMentions = new Set();
+			// MIG-011: also blow away the bridge expansion cache when
+			// the toggle flips. Stale FilterExpansion would render the
+			// old bridge results until the user typed again.
+			if (bridgeExpansionCache.size > 0) bridgeExpansionCache = new Map();
+			bridgeExpansion = null;
+		});
+	});
+
+	// ─── MIG-011 — Index filter cross-language bridge ───
+	//
+	// State: the latest FilterExpansion (or null when none for the
+	// current query). Populated via a debounced effect that watches
+	// `filterQuery` + `bridgeFilterEnabled`. Cached per-query for the
+	// session so re-typing the same query is free.
+	let bridgeExpansion = $state<FilterExpansion | null>(null);
+	let bridgeExpansionCache = $state<Map<string, FilterExpansion | null>>(new Map());
+	let bridgeFetchToken = 0; // monotonic; cancels stale in-flight fetches
+
+	$effect(() => {
+		// Track the deps explicitly. Cache + state writes go inside untrack
+		// per the same Rule-2 reasoning as the mentions-cache effect above.
+		// The cleanup return MUST bubble out of `untrack` so Svelte sees it
+		// and can cancel the pending timeout on the next run / unmount —
+		// otherwise a fast typist would fire one IPC per ~300ms keystroke
+		// burst instead of just the final settled query.
+		const enabled = bridgeFilterEnabled;
+		const q = filterQuery.trim().toLowerCase();
+		return untrack(() => {
+			// Toggle off OR empty query → clear, no IPC.
+			if (!enabled || !q) {
+				bridgeExpansion = null;
+				return undefined;
+			}
+			// Cache hit — use cached result instantly, no IPC.
+			if (bridgeExpansionCache.has(q)) {
+				bridgeExpansion = bridgeExpansionCache.get(q) ?? null;
+				return undefined;
+			}
+			// Debounce + fetch. Token cancels stale results when user
+			// keeps typing — only the most recent fetch's result lands.
+			const myToken = ++bridgeFetchToken;
+			const handle = setTimeout(async () => {
+				try {
+					const result = await lexiconExpandForFilter(q);
+					if (myToken !== bridgeFetchToken) return; // superseded
+					bridgeExpansionCache.set(q, result);
+					bridgeExpansionCache = new Map(bridgeExpansionCache);
+					bridgeExpansion = result;
+				} catch (err) {
+					if (myToken !== bridgeFetchToken) return;
+					console.error('[IndexPanel] lexiconExpandForFilter failed for q=', q, err);
+					bridgeExpansion = null;
+				}
+			}, 300);
+			return () => clearTimeout(handle);
 		});
 	});
 

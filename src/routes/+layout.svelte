@@ -4812,6 +4812,7 @@
 							onNoteClick={handleIndexNoteClick}
 							loadMentions={(term) => readTermMentions(term, 500, $appSettings.index.expandCrossLanguage)}
 							cacheKey={$appSettings.index.expandCrossLanguage}
+							bridgeFilterEnabled={$appSettings.index.expandCrossLanguage}
 							loadCooccurrence={(term) => readCooccurringTerms(term)}
 							onNoteHover={handleIndexNoteHover}
 							onNoteLeave={handleIndexNoteLeave}

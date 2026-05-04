@@ -2459,6 +2459,34 @@ export async function readCooccurringTerms(
 	});
 }
 
+// ─── MIG-011 — Index filter cross-language bridge ───
+
+/** Single cross-language lemma surfaced by the Index filter bridge.
+ *  See `MIG-011-INDEX-FILTER-BRIDGE-ARCHITECT.md`. */
+export interface FilterLemma {
+	lemma_lower: string;
+	lang: string;
+}
+
+/** Result of `lexiconExpandForFilter` — `null` when the query is out
+ *  of corpus or has no cross-language equivalents. The frontend treats
+ *  null as "no bridge expansion this keystroke; substring filter only."
+ *  Returned `lemmas` are filtered to non-source-language only (M13
+ *  same-language exclusion rule). */
+export interface FilterExpansion {
+	source_lemma: string;
+	source_lang: string;
+	lemmas: FilterLemma[];
+}
+
+/** Invoke the M11 Lexical Bridge for the Index filter box. Per-keystroke
+ *  callers MUST debounce (≥300ms) to avoid spamming the IPC; the wrapper
+ *  itself is just the round-trip. The result is suitable for caching by
+ *  the lower-cased query string for the duration of the session. */
+export async function lexiconExpandForFilter(query: string): Promise<FilterExpansion | null> {
+	return await invoke('lexicon_expand_for_filter', { query });
+}
+
 // ─── Navigator data ───
 export interface NoteWithMeta {
 	name: string;
