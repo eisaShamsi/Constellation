@@ -80,6 +80,15 @@
 			const list = await loadMentions(term);
 			mentionsCache.set(term, list);
 			mentionsCache = new Map(mentionsCache);
+		} catch (err) {
+			// IPC error (FTS5 MATCH parser hiccup, tokenizer panic, etc.)
+			// Without a catch the error bubbles past `finally` as an
+			// unhandled rejection — silent in production. Cache an empty
+			// array so the UI can render a fallback row instead of just
+			// looking blank, and log to console for diagnosis.
+			console.error('[IndexPanel] readTermMentions failed for term=', term, err);
+			mentionsCache.set(term, []);
+			mentionsCache = new Map(mentionsCache);
 		} finally {
 			loadingMentions.delete(term);
 			loadingMentions = new Set(loadingMentions);

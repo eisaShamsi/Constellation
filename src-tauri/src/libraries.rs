@@ -3475,17 +3475,76 @@ pub fn read_term_mentions(
     crate::search::register_fts5_tokenizer(&mut conn)?;
 
     let (match_expr, expansion) = build_term_match_clause(&term, expand);
+    let bridge_terms_lower: Vec<String> = expansion
+        .as_ref()
+        .map(|e| e.bridge_terms_lower.clone())
+        .unwrap_or_default();
 
-    // `snippet(notes_fts, -1, CHAR(2), CHAR(3), '…', 12)` returns a single
-    // line of surrounding text with the matched tokens wrapped in STX/ETX
-    // (\x02/\x03) sentinels. `-1` means "best column across all indexed
-    // columns" — so a term that lives in the title (column 0) or body
-    // (column 1) both get a useful preview. `12` tokens ≈ one line of
-    // context; longer snippets waste vertical space in the expanded row.
-    // STX/ETX are used (not `<mark>`) so literal HTML in user notes
-    // cannot be injected into the DOM at render time. The cross-language
-    // badge scan below uses the same delimiters via
-    // `find_match_via_marked`.
+    // Try the (possibly-expanded) MATCH first. If FTS5 errors mid-iteration
+    // — which can happen on certain expanded OR-expressions where one
+    // phrase trips the constellation tokenizer or the FTS5 parser — fall
+    // back to the literal exact-phrase path so the user always sees
+    // something rather than an empty mentions list. The failure is logged
+    // to stderr (visible in `tauri dev` console / `RUST_LOG` capture).
+    match run_mentions_query(&conn, &match_expr, limit, &bridge_terms_lower) {
+        Ok(rows) if rows.is_empty() && expansion.is_some() => {
+            // Expanded MATCH parsed cleanly but yielded zero rows. Could
+            // be a legitimate "no notes about that concept anywhere"
+            // result, OR a tokenizer mismatch that silently dropped every
+            // expanded phrase. Retry with the exact-phrase fallback so
+            // the user at least sees direct hits — the badge UI will
+            // simply not appear (no via_lemma since bridge_terms_lower
+            // is empty in the fallback path).
+            eprintln!(
+                "[read_term_mentions] expanded MATCH for term={:?} returned 0 rows; falling back to exact phrase",
+                term
+            );
+            let exact_phrase = format!("\"{}\"", term.replace('"', "\"\""));
+            run_mentions_query(&conn, &exact_phrase, limit, &[])
+        }
+        Ok(rows) => Ok(rows),
+        Err(e) if expansion.is_some() => {
+            // Hard error during the expanded-path iteration. Same
+            // fallback strategy as above. Surface the diagnostic.
+            eprintln!(
+                "[read_term_mentions] expanded MATCH for term={:?} errored ({}); falling back to exact phrase",
+                term, e
+            );
+            let exact_phrase = format!("\"{}\"", term.replace('"', "\"\""));
+            run_mentions_query(&conn, &exact_phrase, limit, &[])
+        }
+        Err(e) => {
+            // Error on the no-expansion path is unrecoverable (no
+            // alternative to fall back to). Propagate.
+            Err(e)
+        }
+    }
+}
+
+/// Execute the snippet+notes_fts MATCH query and collect rows. Extracted
+/// so `read_term_mentions` can attempt the expanded MATCH first and fall
+/// back to the exact-phrase MATCH if the expanded path errors or yields
+/// zero rows on what was supposed to be an expanded query.
+///
+/// `bridge_terms_lower` is the per-row badge scan input. Pass an empty
+/// slice on the exact-phrase fallback path so no rows can earn a badge
+/// (which would be misleading — they're direct hits).
+///
+/// `snippet(notes_fts, -1, CHAR(2), CHAR(3), '…', 12)` returns a single
+/// line of surrounding text with the matched tokens wrapped in STX/ETX
+/// (\x02/\x03) sentinels. `-1` means "best column across all indexed
+/// columns" — so a term that lives in the title (column 0) or body
+/// (column 1) both get a useful preview. `12` tokens ≈ one line of
+/// context; longer snippets waste vertical space in the expanded row.
+/// STX/ETX are used (not `<mark>`) so literal HTML in user notes cannot
+/// be injected into the DOM at render time. The cross-language badge
+/// scan uses the same delimiters via `find_match_via_marked`.
+fn run_mentions_query(
+    conn: &rusqlite::Connection,
+    match_expr: &str,
+    limit: u32,
+    bridge_terms_lower: &[String],
+) -> Result<Vec<IndexMention>, String> {
     let mut stmt = conn.prepare(
         "SELECT nm.path, nm.name,
                 snippet(notes_fts, -1, CHAR(2), CHAR(3), '…', 12)
@@ -3495,11 +3554,6 @@ pub fn read_term_mentions(
          ORDER BY LOWER(nm.name)
          LIMIT ?2"
     ).map_err(|e| e.to_string())?;
-
-    let bridge_terms_lower: &[String] = expansion
-        .as_ref()
-        .map(|e| e.bridge_terms_lower.as_slice())
-        .unwrap_or(&[]);
 
     let rows = stmt.query_map(rusqlite::params![match_expr, limit as i64], |row| {
         let note_path: String = row.get(0)?;
@@ -3519,7 +3573,24 @@ pub fn read_term_mentions(
         Ok(IndexMention { note_path, note_name, snippet, via_lemma })
     }).map_err(|e| e.to_string())?;
 
-    Ok(rows.flatten().collect())
+    // Per-row errors (rare — usually only on tokenizer panics during
+    // snippet generation). Drop bad rows but log the count so persistent
+    // issues surface in the dev console.
+    let mut out: Vec<IndexMention> = Vec::new();
+    let mut row_errors = 0usize;
+    for r in rows {
+        match r {
+            Ok(m) => out.push(m),
+            Err(_) => row_errors += 1,
+        }
+    }
+    if row_errors > 0 {
+        eprintln!(
+            "[read_term_mentions] {} row(s) dropped due to per-row errors during MATCH={:?}",
+            row_errors, match_expr
+        );
+    }
+    Ok(out)
 }
 
 /// Return the top co-occurring terms for `term` — other vocabulary terms
