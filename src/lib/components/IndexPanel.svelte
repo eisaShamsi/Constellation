@@ -1060,6 +1060,10 @@
 								}}>
 								{entry.term}
 								{#if entry.is_compound}<span class="gp-compound-badge">2w</span>{/if}
+								{#if bridgeFilterAnnotations.has(entry.term)}
+									{@const viaSource = bridgeFilterAnnotations.get(entry.term) ?? ''}
+									<span class="gp-ref-via" dir="auto" title={$t('indexPanel.viaLemmaTooltip') || 'Cross-language match via the Lexical Bridge'}>{($t('indexPanel.viaLemma') || 'via {lemma}').replace('{lemma}', viaSource)}</span>
+								{/if}
 							</span>
 							<div class="gp-freq-wrap">
 								<div class="gp-freq-bar" style="width: {(entry.count / maxCount) * 100}%"></div>
