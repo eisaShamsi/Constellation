@@ -25,7 +25,7 @@
 		onTermSelect,
 		loadMentions,
 		loadCooccurrence,
-		expandCrossLanguage = false,
+		cacheKey,
 	}: {
 		entries: IndexEntry[];
 		isLoading?: boolean;
@@ -42,12 +42,13 @@
 		 *  alongside `loadMentions` on expand; results render as a chip
 		 *  strip beneath the mentions list. */
 		loadCooccurrence?: (term: string) => Promise<CooccurringTerm[]>;
-		/** MIG-010: M11 Lexical Bridge expansion toggle. The parent reads
-		 *  `$appSettings.index.expandCrossLanguage` and passes it here so
-		 *  the IndexPanel can invalidate `mentionsCache` when the user
-		 *  flips the toggle in Settings (otherwise the cache would serve
-		 *  the stale results from the previous toggle state). */
-		expandCrossLanguage?: boolean;
+		/** Cache-invalidation token. When this value changes, the panel
+		 *  drops `mentionsCache` so the next click re-fetches. Parents
+		 *  flip this whenever `loadMentions` would now produce different
+		 *  results — e.g. a Settings toggle that affects what mentions
+		 *  the IPC returns. Doesn't need a stable type; reference change
+		 *  is the signal. The semantic meaning lives in the parent. */
+		cacheKey?: unknown;
 	} = $props();
 
 	// Per-term mentions cache — populated on demand when the user expands a term.
@@ -55,22 +56,12 @@
 	let mentionsCache = $state<Map<string, IndexMention[]>>(new Map());
 	let loadingMentions = $state<Set<string>>(new Set());
 
-	// MIG-010: when the user flips the cross-language expansion toggle in
-	// Settings, every cached row's `via_lemma` (and possibly the row count)
-	// is now stale. Clear the cache so the next click re-fetches with the
-	// new flag. Cooccurrence cache is unaffected — it's independent of the
-	// expansion path.
-	//
-	// IMPORTANT: the cache MUTATIONS (and the `.size` reads guarding them)
-	// MUST live inside `untrack` — otherwise this effect tracks
-	// `mentionsCache.size` as a dependency, and every successful fetch
-	// (which sets the cache → size changes) re-fires this effect, which
-	// clears the cache it just populated. Classic Rule 2 violation
-	// (CLAUDE.md): "never write a $effect that reads and writes the same
-	// reactive variable." Only `expandCrossLanguage` should drive this
-	// effect's re-runs; the cache reads + writes are bookkeeping.
+	// Re-fetch when the parent invalidates. Body wrapped in `untrack` so
+	// reading `mentionsCache.size` doesn't accidentally make the cache
+	// itself a dependency (classic Rule 2 violation in CLAUDE.md — the
+	// effect would clear the cache it just populated, infinite-looping).
 	$effect(() => {
-		void expandCrossLanguage;
+		void cacheKey;
 		untrack(() => {
 			if (mentionsCache.size > 0) mentionsCache = new Map();
 			if (loadingMentions.size > 0) loadingMentions = new Set();

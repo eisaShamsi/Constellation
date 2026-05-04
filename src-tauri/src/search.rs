@@ -2636,12 +2636,22 @@ fn lexical_search(conn: &Connection, query: &str, limit: u32) -> Vec<SearchResul
 /// cross-lingual hits show the badge.
 pub(crate) struct LexicalExpansion {
     /// FTS5 MATCH clause, e.g. `"tree" OR "trees" OR "شجرة" OR "árbol"`.
-    pub(crate) match_expr: String,
+    match_expr: String,
     /// Lowercased non-source-language lemmas from the expansion.
     /// Empty when expansion only produced same-language terms
     /// (`lexical_search` still takes the expanded path in that case
     /// but no row can earn a badge).
-    pub(crate) bridge_terms_lower: Vec<String>,
+    bridge_terms_lower: Vec<String>,
+}
+
+impl LexicalExpansion {
+    /// Consume into `(match_expr, bridge_terms_lower)` for callers that
+    /// want both halves and don't care about the wrapper. Avoids cloning
+    /// when the expansion is short-lived (the typical case — built by
+    /// `expanded_match_query` and immediately decomposed by callers).
+    pub(crate) fn into_parts(self) -> (String, Vec<String>) {
+        (self.match_expr, self.bridge_terms_lower)
+    }
 }
 
 /// Try to produce a cross-language FTS5 MATCH expression for `normalized`

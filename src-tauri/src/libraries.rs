@@ -3397,26 +3397,32 @@ pub fn read_index_entries(app: tauri::AppHandle) -> Result<Vec<IndexEntry>, Stri
     Ok(entries)
 }
 
-/// Build the FTS5 MATCH clause to fetch mentions for an Index term, plus
-/// the optional [`crate::search::LexicalExpansion`] used to badge rows
-/// with their cross-language bridge lemma.
+/// FTS5 phrase-quote a literal term: wrap in `"..."` and double any
+/// embedded `"` per FTS5 quoted-string syntax. The single source of
+/// truth for "how the Index path quotes a literal term" — used by
+/// `build_term_match_clause` and the read_term_mentions fallback path.
+fn fts_quote_phrase(term: &str) -> String {
+    format!("\"{}\"", term.replace('"', "\"\""))
+}
+
+/// Build the FTS5 MATCH clause to fetch mentions for an Index term.
 ///
-/// Returns `(match_expression, expansion)`:
+/// Returns `(match_expression, bridge_terms_lower)`:
 ///   - `match_expression` is what gets bound as `?1` in the MATCH query.
-///   - `expansion` is `Some` only when `expand_cross_language` was true
-///     AND the M11 Lexical Bridge produced a real cross-language OR
-///     expansion (term in corpus, at least one foreign-language lemma).
-///     When `Some`, callers walk each row's snippet through
-///     [`crate::search::find_match_via_marked`] to populate `via_lemma`.
+///   - `bridge_terms_lower` is `Some` only when `expand_cross_language`
+///     was true AND the M11 Lexical Bridge produced a real cross-
+///     language OR expansion (term in corpus, at least one foreign-
+///     language lemma). When `Some`, callers walk each row's snippet
+///     through [`crate::search::find_match_via_marked`] to populate
+///     `via_lemma`.
 ///
 /// The exact-phrase fallback path (no expansion) is byte-identical to
-/// the pre-MIG-010 behaviour: phrase-quoted, doubled `"` for FTS5
-/// quoted-string escaping. This is what guarantees Invariant I1 in
+/// the pre-MIG-010 behaviour. This is what guarantees Invariant I1 in
 /// `MIG-010-INDEX-LEXICAL-BRIDGE-ARCHITECT.md`.
 fn build_term_match_clause(
     term: &str,
     expand_cross_language: bool,
-) -> (String, Option<crate::search::LexicalExpansion>) {
+) -> (String, Option<Vec<String>>) {
     if expand_cross_language {
         // Same normalization the search-side bridge uses, so a term
         // from the Index dictionary (already FTS5-tokenized) hits the
@@ -3424,15 +3430,14 @@ fn build_term_match_clause(
         // route the same query.
         let normalized = crate::arabic::normalizer::normalize_stripped(term);
         if let Some(expansion) = crate::search::expanded_match_query(&normalized) {
-            // Use the expansion's OR-joined phrase MATCH directly. It's
-            // already FTS5-quoted per phrase, so we don't re-wrap.
-            let match_expr = expansion.match_expr.clone();
-            return (match_expr, Some(expansion));
+            // Decompose into the OR-joined phrase MATCH (already
+            // FTS5-quoted per phrase) and the badge-scan term set.
+            let (match_expr, bridge) = expansion.into_parts();
+            return (match_expr, Some(bridge));
         }
     }
     // Exact-phrase fallback (default behaviour, pre-MIG-010).
-    let phrase = format!("\"{}\"", term.replace('"', "\"\""));
-    (phrase, None)
+    (fts_quote_phrase(term), None)
 }
 
 /// Lazy-load the list of notes mentioning a given term. Called when the
@@ -3474,51 +3479,41 @@ pub fn read_term_mentions(
     // tokenizer: constellation".
     crate::search::register_fts5_tokenizer(&mut conn)?;
 
-    let (match_expr, expansion) = build_term_match_clause(&term, expand);
-    let bridge_terms_lower: Vec<String> = expansion
-        .as_ref()
-        .map(|e| e.bridge_terms_lower.clone())
-        .unwrap_or_default();
+    let (match_expr, bridge_terms) = build_term_match_clause(&term, expand);
+    let bridge_terms_slice: &[String] = bridge_terms.as_deref().unwrap_or(&[]);
+    let did_expand = bridge_terms.is_some();
 
-    // Try the (possibly-expanded) MATCH first. If FTS5 errors mid-iteration
-    // — which can happen on certain expanded OR-expressions where one
-    // phrase trips the constellation tokenizer or the FTS5 parser — fall
-    // back to the literal exact-phrase path so the user always sees
-    // something rather than an empty mentions list. The failure is logged
-    // to stderr (visible in `tauri dev` console / `RUST_LOG` capture).
-    match run_mentions_query(&conn, &match_expr, limit, &bridge_terms_lower) {
-        Ok(rows) if rows.is_empty() && expansion.is_some() => {
-            // Expanded MATCH parsed cleanly but yielded zero rows. Could
-            // be a legitimate "no notes about that concept anywhere"
-            // result, OR a tokenizer mismatch that silently dropped every
-            // expanded phrase. Retry with the exact-phrase fallback so
-            // the user at least sees direct hits — the badge UI will
-            // simply not appear (no via_lemma since bridge_terms_lower
-            // is empty in the fallback path).
-            eprintln!(
+    // Try the (possibly-expanded) MATCH first. The expanded path can yield
+    // zero rows (silent tokenizer-mismatch on every expanded phrase) or
+    // error mid-iteration (FTS5 parser quirk on a specific OR clause). In
+    // either case fall back to the literal exact-phrase MATCH — the user
+    // always sees direct hits even if cross-language expansion bombed.
+    // Failure modes are logged in debug builds only so production stderr
+    // stays quiet on a hot path.
+    let primary = run_mentions_query(&conn, &match_expr, limit, bridge_terms_slice);
+    let needs_fallback = did_expand
+        && match &primary {
+            Ok(rows) => rows.is_empty(),
+            Err(_) => true,
+        };
+    if !needs_fallback {
+        return primary;
+    }
+    if cfg!(debug_assertions) {
+        match &primary {
+            Ok(_) => eprintln!(
                 "[read_term_mentions] expanded MATCH for term={:?} returned 0 rows; falling back to exact phrase",
                 term
-            );
-            let exact_phrase = format!("\"{}\"", term.replace('"', "\"\""));
-            run_mentions_query(&conn, &exact_phrase, limit, &[])
-        }
-        Ok(rows) => Ok(rows),
-        Err(e) if expansion.is_some() => {
-            // Hard error during the expanded-path iteration. Same
-            // fallback strategy as above. Surface the diagnostic.
-            eprintln!(
+            ),
+            Err(e) => eprintln!(
                 "[read_term_mentions] expanded MATCH for term={:?} errored ({}); falling back to exact phrase",
                 term, e
-            );
-            let exact_phrase = format!("\"{}\"", term.replace('"', "\"\""));
-            run_mentions_query(&conn, &exact_phrase, limit, &[])
-        }
-        Err(e) => {
-            // Error on the no-expansion path is unrecoverable (no
-            // alternative to fall back to). Propagate.
-            Err(e)
+            ),
         }
     }
+    // Pass an empty bridge slice on the fallback path so no row earns a
+    // misleading badge — they're literal direct hits, not bridged.
+    run_mentions_query(&conn, &fts_quote_phrase(&term), limit, &[])
 }
 
 /// Execute the snippet+notes_fts MATCH query and collect rows. Extracted
@@ -3545,7 +3540,9 @@ fn run_mentions_query(
     limit: u32,
     bridge_terms_lower: &[String],
 ) -> Result<Vec<IndexMention>, String> {
-    let mut stmt = conn.prepare(
+    // `prepare_cached` so the expansion-then-fallback retry path doesn't
+    // re-prepare the same SQL twice on a single read_term_mentions call.
+    let mut stmt = conn.prepare_cached(
         "SELECT nm.path, nm.name,
                 snippet(notes_fts, -1, CHAR(2), CHAR(3), '…', 12)
          FROM notes_fts
@@ -3584,7 +3581,7 @@ fn run_mentions_query(
             Err(_) => row_errors += 1,
         }
     }
-    if row_errors > 0 {
+    if row_errors > 0 && cfg!(debug_assertions) {
         eprintln!(
             "[read_term_mentions] {} row(s) dropped due to per-row errors during MATCH={:?}",
             row_errors, match_expr
@@ -4615,21 +4612,21 @@ mod tests {
 
     /// Invariant I3 (in-corpus expansion): toggle ON, term in corpus
     /// with cross-language equivalents — helper returns the OR-joined
-    /// expansion clause AND the LexicalExpansion struct so the caller
+    /// expansion clause AND the bridge-terms-lower set so the caller
     /// can scan snippets for bridge lemmas.
     #[test]
     fn build_term_match_clause_expand_in_corpus_returns_expansion() {
-        let (clause, expansion) = build_term_match_clause("tree", true);
+        let (clause, bridge) = build_term_match_clause("tree", true);
         // The corpus has "tree" with cross-language equivalents; the
         // expanded clause must contain " OR " (otherwise expansion
         // would be a degenerate single-phrase and the helper would
         // have fallen back per `expanded_match_query`'s own filter).
         assert!(clause.contains(" OR "),
             "in-corpus expansion must produce OR-joined phrases, got: {clause}");
-        let exp = expansion.expect("in-corpus term must produce LexicalExpansion");
-        assert!(!exp.bridge_terms_lower.is_empty(),
+        let bridge = bridge.expect("in-corpus term must produce bridge terms");
+        assert!(!bridge.is_empty(),
             "in-corpus cross-language term must produce ≥1 bridge term");
         // Bridge terms are pre-lowercased (M13 invariant).
-        assert!(exp.bridge_terms_lower.iter().all(|t| t == &t.to_lowercase()));
+        assert!(bridge.iter().all(|t| t == &t.to_lowercase()));
     }
 }

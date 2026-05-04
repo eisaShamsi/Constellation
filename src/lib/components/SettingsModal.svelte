@@ -2668,6 +2668,9 @@
 		box-shadow: 0 1px 2px rgba(0,0,0,0.15);
 	}
 	.toggle input:checked + .toggle-slider { background: var(--interactive-accent); }
+	/* 18px = track-width 40 − circle-width 16 − inset 3×2 = 18 — the
+	   exact distance the circle needs to slide from off-position
+	   (left:3) to on-position (right:3). */
 	.toggle input:checked + .toggle-slider::after { transform: translateX(18px); }
 	/* RTL: anchor the off-position to the right edge instead of the left,
 	   and translate the on-position to the left so the slider moves
