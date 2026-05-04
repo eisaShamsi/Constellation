@@ -60,10 +60,21 @@
 	// is now stale. Clear the cache so the next click re-fetches with the
 	// new flag. Cooccurrence cache is unaffected — it's independent of the
 	// expansion path.
+	//
+	// IMPORTANT: the cache MUTATIONS (and the `.size` reads guarding them)
+	// MUST live inside `untrack` — otherwise this effect tracks
+	// `mentionsCache.size` as a dependency, and every successful fetch
+	// (which sets the cache → size changes) re-fires this effect, which
+	// clears the cache it just populated. Classic Rule 2 violation
+	// (CLAUDE.md): "never write a $effect that reads and writes the same
+	// reactive variable." Only `expandCrossLanguage` should drive this
+	// effect's re-runs; the cache reads + writes are bookkeeping.
 	$effect(() => {
 		void expandCrossLanguage;
-		if (mentionsCache.size > 0) mentionsCache = new Map();
-		if (loadingMentions.size > 0) loadingMentions = new Set();
+		untrack(() => {
+			if (mentionsCache.size > 0) mentionsCache = new Map();
+			if (loadingMentions.size > 0) loadingMentions = new Set();
+		});
 	});
 
 	function getMentions(term: string): IndexMention[] {
