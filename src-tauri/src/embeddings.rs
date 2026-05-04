@@ -15,6 +15,34 @@ use tokenizers::Tokenizer;
 
 pub struct EmbeddingState {
     pub engine: Mutex<Option<EmbeddingEngine>>,
+    /// MIG-012 cancel flag for the term-embedding job. Lives on the
+    /// per-app-instance state rather than as a process global so the
+    /// scope is "this app" — one Universe at a time today, but
+    /// future-proof if app instances ever multiplex.
+    pub term_embed_cancel: std::sync::atomic::AtomicBool,
+}
+
+// ─── MIG-012 — f32 BLOB helpers (shared between note + term embeddings) ─
+
+/// Pack an f32 vector into a little-endian byte BLOB suitable for
+/// SQLite storage. Inverse of `blob_to_vec`. Used by both
+/// `note_embeddings` and `term_embeddings` writers.
+fn vec_to_blob(v: &[f32]) -> Vec<u8> {
+    v.iter().flat_map(|f| f.to_le_bytes()).collect()
+}
+
+/// Unpack a SQLite BLOB back into an f32 vector. Returns None if the
+/// byte length isn't a multiple of 4 (corrupt row). Caller checks
+/// length matches the expected dimensions.
+fn blob_to_vec(bytes: &[u8]) -> Option<Vec<f32>> {
+    if bytes.len() % 4 != 0 {
+        return None;
+    }
+    let mut out = Vec::with_capacity(bytes.len() / 4);
+    for chunk in bytes.chunks_exact(4) {
+        out.push(f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]));
+    }
+    Some(out)
 }
 
 pub struct EmbeddingEngine {
@@ -231,7 +259,7 @@ pub fn constellation_embed_notes(
         let text = format!("passage: {} {}", note.name.replace(".md", ""), note.content);
         match run_embedding(engine, &text) {
             Ok(embedding) => {
-                let bytes: Vec<u8> = embedding.iter().flat_map(|f| f.to_le_bytes()).collect();
+                let bytes = vec_to_blob(&embedding);
                 let dims = embedding.len() as i32;
                 conn.execute(
                     "INSERT OR REPLACE INTO note_embeddings (path, embedding, dimensions, model_id, cid_cn) VALUES (?1, ?2, ?3, ?4, (SELECT cid_cn FROM note_meta WHERE path = ?1))",
@@ -274,13 +302,7 @@ pub fn constellation_embedding_status(
 
 // ─── MIG-012 — Index Search Engine: term-level embeddings ─────
 
-use std::sync::atomic::{AtomicBool, Ordering};
-
-/// Process-global cancel flag for the term-embedding job. Set true by
-/// `cancel_term_embeddings`; the worker loop in `init_term_embeddings`
-/// checks it per-term and breaks out cleanly. Reset to false at the
-/// start of every new init invocation.
-static TERM_EMBED_CANCEL: AtomicBool = AtomicBool::new(false);
+use std::sync::atomic::Ordering;
 
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct TermEmbedProgress {
@@ -321,32 +343,29 @@ pub fn init_term_embeddings(
 ) -> Result<(), String> {
     use rusqlite::params;
 
-    TERM_EMBED_CANCEL.store(false, Ordering::SeqCst);
+    let embed_state = app.state::<EmbeddingState>();
+    embed_state.term_embed_cancel.store(false, Ordering::SeqCst);
     ensure_engine(&app)?;
     let force = force.unwrap_or(false);
 
-    let search_state = app.state::<crate::search::SearchState>();
-    let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
-    let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
-
-    // Collect every Index term from notes_vocab. Same filter as
-    // read_index_entries: cnt >= 5, length >= 2.
-    let mut stmt = conn
-        .prepare("SELECT term FROM notes_vocab WHERE LENGTH(term) >= 2 AND cnt >= 5 ORDER BY term")
-        .map_err(|e| e.to_string())?;
-    let all_terms: Vec<String> = stmt
-        .query_map([], |row| row.get::<_, String>(0))
-        .map_err(|e| e.to_string())?
-        .filter_map(|r| r.ok())
-        .collect();
+    // Pull the term list with a SHORT-lived db lock so we can release
+    // it before the long embed loop. Lock-per-iteration below avoids
+    // holding SearchState for the full ~10–20 min job, which would
+    // freeze every other read-only IPC against search.db.
+    let all_terms: Vec<String> = {
+        let search_state = app.state::<crate::search::SearchState>();
+        let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
+        let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
+        let mut stmt = conn
+            .prepare("SELECT term FROM notes_vocab WHERE LENGTH(term) >= 2 AND cnt >= 5 ORDER BY term")
+            .map_err(|e| e.to_string())?;
+        let rows = stmt
+            .query_map([], |row| row.get::<_, String>(0))
+            .map_err(|e| e.to_string())?;
+        let collected: Vec<String> = rows.filter_map(|r| r.ok()).collect();
+        collected
+    };
     let total = all_terms.len() as u32;
-    drop(stmt);
-
-    let engine_state = app.state::<EmbeddingState>();
-    let engine_guard = engine_state.engine.lock().map_err(|e| e.to_string())?;
-    let engine = engine_guard
-        .as_ref()
-        .ok_or("Embedding engine not initialized")?;
 
     let mut processed = 0u32;
     let _ = app.emit(
@@ -355,7 +374,7 @@ pub fn init_term_embeddings(
     );
 
     for term in &all_terms {
-        if TERM_EMBED_CANCEL.load(Ordering::SeqCst) {
+        if embed_state.term_embed_cancel.load(Ordering::SeqCst) {
             let _ = app.emit(
                 "term-embedding-progress",
                 TermEmbedProgress { processed, total, done: true, cancelled: true },
@@ -363,15 +382,19 @@ pub fn init_term_embeddings(
             return Ok(());
         }
 
-        // Skip if already embedded (unless force).
+        // Per-term: skip-if-existing check with a short-lived lock.
         if !force {
-            let existing: bool = conn
-                .query_row(
+            let existing: bool = {
+                let search_state = app.state::<crate::search::SearchState>();
+                let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
+                let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
+                conn.query_row(
                     "SELECT COUNT(*) > 0 FROM term_embeddings WHERE term = ?1",
                     params![term],
                     |row| row.get(0),
                 )
-                .unwrap_or(false);
+                .unwrap_or(false)
+            };
             if existing {
                 processed += 1;
                 continue;
@@ -388,16 +411,38 @@ pub fn init_term_embeddings(
             term.clone()
         };
         let prefixed = format!("passage: {}", display);
-        match run_embedding(engine, &prefixed) {
-            Ok(embedding) => {
-                let bytes: Vec<u8> = embedding.iter().flat_map(|f| f.to_le_bytes()).collect();
-                let dims = embedding.len() as i32;
-                let _ = conn.execute(
-                    "INSERT OR REPLACE INTO term_embeddings (term, embedding, dimensions, model_id, last_built) VALUES (?1, ?2, ?3, ?4, CAST(strftime('%s','now') AS INTEGER))",
-                    params![term, bytes, dims, "multilingual-e5-small"],
-                );
+
+        // Embed: hold the engine lock ONLY for run_embedding. Other
+        // consumers (note-embedding flow, future surfaces) get a clean
+        // window between every term. Mutex acquire/release is microseconds
+        // vs. tens-of-ms compute per term — negligible overhead.
+        let embedding = {
+            let engine_guard = embed_state.engine.lock().map_err(|e| e.to_string())?;
+            let engine = engine_guard
+                .as_ref()
+                .ok_or("Embedding engine not initialized")?;
+            match run_embedding(engine, &prefixed) {
+                Ok(e) => e,
+                Err(e) => {
+                    eprintln!("[term_embeddings] Failed to embed {:?}: {}", term, e);
+                    processed += 1;
+                    continue;
+                }
             }
-            Err(e) => eprintln!("[term_embeddings] Failed to embed {:?}: {}", term, e),
+        };
+
+        // Insert: short-lived db lock per term. Other read-only IPCs
+        // can fit between writes.
+        {
+            let search_state = app.state::<crate::search::SearchState>();
+            let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
+            let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
+            let bytes = vec_to_blob(&embedding);
+            let dims = embedding.len() as i32;
+            let _ = conn.execute(
+                "INSERT OR REPLACE INTO term_embeddings (term, embedding, dimensions, model_id, last_built) VALUES (?1, ?2, ?3, ?4, CAST(strftime('%s','now') AS INTEGER))",
+                params![term, bytes, dims, "multilingual-e5-small"],
+            );
         }
 
         processed += 1;
@@ -416,12 +461,13 @@ pub fn init_term_embeddings(
     Ok(())
 }
 
-/// Cancel an in-flight term-embedding job. Sets the global cancel flag;
-/// the worker breaks out at the next per-term check. Idempotent: calling
-/// when no job is running is a no-op.
+/// Cancel an in-flight term-embedding job. Sets the per-app cancel flag
+/// on `EmbeddingState`; the worker breaks out at the next per-term check.
+/// Idempotent: calling when no job is running is a no-op.
 #[tauri::command]
-pub fn cancel_term_embeddings() -> Result<(), String> {
-    TERM_EMBED_CANCEL.store(true, Ordering::SeqCst);
+pub fn cancel_term_embeddings(app: tauri::AppHandle) -> Result<(), String> {
+    let embed_state = app.state::<EmbeddingState>();
+    embed_state.term_embed_cancel.store(true, Ordering::SeqCst);
     Ok(())
 }
 
@@ -479,16 +525,17 @@ pub fn search_terms_semantic(
     let mut scored: Vec<TermSimilarity> = Vec::new();
     for r in rows.flatten() {
         let (term, bytes) = r;
-        // f32 little-endian. Skip rows that don't decode cleanly.
-        if bytes.len() != query_vec.len() * 4 {
+        // Decode + length check. Both vectors are L2-normalized at write
+        // time, so cosine similarity == dot product.
+        let Some(term_vec) = blob_to_vec(&bytes) else { continue };
+        if term_vec.len() != query_vec.len() {
             continue;
         }
-        let mut score = 0.0f32;
-        for (i, qv) in query_vec.iter().enumerate() {
-            let off = i * 4;
-            let v = f32::from_le_bytes([bytes[off], bytes[off + 1], bytes[off + 2], bytes[off + 3]]);
-            score += qv * v;
-        }
+        let score: f32 = query_vec
+            .iter()
+            .zip(term_vec.iter())
+            .map(|(q, t)| q * t)
+            .sum();
         if score >= threshold {
             scored.push(TermSimilarity { term, score });
         }

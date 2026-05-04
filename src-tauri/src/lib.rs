@@ -230,7 +230,7 @@ pub fn run() {
         .manage(watcher::WatcherState::new())
         .manage(universe::UniverseState::new())
         .manage(search::SearchState::new())
-        .manage(embeddings::EmbeddingState { engine: std::sync::Mutex::new(None) })
+        .manage(embeddings::EmbeddingState { engine: std::sync::Mutex::new(None), term_embed_cancel: std::sync::atomic::AtomicBool::new(false) })
         .invoke_handler({
             // Round 6 diagnostic (2026-04-19) — IPC arrival tracer.
             //
