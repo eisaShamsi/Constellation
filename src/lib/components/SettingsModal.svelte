@@ -12,6 +12,7 @@
 	import { downloadJSON, pickJSONFile } from '$lib/utils';
 	import IconOverrideSettings from './IconOverrideSettings.svelte';
 	import ArabicOverridesPanel from './ArabicOverridesPanel.svelte';
+	import ConfirmDialog from './ConfirmDialog.svelte';
 	import { notifySettingsChanged } from '$lib/secondScreen';
 	import { aiSettings, updateAISettings, setProvider } from '$lib/ai/store';
 	import { validateConnection } from '$lib/ai/engine';
@@ -26,6 +27,19 @@
 	} = $props();
 
 	let activeSection = $state('dashboard');
+
+	// MIG-012 §Build.8-fix — fully-localized confirm dialog state.
+	// Replaces browser-native confirm() which forces OS-locale OK/Cancel
+	// labels (always English on Windows-EN) and bypassed our $t chain.
+	// `confirmDialog` is null when no dialog is open; otherwise carries
+	// the message + button labels + onConfirm/onCancel handlers.
+	let confirmDialog = $state<null | {
+		message: string;
+		confirmLabel: string;
+		cancelLabel: string;
+		danger?: boolean;
+		onConfirm: () => void;
+	}>(null);
 
 	// Theme editor state
 	let editingTheme = $state<ConstellationTheme | null>(null);
@@ -1870,12 +1884,18 @@
 							<div class="setting-name">{$t('settings.index.clearHistory.label') || 'Clear search history'}</div>
 							<div class="setting-desc">{$t('settings.index.clearHistory.description') || 'Permanently remove all stored Index filter queries from this Universe. Cannot be undone.'}</div>
 						</div>
-						<button class="setting-btn" onclick={async () => {
-							if (confirm($t('settings.index.clearHistory.confirm') || 'Permanently delete all Index search history for this Universe?')) {
-								try {
-									await clearIndexHistory();
-								} catch (e) { console.error('[Settings] clearIndexHistory failed:', e); }
-							}
+						<button class="setting-btn" onclick={() => {
+							confirmDialog = {
+								message: $t('settings.index.clearHistory.confirm') || 'Permanently delete all Index search history for this Universe?',
+								confirmLabel: $t('settings.index.clearHistory.button') || 'Clear',
+								cancelLabel: $t('common.cancel') || 'Cancel',
+								danger: true,
+								onConfirm: async () => {
+									try {
+										await clearIndexHistory();
+									} catch (e) { console.error('[Settings] clearIndexHistory failed:', e); }
+								},
+							};
 						}}>{$t('settings.index.clearHistory.button') || 'Clear'}</button>
 					</div>
 
@@ -2533,6 +2553,24 @@
 	<ObsidianThemeBrowser
 		onClose={() => showObsidianBrowser = false}
 		onImported={(theme) => { showObsidianBrowser = false; }}
+	/>
+{/if}
+
+<!-- MIG-012 §Build.8-fix: localized confirm dialog. Browser-native
+     confirm() forces OS-locale OK/Cancel and bypassed our i18n; this
+     mounts the existing ConfirmDialog component instead. -->
+{#if confirmDialog}
+	<ConfirmDialog
+		message={confirmDialog.message}
+		confirmLabel={confirmDialog.confirmLabel}
+		cancelLabel={confirmDialog.cancelLabel}
+		danger={confirmDialog.danger ?? false}
+		onConfirm={() => {
+			const cb = confirmDialog?.onConfirm;
+			confirmDialog = null;
+			cb?.();
+		}}
+		onCancel={() => { confirmDialog = null; }}
 	/>
 {/if}
 
