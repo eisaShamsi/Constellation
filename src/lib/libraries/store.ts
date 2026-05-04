@@ -2487,6 +2487,59 @@ export async function lexiconExpandForFilter(query: string): Promise<FilterExpan
 	return await invoke('lexicon_expand_for_filter', { query });
 }
 
+// ─── MIG-012 — semantic search over term embeddings ───
+
+/** One result row from `searchTermsSemantic`. `score` is in [0,1] —
+ *  cosine similarity between the query embedding and the term embedding,
+ *  L2-normalized so dot product == cosine. */
+export interface TermSimilarity {
+	term: string;
+	score: number;
+}
+
+/** Embed `query` and return up to `topK` Index terms whose embeddings
+ *  exceed `threshold` cosine similarity. Per-keystroke callers MUST
+ *  debounce (≥300ms). Returns [] when no results clear the threshold,
+ *  or when term_embeddings is empty (initial state — call
+ *  `initTermEmbeddings` first). */
+export async function searchTermsSemantic(
+	query: string,
+	topK?: number,
+	threshold?: number,
+): Promise<TermSimilarity[]> {
+	return await invoke('search_terms_semantic', {
+		query,
+		topK: topK ?? null,
+		threshold: threshold ?? null,
+	});
+}
+
+/** Trigger the background term-embedding job. Listen for
+ *  `term-embedding-progress` events to render a progress bar. Idempotent:
+ *  re-firing skips already-embedded terms unless `force` is true. */
+export async function initTermEmbeddings(force?: boolean): Promise<void> {
+	return await invoke('init_term_embeddings', { force: force ?? null });
+}
+
+/** Cancel an in-flight term-embedding job. Idempotent. */
+export async function cancelTermEmbeddings(): Promise<void> {
+	return await invoke('cancel_term_embeddings');
+}
+
+/** Count of terms in `term_embeddings`. Frontend uses this to decide
+ *  whether to fire `initTermEmbeddings` (count == 0) or skip. */
+export async function termEmbeddingStatus(): Promise<number> {
+	return await invoke('term_embedding_status');
+}
+
+/** Progress payload from the `term-embedding-progress` Tauri event. */
+export interface TermEmbedProgress {
+	processed: number;
+	total: number;
+	done: boolean;
+	cancelled: boolean;
+}
+
 // ─── Navigator data ───
 export interface NoteWithMeta {
 	name: string;

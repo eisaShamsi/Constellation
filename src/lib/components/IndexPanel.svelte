@@ -8,7 +8,9 @@
 		type IndexMention,
 		type CooccurringTerm,
 		type FilterExpansion,
+		type TermSimilarity,
 		lexiconExpandForFilter,
+		searchTermsSemantic,
 	} from '$lib/libraries/store';
 	import VirtualList from '$lib/components/VirtualList.svelte';
 
@@ -29,6 +31,7 @@
 		loadCooccurrence,
 		cacheKey,
 		bridgeFilterEnabled = false,
+		semanticSearchEnabled = false,
 	}: {
 		entries: IndexEntry[];
 		isLoading?: boolean;
@@ -58,6 +61,12 @@
 		 *  badges. When false, filter is pure substring (default).
 		 *  Toggle source: `$appSettings.index.expandCrossLanguage`. */
 		bridgeFilterEnabled?: boolean;
+		/** MIG-012: when true, the filter ALSO does semantic search over
+		 *  `term_embeddings` per-keystroke (debounced), surfaces top-K
+		 *  conceptually-related terms with a `≈` indicator. When false,
+		 *  no semantic IPC fires (default). Toggle source:
+		 *  `$appSettings.index.semanticSearchEnabled`. */
+		semanticSearchEnabled?: boolean;
 	} = $props();
 
 	// Per-term mentions cache — populated on demand when the user expands a term.
@@ -91,6 +100,47 @@
 	let bridgeExpansion = $state<FilterExpansion | null>(null);
 	let bridgeExpansionCache = $state<Map<string, FilterExpansion | null>>(new Map());
 	let bridgeFetchToken = 0; // monotonic; cancels stale in-flight fetches
+
+	// ─── MIG-012 — semantic search state ───
+	//
+	// Same shape as the bridge expansion: latest result + per-query cache
+	// + cancel-token for stale fetches. `semanticMatches` is a Map<term,
+	// score> populated when the query produced cosine-similar terms.
+	let semanticMatches = $state<Map<string, number>>(new Map());
+	let semanticCache = $state<Map<string, Map<string, number>>>(new Map());
+	let semanticFetchToken = 0;
+
+	$effect(() => {
+		const enabled = semanticSearchEnabled;
+		const q = filterQuery.trim().toLowerCase();
+		return untrack(() => {
+			if (!enabled || !q) {
+				semanticMatches = new Map();
+				return undefined;
+			}
+			if (semanticCache.has(q)) {
+				semanticMatches = semanticCache.get(q) ?? new Map();
+				return undefined;
+			}
+			const myToken = ++semanticFetchToken;
+			const handle = setTimeout(async () => {
+				try {
+					const results: TermSimilarity[] = await searchTermsSemantic(q, 50, 0.7);
+					if (myToken !== semanticFetchToken) return;
+					const m = new Map<string, number>();
+					for (const r of results) m.set(r.term, r.score);
+					semanticCache.set(q, m);
+					semanticCache = new Map(semanticCache);
+					semanticMatches = m;
+				} catch (err) {
+					if (myToken !== semanticFetchToken) return;
+					console.error('[IndexPanel] searchTermsSemantic failed for q=', q, err);
+					semanticMatches = new Map();
+				}
+			}, 300);
+			return () => clearTimeout(handle);
+		});
+	});
 
 	$effect(() => {
 		// Track the deps explicitly. Cache + state writes go inside untrack
@@ -475,16 +525,18 @@
 			result = result.filter(e => !excludedTerms.has(e.term.toLowerCase()));
 		}
 		const annotations = new Map<string, string>();
-		if (!raw) return { entries: result, annotations };
+		const semanticAnnotations = new Map<string, number>();
+		if (!raw) return { entries: result, annotations, semanticAnnotations };
 		const hasComma = /[،,؛;]/.test(raw);
 		const rawQueries = hasComma
 			? raw.split(/[،,؛;]/).map(t => t.trim().toLowerCase()).filter(Boolean)
 			: [raw.toLowerCase()];
-		if (rawQueries.length === 0) return { entries: result, annotations };
+		if (rawQueries.length === 0) return { entries: result, annotations, semanticAnnotations };
 		// Prepare each sub-query ONCE — ARABIC_RE.test + stemming run per
 		// filter pass, not per entry. The inner loop is then pure .includes.
 		const prepared = rawQueries.map(prepareQuery);
 		const bridge = bridgeExpansion; // snapshot; effect updates this
+		const semantic = semanticMatches; // MIG-012 snapshot
 		const matched: IndexEntry[] = [];
 		for (const e of result) {
 			const lower = e.term.toLowerCase();
@@ -501,6 +553,7 @@
 				matched.push(e);
 				continue;
 			}
+			let bridged = false;
 			// MIG-011: no direct hit — try the cross-language bridge.
 			if (bridge && bridge.lemmas.length > 0) {
 				for (const { lemma_lower } of bridge.lemmas) {
@@ -508,16 +561,29 @@
 					if (lower.includes(lemma_lower) || lemma_lower.includes(lower)) {
 						matched.push(e);
 						annotations.set(e.term, bridge.source_lemma);
+						bridged = true;
 						break;
 					}
 				}
 			}
+			if (bridged) continue;
+			// MIG-012: no direct + no bridge — try the semantic match.
+			// `semanticMatches` is keyed by the FTS5-stored term, which is
+			// what e.term is, so the lookup is exact.
+			if (semantic.size > 0) {
+				const score = semantic.get(e.term);
+				if (score !== undefined) {
+					matched.push(e);
+					semanticAnnotations.set(e.term, score);
+				}
+			}
 		}
-		return { entries: matched, annotations };
+		return { entries: matched, annotations, semanticAnnotations };
 	});
 
 	const filteredEntries = $derived(filteredResult.entries);
 	const bridgeFilterAnnotations = $derived(filteredResult.annotations);
+	const semanticFilterAnnotations = $derived(filteredResult.semanticAnnotations);
 
 	const availableScripts = $derived.by(() => {
 		const scripts = new Set<ScriptKey>();
@@ -1063,6 +1129,8 @@
 								{#if bridgeFilterAnnotations.has(entry.term)}
 									{@const viaSource = bridgeFilterAnnotations.get(entry.term) ?? ''}
 									<span class="gp-ref-via" dir="auto" title={$t('indexPanel.viaLemmaTooltip') || 'Cross-language match via the Lexical Bridge'}>{($t('indexPanel.viaLemma') || 'via {lemma}').replace('{lemma}', viaSource)}</span>
+								{:else if semanticFilterAnnotations.has(entry.term)}
+									<span class="gp-ref-semantic" dir="auto" title={$t('indexPanel.semanticMatchTooltip') || 'Semantic match — conceptually related to your query'}>{$t('indexPanel.semanticMatch') || '≈ similar'}</span>
 								{/if}
 							</span>
 							<div class="gp-freq-wrap">
@@ -1501,6 +1569,25 @@
 	}
 	.gp-ref:hover .gp-ref-name {
 		text-decoration: underline;
+	}
+	/* MIG-012 — semantic match badge. Renders as a small inline chip
+	   after the term name when a row surfaced because of an embedding-
+	   space cosine match (not substring, not lexical bridge). Visually
+	   distinct from .gp-ref-via via a different accent (using
+	   --color-cyan / --color-blue mix vs. accent-purple) so users can
+	   tell at a glance which signal surfaced the row. */
+	.gp-ref-semantic {
+		display: inline-block;
+		font-size: 0.65rem;
+		font-weight: 500;
+		color: var(--text-muted);
+		background: color-mix(in srgb, var(--color-cyan, #06b6d4) 12%, transparent);
+		border: 1px solid color-mix(in srgb, var(--color-cyan, #06b6d4) 24%, transparent);
+		border-radius: 3px;
+		padding: 1px 5px;
+		margin-inline-start: 6px;
+		vertical-align: baseline;
+		white-space: nowrap;
 	}
 	/* MIG-010 — cross-language bridge badge. Renders as a small inline
 	   chip after the note name when a row surfaced because of M11
