@@ -101,28 +101,40 @@
 		await runEmbedJob(false);
 	}
 
+	// MIG-012 §Build.7-fix-3: gap-feedback + error-surfacing.
+	// Production Tauri builds disable DevTools, so any silent failure
+	// during the click→first-event gap was invisible to the user. This
+	// state surfaces errors visibly, alongside the progress strip.
+	let semanticErrorMessage = $state<string | null>(null);
+
 	async function runEmbedJob(force: boolean) {
-		// Set up listener BEFORE firing init so we don't miss early events.
+		// Pre-populate the progress store IMMEDIATELY so the user sees
+		// the strip flip on click — closes the visible-feedback gap
+		// between click and the first Rust progress event (which can
+		// take 2–5 seconds when the embedding model needs to load on
+		// first invocation of the session).
+		semanticErrorMessage = null;
+		termEmbedProgress.set({ processed: 0, total: 0, done: false, cancelled: false });
+
 		try {
 			semanticUnlisten = await listen<TermEmbedProgress>('term-embedding-progress', (event) => {
 				termEmbedProgress.set(event.payload);
 				if (event.payload.done) {
 					semanticUnlisten?.();
 					semanticUnlisten = null;
-					// Refresh the count so the status line reflects reality
-					// post-job (cancelled jobs may have embedded some terms).
 					void refreshSemanticCount();
-					// Keep the final payload visible briefly so the user sees
-					// "✓ Done" or "Cancelled", then clear.
 					setTimeout(() => { termEmbedProgress.set(null); }, 4000);
 				}
 			});
 		} catch (e) {
 			console.error('[Settings] event listen failed:', e);
+			semanticErrorMessage = String(e);
+			termEmbedProgress.set(null);
 			return;
 		}
 		initTermEmbeddings(force).catch((err) => {
 			console.error('[Settings] initTermEmbeddings failed:', err);
+			semanticErrorMessage = String(err);
 			semanticUnlisten?.();
 			semanticUnlisten = null;
 			termEmbedProgress.set(null);
@@ -1979,9 +1991,10 @@
 						</label>
 					</div>
 
-					<!-- MIG-012 §Build.7-fix-1 — embedding progress indicator -->
+					<!-- MIG-012 §Build.7-fix-1/3 — embedding progress indicator -->
 					{#if $termEmbedProgress}
 						{@const p = $termEmbedProgress}
+						{@const isStarting = p.total === 0 && p.processed === 0 && !p.done}
 						{@const pct = p.total > 0 ? Math.min(100, Math.round((p.processed / p.total) * 100)) : 0}
 						<div class="semantic-progress" dir="auto">
 							<div class="semantic-progress-row">
@@ -1990,6 +2003,8 @@
 										{$t('settings.index.semanticSearch.cancelled') || 'Cancelled'}
 									{:else if p.done}
 										{$t('settings.index.semanticSearch.done') || 'Done'}
+									{:else if isStarting}
+										{$t('settings.index.semanticSearch.starting') || 'Starting…'}
 									{:else}
 										{($t('settings.index.semanticSearch.progress') || 'Embedding terms: {processed} / {total}')
 											.replace('{processed}', String(p.processed))
@@ -2003,7 +2018,19 @@
 								{/if}
 							</div>
 							<div class="semantic-progress-bar">
-								<div class="semantic-progress-fill" class:done={p.done} class:cancelled={p.cancelled} style="width: {pct}%"></div>
+								<div class="semantic-progress-fill" class:starting={isStarting} class:done={p.done} class:cancelled={p.cancelled} style="width: {isStarting ? 100 : pct}%"></div>
+							</div>
+						</div>
+					{:else if semanticErrorMessage}
+						<div class="semantic-progress semantic-error" dir="auto">
+							<div class="semantic-progress-row">
+								<span class="semantic-progress-label">
+									{($t('settings.index.semanticSearch.error') || 'Embedding job failed: {error}')
+										.replace('{error}', semanticErrorMessage)}
+								</span>
+								<button class="setting-btn semantic-progress-cancel" onclick={() => { semanticErrorMessage = null; }}>
+									{$t('common.dismiss') || 'Dismiss'}
+								</button>
 							</div>
 						</div>
 					{:else if $appSettings.index.semanticSearchEnabled && semanticIndexedCount !== null}
@@ -2943,6 +2970,22 @@
 	}
 	.semantic-progress-fill.done { background: var(--color-green, #16a34a); }
 	.semantic-progress-fill.cancelled { background: var(--text-faint); }
+	/* MIG-012 §Build.7-fix-3 — "Starting…" indeterminate-style fill that
+	   animates left-to-right while the gap between click-confirm and the
+	   first Rust progress event closes. Closes the visible-feedback gap. */
+	.semantic-progress-fill.starting {
+		background: linear-gradient(90deg, transparent 0%, var(--interactive-accent) 50%, transparent 100%);
+		background-size: 200% 100%;
+		animation: semantic-starting-shimmer 1.4s linear infinite;
+	}
+	@keyframes semantic-starting-shimmer {
+		0%   { background-position: 200% 0; }
+		100% { background-position: -200% 0; }
+	}
+	.semantic-progress.semantic-error {
+		border-color: var(--text-error, #dc2626);
+		background: color-mix(in srgb, var(--text-error, #dc2626) 8%, transparent);
+	}
 
 	/* MIG-012 §Build.7-fix-2 — index status + manual rebuild row.
 	   Shown when the toggle is on AND no embed job is in progress.
