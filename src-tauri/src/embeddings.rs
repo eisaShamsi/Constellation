@@ -352,12 +352,36 @@ pub fn init_term_embeddings(
     // it before the long embed loop. Lock-per-iteration below avoids
     // holding SearchState for the full ~10–20 min job, which would
     // freeze every other read-only IPC against search.db.
+    // MIG-012-fix-4 — embed-path threshold divergence from browse path.
+    // `read_index_entries` (Index panel browse) uses `cnt >= 5` to
+    // surface the long-tail vocabulary. The embed path needs a tighter
+    // threshold because:
+    //   (a) Embedding is ~50 ms/term; on a 7,600-note Universe with
+    //       multi-script noise (SQLite LENGTH() counts BYTES, so
+    //       1-character Arabic / Hebrew / CJK terms pass `LENGTH >= 2`),
+    //       the cnt >= 5 corpus balloons to ~570k → ~8 hours of CPU.
+    //   (b) Low-frequency terms make poor semantic anchors anyway —
+    //       a 5-occurrence term hasn't accumulated enough context for
+    //       the embedding model to capture meaning reliably; semantic
+    //       neighbours of such terms are usually noise.
+    //
+    // `cnt >= 20` is empirically a reasonable threshold — drops the
+    // 7,600-note corpus from ~573k to ~30-50k → 30-min rebuild instead
+    // of 8 hours. The browse path stays at `cnt >= 5` so the Index
+    // panel's term list is unaffected; only the semantic-search corpus
+    // changes.
+    //
+    // Existing rows in `term_embeddings` from prior runs (with the old
+    // threshold) are preserved — INSERT OR REPLACE on the embed path
+    // doesn't DELETE. Search continues to use them. Future fix can
+    // add a Settings knob (`project_term_embeddings_threshold_too_loose.md`)
+    // for power users who want a different trade-off.
     let all_terms: Vec<String> = {
         let search_state = app.state::<crate::search::SearchState>();
         let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
         let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
         let mut stmt = conn
-            .prepare("SELECT term FROM notes_vocab WHERE LENGTH(term) >= 2 AND cnt >= 5 ORDER BY term")
+            .prepare("SELECT term FROM notes_vocab WHERE LENGTH(term) >= 2 AND cnt >= 20 ORDER BY term")
             .map_err(|e| e.to_string())?;
         let rows = stmt
             .query_map([], |row| row.get::<_, String>(0))
