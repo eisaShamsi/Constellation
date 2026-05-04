@@ -943,6 +943,9 @@
 								onmouseenter={(e) => onNoteHover(mention.note_path, e)}
 								onmouseleave={() => onNoteLeave()}>
 								<span class="gp-ref-name">{mention.note_name}</span>
+								{#if mention.viaLemma}
+									<span class="gp-ref-via" dir="auto" title={$t('indexPanel.viaLemmaTooltip') || 'Cross-language match via the Lexical Bridge'}>{($t('indexPanel.viaLemma') || 'via {lemma}').replace('{lemma}', mention.viaLemma)}</span>
+								{/if}
 								{#if mention.snippet}
 									<span class="gp-ref-snippet" dir="auto">
 										{#each splitSnippet(mention.snippet) as part}
@@ -1360,6 +1363,24 @@
 	}
 	.gp-ref:hover .gp-ref-name {
 		text-decoration: underline;
+	}
+	/* MIG-010 — cross-language bridge badge. Renders as a small inline
+	   chip after the note name when a row surfaced because of M11
+	   Lexical Bridge expansion. Logical (start/end) properties so RTL
+	   users see it on the correct side; `dir="auto"` on the element
+	   itself so the lemma's own script direction reads naturally. */
+	.gp-ref-via {
+		display: inline-block;
+		font-size: 0.65rem;
+		font-weight: 500;
+		color: var(--text-muted);
+		background: color-mix(in srgb, var(--interactive-accent) 12%, transparent);
+		border: 1px solid color-mix(in srgb, var(--interactive-accent) 24%, transparent);
+		border-radius: 3px;
+		padding: 1px 5px;
+		margin-inline-start: 6px;
+		vertical-align: baseline;
+		white-space: nowrap;
 	}
 	/* One-line context snippet beneath the note name. Each snippet carries
 	   its own dir="auto" in the template so a Hebrew/Arabic snippet under

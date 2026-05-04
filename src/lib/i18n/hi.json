@@ -847,7 +847,9 @@
     "noteWithAll": "नोट में सभी हैं",
     "notesWithAll": "नोटों में सभी हैं",
     "selectedTerms": "चयनित शब्द",
-    "alsoAppearsWith": "साथ भी दिखाई देता है"
+    "alsoAppearsWith": "साथ भी दिखाई देता है",
+    "viaLemma": "{lemma} के माध्यम से",
+    "viaLemmaTooltip": "लेक्सिकल ब्रिज के माध्यम से क्रॉस-भाषा मिलान"
   },
   "workspacesPanel": {
     "title": "वर्कस्पेस",

@@ -2357,6 +2357,14 @@ export interface IndexMention {
 	 *  Optional: empty/absent when FTS5 produced no snippet (title-only
 	 *  match against an empty body). */
 	snippet?: string | null;
+	/** Cross-language bridge lemma when this row surfaced because of M11
+	 *  Lexical Bridge expansion (only when `expandCrossLanguage: true`
+	 *  was passed to {@link readTermMentions} AND the matched token is
+	 *  a non-source-language equivalent of the queried term). The
+	 *  IndexPanel renders it as a small "via {lemma}" badge. Absent for
+	 *  direct matches. (Note: Tauri converts Rust `via_lemma` snake_case
+	 *  to TypeScript `viaLemma` camelCase. See MIG-010.) */
+	viaLemma?: string | null;
 }
 
 export interface IndexEntry {
@@ -2391,9 +2399,23 @@ export async function readIndexEntries(): Promise<IndexEntry[]> {
 /**
  * Lazy-load the list of notes mentioning a given term. Called on expand.
  * Uses FTS5 MATCH against the term dictionary — sub-10 ms per call.
+ *
+ * `expandCrossLanguage`: when true, expand across languages via the M11
+ * Lexical Bridge (MIG-010). Each row's `viaLemma` carries the bridge
+ * lemma that surfaced it (None for direct matches). Off by default.
+ * The IndexPanel reads `$appSettings.index.expandCrossLanguage` and
+ * forwards the flag here.
  */
-export async function readTermMentions(term: string, limit?: number): Promise<IndexMention[]> {
-	return await invoke('read_term_mentions', { term, limit: limit ?? null });
+export async function readTermMentions(
+	term: string,
+	limit?: number,
+	expandCrossLanguage?: boolean,
+): Promise<IndexMention[]> {
+	return await invoke('read_term_mentions', {
+		term,
+		limit: limit ?? null,
+		expandCrossLanguage: expandCrossLanguage ?? null,
+	});
 }
 
 /**

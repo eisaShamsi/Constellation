@@ -847,7 +847,9 @@
     "noteWithAll": "件のノートがすべてを含む",
     "notesWithAll": "件のノートがすべてを含む",
     "selectedTerms": "個の選択された用語",
-    "alsoAppearsWith": "同時に出現する語"
+    "alsoAppearsWith": "同時に出現する語",
+    "viaLemma": "{lemma} 経由",
+    "viaLemmaTooltip": "Lexical Bridge による言語横断マッチ"
   },
   "workspacesPanel": {
     "title": "ワークスペース",

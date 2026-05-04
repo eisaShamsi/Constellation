@@ -847,7 +847,9 @@
     "noteWithAll": "نوٹ تمام پر مشتمل ہے",
     "notesWithAll": "نوٹس تمام پر مشتمل ہیں",
     "selectedTerms": "منتخب اصطلاحات",
-    "alsoAppearsWith": "کے ساتھ بھی آتا ہے"
+    "alsoAppearsWith": "کے ساتھ بھی آتا ہے",
+    "viaLemma": "{lemma} کے ذریعے",
+    "viaLemmaTooltip": "لیکسیکل برج کے ذریعے بین اللسانی مطابقت"
   },
   "workspacesPanel": {
     "title": "ورک اسپیسز",

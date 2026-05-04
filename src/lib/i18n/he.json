@@ -847,7 +847,9 @@
     "noteWithAll": "פתק מכיל את כל",
     "notesWithAll": "פתקים מכילים את כל",
     "selectedTerms": "המונחים שנבחרו",
-    "alsoAppearsWith": "מופיע גם עם"
+    "alsoAppearsWith": "מופיע גם עם",
+    "viaLemma": "דרך {lemma}",
+    "viaLemmaTooltip": "התאמה בין-שפתית דרך הגשר הלקסיקלי"
   },
   "workspacesPanel": {
     "title": "סביבות עבודה",

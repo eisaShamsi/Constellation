@@ -4800,7 +4800,7 @@
 							entries={allIndexEntries}
 							isLoading={indexLoading}
 							onNoteClick={handleIndexNoteClick}
-							loadMentions={(term) => readTermMentions(term, 500)}
+							loadMentions={(term) => readTermMentions(term, 500, $appSettings.index.expandCrossLanguage)}
 							loadCooccurrence={(term) => readCooccurringTerms(term)}
 							onNoteHover={handleIndexNoteHover}
 							onNoteLeave={handleIndexNoteLeave}

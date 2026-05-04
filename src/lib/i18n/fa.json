@@ -847,7 +847,9 @@
     "noteWithAll": "یادداشت شامل همهٔ",
     "notesWithAll": "یادداشت شامل همهٔ",
     "selectedTerms": "اصطلاح انتخاب‌شده",
-    "alsoAppearsWith": "همچنین ظاهر می‌شود با"
+    "alsoAppearsWith": "همچنین ظاهر می‌شود با",
+    "viaLemma": "از طریق {lemma}",
+    "viaLemmaTooltip": "تطابق میان‌زبانی از طریق پل واژگانی"
   },
   "workspacesPanel": {
     "title": "فضاهای کاری",

@@ -884,7 +884,9 @@
     "noteWithAll": "note contains all",
     "notesWithAll": "notes contain all",
     "selectedTerms": "selected terms",
-    "alsoAppearsWith": "Also appears with"
+    "alsoAppearsWith": "Also appears with",
+    "viaLemma": "via {lemma}",
+    "viaLemmaTooltip": "Cross-language match via the Lexical Bridge"
   },
   "workspacesPanel": {
     "title": "Workspaces",

@@ -847,7 +847,9 @@
     "noteWithAll": "note contient tous les",
     "notesWithAll": "notes contiennent tous les",
     "selectedTerms": "termes sélectionnés",
-    "alsoAppearsWith": "Apparaît aussi avec"
+    "alsoAppearsWith": "Apparaît aussi avec",
+    "viaLemma": "via {lemma}",
+    "viaLemmaTooltip": "Correspondance multilingue via le Pont Lexical"
   },
   "workspacesPanel": {
     "title": "Espaces de travail",

@@ -848,7 +848,9 @@
     "noteWithAll": "ملاحظة تحتوي على جميع",
     "notesWithAll": "ملاحظات تحتوي على جميع",
     "selectedTerms": "المصطلحات المحددة",
-    "alsoAppearsWith": "يظهر أيضًا مع"
+    "alsoAppearsWith": "يظهر أيضًا مع",
+    "viaLemma": "عبر {lemma}",
+    "viaLemmaTooltip": "مطابقة عبر اللغات بواسطة الجسر المعجمي"
   },
   "workspacesPanel": {
     "title": "مساحات العمل",

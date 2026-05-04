@@ -847,7 +847,9 @@
     "noteWithAll": "条笔记包含所有",
     "notesWithAll": "条笔记包含所有",
     "selectedTerms": "个选定术语",
-    "alsoAppearsWith": "同时出现"
+    "alsoAppearsWith": "同时出现",
+    "viaLemma": "通过 {lemma}",
+    "viaLemmaTooltip": "通过词汇桥的跨语言匹配"
   },
   "workspacesPanel": {
     "title": "工作区",

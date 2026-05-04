@@ -847,7 +847,9 @@
     "noteWithAll": "not tümünü içeriyor",
     "notesWithAll": "not tümünü içeriyor",
     "selectedTerms": "seçili terim",
-    "alsoAppearsWith": "Birlikte görünür"
+    "alsoAppearsWith": "Birlikte görünür",
+    "viaLemma": "{lemma} üzerinden",
+    "viaLemmaTooltip": "Lexical Bridge üzerinden diller arası eşleşme"
   },
   "workspacesPanel": {
     "title": "Çalışma Alanları",

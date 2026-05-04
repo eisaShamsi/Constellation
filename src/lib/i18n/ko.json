@@ -847,7 +847,9 @@
     "noteWithAll": "개의 노트가 모두 포함",
     "notesWithAll": "개의 노트가 모두 포함",
     "selectedTerms": "개 선택된 용어",
-    "alsoAppearsWith": "함께 나타나는 단어"
+    "alsoAppearsWith": "함께 나타나는 단어",
+    "viaLemma": "{lemma} 통해",
+    "viaLemmaTooltip": "Lexical Bridge를 통한 교차 언어 일치"
   },
   "workspacesPanel": {
     "title": "작업 공간",

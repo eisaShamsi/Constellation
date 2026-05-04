@@ -847,7 +847,9 @@
     "noteWithAll": "Notiz enthält alle",
     "notesWithAll": "Notizen enthalten alle",
     "selectedTerms": "ausgewählten Begriffe",
-    "alsoAppearsWith": "Kommt auch vor mit"
+    "alsoAppearsWith": "Kommt auch vor mit",
+    "viaLemma": "über {lemma}",
+    "viaLemmaTooltip": "Sprachübergreifende Übereinstimmung über die Lexical Bridge"
   },
   "workspacesPanel": {
     "title": "Arbeitsbereiche",

@@ -847,7 +847,9 @@
     "noteWithAll": "заметка содержит все",
     "notesWithAll": "заметок содержат все",
     "selectedTerms": "выбранных терминов",
-    "alsoAppearsWith": "Также встречается с"
+    "alsoAppearsWith": "Также встречается с",
+    "viaLemma": "через {lemma}",
+    "viaLemmaTooltip": "Межъязыковое совпадение через Lexical Bridge"
   },
   "workspacesPanel": {
     "title": "Рабочие пространства",
