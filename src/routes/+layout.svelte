@@ -3602,7 +3602,17 @@
 	// Triggered on `graphReady` so the first read doesn't fight the boot
 	// snapshot IPC queue. Subsequent universe switches trigger a re-read.
 	// One `invoke` round-trip, tens of milliseconds on a 50k-term Universe.
+	// MIG-010 Phase D: load lazily on first Index-panel open, not at boot.
+	// Pre-MIG-010 this fired on `graphReady` regardless of whether the user
+	// would actually open the Index — paying the cost (tens of ms on a 50k-
+	// term Universe, 100-200 ms on 100k+) for every boot, even when the
+	// user never expanded the panel that session. Gating on `showIndex`
+	// makes the cost on-demand: free at boot, paid the first time the
+	// user opens the panel. Subsequent opens (within the same Universe)
+	// hit the cached `allIndexEntries`. Universe switches keep the existing
+	// `indexLoadedKey` invalidation path so the data refreshes correctly.
 	$effect(() => {
+		if (!showIndex) return;
 		if (!graphReady) return;
 		if ($libraries.length === 0) return;
 		const key = `${activeUniverseName}|${$libraries.length}`;
