@@ -2362,9 +2362,13 @@ export interface IndexMention {
 	 *  was passed to {@link readTermMentions} AND the matched token is
 	 *  a non-source-language equivalent of the queried term). The
 	 *  IndexPanel renders it as a small "via {lemma}" badge. Absent for
-	 *  direct matches. (Note: Tauri converts Rust `via_lemma` snake_case
-	 *  to TypeScript `viaLemma` camelCase. See MIG-010.) */
-	viaLemma?: string | null;
+	 *  direct matches.
+	 *
+	 *  IMPORTANT: snake_case to match Tauri's wire format. Tauri auto-
+	 *  converts case for command PARAMETERS but NOT for struct fields
+	 *  in return values — same convention as `note_path` / `note_name`
+	 *  / `snippet`. (MIG-010.) */
+	via_lemma?: string | null;
 }
 
 export interface IndexEntry {

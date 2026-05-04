@@ -25,6 +25,7 @@
 		onTermSelect,
 		loadMentions,
 		loadCooccurrence,
+		expandCrossLanguage = false,
 	}: {
 		entries: IndexEntry[];
 		isLoading?: boolean;
@@ -41,12 +42,29 @@
 		 *  alongside `loadMentions` on expand; results render as a chip
 		 *  strip beneath the mentions list. */
 		loadCooccurrence?: (term: string) => Promise<CooccurringTerm[]>;
+		/** MIG-010: M11 Lexical Bridge expansion toggle. The parent reads
+		 *  `$appSettings.index.expandCrossLanguage` and passes it here so
+		 *  the IndexPanel can invalidate `mentionsCache` when the user
+		 *  flips the toggle in Settings (otherwise the cache would serve
+		 *  the stale results from the previous toggle state). */
+		expandCrossLanguage?: boolean;
 	} = $props();
 
 	// Per-term mentions cache — populated on demand when the user expands a term.
 	// Keeps the initial IPC payload tiny (terms only; no mentions pre-loaded).
 	let mentionsCache = $state<Map<string, IndexMention[]>>(new Map());
 	let loadingMentions = $state<Set<string>>(new Set());
+
+	// MIG-010: when the user flips the cross-language expansion toggle in
+	// Settings, every cached row's `via_lemma` (and possibly the row count)
+	// is now stale. Clear the cache so the next click re-fetches with the
+	// new flag. Cooccurrence cache is unaffected — it's independent of the
+	// expansion path.
+	$effect(() => {
+		void expandCrossLanguage;
+		if (mentionsCache.size > 0) mentionsCache = new Map();
+		if (loadingMentions.size > 0) loadingMentions = new Set();
+	});
 
 	function getMentions(term: string): IndexMention[] {
 		return mentionsCache.get(term) ?? [];
@@ -943,8 +961,8 @@
 								onmouseenter={(e) => onNoteHover(mention.note_path, e)}
 								onmouseleave={() => onNoteLeave()}>
 								<span class="gp-ref-name">{mention.note_name}</span>
-								{#if mention.viaLemma}
-									<span class="gp-ref-via" dir="auto" title={$t('indexPanel.viaLemmaTooltip') || 'Cross-language match via the Lexical Bridge'}>{($t('indexPanel.viaLemma') || 'via {lemma}').replace('{lemma}', mention.viaLemma)}</span>
+								{#if mention.via_lemma}
+									<span class="gp-ref-via" dir="auto" title={$t('indexPanel.viaLemmaTooltip') || 'Cross-language match via the Lexical Bridge'}>{($t('indexPanel.viaLemma') || 'via {lemma}').replace('{lemma}', mention.via_lemma)}</span>
 								{/if}
 								{#if mention.snippet}
 									<span class="gp-ref-snippet" dir="auto">

@@ -2644,12 +2644,20 @@
 		border-radius: 3px; font-size: 0.75rem; color: var(--text-normal);
 	}
 
-	/* Toggle Switch */
+	/* Toggle Switch.
+	   Off-state uses a clearly muted gray (background-modifier-border) so
+	   off ≠ on at a glance — the prior --background-modifier-border-focus
+	   was too pale on light themes; users couldn't tell the toggle's
+	   state. On-state uses --interactive-accent (purple).
+	   RTL: in Arabic / Hebrew / Persian / Urdu the slider's "on" position
+	   mirrors so the slider visually moves toward the row's logical end
+	   regardless of writing direction — matches iOS / Android / Windows
+	   conventions for RTL toggles. */
 	.toggle { position: relative; display: inline-block; width: 40px; height: 22px; flex-shrink: 0; }
 	.toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
 	.toggle-slider {
 		position: absolute; inset: 0; cursor: pointer;
-		background: var(--background-modifier-border-focus);
+		background: var(--background-modifier-border);
 		border-radius: 22px; transition: background 0.2s ease;
 	}
 	.toggle-slider::after {
@@ -2661,6 +2669,12 @@
 	}
 	.toggle input:checked + .toggle-slider { background: var(--interactive-accent); }
 	.toggle input:checked + .toggle-slider::after { transform: translateX(18px); }
+	/* RTL: anchor the off-position to the right edge instead of the left,
+	   and translate the on-position to the left so the slider moves
+	   toward the row's logical end (matches LTR direction-of-completion
+	   intuition: off → start, on → end). */
+	:global([dir="rtl"]) .toggle-slider::after { left: auto; right: 3px; }
+	:global([dir="rtl"]) .toggle input:checked + .toggle-slider::after { transform: translateX(-18px); }
 
 	/* Script toolbar checkboxes */
 	.script-toolbar-checkboxes {
