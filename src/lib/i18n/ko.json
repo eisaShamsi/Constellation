@@ -514,7 +514,8 @@
         "starting": "Starting…",
         "error": "Embedding job failed: {error}",
         "loadingModel": "Loading embedding model…",
-        "scanningVocab": "Scanning vocabulary…"
+        "scanningVocab": "Scanning vocabulary…",
+        "optimizingFts5": "Compacting search index…"
       },
       "searchHistory": {
         "label": "Search history",

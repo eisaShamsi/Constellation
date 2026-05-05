@@ -402,6 +402,53 @@ pub fn init_term_embeddings(
     // doesn't DELETE. Search continues to use them. Future fix can
     // add a Settings knob (`project_term_embeddings_threshold_too_loose.md`)
     // for power users who want a different trade-off.
+    // MIG-012-fix-7 — Phase 1.5: compact the FTS5 index before scanning.
+    // Boss-observed during fix-6: the `notes_vocab` SELECT hung 20+
+    // minutes on a heavily-fragmented FTS5 index (today's MIG-006 +
+    // MIG-008 + MIG-010 + MIG-011 + MIG-012 cascades created many
+    // segments; vocab walk has to merge them all). `merge` rebuilds
+    // the largest segments into one, making subsequent vocab scans
+    // dramatically faster (typical reduction: 60-segment fragmented
+    // index → 1 segment, scan goes from minutes to milliseconds).
+    //
+    // Using `merge` (not `optimize`): merge processes only the largest
+    // N segments worth of pages and is bounded; optimize rewrites the
+    // entire index and can take longer than the scan it's trying to
+    // accelerate. The integer rank value (-N) tells FTS5 to merge up
+    // to the equivalent of N×merge_pages worth of work — 500 pages
+    // × FTS5's default ~16 KB/page ≈ 8 MB of merge work, plenty for
+    // most libraries' fragmentation.
+    //
+    // If merge fails (e.g., schema lock contention), we log + continue
+    // — the scan might still be slow, but the Rebuild won't fail
+    // outright. Idempotent: running on an already-merged index is a
+    // near-no-op.
+    let _ = app.emit(
+        "term-embedding-progress",
+        TermEmbedProgress {
+            processed: 0,
+            total: 0,
+            done: false,
+            cancelled: false,
+            phase: Some("optimizing-fts5".into()),
+        },
+    );
+    {
+        let search_state = app.state::<crate::search::SearchState>();
+        let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
+        let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
+        // FTS5 'merge' compacts segments incrementally. The rank
+        // parameter caps the work; we use 500 as a generous-but-bounded
+        // value (the FTS5 default is 16, which would barely move on
+        // Boss's heavily-fragmented index).
+        if let Err(e) = conn.execute(
+            "INSERT INTO notes_fts(notes_fts, rank) VALUES('merge', 500)",
+            [],
+        ) {
+            eprintln!("[term_embeddings] FTS5 merge failed (continuing): {}", e);
+        }
+    }
+
     // Phase 2 — scanning the FTS5 vocab. On large libraries this walks
     // millions of token-position rows + sorts; can take seconds.
     let _ = app.emit(

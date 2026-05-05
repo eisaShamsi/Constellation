@@ -2005,6 +2005,8 @@
 										{$t('settings.index.semanticSearch.done') || 'Done'}
 									{:else if p.phase === 'loading-model'}
 										{$t('settings.index.semanticSearch.loadingModel') || 'Loading embedding model…'}
+									{:else if p.phase === 'optimizing-fts5'}
+										{$t('settings.index.semanticSearch.optimizingFts5') || 'Compacting search index…'}
 									{:else if p.phase === 'scanning-vocab'}
 										{$t('settings.index.semanticSearch.scanningVocab') || 'Scanning vocabulary…'}
 									{:else if isStarting}
