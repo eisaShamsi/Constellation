@@ -78,7 +78,7 @@ pub(crate) const SKY_SCHEMA_VERSION: i64 = 10;
 /// PRIMARY-KEY promotion in Step 6) bump this further.
 pub(crate) const NOTE_META_SCHEMA_VERSION: i64 = 1;
 
-/// MIG-013 §1C — `term_vocab.bridge_concept_id` schema version.
+/// MIG-013 §1C/§1D — `term_vocab.bridge_concept_id` schema version.
 ///
 /// | version | change                                                      |
 /// |--------:|-------------------------------------------------------------|
@@ -87,7 +87,15 @@ pub(crate) const NOTE_META_SCHEMA_VERSION: i64 = 1;
 /// |         | by `ctse::hooks::on_note_indexed` (fast path) and the       |
 /// |         | `ctse_run_backfill` Tauri command (slow path). NULL means   |
 /// |         | "not yet attempted"; sentinel `'-'` means "tried, no hit".  |
-pub(crate) const TERM_VOCAB_BRIDGE_SCHEMA_VERSION: i64 = 1;
+/// |       2 | bulk-sentinel every NULL bigram row in one UPDATE.          |
+/// |         | Bigrams (tokens joined by FTS5 `BIGRAM_SEP` = U+001F) are   |
+/// |         | not lexicon-resolvable; iterating them in the backfill is   |
+/// |         | wasted IO and locks the SearchState mutex for hours on a    |
+/// |         | typical multi-million-row corpus. Pre-marking them lets the |
+/// |         | backfill target only the ~50K real stem rows. (See         |
+/// |         | `lab/reports/SESSION-LOG-2026-05-05.md` "§1D bigram        |
+/// |         | explosion".)                                               |
+pub(crate) const TERM_VOCAB_BRIDGE_SCHEMA_VERSION: i64 = 2;
 
 /// MIG-002 §4 — SQL fragment that computes sky_nodes.stratum (1–8) from
 /// the same five signals as strata.rs::compute_stratum:
@@ -468,6 +476,37 @@ fn ensure_term_vocab_bridge_column(conn: &Connection) -> rusqlite::Result<()> {
     conn.execute_batch(
         "CREATE INDEX IF NOT EXISTS idx_term_vocab_bridge_concept_id
              ON term_vocab (bridge_concept_id);",
+    )?;
+    Ok(())
+}
+
+/// MIG-013 §1D — bulk-sentinel every NULL bigram row.
+///
+/// On a real Constellation library the FTS5 tokenizer emits both stems
+/// AND bigrams (joined by `BIGRAM_SEP` = U+001F) so that phrase queries
+/// match. Bigrams correctly belong in `term_vocab` (the Index panel and
+/// other surfaces consume them), but they are not lexicon-resolvable —
+/// the M11 graph keys are single lemmas, never two-word internal
+/// sentinel-joined pairs. A 7,600-note Arabic+English corpus produces
+/// ~50K stems and ~5.7M bigrams; left as NULLs, the backfill iterates
+/// every one of them with a per-row UPDATE, locking the SearchState
+/// mutex for multiple hours.
+///
+/// One bulk UPDATE in a single transaction handles all of them:
+/// sub-second on modern SSD, scales linearly with corpus size, and
+/// leaves the index pristine for the post-fill backfill which now
+/// targets only the ~50K real stems.
+///
+/// Idempotent: only NULL bigram rows are touched. Real concept ids
+/// (`c:…`) and prior `'-'` sentinels are untouched. Re-running the
+/// migration is a no-op.
+fn sentinel_bigram_rows(conn: &Connection) -> rusqlite::Result<()> {
+    conn.execute(
+        "UPDATE term_vocab \
+         SET bridge_concept_id = '-' \
+         WHERE bridge_concept_id IS NULL \
+           AND term LIKE '%' || CHAR(31) || '%'",
+        [],
     )?;
     Ok(())
 }
@@ -1235,10 +1274,10 @@ fn init_db(path: &Path) -> Result<Connection, String> {
             ON term_vocab (total_count DESC);
     ").map_err(|e| format!("Failed to create term_vocab: {}", e))?;
 
-    // MIG-013 §1C — `term_vocab.bridge_concept_id` column + index. Gated
-    // by `schema_versions.term_vocab_bridge` so the migration runs once
-    // per existing DB and is a no-op on fresh DBs (the column is also
-    // ensured on a fresh DB by the same call — `ensure_*` is idempotent).
+    // MIG-013 §1C/§1D — `term_vocab.bridge_concept_id` column + index +
+    // bigram-sentinel migration. Each step is gated independently
+    // against `schema_versions.term_vocab_bridge` so we re-enter cleanly
+    // on partial-migration recovery (e.g. crash between v1 and v2).
     let stored_term_vocab_bridge_version: i64 = conn
         .query_row(
             "SELECT version FROM schema_versions WHERE module = 'term_vocab_bridge'",
@@ -1246,22 +1285,41 @@ fn init_db(path: &Path) -> Result<Connection, String> {
             |row| row.get(0),
         )
         .unwrap_or(0);
+
+    // Step v0→v1 — column + index. Idempotent on every boot
+    // regardless of stored version (the helper probes `PRAGMA
+    // table_info` and only ALTERs when missing). Cheap.
+    ensure_term_vocab_bridge_column(&conn)
+        .map_err(|e| format!("Failed to ensure term_vocab.bridge_concept_id: {}", e))?;
+
+    // Step v1→v2 — bulk-sentinel bigram rows. Runs once. On a fresh DB
+    // term_vocab is empty, so the UPDATE matches zero rows (no-op). On
+    // Boss's library or any pre-existing one with millions of bigram
+    // rows, this single UPDATE replaces what would otherwise be a
+    // multi-hour iteration in `ctse_run_backfill`.
+    if stored_term_vocab_bridge_version < 2 {
+        let t0 = std::time::Instant::now();
+        sentinel_bigram_rows(&conn)
+            .map_err(|e| format!("Failed to sentinel term_vocab bigram rows: {}", e))?;
+        diag_log(path, &format!(
+            "[search] init_db: term_vocab bigram-sentinel migration v2 ran in {} ms",
+            t0.elapsed().as_millis(),
+        ));
+    }
+
+    // Stamp the latest version so subsequent boots short-circuit the
+    // gate. INSERT OR REPLACE so concurrent migrations from older
+    // versions converge to the same row.
     if stored_term_vocab_bridge_version < TERM_VOCAB_BRIDGE_SCHEMA_VERSION {
-        ensure_term_vocab_bridge_column(&conn)
-            .map_err(|e| format!("Failed to ensure term_vocab.bridge_concept_id: {}", e))?;
         conn.execute(
             "INSERT OR REPLACE INTO schema_versions (module, version, updated_at) VALUES ('term_vocab_bridge', ?1, strftime('%s','now'))",
             rusqlite::params![TERM_VOCAB_BRIDGE_SCHEMA_VERSION],
         ).map_err(|e| format!("Failed to stamp schema_versions.term_vocab_bridge: {}", e))?;
         diag_log(path, &format!(
-            "[search] init_db: schema_versions.term_vocab_bridge stamped to {} (column added or already present)",
+            "[search] init_db: schema_versions.term_vocab_bridge stamped to {} (was {})",
             TERM_VOCAB_BRIDGE_SCHEMA_VERSION,
+            stored_term_vocab_bridge_version,
         ));
-    } else {
-        // Defensive: schema_versions says we're current, but ensure the
-        // column physically exists. Cheap PRAGMA + idempotent index.
-        ensure_term_vocab_bridge_column(&conn)
-            .map_err(|e| format!("Failed to ensure term_vocab.bridge_concept_id: {}", e))?;
     }
 
     // MIG-012 — Search history. Per-Universe (this database is per-

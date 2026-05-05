@@ -68,15 +68,21 @@ fn emit(app: &tauri::AppHandle, payload: CtseBackfillProgress) {
     let _ = app.emit("ctse-backfill-progress", payload);
 }
 
-/// Pull the count of NULL rows. Cheap (the index on
-/// `bridge_concept_id` makes this an indexed sparse scan).
+/// Pull the count of NULL rows that the backfill will actually process.
+/// Filters out bigrams (joined by `BIGRAM_SEP` = U+001F / CHAR(31)) —
+/// those are not lexicon-resolvable and are bulk-sentinelled by the
+/// schema-version 2 migration in `init_db`. Belt-and-suspenders: if a
+/// new note save introduces a fresh bigram between migrations, we
+/// still skip it here.
 fn count_null_rows(app: &tauri::AppHandle) -> Result<u32, String> {
     let state = app.state::<SearchState>();
     let db = state.db.lock().map_err(|e| e.to_string())?;
     let conn = db.as_ref().ok_or("Search database not initialized")?;
     let n: u32 = conn
         .query_row(
-            "SELECT COUNT(*) FROM term_vocab WHERE bridge_concept_id IS NULL",
+            "SELECT COUNT(*) FROM term_vocab \
+             WHERE bridge_concept_id IS NULL \
+               AND term NOT LIKE '%' || CHAR(31) || '%'",
             [],
             |row| row.get(0),
         )
@@ -86,7 +92,8 @@ fn count_null_rows(app: &tauri::AppHandle) -> Result<u32, String> {
 
 /// Pull the next batch of unresolved terms. TF-IDF descending
 /// (rarest first → search becomes useful early in the backfill, since
-/// rare terms carry the most discriminative signal).
+/// rare terms carry the most discriminative signal). Bigram rows are
+/// excluded — see [`count_null_rows`].
 fn next_batch(app: &tauri::AppHandle, limit: usize) -> Result<Vec<String>, String> {
     let state = app.state::<SearchState>();
     let db = state.db.lock().map_err(|e| e.to_string())?;
@@ -95,6 +102,7 @@ fn next_batch(app: &tauri::AppHandle, limit: usize) -> Result<Vec<String>, Strin
         .prepare(
             "SELECT term FROM term_vocab \
              WHERE bridge_concept_id IS NULL \
+               AND term NOT LIKE '%' || CHAR(31) || '%' \
              ORDER BY total_count ASC, term \
              LIMIT ?1",
         )
