@@ -154,19 +154,24 @@ Tauri v2 desktop app (Rust + SvelteKit/Svelte 5) — a Personal Knowledge Formul
 - Never build a single-language assumption into layout, fonts, cursor behavior, or input handling.
 
 ### Constellation Knowledge Hierarchy
-Constellation organizes knowledge in a five-level hierarchy — no other PKM system has this depth:
+Constellation organizes knowledge in a four-level structural hierarchy with an **optional federation layer** at the top — no other PKM system has this depth:
 
 ```
 Universe (root)
-  └── cUniverse (child universe)
-       └── Library
-            └── Folder
-                 └── Note
+├── Library (one or more — the Universe's own)
+│    └── Folder
+│         └── Note
+└── cUniverse (zero or more — optional federation links)
+     └── Library (libraries from the linked Universe — recursive)
+          └── Folder
+               └── Note
 ```
 
-- **Universe**: The top-level container. Named by the user. Contains all libraries, settings, bases, bookmarks. One per Constellation instance. Stored as a directory with `universe.json`.
-- **cUniverse (Child Universe)**: A linked Universe that contributes its libraries to a parent. Enables federation — viewing notes from multiple independent Universes in one window.
-- **Library**: A complete, self-contained knowledge base (equivalent to an Obsidian vault). Has its own color, appearance, tags, links, and index. Registered in `libraries.json`. Multiple libraries coexist in one Universe. Libraries are never copied — Constellation reads them in place.
+The structural levels of stored knowledge are **Universe → Library → Folder → Note** (four levels). **cUniverse is a sibling federation mechanism**, not a level a user has to traverse to reach a Library — a Universe holds its Libraries directly, and *optionally* also links to other Universes whose Libraries are federated in via `universe.json`'s `children` array. Verified against `src-tauri/src/universe.rs::resolve_libraries_recursive` (loads `libraries.json` directly, then recurses into `universe.json` children).
+
+- **Universe**: The top-level container. Named by the user. Contains its own libraries, settings, bases, bookmarks, and an optional list of cUniverse children. One Universe is "active" per Constellation instance. Stored as a directory with `universe.json` (the federation manifest) and `.constellation/libraries.json` (the own-libraries manifest).
+- **Library**: A complete, self-contained knowledge base (equivalent to an Obsidian vault) — **a direct child of a Universe**. Has its own color, appearance, tags, links, and index. Registered in `libraries.json`. Multiple libraries coexist in one Universe. Libraries are never copied — Constellation reads them in place.
+- **cUniverse (Child Universe)** — *optional layer*: A linked Universe whose libraries get federated into the parent at runtime. Each cUniverse is itself a full Universe (with its own libraries and its own optional cUniverse children); `resolve_libraries_recursive` flattens the federation tree into one library list. Enables viewing notes from multiple independent Universes in one window. **A Universe with zero cUniverses is a complete, valid setup** — federation is opt-in.
 - **Folder**: A subdirectory within a Library. Organizational structure only. Supports nesting.
 - **Note**: A single `.md` file with optional YAML frontmatter. The atomic unit of knowledge.
 
