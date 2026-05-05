@@ -414,12 +414,27 @@ pub fn init_term_embeddings(
             phase: Some("scanning-vocab".into()),
         },
     );
+    // MIG-012-fix-6 — open a fresh read-only connection for the vocab
+    // scan, mirroring `read_index_entries` exactly. Boss-observed
+    // 20-minute hangs on the prior shared-SearchState path; the Index
+    // panel's `read_index_entries` runs the same shape SQL in ~350ms
+    // via this pattern. Avoids any contention with the shared write
+    // connection AND any shared-PRAGMA differences.
+    //
+    // Also drops ORDER BY — the embed loop doesn't care about term
+    // order. fts5vocab walks the FTS5 dictionary in its native order
+    // anyway; ORDER BY would force SQLite to materialize + sort.
     let all_terms: Vec<String> = {
-        let search_state = app.state::<crate::search::SearchState>();
-        let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
-        let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
+        use rusqlite::{Connection, OpenFlags};
+        let db_path = crate::search::db_path(&app)?;
+        let flags = OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX;
+        let mut conn = Connection::open_with_flags(&db_path, flags)
+            .map_err(|e| format!("Failed to open search.db: {}", e))?;
+        conn.busy_timeout(std::time::Duration::from_millis(500))
+            .map_err(|e| e.to_string())?;
+        crate::search::register_fts5_tokenizer(&mut conn)?;
         let mut stmt = conn
-            .prepare("SELECT term FROM notes_vocab WHERE LENGTH(term) >= 2 AND cnt >= 20 ORDER BY term")
+            .prepare("SELECT term FROM notes_vocab WHERE LENGTH(term) >= 2 AND cnt >= 20")
             .map_err(|e| e.to_string())?;
         let rows = stmt
             .query_map([], |row| row.get::<_, String>(0))
