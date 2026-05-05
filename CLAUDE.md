@@ -231,6 +231,25 @@ Stops happen only at:
 
 The Standing Order session-log discipline still applies between steps — log each `§NNN` commit as it lands. But that's record-keeping, not approval-seeking.
 
+## State the Function in Hand (top principal)
+
+At the start of every task — and again at the start of every fresh session, and again any time the work pivots to a different surface — state the **function in hand** in a single line:
+
+> Working on: **the Index panel filter** (the term-browser dropdown in the sidebar Index pane, where MIG-010/MIG-011/MIG-012 added the `via {lemma}` and `≈ similar` badges).
+
+The function-in-hand statement is a one-line anchor naming the feature exactly the way the orientation doc names it. It precedes every other rule. The Predecessor Lookup Rule reads against it ("predecessor of *this surface*"); the Stop-On-Correction Rule fires when the conversation drifts off it; the Testing Instructions Rule frames test tutorials around it.
+
+The point is to make wrong-target drift **impossible at the first line** of any work. If I don't write the function-in-hand statement, I haven't started the task — I'm in undirected coding, which is how features land in the wrong panel.
+
+Re-fire the statement when:
+
+- A fresh session starts.
+- The work pivots to a different feature (a "now we're working on Y" moment).
+- The Boss corrects the framing (the Stop-On-Correction Rule's exit ramp loops back here).
+- A multi-day task resumes after a gap.
+
+Canonical violation: the entire §1D wrong-target incident. I never wrote down "Working on: the Index panel filter" before §1D-A. With that line in place, the moment I drafted "wire to SearchHub" the contradiction with the function-in-hand would have been visible immediately. Without it, drift took 4 commits + 3 builds to catch.
+
 ## Predecessor Lookup Rule (top principal)
 
 Before removing, moving, or replacing any user-facing feature, IPC surface, settings entry, or UI wiring, write a **Predecessor → Replacement** entry into the current day's session log, capturing:
