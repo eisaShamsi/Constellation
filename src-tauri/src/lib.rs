@@ -383,6 +383,13 @@ pub fn run() {
             ctse::backfill::ctse_run_backfill,
             ctse::backfill::ctse_cancel_backfill,
             ctse::backfill::ctse_backfill_status,
+            // MIG-013 §1D — first-fill (one-shot bulk population of
+            // term_vocab from note_meta.body_text via the same hook
+            // path as per-save) and concept-based semantic search.
+            ctse::first_fill::ctse_first_fill,
+            ctse::first_fill::ctse_first_fill_status,
+            ctse::first_fill::ctse_cancel_first_fill,
+            ctse::search::ctse_search_by_concept,
             libraries::read_index_history,
             libraries::write_index_history_entry,
             libraries::clear_index_history,

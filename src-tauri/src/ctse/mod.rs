@@ -36,7 +36,9 @@
 //! source is modified.
 
 pub mod backfill;
+pub mod first_fill;
 pub mod hooks;
+pub mod search;
 
 use crate::arabic::Lang;
 use crate::bridge_vectors::{self, ConceptVectorStore};
