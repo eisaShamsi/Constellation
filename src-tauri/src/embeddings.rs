@@ -185,6 +185,121 @@ fn run_embedding(engine: &EmbeddingEngine, text: &str) -> Result<Vec<f32>, Strin
     Ok(result)
 }
 
+/// MIG-013 CTSE Phase 1.5 — batched inference for the term-embedding
+/// bootstrap. Replaces per-term ONNX calls (~60-70ms each → ~15
+/// terms/sec) with a single inference per batch of N terms (~80ms per
+/// batch of 32 → ~400 terms/sec). Same model, same prefixes, same
+/// L2-normalization — just amortizes the inference fixed overhead
+/// across the batch.
+///
+/// Returns one Vec<f32> per input text in input order. The caller is
+/// responsible for the "passage: " / "query: " prefix.
+fn run_embedding_batch(engine: &EmbeddingEngine, texts: &[String]) -> Result<Vec<Vec<f32>>, String> {
+    if texts.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    // Tokenize each text. Truncate text bytes first (UTF-8-safe) so the
+    // tokenizer doesn't choke on huge inputs, then truncate token
+    // sequence to MAX_TOKENS. Track the per-batch max sequence length
+    // so we know how much to pad shorter rows to.
+    const MAX_TOKENS: usize = 512;
+    let mut encoded = Vec::with_capacity(texts.len());
+    let mut max_len = 1usize;
+    for text in texts {
+        let truncated: &str = if text.len() > 2000 {
+            let mut end = 2000;
+            while end > 0 && !text.is_char_boundary(end) {
+                end -= 1;
+            }
+            &text[..end]
+        } else {
+            text.as_str()
+        };
+        let encoding = engine
+            .tokenizer
+            .encode(truncated, true)
+            .map_err(|e| format!("Tokenization failed: {}", e))?;
+        let len = encoding.get_ids().len().min(MAX_TOKENS);
+        if len > max_len {
+            max_len = len;
+        }
+        encoded.push(encoding);
+    }
+
+    // Pack into [batch_size, max_len] tensors. Shorter rows are padded
+    // with token_id=0 + attention_mask=0 (the standard padding scheme).
+    let batch_size = texts.len();
+    let total = batch_size * max_len;
+    let mut input_ids = vec![0i64; total];
+    let mut attention_mask = vec![0i64; total];
+    let mut token_type_ids = vec![0i64; total];
+    for (i, encoding) in encoded.iter().enumerate() {
+        let ids = encoding.get_ids();
+        let mask = encoding.get_attention_mask();
+        let types = encoding.get_type_ids();
+        let len = ids.len().min(MAX_TOKENS);
+        let row_off = i * max_len;
+        for j in 0..len {
+            input_ids[row_off + j] = ids[j] as i64;
+            attention_mask[row_off + j] = mask[j] as i64;
+            token_type_ids[row_off + j] = types[j] as i64;
+        }
+    }
+
+    // Build tensors. The mask is also kept in scope below for the
+    // mean-pool weighting; we clone the bytes used for the tensor.
+    let mask_for_pool = attention_mask.clone();
+    let ids_tensor = ort::value::Tensor::from_array(([batch_size, max_len], input_ids.into_boxed_slice()))
+        .map_err(|e| format!("Tensor creation failed: {}", e))?;
+    let mask_tensor = ort::value::Tensor::from_array(([batch_size, max_len], attention_mask.into_boxed_slice()))
+        .map_err(|e| format!("Tensor creation failed: {}", e))?;
+    let type_tensor = ort::value::Tensor::from_array(([batch_size, max_len], token_type_ids.into_boxed_slice()))
+        .map_err(|e| format!("Tensor creation failed: {}", e))?;
+
+    let mut session = engine.session.lock().map_err(|e| e.to_string())?;
+    let outputs = session
+        .run(ort::inputs![ids_tensor, mask_tensor, type_tensor])
+        .map_err(|e| format!("Inference failed: {}", e))?;
+    let (shape, data) = outputs[0]
+        .try_extract_tensor::<f32>()
+        .map_err(|e| format!("Output extraction failed: {}", e))?;
+    if shape.len() != 3 || shape[0] as usize != batch_size {
+        return Err(format!("Unexpected output shape: {:?}", shape));
+    }
+    let embed_dim = shape[2] as usize;
+
+    // Per-row mean pool with attention mask + L2-normalize (identical
+    // to the single-row run_embedding pooling, just iterated per row).
+    let mut results = Vec::with_capacity(batch_size);
+    for b in 0..batch_size {
+        let mut vec = vec![0.0f32; embed_dim];
+        let mut count = 0.0f32;
+        for s in 0..max_len {
+            if mask_for_pool[b * max_len + s] == 1 {
+                let offset = (b * max_len + s) * embed_dim;
+                for j in 0..embed_dim {
+                    vec[j] += data[offset + j];
+                }
+                count += 1.0;
+            }
+        }
+        if count > 0.0 {
+            for v in vec.iter_mut() {
+                *v /= count;
+            }
+        }
+        let norm: f32 = vec.iter().map(|x| x * x).sum::<f32>().sqrt();
+        if norm > 0.0 {
+            for v in vec.iter_mut() {
+                *v /= norm;
+            }
+        }
+        results.push(vec);
+    }
+    Ok(results)
+}
+
 // ─── Tauri Commands ──────────────────────────────────────────
 
 /// Initialize the embedding engine (load model + tokenizer).
@@ -466,7 +581,52 @@ pub fn init_term_embeddings(
         TermEmbedProgress { processed: 0, total, done: false, cancelled: false, phase: Some("embedding".into()) },
     );
 
-    for term in &all_terms {
+    // MIG-013 CTSE Phase 1.5 — batched embedding inference. Single-term
+    // ONNX calls were ~60-70ms each (~15 terms/sec). Batching N terms
+    // per inference amortizes the fixed per-call overhead across the
+    // batch, yielding ~10-30× throughput. 32 chosen as a balance: large
+    // enough to amortize, small enough to keep peak memory bounded
+    // (32 × 512 tokens × ~10 ints/token = small). Batching also keeps
+    // the engine lock held for one call per batch, not one per term.
+    const EMBED_BATCH_SIZE: usize = 32;
+
+    // Pre-compute the already-embedded set in ONE query when !force,
+    // so the batch-skip check below is O(1) HashSet lookup instead of
+    // a per-term SQL hit. Massive savings when most terms already exist.
+    let already_embedded: std::collections::HashSet<String> = if !force {
+        let search_state = app.state::<crate::search::SearchState>();
+        let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
+        let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
+        let mut stmt = conn
+            .prepare("SELECT term FROM term_embeddings")
+            .map_err(|e| e.to_string())?;
+        let rows = stmt
+            .query_map([], |row| row.get::<_, String>(0))
+            .map_err(|e| e.to_string())?;
+        rows.filter_map(|r| r.ok()).collect()
+    } else {
+        std::collections::HashSet::new()
+    };
+
+    // Pre-filter terms_to_embed so the batch loop has only fresh work.
+    let terms_to_embed: Vec<&String> = all_terms
+        .iter()
+        .filter(|t| force || !already_embedded.contains(*t))
+        .collect();
+    let to_embed_count = terms_to_embed.len();
+    // Adjust `processed` to account for already-embedded terms we
+    // skipped — they count toward the displayed total so the bar
+    // reflects "total terms" not "fresh terms."
+    let pre_skipped = (total as usize).saturating_sub(to_embed_count) as u32;
+    processed = pre_skipped;
+    if pre_skipped > 0 {
+        let _ = app.emit(
+            "term-embedding-progress",
+            TermEmbedProgress { processed, total, done: false, cancelled: false, phase: Some("embedding".into()) },
+        );
+    }
+
+    for chunk in terms_to_embed.chunks(EMBED_BATCH_SIZE) {
         if embed_state.term_embed_cancel.load(Ordering::SeqCst) {
             let _ = app.emit(
                 "term-embedding-progress",
@@ -475,76 +635,63 @@ pub fn init_term_embeddings(
             return Ok(());
         }
 
-        // Per-term: skip-if-existing check with a short-lived lock.
-        if !force {
-            let existing: bool = {
-                let search_state = app.state::<crate::search::SearchState>();
-                let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
-                let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
-                conn.query_row(
-                    "SELECT COUNT(*) > 0 FROM term_embeddings WHERE term = ?1",
-                    params![term],
-                    |row| row.get(0),
-                )
-                .unwrap_or(false)
-            };
-            if existing {
-                processed += 1;
-                continue;
-            }
-        }
+        // Build "passage: <term>" inputs (display form for bigrams).
+        let prefixed: Vec<String> = chunk
+            .iter()
+            .map(|term| {
+                let display = if term.as_bytes().contains(&crate::fts5_tokenizer::BIGRAM_SEP) {
+                    term.replace('\u{001F}', " ")
+                } else {
+                    (*term).clone()
+                };
+                format!("passage: {}", display)
+            })
+            .collect();
 
-        // Bigram terms (sentinel \x1F) are stored unchanged in
-        // notes_vocab; the display form is the space-joined version.
-        // Embed the display form so the query embedding (clean text)
-        // matches in the same space.
-        let display = if term.as_bytes().contains(&crate::fts5_tokenizer::BIGRAM_SEP) {
-            term.replace('\u{001F}', " ")
-        } else {
-            term.clone()
-        };
-        let prefixed = format!("passage: {}", display);
-
-        // Embed: hold the engine lock ONLY for run_embedding. Other
-        // consumers (note-embedding flow, future surfaces) get a clean
-        // window between every term. Mutex acquire/release is microseconds
-        // vs. tens-of-ms compute per term — negligible overhead.
-        let embedding = {
+        // Single ONNX inference call for the whole batch. Hold the
+        // engine lock only for this call; release before the SQL write.
+        let embeddings = {
             let engine_guard = embed_state.engine.lock().map_err(|e| e.to_string())?;
             let engine = engine_guard
                 .as_ref()
                 .ok_or("Embedding engine not initialized")?;
-            match run_embedding(engine, &prefixed) {
-                Ok(e) => e,
+            match run_embedding_batch(engine, &prefixed) {
+                Ok(v) => v,
                 Err(e) => {
-                    eprintln!("[term_embeddings] Failed to embed {:?}: {}", term, e);
-                    processed += 1;
+                    eprintln!("[term_embeddings] batch inference failed ({} terms): {}", chunk.len(), e);
+                    processed += chunk.len() as u32;
                     continue;
                 }
             }
         };
 
-        // Insert: short-lived db lock per term. Other read-only IPCs
-        // can fit between writes.
+        // Bulk-insert this batch in a single transaction.
         {
             let search_state = app.state::<crate::search::SearchState>();
             let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
             let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
-            let bytes = vec_to_blob(&embedding);
-            let dims = embedding.len() as i32;
-            let _ = conn.execute(
-                "INSERT OR REPLACE INTO term_embeddings (term, embedding, dimensions, model_id, last_built) VALUES (?1, ?2, ?3, ?4, CAST(strftime('%s','now') AS INTEGER))",
-                params![term, bytes, dims, "multilingual-e5-small"],
-            );
+            let tx = conn.unchecked_transaction().map_err(|e| e.to_string())?;
+            {
+                let mut stmt = tx
+                    .prepare(
+                        "INSERT OR REPLACE INTO term_embeddings (term, embedding, dimensions, model_id, last_built) VALUES (?1, ?2, ?3, ?4, CAST(strftime('%s','now') AS INTEGER))",
+                    )
+                    .map_err(|e| e.to_string())?;
+                for (i, embedding) in embeddings.iter().enumerate() {
+                    let bytes = vec_to_blob(embedding);
+                    let dims = embedding.len() as i32;
+                    let term_str: &String = chunk[i];
+                    let _ = stmt.execute(params![term_str, bytes, dims, "multilingual-e5-small"]);
+                }
+            }
+            tx.commit().map_err(|e| e.to_string())?;
         }
 
-        processed += 1;
-        if processed % 50 == 0 || processed == total {
-            let _ = app.emit(
-                "term-embedding-progress",
-                TermEmbedProgress { processed, total, done: false, cancelled: false, phase: None },
-            );
-        }
+        processed += chunk.len() as u32;
+        let _ = app.emit(
+            "term-embedding-progress",
+            TermEmbedProgress { processed, total, done: false, cancelled: false, phase: None },
+        );
     }
 
     let _ = app.emit(
