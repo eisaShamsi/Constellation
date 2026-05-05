@@ -231,6 +231,32 @@ Stops happen only at:
 
 The Standing Order session-log discipline still applies between steps — log each `§NNN` commit as it lands. But that's record-keeping, not approval-seeking.
 
+## Predecessor Lookup Rule (top principal)
+
+Before removing, moving, or replacing any user-facing feature, IPC surface, settings entry, or UI wiring, write a **Predecessor → Replacement** entry into the current day's session log, capturing:
+
+- **Where it lives now.** Specific file path, function name, settings path (e.g. `$appSettings.index.semanticSearchEnabled`), and the predecessor MIG number that introduced it.
+- **Where its replacement will live.** **Default: the same place.** A different place ONLY with explicit Boss approval logged in the same session.
+- **What gets cut and what gets kept.** The in-place call sites that will go away; any consumers that need re-pointing.
+
+This entry comes **BEFORE any code edit**. It's verified against the current orientation doc — not memory — because orientation is the durable record of where features live across MIG history.
+
+The rule fires for: removing a Tauri command, deleting a frontend store wrapper, dropping a Settings UI element, retiring a writable store, replacing an existing search / filter / panel / UI surface, relocating any wiring across components.
+
+It does NOT fire for: bug fixes that don't relocate features, comment edits, dependency bumps, single-file refactors that don't change call shape.
+
+Canonical violation (2026-05-05): §1D-B retired IndexPanel's per-keystroke `searchTermsSemantic` and added a new `concept` category to SearchHub instead of restoring the equivalent in IndexPanel. Four explicit pointers — Settings flag named `index.semanticSearchEnabled`, IndexPanel was the actual call site, MIGs 010 / 011 / 012 all operated on IndexPanel, the Settings progress strip lived under Settings → Index — all said "Index panel"; I read past every one and shipped the wrong-target replacement. The rule above would have surfaced "Predecessor: IndexPanel filter, third layer; Replacement: same place" as the first written line, and the SearchHub option would have required Boss approval that was never sought.
+
+## Stop-On-Correction Rule (top principal)
+
+When the Boss says "wrong target", "you're confused", "no", "unacceptable", "we're working on X" (when X corrects my framing), or any equivalent course-correction phrasing, I **stop all in-flight code edits**, summarize what's changed since the last explicit Boss approval, state the corrected understanding, and wait for "proceed" before touching another line.
+
+The full sequence is: **stop → list changes since last approval → state the corrected understanding → wait for explicit go**.
+
+No pivot-and-power-through. No "let me ask three clarifying questions and start coding the answers". A correction is the Boss revoking the cascade approval; the next action is theirs, not mine. This rule overrides Plan-Approval-Equals-Build-Approval — Plan approval covered the *original* target, and the correction tells me that target was wrong.
+
+Canonical violation (2026-05-05): when the Boss wrote "SearchHub? But we are working on the Index!" the right move was to stop, list everything I'd changed in the SearchHub direction, and wait for confirmation. Instead I asked three clarifying questions and immediately started laying down IndexPanel-restoration code while the questions were still unanswered. Same drift pattern that put the feature in SearchHub in the first place.
+
 ## Backup Routine
 After each successful milestone:
 1. **Git tag**: `git tag milestone/<name> <commit>` then `git push origin --tags`
