@@ -515,7 +515,9 @@
         "error": "Embedding job failed: {error}",
         "loadingModel": "Loading embedding model…",
         "scanningVocab": "Scanning vocabulary…",
-        "optimizingFts5": "Compacting search index…"
+        "optimizingFts5": "Compacting search index…",
+        "tokenizing": "Building vocabulary: {processed} / {total} notes",
+        "tokenizingStart": "Building vocabulary…"
       },
       "searchHistory": {
         "label": "Search history",

@@ -1172,6 +1172,33 @@ fn init_db(path: &Path) -> Result<Connection, String> {
         );
     ").map_err(|e| format!("Failed to create term_embeddings: {}", e))?;
 
+    // MIG-012-fix-8 — shadow vocabulary table for fast term enumeration.
+    // Replaces direct queries against `notes_vocab` (fts5vocab virtual
+    // table) which walks every doc-list per query and times out on
+    // large libraries (Boss reported 20+ minutes on a 7,600-note
+    // library; pathological at 10K+ notes).
+    //
+    // CLAUDE.md Rule 8 (Write-Time Derivation) applied: the embed
+    // pipeline materializes vocabulary into a regular indexed table at
+    // build time, then queries it at read time. Bootstrap is a
+    // streaming pass over `note_meta.body_text` using the same
+    // `process_word_for_fts` tokenizer that populates `notes_fts`, so
+    // `term_vocab.term` matches the namespace `notes_fts` stores.
+    //
+    // Future incremental maintenance via reindex_single_note hooks is
+    // queued (see project_term_vocab_incremental.md). For now,
+    // populated on demand by `populate_term_vocab` (called from
+    // init_term_embeddings).
+    conn.execute_batch("
+        CREATE TABLE IF NOT EXISTS term_vocab (
+            term TEXT PRIMARY KEY,
+            doc_count INTEGER NOT NULL,
+            total_count INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_term_vocab_total_count
+            ON term_vocab (total_count DESC);
+    ").map_err(|e| format!("Failed to create term_vocab: {}", e))?;
+
     // MIG-012 — Search history. Per-Universe (this database is per-
     // Universe). Boss-approved Q3.B. Capped at 200 rows by application
     // logic on each write (FIFO eviction).

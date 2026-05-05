@@ -444,7 +444,9 @@
         "error": "فشلت مهمة التضمين: {error}",
         "loadingModel": "جارٍ تحميل نموذج التضمين…",
         "scanningVocab": "جارٍ مسح المفردات…",
-        "optimizingFts5": "جارٍ ضغط فهرس البحث…"
+        "optimizingFts5": "جارٍ ضغط فهرس البحث…",
+        "tokenizing": "جارٍ بناء المفردات: {processed} / {total} ملاحظة",
+        "tokenizingStart": "جارٍ بناء المفردات…"
       },
       "searchHistory": {
         "label": "سجل البحث",

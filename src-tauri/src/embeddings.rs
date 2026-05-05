@@ -402,55 +402,39 @@ pub fn init_term_embeddings(
     // doesn't DELETE. Search continues to use them. Future fix can
     // add a Settings knob (`project_term_embeddings_threshold_too_loose.md`)
     // for power users who want a different trade-off.
-    // MIG-012-fix-7 — Phase 1.5: compact the FTS5 index before scanning.
-    // Boss-observed during fix-6: the `notes_vocab` SELECT hung 20+
-    // minutes on a heavily-fragmented FTS5 index (today's MIG-006 +
-    // MIG-008 + MIG-010 + MIG-011 + MIG-012 cascades created many
-    // segments; vocab walk has to merge them all). `merge` rebuilds
-    // the largest segments into one, making subsequent vocab scans
-    // dramatically faster (typical reduction: 60-segment fragmented
-    // index → 1 segment, scan goes from minutes to milliseconds).
+    // MIG-012-fix-8 — Phase 1.5: populate the term_vocab shadow table.
+    // The fts5vocab approach (fix-3 through fix-7) hung 20+ minutes on
+    // a 7,600-note library because fts5vocab walks every doc-list per
+    // query. Replaced with CLAUDE.md Rule 8 architecture: stream
+    // note_meta + tokenize each body in-Rust + aggregate counts, then
+    // bulk-write to a regular indexed `term_vocab` table. Subsequent
+    // queries against term_vocab are O(indexed lookup) — milliseconds.
     //
-    // Using `merge` (not `optimize`): merge processes only the largest
-    // N segments worth of pages and is bounded; optimize rewrites the
-    // entire index and can take longer than the scan it's trying to
-    // accelerate. The integer rank value (-N) tells FTS5 to merge up
-    // to the equivalent of N×merge_pages worth of work — 500 pages
-    // × FTS5's default ~16 KB/page ≈ 8 MB of merge work, plenty for
-    // most libraries' fragmentation.
-    //
-    // If merge fails (e.g., schema lock contention), we log + continue
-    // — the scan might still be slow, but the Rebuild won't fail
-    // outright. Idempotent: running on an already-merged index is a
-    // near-no-op.
-    let _ = app.emit(
-        "term-embedding-progress",
-        TermEmbedProgress {
-            processed: 0,
-            total: 0,
-            done: false,
-            cancelled: false,
-            phase: Some("optimizing-fts5".into()),
-        },
-    );
-    {
-        let search_state = app.state::<crate::search::SearchState>();
-        let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
-        let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
-        // FTS5 'merge' compacts segments incrementally. The rank
-        // parameter caps the work; we use 500 as a generous-but-bounded
-        // value (the FTS5 default is 16, which would barely move on
-        // Boss's heavily-fragmented index).
-        if let Err(e) = conn.execute(
-            "INSERT INTO notes_fts(notes_fts, rank) VALUES('merge', 500)",
-            [],
-        ) {
-            eprintln!("[term_embeddings] FTS5 merge failed (continuing): {}", e);
-        }
+    // Force=true rebuilds the vocab from scratch (the user explicitly
+    // wants fresh data). Force=false populates only when empty (lazy
+    // bootstrap on first run).
+    let need_populate = if force {
+        true
+    } else {
+        let count = {
+            let search_state = app.state::<crate::search::SearchState>();
+            let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
+            let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
+            conn.query_row("SELECT COUNT(*) FROM term_vocab", [], |row| row.get::<_, i64>(0))
+                .unwrap_or(0)
+        };
+        count == 0
+    };
+    if need_populate {
+        populate_term_vocab(&app)?;
     }
 
-    // Phase 2 — scanning the FTS5 vocab. On large libraries this walks
-    // millions of token-position rows + sorts; can take seconds.
+    // Phase 2 — fast SELECT against the maintained term_vocab table.
+    // Replaces fix-3..fix-7's fts5vocab path which timed out on large
+    // libraries. Since term_vocab is a regular indexed SQLite table,
+    // this query runs in milliseconds regardless of library size —
+    // O(indexed_lookup) on a `total_count >= 20` filter served by the
+    // idx_term_vocab_total_count index.
     let _ = app.emit(
         "term-embedding-progress",
         TermEmbedProgress {
@@ -461,27 +445,12 @@ pub fn init_term_embeddings(
             phase: Some("scanning-vocab".into()),
         },
     );
-    // MIG-012-fix-6 — open a fresh read-only connection for the vocab
-    // scan, mirroring `read_index_entries` exactly. Boss-observed
-    // 20-minute hangs on the prior shared-SearchState path; the Index
-    // panel's `read_index_entries` runs the same shape SQL in ~350ms
-    // via this pattern. Avoids any contention with the shared write
-    // connection AND any shared-PRAGMA differences.
-    //
-    // Also drops ORDER BY — the embed loop doesn't care about term
-    // order. fts5vocab walks the FTS5 dictionary in its native order
-    // anyway; ORDER BY would force SQLite to materialize + sort.
     let all_terms: Vec<String> = {
-        use rusqlite::{Connection, OpenFlags};
-        let db_path = crate::search::db_path(&app)?;
-        let flags = OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX;
-        let mut conn = Connection::open_with_flags(&db_path, flags)
-            .map_err(|e| format!("Failed to open search.db: {}", e))?;
-        conn.busy_timeout(std::time::Duration::from_millis(500))
-            .map_err(|e| e.to_string())?;
-        crate::search::register_fts5_tokenizer(&mut conn)?;
+        let search_state = app.state::<crate::search::SearchState>();
+        let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
+        let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
         let mut stmt = conn
-            .prepare("SELECT term FROM notes_vocab WHERE LENGTH(term) >= 2 AND cnt >= 20")
+            .prepare("SELECT term FROM term_vocab WHERE total_count >= 20")
             .map_err(|e| e.to_string())?;
         let rows = stmt
             .query_map([], |row| row.get::<_, String>(0))
@@ -673,6 +642,132 @@ pub fn search_terms_semantic(
 /// Status check for the term-embedding pipeline. Used by the frontend
 /// to decide whether the toggle should fire `init_term_embeddings`
 /// (Q2.C — only when count == 0) or skip it (already populated).
+#[tauri::command]
+// MIG-012-fix-8 — populate the `term_vocab` shadow table by streaming
+// over `note_meta.body_text` and tokenizing each note in-Rust with the
+// same `process_word_for_fts` pipeline that populates `notes_fts`.
+//
+// Why this exists: querying `fts5vocab` (the FTS5 vocab virtual table)
+// directly with a frequency filter walks every doc-list per query and
+// hangs for 20+ minutes on libraries of ~7,600 notes. The architectural
+// fix is CLAUDE.md Rule 8 — materialize the derived view at write time,
+// query a regular indexed table at read time. This function is the
+// initial bootstrap; future MIGs can wire incremental maintenance
+// into `reindex_single_note` / `reindex_delete_note` to keep
+// `term_vocab` in sync as notes change.
+//
+// Algorithm:
+//   1. Fetch (path, body_text) for every note via SearchState.db.
+//      Indexed scan; sub-second on 7,600 notes.
+//   2. For each note: tokenize body_text via `tokenize_to_vec`
+//      (mirrors the FTS5 tokenizer's stem + bigram emission). Aggregate
+//      into HashMap<term, (HashSet<note_path>, total_count)> in memory.
+//   3. Single transaction: DELETE FROM term_vocab; bulk INSERT new rows.
+//
+// Emits `term-embedding-progress` events with phase="tokenizing-content"
+// every 100 notes so the user sees progress.
+fn populate_term_vocab(app: &tauri::AppHandle) -> Result<(), String> {
+    use rusqlite::params;
+    use std::collections::{HashMap, HashSet};
+
+    let _ = app.emit(
+        "term-embedding-progress",
+        TermEmbedProgress {
+            processed: 0,
+            total: 0,
+            done: false,
+            cancelled: false,
+            phase: Some("tokenizing-content".into()),
+        },
+    );
+
+    // Fetch all (path, body_text). Short-lived lock.
+    let notes: Vec<(String, String)> = {
+        let search_state = app.state::<crate::search::SearchState>();
+        let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
+        let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
+        let mut stmt = conn
+            .prepare("SELECT path, body_text FROM note_meta")
+            .map_err(|e| e.to_string())?;
+        let rows = stmt
+            .query_map([], |row| {
+                Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+            })
+            .map_err(|e| e.to_string())?;
+        rows.filter_map(|r| r.ok()).collect()
+    };
+    let total = notes.len() as u32;
+
+    // Build stopwords once (same set the FTS5 tokenizer uses).
+    let stopwords = crate::libraries::build_stopwords();
+
+    // Aggregate. doc_count = distinct notes containing the term;
+    // total_count = sum of occurrences across all notes.
+    let embed_state = app.state::<EmbeddingState>();
+    let mut term_data: HashMap<String, (HashSet<String>, u32)> = HashMap::new();
+    for (i, (path, body)) in notes.iter().enumerate() {
+        if embed_state.term_embed_cancel.load(Ordering::SeqCst) {
+            // User cancelled mid-tokenize. Bail out without writing —
+            // term_vocab stays in whatever state it was in.
+            let _ = app.emit(
+                "term-embedding-progress",
+                TermEmbedProgress {
+                    processed: i as u32,
+                    total,
+                    done: true,
+                    cancelled: true,
+                    phase: None,
+                },
+            );
+            return Ok(());
+        }
+        let tokens = crate::fts5_tokenizer::tokenize_to_vec(body, &stopwords);
+        for token in tokens {
+            let entry = term_data
+                .entry(token)
+                .or_insert_with(|| (HashSet::new(), 0));
+            entry.0.insert(path.clone());
+            entry.1 += 1;
+        }
+        if i % 100 == 0 || i + 1 == notes.len() {
+            let _ = app.emit(
+                "term-embedding-progress",
+                TermEmbedProgress {
+                    processed: (i + 1) as u32,
+                    total,
+                    done: false,
+                    cancelled: false,
+                    phase: Some("tokenizing-content".into()),
+                },
+            );
+        }
+    }
+
+    // Write to term_vocab in one transaction. DELETE + bulk INSERT.
+    {
+        let search_state = app.state::<crate::search::SearchState>();
+        let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
+        let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
+        let tx = conn
+            .unchecked_transaction()
+            .map_err(|e| e.to_string())?;
+        tx.execute("DELETE FROM term_vocab", [])
+            .map_err(|e| e.to_string())?;
+        {
+            let mut stmt = tx
+                .prepare("INSERT INTO term_vocab (term, doc_count, total_count) VALUES (?1, ?2, ?3)")
+                .map_err(|e| e.to_string())?;
+            for (term, (docs, count)) in &term_data {
+                stmt.execute(params![term, docs.len() as i64, *count as i64])
+                    .map_err(|e| e.to_string())?;
+            }
+        }
+        tx.commit().map_err(|e| e.to_string())?;
+    }
+
+    Ok(())
+}
+
 #[tauri::command]
 pub fn term_embedding_status(app: tauri::AppHandle) -> Result<u32, String> {
     let search_state = app.state::<crate::search::SearchState>();

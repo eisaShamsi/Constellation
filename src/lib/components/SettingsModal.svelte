@@ -2005,6 +2005,12 @@
 										{$t('settings.index.semanticSearch.done') || 'Done'}
 									{:else if p.phase === 'loading-model'}
 										{$t('settings.index.semanticSearch.loadingModel') || 'Loading embedding model…'}
+									{:else if p.phase === 'tokenizing-content'}
+										{p.total > 0
+											? ($t('settings.index.semanticSearch.tokenizing') || 'Building vocabulary: {processed} / {total} notes')
+												.replace('{processed}', String(p.processed))
+												.replace('{total}', String(p.total))
+											: ($t('settings.index.semanticSearch.tokenizingStart') || 'Building vocabulary…')}
 									{:else if p.phase === 'optimizing-fts5'}
 										{$t('settings.index.semanticSearch.optimizingFts5') || 'Compacting search index…'}
 									{:else if p.phase === 'scanning-vocab'}

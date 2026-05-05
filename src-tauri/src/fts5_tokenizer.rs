@@ -422,6 +422,85 @@ fn is_word_boundary(c: char) -> bool {
 ///   * 1 token — the stem — if emitted normally. Position advances.
 ///   * 2 tokens if a bigram forms with the previous non-stopword word:
 ///     the stem first, then `prev_stem \x1f cur_stem` as colocated.
+/// MIG-012-fix-8 — same tokenization pipeline as the FTS5 tokenizer's
+/// `tokenize` method, but emits to a `Vec<String>` instead of an FTS5
+/// cursor. Used by `populate_term_vocab` to bootstrap the shadow
+/// vocabulary table from `note_meta.body_text` content with byte-
+/// identical tokens to what `notes_fts` actually stores.
+///
+/// Output includes both stems (primary tokens) AND bigrams (joined by
+/// `BIGRAM_SEP`), matching the FTS5 tokenizer's emission. Stopwords
+/// are filtered the same way.
+pub fn tokenize_to_vec(text: &str, stopwords: &HashSet<String>) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    let mut prev_stem: Option<String> = None;
+    let mut word_start: Option<usize> = None;
+
+    for (byte_idx, ch) in text.char_indices() {
+        if is_word_boundary(ch) {
+            if let Some(start) = word_start.take() {
+                let end = byte_idx;
+                emit_word_collect(
+                    &text[start..end],
+                    stopwords,
+                    &mut prev_stem,
+                    &mut out,
+                );
+            }
+        } else if word_start.is_none() {
+            word_start = Some(byte_idx);
+        }
+    }
+    if let Some(start) = word_start {
+        let end = text.len();
+        emit_word_collect(
+            &text[start..end],
+            stopwords,
+            &mut prev_stem,
+            &mut out,
+        );
+    }
+    out
+}
+
+/// Vec-emitting twin of `emit_word`. Mirrors that function exactly:
+/// strip-quotes → process_word_for_fts → stopword check → emit primary
+/// stem → emit bigram if previous same-script stem exists.
+fn emit_word_collect(
+    raw_word: &str,
+    stopwords: &HashSet<String>,
+    prev_stem: &mut Option<String>,
+    out: &mut Vec<String>,
+) {
+    let word = raw_word.trim_matches('\'');
+    if word.is_empty() {
+        *prev_stem = None;
+        return;
+    }
+    let (stem, norm_lower) = match crate::libraries::process_word_for_fts(word) {
+        Some(v) => v,
+        None => {
+            *prev_stem = None;
+            return;
+        }
+    };
+    if stopwords.contains(&stem) || stopwords.contains(&norm_lower) {
+        *prev_stem = None;
+        return;
+    }
+    out.push(stem.clone());
+    if let Some(prev) = prev_stem.as_ref() {
+        if crate::libraries::is_same_script(prev, &stem) {
+            let mut bigram = String::with_capacity(prev.len() + 1 + stem.len());
+            bigram.push_str(prev);
+            bigram.push('\u{001F}');
+            bigram.push_str(&stem);
+            out.push(bigram);
+        }
+    }
+    *prev_stem = Some(stem);
+}
+
 fn emit_word<TKF>(
     raw_word: &str,
     start: usize,
