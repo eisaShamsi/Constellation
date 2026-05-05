@@ -8,8 +8,10 @@
 		type IndexMention,
 		type CooccurringTerm,
 		type FilterExpansion,
+		type CtseTermSimilarity,
 		type IndexHistoryEntry,
 		lexiconExpandForFilter,
+		ctseSearchTermsByConcept,
 		readIndexHistory,
 		writeIndexHistoryEntry,
 	} from '$lib/libraries/store';
@@ -108,11 +110,57 @@
 	let bridgeExpansionCache = $state<Map<string, FilterExpansion | null>>(new Map());
 	let bridgeFetchToken = 0; // monotonic; cancels stale in-flight fetches
 
-	// (MIG-012 per-keystroke semantic-of-terms search retired by
-	// MIG-013 §1D. The Index panel is now pure literal + bridge
-	// substring browsing. Cross-language semantic SEARCH lives in the
-	// SearchHub, where it returns notes — not terms — via the CTSE
-	// `ctse_search_by_concept` Tauri command.)
+	// ─── MIG-013 §1D — CTSE Bridge Adapter (cross-language `≈ similar`) ───
+	//
+	// Replaces MIG-012's `searchTermsSemantic` + per-library
+	// `term_embeddings` table (retired in §1C). The new path is
+	// query-time concept expansion: embed the user's filter query,
+	// find top-K nearest M11 concepts, expand each to its multilingual
+	// lemmas, tokenize through `fts5_tokenizer::tokenize_to_vec`,
+	// and return the subset that exists in this Universe's
+	// `term_vocab`. The dropdown shows those matched terms with the
+	// `≈ similar` badge — same UX MIG-012 had, no per-library setup
+	// cost, no boot wait. Aligns with the Lucene SynonymGraphFilter /
+	// SQLite FTS5 Method 2 / CLIR query-translation pattern (Law 1.5,
+	// Working Agreement #5).
+	//
+	// `semanticMatches` is a `Map<term, score>` keyed by the FTS5-
+	// stored stem (which is what `entry.term` is), so the lookup
+	// against `IndexEntry` rows is exact.
+	let semanticMatches = $state<Map<string, number>>(new Map());
+	let semanticCache = $state<Map<string, Map<string, number>>>(new Map());
+	let semanticFetchToken = 0;
+
+	$effect(() => {
+		const q = filterQuery.trim().toLowerCase();
+		return untrack(() => {
+			if (!q) {
+				semanticMatches = new Map();
+				return undefined;
+			}
+			if (semanticCache.has(q)) {
+				semanticMatches = semanticCache.get(q) ?? new Map();
+				return undefined;
+			}
+			const myToken = ++semanticFetchToken;
+			const handle = setTimeout(async () => {
+				try {
+					const results: CtseTermSimilarity[] = await ctseSearchTermsByConcept(q);
+					if (myToken !== semanticFetchToken) return;
+					const m = new Map<string, number>();
+					for (const r of results) m.set(r.term, r.score);
+					semanticCache.set(q, m);
+					semanticCache = new Map(semanticCache);
+					semanticMatches = m;
+				} catch (err) {
+					if (myToken !== semanticFetchToken) return;
+					console.error('[IndexPanel] ctseSearchTermsByConcept failed for q=', q, err);
+					semanticMatches = new Map();
+				}
+			}, 300);
+			return () => clearTimeout(handle);
+		});
+	});
 
 	// ─── MIG-012 — search history state ───
 	//
@@ -544,16 +592,18 @@
 			result = result.filter(e => !excludedTerms.has(e.term.toLowerCase()));
 		}
 		const annotations = new Map<string, string>();
-		if (!raw) return { entries: result, annotations };
+		const semanticAnnotations = new Map<string, number>();
+		if (!raw) return { entries: result, annotations, semanticAnnotations };
 		const hasComma = /[،,؛;]/.test(raw);
 		const rawQueries = hasComma
 			? raw.split(/[،,؛;]/).map(t => t.trim().toLowerCase()).filter(Boolean)
 			: [raw.toLowerCase()];
-		if (rawQueries.length === 0) return { entries: result, annotations };
+		if (rawQueries.length === 0) return { entries: result, annotations, semanticAnnotations };
 		// Prepare each sub-query ONCE — ARABIC_RE.test + stemming run per
 		// filter pass, not per entry. The inner loop is then pure .includes.
 		const prepared = rawQueries.map(prepareQuery);
 		const bridge = bridgeExpansion; // snapshot; effect updates this
+		const semantic = semanticMatches; // MIG-013 §1D snapshot
 		const matched: IndexEntry[] = [];
 		for (const e of result) {
 			const lower = e.term.toLowerCase();
@@ -570,6 +620,7 @@
 				matched.push(e);
 				continue;
 			}
+			let bridged = false;
 			// MIG-011: no direct hit — try the cross-language bridge.
 			if (bridge && bridge.lemmas.length > 0) {
 				for (const { lemma_lower } of bridge.lemmas) {
@@ -577,16 +628,29 @@
 					if (lower.includes(lemma_lower) || lemma_lower.includes(lower)) {
 						matched.push(e);
 						annotations.set(e.term, bridge.source_lemma);
+						bridged = true;
 						break;
 					}
 				}
 			}
+			if (bridged) continue;
+			// MIG-013 §1D: no direct + no bridge — try the CTSE concept
+			// match. `semanticMatches` is keyed by the FTS5-stored stem,
+			// which is what `e.term` is, so the lookup is exact.
+			if (semantic.size > 0) {
+				const score = semantic.get(e.term);
+				if (score !== undefined) {
+					matched.push(e);
+					semanticAnnotations.set(e.term, score);
+				}
+			}
 		}
-		return { entries: matched, annotations };
+		return { entries: matched, annotations, semanticAnnotations };
 	});
 
 	const filteredEntries = $derived(filteredResult.entries);
 	const bridgeFilterAnnotations = $derived(filteredResult.annotations);
+	const semanticFilterAnnotations = $derived(filteredResult.semanticAnnotations);
 
 	const availableScripts = $derived.by(() => {
 		const scripts = new Set<ScriptKey>();
@@ -1159,6 +1223,8 @@
 								{#if bridgeFilterAnnotations.has(entry.term)}
 									{@const viaSource = bridgeFilterAnnotations.get(entry.term) ?? ''}
 									<span class="gp-ref-via" dir="auto" title={$t('indexPanel.viaLemmaTooltip') || 'Cross-language match via the Lexical Bridge'}>{($t('indexPanel.viaLemma') || 'via {lemma}').replace('{lemma}', viaSource)}</span>
+								{:else if semanticFilterAnnotations.has(entry.term)}
+									<span class="gp-ref-semantic" dir="auto" title={$t('indexPanel.semanticMatchTooltip') || 'Semantic match — conceptually related to your query'}>{$t('indexPanel.semanticMatch') || '≈ similar'}</span>
 								{/if}
 							</span>
 							<div class="gp-freq-wrap">

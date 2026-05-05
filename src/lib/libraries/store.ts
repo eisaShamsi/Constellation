@@ -2487,52 +2487,43 @@ export async function lexiconExpandForFilter(query: string): Promise<FilterExpan
 	return await invoke('lexicon_expand_for_filter', { query });
 }
 
-// ─── MIG-013 §1D — CTSE Bridge Adapter (cross-language semantic search) ───
+// ─── MIG-013 §1D — CTSE Bridge Adapter (Index panel cross-language `≈ similar`) ───
 
-/** One row from [`ctseSearchByConcept`]. The result is a NOTE hit (not
- *  a term) — the concept→term mapping is expanded server-side and
- *  becomes a single FTS5 OR-clause MATCH against `notes_fts`. */
-export interface CtseConceptHit {
-	path: string;
-	name: string;
-	library_name: string;
-	/** FTS5 `snippet()` output with CHAR(2)/CHAR(3) markers around
-	 *  matched tokens. Frontend renders as `<mark>` spans. */
-	snippet?: string | null;
+/** One row from [`ctseSearchTermsByConcept`]. Same shape as the
+ *  retired MIG-012 `TermSimilarity` so the IndexPanel filter UX is a
+ *  drop-in: the dropdown adds `≈ similar` annotations to existing
+ *  vocabulary terms whose M11 concept matches the user's query. */
+export interface CtseTermSimilarity {
+	/** Stem as stored in `term_vocab.term` (already in the FTS5
+	 *  tokenizer namespace, so it matches `IndexEntry.term` exactly). */
+	term: string;
+	/** Cosine score of the highest M11 concept that brought this
+	 *  term into the result, in [min_score, 1.0]. */
+	score: number;
 }
 
-export interface CtseConceptSearchOptions {
-	/** Restrict results to a single library. `null` searches every
-	 *  library in the active Universe (the cross-library, cross-language
-	 *  default). */
-	library_name?: string | null;
-	limit?: number | null;
-	min_score?: number | null;
-}
-
-/** Embed the query, map to top-K M11 concepts, expand each concept
- *  to its multilingual lemmas via an in-memory map, and run an FTS5
- *  OR-clause MATCH against `notes_fts`.
+/** Embed the user's filter query, find top-K nearest M11 concepts,
+ *  expand each concept to its multilingual lemmas, tokenize those
+ *  lemmas through Constellation's FTS5 tokenizer, and return the
+ *  subset that exists in the user's `term_vocab` — i.e., terms the
+ *  user's library actually contains.
  *
- *  Returns notes regardless of script — typing "knowledge" surfaces
- *  notes containing "معرفة" because both lemmas live under the same
- *  M11 concept. The expansion happens entirely at query time
- *  (Lucene `SynonymGraphFilter` / SQLite FTS5 Method 2 / CLIR
- *  query-translation pattern); no per-term backfill or first-fill
- *  is required. Per-keystroke callers MUST debounce (≥300 ms;
- *  CLAUDE.md Rule 3) — each call is one e5 inference + cosine
- *  sweep + FTS5 query. */
-export async function ctseSearchByConcept(
+ *  Replaces the retired MIG-012 `searchTermsSemantic`. All concept
+ *  expansion happens at query time (Lucene `SynonymGraphFilter` /
+ *  SQLite FTS5 Method 2 / CLIR query-translation pattern); there is
+ *  no per-term backfill, no first-fill, no boot wait.
+ *
+ *  Per-keystroke callers MUST debounce (≥300 ms; CLAUDE.md Rule 3) —
+ *  each call is one e5 inference + cosine sweep + indexed lookup. */
+export async function ctseSearchTermsByConcept(
 	query: string,
-	options?: CtseConceptSearchOptions,
-): Promise<CtseConceptHit[]> {
-	return await invoke('ctse_search_by_concept', {
-		request: {
-			query,
-			library_name: options?.library_name ?? null,
-			limit: options?.limit ?? null,
-			min_score: options?.min_score ?? null,
-		},
+	topK?: number,
+	minScore?: number,
+): Promise<CtseTermSimilarity[]> {
+	return await invoke('ctse_search_terms_by_concept', {
+		query,
+		topK: topK ?? null,
+		minScore: minScore ?? null,
 	});
 }
 

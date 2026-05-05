@@ -171,6 +171,28 @@ Discarded the half-finished fix-10 edit in `embeddings.rs` (architect v2 §5) be
 4. Pick up §1D — start with the boot-time auto-fire decision (where to gate the first-fill check; recommend a boolean column on `schema_versions` or a sentinel value).
 5. Cascade through §1D → §1E. Boss test fires at §1D once cross-language search is wired and the first-fill has run.
 
+## §1D wrong-target incident → Option B → IndexPanel restoration
+
+**Sequence of mistakes and corrections** (all 2026-05-05):
+
+1. §1D-A (`7b52f1d`) shipped first-fill + `ctse_search_by_concept` (note-returning) + boot-time auto-fire + status-bar strip — index-time pre-computation architecture. Bigram-explosion fix (`9aba974`) + slow-path-eliminate proposal followed.
+2. Boss directive: cross-check against proven methods. Five WebSearches (Lucene, Elasticsearch, SQLite FTS5, CLIR, library platforms) produced unanimous "query-time concept expansion is the standard" finding. CLAUDE.md Working Agreement #5 added.
+3. Option B (`5a0be3c`) — pivot to query-time expansion, retired backfill / first-fill modules entirely. **Wired the new search to SearchHub instead of IndexPanel.**
+4. Boss correction: "SearchHub? But we are working on the Index!" — four explicit pointers (Settings flag named `index.semanticSearchEnabled`, IndexPanel was the actual `searchTermsSemantic` call site, MIGs 010/011/012 all operated on IndexPanel, the Settings progress strip was under Settings → Index) all said "Index panel"; I shipped the wrong-target replacement.
+5. Boss directives that followed:
+   - Add **Predecessor Lookup Rule** to CLAUDE.md as top-principal.
+   - Add **Stop-On-Correction Rule** to CLAUDE.md as top-principal.
+   - Develop **Constellation Development Laws v1.0** distilled from CLAUDE.md, every orientation version, every session log, every LL entry, and the Boss-feedback record.
+6. `df9a3a2` shipped CLAUDE.md additions + Laws v1.0.
+7. §1D-D — IndexPanel restoration. **Predecessor → Replacement entry** per the new Law 3.2:
+
+   - **Predecessor.** MIG-012 `searchTermsSemantic` per-keystroke effect in `src/lib/components/IndexPanel.svelte`, gated on `$appSettings.index.semanticSearchEnabled`, populating `semanticMatches` Map and rendering the `≈ similar` badge in the filter dropdown. Toggle UI lived under Settings → Index.
+   - **Replacement.** Same place. The dropdown badge UX is restored byte-for-byte (`gp-ref-semantic` span, `indexPanel.semanticMatch` / `semanticMatchTooltip` i18n keys). The per-keystroke effect now calls `ctseSearchTermsByConcept` (new wrapper over `ctse_search_terms_by_concept` Tauri command). Toggle gate omitted (always-on) per Law 2.4 — no per-library setup cost with CTSE, no reason to add a toggle to disable a now-free feature.
+   - **Cut.** SearchHub `concept` category integration (added in `5a0be3c`, reverted in this commit). `ctse_search_by_concept` (note-returning Tauri command) renamed and reshaped to `ctse_search_terms_by_concept` (term-returning, the IndexPanel-shaped surface). `ctseSearchByConcept` / `CtseConceptHit` frontend types removed.
+   - **Kept.** All §1C hook simplifications. `term_vocab.bridge_concept_id` dead schema (forward-compat). `concept_lemmas()` in-memory map and the `bridge_vectors` matrix asset. The new `ctse::search` module with the renamed command.
+
+   Verification: 5 ctse tests green (4 hooks + 1 `concept_lemmas_includes_book_in_multiple_languages` cross-script sanity); svelte-check passes (only pre-existing `LinkLifecycle.fresh` deferred error). M11 zero-diff invariant: `git diff src-tauri/src/lexicon/` empty.
+
 ## Notes for next session if interrupted
 - `cargo run --bin build_concept_vectors --release` is the canonical way to regenerate the asset if M11 TSV changes. Output lands at `src-tauri/src/bridge_vectors/data/concept_vectors_v1.bin`.
 - The asset is committed to the repo (Boss-approved). It changes only when `lexicon_v1.tsv` does.

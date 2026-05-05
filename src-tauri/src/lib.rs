@@ -382,8 +382,11 @@ pub fn run() {
             // pattern (Lucene SynonymGraphFilter, SQLite FTS5 Method 2,
             // CLIR query-translation, Primo controlled-vocabulary
             // expansion): expand at query time, not at index time. One
-            // Tauri command does the whole read path.
-            ctse::search::ctse_search_by_concept,
+            // Tauri command serves the IndexPanel filter — given a
+            // user query, return the subset of `term_vocab` terms
+            // that resolve to the same M11 concepts as the query
+            // (the multilingual `≈ similar` row in the dropdown).
+            ctse::search::ctse_search_terms_by_concept,
             libraries::read_index_history,
             libraries::write_index_history_entry,
             libraries::clear_index_history,
