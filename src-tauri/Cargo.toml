@@ -28,6 +28,10 @@ petgraph = "0.6"
 rusqlite = { version = "0.31", features = ["bundled"] }
 ort = "2.0.0-rc.12"
 tokenizers = { version = "0.20", default-features = false, features = ["onig"] }
+# MIG-012-fix-9: parallel data work (vocab population, future bulk
+# tokenization passes). rayon is already a transitive dep via tokenizers;
+# adding it directly so we can `use rayon::prelude::*`.
+rayon = "1"
 chrono = "0.4"
 rand = "0.8"
 tauri-plugin-updater = "2.10.0"
