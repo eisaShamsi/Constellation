@@ -6,6 +6,13 @@ authors = ["eisaShamsi"]
 license = "MIT"
 edition = "2021"
 repository = "https://github.com/eisaShamsi/Constellation"
+# MIG-013 §1A added a second `[[bin]]` target (`build_concept_vectors`),
+# which makes Cargo's "default binary for this package" ambiguous. Tauri
+# (and `cargo run` without `--bin`) reads `default-run` to disambiguate.
+# The Constellation app binary is `src/main.rs` → package name
+# `constellation`. The build helper is opt-in via `--bin
+# build_concept_vectors`.
+default-run = "constellation"
 
 [lib]
 name = "constellation_lib"
