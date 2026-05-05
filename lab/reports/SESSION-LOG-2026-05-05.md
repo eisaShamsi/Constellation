@@ -87,48 +87,92 @@ Discarded the half-finished fix-10 edit in `embeddings.rs` (architect v2 §5) be
 - The asset is parsed once via OnceLock and the matrix lives on the heap (~30 MB) for f32-alignment correctness. `include_bytes!` zero-copy was rejected as UB-prone.
 - The `ctse::resolve_term_pure` test pattern (panicking closure on fast-path tests) is the right reuse target for §1C — verifies fast-path coverage without burning ONNX cycles.
 
-## State-of-standing — end of session 2026-05-05
+## §1C — write-time hooks + slow-path backfill scaffold
+
+### What landed
+- **Schema migration** (`search.rs`): new `TERM_VOCAB_BRIDGE_SCHEMA_VERSION = 1` constant and `ensure_term_vocab_bridge_column()` helper. Gated via `schema_versions` row `('term_vocab_bridge', 1)`. Adds `bridge_concept_id TEXT` (nullable) plus `idx_term_vocab_bridge_concept_id` index. Idempotent — fresh DBs and existing DBs both end up with the column. Pattern mirrors the sky / note_meta MIG-002 / MIG-003 helpers.
+- **Write-time hook** (`ctse/hooks.rs`, NEW):
+  - `on_note_indexed(conn, path, old_body, new_body)` — tokenizes both bodies via `fts5_tokenizer::tokenize_to_vec`, computes signed per-term `(total_delta, doc_delta)`, applies INSERT/UPDATE to `term_vocab`, and fast-path-resolves M11 concept ids for newly-inserted terms only.
+  - `on_note_deleted(conn, path, body)` — subtracts a deleted note's contributions; rows that drop to zero are kept as tombstones with `bridge_concept_id` preserved (revival on next save is free).
+  - Stopword set is cached at module level via `OnceLock` (`crate::libraries::build_stopwords()`).
+  - `BODY_CAP_BYTES = 1 MiB` (matches the prior `populate_term_vocab` precedent).
+  - **No ONNX in the write path** — fast-path-only. Slow-path resolution is deferred to the backfill (§1C-4).
+- **Wire-in** (`search.rs::reindex_single_note` + `reindex_delete_note`): both wrappers now query `note_meta.body_text` once before the index_note write and once after, then call the appropriate hook with `old_body`/`new_body`. Hook errors are logged but never fail the reindex (term_vocab is a derived view; the file + note_meta are the sources of truth).
+- **Slow-path backfill** (`ctse/backfill.rs`, NEW):
+  - Tauri commands: `ctse_run_backfill`, `ctse_cancel_backfill`, `ctse_backfill_status`.
+  - Walks `WHERE bridge_concept_id IS NULL ORDER BY total_count ASC, term LIMIT 500` (TF-IDF descending = rarest first; search becomes useful early in the backfill).
+  - Per-term resolution via new `ctse::resolve_term_multilang(app, term)`: 15-language fast-path FST sweep, then slow-path e5 inference + cosine k-NN. Bigrams skip slow path.
+  - Sentinel `'-'` for "tried and failed" so re-runs visit only genuinely-new NULL rows.
+  - Resumable: each batch commits in its own transaction. App close mid-fill leaves a partial-but-correct state.
+  - Cancellation reuses `EmbeddingState.term_embed_cancel: AtomicBool` (orphaned by §1C-5; per gotcha #2 of last session).
+  - Emits `ctse-backfill-progress` events with `{processed, total, done, cancelled}`.
+- **Shared multi-lang helper** (`ctse/mod.rs`):
+  - New `pub fn fast_path_concept_id(graph, term)` — single multi-language lookup helper used by both the hook and the backfill. Returns `None` for bigrams without trying any language.
+  - New `pub fn resolve_term_multilang(app, term)` — fast-path-then-slow-path resolver for the backfill.
+- **Retired surfaces** (`embeddings.rs`):
+  - Deleted `init_term_embeddings`, `cancel_term_embeddings`, `search_terms_semantic`, `term_embedding_status` Tauri commands.
+  - Deleted `populate_term_vocab` (Phase 1 rayon bootstrap) and `blob_to_vec` (orphaned with `search_terms_semantic`).
+  - Deleted `TermEmbedProgress` and `TermSimilarity` payload structs.
+  - Removed orphaned `use std::sync::atomic::Ordering` and `Emitter` imports.
+  - Kept: `EmbeddingState.term_embed_cancel` (reused by `ctse::backfill`), `vec_to_blob` (still used by `constellation_embed_notes`), `embed_passages_standalone` (used by §1A build helper), the runtime engine pipeline.
+- **Schema cleanup** (`search.rs`): `term_embeddings` CREATE TABLE removed. The comment on `term_vocab` updated to reference §1C's write-time-derivation maintenance path. Existing DBs may still carry the old `term_embeddings` table — left in place (harmless dangling table). The MIG-013 §5 §retired-table-GC item is queued for a future cleanup pass.
+- **lib.rs**: deregistered the four old commands; registered the three new `ctse::backfill::*` commands. The frontend store still references the old IPCs (`initTermEmbeddings`, etc.) — those throw at runtime if invoked, but §1D's Settings cleanup removes the call sites.
+
+### Verification (§1C test gate, automated)
+
+| Check | Result |
+|---|---|
+| `cargo build --release --lib` | ok, 1m 50s, 22 warnings (all pre-existing) |
+| `cargo test --lib --tests ctse` | **9/9 ok** |
+| · `ctse::tests::fast_path_resolves_known_lemma_without_calling_slow_path` | ok |
+| · `ctse::tests::slow_path_zero_query_returns_none_below_threshold` | ok |
+| · `ctse::tests::slow_path_above_one_threshold_rejects_everything` | ok |
+| · `ctse::tests::slow_path_zero_threshold_always_returns_some` | ok |
+| · `ctse::hooks::tests::first_index_inserts_and_fast_path_resolves` | ok |
+| · `ctse::hooks::tests::idempotent_resave_yields_no_delta` | ok |
+| · `ctse::hooks::tests::edit_applies_signed_delta` | ok |
+| · `ctse::hooks::tests::delete_subtracts_and_tombstones` | ok |
+| · `ctse::hooks::tests::bigram_tokens_stay_null_after_fast_path` | ok |
+| `cargo test --lib --tests bridge_vectors` | **6/6 ok** (no regression) |
+| **M11 zero-diff invariant** | `git diff src-tauri/src/lexicon/` → **empty** ✓ |
+
+### Implementation notes for §1D
+- `term_vocab` starts empty after §1C lands on Boss's existing library — `populate_term_vocab` is gone, and the write-time hook only grows the table on saves. §1D needs **either** an auto-trigger that walks `note_meta.body_text` on first boot when `term_vocab` is empty (re-fires `on_note_indexed` for each row) **or** an explicit "Index this library now" Settings action. Recommendation: do both — auto-fire on first boot (silent, status-bar strip), keep an explicit action for power users.
+- The `ctse_run_backfill` Tauri command is registered but no auto-trigger fires it yet. §1D adds a boot-time check: if `ctse_backfill_status > 0` and a small flag (e.g., a settings or schema_versions row) shows we haven't auto-fired this Universe, dispatch the command.
+- The frontend SettingsModal still has live calls to the four removed Tauri commands. Until §1D lands, toggling semantic search ON in Settings throws at runtime on the first IPC. Acceptable in a cascade — no Boss test happens between §1C and §1D.
+- `ctse_search_by_concept` is the §1D query-path command. Pattern: embed query → top-k concept ids via cosine on the 20K matrix → SQL `JOIN term_vocab ON bridge_concept_id IN (...)` → `notes_fts MATCH` for snippets.
+
+## State-of-standing — end of session 2026-05-05 (revised after §1C)
 
 ### Shipped today (verified-shipped, protected)
-- `5e1c0f1` MIG-013 §1A — 30 MB concept-vector asset baked at build time. 20,000 concepts × 384 f32, all L2-normalized, magic+count+dim verified. Build helper at `src-tauri/build_assets/build_concept_vectors.rs`. Throughput 1008 passages/sec on 24 threads. M11 zero-diff invariant: `git diff src-tauri/src/lexicon/` empty.
-- `909e381` MIG-013 §1B — runtime asset loader (`bridge_vectors::asset` + `bridge_vectors::store`) and adapter (`ctse::resolve_term_pure` + `ctse::resolve_term_to_concept`). 10 tests all pass: 5 store unit + 1 asset round-trip + 4 adapter (real M11). Fast-path resolution of `book/En` confirmed (panicking-on-call slow-path closure never fired). Cosine k-NN over 20K × 384 matrix; small-k via sorted Vec.
+- `5e1c0f1` MIG-013 §1A — 30 MB concept-vector asset baked at build time. 20,000 concepts × 384 f32, all L2-normalized, magic+count+dim verified.
+- `909e381` MIG-013 §1B — runtime asset loader + Bridge Adapter API + 10 tests.
+- **(this session)** MIG-013 §1C — schema migration `term_vocab.bridge_concept_id`; write-time hook (`ctse/hooks.rs`); slow-path backfill (`ctse/backfill.rs`) with `ctse_run_backfill`/`ctse_cancel_backfill`/`ctse_backfill_status` Tauri commands; retirement of `init_term_embeddings` / `cancel_term_embeddings` / `search_terms_semantic` / `term_embedding_status` / `populate_term_vocab` / the `term_embeddings` CREATE TABLE. 9 ctse tests + 6 bridge_vectors tests green; M11 zero-diff invariant intact.
 
 ### At-risk / in-flight / uncommitted
-- **None.** Working tree is clean (only the two `lab/reports/` doc additions ride along with `lib.rs` visibility changes; all included in commits above).
+- **Frontend SettingsModal still calls the four removed Tauri commands.** Toggling semantic search ON in Settings throws at runtime on the first IPC. Resolved by §1D's full Settings cleanup. No Boss test happens in this gap.
+- **Existing libraries' `term_vocab` may have stale row data** from the prior `populate_term_vocab` bootstrap (rows with `doc_count = 0` because the bulk loader skipped that field). Cosmetic — backfill still works because the NULL filter on `bridge_concept_id` is the cursor. Ordering is by `total_count` which is correct.
 
 ### Known-broken / pre-existing
-- Boss's library term_vocab population path. `populate_term_vocab` (embeddings.rs:867) was committed at `e87adeb` (Phase 1) but its only caller — `init_term_embeddings` — is being retired in §1C. This means after §1C, `term_vocab` is filled only incrementally via reindex hooks (not bulk-populated on first boot). Boss's existing 7,635-note library will start with an empty `term_vocab` after §1C lands. New saves grow it. This is consistent with CLAUDE.md Rule 8 (Write-Time Derivation) but means the §1D Boss-test will show progress only on edited notes, not as a one-shot bulk strip. **Recommendation**: surface this in §1D Boss-test tutorial and/or add a one-time "Index this library now" trigger.
-- 23 pre-existing dead-code warnings in the lib (none introduced by §1A/§1B; visible in build logs).
+- 22 pre-existing dead-code warnings in the lib (none introduced by §1C). Two new warnings appeared and were resolved by removing the orphaned `Emitter` import.
 
 ### Pending (not started)
-- **§1C** (Rust-side only — re-scoped from approved Plan, recorded here for transparency):
-  1. `search.rs` schema migration: add `bridge_concept_id TEXT` column to `term_vocab`; gate via new `schema_versions` row `('term_vocab_bridge', 1)`. Pattern at search.rs:1047–1062 (sky module) is the reuse target.
-  2. `ctse/hooks.rs` (new) — `pub fn on_note_indexed(conn, app, note_path, body_text)` — re-tokenize via `fts5_tokenizer::tokenize_to_vec`, upsert into `term_vocab` with incremental count maintenance, **fast-path-only** resolve `bridge_concept_id`. No ONNX in write path (gotcha #2 from §1C scout).
-  3. Wire `on_note_indexed` into `reindex_single_note` (search.rs:3890) **post-COMMIT**.
-  4. `ctse/backfill.rs` (new) — Tauri command `ctse_run_backfill(library_name)` that walks `WHERE bridge_concept_id IS NULL ORDER BY total_count ASC LIMIT 500`, slow-path-resolves per term, commits per batch, emits `ctse-backfill-progress` events. Resumable (idempotent NULL-walk). Sentinel `'-'` for "tried and failed" so successive runs don't re-attempt.
-  5. Remove `init_term_embeddings` Tauri command (embeddings.rs:516–752), deregister from lib.rs:379, remove `term_embeddings` table from `init_db` (search.rs:1165).
-  6. Remove `populate_term_vocab` (embeddings.rs:867) once its single caller is gone.
-- **§1C frontend** (deferred to §1D for atomicity): SettingsModal "Rebuild Term Embeddings" button + `confirmDialog` + `termEmbedProgress` UI removal; `termEmbedProgress` writable store removal.
-- **§1D**: auto-trigger backfill on app boot if NULL rows present; status-bar progress strip; `ctse_search_by_concept` Tauri command + frontend wiring; full Settings UI cleanup. **First Boss-testable gate** (cross-language semantic search).
-- **§1E**: three-agent audit (invariants, drift, migration-path).
+- **§1D** (next): auto-trigger first-fill on boot when `term_vocab` is empty (walks `note_meta.body_text` and re-fires `on_note_indexed`); auto-trigger `ctse_run_backfill` on boot when NULL rows exist; status-bar progress strip subscribed to `ctse-backfill-progress`; `ctse_search_by_concept` Tauri command + frontend wiring; full Settings UI cleanup (remove the four old IPCs' call sites + the `termEmbedProgress` writable store + the `confirmDialog` for "Rebuild Term Embeddings"); update help files + User Manual to describe Constellation Sight cross-language behavior. **First Boss-testable gate** (cross-language semantic search).
+- **§1E**: three-agent audit (invariants, drift, migration-path) per Migration Rule §4.
 
 ### Documentation drift
-- `docs/Constellation Orientation & Onboarding v1.34.md` does not yet mention CTSE Bridge Adapter (the v1 user-corpus pipeline was never added either). Will be added when §1D lands and CTSE becomes user-visible — bumping to v1.35 in the same commit per Standing Order.
-- User Manual + 14 translations: no §1A/§1B content needed yet (silent commits). Drafts queued for §1D.
-
-### Open architectural questions for next session
-1. **Per-note hook tokenization cost**: `tokenize_to_vec` on a 5000-word note runs in ~5 ms (acceptable). For pathological notes (>50K words), it could be slower. Add a body-cap (e.g., 1 MiB) per the Phase 1 precedent? Yes — recommend matching the existing `BODY_CAP_BYTES` constant from the original Phase 1 commit.
-2. **Cancellation**: backfill needs a cancel flag. The existing `EmbeddingState.term_embed_cancel: AtomicBool` (embeddings.rs:22) is being orphaned by `init_term_embeddings` removal; reuse it as `ctse_backfill_cancel` instead of creating a parallel atomic.
-3. **What happens to the `populate_term_vocab` source code?** Two options: (a) delete entirely (simplest, can be resurrected from git if needed for a future bulk-bootstrap feature); (b) keep as a private fn and add a new Tauri command `ctse_populate_term_vocab` that exposes it for an explicit Boss-triggered "Index this library now" button. **Recommendation: defer the choice to §1D when the Settings UI is being touched anyway.**
+- Orientation `v1.35` covers §1A + §1B. **Bumping to `v1.36` in this commit** per Standing Order #6 — covers §1C.
+- User Manual + 14 translations: still no §1A/§1B/§1C content. Drafts queued for §1D when CTSE becomes user-visible (cross-language search Boss test).
 
 ### How to resume next session
-1. Read `lab/reports/MIG-013-CTSE-ARCHITECT-v2.md`, `MIG-013-CTSE-PLAN.md`, this session log.
-2. Run `git log --oneline -6 main` and confirm `909e381` is the latest CTSE commit.
-3. Verify M11 invariant still holds: `git diff src-tauri/src/lexicon/` should be empty.
-4. Pick up §1C item 1 (schema migration via `schema_versions`).
-5. Cascade through §1C → §1D → §1E with no mid-cascade approval; Boss test fires at §1D.
+1. Read `lab/reports/MIG-013-CTSE-ARCHITECT-v2.md`, `MIG-013-CTSE-PLAN.md`, this session log (especially the §1C section above).
+2. `git log --oneline -8 main` and confirm the §1C commit is the latest.
+3. M11 invariant: `git diff src-tauri/src/lexicon/` should be empty.
+4. Pick up §1D — start with the boot-time auto-fire decision (where to gate the first-fill check; recommend a boolean column on `schema_versions` or a sentinel value).
+5. Cascade through §1D → §1E. Boss test fires at §1D once cross-language search is wired and the first-fill has run.
 
 ## Notes for next session if interrupted
 - `cargo run --bin build_concept_vectors --release` is the canonical way to regenerate the asset if M11 TSV changes. Output lands at `src-tauri/src/bridge_vectors/data/concept_vectors_v1.bin`.
 - The asset is committed to the repo (Boss-approved). It changes only when `lexicon_v1.tsv` does.
 - The `embed_passages_standalone` helper is **the only public surface** added to `embeddings.rs`; runtime callers continue to use the private `ensure_engine` / `run_embedding_batch` path through `EmbeddingState`.
+- §1C's hook uses `note_meta.body_text` as the source of truth for tokenization (NOT the file on disk) — this is intentional, because `notes_fts` was populated from the same `body_text`, so the token namespaces stay in sync. If a future migration changes the body normalization pipeline, both surfaces must be re-derived together.

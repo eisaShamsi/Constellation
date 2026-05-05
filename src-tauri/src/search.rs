@@ -78,6 +78,17 @@ pub(crate) const SKY_SCHEMA_VERSION: i64 = 10;
 /// PRIMARY-KEY promotion in Step 6) bump this further.
 pub(crate) const NOTE_META_SCHEMA_VERSION: i64 = 1;
 
+/// MIG-013 §1C — `term_vocab.bridge_concept_id` schema version.
+///
+/// | version | change                                                      |
+/// |--------:|-------------------------------------------------------------|
+/// |       0 | pre-MIG-013 — `term_vocab` exists without bridge column     |
+/// |       1 | adds `bridge_concept_id TEXT` column + index. Populated     |
+/// |         | by `ctse::hooks::on_note_indexed` (fast path) and the       |
+/// |         | `ctse_run_backfill` Tauri command (slow path). NULL means   |
+/// |         | "not yet attempted"; sentinel `'-'` means "tried, no hit".  |
+pub(crate) const TERM_VOCAB_BRIDGE_SCHEMA_VERSION: i64 = 1;
+
 /// MIG-002 §4 — SQL fragment that computes sky_nodes.stratum (1–8) from
 /// the same five signals as strata.rs::compute_stratum:
 ///
@@ -426,6 +437,38 @@ fn ensure_note_meta_mig003_column(conn: &Connection) -> rusqlite::Result<()> {
             "ALTER TABLE note_meta ADD COLUMN cid_cn TEXT NOT NULL DEFAULT '';",
         )?;
     }
+    Ok(())
+}
+
+/// MIG-013 §1C — ensure `term_vocab` has the `bridge_concept_id` column
+/// and its supporting index. Idempotent: probes `PRAGMA table_info` and
+/// ALTERs only if the column is missing. The column is nullable
+/// (`TEXT` with no NOT NULL) so existing rows accept the wider schema
+/// without backfill — population happens lazily via the write-time hook
+/// and the explicit `ctse_run_backfill` command.
+fn ensure_term_vocab_bridge_column(conn: &Connection) -> rusqlite::Result<()> {
+    let mut have_col = false;
+    {
+        let mut stmt = conn.prepare("PRAGMA table_info(term_vocab)")?;
+        let rows = stmt.query_map([], |row| row.get::<_, String>(1))?;
+        for col in rows {
+            if col?.as_str() == "bridge_concept_id" {
+                have_col = true;
+            }
+        }
+    }
+    if !have_col {
+        conn.execute_batch(
+            "ALTER TABLE term_vocab ADD COLUMN bridge_concept_id TEXT;",
+        )?;
+    }
+    // Always ensure the index — `CREATE INDEX IF NOT EXISTS` is cheap
+    // and covers the case where the column existed but the index was
+    // dropped or never created (defensive idempotency).
+    conn.execute_batch(
+        "CREATE INDEX IF NOT EXISTS idx_term_vocab_bridge_concept_id
+             ON term_vocab (bridge_concept_id);",
+    )?;
     Ok(())
 }
 
@@ -1155,22 +1198,13 @@ fn init_db(path: &Path) -> Result<Connection, String> {
         );
     ").map_err(|e| format!("Failed to create note_embeddings: {}", e))?;
 
-    // MIG-012 — Index Search Engine: term-level embeddings for semantic
-    // filter search. Each row is one Index vocabulary term embedded with
-    // the same multilingual-e5-small model used for note_embeddings.
-    // `last_built` lets us detect stale embeddings if the model changes
-    // (Boss-deferred — see MIG-012 Architect §6 risk register).
-    // Populated lazily on first semantic-search-toggle-on
-    // (Boss-approved Q2.C) by the `init_term_embeddings` IPC.
-    conn.execute_batch("
-        CREATE TABLE IF NOT EXISTS term_embeddings (
-            term TEXT PRIMARY KEY,
-            embedding BLOB NOT NULL,
-            dimensions INTEGER NOT NULL DEFAULT 384,
-            model_id TEXT DEFAULT 'multilingual-e5-small',
-            last_built INTEGER NOT NULL DEFAULT (CAST(strftime('%s','now') AS INTEGER))
-        );
-    ").map_err(|e| format!("Failed to create term_embeddings: {}", e))?;
+    // (MIG-012 `term_embeddings` table retired by MIG-013 §1C: the
+    // per-library term-embedding pipeline was replaced by the CTSE
+    // Bridge Adapter — `term_vocab.bridge_concept_id` resolves to one
+    // of M11's ~20K curated concepts whose vectors are baked at build
+    // time. The retired table is left untouched on disk for any DB
+    // that still has it; future cleanup may DROP it but is not
+    // required for correctness.)
 
     // MIG-012-fix-8 — shadow vocabulary table for fast term enumeration.
     // Replaces direct queries against `notes_vocab` (fts5vocab virtual
@@ -1178,17 +1212,19 @@ fn init_db(path: &Path) -> Result<Connection, String> {
     // large libraries (Boss reported 20+ minutes on a 7,600-note
     // library; pathological at 10K+ notes).
     //
-    // CLAUDE.md Rule 8 (Write-Time Derivation) applied: the embed
-    // pipeline materializes vocabulary into a regular indexed table at
-    // build time, then queries it at read time. Bootstrap is a
-    // streaming pass over `note_meta.body_text` using the same
-    // `process_word_for_fts` tokenizer that populates `notes_fts`, so
-    // `term_vocab.term` matches the namespace `notes_fts` stores.
+    // CLAUDE.md Rule 8 (Write-Time Derivation): vocabulary is
+    // materialized into a regular indexed table on every save, then
+    // queried at read time. The maintenance happens in MIG-013 §1C's
+    // `ctse::hooks::on_note_indexed`, called from `reindex_single_note`
+    // post-COMMIT. `term_vocab.term` matches the FTS5 token namespace
+    // because both use `fts5_tokenizer::tokenize_to_vec` over the same
+    // body_text.
     //
-    // Future incremental maintenance via reindex_single_note hooks is
-    // queued (see project_term_vocab_incremental.md). For now,
-    // populated on demand by `populate_term_vocab` (called from
-    // init_term_embeddings).
+    // (MIG-013 §1A-§1C retired the prior bulk `populate_term_vocab`
+    // bootstrap. Existing libraries start with a sparse term_vocab and
+    // grow it incrementally as notes save. A first-fill walk over
+    // `note_meta.body_text` is queued for §1D so the §1D Boss-test
+    // doesn't depend on per-note edits.)
     conn.execute_batch("
         CREATE TABLE IF NOT EXISTS term_vocab (
             term TEXT PRIMARY KEY,
@@ -1198,6 +1234,35 @@ fn init_db(path: &Path) -> Result<Connection, String> {
         CREATE INDEX IF NOT EXISTS idx_term_vocab_total_count
             ON term_vocab (total_count DESC);
     ").map_err(|e| format!("Failed to create term_vocab: {}", e))?;
+
+    // MIG-013 §1C — `term_vocab.bridge_concept_id` column + index. Gated
+    // by `schema_versions.term_vocab_bridge` so the migration runs once
+    // per existing DB and is a no-op on fresh DBs (the column is also
+    // ensured on a fresh DB by the same call — `ensure_*` is idempotent).
+    let stored_term_vocab_bridge_version: i64 = conn
+        .query_row(
+            "SELECT version FROM schema_versions WHERE module = 'term_vocab_bridge'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap_or(0);
+    if stored_term_vocab_bridge_version < TERM_VOCAB_BRIDGE_SCHEMA_VERSION {
+        ensure_term_vocab_bridge_column(&conn)
+            .map_err(|e| format!("Failed to ensure term_vocab.bridge_concept_id: {}", e))?;
+        conn.execute(
+            "INSERT OR REPLACE INTO schema_versions (module, version, updated_at) VALUES ('term_vocab_bridge', ?1, strftime('%s','now'))",
+            rusqlite::params![TERM_VOCAB_BRIDGE_SCHEMA_VERSION],
+        ).map_err(|e| format!("Failed to stamp schema_versions.term_vocab_bridge: {}", e))?;
+        diag_log(path, &format!(
+            "[search] init_db: schema_versions.term_vocab_bridge stamped to {} (column added or already present)",
+            TERM_VOCAB_BRIDGE_SCHEMA_VERSION,
+        ));
+    } else {
+        // Defensive: schema_versions says we're current, but ensure the
+        // column physically exists. Cheap PRAGMA + idempotent index.
+        ensure_term_vocab_bridge_column(&conn)
+            .map_err(|e| format!("Failed to ensure term_vocab.bridge_concept_id: {}", e))?;
+    }
 
     // MIG-012 — Search history. Per-Universe (this database is per-
     // Universe). Boss-approved Q3.B. Capped at 200 rows by application
@@ -3880,8 +3945,28 @@ pub fn constellation_search_reindex(
 pub fn reindex_delete_note(state: &SearchState, note_path: &str) -> Result<(), String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
     if let Some(conn) = db.as_ref() {
+        // MIG-013 §1C — capture body BEFORE deletion so the CTSE hook
+        // can subtract this note's term contributions from term_vocab.
+        // `note_meta.body_text` is the source of truth for tokenization
+        // (matches what `notes_fts` ingested at index time).
+        let old_body: Option<String> = conn
+            .query_row(
+                "SELECT body_text FROM note_meta WHERE path = ?1",
+                params![note_path],
+                |row| row.get(0),
+            )
+            .ok();
         let _ = conn.execute("DELETE FROM note_links WHERE source_path = ?1", params![note_path]);
         let _ = conn.execute("DELETE FROM note_meta WHERE path = ?1", params![note_path]);
+        if let Some(body) = old_body {
+            // Best-effort: term_vocab maintenance failure must not fail
+            // the file-level deletion. The file is gone; correctness is
+            // recoverable on next save of any other note touching the
+            // same terms.
+            if let Err(e) = crate::ctse::hooks::on_note_deleted(conn, note_path, &body) {
+                eprintln!("[ctse] on_note_deleted failed for {}: {}", note_path, e);
+            }
+        }
     }
     Ok(())
 }
@@ -3894,7 +3979,48 @@ pub fn reindex_single_note(
 ) -> Result<(), String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
     if let Some(conn) = db.as_ref() {
+        // MIG-013 §1C — capture old body BEFORE index_note overwrites
+        // the row. The CTSE hook needs both old and new bodies to
+        // compute a signed term-count delta against term_vocab.
+        // First-time saves: query returns None, hook treats every new
+        // token as fresh contribution.
+        let old_body: Option<String> = conn
+            .query_row(
+                "SELECT body_text FROM note_meta WHERE path = ?1",
+                params![note_path],
+                |row| row.get(0),
+            )
+            .ok();
+
         index_note(conn, note_path, library_name)?;
+
+        // Post-COMMIT (index_note's BEGIN IMMEDIATE/COMMIT block has
+        // already returned). Read the freshly-written body and apply
+        // the delta. If the file no longer exists on disk index_note
+        // becomes a no-op — note_meta.body_text reflects the prior
+        // state, but the post-read returns the same as the pre-read,
+        // yielding a zero delta. Correct.
+        let new_body_opt: Option<String> = conn
+            .query_row(
+                "SELECT body_text FROM note_meta WHERE path = ?1",
+                params![note_path],
+                |row| row.get(0),
+            )
+            .ok();
+        if let Some(new_body) = new_body_opt {
+            // Best-effort: term_vocab maintenance failure must not
+            // fail the file reindex. note_meta + notes_fts are the
+            // user-facing sources of truth; term_vocab is a derived
+            // view and can be re-synthesized from the corpus.
+            if let Err(e) = crate::ctse::hooks::on_note_indexed(
+                conn,
+                note_path,
+                old_body.as_deref(),
+                &new_body,
+            ) {
+                eprintln!("[ctse] on_note_indexed failed for {}: {}", note_path, e);
+            }
+        }
     }
     Ok(())
 }

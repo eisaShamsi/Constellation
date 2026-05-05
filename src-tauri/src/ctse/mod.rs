@@ -35,6 +35,9 @@
 //! field were already public before MIG-013; no lexicon-module
 //! source is modified.
 
+pub mod backfill;
+pub mod hooks;
+
 use crate::arabic::Lang;
 use crate::bridge_vectors::{self, ConceptVectorStore};
 use crate::lexicon::LexiconGraph;
@@ -77,6 +80,75 @@ where
         return None;
     }
     store.concept_id(row).map(str::to_string)
+}
+
+/// Multi-language M11 fast-path lookup. Tries every supported
+/// language's FST cache (15 microsecond-scale queries) and returns
+/// the first concept-id hit. Bigram tokens (joined by
+/// `BIGRAM_SEP`) are not lexicon-resolvable and return `None`
+/// without trying any language.
+///
+/// Pure, infallible, non-blocking. Used by the write-time hook
+/// (§1C, [`hooks::on_note_indexed`]) and as the fast half of the
+/// backfill resolver ([`resolve_term_multilang`]).
+pub fn fast_path_concept_id(graph: &LexiconGraph, term: &str) -> Option<String> {
+    if term.as_bytes().contains(&crate::fts5_tokenizer::BIGRAM_SEP) {
+        return None;
+    }
+    for &lang in Lang::all() {
+        let nodes = graph.find_nodes(lang, term);
+        if let Some(&first_idx) = nodes.first() {
+            if let Some(node) = graph.nodes.get(first_idx as usize) {
+                return Some(node.concept_id.clone());
+            }
+        }
+    }
+    None
+}
+
+/// Backfill-mode resolver. Tries every supported language for fast-path
+/// before falling to the slow-path (e5 inference + cosine k-NN against
+/// the 20K M11 concept matrix).
+///
+/// Used by `ctse::backfill::ctse_run_backfill` to populate
+/// `term_vocab.bridge_concept_id` for rows the write-time hook left
+/// NULL — either because all 15 languages missed in fast path, or
+/// because the row pre-dates §1C and never saw the hook at all.
+///
+/// Returns:
+/// - `Ok(Some(concept_id))` — resolved (fast or slow path).
+/// - `Ok(None)` — bigram token, no fast-path hit AND slow-path either
+///   missed or scored below `DEFAULT_THRESHOLD`. Caller should write
+///   the sentinel value so the term isn't retried.
+/// - `Err(_)` — engine init failure or DB-side hard error.
+pub fn resolve_term_multilang(
+    app: &tauri::AppHandle,
+    term: &str,
+) -> Result<Option<String>, String> {
+    let graph = LexiconGraph::get();
+    if let Some(cid) = fast_path_concept_id(graph, term) {
+        return Ok(Some(cid));
+    }
+    // Bigrams already filtered out in fast_path_concept_id; bail
+    // before incurring slow-path cost (would just produce noise).
+    if term.as_bytes().contains(&crate::fts5_tokenizer::BIGRAM_SEP) {
+        return Ok(None);
+    }
+
+    // Slow path: embed term and cosine-NN against the baked matrix.
+    let q = match crate::embeddings::constellation_embed_text(app.clone(), term.to_string()) {
+        Ok(v) => v,
+        Err(_) => return Ok(None),
+    };
+    let store = bridge_vectors::get();
+    let (row, score) = match store.nearest_concept(&q) {
+        Some(v) => v,
+        None => return Ok(None),
+    };
+    if score < DEFAULT_THRESHOLD {
+        return Ok(None);
+    }
+    Ok(store.concept_id(row).map(str::to_string))
 }
 
 /// Tauri-context wrapper. Resolves a term to its M11 concept ID

@@ -376,10 +376,13 @@ pub fn run() {
             libraries::read_term_mentions,
             libraries::read_cooccurring_terms,
             lexicon::lexicon_expand_for_filter,
-            embeddings::init_term_embeddings,
-            embeddings::cancel_term_embeddings,
-            embeddings::search_terms_semantic,
-            embeddings::term_embedding_status,
+            // MIG-013 §1C — CTSE Bridge Adapter backfill commands.
+            // Replaces the retired MIG-012 init/cancel/search/status
+            // term-embedding pipeline. The new commands operate on
+            // `term_vocab.bridge_concept_id` instead of `term_embeddings`.
+            ctse::backfill::ctse_run_backfill,
+            ctse::backfill::ctse_cancel_backfill,
+            ctse::backfill::ctse_backfill_status,
             libraries::read_index_history,
             libraries::write_index_history_entry,
             libraries::clear_index_history,

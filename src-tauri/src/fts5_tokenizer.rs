@@ -424,9 +424,9 @@ fn is_word_boundary(c: char) -> bool {
 ///     the stem first, then `prev_stem \x1f cur_stem` as colocated.
 /// MIG-012-fix-8 — same tokenization pipeline as the FTS5 tokenizer's
 /// `tokenize` method, but emits to a `Vec<String>` instead of an FTS5
-/// cursor. Used by `populate_term_vocab` to bootstrap the shadow
-/// vocabulary table from `note_meta.body_text` content with byte-
-/// identical tokens to what `notes_fts` actually stores.
+/// cursor. Used by `ctse::hooks::on_note_indexed` (MIG-013 §1C) to
+/// maintain the `term_vocab` shadow table on every note save with
+/// byte-identical tokens to what `notes_fts` actually stores.
 ///
 /// Output includes both stems (primary tokens) AND bigrams (joined by
 /// `BIGRAM_SEP`), matching the FTS5 tokenizer's emission. Stopwords
