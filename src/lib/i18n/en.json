@@ -426,26 +426,6 @@
         "label": "Expand mentions cross-language",
         "description": "When you click a term in the Index panel, also surface notes containing its translations from the Lexical Bridge. Off by default — turning it on adds a \"via {lemma}\" badge to each cross-language match so you can always tell which mentions are direct vs. bridged."
       },
-      "semanticSearch": {
-        "label": "Semantic search",
-        "description": "When you type in the Index filter, also find conceptually-related terms via embeddings — typing \"thinking\" can surface \"cognition\", \"reflection\", etc., even when there's no direct lexical match. First-time activation builds the embedding index (~10–20 min for a 7,600-note library); progress shows in the Index panel. Off by default.",
-        "progress": "Embedding terms: {processed} / {total}",
-        "done": "✓ Embedding complete",
-        "cancelled": "Cancelled",
-        "indexed": "✓ {count} terms indexed",
-        "notBuilt": "Index not built yet",
-        "rebuild": "Rebuild",
-        "build": "Build now",
-        "rebuildConfirm": "Rebuild the semantic index from scratch? This re-embeds every Index term and takes ~10–20 minutes on a 7,600-note library.",
-        "buildConfirm": "Build the semantic index now? This embeds every Index term and takes ~10–20 minutes on a 7,600-note library.",
-        "starting": "Starting…",
-        "error": "Embedding job failed: {error}",
-        "loadingModel": "Loading embedding model…",
-        "scanningVocab": "Scanning vocabulary…",
-        "optimizingFts5": "Compacting search index…",
-        "tokenizing": "Building vocabulary: {processed} / {total} notes",
-        "tokenizingStart": "Building vocabulary…"
-      },
       "searchHistory": {
         "label": "Search history",
         "description": "Remember Index filter queries within this Universe. On focus / down-arrow the filter shows recent queries. Capped at 200 entries with FIFO eviction. Off by default; storage is per-Universe in SQLite."

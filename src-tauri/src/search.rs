@@ -80,21 +80,30 @@ pub(crate) const NOTE_META_SCHEMA_VERSION: i64 = 1;
 
 /// MIG-013 §1C/§1D — `term_vocab.bridge_concept_id` schema version.
 ///
+/// **Status: dead schema as of §1D Option B.** The column was originally
+/// designed to hold per-term M11 concept IDs populated at write time
+/// (fast path) and via a slow-path `ctse_run_backfill` job. Both paths
+/// were retired when CTSE pivoted to query-time concept expansion
+/// (Lucene `SynonymGraphFilter` / SQLite FTS5 Method 2 / CLIR
+/// query-translation pattern; see `ctse/mod.rs` and `ctse/search.rs`).
+/// The column and its v1/v2 migrations are preserved as forward-compat
+/// in case a future "deep concept tagging" feature wants the surface.
+///
 /// | version | change                                                      |
 /// |--------:|-------------------------------------------------------------|
 /// |       0 | pre-MIG-013 — `term_vocab` exists without bridge column     |
-/// |       1 | adds `bridge_concept_id TEXT` column + index. Populated     |
-/// |         | by `ctse::hooks::on_note_indexed` (fast path) and the       |
-/// |         | `ctse_run_backfill` Tauri command (slow path). NULL means   |
-/// |         | "not yet attempted"; sentinel `'-'` means "tried, no hit".  |
-/// |       2 | bulk-sentinel every NULL bigram row in one UPDATE.          |
-/// |         | Bigrams (tokens joined by FTS5 `BIGRAM_SEP` = U+001F) are   |
-/// |         | not lexicon-resolvable; iterating them in the backfill is   |
-/// |         | wasted IO and locks the SearchState mutex for hours on a    |
-/// |         | typical multi-million-row corpus. Pre-marking them lets the |
-/// |         | backfill target only the ~50K real stem rows. (See         |
-/// |         | `lab/reports/SESSION-LOG-2026-05-05.md` "§1D bigram        |
-/// |         | explosion".)                                               |
+/// |       1 | adds `bridge_concept_id TEXT` column + index. Idempotent    |
+/// |         | column-add via `ensure_term_vocab_bridge_column`.           |
+/// |       2 | one-shot `UPDATE term_vocab SET bridge_concept_id = '-'    |
+/// |         | WHERE bridge_concept_id IS NULL AND term LIKE '%' ||       |
+/// |         | CHAR(31) || '%'`. Originally introduced because the         |
+/// |         | retired `ctse_run_backfill` job iterated every NULL row    |
+/// |         | and would have spent hours on a multi-million-row corpus    |
+/// |         | of FTS5 bigrams (joined by `BIGRAM_SEP` = U+001F). After   |
+/// |         | the §1D Option B pivot the column is no longer read, so    |
+/// |         | this migration is now defensive-only — it ensures any      |
+/// |         | future writer that does read the column never sees stale   |
+/// |         | NULL bigram rows.                                           |
 pub(crate) const TERM_VOCAB_BRIDGE_SCHEMA_VERSION: i64 = 2;
 
 /// MIG-002 §4 — SQL fragment that computes sky_nodes.stratum (1–8) from
@@ -452,8 +461,14 @@ fn ensure_note_meta_mig003_column(conn: &Connection) -> rusqlite::Result<()> {
 /// and its supporting index. Idempotent: probes `PRAGMA table_info` and
 /// ALTERs only if the column is missing. The column is nullable
 /// (`TEXT` with no NOT NULL) so existing rows accept the wider schema
-/// without backfill — population happens lazily via the write-time hook
-/// and the explicit `ctse_run_backfill` command.
+/// without backfill.
+///
+/// **Dead schema as of §1D Option B** — nothing reads or writes this
+/// column on the live CTSE path. Cross-language search runs entirely at
+/// query time via the in-memory `concept_lemmas` map (see
+/// `ctse::search::ctse_search_terms_by_concept`). The column survives
+/// as forward-compat; the only writer is the v2 sentinel migration
+/// below, which one-shot pre-marks bigram rows as defensive cleanup.
 fn ensure_term_vocab_bridge_column(conn: &Connection) -> rusqlite::Result<()> {
     let mut have_col = false;
     {
@@ -483,19 +498,27 @@ fn ensure_term_vocab_bridge_column(conn: &Connection) -> rusqlite::Result<()> {
 /// MIG-013 §1D — bulk-sentinel every NULL bigram row.
 ///
 /// On a real Constellation library the FTS5 tokenizer emits both stems
-/// AND bigrams (joined by `BIGRAM_SEP` = U+001F) so that phrase queries
-/// match. Bigrams correctly belong in `term_vocab` (the Index panel and
-/// other surfaces consume them), but they are not lexicon-resolvable —
-/// the M11 graph keys are single lemmas, never two-word internal
-/// sentinel-joined pairs. A 7,600-note Arabic+English corpus produces
-/// ~50K stems and ~5.7M bigrams; left as NULLs, the backfill iterates
-/// every one of them with a per-row UPDATE, locking the SearchState
-/// mutex for multiple hours.
+/// AND bigrams (joined by `BIGRAM_SEP` = U+001F) so phrase queries
+/// match. Bigrams correctly belong in `term_vocab` (the Index panel
+/// and other surfaces consume them), but they are not lexicon-
+/// resolvable — the M11 graph keys are single lemmas, never two-word
+/// internal sentinel-joined pairs.
 ///
-/// One bulk UPDATE in a single transaction handles all of them:
-/// sub-second on modern SSD, scales linearly with corpus size, and
-/// leaves the index pristine for the post-fill backfill which now
-/// targets only the ~50K real stems.
+/// **Why this migration still exists after §1D Option B**: the column
+/// is now dead schema, so this UPDATE doesn't affect any live read
+/// path. It survives as defensive cleanup for forward-compat. If a
+/// future feature ever reactivates `bridge_concept_id` reads, that
+/// future feature inherits a column where bigram rows are
+/// pre-sentinelled rather than NULL — saving the same iteration cost
+/// the original §1D backfill would have hit.
+///
+/// **Boot-time cost on pre-MIG-013 DBs**: a 7,600-note Arabic+English
+/// corpus produces ~50K stems and ~5.7M bigrams, so the UPDATE scans
+/// ~5.7M rows and writes `'-'` to ~5.68M of them. Wall-clock: tens of
+/// seconds on commodity SSD, multiple minutes on slower disk. The
+/// boot path is fully blocking with no progress feedback. Tracked in
+/// `lab/reports/MIG-013-CTSE-AUDIT.md` §3 as deferred P1-M1; future
+/// mini-MIG will chunk + emit progress events.
 ///
 /// Idempotent: only NULL bigram rows are touched. Real concept ids
 /// (`c:…`) and prior `'-'` sentinels are untouched. Re-running the
