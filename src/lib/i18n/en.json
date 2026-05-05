@@ -704,6 +704,7 @@
     "properties": "Properties",
     "wikilinks": "Wikilinks",
     "semantic": "Semantic",
+    "concept": "Concept",
     "notes": "notes",
     "from": "from",
     "supports": "Supports",
@@ -1873,7 +1874,15 @@
     "content": "C",
     "property": "P",
     "wikilink": "W",
-    "semantic": "S"
+    "semantic": "S",
+    "concept": "≈"
+  },
+  "ctse": {
+    "firstFillProgress": "Linking vocabulary… {processed} / {total}",
+    "firstFillDone": "Vocabulary linked",
+    "backfillProgress": "Resolving concepts… {processed} / {total}",
+    "backfillDone": "Concepts resolved",
+    "cancelled": "Cancelled"
   },
   "skyView": {
     "noNotes": "No notes to display",

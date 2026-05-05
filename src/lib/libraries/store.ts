@@ -2487,76 +2487,121 @@ export async function lexiconExpandForFilter(query: string): Promise<FilterExpan
 	return await invoke('lexicon_expand_for_filter', { query });
 }
 
-// ─── MIG-012 — semantic search over term embeddings ───
+// ─── MIG-013 §1D — CTSE Bridge Adapter (cross-language semantic search) ───
 
-/** One result row from `searchTermsSemantic`. `score` is in [0,1] —
- *  cosine similarity between the query embedding and the term embedding,
- *  L2-normalized so dot product == cosine. */
-export interface TermSimilarity {
-	term: string;
-	score: number;
+/** One row from [`ctseSearchByConcept`]. The result is a NOTE hit (not
+ *  a term) — the concept→term mapping is expanded server-side and
+ *  becomes a single FTS5 OR-clause MATCH against `notes_fts`. */
+export interface CtseConceptHit {
+	path: string;
+	name: string;
+	library_name: string;
+	/** FTS5 `snippet()` output with CHAR(2)/CHAR(3) markers around
+	 *  matched tokens. Frontend renders as `<mark>` spans. */
+	snippet?: string | null;
 }
 
-/** Embed `query` and return up to `topK` Index terms whose embeddings
- *  exceed `threshold` cosine similarity. Per-keystroke callers MUST
- *  debounce (≥300ms). Returns [] when no results clear the threshold,
- *  or when term_embeddings is empty (initial state — call
- *  `initTermEmbeddings` first). */
-export async function searchTermsSemantic(
+export interface CtseConceptSearchOptions {
+	/** Restrict results to a single library. `null` searches every
+	 *  library in the active Universe (the cross-library, cross-language
+	 *  default). */
+	library_name?: string | null;
+	limit?: number | null;
+	min_score?: number | null;
+}
+
+/** Embed the query, map to top-K M11 concepts, expand to every
+ *  `term_vocab` row whose `bridge_concept_id` matches, and run an
+ *  FTS5 OR-clause MATCH against `notes_fts`.
+ *
+ *  Returns notes regardless of script — typing "knowledge" surfaces
+ *  notes containing "معرفة" because both lemmas resolve to the same
+ *  M11 concept. Per-keystroke callers MUST debounce (≥300 ms;
+ *  CLAUDE.md Rule 3) — each call is one e5 inference + cosine sweep
+ *  + FTS5 query. */
+export async function ctseSearchByConcept(
 	query: string,
-	topK?: number,
-	threshold?: number,
-): Promise<TermSimilarity[]> {
-	return await invoke('search_terms_semantic', {
-		query,
-		topK: topK ?? null,
-		threshold: threshold ?? null,
+	options?: CtseConceptSearchOptions,
+): Promise<CtseConceptHit[]> {
+	return await invoke('ctse_search_by_concept', {
+		request: {
+			query,
+			library_name: options?.library_name ?? null,
+			limit: options?.limit ?? null,
+			min_score: options?.min_score ?? null,
+		},
 	});
 }
 
-/** Trigger the background term-embedding job. Listen for
- *  `term-embedding-progress` events to render a progress bar. Idempotent:
- *  re-firing skips already-embedded terms unless `force` is true. */
-export async function initTermEmbeddings(force?: boolean): Promise<void> {
-	return await invoke('init_term_embeddings', { force: force ?? null });
+/** True iff the `term_vocab` ledger is empty AND there's at least one
+ *  note with body content — i.e. an existing library that pre-dates
+ *  CTSE §1C and needs a one-shot first-fill. Frontend gates the
+ *  `ctseFirstFill` call on this; on a fresh empty universe it returns
+ *  false and there's nothing to do. */
+export async function ctseFirstFillStatus(): Promise<boolean> {
+	return await invoke('ctse_first_fill_status');
 }
 
-/** Cancel an in-flight term-embedding job. Idempotent. */
-export async function cancelTermEmbeddings(): Promise<void> {
-	return await invoke('cancel_term_embeddings');
+/** Walk every `note_meta` row and re-fire the per-save term-vocab hook
+ *  with `old_body = None`, populating `term_vocab` from scratch. Emits
+ *  `ctse-firstfill-progress` events on a `CtseFillProgress` payload.
+ *  Resumable via [`ctseCancelFirstFill`]. Should be called exactly
+ *  once per universe (the gate is [`ctseFirstFillStatus`]). */
+export async function ctseFirstFill(): Promise<void> {
+	return await invoke('ctse_first_fill');
 }
 
-/** Count of terms in `term_embeddings`. Frontend uses this to decide
- *  whether to fire `initTermEmbeddings` (count == 0) or skip. */
-export async function termEmbeddingStatus(): Promise<number> {
-	return await invoke('term_embedding_status');
+/** Request that the running first-fill stop at the next safe point.
+ *  Idempotent. */
+export async function ctseCancelFirstFill(): Promise<void> {
+	return await invoke('ctse_cancel_first_fill');
 }
 
-/** Progress payload from the `term-embedding-progress` Tauri event.
- *  `phase` (MIG-012-fix-5) tells the frontend which stage of the embed
- *  job is running so the UI can show a precise label instead of the
- *  generic "Starting…" shimmer. Values: "loading-model" |
- *  "scanning-vocab" | "embedding". Absent on done/cancelled events. */
-export interface TermEmbedProgress {
+/** Count of `term_vocab` rows still missing a `bridge_concept_id`.
+ *  Frontend fires `ctseRunBackfill` if > 0 after first-fill (or on
+ *  cold boot if no first-fill is needed). */
+export async function ctseBackfillStatus(): Promise<number> {
+	return await invoke('ctse_backfill_status');
+}
+
+/** Resolve every NULL `bridge_concept_id` row via the slow path
+ *  (e5 embedding + cosine k-NN over the 20K concept matrix). Sentinels
+ *  unresolved terms with `'-'` so re-runs visit only fresh NULLs.
+ *  Emits `ctse-backfill-progress` events on a `CtseFillProgress`
+ *  payload. */
+export async function ctseRunBackfill(): Promise<void> {
+	return await invoke('ctse_run_backfill');
+}
+
+/** Request that the running backfill stop at the next safe point.
+ *  Idempotent. */
+export async function ctseCancelBackfill(): Promise<void> {
+	return await invoke('ctse_cancel_backfill');
+}
+
+/** Progress payload shared by `ctse-firstfill-progress` and
+ *  `ctse-backfill-progress` events. Same shape so a single status-bar
+ *  strip can render either stream by switching the event name. */
+export interface CtseFillProgress {
 	processed: number;
 	total: number;
 	done: boolean;
 	cancelled: boolean;
-	phase?: string | null;
 }
 
-/** Module-scoped store carrying the latest term-embedding job state.
- *  Components subscribe via `$termEmbedProgress` and render a progress
- *  UI from anywhere; Settings, status bar, IndexPanel can each read the
- *  same source of truth. Lives outside any component so the job survives
- *  modal mount/unmount cycles — the user can close Settings while the
- *  embed-all loop runs and reopen later to see current progress.
+/** Module-scoped store carrying the latest CTSE fill state. Tagged
+ *  with which phase is active so the UI can label it appropriately
+ *  ("Linking terms…" for first-fill, "Resolving concepts…" for
+ *  backfill). `null` = no job running; the strip hides itself.
  *
- *  null means: no job has run this session, OR the last job's "done"
- *  payload was cleared after the brief post-completion display window.
- *  Set by the SettingsModal $effect that fires on toggle-on and listens
- *  for the Tauri event. (MIG-012 Build.7-fix-1) */
-export const termEmbedProgress = writable<TermEmbedProgress | null>(null);
+ *  Set by the boot-time orchestrator in `+layout.svelte` which listens
+ *  to both Tauri event streams. */
+export type CtseFillPhase = 'first-fill' | 'backfill';
+export interface CtseFillStatus {
+	phase: CtseFillPhase;
+	progress: CtseFillProgress;
+}
+export const ctseFillStatus = writable<CtseFillStatus | null>(null);
 
 // ─── MIG-012 — Index search history ───
 

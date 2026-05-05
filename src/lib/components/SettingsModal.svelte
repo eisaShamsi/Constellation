@@ -5,9 +5,7 @@
 	import { check } from '@tauri-apps/plugin-updater';
 	import { relaunch } from '@tauri-apps/plugin-process';
 	import { t, locale, setLocale, SUPPORTED_LOCALES, type Locale } from '$lib/i18n';
-	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats, SCRIPT_UNICODE_RANGES, SCRIPT_LABELS, SCRIPT_SAMPLES, getAllFontSets, getFontSetById, type FontSet, TYPEWRITER_FONTS, BUILTIN_THEMES, type ConstellationTheme, LINK_TYPE_NAMES, DEFAULT_SETTINGS, backfillLinkConfidence, type PanelId, type PanelSlot, clearIndexHistory, initTermEmbeddings, cancelTermEmbeddings, termEmbeddingStatus, termEmbedProgress, type TermEmbedProgress } from '$lib/libraries/store';
-	import { listen, type UnlistenFn } from '@tauri-apps/api/event';
-	import { untrack } from 'svelte';
+	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats, SCRIPT_UNICODE_RANGES, SCRIPT_LABELS, SCRIPT_SAMPLES, getAllFontSets, getFontSetById, type FontSet, TYPEWRITER_FONTS, BUILTIN_THEMES, type ConstellationTheme, LINK_TYPE_NAMES, DEFAULT_SETTINGS, backfillLinkConfidence, type PanelId, type PanelSlot, clearIndexHistory } from '$lib/libraries/store';
 	import ObsidianThemeBrowser from './ObsidianThemeBrowser.svelte';
 	import StyleSettingsPanel from './StyleSettingsPanel.svelte';
 	import { getEffectiveStyleBlocks } from '$lib/theme/constellationStyleSettings';
@@ -43,130 +41,15 @@
 		onConfirm: () => void;
 	}>(null);
 
-	// MIG-012 §Build.7-fix-1 — auto-trigger the term-embedding job when
-	// the semantic-search toggle flips ON for the first time. Listens for
-	// the `term-embedding-progress` Tauri event and writes to the
-	// module-scoped `termEmbedProgress` store so progress survives modal
-	// open/close. The job itself runs in the Rust thread pool — closing
-	// Settings doesn't kill it.
-	//
-	// Edge cases handled:
-	//   - Toggle on but term_embeddings already populated → skip the IPC.
-	//   - Toggle on, listener attaches, then user toggles off → unlisten +
-	//     fire cancel_term_embeddings. The Rust worker breaks at next term.
-	//   - User toggles off then on again partway → resumable: init skips
-	//     already-embedded terms via the existence check.
-	let semanticUnlisten: UnlistenFn | null = null;
-	let semanticToggleSeen = false; // ignore the initial $effect run on mount
-
-	// MIG-012 §Build.7-fix-2 — visible diagnostic for the term-embedding
-	// state. Production Tauri builds have DevTools disabled, so the only
-	// way the user can answer "is my semantic index built?" is via UI.
-	// `null` = haven't queried yet; `number` = current row count from
-	// term_embeddings. Refreshed on mount, on toggle on, and after the
-	// embed job completes.
-	let semanticIndexedCount = $state<number | null>(null);
-
-	async function refreshSemanticCount() {
-		try {
-			semanticIndexedCount = await termEmbeddingStatus();
-		} catch (e) {
-			console.error('[Settings] termEmbeddingStatus failed:', e);
-			semanticIndexedCount = null;
-		}
-	}
-
-	// Eager refresh on Settings mount so the user sees the current state
-	// immediately when they navigate to Index.
-	$effect(() => {
-		untrack(() => { void refreshSemanticCount(); });
-	});
-
-	async function maybeStartSemanticInit() {
-		try {
-			const count = await termEmbeddingStatus();
-			semanticIndexedCount = count;
-			if (count > 0) {
-				// Already populated; no init needed. Clear any stale progress
-				// state (from a prior session that completed). The status
-				// line below the toggle shows "✓ N terms indexed".
-				termEmbedProgress.set(null);
-				return;
-			}
-		} catch (e) {
-			console.error('[Settings] termEmbeddingStatus failed:', e);
-			return;
-		}
-		// Empty table → fire init.
-		await runEmbedJob(false);
-	}
-
-	// MIG-012 §Build.7-fix-3: gap-feedback + error-surfacing.
-	// Production Tauri builds disable DevTools, so any silent failure
-	// during the click→first-event gap was invisible to the user. This
-	// state surfaces errors visibly, alongside the progress strip.
-	let semanticErrorMessage = $state<string | null>(null);
-
-	async function runEmbedJob(force: boolean) {
-		// Pre-populate the progress store IMMEDIATELY so the user sees
-		// the strip flip on click — closes the visible-feedback gap
-		// between click and the first Rust progress event (which can
-		// take 2–5 seconds when the embedding model needs to load on
-		// first invocation of the session).
-		semanticErrorMessage = null;
-		termEmbedProgress.set({ processed: 0, total: 0, done: false, cancelled: false });
-
-		try {
-			semanticUnlisten = await listen<TermEmbedProgress>('term-embedding-progress', (event) => {
-				termEmbedProgress.set(event.payload);
-				if (event.payload.done) {
-					semanticUnlisten?.();
-					semanticUnlisten = null;
-					void refreshSemanticCount();
-					setTimeout(() => { termEmbedProgress.set(null); }, 4000);
-				}
-			});
-		} catch (e) {
-			console.error('[Settings] event listen failed:', e);
-			semanticErrorMessage = String(e);
-			termEmbedProgress.set(null);
-			return;
-		}
-		initTermEmbeddings(force).catch((err) => {
-			console.error('[Settings] initTermEmbeddings failed:', err);
-			semanticErrorMessage = String(err);
-			semanticUnlisten?.();
-			semanticUnlisten = null;
-			termEmbedProgress.set(null);
-		});
-	}
-
-	function stopSemanticInit() {
-		// Toggle just flipped off — cancel the running job + unlisten +
-		// clear progress UI.
-		cancelTermEmbeddings().catch(() => {});
-		semanticUnlisten?.();
-		semanticUnlisten = null;
-		// Don't immediately null the store — let the cancelled-event flush
-		// through so the user sees "Cancelled" briefly. The 4-sec setTimeout
-		// in the listener handles cleanup after the worker emits its final
-		// done+cancelled event.
-	}
-
-	$effect(() => {
-		const enabled = $appSettings.index.semanticSearchEnabled;
-		if (!semanticToggleSeen) {
-			semanticToggleSeen = true;
-			return; // skip the initial reactive read on mount
-		}
-		untrack(() => {
-			if (enabled) {
-				void maybeStartSemanticInit();
-			} else {
-				stopSemanticInit();
-			}
-		});
-	});
+	// (MIG-012 per-library term-embedding pipeline retired by MIG-013
+	// §1C/§1D. The Settings "Rebuild Term Embeddings" button + its
+	// progress strip + the toggle for `index.semanticSearchEnabled`
+	// have been removed. Cross-language semantic search is now driven
+	// silently by the CTSE Bridge Adapter — first-fill and slow-path
+	// backfill auto-fire on app boot with their own status-bar strip
+	// living in `+layout.svelte`. The `index.semanticSearchEnabled`
+	// flag is left in the settings shape for backward compat but is
+	// no longer read anywhere.)
 
 	// Theme editor state
 	let editingTheme = $state<ConstellationTheme | null>(null);
@@ -1977,114 +1860,16 @@
 						</label>
 					</div>
 
-					<!-- MIG-012 — Semantic search -->
-					<div class="setting-item">
-						<div class="setting-info">
-							<div class="setting-name">{$t('settings.index.semanticSearch.label') || 'Semantic search'}</div>
-							<div class="setting-desc">{$t('settings.index.semanticSearch.description') || 'When you type in the Index filter, also find conceptually-related terms via embeddings — typing "thinking" can surface "cognition", "reflection", etc., even when there\'s no direct lexical match. First-time activation builds the embedding index (~10–20 min for a 7,600-note library); progress shows below. Off by default.'}</div>
-						</div>
-						<label class="toggle">
-							<input type="checkbox"
-								checked={$appSettings.index.semanticSearchEnabled}
-								onchange={() => updateSettings({ index: { ...$appSettings.index, semanticSearchEnabled: !$appSettings.index.semanticSearchEnabled } })} />
-							<span class="toggle-slider"></span>
-						</label>
-					</div>
-
-					<!-- MIG-012 §Build.7-fix-1/3 — embedding progress indicator -->
-					{#if $termEmbedProgress}
-						{@const p = $termEmbedProgress}
-						{@const isStarting = p.total === 0 && p.processed === 0 && !p.done}
-						{@const pct = p.total > 0 ? Math.min(100, Math.round((p.processed / p.total) * 100)) : 0}
-						<div class="semantic-progress" dir="auto">
-							<div class="semantic-progress-row">
-								<span class="semantic-progress-label">
-									{#if p.done && p.cancelled}
-										{$t('settings.index.semanticSearch.cancelled') || 'Cancelled'}
-									{:else if p.done}
-										{$t('settings.index.semanticSearch.done') || 'Done'}
-									{:else if p.phase === 'loading-model'}
-										{$t('settings.index.semanticSearch.loadingModel') || 'Loading embedding model…'}
-									{:else if p.phase === 'tokenizing-content'}
-										{p.total > 0
-											? ($t('settings.index.semanticSearch.tokenizing') || 'Building vocabulary: {processed} / {total} notes')
-												.replace('{processed}', String(p.processed))
-												.replace('{total}', String(p.total))
-											: ($t('settings.index.semanticSearch.tokenizingStart') || 'Building vocabulary…')}
-									{:else if p.phase === 'optimizing-fts5'}
-										{$t('settings.index.semanticSearch.optimizingFts5') || 'Compacting search index…'}
-									{:else if p.phase === 'scanning-vocab'}
-										{$t('settings.index.semanticSearch.scanningVocab') || 'Scanning vocabulary…'}
-									{:else if isStarting}
-										{$t('settings.index.semanticSearch.starting') || 'Starting…'}
-									{:else}
-										{($t('settings.index.semanticSearch.progress') || 'Embedding terms: {processed} / {total}')
-											.replace('{processed}', String(p.processed))
-											.replace('{total}', String(p.total))}
-									{/if}
-								</span>
-								{#if !p.done}
-									<button class="setting-btn semantic-progress-cancel" onclick={() => { stopSemanticInit(); }}>
-										{$t('common.cancel') || 'Cancel'}
-									</button>
-								{/if}
-							</div>
-							<div class="semantic-progress-bar">
-								<div class="semantic-progress-fill" class:starting={isStarting} class:done={p.done} class:cancelled={p.cancelled} style="width: {isStarting ? 100 : pct}%"></div>
-							</div>
-						</div>
-					{:else if semanticErrorMessage}
-						<div class="semantic-progress semantic-error" dir="auto">
-							<div class="semantic-progress-row">
-								<span class="semantic-progress-label">
-									{($t('settings.index.semanticSearch.error') || 'Embedding job failed: {error}')
-										.replace('{error}', semanticErrorMessage)}
-								</span>
-								<button class="setting-btn semantic-progress-cancel" onclick={() => { semanticErrorMessage = null; }}>
-									{$t('common.dismiss') || 'Dismiss'}
-								</button>
-							</div>
-						</div>
-					{:else if $appSettings.index.semanticSearchEnabled && semanticIndexedCount !== null}
-						<!-- MIG-012 §Build.7-fix-2 — visible diagnostic + manual rebuild -->
-						<div class="semantic-status" dir="auto">
-							<span class="semantic-status-label">
-								{#if semanticIndexedCount > 0}
-									{($t('settings.index.semanticSearch.indexed') || '✓ {count} terms indexed')
-										.replace('{count}', String(semanticIndexedCount))}
-								{:else}
-									{$t('settings.index.semanticSearch.notBuilt') || 'Index not built'}
-								{/if}
-							</span>
-							<button class="setting-btn semantic-status-rebuild" onclick={() => {
-								confirmDialog = {
-									message: semanticIndexedCount && semanticIndexedCount > 0
-										? ($t('settings.index.semanticSearch.rebuildConfirm') || 'Rebuild the semantic index from scratch? This re-embeds every Index term and takes ~10–20 minutes on a 7,600-note library.')
-										: ($t('settings.index.semanticSearch.buildConfirm') || 'Build the semantic index now? This embeds every Index term and takes ~10–20 minutes on a 7,600-note library.'),
-									confirmLabel: semanticIndexedCount && semanticIndexedCount > 0
-										? ($t('settings.index.semanticSearch.rebuild') || 'Rebuild')
-										: ($t('settings.index.semanticSearch.build') || 'Build now'),
-									cancelLabel: $t('common.cancel') || 'Cancel',
-									danger: false,
-									onConfirm: () => {
-										// force=true on rebuild; force=false on first build
-										// (incremental, skips already-embedded terms — but
-										// table is empty so no skip happens).
-										const force = (semanticIndexedCount ?? 0) > 0;
-										void runEmbedJob(force);
-									},
-								};
-							}}>
-								{#if semanticIndexedCount > 0}
-									{$t('settings.index.semanticSearch.rebuild') || 'Rebuild'}
-								{:else}
-									{$t('settings.index.semanticSearch.build') || 'Build now'}
-								{/if}
-							</button>
-						</div>
-					{/if}
+					<!-- (MIG-012 "Semantic search" toggle + progress strip removed
+					     by MIG-013 §1D. Cross-language search is now silently
+					     wired via the CTSE Bridge Adapter; first-fill and
+					     slow-path backfill auto-run on app boot with their
+					     own status-bar strip. Searching happens in the
+					     Search hub, where typing "knowledge" surfaces notes
+					     containing "معرفة" and vice versa.) -->
 
 					<!-- MIG-012 — Search history -->
+
 					<div class="setting-item">
 						<div class="setting-info">
 							<div class="setting-name">{$t('settings.index.searchHistory.label') || 'Search history'}</div>

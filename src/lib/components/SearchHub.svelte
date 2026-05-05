@@ -3,8 +3,10 @@
 	import {
 		universalSearch, appSettings, embedText, constellationSearch, parseSearchQuery,
 		canonicalizeSearchQuery, hasAdvancedSyntaxMultilingual, stripInvisibleChars,
+		ctseSearchByConcept,
 		type UniversalSearchResponse,
-		type ConstellationSearchResult
+		type ConstellationSearchResult,
+		type CtseConceptHit
 	} from '$lib/libraries/store';
 	import { readSearchHistory, addSearchHistory, clearSearchHistory, relativeTime } from '$lib/libraries/searchHistory';
 	import { detectDir } from '$lib/utils';
@@ -39,18 +41,25 @@
 
 	let searchInput: HTMLInputElement;
 
-	const categories = ['titles', 'contents', 'tags', 'properties', 'wikilinks', 'semantic'] as const;
+	// MIG-013 \u00a71D \u2014 `concept` is the cross-language semantic category
+	// powered by the CTSE Bridge Adapter. Embeds the query, finds the
+	// nearest M11 concepts, joins term_vocab to get every script's
+	// equivalent terms, FTS5 MATCHes them, returns notes regardless of
+	// the language they're written in. The "semantic" category remains
+	// for note-level cosine over `note_embeddings` (different feature,
+	// kept for users who have it populated).
+	const categories = ['titles', 'contents', 'tags', 'properties', 'wikilinks', 'semantic', 'concept'] as const;
 
 	const categoryIcons = $derived.by(() => {
 		const b = (key: string, fallback: string) => $t(`searchBadges.${key}`) !== `searchBadges.${key}` ? $t(`searchBadges.${key}`) : fallback;
 		return {
-			titles: b('title', 'T'), contents: b('content', 'C'), tags: '#', properties: b('property', 'P'), wikilinks: b('wikilink', 'W'), semantic: b('semantic', 'S'),
+			titles: b('title', 'T'), contents: b('content', 'C'), tags: '#', properties: b('property', 'P'), wikilinks: b('wikilink', 'W'), semantic: b('semantic', 'S'), concept: b('concept', '\u2248'),
 			title: b('title', 'T'), content: b('content', 'C'), tag: '#', property: b('property', 'P'), wikilink: b('wikilink', 'W'), structured: '0\u0336'
 		} as Record<string, string>;
 	});
 
 	const categoryColors: Record<string, string> = {
-		titles: '#3b82f6', contents: '#16a34a', tags: '#f472b6', properties: '#f59e0b', wikilinks: '#60a5fa', semantic: '#7c3aed',
+		titles: '#3b82f6', contents: '#16a34a', tags: '#f472b6', properties: '#f59e0b', wikilinks: '#60a5fa', semantic: '#7c3aed', concept: '#0891b2',
 		// match_type values from advanced/structured search
 		title: '#3b82f6', content: '#16a34a', tag: '#f472b6', property: '#f59e0b', wikilink: '#60a5fa', structured: '#ef4444'
 	};
@@ -148,7 +157,33 @@
 					if ($appSettings.enabledFeatures?.semanticSearch) {
 						try { qEmbed = await embedText(q); } catch {}
 					}
-					response = await universalSearch(q, qEmbed, 0);
+					// MIG-013 §1D — fire the universal search and the CTSE
+					// concept search in parallel; merge concept hits into
+					// the response under a `concept` key. CTSE failures
+					// (engine init failure, empty term_vocab) degrade
+					// gracefully — the rest of the categories still render.
+					const [universal, conceptHits] = await Promise.all([
+						universalSearch(q, qEmbed, 0),
+						ctseSearchByConcept(q).catch((err) => {
+							console.warn('[SearchHub] ctseSearchByConcept failed:', err);
+							return [] as CtseConceptHit[];
+						}),
+					]);
+					response = universal;
+					// Map CTSE hits into the same shape as the other
+					// categories. score 1.0 is a placeholder — concept-
+					// based ranking is by FTS5 rank server-side, so the
+					// row order already reflects relevance.
+					const conceptResults: ConstellationSearchResult[] = conceptHits.map((h) => ({
+						name: h.name,
+						path: h.path,
+						library_name: h.library_name,
+						score: 1.0,
+						match_type: 'concept',
+						snippet: h.snippet ?? undefined,
+						modified: 0,
+					}));
+					(response as unknown as Record<string, ConstellationSearchResult[]>).concept = conceptResults;
 				}
 				addSearchHistory(q);
 				history = readSearchHistory();

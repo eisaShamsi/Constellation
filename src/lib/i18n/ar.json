@@ -668,6 +668,7 @@
     "properties": "الخصائص",
     "wikilinks": "الروابط",
     "semantic": "دلالي",
+    "concept": "مفهومي",
     "notes": "ملاحظة",
     "from": "من",
     "supports": "يدعم",
@@ -1838,7 +1839,15 @@
     "content": "م",
     "property": "خ",
     "wikilink": "ر",
-    "semantic": "د"
+    "semantic": "د",
+    "concept": "≈"
+  },
+  "ctse": {
+    "firstFillProgress": "ربط المفردات… {processed} / {total}",
+    "firstFillDone": "تم ربط المفردات",
+    "backfillProgress": "تحديد المفاهيم… {processed} / {total}",
+    "backfillDone": "تم تحديد المفاهيم",
+    "cancelled": "ملغى"
   },
   "skyView": {
     "noNotes": "لا توجد ملاحظات لعرضها",
