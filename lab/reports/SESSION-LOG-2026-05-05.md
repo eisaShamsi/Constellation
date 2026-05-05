@@ -53,8 +53,41 @@ Discarded the half-finished fix-10 edit in `embeddings.rs` (architect v2 §5) be
   - Modified: Cargo.toml, embeddings.rs, lib.rs
   - New: bridge_vectors/, build_assets/, lab/reports/MIG-013-CTSE-ARCHITECT-v2.md, lab/reports/MIG-013-CTSE-PLAN.md, lab/reports/SESSION-LOG-2026-05-05.md
 
-## Open items (after §1A commit)
-- §1B: bridge_vectors runtime loader + cosine k-NN + `ctse::resolve_term_to_concept`.
+## §1B — Runtime loader + bridge adapter
+
+### What landed
+- `src-tauri/src/bridge_vectors/asset.rs` — `parse()` over `include_bytes!("data/concept_vectors_v1.bin")`. Parses header + concept-id table + matrix into an owned `Box<[f32]>` (deliberately copies — `include_bytes!` returns `&'static [u8]` at unspecified alignment, and reinterpreting unaligned bytes as `&[f32]` is UB on strict-alignment targets).
+- `src-tauri/src/bridge_vectors/store.rs` — `ConceptVectorStore` with `nearest_concept` and `nearest_concepts_k` (cosine over flat row-major matrix; small-k uses a sorted Vec instead of BinaryHeap for cache friendliness).
+- `src-tauri/src/bridge_vectors/mod.rs` — `pub fn get() -> &'static ConceptVectorStore` singleton via OnceLock.
+- `src-tauri/src/ctse/mod.rs` — Bridge Adapter:
+  - `resolve_term_pure(graph, store, embed_query, term, lang, threshold)` — pure dependency-injected core; closure invoked only when M11 fast path misses.
+  - `resolve_term_to_concept(app, term, lang)` — Tauri-context wrapper; pulls singletons + delegates query embed to `embeddings::constellation_embed_text`.
+  - `DEFAULT_THRESHOLD = 0.78` (initial guess; tunable in §1D).
+- `src-tauri/src/lib.rs` — `pub mod ctse;` registration.
+
+### Verification (§1B test gate, automated)
+
+| Test | Result |
+|---|---|
+| `bridge_vectors::store::nearest_concept_returns_exact_match_with_score_one` | ok |
+| `bridge_vectors::store::nearest_concept_rejects_wrong_dim` | ok |
+| `bridge_vectors::store::nearest_concept_zero_query_returns_zero_score` | ok |
+| `bridge_vectors::store::top_k_returns_descending_scores` | ok |
+| `bridge_vectors::store::top_k_clamps_to_count` | ok |
+| `bridge_vectors::asset::baked_asset_parses` (real 30 MB asset) | ok |
+| `ctse::fast_path_resolves_known_lemma_without_calling_slow_path` | ok — `book/En` resolved via M11; panicking closure never fired |
+| `ctse::slow_path_zero_query_returns_none_below_threshold` | ok |
+| `ctse::slow_path_above_one_threshold_rejects_everything` | ok |
+| `ctse::slow_path_zero_threshold_always_returns_some` | ok |
+| **M11 zero-diff invariant** | `git diff src-tauri/src/lexicon/` → **empty** ✓ |
+| `cargo build --release` (lib) | ok, 1m 31s, 0 new warnings |
+
+### Key implementation notes for next session
+- `LexiconGraph.nodes` is `pub Vec<LemmaNode>` and `LemmaNode.concept_id` is `pub String`. The fast path indexes directly: `graph.nodes[node_idx as usize].concept_id`. No new lexicon API surface required.
+- The asset is parsed once via OnceLock and the matrix lives on the heap (~30 MB) for f32-alignment correctness. `include_bytes!` zero-copy was rejected as UB-prone.
+- The `ctse::resolve_term_pure` test pattern (panicking closure on fast-path tests) is the right reuse target for §1C — verifies fast-path coverage without burning ONNX cycles.
+
+## Open items (after §1B commit)
 - §1C: `term_vocab.bridge_concept_id` + write-time hook + progressive backfill (first Boss-testable gate).
 - §1D: query path + remove old "Rebuild Term Embeddings" Settings UI (second Boss-testable gate).
 - §1E: three-agent audit per Migration Rule §4.

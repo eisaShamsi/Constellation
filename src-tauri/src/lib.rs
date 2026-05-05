@@ -11,6 +11,10 @@ mod canvas;
 mod boot_bundle;
 mod cache;
 mod canonical;
+// MIG-013 §1B: CTSE Bridge Adapter (term → M11 concept resolver).
+// Public so future write-time hooks (in §1C) can call it from any
+// crate-internal module without going through a re-export chain.
+pub mod ctse;
 // MIG-013 §1A: visibility widened from `mod` to `pub mod` so the
 // offline `build_concept_vectors` [[bin]] target can call
 // `embeddings::embed_passages_standalone`. No behavioral change —
