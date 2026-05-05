@@ -439,7 +439,9 @@
         "rebuildConfirm": "Rebuild the semantic index from scratch? This re-embeds every Index term and takes ~10–20 minutes on a 7,600-note library.",
         "buildConfirm": "Build the semantic index now? This embeds every Index term and takes ~10–20 minutes on a 7,600-note library.",
         "starting": "Starting…",
-        "error": "Embedding job failed: {error}"
+        "error": "Embedding job failed: {error}",
+        "loadingModel": "Loading embedding model…",
+        "scanningVocab": "Scanning vocabulary…"
       },
       "searchHistory": {
         "label": "Search history",

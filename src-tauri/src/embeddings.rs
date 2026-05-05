@@ -310,6 +310,17 @@ pub struct TermEmbedProgress {
     pub total: u32,
     pub done: bool,
     pub cancelled: bool,
+    /// MIG-012-fix-5: which phase the worker is in. Lets the frontend
+    /// distinguish "Loading model" (slow on cold disk: ~10–30s for the
+    /// ONNX model + tokenizer) from "Scanning vocabulary" (slow on
+    /// large libraries: SQLite walks the FTS5 vocab segments and sorts)
+    /// from the actual per-term embedding loop. Without this, the UI
+    /// shows an indeterminate "Starting…" shimmer for both early
+    /// phases and the user can't tell which is the bottleneck.
+    /// Values: "loading-model" | "scanning-vocab" | "embedding".
+    /// `None` on the per-term progress events for backward compat.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub phase: Option<String>,
 }
 
 #[derive(Debug, Clone, serde::Serialize)]
@@ -345,6 +356,21 @@ pub fn init_term_embeddings(
 
     let embed_state = app.state::<EmbeddingState>();
     embed_state.term_embed_cancel.store(false, Ordering::SeqCst);
+
+    // MIG-012-fix-5 — phase-1 emit BEFORE ensure_engine so the user sees
+    // "Loading model…" immediately. The ONNX model is ~120 MB and on
+    // cold disk loads in tens of seconds; without this emit the user
+    // would sit in indeterminate-shimmer for that whole window.
+    let _ = app.emit(
+        "term-embedding-progress",
+        TermEmbedProgress {
+            processed: 0,
+            total: 0,
+            done: false,
+            cancelled: false,
+            phase: Some("loading-model".into()),
+        },
+    );
     ensure_engine(&app)?;
     let force = force.unwrap_or(false);
 
@@ -376,6 +402,18 @@ pub fn init_term_embeddings(
     // doesn't DELETE. Search continues to use them. Future fix can
     // add a Settings knob (`project_term_embeddings_threshold_too_loose.md`)
     // for power users who want a different trade-off.
+    // Phase 2 — scanning the FTS5 vocab. On large libraries this walks
+    // millions of token-position rows + sorts; can take seconds.
+    let _ = app.emit(
+        "term-embedding-progress",
+        TermEmbedProgress {
+            processed: 0,
+            total: 0,
+            done: false,
+            cancelled: false,
+            phase: Some("scanning-vocab".into()),
+        },
+    );
     let all_terms: Vec<String> = {
         let search_state = app.state::<crate::search::SearchState>();
         let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
@@ -394,14 +432,14 @@ pub fn init_term_embeddings(
     let mut processed = 0u32;
     let _ = app.emit(
         "term-embedding-progress",
-        TermEmbedProgress { processed: 0, total, done: false, cancelled: false },
+        TermEmbedProgress { processed: 0, total, done: false, cancelled: false, phase: Some("embedding".into()) },
     );
 
     for term in &all_terms {
         if embed_state.term_embed_cancel.load(Ordering::SeqCst) {
             let _ = app.emit(
                 "term-embedding-progress",
-                TermEmbedProgress { processed, total, done: true, cancelled: true },
+                TermEmbedProgress { processed, total, done: true, cancelled: true, phase: None },
             );
             return Ok(());
         }
@@ -473,14 +511,14 @@ pub fn init_term_embeddings(
         if processed % 50 == 0 || processed == total {
             let _ = app.emit(
                 "term-embedding-progress",
-                TermEmbedProgress { processed, total, done: false, cancelled: false },
+                TermEmbedProgress { processed, total, done: false, cancelled: false, phase: None },
             );
         }
     }
 
     let _ = app.emit(
         "term-embedding-progress",
-        TermEmbedProgress { processed, total, done: true, cancelled: false },
+        TermEmbedProgress { processed, total, done: true, cancelled: false, phase: None },
     );
     Ok(())
 }

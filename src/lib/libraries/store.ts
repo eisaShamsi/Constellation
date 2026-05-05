@@ -2532,12 +2532,17 @@ export async function termEmbeddingStatus(): Promise<number> {
 	return await invoke('term_embedding_status');
 }
 
-/** Progress payload from the `term-embedding-progress` Tauri event. */
+/** Progress payload from the `term-embedding-progress` Tauri event.
+ *  `phase` (MIG-012-fix-5) tells the frontend which stage of the embed
+ *  job is running so the UI can show a precise label instead of the
+ *  generic "Starting…" shimmer. Values: "loading-model" |
+ *  "scanning-vocab" | "embedding". Absent on done/cancelled events. */
 export interface TermEmbedProgress {
 	processed: number;
 	total: number;
 	done: boolean;
 	cancelled: boolean;
+	phase?: string | null;
 }
 
 /** Module-scoped store carrying the latest term-embedding job state.

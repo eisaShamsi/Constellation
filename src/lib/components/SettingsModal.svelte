@@ -2003,6 +2003,10 @@
 										{$t('settings.index.semanticSearch.cancelled') || 'Cancelled'}
 									{:else if p.done}
 										{$t('settings.index.semanticSearch.done') || 'Done'}
+									{:else if p.phase === 'loading-model'}
+										{$t('settings.index.semanticSearch.loadingModel') || 'Loading embedding model…'}
+									{:else if p.phase === 'scanning-vocab'}
+										{$t('settings.index.semanticSearch.scanningVocab') || 'Scanning vocabulary…'}
 									{:else if isStarting}
 										{$t('settings.index.semanticSearch.starting') || 'Starting…'}
 									{:else}
