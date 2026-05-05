@@ -48,7 +48,19 @@ Cross-language matches carry a small **"via {lemma}"** badge next to the note na
 
 Direct same-language matches still appear with no badge. The toggle is **off by default** so the Index works the same as before for users who want their vocabulary strictly per-language.
 
-**Note**: today the toggle affects mentions only — the **filter box** at the top of the Index still does plain substring matching, so typing "knowledge" finds only index terms containing those letters. Cross-language filtering (typing "knowledge" also finding "معرفة" in the term list) is a planned next step.
+## Cross-language Filter — `≈ similar`
+
+The Index filter at the top of the panel does **three layers** of matching as you type. Each layer adds a different kind of result:
+
+1. **Literal substring** (always on). Typing `know` surfaces every term in your vocabulary containing those letters: `knowledge`, `known`, `knowing`, etc. This is the fastest layer and what you've always used.
+2. **Cross-language bridge** — adds `via {lemma}` results when **Settings → Index → "Expand mentions cross-language"** is on. Typing `knowledge` ALSO surfaces Arabic terms whose dictionary translation is "knowledge" (`معرفة`, `علم`, …), each marked with the small **"via knowledge"** badge.
+3. **Cross-language concept (`≈ similar`)** — always on, no setup. Typing `knowledge` ALSO surfaces terms whose **M11 concept** is the same — even when there's no direct dictionary translation lemma in your library. These rows carry the **`≈ similar`** badge.
+
+How layer 3 works in plain terms: when you type `knowledge`, Constellation embeds that word once into a 384-dimension semantic space (one-time, ~50 milliseconds), looks up the ten nearest concepts in M11's 20,000-concept dictionary, expands each concept into all the languages it covers, and shows you which of *your* vocabulary terms map to those concepts. So if your library has Arabic notes that use `معرفة`, the stem `معرف` will appear in the dropdown with the `≈ similar` badge — even if you never turned the cross-language bridge toggle on.
+
+The first time you type any query in a fresh session, expect a 2–5 second wait while the embedding model loads. Every query after that runs in ~80 milliseconds; the panel stays responsive while you type.
+
+Misses are normal. The M11 dictionary covers 20,000 common-vocabulary concepts. Specialized jargon, proper nouns, and rare regional variants will often miss `≈ similar` — they'll still appear if they match the literal substring (layer 1) or the bridge (layer 2). Misses are not bugs.
 
 ## Editing from the Index
 

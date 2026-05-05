@@ -729,7 +729,21 @@ By default, clicking a term in the Index shows only notes that contain that **li
 
 The toggle is **off by default** to preserve the literal-only Index behaviour for users who want it strictly per-language. When on, it composes with everything else — frequency sort, letter filter, script tabs, second screen.
 
-What about the **filter box** at the top of the Index? Today it does plain substring matching — typing "knowledge" only finds index terms that literally contain those letters. Cross-language filtering (typing "knowledge" surfacing the term "معرفة" too) is a planned next step, not yet shipped.
+### Cross-language Filter — `≈ similar` (always on)
+
+The filter box at the top of the Index now does **three layers** of matching as you type. Each layer adds a different kind of result:
+
+1. **Literal substring** (always on). Typing `know` surfaces every term in your vocabulary containing those letters: `knowledge`, `known`, `knowing`, etc. The fastest layer.
+2. **Cross-language bridge** — when **Settings → Index → "Expand mentions cross-language"** is on, typing `knowledge` ALSO surfaces Arabic terms whose dictionary translation is "knowledge" (`معرفة`, `علم`, …). Each marked with the **"via knowledge"** badge.
+3. **Cross-language concept (`≈ similar`)** — always on, no setup. Typing `knowledge` ALSO surfaces terms whose **M11 concept** is the same as yours, even when there's no direct dictionary translation in your library. These rows carry the **`≈ similar`** badge.
+
+How layer 3 works in plain terms: when you type `knowledge`, Constellation embeds that word once into a 384-dimension semantic space (~50 ms), looks up the ten nearest concepts in the M11 dictionary that ships with the app, expands each concept into all the languages it covers, and shows you which of *your* vocabulary terms map to those concepts. So if your library has Arabic notes that use `معرفة`, the stem `معرف` will appear in the dropdown with the `≈ similar` badge — even if you never turned the cross-language bridge toggle on.
+
+The first time you type any query in a fresh session, expect a 2–5 second wait while the embedding model loads. Every query after that runs in ~80 ms; the panel stays responsive while you type. The IPC is debounced at 300 ms so only the *settled* query fires the embedding call, not every keystroke.
+
+Misses are normal. The M11 dictionary covers 20,000 common-vocabulary concepts. Specialized jargon, proper nouns, and rare regional variants will often miss `≈ similar` — they still appear if they match the literal substring (layer 1) or the bridge (layer 2). Misses are not bugs.
+
+There is **no setup**: no embedding-build phase, no per-library training, no "Rebuild" button anywhere. The 20K concept matrix ships with the app as a 30 MB asset; the per-query lookup is fully local.
 
 ---
 
