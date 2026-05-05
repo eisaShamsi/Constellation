@@ -300,6 +300,56 @@ fn run_embedding_batch(engine: &EmbeddingEngine, texts: &[String]) -> Result<Vec
     Ok(results)
 }
 
+/// MIG-013 §1A — Build-time / standalone embedding helper.
+///
+/// Builds its own Session + Tokenizer from the given paths (no
+/// AppHandle, no Tauri runtime), then chunks the input through the
+/// same batched mean-pool + L2-normalize pipeline as
+/// `run_embedding_batch`. Used by the offline
+/// `build_concept_vectors` [[bin]] to embed M11's ~20K concepts at
+/// build time and bake the result into the binary asset shipped
+/// with the app.
+///
+/// Returns one Vec<f32> per input text in input order. The caller
+/// is responsible for prepending "passage: " (for indexed content)
+/// or "query: " (for queries) per the e5 model card.
+///
+/// `intra_threads` is honored verbatim (clamped to >=1); the build
+/// helper passes physical-core count for max throughput. The
+/// runtime engine still uses 2 (set in `init_engine`) to avoid
+/// fighting Tauri's thread pool.
+pub fn embed_passages_standalone(
+    model_path: &std::path::Path,
+    tokenizer_path: &std::path::Path,
+    texts: &[String],
+    intra_threads: usize,
+    batch_size: usize,
+) -> Result<Vec<Vec<f32>>, String> {
+    if texts.is_empty() {
+        return Ok(Vec::new());
+    }
+    let session = Session::builder()
+        .map_err(|e| format!("Failed to create session builder: {}", e))?
+        .with_optimization_level(GraphOptimizationLevel::Level3)
+        .map_err(|e| format!("Failed to set optimization: {}", e))?
+        .with_intra_threads(intra_threads.max(1))
+        .map_err(|e| format!("Failed to set threads: {}", e))?
+        .commit_from_file(model_path)
+        .map_err(|e| format!("Failed to load model: {}", e))?;
+    let tokenizer = Tokenizer::from_file(tokenizer_path)
+        .map_err(|e| format!("Failed to load tokenizer: {}", e))?;
+    let engine = EmbeddingEngine { session: Mutex::new(session), tokenizer };
+
+    let bs = batch_size.max(1);
+    let mut all = Vec::with_capacity(texts.len());
+    for chunk in texts.chunks(bs) {
+        let batch_in: Vec<String> = chunk.to_vec();
+        let batch_out = run_embedding_batch(&engine, &batch_in)?;
+        all.extend(batch_out);
+    }
+    Ok(all)
+}
+
 // ─── Tauri Commands ──────────────────────────────────────────
 
 /// Initialize the embedding engine (load model + tokenizer).

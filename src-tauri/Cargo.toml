@@ -11,6 +11,15 @@ repository = "https://github.com/eisaShamsi/Constellation"
 name = "constellation_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
+# MIG-013 §1A: offline build-time helper that bakes M11's ~20K concept
+# vectors into `src/bridge_vectors/data/concept_vectors_v1.bin`. Run once
+# per release with:
+#     cd src-tauri && cargo run --bin build_concept_vectors --release
+# The output asset is committed to the repo and shipped with the binary.
+[[bin]]
+name = "build_concept_vectors"
+path = "build_assets/build_concept_vectors.rs"
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 

@@ -1,11 +1,21 @@
 mod ai;
-mod arabic;
+// MIG-013 §1A: visibility widened so `build_concept_vectors` [[bin]]
+// can name `arabic::Lang` (the language enum used by lexicon::ConceptRecord).
+pub mod arabic;
 mod bases;
+// MIG-013 §1A: CTSE Bridge Vector Store. Public so the offline
+// `build_concept_vectors` [[bin]] can reference layout constants
+// (ASSET_MAGIC, VECTOR_DIM) when emitting the binary asset.
+pub mod bridge_vectors;
 mod canvas;
 mod boot_bundle;
 mod cache;
 mod canonical;
-mod embeddings;
+// MIG-013 §1A: visibility widened from `mod` to `pub mod` so the
+// offline `build_concept_vectors` [[bin]] target can call
+// `embeddings::embed_passages_standalone`. No behavioral change —
+// purely additive: in-crate access paths are unchanged.
+pub mod embeddings;
 mod embeds;
 mod dataview;
 mod file_kinds;
@@ -16,7 +26,11 @@ mod libraries;
 mod mig003_step4;
 mod sight;
 mod lenses;
-mod lexicon;
+// MIG-013 §1A: visibility widened so the offline `build_concept_vectors`
+// [[bin]] can call `lexicon::parse`. The M11 zero-diff invariant covers
+// `src-tauri/src/lexicon/**` (the data + module sources), not `lib.rs`.
+// Verified by `git diff src-tauri/src/lexicon/` returning empty.
+pub mod lexicon;
 mod search;
 mod sky_backfill;
 mod map;
