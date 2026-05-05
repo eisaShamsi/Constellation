@@ -1877,13 +1877,6 @@
     "semantic": "S",
     "concept": "≈"
   },
-  "ctse": {
-    "firstFillProgress": "Linking vocabulary… {processed} / {total}",
-    "firstFillDone": "Vocabulary linked",
-    "backfillProgress": "Resolving concepts… {processed} / {total}",
-    "backfillDone": "Concepts resolved",
-    "cancelled": "Cancelled"
-  },
   "skyView": {
     "noNotes": "No notes to display",
     "controls": {

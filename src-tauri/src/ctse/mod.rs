@@ -1,282 +1,45 @@
-//! Constellation Terms Scanning Engine — Bridge Adapter (MIG-013 §1B).
+//! Constellation Terms Scanning Engine — Bridge Adapter (MIG-013).
 //!
-//! Resolves a user-library term to its M11 concept ID. Two paths:
+//! Two surfaces:
 //!
-//! 1. **Fast path**: exact-form lookup against the M11 lexicon
-//!    (`lexicon::LexiconGraph::find_nodes`). O(|lemma|) FST query;
-//!    no ONNX inference. Hits ~80% of expected terms.
-//! 2. **Slow path**: embed the term via multilingual-e5-small and
-//!    cosine-NN against the baked concept-vector matrix
-//!    (`bridge_vectors::ConceptVectorStore::nearest_concept`). One
-//!    ~10 ms ONNX inference + ~5 ms k-NN. Used only for terms M11
-//!    doesn't have exact-form coverage for (proper nouns, code
-//!    identifiers, regional variants).
+//! - [`hooks`] — write-time `term_vocab` ledger maintenance. Every
+//!   note save calls `hooks::on_note_indexed` to apply a signed
+//!   per-term delta against the shadow vocabulary table. Delete-path
+//!   uses `hooks::on_note_deleted`. Pure local bookkeeping; no ONNX,
+//!   no concept resolution.
 //!
-//! ## Public surface
+//! - [`search`] — query-time concept expansion. The `ctse_search_by_concept`
+//!   Tauri command embeds the user query, finds the top-K nearest
+//!   M11 concepts via cosine k-NN against the baked
+//!   `bridge_vectors` matrix, expands each concept to its
+//!   multilingual lemmas via an in-memory `concept_id → [lemmas]`
+//!   map (built once at boot from `LexiconGraph`), and runs an
+//!   FTS5 OR-clause MATCH against `notes_fts`. Cross-language
+//!   search "for free" — typing "knowledge" surfaces "معرفة"
+//!   notes because both lemmas live under the same M11 concept.
 //!
-//! - [`resolve_term_pure`] — testable, dependency-injected core.
-//!   Takes a graph, a vector store, and an `embed_query` callback;
-//!   returns the resolved concept ID or `None`.
-//! - [`resolve_term_to_concept`] — Tauri-context wrapper that pulls
-//!   the lexicon singleton, the bridge-vector singleton, and the
-//!   embedding engine from app state. The intended caller for
-//!   §1C's write-time hooks.
+//! ## Why query-time, not document-side concept tagging
 //!
-//! ## Threshold
-//!
-//! `DEFAULT_THRESHOLD = 0.78` — initial guess from the e5 model
-//! card. Tuned empirically in §1D once Boss reports query-quality
-//! signal on his library.
+//! Earlier MIG-013 §1D drafts pre-computed
+//! `term_vocab.bridge_concept_id` for every user term (eager
+//! tagging) plus a slow-path ONNX backfill for terms M11 didn't
+//! cover. Boss-test surfaced that an encyclopedic 7,639-note
+//! library produced 5.7M `term_vocab` rows (50K stems + 5.68M
+//! bigrams) and that the slow-path projected at multiple hours of
+//! ONNX inference. The dominant industry pattern — Lucene
+//! `SynonymGraphFilter`, SQLite FTS5 Method 2, CLIR query
+//! translation, Primo controlled-vocabulary expansion — runs
+//! synonym/concept expansion at query time, not at index time.
+//! Constellation now does the same. The `bridge_concept_id`
+//! column stays as dead schema (idempotent migrations preserved
+//! for forward-compat); nothing reads or writes it.
 //!
 //! ## M11 zero-touch
 //!
-//! This module reads `LexiconGraph::get()` and indexes
-//! `graph.nodes[idx].concept_id` directly. Both the method and the
-//! field were already public before MIG-013; no lexicon-module
-//! source is modified.
+//! Both surfaces consume `LexiconGraph` and `bridge_vectors`
+//! read-only. `lexicon/` source files have a zero-line diff at
+//! every CTSE commit (verified mechanically by
+//! `git diff src-tauri/src/lexicon/` returning empty).
 
-pub mod backfill;
-pub mod first_fill;
 pub mod hooks;
 pub mod search;
-
-use crate::arabic::Lang;
-use crate::bridge_vectors::{self, ConceptVectorStore};
-use crate::lexicon::LexiconGraph;
-
-/// Default cosine threshold for the slow path. Below this, the
-/// nearest concept is treated as "too far" and the term is left
-/// unresolved (`None`). 0.78 is an initial empirical guess from
-/// the multilingual-e5-small model card; will be tuned in §1D.
-pub const DEFAULT_THRESHOLD: f32 = 0.78;
-
-/// Pure resolver used by tests and by the AppHandle wrapper.
-///
-/// `embed_query` is invoked **only when the fast path misses** — so
-/// callers are encouraged to defer engine init until really needed.
-/// The closure must produce a `VECTOR_DIM`-long L2-normalized vector
-/// (the same shape `bridge_vectors::nearest_concept` expects).
-pub fn resolve_term_pure<F>(
-    graph: &LexiconGraph,
-    store: &ConceptVectorStore,
-    embed_query: F,
-    term: &str,
-    lang: Lang,
-    threshold: f32,
-) -> Option<String>
-where
-    F: FnOnce(&str) -> Option<Vec<f32>>,
-{
-    // ── Fast path: M11 exact-form lookup ──
-    let nodes = graph.find_nodes(lang, term);
-    if let Some(&first_idx) = nodes.first() {
-        if let Some(node) = graph.nodes.get(first_idx as usize) {
-            return Some(node.concept_id.clone());
-        }
-    }
-
-    // ── Slow path: embed + cosine k-NN ──
-    let q = embed_query(term)?;
-    let (row, score) = store.nearest_concept(&q)?;
-    if score < threshold {
-        return None;
-    }
-    store.concept_id(row).map(str::to_string)
-}
-
-/// Multi-language M11 fast-path lookup. Tries every supported
-/// language's FST cache (15 microsecond-scale queries) and returns
-/// the first concept-id hit. Bigram tokens (joined by
-/// `BIGRAM_SEP`) are not lexicon-resolvable and return `None`
-/// without trying any language.
-///
-/// Pure, infallible, non-blocking. Used by the write-time hook
-/// (§1C, [`hooks::on_note_indexed`]) and as the fast half of the
-/// backfill resolver ([`resolve_term_multilang`]).
-pub fn fast_path_concept_id(graph: &LexiconGraph, term: &str) -> Option<String> {
-    if term.as_bytes().contains(&crate::fts5_tokenizer::BIGRAM_SEP) {
-        return None;
-    }
-    for &lang in Lang::all() {
-        let nodes = graph.find_nodes(lang, term);
-        if let Some(&first_idx) = nodes.first() {
-            if let Some(node) = graph.nodes.get(first_idx as usize) {
-                return Some(node.concept_id.clone());
-            }
-        }
-    }
-    None
-}
-
-/// Backfill-mode resolver. Tries every supported language for fast-path
-/// before falling to the slow-path (e5 inference + cosine k-NN against
-/// the 20K M11 concept matrix).
-///
-/// Used by `ctse::backfill::ctse_run_backfill` to populate
-/// `term_vocab.bridge_concept_id` for rows the write-time hook left
-/// NULL — either because all 15 languages missed in fast path, or
-/// because the row pre-dates §1C and never saw the hook at all.
-///
-/// Returns:
-/// - `Ok(Some(concept_id))` — resolved (fast or slow path).
-/// - `Ok(None)` — bigram token, no fast-path hit AND slow-path either
-///   missed or scored below `DEFAULT_THRESHOLD`. Caller should write
-///   the sentinel value so the term isn't retried.
-/// - `Err(_)` — engine init failure or DB-side hard error.
-pub fn resolve_term_multilang(
-    app: &tauri::AppHandle,
-    term: &str,
-) -> Result<Option<String>, String> {
-    let graph = LexiconGraph::get();
-    if let Some(cid) = fast_path_concept_id(graph, term) {
-        return Ok(Some(cid));
-    }
-    // Bigrams already filtered out in fast_path_concept_id; bail
-    // before incurring slow-path cost (would just produce noise).
-    if term.as_bytes().contains(&crate::fts5_tokenizer::BIGRAM_SEP) {
-        return Ok(None);
-    }
-
-    // Slow path: embed term and cosine-NN against the baked matrix.
-    let q = match crate::embeddings::constellation_embed_text(app.clone(), term.to_string()) {
-        Ok(v) => v,
-        Err(_) => return Ok(None),
-    };
-    let store = bridge_vectors::get();
-    let (row, score) = match store.nearest_concept(&q) {
-        Some(v) => v,
-        None => return Ok(None),
-    };
-    if score < DEFAULT_THRESHOLD {
-        return Ok(None);
-    }
-    Ok(store.concept_id(row).map(str::to_string))
-}
-
-/// Tauri-context wrapper. Resolves a term to its M11 concept ID
-/// using the live lexicon, the baked bridge-vector store, and the
-/// existing embedding engine.
-///
-/// Returns:
-/// - `Ok(Some(concept_id))` — resolved (fast or slow path).
-/// - `Ok(None)` — no fast-path hit AND slow-path score below
-///   `DEFAULT_THRESHOLD` (or slow-path embedding failed cleanly).
-/// - `Err(_)` — only on hard failures upstream of resolution
-///   (engine init failure cascading from a missing model file).
-pub fn resolve_term_to_concept(
-    app: &tauri::AppHandle,
-    term: &str,
-    lang: Lang,
-) -> Result<Option<String>, String> {
-    let graph = LexiconGraph::get();
-    let store = bridge_vectors::get();
-    // Borrow `app` for the closure without cloning the AppHandle on
-    // the fast path (where the closure is never invoked).
-    let app_ref = app;
-    let resolved = resolve_term_pure(
-        graph,
-        store,
-        |t: &str| crate::embeddings::constellation_embed_text(app_ref.clone(), t.to_string()).ok(),
-        term,
-        lang,
-        DEFAULT_THRESHOLD,
-    );
-    Ok(resolved)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::bridge_vectors::VECTOR_DIM;
-
-    /// Fast path: a known M11 lemma resolves without invoking the
-    /// slow-path closure.
-    #[test]
-    fn fast_path_resolves_known_lemma_without_calling_slow_path() {
-        let graph = LexiconGraph::get();
-        let store = bridge_vectors::get();
-        let result = resolve_term_pure(
-            graph,
-            store,
-            |_t| panic!("slow path must NOT be invoked when fast path hits"),
-            "book",
-            Lang::En,
-            DEFAULT_THRESHOLD,
-        );
-        assert!(
-            result.is_some(),
-            "M11 covers 'book' in English; fast path should succeed"
-        );
-        let cid = result.unwrap();
-        assert!(
-            cid.starts_with("c:"),
-            "concept id should be M11-namespaced, got {cid:?}"
-        );
-    }
-
-    /// Slow path with a zero query vector returns `None` (every
-    /// dot product is 0, well below the threshold). Confirms the
-    /// threshold gate is wired correctly.
-    #[test]
-    fn slow_path_zero_query_returns_none_below_threshold() {
-        let graph = LexiconGraph::get();
-        let store = bridge_vectors::get();
-        let result = resolve_term_pure(
-            graph,
-            store,
-            |_t| Some(vec![0.0f32; VECTOR_DIM]),
-            "garblefuxxzqq-not-in-m11",
-            Lang::En,
-            DEFAULT_THRESHOLD,
-        );
-        assert!(
-            result.is_none(),
-            "zero-query slow path must score 0.0 < threshold {DEFAULT_THRESHOLD}"
-        );
-    }
-
-    /// Slow path with a strict threshold of 1.01 (impossible to
-    /// reach) returns None even if the fake embed vector happens
-    /// to match a concept perfectly. Confirms the threshold is
-    /// strictly less-than (a perfect 1.0 score must clear 0.78
-    /// but not 1.01).
-    #[test]
-    fn slow_path_above_one_threshold_rejects_everything() {
-        let graph = LexiconGraph::get();
-        let store = bridge_vectors::get();
-        // Use the first row of the actual store — guaranteed to
-        // produce score 1.0 against itself.
-        let mut probe = vec![0.0f32; VECTOR_DIM];
-        probe[0] = 1.0; // arbitrary non-zero query
-        let result = resolve_term_pure(
-            graph,
-            store,
-            |_t| Some(probe.clone()),
-            "garblefuxxzqq-not-in-m11",
-            Lang::En,
-            1.01,
-        );
-        assert!(result.is_none());
-    }
-
-    /// Slow path with a permissive threshold of 0.0 always returns
-    /// *some* concept (the nearest one, however weak). Confirms the
-    /// fallthrough returns `Some` when score ≥ threshold.
-    #[test]
-    fn slow_path_zero_threshold_always_returns_some() {
-        let graph = LexiconGraph::get();
-        let store = bridge_vectors::get();
-        let mut probe = vec![0.0f32; VECTOR_DIM];
-        probe[0] = 1.0;
-        let result = resolve_term_pure(
-            graph,
-            store,
-            |_t| Some(probe.clone()),
-            "garblefuxxzqq-not-in-m11",
-            Lang::En,
-            0.0,
-        );
-        assert!(result.is_some());
-        assert!(result.unwrap().starts_with("c:"));
-    }
-}

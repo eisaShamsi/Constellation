@@ -1,4 +1,4 @@
-//! CTSE write-time hooks (MIG-013 §1C).
+//! CTSE write-time hooks (MIG-013 §1C, query-time-expansion variant).
 //!
 //! Maintains `term_vocab` incrementally as notes are saved or deleted.
 //! Each save delta is computed from the old vs. new body_text using the
@@ -13,10 +13,30 @@
 //! module's hooks. There is no `populate_*` / `rebuild_*` command and
 //! no boot-time re-walk of the corpus — the index is always current.
 //!
+//! ## What this hook does NOT do anymore
+//!
+//! Earlier §1C drafts also fast-path-resolved each new term to its
+//! M11 concept ID and stored the result in `term_vocab.bridge_concept_id`
+//! for use in cross-language search. **That column is now dead schema**
+//! (left in place for forward-compat, but never read or written from
+//! the hook). Cross-language search runs entirely at query time —
+//! `ctse::search::ctse_search_by_concept` embeds the user query, finds
+//! top-K M11 concepts, and expands them to multilingual lemmas in
+//! memory. Pre-computing the term→concept map per save was a Working
+//! Agreement #5 violation: the dominant industry pattern (Lucene
+//! `SynonymGraphFilter`, SQLite FTS5 Method 2, CLIR query-translation,
+//! Primo controlled-vocabulary expansion) all do query-time expansion,
+//! not document-side concept tagging. Removing the per-save fast-path
+//! call eliminates the bigram-explosion + slow-path-takes-hours
+//! pathology entirely.
+//!
+//! What's left here is the bare ledger: maintain `(doc_count,
+//! total_count)` per term so the Index panel and other consumers see
+//! a current vocabulary view.
+//!
 //! ## Why both `total_count` AND `doc_count` are maintained
 //!
-//! - `total_count` — total occurrences across the corpus. Used by the
-//!   backfill ordering (TF-IDF descending = rarest terms first) and by
+//! - `total_count` — total occurrences across the corpus. Used by
 //!   the Index panel for "popular terms" lists.
 //! - `doc_count` — number of distinct notes containing the term. The
 //!   IDF half of TF-IDF and a useful cardinality signal in its own right.
@@ -25,30 +45,17 @@
 //! token-count map is differenced against the new body's, yielding a
 //! signed delta per term.
 //!
-//! ## Fast-path concept resolution
-//!
-//! For each term that's NEW to `term_vocab` (didn't exist before this
-//! save), we attempt an M11 fast-path lookup across all 15 supported
-//! languages. On hit, `bridge_concept_id` is populated immediately
-//! (microseconds — FST query, no ONNX). On miss, the column stays NULL
-//! and the slow-path `ctse_run_backfill` Tauri command (§1C-4) picks
-//! it up later via e5 inference.
-//!
-//! Bigram tokens (joined by `BIGRAM_SEP`, U+001F) are skipped from
-//! resolution — the lexicon doesn't store bigrams, and a bigram sent
-//! to the slow path returns noise.
-//!
 //! ## Hot-path invariants
 //!
-//! - **No ONNX** — write path must never call the embedding engine.
-//!   Slow-path resolution is exclusively the backfill's job.
+//! - **No ONNX, no concept lookup** — write path is purely local
+//!   bookkeeping. Cross-language semantics live entirely on the read
+//!   side.
 //! - **No allocations in the steady state** — stopwords are cached in
 //!   a `OnceLock`, hash maps are sized from the token vec length.
 //! - **Body cap** — pathological bodies (Wikipedia paste, hex blob)
 //!   are clipped to 1 MiB on a UTF-8 boundary, mirroring the
 //!   `BODY_CAP_BYTES` precedent set by the original Phase 1 commit.
 
-use crate::lexicon::LexiconGraph;
 use rusqlite::{params, Connection};
 use std::collections::{HashMap, HashSet};
 use std::sync::OnceLock;
@@ -130,16 +137,10 @@ fn compute_delta(
 }
 
 /// Apply a delta map to `term_vocab` inside the caller's connection.
-///
-/// Returns the list of terms that were newly inserted (didn't exist in
-/// `term_vocab` before this call). Used by the caller to drive
-/// fast-path concept resolution on just the fresh additions.
-fn apply_delta(conn: &Connection, delta: &HashMap<String, Delta>) -> Result<Vec<String>, String> {
+fn apply_delta(conn: &Connection, delta: &HashMap<String, Delta>) -> Result<(), String> {
     if delta.is_empty() {
-        return Ok(Vec::new());
+        return Ok(());
     }
-    let mut new_terms: Vec<String> = Vec::new();
-
     let mut select_existing = conn
         .prepare("SELECT total_count FROM term_vocab WHERE term = ?1")
         .map_err(|e| format!("term_vocab existence prepare failed: {}", e))?;
@@ -176,37 +177,13 @@ fn apply_delta(conn: &Connection, delta: &HashMap<String, Delta>) -> Result<Vec<
             insert_stmt
                 .execute(params![term, initial_doc, d.total as i64])
                 .map_err(|e| format!("term_vocab insert failed for {term:?}: {}", e))?;
-            new_terms.push(term.clone());
-        }
-    }
-    Ok(new_terms)
-}
-
-/// Apply fast-path concept resolution to a list of newly-inserted
-/// terms. Slow-path (ONNX) resolution is deferred to the backfill.
-/// Reuses the shared multi-language fast-path helper from
-/// [`super::fast_path_concept_id`].
-fn fast_path_resolve_new_terms(conn: &Connection, terms: &[String]) -> Result<(), String> {
-    if terms.is_empty() {
-        return Ok(());
-    }
-    let graph = LexiconGraph::get();
-    let mut update = conn
-        .prepare("UPDATE term_vocab SET bridge_concept_id = ?1 WHERE term = ?2")
-        .map_err(|e| format!("term_vocab bridge update prepare failed: {}", e))?;
-    for term in terms {
-        if let Some(cid) = super::fast_path_concept_id(graph, term) {
-            update
-                .execute(params![cid, term])
-                .map_err(|e| format!("term_vocab bridge update failed for {term:?}: {}", e))?;
         }
     }
     Ok(())
 }
 
 /// Hook fired after a single note has been (re)indexed. Computes the
-/// delta from old to new body and applies it to `term_vocab`. New
-/// terms get a fast-path concept lookup (M11 only — no ONNX).
+/// delta from old to new body and applies it to `term_vocab`.
 ///
 /// `old_body` is `None` for first-time indexing (the path didn't exist
 /// in `note_meta` before this save). In that case every token in the
@@ -224,16 +201,13 @@ pub fn on_note_indexed(
     let old = old_body.map(token_counts).unwrap_or_default();
     let new = token_counts(new_body);
     let delta = compute_delta(&old, &new);
-    let new_terms = apply_delta(conn, &delta)?;
-    fast_path_resolve_new_terms(conn, &new_terms)?;
-    Ok(())
+    apply_delta(conn, &delta)
 }
 
 /// Hook fired after a note has been deleted from `note_meta`. Subtracts
 /// the deleted body's term contributions from `term_vocab`. Rows that
-/// drop to zero `total_count` are kept as tombstones with their
-/// `bridge_concept_id` intact — the term may reappear in a future save,
-/// and re-resolving the concept on every revival is wasteful.
+/// drop to zero `total_count` are kept as tombstones — the term may
+/// reappear in a future save and re-counting from zero is correct.
 pub fn on_note_deleted(
     conn: &Connection,
     _note_path: &str,
@@ -250,8 +224,7 @@ pub fn on_note_deleted(
             },
         );
     }
-    apply_delta(conn, &delta)?;
-    Ok(())
+    apply_delta(conn, &delta)
 }
 
 #[cfg(test)]
@@ -271,25 +244,20 @@ mod tests {
         .unwrap();
     }
 
-    fn count_row(conn: &Connection, term: &str) -> Option<(i64, i64, Option<String>)> {
+    fn count_row(conn: &Connection, term: &str) -> Option<(i64, i64)> {
         conn.query_row(
-            "SELECT doc_count, total_count, bridge_concept_id FROM term_vocab WHERE term = ?1",
+            "SELECT doc_count, total_count FROM term_vocab WHERE term = ?1",
             params![term],
-            |row| {
-                Ok((
-                    row.get::<_, i64>(0)?,
-                    row.get::<_, i64>(1)?,
-                    row.get::<_, Option<String>>(2)?,
-                ))
-            },
+            |row| Ok((row.get::<_, i64>(0)?, row.get::<_, i64>(1)?)),
         )
         .ok()
     }
 
     /// First-time index of a note inserts its tokens with the right
-    /// counts and resolves M11-known terms via the fast path.
+    /// counts. (No fast-path concept resolution anymore — that's a
+    /// query-time concern in `ctse::search`.)
     #[test]
-    fn first_index_inserts_and_fast_path_resolves() {
+    fn first_index_inserts_with_correct_counts() {
         let conn = Connection::open_in_memory().unwrap();
         make_term_vocab(&conn);
 
@@ -298,11 +266,10 @@ mod tests {
         let book = count_row(&conn, "book").expect("'book' should be inserted");
         assert_eq!(book.0, 1, "doc_count for 'book'");
         assert!(book.1 >= 2, "total_count for 'book' should be at least 2");
-        assert!(
-            book.2.as_deref().map(|s| s.starts_with("c:")).unwrap_or(false),
-            "fast path should resolve 'book' to a c: concept id; got {:?}",
-            book.2
-        );
+
+        let know = count_row(&conn, "knowledge").expect("'knowledge' should be inserted");
+        assert_eq!(know.0, 1, "doc_count for 'knowledge'");
+        assert!(know.1 >= 1, "total_count for 'knowledge' should be at least 1");
     }
 
     /// A second save of the same note with the same body yields no row
@@ -358,28 +325,5 @@ mod tests {
         let book = count_row(&conn, "book").expect("tombstone row remains");
         assert_eq!(book.0, 0);
         assert_eq!(book.1, 0);
-        assert!(
-            book.2.is_some(),
-            "bridge_concept_id is preserved across delete"
-        );
-    }
-
-    /// Bigram tokens (containing the FTS5 sentinel byte) skip fast-path
-    /// resolution — bigrams are not lexicon-resolvable.
-    #[test]
-    fn bigram_tokens_stay_null_after_fast_path() {
-        let conn = Connection::open_in_memory().unwrap();
-        make_term_vocab(&conn);
-        // Inject a synthetic bigram row directly so we don't rely on
-        // tokenizer internals to produce one.
-        let bigram = format!("foo\u{001f}bar");
-        conn.execute(
-            "INSERT INTO term_vocab (term, doc_count, total_count, bridge_concept_id) VALUES (?1, 1, 1, NULL)",
-            params![bigram],
-        )
-        .unwrap();
-        fast_path_resolve_new_terms(&conn, &[bigram.clone()]).unwrap();
-        let row = count_row(&conn, &bigram).unwrap();
-        assert!(row.2.is_none(), "bigram must remain unresolved (NULL)");
     }
 }

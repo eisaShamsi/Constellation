@@ -1842,13 +1842,6 @@
     "semantic": "د",
     "concept": "≈"
   },
-  "ctse": {
-    "firstFillProgress": "ربط المفردات… {processed} / {total}",
-    "firstFillDone": "تم ربط المفردات",
-    "backfillProgress": "تحديد المفاهيم… {processed} / {total}",
-    "backfillDone": "تم تحديد المفاهيم",
-    "cancelled": "ملغى"
-  },
   "skyView": {
     "noNotes": "لا توجد ملاحظات لعرضها",
     "controls": {

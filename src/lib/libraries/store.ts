@@ -2510,15 +2510,18 @@ export interface CtseConceptSearchOptions {
 	min_score?: number | null;
 }
 
-/** Embed the query, map to top-K M11 concepts, expand to every
- *  `term_vocab` row whose `bridge_concept_id` matches, and run an
- *  FTS5 OR-clause MATCH against `notes_fts`.
+/** Embed the query, map to top-K M11 concepts, expand each concept
+ *  to its multilingual lemmas via an in-memory map, and run an FTS5
+ *  OR-clause MATCH against `notes_fts`.
  *
  *  Returns notes regardless of script — typing "knowledge" surfaces
- *  notes containing "معرفة" because both lemmas resolve to the same
- *  M11 concept. Per-keystroke callers MUST debounce (≥300 ms;
- *  CLAUDE.md Rule 3) — each call is one e5 inference + cosine sweep
- *  + FTS5 query. */
+ *  notes containing "معرفة" because both lemmas live under the same
+ *  M11 concept. The expansion happens entirely at query time
+ *  (Lucene `SynonymGraphFilter` / SQLite FTS5 Method 2 / CLIR
+ *  query-translation pattern); no per-term backfill or first-fill
+ *  is required. Per-keystroke callers MUST debounce (≥300 ms;
+ *  CLAUDE.md Rule 3) — each call is one e5 inference + cosine
+ *  sweep + FTS5 query. */
 export async function ctseSearchByConcept(
 	query: string,
 	options?: CtseConceptSearchOptions,
@@ -2532,76 +2535,6 @@ export async function ctseSearchByConcept(
 		},
 	});
 }
-
-/** True iff the `term_vocab` ledger is empty AND there's at least one
- *  note with body content — i.e. an existing library that pre-dates
- *  CTSE §1C and needs a one-shot first-fill. Frontend gates the
- *  `ctseFirstFill` call on this; on a fresh empty universe it returns
- *  false and there's nothing to do. */
-export async function ctseFirstFillStatus(): Promise<boolean> {
-	return await invoke('ctse_first_fill_status');
-}
-
-/** Walk every `note_meta` row and re-fire the per-save term-vocab hook
- *  with `old_body = None`, populating `term_vocab` from scratch. Emits
- *  `ctse-firstfill-progress` events on a `CtseFillProgress` payload.
- *  Resumable via [`ctseCancelFirstFill`]. Should be called exactly
- *  once per universe (the gate is [`ctseFirstFillStatus`]). */
-export async function ctseFirstFill(): Promise<void> {
-	return await invoke('ctse_first_fill');
-}
-
-/** Request that the running first-fill stop at the next safe point.
- *  Idempotent. */
-export async function ctseCancelFirstFill(): Promise<void> {
-	return await invoke('ctse_cancel_first_fill');
-}
-
-/** Count of `term_vocab` rows still missing a `bridge_concept_id`.
- *  Frontend fires `ctseRunBackfill` if > 0 after first-fill (or on
- *  cold boot if no first-fill is needed). */
-export async function ctseBackfillStatus(): Promise<number> {
-	return await invoke('ctse_backfill_status');
-}
-
-/** Resolve every NULL `bridge_concept_id` row via the slow path
- *  (e5 embedding + cosine k-NN over the 20K concept matrix). Sentinels
- *  unresolved terms with `'-'` so re-runs visit only fresh NULLs.
- *  Emits `ctse-backfill-progress` events on a `CtseFillProgress`
- *  payload. */
-export async function ctseRunBackfill(): Promise<void> {
-	return await invoke('ctse_run_backfill');
-}
-
-/** Request that the running backfill stop at the next safe point.
- *  Idempotent. */
-export async function ctseCancelBackfill(): Promise<void> {
-	return await invoke('ctse_cancel_backfill');
-}
-
-/** Progress payload shared by `ctse-firstfill-progress` and
- *  `ctse-backfill-progress` events. Same shape so a single status-bar
- *  strip can render either stream by switching the event name. */
-export interface CtseFillProgress {
-	processed: number;
-	total: number;
-	done: boolean;
-	cancelled: boolean;
-}
-
-/** Module-scoped store carrying the latest CTSE fill state. Tagged
- *  with which phase is active so the UI can label it appropriately
- *  ("Linking terms…" for first-fill, "Resolving concepts…" for
- *  backfill). `null` = no job running; the strip hides itself.
- *
- *  Set by the boot-time orchestrator in `+layout.svelte` which listens
- *  to both Tauri event streams. */
-export type CtseFillPhase = 'first-fill' | 'backfill';
-export interface CtseFillStatus {
-	phase: CtseFillPhase;
-	progress: CtseFillProgress;
-}
-export const ctseFillStatus = writable<CtseFillStatus | null>(null);
 
 // ─── MIG-012 — Index search history ───
 

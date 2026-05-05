@@ -1,53 +1,83 @@
-//! CTSE concept-based semantic search (MIG-013 §1D).
+//! CTSE concept-based semantic search (MIG-013 §1D, query-time
+//! expansion architecture).
 //!
-//! Closes the read path: a user query is embedded once, mapped to its
-//! nearest M11 concepts, expanded back to every term in `term_vocab`
-//! that resolves to those concepts, and finally surfaced as note hits
-//! via the existing `notes_fts` MATCH pipeline.
+//! ## How it closes the cross-language loop
 //!
-//! ## Why this gives cross-language search "for free"
+//! 1. The user's query is embedded once via multilingual-e5-small.
+//! 2. Cosine k-NN against the baked 20K M11 concept-vector matrix
+//!    yields the top-K nearest concept IDs (each `c:…`).
+//! 3. For each surviving concept ID we expand it back to its lemmas
+//!    in every supported language using a process-wide
+//!    `concept_id → [lemma]` index built once at boot from
+//!    `LexiconGraph`. So `c:knowledge` expands to `["knowledge",
+//!    "معرفة", "wissen", "savoir", …]`.
+//! 4. Those lemmas are joined into a single FTS5 OR-clause MATCH
+//!    against `notes_fts`. The FTS5 tokenizer stems every lemma the
+//!    same way it stemmed the indexed bodies, so "knowledge" matches
+//!    documents containing "knowledge", "knowl-", or any of the same
+//!    concept's other-language lemmas.
 //!
-//! Every M11 concept ships with its multilingual lemma set (English,
-//! Arabic, Spanish, ...). At first-fill, Arabic terms like `معرفة`
-//! and English terms like `knowledge` resolve to the same concept id.
-//! When the user types "knowledge", the e5 embedding lands close to
-//! that concept. The OR-clause built from term_vocab includes both
-//! lemmas, so the FTS5 MATCH surfaces notes regardless of which
-//! script they're written in.
+//! ## Why query-time expansion (not pre-computed `bridge_concept_id`)
+//!
+//! Mature search systems uniformly do **query-time concept/synonym
+//! expansion**, not document-side concept tagging:
+//!
+//! - **Lucene/Elasticsearch**: `SynonymGraphFilter` (2017+) is
+//!   recommended at query time over the deprecated index-time
+//!   `SynonymFilter`, because index-time flattens token graphs and
+//!   breaks phrase queries.
+//! - **SQLite FTS5**: documented "Method 2 — query-time synonym
+//!   expansion" is one of the three core synonym strategies.
+//! - **CLIR (Cross-Language Information Retrieval)**: query
+//!   translation is the canonical technique. The query is short and
+//!   dynamic; the corpus is large and static.
+//! - **Library platforms (Primo, Ex Libris)**: controlled-vocabulary
+//!   expansion runs at query time so the index doesn't need to be
+//!   re-tagged when the vocabulary changes.
+//!
+//! Constellation's CTSE follows the same pattern: M11 is the
+//! controlled vocabulary; user queries get expanded into M11
+//! concept IDs and then into multilingual lemmas; the FTS5 MATCH
+//! against `notes_fts` is the same shape every other lexical search
+//! uses. There is no per-term bridge column, no boot-time backfill,
+//! no first-fill — adding a new M11 release picks up automatically
+//! on the next query.
 //!
 //! ## Cost profile
 //!
-//! - One e5 inference (~50 ms) per query.
-//! - One cosine sweep over 20K × 384 floats (~5 ms).
-//! - One `term_vocab` lookup (indexed, sub-ms).
-//! - One FTS5 MATCH with an OR clause (linear in matched rows; bounded
-//!   by `LIMIT`).
-//!
-//! Total: typical query lands in ~60–80 ms end-to-end. Frontend MUST
-//! debounce ≥300 ms (CLAUDE.md Rule 3) to keep the IPC channel cool.
+//! - Boot: build `concept_id → lemmas` map once via a single pass
+//!   over `LexiconGraph::nodes`. ~10 ms on Boss's 200K-node M11,
+//!   ~5 MB resident. Cached forever via `OnceLock`.
+//! - Per query: ~50 ms e5 inference + ~5 ms cosine k-NN + sub-ms
+//!   in-memory expansion + ~20–50 ms FTS5 MATCH.
+//! - Frontend MUST debounce ≥300 ms (CLAUDE.md Rule 3).
 
-use rusqlite::{params, params_from_iter};
+use rusqlite::params;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::sync::OnceLock;
 use tauri::Manager;
 
 use crate::bridge_vectors;
 use crate::embeddings;
+use crate::lexicon::LexiconGraph;
 use crate::search::SearchState;
 
-/// How many nearest concepts to consider per query. Each concept may
-/// have ~5–20 terms in `term_vocab` mapping to it (multi-script
-/// coverage), so the OR-clause cardinality is roughly K × 10.
+/// Top-K nearest concept count. Each concept expands to ~10–15
+/// lemmas (all the languages M11 covers), so the OR-clause has
+/// roughly K × 12 entries. K=10 lands ~120 lemmas — comfortably
+/// within FTS5's parser budget.
 const CONCEPT_TOP_K: usize = 10;
 
-/// Minimum cosine score for a concept to be included. Below this, the
-/// concept is "too far" from the query and would dilute results with
-/// noise. Tunable via the request payload (`min_score`).
+/// Minimum cosine score for a concept to be included. Below this
+/// the concept is "too far" from the query and would dilute results
+/// with semantic noise. Tunable via the request payload.
 const DEFAULT_MIN_SCORE: f32 = 0.55;
 
-/// Hard cap on the OR-clause cardinality to avoid pathological FTS5
-/// query parses on rare multi-concept queries. 200 quoted terms in
-/// one MATCH is comfortably handled by SQLite's parser.
-const TERM_CAP: usize = 200;
+/// Hard cap on lemma cardinality in the FTS5 OR-clause. 200 quoted
+/// terms in one MATCH is comfortably handled by SQLite's parser;
+/// going much higher risks "too many query terms" errors.
+const LEMMA_CAP: usize = 200;
 
 #[derive(Debug, Serialize)]
 pub struct ConceptSearchHit {
@@ -55,7 +85,7 @@ pub struct ConceptSearchHit {
     pub name: String,
     pub library_name: String,
     /// FTS5 `snippet()` output with CHAR(2)/CHAR(3) markers around
-    /// matched tokens. Frontend renders these as `<mark>` spans.
+    /// matched tokens. Frontend renders as `<mark>` spans.
     pub snippet: Option<String>,
 }
 
@@ -69,13 +99,44 @@ pub struct ConceptSearchRequest {
     pub min_score: Option<f32>,
 }
 
-/// Embed the query, map to top-K M11 concepts, expand to term_vocab,
-/// run an FTS5 OR-clause MATCH, return note hits with snippets.
+/// Process-wide `concept_id → [lemma]` reverse index. Built lazily
+/// on first call by walking `LexiconGraph::nodes` once. Each lemma
+/// appears once per concept it belongs to (multilingual coverage —
+/// "knowledge" and "معرفة" both land under `c:knowledge`).
+///
+/// Lemmas are stored as bare strings (no `Lang` tag) because the
+/// FTS5 tokenizer doesn't care about source language — it stems
+/// every input through the same pipeline. Including the language
+/// would add memory without adding retrieval signal.
+fn concept_lemmas() -> &'static HashMap<String, Vec<String>> {
+    static CACHE: OnceLock<HashMap<String, Vec<String>>> = OnceLock::new();
+    CACHE.get_or_init(|| {
+        let graph = LexiconGraph::get();
+        let mut map: HashMap<String, Vec<String>> = HashMap::with_capacity(20_000);
+        for node in &graph.nodes {
+            map.entry(node.concept_id.clone())
+                .or_default()
+                .push(node.lemma.clone());
+        }
+        // De-duplicate per concept (rare but possible if the same
+        // surface appears under multiple senses with the same
+        // concept ID). Cheap — concept lemma lists are small.
+        for lemmas in map.values_mut() {
+            lemmas.sort();
+            lemmas.dedup();
+        }
+        map
+    })
+}
+
+/// Embed the query, map to top-K M11 concepts, expand to their
+/// multilingual lemmas, run an FTS5 OR-clause MATCH, return note
+/// hits with snippets.
 ///
 /// Returns `Ok(Vec::new())` on empty/whitespace queries, on no
-/// concept above the threshold, and on no terms mapped to the
-/// surviving concepts. The caller (frontend) handles all three the
-/// same way: render an empty result set.
+/// concept above the score threshold, and on no lemmas (a concept
+/// with empty lemma list — vanishingly rare). The caller (frontend)
+/// renders all three the same: empty result set.
 #[tauri::command]
 pub fn ctse_search_by_concept(
     app: tauri::AppHandle,
@@ -103,51 +164,40 @@ pub fn ctse_search_by_concept(
         return Ok(Vec::new());
     }
 
-    // Steps 3–5 share the SearchState lock.
-    let state = app.state::<SearchState>();
-    let db = state.db.lock().map_err(|e| e.to_string())?;
-    let conn = db.as_ref().ok_or("Search database not initialized")?;
-
-    // Step 3 — pull every term_vocab row whose bridge_concept_id is in
-    // the surviving concept set. Skip bigrams (joined by U+001F /
-    // CHAR(31)) — they aren't lexicon-resolvable so should never have
-    // landed here in the first place, but defensive.
-    let placeholders = concept_ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
-    let term_sql = format!(
-        "SELECT term FROM term_vocab \
-         WHERE bridge_concept_id IN ({}) \
-           AND term NOT LIKE '%' || CHAR(31) || '%'",
-        placeholders
-    );
-    let terms: Vec<String> = {
-        let mut stmt = conn.prepare(&term_sql).map_err(|e| e.to_string())?;
-        let rows = stmt
-            .query_map(params_from_iter(concept_ids.iter()), |row| {
-                row.get::<_, String>(0)
-            })
-            .map_err(|e| e.to_string())?;
-        rows.filter_map(|r| r.ok()).collect()
-    };
-    if terms.is_empty() {
+    // Step 3 — expand each concept ID to its multilingual lemmas
+    // via the in-memory map. Union + dedupe across concepts.
+    let map = concept_lemmas();
+    let mut lemma_set: std::collections::HashSet<String> =
+        std::collections::HashSet::with_capacity(concept_ids.len() * 12);
+    for cid in &concept_ids {
+        if let Some(lemmas) = map.get(cid) {
+            for lemma in lemmas {
+                lemma_set.insert(lemma.clone());
+            }
+        }
+    }
+    if lemma_set.is_empty() {
         return Ok(Vec::new());
     }
 
-    // Step 4 — build the FTS5 MATCH query. Each term is wrapped in
+    // Step 4 — build the FTS5 MATCH query. Each lemma is wrapped in
     // double quotes so the FTS5 query parser treats it as a phrase
-    // (escapes special chars). Embedded `"` is doubled per FTS5
-    // grammar. The OR clause is capped at `TERM_CAP` to keep the
-    // parser in its happy path.
-    let match_query: String = terms
+    // (escaping special chars). Embedded `"` is doubled per FTS5
+    // grammar. Cardinality cap protects the parser.
+    let lemmas: Vec<String> = lemma_set.into_iter().take(LEMMA_CAP).collect();
+    let match_query: String = lemmas
         .iter()
-        .take(TERM_CAP)
         .map(|t| format!("\"{}\"", t.replace('"', "\"\"")))
         .collect::<Vec<_>>()
         .join(" OR ");
 
-    // Step 5 — FTS5 MATCH joined with note_meta. The library filter
-    // is applied as a separate clause (note_meta.library_name is
-    // indexed via `idx_note_library`, so the planner can intersect
-    // efficiently).
+    // Step 5 — FTS5 MATCH joined with note_meta. Optional library
+    // filter uses `idx_note_library` for an indexed intersection
+    // with the FTS5 result set.
+    let state = app.state::<SearchState>();
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let conn = db.as_ref().ok_or("Search database not initialized")?;
+
     let mut hits = Vec::new();
     if let Some(library) = request.library_name.as_deref() {
         let sql = "SELECT nm.path, nm.name, nm.library_name, \
@@ -192,4 +242,37 @@ pub fn ctse_search_by_concept(
         }
     }
     Ok(hits)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Sanity: the lazy `concept_id → lemmas` map covers a known
+    /// English lemma and an Arabic equivalent under the same
+    /// concept ID. This exercises both the cache build and the
+    /// cross-language coverage that the search path depends on.
+    #[test]
+    fn concept_lemmas_includes_book_in_multiple_languages() {
+        let map = concept_lemmas();
+        assert!(!map.is_empty(), "concept_lemmas map must not be empty");
+        // Find any concept whose English lemma is "book".
+        let book_concept = map
+            .iter()
+            .find(|(_, lemmas)| lemmas.iter().any(|l| l == "book"));
+        assert!(
+            book_concept.is_some(),
+            "M11 should have a concept whose lemmas include 'book'"
+        );
+        let (_, lemmas) = book_concept.unwrap();
+        // M11 ships multilingual coverage; assert at least one
+        // non-Latin-alphabet lemma is present (Arabic, CJK, etc.).
+        let has_non_latin = lemmas.iter().any(|l| {
+            l.chars().any(|c| !c.is_ascii() && c.is_alphabetic())
+        });
+        assert!(
+            has_non_latin,
+            "expected at least one non-ASCII lemma alongside 'book'; got {lemmas:?}",
+        );
+    }
 }

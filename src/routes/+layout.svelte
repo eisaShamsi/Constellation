@@ -73,15 +73,6 @@
 	import TagsPanel from '$lib/components/TagsPanel.svelte';
 
 	import { embedNotes, embeddingStatus } from '$lib/libraries/store';
-	// MIG-013 §1D — CTSE Bridge Adapter auto-fire on boot.
-	import {
-		ctseFirstFillStatus,
-		ctseFirstFill,
-		ctseBackfillStatus,
-		ctseRunBackfill,
-		ctseFillStatus,
-		type CtseFillProgress,
-	} from '$lib/libraries/store';
 	import DashboardView from '$lib/components/DashboardView.svelte';
 	import KnowledgeHealthDashboard from '$lib/components/KnowledgeHealthDashboard.svelte';
 	import TasksPanel from '$lib/components/TasksPanel.svelte';
@@ -3602,71 +3593,17 @@
 		pagePreview = { ...pagePreview, visible: false };
 	}
 
-	// ─── CTSE Bridge Adapter — boot-time first-fill + backfill ───
-	// MIG-013 §1D. Fires once after `graphReady` so `term_vocab` is
-	// always populated and every term has an attempt at concept
-	// resolution by the time the user types anything in SearchHub:
-	//
-	//   1. If the library pre-dates §1C → `term_vocab` is empty.
-	//      `ctseFirstFillStatus()` returns true, we re-fire the
-	//      per-save hook for every existing note inside chunked
-	//      transactions. Most terms get fast-path-resolved here.
-	//   2. After first-fill (or skipping it on already-populated
-	//      libraries), check `ctseBackfillStatus()`. If any rows
-	//      still have NULL `bridge_concept_id`, fire the slow-path
-	//      `ctse_run_backfill` (one e5 inference + cosine sweep per
-	//      term, ~50 ms each).
-	//
-	// Both jobs emit progress events. The status-bar strip in the
-	// template subscribes to `ctseFillStatus` and shows a single line
-	// of progress while either is active.
-	let ctseAutoFireDone = false;
-	$effect(() => {
-		if (!graphReady) return;
-		if (ctseAutoFireDone) return;
-		ctseAutoFireDone = true;
-		untrack(() => { void runCtseAutoFire(); });
-	});
-	async function runCtseAutoFire() {
-		try {
-			// Listeners first — small chance the Rust side emits before
-			// our await returns, but in practice the IPC round-trip is
-			// always slower than `listen()` setup.
-			const ffUnlisten = await listen<CtseFillProgress>('ctse-firstfill-progress', (event) => {
-				ctseFillStatus.set({ phase: 'first-fill', progress: event.payload });
-				if (event.payload.done) {
-					setTimeout(() => {
-						ctseFillStatus.update(s => (s && s.phase === 'first-fill' && s.progress.done) ? null : s);
-					}, 4000);
-				}
-			});
-			const bfUnlisten = await listen<CtseFillProgress>('ctse-backfill-progress', (event) => {
-				ctseFillStatus.set({ phase: 'backfill', progress: event.payload });
-				if (event.payload.done) {
-					setTimeout(() => {
-						ctseFillStatus.update(s => (s && s.phase === 'backfill' && s.progress.done) ? null : s);
-					}, 4000);
-				}
-			});
-			cleanupFns.push(() => { ffUnlisten(); });
-			cleanupFns.push(() => { bfUnlisten(); });
-
-			// Step 1 — first-fill if the library pre-dates §1C.
-			const firstFillNeeded = await ctseFirstFillStatus();
-			if (firstFillNeeded) {
-				await ctseFirstFill();
-			}
-			// Step 2 — backfill any still-NULL rows (the long-tail terms
-			// that fast-path missed and need a slow-path embed).
-			const backfillCount = await ctseBackfillStatus();
-			if (backfillCount > 0) {
-				await ctseRunBackfill();
-			}
-		} catch (err) {
-			console.error('[CTSE] boot-time auto-fire failed:', err);
-			ctseFillStatus.set(null);
-		}
-	}
+	// (MIG-013 §1D originally added a boot-time CTSE auto-fire that
+	// ran a first-fill + slow-path backfill on the existing library
+	// before the user could query. That index-time approach was
+	// retired — the dominant industry pattern (Lucene
+	// SynonymGraphFilter, SQLite FTS5 Method 2, CLIR query
+	// translation, Primo controlled-vocabulary expansion) does
+	// concept expansion at query time, not at index time. CTSE now
+	// follows that pattern: `ctse_search_by_concept` embeds the user
+	// query, finds top-K M11 concepts, and expands them to
+	// multilingual lemmas in memory — no per-term backfill, no
+	// status-bar strip, no boot wait. See `src-tauri/src/ctse/search.rs`.)
 
 	// ─── Index panel: FTS5 vocab read ───
 	// The Index panel is now backed by the `notes_vocab` virtual table
@@ -6200,38 +6137,6 @@
 	/>
 {/if}
 
-<!-- MIG-013 §1D — CTSE fill/backfill status strip. Fixed at the bottom
-     of the viewport when first-fill or backfill is running so the user
-     gets visible feedback during the (potentially many-minute) job
-     without modal interference. Hides itself 4 sec after `done`. -->
-{#if $ctseFillStatus}
-	{@const phase = $ctseFillStatus.phase}
-	{@const p = $ctseFillStatus.progress}
-	{@const pct = p.total > 0 ? Math.min(100, Math.round((p.processed / p.total) * 100)) : 0}
-	<div class="ctse-fill-strip" dir="auto">
-		<span class="ctse-fill-label">
-			{#if p.cancelled}
-				{$t('ctse.cancelled') || 'Cancelled'}
-			{:else if p.done}
-				{phase === 'first-fill'
-					? ($t('ctse.firstFillDone') || 'Vocabulary linked')
-					: ($t('ctse.backfillDone') || 'Concepts resolved')}
-			{:else if phase === 'first-fill'}
-				{($t('ctse.firstFillProgress') || 'Linking vocabulary… {processed} / {total}')
-					.replace('{processed}', String(p.processed))
-					.replace('{total}', String(p.total))}
-			{:else}
-				{($t('ctse.backfillProgress') || 'Resolving concepts… {processed} / {total}')
-					.replace('{processed}', String(p.processed))
-					.replace('{total}', String(p.total))}
-			{/if}
-		</span>
-		<div class="ctse-fill-bar">
-			<div class="ctse-fill-fill" class:done={p.done} class:cancelled={p.cancelled} style="width: {pct}%"></div>
-		</div>
-	</div>
-{/if}
-
 <style>
 	/* ─── Canonical Migration Overlay ─── */
 	.canonical-overlay {
@@ -7407,48 +7312,5 @@
 	.cd-base-libs-item input[type="checkbox"] { cursor: pointer; accent-color: var(--interactive-accent); }
 	.cd-base-libs-dot {
 		width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
-	}
-
-	/* MIG-013 §1D — CTSE fill/backfill status strip. */
-	.ctse-fill-strip {
-		position: fixed;
-		bottom: 12px;
-		left: 50%;
-		transform: translateX(-50%);
-		z-index: 1000;
-		padding: 8px 14px;
-		min-width: 320px;
-		max-width: 560px;
-		background: var(--background-secondary);
-		border: 1px solid var(--background-modifier-border);
-		border-radius: 6px;
-		box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
-		display: flex;
-		flex-direction: column;
-		gap: 6px;
-		font-size: 0.82rem;
-		color: var(--text-normal);
-		opacity: 0.96;
-	}
-	.ctse-fill-label {
-		font-weight: 500;
-	}
-	.ctse-fill-bar {
-		width: 100%;
-		height: 4px;
-		background: var(--background-modifier-border);
-		border-radius: 2px;
-		overflow: hidden;
-	}
-	.ctse-fill-fill {
-		height: 100%;
-		background: var(--interactive-accent);
-		transition: width 200ms ease;
-	}
-	.ctse-fill-fill.done {
-		background: #16a34a;
-	}
-	.ctse-fill-fill.cancelled {
-		background: var(--text-muted);
 	}
 </style>

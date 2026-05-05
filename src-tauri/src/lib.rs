@@ -376,19 +376,13 @@ pub fn run() {
             libraries::read_term_mentions,
             libraries::read_cooccurring_terms,
             lexicon::lexicon_expand_for_filter,
-            // MIG-013 §1C — CTSE Bridge Adapter backfill commands.
-            // Replaces the retired MIG-012 init/cancel/search/status
-            // term-embedding pipeline. The new commands operate on
-            // `term_vocab.bridge_concept_id` instead of `term_embeddings`.
-            ctse::backfill::ctse_run_backfill,
-            ctse::backfill::ctse_cancel_backfill,
-            ctse::backfill::ctse_backfill_status,
-            // MIG-013 §1D — first-fill (one-shot bulk population of
-            // term_vocab from note_meta.body_text via the same hook
-            // path as per-save) and concept-based semantic search.
-            ctse::first_fill::ctse_first_fill,
-            ctse::first_fill::ctse_first_fill_status,
-            ctse::first_fill::ctse_cancel_first_fill,
+            // MIG-013 §1D — CTSE Bridge Adapter (query-time concept
+            // expansion). The earlier index-time backfill / first-fill
+            // pipeline was retired in favour of the dominant industry
+            // pattern (Lucene SynonymGraphFilter, SQLite FTS5 Method 2,
+            // CLIR query-translation, Primo controlled-vocabulary
+            // expansion): expand at query time, not at index time. One
+            // Tauri command does the whole read path.
             ctse::search::ctse_search_by_concept,
             libraries::read_index_history,
             libraries::write_index_history_entry,
