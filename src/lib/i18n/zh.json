@@ -1836,5 +1836,11 @@
     "weakFoundationsDesc": "建立在假设级证据上的高权重想法 — 正式化前请检查。",
     "bias": "潜在偏见（没有对立观点）",
     "biasDesc": "只有支持且无矛盾的目标 — 寻找对立的观点。"
+  },
+  "migrationProgress": {
+    "termVocabV2": {
+      "label": "正在迁移术语索引",
+      "done": "术语索引迁移完成"
+    }
   }
 }

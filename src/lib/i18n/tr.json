@@ -1836,5 +1836,11 @@
     "weakFoundationsDesc": "Hipotez düzeyinde kanıtlara dayanan yüksek ağırlıklı fikirler — resmileştirmeden önce inceleyin.",
     "bias": "Potansiyel önyargı (karşı görüş yok)",
     "biasDesc": "Yalnızca destekleyici ve sıfır çelişkili hedefler — karşıt perspektifler arayın."
+  },
+  "migrationProgress": {
+    "termVocabV2": {
+      "label": "Terim dizini taşınıyor",
+      "done": "Terim dizini taşıma tamamlandı"
+    }
   }
 }

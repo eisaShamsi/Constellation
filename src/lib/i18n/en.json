@@ -1904,5 +1904,11 @@
     "established": "Established",
     "contested": "Contested",
     "archive": "Archive link"
+  },
+  "migrationProgress": {
+    "termVocabV2": {
+      "label": "Migrating term index",
+      "done": "Term index migration complete"
+    }
   }
 }

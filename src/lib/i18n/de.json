@@ -1836,5 +1836,11 @@
     "weakFoundationsDesc": "Hochgewichtige Ideen auf hypothetischer Basis — vor der Formalisierung prüfen.",
     "bias": "Potenzielle Verzerrung (kein Gegenpunkt)",
     "biasDesc": "Ziele mit nur Unterstützungen und null Widersprüchen — gegenteilige Perspektiven suchen."
+  },
+  "migrationProgress": {
+    "termVocabV2": {
+      "label": "Begriffsindex wird migriert",
+      "done": "Migration des Begriffsindex abgeschlossen"
+    }
   }
 }

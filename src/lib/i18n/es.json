@@ -1836,5 +1836,11 @@
     "weakFoundationsDesc": "Ideas de alto peso construidas sobre evidencia hipotética — examinar antes de formalizar.",
     "bias": "Sesgo potencial (sin visión contraria)",
     "biasDesc": "Objetivos solo con apoyos y cero contradicciones — buscar perspectivas opuestas."
+  },
+  "migrationProgress": {
+    "termVocabV2": {
+      "label": "Migrando índice de términos",
+      "done": "Migración del índice de términos completada"
+    }
   }
 }

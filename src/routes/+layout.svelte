@@ -93,6 +93,7 @@
 	import WorkspaceManager from '$lib/components/WorkspaceManager.svelte';
 	import SettingsModal from '$lib/components/SettingsModal.svelte';
 	import LockScreen from '$lib/components/LockScreen.svelte';
+	import MigrationProgressStrip from '$lib/components/MigrationProgressStrip.svelte';
 	import LibrarySwitcher from '$lib/components/LibrarySwitcher.svelte';
 	import LibraryManager from '$lib/components/LibraryManager.svelte';
 	import LibraryPicker from '$lib/components/LibraryPicker.svelte';
@@ -6086,6 +6087,11 @@
 				<span class="sb-item">{$t('libraryManager.manageLibraries')}</span>
 			{/if}
 		</div>
+		<!-- MIG-015 §1C — center slot for migration progress strips. Hidden
+		     when no migration is in flight (the component returns nothing).  -->
+		<div class="sb-center">
+			<MigrationProgressStrip />
+		</div>
 		<div class="sb-right">
 			{#if sidebarTab}
 				{#if sidebarProperties.length > 0}
@@ -7220,6 +7226,11 @@
 		color: var(--statusbar-color, var(--text-muted));
 	}
 	.sb-left, .sb-right { display: flex; align-items: center; gap: 4px; }
+	/* MIG-015 §1C — center group expands to fill available space and
+	   centers its content. Empty (zero-width) when no migration strip
+	   is rendered, so the existing left/right space-between layout is
+	   visually unchanged in the common case. */
+	.sb-center { flex: 1; display: flex; justify-content: center; align-items: center; }
 	.sb-dot { color: var(--border); }
 	.sb-universe {
 		display: flex; align-items: center; gap: 3px;
