@@ -534,6 +534,64 @@ fn sentinel_bigram_rows(conn: &Connection) -> rusqlite::Result<()> {
     Ok(())
 }
 
+/// MIG-015 §1A — count `term_vocab` rows still requiring the v2 bigram
+/// sentinel. Cheap query — exists only to populate the `total` field of
+/// the initial progress event so the status-bar strip can show
+/// "Migrating term index — 0 / N" before the first chunk runs.
+#[allow(dead_code)] // wired into init_db deferred path in §1B
+fn count_pending_v2_sentinel_rows(conn: &Connection) -> rusqlite::Result<u64> {
+    conn.query_row(
+        "SELECT COUNT(*) FROM term_vocab \
+         WHERE bridge_concept_id IS NULL \
+           AND term LIKE '%' || CHAR(31) || '%'",
+        [],
+        |row| row.get::<_, i64>(0).map(|n| n as u64),
+    )
+}
+
+/// MIG-015 §1A — chunked variant of `sentinel_bigram_rows`. Each chunk
+/// processes up to `chunk_size` rows; loops until 0 rows affected. The
+/// `on_progress` callback fires after each non-empty chunk with the
+/// cumulative completed-row count.
+///
+/// Crash-recoverable by construction — the WHERE clause excludes
+/// already-sentinelled rows, so a re-entry from a prior partial run
+/// picks up where it left off without journaling state.
+///
+/// SQLite-portable shape: stock SQLite doesn't support `UPDATE ... LIMIT N`
+/// (requires `SQLITE_ENABLE_UPDATE_DELETE_LIMIT`), so we use the
+/// idiomatic `UPDATE ... WHERE rowid IN (SELECT rowid ... LIMIT N)`.
+///
+/// Returns the total number of rows sentinelled by this call.
+#[allow(dead_code)] // wired into init_db deferred path in §1B
+fn sentinel_bigram_rows_chunked<F>(
+    conn: &Connection,
+    chunk_size: u32,
+    mut on_progress: F,
+) -> rusqlite::Result<u64>
+where
+    F: FnMut(u64),
+{
+    let mut completed: u64 = 0;
+    loop {
+        let affected = conn.execute(
+            "UPDATE term_vocab \
+                SET bridge_concept_id = '-' \
+              WHERE rowid IN ( \
+                SELECT rowid FROM term_vocab \
+                 WHERE bridge_concept_id IS NULL \
+                   AND term LIKE '%' || CHAR(31) || '%' \
+                 LIMIT ?1 \
+              )",
+            rusqlite::params![chunk_size],
+        )? as u64;
+        if affected == 0 { break; }
+        completed += affected;
+        on_progress(completed);
+    }
+    Ok(completed)
+}
+
 /// MIG-003 Step 1 — Walk every row in `note_meta`, read the file's
 /// frontmatter, ensure `cid_cn:` is present (injecting it via
 /// `canonical::ensure_cid_cn` for files that lack it), and populate
