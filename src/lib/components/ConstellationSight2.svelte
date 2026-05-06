@@ -963,13 +963,25 @@
 		performance.mark('sight:mount:end');
 		performance.measure('sight:mount:total', 'sight:mount:start', 'sight:mount:end');
 
-		// Dump mount measures (separate from toggle measures since they
-		// fire after the toggle's table). Eisa copies both tables.
+		// Dump mount measures. Production binary ships with DevTools
+		// disabled, so append the trace to a clipboard string + alert
+		// so Eisa can paste both toggle and mount traces in one step.
+		// (toggleLens() in +layout.svelte fires its alert FIRST since
+		// it's the parent flow; this mount alert chains after the user
+		// dismisses that one.)
 		const mountMeasures = performance.getEntriesByType('measure')
 			.filter(m => m.name.startsWith('sight:mount:'))
 			.map(m => ({ phase: m.name, duration_ms: Math.round(m.duration) }));
 		console.log('[MIG-016 §1A] Sight mount trace:');
 		console.table(mountMeasures);
+
+		const mountTraceText = '=== Sight mount trace (MIG-016 §1A) ===\n' +
+			'phase' + ' '.repeat(40 - 5) + 'duration_ms\n' +
+			'-'.repeat(60) + '\n' +
+			mountMeasures.map(m => m.phase.padEnd(40) + String(m.duration_ms).padStart(10)).join('\n');
+		navigator.clipboard.writeText(mountTraceText)
+			.then(() => alert('Sight mount trace copied to clipboard.\nPaste it in chat (separate from the toggle trace).'))
+			.catch(() => alert('Sight mount trace (copy below):\n\n' + mountTraceText));
 
 		loadLinkEnrichment().then(() => {
 			for (const link of simLinks) {

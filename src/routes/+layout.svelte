@@ -3454,13 +3454,24 @@
 			performance.measure('sight:toggle:total', 'sight:toggle:start', 'sight:toggle:end');
 
 			// MIG-016 §1A — dump all sight:* measures for the Boss-test
-			// data-collection gate. Eisa copies this table from DevTools
-			// console; Claude reads it to calibrate §1B-§1E budgets.
+			// data-collection gate. Production binary ships with DevTools
+			// disabled, so write to clipboard + alert so Eisa can paste
+			// the trace into chat directly. Console.log retained as a
+			// fallback for any session where DevTools IS available.
 			const sightMeasures = performance.getEntriesByType('measure')
 				.filter(m => m.name.startsWith('sight:'))
 				.map(m => ({ phase: m.name, duration_ms: Math.round(m.duration) }));
 			console.log('[MIG-016 §1A] Sight perf trace:');
 			console.table(sightMeasures);
+
+			const traceText = '=== Sight perf trace (MIG-016 §1A) ===\n' +
+				`library: ${$libraries.length} libraries, skyNodes=${skyNodes.length}, skyLinks=${skyLinks.length}\n` +
+				'phase' + ' '.repeat(40 - 5) + 'duration_ms\n' +
+				'-'.repeat(60) + '\n' +
+				sightMeasures.map(m => m.phase.padEnd(40) + String(m.duration_ms).padStart(10)).join('\n');
+			navigator.clipboard.writeText(traceText)
+				.then(() => alert('Sight perf trace copied to clipboard.\nPaste it in chat.'))
+				.catch(() => alert('Sight perf trace (copy below):\n\n' + traceText));
 		} catch (e) {
 			console.error('[Lens] Failed to compute:', e);
 		}
