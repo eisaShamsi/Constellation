@@ -1548,31 +1548,30 @@ const STAGE_META: Record<LinkStage, { icon: string; color: string; label: string
 
 export function getLinkStageMeta(stage: LinkStage) { return STAGE_META[stage]; }
 
-// ─── MIG-014 — Note stage taxonomy (Living Link 6-stage baseline + custom) ───
+// ─── MIG-014 — Note stage taxonomy (Living Link baseline + per-note custom term) ───
 
 /**
- * A user-defined note-stage entry. Persisted in the active Universe's
- * `universe.json` under `custom_stages`. Surfaces alongside the
- * `LIVING_LINK_BASELINE` six in PropertyEditor's combobox and the
- * NotePane breadcrumb dropdown.
- *
- * `name` is stored normalized (trimmed + lowercased on the Rust side
- * before insertion) so on-disk frontmatter `stage:` values remain
- * consistent across sessions and devices.
+ * A baseline lifecycle stage. Six of these form the canonical chain;
+ * the structure is value + emoji + the (i18n-keyed) label callers
+ * resolve via $t(`notePane.stage.${name}`). Used inside
+ * `LIVING_LINK_BASELINE` only — there is no user-extensible analogue
+ * since per-note custom terms are encoded into stage values directly
+ * (see Stages Concept Paper v1.2 + Plan v4 commit 5782f15).
  */
-export interface CustomStage {
+export interface BaselineStage {
 	name: string;
 	emoji: string;
 }
 
 /**
  * The Living Link baseline — six stages every Constellation Universe
- * always exposes. Mirrors `LIVING_LINK_BASELINE_NAMES` in
- * `src-tauri/src/universe.rs`. Order is the canonical promotion path
+ * always exposes. Order is the canonical promotion path
  * (spark → birth → growth → maturity → dormancy → archival), which
- * NotePane's breadcrumb arrows step through.
+ * NotePane's breadcrumb arrows step through. Custom note-types are
+ * encoded as a dash suffix (`spark-concept`) per-note; nothing
+ * Universe-wide stores them.
  */
-export const LIVING_LINK_BASELINE: ReadonlyArray<CustomStage> = [
+export const LIVING_LINK_BASELINE: ReadonlyArray<BaselineStage> = [
 	{ name: 'spark',    emoji: '✨' },
 	{ name: 'birth',    emoji: '🌱' },
 	{ name: 'growth',   emoji: '🌿' },
@@ -1582,64 +1581,10 @@ export const LIVING_LINK_BASELINE: ReadonlyArray<CustomStage> = [
 ] as const;
 
 /**
- * Active-Universe custom stages. Loaded by `+layout.svelte` after
- * `set_active_universe` succeeds; mutated only via the IPC wrappers
- * below (which re-read on success so the store stays authoritative).
- * Empty on fresh Universes — PropertyEditor renders just the baseline.
- */
-export const customStages = writable<CustomStage[]>([]);
-
-/** Read the active Universe's custom_stages from universe.json. */
-export async function readCustomStages(): Promise<CustomStage[]> {
-	return invoke<CustomStage[]>('read_custom_stages');
-}
-
-/** Append a custom stage. Rust normalizes `name` and rejects baseline collisions / duplicates. */
-export async function addCustomStage(stage: CustomStage): Promise<void> {
-	await invoke('add_custom_stage', { stage });
-	const fresh = await readCustomStages();
-	customStages.set(fresh);
-}
-
-/** Rename / re-emoji an existing custom stage. `oldName` is the pre-edit normalized name. */
-export async function updateCustomStage(oldName: string, newStage: CustomStage): Promise<void> {
-	await invoke('update_custom_stage', { oldName, newStage });
-	const fresh = await readCustomStages();
-	customStages.set(fresh);
-}
-
-/** Remove a custom stage by name. Notes that reference it keep the value on disk; PropertyEditor renders it as plain text until renamed. */
-export async function removeCustomStage(name: string): Promise<void> {
-	await invoke('remove_custom_stage', { name });
-	const fresh = await readCustomStages();
-	customStages.set(fresh);
-}
-
-/** Reorder custom stages. `namesInOrder` must contain every existing custom-stage name exactly once. */
-export async function reorderCustomStages(namesInOrder: string[]): Promise<void> {
-	await invoke('reorder_custom_stages', { namesInOrder });
-	const fresh = await readCustomStages();
-	customStages.set(fresh);
-}
-
-/**
- * Returns true when `value` matches a baseline or a currently-known
- * custom stage. Used by PropertyEditor to decide whether to render
- * the typed value as a "create new stage" affordance vs. just a
- * known-stage selection.
- */
-export function isKnownStage(value: string, customs: CustomStage[]): boolean {
-	const v = value.trim().toLowerCase();
-	if (LIVING_LINK_BASELINE.some(b => b.name === v)) return true;
-	return customs.some(c => c.name.trim().toLowerCase() === v);
-}
-
-/**
  * Old Zettelkasten emoji map. Notes saved before MIG-014 may still
  * carry these values (`fleeting/literature/permanent/synthesis`).
- * Per Architect §5.2 the on-disk values are preserved verbatim — we
- * keep the old emoji here so the UI continues to render them
- * recognisably without forcing a migration.
+ * The on-disk values are preserved verbatim — the map keeps display
+ * recognisable without forcing a silent migration.
  */
 export const LEGACY_ZETTELKASTEN_EMOJI: Readonly<Record<string, string>> = {
 	fleeting: '🌱',
@@ -1649,22 +1594,70 @@ export const LEGACY_ZETTELKASTEN_EMOJI: Readonly<Record<string, string>> = {
 };
 
 /**
- * Resolve an emoji for a stage name, regardless of whether it's a
- * Living Link baseline, a user-defined custom stage, or a legacy
- * Zettelkasten value still living on disk. Returns `''` for empty
- * input and `🏷️` (the default custom-stage emoji) for unknown
- * non-empty values that haven't been registered yet — matches the
- * default `addCustomStage` ships with.
+ * Split a stage value into its lifecycle prefix and (optional) custom-term
+ * suffix. The dash separator is canonical: `spark-concept` →
+ * `{ lifecycle: 'spark', suffix: 'concept' }`. Values without a dash
+ * have an empty suffix. Trailing dash (`spark-`) yields empty suffix.
  */
-export function lookupStageEmoji(name: string, customs: CustomStage[]): string {
-	const v = name.trim().toLowerCase();
-	if (!v) return '';
-	const baseline = LIVING_LINK_BASELINE.find(b => b.name === v);
+export function splitStage(stage: string): { lifecycle: string; suffix: string } {
+	const i = stage.indexOf('-');
+	return i < 0
+		? { lifecycle: stage, suffix: '' }
+		: { lifecycle: stage.slice(0, i), suffix: stage.slice(i + 1) };
+}
+
+/**
+ * Build the human-readable display label for a stage value. Lifecycle
+ * goes through i18n; suffix is rendered with first-letter-capitalised.
+ * Pure — same input always yields same output.
+ */
+export function stageLabel(stage: string, t: (k: string) => string): string {
+	const { lifecycle, suffix } = splitStage(stage);
+	const isBaseline = LIVING_LINK_BASELINE.some(b => b.name === lifecycle);
+	const lifecycleLabel = isBaseline
+		? t(`notePane.stage.${lifecycle}`)
+		: lifecycle.charAt(0).toUpperCase() + lifecycle.slice(1);
+	if (!suffix) return lifecycleLabel;
+	const suffixDisplay = suffix.charAt(0).toUpperCase() + suffix.slice(1);
+	return `${lifecycleLabel}-${suffixDisplay}`;
+}
+
+/**
+ * Resolve a stage value's emoji. Lifecycle-only — the dash-encoded
+ * custom term suffix carries no emoji of its own. Falls back to the
+ * legacy Zettelkasten map for old-on-disk values, then to `''`.
+ */
+export function lookupStageEmoji(stage: string): string {
+	const { lifecycle } = splitStage(stage);
+	if (!lifecycle) return '';
+	const baseline = LIVING_LINK_BASELINE.find(b => b.name === lifecycle);
 	if (baseline) return baseline.emoji;
-	const custom = customs.find(c => c.name.trim().toLowerCase() === v);
-	if (custom) return custom.emoji;
-	if (LEGACY_ZETTELKASTEN_EMOJI[v]) return LEGACY_ZETTELKASTEN_EMOJI[v];
-	return '🏷️';
+	if (LEGACY_ZETTELKASTEN_EMOJI[lifecycle]) return LEGACY_ZETTELKASTEN_EMOJI[lifecycle];
+	return '';
+}
+
+/**
+ * Compute the next stage in the promote chain. The chain length is
+ * always 6 (the Living Link baseline) — custom suffixes carry across.
+ * `spark-concept` → `birth-concept`; `archival-concept` → null.
+ * Values whose lifecycle isn't a baseline (legacy Zettelkasten,
+ * malformed, etc.) yield null — promote arrow hidden in those cases.
+ */
+export function nextStage(stage: string): string | null {
+	const { lifecycle, suffix } = splitStage(stage);
+	const idx = LIVING_LINK_BASELINE.findIndex(b => b.name === lifecycle);
+	if (idx < 0 || idx === LIVING_LINK_BASELINE.length - 1) return null;
+	const next = LIVING_LINK_BASELINE[idx + 1].name;
+	return suffix ? `${next}-${suffix}` : next;
+}
+
+/** Symmetric to `nextStage`. `spark-concept` → null; `birth-concept` → `spark-concept`. */
+export function prevStage(stage: string): string | null {
+	const { lifecycle, suffix } = splitStage(stage);
+	const idx = LIVING_LINK_BASELINE.findIndex(b => b.name === lifecycle);
+	if (idx <= 0) return null;
+	const prev = LIVING_LINK_BASELINE[idx - 1].name;
+	return suffix ? `${prev}-${suffix}` : prev;
 }
 
 /** Initialize the Rust-native ONNX embedding engine. */

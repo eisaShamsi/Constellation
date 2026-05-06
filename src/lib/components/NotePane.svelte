@@ -8,7 +8,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { t } from '$lib/i18n';
 	import { appSettings, getEffectiveScriptFonts } from '$lib/libraries/store';
-	import { LIVING_LINK_BASELINE, customStages, lookupStageEmoji } from '$lib/libraries/store';
+	import { LIVING_LINK_BASELINE, lookupStageEmoji } from '$lib/libraries/store';
 	import type { FrontmatterProperty } from '$lib/libraries/store';
 	import PropertyEditor from './PropertyEditor.svelte';
 	import { EditorView, keymap, drawSelection, Decoration, type DecorationSet } from '@codemirror/view';
@@ -922,9 +922,9 @@
 			     chronologically. Old Zettelkasten values (fleeting/literature/permanent/
 			     synthesis) yield idx = -1 so neither arrow renders, but the badge still
 			     shows via lookupStageEmoji's legacy fallback. -->
-			{@const stageOrder = [...LIVING_LINK_BASELINE.map(s => s.name), ...$customStages.map(s => s.name)]}
+			{@const stageOrder = LIVING_LINK_BASELINE.map(s => s.name)}
 			{@const idx = stageOrder.indexOf(currentStage)}
-			{@const stageEmoji = lookupStageEmoji(currentStage, $customStages)}
+			{@const stageEmoji = lookupStageEmoji(currentStage)}
 			{@const stageDisplayLabel = LIVING_LINK_BASELINE.some(b => b.name === currentStage) ? $t(`notePane.stage.${currentStage}`) : currentStage.charAt(0).toUpperCase() + currentStage.slice(1)}
 			{@const isRTL = dir === 'rtl'}
 			<div class="e-bc-stage-wrap">

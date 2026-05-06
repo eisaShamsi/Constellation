@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { FrontmatterProperty, PropertyType } from '$lib/libraries/store';
 	import { saveTabContent, normalizeDateValue, buildFullContent, openTabs } from '$lib/libraries/store';
-	import { LIVING_LINK_BASELINE, customStages, addCustomStage, isKnownStage, lookupStageEmoji } from '$lib/libraries/store';
+	import { LIVING_LINK_BASELINE, lookupStageEmoji, splitStage, stageLabel } from '$lib/libraries/store';
 	import { setRegisteredType, getRegisteredType } from '$lib/libraries/propertyTypeRegistry';
 	import { t, locale } from '$lib/i18n';
 	import { get } from 'svelte/store';
@@ -119,7 +119,10 @@
 	// item (user explicitly arrowed to it) or the typed input value (user
 	// is creating a custom stage).
 	let stageUserNavigated = $state(false);
-	const stageOptions = $derived([...LIVING_LINK_BASELINE, ...$customStages]);
+	// MIG-014 §2B — dropdown sources from LIVING_LINK_BASELINE only.
+	// §2C will reintroduce mode-flip (6 fixed vs 6 paired) based on the
+	// per-note custom-term suffix encoded into the stage value.
+	const stageOptions = $derived(LIVING_LINK_BASELINE);
 
 	// Key suggestion state
 	let focusedKeyIdx = $state(-1);
@@ -171,30 +174,16 @@
 		}
 	}
 
-	// MIG-014 §1C.5 — Render a stage's display label.
-	// Baseline stages translate via `notePane.stage.{name}`; custom stages
-	// are user-typed so we capitalize the first character and show the
-	// rest verbatim (preserves any non-Latin script).
-	function stageLabel(name: string): string {
-		const baseline = LIVING_LINK_BASELINE.some(b => b.name === name);
-		if (baseline) return $t(`notePane.stage.${name}`);
-		return name.charAt(0).toUpperCase() + name.slice(1);
-	}
-
-	// MIG-014 §1C.5 — Commit a stage selection (whether picked or typed).
-	// `raw` is normalized (trim + lowercase) before disk write so frontmatter
-	// `stage:` values stay canonical across sessions and devices. New values
-	// (not in baseline + customs) are persisted as a custom stage so the
-	// next note in the same Universe sees them in its dropdown.
+	// MIG-014 §2B — Commit a stage selection. The custom-term flow
+	// (typing a non-list value to register it Universe-wide) was dropped
+	// in §2A because the custom term is now per-note (encoded as a dash
+	// suffix in the value itself). §2C will add the mode-flip combobox
+	// that handles the per-note suffix. For now the dropdown is fixed-only.
 	function commitStage(idx: number, raw: string) {
 		const v = raw.trim().toLowerCase();
 		if (!v) return;
 		updateValue(idx, v);
 		onstagechange?.(v);
-		if (!isKnownStage(v, $customStages)) {
-			addCustomStage({ name: v, emoji: '🏷️' }).catch(err =>
-				console.warn('[PropertyEditor] addCustomStage failed:', err));
-		}
 		stageMenuOpen = -1;
 	}
 
@@ -569,7 +558,7 @@
 				     pe-stage-current-emoji span shows the emoji for the current
 				     value (input value alone is the canonical lowercase name). -->
 				<div class="pe-stage-wrap">
-					<span class="pe-stage-current-emoji" aria-hidden="true">{lookupStageEmoji(prop.value, $customStages)}</span>
+					<span class="pe-stage-current-emoji" aria-hidden="true">{lookupStageEmoji(prop.value)}</span>
 					<input
 						class="pe-val pe-stage-input"
 						type="text"
@@ -587,7 +576,7 @@
 									onmousedown={(e) => e.preventDefault()}
 									onclick={(e) => { e.stopPropagation(); commitStage(idx, opt.name); }}>
 									<span class="pe-stage-emoji">{opt.emoji}</span>
-									<span class="pe-stage-label">{stageLabel(opt.name)}</span>
+									<span class="pe-stage-label">{stageLabel(opt.name, $t)}</span>
 								</button>
 							{/each}
 						</div>

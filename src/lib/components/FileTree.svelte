@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { FileEntry } from '$lib/libraries/store';
-	import { activeTab, splitActive, openTabs, customStages, lookupStageEmoji } from '$lib/libraries/store';
+	import { activeTab, splitActive, openTabs, lookupStageEmoji } from '$lib/libraries/store';
 
 	let {
 		entries,
@@ -138,7 +138,7 @@
 						     Empty value → no badge rendered. -->
 						{#if stageMap.get(entry.path.replace(/\\/g, '/').toLowerCase())}
 							{@const _stageVal = stageMap.get(entry.path.replace(/\\/g, '/').toLowerCase())!}
-							<span class="note-stage">{lookupStageEmoji(_stageVal, $customStages)}</span>
+							<span class="note-stage">{lookupStageEmoji(_stageVal)}</span>
 						{/if}
 						<span class="note-name">{entry.display_title || entry.name.replace(/\.(md|base)$/, '')}</span>
 					</button>
