@@ -263,7 +263,9 @@
 		const targetName = promoteSelectedLib.name;
 		const targetColor = promoteSelectedLib.color;
 		const fileName = promoteNoteName.trim() + '.md';
-		const frontmatter = `---\nstage: permanent\ncanvas_origin: "${canvasTitle}"\n${item.quadrant ? `canvas_quadrant: ${item.quadrant}\n` : ''}---\n`;
+		// MIG-014 §2F — canvas-promoted note is a defined-concept-in-progress → growth
+		// (was `permanent` from the dropped Zettelkasten model).
+		const frontmatter = `---\nstage: growth\ncanvas_origin: "${canvasTitle}"\n${item.quadrant ? `canvas_quadrant: ${item.quadrant}\n` : ''}---\n`;
 		try {
 			const newPath = await createNote(targetPath, fileName);
 			await writeNote(newPath, frontmatter + item.content);

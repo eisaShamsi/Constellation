@@ -829,9 +829,6 @@
     },
     "noteStage": "— المرحلة —"
   },
-  "focusPane": {
-    "promote": "ترقية إلى دائمة"
-  },
   "commandPalette": {
     "placeholder": "أدخل أمر...",
     "noResults": "لا توجد نتائج"

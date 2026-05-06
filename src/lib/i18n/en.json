@@ -865,9 +865,6 @@
     },
     "noteStage": "— Stage —"
   },
-  "focusPane": {
-    "promote": "Promote to Permanent"
-  },
   "commandPalette": {
     "placeholder": "Type a command...",
     "noResults": "No results"

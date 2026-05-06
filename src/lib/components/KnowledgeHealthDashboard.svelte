@@ -77,8 +77,11 @@
 		hypothesis: '#94a3b8', evidence: '#3b82f6', established: '#16a34a', contested: '#ef4444',
 	};
 
+	// MIG-014 §2F — Living Link 6-stage colours. Was missing `spark`; had
+	// `archived` instead of the canonical `archival`. Aligned now with the
+	// LIVING_LINK_BASELINE order.
 	const stageColors: Record<string, string> = {
-		birth: '#94a3b8', growth: '#16a34a', maturity: '#7c3aed', dormancy: '#f59e0b', archived: '#ef4444',
+		spark: '#a78bfa', birth: '#94a3b8', growth: '#16a34a', maturity: '#7c3aed', dormancy: '#f59e0b', archival: '#ef4444',
 	};
 </script>
 

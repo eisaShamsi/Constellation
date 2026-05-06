@@ -134,7 +134,9 @@
 		}
 
 		const fileName = compositionTitle.trim().replace(/[<>:"/\\|?*]/g, '_') + '.md';
-		const frontmatter = `---\nstage: synthesis\ntitle: "${compositionTitle.trim()}"\ncreated: ${new Date().toISOString().split('T')[0]}\n---\n`;
+		// MIG-014 §2F — composition is a settled, depended-upon claim → maturity
+		// (was `synthesis` from the dropped Zettelkasten model).
+		const frontmatter = `---\nstage: maturity\ntitle: "${compositionTitle.trim()}"\ncreated: ${new Date().toISOString().split('T')[0]}\n---\n`;
 		const content = frontmatter + md;
 
 		try {

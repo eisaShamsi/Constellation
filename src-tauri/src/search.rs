@@ -3737,43 +3737,66 @@ pub fn constellation_link_decay(app: tauri::AppHandle) -> Result<serde_json::Val
         }
     }
 
-    // Step 2: Count lifecycle stage distribution
+    // Step 2: Count lifecycle stage distribution.
+    //
+    // MIG-014 §2F — buckets aligned with the Living Link 6-stage taxonomy
+    // (`LIVING_LINK_BASELINE` in `src/lib/libraries/store.ts`):
+    //   spark    — traversal_count = 0 AND created within last 7 days
+    //   birth    — traversal_count = 0 AND created ≥ 7 days ago
+    //   growth   — traversal_count > 0 AND weight < 5.0
+    //   maturity — weight >= 5.0
+    //   dormancy — status = 'dormant'
+    //   archival — status = 'archived' (DB enum stays 'archived'; dashboard
+    //              key is `archival` to match the lifecycle name)
     let mut stages: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
 
-    // Birth: traversal_count = 0, weight = 1.0
+    // Spark: just-created and untraversed (< 7 days). SQLite's julianday
+    // does the date math without needing client-side parsing.
+    let spark: usize = conn.query_row(
+        "SELECT COUNT(*) FROM note_links \
+         WHERE status = 'active' AND traversal_count = 0 \
+           AND julianday('now') - julianday(created) < 7",
+        [], |r| r.get(0)
+    ).unwrap_or(0);
+    stages.insert("spark".to_string(), spark);
+
+    // Birth: still untraversed but past the spark window.
     let birth: usize = conn.query_row(
-        "SELECT COUNT(*) FROM note_links WHERE status = 'active' AND traversal_count = 0",
+        "SELECT COUNT(*) FROM note_links \
+         WHERE status = 'active' AND traversal_count = 0 \
+           AND julianday('now') - julianday(created) >= 7",
         [], |r| r.get(0)
     ).unwrap_or(0);
     stages.insert("birth".to_string(), birth);
 
-    // Growth: traversal_count > 0, weight < 5.0
+    // Growth: traversed at least once, not yet mature.
     let growth: usize = conn.query_row(
         "SELECT COUNT(*) FROM note_links WHERE status = 'active' AND traversal_count > 0 AND weight < 5.0",
         [], |r| r.get(0)
     ).unwrap_or(0);
     stages.insert("growth".to_string(), growth);
 
-    // Maturity: weight >= 5.0
+    // Maturity.
     let maturity: usize = conn.query_row(
         "SELECT COUNT(*) FROM note_links WHERE status = 'active' AND weight >= 5.0",
         [], |r| r.get(0)
     ).unwrap_or(0);
     stages.insert("maturity".to_string(), maturity);
 
-    // Dormancy
+    // Dormancy.
     let dormant: usize = conn.query_row(
         "SELECT COUNT(*) FROM note_links WHERE status = 'dormant'",
         [], |r| r.get(0)
     ).unwrap_or(0);
     stages.insert("dormancy".to_string(), dormant);
 
-    // Archived
-    let archived: usize = conn.query_row(
+    // Archival (DB enum stays 'archived' — back-compat). Bucket key uses
+    // `archival` to match the lifecycle name and the frontend `stageColors`.
+    let archival: usize = conn.query_row(
         "SELECT COUNT(*) FROM note_links WHERE status = 'archived'",
         [], |r| r.get(0)
     ).unwrap_or(0);
-    stages.insert("archived".to_string(), archived);
+    stages.insert("archival".to_string(), archival);
 
     Ok(serde_json::json!({
         "decayed": decayed,
