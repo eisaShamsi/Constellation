@@ -523,22 +523,10 @@ fn ensure_term_vocab_bridge_column(conn: &Connection) -> rusqlite::Result<()> {
 /// Idempotent: only NULL bigram rows are touched. Real concept ids
 /// (`c:…`) and prior `'-'` sentinels are untouched. Re-running the
 /// migration is a no-op.
-fn sentinel_bigram_rows(conn: &Connection) -> rusqlite::Result<()> {
-    conn.execute(
-        "UPDATE term_vocab \
-         SET bridge_concept_id = '-' \
-         WHERE bridge_concept_id IS NULL \
-           AND term LIKE '%' || CHAR(31) || '%'",
-        [],
-    )?;
-    Ok(())
-}
-
 /// MIG-015 §1A — count `term_vocab` rows still requiring the v2 bigram
 /// sentinel. Cheap query — exists only to populate the `total` field of
 /// the initial progress event so the status-bar strip can show
 /// "Migrating term index — 0 / N" before the first chunk runs.
-#[allow(dead_code)] // wired into init_db deferred path in §1B
 fn count_pending_v2_sentinel_rows(conn: &Connection) -> rusqlite::Result<u64> {
     conn.query_row(
         "SELECT COUNT(*) FROM term_vocab \
@@ -563,7 +551,6 @@ fn count_pending_v2_sentinel_rows(conn: &Connection) -> rusqlite::Result<u64> {
 /// idiomatic `UPDATE ... WHERE rowid IN (SELECT rowid ... LIMIT N)`.
 ///
 /// Returns the total number of rows sentinelled by this call.
-#[allow(dead_code)] // wired into init_db deferred path in §1B
 fn sentinel_bigram_rows_chunked<F>(
     conn: &Connection,
     chunk_size: u32,
@@ -590,6 +577,142 @@ where
         on_progress(completed);
     }
     Ok(completed)
+}
+
+/// MIG-015 §1B — entry point for the deferred v2 sentinel migration.
+/// Called from `ensure_search_db_ready` after `init_db` completes and
+/// the connection is in state. Mirrors the `sky_backfill::maybe_schedule`
+/// pattern: cheap pre-check on the main thread; spawn a worker thread
+/// only when work is actually needed.
+///
+/// Emits `migration:term_vocab_v2` Tauri events with three phases:
+///   - `start { total }`         — fired once at the beginning (skipped if total is 0)
+///   - `progress { completed, total }` — fired after each non-empty chunk
+///   - `done { total }`          — fired once on successful completion
+///
+/// Stamps `schema_versions.term_vocab_bridge = TERM_VOCAB_BRIDGE_SCHEMA_VERSION`
+/// on success. Failure leaves the stamp at its prior value so the next
+/// boot retries.
+pub fn maybe_schedule_v2_sentinel_migration(app: tauri::AppHandle) {
+    use tauri::Manager;
+
+    // Cheap pre-check on the main thread — avoids spawning a worker for
+    // the common case (already migrated).
+    let state = app.state::<SearchState>();
+    let needs_run = {
+        let guard = match state.db.lock() {
+            Ok(g) => g,
+            Err(_) => return,
+        };
+        let Some(conn) = guard.as_ref() else {
+            return;
+        };
+        let stored: i64 = conn
+            .query_row(
+                "SELECT version FROM schema_versions WHERE module = 'term_vocab_bridge'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap_or(0);
+        stored < TERM_VOCAB_BRIDGE_SCHEMA_VERSION
+    };
+    if !needs_run {
+        return;
+    }
+
+    let app_bg = app.clone();
+    std::thread::spawn(move || {
+        if let Err(e) = run_v2_sentinel_migration(&app_bg) {
+            eprintln!("[search] term_vocab v2 sentinel migration task failed: {}", e);
+        }
+    });
+}
+
+/// Body of the deferred migration. Holds the DB mutex for the duration
+/// of the chunked loop — each chunk is fast (200-400ms on commodity
+/// SSD), so the lock window per chunk is small. Between chunks the
+/// runtime briefly yields, allowing other DB callers to interleave.
+fn run_v2_sentinel_migration(app: &tauri::AppHandle) -> Result<(), String> {
+    use tauri::{Emitter, Manager};
+
+    /// 100k-row chunks. Empirical SSD UPDATE throughput is 250-500k rows/sec,
+    /// so each chunk completes in 200-400ms. On a 5.7M-row migration that's
+    /// ~50-100 progress updates total — visible motion in the UI without
+    /// flooding the Tauri event channel.
+    const CHUNK_SIZE: u32 = 100_000;
+
+    let state = app.state::<SearchState>();
+
+    // Re-check inside the worker — the migration could have completed
+    // between maybe_schedule's pre-check and this thread starting (e.g.
+    // a second ensure_search_db_ready triggered by a window swap).
+    let total = {
+        let guard = state.db.lock().map_err(|e| e.to_string())?;
+        let conn = guard.as_ref().ok_or("DB not initialized")?;
+        let stored: i64 = conn
+            .query_row(
+                "SELECT version FROM schema_versions WHERE module = 'term_vocab_bridge'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap_or(0);
+        if stored >= TERM_VOCAB_BRIDGE_SCHEMA_VERSION {
+            return Ok(());
+        }
+        count_pending_v2_sentinel_rows(conn).map_err(|e| e.to_string())?
+    };
+
+    // No work to do — just stamp and exit. (Fresh DB common case.)
+    if total == 0 {
+        let mut guard = state.db.lock().map_err(|e| e.to_string())?;
+        let conn = guard.as_mut().ok_or("DB not initialized")?;
+        conn.execute(
+            "INSERT OR REPLACE INTO schema_versions (module, version, updated_at) VALUES ('term_vocab_bridge', ?1, strftime('%s','now'))",
+            rusqlite::params![TERM_VOCAB_BRIDGE_SCHEMA_VERSION],
+        ).map_err(|e| format!("Failed to stamp schema_versions.term_vocab_bridge: {}", e))?;
+        return Ok(());
+    }
+
+    // Announce start — frontend strip appears.
+    let _ = app.emit("migration:term_vocab_v2", serde_json::json!({
+        "phase": "start",
+        "total": total,
+    }));
+
+    // Run the chunked migration. Each chunk emits progress.
+    let app_emit = app.clone();
+    let result = {
+        let mut guard = state.db.lock().map_err(|e| e.to_string())?;
+        let conn = guard.as_mut().ok_or("DB not initialized")?;
+        sentinel_bigram_rows_chunked(conn, CHUNK_SIZE, |completed| {
+            let _ = app_emit.emit("migration:term_vocab_v2", serde_json::json!({
+                "phase": "progress",
+                "completed": completed,
+                "total": total,
+            }));
+        })
+    };
+    let processed = result.map_err(|e| format!("v2 sentinel migration failed: {}", e))?;
+
+    // Stamp on success. Crash-recoverable by construction — if we
+    // failed mid-loop above, we'd have returned an error and the stamp
+    // would not land; next boot retries.
+    {
+        let mut guard = state.db.lock().map_err(|e| e.to_string())?;
+        let conn = guard.as_mut().ok_or("DB not initialized")?;
+        conn.execute(
+            "INSERT OR REPLACE INTO schema_versions (module, version, updated_at) VALUES ('term_vocab_bridge', ?1, strftime('%s','now'))",
+            rusqlite::params![TERM_VOCAB_BRIDGE_SCHEMA_VERSION],
+        ).map_err(|e| format!("Failed to stamp schema_versions.term_vocab_bridge: {}", e))?;
+    }
+
+    // Announce done.
+    let _ = app.emit("migration:term_vocab_v2", serde_json::json!({
+        "phase": "done",
+        "total": processed,
+    }));
+
+    Ok(())
 }
 
 /// MIG-003 Step 1 — Walk every row in `note_meta`, read the file's
@@ -1373,32 +1496,22 @@ fn init_db(path: &Path) -> Result<Connection, String> {
     ensure_term_vocab_bridge_column(&conn)
         .map_err(|e| format!("Failed to ensure term_vocab.bridge_concept_id: {}", e))?;
 
-    // Step v1→v2 — bulk-sentinel bigram rows. Runs once. On a fresh DB
-    // term_vocab is empty, so the UPDATE matches zero rows (no-op). On
-    // Boss's library or any pre-existing one with millions of bigram
-    // rows, this single UPDATE replaces what would otherwise be a
-    // multi-hour iteration in `ctse_run_backfill`.
-    if stored_term_vocab_bridge_version < 2 {
-        let t0 = std::time::Instant::now();
-        sentinel_bigram_rows(&conn)
-            .map_err(|e| format!("Failed to sentinel term_vocab bigram rows: {}", e))?;
-        diag_log(path, &format!(
-            "[search] init_db: term_vocab bigram-sentinel migration v2 ran in {} ms",
-            t0.elapsed().as_millis(),
-        ));
-    }
-
-    // Stamp the latest version so subsequent boots short-circuit the
-    // gate. INSERT OR REPLACE so concurrent migrations from older
-    // versions converge to the same row.
+    // Step v1→v2 — bulk-sentinel bigram rows. MIG-015 (PJ-001) defers
+    // this step off the boot critical path. On Boss-equivalent libraries
+    // (~5.7M term_vocab rows), the bulk UPDATE blocks for 30-90 sec
+    // with no UI feedback. We now only DETECT pending here; the actual
+    // UPDATE runs in a deferred async task scheduled from
+    // `ensure_search_db_ready` via `maybe_schedule_v2_sentinel_migration`.
+    //
+    // Schema-version stamping also moves into the deferred task's
+    // success path. If the user kills the app mid-migration,
+    // schema_versions.term_vocab_bridge stays at its prior value and
+    // the next boot picks up where left off via the WHERE clause's
+    // `bridge_concept_id IS NULL` filter (crash-recoverable by
+    // construction — no journal table, no checkpointing).
     if stored_term_vocab_bridge_version < TERM_VOCAB_BRIDGE_SCHEMA_VERSION {
-        conn.execute(
-            "INSERT OR REPLACE INTO schema_versions (module, version, updated_at) VALUES ('term_vocab_bridge', ?1, strftime('%s','now'))",
-            rusqlite::params![TERM_VOCAB_BRIDGE_SCHEMA_VERSION],
-        ).map_err(|e| format!("Failed to stamp schema_versions.term_vocab_bridge: {}", e))?;
         diag_log(path, &format!(
-            "[search] init_db: schema_versions.term_vocab_bridge stamped to {} (was {})",
-            TERM_VOCAB_BRIDGE_SCHEMA_VERSION,
+            "[search] init_db: term_vocab v2 sentinel migration deferred to async task (stored version = {})",
             stored_term_vocab_bridge_version,
         ));
     }
@@ -4041,6 +4154,16 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
     // thread. No-op if schema_versions.sky is already at target. Returns
     // immediately so this doesn't extend boot time.
     crate::sky_backfill::maybe_schedule(app.clone());
+
+    // MIG-015 (PJ-001) §1B: schedule the deferred term_vocab v2 sentinel
+    // migration on a background thread. No-op if the schema stamp is
+    // already at v2 OR if there are no rows pending. On a pre-MIG-013
+    // library (~5.7M rows) this avoids the 30-90 sec boot freeze that
+    // the inline single-statement UPDATE used to cause; the user gets
+    // a fully-painted UI immediately and the chunked migration runs in
+    // the background with status-bar progress emit.
+    maybe_schedule_v2_sentinel_migration(app.clone());
+
     Ok(())
 }
 
