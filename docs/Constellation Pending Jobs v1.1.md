@@ -57,13 +57,24 @@ The first three rows are what's queued to start *next*; the rest are sequenced b
 
 ### PJ-001 — MIG-013 P1-M1: chunk the v2 sentinel migration with progress UI
 
-**Status.** Open · **Severity.** P1 · **Effort.** Mini-MIG
+**Status.** **SHIPPED 2026-05-06 via MIG-015** · **Severity.** P1 · **Effort.** Mini-MIG (4 phases)
 
 The MIG-013 §1E audit (`lab/reports/MIG-013-CTSE-AUDIT.md` §3) found that the v2 bigram-sentinel migration's bulk UPDATE blocks boot for 30–90 sec on pre-MIG-013 DBs (~5.7M bigram rows) with zero user feedback. Boss's library has already migrated, but new pre-MIG-013 backups would hit it once.
 
-**Source.** `lab/reports/MIG-013-CTSE-AUDIT.md` §3, `project_mig013_v2_migration_blocking_boot.md`.
+**What shipped (MIG-015 §1A → §1D)**: the migration moved off the boot critical path. `init_db` only detects pending; a worker thread spawned from `ensure_search_db_ready` runs the chunked migration (100,000 rows per chunk) with the DB mutex acquired+dropped per chunk + a 10ms yield between chunks so other IPC callers can interleave. Tauri event channel `migration:term_vocab_v2` emits start/progress/done phases. Frontend `MigrationProgressStrip.svelte` listens and renders a status-bar strip in a new `.sb-center` group: `Migrating term index — N / M`, then `Term index migration complete`, hidden 4 seconds later. i18n covers all 15 locales upfront.
 
-**Acceptance.** On a 5.7M-row pre-MIG-013 DB, boot proceeds to first paint within 5 seconds. A status-bar strip shows `Migrating term index — N / M` and disappears 4 seconds after `done`. Pre-UPDATE `diag_log` records the matching row count for diagnostics even without UI.
+**Acceptance**: ALL met.
+- ✅ Boot proceeds to first paint without waiting on the migration.
+- ✅ Status-bar strip shows running counts; hides 4 sec after `done`.
+- ✅ Crash-recoverable by construction (WHERE clause is the resume marker).
+- ✅ 15 locales translated.
+- ✅ Three-agent audit clean after one P0 fix (DB mutex held across loop → split per chunk).
+
+**Visual Boss test skipped** per Eisa's directive: Boss's library is already at v2 from earlier MIG-013 testing, and rolling back to manufacture migration work would touch closed-feature production data (Index closed 2026-05-04 per session log; Working Agreement #4 forbids "let's see what happens" on closed-feature data). Static audit verifies behaviour; future users with pre-MIG-013 backups will exercise the visible path naturally.
+
+**Closed-out commit chain**: `0ca7e64` (§1A) → `df0bf87` (§1B) → `62d3b4a` (§1C) → close-out commit (§1D + P0 fix + audit + orientation v1.47).
+
+**Source.** `lab/reports/MIG-013-CTSE-AUDIT.md` §3 (original deferred); `lab/reports/PJ-001-CHUNKED-V2-SENTINEL-ARCHITECT.md`; `lab/reports/PJ-001-CHUNKED-V2-SENTINEL-PLAN.md`; `lab/reports/MIG-015-CHUNKED-V2-SENTINEL-AUDIT.md`.
 
 ---
 

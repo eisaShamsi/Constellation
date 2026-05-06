@@ -513,12 +513,12 @@ fn ensure_term_vocab_bridge_column(conn: &Connection) -> rusqlite::Result<()> {
 /// the original §1D backfill would have hit.
 ///
 /// **Boot-time cost on pre-MIG-013 DBs**: a 7,600-note Arabic+English
-/// corpus produces ~50K stems and ~5.7M bigrams, so the UPDATE scans
-/// ~5.7M rows and writes `'-'` to ~5.68M of them. Wall-clock: tens of
-/// seconds on commodity SSD, multiple minutes on slower disk. The
-/// boot path is fully blocking with no progress feedback. Tracked in
-/// `lab/reports/MIG-013-CTSE-AUDIT.md` §3 as deferred P1-M1; future
-/// mini-MIG will chunk + emit progress events.
+/// corpus produces ~50K stems and ~5.7M bigrams. MIG-015 (PJ-001)
+/// closed the boot-blocking variant: the migration now runs in a
+/// background worker that chunks the UPDATE in 100k-row batches,
+/// dropping + re-acquiring the DB mutex around each chunk so other
+/// IPC callers see ~10ms availability windows between chunks. Status
+/// strip in `MigrationProgressStrip.svelte` shows progress.
 ///
 /// Idempotent: only NULL bigram rows are touched. Real concept ids
 /// (`c:…`) and prior `'-'` sentinels are untouched. Re-running the
@@ -537,46 +537,39 @@ fn count_pending_v2_sentinel_rows(conn: &Connection) -> rusqlite::Result<u64> {
     )
 }
 
-/// MIG-015 §1A — chunked variant of `sentinel_bigram_rows`. Each chunk
-/// processes up to `chunk_size` rows; loops until 0 rows affected. The
-/// `on_progress` callback fires after each non-empty chunk with the
-/// cumulative completed-row count.
-///
-/// Crash-recoverable by construction — the WHERE clause excludes
-/// already-sentinelled rows, so a re-entry from a prior partial run
-/// picks up where it left off without journaling state.
+/// MIG-015 §1A — single-chunk variant of `sentinel_bigram_rows`. The
+/// caller drives the loop and is responsible for dropping +
+/// re-acquiring the DB mutex around each call so concurrent IPC
+/// callers see availability windows between chunks. (The original
+/// §1A `sentinel_bigram_rows_chunked` helper held the mutex for the
+/// whole loop — §1D audit P0 fix.)
 ///
 /// SQLite-portable shape: stock SQLite doesn't support `UPDATE ... LIMIT N`
 /// (requires `SQLITE_ENABLE_UPDATE_DELETE_LIMIT`), so we use the
 /// idiomatic `UPDATE ... WHERE rowid IN (SELECT rowid ... LIMIT N)`.
 ///
-/// Returns the total number of rows sentinelled by this call.
-fn sentinel_bigram_rows_chunked<F>(
+/// Returns the number of rows affected by this single chunk. 0 means
+/// no more pending rows; caller should break out of its loop.
+///
+/// Crash-recoverable by construction — the WHERE clause excludes
+/// already-sentinelled rows, so a re-entry from a prior partial run
+/// picks up where it left off without journaling state.
+fn sentinel_bigram_rows_chunk(
     conn: &Connection,
     chunk_size: u32,
-    mut on_progress: F,
-) -> rusqlite::Result<u64>
-where
-    F: FnMut(u64),
-{
-    let mut completed: u64 = 0;
-    loop {
-        let affected = conn.execute(
-            "UPDATE term_vocab \
-                SET bridge_concept_id = '-' \
-              WHERE rowid IN ( \
-                SELECT rowid FROM term_vocab \
-                 WHERE bridge_concept_id IS NULL \
-                   AND term LIKE '%' || CHAR(31) || '%' \
-                 LIMIT ?1 \
-              )",
-            rusqlite::params![chunk_size],
-        )? as u64;
-        if affected == 0 { break; }
-        completed += affected;
-        on_progress(completed);
-    }
-    Ok(completed)
+) -> rusqlite::Result<u64> {
+    let affected = conn.execute(
+        "UPDATE term_vocab \
+            SET bridge_concept_id = '-' \
+          WHERE rowid IN ( \
+            SELECT rowid FROM term_vocab \
+             WHERE bridge_concept_id IS NULL \
+               AND term LIKE '%' || CHAR(31) || '%' \
+             LIMIT ?1 \
+          )",
+        rusqlite::params![chunk_size],
+    )? as u64;
+    Ok(affected)
 }
 
 /// MIG-015 §1B — entry point for the deferred v2 sentinel migration.
@@ -679,20 +672,38 @@ fn run_v2_sentinel_migration(app: &tauri::AppHandle) -> Result<(), String> {
         "total": total,
     }));
 
-    // Run the chunked migration. Each chunk emits progress.
-    let app_emit = app.clone();
-    let result = {
-        let mut guard = state.db.lock().map_err(|e| e.to_string())?;
-        let conn = guard.as_mut().ok_or("DB not initialized")?;
-        sentinel_bigram_rows_chunked(conn, CHUNK_SIZE, |completed| {
-            let _ = app_emit.emit("migration:term_vocab_v2", serde_json::json!({
-                "phase": "progress",
-                "completed": completed,
-                "total": total,
-            }));
-        })
-    };
-    let processed = result.map_err(|e| format!("v2 sentinel migration failed: {}", e))?;
+    // Run the chunked migration. Drop + re-acquire the DB mutex around
+    // each chunk so concurrent IPC callers (note saves, search queries,
+    // anything that holds `state.db.lock()`) see ~10ms availability
+    // windows between chunks. §1D audit P0 fix: the original §1A
+    // helper held the mutex for the whole loop, which contradicted
+    // the §1B design contract "between chunks the runtime briefly
+    // yields, allowing other DB callers to interleave." The lock is
+    // now released between chunks; the brief sleep below ensures the
+    // OS scheduler actually gives waiting threads a turn before this
+    // worker re-acquires.
+    let mut processed: u64 = 0;
+    loop {
+        let affected = {
+            let guard = state.db.lock().map_err(|e| e.to_string())?;
+            let conn = guard.as_ref().ok_or("DB not initialized")?;
+            sentinel_bigram_rows_chunk(conn, CHUNK_SIZE)
+                .map_err(|e| format!("v2 sentinel chunk failed: {}", e))?
+        }; // mutex dropped here — other callers can interleave
+        if affected == 0 { break; }
+        processed += affected;
+        let _ = app.emit("migration:term_vocab_v2", serde_json::json!({
+            "phase": "progress",
+            "completed": processed,
+            "total": total,
+        }));
+        // Brief yield so other DB callers can actually acquire the
+        // mutex before this worker re-acquires for the next chunk.
+        // 10ms is small relative to the chunk's 200-400ms duration
+        // (≤5% slowdown) but long enough to guarantee the OS
+        // scheduler interleaves waiting threads.
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
 
     // Stamp on success. Crash-recoverable by construction — if we
     // failed mid-loop above, we'd have returned an error and the stamp
