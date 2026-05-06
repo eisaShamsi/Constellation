@@ -128,6 +128,11 @@
 	// Simulation
 	let simNodes: SimNode[] = [];
 	let simLinks: SimLink[] = [];
+	// MIG-016 §1B — neighborMap for O(degree) hover-edge lookup.
+	// Mirrors graphEngine.ts:410-429 (Sky View's neighbor maps). Populated
+	// once in buildSimData; consumed in drawLinks's hover branch + the
+	// selectedNode neighborhood-highlight path.
+	let neighborMap = new Map<string, Set<string>>();
 	let simulation: d3.Simulation<SimNode, SimLink> | null = null;
 
 	// Interaction
@@ -229,6 +234,9 @@
 		});
 
 		simLinks = [];
+		// MIG-016 §1B — rebuild neighborMap fresh on every buildSimData
+		// call. Symmetric: each link contributes both (s→t) and (t→s).
+		neighborMap = new Map<string, Set<string>>();
 		for (const l of links) {
 			const src = nodeMap.get(l.source);
 			const tgt = nodeMap.get(l.target);
@@ -245,6 +253,10 @@
 					traversalCount: enriched?.traversalCount ?? 0,
 					status: enriched?.status ?? 'active',
 				});
+				if (!neighborMap.has(src.id)) neighborMap.set(src.id, new Set());
+				if (!neighborMap.has(tgt.id)) neighborMap.set(tgt.id, new Set());
+				neighborMap.get(src.id)!.add(tgt.id);
+				neighborMap.get(tgt.id)!.add(src.id);
 			}
 		}
 	}
@@ -535,7 +547,23 @@
 		ctx.scale(zoom, zoom);
 
 		drawRadialGuides();
-		drawLinks();
+		// MIG-016 §1B — edges-on-hover gate. Mirrors Sky View's "nervous
+		// system" pattern at graphEngine.ts:1880-1894. Edges drawn only
+		// when one of the four reveal-conditions holds:
+		//   - A node is hovered (its neighborhood)
+		//   - A node is selected (neighborhood-highlight)
+		//   - Search is active (matched nodes' edges shown)
+		//   - A link annotation is being hovered (need that link visible)
+		// On the common path (idle Sight, no interaction) the edge loop
+		// is skipped entirely — first-paint cost drops from O(visible_edges)
+		// to zero, restoring per-frame headroom for nodes + decorations.
+		const hasSearch = searchMatchSet.size > 0;
+		const needsEdgeDraw =
+			hoveredNode !== null
+			|| selectedNode !== null
+			|| hasSearch
+			|| hoveredLink !== null;
+		if (needsEdgeDraw) drawLinks();
 		drawNodes();
 		drawSearchBadges();
 		if (hoveredNode) drawHoverLabel(hoveredNode);
@@ -569,9 +597,21 @@
 		const vpTop = -panY / zoom - hh - 50, vpBottom = -panY / zoom + hh + 50;
 		const hasSearch = searchMatchSet.size > 0;
 
+		// MIG-016 §1B — when hovering or selecting a single node, restrict
+		// the iteration to that node's neighborhood. Drops the cost from
+		// O(E) to O(degree). Falls back to full iteration when search is
+		// active (per-link search-classification needs the full set) or
+		// a link annotation is being hovered.
+		const focusNodeId = hoveredNode?.id ?? selectedNode?.id ?? null;
+		const focusOnly = focusNodeId !== null && !hasSearch && hoveredLink === null;
+
 		for (const link of simLinks) {
 			const src = link.source as SimNode;
 			const tgt = link.target as SimNode;
+
+			// Fast neighborhood filter — skip non-incident edges in focus mode.
+			if (focusOnly && src.id !== focusNodeId && tgt.id !== focusNodeId) continue;
+
 			const sx = src.x ?? 0, sy = src.y ?? 0;
 			const tx = tgt.x ?? 0, ty = tgt.y ?? 0;
 
@@ -963,25 +1003,13 @@
 		performance.mark('sight:mount:end');
 		performance.measure('sight:mount:total', 'sight:mount:start', 'sight:mount:end');
 
-		// Dump mount measures. Production binary ships with DevTools
-		// disabled, so append the trace to a clipboard string + alert
-		// so Eisa can paste both toggle and mount traces in one step.
-		// (toggleLens() in +layout.svelte fires its alert FIRST since
-		// it's the parent flow; this mount alert chains after the user
-		// dismisses that one.)
+		// MIG-016 §1A — performance.marks retained; alert/clipboard prompts
+		// removed at §1B start. Console.log retained for rare DevTools sessions.
 		const mountMeasures = performance.getEntriesByType('measure')
 			.filter(m => m.name.startsWith('sight:mount:'))
 			.map(m => ({ phase: m.name, duration_ms: Math.round(m.duration) }));
 		console.log('[MIG-016 §1A] Sight mount trace:');
 		console.table(mountMeasures);
-
-		const mountTraceText = '=== Sight mount trace (MIG-016 §1A) ===\n' +
-			'phase' + ' '.repeat(40 - 5) + 'duration_ms\n' +
-			'-'.repeat(60) + '\n' +
-			mountMeasures.map(m => m.phase.padEnd(40) + String(m.duration_ms).padStart(10)).join('\n');
-		navigator.clipboard.writeText(mountTraceText)
-			.then(() => alert('Sight mount trace copied to clipboard.\nPaste it in chat (separate from the toggle trace).'))
-			.catch(() => alert('Sight mount trace (copy below):\n\n' + mountTraceText));
 
 		loadLinkEnrichment().then(() => {
 			for (const link of simLinks) {
