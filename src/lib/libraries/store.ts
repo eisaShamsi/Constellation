@@ -1548,6 +1548,92 @@ const STAGE_META: Record<LinkStage, { icon: string; color: string; label: string
 
 export function getLinkStageMeta(stage: LinkStage) { return STAGE_META[stage]; }
 
+// ─── MIG-014 — Note stage taxonomy (Living Link 6-stage baseline + custom) ───
+
+/**
+ * A user-defined note-stage entry. Persisted in the active Universe's
+ * `universe.json` under `custom_stages`. Surfaces alongside the
+ * `LIVING_LINK_BASELINE` six in PropertyEditor's combobox and the
+ * NotePane breadcrumb dropdown.
+ *
+ * `name` is stored normalized (trimmed + lowercased on the Rust side
+ * before insertion) so on-disk frontmatter `stage:` values remain
+ * consistent across sessions and devices.
+ */
+export interface CustomStage {
+	name: string;
+	emoji: string;
+}
+
+/**
+ * The Living Link baseline — six stages every Constellation Universe
+ * always exposes. Mirrors `LIVING_LINK_BASELINE_NAMES` in
+ * `src-tauri/src/universe.rs`. Order is the canonical promotion path
+ * (spark → birth → growth → maturity → dormancy → archival), which
+ * NotePane's breadcrumb arrows step through.
+ */
+export const LIVING_LINK_BASELINE: ReadonlyArray<CustomStage> = [
+	{ name: 'spark',    emoji: '✨' },
+	{ name: 'birth',    emoji: '🌱' },
+	{ name: 'growth',   emoji: '🌿' },
+	{ name: 'maturity', emoji: '🌳' },
+	{ name: 'dormancy', emoji: '😴' },
+	{ name: 'archival', emoji: '📦' },
+] as const;
+
+/**
+ * Active-Universe custom stages. Loaded by `+layout.svelte` after
+ * `set_active_universe` succeeds; mutated only via the IPC wrappers
+ * below (which re-read on success so the store stays authoritative).
+ * Empty on fresh Universes — PropertyEditor renders just the baseline.
+ */
+export const customStages = writable<CustomStage[]>([]);
+
+/** Read the active Universe's custom_stages from universe.json. */
+export async function readCustomStages(): Promise<CustomStage[]> {
+	return invoke<CustomStage[]>('read_custom_stages');
+}
+
+/** Append a custom stage. Rust normalizes `name` and rejects baseline collisions / duplicates. */
+export async function addCustomStage(stage: CustomStage): Promise<void> {
+	await invoke('add_custom_stage', { stage });
+	const fresh = await readCustomStages();
+	customStages.set(fresh);
+}
+
+/** Rename / re-emoji an existing custom stage. `oldName` is the pre-edit normalized name. */
+export async function updateCustomStage(oldName: string, newStage: CustomStage): Promise<void> {
+	await invoke('update_custom_stage', { oldName, newStage });
+	const fresh = await readCustomStages();
+	customStages.set(fresh);
+}
+
+/** Remove a custom stage by name. Notes that reference it keep the value on disk; PropertyEditor renders it as plain text until renamed. */
+export async function removeCustomStage(name: string): Promise<void> {
+	await invoke('remove_custom_stage', { name });
+	const fresh = await readCustomStages();
+	customStages.set(fresh);
+}
+
+/** Reorder custom stages. `namesInOrder` must contain every existing custom-stage name exactly once. */
+export async function reorderCustomStages(namesInOrder: string[]): Promise<void> {
+	await invoke('reorder_custom_stages', { namesInOrder });
+	const fresh = await readCustomStages();
+	customStages.set(fresh);
+}
+
+/**
+ * Returns true when `value` matches a baseline or a currently-known
+ * custom stage. Used by PropertyEditor to decide whether to render
+ * the typed value as a "create new stage" affordance vs. just a
+ * known-stage selection.
+ */
+export function isKnownStage(value: string, customs: CustomStage[]): boolean {
+	const v = value.trim().toLowerCase();
+	if (LIVING_LINK_BASELINE.some(b => b.name === v)) return true;
+	return customs.some(c => c.name.trim().toLowerCase() === v);
+}
+
 /** Initialize the Rust-native ONNX embedding engine. */
 export async function initEmbeddingEngine(): Promise<string> {
 	return invoke('constellation_init_embeddings');
