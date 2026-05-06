@@ -162,8 +162,16 @@
 		if (titleEl && document.activeElement === titleEl) return;
 		if (titleValue !== title) titleValue = title;
 	});
-	let currentStage = $state(stage?.toLowerCase() ?? '');
-	// Stage sync: breadcrumb ← Properties panel via onstagechange callback (no $effect needed)
+	// MIG-014 §2D fix — stage is the PARENT; every UI surface that touches it
+	// is a subfunction that DERIVES, not a holder of its own copy. Per Eisa's
+	// architectural directive 2026-05-06 ("Enough patching"). The prior
+	// `$state(stage?.toLowerCase() ?? '')` held a local copy that drifted from
+	// Properties + file tree across handlePromote / handlePromote-from-disk /
+	// onstagechange paths — three patches couldn't keep all three surfaces
+	// in sync because each was its own source of truth. Now currentStage
+	// derives from the `stage` prop, which itself derives from the on-disk
+	// `stage:` frontmatter via NoteEditor.parsed. One source, one update path.
+	let currentStage = $derived(stage?.toLowerCase() ?? '');
 	let titleEl: HTMLInputElement | undefined;
 	let editorEl: HTMLDivElement | undefined;
 	let view: EditorView | null = null;
@@ -936,7 +944,6 @@
 						aria-label={$t('notePane.demote')}
 						onmousedown={(e) => e.preventDefault()}
 						onclick={() => {
-							currentStage = pp;
 							onpromote?.(pp);
 							view?.focus();
 						}}>{isRTL ? '→' : '←'}</button>
@@ -949,7 +956,6 @@
 						title={$t('notePane.promote')}
 						onmousedown={(e) => e.preventDefault()}
 						onclick={() => {
-							currentStage = np;
 							onpromote?.(np);
 							view?.focus();
 						}}>{$t('notePane.promote')} {isRTL ? '←' : '→'}</button>
@@ -1061,7 +1067,7 @@
 					noteDir={dir}
 					collapsed={propsCollapsed}
 					onToggle={() => propsCollapsed = !propsCollapsed}
-					onstagechange={(s) => { currentStage = s; onpromote?.(s); }}
+					onstagechange={(s) => { onpromote?.(s); }}
 				/>
 			{/if}
 			<hr class="e-props-divider" />
