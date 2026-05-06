@@ -119,10 +119,27 @@
 	// item (user explicitly arrowed to it) or the typed input value (user
 	// is creating a custom stage).
 	let stageUserNavigated = $state(false);
-	// MIG-014 §2B — dropdown sources from LIVING_LINK_BASELINE only.
-	// §2C will reintroduce mode-flip (6 fixed vs 6 paired) based on the
-	// per-note custom-term suffix encoded into the stage value.
-	const stageOptions = $derived(LIVING_LINK_BASELINE);
+	// MIG-014 §2C — Mode-flip combobox. The dropdown always shows 6 entries:
+	// Mode A (input empty / matches a fixed lifecycle name): the 6 baseline
+	// stages.  Mode B (input is a custom word or has a dash suffix): the
+	// 6 paired stages (`spark-<suffix>`, `birth-<suffix>`, …) with the
+	// suffix being either the part after the dash or the whole input.
+	// Per Stages Concept Paper v1.2 §4: per-note scope; nothing Universe-wide.
+	function buildStageOptions(inputVal: string): Array<{ value: string; emoji: string }> {
+		const trimmed = inputVal.trim();
+		const lcTrimmed = trimmed.toLowerCase();
+		const { suffix } = splitStage(trimmed);
+		const isFixed = !suffix && LIVING_LINK_BASELINE.some(b => b.name === lcTrimmed);
+		if (!trimmed || isFixed) {
+			return LIVING_LINK_BASELINE.map(b => ({ value: b.name, emoji: b.emoji }));
+		}
+		// Mode B: term is suffix when input has dash, else whole input.
+		const term = (suffix || trimmed).toLowerCase();
+		return LIVING_LINK_BASELINE.map(b => ({
+			value: `${b.name}-${term}`,
+			emoji: b.emoji,
+		}));
+	}
 
 	// Key suggestion state
 	let focusedKeyIdx = $state(-1);
@@ -187,8 +204,7 @@
 		stageMenuOpen = -1;
 	}
 
-	function handleStageKeydown(e: KeyboardEvent, idx: number) {
-		const opts = stageOptions;
+	function handleStageKeydown(e: KeyboardEvent, idx: number, opts: Array<{ value: string; emoji: string }>) {
 		if (e.key === 'ArrowDown') {
 			e.preventDefault();
 			stageUserNavigated = true;
@@ -201,23 +217,24 @@
 			stageHighlight = Math.max(stageHighlight - 1, 0);
 		} else if (e.key === 'Enter') {
 			e.preventDefault();
-			// Only commit the highlighted dropdown item when the user
-			// explicitly navigated there with arrow keys. Otherwise commit
-			// the typed input — that's how custom values get added.
+			// Commit the highlighted dropdown item when the user explicitly
+			// navigated there. Otherwise (typing a fresh value, no navigation)
+			// commit the dropdown's first item — Mode B's first item is
+			// `spark-<typed>`, which is what the user expects when typing
+			// a custom term and pressing Enter without picking.
 			if (stageUserNavigated && stageMenuOpen === idx && opts[stageHighlight]) {
-				commitStage(idx, opts[stageHighlight].name);
-			} else {
-				commitStage(idx, (e.target as HTMLInputElement).value);
+				commitStage(idx, opts[stageHighlight].value);
+			} else if (stageMenuOpen === idx && opts[0]) {
+				commitStage(idx, opts[0].value);
 			}
 			(e.target as HTMLInputElement).blur();
 		} else if (e.key === 'Tab') {
 			// Same logic as Enter, but doesn't preventDefault — Tab still
 			// moves focus to the next field.
 			if (stageUserNavigated && stageMenuOpen === idx && opts[stageHighlight]) {
-				commitStage(idx, opts[stageHighlight].name);
-			} else {
-				const v = (e.target as HTMLInputElement).value;
-				if (v) commitStage(idx, v);
+				commitStage(idx, opts[stageHighlight].value);
+			} else if (stageMenuOpen === idx && opts[0]) {
+				commitStage(idx, opts[0].value);
 			}
 		} else if (e.key === 'Escape') {
 			e.preventDefault();
@@ -550,13 +567,16 @@
 
 			<!-- Value input by type -->
 			{#if prop.key.toLowerCase() === 'stage'}
-				<!-- MIG-014 §1C.5 — custom combobox (replaces native <datalist>):
-				     6 Living Link baseline + per-Universe custom stages, single-row
-				     items rendered as "emoji label". Inline-add on commit: typing a
-				     value not in the combined list calls addCustomStage so it's
-				     reusable in any other note in the same Universe. The leading
-				     pe-stage-current-emoji span shows the emoji for the current
-				     value (input value alone is the canonical lowercase name). -->
+				<!-- MIG-014 §2C — mode-flip combobox per Stages Concept Paper v1.2.
+				     The dropdown is always 6 entries:
+				       Mode A (input empty / matches a fixed lifecycle name):
+				         the 6 Living Link baselines.
+				       Mode B (custom word in input or dash suffix present):
+				         the 6 paired stages with the user's suffix —
+				         "spark-<suffix>", "birth-<suffix>", …
+				     Per-note scope — nothing Universe-wide. The custom term
+				     is encoded into the on-disk value as the dash suffix. -->
+				{@const opts = buildStageOptions(prop.value)}
 				<div class="pe-stage-wrap">
 					<span class="pe-stage-current-emoji" aria-hidden="true">{lookupStageEmoji(prop.value)}</span>
 					<input
@@ -567,16 +587,16 @@
 						oninput={(e) => { updateValue(idx, (e.target as HTMLInputElement).value); stageUserNavigated = false; stageMenuOpen = idx; }}
 						onfocus={() => { stageMenuOpen = idx; stageHighlight = 0; stageUserNavigated = false; }}
 						onclick={(e) => { e.stopPropagation(); stageMenuOpen = idx; }}
-						onkeydown={(e) => handleStageKeydown(e, idx)}
+						onkeydown={(e) => handleStageKeydown(e, idx, opts)}
 					/>
 					{#if stageMenuOpen === idx}
 						<div class="pe-stage-dropdown">
-							{#each stageOptions as opt, optIdx}
+							{#each opts as opt, optIdx}
 								<button class="pe-stage-option" class:pe-stage-active={optIdx === stageHighlight}
 									onmousedown={(e) => e.preventDefault()}
-									onclick={(e) => { e.stopPropagation(); commitStage(idx, opt.name); }}>
+									onclick={(e) => { e.stopPropagation(); commitStage(idx, opt.value); }}>
 									<span class="pe-stage-emoji">{opt.emoji}</span>
-									<span class="pe-stage-label">{stageLabel(opt.name, $t)}</span>
+									<span class="pe-stage-label">{stageLabel(opt.value, $t)}</span>
 								</button>
 							{/each}
 						</div>
