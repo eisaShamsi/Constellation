@@ -75,8 +75,17 @@
 		linkTraversalMap?: Map<string, number>;
 	} = $props();
 
-	// Internal derived state — recalculated when tab changes
-	let parsed = $derived(parseFrontmatter(tab.content || ''));
+	// Internal derived state — recalculated when tab changes OR when the
+	// openTabs store entry for this tab changes. The store dereference is
+	// what makes promote/demote (which mutates ct.content + openTabs.update)
+	// propagate into PropertyEditor: without it, $derived only watches the
+	// `tab` prop reference, not its mutable `content` field, so Svelte 5
+	// doesn't see the post-promote update — the breadcrumb advanced (local
+	// state) but Properties stayed stale (BUG-019, MIG-014 §2D Boss test).
+	let parsed = $derived.by(() => {
+		const ct = $openTabs.find(x => x.id === tab.id);
+		return parseFrontmatter(ct?.content ?? tab.content ?? '');
+	});
 	let body = $derived(parsed.body);
 	let noteDir = $derived(detectDir(body) || $dir);
 	let stage = $derived(parsed.properties.find((p: FrontmatterProperty) => p.key.toLowerCase() === 'stage')?.value ?? '');

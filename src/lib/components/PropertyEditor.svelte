@@ -204,6 +204,27 @@
 		stageMenuOpen = -1;
 	}
 
+	// Resolve which stage value to commit when the user presses Enter or
+	// Tab. Three-tier precedence:
+	//   1. Explicit arrow-navigation → commit the highlighted opt.
+	//   2. Typed value already matches one of the dropdown options
+	//      (Mode A: typed "birth", opts has "birth" → commit "birth";
+	//      Mode B: typed "spark-concept" → commit "spark-concept").
+	//   3. Mode-B custom-term shortcut: typed a non-matching word
+	//      (e.g. "concept") → commit the dropdown's first item
+	//      (`spark-<term>`), since the dropdown's contents reflect
+	//      what the user typed.
+	function commitFromInputOrHighlight(e: KeyboardEvent, idx: number, opts: Array<{ value: string; emoji: string }>) {
+		const inputVal = (e.target as HTMLInputElement).value.trim().toLowerCase();
+		if (stageUserNavigated && stageMenuOpen === idx && opts[stageHighlight]) {
+			commitStage(idx, opts[stageHighlight].value);
+		} else if (inputVal && opts.some(o => o.value === inputVal)) {
+			commitStage(idx, inputVal);
+		} else if (stageMenuOpen === idx && opts[0]) {
+			commitStage(idx, opts[0].value);
+		}
+	}
+
 	function handleStageKeydown(e: KeyboardEvent, idx: number, opts: Array<{ value: string; emoji: string }>) {
 		if (e.key === 'ArrowDown') {
 			e.preventDefault();
@@ -217,25 +238,12 @@
 			stageHighlight = Math.max(stageHighlight - 1, 0);
 		} else if (e.key === 'Enter') {
 			e.preventDefault();
-			// Commit the highlighted dropdown item when the user explicitly
-			// navigated there. Otherwise (typing a fresh value, no navigation)
-			// commit the dropdown's first item — Mode B's first item is
-			// `spark-<typed>`, which is what the user expects when typing
-			// a custom term and pressing Enter without picking.
-			if (stageUserNavigated && stageMenuOpen === idx && opts[stageHighlight]) {
-				commitStage(idx, opts[stageHighlight].value);
-			} else if (stageMenuOpen === idx && opts[0]) {
-				commitStage(idx, opts[0].value);
-			}
+			commitFromInputOrHighlight(e, idx, opts);
 			(e.target as HTMLInputElement).blur();
 		} else if (e.key === 'Tab') {
 			// Same logic as Enter, but doesn't preventDefault — Tab still
 			// moves focus to the next field.
-			if (stageUserNavigated && stageMenuOpen === idx && opts[stageHighlight]) {
-				commitStage(idx, opts[stageHighlight].value);
-			} else if (stageMenuOpen === idx && opts[0]) {
-				commitStage(idx, opts[0].value);
-			}
+			commitFromInputOrHighlight(e, idx, opts);
 		} else if (e.key === 'Escape') {
 			e.preventDefault();
 			stageMenuOpen = -1;
