@@ -106,6 +106,16 @@
 	// Type dropdown state
 	let openTypeMenu = $state(-1);
 
+	// MIG-014 §1C.5 — Stage combobox dropdown state. `stageMenuOpen` is the
+	// property-row index whose stage dropdown is currently open, or -1.
+	// Native <datalist> was replaced because Chromium/WebView2 renders the
+	// option's `value` and inner-text as a two-tier line that confuses the
+	// "type or pick" affordance. This is a custom dropdown matching the
+	// type-icon dropdown's visual treatment.
+	let stageMenuOpen = $state(-1);
+	let stageHighlight = $state(0);
+	const stageOptions = $derived([...LIVING_LINK_BASELINE, ...$customStages]);
+
 	// Key suggestion state
 	let focusedKeyIdx = $state(-1);
 	let suggestHighlight = $state(0);
@@ -150,6 +160,69 @@
 		}
 		if (focusedKeyIdx >= 0 && !target.closest('.pe-key-wrap')) {
 			focusedKeyIdx = -1;
+		}
+		if (stageMenuOpen >= 0 && !target.closest('.pe-stage-wrap')) {
+			stageMenuOpen = -1;
+		}
+	}
+
+	// MIG-014 §1C.5 — Render a stage's display label.
+	// Baseline stages translate via `notePane.stage.{name}`; custom stages
+	// are user-typed so we capitalize the first character and show the
+	// rest verbatim (preserves any non-Latin script).
+	function stageLabel(name: string): string {
+		const baseline = LIVING_LINK_BASELINE.some(b => b.name === name);
+		if (baseline) return $t(`notePane.stage.${name}`);
+		return name.charAt(0).toUpperCase() + name.slice(1);
+	}
+
+	// MIG-014 §1C.5 — Commit a stage selection (whether picked or typed).
+	// `raw` is normalized (trim + lowercase) before disk write so frontmatter
+	// `stage:` values stay canonical across sessions and devices. New values
+	// (not in baseline + customs) are persisted as a custom stage so the
+	// next note in the same Universe sees them in its dropdown.
+	function commitStage(idx: number, raw: string) {
+		const v = raw.trim().toLowerCase();
+		if (!v) return;
+		updateValue(idx, v);
+		onstagechange?.(v);
+		if (!isKnownStage(v, $customStages)) {
+			addCustomStage({ name: v, emoji: '🏷️' }).catch(err =>
+				console.warn('[PropertyEditor] addCustomStage failed:', err));
+		}
+		stageMenuOpen = -1;
+	}
+
+	function handleStageKeydown(e: KeyboardEvent, idx: number) {
+		const opts = stageOptions;
+		if (e.key === 'ArrowDown') {
+			e.preventDefault();
+			if (stageMenuOpen !== idx) { stageMenuOpen = idx; stageHighlight = 0; return; }
+			stageHighlight = Math.min(stageHighlight + 1, opts.length - 1);
+		} else if (e.key === 'ArrowUp') {
+			e.preventDefault();
+			if (stageMenuOpen !== idx) { stageMenuOpen = idx; stageHighlight = opts.length - 1; return; }
+			stageHighlight = Math.max(stageHighlight - 1, 0);
+		} else if (e.key === 'Enter') {
+			e.preventDefault();
+			if (stageMenuOpen === idx && opts[stageHighlight]) {
+				commitStage(idx, opts[stageHighlight].name);
+			} else {
+				commitStage(idx, (e.target as HTMLInputElement).value);
+			}
+			(e.target as HTMLInputElement).blur();
+		} else if (e.key === 'Tab') {
+			// Tab commits typed value (if any) but lets default tab order proceed.
+			if (stageMenuOpen === idx && opts[stageHighlight]) {
+				commitStage(idx, opts[stageHighlight].name);
+			} else {
+				const v = (e.target as HTMLInputElement).value;
+				if (v) commitStage(idx, v);
+			}
+		} else if (e.key === 'Escape') {
+			e.preventDefault();
+			stageMenuOpen = -1;
+			(e.target as HTMLInputElement).blur();
 		}
 	}
 
@@ -477,35 +550,35 @@
 
 			<!-- Value input by type -->
 			{#if prop.key.toLowerCase() === 'stage'}
-				<!-- MIG-014 — open combobox: 6 Living Link baseline + per-Universe customs.
-				     Inline-add: typing a value not in the combined list calls
-				     addCustomStage on commit so the value is reusable in any other
-				     note in the same Universe. -->
-				<input
-					class="pe-val pe-stage-input"
-					type="text"
-					list="stage-suggestions-{idx}"
-					value={prop.value}
-					placeholder={$t('propertyEditor.stagePlaceholder')}
-					oninput={(e) => updateValue(idx, (e.target as HTMLInputElement).value)}
-					onchange={(e) => {
-						const v = (e.target as HTMLInputElement).value.toLowerCase().trim();
-						updateValue(idx, v);
-						onstagechange?.(v);
-						if (v && !isKnownStage(v, $customStages)) {
-							addCustomStage({ name: v, emoji: '🏷️' }).catch(err =>
-								console.warn('[PropertyEditor] addCustomStage failed:', err));
-						}
-					}}
-				/>
-				<datalist id="stage-suggestions-{idx}">
-					{#each LIVING_LINK_BASELINE as bs}
-						<option value={bs.name}>{bs.emoji} {$t(`notePane.stage.${bs.name}`)}</option>
-					{/each}
-					{#each $customStages as cs}
-						<option value={cs.name}>{cs.emoji} {cs.name}</option>
-					{/each}
-				</datalist>
+				<!-- MIG-014 §1C.5 — custom combobox (replaces native <datalist>):
+				     6 Living Link baseline + per-Universe custom stages, single-row
+				     items rendered as "emoji label". Inline-add on commit: typing a
+				     value not in the combined list calls addCustomStage so it's
+				     reusable in any other note in the same Universe. -->
+				<div class="pe-stage-wrap">
+					<input
+						class="pe-val pe-stage-input"
+						type="text"
+						value={prop.value}
+						placeholder={$t('propertyEditor.stagePlaceholder')}
+						oninput={(e) => updateValue(idx, (e.target as HTMLInputElement).value)}
+						onfocus={() => { stageMenuOpen = idx; stageHighlight = 0; }}
+						onclick={(e) => { e.stopPropagation(); stageMenuOpen = idx; }}
+						onkeydown={(e) => handleStageKeydown(e, idx)}
+					/>
+					{#if stageMenuOpen === idx}
+						<div class="pe-stage-dropdown">
+							{#each stageOptions as opt, optIdx}
+								<button class="pe-stage-option" class:pe-stage-active={optIdx === stageHighlight}
+									onmousedown={(e) => e.preventDefault()}
+									onclick={(e) => { e.stopPropagation(); commitStage(idx, opt.name); }}>
+									<span class="pe-stage-emoji">{opt.emoji}</span>
+									<span class="pe-stage-label">{stageLabel(opt.name)}</span>
+								</button>
+							{/each}
+						</div>
+					{/if}
+				</div>
 			{:else if prop.type === 'checkbox'}
 				<label class="pe-checkbox-wrap">
 					<input type="checkbox" class="pe-checkbox"
@@ -658,6 +731,38 @@
 	.pe-type-option.pe-type-active { background: var(--background-modifier-border-focus); font-weight: 600; }
 	.pe-type-option-icon { width: 18px; text-align: center; flex-shrink: 0; }
 	.pe-type-option-label { flex: 1; }
+
+	/* MIG-014 §1C.5 — stage combobox (custom dropdown, no native <datalist>) */
+	.pe-stage-wrap { position: relative; flex: 1; min-width: 0; }
+	.pe-stage-input {
+		width: 100%; box-sizing: border-box;
+		border: none; background: none; padding: 3px 4px;
+		font-size: 0.85rem; color: var(--text-normal);
+		font-family: inherit; outline: none;
+		border-radius: 3px; text-align: start;
+	}
+	.pe-stage-input:focus { background: var(--background-primary); box-shadow: 0 0 0 1px hsla(var(--accent-h), var(--accent-s), var(--accent-l), 0.27); }
+	.pe-stage-dropdown {
+		position: absolute; top: 100%; left: 0; right: 0; z-index: 100;
+		margin-top: 2px;
+		background: var(--background-primary);
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 8px; padding: 4px;
+		box-shadow: var(--shadow-s);
+		max-height: 280px; overflow-y: auto;
+	}
+	.pe-stage-option {
+		display: flex; align-items: center; gap: 10px;
+		width: 100%; border: none; background: none;
+		padding: 6px 10px;
+		border-radius: 6px; cursor: pointer;
+		font-size: 0.95rem; color: var(--text-normal); font-family: inherit;
+		text-align: start;
+	}
+	.pe-stage-option:hover,
+	.pe-stage-option.pe-stage-active { background: var(--background-modifier-hover); }
+	.pe-stage-emoji { font-size: 1.2rem; line-height: 1; flex-shrink: 0; }
+	.pe-stage-label { flex: 1; }
 
 	/* Key input + suggestions */
 	.pe-key-wrap { position: relative; flex-shrink: 0; width: auto; min-width: 50px; max-width: 100px; }

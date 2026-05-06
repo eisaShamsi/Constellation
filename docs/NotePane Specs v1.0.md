@@ -140,10 +140,10 @@ The CM6 extension stack lives in `$lib/editor/` and is **shared with FocusPane**
 
 ### 3.5 Stage + breadcrumb
 
-- Stage breadcrumb is a dropdown menu (`6cbe87c`, "Replace promote button with stage dropdown menu"). Stage values lowercased (`da0d03d`, `5e45315`).
+- **Final design — promote/demote arrows + badge, NO dropdown.** The breadcrumb's stage region is `[← demote-arrow] [emoji label-badge] [promote-arrow →]`. RTL flips arrow direction. The dropdown experiment (`6cbe87c`, "Replace promote button with stage dropdown menu") was undone at `90c1ea8` (§136, 2026-05-02 stage breadcrumb redesign + handlePromote cascade gate) — the current code at NotePane.svelte:918-950 has no dropdown. Earlier doc draft mistakenly captured the dropdown experiment as final state; corrected 2026-05-06.
+- Stage values lowercased on disk (`da0d03d`, `5e45315`).
 - **Stage sync**: `Properties → breadcrumb` is via the **`onstagechange` callback** from PropertyEditor, NOT a `$effect` watching `properties`. The earlier `$effect` pattern (`b46b51a`, `63ca542`) was REMOVED at `3441358` because it disrupted CM6 cursor display.
-- Stage redesign at `90c1ea8` (§136, 2026-05-02) consolidated the design.
-- Breadcrumb shows: navigate back/forward, title, stage dropdown, three-dot menu, optional trail navigation chevrons.
+- Breadcrumb shows: navigate back/forward, title, stage badge with promote/demote arrows, three-dot menu, optional trail navigation chevrons.
 
 ### 3.6 Toolbar
 
