@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { FileEntry } from '$lib/libraries/store';
-	import { activeTab, splitActive, openTabs } from '$lib/libraries/store';
+	import { activeTab, splitActive, openTabs, customStages, lookupStageEmoji } from '$lib/libraries/store';
 
 	let {
 		entries,
@@ -133,7 +133,13 @@
 						{#if entry.name.endsWith('.base')}
 							<svg class="base-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
 						{/if}
-						{#if stageMap.get(entry.path.replace(/\\/g, '/').toLowerCase()) === 'fleeting'}<span class="note-stage">🌱</span>{:else if stageMap.get(entry.path.replace(/\\/g, '/').toLowerCase()) === 'literature'}<span class="note-stage">📖</span>{:else if stageMap.get(entry.path.replace(/\\/g, '/').toLowerCase()) === 'permanent'}<span class="note-stage">🔗</span>{:else if stageMap.get(entry.path.replace(/\\/g, '/').toLowerCase()) === 'synthesis'}<span class="note-stage">✨</span>{/if}
+						<!-- MIG-014 §1D — stage emoji via lookupStageEmoji (Living Link
+						     baseline + per-Universe customs + legacy Zettelkasten fallback).
+						     Empty value → no badge rendered. -->
+						{#if stageMap.get(entry.path.replace(/\\/g, '/').toLowerCase())}
+							{@const _stageVal = stageMap.get(entry.path.replace(/\\/g, '/').toLowerCase())!}
+							<span class="note-stage">{lookupStageEmoji(_stageVal, $customStages)}</span>
+						{/if}
 						<span class="note-name">{entry.display_title || entry.name.replace(/\.(md|base)$/, '')}</span>
 					</button>
 				{/if}

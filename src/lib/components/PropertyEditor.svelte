@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { FrontmatterProperty, PropertyType } from '$lib/libraries/store';
 	import { saveTabContent, normalizeDateValue, buildFullContent, openTabs } from '$lib/libraries/store';
-	import { LIVING_LINK_BASELINE, customStages, addCustomStage, isKnownStage } from '$lib/libraries/store';
+	import { LIVING_LINK_BASELINE, customStages, addCustomStage, isKnownStage, lookupStageEmoji } from '$lib/libraries/store';
 	import { setRegisteredType, getRegisteredType } from '$lib/libraries/propertyTypeRegistry';
 	import { t, locale } from '$lib/i18n';
 	import { get } from 'svelte/store';
@@ -114,6 +114,11 @@
 	// type-icon dropdown's visual treatment.
 	let stageMenuOpen = $state(-1);
 	let stageHighlight = $state(0);
+	// `stageUserNavigated` flips true on ArrowUp/ArrowDown and back to false
+	// on typing — so Enter knows whether to commit the highlighted dropdown
+	// item (user explicitly arrowed to it) or the typed input value (user
+	// is creating a custom stage).
+	let stageUserNavigated = $state(false);
 	const stageOptions = $derived([...LIVING_LINK_BASELINE, ...$customStages]);
 
 	// Key suggestion state
@@ -197,23 +202,29 @@
 		const opts = stageOptions;
 		if (e.key === 'ArrowDown') {
 			e.preventDefault();
+			stageUserNavigated = true;
 			if (stageMenuOpen !== idx) { stageMenuOpen = idx; stageHighlight = 0; return; }
 			stageHighlight = Math.min(stageHighlight + 1, opts.length - 1);
 		} else if (e.key === 'ArrowUp') {
 			e.preventDefault();
+			stageUserNavigated = true;
 			if (stageMenuOpen !== idx) { stageMenuOpen = idx; stageHighlight = opts.length - 1; return; }
 			stageHighlight = Math.max(stageHighlight - 1, 0);
 		} else if (e.key === 'Enter') {
 			e.preventDefault();
-			if (stageMenuOpen === idx && opts[stageHighlight]) {
+			// Only commit the highlighted dropdown item when the user
+			// explicitly navigated there with arrow keys. Otherwise commit
+			// the typed input — that's how custom values get added.
+			if (stageUserNavigated && stageMenuOpen === idx && opts[stageHighlight]) {
 				commitStage(idx, opts[stageHighlight].name);
 			} else {
 				commitStage(idx, (e.target as HTMLInputElement).value);
 			}
 			(e.target as HTMLInputElement).blur();
 		} else if (e.key === 'Tab') {
-			// Tab commits typed value (if any) but lets default tab order proceed.
-			if (stageMenuOpen === idx && opts[stageHighlight]) {
+			// Same logic as Enter, but doesn't preventDefault — Tab still
+			// moves focus to the next field.
+			if (stageUserNavigated && stageMenuOpen === idx && opts[stageHighlight]) {
 				commitStage(idx, opts[stageHighlight].name);
 			} else {
 				const v = (e.target as HTMLInputElement).value;
@@ -554,15 +565,18 @@
 				     6 Living Link baseline + per-Universe custom stages, single-row
 				     items rendered as "emoji label". Inline-add on commit: typing a
 				     value not in the combined list calls addCustomStage so it's
-				     reusable in any other note in the same Universe. -->
+				     reusable in any other note in the same Universe. The leading
+				     pe-stage-current-emoji span shows the emoji for the current
+				     value (input value alone is the canonical lowercase name). -->
 				<div class="pe-stage-wrap">
+					<span class="pe-stage-current-emoji" aria-hidden="true">{lookupStageEmoji(prop.value, $customStages)}</span>
 					<input
 						class="pe-val pe-stage-input"
 						type="text"
 						value={prop.value}
 						placeholder={$t('propertyEditor.stagePlaceholder')}
-						oninput={(e) => updateValue(idx, (e.target as HTMLInputElement).value)}
-						onfocus={() => { stageMenuOpen = idx; stageHighlight = 0; }}
+						oninput={(e) => { updateValue(idx, (e.target as HTMLInputElement).value); stageUserNavigated = false; stageMenuOpen = idx; }}
+						onfocus={() => { stageMenuOpen = idx; stageHighlight = 0; stageUserNavigated = false; }}
 						onclick={(e) => { e.stopPropagation(); stageMenuOpen = idx; }}
 						onkeydown={(e) => handleStageKeydown(e, idx)}
 					/>
@@ -733,9 +747,17 @@
 	.pe-type-option-label { flex: 1; }
 
 	/* MIG-014 §1C.5 — stage combobox (custom dropdown, no native <datalist>) */
-	.pe-stage-wrap { position: relative; flex: 1; min-width: 0; }
+	.pe-stage-wrap {
+		position: relative; flex: 1; min-width: 0;
+		display: flex; align-items: center; gap: 6px;
+	}
+	.pe-stage-current-emoji {
+		font-size: 1.05rem; line-height: 1;
+		flex-shrink: 0;
+		opacity: 0.95;
+	}
 	.pe-stage-input {
-		width: 100%; box-sizing: border-box;
+		flex: 1; min-width: 0; box-sizing: border-box;
 		border: none; background: none; padding: 3px 4px;
 		font-size: 0.85rem; color: var(--text-normal);
 		font-family: inherit; outline: none;

@@ -1634,6 +1634,39 @@ export function isKnownStage(value: string, customs: CustomStage[]): boolean {
 	return customs.some(c => c.name.trim().toLowerCase() === v);
 }
 
+/**
+ * Old Zettelkasten emoji map. Notes saved before MIG-014 may still
+ * carry these values (`fleeting/literature/permanent/synthesis`).
+ * Per Architect §5.2 the on-disk values are preserved verbatim — we
+ * keep the old emoji here so the UI continues to render them
+ * recognisably without forcing a migration.
+ */
+export const LEGACY_ZETTELKASTEN_EMOJI: Readonly<Record<string, string>> = {
+	fleeting: '🌱',
+	literature: '📖',
+	permanent: '🔗',
+	synthesis: '✨',
+};
+
+/**
+ * Resolve an emoji for a stage name, regardless of whether it's a
+ * Living Link baseline, a user-defined custom stage, or a legacy
+ * Zettelkasten value still living on disk. Returns `''` for empty
+ * input and `🏷️` (the default custom-stage emoji) for unknown
+ * non-empty values that haven't been registered yet — matches the
+ * default `addCustomStage` ships with.
+ */
+export function lookupStageEmoji(name: string, customs: CustomStage[]): string {
+	const v = name.trim().toLowerCase();
+	if (!v) return '';
+	const baseline = LIVING_LINK_BASELINE.find(b => b.name === v);
+	if (baseline) return baseline.emoji;
+	const custom = customs.find(c => c.name.trim().toLowerCase() === v);
+	if (custom) return custom.emoji;
+	if (LEGACY_ZETTELKASTEN_EMOJI[v]) return LEGACY_ZETTELKASTEN_EMOJI[v];
+	return '🏷️';
+}
+
 /** Initialize the Rust-native ONNX embedding engine. */
 export async function initEmbeddingEngine(): Promise<string> {
 	return invoke('constellation_init_embeddings');

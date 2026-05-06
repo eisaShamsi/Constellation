@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
+	import { customStages, lookupStageEmoji } from '$lib/libraries/store';
 	import HelpTip from './HelpTip.svelte';
 
 	interface LinkedNote { name: string; path: string; depth: number; stratum: number; }
@@ -91,9 +92,9 @@
 	const ORIGIN_COLORS: Record<string, string> = {
 		received: '#4A9EFF', discovered: '#FFB347', mixed: '#A78BFA', none: '#9ca3af',
 	};
-	const STAGE_ICONS: Record<string, string> = {
-		fleeting: '\u{1F331}', literature: '\u{1F4D6}', permanent: '\u{1F517}', synthesis: '✨',
-	};
+	// MIG-014 §1D — stage icons resolved through lookupStageEmoji
+	// (Living Link 6-stage baseline + per-Universe customs + legacy
+	// Zettelkasten fallback). Old hardcoded STAGE_ICONS removed.
 
 	function truncName(name: string, max: number): string {
 		return name.length > max ? name.slice(0, max - 1) + '…' : name;
@@ -258,7 +259,7 @@
 				<div class="i360-card-meta">
 					<span class="i360-stratum-pill">L{activeStratum} {tr($t(`inspector360.stratum_name_${activeStratum}`), `inspector360.stratum_name_${activeStratum}`, STRATUM_FALLBACK[activeStratum])}</span>
 					<span class="i360-pill" style="background: color-mix(in srgb, {MATURITY_COLORS[data.maturity] ?? '#999'} 18%, transparent); color: {MATURITY_COLORS[data.maturity] ?? '#999'}">{data.maturity}</span>
-					{#if data.stage}<span class="i360-pill-soft">{STAGE_ICONS[data.stage] || ''} {data.stage}</span>{/if}
+					{#if data.stage}<span class="i360-pill-soft">{lookupStageEmoji(data.stage, $customStages)} {data.stage}</span>{/if}
 				</div>
 				<div class="i360-card-counts">
 					<span>{'⬆'} {data.total_outbound}</span>
@@ -332,7 +333,7 @@
 				</div>
 				<div class="i360-strip-cell">
 					<span class="i360-strip-label">{tr($t('inspector360.dim_stage'), 'inspector360.dim_stage', 'Stage')} <HelpTip tooltip={tr($t('inspector360.help_dim_stage'), 'inspector360.help_dim_stage', '')} position="bottom" /></span>
-					<span class="i360-strip-value">{STAGE_ICONS[data.stage] || ''} {data.stage ? tr($t(`inspector360.stage_${data.stage}`), `inspector360.stage_${data.stage}`, data.stage) : tr($t('inspector360.stage_none'), 'inspector360.stage_none', 'none')}</span>
+					<span class="i360-strip-value">{lookupStageEmoji(data.stage, $customStages)} {data.stage ? tr($t(`inspector360.stage_${data.stage}`), `inspector360.stage_${data.stage}`, data.stage) : tr($t('inspector360.stage_none'), 'inspector360.stage_none', 'none')}</span>
 				</div>
 				<div class="i360-strip-cell">
 					<span class="i360-strip-label">{tr($t('inspector360.dim_review'), 'inspector360.dim_review', 'Review')} <HelpTip tooltip={tr($t('inspector360.help_dim_review'), 'inspector360.help_dim_review', '')} position="bottom" /></span>

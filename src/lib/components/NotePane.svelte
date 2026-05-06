@@ -8,6 +8,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { t } from '$lib/i18n';
 	import { appSettings, getEffectiveScriptFonts } from '$lib/libraries/store';
+	import { LIVING_LINK_BASELINE, customStages, lookupStageEmoji } from '$lib/libraries/store';
 	import type { FrontmatterProperty } from '$lib/libraries/store';
 	import PropertyEditor from './PropertyEditor.svelte';
 	import { EditorView, keymap, drawSelection, Decoration, type DecorationSet } from '@codemirror/view';
@@ -916,9 +917,15 @@
 		<span class="e-bc-sep">/</span>
 		<span class="e-bc-note">{title}</span>
 		{#if currentStage}
-			{@const stageOrder = ['fleeting', 'literature', 'permanent', 'synthesis']}
+			<!-- MIG-014 §1D — stage list = Living Link 6-stage baseline + per-Universe customs.
+			     Demote/promote arrows iterate through it in order. Custom stages append
+			     chronologically. Old Zettelkasten values (fleeting/literature/permanent/
+			     synthesis) yield idx = -1 so neither arrow renders, but the badge still
+			     shows via lookupStageEmoji's legacy fallback. -->
+			{@const stageOrder = [...LIVING_LINK_BASELINE.map(s => s.name), ...$customStages.map(s => s.name)]}
 			{@const idx = stageOrder.indexOf(currentStage)}
-			{@const stageEmoji = currentStage === 'fleeting' ? '🌱' : currentStage === 'literature' ? '📖' : currentStage === 'permanent' ? '🔗' : currentStage === 'synthesis' ? '✨' : ''}
+			{@const stageEmoji = lookupStageEmoji(currentStage, $customStages)}
+			{@const stageDisplayLabel = LIVING_LINK_BASELINE.some(b => b.name === currentStage) ? $t(`notePane.stage.${currentStage}`) : currentStage.charAt(0).toUpperCase() + currentStage.slice(1)}
 			{@const isRTL = dir === 'rtl'}
 			<div class="e-bc-stage-wrap">
 				{#if idx > 0}
@@ -933,8 +940,8 @@
 							view?.focus();
 						}}>{isRTL ? '→' : '←'}</button>
 				{/if}
-				<span class="e-bc-stage-badge" title={$t(`notePane.stage.${currentStage}`)}>
-					{stageEmoji} {$t(`notePane.stage.${currentStage}`)}
+				<span class="e-bc-stage-badge" title={stageDisplayLabel}>
+					{stageEmoji} {stageDisplayLabel}
 				</span>
 				{#if idx >= 0 && idx < stageOrder.length - 1}
 					<button class="e-bc-promote"
