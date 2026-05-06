@@ -931,6 +931,12 @@
 
 	// ─── Lifecycle ────────────────────────────────────────────
 	onMount(async () => {
+		// MIG-016 §1A — performance.mark instrumentation for the cold-mount
+		// path (buildSimData / computeGravityWellLayout / fitToScreen / first
+		// paint). Companion to the toggleLens() instrumentation in
+		// +layout.svelte; both feed the data-collection gate.
+		performance.mark('sight:mount:start');
+
 		const rect = canvasEl.parentElement?.getBoundingClientRect();
 		width = rect?.width ?? 800;
 		height = rect?.height ?? 600;
@@ -939,9 +945,31 @@
 		ctx = canvasEl.getContext('2d');
 		if (ctx) ctx.scale(devicePixelRatio, devicePixelRatio);
 
+		performance.mark('sight:mount:buildSimData:start');
 		buildSimData();
+		performance.mark('sight:mount:buildSimData:end');
+		performance.measure('sight:mount:buildSimData', 'sight:mount:buildSimData:start', 'sight:mount:buildSimData:end');
+
+		performance.mark('sight:mount:layout:start');
 		computeGravityWellLayout();
+		performance.mark('sight:mount:layout:end');
+		performance.measure('sight:mount:layout', 'sight:mount:layout:start', 'sight:mount:layout:end');
+
+		performance.mark('sight:mount:fitToScreen:start');
 		fitToScreen();
+		performance.mark('sight:mount:fitToScreen:end');
+		performance.measure('sight:mount:fitToScreen', 'sight:mount:fitToScreen:start', 'sight:mount:fitToScreen:end');
+
+		performance.mark('sight:mount:end');
+		performance.measure('sight:mount:total', 'sight:mount:start', 'sight:mount:end');
+
+		// Dump mount measures (separate from toggle measures since they
+		// fire after the toggle's table). Eisa copies both tables.
+		const mountMeasures = performance.getEntriesByType('measure')
+			.filter(m => m.name.startsWith('sight:mount:'))
+			.map(m => ({ phase: m.name, duration_ms: Math.round(m.duration) }));
+		console.log('[MIG-016 §1A] Sight mount trace:');
+		console.table(mountMeasures);
 
 		loadLinkEnrichment().then(() => {
 			for (const link of simLinks) {

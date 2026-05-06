@@ -3348,30 +3348,46 @@
 		lensLoading = true;
 		// Snapshot the graph version so we can detect a mid-computation change.
 		const computeVersion = skyVersion;
+		// MIG-016 §1A — performance.mark instrumentation. Calibrates the
+		// per-phase budgets for §1B (edges-on-hover) / §1C (worker offload)
+		// / §1D (post-paint prewarm) / §1E (SQLite cache). Console.table
+		// dump after lensActive = true. Boss data-collection gate: Eisa
+		// runs the build, opens DevTools console, copies the table to me.
+		performance.mark('sight:toggle:start');
 		try {
 			// 1. Compute centrality in Rust
+			performance.mark('sight:rust-centrality:start');
 			const libPaths = $libraries.map(l => [l.path, l.name] as [string, string]);
 			const result = await invoke<{ centrality: Record<string, number>; node_count: number; edge_count: number }>(
 				'constellation_sight_centrality', { libraryPaths: libPaths }
 			);
 			lensCentrality = new Map(Object.entries(result.centrality));
+			performance.mark('sight:rust-centrality:end');
+			performance.measure('sight:rust-centrality', 'sight:rust-centrality:start', 'sight:rust-centrality:end');
 
 			// 2. Run community detection (existing JS Louvain)
+			performance.mark('sight:louvain:start');
 			const clusterResult = detectClusters(
 				skyNodes.map(n => ({ id: n.id, name: n.name })),
 				skyLinks.map(l => ({ source: l.source, target: l.target })),
 			);
 			lensCommunities = clusterResult.clusters;
 			lensCommunityAssignments = clusterResult.assignments;
+			performance.mark('sight:louvain:end');
+			performance.measure('sight:louvain', 'sight:louvain:start', 'sight:louvain:end');
 
 			// 3. Compute structural gaps
+			performance.mark('sight:structural-gaps:start');
 			lensGaps = computeStructuralGaps(
 				clusterResult.clusters,
 				skyLinks.map(l => ({ source: l.source, target: l.target })),
 				clusterResult.assignments,
 			);
+			performance.mark('sight:structural-gaps:end');
+			performance.measure('sight:structural-gaps', 'sight:structural-gaps:start', 'sight:structural-gaps:end');
 
 			// 4. Compute universe health
+			performance.mark('sight:universe-health:start');
 			lensHealth = computeUniverseHealth(
 				clusterResult.modularity,
 				clusterResult.clusters,
@@ -3379,16 +3395,22 @@
 				skyLinks.length,
 				lensGaps.length,
 			);
+			performance.mark('sight:universe-health:end');
+			performance.measure('sight:universe-health', 'sight:universe-health:start', 'sight:universe-health:end');
 
 			// 5. Stratum-weighted centrality (Feature 2)
+			performance.mark('sight:stratum-weighted:start');
 			const weightedCentrality = stratumWeightedCentrality(
 				lensCentrality,
 				skyLinks.map(l => ({ source: l.source, target: l.target })),
 				skyNodes,
 			);
 			lensCentrality = weightedCentrality; // Replace with stratum-weighted version
+			performance.mark('sight:stratum-weighted:end');
+			performance.measure('sight:stratum-weighted', 'sight:stratum-weighted:start', 'sight:stratum-weighted:end');
 
 			// 6. Build top bridges list (top 10 by weighted centrality)
+			performance.mark('sight:top-bridges:start');
 			lensBridges = [...lensCentrality.entries()]
 				.sort((a, b) => b[1] - a[1])
 				.slice(0, 10)
@@ -3396,21 +3418,29 @@
 					const node = skyNodes.find(n => n.id === id);
 					return { id, name: node?.name ?? id, centrality };
 				});
+			performance.mark('sight:top-bridges:end');
+			performance.measure('sight:top-bridges', 'sight:top-bridges:start', 'sight:top-bridges:end');
 
 			// 7. Community profiles (Features 4 & 5: maturity + provenance)
+			performance.mark('sight:community-profiles:start');
 			lensCommunityProfiles = buildCommunityProfiles(
 				clusterResult.clusters,
 				clusterResult.assignments,
 				skyNodes,
 			);
+			performance.mark('sight:community-profiles:end');
+			performance.measure('sight:community-profiles', 'sight:community-profiles:start', 'sight:community-profiles:end');
 
 			// 8. Bridge suggestions for gaps (Feature 7)
+			performance.mark('sight:bridge-suggestions:start');
 			lensGaps = suggestBridges(
 				lensGaps,
 				clusterResult.clusters,
 				skyNodes.map(n => ({ id: n.id, name: n.name })),
 				skyLinks.map(l => ({ source: l.source, target: l.target })),
 			);
+			performance.mark('sight:bridge-suggestions:end');
+			performance.measure('sight:bridge-suggestions', 'sight:bridge-suggestions:start', 'sight:bridge-suggestions:end');
 
 			// 9. Contradictions from Rust (Feature 3)
 			lensContradictions = (result as any).contradictions ?? [];
@@ -3420,6 +3450,17 @@
 				lensDataStale = false;
 			}
 			lensActive = true;
+			performance.mark('sight:toggle:end');
+			performance.measure('sight:toggle:total', 'sight:toggle:start', 'sight:toggle:end');
+
+			// MIG-016 §1A — dump all sight:* measures for the Boss-test
+			// data-collection gate. Eisa copies this table from DevTools
+			// console; Claude reads it to calibrate §1B-§1E budgets.
+			const sightMeasures = performance.getEntriesByType('measure')
+				.filter(m => m.name.startsWith('sight:'))
+				.map(m => ({ phase: m.name, duration_ms: Math.round(m.duration) }));
+			console.log('[MIG-016 §1A] Sight perf trace:');
+			console.table(sightMeasures);
 		} catch (e) {
 			console.error('[Lens] Failed to compute:', e);
 		}
