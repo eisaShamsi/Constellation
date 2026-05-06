@@ -384,49 +384,59 @@ Any note containing one or more of these keys with a non-empty value is treated 
 
 ---
 
-## Feature 6: Externalization Engine (محرك التجسيد)
+## Feature 6: Stages — the Living Link lifecycle (مراحل دورة الحياة)
 
 ### What it is
 
-A progressive formalization pipeline that tracks how your notes mature from raw captures to crystallized insights. Every note can be assigned one of four stages:
+A note's lifecycle position — where the thinking sits *now*, not what the note is *about*. Constellation uses six fixed lifecycle stages, in canonical order:
 
-| Stage | Icon | Meaning |
-|-------|------|---------|
-| Fleeting | 🌱 | Quick capture, passing thought |
-| Literature | 📖 | Rewritten from a source in your own words |
-| Permanent | 🔗 | Atomic idea, one concept, connected to your graph |
-| Synthesis | ✨ | Original insight combining multiple permanent notes |
+| # | Stage | Icon | Meaning |
+|---|-------|------|---------|
+| 1 | Spark | ✨ | First ignition — a question or hunch captured before substance. |
+| 2 | Birth | 🌱 | First concrete formulation; a defensible claim. |
+| 3 | Growth | 🌿 | Active development — evidence, structure, links accumulating. |
+| 4 | Maturity | 🌳 | Settled; depended-upon; cite-stable. |
+| 5 | Dormancy | 😴 | Quiet but preserved. A pause, not a retirement. |
+| 6 | Archival | 📦 | Retired or superseded; preserved for reference. |
+
+A note can also carry an optional **custom term** that pairs with each lifecycle stage. Type `concept` in the stage field and the dropdown shows `Spark-Concept`, `Birth-Concept`, `Growth-Concept`, etc. The custom term is **per-note** — it lives in that note's `stage:` value as a dash suffix; nothing is set Universe-wide.
 
 ### Why it matters
 
-Most apps treat all notes equally. The Externalization Engine makes the distinction visible — you can see at a glance how much of your library is raw capture versus genuine understanding.
+A note's life mirrors a link's life. The same vocabulary — Spark / Birth / Growth / Maturity / Dormancy / Archival — describes both, because in Constellation knowledge is the connections between thoughts and both endpoints age through the same arc.
+
+The custom-term layer lets you mark *what kind* of note a particular stage represents (a `Birth-Concept` versus a `Birth-Hypothesis`) without forcing a shared vocabulary across the Universe. Each note declares its own.
 
 ### How to use it
 
 **Setting a stage:**
-- In the breadcrumb bar (above the editor), use the stage dropdown to select a stage
-- Or expand Properties and use the stage dropdown there
-- Both sync instantly with the file tree
+- Open the Properties panel and click the stage value.
+- The combobox shows **6 entries** — either the 6 fixed lifecycle stages (Mode A) or 6 paired stages with your typed term (Mode B). The mode flips automatically based on what you type.
+- Click an entry to commit, or press Enter on the typed value.
 
-**Promoting a note:**
-- Change the dropdown from one stage to the next
-- In Focus mode, click "🔗 Promote to Permanent" at the bottom
+**Promoting / demoting:**
+- The breadcrumb at the top of the note shows `[← demote] [emoji label] [Promote →]`.
+- Promote advances to the next lifecycle phase, carrying any custom suffix verbatim (`Spark-Concept` → `Birth-Concept` → … → `Archival-Concept`).
+- Demote walks back one phase.
+- At Spark, demote is hidden. At Archival, promote is hidden.
 
-**Removing a stage:**
-- Select "— Stage —" from the dropdown to remove the stage entirely
+**Switching tracks:**
+- To change the custom term, edit the value in the Properties panel. Promote/demote does not switch tracks.
+- To remove the term entirely, clear the suffix in Properties (leave just the lifecycle name like `birth`).
 
 ### Where you see it
 
-- **Breadcrumb bar**: dropdown with emoji + stage name
-- **Properties panel**: dropdown when `stage` property exists
-- **File tree**: emoji icon next to the note name
-- **Focus mode footer**: "Promote to Permanent" button
+- **Breadcrumb bar**: badge `🌱 Birth-Concept` (or just `🌱 Birth` for default-track) + promote/demote arrows.
+- **Properties panel**: single combobox, 6 entries always.
+- **File tree**: lifecycle emoji next to the note name. The custom-term suffix is *not* shown in the tree.
+- **360.3D / Inspector**: full label with the suffix.
 
 ### Tips
 
-- Stages are completely optional — notes without a stage work normally
-- Start by marking your most important notes as Permanent or Synthesis
-- Use Fleeting for quick captures in Focus mode
+- Stages are optional — notes without a `stage:` row work normally.
+- On-disk encoding uses lowercase + dash: `stage: spark-concept`.
+- Each note's custom term is independent of other notes' terms.
+- Old Zettelkasten values (`fleeting / literature / permanent / synthesis`) still display with their original emoji; they aren't promoteable in the new chain — to advance them, edit the value to a Living Link baseline.
 
 ---
 
@@ -558,7 +568,7 @@ Constellation ships with two built-in lenses:
 
 | Lens | Grouping | What it shows |
 |------|----------|---------------|
-| **By Stage** | `stage` frontmatter property | Groups notes into Fleeting, Literature, Permanent, and Synthesis — the four stages of the Externalization Engine |
+| **By Stage** | `stage` frontmatter property | Groups notes by lifecycle position — Spark / Birth / Growth / Maturity / Dormancy / Archival (six fixed Living Link stages, plus per-note custom-term variants like `Spark-Concept`) |
 | **By Topic** | Tags | Groups notes by their tags, so you can see all notes about a topic in one place |
 
 You can also create custom lenses that group notes by any frontmatter property you choose.
@@ -599,7 +609,7 @@ Open the Command Palette and type "Create Lens" to create a new lens directly.
 ### Tips
 
 - The "Folders" option is always available — it shows the normal file tree. Lenses are additive, not replacements.
-- The "By Stage" lens pairs naturally with the Externalization Engine. Use it to see how much of your library is still Fleeting versus Permanent or Synthesis.
+- The "By Stage" lens pairs naturally with the Living Link lifecycle. Use it to see how much of your library is still Spark or Birth versus Maturity or Dormancy.
 - The "By Topic" lens is especially useful for large libraries where notes about the same topic are scattered across different folders.
 - Custom lenses can group by any frontmatter property: `project`, `status`, `priority`, `category` — whatever fits your workflow.
 - No notes are duplicated or moved. Lenses are purely virtual views. Your files stay exactly where they are on disk.
@@ -616,7 +626,7 @@ These 9 features work together as a unified system:
 3. **Maturity Lifecycle** tracks how your notes grow over time — from fresh seeds to authoritative references.
 4. **Tension Detector** surfaces what is disconnected, contradictory, or fragile — the structural weaknesses in your thinking.
 5. **Provenance Chain** traces where your knowledge comes from — external evidence or personal insight, and how many steps removed.
-6. **Externalization Engine** makes the formalization journey visible — from fleeting capture to synthesized insight.
+6. **Stages — Living Link lifecycle** makes the formalization journey visible — from first Spark to Archival, with optional per-note custom-term variants.
 7. **Review Pulse** ensures you revisit what you know — spaced resurfacing that fights knowledge decay and keeps your mental models honest.
 8. **Trails** add the linear dimension — named ordered sequences that turn your web of knowledge into guided paths.
 9. **Multi-Lens Views** offer multiple perspectives — view the same library grouped by stage, topic, or any custom property without moving files.
@@ -628,7 +638,7 @@ The Cognitive Engine does not answer that question for you. It gives you the str
 ### How it all connects
 
 - When you add a **typed link**, that link feeds into **Strata** (certain types like `generalizes` and `supports` boost your note's level), **Maturity** (each inbound link brings a note closer to Evergreen), **Tension** (a `contradicts` link registers as a detected contradiction), and **Provenance** (a `derives-from` link extends the source chain).
-- When you set a **stage** on a note, the Externalization Engine tracks its formalization progress. A Fleeting note promoted to Permanent signals that a raw idea has been refined into a standalone concept.
+- When you set a **stage** on a note, the Living Link lifecycle tracks where it sits in the arc from first ignition to settled or retired. A note promoted from Spark through Birth, Growth, and Maturity signals that a raw flicker has matured into a depended-upon claim.
 - When **Review Pulse** resurfaces a note, you have the opportunity to add new links, update stale content, or re-evaluate assumptions — feeding back into every other CE feature.
 - When you create a **Trail**, you impose narrative order on your knowledge web, making it possible to walk through complex ideas step by step.
 - When you switch a **Lens**, you see the same library from a different angle — by formalization stage, by topic, or by any property you define. No files move; only the perspective changes.
@@ -685,7 +695,7 @@ There are two ways to open the Inspector for the note you are currently editing 
 In the **right sidebar**, click the **360.3D Inspector tab** (its icon is a small reticle: a circle with a centre dot and four short spokes). A scorecard appears showing:
 
 - The note's name.
-- A stratum pill (e.g. `L4 Concept`) and a maturity pill (e.g. `evergreen` in green). If the note has a stage (fleeting / literature / permanent / synthesis), it appears as a soft chip too.
+- A stratum pill (e.g. `L4 Concept`) and a maturity pill (e.g. `evergreen` in green). If the note has a stage (one of the six Living Link phases, optionally with a custom-term suffix like `spark-concept`), it appears as a soft chip too.
 - One line of counts: ↑outbound · ↓inbound · word count.
 - A per-direction bar chart with eight rows, one per typed direction plus Untyped. Each row shows the direction's name, a filled track proportional to its count, and the count itself. Empty rows are dimmed at 50 % opacity and show an em-dash where the count would be — these are your blind spots at this note.
 - A flags row: orphan, fragile, gap-count, due-for-review (whichever apply).
@@ -716,7 +726,7 @@ The Inspector reads everything from your note files and your existing link graph
 - **Maturity colour** comes from the Maturity Lifecycle feature (Feature 3).
 - **Contradictions count** comes from the Tension Detector (Feature 4).
 - **Origin type and trust depth** come from the Provenance Chain (Feature 5).
-- **Stage** comes from the Externalization Engine (Feature 6).
+- **Stage** comes from the Living Link lifecycle (Feature 6).
 - **Last reviewed / due** comes from the Review Pulse (Feature 7).
 - **Trail memberships** come from the Trails feature (Feature 8).
 - **Lens groups** come from the Multi-Lens Views feature (Feature 9).

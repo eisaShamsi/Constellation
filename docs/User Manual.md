@@ -1444,43 +1444,64 @@ Knowing what you think is only half the picture. Knowing where your ideas came f
 - If the Provenance tab shows "No derives-from chain found," it means the current note has no provenance links yet. The panel will display a hint reminding you of the syntax.
 - Provenance Chains are especially valuable for academic work, research projects, or any context where you need to trace an idea back to its original source.
 
-### 18.6 Externalization Engine
+### 18.6 Stages — the Living Link lifecycle
 
 **What it is**
 
-A progressive formalization pipeline that tracks how your notes mature from raw captures to crystallized insights. Every note can be assigned one of four stages:
+A note's lifecycle position. Knowledge isn't born finished — an idea begins as a flicker, takes shape, accumulates evidence, settles, fades, or is retired. Stages mark **where the thinking sits now**, not what the note is about.
 
-| Stage | Icon | Meaning |
-|-------|------|---------|
-| Fleeting | 🌱 | Quick capture, passing thought |
-| Literature | 📖 | Rewritten from a source in your own words |
-| Permanent | 🔗 | Atomic idea, one concept, connected to your graph |
-| Synthesis | ✨ | Original insight combining multiple permanent notes |
+Constellation uses **six fixed lifecycle stages** that any note can carry, in this order:
+
+| # | Stage | Icon | Meaning |
+|---|-------|------|---------|
+| 1 | Spark | ✨ | First ignition — a question, hypothesis, or hunch captured before substance. |
+| 2 | Birth | 🌱 | First concrete formulation; a defensible claim. |
+| 3 | Growth | 🌿 | Active development — evidence, structure, links accumulating. |
+| 4 | Maturity | 🌳 | Settled; depended-upon; cite-stable. |
+| 5 | Dormancy | 😴 | Quiet but preserved. A pause, not a retirement. |
+| 6 | Archival | 📦 | Retired or superseded; preserved for reference. |
+
+You can also add a **per-note custom term** that pairs with each lifecycle stage — e.g. `Spark-Concept`, `Birth-Concept`, `Growth-Concept`. Custom terms are typed per note and live only on that note (nothing is set Universe-wide).
 
 **Why it matters**
 
-Most apps treat all notes equally. The Externalization Engine makes the distinction visible — you can see at a glance how much of your library is raw capture versus genuine understanding.
+A note about gardening and a note about epistemology both move through the same lifecycle. Tracking that lifecycle makes the distinction between raw capture, working substance, and settled knowledge visible at a glance.
+
+The custom-term layer lets you mark *what kind* of note a particular stage represents — say, a `Birth-Concept` versus a `Birth-Hypothesis` versus a `Birth-Argument` — without forcing a Universe-wide vocabulary.
 
 **How to use it**
 
-1. In the breadcrumb bar (above the editor), use the stage dropdown to select a stage for the current note.
-2. Or expand Properties and use the stage dropdown there. Both sync instantly with the file tree.
-3. To promote a note, change the dropdown from one stage to the next. In Focus mode, click "Promote to Permanent" at the bottom.
-4. To remove a stage, select "— Stage —" from the dropdown.
+*Setting a stage from the Properties panel:*
+1. Open any note and expand the Properties panel.
+2. Click the stage value. A dropdown opens with **6 entries**.
+3. **Mode A** (default): the 6 fixed lifecycle stages. Pick one to commit.
+4. **Mode B** (custom): type a word like `concept` in the input. The dropdown swaps to show 6 paired stages — `Spark-Concept`, `Birth-Concept`, etc. Pick one. The fixed entries are hidden in Mode B.
+5. Press **Enter** without picking to commit:
+   - Mode A: typed name commits as-is (e.g. `birth` → `birth`).
+   - Mode B: typed term commits as `spark-<term>` (the first paired entry).
+6. **Switching back to fixed**: clear the input or type a fixed name. The dropdown returns to Mode A.
+
+*Promoting / demoting from the breadcrumb:*
+1. The breadcrumb above the editor shows the current stage as a badge: `🌿 Growth-Concept`.
+2. The **Promote →** arrow advances to the next lifecycle phase, **carrying the suffix verbatim** (`Growth-Concept` → `Maturity-Concept`).
+3. The **← Demote** arrow goes back one phase.
+4. At Spark, the demote arrow is hidden. At Archival, the promote arrow is hidden.
+5. To change the custom term itself (or remove it), edit the value in the Properties panel.
 
 **Where you see it**
 
-- **Breadcrumb bar**: A dropdown with emoji + stage name appears above the editor.
-- **Properties panel**: A stage dropdown appears when the `stage` property exists on the note.
-- **File tree**: An emoji icon appears next to the note name matching its stage.
-- **Focus mode footer**: A "Promote to Permanent" button for quick stage advancement.
+- **Breadcrumb bar**: badge with `<emoji> <Lifecycle>` or `<emoji> <Lifecycle>-<Term>`, plus the promote/demote arrows.
+- **Properties panel**: the single stage combobox with mode-flip behaviour.
+- **File tree**: a lifecycle emoji appears next to each note's name. The custom-term suffix is *not* shown in the tree (lifecycle only).
+- **360.3D / Inspector**: the full label with suffix, e.g. `✨ Spark-Concept`.
 
 **Tips**
 
-- Stages are completely optional — notes without a stage work normally.
-- Start by marking your most important notes as Permanent or Synthesis.
-- Use Fleeting for quick captures in Focus mode.
-- The four stages follow the Zettelkasten progression: fleeting thoughts become literature notes, which become permanent atomic ideas, which combine into original synthesis.
+- Stages are optional. Notes without a `stage:` row work normally.
+- The dash separator (`Spark-Concept`) is the canonical encoding. On disk the value is lowercase: `stage: spark-concept`.
+- Each note's custom term is independent. Two notes with `stage: birth-concept` aren't linked to each other — each typed it on its own.
+- Promote / demote walks the lifecycle, not the custom term. To switch tracks, edit Properties.
+- **Old Zettelkasten values still work**: notes saved before MIG-014 with `stage: fleeting / literature / permanent / synthesis` keep their on-disk values and display with their old emoji. They aren't promoteable in the new chain — to advance them, edit the stage value to a Living Link baseline.
 
 ---
 
@@ -1559,7 +1580,7 @@ Knowledge is not always a web. Sometimes it is a path — a learning sequence, a
 
 **What it is**
 
-Multi-Lens Views let you view your library through different classification schemes without changing your folder structure or duplicating notes. A "lens" is a virtual grouping that reorganizes notes based on a property or tag. Built-in lenses: "By Stage" (groups by Fleeting/Literature/Permanent/Synthesis) and "By Topic" (groups by tags). You can create custom lenses in Settings.
+Multi-Lens Views let you view your library through different classification schemes without changing your folder structure or duplicating notes. A "lens" is a virtual grouping that reorganizes notes based on a property or tag. Built-in lenses: "By Stage" (groups by lifecycle position — Spark / Birth / Growth / Maturity / Dormancy / Archival) and "By Topic" (groups by tags). You can create custom lenses in Settings.
 
 **Why it matters**
 
@@ -1582,7 +1603,7 @@ Folder structures impose a single hierarchy, but knowledge does not fit one tree
 **Tips**
 
 - "Folders" is always available as the default file tree. Lenses are additive, not replacements.
-- "By Stage" pairs with the Externalization Engine to show your formalization progress.
+- "By Stage" pairs with the Living Link lifecycle (§18.6) to show your formalization progress — Spark / Birth / Growth / Maturity / Dormancy / Archival, plus any per-note custom-term variants.
 - "By Topic" is useful for large libraries where related notes are scattered across folders.
 - Custom lenses can group by any frontmatter property: `project`, `status`, `priority`, etc.
 - No notes are duplicated or moved. Lenses are purely virtual views.
