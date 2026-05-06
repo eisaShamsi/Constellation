@@ -138,7 +138,38 @@ The Living Link Architecture spec (`docs/CONSTELLATION-KNOWLEDGE-FORMULATION.md`
 
 ### PJ-007 — Note-stage taxonomy: Living Link 6-stage baseline + extensible custom stages
 
-**Status.** **Confirmed · Ready to start** · **Severity.** P1 · **Effort.** Single focused MIG
+**Status.** **SHIPPED 2026-05-06 via MIG-014 (per-note dash-encoded model)** · **Severity.** P1 · **Effort.** Single focused MIG (delivered as a 2-iteration migration: §1A–§1D flat-list iteration record, §2A–§2F shipped model)
+
+**What actually shipped**: the **per-note dash-encoded model** from `Stages-Concept-Paper-v1.2.md` and Plan v4. Iteration 1 (§1A → §1D, flat custom-stage list with per-Universe `custom_stages: Vec<CustomStage>` + 5 IPC commands + emoji picker) was built then proven wrong in Boss test — it didn't scale (long promote chain), the matrix was wrong (Eisa: "It is allowed only one custom term"), and it broke the Single-Source-of-Truth principle (three local mirrors of the stage value drifted across surfaces).
+
+Iteration 2 (§2A → §2F, the model that ships):
+
+- **6 fixed lifecycle stages** form the canonical chain: spark → birth → growth → maturity → dormancy → archival.
+- **Per-note custom term** as a dash suffix in the on-disk frontmatter `stage:` value (e.g. `stage: spark-concept`). No Universe-wide setting.
+- **PropertyEditor combobox** is a 6-entry mode-flip dropdown: Mode A (input empty / matches a fixed name) → 6 baselines; Mode B (custom word in input or dash suffix) → 6 paired stages (`Spark-Concept`, `Birth-Concept`, …).
+- **Breadcrumb promote/demote** walks the 6-baseline chain; suffix carried verbatim across the chain. Single-source-of-truth (Law 2.7) — `currentStage` is `$derived` from the prop, never a local `$state` mirror.
+- **No emoji per custom term**: emoji follows the lifecycle phase.
+- **Old Zettelkasten values** (`fleeting / literature / permanent / synthesis`) preserved verbatim on disk; render via `LEGACY_ZETTELKASTEN_EMOJI` for back-compat. They aren't promoteable in the new chain.
+
+**Acceptance**: ALL met.
+- ✅ Single combobox in Properties (Mode A / Mode B).
+- ✅ On-disk frontmatter is the single canonical source — no Universe-level state.
+- ✅ Promote/demote chain length always 6.
+- ✅ User Manual + Cognitive Engine help updated (en + ar; PJ-014 queues 13 others).
+- ✅ Boss tests passed: combobox + per-note scope + cross-track navigation + boundary cases (Spark/Archival).
+- ✅ Three-agent audit clean (invariants / drift / migration-path), audit report at `lab/reports/MIG-014-NOTE-STAGE-AUDIT.md`.
+
+**Generalisation produced**: Law 2.7 (Constellation Development Laws v1.4) — every first-class data property has one canonical owner; UI surfaces are subfunctions that derive, never hold their own copy. Triggered by the §2C+§2D stage-sync patch cycle (Eisa: "Enough patching").
+
+**Closed-out commit chain**: `c3b9454` (§1A) → `8a9ab3d` (§1B) → `17bf474` (§1C) → `9973e65` (§1C.5) → `f4eef3e` (§1C.5 fix + §1D) [iteration record] → `2f58b8a` (§2A) → `59ed95c` (§2B) → `432076c` (§2C) → `2c58bda` (§2D) → `bb7a6ef` (§2C+D fix) → `e3a97a1` (Law 2.7 architectural fix) → `a50463c` (§2E) → `339d65b` (§2F closes).
+
+**Source.** Stages Concept Paper v1.0 → v1.2; MIG-014 Plan v1 → v4; MIG-014 §2F audit report.
+
+---
+
+### PJ-007 — original brief (kept for reference)
+
+**Status.** SHIPPED 2026-05-06.
 
 **Boss decision (2026-05-06)**: Notes use the **Living Link 6-stage lifecycle** as the canonical baseline (`spark / birth / growth / maturity / dormancy / archival`). The taxonomy is **closed but user-extensible** — users can add their own stages and Constellation accommodates them. The Zettelkasten 4-stage taxonomy currently in `PropertyEditor.svelte:481-484` is replaced. The note remains liquid: the system tracks usage, surfaces signals, and stays out of the user's way on classification.
 
