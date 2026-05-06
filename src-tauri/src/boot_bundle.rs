@@ -25,7 +25,7 @@ use std::collections::HashMap;
 use std::time::Instant;
 
 use crate::libraries::LibraryInfo;
-use crate::universe::{ChildUniverseInfo, CustomStage};
+use crate::universe::ChildUniverseInfo;
 
 #[derive(Debug, Serialize)]
 pub struct BootBundle {
@@ -39,10 +39,6 @@ pub struct BootBundle {
     /// Keyed by child universe path → list of library paths (normalized
     /// lowercase with forward slashes) that belong to that child.
     pub child_universe_lib_paths: HashMap<String, Vec<String>>,
-    /// MIG-014 — active Universe's user-extensible note-stage taxonomy.
-    /// Bundled here (instead of a separate IPC) so the boot path stays
-    /// "one round-trip" — see the BOOT RULE in `+layout.svelte`.
-    pub custom_stages: Vec<CustomStage>,
     /// Per-step wall-clock timings captured inside `constellation_boot_bundle`.
     /// Ordered the same way the steps run. The frontend writes these into
     /// `boot-perf.latest.json` as `boot_bundle_timings` so cold-boot
@@ -109,10 +105,6 @@ pub fn constellation_boot_bundle(app: tauri::AppHandle) -> Result<BootBundle, St
         "get_child_universes",
         crate::universe::get_child_universes(app.clone()).unwrap_or_default()
     );
-    let custom_stages = time_step!(
-        "read_custom_stages",
-        crate::universe::read_custom_stages(app.clone()).unwrap_or_default()
-    );
 
     // Resolve each child's library paths in the same pass, so the frontend
     // doesn't have to do per-child round-trips.
@@ -140,7 +132,6 @@ pub fn constellation_boot_bundle(app: tauri::AppHandle) -> Result<BootBundle, St
         workspace_bases,
         child_universes,
         child_universe_lib_paths,
-        custom_stages,
         timings_ms: timings,
     })
 }

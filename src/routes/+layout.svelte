@@ -33,7 +33,6 @@
 		resolveWikilinkCrossLibrary,
 		buildDefaultFrontmatter,
 		linkTraversalBumps, clearLinkTraversalBumps,
-		customStages,
 		type FrontmatterProperty, type HeadingItem, type NoteLink, type SkyNode, type SkyLink,
 		type IndexEntry
 	} from '$lib/libraries/store';
@@ -1829,8 +1828,6 @@
 			workspace_bases: any[];
 			child_universes: ChildUniverseInfo[];
 			child_universe_lib_paths: Record<string, string[]>;
-			/** MIG-014 — active Universe's user-extensible note stages. */
-			custom_stages: { name: string; emoji: string }[];
 			/** Per-step wall-clock timings measured inside the Rust command.
 			 *  Attributed into `boot-perf.latest.json#boot_bundle_timings`
 			 *  so cold-boot bottlenecks are diagnosable without rebuilds. */
@@ -1888,10 +1885,6 @@
 				map.set(cu.path, new Set(bundle.child_universe_lib_paths[cu.path] ?? []));
 			}
 			childUniverseLibPaths = map;
-
-			// MIG-014 — seed the customStages writable from the bundle.
-			// Empty on fresh Universes (Living Link baseline is hard-coded).
-			customStages.set(Array.isArray(bundle.custom_stages) ? bundle.custom_stages : []);
 
 			// Stash Rust-side per-step timings so buildBootPerfReport can write
 			// them into boot-perf.latest.json. Investigation target per
