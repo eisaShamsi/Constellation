@@ -8,6 +8,26 @@ use tauri::Manager;
 
 // ─── Data Structures ───
 
+/// MIG-014 — User-extensible note stage entry.
+///
+/// Each Universe ships with the six Living Link baseline stages
+/// (`spark / birth / growth / maturity / dormancy / archival`)
+/// hard-coded on the frontend. Users can add their own custom
+/// stages here; they get serialized into the Universe's
+/// `universe.json` and surface in PropertyEditor + the NotePane
+/// breadcrumb dropdown alongside the baseline.
+///
+/// `name` is stored verbatim — any language, any case (PropertyEditor
+/// lowercases on commit so the on-disk frontmatter `stage:` value
+/// stays normalized). `emoji` defaults to `🏷️` for inline-added
+/// values; the user can change it via Settings → Notes → Manage
+/// Custom Stages.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CustomStage {
+    pub name: String,
+    pub emoji: String,
+}
+
 /// Metadata stored inside each universe's .constellation/universe.json.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UniverseMeta {
@@ -19,6 +39,13 @@ pub struct UniverseMeta {
     /// Relative folder name for universe-level notes (e.g., "كون عيسى")
     #[serde(default)]
     pub notes_folder: Option<String>,
+    /// MIG-014 — user-extensible note stage taxonomy. Empty on fresh
+    /// Universes (the frontend renders the six Living Link baseline
+    /// stages directly). `#[serde(default)]` keeps backward compat
+    /// with pre-MIG-014 `universe.json` files that don't have this
+    /// field — they deserialize to `vec![]` cleanly.
+    #[serde(default)]
+    pub custom_stages: Vec<CustomStage>,
 }
 
 /// Entry in the global registry (app_data_dir/universes.json).
@@ -498,6 +525,7 @@ pub fn create_universe(
         version: 2,
         children: vec![],
         notes_folder: None, // None = universe root is the library (flat)
+        custom_stages: vec![],
     };
     let meta_json = serde_json::to_string_pretty(&meta).map_err(|e| e.to_string())?;
     fs::write(cdir.join("universe.json"), &meta_json)
@@ -972,6 +1000,7 @@ pub fn link_library_as_universe(app: tauri::AppHandle, path: String) -> Result<U
         version: 2,
         children: vec![],
         notes_folder: None,
+        custom_stages: vec![],
     };
     let meta_json = serde_json::to_string_pretty(&meta).map_err(|e| e.to_string())?;
     fs::write(cdir.join("universe.json"), &meta_json)
@@ -1299,6 +1328,170 @@ pub fn save_universe_property_types(app: tauri::AppHandle, types: serde_json::Va
         .map_err(|e| format!("Failed to save property types: {}", e))
 }
 
+// ─── MIG-014 — Custom note stages (per-Universe extensible) ───
+
+/// Baseline stage names hard-coded; mirrors the frontend's
+/// `LIVING_LINK_BASELINE` in `src/lib/libraries/store.ts`. Used by
+/// the custom-stage mutation commands below to reject names that
+/// would collide with the always-present baseline.
+const LIVING_LINK_BASELINE_NAMES: &[&str] = &[
+    "spark", "birth", "growth", "maturity", "dormancy", "archival",
+];
+
+/// Read the active Universe's `custom_stages` field from `universe.json`.
+#[tauri::command]
+pub fn read_custom_stages(app: tauri::AppHandle) -> Result<Vec<CustomStage>, String> {
+    let cdir = active_constellation_dir(&app)?;
+    let meta_path = cdir.join("universe.json");
+    if !meta_path.exists() {
+        return Ok(vec![]);
+    }
+    let data = fs::read_to_string(&meta_path)
+        .map_err(|e| format!("Failed to read universe.json: {}", e))?;
+    let meta: UniverseMeta = serde_json::from_str(&data)
+        .map_err(|e| format!("Failed to parse universe.json: {}", e))?;
+    Ok(meta.custom_stages)
+}
+
+/// Read `universe.json`, apply `f` to its `custom_stages`, write back.
+/// Centralises the read-modify-write pattern so each mutation command
+/// stays small. Errors propagated verbatim.
+fn mutate_custom_stages<F>(app: &tauri::AppHandle, f: F) -> Result<(), String>
+where
+    F: FnOnce(&mut Vec<CustomStage>) -> Result<(), String>,
+{
+    let cdir = active_constellation_dir(app)?;
+    let meta_path = cdir.join("universe.json");
+    let data = fs::read_to_string(&meta_path)
+        .map_err(|e| format!("Failed to read universe.json: {}", e))?;
+    let mut meta: UniverseMeta = serde_json::from_str(&data)
+        .map_err(|e| format!("Failed to parse universe.json: {}", e))?;
+    f(&mut meta.custom_stages)?;
+    let json = serde_json::to_string_pretty(&meta)
+        .map_err(|e| format!("Failed to serialize universe.json: {}", e))?;
+    fs::write(&meta_path, json)
+        .map_err(|e| format!("Failed to write universe.json: {}", e))
+}
+
+/// Add a custom stage to the active Universe. The name is normalized
+/// (trimmed + lowercased) to match the on-disk `stage:` value
+/// PropertyEditor writes. Rejects empty names, baseline collisions,
+/// and duplicates of existing custom stages.
+#[tauri::command]
+pub fn add_custom_stage(app: tauri::AppHandle, stage: CustomStage) -> Result<(), String> {
+    let name = stage.name.trim().to_lowercase();
+    if name.is_empty() {
+        return Err("Custom stage name cannot be empty".to_string());
+    }
+    if LIVING_LINK_BASELINE_NAMES.contains(&name.as_str()) {
+        return Err(format!(
+            "'{}' is a built-in baseline stage and is always available — no need to add it as custom",
+            name,
+        ));
+    }
+    mutate_custom_stages(&app, |stages| {
+        if stages.iter().any(|s| s.name == name) {
+            return Err(format!("Custom stage '{}' already exists", name));
+        }
+        stages.push(CustomStage { name, emoji: stage.emoji });
+        Ok(())
+    })
+}
+
+/// Update an existing custom stage by old name. Supports rename
+/// (when `new_stage.name` differs from `old_name`) and emoji change.
+/// Rename collisions against baseline or existing custom names are
+/// rejected.
+#[tauri::command]
+pub fn update_custom_stage(
+    app: tauri::AppHandle,
+    old_name: String,
+    new_stage: CustomStage,
+) -> Result<(), String> {
+    let old = old_name.trim().to_lowercase();
+    let new_name = new_stage.name.trim().to_lowercase();
+    if new_name.is_empty() {
+        return Err("Custom stage name cannot be empty".to_string());
+    }
+    mutate_custom_stages(&app, |stages| {
+        let idx = stages
+            .iter()
+            .position(|s| s.name == old)
+            .ok_or_else(|| format!("Custom stage '{}' not found", old))?;
+        if new_name != old {
+            if LIVING_LINK_BASELINE_NAMES.contains(&new_name.as_str()) {
+                return Err(format!(
+                    "Cannot rename to '{}' — that name is a built-in baseline stage",
+                    new_name,
+                ));
+            }
+            if stages.iter().any(|s| s.name == new_name) {
+                return Err(format!("Custom stage '{}' already exists", new_name));
+            }
+        }
+        stages[idx] = CustomStage {
+            name: new_name,
+            emoji: new_stage.emoji,
+        };
+        Ok(())
+    })
+}
+
+/// Remove a custom stage by name. Notes already using the value keep
+/// their `stage:` frontmatter verbatim — the system never silently
+/// modifies note files (Law 1.3 — File Over App). Future selections
+/// from PropertyEditor / breadcrumb will not include the removed
+/// stage in the dropdown.
+#[tauri::command]
+pub fn remove_custom_stage(app: tauri::AppHandle, name: String) -> Result<(), String> {
+    let target = name.trim().to_lowercase();
+    mutate_custom_stages(&app, |stages| {
+        let before = stages.len();
+        stages.retain(|s| s.name != target);
+        if stages.len() == before {
+            return Err(format!("Custom stage '{}' not found", target));
+        }
+        Ok(())
+    })
+}
+
+/// Reorder custom stages. `names_in_order` is the user's desired new
+/// order (typically the full list after a drag-and-drop reorder).
+/// Names in the input that don't exist in `custom_stages` are an
+/// error. Stages not mentioned in the input are appended at the end
+/// in their original order — defensive against a partial reorder
+/// payload.
+#[tauri::command]
+pub fn reorder_custom_stages(
+    app: tauri::AppHandle,
+    names_in_order: Vec<String>,
+) -> Result<(), String> {
+    mutate_custom_stages(&app, |stages| {
+        let normalized: Vec<String> = names_in_order
+            .iter()
+            .map(|s| s.trim().to_lowercase())
+            .collect();
+        for n in &normalized {
+            if !stages.iter().any(|s| s.name == *n) {
+                return Err(format!("Cannot reorder: '{}' not in custom_stages", n));
+            }
+        }
+        let mut ordered: Vec<CustomStage> = Vec::with_capacity(stages.len());
+        for n in &normalized {
+            if let Some(s) = stages.iter().find(|s| s.name == *n) {
+                ordered.push(s.clone());
+            }
+        }
+        for s in stages.iter() {
+            if !normalized.contains(&s.name) {
+                ordered.push(s.clone());
+            }
+        }
+        *stages = ordered;
+        Ok(())
+    })
+}
+
 // ─── Legacy Migration ───
 
 /// Migrate legacy data from app_data_dir to a new universe directory.
@@ -1348,6 +1541,7 @@ pub fn migrate_legacy_data(app: tauri::AppHandle, name: String, universe_path: S
         version: 2,
         children: vec![],
         notes_folder: None,
+        custom_stages: vec![],
     };
     let meta_json = serde_json::to_string_pretty(&meta).map_err(|e| e.to_string())?;
     fs::write(cdir.join("universe.json"), &meta_json)
