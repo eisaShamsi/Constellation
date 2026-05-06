@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { FrontmatterProperty, PropertyType } from '$lib/libraries/store';
 	import { saveTabContent, normalizeDateValue, buildFullContent, openTabs } from '$lib/libraries/store';
+	import { LIVING_LINK_BASELINE, customStages, addCustomStage, isKnownStage } from '$lib/libraries/store';
 	import { setRegisteredType, getRegisteredType } from '$lib/libraries/propertyTypeRegistry';
 	import { t, locale } from '$lib/i18n';
 	import { get } from 'svelte/store';
@@ -476,13 +477,35 @@
 
 			<!-- Value input by type -->
 			{#if prop.key.toLowerCase() === 'stage'}
-				<select class="pe-val pe-stage-select" value={prop.value.toLowerCase()}
-					onchange={(e) => { const v = (e.target as HTMLSelectElement).value; updateValue(idx, v); onstagechange?.(v); }}>
-					<option value="fleeting">🌱 {$t('notePane.stage.fleeting')}</option>
-					<option value="literature">📖 {$t('notePane.stage.literature')}</option>
-					<option value="permanent">🔗 {$t('notePane.stage.permanent')}</option>
-					<option value="synthesis">✨ {$t('notePane.stage.synthesis')}</option>
-				</select>
+				<!-- MIG-014 — open combobox: 6 Living Link baseline + per-Universe customs.
+				     Inline-add: typing a value not in the combined list calls
+				     addCustomStage on commit so the value is reusable in any other
+				     note in the same Universe. -->
+				<input
+					class="pe-val pe-stage-input"
+					type="text"
+					list="stage-suggestions-{idx}"
+					value={prop.value}
+					placeholder={$t('propertyEditor.stagePlaceholder')}
+					oninput={(e) => updateValue(idx, (e.target as HTMLInputElement).value)}
+					onchange={(e) => {
+						const v = (e.target as HTMLInputElement).value.toLowerCase().trim();
+						updateValue(idx, v);
+						onstagechange?.(v);
+						if (v && !isKnownStage(v, $customStages)) {
+							addCustomStage({ name: v, emoji: '🏷️' }).catch(err =>
+								console.warn('[PropertyEditor] addCustomStage failed:', err));
+						}
+					}}
+				/>
+				<datalist id="stage-suggestions-{idx}">
+					{#each LIVING_LINK_BASELINE as bs}
+						<option value={bs.name}>{bs.emoji} {$t(`notePane.stage.${bs.name}`)}</option>
+					{/each}
+					{#each $customStages as cs}
+						<option value={cs.name}>{cs.emoji} {cs.name}</option>
+					{/each}
+				</datalist>
 			{:else if prop.type === 'checkbox'}
 				<label class="pe-checkbox-wrap">
 					<input type="checkbox" class="pe-checkbox"

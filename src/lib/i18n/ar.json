@@ -888,6 +888,7 @@
     "keyPlaceholder": "مفتاح",
     "addPlaceholder": "أضف...",
     "valuePlaceholder": "قيمة",
+    "stagePlaceholder": "اكتب أو اختر مرحلة…",
     "delete": "حذف",
     "addProperty": "إضافة خاصية",
     "true": "صحيح",

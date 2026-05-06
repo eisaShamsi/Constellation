@@ -924,6 +924,7 @@
     "keyPlaceholder": "Key",
     "addPlaceholder": "Add...",
     "valuePlaceholder": "Value",
+    "stagePlaceholder": "Type or pick a stage…",
     "delete": "Delete",
     "addProperty": "Add property",
     "true": "True",
