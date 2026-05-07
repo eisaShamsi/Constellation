@@ -111,9 +111,8 @@
     let pathToTitle = new Map<string, string>();
     /** Map note_path → library name (used by onOpenNote). */
     let pathToLibrary = new Map<string, string>();
-    /** Adjacency: note_path → set of neighbor note_paths. Used for hover highlight. */
-    let pathAdjacency = new Map<string, Set<string>>();
-    /** All graph edges in (path-A, path-B) form, deduped. */
+    /** All graph edges in (path-A, path-B) form, deduped. The focus
+     *  overlay walks this on hover/select to find incident edges. */
     let resolvedEdges: Array<{ a: string; b: string }> = [];
 
     // ─── Interaction state ───────────────────────────────────────────
@@ -180,26 +179,34 @@
             }
         }
 
-        // Resolved edges in (path-A, path-B) form, deduped
-        const edgeSet = new Set<string>();
+        // Resolved edges in (path-A, path-B) form, deduped via
+        // index-packed bigints. Replaces the prior `Set<string>` of
+        // `${aPath}|${bPath}` keys (which held ~656k × ~150 bytes ≈
+        // 100 MB on Boss-scale universes — a primary OOM contributor).
+        // Now: `Set<bigint>` of `(a_idx << 32 | b_idx)` keys, ~16 bytes
+        // each. ~10× memory reduction.
+        const pathToIdxLocal = new Map<string, number>();
+        let nextIdx = 0;
+        const indexOf = (p: string): number => {
+            let i = pathToIdxLocal.get(p);
+            if (i === undefined) { i = nextIdx++; pathToIdxLocal.set(p, i); }
+            return i;
+        };
+        const edgeSet = new Set<bigint>();
         resolvedEdges = [];
-        pathAdjacency.clear();
         for (const link of links) {
             const aPath = nameToPath.get(link.source);
             const bPath = nameToPath.get(link.target);
             if (!aPath || !bPath || aPath === bPath) continue;
             if (!pathToPoint.has(aPath) || !pathToPoint.has(bPath)) continue;
-            const key = aPath < bPath ? `${aPath}|${bPath}` : `${bPath}|${aPath}`;
+            const aIdx = indexOf(aPath);
+            const bIdx = indexOf(bPath);
+            const lo = aIdx < bIdx ? aIdx : bIdx;
+            const hi = aIdx < bIdx ? bIdx : aIdx;
+            const key = (BigInt(lo) << 32n) | BigInt(hi);
             if (edgeSet.has(key)) continue;
             edgeSet.add(key);
             resolvedEdges.push({ a: aPath, b: bPath });
-            // Adjacency
-            let setA = pathAdjacency.get(aPath);
-            if (!setA) { setA = new Set(); pathAdjacency.set(aPath, setA); }
-            setA.add(bPath);
-            let setB = pathAdjacency.get(bPath);
-            if (!setB) { setB = new Set(); pathAdjacency.set(bPath, setB); }
-            setB.add(aPath);
         }
 
         // Communities — Louvain on (id, name) nodes + skyLinks
@@ -472,13 +479,22 @@
         }
     }
 
-    /** Draw faint connector lines on the base layer. */
+    /** Draw faint connector lines on the base layer.
+     *  Cap rendered edges at MAX_FAINT_EDGES_AT_REST to bound the Pixi
+     *  buffer + draw cost on large universes (Boss-scale: 656k links).
+     *  When over-cap, the visible sample is the FIRST N edges from
+     *  `resolvedEdges` — deterministic since iteration order is stable.
+     *  The full edge set is still in `resolvedEdges` for the focus
+     *  overlay (hover/click brightens incident edges regardless of cap). */
+    const MAX_FAINT_EDGES_AT_REST = 30000;
     function drawEdges() {
         if (!edgeContainer) return;
         edgeContainer.removeChildren();
 
         const lines = new Graphics();
-        for (const e of resolvedEdges) {
+        const limit = Math.min(resolvedEdges.length, MAX_FAINT_EDGES_AT_REST);
+        for (let i = 0; i < limit; i++) {
+            const e = resolvedEdges[i];
             const sa = pathToScreen.get(e.a);
             const sb = pathToScreen.get(e.b);
             if (!sa || !sb) continue;
@@ -875,16 +891,24 @@
         app.stage.addChild(focusOverlay);
         app.stage.addChild(calendarRimContainer);
 
-        showPlaceholder($t('sightV3.placeholder') || 'Sight v3 — projection foundation (MIG-018 §1E)');
+        // MIG-019 §2E.2 SOLVE: progress markers visible to the user
+        // (production builds disable DevTools, so console.log isn't
+        // observable). The placeholder text updates at each stage so
+        // the OOM page (or status of a hung mount) shows where in the
+        // pipeline we got — diagnostic without needing a console.
+        showPlaceholder(`Sight v3 — opening
+${nodes?.length ?? 0} notes · ${links?.length ?? 0} links`);
 
         try {
             const stats = get(libraryStats);
             const libraryPaths: Array<[string, string]> = stats.map((s) => [s.path, s.name]);
+
+            showPlaceholder(`Stage 1/4: layout (MDS embedding)
+${nodes?.length ?? 0} notes · ${links?.length ?? 0} links`);
             const layoutT0 = performance.now();
             layoutPoints = await fetchLayout(libraryPaths, 50);
-            console.log(
-                `[SightV3] fetched ${layoutPoints.length} layout points across ${libraryPaths.length} libraries in ${Math.round(performance.now() - layoutT0)}ms`,
-            );
+            const layoutMs = Math.round(performance.now() - layoutT0);
+            console.log(`[SightV3] layout: ${layoutPoints.length} points in ${layoutMs}ms`);
 
             // MIG-019 §2A.1 hot-fix (Boss-test OOM 2026-05-07):
             // similarity fetch was BLOCKING the chart render — on 7,600-
@@ -897,9 +921,17 @@
             if (layoutPoints.length === 0) {
                 showPlaceholder('No notes in this universe yet.');
             } else {
+                showPlaceholder(`Stage 2/4: building indices (Louvain communities, ${links?.length ?? 0} edges)`);
+                const idxT0 = performance.now();
                 buildIndices();
-                hidePlaceholder();
+                console.log(`[SightV3] buildIndices: ${resolvedEdges.length} unique edges in ${Math.round(performance.now() - idxT0)}ms`);
+
+                showPlaceholder(`Stage 3/4: rendering (${layoutPoints.length} stars, ${Math.min(resolvedEdges.length, MAX_FAINT_EDGES_AT_REST)} edges at-rest)`);
+                const drawT0 = performance.now();
                 fullRedraw();
+                console.log(`[SightV3] fullRedraw: ${Math.round(performance.now() - drawT0)}ms`);
+
+                hidePlaceholder();
             }
 
             // MIG-019 §2A+§2B redesign: background density-grid fetch.
