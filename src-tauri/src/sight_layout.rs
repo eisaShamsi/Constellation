@@ -28,10 +28,23 @@
 //! `community_id` is persisted as 0 (placeholder); §1E computes Louvain
 //! frontend-side to avoid duplicating the existing `clusterEngine.ts`
 //! Louvain implementation in Rust.
+//!
+//! ── MIG-019 §2A additions (this commit) ──
+//! TF-IDF content-similarity compute (PJ-035 → Milky Way density wash).
+//! Reads note bodies from `note_meta`, tokenizes via Constellation's
+//! existing FTS5 tokenizer (`fts5_tokenizer::tokenize_to_vec`) for
+//! cross-cutting consistency with search. Computes sparse TF×IDF
+//! vectors (top-k terms per note), builds an inverted-index of those
+//! top terms, finds candidate similar pairs via inverted lookup,
+//! computes exact cosine similarity for candidates, persists pairs
+//! above the threshold to `sight_v3_similarity_edges`. Returns sorted
+//! `(path_a, path_b, similarity)` triples for the frontend Milky Way
+//! renderer.
 
 use rusqlite::Connection;
 use serde::Serialize;
 use std::collections::{HashMap, HashSet, VecDeque};
+use std::sync::OnceLock;
 use tauri::Manager;
 
 use crate::search::SearchState;
@@ -620,6 +633,333 @@ fn normalize_to_unit_disk(coords: Vec<(f64, f64)>) -> Vec<(f64, f64)> {
 }
 
 // ─────────────────────────────────────────────────────────────────────
+// MIG-019 §2A — TF-IDF content-similarity compute (PJ-035 → Milky Way)
+// ─────────────────────────────────────────────────────────────────────
+
+/// One row in `sight_v3_similarity_edges`. Returned by
+/// `constellation_sight_v3_similarity_field` to the frontend; one entry
+/// per (note_a, note_b) pair whose TF-IDF cosine similarity exceeds the
+/// threshold. Edge ordering is canonicalized: `note_path_a < note_path_b`.
+///
+/// `similarity` ∈ [0, 1] — normalized cosine of the sparse TF×IDF vectors.
+/// `1.0` = identical bodies; `0.0` = no shared meaningful terms.
+#[derive(Debug, Clone, Serialize)]
+pub struct SimilarityEdge {
+    pub note_path_a: String,
+    pub note_path_b: String,
+    pub similarity: f32,
+}
+
+/// `constellation_sight_v3_similarity_field` — the v3 Milky Way IPC.
+///
+/// Frontend calls this on Sight-v3 toggle (after `fetchLayout`).
+/// Behavior in §2A: cache-hit returns persisted rows; cache-miss runs
+/// cold compute and persists. Same caching pattern as
+/// `constellation_sight_v3_layout`.
+///
+/// `library_paths` — list of `(library_path, library_name)` tuples
+/// matching the layout IPC's signature.
+/// `k_top_terms` — number of top TF×IDF terms to keep per note for
+/// the inverted-index candidate filter. Default 50 (frontend passes
+/// this). Larger k = more candidate pairs considered = more accurate
+/// but more compute.
+/// `similarity_threshold` — cosine similarity floor. Pairs below this
+/// are dropped. Default 0.3 (per Concept Paper v1.1 §3.3).
+#[tauri::command]
+pub fn constellation_sight_v3_similarity_field(
+    app: tauri::AppHandle,
+    library_paths: Vec<(String, String)>,
+    k_top_terms: usize,
+    similarity_threshold: f32,
+) -> Result<Vec<SimilarityEdge>, String> {
+    let state = app.state::<SearchState>();
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let conn = db.as_ref().ok_or("Search DB not initialized")?;
+
+    let lib_hash = compute_library_set_hash(&library_paths);
+    let current_version = get_or_init_graph_version(conn, &lib_hash)?;
+
+    // Cache-read-first: §2A ships cache-aware semantics for similarity
+    // (different from §1B's always-recompute) because TF-IDF compute is
+    // heavier and the cache is more valuable here.
+    if let Some(cached) = read_cached_similarity(conn, &lib_hash, current_version)? {
+        return Ok(cached);
+    }
+
+    // ── Read note_meta paths + bodies for the queried library set ──
+    let lib_set: HashSet<String> = library_paths.iter().map(|(p, _)| p.clone()).collect();
+    let mut note_paths: Vec<String> = Vec::new();
+    let mut note_bodies: Vec<String> = Vec::new();
+    {
+        let mut stmt = conn
+            .prepare("SELECT path, body FROM note_meta")
+            .map_err(|e| format!("prepare note_meta similarity read: {}", e))?;
+        let rows = stmt
+            .query_map([], |r| {
+                Ok((r.get::<_, String>(0)?, r.get::<_, Option<String>>(1)?.unwrap_or_default()))
+            })
+            .map_err(|e| format!("query note_meta similarity read: {}", e))?;
+        for row in rows {
+            let (path, body) = row.map_err(|e| format!("read row: {}", e))?;
+            let in_set = lib_set.iter().any(|lib_path| {
+                path.starts_with(lib_path)
+                    && (path.len() == lib_path.len()
+                        || path.as_bytes().get(lib_path.len()) == Some(&b'/')
+                        || path.as_bytes().get(lib_path.len()) == Some(&b'\\'))
+            });
+            if in_set {
+                note_paths.push(path);
+                note_bodies.push(body);
+            }
+        }
+    }
+
+    let n = note_paths.len();
+    if n == 0 {
+        return Ok(Vec::new());
+    }
+
+    // ── Tokenize each body via Constellation's FTS5 tokenizer ────────
+    let stopwords = stopwords_cached();
+    let mut token_sets: Vec<HashMap<String, u32>> = Vec::with_capacity(n);
+    for body in &note_bodies {
+        let clipped = clip_utf8(body, BODY_CAP_BYTES);
+        let tokens = crate::fts5_tokenizer::tokenize_to_vec(clipped, stopwords);
+        let mut counts: HashMap<String, u32> = HashMap::with_capacity(tokens.len().min(256));
+        for t in tokens {
+            *counts.entry(t).or_insert(0) += 1;
+        }
+        token_sets.push(counts);
+    }
+
+    // ── Build IDF + sparse TF×IDF vectors via extracted helpers ─────
+    let idf = compute_idf(&token_sets);
+    let mut sparse_vectors: Vec<Vec<(String, f64)>> = Vec::with_capacity(n);
+    for counts in &token_sets {
+        sparse_vectors.push(build_sparse_tfidf(counts, &idf, k_top_terms));
+    }
+
+    // ── Build inverted index: term → Vec<note_idx> for candidate lookup
+    let mut inverted: HashMap<String, Vec<usize>> = HashMap::new();
+    for (i, vec_i) in sparse_vectors.iter().enumerate() {
+        for (term, _) in vec_i {
+            inverted.entry(term.clone()).or_default().push(i);
+        }
+    }
+
+    // ── Compute similarities for candidate pairs ────────────────────
+    // For each note i, find candidates via inverted lookup of its top
+    // terms. Each candidate j (with i < j) is scored once.
+    let threshold = similarity_threshold as f64;
+    let mut edges: Vec<SimilarityEdge> = Vec::new();
+    for i in 0..n {
+        let vec_i = &sparse_vectors[i];
+        if vec_i.is_empty() {
+            continue;
+        }
+        // Build a candidate set via inverted index lookup
+        let mut candidates: HashSet<usize> = HashSet::new();
+        for (term, _) in vec_i {
+            if let Some(notes) = inverted.get(term) {
+                for &j in notes {
+                    if j > i {
+                        candidates.insert(j);
+                    }
+                }
+            }
+        }
+        if candidates.is_empty() {
+            continue;
+        }
+
+        for j in candidates {
+            let vec_j = &sparse_vectors[j];
+            if vec_j.is_empty() {
+                continue;
+            }
+            let dot = cosine_sparse(vec_i, vec_j);
+            if dot >= threshold {
+                let (a, b) = if note_paths[i] < note_paths[j] {
+                    (note_paths[i].clone(), note_paths[j].clone())
+                } else {
+                    (note_paths[j].clone(), note_paths[i].clone())
+                };
+                edges.push(SimilarityEdge {
+                    note_path_a: a,
+                    note_path_b: b,
+                    similarity: dot as f32,
+                });
+            }
+        }
+    }
+
+    // Sort by similarity descending so the frontend can cap at top-N
+    // for the Milky Way render without losing the strongest signals.
+    edges.sort_by(|a, b| {
+        b.similarity
+            .partial_cmp(&a.similarity)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
+
+    persist_similarity(conn, &lib_hash, current_version, &edges)?;
+
+    Ok(edges)
+}
+
+/// Process-wide stopwords cache. Same idiom as `ctse::hooks::stopwords_cached`.
+fn stopwords_cached() -> &'static HashSet<String> {
+    static SW: OnceLock<HashSet<String>> = OnceLock::new();
+    SW.get_or_init(crate::libraries::build_stopwords)
+}
+
+/// IDF formula: `log((N + 1) / (df_t + 1)) + 1`. Smoothed so unique terms
+/// don't divide by zero and trivial corpora (single doc) give sensible
+/// non-zero IDF. Mirrors sklearn's TfidfVectorizer with smooth_idf=True.
+fn compute_idf(per_doc_counts: &[HashMap<String, u32>]) -> HashMap<String, f64> {
+    let n_f = per_doc_counts.len() as f64;
+    let mut df: HashMap<&str, u32> = HashMap::new();
+    for counts in per_doc_counts {
+        for term in counts.keys() {
+            *df.entry(term.as_str()).or_insert(0) += 1;
+        }
+    }
+    df.into_iter()
+        .map(|(term, doc_freq)| {
+            let v = ((n_f + 1.0) / (doc_freq as f64 + 1.0)).ln() + 1.0;
+            (term.to_string(), v)
+        })
+        .collect()
+}
+
+/// Build the TF×IDF sparse vector for one doc, top-k by score, L2-normalized.
+/// L2 normalization makes cosine similarity == dot product downstream.
+fn build_sparse_tfidf(
+    counts: &HashMap<String, u32>,
+    idf: &HashMap<String, f64>,
+    k_top_terms: usize,
+) -> Vec<(String, f64)> {
+    let total_terms: u32 = counts.values().sum();
+    if total_terms == 0 {
+        return Vec::new();
+    }
+    let total_f = total_terms as f64;
+    let mut scored: Vec<(String, f64)> = counts
+        .iter()
+        .map(|(term, count)| {
+            let tf = *count as f64 / total_f;
+            let idf_val = idf.get(term).copied().unwrap_or(0.0);
+            (term.clone(), tf * idf_val)
+        })
+        .collect();
+    scored.sort_by(|a, b| {
+        b.1.partial_cmp(&a.1)
+            .unwrap_or(std::cmp::Ordering::Equal)
+            .then(a.0.cmp(&b.0))
+    });
+    scored.truncate(k_top_terms.max(1));
+    let norm: f64 = scored.iter().map(|(_, s)| s * s).sum::<f64>().sqrt();
+    if norm > 1e-12 {
+        for (_, s) in scored.iter_mut() {
+            *s /= norm;
+        }
+    }
+    scored
+}
+
+/// Cosine similarity of two L2-normalized sparse vectors == dot product.
+/// Iterates the smaller vector's terms; lookups are O(1) per term.
+fn cosine_sparse(a: &[(String, f64)], b: &[(String, f64)]) -> f64 {
+    let (small, large) = if a.len() <= b.len() { (a, b) } else { (b, a) };
+    let map_l: HashMap<&str, f64> = large.iter().map(|(t, s)| (t.as_str(), *s)).collect();
+    small
+        .iter()
+        .filter_map(|(t, ss)| map_l.get(t.as_str()).map(|sl| ss * sl))
+        .sum()
+}
+
+const BODY_CAP_BYTES: usize = 1024 * 1024;
+
+fn clip_utf8(s: &str, cap: usize) -> &str {
+    if s.len() <= cap {
+        return s;
+    }
+    let mut end = cap;
+    while end > 0 && !s.is_char_boundary(end) {
+        end -= 1;
+    }
+    &s[..end]
+}
+
+fn read_cached_similarity(
+    conn: &Connection,
+    lib_hash: &str,
+    version: i64,
+) -> Result<Option<Vec<SimilarityEdge>>, String> {
+    let mut stmt = conn
+        .prepare(
+            "SELECT note_path_a, note_path_b, similarity
+             FROM sight_v3_similarity_edges
+             WHERE library_set_hash = ?1 AND graph_version = ?2
+             ORDER BY similarity DESC",
+        )
+        .map_err(|e| format!("prepare similarity read: {}", e))?;
+    let rows: Vec<SimilarityEdge> = stmt
+        .query_map(rusqlite::params![lib_hash, version], |row| {
+            Ok(SimilarityEdge {
+                note_path_a: row.get(0)?,
+                note_path_b: row.get(1)?,
+                similarity: row.get::<_, f64>(2)? as f32,
+            })
+        })
+        .map_err(|e| format!("query similarity: {}", e))?
+        .filter_map(|r| r.ok())
+        .collect();
+    if rows.is_empty() {
+        Ok(None)
+    } else {
+        Ok(Some(rows))
+    }
+}
+
+fn persist_similarity(
+    conn: &Connection,
+    lib_hash: &str,
+    version: i64,
+    edges: &[SimilarityEdge],
+) -> Result<(), String> {
+    conn.execute(
+        "DELETE FROM sight_v3_similarity_edges WHERE library_set_hash = ?1 AND graph_version = ?2",
+        rusqlite::params![lib_hash, version],
+    )
+    .map_err(|e| format!("clear stale similarity: {}", e))?;
+
+    let tx = conn
+        .unchecked_transaction()
+        .map_err(|e| format!("begin tx: {}", e))?;
+    {
+        let mut stmt = tx
+            .prepare(
+                "INSERT INTO sight_v3_similarity_edges
+                 (note_path_a, note_path_b, library_set_hash, graph_version, similarity)
+                 VALUES (?1, ?2, ?3, ?4, ?5)",
+            )
+            .map_err(|e| format!("prepare insert similarity: {}", e))?;
+        for e in edges {
+            stmt.execute(rusqlite::params![
+                e.note_path_a,
+                e.note_path_b,
+                lib_hash,
+                version,
+                e.similarity as f64,
+            ])
+            .map_err(|err| format!("insert similarity row: {}", err))?;
+        }
+    }
+    tx.commit().map_err(|e| format!("commit similarity: {}", e))?;
+    Ok(())
+}
+
+// ─────────────────────────────────────────────────────────────────────
 // Tests
 // ─────────────────────────────────────────────────────────────────────
 
@@ -748,5 +1088,138 @@ mod tests {
         // Hash should be stable across calls
         let h3 = compute_library_set_hash(&lp1);
         assert_eq!(h1, h3);
+    }
+
+    // ─── MIG-019 §2A — TF-IDF unit tests ────────────────────────────
+
+    /// 3-document corpus. "shared" appears in all 3 → low IDF.
+    /// "rare" appears in 1 → high IDF. Verify the formula matches:
+    /// log((N+1)/(df+1)) + 1.
+    #[test]
+    fn idf_formula_basic_corpus() {
+        let mut d1 = HashMap::new();
+        d1.insert("shared".to_string(), 3u32);
+        d1.insert("rare".to_string(), 1u32);
+        let mut d2 = HashMap::new();
+        d2.insert("shared".to_string(), 2u32);
+        let mut d3 = HashMap::new();
+        d3.insert("shared".to_string(), 1u32);
+        d3.insert("medium".to_string(), 1u32);
+
+        let docs = vec![d1, d2, d3];
+        let idf = compute_idf(&docs);
+
+        // df("shared") = 3, N = 3 → IDF = ln(4/4) + 1 = 1.0
+        assert!((idf["shared"] - 1.0).abs() < 1e-9);
+        // df("rare") = 1 → IDF = ln(4/2) + 1 = ln(2) + 1 ≈ 1.6931
+        assert!((idf["rare"] - (2.0_f64.ln() + 1.0)).abs() < 1e-9);
+        // df("medium") = 1 → same as rare
+        assert!((idf["medium"] - idf["rare"]).abs() < 1e-9);
+    }
+
+    /// Build sparse TF×IDF and verify L2 norm ≈ 1.0 (so cosine
+    /// becomes a dot product later).
+    #[test]
+    fn tfidf_l2_normalized() {
+        let mut counts = HashMap::new();
+        counts.insert("foo".to_string(), 2u32);
+        counts.insert("bar".to_string(), 5u32);
+        counts.insert("baz".to_string(), 1u32);
+
+        let mut idf = HashMap::new();
+        idf.insert("foo".to_string(), 1.5);
+        idf.insert("bar".to_string(), 2.0);
+        idf.insert("baz".to_string(), 1.0);
+
+        let v = build_sparse_tfidf(&counts, &idf, 50);
+        let norm_squared: f64 = v.iter().map(|(_, s)| s * s).sum();
+        assert!(
+            (norm_squared - 1.0).abs() < 1e-9,
+            "L2-normalized vector should have norm² = 1.0; got {}",
+            norm_squared
+        );
+        // top-k truncation: 3 terms requested via k=50 → all 3 kept
+        assert_eq!(v.len(), 3);
+    }
+
+    /// Top-k truncation drops lowest-score terms first.
+    #[test]
+    fn tfidf_truncates_to_top_k() {
+        let mut counts = HashMap::new();
+        for term in &["a", "b", "c", "d", "e"] {
+            counts.insert(term.to_string(), 1u32);
+        }
+        let mut idf = HashMap::new();
+        idf.insert("a".to_string(), 5.0); // highest
+        idf.insert("b".to_string(), 4.0);
+        idf.insert("c".to_string(), 3.0);
+        idf.insert("d".to_string(), 2.0);
+        idf.insert("e".to_string(), 1.0); // lowest
+
+        let v = build_sparse_tfidf(&counts, &idf, 3);
+        assert_eq!(v.len(), 3);
+        // Top 3 should be a, b, c (highest IDF * tf scores)
+        let kept: HashSet<&str> = v.iter().map(|(t, _)| t.as_str()).collect();
+        assert!(kept.contains("a"));
+        assert!(kept.contains("b"));
+        assert!(kept.contains("c"));
+        assert!(!kept.contains("d"));
+        assert!(!kept.contains("e"));
+    }
+
+    /// Identical L2-normalized vectors → cosine = 1.
+    #[test]
+    fn cosine_identical_vectors_eq_one() {
+        let v: Vec<(String, f64)> = vec![
+            ("a".to_string(), 0.6),
+            ("b".to_string(), 0.8), // 0.6² + 0.8² = 1.0
+        ];
+        let s = cosine_sparse(&v, &v);
+        assert!((s - 1.0).abs() < 1e-9);
+    }
+
+    /// Disjoint sparse vectors (no shared terms) → cosine = 0.
+    #[test]
+    fn cosine_disjoint_vectors_eq_zero() {
+        let a: Vec<(String, f64)> = vec![("a".to_string(), 1.0)];
+        let b: Vec<(String, f64)> = vec![("b".to_string(), 1.0)];
+        let s = cosine_sparse(&a, &b);
+        assert!(s.abs() < 1e-9);
+    }
+
+    /// Empty body → empty vector → cosine = 0.
+    #[test]
+    fn cosine_handles_empty_vector() {
+        let a: Vec<(String, f64)> = vec![];
+        let b: Vec<(String, f64)> = vec![("foo".to_string(), 1.0)];
+        let s = cosine_sparse(&a, &b);
+        assert_eq!(s, 0.0);
+    }
+
+    /// Determinism: same corpus → same IDF + same sparse vectors,
+    /// independent of HashMap iteration order quirks.
+    #[test]
+    fn tfidf_pipeline_deterministic() {
+        let mut counts1 = HashMap::new();
+        counts1.insert("alpha".to_string(), 3u32);
+        counts1.insert("beta".to_string(), 1u32);
+        let mut counts2 = HashMap::new();
+        counts2.insert("alpha".to_string(), 1u32);
+        counts2.insert("gamma".to_string(), 2u32);
+        let docs = vec![counts1.clone(), counts2.clone()];
+
+        let idf_a = compute_idf(&docs);
+        let idf_b = compute_idf(&docs);
+        for (term, value) in &idf_a {
+            assert!((idf_b[term] - value).abs() < 1e-12);
+        }
+
+        let v_a = build_sparse_tfidf(&counts1, &idf_a, 50);
+        let v_b = build_sparse_tfidf(&counts1, &idf_a, 50);
+        assert_eq!(v_a.len(), v_b.len());
+        for ((ta, sa), (tb, sb)) in v_a.iter().zip(v_b.iter()) {
+            assert_eq!(ta, tb);
+            assert!((sa - sb).abs() < 1e-12);
+        }
     }
 }

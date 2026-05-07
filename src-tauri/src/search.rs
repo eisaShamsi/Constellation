@@ -72,26 +72,24 @@ const FTS_SCHEMA_VERSION: i64 = 1;
 /// or defaulted so pre-MIG-002 binaries tolerate the wider schema.
 pub(crate) const SKY_SCHEMA_VERSION: i64 = 10;
 
-/// MIG-018 — `sight_v3_layout` cache schema version.
+/// MIG-018 / MIG-019 — `sight_v3_*` cache schema version.
 ///
-/// | Version | Change                                                   |
-/// |---------|----------------------------------------------------------|
-/// |       1 | MIG-018 §1A — sight_v3_layout + sight_v3_layout_cursor + |
-/// |         | sight_v3_graph_version tables. Triggers on note_links    |
-/// |         | bump graph_version per library_set_hash. Resumable       |
-/// |         | back-fill via sight_layout::maybe_schedule (PJ-038).     |
+/// | Version | Change                                                       |
+/// |---------|--------------------------------------------------------------|
+/// |       1 | MIG-018 §1A — sight_v3_layout + sight_v3_layout_cursor +     |
+/// |         | sight_v3_graph_version tables. Resumable back-fill pattern.  |
+/// |       2 | MIG-019 §2A — sight_v3_similarity_edges table for TF-IDF     |
+/// |         | content-similarity edges (PJ-035 Milky Way). Bumping the     |
+/// |         | version invalidates all v1 cache rows: next v3 toggle does   |
+/// |         | cold MDS + cold TF-IDF compute. Eisa-approved 2026-05-07     |
+/// |         | "acceptable cosmetic cache pollution" per Architect §5 row   |
+/// |         | 2 / Eisa response #2.                                        |
 ///
-/// Bumping this version invalidates every cached layout: the next
-/// frontend Sight v3 toggle triggers a full Landmark-MDS recompute.
-/// Mirrors the SKY_SCHEMA_VERSION pattern.
-///
-/// §1A: declared but not yet read — the version-gate logic that
-/// `SELECT version FROM schema_versions WHERE module = 'sight_v3'` and
-/// invalidates `sight_v3_layout` rows lands in §1B alongside the actual
-/// compute. Until then the constant exists so external references in
-/// the §1B PR have something stable to import.
-#[allow(dead_code)]
-pub(crate) const SIGHT_V3_SCHEMA_VERSION: i64 = 1;
+/// Mirrors the SKY_SCHEMA_VERSION pattern: bumping this constant gates
+/// the cache-wipe logic in `init_db` below; old rows for any prior
+/// version get DELETED on the first boot after the bump, forcing a
+/// cold recompute on the next user-driven Sight toggle.
+pub(crate) const SIGHT_V3_SCHEMA_VERSION: i64 = 2;
 
 /// MIG-003 Step 1 — `note_meta` schema version. Bumped to 1 when the
 /// `cid_cn` column was added and backfilled from frontmatter. Subsequent
@@ -2342,7 +2340,62 @@ fn init_db(path: &Path) -> Result<Connection, String> {
         --
         -- For MIG-018 §1A: tables-only. Bump-on-edit semantics land in
         -- §1B alongside the compute path.
+
+        -- MIG-019 §2A: TF-IDF content-similarity edges cache (PJ-035 →
+        -- Milky Way density wash). Mirrors sight_v3_layout's caching
+        -- pattern: keyed by (library_set_hash, graph_version) and
+        -- invalidated by the same graph_version bumps.
+        --
+        -- Edge ordering: caller stores with note_path_a < note_path_b
+        -- to deduplicate undirected pairs. Similarity is normalized
+        -- cosine in [0, 1].
+        CREATE TABLE IF NOT EXISTS sight_v3_similarity_edges (
+            note_path_a       TEXT NOT NULL,
+            note_path_b       TEXT NOT NULL,
+            library_set_hash  TEXT NOT NULL,
+            graph_version     INTEGER NOT NULL,
+            similarity        REAL NOT NULL,
+            PRIMARY KEY (note_path_a, note_path_b, library_set_hash, graph_version)
+        );
+        CREATE INDEX IF NOT EXISTS idx_sight_v3_similarity_libset_ver
+            ON sight_v3_similarity_edges(library_set_hash, graph_version);
     ").map_err(|e| format!("Failed to create sight_v3_* tables: {}", e))?;
+
+    // ── MIG-019 §2A: SIGHT_V3_SCHEMA_VERSION cache invalidation ────
+    //
+    // If the stored sight_v3 module version is below the current target,
+    // wipe all four cache tables so the next user-driven Sight v3 toggle
+    // does a cold compute against the new schema. The wipe is idempotent
+    // and runs after the CREATE TABLE IF NOT EXISTS statements above
+    // (so empty rows on a fresh DB don't cause an error).
+    //
+    // Eisa-approved 2026-05-07 (Architect §5 row 2): "acceptable cosmetic
+    // cache pollution; only happens once per upgrade." Sub-second cold
+    // compute on Boss-scale graphs.
+    let stored_sight_v3_version: i64 = conn
+        .query_row(
+            "SELECT version FROM schema_versions WHERE module = 'sight_v3'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap_or(0);
+    if stored_sight_v3_version < SIGHT_V3_SCHEMA_VERSION {
+        diag_log(path, &format!(
+            "[search] init_db: schema_versions.sight_v3={} (target {}) — wiping cache tables for cold recompute",
+            stored_sight_v3_version, SIGHT_V3_SCHEMA_VERSION,
+        ));
+        conn.execute_batch("
+            DELETE FROM sight_v3_layout;
+            DELETE FROM sight_v3_layout_cursor;
+            DELETE FROM sight_v3_graph_version;
+            DELETE FROM sight_v3_similarity_edges;
+        ").map_err(|e| format!("Failed to wipe sight_v3 cache for version bump: {}", e))?;
+        conn.execute(
+            "INSERT OR REPLACE INTO schema_versions (module, version, updated_at)
+             VALUES ('sight_v3', ?1, strftime('%s','now'))",
+            rusqlite::params![SIGHT_V3_SCHEMA_VERSION],
+        ).map_err(|e| format!("Failed to stamp schema_versions.sight_v3: {}", e))?;
+    }
 
     // ─── One-time FTS5 rebuild after tokenizer migration ─────────────
     // If we bumped past FTS_SCHEMA_VERSION above we dropped the old
