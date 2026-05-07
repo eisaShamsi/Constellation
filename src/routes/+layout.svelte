@@ -62,6 +62,7 @@
 	import { processTemplate, processTemplateAsync, extractTemplateBody, type TemplateCallbacks } from '$lib/templates/engine';
 	import GraphMindView from '$lib/components/GraphMindView.svelte';
 	import ConstellationSight from '$lib/components/ConstellationSight2.svelte';
+	import { SIGHT_V2_ENABLED } from '$lib/sight/engine';
 	import { detectClusters, computeStructuralGaps, computeUniverseHealth, buildCommunityProfiles, stratumWeightedCentrality, suggestBridges, type StructuralGap, type UniverseHealth, type ClusterInfo, type CommunityProfile } from '$lib/graph/clusterEngine';
 	import OrgChart from '$lib/components/OrgChart.svelte';
 	import EmojiIconPicker from '$lib/components/EmojiIconPicker.svelte';
@@ -4355,7 +4356,9 @@
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
 			</button>
 			{/if}
-			{#if $appSettings.enabledFeatures?.constellationSight !== false}
+			<!-- MIG-017 (PJ-039): v2 Sight dock button gated behind SIGHT_V2_ENABLED.
+			     v2 is preserved on disk as a known-good fallback while v3 (PJ-038) is built fresh. -->
+			{#if SIGHT_V2_ENABLED && $appSettings.enabledFeatures?.constellationSight !== false}
 			<button class="dock-btn" class:active={lensActive} onclick={() => {
 				if (!lensActive) {
 					toggleLens(); showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showInspector360 = false; lensReturnPending = false;
@@ -4735,7 +4738,7 @@
 					{$t('orgChart.returnToOrgChart') || 'Return to OrgChart'}
 				</button>
 			{/if}
-			{#if lensReturnPending}
+			{#if lensReturnPending && SIGHT_V2_ENABLED}
 				<button class="index-return-btn" onclick={() => { lensActive = true; lensReturnPending = false; }}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
 					{$t('lens.returnToLens') || 'Return to Lens'}
@@ -4984,9 +4987,11 @@
 			</div>
 		{/if}
 
-		<!-- Constellation Lens — standalone D3+Canvas component -->
-		<div class="lens-overlay" class:lens-visible={lensActive}>
-			{#if lensActive}
+		<!-- Constellation Sight (v2) — standalone D3+Canvas component.
+		     MIG-017 (PJ-039): outer SIGHT_V2_ENABLED gate ensures the overlay never mounts
+		     when v2 is disabled, even if `lensActive` is forced via DevTools. -->
+		<div class="lens-overlay" class:lens-visible={lensActive && SIGHT_V2_ENABLED}>
+			{#if lensActive && SIGHT_V2_ENABLED}
 				<ConstellationSight
 					nodes={skyNodes}
 					links={skyLinks}

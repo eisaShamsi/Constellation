@@ -101,3 +101,61 @@ Decision: build v3 fresh; preserve v2 as known-good fallback. v3 inherits the Ru
 ## Next decision point
 
 After this commit lands, run **MIG-017 Architect** for disabling v2 Sight. Single mini-MIG, single session. Then **PJ-038 Architect + own Concept Paper** for v3.
+
+---
+
+## End-of-day update — MIG-017 (PJ-039) CLOSED
+
+After Eisa's "Proceed", cascaded through Architect → Plan → Build → Audit in one session. v2 Sight is now unreachable from the running app's user surface in default config; v2 component + IPCs preserved on disk as known-good fallback for v3 (PJ-038).
+
+### Mechanism (Architect → Plan)
+
+Single code constant `SIGHT_V2_ENABLED = false` in new module `src/lib/sight/engine.ts`. Gates four UI surfaces with `&& SIGHT_V2_ENABLED` (or conditional spread for the SettingsModal entry):
+
+- Dock button — `src/routes/+layout.svelte:4361`.
+- Modal mount + overlay class binding — `src/routes/+layout.svelte:4993-4994`.
+- "Return to Lens" button — `src/routes/+layout.svelte:4741`.
+- Settings → Plugins → Visualization plugin entry — `src/lib/components/SettingsModal.svelte:270`.
+
+Plus a 🚧 banner prepended to `docs/help.uConstellation.World/Constellation Sight/Constellation Sight.md`; original v2 documentation untouched beneath.
+
+### Why a code constant, not a Settings flag
+
+The fallback is a *codebase* fallback, not a user-facing toggle. Settings flag would have required a one-time migration to flip existing users' saved `enabledFeatures.constellationSight: true` → `false`. Const-based gate wins regardless of saved state — zero churn, single source of truth, one-edit rollback.
+
+### Audit (three agents in parallel)
+
+All three agents (invariants / drift / migration-path) returned **CLEAN**. Audit report: `lab/reports/MIG-017-DISABLE-V2-SIGHT-AUDIT.md`. 0 P0, 0 P1, 0 P2, 0 P3.
+
+| Agent | Coverage | Verdict |
+|---|---|---|
+| **Invariants** | All 12 invariants from Architect §6 + extra entry-point scan | ✅ CLEAN |
+| **Drift** | Implicit consumers, CSS overlay collapse, cross-surface touchpoints, naming forward-compat | ✅ CLEAN |
+| **Migration-path** | All 5 scenarios from Architect §8 + 2 extra paths (`lensReturnPending` entry points, v3 coexistence) | ✅ CLEAN |
+
+### Commits today
+
+| Commit | Phase / scope |
+|---|---|
+| `94c4331` | MIG-016 closes — Cancelled (partial-shipped) + Sight Concept Paper v1.1 + Pending Jobs v1.4 + orientation v1.55 |
+| (this) | MIG-017 closes — disable v2 Sight + Pending Jobs v1.5 + orientation v1.56 |
+
+### Decisions made
+
+1. **Code constant, not Settings flag**, for the v2-disable mechanism. Rationale documented in Architect §4.1.
+2. **Belt-and-suspenders gating**: dock button + modal mount + "Return to Lens" button + Settings entry all gate independently. Defense-in-depth against any stray code path.
+3. **Help-doc banner is non-destructive** — original v2 documentation preserved beneath, since it remains accurate for the v2 component on disk.
+4. **No Boss test gate this MIG** — UI-hide MIG, not feature MIG. Audit replaces Boss test for verification.
+5. **v3 forward-compat baked in**: const naming (`SIGHT_V2_ENABLED`) explicitly accommodates a future `SIGHT_V3_ENABLED` const in the same file. No `enabledFeatures` field collision when v3 ships.
+
+### State at end of day
+
+- **MIG-016 (PJ-034)** — Cancelled (partial-shipped). §1A + §1B in production.
+- **MIG-017 (PJ-039)** — CLOSED. v2 Sight disabled cleanly.
+- **PJ-038 (Sight v3 build with own Concept Paper)** — UNBLOCKED. Top of queue.
+- **Done count**: 7 (PJ-001, PJ-006, PJ-007, PJ-025, PJ-026, PJ-027, PJ-039). Cancelled: 1 (PJ-034 partial-shipped).
+- **Documentation aligned**: orientation v1.55 → v1.56; Pending Jobs v1.4 → v1.5; v2 help doc has the 🚧 banner.
+
+### Tomorrow's first move
+
+Whatever Eisa picks. PJ-038 Architect + dedicated Concept Paper for v3 Sight is the next logical step — multi-MIG with star-chart aesthetic per the v1.1 paper §13–§14 vision. PJ-035 / PJ-036 / PJ-037 absorb into v3 design.

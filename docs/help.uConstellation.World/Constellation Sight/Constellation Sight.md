@@ -9,6 +9,14 @@ aliases:
 description: The Constellation Sight visualizes your entire knowledge system as a gravity-well graph, revealing how ideas connect, where knowledge is strong, and where it needs growth.
 ---
 
+> **🚧 Constellation Sight is being rebuilt.**
+>
+> The current "gravity-well" visualization (v2) has been disabled in this build. A new Sight (v3) is in design — based on a star-chart aesthetic that will let you see your entire knowledge universe at a glance, with bridge-note "stars," knowledge-cluster "constellations," and density "Milky Way" bands. The reference page below describes what v2 *did* and is preserved while v3 ships.
+>
+> Why the rebuild? To deliver Sight's promise — *"What patterns and gaps exist in my thinking?"* — the visualization needs to be readable in one look, with stable spatial memory across sessions. Force-directed layouts (v2's choice) re-run their physics simulation each session and don't give the eye that anchor. Star charts do.
+>
+> Read [`Constellation-Sight-Concept-Paper-v1.1.md`](../../Constellation-Sight-Concept-Paper-v1.1.md) for what Sight is for, §13 for the star-chart vision, and §14 for the v3 redesign.
+
 # Constellation Sight
 
 ## What Is It?
