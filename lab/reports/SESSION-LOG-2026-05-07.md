@@ -159,3 +159,35 @@ All three agents (invariants / drift / migration-path) returned **CLEAN**. Audit
 ### Tomorrow's first move
 
 Whatever Eisa picks. PJ-038 Architect + dedicated Concept Paper for v3 Sight is the next logical step — multi-MIG with star-chart aesthetic per the v1.1 paper §13–§14 vision. PJ-035 / PJ-036 / PJ-037 absorb into v3 design.
+
+---
+
+## End-of-day update — PJ-038 Concept Paper v1.0 drafted
+
+After "go," drafted the dedicated v3 Concept Paper. Single artifact: `docs/Constellation-Sight-v3-Concept-Paper-v1.0.md` (~600 lines, 14 sections + glossary).
+
+### What's in the paper
+
+- **§1 vision**: the 19th-century printed-star-chart reference; the at-a-glance read.
+- **§2 visual grammar**: nine star-chart elements mapped row-by-row to their Sight semantics (star → note, magnitude → centrality, territory → community, connector lines → wikilinks, Milky Way → similarity, label → community-profile, calendar rim → time, empty patches → structural gaps, dome → universe health).
+- **§3 projection method**: two-stage pipeline (spectral embedding → Lambert azimuthal equal-area). Determinism-per-snapshot caching in SQLite (mirrors deferred MIG-016 §1E design). Edge cases (disconnected components, tiny universes, dominant-community case).
+- **§4 interactivity**: nine interaction modes — resting / hover star / click star / double-click / hover territory / click territory / search / calendar rim / right-click.
+- **§5 absorbing the deferred PJs**: PJ-035 → Milky Way, PJ-036 → magnitude slider, PJ-037 → two-up panel.
+- **§6 universe-health at a glance**: how the four metrics (M / D / E / C) become visually obvious from dome shape.
+- **§7 internationalization**: RTL, Arabic constellation labels, Hijri rim.
+- **§8 performance**: latency budgets + three-layer rendering (SVG + Canvas + DOM) + SQLite cache + idle-prewarm.
+- **§9 phased rollout**: three MIGs (MIG-018 projection foundation; MIG-019 density + time + search; MIG-020 layer peeling + Map↔Sight + v2 retire). Each its own four-phase migration cycle. Each Boss-test gated.
+- **§10 out of scope**.
+- **§11 ten open questions for Eisa**: design calls needed before code begins (spectral vs. MDS, Lambert vs. stereographic, Hijri rim, magnitude slider direction, two-up default, label visibility, color scheme, search persistence, render layer, accessibility timing).
+- **§12 acceptance criteria**.
+- **§13 glossary**, **§14 cross-references**.
+
+### Why a paper before any code
+
+Eisa's directive 2026-05-07: *"v3 shall get its own dedicated Concept Paper."* The v1.1 paper covers the *analytical foundation* both versions share; v3's paper covers the *visual + interaction grammar* that's new. Read side-by-side, they form the design contract for the multi-MIG build.
+
+### What's next
+
+**Awaiting Eisa's design review on §11.** Ten design questions need calls before MIG-018 opens. None blocks the others; Eisa can answer in any order. Once §11 resolves, the paper bumps to v1.1 with the design choices baked in, and MIG-018 Architect opens.
+
+If Eisa wants to refactor §1-§10 of the paper itself (e.g., reject the star-chart aesthetic for a different visual grammar), that's the moment — before any code. Cheap to redirect now; expensive after MIG-018 ships.
