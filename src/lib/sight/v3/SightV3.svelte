@@ -52,6 +52,27 @@
     import SightV3SidePanel from './SightV3SidePanel.svelte';
     import { t } from '$lib/i18n';
 
+    // MIG-019 §2G — Polar layout helpers.  See docs/SIGHT-V3-VISUAL-SPEC.md §2.
+    import {
+        polarToCartesian,
+        radiusFromCentrality,
+        magnitudeSize,
+        magnitudeAlpha,
+        PALETTE as V3_PALETTE,
+        DOME_RATIOS,
+    } from './polar';
+    import {
+        type SightMode,
+        DEFAULT_MODE,
+        resolveMode,
+    } from './modes';
+    import {
+        buildRegionLayout,
+        azimuthInWedge,
+        type RegionLayout,
+        type RegionWedge,
+    } from './regions';
+
     interface Props {
         nodes: SkyNode[];
         links: SkyLink[];
@@ -115,6 +136,51 @@
      *  overlay walks this on hover/select to find incident edges. */
     let resolvedEdges: Array<{ a: string; b: string }> = [];
 
+    // ─── MIG-019 §2G: Polar layout state ─────────────────────────────
+    /** The active rim-axis mode. Default = 'regions' (spec §1.3).
+     *  Persistence + toggle UI land in §2G.4 / §2G.5. */
+    let currentMode = $state<SightMode>(resolveMode(
+        ($appSettings as any)?.sight?.lastMode ?? null,
+    ));
+    /** Region (library) wedge layout — built once per fetch.
+     *  Updated when libraryPaths or layoutPoints change. */
+    let regionLayout = $state<RegionLayout | null>(null);
+    /** The library path/name tuples passed into fetchLayout — kept on
+     *  hand so we can rebuild the region layout if mode/data changes. */
+    let libraryPathsCached: Array<[string, string]> = [];
+    /** Pre-computed embed-angle per note (atan2 of embed_x, embed_y).
+     *  Used by `azimuthInWedge` for stable in-wedge positioning. */
+    let pathToEmbedAngle = new Map<string, number>();
+    /** §2G.3c: centrality rank (0 = most central → center; 1 = least
+     *  central → rim). Used for radial position. Real centrality data
+     *  is heavily skewed near 0, so ranking via centrality_norm directly
+     *  packs >90 % of stars at the rim. Ranking by percentile produces
+     *  a uniform radial distribution. */
+    let pathToCentralityRank = new Map<string, number>();
+
+    /** §2G.3b: rim label geometry, published by `drawRegionRim`.
+     *  Rendered as HTML elements (with `dir="auto"`) in the Svelte
+     *  template so Unicode bidi shaping works natively for Arabic /
+     *  Hebrew / mixed-script library names. */
+    interface RimLabelGeo {
+        key: string;
+        name: string;
+        count: number;
+        /** Library name label position. */
+        lx: number;
+        ly: number;
+        /** Note-count caption position. */
+        cxLabel: number;
+        cyLabel: number;
+        /** Rotation in degrees, already flipped for the lower half. */
+        rotDeg: number;
+        /** §2G.3c: Tangential chord length at the label radius (px),
+         *  used as max-width so labels can't bleed into adjacent
+         *  wedges. Long names ellipsize; short names breathe. */
+        maxWidthPx: number;
+    }
+    let rimLabelGeometry = $state<RimLabelGeo[]>([]);
+
     // ─── Interaction state ───────────────────────────────────────────
     let isLoading = $state(true);
     let errorMessage = $state<string | null>(null);
@@ -159,13 +225,39 @@
         return 1.5 + Math.sqrt(Math.max(0, centrality_norm)) * 4.5;
     }
 
+    /** §2G.3b — dome geometry with breathing room.
+     *
+     *  Eisa's directive 2026-05-07: "the dome should be at least 100 px
+     *  away from the top and bottom window borders." The Universe Health
+     *  card occupies ~155 px at top, so we reserve ~270 px there
+     *  (Universe Health + 100 px clear margin). 100 px reserved at
+     *  bottom. Sides reserve 100 px so the rim labels (which extend
+     *  ~70 px outside the dome) don't kiss the window edge.
+     *
+     *  The dome center shifts down to the middle of the AVAILABLE
+     *  vertical space, not the middle of the canvas.  */
     function getViewport() {
         if (!app) return null;
         const w = app.screen.width;
         const h = app.screen.height;
         if (w === 0 || h === 0) return null;
-        const radius = (Math.min(w, h) / 2) * 0.92;
-        return { cx: w / 2, cy: h / 2, radius };
+
+        const TOP_RESERVE = 270;     // Universe Health + 100 px buffer
+        const BOTTOM_RESERVE = 100;  // Eisa-mandated minimum
+        const SIDE_RESERVE = 100;    // room for rim labels
+
+        const availableW = Math.max(100, w - 2 * SIDE_RESERVE);
+        const availableH = Math.max(100, h - TOP_RESERVE - BOTTOM_RESERVE);
+        // Account for the rim band ~80 px outside the dome by keeping
+        // domeRadius + 80 within the available bounding box.
+        const RIM_OUT_PX = 80;
+        const radius = Math.max(
+            50,
+            Math.min(availableW / 2, availableH / 2) - RIM_OUT_PX,
+        );
+        const cx = w / 2;
+        const cy = TOP_RESERVE + availableH / 2;
+        return { cx, cy, radius };
     }
 
     function buildIndices() {
@@ -257,15 +349,101 @@
         }
     }
 
-    /** Project all layout points to screen and cache the result. */
+    /** Project all layout points to screen using the active rim-axis mode.
+     *
+     *  MIG-019 §2G (Eisa's 2026-05-07 redesign): the chart is a polar
+     *  layout where radius = inverse centrality and azimuth = mode-dependent
+     *  rim wedge. For Regions mode, each note's azimuth comes from its
+     *  library's wedge in `regionLayout`.
+     *
+     *  Other modes (Link Types, Time, Confidence, Stages, Acts) land
+     *  in subsequent commits per the spec. While their data layers are
+     *  pending we fall back to Regions mode positioning so the chart
+     *  always renders.
+     */
     function recomputeScreenPositions() {
         const viewport = getViewport();
         if (!viewport) return;
-        const projection = currentProjection();
+
+        // Build the region wedges if we don't have them yet (or if the
+        // library set changed). Cached after first build per fetch.
+        if (regionLayout == null && layoutPoints.length > 0 && libraryPathsCached.length > 0) {
+            regionLayout = buildRegionLayout(layoutPoints, libraryPathsCached);
+            // Pre-compute embed angles once for stable in-wedge positions.
+            pathToEmbedAngle.clear();
+            for (const pt of layoutPoints) {
+                const ang = Math.atan2(pt.embed_x, pt.embed_y);  // theta=0 at top
+                const TAU = Math.PI * 2;
+                const wrapped = ((ang % TAU) + TAU) % TAU;
+                pathToEmbedAngle.set(pt.note_path, wrapped);
+            }
+            // §2G.3c: pre-compute centrality RANK percentile per note so
+            // the radial distribution is uniform (rather than packed at
+            // the rim because raw betweenness is skewed near 0).
+            pathToCentralityRank.clear();
+            const sorted = [...layoutPoints].sort(
+                (a, b) => b.centrality_norm - a.centrality_norm,
+            );
+            const denom = Math.max(1, sorted.length - 1);
+            sorted.forEach((pt, i) => {
+                pathToCentralityRank.set(pt.note_path, i / denom);
+            });
+        }
+
         pathToScreen.clear();
+        const domeR = viewport.radius;
+        const cx = viewport.cx;
+        const cy = viewport.cy;
+
+        // Mode dispatch. Today (§2G.3) we ship Regions; the other modes
+        // are stubbed to fall back to Regions until §2G.4 wires them.
+        const wedgeFor = (notePath: string): RegionWedge | null => {
+            if (regionLayout == null) return null;
+            return regionLayout.pathToWedge.get(notePath) ?? null;
+        };
+
+        // §2G.3c: radial spread parameters. Inner inset keeps the
+        // most-central star slightly off the pole (visual breathing
+        // room). Outer cap keeps least-central stars off the rim
+        // divider so they don't kiss the wedge label band.
+        const INNER_INSET = 0.04 * domeR;
+        const OUTER_CAP = 0.96 * domeR;
+
         for (const pt of layoutPoints) {
-            const { x, y } = embedToScreen(pt.embed_x, pt.embed_y, projection, viewport);
-            pathToScreen.set(pt.note_path, { x, y, r: starRadius(pt.centrality_norm) });
+            // §2G.3c: radius from centrality RANK PERCENTILE, not raw
+            // centrality_norm. Real graphs are heavily skewed (most
+            // notes have centrality ~0.0–0.05), so a direct mapping
+            // packed >90 % of stars at the rim. Rank-percentile gives
+            // a uniform radial distribution:
+            //   rank=0 (most central) → r=INNER_INSET
+            //   rank=1 (least central) → r=OUTER_CAP
+            const rank = pathToCentralityRank.get(pt.note_path) ?? 0.5;
+            const r = INNER_INSET + rank * (OUTER_CAP - INNER_INSET);
+
+            // Azimuth: mode-dependent. For Regions, look up the note's
+            // library wedge and project its embed angle into the wedge.
+            let azimuth: number;
+            const wedge = wedgeFor(pt.note_path);
+            if (wedge) {
+                const embedAng = pathToEmbedAngle.get(pt.note_path) ?? 0;
+                azimuth = azimuthInWedge(wedge, embedAng);
+            } else {
+                // Fallback if no wedge (e.g., empty regionLayout): keep
+                // the old MDS-derived position as a safety net.
+                const projection = currentProjection();
+                const { x, y } = embedToScreen(pt.embed_x, pt.embed_y, projection, viewport);
+                pathToScreen.set(pt.note_path, {
+                    x, y,
+                    r: magnitudeSize(pt.centrality_norm) * 1.4,
+                });
+                continue;
+            }
+
+            const { x, y } = polarToCartesian(r, azimuth, cx, cy);
+            pathToScreen.set(pt.note_path, {
+                x, y,
+                r: magnitudeSize(pt.centrality_norm) * 1.4,
+            });
         }
     }
 
@@ -280,12 +458,13 @@
         const enabled = ($appSettings.sight?.calendarSystems ?? ['gregorian']) as CalendarSystem[];
         if (enabled.length === 0) return;
 
-        const w = app.screen.width;
-        const h = app.screen.height;
-        const domeRadius = (Math.min(w, h) / 2) * 0.92;
+        // §2G.3b: share viewport with the dome so the rim is concentric.
+        const vp = getViewport();
+        if (!vp) return;
+        const domeRadius = vp.radius;
         const rimViewport = {
-            cx: w / 2,
-            cy: h / 2,
+            cx: vp.cx,
+            cy: vp.cy,
             innerRadius: domeRadius + 4, // small gap between dome edge and rim
             outerRadius: domeRadius + 4 + 22 * enabled.length,
         };
@@ -416,15 +595,17 @@
         ctx.putImageData(imgData, 0, 0);
 
         // Convert to Pixi Texture and stretch to fill the dome.
+        // §2G.3b: align with shared viewport so the Milky Way sits
+        // inside the actual dome (not centered on the raw canvas).
         const texture = Texture.from(canvas);
         const sprite = new Sprite(texture);
-        const aw = app.screen.width;
-        const ah = app.screen.height;
-        const domeRadius = (Math.min(aw, ah) / 2) * 0.92;
+        const vp = getViewport();
+        if (!vp) return;
+        const domeRadius = vp.radius;
         sprite.width = domeRadius * 2;
         sprite.height = domeRadius * 2;
-        sprite.x = aw / 2 - domeRadius;
-        sprite.y = ah / 2 - domeRadius;
+        sprite.x = vp.cx - domeRadius;
+        sprite.y = vp.cy - domeRadius;
         milkyWayContainer.addChild(sprite);
     }
 
@@ -437,61 +618,18 @@
         if (!territoryContainer) return;
         safeClearContainer(territoryContainer);
 
-        const labeled: Array<Point2D & { communityId: number }> = [];
-        for (const [path, screen] of pathToScreen) {
-            const communityId = pathToCommunity.get(path);
-            if (communityId === undefined) continue;
-            labeled.push({ x: screen.x, y: screen.y, communityId });
-        }
-        const territories = communityTerritories(labeled);
-        const searchOn = isSearchActive();
-        const alwaysOnLabels = $appSettings.sight?.alwaysOnLabels === true;
-
-        // MIG-019 §2E.4: consolidate ~10-50 polygon Graphics into ONE
-        // Graphics with multiple subpaths. Same single-draw-call benefit
-        // as drawStars; reduces GPU buffer count.
-        const polys = new Graphics();
-        const labels: Text[] = [];
-        for (const [communityId, hull] of territories) {
-            if (hull.length < 3) continue;
-            const color = communityColorInt(communityId);
-            const hasMatch = searchOn && communityHasMatch(communityId);
-
-            const fillAlpha = searchOn ? (hasMatch ? 0.16 : 0.04) : 0.10;
-            const strokeAlpha = searchOn ? (hasMatch ? 0.85 : 0.10) : 0.30;
-            const strokeWidth = searchOn && hasMatch ? 2.5 : 1;
-
-            polys.poly(hull.flatMap((p) => [p.x, p.y]));
-            polys.fill({ color, alpha: fillAlpha });
-            polys.stroke({ color, alpha: strokeAlpha, width: strokeWidth });
-
-            if (alwaysOnLabels) {
-                const cluster = communityById.get(communityId);
-                if (cluster && cluster.suggestedName) {
-                    let cx = 0, cy = 0;
-                    for (const p of hull) { cx += p.x; cy += p.y; }
-                    cx /= hull.length;
-                    cy /= hull.length;
-                    const label = new Text({
-                        text: cluster.suggestedName,
-                        style: new TextStyle({
-                            fill: 0xd4af37,
-                            fontSize: 11,
-                            fontFamily: 'system-ui, -apple-system, sans-serif',
-                            align: 'center',
-                            fontStyle: 'italic',
-                        }),
-                        anchor: 0.5,
-                    });
-                    label.x = cx;
-                    label.y = cy;
-                    label.alpha = 0.7;
-                    labels.push(label);
-                }
-            }
-        }
-        territoryContainer.addChild(polys);
-        for (const label of labels) territoryContainer.addChild(label);
+        // MIG-019 §2G (Eisa post-§2G.3 directive 2026-05-07): community
+        // territories were a v2 carryover that worked when MDS clustered
+        // each community geographically. In the polar layout azimuth is
+        // library-based, so each community is now scattered across many
+        // wedges — the convex hulls span the whole dome and 20 of them
+        // overlap into a solid blob that hides the stars.
+        //
+        // Disabled in §2G.3. We may revive a per-(library × community)
+        // sub-territory layer in a later phase, but only after we have
+        // a layout grammar where it'd actually communicate something.
+        // (Function intentionally returns above. The territory layer
+        //  stays empty under the polar layout — see comment.)
     }
 
     /** Draw faint connector lines on the base layer.
@@ -502,22 +640,21 @@
      *  The full edge set is still in `resolvedEdges` for the focus
      *  overlay (hover/click brightens incident edges regardless of cap). */
     const MAX_FAINT_EDGES_AT_REST = 30000;
+    /** MIG-019 §2G (spec §3): edges are HIDDEN in the resting state.
+     *  No constellation lines are drawn unless a star is hovered or
+     *  selected. The focus overlay (`drawFocusOverlay`) handles the
+     *  active state by drawing only the selected node's incident edges
+     *  in gold. Per Concept Paper §4.1 — "we will show it as faint lines
+     *  until the user hovers over or the connected nodes linking them."
+     *
+     *  This function intentionally clears the edge container and stops
+     *  there: it removes any prior constellation chains so they don't
+     *  ghost across mode switches. The edge layer stays empty until
+     *  `drawFocusOverlay` renders into it on hover/click.  */
     function drawEdges() {
         if (!edgeContainer) return;
         safeClearContainer(edgeContainer);
-
-        const lines = new Graphics();
-        const limit = Math.min(resolvedEdges.length, MAX_FAINT_EDGES_AT_REST);
-        for (let i = 0; i < limit; i++) {
-            const e = resolvedEdges[i];
-            const sa = pathToScreen.get(e.a);
-            const sb = pathToScreen.get(e.b);
-            if (!sa || !sb) continue;
-            lines.moveTo(sa.x, sa.y);
-            lines.lineTo(sb.x, sb.y);
-        }
-        lines.stroke({ color: CONNECTOR_LINE_COLOR, alpha: 0.12, width: 1 });
-        edgeContainer.addChild(lines);
+        // Resting state — no edges. The focus overlay handles active state.
     }
 
     /** Draw stars on the base layer.
@@ -561,11 +698,15 @@
                 alpha = baseAlpha;
             }
 
+            // MIG-019 §2G: stars are near-black (#1a1a1a) on cream
+            // parchment, per the Suwaidi star-chart palette.  Magnitude
+            // alpha already encodes brightness; modulating it here keeps
+            // the search-active dim/flare semantics intact.
             // Each circle gets its own fill() call so per-star alpha
             // is preserved. Pixi v8 batches all subpaths into one GL
             // draw call regardless.
             stars.circle(screen.x, screen.y, radius);
-            stars.fill({ color: 0xf5e6c8, alpha });
+            stars.fill({ color: 0x1a1a1a, alpha });
         }
         starContainer.addChild(stars);
     }
@@ -601,7 +742,7 @@
                 }
             }
             if (edgeCount > 0) {
-                lines.stroke({ color: 0xf5e6c8, alpha: 0.85, width: 1.5 });
+                lines.stroke({ color: 0xc9a227, alpha: 0.7, width: 1.0 });
                 focusOverlay.addChild(lines);
             }
             return;
@@ -669,6 +810,108 @@
         return best;
     }
 
+    /** MIG-019 §2G: rim renderer dispatched by active mode.
+     *
+     *  For Regions mode (§2G.3), draws library wedge labels around the
+     *  outer rim — proportional widths, blue ink, tangential rotation,
+     *  with note counts just outside.
+     *
+     *  Time mode (§2G.4) will route through `drawCalendarRim()`.
+     *  Other modes (Link Types, Confidence, Stages, Acts) will draw
+     *  their fixed wedge labels via small per-mode renderers added
+     *  in subsequent commits. */
+    function drawRimForMode() {
+        if (!calendarRimContainer || !app) return;
+        if (currentMode === 'regions') {
+            drawRegionRim();
+        } else if (currentMode === 'time') {
+            drawCalendarRim();
+            rimLabelGeometry = [];  // hide region rim labels
+        } else {
+            // Other modes not yet wired — empty rim is fine for now.
+            safeClearContainer(calendarRimContainer);
+            rimLabelGeometry = [];
+        }
+    }
+
+    /** MIG-019 §2G.3: Regions-mode rim. Library wedges sized by note
+     *  count (largest first), with tangential blue-ink labels.
+     *  §2G.3b: shares the same viewport as star positioning so the rim
+     *  is concentric with the dome (not centered on the raw canvas). */
+    function drawRegionRim() {
+        if (!calendarRimContainer || !app) return;
+        safeClearContainer(calendarRimContainer);
+        if (!regionLayout || regionLayout.wedges.length === 0) return;
+
+        const vp = getViewport();
+        if (!vp) return;
+        const cx = vp.cx;
+        const cy = vp.cy;
+        const domeR = vp.radius;
+        const rimInner = domeR + 18;
+        const rimOuter = domeR + 70;
+
+        // Outer + inner rim circles
+        const rim = new Graphics();
+        rim.circle(cx, cy, rimOuter);
+        rim.stroke({ color: 0x1a1a1a, alpha: 0.55, width: 0.8 });
+        rim.circle(cx, cy, rimInner);
+        rim.stroke({ color: 0x1a1a1a, alpha: 0.35, width: 0.5 });
+        // Dome edge
+        rim.circle(cx, cy, domeR);
+        rim.stroke({ color: 0x1a1a1a, alpha: 0.4, width: 0.7 });
+
+        // Wedge dividers + labels
+        const TAU = Math.PI * 2;
+        for (const wedge of regionLayout.wedges) {
+            // Divider line at start of wedge — rim band only.
+            const tStart = wedge.arcStartRad;
+            // polar.ts convention: theta=0 at TOP, CW+. Pixi uses standard math:
+            // angle 0 = right (+x), CCW positive. Convert by subtracting π/2 and
+            // negating: pixi_angle = -(theta - π/2) = π/2 - theta. We use sin/cos
+            // directly on polar coords, matching `polarToCartesian`.
+            const dx0 = (rimInner - 2) * Math.sin(tStart);
+            const dy0 = -(rimInner - 2) * Math.cos(tStart);
+            const dx1 = (rimOuter + 4) * Math.sin(tStart);
+            const dy1 = -(rimOuter + 4) * Math.cos(tStart);
+            rim.moveTo(cx + dx0, cy + dy0);
+            rim.lineTo(cx + dx1, cy + dy1);
+        }
+        rim.stroke({ color: 0x1a1a1a, alpha: 0.55, width: 0.7 });
+        calendarRimContainer.addChild(rim);
+
+        // §2G.3b: Wedge labels were Pixi Text — Pixi v8's text path
+        // doesn't reliably handle Unicode bidi shaping (Arabic/Hebrew
+        // came out backwards on Eisa's universe). Labels now render as
+        // HTML elements with `dir="auto"` so the browser handles bidi
+        // natively. We just publish the wedge geometry below; the
+        // Svelte template renders the labels.
+        rimLabelGeometry = regionLayout.wedges.map((wedge) => {
+            const t = wedge.arcMidRad;
+            const labelR = (rimInner + rimOuter) / 2 + 2;
+            const countR = rimOuter + 22;
+            const lx = cx + labelR * Math.sin(t);
+            const ly = cy - labelR * Math.cos(t);
+            const cxLabel = cx + countR * Math.sin(t);
+            const cyLabel = cy - countR * Math.cos(t);
+            // Tangent rotation in degrees, flipped on the lower half so
+            // text reads right-side up.
+            let rotDeg = (t * 180) / Math.PI;
+            if (t > Math.PI / 2 && t < (3 * Math.PI) / 2) rotDeg += 180;
+            // §2G.3c: tangential chord length = arc length at the label
+            // radius. Use that as the label's max-width so long library
+            // names ellipsize instead of bleeding across adjacent wedges.
+            const arcSize = wedge.arcEndRad - wedge.arcStartRad;
+            const maxWidthPx = Math.max(40, arcSize * labelR - 8);
+            return {
+                key: wedge.libraryPath,
+                name: wedge.libraryName,
+                count: wedge.noteCount,
+                lx, ly, cxLabel, cyLabel, rotDeg, maxWidthPx,
+            };
+        });
+    }
+
     function fullRedraw() {
         recomputeScreenPositions();
         drawMilkyWay();
@@ -676,7 +919,7 @@
         drawEdges();
         drawStars();
         drawFocusOverlay();
-        drawCalendarRim();
+        drawRimForMode();
     }
 
     function showPlaceholder(message: string, isError: boolean = false) {
@@ -685,7 +928,7 @@
             placeholderText = new Text({
                 text: message,
                 style: new TextStyle({
-                    fill: isError ? 0xff6b6b : 0xf5e6c8,
+                    fill: isError ? 0xa83232 : 0x1a1a1a,
                     fontSize: 18,
                     fontFamily: 'system-ui, -apple-system, sans-serif',
                     align: 'center',
@@ -695,7 +938,7 @@
             app.stage.addChild(placeholderText);
         } else {
             placeholderText.text = message;
-            (placeholderText.style as TextStyle).fill = isError ? 0xff6b6b : 0xf5e6c8;
+            (placeholderText.style as TextStyle).fill = isError ? 0xa83232 : 0x1a1a1a;
             placeholderText.visible = true;
         }
         placeholderText.x = app.screen.width / 2;
@@ -707,16 +950,17 @@
     }
 
     // ─── Pointer handlers ────────────────────────────────────────────
-    /** Get rim viewport for hit-testing. Mirrors drawCalendarRim's geometry. */
+    /** Get rim viewport for hit-testing. §2G.3b: mirrors the shared
+     *  dome viewport so hit-tests land where the rim is actually drawn. */
     function getRimViewport() {
         if (!app) return null;
-        const w = app.screen.width;
-        const h = app.screen.height;
+        const vp = getViewport();
+        if (!vp) return null;
         const enabled = ($appSettings.sight?.calendarSystems ?? ['gregorian']) as CalendarSystem[];
-        const domeRadius = (Math.min(w, h) / 2) * 0.92;
+        const domeRadius = vp.radius;
         return {
-            cx: w / 2,
-            cy: h / 2,
+            cx: vp.cx,
+            cy: vp.cy,
             innerRadius: domeRadius + 4,
             outerRadius: domeRadius + 4 + 22 * enabled.length,
             enabled,
@@ -728,31 +972,34 @@
         const px = ev.clientX - rect.left;
         const py = ev.clientY - rect.top;
 
-        // MIG-019 §2C: rim hit-test first. If hovering a calendar month,
-        // preview-filter the chart by that month (but only if the filter
-        // isn't already pinned by a click).
-        const rimVp = getRimViewport();
-        if (rimVp) {
-            const monthHit = pickMonth(rimVp, px, py, rimVp.enabled);
-            if (monthHit) {
-                const greg = gregorianMonthFromSegment(monthHit);
-                if (hoveredMonth !== (greg ?? -1)) {
-                    hoveredMonth = greg ?? -1;
+        // MIG-019 §2C / §2G.3b: rim hit-test only in Time mode. In other
+        // modes, the calendar-rim hit-test was wiping the region rim
+        // because it shares the same Pixi container — Eisa caught this
+        // 2026-05-07. Mode is user-driven only, never auto-switched.
+        if (currentMode === 'time') {
+            const rimVp = getRimViewport();
+            if (rimVp) {
+                const monthHit = pickMonth(rimVp, px, py, rimVp.enabled);
+                if (monthHit) {
+                    const greg = gregorianMonthFromSegment(monthHit);
+                    if (hoveredMonth !== (greg ?? -1)) {
+                        hoveredMonth = greg ?? -1;
+                        if (!monthFilterPersistent) {
+                            monthFilterMonth = greg ?? -1;
+                            drawStars();
+                        }
+                        drawCalendarRim();
+                    }
+                    tooltipVisible = false;
+                    return;
+                } else if (hoveredMonth !== -1) {
+                    hoveredMonth = -1;
                     if (!monthFilterPersistent) {
-                        monthFilterMonth = greg ?? -1;
+                        monthFilterMonth = -1;
                         drawStars();
                     }
                     drawCalendarRim();
                 }
-                tooltipVisible = false;
-                return;
-            } else if (hoveredMonth !== -1) {
-                hoveredMonth = -1;
-                if (!monthFilterPersistent) {
-                    monthFilterMonth = -1;
-                    drawStars();
-                }
-                drawCalendarRim();
             }
         }
 
@@ -780,7 +1027,8 @@
             hoveredPath = null;
             drawFocusOverlay();
         }
-        if (hoveredMonth !== -1) {
+        // §2G.3b: month-rim cleanup only in Time mode.
+        if (currentMode === 'time' && hoveredMonth !== -1) {
             hoveredMonth = -1;
             if (!monthFilterPersistent) {
                 monthFilterMonth = -1;
@@ -796,24 +1044,27 @@
         const px = ev.clientX - rect.left;
         const py = ev.clientY - rect.top;
 
-        // MIG-019 §2C: rim click toggles persistent month filter.
-        const rimVp = getRimViewport();
-        if (rimVp) {
-            const monthHit = pickMonth(rimVp, px, py, rimVp.enabled);
-            if (monthHit) {
-                const greg = gregorianMonthFromSegment(monthHit);
-                if (greg !== null) {
-                    if (monthFilterPersistent && monthFilterMonth === greg) {
-                        // Click same month again → clear persistent filter
-                        monthFilterPersistent = false;
-                        monthFilterMonth = -1;
-                    } else {
-                        monthFilterPersistent = true;
-                        monthFilterMonth = greg;
+        // §2C / §2G.3b: rim click toggles persistent month filter.
+        // Time mode only — Region rim clicks fall through to star pick.
+        if (currentMode === 'time') {
+            const rimVp = getRimViewport();
+            if (rimVp) {
+                const monthHit = pickMonth(rimVp, px, py, rimVp.enabled);
+                if (monthHit) {
+                    const greg = gregorianMonthFromSegment(monthHit);
+                    if (greg !== null) {
+                        if (monthFilterPersistent && monthFilterMonth === greg) {
+                            // Click same month again → clear persistent filter
+                            monthFilterPersistent = false;
+                            monthFilterMonth = -1;
+                        } else {
+                            monthFilterPersistent = true;
+                            monthFilterMonth = greg;
+                        }
+                        drawStars();
+                        drawCalendarRim();
+                        return;
                     }
-                    drawStars();
-                    drawCalendarRim();
-                    return;
                 }
             }
         }
@@ -828,7 +1079,7 @@
                 selectedPath = null;
                 drawFocusOverlay();
             }
-            if (monthFilterPersistent) {
+            if (currentMode === 'time' && monthFilterPersistent) {
                 monthFilterPersistent = false;
                 monthFilterMonth = -1;
                 drawStars();
@@ -885,7 +1136,8 @@
     onMount(async () => {
         app = new Application();
         await app.init({
-            background: SKY_BACKGROUND,
+            // MIG-019 §2G: Suwaidi cream parchment (#faf6e8) — was navy.
+            background: 0xfaf6e8,
             resizeTo: canvasContainer,
             antialias: true,
         });
@@ -924,6 +1176,11 @@ ${nodes?.length ?? 0} notes · ${links?.length ?? 0} links`);
         try {
             const stats = get(libraryStats);
             const libraryPaths: Array<[string, string]> = stats.map((s) => [s.path, s.name]);
+            // MIG-019 §2G: cache for the polar layout's Region wedge build.
+            libraryPathsCached = libraryPaths;
+            // Fresh fetch — invalidate any previous regionLayout build so
+            // recomputeScreenPositions() rebuilds against the new layoutPoints.
+            regionLayout = null;
 
             showPlaceholder(`Stage 1/4: layout (MDS embedding)
 ${nodes?.length ?? 0} notes · ${links?.length ?? 0} links`);
@@ -1009,12 +1266,14 @@ ${nodes?.length ?? 0} notes · ${links?.length ?? 0} links`);
         }
     });
 
-    // MIG-019 §2C: redraw calendar rim when the user enables/disables
-    // calendar systems in Settings → Sight → Calendar systems.
+    // MIG-019 §2C: redraw rim when the user enables/disables calendar
+    // systems in Settings → Sight → Calendar systems. §2G dispatches
+    // through `drawRimForMode()` so the right rim renders for the
+    // active mode (calendar only matters in Time mode).
     $effect(() => {
         const _calendars = $appSettings.sight?.calendarSystems;
         if (!isLoading && layoutPoints.length > 0) {
-            drawCalendarRim();
+            drawRimForMode();
         }
     });
 
@@ -1103,6 +1362,68 @@ ${nodes?.length ?? 0} notes · ${links?.length ?? 0} links`);
         >{tooltipText}</div>
     {/if}
 
+    <!-- §2G.3b: Region-rim labels (HTML overlay). Library names go
+         through `dir="auto"` so the browser handles bidi natively —
+         Arabic / Hebrew / Persian library names render right-to-left
+         within their tangent rotation. -->
+    {#each rimLabelGeometry as geo (geo.key)}
+        <div
+            class="sight-v3-rim-label"
+            style="left: {geo.lx}px; top: {geo.ly}px; transform: translate(-50%, -50%) rotate({geo.rotDeg}deg); max-width: {geo.maxWidthPx}px;"
+            dir="auto"
+            title={geo.name}
+        >{geo.name.toUpperCase()}</div>
+        <div
+            class="sight-v3-rim-count"
+            style="left: {geo.cxLabel}px; top: {geo.cyLabel}px; transform: translate(-50%, -50%) rotate({geo.rotDeg}deg); max-width: {geo.maxWidthPx}px;"
+        >{geo.count.toLocaleString()} notes</div>
+    {/each}
+
+    <!-- MIG-019 §2G (spec §4): Universe Health anchor — top-center,
+         above the dome. Roundel at center, two metrics flanking on
+         each side. Renders only when layout has loaded.
+         (Metric labels are cartographic — kept in English uppercase
+         like astronomy chart labels; i18n keys land in §2G.6.) -->
+    {#if !isLoading && layoutPoints.length > 0}
+        <div class="sight-v3-health-anchor" aria-hidden="false">
+            <div class="sight-v3-health-caption">UNIVERSE HEALTH</div>
+            <div class="sight-v3-health-row">
+                <div class="sight-v3-metric">
+                    <div class="sight-v3-metric-label">MODULARITY</div>
+                    <div class="sight-v3-metric-value">{healthReport.modularity.display}</div>
+                    <div class="sight-v3-metric-pill pill-{healthReport.modularity.status}">
+                        {healthReport.modularity.status.toUpperCase()}
+                    </div>
+                </div>
+                <div class="sight-v3-metric">
+                    <div class="sight-v3-metric-label">DOMINANCE</div>
+                    <div class="sight-v3-metric-value">{healthReport.dominance.display}</div>
+                    <div class="sight-v3-metric-pill pill-{healthReport.dominance.status}">
+                        {healthReport.dominance.status.toUpperCase()}
+                    </div>
+                </div>
+                <div class="sight-v3-roundel" aria-label="Universe Health Score">
+                    <div class="sight-v3-score">{Math.round(healthReport.score)}</div>
+                    <div class="sight-v3-score-denom">/ 100</div>
+                </div>
+                <div class="sight-v3-metric">
+                    <div class="sight-v3-metric-label">ENTROPY</div>
+                    <div class="sight-v3-metric-value">{healthReport.entropy.display}</div>
+                    <div class="sight-v3-metric-pill pill-{healthReport.entropy.status}">
+                        {healthReport.entropy.status.toUpperCase()}
+                    </div>
+                </div>
+                <div class="sight-v3-metric">
+                    <div class="sight-v3-metric-label">CONNECTIVITY</div>
+                    <div class="sight-v3-metric-value">{healthReport.connectivity.display}</div>
+                    <div class="sight-v3-metric-pill pill-{healthReport.connectivity.status}">
+                        {healthReport.connectivity.status.toUpperCase()}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {/if}
+
     <SightV3SidePanel
         notePath={selectedPath}
         noteTitle={sidePanelTitle}
@@ -1111,20 +1432,20 @@ ${nodes?.length ?? 0} notes · ${links?.length ?? 0} links`);
         totalNotes={sidePanelTotalNotes}
         incomingCount={sidePanelIncoming}
         outgoingCount={sidePanelOutgoing}
-        health={healthReport}
         onOpenNote={sidePanelOpenNote}
         onClose={sidePanelClose}
     />
 </div>
 
 <style>
+    /* MIG-019 §2G: Suwaidi cream parchment palette (was navy theme). */
     .sight-v3-root {
         position: fixed;
         top: 0;
         left: 0;
         width: 100vw;
         height: 100vh;
-        background: #0f1729;
+        background: #faf6e8;  /* cream parchment */
         z-index: 1000;
         display: flex;
         align-items: stretch;
@@ -1148,10 +1469,10 @@ ${nodes?.length ?? 0} notes · ${links?.length ?? 0} links`);
         right: 16px;
         width: 32px;
         height: 32px;
-        background: rgba(245, 230, 200, 0.1);
-        border: 1px solid rgba(245, 230, 200, 0.3);
+        background: rgba(26, 26, 26, 0.04);
+        border: 1px solid rgba(26, 26, 26, 0.25);
         border-radius: 50%;
-        color: #f5e6c8;
+        color: #1a1a1a;
         font-size: 20px;
         line-height: 28px;
         cursor: pointer;
@@ -1160,15 +1481,135 @@ ${nodes?.length ?? 0} notes · ${links?.length ?? 0} links`);
     }
 
     .sight-v3-close:hover {
-        background: rgba(212, 175, 55, 0.25);
-        border-color: rgba(212, 175, 55, 0.6);
+        background: rgba(201, 162, 39, 0.20);
+        border-color: rgba(201, 162, 39, 0.7);
+    }
+
+    /* §2G.3b: Region-rim labels (HTML overlay).
+       Native bidi via `dir="auto"` so Arabic library names render
+       right-to-left within their tangent rotation. */
+    .sight-v3-rim-label,
+    .sight-v3-rim-count {
+        position: absolute;
+        pointer-events: none;
+        white-space: nowrap;
+        text-align: center;
+        font-family: serif;
+        z-index: 6;
+        user-select: none;
+    }
+    .sight-v3-rim-label {
+        color: #2a4a8c;
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: 0.18em;
+        opacity: 0.9;
+    }
+    .sight-v3-rim-count {
+        color: rgba(26, 26, 26, 0.6);
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        font-style: italic;
+    }
+
+    /* MIG-019 §2G (spec §4): Universe Health anchor.
+       Top-center, roundel + flanking metrics, blue-ink + gold accents. */
+    .sight-v3-health-anchor {
+        position: absolute;
+        top: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 8;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        pointer-events: none;
+        font-family: serif;
+    }
+    .sight-v3-health-caption {
+        font-size: 11px;
+        letter-spacing: 3px;
+        color: rgba(26, 26, 26, 0.6);
+        margin-bottom: 6px;
+    }
+    .sight-v3-health-row {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 36px;
+    }
+    .sight-v3-roundel {
+        width: 100px;
+        height: 100px;
+        border: 2.5px solid #c9a227;
+        border-radius: 50%;
+        background: #faf6e8;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+    }
+    .sight-v3-score {
+        font-size: 38px;
+        font-weight: 600;
+        color: #c9a227;
+        line-height: 1;
+    }
+    .sight-v3-score-denom {
+        font-size: 10px;
+        color: rgba(26, 26, 26, 0.6);
+        margin-top: 4px;
+    }
+    .sight-v3-metric {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-width: 96px;
+    }
+    .sight-v3-metric-label {
+        font-size: 10px;
+        letter-spacing: 2px;
+        color: rgba(26, 26, 26, 0.55);
+        margin-bottom: 4px;
+        white-space: nowrap;
+    }
+    .sight-v3-metric-value {
+        font-size: 22px;
+        font-weight: 500;
+        color: rgba(26, 26, 26, 0.92);
+        line-height: 1.1;
+    }
+    .sight-v3-metric-pill {
+        margin-top: 6px;
+        padding: 3px 10px;
+        border-radius: 8px;
+        font-size: 9px;
+        font-weight: 600;
+        letter-spacing: 1.6px;
+        border: 0.7px solid;
+    }
+    .pill-healthy {
+        color: #3a8a4a;
+        border-color: rgba(58, 138, 74, 0.6);
+        background: rgba(58, 138, 74, 0.10);
+    }
+    .pill-caution {
+        color: #c9831f;
+        border-color: rgba(201, 131, 31, 0.6);
+        background: rgba(201, 131, 31, 0.10);
+    }
+    .pill-imbalanced {
+        color: #a83232;
+        border-color: rgba(168, 50, 50, 0.6);
+        background: rgba(168, 50, 50, 0.10);
     }
 
     .sight-v3-tooltip {
         position: fixed;
-        background: rgba(15, 23, 41, 0.94);
-        color: #f5e6c8;
-        border: 1px solid rgba(212, 175, 55, 0.45);
+        background: rgba(250, 246, 232, 0.96);
+        color: #1a1a1a;
+        border: 1px solid rgba(201, 162, 39, 0.55);
         padding: 8px 10px;
         font-size: 12px;
         border-radius: 4px;
