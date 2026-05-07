@@ -1,11 +1,19 @@
 # Sight v3 — Visual Specification
 
-**Version:** 1.0
+**Version:** 1.1 (per-mode (X, Y, Z) grammar; supersedes v1.0)
 **Date:** 2026-05-07
 **Author:** Eisa Al-Shamsi (design); Claude (codification)
 **Status:** Approved — locks the design contract for MIG-019 §2G implementation
 **Reference mockup:** `docs/Constellation-Sight-v3-mockup-A2-toggle.svg`
 **Reference generator:** `lab/sight-v3-mockup-generator.py` (`build_option_a_toggle`)
+
+> **What changed in v1.1** (2026-05-07 evening, mid-§2G.3): Eisa
+> elevated the design from "switchable rim axis" to "**per-mode
+> (X, Y, Z) grammar**" — each mode declares its own azimuth, radius,
+> and magnitude rules. Color stays invariant (community Louvain).
+> §1.1 (mode wedge defs) and §2 (polar grammar) are restructured below.
+> §7 invariants list updated: only **Color** is mode-invariant; X/Y/Z
+> are mode-specific.
 
 ---
 
@@ -21,18 +29,22 @@ The metaphor anchor is the Suwaidi northern-hemisphere star chart: a cream-parch
 
 ---
 
-## §1. The Six Modes (Rim Axis Toggle)
+## §1. The Six Modes (per-mode X / Y / Z grammar)
 
-Each mode redefines what a star's **azimuth** (rim wedge) means. **Radius (centrality), color (community), and magnitude (importance) are invariant across all six modes.**
+Each mode is a **cognitive lens** that picks its own three input variables and maps them to azimuth (X), radius (Y), and magnitude (Z). **Only color is invariant** across modes (community membership via Louvain).
 
-| ID | Mode | Wedges | A note's azimuth = | Backed by data | Status |
-|----|------|--------|--------------------|---------------|--------|
-| **R** | Regions | N (variable, = library count) | Which library it lives in | `libraries` store (always present) | **Default · Ready** |
-| **L** | Link Types | 7 fixed | Its dominant outgoing link type | `note_links.link_type` (MIG-008+) | **Ready** |
-| **T** | Time | Variable (years × months) | When it was created/modified | `note_meta.created_at` | **Ready** |
-| **C** | Confidence | 4 fixed | Confidence of strongest outgoing link | `note_links.confidence` | **Available later** (Concept Paper §6.3 P2) |
-| **S** | Stages | 6 fixed | Dominant lifecycle stage of its links | Lifecycle tracking (P3) | **Available later** (P3) |
-| **A** | Acts | 5 fixed | Which Act produced this note (Observation/Connection/Tension/Synthesis/Conviction) | Acts analysis layer (P4) | **Available later** (P4) |
+When the user toggles modes, every star's color is preserved while it migrates in (X, Y, Z) — the migration trajectory is itself a diagnostic signal (a star at the center under Regions but at the rim under Confidence is telling you something).
+
+| ID | Mode | X (azimuth) | Y (radius: center → rim) | Z (magnitude / size) | Cognitive question | Data status |
+|----|------|-------------|--------------------------|----------------------|--------------------|-------------|
+| **R** | Regions | Library | Centrality rank | Total degree (link count) | "Where in my cosmos does this idea live, and how central?" | **Ready** |
+| **L** | Link Types | Dominant outgoing link type | Type diversity (# distinct types used) | Total outgoing links | "What kind of reasoning, and how versatile?" | **Partial** — Z ready; X needs `note_links.link_type` piped through |
+| **T** | Time | Creation date wedge (year, with month sub-wedges on the most recent year) | Recency (last edit; center = recently edited, rim = dormant) | Age (oldest = brightest, like ancient stars) | "When did it emerge, and is it still alive?" | **Ready** |
+| **C** | Confidence | Dominant confidence (hypothesis → evidence → established → contested) | Certainty homogeneity (center = consistent, rim = mixed) | Total link count | "How certain, and how consistent?" | **Available later** — Concept Paper §6.3 P2 |
+| **S** | Stages | Dominant lifecycle stage (Spark → Birth → Growth → Maturity → Dormancy → Archival) | Average link weight (center = high-weight, rim = low-weight) | Total traversal count | "How alive, and how worn the path?" | **Available later** — P3 |
+| **A** | Acts | Which Act produced the note (Observation → Connection → Tension → Synthesis → Conviction) | Synthesis depth (center = fully synthesized, rim = raw) | Total connections | "Where in the formulation arc?" | **Available later** — P4 |
+
+When a mode's X data isn't yet piped, the implementation falls back to Regions positioning so the chart always renders. The toggle UI dims that mode with an "available later" tooltip.
 
 ### §1.1 Wedge labels per mode
 
@@ -245,16 +257,18 @@ Status pill colors:
 
 These are the load-bearing rules. Breaking any of them is a P0 regression.
 
-1. **Radius = inverse centrality**, mode-invariant.
-2. **Color = community**, mode-invariant.
-3. **Magnitude = log(degree+1)**, mode-invariant.
-4. **Edges hidden by default** — never render constellation chains in the resting state.
-5. **No edge spaghetti during animation** — even if a node is selected, edges follow the endpoints during the 600 ms migration; no blinking or instant snap.
-6. **Empty wedges compress out** — the rim never shows a wedge with zero notes, regardless of mode.
-7. **Universe Health stays top-center** — roundel + metrics never overlap the dome edge or the toggle bar.
+1. **Color = community** (Louvain) — the *only* mode-invariant axis. A star's color is preserved when the user toggles modes.
+2. **X / Y / Z are mode-specific** — each mode declares its own (azimuth, radius, magnitude) rules. Their formulas live in `src/lib/sight/v3/modes.ts::positionForMode`. Changes to the cognitive grammar must update both this spec and that dispatcher in the same commit.
+3. **Edges hidden by default** — never render constellation chains in the resting state.
+4. **No edge spaghetti during animation** — even if a node is selected, edges follow the endpoints during the 600 ms migration; no blinking or instant snap.
+5. **Empty wedges compress out** — the rim never shows a wedge with zero notes, regardless of mode.
+6. **Universe Health stays top-center** — roundel + metrics never overlap the dome edge or the toggle bar.
+7. **Universe-name header sits between Universe Health and the dome** — top-center, blue ink serif italic, `dir="auto"` so RTL universe names render correctly.
 8. **OOM-safe Pixi batching** — single `Graphics` for stars (with subpaths), single `Graphics` for territories, `safeClearContainer` destroys children on remove. Never `new Graphics()` per star.
 9. **No per-frame allocations in hover handlers** — recompute decoration sets only on selection change, not on every mousemove.
-10. **Mode-switch is a pure rotation** — only azimuth interpolates. No re-fetch from Rust IPC; the frontend has all data needed to re-azimuth in JS.
+10. **Mode-switch is a state change, not an IPC call** — `positionForMode(mode, ctx)` re-projects in JS. No re-fetch from Rust. The frontend has all data needed (SkyNode + layout + region wedges + ModeStats) to re-position every star in O(N).
+11. **Color is preserved across mode switches** — the migration animation only interpolates X/Y/Z; the star's fill color stays constant. This is what makes the toggle a *diagnostic* tool: same patient, different scan.
+12. **Rim labels are HTML overlay**, not Pixi Text — `dir="auto"` for native bidi shaping (Arabic / Hebrew / mixed-script library names render correctly).
 
 ---
 

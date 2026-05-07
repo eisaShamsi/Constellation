@@ -5019,6 +5019,7 @@
 				nodes={skyNodes}
 				links={skyLinks}
 				searchMatchIds={searchHubMatchIds}
+				universeName={activeUniverseName}
 				onClose={() => { sightV3Active = false; }}
 				onOpenNote={(path: string, libraryName: string) => {
 					const lib = $libraryStats.find(l => l.name === libraryName);

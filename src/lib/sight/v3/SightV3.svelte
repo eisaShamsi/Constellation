@@ -63,8 +63,14 @@
     } from './polar';
     import {
         type SightMode,
+        type ModeContext,
+        type ModeStats,
+        type ModePosition,
         DEFAULT_MODE,
         resolveMode,
+        positionForMode,
+        buildModeStats,
+        emptyModeStats,
     } from './modes';
     import {
         buildRegionLayout,
@@ -81,10 +87,13 @@
          *  Matched stars flare (brighter + bigger); non-matched dim heavily;
          *  territories containing matches get a halo glow. */
         searchMatchIds?: Set<string> | null;
+        /** §2G.3c: active Universe name shown above the dome, between
+         *  the Universe Health metrics and the chart. */
+        universeName?: string;
         onClose: () => void;
         onOpenNote: (path: string, libraryName: string) => void;
     }
-    let { nodes, links, searchMatchIds = null, onClose, onOpenNote }: Props = $props();
+    let { nodes, links, searchMatchIds = null, universeName = '', onClose, onOpenNote }: Props = $props();
 
     // ─── DOM + Pixi handles ──────────────────────────────────────────
     let canvasContainer: HTMLDivElement;
@@ -119,7 +128,7 @@
     /** Map note_path → community id. */
     let pathToCommunity = new Map<string, number>();
     /** Map note_path → its on-screen position (recomputed every redraw). */
-    let pathToScreen = new Map<string, { x: number; y: number; r: number }>();
+    let pathToScreen = new Map<string, { x: number; y: number; r: number; baseAlpha: number }>();
     /** Community metadata from clusterEngine. */
     let clusters: ClusterInfo[] = [];
     /** Map community-id → cluster info for fast tooltip lookup. */
@@ -157,6 +166,11 @@
      *  packs >90 % of stars at the rim. Ranking by percentile produces
      *  a uniform radial distribution. */
     let pathToCentralityRank = new Map<string, number>();
+    /** §2G.3d: per-note SkyNode lookup for ModeContext (linkCount,
+     *  outgoingCount, createdAt, modifiedAt). */
+    let pathToSkyNode = new Map<string, SkyNode>();
+    /** §2G.3d: universe-wide stats (T mode wedges, time spans, etc.). */
+    let modeStats: ModeStats = emptyModeStats();
 
     /** §2G.3b: rim label geometry, published by `drawRegionRim`.
      *  Rendered as HTML elements (with `dir="auto"`) in the Svelte
@@ -242,7 +256,11 @@
         const h = app.screen.height;
         if (w === 0 || h === 0) return null;
 
-        const TOP_RESERVE = 270;     // Universe Health + 100 px buffer
+        // §2G.3c: bumped from 270 → 320 so the Universe-name header
+        // (which sits above the dome and below the Universe Health
+        // metrics) has 50 px of dedicated space. 100 px Eisa-mandated
+        // dome breathing room is preserved.
+        const TOP_RESERVE = 320;
         const BOTTOM_RESERVE = 100;  // Eisa-mandated minimum
         const SIDE_RESERVE = 100;    // room for rim labels
 
@@ -277,6 +295,9 @@
         pathToTitle.clear();
         pathToLibrary.clear();
         pathToCreatedAt.clear();
+        // §2G.3d: full per-note SkyNode lookup so positionForMode can
+        // access linkCount, outgoingCount, createdAt, etc. in O(1).
+        pathToSkyNode.clear();
         for (const n of nodes) {
             nameToPath.set(n.id, n.path);
             pathToTitle.set(n.path, n.name);
@@ -284,7 +305,21 @@
             if (typeof n.createdAt === 'number') {
                 pathToCreatedAt.set(n.path, n.createdAt);
             }
+            pathToSkyNode.set(n.path, n);
         }
+        // §2G.3d: build universe-wide stats once per fetch (T mode
+        // year wedges, createdAt/modifiedAt min/max, etc.).
+        const statsInput = new Map<string, { createdAt?: number; modifiedAt?: number }>();
+        for (const n of nodes) {
+            statsInput.set(n.path, {
+                createdAt: typeof n.createdAt === 'number' ? n.createdAt : undefined,
+                // SkyNode lacks modifiedAt today — reuse createdAt as a
+                // safe stand-in until note_meta.modified_at is piped
+                // through. Recency degrades gracefully (rim).
+                modifiedAt: typeof n.createdAt === 'number' ? n.createdAt : undefined,
+            });
+        }
+        modeStats = buildModeStats(statsInput);
 
         // Resolved edges in (path-A, path-B) form, deduped via
         // index-packed bigints. Replaces the prior `Set<string>` of
@@ -351,35 +386,36 @@
 
     /** Project all layout points to screen using the active rim-axis mode.
      *
-     *  MIG-019 §2G (Eisa's 2026-05-07 redesign): the chart is a polar
-     *  layout where radius = inverse centrality and azimuth = mode-dependent
-     *  rim wedge. For Regions mode, each note's azimuth comes from its
-     *  library's wedge in `regionLayout`.
+     *  §2G.3d: per-mode (X, Y, Z) dispatch. Each mode declares its own
+     *  azimuth / radius / magnitude rules (see modes.ts::positionForMode).
+     *  Color stays invariant (community Louvain). The chart becomes a
+     *  multi-instrument cognitive lens: same Universe, different scan.
      *
-     *  Other modes (Link Types, Time, Confidence, Stages, Acts) land
-     *  in subsequent commits per the spec. While their data layers are
-     *  pending we fall back to Regions mode positioning so the chart
-     *  always renders.
+     *  R · Regions  X=library wedge        Y=centrality rank   Z=degree
+     *  L · Link Types X=dominant link type Y=type diversity*   Z=outgoing*
+     *  T · Time     X=creation date wedge  Y=recency           Z=age
+     *  C · Confidence — falls back to Regions until P2 ships
+     *  S · Stages — falls back to Regions until P3 ships
+     *  A · Acts — falls back to Regions until P4 ships
+     *
+     *  *Items marked * use SkyNode.outgoingCount today; full L mode
+     *   needs note_links.link_type piped in (§2G.4 follow-up).
      */
     function recomputeScreenPositions() {
         const viewport = getViewport();
         if (!viewport) return;
 
-        // Build the region wedges if we don't have them yet (or if the
-        // library set changed). Cached after first build per fetch.
+        // Build per-fetch caches once (region wedges, embed angles,
+        // centrality rank). Cleared whenever fetchLayout runs.
         if (regionLayout == null && layoutPoints.length > 0 && libraryPathsCached.length > 0) {
             regionLayout = buildRegionLayout(layoutPoints, libraryPathsCached);
-            // Pre-compute embed angles once for stable in-wedge positions.
             pathToEmbedAngle.clear();
             for (const pt of layoutPoints) {
-                const ang = Math.atan2(pt.embed_x, pt.embed_y);  // theta=0 at top
+                const ang = Math.atan2(pt.embed_x, pt.embed_y);
                 const TAU = Math.PI * 2;
                 const wrapped = ((ang % TAU) + TAU) % TAU;
                 pathToEmbedAngle.set(pt.note_path, wrapped);
             }
-            // §2G.3c: pre-compute centrality RANK percentile per note so
-            // the radial distribution is uniform (rather than packed at
-            // the rim because raw betweenness is skewed near 0).
             pathToCentralityRank.clear();
             const sorted = [...layoutPoints].sort(
                 (a, b) => b.centrality_norm - a.centrality_norm,
@@ -395,54 +431,45 @@
         const cx = viewport.cx;
         const cy = viewport.cy;
 
-        // Mode dispatch. Today (§2G.3) we ship Regions; the other modes
-        // are stubbed to fall back to Regions until §2G.4 wires them.
-        const wedgeFor = (notePath: string): RegionWedge | null => {
-            if (regionLayout == null) return null;
-            return regionLayout.pathToWedge.get(notePath) ?? null;
-        };
-
-        // §2G.3c: radial spread parameters. Inner inset keeps the
-        // most-central star slightly off the pole (visual breathing
-        // room). Outer cap keeps least-central stars off the rim
-        // divider so they don't kiss the wedge label band.
+        // §2G.3c radial breathing room.
         const INNER_INSET = 0.04 * domeR;
         const OUTER_CAP = 0.96 * domeR;
 
+        // Reusable ModeContext — mutated per-iteration to avoid
+        // allocations on the hot path.
+        const ctx: ModeContext = {
+            notePath: '',
+            centralityRank: 0,
+            linkCount: 0,
+            outgoingCount: 0,
+            createdAt: null,
+            modifiedAt: null,
+            regionLayout,
+            embedAngleRad: 0,
+            domeR,
+            innerInset: INNER_INSET,
+            outerCap: OUTER_CAP,
+            stats: modeStats,
+        };
+
         for (const pt of layoutPoints) {
-            // §2G.3c: radius from centrality RANK PERCENTILE, not raw
-            // centrality_norm. Real graphs are heavily skewed (most
-            // notes have centrality ~0.0–0.05), so a direct mapping
-            // packed >90 % of stars at the rim. Rank-percentile gives
-            // a uniform radial distribution:
-            //   rank=0 (most central) → r=INNER_INSET
-            //   rank=1 (least central) → r=OUTER_CAP
-            const rank = pathToCentralityRank.get(pt.note_path) ?? 0.5;
-            const r = INNER_INSET + rank * (OUTER_CAP - INNER_INSET);
+            const sky = pathToSkyNode.get(pt.note_path);
+            ctx.notePath = pt.note_path;
+            ctx.centralityRank = pathToCentralityRank.get(pt.note_path) ?? 0.5;
+            ctx.linkCount = sky?.linkCount ?? 0;
+            ctx.outgoingCount = sky?.outgoingCount ?? 0;
+            ctx.createdAt = (sky?.createdAt ?? null) as number | null;
+            ctx.modifiedAt = (sky?.createdAt ?? null) as number | null;  // see buildIndices note
+            ctx.embedAngleRad = pathToEmbedAngle.get(pt.note_path) ?? 0;
+            ctx.regionLayout = regionLayout;
+            ctx.stats = modeStats;
 
-            // Azimuth: mode-dependent. For Regions, look up the note's
-            // library wedge and project its embed angle into the wedge.
-            let azimuth: number;
-            const wedge = wedgeFor(pt.note_path);
-            if (wedge) {
-                const embedAng = pathToEmbedAngle.get(pt.note_path) ?? 0;
-                azimuth = azimuthInWedge(wedge, embedAng);
-            } else {
-                // Fallback if no wedge (e.g., empty regionLayout): keep
-                // the old MDS-derived position as a safety net.
-                const projection = currentProjection();
-                const { x, y } = embedToScreen(pt.embed_x, pt.embed_y, projection, viewport);
-                pathToScreen.set(pt.note_path, {
-                    x, y,
-                    r: magnitudeSize(pt.centrality_norm) * 1.4,
-                });
-                continue;
-            }
-
-            const { x, y } = polarToCartesian(r, azimuth, cx, cy);
+            const pos: ModePosition = positionForMode(currentMode, ctx);
+            const { x, y } = polarToCartesian(pos.radius, pos.azimuth, cx, cy);
             pathToScreen.set(pt.note_path, {
                 x, y,
-                r: magnitudeSize(pt.centrality_norm) * 1.4,
+                r: pos.magnitude * 1.4,
+                baseAlpha: pos.alpha,
             });
         }
     }
@@ -681,7 +708,10 @@
             if (!screen) continue;
             const passesMonth = passesMonthFilter(pt.note_path);
             const passesSrc = passesSearch(pt.note_path);
-            const baseAlpha = 0.65 + pt.centrality_norm * 0.35;
+            // §2G.3d: base alpha is now mode-aware (computed in
+            // positionForMode and stored in pathToScreen). Search /
+            // month filter overrides still apply.
+            const baseAlpha = screen.baseAlpha;
 
             let alpha: number;
             let radius = screen.r;
@@ -1422,6 +1452,13 @@ ${nodes?.length ?? 0} notes · ${links?.length ?? 0} links`);
                 </div>
             </div>
         </div>
+
+        <!-- §2G.3c: Universe name — above the dome, below the Universe
+             Health card. `dir="auto"` so Arabic / Hebrew names render
+             in their natural script direction. -->
+        {#if universeName}
+            <div class="sight-v3-universe-name" dir="auto">{universeName}</div>
+        {/if}
     {/if}
 
     <SightV3SidePanel
@@ -1485,6 +1522,30 @@ ${nodes?.length ?? 0} notes · ${links?.length ?? 0} links`);
         border-color: rgba(201, 162, 39, 0.7);
     }
 
+    /* §2G.3c: Universe name header — above the dome, below the
+       Universe Health metrics. Sits in the 50 px slot between
+       y≈230 (metrics bottom) and y≈320 (dome top). */
+    .sight-v3-universe-name {
+        position: absolute;
+        top: 248px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 8;
+        font-family: serif;
+        font-size: 22px;
+        font-weight: 600;
+        font-style: italic;
+        letter-spacing: 0.06em;
+        color: #2a4a8c;
+        opacity: 0.95;
+        max-width: 70vw;
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        pointer-events: none;
+    }
+
     /* §2G.3b: Region-rim labels (HTML overlay).
        Native bidi via `dir="auto"` so Arabic library names render
        right-to-left within their tangent rotation. */
@@ -1497,6 +1558,10 @@ ${nodes?.length ?? 0} notes · ${links?.length ?? 0} links`);
         font-family: serif;
         z-index: 6;
         user-select: none;
+        /* §2G.3c: long library names ellipsize within their wedge's
+           tangential chord so they can't bleed into adjacent wedges. */
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     .sight-v3-rim-label {
         color: #2a4a8c;
