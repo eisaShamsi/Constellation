@@ -230,3 +230,63 @@ Eisa's design review came back with comprehensive answers. All ten §11 question
 **MIG-018 Architect**. The first of three v3-build MIGs. Scope: Rust `compute_layout_embedding` (Landmark-MDS variant), `sight_v3_layout` SQLite cache + write-time triggers, `src/lib/sight/projection.ts` + `SightV3.svelte`, dock button + Settings entry behind `SIGHT_V3_ENABLED`, both Lambert + stereographic projections. Boss-test gate at end: stars render at correct positions, basic hover/click/double-click works, projection toggle works.
 
 Per Migration Rule, after MIG-018 Architect lands I'll write the Plan and **stop for Eisa's explicit Plan approval before Build**.
+
+---
+
+## End-of-day update — MIG-018 CLOSES (PJ-038 phase 1 of 3)
+
+After Eisa's Plan approval ("§1A Approved" + 2 refinements) at ~mid-day, cascaded through six phases (§1A → §1F) in one session. v3 projection foundation is **live in production**.
+
+### Eight commits today on the v3 trajectory
+
+| Commit | Phase / scope |
+|---|---|
+| `1164b08` | PJ-038 Concept Paper v1.0 drafted (awaiting design review) |
+| `44c37c9` | PJ-038 Concept Paper v1.1 ratified + PJ-037 rejected + Pending Jobs v1.6 + orientation v1.57 |
+| `51e270a` | MIG-018 Architect + Plan |
+| `fe85792` | MIG-018 §1A — schema + sight_layout.rs skeleton + IPC registered |
+| `24aa6bd` | MIG-018 §1B — Landmark-MDS compute + persistence + invalidation IPC (5 unit tests passing) |
+| `dd6759e` | MIG-018 §1C — frontend skeleton + dock button + Settings entry + i18n 15 locales |
+| `4dc6878` | MIG-018 §1D — star rendering + Lambert/stereographic projection toggle + Settings → Sight section |
+| `26ce36e` | MIG-018 §1E — territories + faint connector lines + hover/click + side panel + Suwaidi palette [Boss-test gate] |
+| (this) | MIG-018 §1F — audit + Pending Jobs v1.7 + orientation v1.58 + SIGHT_V3_ENABLED=true committed |
+
+### What v3 looks like now
+
+Click the new star-icon dock button. The screen fills with a deep midnight-blue dome of stars at deterministic Landmark-MDS positions. Constellation territories are soft Suwaidi pastel regions (warm-cream / gold / amber / dusty rose / sandy tan / parchment / antique-white / dark goldenrod cycled by Louvain community id). Faint connector lines weave between stars — visible structure that doesn't shout. Hover a star: tooltip + incident edges brighten + gold ring around the focus. Click: that constellation lights up + side panel slides in with title, community, centrality rank, connection counts, "Open in editor" button. Double-click: opens the note. Settings → Sight → Projection: switch Lambert ↔ Stereographic; the dome reshapes; same notes return to remembered positions on the next toggle.
+
+### Boss test (§1E gate)
+
+Eisa flipped `SIGHT_V3_ENABLED = true` locally, ran the install, walked through all 11 steps. **Report: "All pass"**.
+
+### Three-agent audit (§1F)
+
+All three agents (invariants / drift / migration-path) returned **CLEAN**. 0 P0, 0 P1, 0 P2, 0 P3. Audit report: `lab/reports/MIG-018-V3-PROJECTION-FOUNDATION-AUDIT.md`. Verified all 13 invariants from Architect §3, the drift map (zero implicit consumers), the seven migration-path scenarios, and four extra paths.
+
+### Decisions made (recap)
+
+1. **Graph-distance MDS** chosen over spectral embedding (§11 Q1).
+2. **Both Lambert + stereographic** projections ship; user-toggle (§11 Q2).
+3. **Calendar rim**: Gregorian default; users add others via Settings (§11 Q3) — UI lands in MIG-019.
+4. **Magnitude slider direction**: astronomy convention (right = peel) (§11 Q4) — implementation in MIG-020.
+5. **Two-up panel**: N/A — PJ-037 rejected (§11 Q5).
+6. **Constellation labels**: hover/select only by default; Settings toggle for always-on (§11 Q6).
+7. **Color scheme**: cycled Suwaidi pastels by Louvain id (§11 Q7) — implemented this MIG.
+8. **Search filter persistence**: Esc + click-background (§11 Q8).
+9. **Render layer**: Pixi.js (§11 Q9) — implemented this MIG.
+10. **Accessibility**: deferred (§11 Q10).
+11. **Faint lines at rest** (Eisa-directed beyond §11): the v3 reframe of v1.1 paper Principle 6 — *reveal* now means *brighten*, not *render-from-zero*.
+12. **`enabledFeatures.constellationSightV3`**: fresh field name (NOT reuse v2's `constellationSight`) — Eisa's call.
+
+### State at end of day
+
+- **PJ-038 (Sight v3 build)**: **In-Progress** — 1 of 3 MIGs done.
+- **MIG-018**: closed Done.
+- **MIG-019 (next-up)**: density (PJ-035 Milky Way) + calendar rim + universe-health card + full search integration.
+- **MIG-020 (after MIG-019)**: layer peeling (PJ-036) + v2 retire.
+- **Done count**: 7 (unchanged). **Cancelled**: 1 (PJ-034). **Rejected**: 1 (PJ-037).
+- **Documentation aligned**: orientation v1.55 → v1.58 (4 bumps today); Pending Jobs v1.4 → v1.7 (3 bumps today); v3 Concept Paper v1.0 + v1.1 + audit report all in `docs/` and `lab/reports/`.
+
+### Tomorrow's first move
+
+Whatever Eisa picks. **MIG-019 Architect** is the natural next step — density + time + search + universe-health card on the v3 base. MIG-019 is single MIG, multi-phase build; expect ~6 phases similar to MIG-018's shape.

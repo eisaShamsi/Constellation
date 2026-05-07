@@ -18,4 +18,4 @@
  * (v3 ship-behind-flag pattern).
  */
 export const SIGHT_V2_ENABLED = false;
-export const SIGHT_V3_ENABLED = false;
+export const SIGHT_V3_ENABLED = true;
