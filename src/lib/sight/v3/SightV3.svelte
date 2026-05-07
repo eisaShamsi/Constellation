@@ -157,8 +157,18 @@
     /** The library path/name tuples passed into fetchLayout — kept on
      *  hand so we can rebuild the region layout if mode/data changes. */
     let libraryPathsCached: Array<[string, string]> = [];
-    /** Pre-computed embed-angle per note (atan2 of embed_x, embed_y).
-     *  Used by `azimuthInWedge` for stable in-wedge positioning. */
+    /** §2G.3e: in-wedge azimuth jitter [0, 2π) per note.
+     *
+     *  Originally populated from `atan2(embed_x, embed_y)` of the MDS
+     *  layout. Problem: notes from the same MDS cluster (i.e., same
+     *  community) get nearly-identical embed angles. After `azimuthInWedge`
+     *  maps the angle into the wedge, all those stars stack on a single
+     *  in-wedge azimuth → radial spoke per cluster (Eisa screenshot
+     *  2026-05-07 evening).
+     *
+     *  Fix: derive a uniform per-note hash so notes spread evenly across
+     *  the wedge regardless of MDS clustering. Deterministic per
+     *  `note_path` so positions are stable across renders. */
     let pathToEmbedAngle = new Map<string, number>();
     /** §2G.3c: centrality rank (0 = most central → center; 1 = least
      *  central → rim). Used for radial position. Real centrality data
@@ -233,6 +243,17 @@
         for (const child of old) {
             try { child.destroy(); } catch { /* defensive — already destroyed */ }
         }
+    }
+
+    /** §2G.3e: deterministic [0, 1) hash from a string. djb2 variant —
+     *  fast, collision-tolerant for our use (uniform spread of stars
+     *  within their wedge, not security). */
+    function hash01(s: string): number {
+        let h = 5381;
+        for (let i = 0; i < s.length; i++) {
+            h = ((h << 5) + h) ^ s.charCodeAt(i);  // h * 33 ^ c
+        }
+        return ((h >>> 0) % 1_000_003) / 1_000_003;
     }
 
     function starRadius(centrality_norm: number): number {
@@ -409,12 +430,11 @@
         // centrality rank). Cleared whenever fetchLayout runs.
         if (regionLayout == null && layoutPoints.length > 0 && libraryPathsCached.length > 0) {
             regionLayout = buildRegionLayout(layoutPoints, libraryPathsCached);
+            // §2G.3e: hash-based in-wedge azimuth jitter so MDS-clustered
+            // notes don't stack on the same radial spoke. Uniform [0, 2π).
             pathToEmbedAngle.clear();
             for (const pt of layoutPoints) {
-                const ang = Math.atan2(pt.embed_x, pt.embed_y);
-                const TAU = Math.PI * 2;
-                const wrapped = ((ang % TAU) + TAU) % TAU;
-                pathToEmbedAngle.set(pt.note_path, wrapped);
+                pathToEmbedAngle.set(pt.note_path, hash01(pt.note_path) * Math.PI * 2);
             }
             pathToCentralityRank.clear();
             const sorted = [...layoutPoints].sort(
@@ -422,7 +442,15 @@
             );
             const denom = Math.max(1, sorted.length - 1);
             sorted.forEach((pt, i) => {
-                pathToCentralityRank.set(pt.note_path, i / denom);
+                // §2G.3e: small per-note rank jitter (±1.5 %) so notes
+                // with the same centrality rank don't form perfect
+                // concentric rings. Hash on a different salt than azimuth.
+                const baseRank = i / denom;
+                const jitter = (hash01(pt.note_path + '|rj') - 0.5) * 0.03;
+                pathToCentralityRank.set(
+                    pt.note_path,
+                    Math.max(0, Math.min(1, baseRank + jitter)),
+                );
             });
         }
 
@@ -471,6 +499,107 @@
                 r: pos.magnitude * 1.4,
                 baseAlpha: pos.alpha,
             });
+        }
+
+        // §2G.3e: repulsion pass — Eisa's directive ("each node shouldn't
+        // touch or overlap its neighbors. There should be a node repulsion
+        // effect"). Within each wedge, push apart any pair of stars
+        // closer than MIN_DIST. Bounded to wedge bounds so a Biology
+        // star can't drift into Physics. Spatial grid keeps it O(N) per
+        // iteration; 6 iterations converges fast.
+        if (regionLayout && currentMode === 'regions') {
+            applyWedgeRepulsion(cx, cy, domeR);
+        }
+    }
+
+    /** §2G.3e: wedge-bounded repulsion. Stars within the same wedge
+     *  push each other apart until none overlap. Each star is then
+     *  re-clamped to its wedge's angular bounds + the dome's radial
+     *  bounds so repulsion can't push a star outside its wedge. */
+    function applyWedgeRepulsion(cx: number, cy: number, domeR: number) {
+        if (!regionLayout) return;
+        const MIN_DIST = 6;       // px between star centers
+        const MAX_ITER = 6;
+        const ITER_FACTOR = 0.45; // per-pass push amount as fraction of deficit
+
+        // Group stars by wedge — repulsion only acts within a wedge.
+        type StarRef = { path: string; pos: { x: number; y: number; r: number; baseAlpha: number }; wedge: RegionWedge };
+        const wedgeStars = new Map<RegionWedge, StarRef[]>();
+        pathToScreen.forEach((screen, path) => {
+            const wedge = regionLayout!.pathToWedge.get(path);
+            if (!wedge) return;
+            const arr = wedgeStars.get(wedge);
+            const ref = { path, pos: screen, wedge };
+            if (arr) arr.push(ref);
+            else wedgeStars.set(wedge, [ref]);
+        });
+
+        const cellSize = MIN_DIST * 2;
+        const innerR = 0.04 * domeR;
+        const outerR = 0.96 * domeR;
+        const TAU = Math.PI * 2;
+
+        for (let iter = 0; iter < MAX_ITER; iter++) {
+            let moved = false;
+            wedgeStars.forEach((stars) => {
+                if (stars.length < 2) return;
+                // Build spatial grid (per iteration since positions move).
+                const grid = new Map<string, StarRef[]>();
+                for (const s of stars) {
+                    const gx = Math.floor(s.pos.x / cellSize);
+                    const gy = Math.floor(s.pos.y / cellSize);
+                    const k = gx + ',' + gy;
+                    const cell = grid.get(k);
+                    if (cell) cell.push(s);
+                    else grid.set(k, [s]);
+                }
+                // Repel each star against neighbors in 9 nearby cells.
+                for (const s of stars) {
+                    const gx = Math.floor(s.pos.x / cellSize);
+                    const gy = Math.floor(s.pos.y / cellSize);
+                    for (let dx = -1; dx <= 1; dx++) {
+                        for (let dy = -1; dy <= 1; dy++) {
+                            const cell = grid.get((gx + dx) + ',' + (gy + dy));
+                            if (!cell) continue;
+                            for (const o of cell) {
+                                if (o.path === s.path) continue;
+                                const ddx = s.pos.x - o.pos.x;
+                                const ddy = s.pos.y - o.pos.y;
+                                const d2 = ddx * ddx + ddy * ddy;
+                                if (d2 >= MIN_DIST * MIN_DIST || d2 <= 0) continue;
+                                const d = Math.sqrt(d2);
+                                const push = (MIN_DIST - d) * ITER_FACTOR;
+                                s.pos.x += (ddx / d) * push;
+                                s.pos.y += (ddy / d) * push;
+                                moved = true;
+                            }
+                        }
+                    }
+                }
+                // After pushing, clamp every star back into its wedge.
+                for (const s of stars) {
+                    const ddx = s.pos.x - cx;
+                    const ddy = s.pos.y - cy;
+                    let r = Math.sqrt(ddx * ddx + ddy * ddy);
+                    if (r < 1) r = 1;  // avoid div-by-zero on pole
+                    let theta = Math.atan2(ddx, -ddy);  // 0 at top, CW+
+                    theta = ((theta % TAU) + TAU) % TAU;
+                    // Clamp angle to wedge bounds with 2 % inset.
+                    const span = s.wedge.arcEndRad - s.wedge.arcStartRad;
+                    const inset = Math.min(0.02 * span, 0.04);
+                    const lo = s.wedge.arcStartRad + inset;
+                    const hi = s.wedge.arcEndRad - inset;
+                    if (theta < lo) theta = lo;
+                    else if (theta > hi) theta = hi;
+                    // Clamp radius to dome bounds.
+                    if (r < innerR) r = innerR;
+                    else if (r > outerR) r = outerR;
+                    // Recompose.
+                    s.pos.x = cx + r * Math.sin(theta);
+                    s.pos.y = cy - r * Math.cos(theta);
+                }
+            });
+            if (!moved) break;
         }
     }
 
@@ -1212,7 +1341,7 @@ ${nodes?.length ?? 0} notes · ${links?.length ?? 0} links`);
             // recomputeScreenPositions() rebuilds against the new layoutPoints.
             regionLayout = null;
 
-            showPlaceholder(`Stage 1/4: layout (MDS embedding)
+            showPlaceholder(`Stage 1/4: fetching layout
 ${nodes?.length ?? 0} notes · ${links?.length ?? 0} links`);
             const layoutT0 = performance.now();
             layoutPoints = await fetchLayout(libraryPaths, 50);
@@ -1565,14 +1694,16 @@ ${nodes?.length ?? 0} notes · ${links?.length ?? 0} links`);
     }
     .sight-v3-rim-label {
         color: #2a4a8c;
-        font-size: 15px;
+        /* §2G.3e: 15 → 12 px to fit longer library names without
+           triggering ellipsis as aggressively. */
+        font-size: 12px;
         font-weight: 600;
-        letter-spacing: 0.18em;
-        opacity: 0.9;
+        letter-spacing: 0.16em;
+        opacity: 0.92;
     }
     .sight-v3-rim-count {
         color: rgba(26, 26, 26, 0.6);
-        font-size: 10px;
+        font-size: 9px;
         letter-spacing: 0.08em;
         font-style: italic;
     }
