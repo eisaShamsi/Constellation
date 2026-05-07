@@ -140,6 +140,21 @@
         return s?.sight?.projection === 'stereographic' ? 'stereographic' : 'lambert';
     }
 
+    /** MIG-019 §2E.4: Pixi v8 `removeChildren()` only DETACHES — it
+     *  doesn't free GPU buffers. With 6+ $effects firing on mount and
+     *  fullRedraw running once, calling `container.removeChildren()`
+     *  before each redraw leaks WebGL state across cycles. The GPU
+     *  process eventually saturates → page-OOM.
+     *
+     *  This helper detaches AND destroys every child so per-cycle
+     *  state actually returns to zero. */
+    function safeClearContainer(container: Container) {
+        const old = container.removeChildren();
+        for (const child of old) {
+            try { child.destroy(); } catch { /* defensive — already destroyed */ }
+        }
+    }
+
     function starRadius(centrality_norm: number): number {
         return 1.5 + Math.sqrt(Math.max(0, centrality_norm)) * 4.5;
     }
@@ -260,7 +275,7 @@
      *  2026-05-07): Gregorian default; users add others via Settings. */
     function drawCalendarRim() {
         if (!calendarRimContainer || !app) return;
-        calendarRimContainer.removeChildren();
+        safeClearContainer(calendarRimContainer);
 
         const enabled = ($appSettings.sight?.calendarSystems ?? ['gregorian']) as CalendarSystem[];
         if (enabled.length === 0) return;
@@ -366,7 +381,7 @@
      *  one-time canvas. Single draw call — universe size irrelevant. */
     function drawMilkyWay() {
         if (!milkyWayContainer || !app) return;
-        milkyWayContainer.removeChildren();
+        safeClearContainer(milkyWayContainer);
         // Hide if Settings → Sight → "Milky Way density wash" is OFF.
         if ($appSettings.sight?.showMilkyWay === false) {
             milkyWayContainer.visible = false;
@@ -420,7 +435,7 @@
      *    centroid when $appSettings.sight.alwaysOnLabels is true. */
     function drawTerritories() {
         if (!territoryContainer) return;
-        territoryContainer.removeChildren();
+        safeClearContainer(territoryContainer);
 
         const labeled: Array<Point2D & { communityId: number }> = [];
         for (const [path, screen] of pathToScreen) {
@@ -432,29 +447,27 @@
         const searchOn = isSearchActive();
         const alwaysOnLabels = $appSettings.sight?.alwaysOnLabels === true;
 
+        // MIG-019 §2E.4: consolidate ~10-50 polygon Graphics into ONE
+        // Graphics with multiple subpaths. Same single-draw-call benefit
+        // as drawStars; reduces GPU buffer count.
+        const polys = new Graphics();
+        const labels: Text[] = [];
         for (const [communityId, hull] of territories) {
-            if (hull.length < 3) continue; // skip degenerate communities
+            if (hull.length < 3) continue;
             const color = communityColorInt(communityId);
             const hasMatch = searchOn && communityHasMatch(communityId);
 
-            // Search-active styling:
-            //  - territories with matches: thicker border + higher alpha (halo)
-            //  - territories without matches: lower fill alpha (dim)
             const fillAlpha = searchOn ? (hasMatch ? 0.16 : 0.04) : 0.10;
             const strokeAlpha = searchOn ? (hasMatch ? 0.85 : 0.10) : 0.30;
             const strokeWidth = searchOn && hasMatch ? 2.5 : 1;
 
-            const poly = new Graphics();
-            poly.poly(hull.flatMap((p) => [p.x, p.y]));
-            poly.fill({ color, alpha: fillAlpha });
-            poly.stroke({ color, alpha: strokeAlpha, width: strokeWidth });
-            territoryContainer.addChild(poly);
+            polys.poly(hull.flatMap((p) => [p.x, p.y]));
+            polys.fill({ color, alpha: fillAlpha });
+            polys.stroke({ color, alpha: strokeAlpha, width: strokeWidth });
 
-            // MIG-019 §2E: always-on label at territory centroid.
             if (alwaysOnLabels) {
                 const cluster = communityById.get(communityId);
                 if (cluster && cluster.suggestedName) {
-                    // Centroid as polygon vertex average (approximate).
                     let cx = 0, cy = 0;
                     for (const p of hull) { cx += p.x; cy += p.y; }
                     cx /= hull.length;
@@ -462,7 +475,7 @@
                     const label = new Text({
                         text: cluster.suggestedName,
                         style: new TextStyle({
-                            fill: 0xd4af37, // Suwaidi gold
+                            fill: 0xd4af37,
                             fontSize: 11,
                             fontFamily: 'system-ui, -apple-system, sans-serif',
                             align: 'center',
@@ -473,10 +486,12 @@
                     label.x = cx;
                     label.y = cy;
                     label.alpha = 0.7;
-                    territoryContainer.addChild(label);
+                    labels.push(label);
                 }
             }
         }
+        territoryContainer.addChild(polys);
+        for (const label of labels) territoryContainer.addChild(label);
     }
 
     /** Draw faint connector lines on the base layer.
@@ -489,7 +504,7 @@
     const MAX_FAINT_EDGES_AT_REST = 30000;
     function drawEdges() {
         if (!edgeContainer) return;
-        edgeContainer.removeChildren();
+        safeClearContainer(edgeContainer);
 
         const lines = new Graphics();
         const limit = Math.min(resolvedEdges.length, MAX_FAINT_EDGES_AT_REST);
@@ -506,46 +521,53 @@
     }
 
     /** Draw stars on the base layer.
+     *
+     *  MIG-019 §2E.4 SOLVE (2026-05-07): consolidated 7,334 separate
+     *  `new Graphics()` instances into a SINGLE Graphics with 7,334
+     *  circle subpaths. v2 ConstellationSight2 used Canvas 2D (single
+     *  canvas, direct draw calls — no per-shape GPU allocations); my
+     *  Pixi v8 implementation was allocating GPU buffers per-instance,
+     *  which the WebView2 GPU process can't sustain at Boss scale
+     *  (7,334 stars × 217k links). Single-Graphics + per-circle
+     *  fill() batches everything into one GL draw call.
+     *
      *  - MIG-019 §2C: dim stars failing the month filter.
      *  - MIG-019 §2E: search-active path — matched stars flare (size +
      *    brightness boost), non-matched dim heavily. */
     function drawStars() {
         if (!starContainer) return;
-        starContainer.removeChildren();
+        safeClearContainer(starContainer);
         const searchOn = isSearchActive();
+        const stars = new Graphics();
         for (const pt of layoutPoints) {
             const screen = pathToScreen.get(pt.note_path);
             if (!screen) continue;
             const passesMonth = passesMonthFilter(pt.note_path);
             const passesSrc = passesSearch(pt.note_path);
-            const star = new Graphics();
             const baseAlpha = 0.65 + pt.centrality_norm * 0.35;
 
-            // Decide alpha + size based on filter state.
             let alpha: number;
             let radius = screen.r;
             if (searchOn) {
                 if (passesSrc && passesMonth) {
-                    // Match: 1.5x size + full alpha (flare effect)
                     radius = screen.r * 1.5;
                     alpha = 1.0;
                 } else {
-                    // Non-match: heavy dim
                     alpha = 0.10;
                 }
             } else if (!passesMonth) {
-                // Month-filter dim
                 alpha = 0.15;
             } else {
                 alpha = baseAlpha;
             }
 
-            star.circle(0, 0, radius);
-            star.fill({ color: 0xf5e6c8, alpha });
-            star.x = screen.x;
-            star.y = screen.y;
-            starContainer.addChild(star);
+            // Each circle gets its own fill() call so per-star alpha
+            // is preserved. Pixi v8 batches all subpaths into one GL
+            // draw call regardless.
+            stars.circle(screen.x, screen.y, radius);
+            stars.fill({ color: 0xf5e6c8, alpha });
         }
+        starContainer.addChild(stars);
     }
 
     /** Redraw the focus overlay based on hoveredPath / selectedPath /
@@ -557,7 +579,7 @@
      *  Draws AFTER drawX so it sits on top. */
     function drawFocusOverlay() {
         if (!focusOverlay) return;
-        focusOverlay.removeChildren();
+        safeClearContainer(focusOverlay);
 
         const focusPath = selectedPath ?? hoveredPath;
         const searchOn = isSearchActive();
