@@ -29,6 +29,7 @@ mod importers;
 mod libraries;
 mod mig003_step4;
 mod sight;
+mod sight_layout;
 mod lenses;
 // MIG-013 §1A: visibility widened so the offline `build_concept_vectors`
 // [[bin]] can call `lexicon::parse`. The M11 zero-diff invariant covers
@@ -330,6 +331,7 @@ pub fn run() {
             inspector360::get_360_view,
             sight::constellation_sight_centrality,
             sight::constellation_sight_tag_edges,
+            sight_layout::constellation_sight_v3_layout,
             boot_bundle::constellation_boot_bundle,
             cache::cache_boot_snapshot,
             cache::cache_boot_snapshot_core,

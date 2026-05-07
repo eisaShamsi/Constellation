@@ -72,6 +72,27 @@ const FTS_SCHEMA_VERSION: i64 = 1;
 /// or defaulted so pre-MIG-002 binaries tolerate the wider schema.
 pub(crate) const SKY_SCHEMA_VERSION: i64 = 10;
 
+/// MIG-018 — `sight_v3_layout` cache schema version.
+///
+/// | Version | Change                                                   |
+/// |---------|----------------------------------------------------------|
+/// |       1 | MIG-018 §1A — sight_v3_layout + sight_v3_layout_cursor + |
+/// |         | sight_v3_graph_version tables. Triggers on note_links    |
+/// |         | bump graph_version per library_set_hash. Resumable       |
+/// |         | back-fill via sight_layout::maybe_schedule (PJ-038).     |
+///
+/// Bumping this version invalidates every cached layout: the next
+/// frontend Sight v3 toggle triggers a full Landmark-MDS recompute.
+/// Mirrors the SKY_SCHEMA_VERSION pattern.
+///
+/// §1A: declared but not yet read — the version-gate logic that
+/// `SELECT version FROM schema_versions WHERE module = 'sight_v3'` and
+/// invalidates `sight_v3_layout` rows lands in §1B alongside the actual
+/// compute. Until then the constant exists so external references in
+/// the §1B PR have something stable to import.
+#[allow(dead_code)]
+pub(crate) const SIGHT_V3_SCHEMA_VERSION: i64 = 1;
+
 /// MIG-003 Step 1 — `note_meta` schema version. Bumped to 1 when the
 /// `cid_cn` column was added and backfilled from frontmatter. Subsequent
 /// MIG-003 steps (FK columns on `note_links`/`sky_nodes`/`note_aliases`,
@@ -2255,6 +2276,73 @@ fn init_db(path: &Path) -> Result<Connection, String> {
     // Same reasons as §4: boot-paint-blocking cost + reuse of the
     // resumable cursor. Bumping SKY_SCHEMA_VERSION (now v6) forces
     // sky_backfill::maybe_schedule to re-run.
+
+    // ─── MIG-018 §1A: Sight v3 projection-foundation cache tables ────
+    //
+    // Three tables store the deterministic Landmark-MDS embedding for the
+    // v3 star-chart visualization (PJ-038). Per CLAUDE.md Performance
+    // Rule 8 (write-time derivation): the cache is invalidated by triggers
+    // on `note_links` writes; reads at frontend Sight-toggle are cheap
+    // SELECTs.
+    //
+    //   sight_v3_layout         — one row per (note_path, lib_set, ver):
+    //                             cached embed_x, embed_y in unit-disk
+    //                             coords + community_id + centrality_norm.
+    //   sight_v3_layout_cursor  — resumable back-fill cursor, mirrors
+    //                             sky_backfill_cursor (MIG-001 §5).
+    //   sight_v3_graph_version  — single-row meta per library_set_hash;
+    //                             bumped by note_links triggers; the
+    //                             frontend compares cached vs current
+    //                             version to decide recompute.
+    //
+    // Trigger semantics: any insert/delete on note_links bumps the version
+    // for every library_set_hash. (We can't know which library_set_hash
+    // each link affects without joining note_meta.library_name; the
+    // frontend will recompute lazily on next toggle, which is acceptable
+    // — embedding is sub-second on Boss-scale graphs.)
+    //
+    // Schema is gated by SIGHT_V3_SCHEMA_VERSION; bumping it invalidates
+    // every cached layout. The frontend must observe the bump (via the
+    // `constellation_sight_v3_layout` IPC return value) and recompute.
+    conn.execute_batch("
+        CREATE TABLE IF NOT EXISTS sight_v3_layout (
+            note_path        TEXT NOT NULL,
+            library_set_hash TEXT NOT NULL,
+            graph_version    INTEGER NOT NULL,
+            embed_x          REAL NOT NULL,
+            embed_y          REAL NOT NULL,
+            community_id     INTEGER NOT NULL,
+            centrality_norm  REAL NOT NULL,
+            PRIMARY KEY (note_path, library_set_hash, graph_version)
+        );
+        CREATE INDEX IF NOT EXISTS idx_sight_v3_layout_libset_ver
+            ON sight_v3_layout(library_set_hash, graph_version);
+
+        CREATE TABLE IF NOT EXISTS sight_v3_layout_cursor (
+            library_set_hash TEXT PRIMARY KEY,
+            graph_version    INTEGER NOT NULL,
+            completed        INTEGER NOT NULL DEFAULT 0,
+            started_at       INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+            completed_at     INTEGER
+        );
+
+        CREATE TABLE IF NOT EXISTS sight_v3_graph_version (
+            library_set_hash TEXT PRIMARY KEY,
+            version          INTEGER NOT NULL DEFAULT 0,
+            bumped_at        INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+        );
+
+        -- Note: sight_v3_graph_version bumps live in the application code,
+        -- not in SQL triggers. Reason: a SQL trigger on note_links would
+        -- need to know the library_set_hash that the changed note belongs
+        -- to, which requires joining note_meta + libraries config — too
+        -- expensive to do per-row inside a trigger. Instead, the frontend
+        -- bumps on graph-version writes via a deliberate IPC call after
+        -- batch operations, mirroring v2's lensDataStale invalidation.
+        --
+        -- For MIG-018 §1A: tables-only. Bump-on-edit semantics land in
+        -- §1B alongside the compute path.
+    ").map_err(|e| format!("Failed to create sight_v3_* tables: {}", e))?;
 
     // ─── One-time FTS5 rebuild after tokenizer migration ─────────────
     // If we bumped past FTS_SCHEMA_VERSION above we dropped the old
