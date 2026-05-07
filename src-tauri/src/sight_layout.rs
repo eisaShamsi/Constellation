@@ -392,25 +392,51 @@ fn build_adjacency(edges: &[(usize, usize)], n: usize) -> Vec<Vec<usize>> {
 /// node) so per-call cost stays bounded. Sampling is a well-established
 /// approximation for visualization-quality centrality (the exact value
 /// only matters for ranking, which is preserved).
+///
+/// MIG-019 §2E.3 (Boss-test memory fix 2026-05-07): pre-allocate the
+/// per-iteration working buffers ONCE outside the source loop and reuse
+/// them across all sources via `.clear()` / scalar resets. Previously
+/// each iteration did `vec![Vec::new(); n]` which on Boss's universe
+/// (7,334 notes × 217k links × 200 sources) added up to ~36 MB of
+/// allocator churn — Windows' default allocator doesn't promptly return
+/// freed memory to the OS, so the Rust process bloated despite the
+/// per-iteration math being O(small).
+///
+/// Also reduced the source sample from n/200 to n/100 (≈ 100 sources).
+/// 100 sources is well-established as adequate for ranking-quality
+/// centrality on visualization-scale graphs; the sample density only
+/// affects absolute centrality values, not the rank order that drives
+/// landmark picking + star-magnitude scaling.
 fn compute_centrality_normalized(adj: &[Vec<usize>], n: usize) -> Vec<f64> {
     let mut cb = vec![0.0_f64; n];
     let sources: Vec<usize> = if n > 500 {
-        let step = (n / 200).max(1);
+        let step = (n / 100).max(1);
         (0..n).step_by(step).collect()
     } else {
         (0..n).collect()
     };
 
+    // Pre-allocate working buffers ONCE; reuse across all source iterations.
+    let mut stack: Vec<usize> = Vec::with_capacity(n);
+    let mut pred: Vec<Vec<usize>> = (0..n).map(|_| Vec::new()).collect();
+    let mut sigma = vec![0.0_f64; n];
+    let mut dist: Vec<i64> = vec![-1; n];
+    let mut delta = vec![0.0_f64; n];
+    let mut queue: VecDeque<usize> = VecDeque::with_capacity(n);
+
     for &s in &sources {
-        // BFS bookkeeping
-        let mut stack: Vec<usize> = Vec::with_capacity(n);
-        let mut pred: Vec<Vec<usize>> = vec![Vec::new(); n];
-        let mut sigma = vec![0.0_f64; n];
-        let mut dist: Vec<i64> = vec![-1; n];
+        // Reset state. .clear() preserves capacity so subsequent
+        // iterations don't reallocate the inner Vecs.
+        stack.clear();
+        for p in pred.iter_mut() { p.clear(); }
+        for v in sigma.iter_mut() { *v = 0.0; }
+        for v in dist.iter_mut() { *v = -1; }
+        for v in delta.iter_mut() { *v = 0.0; }
+        queue.clear();
         sigma[s] = 1.0;
         dist[s] = 0;
-        let mut queue: VecDeque<usize> = VecDeque::new();
         queue.push_back(s);
+
         while let Some(v) = queue.pop_front() {
             stack.push(v);
             for &w in &adj[v] {
@@ -425,7 +451,6 @@ fn compute_centrality_normalized(adj: &[Vec<usize>], n: usize) -> Vec<f64> {
             }
         }
         // Accumulate dependency
-        let mut delta = vec![0.0_f64; n];
         while let Some(w) = stack.pop() {
             for &v in &pred[w] {
                 delta[v] += (sigma[v] / sigma[w]) * (1.0 + delta[w]);
@@ -458,14 +483,21 @@ fn pick_landmarks(centrality: &[f64], k: usize) -> Vec<usize> {
 /// V×k matrix: `dist_matrix[v][l_idx]` = shortest-path distance from
 /// node `v` to landmark `landmarks[l_idx]`. Disconnected pairs get a
 /// sentinel value (max finite distance + 1) so MDS doesn't see infs.
+///
+/// MIG-019 §2E.3: same allocation-recycling pattern as
+/// compute_centrality_normalized — pre-allocate `dist` and `queue`
+/// once, reuse across landmarks via `.clear()`/reset.
 fn compute_landmark_distances(adj: &[Vec<usize>], landmarks: &[usize], n: usize) -> Vec<Vec<f64>> {
     let k = landmarks.len();
     let mut dist_matrix = vec![vec![f64::INFINITY; k]; n];
 
+    let mut dist = vec![f64::INFINITY; n];
+    let mut queue: VecDeque<usize> = VecDeque::with_capacity(n);
+
     for (l_idx, &landmark) in landmarks.iter().enumerate() {
-        let mut dist = vec![f64::INFINITY; n];
+        for v in dist.iter_mut() { *v = f64::INFINITY; }
+        queue.clear();
         dist[landmark] = 0.0;
-        let mut queue: VecDeque<usize> = VecDeque::new();
         queue.push_back(landmark);
         while let Some(v) = queue.pop_front() {
             let dv = dist[v];
