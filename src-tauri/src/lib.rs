@@ -332,6 +332,7 @@ pub fn run() {
             sight::constellation_sight_centrality,
             sight::constellation_sight_tag_edges,
             sight_layout::constellation_sight_v3_layout,
+            sight_layout::constellation_sight_v3_invalidate_layout,
             boot_bundle::constellation_boot_bundle,
             cache::cache_boot_snapshot,
             cache::cache_boot_snapshot_core,
