@@ -10,6 +10,7 @@
       "universe": "الكون والمكتبات",
       "editor": "المحرر",
       "skyview": "عرض السماء والروابط",
+      "sight": "Sight",
       "intelligence": "الذكاء",
       "security": "الأمان والخصوصية",
       "appearance": "المظهر",
@@ -511,6 +512,16 @@
       "coreSnapshot": "لقطة أساسية (ملاحظات)",
       "graphSnapshot": "لقطة الرسم البياني (روابط + وسوم)",
       "fanout": "توزيع وانسَ"
+    },
+    "sight": {
+      "intro": "Constellation Sight v3 — تصور خريطة النجوم لعالم المعرفة لديك.",
+      "projection": {
+        "label": "الإسقاط",
+        "lambert": "Lambert (متساوي المساحة)",
+        "lambertHint": "أحجام المجتمعات متناسبة مع عدد العقد.",
+        "stereographic": "Stereographic (متساوي الزوايا)",
+        "stereographicHint": "أشكال الكوكبات محفوظة؛ الأحجام مضللة بالقرب من الحواف."
+      }
     }
   },
   "commands": {
@@ -1698,7 +1709,7 @@
   },
   "sightV3": {
     "title": "Constellation Sight",
-    "placeholder": "Sight v3 — أساس الإسقاط (MIG-018 §1C)",
+    "placeholder": "Sight v3 — أساس الإسقاط (MIG-018 §1D)",
     "close": "إغلاق Sight"
   },
   "lens": {

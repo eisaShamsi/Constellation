@@ -10,6 +10,7 @@
       "universe": "Universum & Bibliotheken",
       "editor": "Editor",
       "skyview": "Sky View & Links",
+      "sight": "Sight",
       "intelligence": "Intelligenz",
       "security": "Sicherheit & Datenschutz",
       "appearance": "Erscheinungsbild",
@@ -510,6 +511,16 @@
         "description": "Permanently remove all stored Index filter queries from this Universe. Cannot be undone.",
         "button": "Clear",
         "confirm": "Permanently delete all Index search history for this Universe?"
+      }
+    },
+    "sight": {
+      "intro": "Constellation Sight v3 — star-chart visualization of your knowledge universe.",
+      "projection": {
+        "label": "Projection",
+        "lambert": "Lambert (equal-area)",
+        "lambertHint": "Community sizes visually proportional to node count.",
+        "stereographic": "Stereographic (equal-angle)",
+        "stereographicHint": "Constellation shapes preserved; sizes mislead near edges."
       }
     }
   },
@@ -1627,7 +1638,7 @@
   },
   "sightV3": {
     "title": "Constellation Sight",
-    "placeholder": "Sight v3 — projection foundation (MIG-018 §1C)",
+    "placeholder": "Sight v3 — projection foundation (MIG-018 §1D)",
     "close": "Close Sight"
   },
   "lens": {

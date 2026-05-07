@@ -229,6 +229,10 @@
 		{ id: 'language', label: $t('settings.language.title') || 'Language', icon: 'translate' },
 		{ id: 'arabic-overrides', label: $t('settings.sections.arabicOverrides') || 'Arabic Overrides', icon: 'translate' },
 		{ id: 'skyview', label: $t('settings.sections.skyview'), icon: 'graph' },
+		// MIG-018 (PJ-038): Sight v3 section — projection toggle + future
+		// always-on labels / calendar systems / magnitude slider. Hidden
+		// when SIGHT_V3_ENABLED is false (committed default through §1E).
+		...(SIGHT_V3_ENABLED ? [{ id: 'sight', label: $t('settings.sections.sight') || 'Sight', icon: 'eye' }] : []),
 		{ id: 'intelligence', label: $t('settings.sections.intelligence'), icon: 'bot' },
 		{ id: 'security', label: $t('settings.sections.security'), icon: 'shield' },
 		{ id: 'knowledge', label: $t('settings.sections.knowledge') || 'Knowledge Management', icon: 'brain' },
@@ -1570,6 +1574,44 @@
 								oninput={(e) => updateSettings({ skyView: { ...$appSettings.skyView, linkDistance: Number((e.target as HTMLInputElement).value) } })} />
 							<span class="range-value">{$appSettings.skyView?.linkDistance ?? 30}</span>
 						</div>
+					</div>
+
+				<!-- ═══ SIGHT (v3) — MIG-018 (PJ-038) ═══ -->
+				{:else if activeSection === 'sight'}
+					<p class="section-intro">
+						{$t('settings.sight.intro') || 'Constellation Sight v3 — star-chart visualization of your knowledge universe.'}
+					</p>
+
+					<div class="setting-section-heading">{$t('settings.sight.projection.label') || 'Projection'}</div>
+					<div class="setting-row">
+						<label class="setting-label">
+							<input
+								type="radio"
+								name="sight-projection"
+								value="lambert"
+								checked={($appSettings.sight?.projection ?? 'lambert') === 'lambert'}
+								onchange={() => updateSettings({ sight: { ...$appSettings.sight, projection: 'lambert' } })}
+							/>
+							<span>{$t('settings.sight.projection.lambert') || 'Lambert (equal-area)'}</span>
+							<span class="setting-hint">
+								{$t('settings.sight.projection.lambertHint') || 'Community sizes visually proportional to node count.'}
+							</span>
+						</label>
+					</div>
+					<div class="setting-row">
+						<label class="setting-label">
+							<input
+								type="radio"
+								name="sight-projection"
+								value="stereographic"
+								checked={$appSettings.sight?.projection === 'stereographic'}
+								onchange={() => updateSettings({ sight: { ...$appSettings.sight, projection: 'stereographic' } })}
+							/>
+							<span>{$t('settings.sight.projection.stereographic') || 'Stereographic (equal-angle)'}</span>
+							<span class="setting-hint">
+								{$t('settings.sight.projection.stereographicHint') || 'Constellation shapes preserved; sizes mislead near edges.'}
+							</span>
+						</label>
 					</div>
 
 				<!-- ═══ INTELLIGENCE (AI) ═══ -->

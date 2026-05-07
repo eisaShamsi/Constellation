@@ -3253,6 +3253,23 @@ export interface AppSettings {
 		emojiIconPicker: boolean;
 		inspector360: boolean;
 	};
+	/**
+	 * MIG-018 (PJ-038) — Sight v3 settings namespace.
+	 *
+	 * `projection` — Lambert (equal-area, default; community sizes
+	 * accurate) or Stereographic (equal-angle; constellation shapes
+	 * accurate). Per Eisa's design call §11 Q2 2026-05-07: ship both
+	 * with user toggle. Switching is a frontend-only operation; the
+	 * MDS embedding doesn't change.
+	 *
+	 * Future fields land in MIG-019 / MIG-020:
+	 *   - `alwaysOnLabels`: boolean — show constellation labels at rest
+	 *   - `calendarSystems`: string[] — Gregorian + user-added systems
+	 *   - `magnitudeThreshold`: number — layer-peeling slider state
+	 */
+	sight?: {
+		projection?: 'lambert' | 'stereographic';
+	};
 	/** AI/LLM integration preferences */
 	ai?: {
 		contextLines?: number;
@@ -3373,6 +3390,11 @@ export const DEFAULT_SETTINGS: AppSettings = {
 		constellationSightV3: true,
 		emojiIconPicker: true,
 		inspector360: true,
+	},
+	// MIG-018 §1D: Sight v3 settings — projection defaults to Lambert
+	// (equal-area; community sizes visually proportional to node count).
+	sight: {
+		projection: 'lambert',
 	},
 	customShortcuts: {},
 	linkPills: {

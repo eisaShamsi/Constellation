@@ -10,6 +10,7 @@
       "universe": "Universe & Libraries",
       "editor": "Editor",
       "skyview": "Sky View & Links",
+      "sight": "Sight",
       "intelligence": "Intelligence",
       "security": "Security & Privacy",
       "appearance": "Appearance",
@@ -509,6 +510,16 @@
       "panelLinksDesc": "Living Link analytics and management",
       "resetDefault": "Reset to defaults",
       "resetDefaultDesc": "Restore the default panel layout (Backlinks left, Outgoing right)"
+    },
+    "sight": {
+      "intro": "Constellation Sight v3 — star-chart visualization of your knowledge universe.",
+      "projection": {
+        "label": "Projection",
+        "lambert": "Lambert (equal-area)",
+        "lambertHint": "Community sizes visually proportional to node count.",
+        "stereographic": "Stereographic (equal-angle)",
+        "stereographicHint": "Constellation shapes preserved; sizes mislead near edges."
+      }
     }
   },
   "commands": {
@@ -1733,7 +1744,7 @@
   },
   "sightV3": {
     "title": "Constellation Sight",
-    "placeholder": "Sight v3 — projection foundation (MIG-018 §1C)",
+    "placeholder": "Sight v3 — projection foundation (MIG-018 §1D)",
     "close": "Close Sight"
   },
   "lens": {
