@@ -290,3 +290,117 @@ All three agents (invariants / drift / migration-path) returned **CLEAN**. 0 P0,
 ### Tomorrow's first move
 
 Whatever Eisa picks. **MIG-019 Architect** is the natural next step — density + time + search + universe-health card on the v3 base. MIG-019 is single MIG, multi-phase build; expect ~6 phases similar to MIG-018's shape.
+
+---
+
+## MIG-019 §2G — Polar layout redesign (in flight, evening of 2026-05-07)
+
+After §2A–§2F shipped (density-grid IPC replacing the OOM-prone edge list, OOM solved at 7,636-note scale), Eisa critiqued the visual: doesn't resemble celestial hemisphere, calendar rim doesn't scale years, Universe Health card location is a distraction. Pivot from code to design: four mockup options generated (`docs/Constellation-Sight-v3-mockup-{A,B,C,D}-*.svg`) on Suwaidi cream palette. Eisa picked Option A (polar grid).
+
+Then, three iterations of refinement:
+1. **Rim axis is switchable** (Eisa's idea): the chart becomes a multi-lens diagnostic. Rim toggles between Regions / Link Types / Time / Confidence / Stages / Acts (R/L/T/C/S/A). Radius (centrality) and color (community) stay invariant; only azimuth changes.
+2. **Time becomes its own mode** (T) — no orthogonal year ladder needed.
+3. **Universe Health → top-center, metrics flanking the roundel** (not below). The dome edge is clean.
+4. **Edges hidden in resting state**, revealed on hover/click of a node (Concept Paper §4.1).
+
+Final mockup: `docs/Constellation-Sight-v3-mockup-A2-toggle.svg`. Approved.
+
+### §2G.1 — Visual spec doc (in this commit)
+
+`docs/SIGHT-V3-VISUAL-SPEC.md` codifies the design contract. 10 sections covering: 6 modes & their wedge labels, polar grammar, edge resting/active states, Universe Health anchor, toggle UI (production = compact letter-button bar, top-right), Suwaidi palette tokens, 10 layout invariants, deferred items, phase mapping, acceptance criteria.
+
+The three approved defaults:
+1. Rim labels = uniform Suwaidi blue ink (`#2a4a8c`); star colors per-community.
+2. Wedge order = by note count, largest first.
+3. Production toggle = compact letter-button bar (R/L/T active; C/S/A "available later"); full preview strip from mockup is exposition only.
+
+### §2G plan (cascade per Plan Approval = Build Approval)
+
+| Phase | Work | User-test stop? |
+|-------|------|-----------------|
+| §2G.1 | Visual spec doc | No |
+| §2G.2 | Pure helpers (polar.ts, modes.ts, regions.ts) | No |
+| §2G.3 | SightV3.svelte rewrite | **YES** — Boss tests visual |
+| §2G.4 | Mode toggle + 600 ms migration animation | **YES** — Boss tests animation |
+| §2G.5 | Mode persistence (`appSettings.sight.lastMode`) | **YES** — Boss tests persistence |
+| §2G.6 | Three-agent audit + orientation v-bump + tag | No |
+
+Architectural-impact scan complete (Explore agent): SightV3.svelte is isolated (1180 lines, only consumed by `+layout.svelte`); v2 is independent; settings persistence pattern is established; library color is NOT centrally stored (sidestepped via uniform blue ink labels).
+
+### §2G.1 SHIPPED (`bfb8aba`)
+
+`docs/SIGHT-V3-VISUAL-SPEC.md` written — design contract codifying the approved mockup. Five mockup SVGs + the original mockup checked in. `lab/sight-v3-mockup-generator.py` shipped. Three approved defaults locked: rim labels = uniform Suwaidi blue ink; wedge order = note-count desc; production toggle = compact letter-button bar (full preview strip is design exposition only).
+
+### §2G.2 SHIPPED (`b1a2477`)
+
+Three pure helper modules in `src/lib/sight/v3/`:
+- `polar.ts` — polar math, magnitude buckets, palette tokens, dome ratios, animation easing
+- `modes.ts` — 6 rim-axis modes (R · L · T ready; C · S · A "available later" per Concept Paper §6.3)
+- `regions.ts` — `buildRegionLayout()` for library wedge sizing (sorted by note count, empty wedges compressed, Windows/Unix path-prefix tolerant)
+
+Type-checked clean. Stateless. No allocations on the hot path.
+
+### §2G.3 → §2G.3c SHIPPED (`7d6fcf6`)
+
+Four phases of in-flight rewrites rolled into one commit so the working tree stops carrying ~5 hours of uncommitted code.
+
+**§2G.3** — Core polar layout rewrite:
+- Theme: navy → cream parchment; near-black stars; gold/cyan reference rings.
+- MDS `embedToScreen()` replaced by polar positioning (radius=centrality, azimuth=mode wedge).
+- `drawRegionRim()` ships library wedges with blue-ink tangent labels.
+- `drawEdges()` empty by default — focus overlay handles hover/click reveal in gold.
+- Universe Health → HTML overlay anchored top-center.
+
+**§2G.3a** — After Eisa's first Boss test (PASS):
+- Disabled `drawTerritories()` — community hulls span the whole dome in polar layout, made a tan blob hiding stars.
+- `SightV3SidePanel` Universe Health section removed; panel opens only on star selection.
+- Metric labels switched from `$t()` to literal English uppercase (i18n keys land in §2G.6).
+
+**§2G.3b** — After Eisa's second Boss test:
+- Calendar-rim hover/click handlers gated on `currentMode === 'time'`. Mode is user-driven only — Eisa caught the rim auto-shifting from Regions to calendar months on hover.
+- `getViewport()` reserves 270px top + 100px bottom + 100px sides + 80px outside-dome. Dome center shifts down to middle of AVAILABLE space.
+- Region rim labels migrated from Pixi Text → HTML overlay with `dir="auto"`. Browser handles bidi natively for Arabic / Hebrew / mixed-script library names.
+
+**§2G.3c** (partial; finish + ship in next commit):
+- Centrality RANK PERCENTILE for radius (was direct centrality_norm; real graphs are skewed → most stars packed at rim).
+- Per-wedge `maxWidthPx` emitted in rim label geometry (ellipsis CSS pending).
+- Universe-name header (above dome, below Health metrics) pending.
+
+### §2G state-of-standing as of 2026-05-07 ~21:50 (SO #5 record before §2G.3d)
+
+**Major architectural pivot during this phase:** Eisa proposed and approved a per-mode (X, Y, Z) grammar where each rim mode declares its own azimuth / radius / magnitude variables — turning Sight from a single chart into a multi-instrument cognitive lens (the §5.3 stethoscope/MRI/ECG metaphor from the Concept Paper). Color stays invariant (community Louvain).
+
+**(X, Y, Z) approved per mode:**
+| Mode | X (azimuth) | Y (radius) | Z (magnitude) |
+|------|-------------|------------|---------------|
+| R · Regions | Library | Centrality rank | Degree |
+| L · Link Types | Dominant outgoing link type | Type diversity | Total outgoing links |
+| T · Time | Creation date wedge | Recency (last edit) | Age |
+| C · Confidence | Dominant confidence | Certainty homogeneity | Total link count |
+| S · Stages | Dominant lifecycle stage | Avg link weight | Total traversal count |
+| A · Acts | Which Act | Synthesis depth | Total connections |
+
+**Verified shipped + protected:**
+- §2G.1: visual spec doc + mockups (`bfb8aba`, pushed)
+- §2G.2: pure helpers (`b1a2477`, pushed)
+- §2G.3 → §2G.3c partial: SightV3 rewrite (`7d6fcf6`, pushed)
+- 10 prior MIG-019 §2A → §2E commits also pushed (origin/main was 36h stale)
+
+**At-risk / in-flight (uncommitted):**
+- §2G.3c finish: rim label ellipsis CSS, Universe-name header markup
+- §2G.3d: (X, Y, Z) per-mode grammar refactor + spec doc v1.0 → v1.1
+- §2G.4: mode toggle UI + 600ms migration animation
+- §2G.5: mode persistence
+- §2G.6: 3-agent audit + orientation v-bump + tag
+
+**Known-broken:** none currently observed in the §2G.3b build. Two Boss tests passed.
+
+**Pending but not started:** MIG-020 (layer peeling + v2 retire) after MIG-019 closes.
+
+**Documentation drift:**
+- Orientation still at v1.58 — hasn't bumped for §2G in flight. Will bump to v1.59 in this catch-up commit.
+- MoCh: last `MoCh-2026-05-06-0900.md`; today's been ~5+ hours of direct chat — fresh MoCh due.
+
+### Next session resumes at
+
+§2G.3c finish (rim label ellipsis CSS + Universe-name header markup) → cascade into §2G.3d (X/Y/Z refactor) → build → user tests → §2G.4 (toggle + animation) → user tests → §2G.5 (persistence) → user tests → §2G.6 (audit + close).
