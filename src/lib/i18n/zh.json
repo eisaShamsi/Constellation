@@ -537,6 +537,13 @@
         "solarHijri": "Solar Hijri",
         "hebrew": "Hebrew",
         "placeholderNote": "* Solar Hijri and Hebrew render Gregorian month names with a placeholder marker until PJ-014 backfill ships full localization."
+      },
+      "labels": {
+        "label": "Labels"
+      },
+      "alwaysOnLabels": {
+        "label": "Show constellation labels at rest",
+        "hint": "Off (default): labels appear on hover or selection. On: labels stay visible at territory centroids."
       }
     }
   },

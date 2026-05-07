@@ -3280,6 +3280,10 @@ export interface AppSettings {
 		 *  default; users add Hijri / Solar Hijri / Hebrew via Settings.
 		 *  Solar-Hijri / Hebrew are placeholders for PJ-014 backfill. */
 		calendarSystems?: Array<'gregorian' | 'hijri' | 'solar-hijri' | 'hebrew'>;
+		/** MIG-019 §2E: render constellation labels at territory
+		 *  centroids at-rest (in addition to hover/select). Default false
+		 *  per Eisa's §11 Q6 — hover/select-only is the cleaner default. */
+		alwaysOnLabels?: boolean;
 	};
 	/** AI/LLM integration preferences */
 	ai?: {
@@ -3402,16 +3406,16 @@ export const DEFAULT_SETTINGS: AppSettings = {
 		emojiIconPicker: true,
 		inspector360: true,
 	},
-	// MIG-018 §1D + MIG-019 §2B/§2C: Sight v3 settings.
-	// projection: Lambert (equal-area; community sizes visually
-	//   proportional to node count) by default.
-	// showMilkyWay: TRUE by default — the band IS the InfraNodus mechanic
-	//   that distinguishes v3's visual grammar.
-	// calendarSystems: ['gregorian'] default per Eisa's §11 Q3 design call.
+	// MIG-018 §1D + MIG-019 §2B/§2C/§2E: Sight v3 settings.
+	// projection: Lambert (equal-area) by default.
+	// showMilkyWay: TRUE by default.
+	// calendarSystems: ['gregorian'] default per Eisa's §11 Q3.
+	// alwaysOnLabels: false default per Eisa's §11 Q6 (hover/select-only).
 	sight: {
 		projection: 'lambert',
 		showMilkyWay: true,
 		calendarSystems: ['gregorian'],
+		alwaysOnLabels: false,
 	},
 	customShortcuts: {},
 	linkPills: {

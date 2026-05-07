@@ -55,10 +55,15 @@
     interface Props {
         nodes: SkyNode[];
         links: SkyLink[];
+        /** MIG-019 §2E: search-hub match set. Lowercased note names.
+         *  Null when no search is active; non-empty Set when query has matches.
+         *  Matched stars flare (brighter + bigger); non-matched dim heavily;
+         *  territories containing matches get a halo glow. */
+        searchMatchIds?: Set<string> | null;
         onClose: () => void;
         onOpenNote: (path: string, libraryName: string) => void;
     }
-    let { nodes, links, onClose, onOpenNote }: Props = $props();
+    let { nodes, links, searchMatchIds = null, onClose, onOpenNote }: Props = $props();
 
     // ─── DOM + Pixi handles ──────────────────────────────────────────
     let canvasContainer: HTMLDivElement;
@@ -124,6 +129,9 @@
     /** Whether the filter is from a click (persistent) or hover (preview). */
     let monthFilterPersistent = $state<boolean>(false);
     let hoveredMonth = $state<number>(-1);
+    /** MIG-019 §2E: derived set of matched note_paths from searchMatchIds.
+     *  Empty Set = no filter (or empty match list). */
+    let matchedPaths = $state<Set<string>>(new Set());
 
     // ─── Helpers ─────────────────────────────────────────────────────
     function currentProjection(): ProjectionMode {
@@ -319,6 +327,25 @@
         return new Date(created).getMonth() === monthFilterMonth;
     }
 
+    /** MIG-019 §2E: search-active check. */
+    function isSearchActive(): boolean {
+        return matchedPaths.size > 0;
+    }
+
+    function passesSearch(notePath: string): boolean {
+        if (!isSearchActive()) return true;
+        return matchedPaths.has(notePath);
+    }
+
+    /** Resolve a community's "has match" boolean — used for territory halo. */
+    function communityHasMatch(communityId: number): boolean {
+        if (!isSearchActive()) return false;
+        for (const path of matchedPaths) {
+            if (pathToCommunity.get(path) === communityId) return true;
+        }
+        return false;
+    }
+
     /** MIG-019 §2B — Milky Way density wash (PJ-035).
      *  Renders the top-2000 highest-similarity TF-IDF edges as soft
      *  alpha-blended cream-colored lines. The container has a BlurFilter
@@ -359,7 +386,11 @@
         milkyWayContainer.addChild(lines);
     }
 
-    /** Draw community territory polygons on the base layer. */
+    /** Draw community territory polygons on the base layer.
+     *  - MIG-019 §2E search-active path: territories with matches get
+     *    halo (border thickens + brightens); territories without dim.
+     *  - MIG-019 §2E always-on labels: render community label at the
+     *    centroid when $appSettings.sight.alwaysOnLabels is true. */
     function drawTerritories() {
         if (!territoryContainer) return;
         territoryContainer.removeChildren();
@@ -371,15 +402,53 @@
             labeled.push({ x: screen.x, y: screen.y, communityId });
         }
         const territories = communityTerritories(labeled);
+        const searchOn = isSearchActive();
+        const alwaysOnLabels = $appSettings.sight?.alwaysOnLabels === true;
 
         for (const [communityId, hull] of territories) {
             if (hull.length < 3) continue; // skip degenerate communities
             const color = communityColorInt(communityId);
+            const hasMatch = searchOn && communityHasMatch(communityId);
+
+            // Search-active styling:
+            //  - territories with matches: thicker border + higher alpha (halo)
+            //  - territories without matches: lower fill alpha (dim)
+            const fillAlpha = searchOn ? (hasMatch ? 0.16 : 0.04) : 0.10;
+            const strokeAlpha = searchOn ? (hasMatch ? 0.85 : 0.10) : 0.30;
+            const strokeWidth = searchOn && hasMatch ? 2.5 : 1;
+
             const poly = new Graphics();
             poly.poly(hull.flatMap((p) => [p.x, p.y]));
-            poly.fill({ color, alpha: 0.10 });
-            poly.stroke({ color, alpha: 0.30, width: 1 });
+            poly.fill({ color, alpha: fillAlpha });
+            poly.stroke({ color, alpha: strokeAlpha, width: strokeWidth });
             territoryContainer.addChild(poly);
+
+            // MIG-019 §2E: always-on label at territory centroid.
+            if (alwaysOnLabels) {
+                const cluster = communityById.get(communityId);
+                if (cluster && cluster.suggestedName) {
+                    // Centroid as polygon vertex average (approximate).
+                    let cx = 0, cy = 0;
+                    for (const p of hull) { cx += p.x; cy += p.y; }
+                    cx /= hull.length;
+                    cy /= hull.length;
+                    const label = new Text({
+                        text: cluster.suggestedName,
+                        style: new TextStyle({
+                            fill: 0xd4af37, // Suwaidi gold
+                            fontSize: 11,
+                            fontFamily: 'system-ui, -apple-system, sans-serif',
+                            align: 'center',
+                            fontStyle: 'italic',
+                        }),
+                        anchor: 0.5,
+                    });
+                    label.x = cx;
+                    label.y = cy;
+                    label.alpha = 0.7;
+                    territoryContainer.addChild(label);
+                }
+            }
         }
     }
 
@@ -400,39 +469,86 @@
         edgeContainer.addChild(lines);
     }
 
-    /** Draw stars on the base layer. MIG-019 §2C: respect month filter. */
+    /** Draw stars on the base layer.
+     *  - MIG-019 §2C: dim stars failing the month filter.
+     *  - MIG-019 §2E: search-active path — matched stars flare (size +
+     *    brightness boost), non-matched dim heavily. */
     function drawStars() {
         if (!starContainer) return;
         starContainer.removeChildren();
+        const searchOn = isSearchActive();
         for (const pt of layoutPoints) {
             const screen = pathToScreen.get(pt.note_path);
             if (!screen) continue;
-            const passes = passesMonthFilter(pt.note_path);
+            const passesMonth = passesMonthFilter(pt.note_path);
+            const passesSrc = passesSearch(pt.note_path);
             const star = new Graphics();
-            star.circle(0, 0, screen.r);
-            // Dim non-matching stars (alpha 0.15) when filter is active.
             const baseAlpha = 0.65 + pt.centrality_norm * 0.35;
-            const alpha = passes ? baseAlpha : 0.15;
-            star.fill({
-                color: 0xf5e6c8,
-                alpha,
-            });
+
+            // Decide alpha + size based on filter state.
+            let alpha: number;
+            let radius = screen.r;
+            if (searchOn) {
+                if (passesSrc && passesMonth) {
+                    // Match: 1.5x size + full alpha (flare effect)
+                    radius = screen.r * 1.5;
+                    alpha = 1.0;
+                } else {
+                    // Non-match: heavy dim
+                    alpha = 0.10;
+                }
+            } else if (!passesMonth) {
+                // Month-filter dim
+                alpha = 0.15;
+            } else {
+                alpha = baseAlpha;
+            }
+
+            star.circle(0, 0, radius);
+            star.fill({ color: 0xf5e6c8, alpha });
             star.x = screen.x;
             star.y = screen.y;
             starContainer.addChild(star);
         }
     }
 
-    /** Redraw the focus overlay based on hoveredPath / selectedPath.
-     *  - No state → empty overlay.
+    /** Redraw the focus overlay based on hoveredPath / selectedPath /
+     *  search-active state.
+     *  - No state → empty overlay (or search-match edges if search active).
      *  - hoveredPath (no selection) → brighten edges incident to that star.
      *  - selectedPath → brighten ALL edges within that star's community.
+     *  - searchActive (no specific focus) → brighten edges between matched stars.
      *  Draws AFTER drawX so it sits on top. */
     function drawFocusOverlay() {
         if (!focusOverlay) return;
         focusOverlay.removeChildren();
 
         const focusPath = selectedPath ?? hoveredPath;
+        const searchOn = isSearchActive();
+
+        // MIG-019 §2E: if no focus star but search is active, brighten
+        // edges between matched stars so the user sees the search-result
+        // sub-graph clearly.
+        if (!focusPath && searchOn) {
+            const lines = new Graphics();
+            let edgeCount = 0;
+            for (const e of resolvedEdges) {
+                if (matchedPaths.has(e.a) && matchedPaths.has(e.b)) {
+                    const sa = pathToScreen.get(e.a);
+                    const sb = pathToScreen.get(e.b);
+                    if (!sa || !sb) continue;
+                    lines.moveTo(sa.x, sa.y);
+                    lines.lineTo(sb.x, sb.y);
+                    edgeCount++;
+                }
+            }
+            if (edgeCount > 0) {
+                lines.stroke({ color: 0xf5e6c8, alpha: 0.85, width: 1.5 });
+                focusOverlay.addChild(lines);
+            }
+            return;
+        }
+
         if (!focusPath) return;
 
         const focusScreen = pathToScreen.get(focusPath);
@@ -810,6 +926,37 @@
         const _calendars = $appSettings.sight?.calendarSystems;
         if (!isLoading && layoutPoints.length > 0) {
             drawCalendarRim();
+        }
+    });
+
+    // MIG-019 §2E: search match propagation.
+    // searchMatchIds is a Set<string> of lowercased note names from
+    // SearchHub. Convert to Set<note_path> via the nameToPath map and
+    // redraw the affected layers.
+    $effect(() => {
+        const ids = searchMatchIds;
+        const newMatched = new Set<string>();
+        if (ids && ids.size > 0) {
+            for (const name of ids) {
+                const path = nameToPath.get(name);
+                if (path) newMatched.add(path);
+            }
+        }
+        matchedPaths = newMatched;
+        if (!isLoading && layoutPoints.length > 0) {
+            drawTerritories();
+            drawStars();
+            drawFocusOverlay();
+        }
+    });
+
+    // MIG-019 §2E: always-on labels toggle.
+    // Reading $appSettings.sight?.alwaysOnLabels triggers re-render of
+    // territories (since labels are rendered there).
+    $effect(() => {
+        const _alwaysLabels = $appSettings.sight?.alwaysOnLabels;
+        if (!isLoading && layoutPoints.length > 0) {
+            drawTerritories();
         }
     });
 

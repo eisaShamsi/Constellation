@@ -1658,6 +1658,22 @@
 						{$t('settings.sight.calendarSystems.placeholderNote') || '* Solar Hijri and Hebrew render Gregorian month names with a placeholder marker until PJ-014 backfill ships full localization.'}
 					</p>
 
+					<!-- MIG-019 §2E: Always-on constellation labels toggle -->
+					<div class="setting-section-heading">{$t('settings.sight.labels.label') || 'Labels'}</div>
+					<div class="setting-row">
+						<label class="setting-label">
+							<input
+								type="checkbox"
+								checked={$appSettings.sight?.alwaysOnLabels === true}
+								onchange={(e) => updateSettings({ sight: { ...$appSettings.sight, alwaysOnLabels: (e.target as HTMLInputElement).checked } })}
+							/>
+							<span>{$t('settings.sight.alwaysOnLabels.label') || 'Show constellation labels at rest'}</span>
+							<span class="setting-hint">
+								{$t('settings.sight.alwaysOnLabels.hint') || 'Off (default): labels appear on hover or selection. On: labels stay visible at territory centroids.'}
+							</span>
+						</label>
+					</div>
+
 				<!-- ═══ INTELLIGENCE (AI) ═══ -->
 				{:else if activeSection === 'intelligence'}
 					<p class="section-intro">{$t('settings.intelligence.intro')}</p>
