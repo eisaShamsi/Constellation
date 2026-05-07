@@ -22,10 +22,11 @@
 -->
 <script lang="ts">
     import { onMount, onDestroy } from 'svelte';
-    import { Application, Container, Graphics, Text, TextStyle } from 'pixi.js';
+    import { Application, Container, Graphics, Text, TextStyle, BlurFilter } from 'pixi.js';
     import { libraryStats, appSettings, type SkyNode, type SkyLink } from '$lib/libraries/store';
     import { get } from 'svelte/store';
     import { fetchLayout, type LayoutPoint } from '$lib/sight/layout-cache';
+    import { fetchSimilarity, type SimilarityEdge } from '$lib/sight/similarity-cache';
     import { embedToScreen, type ProjectionMode } from '$lib/sight/projection';
     import { detectClusters, type ClusterInfo } from '$lib/graph/clusterEngine';
     import { communityTerritories, type Point2D } from '$lib/sight/community-territory';
@@ -49,6 +50,9 @@
     // ─── DOM + Pixi handles ──────────────────────────────────────────
     let canvasContainer: HTMLDivElement;
     let app: Application | null = null;
+    /** MIG-019 §2B: Milky Way density wash. Sits between sky background
+     *  and territoryContainer so stars + edges still render on top. */
+    let milkyWayContainer: Container | null = null;
     let territoryContainer: Container | null = null;
     let edgeContainer: Container | null = null;
     let starContainer: Container | null = null;
@@ -58,6 +62,8 @@
 
     // ─── Data ────────────────────────────────────────────────────────
     let layoutPoints: LayoutPoint[] = $state([]);
+    /** MIG-019 §2B: high-similarity edges from TF-IDF (PJ-035 → Milky Way). */
+    let similarityEdges: SimilarityEdge[] = $state([]);
     /** Map note_path → its layout point (for fast lookup during edge draw). */
     let pathToPoint = new Map<string, LayoutPoint>();
     /** Map note_path → community id. */
@@ -181,6 +187,46 @@
             const { x, y } = embedToScreen(pt.embed_x, pt.embed_y, projection, viewport);
             pathToScreen.set(pt.note_path, { x, y, r: starRadius(pt.centrality_norm) });
         }
+    }
+
+    /** MIG-019 §2B — Milky Way density wash (PJ-035).
+     *  Renders the top-2000 highest-similarity TF-IDF edges as soft
+     *  alpha-blended cream-colored lines. The container has a BlurFilter
+     *  applied so the lines smear into a continuous band of texture
+     *  rather than reading as discrete connections (which would compete
+     *  with the explicit-wikilink connector lines).
+     *
+     *  Capped at 2000 edges per Architect §8 — Pixi v8 BlurFilter on
+     *  more than that starts to chug; keeping the strongest signals is
+     *  what matters for the at-a-glance density read. */
+    const MILKY_WAY_TOP_N = 2000;
+    function drawMilkyWay() {
+        if (!milkyWayContainer) return;
+        milkyWayContainer.removeChildren();
+        // Hide if Settings → Sight → "Milky Way density wash" is OFF.
+        if ($appSettings.sight?.showMilkyWay === false) {
+            milkyWayContainer.visible = false;
+            return;
+        }
+        milkyWayContainer.visible = true;
+
+        const lines = new Graphics();
+        let drawnCount = 0;
+        // similarityEdges is sorted descending by similarity in §2A,
+        // so the slice picks the strongest signals.
+        for (const edge of similarityEdges) {
+            if (drawnCount >= MILKY_WAY_TOP_N) break;
+            const sa = pathToScreen.get(edge.note_path_a);
+            const sb = pathToScreen.get(edge.note_path_b);
+            if (!sa || !sb) continue;
+            lines.moveTo(sa.x, sa.y);
+            lines.lineTo(sb.x, sb.y);
+            drawnCount++;
+        }
+        // Suwaidi cream, very low alpha so the BlurFilter merges
+        // overlapping lines into a band texture.
+        lines.stroke({ color: CONNECTOR_LINE_COLOR, alpha: 0.06, width: 1 });
+        milkyWayContainer.addChild(lines);
     }
 
     /** Draw community territory polygons on the base layer. */
@@ -317,6 +363,7 @@
 
     function fullRedraw() {
         recomputeScreenPositions();
+        drawMilkyWay();
         drawTerritories();
         drawEdges();
         drawStars();
@@ -453,11 +500,21 @@
         });
         canvasContainer.appendChild(app.canvas);
 
+        // MIG-019 §2B: Milky Way density layer. Sits beneath territories
+        // (deepest above the sky background) so stars + edges + territory
+        // borders all render visibly over the band texture. BlurFilter
+        // (8px blur) merges discrete soft lines into a continuous wash —
+        // the visual idiom from the Suwaidi-chart reference image.
+        milkyWayContainer = new Container();
+        const blurFilter = new BlurFilter({ strength: 8, quality: 4 });
+        milkyWayContainer.filters = [blurFilter];
         territoryContainer = new Container();
         edgeContainer = new Container();
         starContainer = new Container();
         focusOverlay = new Container();
-        // Order matters: territories at the back, then edges, then stars, then focus on top.
+        // Order matters: Milky Way at the back, then territories, edges,
+        // stars, focus overlay on top.
+        app.stage.addChild(milkyWayContainer);
         app.stage.addChild(territoryContainer);
         app.stage.addChild(edgeContainer);
         app.stage.addChild(starContainer);
@@ -470,8 +527,18 @@
             const libraryPaths: Array<[string, string]> = stats.map((s) => [s.path, s.name]);
             layoutPoints = await fetchLayout(libraryPaths, 50);
             console.log(
-                `[SightV3 §1E] fetched ${layoutPoints.length} layout points across ${libraryPaths.length} libraries`,
+                `[SightV3] fetched ${layoutPoints.length} layout points across ${libraryPaths.length} libraries`,
             );
+
+            // MIG-019 §2B: fetch similarity edges in parallel after layout.
+            // Failures fall through to an empty Milky Way (graceful degradation).
+            try {
+                similarityEdges = await fetchSimilarity(libraryPaths, 50, 0.3);
+                console.log(`[SightV3 §2B] fetched ${similarityEdges.length} similarity edges`);
+            } catch (simErr) {
+                console.error('[SightV3 §2B] similarity fetch failed (Milky Way empty):', simErr);
+                similarityEdges = [];
+            }
 
             if (layoutPoints.length === 0) {
                 showPlaceholder('No notes in this universe yet.');
@@ -507,6 +574,15 @@
         }
     });
 
+    // MIG-019 §2B: redraw Milky Way on visibility toggle.
+    // Reading $appSettings.sight?.showMilkyWay subscribes the effect.
+    $effect(() => {
+        const _show = $appSettings.sight?.showMilkyWay;
+        if (!isLoading && layoutPoints.length > 0) {
+            drawMilkyWay();
+        }
+    });
+
     onDestroy(() => {
         if (resizeObserver) {
             resizeObserver.disconnect();
@@ -516,6 +592,7 @@
             app.destroy(true, { children: true, texture: true });
             app = null;
         }
+        milkyWayContainer = null;
         territoryContainer = null;
         edgeContainer = null;
         starContainer = null;

@@ -3269,6 +3269,11 @@ export interface AppSettings {
 	 */
 	sight?: {
 		projection?: 'lambert' | 'stereographic';
+		/** MIG-019 §2B: toggle the Milky Way density wash (PJ-035).
+		 *  Default true per Eisa's design call 2026-05-07 — the band IS
+		 *  the InfraNodus mechanic the v3 paper §13 describes as core
+		 *  to the visual grammar. */
+		showMilkyWay?: boolean;
 	};
 	/** AI/LLM integration preferences */
 	ai?: {
@@ -3391,10 +3396,15 @@ export const DEFAULT_SETTINGS: AppSettings = {
 		emojiIconPicker: true,
 		inspector360: true,
 	},
-	// MIG-018 §1D: Sight v3 settings — projection defaults to Lambert
-	// (equal-area; community sizes visually proportional to node count).
+	// MIG-018 §1D + MIG-019 §2B: Sight v3 settings.
+	// projection: Lambert (equal-area; community sizes visually
+	//   proportional to node count) by default.
+	// showMilkyWay: TRUE by default — the band IS the InfraNodus mechanic
+	//   that distinguishes v3's visual grammar (Eisa's design call
+	//   2026-05-07, §11 Q3 follow-up).
 	sight: {
 		projection: 'lambert',
+		showMilkyWay: true,
 	},
 	customShortcuts: {},
 	linkPills: {

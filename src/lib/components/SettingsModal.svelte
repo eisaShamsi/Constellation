@@ -1614,6 +1614,22 @@
 						</label>
 					</div>
 
+					<!-- MIG-019 §2B: Milky Way density wash toggle (PJ-035) -->
+					<div class="setting-section-heading">{$t('settings.sight.density.label') || 'Density'}</div>
+					<div class="setting-row">
+						<label class="setting-label">
+							<input
+								type="checkbox"
+								checked={$appSettings.sight?.showMilkyWay !== false}
+								onchange={(e) => updateSettings({ sight: { ...$appSettings.sight, showMilkyWay: (e.target as HTMLInputElement).checked } })}
+							/>
+							<span>{$t('settings.sight.showMilkyWay.label') || 'Milky Way density wash'}</span>
+							<span class="setting-hint">
+								{$t('settings.sight.showMilkyWay.hint') || 'Soft band of texture between notes with similar content (TF-IDF). Off = stars-only.'}
+							</span>
+						</label>
+					</div>
+
 				<!-- ═══ INTELLIGENCE (AI) ═══ -->
 				{:else if activeSection === 'intelligence'}
 					<p class="section-intro">{$t('settings.intelligence.intro')}</p>

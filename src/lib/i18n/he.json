@@ -521,6 +521,13 @@
         "lambertHint": "Community sizes visually proportional to node count.",
         "stereographic": "Stereographic (equal-angle)",
         "stereographicHint": "Constellation shapes preserved; sizes mislead near edges."
+      },
+      "density": {
+        "label": "Density"
+      },
+      "showMilkyWay": {
+        "label": "Milky Way density wash",
+        "hint": "Soft band of texture between notes with similar content (TF-IDF). Off = stars-only."
       }
     }
   },
