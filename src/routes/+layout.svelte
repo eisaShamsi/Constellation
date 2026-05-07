@@ -5015,7 +5015,16 @@
 		     is disabled in committed source (default through §1A–§1E; flipped to
 		     true in §1F after Boss-test passes). -->
 		{#if sightV3Active && SIGHT_V3_ENABLED}
-			<SightV3 onClose={() => { sightV3Active = false; }} />
+			<SightV3
+				nodes={skyNodes}
+				links={skyLinks}
+				onClose={() => { sightV3Active = false; }}
+				onOpenNote={(path: string, libraryName: string) => {
+					const lib = $libraryStats.find(l => l.name === libraryName);
+					const color = lib ? (libraryColorMap[libraryName] || '#7c3aed') : '#7c3aed';
+					openNoteTab(path, libraryName, color);
+				}}
+			/>
 		{/if}
 
 		<!-- Constellation Sight (v2) — standalone D3+Canvas component.

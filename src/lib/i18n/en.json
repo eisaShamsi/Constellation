@@ -1744,8 +1744,23 @@
   },
   "sightV3": {
     "title": "Constellation Sight",
-    "placeholder": "Sight v3 — projection foundation (MIG-018 §1D)",
-    "close": "Close Sight"
+    "placeholder": "Sight v3 — projection foundation (MIG-018 §1E)",
+    "close": "Close Sight",
+    "tooltip": {
+      "community": "Community",
+      "centralityRank": "Centrality rank",
+      "lifecycle": "Lifecycle"
+    },
+    "sidePanel": {
+      "community": "Community",
+      "centralityRank": "Centrality rank",
+      "connections": "Connections",
+      "incomingLinks": "Incoming links",
+      "outgoingLinks": "Outgoing links",
+      "openNote": "Open in editor",
+      "close": "Close panel",
+      "structuralGaps": "Structural gap suggestions"
+    }
   },
   "lens": {
     "title": "Constellation Sight",

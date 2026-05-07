@@ -1709,8 +1709,23 @@
   },
   "sightV3": {
     "title": "Constellation Sight",
-    "placeholder": "Sight v3 — أساس الإسقاط (MIG-018 §1D)",
-    "close": "إغلاق Sight"
+    "placeholder": "Sight v3 — أساس الإسقاط (MIG-018 §1E)",
+    "close": "إغلاق Sight",
+    "tooltip": {
+      "community": "المجتمع",
+      "centralityRank": "رتبة المركزية",
+      "lifecycle": "المرحلة"
+    },
+    "sidePanel": {
+      "community": "المجتمع",
+      "centralityRank": "رتبة المركزية",
+      "connections": "الروابط",
+      "incomingLinks": "روابط واردة",
+      "outgoingLinks": "روابط صادرة",
+      "openNote": "فتح في المحرر",
+      "close": "إغلاق اللوحة",
+      "structuralGaps": "اقتراحات روابط مفقودة"
+    }
   },
   "lens": {
     "title": "بصيرة كونستليشن",
