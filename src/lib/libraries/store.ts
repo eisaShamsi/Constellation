@@ -3244,6 +3244,12 @@ export interface AppSettings {
 		secondScreen: boolean;
 		constellationMap: boolean;
 		constellationSight: boolean;
+		// MIG-018 (PJ-038): v3 Sight is a separate plugin from v2's
+		// `constellationSight`. New field name avoids overloading the
+		// v2 setting (Eisa's design call 2026-05-07 — fresh field over
+		// reuse). Independent toggle: a user can enable v3 without
+		// touching v2's vestigial flag.
+		constellationSightV3: boolean;
 		emojiIconPicker: boolean;
 		inspector360: boolean;
 	};
@@ -3360,6 +3366,11 @@ export const DEFAULT_SETTINGS: AppSettings = {
 		secondScreen: true,
 		constellationMap: false,
 		constellationSight: true,
+		// MIG-018 (PJ-038): v3 default-on once SIGHT_V3_ENABLED flips
+		// to true in §1F (after Boss-test passes). Until then the
+		// SIGHT_V3_ENABLED const short-circuits the gate regardless
+		// of this user setting, mirroring v2's MIG-017 disable pattern.
+		constellationSightV3: true,
 		emojiIconPicker: true,
 		inspector360: true,
 	},

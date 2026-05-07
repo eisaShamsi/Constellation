@@ -411,6 +411,8 @@
       "constellationMapDesc": "Sunburst visualization of knowledge structure",
       "constellationSight": "Constellation Sight",
       "constellationSightDesc": "Gravity-well knowledge visualization with analytics",
+      "constellationSightV3": "Constellation Sight",
+      "constellationSightV3Desc": "Star-chart knowledge visualization — see your entire universe at a glance",
       "notesNavigator": "노트 내비게이터",
       "notesNavigatorDesc": "폴더, 태그 또는 속성으로 노트 탐색 및 필터링",
       "secondScreen": "세컨드 스크린",
@@ -1622,6 +1624,11 @@
   "dashboard": {
     "show": "대시보드 표시",
     "hide": "대시보드 숨기기"
+  },
+  "sightV3": {
+    "title": "Constellation Sight",
+    "placeholder": "Sight v3 — projection foundation (MIG-018 §1C)",
+    "close": "Close Sight"
   },
   "lens": {
     "title": "Constellation Sight",

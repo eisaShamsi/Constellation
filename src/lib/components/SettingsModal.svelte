@@ -17,7 +17,7 @@
 	import { aiSettings, updateAISettings, setProvider } from '$lib/ai/store';
 	import { validateConnection } from '$lib/ai/engine';
 	import { PROVIDER_INFO, DEFAULT_MODELS, type ProviderId } from '$lib/ai/provider';
-	import { SIGHT_V2_ENABLED } from '$lib/sight/engine';
+	import { SIGHT_V2_ENABLED, SIGHT_V3_ENABLED } from '$lib/sight/engine';
 
 	let {
 		onClose,
@@ -266,8 +266,13 @@
 			features: [
 				{ id: 'skyView', name: $t('settings.plugins.graphView') || 'Sky View', desc: $t('settings.plugins.graphViewDesc') || 'Visualize links between notes', icon: '🌐' },
 				// MIG-017 (PJ-039): v2 Sight plugin entry hidden when SIGHT_V2_ENABLED is false.
-				// v3 (PJ-038) will register its own plugin entry under a new id.
+				// v3 (PJ-038) registers a separate plugin entry under id 'constellationSightV3'.
 				...(SIGHT_V2_ENABLED ? [{ id: 'constellationSight', name: $t('settings.plugins.constellationSight') || 'Constellation Sight', desc: $t('settings.plugins.constellationSightDesc') || 'Gravity-well knowledge visualization with analytics', icon: '👁️' }] : []),
+				// MIG-018 (PJ-038): v3 Sight plugin entry. Star icon
+				// distinguishes it from v2's eye icon. Field name
+				// `constellationSightV3` is fresh per Eisa's design call
+				// 2026-05-07 — no overload of v2's setting.
+				...(SIGHT_V3_ENABLED ? [{ id: 'constellationSightV3', name: $t('settings.plugins.constellationSightV3') || 'Constellation Sight', desc: $t('settings.plugins.constellationSightV3Desc') || 'Star-chart knowledge visualization', icon: '✦' }] : []),
 				{ id: 'constellationMap', name: $t('settings.plugins.constellationMap') || 'Constellation Map', desc: $t('settings.plugins.constellationMapDesc') || 'Sunburst visualization of knowledge structure', icon: '🗺️' },
 				{ id: 'orgChart', name: $t('settings.plugins.orgChart') || 'OrgChart', desc: $t('settings.plugins.orgChartDesc') || 'Visual tree of your knowledge hierarchy', icon: '🏛️' },
 				{ id: 'backlinks', name: $t('settings.plugins.backlinks') || 'Backlinks', desc: $t('settings.plugins.backlinksDesc') || 'Show notes that link to the current note', icon: '🔗' },

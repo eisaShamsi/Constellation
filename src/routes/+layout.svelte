@@ -62,7 +62,8 @@
 	import { processTemplate, processTemplateAsync, extractTemplateBody, type TemplateCallbacks } from '$lib/templates/engine';
 	import GraphMindView from '$lib/components/GraphMindView.svelte';
 	import ConstellationSight from '$lib/components/ConstellationSight2.svelte';
-	import { SIGHT_V2_ENABLED } from '$lib/sight/engine';
+	import SightV3 from '$lib/sight/v3/SightV3.svelte';
+	import { SIGHT_V2_ENABLED, SIGHT_V3_ENABLED } from '$lib/sight/engine';
 	import { detectClusters, computeStructuralGaps, computeUniverseHealth, buildCommunityProfiles, stratumWeightedCentrality, suggestBridges, type StructuralGap, type UniverseHealth, type ClusterInfo, type CommunityProfile } from '$lib/graph/clusterEngine';
 	import OrgChart from '$lib/components/OrgChart.svelte';
 	import EmojiIconPicker from '$lib/components/EmojiIconPicker.svelte';
@@ -737,6 +738,11 @@
 	// Constellation Lens state
 	let lensActive = $state(false);
 	let lensLoading = $state(false);
+	// MIG-018 (PJ-038) — v3 Sight active flag. Independent from lensActive
+	// so a developer flipping SIGHT_V2_ENABLED + SIGHT_V3_ENABLED both true
+	// in a custom build can A/B them. In production exactly one of v2 / v3
+	// renders at a time; the SIGHT_V*_ENABLED gates enforce this.
+	let sightV3Active = $state(false);
 	let lensCentrality = $state<Map<string, number>>(new Map());
 	let lensCommunities = $state<ClusterInfo[]>([]);
 	let lensCommunityAssignments = $state<Map<string, number>>(new Map());
@@ -1031,7 +1037,7 @@
 	const isHome = $derived(page.url.pathname === '/');
 	const isDashboardVisible = $derived(isHome && !$activeTab && $libraries.length > 0 && $appSettings.showDashboard);
 	/** True when any full-page function is active — disables sidebars and split pane */
-	const fullPageActive = $derived(showSkyView || showGlobalTasks || showIndex || showExpressionForge || showSenseMakingCanvas || showConstellationMap || showOrgChart || showKnowledgeHealth || lensActive || showSearchHub || showInspector360 || isDashboardVisible);
+	const fullPageActive = $derived(showSkyView || showGlobalTasks || showIndex || showExpressionForge || showSenseMakingCanvas || showConstellationMap || showOrgChart || showKnowledgeHealth || lensActive || sightV3Active || showSearchHub || showInspector360 || isDashboardVisible);
 
 	// Shared disable/title logic for the three layout-bar buttons (left sidebar,
 	// split-view, right sidebar). Any overlay mode that takes over the editor
@@ -1686,7 +1692,7 @@
 			{ id: 'quick-capture', name: $t('commands.quickCapture'), shortcut: sc('quick-capture'), icon: '⚡', action: handleQuickCapture, category: 'File' },
 			{ id: 'new-base', name: $t('commands.newBase'), shortcut: sc('new-base'), icon: '▦', action: handleNewBase, category: 'File' },
 			{ id: 'quick-switch', name: $t('commands.quickSwitcher'), shortcut: sc('quick-switch'), icon: '🔍', action: () => { showCommandPalette = false; showQuickSwitcher = true; }, category: 'Navigation' },
-			{ id: 'search', name: $t('commands.searchLibrary'), shortcut: sc('search'), icon: '🔎', action: () => { showSearchHub = true; searchHubInitialQuery = ''; showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; showInspector360 = false; /* fullPageActive $effect handles sidebar snapshot */ }, category: 'Navigation' },
+			{ id: 'search', name: $t('commands.searchLibrary'), shortcut: sc('search'), icon: '🔎', action: () => { showSearchHub = true; searchHubInitialQuery = ''; showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; sightV3Active = false; showInspector360 = false; /* fullPageActive $effect handles sidebar snapshot */ }, category: 'Navigation' },
 			{ id: 'daily-note', name: $t('commands.dailyNote'), shortcut: sc('daily-note'), icon: '📅', action: handleOpenDailyNote, category: 'Daily Notes' },
 			{ id: 'toggle-edit', name: $t('commands.toggleEdit'), shortcut: sc('toggle-edit'), icon: '✏️', action: () => { const tab = get(focusedTab); if (tab) toggleEditMode(tab.id); }, category: 'Editor' },
 			{ id: 'star-view', name: $t('commands.skyView'), shortcut: sc('star-view'), icon: '🕸️', action: () => { showSkyView = !showSkyView; showConstellationMap = false; }, category: 'View' },
@@ -2903,6 +2909,7 @@
 			if (showQuickSwitcher) { showQuickSwitcher = false; return; }
 			if (showSkyView) { showSkyView = false; return; }
 			if (lensActive) { lensActive = false; return; }
+			if (sightV3Active) { sightV3Active = false; return; }
 			if (showOrgChart) { showOrgChart = false; return; }
 			if (sidebarMode === 'skyview') { sidebarMode = 'tree'; return; }
 			if (showGlobalTasks) { showGlobalTasks = false; return; }
@@ -3581,7 +3588,7 @@
 	function handleTagClick(tag: string) {
 		searchHubInitialQuery = `#${tag}`;
 		showSearchHub = true;
-		showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; showInspector360 = false;
+		showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; sightV3Active = false; showInspector360 = false;
 		/* fullPageActive $effect handles sidebar snapshot */
 	}
 
@@ -4295,7 +4302,7 @@
 				showSearchHub = !showSearchHub;
 				if (showSearchHub) {
 					searchHubInitialQuery = '';
-					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; showInspector360 = false;
+					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; sightV3Active = false; showInspector360 = false;
 				}
 				searchHubReturnPending = false;
 				/* fullPageActive $effect handles sidebar snapshot on entry/exit */
@@ -4368,6 +4375,22 @@
 				/* fullPageActive $effect handles sidebar snapshot */
 			}} title={$t('lens.title') || 'Constellation Sight'}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+			</button>
+			{/if}
+			<!-- MIG-018 (PJ-038): v3 Sight dock button (star-chart engine).
+			     Uses a fresh enabledFeatures field name (`constellationSightV3`) per Eisa's
+			     design call 2026-05-07 — no overloading of v2's `constellationSight`. -->
+			{#if SIGHT_V3_ENABLED && $appSettings.enabledFeatures?.constellationSightV3 !== false}
+			<button class="dock-btn" class:active={sightV3Active} onclick={() => {
+				if (!sightV3Active) {
+					sightV3Active = true;
+					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showInspector360 = false; lensActive = false; lensReturnPending = false;
+				} else {
+					sightV3Active = false;
+				}
+			}} title={$t('sightV3.title') || 'Constellation Sight'} aria-label="Constellation Sight v3">
+				<!-- Star icon (distinct from v2's eye icon): five-pointed star outline -->
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
 			</button>
 			{/if}
 			{#if $appSettings.enabledFeatures?.inspector360 !== false}
@@ -4745,7 +4768,7 @@
 				</button>
 			{/if}
 			{#if searchHubReturnPending}
-				<button class="index-return-btn" onclick={() => { showSearchHub = true; searchHubReturnPending = false; showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; showInspector360 = false; }}>
+				<button class="index-return-btn" onclick={() => { showSearchHub = true; searchHubReturnPending = false; showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; sightV3Active = false; showInspector360 = false; }}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
 					{$t('searchHub.title')}
 				</button>
@@ -4985,6 +5008,14 @@
 					onClose={() => { showOrgChart = false; orgChartReturnPending = false; }}
 				/>
 			</div>
+		{/if}
+
+		<!-- Constellation Sight v3 (MIG-018, PJ-038) — Pixi-based star-chart engine.
+		     Outer SIGHT_V3_ENABLED gate prevents the overlay from mounting when v3
+		     is disabled in committed source (default through §1A–§1E; flipped to
+		     true in §1F after Boss-test passes). -->
+		{#if sightV3Active && SIGHT_V3_ENABLED}
+			<SightV3 onClose={() => { sightV3Active = false; }} />
 		{/if}
 
 		<!-- Constellation Sight (v2) — standalone D3+Canvas component.

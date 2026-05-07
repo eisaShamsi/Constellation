@@ -411,6 +411,8 @@
       "constellationMapDesc": "Sunburst visualization of knowledge structure",
       "constellationSight": "Constellation Sight",
       "constellationSightDesc": "Gravity-well knowledge visualization with analytics",
+      "constellationSightV3": "Constellation Sight",
+      "constellationSightV3Desc": "تصور المعرفة كخريطة نجوم — رؤية كامل العالم في لمحة",
       "notesNavigator": "متصفح الملاحظات",
       "notesNavigatorDesc": "تصفح وتصفية الملاحظات حسب المجلد أو الوسم أو الخاصية",
       "secondScreen": "الشاشة الثانية",
@@ -1693,6 +1695,11 @@
   "dashboard": {
     "show": "عرض لوحة المعلومات",
     "hide": "إخفاء لوحة المعلومات"
+  },
+  "sightV3": {
+    "title": "Constellation Sight",
+    "placeholder": "Sight v3 — أساس الإسقاط (MIG-018 §1C)",
+    "close": "إغلاق Sight"
   },
   "lens": {
     "title": "بصيرة كونستليشن",

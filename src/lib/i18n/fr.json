@@ -411,6 +411,8 @@
       "constellationMapDesc": "Sunburst visualization of knowledge structure",
       "constellationSight": "Constellation Sight",
       "constellationSightDesc": "Gravity-well knowledge visualization with analytics",
+      "constellationSightV3": "Constellation Sight",
+      "constellationSightV3Desc": "Star-chart knowledge visualization — see your entire universe at a glance",
       "notesNavigator": "Navigateur de Notes",
       "notesNavigatorDesc": "Parcourir et filtrer les notes par dossier, tag ou propriété",
       "secondScreen": "Second Écran",
@@ -1622,6 +1624,11 @@
   "dashboard": {
     "show": "Afficher le tableau de bord",
     "hide": "Masquer le tableau de bord"
+  },
+  "sightV3": {
+    "title": "Constellation Sight",
+    "placeholder": "Sight v3 — projection foundation (MIG-018 §1C)",
+    "close": "Close Sight"
   },
   "lens": {
     "title": "Constellation Sight",
