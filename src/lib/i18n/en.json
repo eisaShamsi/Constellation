@@ -526,6 +526,15 @@
       "showMilkyWay": {
         "label": "Milky Way density wash",
         "hint": "Soft band of texture between notes with similar content (TF-IDF). Off = stars-only."
+      },
+      "calendarSystems": {
+        "label": "Calendar systems",
+        "hint": "Each enabled system adds a concentric ring of month markers around the dome. First in the list is innermost.",
+        "gregorian": "Gregorian",
+        "hijri": "Hijri (Islamic)",
+        "solarHijri": "Solar Hijri",
+        "hebrew": "Hebrew",
+        "placeholderNote": "* Solar Hijri and Hebrew render Gregorian month names with a placeholder marker until PJ-014 backfill ships full localization."
       }
     }
   },

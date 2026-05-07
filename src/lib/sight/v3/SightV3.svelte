@@ -31,6 +31,14 @@
     import { detectClusters, type ClusterInfo } from '$lib/graph/clusterEngine';
     import { communityTerritories, type Point2D } from '$lib/sight/community-territory';
     import {
+        monthArcSegments,
+        pickMonth,
+        gregorianMonthFromSegment,
+        type CalendarSystem,
+        type MonthSegment,
+    } from '$lib/sight/calendar-rim';
+    import { locale as i18nLocale } from '$lib/i18n';
+    import {
         SUWAIDI_PALETTE,
         communityColorInt,
         SKY_BACKGROUND,
@@ -53,6 +61,9 @@
     /** MIG-019 §2B: Milky Way density wash. Sits between sky background
      *  and territoryContainer so stars + edges still render on top. */
     let milkyWayContainer: Container | null = null;
+    /** MIG-019 §2C: Calendar rim. Outermost layer (above stars/focus) so
+     *  rim labels + arc lines never get hidden by the chart contents. */
+    let calendarRimContainer: Container | null = null;
     let territoryContainer: Container | null = null;
     let edgeContainer: Container | null = null;
     let starContainer: Container | null = null;
@@ -66,6 +77,10 @@
     let similarityEdges: SimilarityEdge[] = $state([]);
     /** Map note_path → its layout point (for fast lookup during edge draw). */
     let pathToPoint = new Map<string, LayoutPoint>();
+    /** MIG-019 §2C: per-note creation date (epoch ms) for month filter. */
+    let pathToCreatedAt = new Map<string, number>();
+    /** MIG-019 §2C: cached month segments (one per ring × 12 months). */
+    let monthSegments: MonthSegment[] = [];
     /** Map note_path → community id. */
     let pathToCommunity = new Map<string, number>();
     /** Map note_path → its on-screen position (recomputed every redraw). */
@@ -96,6 +111,12 @@
     let tooltipX = $state<number>(0);
     let tooltipY = $state<number>(0);
     let tooltipVisible = $state<boolean>(false);
+    /** MIG-019 §2C: rim-driven month filter. -1 = no filter; 0..11 =
+     *  Gregorian month index. Hijri / others land in PJ-014 follow-up. */
+    let monthFilterMonth = $state<number>(-1);
+    /** Whether the filter is from a click (persistent) or hover (preview). */
+    let monthFilterPersistent = $state<boolean>(false);
+    let hoveredMonth = $state<number>(-1);
 
     // ─── Helpers ─────────────────────────────────────────────────────
     function currentProjection(): ProjectionMode {
@@ -128,14 +149,18 @@
         const ranked = [...layoutPoints].sort((a, b) => b.centrality_norm - a.centrality_norm);
         ranked.forEach((p, i) => centralityRank.set(p.note_path, i + 1));
 
-        // Name + library lookups from skyNodes
+        // Name + library + createdAt lookups from skyNodes
         nameToPath.clear();
         pathToTitle.clear();
         pathToLibrary.clear();
+        pathToCreatedAt.clear();
         for (const n of nodes) {
             nameToPath.set(n.id, n.path);
             pathToTitle.set(n.path, n.name);
             pathToLibrary.set(n.path, n.libraryName);
+            if (typeof n.createdAt === 'number') {
+                pathToCreatedAt.set(n.path, n.createdAt);
+            }
         }
 
         // Resolved edges in (path-A, path-B) form, deduped
@@ -187,6 +212,88 @@
             const { x, y } = embedToScreen(pt.embed_x, pt.embed_y, projection, viewport);
             pathToScreen.set(pt.note_path, { x, y, r: starRadius(pt.centrality_norm) });
         }
+    }
+
+    /** MIG-019 §2C — Calendar rim (concentric rings, one per enabled
+     *  calendar system). Renders arc dividers + month labels around the
+     *  perimeter just outside the dome. Eisa's design call (§11 Q3,
+     *  2026-05-07): Gregorian default; users add others via Settings. */
+    function drawCalendarRim() {
+        if (!calendarRimContainer || !app) return;
+        calendarRimContainer.removeChildren();
+
+        const enabled = ($appSettings.sight?.calendarSystems ?? ['gregorian']) as CalendarSystem[];
+        if (enabled.length === 0) return;
+
+        const w = app.screen.width;
+        const h = app.screen.height;
+        const domeRadius = (Math.min(w, h) / 2) * 0.92;
+        const rimViewport = {
+            cx: w / 2,
+            cy: h / 2,
+            innerRadius: domeRadius + 4, // small gap between dome edge and rim
+            outerRadius: domeRadius + 4 + 22 * enabled.length,
+        };
+
+        const locale = get(i18nLocale) ?? 'en';
+        monthSegments = monthArcSegments(rimViewport, enabled, locale);
+
+        // Current Gregorian month (highlighted by a brighter ring color).
+        const currentGregorianMonth = new Date().getMonth();
+
+        // Render arc dividers
+        const arcs = new Graphics();
+        for (const seg of monthSegments) {
+            // Each segment: draw the radial divider line at the start angle
+            // (ring boundary at startAngle).
+            const x1 = rimViewport.cx + seg.rIn * Math.cos(seg.startAngle);
+            const y1 = rimViewport.cy + seg.rIn * Math.sin(seg.startAngle);
+            const x2 = rimViewport.cx + seg.rOut * Math.cos(seg.startAngle);
+            const y2 = rimViewport.cy + seg.rOut * Math.sin(seg.startAngle);
+            arcs.moveTo(x1, y1);
+            arcs.lineTo(x2, y2);
+        }
+        // Outer + inner ring boundaries
+        for (let r = 0; r <= enabled.length; r++) {
+            const radius = rimViewport.innerRadius + r * 22;
+            arcs.circle(rimViewport.cx, rimViewport.cy, radius);
+        }
+        arcs.stroke({ color: 0xd4af37, alpha: 0.35, width: 1 });
+        calendarRimContainer.addChild(arcs);
+
+        // Render month labels
+        for (const seg of monthSegments) {
+            const isCurrent = seg.calendar === 'gregorian' && seg.monthIndex === currentGregorianMonth;
+            const isHovered = seg.calendar === 'gregorian' && seg.monthIndex === hoveredMonth;
+            const isFiltered = seg.calendar === 'gregorian'
+                && monthFilterMonth === seg.monthIndex
+                && monthFilterPersistent;
+            const alpha = isFiltered ? 1.0 : isHovered ? 0.95 : isCurrent ? 0.9 : 0.65;
+            const fontSize = isCurrent || isFiltered ? 11 : 10;
+            const label = new Text({
+                text: seg.label,
+                style: new TextStyle({
+                    fill: isCurrent || isFiltered ? 0xd4af37 : 0xf5e6c8,
+                    fontSize,
+                    fontFamily: 'system-ui, -apple-system, sans-serif',
+                    align: 'center',
+                }),
+                anchor: 0.5,
+            });
+            label.x = seg.labelX;
+            label.y = seg.labelY;
+            label.alpha = alpha;
+            calendarRimContainer.addChild(label);
+        }
+    }
+
+    /** Month-filter check: returns true if this note matches the current
+     *  filter (or there is no filter). Used by drawStars to dim non-matching. */
+    function passesMonthFilter(notePath: string): boolean {
+        if (monthFilterMonth < 0) return true;
+        const created = pathToCreatedAt.get(notePath);
+        if (created === undefined) return false;
+        return new Date(created).getMonth() === monthFilterMonth;
     }
 
     /** MIG-019 §2B — Milky Way density wash (PJ-035).
@@ -270,18 +377,22 @@
         edgeContainer.addChild(lines);
     }
 
-    /** Draw stars on the base layer. */
+    /** Draw stars on the base layer. MIG-019 §2C: respect month filter. */
     function drawStars() {
         if (!starContainer) return;
         starContainer.removeChildren();
         for (const pt of layoutPoints) {
             const screen = pathToScreen.get(pt.note_path);
             if (!screen) continue;
+            const passes = passesMonthFilter(pt.note_path);
             const star = new Graphics();
             star.circle(0, 0, screen.r);
+            // Dim non-matching stars (alpha 0.15) when filter is active.
+            const baseAlpha = 0.65 + pt.centrality_norm * 0.35;
+            const alpha = passes ? baseAlpha : 0.15;
             star.fill({
                 color: 0xf5e6c8,
-                alpha: 0.65 + pt.centrality_norm * 0.35,
+                alpha,
             });
             star.x = screen.x;
             star.y = screen.y;
@@ -368,6 +479,7 @@
         drawEdges();
         drawStars();
         drawFocusOverlay();
+        drawCalendarRim();
     }
 
     function showPlaceholder(message: string, isError: boolean = false) {
@@ -398,10 +510,55 @@
     }
 
     // ─── Pointer handlers ────────────────────────────────────────────
+    /** Get rim viewport for hit-testing. Mirrors drawCalendarRim's geometry. */
+    function getRimViewport() {
+        if (!app) return null;
+        const w = app.screen.width;
+        const h = app.screen.height;
+        const enabled = ($appSettings.sight?.calendarSystems ?? ['gregorian']) as CalendarSystem[];
+        const domeRadius = (Math.min(w, h) / 2) * 0.92;
+        return {
+            cx: w / 2,
+            cy: h / 2,
+            innerRadius: domeRadius + 4,
+            outerRadius: domeRadius + 4 + 22 * enabled.length,
+            enabled,
+        };
+    }
+
     function handlePointerMove(ev: PointerEvent) {
         const rect = canvasContainer.getBoundingClientRect();
         const px = ev.clientX - rect.left;
         const py = ev.clientY - rect.top;
+
+        // MIG-019 §2C: rim hit-test first. If hovering a calendar month,
+        // preview-filter the chart by that month (but only if the filter
+        // isn't already pinned by a click).
+        const rimVp = getRimViewport();
+        if (rimVp) {
+            const monthHit = pickMonth(rimVp, px, py, rimVp.enabled);
+            if (monthHit) {
+                const greg = gregorianMonthFromSegment(monthHit);
+                if (hoveredMonth !== (greg ?? -1)) {
+                    hoveredMonth = greg ?? -1;
+                    if (!monthFilterPersistent) {
+                        monthFilterMonth = greg ?? -1;
+                        drawStars();
+                    }
+                    drawCalendarRim();
+                }
+                tooltipVisible = false;
+                return;
+            } else if (hoveredMonth !== -1) {
+                hoveredMonth = -1;
+                if (!monthFilterPersistent) {
+                    monthFilterMonth = -1;
+                    drawStars();
+                }
+                drawCalendarRim();
+            }
+        }
+
         const nearest = pickStar(px, py);
         if (nearest !== hoveredPath) {
             hoveredPath = nearest;
@@ -426,6 +583,14 @@
             hoveredPath = null;
             drawFocusOverlay();
         }
+        if (hoveredMonth !== -1) {
+            hoveredMonth = -1;
+            if (!monthFilterPersistent) {
+                monthFilterMonth = -1;
+                drawStars();
+            }
+            drawCalendarRim();
+        }
         tooltipVisible = false;
     }
 
@@ -433,15 +598,44 @@
         const rect = canvasContainer.getBoundingClientRect();
         const px = ev.clientX - rect.left;
         const py = ev.clientY - rect.top;
+
+        // MIG-019 §2C: rim click toggles persistent month filter.
+        const rimVp = getRimViewport();
+        if (rimVp) {
+            const monthHit = pickMonth(rimVp, px, py, rimVp.enabled);
+            if (monthHit) {
+                const greg = gregorianMonthFromSegment(monthHit);
+                if (greg !== null) {
+                    if (monthFilterPersistent && monthFilterMonth === greg) {
+                        // Click same month again → clear persistent filter
+                        monthFilterPersistent = false;
+                        monthFilterMonth = -1;
+                    } else {
+                        monthFilterPersistent = true;
+                        monthFilterMonth = greg;
+                    }
+                    drawStars();
+                    drawCalendarRim();
+                    return;
+                }
+            }
+        }
+
         const nearest = pickStar(px, py);
         if (nearest) {
             selectedPath = nearest;
             drawFocusOverlay();
         } else {
-            // Click on background clears selection
+            // Click on background clears selection AND any persistent month filter
             if (selectedPath !== null) {
                 selectedPath = null;
                 drawFocusOverlay();
+            }
+            if (monthFilterPersistent) {
+                monthFilterPersistent = false;
+                monthFilterMonth = -1;
+                drawStars();
+                drawCalendarRim();
             }
         }
     }
@@ -512,13 +706,17 @@
         edgeContainer = new Container();
         starContainer = new Container();
         focusOverlay = new Container();
+        // MIG-019 §2C: calendar rim sits ABOVE everything else so labels
+        // never hide behind chart contents.
+        calendarRimContainer = new Container();
         // Order matters: Milky Way at the back, then territories, edges,
-        // stars, focus overlay on top.
+        // stars, focus overlay, calendar rim on top.
         app.stage.addChild(milkyWayContainer);
         app.stage.addChild(territoryContainer);
         app.stage.addChild(edgeContainer);
         app.stage.addChild(starContainer);
         app.stage.addChild(focusOverlay);
+        app.stage.addChild(calendarRimContainer);
 
         showPlaceholder($t('sightV3.placeholder') || 'Sight v3 — projection foundation (MIG-018 §1E)');
 
@@ -583,6 +781,15 @@
         }
     });
 
+    // MIG-019 §2C: redraw calendar rim when the user enables/disables
+    // calendar systems in Settings → Sight → Calendar systems.
+    $effect(() => {
+        const _calendars = $appSettings.sight?.calendarSystems;
+        if (!isLoading && layoutPoints.length > 0) {
+            drawCalendarRim();
+        }
+    });
+
     onDestroy(() => {
         if (resizeObserver) {
             resizeObserver.disconnect();
@@ -597,6 +804,7 @@
         edgeContainer = null;
         starContainer = null;
         focusOverlay = null;
+        calendarRimContainer = null;
         placeholderText = null;
     });
 

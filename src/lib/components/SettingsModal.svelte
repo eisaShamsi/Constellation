@@ -1630,6 +1630,34 @@
 						</label>
 					</div>
 
+					<!-- MIG-019 §2C: Calendar systems multi-toggle -->
+					<div class="setting-section-heading">{$t('settings.sight.calendarSystems.label') || 'Calendar systems'}</div>
+					<p class="setting-row" style="font-size: 12px; color: var(--text-muted);">
+						{$t('settings.sight.calendarSystems.hint') || 'Each enabled system adds a concentric ring of month markers around the dome. First in the list is innermost.'}
+					</p>
+					{#each [['gregorian', $t('settings.sight.calendarSystems.gregorian') || 'Gregorian'], ['hijri', $t('settings.sight.calendarSystems.hijri') || 'Hijri (Islamic)'], ['solar-hijri', ($t('settings.sight.calendarSystems.solarHijri') || 'Solar Hijri') + ' *'], ['hebrew', ($t('settings.sight.calendarSystems.hebrew') || 'Hebrew') + ' *']] as [sysId, sysLabel]}
+						<div class="setting-row">
+							<label class="setting-label">
+								<input
+									type="checkbox"
+									checked={($appSettings.sight?.calendarSystems ?? ['gregorian']).includes(sysId as any)}
+									onchange={(e) => {
+										const current = ($appSettings.sight?.calendarSystems ?? ['gregorian']).slice();
+										const checked = (e.target as HTMLInputElement).checked;
+										const idx = current.indexOf(sysId as any);
+										if (checked && idx === -1) current.push(sysId as any);
+										if (!checked && idx !== -1) current.splice(idx, 1);
+										updateSettings({ sight: { ...$appSettings.sight, calendarSystems: current as Array<'gregorian'|'hijri'|'solar-hijri'|'hebrew'> } });
+									}}
+								/>
+								<span>{sysLabel}</span>
+							</label>
+						</div>
+					{/each}
+					<p class="setting-row" style="font-size: 11px; color: var(--text-muted); font-style: italic;">
+						{$t('settings.sight.calendarSystems.placeholderNote') || '* Solar Hijri and Hebrew render Gregorian month names with a placeholder marker until PJ-014 backfill ships full localization.'}
+					</p>
+
 				<!-- ═══ INTELLIGENCE (AI) ═══ -->
 				{:else if activeSection === 'intelligence'}
 					<p class="section-intro">{$t('settings.intelligence.intro')}</p>

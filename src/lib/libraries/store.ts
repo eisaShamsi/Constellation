@@ -3274,6 +3274,12 @@ export interface AppSettings {
 		 *  the InfraNodus mechanic the v3 paper §13 describes as core
 		 *  to the visual grammar. */
 		showMilkyWay?: boolean;
+		/** MIG-019 §2C: enabled calendar systems for the rim. Each
+		 *  system renders as its own concentric ring; first in the list
+		 *  is innermost. Eisa-approved §11 Q3 (2026-05-07): Gregorian
+		 *  default; users add Hijri / Solar Hijri / Hebrew via Settings.
+		 *  Solar-Hijri / Hebrew are placeholders for PJ-014 backfill. */
+		calendarSystems?: Array<'gregorian' | 'hijri' | 'solar-hijri' | 'hebrew'>;
 	};
 	/** AI/LLM integration preferences */
 	ai?: {
@@ -3396,15 +3402,16 @@ export const DEFAULT_SETTINGS: AppSettings = {
 		emojiIconPicker: true,
 		inspector360: true,
 	},
-	// MIG-018 §1D + MIG-019 §2B: Sight v3 settings.
+	// MIG-018 §1D + MIG-019 §2B/§2C: Sight v3 settings.
 	// projection: Lambert (equal-area; community sizes visually
 	//   proportional to node count) by default.
 	// showMilkyWay: TRUE by default — the band IS the InfraNodus mechanic
-	//   that distinguishes v3's visual grammar (Eisa's design call
-	//   2026-05-07, §11 Q3 follow-up).
+	//   that distinguishes v3's visual grammar.
+	// calendarSystems: ['gregorian'] default per Eisa's §11 Q3 design call.
 	sight: {
 		projection: 'lambert',
 		showMilkyWay: true,
+		calendarSystems: ['gregorian'],
 	},
 	customShortcuts: {},
 	linkPills: {
