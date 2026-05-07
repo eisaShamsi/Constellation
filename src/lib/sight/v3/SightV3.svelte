@@ -862,21 +862,20 @@
         try {
             const stats = get(libraryStats);
             const libraryPaths: Array<[string, string]> = stats.map((s) => [s.path, s.name]);
+            const layoutT0 = performance.now();
             layoutPoints = await fetchLayout(libraryPaths, 50);
             console.log(
-                `[SightV3] fetched ${layoutPoints.length} layout points across ${libraryPaths.length} libraries`,
+                `[SightV3] fetched ${layoutPoints.length} layout points across ${libraryPaths.length} libraries in ${Math.round(performance.now() - layoutT0)}ms`,
             );
 
-            // MIG-019 §2B: fetch similarity edges in parallel after layout.
-            // Failures fall through to an empty Milky Way (graceful degradation).
-            try {
-                similarityEdges = await fetchSimilarity(libraryPaths, 50, 0.3);
-                console.log(`[SightV3 §2B] fetched ${similarityEdges.length} similarity edges`);
-            } catch (simErr) {
-                console.error('[SightV3 §2B] similarity fetch failed (Milky Way empty):', simErr);
-                similarityEdges = [];
-            }
-
+            // MIG-019 §2A.1 hot-fix (Boss-test OOM 2026-05-07):
+            // similarity fetch was BLOCKING the chart render — on 7,600-
+            // note universes the IPC payload was blowing JS heap before
+            // hidePlaceholder() could fire. Now we render the layout
+            // first (stars + territories + connector lines + rim) and
+            // fetch similarity in the BACKGROUND. Milky Way appears when
+            // the IPC returns; if it OOMs or fails, the rest of v3 still
+            // works — graceful degradation.
             if (layoutPoints.length === 0) {
                 showPlaceholder('No notes in this universe yet.');
             } else {
@@ -884,6 +883,21 @@
                 hidePlaceholder();
                 fullRedraw();
             }
+
+            // Background similarity fetch (non-blocking)
+            (async () => {
+                const simT0 = performance.now();
+                try {
+                    const edges = await fetchSimilarity(libraryPaths, 50, 0.3);
+                    console.log(`[SightV3 §2B] fetched ${edges.length} similarity edges in ${Math.round(performance.now() - simT0)}ms`);
+                    if (!app) return; // component unmounted while we waited
+                    similarityEdges = edges;
+                    drawMilkyWay();
+                } catch (simErr) {
+                    console.error('[SightV3 §2B] similarity fetch failed (Milky Way empty; chart still functional):', simErr);
+                    similarityEdges = [];
+                }
+            })();
         } catch (e) {
             errorMessage = String(e);
             console.error('[SightV3 §1E] layout fetch failed:', e);

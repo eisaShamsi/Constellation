@@ -686,10 +686,19 @@ pub fn constellation_sight_v3_similarity_field(
         return Ok(cached);
     }
 
-    // ── Read note_meta paths + bodies for the queried library set ──
+    // ── Stream-read paths + bodies, tokenizing inline ────────────────
+    // MIG-019 §2A.1 (Boss-test OOM hot-fix 2026-05-07): on 7,600-note
+    // universes the prior "read all bodies then tokenize" pattern peaked
+    // memory at the corpus footprint × 2 (raw bodies + token sets). We
+    // now stream — read one row, clip, tokenize, drop the body — so peak
+    // memory is just the token sets. Body cap also tightened to 64KB
+    // for similarity (separate from CTSE's 1MB cap because TF-IDF
+    // doesn't benefit from longer bodies past the lede).
+    const SIMILARITY_BODY_CAP: usize = 64 * 1024;
     let lib_set: HashSet<String> = library_paths.iter().map(|(p, _)| p.clone()).collect();
     let mut note_paths: Vec<String> = Vec::new();
-    let mut note_bodies: Vec<String> = Vec::new();
+    let mut token_sets: Vec<HashMap<String, u32>> = Vec::new();
+    let stopwords = stopwords_cached();
     {
         let mut stmt = conn
             .prepare("SELECT path, body FROM note_meta")
@@ -707,29 +716,24 @@ pub fn constellation_sight_v3_similarity_field(
                         || path.as_bytes().get(lib_path.len()) == Some(&b'/')
                         || path.as_bytes().get(lib_path.len()) == Some(&b'\\'))
             });
-            if in_set {
-                note_paths.push(path);
-                note_bodies.push(body);
+            if !in_set {
+                continue;
             }
+            // Tokenize inline; body is dropped at end of loop iteration.
+            let clipped = clip_utf8(&body, SIMILARITY_BODY_CAP);
+            let tokens = crate::fts5_tokenizer::tokenize_to_vec(clipped, stopwords);
+            let mut counts: HashMap<String, u32> = HashMap::with_capacity(tokens.len().min(256));
+            for t in tokens {
+                *counts.entry(t).or_insert(0) += 1;
+            }
+            note_paths.push(path);
+            token_sets.push(counts);
         }
     }
 
     let n = note_paths.len();
     if n == 0 {
         return Ok(Vec::new());
-    }
-
-    // ── Tokenize each body via Constellation's FTS5 tokenizer ────────
-    let stopwords = stopwords_cached();
-    let mut token_sets: Vec<HashMap<String, u32>> = Vec::with_capacity(n);
-    for body in &note_bodies {
-        let clipped = clip_utf8(body, BODY_CAP_BYTES);
-        let tokens = crate::fts5_tokenizer::tokenize_to_vec(clipped, stopwords);
-        let mut counts: HashMap<String, u32> = HashMap::with_capacity(tokens.len().min(256));
-        for t in tokens {
-            *counts.entry(t).or_insert(0) += 1;
-        }
-        token_sets.push(counts);
     }
 
     // ── Build IDF + sparse TF×IDF vectors via extracted helpers ─────
@@ -800,6 +804,16 @@ pub fn constellation_sight_v3_similarity_field(
             .partial_cmp(&a.similarity)
             .unwrap_or(std::cmp::Ordering::Equal)
     });
+
+    // MIG-019 §2A.1 (Boss-test OOM hot-fix 2026-05-07): cap returned
+    // edges at TOP_K_EDGES_RETURN to prevent the IPC payload from
+    // blowing the WebView2 JS heap on large universes. Rendering caps
+    // at MILKY_WAY_TOP_N=2000 anyway; we leave headroom (5000) so future
+    // search/filter logic in MIG-020 has more signal to work with.
+    const TOP_K_EDGES_RETURN: usize = 5000;
+    if edges.len() > TOP_K_EDGES_RETURN {
+        edges.truncate(TOP_K_EDGES_RETURN);
+    }
 
     persist_similarity(conn, &lib_hash, current_version, &edges)?;
 
@@ -877,6 +891,11 @@ fn cosine_sparse(a: &[(String, f64)], b: &[(String, f64)]) -> f64 {
         .sum()
 }
 
+/// Module-level body-cap constant retained for future callers that want
+/// the CTSE convention. The MIG-019 similarity IPC uses a tighter local
+/// cap (`SIMILARITY_BODY_CAP = 64KB`) inline because TF-IDF doesn't
+/// benefit from the lede-and-then-some that 1MB allows.
+#[allow(dead_code)]
 const BODY_CAP_BYTES: usize = 1024 * 1024;
 
 fn clip_utf8(s: &str, cap: usize) -> &str {
