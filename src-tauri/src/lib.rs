@@ -333,7 +333,7 @@ pub fn run() {
             sight::constellation_sight_tag_edges,
             sight_layout::constellation_sight_v3_layout,
             sight_layout::constellation_sight_v3_invalidate_layout,
-            sight_layout::constellation_sight_v3_similarity_field,
+            sight_layout::constellation_sight_v3_density_field,
             boot_bundle::constellation_boot_bundle,
             cache::cache_boot_snapshot,
             cache::cache_boot_snapshot_core,

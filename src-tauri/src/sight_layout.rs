@@ -287,6 +287,40 @@ fn read_graph(
     Ok((paths, edge_set.into_iter().collect()))
 }
 
+/// Reads the cached layout for `(lib_hash, version)` from
+/// `sight_v3_layout`. Returns `None` if no rows exist.
+///
+/// Added in MIG-019 §2A+§2B redesign: the density compute needs the
+/// embedding coords (from MDS) to project pairs into grid space, so
+/// it reads the layout cache rather than recomputing MDS.
+fn read_cached_layout(
+    conn: &Connection,
+    lib_hash: &str,
+    version: i64,
+) -> Result<Option<Vec<LayoutPoint>>, String> {
+    let mut stmt = conn
+        .prepare(
+            "SELECT note_path, embed_x, embed_y, community_id, centrality_norm
+             FROM sight_v3_layout
+             WHERE library_set_hash = ?1 AND graph_version = ?2",
+        )
+        .map_err(|e| format!("prepare layout read: {}", e))?;
+    let rows: Vec<LayoutPoint> = stmt
+        .query_map(rusqlite::params![lib_hash, version], |row| {
+            Ok(LayoutPoint {
+                note_path: row.get(0)?,
+                embed_x: row.get::<_, f64>(1)? as f32,
+                embed_y: row.get::<_, f64>(2)? as f32,
+                community_id: row.get(3)?,
+                centrality_norm: row.get::<_, f64>(4)? as f32,
+            })
+        })
+        .map_err(|e| format!("query layout: {}", e))?
+        .filter_map(|r| r.ok())
+        .collect();
+    if rows.is_empty() { Ok(None) } else { Ok(Some(rows)) }
+}
+
 /// Persists the computed layout to `sight_v3_layout`. Wipes any stale
 /// rows for the same `(lib_hash, version)` first (idempotent re-run).
 fn persist_layout(
@@ -633,45 +667,67 @@ fn normalize_to_unit_disk(coords: Vec<(f64, f64)>) -> Vec<(f64, f64)> {
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// MIG-019 §2A — TF-IDF content-similarity compute (PJ-035 → Milky Way)
+// MIG-019 §2A+§2B redesign — TF-IDF density grid (PJ-035 → Milky Way)
 // ─────────────────────────────────────────────────────────────────────
+//
+// Architecture (post Eisa's 2026-05-07 "Don't patch it. Solve it.")
+//
+// The Concept Paper v1.1 §5.1 specifies the Milky Way as a "density
+// field, not a set of edges." The v2 shipping shape (edge list +
+// BlurFilter) accumulated O(candidate_pairs) heap allocating two
+// cloned path strings per edge — OOM at ~7,600 notes / ~656k links.
+//
+// The v3 shape: every candidate pair above the similarity threshold
+// rasterizes a line in a fixed-size 2D density grid (256×256 f32),
+// accumulating the similarity weight per cell. The grid is then
+// Gaussian-blurred to smooth the discrete lines into a continuous
+// band texture. The grid (≈ 256 KB) is the IPC payload — universe
+// size becomes irrelevant.
+//
+// Memory profile (worst case): grid 256 KB + sparse vectors ~10 MB +
+// inverted index ~10 MB + per-iteration candidates HashSet ~24 KB.
+// Bounded by output, not input.
 
-/// One row in `sight_v3_similarity_edges`. Returned by
-/// `constellation_sight_v3_similarity_field` to the frontend; one entry
-/// per (note_a, note_b) pair whose TF-IDF cosine similarity exceeds the
-/// threshold. Edge ordering is canonicalized: `note_path_a < note_path_b`.
+const DENSITY_GRID_SIZE: usize = 256;
+const BLUR_PASSES: usize = 3;
+
+/// Returned by `constellation_sight_v3_density_field`. The frontend
+/// builds a Pixi Texture from `values` and renders it as a single
+/// Sprite filling the dome — one draw call regardless of universe size.
 ///
-/// `similarity` ∈ [0, 1] — normalized cosine of the sparse TF×IDF vectors.
-/// `1.0` = identical bodies; `0.0` = no shared meaningful terms.
+/// `values` length == `width * height`. Row-major; `values[y * width + x]`.
+/// Each cell holds the accumulated, blurred similarity weight for the
+/// pairs whose connecting line passed through that cell.
+///
+/// `max_value` is the maximum across the grid — frontend uses it to
+/// normalize alpha into [0, 1] for rendering.
 #[derive(Debug, Clone, Serialize)]
-pub struct SimilarityEdge {
-    pub note_path_a: String,
-    pub note_path_b: String,
-    pub similarity: f32,
+pub struct DensityField {
+    pub width: u32,
+    pub height: u32,
+    pub max_value: f32,
+    pub values: Vec<f32>,
 }
 
-/// `constellation_sight_v3_similarity_field` — the v3 Milky Way IPC.
+/// `constellation_sight_v3_density_field` — the v3 Milky Way IPC.
 ///
-/// Frontend calls this on Sight-v3 toggle (after `fetchLayout`).
-/// Behavior in §2A: cache-hit returns persisted rows; cache-miss runs
-/// cold compute and persists. Same caching pattern as
-/// `constellation_sight_v3_layout`.
+/// Frontend calls this after `fetchLayout` (asynchronously, so the
+/// chart doesn't block on the density compute). Cache-hit reads the
+/// persisted BLOB; cache-miss runs cold compute and persists.
 ///
-/// `library_paths` — list of `(library_path, library_name)` tuples
-/// matching the layout IPC's signature.
-/// `k_top_terms` — number of top TF×IDF terms to keep per note for
-/// the inverted-index candidate filter. Default 50 (frontend passes
-/// this). Larger k = more candidate pairs considered = more accurate
-/// but more compute.
+/// `library_paths` — `(library_path, library_name)` tuples matching
+///   the layout IPC's signature.
+/// `k_top_terms` — top-k TF×IDF terms per note for the inverted-index
+///   candidate filter. Default 50.
 /// `similarity_threshold` — cosine similarity floor. Pairs below this
-/// are dropped. Default 0.3 (per Concept Paper v1.1 §3.3).
+///   are dropped. Default 0.3 per Concept Paper v1.1 §3.3.
 #[tauri::command]
-pub fn constellation_sight_v3_similarity_field(
+pub fn constellation_sight_v3_density_field(
     app: tauri::AppHandle,
     library_paths: Vec<(String, String)>,
     k_top_terms: usize,
     similarity_threshold: f32,
-) -> Result<Vec<SimilarityEdge>, String> {
+) -> Result<DensityField, String> {
     let state = app.state::<SearchState>();
     let db = state.db.lock().map_err(|e| e.to_string())?;
     let conn = db.as_ref().ok_or("Search DB not initialized")?;
@@ -679,35 +735,44 @@ pub fn constellation_sight_v3_similarity_field(
     let lib_hash = compute_library_set_hash(&library_paths);
     let current_version = get_or_init_graph_version(conn, &lib_hash)?;
 
-    // Cache-read-first: §2A ships cache-aware semantics for similarity
-    // (different from §1B's always-recompute) because TF-IDF compute is
-    // heavier and the cache is more valuable here.
-    if let Some(cached) = read_cached_similarity(conn, &lib_hash, current_version)? {
+    // Cache-read-first: BLOB lookup is sub-millisecond.
+    if let Some(cached) = read_cached_density(conn, &lib_hash, current_version)? {
         return Ok(cached);
     }
 
-    // ── Stream-read paths + bodies, tokenizing inline ────────────────
-    // MIG-019 §2A.1 (Boss-test OOM hot-fix 2026-05-07): on 7,600-note
-    // universes the prior "read all bodies then tokenize" pattern peaked
-    // memory at the corpus footprint × 2 (raw bodies + token sets). We
-    // now stream — read one row, clip, tokenize, drop the body — so peak
-    // memory is just the token sets. Body cap also tightened to 64KB
-    // for similarity (separate from CTSE's 1MB cap because TF-IDF
-    // doesn't benefit from longer bodies past the lede).
+    // ── Read layout positions from sight_v3_layout cache ─────────────
+    // The frontend calls this IPC AFTER fetchLayout (which populates
+    // sight_v3_layout via §1B's compute). We read those embedding
+    // coords here to project pairs into grid space. If the layout cache
+    // is empty (race or upstream error), return an empty grid.
+    let layout = match read_cached_layout(conn, &lib_hash, current_version)? {
+        Some(rows) if !rows.is_empty() => rows,
+        _ => return Ok(empty_density_field()),
+    };
+    let mut path_to_coords: HashMap<String, (f32, f32)> = HashMap::with_capacity(layout.len());
+    for pt in &layout {
+        path_to_coords.insert(pt.note_path.clone(), (pt.embed_x, pt.embed_y));
+    }
+
+    // ── Stream-read paths + bodies, tokenize inline ──────────────────
+    // The body is dropped at end of each iteration; only the per-note
+    // token counts (HashMap) survive. Memory peaks at ~10 MB on
+    // Boss-scale graphs (7,600 notes × ~100 distinct terms × ~30 bytes).
     const SIMILARITY_BODY_CAP: usize = 64 * 1024;
     let lib_set: HashSet<String> = library_paths.iter().map(|(p, _)| p.clone()).collect();
     let mut note_paths: Vec<String> = Vec::new();
+    let mut note_coords: Vec<(f32, f32)> = Vec::new();
     let mut token_sets: Vec<HashMap<String, u32>> = Vec::new();
     let stopwords = stopwords_cached();
     {
         let mut stmt = conn
             .prepare("SELECT path, body FROM note_meta")
-            .map_err(|e| format!("prepare note_meta similarity read: {}", e))?;
+            .map_err(|e| format!("prepare note_meta density read: {}", e))?;
         let rows = stmt
             .query_map([], |r| {
                 Ok((r.get::<_, String>(0)?, r.get::<_, Option<String>>(1)?.unwrap_or_default()))
             })
-            .map_err(|e| format!("query note_meta similarity read: {}", e))?;
+            .map_err(|e| format!("query note_meta density read: {}", e))?;
         for row in rows {
             let (path, body) = row.map_err(|e| format!("read row: {}", e))?;
             let in_set = lib_set.iter().any(|lib_path| {
@@ -719,7 +784,13 @@ pub fn constellation_sight_v3_similarity_field(
             if !in_set {
                 continue;
             }
-            // Tokenize inline; body is dropped at end of loop iteration.
+            // Skip notes without a layout entry (orphans / new since last
+            // MDS compute) — they can't contribute to the density field
+            // until the next layout recompute.
+            let coords = match path_to_coords.get(&path) {
+                Some(c) => *c,
+                None => continue,
+            };
             let clipped = clip_utf8(&body, SIMILARITY_BODY_CAP);
             let tokens = crate::fts5_tokenizer::tokenize_to_vec(clipped, stopwords);
             let mut counts: HashMap<String, u32> = HashMap::with_capacity(tokens.len().min(256));
@@ -727,21 +798,24 @@ pub fn constellation_sight_v3_similarity_field(
                 *counts.entry(t).or_insert(0) += 1;
             }
             note_paths.push(path);
+            note_coords.push(coords);
             token_sets.push(counts);
         }
     }
 
     let n = note_paths.len();
     if n == 0 {
-        return Ok(Vec::new());
+        return Ok(empty_density_field());
     }
 
-    // ── Build IDF + sparse TF×IDF vectors via extracted helpers ─────
+    // ── Build IDF + sparse TF×IDF vectors ────────────────────────────
     let idf = compute_idf(&token_sets);
     let mut sparse_vectors: Vec<Vec<(String, f64)>> = Vec::with_capacity(n);
     for counts in &token_sets {
         sparse_vectors.push(build_sparse_tfidf(counts, &idf, k_top_terms));
     }
+    drop(token_sets); // free per-note token-count maps now that sparse vectors are built
+    drop(idf);
 
     // ── Build inverted index: term → Vec<note_idx> for candidate lookup
     let mut inverted: HashMap<String, Vec<usize>> = HashMap::new();
@@ -751,17 +825,23 @@ pub fn constellation_sight_v3_similarity_field(
         }
     }
 
-    // ── Compute similarities for candidate pairs ────────────────────
-    // For each note i, find candidates via inverted lookup of its top
-    // terms. Each candidate j (with i < j) is scored once.
+    // ── Initialize density grid ──────────────────────────────────────
+    let gw = DENSITY_GRID_SIZE;
+    let gh = DENSITY_GRID_SIZE;
+    let mut grid = vec![0.0_f32; gw * gh];
+
+    // ── Compute similarities, rasterize into grid ────────────────────
+    // For each candidate pair above the threshold: rasterize a line in
+    // grid space (DDA), accumulating similarity weight per cell. The
+    // pair is then dropped — no edge list, no path-string cloning.
+    // Memory for the accumulator is fixed at gw*gh*4 bytes regardless
+    // of universe size.
     let threshold = similarity_threshold as f64;
-    let mut edges: Vec<SimilarityEdge> = Vec::new();
     for i in 0..n {
         let vec_i = &sparse_vectors[i];
         if vec_i.is_empty() {
             continue;
         }
-        // Build a candidate set via inverted index lookup
         let mut candidates: HashSet<usize> = HashSet::new();
         for (term, _) in vec_i {
             if let Some(notes) = inverted.get(term) {
@@ -775,7 +855,7 @@ pub fn constellation_sight_v3_similarity_field(
         if candidates.is_empty() {
             continue;
         }
-
+        let (xi_e, yi_e) = note_coords[i];
         for j in candidates {
             let vec_j = &sparse_vectors[j];
             if vec_j.is_empty() {
@@ -783,41 +863,95 @@ pub fn constellation_sight_v3_similarity_field(
             }
             let dot = cosine_sparse(vec_i, vec_j);
             if dot >= threshold {
-                let (a, b) = if note_paths[i] < note_paths[j] {
-                    (note_paths[i].clone(), note_paths[j].clone())
-                } else {
-                    (note_paths[j].clone(), note_paths[i].clone())
-                };
-                edges.push(SimilarityEdge {
-                    note_path_a: a,
-                    note_path_b: b,
-                    similarity: dot as f32,
-                });
+                let (xj_e, yj_e) = note_coords[j];
+                let (gxi, gyi) = embed_to_grid(xi_e, yi_e, gw, gh);
+                let (gxj, gyj) = embed_to_grid(xj_e, yj_e, gw, gh);
+                rasterize_line(&mut grid, gw, gh, gxi, gyi, gxj, gyj, dot as f32);
             }
         }
     }
 
-    // Sort by similarity descending so the frontend can cap at top-N
-    // for the Milky Way render without losing the strongest signals.
-    edges.sort_by(|a, b| {
-        b.similarity
-            .partial_cmp(&a.similarity)
-            .unwrap_or(std::cmp::Ordering::Equal)
-    });
-
-    // MIG-019 §2A.1 (Boss-test OOM hot-fix 2026-05-07): cap returned
-    // edges at TOP_K_EDGES_RETURN to prevent the IPC payload from
-    // blowing the WebView2 JS heap on large universes. Rendering caps
-    // at MILKY_WAY_TOP_N=2000 anyway; we leave headroom (5000) so future
-    // search/filter logic in MIG-020 has more signal to work with.
-    const TOP_K_EDGES_RETURN: usize = 5000;
-    if edges.len() > TOP_K_EDGES_RETURN {
-        edges.truncate(TOP_K_EDGES_RETURN);
+    // ── Smooth: separable Gaussian blur, BLUR_PASSES iterations ──────
+    for _ in 0..BLUR_PASSES {
+        gaussian_blur_separable(&mut grid, gw, gh);
     }
 
-    persist_similarity(conn, &lib_hash, current_version, &edges)?;
+    // ── Find max value for frontend normalization ────────────────────
+    let max_value = grid.iter().cloned().fold(0.0_f32, f32::max);
 
-    Ok(edges)
+    let field = DensityField {
+        width: gw as u32,
+        height: gh as u32,
+        max_value,
+        values: grid,
+    };
+
+    persist_density(conn, &lib_hash, current_version, &field)?;
+    Ok(field)
+}
+
+/// Empty density field returned when there's no data to compute over.
+fn empty_density_field() -> DensityField {
+    DensityField {
+        width: DENSITY_GRID_SIZE as u32,
+        height: DENSITY_GRID_SIZE as u32,
+        max_value: 0.0,
+        values: vec![0.0_f32; DENSITY_GRID_SIZE * DENSITY_GRID_SIZE],
+    }
+}
+
+/// Map an embedding-space point in `[-1, 1] × [-1, 1]` to grid coords
+/// in `[0, gw) × [0, gh)`. Clamps to grid bounds.
+#[inline]
+fn embed_to_grid(x: f32, y: f32, gw: usize, gh: usize) -> (f32, f32) {
+    let gx = ((x + 1.0) * 0.5 * gw as f32).clamp(0.0, (gw - 1) as f32);
+    let gy = ((y + 1.0) * 0.5 * gh as f32).clamp(0.0, (gh - 1) as f32);
+    (gx, gy)
+}
+
+/// DDA line rasterization: walks a line from (x0, y0) to (x1, y1) in
+/// grid space, accumulating `weight` per visited cell.
+fn rasterize_line(grid: &mut [f32], gw: usize, gh: usize, x0: f32, y0: f32, x1: f32, y1: f32, weight: f32) {
+    let dx = x1 - x0;
+    let dy = y1 - y0;
+    let steps = dx.abs().max(dy.abs()).max(1.0) as usize;
+    let step_x = dx / steps as f32;
+    let step_y = dy / steps as f32;
+    for s in 0..=steps {
+        let x = x0 + step_x * s as f32;
+        let y = y0 + step_y * s as f32;
+        let gx = x.floor() as i32;
+        let gy = y.floor() as i32;
+        if gx >= 0 && (gx as usize) < gw && gy >= 0 && (gy as usize) < gh {
+            grid[(gy as usize) * gw + (gx as usize)] += weight;
+        }
+    }
+}
+
+/// Separable 3-tap Gaussian blur (kernel [1, 2, 1] / 4). One pass =
+/// horizontal blur followed by vertical blur. Three passes ≈ a 7×7
+/// Gaussian — enough to smooth the discrete rasterized lines into the
+/// soft band texture the Milky Way needs.
+fn gaussian_blur_separable(grid: &mut Vec<f32>, gw: usize, gh: usize) {
+    let mut tmp = vec![0.0_f32; gw * gh];
+    // Horizontal pass: tmp[y][x] = (g[y][x-1] + 2*g[y][x] + g[y][x+1]) / 4
+    for y in 0..gh {
+        for x in 0..gw {
+            let l = if x == 0 { x } else { x - 1 };
+            let r = if x + 1 >= gw { x } else { x + 1 };
+            let s = grid[y * gw + l] + 2.0 * grid[y * gw + x] + grid[y * gw + r];
+            tmp[y * gw + x] = s * 0.25;
+        }
+    }
+    // Vertical pass: write back into grid
+    for y in 0..gh {
+        let u = if y == 0 { y } else { y - 1 };
+        let d = if y + 1 >= gh { y } else { y + 1 };
+        for x in 0..gw {
+            let s = tmp[u * gw + x] + 2.0 * tmp[y * gw + x] + tmp[d * gw + x];
+            grid[y * gw + x] = s * 0.25;
+        }
+    }
 }
 
 /// Process-wide stopwords cache. Same idiom as `ctse::hooks::stopwords_cached`.
@@ -909,72 +1043,96 @@ fn clip_utf8(s: &str, cap: usize) -> &str {
     &s[..end]
 }
 
-fn read_cached_similarity(
+/// Read the cached density grid for `(lib_hash, version)` from
+/// `sight_v3_density_grid`. Returns `None` on cache miss.
+///
+/// The BLOB column holds the `Vec<f32>` as little-endian f32 bytes
+/// (4 bytes per cell × width × height). Decoding is a single
+/// chunks-of-4 scan; sub-millisecond on a 256 KB BLOB.
+fn read_cached_density(
     conn: &Connection,
     lib_hash: &str,
     version: i64,
-) -> Result<Option<Vec<SimilarityEdge>>, String> {
-    let mut stmt = conn
-        .prepare(
-            "SELECT note_path_a, note_path_b, similarity
-             FROM sight_v3_similarity_edges
-             WHERE library_set_hash = ?1 AND graph_version = ?2
-             ORDER BY similarity DESC",
+) -> Result<Option<DensityField>, String> {
+    let row = conn
+        .query_row(
+            "SELECT width, height, max_value, data
+             FROM sight_v3_density_grid
+             WHERE library_set_hash = ?1 AND graph_version = ?2",
+            rusqlite::params![lib_hash, version],
+            |r| {
+                Ok((
+                    r.get::<_, i64>(0)? as u32,
+                    r.get::<_, i64>(1)? as u32,
+                    r.get::<_, f64>(2)? as f32,
+                    r.get::<_, Vec<u8>>(3)?,
+                ))
+            },
         )
-        .map_err(|e| format!("prepare similarity read: {}", e))?;
-    let rows: Vec<SimilarityEdge> = stmt
-        .query_map(rusqlite::params![lib_hash, version], |row| {
-            Ok(SimilarityEdge {
-                note_path_a: row.get(0)?,
-                note_path_b: row.get(1)?,
-                similarity: row.get::<_, f64>(2)? as f32,
-            })
-        })
-        .map_err(|e| format!("query similarity: {}", e))?
-        .filter_map(|r| r.ok())
-        .collect();
-    if rows.is_empty() {
-        Ok(None)
-    } else {
-        Ok(Some(rows))
+        .ok();
+    match row {
+        Some((width, height, max_value, blob)) => {
+            // Decode little-endian f32 bytes into Vec<f32>.
+            let n = (width as usize) * (height as usize);
+            if blob.len() != n * 4 {
+                return Err(format!(
+                    "density grid BLOB size mismatch: expected {} bytes, got {}",
+                    n * 4,
+                    blob.len()
+                ));
+            }
+            let mut values = Vec::with_capacity(n);
+            for chunk in blob.chunks_exact(4) {
+                values.push(f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]));
+            }
+            Ok(Some(DensityField {
+                width,
+                height,
+                max_value,
+                values,
+            }))
+        }
+        None => Ok(None),
     }
 }
 
-fn persist_similarity(
+/// Persist the density grid to `sight_v3_density_grid`. Idempotent:
+/// `INSERT OR REPLACE` on the (lib_hash, version) primary key.
+///
+/// Encoding: `values` is serialized as a flat Vec<u8> of little-endian
+/// f32 bytes. For a 256×256 grid: 262,144 bytes ≈ 256 KB.
+fn persist_density(
     conn: &Connection,
     lib_hash: &str,
     version: i64,
-    edges: &[SimilarityEdge],
+    field: &DensityField,
 ) -> Result<(), String> {
-    conn.execute(
-        "DELETE FROM sight_v3_similarity_edges WHERE library_set_hash = ?1 AND graph_version = ?2",
-        rusqlite::params![lib_hash, version],
-    )
-    .map_err(|e| format!("clear stale similarity: {}", e))?;
-
-    let tx = conn
-        .unchecked_transaction()
-        .map_err(|e| format!("begin tx: {}", e))?;
-    {
-        let mut stmt = tx
-            .prepare(
-                "INSERT INTO sight_v3_similarity_edges
-                 (note_path_a, note_path_b, library_set_hash, graph_version, similarity)
-                 VALUES (?1, ?2, ?3, ?4, ?5)",
-            )
-            .map_err(|e| format!("prepare insert similarity: {}", e))?;
-        for e in edges {
-            stmt.execute(rusqlite::params![
-                e.note_path_a,
-                e.note_path_b,
-                lib_hash,
-                version,
-                e.similarity as f64,
-            ])
-            .map_err(|err| format!("insert similarity row: {}", err))?;
-        }
+    let n = (field.width as usize) * (field.height as usize);
+    if field.values.len() != n {
+        return Err(format!(
+            "density grid value/dimension mismatch: width*height={} but values.len()={}",
+            n,
+            field.values.len()
+        ));
     }
-    tx.commit().map_err(|e| format!("commit similarity: {}", e))?;
+    let mut blob: Vec<u8> = Vec::with_capacity(n * 4);
+    for v in &field.values {
+        blob.extend_from_slice(&v.to_le_bytes());
+    }
+    conn.execute(
+        "INSERT OR REPLACE INTO sight_v3_density_grid
+         (library_set_hash, graph_version, width, height, max_value, data, computed_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, strftime('%s','now'))",
+        rusqlite::params![
+            lib_hash,
+            version,
+            field.width as i64,
+            field.height as i64,
+            field.max_value as f64,
+            blob,
+        ],
+    )
+    .map_err(|e| format!("persist density grid: {}", e))?;
     Ok(())
 }
 
@@ -1213,6 +1371,72 @@ mod tests {
         let b: Vec<(String, f64)> = vec![("foo".to_string(), 1.0)];
         let s = cosine_sparse(&a, &b);
         assert_eq!(s, 0.0);
+    }
+
+    // ─── MIG-019 §2A+§2B redesign — density-grid unit tests ────────
+
+    /// Single line through the grid centre accumulates weight along its
+    /// trajectory and only along its trajectory.
+    #[test]
+    fn rasterize_line_accumulates_along_path() {
+        let gw = 10;
+        let gh = 10;
+        let mut grid = vec![0.0_f32; gw * gh];
+        rasterize_line(&mut grid, gw, gh, 0.0, 0.0, 9.0, 9.0, 1.0);
+        // Diagonal from (0,0) to (9,9): cells (0,0), (1,1), ..., (9,9) all incremented
+        for i in 0..10 {
+            assert!(grid[i * gw + i] >= 1.0, "diagonal cell ({},{}) untouched", i, i);
+        }
+        // Off-diagonal cell (0, 9) should NOT be touched
+        assert_eq!(grid[9 * gw + 0], 0.0);
+        assert_eq!(grid[0 * gw + 9], 0.0);
+    }
+
+    /// Lines outside grid bounds clamp gracefully — no panic, no
+    /// out-of-bounds writes, no spurious increments.
+    #[test]
+    fn rasterize_line_handles_out_of_bounds() {
+        let gw = 5;
+        let gh = 5;
+        let mut grid = vec![0.0_f32; gw * gh];
+        rasterize_line(&mut grid, gw, gh, -10.0, -10.0, -5.0, -5.0, 1.0);
+        for v in &grid {
+            assert_eq!(*v, 0.0);
+        }
+    }
+
+    /// embed_to_grid maps unit-disk corners to grid corners.
+    #[test]
+    fn embed_to_grid_maps_corners() {
+        let gw = 10;
+        let gh = 10;
+        let (gx, gy) = embed_to_grid(-1.0, -1.0, gw, gh);
+        assert!((gx - 0.0).abs() < 1e-3);
+        assert!((gy - 0.0).abs() < 1e-3);
+        let (gx, gy) = embed_to_grid(1.0, 1.0, gw, gh);
+        assert!((gx - 9.0).abs() < 1e-3); // clamped to gw-1
+        assert!((gy - 9.0).abs() < 1e-3);
+        let (gx, gy) = embed_to_grid(0.0, 0.0, gw, gh);
+        assert!((gx - 5.0).abs() < 1e-3); // centre
+        assert!((gy - 5.0).abs() < 1e-3);
+    }
+
+    /// Gaussian blur is mass-conserving (modulo border effects). A
+    /// single hot cell spreads to 9 cells with the 3×3 separable kernel.
+    #[test]
+    fn gaussian_blur_spreads_single_hot_cell() {
+        let gw = 5;
+        let gh = 5;
+        let mut grid = vec![0.0_f32; gw * gh];
+        grid[2 * gw + 2] = 16.0; // centre
+        gaussian_blur_separable(&mut grid, gw, gh);
+        // Centre should receive the most weight; 4 neighbours next; 4 corners least.
+        let centre = grid[2 * gw + 2];
+        let cardinal = grid[1 * gw + 2]; // up
+        let diagonal = grid[1 * gw + 1]; // up-left
+        assert!(centre > cardinal);
+        assert!(cardinal > diagonal);
+        assert!(diagonal > 0.0);
     }
 
     /// Determinism: same corpus → same IDF + same sparse vectors,

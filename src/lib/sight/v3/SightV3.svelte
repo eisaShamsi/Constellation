@@ -22,11 +22,11 @@
 -->
 <script lang="ts">
     import { onMount, onDestroy } from 'svelte';
-    import { Application, Container, Graphics, Text, TextStyle, BlurFilter } from 'pixi.js';
+    import { Application, Container, Graphics, Text, TextStyle, Sprite, Texture } from 'pixi.js';
     import { libraryStats, appSettings, type SkyNode, type SkyLink } from '$lib/libraries/store';
     import { get } from 'svelte/store';
     import { fetchLayout, type LayoutPoint } from '$lib/sight/layout-cache';
-    import { fetchSimilarity, type SimilarityEdge } from '$lib/sight/similarity-cache';
+    import { fetchDensityField, type DensityField } from '$lib/sight/density-cache';
     import { embedToScreen, type ProjectionMode } from '$lib/sight/projection';
     import { detectClusters, type ClusterInfo } from '$lib/graph/clusterEngine';
     import { communityTerritories, type Point2D } from '$lib/sight/community-territory';
@@ -83,8 +83,10 @@
 
     // ─── Data ────────────────────────────────────────────────────────
     let layoutPoints: LayoutPoint[] = $state([]);
-    /** MIG-019 §2B: high-similarity edges from TF-IDF (PJ-035 → Milky Way). */
-    let similarityEdges: SimilarityEdge[] = $state([]);
+    /** MIG-019 §2A+§2B redesign: 2D density field from TF-IDF
+     *  (PJ-035 → Milky Way). 256×256 f32 grid; ~256 KB, input-size
+     *  invariant. Rendered as a single Pixi Sprite. */
+    let densityField = $state<DensityField | null>(null);
     /** Map note_path → its layout point (for fast lookup during edge draw). */
     let pathToPoint = new Map<string, LayoutPoint>();
     /** MIG-019 §2C: per-note creation date (epoch ms) for month filter. */
@@ -346,19 +348,17 @@
         return false;
     }
 
-    /** MIG-019 §2B — Milky Way density wash (PJ-035).
-     *  Renders the top-2000 highest-similarity TF-IDF edges as soft
-     *  alpha-blended cream-colored lines. The container has a BlurFilter
-     *  applied so the lines smear into a continuous band of texture
-     *  rather than reading as discrete connections (which would compete
-     *  with the explicit-wikilink connector lines).
+    /** MIG-019 §2A+§2B redesign — Milky Way density wash (PJ-035).
+     *  Renders the Rust-side density grid as a single Pixi Sprite.
      *
-     *  Capped at 2000 edges per Architect §8 — Pixi v8 BlurFilter on
-     *  more than that starts to chug; keeping the strongest signals is
-     *  what matters for the at-a-glance density read. */
-    const MILKY_WAY_TOP_N = 2000;
+     *  The grid (256×256 f32) was accumulated by rasterizing every
+     *  high-similarity pair into grid space and then Gaussian-blurring
+     *  to smooth into a continuous band texture. We build an RGBA8
+     *  ImageData from the grid (Suwaidi cream tinted; alpha proportional
+     *  to normalized cell value) and convert to a Pixi Texture via a
+     *  one-time canvas. Single draw call — universe size irrelevant. */
     function drawMilkyWay() {
-        if (!milkyWayContainer) return;
+        if (!milkyWayContainer || !app) return;
         milkyWayContainer.removeChildren();
         // Hide if Settings → Sight → "Milky Way density wash" is OFF.
         if ($appSettings.sight?.showMilkyWay === false) {
@@ -366,24 +366,44 @@
             return;
         }
         milkyWayContainer.visible = true;
+        if (!densityField || densityField.max_value <= 0) return;
 
-        const lines = new Graphics();
-        let drawnCount = 0;
-        // similarityEdges is sorted descending by similarity in §2A,
-        // so the slice picks the strongest signals.
-        for (const edge of similarityEdges) {
-            if (drawnCount >= MILKY_WAY_TOP_N) break;
-            const sa = pathToScreen.get(edge.note_path_a);
-            const sb = pathToScreen.get(edge.note_path_b);
-            if (!sa || !sb) continue;
-            lines.moveTo(sa.x, sa.y);
-            lines.lineTo(sb.x, sb.y);
-            drawnCount++;
+        // Build RGBA8 ImageData from the float grid.
+        const w = densityField.width;
+        const h = densityField.height;
+        const maxV = densityField.max_value || 1.0;
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        const imgData = ctx.createImageData(w, h);
+        const rgba = imgData.data;
+        for (let i = 0; i < w * h; i++) {
+            // Normalize, then apply soft gamma (sqrt) so faint regions
+            // are still visible while the brightest spots don't oversaturate.
+            const v = Math.sqrt(Math.max(0, densityField.values[i] / maxV));
+            // Suwaidi cream (#f5e6c8) — same as the connector lines.
+            rgba[i * 4 + 0] = 0xf5;
+            rgba[i * 4 + 1] = 0xe6;
+            rgba[i * 4 + 2] = 0xc8;
+            // Cap alpha at ~110/255 (~43%) so the band stays subtle —
+            // it's a backdrop, not a foreground feature.
+            rgba[i * 4 + 3] = Math.round(v * 110);
         }
-        // Suwaidi cream, very low alpha so the BlurFilter merges
-        // overlapping lines into a band texture.
-        lines.stroke({ color: CONNECTOR_LINE_COLOR, alpha: 0.06, width: 1 });
-        milkyWayContainer.addChild(lines);
+        ctx.putImageData(imgData, 0, 0);
+
+        // Convert to Pixi Texture and stretch to fill the dome.
+        const texture = Texture.from(canvas);
+        const sprite = new Sprite(texture);
+        const aw = app.screen.width;
+        const ah = app.screen.height;
+        const domeRadius = (Math.min(aw, ah) / 2) * 0.92;
+        sprite.width = domeRadius * 2;
+        sprite.height = domeRadius * 2;
+        sprite.x = aw / 2 - domeRadius;
+        sprite.y = ah / 2 - domeRadius;
+        milkyWayContainer.addChild(sprite);
     }
 
     /** Draw community territory polygons on the base layer.
@@ -833,14 +853,12 @@
         });
         canvasContainer.appendChild(app.canvas);
 
-        // MIG-019 §2B: Milky Way density layer. Sits beneath territories
-        // (deepest above the sky background) so stars + edges + territory
-        // borders all render visibly over the band texture. BlurFilter
-        // (8px blur) merges discrete soft lines into a continuous wash —
-        // the visual idiom from the Suwaidi-chart reference image.
+        // MIG-019 §2A+§2B redesign: Milky Way is a single Pixi Sprite
+        // built from the Rust-side pre-blurred density grid. Sits
+        // beneath territories so stars + edges + territory borders all
+        // render visibly over the band texture. No BlurFilter needed
+        // (blur is done in Rust at compute time, not per-frame).
         milkyWayContainer = new Container();
-        const blurFilter = new BlurFilter({ strength: 8, quality: 4 });
-        milkyWayContainer.filters = [blurFilter];
         territoryContainer = new Container();
         edgeContainer = new Container();
         starContainer = new Container();
@@ -884,18 +902,21 @@
                 fullRedraw();
             }
 
-            // Background similarity fetch (non-blocking)
+            // MIG-019 §2A+§2B redesign: background density-grid fetch.
+            // Output-bounded (~256 KB) — universe size irrelevant.
+            // Failures fall through to no Milky Way (graceful degradation).
             (async () => {
-                const simT0 = performance.now();
+                const densT0 = performance.now();
                 try {
-                    const edges = await fetchSimilarity(libraryPaths, 50, 0.3);
-                    console.log(`[SightV3 §2B] fetched ${edges.length} similarity edges in ${Math.round(performance.now() - simT0)}ms`);
+                    const field = await fetchDensityField(libraryPaths, 50, 0.3);
+                    const elapsed = Math.round(performance.now() - densT0);
+                    console.log(`[SightV3 §2A+§2B] density grid fetched: ${field.width}×${field.height} cells, max=${field.max_value.toFixed(3)} in ${elapsed}ms`);
                     if (!app) return; // component unmounted while we waited
-                    similarityEdges = edges;
+                    densityField = field;
                     drawMilkyWay();
-                } catch (simErr) {
-                    console.error('[SightV3 §2B] similarity fetch failed (Milky Way empty; chart still functional):', simErr);
-                    similarityEdges = [];
+                } catch (densErr) {
+                    console.error('[SightV3 §2A+§2B] density grid fetch failed (Milky Way empty; chart still functional):', densErr);
+                    densityField = null;
                 }
             })();
         } catch (e) {

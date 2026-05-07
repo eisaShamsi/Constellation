@@ -79,17 +79,20 @@ pub(crate) const SKY_SCHEMA_VERSION: i64 = 10;
 /// |       1 | MIG-018 §1A — sight_v3_layout + sight_v3_layout_cursor +     |
 /// |         | sight_v3_graph_version tables. Resumable back-fill pattern.  |
 /// |       2 | MIG-019 §2A — sight_v3_similarity_edges table for TF-IDF     |
-/// |         | content-similarity edges (PJ-035 Milky Way). Bumping the     |
-/// |         | version invalidates all v1 cache rows: next v3 toggle does   |
-/// |         | cold MDS + cold TF-IDF compute. Eisa-approved 2026-05-07     |
-/// |         | "acceptable cosmetic cache pollution" per Architect §5 row   |
-/// |         | 2 / Eisa response #2.                                        |
+/// |         | content-similarity edges (PJ-035 Milky Way; edge-list        |
+/// |         | approach, OOM-prone on large universes — REPLACED in v3).    |
+/// |       3 | MIG-019 §2A+§2B redesign — drop sight_v3_similarity_edges;   |
+/// |         | add sight_v3_density_grid (single-row BLOB per snapshot).    |
+/// |         | Density-field architecture per Concept Paper v1.1 §5.1.      |
+/// |         | Memory now bounded by OUTPUT (256² × 4 = 256KB) rather than  |
+/// |         | input (millions of candidate pairs). Eisa-directed pivot     |
+/// |         | 2026-05-07: "Don't patch it. Solve it."                      |
 ///
 /// Mirrors the SKY_SCHEMA_VERSION pattern: bumping this constant gates
 /// the cache-wipe logic in `init_db` below; old rows for any prior
 /// version get DELETED on the first boot after the bump, forcing a
 /// cold recompute on the next user-driven Sight toggle.
-pub(crate) const SIGHT_V3_SCHEMA_VERSION: i64 = 2;
+pub(crate) const SIGHT_V3_SCHEMA_VERSION: i64 = 3;
 
 /// MIG-003 Step 1 — `note_meta` schema version. Bumped to 1 when the
 /// `cid_cn` column was added and backfilled from frontmatter. Subsequent
@@ -2341,24 +2344,38 @@ fn init_db(path: &Path) -> Result<Connection, String> {
         -- For MIG-018 §1A: tables-only. Bump-on-edit semantics land in
         -- §1B alongside the compute path.
 
-        -- MIG-019 §2A: TF-IDF content-similarity edges cache (PJ-035 →
-        -- Milky Way density wash). Mirrors sight_v3_layout's caching
-        -- pattern: keyed by (library_set_hash, graph_version) and
-        -- invalidated by the same graph_version bumps.
+        -- MIG-019 §2A+§2B redesign: TF-IDF content-similarity DENSITY GRID
+        -- (PJ-035 → Milky Way). Replaces the v2 sight_v3_similarity_edges
+        -- table after Eisa's 2026-05-07 directive ('Don't patch it. Solve
+        -- it.') exposed the edge-list approach as fundamentally OOM-prone:
+        -- accumulating candidate pairs as cloned-string SimilarityEdge
+        -- structs allocates O(candidate_pairs × ~200 bytes) Rust heap
+        -- BEFORE the output cap fires — sub-Gigabyte universes were
+        -- crashing the Rust process on the all-pairs accumulator.
         --
-        -- Edge ordering: caller stores with note_path_a < note_path_b
-        -- to deduplicate undirected pairs. Similarity is normalized
-        -- cosine in [0, 1].
-        CREATE TABLE IF NOT EXISTS sight_v3_similarity_edges (
-            note_path_a       TEXT NOT NULL,
-            note_path_b       TEXT NOT NULL,
+        -- The density-grid architecture per Concept Paper v1.1 §5.1:
+        -- one row per (library_set_hash, graph_version) holds a 256×256
+        -- f32 grid as a BLOB (256² × 4 = 262,144 bytes ≈ 256 KB).
+        -- Memory is now bounded by OUTPUT, not INPUT: each candidate
+        -- pair above the similarity threshold rasterizes a line into the
+        -- grid (DDA, ~100 cells per pair) and is then dropped. The grid
+        -- accumulates similarity weights; a Gaussian blur smooths it
+        -- into the diffuse band texture. Universe size becomes
+        -- irrelevant to memory pressure.
+        CREATE TABLE IF NOT EXISTS sight_v3_density_grid (
             library_set_hash  TEXT NOT NULL,
             graph_version     INTEGER NOT NULL,
-            similarity        REAL NOT NULL,
-            PRIMARY KEY (note_path_a, note_path_b, library_set_hash, graph_version)
+            width             INTEGER NOT NULL,
+            height            INTEGER NOT NULL,
+            max_value         REAL NOT NULL,
+            data              BLOB NOT NULL,
+            computed_at       INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+            PRIMARY KEY (library_set_hash, graph_version)
         );
-        CREATE INDEX IF NOT EXISTS idx_sight_v3_similarity_libset_ver
-            ON sight_v3_similarity_edges(library_set_hash, graph_version);
+
+        -- MIG-019 v3 redesign: drop the v2 edge-list table on schema
+        -- bump. Idempotent — DROP IF EXISTS is a no-op on fresh DBs.
+        DROP TABLE IF EXISTS sight_v3_similarity_edges;
     ").map_err(|e| format!("Failed to create sight_v3_* tables: {}", e))?;
 
     // ── MIG-019 §2A: SIGHT_V3_SCHEMA_VERSION cache invalidation ────
@@ -2388,7 +2405,7 @@ fn init_db(path: &Path) -> Result<Connection, String> {
             DELETE FROM sight_v3_layout;
             DELETE FROM sight_v3_layout_cursor;
             DELETE FROM sight_v3_graph_version;
-            DELETE FROM sight_v3_similarity_edges;
+            DELETE FROM sight_v3_density_grid;
         ").map_err(|e| format!("Failed to wipe sight_v3 cache for version bump: {}", e))?;
         conn.execute(
             "INSERT OR REPLACE INTO schema_versions (module, version, updated_at)
