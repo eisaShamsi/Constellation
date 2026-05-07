@@ -10,6 +10,7 @@
 -->
 <script lang="ts">
     import { t } from '$lib/i18n';
+    import type { HealthReport, MetricBadge } from '$lib/sight/universe-health';
 
     interface Props {
         notePath: string | null;
@@ -19,6 +20,9 @@
         totalNotes: number;
         incomingCount: number;
         outgoingCount: number;
+        /** MIG-019 §2D: universe-health metrics. Always shown when no
+         *  star is selected; tucks below note details when one is. */
+        health: HealthReport;
         onOpenNote: () => void;
         onClose: () => void;
     }
@@ -30,12 +34,29 @@
         totalNotes,
         incomingCount,
         outgoingCount,
+        health,
         onOpenNote,
         onClose,
     }: Props = $props();
+
+    /** Open if a star is selected OR no star is selected (always show
+     *  universe-health when no star). The panel is hidden only when
+     *  the user explicitly closes it via the button. */
+    const isOpen = $derived(notePath !== null);
+
+    function statusClass(status: 'healthy' | 'caution' | 'imbalanced'): string {
+        return `sv3-sp-badge sv3-sp-badge-${status}`;
+    }
+
+    function statusLabel(status: 'healthy' | 'caution' | 'imbalanced'): string {
+        if (status === 'healthy') return $t('sightV3.sidePanel.healthy') || 'healthy';
+        if (status === 'caution') return $t('sightV3.sidePanel.caution') || 'caution';
+        return $t('sightV3.sidePanel.imbalanced') || 'imbalanced';
+    }
 </script>
 
-<div class="sight-v3-side-panel" class:open={notePath !== null} dir="auto">
+<div class="sight-v3-side-panel" class:open={isOpen || health.totalNotes > 0} dir="auto">
+    <!-- Note details section — shown only when a star is selected -->
     {#if notePath}
         <div class="sv3-sp-header">
             <h3 class="sv3-sp-title">{noteTitle}</h3>
@@ -72,6 +93,60 @@
                 {$t('sightV3.sidePanel.openNote') || 'Open in editor'}
             </button>
         </div>
+
+        <div class="sv3-sp-divider"></div>
+    {/if}
+
+    <!-- MIG-019 §2D: Universe-health card. Always visible when there's
+         data to show (totalNotes > 0). Tucks below note details when a
+         star is selected; sits at the top when nothing is selected. -->
+    {#if health.totalNotes > 0}
+        <div class="sv3-sp-section">
+            <div class="sv3-sp-section-title">{$t('sightV3.sidePanel.universeHealth') || 'Universe health'}</div>
+            <div class="sv3-sp-score-row">
+                <span class="sv3-sp-score">{health.score}</span>
+                <span class="sv3-sp-score-label">/ 100</span>
+            </div>
+
+            <div class="sv3-sp-metric">
+                <div class="sv3-sp-metric-row">
+                    <span class="sv3-sp-label">{$t('sightV3.sidePanel.modularity') || 'Modularity'}</span>
+                    <span class="sv3-sp-value">{health.modularity.display}</span>
+                    <span class={statusClass(health.modularity.status)}>{statusLabel(health.modularity.status)}</span>
+                </div>
+            </div>
+            <div class="sv3-sp-metric">
+                <div class="sv3-sp-metric-row">
+                    <span class="sv3-sp-label">{$t('sightV3.sidePanel.dominance') || 'Dominance'}</span>
+                    <span class="sv3-sp-value">{health.dominance.display}</span>
+                    <span class={statusClass(health.dominance.status)}>{statusLabel(health.dominance.status)}</span>
+                </div>
+            </div>
+            <div class="sv3-sp-metric">
+                <div class="sv3-sp-metric-row">
+                    <span class="sv3-sp-label">{$t('sightV3.sidePanel.entropy') || 'Entropy'}</span>
+                    <span class="sv3-sp-value">{health.entropy.display}</span>
+                    <span class={statusClass(health.entropy.status)}>{statusLabel(health.entropy.status)}</span>
+                </div>
+            </div>
+            <div class="sv3-sp-metric">
+                <div class="sv3-sp-metric-row">
+                    <span class="sv3-sp-label">{$t('sightV3.sidePanel.connectivity') || 'Connectivity'}</span>
+                    <span class="sv3-sp-value">{health.connectivity.display}</span>
+                    <span class={statusClass(health.connectivity.status)}>{statusLabel(health.connectivity.status)}</span>
+                </div>
+            </div>
+
+            <p class="sv3-sp-hint">
+                {health.totalNotes} {$t('sightV3.sidePanel.notes') || 'notes'} · {health.totalEdges} {$t('sightV3.sidePanel.edges') || 'edges'} · {health.communityCount} {$t('sightV3.sidePanel.communities') || 'communities'}
+            </p>
+        </div>
+
+        {#if !notePath}
+            <p class="sv3-sp-hint sv3-sp-hint-secondary">
+                {$t('sightV3.sidePanel.clickStarHint') || 'Click a star to see its details.'}
+            </p>
+        {/if}
     {/if}
 </div>
 
@@ -180,5 +255,78 @@
 
     .sv3-sp-action-btn.primary {
         font-weight: 500;
+    }
+
+    /* MIG-019 §2D: universe-health card styles */
+    .sv3-sp-divider {
+        height: 1px;
+        background: rgba(245, 230, 200, 0.15);
+        margin: 16px 0;
+    }
+
+    .sv3-sp-score-row {
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+        margin-bottom: 12px;
+    }
+
+    .sv3-sp-score {
+        font-size: 28px;
+        font-weight: 600;
+        color: #d4af37;
+    }
+
+    .sv3-sp-score-label {
+        font-size: 12px;
+        color: rgba(245, 230, 200, 0.55);
+    }
+
+    .sv3-sp-metric {
+        margin: 6px 0;
+    }
+
+    .sv3-sp-metric-row {
+        display: grid;
+        grid-template-columns: 1fr auto auto;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+    }
+
+    .sv3-sp-badge {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-weight: 500;
+    }
+
+    .sv3-sp-badge-healthy {
+        background: rgba(74, 222, 128, 0.18);
+        color: #4ade80;
+    }
+
+    .sv3-sp-badge-caution {
+        background: rgba(250, 204, 21, 0.18);
+        color: #facc15;
+    }
+
+    .sv3-sp-badge-imbalanced {
+        background: rgba(248, 113, 113, 0.18);
+        color: #f87171;
+    }
+
+    .sv3-sp-hint {
+        font-size: 11px;
+        color: rgba(245, 230, 200, 0.55);
+        margin: 12px 0 0;
+        line-height: 1.4;
+    }
+
+    .sv3-sp-hint-secondary {
+        margin-top: 16px;
+        font-style: italic;
     }
 </style>

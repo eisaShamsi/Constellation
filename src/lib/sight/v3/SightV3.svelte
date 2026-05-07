@@ -31,6 +31,11 @@
     import { detectClusters, type ClusterInfo } from '$lib/graph/clusterEngine';
     import { communityTerritories, type Point2D } from '$lib/sight/community-territory';
     import {
+        computeHealthReport,
+        emptyHealthReport,
+        type HealthReport,
+    } from '$lib/sight/universe-health';
+    import {
         monthArcSegments,
         pickMonth,
         gregorianMonthFromSegment,
@@ -81,6 +86,8 @@
     let pathToCreatedAt = new Map<string, number>();
     /** MIG-019 §2C: cached month segments (one per ring × 12 months). */
     let monthSegments: MonthSegment[] = [];
+    /** MIG-019 §2D: computed universe-health report (passed to side panel). */
+    let healthReport = $state<HealthReport>(emptyHealthReport());
     /** Map note_path → community id. */
     let pathToCommunity = new Map<string, number>();
     /** Map note_path → its on-screen position (recomputed every redraw). */
@@ -199,6 +206,22 @@
         for (const [nodeId, communityId] of louvain.assignments) {
             const path = nameToPath.get(nodeId);
             if (path) pathToCommunity.set(path, communityId);
+        }
+
+        // MIG-019 §2D: compute universe-health report from Louvain output.
+        // Passes through to clusterEngine.ts::computeUniverseHealth +
+        // computeStructuralGaps via the universe-health.ts wrapper.
+        const linkPairs = links.map((l) => ({ source: l.source, target: l.target }));
+        if (clusters.length > 0 && layoutPoints.length > 0) {
+            healthReport = computeHealthReport(
+                louvain.modularity,
+                clusters,
+                linkPairs,
+                louvain.assignments,
+                layoutPoints.length,
+            );
+        } else {
+            healthReport = emptyHealthReport();
         }
     }
 
@@ -852,6 +875,7 @@
         totalNotes={sidePanelTotalNotes}
         incomingCount={sidePanelIncoming}
         outgoingCount={sidePanelOutgoing}
+        health={healthReport}
         onOpenNote={sidePanelOpenNote}
         onClose={sidePanelClose}
     />

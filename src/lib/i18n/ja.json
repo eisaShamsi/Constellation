@@ -1669,7 +1669,19 @@
       "outgoingLinks": "Outgoing links",
       "openNote": "Open in editor",
       "close": "Close panel",
-      "structuralGaps": "Structural gap suggestions"
+      "structuralGaps": "Structural gap suggestions",
+      "universeHealth": "Universe health",
+      "modularity": "Modularity",
+      "dominance": "Dominance",
+      "entropy": "Entropy",
+      "connectivity": "Connectivity",
+      "healthy": "healthy",
+      "caution": "caution",
+      "imbalanced": "imbalanced",
+      "notes": "notes",
+      "edges": "edges",
+      "communities": "communities",
+      "clickStarHint": "Click a star to see its details."
     }
   },
   "lens": {

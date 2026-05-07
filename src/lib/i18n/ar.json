@@ -1740,7 +1740,19 @@
       "outgoingLinks": "روابط صادرة",
       "openNote": "فتح في المحرر",
       "close": "إغلاق اللوحة",
-      "structuralGaps": "اقتراحات روابط مفقودة"
+      "structuralGaps": "اقتراحات روابط مفقودة",
+      "universeHealth": "صحة الكون",
+      "modularity": "النمطية",
+      "dominance": "الهيمنة",
+      "entropy": "الإنتروبيا",
+      "connectivity": "الاتصال",
+      "healthy": "صحي",
+      "caution": "تحذير",
+      "imbalanced": "غير متوازن",
+      "notes": "ملاحظات",
+      "edges": "حواف",
+      "communities": "مجتمعات",
+      "clickStarHint": "انقر على نجمة لمشاهدة تفاصيلها."
     }
   },
   "lens": {
