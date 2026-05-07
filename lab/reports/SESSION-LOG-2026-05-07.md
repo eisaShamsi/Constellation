@@ -191,3 +191,42 @@ Eisa's directive 2026-05-07: *"v3 shall get its own dedicated Concept Paper."* T
 **Awaiting Eisa's design review on §11.** Ten design questions need calls before MIG-018 opens. None blocks the others; Eisa can answer in any order. Once §11 resolves, the paper bumps to v1.1 with the design choices baked in, and MIG-018 Architect opens.
 
 If Eisa wants to refactor §1-§10 of the paper itself (e.g., reject the star-chart aesthetic for a different visual grammar), that's the moment — before any code. Cheap to redirect now; expensive after MIG-018 ships.
+
+---
+
+## End-of-day update — v3 Concept Paper v1.1 ratified
+
+Eisa's design review came back with comprehensive answers. All ten §11 questions resolved + two structural revisions made beyond §11 scope.
+
+### §11 design calls
+
+| # | Decision |
+|---|---|
+| 1 | Embedding: graph-distance MDS (Landmark variant) |
+| 2 | Projection: BOTH Lambert + stereographic ship; user toggle |
+| 3 | Calendar rim: Gregorian default; users add others via Settings |
+| 4 | Magnitude slider: astronomy convention (drag right = peel) |
+| 5 | Two-up panel: N/A (PJ-037 rejected) |
+| 6 | Constellation labels: hover/select only by default; Settings toggle for always-on |
+| 7 | Color scheme: cycled pastels by Louvain id; user-overridable via Style Settings |
+| 8 | Search filter persistence: Esc + click-background |
+| 9 | Render layer: Pixi.js |
+| 10 | Accessibility: defer to post-v3 PJ |
+
+### Structural revisions beyond §11
+
+1. **§4.1 resting state**: connector lines now **faint at rest, brighten on hover/select** (replaces v1.0's "no lines until hover"). Eisa's directive: *"with v3, we will show it as faint lines until the user hovers over it or the connected nodes linking them."* This reframes v1.1 paper Principle 6 — *reveal* now means *brighten*, not *render-from-zero*. Triggers a §8.2 rendering split: two Pixi layers (base = always-on faint structure, focus overlay = brightening on hover) so per-frame draw cost stays near zero at rest while the structural pattern is always visible.
+
+2. **§5.3 Map↔Sight integration: REJECTED**. Eisa: *"There won't be Map-Sight integration."* PJ-037 marked Rejected in Pending Jobs v1.6; number retired. v3 stays single-view; Map and Sight remain independent surfaces. The "Map diagnoses, Sight prescribes" loop happens in the user's head.
+
+### Artifacts in this commit
+
+- `docs/Constellation-Sight-v3-Concept-Paper-v1.1.md` — ratified Concept Paper. v1.0 stays in `docs/` as historical record.
+- `docs/Constellation Pending Jobs v1.6.md` — PJ-037 Rejected; PJ-038 §8 trajectory revised; new "Rejected" count tracked.
+- `docs/Constellation Orientation & Onboarding v1.57.md` — bump from v1.56 with v3 ratification preamble + new index entry for the v3 Concept Paper.
+
+### Next move
+
+**MIG-018 Architect**. The first of three v3-build MIGs. Scope: Rust `compute_layout_embedding` (Landmark-MDS variant), `sight_v3_layout` SQLite cache + write-time triggers, `src/lib/sight/projection.ts` + `SightV3.svelte`, dock button + Settings entry behind `SIGHT_V3_ENABLED`, both Lambert + stereographic projections. Boss-test gate at end: stars render at correct positions, basic hover/click/double-click works, projection toggle works.
+
+Per Migration Rule, after MIG-018 Architect lands I'll write the Plan and **stop for Eisa's explicit Plan approval before Build**.
