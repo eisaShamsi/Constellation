@@ -78,6 +78,8 @@
         type RegionLayout,
         type RegionWedge,
     } from './regions';
+    import { buildLibraryColorMap } from './library-colors';
+    import { detectDir } from '$lib/utils';
 
     interface Props {
         nodes: SkyNode[];
@@ -181,6 +183,12 @@
     let pathToSkyNode = new Map<string, SkyNode>();
     /** §2G.3d: universe-wide stats (T mode wedges, time spans, etc.). */
     let modeStats: ModeStats = emptyModeStats();
+    /** §2G.3f: per-library deterministic color map (libraryPath →
+     *  { hex, css, index }). Built once per fetch from the region
+     *  wedge order (sorted by note count desc). Stars, rim numbers,
+     *  and the legend panel all read from here so colors stay in
+     *  lockstep across the three surfaces. */
+    let libraryColors = $state<Map<string, { hex: number; css: string; index: number }>>(new Map());
 
     /** §2G.3b: rim label geometry, published by `drawRegionRim`.
      *  Rendered as HTML elements (with `dir="auto"`) in the Svelte
@@ -189,19 +197,17 @@
     interface RimLabelGeo {
         key: string;
         name: string;
+        /** §2G.3f: 1-indexed library number rendered ON the rim.
+         *  Library names move to the legend panel — see §2G.3f. */
+        index: number;
+        /** §2G.3f: per-library hex color (CSS string). */
+        colorCss: string;
         count: number;
-        /** Library name label position. */
+        /** Number label position (mid-arc). */
         lx: number;
         ly: number;
-        /** Note-count caption position. */
-        cxLabel: number;
-        cyLabel: number;
         /** Rotation in degrees, already flipped for the lower half. */
         rotDeg: number;
-        /** §2G.3c: Tangential chord length at the label radius (px),
-         *  used as max-width so labels can't bleed into adjacent
-         *  wedges. Long names ellipsize; short names breathe. */
-        maxWidthPx: number;
     }
     let rimLabelGeometry = $state<RimLabelGeo[]>([]);
 
@@ -430,6 +436,10 @@
         // centrality rank). Cleared whenever fetchLayout runs.
         if (regionLayout == null && layoutPoints.length > 0 && libraryPathsCached.length > 0) {
             regionLayout = buildRegionLayout(layoutPoints, libraryPathsCached);
+            // §2G.3f: per-library color map. Built once from the wedge
+            // order (sorted by count desc). Stars + rim numbers + legend
+            // panel all read from this single source of truth.
+            libraryColors = buildLibraryColorMap(regionLayout.wedges);
             // §2G.3e: hash-based in-wedge azimuth jitter so MDS-clustered
             // notes don't stack on the same radial spoke. Uniform [0, 2π).
             pathToEmbedAngle.clear();
@@ -442,10 +452,13 @@
             );
             const denom = Math.max(1, sorted.length - 1);
             sorted.forEach((pt, i) => {
-                // §2G.3e: small per-note rank jitter (±1.5 %) so notes
-                // with the same centrality rank don't form perfect
-                // concentric rings. Hash on a different salt than azimuth.
-                const baseRank = i / denom;
+                // §2G.3f: SQRT mapping for radial position. Real centrality
+                // distribution is fine; the issue is angular AREA scales
+                // with r, so a uniform rank percentile packs more stars
+                // per unit area near center. sqrt(rank) corrects this →
+                // uniform AREA density, no inner crowding. Plus the
+                // small ±1.5 % jitter (different salt) breaks rings.
+                const baseRank = Math.sqrt(i / denom);
                 const jitter = (hash01(pt.note_path + '|rj') - 0.5) * 0.03;
                 pathToCentralityRank.set(
                     pt.note_path,
@@ -518,8 +531,13 @@
      *  bounds so repulsion can't push a star outside its wedge. */
     function applyWedgeRepulsion(cx: number, cy: number, domeR: number) {
         if (!regionLayout) return;
-        const MIN_DIST = 6;       // px between star centers
-        const MAX_ITER = 6;
+        // §2G.3f: tighter spacing rule per Eisa's directive ("nodes
+        // shouldn't touch each other"). 9 px between centers comfortably
+        // exceeds 2 × MAX_NODE_RADIUS = 8 px so adjacent stars at max
+        // size still have a 1 px breathing gap. 12 iterations to ensure
+        // convergence at high density.
+        const MIN_DIST = 9;
+        const MAX_ITER = 12;
         const ITER_FACTOR = 0.45; // per-pass push amount as fraction of deficit
 
         // Group stars by wedge — repulsion only acts within a wedge.
@@ -832,21 +850,29 @@
         safeClearContainer(starContainer);
         const searchOn = isSearchActive();
         const stars = new Graphics();
+        // §2G.3f: cap node radius so no star exceeds MAX_NODE_RADIUS,
+        // distributed in proportion below. Pairs with MIN_DIST=9 in
+        // applyWedgeRepulsion so even max-size adjacent stars keep a
+        // visible 1 px breathing gap.
+        const MAX_NODE_RADIUS = 4.0;
+        const MIN_NODE_RADIUS = 1.2;
         for (const pt of layoutPoints) {
             const screen = pathToScreen.get(pt.note_path);
             if (!screen) continue;
             const passesMonth = passesMonthFilter(pt.note_path);
             const passesSrc = passesSearch(pt.note_path);
-            // §2G.3d: base alpha is now mode-aware (computed in
-            // positionForMode and stored in pathToScreen). Search /
-            // month filter overrides still apply.
             const baseAlpha = screen.baseAlpha;
 
+            // §2G.3f: proportional sizing capped at MAX_NODE_RADIUS.
+            // screen.r came from positionForMode; we re-normalize to
+            // [MIN, MAX] here so no star outgrows the cap.
+            const sizeNorm = Math.max(0, Math.min(1, screen.r / 8.4));
+            let radius = MIN_NODE_RADIUS + sizeNorm * (MAX_NODE_RADIUS - MIN_NODE_RADIUS);
+
             let alpha: number;
-            let radius = screen.r;
             if (searchOn) {
                 if (passesSrc && passesMonth) {
-                    radius = screen.r * 1.5;
+                    radius = Math.min(radius * 1.5, MAX_NODE_RADIUS + 1.0);
                     alpha = 1.0;
                 } else {
                     alpha = 0.10;
@@ -857,15 +883,20 @@
                 alpha = baseAlpha;
             }
 
-            // MIG-019 §2G: stars are near-black (#1a1a1a) on cream
-            // parchment, per the Suwaidi star-chart palette.  Magnitude
-            // alpha already encodes brightness; modulating it here keeps
-            // the search-active dim/flare semantics intact.
-            // Each circle gets its own fill() call so per-star alpha
-            // is preserved. Pixi v8 batches all subpaths into one GL
-            // draw call regardless.
+            // §2G.3f: per-library color (was uniform near-black). Falls
+            // back to ink when no wedge is found.
+            const wedge = regionLayout?.pathToWedge.get(pt.note_path);
+            const libColor = wedge ? libraryColors.get(wedge.libraryPath) : undefined;
+            const fillColor = libColor?.hex ?? 0x1a1a1a;
+
+            // §2G.3f: each star draws as TWO subpaths in the same
+            // Graphics — fill + stroke — so we still hit the single
+            // GL draw call from §2E.4 OOM solve.
             stars.circle(screen.x, screen.y, radius);
-            stars.fill({ color: 0x1a1a1a, alpha });
+            stars.fill({ color: fillColor, alpha });
+            // Thin contrast stroke around every star (Eisa directive).
+            stars.circle(screen.x, screen.y, radius);
+            stars.stroke({ color: 0x1a1a1a, alpha: alpha * 0.85, width: 0.6 });
         }
         starContainer.addChild(stars);
     }
@@ -1048,25 +1079,20 @@
         rimLabelGeometry = regionLayout.wedges.map((wedge) => {
             const t = wedge.arcMidRad;
             const labelR = (rimInner + rimOuter) / 2 + 2;
-            const countR = rimOuter + 22;
             const lx = cx + labelR * Math.sin(t);
             const ly = cy - labelR * Math.cos(t);
-            const cxLabel = cx + countR * Math.sin(t);
-            const cyLabel = cy - countR * Math.cos(t);
-            // Tangent rotation in degrees, flipped on the lower half so
-            // text reads right-side up.
-            let rotDeg = (t * 180) / Math.PI;
-            if (t > Math.PI / 2 && t < (3 * Math.PI) / 2) rotDeg += 180;
-            // §2G.3c: tangential chord length = arc length at the label
-            // radius. Use that as the label's max-width so long library
-            // names ellipsize instead of bleeding across adjacent wedges.
-            const arcSize = wedge.arcEndRad - wedge.arcStartRad;
-            const maxWidthPx = Math.max(40, arcSize * labelR - 8);
+            // §2G.3f: keep upright (no per-rim rotation) for numbers —
+            // a single digit doesn't need to follow the arc; uprightness
+            // makes the legend mapping easier to read.
+            const rotDeg = 0;
+            const lc = libraryColors.get(wedge.libraryPath);
             return {
                 key: wedge.libraryPath,
                 name: wedge.libraryName,
+                index: lc?.index ?? 0,
+                colorCss: lc?.css ?? '#2a4a8c',
                 count: wedge.noteCount,
-                lx, ly, cxLabel, cyLabel, rotDeg, maxWidthPx,
+                lx, ly, rotDeg,
             };
         });
     }
@@ -1326,45 +1352,29 @@
 
         // MIG-019 §2E.2 SOLVE: progress markers visible to the user
         // (production builds disable DevTools, so console.log isn't
-        // observable). The placeholder text updates at each stage so
-        // the OOM page (or status of a hung mount) shows where in the
-        // pipeline we got — diagnostic without needing a console.
-        showPlaceholder(`Sight v3 — opening
-${nodes?.length ?? 0} notes · ${links?.length ?? 0} links`);
+        // §2G.3f: silent loading per Eisa. The staged "Stage 1/4..."
+        // text was diagnostic noise during a normal load; remove it.
+        // Errors and the empty-universe case still surface a placeholder.
+        // Detailed timing still goes to console.log for diagnostics.
 
         try {
             const stats = get(libraryStats);
             const libraryPaths: Array<[string, string]> = stats.map((s) => [s.path, s.name]);
-            // MIG-019 §2G: cache for the polar layout's Region wedge build.
             libraryPathsCached = libraryPaths;
-            // Fresh fetch — invalidate any previous regionLayout build so
-            // recomputeScreenPositions() rebuilds against the new layoutPoints.
             regionLayout = null;
 
-            showPlaceholder(`Stage 1/4: fetching layout
-${nodes?.length ?? 0} notes · ${links?.length ?? 0} links`);
             const layoutT0 = performance.now();
             layoutPoints = await fetchLayout(libraryPaths, 50);
             const layoutMs = Math.round(performance.now() - layoutT0);
             console.log(`[SightV3] layout: ${layoutPoints.length} points in ${layoutMs}ms`);
 
-            // MIG-019 §2A.1 hot-fix (Boss-test OOM 2026-05-07):
-            // similarity fetch was BLOCKING the chart render — on 7,600-
-            // note universes the IPC payload was blowing JS heap before
-            // hidePlaceholder() could fire. Now we render the layout
-            // first (stars + territories + connector lines + rim) and
-            // fetch similarity in the BACKGROUND. Milky Way appears when
-            // the IPC returns; if it OOMs or fails, the rest of v3 still
-            // works — graceful degradation.
             if (layoutPoints.length === 0) {
                 showPlaceholder('No notes in this universe yet.');
             } else {
-                showPlaceholder(`Stage 2/4: building indices (Louvain communities, ${links?.length ?? 0} edges)`);
                 const idxT0 = performance.now();
                 buildIndices();
                 console.log(`[SightV3] buildIndices: ${resolvedEdges.length} unique edges in ${Math.round(performance.now() - idxT0)}ms`);
 
-                showPlaceholder(`Stage 3/4: rendering (${layoutPoints.length} stars, ${Math.min(resolvedEdges.length, MAX_FAINT_EDGES_AT_REST)} edges at-rest)`);
                 const drawT0 = performance.now();
                 fullRedraw();
                 console.log(`[SightV3] fullRedraw: ${Math.round(performance.now() - drawT0)}ms`);
@@ -1525,18 +1535,39 @@ ${nodes?.length ?? 0} notes · ${links?.length ?? 0} links`);
          through `dir="auto"` so the browser handles bidi natively —
          Arabic / Hebrew / Persian library names render right-to-left
          within their tangent rotation. -->
+    <!-- §2G.3f: rim labels are now COLORED NUMBERS (1, 2, 3, ...).
+         Library names move to the legend panel below. The number's
+         color matches the library's color so visual mapping stays
+         tight (rim number ↔ legend row ↔ stars in the wedge). -->
     {#each rimLabelGeometry as geo (geo.key)}
         <div
-            class="sight-v3-rim-label"
-            style="left: {geo.lx}px; top: {geo.ly}px; transform: translate(-50%, -50%) rotate({geo.rotDeg}deg); max-width: {geo.maxWidthPx}px;"
-            dir="auto"
-            title={geo.name}
-        >{geo.name.toUpperCase()}</div>
-        <div
-            class="sight-v3-rim-count"
-            style="left: {geo.cxLabel}px; top: {geo.cyLabel}px; transform: translate(-50%, -50%) rotate({geo.rotDeg}deg); max-width: {geo.maxWidthPx}px;"
-        >{geo.count.toLocaleString()} notes</div>
+            class="sight-v3-rim-number"
+            style="left: {geo.lx}px; top: {geo.ly}px; color: {geo.colorCss};"
+            title="{geo.name} — {geo.count.toLocaleString()} notes"
+        >{geo.index}</div>
     {/each}
+
+    <!-- §2G.3f: Library legend panel. Anchored to the LEFT for LTR
+         interfaces, RIGHT for RTL. Lists Universe root + numbered
+         libraries with color swatches and note counts. -->
+    {#if libraryColors.size > 0 && rimLabelGeometry.length > 0}
+        <div class="sight-v3-legend" class:legend-rtl={detectDir(universeName) === 'rtl'}>
+            <div class="sight-v3-legend-header" dir="auto">
+                <div class="sight-v3-legend-universe-label">UNIVERSE</div>
+                <div class="sight-v3-legend-universe-name">{universeName || 'Universe'}</div>
+            </div>
+            <div class="sight-v3-legend-divider"></div>
+            <div class="sight-v3-legend-libs">
+                {#each rimLabelGeometry as geo (geo.key)}
+                    <div class="sight-v3-legend-row" dir="auto">
+                        <span class="sight-v3-legend-num" style="background: {geo.colorCss};">{geo.index}</span>
+                        <span class="sight-v3-legend-name" title={geo.name}>{geo.name}</span>
+                        <span class="sight-v3-legend-count">{geo.count.toLocaleString()}</span>
+                    </div>
+                {/each}
+            </div>
+        </div>
+    {/if}
 
     <!-- MIG-019 §2G (spec §4): Universe Health anchor — top-center,
          above the dome. Roundel at center, two metrics flanking on
@@ -1675,37 +1706,104 @@ ${nodes?.length ?? 0} notes · ${links?.length ?? 0} links`);
         pointer-events: none;
     }
 
-    /* §2G.3b: Region-rim labels (HTML overlay).
-       Native bidi via `dir="auto"` so Arabic library names render
-       right-to-left within their tangent rotation. */
-    .sight-v3-rim-label,
-    .sight-v3-rim-count {
+    /* §2G.3f: Rim numbers (replaces library-name labels). Each number
+       inherits its color from the library palette via inline style;
+       the legend panel below maps number → library. Single digits or
+       small two-digit numbers stay upright (no per-rim rotation
+       needed) so the legend mapping is easy to read. */
+    .sight-v3-rim-number {
         position: absolute;
         pointer-events: none;
-        white-space: nowrap;
-        text-align: center;
         font-family: serif;
+        font-weight: 700;
+        font-size: 16px;
         z-index: 6;
         user-select: none;
-        /* §2G.3c: long library names ellipsize within their wedge's
-           tangential chord so they can't bleed into adjacent wedges. */
+        transform: translate(-50%, -50%);
+        text-shadow: 0 0 3px #faf6e8, 0 0 3px #faf6e8;  /* halo against cream */
+    }
+
+    /* §2G.3f: Library legend panel — anchored to the left edge for
+       LTR interfaces, right edge for RTL. Lists Universe root +
+       numbered libraries with color swatches. The number swatches
+       on the rim point users to this panel for the actual names. */
+    .sight-v3-legend {
+        position: absolute;
+        top: 270px;
+        left: 24px;
+        width: 248px;
+        max-height: calc(100vh - 380px);
+        z-index: 7;
+        font-family: serif;
+        background: rgba(250, 246, 232, 0.85);
+        border: 1px solid rgba(26, 26, 26, 0.18);
+        border-radius: 8px;
+        padding: 14px 16px;
+        backdrop-filter: blur(2px);
+        overflow-y: auto;
+        box-shadow: 0 1px 3px rgba(26, 26, 26, 0.05);
+    }
+    .sight-v3-legend.legend-rtl {
+        left: auto;
+        right: 24px;
+    }
+    .sight-v3-legend-header {
+        margin-bottom: 8px;
+    }
+    .sight-v3-legend-universe-label {
+        font-size: 9px;
+        letter-spacing: 2.5px;
+        color: rgba(26, 26, 26, 0.55);
+        margin-bottom: 4px;
+    }
+    .sight-v3-legend-universe-name {
+        font-size: 14px;
+        font-style: italic;
+        font-weight: 600;
+        color: #2a4a8c;
+        line-height: 1.3;
+        word-break: break-word;
+    }
+    .sight-v3-legend-divider {
+        height: 1px;
+        background: rgba(26, 26, 26, 0.15);
+        margin: 10px 0;
+    }
+    .sight-v3-legend-libs {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .sight-v3-legend-row {
+        display: grid;
+        grid-template-columns: 24px 1fr auto;
+        gap: 8px;
+        align-items: center;
+        font-size: 12px;
+    }
+    .sight-v3-legend-num {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        color: #faf6e8;
+        font-weight: 700;
+        font-size: 11px;
+        font-family: serif;
+    }
+    .sight-v3-legend-name {
+        color: #1a1a1a;
+        white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
-    .sight-v3-rim-label {
-        color: #2a4a8c;
-        /* §2G.3e: 15 → 12 px to fit longer library names without
-           triggering ellipsis as aggressively. */
-        font-size: 12px;
-        font-weight: 600;
-        letter-spacing: 0.16em;
-        opacity: 0.92;
-    }
-    .sight-v3-rim-count {
-        color: rgba(26, 26, 26, 0.6);
-        font-size: 9px;
-        letter-spacing: 0.08em;
+    .sight-v3-legend-count {
+        color: rgba(26, 26, 26, 0.55);
+        font-size: 10px;
         font-style: italic;
+        white-space: nowrap;
     }
 
     /* MIG-019 §2G (spec §4): Universe Health anchor.
