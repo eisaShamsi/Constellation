@@ -161,13 +161,54 @@ When a Svelte 5 button click doesn't fire but hover does, the click event isn't 
 
 ---
 
-## Next session
+## §2G.3p–§2G.3q — External close button + Pixi.js v8 → D3 + Canvas 2D migration
 
-§2G.3o Boss test (Stage 1: close button) verdict. If PASS:
-- Send Stage 2 (rim numbers locked at any zoom) + Stage 3 (connected-notes list) to Eisa.
-- After Stage 2/3 PASS:
-  - §2G.4: mode toggle UI (top-right 6-button bar: R · L · T · C · S · A) with 600 ms eased migration animation. R/L/T light up, C/S/A dimmed "available later".
-  - §2G.5: persist `appSettings.sight.lastMode` per Universe.
-  - §2G.6: 3-agent audit + tag MIG-019 milestone + orientation v1.72 + i18n keys + 14 help-file translations + close-out.
+§2G.3o's structural flex-column fix (and the external close button in +layout.svelte) still didn't solve the close button because the ROOT CAUSE was deeper than Svelte 5 event delegation: **Pixi.js v8's EventSystem registers `document.addEventListener('pointermove/pointerup', ..., true)` capture-phase listeners that globally intercept pointer events.** These steal click events BEFORE any DOM element receives them — even buttons completely outside the Pixi component, in the parent layout, with higher z-index. CSS `:hover` still works (browser rendering engine, not JS events), which is why hover gold-tint always worked but onclick never fired across 11 iterations.
 
-If FAIL: stop iterating. Bring in code-reviewer + Plan agents in parallel. The structural fix is the canonical answer; if it still doesn't work, the bug is somewhere I'd never debug from screenshots alone.
+Eisa: *"Enough patching, find a root solution, even if it means restructuring the Sight all over again."* Then: *"Is Pixi the right tool? What about Canvas, since we are building a 2D tool?"*
+
+### What §2G.3q ships
+
+**Complete Pixi.js v8 → D3 + Canvas 2D migration** of `src/lib/sight/v3/SightV3.svelte`:
+
+- **Renderer**: `new Application()` + Pixi Containers/Graphics/Text → raw `<canvas>` + `getContext('2d')` + immediate-mode draw pipeline
+- **Zoom/Pan**: Manual `chartZoom`/`chartPanX`/`chartPanY` + `handleWheel` + `handlePointerDown`/`handlePointerUp` → `d3.zoom()` (wheel, drag, touch pinch, passive:false, rAF-throttled)
+- **Stars**: `new Graphics().circle().fill().stroke()` → `ctx.beginPath(); ctx.arc(); ctx.fill(); ctx.stroke()`
+- **Focus overlay**: Pixi Graphics lines + circles → Canvas 2D moveTo/lineTo/arc
+- **Region rim**: Pixi Graphics + Pixi Text → Canvas 2D arc/stroke/strokeText/fillText
+- **Milky Way**: Pixi Sprite+Texture → offscreen canvas + ctx.drawImage
+- **Hit-testing**: Manual inverse transform → `currentTransform.invert([px, py])` (d3-zoom)
+- **Placeholder**: Pixi Text on stage → simple string rendered in draw() via ctx.fillText
+- **DPR handling**: Canvas attribute size = CSS size × devicePixelRatio; ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+- **Close button**: Works because Canvas 2D has ZERO global event side effects (no document-level listeners)
+
+D3 v7 was already a dependency (used by SkyView). pixi.js stays in package.json for Constellation Map (graphEngine.ts).
+
+### Build verification
+
+- `svelte-check`: 0 new errors (1 pre-existing `fresh` LinkLifecycle — deferred MIG-014 follow-up)
+- `npm run build`: ✓ built in 1m 54s, output clean
+- ModeContext local variable renamed `ctx` → `mctx` to avoid shadowing the Canvas 2D context
+
+### What this eliminates permanently
+
+1. Pixi.js v8 EventSystem global capture-phase listeners (the 11-iteration close-button killer)
+2. GPU buffer allocation per-star (the 3-minute render time on Boss-scale universes)
+3. Pixi Container hierarchy management (6 containers + stage → single draw() pipeline)
+4. Two-transform-pipeline drift (Pixi scale vs CSS transform — now one d3-zoom transform)
+
+### Orientation chain
+
+- v1.71 → **v1.72** (§2G.3q inline). Preserved in `docs/`.
+
+---
+
+## Next steps
+
+1. **Build binary** and have Eisa test:
+   - Stage 1: close button (× in top-right corner) — the 12th-iteration test
+   - Stage 2: chart renders (stars, rim numbers, Universe Health, legend)
+   - Stage 3: zoom/pan (mouse wheel + drag)
+   - Stage 4: hover tooltip + click selection + connected-notes side panel
+2. After PASS → §2G.4 mode toggle UI + §2G.5 persistence + §2G.6 audit/close-out
+3. MIG-020 (layer peeling + v2 retire)

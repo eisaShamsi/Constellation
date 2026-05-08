@@ -1,28 +1,23 @@
 <!--
     SightV3.svelte — the v3 star-chart Sight component.
 
-    §1C: empty Pixi canvas + placeholder text.
-    §1D: stars at MDS-embedded positions, sized by centrality;
-        Lambert ↔ stereographic projection toggle.
-    §1E (this commit): territories + faint connector lines at rest +
-        hover/click/double-click + tooltip + side panel + Suwaidi
-        warm-cream + gold palette. The Boss-test gate.
+    §2G.3q: Canvas 2D + D3-zoom renderer (replaces Pixi.js v8 which had
+    document-level capture-phase pointer listeners that stole global
+    click events, breaking the close button across 11 iterations).
 
-    §1E architecture — three Pixi containers on a single Stage:
-      territoryContainer  — community polygons (cycled-pastel fill)
-      edgeContainer       — faint connector lines (Suwaidi cream, low α)
-      starContainer       — stars (Suwaidi cream, sized by centrality)
-      focusOverlay        — brightened edges + outlined focus star,
-                            redrawn ONLY on hover/click state changes.
-    The first three layers redraw together on layout/projection changes.
-    The focus overlay redraws on hover/click only — base stays static.
+    Architecture — immediate-mode Canvas 2D draw() pipeline:
+      1. Clear + cream fill
+      2. Apply d3-zoom transform (translate + scale)
+      3. Draw layers in order: Milky Way → territories → edges →
+         stars → focus overlay → rim
+      4. Sync HTML overlay CSS transform for lockstep zoom/pan.
 
     Companion to: docs/Constellation-Sight-v3-Concept-Paper-v1.1.md.
     Plan ref:    lab/reports/MIG-018-V3-PROJECTION-FOUNDATION-PLAN.md.
 -->
 <script lang="ts">
     import { onMount, onDestroy } from 'svelte';
-    import { Application, Container, Graphics, Text, TextStyle, Sprite, Texture } from 'pixi.js';
+    import * as d3 from 'd3';
     import { libraryStats, appSettings, type SkyNode, type SkyLink } from '$lib/libraries/store';
     import { get } from 'svelte/store';
     import { fetchLayout, type LayoutPoint } from '$lib/sight/layout-cache';
@@ -97,35 +92,29 @@
     }
     let { nodes, links, searchMatchIds = null, universeName = '', onClose, onOpenNote }: Props = $props();
 
-    // ─── DOM + Pixi handles ──────────────────────────────────────────
+    // ─── DOM + Canvas 2D handles ────────────────────────────────────
+    // §2G.3q: Pixi.js v8 → D3 + Canvas 2D migration. Pixi's EventSystem
+    // registered document-level capture-phase pointer listeners that stole
+    // global click events, breaking the close button across 11 iterations.
+    // Canvas 2D has zero global event side effects. D3 provides zoom/pan.
     let canvasContainer: HTMLDivElement;
-    let app: Application | null = null;
-    /** MIG-019 §2B: Milky Way density wash. Sits between sky background
-     *  and territoryContainer so stars + edges still render on top. */
-    let milkyWayContainer: Container | null = null;
-    /** MIG-019 §2C: Calendar rim. Outermost layer (above stars/focus) so
-     *  rim labels + arc lines never get hidden by the chart contents. */
-    let calendarRimContainer: Container | null = null;
-    let territoryContainer: Container | null = null;
-    let edgeContainer: Container | null = null;
-    let starContainer: Container | null = null;
-    let focusOverlay: Container | null = null;
-    let placeholderText: Text | null = null;
+    let canvasEl: HTMLCanvasElement | null = null;
+    let ctx: CanvasRenderingContext2D | null = null;
+    let canvasDpr = 1;    // devicePixelRatio
+    let canvasW = 0;      // CSS pixel width
+    let canvasH = 0;      // CSS pixel height
+    /** Offscreen canvas for the Milky Way density wash (built once per
+     *  density-field fetch, drawn via ctx.drawImage each frame). */
+    let milkyWayOffscreen: HTMLCanvasElement | null = null;
     let resizeObserver: ResizeObserver | null = null;
-    // §2G.3l: closeBtn $state ref + bind:this + $effect addEventListener
-    // pattern ALL removed. Per Svelte 5 docs (and the closed issue
-    // #10435), the canonical pattern is `<button onclick={fn}>` directly.
-    // Six rounds of "defensive" wiring fought a non-bug.
-    /** §2G.3g: parent of every chart layer that should scale + pan
-     *  with the zoom controls. Placeholder text and HTML overlays
-     *  are NOT inside this — they stay anchored to the window. */
-    let chartContainer: Container | null = null;
+    let placeholderMessage: string | null = null;
+    let placeholderIsError = false;
 
     // ─── Data ────────────────────────────────────────────────────────
     let layoutPoints: LayoutPoint[] = $state([]);
     /** MIG-019 §2A+§2B redesign: 2D density field from TF-IDF
      *  (PJ-035 → Milky Way). 256×256 f32 grid; ~256 KB, input-size
-     *  invariant. Rendered as a single Pixi Sprite. */
+     *  invariant. Rendered as a Canvas 2D drawImage from offscreen canvas. */
     let densityField = $state<DensityField | null>(null);
     /** Map note_path → its layout point (for fast lookup during edge draw). */
     let pathToPoint = new Map<string, LayoutPoint>();
@@ -198,26 +187,16 @@
      *  lockstep across the three surfaces. */
     let libraryColors = $state<Map<string, { hex: number; css: string; index: number }>>(new Map());
 
-    // ─── §2G.3g: chart-level zoom + pan ──────────────────────────────
-    /** Scale factor for the chart layers (stars, rim, milky way, etc.).
-     *  HTML overlays (Universe Health, Universe-name header, legend,
-     *  close button) stay screen-anchored. */
-    let chartZoom = $state(1.0);
-    let chartPanX = $state(0);
-    let chartPanY = $state(0);
+    // ─── §2G.3q: chart-level zoom + pan (d3-zoom) ─────────────────
+    /** d3-zoom transform — replaces manual chartZoom/chartPanX/chartPanY.
+     *  `t.k` = scale, `t.x` = translateX, `t.y` = translateY. */
+    let currentTransform = $state(d3.zoomIdentity);
     const MIN_ZOOM = 0.4;
     const MAX_ZOOM = 5.0;
-    const DRAG_THRESHOLD_PX = 4;
-    /** Drag state for the pan gesture. Null when no button is down. */
-    let panDragState: {
-        startClientX: number;
-        startClientY: number;
-        startPanX: number;
-        startPanY: number;
-    } | null = null;
-    /** True if the current pointer-down → pointer-up sequence has
-     *  exceeded the drag threshold. Used to suppress the click that
-     *  fires after a drag. Reset on the next pointer-down. */
+    let zoomBehavior: d3.ZoomBehavior<HTMLCanvasElement, unknown> | null = null;
+    /** True if d3-zoom is in an active drag gesture. Used to suppress
+     *  hover tooltips during pan and suppress the click after drag. */
+    let isDragging = false;
     let panDragMoved = false;
 
     /** §2G.3b: rim label geometry, published by `drawRegionRim`.
@@ -266,21 +245,6 @@
         return s?.sight?.projection === 'stereographic' ? 'stereographic' : 'lambert';
     }
 
-    /** MIG-019 §2E.4: Pixi v8 `removeChildren()` only DETACHES — it
-     *  doesn't free GPU buffers. With 6+ $effects firing on mount and
-     *  fullRedraw running once, calling `container.removeChildren()`
-     *  before each redraw leaks WebGL state across cycles. The GPU
-     *  process eventually saturates → page-OOM.
-     *
-     *  This helper detaches AND destroys every child so per-cycle
-     *  state actually returns to zero. */
-    function safeClearContainer(container: Container) {
-        const old = container.removeChildren();
-        for (const child of old) {
-            try { child.destroy(); } catch { /* defensive — already destroyed */ }
-        }
-    }
-
     /** §2G.3e: deterministic [0, 1) hash from a string. djb2 variant —
      *  fast, collision-tolerant for our use (uniform spread of stars
      *  within their wedge, not security). */
@@ -308,138 +272,36 @@
         return STAR_MIN_RADIUS + sizeNorm * (STAR_MAX_RADIUS - STAR_MIN_RADIUS);
     }
 
-    /** §2G.3b — dome geometry with breathing room.
-     *
-     *  Eisa's directive 2026-05-07: "the dome should be at least 100 px
-     *  away from the top and bottom window borders." The Universe Health
-     *  card occupies ~155 px at top, so we reserve ~270 px there
-     *  (Universe Health + 100 px clear margin). 100 px reserved at
-     *  bottom. Sides reserve 100 px so the rim labels (which extend
-     *  ~70 px outside the dome) don't kiss the window edge.
-     *
-     *  The dome center shifts down to the middle of the AVAILABLE
-     *  vertical space, not the middle of the canvas.  */
-    /** §2G.3l (evidence-backed redesign): Pixi-native zoom for the
-     *  canvas, CSS-transform on a separate wrapper for HTML overlays.
-     *  Both driven by the same chartZoom + chartPanX/Y values,
-     *  applied in lockstep so they look like one lens.
-     *
-     *  Why split? CSS-scaling the <canvas> element blurs it (canvas
-     *  is a fixed bitmap; MDN "Optimizing canvas"). The canonical
-     *  Pixi pattern is `container.scale.set(zoom)` with `pivot` and
-     *  `position` for translation (Steve Ruiz "Creating a Zoom UI";
-     *  pixi-viewport library). Hit-testing automatically accounts
-     *  for container transforms.
-     *
-     *  HTML overlays (legend, Universe Health, etc.) are pure DOM,
-     *  so they CSS-scale via a wrapper transform. They stay sharp
-     *  because they're vector text/CSS, not bitmap.
-     *
-     *  Eisa directive 2026-05-08: "everything locked in place; mouse
-     *  wheel as a lens." Two transform sources, one chartZoom value,
-     *  same visual result. */
+    /** §2G.3q: HTML overlays CSS transform — driven by d3-zoom's
+     *  currentTransform so HTML legends / health / universe-name scale
+     *  in lockstep with the Canvas 2D chart. */
     let overlaysTransform = $state('none');
-    let overlaysTransformOrigin = $state('50% 50%');
+    let overlaysTransformOrigin = $state('0 0');
 
-    /** Pixi-side: scale + pan the chartContainer (which holds stars,
-     *  rim, Milky Way, edges, focus overlay). */
-    function updateChartTransform() {
-        if (!chartContainer) return;
-        const vp = getViewport();
-        if (!vp) return;
-        chartContainer.pivot.set(vp.cx, vp.cy);
-        chartContainer.position.set(vp.cx + chartPanX, vp.cy + chartPanY);
-        chartContainer.scale.set(chartZoom);
-    }
-
-    /** HTML side: CSS transform on the overlays wrapper. Same pivot
-     *  and translate as Pixi so they move in lockstep.
-     *  §2G.3m: switched to translate3d/scale3d for GPU-precise
-     *  sub-pixel rendering matching what Pixi does on its canvas;
-     *  the 2D versions can produce slight rounding differences
-     *  that show up as "library numbers offset on zoom." */
     function syncOverlaysTransform() {
-        const vp = getViewport();
-        if (!vp) {
-            overlaysTransform = 'none';
-            overlaysTransformOrigin = '50% 50%';
-            return;
-        }
-        overlaysTransformOrigin = `${vp.cx}px ${vp.cy}px`;
-        if (chartZoom === 1 && chartPanX === 0 && chartPanY === 0) {
+        const t = currentTransform;
+        if (t.k === 1 && t.x === 0 && t.y === 0) {
             overlaysTransform = 'none';
         } else {
-            overlaysTransform = `translate3d(${chartPanX}px, ${chartPanY}px, 0) scale3d(${chartZoom}, ${chartZoom}, 1)`;
+            overlaysTransformOrigin = '0 0';
+            overlaysTransform = `translate3d(${t.x}px, ${t.y}px, 0) scale3d(${t.k}, ${t.k}, 1)`;
         }
     }
 
-    /** One call applies both transforms in lockstep. */
-    function syncZoomTransform() {
-        updateChartTransform();
-        syncOverlaysTransform();
-    }
-    /** Back-compat alias. */
-    function syncRimTransform() { syncOverlaysTransform(); }
-
-    /** §2G.3g: wheel-zoom handler. preventDefault stops the page from
-     *  scrolling and stops Ctrl+wheel from triggering browser zoom.
-     *  §2G.3k: rAF-throttled — high-DPI mice fire 100+ wheel events
-     *  per second; without throttling, each event was scheduling a
-     *  Svelte reactive update and flooding the main thread to a
-     *  freeze. Now: zoom state updates immediately, but the
-     *  syncZoomTransform DOM write happens at most once per frame. */
-    let zoomFrame: number | null = null;
-    function handleWheel(ev: WheelEvent) {
-        ev.preventDefault();
-        const dz = -ev.deltaY * 0.0015;
-        const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, chartZoom * Math.exp(dz)));
-        if (newZoom === chartZoom) return;
-        chartZoom = newZoom;
-        if (zoomFrame !== null) return;  // already a sync scheduled this frame
-        zoomFrame = requestAnimationFrame(() => {
-            zoomFrame = null;
-            syncZoomTransform();
-        });
-    }
-
-    /** §2G.3g: pointer-down starts a potential pan gesture. We don't
-     *  commit to dragging until the pointer moves more than DRAG_THRESHOLD;
-     *  that lets short clicks still hit stars. */
-    function handlePointerDown(ev: PointerEvent) {
-        if (ev.button !== 0) return;  // primary mouse button only
-        panDragState = {
-            startClientX: ev.clientX,
-            startClientY: ev.clientY,
-            startPanX: chartPanX,
-            startPanY: chartPanY,
-        };
-        panDragMoved = false;
-    }
-
-    /** §2G.3g: pointer-up cleans up the drag state and the cursor. */
-    function handlePointerUp() {
-        if (panDragState) {
-            panDragState = null;
-            if (canvasContainer) canvasContainer.style.cursor = 'default';
-        }
-    }
-
-    /** §2G.3g: reset zoom + pan to defaults. Bound to Esc when no
-     *  selection is active (existing handleEscape path) and to a
-     *  "Reset view" button when zoom != 1 or pan != 0. */
     function resetView() {
-        if (chartZoom === 1 && chartPanX === 0 && chartPanY === 0) return;
-        chartZoom = 1.0;
-        chartPanX = 0;
-        chartPanY = 0;
-        updateChartTransform();
-        syncRimTransform();
+        if (!canvasEl || !zoomBehavior) return;
+        d3.select(canvasEl).transition().duration(300)
+            .call(zoomBehavior.transform, d3.zoomIdentity);
+    }
+
+    /** Convert a hex integer (0xd4af37) to a CSS string ('#d4af37'). */
+    function hexInt(n: number): string {
+        return '#' + n.toString(16).padStart(6, '0');
     }
 
     function getViewport() {
-        if (!app) return null;
-        const w = app.screen.width;
-        const h = app.screen.height;
+        const w = canvasW;
+        const h = canvasH;
         if (w === 0 || h === 0) return null;
 
         // §2G.3c: bumped from 270 → 320 so the Universe-name header
@@ -637,7 +499,7 @@
 
         // Reusable ModeContext — mutated per-iteration to avoid
         // allocations on the hot path.
-        const ctx: ModeContext = {
+        const mctx: ModeContext = {
             notePath: '',
             centralityRank: 0,
             linkCount: 0,
@@ -654,17 +516,17 @@
 
         for (const pt of layoutPoints) {
             const sky = pathToSkyNode.get(pt.note_path);
-            ctx.notePath = pt.note_path;
-            ctx.centralityRank = pathToCentralityRank.get(pt.note_path) ?? 0.5;
-            ctx.linkCount = sky?.linkCount ?? 0;
-            ctx.outgoingCount = sky?.outgoingCount ?? 0;
-            ctx.createdAt = (sky?.createdAt ?? null) as number | null;
-            ctx.modifiedAt = (sky?.createdAt ?? null) as number | null;  // see buildIndices note
-            ctx.embedAngleRad = pathToEmbedAngle.get(pt.note_path) ?? 0;
-            ctx.regionLayout = regionLayout;
-            ctx.stats = modeStats;
+            mctx.notePath = pt.note_path;
+            mctx.centralityRank = pathToCentralityRank.get(pt.note_path) ?? 0.5;
+            mctx.linkCount = sky?.linkCount ?? 0;
+            mctx.outgoingCount = sky?.outgoingCount ?? 0;
+            mctx.createdAt = (sky?.createdAt ?? null) as number | null;
+            mctx.modifiedAt = (sky?.createdAt ?? null) as number | null;  // see buildIndices note
+            mctx.embedAngleRad = pathToEmbedAngle.get(pt.note_path) ?? 0;
+            mctx.regionLayout = regionLayout;
+            mctx.stats = modeStats;
 
-            const pos: ModePosition = positionForMode(currentMode, ctx);
+            const pos: ModePosition = positionForMode(currentMode, mctx);
             const { x, y } = polarToCartesian(pos.radius, pos.azimuth, cx, cy);
             pathToScreen.set(pt.note_path, {
                 x, y,
@@ -785,50 +647,49 @@
      *  perimeter just outside the dome. Eisa's design call (§11 Q3,
      *  2026-05-07): Gregorian default; users add others via Settings. */
     function drawCalendarRim() {
-        if (!calendarRimContainer || !app) return;
-        safeClearContainer(calendarRimContainer);
+        if (!ctx) return;
 
         const enabled = ($appSettings.sight?.calendarSystems ?? ['gregorian']) as CalendarSystem[];
         if (enabled.length === 0) return;
 
-        // §2G.3b: share viewport with the dome so the rim is concentric.
         const vp = getViewport();
         if (!vp) return;
         const domeRadius = vp.radius;
         const rimViewport = {
             cx: vp.cx,
             cy: vp.cy,
-            innerRadius: domeRadius + 4, // small gap between dome edge and rim
+            innerRadius: domeRadius + 4,
             outerRadius: domeRadius + 4 + 22 * enabled.length,
         };
 
         const locale = get(i18nLocale) ?? 'en';
         monthSegments = monthArcSegments(rimViewport, enabled, locale);
 
-        // Current Gregorian month (highlighted by a brighter ring color).
         const currentGregorianMonth = new Date().getMonth();
 
-        // Render arc dividers
-        const arcs = new Graphics();
+        // Arc dividers
+        ctx.beginPath();
         for (const seg of monthSegments) {
-            // Each segment: draw the radial divider line at the start angle
-            // (ring boundary at startAngle).
             const x1 = rimViewport.cx + seg.rIn * Math.cos(seg.startAngle);
             const y1 = rimViewport.cy + seg.rIn * Math.sin(seg.startAngle);
             const x2 = rimViewport.cx + seg.rOut * Math.cos(seg.startAngle);
             const y2 = rimViewport.cy + seg.rOut * Math.sin(seg.startAngle);
-            arcs.moveTo(x1, y1);
-            arcs.lineTo(x2, y2);
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
         }
         // Outer + inner ring boundaries
         for (let r = 0; r <= enabled.length; r++) {
             const radius = rimViewport.innerRadius + r * 22;
-            arcs.circle(rimViewport.cx, rimViewport.cy, radius);
+            ctx.moveTo(rimViewport.cx + radius, rimViewport.cy);
+            ctx.arc(rimViewport.cx, rimViewport.cy, radius, 0, Math.PI * 2);
         }
-        arcs.stroke({ color: 0xd4af37, alpha: 0.35, width: 1 });
-        calendarRimContainer.addChild(arcs);
+        ctx.strokeStyle = 'rgba(212, 175, 55, 0.35)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
 
-        // Render month labels
+        // Month labels
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
         for (const seg of monthSegments) {
             const isCurrent = seg.calendar === 'gregorian' && seg.monthIndex === currentGregorianMonth;
             const isHovered = seg.calendar === 'gregorian' && seg.monthIndex === hoveredMonth;
@@ -837,20 +698,9 @@
                 && monthFilterPersistent;
             const alpha = isFiltered ? 1.0 : isHovered ? 0.95 : isCurrent ? 0.9 : 0.65;
             const fontSize = isCurrent || isFiltered ? 11 : 10;
-            const label = new Text({
-                text: seg.label,
-                style: new TextStyle({
-                    fill: isCurrent || isFiltered ? 0xd4af37 : 0xf5e6c8,
-                    fontSize,
-                    fontFamily: 'system-ui, -apple-system, sans-serif',
-                    align: 'center',
-                }),
-                anchor: 0.5,
-            });
-            label.x = seg.labelX;
-            label.y = seg.labelY;
-            label.alpha = alpha;
-            calendarRimContainer.addChild(label);
+            ctx.font = `${fontSize}px system-ui, -apple-system, sans-serif`;
+            ctx.fillStyle = isCurrent || isFiltered ? `rgba(212, 175, 55, ${alpha})` : `rgba(245, 230, 200, ${alpha})`;
+            ctx.fillText(seg.label, seg.labelX, seg.labelY);
         }
     }
 
@@ -883,63 +733,52 @@
     }
 
     /** MIG-019 §2A+§2B redesign — Milky Way density wash (PJ-035).
-     *  Renders the Rust-side density grid as a single Pixi Sprite.
+     *  Renders the Rust-side density grid as a Canvas 2D drawImage.
      *
      *  The grid (256×256 f32) was accumulated by rasterizing every
      *  high-similarity pair into grid space and then Gaussian-blurring
      *  to smooth into a continuous band texture. We build an RGBA8
      *  ImageData from the grid (Suwaidi cream tinted; alpha proportional
-     *  to normalized cell value) and convert to a Pixi Texture via a
-     *  one-time canvas. Single draw call — universe size irrelevant. */
-    function drawMilkyWay() {
-        if (!milkyWayContainer || !app) return;
-        safeClearContainer(milkyWayContainer);
-        // Hide if Settings → Sight → "Milky Way density wash" is OFF.
+     *  to normalized cell value) onto an offscreen canvas and blit it
+     *  each frame. Single draw call — universe size irrelevant. */
+    /** Build the offscreen Milky Way canvas from the density field.
+     *  Called once per density-field fetch; drawn via drawMilkyWay(). */
+    function buildMilkyWayImage() {
         if ($appSettings.sight?.showMilkyWay === false) {
-            milkyWayContainer.visible = false;
+            milkyWayOffscreen = null;
             return;
         }
-        milkyWayContainer.visible = true;
-        if (!densityField || densityField.max_value <= 0) return;
-
-        // Build RGBA8 ImageData from the float grid.
+        if (!densityField || densityField.max_value <= 0) {
+            milkyWayOffscreen = null;
+            return;
+        }
         const w = densityField.width;
         const h = densityField.height;
         const maxV = densityField.max_value || 1.0;
-        const canvas = document.createElement('canvas');
-        canvas.width = w;
-        canvas.height = h;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-        const imgData = ctx.createImageData(w, h);
+        const offCanvas = document.createElement('canvas');
+        offCanvas.width = w;
+        offCanvas.height = h;
+        const offCtx = offCanvas.getContext('2d');
+        if (!offCtx) return;
+        const imgData = offCtx.createImageData(w, h);
         const rgba = imgData.data;
         for (let i = 0; i < w * h; i++) {
-            // Normalize, then apply soft gamma (sqrt) so faint regions
-            // are still visible while the brightest spots don't oversaturate.
             const v = Math.sqrt(Math.max(0, densityField.values[i] / maxV));
-            // Suwaidi cream (#f5e6c8) — same as the connector lines.
             rgba[i * 4 + 0] = 0xf5;
             rgba[i * 4 + 1] = 0xe6;
             rgba[i * 4 + 2] = 0xc8;
-            // Cap alpha at ~110/255 (~43%) so the band stays subtle —
-            // it's a backdrop, not a foreground feature.
             rgba[i * 4 + 3] = Math.round(v * 110);
         }
-        ctx.putImageData(imgData, 0, 0);
+        offCtx.putImageData(imgData, 0, 0);
+        milkyWayOffscreen = offCanvas;
+    }
 
-        // Convert to Pixi Texture and stretch to fill the dome.
-        // §2G.3b: align with shared viewport so the Milky Way sits
-        // inside the actual dome (not centered on the raw canvas).
-        const texture = Texture.from(canvas);
-        const sprite = new Sprite(texture);
+    function drawMilkyWay() {
+        if (!ctx || !milkyWayOffscreen) return;
         const vp = getViewport();
         if (!vp) return;
-        const domeRadius = vp.radius;
-        sprite.width = domeRadius * 2;
-        sprite.height = domeRadius * 2;
-        sprite.x = vp.cx - domeRadius;
-        sprite.y = vp.cy - domeRadius;
-        milkyWayContainer.addChild(sprite);
+        const domeR = vp.radius;
+        ctx.drawImage(milkyWayOffscreen, vp.cx - domeR, vp.cy - domeR, domeR * 2, domeR * 2);
     }
 
     /** Draw community territory polygons on the base layer.
@@ -948,8 +787,6 @@
      *  - MIG-019 §2E always-on labels: render community label at the
      *    centroid when $appSettings.sight.alwaysOnLabels is true. */
     function drawTerritories() {
-        if (!territoryContainer) return;
-        safeClearContainer(territoryContainer);
 
         // MIG-019 §2G (Eisa post-§2G.3 directive 2026-05-07): community
         // territories were a v2 carryover that worked when MDS clustered
@@ -966,8 +803,8 @@
     }
 
     /** Draw faint connector lines on the base layer.
-     *  Cap rendered edges at MAX_FAINT_EDGES_AT_REST to bound the Pixi
-     *  buffer + draw cost on large universes (Boss-scale: 656k links).
+     *  Cap rendered edges at MAX_FAINT_EDGES_AT_REST to bound draw cost
+     *  on large universes (Boss-scale: 656k links).
      *  When over-cap, the visible sample is the FIRST N edges from
      *  `resolvedEdges` — deterministic since iteration order is stable.
      *  The full edge set is still in `resolvedEdges` for the focus
@@ -985,33 +822,21 @@
      *  ghost across mode switches. The edge layer stays empty until
      *  `drawFocusOverlay` renders into it on hover/click.  */
     function drawEdges() {
-        if (!edgeContainer) return;
-        safeClearContainer(edgeContainer);
         // Resting state — no edges. The focus overlay handles active state.
     }
 
     /** Draw stars on the base layer.
      *
-     *  MIG-019 §2E.4 SOLVE (2026-05-07): consolidated 7,334 separate
-     *  `new Graphics()` instances into a SINGLE Graphics with 7,334
-     *  circle subpaths. v2 ConstellationSight2 used Canvas 2D (single
-     *  canvas, direct draw calls — no per-shape GPU allocations); my
-     *  Pixi v8 implementation was allocating GPU buffers per-instance,
-     *  which the WebView2 GPU process can't sustain at Boss scale
-     *  (7,334 stars × 217k links). Single-Graphics + per-circle
-     *  fill() batches everything into one GL draw call.
+     *  §2G.3q Canvas 2D: draws each star as a filled circle with a thin
+     *  contrast stroke. Immediate-mode rendering — no GPU buffer
+     *  allocations (the root cause of the 3-minute Pixi v8 render).
      *
      *  - MIG-019 §2C: dim stars failing the month filter.
      *  - MIG-019 §2E: search-active path — matched stars flare (size +
      *    brightness boost), non-matched dim heavily. */
     function drawStars() {
-        if (!starContainer) return;
-        safeClearContainer(starContainer);
+        if (!ctx) return;
         const searchOn = isSearchActive();
-        const stars = new Graphics();
-        // §2G.3m: actualNodeRadius is the SINGLE source of truth for
-        // the drawn star radius. drawFocusOverlay calls the same
-        // function so selection rings exactly match the node size.
         for (const pt of layoutPoints) {
             const screen = pathToScreen.get(pt.note_path);
             if (!screen) continue;
@@ -1035,22 +860,23 @@
                 alpha = baseAlpha;
             }
 
-            // §2G.3f: per-library color (was uniform near-black). Falls
-            // back to ink when no wedge is found.
             const wedge = regionLayout?.pathToWedge.get(pt.note_path);
             const libColor = wedge ? libraryColors.get(wedge.libraryPath) : undefined;
-            const fillColor = libColor?.hex ?? 0x1a1a1a;
+            const fillCss = libColor?.css ?? '#1a1a1a';
 
-            // §2G.3f: each star draws as TWO subpaths in the same
-            // Graphics — fill + stroke — so we still hit the single
-            // GL draw call from §2E.4 OOM solve.
-            stars.circle(screen.x, screen.y, radius);
-            stars.fill({ color: fillColor, alpha });
-            // Thin contrast stroke around every star (Eisa directive).
-            stars.circle(screen.x, screen.y, radius);
-            stars.stroke({ color: 0x1a1a1a, alpha: alpha * 0.85, width: 0.6 });
+            // Fill
+            ctx.beginPath();
+            ctx.arc(screen.x, screen.y, radius, 0, Math.PI * 2);
+            ctx.fillStyle = fillCss;
+            ctx.globalAlpha = alpha;
+            ctx.fill();
+            // Thin contrast stroke
+            ctx.strokeStyle = '#1a1a1a';
+            ctx.lineWidth = 0.6;
+            ctx.globalAlpha = alpha * 0.85;
+            ctx.stroke();
         }
-        starContainer.addChild(stars);
+        ctx.globalAlpha = 1.0;
     }
 
     /** Redraw the focus overlay based on hoveredPath / selectedPath /
@@ -1060,9 +886,11 @@
      *  - selectedPath → brighten ALL edges within that star's community.
      *  - searchActive (no specific focus) → brighten edges between matched stars.
      *  Draws AFTER drawX so it sits on top. */
+    /** §2G.3q Canvas 2D: draw focus overlay (edges + rings for
+     *  hovered/selected star). Called AFTER drawStars in the draw()
+     *  pipeline so it renders on top of the base layer. */
     function drawFocusOverlay() {
-        if (!focusOverlay) return;
-        safeClearContainer(focusOverlay);
+        if (!ctx) return;
 
         const focusPath = selectedPath ?? hoveredPath;
         const searchOn = isSearchActive();
@@ -1071,21 +899,24 @@
         // edges between matched stars so the user sees the search-result
         // sub-graph clearly.
         if (!focusPath && searchOn) {
-            const lines = new Graphics();
+            ctx.beginPath();
             let edgeCount = 0;
             for (const e of resolvedEdges) {
                 if (matchedPaths.has(e.a) && matchedPaths.has(e.b)) {
                     const sa = pathToScreen.get(e.a);
                     const sb = pathToScreen.get(e.b);
                     if (!sa || !sb) continue;
-                    lines.moveTo(sa.x, sa.y);
-                    lines.lineTo(sb.x, sb.y);
+                    ctx.moveTo(sa.x, sa.y);
+                    ctx.lineTo(sb.x, sb.y);
                     edgeCount++;
                 }
             }
             if (edgeCount > 0) {
-                lines.stroke({ color: 0xc9a227, alpha: 0.7, width: 1.0 });
-                focusOverlay.addChild(lines);
+                ctx.strokeStyle = '#c9a227';
+                ctx.globalAlpha = 0.7;
+                ctx.lineWidth = 1.0;
+                ctx.stroke();
+                ctx.globalAlpha = 1.0;
             }
             return;
         }
@@ -1095,13 +926,9 @@
         const focusScreen = pathToScreen.get(focusPath);
         if (!focusScreen) return;
 
-        // §2G.3h: edges incident to the FOCUSED NODE only (was: whole
-        // community on selection). Cap at MAX_FOCUS_EDGES so a hub
-        // node doesn't smother the chart with hundreds of fan-out
-        // lines (Eisa screenshot 2026-05-08). Lighter stroke so 1-hop
-        // neighbours remain readable through the gold rays.
+        // §2G.3h: edges incident to the FOCUSED NODE only.
         const MAX_FOCUS_EDGES = 50;
-        const lines = new Graphics();
+        ctx.beginPath();
         let edgeCount = 0;
         const neighbours = new Set<string>();
         for (const e of resolvedEdges) {
@@ -1110,60 +937,52 @@
             const sa = pathToScreen.get(e.a);
             const sb = pathToScreen.get(e.b);
             if (!sa || !sb) continue;
-            lines.moveTo(sa.x, sa.y);
-            lines.lineTo(sb.x, sb.y);
+            ctx.moveTo(sa.x, sa.y);
+            ctx.lineTo(sb.x, sb.y);
             edgeCount++;
             neighbours.add(e.a === focusPath ? e.b : e.a);
         }
         if (edgeCount > 0) {
-            // §2G.3m: switched to INK (#1a1a1a) at alpha 0.7 for
-            // strong contrast on the cream BG. The dark-amber
-            // (#6b4f0d) was still too low-contrast per Eisa's
-            // §2G.3l feedback.
-            lines.stroke({ color: 0x1a1a1a, alpha: 0.7, width: 1.0 });
-            focusOverlay.addChild(lines);
+            ctx.strokeStyle = '#1a1a1a';
+            ctx.globalAlpha = 0.7;
+            ctx.lineWidth = 1.0;
+            ctx.stroke();
         }
-        // §2G.3m: neighbour rings sized to the ACTUAL node radius
-        // (was: ns.r which is the position pseudo-radius, not the
-        // drawn radius — rings ended up 1.5-2× the visible node).
+
+        // Neighbour rings
         if (neighbours.size > 0) {
-            const neighbourRings = new Graphics();
             for (const npath of neighbours) {
                 const ns = pathToScreen.get(npath);
                 if (!ns) continue;
                 const r = actualNodeRadius(ns.r) + 0.8;
-                neighbourRings.circle(ns.x, ns.y, r);
-                neighbourRings.stroke({ color: 0xc9a227, alpha: 0.85, width: 0.8 });
+                ctx.beginPath();
+                ctx.arc(ns.x, ns.y, r, 0, Math.PI * 2);
+                ctx.strokeStyle = '#c9a227';
+                ctx.globalAlpha = 0.85;
+                ctx.lineWidth = 0.8;
+                ctx.stroke();
             }
-            focusOverlay.addChild(neighbourRings);
         }
 
-        // §2G.3m: ring size matches the actual drawn node radius. Was
-        // using `focusScreen.r + 1` where focusScreen.r is the position
-        // pseudo-radius (0.7-8.4 px), not the rendered radius (1.2-4.0).
-        // Now via the shared `actualNodeRadius()` helper so the ring
-        // sits exactly 1 px outside the node's visible edge.
-        const ring = new Graphics();
+        // Focus ring on the selected/hovered star
         const focusR = actualNodeRadius(focusScreen.r);
-        ring.circle(focusScreen.x, focusScreen.y, focusR + 1);
-        ring.stroke({ color: 0xc9a227, alpha: 1.0, width: 1.5 });
-        focusOverlay.addChild(ring);
+        ctx.beginPath();
+        ctx.arc(focusScreen.x, focusScreen.y, focusR + 1, 0, Math.PI * 2);
+        ctx.strokeStyle = '#c9a227';
+        ctx.globalAlpha = 1.0;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.globalAlpha = 1.0;
     }
 
     /** Find the nearest star within `r=10` of (px, py). Returns the
      *  note_path or null. O(n) iteration; for 30k stars this is ~1ms. */
+    /** §2G.3q Canvas 2D: find the nearest star within hit radius of
+     *  (px, py) in CSS coordinates. Uses d3-zoom's `currentTransform
+     *  .invert()` to map screen → data space. O(n) scan — ~1ms for 7k. */
     function pickStar(px: number, py: number): string | null {
-        // §2G.3l: canvas is NOT CSS-scaled (Pixi-native chartContainer
-        // scale handles the zoom). So (px, py) — already canvas-internal
-        // CSS coords from getBoundingClientRect — need the inverse of
-        // the chartContainer's transform:
-        //   chartContainer = pivot(cx, cy) + position(cx+panX, cy+panY) + scale(zoom)
-        //   visual_x = (canonical_x - cx) * zoom + cx + panX
-        //   canonical_x = (visual_x - cx - panX) / zoom + cx
-        const vp = getViewport();
-        if (!vp) return null;
-        const cpx = (px - vp.cx - chartPanX) / chartZoom + vp.cx;
-        const cpy = (py - vp.cy - chartPanY) / chartZoom + vp.cy;
+        // Invert the d3-zoom transform to get canonical (data-space) coords.
+        const [cpx, cpy] = currentTransform.invert([px, py]);
 
         const HOVER_RADIUS = 10;
         let best: string | null = null;
@@ -1172,9 +991,8 @@
             const dx = s.x - cpx;
             const dy = s.y - cpy;
             const d2 = dx * dx + dy * dy;
-            // tolerance: hit even a bit outside the star sprite
             const effectiveR = s.r + 4;
-            const hitR2 = Math.max(d2, 0) <= effectiveR * effectiveR ? d2 : Infinity;
+            const hitR2 = d2 <= effectiveR * effectiveR ? d2 : Infinity;
             if (hitR2 < bestDist) {
                 bestDist = hitR2;
                 best = path;
@@ -1193,16 +1011,15 @@
      *  Other modes (Link Types, Confidence, Stages, Acts) will draw
      *  their fixed wedge labels via small per-mode renderers added
      *  in subsequent commits. */
+    /** §2G.3q Canvas 2D: dispatch rim rendering by active mode. */
     function drawRimForMode() {
-        if (!calendarRimContainer || !app) return;
+        if (!ctx) return;
         if (currentMode === 'regions') {
             drawRegionRim();
         } else if (currentMode === 'time') {
             drawCalendarRim();
-            rimLabelGeometry = [];  // hide region rim labels
+            rimLabelGeometry = [];
         } else {
-            // Other modes not yet wired — empty rim is fine for now.
-            safeClearContainer(calendarRimContainer);
             rimLabelGeometry = [];
         }
     }
@@ -1211,10 +1028,10 @@
      *  count (largest first), with tangential blue-ink labels.
      *  §2G.3b: shares the same viewport as star positioning so the rim
      *  is concentric with the dome (not centered on the raw canvas). */
+    /** §2G.3q Canvas 2D: Regions-mode rim. Library wedges sized by note
+     *  count (largest first), with tangential labels drawn on canvas. */
     function drawRegionRim() {
-        if (!calendarRimContainer || !app) return;
-        safeClearContainer(calendarRimContainer);
-        if (!regionLayout || regionLayout.wedges.length === 0) return;
+        if (!ctx || !regionLayout || regionLayout.wedges.length === 0) return;
 
         const vp = getViewport();
         if (!vp) return;
@@ -1224,69 +1041,64 @@
         const rimInner = domeR + 18;
         const rimOuter = domeR + 70;
 
-        // Outer + inner rim circles
-        const rim = new Graphics();
-        rim.circle(cx, cy, rimOuter);
-        rim.stroke({ color: 0x1a1a1a, alpha: 0.55, width: 0.8 });
-        rim.circle(cx, cy, rimInner);
-        rim.stroke({ color: 0x1a1a1a, alpha: 0.35, width: 0.5 });
+        // Outer rim circle
+        ctx.beginPath();
+        ctx.arc(cx, cy, rimOuter, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(26, 26, 26, 0.55)';
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+        // Inner rim circle
+        ctx.beginPath();
+        ctx.arc(cx, cy, rimInner, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(26, 26, 26, 0.35)';
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
         // Dome edge
-        rim.circle(cx, cy, domeR);
-        rim.stroke({ color: 0x1a1a1a, alpha: 0.4, width: 0.7 });
+        ctx.beginPath();
+        ctx.arc(cx, cy, domeR, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(26, 26, 26, 0.4)';
+        ctx.lineWidth = 0.7;
+        ctx.stroke();
 
-        // Wedge dividers + labels
-        const TAU = Math.PI * 2;
+        // Wedge dividers
+        ctx.beginPath();
         for (const wedge of regionLayout.wedges) {
-            // Divider line at start of wedge — rim band only.
             const tStart = wedge.arcStartRad;
-            // polar.ts convention: theta=0 at TOP, CW+. Pixi uses standard math:
-            // angle 0 = right (+x), CCW positive. Convert by subtracting π/2 and
-            // negating: pixi_angle = -(theta - π/2) = π/2 - theta. We use sin/cos
-            // directly on polar coords, matching `polarToCartesian`.
             const dx0 = (rimInner - 2) * Math.sin(tStart);
             const dy0 = -(rimInner - 2) * Math.cos(tStart);
             const dx1 = (rimOuter + 4) * Math.sin(tStart);
             const dy1 = -(rimOuter + 4) * Math.cos(tStart);
-            rim.moveTo(cx + dx0, cy + dy0);
-            rim.lineTo(cx + dx1, cy + dy1);
+            ctx.moveTo(cx + dx0, cy + dy0);
+            ctx.lineTo(cx + dx1, cy + dy1);
         }
-        rim.stroke({ color: 0x1a1a1a, alpha: 0.55, width: 0.7 });
-        calendarRimContainer.addChild(rim);
+        ctx.strokeStyle = 'rgba(26, 26, 26, 0.55)';
+        ctx.lineWidth = 0.7;
+        ctx.stroke();
 
-        // §2G.3n: rim NUMBERS are now Pixi Text, drawn into the same
-        // calendarRimContainer that holds the rim circles. Both are
-        // children of chartContainer and share the chartContainer
-        // transform — so when chartZoom changes, the numbers scale
-        // EXACTLY in lockstep with the circles. No more CSS-vs-Pixi
-        // divergence drift (the §2G.3l-m bug).
-        //
-        // (The library legend panel still uses HTML — it doesn't have
-        // to align with the rim, and the legend names need `dir="auto"`
-        // for Arabic/Hebrew/Persian library names. Single digits don't.)
+        // Rim numbers — drawn directly on the canvas so they scale
+        // with the d3-zoom transform (no CSS-vs-Canvas drift).
         const labelR = (rimInner + rimOuter) / 2 + 2;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = '700 16px serif';
         for (const wedge of regionLayout.wedges) {
             const lc = libraryColors.get(wedge.libraryPath);
             if (!lc) continue;
             const t = wedge.arcMidRad;
             const lx = cx + labelR * Math.sin(t);
             const ly = cy - labelR * Math.cos(t);
-            const numText = new Text({
-                text: String(lc.index),
-                style: new TextStyle({
-                    fontFamily: 'serif',
-                    fontSize: 16,
-                    fontWeight: '700',
-                    fill: lc.hex,
-                    stroke: { color: 0xfaf6e8, width: 3 },  // cream halo for legibility
-                }),
-                anchor: 0.5,
-            });
-            numText.x = lx;
-            numText.y = ly;
-            calendarRimContainer.addChild(numText);
+            // Cream halo for legibility
+            ctx.strokeStyle = '#faf6e8';
+            ctx.lineWidth = 3;
+            ctx.globalAlpha = 1.0;
+            ctx.strokeText(String(lc.index), lx, ly);
+            // Colored number
+            ctx.fillStyle = lc.css;
+            ctx.globalAlpha = 1.0;
+            ctx.fillText(String(lc.index), lx, ly);
         }
 
-        // Legend still needs the wedge metadata (colors + names + counts).
+        // Legend metadata (colors + names + counts for the HTML panel).
         rimLabelGeometry = regionLayout.wedges.map((wedge) => {
             const lc = libraryColors.get(wedge.libraryPath);
             return {
@@ -1295,57 +1107,88 @@
                 index: lc?.index ?? 0,
                 colorCss: lc?.css ?? '#2a4a8c',
                 count: wedge.noteCount,
-                lx: 0, ly: 0, rotDeg: 0,  // unused now; kept for type compat
+                lx: 0, ly: 0, rotDeg: 0,
             };
         });
     }
 
-    function fullRedraw() {
+    /** §2G.3q Canvas 2D: unified draw pipeline. Clears the canvas,
+     *  applies the d3-zoom transform, then draws each layer in order.
+     *  Called on every state change (zoom, pan, hover, select, resize). */
+    function draw() {
+        if (!ctx || !canvasEl) return;
+        const w = canvasW;
+        const h = canvasH;
+        if (w === 0 || h === 0) return;
+
         recomputeScreenPositions();
+
+        // Clear entire canvas (in device-pixel space).
+        ctx.save();
+        ctx.setTransform(canvasDpr, 0, 0, canvasDpr, 0, 0);
+        ctx.clearRect(0, 0, w, h);
+        // Fill cream background.
+        ctx.fillStyle = '#faf6e8';
+        ctx.fillRect(0, 0, w, h);
+        ctx.restore();
+
+        // Apply d3-zoom transform so all drawing is in data space.
+        const t = currentTransform;
+        ctx.save();
+        ctx.setTransform(
+            canvasDpr * t.k, 0,
+            0, canvasDpr * t.k,
+            canvasDpr * t.x, canvasDpr * t.y,
+        );
+
+        // Layer order: Milky Way → territories → edges → stars →
+        // focus overlay → rim. Same order as the old Pixi containers.
         drawMilkyWay();
         drawTerritories();
         drawEdges();
         drawStars();
         drawFocusOverlay();
         drawRimForMode();
-        // §2G.3g: keep the Pixi container transform + HTML rim wrapper
-        // transform in sync with the (possibly resized) viewport.
-        updateChartTransform();
-        syncRimTransform();
+
+        // Placeholder text (if no stars).
+        if (placeholderMessage) {
+            ctx.font = '18px system-ui, -apple-system, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = placeholderIsError ? '#a83232' : '#1a1a1a';
+            ctx.globalAlpha = 1.0;
+            ctx.fillText(placeholderMessage, w / 2, h / 2);
+        }
+
+        ctx.restore();
+
+        // Keep HTML overlays in sync with the zoom transform.
+        syncOverlaysTransform();
     }
 
+    /** Legacy alias — some $effects still call fullRedraw(). */
+    function fullRedraw() { draw(); }
+
+    /** §2G.3q: placeholder is now a simple string rendered by draw(). */
     function showPlaceholder(message: string, isError: boolean = false) {
-        if (!app) return;
-        if (!placeholderText) {
-            placeholderText = new Text({
-                text: message,
-                style: new TextStyle({
-                    fill: isError ? 0xa83232 : 0x1a1a1a,
-                    fontSize: 18,
-                    fontFamily: 'system-ui, -apple-system, sans-serif',
-                    align: 'center',
-                }),
-                anchor: 0.5,
-            });
-            app.stage.addChild(placeholderText);
-        } else {
-            placeholderText.text = message;
-            (placeholderText.style as TextStyle).fill = isError ? 0xa83232 : 0x1a1a1a;
-            placeholderText.visible = true;
-        }
-        placeholderText.x = app.screen.width / 2;
-        placeholderText.y = app.screen.height / 2;
+        placeholderMessage = message;
+        placeholderIsError = isError;
+        draw();
     }
 
     function hidePlaceholder() {
-        if (placeholderText) placeholderText.visible = false;
+        placeholderMessage = null;
+        draw();
     }
 
     // ─── Pointer handlers ────────────────────────────────────────────
-    /** Get rim viewport for hit-testing. §2G.3b: mirrors the shared
-     *  dome viewport so hit-tests land where the rim is actually drawn. */
+    // §2G.3q: Pan and zoom are handled by d3-zoom (wheel, drag, touch).
+    // These handlers deal with hover, click, double-click, and rim
+    // hit-testing only. d3-zoom's drag detection sets `isDragging` so
+    // we can suppress click-after-pan.
+
+    /** Get rim viewport for hit-testing. */
     function getRimViewport() {
-        if (!app) return null;
         const vp = getViewport();
         if (!vp) return null;
         const enabled = ($appSettings.sight?.calendarSystems ?? ['gregorian']) as CalendarSystem[];
@@ -1360,40 +1203,16 @@
     }
 
     function handlePointerMove(ev: PointerEvent) {
-        const rect = canvasContainer.getBoundingClientRect();
+        // Suppress hover during d3-zoom drag.
+        if (isDragging) {
+            tooltipVisible = false;
+            return;
+        }
+        const rect = (canvasEl ?? canvasContainer).getBoundingClientRect();
         const px = ev.clientX - rect.left;
         const py = ev.clientY - rect.top;
 
-        // §2G.3g: drag-to-pan gesture. While the pointer is down, we
-        // accumulate movement until DRAG_THRESHOLD is exceeded, then
-        // commit to a pan and suppress hover/click for the duration.
-        // §2G.3k: rAF-throttled (same reason as wheel — high-DPI
-        // pointermove fires faster than the main thread can absorb).
-        if (panDragState) {
-            const dx = ev.clientX - panDragState.startClientX;
-            const dy = ev.clientY - panDragState.startClientY;
-            if (!panDragMoved && Math.hypot(dx, dy) > DRAG_THRESHOLD_PX) {
-                panDragMoved = true;
-                if (canvasContainer) canvasContainer.style.cursor = 'grabbing';
-                tooltipVisible = false;
-            }
-            if (panDragMoved) {
-                chartPanX = panDragState.startPanX + dx;
-                chartPanY = panDragState.startPanY + dy;
-                if (zoomFrame === null) {
-                    zoomFrame = requestAnimationFrame(() => {
-                        zoomFrame = null;
-                        syncZoomTransform();
-                    });
-                }
-                return;  // suppress hover during drag
-            }
-        }
-
-        // MIG-019 §2C / §2G.3b: rim hit-test only in Time mode. In other
-        // modes, the calendar-rim hit-test was wiping the region rim
-        // because it shares the same Pixi container — Eisa caught this
-        // 2026-05-07. Mode is user-driven only, never auto-switched.
+        // Rim hit-test only in Time mode.
         if (currentMode === 'time') {
             const rimVp = getRimViewport();
             if (rimVp) {
@@ -1404,9 +1223,8 @@
                         hoveredMonth = greg ?? -1;
                         if (!monthFilterPersistent) {
                             monthFilterMonth = greg ?? -1;
-                            drawStars();
                         }
-                        drawCalendarRim();
+                        draw();
                     }
                     tooltipVisible = false;
                     return;
@@ -1414,9 +1232,8 @@
                     hoveredMonth = -1;
                     if (!monthFilterPersistent) {
                         monthFilterMonth = -1;
-                        drawStars();
                     }
-                    drawCalendarRim();
+                    draw();
                 }
             }
         }
@@ -1424,7 +1241,7 @@
         const nearest = pickStar(px, py);
         if (nearest !== hoveredPath) {
             hoveredPath = nearest;
-            drawFocusOverlay();
+            draw();
         }
         if (nearest) {
             const title = pathToTitle.get(nearest) ?? '(untitled)';
@@ -1443,34 +1260,29 @@
     function handlePointerLeave() {
         if (hoveredPath !== null) {
             hoveredPath = null;
-            drawFocusOverlay();
+            draw();
         }
-        // §2G.3b: month-rim cleanup only in Time mode.
         if (currentMode === 'time' && hoveredMonth !== -1) {
             hoveredMonth = -1;
             if (!monthFilterPersistent) {
                 monthFilterMonth = -1;
-                drawStars();
             }
-            drawCalendarRim();
+            draw();
         }
         tooltipVisible = false;
     }
 
     function handleClick(ev: MouseEvent) {
-        // §2G.3g: a click that follows a pan gesture isn't a real click.
-        // panDragMoved was set during pointer-move; consume it here so
-        // the next click works normally.
+        // Suppress click after d3-zoom pan gesture.
         if (panDragMoved) {
             panDragMoved = false;
             return;
         }
-        const rect = canvasContainer.getBoundingClientRect();
+        const rect = (canvasEl ?? canvasContainer).getBoundingClientRect();
         const px = ev.clientX - rect.left;
         const py = ev.clientY - rect.top;
 
-        // §2C / §2G.3b: rim click toggles persistent month filter.
-        // Time mode only — Region rim clicks fall through to star pick.
+        // Rim click — Time mode only.
         if (currentMode === 'time') {
             const rimVp = getRimViewport();
             if (rimVp) {
@@ -1479,15 +1291,13 @@
                     const greg = gregorianMonthFromSegment(monthHit);
                     if (greg !== null) {
                         if (monthFilterPersistent && monthFilterMonth === greg) {
-                            // Click same month again → clear persistent filter
                             monthFilterPersistent = false;
                             monthFilterMonth = -1;
                         } else {
                             monthFilterPersistent = true;
                             monthFilterMonth = greg;
                         }
-                        drawStars();
-                        drawCalendarRim();
+                        draw();
                         return;
                     }
                 }
@@ -1497,24 +1307,21 @@
         const nearest = pickStar(px, py);
         if (nearest) {
             selectedPath = nearest;
-            drawFocusOverlay();
+            draw();
         } else {
-            // Click on background clears selection AND any persistent month filter
             if (selectedPath !== null) {
                 selectedPath = null;
-                drawFocusOverlay();
             }
             if (currentMode === 'time' && monthFilterPersistent) {
                 monthFilterPersistent = false;
                 monthFilterMonth = -1;
-                drawStars();
-                drawCalendarRim();
             }
+            draw();
         }
     }
 
     function handleDoubleClick(ev: MouseEvent) {
-        const rect = canvasContainer.getBoundingClientRect();
+        const rect = (canvasEl ?? canvasContainer).getBoundingClientRect();
         const px = ev.clientX - rect.left;
         const py = ev.clientY - rect.top;
         const nearest = pickStar(px, py);
@@ -1587,59 +1394,64 @@
 
     // ─── Lifecycle ───────────────────────────────────────────────────
     onMount(async () => {
-        app = new Application();
-        await app.init({
-            // MIG-019 §2G: Suwaidi cream parchment (#faf6e8) — was navy.
-            background: 0xfaf6e8,
-            resizeTo: canvasContainer,
-            antialias: true,
-            // §2G.3g: honor device pixel ratio so browser zoom (Ctrl+/-)
-            // re-renders the dome at the new resolution. autoDensity
-            // keeps the CSS size matched to the container while the
-            // backing buffer scales by resolution. Without these two,
-            // the canvas backing buffer stayed at the old size after
-            // a zoom, so the dome appeared misaligned with the HTML
-            // overlay (rim numbers, legend, etc.).
-            autoDensity: true,
-            resolution: Math.max(1, window.devicePixelRatio || 1),
-        });
-        canvasContainer.appendChild(app.canvas);
+        // §2G.3q: Canvas 2D initialization — replaces Pixi.js Application.
+        // Zero global event side effects (the root cause of the 11-iteration
+        // close-button failure). D3 provides zoom/pan via d3-zoom.
+        const canvas = document.createElement('canvas');
+        canvasContainer.appendChild(canvas);
+        canvasEl = canvas;
+        ctx = canvas.getContext('2d');
+        if (!ctx) {
+            console.error('[SightV3] Failed to get Canvas 2D context');
+            return;
+        }
 
-        // MIG-019 §2A+§2B redesign: Milky Way is a single Pixi Sprite
-        // built from the Rust-side pre-blurred density grid. Sits
-        // beneath territories so stars + edges + territory borders all
-        // render visibly over the band texture. No BlurFilter needed
-        // (blur is done in Rust at compute time, not per-frame).
-        milkyWayContainer = new Container();
-        territoryContainer = new Container();
-        edgeContainer = new Container();
-        starContainer = new Container();
-        focusOverlay = new Container();
-        // MIG-019 §2C: calendar rim sits ABOVE everything else so labels
-        // never hide behind chart contents.
-        calendarRimContainer = new Container();
-        // Order matters: Milky Way at the back, then territories, edges,
-        // stars, focus overlay, calendar rim on top.
-        // §2G.3g: chartContainer wraps every layer that should zoom +
-        // pan together. Stars, rim, edges, milky way, focus overlay all
-        // live inside it. Placeholder text stays on the stage so it
-        // doesn't scale with chart zoom.
-        chartContainer = new Container();
-        app.stage.addChild(chartContainer);
-        chartContainer.addChild(milkyWayContainer);
-        chartContainer.addChild(territoryContainer);
-        chartContainer.addChild(edgeContainer);
-        chartContainer.addChild(starContainer);
-        chartContainer.addChild(focusOverlay);
-        chartContainer.addChild(calendarRimContainer);
+        // Size the canvas to fill the container at device pixel ratio.
+        function sizeCanvas() {
+            if (!canvasEl || !ctx) return;
+            const rect = canvasContainer.getBoundingClientRect();
+            canvasW = rect.width;
+            canvasH = rect.height;
+            canvasDpr = Math.max(1, window.devicePixelRatio || 1);
+            canvasEl.width = Math.round(canvasW * canvasDpr);
+            canvasEl.height = Math.round(canvasH * canvasDpr);
+            canvasEl.style.width = canvasW + 'px';
+            canvasEl.style.height = canvasH + 'px';
+        }
+        sizeCanvas();
 
-        // MIG-019 §2E.2 SOLVE: progress markers visible to the user
-        // (production builds disable DevTools, so console.log isn't
-        // §2G.3f: silent loading per Eisa. The staged "Stage 1/4..."
-        // text was diagnostic noise during a normal load; remove it.
-        // Errors and the empty-universe case still surface a placeholder.
-        // Detailed timing still goes to console.log for diagnostics.
+        // d3-zoom: handles wheel zoom, drag pan, touch pinch. Replaces
+        // the manual chartZoom/chartPanX/chartPanY + handleWheel +
+        // handlePointerDown/Up drag logic. `passive: false` on the
+        // wheel listener so preventDefault blocks browser zoom.
+        zoomBehavior = d3.zoom<HTMLCanvasElement, unknown>()
+            .scaleExtent([MIN_ZOOM, MAX_ZOOM])
+            .on('start', (event) => {
+                if (event.sourceEvent?.type === 'mousedown') {
+                    isDragging = false;
+                    panDragMoved = false;
+                }
+            })
+            .on('zoom', (event) => {
+                currentTransform = event.transform;
+                // Detect drag (pan) to suppress click after.
+                if (event.sourceEvent?.type === 'mousemove') {
+                    isDragging = true;
+                    panDragMoved = true;
+                    tooltipVisible = false;
+                }
+                draw();
+            })
+            .on('end', () => {
+                isDragging = false;
+            });
 
+        const sel = d3.select(canvasEl);
+        sel.call(zoomBehavior);
+        // Filter: allow double-click for star open (not zoom reset).
+        sel.on('dblclick.zoom', null);
+
+        // Data fetch + initial draw.
         try {
             const stats = get(libraryStats);
             const libraryPaths: Array<[string, string]> = stats.map((s) => [s.path, s.name]);
@@ -1659,24 +1471,23 @@
                 console.log(`[SightV3] buildIndices: ${resolvedEdges.length} unique edges in ${Math.round(performance.now() - idxT0)}ms`);
 
                 const drawT0 = performance.now();
-                fullRedraw();
-                console.log(`[SightV3] fullRedraw: ${Math.round(performance.now() - drawT0)}ms`);
+                draw();
+                console.log(`[SightV3] draw: ${Math.round(performance.now() - drawT0)}ms`);
 
                 hidePlaceholder();
             }
 
-            // MIG-019 §2A+§2B redesign: background density-grid fetch.
-            // Output-bounded (~256 KB) — universe size irrelevant.
-            // Failures fall through to no Milky Way (graceful degradation).
+            // Background density-grid fetch for Milky Way.
             (async () => {
                 const densT0 = performance.now();
                 try {
                     const field = await fetchDensityField(libraryPaths, 50, 0.3);
                     const elapsed = Math.round(performance.now() - densT0);
                     console.log(`[SightV3 §2A+§2B] density grid fetched: ${field.width}×${field.height} cells, max=${field.max_value.toFixed(3)} in ${elapsed}ms`);
-                    if (!app) return; // component unmounted while we waited
+                    if (!canvasEl) return; // component unmounted while we waited
                     densityField = field;
-                    drawMilkyWay();
+                    buildMilkyWayImage();
+                    draw();
                 } catch (densErr) {
                     console.error('[SightV3 §2A+§2B] density grid fetch failed (Milky Way empty; chart still functional):', densErr);
                     densityField = null;
@@ -1689,53 +1500,28 @@
         }
         isLoading = false;
 
-        // §2G.3h: wheel listener wired via addEventListener so we can
-        // pass `passive: false` and have preventDefault() actually
-        // stop the page from scrolling / Ctrl+wheel from triggering
-        // browser zoom. Svelte's `onwheel` attribute defaults to
-        // passive in modern browsers, which silently swallows
-        // preventDefault.
-        canvasContainer.addEventListener('wheel', handleWheel, { passive: false });
-
-        // §2G.3l: close-button wiring is back in the markup as
-        // `onclick={fn}` per Svelte 5 docs. No more $effect / bind:this
-        // / addEventListener dance. The previous patterns silently
-        // dropped listeners.
-
-        // Resize observer — picks up CSS-size changes (window resize,
-        // sidebar collapse, etc.) and triggers a full redraw.
+        // Resize observer — picks up CSS-size changes and resizes canvas.
         resizeObserver = new ResizeObserver(() => {
+            sizeCanvas();
             if (!isLoading && layoutPoints.length > 0) {
-                fullRedraw();
-            } else if (placeholderText && placeholderText.visible && app) {
-                placeholderText.x = app.screen.width / 2;
-                placeholderText.y = app.screen.height / 2;
+                draw();
+            } else if (placeholderMessage) {
+                draw();
             }
         });
         resizeObserver.observe(canvasContainer);
 
-        // §2G.3g: visualViewport listener — browser zoom (Ctrl+/-)
-        // changes devicePixelRatio without always firing a CSS-size
-        // resize on the container. When that happens we still need
-        // to re-render so HTML overlay positions (rim numbers, etc.)
-        // stay aligned with the Pixi-drawn dome.
+        // visualViewport listener — browser zoom changes DPR.
         if (typeof window !== 'undefined' && window.visualViewport) {
-            const onZoom = () => {
-                if (!app) return;
-                // Re-set the resolution so Pixi renders at the new DPR.
-                const dpr = Math.max(1, window.devicePixelRatio || 1);
-                if (app.renderer.resolution !== dpr) {
-                    app.renderer.resolution = dpr;
-                    app.renderer.resize(app.screen.width, app.screen.height);
-                }
+            const onBrowserZoom = () => {
+                sizeCanvas();
                 if (!isLoading && layoutPoints.length > 0) {
-                    fullRedraw();
+                    draw();
                 }
             };
-            window.visualViewport.addEventListener('resize', onZoom);
-            // Save for cleanup in onDestroy.
+            window.visualViewport.addEventListener('resize', onBrowserZoom);
             (visualViewportCleanup as { fn: (() => void) | null }).fn = () => {
-                window.visualViewport?.removeEventListener('resize', onZoom);
+                window.visualViewport?.removeEventListener('resize', onBrowserZoom);
             };
         }
     });
@@ -1744,38 +1530,32 @@
      *  listener (set in onMount, called from onDestroy). */
     const visualViewportCleanup: { fn: (() => void) | null } = { fn: null };
 
-    // Re-draw on projection toggle
+    // Re-draw on projection toggle.
     $effect(() => {
         const _projection = $appSettings.sight?.projection;
         if (!isLoading && layoutPoints.length > 0) {
-            fullRedraw();
+            draw();
         }
     });
 
-    // MIG-019 §2B: redraw Milky Way on visibility toggle.
-    // Reading $appSettings.sight?.showMilkyWay subscribes the effect.
+    // §2B: redraw on Milky Way visibility toggle.
     $effect(() => {
         const _show = $appSettings.sight?.showMilkyWay;
         if (!isLoading && layoutPoints.length > 0) {
-            drawMilkyWay();
+            buildMilkyWayImage();
+            draw();
         }
     });
 
-    // MIG-019 §2C: redraw rim when the user enables/disables calendar
-    // systems in Settings → Sight → Calendar systems. §2G dispatches
-    // through `drawRimForMode()` so the right rim renders for the
-    // active mode (calendar only matters in Time mode).
+    // §2C: redraw rim on calendar systems change.
     $effect(() => {
         const _calendars = $appSettings.sight?.calendarSystems;
         if (!isLoading && layoutPoints.length > 0) {
-            drawRimForMode();
+            draw();
         }
     });
 
-    // MIG-019 §2E: search match propagation.
-    // searchMatchIds is a Set<string> of lowercased note names from
-    // SearchHub. Convert to Set<note_path> via the nameToPath map and
-    // redraw the affected layers.
+    // §2E: search match propagation.
     $effect(() => {
         const ids = searchMatchIds;
         const newMatched = new Set<string>();
@@ -1787,62 +1567,39 @@
         }
         matchedPaths = newMatched;
         if (!isLoading && layoutPoints.length > 0) {
-            drawTerritories();
-            drawStars();
-            drawFocusOverlay();
+            draw();
         }
     });
 
-    // MIG-019 §2E: always-on labels toggle.
-    // Reading $appSettings.sight?.alwaysOnLabels triggers re-render of
-    // territories (since labels are rendered there).
+    // §2E: always-on labels toggle.
     $effect(() => {
         const _alwaysLabels = $appSettings.sight?.alwaysOnLabels;
         if (!isLoading && layoutPoints.length > 0) {
-            drawTerritories();
+            draw();
         }
     });
-
-    // §2G.3k: REMOVED the redundant $effect that watched
-    // chartZoom/Pan. It was firing on EVERY wheel notch (high-DPI
-    // mice fire 100+ wheel events per second), each invocation
-    // triggering Svelte reactivity scheduling, and flooding the main
-    // thread to the point of an apparent freeze (Eisa report on
-    // §2G.3j: "the app freezes. It is non-responsive"). Every wheel
-    // / drag / reset / Esc handler now calls syncZoomTransform()
-    // synchronously and that's enough — no belt-and-suspenders
-    // needed at the cost of overhead.
-
-    // §2G.3l: close-button $effect REMOVED. Was creating a new
-    // handler reference each cycle and re-registering listeners on
-    // every reactive update. Replaced with `onclick={fn}` in the
-    // markup — the canonical Svelte 5 pattern.
 
     onDestroy(() => {
         if (resizeObserver) {
             resizeObserver.disconnect();
             resizeObserver = null;
         }
-        // §2G.3g: tear down the visualViewport zoom listener.
         if (visualViewportCleanup.fn) {
             visualViewportCleanup.fn();
             visualViewportCleanup.fn = null;
         }
-        // §2G.3h: tear down the wheel listener.
-        if (canvasContainer) {
-            canvasContainer.removeEventListener('wheel', handleWheel);
+        // §2G.3q: tear down d3-zoom listeners on the canvas.
+        if (canvasEl && zoomBehavior) {
+            d3.select(canvasEl).on('.zoom', null);
         }
-        if (app) {
-            app.destroy(true, { children: true, texture: true });
-            app = null;
+        // Remove canvas from DOM.
+        if (canvasEl && canvasEl.parentElement) {
+            canvasEl.parentElement.removeChild(canvasEl);
         }
-        milkyWayContainer = null;
-        territoryContainer = null;
-        edgeContainer = null;
-        starContainer = null;
-        focusOverlay = null;
-        calendarRimContainer = null;
-        placeholderText = null;
+        canvasEl = null;
+        ctx = null;
+        milkyWayOffscreen = null;
+        zoomBehavior = null;
     });
 
     function handleEscape(e: KeyboardEvent) {
@@ -1861,25 +1618,13 @@
 <svelte:window onkeydown={handleEscape} />
 
 <div class="sight-v3-root">
-    <!-- §2G.3o: STRUCTURAL FIX — root is now `display: flex;
-         flex-direction: column`, matching v2's `.sight2-root` exactly.
-         Header is a REAL flex row (Row 1, fixed height); body fills
-         the remaining height (Row 2). They do NOT overlap.
-         Eight prior iterations failed because the close button was in
-         a `position: absolute` strip overlaying the canvas — the
-         button's `pointer-events: auto` + parent's `pointer-events:
-         none` should have worked on paper, but click events were
-         silently lost in some unknown event-routing path between
-         the absolute button and the absolute canvas sibling.
-         The v2 `ConstellationSight2.svelte` and `SkyView.svelte` have
-         shipped working close buttons for months — both put the close
-         button inside a NORMAL flex row that is a real layout
-         participant, NOT an overlay. This commit copies that exact
-         structure for v3. -->
-    <div class="sight-v3-header">
-        <span class="sight-v3-header-spacer"></span>
-        <button class="sight-v3-close" onclick={() => onClose?.()}>×</button>
-    </div>
+    <!-- §2G.3p: Close button REMOVED from SightV3. It now lives in
+         +layout.svelte as an external fixed-position button that directly
+         sets `sightV3Active = false` — replicating SkyView's star-close
+         pattern (line 5108). Ten prior iterations failed trying to make
+         a close button work INSIDE this component (Svelte 5 delegation +
+         Pixi v8 capture interference). The Esc handler below still works
+         as a keyboard escape hatch. -->
 
     <!-- §2G.3o: body row — takes the remaining height. Acts as the
          positioning ancestor for the absolute canvas + reset-view +
@@ -1892,46 +1637,33 @@
     <button
         type="button"
         class="sight-v3-reset-view"
-        class:reset-active={chartZoom !== 1 || chartPanX !== 0 || chartPanY !== 0}
+        class:reset-active={currentTransform.k !== 1 || currentTransform.x !== 0 || currentTransform.y !== 0}
         onclick={resetView}
         aria-label={$t('sightV3.resetView') || 'Reset view'}
     >Reset view</button>
 
-    <!-- §2G.3l: Pixi canvas — direct child of body, NOT inside a CSS-
-         transformed wrapper. Pixi's `chartContainer.scale.set(zoom)`
-         handles the zoom natively, keeping the canvas crisp at any
-         zoom level (per Steve Ruiz's "Creating a Zoom UI" article and
-         the pixi-viewport library: zoom by scaling a Container, not
-         by CSS-scaling the <canvas> element).
-         MDN: "Canvas is rendering to a bitmap of one size then scaling
-         the bitmap to fit the CSS dimensions" — CSS-scaling the
-         canvas would blur it. -->
+    <!-- §2G.3q: Canvas 2D — d3-zoom handles zoom/pan transforms
+         directly on the canvas context. The <canvas> element is
+         created by onMount inside this container. -->
+    <!-- §2G.3q: Canvas 2D container. d3-zoom handles wheel + drag
+         on the <canvas> element created in onMount. Pointer-move,
+         click, double-click are wired here for star interaction.
+         No onpointerdown/onpointerup — d3-zoom owns the drag. -->
     <div
         class="sight-v3-canvas"
         bind:this={canvasContainer}
-        onpointerdown={handlePointerDown}
         onpointermove={handlePointerMove}
         onpointerleave={handlePointerLeave}
-        onpointerup={handlePointerUp}
         onclick={handleClick}
         ondblclick={handleDoubleClick}
         role="application"
         aria-label="Constellation Sight v3"
     ></div>
 
-    <!-- §2G.3l: HTML overlays wrapper. CSS-transform driven by the same
-         chartZoom/Pan as the Pixi chartContainer, so HTML overlays
-         (rim numbers, Universe Health, Universe-name, legend) zoom
-         and pan in lockstep with the Pixi-rendered chart. The wrapper
-         is `pointer-events: none` so clicks fall through to the
-         canvas's pointer handlers below. -->
-    <!-- §2G.3n: rim numbers REMOVED from this wrapper — they're now
-         Pixi Text inside calendarRimContainer (a child of chartContainer)
-         so they share the Pixi-side transform with the rim circles
-         and no longer drift on zoom. The wrapper still scales the
-         remaining HTML overlays (Universe Health, Universe-name,
-         legend) which are screen-anchored UI rather than chart elements
-         that need pixel-perfect rim alignment. -->
+    <!-- §2G.3q: HTML overlays wrapper. CSS-transform driven by d3-zoom's
+         currentTransform so HTML overlays (Universe Health, Universe-name,
+         legend) zoom and pan in lockstep with the Canvas 2D chart.
+         `pointer-events: none` so clicks fall through to the canvas. -->
     <div
         class="sight-v3-overlays-wrapper"
         style="transform-origin: {overlaysTransformOrigin}; transform: {overlaysTransform};"
@@ -2082,6 +1814,8 @@
         min-height: 0;  /* allow flex child to shrink below content size */
     }
 
+    /* §2G.3q: Canvas 2D child — sized by JS (sizeCanvas) to match
+       container at device pixel ratio. No Pixi :global(canvas) needed. */
     .sight-v3-canvas {
         position: absolute;
         inset: 0;
@@ -2090,74 +1824,18 @@
 
     .sight-v3-canvas :global(canvas) {
         display: block;
-        width: 100% !important;
-        height: 100% !important;
     }
 
-    /* §2G.3o: header bar — REAL FLEX ROW, no longer an absolute
-       overlay. Lives as Row 1 of the root flex column; the body
-       below it (canvas + overlays) lives as Row 2. They do not
-       overlap. This matches v2's `.sight2-header` pattern verbatim
-       (ConstellationSight2.svelte:1277-1285).
+    /* §2G.3p: header + close button REMOVED from SightV3 — they now
+       live in +layout.svelte as an external fixed-position button
+       (class .sight-v3-ext-close) that directly sets sightV3Active.
+       Replicates SkyView's star-close pattern. */
 
-       Why this is the structural fix that finally works (per Svelte
-       #15343 + Pixi #10911 audit findings, 2026-05-08):
-       Svelte 5 delegates `onclick={fn}` to `<body>` and relies on
-       the click event bubbling all the way up. When the button is
-       in an absolute overlay sibling of a canvas wrapper that ALSO
-       has onclick + pointerdown + pointermove + pointerup +
-       dblclick handlers (all delegated to body), the canvas's
-       handlers and Pixi v8's document-level capture-phase pointer
-       listener can interfere with the click delivery to the button.
-       Hover (CSS `:hover`) still fires because hover is NOT
-       delegated. That exactly matches the symptom — gold-on-hover
-       but no click — across eight prior iterations.
-
-       The fix: put the close button in a clean DOM branch
-       (.sight-v3-header → .sight-v3-close) that does NOT cross the
-       canvas branch (.sight-v3-body → .sight-v3-canvas) on its
-       bubble path to body. Structural separation > pointer-events
-       gymnastics. */
-    .sight-v3-header {
-        flex-shrink: 0;          /* keeps header at natural height */
-        height: 44px;
-        display: flex;
-        align-items: center;
-        padding: 0 16px;
-        background: rgba(250, 246, 232, 0.85);
-        border-bottom: 1px solid rgba(26, 26, 26, 0.08);
-    }
-    .sight-v3-header-spacer {
-        flex: 1;
-    }
-    .sight-v3-close {
-        /* Matches v2 exactly: inline flex item, simple style. No
-           position, no z-index, no pointer-events tricks. */
-        border: none;
-        background: transparent;
-        cursor: pointer;
-        font-size: 22px;
-        line-height: 28px;
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        color: rgba(26, 26, 26, 0.7);
-        padding: 0;
-        font-family: serif;
-        font-weight: 600;
-    }
-    .sight-v3-close:hover {
-        color: #1a1a1a;
-        background: rgba(201, 162, 39, 0.35);
-    }
-
-    /* §2G.3l: HTML overlays wrapper. CSS-transform scales the rim
-       numbers / Universe Health / Universe-name / legend in lockstep
-       with the Pixi `chartContainer.scale` (Pixi-side handles the
-       canvas, CSS handles HTML — both driven by the same chartZoom).
-       `pointer-events: none` so clicks pass through to the canvas's
-       handlers; individual overlays can re-enable if they need to
-       capture clicks. */
+    /* §2G.3q: HTML overlays wrapper. CSS-transform scales the
+       Universe Health / Universe-name / legend in lockstep with the
+       Canvas 2D d3-zoom transform. `pointer-events: none` so clicks
+       pass through to the canvas's handlers; individual overlays
+       can re-enable if they need to capture clicks. */
     .sight-v3-overlays-wrapper {
         position: absolute;
         inset: 0;

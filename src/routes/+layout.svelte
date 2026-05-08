@@ -5027,6 +5027,13 @@
 					openNoteTab(path, libraryName, color);
 				}}
 			/>
+			<!-- §2G.3p: External close button — lives in +layout.svelte,
+			     NOT inside SightV3. Replicates SkyView's star-close pattern
+			     (line 5108): the button directly sets the reactive variable,
+			     no callback crossing component boundaries, no Pixi/Svelte
+			     delegation interference. z-index 1001 sits above SightV3's
+			     fixed overlay (z-index 1000). -->
+			<button class="sight-v3-ext-close" onclick={() => { sightV3Active = false; }}>×</button>
 		{/if}
 
 		<!-- Constellation Sight (v2) — standalone D3+Canvas component.
@@ -7015,6 +7022,34 @@
 		font-size: 1.2rem;
 	}
 	.star-close:hover { background: var(--border); color: var(--text); }
+	/* §2G.3p: External Sight v3 close button — position:fixed above the
+	   Sight overlay (z-index 1000). Replicates the SkyView star-close
+	   pattern but positioned over a fixed full-screen overlay. */
+	.sight-v3-ext-close {
+		position: fixed;
+		top: 8px;
+		inset-inline-end: 16px;
+		z-index: 1001;
+		width: 32px;
+		height: 32px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border: none;
+		background: rgba(250, 246, 232, 0.85);
+		cursor: pointer;
+		font-size: 22px;
+		line-height: 28px;
+		border-radius: 50%;
+		color: rgba(26, 26, 26, 0.7);
+		padding: 0;
+		font-family: serif;
+		font-weight: 600;
+	}
+	.sight-v3-ext-close:hover {
+		color: #1a1a1a;
+		background: rgba(201, 162, 39, 0.35);
+	}
 	.lens-overlay {
 		display: none; flex: 1; overflow: hidden;
 		background: var(--background-primary); min-height: 0;
