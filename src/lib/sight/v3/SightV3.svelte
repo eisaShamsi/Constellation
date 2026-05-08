@@ -112,12 +112,10 @@
     let focusOverlay: Container | null = null;
     let placeholderText: Text | null = null;
     let resizeObserver: ResizeObserver | null = null;
-    /** §2G.3i: explicit DOM ref for the close button so we can bind
-     *  addEventListener('click', ...) directly. Three rounds of fixing
-     *  the Svelte `onclick={...}` binding never made it fire — the
-     *  addEventListener path is bulletproof since hover already proves
-     *  DOM events reach the element. */
-    let closeBtn: HTMLButtonElement | null = $state(null);
+    // §2G.3l: closeBtn $state ref + bind:this + $effect addEventListener
+    // pattern ALL removed. Per Svelte 5 docs (and the closed issue
+    // #10435), the canonical pattern is `<button onclick={fn}>` directly.
+    // Six rounds of "defensive" wiring fought a non-bug.
     /** §2G.3g: parent of every chart layer that should scale + pan
      *  with the zoom controls. Placeholder text and HTML overlays
      *  are NOT inside this — they stay anchored to the window. */
@@ -309,35 +307,63 @@
      *
      *  The dome center shifts down to the middle of the AVAILABLE
      *  vertical space, not the middle of the canvas.  */
-    /** §2G.3i: lens-style zoom — apply ONE CSS transform to the
-     *  zoom-wrapper that holds the canvas + every chart overlay
-     *  (rim numbers, Universe Health, Universe-name, legend). Pixi-
-     *  side chartContainer is now structural only (no transform);
-     *  CSS does all the scaling.
+    /** §2G.3l (evidence-backed redesign): Pixi-native zoom for the
+     *  canvas, CSS-transform on a separate wrapper for HTML overlays.
+     *  Both driven by the same chartZoom + chartPanX/Y values,
+     *  applied in lockstep so they look like one lens.
      *
-     *  Eisa directive 2026-05-08: "imagine the Sight page as a
-     *  regular page; all its components and elements should be
-     *  locked in place. The mouse wheel will act as a lens." */
-    let zoomWrapperTransform = $state('none');
-    let zoomWrapperTransformOrigin = $state('50% 50%');
-    function syncZoomTransform() {
+     *  Why split? CSS-scaling the <canvas> element blurs it (canvas
+     *  is a fixed bitmap; MDN "Optimizing canvas"). The canonical
+     *  Pixi pattern is `container.scale.set(zoom)` with `pivot` and
+     *  `position` for translation (Steve Ruiz "Creating a Zoom UI";
+     *  pixi-viewport library). Hit-testing automatically accounts
+     *  for container transforms.
+     *
+     *  HTML overlays (legend, Universe Health, etc.) are pure DOM,
+     *  so they CSS-scale via a wrapper transform. They stay sharp
+     *  because they're vector text/CSS, not bitmap.
+     *
+     *  Eisa directive 2026-05-08: "everything locked in place; mouse
+     *  wheel as a lens." Two transform sources, one chartZoom value,
+     *  same visual result. */
+    let overlaysTransform = $state('none');
+    let overlaysTransformOrigin = $state('50% 50%');
+
+    /** Pixi-side: scale + pan the chartContainer (which holds stars,
+     *  rim, Milky Way, edges, focus overlay). */
+    function updateChartTransform() {
+        if (!chartContainer) return;
+        const vp = getViewport();
+        if (!vp) return;
+        chartContainer.pivot.set(vp.cx, vp.cy);
+        chartContainer.position.set(vp.cx + chartPanX, vp.cy + chartPanY);
+        chartContainer.scale.set(chartZoom);
+    }
+
+    /** HTML side: CSS transform on the overlays wrapper. Same pivot
+     *  and translate as Pixi so they move in lockstep. */
+    function syncOverlaysTransform() {
         const vp = getViewport();
         if (!vp) {
-            zoomWrapperTransform = 'none';
-            zoomWrapperTransformOrigin = '50% 50%';
+            overlaysTransform = 'none';
+            overlaysTransformOrigin = '50% 50%';
             return;
         }
-        zoomWrapperTransformOrigin = `${vp.cx}px ${vp.cy}px`;
+        overlaysTransformOrigin = `${vp.cx}px ${vp.cy}px`;
         if (chartZoom === 1 && chartPanX === 0 && chartPanY === 0) {
-            zoomWrapperTransform = 'none';
+            overlaysTransform = 'none';
         } else {
-            zoomWrapperTransform = `translate(${chartPanX}px, ${chartPanY}px) scale(${chartZoom})`;
+            overlaysTransform = `translate(${chartPanX}px, ${chartPanY}px) scale(${chartZoom})`;
         }
     }
-    /** Back-compat shims so existing call sites still work. They now
-     *  funnel through the single CSS transform. */
-    function updateChartTransform() { syncZoomTransform(); }
-    function syncRimTransform() { syncZoomTransform(); }
+
+    /** One call applies both transforms in lockstep. */
+    function syncZoomTransform() {
+        updateChartTransform();
+        syncOverlaysTransform();
+    }
+    /** Back-compat alias. */
+    function syncRimTransform() { syncOverlaysTransform(); }
 
     /** §2G.3g: wheel-zoom handler. preventDefault stops the page from
      *  scrolling and stops Ctrl+wheel from triggering browser zoom.
@@ -1113,15 +1139,17 @@
     /** Find the nearest star within `r=10` of (px, py). Returns the
      *  note_path or null. O(n) iteration; for 30k stars this is ~1ms. */
     function pickStar(px: number, py: number): string | null {
-        // §2G.3i: lens architecture — the canvas is CSS-scaled by the
-        // zoom-wrapper. (px, py) are mouse offsets from the canvas's
-        // VISUAL top-left (post-transform). Because `getBoundingClientRect`
-        // already absorbs the wrapper's translate AND scale into
-        // rect.left/top, the inverse simplifies cleanly to just
-        // `internal = visual_offset / chartZoom`. No need to also
-        // subtract pan or origin — they're already baked into rect.left.
-        const cpx = px / chartZoom;
-        const cpy = py / chartZoom;
+        // §2G.3l: canvas is NOT CSS-scaled (Pixi-native chartContainer
+        // scale handles the zoom). So (px, py) — already canvas-internal
+        // CSS coords from getBoundingClientRect — need the inverse of
+        // the chartContainer's transform:
+        //   chartContainer = pivot(cx, cy) + position(cx+panX, cy+panY) + scale(zoom)
+        //   visual_x = (canonical_x - cx) * zoom + cx + panX
+        //   canonical_x = (visual_x - cx - panX) / zoom + cx
+        const vp = getViewport();
+        if (!vp) return null;
+        const cpx = (px - vp.cx - chartPanX) / chartZoom + vp.cx;
+        const cpy = (py - vp.cy - chartPanY) / chartZoom + vp.cy;
 
         const HOVER_RADIUS = 10;
         let best: string | null = null;
@@ -1607,12 +1635,10 @@
         // preventDefault.
         canvasContainer.addEventListener('wheel', handleWheel, { passive: false });
 
-        // §2G.3j: close-button wiring moved to a reactive $effect
-        // below this onMount. The if-closeBtn check here was firing
-        // BEFORE bind:this had attached the ref (Svelte 5 timing
-        // quirk with $state-typed refs), so the listener was never
-        // attached. The $effect re-runs when closeBtn becomes
-        // non-null and is bulletproof.
+        // §2G.3l: close-button wiring is back in the markup as
+        // `onclick={fn}` per Svelte 5 docs. No more $effect / bind:this
+        // / addEventListener dance. The previous patterns silently
+        // dropped listeners.
 
         // Resize observer — picks up CSS-size changes (window resize,
         // sidebar collapse, etc.) and triggers a full redraw.
@@ -1725,26 +1751,10 @@
     // synchronously and that's enough — no belt-and-suspenders
     // needed at the cost of overhead.
 
-    // §2G.3j: close-button event binding via $effect. After four
-    // rounds of failing Svelte `onclick={...}` and one round of
-    // failing onMount-time `addEventListener` (bind:this hadn't
-    // resolved by the time onMount ran in §2G.3i), this is the
-    // bulletproof pattern: the $effect re-runs when closeBtn
-    // becomes non-null (reactive on the $state ref), and registers
-    // the click + pointerup handlers directly on the DOM node.
-    $effect(() => {
-        if (!closeBtn) return;
-        const handler = (ev: Event) => {
-            ev.stopPropagation();
-            onClose();
-        };
-        closeBtn.addEventListener('click', handler);
-        closeBtn.addEventListener('pointerup', handler);
-        return () => {
-            closeBtn?.removeEventListener('click', handler);
-            closeBtn?.removeEventListener('pointerup', handler);
-        };
-    });
+    // §2G.3l: close-button $effect REMOVED. Was creating a new
+    // handler reference each cycle and re-registering listeners on
+    // every reactive update. Replaced with `onclick={fn}` in the
+    // markup — the canonical Svelte 5 pattern.
 
     onDestroy(() => {
         if (resizeObserver) {
@@ -1794,20 +1804,19 @@
 <svelte:window onkeydown={handleEscape} />
 
 <div class="sight-v3-root">
-    <!-- §2G.3i: close button (chrome — outside zoom wrapper). Click
-         is wired via addEventListener in onMount, NOT Svelte
-         `onclick={...}` which mysteriously didn't fire. bind:this
-         gives us the raw DOM ref. -->
+    <!-- §2G.3l: chrome — close button uses `onclick={fn}` directly per
+         Svelte 5 canonical pattern (svelte.dev/docs/svelte/bind shows
+         this exact form: <button bind:this={x} onclick={() => x.focus()}>).
+         No more $effect / bind:this / addEventListener dance. -->
     <button
         type="button"
         class="sight-v3-close"
-        bind:this={closeBtn}
+        onclick={(e) => { e.stopPropagation(); onClose(); }}
         aria-label={$t('sightV3.close') || 'Close Sight'}
     >×</button>
 
-    <!-- §2G.3i: Reset View button (chrome — outside zoom wrapper).
-         Always visible per Eisa's directive ("I cannot see the reset
-         button"). Faded when at default state, prominent when zoom
+    <!-- §2G.3i: Reset View button (chrome). Always visible per Eisa's
+         directive. Faded when at default state, prominent when zoom
          or pan changes. -->
     <button
         type="button"
@@ -1817,33 +1826,38 @@
         aria-label={$t('sightV3.resetView') || 'Reset view'}
     >Reset view</button>
 
-    <!-- §2G.3i: lens-style zoom wrapper. Per Eisa's directive
-         (2026-05-08): "imagine the Sight page as a regular page;
-         all its components and elements should be locked in place.
-         The mouse wheel will act as a lens." A SINGLE CSS transform
-         applies to the wrapper, scaling the canvas + every chart
-         overlay together so they move/zoom as one. Chrome (close,
-         reset, side panel) stays outside this wrapper. -->
+    <!-- §2G.3l: Pixi canvas — direct child of root, NOT inside a CSS-
+         transformed wrapper. Pixi's `chartContainer.scale.set(zoom)`
+         handles the zoom natively, keeping the canvas crisp at any
+         zoom level (per Steve Ruiz's "Creating a Zoom UI" article and
+         the pixi-viewport library: zoom by scaling a Container, not
+         by CSS-scaling the <canvas> element).
+         MDN: "Canvas is rendering to a bitmap of one size then scaling
+         the bitmap to fit the CSS dimensions" — CSS-scaling the
+         canvas would blur it. -->
     <div
-        class="sight-v3-zoom-wrapper"
-        style="transform-origin: {zoomWrapperTransformOrigin}; transform: {zoomWrapperTransform};"
-    >
-        <div
-            class="sight-v3-canvas"
-            bind:this={canvasContainer}
-            onpointerdown={handlePointerDown}
-            onpointermove={handlePointerMove}
-            onpointerleave={handlePointerLeave}
-            onpointerup={handlePointerUp}
-            onclick={handleClick}
-            ondblclick={handleDoubleClick}
-            role="application"
-            aria-label="Constellation Sight v3"
-        ></div>
+        class="sight-v3-canvas"
+        bind:this={canvasContainer}
+        onpointerdown={handlePointerDown}
+        onpointermove={handlePointerMove}
+        onpointerleave={handlePointerLeave}
+        onpointerup={handlePointerUp}
+        onclick={handleClick}
+        ondblclick={handleDoubleClick}
+        role="application"
+        aria-label="Constellation Sight v3"
+    ></div>
 
-        <!-- §2G.3f: rim labels are COLORED NUMBERS (1, 2, 3, ...).
-             §2G.3i: positioned at canonical coords inside the zoom
-             wrapper; the wrapper's transform handles zoom + pan. -->
+    <!-- §2G.3l: HTML overlays wrapper. CSS-transform driven by the same
+         chartZoom/Pan as the Pixi chartContainer, so HTML overlays
+         (rim numbers, Universe Health, Universe-name, legend) zoom
+         and pan in lockstep with the Pixi-rendered chart. The wrapper
+         is `pointer-events: none` so clicks fall through to the
+         canvas's pointer handlers below. -->
+    <div
+        class="sight-v3-overlays-wrapper"
+        style="transform-origin: {overlaysTransformOrigin}; transform: {overlaysTransform};"
+    >
         {#each rimLabelGeometry as geo (geo.key)}
             <div
                 class="sight-v3-rim-number"
@@ -1926,7 +1940,7 @@
         {/if}
     {/if}
 
-    </div><!-- /.sight-v3-zoom-wrapper —§2G.3i lens-end -->
+    </div><!-- /.sight-v3-overlays-wrapper —§2G.3l -->
 
     <!-- §2G.3i: tooltip OUTSIDE the zoom wrapper. Inside, the wrapper's
          CSS transform breaks `position: fixed` (which becomes relative
@@ -1955,7 +1969,10 @@
 </div>
 
 <style>
-    /* MIG-019 §2G: Suwaidi cream parchment palette (was navy theme). */
+    /* MIG-019 §2G: Suwaidi cream parchment palette (was navy theme).
+       §2G.3l: dropped `display: flex`. Canvas + overlays-wrapper are
+       both `position: absolute; inset: 0` so they fill the screen
+       without flex sizing dependencies. */
     .sight-v3-root {
         position: fixed;
         top: 0;
@@ -1964,13 +1981,11 @@
         height: 100vh;
         background: #faf6e8;  /* cream parchment */
         z-index: 1000;
-        display: flex;
-        align-items: stretch;
     }
 
     .sight-v3-canvas {
-        flex: 1;
-        position: relative;
+        position: absolute;
+        inset: 0;
         cursor: default;
     }
 
@@ -2011,23 +2026,19 @@
         transform: scale(0.94);
     }
 
-    /* §2G.3i: lens-style zoom wrapper. ONE CSS transform scales every
-       chart layer + overlay together — Eisa's directive: "imagine the
-       Sight page as a regular page; all its components and elements
-       should be locked in place. The mouse wheel will act as a lens."
-       Chrome (close button, reset, side panel) sits outside this
-       wrapper and doesn't scale.
-
-       §2G.3j: must be `display: flex` so the canvas inside (with its
-       `flex: 1`) actually fills the wrapper. Without this, the canvas
-       sized down to its content (Pixi default ~800×800) and the dome
-       rendered tiny in the corner of an otherwise-empty screen. */
-    .sight-v3-zoom-wrapper {
-        flex: 1;
-        position: relative;
-        display: flex;
-        align-items: stretch;
+    /* §2G.3l: HTML overlays wrapper. CSS-transform scales the rim
+       numbers / Universe Health / Universe-name / legend in lockstep
+       with the Pixi `chartContainer.scale` (Pixi-side handles the
+       canvas, CSS handles HTML — both driven by the same chartZoom).
+       `pointer-events: none` so clicks pass through to the canvas's
+       handlers; individual overlays can re-enable if they need to
+       capture clicks. */
+    .sight-v3-overlays-wrapper {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
         will-change: transform;
+        z-index: 6;
     }
 
     /* §2G.3i: Reset View button — chrome (NOT inside zoom wrapper).
@@ -2133,6 +2144,10 @@
         backdrop-filter: blur(2px);
         overflow-y: auto;
         box-shadow: 0 1px 3px rgba(26, 26, 26, 0.05);
+        /* §2G.3l: parent wrapper is pointer-events:none for click
+           pass-through, but the legend itself shows native title
+           tooltips on hover — so re-enable pointer events here. */
+        pointer-events: auto;
     }
     .sight-v3-legend.legend-rtl {
         left: auto;
