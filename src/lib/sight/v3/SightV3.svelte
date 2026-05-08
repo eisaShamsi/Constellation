@@ -1043,54 +1043,77 @@
         const focusScreen = pathToScreen.get(focusPath);
         if (!focusScreen) return;
 
-        // Decide which edges to brighten:
-        //  - Selected: all edges where both ends are in the same community.
-        //  - Hovered (no selection): edges incident to the hover.
-        const focusCommunity = pathToCommunity.get(focusPath);
-        const isSelected = selectedPath !== null;
-
+        // §2G.3h: edges incident to the FOCUSED NODE only (was: whole
+        // community on selection). Cap at MAX_FOCUS_EDGES so a hub
+        // node doesn't smother the chart with hundreds of fan-out
+        // lines (Eisa screenshot 2026-05-08). Lighter stroke so 1-hop
+        // neighbours remain readable through the gold rays.
+        const MAX_FOCUS_EDGES = 50;
         const lines = new Graphics();
         let edgeCount = 0;
+        const neighbours = new Set<string>();
         for (const e of resolvedEdges) {
-            let highlight = false;
-            if (isSelected && focusCommunity !== undefined) {
-                const ca = pathToCommunity.get(e.a);
-                const cb = pathToCommunity.get(e.b);
-                if (ca === focusCommunity && cb === focusCommunity) highlight = true;
-            } else {
-                if (e.a === focusPath || e.b === focusPath) highlight = true;
-            }
-            if (!highlight) continue;
+            if (edgeCount >= MAX_FOCUS_EDGES) break;
+            if (e.a !== focusPath && e.b !== focusPath) continue;
             const sa = pathToScreen.get(e.a);
             const sb = pathToScreen.get(e.b);
             if (!sa || !sb) continue;
             lines.moveTo(sa.x, sa.y);
             lines.lineTo(sb.x, sb.y);
             edgeCount++;
+            neighbours.add(e.a === focusPath ? e.b : e.a);
         }
         if (edgeCount > 0) {
-            lines.stroke({ color: 0xf5e6c8, alpha: 0.85, width: 1.5 });
+            lines.stroke({ color: 0xc9a227, alpha: 0.55, width: 0.7 });
             focusOverlay.addChild(lines);
         }
+        // §2G.3h: thin gold ring around each 1-hop neighbour so the
+        // user can SEE which stars are connected even through the
+        // gold rays. Ring radius matches node size.
+        if (neighbours.size > 0) {
+            const neighbourRings = new Graphics();
+            for (const npath of neighbours) {
+                const ns = pathToScreen.get(npath);
+                if (!ns) continue;
+                neighbourRings.circle(ns.x, ns.y, ns.r + 0.8);
+                neighbourRings.stroke({ color: 0xc9a227, alpha: 0.85, width: 0.8 });
+            }
+            focusOverlay.addChild(neighbourRings);
+        }
 
-        // Outlined focus star (a ring around the focused star)
+        // §2G.3h: ring size matches node exactly (Eisa directive). Was
+        // r+3 with a 2 px stroke — the ring rendered as a halo much
+        // larger than the actual node. Now the ring sits 1 px outside
+        // the node's edge with a 1.5 px gold stroke.
         const ring = new Graphics();
-        ring.circle(focusScreen.x, focusScreen.y, focusScreen.r + 3);
-        ring.stroke({ color: 0xd4af37, alpha: 0.95, width: 2 });
+        ring.circle(focusScreen.x, focusScreen.y, focusScreen.r + 1);
+        ring.stroke({ color: 0xc9a227, alpha: 1.0, width: 1.5 });
         focusOverlay.addChild(ring);
     }
 
     /** Find the nearest star within `r=10` of (px, py). Returns the
      *  note_path or null. O(n) iteration; for 30k stars this is ~1ms. */
     function pickStar(px: number, py: number): string | null {
+        // §2G.3h: inverse-transform the mouse into CANONICAL chart coords
+        // before hit-testing. pathToScreen stores stars at zoom=1, pan=0
+        // positions (the chartContainer transform applies the visual
+        // zoom/pan). Without this inverse the click lands on a different
+        // star than the one the user is pointing at when zoomed/panned
+        // (Eisa screenshot 2026-05-08).
+        const vp = getViewport();
+        if (!vp) return null;
+        const cpx = (px - vp.cx - chartPanX) / chartZoom + vp.cx;
+        const cpy = (py - vp.cy - chartPanY) / chartZoom + vp.cy;
+
         const HOVER_RADIUS = 10;
         let best: string | null = null;
         let bestDist = HOVER_RADIUS * HOVER_RADIUS;
         for (const [path, s] of pathToScreen) {
-            const dx = s.x - px;
-            const dy = s.y - py;
+            const dx = s.x - cpx;
+            const dy = s.y - cpy;
             const d2 = dx * dx + dy * dy;
-            const effectiveR = s.r + 4; // tolerance: hit even a bit outside the star sprite
+            // tolerance: hit even a bit outside the star sprite
+            const effectiveR = s.r + 4;
             const hitR2 = Math.max(d2, 0) <= effectiveR * effectiveR ? d2 : Infinity;
             if (hitR2 < bestDist) {
                 bestDist = hitR2;
@@ -1552,6 +1575,14 @@
         }
         isLoading = false;
 
+        // §2G.3h: wheel listener wired via addEventListener so we can
+        // pass `passive: false` and have preventDefault() actually
+        // stop the page from scrolling / Ctrl+wheel from triggering
+        // browser zoom. Svelte's `onwheel` attribute defaults to
+        // passive in modern browsers, which silently swallows
+        // preventDefault.
+        canvasContainer.addEventListener('wheel', handleWheel, { passive: false });
+
         // Resize observer — picks up CSS-size changes (window resize,
         // sidebar collapse, etc.) and triggers a full redraw.
         resizeObserver = new ResizeObserver(() => {
@@ -1653,6 +1684,18 @@
         }
     });
 
+    // §2G.3h: chart zoom + pan are reactive — any change re-applies
+    // both the Pixi container transform and the HTML rim wrapper
+    // transform synchronously. Belt-and-suspenders: even if a handler
+    // forgets to call updateChartTransform/syncRimTransform manually,
+    // this $effect catches the change.
+    $effect(() => {
+        // Track these so any change triggers transform update.
+        const _ = [chartZoom, chartPanX, chartPanY];
+        if (chartContainer) updateChartTransform();
+        syncRimTransform();
+    });
+
     onDestroy(() => {
         if (resizeObserver) {
             resizeObserver.disconnect();
@@ -1662,6 +1705,10 @@
         if (visualViewportCleanup.fn) {
             visualViewportCleanup.fn();
             visualViewportCleanup.fn = null;
+        }
+        // §2G.3h: tear down the wheel listener.
+        if (canvasContainer) {
+            canvasContainer.removeEventListener('wheel', handleWheel);
         }
         if (app) {
             app.destroy(true, { children: true, texture: true });
@@ -1679,9 +1726,14 @@
     function handleEscape(e: KeyboardEvent) {
         if (e.key === 'Escape') {
             e.preventDefault();
+            // §2G.3h: Esc cascade — clear selection → reset view →
+            // close. Each press undoes one layer of state, so the user
+            // can always escape back to a clean canonical view.
             if (selectedPath !== null) {
                 selectedPath = null;
                 drawFocusOverlay();
+            } else if (chartZoom !== 1 || chartPanX !== 0 || chartPanY !== 0) {
+                resetView();
             } else {
                 onClose();
             }
@@ -1695,8 +1747,7 @@
     <button
         type="button"
         class="sight-v3-close"
-        onclick={onClose}
-        onpointerdown={(e) => e.stopPropagation()}
+        onclick={(e) => { e.stopPropagation(); onClose(); }}
         aria-label={$t('sightV3.close') || 'Close Sight'}
     >×</button>
     <div
@@ -1708,7 +1759,6 @@
         onpointerup={handlePointerUp}
         onclick={handleClick}
         ondblclick={handleDoubleClick}
-        onwheel={handleWheel}
         role="application"
         aria-label="Constellation Sight v3"
     ></div>
@@ -1871,26 +1921,31 @@
         position: absolute;
         top: 12px;
         right: 16px;
-        width: 36px;
-        height: 36px;
-        background: rgba(250, 246, 232, 0.92);
-        border: 1px solid rgba(26, 26, 26, 0.35);
+        width: 38px;
+        height: 38px;
+        background: rgba(250, 246, 232, 0.95);
+        border: 1.5px solid rgba(26, 26, 26, 0.55);
         border-radius: 50%;
         color: #1a1a1a;
-        font-size: 22px;
+        font-size: 24px;
         line-height: 32px;
         cursor: pointer;
-        /* §2G.3g: bumped 10 → 100 so it sits above every overlay
-           (legend at z:7, universe-name at z:8, health-anchor at z:8,
-           rim wrapper at z:6). */
-        z-index: 100;
+        /* §2G.3h: 100 → 1000 so nothing in the chart can intercept
+           the click. Also bigger hit-area + thicker border for
+           clarity. */
+        z-index: 1000;
         padding: 0;
         pointer-events: auto;
+        font-family: serif;
+        font-weight: 600;
     }
 
     .sight-v3-close:hover {
-        background: rgba(201, 162, 39, 0.32);
-        border-color: rgba(201, 162, 39, 0.9);
+        background: rgba(201, 162, 39, 0.40);
+        border-color: rgba(201, 162, 39, 1);
+    }
+    .sight-v3-close:active {
+        transform: scale(0.94);
     }
 
     /* §2G.3g: chart layer wrapper for HTML rim numbers. Applies the
@@ -1905,25 +1960,30 @@
     }
 
     /* §2G.3g: Reset View button — only visible when zoom or pan is
-       not at default. Placed below the legend (left for LTR, right
-       for RTL — but always on the legend's side). */
+       not at default. §2G.3h: bumped visibility — bigger, gold-bordered,
+       z-index 60 so it sits above legend (7) and side panel (50). */
     .sight-v3-reset-view {
         position: absolute;
-        bottom: 24px;
+        bottom: 28px;
         left: 24px;
-        z-index: 9;
-        background: rgba(250, 246, 232, 0.92);
-        border: 1px solid rgba(201, 162, 39, 0.6);
-        border-radius: 16px;
-        padding: 6px 14px;
+        z-index: 60;
+        background: rgba(250, 246, 232, 0.95);
+        border: 1.5px solid rgba(201, 162, 39, 0.85);
+        border-radius: 18px;
+        padding: 8px 18px;
         font-family: serif;
-        font-size: 12px;
+        font-size: 13px;
+        font-weight: 600;
         color: #1a1a1a;
         cursor: pointer;
-        font-style: italic;
+        box-shadow: 0 1px 3px rgba(26, 26, 26, 0.1);
     }
     .sight-v3-reset-view:hover {
-        background: rgba(201, 162, 39, 0.25);
+        background: rgba(201, 162, 39, 0.30);
+        border-color: #c9a227;
+    }
+    .sight-v3-reset-view:active {
+        transform: scale(0.96);
     }
 
     /* §2G.3c: Universe name header — above the dome, below the
@@ -1948,6 +2008,10 @@
         overflow: hidden;
         text-overflow: ellipsis;
         pointer-events: none;
+        /* §2G.3h: cream backdrop so zoomed stars don't bleed through. */
+        background: rgba(250, 246, 232, 0.93);
+        padding: 4px 18px;
+        border-radius: 10px;
     }
 
     /* §2G.3f: Rim numbers (replaces library-name labels). Each number
@@ -2051,10 +2115,12 @@
     }
 
     /* MIG-019 §2G (spec §4): Universe Health anchor.
-       Top-center, roundel + flanking metrics, blue-ink + gold accents. */
+       Top-center, roundel + flanking metrics, blue-ink + gold accents.
+       §2G.3h: cream backdrop + soft shadow so zoomed-in stars don't
+       bleed through the metrics text (Eisa screenshot 2026-05-08). */
     .sight-v3-health-anchor {
         position: absolute;
-        top: 24px;
+        top: 16px;
         left: 50%;
         transform: translateX(-50%);
         z-index: 8;
@@ -2063,6 +2129,11 @@
         align-items: center;
         pointer-events: none;
         font-family: serif;
+        background: rgba(250, 246, 232, 0.93);
+        border: 1px solid rgba(26, 26, 26, 0.12);
+        border-radius: 14px;
+        padding: 10px 22px 14px;
+        box-shadow: 0 1px 3px rgba(26, 26, 26, 0.05);
     }
     .sight-v3-health-caption {
         font-size: 11px;

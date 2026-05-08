@@ -96,8 +96,12 @@
         box-sizing: border-box;
         transform: translateX(100%);
         transition: transform 200ms ease-out;
-        z-index: 5;
+        /* §2G.3h: 5 → 50 so the panel sits above legend (z:7),
+           rim wrapper (z:6), Universe Health (z:8), Universe-name (z:8)
+           but below close button (z:1000). */
+        z-index: 50;
         overflow-y: auto;
+        box-shadow: -2px 0 6px rgba(26, 26, 26, 0.08);
     }
 
     .sight-v3-side-panel.open {
