@@ -1253,21 +1253,41 @@
         rim.stroke({ color: 0x1a1a1a, alpha: 0.55, width: 0.7 });
         calendarRimContainer.addChild(rim);
 
-        // §2G.3b: Wedge labels were Pixi Text — Pixi v8's text path
-        // doesn't reliably handle Unicode bidi shaping (Arabic/Hebrew
-        // came out backwards on Eisa's universe). Labels now render as
-        // HTML elements with `dir="auto"` so the browser handles bidi
-        // natively. We just publish the wedge geometry below; the
-        // Svelte template renders the labels.
-        rimLabelGeometry = regionLayout.wedges.map((wedge) => {
+        // §2G.3n: rim NUMBERS are now Pixi Text, drawn into the same
+        // calendarRimContainer that holds the rim circles. Both are
+        // children of chartContainer and share the chartContainer
+        // transform — so when chartZoom changes, the numbers scale
+        // EXACTLY in lockstep with the circles. No more CSS-vs-Pixi
+        // divergence drift (the §2G.3l-m bug).
+        //
+        // (The library legend panel still uses HTML — it doesn't have
+        // to align with the rim, and the legend names need `dir="auto"`
+        // for Arabic/Hebrew/Persian library names. Single digits don't.)
+        const labelR = (rimInner + rimOuter) / 2 + 2;
+        for (const wedge of regionLayout.wedges) {
+            const lc = libraryColors.get(wedge.libraryPath);
+            if (!lc) continue;
             const t = wedge.arcMidRad;
-            const labelR = (rimInner + rimOuter) / 2 + 2;
             const lx = cx + labelR * Math.sin(t);
             const ly = cy - labelR * Math.cos(t);
-            // §2G.3f: keep upright (no per-rim rotation) for numbers —
-            // a single digit doesn't need to follow the arc; uprightness
-            // makes the legend mapping easier to read.
-            const rotDeg = 0;
+            const numText = new Text({
+                text: String(lc.index),
+                style: new TextStyle({
+                    fontFamily: 'serif',
+                    fontSize: 16,
+                    fontWeight: '700',
+                    fill: lc.hex,
+                    stroke: { color: 0xfaf6e8, width: 3 },  // cream halo for legibility
+                }),
+                anchor: 0.5,
+            });
+            numText.x = lx;
+            numText.y = ly;
+            calendarRimContainer.addChild(numText);
+        }
+
+        // Legend still needs the wedge metadata (colors + names + counts).
+        rimLabelGeometry = regionLayout.wedges.map((wedge) => {
             const lc = libraryColors.get(wedge.libraryPath);
             return {
                 key: wedge.libraryPath,
@@ -1275,7 +1295,7 @@
                 index: lc?.index ?? 0,
                 colorCss: lc?.css ?? '#2a4a8c',
                 count: wedge.noteCount,
-                lx, ly, rotDeg,
+                lx: 0, ly: 0, rotDeg: 0,  // unused now; kept for type compat
             };
         });
     }
@@ -1536,6 +1556,34 @@
         return count;
     });
     const sidePanelOutgoing = $derived(0); // §1E: incoming + outgoing combined; MIG-019 splits by direction
+
+    /** §2G.3n: list of 1-hop neighbours for the selected note (title +
+     *  library color), so the side panel can show "Connected notes:"
+     *  to satisfy Eisa's request for connected-node titles. Capped at
+     *  50 like the focus-overlay edges (hub nodes can have hundreds
+     *  of connections — limit to keep the panel scannable). */
+    const sidePanelConnectedNotes = $derived.by(() => {
+        if (!selectedPath) return [] as Array<{ path: string; title: string; libraryName: string; colorCss: string }>;
+        const sel = selectedPath;
+        const seen = new Set<string>();
+        const out: Array<{ path: string; title: string; libraryName: string; colorCss: string }> = [];
+        for (const e of resolvedEdges) {
+            if (out.length >= 50) break;
+            const otherPath = e.a === sel ? e.b : e.b === sel ? e.a : null;
+            if (!otherPath || seen.has(otherPath)) continue;
+            seen.add(otherPath);
+            const libraryName = pathToLibrary.get(otherPath) ?? '';
+            const wedge = regionLayout?.pathToWedge.get(otherPath);
+            const colorCss = wedge ? (libraryColors.get(wedge.libraryPath)?.css ?? '#1a1a1a') : '#1a1a1a';
+            out.push({
+                path: otherPath,
+                title: pathToTitle.get(otherPath) ?? '(untitled)',
+                libraryName,
+                colorCss,
+            });
+        }
+        return out;
+    });
 
     // ─── Lifecycle ───────────────────────────────────────────────────
     onMount(async () => {
@@ -1813,19 +1861,18 @@
 <svelte:window onkeydown={handleEscape} />
 
 <div class="sight-v3-root">
-    <!-- §2G.3m: close button — adding `onpointerup` as a defensive
-         second path. After 7 rounds where `onclick` repeatedly didn't
-         fire (despite being the canonical Svelte 5 pattern), we don't
-         keep guessing — we register on multiple pointer events so
-         that AT LEAST one fires. pointerup fires before click in the
-         pointer event sequence and is rarely suppressed. -->
-    <button
-        type="button"
-        class="sight-v3-close"
-        onclick={(e) => { e.stopPropagation(); onClose(); }}
-        onpointerup={(e) => { e.stopPropagation(); onClose(); }}
-        aria-label={$t('sightV3.close') || 'Close Sight'}
-    >×</button>
+    <!-- §2G.3n: header bar (matches the v2 pattern from
+         ConstellationSight2.svelte:1041-1064 which has a working
+         close button in production). The button is inline as a flex
+         item, NOT position:absolute over the canvas. Identical
+         onclick signature to v2: `() => onClose?.()` — no
+         stopPropagation, no onpointerup, no aria-label complications.
+         If this still doesn't fire, the issue is upstream of any
+         JavaScript we can write. -->
+    <div class="sight-v3-header">
+        <span class="sight-v3-header-spacer"></span>
+        <button class="sight-v3-close" onclick={() => onClose?.()}>×</button>
+    </div>
 
     <!-- §2G.3i: Reset View button (chrome). Always visible per Eisa's
          directive. Faded when at default state, prominent when zoom
@@ -1866,17 +1913,17 @@
          and pan in lockstep with the Pixi-rendered chart. The wrapper
          is `pointer-events: none` so clicks fall through to the
          canvas's pointer handlers below. -->
+    <!-- §2G.3n: rim numbers REMOVED from this wrapper — they're now
+         Pixi Text inside calendarRimContainer (a child of chartContainer)
+         so they share the Pixi-side transform with the rim circles
+         and no longer drift on zoom. The wrapper still scales the
+         remaining HTML overlays (Universe Health, Universe-name,
+         legend) which are screen-anchored UI rather than chart elements
+         that need pixel-perfect rim alignment. -->
     <div
         class="sight-v3-overlays-wrapper"
         style="transform-origin: {overlaysTransformOrigin}; transform: {overlaysTransform};"
     >
-        {#each rimLabelGeometry as geo (geo.key)}
-            <div
-                class="sight-v3-rim-number"
-                style="left: {geo.lx}px; top: {geo.ly}px; color: {geo.colorCss};"
-                title="{geo.name} — {geo.count.toLocaleString()} notes"
-            >{geo.index}</div>
-        {/each}
 
     <!-- §2G.3f: Library legend panel. Anchored to the LEFT for LTR
          interfaces, RIGHT for RTL. Lists Universe root + numbered
@@ -1975,7 +2022,14 @@
         totalNotes={sidePanelTotalNotes}
         incomingCount={sidePanelIncoming}
         outgoingCount={sidePanelOutgoing}
+        connectedNotes={sidePanelConnectedNotes}
         onOpenNote={sidePanelOpenNote}
+        onConnectedClick={(path) => {
+            // §2G.3n: clicking a connected note in the side panel
+            // selects it (cascades the focus overlay to that node).
+            const sky = pathToSkyNode.get(path);
+            if (sky) onOpenNote(path, sky.libraryName);
+        }}
         onClose={sidePanelClose}
     />
 </div>
@@ -2007,35 +2061,46 @@
         height: 100% !important;
     }
 
-    .sight-v3-close {
+    /* §2G.3n: header bar (matches v2's `.sight2-header` pattern).
+       Sits at the very top of the chart panel as a thin inline
+       flex strip, holding the close button (and any future toolbar
+       buttons). NOT position:absolute — that was the failure mode
+       of every prior v3 close-button attempt. */
+    .sight-v3-header {
         position: absolute;
-        top: 12px;
-        right: 16px;
-        width: 38px;
-        height: 38px;
-        background: rgba(250, 246, 232, 0.95);
-        border: 1.5px solid rgba(26, 26, 26, 0.55);
-        border-radius: 50%;
-        color: #1a1a1a;
-        font-size: 24px;
-        line-height: 32px;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        padding: 0 16px;
+        z-index: 100;
+        pointer-events: none;  /* let clicks pass through except for own button */
+    }
+    .sight-v3-header-spacer {
+        flex: 1;
+        pointer-events: none;
+    }
+    .sight-v3-close {
+        /* Matches v2 exactly: inline flex item, simple style. */
+        border: none;
+        background: rgba(250, 246, 232, 0.85);
         cursor: pointer;
-        /* §2G.3j: 1000 → 9999 — pure paranoia after Eisa's "STILL
-           doesn't work" feedback. No element in this page should
-           sit above 9999. */
-        z-index: 9999;
+        font-size: 22px;
+        line-height: 28px;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        color: rgba(26, 26, 26, 0.7);
         padding: 0;
-        pointer-events: auto;
         font-family: serif;
         font-weight: 600;
+        pointer-events: auto;  /* re-enable on the button itself */
     }
-
     .sight-v3-close:hover {
-        background: rgba(201, 162, 39, 0.40);
-        border-color: rgba(201, 162, 39, 1);
-    }
-    .sight-v3-close:active {
-        transform: scale(0.94);
+        color: #1a1a1a;
+        background: rgba(201, 162, 39, 0.35);
     }
 
     /* §2G.3l: HTML overlays wrapper. CSS-transform scales the rim
@@ -2118,23 +2183,6 @@
         background: rgba(250, 246, 232, 0.93);
         padding: 4px 18px;
         border-radius: 10px;
-    }
-
-    /* §2G.3f: Rim numbers (replaces library-name labels). Each number
-       inherits its color from the library palette via inline style;
-       the legend panel below maps number → library. Single digits or
-       small two-digit numbers stay upright (no per-rim rotation
-       needed) so the legend mapping is easy to read. */
-    .sight-v3-rim-number {
-        position: absolute;
-        pointer-events: none;
-        font-family: serif;
-        font-weight: 700;
-        font-size: 16px;
-        z-index: 6;
-        user-select: none;
-        transform: translate(-50%, -50%);
-        text-shadow: 0 0 3px #faf6e8, 0 0 3px #faf6e8;  /* halo against cream */
     }
 
     /* §2G.3f: Library legend panel — anchored to the left edge for

@@ -81,11 +81,48 @@ All commits pushed to `origin/main`. Origin tracks `1592663` at end of day.
 
 ---
 
+## §2G.3j → §2G.3n cascade (catch-up — five more rounds same day)
+
+The §2G.3i Boss test surfaced regressions; what looked like a one-step verification fanned out into five more iterations. All shipped same-day (2026-05-08), all pushed to `origin/main`, each with its own inline orientation v-bump per the inline-orientation rule.
+
+| Commit | Phase | Visible to user |
+|--------|-------|-----------------|
+| `3623887` | §2G.3j | Fix lens-architecture regressions: `.sight-v3-zoom-wrapper` got `display: flex; align-items: stretch` so canvas's `flex: 1` actually works (was sized to content default ~800×800) + close-button binding via `$effect` reactive on `closeBtn` $state ref (bind:this could resolve after onMount) + close-button z-index 1000 → 9999 |
+| `9b1c5fb` | §2G.3k | Wheel-zoom freeze fix: removed redundant `$effect` watching `chartZoom` + `chartPanX` + `chartPanY` (was firing 200+ Svelte reactive updates per second on smooth-scroll wheels) + rAF-throttled wheel + drag handlers via single shared `zoomFrame` token (DOM writes coalesced to one per animation frame, math stays responsive) |
+| `a78e0c3` | §2G.3l | **Evidence-backed redesign after a 5-agent audit** (3 codebase Explore + 2 web research). Findings cited from MDN, Steve Ruiz, pixi-viewport, W3C resize-observer, Svelte 5 docs. Reverted lens-CSS-on-canvas (CSS-scaling a `<canvas>` blurs the bitmap). Restored Pixi-native `chartContainer.scale.set(zoom)`. New `.sight-v3-overlays-wrapper` (HTML only, separate from canvas) scales via CSS for rim numbers + Universe Health + Universe-name + legend in lockstep. Canvas back to `position: absolute; inset: 0`. Hit-testing inverse-transform: `internal_x = (mouse_x - cx - panX) / chartZoom + cx`. Close button via direct `onclick={(e) => { e.stopPropagation(); onClose(); }}` (no more bind:this / addEventListener). |
+| `b64d6b1` | §2G.3m | Defensive fix-up batch: close button gets BOTH `onclick` AND `onpointerup` (8th iteration; pointerup fires earlier in pointer-event sequence and is rarely suppressed) + Esc simplified to single-press always-close (cascade reset/clear/close was friction; Esc is the guaranteed escape hatch) + selection ring matches node size via shared `actualNodeRadius()` helper (was 2.35× too big for brightest stars) + edges → INK `#1a1a1a @ alpha 0.7` (dark burnt-amber still too low contrast on cream) + CSS overlays-wrapper switched to `translate3d/scale3d` (GPU-precise, eliminates sub-pixel divergence with Pixi rim arcs) |
+| **(this commit)** | **§2G.3n** | **Adopt v2 working pattern wholesale** after Eisa: *"Check how we manage to do it right in the SV. It is already working there."* + *"Fix it, don't patch it."* — (1) Close button via thin `.sight-v3-header` flex strip with inline `onclick={() => onClose?.()}` button (matches `ConstellationSight2.svelte` line 1063 exactly) — no bind:this, no addEventListener, no $effect, no z-index 9999. (2) Library rim numbers moved from HTML overlay to **Pixi `Text`** inside `calendarRimContainer` — single transform pipeline, mathematically impossible to drift on zoom. CSS `.sight-v3-rim-number` rule deleted as dead code. (3) `sidePanelConnectedNotes` `$derived.by` walks 1-hop neighbours (cap 50) of selected note; new `connectedNotes` prop + `onConnectedClick` callback on `SightV3SidePanel`; side panel renders clickable list (color dot + title + library name) under "Connected notes (N)" header — clicking a row recentres the panel on that neighbour. |
+
+### Eisa-flagged round-by-round (continuation)
+
+| Round | Eisa report | Fix |
+|-------|-------------|-----|
+| §2G.3i | "What happened to my Sight? Even mouse wheel doesn't work. Nothing is working. Enough patching." | §2G.3j (canvas-sizing fix + reactive close-button binding) |
+| §2G.3j | "When I try to zoom in using the mouse wheel, the app freezes." | §2G.3k (rAF throttle + remove redundant $effect) |
+| §2G.3k | "Not working. Enough wasting my time. Bring in the audit agents and conduct the necessary research." | §2G.3l (5-agent audit → evidence-backed redesign with citations) |
+| §2G.3l | "Library numbers offset on zoom. Selection ring doesn't match node size. Edges low contrast. Close button NOT WORKING." | §2G.3m (translate3d + actualNodeRadius helper + ink edges + onpointerup) |
+| §2G.3m | "Close button still not working. Library handles still not fixed to rim. Need connected-note titles. Fix it, don't patch it." | §2G.3n (v2-pattern adoption: header bar + Pixi rim text + connected-notes list) |
+
+### Orientation chain (continuation)
+
+- v1.65 → v1.66 (§2G.3j inline) → v1.67 (§2G.3k) → v1.68 (§2G.3l) → v1.69 (§2G.3m) → **v1.70 (§2G.3n inline)**
+- All preserved in `docs/` per SO #6. Five more bumps today, all inline with the trigger commit per the inline-orientation rule.
+
+### What §2G.3l audit + §2G.3n v2-pattern adoption taught us (additions)
+
+6. **When a bug resists 8 iterations of patches, look for a working version elsewhere in the codebase.** Eisa's "check how we manage to do it right in the SV" was the breakthrough. v2's `ConstellationSight2.svelte` had the exact same close-button widget shipping for months in production — a thin flex header with `onclick={() => onClose?.()}`. The v3 attempts kept inventing new defenses (z-index 9999, addEventListener, $effect, defensive pointerup) when the right answer was "match the working pattern verbatim". When stuck on a feature that's working elsewhere, **adopt, don't reinvent**.
+
+7. **Two transform pipelines = drift.** Rim numbers as HTML overlay scaled via CSS `transform` while Pixi rim arcs scaled via `chartContainer.scale.set()` produced a tiny but visible offset that compounded with zoom. `translate3d` reduced it (GPU matrix precision) but didn't eliminate it. Fix: **single source of geometric truth**. Move the labels INTO the same Pixi container as the geometry they're labeling. Mathematically impossible to drift. Eisa's "fix it, don't patch it" was the right framing.
+
+8. **Connected-notes visibility is a knowledge-formulation requirement, not a UI nicety.** A graph-view side panel that shows counts but not which notes feels like file-management; a panel that shows the names of the linked notes — clickable for further exploration — is the cognitive vocabulary of the Living Link Architecture. The 1-hop neighbour list is the smallest unit that makes Sight a thinking instrument rather than a counter. Cap 50 prevents hub-overflow but matches the focus-overlay edge cap so the visual and the panel agree on what counts as "connected".
+
+---
+
 ## Next session
 
-§2G.3i Boss test verdict. If PASS:
+§2G.3n Boss test verdict. If PASS:
 - §2G.4: mode toggle UI (top-right 6-button bar: R · L · T · C · S · A) with 600 ms eased migration animation. R/L/T light up, C/S/A dimmed "available later".
 - §2G.5: persist `appSettings.sight.lastMode` per Universe.
-- §2G.6: 3-agent audit + tag MIG-019 milestone + orientation v1.66 + i18n keys for mode names + close-out.
+- §2G.6: 3-agent audit + tag MIG-019 milestone + orientation v1.71 + i18n keys for mode names + close-out.
 
-If FAIL on close button or lens zoom: another round.
+If FAIL on close button (9th iteration?), rim numbers, or connected-notes list: deeper architectural inspection (could be a Svelte 5 + Tauri WebView2 interaction nobody has documented).

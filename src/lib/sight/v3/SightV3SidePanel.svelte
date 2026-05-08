@@ -14,6 +14,12 @@
 <script lang="ts">
     import { t } from '$lib/i18n';
 
+    interface ConnectedNote {
+        path: string;
+        title: string;
+        libraryName: string;
+        colorCss: string;
+    }
     interface Props {
         notePath: string | null;
         noteTitle: string;
@@ -22,7 +28,13 @@
         totalNotes: number;
         incomingCount: number;
         outgoingCount: number;
+        /** §2G.3n: 1-hop neighbours of the selected note. The side
+         *  panel renders them as a clickable list so the user can see
+         *  WHICH notes are linked, with their titles and libraries. */
+        connectedNotes?: ConnectedNote[];
         onOpenNote: () => void;
+        /** §2G.3n: invoked when the user clicks a connected-note row. */
+        onConnectedClick?: (path: string) => void;
         onClose: () => void;
     }
     let {
@@ -33,7 +45,9 @@
         totalNotes,
         incomingCount,
         outgoingCount,
+        connectedNotes = [],
         onOpenNote,
+        onConnectedClick,
         onClose,
     }: Props = $props();
 
@@ -72,6 +86,29 @@
                 <span class="sv3-sp-value">{outgoingCount}</span>
             </div>
         </div>
+
+        {#if connectedNotes.length > 0}
+            <div class="sv3-sp-section">
+                <div class="sv3-sp-section-title">
+                    {$t('sightV3.sidePanel.connectedNotes') || 'Connected notes'}
+                    <span class="sv3-sp-section-count">({connectedNotes.length})</span>
+                </div>
+                <div class="sv3-sp-connected-list">
+                    {#each connectedNotes as cn (cn.path)}
+                        <button
+                            class="sv3-sp-connected-row"
+                            onclick={() => onConnectedClick?.(cn.path)}
+                            dir="auto"
+                            title={cn.title}
+                        >
+                            <span class="sv3-sp-connected-dot" style="background: {cn.colorCss};"></span>
+                            <span class="sv3-sp-connected-title">{cn.title}</span>
+                            <span class="sv3-sp-connected-lib" dir="auto">{cn.libraryName}</span>
+                        </button>
+                    {/each}
+                </div>
+            </div>
+        {/if}
 
         <div class="sv3-sp-actions">
             <button class="sv3-sp-action-btn primary" onclick={onOpenNote}>
@@ -192,5 +229,74 @@
 
     .sv3-sp-action-btn.primary {
         font-weight: 500;
+    }
+
+    /* §2G.3n: Connected-notes list — 1-hop neighbours of the selected
+       star, rendered as a clickable list so the user can see WHICH
+       notes are linked, not just how many. Click a row to recentre the
+       side panel on that neighbour. */
+    .sv3-sp-section-count {
+        color: rgba(26, 26, 26, 0.45);
+        font-weight: 400;
+        margin-inline-start: 4px;
+        text-transform: none;
+        letter-spacing: 0;
+    }
+
+    .sv3-sp-connected-list {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        max-height: 320px;
+        overflow-y: auto;
+        margin-inline: -6px;
+        padding-inline: 2px;
+    }
+
+    .sv3-sp-connected-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        padding: 6px 8px;
+        background: transparent;
+        border: 1px solid transparent;
+        border-radius: 4px;
+        color: #1a1a1a;
+        font-size: 12px;
+        cursor: pointer;
+        text-align: start;
+        font-family: inherit;
+    }
+
+    .sv3-sp-connected-row:hover {
+        background: rgba(201, 162, 39, 0.10);
+        border-color: rgba(201, 162, 39, 0.3);
+    }
+
+    .sv3-sp-connected-dot {
+        flex: 0 0 auto;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        box-shadow: 0 0 0 1px rgba(26, 26, 26, 0.15);
+    }
+
+    .sv3-sp-connected-title {
+        flex: 1 1 auto;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        min-width: 0;
+    }
+
+    .sv3-sp-connected-lib {
+        flex: 0 0 auto;
+        color: rgba(26, 26, 26, 0.55);
+        font-size: 11px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 110px;
     }
 </style>
