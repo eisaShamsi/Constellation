@@ -340,15 +340,24 @@
     function syncRimTransform() { syncZoomTransform(); }
 
     /** §2G.3g: wheel-zoom handler. preventDefault stops the page from
-     *  scrolling and stops Ctrl+wheel from triggering browser zoom. */
+     *  scrolling and stops Ctrl+wheel from triggering browser zoom.
+     *  §2G.3k: rAF-throttled — high-DPI mice fire 100+ wheel events
+     *  per second; without throttling, each event was scheduling a
+     *  Svelte reactive update and flooding the main thread to a
+     *  freeze. Now: zoom state updates immediately, but the
+     *  syncZoomTransform DOM write happens at most once per frame. */
+    let zoomFrame: number | null = null;
     function handleWheel(ev: WheelEvent) {
         ev.preventDefault();
         const dz = -ev.deltaY * 0.0015;
         const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, chartZoom * Math.exp(dz)));
         if (newZoom === chartZoom) return;
         chartZoom = newZoom;
-        updateChartTransform();
-        syncRimTransform();
+        if (zoomFrame !== null) return;  // already a sync scheduled this frame
+        zoomFrame = requestAnimationFrame(() => {
+            zoomFrame = null;
+            syncZoomTransform();
+        });
     }
 
     /** §2G.3g: pointer-down starts a potential pan gesture. We don't
@@ -1296,6 +1305,8 @@
         // §2G.3g: drag-to-pan gesture. While the pointer is down, we
         // accumulate movement until DRAG_THRESHOLD is exceeded, then
         // commit to a pan and suppress hover/click for the duration.
+        // §2G.3k: rAF-throttled (same reason as wheel — high-DPI
+        // pointermove fires faster than the main thread can absorb).
         if (panDragState) {
             const dx = ev.clientX - panDragState.startClientX;
             const dy = ev.clientY - panDragState.startClientY;
@@ -1307,8 +1318,12 @@
             if (panDragMoved) {
                 chartPanX = panDragState.startPanX + dx;
                 chartPanY = panDragState.startPanY + dy;
-                updateChartTransform();
-                syncRimTransform();
+                if (zoomFrame === null) {
+                    zoomFrame = requestAnimationFrame(() => {
+                        zoomFrame = null;
+                        syncZoomTransform();
+                    });
+                }
                 return;  // suppress hover during drag
             }
         }
@@ -1700,17 +1715,15 @@
         }
     });
 
-    // §2G.3h: chart zoom + pan are reactive — any change re-applies
-    // both the Pixi container transform and the HTML rim wrapper
-    // transform synchronously. Belt-and-suspenders: even if a handler
-    // forgets to call updateChartTransform/syncRimTransform manually,
-    // this $effect catches the change.
-    $effect(() => {
-        // Track these so any change triggers transform update.
-        const _ = [chartZoom, chartPanX, chartPanY];
-        if (chartContainer) updateChartTransform();
-        syncRimTransform();
-    });
+    // §2G.3k: REMOVED the redundant $effect that watched
+    // chartZoom/Pan. It was firing on EVERY wheel notch (high-DPI
+    // mice fire 100+ wheel events per second), each invocation
+    // triggering Svelte reactivity scheduling, and flooding the main
+    // thread to the point of an apparent freeze (Eisa report on
+    // §2G.3j: "the app freezes. It is non-responsive"). Every wheel
+    // / drag / reset / Esc handler now calls syncZoomTransform()
+    // synchronously and that's enough — no belt-and-suspenders
+    // needed at the cost of overhead.
 
     // §2G.3j: close-button event binding via $effect. After four
     // rounds of failing Svelte `onclick={...}` and one round of
