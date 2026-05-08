@@ -1861,18 +1861,30 @@
 <svelte:window onkeydown={handleEscape} />
 
 <div class="sight-v3-root">
-    <!-- §2G.3n: header bar (matches the v2 pattern from
-         ConstellationSight2.svelte:1041-1064 which has a working
-         close button in production). The button is inline as a flex
-         item, NOT position:absolute over the canvas. Identical
-         onclick signature to v2: `() => onClose?.()` — no
-         stopPropagation, no onpointerup, no aria-label complications.
-         If this still doesn't fire, the issue is upstream of any
-         JavaScript we can write. -->
+    <!-- §2G.3o: STRUCTURAL FIX — root is now `display: flex;
+         flex-direction: column`, matching v2's `.sight2-root` exactly.
+         Header is a REAL flex row (Row 1, fixed height); body fills
+         the remaining height (Row 2). They do NOT overlap.
+         Eight prior iterations failed because the close button was in
+         a `position: absolute` strip overlaying the canvas — the
+         button's `pointer-events: auto` + parent's `pointer-events:
+         none` should have worked on paper, but click events were
+         silently lost in some unknown event-routing path between
+         the absolute button and the absolute canvas sibling.
+         The v2 `ConstellationSight2.svelte` and `SkyView.svelte` have
+         shipped working close buttons for months — both put the close
+         button inside a NORMAL flex row that is a real layout
+         participant, NOT an overlay. This commit copies that exact
+         structure for v3. -->
     <div class="sight-v3-header">
         <span class="sight-v3-header-spacer"></span>
         <button class="sight-v3-close" onclick={() => onClose?.()}>×</button>
     </div>
+
+    <!-- §2G.3o: body row — takes the remaining height. Acts as the
+         positioning ancestor for the absolute canvas + reset-view +
+         overlays-wrapper + tooltip. -->
+    <div class="sight-v3-body">
 
     <!-- §2G.3i: Reset View button (chrome). Always visible per Eisa's
          directive. Faded when at default state, prominent when zoom
@@ -1885,7 +1897,7 @@
         aria-label={$t('sightV3.resetView') || 'Reset view'}
     >Reset view</button>
 
-    <!-- §2G.3l: Pixi canvas — direct child of root, NOT inside a CSS-
+    <!-- §2G.3l: Pixi canvas — direct child of body, NOT inside a CSS-
          transformed wrapper. Pixi's `chartContainer.scale.set(zoom)`
          handles the zoom natively, keeping the canvas crisp at any
          zoom level (per Steve Ruiz's "Creating a Zoom UI" article and
@@ -2014,6 +2026,8 @@
         >{tooltipText}</div>
     {/if}
 
+    </div><!-- /.sight-v3-body —§2G.3o -->
+
     <SightV3SidePanel
         notePath={selectedPath}
         noteTitle={sidePanelTitle}
@@ -2036,9 +2050,15 @@
 
 <style>
     /* MIG-019 §2G: Suwaidi cream parchment palette (was navy theme).
-       §2G.3l: dropped `display: flex`. Canvas + overlays-wrapper are
-       both `position: absolute; inset: 0` so they fill the screen
-       without flex sizing dependencies. */
+       §2G.3o: RESTORED `display: flex; flex-direction: column` on the
+       root, matching v2's `.sight2-root` exactly. The header is the
+       first flex row (fixed height); the body is the second (flex: 1).
+       The canvas + overlays-wrapper sit INSIDE the body and are
+       `position: absolute; inset: 0` relative to the body — they fill
+       only the space below the header, never the header itself. The
+       close button is a real flex-row child, not floating in an
+       absolute strip over the canvas. This is the structural pattern
+       that has shipped working in v2 + SkyView for months. */
     .sight-v3-root {
         position: fixed;
         top: 0;
@@ -2047,6 +2067,19 @@
         height: 100vh;
         background: #faf6e8;  /* cream parchment */
         z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    /* §2G.3o: body row — takes remaining height after header. Acts as
+       the positioning ancestor for the absolute canvas + reset button
+       + overlays wrapper. */
+    .sight-v3-body {
+        flex: 1;
+        position: relative;
+        overflow: hidden;
+        min-height: 0;  /* allow flex child to shrink below content size */
     }
 
     .sight-v3-canvas {
@@ -2061,31 +2094,47 @@
         height: 100% !important;
     }
 
-    /* §2G.3n: header bar (matches v2's `.sight2-header` pattern).
-       Sits at the very top of the chart panel as a thin inline
-       flex strip, holding the close button (and any future toolbar
-       buttons). NOT position:absolute — that was the failure mode
-       of every prior v3 close-button attempt. */
+    /* §2G.3o: header bar — REAL FLEX ROW, no longer an absolute
+       overlay. Lives as Row 1 of the root flex column; the body
+       below it (canvas + overlays) lives as Row 2. They do not
+       overlap. This matches v2's `.sight2-header` pattern verbatim
+       (ConstellationSight2.svelte:1277-1285).
+
+       Why this is the structural fix that finally works (per Svelte
+       #15343 + Pixi #10911 audit findings, 2026-05-08):
+       Svelte 5 delegates `onclick={fn}` to `<body>` and relies on
+       the click event bubbling all the way up. When the button is
+       in an absolute overlay sibling of a canvas wrapper that ALSO
+       has onclick + pointerdown + pointermove + pointerup +
+       dblclick handlers (all delegated to body), the canvas's
+       handlers and Pixi v8's document-level capture-phase pointer
+       listener can interfere with the click delivery to the button.
+       Hover (CSS `:hover`) still fires because hover is NOT
+       delegated. That exactly matches the symptom — gold-on-hover
+       but no click — across eight prior iterations.
+
+       The fix: put the close button in a clean DOM branch
+       (.sight-v3-header → .sight-v3-close) that does NOT cross the
+       canvas branch (.sight-v3-body → .sight-v3-canvas) on its
+       bubble path to body. Structural separation > pointer-events
+       gymnastics. */
     .sight-v3-header {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
+        flex-shrink: 0;          /* keeps header at natural height */
         height: 44px;
         display: flex;
         align-items: center;
         padding: 0 16px;
-        z-index: 100;
-        pointer-events: none;  /* let clicks pass through except for own button */
+        background: rgba(250, 246, 232, 0.85);
+        border-bottom: 1px solid rgba(26, 26, 26, 0.08);
     }
     .sight-v3-header-spacer {
         flex: 1;
-        pointer-events: none;
     }
     .sight-v3-close {
-        /* Matches v2 exactly: inline flex item, simple style. */
+        /* Matches v2 exactly: inline flex item, simple style. No
+           position, no z-index, no pointer-events tricks. */
         border: none;
-        background: rgba(250, 246, 232, 0.85);
+        background: transparent;
         cursor: pointer;
         font-size: 22px;
         line-height: 28px;
@@ -2096,7 +2145,6 @@
         padding: 0;
         font-family: serif;
         font-weight: 600;
-        pointer-events: auto;  /* re-enable on the button itself */
     }
     .sight-v3-close:hover {
         color: #1a1a1a;

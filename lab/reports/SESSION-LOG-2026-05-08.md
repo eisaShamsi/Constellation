@@ -118,11 +118,56 @@ The §2G.3i Boss test surfaced regressions; what looked like a one-step verifica
 
 ---
 
+## §2G.3o — Structural fix (close button, ninth-iteration root cause)
+
+Pre-test, after Eisa pushed back: *"I am really wondering why you are not able to fix a simple task, like a 'Close' function!! Is it that hard? How many attempts so far?"* — and then: *"Go and do your homework. Dig for the simple, proven right solution."*
+
+The §2G.3n commit had only copied v2's MARKUP (header div + close button), keeping v3's CSS where the header was `position: absolute` over the canvas. That's not "adopting v2's pattern" — that's a partial copy with the broken layout still in place. Eight iterations of pointer-events thread-the-needle and z-index escalation papered over the structural mistake without ever removing it.
+
+### Homework — what the audit found
+
+Spawned a parallel research agent. Found documented root cause:
+
+- **Svelte 5 issue #15343 + #13213**: Svelte 5 delegates `onclick={fn}` handlers to `<body>` and relies on the click event bubbling all the way up. Any ancestor / sibling-with-handlers in the bubble path that calls `stopPropagation()` (or whose Svelte-delegated handler interferes with the bubble path) silently swallows the click. **Hover still works because hover is NOT delegated.** This exactly matches v3's symptom.
+- **Pixi v8 EventSystem**: registers a `document.addEventListener('pointermove', …, true)` capture-phase listener for hit-testing. Combined with the canvas wrapper having `onclick`+`onpointerdown`+`onpointermove`+`onpointerup`+`ondblclick` (all body-delegated), this compounds the delegation problem.
+- **Working examples in the same codebase** (`ConstellationSight2.svelte:1041-1064, 1269-1304` and `SkyView.svelte:961-965, 1162-1200`) BOTH use a flex-column root with the header as a real layout participant (no `position: absolute` on the header). That structural separation removes the bubble-path interference.
+
+### What §2G.3o ships
+
+| Commit | Phase | Visible to user |
+|--------|-------|-----------------|
+| **(this commit)** | **§2G.3o** | **Structural fix.** `.sight-v3-root` → `display: flex; flex-direction: column`. `.sight-v3-header` → real flex Row 1 (44 px, `flex-shrink: 0`, NO position:absolute, NO z-index, NO pointer-events). New `.sight-v3-body` Row 2 (`flex: 1; position: relative`) wraps canvas + Reset View + overlays + tooltip. Close button is now a plain inline flex item with plain `onclick={() => onClose?.()}` — no defenses, no patches. The bubble path from close button no longer crosses the canvas branch, so Svelte's body delegate routes the click correctly. Type-checked clean. |
+
+### Why this works where eight prior iterations failed
+
+| Iteration | Approach | Why it failed |
+|-----------|----------|---------------|
+| §2G.3g | Bumped close-button z-index to 100 | Z-index doesn't fix delegation; click never reached body |
+| §2G.3h | Bumped to 1000 + Esc cascade | Same reason |
+| §2G.3i | `bind:this` + `addEventListener('click')` | Bypassed delegation BUT `closeBtn` $state ref had timing issues; some attaches no-op'd |
+| §2G.3j | Reactive `$effect` on `closeBtn` ref + z-index 9999 | $effect re-ran but stale closures dropped listeners on cleanup |
+| §2G.3l | Pixi-native zoom + plain `onclick` | Restored the trigger condition (overlay sibling of canvas) |
+| §2G.3m | + defensive `onpointerup` | pointerup also bubbles through canvas-event-handler delegates |
+| §2G.3n | Copied v2's MARKUP but kept v3's broken CSS | Header was still `position: absolute` over canvas — the trigger condition stayed |
+| **§2G.3o** | **Match v2's STRUCTURE: flex-column root, header as real Row 1, canvas in Row 2** | **Removes the trigger condition entirely** |
+
+### Lesson learned (one-line, for LL-NNN bookkeeping)
+
+When a Svelte 5 button click doesn't fire but hover does, the click event isn't reaching `<body>` for delegation. Don't add defenses (z-index, addEventListener, capture phase, pointerup) — find what's intercepting the bubble path and remove it structurally. The interceptor is usually a sibling element with its own delegated handlers + a layered absolute layout.
+
+### Orientation chain
+
+- v1.70 → **v1.71** (§2G.3o inline). Preserved in `docs/`.
+
+---
+
 ## Next session
 
-§2G.3n Boss test verdict. If PASS:
-- §2G.4: mode toggle UI (top-right 6-button bar: R · L · T · C · S · A) with 600 ms eased migration animation. R/L/T light up, C/S/A dimmed "available later".
-- §2G.5: persist `appSettings.sight.lastMode` per Universe.
-- §2G.6: 3-agent audit + tag MIG-019 milestone + orientation v1.71 + i18n keys for mode names + close-out.
+§2G.3o Boss test (Stage 1: close button) verdict. If PASS:
+- Send Stage 2 (rim numbers locked at any zoom) + Stage 3 (connected-notes list) to Eisa.
+- After Stage 2/3 PASS:
+  - §2G.4: mode toggle UI (top-right 6-button bar: R · L · T · C · S · A) with 600 ms eased migration animation. R/L/T light up, C/S/A dimmed "available later".
+  - §2G.5: persist `appSettings.sight.lastMode` per Universe.
+  - §2G.6: 3-agent audit + tag MIG-019 milestone + orientation v1.72 + i18n keys + 14 help-file translations + close-out.
 
-If FAIL on close button (9th iteration?), rim numbers, or connected-notes list: deeper architectural inspection (could be a Svelte 5 + Tauri WebView2 interaction nobody has documented).
+If FAIL: stop iterating. Bring in code-reviewer + Plan agents in parallel. The structural fix is the canonical answer; if it still doesn't work, the bug is somewhere I'd never debug from screenshots alone.
