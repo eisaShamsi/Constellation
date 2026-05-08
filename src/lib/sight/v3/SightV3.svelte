@@ -1592,23 +1592,12 @@
         // preventDefault.
         canvasContainer.addEventListener('wheel', handleWheel, { passive: false });
 
-        // §2G.3i: close button via raw DOM addEventListener. Three
-        // rounds of `onclick={...}` in the markup didn't fire (hover
-        // styles worked, click didn't — a Svelte 5 binding quirk we
-        // couldn't reproduce). addEventListener is bulletproof because
-        // it bypasses the Svelte event system entirely.
-        if (closeBtn) {
-            closeBtn.addEventListener('click', (ev) => {
-                ev.stopPropagation();
-                onClose();
-            });
-            closeBtn.addEventListener('pointerup', (ev) => {
-                // Defensive: also fire on pointerup so a missed click
-                // event still closes Sight v3.
-                ev.stopPropagation();
-                onClose();
-            });
-        }
+        // §2G.3j: close-button wiring moved to a reactive $effect
+        // below this onMount. The if-closeBtn check here was firing
+        // BEFORE bind:this had attached the ref (Svelte 5 timing
+        // quirk with $state-typed refs), so the listener was never
+        // attached. The $effect re-runs when closeBtn becomes
+        // non-null and is bulletproof.
 
         // Resize observer — picks up CSS-size changes (window resize,
         // sidebar collapse, etc.) and triggers a full redraw.
@@ -1721,6 +1710,27 @@
         const _ = [chartZoom, chartPanX, chartPanY];
         if (chartContainer) updateChartTransform();
         syncRimTransform();
+    });
+
+    // §2G.3j: close-button event binding via $effect. After four
+    // rounds of failing Svelte `onclick={...}` and one round of
+    // failing onMount-time `addEventListener` (bind:this hadn't
+    // resolved by the time onMount ran in §2G.3i), this is the
+    // bulletproof pattern: the $effect re-runs when closeBtn
+    // becomes non-null (reactive on the $state ref), and registers
+    // the click + pointerup handlers directly on the DOM node.
+    $effect(() => {
+        if (!closeBtn) return;
+        const handler = (ev: Event) => {
+            ev.stopPropagation();
+            onClose();
+        };
+        closeBtn.addEventListener('click', handler);
+        closeBtn.addEventListener('pointerup', handler);
+        return () => {
+            closeBtn?.removeEventListener('click', handler);
+            closeBtn?.removeEventListener('pointerup', handler);
+        };
     });
 
     onDestroy(() => {
@@ -1970,10 +1980,10 @@
         font-size: 24px;
         line-height: 32px;
         cursor: pointer;
-        /* §2G.3h: 100 → 1000 so nothing in the chart can intercept
-           the click. Also bigger hit-area + thicker border for
-           clarity. */
-        z-index: 1000;
+        /* §2G.3j: 1000 → 9999 — pure paranoia after Eisa's "STILL
+           doesn't work" feedback. No element in this page should
+           sit above 9999. */
+        z-index: 9999;
         padding: 0;
         pointer-events: auto;
         font-family: serif;
@@ -1993,14 +2003,18 @@
        Sight page as a regular page; all its components and elements
        should be locked in place. The mouse wheel will act as a lens."
        Chrome (close button, reset, side panel) sits outside this
-       wrapper and doesn't scale. */
+       wrapper and doesn't scale.
+
+       §2G.3j: must be `display: flex` so the canvas inside (with its
+       `flex: 1`) actually fills the wrapper. Without this, the canvas
+       sized down to its content (Pixi default ~800×800) and the dome
+       rendered tiny in the corner of an otherwise-empty screen. */
     .sight-v3-zoom-wrapper {
         flex: 1;
         position: relative;
+        display: flex;
+        align-items: stretch;
         will-change: transform;
-        /* Subtle GPU promotion so the lens scaling doesn't trigger
-           a CPU-bound paint on every wheel notch. */
-        transform-style: preserve-3d;
     }
 
     /* §2G.3i: Reset View button — chrome (NOT inside zoom wrapper).
