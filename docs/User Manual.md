@@ -749,43 +749,69 @@ There is **no setup**: no embedding-build phase, no per-library training, no "Re
 
 ## 8. Constellation Sight
 
-The Constellation Sight visualizes your entire knowledge system as a gravity-well graph. It answers: **"What does my knowledge look like, and how healthy is it?"**
+The Constellation Sight visualizes your entire knowledge universe as a celestial-hemisphere star chart. It answers: **"What does my knowledge look like, and how healthy is it?"**
 
 ### Opening the Sight
 
-Click the **Sight button** (eye icon) in the left ribbon. The gravity-well graph appears. Click x to close.
+Click the **Sight button** (star icon) in the left ribbon. The dome of stars renders on a cream parchment background — Suwaidi northern-hemisphere chart aesthetic. Click the **(×)** at the top-right to close, or press **Esc**.
 
-### The Gravity-Well Graph
+### The Dome
 
-Notes are arranged in concentric rings by importance (centrality). The most connected notes sit at the center; peripheral notes at the edges. Within each ring, notes are grouped by library (your organization). Node color = library.
+Notes appear as small colored dots — stars. They're arranged in a polar layout:
 
-| Element | Meaning |
-|---------|---------|
-| **Large node** | High centrality — bridges different knowledge areas |
-| **Small node** | Peripheral — within one area |
-| **Node color** | Library membership |
-| **Solid line** | Link between two notes |
-| **Direction arrows** | Small arrows showing link direction |
-| **Line thickness** | Confidence level (thick = established, thin = hypothesis) |
+| Visual | Meaning (Regions mode — the default) |
+|--------|--------------------------------------|
+| **Position from center to rim (radius)** | How central the note is in your link graph. Center = most-connected hub; rim = peripheral leaves. |
+| **Position around the rim (azimuth)** | Which **library** the note lives in. Each library gets its own wedge, sized proportional to note count. |
+| **Star color** | Library membership. Same library = same color. Each library gets a unique color from a deterministic palette. |
+| **Star size** | Total link count (in + out). Brightest stars are your most-connected notes. Capped so no star dwarfs the others. |
+| **Black outline** | Every star has a thin contrast frame so it stays visible against the cream background. |
+
+### The Library Legend
+
+A panel on the **left side** of the screen (or **right side** if your Universe name reads right-to-left) lists every library with its color swatch, name, and note count. Each library is **numbered** (1, 2, 3, …) and the same number appears around the rim of the dome in the matching color — so you can read the chart by glancing between the legend and the rim.
+
+The legend's header also shows your Universe name and a "UNIVERSE" caption. Long Universe / library names truncate gracefully; hover any name for the full title.
+
+### The Universe Health Card
+
+A roundel above the dome shows the overall **Universe Health score** (0-100), with four metrics flanking it: **Modularity**, **Dominance**, **Entropy**, **Connectivity**. Each metric has a colored status pill (HEALTHY / CAUTION / IMBALANCED) computed from your graph topology.
+
+### The (X, Y, Z) Grammar — Multiple Modes
+
+Sight is a **multi-instrument cognitive lens**. The same Universe can be read through six different "modes" — each with its own meaning for X (azimuth), Y (radius), and Z (size). Color (library) stays the same across all modes.
+
+| Mode | X (rim wedge) | Y (radius) | Z (size) | Cognitive question |
+|------|---------------|------------|----------|--------------------|
+| **R · Regions** *(default)* | Library | Centrality rank | Total degree | "Where in my cosmos does this idea live, and how central?" |
+| **L · Link Types** | Dominant outgoing link type (supports, contradicts…) | Type diversity | Outgoing links | "What kind of reasoning, and how versatile?" |
+| **T · Time** | Creation date wedge (year + month) | Recency (last edit) | Age | "When did it emerge, and is it still alive?" |
+| **C · Confidence** *(coming soon)* | Dominant confidence | Certainty homogeneity | Link count | "How certain, and how consistent?" |
+| **S · Stages** *(coming soon)* | Dominant lifecycle stage | Avg link weight | Traversal count | "How alive, and how worn?" |
+| **A · Acts** *(coming soon)* | Which Act produced the note | Synthesis depth | Connections | "Where in the formulation arc?" |
+
+**Today's build:** Regions mode is active by default. The toggle bar to switch to other modes is shipping in the next phase. Stars will *migrate* between (X, Y, Z) positions when you switch modes — same star, different scan.
 
 ### Interaction
 
-- **Single-click** a node: highlights its neighborhood (all connected notes). Everything else dims.
-- **Double-click**: opens the note in the editor.
-- **Click empty space**: clears the highlight.
-- **Scroll**: zoom. **Drag**: pan. **Fit to Screen**: toolbar button.
+| Gesture | Effect |
+|---------|--------|
+| **Hover a star** | Tooltip shows the note's title (bold), community, and centrality rank. |
+| **Click a star** | The star gets a gold ring; its links radiate out in dark amber; connected (1-hop neighbour) stars get thin gold rings. The right-side panel slides in with note details (title, library, link counts, "Open in editor" button). |
+| **Click empty space** | Clears the selection. |
+| **Double-click a star** | Opens the note in the editor. |
+| **Mouse wheel** | Zoom in / out around the dome center. The whole "page" — chart, library legend, Universe Health card, Universe-name header — scales together as a lens. Range: 0.4× to 5×. |
+| **Click + drag empty space** | Pan the chart. Drag threshold is 4 px so short clicks still hit stars. Cursor changes to `grabbing` while dragging. |
+| **Reset View button** *(bottom-left)* | Snaps zoom + pan back to canonical. Always visible — muted at default state, prominent when zoomed/panned. |
+| **Esc** | Cascading: first press clears any selected star; second press resets zoom + pan; third press closes Sight. |
 
 ### Search in Sight
 
-Click the magnifying glass. Supports all operators: `links to [[X]]`, `links from [[X]]`, `mutual [[X]]`, `orphans`, `supports [[X]]`, `contradicts [[X]]`, `#tag`, free text, and semantic search. Results show directional colors: green (inward), red (outward).
+Click the magnifying glass (or focus search via the global shortcut). Matched stars flare brighter; non-matched stars dim.
 
-### Analytics Panel (SightPanel)
+### Closing
 
-Click the grid icon to open the sidebar. Shows: Universe Health score (0-100), note/link/orphan counts, link type and confidence bars, top 10 bridges, and Knowledge Insights (strongest evidence, weak foundations, tensions, stagnating, most connected, knowledge gaps).
-
-### Settings
-
-Gear icon: adjust link stroke thickness, opacity, and arrow size. Settings persist across sessions.
+Click the **(×)** at the top-right, or press **Esc** until the chart closes.
 
 ---
 

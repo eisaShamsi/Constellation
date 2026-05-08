@@ -1,257 +1,127 @@
 ---
 aliases:
   - Constellation Sight
+  - Sight
+  - Star Chart
   - Knowledge Lens
-  - Network Analysis
-  - Graph Analytics
-  - Bridge Notes
+  - Cognitive Lens
   - Universe Health
-description: The Constellation Sight visualizes your entire knowledge system as a gravity-well graph, revealing how ideas connect, where knowledge is strong, and where it needs growth.
+description: The Constellation Sight visualizes your entire knowledge universe as a celestial-hemisphere star chart. Each note is a star; libraries are wedges around the rim; the most-central notes sit near the pole. Multiple modes let you read the same universe through different cognitive lenses.
 ---
-
-> **🚧 Constellation Sight is being rebuilt.**
->
-> The current "gravity-well" visualization (v2) has been disabled in this build. A new Sight (v3) is in design — based on a star-chart aesthetic that will let you see your entire knowledge universe at a glance, with bridge-note "stars," knowledge-cluster "constellations," and density "Milky Way" bands. The reference page below describes what v2 *did* and is preserved while v3 ships.
->
-> Why the rebuild? To deliver Sight's promise — *"What patterns and gaps exist in my thinking?"* — the visualization needs to be readable in one look, with stable spatial memory across sessions. Force-directed layouts (v2's choice) re-run their physics simulation each session and don't give the eye that anchor. Star charts do.
->
-> Read [`Constellation-Sight-Concept-Paper-v1.1.md`](../../Constellation-Sight-Concept-Paper-v1.1.md) for what Sight is for, §13 for the star-chart vision, and §14 for the v3 redesign.
 
 # Constellation Sight
 
 ## What Is It?
 
-Imagine looking at a city from above at night. Some buildings are in the center, surrounded by roads leading everywhere --- they're hubs. Other buildings sit on the outskirts with one road in. Between them, highways show how traffic flows.
+Imagine looking at the night sky from the northern hemisphere on a clear evening. The brightest stars cluster near the celestial pole. Constellations spread across the sky in regions you can navigate by. The Milky Way arcs faintly across the dome.
 
-The Constellation Sight does this for your knowledge. Every note is a point. Every link between notes is a line. The most connected, important notes sit at the center. The peripheral ones sit at the edges. Links show how ideas flow between them --- their type, direction, and strength.
+The Constellation Sight does this for your knowledge. Every note is a star on a parchment-cream sky. The most-connected notes sit near the center of the dome. The peripheral ones spread to the rim. Each library gets its own colored wedge. A small panel on the side lists every library by number and color — so you can read the chart at a glance.
 
-It answers the question: **"What does my knowledge system look like, and how healthy is it?"**
+It answers: **"What does my knowledge system look like, and how healthy is it?"**
 
 ---
 
 ## Why Does It Matter?
 
-Most note-taking apps show you what you wrote. The Constellation Sight shows you the *shape* of what you know --- where your thinking is deep, where it's shallow, and how ideas connect across libraries.
+Most note-taking apps show you what you wrote. The Constellation Sight shows you the *shape* of what you know — where your thinking is concentrated, where it's thin, and how ideas connect across libraries.
+
+The chart is also a **multi-instrument**. The same universe can be viewed through six different cognitive lenses (Regions, Link Types, Time, Confidence, Stages, Acts). Stars don't move between lenses — only how the chart organizes them changes. A note that sits at the center under Regions but flies to the rim under Confidence is telling you something diagnostic.
 
 ---
 
 ## How to Open It
 
-1. Click the **Sight button** (eye icon) in the left ribbon
-2. Wait a few seconds while the graph builds
-3. The Sight view appears: a gravity-well graph filling the screen
-
-To close: click the **x** button in the top-right corner.
+1. Click the **star icon** (Sight v3) in the left ribbon.
+2. The dome renders silently — no progress bar in normal use; the chart appears when ready (typically 2–5 seconds on large universes).
+3. To close: click the **(×)** at the top-right corner, or press **Esc** repeatedly.
 
 ---
 
 ## What You See
 
-### The Gravity-Well Graph
+### The Dome
 
-Notes are arranged in concentric rings based on their importance (centrality):
+A circular chart of stars on a cream parchment background — Suwaidi northern-hemisphere chart aesthetic. Each star is a note in your universe. The polar layout means:
 
-| Ring | Who's Here | Why |
-|------|-----------|-----|
-| **Center** | Top 5% most connected notes | These are the hubs of your knowledge --- bridges between different areas |
-| **Inner ring** | 5-15% | Major concepts with strong connections |
-| **Middle ring** | 15-35% | Supporting knowledge |
-| **Outer ring** | 35-100% | Peripheral notes, orphans, seeds |
+- **Center → rim (radius) = how central the note is.** Most-connected hubs sit near the pole; peripheral leaves spread to the rim.
+- **Around the rim (azimuth) = which library the note lives in.** Libraries are arranged in wedges, sized proportional to note count.
 
-Within each ring, notes are grouped by **library** --- your own organization. Notes from the same library share the same color and cluster in the same angular sector.
+### The Library Legend
 
-### Visual Vocabulary
+A panel on the left side of the screen (or the right side if your Universe name reads right-to-left, like Arabic / Hebrew / Persian) lists every library:
 
-| Element | What It Means |
-|---------|---------------|
-| **Large node** | High centrality --- this note bridges different knowledge areas |
-| **Small node** | Low centrality --- peripheral or within a single topic |
-| **Node color** | Which library the note belongs to |
-| **Solid line** | A link between two notes |
-| **Direction arrows** | Small arrows along each link showing which way the connection flows |
-| **Line thickness** | Thicker = higher confidence (established), thinner = lower (hypothesis) |
+- **UNIVERSE caption** at the top — your Universe's name in italic blue serif.
+- **Numbered list of libraries.** Each row has a colored circular badge (the library's color), the library name, and the note count.
+- The same numbers appear **around the rim of the dome** in the matching color, so you can navigate by glancing between the legend and the chart.
 
----
+### The Universe Health Card
 
-## Interacting with the Graph
+Anchored above the dome:
 
-### Pan and Zoom
+- **UNIVERSE HEALTH** caption.
+- A gold roundel with the overall score (e.g., **91 / 100**).
+- Four metrics flanking the roundel: **Modularity**, **Dominance**, **Entropy**, **Connectivity**.
+- Each metric has a colored status pill (**HEALTHY** / **CAUTION** / **IMBALANCED**).
 
-- **Scroll wheel**: Zoom in/out
-- **Click and drag**: Pan the view
-- **Fit to Screen button**: Resets zoom to show all nodes (expand icon in toolbar)
+### The Universe Name
 
-### Neighborhood Highlight
+A blue-serif italic header above the dome (and below the Universe Health card) shows your Universe's name. Renders right-to-left for RTL languages automatically.
 
-**Single-click** any node to see its connections:
+### The Stars
 
-- The clicked node gets an amber ring
-- All directly connected notes stay fully visible
-- Everything else dims to ~12% opacity
-- Links to/from the selected note stay visible; all others nearly disappear
+Each star is a small colored dot:
 
-This is the nervous system metaphor: touch a nerve, and you see what it connects to.
-
-**Click empty space** to clear the highlight.
-
-**Double-click** a node to open the note in the editor.
-
-### Hover
-
-Move your mouse over any node to see its name in a tooltip.
+- **Color = library.** Every star in the same library shares one color (deterministic per library).
+- **Size = total link count.** Most-connected notes are biggest; sizes are capped so no star dwarfs the others.
+- **Thin black outline** on every star for contrast against the cream background.
+- **Stars don't touch each other** — a repulsion algorithm keeps a 9 px minimum gap so the chart stays readable.
 
 ---
 
-## Search
+## Interaction
 
-Click the **magnifying glass** in the toolbar to open the search bar. The Sight search supports all the same operators as the main Search Hub:
+| Gesture | Effect |
+|---------|--------|
+| **Hover a star** | A tooltip appears near the cursor: the note's title (bold), community, centrality rank. |
+| **Click a star** | A gold ring appears around the star; its links radiate out as dark-amber lines; connected neighbour stars get thin gold rings. The right-side panel slides in with note details. |
+| **Double-click a star** | Opens the note in the editor. |
+| **Click empty space** | Clears the selection; lines and rings disappear; side panel slides out. |
+| **Mouse wheel over the chart** | Zoom the entire chart in/out. Everything scales together — the dome, the library legend, the Universe Health card, the Universe-name header. Like a magnifying glass over a fixed page. Range: 0.4× to 5×. |
+| **Click + drag empty space** | Pan the chart. Drag threshold is 4 px so short clicks still hit stars. |
+| **Reset View** *(bottom-left button)* | Always visible. Muted when at default zoom/pan; prominent when not. One click returns the chart to canonical view. |
+| **Esc** | Cascading. First press clears the selected star. Second press resets zoom and pan. Third press closes the Sight. |
 
-### Free Text
-Type any word or phrase. Results are highlighted on the graph with blue rings and category badges:
-- **T** = title match
-- **C** = content match
-- **#** = tag match
-- **P** = property match
-- **S** = semantic match
-
-### Link Operators
-
-| Operator | Example | What It Finds |
-|----------|---------|---------------|
-| `links to [[X]]` | `links to [[Ideaverse]]` | Notes that link TO this note |
-| `links from [[X]]` | `links from [[Ideaverse]]` | Notes that this note links TO |
-| `mutual [[X]]` | `mutual [[Ideaverse]]` | Notes with bidirectional links |
-| `links all [[X]]` | `links all [[Ideaverse]]` | All linked notes (union of to + from) |
-| `orphans` | `orphans` | Notes with no links at all |
-
-### Cognitive Link Types
-
-| Operator | What It Finds |
-|----------|---------------|
-| `supports [[X]]` | Notes that support this note |
-| `contradicts [[X]]` | Notes that contradict this note |
-| `causes [[X]]` | Notes that cause this note |
-| `exemplifies [[X]]` | Notes that exemplify this note |
-| `generalizes [[X]]` | Notes that generalize this note |
-| `derives from [[X]]` | Notes derived from this note |
-| `part of [[X]]` | Notes that are part of this note |
-
-### Directional Link Colors
-
-When searching link operators, the connections are highlighted with direction:
-- **Green lines** = inward (the result links TO the target)
-- **Red lines** = outward (the target links TO the result)
-- **Amber lines** = between two results
-
-### Navigating Results
-
-- Press **Enter** to jump to the next result (zooms to 3x)
-- Press **Shift+Enter** for the previous result
-- An **amber pointer arrow** marks the current result
-- The result counter shows your position (e.g., "3/15")
-
-### Syntax Chips
-
-Click the **three-dot button** next to the search input to see all available operators as clickable chips. These are localized to your interface language.
-
-### Search History
-
-Click the search input when empty to see your recent searches (up to 8).
+The (×) close button at the top-right and the right-side note panel (slides in when a star is selected) stay anchored to the window — they don't scale with the lens zoom.
 
 ---
 
-## Analytics Panel (SightPanel)
+## The Six Modes (cognitive lenses)
 
-Click the **grid icon** in the toolbar to open the analytics sidebar.
+Sight isn't just one chart — it's six chart **modes**, each with its own way of organizing the dome. Color (library) stays the same across all modes; only the *meaning* of position and size changes.
 
-### Universe Health (0-100)
+| Mode | What the rim shows | What the radius means | What the size means | Asks |
+|------|--------------------|------------------------|----------------------|------|
+| **R · Regions** *(default, ready)* | Library | Centrality rank | Total degree | "Where in my cosmos does this idea live?" |
+| **L · Link Types** *(ready)* | Dominant outgoing link type | Type diversity | Outgoing links | "What kind of reasoning?" |
+| **T · Time** *(ready)* | Creation date wedge (year, month) | Recency | Age | "When did it emerge, and is it still alive?" |
+| **C · Confidence** *(coming soon)* | Dominant confidence | Certainty homogeneity | Link count | "How certain?" |
+| **S · Stages** *(coming soon)* | Dominant lifecycle stage | Avg link weight | Traversal count | "How alive?" |
+| **A · Acts** *(coming soon)* | Which Act produced the note | Synthesis depth | Connections | "Where in the formulation arc?" |
 
-A single number capturing the overall health of your knowledge system:
-
-- **Green (70+)**: Healthy --- well-connected, diverse knowledge
-- **Amber (40-69)**: Moderate --- some areas need attention
-- **Red (below 40)**: Low --- knowledge may be too concentrated or disconnected
-
-### Overview
-
-Quick metrics at a glance:
-- **Notes**: Total notes in your universe
-- **Links**: Total connections between notes
-- **Orphans**: Notes with no links (candidates for connection)
-- **Links/Note**: Average connectivity ratio
-
-Below these, a **library breakdown** shows how many notes belong to each library, with colored dots matching the graph.
-
-### Link Health
-
-Expandable section showing:
-- **By Type**: Horizontal bars for each link type (supports, contradicts, causes, etc.) with counts
-- **By Confidence**: Bars for hypothesis, evidence, established, contested
-- **Dormant Links**: Count of links not traversed in 90+ days (a warning signal)
-
-### Top Bridges
-
-The 10 most structurally important notes. These are the notes that connect different areas of your knowledge. Click any bridge to highlight its neighborhood on the graph.
-
-### Knowledge Insights
-
-Six diagnostic views of your knowledge system:
-
-| View | What It Shows |
-|------|---------------|
-| **Strongest Evidence** | Links with highest weight and established confidence |
-| **Weak Foundations** | Hypothesis-level links with low weight --- ideas that need more support |
-| **Tensions** | Contradiction pairs --- ideas in active disagreement |
-| **Stagnating** | High-weight links not traversed recently --- knowledge going dormant |
-| **Most Connected** | Notes with the highest number of connections |
-| **Knowledge Gaps** | Areas where connections are missing |
-
-Click any insight row to highlight the relevant nodes on the graph.
-
----
-
-## Settings
-
-Click the **gear icon** in the toolbar:
-
-- **Legend**: Toggle the legend panel on/off
-- **Stroke**: Adjust link line thickness (0.5x to 4x)
-- **Opacity**: Adjust link visibility (10% to 100%)
-- **Arrows**: Adjust direction arrow size (2px to 16px)
-
-Settings persist when you navigate away and come back.
+**Today's build:** Regions is the default; the toggle UI to switch to other modes is shipping in the next phase. Stars will migrate between (X, Y, Z) positions with a 600 ms eased animation when modes switch — same patient, different scan.
 
 ---
 
 ## Tips
 
-> **Start with the health score.** A low score means your knowledge needs more connections or diversity.
-
-> **Click nodes to explore neighborhoods.** The highlight reveals local structure that's invisible in the full graph.
-
-> **Use link search to trace reasoning.** "links to [[X]]" shows everything pointing at an idea. "links from [[X]]" shows where an idea leads.
-
-> **Watch the bridges.** Your top bridge notes are the backbone of your knowledge. Strengthen them.
-
-> **The Sight works better with more links.** The more you connect your notes, the richer the visualization.
+- **Read the chart by region first.** Glance at the colored wedges and rim numbers, then check the legend for what each wedge means.
+- **Look for outliers.** A star sitting alone near the center of an empty wedge is a hub note in a small library — likely an important bridge.
+- **Use Esc liberally.** Three presses always returns you to the main app, regardless of what state the chart is in.
+- **Zoom in for detail.** Wheel-zoom in to inspect a dense wedge; wheel-zoom out to see the whole knowledge cosmos at once. Reset View snaps back instantly.
+- **The Universe Health card is your compass.** Modularity below 0.3 ("CAUTION") suggests your knowledge is too tangled; Dominance above 50 % ("CAUTION") suggests one library is swallowing your thinking; Entropy below 1 ("IMBALANCED") suggests low diversity. Watch these metrics over time as you grow your knowledge graph.
 
 ---
 
-## How It Works
+## Concept paper
 
-The Constellation Sight uses **betweenness centrality** (Brandes' algorithm) to determine which notes are most structurally important. Notes that sit on many shortest paths between other notes are bridges --- they connect different areas of knowledge.
-
-The **gravity-well layout** positions nodes in concentric rings by centrality percentile, with angular sectors grouped by library. No random simulation --- positions are deterministic based on your knowledge metrics.
-
-All computation runs locally on your machine. No data leaves your device.
-
----
-
-## Relationship to Other Features
-
-| Feature | What It Shows | How It Relates to Sight |
-|---------|---------------|------------------------|
-| **Sky View** | Your note graph as a force-directed visualization | Sight uses the same graph but with a structured gravity-well layout and analytics |
-| **Constellation Map** | The shape and maturity of your knowledge as a sunburst | The Map shows *structure*; Sight shows *connections* |
-| **OrgChart** | Your folder/library hierarchy as a visual tree | OrgChart shows how you *organized* notes; Sight shows how they *actually connect* |
-| **Search Hub** | Full-text, tag, property, and semantic search | Sight search uses the same engine but highlights results on the graph |
+For the design philosophy and architecture: see `docs/Constellation-Sight-v3-Concept-Paper-v1.1.md` (the v3 design paper) and `docs/SIGHT-V3-VISUAL-SPEC.md` (the per-mode (X, Y, Z) grammar specification).
