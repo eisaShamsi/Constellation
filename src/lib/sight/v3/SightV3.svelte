@@ -112,6 +112,12 @@
     let focusOverlay: Container | null = null;
     let placeholderText: Text | null = null;
     let resizeObserver: ResizeObserver | null = null;
+    /** §2G.3i: explicit DOM ref for the close button so we can bind
+     *  addEventListener('click', ...) directly. Three rounds of fixing
+     *  the Svelte `onclick={...}` binding never made it fire — the
+     *  addEventListener path is bulletproof since hover already proves
+     *  DOM events reach the element. */
+    let closeBtn: HTMLButtonElement | null = $state(null);
     /** §2G.3g: parent of every chart layer that should scale + pan
      *  with the zoom controls. Placeholder text and HTML overlays
      *  are NOT inside this — they stay anchored to the window. */
@@ -303,33 +309,35 @@
      *
      *  The dome center shifts down to the middle of the AVAILABLE
      *  vertical space, not the middle of the canvas.  */
-    /** §2G.3g: apply current zoom + pan to the chart container and
-     *  the HTML rim wrapper. Pivot at the dome center so scaling
-     *  happens around (cx, cy). Called on every wheel/drag event. */
-    function updateChartTransform() {
-        if (!chartContainer) return;
-        const vp = getViewport();
-        if (!vp) return;
-        chartContainer.pivot.set(vp.cx, vp.cy);
-        chartContainer.position.set(vp.cx + chartPanX, vp.cy + chartPanY);
-        chartContainer.scale.set(chartZoom);
-    }
-
-    /** §2G.3g: derived CSS transform string for the HTML rim wrapper.
-     *  Pivots at the same point as the Pixi container so the rim
-     *  numbers stay locked to the dome's edge under any zoom/pan. */
-    let rimTransformOrigin = $state('50% 50%');
-    let rimTransform = $state('none');
-    function syncRimTransform() {
+    /** §2G.3i: lens-style zoom — apply ONE CSS transform to the
+     *  zoom-wrapper that holds the canvas + every chart overlay
+     *  (rim numbers, Universe Health, Universe-name, legend). Pixi-
+     *  side chartContainer is now structural only (no transform);
+     *  CSS does all the scaling.
+     *
+     *  Eisa directive 2026-05-08: "imagine the Sight page as a
+     *  regular page; all its components and elements should be
+     *  locked in place. The mouse wheel will act as a lens." */
+    let zoomWrapperTransform = $state('none');
+    let zoomWrapperTransformOrigin = $state('50% 50%');
+    function syncZoomTransform() {
         const vp = getViewport();
         if (!vp) {
-            rimTransformOrigin = '50% 50%';
-            rimTransform = 'none';
+            zoomWrapperTransform = 'none';
+            zoomWrapperTransformOrigin = '50% 50%';
             return;
         }
-        rimTransformOrigin = `${vp.cx}px ${vp.cy}px`;
-        rimTransform = `translate(${chartPanX}px, ${chartPanY}px) scale(${chartZoom})`;
+        zoomWrapperTransformOrigin = `${vp.cx}px ${vp.cy}px`;
+        if (chartZoom === 1 && chartPanX === 0 && chartPanY === 0) {
+            zoomWrapperTransform = 'none';
+        } else {
+            zoomWrapperTransform = `translate(${chartPanX}px, ${chartPanY}px) scale(${chartZoom})`;
+        }
     }
+    /** Back-compat shims so existing call sites still work. They now
+     *  funnel through the single CSS transform. */
+    function updateChartTransform() { syncZoomTransform(); }
+    function syncRimTransform() { syncZoomTransform(); }
 
     /** §2G.3g: wheel-zoom handler. preventDefault stops the page from
      *  scrolling and stops Ctrl+wheel from triggering browser zoom. */
@@ -1064,7 +1072,9 @@
             neighbours.add(e.a === focusPath ? e.b : e.a);
         }
         if (edgeCount > 0) {
-            lines.stroke({ color: 0xc9a227, alpha: 0.55, width: 0.7 });
+            // §2G.3i: darker tone (was light gold @ 0.55) so edges
+            // read against the cream BG. Darker burnt-amber.
+            lines.stroke({ color: 0x6b4f0d, alpha: 0.85, width: 1.0 });
             focusOverlay.addChild(lines);
         }
         // §2G.3h: thin gold ring around each 1-hop neighbour so the
@@ -1094,16 +1104,15 @@
     /** Find the nearest star within `r=10` of (px, py). Returns the
      *  note_path or null. O(n) iteration; for 30k stars this is ~1ms. */
     function pickStar(px: number, py: number): string | null {
-        // §2G.3h: inverse-transform the mouse into CANONICAL chart coords
-        // before hit-testing. pathToScreen stores stars at zoom=1, pan=0
-        // positions (the chartContainer transform applies the visual
-        // zoom/pan). Without this inverse the click lands on a different
-        // star than the one the user is pointing at when zoomed/panned
-        // (Eisa screenshot 2026-05-08).
-        const vp = getViewport();
-        if (!vp) return null;
-        const cpx = (px - vp.cx - chartPanX) / chartZoom + vp.cx;
-        const cpy = (py - vp.cy - chartPanY) / chartZoom + vp.cy;
+        // §2G.3i: lens architecture — the canvas is CSS-scaled by the
+        // zoom-wrapper. (px, py) are mouse offsets from the canvas's
+        // VISUAL top-left (post-transform). Because `getBoundingClientRect`
+        // already absorbs the wrapper's translate AND scale into
+        // rect.left/top, the inverse simplifies cleanly to just
+        // `internal = visual_offset / chartZoom`. No need to also
+        // subtract pan or origin — they're already baked into rect.left.
+        const cpx = px / chartZoom;
+        const cpy = py / chartZoom;
 
         const HOVER_RADIUS = 10;
         let best: string | null = null;
@@ -1583,6 +1592,24 @@
         // preventDefault.
         canvasContainer.addEventListener('wheel', handleWheel, { passive: false });
 
+        // §2G.3i: close button via raw DOM addEventListener. Three
+        // rounds of `onclick={...}` in the markup didn't fire (hover
+        // styles worked, click didn't — a Svelte 5 binding quirk we
+        // couldn't reproduce). addEventListener is bulletproof because
+        // it bypasses the Svelte event system entirely.
+        if (closeBtn) {
+            closeBtn.addEventListener('click', (ev) => {
+                ev.stopPropagation();
+                onClose();
+            });
+            closeBtn.addEventListener('pointerup', (ev) => {
+                // Defensive: also fire on pointerup so a missed click
+                // event still closes Sight v3.
+                ev.stopPropagation();
+                onClose();
+            });
+        }
+
         // Resize observer — picks up CSS-size changes (window resize,
         // sidebar collapse, etc.) and triggers a full redraw.
         resizeObserver = new ResizeObserver(() => {
@@ -1744,45 +1771,56 @@
 <svelte:window onkeydown={handleEscape} />
 
 <div class="sight-v3-root">
+    <!-- §2G.3i: close button (chrome — outside zoom wrapper). Click
+         is wired via addEventListener in onMount, NOT Svelte
+         `onclick={...}` which mysteriously didn't fire. bind:this
+         gives us the raw DOM ref. -->
     <button
         type="button"
         class="sight-v3-close"
-        onclick={(e) => { e.stopPropagation(); onClose(); }}
+        bind:this={closeBtn}
         aria-label={$t('sightV3.close') || 'Close Sight'}
     >×</button>
-    <div
-        class="sight-v3-canvas"
-        bind:this={canvasContainer}
-        onpointerdown={handlePointerDown}
-        onpointermove={handlePointerMove}
-        onpointerleave={handlePointerLeave}
-        onpointerup={handlePointerUp}
-        onclick={handleClick}
-        ondblclick={handleDoubleClick}
-        role="application"
-        aria-label="Constellation Sight v3"
-    ></div>
 
-    {#if tooltipVisible && tooltipText}
-        <div
-            class="sight-v3-tooltip"
-            style="left: {tooltipX}px; top: {tooltipY}px;"
-            dir="auto"
-        >{tooltipText}</div>
-    {/if}
+    <!-- §2G.3i: Reset View button (chrome — outside zoom wrapper).
+         Always visible per Eisa's directive ("I cannot see the reset
+         button"). Faded when at default state, prominent when zoom
+         or pan changes. -->
+    <button
+        type="button"
+        class="sight-v3-reset-view"
+        class:reset-active={chartZoom !== 1 || chartPanX !== 0 || chartPanY !== 0}
+        onclick={resetView}
+        aria-label={$t('sightV3.resetView') || 'Reset view'}
+    >Reset view</button>
 
-    <!-- §2G.3b: Region-rim labels (HTML overlay). Library names go
-         through `dir="auto"` so the browser handles bidi natively —
-         Arabic / Hebrew / Persian library names render right-to-left
-         within their tangent rotation. -->
-    <!-- §2G.3f: rim labels are COLORED NUMBERS (1, 2, 3, ...).
-         §2G.3g: wrapped in a transform-aware wrapper so they zoom +
-         pan with the Pixi-drawn dome. The wrapper's transform-origin
-         pivots at the dome center for symmetric scaling. -->
+    <!-- §2G.3i: lens-style zoom wrapper. Per Eisa's directive
+         (2026-05-08): "imagine the Sight page as a regular page;
+         all its components and elements should be locked in place.
+         The mouse wheel will act as a lens." A SINGLE CSS transform
+         applies to the wrapper, scaling the canvas + every chart
+         overlay together so they move/zoom as one. Chrome (close,
+         reset, side panel) stays outside this wrapper. -->
     <div
-        class="sight-v3-rim-wrapper"
-        style="transform-origin: {rimTransformOrigin}; transform: {rimTransform};"
+        class="sight-v3-zoom-wrapper"
+        style="transform-origin: {zoomWrapperTransformOrigin}; transform: {zoomWrapperTransform};"
     >
+        <div
+            class="sight-v3-canvas"
+            bind:this={canvasContainer}
+            onpointerdown={handlePointerDown}
+            onpointermove={handlePointerMove}
+            onpointerleave={handlePointerLeave}
+            onpointerup={handlePointerUp}
+            onclick={handleClick}
+            ondblclick={handleDoubleClick}
+            role="application"
+            aria-label="Constellation Sight v3"
+        ></div>
+
+        <!-- §2G.3f: rim labels are COLORED NUMBERS (1, 2, 3, ...).
+             §2G.3i: positioned at canonical coords inside the zoom
+             wrapper; the wrapper's transform handles zoom + pan. -->
         {#each rimLabelGeometry as geo (geo.key)}
             <div
                 class="sight-v3-rim-number"
@@ -1790,19 +1828,6 @@
                 title="{geo.name} — {geo.count.toLocaleString()} notes"
             >{geo.index}</div>
         {/each}
-    </div>
-
-    <!-- §2G.3g: Reset view button — only visible when zoom or pan
-         differs from defaults. Sits above the legend so users can
-         get back to the canonical view in one click. -->
-    {#if chartZoom !== 1 || chartPanX !== 0 || chartPanY !== 0}
-        <button
-            type="button"
-            class="sight-v3-reset-view"
-            onclick={resetView}
-            aria-label={$t('sightV3.resetView') || 'Reset view'}
-        >Reset view</button>
-    {/if}
 
     <!-- §2G.3f: Library legend panel. Anchored to the LEFT for LTR
          interfaces, RIGHT for RTL. Lists Universe root + numbered
@@ -1878,6 +1903,21 @@
         {/if}
     {/if}
 
+    </div><!-- /.sight-v3-zoom-wrapper —§2G.3i lens-end -->
+
+    <!-- §2G.3i: tooltip OUTSIDE the zoom wrapper. Inside, the wrapper's
+         CSS transform breaks `position: fixed` (which becomes relative
+         to the transformed ancestor instead of the viewport). Outside,
+         it stays anchored to the cursor regardless of zoom/pan, with
+         very high z-index so the title is always readable. -->
+    {#if tooltipVisible && tooltipText}
+        <div
+            class="sight-v3-tooltip"
+            style="left: {tooltipX}px; top: {tooltipY}px;"
+            dir="auto"
+        >{tooltipText}</div>
+    {/if}
+
     <SightV3SidePanel
         notePath={selectedPath}
         noteTitle={sidePanelTitle}
@@ -1948,39 +1988,55 @@
         transform: scale(0.94);
     }
 
-    /* §2G.3g: chart layer wrapper for HTML rim numbers. Applies the
-       same scale + translate as the Pixi chartContainer so the rim
-       stays locked to the dome under any zoom or pan. */
-    .sight-v3-rim-wrapper {
-        position: absolute;
-        inset: 0;
-        z-index: 6;
-        pointer-events: none;
+    /* §2G.3i: lens-style zoom wrapper. ONE CSS transform scales every
+       chart layer + overlay together — Eisa's directive: "imagine the
+       Sight page as a regular page; all its components and elements
+       should be locked in place. The mouse wheel will act as a lens."
+       Chrome (close button, reset, side panel) sits outside this
+       wrapper and doesn't scale. */
+    .sight-v3-zoom-wrapper {
+        flex: 1;
+        position: relative;
         will-change: transform;
+        /* Subtle GPU promotion so the lens scaling doesn't trigger
+           a CPU-bound paint on every wheel notch. */
+        transform-style: preserve-3d;
     }
 
-    /* §2G.3g: Reset View button — only visible when zoom or pan is
-       not at default. §2G.3h: bumped visibility — bigger, gold-bordered,
-       z-index 60 so it sits above legend (7) and side panel (50). */
+    /* §2G.3i: Reset View button — chrome (NOT inside zoom wrapper).
+       Always visible per Eisa's directive ("I cannot see the reset
+       button"); muted at default state, prominent when zoom or pan
+       differs from canonical. */
     .sight-v3-reset-view {
         position: absolute;
         bottom: 28px;
         left: 24px;
-        z-index: 60;
-        background: rgba(250, 246, 232, 0.95);
-        border: 1.5px solid rgba(201, 162, 39, 0.85);
+        z-index: 999;
+        background: rgba(250, 246, 232, 0.85);
+        border: 1px solid rgba(26, 26, 26, 0.25);
         border-radius: 18px;
         padding: 8px 18px;
         font-family: serif;
         font-size: 13px;
-        font-weight: 600;
-        color: #1a1a1a;
+        font-weight: 500;
+        color: rgba(26, 26, 26, 0.5);
         cursor: pointer;
+        opacity: 0.6;
+        transition: opacity 200ms ease, background 200ms ease, color 200ms ease;
+    }
+    .sight-v3-reset-view.reset-active {
+        opacity: 1;
+        background: rgba(250, 246, 232, 0.95);
+        border: 1.5px solid rgba(201, 162, 39, 0.85);
+        color: #1a1a1a;
+        font-weight: 600;
         box-shadow: 0 1px 3px rgba(26, 26, 26, 0.1);
     }
     .sight-v3-reset-view:hover {
+        opacity: 1;
         background: rgba(201, 162, 39, 0.30);
         border-color: #c9a227;
+        color: #1a1a1a;
     }
     .sight-v3-reset-view:active {
         transform: scale(0.96);
@@ -2216,15 +2272,27 @@
 
     .sight-v3-tooltip {
         position: fixed;
-        background: rgba(250, 246, 232, 0.96);
+        background: rgba(250, 246, 232, 0.98);
         color: #1a1a1a;
-        border: 1px solid rgba(201, 162, 39, 0.55);
-        padding: 8px 10px;
-        font-size: 12px;
-        border-radius: 4px;
+        border: 1px solid rgba(201, 162, 39, 0.7);
+        padding: 9px 12px;
+        font-size: 13px;
+        font-family: serif;
+        border-radius: 6px;
         pointer-events: none;
         white-space: pre-line;
-        z-index: 50;
-        max-width: 260px;
+        /* §2G.3i: bumped 50 → 1500 so the tooltip sits above the side
+           panel (50), the close button (1000), and everything else. */
+        z-index: 1500;
+        max-width: 320px;
+        line-height: 1.4;
+        box-shadow: 0 2px 6px rgba(26, 26, 26, 0.15);
+    }
+    /* First line of the tooltip is the note title — make it bold so
+       it reads as a heading. The community/centrality lines that
+       follow are plain text. */
+    .sight-v3-tooltip::first-line {
+        font-weight: 700;
+        font-size: 14px;
     }
 </style>
