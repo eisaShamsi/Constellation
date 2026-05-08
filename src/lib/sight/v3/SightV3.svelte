@@ -109,6 +109,12 @@
     let resizeObserver: ResizeObserver | null = null;
     let placeholderMessage: string | null = null;
     let placeholderIsError = false;
+    /** §2G.3r: raw DOM close button — created in onMount, NOT in the
+     *  Svelte template. Svelte 5 delegates onclick to <body>; twelve
+     *  iterations proved that something in the bubble path swallows
+     *  the delegated click. Raw DOM + raw addEventListener bypasses
+     *  Svelte entirely. */
+    let closeBtnEl: HTMLButtonElement | null = null;
 
     // ─── Data ────────────────────────────────────────────────────────
     let layoutPoints: LayoutPoint[] = $state([]);
@@ -1420,6 +1426,67 @@
         }
         sizeCanvas();
 
+        // §2G.3r: raw DOM close button. Created here (not in the Svelte
+        // template) so it uses raw addEventListener — completely bypasses
+        // Svelte 5's body-level event delegation which has failed to
+        // deliver click events across twelve iterations. Uses pointerdown
+        // (fires before mousedown/click in the event sequence) with
+        // stopPropagation + stopImmediatePropagation to guarantee no
+        // other handler can swallow it.
+        {
+            const btn = document.createElement('button');
+            btn.textContent = '×';
+            btn.setAttribute('aria-label', 'Close Sight');
+            btn.style.cssText = [
+                'position: absolute',
+                'top: 8px',
+                'inset-inline-end: 16px',
+                'z-index: 100',
+                'width: 36px',
+                'height: 36px',
+                'display: flex',
+                'align-items: center',
+                'justify-content: center',
+                'border: 1.5px solid rgba(26, 26, 26, 0.25)',
+                'background: rgba(250, 246, 232, 0.92)',
+                'cursor: pointer',
+                'font-size: 24px',
+                'line-height: 1',
+                'border-radius: 50%',
+                'color: rgba(26, 26, 26, 0.75)',
+                'padding: 0',
+                'font-family: serif',
+                'font-weight: 600',
+                'box-shadow: 0 1px 4px rgba(26, 26, 26, 0.12)',
+            ].join('; ');
+            btn.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                onClose();
+            });
+            btn.addEventListener('mousedown', (e) => {
+                // Belt-and-suspenders: if pointerdown somehow didn't fire.
+                e.stopPropagation();
+                onClose();
+            });
+            btn.addEventListener('mouseover', () => {
+                btn.style.color = '#1a1a1a';
+                btn.style.background = 'rgba(201, 162, 39, 0.35)';
+                btn.style.borderColor = '#c9a227';
+            });
+            btn.addEventListener('mouseout', () => {
+                btn.style.color = 'rgba(26, 26, 26, 0.75)';
+                btn.style.background = 'rgba(250, 246, 232, 0.92)';
+                btn.style.borderColor = 'rgba(26, 26, 26, 0.25)';
+            });
+            // Append to the .sight-v3-body (canvasContainer's parent),
+            // so it's positioned within the body's relative context.
+            const body = canvasContainer.parentElement;
+            if (body) body.appendChild(btn);
+            closeBtnEl = btn;
+        }
+
         // d3-zoom: handles wheel zoom, drag pan, touch pinch. Replaces
         // the manual chartZoom/chartPanX/chartPanY + handleWheel +
         // handlePointerDown/Up drag logic. `passive: false` on the
@@ -1596,6 +1663,11 @@
         if (canvasEl && canvasEl.parentElement) {
             canvasEl.parentElement.removeChild(canvasEl);
         }
+        // §2G.3r: remove raw DOM close button.
+        if (closeBtnEl && closeBtnEl.parentElement) {
+            closeBtnEl.parentElement.removeChild(closeBtnEl);
+        }
+        closeBtnEl = null;
         canvasEl = null;
         ctx = null;
         milkyWayOffscreen = null;
