@@ -15,7 +15,7 @@
 > - **§4 / §6 territory labels**: hover/select only by default; Settings toggle for always-on.
 > - **§6 territory colors**: cycled pastel by Louvain id; user-overridable per community via existing **Style Settings** system.
 > - **§4 search filter persistence**: Esc + click-background to clear.
-> - **§8 render layer**: **Pixi.js** (consistent with Sky View / v2).
+> - **§8 render layer**: **Canvas 2D + D3-zoom** (v4 pivot; see §8.2 implementation note).
 > - **§10 accessibility**: **deferred** to a separate post-v3 PJ; not baked into Phase 1.
 >
 > All ten §11 questions resolved. §11 is now **§11 — Design decisions (resolved 2026-05-07)** below.
@@ -262,14 +262,15 @@ Search query string + results follow the same multi-language path the v2 Search 
 
 - **Landmark-MDS embedding** runs in Rust (existing analytics module; new function `compute_layout_embedding`). Sub-second on Brandes-scale graphs (~30k notes) using k = 50-100 landmarks. The full V×V distance matrix is *never* materialized.
 - **SQLite cache layer** (mirrors the deferred PJ-034 §1E design). Boot reads the cached layout in milliseconds; full recompute only on graph version bump.
-- **Three-layer rendering** (Pixi.js for Layers 1+2 per Eisa's §11 Q9, consistent with Sky View / v2):
-  - **Pixi.js Layer 1 — base** — stars + faint connector lines (always-on, ~0.10–0.15 alpha) + territory fills + Milky Way density + calendar rim. Drawn ONCE per cache-warm cycle. Static; not redrawn per frame.
-  - **Pixi.js Layer 2 — focus overlay** — the brightened constellation lines + flared stars + halo glows + selection cursor for the currently-hovered/selected element. Redrawn on hover/select state change only (not per frame). Sparse element count even when focused (one constellation's worth of edges + a few stars).
+- **Three-layer rendering** (Canvas 2D + D3-zoom for Layers 1+2; see §11 Q9 and v4 implementation note below):
+  - **Canvas Layer 1 — base** — stars + faint connector lines (always-on, ~0.10–0.15 alpha) + territory fills + Milky Way density + calendar rim. Drawn ONCE per cache-warm cycle. Static; not redrawn per frame.
+  - **Canvas Layer 2 — focus overlay** — the brightened constellation lines + flared stars + halo glows + selection cursor for the currently-hovered/selected element. Redrawn on hover/select state change only (not per frame). Sparse element count even when focused (one constellation's worth of edges + a few stars).
   - **DOM Layer 3 — UI** — tooltips, side panel, right-click menu, magnitude slider, calendar-rim drag handle (sparse; ergonomic).
-- **Why two Pixi layers, not one**: separating *base* from *focus overlay* keeps the per-frame draw cost near zero at rest. The base layer is computed-once-stays-still; only the overlay redraws on interaction. This is the v3 reframe of v2's Principle 6 — the perf benefit (zero per-frame edge cost at rest) is preserved even though we *show* the faint structure now.
+- **Why two Canvas layers, not one**: separating *base* from *focus overlay* keeps the per-frame draw cost near zero at rest. The base layer is computed-once-stays-still; only the overlay redraws on interaction. This is the v3 reframe of v2's Principle 6 — the perf benefit (zero per-frame edge cost at rest) is preserved even though we *show* the faint structure now.
+- **v4 implementation note (2026-05-08)**: the original v3 concept specified Pixi.js (consistent with Sky View v2). During implementation, v3 used a `position: fixed` overlay pattern which caused 13 failed close-button iterations because D3-zoom consumed all pointer events on the overlay, leaving no reliable way to wire DOM controls. **v4 pivots to Canvas 2D + D3-zoom using SkyView's proven mount pattern** (flex child inside `.content-area`), eliminating the overlay/pointer conflict entirely. The render-layer architecture (base + focus overlay + DOM UI) remains the same; only the technology underneath the canvas layers changed. v4 is the active implementation superseding v3.
 - **Web Worker offload** for the magnitude-slider recompute (Layer Peeling — PJ-036). The slider fires `requestAnimationFrame`-throttled events; each event triggers a worker to recompute the visible-star set; result returned in milliseconds, base layer redraws.
 - **Idle-prewarm**: on app boot, after first paint, schedule a `requestIdleCallback` to compute the layout and warm the cache so the first toggle is instant. (Mirrors the deferred PJ-034 §1D design.)
-- **Projection switch** (Lambert ↔ stereographic): re-runs the projection transform on the same cached embedding; redraws Layer 1; Layer 2 redraws on next interaction. ~1-frame transition.
+- **Projection switch** (Lambert ↔ stereographic): re-runs the projection transform on the same cached embedding; redraws Canvas Layer 1; Canvas Layer 2 redraws on next interaction. ~1-frame transition.
 
 ### §8.3 Boot-perf invariant
 
@@ -280,6 +281,8 @@ Per CLAUDE.md "Performance Rule 8 (write-time derivation)" + "no new feature may
 ## §9 · Phased rollout
 
 v3 ships in three phases, each its own MIG, each landable independently.
+
+> **v4 pivot note (2026-05-08):** v4 replaces v3 as the active implementation. The concept paper's design (visual grammar, projection math, interaction model, phased rollout) is unchanged; only the render technology and mount pattern changed. v3's `position: fixed` overlay caused 13 failed close-button iterations (D3-zoom consumed all pointer events); v4 uses SkyView's proven flex-child mount pattern inside `.content-area`, with Canvas 2D + D3-zoom replacing Pixi.js. The MIG sequence below applies to v4.
 
 ### §9.1 Phase 1 — Projection foundation (MIG-018)
 
@@ -337,7 +340,7 @@ All ten v1.0 open questions resolved by Eisa's design review. Two structural rev
 | 6 | Constellation labels at rest | **Hover/select only by default; Settings toggle for always-on** | §4.1 / §4.5 / §4.6; Settings → Sight → "Show constellation labels at rest." |
 | 7 | Color scheme | **Cycled pastels by Louvain id default; user-overridable via Style Settings** | §2 territory row; integrates with existing Style Settings system. |
 | 8 | Search filter persistence | **Esc + click-background to clear** | §4.7; no persistence across Sight close/reopen. |
-| 9 | Render layer | **Pixi.js** (consistent with Sky View / v2) | §8.2; two Pixi layers (base + focus overlay) + DOM layer for UI chrome. |
+| 9 | Render layer | **Canvas 2D + D3-zoom** (v4 pivot; replaces original Pixi.js spec) | §8.2; two Canvas layers (base + focus overlay) + DOM layer for UI chrome. See §8.2 v4 implementation note. |
 | 10 | Accessibility (high-contrast / keyboard nav) | **Defer to separate post-v3 PJ** | §10 out-of-scope. RTL + per-locale calendars + multi-script labels still in Phase 1 (Language-First architecture, not "accessibility extras"). |
 
 ### Beyond §11 — two structural revisions
@@ -379,7 +382,7 @@ For PJ-038 to close as Done:
 | **Calendar rim** | The outer ring showing months / years. |
 | **Dome** | The full circular field of the chart — the user's universe at a glance. |
 | **Magnitude slider** | The Layer Peeling control. Drag right = hide stars *brighter* than threshold N (peels the dominant layer; astronomy convention). |
-| **Base layer / focus overlay** | Two Pixi.js render layers. Base is static (stars + faint connector lines + territories + Milky Way + rim) drawn once per cache cycle. Focus overlay redraws on hover/select to brighten the focused star or constellation. |
+| **Base layer / focus overlay** | Two Canvas 2D render layers (v4 pivot from Pixi.js). Base is static (stars + faint connector lines + territories + Milky Way + rim) drawn once per cache cycle. Focus overlay redraws on hover/select to brighten the focused star or constellation. |
 
 ---
 

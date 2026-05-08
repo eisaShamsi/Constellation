@@ -203,12 +203,40 @@ D3 v7 was already a dependency (used by SkyView). pixi.js stays in package.json 
 
 ---
 
+## Session 2 — Sight v3 → v4 clean-slate pivot
+
+### Background
+
+Eisa tested the v3 §2G.3r build (raw DOM close button, 13th iteration). Close button still didn't work. Directive: **abandon v3, start from scratch as v4.**
+
+Investigation revealed the root cause that 13 iterations couldn't fix: SightV3 mounted as `position: fixed; inset: 0; z-index: 1000` — a full-screen overlay OUTSIDE normal DOM flow. D3-zoom's event listeners on the viewport-filling canvas consumed all pointer events. Every z-index escalation, raw addEventListener, Svelte bypass, external button — all failed because the architecture was fundamentally wrong.
+
+**SkyView's close button works because it renders inside `.content-area` as a normal flex child.** Header with close button in first row. Graph view in second row. No position:fixed. No z-index wars.
+
+### What v4 ships
+
+| File | Change |
+|------|--------|
+| `src/lib/sight/v4/SightV4.svelte` | **NEW** — clean-slate component. NO position:fixed root. Plain flex child. Same Canvas 2D + D3-zoom draw pipeline. Reuses all v3 helper modules (modes.ts, polar.ts, regions.ts, library-colors.ts). |
+| `src/lib/sight/v4/SightV4SidePanel.svelte` | **NEW** — copy of v3 side panel (unchanged logic). |
+| `src/lib/sight/engine.ts` | SIGHT_V3_ENABLED = false, SIGHT_V4_ENABLED = true |
+| `src/routes/+layout.svelte` | v4 mounted INSIDE `.content-area` using `.star-fullscreen` pattern (same as SkyView). Close button: `<button class="star-close" onclick={() => sightV4Active = false}>×</button>` |
+| `docs/Constellation-Sight-v3-Concept-Paper-v1.1.md` | §8, §9, §11 updated (Pixi → Canvas 2D, v4 pivot noted) |
+| `docs/SIGHT-V3-VISUAL-SPEC.md` | §7 invariants updated (Pixi → Canvas 2D) |
+| `docs/Constellation Orientation & Onboarding v1.73.md` | v4 pivot documented |
+
+### Orientation chain
+
+- v1.72 → **v1.73** (v3→v4 pivot). Preserved in `docs/`.
+
+---
+
 ## Next steps
 
 1. **Build binary** and have Eisa test:
-   - Stage 1: close button (× in top-right corner) — the 12th-iteration test
-   - Stage 2: chart renders (stars, rim numbers, Universe Health, legend)
+   - Stage 1: close button (× in header row) — THE TEST that has failed 13 times
+   - Stage 2: chart renders (stars, rim numbers, Universe Health, legend, Milky Way)
    - Stage 3: zoom/pan (mouse wheel + drag)
-   - Stage 4: hover tooltip + click selection + connected-notes side panel
+   - Stage 4: hover tooltip + click selection + connected-notes side panel + double-click to open note
 2. After PASS → §2G.4 mode toggle UI + §2G.5 persistence + §2G.6 audit/close-out
 3. MIG-020 (layer peeling + v2 retire)

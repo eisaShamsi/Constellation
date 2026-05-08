@@ -753,7 +753,7 @@ The Constellation Sight visualizes your entire knowledge universe as a celestial
 
 ### Opening the Sight
 
-Click the **Sight button** (star icon) in the left ribbon. The dome of stars renders on a cream parchment background — Suwaidi northern-hemisphere chart aesthetic. Click the **(×)** at the top-right to close, or press **Esc**.
+Click the **Sight button** (star icon) in the left ribbon. The dome of stars renders on a cream parchment background — Suwaidi northern-hemisphere chart aesthetic. Click the **(×)** button in the header bar to close, or press **Esc**.
 
 ### The Dome
 

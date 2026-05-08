@@ -264,11 +264,11 @@ These are the load-bearing rules. Breaking any of them is a P0 regression.
 5. **Empty wedges compress out** — the rim never shows a wedge with zero notes, regardless of mode.
 6. **Universe Health stays top-center** — roundel + metrics never overlap the dome edge or the toggle bar.
 7. **Universe-name header sits between Universe Health and the dome** — top-center, blue ink serif italic, `dir="auto"` so RTL universe names render correctly.
-8. **OOM-safe Pixi batching** — single `Graphics` for stars (with subpaths), single `Graphics` for territories, `safeClearContainer` destroys children on remove. Never `new Graphics()` per star.
+8. **OOM-safe Canvas 2D rendering** — single `<canvas>` element with D3-zoom for pan/zoom; stars and territories drawn via `CanvasRenderingContext2D` path batching. Never allocate per-star objects; clear and redraw the visible viewport on each frame.
 9. **No per-frame allocations in hover handlers** — recompute decoration sets only on selection change, not on every mousemove.
 10. **Mode-switch is a state change, not an IPC call** — `positionForMode(mode, ctx)` re-projects in JS. No re-fetch from Rust. The frontend has all data needed (SkyNode + layout + region wedges + ModeStats) to re-position every star in O(N).
 11. **Color is preserved across mode switches** — the migration animation only interpolates X/Y/Z; the star's fill color stays constant. This is what makes the toggle a *diagnostic* tool: same patient, different scan.
-12. **Rim labels are HTML overlay**, not Pixi Text — `dir="auto"` for native bidi shaping (Arabic / Hebrew / mixed-script library names render correctly).
+12. **Rim labels are HTML overlay**, not canvas-drawn text — `dir="auto"` for native bidi shaping (Arabic / Hebrew / mixed-script library names render correctly).
 
 ---
 

@@ -31,9 +31,9 @@ The chart is also a **multi-instrument**. The same universe can be viewed throug
 
 ## How to Open It
 
-1. Click the **star icon** (Sight v3) in the left ribbon.
+1. Click the **star icon** (Sight) in the left ribbon.
 2. The dome renders silently — no progress bar in normal use; the chart appears when ready (typically 2–5 seconds on large universes).
-3. To close: click the **(×)** at the top-right corner, or press **Esc** repeatedly.
+3. To close: click the **(×)** button in the header bar at the top, or press **Esc**.
 
 ---
 
@@ -138,4 +138,4 @@ Sight isn't just one chart — it's six chart **modes**, each with its own way o
 
 ## Concept paper
 
-For the design philosophy and architecture: see `docs/Constellation-Sight-v3-Concept-Paper-v1.1.md` (the v3 design paper) and `docs/SIGHT-V3-VISUAL-SPEC.md` (the per-mode (X, Y, Z) grammar specification).
+For the design philosophy and architecture: see `docs/Constellation-Sight-v3-Concept-Paper-v1.1.md` (the design paper, updated for v4) and `docs/SIGHT-V3-VISUAL-SPEC.md` (the per-mode (X, Y, Z) grammar specification).
