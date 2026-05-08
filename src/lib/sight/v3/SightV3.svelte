@@ -112,6 +112,10 @@
     let focusOverlay: Container | null = null;
     let placeholderText: Text | null = null;
     let resizeObserver: ResizeObserver | null = null;
+    /** §2G.3g: parent of every chart layer that should scale + pan
+     *  with the zoom controls. Placeholder text and HTML overlays
+     *  are NOT inside this — they stay anchored to the window. */
+    let chartContainer: Container | null = null;
 
     // ─── Data ────────────────────────────────────────────────────────
     let layoutPoints: LayoutPoint[] = $state([]);
@@ -189,6 +193,28 @@
      *  and the legend panel all read from here so colors stay in
      *  lockstep across the three surfaces. */
     let libraryColors = $state<Map<string, { hex: number; css: string; index: number }>>(new Map());
+
+    // ─── §2G.3g: chart-level zoom + pan ──────────────────────────────
+    /** Scale factor for the chart layers (stars, rim, milky way, etc.).
+     *  HTML overlays (Universe Health, Universe-name header, legend,
+     *  close button) stay screen-anchored. */
+    let chartZoom = $state(1.0);
+    let chartPanX = $state(0);
+    let chartPanY = $state(0);
+    const MIN_ZOOM = 0.4;
+    const MAX_ZOOM = 5.0;
+    const DRAG_THRESHOLD_PX = 4;
+    /** Drag state for the pan gesture. Null when no button is down. */
+    let panDragState: {
+        startClientX: number;
+        startClientY: number;
+        startPanX: number;
+        startPanY: number;
+    } | null = null;
+    /** True if the current pointer-down → pointer-up sequence has
+     *  exceeded the drag threshold. Used to suppress the click that
+     *  fires after a drag. Reset on the next pointer-down. */
+    let panDragMoved = false;
 
     /** §2G.3b: rim label geometry, published by `drawRegionRim`.
      *  Rendered as HTML elements (with `dir="auto"`) in the Svelte
@@ -277,6 +303,80 @@
      *
      *  The dome center shifts down to the middle of the AVAILABLE
      *  vertical space, not the middle of the canvas.  */
+    /** §2G.3g: apply current zoom + pan to the chart container and
+     *  the HTML rim wrapper. Pivot at the dome center so scaling
+     *  happens around (cx, cy). Called on every wheel/drag event. */
+    function updateChartTransform() {
+        if (!chartContainer) return;
+        const vp = getViewport();
+        if (!vp) return;
+        chartContainer.pivot.set(vp.cx, vp.cy);
+        chartContainer.position.set(vp.cx + chartPanX, vp.cy + chartPanY);
+        chartContainer.scale.set(chartZoom);
+    }
+
+    /** §2G.3g: derived CSS transform string for the HTML rim wrapper.
+     *  Pivots at the same point as the Pixi container so the rim
+     *  numbers stay locked to the dome's edge under any zoom/pan. */
+    let rimTransformOrigin = $state('50% 50%');
+    let rimTransform = $state('none');
+    function syncRimTransform() {
+        const vp = getViewport();
+        if (!vp) {
+            rimTransformOrigin = '50% 50%';
+            rimTransform = 'none';
+            return;
+        }
+        rimTransformOrigin = `${vp.cx}px ${vp.cy}px`;
+        rimTransform = `translate(${chartPanX}px, ${chartPanY}px) scale(${chartZoom})`;
+    }
+
+    /** §2G.3g: wheel-zoom handler. preventDefault stops the page from
+     *  scrolling and stops Ctrl+wheel from triggering browser zoom. */
+    function handleWheel(ev: WheelEvent) {
+        ev.preventDefault();
+        const dz = -ev.deltaY * 0.0015;
+        const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, chartZoom * Math.exp(dz)));
+        if (newZoom === chartZoom) return;
+        chartZoom = newZoom;
+        updateChartTransform();
+        syncRimTransform();
+    }
+
+    /** §2G.3g: pointer-down starts a potential pan gesture. We don't
+     *  commit to dragging until the pointer moves more than DRAG_THRESHOLD;
+     *  that lets short clicks still hit stars. */
+    function handlePointerDown(ev: PointerEvent) {
+        if (ev.button !== 0) return;  // primary mouse button only
+        panDragState = {
+            startClientX: ev.clientX,
+            startClientY: ev.clientY,
+            startPanX: chartPanX,
+            startPanY: chartPanY,
+        };
+        panDragMoved = false;
+    }
+
+    /** §2G.3g: pointer-up cleans up the drag state and the cursor. */
+    function handlePointerUp() {
+        if (panDragState) {
+            panDragState = null;
+            if (canvasContainer) canvasContainer.style.cursor = 'default';
+        }
+    }
+
+    /** §2G.3g: reset zoom + pan to defaults. Bound to Esc when no
+     *  selection is active (existing handleEscape path) and to a
+     *  "Reset view" button when zoom != 1 or pan != 0. */
+    function resetView() {
+        if (chartZoom === 1 && chartPanX === 0 && chartPanY === 0) return;
+        chartZoom = 1.0;
+        chartPanX = 0;
+        chartPanY = 0;
+        updateChartTransform();
+        syncRimTransform();
+    }
+
     function getViewport() {
         if (!app) return null;
         const w = app.screen.width;
@@ -1105,6 +1205,10 @@
         drawStars();
         drawFocusOverlay();
         drawRimForMode();
+        // §2G.3g: keep the Pixi container transform + HTML rim wrapper
+        // transform in sync with the (possibly resized) viewport.
+        updateChartTransform();
+        syncRimTransform();
     }
 
     function showPlaceholder(message: string, isError: boolean = false) {
@@ -1156,6 +1260,26 @@
         const rect = canvasContainer.getBoundingClientRect();
         const px = ev.clientX - rect.left;
         const py = ev.clientY - rect.top;
+
+        // §2G.3g: drag-to-pan gesture. While the pointer is down, we
+        // accumulate movement until DRAG_THRESHOLD is exceeded, then
+        // commit to a pan and suppress hover/click for the duration.
+        if (panDragState) {
+            const dx = ev.clientX - panDragState.startClientX;
+            const dy = ev.clientY - panDragState.startClientY;
+            if (!panDragMoved && Math.hypot(dx, dy) > DRAG_THRESHOLD_PX) {
+                panDragMoved = true;
+                if (canvasContainer) canvasContainer.style.cursor = 'grabbing';
+                tooltipVisible = false;
+            }
+            if (panDragMoved) {
+                chartPanX = panDragState.startPanX + dx;
+                chartPanY = panDragState.startPanY + dy;
+                updateChartTransform();
+                syncRimTransform();
+                return;  // suppress hover during drag
+            }
+        }
 
         // MIG-019 §2C / §2G.3b: rim hit-test only in Time mode. In other
         // modes, the calendar-rim hit-test was wiping the region rim
@@ -1225,6 +1349,13 @@
     }
 
     function handleClick(ev: MouseEvent) {
+        // §2G.3g: a click that follows a pan gesture isn't a real click.
+        // panDragMoved was set during pointer-move; consume it here so
+        // the next click works normally.
+        if (panDragMoved) {
+            panDragMoved = false;
+            return;
+        }
         const rect = canvasContainer.getBoundingClientRect();
         const px = ev.clientX - rect.left;
         const py = ev.clientY - rect.top;
@@ -1325,6 +1456,15 @@
             background: 0xfaf6e8,
             resizeTo: canvasContainer,
             antialias: true,
+            // §2G.3g: honor device pixel ratio so browser zoom (Ctrl+/-)
+            // re-renders the dome at the new resolution. autoDensity
+            // keeps the CSS size matched to the container while the
+            // backing buffer scales by resolution. Without these two,
+            // the canvas backing buffer stayed at the old size after
+            // a zoom, so the dome appeared misaligned with the HTML
+            // overlay (rim numbers, legend, etc.).
+            autoDensity: true,
+            resolution: Math.max(1, window.devicePixelRatio || 1),
         });
         canvasContainer.appendChild(app.canvas);
 
@@ -1343,12 +1483,18 @@
         calendarRimContainer = new Container();
         // Order matters: Milky Way at the back, then territories, edges,
         // stars, focus overlay, calendar rim on top.
-        app.stage.addChild(milkyWayContainer);
-        app.stage.addChild(territoryContainer);
-        app.stage.addChild(edgeContainer);
-        app.stage.addChild(starContainer);
-        app.stage.addChild(focusOverlay);
-        app.stage.addChild(calendarRimContainer);
+        // §2G.3g: chartContainer wraps every layer that should zoom +
+        // pan together. Stars, rim, edges, milky way, focus overlay all
+        // live inside it. Placeholder text stays on the stage so it
+        // doesn't scale with chart zoom.
+        chartContainer = new Container();
+        app.stage.addChild(chartContainer);
+        chartContainer.addChild(milkyWayContainer);
+        chartContainer.addChild(territoryContainer);
+        chartContainer.addChild(edgeContainer);
+        chartContainer.addChild(starContainer);
+        chartContainer.addChild(focusOverlay);
+        chartContainer.addChild(calendarRimContainer);
 
         // MIG-019 §2E.2 SOLVE: progress markers visible to the user
         // (production builds disable DevTools, so console.log isn't
@@ -1406,7 +1552,8 @@
         }
         isLoading = false;
 
-        // Resize observer
+        // Resize observer — picks up CSS-size changes (window resize,
+        // sidebar collapse, etc.) and triggers a full redraw.
         resizeObserver = new ResizeObserver(() => {
             if (!isLoading && layoutPoints.length > 0) {
                 fullRedraw();
@@ -1416,7 +1563,36 @@
             }
         });
         resizeObserver.observe(canvasContainer);
+
+        // §2G.3g: visualViewport listener — browser zoom (Ctrl+/-)
+        // changes devicePixelRatio without always firing a CSS-size
+        // resize on the container. When that happens we still need
+        // to re-render so HTML overlay positions (rim numbers, etc.)
+        // stay aligned with the Pixi-drawn dome.
+        if (typeof window !== 'undefined' && window.visualViewport) {
+            const onZoom = () => {
+                if (!app) return;
+                // Re-set the resolution so Pixi renders at the new DPR.
+                const dpr = Math.max(1, window.devicePixelRatio || 1);
+                if (app.renderer.resolution !== dpr) {
+                    app.renderer.resolution = dpr;
+                    app.renderer.resize(app.screen.width, app.screen.height);
+                }
+                if (!isLoading && layoutPoints.length > 0) {
+                    fullRedraw();
+                }
+            };
+            window.visualViewport.addEventListener('resize', onZoom);
+            // Save for cleanup in onDestroy.
+            (visualViewportCleanup as { fn: (() => void) | null }).fn = () => {
+                window.visualViewport?.removeEventListener('resize', onZoom);
+            };
+        }
     });
+
+    /** §2G.3g: closure-captured cleanup ref for the visualViewport
+     *  listener (set in onMount, called from onDestroy). */
+    const visualViewportCleanup: { fn: (() => void) | null } = { fn: null };
 
     // Re-draw on projection toggle
     $effect(() => {
@@ -1482,6 +1658,11 @@
             resizeObserver.disconnect();
             resizeObserver = null;
         }
+        // §2G.3g: tear down the visualViewport zoom listener.
+        if (visualViewportCleanup.fn) {
+            visualViewportCleanup.fn();
+            visualViewportCleanup.fn = null;
+        }
         if (app) {
             app.destroy(true, { children: true, texture: true });
             app = null;
@@ -1511,14 +1692,23 @@
 <svelte:window onkeydown={handleEscape} />
 
 <div class="sight-v3-root">
-    <button class="sight-v3-close" onclick={onClose} aria-label={$t('sightV3.close') || 'Close Sight'}>×</button>
+    <button
+        type="button"
+        class="sight-v3-close"
+        onclick={onClose}
+        onpointerdown={(e) => e.stopPropagation()}
+        aria-label={$t('sightV3.close') || 'Close Sight'}
+    >×</button>
     <div
         class="sight-v3-canvas"
         bind:this={canvasContainer}
+        onpointerdown={handlePointerDown}
         onpointermove={handlePointerMove}
         onpointerleave={handlePointerLeave}
+        onpointerup={handlePointerUp}
         onclick={handleClick}
         ondblclick={handleDoubleClick}
+        onwheel={handleWheel}
         role="application"
         aria-label="Constellation Sight v3"
     ></div>
@@ -1535,17 +1725,34 @@
          through `dir="auto"` so the browser handles bidi natively —
          Arabic / Hebrew / Persian library names render right-to-left
          within their tangent rotation. -->
-    <!-- §2G.3f: rim labels are now COLORED NUMBERS (1, 2, 3, ...).
-         Library names move to the legend panel below. The number's
-         color matches the library's color so visual mapping stays
-         tight (rim number ↔ legend row ↔ stars in the wedge). -->
-    {#each rimLabelGeometry as geo (geo.key)}
-        <div
-            class="sight-v3-rim-number"
-            style="left: {geo.lx}px; top: {geo.ly}px; color: {geo.colorCss};"
-            title="{geo.name} — {geo.count.toLocaleString()} notes"
-        >{geo.index}</div>
-    {/each}
+    <!-- §2G.3f: rim labels are COLORED NUMBERS (1, 2, 3, ...).
+         §2G.3g: wrapped in a transform-aware wrapper so they zoom +
+         pan with the Pixi-drawn dome. The wrapper's transform-origin
+         pivots at the dome center for symmetric scaling. -->
+    <div
+        class="sight-v3-rim-wrapper"
+        style="transform-origin: {rimTransformOrigin}; transform: {rimTransform};"
+    >
+        {#each rimLabelGeometry as geo (geo.key)}
+            <div
+                class="sight-v3-rim-number"
+                style="left: {geo.lx}px; top: {geo.ly}px; color: {geo.colorCss};"
+                title="{geo.name} — {geo.count.toLocaleString()} notes"
+            >{geo.index}</div>
+        {/each}
+    </div>
+
+    <!-- §2G.3g: Reset view button — only visible when zoom or pan
+         differs from defaults. Sits above the legend so users can
+         get back to the canonical view in one click. -->
+    {#if chartZoom !== 1 || chartPanX !== 0 || chartPanY !== 0}
+        <button
+            type="button"
+            class="sight-v3-reset-view"
+            onclick={resetView}
+            aria-label={$t('sightV3.resetView') || 'Reset view'}
+        >Reset view</button>
+    {/if}
 
     <!-- §2G.3f: Library legend panel. Anchored to the LEFT for LTR
          interfaces, RIGHT for RTL. Lists Universe root + numbered
@@ -1664,22 +1871,59 @@
         position: absolute;
         top: 12px;
         right: 16px;
-        width: 32px;
-        height: 32px;
-        background: rgba(26, 26, 26, 0.04);
-        border: 1px solid rgba(26, 26, 26, 0.25);
+        width: 36px;
+        height: 36px;
+        background: rgba(250, 246, 232, 0.92);
+        border: 1px solid rgba(26, 26, 26, 0.35);
         border-radius: 50%;
         color: #1a1a1a;
-        font-size: 20px;
-        line-height: 28px;
+        font-size: 22px;
+        line-height: 32px;
         cursor: pointer;
-        z-index: 10;
+        /* §2G.3g: bumped 10 → 100 so it sits above every overlay
+           (legend at z:7, universe-name at z:8, health-anchor at z:8,
+           rim wrapper at z:6). */
+        z-index: 100;
         padding: 0;
+        pointer-events: auto;
     }
 
     .sight-v3-close:hover {
-        background: rgba(201, 162, 39, 0.20);
-        border-color: rgba(201, 162, 39, 0.7);
+        background: rgba(201, 162, 39, 0.32);
+        border-color: rgba(201, 162, 39, 0.9);
+    }
+
+    /* §2G.3g: chart layer wrapper for HTML rim numbers. Applies the
+       same scale + translate as the Pixi chartContainer so the rim
+       stays locked to the dome under any zoom or pan. */
+    .sight-v3-rim-wrapper {
+        position: absolute;
+        inset: 0;
+        z-index: 6;
+        pointer-events: none;
+        will-change: transform;
+    }
+
+    /* §2G.3g: Reset View button — only visible when zoom or pan is
+       not at default. Placed below the legend (left for LTR, right
+       for RTL — but always on the legend's side). */
+    .sight-v3-reset-view {
+        position: absolute;
+        bottom: 24px;
+        left: 24px;
+        z-index: 9;
+        background: rgba(250, 246, 232, 0.92);
+        border: 1px solid rgba(201, 162, 39, 0.6);
+        border-radius: 16px;
+        padding: 6px 14px;
+        font-family: serif;
+        font-size: 12px;
+        color: #1a1a1a;
+        cursor: pointer;
+        font-style: italic;
+    }
+    .sight-v3-reset-view:hover {
+        background: rgba(201, 162, 39, 0.25);
     }
 
     /* §2G.3c: Universe name header — above the dome, below the
