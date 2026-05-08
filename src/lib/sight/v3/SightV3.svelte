@@ -296,6 +296,18 @@
         return 1.5 + Math.sqrt(Math.max(0, centrality_norm)) * 4.5;
     }
 
+    /** §2G.3m: SINGLE source of truth for the actual drawn star radius.
+     *  Both drawStars and drawFocusOverlay call this so the selection
+     *  ring exactly matches the node it surrounds (was: drawStars used
+     *  one formula, drawFocusOverlay read screen.r which used a
+     *  different scale → ring up to 2.35× bigger than the node). */
+    const STAR_MIN_RADIUS = 1.2;
+    const STAR_MAX_RADIUS = 4.0;
+    function actualNodeRadius(screenR: number): number {
+        const sizeNorm = Math.max(0, Math.min(1, screenR / 8.4));
+        return STAR_MIN_RADIUS + sizeNorm * (STAR_MAX_RADIUS - STAR_MIN_RADIUS);
+    }
+
     /** §2G.3b — dome geometry with breathing room.
      *
      *  Eisa's directive 2026-05-07: "the dome should be at least 100 px
@@ -341,7 +353,11 @@
     }
 
     /** HTML side: CSS transform on the overlays wrapper. Same pivot
-     *  and translate as Pixi so they move in lockstep. */
+     *  and translate as Pixi so they move in lockstep.
+     *  §2G.3m: switched to translate3d/scale3d for GPU-precise
+     *  sub-pixel rendering matching what Pixi does on its canvas;
+     *  the 2D versions can produce slight rounding differences
+     *  that show up as "library numbers offset on zoom." */
     function syncOverlaysTransform() {
         const vp = getViewport();
         if (!vp) {
@@ -353,7 +369,7 @@
         if (chartZoom === 1 && chartPanX === 0 && chartPanY === 0) {
             overlaysTransform = 'none';
         } else {
-            overlaysTransform = `translate(${chartPanX}px, ${chartPanY}px) scale(${chartZoom})`;
+            overlaysTransform = `translate3d(${chartPanX}px, ${chartPanY}px, 0) scale3d(${chartZoom}, ${chartZoom}, 1)`;
         }
     }
 
@@ -993,12 +1009,9 @@
         safeClearContainer(starContainer);
         const searchOn = isSearchActive();
         const stars = new Graphics();
-        // §2G.3f: cap node radius so no star exceeds MAX_NODE_RADIUS,
-        // distributed in proportion below. Pairs with MIN_DIST=9 in
-        // applyWedgeRepulsion so even max-size adjacent stars keep a
-        // visible 1 px breathing gap.
-        const MAX_NODE_RADIUS = 4.0;
-        const MIN_NODE_RADIUS = 1.2;
+        // §2G.3m: actualNodeRadius is the SINGLE source of truth for
+        // the drawn star radius. drawFocusOverlay calls the same
+        // function so selection rings exactly match the node size.
         for (const pt of layoutPoints) {
             const screen = pathToScreen.get(pt.note_path);
             if (!screen) continue;
@@ -1006,16 +1019,12 @@
             const passesSrc = passesSearch(pt.note_path);
             const baseAlpha = screen.baseAlpha;
 
-            // §2G.3f: proportional sizing capped at MAX_NODE_RADIUS.
-            // screen.r came from positionForMode; we re-normalize to
-            // [MIN, MAX] here so no star outgrows the cap.
-            const sizeNorm = Math.max(0, Math.min(1, screen.r / 8.4));
-            let radius = MIN_NODE_RADIUS + sizeNorm * (MAX_NODE_RADIUS - MIN_NODE_RADIUS);
+            let radius = actualNodeRadius(screen.r);
 
             let alpha: number;
             if (searchOn) {
                 if (passesSrc && passesMonth) {
-                    radius = Math.min(radius * 1.5, MAX_NODE_RADIUS + 1.0);
+                    radius = Math.min(radius * 1.5, STAR_MAX_RADIUS + 1.0);
                     alpha = 1.0;
                 } else {
                     alpha = 0.10;
@@ -1107,31 +1116,36 @@
             neighbours.add(e.a === focusPath ? e.b : e.a);
         }
         if (edgeCount > 0) {
-            // §2G.3i: darker tone (was light gold @ 0.55) so edges
-            // read against the cream BG. Darker burnt-amber.
-            lines.stroke({ color: 0x6b4f0d, alpha: 0.85, width: 1.0 });
+            // §2G.3m: switched to INK (#1a1a1a) at alpha 0.7 for
+            // strong contrast on the cream BG. The dark-amber
+            // (#6b4f0d) was still too low-contrast per Eisa's
+            // §2G.3l feedback.
+            lines.stroke({ color: 0x1a1a1a, alpha: 0.7, width: 1.0 });
             focusOverlay.addChild(lines);
         }
-        // §2G.3h: thin gold ring around each 1-hop neighbour so the
-        // user can SEE which stars are connected even through the
-        // gold rays. Ring radius matches node size.
+        // §2G.3m: neighbour rings sized to the ACTUAL node radius
+        // (was: ns.r which is the position pseudo-radius, not the
+        // drawn radius — rings ended up 1.5-2× the visible node).
         if (neighbours.size > 0) {
             const neighbourRings = new Graphics();
             for (const npath of neighbours) {
                 const ns = pathToScreen.get(npath);
                 if (!ns) continue;
-                neighbourRings.circle(ns.x, ns.y, ns.r + 0.8);
+                const r = actualNodeRadius(ns.r) + 0.8;
+                neighbourRings.circle(ns.x, ns.y, r);
                 neighbourRings.stroke({ color: 0xc9a227, alpha: 0.85, width: 0.8 });
             }
             focusOverlay.addChild(neighbourRings);
         }
 
-        // §2G.3h: ring size matches node exactly (Eisa directive). Was
-        // r+3 with a 2 px stroke — the ring rendered as a halo much
-        // larger than the actual node. Now the ring sits 1 px outside
-        // the node's edge with a 1.5 px gold stroke.
+        // §2G.3m: ring size matches the actual drawn node radius. Was
+        // using `focusScreen.r + 1` where focusScreen.r is the position
+        // pseudo-radius (0.7-8.4 px), not the rendered radius (1.2-4.0).
+        // Now via the shared `actualNodeRadius()` helper so the ring
+        // sits exactly 1 px outside the node's visible edge.
         const ring = new Graphics();
-        ring.circle(focusScreen.x, focusScreen.y, focusScreen.r + 1);
+        const focusR = actualNodeRadius(focusScreen.r);
+        ring.circle(focusScreen.x, focusScreen.y, focusR + 1);
         ring.stroke({ color: 0xc9a227, alpha: 1.0, width: 1.5 });
         focusOverlay.addChild(ring);
     }
@@ -1786,17 +1800,12 @@
     function handleEscape(e: KeyboardEvent) {
         if (e.key === 'Escape') {
             e.preventDefault();
-            // §2G.3h: Esc cascade — clear selection → reset view →
-            // close. Each press undoes one layer of state, so the user
-            // can always escape back to a clean canonical view.
-            if (selectedPath !== null) {
-                selectedPath = null;
-                drawFocusOverlay();
-            } else if (chartZoom !== 1 || chartPanX !== 0 || chartPanY !== 0) {
-                resetView();
-            } else {
-                onClose();
-            }
+            // §2G.3m: simplified — Esc always closes Sight. User has
+            // the Reset View button for view reset and can click empty
+            // space to clear selection. Single-press close gives a
+            // guaranteed escape hatch since the (×) button has had
+            // intermittent failures.
+            onClose();
         }
     }
 </script>
@@ -1804,14 +1813,17 @@
 <svelte:window onkeydown={handleEscape} />
 
 <div class="sight-v3-root">
-    <!-- §2G.3l: chrome — close button uses `onclick={fn}` directly per
-         Svelte 5 canonical pattern (svelte.dev/docs/svelte/bind shows
-         this exact form: <button bind:this={x} onclick={() => x.focus()}>).
-         No more $effect / bind:this / addEventListener dance. -->
+    <!-- §2G.3m: close button — adding `onpointerup` as a defensive
+         second path. After 7 rounds where `onclick` repeatedly didn't
+         fire (despite being the canonical Svelte 5 pattern), we don't
+         keep guessing — we register on multiple pointer events so
+         that AT LEAST one fires. pointerup fires before click in the
+         pointer event sequence and is rarely suppressed. -->
     <button
         type="button"
         class="sight-v3-close"
         onclick={(e) => { e.stopPropagation(); onClose(); }}
+        onpointerup={(e) => { e.stopPropagation(); onClose(); }}
         aria-label={$t('sightV3.close') || 'Close Sight'}
     >×</button>
 
