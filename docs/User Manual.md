@@ -797,7 +797,7 @@ Sight is a **multi-instrument cognitive lens**. The same Universe can be read th
 | Gesture | Effect |
 |---------|--------|
 | **Hover a star** | Tooltip shows the note's title (bold), community, and centrality rank. |
-| **Click a star** | The star gets a gold ring; its links radiate out in dark amber; connected (1-hop neighbour) stars get thin gold rings. The right-side panel slides in with note details (title, library, link counts, "Open in editor" button). |
+| **Click a star** | The star gets a gold ring; its links radiate out in ink-dark lines; connected (1-hop neighbour) stars get thin gold rings. The right-side panel slides in with note details (title, community, centrality rank, incoming/outgoing link counts, the **Connected notes** clickable list, and an "Open in editor" button). Click any row in the Connected notes list to recentre the side panel on that neighbour without leaving Sight. |
 | **Click empty space** | Clears the selection. |
 | **Double-click a star** | Opens the note in the editor. |
 | **Mouse wheel** | Zoom in / out around the dome center. The whole "page" — chart, library legend, Universe Health card, Universe-name header — scales together as a lens. Range: 0.4× to 5×. |

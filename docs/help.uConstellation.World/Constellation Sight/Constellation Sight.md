@@ -93,6 +93,20 @@ Each star is a small colored dot:
 
 The (×) close button at the top-right and the right-side note panel (slides in when a star is selected) stay anchored to the window — they don't scale with the lens zoom.
 
+### The Note Side Panel
+
+When you click a star, the right-side panel slides in showing:
+
+- **The note's title** at the top.
+- **Community** — the Louvain cluster the note belongs to (notes that frequently link to each other share a community, regardless of library).
+- **Centrality rank** — where this note ranks among all notes in the universe by centrality (e.g., #12 of 247).
+- **Incoming links** — how many notes link TO this note.
+- **Outgoing links** — how many notes this note links to.
+- **Connected notes (N)** — a clickable list of every note linked to this one (up to 50). Each row shows a small colored dot (the linked note's library color), the note's title, and the library name. **Click any row** to recentre the panel on that connected note — Sight stays open, you don't switch to the editor. This lets you walk the graph one hop at a time, exploring the neighbourhood of an idea without leaving the dome.
+- **Open in editor** — a button at the bottom that switches to the standard Editor pane on the selected note.
+
+The connected-notes list makes the side panel a *navigation surface*, not just an information display. You can chase a thought from one note to its supporters, contrasts, exemplars, and back — all by clicking dots in a list.
+
 ---
 
 ## The Six Modes (cognitive lenses)
