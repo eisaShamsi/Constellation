@@ -223,7 +223,11 @@
             <!-- Edit mode: multi-select all 11 sources + 'unclassifiable' opt-out -->
             <div class="srp-edit-grid">
               {#each ALL_SOURCES as src}
-                <label class="srp-edit-pill" class:active={editedSources.has(src)}>
+                <label
+                  class="srp-edit-pill"
+                  class:active={editedSources.has(src)}
+                  title={$t('sources.description.' + src) || src}
+                >
                   <input
                     type="checkbox"
                     checked={editedSources.has(src)}
@@ -247,7 +251,10 @@
               {#each record.suggestions as s, i}
                 <li class="srp-suggestion" class:primary={i === 0}>
                   <div class="srp-source-row">
-                    <span class="srp-source-name">
+                    <span
+                      class="srp-source-name"
+                      title={$t('sources.description.' + s.source) || s.source}
+                    >
                       {$t('sources.label.' + s.source) || s.source}
                     </span>
                     <span class="srp-confidence">{formatConfidence(s.confidence)}</span>
@@ -421,7 +428,9 @@
     font-size: 12px;
   }
   .srp-suggestion.primary {
-    border-left-color: var(--text-accent, #c9a227);
+    /* Suwaidi gold — hard-coded to be theme-independent (don't pick up
+       the user's --text-accent which is often purple/blue per theme). */
+    border-left-color: #c9a227;
     background: rgba(201, 162, 39, 0.06);
   }
   .srp-source-row {

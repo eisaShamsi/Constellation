@@ -800,6 +800,20 @@
       "revelation": "Revelation",
       "unclassifiable": "Unclassifiable"
     },
+    "description": {
+      "perception": "First-hand sensory observation. What you saw, heard, touched, measured yourself in the present moment.",
+      "inference": "Reasoning from premises to conclusions. Logical derivation, calculation, deduction.",
+      "testimony": "Knowledge from someone else's report — quoted statements, citations, references to a single named source.",
+      "mass-transmission": "Convergent reports by many independent witnesses too numerous to collude. The Sunni al-tawatur — yields certain knowledge.",
+      "comparison": "Knowledge by analogy to a known thing. Legal qiyas, scientific reasoning by analogy, structural parallels.",
+      "postulation": "Inference to the best explanation. Positing an unobserved fact required to explain an observed one (arthapatti).",
+      "non-apprehension": "Knowledge of absence. Something is NOT there because perception of it fails (anupalabdhi).",
+      "memory": "Recall of past experience. What you remember from earlier observations, conversations, or learnings.",
+      "innate-disposition": "Pre-experiential knowing — basic moral or logical truths every healthy mind recognizes (fitrah / nous).",
+      "inspiration": "Mystical or creative apprehension — sudden insight, vision, dream-content, unbidden realization (al-ilham).",
+      "revelation": "Sacred-text or prophetic transmission — Qur'an, scripture, divine command (al-wahy).",
+      "unclassifiable": "User opt-out: this note doesn't fit any of the 11 sources, OR the user prefers not to classify it. Suppresses future classifier suggestions."
+    },
     "review": {
       "title": "Source Review",
       "refresh": "Refresh queue",
