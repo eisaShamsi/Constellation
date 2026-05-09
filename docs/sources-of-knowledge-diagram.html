@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sources of Knowledge — Three-Level Interactive Diagram</title>
+<style>
+  :root {
+    --bg: #fafaf7;
+    --surface: #ffffff;
+    --text: #1a1a18;
+    --text-muted: #6b6a64;
+    --border: rgba(0,0,0,0.10);
+    --border-strong: rgba(0,0,0,0.22);
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.04), 0 2px 6px rgba(0,0,0,0.04);
+    --shadow-md: 0 1px 2px rgba(0,0,0,0.06), 0 6px 18px rgba(0,0,0,0.08);
+
+    --c-root:  #5f5e5a;  --c-root-bg:  #f1efe8;
+    --c-tier1: #0f6e56;  --c-tier1-bg: #e1f5ee;
+    --c-tier2: #534ab7;  --c-tier2-bg: #eeedfe;
+    --c-tier3: #854f0b;  --c-tier3-bg: #faeeda;
+
+    --font-en: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", system-ui, sans-serif;
+    --font-ar: "Iowan Old Style", "Amiri", "Sakkal Majalla", "Noto Naskh Arabic", "Times New Roman", serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1a18;
+      --surface: #232320;
+      --text: #ebeae3;
+      --text-muted: #a09e94;
+      --border: rgba(255,255,255,0.10);
+      --border-strong: rgba(255,255,255,0.24);
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+      --shadow-md: 0 1px 2px rgba(0,0,0,0.3), 0 6px 18px rgba(0,0,0,0.4);
+      --c-root-bg:  #2c2c2a;
+      --c-tier1-bg: #0a3326;
+      --c-tier2-bg: #1f1c3a;
+      --c-tier3-bg: #3a2706;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-en);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.4;
+    font-size: 14px;
+  }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 28px 36px 22px;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    backdrop-filter: blur(8px);
+  }
+  header h1 {
+    margin: 0 0 4px;
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  header h2 {
+    margin: 0 0 10px;
+    font-family: var(--font-ar);
+    font-size: 20px;
+    font-weight: 400;
+    direction: rtl;
+    text-align: left;
+    color: var(--text-muted);
+  }
+  header p.lead {
+    margin: 0 0 16px;
+    color: var(--text-muted);
+    font-size: 13px;
+    max-width: 70ch;
+  }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+  .controls button {
+    font: inherit;
+    font-size: 13px;
+    padding: 6px 14px;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .controls button:hover { background: var(--c-root-bg); }
+
+  .legend {
+    margin-left: auto;
+    display: flex;
+    gap: 14px;
+    font-size: 12px;
+    color: var(--text-muted);
+    flex-wrap: wrap;
+  }
+  .legend-swatch {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .legend-swatch::before {
+    content: '';
+    width: 12px; height: 12px;
+    border-radius: 3px;
+    background: currentColor;
+    flex-shrink: 0;
+  }
+  .legend-swatch.tier1 { color: var(--c-tier1); }
+  .legend-swatch.tier2 { color: var(--c-tier2); }
+  .legend-swatch.tier3 { color: var(--c-tier3); }
+
+  main {
+    padding: 24px 36px 60px;
+    overflow-x: auto;
+  }
+
+  #diagram {
+    position: relative;
+    transition: width 0.35s ease, height 0.35s ease;
+    min-height: 200px;
+  }
+
+  #connections {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 1;
+    overflow: visible;
+  }
+  #connections path {
+    fill: none;
+    stroke: var(--border-strong);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    opacity: 0;
+    animation: fadein 0.3s ease forwards;
+  }
+
+  @keyframes fadein { to { opacity: 0.9; } }
+
+  .node {
+    position: absolute;
+    width: 260px;
+    min-height: 72px;
+    background: var(--surface);
+    border-radius: 9px;
+    padding: 9px 14px;
+    z-index: 2;
+    box-shadow: var(--shadow-sm);
+    transition:
+      left 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+      top  0.35s cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 0.25s ease,
+      transform 0.15s ease,
+      box-shadow 0.15s ease;
+    user-select: none;
+    cursor: default;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .node.entering { opacity: 0; transform: translateX(-8px); }
+  .node.has-children { cursor: pointer; }
+  .node.has-children:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .node.tier-0 {
+    background: var(--c-root-bg);
+    border-left: 4px solid var(--c-root);
+    width: 280px;
+  }
+  .node.tier-0 .node-en { font-size: 16px; font-weight: 600; }
+  .node.tier-0 .node-ar { font-size: 16px; }
+
+  .node.tier-1 { background: var(--c-tier1-bg); border-left: 4px solid var(--c-tier1); }
+  .node.tier-2 { background: var(--c-tier2-bg); border-left: 4px solid var(--c-tier2); }
+  .node.tier-3 { background: var(--c-tier3-bg); border-left: 4px solid var(--c-tier3); }
+
+  .node.level-3 {
+    background: var(--surface);
+    border-left-width: 3px;
+    width: 240px;
+    min-height: 60px;
+  }
+  .node.level-3 .node-en { font-size: 13px; }
+  .node.level-3 .node-ar { font-size: 13px; }
+
+  .node-meta {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+    margin-bottom: 2px;
+  }
+  .node-en {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1.3;
+  }
+  .node-ar {
+    font-family: var(--font-ar);
+    font-size: 14px;
+    color: var(--text);
+    direction: rtl;
+    unicode-bidi: isolate;
+    margin-top: 2px;
+    line-height: 1.4;
+  }
+  .node-tr {
+    font-style: italic;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 1px;
+    line-height: 1.3;
+  }
+
+  .node-toggle {
+    position: absolute;
+    right: -10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 22px;
+    height: 22px;
+    background: var(--surface);
+    border: 1.5px solid var(--border-strong);
+    border-radius: 50%;
+    font-size: 16px;
+    line-height: 19px;
+    text-align: center;
+    color: var(--text);
+    font-weight: 500;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    z-index: 3;
+  }
+  .node.tier-0.has-children:not(.expanded) .node-toggle { animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(95, 94, 90, 0.4); }
+    50%      { box-shadow: 0 0 0 6px rgba(95, 94, 90, 0); }
+  }
+
+  .node.has-children.expanded .node-toggle {
+    background: var(--text);
+    color: var(--bg);
+    border-color: var(--text);
+  }
+
+  /* Hint when fully collapsed */
+  .hint {
+    position: absolute;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-style: italic;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .hint.hidden { opacity: 0; }
+
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 20px 36px;
+    color: var(--text-muted);
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  @media (max-width: 720px) {
+    header { padding: 18px 16px 14px; }
+    main { padding: 16px; }
+    footer { padding: 14px 16px; }
+    .legend { width: 100%; margin-left: 0; }
+  }
+
+  @media print {
+    :root {
+      --bg: #fff;
+      --surface: #fff;
+      --text: #000;
+      --text-muted: #555;
+      --border: rgba(0,0,0,0.2);
+      --border-strong: rgba(0,0,0,0.4);
+    }
+    header { position: static; padding: 16px 0; border-bottom: 2px solid #000; }
+    .controls, .hint { display: none; }
+    .node-toggle { display: none; }
+    .node { box-shadow: none; border: 1px solid #ccc; }
+    .node.has-children:hover { transform: none; box-shadow: none; }
+    main { padding: 16px 0; }
+    @page { size: landscape; margin: 1cm; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Sources / Means of Knowledge — Three-Level Diagram</h1>
+  <h2>مصادر / وسائل المعرفة — مخطط على ثلاثة مستويات</h2>
+  <p class="lead">The horizontal axis of the Universal Epistemic Content Taxonomy. Companion to the comparative civilizational essay on epistemic content. Click any node with a <strong>+</strong> to reveal its branches.</p>
+  <div class="controls">
+    <button onclick="expandAll()">Expand all</button>
+    <button onclick="collapseAll()">Collapse all</button>
+    <button onclick="window.print()">Print</button>
+    <div class="legend" aria-label="Tier of acceptance">
+      <span class="legend-swatch tier1">Tier 1 — universally accepted</span>
+      <span class="legend-swatch tier2">Tier 2 — broadly accepted</span>
+      <span class="legend-swatch tier3">Tier 3 — school-specific or contested</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div id="diagram">
+    <svg id="connections" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div id="hint" class="hint"></div>
+  </div>
+</main>
+
+<footer>
+  Synthesized from the convergent treatment of <em>masādir al-maʿrifah</em> (مصادر المعرفة) in Sunni <em>uṣūl al-fiqh</em>, the <em>pramāṇa</em> framework in classical Indian philosophy, and the three-source typology of the Mohist Canon, with refinements from Greek, Persian-Islamic Illuminationist (<em>Ishrāqī</em>), and modern analytic epistemology. Sunni-restricted on Islamic content. Companion to <em>Epistemic Content: A Comparative Civilizational Survey</em> (Eisa, 2026). Accuracy rating: 4 / 5.
+</footer>
+
+<script>
+"use strict";
+
+// =============================================================================
+// DATA — Sources / Means of Knowledge, three levels deep
+// =============================================================================
+const SOURCES_DATA = {
+  id: "ROOT",
+  en: "Sources / Means of knowledge",
+  ar: "مصادر / وسائل المعرفة",
+  tier: 0,
+  k: [
+    {
+      id: "S1",
+      en: "Perception / Sensation",
+      ar: "الحِسّ",
+      tr: "pratyakṣa",
+      tier: 1,
+      k: [
+        { en: "External perception",      ar: "الإدراك الخارجي",  tr: "bāhya pratyakṣa" },
+        { en: "Internal perception",      ar: "الإدراك الباطني",  tr: "mānasa pratyakṣa" },
+        { en: "Self-perception",          ar: "الشُّعور بالذات",   tr: "svasaṃvedana" },
+        { en: "Extraordinary perception", ar: "الإدراك الفائق",   tr: "yogaja / mushāhadah" }
+      ]
+    },
+    {
+      id: "S2",
+      en: "Inference / Reason",
+      ar: "العَقل",
+      tr: "anumāna",
+      tier: 1,
+      k: [
+        { en: "Deductive inference",  ar: "الاستنباط البُرهاني" },
+        { en: "Inductive inference",  ar: "الاستقراء" },
+        { en: "Abductive inference",  ar: "الاستدلال الافتراضي" },
+        { en: "Necessary reason",     ar: "العَقل الضَّروري" },
+        { en: "Speculative reason",   ar: "العَقل النَّظَري" }
+      ]
+    },
+    {
+      id: "S3",
+      en: "Testimony",
+      ar: "الخَبَر",
+      tr: "śabda",
+      tier: 2,
+      k: [
+        { en: "Direct witness testimony", ar: "الشَّهادة المباشرة" },
+        { en: "Reported testimony",       ar: "الخَبَر المنقول" },
+        { en: "Authoritative testimony",  ar: "خَبَر الثِّقة",       tr: "āpta-vacana" },
+        { en: "Scriptural testimony",     ar: "النَّقل الشَّرعي" }
+      ]
+    },
+    {
+      id: "S4",
+      en: "Mass-transmission",
+      ar: "التَّواتُر",
+      tier: 3,
+      k: [
+        { en: "Verbal mass-transmission",     ar: "تَواتُر لَفظي" },
+        { en: "Meaning mass-transmission",    ar: "تَواتُر مَعنوي" },
+        { en: "Practical mass-transmission",  ar: "تَواتُر عَمَلي" }
+      ]
+    },
+    {
+      id: "S5",
+      en: "Comparison / Analogy",
+      ar: "القياس",
+      tr: "upamāna",
+      tier: 2,
+      k: [
+        { en: "Analogy by ratio legis",  ar: "قياس العِلَّة" },
+        { en: "Analogy by indication",   ar: "قياس الدِّلالة" },
+        { en: "Analogy by resemblance",  ar: "قياس الشَّبَه" },
+        { en: "A fortiori analogy",      ar: "قياس الأَوْلى" }
+      ]
+    },
+    {
+      id: "S6",
+      en: "Postulation / IBE",
+      ar: "الاستنباط الافتراضي",
+      tr: "arthāpatti",
+      tier: 3,
+      k: [
+        { en: "From perceived fact",          ar: "من مُعطى مُشاهَد",  tr: "dṛṣṭārthāpatti" },
+        { en: "From heard fact",              ar: "من خَبَر مَسموع",    tr: "śrutārthāpatti" },
+        { en: "Inference to best explanation",ar: "الاستدلال على أفضل تفسير" }
+      ]
+    },
+    {
+      id: "S7",
+      en: "Non-apprehension",
+      ar: "عَدَم الإدراك",
+      tr: "anupalabdhi",
+      tier: 3,
+      k: [
+        { en: "Prior absence",       ar: "العَدَم السابِق",    tr: "prāgabhāva" },
+        { en: "Posterior absence",   ar: "العَدَم اللَّاحِق",   tr: "pradhvaṃsābhāva" },
+        { en: "Mutual absence",      ar: "العَدَم التَّبادُلي", tr: "anyonyābhāva" },
+        { en: "Absolute absence",    ar: "العَدَم المُطلَق",   tr: "atyantābhāva" }
+      ]
+    },
+    {
+      id: "S8",
+      en: "Memory",
+      ar: "الذاكرة",
+      tr: "smṛti",
+      tier: 2,
+      k: [
+        { en: "Recollection",      ar: "التَّذَكُّر" },
+        { en: "Recognition",       ar: "التَّعَرُّف",   tr: "pratyabhijñā" },
+        { en: "Episodic memory",   ar: "ذاكرة الأحداث" },
+        { en: "Semantic memory",   ar: "ذاكرة المعاني" }
+      ]
+    },
+    {
+      id: "S9",
+      en: "Innate disposition / Intuition",
+      ar: "الفِطرة / الحَدْس",
+      tier: 2,
+      k: [
+        { en: "Primordial disposition (Sunni)", ar: "الفِطرة" },
+        { en: "Intuition of first principles",  ar: "بَدَهيات العَقل" },
+        { en: "Innate moral knowledge",         ar: "المعرفة الأخلاقية الفطرية", tr: "liángzhī" },
+        { en: "Self-evident axioms",            ar: "العُلوم الضَّرورية" }
+      ]
+    },
+    {
+      id: "S10",
+      en: "Inspiration / Mystical apprehension",
+      ar: "الإلهام / الكَشْف",
+      tier: 3,
+      k: [
+        { en: "Ilhām (inspiration)",   ar: "الإلهام" },
+        { en: "Kashf (unveiling)",     ar: "الكَشْف" },
+        { en: "True dream-vision",     ar: "الرُّؤيا الصَّادِقة" }
+      ]
+    },
+    {
+      id: "S11",
+      en: "Revelation",
+      ar: "الوحي",
+      tier: 3,
+      k: [
+        { en: "Recited revelation (Quran)",      ar: "الوحي المتلوّ" },
+        { en: "Non-recited revelation (Sunnah)", ar: "الوحي غير المتلوّ" },
+        { en: "Modes of receiving revelation",   ar: "أوجُه نزول الوحي" }
+      ]
+    }
+  ]
+};
+
+// =============================================================================
+// LAYOUT CONSTANTS
+// =============================================================================
+const NODE_W      = 260;
+const ROOT_W      = 280;
+const LEAF_W      = 240;
+const NODE_H      = 72;     // standard slot height
+const LEAF_H      = 60;     // smaller for level-3 leaves
+const LEVEL_GAP   = 60;     // horizontal gap between levels
+const VGAP        = 12;     // vertical gap between siblings
+const PAD         = 28;     // outer padding
+
+// =============================================================================
+// STATE
+// =============================================================================
+const expanded = new Set();   // ids of currently-expanded nodes
+
+// =============================================================================
+// IDENTITY HELPERS
+// =============================================================================
+let _autoId = 0;
+function getId(node) {
+  if (!node._id) {
+    node._id = node.id || ('n' + (++_autoId));
+  }
+  return node._id;
+}
+
+// Pre-assign IDs and build parent links
+function preprocess(node, parent, level) {
+  getId(node);
+  node._parent = parent;
+  node._level = level;
+  if (node.k) for (const c of node.k) preprocess(c, node, level + 1);
+}
+
+// =============================================================================
+// SIZE HELPERS
+// =============================================================================
+function widthOf(node) {
+  if (node._level === 0) return ROOT_W;
+  if (node._level === 2) return LEAF_W;
+  return NODE_W;
+}
+function heightOf(node) {
+  return node._level === 2 ? LEAF_H : NODE_H;
+}
+function slotHeightOf(node) {
+  return heightOf(node) + VGAP;
+}
+
+// =============================================================================
+// LAYOUT — recursive
+// =============================================================================
+function subtreeHeight(node) {
+  const own = slotHeightOf(node);
+  if (!expanded.has(getId(node)) || !node.k || !node.k.length) return own;
+  const childTotal = node.k.reduce((s, c) => s + subtreeHeight(c), 0);
+  return Math.max(own, childTotal);
+}
+
+function assignPositions(node, x, top) {
+  const subH = subtreeHeight(node);
+  node._x = x;
+  node._y = top + (subH - heightOf(node)) / 2;
+  node._visible = true;
+
+  if (expanded.has(getId(node)) && node.k) {
+    let cy = top;
+    let cx = x + widthOf(node) + LEVEL_GAP;
+    for (const child of node.k) {
+      const ch = subtreeHeight(child);
+      assignPositions(child, cx, cy);
+      cy += ch;
+    }
+  } else if (node.k) {
+    for (const c of node.k) markInvisible(c);
+  }
+}
+
+function markInvisible(node) {
+  node._visible = false;
+  if (node.k) for (const c of node.k) markInvisible(c);
+}
+
+// =============================================================================
+// RENDER
+// =============================================================================
+const diagram = document.getElementById("diagram");
+const svg     = document.getElementById("connections");
+const hint    = document.getElementById("hint");
+
+function escape(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[c]));
+}
+
+function createNodeEl(node) {
+  const el = document.createElement("div");
+  el.id = "node-" + getId(node);
+  el.dataset.id = getId(node);
+  el.className = "node tier-" + (node.tier !== undefined ? node.tier : 3) + " entering";
+  if (node.k && node.k.length) el.classList.add("has-children");
+  if (node._level === 2) el.classList.add("level-3");
+
+  let html = "";
+  if (node.id && node._level === 1) {
+    html += `<div class="node-meta">${escape(node.id)}</div>`;
+  }
+  html += `<div class="node-en">${escape(node.en)}</div>`;
+  if (node.ar) html += `<div class="node-ar">${escape(node.ar)}</div>`;
+  if (node.tr) html += `<div class="node-tr">${escape(node.tr)}</div>`;
+  el.innerHTML = html;
+
+  if (node.k && node.k.length) {
+    const t = document.createElement("div");
+    t.className = "node-toggle";
+    t.textContent = "+";
+    el.appendChild(t);
+
+    el.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      const id = getId(node);
+      if (expanded.has(id)) expanded.delete(id);
+      else expanded.add(id);
+      render();
+    });
+  }
+
+  el.style.left = node._x + "px";
+  el.style.top  = node._y + "px";
+  return el;
+}
+
+function updateNodeEl(el, node) {
+  el.style.left = node._x + "px";
+  el.style.top  = node._y + "px";
+  el.classList.toggle("expanded", expanded.has(getId(node)));
+  const t = el.querySelector(".node-toggle");
+  if (t) t.textContent = expanded.has(getId(node)) ? "−" : "+";
+}
+
+function render() {
+  // 1. Recompute layout
+  assignPositions(SOURCES_DATA, PAD, PAD);
+
+  // 2. Walk all nodes; create / update / remove DOM
+  const allNodes = [];
+  (function collect(n){ allNodes.push(n); if (n.k) n.k.forEach(collect); })(SOURCES_DATA);
+
+  let maxX = 0, maxY = 0;
+  const visibleIds = new Set();
+
+  for (const node of allNodes) {
+    if (node._visible) {
+      visibleIds.add(getId(node));
+      const id = "node-" + getId(node);
+      let el = document.getElementById(id);
+      if (!el) {
+        el = createNodeEl(node);
+        diagram.appendChild(el);
+        // Trigger entrance animation on the next frame
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => el.classList.remove("entering"));
+        });
+      } else {
+        updateNodeEl(el, node);
+      }
+      const rightX = node._x + widthOf(node);
+      const bottomY = node._y + heightOf(node);
+      if (rightX > maxX) maxX = rightX;
+      if (bottomY > maxY) maxY = bottomY;
+    }
+  }
+
+  // Remove nodes no longer visible
+  diagram.querySelectorAll(".node").forEach(el => {
+    if (!visibleIds.has(el.dataset.id)) el.remove();
+  });
+
+  // 3. Update connections
+  updateConnections(allNodes);
+
+  // 4. Resize container
+  const totalW = maxX + PAD;
+  const totalH = maxY + PAD;
+  diagram.style.width  = totalW + "px";
+  diagram.style.height = totalH + "px";
+  svg.setAttribute("viewBox", `0 0 ${totalW} ${totalH}`);
+  svg.setAttribute("width",  totalW);
+  svg.setAttribute("height", totalH);
+
+  // 5. Update / hide hint
+  if (expanded.size === 0) {
+    hint.textContent = "↑ Click the root node to reveal the eleven sources of knowledge";
+    hint.style.left = (PAD + ROOT_W + 24) + "px";
+    hint.style.top  = (SOURCES_DATA._y + 24) + "px";
+    hint.classList.remove("hidden");
+  } else {
+    hint.classList.add("hidden");
+  }
+}
+
+function updateConnections(allNodes) {
+  const paths = [];
+  for (const node of allNodes) {
+    if (!node._visible || !node._parent || !node._parent._visible) continue;
+    const p = node._parent;
+    const fromX = p._x + widthOf(p);
+    const fromY = p._y + heightOf(p) / 2;
+    const toX   = node._x;
+    const toY   = node._y + heightOf(node) / 2;
+    const dx    = (toX - fromX) / 2;
+    const d = `M ${fromX} ${fromY} C ${fromX + dx} ${fromY}, ${toX - dx} ${toY}, ${toX} ${toY}`;
+    paths.push(d);
+  }
+  // Render as a single innerHTML write to keep things simple
+  svg.innerHTML = paths.map(d => `<path d="${d}"/>`).join("");
+}
+
+// =============================================================================
+// CONTROLS
+// =============================================================================
+function expandAll() {
+  (function visit(n){
+    if (n.k && n.k.length) {
+      expanded.add(getId(n));
+      n.k.forEach(visit);
+    }
+  })(SOURCES_DATA);
+  render();
+}
+
+function collapseAll() {
+  expanded.clear();
+  render();
+}
+
+// =============================================================================
+// BOOT
+// =============================================================================
+preprocess(SOURCES_DATA, null, 0);
+render();  // initial render: only root visible (expanded set is empty)
+</script>
+
+</body>
+</html>

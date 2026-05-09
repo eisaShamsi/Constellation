@@ -344,3 +344,58 @@ Either: (a) fix any build errors Eisa reports, or (b) cascade §1D (PropertyEdit
 ## Verbatim Eisa quotes captured in this phase
 
 - *"I was referring to this."* (2026-05-09 — Stop-On-Correction; "Proceed" meant Build cascade, not the Claude Code UI investigation)
+
+---
+
+## Phase 15 — MIG-021 cascade pause; v2 Redesign Architect drafted
+
+After Stage 3 RTL fixes landed (`ec288fe`), Eisa surfaced the usability concern: 11 flat horizontal sources are too abstract for non-expert recognition. ("Constructed Idea is easier than Semantic Contents.") Asked whether the code captured the whole taxonomy.
+
+### Honest gap-disclosure
+
+Acknowledged: only the 11 horizontal sources were embedded; the 5-branch vertical tree (~218 nodes) was projected onto the existing strata field per Concept Paper v2.0 §3.3 but not separately addressable; the 218 deeper sub-nodes were not in code at all.
+
+### The pivot
+
+Eisa picked Option B (two parallel fields per note: horizontal `sources:` + new vertical `content_type:`) + at least 2 levels of depth on the horizontal axis.
+
+I drafted a 51-sub-leaf decomposition for the 11 horizontal parents (§3 of an in-flight Architect). Eisa challenged: "Where did I mention the 11 source? Which document?" — a sharp BASIC-RULE check. I conceded honestly: the "11" came from his taxonomy doc Section III + my question framing, not from his personal directive. Eisa then directed me to wait while he developed the horizontal taxonomy himself rather than ratifying my draft.
+
+### Eisa-authored horizontal taxonomy delivered
+
+Eisa shared `sources-of-knowledge-diagram.html` — 3-level interactive diagram, EN+AR+transliteration, 11 parents with TIER METADATA (Tier 1/2/3 acceptance), 41 sub-leaves in scholarly traditional terms (uṣūl al-fiqh classifications, classical pramāṇa sub-distinctions, Mīmāṃsā arthāpatti types, etc.). Substantively different from my generic-modern draft.
+
+Saved to `docs/sources-of-knowledge-diagram.html` as canonical.
+
+### Tier dimension is new
+
+Tier metadata was not in my earlier work. Implications: tier-coloring in the tree picker (teal/purple/amber per the diagram), Settings → Sources opt-out for Tier 3 (school-specific sources users may not endorse), classifier confidence-fallback (when top-1 is Tier 3 and confidence is borderline, suggest Tier 1/2 alternative to avoid surfacing contested categories on secular notes).
+
+### Fresh v2 Redesign Architect drafted
+
+`lab/reports/MIG-021v2-EPISTEMIC-CLASSIFIER-REDESIGN-ARCHITECT.md` — supersedes the original. Built against Eisa's canonical horizontal taxonomy. New sections:
+- §2 horizontal taxonomy (Eisa-canonical, no ratification needed)
+- §3 vertical axis (lifted from existing chart)
+- §5 tree picker UI (mirrors both diagrams)
+- §6 classifier extension with tier-aware fallback
+- §10 tier system UX
+- §11 Concept Paper v2.1 amendments (deferred to §1K' close-out)
+- §12 8 open questions locked with defaults
+
+### Orientation v1.79 bumped (per SO #6 — Architect ship trigger)
+
+Preamble notes the pivot, the Eisa-authored taxonomy, the redesign Architect, the preserved foundation on `main`.
+
+### What's preserved on `main`
+
+All commits from §1A through §1C (incl. 3 fix commits) — `4d6ef37`, `dcbd40e`, `4e70393`, `c3f3e96`, `4769fbe`, `ec288fe`. Substantively nothing rolled back. The v2 redesign expands vocabulary + replaces flat picker with tree picker; foundation adapts.
+
+### Boss review pending
+
+Architect §14 has the checklist — 7 items for Eisa to ratify or revise. On approval, new Plan doc → Build cascade resumes per Plan-Approval-Equals-Build-Approval.
+
+## Verbatim Eisa quotes captured in v1.79 preamble
+
+- *"It would be easier for regular users to select the right source if we include the whole taxonomy. ... We will give the user the choice to choose the right level."* (2026-05-09 — Option B + 2-level depth directive)
+- *"Where did I mention the 11 source? Which document?"* (2026-05-09 — BASIC RULE check; surfaced that "the 11" came from his taxonomy doc + my framing, not a separate personal directive)
+- *"I want you to wait until I develop the Horizontal Axis: Sources / Means of Knowledge taxonomy."* (2026-05-09 — pause directive; honored before drafting v2 Architect)
