@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Universal Epistemic Content Taxonomy — Five-Level Chart</title>
+<style>
+  :root {
+    --bg: #fafaf7;
+    --surface: #ffffff;
+    --text: #1a1a18;
+    --text-muted: #6b6a64;
+    --border: rgba(0,0,0,0.08);
+    --border-strong: rgba(0,0,0,0.18);
+    --shadow: 0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04);
+    --radius: 10px;
+
+    --c-gray:   #5f5e5a;  --c-gray-bg:   #f1efe8;
+    --c-purple: #534ab7;  --c-purple-bg: #eeedfe;
+    --c-teal:   #0f6e56;  --c-teal-bg:   #e1f5ee;
+    --c-pink:   #993556;  --c-pink-bg:   #fbeaf0;
+    --c-coral:  #993c1d;  --c-coral-bg:  #faece7;
+    --c-amber:  #854f0b;  --c-amber-bg:  #faeeda;
+
+    --font-en: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", system-ui, sans-serif;
+    --font-ar: "Iowan Old Style", "Amiri", "Sakkal Majalla", "Noto Naskh Arabic", "Times New Roman", serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1a18;
+      --surface: #232320;
+      --text: #ebeae3;
+      --text-muted: #a09e94;
+      --border: rgba(255,255,255,0.08);
+      --border-strong: rgba(255,255,255,0.18);
+      --shadow: 0 1px 2px rgba(0,0,0,0.2), 0 4px 16px rgba(0,0,0,0.3);
+      --c-gray-bg:   #2c2c2a;
+      --c-purple-bg: #1f1c3a;
+      --c-teal-bg:   #0a3326;
+      --c-pink-bg:   #361420;
+      --c-coral-bg:  #3a1c0e;
+      --c-amber-bg:  #3a2706;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-en);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    font-size: 15px;
+  }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 32px 40px 24px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    backdrop-filter: blur(8px);
+  }
+  header h1 {
+    margin: 0 0 4px;
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  header h2 {
+    margin: 0 0 12px;
+    font-family: var(--font-ar);
+    font-size: 22px;
+    font-weight: 400;
+    direction: rtl;
+    text-align: left;
+    color: var(--text-muted);
+  }
+  header p.lead {
+    margin: 0 0 20px;
+    color: var(--text-muted);
+    font-size: 14px;
+    max-width: 60ch;
+  }
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+  .controls button, .controls input {
+    font: inherit;
+    font-size: 13px;
+    padding: 7px 14px;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .controls button:hover { background: var(--c-gray-bg); border-color: var(--c-gray); }
+  .controls input { cursor: text; min-width: 240px; }
+  .controls input:focus { outline: 2px solid var(--c-purple); outline-offset: -1px; }
+  .legend {
+    margin-left: auto;
+    display: flex;
+    gap: 12px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .legend-swatch {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .legend-swatch::before {
+    content: '';
+    width: 10px; height: 10px;
+    border-radius: 2px;
+    background: currentColor;
+  }
+  .legend-swatch.purple { color: var(--c-purple); }
+  .legend-swatch.teal   { color: var(--c-teal); }
+  .legend-swatch.pink   { color: var(--c-pink); }
+  .legend-swatch.coral  { color: var(--c-coral); }
+  .legend-swatch.amber  { color: var(--c-amber); }
+
+  main {
+    padding: 32px 40px 80px;
+    max-width: 1200px;
+  }
+
+  ul.tree {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  ul.tree ul {
+    list-style: none;
+    padding-left: 28px;
+    margin: 0;
+    border-left: 1px solid var(--border);
+    margin-left: 14px;
+    overflow: hidden;
+    transition: max-height 0.25s ease;
+  }
+  body[dir="rtl"] ul.tree ul {
+    padding-left: 0;
+    padding-right: 28px;
+    border-left: none;
+    border-right: 1px solid var(--border);
+    margin-left: 0;
+    margin-right: 14px;
+  }
+  li.node {
+    margin: 0;
+    position: relative;
+  }
+  .node-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 6px 10px 6px 8px;
+    border-radius: 6px;
+    cursor: default;
+    transition: background 0.12s;
+  }
+  li.has-children > .node-row { cursor: pointer; }
+  li.has-children > .node-row:hover { background: var(--c-gray-bg); }
+  .toggle {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 10px;
+    line-height: 14px;
+    user-select: none;
+    transition: transform 0.15s;
+    flex-shrink: 0;
+  }
+  li.has-children.collapsed > .node-row .toggle { transform: rotate(-90deg); }
+  li:not(.has-children) > .node-row .toggle { visibility: hidden; }
+  li.has-children.collapsed > ul { max-height: 0 !important; }
+
+  .label-en {
+    font-weight: 500;
+    color: var(--text);
+  }
+  .label-ar {
+    font-family: var(--font-ar);
+    font-size: 0.95em;
+    color: var(--text-muted);
+    direction: rtl;
+    unicode-bidi: isolate;
+  }
+  .count {
+    font-size: 11px;
+    color: var(--text-muted);
+    background: var(--c-gray-bg);
+    padding: 1px 7px;
+    border-radius: 999px;
+    margin-left: auto;
+  }
+
+  /* Branch color stripes */
+  li.color-purple > .node-row { border-left: 3px solid var(--c-purple); padding-left: 9px; }
+  li.color-teal   > .node-row { border-left: 3px solid var(--c-teal);   padding-left: 9px; }
+  li.color-pink   > .node-row { border-left: 3px solid var(--c-pink);   padding-left: 9px; }
+  li.color-coral  > .node-row { border-left: 3px solid var(--c-coral);  padding-left: 9px; }
+  li.color-amber  > .node-row { border-left: 3px solid var(--c-amber);  padding-left: 9px; }
+  li.color-gray   > .node-row { border-left: 3px solid var(--c-gray);   padding-left: 9px; }
+
+  /* Level 1 (root) — prominent */
+  li.level-1 > .node-row {
+    background: var(--c-gray-bg);
+    padding: 14px 14px 14px 11px;
+    border-radius: var(--radius);
+    margin-bottom: 8px;
+    box-shadow: var(--shadow);
+  }
+  li.level-1 > .node-row .label-en { font-size: 18px; font-weight: 600; }
+  li.level-1 > .node-row .label-ar { font-size: 17px; }
+
+  /* Level 2 (branches) — strong */
+  li.level-2 > .node-row {
+    padding: 10px 12px 10px 9px;
+    border-radius: 8px;
+    margin: 8px 0 4px;
+    font-weight: 500;
+  }
+  li.level-2.color-purple > .node-row { background: var(--c-purple-bg); }
+  li.level-2.color-teal   > .node-row { background: var(--c-teal-bg); }
+  li.level-2.color-pink   > .node-row { background: var(--c-pink-bg); }
+  li.level-2.color-coral  > .node-row { background: var(--c-coral-bg); }
+  li.level-2.color-amber  > .node-row { background: var(--c-amber-bg); }
+  li.level-2 > .node-row .label-en { font-size: 16px; }
+  li.level-2 > .node-row .label-ar { font-size: 15px; }
+
+  /* Level 3 — moderate */
+  li.level-3 > .node-row .label-en { font-size: 15px; }
+
+  /* Level 4-5 — compact */
+  li.level-4 > .node-row, li.level-5 > .node-row {
+    padding-top: 4px; padding-bottom: 4px;
+  }
+  li.level-4 > .node-row .label-en, li.level-5 > .node-row .label-en {
+    font-size: 14px; font-weight: 400;
+  }
+  li.level-5 > .node-row .label-en { color: var(--text-muted); }
+
+  /* Search highlighting */
+  li.hidden { display: none; }
+  li.match > .node-row { background: rgba(255, 220, 100, 0.18); }
+
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 24px 40px;
+    color: var(--text-muted);
+    font-size: 13px;
+    max-width: 1200px;
+  }
+  footer p { margin: 4px 0; }
+  footer a { color: var(--c-purple); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  @media (max-width: 720px) {
+    header { padding: 20px 16px 16px; }
+    main { padding: 16px; }
+    footer { padding: 16px; }
+    .legend { width: 100%; margin-left: 0; flex-wrap: wrap; }
+    ul.tree ul { padding-left: 18px; margin-left: 8px; }
+  }
+
+  @media print {
+    :root {
+      --bg: #fff;
+      --surface: #fff;
+      --text: #000;
+      --text-muted: #555;
+      --border: rgba(0,0,0,0.2);
+      --border-strong: rgba(0,0,0,0.4);
+      --shadow: none;
+    }
+    header { position: static; padding: 16px 0; border-bottom: 2px solid #000; }
+    .controls, .legend { display: none; }
+    main { padding: 16px 0; max-width: none; }
+    li.has-children.collapsed > ul { max-height: none !important; }
+    li.has-children > .node-row { cursor: default; }
+    li.has-children > .node-row:hover { background: transparent; }
+    li.level-1 > .node-row { background: #f0f0e8 !important; box-shadow: none; }
+    li { page-break-inside: avoid; }
+    .toggle { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Universal Epistemic Content Taxonomy</h1>
+  <h2>تصنيف المحتوى المعرفي الكوني</h2>
+  <p class="lead">Five-level hierarchical reference. Click any node with children to expand or collapse it. Companion to the comparative civilizational essay on epistemic content.</p>
+  <div class="controls">
+    <button onclick="expandAll()">Expand all</button>
+    <button onclick="collapseAll()">Collapse to branches</button>
+    <button onclick="resetView()">Reset</button>
+    <input type="text" id="search" placeholder="Filter by English or Arabic term…" oninput="filter(this.value)">
+    <button onclick="window.print()">Print</button>
+    <div class="legend" aria-label="Branch colors">
+      <span class="legend-swatch purple">Sensory</span>
+      <span class="legend-swatch teal">Symbolic</span>
+      <span class="legend-swatch pink">Semantic</span>
+      <span class="legend-swatch coral">States</span>
+      <span class="legend-swatch amber">Constructs</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <ul id="tree" class="tree"></ul>
+</main>
+
+<footer>
+  <p>Companion to <em>Epistemic Content: A Comparative Civilizational Survey</em> (Eisa, 2026).</p>
+  <p>Synthesized from five major epistemological traditions — Greek &amp; Western analytic, Arabic-Islamic Sunni (kalām, uṣūl al-fiqh, falsafa), Indian pramāṇa-vāda, classical Chinese (Mohist, Confucian, Daoist, Neo-Confucian), and Persian-Islamic Ishrāqī — with supplementary input from Jewish, Tibetan Buddhist, African, and Mesoamerican philosophy.</p>
+  <p>Accuracy rating: 4 / 5 — defensible scholarly construction, not the canonical doctrine of any single school.</p>
+</footer>
+
+<script>
+// === DATA ===
+// Keys: en (English), ar (Arabic), c (color, inherited), k (children)
+
+const TAXONOMY = {
+  en: "Epistemic content",
+  ar: "المحتوى المعرفي",
+  c: "gray",
+  k: [
+    {
+      en: "Sensory inputs",
+      ar: "المُدخَلات الحسية",
+      c: "purple",
+      k: [
+        { en: "Signal", ar: "إشارة", k: [
+          { en: "Physical signal", ar: "إشارة فيزيائية", k: [
+            { en: "Electromagnetic", ar: "كهرومغناطيسية" },
+            { en: "Acoustic",        ar: "صوتية" },
+            { en: "Mechanical",      ar: "ميكانيكية" },
+            { en: "Chemical",        ar: "كيميائية" }
+          ]},
+          { en: "Biological signal", ar: "إشارة بيولوجية", k: [
+            { en: "Neural",      ar: "عصبية" },
+            { en: "Hormonal",    ar: "هرمونية" },
+            { en: "Bioelectric", ar: "كهربائية حيوية" }
+          ]}
+        ]},
+        { en: "Stimulus", ar: "مُنبِّه", k: [
+          { en: "Distal stimulus",        ar: "مُنبِّه بعيد" },
+          { en: "Proximal stimulus",      ar: "مُنبِّه قريب" },
+          { en: "Conditioned stimulus",   ar: "مُنبِّه مَشروط" },
+          { en: "Unconditioned stimulus", ar: "مُنبِّه غير مَشروط" }
+        ]},
+        { en: "Sense-datum", ar: "مُعطى حِسِّي", k: [
+          { en: "Visual qualia",          ar: "مُعطيات بصرية" },
+          { en: "Auditory qualia",        ar: "مُعطيات سمعية" },
+          { en: "Tactile qualia",         ar: "مُعطيات لمسية" },
+          { en: "Olfactory qualia",       ar: "مُعطيات شمية" },
+          { en: "Gustatory qualia",       ar: "مُعطيات ذوقية" },
+          { en: "Proprioceptive qualia",  ar: "مُعطيات حِسِّية حركية" }
+        ]},
+        { en: "Percept", ar: "مُدرَك حِسِّي", k: [
+          { en: "Indeterminate percept (nirvikalpa)", ar: "إدراك غير مُحدَّد", k: [
+            { en: "Pure sensation",         ar: "إحساس صِرف" }
+          ]},
+          { en: "Determinate percept (savikalpa)", ar: "إدراك مُحدَّد", k: [
+            { en: "Object recognition",     ar: "تَعَرُّف على الموضوع" },
+            { en: "Categorized perception", ar: "إدراك مُصنَّف" }
+          ]},
+          { en: "Extra-ordinary perception (alaukika)", ar: "إدراك فائق", k: [
+            { en: "Generic (sāmānyalakṣaṇa)",  ar: "إدراك للنوع العام" },
+            { en: "Acquired (jñānalakṣaṇa)",   ar: "إدراك مُكتسَب" },
+            { en: "Yogic (yogaja)",            ar: "إدراك تأمُّلي" }
+          ]}
+        ]}
+      ]
+    },
+    {
+      en: "Symbolic entities",
+      ar: "الكيانات الرمزية",
+      c: "teal",
+      k: [
+        { en: "Sign (Peirce's classification)", ar: "علامة (تصنيف بيرس)", k: [
+          { en: "Icon — by resemblance", ar: "أيقونة — بالمشابهة", k: [
+            { en: "Image",     ar: "صورة" },
+            { en: "Diagram",   ar: "مُخطَّط" },
+            { en: "Metaphor",  ar: "استعارة" }
+          ]},
+          { en: "Index — by causal connection", ar: "دلالة سببية — بالاقتران", k: [
+            { en: "Symptom",   ar: "عَرَض" },
+            { en: "Trace",     ar: "أثَر" },
+            { en: "Pointer",   ar: "مُؤَشِّر" }
+          ]},
+          { en: "Symbol — by convention", ar: "رمز اصطلاحي — بالتواضُع", k: [
+            { en: "Word",             ar: "كلمة" },
+            { en: "Numeral",          ar: "رقم" },
+            { en: "Logical operator", ar: "مُؤَثِّر منطقي" }
+          ]}
+        ]},
+        { en: "Symbol", ar: "رَمز", k: [
+          { en: "Linguistic symbol", ar: "رمز لُغوي", k: [
+            { en: "Phoneme",  ar: "فونيم / صَوتية" },
+            { en: "Morpheme", ar: "مورفيم / صَرفية" },
+            { en: "Lexeme",   ar: "ليكسيم / مُعجَمية" }
+          ]},
+          { en: "Mathematical symbol",  ar: "رمز رياضي" },
+          { en: "Logical symbol",       ar: "رمز منطقي" },
+          { en: "Iconographic symbol",  ar: "رمز أيقوني" }
+        ]},
+        { en: "Data", ar: "بيانات", k: [
+          { en: "Structured data", ar: "بيانات مُهيكَلة", k: [
+            { en: "Tabular",     ar: "جَدوَلية" },
+            { en: "Relational",  ar: "علائقية" }
+          ]},
+          { en: "Semi-structured data", ar: "بيانات شبه مُهيكَلة", k: [
+            { en: "JSON / XML / YAML", ar: "صِيَغ مُتسلسِلة" }
+          ]},
+          { en: "Unstructured data", ar: "بيانات غير مُهيكَلة", k: [
+            { en: "Text",   ar: "نص" },
+            { en: "Image",  ar: "صورة" },
+            { en: "Audio",  ar: "صوت" },
+            { en: "Video",  ar: "فيديو" }
+          ]},
+          { en: "Quantitative data",  ar: "بيانات كمية" },
+          { en: "Qualitative data",   ar: "بيانات نوعية" }
+        ]},
+        { en: "Code", ar: "شِفرة / ترميز", k: [
+          { en: "Natural language code",  ar: "شِفرة لغة طبيعية" },
+          { en: "Formal language code",   ar: "شِفرة لغة صورية" },
+          { en: "Computer code",          ar: "شِفرة حاسوبية" },
+          { en: "Cryptographic code",     ar: "شِفرة تَعمية" }
+        ]},
+        { en: "Inscription", ar: "تَدوين", k: [
+          { en: "Oral",       ar: "شَفَوي" },
+          { en: "Manuscript", ar: "مَخطوط" },
+          { en: "Print",      ar: "مَطبوع" },
+          { en: "Digital",    ar: "رَقمي" }
+        ]}
+      ]
+    },
+    {
+      en: "Semantic contents",
+      ar: "المحتويات الدلالية",
+      c: "pink",
+      k: [
+        { en: "Concept (taṣawwur)", ar: "مفهوم / تَصوُّر", k: [
+          { en: "Simple concept",     ar: "تَصوُّر بسيط" },
+          { en: "Compound concept",   ar: "تَصوُّر مُركَّب" },
+          { en: "Empirical concept",  ar: "مفهوم تجريبي", k: [
+            { en: "Observational", ar: "مُشاهَداتي" },
+            { en: "Experimental",  ar: "اختباري" }
+          ]},
+          { en: "A priori concept", ar: "مفهوم قَبْلي", k: [
+            { en: "Logical",       ar: "منطقي" },
+            { en: "Mathematical",  ar: "رياضي" }
+          ]},
+          { en: "Concrete concept",  ar: "مفهوم عَيني" },
+          { en: "Abstract concept",  ar: "مفهوم مُجرَّد" }
+        ]},
+        { en: "Idea", ar: "فكرة", k: [
+          { en: "Innate idea (Cartesian)",          ar: "فكرة فطرية" },
+          { en: "Adventitious idea",                ar: "فكرة مكتسَبة" },
+          { en: "Constructed idea",                 ar: "فكرة مُؤَلَّفة" },
+          { en: "Clear and distinct idea",          ar: "فكرة واضحة ومُتمايزة" }
+        ]},
+        { en: "Proposition (qaḍiyyah)", ar: "قضية", k: [
+          { en: "Categorical proposition", ar: "قضية حَملية", k: [
+            { en: "Universal affirmative", ar: "موجبة كلية" },
+            { en: "Universal negative",    ar: "سالبة كلية" },
+            { en: "Particular affirmative", ar: "موجبة جزئية" },
+            { en: "Particular negative",   ar: "سالبة جزئية" }
+          ]},
+          { en: "Hypothetical proposition", ar: "قضية شَرطية", k: [
+            { en: "Conjunctive (muttaṣilah)", ar: "متصلة" },
+            { en: "Disjunctive (munfaṣilah)", ar: "منفصلة" }
+          ]},
+          { en: "Modal proposition", ar: "قضية موجَّهة", k: [
+            { en: "Necessary",   ar: "ضرورية" },
+            { en: "Possible",    ar: "ممكنة" },
+            { en: "Impossible",  ar: "مُمتنِعة" }
+          ]}
+        ]},
+        { en: "Information (DIKW T2)", ar: "معلومات", k: [
+          { en: "Syntactic information",  ar: "معلومات بِنيوية" },
+          { en: "Semantic information",   ar: "معلومات دَلالية" },
+          { en: "Pragmatic information",  ar: "معلومات تَداولية" }
+        ]},
+        { en: "Fact (wāqiʿah)", ar: "واقعة / حقيقة", k: [
+          { en: "Empirical fact",   ar: "واقعة تجريبية" },
+          { en: "Mathematical fact",ar: "واقعة رياضية" },
+          { en: "Logical fact",     ar: "واقعة منطقية" },
+          { en: "Historical fact",  ar: "واقعة تاريخية" },
+          { en: "Moral fact",       ar: "واقعة أخلاقية" }
+        ]},
+        { en: "Meaning (maʿnā)", ar: "معنى", k: [
+          { en: "Sense vs. reference (Frege)",    ar: "المعنى مقابل المرجع" },
+          { en: "Connotation vs. denotation",     ar: "تضمين مقابل دلالة" },
+          { en: "Literal vs. figurative",         ar: "حقيقي مقابل مجازي" }
+        ]},
+        { en: "Definition (ḥadd)", ar: "تعريف / حدّ", k: [
+          { en: "Real definition",     ar: "حدّ حقيقي" },
+          { en: "Nominal definition",  ar: "حدّ اسمي" },
+          { en: "Genus-differentia",   ar: "جنس وفصل" },
+          { en: "Ostensive definition",ar: "تعريف إشاري" }
+        ]}
+      ]
+    },
+    {
+      en: "Epistemic states",
+      ar: "الحالات المعرفية",
+      c: "coral",
+      k: [
+        { en: "Compound ignorance",  ar: "جَهْل مُرَكَّب" },
+        { en: "Simple ignorance",    ar: "جَهْل بَسيط" },
+        { en: "Illusion (wahm)", ar: "وَهْم", k: [
+          { en: "Perceptual illusion",  ar: "وَهْم إدراكي" },
+          { en: "Cognitive illusion",   ar: "وَهْم معرفي" }
+        ]},
+        { en: "Doubt (shakk)", ar: "شَكّ", k: [
+          { en: "Methodological doubt",   ar: "شك مَنهَجي" },
+          { en: "Habitual doubt",         ar: "شك عَرَضي" },
+          { en: "Equipoised doubt",       ar: "شك مُتساوي الطرفين" }
+        ]},
+        { en: "Opinion (ẓann)", ar: "ظَنّ", k: [
+          { en: "Probable opinion",         ar: "ظن غالب" },
+          { en: "Well-grounded opinion",    ar: "ظن مُسوَّغ" },
+          { en: "Dispositional opinion",    ar: "ظن استعدادي" }
+        ]},
+        { en: "Belief (iʿtiqād / taṣdīq)", ar: "اعتقاد / تصديق", k: [
+          { en: "Occurrent belief",       ar: "اعتقاد حالي" },
+          { en: "Dispositional belief",   ar: "اعتقاد استعدادي" },
+          { en: "Faith (īmān)",           ar: "إيمان" }
+        ]},
+        { en: "Knowledge (ʿilm / maʿrifah)", ar: "علم / معرفة", k: [
+          { en: "By mode of representation", ar: "بحسب نمط التمثيل", k: [
+            { en: "Acquired (al-ʿilm al-ḥuṣūlī)",   ar: "علم حُصولي" },
+            { en: "Presential (al-ʿilm al-ḥuḍūrī)", ar: "علم حُضوري" }
+          ]},
+          { en: "By content type", ar: "بحسب نوع المحتوى", k: [
+            { en: "Propositional (knowledge-that)", ar: "علم قَضَوي", k: [
+              { en: "A priori — analytic",     ar: "قَبْلي — تحليلي" },
+              { en: "A priori — synthetic",    ar: "قَبْلي — تركيبي" },
+              { en: "A posteriori — empirical",ar: "بَعْدي — تجريبي" },
+              { en: "A posteriori — testimonial", ar: "بَعْدي — خَبَري" }
+            ]},
+            { en: "Procedural (knowledge-how)", ar: "علم إجرائي", k: [
+              { en: "Motor skill",    ar: "مهارة حركية" },
+              { en: "Cognitive skill",ar: "مهارة معرفية" },
+              { en: "Social skill",   ar: "مهارة اجتماعية" }
+            ]},
+            { en: "Acquaintance (knowledge-of)", ar: "معرفة بالمباشرة", k: [
+              { en: "By direct experience", ar: "بالتجربة المباشرة" },
+              { en: "By memory",            ar: "بالذاكرة" }
+            ]},
+            { en: "Tacit (Polanyi)", ar: "علم ضمني" }
+          ]},
+          { en: "By source", ar: "بحسب المصدر", k: [
+            { en: "Sensory knowledge",     ar: "علم حِسِّي" },
+            { en: "Rational knowledge",    ar: "علم عقلي" },
+            { en: "Testimonial knowledge", ar: "علم خَبَري" },
+            { en: "Revelatory knowledge",  ar: "علم وَحْيي" }
+          ]}
+        ]},
+        { en: "Certainty (yaqīn)", ar: "يَقين", k: [
+          { en: "Logical certainty",        ar: "يقين منطقي" },
+          { en: "Mathematical certainty",   ar: "يقين رياضي" },
+          { en: "Metaphysical certainty",   ar: "يقين ميتافيزيقي" },
+          { en: "Moral certainty",          ar: "يقين أخلاقي" },
+          { en: "Religious certainty", ar: "يقين ديني", k: [
+            { en: "ʿIlm al-yaqīn — knowledge of certainty",   ar: "علم اليقين" },
+            { en: "ʿAyn al-yaqīn — eye of certainty",         ar: "عين اليقين" },
+            { en: "Ḥaqq al-yaqīn — truth of certainty",       ar: "حقّ اليقين" }
+          ]}
+        ]}
+      ]
+    },
+    {
+      en: "Higher-order constructs",
+      ar: "التركيبات العُليا",
+      c: "amber",
+      k: [
+        { en: "Hypothesis (faraḍiyyah)", ar: "فَرَضيَّة", k: [
+          { en: "Working hypothesis",      ar: "فرضية عَمَل" },
+          { en: "Statistical hypothesis", ar: "فرضية إحصائية", k: [
+            { en: "Null hypothesis",         ar: "فرضية العَدَم" },
+            { en: "Alternative hypothesis",  ar: "فرضية بَديلة" }
+          ]},
+          { en: "Causal hypothesis",      ar: "فرضية سببية" }
+        ]},
+        { en: "Theory (naẓariyyah)", ar: "نَظَرية", k: [
+          { en: "Empirical theory", ar: "نظرية تجريبية", k: [
+            { en: "Descriptive",  ar: "وَصفية" },
+            { en: "Explanatory",  ar: "تفسيرية" },
+            { en: "Predictive",   ar: "تنبؤية" }
+          ]},
+          { en: "Formal theory",     ar: "نظرية صورية" },
+          { en: "Normative theory",  ar: "نظرية معيارية" }
+        ]},
+        { en: "Model (namūdhaj)", ar: "نَموذَج", k: [
+          { en: "Physical model",      ar: "نموذج فيزيائي" },
+          { en: "Mathematical model",  ar: "نموذج رياضي" },
+          { en: "Computational model", ar: "نموذج حاسوبي" },
+          { en: "Conceptual model",    ar: "نموذج مفاهيمي" }
+        ]},
+        { en: "Law (qānūn)", ar: "قانون", k: [
+          { en: "Natural law", ar: "قانون طبيعي", k: [
+            { en: "Universal law",     ar: "قانون كلي" },
+            { en: "Statistical law",   ar: "قانون إحصائي" }
+          ]},
+          { en: "Logical law", ar: "قانون منطقي", k: [
+            { en: "Identity",           ar: "الهُوية" },
+            { en: "Non-contradiction",  ar: "عدم التناقض" },
+            { en: "Excluded middle",    ar: "الثالث المرفوع" }
+          ]},
+          { en: "Divine law (sharīʿah)", ar: "شَريعة" },
+          { en: "Positive law",          ar: "قانون وَضْعي" }
+        ]},
+        { en: "Doctrine (madhhab)", ar: "مَذهَب", k: [
+          { en: "Religious doctrine",      ar: "مَذهَب ديني" },
+          { en: "Philosophical doctrine",  ar: "مَذهَب فلسفي" },
+          { en: "Scientific doctrine",     ar: "مَذهَب علمي" }
+        ]},
+        { en: "Insight (baṣīrah)", ar: "بَصيرة", k: [
+          { en: "Aesthetic insight",    ar: "بصيرة جمالية" },
+          { en: "Mystical insight",     ar: "بصيرة عرفانية" },
+          { en: "Scientific insight",   ar: "بصيرة علمية" }
+        ]},
+        { en: "Wisdom (ḥikmah)", ar: "حِكمة", k: [
+          { en: "Theoretical wisdom (sophia)",  ar: "حكمة نَظَرية" },
+          { en: "Practical wisdom (phronēsis)", ar: "حكمة عَمَلية" },
+          { en: "Productive craft (technē)",    ar: "صناعة مُنتِجة" },
+          { en: "Spiritual wisdom",             ar: "حكمة روحانية" }
+        ]},
+        { en: "Worldview (ruʾyah kawniyyah)", ar: "رؤية كَونية", k: [
+          { en: "Religious worldview",  ar: "رؤية كَونية دينية" },
+          { en: "Secular worldview",    ar: "رؤية كَونية علمانية" },
+          { en: "Syncretic worldview",  ar: "رؤية كَونية تَوفيقية" }
+        ]}
+      ]
+    }
+  ]
+};
+
+// === RENDERER ===
+function render(node, level, parentColor, parent) {
+  const color = node.c || parentColor || "gray";
+  const hasChildren = Array.isArray(node.k) && node.k.length > 0;
+  const li = document.createElement("li");
+  li.className = `node level-${level} color-${color}` + (hasChildren ? " has-children" : "");
+  li.dataset.search = (node.en + " " + node.ar).toLowerCase();
+
+  const row = document.createElement("div");
+  row.className = "node-row";
+  row.innerHTML =
+    `<span class="toggle" aria-hidden="true">▾</span>` +
+    `<span class="label-en">${escape(node.en)}</span>` +
+    `<span class="label-ar">${escape(node.ar)}</span>` +
+    (hasChildren ? `<span class="count">${countDescendants(node)}</span>` : "");
+  if (hasChildren) {
+    row.addEventListener("click", () => li.classList.toggle("collapsed"));
+  }
+  li.appendChild(row);
+
+  if (hasChildren) {
+    const ul = document.createElement("ul");
+    node.k.forEach(child => render(child, level + 1, color, ul));
+    li.appendChild(ul);
+  }
+  parent.appendChild(li);
+}
+
+function countDescendants(node) {
+  if (!node.k) return 0;
+  let n = node.k.length;
+  for (const c of node.k) n += countDescendants(c);
+  return n;
+}
+
+function escape(s) {
+  return s.replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+// === INTERACTIONS ===
+function expandAll() {
+  document.querySelectorAll("li.has-children").forEach(li => li.classList.remove("collapsed"));
+}
+function collapseAll() {
+  // Collapse everything below level 2
+  document.querySelectorAll("li.has-children").forEach(li => {
+    if (parseInt(li.className.match(/level-(\d+)/)[1]) >= 2) li.classList.add("collapsed");
+  });
+  // But keep level 1 (root) open
+  document.querySelectorAll("li.level-1.has-children").forEach(li => li.classList.remove("collapsed"));
+}
+function resetView() {
+  document.getElementById("search").value = "";
+  filter("");
+  collapseAll();
+}
+function filter(query) {
+  const q = query.trim().toLowerCase();
+  const all = document.querySelectorAll("li.node");
+  if (!q) {
+    all.forEach(li => { li.classList.remove("hidden", "match"); });
+    return;
+  }
+  // First, hide everything
+  all.forEach(li => { li.classList.add("hidden"); li.classList.remove("match"); });
+  // Show matching nodes and their ancestors and descendants
+  all.forEach(li => {
+    if (li.dataset.search.includes(q)) {
+      li.classList.remove("hidden");
+      li.classList.add("match");
+      // Show all ancestors, expanded
+      let p = li.parentElement;
+      while (p && p.id !== "tree") {
+        if (p.tagName === "LI") {
+          p.classList.remove("hidden", "collapsed");
+        }
+        p = p.parentElement;
+      }
+      // Show all descendants
+      li.querySelectorAll("li").forEach(d => d.classList.remove("hidden"));
+      li.classList.remove("collapsed");
+    }
+  });
+}
+
+// === BOOT ===
+const tree = document.getElementById("tree");
+render(TAXONOMY, 1, "gray", tree);
+collapseAll();  // Start with branches visible, sub-branches collapsed
+</script>
+
+</body>
+</html>

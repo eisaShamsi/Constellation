@@ -1,0 +1,330 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 900" font-family="Georgia, 'Times New Roman', serif">
+  <!-- Suwaidi palette tokens -->
+  <defs>
+    <style>
+      .bg{fill:#faf6e8}
+      .ink{fill:#1a1a1a}
+      .ink-soft{fill:#3a3a3a}
+      .blue{fill:#2a4a8c}
+      .gold{fill:#c9a227}
+      .cyan{fill:#2b8fa8}
+      .green{fill:#3a8a4a}
+      .amber{fill:#c9831f}
+      .red{fill:#a83232}
+      .rule{stroke:#b8a98a;stroke-width:1;fill:none}
+      .panel-bg{fill:#fbf8ec;stroke:#b8a98a;stroke-width:0.8}
+      .h-title{font-size:13px;letter-spacing:2.5px;font-weight:600;fill:#2a4a8c}
+      .h-num{font-size:34px;font-weight:600;fill:#1a1a1a}
+      .h-cap{font-size:10px;letter-spacing:2px;fill:#3a3a3a}
+      .pn-title{font-size:11px;letter-spacing:2.5px;font-weight:700;fill:#2a4a8c}
+      .pn-read{font-size:11px;font-style:italic;fill:#3a3a3a}
+      .lbl{font-size:10px;fill:#1a1a1a}
+      .lbl-soft{font-size:9px;fill:#3a3a3a}
+      .num{font-size:10px;fill:#1a1a1a;font-weight:600}
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1400" height="900" class="bg"/>
+
+  <!-- ============ HEADER STRIP ============ -->
+  <text x="700" y="40" text-anchor="middle" class="h-title">CONSTELLATION SIGHT  ·  THE SHAPE OF YOUR EPISTEMIC CONTENT</text>
+  <text x="700" y="62" text-anchor="middle" font-size="13" font-style="italic" fill="#1a1a1a">Universe: Trial-7600  ·  16 libraries  ·  spanning Mar 2025 – May 2026</text>
+
+  <!-- four headline numbers -->
+  <g transform="translate(220,100)">
+    <text x="0" y="0" class="h-cap">NOTES</text>
+    <text x="0" y="32" class="h-num">7,600</text>
+  </g>
+  <g transform="translate(530,100)">
+    <text x="0" y="0" class="h-cap">TYPED LINKS</text>
+    <text x="0" y="32" class="h-num">656,855</text>
+  </g>
+  <g transform="translate(840,100)">
+    <text x="0" y="0" class="h-cap">ACTIVE THIS MONTH</text>
+    <text x="0" y="32" class="h-num">1,247</text>
+  </g>
+  <g transform="translate(1150,100)">
+    <text x="0" y="0" class="h-cap">DORMANT &gt; 90 DAYS</text>
+    <text x="0" y="32" class="h-num">2,180</text>
+  </g>
+
+  <line x1="80" y1="155" x2="1320" y2="155" class="rule"/>
+
+  <!-- ============ PANEL 1 — STRATA (top-left) ============ -->
+  <g transform="translate(80,180)">
+    <rect width="400" height="220" rx="6" class="panel-bg"/>
+    <text x="20" y="28" class="pn-title">STRATA  ·  WHERE YOUR KNOWLEDGE SITS</text>
+
+    <!-- vertical bars: L8 (top) → L1 (bottom) -->
+    <!-- bar height area: y=50, height=140; bar width 36, gap 8 -->
+    <g transform="translate(28,50)">
+      <!-- L8 Worldview, 4%, 310 -->
+      <rect x="0" y="124" width="36" height="16" fill="#2a4a8c"/>
+      <text x="18" y="158" text-anchor="middle" class="lbl-soft">L8</text>
+      <text x="18" y="120" text-anchor="middle" class="num">310</text>
+      <!-- L7 Perspective, 8%, 600 -->
+      <rect x="44" y="108" width="36" height="32" fill="#2a4a8c"/>
+      <text x="62" y="158" text-anchor="middle" class="lbl-soft">L7</text>
+      <text x="62" y="104" text-anchor="middle" class="num">600</text>
+      <!-- L6 Framework, 13%, 990 -->
+      <rect x="88" y="88" width="36" height="52" fill="#2a4a8c"/>
+      <text x="106" y="158" text-anchor="middle" class="lbl-soft">L6</text>
+      <text x="106" y="84" text-anchor="middle" class="num">990</text>
+      <!-- L5 Theory, 20%, 1520 -->
+      <rect x="132" y="60" width="36" height="80" fill="#2a4a8c"/>
+      <text x="150" y="158" text-anchor="middle" class="lbl-soft">L5</text>
+      <text x="150" y="56" text-anchor="middle" class="num">1,520</text>
+      <!-- L4 Hypothesis, 25%, 1900 -->
+      <rect x="176" y="40" width="36" height="100" fill="#c9a227"/>
+      <text x="194" y="158" text-anchor="middle" class="lbl-soft">L4</text>
+      <text x="194" y="36" text-anchor="middle" class="num">1,900</text>
+      <!-- L3 Opinion, 15%, 1140 -->
+      <rect x="220" y="80" width="36" height="60" fill="#2a4a8c"/>
+      <text x="238" y="158" text-anchor="middle" class="lbl-soft">L3</text>
+      <text x="238" y="76" text-anchor="middle" class="num">1,140</text>
+      <!-- L2 Fact, 10%, 760 -->
+      <rect x="264" y="100" width="36" height="40" fill="#2a4a8c"/>
+      <text x="282" y="158" text-anchor="middle" class="lbl-soft">L2</text>
+      <text x="282" y="96" text-anchor="middle" class="num">760</text>
+      <!-- L1 Datum, 5%, 380 -->
+      <rect x="308" y="120" width="36" height="20" fill="#2a4a8c"/>
+      <text x="326" y="158" text-anchor="middle" class="lbl-soft">L1</text>
+      <text x="326" y="116" text-anchor="middle" class="num">380</text>
+
+      <!-- baseline -->
+      <line x1="-4" y1="140" x2="348" y2="140" stroke="#1a1a1a" stroke-width="0.8"/>
+    </g>
+
+    <text x="20" y="200" class="pn-read">Your universe peaks at L4 Hypothesis — you reason mid-stratum, light at the very top and the very bottom.</text>
+  </g>
+
+  <!-- ============ PANEL 2 — MATURITY (top-mid) ============ -->
+  <g transform="translate(500,180)">
+    <rect width="400" height="220" rx="6" class="panel-bg"/>
+    <text x="20" y="28" class="pn-title">MATURITY  ·  HOW DEVELOPED YOUR NOTES ARE</text>
+
+    <!-- horizontal stacked bar -->
+    <!-- total width 360 -->
+    <g transform="translate(20,80)">
+      <!-- Seed 25%, 90 -->
+      <rect x="0"   y="0" width="90" height="40" fill="#c9831f"/>
+      <!-- Sapling 35%, 126 -->
+      <rect x="90"  y="0" width="126" height="40" fill="#3a8a4a" opacity="0.55"/>
+      <!-- Evergreen 25%, 90 -->
+      <rect x="216" y="0" width="90" height="40" fill="#3a8a4a"/>
+      <!-- Canonical 10%, 36 -->
+      <rect x="306" y="0" width="36" height="40" fill="#c9a227"/>
+      <!-- Wilting 5%, 18 -->
+      <rect x="342" y="0" width="18" height="40" fill="#a83232" opacity="0.6"/>
+
+      <!-- labels with counts under each segment -->
+      <text x="45"  y="60" text-anchor="middle" class="lbl">seed</text>
+      <text x="45"  y="74" text-anchor="middle" class="num">1,900</text>
+
+      <text x="153" y="60" text-anchor="middle" class="lbl">sapling</text>
+      <text x="153" y="74" text-anchor="middle" class="num">2,660</text>
+
+      <text x="261" y="60" text-anchor="middle" class="lbl">evergreen</text>
+      <text x="261" y="74" text-anchor="middle" class="num">1,900</text>
+
+      <text x="324" y="60" text-anchor="middle" class="lbl-soft">canon.</text>
+      <text x="324" y="74" text-anchor="middle" class="num">760</text>
+
+      <text x="351" y="60" text-anchor="middle" class="lbl-soft">wilt.</text>
+      <text x="351" y="74" text-anchor="middle" class="num">380</text>
+    </g>
+
+    <text x="20" y="200" class="pn-read">60% of your notes are still seed or sapling — you are in active development, not consolidation.</text>
+  </g>
+
+  <!-- ============ PANEL 3 — STAGES (top-right) ============ -->
+  <g transform="translate(920,180)">
+    <rect width="400" height="220" rx="6" class="panel-bg"/>
+    <text x="20" y="28" class="pn-title">STAGES  ·  WHERE IN ITS LIFECYCLE</text>
+
+    <!-- horizontal stacked bar -->
+    <g transform="translate(20,80)">
+      <!-- Spark 15%, 54 -->
+      <rect x="0"   y="0" width="54" height="40" fill="#c9a227"/>
+      <!-- Birth 25%, 90 -->
+      <rect x="54"  y="0" width="90" height="40" fill="#c9a227" opacity="0.7"/>
+      <!-- Growth 30%, 108 -->
+      <rect x="144" y="0" width="108" height="40" fill="#3a8a4a"/>
+      <!-- Maturity 20%, 72 -->
+      <rect x="252" y="0" width="72" height="40" fill="#2a4a8c"/>
+      <!-- Dormancy 7%, 25 -->
+      <rect x="324" y="0" width="25" height="40" fill="#3a3a3a" opacity="0.55"/>
+      <!-- Archival 3%, 11 -->
+      <rect x="349" y="0" width="11" height="40" fill="#3a3a3a"/>
+
+      <text x="27"  y="60" text-anchor="middle" class="lbl">spark</text>
+      <text x="27"  y="74" text-anchor="middle" class="num">1,140</text>
+
+      <text x="99"  y="60" text-anchor="middle" class="lbl">birth</text>
+      <text x="99"  y="74" text-anchor="middle" class="num">1,900</text>
+
+      <text x="198" y="60" text-anchor="middle" class="lbl">growth</text>
+      <text x="198" y="74" text-anchor="middle" class="num">2,280</text>
+
+      <text x="288" y="60" text-anchor="middle" class="lbl">maturity</text>
+      <text x="288" y="74" text-anchor="middle" class="num">1,520</text>
+
+      <text x="336" y="60" text-anchor="middle" class="lbl-soft">dorm.</text>
+      <text x="336" y="74" text-anchor="middle" class="num">530</text>
+
+      <text x="354" y="60" text-anchor="middle" class="lbl-soft">arch.</text>
+      <text x="354" y="74" text-anchor="middle" class="num">230</text>
+    </g>
+
+    <text x="20" y="200" class="pn-read">Most of your knowledge is alive (Birth → Maturity = 76%). Only 10% is dormant or archived.</text>
+  </g>
+
+  <!-- ============ PANEL 4 — CONFIDENCE (bottom-left, donut) ============ -->
+  <g transform="translate(80,420)">
+    <rect width="400" height="220" rx="6" class="panel-bg"/>
+    <text x="20" y="28" class="pn-title">CONFIDENCE  ·  HOW CERTAIN ARE YOUR LINKS</text>
+
+    <!-- donut centered at 130,130 -->
+    <g transform="translate(130,130)">
+      <!-- Hypothesis 65%: arc from 0 to 234deg -->
+      <path d="M 0 -70 A 70 70 0 1 1 -56.66 41.13 L -32.38 23.50 A 40 40 0 1 0 0 -40 Z" fill="#c9831f"/>
+      <!-- Evidence 22%: 234 → 313.2deg (79.2deg) -->
+      <path d="M -56.66 41.13 A 70 70 0 0 1 51.18 47.78 L 29.25 27.30 A 40 40 0 0 0 -32.38 23.50 Z" fill="#3a8a4a" opacity="0.6"/>
+      <!-- Established 11%: 313.2 → 352.8deg (39.6deg) -->
+      <path d="M 51.18 47.78 A 70 70 0 0 1 68.66 -13.62 L 39.23 -7.78 A 40 40 0 0 0 29.25 27.30 Z" fill="#3a8a4a"/>
+      <!-- Contested 2%: 352.8 → 360deg (7.2deg) -->
+      <path d="M 68.66 -13.62 A 70 70 0 0 1 70 0 L 40 0 A 40 40 0 0 0 39.23 -7.78 Z" fill="#a83232"/>
+
+      <text x="0" y="-3" text-anchor="middle" font-size="12" class="lbl-soft">total</text>
+      <text x="0" y="14" text-anchor="middle" font-size="16" font-weight="600" fill="#1a1a1a">656,855</text>
+    </g>
+
+    <!-- legend right side -->
+    <g transform="translate(260,80)" font-size="11">
+      <rect x="0" y="0" width="12" height="12" fill="#c9831f"/>
+      <text x="20" y="10" class="lbl">hypothesis</text>
+      <text x="120" y="10" class="num" text-anchor="end">65%</text>
+
+      <rect x="0" y="22" width="12" height="12" fill="#3a8a4a" opacity="0.6"/>
+      <text x="20" y="32" class="lbl">evidence</text>
+      <text x="120" y="32" class="num" text-anchor="end">22%</text>
+
+      <rect x="0" y="44" width="12" height="12" fill="#3a8a4a"/>
+      <text x="20" y="54" class="lbl">established</text>
+      <text x="120" y="54" class="num" text-anchor="end">11%</text>
+
+      <rect x="0" y="66" width="12" height="12" fill="#a83232"/>
+      <text x="20" y="76" class="lbl">contested</text>
+      <text x="120" y="76" class="num" text-anchor="end">2%</text>
+    </g>
+
+    <text x="20" y="200" class="pn-read">Two-thirds of your links are still hypothesis. Only 11% have firmed into established knowledge.</text>
+  </g>
+
+  <!-- ============ PANEL 5 — LINK TYPES (bottom-mid) ============ -->
+  <g transform="translate(500,420)">
+    <rect width="400" height="220" rx="6" class="panel-bg"/>
+    <text x="20" y="28" class="pn-title">LINK TYPES  ·  WHAT KIND OF REASONING</text>
+
+    <!-- horizontal bars stacked vertically -->
+    <!-- bar area: x=120, max width=240, row height 18 -->
+    <g transform="translate(20,60)" font-size="10">
+      <!-- supports 42.9% -->
+      <text x="0" y="14" class="lbl">supports</text>
+      <rect x="100" y="3" width="206" height="14" fill="#3a8a4a"/>
+      <text x="312" y="14" class="num">42.9%</text>
+
+      <!-- derives-from 43.9% -->
+      <text x="0" y="36" class="lbl">derives-from</text>
+      <rect x="100" y="25" width="211" height="14" fill="#2a4a8c"/>
+      <text x="317" y="36" class="num">43.9%</text>
+
+      <!-- exemplifies 5.7% -->
+      <text x="0" y="58" class="lbl">exemplifies</text>
+      <rect x="100" y="47" width="27" height="14" fill="#c9a227"/>
+      <text x="133" y="58" class="num">5.7%</text>
+
+      <!-- contradicts 3.0% -->
+      <text x="0" y="80" class="lbl">contradicts</text>
+      <rect x="100" y="69" width="14" height="14" fill="#a83232"/>
+      <text x="120" y="80" class="num">3.0%</text>
+
+      <!-- causes 2.7% -->
+      <text x="0" y="102" class="lbl">causes</text>
+      <rect x="100" y="91" width="13" height="14" fill="#c9831f"/>
+      <text x="119" y="102" class="num">2.7%</text>
+
+      <!-- part-of 1.4% -->
+      <text x="0" y="124" class="lbl">part-of</text>
+      <rect x="100" y="113" width="7" height="14" fill="#2b8fa8"/>
+      <text x="113" y="124" class="num">1.4%</text>
+
+      <!-- generalizes 0.3% -->
+      <text x="0" y="146" class="lbl">generalizes</text>
+      <rect x="100" y="135" width="2" height="14" fill="#3a3a3a"/>
+      <text x="108" y="146" class="num">0.3%</text>
+    </g>
+
+    <text x="20" y="208" class="pn-read">87% of links build (supports + derives-from). Only 3% are contradicts — surface tension is rare.</text>
+  </g>
+
+  <!-- ============ PANEL 6 — ACTS (bottom-right) ============ -->
+  <g transform="translate(920,420)">
+    <rect width="400" height="220" rx="6" class="panel-bg"/>
+    <text x="20" y="28" class="pn-title">ACTS  ·  WHERE IN THE FORMULATION ARC</text>
+
+    <!-- 5-segment radial pie centered at 130,130 -->
+    <g transform="translate(130,130)">
+      <!-- Observation 38%: 0 → 136.8deg -->
+      <path d="M 0 -70 A 70 70 0 0 1 47.93 51.05 L 0 0 Z" fill="#2b8fa8"/>
+      <!-- Connection 28%: 136.8 → 237.6 (100.8deg) -->
+      <path d="M 47.93 51.05 A 70 70 0 0 1 -37.46 59.10 L 0 0 Z" fill="#c9a227"/>
+      <!-- Tension 12%: 237.6 → 280.8 (43.2deg) -->
+      <path d="M -37.46 59.10 A 70 70 0 0 1 -68.42 14.93 L 0 0 Z" fill="#a83232"/>
+      <!-- Synthesis 16%: 280.8 → 338.4 (57.6deg) -->
+      <path d="M -68.42 14.93 A 70 70 0 0 1 -25.85 -65.04 L 0 0 Z" fill="#3a8a4a"/>
+      <!-- Conviction 6%: 338.4 → 360 (21.6deg) -->
+      <path d="M -25.85 -65.04 A 70 70 0 0 1 0 -70 L 0 0 Z" fill="#2a4a8c"/>
+    </g>
+
+    <!-- legend right side -->
+    <g transform="translate(260,70)" font-size="11">
+      <rect x="0" y="0" width="12" height="12" fill="#2b8fa8"/>
+      <text x="20" y="10" class="lbl">observation</text>
+      <text x="120" y="10" class="num" text-anchor="end">38%</text>
+
+      <rect x="0" y="22" width="12" height="12" fill="#c9a227"/>
+      <text x="20" y="32" class="lbl">connection</text>
+      <text x="120" y="32" class="num" text-anchor="end">28%</text>
+
+      <rect x="0" y="44" width="12" height="12" fill="#a83232"/>
+      <text x="20" y="54" class="lbl">tension</text>
+      <text x="120" y="54" class="num" text-anchor="end">12%</text>
+
+      <rect x="0" y="66" width="12" height="12" fill="#3a8a4a"/>
+      <text x="20" y="76" class="lbl">synthesis</text>
+      <text x="120" y="76" class="num" text-anchor="end">16%</text>
+
+      <rect x="0" y="88" width="12" height="12" fill="#2a4a8c"/>
+      <text x="20" y="98" class="lbl">conviction</text>
+      <text x="120" y="98" class="num" text-anchor="end">6%</text>
+    </g>
+
+    <text x="20" y="200" class="pn-read">You are mostly observing and connecting. Only 6% has reached conviction — early formulation phase.</text>
+  </g>
+
+  <!-- ============ FOOTER ============ -->
+  <text x="700" y="690" text-anchor="middle" font-size="11" font-style="italic" fill="#3a3a3a">
+    Each panel is one dimension of your epistemic content. Click any panel to drill into the notes behind it.
+  </text>
+  <text x="700" y="710" text-anchor="middle" font-size="10" fill="#3a3a3a" letter-spacing="2">
+    HEADER  ·  STRATA  ·  MATURITY  ·  STAGES  ·  CONFIDENCE  ·  LINK TYPES  ·  ACTS
+  </text>
+
+  <!-- mock label -->
+  <text x="1320" y="880" text-anchor="end" font-size="9" fill="#b8a98a" letter-spacing="1">
+    SIGHT vNEXT — OPTION A — DASHBOARD MOCK — 2026-05-09
+  </text>
+</svg>

@@ -1,0 +1,348 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 900" font-family="Georgia, 'Times New Roman', serif">
+  <defs>
+    <style>
+      .bg{fill:#faf6e8}
+      .ink{fill:#1a1a1a}
+      .ink-soft{fill:#3a3a3a}
+      .blue{fill:#2a4a8c}
+      .gold{fill:#c9a227}
+      .red{fill:#a83232}
+      .h-title{font-size:13px;letter-spacing:2.5px;font-weight:600;fill:#2a4a8c}
+      .pn-title{font-size:11px;letter-spacing:2.5px;font-weight:700;fill:#2a4a8c}
+      .pn-read{font-size:11px;font-style:italic;fill:#3a3a3a}
+      .lbl{font-size:10px;fill:#1a1a1a}
+      .lbl-soft{font-size:9px;fill:#3a3a3a}
+      .lbl-rim{font-size:9px;fill:#2a4a8c;letter-spacing:1px}
+      .lbl-wedge{font-size:11px;fill:#2a4a8c;font-weight:600}
+      .strata-lbl{font-size:8px;fill:#3a3a3a;font-style:italic}
+    </style>
+  </defs>
+
+  <rect width="1400" height="900" class="bg"/>
+
+  <!-- ============ HEADER ============ -->
+  <text x="700" y="38" text-anchor="middle" class="h-title">CONSTELLATION SIGHT  ·  THE SAME SKY, READ THROUGH SIX MODES</text>
+  <text x="700" y="60" text-anchor="middle" font-size="13" font-style="italic" fill="#1a1a1a">Strata stays the radius. Only the wedges change.</text>
+
+  <!-- ============ MODE TOGGLE BAR ============ -->
+  <!-- 6 buttons centered at x=700. Each 50w x 44h, 10 gap. Total width 6*50+5*10 = 350. Range 525-875 -->
+  <g transform="translate(525,98)">
+
+    <!-- R — Regions (active, right dome) -->
+    <rect x="0" y="0" width="50" height="44" rx="6" fill="#c9a227"/>
+    <text x="25" y="29" text-anchor="middle" font-size="20" font-weight="700" fill="#faf6e8" font-family="Georgia, serif">R</text>
+
+    <!-- L — Link Types (ready, inactive) -->
+    <rect x="60" y="0" width="50" height="44" rx="6" fill="#fbf8ec" stroke="#1a1a1a" stroke-width="1" opacity="0.7"/>
+    <text x="85" y="29" text-anchor="middle" font-size="20" font-weight="700" fill="#1a1a1a">L</text>
+
+    <!-- T — Time (active, left dome) -->
+    <rect x="120" y="0" width="50" height="44" rx="6" fill="#c9a227"/>
+    <text x="145" y="29" text-anchor="middle" font-size="20" font-weight="700" fill="#faf6e8" font-family="Georgia, serif">T</text>
+
+    <!-- C — Confidence (available later) -->
+    <rect x="180" y="0" width="50" height="44" rx="6" fill="#fbf8ec" stroke="#b8a98a" stroke-width="1" stroke-dasharray="3 2"/>
+    <text x="205" y="29" text-anchor="middle" font-size="20" font-weight="700" fill="#1a1a1a" opacity="0.45">C</text>
+
+    <!-- S — Stages (available later) -->
+    <rect x="240" y="0" width="50" height="44" rx="6" fill="#fbf8ec" stroke="#b8a98a" stroke-width="1" stroke-dasharray="3 2"/>
+    <text x="265" y="29" text-anchor="middle" font-size="20" font-weight="700" fill="#1a1a1a" opacity="0.45">S</text>
+
+    <!-- A — Acts (available later) -->
+    <rect x="300" y="0" width="50" height="44" rx="6" fill="#fbf8ec" stroke="#b8a98a" stroke-width="1" stroke-dasharray="3 2"/>
+    <text x="325" y="29" text-anchor="middle" font-size="20" font-weight="700" fill="#1a1a1a" opacity="0.45">A</text>
+
+  </g>
+
+  <text x="700" y="170" text-anchor="middle" class="lbl-soft" font-style="italic">
+    Comparison view — in production you'd toggle between modes with one click.
+    R / T are shown active; L is ready; C / S / A available later.
+  </text>
+
+  <!-- ============ LEFT DOME — TIME ============ -->
+  <text x="350" y="220" text-anchor="middle" class="pn-title">TIME  ·  WHEN EACH NOTE WAS CREATED</text>
+
+  <g transform="translate(350,500)">
+    <!-- Outer rim circle (calendar rim) -->
+    <circle r="240" fill="none" stroke="#b8a98a" stroke-width="1.2"/>
+    <circle r="252" fill="none" stroke="#b8a98a" stroke-width="0.5" stroke-dasharray="2 4"/>
+
+    <!-- 8 strata band circles -->
+    <circle r="210" fill="none" stroke="#b8a98a" stroke-width="0.5" opacity="0.55"/>
+    <circle r="180" fill="none" stroke="#b8a98a" stroke-width="0.5" opacity="0.55"/>
+    <circle r="150" fill="none" stroke="#b8a98a" stroke-width="0.5" opacity="0.55"/>
+    <circle r="120" fill="none" stroke="#b8a98a" stroke-width="0.5" opacity="0.55"/>
+    <circle r="90"  fill="none" stroke="#b8a98a" stroke-width="0.5" opacity="0.55"/>
+    <circle r="60"  fill="none" stroke="#b8a98a" stroke-width="0.5" opacity="0.55"/>
+    <circle r="30"  fill="none" stroke="#b8a98a" stroke-width="0.5" opacity="0.55"/>
+
+    <!-- Strata labels along top spoke -->
+    <text x="0" y="-12"  class="strata-lbl" text-anchor="middle">L8</text>
+    <text x="0" y="-42"  class="strata-lbl" text-anchor="middle">L7</text>
+    <text x="0" y="-72"  class="strata-lbl" text-anchor="middle">L6</text>
+    <text x="0" y="-102" class="strata-lbl" text-anchor="middle">L5</text>
+    <text x="0" y="-132" class="strata-lbl" text-anchor="middle">L4</text>
+    <text x="0" y="-162" class="strata-lbl" text-anchor="middle">L3</text>
+    <text x="0" y="-192" class="strata-lbl" text-anchor="middle">L2</text>
+    <text x="0" y="-222" class="strata-lbl" text-anchor="middle">L1</text>
+
+    <!-- 12 month wedge spokes (very faint) -->
+    <g stroke="#b8a98a" stroke-width="0.4" opacity="0.4">
+      <line x1="0" y1="0" x2="0"      y2="-240"/>
+      <line x1="0" y1="0" x2="120"    y2="-207.85"/>
+      <line x1="0" y1="0" x2="207.85" y2="-120"/>
+      <line x1="0" y1="0" x2="240"    y2="0"/>
+      <line x1="0" y1="0" x2="207.85" y2="120"/>
+      <line x1="0" y1="0" x2="120"    y2="207.85"/>
+      <line x1="0" y1="0" x2="0"      y2="240"/>
+      <line x1="0" y1="0" x2="-120"   y2="207.85"/>
+      <line x1="0" y1="0" x2="-207.85" y2="120"/>
+      <line x1="0" y1="0" x2="-240"   y2="0"/>
+      <line x1="0" y1="0" x2="-207.85" y2="-120"/>
+      <line x1="0" y1="0" x2="-120"   y2="-207.85"/>
+    </g>
+
+    <!-- Month labels at wedge centers (each centered between spokes, at radius 262) -->
+    <!-- Wedge centers at 15°, 45°, 75°, 105°, 135°, 165°, 195°, 225°, 255°, 285°, 315°, 345° -->
+    <g class="lbl-rim" text-anchor="middle">
+      <text x="68" y="-249">JAN</text>
+      <text x="183" y="-179">FEB</text>
+      <text x="249" y="-68">MAR</text>
+      <text x="249" y="74">APR</text>
+      <text x="183" y="186">MAY</text>
+      <text x="68" y="256">JUN</text>
+      <text x="-68" y="256">JUL</text>
+      <text x="-183" y="186">AUG</text>
+      <text x="-249" y="74">SEP</text>
+      <text x="-249" y="-68">OCT</text>
+      <text x="-183" y="-179">NOV</text>
+      <text x="-68" y="-249">DEC</text>
+    </g>
+
+    <!-- Highlight current month (May) wedge -->
+    <path d="M 0 0 L 207.85 -120 A 240 240 0 0 1 240 0 Z" fill="#c9a227" opacity="0.05"/>
+
+    <!-- ===== STARS — TIME MODE ===== -->
+    <!-- Distribution biased to recent months (Feb–May 2026). Each at stratum band. -->
+
+    <!-- L8 (r≈15) — 2 canonical bright stars -->
+    <circle cx="13"  cy="-7"  r="5"   fill="#1a1a1a" opacity="1"/>     <!-- May, evidence -->
+    <circle cx="-12" cy="-9"  r="4.5" fill="#1a1a1a" opacity="0.95"/>  <!-- Apr, established -->
+
+    <!-- L7 (r≈45) — 3 stars -->
+    <circle cx="38"  cy="-24" r="5"   fill="#1a1a1a" opacity="0.95"/>  <!-- Apr, evergreen, established -->
+    <circle cx="-32" cy="-31" r="3.5" fill="#1a1a1a" opacity="0.7"/>   <!-- Feb, sapling, evidence -->
+    <circle cx="22"  cy="40"  r="3.5" fill="#1a1a1a" opacity="0.95"/>  <!-- Jun, evergreen -->
+
+    <!-- L6 (r≈75) — 4 stars -->
+    <circle cx="62"  cy="-42" r="3.5" fill="#1a1a1a" opacity="0.7"/>   <!-- Apr -->
+    <circle cx="38"  cy="65"  r="3.5" fill="#1a1a1a" opacity="0.95"/>  <!-- Jun, canonical -->
+    <circle cx="-58" cy="48"  r="2.5" fill="#1a1a1a" opacity="0.45"/>  <!-- Aug -->
+    <circle cx="-72" cy="-22" r="2.5" fill="#1a1a1a" opacity="0.7"/>   <!-- Nov -->
+
+    <!-- L5 (r≈105) — 5 stars -->
+    <circle cx="78"  cy="-70" r="3.5" fill="#1a1a1a" opacity="0.95"/>  <!-- Mar -->
+    <circle cx="103" cy="-22" r="3.5" fill="#1a1a1a" opacity="0.7"/>   <!-- Apr -->
+    <circle cx="50"  cy="92"  r="2.5" fill="#1a1a1a" opacity="0.45"/>  <!-- Jun -->
+    <circle cx="-100" cy="32" r="2.5" fill="#1a1a1a" opacity="0.7"/>   <!-- Sep -->
+    <circle cx="-65" cy="-82" r="3.5" fill="#1a1a1a" opacity="0.7"/>   <!-- Nov -->
+
+    <!-- L4 (r≈135) — 5 stars (mostly hypothesis-faint) -->
+    <circle cx="100" cy="-92" r="2"   fill="#1a1a1a" opacity="0.45"/>  <!-- Mar -->
+    <circle cx="135" cy="-12" r="2.5" fill="#1a1a1a" opacity="0.7"/>   <!-- Apr -->
+    <circle cx="68"  cy="118" r="2"   fill="#1a1a1a" opacity="0.45"/>  <!-- Jun -->
+    <circle cx="-130" cy="-42" r="1.5" fill="#a83232" opacity="0.85"/> <!-- Oct, contested -->
+    <circle cx="20"  cy="-135" r="2"  fill="#1a1a1a" opacity="0.45"/>  <!-- Dec -->
+
+    <!-- L3 (r≈165) — 4 stars -->
+    <circle cx="160" cy="-32" r="2.5" fill="#1a1a1a" opacity="0.7"/>   <!-- Apr -->
+    <circle cx="115" cy="120" r="2"   fill="#1a1a1a" opacity="0.45"/>  <!-- Jun -->
+    <circle cx="-148" cy="78" r="1.5" fill="#1a1a1a" opacity="0.45"/>  <!-- Aug -->
+    <circle cx="-58" cy="-152" r="2.5" fill="#1a1a1a" opacity="0.7"/>  <!-- Dec -->
+
+    <!-- L2 (r≈195) — 2 stars -->
+    <circle cx="178" cy="-78" r="1.5" fill="#1a1a1a" opacity="0.45"/>  <!-- Mar -->
+    <circle cx="-88" cy="172" r="1.5" fill="#1a1a1a" opacity="0.45"/>  <!-- Jul -->
+
+    <!-- L1 (r≈225) — 0 (skipping for clarity at this size) -->
+  </g>
+
+  <!-- ============ RIGHT DOME — REGIONS ============ -->
+  <text x="1050" y="220" text-anchor="middle" class="pn-title">REGIONS  ·  WHICH LIBRARY EACH NOTE IS IN</text>
+
+  <g transform="translate(1050,500)">
+    <!-- Outer rim circle -->
+    <circle r="240" fill="none" stroke="#b8a98a" stroke-width="1.2"/>
+    <circle r="252" fill="none" stroke="#b8a98a" stroke-width="0.5" stroke-dasharray="2 4"/>
+
+    <!-- 8 strata band circles (IDENTICAL to left dome) -->
+    <circle r="210" fill="none" stroke="#b8a98a" stroke-width="0.5" opacity="0.55"/>
+    <circle r="180" fill="none" stroke="#b8a98a" stroke-width="0.5" opacity="0.55"/>
+    <circle r="150" fill="none" stroke="#b8a98a" stroke-width="0.5" opacity="0.55"/>
+    <circle r="120" fill="none" stroke="#b8a98a" stroke-width="0.5" opacity="0.55"/>
+    <circle r="90"  fill="none" stroke="#b8a98a" stroke-width="0.5" opacity="0.55"/>
+    <circle r="60"  fill="none" stroke="#b8a98a" stroke-width="0.5" opacity="0.55"/>
+    <circle r="30"  fill="none" stroke="#b8a98a" stroke-width="0.5" opacity="0.55"/>
+
+    <!-- Strata labels along top spoke -->
+    <text x="0" y="-12"  class="strata-lbl" text-anchor="middle">L8</text>
+    <text x="0" y="-42"  class="strata-lbl" text-anchor="middle">L7</text>
+    <text x="0" y="-72"  class="strata-lbl" text-anchor="middle">L6</text>
+    <text x="0" y="-102" class="strata-lbl" text-anchor="middle">L5</text>
+    <text x="0" y="-132" class="strata-lbl" text-anchor="middle">L4</text>
+    <text x="0" y="-162" class="strata-lbl" text-anchor="middle">L3</text>
+    <text x="0" y="-192" class="strata-lbl" text-anchor="middle">L2</text>
+    <text x="0" y="-222" class="strata-lbl" text-anchor="middle">L1</text>
+
+    <!-- Library wedges, sized by note count.
+         Lib1 Research 30%=108°  → 0–108°
+         Lib2 Reading  25%=90°   → 108–198°
+         Lib3 Daily    18%=65°   → 198–263°
+         Lib4 Projects 12%=43°   → 263–306°
+         Lib5 Archive  9%=32°    → 306–338°
+         Lib6 Reference 6%=22°   → 338–360°
+         All angles measured from top (12 o'clock), clockwise. -->
+    <g stroke="#b8a98a" stroke-width="0.6" opacity="0.6" fill="none">
+      <line x1="0" y1="0" x2="0"       y2="-240"/>             <!-- 0° -->
+      <line x1="0" y1="0" x2="228.27"  y2="-74.14"/>           <!-- 108° -->
+      <line x1="0" y1="0" x2="74.14"   y2="228.27"/>           <!-- 198° -->
+      <line x1="0" y1="0" x2="-29.34"  y2="238.20"/>           <!-- 263° -->
+      <line x1="0" y1="0" x2="-194.45" y2="140.66"/>           <!-- 306° -->
+      <line x1="0" y1="0" x2="-225.31" y2="83.06"/>            <!-- 338° -->
+    </g>
+
+    <!-- Library colors as soft fills inside each wedge (using golden-angle palette idea but Suwaidi-soft) -->
+    <g opacity="0.10">
+      <!-- Lib1 Research: warm cream -->
+      <path d="M 0 0 L 0 -240 A 240 240 0 0 1 228.27 -74.14 Z" fill="#c9a227"/>
+      <!-- Lib2 Reading: dusty rose -->
+      <path d="M 0 0 L 228.27 -74.14 A 240 240 0 0 1 74.14 228.27 Z" fill="#a83232"/>
+      <!-- Lib3 Daily: sage green -->
+      <path d="M 0 0 L 74.14 228.27 A 240 240 0 0 1 -29.34 238.20 Z" fill="#3a8a4a"/>
+      <!-- Lib4 Projects: blue ink -->
+      <path d="M 0 0 L -29.34 238.20 A 240 240 0 0 1 -194.45 140.66 Z" fill="#2a4a8c"/>
+      <!-- Lib5 Archive: cyan -->
+      <path d="M 0 0 L -194.45 140.66 A 240 240 0 0 1 -225.31 83.06 Z" fill="#2b8fa8"/>
+      <!-- Lib6 Reference: amber -->
+      <path d="M 0 0 L -225.31 83.06 A 240 240 0 0 1 0 -240 Z" fill="#c9831f"/>
+    </g>
+
+    <!-- Library labels at wedge centers (rim) -->
+    <g class="lbl-wedge" text-anchor="middle">
+      <text x="138" y="-216">RESEARCH</text>          <!-- center 54° -->
+      <text x="223" y="118">READING</text>            <!-- center 153° -->
+      <text x="-117" y="232">DAILY</text>             <!-- center 230.5° -->
+      <text x="-235" y="60">PROJECTS</text>           <!-- center 284.5° -->
+      <text x="-217" y="-105">ARCHIVE</text>          <!-- center 322° -->
+      <text x="-50" y="-242">REF</text>               <!-- center 349° -->
+    </g>
+
+    <!-- ===== STARS — REGIONS MODE =====
+         Same 25 notes as Time mode. Each note's stratum unchanged.
+         Azimuth determined by which library it belongs to.
+         Library mapping (illustrative):
+           Research (1, wedge 0–108°): 9 notes
+           Reading  (2, wedge 108–198°): 7 notes
+           Daily    (3, wedge 198–263°): 4 notes
+           Projects (4, wedge 263–306°): 2 notes
+           Archive  (5, wedge 306–338°): 2 notes
+           Reference(6, wedge 338–360°): 1 note
+    -->
+
+    <!-- L8 (r≈15) — 2 stars: one in Research, one in Reading -->
+    <circle cx="9"   cy="-12" r="5"   fill="#1a1a1a" opacity="1"/>     <!-- Research -->
+    <circle cx="11"  cy="10"  r="4.5" fill="#1a1a1a" opacity="0.95"/>  <!-- Reading -->
+
+    <!-- L7 (r≈45) — 3 stars: 2 Research, 1 Daily -->
+    <circle cx="32"  cy="-32" r="5"   fill="#1a1a1a" opacity="0.95"/>  <!-- Research -->
+    <circle cx="40"  cy="-20" r="3.5" fill="#1a1a1a" opacity="0.7"/>   <!-- Research -->
+    <circle cx="-22" cy="40"  r="3.5" fill="#1a1a1a" opacity="0.95"/>  <!-- Daily -->
+
+    <!-- L6 (r≈75) — 4 stars: 2 Research, 1 Reading, 1 Archive -->
+    <circle cx="50"  cy="-58" r="3.5" fill="#1a1a1a" opacity="0.7"/>   <!-- Research -->
+    <circle cx="62"  cy="-42" r="3.5" fill="#1a1a1a" opacity="0.95"/>  <!-- Research -->
+    <circle cx="68"  cy="32"  r="2.5" fill="#1a1a1a" opacity="0.45"/>  <!-- Reading -->
+    <circle cx="-72" cy="-22" r="2.5" fill="#1a1a1a" opacity="0.7"/>   <!-- Archive -->
+
+    <!-- L5 (r≈105) — 5 stars: 2 Research, 2 Reading, 1 Projects -->
+    <circle cx="60"  cy="-86" r="3.5" fill="#1a1a1a" opacity="0.95"/>  <!-- Research -->
+    <circle cx="93"  cy="-48" r="3.5" fill="#1a1a1a" opacity="0.7"/>   <!-- Research -->
+    <circle cx="98"  cy="38"  r="2.5" fill="#1a1a1a" opacity="0.45"/>  <!-- Reading -->
+    <circle cx="78"  cy="70"  r="2.5" fill="#1a1a1a" opacity="0.7"/>   <!-- Reading -->
+    <circle cx="-95" cy="45"  r="3.5" fill="#1a1a1a" opacity="0.7"/>   <!-- Projects -->
+
+    <!-- L4 (r≈135) — 5 stars: 2 Research, 2 Reading, 1 Reference (contested) -->
+    <circle cx="80"  cy="-108" r="2"  fill="#1a1a1a" opacity="0.45"/>  <!-- Research -->
+    <circle cx="115" cy="-70"  r="2.5" fill="#1a1a1a" opacity="0.7"/>  <!-- Research -->
+    <circle cx="125" cy="50"   r="2"  fill="#1a1a1a" opacity="0.45"/>  <!-- Reading -->
+    <circle cx="100" cy="92"   r="2"  fill="#1a1a1a" opacity="0.45"/>  <!-- Reading -->
+    <circle cx="-30" cy="-132" r="1.5" fill="#a83232" opacity="0.85"/> <!-- Reference, contested -->
+
+    <!-- L3 (r≈165) — 4 stars: 2 Research, 1 Daily, 1 Archive -->
+    <circle cx="92"  cy="-138" r="2.5" fill="#1a1a1a" opacity="0.7"/>  <!-- Research -->
+    <circle cx="142" cy="-86"  r="2"   fill="#1a1a1a" opacity="0.45"/> <!-- Research -->
+    <circle cx="-50" cy="158"  r="2.5" fill="#1a1a1a" opacity="0.7"/>  <!-- Daily -->
+    <circle cx="-152" cy="-65" r="1.5" fill="#1a1a1a" opacity="0.45"/> <!-- Archive -->
+
+    <!-- L2 (r≈195) — 2 stars: 1 Research, 1 Projects -->
+    <circle cx="98" cy="-168" r="1.5" fill="#1a1a1a" opacity="0.45"/>  <!-- Research -->
+    <circle cx="-178" cy="80" r="1.5" fill="#1a1a1a" opacity="0.45"/>  <!-- Projects -->
+
+  </g>
+
+  <!-- ============ FOOTER LEGEND (compact horizontal strip) ============ -->
+  <g transform="translate(140,790)" font-size="10">
+    <line x1="-20" y1="0" x2="1140" y2="0" stroke="#b8a98a" stroke-width="0.6"/>
+
+    <!-- Strata = ring -->
+    <g transform="translate(20,18)">
+      <circle cx="0" cy="0" r="9" fill="none" stroke="#b8a98a" stroke-width="0.6"/>
+      <circle cx="0" cy="0" r="5" fill="none" stroke="#b8a98a" stroke-width="0.6"/>
+      <text x="20" y="3" class="lbl">RING  =  STRATA</text>
+      <text x="20" y="18" class="lbl-soft">L8 center → L1 rim</text>
+    </g>
+
+    <!-- Maturity = size -->
+    <g transform="translate(220,18)">
+      <circle cx="0"  cy="0" r="1.5" fill="#1a1a1a" opacity="0.7"/>
+      <circle cx="14" cy="0" r="2.5" fill="#1a1a1a" opacity="0.7"/>
+      <circle cx="30" cy="0" r="3.5" fill="#1a1a1a" opacity="0.7"/>
+      <circle cx="48" cy="0" r="5"   fill="#1a1a1a" opacity="0.7"/>
+      <text x="62" y="3" class="lbl">SIZE  =  MATURITY</text>
+      <text x="62" y="18" class="lbl-soft">seed → canonical</text>
+    </g>
+
+    <!-- Confidence = brightness -->
+    <g transform="translate(440,18)">
+      <circle cx="0"  cy="0" r="3.5" fill="#1a1a1a" opacity="0.45"/>
+      <circle cx="16" cy="0" r="3.5" fill="#1a1a1a" opacity="0.7"/>
+      <circle cx="32" cy="0" r="3.5" fill="#1a1a1a" opacity="1"/>
+      <text x="46" y="3" class="lbl">BRIGHTNESS  =  CONFIDENCE</text>
+      <text x="46" y="18" class="lbl-soft">hypothesis → established</text>
+    </g>
+
+    <!-- Contested = red -->
+    <g transform="translate(720,18)">
+      <circle cx="0" cy="0" r="3" fill="#a83232" opacity="0.85"/>
+      <text x="14" y="3" class="lbl">RED  =  CONTESTED</text>
+    </g>
+
+    <!-- Wedge = mode azimuth -->
+    <g transform="translate(880,18)">
+      <path d="M 0 0 L 12 -8 A 14 14 0 0 1 14 0 Z" fill="#c9a227" opacity="0.4"/>
+      <text x="22" y="3" class="lbl">WEDGE  =  THE ACTIVE MODE</text>
+      <text x="22" y="18" class="lbl-soft">months / libraries / link types / …</text>
+    </g>
+  </g>
+
+  <text x="700" y="858" text-anchor="middle" class="lbl-soft" font-style="italic">
+    Same notes, same strata distribution, same star sizes &amp; brightness — only the wedge slicing changes between modes.
+    A star at L7 in May is the same note as a star at L7 in Research.
+  </text>
+
+  <!-- mock label -->
+  <text x="1380" y="888" text-anchor="end" font-size="9" fill="#b8a98a" letter-spacing="1">
+    SIGHT vNEXT — OPTION B2 — MODES (TIME ↔ REGIONS) — 2026-05-09
+  </text>
+</svg>

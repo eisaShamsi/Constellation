@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 900" font-family="Georgia, 'Times New Roman', serif">
+  <defs>
+    <style>
+      .bg{fill:#faf6e8}
+      .ink{fill:#1a1a1a}
+      .ink-soft{fill:#3a3a3a}
+      .blue{fill:#2a4a8c}
+      .gold{fill:#c9a227}
+      .cyan{fill:#2b8fa8}
+      .green{fill:#3a8a4a}
+      .amber{fill:#c9831f}
+      .red{fill:#a83232}
+      .h-title{font-size:13px;letter-spacing:2.5px;font-weight:600;fill:#2a4a8c}
+      .pn-title{font-size:11px;letter-spacing:2.5px;font-weight:700;fill:#2a4a8c}
+      .pn-read{font-size:11px;font-style:italic;fill:#3a3a3a}
+      .lbl{font-size:10px;fill:#1a1a1a}
+      .lbl-soft{font-size:9px;fill:#3a3a3a}
+      .lbl-rim{font-size:10px;fill:#2a4a8c;letter-spacing:1px}
+      .strata-lbl{font-size:9px;fill:#1a1a1a;font-style:italic}
+      .num{font-size:10px;fill:#1a1a1a;font-weight:600}
+      .panel-bg{fill:#fbf8ec;stroke:#b8a98a;stroke-width:0.8}
+    </style>
+
+    <!-- Soft milky way gradient -->
+    <radialGradient id="milky" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#e6dec0" stop-opacity="0.55"/>
+      <stop offset="60%" stop-color="#e6dec0" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#e6dec0" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1400" height="900" class="bg"/>
+
+  <!-- ============ HEADER ============ -->
+  <text x="700" y="40" text-anchor="middle" class="h-title">CONSTELLATION SIGHT  ·  THE SHAPE OF YOUR EPISTEMIC CONTENT</text>
+  <text x="700" y="62" text-anchor="middle" font-size="13" font-style="italic" fill="#1a1a1a">Universe: Trial-7600  ·  16 libraries  ·  spanning Mar 2025 – May 2026</text>
+
+  <!-- ============ DOME ============ -->
+  <!-- Center at (520,490), radius 320 -->
+  <g transform="translate(520,490)">
+
+    <!-- Outer rim circle -->
+    <circle r="320" fill="none" stroke="#b8a98a" stroke-width="1.2"/>
+    <circle r="334" fill="none" stroke="#b8a98a" stroke-width="0.6" stroke-dasharray="2 4"/>
+
+    <!-- Strata bands (concentric) -->
+    <!-- L1=outermost rim, L8=center. 8 bands of width 40 -->
+    <circle r="280" fill="none" stroke="#b8a98a" stroke-width="0.5" opacity="0.5"/>
+    <circle r="240" fill="none" stroke="#b8a98a" stroke-width="0.5" opacity="0.5"/>
+    <circle r="200" fill="none" stroke="#b8a98a" stroke-width="0.5" opacity="0.5"/>
+    <circle r="160" fill="none" stroke="#b8a98a" stroke-width="0.5" opacity="0.5"/>
+    <circle r="120" fill="none" stroke="#b8a98a" stroke-width="0.5" opacity="0.5"/>
+    <circle r="80"  fill="none" stroke="#b8a98a" stroke-width="0.5" opacity="0.5"/>
+    <circle r="40"  fill="none" stroke="#b8a98a" stroke-width="0.5" opacity="0.5"/>
+
+    <!-- Strata band labels along the 270° spoke (top) -->
+    <text x="0" y="-14"  class="strata-lbl" text-anchor="middle">L8 Worldview</text>
+    <text x="0" y="-54"  class="strata-lbl" text-anchor="middle">L7 Perspective</text>
+    <text x="0" y="-94"  class="strata-lbl" text-anchor="middle">L6 Framework</text>
+    <text x="0" y="-134" class="strata-lbl" text-anchor="middle">L5 Theory</text>
+    <text x="0" y="-174" class="strata-lbl" text-anchor="middle">L4 Hypothesis</text>
+    <text x="0" y="-214" class="strata-lbl" text-anchor="middle">L3 Opinion</text>
+    <text x="0" y="-254" class="strata-lbl" text-anchor="middle">L2 Fact</text>
+    <text x="0" y="-294" class="strata-lbl" text-anchor="middle">L1 Datum</text>
+
+    <!-- Soft Milky Way wash (content-similarity density) -->
+    <ellipse cx="-80" cy="-50" rx="180" ry="60" fill="url(#milky)" transform="rotate(35 -80 -50)"/>
+    <ellipse cx="90"  cy="80"  rx="200" ry="70" fill="url(#milky)" transform="rotate(-25 90 80)"/>
+
+    <!-- Calendar rim — 12 months (clockwise from top) -->
+    <!-- top = 0deg = -y. Each 30deg. -->
+    <g class="lbl-rim" text-anchor="middle">
+      <text x="0"    y="-348">JAN</text>
+      <text x="174"  y="-300">FEB</text>
+      <text x="301"  y="-174">MAR</text>
+      <text x="348"  y="0"   dominant-baseline="middle">APR</text>
+      <text x="301"  y="174">MAY</text>
+      <text x="174"  y="301">JUN</text>
+      <text x="0"    y="356">JUL</text>
+      <text x="-174" y="301">AUG</text>
+      <text x="-301" y="174">SEP</text>
+      <text x="-348" y="0"   dominant-baseline="middle">OCT</text>
+      <text x="-301" y="-174">NOV</text>
+      <text x="-174" y="-300">DEC</text>
+    </g>
+
+    <!-- Highlight current month wedge (May) very subtly -->
+    <path d="M 0 0 L 250.7 144.7 A 290 290 0 0 1 144.7 250.7 Z"
+          fill="#c9a227" opacity="0.06"/>
+
+    <!-- Stars
+         Encoding:
+           radius = strata band (L8 center → L1 rim)
+           angle  = creation month (rim)
+           size   = maturity (seed=1.5, sapling=2.5, evergreen=3.5, canonical=5, wilting=2 grey)
+           alpha  = confidence (hypothesis=0.45, evidence=0.7, established=1.0)
+           red    = contested
+    -->
+
+    <!-- L8 Worldview — 3 canonical bright stars at center -->
+    <circle cx="-12" cy="-16" r="5"   fill="#1a1a1a" opacity="1"/>
+    <circle cx="20"  cy="-8"  r="5"   fill="#1a1a1a" opacity="1"/>
+    <circle cx="-4"  cy="22"  r="4.5" fill="#1a1a1a" opacity="0.95"/>
+
+    <!-- L7 Perspective — 5 stars, mostly canonical/evergreen -->
+    <circle cx="48"  cy="-32" r="5"   fill="#1a1a1a" opacity="0.95"/>
+    <circle cx="-40" cy="-44" r="3.5" fill="#1a1a1a" opacity="0.85"/>
+    <circle cx="-58" cy="20"  r="3.5" fill="#1a1a1a" opacity="0.7"/>
+    <circle cx="32"  cy="52"  r="5"   fill="#1a1a1a" opacity="1"/>
+    <circle cx="-20" cy="58"  r="2.5" fill="#1a1a1a" opacity="0.7"/>
+
+    <!-- L6 Framework — 8 stars -->
+    <circle cx="80"  cy="-58" r="3.5" fill="#1a1a1a" opacity="0.95"/>
+    <circle cx="-72" cy="-72" r="3.5" fill="#1a1a1a" opacity="0.7"/>
+    <circle cx="-100" cy="0"  r="2.5" fill="#1a1a1a" opacity="0.7"/>
+    <circle cx="-58" cy="84"  r="3.5" fill="#1a1a1a" opacity="0.7"/>
+    <circle cx="20"  cy="98"  r="2.5" fill="#1a1a1a" opacity="0.45"/>
+    <circle cx="92"  cy="38"  r="3.5" fill="#1a1a1a" opacity="0.95"/>
+    <circle cx="60"  cy="-90" r="2.5" fill="#1a1a1a" opacity="0.45"/>
+    <circle cx="-92" cy="42"  r="2.5" fill="#1a1a1a" opacity="0.7"/>
+
+    <!-- L5 Theory — 12 stars, mostly sapling/evergreen -->
+    <circle cx="115" cy="-78" r="2.5" fill="#1a1a1a" opacity="0.7"/>
+    <circle cx="40"  cy="-128" r="3.5" fill="#1a1a1a" opacity="0.95"/>
+    <circle cx="-50" cy="-128" r="2.5" fill="#1a1a1a" opacity="0.45"/>
+    <circle cx="-118" cy="-58" r="3.5" fill="#1a1a1a" opacity="0.7"/>
+    <circle cx="-138" cy="22"  r="2.5" fill="#1a1a1a" opacity="0.7"/>
+    <circle cx="-100" cy="100" r="2.5" fill="#1a1a1a" opacity="0.45"/>
+    <circle cx="-30" cy="138"  r="2.5" fill="#1a1a1a" opacity="0.45"/>
+    <circle cx="58"  cy="128"  r="3.5" fill="#1a1a1a" opacity="0.7"/>
+    <circle cx="125" cy="68"   r="2.5" fill="#1a1a1a" opacity="0.7"/>
+    <circle cx="138" cy="-12"  r="3.5" fill="#1a1a1a" opacity="0.95"/>
+    <circle cx="100" cy="98"   r="2.5" fill="#1a1a1a" opacity="0.45"/>
+    <circle cx="-130" cy="-30" r="2.5" fill="#1a1a1a" opacity="0.7"/>
+
+    <!-- L4 Hypothesis — 15 stars, mostly seed/sapling, mostly hypothesis-faint -->
+    <circle cx="160" cy="-95"  r="2"   fill="#1a1a1a" opacity="0.45"/>
+    <circle cx="78"  cy="-160" r="2.5" fill="#1a1a1a" opacity="0.45"/>
+    <circle cx="-30" cy="-180" r="2"   fill="#1a1a1a" opacity="0.45"/>
+    <circle cx="-110" cy="-145" r="1.5" fill="#1a1a1a" opacity="0.45"/>
+    <circle cx="-168" cy="-60" r="2.5" fill="#1a1a1a" opacity="0.7"/>
+    <circle cx="-180" cy="32"  r="2"   fill="#1a1a1a" opacity="0.45"/>
+    <circle cx="-148" cy="110" r="1.5" fill="#1a1a1a" opacity="0.45"/>
+    <circle cx="-72" cy="170"  r="2"   fill="#1a1a1a" opacity="0.45"/>
+    <circle cx="32"  cy="180"  r="2.5" fill="#1a1a1a" opacity="0.7"/>
+    <circle cx="120" cy="142"  r="1.5" fill="#1a1a1a" opacity="0.45"/>
+    <circle cx="172" cy="60"   r="2"   fill="#1a1a1a" opacity="0.45"/>
+    <circle cx="180" cy="-20"  r="3.5" fill="#1a1a1a" opacity="0.95"/>
+    <circle cx="148" cy="-115" r="1.5" fill="#1a1a1a" opacity="0.45"/>
+    <circle cx="-50" cy="-160" r="1.5" fill="#1a1a1a" opacity="0.45"/>
+    <circle cx="-180" cy="-12" r="1.5" fill="#a83232" opacity="0.85"/>
+    <!-- ^ contested star example (red) -->
+
+    <!-- L3 Opinion — 9 stars -->
+    <circle cx="200" cy="-115" r="2.5" fill="#1a1a1a" opacity="0.7"/>
+    <circle cx="80"  cy="-200" r="2"   fill="#1a1a1a" opacity="0.45"/>
+    <circle cx="-90" cy="-200" r="2.5" fill="#1a1a1a" opacity="0.45"/>
+    <circle cx="-200" cy="-90" r="2"   fill="#1a1a1a" opacity="0.45"/>
+    <circle cx="-220" cy="50"  r="2.5" fill="#1a1a1a" opacity="0.7"/>
+    <circle cx="-130" cy="180" r="1.5" fill="#1a1a1a" opacity="0.45"/>
+    <circle cx="60"  cy="220"  r="2.5" fill="#1a1a1a" opacity="0.7"/>
+    <circle cx="195" cy="120"  r="2"   fill="#1a1a1a" opacity="0.45"/>
+    <circle cx="220" cy="-30"  r="2"   fill="#1a1a1a" opacity="0.45"/>
+
+    <!-- L2 Fact — 6 stars on L2 band -->
+    <circle cx="118" cy="-220" r="1.5" fill="#1a1a1a" opacity="0.45"/>
+    <circle cx="-200" cy="-160" r="1.5" fill="#1a1a1a" opacity="0.45"/>
+    <circle cx="-250" cy="40"  r="1.5" fill="#1a1a1a" opacity="0.45"/>
+    <circle cx="-90" cy="240"  r="1.5" fill="#1a1a1a" opacity="0.45"/>
+    <circle cx="180" cy="180"  r="1.5" fill="#1a1a1a" opacity="0.45"/>
+    <circle cx="248" cy="-30"  r="1.5" fill="#1a1a1a" opacity="0.45"/>
+
+    <!-- L1 Datum — 3 stars on L1 outer band, very faint -->
+    <circle cx="-200" cy="-200" r="1" fill="#3a3a3a" opacity="0.4"/>
+    <circle cx="265" cy="100"   r="1" fill="#3a3a3a" opacity="0.4"/>
+    <circle cx="55"  cy="280"   r="1" fill="#3a3a3a" opacity="0.4"/>
+
+    <!-- A few sample faint connector lines (illustrating Principle 6 — visible, not loud) -->
+    <line x1="-12" y1="-16" x2="48"  y2="-32" stroke="#3a8a4a" stroke-width="0.8" opacity="0.3"/>
+    <line x1="48"  y1="-32" x2="80"  y2="-58" stroke="#2a4a8c" stroke-width="0.8" opacity="0.3"/>
+    <line x1="20"  y1="-8"  x2="32"  y2="52"  stroke="#3a8a4a" stroke-width="0.8" opacity="0.3"/>
+    <line x1="-4"  y1="22"  x2="-58" y2="20"  stroke="#3a8a4a" stroke-width="0.8" opacity="0.3"/>
+    <line x1="32"  y1="52"  x2="92"  y2="38"  stroke="#c9a227" stroke-width="0.8" opacity="0.3"/>
+    <line x1="92"  y1="38"  x2="138" y2="-12" stroke="#3a8a4a" stroke-width="0.8" opacity="0.3"/>
+    <line x1="-40" y1="-44" x2="-72" y2="-72" stroke="#a83232" stroke-width="0.8" opacity="0.3"/>
+    <line x1="40"  y1="-128" x2="115" y2="-78" stroke="#3a8a4a" stroke-width="0.8" opacity="0.3"/>
+    <line x1="-118" y1="-58" x2="-138" y2="22" stroke="#2a4a8c" stroke-width="0.8" opacity="0.3"/>
+
+  </g>
+
+  <!-- ============ LEGEND PANEL (right side) ============ -->
+  <g transform="translate(950,140)">
+    <rect width="380" height="640" rx="6" class="panel-bg"/>
+    <text x="190" y="30" text-anchor="middle" class="pn-title">HOW TO READ THIS SKY</text>
+
+    <!-- Distance from center -->
+    <g transform="translate(20,60)">
+      <text x="0" y="0" class="pn-title" font-size="10">DISTANCE FROM CENTER</text>
+      <text x="0" y="20" class="lbl">center → rim  =  L8 Worldview → L1 Datum</text>
+      <text x="0" y="36" class="lbl-soft">(your most synthesized notes are at the pole)</text>
+    </g>
+
+    <!-- Angle around the rim -->
+    <g transform="translate(20,120)">
+      <text x="0" y="0" class="pn-title" font-size="10">ANGLE AROUND THE RIM</text>
+      <text x="0" y="20" class="lbl">12 months  =  when the note was created</text>
+      <text x="0" y="36" class="lbl-soft">(the calendar is the clock face)</text>
+    </g>
+
+    <!-- Star size -->
+    <g transform="translate(20,180)">
+      <text x="0" y="0" class="pn-title" font-size="10">STAR SIZE  =  MATURITY</text>
+      <g transform="translate(20,28)">
+        <circle cx="0"   cy="0" r="1.5" fill="#1a1a1a" opacity="0.7"/>
+        <text x="14" y="4" class="lbl">seed</text>
+
+        <circle cx="80"  cy="0" r="2.5" fill="#1a1a1a" opacity="0.7"/>
+        <text x="94" y="4" class="lbl">sapling</text>
+
+        <circle cx="170" cy="0" r="3.5" fill="#1a1a1a" opacity="0.7"/>
+        <text x="184" y="4" class="lbl">evergreen</text>
+
+        <circle cx="280" cy="0" r="5"   fill="#1a1a1a" opacity="0.95"/>
+        <text x="294" y="4" class="lbl">canonical</text>
+      </g>
+    </g>
+
+    <!-- Star opacity -->
+    <g transform="translate(20,240)">
+      <text x="0" y="0" class="pn-title" font-size="10">STAR BRIGHTNESS  =  CONFIDENCE</text>
+      <g transform="translate(20,28)">
+        <circle cx="0"   cy="0" r="3.5" fill="#1a1a1a" opacity="0.45"/>
+        <text x="14" y="4" class="lbl">hypothesis</text>
+
+        <circle cx="110" cy="0" r="3.5" fill="#1a1a1a" opacity="0.7"/>
+        <text x="124" y="4" class="lbl">evidence</text>
+
+        <circle cx="210" cy="0" r="3.5" fill="#1a1a1a" opacity="1"/>
+        <text x="224" y="4" class="lbl">established</text>
+
+        <circle cx="320" cy="0" r="3.5" fill="#a83232" opacity="0.85"/>
+      </g>
+      <text x="20" y="50" class="lbl-soft">red dot = contested  ·  faint stars = hypotheses, bright stars = certain</text>
+    </g>
+
+    <!-- Connector lines -->
+    <g transform="translate(20,320)">
+      <text x="0" y="0" class="pn-title" font-size="10">FAINT LINES  =  TYPED LINKS</text>
+      <g transform="translate(20,18)" font-size="10">
+        <line x1="0" y1="6" x2="20" y2="6" stroke="#3a8a4a" stroke-width="1.5"/>
+        <text x="28" y="10" class="lbl">supports / derives-from</text>
+
+        <line x1="0" y1="22" x2="20" y2="22" stroke="#a83232" stroke-width="1.5"/>
+        <text x="28" y="26" class="lbl">contradicts</text>
+
+        <line x1="0" y1="38" x2="20" y2="38" stroke="#c9a227" stroke-width="1.5"/>
+        <text x="28" y="42" class="lbl">exemplifies / generalizes</text>
+
+        <line x1="0" y1="54" x2="20" y2="54" stroke="#2a4a8c" stroke-width="1.5"/>
+        <text x="28" y="58" class="lbl">causes / part-of</text>
+      </g>
+      <text x="20" y="92" class="lbl-soft">faint at rest. Hover any star to brighten its links.</text>
+    </g>
+
+    <!-- Milky Way -->
+    <g transform="translate(20,440)">
+      <text x="0" y="0" class="pn-title" font-size="10">SOFT WASH  =  CONTENT SIMILARITY</text>
+      <text x="0" y="20" class="lbl">where notes share themes without being explicitly linked</text>
+    </g>
+
+    <!-- The first-sight read -->
+    <g transform="translate(20,500)">
+      <line x1="0" y1="0" x2="340" y2="0" stroke="#b8a98a" stroke-width="0.8"/>
+      <text x="0" y="22" class="pn-title" font-size="10">YOUR SKY AT A GLANCE</text>
+      <text x="0" y="42" class="pn-read">A few bright canonical stars at the pole</text>
+      <text x="0" y="58" class="pn-read">(your worldview is taking shape).</text>
+      <text x="0" y="78" class="pn-read">Most stars sit in mid-strata bands and are</text>
+      <text x="0" y="94" class="pn-read">faint (lots of hypotheses still maturing).</text>
+      <text x="0" y="114" class="pn-read">One red contested star near the L4 band.</text>
+    </g>
+
+  </g>
+
+  <!-- mock label -->
+  <text x="1380" y="880" text-anchor="end" font-size="9" fill="#b8a98a" letter-spacing="1">
+    SIGHT vNEXT — OPTION B — METAPHOR (NIGHT SKY, RE-ANCHORED) — 2026-05-09
+  </text>
+</svg>
