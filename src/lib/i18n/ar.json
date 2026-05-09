@@ -746,7 +746,42 @@
     "review": "نبض المراجعة",
     "inspector360": "360.3D",
     "skyView": "Sky View",
-    "links": "لوحة الروابط"
+    "links": "لوحة الروابط",
+    "sourceReview": "مراجعة المصادر"
+  },
+  "sources": {
+    "label": {
+      "perception": "الحِسّ",
+      "inference": "الاستدلال",
+      "testimony": "الخَبَر",
+      "mass-transmission": "التَّواتُر",
+      "comparison": "القياس",
+      "postulation": "الاستنباط الافتراضي",
+      "non-apprehension": "عَدَم الإدراك",
+      "memory": "الذاكرة",
+      "innate-disposition": "الفِطرة",
+      "inspiration": "الإلهام",
+      "revelation": "الوحي",
+      "unclassifiable": "غير قابل للتصنيف"
+    },
+    "review": {
+      "title": "مراجعة المصادر",
+      "refresh": "تحديث القائمة",
+      "loading": "جاري تحميل الاقتراحات…",
+      "errorTitle": "تعذّر تحميل الاقتراحات",
+      "emptyTitle": "لا توجد اقتراحات للمراجعة",
+      "emptySub": "انقر بزر الفأرة الأيمن على أيّ ملاحظة ← \"اقترح المصادر لهذه الملاحظة\" لملء هذه القائمة. أو شغّل المسح في الخلفية من إعدادات ← الذكاء الاصطناعي.",
+      "pending": "قيد المراجعة",
+      "pendingPlural": "قيد المراجعة",
+      "tierLabel": "مستوى المُصنِّف (T1 = مدمج، T2 = نموذج أكبر)",
+      "accept": "قبول",
+      "edit": "تعديل",
+      "reject": "رفض",
+      "save": "حفظ",
+      "cancel": "إلغاء",
+      "classifyActive": "صنّف الملاحظة المفتوحة",
+      "classifying": "جاري التصنيف…"
+    }
   },
   "tasksPanel": {
     "all": "الكل",

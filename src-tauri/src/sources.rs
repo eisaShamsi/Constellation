@@ -515,6 +515,88 @@ pub fn sources_set_manual(
     Ok(())
 }
 
+// ─── Source Review queue IPCs (MIG-021 §1C) ─────────────────────────
+
+/// Read the current suggestion record for a single note. Returns None
+/// if no classifier suggestion is queued for this note.
+/// Used by the Source Review panel when scrolling to a specific entry.
+#[tauri::command]
+pub fn sources_get_suggestions(
+    app: tauri::AppHandle,
+    note_path: String,
+) -> Result<Option<SuggestionRecord>, String> {
+    crate::search::ensure_search_db_ready(&app)?;
+    let search_state = app.state::<crate::search::SearchState>();
+    let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
+    let conn = db_guard
+        .as_ref()
+        .ok_or("Search database not initialized")?;
+    read_suggestions(conn, &note_path)
+}
+
+/// List all pending suggestion records across the active Universe,
+/// ordered by `created_at` ascending (oldest first — review FIFO).
+/// Used by the Source Review panel to populate its queue view.
+#[tauri::command]
+pub fn sources_list_pending_suggestions(
+    app: tauri::AppHandle,
+) -> Result<Vec<SuggestionRecord>, String> {
+    crate::search::ensure_search_db_ready(&app)?;
+    let search_state = app.state::<crate::search::SearchState>();
+    let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
+    let conn = db_guard
+        .as_ref()
+        .ok_or("Search database not initialized")?;
+
+    let mut stmt = conn
+        .prepare(
+            "SELECT note_path, suggestions_json, classifier_tier, created_at
+             FROM sources_suggestions
+             ORDER BY created_at ASC",
+        )
+        .map_err(|e| format!("prepare list: {}", e))?;
+    let rows = stmt
+        .query_map([], |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, String>(1)?,
+                row.get::<_, i64>(2)?,
+                row.get::<_, i64>(3)?,
+            ))
+        })
+        .map_err(|e| format!("query list: {}", e))?;
+
+    let mut out = Vec::new();
+    for row in rows {
+        let (note_path, json, tier, created) = row.map_err(|e| format!("row: {}", e))?;
+        let suggestions: Vec<Suggestion> = serde_json::from_str(&json)
+            .map_err(|e| format!("Failed to parse suggestions for {}: {}", note_path, e))?;
+        out.push(SuggestionRecord {
+            note_path,
+            suggestions,
+            classifier_tier: tier,
+            created_at: created,
+        });
+    }
+    Ok(out)
+}
+
+/// Reject a suggestion: clear the queue entry without writing anything
+/// to `sources:`. The classifier's next scan can re-propose.
+#[tauri::command]
+pub fn sources_reject_suggestion(
+    app: tauri::AppHandle,
+    note_path: String,
+) -> Result<(), String> {
+    crate::search::ensure_search_db_ready(&app)?;
+    let search_state = app.state::<crate::search::SearchState>();
+    let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
+    let conn = db_guard
+        .as_ref()
+        .ok_or("Search database not initialized")?;
+    clear_suggestions(conn, &note_path)
+}
+
 /// Clear the `sources:` field for a note (returns it to "unsourced"
 /// state). Removes both from frontmatter and from the `note_meta`
 /// mirror. Does NOT clear classifier suggestions — the next scan

@@ -323,6 +323,10 @@ pub fn run() {
             sources::sources_clear,
             // MIG-021 §1B — Tier-1 classifier IPC (on-demand single-note)
             classifier::classifier_suggest_for_note,
+            // MIG-021 §1C — Source Review queue IPCs
+            sources::sources_get_suggestions,
+            sources::sources_list_pending_suggestions,
+            sources::sources_reject_suggestion,
             strata::compute_note_strata,
             maturity::compute_note_maturity,
             tension::detect_tensions,

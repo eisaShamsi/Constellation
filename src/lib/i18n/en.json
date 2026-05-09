@@ -782,7 +782,42 @@
     "review": "Review Pulse",
     "inspector360": "360.3D",
     "skyView": "Sky View",
-    "links": "Link Dashboard"
+    "links": "Link Dashboard",
+    "sourceReview": "Source Review"
+  },
+  "sources": {
+    "label": {
+      "perception": "Perception",
+      "inference": "Inference",
+      "testimony": "Testimony",
+      "mass-transmission": "Mass-transmission",
+      "comparison": "Comparison",
+      "postulation": "Postulation",
+      "non-apprehension": "Non-apprehension",
+      "memory": "Memory",
+      "innate-disposition": "Innate disposition",
+      "inspiration": "Inspiration",
+      "revelation": "Revelation",
+      "unclassifiable": "Unclassifiable"
+    },
+    "review": {
+      "title": "Source Review",
+      "refresh": "Refresh queue",
+      "loading": "Loading suggestions…",
+      "errorTitle": "Could not load suggestions",
+      "emptyTitle": "Nothing to review",
+      "emptySub": "Right-click any note → \"Suggest sources for this note\" to populate this queue. Or run a background scan from Settings → AI.",
+      "pending": "pending",
+      "pendingPlural": "pending",
+      "tierLabel": "Classifier tier (T1 = bundled, T2 = larger model)",
+      "accept": "Accept",
+      "edit": "Edit",
+      "reject": "Reject",
+      "save": "Save",
+      "cancel": "Cancel",
+      "classifyActive": "Classify open note",
+      "classifying": "Classifying…"
+    }
   },
   "tasksPanel": {
     "all": "All",

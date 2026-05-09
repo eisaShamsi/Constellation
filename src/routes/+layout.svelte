@@ -84,6 +84,7 @@
 	import TensionPanel from '$lib/components/TensionPanel.svelte';
 	import ProvenancePanel from '$lib/components/ProvenancePanel.svelte';
 	import ReviewPulsePanel from '$lib/components/ReviewPulsePanel.svelte';
+	import SourceReviewPanel from '$lib/components/SourceReviewPanel.svelte';
 	import LinkDashboard from '$lib/components/LinkDashboard.svelte';
 	import ExpressionForge from '$lib/components/ExpressionForge.svelte';
 	import SenseMakingCanvas from '$lib/components/SenseMakingCanvas.svelte';
@@ -335,7 +336,7 @@
 
 	// Right sidebar
 	let rightSidebarOpen = $state(false);
-	let rightSidebarTab = $state<'properties' | 'backlinks' | 'tags' | 'star' | 'tasks' | 'calendar' | 'health' | 'provenance' | 'review' | 'links' | 'inspector360'>('properties');
+	let rightSidebarTab = $state<'properties' | 'backlinks' | 'tags' | 'star' | 'tasks' | 'calendar' | 'health' | 'provenance' | 'review' | 'links' | 'inspector360' | 'sourceReview'>('properties');
 
 	// ── Sidebar overlay snapshots ───────────────────────────────────────────
 	// Every overlay mode that takes over the editor area (full-page view,
@@ -1320,10 +1321,14 @@
 			review:     inSidebar('review'),
 			links:      inSidebar('links'),
 			inspector360: inSidebar('inspector360'),
+			// MIG-021 §1C — Source Review panel is always visible (not yet
+			// in panelPlacements; force-visible until the Settings → Panels
+			// integration ships in a follow-up).
+			sourceReview: true,
 		};
 
 		if (!tabVisible[rightSidebarTab]) {
-			const order = ['properties', 'backlinks', 'tags', 'star', 'tasks', 'calendar', 'health', 'provenance', 'review', 'links', 'inspector360'] as const;
+			const order = ['properties', 'backlinks', 'tags', 'star', 'tasks', 'calendar', 'health', 'provenance', 'review', 'links', 'inspector360', 'sourceReview'] as const;
 			const first = order.find(tab => tabVisible[tab]);
 			rightSidebarTab = (first ?? 'properties') as typeof rightSidebarTab;
 		}
@@ -5692,8 +5697,12 @@
 				{#if ($appSettings.panelPlacements?.inspector360 ?? 'right-sidebar') === 'right-sidebar'}
 					<button class="rs-tab" class:active={rightSidebarTab === 'inspector360'} onclick={() => rightSidebarTab = 'inspector360'} title={$t('panels.inspector360') || $t('inspector360.title') || '360° Inspector'}>
 						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="3" x2="12" y2="9"/><line x1="12" y1="15" x2="12" y2="21"/><line x1="3" y1="12" x2="9" y2="12"/><line x1="15" y1="12" x2="21" y2="12"/></svg>
-					</button>
+				</button>
 				{/if}
+				<!-- MIG-021 §1C — Source Review tab. Force-visible (not yet in panelPlacements). -->
+				<button class="rs-tab" class:active={rightSidebarTab === 'sourceReview'} onclick={() => rightSidebarTab = 'sourceReview'} title={$t('sources.review.title') || 'Source Review'}>
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+				</button>
 			</div>
 
 			{#if isHome && sidebarTab}
@@ -5911,6 +5920,17 @@
 							}}
 						/>
 					</div>
+				{:else if rightSidebarTab === 'sourceReview'}
+					<!-- MIG-021 §1C — Source Review queue (works with or without an active note). -->
+					<div class="rs-section rs-full-height">
+						<SourceReviewPanel
+							activeNotePath={sidebarTab?.path ?? null}
+							onNoteClick={(path, name) => {
+								const lib = $libraryStats.find(l => path.startsWith(l.path));
+								if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
+							}}
+						/>
+					</div>
 				{/if}
 			{:else if rightSidebarTab === 'review'}
 				<!-- Review Pulse works without a note open (library-level feature) -->
@@ -5925,6 +5945,16 @@
 							const lib = get(libraries)[0];
 							if (lib) invoke<any[]>('get_due_notes', { libraryPath: lib.path })
 								.then(notes => { dueNotes = notes; }).catch(() => {});
+						}}
+					/>
+				</div>
+			{:else if rightSidebarTab === 'sourceReview'}
+				<!-- MIG-021 §1C — Source Review queue (works without an active note). -->
+				<div class="rs-section rs-full-height">
+					<SourceReviewPanel
+						onNoteClick={(path, name) => {
+							const lib = $libraryStats.find(l => path.startsWith(l.path));
+							if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
 						}}
 					/>
 				</div>
