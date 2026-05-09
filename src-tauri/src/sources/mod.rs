@@ -27,6 +27,11 @@
 //!   docs/Constellation-Sight-Concept-Paper-v2.0.md §7
 //!   lab/reports/MIG-021-EPISTEMIC-CLASSIFIER-PLAN.md §1A
 
+// MIG-021v2 §1A' — taxonomy data sub-modules (extracted from the two
+// canonical Eisa-authored HTML diagrams in docs/).
+pub mod horizontal_taxonomy;
+pub mod vertical_taxonomy;
+
 use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
@@ -39,37 +44,42 @@ use tauri::Manager;
 /// requires migration. v1 = initial introduction (MIG-021 §1A).
 pub const SOURCES_SCHEMA_VERSION: i64 = 1;
 
-/// The 11 canonical sources from the Universal Epistemic Content Taxonomy
-/// + the 12th `unclassifiable` opt-out token (MIG-021 Plan §0 Q5).
-///
-/// Order is canonical; the frontend's PropertyEditor combobox should
-/// render in this order (the Concept Paper §7.1 lists them in this
-/// order, drawn from the taxonomy doc).
-///
-/// `unclassifiable` is a user-set opt-out that suppresses future
-/// classifier suggestions on a note. It is NOT a real epistemic source;
-/// the classifier never suggests it; Sight v5 mode P treats notes
-/// tagged `unclassifiable` as a separate "user opted out" wedge,
-/// distinct from the "Unsourced" wedge for notes with no `sources:` field.
-pub const SOURCE_IDS: &[&str; 12] = &[
-    "perception",
-    "inference",
-    "testimony",
-    "mass-transmission",
-    "comparison",
-    "postulation",
-    "non-apprehension",
-    "memory",
-    "innate-disposition",
-    "inspiration",
-    "revelation",
-    "unclassifiable",
-];
+/// MIG-021v2 §1A' — schema version for the content_type subsystem.
+/// v1 = initial introduction. Bumped on any structural change to
+/// `note_meta.content_type`.
+pub const CONTENT_TYPE_SCHEMA_VERSION: i64 = 1;
 
-/// The 11 canonical sources only (excludes `unclassifiable`). Used by
-/// the classifier to bound its suggestions to real epistemic sources.
-pub fn classifiable_sources() -> &'static [&'static str] {
-    &SOURCE_IDS[0..11]
+/// All valid horizontal-axis IDs (11 parents + 41 leaves + 1 opt-out
+/// = 53 IDs). Sourced from `horizontal_taxonomy::all_ids()`.
+///
+/// Replaces the §1A flat `SOURCE_IDS` constant. The 11 parent IDs are
+/// byte-identical to §1A's set so legacy `sources:` data on disk
+/// continues to validate against this taxonomy without migration.
+pub fn source_ids() -> Vec<&'static str> {
+    horizontal_taxonomy::all_ids()
+}
+
+/// True if `id` is a valid horizontal-axis source ID (parent, leaf,
+/// or `unclassifiable`).
+pub fn is_valid_source_id(id: &str) -> bool {
+    horizontal_taxonomy::is_valid_id(id)
+}
+
+/// True if `id` is a valid vertical-axis content_type ID.
+pub fn is_valid_content_type_id(id: &str) -> bool {
+    vertical_taxonomy::is_valid_id(id)
+}
+
+/// Classifiable horizontal sources — the 11 parents (excludes leaves
+/// and `unclassifiable`). Tier-1 classifier ranks against parents
+/// first; leaf-vs-parent strategy in §1B' decides whether to suggest
+/// a leaf or fall back to the parent based on confidence threshold.
+pub fn classifiable_sources() -> Vec<&'static str> {
+    horizontal_taxonomy::HORIZONTAL_NODES
+        .iter()
+        .filter(|n| n.parent_id.is_none() && n.id != "unclassifiable")
+        .map(|n| n.id)
+        .collect()
 }
 
 // ─── Types ──────────────────────────────────────────────────────────
@@ -220,7 +230,7 @@ fn push_source(out: &mut Vec<String>, raw: &str) {
     if normalized.is_empty() {
         return;
     }
-    if !SOURCE_IDS.iter().any(|s| *s == normalized) {
+    if !is_valid_source_id(&normalized) {
         return; // Silent drop of unknown values.
     }
     if !out.contains(&normalized) {
@@ -261,10 +271,12 @@ pub fn write_sources_to_db(
     let validated: Vec<&str> = sources
         .iter()
         .filter_map(|s| {
-            SOURCE_IDS
+            // Look up the static-string version of the ID (so we store
+            // 'static slugs from the taxonomy, not the user-supplied bytes).
+            horizontal_taxonomy::HORIZONTAL_NODES
                 .iter()
-                .find(|id| **id == s.as_str())
-                .copied()
+                .find(|n| n.id == s.as_str())
+                .map(|n| n.id)
         })
         .collect();
     let json = serde_json::to_string(&validated)
@@ -356,10 +368,10 @@ pub fn rewrite_frontmatter_sources(content: &str, sources: &[String]) -> String 
     let validated: Vec<&str> = sources
         .iter()
         .filter_map(|s| {
-            SOURCE_IDS
+            horizontal_taxonomy::HORIZONTAL_NODES
                 .iter()
-                .find(|id| **id == s.as_str())
-                .copied()
+                .find(|n| n.id == s.as_str())
+                .map(|n| n.id)
         })
         .collect();
 
@@ -489,11 +501,11 @@ pub fn sources_set_manual(
     sources: Vec<String>,
 ) -> Result<(), String> {
     crate::search::ensure_search_db_ready(&app)?;
-    // Validate all values are in SOURCE_IDS up front; reject the call
-    // entirely if any unknown source slipped through (the frontend
-    // should never send unknowns, but defense-in-depth).
+    // Validate all values are in the horizontal taxonomy up front;
+    // reject the call entirely if any unknown source slipped through
+    // (the frontend should never send unknowns, but defense-in-depth).
     for s in &sources {
-        if !SOURCE_IDS.iter().any(|id| *id == s.as_str()) {
+        if !is_valid_source_id(s) {
             return Err(format!("Unknown source ID: {}", s));
         }
     }
@@ -621,6 +633,359 @@ pub fn sources_clear(
     Ok(())
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// MIG-021v2 §1A' — Content-type subsystem (vertical axis, parallel field)
+// ═══════════════════════════════════════════════════════════════════
+//
+// `content_type:` is the parallel frontmatter field for the vertical
+// axis of the Universal Epistemic Content Taxonomy. Same shape as
+// `sources:` (multi-select, hierarchical, validated against canonical
+// taxonomy). Pickable at any node depth from root through ~218 nodes.
+//
+// Schema: `note_meta.content_type TEXT DEFAULT NULL` — JSON list of
+// vertical_taxonomy node IDs. NULL = unsourced; empty list also = unsourced.
+
+/// Idempotent schema migration adding the `content_type` column to
+/// `note_meta` if missing. Same probe-and-ALTER pattern as the
+/// sources column. Called from `search::init_db` after the
+/// `ensure_note_meta_sources_column` call.
+pub fn ensure_note_meta_content_type_column(conn: &Connection) -> rusqlite::Result<()> {
+    let mut have = false;
+    {
+        let mut stmt = conn.prepare("PRAGMA table_info(note_meta)")?;
+        let rows = stmt.query_map([], |row| row.get::<_, String>(1))?;
+        for col in rows {
+            if col? == "content_type" {
+                have = true;
+                break;
+            }
+        }
+    }
+    if !have {
+        conn.execute_batch(
+            "ALTER TABLE note_meta ADD COLUMN content_type TEXT DEFAULT NULL;",
+        )?;
+    }
+    Ok(())
+}
+
+/// Extract YAML `content_type:` from a note's frontmatter. Mirrors
+/// `extract_sources` exactly (scalar / inline array / block list);
+/// validates against vertical_taxonomy.
+pub fn extract_content_type(content: &str) -> Vec<String> {
+    if !content.starts_with("---") {
+        return Vec::new();
+    }
+    let Some(end) = content[3..].find("\n---") else {
+        return Vec::new();
+    };
+    let frontmatter = &content[3..3 + end];
+
+    let mut out: Vec<String> = Vec::new();
+    let mut in_block = false;
+
+    for line in frontmatter.lines() {
+        let trimmed = line.trim_start();
+
+        if trimmed.starts_with("content_type:") {
+            in_block = true;
+            let value = trimmed["content_type:".len()..].trim();
+            if value.starts_with('[') && value.ends_with(']') {
+                let inner = &value[1..value.len() - 1];
+                for raw in inner.split(',') {
+                    push_content_type(&mut out, raw);
+                }
+                in_block = false;
+            } else if !value.is_empty() {
+                push_content_type(&mut out, value);
+                in_block = false;
+            }
+            continue;
+        }
+
+        if in_block {
+            if let Some(rest) = trimmed.strip_prefix("- ") {
+                push_content_type(&mut out, rest);
+                continue;
+            }
+            if !trimmed.is_empty() {
+                in_block = false;
+            }
+        }
+    }
+    out
+}
+
+fn push_content_type(out: &mut Vec<String>, raw: &str) {
+    let normalized = raw
+        .trim()
+        .trim_matches(|c| c == '"' || c == '\'')
+        .to_lowercase();
+    if normalized.is_empty() {
+        return;
+    }
+    if !is_valid_content_type_id(&normalized) {
+        return; // Silent drop of unknown values.
+    }
+    if !out.contains(&normalized) {
+        out.push(normalized);
+    }
+}
+
+/// Read content_type list from `note_meta` for a given note. Empty Vec
+/// if note unknown / column NULL / JSON parse fails.
+pub fn read_content_type_for_note(
+    conn: &Connection,
+    note_path: &str,
+) -> Result<Vec<String>, String> {
+    let json: Option<String> = conn
+        .query_row(
+            "SELECT content_type FROM note_meta WHERE path = ?1",
+            params![note_path],
+            |row| row.get(0),
+        )
+        .ok()
+        .flatten();
+    match json {
+        None => Ok(Vec::new()),
+        Some(s) if s.is_empty() => Ok(Vec::new()),
+        Some(s) => serde_json::from_str(&s)
+            .map_err(|e| format!("Failed to parse content_type JSON for {}: {}", note_path, e)),
+    }
+}
+
+/// Write content_type list to `note_meta.content_type` (validated;
+/// unknown values dropped). Caller ensures the note row exists.
+pub fn write_content_type_to_db(
+    conn: &Connection,
+    note_path: &str,
+    content_type: &[String],
+) -> Result<(), String> {
+    let validated: Vec<&str> = content_type
+        .iter()
+        .filter_map(|s| {
+            vertical_taxonomy::VERTICAL_NODES
+                .iter()
+                .find(|n| n.id == s.as_str())
+                .map(|n| n.id)
+        })
+        .collect();
+    let json = serde_json::to_string(&validated)
+        .map_err(|e| format!("Failed to serialize content_type: {}", e))?;
+    conn.execute(
+        "UPDATE note_meta SET content_type = ?1 WHERE path = ?2",
+        params![json, note_path],
+    )
+    .map_err(|e| {
+        format!("Failed to update note_meta.content_type for {}: {}", note_path, e)
+    })?;
+    Ok(())
+}
+
+/// Rewrite a note's frontmatter to update the `content_type:` field.
+/// Mirrors `rewrite_frontmatter_sources` exactly.
+pub fn rewrite_frontmatter_content_type(content: &str, content_type: &[String]) -> String {
+    let validated: Vec<&str> = content_type
+        .iter()
+        .filter_map(|s| {
+            vertical_taxonomy::VERTICAL_NODES
+                .iter()
+                .find(|n| n.id == s.as_str())
+                .map(|n| n.id)
+        })
+        .collect();
+
+    if !content.starts_with("---") {
+        if validated.is_empty() {
+            return content.to_string();
+        }
+        let mut out = String::from("---\ncontent_type:\n");
+        for s in &validated {
+            out.push_str("  - ");
+            out.push_str(s);
+            out.push('\n');
+        }
+        out.push_str("---\n\n");
+        out.push_str(content);
+        return out;
+    }
+
+    let Some(end) = content[3..].find("\n---") else {
+        return content.to_string();
+    };
+    let fm = &content[3..3 + end];
+    let body_start = 3 + end + 4;
+    let body = &content[body_start..];
+
+    let mut new_fm_lines: Vec<String> = Vec::new();
+    let mut skip_block = false;
+    for line in fm.lines() {
+        let trimmed = line.trim_start();
+        if trimmed.starts_with("content_type:") {
+            let value = trimmed["content_type:".len()..].trim();
+            if value.is_empty() {
+                skip_block = true;
+            }
+            continue;
+        }
+        if skip_block {
+            if trimmed.starts_with("- ") {
+                continue;
+            } else if !trimmed.is_empty() {
+                skip_block = false;
+            } else {
+                continue;
+            }
+        }
+        new_fm_lines.push(line.to_string());
+    }
+
+    let mut new_fm = new_fm_lines.join("\n");
+    while new_fm.ends_with('\n') || new_fm.ends_with(' ') {
+        new_fm.pop();
+    }
+
+    if !validated.is_empty() {
+        new_fm.push_str("\ncontent_type:\n");
+        for s in &validated {
+            new_fm.push_str("  - ");
+            new_fm.push_str(s);
+            new_fm.push('\n');
+        }
+    } else {
+        new_fm.push('\n');
+    }
+
+    let mut out = String::from("---");
+    out.push_str(&new_fm);
+    out.push_str("---");
+    out.push_str(body);
+    out
+}
+
+fn rewrite_note_content_type_on_disk(
+    note_path: &str,
+    content_type: &[String],
+) -> Result<(), String> {
+    let path = Path::new(note_path);
+    if !path.exists() {
+        return Err(format!("Note not found: {}", note_path));
+    }
+    let content = std::fs::read_to_string(path)
+        .map_err(|e| format!("Failed to read {}: {}", note_path, e))?;
+    let rewritten = rewrite_frontmatter_content_type(&content, content_type);
+    std::fs::write(path, rewritten)
+        .map_err(|e| format!("Failed to write {}: {}", note_path, e))?;
+    Ok(())
+}
+
+// ─── Tauri commands (content_type) ──────────────────────────────────
+
+#[tauri::command]
+pub fn content_type_get_for_note(
+    app: tauri::AppHandle,
+    note_path: String,
+) -> Result<Vec<String>, String> {
+    crate::search::ensure_search_db_ready(&app)?;
+    let search_state = app.state::<crate::search::SearchState>();
+    let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
+    let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
+    read_content_type_for_note(conn, &note_path)
+}
+
+#[tauri::command]
+pub fn content_type_set_manual(
+    app: tauri::AppHandle,
+    note_path: String,
+    content_type: Vec<String>,
+) -> Result<(), String> {
+    crate::search::ensure_search_db_ready(&app)?;
+    for s in &content_type {
+        if !is_valid_content_type_id(s) {
+            return Err(format!("Unknown content_type ID: {}", s));
+        }
+    }
+    rewrite_note_content_type_on_disk(&note_path, &content_type)?;
+    let search_state = app.state::<crate::search::SearchState>();
+    let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
+    let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
+    write_content_type_to_db(conn, &note_path, &content_type)?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn content_type_clear(
+    app: tauri::AppHandle,
+    note_path: String,
+) -> Result<(), String> {
+    crate::search::ensure_search_db_ready(&app)?;
+    let empty: Vec<String> = Vec::new();
+    rewrite_note_content_type_on_disk(&note_path, &empty)?;
+    let search_state = app.state::<crate::search::SearchState>();
+    let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
+    let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
+    write_content_type_to_db(conn, &note_path, &empty)?;
+    Ok(())
+}
+
+// ─── Taxonomy IPCs (single source of truth = Rust; no TS duplication) ──
+
+/// Frontend-facing horizontal-axis taxonomy node. Owned strings for
+/// IPC serialization. Same shape as the static `HorizontalNode` but
+/// with `String` fields.
+#[derive(Debug, Clone, Serialize)]
+pub struct HorizontalNodePayload {
+    pub id: String,
+    pub en: String,
+    pub ar: String,
+    pub tr: Option<String>,
+    pub tier: u8,
+    pub parent_id: Option<String>,
+}
+
+/// Frontend-facing vertical-axis taxonomy node.
+#[derive(Debug, Clone, Serialize)]
+pub struct VerticalNodePayload {
+    pub id: String,
+    pub en: String,
+    pub ar: String,
+    pub parent_id: Option<String>,
+    pub branch: u8,
+}
+
+/// Return the full horizontal-axis taxonomy as a flat list (in canonical
+/// order). Frontend fetches once on app load + caches.
+#[tauri::command]
+pub fn sources_get_horizontal_taxonomy() -> Vec<HorizontalNodePayload> {
+    horizontal_taxonomy::HORIZONTAL_NODES
+        .iter()
+        .map(|n| HorizontalNodePayload {
+            id: n.id.to_string(),
+            en: n.en.to_string(),
+            ar: n.ar.to_string(),
+            tr: n.tr.map(|s| s.to_string()),
+            tier: n.tier,
+            parent_id: n.parent_id.map(|s| s.to_string()),
+        })
+        .collect()
+}
+
+/// Return the full vertical-axis taxonomy as a flat list (in canonical
+/// order). Frontend fetches once on app load + caches.
+#[tauri::command]
+pub fn sources_get_vertical_taxonomy() -> Vec<VerticalNodePayload> {
+    vertical_taxonomy::VERTICAL_NODES
+        .iter()
+        .map(|n| VerticalNodePayload {
+            id: n.id.to_string(),
+            en: n.en.to_string(),
+            ar: n.ar.to_string(),
+            parent_id: n.parent_id.map(|s| s.to_string()),
+            branch: n.branch,
+        })
+        .collect()
+}
+
 // ─── Tests ─────────────────────────────────────────────────────────
 
 #[cfg(test)]
@@ -730,8 +1095,30 @@ mod tests {
 
     #[test]
     fn unclassifiable_is_canonical() {
-        assert!(SOURCE_IDS.contains(&"unclassifiable"));
+        assert!(is_valid_source_id("unclassifiable"));
         assert_eq!(classifiable_sources().len(), 11);
         assert!(!classifiable_sources().contains(&"unclassifiable"));
+    }
+
+    #[test]
+    fn legacy_eleven_parents_still_valid() {
+        // Backward-compat: the §1A SOURCE_IDS set must still validate
+        // (legacy `sources:` data on disk uses these slugs).
+        for legacy in [
+            "perception", "inference", "testimony", "mass-transmission",
+            "comparison", "postulation", "non-apprehension", "memory",
+            "innate-disposition", "inspiration", "revelation", "unclassifiable",
+        ] {
+            assert!(is_valid_source_id(legacy), "legacy id `{}` invalid", legacy);
+        }
+    }
+
+    #[test]
+    fn taxonomy_subleaves_are_valid() {
+        // Spot-check a few v2 leaves
+        assert!(is_valid_source_id("perception/external"));
+        assert!(is_valid_source_id("revelation/recited"));
+        assert!(is_valid_source_id("non-apprehension/prior"));
+        assert!(!is_valid_source_id("perception/nonexistent-leaf"));
     }
 }

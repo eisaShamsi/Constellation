@@ -327,6 +327,13 @@ pub fn run() {
             sources::sources_get_suggestions,
             sources::sources_list_pending_suggestions,
             sources::sources_reject_suggestion,
+            // MIG-021v2 §1A' — Content-type subsystem IPCs (vertical axis)
+            sources::content_type_get_for_note,
+            sources::content_type_set_manual,
+            sources::content_type_clear,
+            // MIG-021v2 §1A' — Taxonomy IPCs (single source of truth in Rust)
+            sources::sources_get_horizontal_taxonomy,
+            sources::sources_get_vertical_taxonomy,
             strata::compute_note_strata,
             maturity::compute_note_maturity,
             tension::detect_tensions,
