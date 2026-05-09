@@ -71,10 +71,21 @@
   function toggleSelected(id: string) {
     const next = new Set(selected);
     if (next.has(id)) {
-      // Removing a node: take it out, but leave ancestors in place.
-      // (Ancestors may still be wanted for their own reasons — explicit
-      // user choice, or they were the original selection.)
+      // Removing a node: cascade DOWN — also remove every descendant.
+      // Selecting a child without its parent is illogical, so the inverse
+      // holds: removing a parent removes the children that hung off it.
       next.delete(id);
+      const stack = [id];
+      while (stack.length) {
+        const cur = stack.pop()!;
+        const kids = childrenByParent.get(cur) ?? [];
+        for (const k of kids) {
+          if (next.has(k.id)) {
+            next.delete(k.id);
+            stack.push(k.id);
+          }
+        }
+      }
     } else {
       // Adding a node: also auto-add every ancestor up the chain.
       // Selecting "External perception" implies "Perception / Sensation".

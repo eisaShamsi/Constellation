@@ -35,3 +35,6 @@ npm-debug.log*
 
 # Claude Code worktrees (per-agent isolation directories — never commit)
 .claude/worktrees/
+
+# MIG-019 stray build logs (one-off — never commit raw build logs)
+lab/build-log-*.txt

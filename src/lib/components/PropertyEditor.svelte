@@ -202,6 +202,46 @@
 		return isAr ? node.ar : node.en;
 	}
 
+	// Order selected IDs by taxonomy tree position (parent-first, depth-first
+	// pre-order traversal). Returns each id with its depth so the pill can
+	// be indented + prefixed with a ↳ connector. Eisa correction 2026-05-09:
+	// pills must read like an outline — parent on top, children indented
+	// underneath — not as a flat shuffled bag.
+	function orderTaxonomyItems(items: string[], axis: 'horizontal' | 'vertical'): Array<{ id: string; depth: number }> {
+		const pool = new Set(items);
+		const taxonomy = axis === 'horizontal' ? horizontalTaxonomy : verticalTaxonomy;
+		if (taxonomy.length === 0) {
+			// Taxonomy not loaded yet — return items as-is at depth 0 so the
+			// pills still render before the first picker expand.
+			return items.map(id => ({ id, depth: 0 }));
+		}
+		const childrenByParent = new Map<string | null, typeof taxonomy>();
+		for (const node of taxonomy) {
+			const key = node.parent_id;
+			if (!childrenByParent.has(key)) childrenByParent.set(key, []);
+			childrenByParent.get(key)!.push(node);
+		}
+		const roots = axis === 'horizontal'
+			? taxonomy.filter(n => n.parent_id === null)
+			: taxonomy.filter(n => n.parent_id === 'epistemic-content');
+		const out: Array<{ id: string; depth: number }> = [];
+		const walk = (nodes: typeof taxonomy, depth: number) => {
+			for (const node of nodes) {
+				if (pool.has(node.id)) {
+					out.push({ id: node.id, depth });
+					pool.delete(node.id);
+				}
+				const kids = childrenByParent.get(node.id) ?? [];
+				if (kids.length > 0) walk(kids, depth + 1);
+			}
+		};
+		walk(roots, 0);
+		// Anything left in pool wasn't found in the taxonomy — append at
+		// depth 0 so we don't silently drop it.
+		for (const id of pool) out.push({ id, depth: 0 });
+		return out;
+	}
+
 	function tierColorForId(id: string): string | null {
 		const node = horizontalTaxonomy.find(n => n.id === id);
 		if (!node) return null;
@@ -674,18 +714,24 @@
 				{@const axis = isTaxonomyKey(prop.key)!}
 				{@const items = prop.listItems ?? (prop.value ? prop.value.split(',').map(s => s.trim()).filter(Boolean) : [])}
 				{@const selectedSet = new Set(items)}
+				{@const orderedItems = orderTaxonomyItems(items, axis)}
 				<div class="pe-taxo-wrap">
 					<div class="pe-taxo-row">
 						<div class="pe-taxo-pills">
-							{#if items.length === 0}
+							{#if orderedItems.length === 0}
 								<span class="pe-taxo-empty">{$t('propertyEditor.empty')}</span>
 							{:else}
-								{#each items as id (id)}
-									{@const color = axis === 'horizontal' ? tierColorForId(id) : null}
-									<span class="pe-taxo-pill" style:--taxo-color={color ?? 'transparent'}>
-										<span class="pe-taxo-label">{taxonomyLabel(id, axis)}</span>
-										<button class="pe-taxo-x" onclick={() => removeTaxonomyValue(idx, id)} title={$t('propertyEditor.delete')}>&times;</button>
-									</span>
+								{#each orderedItems as row (row.id)}
+									{@const color = axis === 'horizontal' ? tierColorForId(row.id) : null}
+									<div class="pe-taxo-pill-line" style:padding-inline-start={`${row.depth * 16}px`}>
+										{#if row.depth > 0}
+											<span class="pe-taxo-connector" aria-hidden="true">↳</span>
+										{/if}
+										<span class="pe-taxo-pill" style:--taxo-color={color ?? 'transparent'}>
+											<span class="pe-taxo-label">{taxonomyLabel(row.id, axis)}</span>
+											<button class="pe-taxo-x" onclick={() => removeTaxonomyValue(idx, row.id)} title={$t('propertyEditor.delete')}>&times;</button>
+										</span>
+									</div>
 								{/each}
 							{/if}
 						</div>
@@ -1108,7 +1154,17 @@
 	}
 	.pe-taxo-pills {
 		flex: 1; min-width: 0;
-		display: flex; flex-wrap: wrap; align-items: center; gap: 4px;
+		display: flex; flex-direction: column; align-items: flex-start; gap: 3px;
+	}
+	.pe-taxo-pill-line {
+		display: flex; align-items: center; gap: 4px;
+		max-width: 100%; min-width: 0;
+	}
+	.pe-taxo-connector {
+		color: var(--text-faint);
+		font-size: 12px; line-height: 1;
+		flex-shrink: 0;
+		user-select: none;
 	}
 	.pe-taxo-empty {
 		color: var(--text-faint); font-style: italic; font-size: 0.78rem;
