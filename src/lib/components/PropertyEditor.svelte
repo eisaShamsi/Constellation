@@ -14,6 +14,15 @@
 	const pillShape = $derived($appSettings.linkPills?.shape ?? { radius: 10, height: 20, fontWeight: 700 });
 	import { formatDate } from '$lib/utils';
 
+	// MIG-021v2 §1D' — Hierarchical pickers for `sources:` and `content_type:`
+	// frontmatter fields. Single source of truth: the Rust taxonomies fetched
+	// via IPC and cached. PropertyEditor stores selections as a YAML list;
+	// the existing save path (`saveTabContent` → `index_note`) re-extracts
+	// on save so the SQLite mirror updates. No special IPC needed here.
+	import TaxonomyTreePicker from '$lib/sources/TaxonomyTreePicker.svelte';
+	import { getHorizontalTaxonomy, type HorizontalNode } from '$lib/sources/horizontalTaxonomy';
+	import { getVerticalTaxonomy, type VerticalNode } from '$lib/sources/verticalTaxonomy';
+
 	let {
 		properties,
 		body,
@@ -90,6 +99,8 @@
 		{ key: 'type', label: 'type', labelAr: 'النوع' },
 		{ key: 'category', label: 'category', labelAr: 'الفئة' },
 		{ key: 'related', label: 'related', labelAr: 'ذات صلة' },
+		{ key: 'sources', label: 'sources', labelAr: 'المصادر' },
+		{ key: 'content_type', label: 'content_type', labelAr: 'نوع المحتوى' },
 	];
 
 	let editableProps = $state<FrontmatterProperty[]>([]);
@@ -151,7 +162,89 @@
 	// Snapshot incoming props for change detection
 	let prevPropsSnapshot = $state('');
 
-	// Sync from props when tab changes OR when properties change externally
+	// MIG-021v2 §1D' — Lazy-loaded taxonomies + per-row tree-picker expand state.
+	// The pickers stay collapsed by default (pills only); user clicks the
+	// chevron to expand. `taxonomyExpanded` is the row index whose tree is
+	// currently open, or -1.
+	let horizontalTaxonomy = $state<HorizontalNode[]>([]);
+	let verticalTaxonomy = $state<VerticalNode[]>([]);
+	let taxonomiesLoaded = $state(false);
+	let taxonomyExpanded = $state(-1);
+
+	function isTaxonomyKey(key: string): 'horizontal' | 'vertical' | null {
+		const k = key.toLowerCase();
+		if (k === 'sources') return 'horizontal';
+		if (k === 'content_type') return 'vertical';
+		return null;
+	}
+
+	async function ensureTaxonomiesLoaded() {
+		if (taxonomiesLoaded) return;
+		try {
+			[horizontalTaxonomy, verticalTaxonomy] = await Promise.all([
+				getHorizontalTaxonomy(),
+				getVerticalTaxonomy(),
+			]);
+			taxonomiesLoaded = true;
+		} catch (err) {
+			console.error('[PropertyEditor] taxonomy load failed:', err);
+		}
+	}
+
+	function taxonomyLabel(id: string, axis: 'horizontal' | 'vertical'): string {
+		const isAr = $locale === 'ar';
+		if (axis === 'horizontal') {
+			const node = horizontalTaxonomy.find(n => n.id === id);
+			if (!node) return id;
+			return isAr ? node.ar : node.en;
+		}
+		const node = verticalTaxonomy.find(n => n.id === id);
+		if (!node) return id;
+		return isAr ? node.ar : node.en;
+	}
+
+	function tierColorForId(id: string): string | null {
+		const node = horizontalTaxonomy.find(n => n.id === id);
+		if (!node) return null;
+		const tier = node.tier > 0
+			? node.tier
+			: (node.parent_id ? (horizontalTaxonomy.find(n => n.id === node.parent_id)?.tier ?? 0) : 0);
+		switch (tier) {
+			case 1: return '#0f6e56';
+			case 2: return '#534ab7';
+			case 3: return '#854f0b';
+			default: return null;
+		}
+	}
+
+	function applyTaxonomySelection(idx: number, selected: Set<string>) {
+		const items = [...selected];
+		editableProps = editableProps.map((p, i) => {
+			if (i !== idx) return p;
+			return {
+				...p,
+				type: 'list' as PropertyType,
+				listItems: items,
+				value: items.join(', '),
+			};
+		});
+		debouncedSave();
+	}
+
+	function removeTaxonomyValue(idx: number, id: string) {
+		const prop = editableProps[idx];
+		const next = (prop.listItems ?? []).filter(v => v !== id);
+		applyTaxonomySelection(idx, new Set(next));
+	}
+
+	function toggleTaxonomyExpanded(idx: number) {
+		if (taxonomyExpanded === idx) {
+			taxonomyExpanded = -1;
+		} else {
+			ensureTaxonomiesLoaded();
+			taxonomyExpanded = idx;
+		}
+	}
 	$effect(() => {
 		const currentSnapshot = JSON.stringify(properties.map(p => ({ k: p.key, v: p.value, t: p.type })));
 		const tabChanged = tabId !== prevTabId;
@@ -574,7 +667,61 @@
 			{/if}
 
 			<!-- Value input by type -->
-			{#if prop.key.toLowerCase() === 'stage'}
+			{#if isTaxonomyKey(prop.key)}
+				<!-- MIG-021v2 §1D' — Hierarchical taxonomy picker for `sources:`
+				     and `content_type:` frontmatter fields. Pills always visible;
+				     chevron toggles inline TaxonomyTreePicker (height-capped).
+				     Saves through the standard YAML write path — no special IPC. -->
+				{@const axis = isTaxonomyKey(prop.key)!}
+				{@const items = prop.listItems ?? (prop.value ? prop.value.split(',').map(s => s.trim()).filter(Boolean) : [])}
+				{@const selectedSet = new Set(items)}
+				<div class="pe-taxo-wrap">
+					<div class="pe-taxo-row">
+						<div class="pe-taxo-pills">
+							{#if items.length === 0}
+								<span class="pe-taxo-empty">{$t('propertyEditor.empty')}</span>
+							{:else}
+								{#each items as id (id)}
+									{@const color = axis === 'horizontal' ? tierColorForId(id) : null}
+									<span class="pe-taxo-pill" style:--taxo-color={color ?? 'transparent'}>
+										<span class="pe-taxo-label">{taxonomyLabel(id, axis)}</span>
+										<button class="pe-taxo-x" onclick={() => removeTaxonomyValue(idx, id)} title={$t('propertyEditor.delete')}>&times;</button>
+									</span>
+								{/each}
+							{/if}
+						</div>
+						<button
+							class="pe-taxo-edit"
+							class:expanded={taxonomyExpanded === idx}
+							onclick={() => toggleTaxonomyExpanded(idx)}
+							title={$t('taxonomyTreePicker.expandAll') || 'Open picker'}
+						>▸</button>
+					</div>
+					{#if taxonomyExpanded === idx}
+						<div class="pe-taxo-tree">
+							{#if !taxonomiesLoaded}
+								<div class="pe-taxo-loading">…</div>
+							{:else if axis === 'horizontal'}
+								<TaxonomyTreePicker
+									taxonomy={horizontalTaxonomy}
+									axis="horizontal"
+									selected={selectedSet}
+									onChange={(s) => applyTaxonomySelection(idx, s)}
+									tierColors={true}
+								/>
+							{:else}
+								<TaxonomyTreePicker
+									taxonomy={verticalTaxonomy}
+									axis="vertical"
+									selected={selectedSet}
+									onChange={(s) => applyTaxonomySelection(idx, s)}
+									tierColors={false}
+								/>
+							{/if}
+						</div>
+					{/if}
+				</div>
+			{:else if prop.key.toLowerCase() === 'stage'}
 				<!-- MIG-014 §2C — mode-flip combobox per Stages Concept Paper v1.2.
 				     The dropdown is always 6 entries:
 				       Mode A (input empty / matches a fixed lifecycle name):
@@ -950,4 +1097,64 @@
 		cursor: pointer; text-align: start;
 	}
 	.pe-add:hover { border-color: var(--interactive-accent); color: var(--interactive-accent); }
+
+	/* MIG-021v2 §1D' — taxonomy picker (sources / content_type) */
+	.pe-taxo-wrap {
+		flex: 1; min-width: 0;
+		display: flex; flex-direction: column; gap: 4px;
+	}
+	.pe-taxo-row {
+		display: flex; align-items: center; gap: 6px;
+		min-width: 0;
+	}
+	.pe-taxo-pills {
+		flex: 1; min-width: 0;
+		display: flex; flex-wrap: wrap; align-items: center; gap: 4px;
+	}
+	.pe-taxo-empty {
+		color: var(--text-faint); font-style: italic; font-size: 0.78rem;
+	}
+	.pe-taxo-pill {
+		display: inline-flex; align-items: center; gap: 4px;
+		box-sizing: border-box;
+		height: var(--pill-height, 20px);
+		padding: 0 8px;
+		border-radius: var(--pill-radius, 10px);
+		background: var(--background-modifier-border-focus); color: #fff;
+		font-size: 0.75rem; font-weight: var(--pill-weight, 700);
+		line-height: 1; white-space: nowrap;
+		border-inline-start: 3px solid var(--taxo-color);
+	}
+	.pe-taxo-label { display: inline-block; }
+	.pe-taxo-x {
+		border: none; background: none; color: rgba(255, 255, 255, 0.75);
+		cursor: pointer; font-size: 0.8rem; padding: 0 1px; line-height: 1;
+	}
+	.pe-taxo-x:hover { color: #fff; }
+	.pe-taxo-edit {
+		flex-shrink: 0;
+		width: 18px; height: 18px;
+		display: flex; align-items: center; justify-content: center;
+		border: 1px solid var(--background-modifier-border);
+		background: transparent;
+		color: var(--text-muted);
+		border-radius: 4px;
+		cursor: pointer;
+		font-size: 10px;
+		padding: 0;
+		transition: transform 0.12s;
+	}
+	.pe-taxo-edit:hover { background: var(--background-modifier-hover); }
+	.pe-taxo-edit.expanded { transform: rotate(90deg); }
+	.pe-taxo-tree {
+		max-height: 320px;
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 6px;
+		overflow: hidden;
+		background: var(--background-primary);
+		display: flex; flex-direction: column;
+	}
+	.pe-taxo-loading {
+		padding: 16px; text-align: center; color: var(--text-faint);
+	}
 </style>

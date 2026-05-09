@@ -465,3 +465,41 @@ cargo check clean throughout (verified after §1A', §1B', and §1C'). 37 warnin
 ### Verbatim Eisa quotes
 
 - *"Approved."* (2026-05-09 — Plan-Approval-Equals-Build-Approval signal)
+
+---
+
+## §1C' Boss-test gate — PASS (2026-05-09)
+
+Eisa: *"All pass"* — covering Stage 1 (build + dual-axis classification), Stage 2 (Accept / Edit / tree mechanics / Save / Cancel), Stage 3 (Arabic walkthrough with locale-aware labels). Closed all three §1C' fixes:
+
+- fix-1: locale-aware label rendering (`labelForId` reads `$locale`)
+- fix-2: pickers always stacked vertically (removed `@media (min-width: 1200px)` row layout)
+- fix-2 (cont.): TaxonomyTreePicker flat-render rewrite (replaces recursive Svelte 5 `{#snippet treeNode(node, depth)}` with pre-walked `Row[]` derived state)
+
+Commits: `4769fbe` (gold border) → `ec288fe` (RTL `border-inline-start`) → `609b2d8` (sub-leaf evidence i18n) → `3582f1d` (stacked + locale-aware) — all under §1C'.
+
+---
+
+## §1D' — PropertyEditor inline taxonomy pickers
+
+**Goal**: per-note manual editing of `sources:` and `content_type:` directly from the Note properties panel.
+
+**EDIT src/lib/components/PropertyEditor.svelte**:
+- Added `isTaxonomyKey(key)` → `'horizontal' | 'vertical' | null` matching `sources` / `content_type`
+- Lazy-load both taxonomies on first expand (`ensureTaxonomiesLoaded`); cached in module-level state
+- New value-rendering branch placed before `stage`: pills row + chevron toggle + inline TaxonomyTreePicker (height-capped 320px)
+- `applyTaxonomySelection(idx, set)` writes `listItems` + `value`; saves via existing `debouncedSave` → `saveTabContent` (frontmatter is single source of truth; `index_note` re-extracts on save so SQLite mirror updates)
+- Pills carry tier-color borders (horizontal axis) via `border-inline-start: 3px solid` (auto-flips RTL)
+- `removeTaxonomyValue` removes individual pill without opening the picker
+- Added `sources` and `content_type` to KEY_SUGGESTIONS (EN + AR)
+
+**Storage path**: PropertyEditor writes the YAML list through the standard frontmatter save; no special IPC. The `sources_set_manual` / `content_type_set_manual` IPCs remain reserved for the Source Review accept-flow.
+
+**i18n**: reused existing `propertyEditor.empty`, `propertyEditor.delete`, `taxonomyTreePicker.expandAll` — no new strings required for §1D' chrome.
+
+**Verification**:
+- `npx svelte-check`: zero new errors (pre-existing LinkLifecycle dedupe untouched — Option B deferred per memory)
+- `npm run build`: clean
+- `npm run tauri build -- --bundles nsis`: produced `Constellation_0.3.4_x64-setup.exe`
+
+**Awaiting §1D' Boss-test**.
