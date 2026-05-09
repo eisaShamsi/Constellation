@@ -259,3 +259,88 @@ Plan-Approval-Equals-Build-Approval is in force. On Eisa's nod ("approved" or re
 ## Verbatim Eisa quotes captured in v1.78 preamble
 
 - *"Enough of your never-ending technical questions. Proceed with the MIG-021 Architect Phase-2."* (2026-05-09 — Stop-On-Correction trigger; Architect approved by directive)
+
+---
+
+## Phase 14 — Build cascade: §1A → §1B → §1C (first Boss-test gate reached)
+
+After v1.78 PCS I went off-thread investigating a Claude Code UI question (`Ctrl+O` toggles tool-output verbosity). Eisa course-corrected: "I was referring to this" — pointing to the four-document Sight v5 specification block. The "Proceed" was the Plan-Approval-Equals-Build-Approval signal, not the Claude Code investigation. Stop-On-Correction; Build cascade started.
+
+### Build environment caveat (architectural surprise, not blocking)
+
+I cannot run `cargo check` or `cargo build` from this agent sandbox — no Rust toolchain installed, and Tauri builds require system libraries the sandbox lacks. Per Plan-Approval-Equals-Build-Approval's "architectural surprise" exception I surfaced this in commit messages: each phase ships with explicit "build verification pending Eisa's local cargo build" notes. If anything fails to compile, fix forward in a follow-up commit.
+
+### §1A — Schema migration + frontmatter parser + 3 IPCs (commit `4d6ef37`)
+
+**NEW src-tauri/src/sources.rs** (~520 LOC including 11 unit tests):
+- SOURCE_IDS constant: 11 canonical sources from the Universal Epistemic Content Taxonomy + 12th `unclassifiable` opt-out token (Plan §0 Q5)
+- `extract_sources()` — frontmatter parser handling all three YAML shapes (scalar / inline array / block list); mirrors `search::extract_aliases` (MIG-004 §2)
+- `rewrite_frontmatter_sources()` — frontmatter rewriter preserving all other fields and body
+- DB read/write helpers + 3 IPCs: `sources_get_for_note`, `sources_set_manual`, `sources_clear`
+
+**EDIT src-tauri/src/search.rs**:
+- `init_db`: wired `ensure_note_meta_sources_column` + `ensure_sources_suggestions_table` after MIG-003 block (idempotent)
+- `index_note`: extracts sources from frontmatter on every save, stamps into the new `note_meta.sources` column (extended INSERT 12 → 13 columns)
+
+**EDIT src-tauri/src/lib.rs**: `mod sources;` + 3 IPCs registered.
+
+### §1B — Tier 1 classifier (commit `dcbd40e`)
+
+**NEW src-tauri/src/classifier/** (directory module, 3 files, ~480 LOC total):
+- `mod.rs` — `classifier_suggest_for_note(path)` IPC: reads note → extracts title+body (Plan §0 Q3) → truncates to 2000 chars (Plan §0 Q4) → runs Tier-1 → writes top-3 to queue → returns SuggestionRecord
+- `source_definitions.rs` — 11 source definitions, ~150 words each, drawn from the taxonomy doc with rich semantic cues for e5-small distinguishability (textual phrases, examples, contrasts with adjacent sources)
+- `tier1_embedding.rs` — embed source defs once at first call (cached in OnceLock), embed note text, cosine similarity, top-3 sorted descending. Math helpers: l2_normalize, dot, clamp01, char-boundary truncate
+
+**EDIT src-tauri/src/embeddings.rs**: `run_embedding` and `ensure_engine` made `pub(crate)` so the classifier can reuse the cached e5-small ONNX engine without duplicating the model load.
+
+**EDIT src-tauri/src/lib.rs**: `mod classifier;` + `classifier_suggest_for_note` IPC.
+
+Hardware impact: zero. e5-small is already shipped (113 MB ONNX for semantic search); reused at no additional bundle cost.
+
+### §1C — Source Review sidebar panel + 3 review IPCs + i18n (commit `4e70393`) — ✅ Boss-test gate
+
+**NEW src/lib/components/SourceReviewPanel.svelte** (~430 LOC incl Suwaidi-aligned styling):
+- Lists pending suggestions FIFO across active Universe
+- Per record: title (clickable → openNoteTab), tier badge, top-3 with confidence + evidence
+- Three actions: Accept (writes via `sources_set_manual`, clears suggestion), Edit (multi-select 11 sources + unclassifiable opt-out, save), Reject (clears without writing)
+- "Classify open note" button when a note is open — small scope expansion to make the §1C test self-contained without yet shipping the §1E right-click action (production builds disable dev-tools console; needed an in-app trigger)
+- Empty / loading / error states with plain-language messages
+- `dir="auto"` for native bidi (RTL works without per-locale switching)
+
+**EDIT src-tauri/src/sources.rs** — three new Tauri commands:
+- `sources_get_suggestions(path)` → Option<SuggestionRecord>
+- `sources_list_pending_suggestions()` → Vec<SuggestionRecord> (FIFO by created_at)
+- `sources_reject_suggestion(path)` → clear queue entry without writing
+
+**EDIT src/routes/+layout.svelte**:
+- Imported SourceReviewPanel
+- Extended `rightSidebarTab` type union with `'sourceReview'`
+- Added `tabVisible[sourceReview] = true` (force-visible until panelPlacements wiring ships)
+- New tab button (checkmark-in-square icon)
+- Two render branches (with-active-tab + without-active-tab) so panel works regardless of editor state — mirrors ReviewPulse pattern
+- Both branches pass `activeNotePath={sidebarTab?.path ?? null}`
+
+**EDIT src/lib/i18n/en.json + ar.json** (~30 strings each):
+- panels.sourceReview
+- sources.label.{11_sources_+_unclassifiable} — full bilingual label set
+- sources.review.{title|refresh|loading|error|empty|pending|tier|accept|edit|reject|save|cancel|classifyActive|classifying}
+
+13 other locales NOT translated this commit — fall back to EN via standard $t() chain. Queued as PJ for human translation.
+
+### Commit hashes
+
+- `4d6ef37` — §1A
+- `dcbd40e` — §1B
+- `4e70393` — §1C (✅ Boss-test gate reached)
+
+### What's now testable
+
+Eisa builds locally (cargo build / npm run tauri dev), then verifies the Source Review panel works end-to-end on the trial Universe per the test tutorial below.
+
+### Next session
+
+Either: (a) fix any build errors Eisa reports, or (b) cascade §1D (PropertyEditor combobox) → §1E (right-click context action — replaces the temp "Classify open note" button) → §1F (background scan + status bar — second Boss-test gate) → §1G (i18n full pass) → §1H (Tier 2 download — third Boss-test gate) → §1I (help docs) → §1J (/simplify + audit) → §1K (close-out + orientation v1.79 bump).
+
+## Verbatim Eisa quotes captured in this phase
+
+- *"I was referring to this."* (2026-05-09 — Stop-On-Correction; "Proceed" meant Build cascade, not the Claude Code UI investigation)
