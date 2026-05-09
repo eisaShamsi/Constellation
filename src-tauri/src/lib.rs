@@ -31,6 +31,7 @@ mod mig003_step4;
 mod sight;
 mod sight_layout;
 mod sources;
+mod classifier;
 mod lenses;
 // MIG-013 §1A: visibility widened so the offline `build_concept_vectors`
 // [[bin]] can call `lexicon::parse`. The M11 zero-diff invariant covers
@@ -320,6 +321,8 @@ pub fn run() {
             sources::sources_get_for_note,
             sources::sources_set_manual,
             sources::sources_clear,
+            // MIG-021 §1B — Tier-1 classifier IPC (on-demand single-note)
+            classifier::classifier_suggest_for_note,
             strata::compute_note_strata,
             maturity::compute_note_maturity,
             tension::detect_tensions,

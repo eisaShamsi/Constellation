@@ -102,7 +102,10 @@ fn init_engine(model_path: &PathBuf, tokenizer_path: &PathBuf) -> Result<Embeddi
     Ok(EmbeddingEngine { session: Mutex::new(session), tokenizer })
 }
 
-fn run_embedding(engine: &EmbeddingEngine, text: &str) -> Result<Vec<f32>, String> {
+// MIG-021 §1B: exposed pub(crate) so the classifier module can reuse
+// the cached engine for source-classification without spinning up a
+// second ONNX session. Caller must hold the EmbeddingState lock.
+pub(crate) fn run_embedding(engine: &EmbeddingEngine, text: &str) -> Result<Vec<f32>, String> {
     // Truncate to ~512 tokens worth of text (char-safe for multi-byte UTF-8)
     let truncated = if text.len() > 2000 {
         let mut end = 2000;
@@ -352,7 +355,9 @@ pub fn constellation_init_embeddings(app: tauri::AppHandle) -> Result<String, St
 }
 
 /// Ensure the engine is loaded (lazy init on first use).
-fn ensure_engine(app: &tauri::AppHandle) -> Result<(), String> {
+/// MIG-021 §1B: pub(crate) so the classifier module can ensure the
+/// engine before classifying; lazy load preserves boot-perf budget.
+pub(crate) fn ensure_engine(app: &tauri::AppHandle) -> Result<(), String> {
     let state = app.state::<EmbeddingState>();
     let guard = state.engine.lock().map_err(|e| e.to_string())?;
     if guard.is_some() { return Ok(()); }
