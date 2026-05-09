@@ -843,8 +843,21 @@
       "save": "Save",
       "cancel": "Cancel",
       "classifyActive": "Classify open note",
-      "classifying": "Classifying…"
+      "classifying": "Classifying…",
+      "axis": {
+        "horizontal": "Sources",
+        "vertical": "Content type"
+      }
     }
+  },
+  "taxonomyTreePicker": {
+    "search": "Search…",
+    "expandAll": "Expand all",
+    "collapseAll": "Collapse all",
+    "noResults": "No matches",
+    "tier1Legend": "Tier 1 — universally accepted",
+    "tier2Legend": "Tier 2 — broadly accepted",
+    "tier3Legend": "Tier 3 — school-specific or contested"
   },
   "tasksPanel": {
     "all": "All",

@@ -1,23 +1,33 @@
 <!--
-  MIG-021 §1C — Source Review sidebar panel.
+  MIG-021v2 §1C' — Source Review sidebar panel (dual-axis).
 
-  Surfaces the classifier's `sources_suggested:` queue for user approval.
-  Per Plan: Accept (writes `sources:` to frontmatter + clears suggestion),
-  Edit (modify before accepting), Reject (clear without writing).
-
-  Anchored against:
-    docs/Constellation-Sight-Concept-Paper-v2.0.md §7.3 + §8.2
-    lab/reports/MIG-021-EPISTEMIC-CLASSIFIER-PLAN.md §1C
+  Shows the classifier's combined queue of suggestions across both axes
+  (horizontal sources + vertical content_type). Per record:
+    - Two sublists, one per axis, with tier badges on horizontal entries
+    - Accept commits BOTH axes (sources_set_manual + content_type_set_manual)
+    - Edit mode opens TWO TaxonomyTreePicker instances (one per axis)
+    - Reject clears the suggestion without writing either field
 -->
 <script lang="ts">
   import { onMount } from 'svelte';
   import { invoke } from '@tauri-apps/api/core';
   import { t } from '$lib/i18n';
+  import TaxonomyTreePicker from '$lib/sources/TaxonomyTreePicker.svelte';
+  import {
+    getHorizontalTaxonomy,
+    tierColor,
+    type HorizontalNode,
+  } from '$lib/sources/horizontalTaxonomy';
+  import {
+    getVerticalTaxonomy,
+    type VerticalNode,
+  } from '$lib/sources/verticalTaxonomy';
 
   type Suggestion = {
     source: string;
     confidence: number;
     evidence: string;
+    axis: string;
   };
 
   type SuggestionRecord = {
@@ -35,30 +45,19 @@
     activeNotePath?: string | null;
   } = $props();
 
-  let classifying = $state(false);
-
   let queue = $state<SuggestionRecord[]>([]);
   let loading = $state(true);
   let error = $state<string | null>(null);
-  let editingPath = $state<string | null>(null);
-  let editedSources = $state<Set<string>>(new Set());
+  let classifying = $state(false);
 
-  // Canonical 11 sources + the 12th `unclassifiable` opt-out token.
-  // Order matches SOURCE_IDS in src-tauri/src/sources.rs.
-  const ALL_SOURCES = [
-    'perception',
-    'inference',
-    'testimony',
-    'mass-transmission',
-    'comparison',
-    'postulation',
-    'non-apprehension',
-    'memory',
-    'innate-disposition',
-    'inspiration',
-    'revelation',
-    'unclassifiable',
-  ] as const;
+  // Edit-mode state per record path
+  let editingPath = $state<string | null>(null);
+  let editedHorizontal = $state(new Set<string>());
+  let editedVertical = $state(new Set<string>());
+
+  // Cached taxonomies (fetched once on mount)
+  let horizontalTaxonomy = $state<HorizontalNode[]>([]);
+  let verticalTaxonomy = $state<VerticalNode[]>([]);
 
   async function loadQueue() {
     loading = true;
@@ -81,7 +80,6 @@
       const record = await invoke<SuggestionRecord>('classifier_suggest_for_note', {
         notePath: activeNotePath,
       });
-      // Insert/replace record in queue (front of list — newest visible first).
       queue = [record, ...queue.filter(r => r.note_path !== record.note_path)];
     } catch (e) {
       error = String(e);
@@ -90,14 +88,26 @@
     }
   }
 
-  async function acceptSuggestion(record: SuggestionRecord, editedList?: string[]) {
-    const sources = editedList ?? record.suggestions.map(s => s.source);
+  async function acceptSuggestion(
+    record: SuggestionRecord,
+    horizontalOverride?: string[],
+    verticalOverride?: string[],
+  ) {
+    const horizontalIds =
+      horizontalOverride ?? record.suggestions.filter(s => s.axis === 'horizontal').map(s => s.source);
+    const verticalIds =
+      verticalOverride ?? record.suggestions.filter(s => s.axis === 'vertical').map(s => s.source);
     try {
-      await invoke('sources_set_manual', { notePath: record.note_path, sources });
-      // sources_set_manual clears the suggestion server-side; reload locally.
+      await invoke('sources_set_manual', {
+        notePath: record.note_path,
+        sources: horizontalIds,
+      });
+      await invoke('content_type_set_manual', {
+        notePath: record.note_path,
+        contentType: verticalIds,
+      });
       queue = queue.filter(r => r.note_path !== record.note_path);
-      editingPath = null;
-      editedSources = new Set();
+      cancelEdit();
     } catch (e) {
       error = String(e);
     }
@@ -114,27 +124,25 @@
 
   function startEdit(record: SuggestionRecord) {
     editingPath = record.note_path;
-    editedSources = new Set(record.suggestions.map(s => s.source));
+    editedHorizontal = new Set(
+      record.suggestions.filter(s => s.axis === 'horizontal').map(s => s.source),
+    );
+    editedVertical = new Set(
+      record.suggestions.filter(s => s.axis === 'vertical').map(s => s.source),
+    );
   }
 
   function cancelEdit() {
     editingPath = null;
-    editedSources = new Set();
-  }
-
-  function toggleSource(source: string) {
-    const next = new Set(editedSources);
-    if (next.has(source)) next.delete(source);
-    else next.add(source);
-    editedSources = next;
+    editedHorizontal = new Set();
+    editedVertical = new Set();
   }
 
   function commitEdit(record: SuggestionRecord) {
-    acceptSuggestion(record, Array.from(editedSources));
+    acceptSuggestion(record, [...editedHorizontal], [...editedVertical]);
   }
 
   function noteName(path: string): string {
-    // Last path segment without .md extension.
     const seg = path.split(/[\\/]/).pop() ?? path;
     return seg.replace(/\.md$/, '');
   }
@@ -143,7 +151,33 @@
     return `${Math.round(c * 100)}%`;
   }
 
-  onMount(() => {
+  function effectiveTierForId(id: string): number {
+    const node = horizontalTaxonomy.find(n => n.id === id);
+    if (!node) return 0;
+    if (node.tier > 0) return node.tier;
+    if (node.parent_id) {
+      const parent = horizontalTaxonomy.find(n => n.id === node.parent_id);
+      if (parent) return parent.tier;
+    }
+    return 0;
+  }
+
+  function labelForId(id: string, axis: string): string {
+    if (axis === 'horizontal') {
+      return horizontalTaxonomy.find(n => n.id === id)?.en ?? id;
+    }
+    return verticalTaxonomy.find(n => n.id === id)?.en ?? id;
+  }
+
+  onMount(async () => {
+    try {
+      [horizontalTaxonomy, verticalTaxonomy] = await Promise.all([
+        getHorizontalTaxonomy(),
+        getVerticalTaxonomy(),
+      ]);
+    } catch (e) {
+      error = `Failed to load taxonomies: ${e}`;
+    }
     loadQueue();
   });
 </script>
@@ -192,7 +226,7 @@
       <div class="srp-empty-title">{$t('sources.review.emptyTitle') || 'Nothing to review'}</div>
       <div class="srp-empty-sub">
         {$t('sources.review.emptySub') ||
-          'Run the classifier from a note’s right-click menu to populate this queue.'}
+          'Classify a note (right-click → Suggest, or use the Classify open note button) to populate this queue.'}
       </div>
     </div>
   {:else}
@@ -205,6 +239,8 @@
 
     <ul class="srp-list">
       {#each queue as record (record.note_path)}
+        {@const horizontalSuggestions = record.suggestions.filter(s => s.axis === 'horizontal')}
+        {@const verticalSuggestions = record.suggestions.filter(s => s.axis === 'vertical')}
         <li class="srp-card">
           <div class="srp-card-header">
             <button
@@ -220,22 +256,36 @@
           </div>
 
           {#if editingPath === record.note_path}
-            <!-- Edit mode: multi-select all 11 sources + 'unclassifiable' opt-out -->
-            <div class="srp-edit-grid">
-              {#each ALL_SOURCES as src}
-                <label
-                  class="srp-edit-pill"
-                  class:active={editedSources.has(src)}
-                  title={$t('sources.description.' + src) || src}
-                >
-                  <input
-                    type="checkbox"
-                    checked={editedSources.has(src)}
-                    onchange={() => toggleSource(src)}
+            <!-- ─── Edit mode: two tree pickers ─── -->
+            <div class="srp-edit-axes">
+              <div class="srp-axis-block">
+                <div class="srp-axis-label">
+                  {$t('sources.review.axis.horizontal') || 'Sources'}
+                </div>
+                <div class="srp-tree-wrap">
+                  <TaxonomyTreePicker
+                    taxonomy={horizontalTaxonomy}
+                    axis="horizontal"
+                    selected={editedHorizontal}
+                    onChange={(s) => (editedHorizontal = s)}
+                    tierColors={true}
                   />
-                  <span>{$t('sources.label.' + src) || src}</span>
-                </label>
-              {/each}
+                </div>
+              </div>
+              <div class="srp-axis-block">
+                <div class="srp-axis-label">
+                  {$t('sources.review.axis.vertical') || 'Content type'}
+                </div>
+                <div class="srp-tree-wrap">
+                  <TaxonomyTreePicker
+                    taxonomy={verticalTaxonomy}
+                    axis="vertical"
+                    selected={editedVertical}
+                    onChange={(s) => (editedVertical = s)}
+                    tierColors={false}
+                  />
+                </div>
+              </div>
             </div>
             <div class="srp-actions">
               <button class="srp-btn srp-btn-primary" onclick={() => commitEdit(record)}>
@@ -246,37 +296,64 @@
               </button>
             </div>
           {:else}
-            <!-- Default: show suggestions with confidence + evidence -->
-            <ul class="srp-suggestions">
-              {#each record.suggestions as s, i}
-                <li class="srp-suggestion" class:primary={i === 0}>
-                  <div class="srp-source-row">
-                    <span
-                      class="srp-source-name"
-                      title={$t('sources.description.' + s.source) || s.source}
+            <!-- ─── Default: dual-axis suggestion display ─── -->
+            {#if horizontalSuggestions.length > 0}
+              <div class="srp-axis-section">
+                <div class="srp-axis-label">
+                  {$t('sources.review.axis.horizontal') || 'Sources'}
+                </div>
+                <ul class="srp-suggestions">
+                  {#each horizontalSuggestions as s, i}
+                    {@const tier = effectiveTierForId(s.source)}
+                    {@const tcolor = tierColor(tier)}
+                    <li
+                      class="srp-suggestion"
+                      class:primary={i === 0}
+                      style:--tier-color={tcolor ?? 'transparent'}
                     >
-                      {$t('sources.label.' + s.source) || s.source}
-                    </span>
-                    <span class="srp-confidence">{formatConfidence(s.confidence)}</span>
-                  </div>
-                  <!--
-                    Evidence string: prefer the locale-aware sources.evidence.{source}
-                    lookup over the stored evidence (which is hardcoded English in
-                    Tier-1 from brief_signature_for in tier1_embedding.rs).
-                    When Tier-2 (Qwen3-1.7B) ships in §1H it will produce dynamic
-                    quote-from-note evidence; that takes precedence over the locale
-                    lookup because per-classification quotes are richer than the
-                    generic per-source signature. For now Tier-1 always returns the
-                    generic signature, so the locale lookup wins.
-                  -->
-                  {#if $t('sources.evidence.' + s.source) || s.evidence}
-                    <div class="srp-evidence">
-                      {$t('sources.evidence.' + s.source) || s.evidence}
-                    </div>
-                  {/if}
-                </li>
-              {/each}
-            </ul>
+                      <div class="srp-source-row">
+                        <span
+                          class="srp-source-name"
+                          title={$t('sources.description.' + s.source) || s.source}
+                        >
+                          {labelForId(s.source, 'horizontal')}
+                        </span>
+                        {#if tier > 0}
+                          <span class="srp-tier-badge" style:background-color={tcolor ?? ''}
+                                title={`Tier ${tier}`}>T{tier}</span>
+                        {/if}
+                        <span class="srp-confidence">{formatConfidence(s.confidence)}</span>
+                      </div>
+                      {#if s.evidence}
+                        <div class="srp-evidence">
+                          {$t('sources.evidence.' + s.source) || s.evidence}
+                        </div>
+                      {/if}
+                    </li>
+                  {/each}
+                </ul>
+              </div>
+            {/if}
+
+            {#if verticalSuggestions.length > 0}
+              <div class="srp-axis-section">
+                <div class="srp-axis-label">
+                  {$t('sources.review.axis.vertical') || 'Content type'}
+                </div>
+                <ul class="srp-suggestions">
+                  {#each verticalSuggestions as s, i}
+                    <li class="srp-suggestion vertical" class:primary={i === 0}>
+                      <div class="srp-source-row">
+                        <span class="srp-source-name">
+                          {labelForId(s.source, 'vertical')}
+                        </span>
+                        <span class="srp-confidence">{formatConfidence(s.confidence)}</span>
+                      </div>
+                    </li>
+                  {/each}
+                </ul>
+              </div>
+            {/if}
 
             <div class="srp-actions">
               <button class="srp-btn srp-btn-primary" onclick={() => acceptSuggestion(record)}>
@@ -428,44 +505,89 @@
     border-radius: 8px;
     flex-shrink: 0;
   }
+  .srp-axis-section {
+    margin-bottom: 8px;
+  }
+  .srp-axis-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted, #6b6a64);
+    margin-bottom: 4px;
+    font-weight: 600;
+  }
   .srp-suggestions {
     list-style: none;
-    margin: 0 0 8px;
+    margin: 0 0 4px;
     padding: 0;
   }
   .srp-suggestion {
     padding: 6px 8px;
-    /* Logical property so the border auto-flips for RTL — appears on
-       the LEADING edge in any locale (left in LTR, right in RTL). */
     border-inline-start: 2px solid transparent;
     margin-bottom: 4px;
     font-size: 12px;
   }
   .srp-suggestion.primary {
-    /* Suwaidi gold — hard-coded to be theme-independent (don't pick up
-       the user's --text-accent which is often purple/blue per theme). */
     border-inline-start-color: #c9a227;
     background: rgba(201, 162, 39, 0.06);
   }
   .srp-source-row {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 8px;
+    gap: 6px;
   }
   .srp-source-name {
     font-weight: 500;
+    flex: 1;
+    min-width: 0;
+  }
+  .srp-tier-badge {
+    color: #faf6e8;
+    font-size: 9px;
+    font-weight: 600;
+    padding: 1px 5px;
+    border-radius: 3px;
+    flex-shrink: 0;
   }
   .srp-confidence {
     font-size: 11px;
     color: var(--text-muted, #6b6a64);
     font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
   }
   .srp-evidence {
     margin-top: 3px;
     font-size: 11px;
     color: var(--text-muted, #6b6a64);
     font-style: italic;
+  }
+  .srp-edit-axes {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  @media (min-width: 1200px) {
+    .srp-edit-axes {
+      flex-direction: row;
+    }
+  }
+  .srp-axis-block {
+    flex: 1;
+    min-width: 0;
+    background: var(--background-primary, #fff);
+    border: 1px solid var(--background-modifier-border, rgba(0,0,0,0.08));
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .srp-axis-block .srp-axis-label {
+    padding: 6px 8px;
+    background: var(--background-modifier-hover, rgba(0,0,0,0.04));
+    border-bottom: 1px solid var(--background-modifier-border, rgba(0,0,0,0.08));
+    margin-bottom: 0;
+  }
+  .srp-tree-wrap {
+    height: 280px;
   }
   .srp-actions {
     display: flex;
@@ -485,9 +607,6 @@
     background: var(--background-modifier-hover, rgba(0,0,0,0.05));
   }
   .srp-btn-primary {
-    /* Suwaidi gold — hard-coded so the Accept button stays visually
-       consistent with the Sight aesthetic regardless of the user's
-       theme (--interactive-accent often resolves to purple). */
     background: #c9a227;
     border-color: #c9a227;
     color: #faf6e8;
@@ -497,31 +616,5 @@
   }
   .srp-btn-danger {
     color: var(--text-error, #a83232);
-  }
-  .srp-edit-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 4px;
-    margin-bottom: 8px;
-  }
-  .srp-edit-pill {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 6px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 11px;
-    background: var(--background-primary, #fff);
-    border: 1px solid var(--background-modifier-border, rgba(0,0,0,0.08));
-  }
-  .srp-edit-pill.active {
-    background: rgba(201, 162, 39, 0.12);
-    /* Suwaidi gold — hard-coded for consistency with the primary
-       suggestion border + Accept button. */
-    border-color: #c9a227;
-  }
-  .srp-edit-pill input {
-    margin: 0;
   }
 </style>

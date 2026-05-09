@@ -807,8 +807,21 @@
       "save": "حفظ",
       "cancel": "إلغاء",
       "classifyActive": "صنّف الملاحظة المفتوحة",
-      "classifying": "جاري التصنيف…"
+      "classifying": "جاري التصنيف…",
+      "axis": {
+        "horizontal": "المصادر",
+        "vertical": "نوع المحتوى"
+      }
     }
+  },
+  "taxonomyTreePicker": {
+    "search": "بحث…",
+    "expandAll": "توسيع الكل",
+    "collapseAll": "طيّ الكل",
+    "noResults": "لا توجد نتائج",
+    "tier1Legend": "المرتبة 1 — مقبول عالمياً",
+    "tier2Legend": "المرتبة 2 — مقبول على نطاق واسع",
+    "tier3Legend": "المرتبة 3 — خاص بمدرسة أو محل خلاف"
   },
   "tasksPanel": {
     "all": "الكل",
