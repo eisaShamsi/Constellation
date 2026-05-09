@@ -176,6 +176,40 @@ All operators work in 15 languages:
 
 ## 1. Getting Started
 
+### System Requirements
+
+#### Minimum — to run Constellation
+
+- **Operating system**: Windows 10 or 11; macOS 11 (Big Sur) or later; or 64-bit Linux from the last 3 years (Ubuntu 22.04, Fedora 38, Debian 12, or equivalent)
+- **Processor**: Any 64-bit computer made in 2013 or later — any Intel or AMD desktop or laptop, or any Apple Silicon Mac
+- **Memory**: 4 GB free RAM
+- **Disk space**: 200 MB for Constellation, plus space for your notes (your notes are plain Markdown files — typically 1–10 MB per 1,000 notes)
+- **Internet**: **Not required.** Constellation runs fully on your machine. You only need internet if you choose to download an optional add-on.
+
+#### Recommended — for comfortable everyday use, large libraries (5,000+ notes), and the Second Screen feature
+
+- **Processor**: 8-core modern processor (Intel or AMD from 2018 onward, or any Apple Silicon Mac)
+- **Memory**: 8 GB free RAM
+- **Disk space**: 1 GB for Constellation and its caches
+- **Display**: Full HD (1920×1080) or higher; a second monitor unlocks the Second Screen feature
+
+#### For Constellation Sight v5 — the source classifier
+
+Sight v5 ships with a small built-in classifier that suggests source-types for your notes. **It runs on the same hardware as Constellation core — no extra requirements.**
+
+For users who want **higher classification accuracy** (especially for Arabic, Hebrew, Persian, and other non-Latin scripts), an optional larger classifier is available:
+
+- **Processor**: 4-core or better
+- **Memory**: 4 GB free RAM during a classification run, on top of Constellation's normal usage
+- **Disk space**: 1.5 GB additional for the model file
+- **Internet**: required for the one-time download (~1.1 GB) from Settings → AI. After download, the classifier runs entirely on your machine — no internet ever.
+
+**Optional GPU acceleration** (NVIDIA, Apple Metal, or Vulkan-compatible) speeds the classifier 5–20× but is **not required** — everything works on the CPU alone.
+
+#### Older or lower-spec machines
+
+Constellation is designed to be fast on a 10-year-old laptop. Everything bundled in the installer works on the minimum spec above. The optional larger Sight classifier is the only feature that benefits from more recent hardware.
+
 ### Installation
 
 Download the latest installer from the [Constellation releases page](https://github.com/eisaShamsi/Constellation/releases):

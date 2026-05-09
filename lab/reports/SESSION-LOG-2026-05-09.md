@@ -140,3 +140,39 @@ This commit:
 - *"forget about the InfraNodus."* (2026-05-09, on Sight's reframed answer)
 - *"The focus of the 360.3D is the Note, while Sight is the whole universe."* (2026-05-09)
 - *"If future Constellation users don't understand it or think it is difficult, then its existence is unnecessary."* (2026-05-09)
+
+---
+
+## Phase 10 — Recommendation accepted; Sight v.next renamed v5; LLM picks confirmed
+
+After the v1.75 PCS, Eisa asked for the recommendation across the three LLM sub-decisions (he was unfamiliar with the LLM landscape). Recommended:
+
+- **LLM**: Qwen3-1.7B Q4_K_M (Apache 2.0, first-class Arabic, ~1.1 GB)
+- **Inference**: llama.cpp via `llama-cpp-2` (GBNF grammar-constrained decoding is the killer feature for guaranteed-valid JSON)
+- **Bundling**: hybrid — but with a twist: **reuse the existing `multilingual-e5-small` (113 MB, already shipping) as the bundled "starter classifier"** via embedding-similarity classification, and offer Qwen3-1.7B as the optional Settings → AI download. Saves a separate bundled-model decision; installer stays at ~50 MB.
+
+Eisa asked about hardware/software requirements. Surfaced:
+- End-user minimum: 64-bit machine from 2013 onward, 4 GB RAM, 200 MB disk, no internet required.
+- Sight v5 bundled tier: same as Constellation core (no extra requirements).
+- Sight v5 optional larger classifier: 4-core CPU, 4 GB free RAM during run, 1.5 GB disk, one-time 1.1 GB download.
+
+**Eisa: "The next Sight will carry v.5."** Naming locked. v.next → v5 going forward.
+
+## Phase 11 — Second PCS (System Requirements docs)
+
+Eisa: *"Then we need to add the minimum PC requirement to operate Constellation, within the Help file and the user manual."*
+
+Drafted EN system-requirements section, three-section format (Minimum / Recommended / Sight v5), plain-language tone (Eisa: "Your call"). Eisa approved and directed to include the Sight v5 sub-section now (with "when it ships" framing).
+
+Shipped this commit:
+- New `### System Requirements` section in `docs/User Manual.md` between `## 1. Getting Started` and `### Installation`
+- Same section translated into Arabic in `docs/help.ar/User Manual.md` (same position)
+- New help topic `docs/help.uConstellation.World/Getting Started/Getting Started.md` (richer than the Manual section, with a "How to check my computer's specs" footer)
+- Arabic version of the new help topic at `docs/help.ar/Getting Started/Getting Started.md`
+- Orientation v1.75 → v1.76 with brief preamble noting the docs addition
+- 13 other locales (de, es, fa, fr, he, hi, ja, ko, pt, ru, tr, ur, zh) NOT translated this commit — queued as PJ-NNN follow-up. Per the BASIC RULE, no inventing translations for languages I cannot verify.
+
+## Verbatim Eisa quotes captured in v1.76 preamble
+
+- *"we need to add the minimum PC requirement to operate Constellation, within the Help file and the user manual."* (2026-05-09)
+- *"The next Sight will carry v.5."* (2026-05-09 — naming lock)
