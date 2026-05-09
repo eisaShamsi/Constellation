@@ -231,12 +231,68 @@ Investigation revealed the root cause that 13 iterations couldn't fix: SightV3 m
 
 ---
 
-## Next steps
+## Session 2 — v4 close-button fix (raw DOM event handlers)
 
-1. **Build binary** and have Eisa test:
-   - Stage 1: close button (× in header row) — THE TEST that has failed 13 times
-   - Stage 2: chart renders (stars, rim numbers, Universe Health, legend, Milky Way)
-   - Stage 3: zoom/pan (mouse wheel + drag)
-   - Stage 4: hover tooltip + click selection + connected-notes side panel + double-click to open note
-2. After PASS → §2G.4 mode toggle UI + §2G.5 persistence + §2G.6 audit/close-out
-3. MIG-020 (layer peeling + v2 retire)
+After the v4 build, Eisa tested and reported **Stage 1 failed again** — close button (×) and Esc didn't work.
+
+Investigation revealed: Svelte 5 delegates `onclick` handlers to `<body>`. SightV4's canvas container had `onclick={handleClick}` in the Svelte template — delegated to body. The parent's close button also delegated to body. d3-zoom's raw DOM listeners on the canvas interact with Svelte's body-level delegation, preventing the close button's click from reaching its handler.
+
+**Fix (commit `3a977c8`)**: Moved all canvas interaction handlers from Svelte template to raw `addEventListener` in `onMount`:
+- `canvasContainer.addEventListener('pointermove', handlePointerMove)`
+- `canvasContainer.addEventListener('pointerleave', handlePointerLeave)`
+- `canvasContainer.addEventListener('click', handleClick)`
+- `canvasContainer.addEventListener('dblclick', handleDoubleClick)`
+
+Also fixed root sizing: `flex: 1; min-height: 0` instead of `width: 100%; height: 100%`.
+
+**This fix was NOT tested by Eisa** — Eisa pivoted before re-testing.
+
+---
+
+## Session 3 — Boss directive: STOP. Go back to basics.
+
+Eisa's directive (before v4 fix could be tested):
+
+> **"I want to start fresh. I want you to discard what has been developed so far. I want you to go to the basics. Let's validate and confirm the 'Constellation Sight Concept'."**
+
+This means:
+- **STOP all v4 implementation work**
+- Go back to the fundamental Sight concept before any more coding
+- The concept itself needs validation, not just the implementation
+
+Claude re-read all three foundation documents:
+1. `docs/Constellation-Sight-v3-Concept-Paper-v1.1.md` (visual + interaction spec)
+2. `docs/Constellation-Sight-Concept-Paper-v1.1.md` (analytical foundation)
+3. `docs/SIGHT-V3-VISUAL-SPEC.md` (per-mode (X, Y, Z) grammar)
+
+Presented the concept to Eisa for validation (five analytical pillars, star chart visual grammar, six cognitive modes). Eisa responded: **"I want to start fresh. Prepare a handover prompt for a new session."**
+
+### State of standing (SO #5 record)
+
+#### Verified shipped + protected (on `main`)
+- All pre-Sight work (MIG-001 through MIG-014) — stable, not at risk
+- v2 Sight disabled under MIG-017 — known-good fallback preserved on disk
+- v3 helper modules: `modes.ts`, `polar.ts`, `regions.ts`, `library-colors.ts` — pure functions, reusable regardless of implementation approach
+
+#### On `main` but status uncertain
+- `29ce010` — MIG-019 — Sight v3 → v4 clean-slate pivot (SkyView mount pattern)
+- `3a977c8` — Sight v4 — raw DOM event handlers fix (NOT tested by Boss)
+- These two commits may need to be reverted or set aside depending on Eisa's decision after concept validation
+
+#### Known state of the Sight feature
+- `SIGHT_V2_ENABLED = false` (disabled, code preserved)
+- `SIGHT_V3_ENABLED = false` (disabled, code preserved)
+- `SIGHT_V4_ENABLED = true` (current, but Boss wants to go back to concept validation)
+
+#### What Eisa is asking for
+- **Concept validation first** — confirm what Sight IS before building anything
+- The three foundation documents define the concept but 13+ failed close-button iterations have eroded confidence
+- Eisa may want to simplify, restructure, or redirect the approach entirely
+
+#### Documentation drift
+- Orientation: v1.73 is current (v4 pivot documented)
+- Session log: this file (updated with Session 3 record)
+- Handover prompt: being prepared for new session
+
+### Orientation chain
+- v1.73 → **v1.74** (Session 3 — Boss directive to stop and validate concept)
