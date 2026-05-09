@@ -176,3 +176,48 @@ Shipped this commit:
 
 - *"we need to add the minimum PC requirement to operate Constellation, within the Help file and the user manual."* (2026-05-09)
 - *"The next Sight will carry v.5."* (2026-05-09 — naming lock)
+
+---
+
+## Phase 12 — Sight Concept Paper v2.0 + MIG-021 Architect drafted (third PCS)
+
+Eisa: *"Proceed."*
+
+Drafted both canonical Sight v5 documents in one pass:
+
+### `docs/Constellation-Sight-Concept-Paper-v2.0.md` (~700 lines)
+
+The **canonical specification of Sight v5**. Supersedes the three obsolete v1.x papers (Sight Concept Paper v1.1, Sight v3 Concept Paper v1.1, SIGHT-V3-VISUAL-SPEC v1.1). Structure: 14 sections.
+
+Notable sections:
+- **§3.3** — the strata-as-radius design is doubly justified (by Constellation's native taxonomy + the cross-civilizational scholarly tradition). Includes the explicit L1→Branch 1+2.3 ... L8→Branch 5.8 mapping table.
+- **§5** — the seven modes (R / L / T / C / S / A / **P**) — each with wedge basis, cognitive question, data source. P (Provenance) is the new mode.
+- **§6** — the four constants (radius / size / brightness / red) that hold across every mode. P0 invariants.
+- **§7** — Sources subsystem with all 11 sources from the taxonomy, frontmatter contract, three setting paths.
+- **§8** — Epistemic Classifier two-tier architecture (e5-small bundled / Qwen3-1.7B optional).
+- **§9** — *what Sight v5 IS NOT* — the load-bearing boundary section the v1.x papers never wrote. Explicit comparison vs every adjacent surface (Sky View, Map, OrgChart, Search Hub, Index, 360.3D, Knowledge Health Dashboard, Multi-Lens).
+- **§11** — three-MIG phased rollout (MIG-021 → 022 → 023) + cleanup MIG.
+
+### `lab/reports/MIG-021-EPISTEMIC-CLASSIFIER-ARCHITECT.md` (~390 lines)
+
+The Architect doc for the Sources subsystem. Eleven landable phases (§1A–§1K). Twelve invariants (P1–P12). Three design options surfaced + rejection reasoning. Architecture (Rust modules, schema, frontmatter contract, Tauri commands, frontend surfaces, i18n keys). Migration-path concerns (first-boot, mid-backfill restart, manual override, downgrade, Tier-2 corruption). Six open questions for Eisa to decide before relevant phases.
+
+### Orientation v1.76 → v1.77
+
+Preamble bump per SO #6 (major doc ship is the trigger). Three orientation bumps in one calendar day (v1.74 morning + v1.75 + v1.76 + v1.77 evening). Body sections still deferred to v1.78+ when Sight v5 actually ships.
+
+### What's now obsolete on disk (preserved per SO #6)
+
+- `docs/Constellation-Sight-Concept-Paper-v1.1.md` — InfraNodus-spined
+- `docs/Constellation-Sight-v3-Concept-Paper-v1.1.md` — per-mode (X, Y, Z) grammar
+- `docs/SIGHT-V3-VISUAL-SPEC.md` — centrality-on-radius
+
+### What's open for next session
+
+1. Eisa Phase-2-sign-off on MIG-021 Architect (or revisions).
+2. Six open questions in Architect §7 to be decided.
+3. Plan doc drafted; Build cascade per /migration discipline.
+
+## Verbatim Eisa quotes captured in v1.77 preamble
+
+- *"Proceed."* (2026-05-09 — directive to draft Sight Concept Paper v2.0 + MIG-021 Architect in parallel)
