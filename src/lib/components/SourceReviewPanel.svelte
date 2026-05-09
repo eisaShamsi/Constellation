@@ -325,8 +325,11 @@
                         <span class="srp-confidence">{formatConfidence(s.confidence)}</span>
                       </div>
                       {#if s.evidence}
+                        {@const parentId = horizontalTaxonomy.find(n => n.id === s.source)?.parent_id ?? s.source}
+                        {@const evidenceKey = 'sources.evidence.' + (s.source.includes('/') ? parentId : s.source)}
+                        {@const translated = $t(evidenceKey)}
                         <div class="srp-evidence">
-                          {$t('sources.evidence.' + s.source) || s.evidence}
+                          {translated && translated !== evidenceKey ? translated : s.evidence}
                         </div>
                       {/if}
                     </li>
