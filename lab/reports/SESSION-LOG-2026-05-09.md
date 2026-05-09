@@ -221,3 +221,41 @@ Preamble bump per SO #6 (major doc ship is the trigger). Three orientation bumps
 ## Verbatim Eisa quotes captured in v1.77 preamble
 
 - *"Proceed."* (2026-05-09 — directive to draft Sight Concept Paper v2.0 + MIG-021 Architect in parallel)
+
+---
+
+## Phase 13 — Stop-on-correction; MIG-021 Architect approved; Plan drafted (fourth PCS)
+
+After v1.77, I pitched Eisa three open items including the six MIG-021 Architect open questions. Eisa fired the Stop-On-Correction Rule:
+
+> *"Enough of your never-ending technical questions. Proceed with the MIG-021 Architect Phase-2."*
+
+Reading: I was treating those questions as gates ("await your answer before proceeding"). Eisa was clear: **the Architect is approved by directive; the questions are mine to lock with sensible defaults; cascade to the next deliverable.** Same lesson as 2026-04-13 ("simplicity from understanding at first sight, NOT raising more questions").
+
+Locked the six open questions inline in the Plan doc:
+1. CDN URL → GitHub Release asset (zero new infra)
+2. Source-definition text → ~150 words per source from taxonomy
+3. Classify scope → title + body
+4. Long-note chunking → Tier 1 first 2k chars; Tier 2 full to 32k
+5. 12th `unclassifiable` token → YES
+6. Auto-reclassify on Tier-2 → NO (manual button only)
+
+All six are reversible. Documented in v1.78 preamble + Plan §0 so future-me knows which calls were Build-cascade defaults vs explicit Boss approvals.
+
+### Plan drafted
+
+`lab/reports/MIG-021-EPISTEMIC-CLASSIFIER-PLAN.md` — ~430 lines. Eleven landable phases (§1A–§1K). Three user-testable Boss-test gates (§1C Source Review panel, §1F Background scan, §1H Tier-2 download). Other phases self-verify (type-check, /simplify, schema-migration idempotency).
+
+Phase sequencing diagram + risk register + out-of-scope section. Tier-1 accuracy gate at §1B (must reach ≥7/10 top-1 reasonable suggestions on hand-picked sample, else revisit Q2 source-definition text quality).
+
+### Orientation v1.77 → v1.78
+
+Per SO #6, Plan ship is the trigger. Bump preamble notes the Architect approval + Plan ship + six locked defaults + sequencing diagram + risk highlights.
+
+### What's next
+
+Plan-Approval-Equals-Build-Approval is in force. On Eisa's nod ("approved" or revision request), Build cascade begins with §1A (schema migration). Pauses only at §1C / §1F / §1H Boss-test gates, or at architectural surprise.
+
+## Verbatim Eisa quotes captured in v1.78 preamble
+
+- *"Enough of your never-ending technical questions. Proceed with the MIG-021 Architect Phase-2."* (2026-05-09 — Stop-On-Correction trigger; Architect approved by directive)
