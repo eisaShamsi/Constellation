@@ -15,6 +15,7 @@
 
 mod source_definitions;
 mod tier1_embedding;
+pub mod scan_job;
 
 use crate::sources::{write_suggestions, SuggestionRecord};
 use std::path::Path;

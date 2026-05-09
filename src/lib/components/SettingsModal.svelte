@@ -210,6 +210,30 @@
 	let hotkeyFilter = $state('');
 	let testStatus = $state('');
 	let testing = $state(false);
+
+	// MIG-021v2 §1F' — background classifier scan trigger.
+	let classifierScanRunning = $state(false);
+	async function refreshClassifierScanStatus() {
+		try {
+			const status = await invoke<{ running: boolean }>('classifier_scan_status');
+			classifierScanRunning = status.running;
+		} catch (e) {
+			console.error('[Settings] classifier_scan_status failed:', e);
+		}
+	}
+	async function startClassifierScan() {
+		try {
+			await invoke('classifier_scan_start');
+			classifierScanRunning = true;
+		} catch (e) {
+			console.error('[Settings] classifier_scan_start failed:', e);
+		}
+	}
+	$effect(() => {
+		// Refresh status when modal opens; the strip listens for live
+		// updates so we don't need a poll loop here.
+		refreshClassifierScanStatus();
+	});
 	let appVersion = $state('');
 	getVersion().then(v => appVersion = v).catch(() => {});
 	let updateChecking = $state(false);
@@ -1751,6 +1775,25 @@
 							</button>
 						</div>
 					{/if}
+
+					<!-- MIG-021v2 §1F' — Source / Content-Type background classifier scan -->
+					<div class="setting-section-heading">
+						{$t('settings.classifier.heading') || 'Sources & content type classifier'}
+					</div>
+
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.classifier.scanName') || 'Run classification scan'}</div>
+							<div class="setting-desc">
+								{$t('settings.classifier.scanDesc') || 'Walks every note in the Universe that has neither sources nor content type set yet, asks the local Tier-1 classifier (e5-small embeddings, no internet) for a suggestion, and queues the result in the Source Review panel for your approval. Resumable: close mid-scan and the next start picks up from where it stopped. Typing stays instant — the scan runs on a background thread.'}
+							</div>
+						</div>
+						<button class="test-btn" onclick={startClassifierScan} disabled={classifierScanRunning}>
+							{classifierScanRunning
+								? ($t('settings.classifier.scanRunning') || 'Running…')
+								: ($t('settings.classifier.scanStart') || 'Start scan')}
+						</button>
+					</div>
 
 					<div class="setting-section-heading">{$t('settings.intelligence.preferences')}</div>
 

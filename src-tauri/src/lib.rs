@@ -252,6 +252,8 @@ pub fn run() {
         .manage(universe::UniverseState::new())
         .manage(search::SearchState::new())
         .manage(embeddings::EmbeddingState { engine: std::sync::Mutex::new(None), term_embed_cancel: std::sync::atomic::AtomicBool::new(false) })
+        // MIG-021v2 §1F' — background scan state.
+        .manage(classifier::scan_job::ScanState::new())
         .invoke_handler({
             // Round 6 diagnostic (2026-04-19) — IPC arrival tracer.
             //
@@ -323,6 +325,10 @@ pub fn run() {
             sources::sources_clear,
             // MIG-021 §1B — Tier-1 classifier IPC (on-demand single-note)
             classifier::classifier_suggest_for_note,
+            // MIG-021v2 §1F' — background scan IPCs
+            classifier::scan_job::classifier_scan_start,
+            classifier::scan_job::classifier_scan_cancel,
+            classifier::scan_job::classifier_scan_status,
             // MIG-021 §1C — Source Review queue IPCs
             sources::sources_get_suggestions,
             sources::sources_list_pending_suggestions,

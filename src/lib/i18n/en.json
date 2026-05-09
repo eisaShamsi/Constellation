@@ -393,6 +393,13 @@
       "templateName": "Template name",
       "noFolderTemplates": "No folder templates configured"
     },
+    "classifier": {
+      "heading": "Sources & content type classifier",
+      "scanName": "Run classification scan",
+      "scanDesc": "Walks every note in the Universe that has neither sources nor content type set yet, asks the local Tier-1 classifier (e5-small embeddings, no internet) for a suggestion, and queues the result in the Source Review panel for your approval. Resumable: close mid-scan and the next start picks up from where it stopped. Typing stays instant — the scan runs on a background thread.",
+      "scanStart": "Start scan",
+      "scanRunning": "Running…"
+    },
     "intelligence": {
       "intro": "Configure AI providers, skills, and privacy controls for your libraries.",
       "connection": "Connection",
@@ -784,6 +791,15 @@
     "skyView": "Sky View",
     "links": "Link Dashboard",
     "sourceReview": "Source Review"
+  },
+  "classifierScan": {
+    "label": "Classifying notes…",
+    "done": "Classification complete",
+    "cancelled": "Classification cancelled",
+    "cancelling": "Cancelling…",
+    "error": "Classification error",
+    "cancel": "Cancel",
+    "cancelTitle": "Stop the running scan; partial results are kept"
   },
   "sources": {
     "contextMenu": {

@@ -98,6 +98,7 @@
 	import SettingsModal from '$lib/components/SettingsModal.svelte';
 	import LockScreen from '$lib/components/LockScreen.svelte';
 	import MigrationProgressStrip from '$lib/components/MigrationProgressStrip.svelte';
+	import ClassifierScanProgressStrip from '$lib/components/ClassifierScanProgressStrip.svelte';
 	import LibrarySwitcher from '$lib/components/LibrarySwitcher.svelte';
 	import LibraryManager from '$lib/components/LibraryManager.svelte';
 	import LibraryPicker from '$lib/components/LibraryPicker.svelte';
@@ -6283,6 +6284,7 @@
 		     when no migration is in flight (the component returns nothing).  -->
 		<div class="sb-center">
 			<MigrationProgressStrip />
+			<ClassifierScanProgressStrip />
 		</div>
 		<div class="sb-right">
 			{#if sidebarTab}
