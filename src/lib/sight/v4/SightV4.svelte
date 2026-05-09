@@ -1097,6 +1097,18 @@
         sel.call(zoomBehavior);
         sel.on('dblclick.zoom', null);
 
+        // v4 FIX: attach interaction handlers via raw addEventListener, NOT
+        // Svelte onclick. Svelte 5 delegates onclick to <body>; when both the
+        // close button and canvas container have Svelte onclick, the delegation
+        // can interfere (same root cause as v3's 13 failed iterations, different
+        // expression). Raw DOM listeners fire on the element directly, bypassing
+        // Svelte's delegation entirely. d3-zoom already uses raw listeners, so
+        // this keeps all canvas interaction in the same event system.
+        canvasContainer.addEventListener('pointermove', handlePointerMove);
+        canvasContainer.addEventListener('pointerleave', handlePointerLeave);
+        canvasContainer.addEventListener('click', handleClick);
+        canvasContainer.addEventListener('dblclick', handleDoubleClick);
+
         // Data fetch + initial draw
         try {
             const stats = get(libraryStats);
@@ -1226,6 +1238,13 @@
             visualViewportCleanup.fn();
             visualViewportCleanup.fn = null;
         }
+        // Remove raw DOM listeners (v4 fix: attached in onMount).
+        if (canvasContainer) {
+            canvasContainer.removeEventListener('pointermove', handlePointerMove);
+            canvasContainer.removeEventListener('pointerleave', handlePointerLeave);
+            canvasContainer.removeEventListener('click', handleClick);
+            canvasContainer.removeEventListener('dblclick', handleDoubleClick);
+        }
         if (canvasEl && zoomBehavior) {
             d3.select(canvasEl).on('.zoom', null);
         }
@@ -1253,13 +1272,14 @@
         aria-label={$t('sightV3.resetView') || 'Reset view'}
     >Reset view</button>
 
+    <!-- v4 FIX: NO Svelte onclick/onpointer* here. All interaction handlers
+         are attached via raw addEventListener in onMount. This prevents Svelte 5's
+         body-level event delegation from interfering with the parent's close button
+         (the root cause of v3's 13-iteration failure). d3-zoom also uses raw DOM
+         listeners, so all canvas interaction is outside Svelte's delegation system. -->
     <div
         class="sight-v4-canvas"
         bind:this={canvasContainer}
-        onpointermove={handlePointerMove}
-        onpointerleave={handlePointerLeave}
-        onclick={handleClick}
-        ondblclick={handleDoubleClick}
         role="application"
         aria-label="Constellation Sight"
     ></div>
@@ -1368,8 +1388,11 @@
        The parent (+layout.svelte .star-fullscreen) provides the full-screen
        layout. This is the architectural fix that v3 never had. */
     .sight-v4-root {
-        width: 100%;
-        height: 100%;
+        /* flex: 1 fills remaining space AFTER the .star-header row.
+           NOT height: 100% — that would try to take the full parent height
+           and overlap the header in a flex column. */
+        flex: 1;
+        min-height: 0;
         background: #faf6e8;
         display: flex;
         flex-direction: column;
