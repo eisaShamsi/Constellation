@@ -70,8 +70,27 @@
 
   function toggleSelected(id: string) {
     const next = new Set(selected);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
+    if (next.has(id)) {
+      // Removing a node: take it out, but leave ancestors in place.
+      // (Ancestors may still be wanted for their own reasons — explicit
+      // user choice, or they were the original selection.)
+      next.delete(id);
+    } else {
+      // Adding a node: also auto-add every ancestor up the chain.
+      // Selecting "External perception" implies "Perception / Sensation".
+      // Cascade UP only; selecting a parent does NOT auto-tick all
+      // children, since the parent means "any/general", not "all kinds".
+      next.add(id);
+      let cur = taxonomy.find((n) => n.id === id);
+      while (cur && cur.parent_id) {
+        // For the vertical axis the synthetic root 'epistemic-content'
+        // is the parent of all top-level branches; treat it as a stop
+        // so we don't add a meaningless root pill.
+        if (cur.parent_id === 'epistemic-content') break;
+        next.add(cur.parent_id);
+        cur = taxonomy.find((n) => n.id === cur!.parent_id);
+      }
+    }
     onChange(next);
   }
 

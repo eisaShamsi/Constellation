@@ -94,7 +94,6 @@
 		{ key: 'created', label: 'created', labelAr: 'أنشئ' },
 		{ key: 'updated', label: 'updated', labelAr: 'حُدث' },
 		{ key: 'author', label: 'author', labelAr: 'المؤلف' },
-		{ key: 'source', label: 'source', labelAr: 'المصدر' },
 		{ key: 'status', label: 'status', labelAr: 'الحالة' },
 		{ key: 'type', label: 'type', labelAr: 'النوع' },
 		{ key: 'category', label: 'category', labelAr: 'الفئة' },
