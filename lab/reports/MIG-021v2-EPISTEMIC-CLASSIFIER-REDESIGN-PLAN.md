@@ -192,9 +192,65 @@ If any step fails, surface immediately and pause cascade.
 
 ---
 
-### Phase §1H' — Tier-2 download + llama.cpp integration ✅ Eisa Boss-test gate
+### Phase §1G2' — Tier 1 deterministic rules engine + bilingual lexicon + correction log ✅ Eisa Boss-test gate
 
-**Goal**: optional larger classifier ships; both axes get LLM-quality classification.
+**Amendment date**: 2026-05-09. Inserted into the cascade after Eisa accepted the consultant analysis surfaced post-§1D' showing that (a) the current Tier-2-only architecture caps Source accuracy at ~75-85% at leaf level, (b) the absent Tier 1 layer means we run the embedding model on notes a regex would handle deterministically in microseconds, and (c) without an active-learning correction log every user override is information thrown away.
+
+**Goal**: ship a free, deterministic Tier 1 that resolves ~30-40% of notes before Tier 2 is consulted, plus the correction log that turns every user override into future training data.
+
+**Files touched**:
+- **NEW** `src-tauri/src/classifier/tier1_rules.rs`:
+  - Frontmatter precedence: if `sources:` or `content_type:` is already in the YAML (set manually via §1D'), Tier 1 returns those values with confidence 1.0 and the lower tiers are skipped.
+  - Regex patterns for citation forms (Sahih al-Bukhari N, ISBN, DOI, URL → testimony; SI units + numerals → fact; equations → fact; quoted blocks → testimony).
+  - Verbal-marker matching: "I doubt / I believe / I'm certain / I lean toward" + Arabic equivalents → epistemic state (vertical axis).
+  - Bilingual lexicon lookup against the new `src-tauri/data/sources_lexicon.json` (next bullet).
+- **NEW** `src-tauri/data/sources_lexicon.json` — paired EN/AR/Sanskrit terms drawn from the Eisa-canonical horizontal taxonomy. Each entry: `{ tokens: [...], axis: "horizontal", target: "<taxonomy_id>", weight: 0.85, scope: "uṣūl|nyāya|generic" }`. Examples: `متواتر / mutawātir → mass-transmission/lafẓī`; `إجماع / ijmāʿ → testimony/consensus`; `قياس → comparison/analogy`; `pratyakṣa → perception/external`.
+- **NEW** `src-tauri/src/classifier/correction_log.rs` — append-only NDJSON at `<library>/.constellation/classifier_corrections.jsonl`. Each user override (Source Review reject/accept-with-edit, PropertyEditor manual change away from classifier suggestion) writes a tuple: `{ ts, note_path, axis, predicted: [...], corrected: [...], tier_used }`. No deletion API — the file is the ground-truth audit trail.
+- **EDIT** `src-tauri/src/classifier/mod.rs` — `classify_note(path)` now: Tier 1 → if confidence ≥ 0.85 return; else Tier 2 → if confidence ≥ 0.55 return; else (in §1H') Tier 3.
+- **EDIT** `src-tauri/src/sources/mod.rs` — `sources_set_manual` and `content_type_set_manual` log to the correction log when the new value differs from the most recent classifier suggestion for that note.
+- **EDIT** `src/lib/components/SourceReviewPanel.svelte` — Tier badge on each suggestion ("T1 rule" / "T2 embedding" / "T3 LLM" — pending §1H') so the user sees which tier produced the suggestion.
+
+**Eisa Boss-test gate**:
+1. Create a note with frontmatter `sources: [testimony]` set manually. Right-click → Suggest. Result: instant; suggestion echoes the manual value with badge "T1 rule" + confidence 1.0. Tier 2 is NOT consulted (verify with logging).
+2. Create a note with the body "حدثنا الإمام مسلم في صحيحه..." Right-click → Suggest. Tier 1 lexicon matches `حدثنا` + `صحيحه` → `testimony` with badge "T1 rule".
+3. Create a note with body "I doubt that the moon landing happened in 1969." Right-click → Suggest. Tier 1 verbal-marker hit → vertical axis = `epistemic-states/doubt`.
+4. Create a note with no frontmatter, no citations, no verbal markers ("Constellation is a personal knowledge formulation system."). Right-click → Suggest. Tier 1 returns nothing high-confidence; Tier 2 takes over and badge shows "T2 embedding".
+5. In Source Review, override a Tier-2 suggestion with a manual selection. Open `<library>/.constellation/classifier_corrections.jsonl` — confirm one new line was appended with the predicted vs corrected tuple.
+
+---
+
+### Phase §1G3' — Provenance metadata schema + capture-time UX ✅ Eisa Boss-test gate
+
+**Amendment date**: 2026-05-09. Companion to §1G2'. The consultant analysis ranked this as #2 highest-leverage of six recommendations: "Five seconds of user input at capture is worth more accuracy than any architectural improvement."
+
+**Goal**: standardize provenance fields in the YAML frontmatter and surface them at note-creation time as a single optional drop-down — so authoritative ground truth flows in by capture, not by retroactive classification.
+
+**Files touched**:
+- **EDIT** `src-tauri/src/sources/mod.rs` — extend the YAML schema with three new optional fields:
+  - `source_citation` (string) — free-form citation if known (e.g. `Sahih al-Bukhari 2371`, `ISBN 978-0-...`, `https://...`)
+  - `acquisition_method` (enum) — `firsthand | reading | hearing | derivation | unknown` — orthogonal to taxonomic source ID; cheaper for the user to pick than full source classification
+  - `confidence` (number 0–1) — user's own self-assessed confidence in the proposition (NOT the classifier's; distinct field)
+- **EDIT** `src/lib/components/PropertyEditor.svelte` — add three new `KEY_SUGGESTIONS` entries (`source_citation`, `acquisition_method`, `confidence`); the `acquisition_method` key gets a special render branch with a 5-option dropdown.
+- **NEW** `src/lib/sources/QuickCaptureSourceWidget.svelte` — small inline widget that appears in NewNoteDialog/CreateItemDialog under the title field: a single drop-down "How did you come across this?" with the 5 acquisition_method options + an "I'll fill this in later" escape. Selection writes the field into the new note's frontmatter on creation.
+- **EDIT** `src-tauri/src/classifier/tier1_rules.rs` — `acquisition_method` is now a Tier 1 strong signal: `firsthand → perception`, `reading → testimony`, `hearing → testimony/oral`, `derivation → inference`, `unknown` → no prior.
+- **EDIT** `src/lib/i18n/en.json` + `ar.json` — `quickCapture.acquisitionMethod.{firsthand|reading|hearing|derivation|unknown|skip}` (~6 strings) + `propertyEditor.acquisitionMethod.label`.
+
+**Eisa Boss-test gate**:
+1. Cmd/Ctrl+N to create a new note. The new dropdown appears under the title field with the prompt "How did you come across this?" and 5 + skip options.
+2. Pick "Reading"; type a title; create. The new note's frontmatter contains `acquisition_method: reading`.
+3. Right-click → Suggest sources. Tier 1 fires: `acquisition_method: reading` is a strong prior for `testimony` → suggestion comes back instantly with high confidence and badge "T1 rule".
+4. From PropertyEditor, edit `acquisition_method` to `firsthand`. Re-suggest. Tier 1 now flips the prior to `perception`.
+5. Verify the dropdown is RTL when UI is Arabic.
+
+---
+
+### Phase §1H' — Tier-3 LLM (Qwen3-1.7B + llama.cpp) integration ✅ Eisa Boss-test gate
+
+**Renamed 2026-05-09**: was "Tier-2 download + llama.cpp" — renamed to **Tier-3** to reflect the corrected three-tier architecture (Tier 1 deterministic rules → Tier 2 embeddings → Tier 3 LLM). The LLM is now consulted only on the residual that Tier 1 + Tier 2 cannot confidently resolve. Substantively unchanged otherwise.
+
+
+
+**Goal**: optional Tier-3 LLM classifier ships; both axes get LLM-quality classification on the hard residual that Tier 1 + Tier 2 left low-confidence.
 
 **Files touched**:
 - `src-tauri/Cargo.toml` — add `llama-cpp-2` dependency

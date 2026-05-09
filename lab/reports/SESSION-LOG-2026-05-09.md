@@ -503,3 +503,25 @@ Commits: `4769fbe` (gold border) → `ec288fe` (RTL `border-inline-start`) → `
 - `npm run tauri build -- --bundles nsis`: produced `Constellation_0.3.4_x64-setup.exe`
 
 **Awaiting §1D' Boss-test**.
+
+---
+
+## MIG-021v2 Plan amendment — Tier 1 + provenance inserted (2026-05-09)
+
+Eisa surfaced an external SME analysis post-§1D' that flagged three structural gaps in the original Plan: (a) no Tier 1 deterministic rules → we run the embedding model on notes a regex would handle in microseconds; (b) no provenance metadata schema → Source-axis accuracy capped at ~75-85% at leaf level by absent textual signal; (c) no correction log → every user override is information thrown away.
+
+I responded with three options (A: stay the cascade and open MIG-022 later; B: insert the missing phases before §1H'; C: pivot entirely). Recommended B — keeps MIG-021v2 as one coherent three-tier deliverable.
+
+Eisa: *"Proceed with your recommendation."*
+
+**Plan amendment landed in same commit as orientation v1.80 → v1.81**:
+- **NEW §1G2'** Tier 1 rules engine + bilingual lexicon (`src-tauri/data/sources_lexicon.json`) + correction log (NDJSON) — Boss-test gate
+- **NEW §1G3'** provenance metadata schema (`source_citation`, `acquisition_method`, `confidence`) + QuickCaptureSourceWidget — Boss-test gate
+- **§1H' renamed** Tier-2 → Tier-3 to reflect corrected three-tier architecture (rules → embeddings → LLM)
+
+**No prior phase rolled back**. Cascade resumes pending §1D' Boss-test result; §1E' (right-click) is still next in line, then §1F' (background scan), §1G' (i18n), §1G2' (NEW), §1G3' (NEW), §1H' (Tier-3), §1I'-§1K' (docs/audit/close-out).
+
+**Verbatim Eisa quotes (this amendment cycle)**:
+- *"All pass"* (§1C' Boss-test gate, all three stages)
+- *"Proceed with your recommendation"* (Plan-amendment authorization)
+
