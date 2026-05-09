@@ -30,6 +30,7 @@
 use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
+use tauri::Manager;
 
 // ─── Constants ─────────────────────────────────────────────────────
 

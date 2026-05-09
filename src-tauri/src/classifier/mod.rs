@@ -16,8 +16,9 @@
 mod source_definitions;
 mod tier1_embedding;
 
-use crate::sources::{write_suggestions, Suggestion, SuggestionRecord};
+use crate::sources::{write_suggestions, SuggestionRecord};
 use std::path::Path;
+use tauri::Manager;
 
 /// On-demand single-note classification.
 ///
@@ -112,9 +113,9 @@ fn extract_title_and_body(content: &str) -> (String, String) {
     (title, body)
 }
 
-/// Re-export for tests + future Tier 2 wrapper.
-pub use source_definitions::SOURCE_DEFINITIONS;
-pub use tier1_embedding::{classify as tier1_classify, get_source_vectors_for_test};
+// Re-exports kept private for now; §1H Tier-2 wrapper will surface
+// what it needs when it lands. Tests inside this module can reach
+// the children directly via super::source_definitions / super::tier1_embedding.
 
 #[cfg(test)]
 mod tests {

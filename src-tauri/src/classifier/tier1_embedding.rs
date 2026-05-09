@@ -16,6 +16,7 @@
 
 use crate::sources::Suggestion;
 use std::sync::OnceLock;
+use tauri::Manager;
 
 use super::source_definitions::SOURCE_DEFINITIONS;
 
