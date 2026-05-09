@@ -814,6 +814,19 @@
       "revelation": "Sacred-text or prophetic transmission — Qur'an, scripture, divine command (al-wahy).",
       "unclassifiable": "User opt-out: this note doesn't fit any of the 11 sources, OR the user prefers not to classify it. Suppresses future classifier suggestions."
     },
+    "evidence": {
+      "perception": "First-hand sensory observation",
+      "inference": "Reasoning from premises to conclusion",
+      "testimony": "Reported by another knower",
+      "mass-transmission": "Convergent multi-witness consensus (al-tawatur)",
+      "comparison": "Knowledge by analogy (qiyas / upamana)",
+      "postulation": "Inference to the best explanation (arthapatti)",
+      "non-apprehension": "Knowledge of absence (anupalabdhi)",
+      "memory": "Recall of past experience (smrti)",
+      "innate-disposition": "Pre-experiential intuition (fitrah / nous)",
+      "inspiration": "Mystical or creative apprehension (al-ilham)",
+      "revelation": "Sacred-text or prophetic transmission (al-wahy)"
+    },
     "review": {
       "title": "Source Review",
       "refresh": "Refresh queue",

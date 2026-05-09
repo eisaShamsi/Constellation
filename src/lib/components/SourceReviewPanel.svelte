@@ -259,8 +259,20 @@
                     </span>
                     <span class="srp-confidence">{formatConfidence(s.confidence)}</span>
                   </div>
-                  {#if s.evidence}
-                    <div class="srp-evidence">{s.evidence}</div>
+                  <!--
+                    Evidence string: prefer the locale-aware sources.evidence.{source}
+                    lookup over the stored evidence (which is hardcoded English in
+                    Tier-1 from brief_signature_for in tier1_embedding.rs).
+                    When Tier-2 (Qwen3-1.7B) ships in §1H it will produce dynamic
+                    quote-from-note evidence; that takes precedence over the locale
+                    lookup because per-classification quotes are richer than the
+                    generic per-source signature. For now Tier-1 always returns the
+                    generic signature, so the locale lookup wins.
+                  -->
+                  {#if $t('sources.evidence.' + s.source) || s.evidence}
+                    <div class="srp-evidence">
+                      {$t('sources.evidence.' + s.source) || s.evidence}
+                    </div>
                   {/if}
                 </li>
               {/each}
@@ -423,14 +435,16 @@
   }
   .srp-suggestion {
     padding: 6px 8px;
-    border-left: 2px solid transparent;
+    /* Logical property so the border auto-flips for RTL — appears on
+       the LEADING edge in any locale (left in LTR, right in RTL). */
+    border-inline-start: 2px solid transparent;
     margin-bottom: 4px;
     font-size: 12px;
   }
   .srp-suggestion.primary {
     /* Suwaidi gold — hard-coded to be theme-independent (don't pick up
        the user's --text-accent which is often purple/blue per theme). */
-    border-left-color: #c9a227;
+    border-inline-start-color: #c9a227;
     background: rgba(201, 162, 39, 0.06);
   }
   .srp-source-row {
@@ -471,9 +485,12 @@
     background: var(--background-modifier-hover, rgba(0,0,0,0.05));
   }
   .srp-btn-primary {
-    background: var(--interactive-accent, #c9a227);
-    border-color: var(--interactive-accent, #c9a227);
-    color: var(--text-on-accent, #faf6e8);
+    /* Suwaidi gold — hard-coded so the Accept button stays visually
+       consistent with the Sight aesthetic regardless of the user's
+       theme (--interactive-accent often resolves to purple). */
+    background: #c9a227;
+    border-color: #c9a227;
+    color: #faf6e8;
   }
   .srp-btn-primary:hover {
     filter: brightness(1.05);
@@ -500,7 +517,9 @@
   }
   .srp-edit-pill.active {
     background: rgba(201, 162, 39, 0.12);
-    border-color: var(--interactive-accent, #c9a227);
+    /* Suwaidi gold — hard-coded for consistency with the primary
+       suggestion border + Accept button. */
+    border-color: #c9a227;
   }
   .srp-edit-pill input {
     margin: 0;
