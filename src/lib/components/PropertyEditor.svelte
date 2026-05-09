@@ -257,7 +257,15 @@
 	}
 
 	function applyTaxonomySelection(idx: number, selected: Set<string>) {
-		const items = [...selected];
+		const prop = editableProps[idx];
+		const axis = isTaxonomyKey(prop.key);
+		// Sort to taxonomy tree order (parent first, depth-first pre-order)
+		// so the on-disk YAML reads as an outline — same order as the pills.
+		// Falls back to insertion order if taxonomies haven't loaded yet
+		// (shouldn't happen — user must open the picker before this fires).
+		const items = (axis && taxonomiesLoaded)
+			? orderTaxonomyItems([...selected], axis).map(r => r.id)
+			: [...selected];
 		editableProps = editableProps.map((p, i) => {
 			if (i !== idx) return p;
 			return {
