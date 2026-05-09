@@ -399,3 +399,69 @@ Architect §14 has the checklist — 7 items for Eisa to ratify or revise. On ap
 - *"It would be easier for regular users to select the right source if we include the whole taxonomy. ... We will give the user the choice to choose the right level."* (2026-05-09 — Option B + 2-level depth directive)
 - *"Where did I mention the 11 source? Which document?"* (2026-05-09 — BASIC RULE check; surfaced that "the 11" came from his taxonomy doc + my framing, not a separate personal directive)
 - *"I want you to wait until I develop the Horizontal Axis: Sources / Means of Knowledge taxonomy."* (2026-05-09 — pause directive; honored before drafting v2 Architect)
+
+---
+
+## Phase 16 — MIG-021v2 Build cascade §1A' → §1C' (first Boss-test gate of v2)
+
+Eisa: "Approved." Cascade started.
+
+### §1A' — Schema + extracted taxonomies + content_type field + 5 new IPCs (commit `7b4db70`)
+
+**NEW src-tauri/src/sources/** (was sources.rs single-file; converted to directory module):
+- `horizontal_taxonomy.rs` (~620 LOC) — extracted from `docs/sources-of-knowledge-diagram.html`. 53 nodes: 11 parents + 41 leaves + 1 unclassifiable. Tri-script labels. Tier metadata. 8 lookup helpers + 7 unit tests.
+- `vertical_taxonomy.rs` (~390 LOC) — extracted from `docs/epistemic-content-taxonomy-chart.html`. ~218 nodes across 5 branches. Full path-slug IDs. 5 unit tests.
+- `mod.rs` (was sources.rs) — adapted: SOURCE_IDS const → source_ids() function reading from horizontal_taxonomy; new content_type subsystem (mirrors sources); 2 NEW taxonomy IPCs (sources_get_horizontal_taxonomy + sources_get_vertical_taxonomy) so frontend fetches once + caches.
+
+**NEW src/lib/sources/horizontalTaxonomy.ts + verticalTaxonomy.ts** — frontend wrappers with cached fetch + lookup helpers + tier/branch color mapping.
+
+5 new Tauri IPCs registered: `content_type_get_for_note`, `content_type_set_manual`, `content_type_clear`, `sources_get_horizontal_taxonomy`, `sources_get_vertical_taxonomy`.
+
+Backward-compat invariant: 11 §1A parent IDs (perception, inference, etc.) byte-identical in v2 horizontal_taxonomy. Legacy `sources:` data on disk validates without migration.
+
+### §1B' — Classifier expand to ~275 candidates + tier-aware fallback + axis tagging (commit `7ea86db`)
+
+**REWRITE src-tauri/src/classifier/source_definitions.rs**:
+- 11 parent SOURCE_DEFINITIONS preserved (~150 words each; battle-tested)
+- NEW HORIZONTAL_LEAF_HINTS: 41 short scholarly sentences from the diagram + standard literature
+- NEW build_classifier_candidates() runtime builder: 52 horizontal (excludes opt-out) + 222 vertical = ~274 entries
+- For vertical nodes: mechanical embedding text "{en} ({ar}). Branch X — {branch}. Parent: {parent}." per Plan §3 risk mitigation (no fabrication of philosophical content where chart provides only labels)
+
+**REWRITE src-tauri/src/classifier/tier1_embedding.rs**:
+- Two cached vector pools: HORIZONTAL_VECTORS (52) + VERTICAL_VECTORS (~218)
+- classify() returns combined Vec<Suggestion>: top-3 horizontal + top-3 vertical
+- Tier-aware fallback (Plan §0 Q7): when top-1 is Tier-3-effective and confidence < 0.55, promote highest-scoring Tier-1/2 candidate
+- Leaf-vs-parent strategy (Plan §0 Q5): when leaf confidence < 0.55, replace with its parent (deduped); user can drill down manually
+- CONFIDENCE_FALLBACK_THRESHOLD = 0.55 locked
+
+**EDIT src-tauri/src/sources/mod.rs**: Suggestion struct adds `axis: String` field with #[serde(default)] -> "horizontal" so legacy §1A/§1B suggestions deserialize.
+
+### §1C' — TaxonomyTreePicker.svelte + dual-axis Source Review + i18n (commit `751c036`) — ✅ Boss-test gate
+
+**NEW src/lib/sources/TaxonomyTreePicker.svelte** (~300 LOC):
+- Reusable hierarchical tree picker (works for both axes via props)
+- Multi-select via checkbox per node
+- Tier-based color coding via border-inline-start (auto-flips RTL)
+- Search/filter input — auto-expands ancestors of matches
+- Tri-script labels (EN + AR + transliteration)
+- Recursive Svelte 5 snippet-based rendering
+
+**REWRITE src/lib/components/SourceReviewPanel.svelte**:
+- Card body: TWO suggestion sublists per record (Sources / Content type), tier badges on horizontal entries
+- Edit mode: TWO TaxonomyTreePicker instances side-by-side ≥1200px (per Plan Q4)
+- Accept commits BOTH axes (sources_set_manual + content_type_set_manual)
+- Taxonomies fetched once on mount + cached
+
+**i18n EN + AR**: sources.review.axis.{horizontal|vertical} + taxonomyTreePicker.{search|expandAll|collapseAll|tier1Legend|tier2Legend|tier3Legend}
+
+### Build verification
+
+cargo check clean throughout (verified after §1A', §1B', and §1C'). 37 warnings, all pre-existing or "never used" for §1D'+ consumption.
+
+### What's now testable
+
+✅ §1C' Boss-test gate. Eisa builds locally + verifies dual-axis classification, tree picker, tier badges, RTL.
+
+### Verbatim Eisa quotes
+
+- *"Approved."* (2026-05-09 — Plan-Approval-Equals-Build-Approval signal)
