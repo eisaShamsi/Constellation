@@ -750,6 +750,9 @@
     "sourceReview": "مراجعة المصادر"
   },
   "sources": {
+    "contextMenu": {
+      "suggest": "اقترح المصادر ونوع المحتوى"
+    },
     "label": {
       "perception": "الحِسّ",
       "inference": "الاستدلال",

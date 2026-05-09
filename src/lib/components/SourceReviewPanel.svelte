@@ -9,7 +9,7 @@
     - Reject clears the suggestion without writing either field
 -->
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { invoke } from '@tauri-apps/api/core';
   import { t, locale, type Locale } from '$lib/i18n';
   import TaxonomyTreePicker from '$lib/sources/TaxonomyTreePicker.svelte';
@@ -185,6 +185,37 @@
     return isArabic ? node.ar : node.en;
   }
 
+  // MIG-021v2 §1E' — listener for the right-click "Suggest sources & content
+  // type" context action (dispatched from +layout.svelte). Classifies the
+  // requested note + prepends to the queue + flashes the new entry so the
+  // user sees it.
+  let highlightedPath = $state<string | null>(null);
+  let highlightTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  async function handleClassifyAndShow(e: Event) {
+    const detail = (e as CustomEvent).detail as { notePath?: string };
+    const notePath = detail?.notePath;
+    if (!notePath || classifying) return;
+    classifying = true;
+    error = null;
+    try {
+      const record = await invoke<SuggestionRecord>('classifier_suggest_for_note', {
+        notePath,
+      });
+      queue = [record, ...queue.filter(r => r.note_path !== record.note_path)];
+      highlightedPath = record.note_path;
+      if (highlightTimeout) clearTimeout(highlightTimeout);
+      highlightTimeout = setTimeout(() => {
+        highlightedPath = null;
+        highlightTimeout = null;
+      }, 2000);
+    } catch (err) {
+      error = String(err);
+    } finally {
+      classifying = false;
+    }
+  }
+
   onMount(async () => {
     try {
       [horizontalTaxonomy, verticalTaxonomy] = await Promise.all([
@@ -195,6 +226,12 @@
       error = `Failed to load taxonomies: ${e}`;
     }
     loadQueue();
+    window.addEventListener('constellation:classify-and-show', handleClassifyAndShow);
+  });
+
+  onDestroy(() => {
+    window.removeEventListener('constellation:classify-and-show', handleClassifyAndShow);
+    if (highlightTimeout) clearTimeout(highlightTimeout);
   });
 </script>
 
@@ -257,7 +294,7 @@
       {#each queue as record (record.note_path)}
         {@const horizontalSuggestions = record.suggestions.filter(s => s.axis === 'horizontal')}
         {@const verticalSuggestions = record.suggestions.filter(s => s.axis === 'vertical')}
-        <li class="srp-card">
+        <li class="srp-card" class:srp-just-added={highlightedPath === record.note_path}>
           <div class="srp-card-header">
             <button
               class="srp-card-title"
@@ -633,5 +670,15 @@
   }
   .srp-btn-danger {
     color: var(--text-error, #a83232);
+  }
+  /* MIG-021v2 §1E' — flash animation when a record is added via the
+     right-click "Suggest sources & content type" action, so the user
+     can spot the just-classified note in the queue. */
+  .srp-just-added {
+    animation: srp-flash 2s ease-out;
+  }
+  @keyframes srp-flash {
+    0%   { background: rgba(201, 162, 39, 0.32); }
+    100% { background: transparent; }
   }
 </style>

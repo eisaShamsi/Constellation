@@ -4018,6 +4018,16 @@
 			icon: '✏️',
 			action: () => { renamingPath = entry.path; }
 		});
+		// MIG-021v2 §1E' — right-click "Suggest sources & content type" on
+		// any markdown note. Triggers Tier-2 classification and surfaces the
+		// result in the Source Review panel. Files only, not folders.
+		if (!entry.is_dir && entry.name.toLowerCase().endsWith('.md')) {
+			items.push({
+				label: $t('sources.contextMenu.suggest') || 'Suggest sources & content type',
+				icon: '✨',
+				action: () => handleSuggestSourcesForNote(entry.path),
+			});
+		}
 		items.push({
 			label: $t('actions.delete'),
 			icon: '🗑️',
@@ -4025,6 +4035,21 @@
 			danger: true
 		});
 		return items;
+	}
+
+	// MIG-021v2 §1E' — right-click action handler. Opens the Source Review
+	// panel and emits a window event the panel listens for; the panel fires
+	// the classifier IPC + prepends the resulting record to the visible queue.
+	function handleSuggestSourcesForNote(notePath: string) {
+		rightSidebarOpen = true;
+		rightSidebarTab = 'sourceReview';
+		// Defer the dispatch one frame so the panel has mounted (the listener
+		// is attached in onMount).
+		requestAnimationFrame(() => {
+			window.dispatchEvent(new CustomEvent('constellation:classify-and-show', {
+				detail: { notePath },
+			}));
+		});
 	}
 
 	async function handleDeleteWorkspaceBase(filePath: string) {

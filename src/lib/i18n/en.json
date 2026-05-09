@@ -786,6 +786,9 @@
     "sourceReview": "Source Review"
   },
   "sources": {
+    "contextMenu": {
+      "suggest": "Suggest sources & content type"
+    },
     "label": {
       "perception": "Perception",
       "inference": "Inference",
