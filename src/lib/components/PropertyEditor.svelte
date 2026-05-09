@@ -1174,6 +1174,11 @@
 		flex-shrink: 0;
 		user-select: none;
 	}
+	/* RTL: mirror the ↳ glyph so it reads right-to-left as ↲, matching the
+	   indent direction. Eisa correction 2026-05-09 (§1D' Stage 3.4). */
+	:global([dir="rtl"]) .pe-taxo-connector {
+		transform: scaleX(-1);
+	}
 	.pe-taxo-empty {
 		color: var(--text-faint); font-style: italic; font-size: 0.78rem;
 	}
