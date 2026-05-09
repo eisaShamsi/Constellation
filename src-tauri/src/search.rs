@@ -1464,6 +1464,15 @@ fn init_db(path: &Path) -> Result<Connection, String> {
         ));
     }
 
+    // MIG-021 §1A — Sources subsystem schema. Idempotent ALTER for the
+    // `sources` column on `note_meta` + `CREATE TABLE IF NOT EXISTS`
+    // for the `sources_suggestions` queue. Both no-op on a DB that
+    // already has them. See `crate::sources` for the full subsystem.
+    crate::sources::ensure_note_meta_sources_column(&conn)
+        .map_err(|e| format!("Failed to ensure note_meta.sources column (MIG-021): {}", e))?;
+    crate::sources::ensure_sources_suggestions_table(&conn)
+        .map_err(|e| format!("Failed to create sources_suggestions table (MIG-021): {}", e))?;
+
     // Create embeddings table for semantic search (Phase 2)
     conn.execute_batch("
         CREATE TABLE IF NOT EXISTS note_embeddings (
@@ -2966,15 +2975,26 @@ fn index_note(conn: &Connection, note_path: &str, library_name: &str) -> Result<
     let typed_links = extract_typed_links(&content);
     let now = chrono::Utc::now().to_rfc3339();
 
+    // MIG-021 §1A — extract `sources:` from frontmatter (handles all three
+    // YAML shapes; unknown values silently dropped). Stored as JSON list
+    // in `note_meta.sources` so the Sight v5 mode-P render and the
+    // Source Review panel can read in O(1) without re-parsing the file.
+    let sources_list = crate::sources::extract_sources(&content);
+    let sources_json: Option<String> = if sources_list.is_empty() {
+        None
+    } else {
+        Some(serde_json::to_string(&sources_list).unwrap_or_default())
+    };
+
     // Upsert: delete old, insert new (triggers handle FTS sync) — wrapped in transaction for atomicity
     conn.execute_batch("BEGIN IMMEDIATE").map_err(|e| e.to_string())?;
     let result = (|| -> Result<(), String> {
         conn.execute("DELETE FROM note_meta WHERE path = ?1", params![note_path])
             .map_err(|e| e.to_string())?;
         conn.execute(
-            "INSERT INTO note_meta (path, name, library_name, modified, properties_json, tags_json, outgoing_links_json, headings_json, body_text, word_count, created_at, cid_cn)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
-            params![note_path, name, library_name, modified, props_json, tags_json, links_json, headings_json, plain_body, word_count, created_at, cid_cn],
+            "INSERT INTO note_meta (path, name, library_name, modified, properties_json, tags_json, outgoing_links_json, headings_json, body_text, word_count, created_at, cid_cn, sources)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
+            params![note_path, name, library_name, modified, props_json, tags_json, links_json, headings_json, plain_body, word_count, created_at, cid_cn, sources_json],
         ).map_err(|e| format!("Failed to index note {}: {}", note_path, e))?;
 
         // MIG-004 §2: clear+repopulate frontmatter-sourced aliases for

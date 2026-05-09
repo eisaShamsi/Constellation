@@ -30,6 +30,7 @@ mod libraries;
 mod mig003_step4;
 mod sight;
 mod sight_layout;
+mod sources;
 mod lenses;
 // MIG-013 §1A: visibility widened so the offline `build_concept_vectors`
 // [[bin]] can call `lexicon::parse`. The M11 zero-diff invariant covers
@@ -315,6 +316,10 @@ pub fn run() {
             embeds::read_vault_config_cmd,
             embeds::invalidate_vault_index_cmd,
             libraries::scan_note_stages,
+            // MIG-021 §1A — Sources subsystem IPCs
+            sources::sources_get_for_note,
+            sources::sources_set_manual,
+            sources::sources_clear,
             strata::compute_note_strata,
             maturity::compute_note_maturity,
             tension::detect_tensions,
