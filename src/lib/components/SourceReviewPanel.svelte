@@ -11,7 +11,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { invoke } from '@tauri-apps/api/core';
-  import { t } from '$lib/i18n';
+  import { t, locale, type Locale } from '$lib/i18n';
   import TaxonomyTreePicker from '$lib/sources/TaxonomyTreePicker.svelte';
   import {
     getHorizontalTaxonomy,
@@ -162,11 +162,27 @@
     return 0;
   }
 
+  // Locale-aware label lookup. Returns Arabic when interface locale is 'ar';
+  // English otherwise. Both EN and AR are present on every taxonomy node
+  // (lifted from Eisa's two HTML diagrams). Falls back to ID if node
+  // missing (shouldn't happen unless legacy data has a stale slug).
+  let currentLocale = $state<Locale>('en');
+  $effect(() => {
+    return locale.subscribe((l) => {
+      currentLocale = l;
+    });
+  });
+
   function labelForId(id: string, axis: string): string {
+    const isArabic = currentLocale === 'ar';
     if (axis === 'horizontal') {
-      return horizontalTaxonomy.find(n => n.id === id)?.en ?? id;
+      const node = horizontalTaxonomy.find(n => n.id === id);
+      if (!node) return id;
+      return isArabic ? node.ar : node.en;
     }
-    return verticalTaxonomy.find(n => n.id === id)?.en ?? id;
+    const node = verticalTaxonomy.find(n => n.id === id);
+    if (!node) return id;
+    return isArabic ? node.ar : node.en;
   }
 
   onMount(async () => {
@@ -565,15 +581,13 @@
     font-style: italic;
   }
   .srp-edit-axes {
+    /* Always stacked per Eisa directive 2026-05-09: side-by-side
+       even at ≥1200px makes each picker too narrow on desktop sidebars
+       AND splits attention. Stack vertically; user scrolls. */
     display: flex;
     flex-direction: column;
     gap: 8px;
     margin-bottom: 8px;
-  }
-  @media (min-width: 1200px) {
-    .srp-edit-axes {
-      flex-direction: row;
-    }
   }
   .srp-axis-block {
     flex: 1;

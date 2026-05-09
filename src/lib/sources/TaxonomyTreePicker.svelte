@@ -1,35 +1,27 @@
 <!--
-  MIG-021v2 §1C' — Hierarchical taxonomy tree picker.
+  MIG-021v2 §1C' fix-2 — Hierarchical taxonomy tree picker (flat-render rewrite).
 
-  One reusable component used by:
-    - SourceReviewPanel.svelte (Edit mode) — for both axes
-    - PropertyEditorSourcesField.svelte (manual setting in §1D') — both axes
+  Reusable tree picker for both horizontal (sources) and vertical (content_type)
+  taxonomies. Renders the visible tree as a single flat list of {node, depth}
+  rows — avoids the recursive Svelte 5 snippet pattern entirely (those are
+  unreliable when self-referenced from within their own definition).
 
   Visual language mirrors:
     - sources-of-knowledge-diagram.html (horizontal axis, tier coloring)
     - epistemic-content-taxonomy-chart.html (vertical axis, indented tree)
-
-  Multi-select via checkbox per node (parent + child both checkable). Tier-based
-  color coding when tierColors=true (teal/purple/amber per the diagram). Search
-  filter at top auto-expands ancestors of matches. Tri-script labels (EN + AR +
-  Sanskrit/Pali transliteration where present). RTL-aware via dir="auto" + the
-  border-inline-start logical property for tier color.
 -->
 <script lang="ts">
-  import { t } from '$lib/i18n';
-  import { tierColor as horizontalTierColor, type HorizontalNode } from './horizontalTaxonomy';
-  import { branchColor as verticalBranchColor, type VerticalNode } from './verticalTaxonomy';
+  import { t, locale, type Locale } from '$lib/i18n';
+  import { tierColor as horizontalTierColor } from './horizontalTaxonomy';
+  import { branchColor as verticalBranchColor } from './verticalTaxonomy';
 
-  // ─── Generic node type that subsumes both horizontal and vertical ─────
   type AnyNode = {
     id: string;
     en: string;
     ar: string;
     parent_id: string | null;
-    // Horizontal-only:
     tr?: string | null;
     tier?: number;
-    // Vertical-only:
     branch?: number;
   };
 
@@ -47,7 +39,7 @@
     tierColors?: boolean;
   } = $props();
 
-  // ─── Tree shape (built from flat list) ───────────────────────────────
+  // ─── Index by parent for O(1) child lookup ──────────────────────────
   let childrenByParent = $derived.by(() => {
     const map = new Map<string | null, AnyNode[]>();
     for (const node of taxonomy) {
@@ -58,10 +50,6 @@
     return map;
   });
 
-  // Top-level entries depend on axis:
-  //   - horizontal: parent_id === null (excludes 'unclassifiable' which is root-level too;
-  //     UI treats it as a top-level pickable)
-  //   - vertical: parent_id === 'epistemic-content' (the 5 branches)
   let topLevel = $derived.by(() => {
     if (axis === 'horizontal') {
       return taxonomy.filter((n) => n.parent_id === null);
@@ -100,8 +88,7 @@
     expanded = new Set();
   }
 
-  // Search: when query is non-empty, expand the ancestors of any matching node
-  // so the matches are visible. Matches are case-insensitive, search EN + AR + tr.
+  // ─── Search match set + ancestor auto-expand ────────────────────────
   let searchMatches = $derived.by(() => {
     if (!query.trim()) return null;
     const q = query.trim().toLowerCase();
@@ -113,7 +100,6 @@
     return matches;
   });
 
-  // When a search is active, expand ancestors of all matches.
   $effect(() => {
     if (!searchMatches || searchMatches.size === 0) return;
     const ancestors = new Set<string>();
@@ -130,7 +116,6 @@
   function isVisible(node: AnyNode): boolean {
     if (!searchMatches) return true;
     if (searchMatches.has(node.id)) return true;
-    // Visible if any descendant matches
     const stack = [node.id];
     while (stack.length) {
       const cur = stack.pop()!;
@@ -143,6 +128,33 @@
     return false;
   }
 
+  // ─── Flat render: pre-walk the tree once into a list of rows ────────
+  type Row = { node: AnyNode; depth: number };
+
+  let visibleRows = $derived.by(() => {
+    const rows: Row[] = [];
+    const walk = (nodes: AnyNode[], depth: number) => {
+      for (const node of nodes) {
+        if (!isVisible(node)) continue;
+        rows.push({ node, depth });
+        if (expanded.has(node.id)) {
+          const kids = childrenByParent.get(node.id) ?? [];
+          if (kids.length > 0) walk(kids, depth + 1);
+        }
+      }
+    };
+    walk(topLevel, 0);
+    return rows;
+  });
+
+  // ─── Locale-aware label rendering ───────────────────────────────────
+  let currentLocale = $state<Locale>('en');
+  $effect(() => {
+    return locale.subscribe((l) => {
+      currentLocale = l;
+    });
+  });
+
   function nodeColor(node: AnyNode): string | null {
     if (tierColors && axis === 'horizontal' && node.parent_id === null && node.tier && node.tier > 0) {
       return horizontalTierColor(node.tier);
@@ -151,6 +163,10 @@
       return verticalBranchColor(node.branch);
     }
     return null;
+  }
+
+  function hasChildren(node: AnyNode): boolean {
+    return (childrenByParent.get(node.id) ?? []).length > 0;
   }
 </script>
 
@@ -179,60 +195,51 @@
   </div>
 
   <ul class="ttp-tree" role="tree">
-    {#each topLevel as root (root.id)}
-      {@render treeNode(root, 0)}
+    {#each visibleRows as row (row.node.id)}
+      {@const node = row.node}
+      {@const depth = row.depth}
+      {@const kids = hasChildren(node)}
+      {@const isExpanded = expanded.has(node.id)}
+      {@const isChecked = selected.has(node.id)}
+      {@const color = nodeColor(node)}
+      {@const isArabic = currentLocale === 'ar'}
+      {@const primaryLabel = isArabic ? node.ar : node.en}
+      {@const secondaryLabel = isArabic ? node.en : node.ar}
+      <li
+        class="ttp-node"
+        class:has-children={kids}
+        style:--node-color={color ?? 'transparent'}
+        role="treeitem"
+        aria-expanded={kids ? isExpanded : undefined}
+      >
+        <div class="ttp-row" style:padding-inline-start={`${depth * 18 + 6}px`}>
+          {#if kids}
+            <button
+              class="ttp-chevron"
+              class:expanded={isExpanded}
+              onclick={() => toggleExpanded(node.id)}
+              aria-label={isExpanded ? 'Collapse' : 'Expand'}
+            >▸</button>
+          {:else}
+            <span class="ttp-chevron-spacer"></span>
+          {/if}
+          <label class="ttp-label">
+            <input
+              type="checkbox"
+              checked={isChecked}
+              onchange={() => toggleSelected(node.id)}
+            />
+            <span class="ttp-primary">{primaryLabel}</span>
+            <span class="ttp-secondary">{secondaryLabel}</span>
+            {#if node.tr}
+              <span class="ttp-tr">{node.tr}</span>
+            {/if}
+          </label>
+        </div>
+      </li>
     {/each}
   </ul>
 </div>
-
-{#snippet treeNode(node: AnyNode, depth: number)}
-  {#if isVisible(node)}
-    {@const kids = childrenByParent.get(node.id) ?? []}
-    {@const hasKids = kids.length > 0}
-    {@const isExpanded = expanded.has(node.id)}
-    {@const isChecked = selected.has(node.id)}
-    {@const color = nodeColor(node)}
-    <li
-      class="ttp-node"
-      class:has-children={hasKids}
-      style:--node-color={color ?? 'transparent'}
-      role="treeitem"
-      aria-expanded={hasKids ? isExpanded : undefined}
-    >
-      <div class="ttp-row" style:padding-inline-start={`${depth * 18 + 6}px`}>
-        {#if hasKids}
-          <button
-            class="ttp-chevron"
-            class:expanded={isExpanded}
-            onclick={() => toggleExpanded(node.id)}
-            aria-label={isExpanded ? 'Collapse' : 'Expand'}
-          >▸</button>
-        {:else}
-          <span class="ttp-chevron-spacer"></span>
-        {/if}
-        <label class="ttp-label">
-          <input
-            type="checkbox"
-            checked={isChecked}
-            onchange={() => toggleSelected(node.id)}
-          />
-          <span class="ttp-en">{node.en}</span>
-          <span class="ttp-ar">{node.ar}</span>
-          {#if node.tr}
-            <span class="ttp-tr">{node.tr}</span>
-          {/if}
-        </label>
-      </div>
-      {#if hasKids && isExpanded}
-        <ul class="ttp-subtree" role="group">
-          {#each kids as child (child.id)}
-            {@render treeNode(child, depth + 1)}
-          {/each}
-        </ul>
-      {/if}
-    </li>
-  {/if}
-{/snippet}
 
 <style>
   .ttp-root {
@@ -287,7 +294,6 @@
     list-style: none;
     margin: 0;
     padding: 0;
-    /* Tier color shown as a leading-edge border (auto-flips for RTL). */
     border-inline-start: 3px solid var(--node-color);
   }
   .ttp-row {
@@ -335,11 +341,11 @@
     flex-shrink: 0;
     cursor: pointer;
   }
-  .ttp-en {
+  .ttp-primary {
     color: var(--text-normal, #1a1a1a);
     font-weight: 500;
   }
-  .ttp-ar {
+  .ttp-secondary {
     color: var(--text-muted, #6b6a64);
     font-size: 11px;
   }
@@ -347,10 +353,5 @@
     color: var(--text-muted, #6b6a64);
     font-size: 10px;
     font-style: italic;
-  }
-  .ttp-subtree {
-    list-style: none;
-    margin: 0;
-    padding: 0;
   }
 </style>
