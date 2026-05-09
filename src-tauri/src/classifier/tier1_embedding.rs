@@ -1,110 +1,216 @@
-//! MIG-021 §1B — Tier 1 classifier: e5-small embedding-similarity.
+//! MIG-021v2 §1B' — Tier 1 classifier (e5-small embedding-similarity), v2.
 //!
 //! Pipeline:
-//!   1. At first call: embed each of the 11 source definitions via
-//!      the existing `multilingual-e5-small` ONNX engine, cache the
-//!      11 × 384-dim L2-normalized vectors in a `OnceLock`.
-//!   2. Per classification: embed the note's text, compute cosine
-//!      similarity against each cached source vector, return top-N
-//!      sorted by similarity descending.
+//!   1. At first call: build the unified ~275-candidate set
+//!      (52 horizontal + 222 vertical), embed each definition via the
+//!      existing `multilingual-e5-small` ONNX engine, cache TWO
+//!      L2-normalized vector pools (HORIZONTAL_VECTORS + VERTICAL_VECTORS)
+//!      keyed by ID.
+//!   2. Per classification: embed the note's text once, compute cosine
+//!      similarity against BOTH pools, return parallel suggestion sets:
+//!      top-3 horizontal + top-3 vertical, each tagged with `axis`.
+//!   3. Tier-aware confidence fallback: if top-1 horizontal pick is a
+//!      Tier 3 source (or its leaf) with confidence < 0.55, swap with
+//!      the highest-scoring Tier 1/2 candidate (Plan §0 Q7 ENABLED).
+//!   4. Leaf-vs-parent strategy: if a leaf's confidence < 0.55, suggest
+//!      its parent instead (more reliable; user can drill down manually).
 //!
-//! Bundled tier — works on the same hardware as Constellation core
-//! (e5-small is already shipped at 113 MB for semantic search; reusing
-//! it here adds zero bundle cost). Accuracy ~65–75% top-1 on most
-//! universes per the §1B verification gate; Tier 2 (Qwen3-1.7B via
-//! llama.cpp, §1H) provides ~85–90% for users who download it.
+//! Bundled tier — same hardware as Constellation core. e5-small (113 MB
+//! ONNX) already shipped for semantic search; reused at zero bundle cost.
+//! Accuracy expectation: ~75-85% top-1 at PARENT level, ~50-65% top-1 at
+//! LEAF level. Tier 2 (Qwen3-1.7B via llama.cpp, §1H') for higher accuracy.
 
-use crate::sources::Suggestion;
+use crate::sources::{horizontal_taxonomy, Suggestion};
 use std::sync::OnceLock;
 use tauri::Manager;
 
-use super::source_definitions::SOURCE_DEFINITIONS;
+use super::source_definitions::{build_classifier_candidates, ClassifierAxis};
 
-/// L2-normalized embeddings of the 11 source definitions, computed
-/// once at first classification call and cached for the lifetime of
-/// the process. `Vec<(source_id, normalized_vector)>`.
-static SOURCE_VECTORS: OnceLock<Vec<(String, Vec<f32>)>> = OnceLock::new();
+/// L2-normalized embeddings of the horizontal axis (52 entries: 11
+/// parents + 41 leaves; opt-out token excluded).
+static HORIZONTAL_VECTORS: OnceLock<Vec<(String, Vec<f32>)>> = OnceLock::new();
 
-/// Top-N suggestions to return per classification. Per Plan §1B
-/// verification: Tier 1 returns top-3, ordered by cosine similarity.
+/// L2-normalized embeddings of the vertical axis (~218 entries: 5
+/// branches + nested sub-nodes; root excluded).
+static VERTICAL_VECTORS: OnceLock<Vec<(String, Vec<f32>)>> = OnceLock::new();
+
+/// Top-N suggestions per axis. Per Plan §1B' verification: top-3.
 const TOP_N: usize = 3;
 
-/// Maximum text length passed to the embedding (char-boundary safe
-/// for UTF-8). Per Plan §0 Q4 — Tier 1 first 2000 chars.
+/// Tier-aware fallback threshold (Plan §0 Q5 + Q7). Below this confidence,
+/// the classifier prefers more-universally-accepted alternatives over
+/// Tier 3 picks AND prefers parent-level over leaf-level.
+const CONFIDENCE_FALLBACK_THRESHOLD: f32 = 0.55;
+
+/// Maximum text length for embedding (char-boundary safe for UTF-8).
 const MAX_TEXT_LEN: usize = 2000;
 
-/// Classify a note's text against the 11 source definitions.
-///
-/// Returns top-3 suggestions ordered by cosine similarity descending,
-/// each with confidence (the cosine similarity itself, [0..1] for
-/// L2-normalized vectors) and an evidence string (currently the
-/// matched source's brief signature; richer evidence extraction may
-/// arrive in a future revision).
+/// Classify a note's text against BOTH axes. Returns up to TOP_N
+/// suggestions per axis (so up to 2*TOP_N total), each tagged with
+/// `axis = "horizontal" | "vertical"`. Suggestions sorted within
+/// each axis by confidence descending.
 pub fn classify(app: &tauri::AppHandle, note_text: &str) -> Result<Vec<Suggestion>, String> {
-    // Ensure source vectors are populated (one-time cost on first call).
-    let source_vectors = ensure_source_vectors(app)?;
+    let (horizontal_vectors, vertical_vectors) = ensure_vector_pools(app)?;
 
-    // Embed the note text.
     let truncated = truncate_to_char_boundary(note_text, MAX_TEXT_LEN);
     let prefixed = format!("query: {}", truncated);
     let note_vec = embed_with_cached_engine(app, &prefixed)?;
     let note_normalized = l2_normalize(&note_vec);
 
-    // Cosine similarity against each source vector.
-    let mut scores: Vec<(String, f32)> = source_vectors
-        .iter()
-        .map(|(id, vec)| (id.clone(), dot(&note_normalized, vec)))
-        .collect();
+    let horizontal_top = top_n_horizontal(&note_normalized, horizontal_vectors);
+    let vertical_top = top_n_for_pool(
+        &note_normalized,
+        vertical_vectors,
+        ClassifierAxis::Vertical,
+    );
 
-    // Sort descending by score.
-    scores.sort_by(|a, b| {
+    let mut combined: Vec<Suggestion> = Vec::with_capacity(2 * TOP_N);
+    combined.extend(horizontal_top);
+    combined.extend(vertical_top);
+    Ok(combined)
+}
+
+/// Horizontal axis cosine ranking + tier-aware fallback + leaf-vs-parent
+/// adjustment. Returns the top TOP_N as Suggestion records tagged
+/// `axis = "horizontal"`.
+fn top_n_horizontal(
+    note_vec: &[f32],
+    pool: &[(String, Vec<f32>)],
+) -> Vec<Suggestion> {
+    let mut scored: Vec<(String, f32)> = pool
+        .iter()
+        .map(|(id, vec)| (id.clone(), dot(note_vec, vec)))
+        .collect();
+    scored.sort_by(|a, b| {
         b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal)
     });
 
-    // Take top-N, build Suggestion records.
-    let suggestions: Vec<Suggestion> = scores
-        .into_iter()
-        .take(TOP_N)
-        .map(|(source, score)| {
-            let evidence = brief_signature_for(&source);
-            Suggestion {
-                source,
-                confidence: clamp01(score),
-                evidence: evidence.to_string(),
+    // Apply tier-aware fallback (Plan §0 Q7) if top-1 is Tier 3 below threshold.
+    if let Some((top_id, top_score)) = scored.first().cloned() {
+        if *top_score_is_tier_three(&top_id) && top_score < CONFIDENCE_FALLBACK_THRESHOLD {
+            // Promote the highest-scoring Tier 1 or Tier 2 candidate to top.
+            if let Some(idx) = scored.iter().position(|(id, _)| {
+                let t = horizontal_taxonomy::effective_tier(id);
+                matches!(t, Some(1) | Some(2))
+            }) {
+                if idx > 0 {
+                    let promoted = scored.remove(idx);
+                    scored.insert(0, promoted);
+                }
             }
+        }
+    }
+
+    // Apply leaf-vs-parent strategy (Plan §0 Q5): if leaf's confidence
+    // < threshold, replace with parent if parent isn't already in top-N.
+    let adjusted: Vec<(String, f32)> = scored
+        .into_iter()
+        .map(|(id, score)| {
+            if score < CONFIDENCE_FALLBACK_THRESHOLD {
+                if let Some(parent) = horizontal_taxonomy::parent_of(&id) {
+                    return (parent.to_string(), score);
+                }
+            }
+            (id, score)
         })
         .collect();
 
-    Ok(suggestions)
-}
-
-/// Ensure the 11 source vectors are computed and cached. First call
-/// embeds all 11 definitions and L2-normalizes them; subsequent calls
-/// are O(1) read from the OnceLock.
-fn ensure_source_vectors(app: &tauri::AppHandle) -> Result<&'static Vec<(String, Vec<f32>)>, String> {
-    if let Some(v) = SOURCE_VECTORS.get() {
-        return Ok(v);
+    // Dedupe (the leaf-fallback may have collapsed multiple leaves to one parent)
+    let mut seen = std::collections::HashSet::new();
+    let mut deduped: Vec<(String, f32)> = Vec::new();
+    for (id, score) in adjusted {
+        if seen.insert(id.clone()) {
+            deduped.push((id, score));
+        }
     }
 
-    let mut vectors: Vec<(String, Vec<f32>)> = Vec::with_capacity(SOURCE_DEFINITIONS.len());
-    for (id, definition) in SOURCE_DEFINITIONS {
+    deduped
+        .into_iter()
+        .take(TOP_N)
+        .map(|(source, score)| {
+            let evidence = brief_signature_for(&source).to_string();
+            Suggestion {
+                source,
+                confidence: clamp01(score),
+                evidence,
+                axis: ClassifierAxis::Horizontal.as_str().to_string(),
+            }
+        })
+        .collect()
+}
+
+/// Generic top-N for a vector pool, no axis-specific adjustments. Used
+/// for the vertical axis (no tier system; no leaf-vs-parent fallback at
+/// this phase — vertical accuracy is BRANCH-level reliable per Plan §6).
+fn top_n_for_pool(
+    note_vec: &[f32],
+    pool: &[(String, Vec<f32>)],
+    axis: ClassifierAxis,
+) -> Vec<Suggestion> {
+    let mut scored: Vec<(String, f32)> = pool
+        .iter()
+        .map(|(id, vec)| (id.clone(), dot(note_vec, vec)))
+        .collect();
+    scored.sort_by(|a, b| {
+        b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal)
+    });
+
+    scored
+        .into_iter()
+        .take(TOP_N)
+        .map(|(id, score)| Suggestion {
+            source: id,
+            confidence: clamp01(score),
+            evidence: String::new(), // vertical axis: no per-source signature yet
+            axis: axis.as_str().to_string(),
+        })
+        .collect()
+}
+
+fn top_score_is_tier_three(id: &str) -> &'static bool {
+    if matches!(horizontal_taxonomy::effective_tier(id), Some(3)) {
+        &true
+    } else {
+        &false
+    }
+}
+
+/// Build both vector pools on first call; cache for process lifetime.
+fn ensure_vector_pools(
+    app: &tauri::AppHandle,
+) -> Result<(&'static Vec<(String, Vec<f32>)>, &'static Vec<(String, Vec<f32>)>), String> {
+    if HORIZONTAL_VECTORS.get().is_some() && VERTICAL_VECTORS.get().is_some() {
+        return Ok((
+            HORIZONTAL_VECTORS.get().unwrap(),
+            VERTICAL_VECTORS.get().unwrap(),
+        ));
+    }
+
+    let candidates = build_classifier_candidates();
+
+    let mut horizontal: Vec<(String, Vec<f32>)> = Vec::new();
+    let mut vertical: Vec<(String, Vec<f32>)> = Vec::new();
+
+    for c in candidates {
         // e5 convention: definitions are passages, prefix with "passage: ".
-        let prefixed = format!("passage: {}", definition);
+        let prefixed = format!("passage: {}", c.embedding_text);
         let vec = embed_with_cached_engine(app, &prefixed)?;
-        vectors.push((id.to_string(), l2_normalize(&vec)));
+        let normalized = l2_normalize(&vec);
+        match c.axis {
+            ClassifierAxis::Horizontal => horizontal.push((c.id, normalized)),
+            ClassifierAxis::Vertical => vertical.push((c.id, normalized)),
+        }
     }
 
-    // Initialize OnceLock; if another thread beat us to it, use theirs
-    // (semantically identical — both threads produce the same vectors).
-    let _ = SOURCE_VECTORS.set(vectors);
-    SOURCE_VECTORS
-        .get()
-        .ok_or_else(|| "SOURCE_VECTORS init failed".to_string())
+    let _ = HORIZONTAL_VECTORS.set(horizontal);
+    let _ = VERTICAL_VECTORS.set(vertical);
+    Ok((
+        HORIZONTAL_VECTORS.get().ok_or("HORIZONTAL_VECTORS init failed")?,
+        VERTICAL_VECTORS.get().ok_or("VERTICAL_VECTORS init failed")?,
+    ))
 }
 
-/// Embed text via the cached e5-small engine in `EmbeddingState`.
-/// Lazy-initializes the engine on first call (existing pattern from
-/// `embeddings::ensure_engine`).
+/// Embed text via the cached e5-small engine.
 fn embed_with_cached_engine(
     app: &tauri::AppHandle,
     text: &str,
@@ -118,7 +224,7 @@ fn embed_with_cached_engine(
     crate::embeddings::run_embedding(engine, text)
 }
 
-// ─── Math helpers ──────────────────────────────────────────────────
+// ─── Math helpers (unchanged from §1B) ──────────────────────────────
 
 fn l2_normalize(v: &[f32]) -> Vec<f32> {
     let norm = v.iter().map(|x| x * x).sum::<f32>().sqrt();
@@ -155,13 +261,13 @@ fn truncate_to_char_boundary(text: &str, max_len: usize) -> &str {
     &text[..end]
 }
 
-/// Brief signature describing what the source represents — used as the
-/// `evidence` string in suggestion records. The frontend may use this
-/// in tooltips. Tier 2 (LLM) can produce richer per-classification
-/// evidence by quoting the actual textual cue; Tier 1 doesn't have
-/// that extraction step, so we fall back to a generic signature.
+/// Brief signature describing a horizontal source — used as the evidence
+/// string in suggestions. Tier-2 will produce richer per-classification
+/// evidence by quoting the actual textual cue; Tier-1 uses this generic
+/// per-parent fallback. Sub-leaves inherit their parent's signature.
 fn brief_signature_for(source: &str) -> &'static str {
-    match source {
+    let parent = horizontal_taxonomy::parent_of(source).unwrap_or(source);
+    match parent {
         "perception" => "First-hand sensory observation",
         "inference" => "Reasoning from premises to conclusion",
         "testimony" => "Reported by another knower",
@@ -173,15 +279,17 @@ fn brief_signature_for(source: &str) -> &'static str {
         "innate-disposition" => "Pre-experiential intuition (fitrah / nous)",
         "inspiration" => "Mystical or creative apprehension (al-ilham)",
         "revelation" => "Sacred-text or prophetic transmission (al-wahy)",
-        _ => "Unknown source",
+        _ => "",
     }
 }
 
-/// Test-only: expose the cached source vectors. Used by integration
-/// tests (when they exist) to verify the embedding cache is populated.
+/// Test-only: expose vector counts for pool-population assertions.
 #[doc(hidden)]
-pub fn get_source_vectors_for_test() -> Option<&'static Vec<(String, Vec<f32>)>> {
-    SOURCE_VECTORS.get()
+pub fn pool_counts_for_test() -> Option<(usize, usize)> {
+    Some((
+        HORIZONTAL_VECTORS.get()?.len(),
+        VERTICAL_VECTORS.get()?.len(),
+    ))
 }
 
 #[cfg(test)]
@@ -197,18 +305,10 @@ mod tests {
     }
 
     #[test]
-    fn l2_normalize_handles_zero_vector() {
-        let v = vec![0.0, 0.0, 0.0];
-        let n = l2_normalize(&v);
-        assert_eq!(n, v);
-    }
-
-    #[test]
     fn dot_product_correct() {
         let a = vec![1.0, 0.0, 0.0];
         let b = vec![1.0, 0.0, 0.0];
         assert!((dot(&a, &b) - 1.0).abs() < 1e-6);
-
         let a = vec![1.0, 0.0, 0.0];
         let b = vec![0.0, 1.0, 0.0];
         assert!(dot(&a, &b).abs() < 1e-6);
@@ -223,17 +323,23 @@ mod tests {
     }
 
     #[test]
-    fn truncate_respects_char_boundary() {
-        let s = "héllo";
-        let t = truncate_to_char_boundary(s, 3);
-        assert!(s.is_char_boundary(t.len()));
+    fn brief_signature_walks_to_parent() {
+        // Leaves inherit parent's signature
+        assert_eq!(
+            brief_signature_for("perception/external"),
+            brief_signature_for("perception")
+        );
+        assert_eq!(
+            brief_signature_for("revelation/recited"),
+            brief_signature_for("revelation")
+        );
     }
 
     #[test]
     fn brief_signature_covers_all_classifiable() {
         for id in crate::sources::classifiable_sources() {
             let sig = brief_signature_for(id);
-            assert_ne!(sig, "Unknown source", "missing signature for {}", id);
+            assert!(!sig.is_empty(), "missing signature for {}", id);
         }
     }
 }

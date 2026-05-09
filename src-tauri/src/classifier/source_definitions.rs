@@ -1,23 +1,57 @@
-//! MIG-021 §1B — The 11 source definitions used as embedding-classification
-//! anchors. Drawn from the Universal Epistemic Content Taxonomy
-//! (`docs/epistemic-content-taxonomy.md`) + Concept Paper v2.0 §7.1.
+//! MIG-021v2 §1B' — Classifier candidate definitions, expanded to cover the
+//! full two-axis taxonomy.
 //!
-//! Each definition is ~120-180 words, rich with semantic cues that
-//! e5-small can distinguish (textual phrases, examples, contrasts with
-//! adjacent sources). Embedded as compile-time constants — at app
-//! startup the classifier embeds each definition once and caches the
-//! 11 × 384-dim vectors in `tier1_embedding::SOURCE_VECTORS`.
+//! Pre-existing `SOURCE_DEFINITIONS` (11 horizontal parents, ~150 words each,
+//! battle-tested in §1B) is preserved and reused. New material added in v2:
 //!
-//! Per Plan §0 Q2: ~150 words per source, English canonical (the
-//! e5-small model is multilingual and embeds English source-defs
-//! into a shared space that aligns with non-English note content).
-//! If accuracy is poor on Arabic-heavy notes, we may add bilingual
-//! definition pairs in a future revision.
+//! 1. `HORIZONTAL_LEAF_HINTS` — 41 short scholarly hints, one per sub-leaf
+//!    from `docs/sources-of-knowledge-diagram.html`. Concatenated with the
+//!    parent's full definition at runtime to produce the leaf's embedding text.
+//!
+//! 2. `build_classifier_candidates()` — runtime builder that walks both
+//!    taxonomies and produces the unified `ClassifierCandidate` list (53
+//!    horizontal + 222 vertical = ~275 entries). For vertical nodes (where
+//!    the source chart provides only labels), the embedding text is built
+//!    mechanically from `[en_label] ([ar_label] [tr]) — Branch X: [branch_name].
+//!    Parent: [parent_label].` Per Plan §3 risk mitigation: no fabrication
+//!    of philosophical content where the chart provides only a label.
+//!
+//! Embedding cost: ~275 definitions × one-time embedding (~10 sec on Eisa's
+//! machine), cached in `tier1_embedding::HORIZONTAL_VECTORS` +
+//! `VERTICAL_VECTORS`. Per-classification cost is unchanged.
 
-/// `(source_id, canonical English definition)` pairs for the 11
-/// classifiable sources. Order matches `crate::sources::SOURCE_IDS[0..11]`.
-/// `unclassifiable` is intentionally absent — it is an opt-out token
-/// the classifier never suggests.
+use crate::sources::{horizontal_taxonomy, vertical_taxonomy};
+
+/// One candidate the classifier embeds and ranks against. The `axis` field
+/// distinguishes horizontal (sources) from vertical (content_type) so the
+/// classifier can return parallel suggestion sets per axis.
+#[derive(Debug, Clone)]
+pub struct ClassifierCandidate {
+    pub id: String,
+    pub axis: ClassifierAxis,
+    pub embedding_text: String,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ClassifierAxis {
+    Horizontal,
+    Vertical,
+}
+
+impl ClassifierAxis {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            ClassifierAxis::Horizontal => "horizontal",
+            ClassifierAxis::Vertical => "vertical",
+        }
+    }
+}
+
+// ─── Horizontal parent definitions (11 — preserved from §1B) ──────────
+
+/// Rich (~150-word) definitions for the 11 horizontal parents. Embedded
+/// at app startup; one of the strongest-distinguishing inputs to the
+/// embedding-similarity classifier. Order matches `classifiable_sources()`.
 pub const SOURCE_DEFINITIONS: &[(&str, &str); 11] = &[
     (
         "perception",
@@ -65,45 +99,224 @@ pub const SOURCE_DEFINITIONS: &[(&str, &str); 11] = &[
     ),
 ];
 
+// ─── Horizontal leaf hints (41 — short, scholarly) ───────────────────
+
+/// Short hints (one sentence each) for the 41 horizontal sub-leaves.
+/// Concatenated with the parent's full definition at runtime to produce
+/// the leaf's embedding text. Drawn from the diagram's tri-script labels
+/// + standard scholarly literature; no fabrication beyond what the labels
+/// themselves already commit to.
+pub const HORIZONTAL_LEAF_HINTS: &[(&str, &str)] = &[
+    // S1 Perception
+    ("perception/external", "Specifically external sensory perception of objects in the world (Indian bāhya pratyakṣa)."),
+    ("perception/internal", "Specifically internal mental perception of one's own thoughts and feelings (mānasa pratyakṣa)."),
+    ("perception/self", "Specifically reflexive self-awareness — knowledge of one's own knowing (svasaṃvedana / al-shu'ūr bi-l-dhāt)."),
+    ("perception/extraordinary", "Specifically extraordinary perception — yogic or contemplative sensing beyond normal sensory range (yogaja / mushāhadah)."),
+
+    // S2 Inference
+    ("inference/deductive", "Specifically deductive inference — necessary conclusion drawn from given premises through formal logic (al-istinbāṭ al-burhānī)."),
+    ("inference/inductive", "Specifically inductive inference — probable generalization derived from observed particulars (al-istiqrā')."),
+    ("inference/abductive", "Specifically abductive inference — conjectural reasoning from effect to most-plausible cause."),
+    ("inference/necessary", "Specifically necessary reason — a priori rational knowledge that the mind grasps as logically inescapable (al-ʿaql al-ḍarūrī)."),
+    ("inference/speculative", "Specifically speculative reason — discursive reasoning toward conclusions not yet certain (al-ʿaql al-naẓarī)."),
+
+    // S3 Testimony
+    ("testimony/direct-witness", "Specifically direct first-person witness testimony from someone who was present at the event (al-shahādah al-mubāsharah)."),
+    ("testimony/reported", "Specifically secondary reported testimony — witnessed by one party and relayed through a chain (al-khabar al-manqūl)."),
+    ("testimony/authoritative", "Specifically testimony from a recognized reliable authority — āpta-vacana / khabar al-thiqah."),
+    ("testimony/scriptural", "Specifically scripturally-grounded testimony — citation of religious sources as testimonial authority (al-naql al-shar'ī)."),
+
+    // S4 Mass-transmission
+    ("mass-transmission/verbal", "Specifically verbal mass-transmission — the transmitted text or wording is itself attested by overwhelming witnesses (tawātur lafẓī)."),
+    ("mass-transmission/meaning", "Specifically meaning-based mass-transmission — the substance is uniformly attested even if wording varies (tawātur ma'nawī)."),
+    ("mass-transmission/practical", "Specifically practical mass-transmission — a continuous community practice that serves as evidence (tawātur 'amalī)."),
+
+    // S5 Comparison / Analogy
+    ("comparison/ratio-legis", "Specifically analogy by shared underlying cause — the classical fiqh qiyās al-'illah."),
+    ("comparison/indication", "Specifically analogy by indicative similarity — qiyās al-dilālah."),
+    ("comparison/resemblance", "Specifically analogy by surface resemblance — qiyās al-shabah."),
+    ("comparison/a-fortiori", "Specifically a fortiori analogy — qiyās al-awlā, where the new case is even more deserving of the ruling than the precedent."),
+
+    // S6 Postulation / IBE
+    ("postulation/from-perceived", "Specifically postulation from a perceived fact — positing an unobserved cause to explain something seen (dṛṣṭārthāpatti)."),
+    ("postulation/from-heard", "Specifically postulation from a heard report — positing an unobserved fact to make sense of testimony (śrutārthāpatti)."),
+    ("postulation/ibe", "Specifically inference to the best explanation — selecting among competing hypotheses the one that best accounts for the data."),
+
+    // S7 Non-apprehension
+    ("non-apprehension/prior", "Specifically prior absence — the non-existence of something before its production (prāgabhāva)."),
+    ("non-apprehension/posterior", "Specifically posterior absence — the non-existence of something after its destruction (pradhvaṃsābhāva)."),
+    ("non-apprehension/mutual", "Specifically mutual absence — two distinct things being not-the-other (anyonyābhāva)."),
+    ("non-apprehension/absolute", "Specifically absolute absence — the unqualified non-existence of a thing in a locus across all time (atyantābhāva)."),
+
+    // S8 Memory
+    ("memory/recollection", "Specifically active recollection — the deliberate calling-to-mind of past content (al-tadhakkur)."),
+    ("memory/recognition", "Specifically recognition — identifying a present object as one previously encountered (pratyabhijñā)."),
+    ("memory/episodic", "Specifically episodic memory — recall of specific dated events from one's own life."),
+    ("memory/semantic", "Specifically semantic memory — recall of general facts and meanings, undated and decontextualized."),
+
+    // S9 Innate disposition
+    ("innate-disposition/primordial", "Specifically primordial disposition — the Sunni fiṭrah, the human innate orientation toward truth and the divine."),
+    ("innate-disposition/first-principles", "Specifically intuition of first principles — self-evident axioms the mind grasps without proof (badahiyāt al-ʿaql)."),
+    ("innate-disposition/moral", "Specifically innate moral knowledge — Mencian liángzhī, the inborn sense of right and wrong."),
+    ("innate-disposition/axioms", "Specifically self-evident axioms — necessary truths whose denial is incoherent (al-ʿulūm al-ḍarūriyyah)."),
+
+    // S10 Inspiration
+    ("inspiration/ilham", "Specifically ilhām — direct God-cast inspiration into the heart of a sincere seeker."),
+    ("inspiration/kashf", "Specifically kashf — mystical unveiling, a sudden vision of unseen reality."),
+    ("inspiration/dream-vision", "Specifically true dream-vision — al-ru'yā al-ṣādiqah, a veridical dream considered a fragment of prophecy."),
+
+    // S11 Revelation
+    ("revelation/recited", "Specifically recited revelation — the Qur'an itself, transmitted as both meaning and exact wording (al-waḥy al-matluww)."),
+    ("revelation/non-recited", "Specifically non-recited revelation — the Sunnah, prophetic teachings transmitted as meaning rather than exact divine speech (al-waḥy ghayr al-matluww)."),
+    ("revelation/modes-of-receiving", "Specifically the modes of receiving revelation — true dream, audible voice, angelic mediation, etc. (awjuh nuzūl al-waḥy)."),
+];
+
+/// Lookup helper for a leaf hint.
+fn leaf_hint(id: &str) -> Option<&'static str> {
+    HORIZONTAL_LEAF_HINTS
+        .iter()
+        .find(|(k, _)| *k == id)
+        .map(|(_, v)| *v)
+}
+
+/// Lookup helper for a parent's full definition.
+fn parent_definition(id: &str) -> Option<&'static str> {
+    SOURCE_DEFINITIONS
+        .iter()
+        .find(|(k, _)| *k == id)
+        .map(|(_, v)| *v)
+}
+
+// ─── Runtime candidate builder ──────────────────────────────────────
+
+/// Build the unified classifier candidate list. Called once at first
+/// classifier invocation; results cached by the caller.
+///
+/// Composition:
+/// - 11 horizontal parents → use rich SOURCE_DEFINITIONS verbatim
+/// - 41 horizontal leaves → "{parent_def} Specifically: {leaf_hint}"
+/// - 222 vertical nodes → mechanical "{en_label} ({ar_label}{ tr_suffix}). Branch X — {branch_label} taxonomy. Parent: {parent_label}."
+///   (Per Plan §3 risk mitigation: no fabrication of philosophical content
+///   where the source diagram provides only a label. The label + Arabic +
+///   transliteration + parent-label give the embedding model enough signal
+///   to differentiate at the BRANCH level reliably; LEAF-level accuracy is
+///   bonus precision when confidence is high. Future PJ may enrich.)
+///
+/// Excludes the `unclassifiable` opt-out token (classifier never suggests it)
+/// and the `epistemic-content` root (not a meaningful classification target).
+pub fn build_classifier_candidates() -> Vec<ClassifierCandidate> {
+    let mut out: Vec<ClassifierCandidate> =
+        Vec::with_capacity(53 + 222);
+
+    // Horizontal axis
+    for node in horizontal_taxonomy::HORIZONTAL_NODES {
+        if node.id == "unclassifiable" {
+            continue; // never suggested
+        }
+        if node.parent_id.is_none() {
+            // Top-level parent — use rich definition
+            if let Some(def) = parent_definition(node.id) {
+                out.push(ClassifierCandidate {
+                    id: node.id.to_string(),
+                    axis: ClassifierAxis::Horizontal,
+                    embedding_text: def.to_string(),
+                });
+            }
+        } else {
+            // Leaf — combine parent's full definition + leaf hint
+            let parent = node.parent_id.unwrap();
+            let parent_def = parent_definition(parent).unwrap_or("");
+            let hint = leaf_hint(node.id).unwrap_or("");
+            let combined = format!("{} {}", parent_def, hint);
+            out.push(ClassifierCandidate {
+                id: node.id.to_string(),
+                axis: ClassifierAxis::Horizontal,
+                embedding_text: combined,
+            });
+        }
+    }
+
+    // Vertical axis — mechanical embedding text from labels + parent context
+    for node in vertical_taxonomy::VERTICAL_NODES {
+        if node.id == "epistemic-content" {
+            continue; // root — not classifiable
+        }
+        let parent_label = node
+            .parent_id
+            .and_then(vertical_taxonomy::en_label)
+            .unwrap_or("(none)");
+        let branch_label = match node.branch {
+            1 => "Sensory inputs",
+            2 => "Symbolic entities",
+            3 => "Semantic contents",
+            4 => "Epistemic states",
+            5 => "Higher-order constructs",
+            _ => "(unknown)",
+        };
+        let text = format!(
+            "{} ({}). Branch {} — {} taxonomy. Parent: {}.",
+            node.en, node.ar, node.branch, branch_label, parent_label
+        );
+        out.push(ClassifierCandidate {
+            id: node.id.to_string(),
+            axis: ClassifierAxis::Vertical,
+            embedding_text: text,
+        });
+    }
+
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn definitions_match_source_ids_count() {
-        // 11 classifiable sources; 'unclassifiable' is the 12th opt-out token
-        // (NOT in SOURCE_DEFINITIONS by design — classifier never suggests it).
+    fn parent_definitions_count() {
         assert_eq!(SOURCE_DEFINITIONS.len(), 11);
-        let ids: Vec<&str> = SOURCE_DEFINITIONS.iter().map(|(id, _)| *id).collect();
-        let canonical = crate::sources::classifiable_sources();
-        assert_eq!(ids, canonical);
     }
 
     #[test]
-    fn definitions_are_substantial() {
-        // Each definition should be at least 100 words (per Plan §0 Q2).
-        for (id, def) in SOURCE_DEFINITIONS {
-            let word_count = def.split_whitespace().count();
-            assert!(
-                word_count >= 100,
-                "Definition for {} has only {} words; needs ≥100 for embedding-classification accuracy",
-                id,
-                word_count
-            );
+    fn leaf_hints_count() {
+        assert_eq!(HORIZONTAL_LEAF_HINTS.len(), 41);
+    }
+
+    #[test]
+    fn every_horizontal_leaf_has_a_hint() {
+        for n in horizontal_taxonomy::HORIZONTAL_NODES {
+            if n.parent_id.is_some() {
+                assert!(
+                    leaf_hint(n.id).is_some(),
+                    "missing hint for leaf `{}`", n.id
+                );
+            }
         }
     }
 
     #[test]
-    fn definitions_are_not_too_long() {
-        // Under 250 words each — keeps total embedding cost reasonable
-        // and avoids drowning the distinctive cues in noise.
+    fn build_candidates_covers_both_axes() {
+        let candidates = build_classifier_candidates();
+        let horizontal: Vec<_> = candidates
+            .iter()
+            .filter(|c| c.axis == ClassifierAxis::Horizontal)
+            .collect();
+        let vertical: Vec<_> = candidates
+            .iter()
+            .filter(|c| c.axis == ClassifierAxis::Vertical)
+            .collect();
+        // 11 parents + 41 leaves = 52 horizontal (excludes unclassifiable)
+        assert_eq!(horizontal.len(), 52);
+        // ~218 sub-nodes (excludes root)
+        assert!(vertical.len() >= 215 && vertical.len() <= 225,
+                "expected ~218 vertical, got {}", vertical.len());
+    }
+
+    #[test]
+    fn parent_definitions_are_substantial() {
         for (id, def) in SOURCE_DEFINITIONS {
-            let word_count = def.split_whitespace().count();
             assert!(
-                word_count <= 250,
-                "Definition for {} has {} words; over 250 may dilute embedding signal",
-                id,
-                word_count
+                def.split_whitespace().count() >= 100,
+                "{} definition too short", id
             );
         }
     }

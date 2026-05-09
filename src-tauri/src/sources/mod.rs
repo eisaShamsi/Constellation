@@ -84,12 +84,23 @@ pub fn classifiable_sources() -> Vec<&'static str> {
 
 // ─── Types ──────────────────────────────────────────────────────────
 
-/// One classifier suggestion record for a single source candidate.
+/// One classifier suggestion record for a single candidate.
+///
+/// MIG-021v2 §1B': adds `axis` field tagging which taxonomy axis the
+/// suggestion belongs to ("horizontal" for sources, "vertical" for
+/// content_type). Defaults to "horizontal" for serde-deserialization
+/// of legacy §1A/§1B data still in the SQLite suggestions table.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Suggestion {
     pub source: String,
     pub confidence: f32,
     pub evidence: String,
+    #[serde(default = "default_axis")]
+    pub axis: String,
+}
+
+fn default_axis() -> String {
+    "horizontal".to_string()
 }
 
 /// A complete suggestion record persisted in `sources_suggestions`
