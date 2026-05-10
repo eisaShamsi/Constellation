@@ -216,6 +216,22 @@
     }
   }
 
+  // MIG-021v2 §1F' fix-1 — live-update during background scan. Without
+  // this the queue count and visible cards only refresh when the panel
+  // re-mounts (i.e. when the user switches away and back). The Rust
+  // scan_job emits `classifier:scan` events every 5 notes; we debounce
+  // a queue reload to ~1.5 s so we don't thrash on a fast scan.
+  let scanReloadTimer: ReturnType<typeof setTimeout> | null = null;
+  let scanUnlisten: (() => void) | null = null;
+
+  function scheduleQueueReload() {
+    if (scanReloadTimer) return;
+    scanReloadTimer = setTimeout(() => {
+      scanReloadTimer = null;
+      loadQueue();
+    }, 1500);
+  }
+
   onMount(async () => {
     try {
       [horizontalTaxonomy, verticalTaxonomy] = await Promise.all([
@@ -227,11 +243,23 @@
     }
     loadQueue();
     window.addEventListener('constellation:classify-and-show', handleClassifyAndShow);
+
+    // Listen for backend scan progress so the queue updates live.
+    const { listen } = await import('@tauri-apps/api/event');
+    const unlisten = await listen<{ phase: string }>('classifier:scan', (ev) => {
+      const phase = ev.payload?.phase;
+      if (phase === 'progress' || phase === 'done' || phase === 'cancelled') {
+        scheduleQueueReload();
+      }
+    });
+    scanUnlisten = unlisten;
   });
 
   onDestroy(() => {
     window.removeEventListener('constellation:classify-and-show', handleClassifyAndShow);
     if (highlightTimeout) clearTimeout(highlightTimeout);
+    if (scanReloadTimer) clearTimeout(scanReloadTimer);
+    scanUnlisten?.();
   });
 </script>
 
