@@ -223,6 +223,47 @@
   // a queue reload to ~1.5 s so we don't thrash on a fast scan.
   let scanReloadTimer: ReturnType<typeof setTimeout> | null = null;
   let scanUnlisten: (() => void) | null = null;
+  let bulkUnlisten: (() => void) | null = null;
+
+  // MIG-021v2 §1F'.b — Bulk Approve All / Reject All state.
+  let bulkConfirm = $state<null | 'accept' | 'reject'>(null);
+  let bulkRunning = $state(false);
+  let bulkCompleted = $state(0);
+  let bulkTotal = $state(0);
+  let bulkCancelling = $state(false);
+
+  async function startBulkAccept() {
+    bulkConfirm = null;
+    bulkRunning = true;
+    bulkCompleted = 0;
+    bulkTotal = queue.length;
+    try {
+      await invoke('sources_accept_all_pending');
+    } catch (e) {
+      error = String(e);
+      bulkRunning = false;
+    }
+  }
+
+  async function cancelBulkAccept() {
+    bulkCancelling = true;
+    try {
+      await invoke('sources_bulk_accept_cancel');
+    } catch (e) {
+      console.error('[BulkAccept] cancel failed:', e);
+    }
+  }
+
+  async function startBulkReject() {
+    bulkConfirm = null;
+    try {
+      const cleared = await invoke<number>('sources_reject_all_pending');
+      console.log(`[BulkReject] cleared ${cleared} suggestions`);
+      await loadQueue();
+    } catch (e) {
+      error = String(e);
+    }
+  }
 
   function scheduleQueueReload() {
     if (scanReloadTimer) return;
@@ -253,6 +294,32 @@
       }
     });
     scanUnlisten = unlisten;
+
+    // MIG-021v2 §1F'.b — bulk-accept progress events drive the inline
+    // progress bar + auto-reload the queue when it finishes.
+    const unlistenBulk = await listen<{ phase: string; total: number; completed: number }>(
+      'sources:bulk_accept',
+      (ev) => {
+        const p = ev.payload;
+        if (p.phase === 'start') {
+          bulkRunning = true;
+          bulkCompleted = 0;
+          bulkTotal = p.total;
+          bulkCancelling = false;
+        } else if (p.phase === 'progress') {
+          bulkCompleted = p.completed;
+          bulkTotal = p.total;
+          scheduleQueueReload();
+        } else if (p.phase === 'done' || p.phase === 'cancelled' || p.phase === 'error') {
+          bulkCompleted = p.completed;
+          bulkTotal = p.total;
+          bulkRunning = false;
+          bulkCancelling = false;
+          loadQueue();
+        }
+      },
+    );
+    bulkUnlisten = unlistenBulk;
   });
 
   onDestroy(() => {
@@ -260,6 +327,7 @@
     if (highlightTimeout) clearTimeout(highlightTimeout);
     if (scanReloadTimer) clearTimeout(scanReloadTimer);
     scanUnlisten?.();
+    bulkUnlisten?.();
   });
 </script>
 
@@ -311,12 +379,80 @@
       </div>
     </div>
   {:else}
-    <div class="srp-count">
-      {queue.length}
-      {queue.length === 1
-        ? ($t('sources.review.pending') || 'pending')
-        : ($t('sources.review.pendingPlural') || 'pending')}
+    <div class="srp-count-row">
+      <span class="srp-count">
+        {queue.length}
+        {queue.length === 1
+          ? ($t('sources.review.pending') || 'pending')
+          : ($t('sources.review.pendingPlural') || 'pending')}
+      </span>
+      <!-- MIG-021v2 §1F'.b — bulk Approve All / Reject All -->
+      <span class="srp-bulk-actions">
+        <button
+          class="srp-bulk-btn srp-bulk-accept"
+          onclick={() => bulkConfirm = 'accept'}
+          disabled={bulkRunning}
+          title={$t('sources.review.acceptAllTitle') || 'Apply every queued suggestion to its note'}
+        >
+          {$t('sources.review.acceptAll') || 'Approve all'}
+        </button>
+        <button
+          class="srp-bulk-btn srp-bulk-reject"
+          onclick={() => bulkConfirm = 'reject'}
+          disabled={bulkRunning}
+          title={$t('sources.review.rejectAllTitle') || 'Clear every queued suggestion without writing'}
+        >
+          {$t('sources.review.rejectAll') || 'Reject all'}
+        </button>
+      </span>
     </div>
+
+    {#if bulkRunning}
+      <div class="srp-bulk-progress">
+        <div class="srp-bulk-progress-text">
+          {bulkCancelling
+            ? ($t('sources.review.bulkCancelling') || 'Cancelling…')
+            : ($t('sources.review.bulkRunning') || 'Approving…')}
+          — {bulkCompleted.toLocaleString()} / {bulkTotal.toLocaleString()}
+          {#if bulkTotal > 0}
+            ({Math.floor((bulkCompleted / bulkTotal) * 100)}%)
+          {/if}
+        </div>
+        <button
+          class="srp-bulk-cancel"
+          onclick={cancelBulkAccept}
+          disabled={bulkCancelling}
+        >
+          {$t('sources.review.bulkCancel') || 'Cancel'}
+        </button>
+      </div>
+    {/if}
+
+    {#if bulkConfirm}
+      <div class="srp-bulk-confirm" role="dialog" aria-modal="true">
+        <div class="srp-bulk-confirm-text">
+          {bulkConfirm === 'accept'
+            ? ($t('sources.review.confirmAcceptAll') || 'Apply every suggestion in the queue to its note? This writes both axes\' top suggestions to {N} notes\' frontmatter.').replace('{N}', queue.length.toLocaleString())
+            : ($t('sources.review.confirmRejectAll') || 'Clear every suggestion in the queue without writing? You can re-run the scan later to regenerate them.')}
+        </div>
+        <div class="srp-bulk-confirm-actions">
+          <button
+            class="srp-btn"
+            onclick={() => bulkConfirm = null}
+          >
+            {$t('sources.review.cancel') || 'Cancel'}
+          </button>
+          <button
+            class="srp-btn srp-btn-primary"
+            onclick={() => bulkConfirm === 'accept' ? startBulkAccept() : startBulkReject()}
+          >
+            {bulkConfirm === 'accept'
+              ? ($t('sources.review.acceptAll') || 'Approve all')
+              : ($t('sources.review.rejectAll') || 'Reject all')}
+          </button>
+        </div>
+      </div>
+    {/if}
 
     <ul class="srp-list">
       {#each queue as record (record.note_path)}
@@ -699,6 +835,59 @@
   .srp-btn-danger {
     color: var(--text-error, #a83232);
   }
+  /* MIG-021v2 §1F'.b — bulk Approve/Reject actions */
+  .srp-count-row {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 8px; padding: 4px 8px;
+    flex-wrap: wrap;
+  }
+  .srp-bulk-actions {
+    display: flex; gap: 6px;
+  }
+  .srp-bulk-btn {
+    padding: 3px 10px; font-size: 11px;
+    border-radius: 4px; cursor: pointer;
+    border: 1px solid var(--background-modifier-border, rgba(0,0,0,0.18));
+    background: transparent;
+    color: var(--text-normal, #1a1a1a);
+  }
+  .srp-bulk-btn:hover { background: var(--background-modifier-hover, rgba(0,0,0,0.05)); }
+  .srp-bulk-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .srp-bulk-accept { color: #c9a227; border-color: rgba(201, 162, 39, 0.4); }
+  .srp-bulk-reject { color: #a83232; border-color: rgba(168, 50, 50, 0.4); }
+  .srp-bulk-progress {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 8px; padding: 6px 8px;
+    background: rgba(201, 162, 39, 0.10);
+    border-block: 1px solid rgba(201, 162, 39, 0.25);
+    font-size: 11px; color: var(--text-normal);
+  }
+  .srp-bulk-progress-text { font-variant-numeric: tabular-nums; }
+  .srp-bulk-cancel {
+    border: 1px solid var(--background-modifier-border, rgba(0,0,0,0.18));
+    background: transparent;
+    color: var(--text-muted);
+    border-radius: 4px;
+    padding: 1px 8px;
+    font-size: 11px;
+    cursor: pointer;
+  }
+  .srp-bulk-cancel:disabled { opacity: 0.5; cursor: not-allowed; }
+  .srp-bulk-confirm {
+    margin: 8px;
+    padding: 10px 12px;
+    border: 1px solid #c9a227;
+    background: rgba(201, 162, 39, 0.08);
+    border-radius: 6px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .srp-bulk-confirm-text {
+    font-size: 12px; line-height: 1.5; color: var(--text-normal);
+  }
+  .srp-bulk-confirm-actions {
+    display: flex; gap: 8px; justify-content: flex-end;
+  }
+
   /* MIG-021v2 §1E' — flash animation when a record is added via the
      right-click "Suggest sources & content type" action, so the user
      can spot the just-classified note in the queue. */

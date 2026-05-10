@@ -863,6 +863,15 @@
       "cancel": "Cancel",
       "classifyActive": "Classify open note",
       "classifying": "Classifying…",
+      "acceptAll": "Approve all",
+      "acceptAllTitle": "Apply every queued suggestion to its note (writes the suggested sources and content type to each note's frontmatter)",
+      "rejectAll": "Reject all",
+      "rejectAllTitle": "Clear every queued suggestion without writing — you can re-run the scan later to regenerate them",
+      "confirmAcceptAll": "Apply every suggestion in the queue to its note? This writes both axes' top suggestions to {N} notes' frontmatter. The operation runs in the background and can be cancelled.",
+      "confirmRejectAll": "Clear every suggestion in the queue without writing? You can re-run the scan later to regenerate them.",
+      "bulkRunning": "Approving…",
+      "bulkCancelling": "Cancelling…",
+      "bulkCancel": "Cancel",
       "axis": {
         "horizontal": "Sources",
         "vertical": "Content type"

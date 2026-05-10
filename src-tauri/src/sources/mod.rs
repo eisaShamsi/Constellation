@@ -31,6 +31,8 @@
 // canonical Eisa-authored HTML diagrams in docs/).
 pub mod horizontal_taxonomy;
 pub mod vertical_taxonomy;
+// MIG-021v2 §1F'.b — Bulk Approve All / Reject All for the Source Review queue.
+pub mod bulk_ops;
 
 use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};

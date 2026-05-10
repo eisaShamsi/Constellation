@@ -254,6 +254,8 @@ pub fn run() {
         .manage(embeddings::EmbeddingState { engine: std::sync::Mutex::new(None), term_embed_cancel: std::sync::atomic::AtomicBool::new(false) })
         // MIG-021v2 §1F' — background scan state.
         .manage(classifier::scan_job::ScanState::new())
+        // MIG-021v2 §1F'.b — bulk Approve All state.
+        .manage(sources::bulk_ops::BulkAcceptState::new())
         .invoke_handler({
             // Round 6 diagnostic (2026-04-19) — IPC arrival tracer.
             //
@@ -329,6 +331,11 @@ pub fn run() {
             classifier::scan_job::classifier_scan_start,
             classifier::scan_job::classifier_scan_cancel,
             classifier::scan_job::classifier_scan_status,
+            // MIG-021v2 §1F'.b — bulk Approve All / Reject All
+            sources::bulk_ops::sources_accept_all_pending,
+            sources::bulk_ops::sources_bulk_accept_cancel,
+            sources::bulk_ops::sources_bulk_accept_status,
+            sources::bulk_ops::sources_reject_all_pending,
             // MIG-021 §1C — Source Review queue IPCs
             sources::sources_get_suggestions,
             sources::sources_list_pending_suggestions,
