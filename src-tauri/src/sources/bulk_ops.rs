@@ -97,8 +97,16 @@ pub fn sources_bulk_accept_cancel(app: AppHandle) -> Result<(), String> {
 /// `sources:` gets every horizontal suggestion ID and `content_type:`
 /// gets every vertical suggestion ID. The user can subsequently trim
 /// via the PropertyEditor pickers.
+///
+/// V3-§8.r5.5 (audit UX agent): added `skip_split` parameter (default
+/// true from the frontend). When true, cards whose composite_json
+/// reports a Split regime on either axis are EXCLUDED from the bulk
+/// accept — the engine "refused to assign" on those cards and
+/// auto-applying the top suggestion would defeat the Sibling
+/// Disambiguation design. They stay in the queue for the user to
+/// resolve via the radio-chip form.
 #[tauri::command]
-pub fn sources_accept_all_pending(app: AppHandle) -> Result<(), String> {
+pub fn sources_accept_all_pending(app: AppHandle, skip_split: Option<bool>) -> Result<(), String> {
     crate::search::ensure_search_db_ready(&app)?;
     let state = app.state::<BulkAcceptState>();
     if state.running.swap(true, Ordering::Relaxed) {
@@ -111,9 +119,10 @@ pub fn sources_accept_all_pending(app: AppHandle) -> Result<(), String> {
         *g = None;
     }
 
+    let skip_split_flag = skip_split.unwrap_or(true);
     let app_clone = app.clone();
     thread::spawn(move || {
-        let result = run_bulk_accept(app_clone.clone());
+        let result = run_bulk_accept(app_clone.clone(), skip_split_flag);
         let state = app_clone.state::<BulkAcceptState>();
         if let Err(e) = result {
             if let Ok(mut g) = state.last_error.lock() {
@@ -136,26 +145,42 @@ pub fn sources_accept_all_pending(app: AppHandle) -> Result<(), String> {
     Ok(())
 }
 
-fn run_bulk_accept(app: AppHandle) -> Result<(), String> {
+fn run_bulk_accept(app: AppHandle, skip_split: bool) -> Result<(), String> {
     // Snapshot the queue once up front so we don't race against new
     // entries being added (e.g. a scan still running in the background).
+    // V3-§8.r5.5: when skip_split is true, also pull composite_json so
+    // we can filter out Split-regime cards in Rust.
     let pending_paths: Vec<String> = {
         let search_state = app.state::<crate::search::SearchState>();
         let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
         let conn = db_guard
             .as_ref()
             .ok_or("Search database not initialized")?;
-        let mut stmt = conn
-            .prepare(
-                "SELECT note_path FROM sources_suggestions ORDER BY created_at ASC",
-            )
-            .map_err(|e| format!("prepare: {}", e))?;
+        let sql = if skip_split {
+            "SELECT note_path, composite_json FROM sources_suggestions ORDER BY created_at ASC"
+        } else {
+            "SELECT note_path, NULL FROM sources_suggestions ORDER BY created_at ASC"
+        };
+        let mut stmt = conn.prepare(sql).map_err(|e| format!("prepare: {}", e))?;
         let rows = stmt
-            .query_map([], |row| row.get::<_, String>(0))
+            .query_map([], |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, Option<String>>(1).ok().flatten(),
+                ))
+            })
             .map_err(|e| format!("query: {}", e))?;
         let mut out = Vec::new();
         for r in rows {
-            out.push(r.map_err(|e| format!("row: {}", e))?);
+            let (path, composite_json) = r.map_err(|e| format!("row: {}", e))?;
+            if skip_split {
+                if let Some(json) = &composite_json {
+                    if has_split_regime(json) {
+                        continue; // skip Split-regime cards
+                    }
+                }
+            }
+            out.push(path);
         }
         out
     };
@@ -291,6 +316,26 @@ fn accept_one(app: &AppHandle, note_path: &str) -> Result<(), String> {
     clear_suggestions(conn, note_path)?;
 
     Ok(())
+}
+
+/// V3-§8.r5.5: Check if a composite_json blob reports a Split regime
+/// on either axis. Defensive: malformed/missing JSON returns false
+/// (don't skip cards we can't read — better to bulk-accept than to
+/// silently leave them in the queue forever).
+fn has_split_regime(composite_json: &str) -> bool {
+    let value: serde_json::Value = match serde_json::from_str(composite_json) {
+        Ok(v) => v,
+        Err(_) => return false,
+    };
+    let regime_is_split = |key: &str| -> bool {
+        value
+            .get(key)
+            .and_then(|v| v.get("regime"))
+            .and_then(|v| v.as_str())
+            .map(|s| s.eq_ignore_ascii_case("Split"))
+            .unwrap_or(false)
+    };
+    regime_is_split("horizontal") || regime_is_split("vertical")
 }
 
 /// Clear EVERY pending suggestion from the queue without writing to

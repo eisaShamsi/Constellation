@@ -376,6 +376,75 @@ mod tests {
     }
 
     #[test]
+    fn bare_blockquote_now_carries_low_weight() {
+        // V3-§8.r5.7 (audit-UX 2026-05-10): bare blockquotes (no attribution)
+        // dropped from 0.70 → 0.40 so they no longer dominate the synthesis
+        // when the rest of the note has no other structural evidence. The
+        // assignment still exists; it just shouldn't be a high-confidence
+        // primary.
+        let c = StructuralCataloger::new();
+        let trail = c
+            .classify(&ctx_for_body("Some setup.\n\n> Quoted statement here.\n\nAnd more."))
+            .unwrap();
+        let witness = trail
+            .horizontal
+            .iter()
+            .find(|a| a.id == "testimony/direct-witness")
+            .expect("bare blockquote should still produce a witness assignment");
+        assert!(
+            (witness.weight - 0.40).abs() < 0.01,
+            "bare blockquote weight should be 0.40, got {}",
+            witness.weight
+        );
+    }
+
+    #[test]
+    fn attributed_blockquote_carries_high_weight() {
+        // V3-§8.r5.7 — when a blockquote IS followed by attribution
+        // (em-dash + name, "source:", "author:"), it gets the original
+        // strong-testimony weight. This is the case where "the user is
+        // quoting someone with a citation" is the right reading.
+        let c = StructuralCataloger::new();
+        let trail = c
+            .classify(&ctx_for_body(
+                "Setup.\n\n> Knowledge is a map of reality.\n— Alfred Korzybski\n\nThe quote frames the discussion.",
+            ))
+            .unwrap();
+        let witness = trail
+            .horizontal
+            .iter()
+            .find(|a| a.id == "testimony/direct-witness")
+            .expect("attributed blockquote should produce a witness assignment");
+        assert!(
+            witness.weight >= 0.80,
+            "attributed blockquote weight should be ≥0.80, got {}",
+            witness.weight
+        );
+    }
+
+    #[test]
+    fn blockquote_with_source_label_carries_high_weight() {
+        // Variant: "source:" / "author:" / "attribution:" labels under
+        // the quote also count as attribution. Same end-state.
+        let c = StructuralCataloger::new();
+        let trail = c
+            .classify(&ctx_for_body(
+                "Note body.\n\n> The map is not the territory.\nsource: Korzybski 1933\n\nEnd.",
+            ))
+            .unwrap();
+        let witness = trail
+            .horizontal
+            .iter()
+            .find(|a| a.id == "testimony/direct-witness")
+            .expect("blockquote+source label should produce a witness assignment");
+        assert!(
+            witness.weight >= 0.80,
+            "blockquote+source label weight should be ≥0.80, got {}",
+            witness.weight
+        );
+    }
+
+    #[test]
     fn english_doubt_marker_fires_vertical_doubt() {
         let c = StructuralCataloger::new();
         let trail = c

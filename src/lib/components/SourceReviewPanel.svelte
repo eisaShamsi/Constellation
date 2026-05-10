@@ -105,6 +105,41 @@
     expandedTrails = next;
   }
 
+  /**
+   * V3-§8.r5.3 (audit UX agent) — trust-calibration default.
+   *
+   * Rationale: until the user has reviewed ~50 cards, they haven't
+   * developed an intuition for when to trust the catalogers. So we
+   * expand the reasoning trail by default for the first 50 reviews,
+   * then quiet down to on-demand once they've calibrated.
+   *
+   * Persisted in localStorage (per-Constellation install, not per-Library
+   * — the algorithm behavior is the same across Libraries). Increments
+   * on every Accept / Reject / Edit-commit / Disambiguation pick that
+   * came from a card carrying a composite trail (legacy v2 cards don't
+   * count — they have no trail to learn from).
+   */
+  const TRUST_CAL_THRESHOLD = 50;
+  const TRUST_CAL_KEY = 'cece-trust-cal-reviewed-count';
+  let trustCalReviewedCount = $state(0);
+  function loadTrustCalCount() {
+    try {
+      const raw = localStorage.getItem(TRUST_CAL_KEY);
+      trustCalReviewedCount = raw ? Math.max(0, parseInt(raw, 10) || 0) : 0;
+    } catch { trustCalReviewedCount = 0; }
+  }
+  function bumpTrustCalCount() {
+    trustCalReviewedCount = trustCalReviewedCount + 1;
+    try { localStorage.setItem(TRUST_CAL_KEY, String(trustCalReviewedCount)); } catch {}
+  }
+  let trustCalActive = $derived(trustCalReviewedCount < TRUST_CAL_THRESHOLD);
+  function isTrailOpen(notePath: string, hasComposite: boolean): boolean {
+    if (expandedTrails.has(notePath)) return true;
+    // Default-open while still calibrating, but only for cards with a
+    // real trail to read (legacy cards have no trail).
+    return trustCalActive && hasComposite;
+  }
+
   // The six catalogers, in render order. Mirrors the orchestrator's
   // cost-ordered registration.
   const CATALOGER_ORDER = [
@@ -150,16 +185,22 @@
     }
   }
 
-  /** 3-letter abbreviation for the badge text. */
-  function catalogerAbbr(c: string): string {
+  /**
+   * V3-§8.r5.1 (audit UX agent): Per-cataloger dot color. 6 distinct hues
+   * so the user learns "amber dot = wordstems lens" without having to read
+   * abbreviations. Status (voiced/silent/dissent) is encoded via fill +
+   * border + an icon glyph, so color alone is never the channel.
+   * Colors picked to remain legible on the parchment (#fbf8ec) background.
+   */
+  function catalogerDotColor(c: string): string {
     switch (c) {
-      case 'user_authority': return 'UA';
-      case 'structural': return 'STR';
-      case 'linguistic': return 'LIN';
-      case 'graph': return 'GRP';
-      case 'semantic': return 'SEM';
-      case 'reasoning': return 'RSN';
-      default: return c.slice(0, 3).toUpperCase();
+      case 'user_authority': return '#2a4a8c';  // blue — your own ground truth
+      case 'structural': return '#a83260';      // rose — citations/structure
+      case 'linguistic': return '#c9a227';      // amber — wordstems/lexicon
+      case 'graph': return '#0f6e56';           // teal — linked notes
+      case 'semantic': return '#534ab7';        // violet — similar notes
+      case 'reasoning': return '#3a7a3a';       // green — AI judgment
+      default: return '#6b6a64';
     }
   }
 
@@ -176,8 +217,57 @@
         chosenId,
       });
       queue = queue.filter(r => r.note_path !== notePath);
+      bumpTrustCalCount(); // V3-§8.r5.3 — counts as a calibration review
     } catch (e) {
       error = String(e);
+    }
+  }
+
+  /**
+   * V3-§8.r5.2 (audit UX agent) — translate machine-readable rule keys
+   * from `rules_fired` into plain-language phrases the user can act on.
+   * Falls back to the raw key (de-snake-cased) when no translation
+   * exists, so an unmapped rule never breaks rendering — it just looks
+   * a touch technical.
+   *
+   * Both EN and AR phrasings live in i18n keys (`cece.rule.<key>`); the
+   * function returns the i18n value if present, else the locale fallback,
+   * else a humanized version of the snake_case key.
+   */
+  function ruleLabel(rule: string): string {
+    const i18nKey = `cece.rule.${rule}`;
+    const translated = $t(i18nKey);
+    if (translated && translated !== i18nKey) return translated;
+    // Locale-default fallbacks (English-only — AR speakers see the EN
+    // phrase if their i18n cece.rule.* key is missing). Keys below are
+    // the EXACT strings the six catalogers emit today (verified against
+    // user_authority.rs / structural.rs / linguistic.rs / graph.rs /
+    // semantic.rs / reasoning.rs as of 2026-05-10).
+    switch (rule) {
+      // User Authority (user_authority.rs:103)
+      case 'rule_of_authority': return 'Your frontmatter is the authority';
+      // Structural (structural.rs:90, 93)
+      case 'structural_pattern_match': return 'Structural pattern matched';
+      case 'stance_or_form_marker': return 'Stance/form marker present';
+      // Linguistic (linguistic.rs:362, 365, 368, 370)
+      case 'cae_root_match': return 'Arabic root match (CAE)';
+      case 'surface_token_match': return 'Surface keyword match';
+      case 'bridge_similarity': return 'Cross-lingual similarity (Bridge)';
+      case 'rule_of_side_channel_preference': return 'Side-channel preference rule';
+      // Graph (graph.rs:167, 168)
+      case 'typed_neighbor_consensus': return 'Typed-link neighbor consensus';
+      // Semantic (semantic.rs:186)
+      case 'semantic_neighbor_consensus': return 'Similar classified neighbors agree';
+      // Shared by Graph + Semantic (graph.rs:168, semantic.rs:187)
+      case 'rule_of_authority_control': return 'Authority-control rule';
+      // Reasoning (reasoning.rs:174-176)
+      case 'schedule_navigation_top_down': return 'Top-down taxonomy navigation';
+      case 'gbnf_constrained': return 'AI judgment (grammar-constrained)';
+      case 'rule_of_application': return 'Use vs. mention disambiguation';
+      default: {
+        // De-snake-case fallback.
+        return rule.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      }
     }
   }
 
@@ -272,6 +362,8 @@
       });
       queue = queue.filter(r => r.note_path !== record.note_path);
       cancelEdit();
+      // V3-§8.r5.3 — only composite-trail cards count toward calibration.
+      if (record.composite_json) bumpTrustCalCount();
     } catch (e) {
       error = String(e);
     }
@@ -281,6 +373,8 @@
     try {
       await invoke('sources_reject_suggestion', { notePath: record.note_path });
       queue = queue.filter(r => r.note_path !== record.note_path);
+      // V3-§8.r5.3 — count rejection as a calibration review too
+      if (record.composite_json) bumpTrustCalCount();
     } catch (e) {
       error = String(e);
     }
@@ -400,14 +494,29 @@
     bulkConfirm = null;
     bulkRunning = true;
     bulkCompleted = 0;
-    bulkTotal = queue.length;
+    // V3-§8.r5.5: Approve All is Split-aware — backend skips Split-regime
+    // cards by default. Counter reflects the *eligible* set, not raw queue
+    // length, so progress doesn't appear to stall for skipped cards.
+    bulkTotal = queue.length - splitAwareSkipCount;
     try {
-      await invoke('sources_accept_all_pending');
+      await invoke('sources_accept_all_pending', { skipSplit: true });
     } catch (e) {
       error = String(e);
       bulkRunning = false;
     }
   }
+
+  /**
+   * V3-§8.r5.5 — Count of cards that the Split-aware Approve All would skip.
+   * Used to show "Approve all (N eligible, M will stay for your call)" in
+   * the confirm dialog so the user understands what's about to happen.
+   */
+  let splitAwareSkipCount = $derived.by(() => {
+    return queue.filter(r => {
+      const c = parseComposite(r);
+      return c && (c.horizontal.regime === 'split' || c.vertical.regime === 'split');
+    }).length;
+  });
 
   async function cancelBulkAccept() {
     bulkCancelling = true;
@@ -438,6 +547,7 @@
   }
 
   onMount(async () => {
+    loadTrustCalCount(); // V3-§8.r5.3
     try {
       [horizontalTaxonomy, verticalTaxonomy] = await Promise.all([
         getHorizontalTaxonomy(),
@@ -543,12 +653,35 @@
       </div>
     </div>
   {:else}
+    {@const splitCount = queue.filter(r => {
+      const c = parseComposite(r);
+      return c && (c.horizontal.regime === 'split' || c.vertical.regime === 'split');
+    }).length}
+    {#if trustCalActive}
+      <!-- V3-§8.r5.3 — trust-calibration banner. Quiet but persistent
+           reminder that reasoning trails are auto-expanded so the user
+           learns when to trust the cataloger ensemble. Disappears once
+           the user has reviewed TRUST_CAL_THRESHOLD cards. -->
+      <div class="srp-trust-cal-banner" title={$t('cece.trustCal.tooltip') || 'Reasoning trails are shown by default while you build a sense of how the catalogers reach their classifications. This banner disappears after 50 reviews.'}>
+        <span class="srp-trust-cal-icon" aria-hidden="true">▸</span>
+        {($t('cece.trustCal.banner') || 'Showing reasoning trails until you review {N} more cards — helps you learn when to trust the catalogers.').replace('{N}', String(TRUST_CAL_THRESHOLD - trustCalReviewedCount))}
+      </div>
+    {/if}
     <div class="srp-count-row">
       <span class="srp-count">
         {queue.length}
         {queue.length === 1
           ? ($t('sources.review.pending') || 'pending')
           : ($t('sources.review.pendingPlural') || 'pending')}
+        {#if splitCount > 0}
+          <!-- V3-§8.r5.4 (audit UX agent): queue-level Split count chip.
+               Differentiates "needs your call" cards from the rest at a
+               glance instead of relying on per-card gold borders that
+               become wallpaper. -->
+          <span class="srp-queue-split-chip" title={$t('cece.queueSplit.tooltip') || 'Cards where catalogers split — your decision is needed'}>
+            • {($t('cece.queueSplit.label') || '{N} need your call').replace('{N}', String(splitCount))}
+          </span>
+        {/if}
       </span>
       <!-- MIG-021v2 §1F'.b — bulk Approve All / Reject All -->
       <span class="srp-bulk-actions">
@@ -595,9 +728,19 @@
     {#if bulkConfirm}
       <div class="srp-bulk-confirm" role="dialog" aria-modal="true">
         <div class="srp-bulk-confirm-text">
-          {bulkConfirm === 'accept'
-            ? ($t('sources.review.confirmAcceptAll') || 'Apply every suggestion in the queue to its note? This writes both axes\' top suggestions to {N} notes\' frontmatter.').replace('{N}', queue.length.toLocaleString())
-            : ($t('sources.review.confirmRejectAll') || 'Clear every suggestion in the queue without writing? You can re-run the scan later to regenerate them.')}
+          {#if bulkConfirm === 'accept'}
+            <!-- V3-§8.r5.5: Split-aware confirmation. Eligible count = queue
+                 minus Split-regime cards (which stay for the user's call). -->
+            {@const eligible = queue.length - splitAwareSkipCount}
+            {($t('sources.review.confirmAcceptAllSplitAware') || 'Apply suggestions to {N} notes whose catalogers reached agreement.').replace('{N}', eligible.toLocaleString())}
+            {#if splitAwareSkipCount > 0}
+              <div class="srp-bulk-confirm-aside">
+                {($t('sources.review.confirmAcceptAllSkipNote') || '{M} cards where catalogers split will stay in the queue for you to decide.').replace('{M}', splitAwareSkipCount.toLocaleString())}
+              </div>
+            {/if}
+          {:else}
+            {$t('sources.review.confirmRejectAll') || 'Clear every suggestion in the queue without writing? You can re-run the scan later to regenerate them.'}
+          {/if}
         </div>
         <div class="srp-bulk-confirm-actions">
           <button
@@ -625,7 +768,7 @@
         {@const composite = parseComposite(record)}
         {@const isSplit = composite && (composite.horizontal.regime === 'split' || composite.vertical.regime === 'split')}
         {@const isStrongMajority = composite && (composite.horizontal.regime === 'strong_majority' || composite.vertical.regime === 'strong_majority')}
-        {@const showTrail = expandedTrails.has(record.note_path)}
+        {@const showTrail = isTrailOpen(record.note_path, !!composite)}
         <li class="srp-card"
             class:srp-just-added={highlightedPath === record.note_path}
             class:srp-split-regime={isSplit}>
@@ -638,31 +781,42 @@
               {noteName(record.note_path)}
             </button>
             {#if composite}
-              <!-- MIG-021v3 V3-§8 — per-cataloger badge cluster -->
-              <span class="srp-cataloger-cluster" title="Cataloger ensemble: ✓ agrees with synthesis, ✗ dissents, – silent">
+              <!-- V3-§8.r5.1 (audit UX agent): per-cataloger dot cluster.
+                   6 tinted dots (one per cataloger), color-coded by lens.
+                   Filled = voiced + agrees with synthesis; ring = voiced
+                   but dissents; empty outline = silent (no signal). The
+                   cluster is the at-a-glance "ensemble health" indicator;
+                   tooltip on each dot names the lens + its status. -->
+              <span class="srp-cataloger-cluster" title={$t('cece.badge.clusterTooltip') || 'Cataloger ensemble — hover each dot for details'}>
                 {#each CATALOGER_ORDER as catName}
                   {@const status = catalogerBadgeStatus(composite, catName)}
+                  {@const color = catalogerDotColor(catName)}
                   <span
-                    class="srp-cataloger-badge"
-                    class:srp-cataloger-voiced={status === '✓'}
-                    class:srp-cataloger-dissent={status === '✗'}
-                    class:srp-cataloger-silent={status === '–'}
-                    title={`${catalogerLabel(catName)}: ${status === '✓' ? 'agrees with synthesis' : status === '✗' ? 'dissents' : 'silent (no signal in this lens)'}`}
-                  >
-                    {catalogerAbbr(catName)} {status}
-                  </span>
+                    class="srp-cat-dot"
+                    class:srp-cat-dot-voiced={status === '✓'}
+                    class:srp-cat-dot-dissent={status === '✗'}
+                    class:srp-cat-dot-silent={status === '–'}
+                    style:--dot-color={color}
+                    title={`${catalogerLabel(catName)} — ${status === '✓' ? ($t('cece.badge.statusAgrees') || 'agrees with synthesis') : status === '✗' ? ($t('cece.badge.statusDissents') || 'dissents') : ($t('cece.badge.statusSilent') || 'silent (no signal in this lens)')}`}
+                    aria-label={`${catalogerLabel(catName)}: ${status === '✓' ? 'agrees' : status === '✗' ? 'dissents' : 'silent'}`}
+                  ></span>
                 {/each}
               </span>
             {:else}
-              <!-- Legacy v2-era row: single tier badge -->
-              <span class="srp-tier" title={$t('sources.review.tierLabel') || 'Classifier tier'}>
-                {record.classifier_tier === 2 ? 'T2' : 'T1'}
+              <!-- V3-§8.r5.6 (audit UX agent): Legacy v2-era row pill.
+                   Plain "Legacy" instead of T1/T2 tier abbreviations the
+                   user was never told about. -->
+              <span class="srp-legacy-pill" title={$t('cece.badge.legacyTooltip') || 'Classified before the cataloger ensemble was added — no per-cataloger trail available'}>
+                {$t('cece.badge.legacy') || 'Legacy'}
               </span>
             {/if}
           </div>
 
-          {#if composite && (isSplit || isStrongMajority)}
-            <!-- Reasoning trail surface (on disagreement only by default) -->
+          {#if composite && (isSplit || isStrongMajority || trustCalActive)}
+            <!-- Reasoning trail surface.
+                 Default: on disagreement only.
+                 V3-§8.r5.3: also default-open during the first
+                 TRUST_CAL_THRESHOLD reviews (trust-calibration period). -->
             <div class="srp-trail-toggle">
               <button class="srp-trail-btn" onclick={() => toggleTrail(record.note_path)}>
                 {#if showTrail}{$t('cece.trail.collapse') || '▾ Hide reasoning'}{:else}{$t('cece.trail.expand') || '▸ Why this classification?'}{/if}
@@ -673,6 +827,10 @@
                 <span class="srp-majority-pill">
                   {$t('cece.regime.strongMajority') || 'Strong majority'} {#if composite.horizontal.dissenter || composite.vertical.dissenter}({composite.horizontal.dissenter ?? composite.vertical.dissenter}){/if}
                 </span>
+              {:else if trustCalActive}
+                <span class="srp-unanimous-pill" title={$t('cece.regime.unanimousTooltip') || 'All voicing catalogers agreed on this classification'}>
+                  {$t('cece.regime.unanimous') || 'Unanimous'}
+                </span>
               {/if}
             </div>
             {#if showTrail}
@@ -681,9 +839,29 @@
                 <ul class="srp-trail-list">
                   {#each composite.per_cataloger_trails.filter(t => t.voiced_opinion) as t}
                     <li class="srp-trail-item">
-                      <strong>{catalogerLabel(t.cataloger)}</strong>
-                      <span class="srp-trail-conf">[{t.self_reported_confidence}]</span>
-                      — {t.reasoning}
+                      <div class="srp-trail-row">
+                        <span
+                          class="srp-trail-dot"
+                          style:background-color={catalogerDotColor(t.cataloger)}
+                          aria-hidden="true"
+                        ></span>
+                        <strong>{catalogerLabel(t.cataloger)}</strong>
+                        <span class="srp-trail-conf">[{t.self_reported_confidence}]</span>
+                      </div>
+                      <div class="srp-trail-reasoning">{t.reasoning}</div>
+                      <!-- V3-§8.r5.2 — translated rules_fired strip.
+                           Each rule the cataloger triggered becomes a
+                           one-word friendly chip ("DOI present",
+                           "Blockquote with attribution"). Chips help the
+                           user audit the lens at a glance instead of
+                           parsing the prose reasoning sentence. -->
+                      {#if t.rules_fired && t.rules_fired.length > 0}
+                        <div class="srp-trail-rules">
+                          {#each t.rules_fired as rule}
+                            <span class="srp-trail-rule" title={rule}>{ruleLabel(rule)}</span>
+                          {/each}
+                        </div>
+                      {/if}
                     </li>
                   {/each}
                 </ul>
@@ -980,14 +1158,8 @@
   .srp-card-title:hover {
     text-decoration: underline;
   }
-  .srp-tier {
-    font-size: 10px;
-    color: var(--text-muted, #6b6a64);
-    background: var(--background-modifier-hover, rgba(0,0,0,0.05));
-    padding: 1px 6px;
-    border-radius: 8px;
-    flex-shrink: 0;
-  }
+  /* V3-§8.r5.6 — .srp-tier removed (replaced by .srp-legacy-pill below).
+     Kept the selector slot for grep/migration history. */
   .srp-axis-section {
     margin-bottom: 8px;
   }
@@ -1098,34 +1270,52 @@
   .srp-btn-danger {
     color: var(--text-error, #a83232);
   }
-  /* MIG-021v3 V3-§8 — per-cataloger badge cluster + reasoning trail */
+  /* MIG-021v3 V3-§8.r5.1 — per-cataloger dot cluster.
+     Six tinted dots, color-keyed by lens (blue/rose/amber/teal/violet/green).
+     Status encoded by fill + ring + glyph (so color alone is never the
+     channel — works for users with color-vision difference). */
   .srp-cataloger-cluster {
-    display: inline-flex; flex-wrap: wrap; gap: 3px;
+    display: inline-flex; flex-wrap: nowrap; gap: 3px;
     align-items: center;
+    flex-shrink: 0;
   }
-  .srp-cataloger-badge {
-    font-size: 9px;
-    padding: 1px 4px;
-    border-radius: 3px;
-    font-weight: 600;
-    line-height: 1.2;
+  .srp-cat-dot {
+    --dot-color: #6b6a64;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
     user-select: none;
-    white-space: nowrap;
+    line-height: 1;
+    position: relative;
+    cursor: help;
   }
-  .srp-cataloger-voiced {
-    background: rgba(15, 110, 86, 0.15);
-    color: #0f6e56;
-    border: 1px solid rgba(15, 110, 86, 0.3);
+  .srp-cat-dot-voiced {
+    background: var(--dot-color);
+    border: 1px solid var(--dot-color);
   }
-  .srp-cataloger-dissent {
-    background: rgba(168, 50, 50, 0.15);
-    color: #a83232;
-    border: 1px solid rgba(168, 50, 50, 0.3);
+  .srp-cat-dot-dissent {
+    background: var(--background-primary, #fff);
+    border: 2px solid var(--dot-color);
+    box-shadow: 0 0 0 1px rgba(168, 50, 50, 0.45);
   }
-  .srp-cataloger-silent {
-    background: rgba(0, 0, 0, 0.04);
+  .srp-cat-dot-silent {
+    background: transparent;
+    border: 1px dashed rgba(107, 106, 100, 0.45);
+  }
+  /* V3-§8.r5.6 — Legacy pill (replaces the bare T1/T2 abbreviation
+     for v2-era rows that don't carry a per-cataloger trail). */
+  .srp-legacy-pill {
+    font-size: 9px;
+    padding: 1px 6px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.05);
     color: var(--text-faint, #6b6a64);
-    border: 1px solid rgba(0, 0, 0, 0.08);
+    border: 1px dashed rgba(0, 0, 0, 0.18);
+    font-style: italic;
+    flex-shrink: 0;
+    cursor: help;
   }
   .srp-card.srp-split-regime {
     border-left: 3px solid #c9a227;
@@ -1159,6 +1349,33 @@
     border-radius: 3px;
     border: 1px solid rgba(83, 74, 183, 0.3);
   }
+  /* V3-§8.r5.3 — Unanimous pill (only shown during trust-calibration so
+     the user can tell why the trail is auto-open even on agreed cards). */
+  .srp-unanimous-pill {
+    font-size: 10px;
+    padding: 2px 6px;
+    background: rgba(15, 110, 86, 0.12);
+    color: #0f6e56;
+    border-radius: 3px;
+    border: 1px solid rgba(15, 110, 86, 0.3);
+    cursor: help;
+  }
+  .srp-trust-cal-banner {
+    margin: 4px 8px 0;
+    padding: 6px 10px;
+    border-radius: 4px;
+    background: rgba(83, 74, 183, 0.06);
+    border: 1px dashed rgba(83, 74, 183, 0.25);
+    color: var(--text-muted, #6b6a64);
+    font-size: 11px;
+    line-height: 1.5;
+    cursor: help;
+  }
+  .srp-trust-cal-icon {
+    color: #534ab7;
+    margin-inline-end: 4px;
+    font-weight: 600;
+  }
   .srp-trail {
     padding: 6px 12px 8px;
     background: rgba(0, 0, 0, 0.02);
@@ -1185,6 +1402,37 @@
     font-size: 10px;
     color: var(--text-faint);
     margin-inline-start: 4px;
+  }
+  /* V3-§8.r5.2 — friendly rules-fired chip strip + lens-color dot inside
+     the reasoning trail. Reusing the cluster's color palette so the user
+     learns which lens-color = which cataloger across surfaces. */
+  .srp-trail-row {
+    display: flex; align-items: center; gap: 4px;
+    margin-bottom: 2px;
+  }
+  .srp-trail-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .srp-trail-reasoning {
+    color: var(--text-normal);
+    margin-inline-start: 11px;
+  }
+  .srp-trail-rules {
+    margin-inline-start: 11px;
+    margin-top: 3px;
+    display: flex; flex-wrap: wrap; gap: 3px;
+  }
+  .srp-trail-rule {
+    font-size: 10px;
+    padding: 1px 6px;
+    background: rgba(0, 0, 0, 0.04);
+    color: var(--text-muted);
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    cursor: help;
   }
 
   /* MIG-021v3 V3-§8.r1.f — Sibling Disambiguation form */
@@ -1275,8 +1523,30 @@
   .srp-bulk-confirm-text {
     font-size: 12px; line-height: 1.5; color: var(--text-normal);
   }
+  /* V3-§8.r5.5 — secondary aside under the main confirm prompt explaining
+     the Split-aware skip behavior. */
+  .srp-bulk-confirm-aside {
+    margin-top: 6px;
+    font-size: 11px;
+    color: var(--text-muted, #6b6a64);
+    font-style: italic;
+  }
   .srp-bulk-confirm-actions {
     display: flex; gap: 8px; justify-content: flex-end;
+  }
+  /* V3-§8.r5.4 — queue-level Split count chip surfaces the "needs your
+     call" cards in one number rather than asking the user to scan for
+     gold borders. */
+  .srp-queue-split-chip {
+    margin-inline-start: 6px;
+    font-size: 10px;
+    padding: 1px 6px;
+    background: rgba(201, 162, 39, 0.18);
+    color: #856204;
+    border-radius: 8px;
+    border: 1px solid rgba(201, 162, 39, 0.4);
+    font-weight: 600;
+    cursor: help;
   }
 
   /* MIG-021v2 §1E' — flash animation when a record is added via the

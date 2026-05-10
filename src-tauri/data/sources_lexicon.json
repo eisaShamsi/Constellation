@@ -168,11 +168,18 @@
       "evidence": "DOI citation"
     },
     {
-      "_comment": "Quoted block — markdown blockquote",
+      "_comment": "Quoted block — markdown blockquote alone. V3-§8.r5.7 audit-UX 2026-05-10: weight dropped from 0.70 → 0.40. Bare blockquote is too common in personal notes (paragraph emphasis, callout-style use) to be strong testimony evidence on its own. Strong testimony requires attribution — see the blockquote-with-attribution rule below.",
       "pattern": "(?m)^> +\\S",
       "target": "testimony/direct-witness",
-      "weight": 0.70,
-      "evidence": "Quoted passage"
+      "weight": 0.40,
+      "evidence": "Quoted passage (no attribution detected)"
+    },
+    {
+      "_comment": "Blockquote followed within 3 lines by attribution marker — em-dash, double-hyphen, or 'source:' / 'author:' label. V3-§8.r5.7 audit-UX 2026-05-10: this is the original strong testimony signal. Attribution moves the regime from 'might be a quote' to 'attributed witness' so the high weight is justified. Catches: '> Quote\\n— Author', '> Quote\\n-- Source', '> Quote\\nsource: ...', '> Quote\\nauthor: ...' (case-insensitive).",
+      "pattern": "(?ms)^> +\\S[^\\n]*(\\n>[^\\n]*){0,3}\\n(>?\\s*[—–-]{1,2}\\s+\\S+|>?\\s*(?i:source|author|attribution|attributed to)\\s*:\\s*\\S+)",
+      "target": "testimony/direct-witness",
+      "weight": 0.85,
+      "evidence": "Attributed quotation (blockquote + source attribution)"
     }
   ]
 }

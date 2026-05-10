@@ -793,7 +793,7 @@
     "sourceReview": "Source Review"
   },
   "cece": {
-    "_comment": "MIG-021v3 V3-§8.r1.e — CECE chrome. The catalog of six lenses + the synthesis-regime UI. Plain-English labels per UX agent recommendation.",
+    "_comment": "MIG-021v3 V3-§8.r1.e + r5 — CECE chrome. The catalog of six lenses + the synthesis-regime UI. Plain-English labels per UX agent recommendation. r5 added the dot-cluster, rule-label translations, and trust-calibration banner.",
     "cataloger": {
       "user_authority": "Your frontmatter",
       "structural": "Citations & structure",
@@ -815,16 +815,49 @@
       "dissent": "{name}: dissents",
       "silent": "{name}: silent (no signal in this lens)"
     },
+    "badge": {
+      "clusterTooltip": "Cataloger ensemble — hover each dot for details",
+      "statusAgrees": "agrees with synthesis",
+      "statusDissents": "dissents from synthesis",
+      "statusSilent": "silent (no signal in this lens)",
+      "legacy": "Legacy",
+      "legacyTooltip": "Classified before the cataloger ensemble was added — no per-cataloger trail available"
+    },
     "regime": {
-      "unanimous": "All catalogers agree",
+      "unanimous": "Unanimous",
+      "unanimousTooltip": "All voicing catalogers agreed on this classification",
       "strongMajority": "Strong majority (one dissent)",
       "split": "Catalogers split — needs your call"
     },
     "trail": {
-      "expand": "Why this classification?",
-      "collapse": "Hide reasoning",
+      "expand": "▸ Why this classification?",
+      "collapse": "▾ Hide reasoning",
       "summary": "Reasoning summary",
       "perCataloger": "Per cataloger"
+    },
+    "rule": {
+      "_comment": "Friendly labels for `rules_fired` strings — V3-§8.r5.2. Keys below are the EXACT strings the six catalogers emit today, verified against user_authority.rs / structural.rs / linguistic.rs / graph.rs / semantic.rs / reasoning.rs as of 2026-05-10.",
+      "rule_of_authority": "Your frontmatter is the authority",
+      "structural_pattern_match": "Structural pattern matched",
+      "stance_or_form_marker": "Stance/form marker present",
+      "cae_root_match": "Arabic root match (CAE)",
+      "surface_token_match": "Surface keyword match",
+      "bridge_similarity": "Cross-lingual similarity (Bridge)",
+      "rule_of_side_channel_preference": "Side-channel preference rule",
+      "typed_neighbor_consensus": "Typed-link neighbor consensus",
+      "semantic_neighbor_consensus": "Similar classified neighbors agree",
+      "rule_of_authority_control": "Authority-control rule",
+      "schedule_navigation_top_down": "Top-down taxonomy navigation",
+      "gbnf_constrained": "AI judgment (grammar-constrained)",
+      "rule_of_application": "Use vs. mention disambiguation"
+    },
+    "trustCal": {
+      "banner": "Showing reasoning trails until you review {N} more cards — helps you learn when to trust the catalogers.",
+      "tooltip": "Reasoning trails are shown by default while you build a sense of how the catalogers reach their classifications. This banner disappears after 50 reviews."
+    },
+    "queueSplit": {
+      "label": "{N} need your call",
+      "tooltip": "Cards where catalogers split — your decision is needed"
     },
     "disambiguation": {
       "title": "Pick the right one",
@@ -912,6 +945,8 @@
       "rejectAll": "Reject all",
       "rejectAllTitle": "Clear every queued suggestion without writing — you can re-run the scan later to regenerate them",
       "confirmAcceptAll": "Apply every suggestion in the queue to its note? This writes both axes' top suggestions to {N} notes' frontmatter. The operation runs in the background and can be cancelled.",
+      "confirmAcceptAllSplitAware": "Apply suggestions to {N} notes whose catalogers reached agreement.",
+      "confirmAcceptAllSkipNote": "{M} cards where catalogers split will stay in the queue for you to decide.",
       "confirmRejectAll": "Clear every suggestion in the queue without writing? You can re-run the scan later to regenerate them.",
       "bulkRunning": "Approving…",
       "bulkCancelling": "Cancelling…",

@@ -757,7 +757,7 @@
     "sourceReview": "مراجعة المصادر"
   },
   "cece": {
-    "_comment": "MIG-021v3 V3-§8.r1.e — CECE chrome AR mirror.",
+    "_comment": "MIG-021v3 V3-§8.r1.e + r5 — CECE chrome AR mirror.",
     "cataloger": {
       "user_authority": "واجهتك الأمامية",
       "structural": "الاستشهادات والبنية",
@@ -779,16 +779,49 @@
       "dissent": "{name}: يعارض",
       "silent": "{name}: صامت (لا إشارة في هذه العدسة)"
     },
+    "badge": {
+      "clusterTooltip": "مجموعة المُصنِّفات — مرّر فوق كل نقطة لمعرفة التفاصيل",
+      "statusAgrees": "يوافق التوليف",
+      "statusDissents": "يعارض التوليف",
+      "statusSilent": "صامت (لا إشارة في هذه العدسة)",
+      "legacy": "تصنيف قديم",
+      "legacyTooltip": "صُنّف قبل إضافة مجموعة المُصنِّفات — لا يوجد سجل تعليل لكل مُصنِّف"
+    },
     "regime": {
-      "unanimous": "كل المُصنِّفات متوافقة",
+      "unanimous": "إجماع",
+      "unanimousTooltip": "كل المُصنِّفات الناطقة اتفقت على هذا التصنيف",
       "strongMajority": "أغلبية قوية (مع معارض واحد)",
       "split": "اختلف المُصنِّفات — قرارك مطلوب"
     },
     "trail": {
-      "expand": "لماذا هذا التصنيف؟",
-      "collapse": "إخفاء الشرح",
+      "expand": "▸ لماذا هذا التصنيف؟",
+      "collapse": "▾ إخفاء الشرح",
       "summary": "ملخص التعليل",
       "perCataloger": "لكل مُصنِّف"
+    },
+    "rule": {
+      "_comment": "تسميات ودودة لمفاتيح القواعد — V3-§8.r5.2. المفاتيح أدناه مطابقة لما تنطقه المُصنِّفات الستة فعلياً، تحقق منها في user_authority.rs / structural.rs / linguistic.rs / graph.rs / semantic.rs / reasoning.rs بتاريخ 2026-05-10.",
+      "rule_of_authority": "بياناتك الأمامية هي المرجع",
+      "structural_pattern_match": "نمط بنيوي مُتطابق",
+      "stance_or_form_marker": "علامة موقف/شكل موجودة",
+      "cae_root_match": "تطابق جذر عربي (CAE)",
+      "surface_token_match": "تطابق كلمة مفتاحية سطحية",
+      "bridge_similarity": "تشابه عبر اللغات (Bridge)",
+      "rule_of_side_channel_preference": "قاعدة تفضيل القناة الجانبية",
+      "typed_neighbor_consensus": "إجماع جيران عبر روابط نوعية",
+      "semantic_neighbor_consensus": "اتفاق الجيران المُصنّفة المشابهة",
+      "rule_of_authority_control": "قاعدة ضبط المرجعية",
+      "schedule_navigation_top_down": "تنقل تنازلي في التصنيف",
+      "gbnf_constrained": "حُكم الذكاء الاصطناعي (مقيد بالنحو)",
+      "rule_of_application": "تمييز الاستعمال عن الذكر"
+    },
+    "trustCal": {
+      "banner": "تُعرض شروحات التعليل حتى تراجع {N} بطاقة إضافية — يساعدك على معرفة متى يمكنك الوثوق بالمُصنِّفات.",
+      "tooltip": "تُعرض شروحات التعليل افتراضياً ريثما تبني حساً لكيفية وصول المُصنِّفات إلى تصنيفاتها. يختفي هذا الإشعار بعد 50 مراجعة."
+    },
+    "queueSplit": {
+      "label": "{N} تحتاج قرارك",
+      "tooltip": "بطاقات اختلفت فيها المُصنِّفات — قرارك مطلوب"
     },
     "disambiguation": {
       "title": "اختر التصنيف الأنسب",
@@ -876,6 +909,8 @@
       "rejectAll": "رفض الكل",
       "rejectAllTitle": "مسح كل اقتراح في القائمة دون كتابة — يمكنك إعادة تشغيل المسح لاحقًا لإعادة توليدها",
       "confirmAcceptAll": "تطبيق كل اقتراح في القائمة على ملاحظته؟ هذا يكتب أعلى اقتراحات المحورين في الواجهة الأمامية لـ {N} ملاحظة. تعمل العملية في الخلفية ويمكن إلغاؤها.",
+      "confirmAcceptAllSplitAware": "تطبيق الاقتراحات على {N} ملاحظة اتفقت مُصنِّفاتها.",
+      "confirmAcceptAllSkipNote": "ستبقى {M} بطاقة اختلفت فيها المُصنِّفات في القائمة لاتخاذ قرارك.",
       "confirmRejectAll": "مسح كل اقتراح في القائمة دون كتابة؟ يمكنك إعادة تشغيل المسح لاحقًا لإعادة توليدها.",
       "bulkRunning": "جاري القبول…",
       "bulkCancelling": "جاري الإلغاء…",

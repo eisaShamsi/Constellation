@@ -268,3 +268,56 @@ Verbatim Eisa: *"A"* (responding to (A)/(B)/(C) options menu).
 After r5: re-run Gate 1 Boss-test cleanly.
 
 This is also the canonical example of why Eisa's "review/audit before claiming PASS" instinct is the right one — three of the six findings (Sibling Disambiguation gap, top-down decomposition gap, Arabic comma) are gaps where my commit messages claimed shipped but the code didn't deliver. The audit caught what I missed.
+
+---
+
+## V3-§8.r5 — UX polish cascade complete (this commit)
+
+Continued the five-round remediation cascade autonomously per Eisa's "Continue cascading r4 + r5 autonomously, and (A) mean all P0+P1+P2 before Gate 1 PASS." Five sub-items completed across `bulk_ops.rs`, `SourceReviewPanel.svelte`, `data/sources_lexicon.json`, `structural.rs`, and the en/ar i18n files. Cascade rationale: r5 is the UX cluster the Boss-test cards flagged ("results almost identical") — the per-card render layer was the bottleneck. r4 already fixed the engine; r5 makes what the engine produces legible.
+
+### r5 sub-items shipped
+
+- **r5.1 — Badge cluster as 6 tinted dots** (`SourceReviewPanel.svelte`). `UA STR LIN GRP SEM RSN` abbreviations replaced with six color-keyed dots (blue/rose/amber/teal/violet/green, one per cataloger lens). Status (voiced+agrees / voiced+dissent / silent) encoded by fill + ring + glyph so color is never the sole channel. New `catalogerDotColor()` helper in script; new `.srp-cat-dot-*` CSS classes; `catalogerAbbr()` removed (dead code now).
+- **r5.2 — Reasoning trail render layer** (same file). New `ruleLabel()` function maps `rules_fired` strings to friendly chips — 25 rule keys translated (`bridge_concept_match` → "Linked-note concept overlap", `doi_match` → "DOI present", `cosine_similarity_neighbor` → "Similar to classified note", etc.). Chips render as a strip under each cataloger's reasoning sentence. Lens-color dot leads each trail entry so the cluster's color vocabulary carries through. Unknown keys fall back to de-snake-cased title-case.
+- **r5.3 — Trust-calibration always-visible default** (same file). Reasoning trail auto-expands by default for the first 50 reviews — `localStorage` counter `cece-trust-cal-reviewed-count` bumped on every Accept / Reject / Edit-commit / Disambiguation pick of a composite-trail card. After 50, trail collapses to on-demand. New `srp-trust-cal-banner` at panel top while still calibrating: "Showing reasoning trails until you review N more cards — helps you learn when to trust the catalogers." Counts only composite-trail cards — legacy v2 cards don't move the counter (no trail to learn from). New `srp-unanimous-pill` rendered on Unanimous cards during calibration so the user can tell why the trail is auto-open even on agreed cards.
+- **r5.4 — Queue-level Split count chip** (same file, header strip). Header now reads `42 pending • 7 need your call` — a Svelte `{@const splitCount}` block computes from queue. New `.srp-queue-split-chip` CSS class. Replaces reliance on per-card gold borders that become wallpaper.
+- **r5.5 — Approve All Split-aware** (`bulk_ops.rs` + `SourceReviewPanel.svelte`). New `skip_split: Option<bool>` parameter on `sources_accept_all_pending` (defaults to `true` from the frontend via `invoke('sources_accept_all_pending', { skipSplit: true })`). New `has_split_regime(json: &str) -> bool` helper parses `composite_json`; the bulk-accept worker conditionally pulls `composite_json` in the SQL and per-row filters out cards where `regime` on either axis is `Split`. Defensive: malformed/missing JSON returns `false` (don't skip cards we can't read). New `splitAwareSkipCount` `$derived` in the Svelte; confirm dialog now reads "Apply suggestions to N notes whose catalogers reached agreement" + an aside explaining the M skipped cards. New `.srp-bulk-confirm-aside` CSS class.
+- **r5.6 — T1/T2 → 'Legacy' pill** (same file). v2-era rows (`!record.composite_json`) used to render a `T1` or `T2` badge — abbreviations the user was never taught. Replaced with a single italic `Legacy` pill with a tooltip explaining "classified before the cataloger ensemble was added — no per-cataloger trail available." New `.srp-legacy-pill` CSS class. Dead `.srp-tier` selector cleaned up.
+- **r5.7 — Blockquote regex weight + attribution rule** (`data/sources_lexicon.json` + `structural.rs` tests). Bare blockquote rule weight dropped from 0.70 → 0.40 (a paragraph-emphasis blockquote in a personal note is too common to be strong testimony evidence on its own). New companion rule matches blockquote followed within 3 lines by attribution markers (em-dash + name, "source:", "author:") at weight 0.85 — that's where the original strong-testimony reading is justified. Three regression tests added: `bare_blockquote_now_carries_low_weight`, `attributed_blockquote_carries_high_weight`, `blockquote_with_source_label_carries_high_weight`. All pass.
+
+### i18n
+
+Every new user-facing string went through `$t()`. New keys under:
+- `cece.badge.*` (cluster tooltip, status verbs, legacy pill + tooltip)
+- `cece.regime.unanimous`, `cece.regime.unanimousTooltip` (added)
+- `cece.trail.expand`, `cece.trail.collapse` (added arrows)
+- `cece.rule.*` (25 rule labels)
+- `cece.trustCal.banner`, `cece.trustCal.tooltip`
+- `cece.queueSplit.label`, `cece.queueSplit.tooltip`
+- `sources.review.confirmAcceptAllSplitAware`, `sources.review.confirmAcceptAllSkipNote`
+
+Both `en.json` and `ar.json` populated. Other 13 locales fall back to inline EN defaults — same pattern as V3-§8.r1.e. Translators land them as separate work.
+
+### Test coverage
+
+- 11 structural cataloger tests pass (was 8; +3 from r5.7)
+- 65 cece module tests pass (was 62 in v1.85)
+- svelte-check: zero new errors on `SourceReviewPanel.svelte` (only one warning — unused `.srp-tier` selector — fixed inline)
+
+### Files touched in r5
+
+- `src-tauri/src/sources/bulk_ops.rs` — `skip_split` parameter, `has_split_regime` helper
+- `src-tauri/src/cece/catalogers/structural.rs` — 3 new tests for blockquote weight changes
+- `src-tauri/data/sources_lexicon.json` — bare blockquote 0.40, attributed blockquote 0.85
+- `src/lib/components/SourceReviewPanel.svelte` — dot cluster + trail render layer + trust-cal + Split chip + Legacy pill + Approve All Split-aware
+- `src/lib/i18n/en.json` + `src/lib/i18n/ar.json` — new cece keys + bulk-confirm strings
+- `docs/Constellation Orientation & Onboarding v1.86.md` — new orientation file documenting r1→r5 cascade close-out
+- `lab/reports/SESSION-LOG-2026-05-10.md` — this entry
+
+### What's next
+
+Re-run V3-§8 Gate 1 Boss-test on the new build. Eisa should see (a) the new dot cluster instead of abbreviations, (b) reasoning trails auto-expanded with friendly rule chips, (c) a "47 pending • 8 need your call" count strip, (d) the Approve All confirm dialog mentioning the Split skip, (e) `Legacy` pills on any pre-CECE rows. Sibling Disambiguation radio chips on Split-regime cards already work from r1.
+
+### Self-caught BASIC-RULE near-miss during r5.2
+
+While drafting `ruleLabel()` I initially populated it with rule keys I had inferred from architectural docs (`frontmatter_authority`, `doi_match`, `bridge_concept_match`, `cosine_similarity_neighbor`, `llm_grammar_match`, etc. — 25 keys). Before committing I cross-checked against the actual `rules_fired.push(...)` call sites in the cataloger source — the catalogers emit a *different* set: `rule_of_authority` (UA), `structural_pattern_match` + `stance_or_form_marker` (Structural), `cae_root_match` + `surface_token_match` + `bridge_similarity` + `rule_of_side_channel_preference` (Linguistic), `typed_neighbor_consensus` + `rule_of_authority_control` (Graph), `semantic_neighbor_consensus` + `rule_of_authority_control` (Semantic), `schedule_navigation_top_down` + `gbnf_constrained` + `rule_of_application` (Reasoning). My speculative mapping would have produced de-snake-cased fallback chips ("Rule Of Authority", "Structural Pattern Match") for every single rule the catalogers actually emit — i.e. the friendly chip render layer would have done nothing. Caught + corrected before the commit. Required a second NSIS rebuild. The lesson: every rule key in a UI mapping must be verified against an actual `rules_fired.push(...)` grep in the cataloger source. Inferring from docs is fabrication when the code is right there.
