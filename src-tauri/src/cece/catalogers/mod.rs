@@ -7,3 +7,4 @@
 pub mod user_authority;
 pub mod structural;
 pub mod linguistic;
+pub mod semantic;
