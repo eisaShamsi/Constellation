@@ -756,6 +756,50 @@
     "links": "لوحة الروابط",
     "sourceReview": "مراجعة المصادر"
   },
+  "cece": {
+    "_comment": "MIG-021v3 V3-§8.r1.e — CECE chrome AR mirror.",
+    "cataloger": {
+      "user_authority": "واجهتك الأمامية",
+      "structural": "الاستشهادات والبنية",
+      "linguistic": "الجذور والمعجم",
+      "graph": "الملاحظات المرتبطة",
+      "semantic": "الملاحظات المشابهة",
+      "reasoning": "حُكم الذكاء الاصطناعي"
+    },
+    "catalogerAbbr": {
+      "user_authority": "أ",
+      "structural": "ب",
+      "linguistic": "ل",
+      "graph": "ر",
+      "semantic": "د",
+      "reasoning": "ذ"
+    },
+    "catalogerStatus": {
+      "voiced": "{name}: يوافق التوليف",
+      "dissent": "{name}: يعارض",
+      "silent": "{name}: صامت (لا إشارة في هذه العدسة)"
+    },
+    "regime": {
+      "unanimous": "كل المُصنِّفات متوافقة",
+      "strongMajority": "أغلبية قوية (مع معارض واحد)",
+      "split": "اختلف المُصنِّفات — قرارك مطلوب"
+    },
+    "trail": {
+      "expand": "لماذا هذا التصنيف؟",
+      "collapse": "إخفاء الشرح",
+      "summary": "ملخص التعليل",
+      "perCataloger": "لكل مُصنِّف"
+    },
+    "disambiguation": {
+      "title": "اختر التصنيف الأنسب",
+      "prompt": "اختلف المُصنِّفات بين هذه المرشحات. اختر الأنسب لهذه الملاحظة:",
+      "axisHorizontal": "المصدر",
+      "axisVertical": "نوع المحتوى",
+      "confirm": "تأكيد",
+      "cancel": "إلغاء",
+      "saved": "حُفظ اختيارك — شكراً لتعليم المحرك."
+    }
+  },
   "classifierScan": {
     "label": "جارٍ تصنيف الملاحظات…",
     "done": "اكتمل التصنيف",

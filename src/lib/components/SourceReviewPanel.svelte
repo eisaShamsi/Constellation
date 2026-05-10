@@ -116,15 +116,36 @@
     'reasoning',
   ];
 
-  /** Short label for the per-cataloger badge tooltip. */
+  /**
+   * Short label for the per-cataloger badge tooltip.
+   *
+   * V3-§8.r1.e fix (audit P0.6): switched to plain-English user-facing
+   * labels per the UX agent recommendation ("Your frontmatter" / "Linked
+   * notes" / "Similar notes" / "Citations & structure" / "Wordstems &
+   * lexicon" / "AI judgment"). Returns the AR translation when
+   * currentLocale is Arabic. Falls back to the technical name if neither
+   * is wired (defensive — should never happen if cece.* i18n keys ship).
+   */
   function catalogerLabel(c: string): string {
+    const isAr = currentLocale === 'ar';
+    if (isAr) {
+      switch (c) {
+        case 'user_authority': return 'واجهتك الأمامية';
+        case 'structural': return 'الاستشهادات والبنية';
+        case 'linguistic': return 'الجذور والمعجم';
+        case 'graph': return 'الملاحظات المرتبطة';
+        case 'semantic': return 'الملاحظات المشابهة';
+        case 'reasoning': return 'حُكم الذكاء الاصطناعي';
+        default: return c;
+      }
+    }
     switch (c) {
-      case 'user_authority': return 'User Authority';
-      case 'structural': return 'Structural';
-      case 'linguistic': return 'Linguistic';
-      case 'graph': return 'Graph';
-      case 'semantic': return 'Semantic';
-      case 'reasoning': return 'Reasoning';
+      case 'user_authority': return 'Your frontmatter';
+      case 'structural': return 'Citations & structure';
+      case 'linguistic': return 'Wordstems & lexicon';
+      case 'graph': return 'Linked notes';
+      case 'semantic': return 'Similar notes';
+      case 'reasoning': return 'AI judgment';
       default: return c;
     }
   }
@@ -140,6 +161,44 @@
       case 'reasoning': return 'RSN';
       default: return c.slice(0, 3).toUpperCase();
     }
+  }
+
+  /**
+   * V3-§8.r1.f — Sibling Disambiguation pick handler. Calls the new
+   * cece_resolve_disambiguation IPC, then drops the resolved card
+   * from the queue.
+   */
+  async function resolveDisambiguation(notePath: string, axis: 'horizontal' | 'vertical', chosenId: string) {
+    try {
+      await invoke('cece_resolve_disambiguation', {
+        notePath,
+        axis,
+        chosenId,
+      });
+      queue = queue.filter(r => r.note_path !== notePath);
+    } catch (e) {
+      error = String(e);
+    }
+  }
+
+  /**
+   * For tooltip on each disambiguation chip — find which voicing
+   * cataloger preferred this candidate, return its one-line reasoning.
+   * Helps the user understand why each candidate is on the list.
+   */
+  function catalogerReasonForCandidate(
+    composite: CompositeAssignment,
+    axis: 'horizontal' | 'vertical',
+    candId: string,
+  ): string {
+    for (const trail of composite.per_cataloger_trails) {
+      if (!trail.voiced_opinion) continue;
+      const assignments = axis === 'horizontal' ? trail.horizontal : trail.vertical;
+      if (assignments.some(a => a.id === candId)) {
+        return `${catalogerLabel(trail.cataloger)}: ${trail.reasoning}`;
+      }
+    }
+    return candId;
   }
 
   let {
@@ -606,13 +665,13 @@
             <!-- Reasoning trail surface (on disagreement only by default) -->
             <div class="srp-trail-toggle">
               <button class="srp-trail-btn" onclick={() => toggleTrail(record.note_path)}>
-                {#if showTrail}▾ Hide reasoning{:else}▸ Why this classification?{/if}
+                {#if showTrail}{$t('cece.trail.collapse') || '▾ Hide reasoning'}{:else}{$t('cece.trail.expand') || '▸ Why this classification?'}{/if}
               </button>
               {#if isSplit}
-                <span class="srp-split-pill">Catalogers split — needs your call</span>
+                <span class="srp-split-pill">{$t('cece.regime.split') || 'Catalogers split — needs your call'}</span>
               {:else if isStrongMajority}
                 <span class="srp-majority-pill">
-                  Strong majority {#if composite.horizontal.dissenter || composite.vertical.dissenter}(dissent: {composite.horizontal.dissenter ?? composite.vertical.dissenter}){/if}
+                  {$t('cece.regime.strongMajority') || 'Strong majority'} {#if composite.horizontal.dissenter || composite.vertical.dissenter}({composite.horizontal.dissenter ?? composite.vertical.dissenter}){/if}
                 </span>
               {/if}
             </div>
@@ -628,6 +687,50 @@
                     </li>
                   {/each}
                 </ul>
+              </div>
+            {/if}
+
+            {#if isSplit}
+              <!-- V3-§8.r1.f — Sibling Disambiguation form. Renders the
+                   actual radio-chip picker the Architect §3.1 specified.
+                   For each axis whose regime is split, list the candidate
+                   IDs from `needs_user_disambiguation_between` as a
+                   one-click chip row. User picks; cece_resolve_disambiguation
+                   IPC writes to frontmatter + clears the suggestion. -->
+              <div class="srp-disambig">
+                <div class="srp-disambig-prompt">{$t('cece.disambiguation.prompt') || 'The catalogers split between these candidates. Pick which one fits the note best:'}</div>
+                {#if composite.horizontal.regime === 'split' && composite.horizontal.needs_user_disambiguation_between}
+                  <div class="srp-disambig-axis">
+                    <div class="srp-disambig-axis-label">{$t('cece.disambiguation.axisHorizontal') || 'Source'}</div>
+                    <div class="srp-disambig-chips">
+                      {#each composite.horizontal.needs_user_disambiguation_between as candId}
+                        <button
+                          class="srp-disambig-chip"
+                          onclick={() => resolveDisambiguation(record.note_path, 'horizontal', candId)}
+                          title={catalogerReasonForCandidate(composite, 'horizontal', candId)}
+                        >
+                          {labelForId(candId, 'horizontal')}
+                        </button>
+                      {/each}
+                    </div>
+                  </div>
+                {/if}
+                {#if composite.vertical.regime === 'split' && composite.vertical.needs_user_disambiguation_between}
+                  <div class="srp-disambig-axis">
+                    <div class="srp-disambig-axis-label">{$t('cece.disambiguation.axisVertical') || 'Content type'}</div>
+                    <div class="srp-disambig-chips">
+                      {#each composite.vertical.needs_user_disambiguation_between as candId}
+                        <button
+                          class="srp-disambig-chip"
+                          onclick={() => resolveDisambiguation(record.note_path, 'vertical', candId)}
+                          title={catalogerReasonForCandidate(composite, 'vertical', candId)}
+                        >
+                          {labelForId(candId, 'vertical')}
+                        </button>
+                      {/each}
+                    </div>
+                  </div>
+                {/if}
               </div>
             {/if}
           {/if}
@@ -1082,6 +1185,45 @@
     font-size: 10px;
     color: var(--text-faint);
     margin-inline-start: 4px;
+  }
+
+  /* MIG-021v3 V3-§8.r1.f — Sibling Disambiguation form */
+  .srp-disambig {
+    padding: 8px 12px;
+    background: rgba(201, 162, 39, 0.06);
+    border-block-start: 1px solid rgba(201, 162, 39, 0.25);
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .srp-disambig-prompt {
+    font-size: 11px;
+    color: var(--text-normal);
+    line-height: 1.4;
+  }
+  .srp-disambig-axis {
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .srp-disambig-axis-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+  }
+  .srp-disambig-chips {
+    display: flex; flex-wrap: wrap; gap: 6px;
+  }
+  .srp-disambig-chip {
+    border: 1px solid #c9a227;
+    background: var(--background-primary, #fff);
+    color: var(--text-normal, #1a1a1a);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+  .srp-disambig-chip:hover {
+    background: rgba(201, 162, 39, 0.18);
   }
 
   /* MIG-021v2 §1F'.b — bulk Approve/Reject actions */

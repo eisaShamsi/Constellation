@@ -207,6 +207,35 @@ fn library_root_for_note(app: &tauri::AppHandle, note_path: &str) -> Option<Stri
     crate::classifier::correction_log::library_root_for_note(&pairs, note_path)
 }
 
+/// V3-§8.r1.f — Resolve a Sibling Disambiguation pick.
+///
+/// When the synthesis layer reports `regime: split` on either axis,
+/// the Source Review UI surfaces the candidate IDs as radio chips.
+/// The user picks one; the IPC writes that choice to the note's
+/// frontmatter (via the existing `sources_set_manual` /
+/// `content_type_set_manual` pipelines), logs the correction, and
+/// clears the suggestion row.
+///
+/// `axis` is "horizontal" or "vertical"; `chosen_id` must be a valid
+/// taxonomy ID for that axis (validated downstream by sources::*).
+#[tauri::command]
+pub fn cece_resolve_disambiguation(
+    app: tauri::AppHandle,
+    note_path: String,
+    axis: String,
+    chosen_id: String,
+) -> Result<(), String> {
+    match axis.as_str() {
+        "horizontal" => {
+            crate::sources::sources_set_manual(app, note_path, vec![chosen_id])
+        }
+        "vertical" => {
+            crate::sources::content_type_set_manual(app, note_path, vec![chosen_id])
+        }
+        other => Err(format!("Unknown axis: {}", other)),
+    }
+}
+
 /// V3-§8 extension of write_suggestions: persists the standard
 /// Suggestion list AND the CECE composite reasoning trail so the
 /// Source Review UI can render the per-cataloger badge cluster +

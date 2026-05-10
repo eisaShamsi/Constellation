@@ -374,15 +374,41 @@ impl Cataloger for LinguisticCataloger {
 }
 
 /// Tokenize the note text and return only Arabic-script words. CAE
-/// expects single words, not phrases. We split on whitespace and
-/// punctuation, then filter to tokens whose first non-space char is in
-/// the Arabic Unicode block (U+0600..U+06FF).
+/// expects single words, not phrases. We split on whitespace, ASCII
+/// punctuation, AND Arabic-script punctuation marks — then filter to
+/// tokens whose first non-space char is in the Arabic Unicode block.
+///
+/// MIG-021v3 V3-§8.r1.a fix (audit P0.1): the original splitter used
+/// only `is_ascii_punctuation()`, which excludes Arabic comma `،`
+/// (U+060C), Arabic semicolon `؛` (U+061B), Arabic question mark `؟`
+/// (U+061F), and Arabic full-stop `۔` (U+06D4). On real Arabic prose
+/// these punctuation marks separate words constantly, so the splitter
+/// produced multi-word tokens like `قياس،صحيح` that CAE could not
+/// analyze — silently killing the cataloger's documented "Strong on
+/// technical Arabic" path. This fix adds Arabic-script punctuation
+/// + Unicode general-punctuation block to the splitter.
 fn extract_arabic_tokens(text: &str) -> Vec<String> {
-    text.split(|c: char| c.is_whitespace() || c.is_ascii_punctuation())
-        .filter(|tok| !tok.is_empty())
-        .filter(|tok| tok.chars().next().map(|c| is_arabic(c)).unwrap_or(false))
-        .map(|tok| tok.to_string())
-        .collect()
+    text.split(|c: char| {
+        c.is_whitespace()
+            || c.is_ascii_punctuation()
+            || is_arabic_punctuation(c)
+    })
+    .filter(|tok| !tok.is_empty())
+    .filter(|tok| tok.chars().next().map(is_arabic).unwrap_or(false))
+    .map(|tok| tok.to_string())
+    .collect()
+}
+
+/// Arabic-script and adjacent punctuation marks the CAE root extractor
+/// can't handle inside a token. Audit P0.1 fix.
+fn is_arabic_punctuation(c: char) -> bool {
+    let code = c as u32;
+    matches!(
+        c,
+        '،' | '؛' | '؟' | '۔' | '٪' | '٫' | '٬' | '٭'  // Arabic punctuation block
+    ) || (0x2000..=0x206F).contains(&code) // Unicode general punctuation
+        || (0xFD3E..=0xFD3F).contains(&code) // Ornate parentheses
+        || (0xFD4F..=0xFD4F).contains(&code)
 }
 
 fn is_arabic(c: char) -> bool {
@@ -522,6 +548,28 @@ mod tests {
         assert!(tokens.iter().any(|t| t == "فطرة"));
         assert!(!tokens.iter().any(|t| t == "tests"));
         assert!(!tokens.iter().any(|t| t == "analogy"));
+    }
+
+    #[test]
+    fn arabic_punctuation_separates_tokens() {
+        // V3-§8.r1.a regression for audit P0.1: the original tokenizer
+        // failed to split on Arabic punctuation, producing multi-word
+        // tokens that CAE could not analyze. After the fix, Arabic
+        // commas / semicolons / question marks must split tokens
+        // exactly like ASCII commas would.
+        let tokens = extract_arabic_tokens("هذا قياس،صحيح ومعتبر؛ في الفقه؟");
+        // Each Arabic-script word should appear as its own token.
+        assert!(tokens.iter().any(|t| t == "هذا"));
+        assert!(tokens.iter().any(|t| t == "قياس"));
+        assert!(tokens.iter().any(|t| t == "صحيح"));
+        assert!(tokens.iter().any(|t| t == "ومعتبر"));
+        assert!(tokens.iter().any(|t| t == "في"));
+        assert!(tokens.iter().any(|t| t == "الفقه"));
+        // The pre-fix bug produced "قياس،صحيح" as one token; assert
+        // explicitly it does NOT appear.
+        assert!(!tokens.iter().any(|t| t.contains('،')));
+        assert!(!tokens.iter().any(|t| t.contains('؛')));
+        assert!(!tokens.iter().any(|t| t.contains('؟')));
     }
 
     #[test]

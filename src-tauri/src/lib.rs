@@ -335,6 +335,8 @@ pub fn run() {
             classifier::scan_job::classifier_scan_start,
             classifier::scan_job::classifier_scan_cancel,
             classifier::scan_job::classifier_scan_status,
+            // MIG-021v3 V3-§8.r1.f — Sibling Disambiguation pick resolver
+            classifier::cece_resolve_disambiguation,
             // MIG-021v2 §1F'.b — bulk Approve All / Reject All
             sources::bulk_ops::sources_accept_all_pending,
             sources::bulk_ops::sources_bulk_accept_cancel,

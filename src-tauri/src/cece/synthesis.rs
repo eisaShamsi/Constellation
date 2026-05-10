@@ -284,17 +284,41 @@ fn vote_on_axis(
     }
 }
 
-/// Confidence regime decision per Architect §3.1:
-///   * Unanimous: all voters voted for primary.
-///   * Strong Majority: ≥ 2/3 of voters AND dissenters ≤ 1.
-///   * Split: otherwise.
+/// Confidence regime decision per Architect §3.1.
+///
+/// V3-§8.r1.d fix (audit P0.4): the original implementation required
+/// `total_voters >= 3` to ever reach StrongMajority. With CECE's
+/// typical voter coverage being 2 (User-Authority + Graph + Semantic
+/// + Reasoning often abstain on cold-start, orphan notes, or notes
+/// without frontmatter), this gate ensured EVERY disagreement floored
+/// at Split. Eisa observed this directly: every Boss-test card showed
+/// the gold "Catalogers split — needs your call" border. The audit
+/// converged on this finding from three independent reviewers (NLP,
+/// LIS, UX). Snorkel's `MajorityLabelVoter` uses a ratio-based
+/// threshold that handles low-coverage cases gracefully — that's
+/// what we adopt here.
+///
+/// New regime decision (ratio-based, low-coverage-friendly):
+///   * **Unanimous**: all voicing catalogers agree on the primary.
+///     This is unchanged.
+///   * **StrongMajority**: ratio >= 2/3 AND at least one dissenter
+///     exists. Works at any voter count >= 2 (a 2-voter unanimous
+///     is Unanimous; a 3-voter 2-vs-1 is StrongMajority; a 4-voter
+///     3-vs-1 is StrongMajority; a 4-voter 2-vs-2 is Split).
+///   * **Split**: any case below the StrongMajority ratio. Reserved
+///     for actual close-call disagreements.
 fn compute_regime(primary_voters: usize, total_voters: usize) -> ConfidenceRegime {
+    if total_voters == 0 {
+        // Vacuously Unanimous — caller already handled the no-voicing case
+        // by short-circuiting earlier.
+        return ConfidenceRegime::Unanimous;
+    }
     if primary_voters == total_voters {
-        ConfidenceRegime::Unanimous
-    } else if total_voters >= 3
-        && (primary_voters * 3) >= (total_voters * 2)
-        && (total_voters - primary_voters) <= 1
-    {
+        return ConfidenceRegime::Unanimous;
+    }
+    // Ratio threshold: ≥ 2/3 of voters supported the primary.
+    // Multiplied out to avoid floats: primary_voters * 3 >= total_voters * 2.
+    if primary_voters * 3 >= total_voters * 2 {
         ConfidenceRegime::StrongMajority
     } else {
         ConfidenceRegime::Split
@@ -432,5 +456,63 @@ mod tests {
         let result = synthesize(trails, &r);
         assert_eq!(result.horizontal.regime, ConfidenceRegime::Split);
         assert!(result.horizontal.needs_user_disambiguation_between.is_some());
+    }
+
+    #[test]
+    fn two_voter_unanimous_is_unanimous() {
+        // V3-§8.r1.d regression for audit P0.4. Two catalogers voicing
+        // the same primary used to fall to Split (the >= 3 gate kicked
+        // before the math); now should be Unanimous.
+        let trails = vec![
+            trail("structural", Some("testimony"), None, Confidence::High),
+            trail("semantic", Some("testimony"), None, Confidence::High),
+        ];
+        let r = ReliabilityProfile::default();
+        let result = synthesize(trails, &r);
+        assert_eq!(result.horizontal.regime, ConfidenceRegime::Unanimous);
+    }
+
+    #[test]
+    fn two_voter_disagreement_is_split() {
+        // 1-vs-1 ratio = 0.5 < 2/3 → Split. This matches user
+        // intuition: when only 2 catalogers fire and they disagree,
+        // it's a genuine split that needs the user's call.
+        let trails = vec![
+            trail("structural", Some("testimony"), None, Confidence::High),
+            trail("semantic", Some("perception"), None, Confidence::High),
+        ];
+        let r = ReliabilityProfile::default();
+        let result = synthesize(trails, &r);
+        assert_eq!(result.horizontal.regime, ConfidenceRegime::Split);
+    }
+
+    #[test]
+    fn three_voter_two_vs_one_is_strong_majority() {
+        // 2 of 3 = ratio 0.667 >= 2/3 → StrongMajority (was Split
+        // pre-fix because the >= 3 + dissenters <= 1 check passed,
+        // which actually was correct in this case; check that it
+        // still passes).
+        let trails = vec![
+            trail("structural", Some("testimony"), None, Confidence::High),
+            trail("linguistic", Some("testimony"), None, Confidence::High),
+            trail("semantic", Some("perception"), None, Confidence::High),
+        ];
+        let r = ReliabilityProfile::default();
+        let result = synthesize(trails, &r);
+        assert_eq!(result.horizontal.regime, ConfidenceRegime::StrongMajority);
+    }
+
+    #[test]
+    fn four_voter_two_vs_two_is_split() {
+        // 2 of 4 = ratio 0.5 < 2/3 → Split. Matches Architect §3.1.
+        let trails = vec![
+            trail("structural", Some("testimony"), None, Confidence::High),
+            trail("linguistic", Some("testimony"), None, Confidence::High),
+            trail("semantic", Some("perception"), None, Confidence::High),
+            trail("graph", Some("perception"), None, Confidence::High),
+        ];
+        let r = ReliabilityProfile::default();
+        let result = synthesize(trails, &r);
+        assert_eq!(result.horizontal.regime, ConfidenceRegime::Split);
     }
 }

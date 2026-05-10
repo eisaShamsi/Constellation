@@ -792,6 +792,50 @@
     "links": "Link Dashboard",
     "sourceReview": "Source Review"
   },
+  "cece": {
+    "_comment": "MIG-021v3 V3-§8.r1.e — CECE chrome. The catalog of six lenses + the synthesis-regime UI. Plain-English labels per UX agent recommendation.",
+    "cataloger": {
+      "user_authority": "Your frontmatter",
+      "structural": "Citations & structure",
+      "linguistic": "Wordstems & lexicon",
+      "graph": "Linked notes",
+      "semantic": "Similar notes",
+      "reasoning": "AI judgment"
+    },
+    "catalogerAbbr": {
+      "user_authority": "UA",
+      "structural": "STR",
+      "linguistic": "LIN",
+      "graph": "GRP",
+      "semantic": "SEM",
+      "reasoning": "RSN"
+    },
+    "catalogerStatus": {
+      "voiced": "{name}: agrees with synthesis",
+      "dissent": "{name}: dissents",
+      "silent": "{name}: silent (no signal in this lens)"
+    },
+    "regime": {
+      "unanimous": "All catalogers agree",
+      "strongMajority": "Strong majority (one dissent)",
+      "split": "Catalogers split — needs your call"
+    },
+    "trail": {
+      "expand": "Why this classification?",
+      "collapse": "Hide reasoning",
+      "summary": "Reasoning summary",
+      "perCataloger": "Per cataloger"
+    },
+    "disambiguation": {
+      "title": "Pick the right one",
+      "prompt": "The catalogers split between these candidates. Pick which one fits the note best:",
+      "axisHorizontal": "Source",
+      "axisVertical": "Content type",
+      "confirm": "Confirm",
+      "cancel": "Cancel",
+      "saved": "Saved your pick — thanks for teaching the engine."
+    }
+  },
   "classifierScan": {
     "label": "Classifying notes…",
     "done": "Classification complete",

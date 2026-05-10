@@ -89,6 +89,16 @@ pub fn log_correction(
 /// IPC handlers to know where to drop the correction-log file.
 /// Returns None if the note isn't under any registered library
 /// (e.g. orphan path / path resolution failure).
+///
+/// MIG-021v3 V3-§8.r1.c fix (audit P0.3): the original `starts_with`
+/// matched any string-prefix collision, so a note in `/Universe/Notes_old`
+/// would resolve to library `/Universe/Notes` (and write its
+/// correction-log + reliability JSON into the wrong Library — a direct
+/// violation of Architect §10 invariant 9, "per-Library calibration
+/// is per-Library — no cross-Library data leakage"). The fix requires
+/// either (a) exact equality with the Library root, OR (b) the note
+/// path starts with `<library_root>/` (with explicit separator), so
+/// that `Notes` and `Notes_old` no longer collide.
 pub fn library_root_for_note(
     libraries: &[(String, String)], // (library_id, library_path)
     note_path: &str,
@@ -98,10 +108,71 @@ pub fn library_root_for_note(
         .iter()
         .filter(|(_, p)| {
             let lp = p.replace('\\', "/");
-            normalized.starts_with(&lp)
+            // Strip a trailing slash from the Library path before
+            // comparing, so the with-slash check below works whether
+            // or not the registry stored a trailing separator.
+            let lp_stripped = lp.trim_end_matches('/');
+            normalized == lp_stripped
+                || normalized.starts_with(&format!("{}/", lp_stripped))
         })
         // Pick the longest-prefix match so nested libraries resolve to
         // the most-specific one.
         .max_by_key(|(_, p)| p.len())
         .map(|(_, p)| p.clone())
+}
+
+#[cfg(test)]
+mod path_prefix_collision_tests {
+    use super::*;
+
+    #[test]
+    fn sibling_with_prefix_collision_does_not_resolve() {
+        // V3-§8.r1.c regression for audit P0.3.
+        let libs = vec![
+            ("lib_a".to_string(), "/Universe/Notes".to_string()),
+        ];
+        // A note in a sibling folder whose name STARTS WITH "Notes"
+        // must NOT resolve to library "/Universe/Notes" — the audit's
+        // canonical example.
+        assert_eq!(library_root_for_note(&libs, "/Universe/Notes_old/foo.md"), None);
+        assert_eq!(library_root_for_note(&libs, "/Universe/Notes-archive/foo.md"), None);
+        // But a note actually inside the library MUST resolve.
+        assert_eq!(
+            library_root_for_note(&libs, "/Universe/Notes/foo.md"),
+            Some("/Universe/Notes".to_string())
+        );
+    }
+
+    #[test]
+    fn windows_separator_normalization() {
+        let libs = vec![
+            ("lib_a".to_string(), "E:\\Universe\\Notes".to_string()),
+        ];
+        // Mixed separator path should still resolve.
+        assert_eq!(
+            library_root_for_note(&libs, "E:\\Universe\\Notes/sub/foo.md"),
+            Some("E:\\Universe\\Notes".to_string())
+        );
+    }
+
+    #[test]
+    fn longest_prefix_wins_for_nested_libraries() {
+        let libs = vec![
+            ("lib_outer".to_string(), "/Universe".to_string()),
+            ("lib_inner".to_string(), "/Universe/Notes".to_string()),
+        ];
+        let resolved = library_root_for_note(&libs, "/Universe/Notes/foo.md");
+        assert_eq!(resolved, Some("/Universe/Notes".to_string()));
+    }
+
+    #[test]
+    fn note_path_exactly_equal_to_library_root_resolves() {
+        let libs = vec![
+            ("lib_a".to_string(), "/Universe/Notes".to_string()),
+        ];
+        assert_eq!(
+            library_root_for_note(&libs, "/Universe/Notes"),
+            Some("/Universe/Notes".to_string())
+        );
+    }
 }
