@@ -13,7 +13,7 @@
 These decisions govern the entire cascade. Plan steps reference them but do NOT re-decide them.
 
 1. **Six catalogers**: Linguistic, Structural, Graph, Semantic, Reasoning, User-Authority.
-2. **Tier 3 strategy**: BOTH local (Qwen3-4B-Instruct-2507 Q5_K_M default) + cloud opt-in (Claude / GPT-4 via OpenClaw integration, per Library or per note).
+2. **Tier 3 strategy**: LOCAL-ONLY. Qwen3-4B-Instruct-2507 Q5_K_M via llama.cpp. No cloud track, no opt-in. Boss directive 2026-05-10: notes never leave the device. (Supersedes original Architect §8.2 "BOTH" default.)
 3. **Synthesis design**: weighted vote on Day 1; Snorkel-style learned synthesis deferred to MIG-022.
 4. **Per-Library calibration**: Day 1 with empty `cataloger_reliability.json` per Library; uniform weights until corrections accumulate.
 5. **Reasoning trail rendering**: on-disagreement-only by default; Settings toggle to enable always-visible.
@@ -37,7 +37,7 @@ Eleven phases, three Boss-test gates. v2 ship code is preserved as substrate thr
 | V3-§4 | Linguistic Cataloger (reuses §1G2' lexicon + adds CAE + Lexical Bridge) | Cataloger | — |
 | V3-§5 | Semantic Cataloger (repurposes §1B' tier1_embedding for kNN-blend on per-Library exemplar memory) | Cataloger | — |
 | V3-§6 | Graph Cataloger (new IPC for typed-neighbor lookup) | Cataloger | — |
-| V3-§7 | Reasoning Cataloger (local Qwen3-4B Q5_K_M + GBNF + cloud opt-in adapter + prompt builder + schedule navigation) | Cataloger | — |
+| V3-§7 | Reasoning Cataloger (local Qwen3-4B Q5_K_M + GBNF + prompt builder + schedule navigation) | Cataloger | — |
 | V3-§8 | Source Review UI: composite reasoning trail rendering + per-cataloger badge cluster + Sibling Disambiguation inline + Settings toggle | UI | ✅ **Gate 1: Horizontal axis** |
 | V3-§9 | Vertical-axis activation across all catalogers + dual-axis ensemble run | Activation | ✅ **Gate 2: Vertical axis** |
 | V3-§10 | Settings → CECE section (model download + cloud opt-in + reasoning trail toggle + per-Library calibration view) + i18n EN+AR + Help docs + User Manual chapter | UI / docs | — |
@@ -241,13 +241,12 @@ Eleven phases, three Boss-test gates. v2 ship code is preserved as substrate thr
 
 ## §8  V3-§7 — Reasoning Cataloger
 
-**Goal**: cataloger #6. The largest phase. Local Qwen3-4B-Instruct-2507 Q5_K_M via llama.cpp + GBNF grammar constraint + schedule-navigation prompt builder + optional cloud frontier opt-in.
+**Goal**: cataloger #6. The largest phase. **Local-only** Qwen3-4B-Instruct-2507 Q5_K_M via llama.cpp + GBNF grammar constraint + schedule-navigation prompt builder. Notes never leave the device.
 
 **Files touched**:
 
-**Local-track**:
 - **EDIT** `src-tauri/Cargo.toml` — add `llama-cpp-2 = "0.x"` dependency.
-- **NEW** `src-tauri/src/cece/catalogers/reasoning_local.rs` — llama.cpp wrapper:
+- **NEW** `src-tauri/src/cece/catalogers/reasoning.rs` — llama.cpp wrapper (no `_local` suffix needed since there's no other track):
   - Lazy-load Qwen3-4B-Instruct-2507 Q5_K_M GGUF on first use (resident in memory until unload).
   - Two-step prompt: (1) classify into parent class with full top-level taxonomy; (2) if parent confidence high, classify into that parent's children only.
   - GBNF grammar generator: produces grammar that constrains output to valid JSON matching schema `{horizontal: [valid_id], vertical: [valid_id], reasoning: string, alternatives_considered: [{id: valid_id, reason: string}]}`.
@@ -255,15 +254,10 @@ Eleven phases, three Boss-test gates. v2 ship code is preserved as substrate thr
 - **NEW** `src-tauri/src/cece/catalogers/reasoning_download.rs` — resumable HTTP download from `https://github.com/eisaShamsi/Constellation/releases/download/cece-reasoning/qwen3-4b-instruct-2507-q5_k_m.gguf` (~2.5 GB). Progress events on `cece:download` channel. Resume on partial download.
 - **NEW** `src-tauri/src/cece/catalogers/reasoning_prompt.rs` — prompt builder + GBNF grammar generator + few-shot exemplar pool (12–18 examples spanning the taxonomy).
 
-**Cloud-track**:
-- **NEW** `src-tauri/src/cece/catalogers/reasoning_cloud.rs` — adapter for cloud frontier LLM via OpenClaw. Same prompt as local; structured output via JSON Schema (since cloud APIs don't support GBNF). Per-Library or per-note opt-in flag in settings.
-- **EDIT** `src-tauri/src/cece/cataloger.rs` — Reasoning Cataloger reads its track preference from settings: `auto` (cheaper catalogers' agreement → skip Reasoning; only invoke local on disagreement; cloud only if explicit opt-in), `always_local`, `always_cloud_when_opted_in`, `never`.
-
 **IPCs**:
-- `cece_reasoning_download_local` — kicks off Qwen3-4B download.
+- `cece_reasoning_download` — kicks off Qwen3-4B download.
 - `cece_reasoning_status` — current state (downloaded, downloading%, ready, etc.).
 - `cece_reasoning_unload` — frees memory.
-- `cece_reasoning_set_cloud_opt_in` — per-Library cloud opt-in.
 
 **Settings UI for download** lands in V3-§10 (batched with the rest of CECE settings).
 
@@ -275,6 +269,8 @@ Eleven phases, three Boss-test gates. v2 ship code is preserved as substrate thr
 - Manual cargo-only verification: Reasoning Cataloger can be invoked, returns valid trail, doesn't crash on malformed model output.
 
 **Note**: Boss-test for the Reasoning Cataloger user flow lands in **V3-§8 (Gate 1)** since the UI to expose it is part of the same gate.
+
+**What's removed from the original Plan draft** (Boss directive 2026-05-10): no `reasoning_cloud.rs` adapter, no per-Library cloud opt-in, no `cece_reasoning_set_cloud_opt_in` IPC, no OpenClaw API integration. Privacy guarantee is absolute: notes never leave the device.
 
 ---
 
@@ -368,10 +364,10 @@ The Boss tests the full ensemble end-to-end on the horizontal axis. (Vertical-ax
 
 **Settings UI**:
 - **EDIT** `src/lib/components/SettingsModal.svelte` — new "Constellation Epistemic Content Engine" section under Intelligence:
-  - **Reasoning Cataloger model**:
-    - Status: "Local Qwen3-4B Q5_K_M — downloaded / not downloaded / downloading X%."
+  - **Reasoning Cataloger model** (local-only — notes never leave the device):
+    - Status: "Qwen3-4B Q5_K_M — downloaded / not downloaded / downloading X%."
     - Button: "Download" / "Re-download" / "Unload from memory."
-    - Toggle: "Enable cloud frontier LLM for hard cases (per Library, requires API key in OpenClaw)."
+    - Note text: "All inference is on your device. No data is sent over the network."
   - **Reasoning trail visibility**: toggle "Always show reasoning trails (default: on disagreement only)."
   - **Per-Library calibration view** (read-only): expandable section showing each cataloger's accuracy per axis on this Library, with note count it's been evaluated against.
   - **Background scan toggle**: "Auto-classify with CECE on note save / on app start" (default: app start only).

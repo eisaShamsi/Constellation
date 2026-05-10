@@ -154,3 +154,23 @@ MIG-021v3 PLAN drafting authorized per Plan-Approval-Equals-Build-Approval. Plan
 - *"Go for A"* (authorized Architect drafting)
 - *"All approved, but, 11- We will call it 'Constellation Epistemic Content Engine (CECE)'."*
 - *"Don't forget PCS + Orientation"* (this commit)
+
+---
+
+## V3-§7 Reasoning Cataloger amended — LOCAL-ONLY (Boss directive)
+
+After Plan approval, Boss asked "Does it need to connect to a cloud service to operate?" Clarified that local was the default + cloud was opt-in (per Architect §8.2). Boss responded: *"Reasoning Cataloger does NOT need cloud to operate: Definitely local."*
+
+Per Stop-On-Correction Rule, paused before V3-§1 build. Plan amendment applied:
+
+- Architect §2.5 — was "Two-track" (local + cloud opt-in); now "Local-only."
+- Architect §8.2 — was "BOTH" recommended default; now "LOCAL-ONLY decided 2026-05-10."
+- Architect §10 invariant 4 — was "Local-first by default; cloud opt-in"; now "Local-only, period. CECE has no cloud inference path."
+- Plan §0 #2 — was "BOTH"; now "LOCAL-ONLY."
+- Plan V3-§7 — removed `reasoning_cloud.rs` adapter, removed `cece_reasoning_set_cloud_opt_in` IPC, removed OpenClaw integration, removed per-Library cloud opt-in; renamed `reasoning_local.rs` to just `reasoning.rs` (no `_local` suffix needed).
+- Plan V3-§10 (Settings) — replaced cloud opt-in toggle with "All inference is on your device" note.
+- Orientation v1.83 cataloger table — Reasoning row updated.
+
+Net effect: privacy guarantee strengthens from conditional ("opt-in") to absolute ("never leaves device"). Removes a class of UI surface and one piece of dependency complexity.
+
+Resuming V3-§1 (Foundation) cascade after this commit.

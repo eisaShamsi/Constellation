@@ -24,7 +24,7 @@
 > | Structural | Frontmatter + citations + headings + blockquotes + link types | Existing parsers |
 > | Graph | Typed-neighbor consensus | Living Links typed graph |
 > | Semantic | kNN-blend over already-classified vault | Tier-2 e5-small embeddings |
-> | Reasoning | Schedule + rules in prompt | Local Qwen3-4B (default) + cloud frontier (opt-in) |
+> | Reasoning | Schedule + rules in prompt | Local Qwen3-4B Q5_K_M (notes never leave the device — Boss directive 2026-05-10) |
 > | User-Authority | Frontmatter + capture-time fields | Frontmatter precedence (absolute) |
 >
 > A synthesis layer combines the six reasoning trails into one of three **confidence regimes**: Unanimous (silent accept), Strong Majority (accept with dissent surfaced), Split (refuse to assign and ask the user via Sibling Disambiguation UI). The killer property: the ensemble **detects Bayes-irreducible cases automatically** — when methodologically diverse catalogers still disagree, the engine knows the distinction doesn't live in the text, and asks instead of guessing.

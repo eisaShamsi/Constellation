@@ -125,9 +125,9 @@ Common output schema for every cataloger:
 **Lens**: Tier 3 LLM with the full schedule + cataloger rules in the prompt.
 **Inputs**: note text, frontmatter, optional list of unresolved candidates from cheaper catalogers.
 **Outputs assignment when**: invoked. Always voices an opinion (LLM doesn't abstain).
-**Two-track Tier 3** (Boss decision, see §8.2):
-- **Local Qwen3-4B-Instruct-2507 Q5_K_M** — privacy default, ~1.5s per note, no API cost. The +10–15pp leaf-accuracy gain over 1.7B is sourced (Few-shot Dilemma + distil-labs benchmark).
-- **Cloud frontier (Claude / GPT-4)** — opt-in per Library or per note. Higher accuracy ceiling; user gives explicit consent because notes leave the device.
+**Local-only** (Boss directive 2026-05-10; supersedes the original two-track design):
+- **Qwen3-4B-Instruct-2507 Q5_K_M** via llama.cpp — runs on the user's machine, ~1.5s per note, no API cost, no internet required after initial GGUF download (~2.5 GB). Notes never leave the device. The +10–15pp leaf-accuracy gain over 1.7B is sourced (Few-shot Dilemma + distil-labs benchmark).
+- **No cloud track.** Cloud frontier LLM was an option in the original Architect draft; Boss removed it 2026-05-10 to make privacy absolute rather than conditional. CECE never sends notes off-device, period.
 **Schedule navigation in the prompt**: the prompt presents the parent classes first; if the LLM's parent confidence is high, a second prompt with only that parent's children is sent. Top-down decomposition consistently outperforms flat at depth ≥3 (KG-HTC arXiv 2505.05583).
 **GBNF grammar constraint**: output schema is grammar-constrained to valid taxonomy IDs only. Small accuracy win (+1 to +3pp per ACL 2025 industry paper); large operational reliability win (no parse failures, no hallucinated labels).
 **Strong on**: novel cases, cross-civilizational reasoning, the irreducible residual.
@@ -330,17 +330,15 @@ These are the open architectural questions. Each has a recommended default; Boss
 
 **Recommendation: SIX.** User-Authority as a distinct cataloger with a reasoning trail of its own (`"Set in frontmatter on 2026-05-10"`) is auditable in a way that "synthesis-layer precedence" is not. Cost is negligible (microseconds, no model).
 
-### §8.2  Tier 3 strategy — local-only, cloud-only, or both?
+### §8.2  Tier 3 strategy — Boss-decided 2026-05-10: LOCAL-ONLY
 
-Three options:
+**Decision**: Qwen3-4B-Instruct-2507 Q5_K_M via llama.cpp. No cloud track. Notes never leave the device. Privacy guarantee is absolute, not conditional.
 
-**(a) Local-only** — Qwen3-4B Q5_K_M, no cloud option. Maximum privacy. Accuracy ceiling: per agent 3, leaf-level 65–80% in the user's active subtrees. Bundle download ~2.5 GB.
+This supersedes the original draft's three-option enumeration. The original (a), (b), (c) options are preserved in git history for reference but are not active design choices. CECE's Reasoning Cataloger has one and only one inference path: local Qwen3-4B.
 
-**(b) Cloud-only** — Claude / GPT-4 / Gemini via API. Higher accuracy ceiling. Notes leave the device. Cost per scan; user must have API key. Conflicts with CLAUDE.md's "Local-First" principle as the default.
+**Accuracy ceiling**: per Agent 3 research, leaf-level 65–80% in user's active subtrees on the local 4B model. The 4B is the right size point — Few-shot Dilemma paper + distil-labs benchmark + Qwen3 quantization study converge on 4B as the practical sweet spot for fine-grained classification on consumer hardware. After that, the textual-signal ceiling dominates and bigger models help less than the disk/RAM cost.
 
-**(c) Both — local default + cloud opt-in per Library or per note.** Privacy floor = local. Accuracy ceiling = cloud, when user explicitly opts in. Matches CLAUDE.md's "Local-First by Default; Cloud Opt-in" pattern.
-
-**Recommendation: (c).** This honors the architectural principle without sacrificing the accuracy ceiling for users who want it.
+**Bundle**: ~2.5 GB GGUF download, one-time, resumable, downloaded on user demand from Settings → CECE → "Download Reasoning model."
 
 ### §8.3  Synthesis design — weighted vote vs Snorkel-style learned
 
@@ -421,7 +419,7 @@ These are the architectural commitments. Every component must respect them; the 
 1. **User-Authority is absolute** — when User-Authority Cataloger voices an opinion, no other cataloger overrides it. Frontmatter is the single source of truth for that note.
 2. **Reasoning trails are never silently discarded** — every cataloger's reasoning is logged, even when the synthesis layer doesn't surface it. The user can audit historical decisions.
 3. **Disagreement surfaces** — when catalogers Split, the engine refuses to assign and asks the user. Silent guessing under disagreement is forbidden.
-4. **Local-first by default** — Tier 3 cloud is opt-in per Library. Default install never sends notes off-device.
+4. **Local-only, period** — CECE has no cloud inference path. Notes never leave the device. (Strengthened from the original "local-first by default; cloud opt-in" by Boss directive 2026-05-10.)
 5. **Cataloger errors do NOT propagate** — one cataloger crashing or timing out is isolated; the synthesis layer treats it as `voiced_opinion: false` and proceeds.
 6. **Performance Rule 1 preserved** — ensemble never blocks the UI thread. Background scan + per-note classification both run on worker threads.
 7. **CAE / Lexical Bridge / Living Links integrity** — these are substrates, not internal-only dependencies. The CECE depends on them but doesn't modify them. If Living Links P2–P5 ships changes, the Graph Cataloger adapts; it doesn't regress the Living Links contract.
