@@ -479,15 +479,14 @@ mod tests {
     }
 
     #[test]
-    fn arabic_qiyas_classifies_as_comparison() {
-        // قياس → comparison/ratio-legis (via either CAE root match or
-        // surface-token fallback; CAE root coverage is sparse today).
+    fn arabic_qiyas_classifies_as_inference() {
+        // V3-§8.r3 (audit Epistemology #1): qiyās in Sunni uṣūl is
+        // structurally analogical INFERENCE, not comparison. Routes to
+        // `inference` parent.
         let c = LinguisticCataloger::new();
         let trail = c.classify(&ctx_for_body("هذا قياس فقهي معتبر")).unwrap();
         assert!(trail.voiced_opinion);
-        assert!(trail.horizontal.iter().any(|a| a.id == "comparison/ratio-legis"));
-        // Either path is acceptable — CAE root match is a HIGH-confidence
-        // bonus when CAE knows the root; surface-token is the workhorse.
+        assert!(trail.horizontal.iter().any(|a| a.id == "inference"));
         assert!(trail.rules_fired.contains(&"surface_token_match".to_string())
             || trail.rules_fired.contains(&"cae_root_match".to_string()));
     }
@@ -496,12 +495,15 @@ mod tests {
     fn english_transliteration_falls_to_surface_match() {
         // "mutawatir" is in the lexicon's tokens list but not Arabic
         // script, so CAE doesn't fire — surface match handles it.
+        // V3-§8.r3 (audit Epistemology #2): bare متواتر / mutawatir
+        // routes to PARENT mass-transmission (lafẓī / maʿnawī / ʿamalī
+        // sub-classification needs more context than a token can carry).
         let c = LinguisticCataloger::new();
         let trail = c
             .classify(&ctx_for_body("This hadith is mutawatir according to the Sunni tradition."))
             .unwrap();
         assert!(trail.voiced_opinion);
-        assert!(trail.horizontal.iter().any(|a| a.id == "mass-transmission/verbal"));
+        assert!(trail.horizontal.iter().any(|a| a.id == "mass-transmission"));
         assert!(trail.rules_fired.contains(&"surface_token_match".to_string()));
     }
 

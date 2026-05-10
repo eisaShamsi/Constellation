@@ -3,10 +3,11 @@
 
   "horizontal": [
     {
+      "_comment": "V3-§8.r3 (audit Epistemology #2): bare متواتر in fiqh prose almost always refers to the genus, not specifically lafẓī. Routes to PARENT mass-transmission with weight that the descend_uncertain logic will treat as 'parent class is correct, leaf is uncertain.' Specific lafẓī / maʿnawī / ʿamalī sub-classification requires more context than a token match can carry.",
       "tokens": ["متواتر", "تواتر", "mutawātir", "mutawatir", "tawātur", "tawatur"],
       "root": "و-ت-ر",
-      "target": "mass-transmission/verbal",
-      "weight": 0.90,
+      "target": "mass-transmission",
+      "weight": 0.85,
       "evidence": "Mass-transmission marker (al-tawātur)"
     },
     {
@@ -17,18 +18,20 @@
       "evidence": "Scholarly consensus (ijmāʿ)"
     },
     {
+      "_comment": "V3-§8.r3 (audit Epistemology #1): qiyās in Sunni uṣūl is structurally analogical INFERENCE (with shared ʿillah requirement), not comparison. Buddhist logicians (Dharmakīrti) reduce upamāna to anumāna on similar grounds. Routes to inference parent (not the comparison tree) with confidence at the parent level — descent to a specific inference sub-leaf would need disambiguation context the lexicon doesn't have.",
       "tokens": ["قياس", "qiyās", "qiyas"],
       "root": "ق-ي-س",
-      "target": "comparison/ratio-legis",
-      "weight": 0.85,
-      "evidence": "Legal analogy (qiyās)"
+      "target": "inference",
+      "weight": 0.80,
+      "evidence": "Legal analogy (qiyās) — analogical inference"
     },
     {
+      "_comment": "V3-§8.r3 (audit Epistemology #2 cont.): حدثنا / أخبرنا are hadith CHAIN markers for SINGLE-NARRATOR transmission (isnād āḥād) — the OPPOSITE of tawātur. Original mapping to mass-transmission/verbal was wrong by 180 degrees. Routes to testimony/reported (a single named source's report).",
       "tokens": ["حدثنا", "أخبرنا", "akhbarana", "haddathana"],
       "root": "ح-د-ث",
-      "target": "mass-transmission/verbal",
+      "target": "testimony/reported",
       "weight": 0.80,
-      "evidence": "Hadith chain transmitter marker"
+      "evidence": "Hadith chain transmitter marker (single-narrator chain)"
     },
     {
       "tokens": ["صحيح البخاري", "صحيح مسلم", "Sahih al-Bukhari", "Sahih Muslim"],
@@ -61,9 +64,10 @@
       "evidence": "Postulation (arthāpatti)"
     },
     {
+      "_comment": "V3-§8.r3 (audit Epistemology #3): Bhāṭṭa Mīmāṃsā distinguishes 4 sub-types of anupalabdhi (prāgabhāva / pradhvaṃsābhāva / anyonyābhāva / atyantābhāva). The original mapping to non-apprehension/absolute (atyantābhāva = absolute non-existence — the 'unicorn' case) was wrong for the typical missing-jar example which is prāgabhāva-or-pradhvaṃsa-neutral. Routes to PARENT non-apprehension; descent requires disambiguation context.",
       "tokens": ["anupalabdhi", "anupalabhi"],
-      "target": "non-apprehension/absolute",
-      "weight": 0.85,
+      "target": "non-apprehension",
+      "weight": 0.80,
       "evidence": "Non-apprehension (anupalabdhi)"
     },
     {
@@ -116,10 +120,17 @@
       "evidence": "First-person certainty marker"
     },
     {
-      "tokens": ["I believe", "I think that", "أعتقد", "أظن"],
+      "_comment": "V3-§8.r3 (audit Epistemology #5b): Sunni epistemology distinguishes iʿtiqād (fixed cognitive assent), ẓann (probable opinion — what 'I think' typically conveys in everyday Arabic), and īmān (heart-act with normative weight). The original lexicon flattened أعتقد and أظن into the same belief leaf. Now: أعتقد + 'I believe' map to belief/occurrent; أظن + 'I think that' map to opinion/probable (ẓann ghālib). al-Jurjānī, al-Taʿrīfāt.",
+      "tokens": ["I believe", "أعتقد"],
       "target": "epistemic-states/belief/occurrent",
       "weight": 0.80,
-      "evidence": "First-person belief marker"
+      "evidence": "First-person belief marker (iʿtiqād)"
+    },
+    {
+      "tokens": ["I think that", "I suppose", "أظن", "في ظني"],
+      "target": "epistemic-states/opinion/probable",
+      "weight": 0.80,
+      "evidence": "First-person probable-opinion marker (ẓann ghālib)"
     },
     {
       "tokens": ["علم اليقين", "ʿilm al-yaqīn", "ilm al-yaqin"],
