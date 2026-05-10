@@ -150,8 +150,8 @@
       "evidence": "ISBN citation"
     },
     {
-      "_comment": "DOI — academic paper",
-      "pattern": "(?i)\\b10\\.\\d{4,9}/[\\w./()-]+",
+      "_comment": "DOI — academic paper. V3-§8 fix-B 2026-05-10: tightened to require actual DOI context (literal 'doi:' prefix or doi.org URL) — was matching too many random number/slash patterns in everyday prose. Two alternations: (1) 'doi:' / 'DOI:' / 'doi ' followed by 10.NNNN/...; (2) doi.org/10.NNNN/...",
+      "pattern": "(?i)(doi[\\s:]+10\\.\\d{4,9}/[\\w./()-]+|doi\\.org/10\\.\\d{4,9}/[\\w./()-]+)",
       "target": "testimony/scriptural",
       "weight": 0.85,
       "evidence": "DOI citation"

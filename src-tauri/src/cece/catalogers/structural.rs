@@ -93,14 +93,31 @@ impl Cataloger for StructuralCataloger {
             rules_fired.push("stance_or_form_marker".to_string());
         }
 
-        // Self-confidence: structural patterns are strong evidence when
-        // a citation/equation/blockquote fires; weaker for soft markers.
-        let confidence = if highest_weight(&horizontal) >= 0.85
-            || highest_weight(&vertical) >= 0.85
-        {
+        // V3-§8 fix-C: a single regex hit on an unstructured note body
+        // is weaker signal than the per-pattern weight in the JSON
+        // implies. High confidence requires either:
+        //   (a) two or more distinct horizontal patterns corroborating
+        //       (e.g. ISBN AND blockquote → almost certainly testimony),
+        //   (b) two or more distinct vertical patterns corroborating
+        //       (e.g. doubt marker AND certainty marker, etc.), OR
+        //   (c) any pattern at weight >= 0.85 AND the note has structural
+        //       density (multiple matches anywhere).
+        // Otherwise: Medium confidence — the regex IS evidence, but a
+        // single coincidental match shouldn't drive the synthesis primary
+        // with the weight the JSON declares.
+        let total_horizontal_hits = horizontal.len();
+        let total_vertical_hits = vertical.len();
+        let total_hits = total_horizontal_hits + total_vertical_hits;
+        let max_weight = highest_weight(&horizontal).max(highest_weight(&vertical));
+        let confidence = if total_hits >= 2 && max_weight >= 0.80 {
             Confidence::High
-        } else {
+        } else if max_weight >= 0.85 && total_hits >= 1 {
+            // Single hit on a strong-weight pattern: Medium, not High.
+            // The cataloger still voices its opinion, but the synthesis
+            // layer's weighting downgrades it via confidence_multiplier.
             Confidence::Medium
+        } else {
+            Confidence::Low
         };
 
         Some(ReasoningTrail {
@@ -319,12 +336,30 @@ mod tests {
 
     #[test]
     fn doi_fires_testimony_scriptural() {
+        // V3-§8 fix-B: DOI now requires actual DOI context (literal
+        // "doi:" prefix or doi.org URL). A bare 10.NNNN/path no longer
+        // matches — that's the false-positive case being closed.
         let c = StructuralCataloger::new();
         let trail = c
-            .classify(&ctx_for_body("As described in 10.1234/abc.5678/xyz, the result..."))
+            .classify(&ctx_for_body("As described in doi:10.1234/abc.5678/xyz, the result..."))
             .unwrap();
         assert!(trail.voiced_opinion);
         assert!(trail.horizontal.iter().any(|a| a.id == "testimony/scriptural"));
+    }
+
+    #[test]
+    fn bare_decimal_slash_pattern_no_longer_misfires() {
+        // Regression for V3-§8 fix-B. The old regex matched any
+        // 10.NNNN/path pattern, which caught random version strings,
+        // dates, and unrelated number-slash-text fragments. New regex
+        // requires actual DOI context.
+        let c = StructuralCataloger::new();
+        let trail = c
+            .classify(&ctx_for_body("Version 10.1234/build-rev or similar fragment in prose."))
+            .unwrap();
+        // Should NOT have fired testimony/scriptural on this innocuous
+        // pattern.
+        assert!(!trail.horizontal.iter().any(|a| a.id == "testimony/scriptural"));
     }
 
     #[test]

@@ -45,6 +45,16 @@ pub struct AxisDecision {
     pub needs_user_disambiguation_between: Option<Vec<String>>,
     /// When `regime == StrongMajority`, the cataloger that dissented.
     pub dissenter: Option<String>,
+    /// MIG-021v3 V3-§8 fix-A — actual ensemble vote weight for the
+    /// primary, normalized to [0, 1]. Replaces the hardcoded 0.85
+    /// constant the IPC was emitting before. Reflects how strongly
+    /// the catalogers' weighted vote favored this leaf.
+    #[serde(default)]
+    pub primary_weight: f32,
+    /// Vote weights for `see_also` entries, in the same order as
+    /// `see_also`. Empty when see_also is empty.
+    #[serde(default)]
+    pub see_also_weights: Vec<f32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -125,6 +135,10 @@ fn user_authority_short_circuit(
         see_also: Vec::new(),
         needs_user_disambiguation_between: None,
         dissenter: None,
+        // User-supplied frontmatter is the authoritative answer — full
+        // confidence (1.0) per Architect §2.6 + invariant 1.
+        primary_weight: 1.0,
+        see_also_weights: Vec::new(),
     };
     let v = AxisDecision {
         primary: ua.vertical.iter().find(|a| a.primary).map(|a| a.id.clone()),
@@ -138,6 +152,8 @@ fn user_authority_short_circuit(
         see_also: Vec::new(),
         needs_user_disambiguation_between: None,
         dissenter: None,
+        primary_weight: 1.0,
+        see_also_weights: Vec::new(),
     };
     CompositeAssignment {
         horizontal: h,
@@ -199,6 +215,8 @@ fn vote_on_axis(
             see_also: Vec::new(),
             needs_user_disambiguation_between: None,
             dissenter: None,
+            primary_weight: 0.0,
+            see_also_weights: Vec::new(),
         };
     }
 
@@ -206,7 +224,15 @@ fn vote_on_axis(
     let mut sorted: Vec<(String, f32)> = weighted_votes.into_iter().collect();
     sorted.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
 
-    let (primary_id, _primary_weight) = sorted[0].clone();
+    // Normalize weights: divide everything by the highest weighted vote
+    // so that the primary always reads ≤ 1.0 and see_also reads as a
+    // fraction of how strongly it competed with the primary. This makes
+    // the displayed percentages mean "how much of the total ensemble
+    // signal favored this leaf relative to the winner."
+    let normalizer = sorted[0].1.max(0.0001);
+
+    let (primary_id, primary_raw_weight) = sorted[0].clone();
+    let primary_weight = (primary_raw_weight / normalizer).clamp(0.0, 1.0);
     let primary_voters = who_voted_for.get(&primary_id).cloned().unwrap_or_default();
 
     // Count catalogers that voted vs catalogers that voted differently.
@@ -232,6 +258,12 @@ fn vote_on_axis(
         .take(3)
         .map(|(id, _)| id.clone())
         .collect();
+    let see_also_weights: Vec<f32> = sorted
+        .iter()
+        .skip(1)
+        .take(3)
+        .map(|(_, w)| (w / normalizer).clamp(0.0, 1.0))
+        .collect();
 
     let needs_user_disambiguation_between = if regime == ConfidenceRegime::Split {
         // Surface the top 2-3 candidates for the user to pick.
@@ -247,6 +279,8 @@ fn vote_on_axis(
         see_also,
         needs_user_disambiguation_between,
         dissenter,
+        primary_weight,
+        see_also_weights,
     }
 }
 

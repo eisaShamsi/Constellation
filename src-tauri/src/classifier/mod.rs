@@ -110,19 +110,29 @@ pub fn classifier_suggest_for_note(
     // 4. Build flat suggestions from the composite + persist with the
     //    composite trail in the suggestions_json blob (backward-
     //    compatible — old readers still parse the flat suggestions list).
+    // V3-§8 fix-A: propagate the REAL ensemble weights from the
+    // synthesis layer instead of hardcoded 0.85/0.50 constants.
+    // primary_weight is normalized [0, 1] where 1.0 = winning weighted
+    // vote; see_also_weights are normalized fractions of the primary.
     let mut suggestions: Vec<crate::sources::Suggestion> = Vec::new();
     if let Some(prim) = &composite.horizontal.primary {
         suggestions.push(crate::sources::Suggestion {
             source: prim.clone(),
-            confidence: 0.85,
+            confidence: composite.horizontal.primary_weight,
             evidence: composite.composite_reasoning.clone(),
             axis: "horizontal".to_string(),
         });
-        for s in &composite.horizontal.see_also {
+        for (i, s) in composite.horizontal.see_also.iter().enumerate() {
+            let w = composite
+                .horizontal
+                .see_also_weights
+                .get(i)
+                .copied()
+                .unwrap_or(0.0);
             suggestions.push(crate::sources::Suggestion {
                 source: s.clone(),
-                confidence: 0.5,
-                evidence: "see also (Strong-Majority secondary)".to_string(),
+                confidence: w,
+                evidence: "see also (competing cataloger vote)".to_string(),
                 axis: "horizontal".to_string(),
             });
         }
@@ -130,15 +140,21 @@ pub fn classifier_suggest_for_note(
     if let Some(prim) = &composite.vertical.primary {
         suggestions.push(crate::sources::Suggestion {
             source: prim.clone(),
-            confidence: 0.85,
+            confidence: composite.vertical.primary_weight,
             evidence: composite.composite_reasoning.clone(),
             axis: "vertical".to_string(),
         });
-        for s in &composite.vertical.see_also {
+        for (i, s) in composite.vertical.see_also.iter().enumerate() {
+            let w = composite
+                .vertical
+                .see_also_weights
+                .get(i)
+                .copied()
+                .unwrap_or(0.0);
             suggestions.push(crate::sources::Suggestion {
                 source: s.clone(),
-                confidence: 0.5,
-                evidence: "see also (Strong-Majority secondary)".to_string(),
+                confidence: w,
+                evidence: "see also (competing cataloger vote)".to_string(),
                 axis: "vertical".to_string(),
             });
         }
