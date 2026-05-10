@@ -35,7 +35,112 @@
     suggestions: Suggestion[];
     classifier_tier: number;
     created_at: number;
+    /** MIG-021v3 V3-§8 — composite reasoning trail JSON. None for v2-era rows. */
+    composite_json?: string | null;
   };
+
+  // MIG-021v3 V3-§8 — composite reasoning trail shape (mirrors
+  // src-tauri/src/cece/synthesis.rs::CompositeAssignment serde).
+  type AxisDecision = {
+    primary?: string | null;
+    secondary?: string[];
+    regime: 'unanimous' | 'strong_majority' | 'split';
+    see_also: string[];
+    needs_user_disambiguation_between?: string[] | null;
+    dissenter?: string | null;
+  };
+  type PerCatalogerTrail = {
+    cataloger: string;
+    voiced_opinion: boolean;
+    horizontal: { id: string; primary: boolean; weight: number }[];
+    vertical: { id: string; primary: boolean; weight: number }[];
+    reasoning: string;
+    rules_fired: string[];
+    self_reported_confidence: 'high' | 'medium' | 'low' | 'abstain';
+  };
+  type CompositeAssignment = {
+    horizontal: AxisDecision;
+    vertical: AxisDecision;
+    composite_reasoning: string;
+    catalogers_voiced: string[];
+    catalogers_silent: string[];
+    synthesis_method: string;
+    per_cataloger_trails: PerCatalogerTrail[];
+  };
+
+  /** Parse the composite_json blob lazily; returns null on legacy rows. */
+  function parseComposite(record: SuggestionRecord): CompositeAssignment | null {
+    if (!record.composite_json) return null;
+    try {
+      return JSON.parse(record.composite_json) as CompositeAssignment;
+    } catch {
+      return null;
+    }
+  }
+
+  /** Per-cataloger badge state for the header cluster. */
+  function catalogerBadgeStatus(
+    composite: CompositeAssignment | null,
+    catalogerName: string,
+  ): '✓' | '–' | '✗' {
+    if (!composite) return '–';
+    const trail = composite.per_cataloger_trails.find(t => t.cataloger === catalogerName);
+    if (!trail || !trail.voiced_opinion) return '–';
+    // Voiced: did this cataloger's primary match the synthesis primary?
+    const primH = composite.horizontal.primary;
+    const primV = composite.vertical.primary;
+    const trailH = trail.horizontal.find(a => a.primary)?.id;
+    const trailV = trail.vertical.find(a => a.primary)?.id;
+    const horizontalAgrees = !primH || !trailH || trailH === primH;
+    const verticalAgrees = !primV || !trailV || trailV === primV;
+    return horizontalAgrees && verticalAgrees ? '✓' : '✗';
+  }
+
+  /** Per-card "show reasoning trail" expand state. */
+  let expandedTrails = $state(new Set<string>());
+  function toggleTrail(notePath: string) {
+    const next = new Set(expandedTrails);
+    if (next.has(notePath)) next.delete(notePath);
+    else next.add(notePath);
+    expandedTrails = next;
+  }
+
+  // The six catalogers, in render order. Mirrors the orchestrator's
+  // cost-ordered registration.
+  const CATALOGER_ORDER = [
+    'user_authority',
+    'structural',
+    'linguistic',
+    'graph',
+    'semantic',
+    'reasoning',
+  ];
+
+  /** Short label for the per-cataloger badge tooltip. */
+  function catalogerLabel(c: string): string {
+    switch (c) {
+      case 'user_authority': return 'User Authority';
+      case 'structural': return 'Structural';
+      case 'linguistic': return 'Linguistic';
+      case 'graph': return 'Graph';
+      case 'semantic': return 'Semantic';
+      case 'reasoning': return 'Reasoning';
+      default: return c;
+    }
+  }
+
+  /** 3-letter abbreviation for the badge text. */
+  function catalogerAbbr(c: string): string {
+    switch (c) {
+      case 'user_authority': return 'UA';
+      case 'structural': return 'STR';
+      case 'linguistic': return 'LIN';
+      case 'graph': return 'GRP';
+      case 'semantic': return 'SEM';
+      case 'reasoning': return 'RSN';
+      default: return c.slice(0, 3).toUpperCase();
+    }
+  }
 
   let {
     onNoteClick = (_p: string, _n: string) => {},
@@ -458,7 +563,13 @@
       {#each queue as record (record.note_path)}
         {@const horizontalSuggestions = record.suggestions.filter(s => s.axis === 'horizontal')}
         {@const verticalSuggestions = record.suggestions.filter(s => s.axis === 'vertical')}
-        <li class="srp-card" class:srp-just-added={highlightedPath === record.note_path}>
+        {@const composite = parseComposite(record)}
+        {@const isSplit = composite && (composite.horizontal.regime === 'split' || composite.vertical.regime === 'split')}
+        {@const isStrongMajority = composite && (composite.horizontal.regime === 'strong_majority' || composite.vertical.regime === 'strong_majority')}
+        {@const showTrail = expandedTrails.has(record.note_path)}
+        <li class="srp-card"
+            class:srp-just-added={highlightedPath === record.note_path}
+            class:srp-split-regime={isSplit}>
           <div class="srp-card-header">
             <button
               class="srp-card-title"
@@ -467,10 +578,59 @@
             >
               {noteName(record.note_path)}
             </button>
-            <span class="srp-tier" title={$t('sources.review.tierLabel') || 'Classifier tier'}>
-              {record.classifier_tier === 2 ? 'T2' : 'T1'}
-            </span>
+            {#if composite}
+              <!-- MIG-021v3 V3-§8 — per-cataloger badge cluster -->
+              <span class="srp-cataloger-cluster" title="Cataloger ensemble: ✓ agrees with synthesis, ✗ dissents, – silent">
+                {#each CATALOGER_ORDER as catName}
+                  {@const status = catalogerBadgeStatus(composite, catName)}
+                  <span
+                    class="srp-cataloger-badge"
+                    class:srp-cataloger-voiced={status === '✓'}
+                    class:srp-cataloger-dissent={status === '✗'}
+                    class:srp-cataloger-silent={status === '–'}
+                    title={`${catalogerLabel(catName)}: ${status === '✓' ? 'agrees with synthesis' : status === '✗' ? 'dissents' : 'silent (no signal in this lens)'}`}
+                  >
+                    {catalogerAbbr(catName)} {status}
+                  </span>
+                {/each}
+              </span>
+            {:else}
+              <!-- Legacy v2-era row: single tier badge -->
+              <span class="srp-tier" title={$t('sources.review.tierLabel') || 'Classifier tier'}>
+                {record.classifier_tier === 2 ? 'T2' : 'T1'}
+              </span>
+            {/if}
           </div>
+
+          {#if composite && (isSplit || isStrongMajority)}
+            <!-- Reasoning trail surface (on disagreement only by default) -->
+            <div class="srp-trail-toggle">
+              <button class="srp-trail-btn" onclick={() => toggleTrail(record.note_path)}>
+                {#if showTrail}▾ Hide reasoning{:else}▸ Why this classification?{/if}
+              </button>
+              {#if isSplit}
+                <span class="srp-split-pill">Catalogers split — needs your call</span>
+              {:else if isStrongMajority}
+                <span class="srp-majority-pill">
+                  Strong majority {#if composite.horizontal.dissenter || composite.vertical.dissenter}(dissent: {composite.horizontal.dissenter ?? composite.vertical.dissenter}){/if}
+                </span>
+              {/if}
+            </div>
+            {#if showTrail}
+              <div class="srp-trail">
+                <div class="srp-trail-summary">{composite.composite_reasoning}</div>
+                <ul class="srp-trail-list">
+                  {#each composite.per_cataloger_trails.filter(t => t.voiced_opinion) as t}
+                    <li class="srp-trail-item">
+                      <strong>{catalogerLabel(t.cataloger)}</strong>
+                      <span class="srp-trail-conf">[{t.self_reported_confidence}]</span>
+                      — {t.reasoning}
+                    </li>
+                  {/each}
+                </ul>
+              </div>
+            {/if}
+          {/if}
 
           {#if editingPath === record.note_path}
             <!-- ─── Edit mode: two tree pickers ─── -->
@@ -835,6 +995,95 @@
   .srp-btn-danger {
     color: var(--text-error, #a83232);
   }
+  /* MIG-021v3 V3-§8 — per-cataloger badge cluster + reasoning trail */
+  .srp-cataloger-cluster {
+    display: inline-flex; flex-wrap: wrap; gap: 3px;
+    align-items: center;
+  }
+  .srp-cataloger-badge {
+    font-size: 9px;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-weight: 600;
+    line-height: 1.2;
+    user-select: none;
+    white-space: nowrap;
+  }
+  .srp-cataloger-voiced {
+    background: rgba(15, 110, 86, 0.15);
+    color: #0f6e56;
+    border: 1px solid rgba(15, 110, 86, 0.3);
+  }
+  .srp-cataloger-dissent {
+    background: rgba(168, 50, 50, 0.15);
+    color: #a83232;
+    border: 1px solid rgba(168, 50, 50, 0.3);
+  }
+  .srp-cataloger-silent {
+    background: rgba(0, 0, 0, 0.04);
+    color: var(--text-faint, #6b6a64);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+  }
+  .srp-card.srp-split-regime {
+    border-left: 3px solid #c9a227;
+    padding-left: 8px;
+  }
+  .srp-trail-toggle {
+    display: flex; align-items: center; gap: 8px;
+    padding: 4px 8px;
+    flex-wrap: wrap;
+  }
+  .srp-trail-btn {
+    background: transparent; border: none;
+    color: var(--text-muted, #6b6a64);
+    font-size: 11px; cursor: pointer;
+    padding: 2px 0;
+  }
+  .srp-trail-btn:hover { color: var(--text-normal); }
+  .srp-split-pill {
+    font-size: 10px;
+    padding: 2px 6px;
+    background: rgba(201, 162, 39, 0.18);
+    color: #856204;
+    border-radius: 3px;
+    border: 1px solid rgba(201, 162, 39, 0.4);
+  }
+  .srp-majority-pill {
+    font-size: 10px;
+    padding: 2px 6px;
+    background: rgba(83, 74, 183, 0.12);
+    color: #534ab7;
+    border-radius: 3px;
+    border: 1px solid rgba(83, 74, 183, 0.3);
+  }
+  .srp-trail {
+    padding: 6px 12px 8px;
+    background: rgba(0, 0, 0, 0.02);
+    border-block: 1px solid var(--background-modifier-border, rgba(0,0,0,0.06));
+    font-size: 11px;
+    color: var(--text-normal);
+  }
+  .srp-trail-summary {
+    margin-bottom: 6px;
+    font-style: italic;
+    color: var(--text-muted);
+  }
+  .srp-trail-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .srp-trail-item {
+    padding: 3px 0;
+    border-top: 1px dashed var(--background-modifier-border, rgba(0,0,0,0.06));
+  }
+  .srp-trail-item:first-child { border-top: none; }
+  .srp-trail-conf {
+    font-size: 10px;
+    color: var(--text-faint);
+    margin-inline-start: 4px;
+  }
+
   /* MIG-021v2 §1F'.b — bulk Approve/Reject actions */
   .srp-count-row {
     display: flex; align-items: center; justify-content: space-between;

@@ -174,3 +174,57 @@ Per Stop-On-Correction Rule, paused before V3-§1 build. Plan amendment applied:
 Net effect: privacy guarantee strengthens from conditional ("opt-in") to absolute ("never leaves device"). Removes a class of UI surface and one piece of dependency complexity.
 
 Resuming V3-§1 (Foundation) cascade after this commit.
+
+---
+
+## V3-§1 through V3-§8 cascade — CECE shipped end-to-end
+
+After the MIG-021v3 Plan amendment (Reasoning Cataloger LOCAL-ONLY), I cascaded autonomously per Plan-Approval-Equals-Build-Approval through the cataloger-implementation phases:
+
+- V3-§1 Foundation (`4afb7d9`) — trait + synthesis + orchestrator + rules + reliability; 11 unit tests
+- V3-§2 User-Authority Cataloger (`6b3d41a`); 5 tests
+- V3-§3 Structural Cataloger (`21bd2b8`); 7 tests
+- V3-§4 Linguistic Cataloger (`03fcaa2`) — Eisa picked B (B3 at refinement): full CAE + Lexical Bridge integration. CAE exposes `arabic::analyze() → AnalysisList { surface, lemma, root, pattern_label }`; root coverage is sparse today. Bridge integration via injectable embed_fn (slow path, capped at 3 unmatched terms per note); 7 tests
+- V3-§5 Semantic Cataloger (`4f735df`) — per-Library kNN-blend; 5 tests
+- V3-§6 Graph Cataloger (`d041238`) — Living Links typed-neighbor consensus; 7 tests
+- V3-§7 Reasoning Cataloger logic + prompt + GBNF (`8171244`) — 12 hand-crafted few-shot exemplars, GBNF grammar enumerating every taxonomy ID, JSON parser. **llama-cpp-2 dep + Qwen3-4B GGUF deferred to V3-§7.b** (Plan §13 Windows-toolchain risk surfaced as its own focused commit); 13 tests
+
+55 CECE unit tests pass across the cascade.
+
+### V3-§8 — orchestrator wiring + classifier IPC swap + SourceReview UI rewire
+
+Single commit batched (this one):
+
+**Backend wiring** (`src-tauri/src/cece/wiring.rs`):
+- `build_orchestrator(app)` instantiates all six catalogers in cost order
+- `embed_text(app, text)` wires Semantic + Linguistic catalogers' embed_fn to the real e5-small ONNX engine via EmbeddingState
+- `knn_classified_neighbors(app, query, k)` — brute-force cosine over note_embeddings + note_meta where sources or content_type is non-empty (suitable for vaults up to ~10k classified notes; ANN index is a future optimization)
+- `load_typed_neighbors(app, note_path)` — joins note_links (source_path / target_path / link_type schema verified against search.rs:1679) with note_meta to surface each linked note's classifications
+- Reasoning Cataloger registered with no inference fn (deferred per V3-§7); abstains gracefully
+
+**Classifier IPC swap** (`src-tauri/src/classifier/mod.rs::classifier_suggest_for_note`):
+- v2 three-tier path replaced by CECE orchestrator call
+- Two-pass run: cheap catalogers first; Reasoning only on disagreement (currently abstains since no engine wired)
+- Per-Library reliability profile loaded by longest-prefix Library-root match
+- Final synthesis via `cece::synthesis::synthesize` with reliability weights
+- Composite reasoning trail persisted in new `composite_json` column on `sources_suggestions` (idempotent ALTER TABLE on first call; backward-compat for v2-era rows)
+- SuggestionRecord struct extended with optional `composite_json` field (`#[serde(default)]`)
+
+**Source Review UI rewire** (`SourceReviewPanel.svelte`):
+- New CompositeAssignment / AxisDecision / PerCatalogerTrail TypeScript types mirroring the Rust serde shapes
+- Per-cataloger badge cluster: 6 small badges (UA STR LIN GRP SEM RSN) with ✓ (agrees with synthesis primary) / ✗ (dissents) / – (silent / no signal in this lens) status; tooltips describe each cataloger
+- "Why this classification?" expand button on Strong-Majority and Split cards
+- Expanded reasoning trail shows composite reasoning + per-cataloger reasoning with confidence band
+- Split cards get a gold left border + "Catalogers split — needs your call" pill
+- Strong-Majority cards get a purple "Strong majority (dissent: X)" pill
+- Legacy v2-era rows (no composite_json) render the original single-tier T1/T2 badge — backward compatible
+
+### NSIS installer
+
+Rebuilt at `Constellation_0.3.4_x64-setup.exe` (mtime 2026-05-10 16:20). Awaiting Gate 1 Boss-test.
+
+### Verbatim Eisa quotes (this cycle)
+
+- *"Go for B"* (full CAE + Lexical Bridge integration in V3-§4)
+- *"B3, and enough of your cascading questions."* (V3-§4 sub-decision: per-term embedding-and-similarity Bridge query, accepted slow path)
+- *"Reasoning Cataloger does NOT need cloud to operate: Definitely local."* (V3-§7 amendment)

@@ -106,13 +106,26 @@ fn default_axis() -> String {
 }
 
 /// A complete suggestion record persisted in `sources_suggestions`
-/// table and read by the Source Review panel (MIG-021 §1C).
+/// table and read by the Source Review panel.
+///
+/// MIG-021v3 V3-§8: extended with optional `composite_json` carrying
+/// the CECE composite reasoning trail (per-cataloger trails + regimes
+/// + reasoning text). When None, the row is from a v2-era classify
+/// call and the UI renders the legacy single-tier card.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SuggestionRecord {
     pub note_path: String,
     pub suggestions: Vec<Suggestion>,
-    pub classifier_tier: i64, // 1 = embedding (Tier 1), 2 = LLM (Tier 2)
+    /// 1 = cheap-only path (no Reasoning Cataloger);
+    /// 2 = Reasoning Cataloger also voiced.
+    /// Legacy: 1 = Tier-1 embedding, 2 = Tier-2 LLM (v2 semantics).
+    pub classifier_tier: i64,
     pub created_at: i64,
+    /// CECE composite reasoning trail JSON. None for v2-era rows.
+    /// The frontend parses this lazily; absent → fall back to
+    /// the legacy card rendering.
+    #[serde(default)]
+    pub composite_json: Option<String>,
 }
 
 // ─── Schema migration ──────────────────────────────────────────────
@@ -308,17 +321,28 @@ pub fn read_suggestions(
     conn: &Connection,
     note_path: &str,
 ) -> Result<Option<SuggestionRecord>, String> {
-    let row: Option<(String, i64, i64)> = conn
+    // V3-§8: also read composite_json (may not exist on older DBs;
+    // we COALESCE through SELECT * via a fallback query).
+    let row: Option<(String, i64, i64, Option<String>)> = conn
         .query_row(
-            "SELECT suggestions_json, classifier_tier, created_at
+            "SELECT suggestions_json, classifier_tier, created_at, composite_json
              FROM sources_suggestions WHERE note_path = ?1",
             params![note_path],
-            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3).ok())),
         )
+        .or_else(|_| {
+            // Fallback for pre-V3-§8 schemas without composite_json.
+            conn.query_row(
+                "SELECT suggestions_json, classifier_tier, created_at
+                 FROM sources_suggestions WHERE note_path = ?1",
+                params![note_path],
+                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, None)),
+            )
+        })
         .ok();
     match row {
         None => Ok(None),
-        Some((json, tier, created)) => {
+        Some((json, tier, created, composite)) => {
             let suggestions: Vec<Suggestion> = serde_json::from_str(&json)
                 .map_err(|e| format!("Failed to parse suggestions for {}: {}", note_path, e))?;
             Ok(Some(SuggestionRecord {
@@ -326,6 +350,7 @@ pub fn read_suggestions(
                 suggestions,
                 classifier_tier: tier,
                 created_at: created,
+                composite_json: composite,
             }))
         }
     }
@@ -617,27 +642,43 @@ pub fn sources_list_pending_suggestions(
         .as_ref()
         .ok_or("Search database not initialized")?;
 
-    let mut stmt = conn
-        .prepare(
-            "SELECT note_path, suggestions_json, classifier_tier, created_at
-             FROM sources_suggestions
-             ORDER BY created_at ASC",
-        )
-        .map_err(|e| format!("prepare list: {}", e))?;
+    // V3-§8: select composite_json too. Fall back to the old shape
+    // when the column doesn't exist (pre-V3-§8 DBs).
+    let mut stmt = match conn.prepare(
+        "SELECT note_path, suggestions_json, classifier_tier, created_at, composite_json
+         FROM sources_suggestions
+         ORDER BY created_at ASC",
+    ) {
+        Ok(s) => s,
+        Err(_) => conn
+            .prepare(
+                "SELECT note_path, suggestions_json, classifier_tier, created_at
+                 FROM sources_suggestions
+                 ORDER BY created_at ASC",
+            )
+            .map_err(|e| format!("prepare list (legacy): {}", e))?,
+    };
+    let column_count = stmt.column_count();
     let rows = stmt
         .query_map([], |row| {
+            let composite = if column_count >= 5 {
+                row.get::<_, Option<String>>(4).ok().flatten()
+            } else {
+                None
+            };
             Ok((
                 row.get::<_, String>(0)?,
                 row.get::<_, String>(1)?,
                 row.get::<_, i64>(2)?,
                 row.get::<_, i64>(3)?,
+                composite,
             ))
         })
         .map_err(|e| format!("query list: {}", e))?;
 
     let mut out = Vec::new();
     for row in rows {
-        let (note_path, json, tier, created) = row.map_err(|e| format!("row: {}", e))?;
+        let (note_path, json, tier, created, composite) = row.map_err(|e| format!("row: {}", e))?;
         let suggestions: Vec<Suggestion> = serde_json::from_str(&json)
             .map_err(|e| format!("Failed to parse suggestions for {}: {}", note_path, e))?;
         out.push(SuggestionRecord {
@@ -645,6 +686,7 @@ pub fn sources_list_pending_suggestions(
             suggestions,
             classifier_tier: tier,
             created_at: created,
+            composite_json: composite,
         });
     }
     Ok(out)

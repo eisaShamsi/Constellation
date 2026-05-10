@@ -56,55 +56,111 @@ pub fn classifier_suggest_for_note(
         format!("{}\n\n{}", title, body)
     };
 
-    // 3. MIG-021v2 §1G2' — Tier 1 deterministic rules first.
-    //    Read frontmatter sources / content_type for precedence check.
+    // 3. MIG-021v3 V3-§8 — CECE Cataloger Ensemble.
+    //    Build the production-wired orchestrator (six catalogers,
+    //    cost-ordered, with embed/lookup/inference functions wired
+    //    to the real backends). Run the ensemble against this note.
+    //
+    //    The v2 three-tier classifier (tier1_rules + tier1_embedding)
+    //    is preserved — its outputs are now consumed by the Linguistic,
+    //    Structural, and Semantic catalogers via the wiring layer.
+    //    See lab/reports/MIG-021v3-EPISTEMIC-CONTENT-ENGINE-ARCHITECT.md §6.
+    let _ = text_for_classification; // suppress unused-warning; future:
+                                      // pass title-prepended text into ctx if a
+                                      // cataloger asks for it via context.
     let frontmatter_sources = crate::sources::extract_sources(&content);
     let frontmatter_content_type = crate::sources::extract_content_type(&content);
-    let tier1 = tier1_rules::classify_tier1(
-        &content,
-        &frontmatter_sources,
-        &frontmatter_content_type,
+    let ctx = crate::cece::cataloger::CatalogerContext::new(
+        note_path.clone(),
+        content.clone(),
+        frontmatter_sources,
+        frontmatter_content_type,
     );
 
-    // Combine Tier 1 hits across both axes.
+    let orchestrator = crate::cece::wiring::build_orchestrator(&app);
+
+    // Two-pass run: cheap catalogers first, expensive only if cheaper
+    // catalogers don't reach Unanimous. The closure synthesizes after
+    // the cheap pass so the orchestrator can decide whether to spend
+    // the Reasoning Cataloger budget.
+    let reliability_for_early =
+        crate::cece::reliability::ReliabilityProfile::default();
+    let trails = orchestrator.run(&ctx, |trails_so_far| {
+        let composite = crate::cece::synthesis::synthesize(
+            trails_so_far.to_vec(),
+            &reliability_for_early,
+        );
+        crate::cece::orchestrator::EarlyVerdict::from_decisions(
+            &composite.horizontal,
+            &composite.vertical,
+        )
+    });
+
+    // Final synthesis with the per-Library reliability profile (looked
+    // up by the note's containing Library; falls back to default when
+    // the Library can't be resolved).
+    let library_root = library_root_for_note(&app, &note_path);
+    let reliability = library_root
+        .as_ref()
+        .map(|lr| crate::cece::reliability::load_or_default(lr))
+        .unwrap_or_default();
+    let composite =
+        crate::cece::synthesis::synthesize(trails, &reliability);
+
+    // 4. Build flat suggestions from the composite + persist with the
+    //    composite trail in the suggestions_json blob (backward-
+    //    compatible — old readers still parse the flat suggestions list).
     let mut suggestions: Vec<crate::sources::Suggestion> = Vec::new();
-    suggestions.extend(tier1.horizontal.iter().cloned());
-    suggestions.extend(tier1.vertical.iter().cloned());
-
-    // 4. Fall through to Tier 2 (embeddings) for any axis Tier 1 left empty.
-    //    This is the heart of the three-tier routing — if rules covered
-    //    one axis but not the other, we only spend embedding cost on the
-    //    uncovered axis. Today tier1_embedding::classify always runs for
-    //    both; we filter its output to fill the gap so the cheaper path
-    //    is preserved as much as possible.
-    let needs_horizontal = tier1.horizontal.is_empty();
-    let needs_vertical = tier1.vertical.is_empty();
-    let tier_used: i64 = if tier1.from_frontmatter {
-        1
-    } else if !needs_horizontal && !needs_vertical {
-        1
-    } else if !needs_horizontal || !needs_vertical {
-        // Mixed — at least one axis needed Tier 2. We tag the record at
-        // tier 2 so the badge reflects "model" rather than "rule" when
-        // the user looks at it; the per-suggestion provenance comes
-        // from the evidence string.
-        2
-    } else {
-        2
-    };
-
-    if needs_horizontal || needs_vertical {
-        let tier2 = tier1_embedding::classify(&app, &text_for_classification)?;
-        for s in tier2 {
-            if s.axis == "horizontal" && needs_horizontal {
-                suggestions.push(s);
-            } else if s.axis == "vertical" && needs_vertical {
-                suggestions.push(s);
-            }
+    if let Some(prim) = &composite.horizontal.primary {
+        suggestions.push(crate::sources::Suggestion {
+            source: prim.clone(),
+            confidence: 0.85,
+            evidence: composite.composite_reasoning.clone(),
+            axis: "horizontal".to_string(),
+        });
+        for s in &composite.horizontal.see_also {
+            suggestions.push(crate::sources::Suggestion {
+                source: s.clone(),
+                confidence: 0.5,
+                evidence: "see also (Strong-Majority secondary)".to_string(),
+                axis: "horizontal".to_string(),
+            });
+        }
+    }
+    if let Some(prim) = &composite.vertical.primary {
+        suggestions.push(crate::sources::Suggestion {
+            source: prim.clone(),
+            confidence: 0.85,
+            evidence: composite.composite_reasoning.clone(),
+            axis: "vertical".to_string(),
+        });
+        for s in &composite.vertical.see_also {
+            suggestions.push(crate::sources::Suggestion {
+                source: s.clone(),
+                confidence: 0.5,
+                evidence: "see also (Strong-Majority secondary)".to_string(),
+                axis: "vertical".to_string(),
+            });
         }
     }
 
-    // 5. Write suggestions to queue (overwrites any prior entry).
+    // tier_used semantics carried over from v2 for backward compat:
+    // 1 = only cheap catalogers contributed; 2 = expensive (Reasoning)
+    // also voiced. Since Reasoning Cataloger abstains today (V3-§7
+    // injection deferred), tier_used will always be 1 until V3-§7.b.
+    let tier_used: i64 = if composite
+        .catalogers_voiced
+        .iter()
+        .any(|c| c == "reasoning")
+    {
+        2
+    } else {
+        1
+    };
+
+    // 5. Persist: standard Suggestion list AND the composite trail
+    //    blob. The composite is stored next to the suggestions in the
+    //    same row so the Source Review UI can render both.
     let search_state = app.state::<crate::search::SearchState>();
     let db_guard = search_state
         .db
@@ -113,15 +169,69 @@ pub fn classifier_suggest_for_note(
     let conn = db_guard
         .as_ref()
         .ok_or("Search database not initialized")?;
-    write_suggestions(conn, &note_path, &suggestions, tier_used)?;
+    write_suggestions_with_composite(conn, &note_path, &suggestions, tier_used, &composite)?;
 
     // 6. Return the record for immediate display.
+    let composite_json = serde_json::to_string(&composite).ok();
     Ok(SuggestionRecord {
         note_path,
         suggestions,
         classifier_tier: tier_used,
         created_at: chrono::Utc::now().timestamp(),
+        composite_json,
     })
+}
+
+/// Library-root resolution for the per-Library reliability JSON
+/// lookup. Returns the longest-prefix-matching Library root path, or
+/// None if the note isn't under any registered Library.
+fn library_root_for_note(app: &tauri::AppHandle, note_path: &str) -> Option<String> {
+    let libs = crate::libraries::list_libraries(app.clone());
+    let pairs: Vec<(String, String)> = libs.into_iter().map(|l| (l.id, l.path)).collect();
+    crate::classifier::correction_log::library_root_for_note(&pairs, note_path)
+}
+
+/// V3-§8 extension of write_suggestions: persists the standard
+/// Suggestion list AND the CECE composite reasoning trail so the
+/// Source Review UI can render the per-cataloger badge cluster +
+/// reasoning trail + Sibling Disambiguation prompts.
+///
+/// Storage shape: the composite is serialized as JSON and stored in
+/// a NEW column `composite_json` on `sources_suggestions`. Old rows
+/// have NULL there; the SourceReview UI handles both cases.
+fn write_suggestions_with_composite(
+    conn: &rusqlite::Connection,
+    note_path: &str,
+    suggestions: &[crate::sources::Suggestion],
+    tier_used: i64,
+    composite: &crate::cece::synthesis::CompositeAssignment,
+) -> Result<(), String> {
+    // Add composite_json column lazily on first call (idempotent).
+    let _ = conn.execute(
+        "ALTER TABLE sources_suggestions ADD COLUMN composite_json TEXT",
+        [],
+    );
+
+    let suggestions_json = serde_json::to_string(suggestions)
+        .map_err(|e| format!("serialize suggestions: {}", e))?;
+    let composite_json = serde_json::to_string(composite)
+        .map_err(|e| format!("serialize composite: {}", e))?;
+    let now = chrono::Utc::now().timestamp();
+
+    conn.execute(
+        r#"
+        INSERT INTO sources_suggestions (note_path, suggestions_json, classifier_tier, created_at, composite_json)
+        VALUES (?1, ?2, ?3, ?4, ?5)
+        ON CONFLICT(note_path) DO UPDATE SET
+            suggestions_json = excluded.suggestions_json,
+            classifier_tier = excluded.classifier_tier,
+            created_at = excluded.created_at,
+            composite_json = excluded.composite_json
+        "#,
+        rusqlite::params![note_path, suggestions_json, tier_used, now, composite_json],
+    )
+    .map_err(|e| format!("insert suggestion: {}", e))?;
+    Ok(())
 }
 
 /// Internal: split a note into (title, body) where title is the

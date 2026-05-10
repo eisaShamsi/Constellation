@@ -22,6 +22,7 @@ pub mod orchestrator;
 pub mod reliability;
 pub mod rules;
 pub mod synthesis;
+pub mod wiring;
 
 // Future submodule for the six catalogers (V3-§2 through V3-§7 will
 // add files inside `cece/catalogers/`).
