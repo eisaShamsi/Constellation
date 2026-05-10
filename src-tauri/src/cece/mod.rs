@@ -25,8 +25,4 @@ pub mod synthesis;
 
 // Future submodule for the six catalogers (V3-§2 through V3-§7 will
 // add files inside `cece/catalogers/`).
-pub mod catalogers {
-    // Catalogers are registered in V3-§2 onward. This stub keeps the
-    // module path stable so future Cargo.toml changes (e.g. dependent
-    // path patches) don't have to be reapplied.
-}
+pub mod catalogers;
