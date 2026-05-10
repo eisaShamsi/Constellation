@@ -228,3 +228,43 @@ Rebuilt at `Constellation_0.3.4_x64-setup.exe` (mtime 2026-05-10 16:20). Awaitin
 - *"Go for B"* (full CAE + Lexical Bridge integration in V3-§4)
 - *"B3, and enough of your cascading questions."* (V3-§4 sub-decision: per-term embedding-and-similarity Bridge query, accepted slow path)
 - *"Reasoning Cataloger does NOT need cloud to operate: Definitely local."* (V3-§7 amendment)
+
+---
+
+## V3-§8 Six-Cataloger Independent Audit + Boss directive (A) — Stop and remediate
+
+After three on-the-fly patches (V3-§8 fix-A+B+C) addressed surface symptoms but Eisa still saw "results almost identical across notes" + "Catalogers split on every card", he requested an independent six-cataloger audit before any further patches — mirroring the CECE architectural pattern at the meta-level.
+
+**Six independent reviewer agents spawned in parallel** through methodologically distinct lenses (Library Science, NLP/ML Engineering, Software Architecture, UX/Cognitive, Epistemology, Adversarial). All briefed cold, given absolute paths, instructed to disagree.
+
+Two agents (UX, Epistemology) initially looked in the wrong directory (worktree's stale checkout instead of main repo at `E:\مشاريع كلاود\Constellation\`). Both honestly refused to fabricate per the BASIC RULE. Re-launched with explicit absolute paths; both returned with substantive findings.
+
+**Composite verdict ~6/10. Architecture sound; implementation has specific reproducible gaps.** Full audit: `lab/reports/MIG-021v3-V3-§8-AUDIT.md`.
+
+**Most damaging finding**: I claimed in the V3-§8 commit message that Sibling Disambiguation shipped. It didn't — only the placeholder pill. There is no radio chip UI, no `cece_resolve_disambiguation` IPC handler. The user gets the same Edit/Accept/Reject flow from v2 with extra badges. UX agent caught this directly. Other implementation gaps include: top-down decomposition spec'd in `rules_fired` but not implemented; zero `cece.*` i18n keys (Arabic UI test had English bleeding through); `AxisDecision.secondary` half-built; `OrchestratorState` defined but unused; `OnceLock` lazy fields unused.
+
+**Three P0 reproducible bugs** with specific inputs:
+- Arabic comma silently kills CAE root path (`linguistic.rs:381`) — explains why every Arabic note appears to surface-token-only fire LIN
+- Prompt injection via triple-backtick fence (`reasoning_prompt.rs:55-61`) — working payload provided
+- Cross-Library reliability data leakage via path-prefix collision (`correction_log.rs:96-107`) — direct violation of Architect §10 invariant 9
+
+Plus `compute_regime` Split-everywhere bug (NLP + LIS + UX converged independently).
+
+**Convergent findings**: mutex poisoning cascade (Software Arch + Adversarial); `ALTER TABLE` per IPC call (same convergence); kNN per-call cost (same); critical lexicon thinness for cold-start (NLP + LIS implied).
+
+**Confirmed neutralized**: regex DoS (Rust `regex` is RE2 guaranteed linear); GBNF for closed-set classification; `MIN_SAMPLES_FOR_WEIGHTING=20` math; CIP-precedent for User-Authority.
+
+### Boss directive: (A) Stop and remediate before Gate 1 PASS
+
+Verbatim Eisa: *"A"* (responding to (A)/(B)/(C) options menu).
+
+**Five-phase remediation cascade landing now (~3-5 days estimated):**
+- V3-§8.r1 — P0 critical fixes (Arabic comma; prompt-injection fence; path-prefix; `cece.*` i18n; **Sibling Disambiguation form**; `compute_regime` threshold)
+- V3-§8.r2 — Synthesis architecture (OnceLock vs injection unification; OrchestratorState use; AxisDecision.secondary)
+- V3-§8.r3 — Lexicon corrections (qiyās → inference; حدثنا → testimony/reported; أظن → ẓann; bare متواتر → parent; anupalabdhi → parent; tradition field)
+- V3-§8.r4 — Robustness (tempfile rename; mutex poison recovery; ALTER → init_db; timeouts; NFKC normalization)
+- V3-§8.r5 — UX polish (badge dots; reasoning trail render layer; trust-calibration default; queue-level Split count; Split-aware Approve All)
+
+After r5: re-run Gate 1 Boss-test cleanly.
+
+This is also the canonical example of why Eisa's "review/audit before claiming PASS" instinct is the right one — three of the six findings (Sibling Disambiguation gap, top-down decomposition gap, Arabic comma) are gaps where my commit messages claimed shipped but the code didn't deliver. The audit caught what I missed.
