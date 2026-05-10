@@ -9,3 +9,5 @@ pub mod structural;
 pub mod linguistic;
 pub mod semantic;
 pub mod graph;
+pub mod reasoning;
+pub mod reasoning_prompt;
