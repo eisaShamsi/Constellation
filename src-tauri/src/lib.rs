@@ -32,6 +32,10 @@ mod sight;
 mod sight_layout;
 mod sources;
 mod classifier;
+// MIG-021v3 V3-§1 — Constellation Epistemic Content Engine (CECE).
+// Cataloger Ensemble Architecture. See lab/reports/MIG-021v3-EPISTEMIC-
+// CONTENT-ENGINE-ARCHITECT.md for the architecture spec.
+pub mod cece;
 mod lenses;
 // MIG-013 §1A: visibility widened so the offline `build_concept_vectors`
 // [[bin]] can call `lexicon::parse`. The M11 zero-diff invariant covers

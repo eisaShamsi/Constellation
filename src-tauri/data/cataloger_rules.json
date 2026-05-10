@@ -1,0 +1,40 @@
+{
+  "_doc": "MIG-021v3 V3-§1 — Cataloger rules registry. Declarative encoding of Architect §4 — the five rules every cataloger consults. Catalogers reference rules by ID via cece::rules::rule(RuleId::X). New rules can be added without touching Rust code; existing rules can be refined by editing this file. Schema is versioned implicitly by the RuleId enum in src/cece/rules.rs — adding a rule here AND a variant there keeps them in sync (the loader asserts presence on first call).",
+  "rules": [
+    {
+      "id": "authority",
+      "name": "Rule of Authority",
+      "description": "Frontmatter > body text > AI-inferred. The User-Authority Cataloger encodes this absolutely: when frontmatter has explicit values, no other cataloger overrides them. Other catalogers respect it implicitly — they never voice an opinion that contradicts an explicit frontmatter value.",
+      "applies_to_catalogers": [],
+      "signal_priority": 1.0
+    },
+    {
+      "id": "application",
+      "name": "Rule of Application",
+      "description": "Classify by what the note USES the concept for, not what it merely mentions. A note saying 'al-Bukhari is the source of many authentic hadiths' is about al-Bukhari (the who); a note saying 'حدثنا الإمام البخاري في صحيحه أن النبي ﷺ قال...' is testimony/scriptural transmitting al-Bukhari's content (the use). Linguistic and Structural Catalogers must distinguish use from mention; the Reasoning Cataloger should be primed for this.",
+      "applies_to_catalogers": ["linguistic", "structural", "reasoning"],
+      "signal_priority": 0.9
+    },
+    {
+      "id": "three",
+      "name": "Rule of Three",
+      "description": "When 3+ candidates have similar weight at a depth, ascend one level and assign the parent rather than guess at the leaf. Encoded in each cataloger's 'self_reported_confidence: low + descend_uncertain: true' path. Mirrors 'abstain at depth' from the paper §3.4.",
+      "applies_to_catalogers": [],
+      "signal_priority": 0.85
+    },
+    {
+      "id": "side_channel",
+      "name": "Rule of Side-channel Preference",
+      "description": "When prose evidence and side-channel evidence disagree, prefer the side-channel. Side channels (Living Links typed neighbors, CAE morphology, Lexical Bridge equivalents) are harder to fake than prose mentions. The Linguistic and Graph Catalogers encode this directly; synthesis weighting reinforces it.",
+      "applies_to_catalogers": ["linguistic", "graph", "semantic"],
+      "signal_priority": 0.8
+    },
+    {
+      "id": "authority_control",
+      "name": "Rule of Authority Control",
+      "description": "When neighboring notes (via Living Links) have a consensus classification and the current note is in their semantic neighborhood, prefer to align with them unless explicit reason otherwise. Mirrors LCSH authority files — the cataloger consults what similar items were classified as. Encoded in the Graph Cataloger.",
+      "applies_to_catalogers": ["graph"],
+      "signal_priority": 0.75
+    }
+  ]
+}
