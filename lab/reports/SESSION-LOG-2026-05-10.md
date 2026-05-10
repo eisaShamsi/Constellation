@@ -410,3 +410,53 @@ NSIS `Constellation_0.3.4_x64-setup.exe` rebuilt. Eisa to verify both fixes agai
 ### Lesson worth carrying
 
 When a discrepancy between two filters using "the same logic" can't be root-caused from code reading, **route them through a single helper function**. Three independent call sites that "should agree" are three places where they can drift apart — combining them into one helper closes the bug class permanently and makes any future drift a single-file edit. The semantic-property-vs-string-match angle (`needs_user_disambiguation_between` array vs `regime === 'split'` string) was an additional robustness layer — checking the consequence of the regime rather than the regime field itself is more resilient to future serialization changes.
+
+---
+
+## V3-§8.r8 — Source Review queue composition filter (this commit)
+
+While verifying the r7 fixes Eisa hit the next gap: with a queue of 268 cards (267 Split), trying to find a card with a *specific* composition (e.g. vertical=Split + horizontal=settled, needed for the symmetric-check on the disambig auto-write) was needle-in-haystack scrolling. Eisa: *"This led me to think we need a mechanism to search for such a thing to find the right match."* I proposed three scoped options (minimal filter / full search MIG / defer); Eisa picked **(A)** the minimal filter — ship as r8.
+
+### What shipped
+
+A single chip row above the count strip slices the queue by what kind of decision each card needs:
+
+- **All** (default) — the full queue, prior behavior preserved
+- **Both axes need your call** — both horizontal AND vertical have populated `needs_user_disambiguation_between`
+- **Source needs your call** — horizontal needs disambig, vertical settled
+- **Content type needs your call** — vertical needs disambig, horizontal settled (the bucket Eisa couldn't find)
+- **Catalogers agreed** — neither axis needs disambig (Unanimous + StrongMajority — quick rubber-stamp candidates)
+
+Each chip carries its bucket count. Empty buckets are dimmed + disabled. When the active filter has zero matches, an empty-bucket hint with a "Show all cards" button renders.
+
+### What stayed unchanged (Predecessor → Replacement)
+
+Per the Predecessor Lookup Rule: filter is purely a render-layer slicer. The **same place** (SourceReviewPanel.svelte) gets a new chip row + new $derived `filteredQueue`. The full queue (`queue` $state) is preserved everywhere it matters:
+
+- `splitCount` chip ("267 need your call") still reflects true total across the full queue
+- `splitAwareSkipCount` (Approve All confirm dialog) still operates on the full queue — Approve All processes ALL eligible cards regardless of active filter
+- Reject All clears the entire queue (not just the filtered view)
+
+So the filter doesn't deceive about what's in the queue; it just lets the user navigate by intent.
+
+### Implementation detail worth noting
+
+First attempt put the filter chip definitions inline as `{@const filters: ...}` inside the `<div>` that holds the chip row. svelte-check rejected: `{@const}` must be the immediate child of `{#snippet}` / `{#if}` / `{#each}` / etc., not a regular HTML element. Moved to a top-level `$derived.by` in the script section — `filterChips` recomputes when locale or counts change, template iterates with `{#each filterChips as f}`. Cleaner pattern anyway.
+
+### Files touched in r8
+
+- `src/lib/components/SourceReviewPanel.svelte` — `axisNeedsUserCall` per-axis helper, `QueueFilter` type, `queueFilter` $state, `filterCounts` + `filteredQueue` + `filterChips` $derived, chip row markup, empty-bucket hint, ~50 lines of CSS
+- `src/lib/i18n/en.json` + `src/lib/i18n/ar.json` — 8 new `cece.queueFilter.*` keys
+
+### What this unlocks
+
+Eisa can now:
+1. Click "Source needs your call" → see only horizontal-Split cards
+2. Click "Content type needs your call" → see only vertical-Split cards
+3. Run the symmetric check from r7: pick any "Content type needs your call" card, pick a CONTENT TYPE chip, verify both axes land in frontmatter
+
+### Why this isn't scope-creep
+
+Source Review filter belongs in V3-§8 because the cascade's purpose is making the queue usable at real Library scale. r5 added the queue-level Split chip; r6 fixed Linguistic for long Arabic notes; r7 fixed Approve All math + disambig data loss; r8 closes the workflow loop by letting the user navigate hundreds of cards by intent rather than scroll position. Without r8 the prior fixes can't be exercised on a 268-card queue.
+
+A larger search MIG (free-text title search, filter by primary value, filter by dissenting cataloger) is backlog material.

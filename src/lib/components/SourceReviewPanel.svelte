@@ -107,6 +107,81 @@
         || (Array.isArray(vNeed) && vNeed.length > 0);
   }
 
+  /**
+   * V3-§8.r8 — per-axis "needs your call" predicate. Used by the
+   * composition filter to slice the queue into "Source needs your
+   * call" / "Content type needs your call" / "Both" / "Agreed"
+   * buckets.
+   */
+  function axisNeedsUserCall(c: CompositeAssignment | null, axis: 'horizontal' | 'vertical'): boolean {
+    if (!c) return false;
+    const need = c[axis].needs_user_disambiguation_between;
+    return Array.isArray(need) && need.length > 0;
+  }
+
+  /**
+   * V3-§8.r8 — composition filter for the queue. Default 'all' renders
+   * the full queue (existing behavior); the four other buckets slice
+   * by what kind of decision the card needs from the user. Solves the
+   * "find the needle in 268-card haystack" problem the Boss-test
+   * surfaced 2026-05-10.
+   *
+   * Note: legacy v2-era cards (no composite_json) appear ONLY in 'all'
+   * — they have no per-axis Split state to filter on.
+   */
+  type QueueFilter = 'all' | 'both' | 'source' | 'content_type' | 'agreed';
+  let queueFilter = $state<QueueFilter>('all');
+
+  /** Per-bucket counts for the filter chip labels. Derived once over
+   *  the full queue; updates reactively when the queue changes. */
+  let filterCounts = $derived.by(() => {
+    let both = 0, source = 0, content = 0, agreed = 0;
+    for (const r of queue) {
+      const c = parseComposite(r);
+      if (!c) continue;
+      const h = axisNeedsUserCall(c, 'horizontal');
+      const v = axisNeedsUserCall(c, 'vertical');
+      if (h && v) both++;
+      else if (h) source++;
+      else if (v) content++;
+      else agreed++;
+    }
+    return { all: queue.length, both, source, content, agreed };
+  });
+
+  /** Filtered render-list. Operates only on the rendered queue; the
+   *  full queue is preserved for the count strip + Approve All math. */
+  let filteredQueue = $derived.by(() => {
+    if (queueFilter === 'all') return queue;
+    return queue.filter(r => {
+      const c = parseComposite(r);
+      if (!c) return false; // legacy rows only show in 'all'
+      const h = axisNeedsUserCall(c, 'horizontal');
+      const v = axisNeedsUserCall(c, 'vertical');
+      switch (queueFilter) {
+        case 'both':         return h && v;
+        case 'source':       return h && !v;
+        case 'content_type': return v && !h;
+        case 'agreed':       return !h && !v;
+      }
+    });
+  });
+
+  /** Filter chip definitions for the queueFilter row. Recomputes when
+   *  i18n locale changes (the labels read $t) or when filterCounts
+   *  shifts. Declared as $derived so the template can iterate without
+   *  an inline {@const} (which Svelte 5 only allows inside specific
+   *  block parents). */
+  let filterChips = $derived.by(() => {
+    return [
+      { key: 'all'          as QueueFilter, label: $t('cece.queueFilter.all')         || 'All',                          count: filterCounts.all },
+      { key: 'both'         as QueueFilter, label: $t('cece.queueFilter.both')        || 'Both axes need your call',     count: filterCounts.both },
+      { key: 'source'       as QueueFilter, label: $t('cece.queueFilter.source')      || 'Source needs your call',       count: filterCounts.source },
+      { key: 'content_type' as QueueFilter, label: $t('cece.queueFilter.contentType') || 'Content type needs your call', count: filterCounts.content },
+      { key: 'agreed'       as QueueFilter, label: $t('cece.queueFilter.agreed')      || 'Catalogers agreed',            count: filterCounts.agreed },
+    ];
+  });
+
   /** Per-cataloger badge state for the header cluster. */
   function catalogerBadgeStatus(
     composite: CompositeAssignment | null,
@@ -683,6 +758,29 @@
     </div>
   {:else}
     {@const splitCount = queue.filter(cardNeedsUserCall).length}
+    <!-- V3-§8.r8 — queue composition filter chip row.
+         Slices the rendered list by what kind of decision each card
+         needs. Always operates on the full queue (so Approve All math
+         and the count strip stay accurate). Legacy v2-era cards only
+         appear in 'all'. -->
+    {#if queue.length > 1}
+      <div class="srp-filter-row" role="tablist" aria-label={$t('cece.queueFilter.ariaLabel') || 'Filter the review queue by composition'}>
+        {#each filterChips as f}
+          <button
+            class="srp-filter-chip"
+            class:srp-filter-chip-active={queueFilter === f.key}
+            class:srp-filter-chip-empty={f.count === 0 && f.key !== 'all'}
+            disabled={f.count === 0 && f.key !== 'all'}
+            role="tab"
+            aria-selected={queueFilter === f.key}
+            onclick={() => queueFilter = f.key}
+            title={f.label}
+          >
+            {f.label} <span class="srp-filter-count">({f.count})</span>
+          </button>
+        {/each}
+      </div>
+    {/if}
     {#if trustCalActive}
       <!-- V3-§8.r5.3 — trust-calibration banner. Quiet but persistent
            reminder that reasoning trails are auto-expanded so the user
@@ -787,8 +885,20 @@
       </div>
     {/if}
 
+    {#if filteredQueue.length === 0 && queueFilter !== 'all'}
+      <!-- V3-§8.r8 — bucket is empty; tell the user instead of rendering
+           a silent void. They can switch back to 'All' from here. -->
+      <div class="srp-empty-bucket">
+        <div class="srp-empty-bucket-text">
+          {$t('cece.queueFilter.emptyBucket') || 'No cards match this filter.'}
+        </div>
+        <button class="srp-btn" onclick={() => queueFilter = 'all'}>
+          {$t('cece.queueFilter.showAll') || 'Show all cards'}
+        </button>
+      </div>
+    {/if}
     <ul class="srp-list">
-      {#each queue as record (record.note_path)}
+      {#each filteredQueue as record (record.note_path)}
         {@const horizontalSuggestions = record.suggestions.filter(s => s.axis === 'horizontal')}
         {@const verticalSuggestions = record.suggestions.filter(s => s.axis === 'vertical')}
         {@const composite = parseComposite(record)}
@@ -1560,6 +1670,62 @@
   .srp-bulk-confirm-actions {
     display: flex; gap: 8px; justify-content: flex-end;
   }
+  /* V3-§8.r8 — queue composition filter chip row. Sits between the
+     trust-cal banner and the count strip. Active chip is highlighted;
+     empty buckets are dimmed and disabled. Solves the needle-in-
+     haystack problem when the queue has hundreds of cards.
+
+     The whole row hides if the queue has 0 or 1 cards (no point
+     filtering one card). */
+  .srp-filter-row {
+    display: flex; flex-wrap: wrap; gap: 4px;
+    padding: 4px 8px 0;
+  }
+  .srp-filter-chip {
+    font-size: 10px;
+    padding: 3px 8px;
+    background: transparent;
+    color: var(--text-muted, #6b6a64);
+    border: 1px solid var(--background-modifier-border, rgba(0,0,0,0.18));
+    border-radius: 12px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.12s;
+    line-height: 1.3;
+  }
+  .srp-filter-chip:hover:not(:disabled) {
+    background: var(--background-modifier-hover, rgba(0,0,0,0.05));
+    color: var(--text-normal, #1a1a1a);
+  }
+  .srp-filter-chip-active {
+    background: rgba(201, 162, 39, 0.18);
+    color: #856204;
+    border-color: rgba(201, 162, 39, 0.4);
+    font-weight: 600;
+  }
+  .srp-filter-chip-empty {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .srp-filter-count {
+    font-variant-numeric: tabular-nums;
+    margin-inline-start: 2px;
+  }
+  /* V3-§8.r8 — empty-bucket hint when the active filter has 0 matches. */
+  .srp-empty-bucket {
+    padding: 16px;
+    margin: 8px;
+    text-align: center;
+    color: var(--text-muted, #6b6a64);
+    background: var(--background-secondary, #fbf8ec);
+    border: 1px dashed var(--background-modifier-border, rgba(0,0,0,0.18));
+    border-radius: 6px;
+    display: flex; flex-direction: column; gap: 8px; align-items: center;
+  }
+  .srp-empty-bucket-text {
+    font-size: 12px;
+  }
+
   /* V3-§8.r5.4 — queue-level Split count chip surfaces the "needs your
      call" cards in one number rather than asking the user to scan for
      gold borders. */

@@ -859,6 +859,17 @@
       "label": "{N} need your call",
       "tooltip": "Cards where catalogers split — your decision is needed"
     },
+    "queueFilter": {
+      "_comment": "V3-§8.r8 — composition filter chip row above the queue. Slices the rendered list by what kind of decision each card needs from the user.",
+      "ariaLabel": "Filter the review queue by composition",
+      "all": "All",
+      "both": "Both axes need your call",
+      "source": "Source needs your call",
+      "contentType": "Content type needs your call",
+      "agreed": "Catalogers agreed",
+      "emptyBucket": "No cards match this filter.",
+      "showAll": "Show all cards"
+    },
     "disambiguation": {
       "title": "Pick the right one",
       "prompt": "The catalogers split between these candidates. Pick which one fits the note best:",
