@@ -20,6 +20,7 @@
 //! injectable inference function is wired (V3-§8 / V3-§7.b).
 
 use crate::sources::{horizontal_taxonomy, vertical_taxonomy};
+use std::sync::OnceLock;
 
 /// System prompt — instructs the LLM to act as a Constellation
 /// Cataloger following the Architect §4 Cataloger Rules.
@@ -214,7 +215,18 @@ const EXEMPLARS: &[Exemplar] = &[
 /// This is the single largest reliability improvement in the V3-§7
 /// design (per Agent 3 research: GBNF for closed-set classification
 /// is small accuracy win, large operational reliability win).
+///
+/// V3-§8.r4.6 (audit P2): cached via OnceLock so the ~10–18 KB
+/// alternation grammar is built once at first call, not regenerated
+/// per-IPC. The taxonomy is static at compile time so the grammar
+/// never changes within a process lifetime.
 pub fn build_gbnf_grammar() -> String {
+    GRAMMAR_CACHE.get_or_init(build_gbnf_grammar_uncached).clone()
+}
+
+static GRAMMAR_CACHE: OnceLock<String> = OnceLock::new();
+
+fn build_gbnf_grammar_uncached() -> String {
     let h_ids: Vec<String> = horizontal_taxonomy::all_ids()
         .iter()
         .map(|id| escape_gbnf_string(id))

@@ -122,26 +122,92 @@ impl EarlyVerdict {
     }
 }
 
-/// Run a single cataloger with panic isolation. Returns `None` if the
-/// cataloger panicked; returns `Some(trail)` otherwise (which may itself
-/// have `voiced_opinion: false`).
+/// Run a single cataloger with panic isolation AND timeout enforcement.
 ///
 /// Per Architect §10 invariant 5: cataloger errors do NOT propagate.
+/// Per Architect §10 invariant 12: ensemble timeouts are bounded.
+///
+/// V3-§8.r4.4 (audit P1.4): the original `run_one_safe` only caught
+/// panics, not hangs. A pathological regex in Structural or a hung
+/// embedding call in Semantic would block the IPC indefinitely.
+/// Now: cataloger runs on a dedicated thread; channel `recv_timeout`
+/// enforces the per-cataloger budget. Choosing thread-channel over
+/// `tokio::time::timeout` to keep the orchestrator synchronous and
+/// avoid an async refactor that would touch every cataloger.
+///
+/// Cost: one thread spawn per cataloger per IPC. Threads are cheap on
+/// modern OS (~1ms / ~50KB stack); 6 catalogers per note × 7K notes
+/// in a Library scan = 42K thread spawns over the scan = negligible
+/// vs the actual classification work.
 fn run_one_safe(c: &dyn Cataloger, ctx: &CatalogerContext) -> Option<ReasoningTrail> {
     let cataloger_name = c.name();
-    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| c.classify(ctx)));
-    match result {
-        Ok(trail_opt) => trail_opt,
-        Err(_) => {
-            eprintln!(
-                "[orchestrator] cataloger {} panicked — treating as silent",
-                cataloger_name
-            );
-            Some(ReasoningTrail::abstain(
-                cataloger_name,
-                "Cataloger panicked; isolated by orchestrator.",
-            ))
+    let timeout = cataloger_timeout(cataloger_name);
+
+    // Move the cataloger ref + context to the worker thread. We can't
+    // truly move `c: &dyn Cataloger` across threads (lifetime), so
+    // we use scoped threads with `std::thread::scope` to bound the
+    // lifetime to this call.
+    use std::sync::mpsc;
+    let (tx, rx) = mpsc::channel();
+
+    std::thread::scope(|scope| {
+        let _handle = scope.spawn(move || {
+            let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| c.classify(ctx)));
+            // Send result; ignore if receiver already dropped (timeout fired).
+            let _ = tx.send(result);
+        });
+
+        match rx.recv_timeout(timeout) {
+            Ok(Ok(trail_opt)) => trail_opt,
+            Ok(Err(_)) => {
+                eprintln!(
+                    "[orchestrator] cataloger {} panicked — treating as silent",
+                    cataloger_name
+                );
+                Some(ReasoningTrail::abstain(
+                    cataloger_name,
+                    "Cataloger panicked; isolated by orchestrator.",
+                ))
+            }
+            Err(mpsc::RecvTimeoutError::Timeout) => {
+                eprintln!(
+                    "[orchestrator] cataloger {} exceeded {:?} timeout — treating as silent",
+                    cataloger_name, timeout
+                );
+                Some(ReasoningTrail::abstain(
+                    cataloger_name,
+                    &format!("Cataloger exceeded {:?} timeout; isolated by orchestrator.", timeout),
+                ))
+            }
+            Err(mpsc::RecvTimeoutError::Disconnected) => {
+                // Worker thread vanished without sending — should not
+                // happen under normal conditions; treat as abstention.
+                eprintln!(
+                    "[orchestrator] cataloger {} worker channel disconnected",
+                    cataloger_name
+                );
+                Some(ReasoningTrail::abstain(
+                    cataloger_name,
+                    "Cataloger worker disconnected; isolated by orchestrator.",
+                ))
+            }
         }
+    })
+}
+
+/// Per-cataloger timeout budget. Cheap catalogers get tight budgets;
+/// the Reasoning Cataloger (LLM) gets the slowest tier.
+fn cataloger_timeout(name: &str) -> std::time::Duration {
+    use std::time::Duration;
+    match name {
+        // Cheap microsecond catalogers — anything over 100ms is a hang.
+        "user_authority" | "structural" | "linguistic" => Duration::from_millis(500),
+        // Medium DB-query catalogers — typical 30ms; allow 2s for cold cache.
+        "graph" | "semantic" => Duration::from_secs(2),
+        // Reasoning is LLM-bound — typical 1.5s; allow 5s for cold start.
+        "reasoning" => Duration::from_secs(5),
+        // Unknown / future catalogers — generous default.
+        _ => Duration::from_secs(2),
     }
 }
 

@@ -38,6 +38,7 @@ use crate::sources::{is_valid_content_type_id, is_valid_source_id};
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::sync::OnceLock;
+use unicode_normalization::UnicodeNormalization;
 
 // ─── Lexicon load (extends V3-§3's loader to read the `root` field) ─
 
@@ -85,7 +86,13 @@ fn lexicon() -> &'static LoadedLexicon {
             .into_iter()
             .filter(|r| is_valid_source_id(&r.target))
             .map(|r| TokenRule {
-                tokens: r.tokens.iter().map(|t| t.to_lowercase()).collect(),
+                // V3-§8.r4.5 (audit P1.7): NFKC-normalize tokens at
+                // load so confusable codepoints (Cyrillic look-alikes,
+                // ZWNJ, Tatweel, Persian/Urdu lookalikes for Arabic
+                // characters) match the same way as the canonical
+                // lexicon entry. Without NFKC the substring match is
+                // byte-level and silently bypasses on confusables.
+                tokens: r.tokens.iter().map(|t| t.nfkc().collect::<String>().to_lowercase()).collect(),
                 ..r
             })
             .collect();
@@ -94,7 +101,13 @@ fn lexicon() -> &'static LoadedLexicon {
             .into_iter()
             .filter(|r| is_valid_content_type_id(&r.target))
             .map(|r| TokenRule {
-                tokens: r.tokens.iter().map(|t| t.to_lowercase()).collect(),
+                // V3-§8.r4.5 (audit P1.7): NFKC-normalize tokens at
+                // load so confusable codepoints (Cyrillic look-alikes,
+                // ZWNJ, Tatweel, Persian/Urdu lookalikes for Arabic
+                // characters) match the same way as the canonical
+                // lexicon entry. Without NFKC the substring match is
+                // byte-level and silently bypasses on confusables.
+                tokens: r.tokens.iter().map(|t| t.nfkc().collect::<String>().to_lowercase()).collect(),
                 ..r
             })
             .collect();
@@ -172,7 +185,11 @@ impl Cataloger for LinguisticCataloger {
 
     fn classify(&self, ctx: &CatalogerContext) -> Option<ReasoningTrail> {
         let lex = lexicon();
-        let lower = ctx.content.to_lowercase();
+        // V3-§8.r4.5 (audit P1.7): NFKC-normalize the note content so
+        // confusable codepoints in the user's text match the same way
+        // as the canonical lexicon entries (e.g. a Cyrillic 'і'
+        // typed for Latin 'i' in qiyās; ZWNJ inserted in قياس).
+        let lower: String = ctx.content.nfkc().collect::<String>().to_lowercase();
 
         // Path 1: CAE root match (HIGH confidence).
         // Tokenize Arabic-looking words and analyze their roots.

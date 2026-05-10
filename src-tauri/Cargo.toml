@@ -50,6 +50,15 @@ tokenizers = { version = "0.20", default-features = false, features = ["onig"] }
 rayon = "1"
 chrono = "0.4"
 rand = "0.8"
+# MIG-021v3 V3-§8.r4 (audit P1.2): cross-platform atomic file rename for
+# the per-Library cataloger_reliability.json. std::fs::rename to an
+# existing target is non-atomic on Windows pre-NTFS-fixup; tempfile's
+# NamedTempFile::persist handles the platform difference correctly.
+tempfile = "3"
+# MIG-021v3 V3-§8.r4 (audit P1.7): NFKC Unicode normalization for the
+# Linguistic Cataloger surface-token lookup. Without it, Cyrillic /
+# Persian / Urdu look-alike codepoints silently bypass the lexicon.
+unicode-normalization = "0.1"
 tauri-plugin-updater = "2.10.0"
 tauri-plugin-process = "2.3.1"
 # M3: compact, read-only morphological index. BurntSushi's `fst` crate —

@@ -89,7 +89,11 @@ fn reliability_path(library_path: &str) -> PathBuf {
 /// profile if the file doesn't exist or fails to parse. Failures are
 /// logged but never propagated — uniform weights are always a valid
 /// fallback.
+///
+/// V3-§8.r4.1 also sweeps any orphaned .tmp files left over from a
+/// previous kill-mid-write (audit P1 .tmp accumulation finding).
 pub fn load_or_default(library_path: &str) -> ReliabilityProfile {
+    sweep_tmp_orphans(library_path);
     let path = reliability_path(library_path);
     if !path.exists() {
         return ReliabilityProfile::default();
@@ -112,16 +116,31 @@ pub fn load_or_default(library_path: &str) -> ReliabilityProfile {
     }
 }
 
-/// Atomic write via temp-file rename. Best-effort: write failures are
-/// logged but never abort the user's save flow (the next correction
-/// will overwrite stale data). Per Architect §13 risk mitigation.
+/// Atomic write via cross-platform NamedTempFile::persist. Best-effort:
+/// write failures are logged but never abort the user's save flow
+/// (the next correction will overwrite stale data).
+///
+/// V3-§8.r4.1 fix (audit P1.2): the original implementation used
+/// `std::fs::write` to a `.json.tmp` then `std::fs::rename` to the
+/// final path. On Windows pre-NTFS-fixup, `std::fs::rename` to an
+/// EXISTING destination fails outright — meaning the per-Library
+/// reliability JSON would never update after the first write, and
+/// every subsequent `record_correction` would silently fail. The
+/// `tempfile::NamedTempFile::persist` method handles the platform
+/// difference correctly (uses `MoveFileExW` with
+/// `MOVEFILE_REPLACE_EXISTING` on Windows).
 pub fn save(library_path: &str, profile: &ReliabilityProfile) {
     let path = reliability_path(library_path);
-    if let Some(parent) = path.parent() {
-        if let Err(e) = fs::create_dir_all(parent) {
-            eprintln!("[reliability] mkdir {:?} failed: {}", parent, e);
+    let dir = match path.parent() {
+        Some(p) => p,
+        None => {
+            eprintln!("[reliability] no parent dir for {:?}", path);
             return;
         }
+    };
+    if let Err(e) = fs::create_dir_all(dir) {
+        eprintln!("[reliability] mkdir {:?} failed: {}", dir, e);
+        return;
     }
     let serialized = match serde_json::to_string_pretty(profile) {
         Ok(s) => s,
@@ -130,13 +149,55 @@ pub fn save(library_path: &str, profile: &ReliabilityProfile) {
             return;
         }
     };
-    let tmp_path = path.with_extension("json.tmp");
-    if let Err(e) = fs::write(&tmp_path, serialized) {
-        eprintln!("[reliability] tmp write {:?} failed: {}", tmp_path, e);
+    // tempfile::NamedTempFile creates a uniquely-named temp file in
+    // the target directory, so the rename is same-filesystem and
+    // atomic on POSIX + correctly REPLACES on Windows.
+    let mut tmp = match tempfile::Builder::new()
+        .prefix(".cataloger_reliability.")
+        .suffix(".tmp")
+        .tempfile_in(dir)
+    {
+        Ok(t) => t,
+        Err(e) => {
+            eprintln!("[reliability] tempfile create in {:?} failed: {}", dir, e);
+            return;
+        }
+    };
+    use std::io::Write;
+    if let Err(e) = tmp.write_all(serialized.as_bytes()) {
+        eprintln!("[reliability] tmp write failed: {}", e);
         return;
     }
-    if let Err(e) = fs::rename(&tmp_path, &path) {
-        eprintln!("[reliability] rename failed: {}", e);
+    if let Err(e) = tmp.as_file_mut().sync_all() {
+        // Not fatal — durability is best-effort.
+        eprintln!("[reliability] tmp sync failed (non-fatal): {}", e);
+    }
+    if let Err(e) = tmp.persist(&path) {
+        eprintln!("[reliability] persist failed: {}", e);
+    }
+}
+
+/// Sweep up any orphaned `.tmp` reliability files in a Library's
+/// `.constellation/` directory left over from a previous kill-mid-write.
+/// V3-§8.r4.1 fix (audit P1, .tmp orphan accumulation). Best-effort:
+/// errors logged but never propagated. Called from `load_or_default`
+/// so the cleanup runs lazily on first read.
+fn sweep_tmp_orphans(library_path: &str) {
+    let mut dir = std::path::PathBuf::from(library_path);
+    dir.push(".constellation");
+    if !dir.exists() {
+        return;
+    }
+    let entries = match fs::read_dir(&dir) {
+        Ok(e) => e,
+        Err(_) => return,
+    };
+    for entry in entries.flatten() {
+        let name = entry.file_name();
+        let name_str = name.to_string_lossy();
+        if name_str.starts_with(".cataloger_reliability.") && name_str.ends_with(".tmp") {
+            let _ = fs::remove_file(entry.path());
+        }
     }
 }
 

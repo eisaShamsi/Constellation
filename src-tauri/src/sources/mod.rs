@@ -175,6 +175,33 @@ pub fn ensure_sources_suggestions_table(conn: &Connection) -> rusqlite::Result<(
         CREATE INDEX IF NOT EXISTS idx_sources_suggestions_created
             ON sources_suggestions(created_at);",
     )?;
+    // V3-§8.r4.3 (audit P1.5): the composite_json column was originally
+    // added by `classifier::write_suggestions_with_composite` running an
+    // `ALTER TABLE ... ADD COLUMN` on every IPC call with errors silently
+    // swallowed via `let _ = ...`. Migrating that here at init time:
+    // - Probe column existence via PRAGMA table_info
+    // - Add it once if missing
+    // - If the ALTER fails (transient lock, unexpected schema), log loudly
+    //   and propagate — better than the silent failure that would mask
+    //   real schema corruption
+    let has_composite_json: bool = {
+        let mut stmt = conn.prepare("PRAGMA table_info(sources_suggestions)")?;
+        let rows = stmt.query_map([], |row| row.get::<_, String>(1))?;
+        let mut found = false;
+        for row in rows {
+            if row? == "composite_json" {
+                found = true;
+                break;
+            }
+        }
+        found
+    };
+    if !has_composite_json {
+        conn.execute(
+            "ALTER TABLE sources_suggestions ADD COLUMN composite_json TEXT",
+            [],
+        )?;
+    }
     Ok(())
 }
 

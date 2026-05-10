@@ -122,7 +122,10 @@ impl MemoizedEmbed {
 fn embed_text(app: &AppHandle, text: &str) -> Result<Vec<f32>, String> {
     crate::embeddings::ensure_engine(app)?;
     let state = app.state::<crate::embeddings::EmbeddingState>();
-    let guard = state.engine.lock().map_err(|e| format!("engine lock: {}", e))?;
+    // V3-§8.r4.2 (audit P1.3): poison recovery on the embedding-engine
+    // mutex too. The engine itself is just a Session + Tokenizer; no
+    // in-memory invariant requires poisoning protection.
+    let guard = state.engine.lock().unwrap_or_else(|e| e.into_inner());
     let engine = guard
         .as_ref()
         .ok_or("Embedding engine not initialized")?;
@@ -145,7 +148,7 @@ fn knn_classified_neighbors(
 ) -> Result<Vec<NeighborRecord>, String> {
     crate::search::ensure_search_db_ready(app)?;
     let state = app.state::<crate::search::SearchState>();
-    let guard = state.db.lock().map_err(|e| format!("db lock: {}", e))?;
+    let guard = state.db.lock().unwrap_or_else(|e| e.into_inner());
     let conn = guard
         .as_ref()
         .ok_or("Search DB not initialized")?;
@@ -212,7 +215,7 @@ fn load_typed_neighbors(
 ) -> Result<Vec<TypedNeighbor>, String> {
     crate::search::ensure_search_db_ready(app)?;
     let state = app.state::<crate::search::SearchState>();
-    let guard = state.db.lock().map_err(|e| format!("db lock: {}", e))?;
+    let guard = state.db.lock().unwrap_or_else(|e| e.into_inner());
     let conn = guard
         .as_ref()
         .ok_or("Search DB not initialized")?;
@@ -298,10 +301,24 @@ fn bytes_to_f32_vec(bytes: &[u8]) -> Vec<f32> {
     out
 }
 
+/// Parse a JSON string-array out of a `note_meta.sources` /
+/// `note_meta.content_type` cell, with diagnostic logging on
+/// corruption (V3-§8.r4.7 — audit P2: silent dropping was leaving
+/// Semantic Cataloger without signal with no log line).
 fn parse_json_string_array(json: Option<&str>) -> Vec<String> {
     let Some(s) = json else { return Vec::new() };
     if s.is_empty() || s == "[]" {
         return Vec::new();
     }
-    serde_json::from_str::<Vec<String>>(s).unwrap_or_default()
+    match serde_json::from_str::<Vec<String>>(s) {
+        Ok(v) => v,
+        Err(e) => {
+            eprintln!(
+                "[wiring] note_meta JSON-array parse failed (silently dropping for kNN/graph vote): {} — payload: {:?}",
+                e,
+                if s.len() > 200 { &s[..200] } else { s }
+            );
+            Vec::new()
+        }
+    }
 }

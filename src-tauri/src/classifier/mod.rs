@@ -242,8 +242,15 @@ pub fn cece_resolve_disambiguation(
 /// reasoning trail + Sibling Disambiguation prompts.
 ///
 /// Storage shape: the composite is serialized as JSON and stored in
-/// a NEW column `composite_json` on `sources_suggestions`. Old rows
+/// the `composite_json` column on `sources_suggestions`. v2-era rows
 /// have NULL there; the SourceReview UI handles both cases.
+///
+/// V3-§8.r4.3 (audit P1.5): the column-add ALTER moved from this
+/// hot path into `sources::ensure_sources_suggestions_table`
+/// (called from `search::init_db` at boot). This IPC now assumes
+/// the column exists. If it doesn't, the INSERT will fail loudly
+/// with a real error — which is what we want; silent swallowing
+/// would mask actual schema corruption.
 fn write_suggestions_with_composite(
     conn: &rusqlite::Connection,
     note_path: &str,
@@ -251,12 +258,6 @@ fn write_suggestions_with_composite(
     tier_used: i64,
     composite: &crate::cece::synthesis::CompositeAssignment,
 ) -> Result<(), String> {
-    // Add composite_json column lazily on first call (idempotent).
-    let _ = conn.execute(
-        "ALTER TABLE sources_suggestions ADD COLUMN composite_json TEXT",
-        [],
-    );
-
     let suggestions_json = serde_json::to_string(suggestions)
         .map_err(|e| format!("serialize suggestions: {}", e))?;
     let composite_json = serde_json::to_string(composite)
