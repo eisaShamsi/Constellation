@@ -145,25 +145,27 @@ fn run_one_safe(c: &dyn Cataloger, ctx: &CatalogerContext) -> Option<ReasoningTr
     }
 }
 
-/// State the orchestrator lives in, managed by Tauri so any IPC can
-/// access it. Simple wrapper around the Orchestrator + a Mutex.
-pub struct OrchestratorState {
-    pub inner: std::sync::Mutex<Orchestrator>,
-}
-
-impl OrchestratorState {
-    pub fn new() -> Self {
-        Self {
-            inner: std::sync::Mutex::new(Orchestrator::new()),
-        }
-    }
-}
-
-impl Default for OrchestratorState {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+// V3-§8.r2.d note (audit Software Architecture #6): the original V3-§1
+// scaffolded an `OrchestratorState` Tauri-managed wrapper here, but it
+// was never wired — `classifier_suggest_for_note` constructs a fresh
+// `Orchestrator` per IPC call. The audit flagged this as a half-
+// finished migration. Rather than shipping a stale struct that
+// implied a sharing pattern that doesn't exist, the dead state was
+// deleted in r2.
+//
+// Why per-IPC construction stays: the Orchestrator's closures capture
+// per-call state (the `MemoizedEmbed` cache that dedupes Linguistic +
+// Semantic embed calls within a single note classification). Boot-
+// time construction would need either a different caching strategy
+// (per-app LRU with eviction) or a per-call context that catalogers
+// read from. The latter is what the deleted `CatalogerContext`
+// OnceLock fields tried to express; we deleted them in r2.a because
+// no cataloger read them. Future work could re-introduce a per-call
+// services struct + boot-time orchestrator; not a Day 1 ship blocker.
+//
+// Construction cost per IPC: ~6 `Arc::new` + ~6 closure boxes +
+// 6-element `Vec::sort_by_key`. Microseconds. The real per-note cost
+// is in the catalogers' classify() calls, not this construction.
 
 #[cfg(test)]
 mod tests {

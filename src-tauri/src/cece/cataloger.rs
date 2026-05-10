@@ -10,7 +10,6 @@
 //! signal — it tells the synthesis layer this lens had no evidence.
 
 use serde::{Deserialize, Serialize};
-use std::sync::OnceLock;
 
 /// The two classification axes. A cataloger may produce assignments for
 /// both, one, or neither (when it abstains).
@@ -111,13 +110,21 @@ impl ReasoningTrail {
     }
 }
 
-/// The shared input every cataloger receives. Lazy-loaded helpers
-/// (typed_neighbors, cae_normalized, embedding) populate on first
-/// access so catalogers that don't need them pay no cost.
+/// The shared input every cataloger receives.
 ///
-/// All `OnceLock` fields are populated by the orchestrator on demand
-/// (the orchestrator knows which catalogers will be invoked + which
-/// inputs they need).
+/// V3-§8.r2.a fix (audit Software Architecture #5): the original
+/// design exposed `OnceLock<Vec<TypedNeighbor>>`, `OnceLock<CaeNormalizedText>`,
+/// `OnceLock<Vec<f32>>` lazy fields here, but every cataloger ignored
+/// them and used its own injected `embed_fn` / `lookup_fn` /
+/// `inference_fn` instead. The OnceLocks were dead code that suggested
+/// a sharing pattern that didn't exist. Removed for clarity. The
+/// injection pattern won; per-cataloger function fields are the
+/// canonical I/O surface.
+///
+/// Cross-cataloger I/O deduplication (Linguistic + Semantic both want
+/// to embed the note text) is handled at the wiring layer via the
+/// `MemoizedEmbed` helper that the orchestrator constructs once per
+/// IPC call and shares across cataloger registrations.
 pub struct CatalogerContext {
     pub note_path: String,
     pub content: String,
@@ -125,15 +132,6 @@ pub struct CatalogerContext {
     pub frontmatter_sources: Vec<String>,
     /// Frontmatter `content_type:` already extracted. Empty Vec when absent.
     pub frontmatter_content_type: Vec<String>,
-    /// Lazily populated: typed-neighbor list for the Graph Cataloger.
-    /// `None` means the orchestrator hasn't loaded it yet (cataloger
-    /// calls `typed_neighbors_or_load()`).
-    pub typed_neighbors: OnceLock<Vec<TypedNeighbor>>,
-    /// Lazily populated: CAE morphology output for the Linguistic
-    /// Cataloger.
-    pub cae_normalized: OnceLock<CaeNormalizedText>,
-    /// Lazily populated: e5-small embedding for the Semantic Cataloger.
-    pub embedding: OnceLock<Vec<f32>>,
 }
 
 impl CatalogerContext {
@@ -148,9 +146,6 @@ impl CatalogerContext {
             content,
             frontmatter_sources,
             frontmatter_content_type,
-            typed_neighbors: OnceLock::new(),
-            cae_normalized: OnceLock::new(),
-            embedding: OnceLock::new(),
         }
     }
 }

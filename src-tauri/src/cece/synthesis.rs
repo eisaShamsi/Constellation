@@ -272,9 +272,25 @@ fn vote_on_axis(
         None
     };
 
+    // V3-§8.r2.c fix (audit LIS): AxisDecision.secondary was declared
+    // in the schema but hardcoded to Vec::new() — incomplete principal/
+    // secondary distinction. LIS practice (LC SCM H 180) is "one
+    // principal subject heading + as many secondary as needed; usually
+    // one or two; rarely more than three." Secondary in CECE = the
+    // candidates that were within 80% of the primary's weight (i.e.
+    // close enough to also be true, not just runner-up alternatives).
+    // see_also remains the wider net for surfacing in the UI as
+    // "consider also."
+    let secondary: Vec<String> = sorted
+        .iter()
+        .skip(1)
+        .filter(|(_, w)| *w / normalizer >= 0.80)
+        .map(|(id, _)| id.clone())
+        .collect();
+
     AxisDecision {
         primary: Some(primary_id),
-        secondary: Vec::new(),
+        secondary,
         regime,
         see_also,
         needs_user_disambiguation_between,

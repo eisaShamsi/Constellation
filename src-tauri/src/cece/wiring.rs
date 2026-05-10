@@ -19,20 +19,42 @@ use crate::cece::catalogers::semantic::{NeighborRecord, SemanticCataloger};
 use crate::cece::catalogers::structural::StructuralCataloger;
 use crate::cece::catalogers::user_authority::UserAuthorityCataloger;
 use crate::cece::orchestrator::Orchestrator;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Manager};
 
 /// Build a production-wired orchestrator with all six catalogers
 /// registered in cost order. Called by `classifier_suggest_for_note`
 /// once per request (cataloger init is cheap; the heavy lifting is
 /// inside their classify() calls).
+///
+/// V3-§8.r2.b fix (audit Software Architecture #5): shares one
+/// e5-small inference between Linguistic and Semantic via a
+/// per-call `MemoizedEmbed` cache, instead of letting each cataloger
+/// independently call `embed_fn`. Saves ~30 ms × 7K = ~3.5 minutes
+/// on a full-Library scan when both catalogers want to embed the
+/// same note text.
 pub fn build_orchestrator(app: &AppHandle) -> Orchestrator {
     let mut o = Orchestrator::new();
+
+    // Build the per-IPC embedding cache. Both Linguistic (Bridge slow-
+    // path) and Semantic (kNN-blend) consult `embed` for the same note
+    // text; without memoization that's 2 ONNX calls per note. The
+    // cache lives for the lifetime of this orchestrator (one IPC).
+    let app_for_embed = app.clone();
+    let embed_cache: Arc<MemoizedEmbed> = Arc::new(MemoizedEmbed::new(Box::new(
+        move |text: &str| embed_text(&app_for_embed, text),
+    )));
 
     // ─── Cost 0: cheap, run always ───
     o.register(Arc::new(UserAuthorityCataloger::new()), 0);
     o.register(Arc::new(StructuralCataloger::new()), 0);
-    o.register(Arc::new(LinguisticCataloger::new()), 0);
+
+    // Linguistic uses the shared embedder for Bridge slow-path.
+    let embed_for_linguistic = embed_cache.clone();
+    let linguistic = crate::cece::catalogers::linguistic::LinguisticCataloger::with_embedder(
+        Box::new(move |text: &str| embed_for_linguistic.embed(text)),
+    );
+    o.register(Arc::new(linguistic), 0);
 
     // ─── Cost 1: medium (DB queries) ───
     let app_for_graph = app.clone();
@@ -41,10 +63,10 @@ pub fn build_orchestrator(app: &AppHandle) -> Orchestrator {
     }));
     o.register(Arc::new(graph), 1);
 
-    let app_for_semantic_embed = app.clone();
+    let embed_for_semantic = embed_cache.clone();
     let app_for_semantic_lookup = app.clone();
     let semantic = SemanticCataloger::with_io(
-        Box::new(move |text: &str| embed_text(&app_for_semantic_embed, text)),
+        Box::new(move |text: &str| embed_for_semantic.embed(text)),
         Box::new(move |query: &[f32], k: usize| {
             knn_classified_neighbors(&app_for_semantic_lookup, query, k)
         }),
@@ -57,6 +79,41 @@ pub fn build_orchestrator(app: &AppHandle) -> Orchestrator {
     o.register(Arc::new(ReasoningCataloger::new()), 2);
 
     o
+}
+
+/// Per-call embedding cache. Holds one closure that calls the real
+/// embedder, plus a Mutex<Option<Vec<f32>>> result cache keyed by
+/// text. We key by text-string to handle the (rare) case where two
+/// catalogers want to embed *different* substrings of the same note;
+/// in practice both Linguistic and Semantic embed the full note body
+/// and we get one cache hit.
+pub struct MemoizedEmbed {
+    inner: Box<dyn Fn(&str) -> Result<Vec<f32>, String> + Send + Sync + 'static>,
+    cache: Mutex<Option<(String, Vec<f32>)>>,
+}
+
+impl MemoizedEmbed {
+    pub fn new(
+        inner: Box<dyn Fn(&str) -> Result<Vec<f32>, String> + Send + Sync + 'static>,
+    ) -> Self {
+        Self {
+            inner,
+            cache: Mutex::new(None),
+        }
+    }
+
+    pub fn embed(&self, text: &str) -> Result<Vec<f32>, String> {
+        // Recover from poisoning gracefully (audit P1.3 mitigation pattern).
+        let mut guard = self.cache.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some((cached_text, cached_vec)) = guard.as_ref() {
+            if cached_text == text {
+                return Ok(cached_vec.clone());
+            }
+        }
+        let v = (self.inner)(text)?;
+        *guard = Some((text.to_string(), v.clone()));
+        Ok(v)
+    }
 }
 
 /// Embedding helper: ensures the e5-small ONNX engine is loaded, then
