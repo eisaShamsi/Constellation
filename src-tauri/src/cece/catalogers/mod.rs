@@ -5,3 +5,4 @@
 //! Linguistic), then medium (Graph, Semantic), then expensive (Reasoning).
 
 pub mod user_authority;
+pub mod structural;
