@@ -16,6 +16,9 @@
 mod source_definitions;
 mod tier1_embedding;
 pub mod scan_job;
+// MIG-021v2 §1G2' — Tier 1 deterministic rules + correction log.
+pub mod tier1_rules;
+pub mod correction_log;
 
 use crate::sources::{write_suggestions, SuggestionRecord};
 use std::path::Path;
@@ -53,10 +56,55 @@ pub fn classifier_suggest_for_note(
         format!("{}\n\n{}", title, body)
     };
 
-    // 3. Tier 1 classify: embed text + cosine-similarity to 11 source vectors.
-    let suggestions = tier1_embedding::classify(&app, &text_for_classification)?;
+    // 3. MIG-021v2 §1G2' — Tier 1 deterministic rules first.
+    //    Read frontmatter sources / content_type for precedence check.
+    let frontmatter_sources = crate::sources::extract_sources(&content);
+    let frontmatter_content_type = crate::sources::extract_content_type(&content);
+    let tier1 = tier1_rules::classify_tier1(
+        &content,
+        &frontmatter_sources,
+        &frontmatter_content_type,
+    );
 
-    // 4. Write suggestions to queue (overwrites any prior entry).
+    // Combine Tier 1 hits across both axes.
+    let mut suggestions: Vec<crate::sources::Suggestion> = Vec::new();
+    suggestions.extend(tier1.horizontal.iter().cloned());
+    suggestions.extend(tier1.vertical.iter().cloned());
+
+    // 4. Fall through to Tier 2 (embeddings) for any axis Tier 1 left empty.
+    //    This is the heart of the three-tier routing — if rules covered
+    //    one axis but not the other, we only spend embedding cost on the
+    //    uncovered axis. Today tier1_embedding::classify always runs for
+    //    both; we filter its output to fill the gap so the cheaper path
+    //    is preserved as much as possible.
+    let needs_horizontal = tier1.horizontal.is_empty();
+    let needs_vertical = tier1.vertical.is_empty();
+    let tier_used: i64 = if tier1.from_frontmatter {
+        1
+    } else if !needs_horizontal && !needs_vertical {
+        1
+    } else if !needs_horizontal || !needs_vertical {
+        // Mixed — at least one axis needed Tier 2. We tag the record at
+        // tier 2 so the badge reflects "model" rather than "rule" when
+        // the user looks at it; the per-suggestion provenance comes
+        // from the evidence string.
+        2
+    } else {
+        2
+    };
+
+    if needs_horizontal || needs_vertical {
+        let tier2 = tier1_embedding::classify(&app, &text_for_classification)?;
+        for s in tier2 {
+            if s.axis == "horizontal" && needs_horizontal {
+                suggestions.push(s);
+            } else if s.axis == "vertical" && needs_vertical {
+                suggestions.push(s);
+            }
+        }
+    }
+
+    // 5. Write suggestions to queue (overwrites any prior entry).
     let search_state = app.state::<crate::search::SearchState>();
     let db_guard = search_state
         .db
@@ -65,13 +113,13 @@ pub fn classifier_suggest_for_note(
     let conn = db_guard
         .as_ref()
         .ok_or("Search database not initialized")?;
-    write_suggestions(conn, &note_path, &suggestions, 1)?;
+    write_suggestions(conn, &note_path, &suggestions, tier_used)?;
 
-    // 5. Return the record for immediate display.
+    // 6. Return the record for immediate display.
     Ok(SuggestionRecord {
         note_path,
         suggestions,
-        classifier_tier: 1,
+        classifier_tier: tier_used,
         created_at: chrono::Utc::now().timestamp(),
     })
 }

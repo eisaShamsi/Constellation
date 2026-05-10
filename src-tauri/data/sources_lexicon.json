@@ -1,0 +1,159 @@
+{
+  "_doc": "MIG-021v2 §1G2' bilingual lexicon for Tier 1 deterministic rules. Each entry maps a set of tokens (case-insensitive substring match against note text) to a target taxonomy ID + confidence weight. ALL targets must exist in src-tauri/src/sources/horizontal_taxonomy.rs or vertical_taxonomy.rs — invalid IDs are silently dropped at load. Drawn from Eisa's docs/sources-of-knowledge-diagram.html. Order matters: more specific / longer tokens should come first so they match before more general ones.",
+
+  "horizontal": [
+    {
+      "tokens": ["متواتر", "تواتر", "mutawātir", "mutawatir", "tawātur", "tawatur"],
+      "target": "mass-transmission/verbal",
+      "weight": 0.90,
+      "evidence": "Mass-transmission marker (al-tawātur)"
+    },
+    {
+      "tokens": ["إجماع", "ijmāʿ", "ijma'", "ijmaa"],
+      "target": "testimony/authoritative",
+      "weight": 0.85,
+      "evidence": "Scholarly consensus (ijmāʿ)"
+    },
+    {
+      "tokens": ["قياس", "qiyās", "qiyas"],
+      "target": "comparison/ratio-legis",
+      "weight": 0.85,
+      "evidence": "Legal analogy (qiyās)"
+    },
+    {
+      "tokens": ["حدثنا", "أخبرنا", "akhbarana", "haddathana"],
+      "target": "mass-transmission/verbal",
+      "weight": 0.80,
+      "evidence": "Hadith chain transmitter marker"
+    },
+    {
+      "tokens": ["صحيح البخاري", "صحيح مسلم", "Sahih al-Bukhari", "Sahih Muslim"],
+      "target": "mass-transmission/verbal",
+      "weight": 0.85,
+      "evidence": "Canonical hadith collection"
+    },
+    {
+      "tokens": ["pratyakṣa", "pratyaksha", "pratyaksa"],
+      "target": "perception/external",
+      "weight": 0.85,
+      "evidence": "External perception (pratyakṣa)"
+    },
+    {
+      "tokens": ["anumāna", "anumana"],
+      "target": "inference/deductive",
+      "weight": 0.85,
+      "evidence": "Inference (anumāna)"
+    },
+    {
+      "tokens": ["upamāna", "upamana"],
+      "target": "comparison/resemblance",
+      "weight": 0.85,
+      "evidence": "Comparison (upamāna)"
+    },
+    {
+      "tokens": ["arthāpatti", "arthapatti"],
+      "target": "postulation/ibe",
+      "weight": 0.85,
+      "evidence": "Postulation (arthāpatti)"
+    },
+    {
+      "tokens": ["anupalabdhi", "anupalabhi"],
+      "target": "non-apprehension/absolute",
+      "weight": 0.85,
+      "evidence": "Non-apprehension (anupalabdhi)"
+    },
+    {
+      "tokens": ["smṛti", "smrti", "smriti"],
+      "target": "memory/episodic",
+      "weight": 0.80,
+      "evidence": "Memory (smṛti)"
+    },
+    {
+      "tokens": ["وحي", "al-waḥy", "al-wahy", "al-wahi"],
+      "target": "revelation/recited",
+      "weight": 0.85,
+      "evidence": "Revelation (al-waḥy)"
+    },
+    {
+      "tokens": ["إلهام", "ilhām", "ilham"],
+      "target": "inspiration/ilham",
+      "weight": 0.80,
+      "evidence": "Inspiration (al-ilhām)"
+    },
+    {
+      "tokens": ["كشف", "kashf"],
+      "target": "inspiration/kashf",
+      "weight": 0.80,
+      "evidence": "Mystical unveiling (kashf)"
+    },
+    {
+      "tokens": ["فطرة", "fiṭrah", "fitrah", "fitra"],
+      "target": "innate-disposition/primordial",
+      "weight": 0.80,
+      "evidence": "Primordial disposition (al-fiṭrah)"
+    }
+  ],
+
+  "vertical": [
+    {
+      "tokens": ["I doubt", "I'm not sure", "I am not sure", "I'm uncertain", "أشكّ", "أشك", "في شك", "غير متأكد"],
+      "target": "epistemic-states/doubt",
+      "weight": 0.85,
+      "evidence": "First-person doubt marker"
+    },
+    {
+      "tokens": ["I'm certain", "I am certain", "متأكد", "يقين", "يَقين"],
+      "target": "epistemic-states/certainty",
+      "weight": 0.85,
+      "evidence": "First-person certainty marker"
+    },
+    {
+      "tokens": ["I believe", "I think that", "أعتقد", "أظن"],
+      "target": "epistemic-states/belief/occurrent",
+      "weight": 0.80,
+      "evidence": "First-person belief marker"
+    },
+    {
+      "tokens": ["علم اليقين", "ʿilm al-yaqīn", "ilm al-yaqin"],
+      "target": "epistemic-states/certainty/religious/ilm-al-yaqin",
+      "weight": 0.90,
+      "evidence": "Knowledge of certainty (ʿilm al-yaqīn)"
+    },
+    {
+      "tokens": ["عين اليقين", "ʿayn al-yaqīn", "ayn al-yaqin"],
+      "target": "epistemic-states/certainty/religious/ayn-al-yaqin",
+      "weight": 0.90,
+      "evidence": "Eye of certainty (ʿayn al-yaqīn)"
+    },
+    {
+      "tokens": ["حق اليقين", "ḥaqq al-yaqīn", "haqq al-yaqin"],
+      "target": "epistemic-states/certainty/religious/haqq-al-yaqin",
+      "weight": 0.90,
+      "evidence": "Truth of certainty (ḥaqq al-yaqīn)"
+    }
+  ],
+
+  "regex_horizontal": [
+    {
+      "_comment": "ISBN — book citation, almost always testimony/scriptural",
+      "pattern": "(?i)isbn[\\s:]*[\\d-]{10,17}",
+      "target": "testimony/scriptural",
+      "weight": 0.85,
+      "evidence": "ISBN citation"
+    },
+    {
+      "_comment": "DOI — academic paper",
+      "pattern": "(?i)\\b10\\.\\d{4,9}/[\\w./()-]+",
+      "target": "testimony/scriptural",
+      "weight": 0.85,
+      "evidence": "DOI citation"
+    },
+    {
+      "_comment": "Quoted block — markdown blockquote",
+      "pattern": "(?m)^> +\\S",
+      "target": "testimony/direct-witness",
+      "weight": 0.70,
+      "evidence": "Quoted passage"
+    }
+  ]
+}

@@ -507,6 +507,10 @@ pub fn sources_get_for_note(
 ///
 /// Also clears any pending classifier suggestion for the note (the
 /// user has spoken; no need to surface a suggestion they'll override).
+///
+/// MIG-021v2 §1G2': records every override in the per-library
+/// correction log (NDJSON). Best-effort — log failures don't block
+/// the user's save.
 #[tauri::command]
 pub fn sources_set_manual(
     app: tauri::AppHandle,
@@ -523,10 +527,29 @@ pub fn sources_set_manual(
         }
     }
 
+    // ── Snapshot the prior suggestion BEFORE we overwrite it, so the
+    //    correction log can capture predicted vs corrected. ──
+    let (prior_horizontal, prior_tier) = {
+        let search_state = app.state::<crate::search::SearchState>();
+        let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
+        let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
+        match read_suggestions(conn, &note_path)? {
+            Some(rec) => (
+                rec.suggestions
+                    .iter()
+                    .filter(|s| s.axis == "horizontal")
+                    .map(|s| s.source.clone())
+                    .collect::<Vec<_>>(),
+                rec.classifier_tier,
+            ),
+            None => (Vec::new(), 0),
+        }
+    };
+
     // 1. Write frontmatter to disk (canonical store).
     rewrite_note_sources_on_disk(&note_path, &sources)?;
 
-    // 2. Update note_meta.sources mirror.
+    // 2. Update note_meta.sources mirror + clear suggestion.
     {
         let search_state = app.state::<crate::search::SearchState>();
         let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
@@ -534,8 +557,28 @@ pub fn sources_set_manual(
             .as_ref()
             .ok_or("Search database not initialized")?;
         write_sources_to_db(conn, &note_path, &sources)?;
-        // 3. Clear any pending suggestion (consumed by user action).
         clear_suggestions(conn, &note_path)?;
+    }
+
+    // 3. Log the correction (best-effort; non-blocking).
+    if !prior_horizontal.is_empty() || !sources.is_empty() {
+        let libs = crate::libraries::list_libraries(app.clone());
+        let pairs: Vec<(String, String)> = libs
+            .into_iter()
+            .map(|l| (l.id, l.path))
+            .collect();
+        if let Some(lib_root) =
+            crate::classifier::correction_log::library_root_for_note(&pairs, &note_path)
+        {
+            crate::classifier::correction_log::log_correction(
+                &lib_root,
+                &note_path,
+                "horizontal",
+                &prior_horizontal,
+                &sources,
+                prior_tier,
+            );
+        }
     }
 
     Ok(())
@@ -918,11 +961,49 @@ pub fn content_type_set_manual(
             return Err(format!("Unknown content_type ID: {}", s));
         }
     }
+
+    // Snapshot prior vertical suggestion for the correction log.
+    let (prior_vertical, prior_tier) = {
+        let search_state = app.state::<crate::search::SearchState>();
+        let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
+        let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
+        match read_suggestions(conn, &note_path)? {
+            Some(rec) => (
+                rec.suggestions
+                    .iter()
+                    .filter(|s| s.axis == "vertical")
+                    .map(|s| s.source.clone())
+                    .collect::<Vec<_>>(),
+                rec.classifier_tier,
+            ),
+            None => (Vec::new(), 0),
+        }
+    };
+
     rewrite_note_content_type_on_disk(&note_path, &content_type)?;
     let search_state = app.state::<crate::search::SearchState>();
     let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
     let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
     write_content_type_to_db(conn, &note_path, &content_type)?;
+    drop(db_guard);
+
+    // Log the correction (best-effort; non-blocking).
+    if !prior_vertical.is_empty() || !content_type.is_empty() {
+        let libs = crate::libraries::list_libraries(app.clone());
+        let pairs: Vec<(String, String)> = libs.into_iter().map(|l| (l.id, l.path)).collect();
+        if let Some(lib_root) =
+            crate::classifier::correction_log::library_root_for_note(&pairs, &note_path)
+        {
+            crate::classifier::correction_log::log_correction(
+                &lib_root,
+                &note_path,
+                "vertical",
+                &prior_vertical,
+                &content_type,
+                prior_tier,
+            );
+        }
+    }
     Ok(())
 }
 
