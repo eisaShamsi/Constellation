@@ -355,3 +355,58 @@ One-line edit in `orchestrator.rs::cataloger_timeout`: move Linguistic from the 
 Per-cataloger timeout budgets need to scale with the cataloger's **worst-case** latency on its target inputs, not its typical latency on tiny test fixtures. The original r4.4 budget table was sized against the cataloger's typical fast-path microsecond latency — it didn't account for Linguistic's intentionally-slow Arabic-specific paths. The next cataloger added to the ensemble must declare its slow-path latency explicitly and the orchestrator's `cataloger_timeout` mapping must reflect it.
 
 Without the Boss-test, this regression would have shipped invisibly. The cataloger that's *supposed* to do the heavy lifting on technical Arabic content was silently disabled on exactly the use case it was built for. Eisa's "review/audit before claiming PASS" instinct caught its second target in 24 hours.
+
+---
+
+## V3-§8.r7 — Two Gate-1 follow-ups closed (this commit)
+
+Gate 1 PASSed on the r6 build, with two deferred Boss-test follow-ups. Eisa: *"Let's work on the two issues before moving on."* Both fixed in r7 + 5 new unit tests.
+
+### Issue #1 — Approve All confirm dialog math wrong on UA-short-circuited cards
+
+**Symptom:** dialog said "0 agreed / 2 split" on a queue with one Unanimous (UA short-circuit) + one Split card. Per-card pill correctly identified the first as Unanimous. The two filters disagreed.
+
+**Investigation:**
+1. Wrote a Rust JSON-shape diagnostic test (`synthesis::tests::ua_short_circuit_serializes_both_regimes_as_unanimous`) — feeds UA-voiced + 3 disagreeing catalogers into `synthesize()`, serializes the result, asserts both axes' `regime` field in the JSON is exactly the lowercase string `"unanimous"`. **Test passes.** Synthesis is correct.
+2. Verified the IPC return path (`classifier_suggest_for_note`) returns the same composite via `serde_json::to_string(&composite)`.
+3. Verified the DB write (`write_suggestions_with_composite`) stores `composite_json = excluded.composite_json` on conflict (overwrites correctly).
+4. Verified the frontend parse (`parseComposite`) is plain `JSON.parse` of `record.composite_json`.
+
+Couldn't reproduce the discrepancy in isolation. The bug is/was somewhere in the round-trip that's not visible from code reading alone (possibly an IPC serialization quirk on the way back, or a caching issue with `{@const}` reactivity in Svelte 5).
+
+**Fix (robust, not root-cause):** introduced a semantic helper `cardNeedsUserCall(record)` that returns true iff at least one axis's `needs_user_disambiguation_between` array is populated. The synthesis layer only populates this array when `regime == Split` (`synthesis.rs:268-272`); UA short-circuit explicitly sets it to `None` on both axes (`synthesis.rs:136, 153`). So checking the array is **equivalent to** checking the regime in the correct case AND **robust against** any serialization edge case that left the regime field misformatted.
+
+Per-card pill (`isSplit`), queue chip (`splitCount`), and bulk-confirm dialog (`splitAwareSkipCount`) all now route through the same helper — guarantees they agree forever. If they ever disagree again, the bug is in `cardNeedsUserCall` itself, not in three separate filter call sites.
+
+### Issue #2 — Disambig chip discarded the settled other-axis value
+
+**Symptom:** Eisa's `Auteur theory` test had horizontal=Split, vertical=Unanimous on `epistemic-states/illusion`. Picking the SOURCE chip wrote only `sources:` to frontmatter. The settled vertical value was silently lost. Architect's intended per-axis surgical behavior, but UX-lossy.
+
+**Fix:** extended `cece_resolve_disambiguation` IPC handler:
+1. Before writing the user's pick, read the row's `composite_json` from the DB.
+2. Call `extract_other_axis_settled(composite_json, picked_axis)` — returns the OTHER axis's primary if (a) the JSON is parseable, (b) the other axis is NOT Split (no `needs_user_disambiguation_between`), and (c) the primary string is non-empty.
+3. Write the user's pick (existing behavior) — this also clears the suggestion row.
+4. If `extract_other_axis_settled` returned a value, also write the OTHER axis via the matching IPC. Best-effort (ignored on failure — the user's primary pick already landed).
+
+Defensive: malformed JSON / missing fields / Split-on-both-axes → falls back to the original surgical behavior (write only the picked axis). 5 unit tests cover the cases:
+- `extracts_vertical_primary_when_horizontal_picked`
+- `returns_none_when_other_axis_is_also_split`
+- `extracts_horizontal_primary_when_vertical_picked`
+- `returns_none_on_malformed_json` (3 sub-cases: not JSON, empty object, missing axis)
+- `returns_none_when_other_axis_primary_is_null`
+
+### Files touched in r7
+
+- `src-tauri/src/cece/synthesis.rs` — added the JSON-shape diagnostic test (66 → 67 cece tests pass)
+- `src-tauri/src/classifier/mod.rs` — extended `cece_resolve_disambiguation` + added `extract_other_axis_settled` helper + 5 unit tests
+- `src/lib/components/SourceReviewPanel.svelte` — added `cardNeedsUserCall` helper, routed 3 filter sites through it (`isSplit` / `splitCount` / `splitAwareSkipCount`)
+- `docs/Constellation Orientation & Onboarding v1.88.md` — new orientation file documenting r7
+- `lab/reports/SESSION-LOG-2026-05-10.md` — this entry
+
+### Build
+
+NSIS `Constellation_0.3.4_x64-setup.exe` rebuilt. Eisa to verify both fixes against the previous reproduction scenarios.
+
+### Lesson worth carrying
+
+When a discrepancy between two filters using "the same logic" can't be root-caused from code reading, **route them through a single helper function**. Three independent call sites that "should agree" are three places where they can drift apart — combining them into one helper closes the bug class permanently and makes any future drift a single-file edit. The semantic-property-vs-string-match angle (`needs_user_disambiguation_between` array vs `regime === 'split'` string) was an additional robustness layer — checking the consequence of the regime rather than the regime field itself is more resilient to future serialization changes.

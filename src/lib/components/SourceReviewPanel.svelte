@@ -78,6 +78,35 @@
     }
   }
 
+  /**
+   * V3-§8.r7 Issue #1 fix — does this card actually need the user's call?
+   *
+   * The Gate 1 Boss-test 2026-05-10 surfaced a discrepancy: the per-card
+   * pill correctly detected UA-short-circuited cards as Unanimous, but
+   * the queue-level `splitCount` (which used `regime === 'split'`) was
+   * including the same card as Split. Confirmed via a Rust test that the
+   * synthesis output has `regime: "unanimous"` for both axes when UA
+   * short-circuits — so the bug is/was somewhere in the data round-trip
+   * that I couldn't reproduce in isolation.
+   *
+   * Robust fix: filter on the SEMANTIC PROPERTY (was the user asked to
+   * disambiguate?) rather than the regime string. The synthesis layer
+   * only populates `needs_user_disambiguation_between` when regime ==
+   * Split (`synthesis.rs:268-272`). UA short-circuit explicitly sets
+   * both axes' `needs_user_disambiguation_between` to None
+   * (`synthesis.rs:136, 153`). So if either axis has a populated
+   * disambiguation array, the user must pick — full stop. Robust against
+   * any serialization weirdness in the regime field.
+   */
+  function cardNeedsUserCall(record: SuggestionRecord): boolean {
+    const c = parseComposite(record);
+    if (!c) return false;
+    const hNeed = c.horizontal.needs_user_disambiguation_between;
+    const vNeed = c.vertical.needs_user_disambiguation_between;
+    return (Array.isArray(hNeed) && hNeed.length > 0)
+        || (Array.isArray(vNeed) && vNeed.length > 0);
+  }
+
   /** Per-cataloger badge state for the header cluster. */
   function catalogerBadgeStatus(
     composite: CompositeAssignment | null,
@@ -510,12 +539,12 @@
    * V3-§8.r5.5 — Count of cards that the Split-aware Approve All would skip.
    * Used to show "Approve all (N eligible, M will stay for your call)" in
    * the confirm dialog so the user understands what's about to happen.
+   *
+   * V3-§8.r7 — uses the robust cardNeedsUserCall helper so this stays
+   * consistent with the per-card pill and the queue-level chip.
    */
   let splitAwareSkipCount = $derived.by(() => {
-    return queue.filter(r => {
-      const c = parseComposite(r);
-      return c && (c.horizontal.regime === 'split' || c.vertical.regime === 'split');
-    }).length;
+    return queue.filter(cardNeedsUserCall).length;
   });
 
   async function cancelBulkAccept() {
@@ -653,10 +682,7 @@
       </div>
     </div>
   {:else}
-    {@const splitCount = queue.filter(r => {
-      const c = parseComposite(r);
-      return c && (c.horizontal.regime === 'split' || c.vertical.regime === 'split');
-    }).length}
+    {@const splitCount = queue.filter(cardNeedsUserCall).length}
     {#if trustCalActive}
       <!-- V3-§8.r5.3 — trust-calibration banner. Quiet but persistent
            reminder that reasoning trails are auto-expanded so the user
@@ -766,8 +792,8 @@
         {@const horizontalSuggestions = record.suggestions.filter(s => s.axis === 'horizontal')}
         {@const verticalSuggestions = record.suggestions.filter(s => s.axis === 'vertical')}
         {@const composite = parseComposite(record)}
-        {@const isSplit = composite && (composite.horizontal.regime === 'split' || composite.vertical.regime === 'split')}
-        {@const isStrongMajority = composite && (composite.horizontal.regime === 'strong_majority' || composite.vertical.regime === 'strong_majority')}
+        {@const isSplit = cardNeedsUserCall(record)}
+        {@const isStrongMajority = composite && !isSplit && (composite.horizontal.regime === 'strong_majority' || composite.vertical.regime === 'strong_majority')}
         {@const showTrail = isTrailOpen(record.note_path, !!composite)}
         <li class="srp-card"
             class:srp-just-added={highlightedPath === record.note_path}

@@ -218,6 +218,17 @@ fn library_root_for_note(app: &tauri::AppHandle, note_path: &str) -> Option<Stri
 ///
 /// `axis` is "horizontal" or "vertical"; `chosen_id` must be a valid
 /// taxonomy ID for that axis (validated downstream by sources::*).
+///
+/// V3-§8.r7 Issue #2 (Boss-test 2026-05-10) — also auto-write the
+/// OTHER axis's settled primary when that axis is not Split. Rationale:
+/// the previous behavior was per-axis surgical, which lost data when
+/// only one axis was Split. Example: Auteur theory had horizontal=Split
+/// and vertical=Unanimous on `epistemic-states/illusion`; picking the
+/// SOURCE chip wrote only `sources:` and silently discarded the
+/// settled `epistemic-states/illusion` vertical value. Now we read
+/// the composite_json before writing, identify the other axis's
+/// primary if the other axis is not Split, and write both axes
+/// in sequence.
 #[tauri::command]
 pub fn cece_resolve_disambiguation(
     app: tauri::AppHandle,
@@ -225,14 +236,146 @@ pub fn cece_resolve_disambiguation(
     axis: String,
     chosen_id: String,
 ) -> Result<(), String> {
+    // Read the composite_json from the suggestion row BEFORE the
+    // disambig write clears it, so we know what to auto-write on the
+    // other axis. Best-effort — if the row is gone or composite is
+    // missing, fall back to the surgical (single-axis) behavior.
+    let other_axis_settled: Option<String> = {
+        let search_state = app.state::<crate::search::SearchState>();
+        let db_guard = search_state
+            .db
+            .lock()
+            .map_err(|e| format!("DB lock: {}", e))?;
+        let conn = db_guard
+            .as_ref()
+            .ok_or("Search database not initialized")?;
+        let row: Option<Option<String>> = conn
+            .query_row(
+                "SELECT composite_json FROM sources_suggestions WHERE note_path = ?1",
+                rusqlite::params![&note_path],
+                |r| r.get::<_, Option<String>>(0),
+            )
+            .ok();
+        row.flatten()
+            .and_then(|json| extract_other_axis_settled(&json, &axis))
+    };
+
+    // Apply the user's pick on the disambiguated axis. This call
+    // also clears the suggestion row.
     match axis.as_str() {
         "horizontal" => {
-            crate::sources::sources_set_manual(app, note_path, vec![chosen_id])
+            crate::sources::sources_set_manual(app.clone(), note_path.clone(), vec![chosen_id])?;
         }
         "vertical" => {
-            crate::sources::content_type_set_manual(app, note_path, vec![chosen_id])
+            crate::sources::content_type_set_manual(app.clone(), note_path.clone(), vec![chosen_id])?;
         }
-        other => Err(format!("Unknown axis: {}", other)),
+        other => return Err(format!("Unknown axis: {}", other)),
+    }
+
+    // Also write the other axis's settled primary, if it had one.
+    // The suggestion row is already cleared above; this just writes
+    // the frontmatter + DB mirror.
+    if let Some(other_id) = other_axis_settled {
+        match axis.as_str() {
+            "horizontal" => {
+                let _ = crate::sources::content_type_set_manual(app, note_path, vec![other_id]);
+            }
+            "vertical" => {
+                let _ = crate::sources::sources_set_manual(app, note_path, vec![other_id]);
+            }
+            _ => {}
+        }
+    }
+
+    Ok(())
+}
+
+/// V3-§8.r7 — Parse the composite JSON to extract the OTHER axis's
+/// primary, but ONLY if that other axis is settled (not Split).
+/// Used by `cece_resolve_disambiguation` to auto-write data the user
+/// didn't have to pick.
+///
+/// Defensive: returns None on any parse error, missing field, or if
+/// the other axis is Split (in which case the user has separate
+/// chips for that axis and shouldn't have it auto-written).
+fn extract_other_axis_settled(composite_json: &str, picked_axis: &str) -> Option<String> {
+    let value: serde_json::Value = serde_json::from_str(composite_json).ok()?;
+    let other_key = match picked_axis {
+        "horizontal" => "vertical",
+        "vertical" => "horizontal",
+        _ => return None,
+    };
+    let other = value.get(other_key)?;
+    // Only auto-write if the other axis is NOT Split. Use the same
+    // semantic check as the frontend's cardNeedsUserCall: a Split
+    // axis is one with a populated needs_user_disambiguation_between
+    // array.
+    let needs_disambig = other
+        .get("needs_user_disambiguation_between")
+        .and_then(|v| v.as_array())
+        .map(|a| !a.is_empty())
+        .unwrap_or(false);
+    if needs_disambig {
+        return None;
+    }
+    let primary = other.get("primary")?.as_str()?;
+    if primary.is_empty() {
+        return None;
+    }
+    Some(primary.to_string())
+}
+
+#[cfg(test)]
+mod r7_tests {
+    use super::extract_other_axis_settled;
+
+    #[test]
+    fn extracts_vertical_primary_when_horizontal_picked() {
+        let json = r#"{
+            "horizontal":{"primary":"testimony/authoritative","regime":"split","needs_user_disambiguation_between":["a","b"]},
+            "vertical":{"primary":"epistemic-states/illusion","regime":"unanimous","needs_user_disambiguation_between":null}
+        }"#;
+        assert_eq!(
+            extract_other_axis_settled(json, "horizontal"),
+            Some("epistemic-states/illusion".to_string())
+        );
+    }
+
+    #[test]
+    fn returns_none_when_other_axis_is_also_split() {
+        let json = r#"{
+            "horizontal":{"primary":"a","regime":"split","needs_user_disambiguation_between":["a","b"]},
+            "vertical":{"primary":"x","regime":"split","needs_user_disambiguation_between":["x","y"]}
+        }"#;
+        assert!(extract_other_axis_settled(json, "horizontal").is_none());
+    }
+
+    #[test]
+    fn extracts_horizontal_primary_when_vertical_picked() {
+        let json = r#"{
+            "horizontal":{"primary":"testimony/authoritative","regime":"unanimous","needs_user_disambiguation_between":null},
+            "vertical":{"primary":"x","regime":"split","needs_user_disambiguation_between":["x","y"]}
+        }"#;
+        assert_eq!(
+            extract_other_axis_settled(json, "vertical"),
+            Some("testimony/authoritative".to_string())
+        );
+    }
+
+    #[test]
+    fn returns_none_on_malformed_json() {
+        assert!(extract_other_axis_settled("not json", "horizontal").is_none());
+        assert!(extract_other_axis_settled("{}", "horizontal").is_none());
+        assert!(extract_other_axis_settled(r#"{"horizontal":{}}"#, "vertical").is_none());
+    }
+
+    #[test]
+    fn returns_none_when_other_axis_primary_is_null() {
+        let json = r#"{
+            "horizontal":{"primary":null,"regime":"unanimous","needs_user_disambiguation_between":null},
+            "vertical":{"primary":"x","regime":"split","needs_user_disambiguation_between":["x"]}
+        }"#;
+        assert!(extract_other_axis_settled(json, "vertical").is_none());
     }
 }
 

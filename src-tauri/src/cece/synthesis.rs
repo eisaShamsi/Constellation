@@ -433,6 +433,42 @@ mod tests {
     }
 
     #[test]
+    fn ua_short_circuit_serializes_both_regimes_as_unanimous() {
+        // V3-§8.r7 Issue #1 — Boss-test 2026-05-10 found that the Approve
+        // All confirm dialog counted UA-short-circuited cards as Split.
+        // The TS frontend filters on `regime === 'split'`. This test
+        // pins down what the JSON blob actually looks like for a UA
+        // short-circuit so we can prove the bug is (or isn't) on the
+        // synthesis side.
+        let trails = vec![
+            trail("user_authority", Some("testimony/authoritative"), None, Confidence::High),
+            trail("linguistic", Some("testimony/authoritative"), Some("epistemic-states/doubt"), Confidence::High),
+            trail("structural", Some("testimony/direct-witness"), Some("epistemic-states/doubt"), Confidence::High),
+            trail("semantic", Some("perception"), Some("epistemic-states/illusion"), Confidence::Medium),
+        ];
+        let r = ReliabilityProfile::default();
+        let result = synthesize(trails, &r);
+        let json = serde_json::to_string(&result).expect("must serialize");
+        eprintln!("===== UA-short-circuit JSON blob =====");
+        eprintln!("{}", json);
+        eprintln!("=====================================");
+        let parsed: serde_json::Value =
+            serde_json::from_str(&json).expect("must round-trip");
+        let h_regime = parsed["horizontal"]["regime"].as_str().unwrap_or("MISSING");
+        let v_regime = parsed["vertical"]["regime"].as_str().unwrap_or("MISSING");
+        eprintln!("horizontal.regime in JSON: {:?}", h_regime);
+        eprintln!("vertical.regime in JSON:   {:?}", v_regime);
+        assert_eq!(
+            h_regime, "unanimous",
+            "horizontal regime in JSON must be exactly the string \"unanimous\""
+        );
+        assert_eq!(
+            v_regime, "unanimous",
+            "vertical regime in JSON must be exactly the string \"unanimous\""
+        );
+    }
+
+    #[test]
     fn unanimous_regime_when_all_agree() {
         let trails = vec![
             trail("linguistic", Some("testimony"), None, Confidence::High),
