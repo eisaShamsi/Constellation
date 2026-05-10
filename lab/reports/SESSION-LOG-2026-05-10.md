@@ -321,3 +321,37 @@ Re-run V3-§8 Gate 1 Boss-test on the new build. Eisa should see (a) the new dot
 ### Self-caught BASIC-RULE near-miss during r5.2
 
 While drafting `ruleLabel()` I initially populated it with rule keys I had inferred from architectural docs (`frontmatter_authority`, `doi_match`, `bridge_concept_match`, `cosine_similarity_neighbor`, `llm_grammar_match`, etc. — 25 keys). Before committing I cross-checked against the actual `rules_fired.push(...)` call sites in the cataloger source — the catalogers emit a *different* set: `rule_of_authority` (UA), `structural_pattern_match` + `stance_or_form_marker` (Structural), `cae_root_match` + `surface_token_match` + `bridge_similarity` + `rule_of_side_channel_preference` (Linguistic), `typed_neighbor_consensus` + `rule_of_authority_control` (Graph), `semantic_neighbor_consensus` + `rule_of_authority_control` (Semantic), `schedule_navigation_top_down` + `gbnf_constrained` + `rule_of_application` (Reasoning). My speculative mapping would have produced de-snake-cased fallback chips ("Rule Of Authority", "Structural Pattern Match") for every single rule the catalogers actually emit — i.e. the friendly chip render layer would have done nothing. Caught + corrected before the commit. Required a second NSIS rebuild. The lesson: every rule key in a UI mapping must be verified against an actual `rules_fired.push(...)` grep in the cataloger source. Inferring from docs is fabrication when the code is right there.
+
+---
+
+## V3-§8.r6 — Linguistic timeout regression caught mid-Boss-test (this commit)
+
+During Stage 1 of the Gate 1 re-run on the freshly-installed r5 build, Eisa re-classified the `الخط العربي` note (~30K-character Arabic article) and observed the dot cluster showing **Linguistic silent** + trail summary reading *"Catalogers voiced: structural, semantic."*. Pre-r4 builds had Linguistic voicing on this same note with five CAE roots identified.
+
+### Diagnostic
+
+I asked Eisa to confirm the note body was unchanged (it was — paste of full content showed Quranic root vocabulary like بشر / مدد / سلم / علم / منن throughout). With content ruled out, the regression had to be in r1-r5.
+
+Quick read of `orchestrator.rs::cataloger_timeout` revealed Linguistic was grouped with `user_authority` and `structural` at **500ms** budget. The Linguistic cataloger's classify path:
+
+1. CAE root extraction (per-token, scales with content length)
+2. Lexicon surface-token regex matching (scans whole note)
+3. Bridge slow-path embedding similarity for unknown Arabic terms (embedding + cosine search)
+
+For a 30K-character Arabic note, the slow-path legitimately takes 600–1500ms. The 500ms budget fires `mpsc::recv_timeout`, `run_one_safe` returns `None`, and the orchestrator drops Linguistic entirely. Silent abstain — exactly what Eisa observed.
+
+### Fix
+
+One-line edit in `orchestrator.rs::cataloger_timeout`: move Linguistic from the 500ms cheap tier into the 2s medium tier alongside Graph + Semantic. Comment in code explains *why* the medium tier is correct ("CAE root extraction and Bridge slow-path embedding lookup scale with note length"). Regression test `linguistic_gets_medium_timeout_not_cheap` added to assert the tier; if a future change drifts Linguistic back to 500ms, CI catches it.
+
+### Files touched in r6
+
+- `src-tauri/src/cece/orchestrator.rs` — Linguistic timeout 500ms→2s + regression test
+- `docs/Constellation Orientation & Onboarding v1.87.md` — new orientation file documenting r6
+- `lab/reports/SESSION-LOG-2026-05-10.md` — this entry
+
+### Lesson worth carrying
+
+Per-cataloger timeout budgets need to scale with the cataloger's **worst-case** latency on its target inputs, not its typical latency on tiny test fixtures. The original r4.4 budget table was sized against the cataloger's typical fast-path microsecond latency — it didn't account for Linguistic's intentionally-slow Arabic-specific paths. The next cataloger added to the ensemble must declare its slow-path latency explicitly and the orchestrator's `cataloger_timeout` mapping must reflect it.
+
+Without the Boss-test, this regression would have shipped invisibly. The cataloger that's *supposed* to do the heavy lifting on technical Arabic content was silently disabled on exactly the use case it was built for. Eisa's "review/audit before claiming PASS" instinct caught its second target in 24 hours.

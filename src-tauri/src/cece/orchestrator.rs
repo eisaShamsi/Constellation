@@ -201,7 +201,16 @@ fn cataloger_timeout(name: &str) -> std::time::Duration {
     use std::time::Duration;
     match name {
         // Cheap microsecond catalogers — anything over 100ms is a hang.
-        "user_authority" | "structural" | "linguistic" => Duration::from_millis(500),
+        "user_authority" | "structural" => Duration::from_millis(500),
+        // Linguistic is normally cheap (regex + lexicon) but its CAE root
+        // extraction and Bridge slow-path embedding lookup scale with note
+        // length. On a 30K-character Arabic note the slow-path can
+        // legitimately take 600–1500ms. V3-§8.r6 (post-Gate-1 Boss-test
+        // 2026-05-10): moved from 500ms to 2s tier alongside Graph +
+        // Semantic. The original 500ms grouping was a silent-abstain
+        // regression — long Arabic notes had Linguistic dropped from the
+        // ensemble entirely. Caught on the الخط العربي Boss-test card.
+        "linguistic" => Duration::from_secs(2),
         // Medium DB-query catalogers — typical 30ms; allow 2s for cold cache.
         "graph" | "semantic" => Duration::from_secs(2),
         // Reasoning is LLM-bound — typical 1.5s; allow 5s for cold start.
@@ -303,6 +312,33 @@ mod tests {
         assert_eq!(trails.len(), 2);
         assert!(trails.iter().any(|t| t.cataloger == "panicker" && !t.voiced_opinion));
         assert!(trails.iter().any(|t| t.cataloger == "ok" && t.voiced_opinion));
+    }
+
+    #[test]
+    fn linguistic_gets_medium_timeout_not_cheap() {
+        // V3-§8.r6 regression — Linguistic was originally grouped with the
+        // 500ms cheap-tier catalogers, but its CAE root extraction +
+        // Bridge slow-path embedding lookup scale with note length. On a
+        // long Arabic note the slow-path can take 600–1500ms, which
+        // silently exceeded the 500ms budget and dropped Linguistic from
+        // the trail set entirely. Caught on the الخط العربي Boss-test
+        // card. Don't let it drift back.
+        use std::time::Duration;
+        assert_eq!(
+            cataloger_timeout("linguistic"),
+            Duration::from_secs(2),
+            "Linguistic must be in the 2s tier — see r6 fix"
+        );
+        assert_eq!(
+            cataloger_timeout("structural"),
+            Duration::from_millis(500),
+            "Structural stays in the 500ms cheap tier"
+        );
+        assert_eq!(
+            cataloger_timeout("user_authority"),
+            Duration::from_millis(500),
+            "User-Authority stays in the 500ms cheap tier"
+        );
     }
 
     #[test]
