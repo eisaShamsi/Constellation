@@ -829,6 +829,13 @@
       "strongMajority": "Strong majority (one dissent)",
       "split": "Catalogers split — needs your call"
     },
+    "confidence": {
+      "_comment": "MIG-022 §E.1 (PJ-042) — labels for the Confidence enum that catalogers self-report on each ReasoningTrail. Shown in [brackets] next to the cataloger name in the per-cataloger trail rows. Raw enum strings (high/medium/low/abstain) were previously rendered untranslated; confidenceLabel() in SourceReviewPanel now wraps with $t() fallback to the raw enum on missing key.",
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low",
+      "abstain": "Abstain"
+    },
     "trail": {
       "expand": "▸ Why this classification?",
       "collapse": "▾ Hide reasoning",

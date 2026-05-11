@@ -327,6 +327,23 @@
   }
 
   /**
+   * MIG-022 §E.1 (PJ-042, 2026-05-11) — translate the self-reported
+   * Confidence enum (`high` / `medium` / `low` / `abstain`) into the
+   * active locale. Falls back to the raw enum string on a missing
+   * key so an unexpected enum value never breaks rendering.
+   *
+   * The enum serializes from Rust's `cataloger.rs::Confidence` with
+   * `#[serde(rename_all = "lowercase")]`, so the raw values are always
+   * one of the four keys under `cece.confidence.*`.
+   */
+  function confidenceLabel(c: string): string {
+    const i18nKey = `cece.confidence.${c}`;
+    const translated = $t(i18nKey);
+    if (translated && translated !== i18nKey) return translated;
+    return c; // fallback to raw enum string on missing key
+  }
+
+  /**
    * V3-§8.r1.f — Sibling Disambiguation pick handler. Calls the new
    * cece_resolve_disambiguation IPC, then drops the resolved card
    * from the queue.
@@ -1022,7 +1039,7 @@
                           aria-hidden="true"
                         ></span>
                         <strong>{catalogerLabel(t.cataloger)}</strong>
-                        <span class="srp-trail-conf">[{t.self_reported_confidence}]</span>
+                        <span class="srp-trail-conf">[{confidenceLabel(t.self_reported_confidence)}]</span>
                       </div>
                       <div class="srp-trail-reasoning">{t.reasoning}</div>
                       <!-- V3-§8.r5.2 — translated rules_fired strip.

@@ -791,6 +791,12 @@
       "strongMajority": "Güçlü çoğunluk (bir muhalif)",
       "split": "Kataloglayıcılar bölündü — kararınız gerekli"
     },
+    "confidence": {
+      "high": "Yüksek",
+      "medium": "Orta",
+      "low": "Düşük",
+      "abstain": "Çekimser"
+    },
     "trail": {
       "expand": "▸ Bu sınıflandırma neden?",
       "collapse": "▾ Gerekçeyi gizle",

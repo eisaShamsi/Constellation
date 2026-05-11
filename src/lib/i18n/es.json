@@ -1949,6 +1949,12 @@
       "strongMajority": "Mayoría sólida (una discrepancia)",
       "split": "Catalogadores divididos — se necesita tu decisión"
     },
+    "confidence": {
+      "high": "Alta",
+      "medium": "Media",
+      "low": "Baja",
+      "abstain": "Abstención"
+    },
     "trail": {
       "expand": "▸ ¿Por qué esta clasificación?",
       "collapse": "▾ Ocultar razonamiento",

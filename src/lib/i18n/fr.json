@@ -1949,6 +1949,12 @@
       "strongMajority": "Forte majorité (une dissidence)",
       "split": "Catalogueurs divisés — votre décision est requise"
     },
+    "confidence": {
+      "high": "Élevée",
+      "medium": "Moyenne",
+      "low": "Faible",
+      "abstain": "Abstention"
+    },
     "trail": {
       "expand": "▸ Pourquoi cette classification ?",
       "collapse": "▾ Masquer le raisonnement",

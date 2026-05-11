@@ -791,6 +791,12 @@
       "strongMajority": "Maioria forte (uma divergência)",
       "split": "Catalogadores divididos — precisa da sua decisão"
     },
+    "confidence": {
+      "high": "Alta",
+      "medium": "Média",
+      "low": "Baixa",
+      "abstain": "Abstenção"
+    },
     "trail": {
       "expand": "▸ Por que esta classificação?",
       "collapse": "▾ Ocultar raciocínio",

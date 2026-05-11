@@ -1949,6 +1949,12 @@
       "strongMajority": "Starke Mehrheit (eine Gegenstimme)",
       "split": "Katalogisierer uneinig — deine Entscheidung ist nötig"
     },
+    "confidence": {
+      "high": "Hoch",
+      "medium": "Mittel",
+      "low": "Niedrig",
+      "abstain": "Enthaltung"
+    },
     "trail": {
       "expand": "▸ Warum diese Klassifizierung?",
       "collapse": "▾ Begründung ausblenden",

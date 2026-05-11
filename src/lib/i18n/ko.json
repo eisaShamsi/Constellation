@@ -791,6 +791,12 @@
       "strongMajority": "강한 다수 (1건 반대)",
       "split": "분류기 의견이 갈림 — 당신의 결정이 필요함"
     },
+    "confidence": {
+      "high": "높음",
+      "medium": "중간",
+      "low": "낮음",
+      "abstain": "기권"
+    },
     "trail": {
       "expand": "▸ 왜 이 분류인가?",
       "collapse": "▾ 추론 숨기기",

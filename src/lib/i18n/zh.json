@@ -791,6 +791,12 @@
       "strongMajority": "多数赞成(一项异议)",
       "split": "分类器意见分歧 — 需要你的判断"
     },
+    "confidence": {
+      "high": "高",
+      "medium": "中",
+      "low": "低",
+      "abstain": "弃权"
+    },
     "trail": {
       "expand": "▸ 为什么是这个分类?",
       "collapse": "▾ 隐藏推理",

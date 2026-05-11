@@ -791,6 +791,12 @@
       "strongMajority": "強い多数(1件の異議)",
       "split": "分類器の意見が分かれました — あなたの判断が必要です"
     },
+    "confidence": {
+      "high": "高",
+      "medium": "中",
+      "low": "低",
+      "abstain": "棄権"
+    },
     "trail": {
       "expand": "▸ なぜこの分類なのか?",
       "collapse": "▾ 推論を非表示",
