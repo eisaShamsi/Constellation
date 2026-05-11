@@ -12,6 +12,7 @@
 	import { downloadJSON, pickJSONFile } from '$lib/utils';
 	import IconOverrideSettings from './IconOverrideSettings.svelte';
 	import ArabicOverridesPanel from './ArabicOverridesPanel.svelte';
+	import PerLibraryCalibrationView from './PerLibraryCalibrationView.svelte';
 	import ConfirmDialog from './ConfirmDialog.svelte';
 	import { notifySettingsChanged } from '$lib/secondScreen';
 	import { aiSettings, updateAISettings, setProvider } from '$lib/ai/store';
@@ -630,6 +631,15 @@
 	function updateAIPrefs(partial: Record<string, unknown>) {
 		updateSettings({
 			ai: { ...($appSettings.ai ?? {}), ...partial }
+		} as any);
+	}
+
+	// MIG-021v3 V3-§10.A — CECE Settings (reasoning trail visibility,
+	// background scan trigger). Mirrors updateAIPrefs exactly — partial
+	// merge into the cece sub-object.
+	function updateCECEPrefs(partial: Record<string, unknown>) {
+		updateSettings({
+			cece: { ...($appSettings.cece ?? {}), ...partial }
 		} as any);
 	}
 
@@ -1819,6 +1829,73 @@
 							<option value="active">{$t('settings.intelligence.activeOnly')}</option>
 							<option value="none">{$t('settings.intelligence.noAccess')}</option>
 						</select>
+					</div>
+
+					<!-- MIG-021v3 V3-§10.A — Constellation Epistemic Content Engine
+					     section. Surfaces user controls for the cataloger ensemble
+					     (trail visibility, background scan trigger, per-Library
+					     calibration view of the V3-§9.C.2 reliability data) +
+					     honest status text for the Reasoning Cataloger model
+					     (deferred to V3-§7.b). -->
+					<div class="setting-section-heading">
+						{$t('cece.settings.heading') || 'Constellation Epistemic Content Engine'}
+					</div>
+					<p class="section-intro">
+						{$t('cece.settings.intro') || 'The cataloger ensemble that classifies your notes along Source × Content Type axes. Six lenses, each with its own evidence; the engine combines their votes into a synthesis. Local-only — no notes leave your device.'}
+					</p>
+
+					<!-- Reasoning Cataloger model status (read-only; download
+					     button disabled until V3-§7.b ships). -->
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('cece.settings.reasoningModel') || 'Reasoning Cataloger model'}</div>
+							<div class="setting-desc">
+								{$t('cece.settings.reasoningStatus') || "Not downloaded — local AI judgment lens deferred to V3-§7.b. When llama.cpp wiring ships, you'll be able to download Qwen3-4B Q5_K_M from this panel. All inference will run on your device — no notes ever leave it."}
+							</div>
+						</div>
+						<button class="test-btn" disabled>{$t('cece.settings.downloadDisabled') || 'Coming soon'}</button>
+					</div>
+
+					<!-- Reasoning trail visibility — three-way radio for the
+					     Source Review panel's auto-expand behavior. -->
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('cece.settings.trailVisibility') || 'Reasoning trail visibility'}</div>
+							<div class="setting-desc">{$t('cece.settings.trailVisibilityDesc') || 'When to auto-expand the per-cataloger reasoning trail on each Source Review card.'}</div>
+						</div>
+						<select class="setting-control"
+							value={$appSettings.cece?.reasoningTrailVisibility ?? 'on_disagreement'}
+							onchange={(e) => updateCECEPrefs({ reasoningTrailVisibility: (e.target as HTMLSelectElement).value as any })}>
+							<option value="always">{$t('cece.settings.trailAlways') || 'Always show'}</option>
+							<option value="on_disagreement">{$t('cece.settings.trailOnDisagreement') || 'On disagreement only (default)'}</option>
+							<option value="never">{$t('cece.settings.trailNever') || 'Always hide'}</option>
+						</select>
+					</div>
+
+					<!-- Background classification trigger — three-way radio. -->
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('cece.settings.backgroundScan') || 'Background classification'}</div>
+							<div class="setting-desc">{$t('cece.settings.backgroundScanDesc') || 'When to auto-classify notes that don\'t yet have sources or content type set. On-save uses the existing 1.5-second debounced save — typing stays instant.'}</div>
+						</div>
+						<select class="setting-control"
+							value={$appSettings.cece?.backgroundScan ?? 'off'}
+							onchange={(e) => updateCECEPrefs({ backgroundScan: (e.target as HTMLSelectElement).value as any })}>
+							<option value="off">{$t('cece.settings.scanOff') || 'Off — manual scan only (default)'}</option>
+							<option value="on_save">{$t('cece.settings.scanOnSave') || 'On note save (debounced)'}</option>
+							<option value="on_startup">{$t('cece.settings.scanOnStartup') || 'On app start'}</option>
+						</select>
+					</div>
+
+					<!-- Per-Library calibration view (collapsible). Read-only
+					     surface for the V3-§9.C.2 reliability data. -->
+					<div class="setting-item">
+						<details class="cece-calibration-details">
+							<summary class="cece-calibration-summary">
+								<span class="setting-name">{$t('cece.settings.calibrationHeading') || 'Per-Library calibration'}</span>
+							</summary>
+							<PerLibraryCalibrationView />
+						</details>
 					</div>
 
 				<!-- ═══ SECURITY ═══ -->

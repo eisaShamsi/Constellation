@@ -162,6 +162,19 @@
 					notePath: filePath,
 					libraryName: tab.libraryName,
 				}).catch(() => {});
+				// MIG-021v3 V3-§10.A — CECE background scan on save.
+				// When enabled in Settings, fire classifier_suggest_for_note
+				// after the disk write completes. This rides the existing
+				// 1500ms-debounced save cycle (handleSave is the on-save
+				// callback from NotePane's debouncedSaveTimer), so it
+				// inherits the same "type stays instant" guarantee — never
+				// fires per-keystroke.
+				if (get(appSettings).cece?.backgroundScan === 'on_save') {
+					invoke('classifier_suggest_for_note', { notePath: filePath })
+						.catch((err) => {
+							console.warn('[CECE on-save] classifier_suggest_for_note failed:', err);
+						});
+				}
 			})
 			.catch(() => {})
 			.finally(() => { saving = false; });

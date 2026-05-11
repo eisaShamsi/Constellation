@@ -214,6 +214,78 @@ pub fn record_correction(
     save(library_path, &p);
 }
 
+/// V3-§10.A — Read the active Library's reliability profile for UI
+/// display. Returns the entire ReliabilityProfile struct (which
+/// serializes to the same JSON shape as the on-disk file). The Source
+/// Review Settings panel converts the result to per-cataloger
+/// per-axis accuracy display rows.
+///
+/// "Active Library" is resolved as: if a note is currently open in
+/// NotePane, the Library that contains that note path. Otherwise,
+/// fall back to the first Library returned by `list_libraries`.
+/// Returns an empty default profile (no panic, no error) when no
+/// reliability JSON exists for the resolved Library yet — the UI
+/// renders an empty-state message in that case.
+///
+/// `note_path` is optional; the frontend passes the active note path
+/// when it has one, or null/empty otherwise.
+#[tauri::command]
+pub fn cece_get_reliability_for_active_library(
+    app: tauri::AppHandle,
+    note_path: Option<String>,
+) -> Result<ReliabilityProfile, String> {
+    let libs = crate::libraries::list_libraries(app.clone());
+    if libs.is_empty() {
+        return Ok(ReliabilityProfile::default());
+    }
+    // First try resolving via the active note path (most precise).
+    let lib_root = match note_path.as_deref().filter(|p| !p.is_empty()) {
+        Some(np) => {
+            let pairs: Vec<(String, String)> = libs
+                .iter()
+                .cloned()
+                .map(|l| (l.id, l.path))
+                .collect();
+            crate::classifier::correction_log::library_root_for_note(&pairs, np)
+                // Fall back to first Library when the note isn't under any
+                // registered Library (e.g. orphaned notes).
+                .or_else(|| libs.first().map(|l| l.path.clone()))
+        }
+        None => libs.first().map(|l| l.path.clone()),
+    };
+    match lib_root {
+        Some(root) => Ok(load_or_default(&root)),
+        None => Ok(ReliabilityProfile::default()),
+    }
+}
+
+/// V3-§10.A companion — return the resolved Library path so the UI can
+/// label the calibration view ("Active Library: arab-literature"). Same
+/// resolution logic as the reliability getter above.
+#[tauri::command]
+pub fn cece_get_active_library_root(
+    app: tauri::AppHandle,
+    note_path: Option<String>,
+) -> Result<Option<String>, String> {
+    let libs = crate::libraries::list_libraries(app.clone());
+    if libs.is_empty() {
+        return Ok(None);
+    }
+    let lib_root = match note_path.as_deref().filter(|p| !p.is_empty()) {
+        Some(np) => {
+            let pairs: Vec<(String, String)> = libs
+                .iter()
+                .cloned()
+                .map(|l| (l.id, l.path))
+                .collect();
+            crate::classifier::correction_log::library_root_for_note(&pairs, np)
+                .or_else(|| libs.first().map(|l| l.path.clone()))
+        }
+        None => libs.first().map(|l| l.path.clone()),
+    };
+    Ok(lib_root)
+}
+
 /// V3-§9.C — Update a Library's per-cataloger reliability based on
 /// the user's final correction.
 ///

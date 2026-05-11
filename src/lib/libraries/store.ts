@@ -3291,6 +3291,29 @@ export interface AppSettings {
 		libraryAccess?: 'all' | 'active' | 'none';
 		[key: string]: unknown;
 	};
+	/** MIG-021v3 V3-§10.A — Constellation Epistemic Content Engine
+	 *  user preferences. Defaults preserve pre-V3-§10 behavior:
+	 *  trail visibility = 'on_disagreement' (the trust-cal default
+	 *  + r5.3 fall-through behavior); background scan = 'off'
+	 *  (manual classification scan only). */
+	cece?: {
+		/** When to auto-expand the per-cataloger reasoning trail on
+		 *  Source Review cards.
+		 *  - 'always': open on every card
+		 *  - 'on_disagreement' (default): open on Split / Strong-
+		 *    Majority cards + during the first 50-review trust-cal
+		 *    period; collapsed otherwise
+		 *  - 'never': always collapsed (manual click required) */
+		reasoningTrailVisibility?: 'always' | 'on_disagreement' | 'never';
+		/** When to auto-trigger the classifier scan on notes that
+		 *  don't yet have sources/content_type set.
+		 *  - 'off' (default): manual scan only via Settings button
+		 *  - 'on_save': fire classifier_suggest_for_note when the
+		 *    NotePane debounced save fires (≥1500ms after typing)
+		 *  - 'on_startup': trigger classifier_scan_start once per
+		 *    app boot */
+		backgroundScan?: 'off' | 'on_save' | 'on_startup';
+	};
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {

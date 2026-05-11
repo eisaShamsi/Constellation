@@ -12,6 +12,7 @@
   import { onMount, onDestroy } from 'svelte';
   import { invoke } from '@tauri-apps/api/core';
   import { t, locale, type Locale } from '$lib/i18n';
+  import { appSettings } from '$lib/libraries/store';
   import TaxonomyTreePicker from '$lib/sources/TaxonomyTreePicker.svelte';
   import {
     getHorizontalTaxonomy,
@@ -237,10 +238,27 @@
     try { localStorage.setItem(TRUST_CAL_KEY, String(trustCalReviewedCount)); } catch {}
   }
   let trustCalActive = $derived(trustCalReviewedCount < TRUST_CAL_THRESHOLD);
+
+  /**
+   * V3-§10.A — Trail visibility now respects the user's Settings choice.
+   * Three-way toggle in Settings → Intelligence → CECE:
+   *   - 'always': open on every card regardless of regime
+   *   - 'on_disagreement' (default): pre-V3-§10 behavior (trust-cal +
+   *     Split/StrongMajority cards open by default)
+   *   - 'never': always collapsed unless user clicked the toggle
+   *
+   * Defaults to 'on_disagreement' when the cece sub-object is absent
+   * from saved settings (e.g. existing user upgrading from pre-V3-§10
+   * with no cece preferences).
+   */
   function isTrailOpen(notePath: string, hasComposite: boolean): boolean {
     if (expandedTrails.has(notePath)) return true;
-    // Default-open while still calibrating, but only for cards with a
-    // real trail to read (legacy cards have no trail).
+    const visibilityPref = $appSettings.cece?.reasoningTrailVisibility ?? 'on_disagreement';
+    if (visibilityPref === 'always' && hasComposite) return true;
+    if (visibilityPref === 'never') return false;
+    // 'on_disagreement' — preserve pre-V3-§10 behavior (trust-cal banner
+    // auto-opens, plus the per-card pill logic in the render layer
+    // handles Split/StrongMajority).
     return trustCalActive && hasComposite;
   }
 

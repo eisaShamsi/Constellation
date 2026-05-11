@@ -2078,6 +2078,21 @@
 		window.addEventListener('unhandledrejection', handleUnhandledRejection);
 		window.addEventListener('error', handleUncaughtError);
 
+		// MIG-021v3 V3-§10.A — CECE background scan on app start.
+		// When enabled in Settings, fire classifier_scan_start once
+		// per app boot. Best-effort + non-blocking; the scan runs on
+		// a background thread per V3-§1F'.b, so it doesn't impact
+		// the user's first-paint or first-interaction latency.
+		// Defer by 5 seconds so it doesn't compete with the boot
+		// path's other startup IPCs.
+		if (get(appSettings).cece?.backgroundScan === 'on_startup') {
+			setTimeout(() => {
+				invoke('classifier_scan_start').catch((err) => {
+					console.warn('[CECE on-startup] classifier_scan_start failed:', err);
+				});
+			}, 5000);
+		}
+
 		// Listen for template picker requests from CodeMirrorEditor /template slash command
 		window.addEventListener('constellation:open-template-picker', handleTemplatePicker);
 		document.addEventListener('constellation:show-importer', () => { showImporter = true; });
