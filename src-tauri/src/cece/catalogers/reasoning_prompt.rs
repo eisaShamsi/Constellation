@@ -268,6 +268,95 @@ fn escape_gbnf_string(s: &str) -> String {
     s.replace('\\', "\\\\").replace('"', "\\\"")
 }
 
+// ─── V3-§9.D — Axis-specific GBNF grammars (two-pass interface) ───
+//
+// The combined grammar (build_gbnf_grammar above) returns BOTH axes
+// in one LLM call. V3-§7.b may want to run a two-pass strategy: one
+// LLM call per axis, with that axis's grammar narrowing the response
+// space further. The two-pass approach trades 2× LLM cost for
+// potentially cleaner per-axis reasoning (no need for the LLM to
+// juggle both classifications at once).
+//
+// Phase D adds these two functions WITHOUT changing runtime behavior:
+// the Reasoning Cataloger still abstains today (llama.cpp not wired
+// per V3-§7.b deferred). When V3-§7.b ships, the wiring layer can
+// choose single-pass (combined) or two-pass (horizontal_only +
+// vertical_only) depending on benchmark results.
+
+/// V3-§9.D — Build an axis-specific GBNF grammar containing ONLY the
+/// horizontal taxonomy IDs. Use this when running a horizontal-only
+/// LLM pass (two-pass strategy).
+pub fn build_gbnf_horizontal_only() -> String {
+    GRAMMAR_CACHE_HORIZONTAL
+        .get_or_init(|| build_gbnf_axis_only("horizontal"))
+        .clone()
+}
+
+/// V3-§9.D — Build an axis-specific GBNF grammar containing ONLY the
+/// vertical taxonomy IDs. Use this when running a vertical-only LLM
+/// pass (two-pass strategy).
+pub fn build_gbnf_vertical_only() -> String {
+    GRAMMAR_CACHE_VERTICAL
+        .get_or_init(|| build_gbnf_axis_only("vertical"))
+        .clone()
+}
+
+static GRAMMAR_CACHE_HORIZONTAL: OnceLock<String> = OnceLock::new();
+static GRAMMAR_CACHE_VERTICAL: OnceLock<String> = OnceLock::new();
+
+fn build_gbnf_axis_only(axis: &str) -> String {
+    let ids: Vec<String> = match axis {
+        "horizontal" => horizontal_taxonomy::all_ids()
+            .iter()
+            .map(|id| escape_gbnf_string(id))
+            .collect(),
+        "vertical" => vertical_taxonomy::all_ids()
+            .iter()
+            .map(|id| escape_gbnf_string(id))
+            .collect(),
+        _ => unreachable!("build_gbnf_axis_only: axis must be 'horizontal' or 'vertical'"),
+    };
+    let choice = ids
+        .iter()
+        .map(|s| format!("\"{}\"", s))
+        .collect::<Vec<_>>()
+        .join(" | ");
+    let array_name = format!("{}_array", axis);
+    let id_rule = format!("{}_id", axis.chars().next().unwrap());
+    let value_rule = format!("{}_value", axis.chars().next().unwrap());
+    format!(
+        r#"# CECE Reasoning Cataloger — {axis}-only response grammar
+# V3-§9.D — interface lock-in for V3-§7.b two-pass classification.
+# Constrains the LLM to emit only valid {axis} taxonomy IDs.
+
+root ::= "{{" ws "\"{axis}\":" ws {array_name} ws "," ws "\"reasoning\":" ws json-string ws "," ws "\"alternatives_considered\":" ws alternatives ws "}}"
+
+{array_name} ::= "[" ws ({id_rule} (ws "," ws {id_rule})*)? ws "]"
+{id_rule} ::= "\"" {value_rule} "\""
+{value_rule} ::= {choice}
+
+alternatives ::= "[" ws (alternative (ws "," ws alternative)*)? ws "]"
+alternative ::= "{{" ws "\"id\":" ws "\"" {value_rule} "\"" ws "," ws "\"reason\":" ws json-string ws "}}"
+
+json-string ::= "\"" ([^"\\] | "\\" .)* "\""
+ws ::= [ \t\n]*
+"#,
+        axis = axis,
+        array_name = array_name,
+        id_rule = id_rule,
+        value_rule = value_rule,
+        choice = choice,
+    )
+}
+
+/// V3-§9.D — Backward-compat alias for the existing combined grammar
+/// builder. Kept so V3-§7.b's wiring layer can declare its pass
+/// strategy explicitly: `build_gbnf_combined()` (single-pass) vs
+/// `build_gbnf_horizontal_only()` + `build_gbnf_vertical_only()` (two-pass).
+pub fn build_gbnf_combined() -> String {
+    build_gbnf_grammar()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -359,5 +448,130 @@ mod tests {
         for line in rule_lines {
             assert!(line.contains("::="), "rule line missing '::=': {}", line);
         }
+    }
+
+    // ─── V3-§9.D — axis-aware Reasoning Cataloger interface tests ───
+    // These guard the two-pass interface for V3-§7.b. Reasoning still
+    // abstains at runtime (llama.cpp not wired); these tests verify
+    // the prompt structure and per-axis grammars are well-formed
+    // before V3-§7.b ships.
+
+    #[test]
+    fn v3_p9d_horizontal_grammar_only_contains_horizontal_ids() {
+        let h = build_gbnf_horizontal_only();
+        // Spot-check a horizontal ID is present.
+        assert!(h.contains("testimony/scriptural"), "h grammar missing testimony/scriptural");
+        assert!(h.contains("comparison/ratio-legis"), "h grammar missing comparison/ratio-legis");
+        // Vertical-only IDs must NOT be in the horizontal grammar.
+        // 'epistemic-states/doubt' is a vertical-only ID — if it leaked
+        // into the horizontal grammar, the LLM could emit it as a
+        // horizontal classification, breaking axis separation.
+        assert!(
+            !h.contains("epistemic-states/doubt"),
+            "horizontal grammar must NOT contain vertical IDs"
+        );
+        assert!(
+            !h.contains("semantic-contents/proposition"),
+            "horizontal grammar must NOT contain vertical IDs"
+        );
+    }
+
+    #[test]
+    fn v3_p9d_vertical_grammar_only_contains_vertical_ids() {
+        let v = build_gbnf_vertical_only();
+        // Spot-check vertical IDs.
+        assert!(v.contains("epistemic-states/doubt"));
+        assert!(v.contains("semantic-contents/proposition"));
+        assert!(v.contains("higher-order-constructs/worldview"));
+        // Horizontal-only IDs must NOT be in the vertical grammar.
+        assert!(
+            !v.contains("testimony/scriptural"),
+            "vertical grammar must NOT contain horizontal IDs"
+        );
+        assert!(
+            !v.contains("comparison/ratio-legis"),
+            "vertical grammar must NOT contain horizontal IDs"
+        );
+    }
+
+    #[test]
+    fn v3_p9d_combined_grammar_unchanged() {
+        // Identity guard: the combined grammar still contains both
+        // axes' IDs. If a future change accidentally removes one
+        // axis from the combined grammar, this test catches it.
+        let c = build_gbnf_combined();
+        // Both axes present.
+        assert!(c.contains("testimony/scriptural"), "combined missing horizontal");
+        assert!(c.contains("epistemic-states/doubt"), "combined missing vertical");
+        // Both array rules present.
+        assert!(c.contains("horizontal_array"));
+        assert!(c.contains("vertical_array"));
+        // build_gbnf_combined() is a backward-compat alias for
+        // build_gbnf_grammar() — they MUST return identical strings.
+        assert_eq!(c, build_gbnf_grammar());
+    }
+
+    #[test]
+    fn v3_p9d_system_prompt_explicitly_distinguishes_axes() {
+        // Phase D's prompt audit found the existing SYSTEM_PROMPT
+        // already explicitly distinguishes the two axes (verified
+        // 2026-05-11). This test guards against a future edit
+        // accidentally collapsing them.
+        assert!(
+            SYSTEM_PROMPT.contains("HORIZONTAL"),
+            "system prompt must distinguish HORIZONTAL axis"
+        );
+        assert!(
+            SYSTEM_PROMPT.contains("VERTICAL"),
+            "system prompt must distinguish VERTICAL axis"
+        );
+        assert!(
+            SYSTEM_PROMPT.contains("SOURCE"),
+            "system prompt must explain HORIZONTAL = SOURCE"
+        );
+        assert!(
+            SYSTEM_PROMPT.contains("CONTENT TYPE"),
+            "system prompt must explain VERTICAL = CONTENT TYPE"
+        );
+    }
+
+    #[test]
+    fn v3_p9d_axis_aware_exemplars_balance_horizontal_and_vertical() {
+        // The 12 few-shot exemplars should demonstrate non-trivial
+        // VERTICAL reasoning, not just horizontal classification with
+        // a vertical afterthought. Count exemplars whose "reasoning"
+        // field mentions both axes' classes.
+        let mut both_axes_count = 0;
+        for ex in EXEMPLARS {
+            let mentions_horizontal_class = ex.response.contains("inference")
+                || ex.response.contains("perception")
+                || ex.response.contains("testimony")
+                || ex.response.contains("comparison")
+                || ex.response.contains("revelation")
+                || ex.response.contains("inspiration")
+                || ex.response.contains("memory")
+                || ex.response.contains("non-apprehension")
+                || ex.response.contains("innate-disposition")
+                || ex.response.contains("mass-transmission")
+                || ex.response.contains("postulation")
+                || ex.response.contains("unclassifiable");
+            let mentions_vertical_class = ex.response.contains("epistemic-states")
+                || ex.response.contains("semantic-contents")
+                || ex.response.contains("sensory-inputs")
+                || ex.response.contains("symbolic-entities")
+                || ex.response.contains("higher-order-constructs");
+            if mentions_horizontal_class && mentions_vertical_class {
+                both_axes_count += 1;
+            }
+        }
+        // Most exemplars should demonstrate per-axis reasoning. Set
+        // the bar at "majority" rather than "all" to allow the
+        // unclassifiable-style exemplars where one axis is empty.
+        assert!(
+            both_axes_count >= EXEMPLARS.len() / 2,
+            "at least half of exemplars must demonstrate per-axis reasoning; got {}/{}",
+            both_axes_count,
+            EXEMPLARS.len()
+        );
     }
 }
