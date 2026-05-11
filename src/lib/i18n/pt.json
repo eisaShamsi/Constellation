@@ -746,6 +746,123 @@
     "skyView": "Sky View",
     "links": "Painel de Ligações"
   },
+  "cece": {
+    "_comment": "MIG-021v3 V3-§8.r1.e + r5 — CECE chrome. The catalog of six lenses + the synthesis-regime UI. Plain-English labels per UX agent recommendation. r5 added the dot-cluster, rule-label translations, and trust-calibration banner.",
+    "_translation_note": "Tradução gerada por IA; revisão por falante nativo pendente. Por favor, envie correções através do repositório do projeto.",
+    "cataloger": {
+      "user_authority": "Seu frontmatter",
+      "structural": "Citações e estrutura",
+      "linguistic": "Radicais e léxico",
+      "graph": "Notas vinculadas",
+      "semantic": "Notas semelhantes",
+      "reasoning": "Julgamento de IA"
+    },
+    "catalogerAbbr": {
+      "user_authority": "UA",
+      "structural": "EST",
+      "linguistic": "LIN",
+      "graph": "GRP",
+      "semantic": "SEM",
+      "reasoning": "RAC"
+    },
+    "catalogerStatus": {
+      "voiced": "{name}: concorda com a síntese",
+      "dissent": "{name}: discorda",
+      "silent": "{name}: silencioso (sem sinal nesta lente)"
+    },
+    "badge": {
+      "clusterTooltip": "Conjunto de catalogadores — passe o mouse sobre cada ponto para detalhes",
+      "statusAgrees": "concorda com a síntese",
+      "statusDissents": "discorda da síntese",
+      "statusSilent": "silencioso (sem sinal nesta lente)",
+      "legacy": "Legado",
+      "legacyTooltip": "Classificado antes da adição do conjunto de catalogadores — sem trilha por catalogador disponível"
+    },
+    "regime": {
+      "unanimous": "Unânime",
+      "unanimousTooltip": "Todos os catalogadores ativos concordaram com esta classificação",
+      "strongMajority": "Maioria forte (uma divergência)",
+      "split": "Catalogadores divididos — precisa da sua decisão"
+    },
+    "trail": {
+      "expand": "▸ Por que esta classificação?",
+      "collapse": "▾ Ocultar raciocínio",
+      "summary": "Resumo do raciocínio",
+      "perCataloger": "Por catalogador"
+    },
+    "rule": {
+      "_comment": "Friendly labels for `rules_fired` strings — V3-§8.r5.2. Keys below are the EXACT strings the six catalogers emit today, verified against user_authority.rs / structural.rs / linguistic.rs / graph.rs / semantic.rs / reasoning.rs as of 2026-05-10.",
+      "rule_of_authority": "Seu frontmatter é a autoridade",
+      "structural_pattern_match": "Padrão estrutural correspondido",
+      "stance_or_form_marker": "Marcador de postura/forma presente",
+      "cae_root_match": "Correspondência de raiz árabe (CAE)",
+      "surface_token_match": "Correspondência de palavra-chave de superfície",
+      "bridge_similarity": "Similaridade entre línguas (Bridge)",
+      "rule_of_side_channel_preference": "Regra de preferência por canal lateral",
+      "typed_neighbor_consensus": "Consenso de vizinhos com link tipado",
+      "semantic_neighbor_consensus": "Vizinhos classificados semelhantes concordam",
+      "rule_of_authority_control": "Regra de controle de autoridade",
+      "schedule_navigation_top_down": "Navegação taxonômica de cima para baixo",
+      "gbnf_constrained": "Julgamento de IA (restrito por gramática)",
+      "rule_of_application": "Desambiguação entre uso e menção"
+    },
+    "trustCal": {
+      "banner": "Mostrando trilhas de raciocínio até você revisar mais {N} cartões — ajuda a aprender quando confiar nos catalogadores.",
+      "tooltip": "As trilhas de raciocínio são exibidas por padrão enquanto você desenvolve uma noção de como os catalogadores chegam às suas classificações. Este banner desaparece após 50 revisões."
+    },
+    "queueSplit": {
+      "label": "{N} precisam da sua decisão",
+      "tooltip": "Cartões em que os catalogadores divergiram — sua decisão é necessária"
+    },
+    "queueFilter": {
+      "_comment": "V3-§8.r8 — composition filter chip row above the queue. Slices the rendered list by what kind of decision each card needs from the user.",
+      "ariaLabel": "Filtrar a fila de revisão por composição",
+      "all": "Todos",
+      "both": "Ambos os eixos precisam da sua decisão",
+      "source": "Origem precisa da sua decisão",
+      "contentType": "Tipo de conteúdo precisa da sua decisão",
+      "agreed": "Catalogadores concordaram",
+      "emptyBucket": "Nenhum cartão corresponde a este filtro.",
+      "showAll": "Mostrar todos os cartões"
+    },
+    "settings": {
+      "_comment": "V3-§10.A — Settings UI section for the Constellation Epistemic Content Engine. Surfaces user controls for trail visibility, background scan trigger, and the per-Library calibration view of the V3-§9.C.2 reliability data.",
+      "heading": "Motor de Conteúdo Epistêmico Constellation",
+      "intro": "O conjunto de catalogadores que classifica suas notas pelos eixos Origem × Tipo de Conteúdo. Seis lentes, cada uma com suas próprias evidências; o motor combina seus votos em uma síntese. Apenas local — nenhuma nota sai do seu dispositivo.",
+      "reasoningModel": "Modelo do Catalogador de Raciocínio",
+      "reasoningStatus": "Não baixado — lente de julgamento por IA local adiada para V3-§7.b. Quando a integração do llama.cpp for entregue, você poderá baixar Qwen3-4B Q5_K_M neste painel. Toda a inferência será executada no seu dispositivo — nenhuma nota o deixará jamais.",
+      "downloadDisabled": "Em breve",
+      "trailVisibility": "Visibilidade da trilha de raciocínio",
+      "trailVisibilityDesc": "Quando expandir automaticamente a trilha de raciocínio por catalogador em cada cartão de Revisão de Origem.",
+      "trailAlways": "Sempre mostrar",
+      "trailOnDisagreement": "Apenas em discordância (padrão)",
+      "trailNever": "Sempre ocultar",
+      "backgroundScan": "Classificação em segundo plano",
+      "backgroundScanDesc": "Quando classificar automaticamente as notas que ainda não têm origem ou tipo de conteúdo definido. Ao salvar usa o salvamento debounced de 1,5 segundo existente — a digitação permanece instantânea.",
+      "scanOff": "Desativado — apenas escaneamento manual (padrão)",
+      "scanOnSave": "Ao salvar nota (debounced)",
+      "scanOnStartup": "Na inicialização do app",
+      "calibrationHeading": "Calibração por Biblioteca",
+      "calibrationLoading": "Carregando dados de calibração…",
+      "calibrationError": "Não foi possível carregar os dados de calibração",
+      "calibrationEmpty": "Nenhuma correção registrada ainda nesta Biblioteca. Os dados de calibração aparecerão aqui após você Aceitar ou escolher um chip de Desambiguação Irmã em pelo menos um cartão classificado.",
+      "calibrationActive": "Biblioteca ativa:",
+      "calibrationMinSamples": "Os catalogadores precisam de {N} correções antes de dados estáveis de precisão; abaixo disso, eles votam com peso uniforme.",
+      "calibrationUniform": "uniforme",
+      "calibrationColCataloger": "Catalogador",
+      "calibrationColHorizontal": "Horizontal (Origem)",
+      "calibrationColVertical": "Vertical (Tipo de conteúdo)"
+    },
+    "disambiguation": {
+      "title": "Escolha a correta",
+      "prompt": "Os catalogadores se dividiram entre estes candidatos. Escolha qual se ajusta melhor à nota:",
+      "axisHorizontal": "Origem",
+      "axisVertical": "Tipo de conteúdo",
+      "confirm": "Confirmar",
+      "cancel": "Cancelar",
+      "saved": "Sua escolha foi salva — obrigado por ensinar o motor."
+    }
+  },
   "tasksPanel": {
     "all": "Todas",
     "incomplete": "Incompletas",

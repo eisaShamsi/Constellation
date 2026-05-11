@@ -746,6 +746,123 @@
     "skyView": "Sky View",
     "links": "リンクダッシュボード"
   },
+  "cece": {
+    "_comment": "MIG-021v3 V3-§8.r1.e + r5 — CECE chrome. The catalog of six lenses + the synthesis-regime UI. Plain-English labels per UX agent recommendation. r5 added the dot-cluster, rule-label translations, and trust-calibration banner.",
+    "_translation_note": "AI生成翻訳;ネイティブスピーカーによるレビュー待ち。プロジェクトリポジトリで修正をご報告ください。",
+    "cataloger": {
+      "user_authority": "あなたのfrontmatter",
+      "structural": "引用と構造",
+      "linguistic": "語幹と語彙",
+      "graph": "リンクされたノート",
+      "semantic": "類似ノート",
+      "reasoning": "AI判断"
+    },
+    "catalogerAbbr": {
+      "user_authority": "UA",
+      "structural": "STR",
+      "linguistic": "LIN",
+      "graph": "GRP",
+      "semantic": "SEM",
+      "reasoning": "RSN"
+    },
+    "catalogerStatus": {
+      "voiced": "{name}: 統合に同意",
+      "dissent": "{name}: 異議あり",
+      "silent": "{name}: 沈黙(このレンズで信号なし)"
+    },
+    "badge": {
+      "clusterTooltip": "分類器アンサンブル — 各ドットにカーソルを合わせて詳細を表示",
+      "statusAgrees": "統合に同意",
+      "statusDissents": "統合に異議あり",
+      "statusSilent": "沈黙(このレンズで信号なし)",
+      "legacy": "レガシー",
+      "legacyTooltip": "分類器アンサンブルが追加される前に分類されました — 分類器ごとの履歴は利用できません"
+    },
+    "regime": {
+      "unanimous": "全会一致",
+      "unanimousTooltip": "発言したすべての分類器がこの分類に同意しました",
+      "strongMajority": "強い多数(1件の異議)",
+      "split": "分類器の意見が分かれました — あなたの判断が必要です"
+    },
+    "trail": {
+      "expand": "▸ なぜこの分類なのか?",
+      "collapse": "▾ 推論を非表示",
+      "summary": "推論の要約",
+      "perCataloger": "分類器ごと"
+    },
+    "rule": {
+      "_comment": "Friendly labels for `rules_fired` strings — V3-§8.r5.2. Keys below are the EXACT strings the six catalogers emit today, verified against user_authority.rs / structural.rs / linguistic.rs / graph.rs / semantic.rs / reasoning.rs as of 2026-05-10.",
+      "rule_of_authority": "あなたのfrontmatterが権威です",
+      "structural_pattern_match": "構造パターンが一致しました",
+      "stance_or_form_marker": "立場/形式マーカーが存在します",
+      "cae_root_match": "アラビア語語根の一致(CAE)",
+      "surface_token_match": "表面キーワードの一致",
+      "bridge_similarity": "言語横断類似度(Bridge)",
+      "rule_of_side_channel_preference": "サイドチャネル優先ルール",
+      "typed_neighbor_consensus": "型付きリンクの近隣合意",
+      "semantic_neighbor_consensus": "類似分類済み近隣の合意",
+      "rule_of_authority_control": "権威統制ルール",
+      "schedule_navigation_top_down": "トップダウンの分類体系ナビゲーション",
+      "gbnf_constrained": "AI判断(文法制約付き)",
+      "rule_of_application": "使用 vs. 言及の曖昧性解消"
+    },
+    "trustCal": {
+      "banner": "あと{N}枚のカードをレビューするまで推論履歴を表示しています — 分類器をいつ信頼すべきか学ぶのに役立ちます。",
+      "tooltip": "分類器がどのようにして分類に到達するかの感覚を養う間、推論履歴はデフォルトで表示されます。このバナーは50回のレビュー後に消えます。"
+    },
+    "queueSplit": {
+      "label": "{N}件の判断が必要",
+      "tooltip": "分類器の意見が分かれたカード — あなたの判断が必要です"
+    },
+    "queueFilter": {
+      "_comment": "V3-§8.r8 — composition filter chip row above the queue. Slices the rendered list by what kind of decision each card needs from the user.",
+      "ariaLabel": "構成によってレビューキューをフィルタリング",
+      "all": "すべて",
+      "both": "両方の軸で判断が必要",
+      "source": "ソースの判断が必要",
+      "contentType": "コンテンツタイプの判断が必要",
+      "agreed": "分類器が同意",
+      "emptyBucket": "このフィルターに一致するカードはありません。",
+      "showAll": "すべてのカードを表示"
+    },
+    "settings": {
+      "_comment": "V3-§10.A — Settings UI section for the Constellation Epistemic Content Engine. Surfaces user controls for trail visibility, background scan trigger, and the per-Library calibration view of the V3-§9.C.2 reliability data.",
+      "heading": "Constellation 認識的コンテンツエンジン",
+      "intro": "Source × コンテンツタイプ軸に沿ってノートを分類する分類器アンサンブル。6つのレンズがそれぞれ独自の証拠を持ち、エンジンはそれらの投票を統合します。ローカル専用 — ノートはデバイスから出ません。",
+      "reasoningModel": "Reasoning Cataloger モデル",
+      "reasoningStatus": "未ダウンロード — ローカルAI判断レンズはV3-§7.bに延期。llama.cpp配線が出荷されると、このパネルからQwen3-4B Q5_K_Mをダウンロードできるようになります。すべての推論はあなたのデバイス上で実行され、ノートが外に出ることはありません。",
+      "downloadDisabled": "近日公開",
+      "trailVisibility": "推論履歴の表示",
+      "trailVisibilityDesc": "各 Source Review カードで分類器ごとの推論履歴をいつ自動展開するか。",
+      "trailAlways": "常に表示",
+      "trailOnDisagreement": "不一致時のみ(デフォルト)",
+      "trailNever": "常に非表示",
+      "backgroundScan": "バックグラウンド分類",
+      "backgroundScanDesc": "ソースまたはコンテンツタイプがまだ設定されていないノートをいつ自動分類するか。保存時は既存の1.5秒デバウンスされた保存を使用 — 入力は瞬時のままです。",
+      "scanOff": "オフ — 手動スキャンのみ(デフォルト)",
+      "scanOnSave": "ノート保存時(デバウンス)",
+      "scanOnStartup": "アプリ起動時",
+      "calibrationHeading": "ライブラリごとのキャリブレーション",
+      "calibrationLoading": "キャリブレーションデータを読み込み中…",
+      "calibrationError": "キャリブレーションデータを読み込めませんでした",
+      "calibrationEmpty": "このライブラリではまだ修正がログに記録されていません。少なくとも1枚の分類済みカードで「承認」または「兄弟曖昧性解消」チップを選択すると、キャリブレーションデータがここに表示されます。",
+      "calibrationActive": "アクティブなライブラリ:",
+      "calibrationMinSamples": "分類器は安定した精度データのために{N}件の修正が必要です。それ未満では均一な重みで投票します。",
+      "calibrationUniform": "均一",
+      "calibrationColCataloger": "分類器",
+      "calibrationColHorizontal": "水平(Source)",
+      "calibrationColVertical": "垂直(コンテンツタイプ)"
+    },
+    "disambiguation": {
+      "title": "正しいものを選択",
+      "prompt": "分類器がこれらの候補の間で意見が分かれました。ノートに最も合うものを選んでください:",
+      "axisHorizontal": "Source",
+      "axisVertical": "コンテンツタイプ",
+      "confirm": "確認",
+      "cancel": "キャンセル",
+      "saved": "選択を保存しました — エンジンを教えてくれてありがとう。"
+    }
+  },
   "tasksPanel": {
     "all": "すべて",
     "incomplete": "未完了",

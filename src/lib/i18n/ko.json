@@ -746,6 +746,123 @@
     "skyView": "Sky View",
     "links": "링크 대시보드"
   },
+  "cece": {
+    "_comment": "MIG-021v3 V3-§8.r1.e + r5 — CECE chrome. The catalog of six lenses + the synthesis-regime UI. Plain-English labels per UX agent recommendation. r5 added the dot-cluster, rule-label translations, and trust-calibration banner.",
+    "_translation_note": "AI 생성 번역; 원어민 검토 대기 중. 프로젝트 저장소에 수정 사항을 보고해 주세요.",
+    "cataloger": {
+      "user_authority": "내 frontmatter",
+      "structural": "인용 및 구조",
+      "linguistic": "어간 및 어휘",
+      "graph": "연결된 노트",
+      "semantic": "유사한 노트",
+      "reasoning": "AI 판단"
+    },
+    "catalogerAbbr": {
+      "user_authority": "UA",
+      "structural": "STR",
+      "linguistic": "LIN",
+      "graph": "GRP",
+      "semantic": "SEM",
+      "reasoning": "RSN"
+    },
+    "catalogerStatus": {
+      "voiced": "{name}: 종합에 동의",
+      "dissent": "{name}: 반대",
+      "silent": "{name}: 침묵 (이 렌즈에 신호 없음)"
+    },
+    "badge": {
+      "clusterTooltip": "분류기 앙상블 — 각 점에 마우스를 올려 세부 정보 보기",
+      "statusAgrees": "종합에 동의",
+      "statusDissents": "종합에 반대",
+      "statusSilent": "침묵 (이 렌즈에 신호 없음)",
+      "legacy": "레거시",
+      "legacyTooltip": "분류기 앙상블이 추가되기 전에 분류됨 — 분류기별 추적을 사용할 수 없음"
+    },
+    "regime": {
+      "unanimous": "만장일치",
+      "unanimousTooltip": "발언한 모든 분류기가 이 분류에 동의함",
+      "strongMajority": "강한 다수 (1건 반대)",
+      "split": "분류기 의견이 갈림 — 당신의 결정이 필요함"
+    },
+    "trail": {
+      "expand": "▸ 왜 이 분류인가?",
+      "collapse": "▾ 추론 숨기기",
+      "summary": "추론 요약",
+      "perCataloger": "분류기별"
+    },
+    "rule": {
+      "_comment": "Friendly labels for `rules_fired` strings — V3-§8.r5.2. Keys below are the EXACT strings the six catalogers emit today, verified against user_authority.rs / structural.rs / linguistic.rs / graph.rs / semantic.rs / reasoning.rs as of 2026-05-10.",
+      "rule_of_authority": "당신의 frontmatter가 권위입니다",
+      "structural_pattern_match": "구조 패턴 일치",
+      "stance_or_form_marker": "입장/형식 마커 존재",
+      "cae_root_match": "아랍어 어근 일치 (CAE)",
+      "surface_token_match": "표면 키워드 일치",
+      "bridge_similarity": "교차 언어 유사도 (Bridge)",
+      "rule_of_side_channel_preference": "사이드 채널 선호 규칙",
+      "typed_neighbor_consensus": "타입 링크 이웃 합의",
+      "semantic_neighbor_consensus": "유사한 분류된 이웃들이 동의",
+      "rule_of_authority_control": "권위 통제 규칙",
+      "schedule_navigation_top_down": "하향식 분류 체계 탐색",
+      "gbnf_constrained": "AI 판단 (문법 제약)",
+      "rule_of_application": "사용 vs. 언급 모호성 해소"
+    },
+    "trustCal": {
+      "banner": "{N}개의 카드를 더 검토할 때까지 추론 추적을 표시합니다 — 분류기를 언제 신뢰해야 할지 배우는 데 도움이 됩니다.",
+      "tooltip": "분류기가 어떻게 분류에 도달하는지 감을 잡는 동안 추론 추적이 기본적으로 표시됩니다. 이 배너는 50회 검토 후 사라집니다."
+    },
+    "queueSplit": {
+      "label": "{N}건 결정 필요",
+      "tooltip": "분류기 의견이 갈린 카드 — 당신의 결정이 필요함"
+    },
+    "queueFilter": {
+      "_comment": "V3-§8.r8 — composition filter chip row above the queue. Slices the rendered list by what kind of decision each card needs from the user.",
+      "ariaLabel": "구성에 따라 검토 큐 필터링",
+      "all": "전체",
+      "both": "두 축 모두 결정 필요",
+      "source": "Source 결정 필요",
+      "contentType": "콘텐츠 유형 결정 필요",
+      "agreed": "분류기가 동의함",
+      "emptyBucket": "이 필터와 일치하는 카드가 없습니다.",
+      "showAll": "모든 카드 표시"
+    },
+    "settings": {
+      "_comment": "V3-§10.A — Settings UI section for the Constellation Epistemic Content Engine. Surfaces user controls for trail visibility, background scan trigger, and the per-Library calibration view of the V3-§9.C.2 reliability data.",
+      "heading": "Constellation 인식적 콘텐츠 엔진",
+      "intro": "Source × 콘텐츠 유형 축에 따라 노트를 분류하는 분류기 앙상블입니다. 6개의 렌즈가 각각 자체 증거를 가지며, 엔진은 그들의 투표를 종합으로 결합합니다. 로컬 전용 — 노트는 기기를 떠나지 않습니다.",
+      "reasoningModel": "Reasoning Cataloger 모델",
+      "reasoningStatus": "다운로드되지 않음 — 로컬 AI 판단 렌즈는 V3-§7.b로 연기되었습니다. llama.cpp 배선이 출시되면 이 패널에서 Qwen3-4B Q5_K_M을 다운로드할 수 있습니다. 모든 추론은 당신의 기기에서 실행되며, 노트는 절대로 외부로 나가지 않습니다.",
+      "downloadDisabled": "출시 예정",
+      "trailVisibility": "추론 추적 표시",
+      "trailVisibilityDesc": "각 Source Review 카드에서 분류기별 추론 추적을 언제 자동으로 펼칠지.",
+      "trailAlways": "항상 표시",
+      "trailOnDisagreement": "불일치 시에만 (기본값)",
+      "trailNever": "항상 숨김",
+      "backgroundScan": "백그라운드 분류",
+      "backgroundScanDesc": "Source 또는 콘텐츠 유형이 아직 설정되지 않은 노트를 언제 자동 분류할지. 저장 시는 기존 1.5초 디바운스 저장을 사용합니다 — 입력은 즉각적으로 유지됩니다.",
+      "scanOff": "끔 — 수동 스캔만 (기본값)",
+      "scanOnSave": "노트 저장 시 (디바운스)",
+      "scanOnStartup": "앱 시작 시",
+      "calibrationHeading": "라이브러리별 보정",
+      "calibrationLoading": "보정 데이터 로드 중…",
+      "calibrationError": "보정 데이터를 로드할 수 없습니다",
+      "calibrationEmpty": "이 라이브러리에 아직 수정 사항이 기록되지 않았습니다. 분류된 카드 중 하나 이상에서 수락하거나 형제 모호성 해소 칩을 선택하면 보정 데이터가 여기에 표시됩니다.",
+      "calibrationActive": "활성 라이브러리:",
+      "calibrationMinSamples": "분류기는 안정적인 정확도 데이터를 위해 {N}건의 수정이 필요합니다. 그 이하에서는 균일한 가중치로 투표합니다.",
+      "calibrationUniform": "균일",
+      "calibrationColCataloger": "분류기",
+      "calibrationColHorizontal": "수평 (Source)",
+      "calibrationColVertical": "수직 (콘텐츠 유형)"
+    },
+    "disambiguation": {
+      "title": "올바른 것 선택",
+      "prompt": "분류기들이 이 후보들 사이에서 의견이 갈렸습니다. 노트에 가장 잘 맞는 것을 선택하세요:",
+      "axisHorizontal": "Source",
+      "axisVertical": "콘텐츠 유형",
+      "confirm": "확인",
+      "cancel": "취소",
+      "saved": "선택을 저장했습니다 — 엔진을 가르쳐 주셔서 감사합니다."
+    }
+  },
   "tasksPanel": {
     "all": "전체",
     "incomplete": "미완료",

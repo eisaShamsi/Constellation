@@ -1905,6 +1905,123 @@
     "bias": "Potenzielle Verzerrung (kein Gegenpunkt)",
     "biasDesc": "Ziele mit nur Unterstützungen und null Widersprüchen — gegenteilige Perspektiven suchen."
   },
+  "cece": {
+    "_comment": "MIG-021v3 V3-§8.r1.e + r5 — CECE-Oberfläche. Der Katalog der sechs Linsen + die UI für das Synthese-Regime. Klartext-Beschriftungen gemäß UX-Empfehlung. r5 ergänzte den Punkt-Cluster, die Übersetzungen der Regelbezeichnungen und das Vertrauenskalibrierungs-Banner.",
+    "cataloger": {
+      "user_authority": "Dein Frontmatter",
+      "structural": "Zitate & Struktur",
+      "linguistic": "Wortstämme & Lexikon",
+      "graph": "Verknüpfte Notizen",
+      "semantic": "Ähnliche Notizen",
+      "reasoning": "KI-Urteil"
+    },
+    "catalogerAbbr": {
+      "user_authority": "BV",
+      "structural": "STR",
+      "linguistic": "LIN",
+      "graph": "GRP",
+      "semantic": "SEM",
+      "reasoning": "RSN"
+    },
+    "catalogerStatus": {
+      "voiced": "{name}: stimmt der Synthese zu",
+      "dissent": "{name}: widerspricht",
+      "silent": "{name}: stumm (kein Signal in dieser Linse)"
+    },
+    "badge": {
+      "clusterTooltip": "Katalogisierer-Ensemble — fahre über jeden Punkt für Details",
+      "statusAgrees": "stimmt der Synthese zu",
+      "statusDissents": "widerspricht der Synthese",
+      "statusSilent": "stumm (kein Signal in dieser Linse)",
+      "legacy": "Veraltet",
+      "legacyTooltip": "Klassifiziert, bevor das Katalogisierer-Ensemble hinzugefügt wurde — keine Begründungs-Spur pro Katalogisierer verfügbar"
+    },
+    "regime": {
+      "unanimous": "Einstimmig",
+      "unanimousTooltip": "Alle stimmberechtigten Katalogisierer waren sich bei dieser Klassifizierung einig",
+      "strongMajority": "Starke Mehrheit (eine Gegenstimme)",
+      "split": "Katalogisierer uneinig — deine Entscheidung ist nötig"
+    },
+    "trail": {
+      "expand": "▸ Warum diese Klassifizierung?",
+      "collapse": "▾ Begründung ausblenden",
+      "summary": "Begründungszusammenfassung",
+      "perCataloger": "Pro Katalogisierer"
+    },
+    "rule": {
+      "_comment": "Lesbare Beschriftungen für `rules_fired`-Strings — V3-§8.r5.2. Die Schlüssel unten entsprechen exakt den Strings, die die sechs Katalogisierer heute ausgeben, verifiziert gegen user_authority.rs / structural.rs / linguistic.rs / graph.rs / semantic.rs / reasoning.rs zum Stand 2026-05-10.",
+      "rule_of_authority": "Dein Frontmatter ist maßgeblich",
+      "structural_pattern_match": "Strukturelles Muster erkannt",
+      "stance_or_form_marker": "Haltungs-/Formmarker vorhanden",
+      "cae_root_match": "Arabische Wurzelübereinstimmung (CAE)",
+      "surface_token_match": "Oberflächliche Stichwortübereinstimmung",
+      "bridge_similarity": "Sprachübergreifende Ähnlichkeit (Bridge)",
+      "rule_of_side_channel_preference": "Seitenkanal-Präferenzregel",
+      "typed_neighbor_consensus": "Konsens typisierter Nachbarn",
+      "semantic_neighbor_consensus": "Ähnliche klassifizierte Nachbarn stimmen überein",
+      "rule_of_authority_control": "Normdatenkontroll-Regel",
+      "schedule_navigation_top_down": "Top-down-Taxonomie-Navigation",
+      "gbnf_constrained": "KI-Urteil (grammatikgebunden)",
+      "rule_of_application": "Verwendung vs. Erwähnung — Disambiguierung"
+    },
+    "trustCal": {
+      "banner": "Begründungs-Spuren werden angezeigt, bis du noch {N} weitere Karten geprüft hast — hilft dir zu lernen, wann du den Katalogisierern vertrauen kannst.",
+      "tooltip": "Begründungs-Spuren werden standardmäßig angezeigt, während du ein Gefühl dafür entwickelst, wie die Katalogisierer zu ihren Klassifizierungen kommen. Dieses Banner verschwindet nach 50 Prüfungen."
+    },
+    "queueSplit": {
+      "label": "{N} brauchen deine Entscheidung",
+      "tooltip": "Karten, bei denen die Katalogisierer uneinig sind — deine Entscheidung ist nötig"
+    },
+    "queueFilter": {
+      "_comment": "V3-§8.r8 — Zusammensetzungs-Filterleiste über der Warteschlange. Filtert die gerenderte Liste danach, welche Art von Entscheidung jede Karte vom Benutzer benötigt.",
+      "ariaLabel": "Prüfungs-Warteschlange nach Zusammensetzung filtern",
+      "all": "Alle",
+      "both": "Beide Achsen brauchen deine Entscheidung",
+      "source": "Quelle braucht deine Entscheidung",
+      "contentType": "Inhaltstyp braucht deine Entscheidung",
+      "agreed": "Katalogisierer waren sich einig",
+      "emptyBucket": "Keine Karten passen zu diesem Filter.",
+      "showAll": "Alle Karten anzeigen"
+    },
+    "settings": {
+      "_comment": "V3-§10.A — Einstellungs-UI für den Constellation Epistemic Content Engine. Bietet Benutzersteuerungen für die Sichtbarkeit der Spur, den Hintergrund-Scan-Auslöser und die bibliotheksbezogene Kalibrierungsansicht der V3-§9.C.2-Zuverlässigkeitsdaten.",
+      "heading": "Constellation Epistemic Content Engine",
+      "intro": "Das Katalogisierer-Ensemble, das deine Notizen entlang der Achsen Quelle × Inhaltstyp klassifiziert. Sechs Linsen, jede mit eigener Beweislage; das System kombiniert ihre Stimmen zu einer Synthese. Nur lokal — keine Notiz verlässt dein Gerät.",
+      "reasoningModel": "Modell des Begründungs-Katalogisierers",
+      "reasoningStatus": "Nicht heruntergeladen — die lokale KI-Urteilslinse wurde auf V3-§7.b verschoben. Sobald die llama.cpp-Anbindung fertig ist, kannst du Qwen3-4B Q5_K_M aus diesem Panel herunterladen. Alle Inferenzen laufen auf deinem Gerät — keine Notiz verlässt es jemals.",
+      "downloadDisabled": "Demnächst",
+      "trailVisibility": "Sichtbarkeit der Begründungs-Spur",
+      "trailVisibilityDesc": "Wann die Begründungs-Spur pro Katalogisierer auf jeder Quellen-Prüfungs-Karte automatisch ausgeklappt wird.",
+      "trailAlways": "Immer anzeigen",
+      "trailOnDisagreement": "Nur bei Uneinigkeit (Standard)",
+      "trailNever": "Immer ausblenden",
+      "backgroundScan": "Hintergrund-Klassifizierung",
+      "backgroundScanDesc": "Wann Notizen, denen noch keine Quelle oder kein Inhaltstyp zugewiesen wurde, automatisch klassifiziert werden. „Beim Speichern“ verwendet das vorhandene 1,5-Sekunden-debounced Speichern — die Eingabe bleibt sofort.",
+      "scanOff": "Aus — nur manueller Scan (Standard)",
+      "scanOnSave": "Beim Speichern der Notiz (debounced)",
+      "scanOnStartup": "Beim Programmstart",
+      "calibrationHeading": "Bibliotheksbezogene Kalibrierung",
+      "calibrationLoading": "Kalibrierungsdaten werden geladen…",
+      "calibrationError": "Kalibrierungsdaten konnten nicht geladen werden",
+      "calibrationEmpty": "Auf dieser Bibliothek wurden noch keine Korrekturen erfasst. Kalibrierungsdaten erscheinen hier, sobald du auf mindestens einer klassifizierten Karte „Akzeptieren“ wählst oder einen Sibling-Disambiguation-Chip auswählst.",
+      "calibrationActive": "Aktive Bibliothek:",
+      "calibrationMinSamples": "Katalogisierer brauchen {N} Korrekturen, bevor stabile Genauigkeitsdaten vorliegen; darunter stimmen sie mit gleichmäßigem Gewicht ab.",
+      "calibrationUniform": "gleichmäßig",
+      "calibrationColCataloger": "Katalogisierer",
+      "calibrationColHorizontal": "Horizontal (Quelle)",
+      "calibrationColVertical": "Vertikal (Inhaltstyp)"
+    },
+    "disambiguation": {
+      "title": "Wähle die richtige aus",
+      "prompt": "Die Katalogisierer waren sich zwischen diesen Kandidaten uneinig. Wähle, welcher am besten zur Notiz passt:",
+      "axisHorizontal": "Quelle",
+      "axisVertical": "Inhaltstyp",
+      "confirm": "Bestätigen",
+      "cancel": "Abbrechen",
+      "saved": "Deine Wahl wurde gespeichert — danke, dass du dem System etwas beibringst."
+    },
+    "_translation_note": "KI-generierte Übersetzung; eine muttersprachliche Überprüfung steht aus. Bitte Korrekturen über das Projekt-Repository einreichen."
+  },
   "migrationProgress": {
     "termVocabV2": {
       "label": "Begriffsindex wird migriert",

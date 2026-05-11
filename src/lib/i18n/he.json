@@ -1905,6 +1905,123 @@
     "bias": "הטיה פוטנציאלית (ללא עמדה מנוגדת)",
     "biasDesc": "יעדים עם תמיכות בלבד ואפס סתירות — לחפש פרספקטיבות מנוגדות."
   },
+  "cece": {
+    "_comment": "MIG-021v3 V3-§8.r1.e + r5 — CECE chrome HE mirror.",
+    "_translation_note": "בלוק זה הוא תרגום עבודה לעברית. שמות המנגנונים הטכניים תורגמו ישירות מהאנגלית; במקרה של ספק נשמרה המשמעות האנגלית כמדריך.",
+    "cataloger": {
+      "user_authority": "ה-Frontmatter שלך",
+      "structural": "ציטוטים ומבנה",
+      "linguistic": "שורשי מילים ולקסיקון",
+      "graph": "פתקים מקושרים",
+      "semantic": "פתקים דומים",
+      "reasoning": "שיפוט בינה מלאכותית"
+    },
+    "catalogerAbbr": {
+      "user_authority": "FM",
+      "structural": "מב",
+      "linguistic": "לש",
+      "graph": "קש",
+      "semantic": "דמ",
+      "reasoning": "AI"
+    },
+    "catalogerStatus": {
+      "voiced": "{name}: מסכים עם הסינתזה",
+      "dissent": "{name}: חולק",
+      "silent": "{name}: שותק (אין סיגנל בעדשה זו)"
+    },
+    "badge": {
+      "clusterTooltip": "אנסמבל המקטלגים — רחף מעל כל נקודה לפרטים",
+      "statusAgrees": "מסכים עם הסינתזה",
+      "statusDissents": "חולק על הסינתזה",
+      "statusSilent": "שותק (אין סיגנל בעדשה זו)",
+      "legacy": "ישן",
+      "legacyTooltip": "סווג לפני שאנסמבל המקטלגים נוסף — אין מסלול לכל מקטלג בנפרד"
+    },
+    "regime": {
+      "unanimous": "פה אחד",
+      "unanimousTooltip": "כל המקטלגים שהשמיעו קול הסכימו על סיווג זה",
+      "strongMajority": "רוב חזק (חולק אחד)",
+      "split": "המקטלגים חלוקים — נדרשת ההכרעה שלך"
+    },
+    "trail": {
+      "expand": "▸ למה הסיווג הזה?",
+      "collapse": "▾ הסתר נימוקים",
+      "summary": "סיכום נימוקים",
+      "perCataloger": "לפי מקטלג"
+    },
+    "rule": {
+      "_comment": "תוויות ידידותיות עבור מחרוזות rules_fired — V3-§8.r5.2. המפתחות להלן הם המחרוזות המדויקות ששת המקטלגים פולטים היום, מאומת מול user_authority.rs / structural.rs / linguistic.rs / graph.rs / semantic.rs / reasoning.rs נכון ל-2026-05-10.",
+      "rule_of_authority": "ה-Frontmatter שלך הוא הסמכות",
+      "structural_pattern_match": "התאמת תבנית מבנית",
+      "stance_or_form_marker": "סמן עמדה/צורה נוכח",
+      "cae_root_match": "התאמת שורש ערבי (CAE)",
+      "surface_token_match": "התאמת מילת מפתח שטחית",
+      "bridge_similarity": "דמיון בין-לשוני (Bridge)",
+      "rule_of_side_channel_preference": "כלל העדפת ערוץ צדדי",
+      "typed_neighbor_consensus": "הסכמת שכנים בקישורים מסווגים",
+      "semantic_neighbor_consensus": "שכנים דומים מסווגים מסכימים",
+      "rule_of_authority_control": "כלל בקרת סמכות",
+      "schedule_navigation_top_down": "ניווט טקסונומיה מלמעלה למטה",
+      "gbnf_constrained": "שיפוט בינה מלאכותית (מוגבל-דקדוק)",
+      "rule_of_application": "אבחנה בין שימוש לאזכור"
+    },
+    "trustCal": {
+      "banner": "מציג מסלולי נימוקים עד שתסקור עוד {N} כרטיסיות — עוזר לך ללמוד מתי לבטוח במקטלגים.",
+      "tooltip": "מסלולי נימוקים מוצגים כברירת מחדל בזמן שאתה בונה תחושה כיצד המקטלגים מגיעים לסיווגים שלהם. הבאנר נעלם לאחר 50 סקירות."
+    },
+    "queueSplit": {
+      "label": "{N} זקוקים להכרעתך",
+      "tooltip": "כרטיסיות שבהן המקטלגים חלוקים — נדרשת ההכרעה שלך"
+    },
+    "queueFilter": {
+      "_comment": "V3-§8.r8 — שורת צ'יפים של מסנן הרכב מעל התור. חותכת את הרשימה המוצגת לפי סוג ההחלטה שכל כרטיסייה מחייבת מהמשתמש.",
+      "ariaLabel": "סנן את תור הסקירה לפי הרכב",
+      "all": "הכול",
+      "both": "שני הצירים זקוקים להכרעתך",
+      "source": "המקור זקוק להכרעתך",
+      "contentType": "סוג התוכן זקוק להכרעתך",
+      "agreed": "המקטלגים הסכימו",
+      "emptyBucket": "אין כרטיסיות התואמות מסנן זה.",
+      "showAll": "הצג את כל הכרטיסיות"
+    },
+    "settings": {
+      "_comment": "V3-§10.A — מקטע הגדרות עבור Constellation Epistemic Content Engine.",
+      "heading": "Constellation Epistemic Content Engine",
+      "intro": "אנסמבל המקטלגים שמסווג את הפתקים שלך לאורך צירי מקור × סוג תוכן. שש עדשות, לכל אחת ראיות משלה; המנוע מאחד את ההצבעות שלהן לסינתזה. מקומי בלבד — שום פתק לא יוצא מהמכשיר שלך.",
+      "reasoningModel": "מודל מקטלג נימוקים",
+      "reasoningStatus": "לא הורד — עדשת שיפוט הבינה המלאכותית המקומית נדחתה ל-V3-§7.b. כשחיבור llama.cpp ייצא, תוכל להוריד את Qwen3-4B Q5_K_M מפאנל זה. כל ההסקה תרוץ במכשיר שלך — שום פתק לא יעזוב אותו.",
+      "downloadDisabled": "בקרוב",
+      "trailVisibility": "נראות מסלול הנימוקים",
+      "trailVisibilityDesc": "מתי להרחיב אוטומטית את מסלול הנימוקים לכל מקטלג בכרטיסיית סקירת מקור.",
+      "trailAlways": "תמיד הצג",
+      "trailOnDisagreement": "רק במקרה של אי-הסכמה (ברירת מחדל)",
+      "trailNever": "תמיד הסתר",
+      "backgroundScan": "סיווג ברקע",
+      "backgroundScanDesc": "מתי לסווג אוטומטית פתקים שעדיין אין להם מקור או סוג תוכן מוגדר. האפשרות בעת שמירה משתמשת בשמירה המעוכבת בת 1.5 שניות הקיימת — הקלדה נשארת מיידית.",
+      "scanOff": "כבוי — סריקה ידנית בלבד (ברירת מחדל)",
+      "scanOnSave": "בעת שמירת פתק (מעוכב)",
+      "scanOnStartup": "בעת הפעלת היישום",
+      "calibrationHeading": "כיול לפי ספרייה",
+      "calibrationLoading": "טוען נתוני כיול…",
+      "calibrationError": "לא ניתן לטעון נתוני כיול",
+      "calibrationEmpty": "טרם נרשמו תיקונים בספרייה זו. נתוני כיול יופיעו כאן לאחר שתאשר או תבחר צ'יפ Sibling Disambiguation בכרטיסייה מסווגת אחת לפחות.",
+      "calibrationActive": "ספרייה פעילה:",
+      "calibrationMinSamples": "המקטלגים זקוקים ל-{N} תיקונים לפני נתוני דיוק יציבים; מתחת לכך הם מצביעים במשקל אחיד.",
+      "calibrationUniform": "אחיד",
+      "calibrationColCataloger": "מקטלג",
+      "calibrationColHorizontal": "אופקי (מקור)",
+      "calibrationColVertical": "אנכי (סוג תוכן)"
+    },
+    "disambiguation": {
+      "title": "בחר את הנכון",
+      "prompt": "המקטלגים חלוקים בין מועמדים אלה. בחר איזה מהם מתאים ביותר לפתק:",
+      "axisHorizontal": "מקור",
+      "axisVertical": "סוג תוכן",
+      "confirm": "אישור",
+      "cancel": "ביטול",
+      "saved": "הבחירה שלך נשמרה — תודה שלימדת את המנוע."
+    }
+  },
   "migrationProgress": {
     "termVocabV2": {
       "label": "מעביר אינדקס מונחים",

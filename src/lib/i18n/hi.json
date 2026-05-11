@@ -746,6 +746,123 @@
     "skyView": "Sky View",
     "links": "लिंक डैशबोर्ड"
   },
+  "cece": {
+    "_comment": "MIG-021v3 V3-§8.r1.e + r5 — CECE chrome. The catalog of six lenses + the synthesis-regime UI. Plain-English labels per UX agent recommendation. r5 added the dot-cluster, rule-label translations, and trust-calibration banner.",
+    "_translation_note": "स्वचालित मशीन अनुवाद — V3-§10.D बैच अनुवाद चक्र। हिंदी के लिए सत्यापित शब्दावली: वर्गीकरणकर्ता (cataloger), अक्ष (axis), क्षैतिज/ऊर्ध्वाधर (horizontal/vertical), स्रोत (Source), सामग्री प्रकार (Content type), विभाजित/सर्वसम्मत/मजबूत बहुमत (Split/Unanimous/Strong majority)। CECE संक्षिप्ताक्षर तथा {N}, {name} प्लेसहोल्डर एवं ▸ ▾ × विशेष वर्ण यथावत रखे गए हैं।",
+    "cataloger": {
+      "user_authority": "आपका फ्रंटमैटर",
+      "structural": "उद्धरण और संरचना",
+      "linguistic": "शब्दमूल और शब्दकोश",
+      "graph": "जुड़े हुए नोट्स",
+      "semantic": "समान नोट्स",
+      "reasoning": "AI निर्णय"
+    },
+    "catalogerAbbr": {
+      "user_authority": "UA",
+      "structural": "STR",
+      "linguistic": "LIN",
+      "graph": "GRP",
+      "semantic": "SEM",
+      "reasoning": "RSN"
+    },
+    "catalogerStatus": {
+      "voiced": "{name}: संश्लेषण से सहमत",
+      "dissent": "{name}: असहमत",
+      "silent": "{name}: मौन (इस लेंस में कोई संकेत नहीं)"
+    },
+    "badge": {
+      "clusterTooltip": "वर्गीकरणकर्ता समूह — विवरण के लिए प्रत्येक बिंदु पर होवर करें",
+      "statusAgrees": "संश्लेषण से सहमत",
+      "statusDissents": "संश्लेषण से असहमत",
+      "statusSilent": "मौन (इस लेंस में कोई संकेत नहीं)",
+      "legacy": "विरासत",
+      "legacyTooltip": "वर्गीकरणकर्ता समूह जोड़े जाने से पहले वर्गीकृत — प्रति-वर्गीकरणकर्ता ट्रेल उपलब्ध नहीं"
+    },
+    "regime": {
+      "unanimous": "सर्वसम्मत",
+      "unanimousTooltip": "सभी बोलने वाले वर्गीकरणकर्ता इस वर्गीकरण पर सहमत हुए",
+      "strongMajority": "मजबूत बहुमत (एक असहमति)",
+      "split": "वर्गीकरणकर्ता विभाजित — आपके निर्णय की आवश्यकता है"
+    },
+    "trail": {
+      "expand": "▸ यह वर्गीकरण क्यों?",
+      "collapse": "▾ तर्क छिपाएं",
+      "summary": "तर्क सारांश",
+      "perCataloger": "प्रति वर्गीकरणकर्ता"
+    },
+    "rule": {
+      "_comment": "Friendly labels for `rules_fired` strings — V3-§8.r5.2. Keys below are the EXACT strings the six catalogers emit today, verified against user_authority.rs / structural.rs / linguistic.rs / graph.rs / semantic.rs / reasoning.rs as of 2026-05-10.",
+      "rule_of_authority": "आपका फ्रंटमैटर ही प्राधिकरण है",
+      "structural_pattern_match": "संरचनात्मक पैटर्न मेल खाया",
+      "stance_or_form_marker": "स्थिति/स्वरूप चिह्नक उपस्थित",
+      "cae_root_match": "अरबी मूल मेल (CAE)",
+      "surface_token_match": "सतह कीवर्ड मेल",
+      "bridge_similarity": "अंतर-भाषाई समानता (Bridge)",
+      "rule_of_side_channel_preference": "साइड-चैनल वरीयता नियम",
+      "typed_neighbor_consensus": "टाइप किए गए लिंक पड़ोसी आम सहमति",
+      "semantic_neighbor_consensus": "समान वर्गीकृत पड़ोसी सहमत हैं",
+      "rule_of_authority_control": "प्राधिकरण-नियंत्रण नियम",
+      "schedule_navigation_top_down": "ऊपर से नीचे वर्गीकरण नेविगेशन",
+      "gbnf_constrained": "AI निर्णय (व्याकरण-प्रतिबंधित)",
+      "rule_of_application": "उपयोग बनाम उल्लेख का स्पष्टीकरण"
+    },
+    "trustCal": {
+      "banner": "जब तक आप {N} और कार्ड की समीक्षा नहीं करते, तब तक तर्क ट्रेल दिखाए जा रहे हैं — यह आपको सीखने में मदद करता है कि वर्गीकरणकर्ताओं पर कब भरोसा करें।",
+      "tooltip": "तर्क ट्रेल डिफ़ॉल्ट रूप से दिखाए जाते हैं ताकि आप यह समझ सकें कि वर्गीकरणकर्ता अपने वर्गीकरण तक कैसे पहुंचते हैं। यह बैनर 50 समीक्षाओं के बाद गायब हो जाता है।"
+    },
+    "queueSplit": {
+      "label": "{N} को आपके निर्णय की आवश्यकता है",
+      "tooltip": "वे कार्ड जहां वर्गीकरणकर्ता विभाजित हैं — आपके निर्णय की आवश्यकता है"
+    },
+    "queueFilter": {
+      "_comment": "V3-§8.r8 — composition filter chip row above the queue. Slices the rendered list by what kind of decision each card needs from the user.",
+      "ariaLabel": "समीक्षा कतार को संरचना के अनुसार फ़िल्टर करें",
+      "all": "सभी",
+      "both": "दोनों अक्षों को आपके निर्णय की आवश्यकता है",
+      "source": "स्रोत को आपके निर्णय की आवश्यकता है",
+      "contentType": "सामग्री प्रकार को आपके निर्णय की आवश्यकता है",
+      "agreed": "वर्गीकरणकर्ता सहमत हुए",
+      "emptyBucket": "इस फ़िल्टर से कोई कार्ड मेल नहीं खाता।",
+      "showAll": "सभी कार्ड दिखाएं"
+    },
+    "settings": {
+      "_comment": "V3-§10.A — Settings UI section for the Constellation Epistemic Content Engine. Surfaces user controls for trail visibility, background scan trigger, and the per-Library calibration view of the V3-§9.C.2 reliability data.",
+      "heading": "Constellation ज्ञानमीमांसीय सामग्री इंजन",
+      "intro": "वर्गीकरणकर्ता समूह जो आपके नोट्स को स्रोत × सामग्री प्रकार अक्षों के साथ वर्गीकृत करता है। छह लेंस, प्रत्येक के अपने प्रमाण के साथ; इंजन उनके मतों को एक संश्लेषण में जोड़ता है। केवल स्थानीय — कोई नोट आपके डिवाइस से बाहर नहीं जाता।",
+      "reasoningModel": "तर्क वर्गीकरणकर्ता मॉडल",
+      "reasoningStatus": "डाउनलोड नहीं किया गया — स्थानीय AI निर्णय लेंस V3-§7.b तक स्थगित। जब llama.cpp वायरिंग आती है, तो आप इस पैनल से Qwen3-4B Q5_K_M डाउनलोड कर सकेंगे। सभी अनुमान आपके डिवाइस पर चलेंगे — कोई नोट कभी बाहर नहीं जाएगा।",
+      "downloadDisabled": "जल्द आ रहा है",
+      "trailVisibility": "तर्क ट्रेल दृश्यता",
+      "trailVisibilityDesc": "प्रत्येक स्रोत समीक्षा कार्ड पर प्रति-वर्गीकरणकर्ता तर्क ट्रेल को कब स्वतः विस्तारित करना है।",
+      "trailAlways": "हमेशा दिखाएं",
+      "trailOnDisagreement": "केवल असहमति पर (डिफ़ॉल्ट)",
+      "trailNever": "हमेशा छिपाएं",
+      "backgroundScan": "पृष्ठभूमि वर्गीकरण",
+      "backgroundScanDesc": "उन नोट्स को कब स्वतः वर्गीकृत करना है जिनके स्रोत या सामग्री प्रकार अभी तक सेट नहीं हैं। ऑन-सेव मौजूदा 1.5-सेकंड डिबाउंस्ड सेव का उपयोग करता है — टाइपिंग तत्काल रहती है।",
+      "scanOff": "बंद — केवल मैन्युअल स्कैन (डिफ़ॉल्ट)",
+      "scanOnSave": "नोट सहेजने पर (डिबाउंस्ड)",
+      "scanOnStartup": "ऐप शुरू होने पर",
+      "calibrationHeading": "प्रति-पुस्तकालय अंशशोधन",
+      "calibrationLoading": "अंशशोधन डेटा लोड हो रहा है…",
+      "calibrationError": "अंशशोधन डेटा लोड नहीं किया जा सका",
+      "calibrationEmpty": "इस पुस्तकालय पर अभी तक कोई सुधार दर्ज नहीं किया गया है। कम से कम एक वर्गीकृत कार्ड पर स्वीकार करने या भाई-बहन स्पष्टीकरण चिप चुनने के बाद अंशशोधन डेटा यहां दिखाई देगा।",
+      "calibrationActive": "सक्रिय पुस्तकालय:",
+      "calibrationMinSamples": "वर्गीकरणकर्ताओं को स्थिर सटीकता डेटा से पहले {N} सुधारों की आवश्यकता होती है; उससे कम पर वे एकसमान भार के साथ मतदान करते हैं।",
+      "calibrationUniform": "एकसमान",
+      "calibrationColCataloger": "वर्गीकरणकर्ता",
+      "calibrationColHorizontal": "क्षैतिज (स्रोत)",
+      "calibrationColVertical": "ऊर्ध्वाधर (सामग्री प्रकार)"
+    },
+    "disambiguation": {
+      "title": "सही वाला चुनें",
+      "prompt": "वर्गीकरणकर्ता इन उम्मीदवारों के बीच विभाजित हुए। चुनें कि कौन सा नोट के लिए सबसे उपयुक्त है:",
+      "axisHorizontal": "स्रोत",
+      "axisVertical": "सामग्री प्रकार",
+      "confirm": "पुष्टि करें",
+      "cancel": "रद्द करें",
+      "saved": "आपका चयन सहेजा गया — इंजन को सिखाने के लिए धन्यवाद।"
+    }
+  },
   "tasksPanel": {
     "all": "सभी",
     "incomplete": "अपूर्ण",

@@ -746,6 +746,123 @@
     "skyView": "Sky View",
     "links": "链接仪表盘"
   },
+  "cece": {
+    "_comment": "MIG-021v3 V3-§8.r1.e + r5 — CECE chrome. The catalog of six lenses + the synthesis-regime UI. Plain-English labels per UX agent recommendation. r5 added the dot-cluster, rule-label translations, and trust-calibration banner.",
+    "_translation_note": "AI 生成翻译;等待母语者审阅。请在项目仓库中报告任何修正。",
+    "cataloger": {
+      "user_authority": "你的 frontmatter",
+      "structural": "引用与结构",
+      "linguistic": "词干与词汇",
+      "graph": "已链接笔记",
+      "semantic": "相似笔记",
+      "reasoning": "AI 判断"
+    },
+    "catalogerAbbr": {
+      "user_authority": "UA",
+      "structural": "STR",
+      "linguistic": "LIN",
+      "graph": "GRP",
+      "semantic": "SEM",
+      "reasoning": "RSN"
+    },
+    "catalogerStatus": {
+      "voiced": "{name}:同意综合结论",
+      "dissent": "{name}:持异议",
+      "silent": "{name}:沉默(此透镜无信号)"
+    },
+    "badge": {
+      "clusterTooltip": "分类器集成 — 将鼠标悬停在每个点上查看详情",
+      "statusAgrees": "同意综合结论",
+      "statusDissents": "对综合结论持异议",
+      "statusSilent": "沉默(此透镜无信号)",
+      "legacy": "遗留",
+      "legacyTooltip": "在添加分类器集成之前已分类 — 没有可用的分类器逐项追溯"
+    },
+    "regime": {
+      "unanimous": "一致同意",
+      "unanimousTooltip": "所有发言的分类器都同意此分类",
+      "strongMajority": "多数赞成(一项异议)",
+      "split": "分类器意见分歧 — 需要你的判断"
+    },
+    "trail": {
+      "expand": "▸ 为什么是这个分类?",
+      "collapse": "▾ 隐藏推理",
+      "summary": "推理摘要",
+      "perCataloger": "按分类器"
+    },
+    "rule": {
+      "_comment": "Friendly labels for `rules_fired` strings — V3-§8.r5.2. Keys below are the EXACT strings the six catalogers emit today, verified against user_authority.rs / structural.rs / linguistic.rs / graph.rs / semantic.rs / reasoning.rs as of 2026-05-10.",
+      "rule_of_authority": "你的 frontmatter 即权威",
+      "structural_pattern_match": "结构模式匹配",
+      "stance_or_form_marker": "立场/形式标记存在",
+      "cae_root_match": "阿拉伯语词根匹配 (CAE)",
+      "surface_token_match": "表面关键词匹配",
+      "bridge_similarity": "跨语言相似度 (Bridge)",
+      "rule_of_side_channel_preference": "侧信道优先规则",
+      "typed_neighbor_consensus": "类型化链接邻居共识",
+      "semantic_neighbor_consensus": "相似的已分类邻居达成一致",
+      "rule_of_authority_control": "权威控制规则",
+      "schedule_navigation_top_down": "自上而下分类法导航",
+      "gbnf_constrained": "AI 判断(语法约束)",
+      "rule_of_application": "使用 vs. 提及消歧"
+    },
+    "trustCal": {
+      "banner": "在你再审阅 {N} 张卡片之前,将一直显示推理追溯 — 帮助你了解何时信任分类器。",
+      "tooltip": "在你建立对分类器如何得出分类的理解感觉时,默认显示推理追溯。此横幅将在 50 次审阅后消失。"
+    },
+    "queueSplit": {
+      "label": "{N} 项需要你判断",
+      "tooltip": "分类器意见分歧的卡片 — 需要你的决定"
+    },
+    "queueFilter": {
+      "_comment": "V3-§8.r8 — composition filter chip row above the queue. Slices the rendered list by what kind of decision each card needs from the user.",
+      "ariaLabel": "按构成筛选审阅队列",
+      "all": "全部",
+      "both": "两个轴都需要你判断",
+      "source": "Source 需要你判断",
+      "contentType": "内容类型需要你判断",
+      "agreed": "分类器已达成一致",
+      "emptyBucket": "没有匹配此筛选条件的卡片。",
+      "showAll": "显示所有卡片"
+    },
+    "settings": {
+      "_comment": "V3-§10.A — Settings UI section for the Constellation Epistemic Content Engine. Surfaces user controls for trail visibility, background scan trigger, and the per-Library calibration view of the V3-§9.C.2 reliability data.",
+      "heading": "Constellation 认知内容引擎",
+      "intro": "沿 Source × 内容类型轴对你的笔记进行分类的分类器集成。六个透镜各自带有自己的证据;引擎将它们的投票合成为综合结论。仅本地运行 — 笔记不会离开你的设备。",
+      "reasoningModel": "Reasoning Cataloger 模型",
+      "reasoningStatus": "未下载 — 本地 AI 判断透镜推迟到 V3-§7.b。当 llama.cpp 接线就绪后,你将能从此面板下载 Qwen3-4B Q5_K_M。所有推理都在你的设备上运行 — 笔记永远不会离开。",
+      "downloadDisabled": "即将推出",
+      "trailVisibility": "推理追溯可见性",
+      "trailVisibilityDesc": "在每张 Source Review 卡片上何时自动展开按分类器的推理追溯。",
+      "trailAlways": "始终显示",
+      "trailOnDisagreement": "仅在分歧时(默认)",
+      "trailNever": "始终隐藏",
+      "backgroundScan": "后台分类",
+      "backgroundScanDesc": "何时自动分类尚未设置 source 或内容类型的笔记。保存时使用现有的 1.5 秒防抖保存 — 输入保持即时。",
+      "scanOff": "关闭 — 仅手动扫描(默认)",
+      "scanOnSave": "笔记保存时(防抖)",
+      "scanOnStartup": "应用启动时",
+      "calibrationHeading": "按 Library 校准",
+      "calibrationLoading": "正在加载校准数据…",
+      "calibrationError": "无法加载校准数据",
+      "calibrationEmpty": "此 Library 上尚未记录任何修正。在你接受或在至少一张已分类卡片上选择「同级消歧」芯片后,校准数据将显示在此处。",
+      "calibrationActive": "活动 Library:",
+      "calibrationMinSamples": "分类器需要 {N} 项修正才能获得稳定的准确度数据;低于此数值时,它们以均匀权重投票。",
+      "calibrationUniform": "均匀",
+      "calibrationColCataloger": "分类器",
+      "calibrationColHorizontal": "水平(Source)",
+      "calibrationColVertical": "垂直(内容类型)"
+    },
+    "disambiguation": {
+      "title": "选择正确的一个",
+      "prompt": "分类器在这些候选项之间产生分歧。请选择最适合此笔记的一个:",
+      "axisHorizontal": "Source",
+      "axisVertical": "内容类型",
+      "confirm": "确认",
+      "cancel": "取消",
+      "saved": "已保存你的选择 — 感谢你教导引擎。"
+    }
+  },
   "tasksPanel": {
     "all": "全部",
     "incomplete": "未完成",

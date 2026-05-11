@@ -746,6 +746,123 @@
     "skyView": "Sky View",
     "links": "Bağlantı Panosu"
   },
+  "cece": {
+    "_comment": "MIG-021v3 V3-§8.r1.e + r5 — CECE chrome. The catalog of six lenses + the synthesis-regime UI. Plain-English labels per UX agent recommendation. r5 added the dot-cluster, rule-label translations, and trust-calibration banner.",
+    "_translation_note": "Otomatik makine çevirisi — V3-§10.D toplu çeviri turu. Türkçe için doğrulanmış sözlük: kataloglayıcı (cataloger), eksen (axis), yatay/dikey (horizontal/vertical), Kaynak (Source), İçerik türü (Content type), Bölünmüş/Oybirliği/Güçlü çoğunluk (Split/Unanimous/Strong majority). CECE kısaltması ve {N}, {name} yer tutucuları ile ▸ ▾ × özel karakterleri korunmuştur.",
+    "cataloger": {
+      "user_authority": "Ön bilginiz (frontmatter)",
+      "structural": "Atıflar ve yapı",
+      "linguistic": "Kelime kökleri ve sözlük",
+      "graph": "Bağlı notlar",
+      "semantic": "Benzer notlar",
+      "reasoning": "Yapay zekâ değerlendirmesi"
+    },
+    "catalogerAbbr": {
+      "user_authority": "UA",
+      "structural": "STR",
+      "linguistic": "LIN",
+      "graph": "GRP",
+      "semantic": "SEM",
+      "reasoning": "RSN"
+    },
+    "catalogerStatus": {
+      "voiced": "{name}: sentezle aynı fikirde",
+      "dissent": "{name}: muhalif",
+      "silent": "{name}: sessiz (bu mercekte sinyal yok)"
+    },
+    "badge": {
+      "clusterTooltip": "Kataloglayıcı topluluğu — ayrıntılar için her noktanın üzerine gelin",
+      "statusAgrees": "sentezle aynı fikirde",
+      "statusDissents": "sentezden ayrılıyor",
+      "statusSilent": "sessiz (bu mercekte sinyal yok)",
+      "legacy": "Eski",
+      "legacyTooltip": "Kataloglayıcı topluluğu eklenmeden önce sınıflandırıldı — kataloglayıcı bazında iz mevcut değil"
+    },
+    "regime": {
+      "unanimous": "Oybirliği",
+      "unanimousTooltip": "Tüm sesli kataloglayıcılar bu sınıflandırmada hemfikir oldu",
+      "strongMajority": "Güçlü çoğunluk (bir muhalif)",
+      "split": "Kataloglayıcılar bölündü — kararınız gerekli"
+    },
+    "trail": {
+      "expand": "▸ Bu sınıflandırma neden?",
+      "collapse": "▾ Gerekçeyi gizle",
+      "summary": "Gerekçe özeti",
+      "perCataloger": "Kataloglayıcı bazında"
+    },
+    "rule": {
+      "_comment": "Friendly labels for `rules_fired` strings — V3-§8.r5.2. Keys below are the EXACT strings the six catalogers emit today, verified against user_authority.rs / structural.rs / linguistic.rs / graph.rs / semantic.rs / reasoning.rs as of 2026-05-10.",
+      "rule_of_authority": "Ön bilginiz (frontmatter) yetkilidir",
+      "structural_pattern_match": "Yapısal örüntü eşleşti",
+      "stance_or_form_marker": "Tutum/biçim göstergesi mevcut",
+      "cae_root_match": "Arapça kök eşleşmesi (CAE)",
+      "surface_token_match": "Yüzey anahtar kelime eşleşmesi",
+      "bridge_similarity": "Diller arası benzerlik (Bridge)",
+      "rule_of_side_channel_preference": "Yan kanal tercih kuralı",
+      "typed_neighbor_consensus": "Tipli bağlantı komşu uzlaşısı",
+      "semantic_neighbor_consensus": "Benzer sınıflandırılmış komşular hemfikir",
+      "rule_of_authority_control": "Otorite kontrolü kuralı",
+      "schedule_navigation_top_down": "Yukarıdan aşağıya taksonomi gezintisi",
+      "gbnf_constrained": "Yapay zekâ değerlendirmesi (gramer kısıtlı)",
+      "rule_of_application": "Kullanım vs. anma ayrımı"
+    },
+    "trustCal": {
+      "banner": "{N} kart daha gözden geçirene kadar gerekçe izleri gösteriliyor — kataloglayıcılara ne zaman güveneceğinizi öğrenmenize yardımcı olur.",
+      "tooltip": "Kataloglayıcıların sınıflandırmalara nasıl ulaştığını anlamanız için gerekçe izleri varsayılan olarak gösterilir. Bu uyarı 50 incelemeden sonra kaybolur."
+    },
+    "queueSplit": {
+      "label": "{N} kararınızı bekliyor",
+      "tooltip": "Kataloglayıcıların bölündüğü kartlar — kararınız gerekli"
+    },
+    "queueFilter": {
+      "_comment": "V3-§8.r8 — composition filter chip row above the queue. Slices the rendered list by what kind of decision each card needs from the user.",
+      "ariaLabel": "Gözden geçirme kuyruğunu bileşime göre filtrele",
+      "all": "Tümü",
+      "both": "Her iki eksen kararınızı bekliyor",
+      "source": "Kaynak kararınızı bekliyor",
+      "contentType": "İçerik türü kararınızı bekliyor",
+      "agreed": "Kataloglayıcılar hemfikir",
+      "emptyBucket": "Bu filtreyle eşleşen kart yok.",
+      "showAll": "Tüm kartları göster"
+    },
+    "settings": {
+      "_comment": "V3-§10.A — Settings UI section for the Constellation Epistemic Content Engine. Surfaces user controls for trail visibility, background scan trigger, and the per-Library calibration view of the V3-§9.C.2 reliability data.",
+      "heading": "Constellation Epistemik İçerik Motoru",
+      "intro": "Notlarınızı Kaynak × İçerik Türü eksenleri boyunca sınıflandıran kataloglayıcı topluluğu. Altı mercek, her birinin kendi kanıtı; motor oylarını birleştirerek sentez üretir. Yalnızca yerel — notlar cihazınızdan ayrılmaz.",
+      "reasoningModel": "Akıl Yürütme Kataloglayıcısı modeli",
+      "reasoningStatus": "İndirilmedi — yerel yapay zekâ değerlendirme merceği V3-§7.b'ye ertelendi. llama.cpp bağlantısı geldiğinde Qwen3-4B Q5_K_M modelini bu panelden indirebileceksiniz. Tüm çıkarım cihazınızda çalışacak — notlar asla ayrılmaz.",
+      "downloadDisabled": "Yakında",
+      "trailVisibility": "Gerekçe izi görünürlüğü",
+      "trailVisibilityDesc": "Her Kaynak Gözden Geçirme kartında kataloglayıcı bazında gerekçe izinin ne zaman otomatik genişletileceği.",
+      "trailAlways": "Her zaman göster",
+      "trailOnDisagreement": "Yalnızca anlaşmazlıkta (varsayılan)",
+      "trailNever": "Her zaman gizle",
+      "backgroundScan": "Arka plan sınıflandırması",
+      "backgroundScanDesc": "Henüz kaynağı veya içerik türü ayarlanmamış notların ne zaman otomatik sınıflandırılacağı. Kayıtta seçeneği mevcut 1,5 saniyelik gecikmeli kaydı kullanır — yazma anında kalır.",
+      "scanOff": "Kapalı — yalnızca elle tarama (varsayılan)",
+      "scanOnSave": "Not kaydında (gecikmeli)",
+      "scanOnStartup": "Uygulama başlangıcında",
+      "calibrationHeading": "Kütüphane bazında kalibrasyon",
+      "calibrationLoading": "Kalibrasyon verileri yükleniyor…",
+      "calibrationError": "Kalibrasyon verileri yüklenemedi",
+      "calibrationEmpty": "Bu Kütüphanede henüz düzeltme kaydedilmedi. En az bir sınıflandırılmış kartta Kabul Et'e bastıktan veya Kardeş Belirsizliği Giderme çipi seçtikten sonra kalibrasyon verileri burada görünecek.",
+      "calibrationActive": "Etkin Kütüphane:",
+      "calibrationMinSamples": "Kataloglayıcılar kararlı doğruluk verisi için {N} düzeltmeye ihtiyaç duyar; bunun altında eşit ağırlıkla oy kullanırlar.",
+      "calibrationUniform": "eşit",
+      "calibrationColCataloger": "Kataloglayıcı",
+      "calibrationColHorizontal": "Yatay (Kaynak)",
+      "calibrationColVertical": "Dikey (İçerik türü)"
+    },
+    "disambiguation": {
+      "title": "Doğru olanı seçin",
+      "prompt": "Kataloglayıcılar bu adaylar arasında bölündü. Nota en uygun olanı seçin:",
+      "axisHorizontal": "Kaynak",
+      "axisVertical": "İçerik türü",
+      "confirm": "Onayla",
+      "cancel": "İptal",
+      "saved": "Seçiminiz kaydedildi — motora öğrettiğiniz için teşekkürler."
+    }
+  },
   "tasksPanel": {
     "all": "Tümü",
     "incomplete": "Tamamlanmamış",

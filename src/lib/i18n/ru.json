@@ -746,6 +746,123 @@
     "skyView": "Sky View",
     "links": "Панель ссылок"
   },
+  "cece": {
+    "_comment": "MIG-021v3 V3-§8.r1.e + r5 — CECE chrome. The catalog of six lenses + the synthesis-regime UI. Plain-English labels per UX agent recommendation. r5 added the dot-cluster, rule-label translations, and trust-calibration banner.",
+    "_translation_note": "Перевод сгенерирован ИИ; ожидается проверка носителем языка. Пожалуйста, отправляйте исправления через репозиторий проекта.",
+    "cataloger": {
+      "user_authority": "Ваш frontmatter",
+      "structural": "Цитаты и структура",
+      "linguistic": "Корни слов и лексика",
+      "graph": "Связанные заметки",
+      "semantic": "Похожие заметки",
+      "reasoning": "Суждение ИИ"
+    },
+    "catalogerAbbr": {
+      "user_authority": "АП",
+      "structural": "СТР",
+      "linguistic": "ЛИН",
+      "graph": "ГРФ",
+      "semantic": "СЕМ",
+      "reasoning": "РАС"
+    },
+    "catalogerStatus": {
+      "voiced": "{name}: согласен с синтезом",
+      "dissent": "{name}: не согласен",
+      "silent": "{name}: молчит (нет сигнала в этой линзе)"
+    },
+    "badge": {
+      "clusterTooltip": "Ансамбль каталогизаторов — наведите курсор на каждую точку для подробностей",
+      "statusAgrees": "согласен с синтезом",
+      "statusDissents": "не согласен с синтезом",
+      "statusSilent": "молчит (нет сигнала в этой линзе)",
+      "legacy": "Унаследованное",
+      "legacyTooltip": "Классифицировано до добавления ансамбля каталогизаторов — детальная трасса по каталогизаторам недоступна"
+    },
+    "regime": {
+      "unanimous": "Единогласно",
+      "unanimousTooltip": "Все активные каталогизаторы согласились с этой классификацией",
+      "strongMajority": "Сильное большинство (одно несогласие)",
+      "split": "Каталогизаторы разделились — нужно ваше решение"
+    },
+    "trail": {
+      "expand": "▸ Почему такая классификация?",
+      "collapse": "▾ Скрыть рассуждения",
+      "summary": "Краткое изложение рассуждений",
+      "perCataloger": "По каталогизатору"
+    },
+    "rule": {
+      "_comment": "Friendly labels for `rules_fired` strings — V3-§8.r5.2. Keys below are the EXACT strings the six catalogers emit today, verified against user_authority.rs / structural.rs / linguistic.rs / graph.rs / semantic.rs / reasoning.rs as of 2026-05-10.",
+      "rule_of_authority": "Ваш frontmatter — это авторитет",
+      "structural_pattern_match": "Структурный шаблон совпал",
+      "stance_or_form_marker": "Маркер позиции/формы присутствует",
+      "cae_root_match": "Совпадение арабского корня (CAE)",
+      "surface_token_match": "Совпадение поверхностного ключевого слова",
+      "bridge_similarity": "Межъязыковое сходство (Bridge)",
+      "rule_of_side_channel_preference": "Правило предпочтения побочного канала",
+      "typed_neighbor_consensus": "Консенсус соседей с типизированными ссылками",
+      "semantic_neighbor_consensus": "Похожие классифицированные соседи согласны",
+      "rule_of_authority_control": "Правило контроля авторитета",
+      "schedule_navigation_top_down": "Таксономическая навигация сверху вниз",
+      "gbnf_constrained": "Суждение ИИ (ограничено грамматикой)",
+      "rule_of_application": "Различение использования и упоминания"
+    },
+    "trustCal": {
+      "banner": "Показываем трассы рассуждений, пока вы не просмотрите ещё {N} карточек — это поможет вам понять, когда доверять каталогизаторам.",
+      "tooltip": "Трассы рассуждений показываются по умолчанию, пока вы формируете представление о том, как каталогизаторы приходят к своим классификациям. Этот баннер исчезнет после 50 проверок."
+    },
+    "queueSplit": {
+      "label": "{N} нужно ваше решение",
+      "tooltip": "Карточки, в которых каталогизаторы разделились — требуется ваше решение"
+    },
+    "queueFilter": {
+      "_comment": "V3-§8.r8 — composition filter chip row above the queue. Slices the rendered list by what kind of decision each card needs from the user.",
+      "ariaLabel": "Фильтровать очередь обзора по составу",
+      "all": "Все",
+      "both": "Обе оси требуют вашего решения",
+      "source": "Источник требует вашего решения",
+      "contentType": "Тип контента требует вашего решения",
+      "agreed": "Каталогизаторы согласились",
+      "emptyBucket": "Ни одна карточка не соответствует этому фильтру.",
+      "showAll": "Показать все карточки"
+    },
+    "settings": {
+      "_comment": "V3-§10.A — Settings UI section for the Constellation Epistemic Content Engine. Surfaces user controls for trail visibility, background scan trigger, and the per-Library calibration view of the V3-§9.C.2 reliability data.",
+      "heading": "Constellation Epistemic Content Engine",
+      "intro": "Ансамбль каталогизаторов, который классифицирует ваши заметки по осям Источник × Тип контента. Шесть линз, у каждой свои свидетельства; движок объединяет их голоса в синтез. Только локально — ни одна заметка не покидает ваше устройство.",
+      "reasoningModel": "Модель Каталогизатора Рассуждений",
+      "reasoningStatus": "Не загружено — линза локального суждения ИИ отложена до V3-§7.b. Когда подключение llama.cpp будет готово, вы сможете загрузить Qwen3-4B Q5_K_M из этой панели. Все вычисления будут выполняться на вашем устройстве — ни одна заметка никогда его не покинет.",
+      "downloadDisabled": "Скоро",
+      "trailVisibility": "Видимость трассы рассуждений",
+      "trailVisibilityDesc": "Когда автоматически разворачивать трассу рассуждений по каталогизатору на каждой карточке Обзора Источника.",
+      "trailAlways": "Всегда показывать",
+      "trailOnDisagreement": "Только при несогласии (по умолчанию)",
+      "trailNever": "Всегда скрывать",
+      "backgroundScan": "Фоновая классификация",
+      "backgroundScanDesc": "Когда автоматически классифицировать заметки, у которых ещё не заданы источники или тип контента. При сохранении используется существующее сохранение с задержкой 1,5 секунды — ввод текста остаётся мгновенным.",
+      "scanOff": "Выключено — только ручное сканирование (по умолчанию)",
+      "scanOnSave": "При сохранении заметки (с задержкой)",
+      "scanOnStartup": "При запуске приложения",
+      "calibrationHeading": "Калибровка по Библиотеке",
+      "calibrationLoading": "Загрузка данных калибровки…",
+      "calibrationError": "Не удалось загрузить данные калибровки",
+      "calibrationEmpty": "В этой Библиотеке ещё не зарегистрировано исправлений. Данные калибровки появятся здесь после того, как вы Примете или выберете чип Различения Сиблингов хотя бы на одной классифицированной карточке.",
+      "calibrationActive": "Активная Библиотека:",
+      "calibrationMinSamples": "Каталогизаторам требуется {N} исправлений до получения стабильных данных о точности; ниже этого порога они голосуют с равным весом.",
+      "calibrationUniform": "равномерно",
+      "calibrationColCataloger": "Каталогизатор",
+      "calibrationColHorizontal": "Горизонтальная (Источник)",
+      "calibrationColVertical": "Вертикальная (Тип контента)"
+    },
+    "disambiguation": {
+      "title": "Выберите правильный",
+      "prompt": "Каталогизаторы разделились между этими кандидатами. Выберите тот, который лучше всего подходит к заметке:",
+      "axisHorizontal": "Источник",
+      "axisVertical": "Тип контента",
+      "confirm": "Подтвердить",
+      "cancel": "Отмена",
+      "saved": "Ваш выбор сохранён — спасибо, что обучаете движок."
+    }
+  },
   "tasksPanel": {
     "all": "Все",
     "incomplete": "Незавершённые",

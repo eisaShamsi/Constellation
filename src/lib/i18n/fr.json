@@ -1905,6 +1905,123 @@
     "bias": "Biais potentiel (aucune vision opposée)",
     "biasDesc": "Cibles avec seulement des supports et zéro contradiction — chercher des perspectives opposées."
   },
+  "cece": {
+    "_comment": "MIG-021v3 V3-§8.r1.e + r5 — interface CECE. Le catalogue des six lentilles + l'IU du régime de synthèse. Libellés en langage clair selon la recommandation de l'agent UX. r5 a ajouté la grappe de points, les traductions des étiquettes de règles et la bannière de calibration de confiance.",
+    "cataloger": {
+      "user_authority": "Votre frontmatter",
+      "structural": "Citations et structure",
+      "linguistic": "Racines lexicales et lexique",
+      "graph": "Notes liées",
+      "semantic": "Notes similaires",
+      "reasoning": "Jugement de l'IA"
+    },
+    "catalogerAbbr": {
+      "user_authority": "AU",
+      "structural": "STR",
+      "linguistic": "LIN",
+      "graph": "GRP",
+      "semantic": "SEM",
+      "reasoning": "RAI"
+    },
+    "catalogerStatus": {
+      "voiced": "{name} : approuve la synthèse",
+      "dissent": "{name} : conteste",
+      "silent": "{name} : silencieux (aucun signal dans cette lentille)"
+    },
+    "badge": {
+      "clusterTooltip": "Ensemble de catalogueurs — survolez chaque point pour les détails",
+      "statusAgrees": "approuve la synthèse",
+      "statusDissents": "conteste la synthèse",
+      "statusSilent": "silencieux (aucun signal dans cette lentille)",
+      "legacy": "Hérité",
+      "legacyTooltip": "Classifié avant l'ajout de l'ensemble de catalogueurs — aucune piste de raisonnement par catalogueur disponible"
+    },
+    "regime": {
+      "unanimous": "Unanime",
+      "unanimousTooltip": "Tous les catalogueurs s'exprimant ont été d'accord sur cette classification",
+      "strongMajority": "Forte majorité (une dissidence)",
+      "split": "Catalogueurs divisés — votre décision est requise"
+    },
+    "trail": {
+      "expand": "▸ Pourquoi cette classification ?",
+      "collapse": "▾ Masquer le raisonnement",
+      "summary": "Résumé du raisonnement",
+      "perCataloger": "Par catalogueur"
+    },
+    "rule": {
+      "_comment": "Libellés conviviaux pour les chaînes `rules_fired` — V3-§8.r5.2. Les clés ci-dessous sont les chaînes EXACTES émises aujourd'hui par les six catalogueurs, vérifiées contre user_authority.rs / structural.rs / linguistic.rs / graph.rs / semantic.rs / reasoning.rs au 2026-05-10.",
+      "rule_of_authority": "Votre frontmatter fait autorité",
+      "structural_pattern_match": "Motif structurel détecté",
+      "stance_or_form_marker": "Marqueur de posture/forme présent",
+      "cae_root_match": "Correspondance de racine arabe (CAE)",
+      "surface_token_match": "Correspondance de mot-clé en surface",
+      "bridge_similarity": "Similarité interlingue (Bridge)",
+      "rule_of_side_channel_preference": "Règle de préférence de canal latéral",
+      "typed_neighbor_consensus": "Consensus des voisins par lien typé",
+      "semantic_neighbor_consensus": "Voisins classifiés similaires en accord",
+      "rule_of_authority_control": "Règle de contrôle d'autorité",
+      "schedule_navigation_top_down": "Navigation taxonomique descendante",
+      "gbnf_constrained": "Jugement de l'IA (contraint par grammaire)",
+      "rule_of_application": "Désambiguïsation usage / mention"
+    },
+    "trustCal": {
+      "banner": "Affichage des pistes de raisonnement jusqu'à ce que vous ayez révisé {N} cartes de plus — vous aide à apprendre quand faire confiance aux catalogueurs.",
+      "tooltip": "Les pistes de raisonnement sont affichées par défaut pendant que vous comprenez comment les catalogueurs parviennent à leurs classifications. Cette bannière disparaît après 50 révisions."
+    },
+    "queueSplit": {
+      "label": "{N} requièrent votre décision",
+      "tooltip": "Cartes pour lesquelles les catalogueurs sont divisés — votre décision est requise"
+    },
+    "queueFilter": {
+      "_comment": "V3-§8.r8 — rangée de chips de filtre de composition au-dessus de la file d'attente. Filtre la liste rendue selon le type de décision attendu de l'utilisateur pour chaque carte.",
+      "ariaLabel": "Filtrer la file de révision par composition",
+      "all": "Tout",
+      "both": "Les deux axes requièrent votre décision",
+      "source": "La source requiert votre décision",
+      "contentType": "Le type de contenu requiert votre décision",
+      "agreed": "Catalogueurs en accord",
+      "emptyBucket": "Aucune carte ne correspond à ce filtre.",
+      "showAll": "Afficher toutes les cartes"
+    },
+    "settings": {
+      "_comment": "V3-§10.A — section Paramètres pour le Constellation Epistemic Content Engine. Expose les contrôles utilisateur pour la visibilité de la piste, le déclencheur de scan en arrière-plan et la vue de calibration par Bibliothèque des données de fiabilité de V3-§9.C.2.",
+      "heading": "Constellation Epistemic Content Engine",
+      "intro": "L'ensemble de catalogueurs qui classe vos notes selon les axes Source × Type de contenu. Six lentilles, chacune avec ses propres preuves ; le moteur combine leurs votes en une synthèse. Strictement local — aucune note ne quitte votre appareil.",
+      "reasoningModel": "Modèle du catalogueur de raisonnement",
+      "reasoningStatus": "Non téléchargé — la lentille de jugement IA local est reportée à V3-§7.b. Lorsque l'intégration de llama.cpp sera livrée, vous pourrez télécharger Qwen3-4B Q5_K_M depuis ce panneau. Toute l'inférence s'exécutera sur votre appareil — aucune note ne le quittera jamais.",
+      "downloadDisabled": "Bientôt disponible",
+      "trailVisibility": "Visibilité de la piste de raisonnement",
+      "trailVisibilityDesc": "Quand déplier automatiquement la piste de raisonnement par catalogueur sur chaque carte de Révision des Sources.",
+      "trailAlways": "Toujours afficher",
+      "trailOnDisagreement": "Seulement en cas de désaccord (par défaut)",
+      "trailNever": "Toujours masquer",
+      "backgroundScan": "Classification en arrière-plan",
+      "backgroundScanDesc": "Quand classer automatiquement les notes qui n'ont pas encore de source ou de type de contenu. L'option « à l'enregistrement » utilise l'enregistrement existant avec délai de 1,5 seconde — la frappe reste instantanée.",
+      "scanOff": "Désactivé — scan manuel uniquement (par défaut)",
+      "scanOnSave": "À l'enregistrement de la note (avec délai)",
+      "scanOnStartup": "Au démarrage de l'application",
+      "calibrationHeading": "Calibration par Bibliothèque",
+      "calibrationLoading": "Chargement des données de calibration…",
+      "calibrationError": "Impossible de charger les données de calibration",
+      "calibrationEmpty": "Aucune correction enregistrée pour le moment sur cette Bibliothèque. Les données de calibration apparaîtront ici après que vous aurez accepté ou choisi une puce de Sibling Disambiguation sur au moins une carte classifiée.",
+      "calibrationActive": "Bibliothèque active :",
+      "calibrationMinSamples": "Les catalogueurs ont besoin de {N} corrections avant d'obtenir des données de précision stables ; en dessous de ce seuil ils votent avec un poids uniforme.",
+      "calibrationUniform": "uniforme",
+      "calibrationColCataloger": "Catalogueur",
+      "calibrationColHorizontal": "Horizontal (Source)",
+      "calibrationColVertical": "Vertical (Type de contenu)"
+    },
+    "disambiguation": {
+      "title": "Choisissez le bon",
+      "prompt": "Les catalogueurs sont divisés entre ces candidats. Choisissez celui qui convient le mieux à la note :",
+      "axisHorizontal": "Source",
+      "axisVertical": "Type de contenu",
+      "confirm": "Confirmer",
+      "cancel": "Annuler",
+      "saved": "Votre choix a été enregistré — merci d'avoir aidé le moteur à apprendre."
+    },
+    "_translation_note": "Traduction générée par IA ; relecture par locuteur natif en attente. Veuillez signaler les corrections via le dépôt du projet."
+  },
   "migrationProgress": {
     "termVocabV2": {
       "label": "Migration de l'index des termes",

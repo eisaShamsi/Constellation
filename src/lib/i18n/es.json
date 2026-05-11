@@ -1905,6 +1905,123 @@
     "bias": "Sesgo potencial (sin visión contraria)",
     "biasDesc": "Objetivos solo con apoyos y cero contradicciones — buscar perspectivas opuestas."
   },
+  "cece": {
+    "_comment": "MIG-021v3 V3-§8.r1.e + r5 — interfaz de CECE. El catálogo de las seis lentes + la UI del régimen de síntesis. Etiquetas en lenguaje claro según recomendación del agente UX. r5 añadió el clúster de puntos, las traducciones de las etiquetas de reglas y el banner de calibración de confianza.",
+    "cataloger": {
+      "user_authority": "Tu frontmatter",
+      "structural": "Citas y estructura",
+      "linguistic": "Raíces léxicas y vocabulario",
+      "graph": "Notas enlazadas",
+      "semantic": "Notas similares",
+      "reasoning": "Juicio de la IA"
+    },
+    "catalogerAbbr": {
+      "user_authority": "AU",
+      "structural": "EST",
+      "linguistic": "LIN",
+      "graph": "GRA",
+      "semantic": "SEM",
+      "reasoning": "RAZ"
+    },
+    "catalogerStatus": {
+      "voiced": "{name}: coincide con la síntesis",
+      "dissent": "{name}: discrepa",
+      "silent": "{name}: en silencio (sin señal en esta lente)"
+    },
+    "badge": {
+      "clusterTooltip": "Conjunto de catalogadores — pasa el cursor sobre cada punto para ver detalles",
+      "statusAgrees": "coincide con la síntesis",
+      "statusDissents": "discrepa de la síntesis",
+      "statusSilent": "en silencio (sin señal en esta lente)",
+      "legacy": "Heredado",
+      "legacyTooltip": "Clasificado antes de añadir el conjunto de catalogadores — no hay rastro disponible por catalogador"
+    },
+    "regime": {
+      "unanimous": "Unánime",
+      "unanimousTooltip": "Todos los catalogadores con voz coincidieron en esta clasificación",
+      "strongMajority": "Mayoría sólida (una discrepancia)",
+      "split": "Catalogadores divididos — se necesita tu decisión"
+    },
+    "trail": {
+      "expand": "▸ ¿Por qué esta clasificación?",
+      "collapse": "▾ Ocultar razonamiento",
+      "summary": "Resumen del razonamiento",
+      "perCataloger": "Por catalogador"
+    },
+    "rule": {
+      "_comment": "Etiquetas amigables para las cadenas de `rules_fired` — V3-§8.r5.2. Las claves a continuación son las cadenas EXACTAS que los seis catalogadores emiten hoy, verificadas contra user_authority.rs / structural.rs / linguistic.rs / graph.rs / semantic.rs / reasoning.rs al 2026-05-10.",
+      "rule_of_authority": "Tu frontmatter es la autoridad",
+      "structural_pattern_match": "Patrón estructural coincidente",
+      "stance_or_form_marker": "Marcador de postura o forma presente",
+      "cae_root_match": "Coincidencia de raíz árabe (CAE)",
+      "surface_token_match": "Coincidencia de palabra clave superficial",
+      "bridge_similarity": "Similitud entre idiomas (Bridge)",
+      "rule_of_side_channel_preference": "Regla de preferencia de canal lateral",
+      "typed_neighbor_consensus": "Consenso de vecinos por enlace tipado",
+      "semantic_neighbor_consensus": "Vecinos clasificados similares coinciden",
+      "rule_of_authority_control": "Regla de control de autoridad",
+      "schedule_navigation_top_down": "Navegación taxonómica de arriba abajo",
+      "gbnf_constrained": "Juicio de la IA (restringido por gramática)",
+      "rule_of_application": "Desambiguación entre uso y mención"
+    },
+    "trustCal": {
+      "banner": "Mostrando rastros de razonamiento hasta que revises {N} tarjetas más — te ayuda a aprender cuándo confiar en los catalogadores.",
+      "tooltip": "Los rastros de razonamiento se muestran por defecto mientras desarrollas una idea de cómo los catalogadores llegan a sus clasificaciones. Este banner desaparece tras 50 revisiones."
+    },
+    "queueSplit": {
+      "label": "{N} requieren tu decisión",
+      "tooltip": "Tarjetas en las que los catalogadores se dividieron — se necesita tu decisión"
+    },
+    "queueFilter": {
+      "_comment": "V3-§8.r8 — fila de chips de filtro de composición sobre la cola. Filtra la lista renderizada por el tipo de decisión que cada tarjeta requiere del usuario.",
+      "ariaLabel": "Filtrar la cola de revisión por composición",
+      "all": "Todo",
+      "both": "Ambos ejes requieren tu decisión",
+      "source": "La fuente requiere tu decisión",
+      "contentType": "El tipo de contenido requiere tu decisión",
+      "agreed": "Los catalogadores coincidieron",
+      "emptyBucket": "Ninguna tarjeta coincide con este filtro.",
+      "showAll": "Mostrar todas las tarjetas"
+    },
+    "settings": {
+      "_comment": "V3-§10.A — sección de Ajustes para el Constellation Epistemic Content Engine. Expone controles de usuario para la visibilidad del rastro, el disparador del escaneo en segundo plano y la vista de calibración por Biblioteca de los datos de fiabilidad de V3-§9.C.2.",
+      "heading": "Constellation Epistemic Content Engine",
+      "intro": "El conjunto de catalogadores que clasifica tus notas a lo largo de los ejes Fuente × Tipo de contenido. Seis lentes, cada una con sus propias evidencias; el motor combina sus votos en una síntesis. Solo local — ninguna nota sale de tu dispositivo.",
+      "reasoningModel": "Modelo del catalogador de razonamiento",
+      "reasoningStatus": "No descargado — la lente de juicio de IA local se aplazó a V3-§7.b. Cuando se entregue la integración con llama.cpp podrás descargar Qwen3-4B Q5_K_M desde este panel. Toda la inferencia se ejecutará en tu dispositivo — ninguna nota saldrá nunca de él.",
+      "downloadDisabled": "Próximamente",
+      "trailVisibility": "Visibilidad del rastro de razonamiento",
+      "trailVisibilityDesc": "Cuándo expandir automáticamente el rastro de razonamiento por catalogador en cada tarjeta de Revisión de Fuentes.",
+      "trailAlways": "Mostrar siempre",
+      "trailOnDisagreement": "Solo en desacuerdo (predeterminado)",
+      "trailNever": "Ocultar siempre",
+      "backgroundScan": "Clasificación en segundo plano",
+      "backgroundScanDesc": "Cuándo clasificar automáticamente las notas que aún no tienen fuentes o tipo de contenido. La opción «Al guardar» usa el guardado existente con debounce de 1,5 segundos — la escritura sigue siendo instantánea.",
+      "scanOff": "Desactivado — solo escaneo manual (predeterminado)",
+      "scanOnSave": "Al guardar la nota (con debounce)",
+      "scanOnStartup": "Al iniciar la aplicación",
+      "calibrationHeading": "Calibración por Biblioteca",
+      "calibrationLoading": "Cargando datos de calibración…",
+      "calibrationError": "No se pudieron cargar los datos de calibración",
+      "calibrationEmpty": "Aún no se han registrado correcciones en esta Biblioteca. Los datos de calibración aparecerán aquí después de que aceptes o elijas un chip de Sibling Disambiguation en al menos una tarjeta clasificada.",
+      "calibrationActive": "Biblioteca activa:",
+      "calibrationMinSamples": "Los catalogadores necesitan {N} correcciones antes de obtener datos de exactitud estables; por debajo de ese umbral votan con peso uniforme.",
+      "calibrationUniform": "uniforme",
+      "calibrationColCataloger": "Catalogador",
+      "calibrationColHorizontal": "Horizontal (Fuente)",
+      "calibrationColVertical": "Vertical (Tipo de contenido)"
+    },
+    "disambiguation": {
+      "title": "Elige la correcta",
+      "prompt": "Los catalogadores se dividieron entre estos candidatos. Elige cuál encaja mejor con la nota:",
+      "axisHorizontal": "Fuente",
+      "axisVertical": "Tipo de contenido",
+      "confirm": "Confirmar",
+      "cancel": "Cancelar",
+      "saved": "Tu elección se guardó — gracias por enseñar al motor."
+    },
+    "_translation_note": "Traducción generada por IA; pendiente de revisión por hablante nativo. Por favor envía correcciones a través del repositorio del proyecto."
+  },
   "migrationProgress": {
     "termVocabV2": {
       "label": "Migrando índice de términos",
