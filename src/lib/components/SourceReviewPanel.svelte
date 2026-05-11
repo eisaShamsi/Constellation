@@ -370,7 +370,12 @@
     // $t(key, params) — Constellation's i18n passes params as the
     // second argument's top-level fields (verified against
     // ImporterModal/LibraryManager/LinkDashboard call sites).
-    const params = trail.reasoning_template.params as Record<string, string>;
+    // MIG-022 §E.3.f (Boss-Test Gate 2 Stage 2 catch, 2026-05-11):
+    // resolve taxonomy ID params to localized labels via cece.taxonomy
+    // BEFORE substituting into the reasoning template, so non-en
+    // locales render "horizontal → خَبَر الثِّقة (...)" instead of
+    // "horizontal → testimony/authoritative (...)".
+    const params = resolveTaxonomyParams(trail.reasoning_template.params);
     const translated = $t(i18nKey, params);
     if (translated && translated !== i18nKey) return translated;
     return trail.reasoning; // fallback to English raw on missing key
@@ -384,9 +389,55 @@
   function compositeReasoningLabel(c: CompositeAssignment): string {
     if (!c.composite_reasoning_template) return c.composite_reasoning;
     const i18nKey = `cece.reasoning.${c.composite_reasoning_template.key}`;
-    const translated = $t(i18nKey, c.composite_reasoning_template.params as Record<string, string>);
+    const params = resolveTaxonomyParams(c.composite_reasoning_template.params);
+    const translated = $t(i18nKey, params);
     if (translated && translated !== i18nKey) return translated;
     return c.composite_reasoning;
+  }
+
+  /**
+   * MIG-022 §E.3.f — resolve taxonomy ID params in a reasoning
+   * template params object to localized labels. The cataloger Rust
+   * code emits raw taxonomy IDs (e.g. "testimony/authoritative") as
+   * `h_id`/`v_id`/`sources`/`content_type` placeholder values; this
+   * helper looks each up via `cece.taxonomy.<id>` and substitutes
+   * the localized label. Other params (roots, neighbors) pass
+   * through unchanged.
+   *
+   * The set of "taxonomy-flavored" param keys is hardcoded based on
+   * the §E.2 cataloger build_reasoning emissions:
+   *   single ID  : h_id, v_id
+   *   joined IDs : sources, content_type (UA's comma-joined lists)
+   *   other      : roots (CAE roots), neighbors (note paths) — pass through
+   */
+  function resolveTaxonomyParams(raw: Record<string, unknown>): Record<string, string> {
+    const out: Record<string, string> = {};
+    for (const [k, v] of Object.entries(raw)) {
+      const sv = String(v);
+      if (k === 'h_id' || k === 'v_id') {
+        out[k] = resolveTaxonomyId(sv);
+      } else if (k === 'sources' || k === 'content_type') {
+        out[k] = sv
+          .split(',')
+          .map((s) => resolveTaxonomyId(s.trim()))
+          .join(', ');
+      } else {
+        out[k] = sv;
+      }
+    }
+    return out;
+  }
+
+  /**
+   * Single-ID lookup helper. Returns the localized label when the
+   * `cece.taxonomy.<id>` key resolves; falls back to the raw ID
+   * (which is what the Source Review card showed pre-§E.3.f anyway).
+   */
+  function resolveTaxonomyId(id: string): string {
+    if (!id) return id;
+    const taxKey = `cece.taxonomy.${id}`;
+    const label = $t(taxKey);
+    return label && label !== taxKey ? label : id;
   }
 
   /**
@@ -1073,7 +1124,7 @@
                 <span class="srp-split-pill">{$t('cece.regime.split') || 'Catalogers split — needs your call'}</span>
               {:else if isStrongMajority}
                 <span class="srp-majority-pill">
-                  {$t('cece.regime.strongMajority') || 'Strong majority'} {#if composite.horizontal.dissenter || composite.vertical.dissenter}({composite.horizontal.dissenter ?? composite.vertical.dissenter}){/if}
+                  {$t('cece.regime.strongMajority') || 'Strong majority'} {#if composite.horizontal.dissenter || composite.vertical.dissenter}({catalogerLabel(composite.horizontal.dissenter ?? composite.vertical.dissenter ?? '')}){/if}
                 </span>
               {:else if trustCalActive}
                 <span class="srp-unanimous-pill" title={$t('cece.regime.unanimousTooltip') || 'All voicing catalogers agreed on this classification'}>
