@@ -162,18 +162,27 @@
 					notePath: filePath,
 					libraryName: tab.libraryName,
 				}).catch(() => {});
-				// MIG-021v3 V3-§10.A — CECE background scan on save.
-				// When enabled in Settings, fire classifier_suggest_for_note
-				// after the disk write completes. This rides the existing
-				// 1500ms-debounced save cycle (handleSave is the on-save
-				// callback from NotePane's debouncedSaveTimer), so it
-				// inherits the same "type stays instant" guarantee — never
-				// fires per-keystroke.
+				// MIG-021v3 V3-§10.A.1 — CECE background scan on save.
+				// When enabled in Settings, dispatch the same window event
+				// the right-click "Suggest sources & content type" context
+				// menu uses. The Source Review panel's handleClassifyAndShow
+				// listener does the IPC + queue prepend + flash highlight
+				// in one path, so the on-save flow gets identical UX to
+				// the manual-classify flow.
+				//
+				// V3-§10.A originally called classifier_suggest_for_note
+				// directly here, which fired the IPC correctly but never
+				// notified the Source Review panel — the queue stayed
+				// stale. Caught in Gate 3 Stage 3 (Boss-test 2026-05-11).
+				//
+				// This dispatch rides the existing 1500ms-debounced save
+				// cycle (handleSave is NotePane's debouncedSaveTimer
+				// callback), so the "typing stays instant" guarantee is
+				// preserved — never fires per-keystroke.
 				if (get(appSettings).cece?.backgroundScan === 'on_save') {
-					invoke('classifier_suggest_for_note', { notePath: filePath })
-						.catch((err) => {
-							console.warn('[CECE on-save] classifier_suggest_for_note failed:', err);
-						});
+					window.dispatchEvent(new CustomEvent('constellation:classify-and-show', {
+						detail: { notePath: filePath },
+					}));
 				}
 			})
 			.catch(() => {})
