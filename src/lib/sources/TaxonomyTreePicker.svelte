@@ -233,7 +233,9 @@
       {@const isChecked = selected.has(node.id)}
       {@const color = nodeColor(node)}
       {@const isArabic = currentLocale === 'ar'}
-      {@const primaryLabel = isArabic ? node.ar : node.en}
+      {@const i18nLabel = $t(`cece.taxonomy.${node.id}`)}
+      {@const i18nResolved = i18nLabel && i18nLabel !== `cece.taxonomy.${node.id}`}
+      {@const primaryLabel = i18nResolved ? i18nLabel : (isArabic ? node.ar : node.en)}
       {@const secondaryLabel = isArabic ? node.en : node.ar}
       <li
         class="ttp-node"

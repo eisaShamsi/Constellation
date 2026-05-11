@@ -2088,6 +2088,19 @@
       "reject": "거부",
       "save": "저장",
       "cancel": "취소"
+    },
+    "evidence": {
+      "perception": "직접적인 감각 관찰",
+      "inference": "전제에서 결론으로의 추론",
+      "testimony": "다른 지식인의 보고",
+      "mass-transmission": "수렴적 다중 증인 합의 (al-tawatur)",
+      "comparison": "유추에 의한 지식 (qiyas / upamana)",
+      "postulation": "최선의 설명으로의 추론 (arthapatti)",
+      "non-apprehension": "부재의 지식 (anupalabdhi)",
+      "memory": "과거 경험의 회상 (smrti)",
+      "innate-disposition": "경험 이전의 직관 (fitrah / nous)",
+      "inspiration": "신비적 또는 창조적 통찰 (al-ilham)",
+      "revelation": "성스러운 문헌 또는 예언적 전승 (al-wahy)"
     }
   }
 }

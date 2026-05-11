@@ -2088,6 +2088,19 @@
       "reject": "拒否",
       "save": "保存",
       "cancel": "キャンセル"
+    },
+    "evidence": {
+      "perception": "直接的な感覚的観察",
+      "inference": "前提から結論への推論",
+      "testimony": "他の知者による報告",
+      "mass-transmission": "収束する多証人の合意 (al-tawatur)",
+      "comparison": "類推による知識 (qiyas / upamana)",
+      "postulation": "最良の説明への推論 (arthapatti)",
+      "non-apprehension": "不在の知識 (anupalabdhi)",
+      "memory": "過去の経験の想起 (smrti)",
+      "innate-disposition": "経験以前の直観 (fitrah / nous)",
+      "inspiration": "神秘的または創造的な把握 (al-ilham)",
+      "revelation": "聖典または預言的伝承 (al-wahy)"
     }
   }
 }

@@ -2088,6 +2088,19 @@
       "reject": "Отклонить",
       "save": "Сохранить",
       "cancel": "Отменить"
+    },
+    "evidence": {
+      "perception": "Непосредственное чувственное наблюдение",
+      "inference": "Рассуждение от посылок к выводу",
+      "testimony": "Сообщено другим знающим",
+      "mass-transmission": "Сходящийся консенсус многих свидетелей (al-tawatur)",
+      "comparison": "Знание через аналогию (qiyas / upamana)",
+      "postulation": "Заключение к наилучшему объяснению (arthapatti)",
+      "non-apprehension": "Знание об отсутствии (anupalabdhi)",
+      "memory": "Воспоминание о прошлом опыте (smrti)",
+      "innate-disposition": "Доопытная интуиция (fitrah / nous)",
+      "inspiration": "Мистическое или творческое постижение (al-ilham)",
+      "revelation": "Передача священного текста или пророческая (al-wahy)"
     }
   }
 }

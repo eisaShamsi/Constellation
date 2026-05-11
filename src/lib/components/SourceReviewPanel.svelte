@@ -639,6 +639,15 @@
   });
 
   function labelForId(id: string, axis: string): string {
+    // MIG-022 §E.3.b (PJ-043, 2026-05-11): prefer i18n catalog over
+    // hardcoded en/ar struct fields. Lookup `cece.taxonomy.<id>`;
+    // when the key resolves (i.e. translated value != raw key), use
+    // it. Otherwise fall back to the Rust struct's en/ar fields
+    // (still authoritative for missing-locale defense + as the
+    // canonical source the §E.3.a seed extracts from).
+    const i18nKey = `cece.taxonomy.${id}`;
+    const translated = $t(i18nKey);
+    if (translated && translated !== i18nKey) return translated;
     const isArabic = currentLocale === 'ar';
     if (axis === 'horizontal') {
       const node = horizontalTaxonomy.find(n => n.id === id);

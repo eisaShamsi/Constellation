@@ -191,6 +191,12 @@
 	}
 
 	function taxonomyLabel(id: string, axis: 'horizontal' | 'vertical'): string {
+		// MIG-022 §E.3.b (PJ-043, 2026-05-11): prefer i18n catalog over
+		// hardcoded en/ar struct fields. See SourceReviewPanel.labelForId
+		// for the same pattern.
+		const i18nKey = `cece.taxonomy.${id}`;
+		const translated = $t(i18nKey);
+		if (translated && translated !== i18nKey) return translated;
 		const isAr = $locale === 'ar';
 		if (axis === 'horizontal') {
 			const node = horizontalTaxonomy.find(n => n.id === id);

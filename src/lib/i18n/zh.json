@@ -2088,6 +2088,19 @@
       "reject": "拒绝",
       "save": "保存",
       "cancel": "取消"
+    },
+    "evidence": {
+      "perception": "直接的感官观察",
+      "inference": "从前提到结论的推理",
+      "testimony": "另一位知者的报告",
+      "mass-transmission": "多证人趋同共识 (al-tawatur)",
+      "comparison": "通过类比的知识 (qiyas / upamana)",
+      "postulation": "最佳解释推论 (arthapatti)",
+      "non-apprehension": "对不在的认识 (anupalabdhi)",
+      "memory": "对过去经验的回忆 (smrti)",
+      "innate-disposition": "经验前直观 (fitrah / nous)",
+      "inspiration": "神秘或创造性领悟 (al-ilham)",
+      "revelation": "圣典或先知传承 (al-wahy)"
     }
   }
 }

@@ -2088,6 +2088,19 @@
       "reject": "Reddet",
       "save": "Kaydet",
       "cancel": "İptal"
+    },
+    "evidence": {
+      "perception": "Doğrudan duyusal gözlem",
+      "inference": "Öncüllerden sonuca akıl yürütme",
+      "testimony": "Başka bir bilen tarafından bildirilen (haber)",
+      "mass-transmission": "Yakınsayan çok-tanıklı uzlaşı (tevatür)",
+      "comparison": "Analoji ile bilgi (kıyas / upamana)",
+      "postulation": "En iyi açıklamaya çıkarım (arthapatti)",
+      "non-apprehension": "Yokluk bilgisi (anupalabdhi)",
+      "memory": "Geçmiş deneyimin hatırlanması (smrti)",
+      "innate-disposition": "Deneyim öncesi sezgi (fıtrat / nous)",
+      "inspiration": "Mistik veya yaratıcı kavrayış (ilham)",
+      "revelation": "Kutsal metin veya peygamberî aktarım (vahiy)"
     }
   }
 }

@@ -2088,6 +2088,19 @@
       "reject": "Rejeter",
       "save": "Enregistrer",
       "cancel": "Annuler"
+    },
+    "evidence": {
+      "perception": "Observation sensorielle directe",
+      "inference": "Raisonnement des prémisses à la conclusion",
+      "testimony": "Rapporté par un autre connaisseur",
+      "mass-transmission": "Consensus convergent à témoins multiples (al-tawatur)",
+      "comparison": "Connaissance par analogie (qiyas / upamana)",
+      "postulation": "Inférence à la meilleure explication (arthapatti)",
+      "non-apprehension": "Connaissance de l'absence (anupalabdhi)",
+      "memory": "Souvenir d'une expérience passée (smrti)",
+      "innate-disposition": "Intuition pré-expérientielle (fitrah / nous)",
+      "inspiration": "Appréhension mystique ou créative (al-ilham)",
+      "revelation": "Transmission scripturaire ou prophétique (al-wahy)"
     }
   }
 }
