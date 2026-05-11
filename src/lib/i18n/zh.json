@@ -355,6 +355,13 @@
       "linkDistance": "连接距离",
       "linkDistanceDesc": "相连节点之间的目标距离"
     },
+    "classifier": {
+      "heading": "来源与内容类型分类器",
+      "scanName": "运行分类扫描",
+      "scanDesc": "遍历宇宙中尚未设置来源或内容类型的每条笔记，向本地 Tier-1 分类器（e5-small 嵌入，无需互联网）请求建议，并将结果排入来源审阅面板等待您的批准。可恢复：扫描中途关闭，下次启动从停止处继续。键入保持即时 — 扫描在后台线程上运行。",
+      "scanStart": "开始扫描",
+      "scanRunning": "运行中…"
+    },
     "intelligence": {
       "intro": "为你的资料库配置AI提供商、技能和隐私控制。",
       "connection": "连接",

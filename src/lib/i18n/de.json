@@ -355,6 +355,13 @@
       "linkDistance": "Verbindungsabstand",
       "linkDistanceDesc": "Zielabstand zwischen verbundenen Knoten"
     },
+    "classifier": {
+      "heading": "Quellen- und Inhaltstyp-Klassifizierer",
+      "scanName": "Klassifizierungs-Scan ausführen",
+      "scanDesc": "Geht jede Notiz im Universum durch, die noch keine Quellen oder keinen Inhaltstyp gesetzt hat, fragt den lokalen Tier-1-Klassifizierer (e5-small-Embeddings, kein Internet) nach einem Vorschlag und reiht das Ergebnis im Quellen-Prüfung-Panel zur Genehmigung ein. Fortsetzbar: schließe mitten im Scan und der nächste Start nimmt dort wieder auf, wo er aufgehört hat. Die Eingabe bleibt sofort — der Scan läuft auf einem Hintergrund-Thread.",
+      "scanStart": "Scan starten",
+      "scanRunning": "Läuft…"
+    },
     "intelligence": {
       "intro": "KI-Anbieter, Fähigkeiten und Datenschutzkontrollen für Ihre Bibliotheken konfigurieren.",
       "connection": "Verbindung",

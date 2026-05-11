@@ -355,6 +355,13 @@
       "linkDistance": "Distancia del enlace",
       "linkDistanceDesc": "Distancia objetivo entre nodos conectados"
     },
+    "classifier": {
+      "heading": "Clasificador de fuentes y tipo de contenido",
+      "scanName": "Ejecutar escaneo de clasificación",
+      "scanDesc": "Recorre cada nota del Universo que aún no tiene fuentes ni tipo de contenido establecidos, pregunta al clasificador Tier-1 local (embeddings e5-small, sin internet) por una sugerencia y pone el resultado en cola en el panel de Revisión de Fuentes para su aprobación. Reanudable: cierre el escaneo a mitad y el siguiente inicio retoma desde donde se detuvo. La escritura sigue siendo instantánea — el escaneo se ejecuta en un hilo en segundo plano.",
+      "scanStart": "Iniciar escaneo",
+      "scanRunning": "Ejecutándose…"
+    },
     "intelligence": {
       "intro": "Configura proveedores de IA, habilidades y controles de privacidad para tus bibliotecas.",
       "connection": "Conexión",

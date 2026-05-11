@@ -355,6 +355,13 @@
       "linkDistance": "링크 거리",
       "linkDistanceDesc": "연결된 노드 간의 목표 거리"
     },
+    "classifier": {
+      "heading": "출처 및 콘텐츠 유형 분류기",
+      "scanName": "분류 스캔 실행",
+      "scanDesc": "Universe 내에서 아직 출처나 콘텐츠 유형이 설정되지 않은 모든 노트를 순회하며, 로컬 Tier-1 분류기(e5-small 임베딩, 인터넷 불필요)에 제안을 요청하고 결과를 승인을 위해 Source Review 패널에 큐잉합니다. 재개 가능: 스캔 중간에 닫고 다음 시작 시 멈춘 곳에서 다시 시작합니다. 입력은 즉시 유지됩니다 — 스캔은 백그라운드 스레드에서 실행됩니다.",
+      "scanStart": "스캔 시작",
+      "scanRunning": "실행 중…"
+    },
     "intelligence": {
       "intro": "라이브러리의 AI 제공자, 스킬, 개인정보 제어를 구성합니다.",
       "connection": "연결",

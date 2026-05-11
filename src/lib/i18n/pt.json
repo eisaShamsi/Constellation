@@ -355,6 +355,13 @@
       "linkDistance": "Distância do link",
       "linkDistanceDesc": "Distância alvo entre nós conectados"
     },
+    "classifier": {
+      "heading": "Classificador de fontes e tipo de conteúdo",
+      "scanName": "Executar varredura de classificação",
+      "scanDesc": "Percorre cada nota no Universo que ainda não tem fontes nem tipo de conteúdo definidos, pergunta ao classificador Tier-1 local (embeddings e5-small, sem internet) por uma sugestão e enfileira o resultado no painel de Revisão de Fontes para sua aprovação. Retomável: feche no meio da varredura e o próximo início continua de onde parou. A digitação permanece instantânea — a varredura é executada em uma thread de fundo.",
+      "scanStart": "Iniciar varredura",
+      "scanRunning": "Executando…"
+    },
     "intelligence": {
       "intro": "Configure provedores de IA, habilidades e controles de privacidade para suas bibliotecas.",
       "connection": "Conexão",

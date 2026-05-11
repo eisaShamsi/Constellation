@@ -355,6 +355,13 @@
       "linkDistance": "Bağlantı mesafesi",
       "linkDistanceDesc": "Bağlı düğümler arasındaki hedef mesafe"
     },
+    "classifier": {
+      "heading": "Kaynak ve içerik türü sınıflandırıcı",
+      "scanName": "Sınıflandırma taramasını çalıştır",
+      "scanDesc": "Evrendeki henüz kaynak veya içerik türü ayarlanmamış her notu gezer, yerel Tier-1 sınıflandırıcıdan (e5-small gömüleri, internet yok) bir öneri ister ve sonucu onayınız için Kaynak İncelemesi panelinde sıraya alır. Sürdürülebilir: tarama sırasında kapatın, sonraki başlatma kaldığı yerden devam eder. Yazma anlık kalır — tarama bir arka plan iş parçacığında çalışır.",
+      "scanStart": "Taramayı başlat",
+      "scanRunning": "Çalışıyor…"
+    },
     "intelligence": {
       "intro": "Kütüphaneleriniz için AI sağlayıcılarını, becerileri ve gizlilik kontrollerini yapılandırın.",
       "connection": "Bağlantı",

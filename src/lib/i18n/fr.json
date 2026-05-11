@@ -355,6 +355,13 @@
       "linkDistance": "Distance des liens",
       "linkDistanceDesc": "Distance cible entre les nœuds connectés"
     },
+    "classifier": {
+      "heading": "Classificateur de sources et de type de contenu",
+      "scanName": "Exécuter l'analyse de classification",
+      "scanDesc": "Parcourt chaque note de l'Univers qui n'a encore ni sources ni type de contenu, demande au classificateur Tier-1 local (embeddings e5-small, sans internet) une suggestion et place le résultat dans le panneau de Révision des Sources pour approbation. Reprenable : fermez en cours d'analyse et le prochain démarrage reprendra là où il s'était arrêté. La saisie reste instantanée — l'analyse s'exécute sur un thread d'arrière-plan.",
+      "scanStart": "Démarrer l'analyse",
+      "scanRunning": "En cours…"
+    },
     "intelligence": {
       "intro": "Configurez les fournisseurs IA, les compétences et les contrôles de confidentialité pour vos bibliothèques.",
       "connection": "Connexion",
