@@ -149,6 +149,97 @@
       "target": "epistemic-states/certainty/religious/haqq-al-yaqin",
       "weight": 0.90,
       "evidence": "Truth of certainty (ḥaqq al-yaqīn)"
+    },
+    {
+      "_comment": "V3-§9.A — propositional knowledge marker. 'I know that' / 'we know' phrasing typically signals propositional knowledge (knowledge-that) rather than know-how or know-by-acquaintance.",
+      "tokens": ["I know that", "we know", "نعلم أن", "معلوم", "من المعلوم"],
+      "target": "epistemic-states/knowledge/by-content/propositional",
+      "weight": 0.85,
+      "evidence": "Propositional knowledge marker"
+    },
+    {
+      "_comment": "V3-§9.A — knowledge-by-acquaintance marker. First-person encounter / direct exposure phrasing.",
+      "tokens": ["I have met", "I have seen", "I encountered", "تعرفت على", "شاهدت", "قابلت"],
+      "target": "epistemic-states/knowledge/by-content/acquaintance",
+      "weight": 0.80,
+      "evidence": "Knowledge-by-acquaintance marker"
+    },
+    {
+      "_comment": "V3-§9.A — illusion (wahm) marker. ال-prefixed variants added — surface-token match is exact substring, not lemma-aware.",
+      "tokens": ["illusion", "mirage", "وهم", "الوهم", "سراب", "السراب", "خيال", "الخيال"],
+      "target": "epistemic-states/illusion",
+      "weight": 0.85,
+      "evidence": "Illusion (wahm) marker"
+    },
+    {
+      "_comment": "V3-§9.A — proposition (qaḍiyyah) marker.",
+      "tokens": ["the proposition", "the claim that", "the statement that", "قضية", "القضية", "أن X يعني"],
+      "target": "semantic-contents/proposition",
+      "weight": 0.80,
+      "evidence": "Proposition (qaḍiyyah) marker"
+    },
+    {
+      "_comment": "V3-§9.A — concept (taṣawwur) marker. Definition phrasing maps to concept formation.",
+      "tokens": ["the concept of", "is defined as", "we define", "مفهوم", "المفهوم", "تَصوُّر", "التَصوُّر", "تعريف", "التعريف"],
+      "target": "semantic-contents/concept",
+      "weight": 0.80,
+      "evidence": "Concept (taṣawwur) marker"
+    },
+    {
+      "_comment": "V3-§9.A — fact (wāqiʿah) marker.",
+      "tokens": ["the fact that", "established fact", "حقيقة", "الحقيقة", "واقعة", "الواقعة", "ثابت أن"],
+      "target": "semantic-contents/fact",
+      "weight": 0.80,
+      "evidence": "Fact (wāqiʿah) marker"
+    },
+    {
+      "_comment": "V3-§9.A — theory (naẓariyyah) marker. Theory lives under higher-order-constructs (not semantic-contents) per the Eisa-canonical taxonomy chart.",
+      "tokens": ["the theory of", "according to the theory", "نظرية", "النظرية"],
+      "target": "higher-order-constructs/theory",
+      "weight": 0.80,
+      "evidence": "Theory (naẓariyyah) marker"
+    },
+    {
+      "_comment": "V3-§9.A — constructed-idea marker. 'I had the idea' / 'فكرة خطرت' typically signals an actively-constructed idea rather than an innate one.",
+      "tokens": ["the idea of", "I had the idea", "فكرة", "الفكرة", "خطر ببالي"],
+      "target": "semantic-contents/idea/constructed",
+      "weight": 0.75,
+      "evidence": "Constructed-idea marker"
+    },
+    {
+      "_comment": "V3-§9.A — information (DIKW T2) marker. References to data/info typically signal the information layer.",
+      "tokens": ["the information", "the data", "معلومات", "المعلومات", "بيانات", "البيانات"],
+      "target": "semantic-contents/information",
+      "weight": 0.75,
+      "evidence": "Information (DIKW T2) marker"
+    },
+    {
+      "_comment": "V3-§9.A — sensory signal marker. References to 'the signal' / 'the input' / 'إشارة' (in non-symbolic context) → sensory-inputs/signal.",
+      "tokens": ["the signal", "the input", "إشارة", "الإشارة", "مدخل حسي", "المدخل الحسي"],
+      "target": "sensory-inputs/signal",
+      "weight": 0.70,
+      "evidence": "Sensory signal marker"
+    },
+    {
+      "_comment": "V3-§9.A — symbol/sign marker (Peirce's classification). Note: 'إشارة' overlaps with sensory-inputs/signal — context decides which fires; both will produce assignments and the synthesis layer picks via weight.",
+      "tokens": ["the symbol", "the sign", "إشارة رمزية", "الإشارة الرمزية", "رمز", "الرمز"],
+      "target": "symbolic-entities/sign",
+      "weight": 0.70,
+      "evidence": "Symbol/sign (Peirce) marker"
+    },
+    {
+      "_comment": "V3-§9.A — worldview (ruʾyah kawniyyah) marker. Includes the ال-prefixed Arabic variants (الرؤية الكونية etc.) because real Arabic prose almost always carries the definite article — surface-token match is exact substring, not lemma-aware.",
+      "tokens": ["worldview", "paradigm", "framework", "رؤية كونية", "الرؤية الكونية", "رؤية كَونية", "الرؤية الكَونية", "إطار", "الإطار"],
+      "target": "higher-order-constructs/worldview",
+      "weight": 0.80,
+      "evidence": "Worldview/paradigm marker"
+    },
+    {
+      "_comment": "V3-§9.A — doctrine (madhhab) marker.",
+      "tokens": ["doctrine", "school of thought", "مذهب", "عقيدة", "مدرسة فكرية"],
+      "target": "higher-order-constructs/doctrine",
+      "weight": 0.80,
+      "evidence": "Doctrine/school-of-thought marker"
     }
   ],
 

@@ -597,4 +597,89 @@ mod tests {
         assert_eq!(normalize_root("ق ي س"), "قيس");
         assert_eq!(normalize_root("قيس"), "قيس");
     }
+
+    // ─── V3-§9.A — Vertical lexicon expansion regression tests ───
+    // 12 new entries added to sources_lexicon.json::vertical covering
+    // all 5 branches of the vertical taxonomy. These tests confirm a
+    // few representative entries fire on synthetic input. Full
+    // verification happens in Gate 2 Boss-test (Phase E).
+
+    #[test]
+    fn v3_p9a_definition_phrasing_fires_concept() {
+        // "the concept of" should fire semantic-contents/concept on the
+        // vertical axis. Tests the new lexicon entry, NOT the structural
+        // detector (which Phase B will add separately on a different
+        // regex pattern).
+        let c = LinguisticCataloger::new();
+        let trail = c
+            .classify(&ctx_for_body(
+                "The concept of constructive proof is central to intuitionistic logic.",
+            ))
+            .unwrap();
+        assert!(trail.voiced_opinion, "should voice on a clear vertical signal");
+        assert!(
+            trail.vertical.iter().any(|a| a.id == "semantic-contents/concept"),
+            "vertical assignments should include semantic-contents/concept; got {:?}",
+            trail.vertical.iter().map(|a| &a.id).collect::<Vec<_>>()
+        );
+    }
+
+    #[test]
+    fn v3_p9a_arabic_worldview_fires_higher_order() {
+        let c = LinguisticCataloger::new();
+        let trail = c
+            .classify(&ctx_for_body(
+                "تتشكل الرؤية الكونية للمؤمن من خلال نصوص الوحي والتفكر في الآفاق والأنفس.",
+            ))
+            .unwrap();
+        assert!(trail.voiced_opinion);
+        assert!(
+            trail
+                .vertical
+                .iter()
+                .any(|a| a.id == "higher-order-constructs/worldview"),
+            "should fire higher-order-constructs/worldview; got {:?}",
+            trail.vertical.iter().map(|a| &a.id).collect::<Vec<_>>()
+        );
+    }
+
+    #[test]
+    fn v3_p9a_propositional_knowledge_phrasing_fires_correct_target() {
+        // "we know that ... the boiling point of water is 100°C" — clear
+        // propositional knowledge marker.
+        let c = LinguisticCataloger::new();
+        let trail = c
+            .classify(&ctx_for_body(
+                "We know that the boiling point of water at sea level is 100 degrees Celsius.",
+            ))
+            .unwrap();
+        assert!(trail.voiced_opinion);
+        assert!(
+            trail
+                .vertical
+                .iter()
+                .any(|a| a.id == "epistemic-states/knowledge/by-content/propositional"),
+            "should fire propositional knowledge; got {:?}",
+            trail.vertical.iter().map(|a| &a.id).collect::<Vec<_>>()
+        );
+    }
+
+    #[test]
+    fn v3_p9a_doctrine_phrasing_fires_higher_order() {
+        let c = LinguisticCataloger::new();
+        let trail = c
+            .classify(&ctx_for_body(
+                "The Mu'tazili doctrine on free will differs sharply from the Ash'ari مذهب.",
+            ))
+            .unwrap();
+        assert!(trail.voiced_opinion);
+        assert!(
+            trail
+                .vertical
+                .iter()
+                .any(|a| a.id == "higher-order-constructs/doctrine"),
+            "should fire higher-order-constructs/doctrine; got {:?}",
+            trail.vertical.iter().map(|a| &a.id).collect::<Vec<_>>()
+        );
+    }
 }
