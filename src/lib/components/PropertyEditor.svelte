@@ -54,10 +54,14 @@
 		datetime: '\uD83D\uDD50',
 		list: '\u2255',
 		link: '\uD83D\uDD17',
-		checkbox: '\u2611'
+		checkbox: '\u2611',
+		// MIG-022 \u00A7A.1 \u2014 nested-object-list (e.g. ikhtil\u0101f). Distinct
+		// glyph until the \u00A7A.3 ikhtil\u0101f widget renders the structured
+		// rows directly. Tablet-with-rows icon (U+2630).
+		'nested-object-list': '\u2630',
 	};
 
-	const TYPE_ORDER: PropertyType[] = ['text', 'number', 'date', 'datetime', 'list', 'link', 'checkbox'];
+	const TYPE_ORDER: PropertyType[] = ['text', 'number', 'date', 'datetime', 'list', 'link', 'checkbox', 'nested-object-list'];
 
 	const TYPE_I18N_KEYS: Record<PropertyType, string> = {
 		text: 'propertyEditor.typeText',
@@ -67,6 +71,10 @@
 		list: 'propertyEditor.typeList',
 		link: 'propertyEditor.typeLink',
 		checkbox: 'propertyEditor.typeCheckbox',
+		// MIG-022 \u00A7A.1 \u2014 placeholder i18n key for the nested-object-list
+		// type label. The \u00A7A.4 i18n cascade adds this key to en + ar +
+		// 13-locale backfill alongside the other propertyEditor.* labels.
+		'nested-object-list': 'propertyEditor.typeNestedObjectList',
 	};
 
 	// Special well-known property keys with distinct icons (English + Arabic)
