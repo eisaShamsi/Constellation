@@ -20,6 +20,7 @@ Constellation is a Personal Knowledge Formulation desktop application. Not a fil
 8. [Constellation Sight](#constellation-lens)
 9. [Second Screen](#second-screen)
 10. [Properties and Frontmatter](#properties-and-frontmatter)
+10b. [Source Review (CECE)](#10b-source-review-constellation-epistemic-content-engine--cece)
 11. [Templates](#templates)
 12. [Tables](#tables)
 13. [Tasks](#tasks)
@@ -935,6 +936,90 @@ Constellation detects property types automatically:
 | **Link** | `related: [[Other Note]]` |
 
 Toggle property display in **Settings > Editor > Properties in document** (Visible / Hidden / Source).
+
+---
+
+## 10b. Source Review (Constellation Epistemic Content Engine — CECE)
+
+Two of the most important frontmatter properties — `sources:` and `content_type:` — describe *how you came to know* something and *what kind of knowledge* it is. Constellation's **Epistemic Content Engine** (CECE) classifies every note along these two axes automatically using a 6-cataloger ensemble. The **Source Review** panel is where you review and correct those classifications.
+
+### What the engine does
+
+When you classify a note (right-click → "Suggest sources & content type", or via Settings > Run scan, or automatically via the background scan toggle), CECE runs six independent catalogers against the note. Each one reads the note through a different lens and votes on two questions:
+
+- **Source** (horizontal axis) — where did this knowledge *come from*? Eleven possible values: perception, inference, testimony, mass-transmission, comparison, postulation, non-apprehension, memory, innate-disposition, inspiration, revelation. Plus *unclassifiable*.
+- **Content Type** (vertical axis) — what *kind* of knowledge is this? Five top-level branches: sensory inputs, symbolic entities, semantic contents, epistemic states, higher-order constructs.
+
+The two axes are independent. A note "I doubt the moon landing" is testimony (someone reported it) on source + epistemic-states/doubt (your stance) on content-type.
+
+The engine runs **on your device** — no notes ever leave Constellation.
+
+### The six catalogers
+
+Each cataloger is one lens. The Source Review card shows them as six small colored dots in the top right corner of each card:
+
+- **Your frontmatter** (blue) — adopts what you've already set, with absolute authority
+- **Citations & structure** (rose) — citations, blockquotes, theorem markers, definition phrases
+- **Wordstems & lexicon** (amber) — Arabic root analysis + cross-lingual term equivalence
+- **Linked notes** (teal) — typed Living Links to other classified notes
+- **Similar notes** (violet) — embedding-similarity to your already-classified notes
+- **AI judgment** (green) — a local LLM (Qwen3-4B; *not yet active*, deferred to a future release)
+
+A filled dot means that cataloger voiced and agrees with the synthesis. A ringed dot means it voiced but dissented. A dashed-outline dot means it stayed silent (no signal in this lens).
+
+### Three confidence regimes
+
+After the catalogers vote, each axis lands in one of three regimes:
+
+- **Unanimous** — every voicing cataloger agreed
+- **Strong majority (one dissent)** — most agreed; one dissenter named
+- **Split** — no clear majority; the engine refuses to guess and asks you to pick
+
+Each axis gets its own regime independently — a card can be Unanimous on horizontal + Split on vertical, etc.
+
+### Sibling Disambiguation
+
+When an axis is Split, the engine surfaces the candidate values as **chips** under a prompt: *"Pick which one fits the note best."* Click a chip → the engine writes that pick to the note's frontmatter and removes the card from the queue. If the OTHER axis was settled (Unanimous or Strong majority), the engine *also* writes that axis's value at the same time — one click finishes both axes when only one was Split.
+
+### The reasoning trail
+
+Every card has a *"▸ Why this classification?"* toggle. Expanding it shows one row per voicing cataloger with the reasoning, self-reported confidence, and friendly rule chips ("Surface keyword match", "Arabic root match (CAE)", "Definition marker", etc.) — these are the specific rules each cataloger triggered.
+
+During your **first 50 reviews** the trail auto-expands on every card (a *trust-calibration period*) so you can build intuition for when to trust the engine. After that, trails collapse to on-demand on Unanimous cards. Override anytime in **Settings > Intelligence > CECE > Reasoning trail visibility**.
+
+### The queue composition filter
+
+Above the count strip, five chips slice the queue by what kind of decision each card needs:
+
+- **All** — the full queue
+- **Both axes need your call** — both axes Split
+- **Source needs your call** — horizontal Split + vertical settled
+- **Content type needs your call** — vertical Split + horizontal settled
+- **Catalogers agreed** — neither axis Split (rubber-stamp candidates)
+
+Each chip shows its bucket count. The filter is a render-layer slicer — Approve All math always operates on the full queue regardless of which filter is active.
+
+### Per-card actions
+
+- **Accept** — write the engine's synthesis primary on both axes; remove the card. Updates per-cataloger reliability.
+- **Edit** — open a tree picker for both axes; choose manually. Same reliability update.
+- **Reject** — clear the card without writing.
+- **Sibling Disambiguation chip** — on Split cards only.
+
+### Per-Library calibration
+
+**Settings > Intelligence > CECE > Per-Library calibration** opens a read-only table showing each cataloger's accuracy per axis on the active Library. Different Libraries have different per-cataloger accuracies — Linguistic excels on Arabic-heavy Libraries, Graph excels on densely-linked ones. The synthesis layer uses this calibration data to weight votes.
+
+A cataloger needs **20 corrections** before its accuracy ratio is shown. Below that threshold, the label reads *"(uniform)"* — the cataloger contributes uniformly weighted votes until enough data accumulates.
+
+### Background classification
+
+By default, CECE classifies notes only when you ask it to (right-click or Settings scan button). You can opt into automatic classification in **Settings > Intelligence > CECE > Background classification**:
+
+- **On note save** — classify each note ~1.5 seconds after you stop typing (rides the existing debounced save; never fires per-keystroke; typing stays instant)
+- **On app start** — scan unclassified notes once per launch
+
+For deeper detail (every dot status, every rule chip, click-by-click walkthroughs of common scenarios), see the **Source Review** topic in the help system.
 
 ---
 

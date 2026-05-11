@@ -758,3 +758,9 @@ Future phases will add **Layer 2** — AI-powered discovery on top of these stru
 - **Worldview synthesis** — map your deepest assumptions and how they shape your thinking
 
 Layer 2 requires no separate setup. It will read the structures you have already built with Layer 1 — your typed links, strata levels, maturity states, and provenance chains. Everything you do today with the CE prepares the foundation for deeper intelligence tomorrow.
+
+---
+
+## See also
+
+The CE's **Source × Content Type** classification of every note is produced by the **Constellation Epistemic Content Engine** (CECE) — a 6-cataloger ensemble that reads each note through six independent lenses and synthesizes their votes into a classification. The Source Review panel is where you review and correct those classifications, and the engine learns your Library's shape over time. See the dedicated [Source Review](../Source%20Review/Source%20Review.md) topic for the full walkthrough.
