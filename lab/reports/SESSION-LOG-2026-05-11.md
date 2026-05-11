@@ -155,3 +155,50 @@ Single-axis callers (PropertyEditor) don't get reliability updates — that's co
 When two IPCs operate on the same row in sequence, **whichever one needs to read state from that row must snapshot it before the first IPC's side-effects fire**. Lift the read into the orchestration layer (the caller making both IPC calls) and pass the snapshot explicitly to a dedicated handler. Don't rely on each per-axis IPC to re-derive state from a row that may have been mutated by its sibling.
 
 Same spirit as V3-§8.r7 Issue #1 (where two filters using "the same logic" disagreed on the same data, fixed by routing them through one helper). The recurring pattern: when two paths share a dependency on transient state, centralize the dependency.
+
+---
+
+## Gate 2 PASS close-out + PJ-040 filed (orientation v1.92, Pending Jobs v1.8)
+
+After V3-§9.C.2, Eisa re-ran Gate 2 Stage 3 + completed Stages 4, 5, 6.
+
+### Stage 3 (re-test)
+JSON file shows entries for FOUR catalogers (linguistic, user_authority, semantic, structural) with BOTH `horizontal` AND `vertical` sub-objects appearing for catalogers that voiced on those axes — exactly the dual-axis signature V3-§9.C.2 was designed to produce. Pre-fix, only one axis would have updated per Accept. PASS.
+
+### Stage 4
+Reasoning Cataloger silent (rightmost green dot dashed) on every card. llama.cpp not wired; abstain behavior unchanged. PASS.
+
+### Stage 5
+5 distinct vertical primaries across 5 test notes:
+- Stage 1 — concept → `semantic-contents/concept`
+- Stage 2.1 — worldview (EN) → `higher-order-constructs/worldview`
+- Stage 2.2 — رؤية كونية (AR) → `higher-order-constructs/worldview`
+- Stage 2.3 — figures → `sensory-inputs/signal/physical/electromagnetic`
+- Stage 2.4 — code v2 → `symbolic-entities/sign`
+
+The vertical axis is no longer collapsing all notes to one or two values. PASS.
+
+### Stage 6
+Re-classified `الخط العربي`. Card rendered with UA dot filled (blue), SOURCES collapsed to single `Authoritative testimony 100%` (UA short-circuit signature). Trail toggle hidden (trust-cal counter past 50-review threshold; r5.3 working as designed for Unanimous cards). No horizontal regression vs Gate 1 PASS state.
+
+Eisa substituted with `الحضارة الإسلامية` for the trail visibility check — confirmed horizontal axis classification works end-to-end on real Arabic content (synthesis chose `testimony/authoritative` StrongMajority via 2-of-3 cataloger agreement). PASS.
+
+### Architectural observation → PJ-040
+
+Stage 6 surfaced an architectural observation: when UA short-circuits on PARTIAL frontmatter (e.g. only `sources:` set, no `content_type:`), `user_authority_short_circuit` produces vertical with `primary: None` → no vertical suggestion entry → CONTENT TYPE section vanishes from the card. The other catalogers' high-confidence vertical votes are discarded.
+
+Filed as **PJ-040** (Pending Jobs v1.8): refactor `user_authority_short_circuit` to short-circuit ONLY the axes UA voiced on; for unfilled axes, fall through to normal `vote_on_axis` weighted-vote path. Not blocking V3-§10; could be a focused mini-MIG between V3-§10 phases or after Gate 3.
+
+Behavior has been the same since V3-§1 — only became visible after V3-§9.A populated meaningful vertical lexicon coverage that would now have something to discard.
+
+### Gate 2 PASS — V3-§9 vertical-axis activation complete
+
+V3-§9 cumulative scoreboard:
+- 6 commits shipped (`4e0981a`, `d9dfa60`, `ec5527e`, `b18a3ee`, `bf07ae1`, `75807a3`)
+- +25 cece tests (67 → 92)
+- 2 Boss-test catches mid-cascade (V3-§9.A's ال-prefix gap, V3-§9.C.2's dual-axis silent gap), both fixed inline
+- ~3hrs of agent time + Eisa's two Boss-test sessions
+- Orientation v1.89 → v1.92 (3 versions documenting the cascade + close-out)
+- 1 PJ filed (PJ-040)
+
+Both cataloger-ensemble axes are now production-ready. Next: V3-§10 (Settings + i18n + Help docs + User Manual) — user-facing surfaces around the engine.
