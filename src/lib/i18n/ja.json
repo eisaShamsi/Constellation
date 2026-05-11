@@ -1380,7 +1380,14 @@
     "typeList": "リスト",
     "typeLink": "リンク",
     "typeCheckbox": "チェックボックス",
-    "selectType": "タイプを選択"
+    "selectType": "タイプを選択",
+    "typeNestedObjectList": "複数行リスト (例: ikhtilāf)",
+    "ikhtilafAddRow": "学派を追加",
+    "ikhtilafRemoveRow": "行を削除",
+    "ikhtilafSchoolLabel": "学派",
+    "ikhtilafSchoolPlaceholder": "学派",
+    "ikhtilafPositionLabel": "立場",
+    "ikhtilafPositionPlaceholder": "立場"
   },
   "editor": {
     "undo": "元に戻す",
@@ -2300,7 +2307,8 @@
     "generalizes": "一般化",
     "derives-from": "派生",
     "part-of": "一部",
-    "associative": "連想"
+    "associative": "連想",
+    "supersedes": "置き換える"
   },
   "linkConfidence": {
     "setConfidence": "信頼度を設定",

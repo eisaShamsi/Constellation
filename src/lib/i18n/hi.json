@@ -1380,7 +1380,14 @@
     "typeList": "सूची",
     "typeLink": "लिंक",
     "typeCheckbox": "चेकबॉक्स",
-    "selectType": "प्रकार चुनें"
+    "selectType": "प्रकार चुनें",
+    "typeNestedObjectList": "बहु-पंक्ति सूची (जैसे ikhtilāf)",
+    "ikhtilafAddRow": "विद्यालय जोड़ें",
+    "ikhtilafRemoveRow": "पंक्ति हटाएँ",
+    "ikhtilafSchoolLabel": "विद्यालय",
+    "ikhtilafSchoolPlaceholder": "विद्यालय",
+    "ikhtilafPositionLabel": "स्थिति",
+    "ikhtilafPositionPlaceholder": "स्थिति"
   },
   "editor": {
     "undo": "पूर्ववत करें",
@@ -2300,7 +2307,8 @@
     "generalizes": "सामान्यीकरण",
     "derives-from": "व्युत्पन्न",
     "part-of": "का-हिस्सा",
-    "associative": "साहचर्य"
+    "associative": "साहचर्य",
+    "supersedes": "प्रतिस्थापित करता है"
   },
   "linkConfidence": {
     "setConfidence": "आत्मविश्वास सेट करें",

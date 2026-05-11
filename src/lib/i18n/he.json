@@ -942,7 +942,14 @@
     "typeList": "רשימה",
     "typeLink": "קישור",
     "typeCheckbox": "תיבת סימון",
-    "selectType": "בחר סוג"
+    "selectType": "בחר סוג",
+    "typeNestedObjectList": "רשימה מרובת שורות (למשל ikhtilāf)",
+    "ikhtilafAddRow": "הוסף בית מדרש",
+    "ikhtilafRemoveRow": "הסר שורה",
+    "ikhtilafSchoolLabel": "בית מדרש",
+    "ikhtilafSchoolPlaceholder": "בית מדרש",
+    "ikhtilafPositionLabel": "עמדה",
+    "ikhtilafPositionPlaceholder": "עמדה"
   },
   "editor": {
     "undo": "ביטול",
@@ -1862,7 +1869,8 @@
     "generalizes": "מכליל",
     "derives-from": "נגזר-מ",
     "part-of": "חלק-מ",
-    "associative": "אסוציאטיבי"
+    "associative": "אסוציאטיבי",
+    "supersedes": "מחליף"
   },
   "linkConfidence": {
     "setConfidence": "הגדרת ביטחון",

@@ -942,7 +942,14 @@
     "typeList": "Liste",
     "typeLink": "Link",
     "typeCheckbox": "Kontrollkästchen",
-    "selectType": "Typ wählen"
+    "selectType": "Typ wählen",
+    "typeNestedObjectList": "Mehrzeilige Liste (z. B. ikhtilāf)",
+    "ikhtilafAddRow": "Schule hinzufügen",
+    "ikhtilafRemoveRow": "Zeile entfernen",
+    "ikhtilafSchoolLabel": "Schule",
+    "ikhtilafSchoolPlaceholder": "Schule",
+    "ikhtilafPositionLabel": "Position",
+    "ikhtilafPositionPlaceholder": "Position"
   },
   "editor": {
     "undo": "Rückgängig",
@@ -1862,7 +1869,8 @@
     "generalizes": "verallgemeinert",
     "derives-from": "abgeleitet-von",
     "part-of": "teil-von",
-    "associative": "assoziativ"
+    "associative": "assoziativ",
+    "supersedes": "ersetzt"
   },
   "linkConfidence": {
     "setConfidence": "Vertrauen festlegen",

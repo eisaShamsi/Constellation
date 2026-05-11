@@ -1380,7 +1380,14 @@
     "typeList": "Список",
     "typeLink": "Ссылка",
     "typeCheckbox": "Флажок",
-    "selectType": "Выбрать тип"
+    "selectType": "Выбрать тип",
+    "typeNestedObjectList": "Многострочный список (напр. ikhtilāf)",
+    "ikhtilafAddRow": "Добавить школу",
+    "ikhtilafRemoveRow": "Удалить строку",
+    "ikhtilafSchoolLabel": "Школа",
+    "ikhtilafSchoolPlaceholder": "Школа",
+    "ikhtilafPositionLabel": "Позиция",
+    "ikhtilafPositionPlaceholder": "Позиция"
   },
   "editor": {
     "undo": "Отменить",
@@ -2300,7 +2307,8 @@
     "generalizes": "обобщает",
     "derives-from": "происходит-от",
     "part-of": "часть-от",
-    "associative": "ассоциативный"
+    "associative": "ассоциативный",
+    "supersedes": "заменяет"
   },
   "linkConfidence": {
     "setConfidence": "Задать уверенность",

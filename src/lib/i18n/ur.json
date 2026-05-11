@@ -942,7 +942,14 @@
     "typeList": "فہرست",
     "typeLink": "لنک",
     "typeCheckbox": "چیک باکس",
-    "selectType": "قسم منتخب کریں"
+    "selectType": "قسم منتخب کریں",
+    "typeNestedObjectList": "کثیر سطری فہرست (مثلاً ikhtilāf)",
+    "ikhtilafAddRow": "مذہب شامل کریں",
+    "ikhtilafRemoveRow": "صف ہٹائیں",
+    "ikhtilafSchoolLabel": "مذہب",
+    "ikhtilafSchoolPlaceholder": "مذہب",
+    "ikhtilafPositionLabel": "موقف",
+    "ikhtilafPositionPlaceholder": "موقف"
   },
   "editor": {
     "undo": "واپس کریں",
@@ -1862,7 +1869,8 @@
     "generalizes": "عمومی",
     "derives-from": "ماخوذ",
     "part-of": "حصہ",
-    "associative": "متعلق"
+    "associative": "متعلق",
+    "supersedes": "تبدیل کرتا ہے"
   },
   "linkConfidence": {
     "setConfidence": "اعتماد مقرر کریں",

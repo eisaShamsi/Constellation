@@ -942,7 +942,14 @@
     "typeList": "Lista",
     "typeLink": "Enlace",
     "typeCheckbox": "Casilla",
-    "selectType": "Seleccionar tipo"
+    "selectType": "Seleccionar tipo",
+    "typeNestedObjectList": "Lista de múltiples filas (p. ej. ikhtilāf)",
+    "ikhtilafAddRow": "Añadir escuela",
+    "ikhtilafRemoveRow": "Eliminar fila",
+    "ikhtilafSchoolLabel": "Escuela",
+    "ikhtilafSchoolPlaceholder": "Escuela",
+    "ikhtilafPositionLabel": "Posición",
+    "ikhtilafPositionPlaceholder": "Posición"
   },
   "editor": {
     "undo": "Deshacer",
@@ -1862,7 +1869,8 @@
     "generalizes": "generaliza",
     "derives-from": "deriva-de",
     "part-of": "parte-de",
-    "associative": "asociativo"
+    "associative": "asociativo",
+    "supersedes": "reemplaza"
   },
   "linkConfidence": {
     "setConfidence": "Establecer confianza",

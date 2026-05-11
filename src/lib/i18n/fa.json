@@ -942,7 +942,14 @@
     "typeList": "فهرست",
     "typeLink": "پیوند",
     "typeCheckbox": "کادر انتخاب",
-    "selectType": "انتخاب نوع"
+    "selectType": "انتخاب نوع",
+    "typeNestedObjectList": "فهرست چندردیفی (مثل ikhtilāf)",
+    "ikhtilafAddRow": "افزودن مذهب",
+    "ikhtilafRemoveRow": "حذف ردیف",
+    "ikhtilafSchoolLabel": "مذهب",
+    "ikhtilafSchoolPlaceholder": "مذهب",
+    "ikhtilafPositionLabel": "موضع",
+    "ikhtilafPositionPlaceholder": "موضع"
   },
   "editor": {
     "undo": "واگرد",
@@ -1862,7 +1869,8 @@
     "generalizes": "تعمیم",
     "derives-from": "مشتق از",
     "part-of": "بخشی از",
-    "associative": "تداعی"
+    "associative": "تداعی",
+    "supersedes": "جایگزین می‌کند"
   },
   "linkConfidence": {
     "setConfidence": "تنظیم اعتماد",

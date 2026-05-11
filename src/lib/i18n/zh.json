@@ -1380,7 +1380,14 @@
     "typeList": "列表",
     "typeLink": "链接",
     "typeCheckbox": "复选框",
-    "selectType": "选择类型"
+    "selectType": "选择类型",
+    "typeNestedObjectList": "多行列表（如 ikhtilāf）",
+    "ikhtilafAddRow": "添加学派",
+    "ikhtilafRemoveRow": "删除行",
+    "ikhtilafSchoolLabel": "学派",
+    "ikhtilafSchoolPlaceholder": "学派",
+    "ikhtilafPositionLabel": "立场",
+    "ikhtilafPositionPlaceholder": "立场"
   },
   "editor": {
     "undo": "撤销",
@@ -2300,7 +2307,8 @@
     "generalizes": "概括",
     "derives-from": "源自",
     "part-of": "部分",
-    "associative": "关联"
+    "associative": "关联",
+    "supersedes": "取代"
   },
   "linkConfidence": {
     "setConfidence": "设置置信度",

@@ -1477,7 +1477,14 @@
     "typeList": "قائمة",
     "typeLink": "رابط",
     "typeCheckbox": "مربع اختيار",
-    "selectType": "اختر النوع"
+    "typeNestedObjectList": "قائمة متعددة الصفوف (مثل: الاختلاف)",
+    "selectType": "اختر النوع",
+    "ikhtilafAddRow": "إضافة مذهب",
+    "ikhtilafRemoveRow": "حذف الصف",
+    "ikhtilafSchoolLabel": "المذهب",
+    "ikhtilafSchoolPlaceholder": "المذهب",
+    "ikhtilafPositionLabel": "الموقف",
+    "ikhtilafPositionPlaceholder": "الموقف"
   },
   "editor": {
     "undo": "تراجع",
@@ -2469,7 +2476,8 @@
     "generalizes": "يعمّم",
     "derives-from": "مشتق من",
     "part-of": "جزء من",
-    "associative": "ترابطي"
+    "associative": "ترابطي",
+    "supersedes": "يَنسَخ"
   },
   "linkConfidence": {
     "setConfidence": "تعيين الثقة",

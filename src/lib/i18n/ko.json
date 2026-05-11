@@ -1380,7 +1380,14 @@
     "typeList": "목록",
     "typeLink": "링크",
     "typeCheckbox": "체크박스",
-    "selectType": "유형 선택"
+    "selectType": "유형 선택",
+    "typeNestedObjectList": "다중 행 목록 (예: ikhtilāf)",
+    "ikhtilafAddRow": "학파 추가",
+    "ikhtilafRemoveRow": "행 삭제",
+    "ikhtilafSchoolLabel": "학파",
+    "ikhtilafSchoolPlaceholder": "학파",
+    "ikhtilafPositionLabel": "입장",
+    "ikhtilafPositionPlaceholder": "입장"
   },
   "editor": {
     "undo": "실행 취소",
@@ -2300,7 +2307,8 @@
     "generalizes": "일반화",
     "derives-from": "파생",
     "part-of": "일부",
-    "associative": "연관"
+    "associative": "연관",
+    "supersedes": "대체함"
   },
   "linkConfidence": {
     "setConfidence": "신뢰도 설정",

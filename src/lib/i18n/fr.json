@@ -942,7 +942,14 @@
     "typeList": "Liste",
     "typeLink": "Lien",
     "typeCheckbox": "Case à cocher",
-    "selectType": "Choisir le type"
+    "selectType": "Choisir le type",
+    "typeNestedObjectList": "Liste à plusieurs lignes (par ex. ikhtilāf)",
+    "ikhtilafAddRow": "Ajouter une école",
+    "ikhtilafRemoveRow": "Supprimer la ligne",
+    "ikhtilafSchoolLabel": "École",
+    "ikhtilafSchoolPlaceholder": "École",
+    "ikhtilafPositionLabel": "Position",
+    "ikhtilafPositionPlaceholder": "Position"
   },
   "editor": {
     "undo": "Annuler",
@@ -1862,7 +1869,8 @@
     "generalizes": "généralise",
     "derives-from": "dérivé-de",
     "part-of": "partie-de",
-    "associative": "associatif"
+    "associative": "associatif",
+    "supersedes": "remplace"
   },
   "linkConfidence": {
     "setConfidence": "Définir la confiance",

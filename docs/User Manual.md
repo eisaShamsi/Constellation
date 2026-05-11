@@ -1023,6 +1023,51 @@ For deeper detail (every dot status, every rule chip, click-by-click walkthrough
 
 ---
 
+## 10c. Epistemic Metadata
+
+A small set of optional frontmatter fields for recording richer information about how a note's knowledge was acquired, who holds the position, what discipline it belongs to, and when you last revised your view. Added in MIG-022 §A in response to the gap analysis (`docs/epistemic-content-gap-analysis.md`).
+
+These fields are **all optional**. Notes without them work unchanged.
+
+### Quick reference
+
+| Field | Type | Purpose |
+|---|---|---|
+| `held_by` | text | Whose stance is this? (defaults to `user`; can be `"al-Shāfiʿī"`, `"Ḥanafī"`, etc.) |
+| `domain` | list | Disciplinary tags for retrieval (`[fiqh, ʿibādāt]`) |
+| `function` | text | What this note is for (`reference` / `seed` / `actionable` / `shipped`) |
+| `provenance_civilization` | text | Tradition vocabulary (`sunni-usuli` / `analytic-western` / `nyaya` / etc.) |
+| `updated_at` | date | When you last deliberately revised your view (distinct from the file-system mtime) |
+| `ikhtilāf` | list of objects | Structured scholarly disagreement (`[{school, position}, ...]`) |
+| `warrant` | text | Grade label (parsed but inert until the Warrant Research workstream ships) |
+| `warrant_notes` | text | Free text supporting the warrant grade (also inert) |
+
+### How they appear in the Properties panel
+
+Each field renders with the type-appropriate editor:
+- Text fields → text input
+- `domain` → tag list (Enter to add, × to remove)
+- `updated_at` → date picker
+- **`ikhtilāf` → custom widget** with two side-by-side inputs per row (school + position) plus a remove button per row, and an "Add school" button at the bottom. The widget reads from + writes to the structured YAML, so round-trips preserve every field.
+
+### What about `supersedes`?
+
+`supersedes` is a *relationship between notes* (this note replaces an earlier one), not a property of a single note. Constellation handles it as a **typed link**, not a YAML scalar:
+
+```markdown
+This replaces my earlier analysis: [[old-note-id|supersedes]]
+```
+
+The `|supersedes` suffix on the wikilink makes it a typed-link of the `supersedes` kind — distinct slate blue-gray pill, shows up in Backlinks + Outgoing Links panels, participates in Living Link Architecture.
+
+### What this is NOT
+
+The new fields are **schema** — a recognized vocabulary you can fill in. CECE doesn't currently consume them for classification. Future MIGs (Warrant Research workstream, MIG-023 temporal axis) will ship features that read `warrant`, `updated_at`, and friends.
+
+For deeper detail + a worked example, see the **Epistemic Metadata** topic in the help system.
+
+---
+
 ## 11. Templates
 
 Create reusable note templates:

@@ -1380,7 +1380,14 @@
     "typeList": "Liste",
     "typeLink": "Bağlantı",
     "typeCheckbox": "Onay kutusu",
-    "selectType": "Tür seç"
+    "selectType": "Tür seç",
+    "typeNestedObjectList": "Çok satırlı liste (ör. ikhtilāf)",
+    "ikhtilafAddRow": "Mezhep ekle",
+    "ikhtilafRemoveRow": "Satırı kaldır",
+    "ikhtilafSchoolLabel": "Mezhep",
+    "ikhtilafSchoolPlaceholder": "Mezhep",
+    "ikhtilafPositionLabel": "Pozisyon",
+    "ikhtilafPositionPlaceholder": "Pozisyon"
   },
   "editor": {
     "undo": "Geri al",
@@ -2300,7 +2307,8 @@
     "generalizes": "genelleştirir",
     "derives-from": "türetilir",
     "part-of": "parçası",
-    "associative": "ilişkili"
+    "associative": "ilişkili",
+    "supersedes": "yerine geçer"
   },
   "linkConfidence": {
     "setConfidence": "Güveni ayarla",
