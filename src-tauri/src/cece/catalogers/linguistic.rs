@@ -32,7 +32,8 @@
 
 use crate::arabic;
 use crate::cece::cataloger::{
-    Axis, AxisAssignment, Cataloger, CatalogerContext, Confidence, ReasoningTrail,
+    Axis, AxisAssignment, Cataloger, CatalogerContext, Confidence, ReasoningTemplate,
+    ReasoningTrail,
 };
 use crate::sources::{is_valid_content_type_id, is_valid_source_id};
 use serde::Deserialize;
@@ -371,7 +372,8 @@ impl Cataloger for LinguisticCataloger {
 
         let horizontal = top_assignments(h_hits, 3);
         let vertical = top_assignments(v_hits, 3);
-        let reasoning = build_reasoning(&horizontal, &vertical, &roots_seen);
+        let (reasoning, reasoning_template) =
+            build_reasoning(&horizontal, &vertical, &roots_seen);
 
         Some(ReasoningTrail {
             cataloger: self.name().to_string(),
@@ -379,6 +381,7 @@ impl Cataloger for LinguisticCataloger {
             horizontal,
             vertical,
             reasoning,
+            reasoning_template: Some(reasoning_template),
             rules_fired,
             alternatives_considered: Vec::new(),
             self_reported_confidence: confidence,
@@ -460,13 +463,30 @@ fn top_assignments(
         .collect()
 }
 
+/// MIG-022 §E.2 (PJ-041) — emits the English fallback string AND the
+/// structured i18n template. Six template variants based on (axis count
+/// × roots present). Suffix `_with_roots` rather than nested `.with_roots`
+/// to avoid an i18n JSON shape conflict (a key can't be both a string
+/// AND have nested children):
+///   - both axes,    no roots → cece.reasoning.linguistic.both
+///   - both axes,    w/ roots → cece.reasoning.linguistic.both_with_roots
+///   - h only,       no roots → cece.reasoning.linguistic.horizontal_only
+///   - h only,       w/ roots → cece.reasoning.linguistic.horizontal_only_with_roots
+///   - v only,       no roots → cece.reasoning.linguistic.vertical_only
+///   - v only,       w/ roots → cece.reasoning.linguistic.vertical_only_with_roots
 fn build_reasoning(
     h: &[AxisAssignment],
     v: &[AxisAssignment],
     roots: &[String],
-) -> String {
+) -> (String, ReasoningTemplate) {
     use std::fmt::Write;
-    let mut out = String::from("Linguistic match: ");
+
+    let roots_preview: Vec<&str> = roots.iter().take(5).map(|s| s.as_str()).collect();
+    let roots_joined = roots_preview.join(", ");
+    let has_roots = !roots.is_empty();
+
+    // English fallback string — preserves pre-MIG-022 behavior.
+    let mut english = String::from("Linguistic match: ");
     let mut parts = Vec::new();
     if let Some(top) = h.first() {
         parts.push(format!("horizontal → {} (weight {:.2})", top.id, top.weight));
@@ -474,12 +494,40 @@ fn build_reasoning(
     if let Some(top) = v.first() {
         parts.push(format!("vertical → {} (weight {:.2})", top.id, top.weight));
     }
-    let _ = write!(out, "{}.", parts.join("; "));
-    if !roots.is_empty() {
-        let preview: Vec<&str> = roots.iter().take(5).map(|s| s.as_str()).collect();
-        let _ = write!(out, " CAE roots seen: {}.", preview.join(", "));
+    let _ = write!(english, "{}.", parts.join("; "));
+    if has_roots {
+        let _ = write!(english, " CAE roots seen: {}.", roots_joined);
     }
-    out
+
+    // Template variant + params.
+    let h_top = h.first();
+    let v_top = v.first();
+    let axis_part = match (h_top.is_some(), v_top.is_some()) {
+        (true, true) => "both",
+        (true, false) => "horizontal_only",
+        (false, true) => "vertical_only",
+        (false, false) => "both", // unreachable; defensive
+    };
+    let key = if has_roots {
+        format!("linguistic.{}_with_roots", axis_part)
+    } else {
+        format!("linguistic.{}", axis_part)
+    };
+
+    let mut params = serde_json::json!({});
+    if let Some(ht) = h_top {
+        params["h_id"] = serde_json::Value::String(ht.id.clone());
+        params["h_weight"] = serde_json::Value::String(format!("{:.2}", ht.weight));
+    }
+    if let Some(vt) = v_top {
+        params["v_id"] = serde_json::Value::String(vt.id.clone());
+        params["v_weight"] = serde_json::Value::String(format!("{:.2}", vt.weight));
+    }
+    if has_roots {
+        params["roots"] = serde_json::Value::String(roots_joined);
+    }
+
+    (english, ReasoningTemplate { key, params })
 }
 
 #[cfg(test)]

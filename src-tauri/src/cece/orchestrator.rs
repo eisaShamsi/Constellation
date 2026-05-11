@@ -263,6 +263,7 @@ mod tests {
                 horizontal: Vec::new(),
                 vertical: Vec::new(),
                 reasoning: String::new(),
+                reasoning_template: None,
                 rules_fired: Vec::new(),
                 alternatives_considered: Vec::new(),
                 self_reported_confidence: self.verdict,

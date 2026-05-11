@@ -799,6 +799,42 @@
       "low": "منخفض",
       "abstain": "امتناع"
     },
+    "reasoning": {
+      "user_authority": {
+        "both": "مُعيَّن في واجهة الملف (يدوياً). المصادر: {sources}. نوع المحتوى: {content_type}.",
+        "horizontal_only": "مُعيَّن في واجهة الملف (يدوياً). المصادر: {sources}.",
+        "vertical_only": "مُعيَّن في واجهة الملف (يدوياً). نوع المحتوى: {content_type}."
+      },
+      "structural": {
+        "both": "تطابقت الأنماط البنيوية: أفقي ← {h_id} (الوزن {h_weight})؛ رأسي ← {v_id} (الوزن {v_weight}).",
+        "horizontal_only": "تطابقت الأنماط البنيوية: أفقي ← {h_id} (الوزن {h_weight}).",
+        "vertical_only": "تطابقت الأنماط البنيوية: رأسي ← {v_id} (الوزن {v_weight})."
+      },
+      "linguistic": {
+        "both": "مطابقة لغوية: أفقي ← {h_id} (الوزن {h_weight})؛ رأسي ← {v_id} (الوزن {v_weight}).",
+        "both_with_roots": "مطابقة لغوية: أفقي ← {h_id} (الوزن {h_weight})؛ رأسي ← {v_id} (الوزن {v_weight}). الجذور العربية: {roots}.",
+        "horizontal_only": "مطابقة لغوية: أفقي ← {h_id} (الوزن {h_weight}).",
+        "horizontal_only_with_roots": "مطابقة لغوية: أفقي ← {h_id} (الوزن {h_weight}). الجذور العربية: {roots}.",
+        "vertical_only": "مطابقة لغوية: رأسي ← {v_id} (الوزن {v_weight}).",
+        "vertical_only_with_roots": "مطابقة لغوية: رأسي ← {v_id} (الوزن {v_weight}). الجذور العربية: {roots}."
+      },
+      "semantic": {
+        "both": "إجماع الجيران الدلاليين: أفقي ← {h_id} (الوزن {h_weight})؛ رأسي ← {v_id} (الوزن {v_weight}). أبرز الجيران: {neighbors}.",
+        "horizontal_only": "إجماع الجيران الدلاليين: أفقي ← {h_id} (الوزن {h_weight}). أبرز الجيران: {neighbors}.",
+        "vertical_only": "إجماع الجيران الدلاليين: رأسي ← {v_id} (الوزن {v_weight}). أبرز الجيران: {neighbors}."
+      },
+      "graph": {
+        "both": "إجماع الجيران المُصنَّفة الروابط: أفقي ← {h_id} (الوزن {h_weight})؛ رأسي ← {v_id} (الوزن {v_weight}). الجيران: {neighbors}.",
+        "horizontal_only": "إجماع الجيران المُصنَّفة الروابط: أفقي ← {h_id} (الوزن {h_weight}). الجيران: {neighbors}.",
+        "vertical_only": "إجماع الجيران المُصنَّفة الروابط: رأسي ← {v_id} (الوزن {v_weight}). الجيران: {neighbors}."
+      },
+      "compose": {
+        "user_authority_full": "مُعيَّن من قِبل المستخدم في واجهة الملف.",
+        "user_authority_partial_horizontal": "المصادر مُعيَّنة من قِبل المستخدم في واجهة الملف؛ نوع المحتوى مُركَّب من إجماع المُصنِّفات.",
+        "user_authority_partial_vertical": "نوع المحتوى مُعيَّن من قِبل المستخدم في واجهة الملف؛ المصادر مُركَّبة من إجماع المُصنِّفات.",
+        "weighted_vote": "مُركَّب من إجماع المُصنِّفات."
+      }
+    },
     "trail": {
       "expand": "▸ لماذا هذا التصنيف؟",
       "collapse": "▾ إخفاء الشرح",

@@ -20,7 +20,8 @@
 //!   * Rule of Three — abstains at depth when too many candidates fire
 
 use crate::cece::cataloger::{
-    Axis, AxisAssignment, Cataloger, CatalogerContext, Confidence, ReasoningTrail,
+    Axis, AxisAssignment, Cataloger, CatalogerContext, Confidence, ReasoningTemplate,
+    ReasoningTrail,
 };
 use crate::sources::{is_valid_content_type_id, is_valid_source_id};
 use regex::Regex;
@@ -103,7 +104,7 @@ impl Cataloger for StructuralCataloger {
 
         let horizontal = top_assignments(horizontal_hits, 3);
         let vertical = top_assignments(vertical_hits, 3);
-        let reasoning = build_reasoning(&horizontal, &vertical);
+        let (reasoning, reasoning_template) = build_reasoning(&horizontal, &vertical);
         let mut rules_fired = Vec::new();
         if !horizontal.is_empty() {
             rules_fired.push("structural_pattern_match".to_string());
@@ -145,6 +146,7 @@ impl Cataloger for StructuralCataloger {
             horizontal,
             vertical,
             reasoning,
+            reasoning_template: Some(reasoning_template),
             rules_fired,
             alternatives_considered: Vec::new(),
             self_reported_confidence: confidence,
@@ -363,9 +365,20 @@ fn highest_weight(assignments: &[AxisAssignment]) -> f32 {
         .fold(0.0, f32::max)
 }
 
-fn build_reasoning(h: &[AxisAssignment], v: &[AxisAssignment]) -> String {
+/// MIG-022 §E.2 (PJ-041) — emits the English fallback string AND the
+/// structured i18n template. Three template variants based on which
+/// axes the cataloger voiced:
+///   - both axes  → cece.reasoning.structural.both
+///   - h only     → cece.reasoning.structural.horizontal_only
+///   - v only     → cece.reasoning.structural.vertical_only
+fn build_reasoning(
+    h: &[AxisAssignment],
+    v: &[AxisAssignment],
+) -> (String, ReasoningTemplate) {
     use std::fmt::Write;
-    let mut out = String::from("Structural patterns matched: ");
+
+    // English fallback string — preserves pre-MIG-022 behavior.
+    let mut english = String::from("Structural patterns matched: ");
     let mut parts = Vec::new();
     if let Some(top) = h.first() {
         parts.push(format!("horizontal → {} (weight {:.2})", top.id, top.weight));
@@ -373,8 +386,48 @@ fn build_reasoning(h: &[AxisAssignment], v: &[AxisAssignment]) -> String {
     if let Some(top) = v.first() {
         parts.push(format!("vertical → {} (weight {:.2})", top.id, top.weight));
     }
-    let _ = write!(out, "{}.", parts.join("; "));
-    out
+    let _ = write!(english, "{}.", parts.join("; "));
+
+    // Template variant + params per axis combination. Top of each axis
+    // (assignments are already sorted descending by weight via
+    // top_assignments).
+    let h_top = h.first();
+    let v_top = v.first();
+    let template = match (h_top, v_top) {
+        (Some(ht), Some(vt)) => ReasoningTemplate {
+            key: "structural.both".to_string(),
+            params: serde_json::json!({
+                "h_id": ht.id,
+                "h_weight": format!("{:.2}", ht.weight),
+                "v_id": vt.id,
+                "v_weight": format!("{:.2}", vt.weight),
+            }),
+        },
+        (Some(ht), None) => ReasoningTemplate {
+            key: "structural.horizontal_only".to_string(),
+            params: serde_json::json!({
+                "h_id": ht.id,
+                "h_weight": format!("{:.2}", ht.weight),
+            }),
+        },
+        (None, Some(vt)) => ReasoningTemplate {
+            key: "structural.vertical_only".to_string(),
+            params: serde_json::json!({
+                "v_id": vt.id,
+                "v_weight": format!("{:.2}", vt.weight),
+            }),
+        },
+        // Unreachable: caller already returned an abstain trail when
+        // both hit lists were empty (lines 96-101). Defensive guard.
+        (None, None) => ReasoningTemplate {
+            key: "structural.both".to_string(),
+            params: serde_json::json!({
+                "h_id": "", "h_weight": "0.00", "v_id": "", "v_weight": "0.00"
+            }),
+        },
+    };
+
+    (english, template)
 }
 
 #[cfg(test)]

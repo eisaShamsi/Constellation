@@ -836,6 +836,43 @@
       "low": "Low",
       "abstain": "Abstain"
     },
+    "reasoning": {
+      "_comment": "MIG-022 §E.2 (PJ-041) — i18n templates for per-cataloger reasoning prose. Each cataloger emits {key, params} alongside the raw English `reasoning` field. Frontend renders $t('cece.reasoning.<key>', params) when the template field is present; falls back to raw `reasoning` for legacy composite_json blobs and the Reasoning cataloger (whose prose comes from the LLM). Placeholders use {paramName} syntax. Numeric weights are pre-formatted as 2-decimal strings in Rust to avoid locale-specific number formatting.",
+      "user_authority": {
+        "both": "Set in note frontmatter (manual). Sources: {sources}. Content type: {content_type}.",
+        "horizontal_only": "Set in note frontmatter (manual). Sources: {sources}.",
+        "vertical_only": "Set in note frontmatter (manual). Content type: {content_type}."
+      },
+      "structural": {
+        "both": "Structural patterns matched: horizontal → {h_id} (weight {h_weight}); vertical → {v_id} (weight {v_weight}).",
+        "horizontal_only": "Structural patterns matched: horizontal → {h_id} (weight {h_weight}).",
+        "vertical_only": "Structural patterns matched: vertical → {v_id} (weight {v_weight})."
+      },
+      "linguistic": {
+        "both": "Linguistic match: horizontal → {h_id} (weight {h_weight}); vertical → {v_id} (weight {v_weight}).",
+        "both_with_roots": "Linguistic match: horizontal → {h_id} (weight {h_weight}); vertical → {v_id} (weight {v_weight}). CAE roots seen: {roots}.",
+        "horizontal_only": "Linguistic match: horizontal → {h_id} (weight {h_weight}).",
+        "horizontal_only_with_roots": "Linguistic match: horizontal → {h_id} (weight {h_weight}). CAE roots seen: {roots}.",
+        "vertical_only": "Linguistic match: vertical → {v_id} (weight {v_weight}).",
+        "vertical_only_with_roots": "Linguistic match: vertical → {v_id} (weight {v_weight}). CAE roots seen: {roots}."
+      },
+      "semantic": {
+        "both": "Semantic neighbor consensus: horizontal → {h_id} (weight {h_weight}); vertical → {v_id} (weight {v_weight}). Top neighbors: {neighbors}.",
+        "horizontal_only": "Semantic neighbor consensus: horizontal → {h_id} (weight {h_weight}). Top neighbors: {neighbors}.",
+        "vertical_only": "Semantic neighbor consensus: vertical → {v_id} (weight {v_weight}). Top neighbors: {neighbors}."
+      },
+      "graph": {
+        "both": "Typed-neighbor consensus: horizontal → {h_id} (weight {h_weight}); vertical → {v_id} (weight {v_weight}). Neighbors: {neighbors}.",
+        "horizontal_only": "Typed-neighbor consensus: horizontal → {h_id} (weight {h_weight}). Neighbors: {neighbors}.",
+        "vertical_only": "Typed-neighbor consensus: vertical → {v_id} (weight {v_weight}). Neighbors: {neighbors}."
+      },
+      "compose": {
+        "user_authority_full": "Set by user in frontmatter.",
+        "user_authority_partial_horizontal": "Sources set by user in frontmatter; content type synthesized from cataloger consensus.",
+        "user_authority_partial_vertical": "Content type set by user in frontmatter; sources synthesized from cataloger consensus.",
+        "weighted_vote": "Synthesized from cataloger consensus."
+      }
+    },
     "trail": {
       "expand": "▸ Why this classification?",
       "collapse": "▾ Hide reasoning",

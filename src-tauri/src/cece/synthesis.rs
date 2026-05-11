@@ -16,7 +16,9 @@
 //! an opinion, it overrides everything. The synthesis layer has a hard
 //! early-return for this case.
 
-use crate::cece::cataloger::{AxisAssignment, ReasoningTrail, Confidence, Axis};
+use crate::cece::cataloger::{
+    Axis, AxisAssignment, Confidence, ReasoningTemplate, ReasoningTrail,
+};
 use crate::cece::reliability::{weight_for, ReliabilityProfile};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -62,8 +64,19 @@ pub struct CompositeAssignment {
     pub horizontal: AxisDecision,
     pub vertical: AxisDecision,
     /// One paragraph synthesizing the per-cataloger trails into a
-    /// user-facing explanation.
+    /// user-facing explanation. Pre-MIG-022-§E.2 this was the only
+    /// composite reasoning field; the frontend rendered it raw. Now
+    /// used as the English fallback when `composite_reasoning_template`
+    /// is None or the i18n catalog is missing the template key.
     pub composite_reasoning: String,
+    /// MIG-022 §E.2 (PJ-041) — structured i18n template for the
+    /// composite reasoning summary. When `Some`, frontend renders
+    /// `$t(template.key, template.params)`. Three template variants:
+    ///   - cece.reasoning.compose.user_authority_full       (UA voiced both axes)
+    ///   - cece.reasoning.compose.user_authority_partial    (UA voiced one axis)
+    ///   - cece.reasoning.compose.weighted_vote             (no UA voiced)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub composite_reasoning_template: Option<ReasoningTemplate>,
     pub catalogers_voiced: Vec<String>,
     pub catalogers_silent: Vec<String>,
     /// "weighted_vote" today; "snorkel" in MIG-022.
@@ -125,21 +138,58 @@ pub fn synthesize(
         (false, false) => "weighted_vote".to_string(),
     };
 
-    // composite_reasoning preserves the UA reasoning text for audit when
-    // UA voiced anything; falls back to compose_reasoning otherwise.
-    // The per-axis trail rows below the summary already convey the
-    // mixed source-of-truth on partial cases.
-    let composite_reasoning = match (ua, ua_voiced_horizontal || ua_voiced_vertical) {
-        (Some(ua_trail), true) => {
-            format!("Set by user in frontmatter ({}).", ua_trail.reasoning)
-        }
-        _ => compose_reasoning(&voiced, &horizontal, &vertical),
-    };
+    // MIG-022 §E.2 — Compute composite_reasoning English text + the
+    // structured i18n template. Previously the UA case wrapped UA's
+    // own reasoning in "Set by user in frontmatter (...).", which
+    // double-printed the same text since UA's reasoning already starts
+    // with "Set in note frontmatter...". Closes PJ-045 cosmetic
+    // (composite_reasoning paren dedup).
+    //
+    // Four template variants (per-axis to avoid passing untranslated
+    // axis-name strings as i18n params; templates carry axis-specific
+    // wording directly):
+    //   - both axes UA            → compose.user_authority_full
+    //   - horizontal-only UA      → compose.user_authority_partial_horizontal
+    //   - vertical-only UA        → compose.user_authority_partial_vertical
+    //   - no UA                   → compose.weighted_vote
+    //
+    // Per-cataloger trail rows below the summary already convey the
+    // detailed source-of-truth on partial cases — the composite line
+    // is intentionally short.
+    let (composite_reasoning, composite_reasoning_template) =
+        match (ua_voiced_horizontal, ua_voiced_vertical) {
+            (true, true) => (
+                "Set by user in frontmatter.".to_string(),
+                Some(ReasoningTemplate {
+                    key: "compose.user_authority_full".to_string(),
+                    params: serde_json::json!({}),
+                }),
+            ),
+            (true, false) => (
+                "Sources set by user in frontmatter; content type synthesized from cataloger consensus.".to_string(),
+                Some(ReasoningTemplate {
+                    key: "compose.user_authority_partial_horizontal".to_string(),
+                    params: serde_json::json!({}),
+                }),
+            ),
+            (false, true) => (
+                "Content type set by user in frontmatter; sources synthesized from cataloger consensus.".to_string(),
+                Some(ReasoningTemplate {
+                    key: "compose.user_authority_partial_vertical".to_string(),
+                    params: serde_json::json!({}),
+                }),
+            ),
+            (false, false) => {
+                let (text, tmpl) = compose_reasoning(&voiced, &horizontal, &vertical);
+                (text, Some(tmpl))
+            }
+        };
 
     CompositeAssignment {
         horizontal,
         vertical,
         composite_reasoning,
+        composite_reasoning_template,
         catalogers_voiced,
         catalogers_silent,
         synthesis_method,
@@ -356,28 +406,50 @@ fn confidence_multiplier(c: Confidence) -> f32 {
     }
 }
 
+/// MIG-022 §E.2 (PJ-041) — emits the English fallback string AND the
+/// structured i18n template for the composite-reasoning summary in the
+/// no-UA-voiced (pure weighted-vote) case.
+///
+/// Template: cece.reasoning.compose.weighted_vote
+/// Params: { count } — number of catalogers that voiced
+///
+/// Intentionally simple. The detailed axis primary + regime info is
+/// already shown in the regime pill + per-axis sections + per-cataloger
+/// trail rows below; the composite line just summarizes the synthesis
+/// pathway. Avoids carrying untranslated regime strings as params.
+/// English fallback preserves the longer pre-MIG-022 phrasing for any
+/// composite_json blob that lacks the template.
 fn compose_reasoning(
     voiced: &[&ReasoningTrail],
     horizontal: &AxisDecision,
     vertical: &AxisDecision,
-) -> String {
+) -> (String, ReasoningTemplate) {
     use std::fmt::Write;
-    let mut out = String::new();
+
+    let h_primary = horizontal.primary.clone().unwrap_or_else(|| "(none)".to_string());
+    let v_primary = vertical.primary.clone().unwrap_or_else(|| "(none)".to_string());
+    let h_regime = format!("{:?}", horizontal.regime);
+    let v_regime = format!("{:?}", vertical.regime);
+    let voiced_names: Vec<String> = voiced.iter().map(|t| t.cataloger.clone()).collect();
+    let voiced_joined = voiced_names.join(", ");
+
+    // English fallback — preserves pre-MIG-022 behavior.
+    let mut english = String::new();
     let _ = write!(
-        out,
-        "Horizontal: {} ({:?}); Vertical: {} ({:?}). ",
-        horizontal.primary.as_deref().unwrap_or("(none)"),
-        horizontal.regime,
-        vertical.primary.as_deref().unwrap_or("(none)"),
-        vertical.regime,
+        english,
+        "Horizontal: {} ({}); Vertical: {} ({}). ",
+        h_primary, h_regime, v_primary, v_regime,
     );
-    let voiced_names: Vec<&str> = voiced.iter().map(|t| t.cataloger.as_str()).collect();
-    let _ = write!(
-        out,
-        "Catalogers voiced: {}.",
-        voiced_names.join(", "),
-    );
-    out
+    let _ = write!(english, "Catalogers voiced: {}.", voiced_joined);
+
+    // Template — short summary, count param only. Detail is elsewhere
+    // on the card.
+    let template = ReasoningTemplate {
+        key: "compose.weighted_vote".to_string(),
+        params: serde_json::json!({ "count": voiced_names.len() }),
+    };
+
+    (english, template)
 }
 
 // Stub for the unused import warning suppression; AxisAssignment is part
@@ -419,6 +491,7 @@ mod tests {
                 })
                 .unwrap_or_default(),
             reasoning: String::new(),
+            reasoning_template: None,
             rules_fired: Vec::new(),
             alternatives_considered: Vec::new(),
             self_reported_confidence: confidence,
@@ -436,6 +509,86 @@ mod tests {
         assert_eq!(result.horizontal.primary.as_deref(), Some("testimony"));
         assert_eq!(result.vertical.primary.as_deref(), Some("epistemic-states"));
         assert_eq!(result.synthesis_method, "user_authority_short_circuit");
+    }
+
+    #[test]
+    fn mig022_e2_composite_emits_template_user_authority_full() {
+        // MIG-022 §E.2 (PJ-041): when both axes UA-voiced, composite
+        // reasoning template key is `compose.user_authority_full`,
+        // English fallback is the short clean text (no double-wrap —
+        // closes PJ-045).
+        let trails = vec![
+            trail("user_authority", Some("testimony"), Some("epistemic-states"), Confidence::High),
+            trail("linguistic", Some("inference"), Some("semantic-contents"), Confidence::High),
+        ];
+        let r = ReliabilityProfile::default();
+        let result = synthesize(trails, &r);
+
+        let tmpl = result
+            .composite_reasoning_template
+            .as_ref()
+            .expect("MIG-022 §E.2: composite_reasoning_template must be Some when UA voiced");
+        assert_eq!(tmpl.key, "compose.user_authority_full");
+        assert_eq!(
+            result.composite_reasoning, "Set by user in frontmatter.",
+            "PJ-045: composite_reasoning must NOT double-wrap UA's reasoning text"
+        );
+    }
+
+    #[test]
+    fn mig022_e2_composite_emits_template_partial_horizontal() {
+        // MIG-022 §E.2: when UA voiced horizontal only, composite
+        // template key is `compose.user_authority_partial_horizontal`
+        // (axis-specific so the i18n value can carry "Sources set by..."
+        // wording without untranslated axis-name params).
+        let trails = vec![
+            trail("user_authority", Some("testimony"), None, Confidence::High),
+            trail("linguistic", Some("inference"), Some("epistemic-states"), Confidence::High),
+            trail("structural", Some("perception"), Some("epistemic-states"), Confidence::High),
+        ];
+        let r = ReliabilityProfile::default();
+        let result = synthesize(trails, &r);
+
+        let tmpl = result
+            .composite_reasoning_template
+            .as_ref()
+            .expect("MIG-022 §E.2: composite_reasoning_template must be Some when partial UA");
+        assert_eq!(tmpl.key, "compose.user_authority_partial_horizontal");
+        assert_eq!(result.synthesis_method, "user_authority_partial_short_circuit");
+    }
+
+    #[test]
+    fn mig022_e2_per_cataloger_trail_emits_template() {
+        // MIG-022 §E.2 (PJ-041): non-UA catalogers emit a structured
+        // template alongside the English reasoning. This test verifies
+        // the structural cataloger's trail carries a `structural.both`
+        // template key when both axes voiced.
+        use crate::cece::cataloger::{Cataloger, CatalogerContext};
+        use crate::cece::catalogers::structural::StructuralCataloger;
+
+        let ctx = CatalogerContext::new(
+            "test.md".to_string(),
+            // Structural patterns that fire on both axes: ISBN (testimony)
+            // + a stance marker (probably/maybe → vertical doubt).
+            "See ISBN 978-0-12-345678-9. Probably true.".to_string(),
+            Vec::new(),
+            Vec::new(),
+        );
+        let trail = StructuralCataloger::new()
+            .classify(&ctx)
+            .expect("structural cataloger must produce a trail when patterns fire");
+
+        let tmpl = trail
+            .reasoning_template
+            .as_ref()
+            .expect("MIG-022 §E.2: structural cataloger must emit reasoning_template");
+        assert!(
+            tmpl.key.starts_with("structural."),
+            "expected key to start with 'structural.', got {:?}",
+            tmpl.key,
+        );
+        // English fallback unchanged
+        assert!(trail.reasoning.starts_with("Structural patterns matched"));
     }
 
     #[test]

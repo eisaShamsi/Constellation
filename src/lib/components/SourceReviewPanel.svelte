@@ -50,12 +50,20 @@
     needs_user_disambiguation_between?: string[] | null;
     dissenter?: string | null;
   };
+  // MIG-022 §E.2 (PJ-041) — structured i18n template for reasoning prose.
+  // Each cataloger emits {key, params}; frontend resolves via $t() with
+  // raw `reasoning` as fallback for legacy data + Reasoning cataloger.
+  type ReasoningTemplate = {
+    key: string;
+    params: Record<string, unknown>;
+  };
   type PerCatalogerTrail = {
     cataloger: string;
     voiced_opinion: boolean;
     horizontal: { id: string; primary: boolean; weight: number }[];
     vertical: { id: string; primary: boolean; weight: number }[];
     reasoning: string;
+    reasoning_template?: ReasoningTemplate | null;
     rules_fired: string[];
     self_reported_confidence: 'high' | 'medium' | 'low' | 'abstain';
   };
@@ -63,6 +71,7 @@
     horizontal: AxisDecision;
     vertical: AxisDecision;
     composite_reasoning: string;
+    composite_reasoning_template?: ReasoningTemplate | null;
     catalogers_voiced: string[];
     catalogers_silent: string[];
     synthesis_method: string;
@@ -341,6 +350,43 @@
     const translated = $t(i18nKey);
     if (translated && translated !== i18nKey) return translated;
     return c; // fallback to raw enum string on missing key
+  }
+
+  /**
+   * MIG-022 §E.2 (PJ-041, 2026-05-11) — render the per-cataloger
+   * reasoning prose via the i18n template when present, falling back
+   * to the raw English `reasoning` string when the template is absent
+   * (Reasoning cataloger; legacy composite_json blobs from before
+   * MIG-022) or the i18n catalog is missing the template key in the
+   * active locale.
+   *
+   * The structured template carries {key, params}; key is e.g.
+   * "structural.both" and resolves to `cece.reasoning.structural.both`
+   * with the params satisfying placeholders like {h_id}, {v_weight}.
+   */
+  function reasoningLabel(trail: PerCatalogerTrail): string {
+    if (!trail.reasoning_template) return trail.reasoning;
+    const i18nKey = `cece.reasoning.${trail.reasoning_template.key}`;
+    // $t(key, params) — Constellation's i18n passes params as the
+    // second argument's top-level fields (verified against
+    // ImporterModal/LibraryManager/LinkDashboard call sites).
+    const params = trail.reasoning_template.params as Record<string, string>;
+    const translated = $t(i18nKey, params);
+    if (translated && translated !== i18nKey) return translated;
+    return trail.reasoning; // fallback to English raw on missing key
+  }
+
+  /**
+   * MIG-022 §E.2 — render the composite_reasoning summary via i18n
+   * template when present. Same shape as reasoningLabel above; falls
+   * back to raw English on missing template/key.
+   */
+  function compositeReasoningLabel(c: CompositeAssignment): string {
+    if (!c.composite_reasoning_template) return c.composite_reasoning;
+    const i18nKey = `cece.reasoning.${c.composite_reasoning_template.key}`;
+    const translated = $t(i18nKey, c.composite_reasoning_template.params as Record<string, string>);
+    if (translated && translated !== i18nKey) return translated;
+    return c.composite_reasoning;
   }
 
   /**
@@ -1028,7 +1074,7 @@
             </div>
             {#if showTrail}
               <div class="srp-trail">
-                <div class="srp-trail-summary">{composite.composite_reasoning}</div>
+                <div class="srp-trail-summary">{compositeReasoningLabel(composite)}</div>
                 <ul class="srp-trail-list">
                   {#each composite.per_cataloger_trails.filter(t => t.voiced_opinion) as t}
                     <li class="srp-trail-item">
@@ -1041,7 +1087,7 @@
                         <strong>{catalogerLabel(t.cataloger)}</strong>
                         <span class="srp-trail-conf">[{confidenceLabel(t.self_reported_confidence)}]</span>
                       </div>
-                      <div class="srp-trail-reasoning">{t.reasoning}</div>
+                      <div class="srp-trail-reasoning">{reasoningLabel(t)}</div>
                       <!-- V3-§8.r5.2 — translated rules_fired strip.
                            Each rule the cataloger triggered becomes a
                            one-word friendly chip ("DOI present",

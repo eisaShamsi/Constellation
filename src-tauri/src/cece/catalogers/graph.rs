@@ -27,7 +27,8 @@
 //! case the cataloger abstains gracefully.
 
 use crate::cece::cataloger::{
-    Axis, AxisAssignment, Cataloger, CatalogerContext, Confidence, ReasoningTrail, TypedNeighbor,
+    Axis, AxisAssignment, Cataloger, CatalogerContext, Confidence, ReasoningTemplate,
+    ReasoningTrail, TypedNeighbor,
 };
 use crate::sources::{is_valid_content_type_id, is_valid_source_id};
 use std::collections::HashMap;
@@ -155,7 +156,8 @@ impl Cataloger for GraphCataloger {
             Confidence::Low
         };
 
-        let reasoning = build_reasoning(&horizontal, &vertical, &neighbors_used);
+        let (reasoning, reasoning_template) =
+            build_reasoning(&horizontal, &vertical, &neighbors_used);
 
         Some(ReasoningTrail {
             cataloger: self.name().to_string(),
@@ -163,6 +165,7 @@ impl Cataloger for GraphCataloger {
             horizontal,
             vertical,
             reasoning,
+            reasoning_template: Some(reasoning_template),
             rules_fired: vec![
                 "typed_neighbor_consensus".to_string(),
                 "rule_of_authority_control".to_string(),
@@ -221,13 +224,29 @@ fn top_assignments(
         .collect()
 }
 
+/// MIG-022 §E.2 (PJ-041) — emits the English fallback string AND the
+/// structured i18n template. Three template variants based on which
+/// axes the cataloger voiced (graph always has neighbors when it
+/// voices; the neighbors string is always part of the template):
+///   - both axes  → cece.reasoning.graph.both
+///   - h only     → cece.reasoning.graph.horizontal_only
+///   - v only     → cece.reasoning.graph.vertical_only
 fn build_reasoning(
     h: &[AxisAssignment],
     v: &[AxisAssignment],
     neighbors: &[(String, String, f32)],
-) -> String {
+) -> (String, ReasoningTemplate) {
     use std::fmt::Write;
-    let mut out = String::from("Typed-neighbor consensus: ");
+
+    let preview: Vec<String> = neighbors
+        .iter()
+        .take(3)
+        .map(|(p, lt, w)| format!("{} ({}, {:+.2})", short_name(p), lt, w))
+        .collect();
+    let neighbors_joined = preview.join(", ");
+
+    // English fallback string — preserves pre-MIG-022 behavior.
+    let mut english = String::from("Typed-neighbor consensus: ");
     let mut parts = Vec::new();
     if let Some(top) = h.first() {
         parts.push(format!("horizontal → {} (weight {:.2})", top.id, top.weight));
@@ -235,14 +254,30 @@ fn build_reasoning(
     if let Some(top) = v.first() {
         parts.push(format!("vertical → {} (weight {:.2})", top.id, top.weight));
     }
-    let _ = write!(out, "{}.", parts.join("; "));
-    let preview: Vec<String> = neighbors
-        .iter()
-        .take(3)
-        .map(|(p, lt, w)| format!("{} ({}, {:+.2})", short_name(p), lt, w))
-        .collect();
-    let _ = write!(out, " Neighbors: {}.", preview.join(", "));
-    out
+    let _ = write!(english, "{}.", parts.join("; "));
+    let _ = write!(english, " Neighbors: {}.", neighbors_joined);
+
+    // Template variant + params.
+    let h_top = h.first();
+    let v_top = v.first();
+    let key = match (h_top.is_some(), v_top.is_some()) {
+        (true, true) => "graph.both",
+        (true, false) => "graph.horizontal_only",
+        (false, true) => "graph.vertical_only",
+        (false, false) => "graph.both", // unreachable; defensive
+    };
+
+    let mut params = serde_json::json!({ "neighbors": neighbors_joined });
+    if let Some(ht) = h_top {
+        params["h_id"] = serde_json::Value::String(ht.id.clone());
+        params["h_weight"] = serde_json::Value::String(format!("{:.2}", ht.weight));
+    }
+    if let Some(vt) = v_top {
+        params["v_id"] = serde_json::Value::String(vt.id.clone());
+        params["v_weight"] = serde_json::Value::String(format!("{:.2}", vt.weight));
+    }
+
+    (english, ReasoningTemplate { key: key.to_string(), params })
 }
 
 fn short_name(path: &str) -> String {

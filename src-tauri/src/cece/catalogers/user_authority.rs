@@ -18,9 +18,11 @@
 //!     the author of their own notes.
 
 use crate::cece::cataloger::{
-    AxisAssignment, Axis, Cataloger, CatalogerContext, Confidence, ReasoningTrail,
+    AxisAssignment, Axis, Cataloger, CatalogerContext, Confidence, ReasoningTemplate,
+    ReasoningTrail,
 };
 use crate::sources::{is_valid_content_type_id, is_valid_source_id};
+use serde_json::json;
 
 pub struct UserAuthorityCataloger;
 
@@ -92,7 +94,7 @@ impl Cataloger for UserAuthorityCataloger {
             ));
         }
 
-        let reasoning = build_reasoning(&horizontal, &vertical);
+        let (reasoning, reasoning_template) = build_reasoning(&horizontal, &vertical);
 
         Some(ReasoningTrail {
             cataloger: self.name().to_string(),
@@ -100,6 +102,7 @@ impl Cataloger for UserAuthorityCataloger {
             horizontal,
             vertical,
             reasoning,
+            reasoning_template: Some(reasoning_template),
             rules_fired: vec!["rule_of_authority".to_string()],
             alternatives_considered: Vec::new(),
             self_reported_confidence: Confidence::High,
@@ -111,24 +114,53 @@ impl Cataloger for UserAuthorityCataloger {
     }
 }
 
-fn build_reasoning(h: &[AxisAssignment], v: &[AxisAssignment]) -> String {
+/// MIG-022 §E.2 (PJ-041) — emits the English fallback string AND the
+/// structured i18n template. Three template variants based on which
+/// axes UA voiced:
+///   - both axes  → cece.reasoning.user_authority.both
+///   - h only     → cece.reasoning.user_authority.horizontal_only
+///   - v only     → cece.reasoning.user_authority.vertical_only
+fn build_reasoning(
+    h: &[AxisAssignment],
+    v: &[AxisAssignment],
+) -> (String, ReasoningTemplate) {
     use std::fmt::Write;
-    let mut out = String::from("Set in note frontmatter (manual). ");
+    let h_joined = h.iter().map(|a| a.id.as_str()).collect::<Vec<_>>().join(", ");
+    let v_joined = v.iter().map(|a| a.id.as_str()).collect::<Vec<_>>().join(", ");
+
+    // English fallback string — preserves pre-MIG-022 behavior.
+    let mut english = String::from("Set in note frontmatter (manual). ");
     if !h.is_empty() {
-        let _ = write!(
-            out,
-            "Sources: {}. ",
-            h.iter().map(|a| a.id.as_str()).collect::<Vec<_>>().join(", "),
-        );
+        let _ = write!(english, "Sources: {}. ", h_joined);
     }
     if !v.is_empty() {
-        let _ = write!(
-            out,
-            "Content type: {}. ",
-            v.iter().map(|a| a.id.as_str()).collect::<Vec<_>>().join(", "),
-        );
+        let _ = write!(english, "Content type: {}. ", v_joined);
     }
-    out
+
+    // Template variant + params per axis combination.
+    let template = match (!h.is_empty(), !v.is_empty()) {
+        (true, true) => ReasoningTemplate {
+            key: "user_authority.both".to_string(),
+            params: json!({ "sources": h_joined, "content_type": v_joined }),
+        },
+        (true, false) => ReasoningTemplate {
+            key: "user_authority.horizontal_only".to_string(),
+            params: json!({ "sources": h_joined }),
+        },
+        (false, true) => ReasoningTemplate {
+            key: "user_authority.vertical_only".to_string(),
+            params: json!({ "content_type": v_joined }),
+        },
+        // Unreachable: caller already checks both empty → abstain.
+        // Guard with a no-axes template just in case future refactors
+        // change call shape.
+        (false, false) => ReasoningTemplate {
+            key: "user_authority.both".to_string(),
+            params: json!({ "sources": "", "content_type": "" }),
+        },
+    };
+
+    (english, template)
 }
 
 #[cfg(test)]

@@ -170,6 +170,13 @@ impl Cataloger for ReasoningCataloger {
             horizontal,
             vertical,
             reasoning: parsed.reasoning,
+            // MIG-022 §E.2: the Reasoning cataloger's prose comes from
+            // the LLM's structured output, not a hardcoded format!()
+            // string. No template; frontend falls back to raw
+            // `reasoning`. Future MIG could emit a localized prompt +
+            // parse a template_key from the LLM output. Out of MIG-022
+            // scope.
+            reasoning_template: None,
             rules_fired: vec![
                 "schedule_navigation_top_down".to_string(),
                 "gbnf_constrained".to_string(),

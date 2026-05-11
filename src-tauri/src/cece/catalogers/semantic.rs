@@ -23,7 +23,8 @@
 //! both None in unit tests, in which case the cataloger abstains.
 
 use crate::cece::cataloger::{
-    Axis, AxisAssignment, Cataloger, CatalogerContext, Confidence, ReasoningTrail,
+    Axis, AxisAssignment, Cataloger, CatalogerContext, Confidence, ReasoningTemplate,
+    ReasoningTrail,
 };
 use crate::sources::{is_valid_content_type_id, is_valid_source_id};
 use std::collections::HashMap;
@@ -174,7 +175,8 @@ impl Cataloger for SemanticCataloger {
             Confidence::Low
         };
 
-        let reasoning = build_reasoning(&horizontal, &vertical, &neighbor_paths);
+        let (reasoning, reasoning_template) =
+            build_reasoning(&horizontal, &vertical, &neighbor_paths);
 
         Some(ReasoningTrail {
             cataloger: self.name().to_string(),
@@ -182,6 +184,7 @@ impl Cataloger for SemanticCataloger {
             horizontal,
             vertical,
             reasoning,
+            reasoning_template: Some(reasoning_template),
             rules_fired: vec![
                 "semantic_neighbor_consensus".to_string(),
                 "rule_of_authority_control".to_string(),
@@ -221,13 +224,29 @@ fn top_assignments(
         .collect()
 }
 
+/// MIG-022 §E.2 (PJ-041) — emits the English fallback string AND the
+/// structured i18n template. Three template variants based on which
+/// axes the cataloger voiced (semantic always has neighbors when it
+/// voices; the neighbors string is always part of the template):
+///   - both axes  → cece.reasoning.semantic.both
+///   - h only     → cece.reasoning.semantic.horizontal_only
+///   - v only     → cece.reasoning.semantic.vertical_only
 fn build_reasoning(
     h: &[AxisAssignment],
     v: &[AxisAssignment],
     neighbors: &[(String, f32)],
-) -> String {
+) -> (String, ReasoningTemplate) {
     use std::fmt::Write;
-    let mut out = String::from("Semantic neighbor consensus: ");
+
+    let preview: Vec<String> = neighbors
+        .iter()
+        .take(3)
+        .map(|(p, c)| format!("{} ({:.2})", short_name(p), c))
+        .collect();
+    let neighbors_joined = preview.join(", ");
+
+    // English fallback string — preserves pre-MIG-022 behavior.
+    let mut english = String::from("Semantic neighbor consensus: ");
     let mut parts = Vec::new();
     if let Some(top) = h.first() {
         parts.push(format!("horizontal → {} (weight {:.2})", top.id, top.weight));
@@ -235,14 +254,30 @@ fn build_reasoning(
     if let Some(top) = v.first() {
         parts.push(format!("vertical → {} (weight {:.2})", top.id, top.weight));
     }
-    let _ = write!(out, "{}.", parts.join("; "));
-    let preview: Vec<String> = neighbors
-        .iter()
-        .take(3)
-        .map(|(p, c)| format!("{} ({:.2})", short_name(p), c))
-        .collect();
-    let _ = write!(out, " Top neighbors: {}.", preview.join(", "));
-    out
+    let _ = write!(english, "{}.", parts.join("; "));
+    let _ = write!(english, " Top neighbors: {}.", neighbors_joined);
+
+    // Template variant + params.
+    let h_top = h.first();
+    let v_top = v.first();
+    let key = match (h_top.is_some(), v_top.is_some()) {
+        (true, true) => "semantic.both",
+        (true, false) => "semantic.horizontal_only",
+        (false, true) => "semantic.vertical_only",
+        (false, false) => "semantic.both", // unreachable; defensive
+    };
+
+    let mut params = serde_json::json!({ "neighbors": neighbors_joined });
+    if let Some(ht) = h_top {
+        params["h_id"] = serde_json::Value::String(ht.id.clone());
+        params["h_weight"] = serde_json::Value::String(format!("{:.2}", ht.weight));
+    }
+    if let Some(vt) = v_top {
+        params["v_id"] = serde_json::Value::String(vt.id.clone());
+        params["v_weight"] = serde_json::Value::String(format!("{:.2}", vt.weight));
+    }
+
+    (english, ReasoningTemplate { key: key.to_string(), params })
 }
 
 fn short_name(path: &str) -> String {

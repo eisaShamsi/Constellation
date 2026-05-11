@@ -71,6 +71,30 @@ pub struct RejectedAlternative {
     pub rejected_because: String,
 }
 
+/// MIG-022 §E.2 (PJ-041) — structured i18n template for the reasoning
+/// prose. Each cataloger emits a `key` that resolves against the i18n
+/// catalog (`cece.reasoning.<key>`) plus a `params` JSON object whose
+/// fields the i18n template substitutes. The frontend renders via
+/// `$t(template.key, template.params)` with raw `reasoning` (English)
+/// as fallback when the template key is missing in the active locale.
+///
+/// Template values may use ICU-style `{paramName}` placeholders. Numeric
+/// quantities are pre-formatted as strings in Rust (e.g. weights as
+/// `"0.40"`) so the i18n value never needs locale-aware number formatting.
+/// List separators (e.g. between CAE roots) are pre-joined in Rust with
+/// a comma; locale-aware list separators is a future polish.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ReasoningTemplate {
+    /// i18n key under `cece.reasoning.*` (e.g. "structural.both",
+    /// "linguistic.horizontal_only.with_roots", "user_authority.both").
+    pub key: String,
+    /// JSON object whose fields satisfy the placeholders in the i18n
+    /// value. `serde_json::Value::Object` in practice; `Value` in the
+    /// type so callers can pass a serializable struct directly via
+    /// `serde_json::to_value()`.
+    pub params: serde_json::Value,
+}
+
 /// The output of a single cataloger's `classify` call. Persisted, audited,
 /// surfaced to the user, and consumed by the synthesis layer.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -84,7 +108,19 @@ pub struct ReasoningTrail {
     pub vertical: Vec<AxisAssignment>,
     /// One paragraph in plain language explaining how this cataloger
     /// arrived at its assignment. Surfaced to the user verbatim.
+    /// Pre-MIG-022-§E.2 this was the only reasoning field; the
+    /// frontend rendered it raw. Now used as the English fallback when
+    /// `reasoning_template` is None (legacy composite_json blobs) or
+    /// the i18n catalog is missing the template key.
     pub reasoning: String,
+    /// MIG-022 §E.2 (PJ-041) — structured i18n template. When `Some`,
+    /// the frontend renders `$t(template.key, template.params)` and
+    /// uses `reasoning` only as fallback. When `None`, frontend falls
+    /// back to raw `reasoning` (covers legacy data + the
+    /// `Reasoning` cataloger, whose prose comes from the LLM and is
+    /// not template-keyed).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reasoning_template: Option<ReasoningTemplate>,
     /// Names of cataloger rules (Architect §4) that fired during this
     /// classification. e.g. ["root_pattern_match", "rule_of_authority"].
     pub rules_fired: Vec<String>,
@@ -103,6 +139,11 @@ impl ReasoningTrail {
             horizontal: Vec::new(),
             vertical: Vec::new(),
             reasoning: reason.to_string(),
+            // MIG-022 §E.2: abstain doesn't need a template (no per-axis
+            // info to render). The bare `reasoning` text suffices when
+            // the frontend even bothers to display abstain trails (the
+            // synthesis layer ignores them).
+            reasoning_template: None,
             rules_fired: Vec::new(),
             alternatives_considered: Vec::new(),
             self_reported_confidence: Confidence::Abstain,
