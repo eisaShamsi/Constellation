@@ -74,6 +74,20 @@ pub struct CompositeAssignment {
 
 /// Synthesize one composite assignment from a set of cataloger trails.
 /// Per Architect §3.1 + invariant 1.
+///
+/// MIG-022 §D (PJ-040, 2026-05-11): User-Authority short-circuit is now
+/// **per-axis**. When the user has filled `sources:` in frontmatter but
+/// not `content_type:`, UA voices horizontal only. The horizontal axis
+/// still short-circuits (UA's pick wins, regime=Unanimous, weight=1.0)
+/// but the vertical axis falls through to the normal weighted-vote
+/// synthesis — preserving the work the other catalogers (Linguistic,
+/// Structural, Semantic, Graph) did on vertical. Symmetric for vertical-
+/// only UA frontmatter.
+///
+/// Synthesis method labels:
+///   - both axes UA-voiced  → "user_authority_short_circuit"
+///   - one axis UA-voiced   → "user_authority_partial_short_circuit"
+///   - no axes UA-voiced    → "weighted_vote"
 pub fn synthesize(
     trails: Vec<ReasoningTrail>,
     reliability: &ReliabilityProfile,
@@ -86,25 +100,41 @@ pub fn synthesize(
     let catalogers_voiced: Vec<String> = voiced.iter().map(|t| t.cataloger.clone()).collect();
     let catalogers_silent: Vec<String> = silent.iter().map(|t| t.cataloger.clone()).collect();
 
-    // ── Invariant 1: User-Authority short-circuit ──
-    // When User-Authority voiced, its assignment is the ensemble assignment.
-    // Other catalogers' trails are still preserved (for audit + future
-    // active-learning signal) but don't influence the decision.
-    if let Some(ua) = voiced.iter().find(|t| t.cataloger == "user_authority") {
-        return user_authority_short_circuit(
-            ua,
-            trails.clone(),
-            catalogers_voiced,
-            catalogers_silent,
-        );
-    }
+    // ── Invariant 1 (per-axis): User-Authority short-circuit ──
+    // Per-axis voicing detection. UA is "voiced on axis X" iff its trail
+    // has any assignment on that axis (regardless of voiced_opinion flag,
+    // since UA always voices when frontmatter has any value at all).
+    let ua = voiced.iter().find(|t| t.cataloger == "user_authority");
+    let ua_voiced_horizontal = ua.is_some_and(|u| !u.horizontal.is_empty());
+    let ua_voiced_vertical = ua.is_some_and(|u| !u.vertical.is_empty());
 
-    // ── Per-axis weighted vote ──
-    let horizontal = vote_on_axis(&voiced, Axis::Horizontal, reliability);
-    let vertical = vote_on_axis(&voiced, Axis::Vertical, reliability);
+    let horizontal = if ua_voiced_horizontal {
+        ua_short_circuit_axis(ua.expect("ua_voiced_horizontal implies ua is Some"), Axis::Horizontal)
+    } else {
+        vote_on_axis(&voiced, Axis::Horizontal, reliability)
+    };
+    let vertical = if ua_voiced_vertical {
+        ua_short_circuit_axis(ua.expect("ua_voiced_vertical implies ua is Some"), Axis::Vertical)
+    } else {
+        vote_on_axis(&voiced, Axis::Vertical, reliability)
+    };
 
-    let composite_reasoning =
-        compose_reasoning(&voiced, &horizontal, &vertical);
+    let synthesis_method = match (ua_voiced_horizontal, ua_voiced_vertical) {
+        (true, true) => "user_authority_short_circuit".to_string(),
+        (true, false) | (false, true) => "user_authority_partial_short_circuit".to_string(),
+        (false, false) => "weighted_vote".to_string(),
+    };
+
+    // composite_reasoning preserves the UA reasoning text for audit when
+    // UA voiced anything; falls back to compose_reasoning otherwise.
+    // The per-axis trail rows below the summary already convey the
+    // mixed source-of-truth on partial cases.
+    let composite_reasoning = match (ua, ua_voiced_horizontal || ua_voiced_vertical) {
+        (Some(ua_trail), true) => {
+            format!("Set by user in frontmatter ({}).", ua_trail.reasoning)
+        }
+        _ => compose_reasoning(&voiced, &horizontal, &vertical),
+    };
 
     CompositeAssignment {
         horizontal,
@@ -112,38 +142,23 @@ pub fn synthesize(
         composite_reasoning,
         catalogers_voiced,
         catalogers_silent,
-        synthesis_method: "weighted_vote".to_string(),
+        synthesis_method,
         per_cataloger_trails: trails,
     }
 }
 
-fn user_authority_short_circuit(
-    ua: &ReasoningTrail,
-    all_trails: Vec<ReasoningTrail>,
-    catalogers_voiced: Vec<String>,
-    catalogers_silent: Vec<String>,
-) -> CompositeAssignment {
-    let h = AxisDecision {
-        primary: ua.horizontal.iter().find(|a| a.primary).map(|a| a.id.clone()),
-        secondary: ua
-            .horizontal
-            .iter()
-            .filter(|a| !a.primary)
-            .map(|a| a.id.clone())
-            .collect(),
-        regime: ConfidenceRegime::Unanimous,
-        see_also: Vec::new(),
-        needs_user_disambiguation_between: None,
-        dissenter: None,
-        // User-supplied frontmatter is the authoritative answer — full
-        // confidence (1.0) per Architect §2.6 + invariant 1.
-        primary_weight: 1.0,
-        see_also_weights: Vec::new(),
+/// Build the AxisDecision for a single UA-voiced axis. Caller verifies
+/// the axis has assignments before invoking. Per Architect §2.6 +
+/// invariant 1: user-supplied frontmatter is the authoritative answer
+/// at full confidence (weight 1.0, regime Unanimous).
+fn ua_short_circuit_axis(ua: &ReasoningTrail, axis: Axis) -> AxisDecision {
+    let assignments = match axis {
+        Axis::Horizontal => &ua.horizontal,
+        Axis::Vertical => &ua.vertical,
     };
-    let v = AxisDecision {
-        primary: ua.vertical.iter().find(|a| a.primary).map(|a| a.id.clone()),
-        secondary: ua
-            .vertical
+    AxisDecision {
+        primary: assignments.iter().find(|a| a.primary).map(|a| a.id.clone()),
+        secondary: assignments
             .iter()
             .filter(|a| !a.primary)
             .map(|a| a.id.clone())
@@ -154,15 +169,6 @@ fn user_authority_short_circuit(
         dissenter: None,
         primary_weight: 1.0,
         see_also_weights: Vec::new(),
-    };
-    CompositeAssignment {
-        horizontal: h,
-        vertical: v,
-        composite_reasoning: format!("Set by user in frontmatter ({}).", ua.reasoning),
-        catalogers_voiced,
-        catalogers_silent,
-        synthesis_method: "user_authority_short_circuit".to_string(),
-        per_cataloger_trails: all_trails,
     }
 }
 
@@ -440,8 +446,16 @@ mod tests {
         // pins down what the JSON blob actually looks like for a UA
         // short-circuit so we can prove the bug is (or isn't) on the
         // synthesis side.
+        //
+        // MIG-022 §D (PJ-040, 2026-05-11): the original V3-§8.r7 setup
+        // had UA voicing horizontal only and asserted vertical regime was
+        // also "unanimous" — that was the bug PJ-040 fixes. The corrected
+        // setup gives UA both axes (the actual full-short-circuit case
+        // the test name describes); the partial-UA case is now covered
+        // by `user_authority_partial_short_circuit_horizontal_only` and
+        // its symmetric vertical sibling below.
         let trails = vec![
-            trail("user_authority", Some("testimony/authoritative"), None, Confidence::High),
+            trail("user_authority", Some("testimony/authoritative"), Some("epistemic-states/doubt"), Confidence::High),
             trail("linguistic", Some("testimony/authoritative"), Some("epistemic-states/doubt"), Confidence::High),
             trail("structural", Some("testimony/direct-witness"), Some("epistemic-states/doubt"), Confidence::High),
             trail("semantic", Some("perception"), Some("epistemic-states/illusion"), Confidence::Medium),
@@ -466,6 +480,74 @@ mod tests {
             v_regime, "unanimous",
             "vertical regime in JSON must be exactly the string \"unanimous\""
         );
+        assert_eq!(
+            result.synthesis_method, "user_authority_short_circuit",
+            "both-axes UA must produce the full short-circuit synthesis method label"
+        );
+    }
+
+    #[test]
+    fn user_authority_partial_short_circuit_horizontal_only() {
+        // MIG-022 §D (PJ-040): when the user has set `sources:` in
+        // frontmatter but not `content_type:`, UA voices horizontal
+        // only. The horizontal axis still short-circuits to UA's pick
+        // (regime=Unanimous, weight=1.0), but the vertical axis falls
+        // through to the normal weighted-vote synthesis using the OTHER
+        // catalogers' trails. Before this fix, vertical.primary was
+        // silently None and the Source Review card's CONTENT TYPE
+        // section disappeared.
+        let trails = vec![
+            // UA: horizontal only (user set sources: testimony in frontmatter)
+            trail("user_authority", Some("testimony"), None, Confidence::High),
+            // Linguistic + Structural agree on vertical = epistemic-states
+            // (both sound voices on vertical → the synthesized primary)
+            trail("linguistic", Some("inference"), Some("epistemic-states"), Confidence::High),
+            trail("structural", Some("perception"), Some("epistemic-states"), Confidence::High),
+        ];
+        let r = ReliabilityProfile::default();
+        let result = synthesize(trails, &r);
+
+        // Horizontal: UA short-circuit (existing behavior preserved).
+        assert_eq!(result.horizontal.primary.as_deref(), Some("testimony"));
+        assert_eq!(result.horizontal.regime, ConfidenceRegime::Unanimous);
+        assert!((result.horizontal.primary_weight - 1.0).abs() < 1e-6);
+
+        // Vertical: synthesized from non-UA catalogers (the PJ-040 fix).
+        // Linguistic + Structural unanimously voted "epistemic-states".
+        assert_eq!(result.vertical.primary.as_deref(), Some("epistemic-states"));
+        assert_eq!(result.vertical.regime, ConfidenceRegime::Unanimous);
+
+        // Synthesis method label distinguishes partial from full.
+        assert_eq!(result.synthesis_method, "user_authority_partial_short_circuit");
+    }
+
+    #[test]
+    fn user_authority_partial_short_circuit_vertical_only() {
+        // MIG-022 §D (PJ-040): symmetric to the horizontal-only case.
+        // When the user has set `content_type:` but not `sources:`,
+        // UA voices vertical only; horizontal falls through to the
+        // normal weighted-vote synthesis.
+        let trails = vec![
+            // UA: vertical only (user set content_type: epistemic-states)
+            trail("user_authority", None, Some("epistemic-states"), Confidence::High),
+            // Linguistic + Structural agree on horizontal = testimony
+            trail("linguistic", Some("testimony"), Some("semantic-contents"), Confidence::High),
+            trail("structural", Some("testimony"), Some("higher-order-constructs"), Confidence::High),
+        ];
+        let r = ReliabilityProfile::default();
+        let result = synthesize(trails, &r);
+
+        // Vertical: UA short-circuit.
+        assert_eq!(result.vertical.primary.as_deref(), Some("epistemic-states"));
+        assert_eq!(result.vertical.regime, ConfidenceRegime::Unanimous);
+        assert!((result.vertical.primary_weight - 1.0).abs() < 1e-6);
+
+        // Horizontal: synthesized from non-UA catalogers (the PJ-040 fix).
+        assert_eq!(result.horizontal.primary.as_deref(), Some("testimony"));
+        assert_eq!(result.horizontal.regime, ConfidenceRegime::Unanimous);
+
+        // Synthesis method label distinguishes partial from full.
+        assert_eq!(result.synthesis_method, "user_authority_partial_short_circuit");
     }
 
     #[test]
