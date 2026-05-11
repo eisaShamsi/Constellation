@@ -18,6 +18,7 @@ Constellation, Markdown not kütüphanelerini yönetmek için tasarlanmış bir 
 8. [Constellation Sight](#constellation-sight)
 9. [İkinci Ekran](#ikinci-ekran)
 10. [Özellikler ve Frontmatter](#özellikler-ve-frontmatter)
+10b. [Kaynak Gözden Geçirme (CECE)](#10b-kaynak-gözden-geçirme-constellation-epistemic-content-engine--cece)
 11. [Şablonlar](#şablonlar)
 12. [Tablolar](#tablolar)
 13. [Görevler](#görevler)
@@ -576,6 +577,92 @@ Constellation özellik türlerini otomatik olarak algılar:
 | **Bağlantı** | `related: [[Other Note]]` |
 
 Özellik görüntülemeyi **Ayarlar > Düzenleyici > Belgede özellikler** (Görünür / Gizli / Kaynak) bölümünden değiştirin.
+
+---
+
+## 10b. Kaynak Gözden Geçirme (Constellation Epistemic Content Engine — CECE)
+
+> *(Çeviri notu: V3-§10.F bölümünün yapay zekâ ile üretilmiş çevirisi; ana dili konuşan kişi tarafından gözden geçirme bekliyor.)*
+
+En önemli iki frontmatter özelliği — `sources:` ve `content_type:` — bir şeyi *nasıl öğrendiğinizi* ve *ne tür bir bilgi* olduğunu tanımlar. Constellation'ın **Epistemic Content Engine** (CECE), 6 kataloglayıcıdan oluşan bir topluluk kullanarak her notu bu iki eksen boyunca otomatik olarak sınıflandırır. **Kaynak Gözden Geçirme** paneli, bu sınıflandırmaları gözden geçirip düzelttiğiniz yerdir.
+
+### Motorun yaptığı iş
+
+Bir notu sınıflandırdığınızda (sağ tık → «Kaynak ve içerik türü öner», ya da Ayarlar > Tarama çalıştır üzerinden, ya da otomatik olarak arka plan tarama anahtarı üzerinden), CECE altı bağımsız kataloglayıcıyı nota karşı çalıştırır. Her biri notu farklı bir mercekten okur ve iki soruda oy kullanır:
+
+- **Kaynak** (yatay eksen) — bu bilgi *nereden* geldi? On bir olası değer: algı, çıkarım, tanıklık, kütlesel-aktarım, karşılaştırma, postülasyon, kavrayışsızlık, hafıza, doğuştan-eğilim, ilham, vahiy. Artı *sınıflandırılamaz*.
+- **İçerik türü** (dikey eksen) — bu *ne tür* bir bilgi? Beş üst düzey dal: duyusal girdiler, sembolik varlıklar, anlamsal içerikler, epistemik durumlar, üst düzey yapılar.
+
+İki eksen birbirinden bağımsızdır. «Ay'a iniş hakkında şüphem var» notu kaynak ekseninde tanıklık (birisi bunu bildirdi) + içerik türünde epistemik-durumlar/şüphe (sizin tutumunuz) olur.
+
+Motor **cihazınızda** çalışır — hiçbir not Constellation'dan ayrılmaz.
+
+### Altı kataloglayıcı
+
+Her kataloglayıcı bir mercektir. Kaynak Gözden Geçirme kartı bunları her kartın sağ üst köşesinde altı küçük renkli nokta olarak gösterir:
+
+- **Ön bilginiz (frontmatter)** (mavi) — zaten ayarladığınızı mutlak yetkiyle benimser
+- **Atıflar ve yapı** (gül) — atıflar, blok alıntılar, teorem işaretleri, tanım ifadeleri
+- **Kelime kökleri ve sözlük** (kehribar) — Arapça kök analizi + diller arası terim eşdeğerliği
+- **Bağlı notlar** (turkuaz) — diğer sınıflandırılmış notlara tipli Living Links
+- **Benzer notlar** (mor) — zaten sınıflandırdığınız notlara embedding-benzerliği
+- **Yapay zekâ değerlendirmesi** (yeşil) — yerel bir LLM (Qwen3-4B; *henüz aktif değil*, gelecekteki bir sürüme ertelenmiş)
+
+Dolu bir nokta o kataloglayıcının ses verdiği ve sentezle aynı fikirde olduğu anlamına gelir. Halkalı bir nokta ses verdiği ama muhalif kaldığı anlamına gelir. Kesik konturlu bir nokta sessiz kaldığı anlamına gelir (bu mercekte sinyal yok).
+
+### Üç güven rejimi
+
+Kataloglayıcılar oy kullandıktan sonra her eksen üç rejimden birine düşer:
+
+- **Oybirliği** — ses veren her kataloglayıcı hemfikir oldu
+- **Güçlü çoğunluk (bir muhalif)** — çoğunluk hemfikir oldu; bir muhalif adlandırıldı
+- **Bölündü** — net bir çoğunluk yok; motor tahmin etmeyi reddediyor ve sizden seçim istiyor
+
+Her eksen kendi rejimini bağımsız olarak alır — bir kart yatayda Oybirliği + dikeyde Bölündü olabilir vs.
+
+### Sibling Disambiguation
+
+Bir eksen Bölündüğünde, motor aday değerleri bir istem altında **çipler** olarak sunar: *«Nota en uygun olanı seçin.»* Bir çipe tıklayın → motor bu seçimi notun frontmatter'ına yazar ve kartı kuyruktan kaldırır. DİĞER eksen çözüldüyse (Oybirliği veya Güçlü çoğunluk), motor *aynı zamanda* o eksenin değerini de yazar — yalnızca biri Bölünmüşken bir tıklama her iki ekseni bitirir.
+
+### Gerekçe izi
+
+Her kartta bir *«▸ Bu sınıflandırma neden?»* anahtarı vardır. Genişlettiğinizde, ses veren her kataloglayıcı için bir satır gösterilir; gerekçe, öz raporlanmış güven ve dostane kural çipleri («Yüzey anahtar kelime eşleşmesi», «Arapça kök eşleşmesi (CAE)», «Tanım işareti» vb.) ile birlikte — bunlar her kataloglayıcının tetiklediği özel kurallardır.
+
+**İlk 50 incelemeniz** sırasında iz, her kartta otomatik olarak genişler (bir *güven kalibrasyon dönemi*), böylece motora ne zaman güveneceğinize dair sezgi geliştirebilirsiniz. Bundan sonra Oybirliği kartlarında izler isteğe bağlıya katlanır. **Ayarlar > Zekâ > CECE > Gerekçe izi görünürlüğü** üzerinden istediğiniz zaman geçersiz kılın.
+
+### Kuyruk bileşim filtresi
+
+Sayım çubuğunun üzerinde, beş çip kuyruğu her kartın hangi tür karara ihtiyaç duyduğuna göre dilimler:
+
+- **Tümü** — tam kuyruk
+- **Her iki eksen kararınızı bekliyor** — her iki eksen Bölündü
+- **Kaynak kararınızı bekliyor** — yatay Bölündü + dikey çözüldü
+- **İçerik türü kararınızı bekliyor** — dikey Bölündü + yatay çözüldü
+- **Kataloglayıcılar hemfikir** — hiçbir eksen Bölünmedi (damga adayları)
+
+Her çip kova sayımını gösterir. Filtre bir oluşturma katmanı dilimleyicisidir — Tümünü Kabul Et matematiği, hangi filtre etkin olursa olsun, her zaman tam kuyruk üzerinde çalışır.
+
+### Kart başına işlemler
+
+- **Kabul Et** — motorun sentezini her iki eksen için birincil olarak yaz; kartı kaldır. Kataloglayıcı başına güvenilirliği günceller.
+- **Düzenle** — her iki eksen için ağaç seçici aç; manuel olarak seç. Aynı güvenilirlik güncellemesi.
+- **Reddet** — yazmadan kartı temizler.
+- **Sibling Disambiguation çipi** — yalnızca Bölünmüş kartlarda.
+
+### Kütüphane bazında kalibrasyon
+
+**Ayarlar > Zekâ > CECE > Kütüphane bazında kalibrasyon**, etkin Kütüphanedeki her kataloglayıcının eksen başına doğruluğunu gösteren salt okunur bir tablo açar. Farklı Kütüphanelerin kataloglayıcı başına farklı doğrulukları vardır — Dilbilim Arapça ağırlıklı Kütüphanelerde başarılı olur, Grafik yoğun bağlantılı olanlarda başarılı olur. Sentez katmanı oyları ağırlıklandırmak için bu kalibrasyon verilerini kullanır.
+
+Bir kataloglayıcının doğruluk oranının gösterilebilmesi için **20 düzeltme** gerekir. Bu eşiğin altında etiket *«(eşit)»* olarak okunur — kataloglayıcı yeterli veri birikene kadar eşit ağırlıklı oylarla katkıda bulunur.
+
+### Arka plan sınıflandırması
+
+Varsayılan olarak CECE notları yalnızca siz istediğinizde sınıflandırır (sağ tık veya Ayarlar tarama düğmesi). Otomatik sınıflandırmayı **Ayarlar > Zekâ > CECE > Arka plan sınıflandırması** üzerinden açabilirsiniz:
+
+- **Not kaydında** — yazmayı bıraktıktan ~1,5 saniye sonra her notu sınıflandırır (mevcut gecikmeli kaydetmenin üzerine biner; asla tuş başına tetiklenmez; yazma anında kalır)
+- **Uygulama başlangıcında** — her başlatmada bir kez sınıflandırılmamış notları tarar
+
+Daha derin ayrıntı için (her nokta durumu, her kural çipi, yaygın senaryoların tıklama-tıklama yönergeleri) yardım sistemindeki **Kaynak Gözden Geçirme** konusuna bakın.
 
 ---
 

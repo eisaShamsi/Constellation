@@ -18,6 +18,7 @@ Constellation es una aplicacion de escritorio para la Gestion del Conocimiento P
 8. [Constellation Sight](#constellation-sight)
 9. [Segunda Pantalla](#segunda-pantalla)
 10. [Propiedades y Frontmatter](#propiedades-y-frontmatter)
+10b. [Revisión de Fuentes (CECE)](#10b-revisión-de-fuentes-constellation-epistemic-content-engine--cece)
 11. [Plantillas](#plantillas)
 12. [Tablas](#tablas)
 13. [Tareas](#tareas)
@@ -576,6 +577,92 @@ Constellation detecta los tipos de propiedades automaticamente:
 | **Enlace** | `related: [[Otra Nota]]` |
 
 Alterna la visualizacion de propiedades en **Configuracion > Editor > Propiedades en el documento** (Visible / Oculto / Fuente).
+
+---
+
+## 10b. Revisión de Fuentes (Constellation Epistemic Content Engine — CECE)
+
+> *(Nota de traducción: traducción generada por IA del capítulo V3-§10.F; pendiente de revisión por hablante nativo.)*
+
+Dos de las propiedades de frontmatter más importantes — `sources:` y `content_type:` — describen *cómo llegaste a saber* algo y *qué tipo de conocimiento* es. El **Epistemic Content Engine** (CECE) de Constellation clasifica cada nota a lo largo de estos dos ejes automáticamente usando un conjunto de 6 catalogadores. El panel **Revisión de Fuentes** es donde revisas y corriges esas clasificaciones.
+
+### Lo que hace el motor
+
+Cuando clasificas una nota (clic derecho → «Sugerir fuentes y tipo de contenido», o vía Configuración > Ejecutar escaneo, o automáticamente vía el conmutador de escaneo en segundo plano), CECE ejecuta seis catalogadores independientes contra la nota. Cada uno lee la nota a través de una lente diferente y vota sobre dos preguntas:
+
+- **Fuente** (eje horizontal) — ¿de dónde *vino* este conocimiento? Once valores posibles: percepción, inferencia, testimonio, transmisión-masiva, comparación, postulación, no-aprehensión, memoria, disposición-innata, inspiración, revelación. Más *no clasificable*.
+- **Tipo de contenido** (eje vertical) — ¿qué *clase* de conocimiento es este? Cinco ramas principales: entradas sensoriales, entidades simbólicas, contenidos semánticos, estados epistémicos, constructos de orden superior.
+
+Los dos ejes son independientes. Una nota «Dudo del alunizaje» es testimonio (alguien lo reportó) en la fuente + estados-epistémicos/duda (tu postura) en el tipo de contenido.
+
+El motor se ejecuta **en tu dispositivo** — ninguna nota sale jamás de Constellation.
+
+### Los seis catalogadores
+
+Cada catalogador es una lente. La tarjeta de Revisión de Fuentes los muestra como seis pequeños puntos de colores en la esquina superior derecha de cada tarjeta:
+
+- **Tu frontmatter** (azul) — adopta lo que ya has establecido, con autoridad absoluta
+- **Citas y estructura** (rosa) — citas, citas en bloque, marcadores de teorema, frases de definición
+- **Raíces léxicas y vocabulario** (ámbar) — análisis de raíces árabes + equivalencia de términos entre idiomas
+- **Notas enlazadas** (verde azulado) — Living Links tipados a otras notas clasificadas
+- **Notas similares** (violeta) — similitud por embeddings con tus notas ya clasificadas
+- **Juicio de la IA** (verde) — un LLM local (Qwen3-4B; *aún no activo*, aplazado a una versión futura)
+
+Un punto relleno significa que ese catalogador habló y coincide con la síntesis. Un punto con anillo significa que habló pero discrepó. Un punto con contorno discontinuo significa que permaneció en silencio (sin señal en esa lente).
+
+### Tres regímenes de confianza
+
+Después de que los catalogadores votan, cada eje aterriza en uno de tres regímenes:
+
+- **Unánime** — todos los catalogadores con voz coincidieron
+- **Mayoría sólida (una discrepancia)** — la mayoría coincidió; un disidente nombrado
+- **Dividido** — sin mayoría clara; el motor se niega a adivinar y te pide que elijas
+
+Cada eje obtiene su propio régimen independientemente — una tarjeta puede ser Unánime en horizontal + Dividida en vertical, etc.
+
+### Sibling Disambiguation
+
+Cuando un eje está Dividido, el motor presenta los valores candidatos como **chips** bajo un mensaje: *«Elige cuál encaja mejor con la nota.»* Haz clic en un chip → el motor escribe esa elección en el frontmatter de la nota y elimina la tarjeta de la cola. Si el OTRO eje estaba resuelto (Unánime o Mayoría sólida), el motor *también* escribe el valor de ese eje al mismo tiempo — un clic finaliza ambos ejes cuando solo uno estaba Dividido.
+
+### El rastro de razonamiento
+
+Cada tarjeta tiene un conmutador *«▸ ¿Por qué esta clasificación?»*. Al expandirlo se muestra una fila por cada catalogador con voz, con el razonamiento, la confianza autorreportada y chips de regla amigables («Coincidencia de palabra clave superficial», «Coincidencia de raíz árabe (CAE)», «Marcador de definición», etc.) — estas son las reglas específicas que cada catalogador activó.
+
+Durante tus **primeras 50 revisiones** el rastro se expande automáticamente en cada tarjeta (un *período de calibración de confianza*) para que puedas desarrollar intuición sobre cuándo confiar en el motor. Después, los rastros se contraen a bajo demanda en las tarjetas Unánimes. Anula en cualquier momento en **Configuración > Inteligencia > CECE > Visibilidad del rastro de razonamiento**.
+
+### El filtro de composición de la cola
+
+Sobre la barra de conteo, cinco chips dividen la cola por el tipo de decisión que cada tarjeta necesita:
+
+- **Todo** — la cola completa
+- **Ambos ejes requieren tu decisión** — ambos ejes Divididos
+- **La fuente requiere tu decisión** — horizontal Dividido + vertical resuelto
+- **El tipo de contenido requiere tu decisión** — vertical Dividido + horizontal resuelto
+- **Los catalogadores coincidieron** — ningún eje Dividido (candidatos a sello automático)
+
+Cada chip muestra su recuento de cubo. El filtro es un divisor de capa de renderizado — la matemática de Aceptar Todo siempre opera sobre la cola completa independientemente de qué filtro esté activo.
+
+### Acciones por tarjeta
+
+- **Aceptar** — escribe la síntesis del motor como primaria en ambos ejes; elimina la tarjeta. Actualiza la fiabilidad por catalogador.
+- **Editar** — abre un selector de árbol para ambos ejes; elige manualmente. Misma actualización de fiabilidad.
+- **Rechazar** — limpia la tarjeta sin escribir.
+- **Chip de Sibling Disambiguation** — solo en tarjetas Divididas.
+
+### Calibración por Biblioteca
+
+**Configuración > Inteligencia > CECE > Calibración por Biblioteca** abre una tabla de solo lectura que muestra la exactitud de cada catalogador por eje en la Biblioteca activa. Diferentes Bibliotecas tienen diferentes exactitudes por catalogador — Lingüístico sobresale en Bibliotecas con mucho árabe, Grafo sobresale en las densamente enlazadas. La capa de síntesis usa estos datos de calibración para ponderar votos.
+
+Un catalogador necesita **20 correcciones** antes de que se muestre su ratio de exactitud. Por debajo de ese umbral, la etiqueta dice *«(uniforme)»* — el catalogador contribuye con votos de peso uniforme hasta que se acumulan suficientes datos.
+
+### Clasificación en segundo plano
+
+Por defecto, CECE clasifica notas solo cuando se lo pides (clic derecho o el botón de escaneo en Configuración). Puedes optar por la clasificación automática en **Configuración > Inteligencia > CECE > Clasificación en segundo plano**:
+
+- **Al guardar la nota** — clasifica cada nota ~1,5 segundos después de que dejes de teclear (cabalga sobre el guardado debounced existente; nunca se dispara por pulsación de tecla; la escritura sigue siendo instantánea)
+- **Al iniciar la aplicación** — escanea las notas no clasificadas una vez por arranque
+
+Para más detalle (cada estado de punto, cada chip de regla, paseos clic a clic por escenarios comunes), consulta el tema **Revisión de Fuentes** en el sistema de ayuda.
 
 ---
 

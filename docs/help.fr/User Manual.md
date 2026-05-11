@@ -18,6 +18,7 @@ Constellation est une application de bureau de gestion des connaissances personn
 8. [Constellation Sight](#constellation-sight)
 9. [Second ecran](#second-ecran)
 10. [Proprietes et Frontmatter](#proprietes-et-frontmatter)
+10b. [Révision des Sources (CECE)](#10b-révision-des-sources-constellation-epistemic-content-engine--cece)
 11. [Modeles](#modeles)
 12. [Tableaux](#tableaux)
 13. [Taches](#taches)
@@ -576,6 +577,92 @@ Constellation detecte automatiquement les types de proprietes :
 | **Lien** | `related: [[Autre note]]` |
 
 Basculez l'affichage des proprietes dans **Parametres > Editeur > Proprietes dans le document** (Visible / Masque / Source).
+
+---
+
+## 10b. Révision des Sources (Constellation Epistemic Content Engine — CECE)
+
+> *(Note de traduction : traduction générée par IA du chapitre V3-§10.F ; relecture par locuteur natif en attente.)*
+
+Deux des propriétés frontmatter les plus importantes — `sources:` et `content_type:` — décrivent *comment vous en êtes venu à savoir* quelque chose et *quel type de connaissance* il s'agit. Le **Epistemic Content Engine** (CECE) de Constellation classifie chaque note selon ces deux axes automatiquement à l'aide d'un ensemble de 6 catalogueurs. Le panneau **Révision des Sources** est l'endroit où vous examinez et corrigez ces classifications.
+
+### Ce que fait le moteur
+
+Lorsque vous classifiez une note (clic droit → « Suggérer sources et type de contenu », ou via Paramètres > Lancer le scan, ou automatiquement via le commutateur de scan en arrière-plan), CECE exécute six catalogueurs indépendants contre la note. Chacun lit la note à travers une lentille différente et vote sur deux questions :
+
+- **Source** (axe horizontal) — d'où *provient* cette connaissance ? Onze valeurs possibles : perception, inférence, témoignage, transmission-massive, comparaison, postulation, non-appréhension, mémoire, disposition-innée, inspiration, révélation. Plus *non classifiable*.
+- **Type de contenu** (axe vertical) — quelle *sorte* de connaissance est-ce ? Cinq branches principales : entrées sensorielles, entités symboliques, contenus sémantiques, états épistémiques, constructions d'ordre supérieur.
+
+Les deux axes sont indépendants. Une note « Je doute de l'alunissage » est témoignage (quelqu'un l'a rapporté) sur la source + états-épistémiques/doute (votre posture) sur le type de contenu.
+
+Le moteur s'exécute **sur votre appareil** — aucune note ne quitte jamais Constellation.
+
+### Les six catalogueurs
+
+Chaque catalogueur est une lentille. La carte de Révision des Sources les affiche comme six petits points colorés en haut à droite de chaque carte :
+
+- **Votre frontmatter** (bleu) — adopte ce que vous avez déjà défini, avec autorité absolue
+- **Citations et structure** (rose) — citations, blocs de citation, marqueurs de théorème, formules de définition
+- **Racines lexicales et lexique** (ambre) — analyse de racines arabes + équivalence terminologique interlingue
+- **Notes liées** (sarcelle) — Living Links typés vers d'autres notes classifiées
+- **Notes similaires** (violet) — similarité par embeddings avec vos notes déjà classifiées
+- **Jugement de l'IA** (vert) — un LLM local (Qwen3-4B ; *pas encore actif*, reporté à une version future)
+
+Un point plein signifie que ce catalogueur s'est exprimé et approuve la synthèse. Un point cerclé signifie qu'il s'est exprimé mais a contesté. Un point au contour pointillé signifie qu'il est resté silencieux (aucun signal dans cette lentille).
+
+### Trois régimes de confiance
+
+Après le vote des catalogueurs, chaque axe atterrit dans l'un des trois régimes :
+
+- **Unanime** — chaque catalogueur s'exprimant était d'accord
+- **Forte majorité (une dissidence)** — la plupart étaient d'accord ; un dissident nommé
+- **Divisé** — pas de majorité claire ; le moteur refuse de deviner et vous demande de choisir
+
+Chaque axe obtient son propre régime indépendamment — une carte peut être Unanime sur l'horizontal + Divisée sur le vertical, etc.
+
+### Sibling Disambiguation
+
+Lorsqu'un axe est Divisé, le moteur fait apparaître les valeurs candidates sous forme de **chips** sous une invite : *« Choisissez celui qui convient le mieux à la note. »* Cliquez sur un chip → le moteur écrit ce choix dans le frontmatter de la note et retire la carte de la file d'attente. Si l'AUTRE axe était réglé (Unanime ou Forte majorité), le moteur écrit *aussi* la valeur de cet axe en même temps — un clic termine les deux axes lorsqu'un seul était Divisé.
+
+### La piste de raisonnement
+
+Chaque carte a un commutateur *« ▸ Pourquoi cette classification ? »*. En l'étendant, on voit une ligne par catalogueur s'exprimant avec le raisonnement, la confiance auto-déclarée et des chips de règles conviviaux (« Correspondance de mot-clé en surface », « Correspondance de racine arabe (CAE) », « Marqueur de définition », etc.) — ce sont les règles spécifiques que chaque catalogueur a déclenchées.
+
+Pendant vos **50 premières révisions**, la piste se déplie automatiquement sur chaque carte (une *période de calibration de confiance*) afin que vous puissiez développer votre intuition pour savoir quand faire confiance au moteur. Après cela, les pistes se replient à la demande sur les cartes Unanimes. Substituez à tout moment dans **Paramètres > Intelligence > CECE > Visibilité de la piste de raisonnement**.
+
+### Le filtre de composition de la file d'attente
+
+Au-dessus de la barre de comptage, cinq chips découpent la file d'attente selon le type de décision dont chaque carte a besoin :
+
+- **Tout** — la file complète
+- **Les deux axes requièrent votre décision** — les deux axes Divisés
+- **La source requiert votre décision** — horizontal Divisé + vertical réglé
+- **Le type de contenu requiert votre décision** — vertical Divisé + horizontal réglé
+- **Catalogueurs en accord** — aucun axe Divisé (candidats à tampon automatique)
+
+Chaque chip affiche son décompte. Le filtre est un découpeur de couche de rendu — la mathématique de Tout Accepter opère toujours sur la file complète, quel que soit le filtre actif.
+
+### Actions par carte
+
+- **Accepter** — écrit la synthèse du moteur en primaire sur les deux axes ; retire la carte. Met à jour la fiabilité par catalogueur.
+- **Modifier** — ouvre un sélecteur arborescent pour les deux axes ; choisissez manuellement. Même mise à jour de fiabilité.
+- **Rejeter** — efface la carte sans écrire.
+- **Chip Sibling Disambiguation** — uniquement sur les cartes Divisées.
+
+### Calibration par Bibliothèque
+
+**Paramètres > Intelligence > CECE > Calibration par Bibliothèque** ouvre un tableau en lecture seule indiquant la précision de chaque catalogueur par axe sur la Bibliothèque active. Différentes Bibliothèques ont des précisions par catalogueur différentes — Linguistique excelle sur les Bibliothèques majoritairement arabes, Graphe excelle sur celles densément liées. La couche de synthèse utilise ces données de calibration pour pondérer les votes.
+
+Un catalogueur a besoin de **20 corrections** avant que son ratio de précision soit affiché. En dessous de ce seuil, l'étiquette indique *« (uniforme) »* — le catalogueur contribue avec des votes pondérés uniformément jusqu'à accumulation suffisante de données.
+
+### Classification en arrière-plan
+
+Par défaut, CECE classifie les notes uniquement lorsque vous le lui demandez (clic droit ou bouton de scan dans Paramètres). Vous pouvez activer la classification automatique dans **Paramètres > Intelligence > CECE > Classification en arrière-plan** :
+
+- **À l'enregistrement de la note** — classifie chaque note ~1,5 seconde après que vous arrêtez de taper (chevauche l'enregistrement debounced existant ; ne se déclenche jamais à chaque frappe ; la frappe reste instantanée)
+- **Au démarrage de l'application** — scanne les notes non classifiées une fois par lancement
+
+Pour plus de détails (chaque statut de point, chaque chip de règle, parcours clic par clic des scénarios courants), consultez le sujet **Révision des Sources** dans le système d'aide.
 
 ---
 

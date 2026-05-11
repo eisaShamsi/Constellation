@@ -18,6 +18,7 @@ Constellation ist eine Desktop-Anwendung fuer persoenliches Wissensmanagement (P
 8. [Constellation Sight](#constellation-sight)
 9. [Zweiter Bildschirm](#zweiter-bildschirm)
 10. [Eigenschaften und Frontmatter](#eigenschaften-und-frontmatter)
+10b. [Quellen-Prüfung (CECE)](#10b-quellen-prüfung-constellation-epistemic-content-engine--cece)
 11. [Vorlagen](#vorlagen)
 12. [Tabellen](#tabellen)
 13. [Aufgaben](#aufgaben)
@@ -576,6 +577,92 @@ Constellation erkennt Eigenschaftstypen automatisch:
 | **Link** | `related: [[Andere Notiz]]` |
 
 Eigenschaftsanzeige umschalten unter **Einstellungen > Editor > Eigenschaften im Dokument** (Sichtbar / Ausgeblendet / Quelltext).
+
+---
+
+## 10b. Quellen-Prüfung (Constellation Epistemic Content Engine — CECE)
+
+> *(Übersetzungshinweis: KI-generierte Übersetzung des Kapitels V3-§10.F; muttersprachliche Überprüfung steht aus.)*
+
+Zwei der wichtigsten Frontmatter-Eigenschaften — `sources:` und `content_type:` — beschreiben, *wie du etwas erfahren hast* und *welche Art von Wissen* es ist. Constellations **Epistemic Content Engine** (CECE) klassifiziert jede Notiz entlang dieser beiden Achsen automatisch mithilfe eines Ensembles aus 6 Katalogisierern. Das Panel **Quellen-Prüfung** ist der Ort, an dem du diese Klassifizierungen prüfst und korrigierst.
+
+### Was die Engine tut
+
+Wenn du eine Notiz klassifizierst (Rechtsklick → „Quellen & Inhaltstyp vorschlagen", oder über Einstellungen > Scan ausführen, oder automatisch über den Hintergrund-Scan-Schalter), führt CECE sechs unabhängige Katalogisierer gegen die Notiz aus. Jeder liest die Notiz durch eine andere Linse und stimmt über zwei Fragen ab:
+
+- **Quelle** (horizontale Achse) — woher *kam* dieses Wissen? Elf mögliche Werte: Wahrnehmung, Schlussfolgerung, Zeugenaussage, Massenüberlieferung, Vergleich, Postulation, Nicht-Erfassung, Erinnerung, angeborene Veranlagung, Inspiration, Offenbarung. Plus *unklassifizierbar*.
+- **Inhaltstyp** (vertikale Achse) — welche *Art* von Wissen ist dies? Fünf Hauptzweige: sensorische Eingaben, symbolische Entitäten, semantische Inhalte, epistemische Zustände, Konstrukte höherer Ordnung.
+
+Die beiden Achsen sind unabhängig. Eine Notiz „Ich zweifle an der Mondlandung" ist Zeugenaussage (jemand hat darüber berichtet) auf der Quellenachse + epistemische Zustände/Zweifel (deine Haltung) auf der Inhaltstyp-Achse.
+
+Die Engine läuft **auf deinem Gerät** — keine Notiz verlässt jemals Constellation.
+
+### Die sechs Katalogisierer
+
+Jeder Katalogisierer ist eine Linse. Die Quellen-Prüfungs-Karte zeigt sie als sechs kleine farbige Punkte oben rechts an jeder Karte:
+
+- **Dein Frontmatter** (blau) — übernimmt das, was du bereits gesetzt hast, mit absoluter Autorität
+- **Zitate & Struktur** (rosa) — Zitate, Blockzitate, Theorem-Marker, Definitionsformulierungen
+- **Wortstämme & Lexikon** (bernstein) — arabische Wurzelanalyse + sprachübergreifende Begriffsäquivalenz
+- **Verknüpfte Notizen** (türkis) — typisierte Living Links zu anderen klassifizierten Notizen
+- **Ähnliche Notizen** (violett) — Embedding-Ähnlichkeit zu deinen bereits klassifizierten Notizen
+- **KI-Urteil** (grün) — ein lokales LLM (Qwen3-4B; *noch nicht aktiv*, auf eine zukünftige Version verschoben)
+
+Ein gefüllter Punkt bedeutet, dass dieser Katalogisierer sich geäußert und der Synthese zustimmt. Ein umrandeter Punkt bedeutet, dass er sich geäußert hat, aber widersprochen hat. Ein gestrichelter Punkt bedeutet, dass er stumm geblieben ist (kein Signal in dieser Linse).
+
+### Drei Vertrauens-Regime
+
+Nachdem die Katalogisierer abgestimmt haben, landet jede Achse in einem von drei Regimen:
+
+- **Einstimmig** — jeder sich äußernde Katalogisierer war einverstanden
+- **Starke Mehrheit (eine Gegenstimme)** — die meisten waren einverstanden; ein Andersdenkender benannt
+- **Uneinig** — keine klare Mehrheit; die Engine weigert sich zu raten und bittet dich zu wählen
+
+Jede Achse erhält ihr eigenes Regime unabhängig — eine Karte kann horizontal Einstimmig + vertikal Uneinig sein, etc.
+
+### Sibling Disambiguation
+
+Wenn eine Achse Uneinig ist, präsentiert die Engine die Kandidatenwerte als **Chips** unter einer Eingabeaufforderung: *„Wähle, welcher am besten zur Notiz passt."* Klicke auf einen Chip → die Engine schreibt diese Wahl in das Frontmatter der Notiz und entfernt die Karte aus der Warteschlange. Wenn die ANDERE Achse bereits geklärt war (Einstimmig oder Starke Mehrheit), schreibt die Engine *gleichzeitig* auch den Wert dieser Achse — ein Klick beendet beide Achsen, wenn nur eine Uneinig war.
+
+### Die Begründungs-Spur
+
+Jede Karte hat einen Schalter *„▸ Warum diese Klassifizierung?"*. Beim Aufklappen wird eine Zeile pro sich äußerndem Katalogisierer angezeigt — mit Begründung, selbst gemeldetem Vertrauen und freundlichen Regel-Chips („Oberflächliche Stichwortübereinstimmung", „Arabische Wurzelübereinstimmung (CAE)", „Definitionsmarker" usw.) — das sind die spezifischen Regeln, die jeder Katalogisierer ausgelöst hat.
+
+Während deiner **ersten 50 Prüfungen** wird die Spur auf jeder Karte automatisch ausgeklappt (eine *Vertrauenskalibrierungs-Phase*), damit du ein Gefühl dafür bekommst, wann du der Engine vertrauen kannst. Danach werden die Spuren auf Einstimmigen Karten zu Auf-Anfrage-Anzeige zusammengeklappt. Jederzeit überschreibbar in **Einstellungen > Intelligenz > CECE > Sichtbarkeit der Begründungs-Spur**.
+
+### Der Warteschlangen-Zusammensetzungsfilter
+
+Über der Zählleiste schneiden fünf Chips die Warteschlange nach der Art der Entscheidung, die jede Karte benötigt:
+
+- **Alle** — die volle Warteschlange
+- **Beide Achsen brauchen deine Entscheidung** — beide Achsen Uneinig
+- **Quelle braucht deine Entscheidung** — horizontal Uneinig + vertikal geklärt
+- **Inhaltstyp braucht deine Entscheidung** — vertikal Uneinig + horizontal geklärt
+- **Katalogisierer waren sich einig** — keine Achse Uneinig (Stempel-Kandidaten)
+
+Jeder Chip zeigt seine Eimer-Anzahl. Der Filter ist ein Render-Schicht-Slicer — die Mathematik von Alle Akzeptieren operiert immer auf der vollen Warteschlange, unabhängig davon, welcher Filter aktiv ist.
+
+### Aktionen pro Karte
+
+- **Akzeptieren** — schreibe die Synthese der Engine als primären Wert auf beiden Achsen; entferne die Karte. Aktualisiert die Zuverlässigkeit pro Katalogisierer.
+- **Bearbeiten** — öffnet einen Baum-Picker für beide Achsen; manuell auswählen. Gleiche Zuverlässigkeitsaktualisierung.
+- **Ablehnen** — entfernt die Karte ohne zu schreiben.
+- **Sibling-Disambiguation-Chip** — nur auf Uneinigen Karten.
+
+### Bibliotheksbezogene Kalibrierung
+
+**Einstellungen > Intelligenz > CECE > Bibliotheksbezogene Kalibrierung** öffnet eine schreibgeschützte Tabelle, die die Genauigkeit jedes Katalogisierers pro Achse in der aktiven Bibliothek anzeigt. Verschiedene Bibliotheken haben unterschiedliche Genauigkeiten pro Katalogisierer — Linguistik glänzt bei arabisch-lastigen Bibliotheken, Graph glänzt bei dicht verlinkten. Die Synthese-Schicht verwendet diese Kalibrierungsdaten, um Stimmen zu gewichten.
+
+Ein Katalogisierer braucht **20 Korrekturen**, bevor sein Genauigkeitsverhältnis angezeigt wird. Unterhalb dieser Schwelle steht das Label *„(gleichmäßig)"* — der Katalogisierer trägt gleichmäßig gewichtete Stimmen bei, bis genug Daten vorliegen.
+
+### Hintergrund-Klassifizierung
+
+Standardmäßig klassifiziert CECE Notizen nur, wenn du es darum bittest (Rechtsklick oder Einstellungen-Scan-Schaltfläche). Du kannst die automatische Klassifizierung in **Einstellungen > Intelligenz > CECE > Hintergrund-Klassifizierung** aktivieren:
+
+- **Beim Speichern der Notiz** — klassifiziere jede Notiz ~1,5 Sekunden nachdem du aufhörst zu tippen (reitet auf dem bestehenden debounced Speichern; wird nie pro Tastendruck ausgelöst; Tippen bleibt sofort)
+- **Beim Programmstart** — scanne unklassifizierte Notizen einmal pro Start
+
+Für tiefere Details (jeder Punkt-Status, jeder Regel-Chip, Klick-für-Klick-Anleitungen häufiger Szenarien) siehe das Thema **Quellen-Prüfung** im Hilfesystem.
 
 ---
 
