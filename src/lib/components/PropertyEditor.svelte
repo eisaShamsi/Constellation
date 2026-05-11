@@ -461,11 +461,24 @@
 			} else if (newType === 'date' || newType === 'datetime') {
 				if (updated.value) updated.value = normalizeDateValue(updated.value);
 				updated.listItems = undefined;
+			} else if (newType === 'nested-object-list') {
+				// MIG-022 §A.3 — switching TO nested-object-list seeds an
+				// empty rows array. Existing flat value is preserved in
+				// .value but no longer canonical (the widget reads
+				// nestedObjects). User adds rows via the widget.
+				if (!updated.nestedObjects) updated.nestedObjects = [];
+				updated.listItems = undefined;
 			} else if (newType !== 'list') {
 				if (p.type === 'list' && p.listItems) {
 					updated.value = p.listItems.join(', ');
 				}
 				updated.listItems = undefined;
+				// Switching AWAY from nested-object-list — drop nested
+				// rows; .value carries the compact summary as the
+				// best-effort fallback.
+				if (p.type === 'nested-object-list') {
+					updated.nestedObjects = undefined;
+				}
 			}
 			return updated;
 		});
@@ -527,6 +540,43 @@
 			if (i !== propIdx) return p;
 			const items = (p.listItems ?? []).filter((_, ti) => ti !== tagIdx);
 			return { ...p, listItems: items, value: items.join(', ') };
+		});
+		debouncedSave();
+	}
+
+	// MIG-022 §A.3 (D-A4.α, 2026-05-11) — ikhtilāf widget mutation
+	// helpers. Each operation rebuilds the nestedObjects array and
+	// recomputes the compact `value` summary used by legacy consumers
+	// + search ("Hanafī: permissible | Mālikī: discouraged").
+	const NESTED_FIELD_KEYS = ['school', 'position'] as const;
+	function rebuildNestedSummary(nested: Array<Record<string, string>>): string {
+		return nested
+			.map((o) => Object.entries(o).map(([k, v]) => `${k}: ${v}`).join(' / '))
+			.join(' | ');
+	}
+	function updateNestedField(propIdx: number, rowIdx: number, fieldKey: string, fieldVal: string) {
+		editableProps = editableProps.map((p, i) => {
+			if (i !== propIdx) return p;
+			const nested = (p.nestedObjects ?? []).map((row, ri) =>
+				ri === rowIdx ? { ...row, [fieldKey]: fieldVal } : row,
+			);
+			return { ...p, nestedObjects: nested, value: rebuildNestedSummary(nested) };
+		});
+		debouncedSave();
+	}
+	function addNestedRow(propIdx: number) {
+		editableProps = editableProps.map((p, i) => {
+			if (i !== propIdx) return p;
+			const nested = [...(p.nestedObjects ?? []), { school: '', position: '' }];
+			return { ...p, nestedObjects: nested, value: rebuildNestedSummary(nested) };
+		});
+		debouncedSave();
+	}
+	function removeNestedRow(propIdx: number, rowIdx: number) {
+		editableProps = editableProps.map((p, i) => {
+			if (i !== propIdx) return p;
+			const nested = (p.nestedObjects ?? []).filter((_, ri) => ri !== rowIdx);
+			return { ...p, nestedObjects: nested, value: rebuildNestedSummary(nested) };
 		});
 		debouncedSave();
 	}
@@ -881,6 +931,46 @@
 						<span class="pe-link-bracket">]]</span>
 					{/if}
 				</div>
+			{:else if prop.type === 'nested-object-list'}
+				<!-- MIG-022 \u00A7A.3 (D-A4.\u03B1, 2026-05-11) \u2014 ikhtil\u0101f widget.
+				     Renders the structured rows from prop.nestedObjects
+				     as a list of {school, position} editor cards with
+				     add + remove. Source-of-truth is prop.nestedObjects;
+				     the compact prop.value summary is recomputed on each
+				     mutation for legacy consumers (search, etc.). -->
+				<div class="pe-ikhtilaf">
+					{#if prop.nestedObjects && prop.nestedObjects.length > 0}
+						{#each prop.nestedObjects as row, rowIdx}
+							<div class="pe-ikhtilaf-row">
+								<div class="pe-ikhtilaf-fields">
+									<input
+										class="pe-val pe-ikhtilaf-input"
+										type="text"
+										placeholder={$t('propertyEditor.ikhtilafSchoolPlaceholder') || 'School'}
+										value={row.school ?? ''}
+										aria-label={$t('propertyEditor.ikhtilafSchoolLabel') || 'School'}
+										oninput={(e) => updateNestedField(idx, rowIdx, 'school', (e.target as HTMLInputElement).value)} />
+									<input
+										class="pe-val pe-ikhtilaf-input"
+										type="text"
+										placeholder={$t('propertyEditor.ikhtilafPositionPlaceholder') || 'Position'}
+										value={row.position ?? ''}
+										aria-label={$t('propertyEditor.ikhtilafPositionLabel') || 'Position'}
+										oninput={(e) => updateNestedField(idx, rowIdx, 'position', (e.target as HTMLInputElement).value)} />
+								</div>
+								<button
+									class="pe-ikhtilaf-remove"
+									onclick={() => removeNestedRow(idx, rowIdx)}
+									title={$t('propertyEditor.ikhtilafRemoveRow') || 'Remove row'}>
+									<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+								</button>
+							</div>
+						{/each}
+					{/if}
+					<button class="pe-ikhtilaf-add" onclick={() => addNestedRow(idx)}>
+						+ {$t('propertyEditor.ikhtilafAddRow') || 'Add school'}
+					</button>
+				</div>
 			{:else}
 				<input class="pe-val" type="text" value={prop.value}
 					placeholder={$t('propertyEditor.empty')}
@@ -1164,6 +1254,56 @@
 		cursor: pointer; text-align: start;
 	}
 	.pe-add:hover { border-color: var(--interactive-accent); color: var(--interactive-accent); }
+
+	/* MIG-022 §A.3 (D-A4.α) — ikhtilāf widget. List of {school,
+	   position} editor cards. The two inputs sit side-by-side on
+	   wide rows + stack on narrow ones (CSS-only flex wrap). */
+	.pe-ikhtilaf {
+		flex: 1; min-width: 0;
+		display: flex; flex-direction: column; gap: 6px;
+	}
+	.pe-ikhtilaf-row {
+		display: flex; align-items: stretch; gap: 6px;
+		padding: 4px;
+		background: var(--background-secondary-alt, var(--background-secondary));
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 4px;
+	}
+	.pe-ikhtilaf-fields {
+		flex: 1; min-width: 0;
+		display: flex; flex-wrap: wrap; gap: 4px;
+	}
+	.pe-ikhtilaf-input {
+		flex: 1; min-width: 100px;
+		padding: 3px 6px;
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 3px;
+		background: var(--background-primary);
+		font-size: 0.85rem; font-family: inherit;
+	}
+	.pe-ikhtilaf-remove {
+		width: 24px; height: 24px;
+		display: flex; align-items: center; justify-content: center;
+		border: none; background: none; border-radius: 3px;
+		color: var(--color-base-40); cursor: pointer; padding: 0;
+		flex-shrink: 0;
+	}
+	.pe-ikhtilaf-remove:hover {
+		background: var(--background-modifier-error-hover);
+		color: var(--text-error);
+	}
+	.pe-ikhtilaf-add {
+		display: block; align-self: flex-start;
+		margin-top: 2px;
+		border: 1px dashed var(--background-modifier-border); border-radius: 4px;
+		background: none; padding: 4px 10px;
+		color: var(--text-faint); font-size: 0.78rem; font-family: inherit;
+		cursor: pointer;
+	}
+	.pe-ikhtilaf-add:hover {
+		border-color: var(--interactive-accent);
+		color: var(--interactive-accent);
+	}
 
 	/* MIG-021v2 §1D' — taxonomy picker (sources / content_type) */
 	.pe-taxo-wrap {
