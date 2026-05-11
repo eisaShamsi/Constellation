@@ -69,6 +69,7 @@ pub struct NoteStratum {
 const KNOWN_LINK_TYPES: &[&str] = &[
     "supports", "contradicts", "causes", "exemplifies",
     "generalizes", "derives-from", "part-of", "associative",
+    "supersedes",  // MIG-022 §A.2 (D-A1.β) — see tension.rs for rationale.
 ];
 
 /// Internal note record used during computation.

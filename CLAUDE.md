@@ -127,7 +127,7 @@ Tauri v2 desktop app (Rust + SvelteKit/Svelte 5) — a Personal Knowledge Formul
 - Knowledge is not about storing information. It is about **connecting, challenging, synthesizing, and building** understanding.
 - Links are **living vessels** — they carry type, annotation, weight, confidence, and temporal data.
 - Links follow a lifecycle: Spark → Birth → Growth → Maturity → Dormancy → Renewal/Archival.
-- The 7 link types are the **cognitive vocabulary**: supports, contradicts, causes, exemplifies, generalizes, derives-from, part-of.
+- The 8 link types are the **cognitive vocabulary**: supports, contradicts, causes, exemplifies, generalizes, derives-from, part-of, supersedes. (Plus `associative` as the default/null type — that's 9 typed-link names total but only 8 carry semantic meaning. `supersedes` was added by MIG-022 §A.2 per gap-analysis §6.1: "this note replaces an earlier stance" is a first-class typed relationship between notes, not a flat YAML scalar.)
 - The search engine is a **diagnostic instrument** for intellectual life — not a file finder.
 - The Five Acts of Knowledge Creation: Observation → Connection → Tension → Synthesis → Conviction.
 - Full specification: `docs/CONSTELLATION-KNOWLEDGE-FORMULATION.md`

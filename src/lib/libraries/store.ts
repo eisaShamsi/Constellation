@@ -3597,6 +3597,11 @@ export const DEFAULT_SETTINGS: AppSettings = {
 			'derives-from': '#FFD700',
 			'part-of':      '#AAAAAA',
 			associative:    '#888888',
+			// MIG-022 §A.2 (D-A1.β) — `supersedes` color: slate
+			// blue-gray, distinct from all eight existing pills,
+			// suggesting "this replaces something older". User can
+			// override via Settings → Link pills color picker.
+			supersedes:     '#5B7A8A',
 		},
 		text: {
 			supports:       '#ffffff',
@@ -3607,6 +3612,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
 			'derives-from': '#000000',
 			'part-of':      '#ffffff',
 			associative:    '#ffffff',
+			supersedes:     '#ffffff',  // MIG-022 §A.2 — white text on slate-blue fill
 		},
 		shape: { radius: 10, height: 20, fontWeight: 700 },
 	},
@@ -3644,12 +3650,17 @@ export const DEFAULT_SETTINGS: AppSettings = {
 	},
 };
 
-/** Shared metadata for the eight typed-link names — used by Settings UI
+/** Shared metadata for the nine typed-link names — used by Settings UI
  *  and the two panels so the iteration order is stable. Kept in sync
- *  with `KNOWN_LINK_TYPES` above and `TYPED_LINK_TYPES` in livePreview. */
+ *  with `KNOWN_LINK_TYPES` (Rust: tension.rs / strata.rs / libraries.rs)
+ *  and `TYPED_LINK_TYPES` in livePreview.
+ *
+ *  MIG-022 §A.2 (D-A1.β, 2026-05-11) — `supersedes` added as the 9th.
+ *  Per the gap analysis §6.1, "this note replaces an earlier stance"
+ *  is a first-class typed relationship, not a flat YAML scalar. */
 export const LINK_TYPE_NAMES = [
 	'supports', 'contradicts', 'causes', 'exemplifies',
-	'generalizes', 'derives-from', 'part-of', 'associative',
+	'generalizes', 'derives-from', 'part-of', 'associative', 'supersedes',
 ] as const;
 
 export const appSettings = writable<AppSettings>(DEFAULT_SETTINGS);

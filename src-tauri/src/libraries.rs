@@ -1955,6 +1955,7 @@ fn scan_links_recursive(dir: &Path, re: &regex::Regex, links: &mut Vec<NoteLink>
                     const KNOWN_LINK_TYPES: &[&str] = &[
                         "supports", "contradicts", "causes", "exemplifies",
                         "generalizes", "derives-from", "part-of", "associative",
+                        "supersedes",  // MIG-022 §A.2 (D-A1.β)
                     ];
                     let link_type = cap.get(2).and_then(|alias| {
                         let alias_str = alias.as_str().trim();

@@ -165,9 +165,10 @@ const htmlMarkDeco = Decoration.mark({ class: 'cm-html-mark' });
 const htmlDecoMap: Record<string, Decoration> = { u: htmlUDeco, sub: htmlSubDeco, sup: htmlSupDeco, mark: htmlMarkDeco };
 
 // Typed link decorations — one per semantic link type (CE Phase 1)
+// MIG-022 §A.2 (D-A1.β, 2026-05-11) — `supersedes` added as 9th type.
 const TYPED_LINK_TYPES = new Set([
 	'supports', 'contradicts', 'causes', 'exemplifies',
-	'generalizes', 'derives-from', 'part-of', 'associative',
+	'generalizes', 'derives-from', 'part-of', 'associative', 'supersedes',
 ]);
 const typedLinkDecos: Record<string, ReturnType<typeof Decoration.mark>> = {
 	supports:       Decoration.mark({ class: 'cm-md-link cm-link-supports' }),
@@ -178,6 +179,7 @@ const typedLinkDecos: Record<string, ReturnType<typeof Decoration.mark>> = {
 	'derives-from': Decoration.mark({ class: 'cm-md-link cm-link-derives-from' }),
 	'part-of':      Decoration.mark({ class: 'cm-md-link cm-link-part-of' }),
 	associative:    linkDeco,
+	supersedes:     Decoration.mark({ class: 'cm-md-link cm-link-supersedes' }),
 };
 
 class CheckboxWidget extends WidgetType {
@@ -1175,6 +1177,9 @@ export const livePreviewTheme = EditorView.theme({
 	'.cm-link-generalizes':  { color: '#A44AFF', textDecorationColor: '#A44AFF66' },
 	'.cm-link-derives-from': { color: '#FFD700', textDecorationColor: '#FFD70066' },
 	'.cm-link-part-of':      { color: '#AAAAAA', textDecorationColor: '#AAAAAA66' },
+	// MIG-022 §A.2 (D-A1.β) — slate blue-gray for supersedes; matches
+	// the linkPills.fill default in store.ts. User-overrideable via Settings.
+	'.cm-link-supersedes':   { color: '#5B7A8A', textDecorationColor: '#5B7A8A66' },
 	'.cm-md-align':  { display: 'block', width: '100%' },
 	'.cm-html-hidden': { fontSize: '0', lineHeight: '0', overflow: 'hidden', display: 'inline', width: '0' },
 	'.cm-html-u':    { textDecoration: 'underline' },

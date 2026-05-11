@@ -45,6 +45,12 @@ pub struct GapItem {
 const KNOWN_LINK_TYPES: &[&str] = &[
     "supports", "contradicts", "causes", "exemplifies",
     "generalizes", "derives-from", "part-of", "associative",
+    // MIG-022 §A.2 (D-A1.β, 2026-05-11) — `supersedes` added as the
+    // 9th typed-link name (8 cognitive + associative). Per the gap
+    // analysis §6.1, "this note replaces an earlier stance" is a
+    // first-class relationship between notes, not a YAML scalar.
+    // Living Link Architecture treats it like any other typed link.
+    "supersedes",
 ];
 
 struct NoteInfo {
