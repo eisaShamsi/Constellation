@@ -75,6 +75,25 @@ impl Cataloger for StructuralCataloger {
             }
         }
 
+        // V3-§9.B — Code-block-density rule. Counted via line-pass instead
+        // of regex because counting fences and gating on threshold doesn't
+        // map cleanly to the (regex, target, weight) tuple shape. Notes
+        // with 3+ fenced code blocks (≥6 fence lines starting with ```)
+        // are predominantly symbolic content (formal-language code).
+        let code_block_count = count_code_block_fences(&ctx.content);
+        if code_block_count >= 6 && is_valid_content_type_id("symbolic-entities/sign") {
+            let entry = vertical_hits
+                .entry("symbolic-entities/sign".to_string())
+                .or_insert((0.0, "Code-block density (≥3 fenced blocks)".to_string()));
+            // Density-driven weight: 6 fences = 0.65; scales gently up to
+            // 0.80 at 12+ fences (6+ blocks). Keeps a single trivial
+            // ```...``` from forcing the cataloger toward symbolic.
+            let density_weight = (0.65 + ((code_block_count.saturating_sub(6)) as f32 * 0.025)).min(0.80);
+            if density_weight > entry.0 {
+                entry.0 = density_weight;
+            }
+        }
+
         if horizontal_hits.is_empty() && vertical_hits.is_empty() {
             return Some(ReasoningTrail::abstain(
                 self.name(),
@@ -251,6 +270,43 @@ fn vertical_rules() -> &'static [CompiledRule] {
                     0.65,
                     "Numerical measurement with unit",
                 ),
+                // V3-§9.B — Definition markers → concept formation.
+                // English definition phrasing typically appears in academic /
+                // pedagogical writing introducing a new concept.
+                (
+                    r"(?i)\b(is defined as|defined as|we define|let .{1,30} be|means by definition|by definition)\b",
+                    "semantic-contents/concept",
+                    0.80,
+                    "Definition marker (English)",
+                ),
+                (
+                    r"(تُعرَّف|نُعرِّف|التعريف|يُعرَّف|نقصد بـ)",
+                    "semantic-contents/concept",
+                    0.80,
+                    "Definition marker (Arabic)",
+                ),
+                // V3-§9.B — Worldview / paradigm markers → higher-order construct.
+                (
+                    r"(?i)\b(worldview|paradigm|framework|conceptual scheme)\b",
+                    "higher-order-constructs/worldview",
+                    0.75,
+                    "Worldview/paradigm marker (English)",
+                ),
+                (
+                    r"(رؤية كونية|الرؤية الكونية|نموذج معرفي|تصور كوني)",
+                    "higher-order-constructs/worldview",
+                    0.75,
+                    "Worldview/paradigm marker (Arabic)",
+                ),
+                // V3-§9.B — Image / figure references → visual sensory signal.
+                // Pages that cite figures or diagrams typically describe visual
+                // content the user is referencing.
+                (
+                    r"(?i)\b(figure \d+|fig\.\s*\d+|see figure|see fig\.|في الشكل|انظر الشكل)\b",
+                    "sensory-inputs/signal/physical/electromagnetic",
+                    0.70,
+                    "Visual reference marker (figure/diagram)",
+                ),
             ];
             specs
                 .iter()
@@ -268,6 +324,18 @@ fn vertical_rules() -> &'static [CompiledRule] {
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────
+
+/// V3-§9.B — Count markdown code-block fence lines (lines starting with
+/// `` ``` ``). Each fenced block contributes 2 fences (opening + closing),
+/// so 6 fences ≈ 3 code blocks. Implemented as a line-pass instead of a
+/// regex because the threshold + density-driven weight doesn't map cleanly
+/// to the `(regex, target, weight)` tuple shape used by `vertical_rules()`.
+fn count_code_block_fences(content: &str) -> usize {
+    content
+        .lines()
+        .filter(|line| line.trim_start().starts_with("```"))
+        .count()
+}
 
 fn top_assignments(
     hits: HashMap<String, (f32, String)>,
@@ -485,5 +553,131 @@ mod tests {
             .vertical
             .iter()
             .any(|a| a.id == "epistemic-states/knowledge/by-content/propositional"));
+    }
+
+    // ─── V3-§9.B — Structural vertical-axis detector regression tests ───
+    // 5 new vertical structural rules added in V3-§9.B: definition markers
+    // (English + Arabic), worldview markers (English + Arabic), figure
+    // references, plus a code-block-density rule implemented as a separate
+    // count_code_block_fences helper. These tests confirm each rule fires
+    // on the right content.
+
+    #[test]
+    fn v3_p9b_english_definition_fires_concept() {
+        let c = StructuralCataloger::new();
+        let trail = c
+            .classify(&ctx_for_body(
+                "A monad is defined as a monoid in the category of endofunctors.",
+            ))
+            .unwrap();
+        assert!(trail.voiced_opinion);
+        assert!(
+            trail.vertical.iter().any(|a| a.id == "semantic-contents/concept"),
+            "vertical should contain semantic-contents/concept; got {:?}",
+            trail.vertical.iter().map(|a| &a.id).collect::<Vec<_>>()
+        );
+    }
+
+    #[test]
+    fn v3_p9b_arabic_definition_fires_concept() {
+        let c = StructuralCataloger::new();
+        let trail = c
+            .classify(&ctx_for_body("نُعرِّف الدّالة المستمرة كما يلي."))
+            .unwrap();
+        assert!(trail.voiced_opinion);
+        assert!(
+            trail.vertical.iter().any(|a| a.id == "semantic-contents/concept"),
+            "vertical should contain semantic-contents/concept; got {:?}",
+            trail.vertical.iter().map(|a| &a.id).collect::<Vec<_>>()
+        );
+    }
+
+    #[test]
+    fn v3_p9b_worldview_marker_fires_higher_order() {
+        let c = StructuralCataloger::new();
+        let trail = c
+            .classify(&ctx_for_body(
+                "The materialist worldview reduces all phenomena to physical interactions.",
+            ))
+            .unwrap();
+        assert!(trail.voiced_opinion);
+        assert!(
+            trail
+                .vertical
+                .iter()
+                .any(|a| a.id == "higher-order-constructs/worldview"),
+            "vertical should contain higher-order-constructs/worldview; got {:?}",
+            trail.vertical.iter().map(|a| &a.id).collect::<Vec<_>>()
+        );
+    }
+
+    #[test]
+    fn v3_p9b_figure_reference_fires_visual_signal() {
+        let c = StructuralCataloger::new();
+        let trail = c
+            .classify(&ctx_for_body(
+                "The diagram in figure 3 shows the layered architecture clearly. See fig. 4 for the alternative layout.",
+            ))
+            .unwrap();
+        assert!(trail.voiced_opinion);
+        assert!(
+            trail
+                .vertical
+                .iter()
+                .any(|a| a.id == "sensory-inputs/signal/physical/electromagnetic"),
+            "vertical should contain visual-sensory signal; got {:?}",
+            trail.vertical.iter().map(|a| &a.id).collect::<Vec<_>>()
+        );
+    }
+
+    #[test]
+    fn v3_p9b_code_block_density_fires_symbolic_entity() {
+        let c = StructuralCataloger::new();
+        // 3 fenced code blocks → 6 fence lines → triggers density rule.
+        let body = "Here is a function:\n\n```rust\nfn foo() {}\n```\n\nAnother:\n\n```python\ndef bar():\n    pass\n```\n\nThird:\n\n```js\nconst baz = () => {};\n```\n";
+        let trail = c.classify(&ctx_for_body(body)).unwrap();
+        assert!(trail.voiced_opinion);
+        assert!(
+            trail
+                .vertical
+                .iter()
+                .any(|a| a.id == "symbolic-entities/sign"),
+            "vertical should contain symbolic-entities/sign; got {:?}",
+            trail.vertical.iter().map(|a| &a.id).collect::<Vec<_>>()
+        );
+    }
+
+    #[test]
+    fn v3_p9b_single_code_block_does_not_fire_density() {
+        // One inline code block (2 fence lines) is below the 6-fence
+        // threshold — should NOT fire the density rule. This guards
+        // against the rule over-matching on any note containing a single
+        // code snippet.
+        let c = StructuralCataloger::new();
+        let body = "Just one block:\n\n```\nlet x = 1;\n```\n\nThat's it.";
+        let trail = c.classify(&ctx_for_body(body));
+        // Either abstain (no other rules fired either) OR voiced but
+        // without symbolic-entities/sign in vertical assignments.
+        if let Some(t) = trail {
+            assert!(
+                !t.vertical.iter().any(|a| a.id == "symbolic-entities/sign"),
+                "single code block should NOT fire density rule"
+            );
+        }
+    }
+
+    #[test]
+    fn v3_p9b_count_code_block_fences_helper() {
+        // Direct unit test for the line-pass helper — guards against
+        // future regex tweaks accidentally changing the count.
+        assert_eq!(count_code_block_fences(""), 0);
+        assert_eq!(count_code_block_fences("no fences here"), 0);
+        assert_eq!(count_code_block_fences("```\ncode\n```"), 2);
+        assert_eq!(
+            count_code_block_fences("```\na\n```\n```\nb\n```\n```\nc\n```"),
+            6
+        );
+        // Indented fences still count (some markdown variants permit).
+        assert_eq!(count_code_block_fences("  ```\nblock\n  ```"), 2);
     }
 }
