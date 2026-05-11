@@ -2040,5 +2040,18 @@
       "label": "Terim dizini taşınıyor",
       "done": "Terim dizini taşıma tamamlandı"
     }
+  },
+  "sources": {
+    "review": {
+      "axis": {
+        "horizontal": "Kaynaklar",
+        "vertical": "İçerik türü"
+      },
+      "accept": "Kabul et",
+      "edit": "Düzenle",
+      "reject": "Reddet",
+      "save": "Kaydet",
+      "cancel": "İptal"
+    }
   }
 }

@@ -2040,5 +2040,18 @@
       "label": "用語インデックスを移行中",
       "done": "用語インデックスの移行が完了しました"
     }
+  },
+  "sources": {
+    "review": {
+      "axis": {
+        "horizontal": "ソース",
+        "vertical": "コンテンツタイプ"
+      },
+      "accept": "承認",
+      "edit": "編集",
+      "reject": "拒否",
+      "save": "保存",
+      "cancel": "キャンセル"
+    }
   }
 }

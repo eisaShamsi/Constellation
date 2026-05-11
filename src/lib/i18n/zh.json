@@ -2040,5 +2040,18 @@
       "label": "正在迁移术语索引",
       "done": "术语索引迁移完成"
     }
+  },
+  "sources": {
+    "review": {
+      "axis": {
+        "horizontal": "来源",
+        "vertical": "内容类型"
+      },
+      "accept": "接受",
+      "edit": "编辑",
+      "reject": "拒绝",
+      "save": "保存",
+      "cancel": "取消"
+    }
   }
 }

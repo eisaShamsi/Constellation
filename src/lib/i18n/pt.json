@@ -2040,5 +2040,18 @@
       "label": "Migrando índice de termos",
       "done": "Migração do índice de termos concluída"
     }
+  },
+  "sources": {
+    "review": {
+      "axis": {
+        "horizontal": "Fontes",
+        "vertical": "Tipo de conteúdo"
+      },
+      "accept": "Aceitar",
+      "edit": "Editar",
+      "reject": "Rejeitar",
+      "save": "Salvar",
+      "cancel": "Cancelar"
+    }
   }
 }

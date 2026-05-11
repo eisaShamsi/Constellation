@@ -284,18 +284,18 @@
    * is wired (defensive — should never happen if cece.* i18n keys ship).
    */
   function catalogerLabel(c: string): string {
-    const isAr = currentLocale === 'ar';
-    if (isAr) {
-      switch (c) {
-        case 'user_authority': return 'واجهتك الأمامية';
-        case 'structural': return 'الاستشهادات والبنية';
-        case 'linguistic': return 'الجذور والمعجم';
-        case 'graph': return 'الملاحظات المرتبطة';
-        case 'semantic': return 'الملاحظات المشابهة';
-        case 'reasoning': return 'حُكم الذكاء الاصطناعي';
-        default: return c;
-      }
-    }
+    // MIG-022 §E.1.1 (Boss-Test Gate 1 Stage 2 catch, 2026-05-11):
+    // Previously this function was a hardcoded EN/AR switch — every
+    // non-en/non-ar locale fell through to the English branch even
+    // though `cece.cataloger.*` keys are populated in all 15 locale
+    // files (verified per locale via Python batch). Now mirrors the
+    // ruleLabel() pattern: $t() lookup with English fallback on a
+    // missing key, so every locale renders its own translations.
+    const i18nKey = `cece.cataloger.${c}`;
+    const translated = $t(i18nKey);
+    if (translated && translated !== i18nKey) return translated;
+    // English fallback for an unknown cataloger name (defensive — every
+    // known cataloger has a matching key in en.json).
     switch (c) {
       case 'user_authority': return 'Your frontmatter';
       case 'structural': return 'Citations & structure';

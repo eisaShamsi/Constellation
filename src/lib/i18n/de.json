@@ -2040,5 +2040,18 @@
       "label": "Begriffsindex wird migriert",
       "done": "Migration des Begriffsindex abgeschlossen"
     }
+  },
+  "sources": {
+    "review": {
+      "axis": {
+        "horizontal": "Quellen",
+        "vertical": "Inhaltstyp"
+      },
+      "accept": "Annehmen",
+      "edit": "Bearbeiten",
+      "reject": "Ablehnen",
+      "save": "Speichern",
+      "cancel": "Abbrechen"
+    }
   }
 }

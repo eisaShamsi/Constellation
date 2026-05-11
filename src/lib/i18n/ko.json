@@ -2040,5 +2040,18 @@
       "label": "용어 색인 마이그레이션 중",
       "done": "용어 색인 마이그레이션 완료"
     }
+  },
+  "sources": {
+    "review": {
+      "axis": {
+        "horizontal": "출처",
+        "vertical": "콘텐츠 유형"
+      },
+      "accept": "수락",
+      "edit": "편집",
+      "reject": "거부",
+      "save": "저장",
+      "cancel": "취소"
+    }
   }
 }
