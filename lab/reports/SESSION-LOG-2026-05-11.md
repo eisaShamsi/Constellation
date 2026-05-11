@@ -280,3 +280,35 @@ NSIS rebuilt. Orientation v1.92 → v1.93. Gate 3 Boss-test ready per Plan §7 (
 7 commits + 1 close-out = 8 phases total. Estimated wall-clock per the Plan was 12-15hrs of agent time; actual ~3-4hrs (parallel agent translation accelerated D/E/F substantially). All translation work shipped with disclaimer headers per Option C's risk register.
 
 If Gate 3 PASSes: V3-§11 final integration audit + MIG-021v3 entire close-out.
+
+---
+
+## Gap analysis acknowledgment (mid-Gate-3 pause)
+
+Eisa surfaced an analytical addendum mid-Gate-3 — `docs/epistemic-content-gap-analysis.md` (Eisa 2026, "Gap Analysis of the Universal Epistemic Content Model"). The piece names three structural gaps in the two-axis (Source × Content Type) framework that CECE classifies against:
+
+1. **Temporal / dynamic axis** — beliefs change over time; CECE today is static
+2. **Justification / warrant axis** — source ≠ warrant (mutawātir vs anonymous forum post both qualify as "testimony"); Sunni uṣūl has rich grading vocabulary (mutawātir / mashhūr / āḥād / ṣaḥīḥ / ḥasan / ḍaʿīf / mawḍūʿ) that CECE collapses into source
+3. **Contestation / agent axis** — the model assumes the user's stance; doesn't represent ikhtilāf or scholar/school-attributed stances
+
+Plus five minor extensions (domain, function, confidence-as-probability, linguistic provenance, logical relations between notes).
+
+Eisa asked for my opinion before proceeding with Gate 3. I offered three paths:
+- (A) Close Gate 3 on V3-§10 as scoped; file gap analysis as input for separate MIG-022 workstream
+- (B) Pause Gate 3, expand V3-§10 scope to include §6.1 YAML metadata extensions
+- (C) Run Gate 3 in smaller form (Stages 1-3); start gap analysis Architect doc in parallel
+
+Recommended (A) — the gap analysis is a serious scholarly piece deserving its own architectural response, not a mid-cascade rushed extension. The §6.2 justification classifier alone is bigger than V3-§10 + V3-§11 combined (multi-month research project requiring labeled hadith corpus, domain experts, different model architecture).
+
+Pushback I offered on the analysis itself:
+- §6.1's `warrant: "mutawātir"` flat string under-specifies what's actually a multi-dimensional grading (chain × text × derived conditions)
+- §6.2 framing as "another classifier head" understates the work
+- §6.1's `supersedes` / `contradicts` overlap with the existing Living Links architecture — should extend Living Link types, not add parallel YAML fields
+- §5.2 dhawq deserves more weight (recognized Sufi epistemic category that doesn't fit the 11 sources cleanly)
+
+Eisa picked (A) and agreed with the pushback. Action items landed:
+
+1. Gap analysis doc copied into repo at `docs/epistemic-content-gap-analysis.md` (alongside the existing companion papers)
+2. Orientation v1.93 "what V3-§10 does NOT do" section now explicitly acknowledges the three structural gaps + names MIG-022 as the response workstream
+3. Gate 3 Boss-test resumes (Stages 0-3 instructions already sent before the pause)
+4. After Gate 3 PASS + V3-§11 close-out, write MIG-022 Architect doc mapping §6.1/§6.2/§6.3 to MIG candidates with effort + risk estimates

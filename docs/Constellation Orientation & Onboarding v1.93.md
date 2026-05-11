@@ -58,9 +58,23 @@
 >
 > NSIS `Constellation_0.3.4_x64-setup.exe` rebuilt mtime 2026-05-11 11:49:06 (123 MB). Eisa runs Gate 3 against this build.
 >
+> ### What V3-§10 does NOT do (gap analysis acknowledgment, 2026-05-11)
+>
+> Eisa surfaced an analytical addendum mid-Gate-3 — **"Gap Analysis of the Universal Epistemic Content Model"** (`docs/epistemic-content-gap-analysis.md`). The piece identifies three structural gaps and five minor extensions that the two-axis (Source × Content Type) framework cannot represent. Boss directive: close Gate 3 on V3-§10 as scoped; the gap analysis is input for a separate MIG-022 architectural workstream, not a mid-cascade scope expansion.
+>
+> The three structural gaps the document identifies:
+>
+> - **Temporal / dynamic axis** — CECE today is static. A note's classification is what it IS, not what it WAS or how it got there. Recommended fix per §6.3 of the analysis: a git-like history layer that tracks change events without polluting the taxonomy. Constellation's existing Living Links already carry partial temporal data (weight, traversal count, last-traversed) for the relational dimension; the per-note epistemic-state-over-time dimension is the new work.
+> - **Justification / warrant axis** — *Source* tells you how you came to know; *warrant* tells you why you're entitled to believe. Two notes with identical "testimony" source can have radically different warrant (mutawātir vs anonymous forum post). The Sunni uṣūlī tradition has a thousand years of vocabulary for this (mutawātir / mashhūr / āḥād / ṣaḥīḥ / ḥasan / ḍaʿīf / mawḍūʿ + their conditions). CECE collapses warrant into source — **the most consequential structural gap** the analysis names. Recommended response: defer to MIG-022.v2 as a deliberate scholarly project with uṣūl al-fiqh as the test bed.
+> - **Contestation / agent axis** — A note can record the user's stance, a particular scholar's stance, a school's stance, or *ikhtilāf* (structured scholarly disagreement). The current model assumes the user's stance. For serious scholarly use of CECE this is a real limitation.
+>
+> Five minor extensions noted (domain/subject matter, function/actionability, confidence as probability, linguistic/civilizational provenance, logical relations between notes) — most can land as optional YAML metadata per §6.1 of the analysis without restructuring the engine.
+>
+> Concrete acknowledgment: CECE v1.0 (V3-§1 → V3-§10) is feature-complete for the two-axis model as designed. The gap analysis identifies where the model itself is bounded. MIG-022 — a focused Architect doc responding to §6.1 (YAML metadata extensions), §6.2 (warrant classifier as a separate workstream), §6.3 (temporal axis via versioning) — lands after Gate 3 PASS + V3-§11 close-out.
+>
 > ### What's next
 >
-> If Gate 3 PASSes: V3-§11 (final integration audit + close-out of MIG-021v3 entire). The CECE engine + UI + Settings + i18n + docs are all live; V3-§11 is the cross-cutting audit + the formal MIG close-out commit.
+> If Gate 3 PASSes: **V3-§11** (final integration audit + close-out of MIG-021v3 entire). The CECE engine + UI + Settings + i18n + docs are all live; V3-§11 is the cross-cutting audit + the formal MIG close-out commit. Then **MIG-022** — Architect doc responding to the gap analysis, mapping §6.1/§6.2/§6.3 to specific MIG candidates with effort + risk estimates. Boss decides which pieces to pursue when.
 >
 > **What changed in v1.92** (Gate 2 PASS close-out + PJ-040 filed; V3-§10 plan next):
 >
