@@ -666,6 +666,51 @@ Pour plus de détails (chaque statut de point, chaque chip de règle, parcours c
 
 ---
 
+## 10c. Métadonnées Épistémiques
+
+Un petit ensemble de champs frontmatter optionnels pour enregistrer des informations plus riches sur la manière dont la connaissance d'une note a été acquise, qui détient la position, à quelle discipline elle appartient, et quand vous avez révisé pour la dernière fois votre vision. Ajouté dans MIG-022 §A en réponse à l'analyse des lacunes (`docs/epistemic-content-gap-analysis.md`).
+
+Ces champs sont **tous optionnels**. Les notes sans eux fonctionnent sans changement.
+
+### Référence rapide
+
+| Field | Type | Purpose |
+|---|---|---|
+| `held_by` | text | De qui est cette position ? (par défaut `user` ; peut être `"al-Shāfiʿī"`, `"Ḥanafī"`, etc.) |
+| `domain` | list | Étiquettes disciplinaires pour la récupération (`[fiqh, ʿibādāt]`) |
+| `function` | text | À quoi sert cette note (`reference` / `seed` / `actionable` / `shipped`) |
+| `provenance_civilization` | text | Vocabulaire traditionnel (`sunni-usuli` / `analytic-western` / `nyaya` / etc.) |
+| `updated_at` | date | Quand vous avez délibérément révisé votre vision pour la dernière fois (distinct du mtime du système de fichiers) |
+| `ikhtilāf` | list of objects | Désaccord savant structuré (`[{school, position}, ...]`) |
+| `warrant` | text | Étiquette de degré (parsée mais inerte jusqu'à ce que le Warrant Research workstream soit livré) |
+| `warrant_notes` | text | Texte libre étayant le degré de garantie (également inerte) |
+
+### Comment ils apparaissent dans le panneau Propriétés
+
+Chaque champ est rendu avec l'éditeur approprié au type :
+- Champs texte → entrée texte
+- `domain` → liste d'étiquettes (Entrée pour ajouter, × pour supprimer)
+- `updated_at` → sélecteur de date
+- **`ikhtilāf` → widget personnalisé** avec deux entrées côte à côte par ligne (school + position) plus un bouton supprimer par ligne, et un bouton « Ajouter une école » en bas. Le widget lit depuis et écrit vers le YAML structuré, de sorte que les allers-retours préservent chaque champ.
+
+### Et `supersedes` ?
+
+`supersedes` est une *relation entre notes* (cette note remplace une antérieure), non une propriété d'une note unique. Constellation le gère comme un **lien typé**, non comme un scalaire YAML :
+
+```markdown
+Ceci remplace mon analyse antérieure : [[old-note-id|supersedes]]
+```
+
+Le suffixe `|supersedes` sur le wikilink en fait un lien typé de la sorte `supersedes` — pastille bleu-gris ardoise distincte, apparaît dans les panneaux Backlinks + Outgoing Links, participe à la Living Link Architecture.
+
+### Ce que ce n'est PAS
+
+Les nouveaux champs sont du **schéma** — un vocabulaire reconnu que vous pouvez remplir. CECE ne les consomme pas actuellement pour la classification. De futurs MIGs (Warrant Research workstream, MIG-023 axe temporel) livreront des fonctionnalités qui lisent `warrant`, `updated_at` et compagnie.
+
+Pour plus de détails + un exemple détaillé, consultez le sujet **Métadonnées Épistémiques** dans le système d'aide.
+
+---
+
 ## 11. Modeles
 
 Creez des modeles de notes reutilisables :

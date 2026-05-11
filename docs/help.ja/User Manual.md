@@ -666,6 +666,51 @@ Constellation はプロパティタイプを自動検出します：
 
 ---
 
+## 10c. エピステミックメタデータ
+
+ノートの知識がどのように獲得されたか、誰がその立場を保持しているか、どの分野に属するか、いつ最後に見解を改訂したかについて、より豊かな情報を記録するための、少数のオプションのフロントマターフィールド。MIG-022 §A でギャップ分析(`docs/epistemic-content-gap-analysis.md`)に応じて追加されました。
+
+これらのフィールドは **すべてオプション** です。これらを持たないノートはそのまま動作します。
+
+### クイックリファレンス
+
+| Field | Type | 目的 |
+|---|---|---|
+| `held_by` | text | これは誰の立場か?(デフォルトは `user`; `"al-Shāfiʿī"`、`"Ḥanafī"` などになりうる) |
+| `domain` | list | 検索のための学問領域タグ(`[fiqh, ʿibādāt]`) |
+| `function` | text | このノートは何のためか(`reference` / `seed` / `actionable` / `shipped`) |
+| `provenance_civilization` | text | 伝統の語彙(`sunni-usuli` / `analytic-western` / `nyaya` など) |
+| `updated_at` | date | 最後に意図的に見解を改訂した時(ファイルシステムの mtime とは区別される) |
+| `ikhtilāf` | list of objects | 構造化された学術的不一致(`[{school, position}, ...]`) |
+| `warrant` | text | グレードラベル(Warrant Research ワークストリームが完成するまでパースされるが不活性) |
+| `warrant_notes` | text | warrant グレードを支持する自由テキスト(これも不活性) |
+
+### プロパティパネルでの表示方法
+
+各フィールドは型に適したエディタでレンダリングされます:
+- テキストフィールド → テキスト入力
+- `domain` → タグリスト(Enter で追加、× で削除)
+- `updated_at` → 日付選択
+- **`ikhtilāf` → カスタムウィジェット**:1 行ごとに 2 つの並列入力(school + position)、各行に削除ボタン、下部に「学派を追加」ボタン。ウィジェットは構造化された YAML から読み取り、書き込みます。ラウンドトリップではすべてのフィールドが保持されます。
+
+### `supersedes` についてはどうか?
+
+`supersedes` は *ノート間の関係* (このノートが以前のものを置き換える)であり、単一ノートのプロパティではありません。Constellation はこれを YAML スカラーではなく **型付きリンク** として扱います:
+
+```markdown
+This replaces my earlier analysis: [[old-note-id|supersedes]]
+```
+
+ウィキリンクの `|supersedes` サフィックスは、それを `supersedes` 種別の型付きリンクにします — 専用のスレートブルーグレーピル、Backlinks + Outgoing Links パネルに表示、Living Link Architecture に参加。
+
+### これは何で *ない* か
+
+新しいフィールドは **スキーマ** — 入力できる認識された語彙です。CECE は現在、分類のためにこれらを消費しません。将来の MIG (Warrant Research ワークストリーム、MIG-023 時間軸) は `warrant`、`updated_at` などを読む機能を出荷します。
+
+より深い詳細と完成した例については、ヘルプシステムの **Epistemic Metadata** トピックを参照してください。
+
+---
+
 ## 11. テンプレート
 
 再利用可能なノートテンプレートを作成：

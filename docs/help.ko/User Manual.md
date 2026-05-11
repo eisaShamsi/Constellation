@@ -666,6 +666,51 @@ Constellation은 속성 유형을 자동으로 감지합니다:
 
 ---
 
+## 10c. 인식론적 메타데이터
+
+노트의 지식이 어떻게 획득되었는지, 누가 그 입장을 견지하는지, 어느 학문 분야에 속하는지, 마지막으로 견해를 수정한 시점이 언제인지에 대한 더 풍부한 정보를 기록하기 위한 소수의 선택적 프런트매터 필드. 갭 분석(`docs/epistemic-content-gap-analysis.md`)에 대한 응답으로 MIG-022 §A에 추가되었습니다.
+
+이 필드들은 **모두 선택적**입니다. 이들 없이 노트는 변경 없이 작동합니다.
+
+### 빠른 참조
+
+| Field | Type | 목적 |
+|---|---|---|
+| `held_by` | text | 이는 누구의 입장인가? (기본값은 `user`; `"al-Shāfiʿī"`, `"Ḥanafī"` 등이 될 수 있음) |
+| `domain` | list | 검색용 학문 분야 태그 (`[fiqh, ʿibādāt]`) |
+| `function` | text | 이 노트는 무엇을 위한 것인가 (`reference` / `seed` / `actionable` / `shipped`) |
+| `provenance_civilization` | text | 전통 어휘 (`sunni-usuli` / `analytic-western` / `nyaya` 등) |
+| `updated_at` | date | 마지막으로 의도적으로 견해를 수정한 시점 (파일 시스템 mtime과 구별됨) |
+| `ikhtilāf` | list of objects | 구조화된 학술적 불일치 (`[{school, position}, ...]`) |
+| `warrant` | text | 등급 라벨 (Warrant Research 워크스트림이 출시될 때까지 파싱되지만 비활성) |
+| `warrant_notes` | text | warrant 등급을 뒷받침하는 자유 텍스트 (또한 비활성) |
+
+### Properties 패널에서 표시되는 방법
+
+각 필드는 타입에 적합한 에디터로 렌더링됩니다:
+- 텍스트 필드 → 텍스트 입력
+- `domain` → 태그 목록 (Enter로 추가, ×로 제거)
+- `updated_at` → 날짜 선택기
+- **`ikhtilāf` → 사용자 정의 위젯**: 행당 두 개의 나란한 입력(school + position) + 행당 제거 버튼, 하단에 "학파 추가" 버튼. 위젯은 구조화된 YAML에서 읽고 쓰므로 왕복 시 모든 필드가 보존됩니다.
+
+### `supersedes`는 어떤가?
+
+`supersedes`는 단일 노트의 속성이 아닌 *노트 간의 관계*(이 노트가 이전 것을 대체함)입니다. Constellation은 이것을 YAML 스칼라가 아닌 **타입드 링크**로 처리합니다:
+
+```markdown
+This replaces my earlier analysis: [[old-note-id|supersedes]]
+```
+
+위키링크의 `|supersedes` 접미사는 이를 `supersedes` 종류의 타입드 링크로 만듭니다 — 별도의 슬레이트 블루-그레이 알약, Backlinks + Outgoing Links 패널에 표시, Living Link Architecture에 참여.
+
+### 이것이 *아닌* 것
+
+새 필드는 **스키마**입니다 — 채울 수 있는 인식된 어휘. CECE는 현재 분류를 위해 이를 소비하지 않습니다. 미래의 MIG(Warrant Research 워크스트림, MIG-023 시간 축)는 `warrant`, `updated_at` 등을 읽는 기능을 출시할 것입니다.
+
+더 깊은 세부 사항과 작업 예제는 도움말 시스템의 **Epistemic Metadata** 항목을 참조하세요.
+
+---
+
 ## 11. 템플릿
 
 재사용 가능한 노트 템플릿을 만드세요:

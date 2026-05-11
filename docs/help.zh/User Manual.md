@@ -666,6 +666,51 @@ Constellation 会自动检测属性类型：
 
 ---
 
+## 10c. 认知元数据
+
+一小组可选的前置元数据字段,用于记录有关一篇笔记的知识是如何获得的、谁持有该立场、它属于哪个学科以及你最后一次修订观点的时间等更丰富的信息。在 MIG-022 §A 中为响应差距分析 (`docs/epistemic-content-gap-analysis.md`) 而添加。
+
+这些字段 **全部可选**。没有它们的笔记照常工作。
+
+### 快速参考
+
+| Field | Type | 用途 |
+|---|---|---|
+| `held_by` | text | 这是谁的立场?(默认为 `user`;可以是 `"al-Shāfiʿī"`、`"Ḥanafī"` 等) |
+| `domain` | list | 用于检索的学科标签 (`[fiqh, ʿibādāt]`) |
+| `function` | text | 这篇笔记是干什么用的 (`reference` / `seed` / `actionable` / `shipped`) |
+| `provenance_civilization` | text | 传统词汇 (`sunni-usuli` / `analytic-western` / `nyaya` 等) |
+| `updated_at` | date | 你最后一次有意修订观点的时间(不同于文件系统 mtime) |
+| `ikhtilāf` | list of objects | 结构化的学术分歧 (`[{school, position}, ...]`) |
+| `warrant` | text | 等级标签(已解析但在 Warrant Research 工作流发布前不活跃) |
+| `warrant_notes` | text | 支持 warrant 等级的自由文本(也不活跃) |
+
+### 它们如何在 Properties 面板中出现
+
+每个字段以适合类型的编辑器渲染:
+- 文本字段 → 文本输入
+- `domain` → 标签列表(Enter 添加,× 删除)
+- `updated_at` → 日期选择器
+- **`ikhtilāf` → 自定义小部件**:每行两个并排输入(school + position)加上每行的删除按钮,以及底部的"添加学派"按钮。该小部件从结构化 YAML 读写,因此往返时保留每个字段。
+
+### `supersedes` 怎么处理?
+
+`supersedes` 是 *笔记之间的关系*(这篇笔记替换了较早的笔记),而不是单个笔记的属性。Constellation 将其作为 **类型化链接** 处理,而不是 YAML 标量:
+
+```markdown
+This replaces my earlier analysis: [[old-note-id|supersedes]]
+```
+
+wikilink 上的 `|supersedes` 后缀使其成为 `supersedes` 类型的类型化链接 — 独特的板岩蓝灰胶囊,出现在 Backlinks + Outgoing Links 面板中,参与 Living Link Architecture。
+
+### 这 *不是* 什么
+
+这些新字段是 **模式** — 你可以填写的可识别词汇。CECE 当前不消费它们用于分类。未来的 MIG(Warrant Research 工作流、MIG-023 时间轴)将发布读取 `warrant`、`updated_at` 等的功能。
+
+有关更深入的细节和工作示例,请参阅帮助系统中的 **Epistemic Metadata** 主题。
+
+---
+
 ## 11. 模板
 
 创建可重复使用的笔记模板：

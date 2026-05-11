@@ -666,6 +666,51 @@ Para más detalle (cada estado de punto, cada chip de regla, paseos clic a clic 
 
 ---
 
+## 10c. Metadatos Epistémicos
+
+Un pequeño conjunto de campos opcionales de frontmatter para registrar información más rica sobre cómo se adquirió el conocimiento de una nota, quién sostiene la posición, a qué disciplina pertenece y cuándo revisaste por última vez tu visión. Añadido en MIG-022 §A en respuesta al análisis de brechas (`docs/epistemic-content-gap-analysis.md`).
+
+Estos campos son **todos opcionales**. Las notas sin ellos funcionan sin cambios.
+
+### Referencia rápida
+
+| Field | Type | Purpose |
+|---|---|---|
+| `held_by` | text | ¿De quién es esta postura? (por defecto `user`; puede ser `"al-Shāfiʿī"`, `"Ḥanafī"`, etc.) |
+| `domain` | list | Etiquetas disciplinarias para recuperación (`[fiqh, ʿibādāt]`) |
+| `function` | text | Para qué sirve esta nota (`reference` / `seed` / `actionable` / `shipped`) |
+| `provenance_civilization` | text | Vocabulario tradicional (`sunni-usuli` / `analytic-western` / `nyaya` / etc.) |
+| `updated_at` | date | Cuándo revisaste deliberadamente tu visión por última vez (distinto del mtime del sistema de archivos) |
+| `ikhtilāf` | list of objects | Desacuerdo erudito estructurado (`[{school, position}, ...]`) |
+| `warrant` | text | Etiqueta de grado (parseada pero inerte hasta que el Warrant Research workstream se entregue) |
+| `warrant_notes` | text | Texto libre que sustenta el grado de garantía (también inerte) |
+
+### Cómo aparecen en el panel de Propiedades
+
+Cada campo se renderiza con el editor adecuado al tipo:
+- Campos de texto → entrada de texto
+- `domain` → lista de etiquetas (Enter para añadir, × para eliminar)
+- `updated_at` → selector de fecha
+- **`ikhtilāf` → widget personalizado** con dos entradas lado a lado por fila (school + position) más un botón eliminar por fila, y un botón "Añadir escuela" en la parte inferior. El widget lee desde y escribe al YAML estructurado, así que los viajes de ida y vuelta preservan cada campo.
+
+### ¿Y `supersedes`?
+
+`supersedes` es una *relación entre notas* (esta nota reemplaza una anterior), no una propiedad de una nota única. Constellation lo maneja como un **enlace tipado**, no como un escalar YAML:
+
+```markdown
+Esto reemplaza mi análisis anterior: [[old-note-id|supersedes]]
+```
+
+El sufijo `|supersedes` en el wikilink lo convierte en un enlace tipado del tipo `supersedes` — píldora azul-grisácea pizarra distintiva, aparece en los paneles Backlinks + Outgoing Links, participa en la Living Link Architecture.
+
+### Lo que esto NO es
+
+Los nuevos campos son **esquema** — un vocabulario reconocido que puedes rellenar. CECE actualmente no los consume para la clasificación. Futuros MIGs (Warrant Research workstream, MIG-023 eje temporal) entregarán características que lean `warrant`, `updated_at` y compañía.
+
+Para más detalle + un ejemplo trabajado, consulta el tema **Metadatos Epistémicos** en el sistema de ayuda.
+
+---
+
 ## 11. Plantillas
 
 Crea plantillas de notas reutilizables:

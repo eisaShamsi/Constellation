@@ -666,6 +666,51 @@ Für tiefere Details (jeder Punkt-Status, jeder Regel-Chip, Klick-für-Klick-Anl
 
 ---
 
+## 10c. Epistemische Metadaten
+
+Eine kleine Reihe optionaler Frontmatter-Felder zum Festhalten reichhaltigerer Informationen darüber, wie das Wissen einer Notiz erworben wurde, wer die Position vertritt, welcher Disziplin sie angehört und wann du deine Sicht zuletzt überarbeitet hast. In MIG-022 §A als Reaktion auf die Lückenanalyse (`docs/epistemic-content-gap-analysis.md`) hinzugefügt.
+
+Diese Felder sind **alle optional**. Notizen ohne sie funktionieren unverändert.
+
+### Schnellreferenz
+
+| Feld | Typ | Zweck |
+|---|---|---|
+| `held_by` | text | Wessen Position ist das? (Standard: `user`; kann `"al-Shāfiʿī"`, `"Ḥanafī"` usw. sein) |
+| `domain` | list | Disziplinäre Tags für Abruf (`[fiqh, ʿibādāt]`) |
+| `function` | text | Wozu diese Notiz dient (`reference` / `seed` / `actionable` / `shipped`) |
+| `provenance_civilization` | text | Traditionsvokabular (`sunni-usuli` / `analytic-western` / `nyaya` / usw.) |
+| `updated_at` | date | Wann du deine Sicht zuletzt bewusst überarbeitet hast (im Unterschied zur Dateisystem-mtime) |
+| `ikhtilāf` | list of objects | Strukturierte gelehrte Meinungsverschiedenheit (`[{school, position}, ...]`) |
+| `warrant` | text | Stufenbezeichnung (geparst, aber inert, bis der Warrant Research Workstream ausgeliefert wird) |
+| `warrant_notes` | text | Freitext zur Stützung der Berechtigungsstufe (ebenfalls inert) |
+
+### Wie sie im Properties-Panel erscheinen
+
+Jedes Feld wird mit dem typgerechten Editor gerendert:
+- Textfelder → Texteingabe
+- `domain` → Tag-Liste (Enter zum Hinzufügen, × zum Entfernen)
+- `updated_at` → Datumsauswahl
+- **`ikhtilāf` → eigenes Widget** mit zwei nebeneinanderliegenden Eingaben pro Zeile (school + position) plus einer Entfernen-Schaltfläche pro Zeile und einer „Schule hinzufügen"-Schaltfläche unten. Das Widget liest aus dem strukturierten YAML und schreibt in dieses zurück, sodass Roundtrips jedes Feld bewahren.
+
+### Was ist mit `supersedes`?
+
+`supersedes` ist eine *Beziehung zwischen Notizen* (diese Notiz ersetzt eine frühere), keine Eigenschaft einer einzelnen Notiz. Constellation behandelt es als **typisierten Link**, nicht als YAML-Skalar:
+
+```markdown
+Dies ersetzt meine frühere Analyse: [[old-note-id|supersedes]]
+```
+
+Das `|supersedes`-Suffix am Wikilink macht ihn zu einem typisierten Link der Art `supersedes` — eigene schiefer-blaugraue Pille, erscheint in den Backlinks- + Outgoing-Links-Panels, nimmt an der Living Link Architecture teil.
+
+### Was das NICHT ist
+
+Die neuen Felder sind **Schema** — ein anerkanntes Vokabular, das du ausfüllen kannst. CECE konsumiert sie derzeit nicht für die Klassifizierung. Zukünftige MIGs (Warrant Research Workstream, MIG-023 zeitliche Achse) liefern Funktionen aus, die `warrant`, `updated_at` und Verwandte lesen.
+
+Für tiefere Details + ein durchgearbeitetes Beispiel siehe das Thema **Epistemische Metadaten** im Hilfesystem.
+
+---
+
 ## 11. Vorlagen
 
 Erstellen Sie wiederverwendbare Notizvorlagen:

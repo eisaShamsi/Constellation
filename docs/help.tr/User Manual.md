@@ -666,6 +666,51 @@ Daha derin ayrıntı için (her nokta durumu, her kural çipi, yaygın senaryola
 
 ---
 
+## 10c. Epistemik Üst Veri
+
+Bir notun bilgisinin nasıl elde edildiği, tutumu kimin üstlendiği, hangi disipline ait olduğu ve görüşünüzü en son ne zaman revize ettiğiniz hakkında daha zengin bilgileri kaydetmek için küçük bir isteğe bağlı frontmatter alanları kümesi. Boşluk analizine (`docs/epistemic-content-gap-analysis.md`) yanıt olarak MIG-022 §A'da eklendi.
+
+Bu alanlar **tamamen isteğe bağlıdır**. Onlar olmadan notlar değişmeden çalışır.
+
+### Hızlı referans
+
+| Field | Type | Amaç |
+|---|---|---|
+| `held_by` | text | Bu kimin tutumu? (varsayılan `user`; `"al-Shāfiʿī"`, `"Ḥanafī"` vb. olabilir) |
+| `domain` | list | Getirme için disiplin etiketleri (`[fiqh, ʿibādāt]`) |
+| `function` | text | Bu not ne için (`reference` / `seed` / `actionable` / `shipped`) |
+| `provenance_civilization` | text | Gelenek söz dağarcığı (`sunni-usuli` / `analytic-western` / `nyaya` vb.) |
+| `updated_at` | date | Görüşünüzü en son bilinçli olarak revize ettiğiniz zaman (dosya sisteminin mtime'ından farklı) |
+| `ikhtilāf` | list of objects | Yapılandırılmış akademik anlaşmazlık (`[{school, position}, ...]`) |
+| `warrant` | text | Derece etiketi (Warrant Research iş akışı yayınlanana kadar ayrıştırılır ama atıl) |
+| `warrant_notes` | text | Warrant derecesini destekleyen serbest metin (ayrıca atıl) |
+
+### Properties panelinde nasıl görünürler
+
+Her alan türe uygun editörle oluşturulur:
+- Metin alanları → metin girişi
+- `domain` → etiket listesi (eklemek için Enter, kaldırmak için ×)
+- `updated_at` → tarih seçici
+- **`ikhtilāf` → özel widget**: satır başına yan yana iki giriş (school + position) artı satır başına bir kaldırma düğmesi ve altta bir "Mezhep ekle" düğmesi. Widget, yapılandırılmış YAML'den okur ve oraya yazar, böylece gidiş-dönüşler her alanı korur.
+
+### `supersedes` ne olacak?
+
+`supersedes`, tek bir notun özelliği değil, *notlar arasındaki bir ilişkidir* (bu not daha önceki bir notun yerini alır). Constellation bunu YAML skaleri olarak değil, **türlü bağlantı** olarak ele alır:
+
+```markdown
+This replaces my earlier analysis: [[old-note-id|supersedes]]
+```
+
+Wikilink üzerindeki `|supersedes` soneki, onu `supersedes` türünde bir türlü bağlantı yapar — farklı bir kayrak mavi-gri hap, Backlinks + Outgoing Links panellerinde görünür, Living Link Architecture'a katılır.
+
+### Bu NE DEĞİLDİR
+
+Yeni alanlar bir **şemadır** — doldurabileceğiniz tanınmış bir söz dağarcığı. CECE bunları şu anda sınıflandırma için tüketmez. Gelecekteki MIG'ler (Warrant Research iş akışı, MIG-023 zamansal eksen), `warrant`, `updated_at` ve benzerlerini okuyan özellikler yayınlayacaktır.
+
+Daha derin ayrıntı ve işlenmiş bir örnek için yardım sistemindeki **Epistemic Metadata** konusuna bakın.
+
+---
+
 ## 11. Şablonlar
 
 Yeniden kullanılabilir not şablonları oluşturun:
