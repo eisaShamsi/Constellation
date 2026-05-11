@@ -547,3 +547,63 @@ Surfaced in MIG-022-PLAN.md §6:
 Eisa answers D-A4 + D-B4 + approves the Plan. **Plan-Approval-Equals-Build-Approval** kicks in: I cascade through §0 → §D → §E.1 → §E.2 → §E.3 → §A.1-§A.4 → §B.1-§B.6 → §N autonomously, stopping only at the 5 Boss-test gates and on genuine architectural surprise.
 
 After MIG-022 closes (Phase 4 audit + close-out commit): the **Constellation Warrant Research** workstream opens with its own Concept Paper.
+
+---
+
+## MIG-022 §0 — Legacy classifier cleanup ships (this commit)
+
+Phase 3 Build cascade opens. §0.1 reachability analysis filed at `lab/reports/MIG-022-§0-REACHABILITY.md`; §0.2 deletion + comment fixes land in this commit.
+
+### Decisions locked just before this commit
+
+- **D-A4: α** (full custom widget for `ikhtilāf` Properties panel) — diverges from my recommendation (β raw YAML); means §A.3 grows ~2 days for the polished widget.
+- **D-B4: β** (Sight v3 overlay for temporal-axis UI surface) — diverges from my recommendation (α side-panel); aligns with Constellation's universe-as-cosmos metaphor (gap-analysis §6.3 queries are universe-wide). Couples §B.5 to Sight v3 stability — flagged in the Plan's risk register.
+
+### §0 deletion summary
+
+**Deleted (3 files, 988 LoC of dead code):**
+- `src-tauri/src/classifier/source_definitions.rs` (323 LoC) — only consumer was `tier1_embedding.rs`
+- `src-tauri/src/classifier/tier1_embedding.rs` (345 LoC) — zero production callers; superseded by V3-§8 CECE 6-cataloger ensemble
+- `src-tauri/src/classifier/tier1_rules.rs` (320 LoC) — only callers were its own `#[test]` functions
+
+**Kept (still reachable):**
+- `classifier/mod.rs` — 3 active `#[tauri::command]`s (`classifier_suggest_for_note`, `cece_record_correction_for_card`, `cece_resolve_disambiguation`)
+- `classifier/scan_job.rs` — 3 active `#[tauri::command]`s + `ScanState` Tauri-managed
+- `classifier/correction_log.rs` — `library_root_for_note` has 4 call sites across `sources/mod.rs`, `cece/reliability.rs`, and `classifier/mod.rs`
+
+**Comment cleanup:**
+- `mod.rs:16-21` — module declarations replaced with audit-F1 historical note
+- `mod.rs:28-31` — docstring updated ("Tier 1 classification" → "CECE 6-cataloger ensemble")
+- `mod.rs:60-67` — misleading "tier1_* consumed by catalogers via wiring" comment replaced with accurate note that CECE replaced the v2 classifier wholesale
+- `mod.rs:554-556` — dead reference to `super::source_definitions` and `super::tier1_embedding` removed
+- `sources/vertical_taxonomy.rs:18` — reference to deleted `classifier::source_definitions` updated to historical note
+
+### The misleading audit clue traced
+
+The V3-§11 audit drift agent's F1 finding said classifier modules were dead. The misleading evidence was a comment in `mod.rs:64` claiming the v2 `tier1_*` modules were "consumed by Linguistic, Structural, Semantic catalogers via the wiring layer." Verified false by grep — `cece/wiring.rs` and all six cataloger files have zero `tier1_*` references. The catalogers each implement their logic from scratch. The aspirational comment from V3-§8 planning never got updated when implementation took a different path.
+
+### Verification
+
+- **`cargo build --lib`**: clean (1m 59s; 41 pre-existing warnings, zero from this change)
+- **`cargo test --lib`**: 627 passed, 2 failed, 3 ignored
+  - Both failures are in `search.rs` (`tests_m12::unknown_word_falls_back_to_none`, `tests_m8c::reindex_updates_all_matching_rows_in_one_pass`)
+  - Verified pre-existing by stashing my changes and re-running the same two tests on the prior tree — both still failed
+  - Verified independent by `Grep "classifier::|tier1_|source_definitions" src/search.rs` returning zero matches
+- **Test count delta** matches expectation: deleted modules carried 5 internal tests (`tier1_rules.rs`) + 3 internal tests (`source_definitions.rs`) = 8 tests gone
+
+### Per-cataloger test count
+
+The 92 cece tests from V3-§11 are unaffected (they live in `src-tauri/src/cece/`, not in the deleted classifier files). No `cece` test broken by the change.
+
+### Files in scope this commit
+
+- `src-tauri/src/classifier/mod.rs` — module decls + comment cleanup
+- `src-tauri/src/classifier/source_definitions.rs` — deleted
+- `src-tauri/src/classifier/tier1_embedding.rs` — deleted
+- `src-tauri/src/classifier/tier1_rules.rs` — deleted
+- `src-tauri/src/sources/vertical_taxonomy.rs` — comment cleanup
+- `lab/reports/MIG-022-§0-REACHABILITY.md` — new reachability report
+
+### What's next: §D — PJ-040 partial UA short-circuit
+
+§0 is internal cleanup with no user-visible behavior change; §D is the next phase in the cascade. §D refactors `synthesis.rs::user_authority_short_circuit` to short-circuit per-axis (instead of both-axes-or-nothing), so frontmatter with only `sources:` set surfaces a synthesized vertical primary too. ½ day, 3 new tests, internal change with user-visible effect (Boss-Test Gate 1 fires after §D + §E.1 both land).

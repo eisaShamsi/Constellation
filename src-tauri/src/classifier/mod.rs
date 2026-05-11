@@ -13,11 +13,14 @@
 //!   docs/Constellation-Sight-Concept-Paper-v2.0.md §8
 //!   lab/reports/MIG-021-EPISTEMIC-CLASSIFIER-PLAN.md §1B
 
-mod source_definitions;
-mod tier1_embedding;
+// MIG-022 §0 (audit F1, 2026-05-11) — `source_definitions`,
+// `tier1_embedding`, and `tier1_rules` deleted as dead code. The v2
+// three-tier classifier was replaced wholesale by the V3-§8 CECE
+// 6-cataloger ensemble; the modules had no production callers (only
+// their own internal tests). `scan_job` and `correction_log` remain
+// reachable: scan_job hosts the active classifier_scan_* IPCs; the
+// correction log is consumed by sources/ and cece/reliability.rs.
 pub mod scan_job;
-// MIG-021v2 §1G2' — Tier 1 deterministic rules + correction log.
-pub mod tier1_rules;
 pub mod correction_log;
 
 use crate::sources::{write_suggestions, SuggestionRecord};
@@ -26,9 +29,10 @@ use tauri::Manager;
 
 /// On-demand single-note classification.
 ///
-/// Reads the note from disk, runs Tier 1 classification, writes the top-3
-/// suggestions to the `sources_suggestions` queue, returns the
-/// suggestion record for the frontend to surface immediately.
+/// Reads the note from disk, runs the CECE 6-cataloger ensemble,
+/// writes the synthesized suggestions to the `sources_suggestions`
+/// queue, returns the suggestion record for the frontend to surface
+/// immediately.
 ///
 /// Returns an error if the note can't be read, the embedding engine
 /// fails to initialize, or the database write fails.
@@ -61,9 +65,12 @@ pub fn classifier_suggest_for_note(
     //    cost-ordered, with embed/lookup/inference functions wired
     //    to the real backends). Run the ensemble against this note.
     //
-    //    The v2 three-tier classifier (tier1_rules + tier1_embedding)
-    //    is preserved — its outputs are now consumed by the Linguistic,
-    //    Structural, and Semantic catalogers via the wiring layer.
+    //    MIG-022 §0 (audit F1, 2026-05-11): the v2 three-tier
+    //    classifier (tier1_rules + tier1_embedding + source_definitions)
+    //    has been deleted; CECE replaced it wholesale. Each cataloger
+    //    implements its own logic from scratch (Linguistic uses CAE
+    //    roots directly, Structural uses regex rules directly, Semantic
+    //    uses the embedding helper directly).
     //    See lab/reports/MIG-021v3-EPISTEMIC-CONTENT-ENGINE-ARCHITECT.md §6.
     let _ = text_for_classification; // suppress unused-warning; future:
                                       // pass title-prepended text into ctx if a
@@ -550,10 +557,6 @@ fn extract_title_and_body(content: &str) -> (String, String) {
 
     (title, body)
 }
-
-// Re-exports kept private for now; §1H Tier-2 wrapper will surface
-// what it needs when it lands. Tests inside this module can reach
-// the children directly via super::source_definitions / super::tier1_embedding.
 
 #[cfg(test)]
 mod tests {

@@ -14,8 +14,11 @@
 //!
 //! Per Plan §3 risk mitigation: where the source chart provides only labels
 //! (no rich definitions), this file carries only the labels. Rich
-//! per-node descriptions for embedding-classification (§1B') are derived
-//! mechanically from parent context — see `classifier::source_definitions`.
+//! per-node descriptions for embedding-classification were originally
+//! derived mechanically from parent context in `classifier::source_definitions`;
+//! that module was retired in MIG-022 §0 (the v2 three-tier classifier was
+//! replaced wholesale by the V3-§8 CECE 6-cataloger ensemble, which builds
+//! its own per-cataloger context).
 
 #[derive(Debug, Clone, Copy)]
 pub struct VerticalNode {
