@@ -109,3 +109,49 @@ Two of four V3-§9 build phases (C and D) had their Architect-doc scope reduced 
 The Plan's pre-commit validation step (grep IDs through the taxonomy + audit current code before drafting implementation) caught the divergence early enough to avoid wasted work. Without it, Phase C would have been a no-op schema migration and Phase D would have rewritten an already-correct prompt.
 
 Net wall-clock: ~2hrs of agent time vs the Plan's 4-6hr estimate, because two phases shrank significantly during implementation. All ID typos and ال-prefix gaps caught pre-commit by following the Plan's "validate first" guidance.
+
+---
+
+## V3-§9.C.2 — Dual-axis reliability gap (this commit)
+
+Eisa caught this during Gate 2 Stage 3. The freshly-created `cataloger_reliability.json` had only ONE entry (`semantic.horizontal.correct = 1`) instead of the four expected entries. The Accept flow's two back-to-back IPCs (`sources_set_manual` then `content_type_set_manual`) had a silent gap: the second IPC found the suggestion row already cleared by the first IPC's `clear_suggestions` call, so its `prior_composite` was None and the reliability update was skipped.
+
+### Root cause
+
+V3-§9.C wired `update_reliability_from_correction` INTO each per-axis IPC. That works when only one axis is being written (PropertyEditor manual edit, single-axis correction). It silently fails on the dual-axis flow because the second call can't read what the first one deleted.
+
+Same pattern affected `cece_resolve_disambiguation`'s auto-write path: when a Split-on-one-axis card had a settled value on the other axis, the second axis IPC also lost the composite_json snapshot.
+
+### Fix
+
+Refactored reliability updates OUT of the per-axis IPCs. New IPC `cece_record_correction_for_card(note_path, composite_json, horizontal_pick, vertical_pick)` takes the snapshot explicitly + updates both axes from one source.
+
+Wired into:
+- **Frontend `acceptSuggestion`**: snapshots `record.composite_json` BEFORE the two writes, calls new IPC after.
+- **`cece_resolve_disambiguation`**: snapshots `composite_json` at the same time it reads `extract_other_axis_settled`, calls new IPC at the end.
+
+Single-axis callers (PropertyEditor) don't get reliability updates — that's correct behavior since manual property edits aren't keyed to a specific suggestion row's per-cataloger trail.
+
+### Tests
+
+2 new V3-§9.C.2 reliability tests (the IPC's logic is mirrored in a `dual_axis_record` test helper to avoid needing a Tauri AppHandle):
+- `v3_p9c2_dual_axis_accept_updates_both_axes`
+- `v3_p9c2_horizontal_only_pick_updates_horizontal_only`
+
+92 cece tests pass total (was 90 in V3-§9.E; +2).
+
+### Files touched in V3-§9.C.2
+
+- `src-tauri/src/sources/mod.rs` — removed `update_reliability_from_correction` calls from `sources_set_manual` + `content_type_set_manual`; kept the `prior_composite` snapshot in scope with a comment explaining the move
+- `src-tauri/src/classifier/mod.rs` — added `cece_record_correction_for_card` IPC; refactored `cece_resolve_disambiguation` to snapshot composite once then call the new IPC at the end
+- `src-tauri/src/lib.rs` — registered the new IPC
+- `src-tauri/src/cece/reliability.rs` — added 2 V3-§9.C.2 dual-axis tests
+- `src/lib/components/SourceReviewPanel.svelte` — `acceptSuggestion` snapshots `record.composite_json` and calls `cece_record_correction_for_card` after the two writes
+- `docs/Constellation Orientation & Onboarding v1.91.md` — new orientation file
+- `lab/reports/SESSION-LOG-2026-05-11.md` — this entry
+
+### Lesson
+
+When two IPCs operate on the same row in sequence, **whichever one needs to read state from that row must snapshot it before the first IPC's side-effects fire**. Lift the read into the orchestration layer (the caller making both IPC calls) and pass the snapshot explicitly to a dedicated handler. Don't rely on each per-axis IPC to re-derive state from a row that may have been mutated by its sibling.
+
+Same spirit as V3-§8.r7 Issue #1 (where two filters using "the same logic" disagreed on the same data, fixed by routing them through one helper). The recurring pattern: when two paths share a dependency on transient state, centralize the dependency.

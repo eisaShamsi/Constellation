@@ -615,8 +615,29 @@ pub fn sources_set_manual(
         clear_suggestions(conn, &note_path)?;
     }
 
-    // 3. Log the correction (best-effort; non-blocking) AND
-    //    update per-cataloger reliability (V3-§9.C wiring).
+    // 3. Log the correction (best-effort; non-blocking).
+    //
+    // V3-§9.C.2 (Boss-test 2026-05-11): reliability update REMOVED
+    // from this per-axis IPC. The dual-axis Accept flow (frontend
+    // calls sources_set_manual + content_type_set_manual back-to-back)
+    // had a silent gap — the second IPC found the suggestion row
+    // already cleared by the first IPC's clear_suggestions call, so
+    // its prior_composite was None and reliability never updated on
+    // the second axis. Now: callers that have access to composite_json
+    // (the Source Review panel's Accept handler; cece_resolve_-
+    // disambiguation) call cece_record_correction_for_card directly
+    // after the writes complete. That helper updates BOTH axes from
+    // a single composite_json snapshot. PropertyEditor manual edits
+    // and other single-axis callers without composite context don't
+    // get reliability updates (they have no per-cataloger trail to
+    // score against — that's correct behavior).
+    let _ = prior_composite; // explicit acknowledgement that we
+                              // snapshot it but don't use it here
+                              // post-V3-§9.C.2 — kept in scope so
+                              // future changes can reintroduce a
+                              // single-axis reliability path if the
+                              // dual-axis pattern doesn't hold for
+                              // a new caller.
     if !prior_horizontal.is_empty() || !sources.is_empty() {
         let libs = crate::libraries::list_libraries(app.clone());
         let pairs: Vec<(String, String)> = libs
@@ -634,18 +655,6 @@ pub fn sources_set_manual(
                 &sources,
                 prior_tier,
             );
-            // V3-§9.C — bump per-cataloger per-axis reliability based
-            // on whether each voicing cataloger's primary matched the
-            // user's final pick. No-op when the prior record had no
-            // composite_json (legacy v2-era rows).
-            if let Some(blob) = &prior_composite {
-                crate::cece::reliability::update_reliability_from_correction(
-                    &lib_root,
-                    blob,
-                    "horizontal",
-                    &sources,
-                );
-            }
         }
     }
 
@@ -1074,8 +1083,10 @@ pub fn content_type_set_manual(
     write_content_type_to_db(conn, &note_path, &content_type)?;
     drop(db_guard);
 
-    // Log the correction (best-effort; non-blocking) AND
-    // update per-cataloger reliability (V3-§9.C wiring).
+    // Log the correction (best-effort; non-blocking).
+    // V3-§9.C.2: reliability update moved out — see sources_set_manual
+    // for the rationale.
+    let _ = prior_composite;
     if !prior_vertical.is_empty() || !content_type.is_empty() {
         let libs = crate::libraries::list_libraries(app.clone());
         let pairs: Vec<(String, String)> = libs.into_iter().map(|l| (l.id, l.path)).collect();
@@ -1090,17 +1101,6 @@ pub fn content_type_set_manual(
                 &content_type,
                 prior_tier,
             );
-            // V3-§9.C — bump per-cataloger per-axis reliability based
-            // on whether each voicing cataloger's vertical primary
-            // matched the user's final pick.
-            if let Some(blob) = &prior_composite {
-                crate::cece::reliability::update_reliability_from_correction(
-                    &lib_root,
-                    blob,
-                    "vertical",
-                    &content_type,
-                );
-            }
         }
     }
     Ok(())

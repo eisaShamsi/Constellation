@@ -455,6 +455,10 @@
       horizontalOverride ?? record.suggestions.filter(s => s.axis === 'horizontal').map(s => s.source);
     const verticalIds =
       verticalOverride ?? record.suggestions.filter(s => s.axis === 'vertical').map(s => s.source);
+    // V3-§9.C.2 — snapshot composite_json BEFORE the writes so the
+    // reliability update can use it. The two writes below clear the
+    // suggestion row, so a post-write read would return null.
+    const compositeJsonForReliability = record.composite_json;
     try {
       await invoke('sources_set_manual', {
         notePath: record.note_path,
@@ -464,6 +468,24 @@
         notePath: record.note_path,
         contentType: verticalIds,
       });
+      // V3-§9.C.2 — Now that both axes are written, update per-cataloger
+      // reliability for BOTH axes from the snapshot. Without this call
+      // the per-axis IPCs (which moved their reliability updates out)
+      // would leave reliability un-updated for the Accept flow.
+      // Best-effort: if it fails, the writes already succeeded; we
+      // just don't get a reliability bump.
+      if (compositeJsonForReliability) {
+        try {
+          await invoke('cece_record_correction_for_card', {
+            notePath: record.note_path,
+            compositeJson: compositeJsonForReliability,
+            horizontalPick: horizontalIds,
+            verticalPick: verticalIds,
+          });
+        } catch (relErr) {
+          console.warn('[CECE] reliability update failed (non-fatal):', relErr);
+        }
+      }
       queue = queue.filter(r => r.note_path !== record.note_path);
       cancelEdit();
       // V3-§8.r5.3 — only composite-trail cards count toward calibration.

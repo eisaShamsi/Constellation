@@ -521,4 +521,87 @@ mod tests {
         let struc = p.get("structural", Axis::Horizontal);
         assert_eq!(struc.wrong, 2);
     }
+
+    // ─── V3-§9.C.2 — dual-axis correction tests ───
+    // The IPC `cece_record_correction_for_card` calls
+    // `update_reliability_from_correction` twice (once per axis) from
+    // a single composite_json snapshot. These tests verify the dual-
+    // axis behavior by mimicking what the IPC does without needing a
+    // full Tauri AppHandle.
+
+    fn dual_axis_record(
+        library_path: &str,
+        composite_json: &str,
+        horizontal_pick: &[String],
+        vertical_pick: &[String],
+    ) {
+        // Mirrors cece_record_correction_for_card's body (without
+        // the Tauri AppHandle + library lookup wrapper).
+        if !horizontal_pick.is_empty() {
+            update_reliability_from_correction(
+                library_path,
+                composite_json,
+                "horizontal",
+                horizontal_pick,
+            );
+        }
+        if !vertical_pick.is_empty() {
+            update_reliability_from_correction(
+                library_path,
+                composite_json,
+                "vertical",
+                vertical_pick,
+            );
+        }
+    }
+
+    #[test]
+    fn v3_p9c2_dual_axis_accept_updates_both_axes() {
+        // Boss-test 2026-05-11 Stage 3 surfaced this gap: dual-axis
+        // Accept only updated horizontal because the second per-axis
+        // IPC found the suggestion row already cleared. This test
+        // verifies the new dual-axis call updates BOTH axes from a
+        // single snapshot.
+        let dir = unique_test_library();
+        let lib = dir.path().to_string_lossy().to_string();
+        dual_axis_record(
+            &lib,
+            sample_composite_json(),
+            &["testimony/authoritative".to_string()],
+            &["epistemic-states/doubt".to_string()],
+        );
+        let p = load_or_default(&lib);
+        // Horizontal: linguistic voted authoritative (correct),
+        // structural voted direct-witness (wrong).
+        assert_eq!(p.get("linguistic", Axis::Horizontal).correct, 1);
+        assert_eq!(p.get("structural", Axis::Horizontal).wrong, 1);
+        // Vertical: both voicing catalogers voted doubt (both correct).
+        assert_eq!(p.get("linguistic", Axis::Vertical).correct, 1);
+        assert_eq!(p.get("structural", Axis::Vertical).correct, 1);
+        // The PRE-V3-§9.C.2 bug would show vertical counters at 0.
+        // After fix, they're correctly 1.
+    }
+
+    #[test]
+    fn v3_p9c2_horizontal_only_pick_updates_horizontal_only() {
+        // When a single-axis caller (or a Split-on-one-axis disambig
+        // with no other-axis settled value) passes empty vertical_pick,
+        // only horizontal counters should bump.
+        let dir = unique_test_library();
+        let lib = dir.path().to_string_lossy().to_string();
+        dual_axis_record(
+            &lib,
+            sample_composite_json(),
+            &["testimony/authoritative".to_string()],
+            &[], // empty vertical pick
+        );
+        let p = load_or_default(&lib);
+        assert_eq!(p.get("linguistic", Axis::Horizontal).correct, 1);
+        assert_eq!(p.get("structural", Axis::Horizontal).wrong, 1);
+        // Vertical counters MUST stay at 0 — empty pick = no update.
+        assert_eq!(p.get("linguistic", Axis::Vertical).correct, 0);
+        assert_eq!(p.get("linguistic", Axis::Vertical).wrong, 0);
+        assert_eq!(p.get("structural", Axis::Vertical).correct, 0);
+        assert_eq!(p.get("structural", Axis::Vertical).wrong, 0);
+    }
 }

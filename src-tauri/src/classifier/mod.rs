@@ -207,6 +207,61 @@ fn library_root_for_note(app: &tauri::AppHandle, note_path: &str) -> Option<Stri
     crate::classifier::correction_log::library_root_for_note(&pairs, note_path)
 }
 
+/// V3-§9.C.2 — Update per-cataloger reliability for both axes from
+/// a single composite_json snapshot.
+///
+/// Boss-test 2026-05-11 Stage 3 surfaced a silent gap in V3-§9.C
+/// wiring: when the frontend's Accept handler called sources_set_manual
+/// + content_type_set_manual back-to-back, the second IPC found the
+/// suggestion row already cleared by the first IPC's clear_suggestions
+/// call, so its prior_composite was None and reliability never updated
+/// on the second axis.
+///
+/// Fix: move the reliability update OUT of the per-axis IPCs and
+/// into this dedicated dual-axis IPC. Callers with a composite snapshot
+/// (the Source Review Accept handler; cece_resolve_disambiguation)
+/// invoke this AFTER their writes. Single-pass updates both axes from
+/// one snapshot — the suggestion row's status doesn't matter here
+/// because the caller passes the JSON in directly.
+///
+/// `horizontal_pick` and `vertical_pick` are the user's final IDs on
+/// each axis. Either may be empty (no update on that axis).
+#[tauri::command]
+pub fn cece_record_correction_for_card(
+    app: tauri::AppHandle,
+    note_path: String,
+    composite_json: String,
+    horizontal_pick: Vec<String>,
+    vertical_pick: Vec<String>,
+) -> Result<(), String> {
+    crate::search::ensure_search_db_ready(&app)?;
+    // Resolve the Library root the same way the in-IPC reliability
+    // update used to. Returns None when the note isn't under any
+    // registered Library — in that case there's nowhere to write
+    // reliability data, so it's a no-op.
+    let lib_root = match library_root_for_note(&app, &note_path) {
+        Some(r) => r,
+        None => return Ok(()),
+    };
+    if !horizontal_pick.is_empty() {
+        crate::cece::reliability::update_reliability_from_correction(
+            &lib_root,
+            &composite_json,
+            "horizontal",
+            &horizontal_pick,
+        );
+    }
+    if !vertical_pick.is_empty() {
+        crate::cece::reliability::update_reliability_from_correction(
+            &lib_root,
+            &composite_json,
+            "vertical",
+            &vertical_pick,
+        );
+    }
+    Ok(())
+}
+
 /// V3-§8.r1.f — Resolve a Sibling Disambiguation pick.
 ///
 /// When the synthesis layer reports `regime: split` on either axis,
@@ -236,11 +291,17 @@ pub fn cece_resolve_disambiguation(
     axis: String,
     chosen_id: String,
 ) -> Result<(), String> {
-    // Read the composite_json from the suggestion row BEFORE the
-    // disambig write clears it, so we know what to auto-write on the
-    // other axis. Best-effort — if the row is gone or composite is
-    // missing, fall back to the surgical (single-axis) behavior.
-    let other_axis_settled: Option<String> = {
+    // Snapshot the composite_json from the suggestion row BEFORE any
+    // write happens. Need it for two purposes:
+    //   (1) extract_other_axis_settled — find the OTHER axis's settled
+    //       primary so r7's auto-write can co-write it
+    //   (2) V3-§9.C.2 reliability update — pass to
+    //       cece_record_correction_for_card after writes complete
+    //
+    // After the writes call clear_suggestions, this row is gone, so
+    // we MUST snapshot before. Best-effort: if the row is missing or
+    // the JSON is malformed, both (1) and (2) become no-ops.
+    let composite_snapshot: Option<String> = {
         let search_state = app.state::<crate::search::SearchState>();
         let db_guard = search_state
             .db
@@ -249,19 +310,21 @@ pub fn cece_resolve_disambiguation(
         let conn = db_guard
             .as_ref()
             .ok_or("Search database not initialized")?;
-        let row: Option<Option<String>> = conn
-            .query_row(
-                "SELECT composite_json FROM sources_suggestions WHERE note_path = ?1",
-                rusqlite::params![&note_path],
-                |r| r.get::<_, Option<String>>(0),
-            )
-            .ok();
-        row.flatten()
-            .and_then(|json| extract_other_axis_settled(&json, &axis))
+        conn.query_row(
+            "SELECT composite_json FROM sources_suggestions WHERE note_path = ?1",
+            rusqlite::params![&note_path],
+            |r| r.get::<_, Option<String>>(0),
+        )
+        .ok()
+        .flatten()
     };
+    let other_axis_settled: Option<String> = composite_snapshot
+        .as_deref()
+        .and_then(|json| extract_other_axis_settled(json, &axis));
 
     // Apply the user's pick on the disambiguated axis. This call
     // also clears the suggestion row.
+    let chosen_id_for_reliability = chosen_id.clone();
     match axis.as_str() {
         "horizontal" => {
             crate::sources::sources_set_manual(app.clone(), note_path.clone(), vec![chosen_id])?;
@@ -275,16 +338,43 @@ pub fn cece_resolve_disambiguation(
     // Also write the other axis's settled primary, if it had one.
     // The suggestion row is already cleared above; this just writes
     // the frontmatter + DB mirror.
+    let other_id_for_reliability = other_axis_settled.clone();
     if let Some(other_id) = other_axis_settled {
         match axis.as_str() {
             "horizontal" => {
-                let _ = crate::sources::content_type_set_manual(app, note_path, vec![other_id]);
+                let _ = crate::sources::content_type_set_manual(app.clone(), note_path.clone(), vec![other_id]);
             }
             "vertical" => {
-                let _ = crate::sources::sources_set_manual(app, note_path, vec![other_id]);
+                let _ = crate::sources::sources_set_manual(app.clone(), note_path.clone(), vec![other_id]);
             }
             _ => {}
         }
+    }
+
+    // V3-§9.C.2 — Update per-cataloger reliability for BOTH axes from
+    // the composite_json snapshot we took BEFORE the writes. Without
+    // this call, the dual-axis writes above would silently skip
+    // reliability updates because the per-axis IPCs no longer call
+    // update_reliability_from_correction (moved out post-V3-§9.C.2).
+    if let Some(blob) = composite_snapshot {
+        let (h_pick, v_pick) = match axis.as_str() {
+            "horizontal" => (
+                vec![chosen_id_for_reliability],
+                other_id_for_reliability.into_iter().collect::<Vec<_>>(),
+            ),
+            "vertical" => (
+                other_id_for_reliability.into_iter().collect::<Vec<_>>(),
+                vec![chosen_id_for_reliability],
+            ),
+            _ => (vec![], vec![]),
+        };
+        let _ = cece_record_correction_for_card(
+            app,
+            note_path,
+            blob,
+            h_pick,
+            v_pick,
+        );
     }
 
     Ok(())
