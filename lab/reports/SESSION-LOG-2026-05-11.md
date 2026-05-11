@@ -486,3 +486,64 @@ Five Architect-phase claims that the Plan must verify in code before proceeding:
 ### What's next
 
 **Eisa locks the eight §6 decisions.** Then Phase 2 (Plan) lays out commits + verification clauses + Boss-test gates. Phase 3 (Build) cascades. Phase 4 (Audit) runs the three-agent integration check.
+
+---
+
+## MIG-022 Architect decisions locked + Phase 2 Plan filed (this commit)
+
+Eisa locked all eight §6 decisions in one message. Two diverged from my recommendations:
+
+- **D-A2: β** (defer all warrant UI to Warrant Research) — I had recommended α (warrant display in Cluster A). Eisa's call: warrant fields parse but stay inert in MIG-022; the entire warrant surface (display + classifier) ships as one cohesive workstream.
+- **D-B3: IN MIG-022** (Cluster B included, not split to MIG-023) — I had recommended split. Eisa's call: temporal axis is in MIG-022 scope; ~5-7 weeks total wall-clock; one cohesive cascade.
+
+Plus the explicit **D-C1 commitment**: Warrant Research opens as a workstream **immediately after MIG-022 closes** (not "someday"). Concept Paper to follow.
+
+### Cross-check applied (WA #5)
+
+Spawned a general-purpose agent to cross-check D-B1 (SQLite + triggers for `note_state_history`) against industry patterns: Datomic / XTDB bitemporal, SQL:2011 SYSTEM_TIME, event sourcing, per-file Git versioning. Verdict: SQLite + triggers is the right pattern for local-first SQLite (Datasette uses it via `sqlite-history-json`). Three refinements adopted:
+
+1. **JSON-diff column shape** — single `changes_json TEXT` instead of `(axis_changed, old_value, new_value)` triples. Adding new epistemic fields later doesn't require rewriting the trigger.
+2. **`WHEN OLD.field IS NOT NEW.field` trigger guard** — prevents trigger fires on no-op writes.
+3. **`DROP TRIGGER` + bulk-insert during backfill** — the §B.3 backfill on a 7,600-note universe could otherwise blow up wall-clock by firing 7,600 sequential trigger evaluations.
+
+Soft-delete vs CASCADE deferred to §B.1 micro-decision.
+
+### Phase 2 Plan landed: 14-16 phases, 5 Boss-test gates
+
+```
+§0 — Cleanup (Cluster F)              ──► Verification: cargo build + test pass
+§D — UA partial-frontmatter (PJ-040)  ──► Boss-Test Gate 1
+§E.1 — Confidence enum i18n (PJ-042) ──┘
+§E.2 — Cataloger reasoning i18n (PJ-041) ──► Boss-Test Gate 2
+§E.3 — Taxonomy labels i18n (PJ-043) ──┘
+§A.1 — Frontmatter schema additions ──┐
+§A.2 — Typed-link extension (+supersedes) ──► Boss-Test Gate 3
+§A.3 — Properties panel UI ───────────┤
+§A.4 — i18n + help docs ───────────────┘
+§B.1 — note_state_history schema ─────┐
+§B.2 — Trigger + WHEN guards          │
+§B.3 — Backfill (existing notes)      ├──► Boss-Test Gate 4
+§B.4 — Query API IPC                  │
+§B.5 — UI surface (per D-B4)          │
+§B.6 — i18n + help + User Manual ─────┘
+§N — Final integration audit ─────────► Boss-Test Gate 5 + MIG-022 ships
+```
+
+### Two new Plan-level decisions for Eisa
+
+Surfaced in MIG-022-PLAN.md §6:
+
+1. **D-A4** — `ikhtilāf` Properties panel UX: (α) full widget / (β) raw YAML edit / (γ) read-only display? *Rec: (β) — niche field; raw YAML in MIG-022; polished widget as future PJ.*
+2. **D-B4** — Temporal-axis UI surface: (α) side-panel / (β) Sight v3 overlay / (γ) search filter? *Rec: (α) — matches Backlinks panel pattern; doesn't couple MIG-022 to Sight v3 stability.*
+
+### Files in scope this commit
+
+- `lab/reports/MIG-022-PLAN.md` — new, ~750 lines
+- `docs/Constellation Orientation & Onboarding v1.97.md` — new
+- `lab/reports/SESSION-LOG-2026-05-11.md` — this entry
+
+### What's next
+
+Eisa answers D-A4 + D-B4 + approves the Plan. **Plan-Approval-Equals-Build-Approval** kicks in: I cascade through §0 → §D → §E.1 → §E.2 → §E.3 → §A.1-§A.4 → §B.1-§B.6 → §N autonomously, stopping only at the 5 Boss-test gates and on genuine architectural surprise.
+
+After MIG-022 closes (Phase 4 audit + close-out commit): the **Constellation Warrant Research** workstream opens with its own Concept Paper.
