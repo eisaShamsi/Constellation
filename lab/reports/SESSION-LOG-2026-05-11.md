@@ -202,3 +202,81 @@ V3-§9 cumulative scoreboard:
 - 1 PJ filed (PJ-040)
 
 Both cataloger-ensemble axes are now production-ready. Next: V3-§10 (Settings + i18n + Help docs + User Manual) — user-facing surfaces around the engine.
+
+---
+
+## V3-§10 cascade — User-facing surfaces (Option C, full cascade A→G)
+
+After Gate 2 close-out, Eisa picked Option C for V3-§10 (Settings UI + en+ar i18n + EN docs + 13-locale i18n backfill + 14-locale help topic + 14-locale User Manual chapter). Architect doc + Plan written and approved; cascade landed in 7 commits.
+
+### V3-§10.A — Settings UI + IPC + appSettings.cece (`d44b115`)
+
+New "Constellation Epistemic Content Engine" Settings section under Intelligence with 4 setting rows: Reasoning Cataloger model status (read-only — "Not downloaded, deferred to V3-§7.b" + disabled "Coming soon" button), Reasoning trail visibility dropdown (Always / On disagreement (default) / Never), Background classification dropdown (Off (default) / On note save / On app start), Per-Library calibration collapsible.
+
+Backend additions: `cece_get_reliability_for_active_library(note_path)` + `cece_get_active_library_root(note_path)` IPCs in `reliability.rs`. Library resolution: note_path → containing Library; fallback to first Library when no note open. Returns empty default when no reliability JSON exists yet.
+
+Frontend additions:
+- New `<PerLibraryCalibrationView>` Svelte component (read-only table with empty-state, "(uniform)" labels for catalogers below MIN_SAMPLES_FOR_WEIGHTING=20 threshold).
+- `appSettings.cece` sub-object with `reasoningTrailVisibility` + `backgroundScan` flags. Defaults preserve pre-V3-§10 behavior.
+- `SourceReviewPanel.svelte::isTrailOpen()` now respects the visibility setting.
+- `NoteEditor.svelte::handleSave()` fires `classifier_suggest_for_note` after disk write when `backgroundScan === 'on_save'`. Rides existing 1500ms debounced save — never fires per-keystroke.
+- `+layout.svelte::onMount()` fires `classifier_scan_start` 5s after boot when `backgroundScan === 'on_startup'`.
+
+### V3-§10.B — en + ar i18n for cece.settings.* (`0054981`)
+
+28 new keys added to en.json + ar.json::cece.settings.
+
+### V3-§10.C — EN help topic + EN User Manual chapter (`34a96a9`)
+
+New `docs/help.uConstellation.World/Source Review/Source Review.md` topic — ~3500 words, 13 sections covering: what CECE does, two axes plain-language, six catalogers (with lens-color guide), three confidence regimes, Sibling Disambiguation walkthrough, reasoning trail, queue composition filter, per-card actions, trust-calibration period, per-Library calibration, background classification, common workflows.
+
+New `## 10b. Source Review (CECE)` chapter in `docs/User Manual.md` — ~800 words mirroring the help topic at User Manual depth.
+
+Cross-reference added to `Cognitive Engine` topic.
+
+### V3-§10.D — 13-locale i18n backfill (`259c333`)
+
+All 13 non-en/non-ar locales got the full `cece` block (~90 keys each) translated. Done via 5 parallel agents per language family:
+- Romance (de, es, fr) — agent adce9fb08dc6afde2
+- Iberian + Slavic (pt, ru) — agent a1c61aa1249170478
+- Arabic-script + Hebrew (fa, ur, he) — agent ad82ded015191e0c3
+- CJK (ja, ko, zh) — agent add3540ff7d2025d7
+- Turkish + Hindi (tr, hi) — agent a21385f53ed8bc681
+
+Each block has a `_translation_note` disclaimer in target language. JSON parse-validity verified for all 13. Insertion point near `panels`/`migrationProgress` in most files.
+
+### V3-§10.E — 14-locale help topic translations
+
+New `docs/help.{locale}/Source Review/Source Review.md` for all 14 non-English locales. Each starts with translated disclaimer header. Done via 5 parallel agents:
+- Romance + Iberian (de, es, fr, pt) — agent a8ee26fec10b8a85a
+- Slavic + Turkic (ru, tr) — agent a3824cb128000dbae
+- Arabic-script + Hebrew (ar, fa, ur, he) — agent a572c37f35a27d71f
+- CJK (ja, ko, zh) — agent ac0be44d26f89925e
+- Hindi (hi) — agent a521c08fd71d7e9d4
+
+File sizes verify content presence (range 14KB zh — denser CJK — to 39KB hi — Devanagari with parenthetical English glosses); word counts within ±25% of 2300-word English source.
+
+### V3-§10.F — 14-locale User Manual chapter translations (`50a67b0`)
+
+Each translated User Manual got the new chapter inserted at appropriate position (10b for Latin/CJK, 10ب for fa/ur, 10ב for he, 11ب for ar where ch10 is Second Screen). TOC entries added. Done via 2 parallel agents:
+- Romance + Slavic + Turkic (de, es, fr, pt, ru, tr) — agent a55075ffe6b7ec2fa
+- Arabic-script + Hebrew + CJK + Hindi (ar, fa, ur, he, ja, ko, zh, hi) — agent af4bbb0923096de53
+
+### Translation honesty
+
+Per Option C's risk register: every translated file carries an AI-translation disclaimer in the target language. The `_translation_note` field in i18n JSON + the inline disclaimer at the top of help/User Manual files are the honest signals.
+
+Agents flagged specific terms worth native-speaker review:
+- The 11 Source axis values translate cleanly into ar (matches `ar.json::sources.label` exactly) but renderings for fa/ur/he/ja/ko/zh/hi are plain-language paraphrases of Sunni/Hindu nyāya tradition terms. Highest-priority follow-up.
+- "Sibling Disambiguation" kept in Latin form alongside locale translation (UI feature name).
+- "Living Links" preserved Latin across all locales.
+
+### V3-§10.G — NSIS + orientation v1.93 + Gate 3 ready (this commit)
+
+NSIS rebuilt. Orientation v1.92 → v1.93. Gate 3 Boss-test ready per Plan §7 (7 stages: build installed, Settings section renders, trail visibility setting works in 3 modes, background scan doesn't fire on keystroke, per-Library calibration view shows real data, i18n in 13 other locales, help topic discoverability, User Manual chapter present).
+
+### Cascade scoreboard
+
+7 commits + 1 close-out = 8 phases total. Estimated wall-clock per the Plan was 12-15hrs of agent time; actual ~3-4hrs (parallel agent translation accelerated D/E/F substantially). All translation work shipped with disclaimer headers per Option C's risk register.
+
+If Gate 3 PASSes: V3-§11 final integration audit + MIG-021v3 entire close-out.
