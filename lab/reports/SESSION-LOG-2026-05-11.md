@@ -358,3 +358,64 @@ V3-§10's i18n scope was honest from the start: "strings the frontend sends thro
 
 - V3-§11 (final integration audit + MIG-021v3 entire close-out)
 - MIG-022 (gap analysis response + PJ-041/042/043 + the three structural axis gaps)
+
+---
+
+## V3-§11 — Final integration audit + MIG-021v3 close-out (this commit)
+
+Three parallel agents (invariants / drift / migration-path) ran the integration audit over the entire MIG-021v3 cascade — V3-§1 → V3-§10, every .r/.X follow-up, every Gate. Verdict: **MIG-021v3 ships**, conditional on one AT RISK fix that landed in this same commit.
+
+### Audit agent results
+
+**Agent 1 — Invariants (9 HOLDS · 1 AT RISK · 0 VIOLATED):**
+- HOLDS: 6-cataloger ensemble dispatch · tier timeouts (cheap=500ms / medium=2s / expensive=5s) · three confidence regimes · Sibling Disambiguation contract · per-Library reliability per-axis-aware · queue composition filter regime semantics · Reasoning Cataloger GBNF interface lock-in · all 90 cece.* + cece.settings.* keys present in 15 locales · Editor Parity Rule unaffected (CECE runs out-of-band of CM6 hot path)
+- AT RISK: V3-§10 Settings flag persistence — `cece` block declared in `AppSettings` interface but missing from `DEFAULT_SETTINGS` and `loadSettings` deep-merge. All 5 current consumers use defensive `?.` + `??` so latent-correct today, but a future consumer reading `$appSettings.cece.someFlag` without optional-chain would throw, and the deep-merge omission means a future cece sub-key would silently overwrite saved settings on load.
+- VIOLATED: 0
+
+**Agent 2 — Drift (1 P1 + 3 P3s, nothing blocking):**
+- F1 (P1) — Legacy classifier dead code (`tier1_embedding.rs`, `tier1_rules.rs`, large parts of `source_definitions.rs`); orchestrator + synthesis + 6 catalogers replaced them in V3-§8 but the modules still compile. Candidate cleanup MIG (~1-2hrs).
+- F2 (P3) — Unused import in `wiring.rs` (residual from V3-§9.C.2 refactor)
+- F3 (P3) — Magic number `0.85` in `reasoning.rs` should be a named const
+- F4 (P3) — Dead `write_suggestions` from earlier draft of synthesis.rs
+- F5 — False alarm (Pending Jobs v1.8/v1.9 exist; agent caught a stale state)
+
+**Agent 3 — Migration path (all 7 scenarios PASS · LOW risk):**
+- First-boot · v2-era upgrade (composite_json column ALTER) · reliability JSON format variations · mid-classification interrupt · Settings flag back-compat (PASS today only because consumers are defensive — strengthened to contractually PASS by the AT RISK fix this commit) · i18n locale switching · rollback to V3-§7
+
+### The AT RISK fix (this commit)
+
+Added 4 lines to `src/lib/libraries/store.ts`:
+- `cece: { reasoningTrailVisibility: 'on_disagreement', backgroundScan: 'off' }` in `DEFAULT_SETTINGS`
+- `cece: { ...DEFAULT_SETTINGS.cece, ...((parsed.cece as Record<string, unknown>) || {}) }` in `loadSettings` spread
+
+No behavior change for current users; contract-strengthening only. Verified all 5 consumer call sites (`+layout.svelte:2088`, `NoteEditor.svelte:182`, `SourceReviewPanel.svelte:256`, `SettingsModal.svelte:1867,1882`) still compile and still use defensive defaults — so this is purely defense-in-depth for future consumers.
+
+### Files in scope this commit
+
+- `src/lib/libraries/store.ts` — AT RISK fix (+11 lines: 5 in DEFAULT_SETTINGS, 6 in loadSettings)
+- `lab/reports/MIG-021v3-V3-§11-FINAL-INTEGRATION-AUDIT.md` — new file consolidating the 3 agent reports
+- `docs/Constellation Orientation & Onboarding v1.95.md` — new file marking "MIG-021v3 ships"
+- `lab/reports/SESSION-LOG-2026-05-11.md` — this entry
+
+### MIG-021v3 cumulative scoreboard
+
+| Phase | Commits | What | Outcome |
+|---|---|---|---|
+| V3-§1 → V3-§7 | many | engine spine (6 catalogers, GBNF, synthesis, IPC, reasoning prompt) | engine internals shipped |
+| V3-§8 | `daeba00` `3f486b4` `191fb8c` `663e31f` `23e50c0` `72629fc` `84cde6f` `c355be1` `b366d97` `cf03670` `787b64d` | orchestrator wired + 6 audit fixes + UX polish + queue filter | Gate 1 PASS |
+| V3-§9 | `4e0981a` `d9dfa60` `ec5527e` `b18a3ee` `bf07ae1` `75807a3` `d5fc070` | vertical-axis activation + dual-axis reliability fix | Gate 2 PASS |
+| V3-§10 | `d44b115` `0054981` `34a96a9` `259c333` `7d6e1a0` `50a67b0` `a4438ac` `4ede8ef` `54276c3` `237871f` | Settings + 15-locale i18n + EN+14 help + EN+14 User Manual | Gate 3 PASS |
+| V3-§11 | this commit | AT RISK fix + audit report + orientation v1.95 | **MIG-021v3 ships** |
+
+**Tests:** 92 cece tests, all PASS. **Gates:** 1 PASS · 2 PASS · 3 PASS · 4 (V3-§11) PASS.
+
+**PJs filed during cascade:** PJ-040 · PJ-041 · PJ-042 · PJ-043.
+
+### What's next
+
+- **MIG-022** — Architect doc responding to:
+  - Gap analysis (`docs/epistemic-content-gap-analysis.md`) — temporal axis, justification/warrant axis, contestation/agent axis, plus the five minor extensions
+  - PJ-040 (UA partial-frontmatter)
+  - PJ-041 / PJ-042 / PJ-043 (engine-output i18n gaps)
+  - F1 from this audit (legacy classifier dead-code cleanup, §0 housekeeping)
+  - Boss decides which pieces to pursue when; the order is decided in the Architect cycle, not pre-committed here.

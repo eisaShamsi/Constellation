@@ -3487,6 +3487,15 @@ export const DEFAULT_SETTINGS: AppSettings = {
 	},
 	leftOfNoteWidth: 280,
 	rightOfNoteWidth: 280,
+	// MIG-021v3 V3-§10.A — CECE user preferences. Defaults preserve
+	// pre-V3-§10 behavior: trail visibility = 'on_disagreement' (the
+	// trust-cal default + r5.3 fall-through behavior); background
+	// scan = 'off' (manual classification scan only). These defaults
+	// are the contract every appSettings.cece consumer reads via `??`.
+	cece: {
+		reasoningTrailVisibility: 'on_disagreement',
+		backgroundScan: 'off',
+	},
 };
 
 /** Shared metadata for the eight typed-link names — used by Settings UI
@@ -3518,6 +3527,12 @@ export async function loadSettings() {
 				// Merge panel placements so existing users get new-panel defaults
 				// automatically when we add a new PanelId in a future release.
 				panelPlacements: { ...DEFAULT_SETTINGS.panelPlacements, ...((parsed.panelPlacements as Record<PanelId, PanelSlot>) || {}) },
+				// MIG-021v3 V3-§11 audit fix — preserve cece sub-keys across
+				// settings round-trip. Without this merge, a user who sets
+				// reasoningTrailVisibility but leaves backgroundScan implicit
+				// would get the saved object overwriting the default for
+				// any newly-added sub-keys in a future release.
+				cece: { ...DEFAULT_SETTINGS.cece, ...((parsed.cece as Record<string, unknown>) || {}) },
 			});
 		}
 	} catch { /* ignore */ }
