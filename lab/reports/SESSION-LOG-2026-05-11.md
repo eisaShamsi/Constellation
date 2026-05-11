@@ -607,3 +607,151 @@ The 92 cece tests from V3-§11 are unaffected (they live in `src-tauri/src/cece/
 ### What's next: §D — PJ-040 partial UA short-circuit
 
 §0 is internal cleanup with no user-visible behavior change; §D is the next phase in the cascade. §D refactors `synthesis.rs::user_authority_short_circuit` to short-circuit per-axis (instead of both-axes-or-nothing), so frontmatter with only `sources:` set surfaces a synthesized vertical primary too. ½ day, 3 new tests, internal change with user-visible effect (Boss-Test Gate 1 fires after §D + §E.1 both land).
+
+---
+
+## MIG-022 §D — PJ-040 partial UA short-circuit shipped (`c072700`)
+
+Refactored `synthesize()` in `src-tauri/src/cece/synthesis.rs` from both-axes-or-nothing UA short-circuit to per-axis dispatch:
+- both axes UA-voiced → `user_authority_short_circuit` (existing label preserved)
+- one axis UA-voiced → `user_authority_partial_short_circuit` (new label)
+- no UA voiced → `weighted_vote` (unchanged)
+
+Old `user_authority_short_circuit` function removed; new `ua_short_circuit_axis(ua, axis)` helper builds a single AxisDecision for a UA-voiced axis. Synthesis composite_reasoning fall-through preserves UA reasoning text wrap when UA voiced anything; falls back to `compose_reasoning` otherwise.
+
+**Test updates (cece test count 92 → 94):**
+- `user_authority_short_circuits` (existing) — already used both-axes UA; passes unchanged
+- `ua_short_circuit_serializes_both_regimes_as_unanimous` (existing, V3-§8.r7) — setup corrected. The V3-§8.r7 test had used UA-on-horizontal-only and asserted vertical regime was Unanimous, which was the bug PJ-040 fixes. Now uses both-axes UA so the test name + intent stay valid.
+- `user_authority_partial_short_circuit_horizontal_only` (new) — UA voices horizontal only; Linguistic + Structural agree on vertical
+- `user_authority_partial_short_circuit_vertical_only` (new) — symmetric
+
+Verification: `cargo check --lib` clean; `cargo test --lib cece::synthesis` 11/11 PASS; `cargo test --lib cece::` 94/94 PASS.
+
+---
+
+## MIG-022 §E.1 — PJ-042 Confidence enum i18n shipped (`6c1c3ae`)
+
+The Confidence enum in `cataloger.rs:37-47` serializes as lowercase string (`"high"` / `"medium"` / `"low"` / `"abstain"`) and the trail rendered it raw via `[{t.self_reported_confidence}]`. Boss-test 2026-05-11 V3-§10 Stage 5 found this gap on Arabic UI screenshot (chrome translated, chip stayed English).
+
+Fix: 4 i18n keys under `cece.confidence.*` + a `confidenceLabel()` frontend helper that wraps `$t()` with raw-enum fallback on missing key. Same shape as the V3-§8.r5.2 `ruleLabel()` helper. Backfilled 13 other locales via Python batch (`lab/scripts/mig022_e1_confidence_i18n.py`).
+
+Boss-Test Gate 1 Stage 0 + Stage 1 (PJ-040 verification on `الخط العربي`) PASS — card now shows BOTH SOURCES (UA pick) AND CONTENT TYPE (synthesized) sections; Strong-majority pill correctly identifies Semantic dissenter.
+
+---
+
+## MIG-022 §E.1.1 — Boss-Test Gate 1 i18n catches (`3a250fb`)
+
+Stage 2 of Gate 1 surfaced two gaps in the Spanish UI screenshot that aren't PJ-041:
+
+1. **Cataloger names** ("Your frontmatter", "Citations & structure", etc.) rendered in English on Spanish UI even though `cece.cataloger.*` keys were populated in all 15 locales. Root cause: `catalogerLabel()` in `SourceReviewPanel.svelte:286-308` was a hardcoded EN/AR switch — every non-en/non-ar locale fell through to the English branch. Fixed by mirroring the `ruleLabel` pattern (`$t()` with EN fallback).
+2. **`sources.review.*` keys** (axis.horizontal/vertical, accept, edit, reject, save, cancel — 7 keys) were present in en+ar but missing from all 13 backfilled locales. Same gap shape as V3-§10.D.2 (settings.classifier — V3-§10.D's backfill swept `cece.*` only). Backfilled via Python batch (`lab/scripts/mig022_e1_1_sources_review_i18n.py`).
+
+Both gaps closed inline rather than filed as PJs because they were quick + well-scoped + complete the i18n loop the Boss was actively testing.
+
+Stage 2.1 re-run confirmed: Spanish UI now shows "Tu frontmatter" / "Citas y estructura" / "Fuentes" / "Aceptar" / "Editar" / "Rechazar" / `[Alta]` correctly. **Boss-Test Gate 1 PASSES fully.**
+
+Two follow-ups filed for §N close-out:
+- **PJ-044** (P3 polish) — right-click "Classify Sources" menu entry missing in NotePane (Eisa used "Classify open note" button workaround; same IPC, just no right-click entry point)
+- **PJ-045** (P3 polish) — composite_reasoning paren dedup (cosmetic; addressed in §E.2.a)
+
+---
+
+## MIG-022 §E.2.a — PJ-041 cataloger reasoning prose i18n: Rust + en/ar + frontend (`894b114`)
+
+Refactored all six catalogers + synthesis to emit a structured `ReasoningTemplate { key, params }` alongside the existing English `reasoning: String` field. Frontend resolves via `$t()` with raw English fallback for legacy composite_json blobs + the Reasoning cataloger (whose prose comes from the LLM, not a `format!()` string).
+
+Closed PJ-045 inline: the UA short-circuit case no longer wraps UA's own reasoning text in "Set by user in frontmatter (...)." — UA's reasoning is shown in its own per-cataloger trail row; the composite summary is now a short, locale-aware "Set by user in frontmatter." (full UA) or axis-specific partial message.
+
+**22 templates total** emitted across the 5 non-Reasoning catalogers + the synthesis composite. Frontend changes: ReasoningTemplate TS type + per-trail/composite reasoning_template fields + `reasoningLabel()` and `compositeReasoningLabel()` helpers + render-site updates. (Note: function param renamed from `t` to `trail` to avoid a Svelte 5 store_invalid_scoped_subscription error — the i18n store is also named `t` and runes mode was conflating them.)
+
+**Test count: 94 → 97 cece tests** (+3 new MIG-022 §E.2 regression tests for template emission).
+
+---
+
+## MIG-022 §E.2.b — Reasoning prose 13-locale backfill (`81fba1a`)
+
+22 `cece.reasoning.*` keys backfilled into all 13 non-en/non-ar locales via 3 parallel translation agents (Latin / mixed-script / RTL+Indic). Per-cataloger reasoning prose now renders in the user's locale across the full 15-locale set. **PJ-041 fully closed.**
+
+Translation strategy per agent reports:
+- Latin (de/es/fr/pt): standard tech-doc vocabulary; "frontmatter" kept untranslated as canonical YAML-block name; FR typographic spacing preserved
+- Mixed-script (ja/ko/zh/ru/tr): native axis idioms (横軸/縦軸 / 수평/수직 / 横向/纵向 / горизонтальный/вертикальный / yatay/dikey); CJK uses native punctuation; CAE preserved as Latin acronym
+- RTL+Indic (fa/he/hi/ur): fa+ur adapted from Arabic (close structural relatives); he+hi translated fresh from English
+
+---
+
+## MIG-022 §E.3.a/b/c — Taxonomy en+ar seed + frontend refactor + sources.evidence backfill (`67c200f`)
+
+Three sub-phases of §E.3 landed together as the seed for the larger 13-locale taxonomy backfill:
+
+**§E.3.a — Taxonomy en + ar i18n seed:** Generated `cece.taxonomy.*` keys for en.json + ar.json by parsing the Rust taxonomy structs and extracting (id, en, ar) tuples. **277 nodes total** (224 vertical + 53 horizontal — more than the Plan's ~30 horizontal estimate; counts include leaf nodes like `testimony/authoritative`, `inference/qiyas`, etc.). Script: `lab/scripts/mig022_e3a_taxonomy_i18n_seed.py` (idempotent).
+
+**§E.3.b — Frontend labelForId-pattern refactor (3 callers):** SourceReviewPanel.svelte::labelForId, PropertyEditor.svelte::taxonomyLabel, TaxonomyTreePicker.svelte (inline @const). Each now tries `$t('cece.taxonomy.<id>')` first; falls back to the Rust struct's en/ar fields per active locale on missing key. TreePicker secondaryLabel left as-is (intentionally bilingual display for the power-user picker UX).
+
+**§E.3.c — sources.evidence.* 13-locale backfill (Stage 2.1 gap):** 11 keys × 13 locales = 143 translations. The 11 `sources.evidence.*` keys (perception, inference, testimony, mass-transmission, comparison, postulation, non-apprehension, memory, innate-disposition, inspiration, revelation) were present in en+ar but missing from 13 backfilled locales. Same shape as V3-§10.D.2 (settings.classifier) and §E.1.1 (sources.review). Script: `lab/scripts/mig022_e3c_sources_evidence_i18n.py`.
+
+---
+
+## MIG-022 §E.3.d — Taxonomy node labels 13-locale backfill (`b9f1ab2`)
+
+277 `cece.taxonomy.*` keys × 13 locales = ~3,600 translations via 3 parallel translation agents (same chunking as §E.2.b). **PJ-043 fully closed.**
+
+Translation strategy per agent reports:
+- Latin (de/es/fr/pt): tradition-specific romanizations preserved (shakk, qiyas/anumana, al-tawatur, sophia, phronēsis, technē, ḥadd, baṣīrah); PT European Portuguese conventions; DE long-form compounds; FR typography preserved. Flagged for review: ratio legis kept verbatim Latin; kashf rendered as "revelación"/"revelação".
+- Mixed-script (ja/ko/zh/ru/tr): TR uses naturalized Sufi/uṣūl forms (Tevatür, İllet kıyası, Şebeh kıyası); JA/ZH use native punctuation; KO+TR keep ASCII per convention; Greek romanizations preserved. Flagged for review: nirvikalpa/savikalpa CJK renderings have multiple competing forms; alaukika leans paranormal in CJK.
+- RTL+Indic (fa/he/hi/ur): fa+ur adapted from Arabic; he+hi translated fresh; HI uses Devanagari for Sanskrit pramāṇa terms (निर्विकल्प, सविकल्प, सामान्यलक्षण, ज्ञानलक्षण, योगज, etc.); HE adopts Latin transliterations for Sanskrit (no native equivalent vocabulary). Flagged for review: HE Sanskrit pramāṇa terms; HE tawatur transliteration.
+
+Pre-existing top-level drift in 5 mixed-script files (classifierScan/taxonomyTreePicker missing, focusPane extra) noted by Agent B but not fixed in this commit — pre-dates §E.3.d and out of scope. Track separately if it matters for §N audit.
+
+---
+
+## MIG-022 §E.3.f — Boss-Test Gate 2 catch: taxonomy ID resolution + dissenter i18n (`05b89a5`)
+
+Boss-Test Gate 2 first-run results: Stage 1 (Spanish) PASS, Stage 3 (German) PASS, Stage 2 (Arabic) surfaced two structural gaps that §E.2 + §E.3 didn't fully close:
+
+1. **Cataloger reasoning prose embeds raw English taxonomy IDs.** The §E.2 templates carry `h_id`/`v_id`/`sources`/`content_type` placeholders whose values come from Rust as RAW IDs (e.g. "testimony/authoritative", "epistemic-states/doubt"). When the Arabic template substituted them in, the result read "أفقي ← testimony/authoritative (الوزن 0.90)" — translated axis word + translated weight word, but English IDs in the middle. Spanish + German had the same gap; Boss flagged on Arabic because the script-mismatch is most visible there.
+   Fix: new `resolveTaxonomyParams()` helper called from both `reasoningLabel()` and `compositeReasoningLabel()`. Walks template params and resolves any taxonomy-flavored key (h_id, v_id — single ID; sources, content_type — comma-joined list) to its localized label via `cece.taxonomy.<id>`. Other params (roots, neighbors) pass through unchanged.
+
+2. **Regime pill dissenter rendered raw cataloger name.** "Strong majority (one dissent) (semantic)" — last paren had the internal English name "semantic". Should be the localized `cece.cataloger.semantic` value.
+   Fix: wrap dissenter render in `catalogerLabel()`.
+
+Both gaps closed in one frontend-only commit. Boss-Test Gate 2 re-run **PASSES on all 3 locales** (German + Spanish + Arabic):
+- "أفقي ← خَبَر الثِّقة (الوزن 0.90)" (Arabic) ✓
+- "horizontal → Testimonio autoritativo (peso 0.90)" (Spanish) ✓
+- "horizontal → Autoritatives Zeugnis (Gewicht 0.90)" (German) ✓
+- Regime pill `(الملاحظات المشابهة)` / `(Notas similares)` / `(Ähnliche Notizen)` ✓
+
+**Boss-Test Gate 2 PASSES fully — §E ships.** Source Review card is now fully localized in all 15 languages.
+
+---
+
+## §E cumulative scoreboard
+
+| Phase | Commit | What | i18n closed |
+|---|---|---|---|
+| §E.1 | `6c1c3ae` | Confidence chip i18n (4 keys × 15 locales) | PJ-042 |
+| §E.1.1 | `3a250fb` | catalogerLabel + sources.review backfill | (Boss-test catch) |
+| §E.2.a | `894b114` | Reasoning prose Rust + en+ar + frontend | (frame for PJ-041) |
+| §E.2.b | `81fba1a` | Reasoning prose 13-locale (22 × 13 = 286) | **PJ-041** |
+| §E.3.a/b/c | `67c200f` | Taxonomy en+ar seed (277 × 2) + frontend refactor + sources.evidence (11 × 13 = 143) | — |
+| §E.3.d | `b9f1ab2` | Taxonomy 13-locale (277 × 13 = 3,601) | **PJ-043** |
+| §E.3.f | `05b89a5` | Taxonomy ID resolution + dissenter i18n | (Boss-test catch) |
+
+**7 commits · ~4,775 translations across 15 locales · 4 PJs closed (PJ-041, PJ-042, PJ-043, PJ-045) · 2 Boss-test catches inline.**
+
+PJs filed during cascade for §N close-out:
+- **PJ-044** (P3) — Right-click "Classify Sources" menu entry missing in NotePane
+
+---
+
+## What's next: §A — YAML metadata extensions
+
+Per the Plan §A + Eisa's D-A1.β + D-A2.β + D-A4.α decisions:
+
+| Sub-phase | What |
+|---|---|
+| §A.1 | Frontmatter schema additions (held_by, domain, function, provenance_civilization, updated_at, ikhtilāf; warrant + warrant_notes parsed but inert per D-A2.β) |
+| §A.2 | Typed-link extension: add `supersedes` as 8th typed-link name (per D-A1.β; `contradicts` already exists; YAML scalars NOT added) |
+| §A.3 | Properties panel UI for the new fields + **full custom `ikhtilāf` widget** (per D-A4.α) |
+| §A.4 | i18n keys + help topic + User Manual chapter |
+
+Boss-Test Gate 3 fires after §A.4. Total §A estimated 4-7 days agent time per Plan.
