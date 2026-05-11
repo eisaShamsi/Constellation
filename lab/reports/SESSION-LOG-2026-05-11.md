@@ -419,3 +419,70 @@ No behavior change for current users; contract-strengthening only. Verified all 
   - PJ-041 / PJ-042 / PJ-043 (engine-output i18n gaps)
   - F1 from this audit (legacy classifier dead-code cleanup, §0 housekeeping)
   - Boss decides which pieces to pursue when; the order is decided in the Architect cycle, not pre-committed here.
+
+---
+
+## MIG-022 Architect filed (this commit)
+
+Phase 1 of `/migration` for the MIG-022 cascade. `lab/reports/MIG-022-ARCHITECT.md` maps the territory across six work clusters and surfaces eight decisions for Eisa to lock before Phase 2 (Plan) opens.
+
+### Source material reviewed
+
+- `docs/epistemic-content-gap-analysis.md` (339 lines, full read) — three structural gaps + five minor extensions + §6.1/§6.2/§6.3 recommendations
+- `docs/Constellation Pending Jobs v1.9.md` — PJ-040, PJ-041, PJ-042, PJ-043 entries
+- `lab/reports/MIG-021v3-V3-§11-FINAL-INTEGRATION-AUDIT.md` — F1 dead-code finding context
+- `src-tauri/src/cece/cataloger.rs` — confirmed `Confidence` enum + serialization
+- `src-tauri/src/cece/synthesis.rs` lines 92-167, 423-433 — confirmed UA short-circuit shape
+- `src-tauri/src/cece/catalogers/{structural,linguistic}.rs` — confirmed `build_reasoning` exists at structural.rs:366 and linguistic.rs:463
+- `src-tauri/src/sources/vertical_taxonomy.rs` — confirmed `VerticalNode { id, en, ar, parent_id, branch }` shape
+- `src-tauri/src/classifier/mod.rs` head — confirmed legacy module declarations still exist; reachability of `classifier_suggest_for_note` flagged as Plan-phase verification
+
+### Six work clusters identified
+
+| Cluster | What | Effort | Risk |
+|---|---|---|---|
+| A | §6.1 YAML metadata extensions | 3-5 days | Low-medium |
+| B | §6.3 Temporal axis via history layer | 2-4 weeks | Medium-high |
+| C | §6.2 Warrant classifier (Sunni uṣūl) | Multi-month research | High |
+| D | PJ-040 fix (partial UA short-circuit) | ½ day | Low |
+| E | PJ-041/042/043 i18n bundle | 1-2 weeks | Low-medium |
+| F | Legacy classifier cleanup | ½ day | Low |
+
+### Recommended MIG-022 scope
+
+Architect §5 recommends MIG-022 = **§0 Cleanup (F) + §A YAML metadata + §D UA fix + §E i18n** = ~3 weeks of agent time, two Boss-test gates. Cluster B deferred to MIG-023; Cluster C deferred to a Constellation Warrant Research workstream.
+
+### Eight decisions surfaced for Eisa
+
+1. D-A1 — `supersedes`/`contradicts` as YAML scalars vs. typed-link names (rec: typed-link names)
+2. D-A2 — Warrant display in Cluster A or all warrant UI deferred (rec: display now)
+3. D-A3 — `taxonomy_version` now or stay implicit (rec: implicit)
+4. D-B3 — Cluster B in MIG-022 or split to MIG-023 (rec: split)
+5. D-C1 — Cluster C in MIG-022 or workstream-deferred (rec: workstream-deferred)
+6. D-E1 — PJ-043 storage: struct fields / per-locale JSON / frontend i18n keys (rec: frontend keys)
+7. D-E2 — Cluster E one bundled MIG or three separate (rec: one MIG with three sub-phases)
+8. D-F1 — Cluster F as MIG-022 §0 or its own mini-MIG (rec: §0 housekeeping)
+
+### Cross-cutting invariants identified (§3)
+
+Ten invariants any MIG-022 work must NOT break: File-over-app, Performance Rule 1 (keystroke), Performance Rule 8 (write-time derivation), Editor Parity, Living Link Architecture, CECE 6-cataloger contract, i18n parity, Reliability data continuity, Migration from CECE v1 universes, No regression on boot/typing latency.
+
+### Plan-phase verification queue (§8)
+
+Five Architect-phase claims that the Plan must verify in code before proceeding:
+
+1. F1 reachability — is `classifier::*` actually unreachable? (head of `mod.rs` shows `#[tauri::command]` declarations still)
+2. `build_reasoning` confirmed in 2/6 catalogers; the other 4 stated by PJ-041 but not yet directly verified
+3. Frontmatter parser path — needs to be located, not just guessed
+4. Properties panel path — needs to be located
+5. Schema migration testing on Eisa's primary 7,600-note universe — perf bar
+
+### Files in scope this commit
+
+- `lab/reports/MIG-022-ARCHITECT.md` — new, ~720 lines
+- `docs/Constellation Orientation & Onboarding v1.96.md` — new, "MIG-022 cascade opens" preamble
+- `lab/reports/SESSION-LOG-2026-05-11.md` — this entry
+
+### What's next
+
+**Eisa locks the eight §6 decisions.** Then Phase 2 (Plan) lays out commits + verification clauses + Boss-test gates. Phase 3 (Build) cascades. Phase 4 (Audit) runs the three-agent integration check.
