@@ -797,6 +797,42 @@
       "low": "निम्न",
       "abstain": "अनुपस्थिति"
     },
+    "reasoning": {
+      "user_authority": {
+        "both": "नोट के फ्रंटमैटर में सेट किया गया (मैन्युअल)। स्रोत: {sources}। सामग्री प्रकार: {content_type}।",
+        "horizontal_only": "नोट के फ्रंटमैटर में सेट किया गया (मैन्युअल)। स्रोत: {sources}।",
+        "vertical_only": "नोट के फ्रंटमैटर में सेट किया गया (मैन्युअल)। सामग्री प्रकार: {content_type}।"
+      },
+      "structural": {
+        "both": "संरचनात्मक पैटर्न मिले: क्षैतिज → {h_id} (वज़न {h_weight}); ऊर्ध्वाधर → {v_id} (वज़न {v_weight})।",
+        "horizontal_only": "संरचनात्मक पैटर्न मिले: क्षैतिज → {h_id} (वज़न {h_weight})।",
+        "vertical_only": "संरचनात्मक पैटर्न मिले: ऊर्ध्वाधर → {v_id} (वज़न {v_weight})।"
+      },
+      "linguistic": {
+        "both": "भाषाई मिलान: क्षैतिज → {h_id} (वज़न {h_weight}); ऊर्ध्वाधर → {v_id} (वज़न {v_weight})।",
+        "both_with_roots": "भाषाई मिलान: क्षैतिज → {h_id} (वज़न {h_weight}); ऊर्ध्वाधर → {v_id} (वज़न {v_weight})। पाई गई अरबी मूल (CAE): {roots}।",
+        "horizontal_only": "भाषाई मिलान: क्षैतिज → {h_id} (वज़न {h_weight})।",
+        "horizontal_only_with_roots": "भाषाई मिलान: क्षैतिज → {h_id} (वज़न {h_weight})। पाई गई अरबी मूल (CAE): {roots}।",
+        "vertical_only": "भाषाई मिलान: ऊर्ध्वाधर → {v_id} (वज़न {v_weight})।",
+        "vertical_only_with_roots": "भाषाई मिलान: ऊर्ध्वाधर → {v_id} (वज़न {v_weight})। पाई गई अरबी मूल (CAE): {roots}।"
+      },
+      "semantic": {
+        "both": "अर्थपूर्ण पड़ोसी सहमति: क्षैतिज → {h_id} (वज़न {h_weight}); ऊर्ध्वाधर → {v_id} (वज़न {v_weight})। शीर्ष पड़ोसी: {neighbors}।",
+        "horizontal_only": "अर्थपूर्ण पड़ोसी सहमति: क्षैतिज → {h_id} (वज़न {h_weight})। शीर्ष पड़ोसी: {neighbors}।",
+        "vertical_only": "अर्थपूर्ण पड़ोसी सहमति: ऊर्ध्वाधर → {v_id} (वज़न {v_weight})। शीर्ष पड़ोसी: {neighbors}।"
+      },
+      "graph": {
+        "both": "टाइप किए गए पड़ोसी सहमति: क्षैतिज → {h_id} (वज़न {h_weight}); ऊर्ध्वाधर → {v_id} (वज़न {v_weight})। पड़ोसी: {neighbors}।",
+        "horizontal_only": "टाइप किए गए पड़ोसी सहमति: क्षैतिज → {h_id} (वज़न {h_weight})। पड़ोसी: {neighbors}।",
+        "vertical_only": "टाइप किए गए पड़ोसी सहमति: ऊर्ध्वाधर → {v_id} (वज़न {v_weight})। पड़ोसी: {neighbors}।"
+      },
+      "compose": {
+        "user_authority_full": "उपयोगकर्ता द्वारा फ्रंटमैटर में सेट किया गया।",
+        "user_authority_partial_horizontal": "स्रोत उपयोगकर्ता द्वारा फ्रंटमैटर में सेट; सामग्री प्रकार वर्गीकरणकर्ता सहमति से संश्लेषित।",
+        "user_authority_partial_vertical": "सामग्री प्रकार उपयोगकर्ता द्वारा फ्रंटमैटर में सेट; स्रोत वर्गीकरणकर्ता सहमति से संश्लेषित।",
+        "weighted_vote": "वर्गीकरणकर्ता सहमति से संश्लेषित।"
+      }
+    },
     "trail": {
       "expand": "▸ यह वर्गीकरण क्यों?",
       "collapse": "▾ तर्क छिपाएं",

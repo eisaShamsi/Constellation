@@ -1955,6 +1955,42 @@
       "low": "Faible",
       "abstain": "Abstention"
     },
+    "reasoning": {
+      "user_authority": {
+        "both": "Défini dans le frontmatter de la note (manuel). Sources : {sources}. Type de contenu : {content_type}.",
+        "horizontal_only": "Défini dans le frontmatter de la note (manuel). Sources : {sources}.",
+        "vertical_only": "Défini dans le frontmatter de la note (manuel). Type de contenu : {content_type}."
+      },
+      "structural": {
+        "both": "Motifs structurels identifiés : horizontal → {h_id} (poids {h_weight}) ; vertical → {v_id} (poids {v_weight}).",
+        "horizontal_only": "Motifs structurels identifiés : horizontal → {h_id} (poids {h_weight}).",
+        "vertical_only": "Motifs structurels identifiés : vertical → {v_id} (poids {v_weight})."
+      },
+      "linguistic": {
+        "both": "Correspondance linguistique : horizontal → {h_id} (poids {h_weight}) ; vertical → {v_id} (poids {v_weight}).",
+        "both_with_roots": "Correspondance linguistique : horizontal → {h_id} (poids {h_weight}) ; vertical → {v_id} (poids {v_weight}). Racines CAE détectées : {roots}.",
+        "horizontal_only": "Correspondance linguistique : horizontal → {h_id} (poids {h_weight}).",
+        "horizontal_only_with_roots": "Correspondance linguistique : horizontal → {h_id} (poids {h_weight}). Racines CAE détectées : {roots}.",
+        "vertical_only": "Correspondance linguistique : vertical → {v_id} (poids {v_weight}).",
+        "vertical_only_with_roots": "Correspondance linguistique : vertical → {v_id} (poids {v_weight}). Racines CAE détectées : {roots}."
+      },
+      "semantic": {
+        "both": "Consensus des voisins sémantiques : horizontal → {h_id} (poids {h_weight}) ; vertical → {v_id} (poids {v_weight}). Voisins principaux : {neighbors}.",
+        "horizontal_only": "Consensus des voisins sémantiques : horizontal → {h_id} (poids {h_weight}). Voisins principaux : {neighbors}.",
+        "vertical_only": "Consensus des voisins sémantiques : vertical → {v_id} (poids {v_weight}). Voisins principaux : {neighbors}."
+      },
+      "graph": {
+        "both": "Consensus des voisins typés : horizontal → {h_id} (poids {h_weight}) ; vertical → {v_id} (poids {v_weight}). Voisins : {neighbors}.",
+        "horizontal_only": "Consensus des voisins typés : horizontal → {h_id} (poids {h_weight}). Voisins : {neighbors}.",
+        "vertical_only": "Consensus des voisins typés : vertical → {v_id} (poids {v_weight}). Voisins : {neighbors}."
+      },
+      "compose": {
+        "user_authority_full": "Défini par l'utilisateur dans le frontmatter.",
+        "user_authority_partial_horizontal": "Sources définies par l'utilisateur dans le frontmatter ; type de contenu synthétisé à partir du consensus des catalogueurs.",
+        "user_authority_partial_vertical": "Type de contenu défini par l'utilisateur dans le frontmatter ; sources synthétisées à partir du consensus des catalogueurs.",
+        "weighted_vote": "Synthétisé à partir du consensus des catalogueurs."
+      }
+    },
     "trail": {
       "expand": "▸ Pourquoi cette classification ?",
       "collapse": "▾ Masquer le raisonnement",

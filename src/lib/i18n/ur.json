@@ -1956,6 +1956,42 @@
       "low": "کم",
       "abstain": "اجتناب"
     },
+    "reasoning": {
+      "user_authority": {
+        "both": "نوٹ کے فرنٹ میٹر میں مقرر (دستی طور پر)۔ ذرائع: {sources}۔ مواد کی قسم: {content_type}۔",
+        "horizontal_only": "نوٹ کے فرنٹ میٹر میں مقرر (دستی طور پر)۔ ذرائع: {sources}۔",
+        "vertical_only": "نوٹ کے فرنٹ میٹر میں مقرر (دستی طور پر)۔ مواد کی قسم: {content_type}۔"
+      },
+      "structural": {
+        "both": "ساختی نمونے مماثل: افقی ← {h_id} (وزن {h_weight})؛ عمودی ← {v_id} (وزن {v_weight})۔",
+        "horizontal_only": "ساختی نمونے مماثل: افقی ← {h_id} (وزن {h_weight})۔",
+        "vertical_only": "ساختی نمونے مماثل: عمودی ← {v_id} (وزن {v_weight})۔"
+      },
+      "linguistic": {
+        "both": "لسانی مطابقت: افقی ← {h_id} (وزن {h_weight})؛ عمودی ← {v_id} (وزن {v_weight})۔",
+        "both_with_roots": "لسانی مطابقت: افقی ← {h_id} (وزن {h_weight})؛ عمودی ← {v_id} (وزن {v_weight})۔ پائی گئی عربی جڑیں (CAE): {roots}۔",
+        "horizontal_only": "لسانی مطابقت: افقی ← {h_id} (وزن {h_weight})۔",
+        "horizontal_only_with_roots": "لسانی مطابقت: افقی ← {h_id} (وزن {h_weight})۔ پائی گئی عربی جڑیں (CAE): {roots}۔",
+        "vertical_only": "لسانی مطابقت: عمودی ← {v_id} (وزن {v_weight})۔",
+        "vertical_only_with_roots": "لسانی مطابقت: عمودی ← {v_id} (وزن {v_weight})۔ پائی گئی عربی جڑیں (CAE): {roots}۔"
+      },
+      "semantic": {
+        "both": "معنوی پڑوسیوں کا اجماع: افقی ← {h_id} (وزن {h_weight})؛ عمودی ← {v_id} (وزن {v_weight})۔ سرفہرست پڑوسی: {neighbors}۔",
+        "horizontal_only": "معنوی پڑوسیوں کا اجماع: افقی ← {h_id} (وزن {h_weight})۔ سرفہرست پڑوسی: {neighbors}۔",
+        "vertical_only": "معنوی پڑوسیوں کا اجماع: عمودی ← {v_id} (وزن {v_weight})۔ سرفہرست پڑوسی: {neighbors}۔"
+      },
+      "graph": {
+        "both": "نوع دار پڑوسیوں کا اجماع: افقی ← {h_id} (وزن {h_weight})؛ عمودی ← {v_id} (وزن {v_weight})۔ پڑوسی: {neighbors}۔",
+        "horizontal_only": "نوع دار پڑوسیوں کا اجماع: افقی ← {h_id} (وزن {h_weight})۔ پڑوسی: {neighbors}۔",
+        "vertical_only": "نوع دار پڑوسیوں کا اجماع: عمودی ← {v_id} (وزن {v_weight})۔ پڑوسی: {neighbors}۔"
+      },
+      "compose": {
+        "user_authority_full": "صارف کی جانب سے فرنٹ میٹر میں مقرر۔",
+        "user_authority_partial_horizontal": "ذرائع صارف کی جانب سے فرنٹ میٹر میں مقرر؛ مواد کی قسم فہرست سازوں کے اجماع سے ترکیب پائی۔",
+        "user_authority_partial_vertical": "مواد کی قسم صارف کی جانب سے فرنٹ میٹر میں مقرر؛ ذرائع فہرست سازوں کے اجماع سے ترکیب پائے۔",
+        "weighted_vote": "فہرست سازوں کے اجماع سے ترکیب پایا۔"
+      }
+    },
     "trail": {
       "expand": "▸ یہ درجہ بندی کیوں؟",
       "collapse": "▾ استدلال چھپائیں",

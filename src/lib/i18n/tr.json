@@ -797,6 +797,42 @@
       "low": "Düşük",
       "abstain": "Çekimser"
     },
+    "reasoning": {
+      "user_authority": {
+        "both": "Not frontmatter'ında belirlendi (manuel). Kaynaklar: {sources}. İçerik türü: {content_type}.",
+        "horizontal_only": "Not frontmatter'ında belirlendi (manuel). Kaynaklar: {sources}.",
+        "vertical_only": "Not frontmatter'ında belirlendi (manuel). İçerik türü: {content_type}."
+      },
+      "structural": {
+        "both": "Yapısal kalıplar eşleşti: yatay → {h_id} (ağırlık {h_weight}); dikey → {v_id} (ağırlık {v_weight}).",
+        "horizontal_only": "Yapısal kalıplar eşleşti: yatay → {h_id} (ağırlık {h_weight}).",
+        "vertical_only": "Yapısal kalıplar eşleşti: dikey → {v_id} (ağırlık {v_weight})."
+      },
+      "linguistic": {
+        "both": "Dilsel eşleşme: yatay → {h_id} (ağırlık {h_weight}); dikey → {v_id} (ağırlık {v_weight}).",
+        "both_with_roots": "Dilsel eşleşme: yatay → {h_id} (ağırlık {h_weight}); dikey → {v_id} (ağırlık {v_weight}). Tespit edilen CAE kökleri: {roots}.",
+        "horizontal_only": "Dilsel eşleşme: yatay → {h_id} (ağırlık {h_weight}).",
+        "horizontal_only_with_roots": "Dilsel eşleşme: yatay → {h_id} (ağırlık {h_weight}). Tespit edilen CAE kökleri: {roots}.",
+        "vertical_only": "Dilsel eşleşme: dikey → {v_id} (ağırlık {v_weight}).",
+        "vertical_only_with_roots": "Dilsel eşleşme: dikey → {v_id} (ağırlık {v_weight}). Tespit edilen CAE kökleri: {roots}."
+      },
+      "semantic": {
+        "both": "Anlamsal komşu uzlaşısı: yatay → {h_id} (ağırlık {h_weight}); dikey → {v_id} (ağırlık {v_weight}). En yakın komşular: {neighbors}.",
+        "horizontal_only": "Anlamsal komşu uzlaşısı: yatay → {h_id} (ağırlık {h_weight}). En yakın komşular: {neighbors}.",
+        "vertical_only": "Anlamsal komşu uzlaşısı: dikey → {v_id} (ağırlık {v_weight}). En yakın komşular: {neighbors}."
+      },
+      "graph": {
+        "both": "Türlü komşu uzlaşısı: yatay → {h_id} (ağırlık {h_weight}); dikey → {v_id} (ağırlık {v_weight}). Komşular: {neighbors}.",
+        "horizontal_only": "Türlü komşu uzlaşısı: yatay → {h_id} (ağırlık {h_weight}). Komşular: {neighbors}.",
+        "vertical_only": "Türlü komşu uzlaşısı: dikey → {v_id} (ağırlık {v_weight}). Komşular: {neighbors}."
+      },
+      "compose": {
+        "user_authority_full": "Kullanıcı tarafından frontmatter'da belirlendi.",
+        "user_authority_partial_horizontal": "Kaynaklar kullanıcı tarafından frontmatter'da belirlendi; içerik türü kataloglayıcı uzlaşısından sentezlendi.",
+        "user_authority_partial_vertical": "İçerik türü kullanıcı tarafından frontmatter'da belirlendi; kaynaklar kataloglayıcı uzlaşısından sentezlendi.",
+        "weighted_vote": "Kataloglayıcı uzlaşısından sentezlendi."
+      }
+    },
     "trail": {
       "expand": "▸ Bu sınıflandırma neden?",
       "collapse": "▾ Gerekçeyi gizle",

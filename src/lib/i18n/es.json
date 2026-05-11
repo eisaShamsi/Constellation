@@ -1955,6 +1955,42 @@
       "low": "Baja",
       "abstain": "Abstención"
     },
+    "reasoning": {
+      "user_authority": {
+        "both": "Establecido en el frontmatter de la nota (manual). Fuentes: {sources}. Tipo de contenido: {content_type}.",
+        "horizontal_only": "Establecido en el frontmatter de la nota (manual). Fuentes: {sources}.",
+        "vertical_only": "Establecido en el frontmatter de la nota (manual). Tipo de contenido: {content_type}."
+      },
+      "structural": {
+        "both": "Patrones estructurales coincidentes: horizontal → {h_id} (peso {h_weight}); vertical → {v_id} (peso {v_weight}).",
+        "horizontal_only": "Patrones estructurales coincidentes: horizontal → {h_id} (peso {h_weight}).",
+        "vertical_only": "Patrones estructurales coincidentes: vertical → {v_id} (peso {v_weight})."
+      },
+      "linguistic": {
+        "both": "Coincidencia lingüística: horizontal → {h_id} (peso {h_weight}); vertical → {v_id} (peso {v_weight}).",
+        "both_with_roots": "Coincidencia lingüística: horizontal → {h_id} (peso {h_weight}); vertical → {v_id} (peso {v_weight}). Raíces CAE detectadas: {roots}.",
+        "horizontal_only": "Coincidencia lingüística: horizontal → {h_id} (peso {h_weight}).",
+        "horizontal_only_with_roots": "Coincidencia lingüística: horizontal → {h_id} (peso {h_weight}). Raíces CAE detectadas: {roots}.",
+        "vertical_only": "Coincidencia lingüística: vertical → {v_id} (peso {v_weight}).",
+        "vertical_only_with_roots": "Coincidencia lingüística: vertical → {v_id} (peso {v_weight}). Raíces CAE detectadas: {roots}."
+      },
+      "semantic": {
+        "both": "Consenso de vecinos semánticos: horizontal → {h_id} (peso {h_weight}); vertical → {v_id} (peso {v_weight}). Vecinos principales: {neighbors}.",
+        "horizontal_only": "Consenso de vecinos semánticos: horizontal → {h_id} (peso {h_weight}). Vecinos principales: {neighbors}.",
+        "vertical_only": "Consenso de vecinos semánticos: vertical → {v_id} (peso {v_weight}). Vecinos principales: {neighbors}."
+      },
+      "graph": {
+        "both": "Consenso de vecinos tipados: horizontal → {h_id} (peso {h_weight}); vertical → {v_id} (peso {v_weight}). Vecinos: {neighbors}.",
+        "horizontal_only": "Consenso de vecinos tipados: horizontal → {h_id} (peso {h_weight}). Vecinos: {neighbors}.",
+        "vertical_only": "Consenso de vecinos tipados: vertical → {v_id} (peso {v_weight}). Vecinos: {neighbors}."
+      },
+      "compose": {
+        "user_authority_full": "Establecido por el usuario en el frontmatter.",
+        "user_authority_partial_horizontal": "Fuentes establecidas por el usuario en el frontmatter; tipo de contenido sintetizado a partir del consenso de catalogadores.",
+        "user_authority_partial_vertical": "Tipo de contenido establecido por el usuario en el frontmatter; fuentes sintetizadas a partir del consenso de catalogadores.",
+        "weighted_vote": "Sintetizado a partir del consenso de catalogadores."
+      }
+    },
     "trail": {
       "expand": "▸ ¿Por qué esta clasificación?",
       "collapse": "▾ Ocultar razonamiento",

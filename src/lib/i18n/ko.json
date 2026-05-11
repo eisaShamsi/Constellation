@@ -797,6 +797,42 @@
       "low": "낮음",
       "abstain": "기권"
     },
+    "reasoning": {
+      "user_authority": {
+        "both": "노트 프론트매터에서 설정(수동). 출처: {sources}. 콘텐츠 유형: {content_type}.",
+        "horizontal_only": "노트 프론트매터에서 설정(수동). 출처: {sources}.",
+        "vertical_only": "노트 프론트매터에서 설정(수동). 콘텐츠 유형: {content_type}."
+      },
+      "structural": {
+        "both": "구조적 패턴 일치: 수평 → {h_id} (가중치 {h_weight}); 수직 → {v_id} (가중치 {v_weight}).",
+        "horizontal_only": "구조적 패턴 일치: 수평 → {h_id} (가중치 {h_weight}).",
+        "vertical_only": "구조적 패턴 일치: 수직 → {v_id} (가중치 {v_weight})."
+      },
+      "linguistic": {
+        "both": "언어적 일치: 수평 → {h_id} (가중치 {h_weight}); 수직 → {v_id} (가중치 {v_weight}).",
+        "both_with_roots": "언어적 일치: 수평 → {h_id} (가중치 {h_weight}); 수직 → {v_id} (가중치 {v_weight}). 발견된 CAE 어근: {roots}.",
+        "horizontal_only": "언어적 일치: 수평 → {h_id} (가중치 {h_weight}).",
+        "horizontal_only_with_roots": "언어적 일치: 수평 → {h_id} (가중치 {h_weight}). 발견된 CAE 어근: {roots}.",
+        "vertical_only": "언어적 일치: 수직 → {v_id} (가중치 {v_weight}).",
+        "vertical_only_with_roots": "언어적 일치: 수직 → {v_id} (가중치 {v_weight}). 발견된 CAE 어근: {roots}."
+      },
+      "semantic": {
+        "both": "의미적 이웃 합의: 수평 → {h_id} (가중치 {h_weight}); 수직 → {v_id} (가중치 {v_weight}). 상위 이웃: {neighbors}.",
+        "horizontal_only": "의미적 이웃 합의: 수평 → {h_id} (가중치 {h_weight}). 상위 이웃: {neighbors}.",
+        "vertical_only": "의미적 이웃 합의: 수직 → {v_id} (가중치 {v_weight}). 상위 이웃: {neighbors}."
+      },
+      "graph": {
+        "both": "유형 지정 이웃 합의: 수평 → {h_id} (가중치 {h_weight}); 수직 → {v_id} (가중치 {v_weight}). 이웃: {neighbors}.",
+        "horizontal_only": "유형 지정 이웃 합의: 수평 → {h_id} (가중치 {h_weight}). 이웃: {neighbors}.",
+        "vertical_only": "유형 지정 이웃 합의: 수직 → {v_id} (가중치 {v_weight}). 이웃: {neighbors}."
+      },
+      "compose": {
+        "user_authority_full": "사용자가 프론트매터에서 설정함.",
+        "user_authority_partial_horizontal": "출처는 사용자가 프론트매터에서 설정; 콘텐츠 유형은 분류기 합의로부터 합성됨.",
+        "user_authority_partial_vertical": "콘텐츠 유형은 사용자가 프론트매터에서 설정; 출처는 분류기 합의로부터 합성됨.",
+        "weighted_vote": "분류기 합의로부터 합성됨."
+      }
+    },
     "trail": {
       "expand": "▸ 왜 이 분류인가?",
       "collapse": "▾ 추론 숨기기",

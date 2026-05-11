@@ -1956,6 +1956,42 @@
       "low": "پایین",
       "abstain": "امتناع"
     },
+    "reasoning": {
+      "user_authority": {
+        "both": "تنظیم‌شده در فرامتن یادداشت (دستی). منابع: {sources}. نوع محتوا: {content_type}.",
+        "horizontal_only": "تنظیم‌شده در فرامتن یادداشت (دستی). منابع: {sources}.",
+        "vertical_only": "تنظیم‌شده در فرامتن یادداشت (دستی). نوع محتوا: {content_type}."
+      },
+      "structural": {
+        "both": "الگوهای ساختاری منطبق: افقی ← {h_id} (وزن {h_weight})؛ عمودی ← {v_id} (وزن {v_weight}).",
+        "horizontal_only": "الگوهای ساختاری منطبق: افقی ← {h_id} (وزن {h_weight}).",
+        "vertical_only": "الگوهای ساختاری منطبق: عمودی ← {v_id} (وزن {v_weight})."
+      },
+      "linguistic": {
+        "both": "تطابق زبانی: افقی ← {h_id} (وزن {h_weight})؛ عمودی ← {v_id} (وزن {v_weight}).",
+        "both_with_roots": "تطابق زبانی: افقی ← {h_id} (وزن {h_weight})؛ عمودی ← {v_id} (وزن {v_weight}). ریشه‌های عربی (CAE): {roots}.",
+        "horizontal_only": "تطابق زبانی: افقی ← {h_id} (وزن {h_weight}).",
+        "horizontal_only_with_roots": "تطابق زبانی: افقی ← {h_id} (وزن {h_weight}). ریشه‌های عربی (CAE): {roots}.",
+        "vertical_only": "تطابق زبانی: عمودی ← {v_id} (وزن {v_weight}).",
+        "vertical_only_with_roots": "تطابق زبانی: عمودی ← {v_id} (وزن {v_weight}). ریشه‌های عربی (CAE): {roots}."
+      },
+      "semantic": {
+        "both": "اجماع همسایگان معنایی: افقی ← {h_id} (وزن {h_weight})؛ عمودی ← {v_id} (وزن {v_weight}). برترین همسایگان: {neighbors}.",
+        "horizontal_only": "اجماع همسایگان معنایی: افقی ← {h_id} (وزن {h_weight}). برترین همسایگان: {neighbors}.",
+        "vertical_only": "اجماع همسایگان معنایی: عمودی ← {v_id} (وزن {v_weight}). برترین همسایگان: {neighbors}."
+      },
+      "graph": {
+        "both": "اجماع همسایگان با پیوند نوع‌دار: افقی ← {h_id} (وزن {h_weight})؛ عمودی ← {v_id} (وزن {v_weight}). همسایگان: {neighbors}.",
+        "horizontal_only": "اجماع همسایگان با پیوند نوع‌دار: افقی ← {h_id} (وزن {h_weight}). همسایگان: {neighbors}.",
+        "vertical_only": "اجماع همسایگان با پیوند نوع‌دار: عمودی ← {v_id} (وزن {v_weight}). همسایگان: {neighbors}."
+      },
+      "compose": {
+        "user_authority_full": "توسط کاربر در فرامتن تنظیم شده است.",
+        "user_authority_partial_horizontal": "منابع توسط کاربر در فرامتن تنظیم شده‌اند؛ نوع محتوا از اجماع فهرست‌گذاران ترکیب شده است.",
+        "user_authority_partial_vertical": "نوع محتوا توسط کاربر در فرامتن تنظیم شده است؛ منابع از اجماع فهرست‌گذاران ترکیب شده‌اند.",
+        "weighted_vote": "ترکیب‌شده از اجماع فهرست‌گذاران."
+      }
+    },
     "trail": {
       "expand": "▸ چرا این طبقه‌بندی؟",
       "collapse": "▾ پنهان‌کردن استدلال",

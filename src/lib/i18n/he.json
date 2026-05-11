@@ -1956,6 +1956,42 @@
       "low": "נמוך",
       "abstain": "הימנעות"
     },
+    "reasoning": {
+      "user_authority": {
+        "both": "מוגדר ב-Frontmatter של הפתק (ידני). מקורות: {sources}. סוג תוכן: {content_type}.",
+        "horizontal_only": "מוגדר ב-Frontmatter של הפתק (ידני). מקורות: {sources}.",
+        "vertical_only": "מוגדר ב-Frontmatter של הפתק (ידני). סוג תוכן: {content_type}."
+      },
+      "structural": {
+        "both": "תבניות מבניות תואמות: אופקי → {h_id} (משקל {h_weight}); אנכי → {v_id} (משקל {v_weight}).",
+        "horizontal_only": "תבניות מבניות תואמות: אופקי → {h_id} (משקל {h_weight}).",
+        "vertical_only": "תבניות מבניות תואמות: אנכי → {v_id} (משקל {v_weight})."
+      },
+      "linguistic": {
+        "both": "התאמה לשונית: אופקי → {h_id} (משקל {h_weight}); אנכי → {v_id} (משקל {v_weight}).",
+        "both_with_roots": "התאמה לשונית: אופקי → {h_id} (משקל {h_weight}); אנכי → {v_id} (משקל {v_weight}). שורשים ערביים שזוהו (CAE): {roots}.",
+        "horizontal_only": "התאמה לשונית: אופקי → {h_id} (משקל {h_weight}).",
+        "horizontal_only_with_roots": "התאמה לשונית: אופקי → {h_id} (משקל {h_weight}). שורשים ערביים שזוהו (CAE): {roots}.",
+        "vertical_only": "התאמה לשונית: אנכי → {v_id} (משקל {v_weight}).",
+        "vertical_only_with_roots": "התאמה לשונית: אנכי → {v_id} (משקל {v_weight}). שורשים ערביים שזוהו (CAE): {roots}."
+      },
+      "semantic": {
+        "both": "קונצנזוס שכנים סמנטיים: אופקי → {h_id} (משקל {h_weight}); אנכי → {v_id} (משקל {v_weight}). שכנים מובילים: {neighbors}.",
+        "horizontal_only": "קונצנזוס שכנים סמנטיים: אופקי → {h_id} (משקל {h_weight}). שכנים מובילים: {neighbors}.",
+        "vertical_only": "קונצנזוס שכנים סמנטיים: אנכי → {v_id} (משקל {v_weight}). שכנים מובילים: {neighbors}."
+      },
+      "graph": {
+        "both": "קונצנזוס שכנים מקושרים בקישורים מתויגים: אופקי → {h_id} (משקל {h_weight}); אנכי → {v_id} (משקל {v_weight}). שכנים: {neighbors}.",
+        "horizontal_only": "קונצנזוס שכנים מקושרים בקישורים מתויגים: אופקי → {h_id} (משקל {h_weight}). שכנים: {neighbors}.",
+        "vertical_only": "קונצנזוס שכנים מקושרים בקישורים מתויגים: אנכי → {v_id} (משקל {v_weight}). שכנים: {neighbors}."
+      },
+      "compose": {
+        "user_authority_full": "הוגדר על ידי המשתמש ב-Frontmatter.",
+        "user_authority_partial_horizontal": "המקורות הוגדרו על ידי המשתמש ב-Frontmatter; סוג התוכן סונתז מקונצנזוס המקטלגים.",
+        "user_authority_partial_vertical": "סוג התוכן הוגדר על ידי המשתמש ב-Frontmatter; המקורות סונתזו מקונצנזוס המקטלגים.",
+        "weighted_vote": "סונתז מקונצנזוס המקטלגים."
+      }
+    },
     "trail": {
       "expand": "▸ למה הסיווג הזה?",
       "collapse": "▾ הסתר נימוקים",

@@ -797,6 +797,42 @@
       "low": "Низкая",
       "abstain": "Воздержание"
     },
+    "reasoning": {
+      "user_authority": {
+        "both": "Задано во frontmatter заметки (вручную). Источники: {sources}. Тип содержимого: {content_type}.",
+        "horizontal_only": "Задано во frontmatter заметки (вручную). Источники: {sources}.",
+        "vertical_only": "Задано во frontmatter заметки (вручную). Тип содержимого: {content_type}."
+      },
+      "structural": {
+        "both": "Совпали структурные шаблоны: горизонтальный → {h_id} (вес {h_weight}); вертикальный → {v_id} (вес {v_weight}).",
+        "horizontal_only": "Совпали структурные шаблоны: горизонтальный → {h_id} (вес {h_weight}).",
+        "vertical_only": "Совпали структурные шаблоны: вертикальный → {v_id} (вес {v_weight})."
+      },
+      "linguistic": {
+        "both": "Языковое совпадение: горизонтальный → {h_id} (вес {h_weight}); вертикальный → {v_id} (вес {v_weight}).",
+        "both_with_roots": "Языковое совпадение: горизонтальный → {h_id} (вес {h_weight}); вертикальный → {v_id} (вес {v_weight}). Обнаружены корни CAE: {roots}.",
+        "horizontal_only": "Языковое совпадение: горизонтальный → {h_id} (вес {h_weight}).",
+        "horizontal_only_with_roots": "Языковое совпадение: горизонтальный → {h_id} (вес {h_weight}). Обнаружены корни CAE: {roots}.",
+        "vertical_only": "Языковое совпадение: вертикальный → {v_id} (вес {v_weight}).",
+        "vertical_only_with_roots": "Языковое совпадение: вертикальный → {v_id} (вес {v_weight}). Обнаружены корни CAE: {roots}."
+      },
+      "semantic": {
+        "both": "Консенсус семантических соседей: горизонтальный → {h_id} (вес {h_weight}); вертикальный → {v_id} (вес {v_weight}). Ближайшие соседи: {neighbors}.",
+        "horizontal_only": "Консенсус семантических соседей: горизонтальный → {h_id} (вес {h_weight}). Ближайшие соседи: {neighbors}.",
+        "vertical_only": "Консенсус семантических соседей: вертикальный → {v_id} (вес {v_weight}). Ближайшие соседи: {neighbors}."
+      },
+      "graph": {
+        "both": "Консенсус типизированных соседей: горизонтальный → {h_id} (вес {h_weight}); вертикальный → {v_id} (вес {v_weight}). Соседи: {neighbors}.",
+        "horizontal_only": "Консенсус типизированных соседей: горизонтальный → {h_id} (вес {h_weight}). Соседи: {neighbors}.",
+        "vertical_only": "Консенсус типизированных соседей: вертикальный → {v_id} (вес {v_weight}). Соседи: {neighbors}."
+      },
+      "compose": {
+        "user_authority_full": "Задано пользователем во frontmatter.",
+        "user_authority_partial_horizontal": "Источники заданы пользователем во frontmatter; тип содержимого синтезирован из консенсуса каталогизаторов.",
+        "user_authority_partial_vertical": "Тип содержимого задан пользователем во frontmatter; источники синтезированы из консенсуса каталогизаторов.",
+        "weighted_vote": "Синтезировано из консенсуса каталогизаторов."
+      }
+    },
     "trail": {
       "expand": "▸ Почему такая классификация?",
       "collapse": "▾ Скрыть рассуждения",

@@ -797,6 +797,42 @@
       "low": "低",
       "abstain": "弃权"
     },
+    "reasoning": {
+      "user_authority": {
+        "both": "在笔记 frontmatter 中设置(手动)。来源:{sources}。内容类型:{content_type}。",
+        "horizontal_only": "在笔记 frontmatter 中设置(手动)。来源:{sources}。",
+        "vertical_only": "在笔记 frontmatter 中设置(手动)。内容类型:{content_type}。"
+      },
+      "structural": {
+        "both": "结构模式匹配:横向 → {h_id}(权重 {h_weight});纵向 → {v_id}(权重 {v_weight})。",
+        "horizontal_only": "结构模式匹配:横向 → {h_id}(权重 {h_weight})。",
+        "vertical_only": "结构模式匹配:纵向 → {v_id}(权重 {v_weight})。"
+      },
+      "linguistic": {
+        "both": "语言匹配:横向 → {h_id}(权重 {h_weight});纵向 → {v_id}(权重 {v_weight})。",
+        "both_with_roots": "语言匹配:横向 → {h_id}(权重 {h_weight});纵向 → {v_id}(权重 {v_weight})。识别到的 CAE 词根:{roots}。",
+        "horizontal_only": "语言匹配:横向 → {h_id}(权重 {h_weight})。",
+        "horizontal_only_with_roots": "语言匹配:横向 → {h_id}(权重 {h_weight})。识别到的 CAE 词根:{roots}。",
+        "vertical_only": "语言匹配:纵向 → {v_id}(权重 {v_weight})。",
+        "vertical_only_with_roots": "语言匹配:纵向 → {v_id}(权重 {v_weight})。识别到的 CAE 词根:{roots}。"
+      },
+      "semantic": {
+        "both": "语义近邻共识:横向 → {h_id}(权重 {h_weight});纵向 → {v_id}(权重 {v_weight})。主要近邻:{neighbors}。",
+        "horizontal_only": "语义近邻共识:横向 → {h_id}(权重 {h_weight})。主要近邻:{neighbors}。",
+        "vertical_only": "语义近邻共识:纵向 → {v_id}(权重 {v_weight})。主要近邻:{neighbors}。"
+      },
+      "graph": {
+        "both": "类型化近邻共识:横向 → {h_id}(权重 {h_weight});纵向 → {v_id}(权重 {v_weight})。近邻:{neighbors}。",
+        "horizontal_only": "类型化近邻共识:横向 → {h_id}(权重 {h_weight})。近邻:{neighbors}。",
+        "vertical_only": "类型化近邻共识:纵向 → {v_id}(权重 {v_weight})。近邻:{neighbors}。"
+      },
+      "compose": {
+        "user_authority_full": "由用户在 frontmatter 中设置。",
+        "user_authority_partial_horizontal": "来源由用户在 frontmatter 中设置;内容类型从分类器共识合成。",
+        "user_authority_partial_vertical": "内容类型由用户在 frontmatter 中设置;来源从分类器共识合成。",
+        "weighted_vote": "从分类器共识合成。"
+      }
+    },
     "trail": {
       "expand": "▸ 为什么是这个分类?",
       "collapse": "▾ 隐藏推理",

@@ -797,6 +797,42 @@
       "low": "低",
       "abstain": "棄権"
     },
+    "reasoning": {
+      "user_authority": {
+        "both": "ノートのフロントマターで設定(手動)。ソース: {sources}。コンテンツ種別: {content_type}。",
+        "horizontal_only": "ノートのフロントマターで設定(手動)。ソース: {sources}。",
+        "vertical_only": "ノートのフロントマターで設定(手動)。コンテンツ種別: {content_type}。"
+      },
+      "structural": {
+        "both": "構造パターンが一致: 横軸 → {h_id}(重み {h_weight});縦軸 → {v_id}(重み {v_weight})。",
+        "horizontal_only": "構造パターンが一致: 横軸 → {h_id}(重み {h_weight})。",
+        "vertical_only": "構造パターンが一致: 縦軸 → {v_id}(重み {v_weight})。"
+      },
+      "linguistic": {
+        "both": "言語的一致: 横軸 → {h_id}(重み {h_weight});縦軸 → {v_id}(重み {v_weight})。",
+        "both_with_roots": "言語的一致: 横軸 → {h_id}(重み {h_weight});縦軸 → {v_id}(重み {v_weight})。検出された CAE 語根: {roots}。",
+        "horizontal_only": "言語的一致: 横軸 → {h_id}(重み {h_weight})。",
+        "horizontal_only_with_roots": "言語的一致: 横軸 → {h_id}(重み {h_weight})。検出された CAE 語根: {roots}。",
+        "vertical_only": "言語的一致: 縦軸 → {v_id}(重み {v_weight})。",
+        "vertical_only_with_roots": "言語的一致: 縦軸 → {v_id}(重み {v_weight})。検出された CAE 語根: {roots}。"
+      },
+      "semantic": {
+        "both": "意味的近傍コンセンサス: 横軸 → {h_id}(重み {h_weight});縦軸 → {v_id}(重み {v_weight})。上位の近傍: {neighbors}。",
+        "horizontal_only": "意味的近傍コンセンサス: 横軸 → {h_id}(重み {h_weight})。上位の近傍: {neighbors}。",
+        "vertical_only": "意味的近傍コンセンサス: 縦軸 → {v_id}(重み {v_weight})。上位の近傍: {neighbors}。"
+      },
+      "graph": {
+        "both": "型付き近傍コンセンサス: 横軸 → {h_id}(重み {h_weight});縦軸 → {v_id}(重み {v_weight})。近傍: {neighbors}。",
+        "horizontal_only": "型付き近傍コンセンサス: 横軸 → {h_id}(重み {h_weight})。近傍: {neighbors}。",
+        "vertical_only": "型付き近傍コンセンサス: 縦軸 → {v_id}(重み {v_weight})。近傍: {neighbors}。"
+      },
+      "compose": {
+        "user_authority_full": "ユーザーがフロントマターで設定。",
+        "user_authority_partial_horizontal": "ソースはユーザーがフロントマターで設定;コンテンツ種別は分類器コンセンサスから合成。",
+        "user_authority_partial_vertical": "コンテンツ種別はユーザーがフロントマターで設定;ソースは分類器コンセンサスから合成。",
+        "weighted_vote": "分類器コンセンサスから合成。"
+      }
+    },
     "trail": {
       "expand": "▸ なぜこの分類なのか?",
       "collapse": "▾ 推論を非表示",

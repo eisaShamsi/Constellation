@@ -1955,6 +1955,42 @@
       "low": "Niedrig",
       "abstain": "Enthaltung"
     },
+    "reasoning": {
+      "user_authority": {
+        "both": "Im Frontmatter der Notiz festgelegt (manuell). Quellen: {sources}. Inhaltstyp: {content_type}.",
+        "horizontal_only": "Im Frontmatter der Notiz festgelegt (manuell). Quellen: {sources}.",
+        "vertical_only": "Im Frontmatter der Notiz festgelegt (manuell). Inhaltstyp: {content_type}."
+      },
+      "structural": {
+        "both": "Strukturelle Muster gefunden: horizontal → {h_id} (Gewicht {h_weight}); vertikal → {v_id} (Gewicht {v_weight}).",
+        "horizontal_only": "Strukturelle Muster gefunden: horizontal → {h_id} (Gewicht {h_weight}).",
+        "vertical_only": "Strukturelle Muster gefunden: vertikal → {v_id} (Gewicht {v_weight})."
+      },
+      "linguistic": {
+        "both": "Linguistische Übereinstimmung: horizontal → {h_id} (Gewicht {h_weight}); vertikal → {v_id} (Gewicht {v_weight}).",
+        "both_with_roots": "Linguistische Übereinstimmung: horizontal → {h_id} (Gewicht {h_weight}); vertikal → {v_id} (Gewicht {v_weight}). Erkannte CAE-Wurzeln: {roots}.",
+        "horizontal_only": "Linguistische Übereinstimmung: horizontal → {h_id} (Gewicht {h_weight}).",
+        "horizontal_only_with_roots": "Linguistische Übereinstimmung: horizontal → {h_id} (Gewicht {h_weight}). Erkannte CAE-Wurzeln: {roots}.",
+        "vertical_only": "Linguistische Übereinstimmung: vertikal → {v_id} (Gewicht {v_weight}).",
+        "vertical_only_with_roots": "Linguistische Übereinstimmung: vertikal → {v_id} (Gewicht {v_weight}). Erkannte CAE-Wurzeln: {roots}."
+      },
+      "semantic": {
+        "both": "Konsens der semantischen Nachbarn: horizontal → {h_id} (Gewicht {h_weight}); vertikal → {v_id} (Gewicht {v_weight}). Top-Nachbarn: {neighbors}.",
+        "horizontal_only": "Konsens der semantischen Nachbarn: horizontal → {h_id} (Gewicht {h_weight}). Top-Nachbarn: {neighbors}.",
+        "vertical_only": "Konsens der semantischen Nachbarn: vertikal → {v_id} (Gewicht {v_weight}). Top-Nachbarn: {neighbors}."
+      },
+      "graph": {
+        "both": "Konsens typisierter Nachbarn: horizontal → {h_id} (Gewicht {h_weight}); vertikal → {v_id} (Gewicht {v_weight}). Nachbarn: {neighbors}.",
+        "horizontal_only": "Konsens typisierter Nachbarn: horizontal → {h_id} (Gewicht {h_weight}). Nachbarn: {neighbors}.",
+        "vertical_only": "Konsens typisierter Nachbarn: vertikal → {v_id} (Gewicht {v_weight}). Nachbarn: {neighbors}."
+      },
+      "compose": {
+        "user_authority_full": "Vom Benutzer im Frontmatter festgelegt.",
+        "user_authority_partial_horizontal": "Quellen vom Benutzer im Frontmatter festgelegt; Inhaltstyp aus Katalogisierer-Konsens synthetisiert.",
+        "user_authority_partial_vertical": "Inhaltstyp vom Benutzer im Frontmatter festgelegt; Quellen aus Katalogisierer-Konsens synthetisiert.",
+        "weighted_vote": "Aus Katalogisierer-Konsens synthetisiert."
+      }
+    },
     "trail": {
       "expand": "▸ Warum diese Klassifizierung?",
       "collapse": "▾ Begründung ausblenden",
