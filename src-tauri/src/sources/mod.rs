@@ -581,7 +581,9 @@ pub fn sources_set_manual(
 
     // ── Snapshot the prior suggestion BEFORE we overwrite it, so the
     //    correction log can capture predicted vs corrected. ──
-    let (prior_horizontal, prior_tier) = {
+    // V3-§9.C also snapshots composite_json so the reliability profile
+    // can be updated per-cataloger after the disk write commits.
+    let (prior_horizontal, prior_tier, prior_composite) = {
         let search_state = app.state::<crate::search::SearchState>();
         let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
         let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
@@ -593,8 +595,9 @@ pub fn sources_set_manual(
                     .map(|s| s.source.clone())
                     .collect::<Vec<_>>(),
                 rec.classifier_tier,
+                rec.composite_json,
             ),
-            None => (Vec::new(), 0),
+            None => (Vec::new(), 0, None),
         }
     };
 
@@ -612,7 +615,8 @@ pub fn sources_set_manual(
         clear_suggestions(conn, &note_path)?;
     }
 
-    // 3. Log the correction (best-effort; non-blocking).
+    // 3. Log the correction (best-effort; non-blocking) AND
+    //    update per-cataloger reliability (V3-§9.C wiring).
     if !prior_horizontal.is_empty() || !sources.is_empty() {
         let libs = crate::libraries::list_libraries(app.clone());
         let pairs: Vec<(String, String)> = libs
@@ -630,6 +634,18 @@ pub fn sources_set_manual(
                 &sources,
                 prior_tier,
             );
+            // V3-§9.C — bump per-cataloger per-axis reliability based
+            // on whether each voicing cataloger's primary matched the
+            // user's final pick. No-op when the prior record had no
+            // composite_json (legacy v2-era rows).
+            if let Some(blob) = &prior_composite {
+                crate::cece::reliability::update_reliability_from_correction(
+                    &lib_root,
+                    blob,
+                    "horizontal",
+                    &sources,
+                );
+            }
         }
     }
 
@@ -1031,8 +1047,9 @@ pub fn content_type_set_manual(
         }
     }
 
-    // Snapshot prior vertical suggestion for the correction log.
-    let (prior_vertical, prior_tier) = {
+    // Snapshot prior vertical suggestion for the correction log
+    // + composite_json for the V3-§9.C reliability update.
+    let (prior_vertical, prior_tier, prior_composite) = {
         let search_state = app.state::<crate::search::SearchState>();
         let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
         let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
@@ -1044,8 +1061,9 @@ pub fn content_type_set_manual(
                     .map(|s| s.source.clone())
                     .collect::<Vec<_>>(),
                 rec.classifier_tier,
+                rec.composite_json,
             ),
-            None => (Vec::new(), 0),
+            None => (Vec::new(), 0, None),
         }
     };
 
@@ -1056,7 +1074,8 @@ pub fn content_type_set_manual(
     write_content_type_to_db(conn, &note_path, &content_type)?;
     drop(db_guard);
 
-    // Log the correction (best-effort; non-blocking).
+    // Log the correction (best-effort; non-blocking) AND
+    // update per-cataloger reliability (V3-§9.C wiring).
     if !prior_vertical.is_empty() || !content_type.is_empty() {
         let libs = crate::libraries::list_libraries(app.clone());
         let pairs: Vec<(String, String)> = libs.into_iter().map(|l| (l.id, l.path)).collect();
@@ -1071,6 +1090,17 @@ pub fn content_type_set_manual(
                 &content_type,
                 prior_tier,
             );
+            // V3-§9.C — bump per-cataloger per-axis reliability based
+            // on whether each voicing cataloger's vertical primary
+            // matched the user's final pick.
+            if let Some(blob) = &prior_composite {
+                crate::cece::reliability::update_reliability_from_correction(
+                    &lib_root,
+                    blob,
+                    "vertical",
+                    &content_type,
+                );
+            }
         }
     }
     Ok(())

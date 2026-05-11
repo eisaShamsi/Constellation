@@ -214,6 +214,83 @@ pub fn record_correction(
     save(library_path, &p);
 }
 
+/// V3-§9.C — Update a Library's per-cataloger reliability based on
+/// the user's final correction.
+///
+/// Reads the composite_json blob (the per-cataloger trails the engine
+/// produced at classification time), iterates each cataloger that
+/// voiced on this axis, and marks "correct" if its primary matched
+/// the user's final pick — "wrong" otherwise. One file write per call
+/// (atomic via `save`). Catalogers that abstained (didn't voice on
+/// this axis) don't get a counter bump in either direction — silence
+/// is neither right nor wrong.
+///
+/// Best-effort: malformed JSON / missing fields → no-op (corrections
+/// still log via correction_log; reliability just doesn't update).
+///
+/// `axis_str` is "horizontal" or "vertical" (the string form used by
+/// the existing IPC layer; converted internally to the Axis enum).
+pub fn update_reliability_from_correction(
+    library_path: &str,
+    composite_json: &str,
+    axis_str: &str,
+    user_pick: &[String],
+) {
+    let axis = match axis_str {
+        "horizontal" => Axis::Horizontal,
+        "vertical" => Axis::Vertical,
+        _ => return,
+    };
+    let composite: serde_json::Value = match serde_json::from_str(composite_json) {
+        Ok(v) => v,
+        Err(_) => return,
+    };
+    let trails = match composite.get("per_cataloger_trails").and_then(|v| v.as_array()) {
+        Some(a) => a,
+        None => return,
+    };
+    let mut profile = load_or_default(library_path);
+    let mut any_update = false;
+    for trail in trails {
+        let cataloger_name = match trail.get("cataloger").and_then(|v| v.as_str()) {
+            Some(n) => n,
+            None => continue,
+        };
+        let voiced = trail
+            .get("voiced_opinion")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
+        if !voiced {
+            continue; // silence is neither correct nor wrong
+        }
+        let assignments = trail
+            .get(axis_str)
+            .and_then(|v| v.as_array());
+        let assignments = match assignments {
+            Some(a) => a,
+            None => continue,
+        };
+        // Find this cataloger's primary on this axis.
+        let primary_id = assignments.iter().find_map(|a| {
+            if a.get("primary").and_then(|p| p.as_bool()).unwrap_or(false) {
+                a.get("id").and_then(|i| i.as_str())
+            } else {
+                None
+            }
+        });
+        let primary_id = match primary_id {
+            Some(id) => id,
+            None => continue, // no primary on this axis
+        };
+        let was_correct = user_pick.iter().any(|p| p == primary_id);
+        profile.record(cataloger_name, axis, was_correct);
+        any_update = true;
+    }
+    if any_update {
+        save(library_path, &profile);
+    }
+}
+
 /// Compute a synthesis weight for a cataloger on an axis. Uniform
 /// weight (1.0) until the cataloger has at least `MIN_SAMPLES`
 /// observations on this Library/axis. After that, weight = ratio
@@ -268,5 +345,180 @@ mod tests {
         let h = p2.get("linguistic", Axis::Horizontal);
         assert_eq!(h.correct, 1);
         assert_eq!(h.wrong, 1);
+    }
+
+    // ─── V3-§9.C — update_reliability_from_correction wiring tests ───
+    // The Architect doc framed Phase C as "schema migration" but
+    // auditing the actual code revealed the per-axis schema was
+    // already there; the real gap was that reliability updates were
+    // never wired into the correction flows. These tests verify the
+    // new helper function correctly bumps per-cataloger per-axis
+    // counters from a composite_json blob + user pick.
+
+    use std::sync::atomic::{AtomicUsize, Ordering as AtomicOrdering};
+    static TEST_LIB_COUNTER: AtomicUsize = AtomicUsize::new(0);
+
+    fn unique_test_library() -> tempfile::TempDir {
+        // Each test gets a fresh tempdir so writes don't cross-pollute.
+        let n = TEST_LIB_COUNTER.fetch_add(1, AtomicOrdering::SeqCst);
+        tempfile::Builder::new()
+            .prefix(&format!("v3p9c-test-{}-", n))
+            .tempdir()
+            .expect("tempdir create")
+    }
+
+    fn sample_composite_json() -> &'static str {
+        // Two voicing catalogers — one agrees with synthesis primary
+        // (testimony/authoritative), one dissents (testimony/direct-witness).
+        // One silent cataloger (graph) which should NOT get a counter bump.
+        r#"{
+          "horizontal": {"primary": "testimony/authoritative", "regime": "strong_majority"},
+          "vertical": {"primary": "epistemic-states/doubt", "regime": "unanimous"},
+          "per_cataloger_trails": [
+            { "cataloger": "linguistic", "voiced_opinion": true,
+              "horizontal": [{"id":"testimony/authoritative","primary":true,"weight":0.9}],
+              "vertical":   [{"id":"epistemic-states/doubt","primary":true,"weight":0.85}] },
+            { "cataloger": "structural", "voiced_opinion": true,
+              "horizontal": [{"id":"testimony/direct-witness","primary":true,"weight":0.7}],
+              "vertical":   [{"id":"epistemic-states/doubt","primary":true,"weight":0.85}] },
+            { "cataloger": "graph", "voiced_opinion": false,
+              "horizontal": [],
+              "vertical":   [] }
+          ]
+        }"#
+    }
+
+    #[test]
+    fn v3_p9c_correction_bumps_correct_cataloger_horizontal() {
+        let dir = unique_test_library();
+        let lib = dir.path().to_string_lossy().to_string();
+        update_reliability_from_correction(
+            &lib,
+            sample_composite_json(),
+            "horizontal",
+            &["testimony/authoritative".to_string()],
+        );
+        let p = load_or_default(&lib);
+        // Linguistic voted testimony/authoritative → correct.
+        let ling = p.get("linguistic", Axis::Horizontal);
+        assert_eq!(ling.correct, 1);
+        assert_eq!(ling.wrong, 0);
+        // Structural voted testimony/direct-witness → wrong.
+        let struc = p.get("structural", Axis::Horizontal);
+        assert_eq!(struc.correct, 0);
+        assert_eq!(struc.wrong, 1);
+    }
+
+    #[test]
+    fn v3_p9c_silent_cataloger_does_not_get_counter_bump() {
+        let dir = unique_test_library();
+        let lib = dir.path().to_string_lossy().to_string();
+        update_reliability_from_correction(
+            &lib,
+            sample_composite_json(),
+            "horizontal",
+            &["testimony/authoritative".to_string()],
+        );
+        let p = load_or_default(&lib);
+        // Graph was silent (voiced_opinion: false) — no counter bump
+        // in either direction. Silence is neither right nor wrong.
+        let graph = p.get("graph", Axis::Horizontal);
+        assert_eq!(graph.correct, 0);
+        assert_eq!(graph.wrong, 0);
+    }
+
+    #[test]
+    fn v3_p9c_axis_specific_no_cross_pollution() {
+        // Bump on horizontal-axis correction MUST NOT touch
+        // vertical-axis counters and vice versa.
+        let dir = unique_test_library();
+        let lib = dir.path().to_string_lossy().to_string();
+        update_reliability_from_correction(
+            &lib,
+            sample_composite_json(),
+            "horizontal",
+            &["testimony/authoritative".to_string()],
+        );
+        let p = load_or_default(&lib);
+        // Linguistic vertical counters must stay at 0 (only horizontal
+        // axis was corrected).
+        let ling_v = p.get("linguistic", Axis::Vertical);
+        assert_eq!(ling_v.correct, 0);
+        assert_eq!(ling_v.wrong, 0);
+        let struc_v = p.get("structural", Axis::Vertical);
+        assert_eq!(struc_v.correct, 0);
+        assert_eq!(struc_v.wrong, 0);
+    }
+
+    #[test]
+    fn v3_p9c_vertical_correction_bumps_vertical_only() {
+        let dir = unique_test_library();
+        let lib = dir.path().to_string_lossy().to_string();
+        update_reliability_from_correction(
+            &lib,
+            sample_composite_json(),
+            "vertical",
+            &["epistemic-states/doubt".to_string()],
+        );
+        let p = load_or_default(&lib);
+        // Both linguistic + structural voted doubt on vertical → both correct.
+        assert_eq!(p.get("linguistic", Axis::Vertical).correct, 1);
+        assert_eq!(p.get("structural", Axis::Vertical).correct, 1);
+        // Horizontal counters unchanged.
+        assert_eq!(p.get("linguistic", Axis::Horizontal).correct, 0);
+        assert_eq!(p.get("linguistic", Axis::Horizontal).wrong, 0);
+    }
+
+    #[test]
+    fn v3_p9c_malformed_json_is_no_op() {
+        let dir = unique_test_library();
+        let lib = dir.path().to_string_lossy().to_string();
+        update_reliability_from_correction(
+            &lib,
+            "not valid json {{{",
+            "horizontal",
+            &["testimony/authoritative".to_string()],
+        );
+        let p = load_or_default(&lib);
+        // No file written → empty default profile.
+        assert_eq!(p.stats.len(), 0);
+    }
+
+    #[test]
+    fn v3_p9c_unknown_axis_is_no_op() {
+        let dir = unique_test_library();
+        let lib = dir.path().to_string_lossy().to_string();
+        update_reliability_from_correction(
+            &lib,
+            sample_composite_json(),
+            "diagonal", // not a real axis
+            &["testimony/authoritative".to_string()],
+        );
+        let p = load_or_default(&lib);
+        assert_eq!(p.stats.len(), 0);
+    }
+
+    #[test]
+    fn v3_p9c_existing_profile_accumulates() {
+        let dir = unique_test_library();
+        let lib = dir.path().to_string_lossy().to_string();
+        // Apply two corrections — second one should accumulate, not replace.
+        update_reliability_from_correction(
+            &lib,
+            sample_composite_json(),
+            "horizontal",
+            &["testimony/authoritative".to_string()],
+        );
+        update_reliability_from_correction(
+            &lib,
+            sample_composite_json(),
+            "horizontal",
+            &["testimony/authoritative".to_string()],
+        );
+        let p = load_or_default(&lib);
+        let ling = p.get("linguistic", Axis::Horizontal);
+        assert_eq!(ling.correct, 2);
+        let struc = p.get("structural", Axis::Horizontal);
+        assert_eq!(struc.wrong, 2);
     }
 }
