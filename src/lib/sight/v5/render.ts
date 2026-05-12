@@ -28,6 +28,51 @@ import {
 	stratumBandBoundaries,
 	type MilkyWayEllipse,
 } from './dome';
+import type { LayoutCacheRow, LinkEdge } from './types';
+
+/** Per-star pixel position computed from (stratum, mode azimuth).
+ *  Cached in SightV5.svelte for hit-testing + connector drawing. */
+export interface StarPosition {
+	row: LayoutCacheRow;
+	x: number;                   // canvas pixel (relative to dome center)
+	y: number;
+	radiusPx: number;            // dot radius for hit-testing
+}
+
+/** Maturity → dot radius (px) per Concept Paper §5.3. */
+function sizeForMaturity(m: string | null): number {
+	switch (m) {
+		case 'canonical': return 5;
+		case 'evergreen': return 3.5;
+		case 'sapling':   return 2.5;
+		case 'wilting':   return 2;
+		case 'seed':
+		default:          return 1.5;
+	}
+}
+
+/** Confidence → alpha per Concept Paper §5.3. */
+function alphaForConfidence(a: number | null): number {
+	if (a == null) return 0.45;
+	if (a >= 0.95) return 1.0;
+	if (a >= 0.6)  return 0.7;
+	return 0.45;
+}
+
+/** Typed-link kind → color per Concept Paper §5.4. */
+function colorForLinkType(t: string): string {
+	switch (t) {
+		case 'supports':
+		case 'derives-from': return PALETTE.linkGreen;
+		case 'contradicts':  return PALETTE.linkRed;
+		case 'exemplifies':
+		case 'generalizes':  return PALETTE.linkGold;
+		case 'causes':
+		case 'part-of':      return PALETTE.linkBlue;
+		case 'supersedes':   return PALETTE.linkSlateBlue;
+		default:             return PALETTE.linkGrey;
+	}
+}
 
 /** Render the dome's static base layer onto the provided canvas
  *  context. Clears + redraws the full canvas; cheap (one CLEAR + ~30
@@ -49,6 +94,8 @@ export function renderBaseLayer(
 	domeRadius: number,
 	currentMonthIndex: number,         // 0..11 — for the gold wedge tint
 	modeWedgeAngles?: number[],        // §4: optional active-mode wedge dividers
+	stars?: StarPosition[],            // §5: per-star positions
+	links?: LinkEdge[],                // §5: connector edges (drawn faint at rest)
 ): void {
 	// Background fill (full canvas).
 	ctx.fillStyle = PALETTE.parchment;
@@ -84,7 +131,125 @@ export function renderBaseLayer(
 		drawModeWedgeSpokes(ctx, domeRadius, modeWedgeAngles);
 	}
 
+	// §5 connector lines at faint resting alpha. Drawn BEFORE stars so
+	// stars overlay the lines.
+	if (links && stars && stars.length > 0 && links.length > 0) {
+		drawConnectorsAtRest(ctx, links, stars);
+	}
+
+	// §5 stars — drawn last so they sit on top of the chrome + lines.
+	if (stars && stars.length > 0) {
+		drawStars(ctx, stars);
+	}
+
 	ctx.restore();
+}
+
+/** Re-draw the dome's focus overlay (a separate Canvas layer in
+ *  practice; here we keep the same context for simplicity since the
+ *  base layer is also re-drawn on hover/select state change). Brightens
+ *  the focused star's incident edges to ~0.85 alpha + draws a gold
+ *  selection ring on the focused star itself. */
+export function renderFocusOverlay(
+	ctx: CanvasRenderingContext2D,
+	focusedStar: StarPosition,
+	incidentEdges: LinkEdge[],
+	starsByPath: Map<string, StarPosition>,
+): void {
+	ctx.save();
+	// Translate to dome center (matches base layer).
+	const center = { x: ctx.canvas.width / (window.devicePixelRatio || 1) / 2, y: ctx.canvas.height / (window.devicePixelRatio || 1) / 2 };
+	ctx.translate(center.x, center.y);
+
+	// Brighten incident edges.
+	ctx.globalAlpha = 0.85;
+	ctx.lineWidth = 1.2;
+	for (const e of incidentEdges) {
+		const a = starsByPath.get(e.sourcePath);
+		const b = starsByPath.get(e.targetPath);
+		if (!a || !b) continue;
+		ctx.strokeStyle = colorForLinkType(e.linkType);
+		ctx.beginPath();
+		ctx.moveTo(a.x, a.y);
+		ctx.lineTo(b.x, b.y);
+		ctx.stroke();
+	}
+	ctx.globalAlpha = 1;
+
+	// Gold selection ring on focused star.
+	ctx.strokeStyle = PALETTE.gold;
+	ctx.lineWidth = 1.6;
+	ctx.beginPath();
+	ctx.arc(focusedStar.x, focusedStar.y, focusedStar.radiusPx + 4, 0, Math.PI * 2);
+	ctx.stroke();
+
+	ctx.restore();
+}
+
+function drawStars(ctx: CanvasRenderingContext2D, stars: StarPosition[]): void {
+	for (const s of stars) {
+		const alpha = alphaForConfidence(s.row.confidenceAlpha);
+		const color = s.row.contested ? PALETTE.redInk : PALETTE.ink;
+		ctx.fillStyle = color;
+		ctx.globalAlpha = alpha;
+		ctx.beginPath();
+		ctx.arc(s.x, s.y, s.radiusPx, 0, Math.PI * 2);
+		ctx.fill();
+	}
+	ctx.globalAlpha = 1;
+}
+
+function drawConnectorsAtRest(
+	ctx: CanvasRenderingContext2D,
+	links: LinkEdge[],
+	stars: StarPosition[],
+): void {
+	const byPath = new Map<string, StarPosition>();
+	for (const s of stars) byPath.set(s.row.notePath, s);
+
+	ctx.save();
+	ctx.globalAlpha = 0.13;       // ~0.10–0.15 per Concept Paper §5.4
+	ctx.lineWidth = 0.6;
+	for (const e of links) {
+		const a = byPath.get(e.sourcePath);
+		const b = byPath.get(e.targetPath);
+		if (!a || !b) continue;
+		ctx.strokeStyle = colorForLinkType(e.linkType);
+		ctx.beginPath();
+		ctx.moveTo(a.x, a.y);
+		ctx.lineTo(b.x, b.y);
+		ctx.stroke();
+	}
+	ctx.restore();
+}
+
+/** Helper exported for SightV5.svelte hit-testing. Given a star
+ *  position + a mouse coordinate (relative to dome center), returns
+ *  the squared distance. */
+export function starHitDistanceSq(s: StarPosition, mx: number, my: number): number {
+	const dx = s.x - mx;
+	const dy = s.y - my;
+	return dx * dx + dy * dy;
+}
+
+/** Compute star screen positions from the layout cache rows + the
+ *  current ModeContext + the dome radius. Used by SightV5.svelte to
+ *  feed renderBaseLayer + drive hit-testing. */
+export function computeStarPositions(
+	rows: LayoutCacheRow[],
+	bandCenterForStratum: (s: number) => number,
+	azimuthForRow: (r: LayoutCacheRow) => number,
+): StarPosition[] {
+	const out: StarPosition[] = [];
+	for (const row of rows) {
+		if (row.stratum == null) continue;     // skip unstratified — no radius to place at
+		const r = bandCenterForStratum(row.stratum);
+		const a = azimuthForRow(row);
+		const x = Math.cos(a) * r;
+		const y = Math.sin(a) * r;
+		out.push({ row, x, y, radiusPx: sizeForMaturity(row.maturity) });
+	}
+	return out;
 }
 
 function drawMilkyWay(ctx: CanvasRenderingContext2D, domeRadius: number): void {

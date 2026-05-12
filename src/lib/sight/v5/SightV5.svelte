@@ -4,13 +4,8 @@
 	 *
 	 * §1 — module skeleton + appSettings extension.
 	 * §3 — dome chrome (8 strata bands + Milky Way wash + calendar rim).
-	 * §4 — mode toggle bar (7 modes) + scope toggle bar (3 scopes per D-V3)
-	 *      + per-mode wedge boundary spokes overlay.
-	 * §5 — stars + connectors + hover/select + side panel (future).
-	 *
-	 * Render strategy: Canvas 2D + D3-zoom (D-V1 lock). Two-layer:
-	 * base layer (dome chrome + stars; redrawn on size/mode/scope
-	 * change) + focus overlay (hover/select; §5).
+	 * §4 — mode toggle bar (7 modes) + scope toggle bar (3 scopes per D-V3).
+	 * §5 — layout-cache load + stars + connectors + hover/select + side panel.
 	 *
 	 * Mount pattern (inherited from v4): flex child inside
 	 * `.content-area`, close button in `+layout.svelte` header row.
@@ -18,12 +13,26 @@
 	 * Concept Paper v3.1 §5–§7 + Mock B1 visual contract.
 	 */
 	import { onMount } from 'svelte';
+	import { invoke } from '@tauri-apps/api/core';
 	import { t, locale } from '$lib/i18n';
 	import { appSettings, saveSettings } from '$lib/libraries/store';
-	import type { SightV5Mode, SightV5Scope } from './types';
-	import { renderBaseLayer } from './render';
-	import { calendarRimMonths, type MonthLabel } from './dome';
-	import { buildModeContext } from './modes';
+	import type { SightV5Mode, SightV5Scope, LayoutCacheRow, LinkEdge } from './types';
+	import {
+		renderBaseLayer,
+		renderFocusOverlay,
+		computeStarPositions,
+		starHitDistanceSq,
+		type StarPosition,
+	} from './render';
+	import { calendarRimMonths, type MonthLabel, radiusForStratum } from './dome';
+	import { buildModeContext, azimuthForMode } from './modes';
+	import { filterNotesByScope } from './scope';
+	import SightV5SidePanel from './SightV5SidePanel.svelte';
+
+	interface Props {
+		onOpenNote?: (path: string, libraryName: string) => void;
+	}
+	let { onOpenNote }: Props = $props();
 
 	// ─── canonical mode + scope key sets ───────────────────────────
 	const MODES: ReadonlyArray<SightV5Mode> = ['R', 'L', 'T', 'C', 'S', 'A', 'P'];
@@ -55,16 +64,53 @@
 	let monthLabels: MonthLabel[] = $derived(calendarRimMonths(domeRadius, $locale));
 	const currentMonthIndex = new Date().getMonth();
 
-	// §4: wedge-boundary angles for the active mode. Computed from an
-	// empty rows array — wedge GEOMETRY (uniform spacing for fixed-
-	// order modes; library-count-proportional for R) doesn't need
-	// counts; §5 will supply real rows + use the same context for
-	// per-star azimuth.
-	let modeWedgeAngles: number[] = $derived.by(() => {
-		const ctx = buildModeContext(activeMode, [], $locale);
-		// Use each bucket's start angle; the last bucket's end angle
-		// equals the first bucket's start angle (full circle).
-		return ctx.wedges.map(w => w.azimuthStart);
+	// ─── layout cache + scope-filtered rows ────────────────────────
+	let allRows: LayoutCacheRow[] = $state([]);
+	let links: LinkEdge[] = $state([]);
+	let isLoading = $state(true);
+
+	// Scope-filtered rows (D-V3): universe = all; library / folder pick
+	// the active sidebar context. For §5 we use whatever appSettings
+	// stores; the wiring to a real "active library / folder" comes when
+	// the layout passes that context as a prop (future).
+	let visibleRows = $derived.by(() => filterNotesByScope(allRows, activeScope, null));
+
+	// ─── mode context + star positions ─────────────────────────────
+	let modeContext = $derived.by(() => buildModeContext(activeMode, visibleRows, $locale));
+	let modeWedgeAngles: number[] = $derived(modeContext.wedges.map(w => w.azimuthStart));
+
+	let stars: StarPosition[] = $derived.by(() => {
+		const bandFor = (s: number) => radiusForStratum(s, domeRadius);
+		const azFor = (r: LayoutCacheRow) => azimuthForMode(r, modeContext);
+		return computeStarPositions(visibleRows, bandFor, azFor);
+	});
+	let starsByPath: Map<string, StarPosition> = $derived.by(() => {
+		const m = new Map<string, StarPosition>();
+		for (const s of stars) m.set(s.row.notePath, s);
+		return m;
+	});
+
+	// ─── hover + select state ──────────────────────────────────────
+	let hoveredStar: StarPosition | null = $state(null);
+	let selectedStar: StarPosition | null = $state(null);
+	let tooltipX = $state(0);
+	let tooltipY = $state(0);
+
+	// Incident edges for the focused star (selected wins; hover falls back).
+	let focusedStar: StarPosition | null = $derived(selectedStar ?? hoveredStar);
+	let incidentEdges: LinkEdge[] = $derived.by(() => {
+		const f = focusedStar as StarPosition | null;
+		if (f == null) return [];
+		const path: string = f.row.notePath;
+		return links.filter((e: LinkEdge) => e.sourcePath === path || e.targetPath === path);
+	});
+
+	// Mode P empty-state — when most of the visible set is unsourced.
+	let modePEmptyState = $derived.by(() => {
+		if (activeMode !== 'P') return false;
+		if (visibleRows.length === 0) return false;
+		const unsourced = visibleRows.filter(r => r.sourcesPrimary == null).length;
+		return unsourced / visibleRows.length > 0.7;
 	});
 
 	// ─── render orchestration ──────────────────────────────────────
@@ -78,13 +124,55 @@
 		canvasEl.style.width = `${canvasWidth}px`;
 		canvasEl.style.height = `${canvasHeight}px`;
 		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-		renderBaseLayer(ctx, canvasWidth, canvasHeight, domeRadius, currentMonthIndex, modeWedgeAngles);
+		renderBaseLayer(
+			ctx,
+			canvasWidth,
+			canvasHeight,
+			domeRadius,
+			currentMonthIndex,
+			modeWedgeAngles,
+			stars,
+			links,
+		);
+		// Focus overlay (brightened edges + selection ring) draws over
+		// the base. For §5 we re-draw both on focus change; future
+		// optimization could split into two physical Canvas layers
+		// per the Concept Paper §11.1 perf strategy.
+		if (focusedStar) {
+			renderFocusOverlay(ctx, focusedStar, incidentEdges, starsByPath);
+		}
 	}
 
 	$effect(() => {
-		void canvasWidth; void canvasHeight; void domeRadius; void $locale; void modeWedgeAngles;
+		// Touch reactive deps so this effect re-runs when they change.
+		void canvasWidth; void canvasHeight; void domeRadius; void $locale;
+		void modeWedgeAngles; void stars; void links; void focusedStar;
 		draw();
 	});
+
+	// ─── data load ─────────────────────────────────────────────────
+	async function loadLayout() {
+		try {
+			isLoading = true;
+			const rows = await invoke<LayoutCacheRow[]>('sight_v5_get_layout', {
+				scopeKind: 'universe',  // scope filter applies frontend-side per D-V3
+				scopeId: null,
+			});
+			allRows = rows;
+			// Pull link edges for the loaded notes — capped to 2000 paths
+			// to keep the IPC payload bounded on large universes; future
+			// polish: chunk if needed.
+			const paths = rows.slice(0, 2000).map(r => r.notePath);
+			if (paths.length > 0) {
+				const edges = await invoke<LinkEdge[]>('sight_v5_get_link_set_for_notes', { paths });
+				links = edges;
+			}
+		} catch (err) {
+			console.error('[sight v5] loadLayout failed', err);
+		} finally {
+			isLoading = false;
+		}
+	}
 
 	onMount(() => {
 		if (!containerEl) return;
@@ -98,7 +186,19 @@
 			}
 		});
 		ro.observe(containerEl);
-		return () => ro.disconnect();
+		void loadLayout();
+		// Esc clears selection (also handled at +layout.svelte for app-wide Esc).
+		const onKey = (e: KeyboardEvent) => {
+			if (e.key === 'Escape' && selectedStar) {
+				selectedStar = null;
+				e.stopPropagation();
+			}
+		};
+		window.addEventListener('keydown', onKey, true);
+		return () => {
+			ro.disconnect();
+			window.removeEventListener('keydown', onKey, true);
+		};
 	});
 
 	// ─── mode + scope toggle handlers ──────────────────────────────
@@ -106,6 +206,10 @@
 		if (m === activeMode) return;
 		$appSettings.sight = { ...($appSettings.sight ?? {}), lastMode: m };
 		saveSettings();
+		// Clear selection on mode change — the star's wedge position
+		// just changed; old selection coords are stale.
+		selectedStar = null;
+		hoveredStar = null;
 	}
 	function setScope(s: SightV5Scope) {
 		if (s === activeScope) return;
@@ -113,27 +217,90 @@
 		saveSettings();
 	}
 
-	// ─── mode + scope state helpers ────────────────────────────────
-	// Per Concept Paper §5.5 + D-V6, mode P is dimmed when sparse
-	// data is detected; for §4 we treat all modes as "ready" since
-	// the data check happens in §5 (when actual rows are read from
-	// the layout cache). For now, every mode reflects two states:
-	// active (gold) or ready (cream, inactive).
 	function modeState(m: SightV5Mode): 'active' | 'ready' {
 		return m === activeMode ? 'active' : 'ready';
 	}
 	function scopeState(s: SightV5Scope): 'active' | 'ready' {
 		return s === activeScope ? 'active' : 'ready';
 	}
+
+	// ─── pointer interactions ──────────────────────────────────────
+	const HIT_RADIUS_PX = 8;       // max distance from cursor to count as a hover
+
+	function onCanvasMouseMove(e: MouseEvent) {
+		if (!canvasEl) return;
+		const rect = canvasEl.getBoundingClientRect();
+		// Mouse coordinates relative to dome center.
+		const mx = e.clientX - rect.left - canvasWidth / 2;
+		const my = e.clientY - rect.top - canvasHeight / 2;
+		let best: StarPosition | null = null;
+		let bestDist = HIT_RADIUS_PX * HIT_RADIUS_PX;
+		for (const s of stars) {
+			const d = starHitDistanceSq(s, mx, my);
+			if (d < bestDist) {
+				bestDist = d;
+				best = s;
+			}
+		}
+		hoveredStar = best;
+		if (best) {
+			tooltipX = e.clientX - rect.left + 12;
+			tooltipY = e.clientY - rect.top + 12;
+		}
+	}
+
+	function onCanvasMouseLeave() {
+		hoveredStar = null;
+	}
+
+	function onCanvasClick(e: MouseEvent) {
+		if (!canvasEl) return;
+		const rect = canvasEl.getBoundingClientRect();
+		const mx = e.clientX - rect.left - canvasWidth / 2;
+		const my = e.clientY - rect.top - canvasHeight / 2;
+		let best: StarPosition | null = null;
+		let bestDist = HIT_RADIUS_PX * HIT_RADIUS_PX;
+		for (const s of stars) {
+			const d = starHitDistanceSq(s, mx, my);
+			if (d < bestDist) {
+				bestDist = d;
+				best = s;
+			}
+		}
+		// Click on a star → select; click on background → clear.
+		selectedStar = best;
+	}
+
+	function noteTitleForTooltip(path: string): string {
+		const slash = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
+		const name = slash >= 0 ? path.slice(slash + 1) : path;
+		return name.replace(/\.md$/i, '');
+	}
+
+	// Open in editor handler — forwards to parent prop (mirror v4 pattern).
+	function handleOpenInEditor(path: string) {
+		const star = selectedStar;
+		if (!star) return;
+		onOpenNote?.(path, star.row.libraryName ?? '');
+	}
+
+	// Open Source Review for empty-state CTA.
+	function openSourceReview() {
+		window.dispatchEvent(new CustomEvent('constellation:open-source-review'));
+	}
 </script>
 
 <div class="sight-v5-root" bind:this={containerEl}>
-	<!-- Canvas base layer — dome chrome (§3) + per-mode wedge spokes
-	     (§4) + stars (§5, future). -->
-	<canvas class="sight-v5-canvas" bind:this={canvasEl}></canvas>
+	<!-- Canvas — dome chrome + stars + connectors. -->
+	<canvas
+		class="sight-v5-canvas"
+		bind:this={canvasEl}
+		onmousemove={onCanvasMouseMove}
+		onmouseleave={onCanvasMouseLeave}
+		onclick={onCanvasClick}
+	></canvas>
 
-	<!-- HTML overlay for month labels (NOT canvas-drawn text per v3
-	     invariant 12; dir="auto" handles RTL). -->
+	<!-- Month labels HTML overlay. -->
 	<div class="sight-v5-rim-labels" aria-hidden="false">
 		{#each monthLabels as label (label.monthIndex)}
 			<span
@@ -144,7 +311,16 @@
 		{/each}
 	</div>
 
-	<!-- §4 mode toggle bar — 7 buttons, top-center. -->
+	<!-- Hover tooltip (star title; near cursor). -->
+	{#if hoveredStar && !selectedStar}
+		<div
+			class="sight-v5-tooltip"
+			dir="auto"
+			style="left: {tooltipX}px; top: {tooltipY}px;"
+		>{noteTitleForTooltip(hoveredStar.row.notePath)}</div>
+	{/if}
+
+	<!-- §4 mode toggle bar. -->
 	<div class="sight-v5-mode-bar" role="tablist" aria-label="Sight modes">
 		{#each MODES as m (m)}
 			<button
@@ -160,7 +336,7 @@
 		{/each}
 	</div>
 
-	<!-- §4 scope toggle bar — 3 buttons (D-V3), below mode bar. -->
+	<!-- §4 scope toggle bar. -->
 	<div class="sight-v5-scope-bar" role="tablist" aria-label="Sight scope">
 		{#each (['universe', 'library', 'folder'] as SightV5Scope[]) as s (s)}
 			<button
@@ -174,6 +350,31 @@
 			>{SCOPE_LETTERS[s]}</button>
 		{/each}
 	</div>
+
+	<!-- Mode P empty-state CTA (D-V6). -->
+	{#if modePEmptyState}
+		<div class="sight-v5-empty-state">
+			<p>{$t('sight.v5.empty.provenance') || 'Most of your universe is unsourced.'}</p>
+			<button class="sight-v5-empty-cta" onclick={openSourceReview}>
+				{$t('sight.v5.empty.classify') || 'Classify via Source Review →'}
+			</button>
+		</div>
+	{/if}
+
+	<!-- Loading state. -->
+	{#if isLoading}
+		<div class="sight-v5-loading">{$t('sight.v5.loading') || 'Loading…'}</div>
+	{/if}
+
+	<!-- §5 side panel for selected star. -->
+	{#if selectedStar}
+		<SightV5SidePanel
+			note={selectedStar.row}
+			linkCount={incidentEdges.length}
+			onClose={() => selectedStar = null}
+			onOpenInEditor={handleOpenInEditor}
+		/>
+	{/if}
 </div>
 
 <style>
@@ -194,6 +395,7 @@
 		width: 100%;
 		height: 100%;
 		display: block;
+		cursor: default;
 	}
 	.sight-v5-rim-labels {
 		position: absolute;
@@ -209,7 +411,20 @@
 		text-transform: uppercase;
 		white-space: nowrap;
 	}
-	/* Mode toggle bar — Mock B1 geometry: 7 buttons, ~50w × 44h, 10 gap, centered above dome. */
+	.sight-v5-tooltip {
+		position: absolute;
+		background: rgba(26, 26, 26, 0.9);
+		color: #faf6e8;
+		padding: 0.25rem 0.5rem;
+		border-radius: 3px;
+		font-size: 0.8rem;
+		pointer-events: none;
+		z-index: 4;
+		max-width: 280px;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
 	.sight-v5-mode-bar {
 		position: absolute;
 		top: 24px;
@@ -243,7 +458,6 @@
 	.sight-v5-mode-btn:hover {
 		filter: brightness(0.97);
 	}
-	/* Scope toggle bar — 3 buttons, below mode bar. */
 	.sight-v5-scope-bar {
 		position: absolute;
 		top: 80px;
@@ -269,5 +483,43 @@
 	.sight-v5-scope-btn.active {
 		background: #2a4a8c;
 		color: #faf6e8;
+	}
+	.sight-v5-empty-state {
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		transform: translate(-50%, -50%);
+		text-align: center;
+		max-width: 26rem;
+		background: rgba(250, 246, 232, 0.95);
+		padding: 1.5rem 2rem;
+		border-radius: 6px;
+		border: 1px dashed #b8a98a;
+		z-index: 3;
+		font-style: italic;
+		color: #3a3a3a;
+	}
+	.sight-v5-empty-state p {
+		margin: 0 0 1rem 0;
+	}
+	.sight-v5-empty-cta {
+		background: #2a4a8c;
+		color: #faf6e8;
+		border: none;
+		padding: 0.5rem 1rem;
+		border-radius: 4px;
+		font-family: inherit;
+		font-size: 0.9rem;
+		cursor: pointer;
+	}
+	.sight-v5-loading {
+		position: absolute;
+		left: 50%;
+		bottom: 24px;
+		transform: translateX(-50%);
+		font-size: 0.85rem;
+		color: #3a3a3a;
+		font-style: italic;
+		opacity: 0.8;
 	}
 </style>

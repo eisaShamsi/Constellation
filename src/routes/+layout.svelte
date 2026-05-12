@@ -5344,14 +5344,21 @@
 				<!-- Constellation Sight v5 — Layer 1 visual foundation per
 				     Concept Paper v3.1 §12.1. Inherits v4's flex-child mount
 				     pattern (fix to v3's position:fixed overlay catastrophe).
-				     §1 ships skeleton; §3 lands the dome; §4 lands modes +
-				     scope toggle; §5 lands stars + side panel + interactivity. -->
+				     §1 skeleton + §3 dome + §4 modes/scope + §5 stars +
+				     side panel + interactivity. -->
 				<div class="star-fullscreen sight-v5-fullscreen">
 					<div class="star-header">
 						<span class="star-title">{$t('sight.v5.title') || 'Constellation Sight v5'}</span>
 						<button class="star-close" onclick={() => sightV5Active = false}>×</button>
 					</div>
-					<SightV5 />
+					<SightV5
+						onOpenNote={(path: string, libraryName: string) => {
+							const lib = $libraryStats.find(l => l.name === libraryName);
+							const color = lib ? (libraryColorMap[libraryName] || '#7c3aed') : '#7c3aed';
+							openNoteTab(path, libraryName, color);
+							sightV5Active = false;
+						}}
+					/>
 				</div>
 			{:else if isHome && ($activeTab || $splitActive)}
 				<div class="pane-container" class:horizontal={$splitActive && $splitDirection === 'horizontal'}>
