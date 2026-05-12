@@ -2,30 +2,40 @@
 	/**
 	 * Sight v5 — Layer 1 visual foundation, MIG-024.
 	 *
-	 * §1 shipped the skeleton + mount path; §3 lands the dome chrome:
-	 * 8 strata bands + Milky Way wash + calendar rim + month labels.
-	 * Mode toggle UI lands in §4; stars + interactivity in §5.
+	 * §1 — module skeleton + appSettings extension.
+	 * §3 — dome chrome (8 strata bands + Milky Way wash + calendar rim).
+	 * §4 — mode toggle bar (7 modes) + scope toggle bar (3 scopes per D-V3)
+	 *      + per-mode wedge boundary spokes overlay.
+	 * §5 — stars + connectors + hover/select + side panel (future).
 	 *
-	 * Render strategy (D-V1 = Canvas 2D + D3-zoom): two-layer Canvas —
-	 * base layer for the dome chrome (drawn once per cache-warm
-	 * cycle), focus overlay for hover/select state (redrawn on
-	 * interaction, lands in §5). Month labels are HTML overlay, NOT
-	 * canvas-drawn — `dir="auto"` handles RTL automatically per v3
-	 * invariant 12.
+	 * Render strategy: Canvas 2D + D3-zoom (D-V1 lock). Two-layer:
+	 * base layer (dome chrome + stars; redrawn on size/mode/scope
+	 * change) + focus overlay (hover/select; §5).
 	 *
-	 * Concept Paper v3.1 §5 + Mock B1 visual contract.
+	 * Mount pattern (inherited from v4): flex child inside
+	 * `.content-area`, close button in `+layout.svelte` header row.
+	 *
+	 * Concept Paper v3.1 §5–§7 + Mock B1 visual contract.
 	 */
 	import { onMount } from 'svelte';
 	import { t, locale } from '$lib/i18n';
-	import { appSettings } from '$lib/libraries/store';
+	import { appSettings, saveSettings } from '$lib/libraries/store';
 	import type { SightV5Mode, SightV5Scope } from './types';
 	import { renderBaseLayer } from './render';
 	import { calendarRimMonths, type MonthLabel } from './dome';
+	import { buildModeContext } from './modes';
+
+	// ─── canonical mode + scope key sets ───────────────────────────
+	const MODES: ReadonlyArray<SightV5Mode> = ['R', 'L', 'T', 'C', 'S', 'A', 'P'];
+	const VALID_MODES: ReadonlySet<SightV5Mode> = new Set(MODES);
+	const VALID_SCOPES: ReadonlySet<SightV5Scope> = new Set(['universe', 'library', 'folder']);
+	const SCOPE_LETTERS: Record<SightV5Scope, string> = {
+		universe: 'U',
+		library: 'L',
+		folder: 'F',
+	};
 
 	// ─── persisted mode + scope ────────────────────────────────────
-	const VALID_MODES: ReadonlySet<SightV5Mode> = new Set(['R', 'L', 'T', 'C', 'S', 'A', 'P']);
-	const VALID_SCOPES: ReadonlySet<SightV5Scope> = new Set(['universe', 'library', 'folder']);
-
 	let activeMode: SightV5Mode = $derived.by(() => {
 		const saved = $appSettings.sight?.lastMode;
 		return saved && VALID_MODES.has(saved) ? saved : 'R';
@@ -41,47 +51,46 @@
 	let canvasWidth = $state(800);
 	let canvasHeight = $state(600);
 
-	// Dome radius scales to the smaller container dimension, leaving
-	// ~50 px of padding for the calendar rim's month label overlay.
 	let domeRadius = $derived(Math.max(120, Math.min(canvasWidth, canvasHeight) / 2 - 50));
-
-	// Month labels — computed from active locale + domeRadius.
 	let monthLabels: MonthLabel[] = $derived(calendarRimMonths(domeRadius, $locale));
-
-	// Current month index (0..11) — used by render.ts to gold-tint
-	// the current month's wedge.
 	const currentMonthIndex = new Date().getMonth();
+
+	// §4: wedge-boundary angles for the active mode. Computed from an
+	// empty rows array — wedge GEOMETRY (uniform spacing for fixed-
+	// order modes; library-count-proportional for R) doesn't need
+	// counts; §5 will supply real rows + use the same context for
+	// per-star azimuth.
+	let modeWedgeAngles: number[] = $derived.by(() => {
+		const ctx = buildModeContext(activeMode, [], $locale);
+		// Use each bucket's start angle; the last bucket's end angle
+		// equals the first bucket's start angle (full circle).
+		return ctx.wedges.map(w => w.azimuthStart);
+	});
 
 	// ─── render orchestration ──────────────────────────────────────
 	function draw() {
 		if (!canvasEl) return;
 		const ctx = canvasEl.getContext('2d');
 		if (!ctx) return;
-		// Set Canvas resolution to device-pixel-ratio-aware logical size.
 		const dpr = window.devicePixelRatio || 1;
 		canvasEl.width = canvasWidth * dpr;
 		canvasEl.height = canvasHeight * dpr;
 		canvasEl.style.width = `${canvasWidth}px`;
 		canvasEl.style.height = `${canvasHeight}px`;
 		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-		renderBaseLayer(ctx, canvasWidth, canvasHeight, domeRadius, currentMonthIndex);
+		renderBaseLayer(ctx, canvasWidth, canvasHeight, domeRadius, currentMonthIndex, modeWedgeAngles);
 	}
 
-	// Redraw whenever the dome size or locale changes.
 	$effect(() => {
-		// Touch reactive deps so this effect re-runs when they change.
-		void canvasWidth; void canvasHeight; void domeRadius; void $locale;
+		void canvasWidth; void canvasHeight; void domeRadius; void $locale; void modeWedgeAngles;
 		draw();
 	});
 
 	onMount(() => {
 		if (!containerEl) return;
-		// Initial measure.
 		const rect = containerEl.getBoundingClientRect();
 		canvasWidth = rect.width;
 		canvasHeight = rect.height;
-
-		// Observe resize.
 		const ro = new ResizeObserver(entries => {
 			for (const entry of entries) {
 				canvasWidth = entry.contentRect.width;
@@ -89,19 +98,42 @@
 			}
 		});
 		ro.observe(containerEl);
-
 		return () => ro.disconnect();
 	});
+
+	// ─── mode + scope toggle handlers ──────────────────────────────
+	function setMode(m: SightV5Mode) {
+		if (m === activeMode) return;
+		$appSettings.sight = { ...($appSettings.sight ?? {}), lastMode: m };
+		saveSettings();
+	}
+	function setScope(s: SightV5Scope) {
+		if (s === activeScope) return;
+		$appSettings.sight = { ...($appSettings.sight ?? {}), lastScope: s };
+		saveSettings();
+	}
+
+	// ─── mode + scope state helpers ────────────────────────────────
+	// Per Concept Paper §5.5 + D-V6, mode P is dimmed when sparse
+	// data is detected; for §4 we treat all modes as "ready" since
+	// the data check happens in §5 (when actual rows are read from
+	// the layout cache). For now, every mode reflects two states:
+	// active (gold) or ready (cream, inactive).
+	function modeState(m: SightV5Mode): 'active' | 'ready' {
+		return m === activeMode ? 'active' : 'ready';
+	}
+	function scopeState(s: SightV5Scope): 'active' | 'ready' {
+		return s === activeScope ? 'active' : 'ready';
+	}
 </script>
 
 <div class="sight-v5-root" bind:this={containerEl}>
-	<!-- Canvas base layer — dome chrome (§3) + stars (§5, future). -->
+	<!-- Canvas base layer — dome chrome (§3) + per-mode wedge spokes
+	     (§4) + stars (§5, future). -->
 	<canvas class="sight-v5-canvas" bind:this={canvasEl}></canvas>
 
-	<!-- HTML overlay layer for month labels (NOT canvas-drawn text per
-	     v3 invariant 12; dir="auto" handles RTL). Positioned absolutely
-	     relative to the canvas; transform centers each label at its
-	     calendar-rim wedge position. -->
+	<!-- HTML overlay for month labels (NOT canvas-drawn text per v3
+	     invariant 12; dir="auto" handles RTL). -->
 	<div class="sight-v5-rim-labels" aria-hidden="false">
 		{#each monthLabels as label (label.monthIndex)}
 			<span
@@ -112,14 +144,35 @@
 		{/each}
 	</div>
 
-	<!-- Status strip — §1 placeholder, will be replaced by the mode
-	     toggle bar in §4 and the side panel in §5. -->
-	<div class="sight-v5-status-strip">
-		<span class="sight-v5-status-label">{$t('sight.v5.mode') || 'Mode'}:</span>
-		<strong>{activeMode}</strong>
-		<span class="sight-v5-status-sep">·</span>
-		<span class="sight-v5-status-label">{$t('sight.v5.scope') || 'Scope'}:</span>
-		<strong>{activeScope}</strong>
+	<!-- §4 mode toggle bar — 7 buttons, top-center. -->
+	<div class="sight-v5-mode-bar" role="tablist" aria-label="Sight modes">
+		{#each MODES as m (m)}
+			<button
+				type="button"
+				role="tab"
+				aria-selected={m === activeMode}
+				class="sight-v5-mode-btn"
+				class:active={modeState(m) === 'active'}
+				class:ready={modeState(m) === 'ready'}
+				title={$t(`sight.v5.mode.${m}.title`) || m}
+				onclick={() => setMode(m)}
+			>{m}</button>
+		{/each}
+	</div>
+
+	<!-- §4 scope toggle bar — 3 buttons (D-V3), below mode bar. -->
+	<div class="sight-v5-scope-bar" role="tablist" aria-label="Sight scope">
+		{#each (['universe', 'library', 'folder'] as SightV5Scope[]) as s (s)}
+			<button
+				type="button"
+				role="tab"
+				aria-selected={s === activeScope}
+				class="sight-v5-scope-btn"
+				class:active={scopeState(s) === 'active'}
+				title={$t(`sight.v5.scope.${s}.title`) || s}
+				onclick={() => setScope(s)}
+			>{SCOPE_LETTERS[s]}</button>
+		{/each}
 	</div>
 </div>
 
@@ -156,28 +209,65 @@
 		text-transform: uppercase;
 		white-space: nowrap;
 	}
-	.sight-v5-status-strip {
+	/* Mode toggle bar — Mock B1 geometry: 7 buttons, ~50w × 44h, 10 gap, centered above dome. */
+	.sight-v5-mode-bar {
 		position: absolute;
-		top: 16px;
+		top: 24px;
 		left: 50%;
 		transform: translateX(-50%);
 		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		font-size: 0.85rem;
-		color: #3a3a3a;
-		background: rgba(250, 246, 232, 0.85);
-		padding: 0.25rem 0.75rem;
+		gap: 10px;
+		z-index: 2;
+	}
+	.sight-v5-mode-btn {
+		width: 50px;
+		height: 44px;
+		border-radius: 6px;
+		font-family: Georgia, 'Times New Roman', serif;
+		font-size: 20px;
+		font-weight: 700;
+		cursor: pointer;
+		transition: background 200ms ease, color 200ms ease, border-color 200ms ease;
+	}
+	.sight-v5-mode-btn.active {
+		background: #c9a227;
+		color: #faf6e8;
+		border: 1px solid #c9a227;
+	}
+	.sight-v5-mode-btn.ready {
+		background: #fbf8ec;
+		color: #1a1a1a;
+		border: 1px solid #1a1a1a;
+		opacity: 0.95;
+	}
+	.sight-v5-mode-btn:hover {
+		filter: brightness(0.97);
+	}
+	/* Scope toggle bar — 3 buttons, below mode bar. */
+	.sight-v5-scope-bar {
+		position: absolute;
+		top: 80px;
+		left: 50%;
+		transform: translateX(-50%);
+		display: flex;
+		gap: 6px;
+		z-index: 2;
+	}
+	.sight-v5-scope-btn {
+		width: 34px;
+		height: 28px;
 		border-radius: 4px;
-		pointer-events: none;
-	}
-	.sight-v5-status-label {
+		font-family: Georgia, 'Times New Roman', serif;
+		font-size: 13px;
+		font-weight: 700;
+		cursor: pointer;
+		background: #fbf8ec;
 		color: #2a4a8c;
-		letter-spacing: 0.05em;
-		text-transform: uppercase;
-		font-size: 0.7rem;
+		border: 1px solid #2a4a8c;
+		transition: background 200ms ease, color 200ms ease;
 	}
-	.sight-v5-status-sep {
-		color: #b8a98a;
+	.sight-v5-scope-btn.active {
+		background: #2a4a8c;
+		color: #faf6e8;
 	}
 </style>

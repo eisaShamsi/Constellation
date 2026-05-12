@@ -46,7 +46,11 @@ use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
 
 /// Per-note cache row returned by `sight_v5_get_layout`.
+///
+/// Serde `rename_all = "camelCase"` aligns JSON output with the
+/// TypeScript LayoutCacheRow contract in `src/lib/sight/v5/types.ts`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct LayoutCacheRow {
     pub note_path: String,
     pub stratum: Option<i64>,
@@ -66,6 +70,7 @@ pub struct LayoutCacheRow {
 /// One typed-link edge between two visible notes — read by §5
 /// connector-line rendering.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct LinkEdge {
     pub source_path: String,
     pub target_path: String,

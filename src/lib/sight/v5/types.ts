@@ -39,7 +39,7 @@ export interface Star {
 	maturity: 'seed' | 'sapling' | 'evergreen' | 'canonical' | 'wilting';
 	confidenceAlpha: number;    // 0.45 (hypothesis) | 0.7 (evidence) | 1.0 (established)
 	contested: boolean;         // true → red dot
-	libraryPath: string;
+	libraryName: string;        // matches Rust LayoutCacheRow.library_name via serde camelCase rename
 	folderPath: string;
 	createdMonth: number;       // 0..11 (used by mode T)
 	sourcesPrimary: string | null;  // top-level horizontal-axis family (mode P), or null = Unsourced
@@ -70,39 +70,35 @@ export interface ModeContext {
 
 /** SQLite layout cache row shape (§2). One row per note per
  *  (library_set_hash) — D-V4 locked the per-note × 1 strategy; per-mode
- *  reprojection happens in JS at render time. */
+ *  reprojection happens in JS at render time.
+ *
+ *  Field names match the Rust LayoutCacheRow serde output (camelCase
+ *  via #[serde(rename_all = "camelCase")]). Optional fields use
+ *  TypeScript `| null` — Rust Option<T> serializes to null when None. */
 export interface LayoutCacheRow {
 	notePath: string;
-	stratum: number;
-	maturity: string;
-	confidenceAlpha: number;
-	contested: number;          // SQLite stores as 0/1; converted to bool at the boundary
-	libraryPath: string;
-	folderPath: string;
-	createdMonth: number;
+	stratum: number | null;
+	maturity: string | null;
+	confidenceAlpha: number | null;
+	contested: boolean;         // Rust converts SQLite 0/1 → bool at the IPC boundary
+	libraryName: string | null;
+	folderPath: string | null;
+	createdMonth: number | null;
 	sourcesPrimary: string | null;
 	stage: string | null;
 	actsPrimary: string | null;
 	dominantLinkType: string | null;
-	universeSnapshotHash: string;
 	computedAt: number;         // Unix epoch ms
 }
 
 /** A typed-link edge between two notes — read by §5 connector-line
  *  rendering. Color is mapped per Concept Paper §5.4 (9 typed-link
- *  kinds + supersedes slate-blue + associative cool-grey). */
+ *  kinds + supersedes slate-blue + associative cool-grey).
+ *
+ *  Field names match Rust LinkEdge serde output (camelCase). */
 export interface LinkEdge {
 	sourcePath: string;
 	targetPath: string;
-	linkType:
-		| 'supports'
-		| 'contradicts'
-		| 'causes'
-		| 'exemplifies'
-		| 'generalizes'
-		| 'derives-from'
-		| 'part-of'
-		| 'associative'
-		| 'supersedes';
-	confidence: 'hypothesis' | 'evidence' | 'established' | 'contested';
+	linkType: string;           // 9 typed kinds + 'untyped' (validation at render time)
+	confidence: string;         // 4 levels (hypothesis | evidence | established | contested)
 }

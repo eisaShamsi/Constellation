@@ -48,6 +48,7 @@ export function renderBaseLayer(
 	canvasHeight: number,
 	domeRadius: number,
 	currentMonthIndex: number,         // 0..11 — for the gold wedge tint
+	modeWedgeAngles?: number[],        // §4: optional active-mode wedge dividers
 ): void {
 	// Background fill (full canvas).
 	ctx.fillStyle = PALETTE.parchment;
@@ -73,8 +74,15 @@ export function renderBaseLayer(
 	// outermost strata boundary).
 	drawCalendarRimAccent(ctx, domeRadius);
 
-	// 12 month-wedge spokes (very faint).
+	// 12 month-wedge spokes (very faint) — always-on per Concept Paper
+	// §5.2 (the calendar rim is the stable temporal reference).
 	drawMonthSpokes(ctx, domeRadius);
+
+	// §4 mode-specific wedge boundary spokes (gold, slightly more
+	// visible than the calendar rim spokes — the active-mode cue).
+	if (modeWedgeAngles && modeWedgeAngles.length > 0) {
+		drawModeWedgeSpokes(ctx, domeRadius, modeWedgeAngles);
+	}
 
 	ctx.restore();
 }
@@ -162,6 +170,24 @@ function drawMonthSpokes(ctx: CanvasRenderingContext2D, domeRadius: number): voi
 	ctx.lineWidth = 0.4;
 	ctx.globalAlpha = 0.4;
 	for (const angle of calendarRimSpokes()) {
+		ctx.beginPath();
+		ctx.moveTo(0, 0);
+		ctx.lineTo(Math.cos(angle) * domeRadius, Math.sin(angle) * domeRadius);
+		ctx.stroke();
+	}
+	ctx.restore();
+}
+
+function drawModeWedgeSpokes(
+	ctx: CanvasRenderingContext2D,
+	domeRadius: number,
+	angles: number[],
+): void {
+	ctx.save();
+	ctx.strokeStyle = PALETTE.gold;
+	ctx.lineWidth = 0.6;
+	ctx.globalAlpha = 0.4;
+	for (const angle of angles) {
 		ctx.beginPath();
 		ctx.moveTo(0, 0);
 		ctx.lineTo(Math.cos(angle) * domeRadius, Math.sin(angle) * domeRadius);
