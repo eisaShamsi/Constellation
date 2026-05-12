@@ -37,6 +37,9 @@ mod classifier;
 // CONTENT-ENGINE-ARCHITECT.md for the architecture spec.
 pub mod cece;
 mod lenses;
+// MIG-024 §2 — Sight v5 layout cache + IPCs (per Concept Paper v3.1
+// §12.1; D-V4 per-note × 1 row strategy; D-V3 user-toggleable scope).
+pub mod sight_v5;
 // MIG-013 §1A: visibility widened so the offline `build_concept_vectors`
 // [[bin]] can call `lexicon::parse`. The M11 zero-diff invariant covers
 // `src-tauri/src/lexicon/**` (the data + module sources), not `lib.rs`.
@@ -345,6 +348,11 @@ pub fn run() {
             // MIG-022 §B.4 — note state history query API
             cece::history::cece_get_note_history,
             cece::history::cece_query_history,
+            // MIG-024 §2 — Sight v5 layout cache IPCs
+            sight_v5::sight_v5_get_layout,
+            sight_v5::sight_v5_get_universe_snapshot_hash,
+            sight_v5::sight_v5_get_link_set_for_notes,
+            sight_v5::sight_v5_warm_cache,
             // MIG-021v2 §1F'.b — bulk Approve All / Reject All
             sources::bulk_ops::sources_accept_all_pending,
             sources::bulk_ops::sources_bulk_accept_cancel,

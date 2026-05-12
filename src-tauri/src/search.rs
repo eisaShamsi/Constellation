@@ -1519,6 +1519,28 @@ fn init_db(path: &Path) -> Result<Connection, String> {
         ));
     }
 
+    // MIG-024 §2 — Sight v5 layout cache. Per-note × 1 row per D-V4;
+    // populated at write-time via note_meta UPDATE/DELETE triggers (no
+    // mode-specific rows — per-mode azimuth is computed in JS at
+    // render time per Concept Paper §6). The first-boot backfill
+    // populates the cache for existing notes via a single bulk
+    // INSERT...SELECT that joins note_meta + sky_nodes; subsequent
+    // boots skip via the schema_versions sentinel. Order matters:
+    // table → triggers → backfill, mirroring the §B.1/§B.2/§B.3
+    // pattern above.
+    crate::sight_v5::ensure_sight_v5_layout_table(&conn)
+        .map_err(|e| format!("Failed to create sight_v5_layout table (MIG-024 §2): {}", e))?;
+    crate::sight_v5::ensure_sight_v5_invalidation_trigger(&conn)
+        .map_err(|e| format!("Failed to create sight_v5_layout triggers (MIG-024 §2): {}", e))?;
+    let sight_backfilled = crate::sight_v5::backfill_sight_v5_layout(&mut conn)
+        .map_err(|e| format!("Failed to backfill sight_v5_layout (MIG-024 §2): {}", e))?;
+    if sight_backfilled > 0 {
+        diag_log(path, &format!(
+            "[search] init_db: MIG-024 §2 backfilled {} sight_v5_layout rows",
+            sight_backfilled,
+        ));
+    }
+
     // Create embeddings table for semantic search (Phase 2)
     conn.execute_batch("
         CREATE TABLE IF NOT EXISTS note_embeddings (
