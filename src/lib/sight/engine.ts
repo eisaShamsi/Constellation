@@ -30,7 +30,11 @@
  * 2026-05-12), V4 flips to `false` in the same edit V5 flips to `true`
  * (the v5 ship moment, MIG-024 §6).
  */
+// MIG-024 §6 ship moment (2026-05-12): V4 hidden, V5 active per D-V5.
+// v4 component stays on disk for cleanup MIG (after Eisa confirms v5
+// stable across multiple sessions). Flipping V4 back to true + V5 to
+// false brings v4 back as the rollback target.
 export const SIGHT_V2_ENABLED = false;
 export const SIGHT_V3_ENABLED = false;
-export const SIGHT_V4_ENABLED = true;
-export const SIGHT_V5_ENABLED = false;
+export const SIGHT_V4_ENABLED = false;
+export const SIGHT_V5_ENABLED = true;

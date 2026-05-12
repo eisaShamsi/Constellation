@@ -1068,6 +1068,50 @@ For deeper detail + a worked example, see the **Epistemic Metadata** topic in th
 
 ---
 
+## 10d. Constellation Sight v5
+
+A full-screen visualization of the shape and organization of your epistemic content as a stable star chart.
+
+### Open Sight v5
+
+Click the star icon in the left dock. Sight v5 takes the full content area; press **Esc** or click the **×** in the header to close.
+
+### What you see
+
+- Eight concentric strata bands — L1 Datum at the rim, L8 Worldview at the pole.
+- A 12-month calendar rim wrapping the outside of the dome.
+- Stars (your notes) positioned at their stratum band.
+- Faint typed-link lines between notes.
+
+### Encodings (never change with mode)
+
+- **Position** (radial) = strata (where in the L1→L8 hierarchy the note sits).
+- **Size** = maturity (seed → sapling → evergreen → canonical → wilting).
+- **Brightness** = confidence (hypothesis → evidence → established).
+- **Color** = ink black for normal; red for contested.
+
+### The 7 modes
+
+R Regions · L Link Types · T Time · C Confidence · S Stages · A Acts · P Provenance. The toggle bar at the top of the dome re-cuts the rim wedges per mode. **Strata stays the radius**; only the angular position changes.
+
+### The 3 scopes
+
+U Universe · L Library · F Folder. The scope toggle below the mode bar narrows the visible note set.
+
+### Interactions
+
+- Hover a star → tooltip + incident links brighten.
+- Click a star → side panel with note detail + "Open in editor →".
+- Click background or press Esc → clear selection.
+
+### What Sight v5 is for
+
+It answers one question: **"Is my universe healthy? If not, where does it need to be handled?"** Layer 1 (the visual foundation) shows you the shape; Layers 2–4 (coming in future MIGs) add diagnostic + recommendation + local-AI coaching.
+
+For the full feature set + canonical design contract, see `Constellation-Sight-Concept-Paper-v3.1.md` and the help topic `Sight v5`.
+
+---
+
 ## 11. Templates
 
 Create reusable note templates:
