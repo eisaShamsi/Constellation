@@ -37,6 +37,7 @@
 //! §B.5 ships the Sight v3 overlay UI per D-B4.β.
 
 use rusqlite::Connection;
+use serde::{Deserialize, Serialize};
 
 /// Idempotent table + index creation. Called once per `init_db` after
 /// the sources subsystem schema is in place (so the foreign-key
@@ -271,6 +272,151 @@ pub fn backfill_initial_history(conn: &mut Connection) -> rusqlite::Result<usize
 
     tx.commit()?;
     Ok(rows_seeded)
+}
+
+// ─── §B.4 query API ──────────────────────────────────────────────────────
+
+/// One row of the note_state_history table, as returned to the frontend.
+/// `changes_json` is the raw JSON string; the frontend parses + walks
+/// the diff structure (different keys per event source — `'_seed'` for
+/// backfill rows, per-field keys for trigger rows).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HistoryEvent {
+    pub history_id: i64,
+    pub note_path: String,
+    pub captured_at: i64,
+    pub changes_json: String,
+}
+
+/// Filter for the cross-note query IPC. All fields optional; the
+/// resulting query is the conjunction of the supplied filters.
+#[derive(Debug, Clone, Deserialize)]
+pub struct HistoryFilter {
+    /// Substring match on JSON keys (e.g. "sources" matches every row
+    /// where `changes_json` contains the literal `"sources"` key).
+    /// Future polish: proper JSON path matching via json_extract.
+    pub axis: Option<String>,
+    /// captured_at >= since (milliseconds since epoch).
+    pub since: Option<i64>,
+    /// captured_at <= until (milliseconds since epoch).
+    pub until: Option<i64>,
+    /// Filter to a specific library_name via JOIN with note_meta.
+    pub library_name: Option<String>,
+    /// Caps result-set size; defaults to 1000 if not specified.
+    pub limit: Option<usize>,
+}
+
+/// MIG-022 §B.4 — read all history events for a single note in
+/// chronological order (most recent first; reverse-chronological
+/// matches the dominant UX read pattern of "show me recent changes").
+///
+/// Uses the covering index `idx_note_state_history_note_time` for
+/// the lookup — no full table scan, no sort. Bounded by the note's
+/// individual row count (typically O(10) per note).
+#[tauri::command]
+pub fn cece_get_note_history(
+    app: tauri::AppHandle,
+    note_path: String,
+) -> Result<Vec<HistoryEvent>, String> {
+    use tauri::Manager;
+    let search_state = app.state::<crate::search::SearchState>();
+    let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
+    let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
+    let mut stmt = conn
+        .prepare(
+            "SELECT history_id, note_path, captured_at, changes_json
+             FROM note_state_history
+             WHERE note_path = ?
+             ORDER BY captured_at DESC",
+        )
+        .map_err(|e| format!("prepare failed: {}", e))?;
+    let rows = stmt
+        .query_map([note_path], |row| {
+            Ok(HistoryEvent {
+                history_id: row.get(0)?,
+                note_path: row.get(1)?,
+                captured_at: row.get(2)?,
+                changes_json: row.get(3)?,
+            })
+        })
+        .map_err(|e| format!("query failed: {}", e))?;
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(|e| format!("row collect failed: {}", e))
+}
+
+/// MIG-022 §B.4 — cross-note query with optional filters. Useful for
+/// gap-analysis §6.3-style queries: "show me all notes where my
+/// `sources` changed in the last 6 months", "show all changes in
+/// library X since date Y", etc.
+///
+/// Implementation note: filter values are concatenated into the SQL
+/// dynamically (`format!()`) for the WHERE clauses BUT the actual
+/// values are bound via parameterized `?` placeholders to prevent
+/// SQL injection. The `axis` filter uses `LIKE '%key%'` substring
+/// match on the changes_json text — coarse but sufficient for the
+/// gap-analysis query patterns. Future polish: json_extract for
+/// precise key matching + json_each for iteration.
+#[tauri::command]
+pub fn cece_query_history(
+    app: tauri::AppHandle,
+    filter: HistoryFilter,
+) -> Result<Vec<HistoryEvent>, String> {
+    use tauri::Manager;
+    let search_state = app.state::<crate::search::SearchState>();
+    let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
+    let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
+
+    let mut sql = String::from(
+        "SELECT h.history_id, h.note_path, h.captured_at, h.changes_json
+         FROM note_state_history h",
+    );
+    let mut params: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
+    let mut clauses: Vec<String> = Vec::new();
+
+    if filter.library_name.is_some() {
+        sql.push_str(" JOIN note_meta n ON n.path = h.note_path");
+    }
+    if let Some(axis) = &filter.axis {
+        // Substring match on the JSON text. e.g. axis="sources" matches
+        // any row whose changes_json contains the literal "sources" key.
+        clauses.push("h.changes_json LIKE ?".to_string());
+        params.push(Box::new(format!("%\"{}\"%", axis.replace('%', "\\%"))));
+    }
+    if let Some(since) = filter.since {
+        clauses.push("h.captured_at >= ?".to_string());
+        params.push(Box::new(since));
+    }
+    if let Some(until) = filter.until {
+        clauses.push("h.captured_at <= ?".to_string());
+        params.push(Box::new(until));
+    }
+    if let Some(library) = &filter.library_name {
+        clauses.push("n.library_name = ?".to_string());
+        params.push(Box::new(library.clone()));
+    }
+    if !clauses.is_empty() {
+        sql.push_str(" WHERE ");
+        sql.push_str(&clauses.join(" AND "));
+    }
+    sql.push_str(" ORDER BY h.captured_at DESC LIMIT ?");
+    let limit = filter.limit.unwrap_or(1000) as i64;
+    params.push(Box::new(limit));
+
+    let mut stmt = conn.prepare(&sql).map_err(|e| format!("prepare failed: {}", e))?;
+    let param_refs: Vec<&dyn rusqlite::ToSql> =
+        params.iter().map(|p| p.as_ref() as &dyn rusqlite::ToSql).collect();
+    let rows = stmt
+        .query_map(rusqlite::params_from_iter(param_refs.iter()), |row| {
+            Ok(HistoryEvent {
+                history_id: row.get(0)?,
+                note_path: row.get(1)?,
+                captured_at: row.get(2)?,
+                changes_json: row.get(3)?,
+            })
+        })
+        .map_err(|e| format!("query failed: {}", e))?;
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(|e| format!("row collect failed: {}", e))
 }
 
 #[cfg(test)]

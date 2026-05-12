@@ -342,6 +342,9 @@ pub fn run() {
             // MIG-021v3 V3-§10.A — per-Library calibration view data
             cece::reliability::cece_get_reliability_for_active_library,
             cece::reliability::cece_get_active_library_root,
+            // MIG-022 §B.4 — note state history query API
+            cece::history::cece_get_note_history,
+            cece::history::cece_query_history,
             // MIG-021v2 §1F'.b — bulk Approve All / Reject All
             sources::bulk_ops::sources_accept_all_pending,
             sources::bulk_ops::sources_bulk_accept_cancel,
