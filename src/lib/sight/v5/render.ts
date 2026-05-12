@@ -97,14 +97,18 @@ export function renderBaseLayer(
 	stars?: StarPosition[],            // §5: per-star positions
 	links?: LinkEdge[],                // §5: connector edges (drawn faint at rest)
 	showCurrentMonthTint?: boolean,    // fix-4: gate the gold-month wedge to T mode only
+	domeCenterX?: number,              // fix-5: caller-provided dome center X (default = canvas mid-x)
+	domeCenterY?: number,              // fix-5: caller-provided dome center Y (default = canvas mid-y)
 ): void {
 	// Background fill (full canvas).
 	ctx.fillStyle = PALETTE.parchment;
 	ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
-	// Translate to dome center for the rest of the draw.
-	const cx = canvasWidth / 2;
-	const cy = canvasHeight / 2;
+	// Translate to dome center for the rest of the draw. Caller can
+	// pass an explicit center to leave room for the toggle bars at the
+	// top (fix-5); otherwise default to canvas dead-center.
+	const cx = domeCenterX ?? canvasWidth / 2;
+	const cy = domeCenterY ?? canvasHeight / 2;
 	ctx.save();
 	ctx.translate(cx, cy);
 
@@ -167,11 +171,17 @@ export function renderFocusOverlay(
 	focusedStar: StarPosition,
 	incidentEdges: LinkEdge[],
 	starsByPath: Map<string, StarPosition>,
+	domeCenterX?: number,
+	domeCenterY?: number,
 ): void {
 	ctx.save();
-	// Translate to dome center (matches base layer).
-	const center = { x: ctx.canvas.width / (window.devicePixelRatio || 1) / 2, y: ctx.canvas.height / (window.devicePixelRatio || 1) / 2 };
-	ctx.translate(center.x, center.y);
+	// Translate to dome center (matches base layer). Defaults to canvas
+	// dead-center for backward compat; callers passing a custom center
+	// (fix-5) keep the focus overlay aligned with the base.
+	const dpr = window.devicePixelRatio || 1;
+	const cx = domeCenterX ?? ctx.canvas.width / dpr / 2;
+	const cy = domeCenterY ?? ctx.canvas.height / dpr / 2;
+	ctx.translate(cx, cy);
 
 	// Brighten incident edges.
 	ctx.globalAlpha = 0.85;

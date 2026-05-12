@@ -60,7 +60,19 @@
 	let canvasWidth = $state(800);
 	let canvasHeight = $state(600);
 
-	let domeRadius = $derived(Math.max(120, Math.min(canvasWidth, canvasHeight) / 2 - 50));
+	// Fix-5 (2026-05-12): the dome center moves DOWN by `TOP_RESERVE` so
+	// the toggle bars (mode + scope, ~108 px stacked from top) don't
+	// overlap the dome rim. domeRadius shrinks to fit the remaining
+	// usable height. Floor at 120 px so a tiny window still draws
+	// something meaningful.
+	const TOP_RESERVE = 140;       // mode bar (24+44) + scope bar (8+28) + 36 px gap
+	const BOTTOM_PADDING = 40;     // breathing room below the dome
+	const SIDE_PADDING = 60;       // breathing room on left/right for rim labels
+	let usableHeight = $derived(Math.max(240, canvasHeight - TOP_RESERVE - BOTTOM_PADDING));
+	let usableWidth = $derived(Math.max(240, canvasWidth - 2 * SIDE_PADDING));
+	let domeRadius = $derived(Math.max(120, Math.min(usableHeight, usableWidth) / 2));
+	let domeCenterY = $derived(TOP_RESERVE + usableHeight / 2);
+	let domeCenterX = $derived(canvasWidth / 2);
 	const currentMonthIndex = new Date().getMonth();
 
 	// ─── layout cache + scope-filtered rows ────────────────────────
@@ -155,20 +167,22 @@
 			stars,
 			links,
 			activeMode === 'T',   // fix-4: gold-month tint only when rim shows months
+			domeCenterX,          // fix-5: dome center x (caller-provided to leave room for toolbars)
+			domeCenterY,          // fix-5: dome center y (shifted down by TOP_RESERVE)
 		);
 		// Focus overlay (brightened edges + selection ring) draws over
 		// the base. For §5 we re-draw both on focus change; future
 		// optimization could split into two physical Canvas layers
 		// per the Concept Paper §11.1 perf strategy.
 		if (focusedStar) {
-			renderFocusOverlay(ctx, focusedStar, incidentEdges, starsByPath);
+			renderFocusOverlay(ctx, focusedStar, incidentEdges, starsByPath, domeCenterX, domeCenterY);
 		}
 	}
 
 	$effect(() => {
 		// Touch reactive deps so this effect re-runs when they change.
-		void canvasWidth; void canvasHeight; void domeRadius; void $locale;
-		void modeWedgeAngles; void stars; void links; void focusedStar; void activeMode;
+		void canvasWidth; void canvasHeight; void domeRadius; void domeCenterX; void domeCenterY;
+		void $locale; void modeWedgeAngles; void stars; void links; void focusedStar; void activeMode;
 		draw();
 	});
 
@@ -261,9 +275,9 @@
 	function onCanvasMouseMove(e: MouseEvent) {
 		if (!canvasEl) return;
 		const rect = canvasEl.getBoundingClientRect();
-		// Mouse coordinates relative to dome center.
-		const mx = e.clientX - rect.left - canvasWidth / 2;
-		const my = e.clientY - rect.top - canvasHeight / 2;
+		// Mouse coordinates relative to the shifted dome center (fix-5).
+		const mx = e.clientX - rect.left - domeCenterX;
+		const my = e.clientY - rect.top - domeCenterY;
 		let best: StarPosition | null = null;
 		let bestDist = HIT_RADIUS_PX * HIT_RADIUS_PX;
 		for (const s of stars) {
@@ -287,8 +301,8 @@
 	function onCanvasClick(e: MouseEvent) {
 		if (!canvasEl) return;
 		const rect = canvasEl.getBoundingClientRect();
-		const mx = e.clientX - rect.left - canvasWidth / 2;
-		const my = e.clientY - rect.top - canvasHeight / 2;
+		const mx = e.clientX - rect.left - domeCenterX;
+		const my = e.clientY - rect.top - domeCenterY;
 		let best: StarPosition | null = null;
 		let bestDist = HIT_RADIUS_PX * HIT_RADIUS_PX;
 		for (const s of stars) {
@@ -337,7 +351,7 @@
 			<span
 				class="sight-v5-rim-label"
 				dir="auto"
-				style="left: {canvasWidth / 2 + label.x}px; top: {canvasHeight / 2 + label.y}px;"
+				style="left: {domeCenterX + label.x}px; top: {domeCenterY + label.y}px;"
 			>{label.label}</span>
 		{/each}
 	</div>
