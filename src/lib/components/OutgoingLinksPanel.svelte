@@ -56,6 +56,23 @@
 		return link.linkType ? [link.linkType] : [];
 	}
 
+	/** MIG-022 §A.4.d (Boss-Test Gate 3 Stage 4.1 catch, 2026-05-12):
+	 *  the annotation slot in this panel sometimes carries a known
+	 *  link-type name (e.g. "supersedes", "supports") rather than a
+	 *  user-written annotation. That happens for legacy index data
+	 *  + for the search.rs::parse_typed_links path which treats
+	 *  pipe-aliases as annotation rather than link_type. When the
+	 *  annotation matches a known type, render its localized label
+	 *  via $t('linkTypes.<name>') so non-en locales don't see the
+	 *  raw English. Otherwise pass through verbatim. */
+	function displayAnnotation(annotation: string): string {
+		if (!annotation) return annotation;
+		const key = `linkTypes.${annotation.toLowerCase()}`;
+		const translated = $t(key);
+		if (translated && translated !== key) return translated;
+		return annotation;
+	}
+
 	let showOutgoing = $state(true);
 
 	// Confidence popover — mirrors BacklinksPanel.
@@ -131,7 +148,7 @@
 				</span>
 				<span class="ol-context">{link.context}</span>
 				{#if link.annotation}
-					<span class="ol-annotation" title={link.annotation}>“{link.annotation}”</span>
+					<span class="ol-annotation" title={link.annotation}>“{displayAnnotation(link.annotation)}”</span>
 				{/if}
 			</button>
 		{/each}

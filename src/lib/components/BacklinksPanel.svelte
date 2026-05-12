@@ -13,6 +13,17 @@
 	const LINK_TYPE_TEXT   = $derived($appSettings.linkPills?.text ?? {});
 	const pillShape        = $derived($appSettings.linkPills?.shape ?? { radius: 10, height: 20, fontWeight: 700 });
 
+	/** MIG-022 §A.4.d — same shape as OutgoingLinksPanel.displayAnnotation.
+	 *  Translates known link-type names that land in the annotation
+	 *  slot via $t('linkTypes.<name>'); raw fallback otherwise. */
+	function displayAnnotation(annotation: string): string {
+		if (!annotation) return annotation;
+		const key = `linkTypes.${annotation.toLowerCase()}`;
+		const translated = $t(key);
+		if (translated && translated !== key) return translated;
+		return annotation;
+	}
+
 	/** Format ISO-8601 last_traversed to a short relative label for the tooltip. */
 	function fmtTraversed(iso: string): string {
 		if (!iso) return '';
@@ -172,7 +183,7 @@
 					</span>
 					<span class="bl-context">{bl.context}</span>
 					{#if bl.annotation}
-						<span class="bl-annotation" title={bl.annotation}>“{bl.annotation}”</span>
+						<span class="bl-annotation" title={bl.annotation}>“{displayAnnotation(bl.annotation)}”</span>
 					{/if}
 				</button>
 			{/each}
