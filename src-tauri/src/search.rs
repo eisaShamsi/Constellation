@@ -1501,6 +1501,24 @@ fn init_db(path: &Path) -> Result<Connection, String> {
     crate::cece::history::ensure_note_state_history_trigger(&conn)
         .map_err(|e| format!("Failed to create note_state_history trigger (MIG-022 §B.2): {}", e))?;
 
+    // MIG-022 §B.3 — First-boot backfill: seed an initial-state
+    // history row for every existing note that has any epistemic data
+    // set. Idempotent via schema_versions.note_state_history_backfill
+    // sentinel — once stamped, subsequent boots skip. Resumable per
+    // CLAUDE.md SO #6: if interrupted, the next boot re-runs cleanly
+    // (BEGIN IMMEDIATE transaction; partial writes roll back). Uses
+    // the DROP TRIGGER + bulk INSERT protocol per the WA #5 cross-
+    // check (avoids 7,600 sequential trigger fires on Eisa's primary
+    // universe).
+    let backfilled = crate::cece::history::backfill_initial_history(&mut conn)
+        .map_err(|e| format!("Failed to backfill note_state_history (MIG-022 §B.3): {}", e))?;
+    if backfilled > 0 {
+        diag_log(path, &format!(
+            "[search] init_db: MIG-022 §B.3 backfilled {} initial-state history rows",
+            backfilled,
+        ));
+    }
+
     // Create embeddings table for semantic search (Phase 2)
     conn.execute_batch("
         CREATE TABLE IF NOT EXISTS note_embeddings (

@@ -143,6 +143,136 @@ pub fn drop_note_state_history_trigger(conn: &Connection) -> rusqlite::Result<()
     Ok(())
 }
 
+/// MIG-022 §B.3 — First-boot backfill: seed an initial-state history
+/// row for every existing note that has any epistemic data set.
+///
+/// Idempotent via the `schema_versions` sentinel — once stamped, the
+/// backfill skips on every subsequent boot. Per CLAUDE.md SO #6 the
+/// backfill is **resumable**: if interrupted mid-flight, the next
+/// boot finds the sentinel un-stamped and re-runs cleanly (the bulk
+/// INSERT is wrapped in a transaction; partial writes are rolled
+/// back).
+///
+/// Protocol (per the WA #5 cross-check refinement):
+///   1. Check sentinel — skip + return Ok(0) if already stamped
+///   2. BEGIN IMMEDIATE — exclusive lock for the duration
+///   3. DROP TRIGGER note_state_history_au — so the bulk INSERT
+///      doesn't fire the trigger 7,600 times on Eisa's primary
+///      universe (the canonical SQLite footgun)
+///   4. Bulk INSERT one row per existing note_meta row whose
+///      epistemic fields are non-trivially set (sources, content_type,
+///      OR properties_json != '{}'). Empty notes don't get seed
+///      events — their first UPDATE creates the first history row
+///      naturally
+///   5. Re-attach trigger via ensure_note_state_history_trigger
+///   6. Stamp `schema_versions.note_state_history_backfill = 1`
+///   7. COMMIT (or rollback on any error)
+///
+/// `captured_at` for seed events: the note's `modified` timestamp
+/// (in milliseconds), representing "this is the state at the file's
+/// last save." A pure-history view would require git log or similar
+/// — out of scope; the seed marks "this is where the timeline starts
+/// for this note."
+///
+/// `changes_json` for seed events uses the special `'_seed'` key
+/// (distinct from the `'sources'`/`'content_type'`/`'properties_json'`
+/// keys the UPDATE trigger emits) so query-time consumers can
+/// distinguish "initial state snapshot" from "field change":
+///   `{"_seed": {"sources": "testimony", "content_type": "fact", "properties_json": "{...}"}}`
+///
+/// Returns the count of rows seeded (or 0 if backfill was skipped).
+pub fn backfill_initial_history(conn: &mut Connection) -> rusqlite::Result<usize> {
+    // Check sentinel — skip if already done.
+    let stored_version: i64 = conn
+        .query_row(
+            "SELECT version FROM schema_versions
+             WHERE module = 'note_state_history_backfill'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap_or(0);
+    if stored_version >= 1 {
+        return Ok(0);
+    }
+
+    // BEGIN IMMEDIATE for exclusive write-lock during the backfill.
+    let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+
+    // DROP TRIGGER so each seed row doesn't re-fire it (the trigger
+    // wouldn't actually fire here anyway since we're INSERTing into
+    // note_state_history directly, not UPDATE'ing note_meta — but
+    // dropping it is the canonical protocol per the cross-check + a
+    // belt-and-braces guard against future trigger additions).
+    tx.execute_batch("DROP TRIGGER IF EXISTS note_state_history_au;")?;
+
+    // Single bulk INSERT seeds one row per existing note that has
+    // any non-trivial epistemic data. The WHERE filter avoids
+    // seeding empty notes.
+    //
+    // captured_at: note_meta.modified is seconds-since-epoch (per the
+    // existing schema); convert to milliseconds via `* 1000`.
+    //
+    // changes_json: uses '_seed' key (one underscore prefix) to
+    // distinguish from the UPDATE trigger's per-field keys. Stores
+    // the snapshot of the three watched fields (each may be NULL).
+    let rows_seeded = tx.execute(
+        "INSERT INTO note_state_history (note_path, captured_at, changes_json)
+         SELECT
+             path,
+             modified * 1000,
+             json_object('_seed', json_object(
+                 'sources', sources,
+                 'content_type', content_type,
+                 'properties_json', properties_json
+             ))
+         FROM note_meta
+         WHERE sources IS NOT NULL
+            OR content_type IS NOT NULL
+            OR (properties_json IS NOT NULL AND properties_json != '{}')",
+        [],
+    )?;
+
+    // Re-attach the trigger (same SQL as ensure_note_state_history_trigger;
+    // inlined here so we stay inside the transaction).
+    tx.execute_batch(
+        "
+        CREATE TRIGGER IF NOT EXISTS note_state_history_au
+        AFTER UPDATE ON note_meta
+        WHEN OLD.sources IS NOT NEW.sources
+          OR OLD.content_type IS NOT NEW.content_type
+          OR OLD.properties_json IS NOT NEW.properties_json
+        BEGIN
+            INSERT INTO note_state_history (note_path, captured_at, changes_json)
+            VALUES (
+                NEW.path,
+                CAST(strftime('%s', 'now') AS INTEGER) * 1000,
+                json_object(
+                    'sources', CASE WHEN OLD.sources IS NOT NEW.sources
+                        THEN json_object('old', OLD.sources, 'new', NEW.sources)
+                        ELSE NULL END,
+                    'content_type', CASE WHEN OLD.content_type IS NOT NEW.content_type
+                        THEN json_object('old', OLD.content_type, 'new', NEW.content_type)
+                        ELSE NULL END,
+                    'properties_json', CASE WHEN OLD.properties_json IS NOT NEW.properties_json
+                        THEN json_object('old', OLD.properties_json, 'new', NEW.properties_json)
+                        ELSE NULL END
+                )
+            );
+        END;
+        ",
+    )?;
+
+    // Stamp the sentinel so subsequent boots skip.
+    tx.execute(
+        "INSERT OR REPLACE INTO schema_versions (module, version, updated_at)
+         VALUES ('note_state_history_backfill', 1, strftime('%s','now'))",
+        [],
+    )?;
+
+    tx.commit()?;
+    Ok(rows_seeded)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -361,6 +491,99 @@ mod tests {
         assert!(changes.contains("\"sources\""), "sources diff captured");
         assert!(changes.contains("\"content_type\""), "content_type diff captured");
         assert!(changes.contains("\"properties_json\""), "properties_json diff captured");
+    }
+
+    // ─── §B.3 backfill tests ─────────────────────────────────────────────
+
+    /// Setup variant that includes the `schema_versions` table the
+    /// backfill uses for its idempotency sentinel.
+    fn setup_db_with_trigger_and_sentinel() -> Connection {
+        let conn = setup_db_with_trigger();
+        conn.execute_batch(
+            "CREATE TABLE IF NOT EXISTS schema_versions (
+                module TEXT PRIMARY KEY,
+                version INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL
+            );",
+        ).expect("create schema_versions");
+        conn
+    }
+
+    #[test]
+    fn mig022_b3_backfill_seeds_existing_notes() {
+        let mut conn = setup_db_with_trigger_and_sentinel();
+        // Seed 3 notes: two with epistemic data, one empty.
+        conn.execute(
+            "INSERT INTO note_meta (path, name, library_name, modified, sources, content_type, properties_json)
+             VALUES
+                ('a.md', 'a.md', 'lib', 1700000000, 'testimony', 'fact', '{\"held_by\":\"al-Shāfiʿī\"}'),
+                ('b.md', 'b.md', 'lib', 1700000100, 'inference', NULL, '{}'),
+                ('c.md', 'c.md', 'lib', 1700000200, NULL, NULL, '{}')",
+            [],
+        ).expect("seed notes");
+
+        let count = backfill_initial_history(&mut conn).expect("backfill should succeed");
+        assert_eq!(count, 2, "should seed only the 2 notes with epistemic data (skip c.md)");
+
+        // Verify the seed shape uses the '_seed' key.
+        let changes: String = conn.query_row(
+            "SELECT changes_json FROM note_state_history WHERE note_path = 'a.md'",
+            [],
+            |row| row.get(0),
+        ).expect("read a.md history");
+        assert!(changes.contains("\"_seed\""), "seed events use _seed key: {}", changes);
+        assert!(changes.contains("\"testimony\""), "sources captured: {}", changes);
+        // properties_json is stringified-inside-JSON so its inner
+        // quotes get escaped to `\"...\"`. Loose substring check on
+        // the value's text content is sufficient.
+        assert!(changes.contains("al-Shāfiʿī"), "properties_json captured: {}", changes);
+
+        // Verify captured_at uses the note's modified timestamp × 1000.
+        let captured_at: i64 = conn.query_row(
+            "SELECT captured_at FROM note_state_history WHERE note_path = 'a.md'",
+            [],
+            |row| row.get(0),
+        ).expect("read a.md captured_at");
+        assert_eq!(captured_at, 1700000000 * 1000, "captured_at should be modified * 1000");
+
+        // c.md (empty) should NOT have a history row.
+        assert_eq!(count_history(&conn, "c.md"), 0, "empty notes don't get seed events");
+    }
+
+    #[test]
+    fn mig022_b3_backfill_idempotent() {
+        let mut conn = setup_db_with_trigger_and_sentinel();
+        conn.execute(
+            "INSERT INTO note_meta (path, name, library_name, modified, sources)
+             VALUES ('a.md', 'a.md', 'lib', 1700000000, 'testimony')",
+            [],
+        ).expect("seed");
+        let first = backfill_initial_history(&mut conn).expect("first run");
+        assert_eq!(first, 1);
+        // Second call should skip via sentinel.
+        let second = backfill_initial_history(&mut conn).expect("second run should not error");
+        assert_eq!(second, 0, "sentinel should skip subsequent backfill calls");
+        // Verify only one history row total (no duplicates).
+        assert_eq!(count_history(&conn, "a.md"), 1);
+    }
+
+    #[test]
+    fn mig022_b3_backfill_preserves_trigger_after_run() {
+        let mut conn = setup_db_with_trigger_and_sentinel();
+        conn.execute(
+            "INSERT INTO note_meta (path, name, library_name, modified, sources)
+             VALUES ('a.md', 'a.md', 'lib', 1700000000, 'testimony')",
+            [],
+        ).expect("seed");
+        backfill_initial_history(&mut conn).expect("backfill");
+        // Now an UPDATE on note_meta should fire the trigger.
+        conn.execute(
+            "UPDATE note_meta SET sources = 'inference' WHERE path = 'a.md'",
+            [],
+        ).expect("update");
+        // Should now have 2 history rows: one from backfill (_seed) +
+        // one from trigger (sources diff).
+        assert_eq!(count_history(&conn, "a.md"), 2, "trigger must work after backfill");
     }
 
     #[test]
