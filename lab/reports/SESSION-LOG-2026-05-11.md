@@ -755,3 +755,65 @@ Per the Plan §A + Eisa's D-A1.β + D-A2.β + D-A4.α decisions:
 | §A.4 | i18n keys + help topic + User Manual chapter |
 
 Boss-Test Gate 3 fires after §A.4. Total §A estimated 4-7 days agent time per Plan.
+
+---
+
+## MIG-022 §A — full cascade closes Gate 3 PASS (2026-05-12)
+
+§A shipped across 8 commits + 2 Boss-test catches inline + 5 PJs filed.
+
+### Phase scoreboard
+
+| Phase | Commit | What |
+|---|---|---|
+| §A.1 | `c94912d` | Frontmatter parser: `nested-object-list` PropertyType + `parseFrontmatter`/`reconstructFrontmatter` extensions for `ikhtilāf` nested rows + LIST_KEYS/DATE_KEYS additions for `domain` and `updated_at` |
+| §A.2 | `a03460e` | `supersedes` typed-link added (9th name; D-A1.β). 3 Rust sites (tension/strata/libraries) + 2 frontend sites (LINK_TYPE_NAMES + linkPills.fill/text defaults) + livePreview.ts (TYPED_LINK_TYPES + typedLinkDecos + CSS) + CLAUDE.md cognitive-vocabulary update |
+| §A.3 | `b0305b0` | Properties panel ikhtilāf widget per D-A4.α — full custom `{school, position}` row editor with add/remove, type-change handler, dedicated CSS namespace |
+| §A.4.a | `8a0730b` | 8 i18n keys × 15 locales (1 linkTypes.supersedes + 7 propertyEditor.*) via Python batch + en help topic (`docs/help.uConstellation.World/Epistemic Metadata/Epistemic Metadata.md`, ~1500 words) + en User Manual chapter `## 10c. Epistemic Metadata` |
+| §A.4.b | `738a35a` | 14-locale doc translations via 3 parallel agents (Latin / mixed-script / RTL+Arabic+Indic). 28 files (14 help topics + 14 UM chapters) |
+| Ar fix | `9a6a938` | Boss correction: `linkTypes.supersedes` "يَنسَخ" (= "copies") → "يحلّ محلّ" (= "takes the place of") — semantically correct rendering for "supersedes" |
+| Ur fix | `5e9b5ed` | Boss correction: `linkTypes.supersedes` "تبدیل کرتا ہے" (= "transforms") → "کی جگہ لیتا ہے" (parallel to Arabic structure) |
+| §A.4.d | `1042ea6` | OutgoingLinksPanel + BacklinksPanel `displayAnnotation()` helper — translates known link-type names rendered in the annotation slot via `$t('linkTypes.<name>')`; raw fallback for arbitrary annotations. Closes the remaining "still in English" gap on the supersedes badge in Outgoing/Backlinks panels |
+
+### Boss-Test Gate 3 PASS (all 5 stages + re-spotcheck)
+
+| Stage | Result | Notes |
+|---|---|---|
+| 0 — Binary verify | ✅ PASS | NSIS mtime confirmed |
+| 1 — Simple §A fields round-trip | ✅ PASS | held_by/domain/function/provenance_civilization/updated_at/warrant/warrant_notes via Properties panel "+ Add property" workflow (Eisa flagged: no raw frontmatter editing in Constellation; works around via panel) |
+| 2 — `ikhtilāf` widget (D-A4.α) | ✅ PASS incl. bonus remove-button check | 3-row {school, position} round-trip clean; remove + reload preserves correctly |
+| 3 — `supersedes` typed-link in body | ✅ PASS (functionally) | Backlinks + Outgoing both show the typed-link entry; PJ-047 flagged for visual color discrimination at body font size |
+| 4 — i18n switch (Spanish/German/Arabic) | ✅ PASS | All Properties panel labels + ikhtilāf widget + Settings → Link pills row translate; type picker dropdown clipping flagged as PJ-048 |
+| 4.1 — Re-spotcheck after Ar/Ur supersedes correction + §A.4.d annotation translation | ✅ PASS in all 3 locales | Arabic "يحلّ محلّ", Spanish "reemplaza", German "ersetzt" all rendered correctly in Outgoing Links annotation slot |
+| 5 — Help topic + UM chapter discoverability | ✅ PASS (file-existence) | Files exist on disk in en + 14 locales; in-app Help viewer is missing — filed as PJ-049 |
+
+### Boss-test catches landed inline (not regressions; Boss-driven UX corrections)
+
+1. **Ar/Ur supersedes mistranslation** (Stage 4.1 catch): "يَنسَخ" primarily means "copies" in Arabic — wrong semantics for supersedes. Eisa's correct rendering "يحلّ محلّ" (literally "takes the place of") landed in 9a6a938; parallel Urdu correction "کی جگہ لیتا ہے" landed in 5e9b5ed.
+2. **Annotation slot didn't translate** (Stage 4.1 catch): the Outgoing/Backlinks panels' annotation slot rendered raw English typed-link names. Investigation: search.rs::parse_typed_links treats pipe-aliases as annotation rather than link_type, while libraries.rs::scan_links does it correctly. Both parsers coexist; the panel sometimes gets data from the SQL path. Frontend-only fix in §A.4.d wraps annotation render with `$t('linkTypes.<lower>')` lookup, with raw fallback for user-written annotations.
+
+### PJs filed during Gate 3 (for §N close-out — none block §A ships)
+
+- **PJ-044** (carryover from Gate 1 Stage 1 side note) — Right-click "Classify Sources" menu entry missing in NotePane (Eisa workaround: "Classify open note" button works; same IPC, just no right-click entry)
+- **PJ-046** — Properties panel reorder drag broken (Stage 1 side note 2026-05-11)
+- **PJ-047** — Typed-link editor colors visually indistinguishable at body font size (Stage 3 observation; pre-existing across all 9 typed-link names)
+- **PJ-048** — Type picker dropdown clips longer non-English translations (Stage 4 RTL screenshot showed Arabic items truncated to first 2-3 chars; only the new "Multi-row list" option wraps to 3 lines and shows fully — pre-existing fixed-width design)
+- **PJ-049** — In-app Help viewer not implemented (Stage 5 catch; help topic + User Manual files exist on disk in 15 locales but no UI access surface — F1, command palette, ? menu all return nothing)
+- **PJ-050** — Backlinks panel section header hardcoded English in non-en locales (Stage 4.1 Spanish UI showed "BACKLINKS" instead of translated header; pre-existing)
+
+PJ-040 (closed in §D), PJ-041 (closed in §E.2.b), PJ-042 (closed in §E.1), PJ-043 (closed in §E.3.d), PJ-045 (closed inline in §E.2.a) all confirmed Done.
+
+### What's next: §B — Temporal axis + Sight v3 overlay
+
+Per the Plan §B (with D-B1 SQLite + triggers, D-B2 only-epistemic-fields, D-B3 IN MIG-022, D-B4.β Sight v3 overlay):
+
+| Sub-phase | What |
+|---|---|
+| §B.1 | Schema: `note_state_history` table + index (init_db migration, JSON-diff column shape per the cross-check refinement) |
+| §B.2 | Trigger: `note_state_history_au` AFTER UPDATE on `note_meta` with `WHEN OLD.field IS NOT NEW.field` guard, JSON-diff via `json_object` per-field |
+| §B.3 | Backfill: seed `created` events for existing notes; resumable; Tauri progress events (per CLAUDE.md SO #6 first-time-population rule); `DROP TRIGGER` + bulk-insert protocol per cross-check |
+| §B.4 | Query API IPC: `cece_get_note_history(note_path)` + `cece_query_history(filter)` |
+| §B.5 | UI surface per D-B4.β: Sight v3 overlay (timeline-view layer; couples MIG-022 to Sight v3 stability — flagged in Plan risk register) |
+| §B.6 | i18n + help topic + User Manual chapter |
+
+Boss-Test Gate 4 fires after §B.6. ~2-4 weeks agent time per Plan estimate.
