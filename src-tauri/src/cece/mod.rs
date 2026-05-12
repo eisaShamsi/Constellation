@@ -27,3 +27,9 @@ pub mod wiring;
 // Future submodule for the six catalogers (V3-§2 through V3-§7 will
 // add files inside `cece/catalogers/`).
 pub mod catalogers;
+
+// MIG-022 §B — Note state history (temporal axis). Persists changes to
+// epistemic frontmatter fields per the gap-analysis §6.3 recommendation.
+// §B.1 ships the table + index; §B.2 the trigger; §B.3 the backfill;
+// §B.4 the query API; §B.5 the Sight v3 overlay UI.
+pub mod history;

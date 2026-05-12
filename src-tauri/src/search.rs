@@ -1481,6 +1481,16 @@ fn init_db(path: &Path) -> Result<Connection, String> {
     crate::sources::ensure_note_meta_content_type_column(&conn)
         .map_err(|e| format!("Failed to ensure note_meta.content_type column (MIG-021v2): {}", e))?;
 
+    // MIG-022 §B.1 — Note state history (temporal axis). Persists
+    // changes to epistemic frontmatter fields per the gap-analysis
+    // §6.3 recommendation. Idempotent table + index creation; runs
+    // after the sources/content_type columns exist so the trigger
+    // (added in §B.2) can reference them. The foreign key
+    // `note_state_history.note_path → note_meta(path)` cascades on
+    // delete.
+    crate::cece::history::ensure_note_state_history_table(&conn)
+        .map_err(|e| format!("Failed to create note_state_history table (MIG-022 §B.1): {}", e))?;
+
     // Create embeddings table for semantic search (Phase 2)
     conn.execute_batch("
         CREATE TABLE IF NOT EXISTS note_embeddings (
