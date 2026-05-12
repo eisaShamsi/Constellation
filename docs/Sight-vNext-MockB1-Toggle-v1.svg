@@ -28,13 +28,12 @@
   <rect width="1400" height="900" class="bg"/>
 
   <!-- ============ HEADER ============ -->
-  <text x="700" y="36" text-anchor="middle" class="h-title">CONSTELLATION SIGHT  ·  MOCK B1  ·  ONE MODE ACTIVE, SEVEN AVAILABLE</text>
+  <text x="700" y="36" text-anchor="middle" class="h-title">CONSTELLATION SIGHT  ·  MOCK A  ·  ONE MODE ACTIVE, SIX AVAILABLE</text>
   <text x="700" y="58" text-anchor="middle" font-size="13" font-style="italic" fill="#1a1a1a">Universe: Trial-7600  ·  Active mode: TIME</text>
 
   <!-- ============ MODE TOGGLE BAR ============ -->
-  <!-- 7 buttons centered at x=700. Each 50w x 44h, 10 gap. Total width 7*50+6*10 = 410. Range 495-905 -->
-  <!-- Concept Paper v3.1 §6: production toggle has 7 buttons from Day 1; P (Provenance) added 2026-05-12 -->
-  <g transform="translate(495,86)">
+  <!-- 6 buttons centered at x=700. Each 50w x 44h, 10 gap. Total width 6*50+5*10 = 350. Range 525-875 -->
+  <g transform="translate(525,86)">
 
     <!-- R — Regions (ready, inactive) -->
     <rect x="0" y="0" width="50" height="44" rx="6" fill="#fbf8ec" stroke="#1a1a1a" stroke-width="1" opacity="0.95"/>
@@ -60,15 +59,11 @@
     <rect x="300" y="0" width="50" height="44" rx="6" fill="#fbf8ec" stroke="#b8a98a" stroke-width="1" stroke-dasharray="3 2"/>
     <text x="325" y="29" text-anchor="middle" font-size="20" font-weight="700" fill="#1a1a1a" opacity="0.45">A</text>
 
-    <!-- P — Provenance (available later — unlocks once notes are CECE-classified) -->
-    <rect x="360" y="0" width="50" height="44" rx="6" fill="#fbf8ec" stroke="#b8a98a" stroke-width="1" stroke-dasharray="3 2"/>
-    <text x="385" y="29" text-anchor="middle" font-size="20" font-weight="700" fill="#1a1a1a" opacity="0.45">P</text>
-
   </g>
 
   <!-- Caption row under toggle -->
   <text x="700" y="156" text-anchor="middle" class="lbl-soft">
-    Gold = active  ·  Solid = ready, click to switch  ·  Dashed = available later (C / S / A ship in CE Layer 2; P unlocks once you classify some notes via Source Review)
+    Gold = active  ·  Solid = ready, click to switch  ·  Dashed = available later (Confidence / Stages / Acts ship in CE Layer 2)
   </text>
 
   <!-- ============ DOME — TIME MODE ============ -->
@@ -310,6 +305,6 @@
 
   <!-- mock label -->
   <text x="1380" y="888" text-anchor="end" font-size="9" fill="#b8a98a" letter-spacing="1">
-    SIGHT v5 — MOCK B1 — TOGGLE + ONE DOME — 2026-05-09 · rev 2026-05-12 (7-button toggle per Concept Paper v3.1 §6)
+    SIGHT vNEXT — MOCK B1 — TOGGLE + ONE DOME — 2026-05-09
   </text>
 </svg>
