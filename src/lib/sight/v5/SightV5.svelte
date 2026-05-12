@@ -154,6 +154,7 @@
 			modeWedgeAngles,
 			stars,
 			links,
+			activeMode === 'T',   // fix-4: gold-month tint only when rim shows months
 		);
 		// Focus overlay (brightened edges + selection ring) draws over
 		// the base. For §5 we re-draw both on focus change; future
@@ -167,7 +168,7 @@
 	$effect(() => {
 		// Touch reactive deps so this effect re-runs when they change.
 		void canvasWidth; void canvasHeight; void domeRadius; void $locale;
-		void modeWedgeAngles; void stars; void links; void focusedStar;
+		void modeWedgeAngles; void stars; void links; void focusedStar; void activeMode;
 		draw();
 	});
 

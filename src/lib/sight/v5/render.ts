@@ -96,6 +96,7 @@ export function renderBaseLayer(
 	modeWedgeAngles?: number[],        // §4: optional active-mode wedge dividers
 	stars?: StarPosition[],            // §5: per-star positions
 	links?: LinkEdge[],                // §5: connector edges (drawn faint at rest)
+	showCurrentMonthTint?: boolean,    // fix-4: gate the gold-month wedge to T mode only
 ): void {
 	// Background fill (full canvas).
 	ctx.fillStyle = PALETTE.parchment;
@@ -114,8 +115,15 @@ export function renderBaseLayer(
 	// PJ-035 lands real density data. `drawMilkyWay` helper kept on
 	// disk for that future reintroduction.
 
-	// Current-month wedge subtle highlight (gold @ 0.05 alpha).
-	drawCurrentMonthWedge(ctx, domeRadius, currentMonthIndex);
+	// Fix-4 (2026-05-12): current-month gold wedge only draws when the
+	// active mode is T (Time) — that's the only mode where the rim
+	// actually shows months. In other modes the rim shows libraries /
+	// link kinds / source families / etc., and a "May tint" lands on
+	// a wedge with no temporal meaning (e.g. an EXEMPLIFIES wedge
+	// gold-shaded for no reason). Caller passes `true` only in mode T.
+	if (showCurrentMonthTint) {
+		drawCurrentMonthWedge(ctx, domeRadius, currentMonthIndex);
+	}
 
 	// Strata band rings (8 boundaries — outermost = solid rim, inner
 	// 7 = faint guide lines).
