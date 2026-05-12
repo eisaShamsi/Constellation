@@ -3042,14 +3042,35 @@ fn index_note(conn: &Connection, note_path: &str, library_name: &str) -> Result<
         Some(serde_json::to_string(&content_type_list).unwrap_or_default())
     };
 
-    // Upsert: delete old, insert new (triggers handle FTS sync) — wrapped in transaction for atomicity
+    // MIG-024 §0 (D-N1.α + D-N2.a, 2026-05-12) — UPSERT replaces the prior
+    // DELETE+INSERT pattern. SQLite triggers do NOT fire on DELETE+INSERT for
+    // AFTER UPDATE consumers; the §B note_state_history_au trigger
+    // (MIG-022 §B.2) was therefore catching only the two explicit CECE
+    // classifier writes, missing every direct YAML edit via NotePane.
+    // Switching to ON CONFLICT(path) DO UPDATE makes the AFTER UPDATE
+    // trigger fire on every re-index, restoring §B's contract that every
+    // epistemic-field state change is captured. FTS5 sync still works
+    // correctly because note_meta_au (search.rs:1665-1672) deletes+inserts
+    // the FTS5 row on update.
     conn.execute_batch("BEGIN IMMEDIATE").map_err(|e| e.to_string())?;
     let result = (|| -> Result<(), String> {
-        conn.execute("DELETE FROM note_meta WHERE path = ?1", params![note_path])
-            .map_err(|e| e.to_string())?;
         conn.execute(
             "INSERT INTO note_meta (path, name, library_name, modified, properties_json, tags_json, outgoing_links_json, headings_json, body_text, word_count, created_at, cid_cn, sources, content_type)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)
+             ON CONFLICT(path) DO UPDATE SET
+               name                = excluded.name,
+               library_name        = excluded.library_name,
+               modified            = excluded.modified,
+               properties_json     = excluded.properties_json,
+               tags_json           = excluded.tags_json,
+               outgoing_links_json = excluded.outgoing_links_json,
+               headings_json       = excluded.headings_json,
+               body_text           = excluded.body_text,
+               word_count          = excluded.word_count,
+               created_at          = excluded.created_at,
+               cid_cn              = excluded.cid_cn,
+               sources             = excluded.sources,
+               content_type        = excluded.content_type",
             params![note_path, name, library_name, modified, props_json, tags_json, links_json, headings_json, plain_body, word_count, created_at, cid_cn, sources_json, content_type_json],
         ).map_err(|e| format!("Failed to index note {}: {}", note_path, e))?;
 

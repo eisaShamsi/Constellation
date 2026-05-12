@@ -639,6 +639,112 @@ mod tests {
         assert!(changes.contains("\"properties_json\""), "properties_json diff captured");
     }
 
+    // ─── MIG-024 §0 — UPSERT pattern fires AU trigger (closes §N P1) ────
+    //
+    // The MIG-022 §N final-integration audit found that the canonical
+    // note-save path `index_note` (search.rs:3045-3054) used DELETE+INSERT,
+    // which does NOT fire AFTER UPDATE triggers. Result: the §B.2 trigger
+    // caught only the two explicit CECE classifier writes, missing every
+    // direct YAML edit via NotePane. MIG-024 §0 (Eisa-locked D-N1 = α,
+    // D-N2 = a) replaced DELETE+INSERT with INSERT ... ON CONFLICT(path)
+    // DO UPDATE in `index_note`. These tests verify the UPSERT pattern
+    // actually fires the AU trigger as designed.
+
+    #[test]
+    fn mig024_s0_upsert_pattern_fires_au_trigger_on_existing_row() {
+        let conn = setup_db_with_trigger();
+        // Seed the existing row (simulates a note that's been indexed before).
+        conn.execute(
+            "INSERT INTO note_meta (path, name, library_name, modified, sources, content_type, properties_json)
+             VALUES ('a.md', 'a.md', 'lib', 1700000000, 'testimony', 'fact', '{\"old\":1}')",
+            [],
+        ).expect("seed");
+        assert_eq!(count_history(&conn, "a.md"), 0, "no history yet");
+
+        // Now run the EXACT UPSERT shape `index_note` uses post-MIG-024 §0.
+        // Sources changes from 'testimony' to 'inference' — the AU trigger
+        // MUST fire because §B.2's WHEN guard sees OLD.sources != NEW.sources.
+        conn.execute(
+            "INSERT INTO note_meta (path, name, library_name, modified, sources, content_type, properties_json)
+             VALUES ('a.md', 'a.md', 'lib', 1700000500, 'inference', 'fact', '{\"old\":1}')
+             ON CONFLICT(path) DO UPDATE SET
+               name            = excluded.name,
+               library_name    = excluded.library_name,
+               modified        = excluded.modified,
+               sources         = excluded.sources,
+               content_type    = excluded.content_type,
+               properties_json = excluded.properties_json",
+            [],
+        ).expect("upsert");
+
+        assert_eq!(
+            count_history(&conn, "a.md"), 1,
+            "UPSERT on existing row must fire AU trigger (this is what §0 fixes)"
+        );
+        // Verify the changes_json captured the sources transition.
+        let changes: String = conn.query_row(
+            "SELECT changes_json FROM note_state_history WHERE note_path = 'a.md'",
+            [],
+            |row| row.get(0),
+        ).expect("read changes_json");
+        assert!(changes.contains("\"sources\""), "sources change captured: {}", changes);
+        assert!(changes.contains("\"old\":\"testimony\""), "old value: {}", changes);
+        assert!(changes.contains("\"new\":\"inference\""), "new value: {}", changes);
+    }
+
+    #[test]
+    fn mig024_s0_upsert_pattern_inserts_cleanly_on_new_row() {
+        // Companion test: UPSERT on a NEW path (no conflict) must INSERT
+        // without firing the AU trigger (only the AI trigger should fire,
+        // which is FTS5-side and not history-side). History table stays
+        // empty for first-time indexing; the §B.3 backfill is the one
+        // that seeds initial history events for pre-existing notes.
+        let conn = setup_db_with_trigger();
+        conn.execute(
+            "INSERT INTO note_meta (path, name, library_name, modified, sources, content_type, properties_json)
+             VALUES ('new.md', 'new.md', 'lib', 1700000000, 'testimony', 'fact', '{}')
+             ON CONFLICT(path) DO UPDATE SET
+               sources = excluded.sources,
+               content_type = excluded.content_type",
+            [],
+        ).expect("upsert (insert path — no conflict)");
+
+        assert_eq!(
+            count_history(&conn, "new.md"), 0,
+            "first-time INSERT must NOT fire AU trigger (history seeded by §B.3 backfill, not at-rest INSERT)"
+        );
+    }
+
+    #[test]
+    fn mig024_s0_upsert_pattern_skips_noop_yaml_edit() {
+        // Direct YAML edit that doesn't actually change a watched field
+        // (e.g., user reformats whitespace) — UPSERT fires but the WHEN
+        // guard correctly skips. This proves the §B.2 footgun is still
+        // closed under the UPSERT pattern.
+        let conn = setup_db_with_trigger();
+        conn.execute(
+            "INSERT INTO note_meta (path, name, library_name, modified, sources, content_type, properties_json)
+             VALUES ('a.md', 'a.md', 'lib', 1700000000, 'testimony', 'fact', '{\"k\":1}')",
+            [],
+        ).expect("seed");
+        // UPSERT with the same watched-field values; only `modified` bumps.
+        conn.execute(
+            "INSERT INTO note_meta (path, name, library_name, modified, sources, content_type, properties_json)
+             VALUES ('a.md', 'a.md', 'lib', 1700000999, 'testimony', 'fact', '{\"k\":1}')
+             ON CONFLICT(path) DO UPDATE SET
+               modified        = excluded.modified,
+               sources         = excluded.sources,
+               content_type    = excluded.content_type,
+               properties_json = excluded.properties_json",
+            [],
+        ).expect("noop upsert");
+
+        assert_eq!(
+            count_history(&conn, "a.md"), 0,
+            "no-op UPSERT must NOT fire AU trigger (WHEN guard preserves §B.2 idempotency)"
+        );
+    }
+
     // ─── §B.3 backfill tests ─────────────────────────────────────────────
 
     /// Setup variant that includes the `schema_versions` table the
