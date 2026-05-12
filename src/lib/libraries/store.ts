@@ -3430,6 +3430,19 @@ export interface AppSettings {
 		 *  centroids at-rest (in addition to hover/select). Default false
 		 *  per Eisa's §11 Q6 — hover/select-only is the cleaner default. */
 		alwaysOnLabels?: boolean;
+		/** MIG-024 §1 — Sight v5 last-used mode (per Concept Paper v3.1
+		 *  §6.1; persisted per-Universe). Default 'R' (Regions) — the
+		 *  lowest-cognitive-load mode for first-launch users. If saved
+		 *  value is unrecognized (e.g. legacy v4 mode name), code falls
+		 *  back to 'R' at read time. */
+		lastMode?: 'R' | 'L' | 'T' | 'C' | 'S' | 'A' | 'P';
+		/** MIG-024 §1 + D-V3 (Eisa, 2026-05-12) — Sight v5 last-used scope.
+		 *  Filters the visible note set BEFORE wedge computation. Default
+		 *  'universe' (whole-universe view per Concept Paper §1). 'library'
+		 *  scopes to the active sidebar Library; 'folder' scopes to the
+		 *  active Folder. If saved value's scope target is no longer in
+		 *  context (e.g., active Library closed), falls back to 'universe'. */
+		lastScope?: 'universe' | 'library' | 'folder';
 	};
 	/** AI/LLM integration preferences */
 	ai?: {
@@ -3585,6 +3598,11 @@ export const DEFAULT_SETTINGS: AppSettings = {
 		showMilkyWay: true,
 		calendarSystems: ['gregorian'],
 		alwaysOnLabels: false,
+		// MIG-024 §1 — Sight v5 mode + scope persistence. Defaults match
+		// Concept Paper v3.1 §6.1 (R = Regions = lowest-cognitive-load
+		// first-launch mode) + D-V3 universe-default scope.
+		lastMode: 'R',
+		lastScope: 'universe',
 	},
 	customShortcuts: {},
 	linkPills: {
@@ -3690,6 +3708,11 @@ export async function loadSettings() {
 				// would get the saved object overwriting the default for
 				// any newly-added sub-keys in a future release.
 				cece: { ...DEFAULT_SETTINGS.cece, ...((parsed.cece as Record<string, unknown>) || {}) },
+				// MIG-024 §1 — same V3-§11 AT RISK pattern for sight: a
+				// user who sets projection but leaves lastMode implicit
+				// would otherwise get the saved object overwriting the
+				// new lastMode/lastScope defaults.
+				sight: { ...DEFAULT_SETTINGS.sight, ...((parsed.sight as Record<string, unknown>) || {}) },
 			});
 		}
 	} catch { /* ignore */ }
