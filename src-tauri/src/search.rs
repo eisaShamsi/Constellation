@@ -1522,24 +1522,34 @@ fn init_db(path: &Path) -> Result<Connection, String> {
     // MIG-024 §2 — Sight v5 layout cache. Per-note × 1 row per D-V4;
     // populated at write-time via note_meta UPDATE/DELETE triggers (no
     // mode-specific rows — per-mode azimuth is computed in JS at
-    // render time per Concept Paper §6). The first-boot backfill
-    // populates the cache for existing notes via a single bulk
-    // INSERT...SELECT that joins note_meta + sky_nodes; subsequent
-    // boots skip via the schema_versions sentinel. Order matters:
-    // table → triggers → backfill, mirroring the §B.1/§B.2/§B.3
-    // pattern above.
+    // render time per Concept Paper §6).
+    //
+    // BOOT-PATH FIX (2026-05-12 — hot-fix after Eisa's 19:35 build
+    // hung the app on his 7,636-note universe): the original §2
+    // landed the bulk INSERT...SELECT backfill here synchronously
+    // in init_db. The contested-detection EXISTS subquery joins on
+    // note_links.target_path, but note_links has an index only on
+    // source_path (not target_path) — making the backfill O(N²) on
+    // any non-trivial universe. The bulk-insert turned the app boot
+    // into a multi-minute thrash.
+    //
+    // Fix: schema-only setup here (cheap, microseconds). The
+    // backfill itself runs LAZILY via the `sight_v5_warm_cache` IPC
+    // — called once on first SightV5.svelte mount, with a loading
+    // state. Users who never open Sight v5 don't pay the cost.
+    // Plus: add an index on note_links.target_path so the lazy
+    // backfill (and any other contested-detection query) is fast.
     crate::sight_v5::ensure_sight_v5_layout_table(&conn)
         .map_err(|e| format!("Failed to create sight_v5_layout table (MIG-024 §2): {}", e))?;
     crate::sight_v5::ensure_sight_v5_invalidation_trigger(&conn)
         .map_err(|e| format!("Failed to create sight_v5_layout triggers (MIG-024 §2): {}", e))?;
-    let sight_backfilled = crate::sight_v5::backfill_sight_v5_layout(&mut conn)
-        .map_err(|e| format!("Failed to backfill sight_v5_layout (MIG-024 §2): {}", e))?;
-    if sight_backfilled > 0 {
-        diag_log(path, &format!(
-            "[search] init_db: MIG-024 §2 backfilled {} sight_v5_layout rows",
-            sight_backfilled,
-        ));
-    }
+    // Missing-index fix for the backfill's contested-detection EXISTS
+    // subquery + any future inbound-link query (Layer 2 diagnostic
+    // already plans to read this in MIG-025). idx_link_target on
+    // target_name exists; target_path is the path-based join key.
+    conn.execute_batch(
+        "CREATE INDEX IF NOT EXISTS idx_link_target_path ON note_links(target_path);"
+    ).map_err(|e| format!("Failed to create idx_link_target_path: {}", e))?;
 
     // Create embeddings table for semantic search (Phase 2)
     conn.execute_batch("

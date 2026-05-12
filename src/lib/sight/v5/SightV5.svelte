@@ -151,9 +151,18 @@
 	});
 
 	// ─── data load ─────────────────────────────────────────────────
+	// 2026-05-12 boot-path hot-fix: warm_cache runs the §2 backfill
+	// LAZILY on first SightV5 mount (init_db no longer does it; the
+	// bulk INSERT...SELECT was O(N²) without target_path index, hung
+	// app boot on 7,636-note universes). Loading state stays visible
+	// until both warm_cache + get_layout return.
 	async function loadLayout() {
 		try {
 			isLoading = true;
+			// Step 1: warm the cache (runs backfill if sentinel missing;
+			// fast no-op if already done).
+			await invoke<number>('sight_v5_warm_cache');
+			// Step 2: read the populated cache.
 			const rows = await invoke<LayoutCacheRow[]>('sight_v5_get_layout', {
 				scopeKind: 'universe',  // scope filter applies frontend-side per D-V3
 				scopeId: null,
