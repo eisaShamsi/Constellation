@@ -2322,32 +2322,42 @@
       "mode": "Mode",
       "scope": "Scope",
       "loading": "Loading…",
-      "mode.R.title": "Regions — wedge by Library",
-      "mode.L.title": "Link Types — wedge by typed-link kind",
-      "mode.T.title": "Time — wedge by creation month",
-      "mode.C.title": "Confidence — wedge by per-note confidence",
-      "mode.S.title": "Stages — wedge by lifecycle stage",
-      "mode.A.title": "Acts — wedge by Act produced",
-      "mode.P.title": "Provenance — wedge by source family",
-      "scope.universe.title": "Universe — all notes",
-      "scope.library.title": "Library — current Library context",
-      "scope.folder.title": "Folder — current Folder context",
-      "field.strata": "Strata",
-      "field.maturity": "Maturity",
-      "field.confidence": "Confidence",
-      "field.stage": "Stage",
-      "field.source": "Source",
-      "field.act": "Act",
-      "field.library": "Library",
-      "field.incidentLinks": "Incident links",
-      "field.unstratified": "Unstratified",
-      "field.contested": "Contested",
-      "field.hypothesis": "Hypothesis",
-      "field.evidence": "Evidence",
-      "field.established": "Established",
-      "action.openInEditor": "Open in editor →",
-      "empty.provenance": "Most of your universe is unsourced. Provenance mode reveals the shape of your epistemic content once notes are classified.",
-      "empty.classify": "Classify via Source Review →"
+      "modes": {
+        "R": { "title": "Regions — wedge by Library" },
+        "L": { "title": "Link Types — wedge by typed-link kind" },
+        "T": { "title": "Time — wedge by creation month" },
+        "C": { "title": "Confidence — wedge by per-note confidence" },
+        "S": { "title": "Stages — wedge by lifecycle stage" },
+        "A": { "title": "Acts — wedge by Act produced" },
+        "P": { "title": "Provenance — wedge by source family" }
+      },
+      "scopes": {
+        "universe": { "title": "Universe — all notes" },
+        "library":  { "title": "Library — current Library context" },
+        "folder":   { "title": "Folder — current Folder context" }
+      },
+      "field": {
+        "strata": "Strata",
+        "maturity": "Maturity",
+        "confidence": "Confidence",
+        "stage": "Stage",
+        "source": "Source",
+        "act": "Act",
+        "library": "Library",
+        "incidentLinks": "Incident links",
+        "unstratified": "Unstratified",
+        "contested": "Contested",
+        "hypothesis": "Hypothesis",
+        "evidence": "Evidence",
+        "established": "Established"
+      },
+      "action": {
+        "openInEditor": "Open in editor →"
+      },
+      "empty": {
+        "provenance": "Most of your universe is unsourced. Provenance mode reveals the shape of your epistemic content once notes are classified.",
+        "classify": "Classify via Source Review →"
+      }
     }
   },
   "sightV3": {

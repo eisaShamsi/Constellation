@@ -24,7 +24,7 @@
 		starHitDistanceSq,
 		type StarPosition,
 	} from './render';
-	import { calendarRimMonths, type MonthLabel, radiusForStratum } from './dome';
+	import { radiusForStratum } from './dome';
 	import { buildModeContext, azimuthForMode } from './modes';
 	import { filterNotesByScope } from './scope';
 	import SightV5SidePanel from './SightV5SidePanel.svelte';
@@ -61,7 +61,6 @@
 	let canvasHeight = $state(600);
 
 	let domeRadius = $derived(Math.max(120, Math.min(canvasWidth, canvasHeight) / 2 - 50));
-	let monthLabels: MonthLabel[] = $derived(calendarRimMonths(domeRadius, $locale));
 	const currentMonthIndex = new Date().getMonth();
 
 	// ─── layout cache + scope-filtered rows ────────────────────────
@@ -78,6 +77,28 @@
 	// ─── mode context + star positions ─────────────────────────────
 	let modeContext = $derived.by(() => buildModeContext(activeMode, visibleRows, $locale));
 	let modeWedgeAngles: number[] = $derived(modeContext.wedges.map(w => w.azimuthStart));
+
+	// Fix-3 (2026-05-12): rim labels are PER-MODE, not always months.
+	// Each wedge in the active mode's context contributes one rim
+	// label at its wedge CENTER. Replaces the always-on calendar-rim
+	// months — they lied about wedge meaning in non-T modes (a star
+	// near "APR" in R mode wasn't an April note, just whatever library
+	// landed in that azimuthal slot).
+	let rimLabels: Array<{ key: string; label: string; x: number; y: number }> = $derived.by(() => {
+		const labelOffset = 18;
+		const r = domeRadius + labelOffset;
+		return modeContext.wedges
+			.filter(w => w.azimuthEnd > w.azimuthStart)
+			.map(w => {
+				const center = (w.azimuthStart + w.azimuthEnd) / 2;
+				return {
+					key: w.key,
+					label: w.label,
+					x: Math.cos(center) * r,
+					y: Math.sin(center) * r,
+				};
+			});
+	});
 
 	let stars: StarPosition[] = $derived.by(() => {
 		const bandFor = (s: number) => radiusForStratum(s, domeRadius);
@@ -309,9 +330,9 @@
 		onclick={onCanvasClick}
 	></canvas>
 
-	<!-- Month labels HTML overlay. -->
+	<!-- Per-mode rim labels HTML overlay. dir="auto" handles RTL. -->
 	<div class="sight-v5-rim-labels" aria-hidden="false">
-		{#each monthLabels as label (label.monthIndex)}
+		{#each rimLabels as label (label.key)}
 			<span
 				class="sight-v5-rim-label"
 				dir="auto"
@@ -339,7 +360,7 @@
 				class="sight-v5-mode-btn"
 				class:active={modeState(m) === 'active'}
 				class:ready={modeState(m) === 'ready'}
-				title={$t(`sight.v5.mode.${m}.title`) || m}
+				title={$t(`sight.v5.modes.${m}.title`) || m}
 				onclick={() => setMode(m)}
 			>{m}</button>
 		{/each}
@@ -354,7 +375,7 @@
 				aria-selected={s === activeScope}
 				class="sight-v5-scope-btn"
 				class:active={scopeState(s) === 'active'}
-				title={$t(`sight.v5.scope.${s}.title`) || s}
+				title={$t(`sight.v5.scopes.${s}.title`) || s}
 				onclick={() => setScope(s)}
 			>{SCOPE_LETTERS[s]}</button>
 		{/each}

@@ -107,8 +107,12 @@ export function renderBaseLayer(
 	ctx.save();
 	ctx.translate(cx, cy);
 
-	// Soft Milky Way wash — two ellipses with radial gradient fade.
-	drawMilkyWay(ctx, domeRadius);
+	// Fix-3 (2026-05-12): Milky Way wash REMOVED. Per Concept Paper §5.2
+	// the wash represents content-similarity density (PJ-035 TF-IDF
+	// field). That data isn't shipped yet — what was on screen was
+	// decorative-only and Eisa flagged it as misleading. Re-add when
+	// PJ-035 lands real density data. `drawMilkyWay` helper kept on
+	// disk for that future reintroduction.
 
 	// Current-month wedge subtle highlight (gold @ 0.05 alpha).
 	drawCurrentMonthWedge(ctx, domeRadius, currentMonthIndex);
