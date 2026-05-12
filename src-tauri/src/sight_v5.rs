@@ -167,21 +167,47 @@ pub fn compute_universe_snapshot_hash(conn: &Connection) -> Result<String, Strin
 /// Returns the number of cache rows after the backfill (== note_meta
 /// row count after a successful run).
 pub fn backfill_sight_v5_layout(conn: &mut Connection) -> Result<usize, String> {
-    const SENTINEL_KEY: &str = "mig024_sight_v5_layout_backfill_v1";
+    // Sentinel v2 (2026-05-12): v1's bulk INSERT joined sky_nodes on
+    // sn.id (lowercased note name) instead of sn.path (note_meta path).
+    // Every row landed with NULL stratum because the JOIN never matched
+    // the right column. Empty dome on Eisa's first install. v2 fixes
+    // the JOIN and forces a re-run on any DB that stamped v1.
+    const SENTINEL_KEY: &str = "mig024_sight_v5_layout_backfill_v2";
+    const SENTINEL_KEY_V1: &str = "mig024_sight_v5_layout_backfill_v1";
 
-    // Check sentinel: if already backfilled, return cache count and exit.
-    let already: Option<i64> = conn
+    // Check sentinel: if v2 already done, return cache count and exit.
+    let already_v2: Option<i64> = conn
         .query_row(
             "SELECT version FROM schema_versions WHERE module = ?1",
             params![SENTINEL_KEY],
             |r| r.get(0),
         )
         .ok();
-    if already.is_some() {
+    if already_v2.is_some() {
         let count: i64 = conn
             .query_row("SELECT COUNT(*) FROM sight_v5_layout", [], |r| r.get(0))
             .map_err(|e| format!("backfill: count: {}", e))?;
         return Ok(count as usize);
+    }
+
+    // Detect v1 sentinel — wipe the v1 cache rows so the v2 backfill
+    // re-derives cleanly. No data loss (cache is ephemeral, rebuildable
+    // from note_meta + sky_nodes).
+    let already_v1: Option<i64> = conn
+        .query_row(
+            "SELECT version FROM schema_versions WHERE module = ?1",
+            params![SENTINEL_KEY_V1],
+            |r| r.get(0),
+        )
+        .ok();
+    if already_v1.is_some() {
+        conn.execute("DELETE FROM sight_v5_layout", [])
+            .map_err(|e| format!("backfill: clear v1 cache: {}", e))?;
+        conn.execute(
+            "DELETE FROM schema_versions WHERE module = ?1",
+            params![SENTINEL_KEY_V1],
+        )
+        .map_err(|e| format!("backfill: clear v1 sentinel: {}", e))?;
     }
 
     // Bulk INSERT OR REPLACE: derives per-note layout from note_meta
@@ -243,7 +269,7 @@ pub fn backfill_sight_v5_layout(conn: &mut Connection) -> Result<usize, String> 
                  ORDER BY COUNT(*) DESC LIMIT 1) AS dominant_link_type,
                 strftime('%s', 'now') * 1000 AS computed_at
              FROM note_meta nm
-             LEFT JOIN sky_nodes sn ON sn.id = nm.path",
+             LEFT JOIN sky_nodes sn ON sn.path = nm.path",
             [],
         )
         .map_err(|e| format!("backfill: bulk insert: {}", e))?;
@@ -448,7 +474,8 @@ mod tests {
                 created_at INTEGER
              );
              CREATE TABLE sky_nodes (
-                id TEXT PRIMARY KEY,
+                path TEXT PRIMARY KEY,
+                id TEXT,
                 stratum TEXT,
                 maturity TEXT
              );
@@ -556,11 +583,11 @@ mod tests {
                 ('research/a.md', 'a.md', 'Research', 1700000000, '{\"stage\":\"growth\"}', '[\"testimony\",\"inference\"]', 1700000000),
                 ('research/b.md', 'b.md', 'Research', 1700000100, '{\"stage\":\"maturity\",\"act\":\"synthesis\"}', '[\"perception\"]', 1700100000),
                 ('daily/c.md', 'c.md', 'Daily', 1700000200, '{}', NULL, 1700200000);
-             INSERT INTO sky_nodes (id, stratum, maturity)
+             INSERT INTO sky_nodes (path, id, stratum, maturity)
              VALUES
-                ('research/a.md', 'L4', 'sapling'),
-                ('research/b.md', 'L7', 'evergreen'),
-                ('daily/c.md', 'L1', 'seed');
+                ('research/a.md', 'a.md', 'L4', 'sapling'),
+                ('research/b.md', 'b.md', 'L7', 'evergreen'),
+                ('daily/c.md', 'c.md', 'L1', 'seed');
              INSERT INTO note_links (source_path, target_path, target_name, link_type, confidence)
              VALUES
                 ('research/a.md', 'research/b.md', 'b', 'supports', 'evidence'),
