@@ -1491,6 +1491,16 @@ fn init_db(path: &Path) -> Result<Connection, String> {
     crate::cece::history::ensure_note_state_history_table(&conn)
         .map_err(|e| format!("Failed to create note_state_history table (MIG-022 §B.1): {}", e))?;
 
+    // MIG-022 §B.2 — Trigger fires AFTER UPDATE on note_meta when
+    // any of the watched epistemic-field columns (sources,
+    // content_type, properties_json) actually changed (WHEN guard
+    // skips no-op writes — the canonical SQLite footgun the
+    // cross-check warned about). Captures the old + new values for
+    // each changed field as a single JSON-diff row in
+    // note_state_history. Idempotent via CREATE TRIGGER IF NOT EXISTS.
+    crate::cece::history::ensure_note_state_history_trigger(&conn)
+        .map_err(|e| format!("Failed to create note_state_history trigger (MIG-022 §B.2): {}", e))?;
+
     // Create embeddings table for semantic search (Phase 2)
     conn.execute_batch("
         CREATE TABLE IF NOT EXISTS note_embeddings (
