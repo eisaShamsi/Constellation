@@ -31,12 +31,24 @@ import {
 import type { LayoutCacheRow, LinkEdge } from './types';
 
 /** Per-star pixel position computed from (stratum, mode azimuth).
- *  Cached in SightV5.svelte for hit-testing + connector drawing. */
+ *  Cached in SightV5.svelte for hit-testing + connector drawing.
+ *
+ *  fix-8 (2026-05-13): adds the hollow-fill + frame-color fields per
+ *  the §2 cascade in sight-v5-mode-concepts.md. A star is hollow when
+ *  it qualifies for any of the four incompleteness types; the frame
+ *  color is the highest-priority gap per the cascade:
+ *    1. Mode-data missing       → gold      `#c9a227`
+ *    2. No links                → blue ink  `#2a4a8c`
+ *    3. No properties           → amber     `#c9831f`
+ *    4. No content (body < 50)  → gray      `#888888`
+ *  All other stars render solid. */
 export interface StarPosition {
 	row: LayoutCacheRow;
 	x: number;                   // canvas pixel (relative to dome center)
 	y: number;
 	radiusPx: number;            // dot radius for hit-testing
+	fill: 'solid' | 'hollow';    // fix-8
+	frameColor: string | null;   // fix-8 — null when fill === 'solid'
 }
 
 /** Maturity → dot radius (px) per Concept Paper §5.3. */
@@ -87,6 +99,12 @@ function colorForLinkType(t: string): string {
  *  dome chrome itself is microsecond-scale; the budget headroom is
  *  for star rendering once §5 lands.
  */
+export interface MutedWedgeBg {                  // fix-9 (2026-05-13)
+	azimuthStart: number;
+	azimuthEnd: number;
+	fill: string;
+}
+
 export function renderBaseLayer(
 	ctx: CanvasRenderingContext2D,
 	canvasWidth: number,
@@ -99,6 +117,7 @@ export function renderBaseLayer(
 	showCurrentMonthTint?: boolean,    // fix-4: gate the gold-month wedge to T mode only
 	domeCenterX?: number,              // fix-5: caller-provided dome center X (default = canvas mid-x)
 	domeCenterY?: number,              // fix-5: caller-provided dome center Y (default = canvas mid-y)
+	mutedWedgeBgs?: MutedWedgeBg[],    // fix-9: per-mode muted wedge backgrounds (Mode S Dormancy/Archival)
 ): void {
 	// Background fill (full canvas).
 	ctx.fillStyle = PALETTE.parchment;
@@ -118,6 +137,15 @@ export function renderBaseLayer(
 	// decorative-only and Eisa flagged it as misleading. Re-add when
 	// PJ-035 lands real density data. `drawMilkyWay` helper kept on
 	// disk for that future reintroduction.
+
+	// Fix-9 (2026-05-13): muted wedge backgrounds for active-mode
+	// "less-alive" wedges (Mode S Dormancy + Archival per Eisa
+	// §8.6 of mode-concepts). Drawn BEFORE the strata-band rings so
+	// the rings overlay cleanly. Caller passes only the wedges that
+	// should be muted; standard parchment elsewhere.
+	if (mutedWedgeBgs && mutedWedgeBgs.length > 0) {
+		drawMutedWedgeBackgrounds(ctx, domeRadius, mutedWedgeBgs);
+	}
 
 	// Fix-4 (2026-05-12): current-month gold wedge only draws when the
 	// active mode is T (Time) — that's the only mode where the rim
@@ -209,14 +237,32 @@ export function renderFocusOverlay(
 }
 
 function drawStars(ctx: CanvasRenderingContext2D, stars: StarPosition[]): void {
+	// fix-8 (2026-05-13): hollow rendering + 4 frame-color cascade per
+	// the §2 hollow semantic in sight-v5-mode-concepts.md. Solid stars
+	// render as before (fill with state color at confidence alpha).
+	// Hollow stars render as parchment-interior + colored stroke ring;
+	// the frame color is the highest-priority incompleteness gap per
+	// the priority cascade computed in SightV5.svelte's
+	// computeStarPositions wrapper.
 	for (const s of stars) {
 		const alpha = alphaForConfidence(s.row.confidenceAlpha);
-		const color = s.row.contested ? PALETTE.redInk : PALETTE.ink;
-		ctx.fillStyle = color;
 		ctx.globalAlpha = alpha;
 		ctx.beginPath();
 		ctx.arc(s.x, s.y, s.radiusPx, 0, Math.PI * 2);
-		ctx.fill();
+		if (s.fill === 'solid') {
+			// Solid: fill with state color (ink default; red contested).
+			ctx.fillStyle = s.row.contested ? PALETTE.redInk : PALETTE.ink;
+			ctx.fill();
+		} else {
+			// Hollow: parchment interior + colored stroke ring (frame color).
+			// Interior = parchment to match the dome background visually
+			// (so the ring stands out cleanly without floating on a dot).
+			ctx.fillStyle = PALETTE.parchment;
+			ctx.fill();
+			ctx.strokeStyle = s.frameColor ?? PALETTE.ink;
+			ctx.lineWidth = 1.2;
+			ctx.stroke();
+		}
 	}
 	ctx.globalAlpha = 1;
 }
@@ -254,13 +300,70 @@ export function starHitDistanceSq(s: StarPosition, mx: number, my: number): numb
 	return dx * dx + dy * dy;
 }
 
+/** D-V10 polish (2026-05-13): wedge hit-testing for the active mode.
+ *  Given a mouse coord (relative to dome center) + dome radius +
+ *  the active wedge set, returns the wedge key the mouse is over,
+ *  or null if outside the dome OR over the central pole (where
+ *  wedges have zero meaningful area).
+ *
+ *  Returns the wedge KEY (not the WedgeBucket itself) so the caller
+ *  can do its own lookup. Caller is expected to NOT call this when
+ *  the mouse is already on a star (star hit-test takes precedence). */
+export function wedgeKeyAtPoint(
+	mx: number,
+	my: number,
+	domeRadius: number,
+	wedges: Array<{ key: string; azimuthStart: number; azimuthEnd: number }>,
+): string | null {
+	const r2 = mx * mx + my * my;
+	if (r2 > domeRadius * domeRadius) return null;     // outside dome
+	if (r2 < 16 * 16) return null;                      // inside central 16px — no wedge
+	let angle = Math.atan2(my, mx);
+	// Normalize so it's in the same range as wedge azimuths (which start at -π/2).
+	// We need angle ∈ [-π/2, 3π/2). Wrap if below -π/2.
+	if (angle < -Math.PI / 2) angle += 2 * Math.PI;
+	for (const w of wedges) {
+		const start = w.azimuthStart;
+		const end = w.azimuthEnd;
+		// Handle wrap if a wedge crosses the -π/2 boundary (rare; only
+		// happens with count-proportional wedges in mode R if alignment
+		// is unusual). Standard case is start < end.
+		if (start <= end) {
+			if (angle >= start && angle < end) return w.key;
+		} else {
+			if (angle >= start || angle < end) return w.key;
+		}
+	}
+	return null;
+}
+
 /** Compute star screen positions from the layout cache rows + the
  *  current ModeContext + the dome radius. Used by SightV5.svelte to
- *  feed renderBaseLayer + drive hit-testing. */
+ *  feed renderBaseLayer + drive hit-testing.
+ *
+ *  fix-8 (2026-05-13): also computes the hollow-fill + frame-color
+ *  per the §2 priority cascade. The caller passes a per-row predicate
+ *  `hasModeData` so the mode-data check (cascade priority 1) is mode-
+ *  specific. The other 3 gaps (no-links, no-props, no-content) read
+ *  fields directly off LayoutCacheRow.
+ *
+ *  Frame-color thresholds (Eisa-confirmed in mode-concepts §2.3):
+ *    - bodyChars  < 50       → 'no-content' gap
+ *    - frontmatterKeyCount == 0 → 'no-props' gap
+ *    - linkInCount + linkOutCount == 0 → 'no-links' gap
+ *
+ *  Note: the LayoutCacheRow fields `bodyChars`, `frontmatterKeyCount`,
+ *  `linkInCount`, `linkOutCount` aren't yet populated by the §2 backfill
+ *  (they were added to support fix-8). For now we degrade gracefully:
+ *  if the field is null/undefined, that gap is treated as NOT triggered.
+ *  When the backfill ships those columns (fix-8.b — Rust side), the
+ *  cascade will light up fully. Until then, only the mode-data gap is
+ *  computed (still highest-leverage diagnostic). */
 export function computeStarPositions(
 	rows: LayoutCacheRow[],
 	bandCenterForStratum: (s: number) => number,
 	azimuthForRow: (r: LayoutCacheRow) => number,
+	hasModeData: (r: LayoutCacheRow) => boolean,
 ): StarPosition[] {
 	const out: StarPosition[] = [];
 	for (const row of rows) {
@@ -269,9 +372,48 @@ export function computeStarPositions(
 		const a = azimuthForRow(row);
 		const x = Math.cos(a) * r;
 		const y = Math.sin(a) * r;
-		out.push({ row, x, y, radiusPx: sizeForMaturity(row.maturity) });
+
+		// Priority cascade (highest first). First gap wins.
+		let frameColor: string | null = null;
+		if (!hasModeData(row)) {
+			frameColor = PALETTE.gold;        // mode-data gap
+		} else if (isNoLinks(row)) {
+			frameColor = PALETTE.blueInk;     // no-links gap
+		} else if (isNoProps(row)) {
+			frameColor = '#c9831f';           // no-props gap (amber — see §2.1)
+		} else if (isNoContent(row)) {
+			frameColor = PALETTE.linkGrey;    // no-content gap (gray — see §2.1)
+		}
+
+		out.push({
+			row,
+			x,
+			y,
+			radiusPx: sizeForMaturity(row.maturity),
+			fill: frameColor === null ? 'solid' : 'hollow',
+			frameColor,
+		});
 	}
 	return out;
+}
+
+// Predicates for the 3 non-mode-data gap types. Defensive against
+// missing backfill columns (return false if the LayoutCacheRow lacks
+// the field — degrades gracefully until fix-8.b populates them).
+function isNoLinks(row: LayoutCacheRow): boolean {
+	const r = row as LayoutCacheRow & { linkInCount?: number; linkOutCount?: number };
+	if (r.linkInCount == null || r.linkOutCount == null) return false;
+	return r.linkInCount === 0 && r.linkOutCount === 0;
+}
+function isNoProps(row: LayoutCacheRow): boolean {
+	const r = row as LayoutCacheRow & { frontmatterKeyCount?: number };
+	if (r.frontmatterKeyCount == null) return false;
+	return r.frontmatterKeyCount === 0;
+}
+function isNoContent(row: LayoutCacheRow): boolean {
+	const r = row as LayoutCacheRow & { bodyChars?: number };
+	if (r.bodyChars == null) return false;
+	return r.bodyChars < 50;
 }
 
 function drawMilkyWay(ctx: CanvasRenderingContext2D, domeRadius: number): void {
@@ -361,6 +503,23 @@ function drawMonthSpokes(ctx: CanvasRenderingContext2D, domeRadius: number): voi
 		ctx.moveTo(0, 0);
 		ctx.lineTo(Math.cos(angle) * domeRadius, Math.sin(angle) * domeRadius);
 		ctx.stroke();
+	}
+	ctx.restore();
+}
+
+function drawMutedWedgeBackgrounds(
+	ctx: CanvasRenderingContext2D,
+	domeRadius: number,
+	wedges: MutedWedgeBg[],
+): void {
+	ctx.save();
+	for (const w of wedges) {
+		ctx.fillStyle = w.fill;
+		ctx.beginPath();
+		ctx.moveTo(0, 0);
+		ctx.arc(0, 0, domeRadius, w.azimuthStart, w.azimuthEnd);
+		ctx.closePath();
+		ctx.fill();
 	}
 	ctx.restore();
 }

@@ -167,47 +167,56 @@ pub fn compute_universe_snapshot_hash(conn: &Connection) -> Result<String, Strin
 /// Returns the number of cache rows after the backfill (== note_meta
 /// row count after a successful run).
 pub fn backfill_sight_v5_layout(conn: &mut Connection) -> Result<usize, String> {
+    // Sentinel v3 (2026-05-13 — fix-7): v2 hardcoded NULL for confidence_alpha,
+    // breaking Mode C (every star defaulted to hypothesis bucket + alpha 0.45).
+    // Mode-concepts deep-dive §7.8 surfaced this as P0 — Mode C was visually
+    // shipping but functionally non-operational. v3 replaces the NULL with a
+    // proper SQL aggregation: dominant outgoing link confidence per note,
+    // mapped to alpha (established=1.0 / evidence=0.7 / contested=0.85 /
+    // hypothesis=0.45 default). Sentinel bump auto-clears v1 + v2 stamps.
+    //
     // Sentinel v2 (2026-05-12): v1's bulk INSERT joined sky_nodes on
     // sn.id (lowercased note name) instead of sn.path (note_meta path).
     // Every row landed with NULL stratum because the JOIN never matched
     // the right column. Empty dome on Eisa's first install. v2 fixes
     // the JOIN and forces a re-run on any DB that stamped v1.
-    const SENTINEL_KEY: &str = "mig024_sight_v5_layout_backfill_v2";
+    const SENTINEL_KEY: &str = "mig024_sight_v5_layout_backfill_v3";
+    const SENTINEL_KEY_V2: &str = "mig024_sight_v5_layout_backfill_v2";
     const SENTINEL_KEY_V1: &str = "mig024_sight_v5_layout_backfill_v1";
 
-    // Check sentinel: if v2 already done, return cache count and exit.
-    let already_v2: Option<i64> = conn
+    // Check sentinel: if v3 already done, return cache count and exit.
+    let already_v3: Option<i64> = conn
         .query_row(
             "SELECT version FROM schema_versions WHERE module = ?1",
             params![SENTINEL_KEY],
             |r| r.get(0),
         )
         .ok();
-    if already_v2.is_some() {
+    if already_v3.is_some() {
         let count: i64 = conn
             .query_row("SELECT COUNT(*) FROM sight_v5_layout", [], |r| r.get(0))
             .map_err(|e| format!("backfill: count: {}", e))?;
         return Ok(count as usize);
     }
 
-    // Detect v1 sentinel — wipe the v1 cache rows so the v2 backfill
+    // Detect v1 OR v2 sentinel — wipe the cache rows so the v3 backfill
     // re-derives cleanly. No data loss (cache is ephemeral, rebuildable
-    // from note_meta + sky_nodes).
-    let already_v1: Option<i64> = conn
+    // from note_meta + sky_nodes + note_links).
+    let stale_sentinel: Option<i64> = conn
         .query_row(
-            "SELECT version FROM schema_versions WHERE module = ?1",
-            params![SENTINEL_KEY_V1],
+            "SELECT version FROM schema_versions WHERE module IN (?1, ?2) LIMIT 1",
+            params![SENTINEL_KEY_V1, SENTINEL_KEY_V2],
             |r| r.get(0),
         )
         .ok();
-    if already_v1.is_some() {
+    if stale_sentinel.is_some() {
         conn.execute("DELETE FROM sight_v5_layout", [])
-            .map_err(|e| format!("backfill: clear v1 cache: {}", e))?;
+            .map_err(|e| format!("backfill: clear stale cache: {}", e))?;
         conn.execute(
-            "DELETE FROM schema_versions WHERE module = ?1",
-            params![SENTINEL_KEY_V1],
+            "DELETE FROM schema_versions WHERE module IN (?1, ?2)",
+            params![SENTINEL_KEY_V1, SENTINEL_KEY_V2],
         )
-        .map_err(|e| format!("backfill: clear v1 sentinel: {}", e))?;
+        .map_err(|e| format!("backfill: clear stale sentinels: {}", e))?;
     }
 
     // Bulk INSERT OR REPLACE: derives per-note layout from note_meta
@@ -242,7 +251,26 @@ pub fn backfill_sight_v5_layout(conn: &mut Connection) -> Result<usize, String> 
                     ELSE NULL
                 END AS stratum,
                 sn.maturity,
-                NULL AS confidence_alpha,
+                -- fix-7 (2026-05-13): dominant outgoing-link confidence per
+                -- note, mapped to alpha. Tie-break: SQLite natural order
+                -- (per the ambiguity-surfacing pattern logged in mode-
+                -- concepts §5.7 — Layer 1 is allowed arbitrary-but-stable;
+                -- Layer 2 surfaces ties to the user). Notes with no
+                -- outgoing typed links return NULL → frontend defaults
+                -- to alpha 0.45 (hypothesis) AND renders hollow with the
+                -- gold frame per the §2 hollow cascade.
+                (SELECT
+                    CASE confidence
+                        WHEN 'established' THEN 1.0
+                        WHEN 'evidence'    THEN 0.7
+                        WHEN 'contested'   THEN 0.85
+                        ELSE 0.45
+                    END
+                 FROM note_links nl3
+                 WHERE nl3.source_path = nm.path
+                 GROUP BY confidence
+                 ORDER BY COUNT(*) DESC
+                 LIMIT 1) AS confidence_alpha,
                 CASE WHEN EXISTS (
                     SELECT 1 FROM note_links nl
                     WHERE nl.target_path = nm.path
@@ -717,5 +745,131 @@ mod tests {
             |r| r.get(0),
         )
         .expect("count")
+    }
+
+    // ─── fix-7 (2026-05-13): confidence_alpha population per Mode C ──
+    //
+    // Mode-concepts deep-dive §7.8 surfaced this as P0: the v2 backfill
+    // hardcoded NULL for confidence_alpha → every star defaulted to
+    // alpha 0.45 → Mode C wedges concentrated artificially in
+    // hypothesis. v3 backfill aggregates dominant outgoing-link
+    // confidence per note. These tests verify the new SQL.
+
+    #[test]
+    fn mig024_fix7_confidence_alpha_dominant_established() {
+        let mut conn = setup_db();
+        // Note 'a' has 3 established links + 1 evidence → dominant = established → 1.0.
+        conn.execute_batch(
+            "INSERT INTO note_meta (path, name, library_name, modified)
+             VALUES ('a.md', 'a', 'lib', 1700000000);
+             INSERT INTO note_links (source_path, target_path, target_name, link_type, confidence)
+             VALUES
+                ('a.md', 'b.md', 'b', 'supports', 'established'),
+                ('a.md', 'c.md', 'c', 'supports', 'established'),
+                ('a.md', 'd.md', 'd', 'supports', 'established'),
+                ('a.md', 'e.md', 'e', 'derives-from', 'evidence');",
+        ).expect("seed");
+
+        let inserted = backfill_sight_v5_layout(&mut conn).expect("backfill");
+        assert_eq!(inserted, 1);
+
+        let alpha: Option<f64> = conn
+            .query_row(
+                "SELECT confidence_alpha FROM sight_v5_layout WHERE note_path = 'a.md'",
+                [],
+                |r| r.get(0),
+            )
+            .expect("read alpha");
+        assert_eq!(alpha, Some(1.0), "dominant established → alpha 1.0");
+    }
+
+    #[test]
+    fn mig024_fix7_confidence_alpha_dominant_evidence() {
+        let mut conn = setup_db();
+        conn.execute_batch(
+            "INSERT INTO note_meta (path, name, library_name, modified)
+             VALUES ('a.md', 'a', 'lib', 1700000000);
+             INSERT INTO note_links (source_path, target_path, target_name, link_type, confidence)
+             VALUES
+                ('a.md', 'b.md', 'b', 'supports', 'evidence'),
+                ('a.md', 'c.md', 'c', 'supports', 'evidence'),
+                ('a.md', 'd.md', 'd', 'supports', 'hypothesis');",
+        ).expect("seed");
+
+        backfill_sight_v5_layout(&mut conn).expect("backfill");
+        let alpha: Option<f64> = conn
+            .query_row(
+                "SELECT confidence_alpha FROM sight_v5_layout WHERE note_path = 'a.md'",
+                [],
+                |r| r.get(0),
+            )
+            .expect("read alpha");
+        assert_eq!(alpha, Some(0.7), "dominant evidence → alpha 0.7");
+    }
+
+    #[test]
+    fn mig024_fix7_confidence_alpha_no_outgoing_returns_null() {
+        let mut conn = setup_db();
+        // Note with zero outgoing typed links → SUBQUERY returns no rows
+        // → confidence_alpha is NULL → frontend defaults to hypothesis +
+        // renders hollow with gold frame per §2 cascade.
+        conn.execute(
+            "INSERT INTO note_meta (path, name, library_name, modified)
+             VALUES ('orphan.md', 'orphan', 'lib', 1700000000)",
+            [],
+        ).expect("seed");
+
+        backfill_sight_v5_layout(&mut conn).expect("backfill");
+        let alpha: Option<f64> = conn
+            .query_row(
+                "SELECT confidence_alpha FROM sight_v5_layout WHERE note_path = 'orphan.md'",
+                [],
+                |r| r.get(0),
+            )
+            .expect("read alpha");
+        assert_eq!(alpha, None, "no outgoing links → NULL alpha (hollow + hypothesis default)");
+    }
+
+    #[test]
+    fn mig024_fix7_v2_sentinel_auto_clears() {
+        let mut conn = setup_db();
+        // Stamp v2 sentinel (simulating an existing post-fix-2 install).
+        conn.execute(
+            "INSERT INTO schema_versions (module, version, updated_at)
+             VALUES ('mig024_sight_v5_layout_backfill_v2', 1, 1700000000)",
+            [],
+        ).expect("seed v2 sentinel");
+        // Pre-populate cache with a stale row (simulating v2 NULL-alpha state).
+        conn.execute(
+            "INSERT INTO note_meta (path, name, library_name, modified)
+             VALUES ('a.md', 'a', 'lib', 1700000000)",
+            [],
+        ).expect("seed note");
+        conn.execute(
+            "INSERT INTO sight_v5_layout (note_path, confidence_alpha, computed_at)
+             VALUES ('a.md', NULL, 1700000001000)",
+            [],
+        ).expect("seed stale cache");
+
+        backfill_sight_v5_layout(&mut conn).expect("backfill");
+
+        // v2 sentinel should be cleared; v3 should be stamped.
+        let v2_count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM schema_versions WHERE module = 'mig024_sight_v5_layout_backfill_v2'",
+                [],
+                |r| r.get(0),
+            )
+            .expect("count v2");
+        assert_eq!(v2_count, 0, "v2 sentinel must be auto-cleared by v3 backfill");
+
+        let v3_count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM schema_versions WHERE module = 'mig024_sight_v5_layout_backfill_v3'",
+                [],
+                |r| r.get(0),
+            )
+            .expect("count v3");
+        assert_eq!(v3_count, 1, "v3 sentinel must be stamped");
     }
 }

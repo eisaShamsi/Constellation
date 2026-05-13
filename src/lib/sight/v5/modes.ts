@@ -15,13 +15,22 @@
 import type { LayoutCacheRow } from './types';
 
 /** A wedge bucket — the unit of rim slicing for a given mode.
- *  azimuthStart/azimuthEnd in radians; 0 = top (north), clockwise. */
+ *  azimuthStart/azimuthEnd in radians; 0 = top (north), clockwise.
+ *
+ *  fix-9 (2026-05-13): adds optional `bgFill` for wedges that carry
+ *  data-encoding background tint. Currently used by Mode S to mute
+ *  Dormancy + Archival ("less alive" lifecycle phases per Eisa-
+ *  confirmed §8.6 of mode-concepts). All other wedges leave bgFill
+ *  null → standard parchment background. Refused for Mode P per
+ *  civilizational pluralism principle (§10.6) — no source family
+ *  gets visual differentiation. */
 export interface WedgeBucket {
 	key: string;             // bucket identifier (library name, month index, source family, ...)
 	label: string;           // user-facing label
 	count: number;           // notes in this bucket after scope filter
 	azimuthStart: number;
 	azimuthEnd: number;
+	bgFill?: string | null;  // fix-9: optional muted background fill
 }
 
 /** Context the dispatch needs. Computed once per render frame on
@@ -29,6 +38,12 @@ export interface WedgeBucket {
 export interface ModeContext {
 	wedges: WedgeBucket[];
 	bucketKeyFor: (note: LayoutCacheRow) => string;
+	/** fix-8 (2026-05-13): per-mode "data is present for this mode"
+	 *  predicate. Returns true if the note has the data the active
+	 *  mode classifies on (so the star renders SOLID). False if the
+	 *  note is in the missing-data wedge for this mode (so the star
+	 *  renders HOLLOW with the gold frame per §2 cascade priority 1). */
+	hasModeData: (note: LayoutCacheRow) => boolean;
 }
 
 /** The 9 typed-link kinds (in canonical render order) + Untyped.
@@ -128,6 +143,8 @@ function buildRegionsContext(notes: LayoutCacheRow[]): ModeContext {
 	return {
 		wedges,
 		bucketKeyFor: (n) => n.libraryName ?? '(unknown)',
+		// Mode R: every note has a libraryName in practice → always solid.
+		hasModeData: (n) => n.libraryName != null,
 	};
 }
 
@@ -144,6 +161,7 @@ function buildLinkTypesContext(notes: LayoutCacheRow[]): ModeContext {
 		counts,
 		(n) => n.dominantLinkType ?? 'untyped',
 		(k) => k,
+		(n) => n.dominantLinkType != null,    // hollow if untyped
 	);
 }
 
@@ -166,6 +184,7 @@ function buildTimeContext(notes: LayoutCacheRow[], locale: string): ModeContext 
 			if (m < 0 || m > 11) return '?';
 			return fmt.format(new Date(Date.UTC(2024, m, 15)));
 		},
+		(n) => n.createdMonth != null,        // hollow if no createdMonth
 	);
 }
 
@@ -181,6 +200,7 @@ function buildConfidenceContext(notes: LayoutCacheRow[]): ModeContext {
 		counts,
 		confidenceBucket,
 		(k) => k,
+		(n) => n.confidenceAlpha != null || n.contested,    // hollow if no confidence data
 	);
 }
 function confidenceBucket(n: LayoutCacheRow): string {
@@ -198,12 +218,22 @@ function buildStagesContext(notes: LayoutCacheRow[]): ModeContext {
 		const k = n.stage ?? 'Spark';
 		counts.set(k, (counts.get(k) ?? 0) + 1);
 	}
-	return makeUniformWedges(
+	const ctx = makeUniformWedges(
 		STAGE_ORDER.map(k => k as string),
 		counts,
 		(n) => n.stage ?? 'Spark',
 		(k) => k,
+		(n) => n.stage != null,            // hollow if unstaged
 	);
+	// fix-9 (2026-05-13): mute Dormancy + Archival wedge backgrounds to
+	// encode "less alive" lifecycle phases (Eisa-confirmed §8.6 of mode-
+	// concepts). Weathered cream `#f0e9cb` (~5-7% darker than parchment).
+	for (const w of ctx.wedges) {
+		if (w.key === 'Dormancy' || w.key === 'Archival') {
+			w.bgFill = '#f0e9cb';
+		}
+	}
+	return ctx;
 }
 
 // ─── A Acts ────────────────────────────────────────────────────────
@@ -218,6 +248,7 @@ function buildActsContext(notes: LayoutCacheRow[]): ModeContext {
 		counts,
 		(n) => n.actsPrimary ?? 'Unacted',
 		(k) => k,
+		(n) => n.actsPrimary != null,      // hollow if Unacted
 	);
 }
 
@@ -233,6 +264,7 @@ function buildProvenanceContext(notes: LayoutCacheRow[]): ModeContext {
 		counts,
 		(n) => sourceFamily(n.sourcesPrimary),
 		(k) => k,
+		(n) => n.sourcesPrimary != null,   // hollow if unsourced
 	);
 }
 function sourceFamily(primary: string | null): string {
@@ -247,12 +279,18 @@ function sourceFamily(primary: string | null): string {
 /** Distribute a fixed-order key set uniformly around the rim. Each
  *  bucket gets an equal-angle span; the active wedge set is the
  *  full canonical key list so empty buckets remain visible (they
- *  become to-do prompts per Concept Paper §6 + D-V6). */
+ *  become to-do prompts per Concept Paper §6 + D-V6).
+ *
+ *  fix-8 (2026-05-13): accepts a `hasModeData` predicate so the
+ *  per-mode "is this note classified for the active mode?" check is
+ *  available to render.ts via the ModeContext. Used by the §2
+ *  hollow-cascade priority 1 (mode-data missing → gold frame). */
 function makeUniformWedges(
 	canonicalKeys: string[],
 	counts: Map<string, number>,
 	bucketKeyFor: (n: LayoutCacheRow) => string,
 	labelFor: (k: string) => string,
+	hasModeData: (n: LayoutCacheRow) => boolean,
 ): ModeContext {
 	const total = canonicalKeys.length;
 	const span = (2 * Math.PI) / total;
@@ -263,5 +301,5 @@ function makeUniformWedges(
 		azimuthStart: -Math.PI / 2 + i * span,
 		azimuthEnd: -Math.PI / 2 + (i + 1) * span,
 	}));
-	return { wedges, bucketKeyFor };
+	return { wedges, bucketKeyFor, hasModeData };
 }

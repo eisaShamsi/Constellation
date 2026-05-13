@@ -22,7 +22,9 @@
 		renderFocusOverlay,
 		computeStarPositions,
 		starHitDistanceSq,
+		wedgeKeyAtPoint,
 		type StarPosition,
+		type MutedWedgeBg,
 	} from './render';
 	import { radiusForStratum } from './dome';
 	import { buildModeContext, azimuthForMode } from './modes';
@@ -84,11 +86,40 @@
 	// the active sidebar context. For §5 we use whatever appSettings
 	// stores; the wiring to a real "active library / folder" comes when
 	// the layout passes that context as a prop (future).
-	let visibleRows = $derived.by(() => filterNotesByScope(allRows, activeScope, null));
+	let scopeFilteredRows = $derived.by(() => filterNotesByScope(allRows, activeScope, null));
+
+	// D-V10 polish (2026-05-13): wedge-click → auto-filter. When set,
+	// further filter visible rows to only those whose bucket key matches
+	// the active wedge. Cleared by clicking the same wedge again or
+	// pressing Esc or clicking the chip.
+	let activeWedgeKey: string | null = $state(null);
+
+	let visibleRows = $derived.by(() => {
+		if (activeWedgeKey == null) return scopeFilteredRows;
+		// Filter scope-rows to only those in the active wedge.
+		return scopeFilteredRows.filter(r => modeContext.bucketKeyFor(r) === activeWedgeKey);
+	});
 
 	// ─── mode context + star positions ─────────────────────────────
-	let modeContext = $derived.by(() => buildModeContext(activeMode, visibleRows, $locale));
+	// modeContext built from scopeFilteredRows (NOT activeWedge-filtered)
+	// so wedge counts reflect the full scope-set even when the user has
+	// narrowed to one wedge (D-V10 polish). The activeWedge filter applies
+	// downstream in `visibleRows`.
+	let modeContext = $derived.by(() => buildModeContext(activeMode, scopeFilteredRows, $locale));
 	let modeWedgeAngles: number[] = $derived(modeContext.wedges.map(w => w.azimuthStart));
+
+	// fix-9 (2026-05-13): muted wedge backgrounds — collect any wedges
+	// in the active mode whose bgFill is set (currently only Mode S
+	// Dormancy + Archival per §8.6 of mode-concepts).
+	let mutedWedgeBgs: MutedWedgeBg[] = $derived.by(() =>
+		modeContext.wedges
+			.filter(w => w.bgFill != null)
+			.map(w => ({
+				azimuthStart: w.azimuthStart,
+				azimuthEnd: w.azimuthEnd,
+				fill: w.bgFill!,
+			}))
+	);
 
 	// Fix-3 (2026-05-12): rim labels are PER-MODE, not always months.
 	// Each wedge in the active mode's context contributes one rim
@@ -115,7 +146,10 @@
 	let stars: StarPosition[] = $derived.by(() => {
 		const bandFor = (s: number) => radiusForStratum(s, domeRadius);
 		const azFor = (r: LayoutCacheRow) => azimuthForMode(r, modeContext);
-		return computeStarPositions(visibleRows, bandFor, azFor);
+		// fix-8 (2026-05-13): pass the per-mode hasModeData predicate so
+		// computeStarPositions can fire the §2 hollow cascade priority 1
+		// (mode-data missing → gold frame).
+		return computeStarPositions(visibleRows, bandFor, azFor, modeContext.hasModeData);
 	});
 	let starsByPath: Map<string, StarPosition> = $derived.by(() => {
 		const m = new Map<string, StarPosition>();
@@ -128,6 +162,33 @@
 	let selectedStar: StarPosition | null = $state(null);
 	let tooltipX = $state(0);
 	let tooltipY = $state(0);
+	// D-V10 polish: wedge hover for tooltip
+	let hoveredWedgeKey: string | null = $state(null);
+
+	// D-V10 polish: per-wedge per-stratum breakdown for hover tooltips.
+	// Cached per modeContext change so hover doesn't recompute on every
+	// mousemove. Map<wedgeKey, Map<stratum, count>>.
+	let wedgeStratumBreakdown: Map<string, Map<number, number>> = $derived.by(() => {
+		const out = new Map<string, Map<number, number>>();
+		for (const row of scopeFilteredRows) {
+			if (row.stratum == null) continue;
+			const key = modeContext.bucketKeyFor(row);
+			let m = out.get(key);
+			if (!m) { m = new Map(); out.set(key, m); }
+			m.set(row.stratum, (m.get(row.stratum) ?? 0) + 1);
+		}
+		return out;
+	});
+
+	let hoveredWedge = $derived.by(() => {
+		if (hoveredWedgeKey == null) return null;
+		return modeContext.wedges.find(w => w.key === hoveredWedgeKey) ?? null;
+	});
+
+	let activeWedge = $derived.by(() => {
+		if (activeWedgeKey == null) return null;
+		return modeContext.wedges.find(w => w.key === activeWedgeKey) ?? null;
+	});
 
 	// Incident edges for the focused star (selected wins; hover falls back).
 	let focusedStar: StarPosition | null = $derived(selectedStar ?? hoveredStar);
@@ -169,6 +230,7 @@
 			activeMode === 'T',   // fix-4: gold-month tint only when rim shows months
 			domeCenterX,          // fix-5: dome center x (caller-provided to leave room for toolbars)
 			domeCenterY,          // fix-5: dome center y (shifted down by TOP_RESERVE)
+			mutedWedgeBgs,        // fix-9: muted wedge backgrounds (Mode S Dormancy/Archival)
 		);
 		// Focus overlay (brightened edges + selection ring) draws over
 		// the base. For §5 we re-draw both on focus change; future
@@ -183,6 +245,7 @@
 		// Touch reactive deps so this effect re-runs when they change.
 		void canvasWidth; void canvasHeight; void domeRadius; void domeCenterX; void domeCenterY;
 		void $locale; void modeWedgeAngles; void stars; void links; void focusedStar; void activeMode;
+		void mutedWedgeBgs;   // fix-9
 		draw();
 	});
 
@@ -232,11 +295,18 @@
 		});
 		ro.observe(containerEl);
 		void loadLayout();
-		// Esc clears selection (also handled at +layout.svelte for app-wide Esc).
+		// Esc clears selection OR active wedge filter (D-V10 polish).
+		// Selection takes precedence so users can step out of selection
+		// first, then out of wedge-filter on a second Esc.
 		const onKey = (e: KeyboardEvent) => {
-			if (e.key === 'Escape' && selectedStar) {
-				selectedStar = null;
-				e.stopPropagation();
+			if (e.key === 'Escape') {
+				if (selectedStar) {
+					selectedStar = null;
+					e.stopPropagation();
+				} else if (activeWedgeKey != null) {
+					activeWedgeKey = null;
+					e.stopPropagation();
+				}
 			}
 		};
 		window.addEventListener('keydown', onKey, true);
@@ -278,6 +348,7 @@
 		// Mouse coordinates relative to the shifted dome center (fix-5).
 		const mx = e.clientX - rect.left - domeCenterX;
 		const my = e.clientY - rect.top - domeCenterY;
+		// Star hit-test FIRST (takes precedence over wedge).
 		let best: StarPosition | null = null;
 		let bestDist = HIT_RADIUS_PX * HIT_RADIUS_PX;
 		for (const s of stars) {
@@ -291,11 +362,21 @@
 		if (best) {
 			tooltipX = e.clientX - rect.left + 12;
 			tooltipY = e.clientY - rect.top + 12;
+			hoveredWedgeKey = null;        // star wins over wedge
+		} else {
+			// D-V10 polish: wedge hit-test (only if not over a star).
+			const wkey = wedgeKeyAtPoint(mx, my, domeRadius, modeContext.wedges);
+			if (wkey !== hoveredWedgeKey) hoveredWedgeKey = wkey;
+			if (wkey != null) {
+				tooltipX = e.clientX - rect.left + 12;
+				tooltipY = e.clientY - rect.top + 12;
+			}
 		}
 	}
 
 	function onCanvasMouseLeave() {
 		hoveredStar = null;
+		hoveredWedgeKey = null;
 	}
 
 	function onCanvasClick(e: MouseEvent) {
@@ -312,8 +393,19 @@
 				best = s;
 			}
 		}
-		// Click on a star → select; click on background → clear.
-		selectedStar = best;
+		if (best) {
+			selectedStar = best;
+			return;
+		}
+		// D-V10 polish: wedge click → toggle wedge filter (no star hit).
+		const wkey = wedgeKeyAtPoint(mx, my, domeRadius, modeContext.wedges);
+		if (wkey != null) {
+			activeWedgeKey = (activeWedgeKey === wkey) ? null : wkey;
+			selectedStar = null;          // clear selection when filter toggles
+			return;
+		}
+		// Click on background (not star, not wedge) → clear selection.
+		selectedStar = null;
 	}
 
 	function noteTitleForTooltip(path: string): string {
@@ -356,13 +448,52 @@
 		{/each}
 	</div>
 
-	<!-- Hover tooltip (star title; near cursor). -->
+	<!-- Hover tooltip — star (priority) or wedge (D-V10 polish). -->
 	{#if hoveredStar && !selectedStar}
 		<div
 			class="sight-v5-tooltip"
 			dir="auto"
 			style="left: {tooltipX}px; top: {tooltipY}px;"
 		>{noteTitleForTooltip(hoveredStar.row.notePath)}</div>
+	{:else if hoveredWedge && !selectedStar}
+		<!-- D-V10 polish: wedge tooltip with per-stratum breakdown -->
+		<div
+			class="sight-v5-wedge-tooltip"
+			dir="auto"
+			style="left: {tooltipX}px; top: {tooltipY}px;"
+		>
+			<div class="sv5-wt-header">{hoveredWedge.label}</div>
+			<div class="sv5-wt-count">{hoveredWedge.count} {hoveredWedge.count === 1 ? ($t('sight.v5.tooltip.note') || 'note') : ($t('sight.v5.tooltip.notes') || 'notes')}</div>
+			{#if hoveredWedge.count > 0}
+				{@const breakdown = wedgeStratumBreakdown.get(hoveredWedge.key)}
+				{#if breakdown && breakdown.size > 0}
+					<div class="sv5-wt-strata">
+						{#each [...breakdown.entries()].sort((a, b) => a[0] - b[0]) as [stratum, count] (stratum)}
+							<span class="sv5-wt-stratum">L{stratum}: {count}</span>
+						{/each}
+					</div>
+				{/if}
+			{/if}
+			<div class="sv5-wt-hint">
+				{activeWedgeKey === hoveredWedge.key
+					? ($t('sight.v5.tooltip.clickToClear') || 'Click to clear filter')
+					: ($t('sight.v5.tooltip.clickToFilter') || 'Click to filter')}
+			</div>
+		</div>
+	{/if}
+
+	<!-- D-V10 polish: active wedge-filter chip (top-right). -->
+	{#if activeWedge}
+		<div class="sight-v5-filter-chip" dir="auto" role="status">
+			<span class="sv5-fc-label">{$t('sight.v5.filter.label') || 'Filtered:'}</span>
+			<strong dir="auto">{activeWedge.label}</strong>
+			<button
+				class="sv5-fc-clear"
+				onclick={() => activeWedgeKey = null}
+				title={$t('sight.v5.filter.clear') || 'Clear filter (Esc)'}
+				aria-label={$t('sight.v5.filter.clear') || 'Clear filter'}
+			>×</button>
+		</div>
 	{/if}
 
 	<!-- §4 mode toggle bar. -->
@@ -469,6 +600,84 @@
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
+	}
+	/* D-V10 polish: wedge tooltip (richer than star tooltip) */
+	.sight-v5-wedge-tooltip {
+		position: absolute;
+		background: rgba(26, 26, 26, 0.92);
+		color: #faf6e8;
+		padding: 0.5rem 0.75rem;
+		border-radius: 4px;
+		font-size: 0.8rem;
+		pointer-events: none;
+		z-index: 4;
+		max-width: 320px;
+		min-width: 180px;
+		display: flex;
+		flex-direction: column;
+		gap: 0.3rem;
+	}
+	.sv5-wt-header {
+		font-weight: 600;
+		color: #c9a227;
+		letter-spacing: 0.03em;
+	}
+	.sv5-wt-count {
+		font-style: italic;
+		color: #b8a98a;
+	}
+	.sv5-wt-strata {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+		font-size: 0.75rem;
+	}
+	.sv5-wt-stratum {
+		background: rgba(250, 246, 232, 0.1);
+		padding: 0.1rem 0.4rem;
+		border-radius: 2px;
+	}
+	.sv5-wt-hint {
+		font-size: 0.7rem;
+		color: #b8a98a;
+		font-style: italic;
+		border-top: 1px solid rgba(184, 169, 138, 0.3);
+		padding-top: 0.3rem;
+	}
+	/* D-V10 polish: active wedge-filter chip */
+	.sight-v5-filter-chip {
+		position: absolute;
+		top: 24px;
+		right: 24px;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		background: rgba(201, 162, 39, 0.15);
+		border: 1px solid #c9a227;
+		padding: 0.35rem 0.75rem;
+		border-radius: 4px;
+		font-size: 0.85rem;
+		color: #1a1a1a;
+		z-index: 3;
+		max-width: 280px;
+	}
+	.sv5-fc-label {
+		color: #2a4a8c;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		font-size: 0.7rem;
+	}
+	.sv5-fc-clear {
+		background: transparent;
+		border: none;
+		color: #1a1a1a;
+		font-size: 1.1rem;
+		cursor: pointer;
+		padding: 0 0.25rem;
+		line-height: 1;
+	}
+	.sv5-fc-clear:hover {
+		color: #a83232;
 	}
 	.sight-v5-mode-bar {
 		position: absolute;
