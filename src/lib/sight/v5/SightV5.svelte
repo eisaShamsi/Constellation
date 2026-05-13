@@ -65,7 +65,7 @@
 	// overlap the dome rim. domeRadius shrinks to fit the remaining
 	// usable height. Floor at 120 px so a tiny window still draws
 	// something meaningful.
-	const TOP_RESERVE = 140;       // mode bar (24+44) + scope bar (8+28) + 36 px gap
+	const TOP_RESERVE = 340;       // mode bar (24+44) + scope bar (8+28) + Eisa's 200 px extra (fix-6)
 	const BOTTOM_PADDING = 40;     // breathing room below the dome
 	const SIDE_PADDING = 60;       // breathing room on left/right for rim labels
 	let usableHeight = $derived(Math.max(240, canvasHeight - TOP_RESERVE - BOTTOM_PADDING));
