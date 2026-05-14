@@ -152,6 +152,149 @@ pub fn compute_universe_snapshot_hash(conn: &Connection) -> Result<String, Strin
     Ok(format!("{}-{}-{}-{}", row.0, row.1, row.2, row.3))
 }
 
+/// First-boot backfill: populate `sight_v6_layout` for all existing
+/// notes. Idempotent via `schema_versions` sentinel
+/// `'mig025_sight_v6_layout_backfill_v1'`. Resumable via the
+/// INSERT OR REPLACE pattern (re-running over an existing row is a
+/// no-op for that row's data; the WHOLE bulk INSERT runs atomically
+/// in a transaction so a mid-run interrupt rolls back cleanly).
+///
+/// This is the **synchronous bulk** backfill skeleton landed in §A.3.
+/// §A.4 wraps it with stratum-tiered passes + Tauri progress events
+/// per Architect Option C3 (the user-facing flow uses §A.4's
+/// progressive variant). This synchronous variant is kept for unit
+/// tests + as a fallback / repair operation.
+///
+/// Mirrors `sight_v5::backfill_sight_v5_layout` (with the same fix-7
+/// confidence_alpha aggregation) and adds the 4 new v6 columns:
+///   - link_in_count: subquery over note_links.target_path
+///   - link_out_count: subquery over note_links.source_path
+///   - frontmatter_key_count: COUNT over json_each(properties_json),
+///                            null-guarded so empty/missing JSON → 0
+///   - body_chars: COALESCE(length(body_text), 0)
+///
+/// Returns the number of cache rows after the backfill (== note_meta
+/// row count after a successful run).
+pub fn backfill_sight_v6_layout(conn: &mut Connection) -> Result<usize, String> {
+    use rusqlite::params;
+
+    const SENTINEL_KEY: &str = "mig025_sight_v6_layout_backfill_v1";
+
+    // Check sentinel: if v1 already done, return cache count and exit.
+    let already_done: Option<i64> = conn
+        .query_row(
+            "SELECT version FROM schema_versions WHERE module = ?1",
+            params![SENTINEL_KEY],
+            |r| r.get(0),
+        )
+        .ok();
+    if already_done.is_some() {
+        let count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM sight_v6_layout", [], |r| r.get(0))
+            .map_err(|e| format!("backfill: count: {}", e))?;
+        return Ok(count as usize);
+    }
+
+    let tx = conn
+        .transaction()
+        .map_err(|e| format!("backfill: tx: {}", e))?;
+
+    // Bulk INSERT OR REPLACE: derives per-note layout from note_meta
+    // (sources, stage, acts via json_extract; created_month from
+    // epoch via strftime; body_chars from length(body_text);
+    // frontmatter_key_count from json_each on properties_json; link
+    // in/out counts from note_links) + sky_nodes (stratum, maturity)
+    // via LEFT JOIN.
+    //
+    // confidence_alpha: dominant outgoing-link confidence per note,
+    // mapped to alpha (per v5 fix-7 pattern). Notes with no outgoing
+    // typed links return NULL → frontend defaults to 0.45 (hypothesis)
+    // AND renders hollow per Concept Paper §3.4 fallback.
+    let inserted = tx
+        .execute(
+            "INSERT OR REPLACE INTO sight_v6_layout (
+                note_path, stratum, maturity, confidence_alpha, contested,
+                library_name, folder_path, created_month, sources_primary,
+                stage, acts_primary, dominant_link_type, computed_at,
+                link_in_count, link_out_count, frontmatter_key_count, body_chars
+             )
+             SELECT
+                nm.path,
+                CASE
+                    WHEN sn.stratum LIKE 'L%' AND length(sn.stratum) >= 2
+                        THEN CAST(SUBSTR(sn.stratum, 2) AS INTEGER)
+                    WHEN sn.stratum GLOB '[1-8]'
+                        THEN CAST(sn.stratum AS INTEGER)
+                    ELSE NULL
+                END AS stratum,
+                sn.maturity,
+                (SELECT
+                    CASE confidence
+                        WHEN 'established' THEN 1.0
+                        WHEN 'evidence'    THEN 0.7
+                        WHEN 'contested'   THEN 0.85
+                        ELSE 0.45
+                    END
+                 FROM note_links nl3
+                 WHERE nl3.source_path = nm.path
+                 GROUP BY confidence
+                 ORDER BY COUNT(*) DESC
+                 LIMIT 1) AS confidence_alpha,
+                CASE WHEN EXISTS (
+                    SELECT 1 FROM note_links nl
+                    WHERE nl.target_path = nm.path
+                      AND nl.link_type = 'contradicts'
+                      AND nl.confidence != 'archived'
+                ) THEN 1 ELSE 0 END AS contested,
+                nm.library_name,
+                CASE
+                    WHEN instr(nm.path, '/') > 0
+                        THEN substr(nm.path, 1, length(nm.path) - length(replace(nm.path, '/', '')) + instr(replace(nm.path, '/', char(0x1f)), char(0x1f)))
+                    ELSE NULL
+                END AS folder_path,
+                CASE
+                    WHEN nm.created_at IS NOT NULL
+                        THEN CAST(strftime('%m', nm.created_at, 'unixepoch') AS INTEGER) - 1
+                    ELSE NULL
+                END AS created_month,
+                json_extract(nm.sources, '$[0]') AS sources_primary,
+                json_extract(nm.properties_json, '$.stage') AS stage,
+                json_extract(nm.properties_json, '$.act') AS acts_primary,
+                (SELECT nl2.link_type FROM note_links nl2
+                 WHERE nl2.source_path = nm.path
+                 GROUP BY nl2.link_type
+                 ORDER BY COUNT(*) DESC LIMIT 1) AS dominant_link_type,
+                strftime('%s', 'now') * 1000 AS computed_at,
+                -- v6 additions (Architect §1.2):
+                (SELECT COUNT(*) FROM note_links WHERE target_path = nm.path) AS link_in_count,
+                (SELECT COUNT(*) FROM note_links WHERE source_path = nm.path) AS link_out_count,
+                CASE
+                    WHEN nm.properties_json IS NULL OR nm.properties_json = ''
+                        THEN 0
+                    ELSE (SELECT COUNT(*) FROM json_each(nm.properties_json))
+                END AS frontmatter_key_count,
+                COALESCE(length(nm.body_text), 0) AS body_chars
+             FROM note_meta nm
+             LEFT JOIN sky_nodes sn ON sn.path = nm.path",
+            [],
+        )
+        .map_err(|e| format!("backfill: bulk insert: {}", e))?;
+
+    // Stamp the sentinel as the LAST statement in the transaction so
+    // a mid-backfill interrupt rolls back without leaving a half-
+    // stamped sentinel (same all-or-nothing pattern as v5).
+    tx.execute(
+        "INSERT OR REPLACE INTO schema_versions (module, version, updated_at)
+         VALUES (?1, 1, strftime('%s', 'now'))",
+        params![SENTINEL_KEY],
+    )
+    .map_err(|e| format!("backfill: stamp sentinel: {}", e))?;
+
+    tx.commit()
+        .map_err(|e| format!("backfill: commit: {}", e))?;
+    Ok(inserted)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -393,5 +536,300 @@ mod tests {
             .unwrap();
         assert_eq!(v5_count, 0, "v5 trigger should fire and DELETE the v5 row");
         assert_eq!(v6_count, 0, "v6 trigger should fire and DELETE the v6 row");
+    }
+
+    // ── §A.3 backfill tests ─────────────────────────────────────────
+
+    /// Helper: build an in-memory DB with the full note_meta + sky_nodes
+    /// + schema_versions schema sight_v6 backfill needs. Populates a small
+    /// fixture (3 notes, 4 typed links, partial frontmatter) so subqueries
+    /// can be verified against deterministic counts.
+    fn seeded_universe_db() -> Connection {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE note_meta (
+                path TEXT PRIMARY KEY,
+                name TEXT NOT NULL DEFAULT '',
+                library_name TEXT NOT NULL DEFAULT '',
+                modified INTEGER NOT NULL DEFAULT 0,
+                content_hash TEXT,
+                properties_json TEXT DEFAULT '{}',
+                tags_json TEXT DEFAULT '[]',
+                outgoing_links_json TEXT DEFAULT '[]',
+                headings_json TEXT DEFAULT '[]',
+                body_text TEXT DEFAULT '',
+                word_count INTEGER NOT NULL DEFAULT 0,
+                created_at INTEGER,
+                cid_cn TEXT NOT NULL DEFAULT '',
+                sources TEXT DEFAULT NULL
+            );
+            CREATE TABLE note_links (
+                source_path TEXT NOT NULL,
+                target_path TEXT NOT NULL,
+                link_type TEXT NOT NULL,
+                confidence TEXT NOT NULL DEFAULT 'hypothesis'
+            );
+            CREATE TABLE sky_nodes (
+                path TEXT PRIMARY KEY,
+                stratum TEXT,
+                maturity TEXT
+            );
+            CREATE TABLE schema_versions (
+                module TEXT PRIMARY KEY,
+                version INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL DEFAULT 0
+            );",
+        )
+        .unwrap();
+
+        // 3 notes:
+        //   a.md — Research library, full frontmatter, 2 outgoing + 1 inbound link
+        //   b.md — Research library, minimal frontmatter, 0 outgoing + 1 inbound
+        //   c.md — Personal library, no frontmatter, 1 outgoing + 0 inbound
+        conn.execute_batch(
+            "INSERT INTO note_meta
+                (path, name, library_name, modified, properties_json, body_text,
+                 created_at, sources)
+             VALUES
+                ('a.md', 'a', 'Research', 100,
+                 '{\"stage\":\"established\",\"act\":\"Synthesis\",\"x\":1,\"y\":2}',
+                 'hello world body of note a',
+                 1717200000,
+                 '[\"https://example.com/source-a\"]'),
+                ('b.md', 'b', 'Research', 200,
+                 '{\"stage\":\"fresh\"}',
+                 '',
+                 1717200000,
+                 NULL),
+                ('c.md', 'c', 'Personal', 300,
+                 '{}',
+                 'body of c',
+                 1717200000,
+                 NULL);
+
+             INSERT INTO note_links
+                (source_path, target_path, link_type, confidence)
+             VALUES
+                ('a.md', 'b.md', 'supports',    'evidence'),
+                ('a.md', 'c.md', 'causes',      'established'),
+                ('c.md', 'a.md', 'derives-from', 'hypothesis'),
+                ('a.md', 'b.md', 'contradicts', 'evidence');
+
+             INSERT INTO sky_nodes (path, stratum, maturity) VALUES
+                ('a.md', 'L3', 'evergreen'),
+                ('b.md', 'L1', 'seed'),
+                ('c.md', NULL, NULL);",
+        )
+        .unwrap();
+
+        conn
+    }
+
+    #[test]
+    fn backfill_writes_all_rows() {
+        let mut conn = seeded_universe_db();
+        ensure_sight_v6_layout_table(&conn).unwrap();
+        ensure_sight_v6_invalidation_trigger(&conn).unwrap();
+
+        let inserted = backfill_sight_v6_layout(&mut conn).unwrap();
+        assert_eq!(inserted, 3, "all 3 fixture notes backfilled");
+
+        let cache_count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM sight_v6_layout", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(cache_count, 3);
+    }
+
+    #[test]
+    fn backfill_populates_link_in_and_out_counts() {
+        let mut conn = seeded_universe_db();
+        ensure_sight_v6_layout_table(&conn).unwrap();
+        backfill_sight_v6_layout(&mut conn).unwrap();
+
+        // a.md: 3 outgoing (a→b supports, a→c causes, a→b contradicts), 1 inbound (c→a)
+        // b.md: 0 outgoing, 2 inbound (a→b twice — supports + contradicts)
+        // c.md: 1 outgoing (c→a), 1 inbound (a→c)
+        let (a_out, a_in): (i64, i64) = conn
+            .query_row(
+                "SELECT link_out_count, link_in_count FROM sight_v6_layout WHERE note_path = 'a.md'",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!(a_out, 3);
+        assert_eq!(a_in, 1);
+
+        let (b_out, b_in): (i64, i64) = conn
+            .query_row(
+                "SELECT link_out_count, link_in_count FROM sight_v6_layout WHERE note_path = 'b.md'",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!(b_out, 0);
+        assert_eq!(b_in, 2);
+    }
+
+    #[test]
+    fn backfill_populates_frontmatter_key_count() {
+        let mut conn = seeded_universe_db();
+        ensure_sight_v6_layout_table(&conn).unwrap();
+        backfill_sight_v6_layout(&mut conn).unwrap();
+
+        // a.md: {stage, act, x, y} = 4 keys
+        // b.md: {stage} = 1 key
+        // c.md: {} = 0 keys
+        let a_keys: i64 = conn
+            .query_row(
+                "SELECT frontmatter_key_count FROM sight_v6_layout WHERE note_path = 'a.md'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(a_keys, 4);
+
+        let b_keys: i64 = conn
+            .query_row(
+                "SELECT frontmatter_key_count FROM sight_v6_layout WHERE note_path = 'b.md'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(b_keys, 1);
+
+        let c_keys: i64 = conn
+            .query_row(
+                "SELECT frontmatter_key_count FROM sight_v6_layout WHERE note_path = 'c.md'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(c_keys, 0);
+    }
+
+    #[test]
+    fn backfill_populates_body_chars() {
+        let mut conn = seeded_universe_db();
+        ensure_sight_v6_layout_table(&conn).unwrap();
+        backfill_sight_v6_layout(&mut conn).unwrap();
+
+        let a_chars: i64 = conn
+            .query_row(
+                "SELECT body_chars FROM sight_v6_layout WHERE note_path = 'a.md'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(a_chars, "hello world body of note a".len() as i64);
+
+        let b_chars: i64 = conn
+            .query_row(
+                "SELECT body_chars FROM sight_v6_layout WHERE note_path = 'b.md'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(b_chars, 0); // empty body
+    }
+
+    #[test]
+    fn backfill_stamps_sentinel_v1() {
+        let mut conn = seeded_universe_db();
+        ensure_sight_v6_layout_table(&conn).unwrap();
+        backfill_sight_v6_layout(&mut conn).unwrap();
+
+        let version: i64 = conn
+            .query_row(
+                "SELECT version FROM schema_versions
+                 WHERE module = 'mig025_sight_v6_layout_backfill_v1'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(version, 1);
+    }
+
+    #[test]
+    fn backfill_is_idempotent_via_sentinel() {
+        let mut conn = seeded_universe_db();
+        ensure_sight_v6_layout_table(&conn).unwrap();
+        // First call: full backfill, returns 3.
+        let first = backfill_sight_v6_layout(&mut conn).unwrap();
+        assert_eq!(first, 3);
+
+        // Second call: sentinel set, should short-circuit and return current
+        // cache count (still 3) WITHOUT re-running the bulk INSERT.
+        let second = backfill_sight_v6_layout(&mut conn).unwrap();
+        assert_eq!(second, 3);
+
+        // Cache still has 3 rows.
+        let count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM sight_v6_layout", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(count, 3);
+    }
+
+    #[test]
+    fn backfill_resolves_stratum_from_sky_nodes_l_prefix() {
+        let mut conn = seeded_universe_db();
+        ensure_sight_v6_layout_table(&conn).unwrap();
+        backfill_sight_v6_layout(&mut conn).unwrap();
+
+        // a.md → 'L3' → 3
+        // b.md → 'L1' → 1
+        // c.md → NULL (no sky_nodes entry that the LEFT JOIN finds)
+        let a_stratum: Option<i64> = conn
+            .query_row(
+                "SELECT stratum FROM sight_v6_layout WHERE note_path = 'a.md'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(a_stratum, Some(3));
+
+        let b_stratum: Option<i64> = conn
+            .query_row(
+                "SELECT stratum FROM sight_v6_layout WHERE note_path = 'b.md'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(b_stratum, Some(1));
+
+        let c_stratum: Option<i64> = conn
+            .query_row(
+                "SELECT stratum FROM sight_v6_layout WHERE note_path = 'c.md'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(c_stratum, None);
+    }
+
+    #[test]
+    fn backfill_marks_contested_when_inbound_contradicts() {
+        let mut conn = seeded_universe_db();
+        ensure_sight_v6_layout_table(&conn).unwrap();
+        backfill_sight_v6_layout(&mut conn).unwrap();
+
+        // b.md has an inbound 'contradicts' from a.md → contested = 1
+        // a.md has no inbound contradicts → contested = 0
+        let b_contested: i64 = conn
+            .query_row(
+                "SELECT contested FROM sight_v6_layout WHERE note_path = 'b.md'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(b_contested, 1);
+
+        let a_contested: i64 = conn
+            .query_row(
+                "SELECT contested FROM sight_v6_layout WHERE note_path = 'a.md'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(a_contested, 0);
     }
 }
