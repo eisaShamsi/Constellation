@@ -34,7 +34,19 @@
 // v4 component stays on disk for cleanup MIG (after Eisa confirms v5
 // stable across multiple sessions). Flipping V4 back to true + V5 to
 // false brings v4 back as the rollback target.
+//
+// MIG-025 §A.1 (2026-05-14): SIGHT_V6_ENABLED added per Concept Paper v4.0
+// (ratified 2026-05-13). v6 specifies the next implementation, replacing
+// v5's seven-mode toggle architecture with Coordinated Views (anchor dome
+// + 4 mini-domes + facet sidebar + 7-register chip). Phased build per
+// MIG-025 Plan §A→§D over ~21 wk; v5 stays mounted via dual-flag (B2)
+// until §D.6 deletes it. Flag stays false until §A.14 ship gate clears
+// and Eisa tests Sight v6.0. See:
+//   docs/Constellation-Sight-Concept-Paper-v4.0.md
+//   lab/reports/MIG-025-SIGHT-V6-ARCHITECT.md
+//   lab/reports/MIG-025-SIGHT-V6-PLAN.md
 export const SIGHT_V2_ENABLED = false;
 export const SIGHT_V3_ENABLED = false;
 export const SIGHT_V4_ENABLED = false;
 export const SIGHT_V5_ENABLED = true;
+export const SIGHT_V6_ENABLED = false;
