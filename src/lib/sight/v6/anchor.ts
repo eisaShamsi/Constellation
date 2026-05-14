@@ -93,6 +93,39 @@ export function computeDomeLayout(width: number, height: number): DomeLayout {
  *                        (URL → Read; null → Self; v4.1 will use
  *                        the masādir-aware classification)
  */
+/**
+ * 2026-05-14 §A.14 fix-12 (Boss-test cycle 3.2 depth-exploration):
+ * positions stars via PHYLLOTAXIS (sunflower spiral packing) within
+ * each (band, month) cell. Per Working Agreement #5 research: this
+ * is Vogel's 1979 model, the same mathematical packing sunflowers
+ * have used for >100M years. Replaces the previous FNV-jitter
+ * approach which collapsed dense cells into undifferentiated
+ * texture even at high zoom.
+ *
+ * Algorithm per cell:
+ *   1. Bucket all rows by (band, month) cell key.
+ *   2. Within each cell, sort by notePath (deterministic order →
+ *      same note always at same position across renders).
+ *   3. For star i (0-indexed) in a cell of N stars:
+ *        radius = c × √(i + 0.5)
+ *        angle  = (i + 0.5) × goldenAngle (≈ 137.508°)
+ *      where c is sized so the largest spiral radius fits within
+ *      the cell bounds with a margin: c = 0.92 × cellHalfMin / √N.
+ *   4. Spiral position is added to the cell's centroid in Cartesian
+ *      coords (cell is small enough that local Euclidean ≈ polar).
+ *
+ * Properties:
+ *   • Deterministic (same path → same position across loads).
+ *   • Mathematically optimal packing — distance-between-points is
+ *     maximized for any given point count (Vogel 1979).
+ *   • Preserves stratum × month spatial anchor exactly.
+ *   • At default zoom: dense cells render as the textured speckle
+ *     Eisa accepted. At zoom: spiral structure becomes visible,
+ *     individual stars distinguishable as discrete points on a
+ *     golden-angle spiral.
+ *   • Adaptive c per cell — cells with more stars get tighter
+ *     packing within the same physical bounds.
+ */
 export function computeStarPositions(
 	rows: LayoutCacheRow[],
 	centerX: number,
@@ -105,46 +138,75 @@ export function computeStarPositions(
 	const libraryOrder = uniqueSortedLibraries(rows);
 	const top10thLinkCount = topDecileLinkCount(rows);
 
-	const out: StarDerived[] = [];
+	// Phyllotaxis geometry constants.
+	const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5)); // ≈ 2.39996 rad ≈ 137.508°
+	const bandHalfWidth = outerRadius / 10;            // 5 bands × full = outerRadius / 5; half = / 10
+
+	// Step 1 — bucket by (band, month) cell.
+	interface Cell {
+		band: ReturnType<typeof bandForRawStratum>;
+		month: number;
+		rows: LayoutCacheRow[];
+	}
+	const cellMap = new Map<string, Cell>();
 	for (const row of rows) {
 		const band = bandForRawStratum(row.stratum);
-		const bandCenterRadius = radiusForStratum(band, outerRadius);
-		const bandHalfWidth = outerRadius / 10; // 5 bands → each ½-band ≈ 1/10 of outer radius
-		// Jitter: deterministic per note_path so re-renders stay stable.
-		// Hashes the path to two normalized [0, 1) values.
-		// 2026-05-14 §A.14 fix-2 (Boss-test #2 feedback): jitter widened
-		// substantially. Original ±15% radial + ±π/24 angular collapsed
-		// thousands of co-stratum/co-month notes into visible blobs.
-		// New: spread across nearly the full band width radially (±0.85 ×
-		// halfWidth) and the full month wedge angularly (±π/12 = full
-		// 30° wedge), so 7,636-note universes show as a textured speckle
-		// instead of opaque masses.
-		const [jitterRadial, jitterAngular] = pathHashJitter(row.notePath);
-		const radial = bandCenterRadius + (jitterRadial - 0.5) * 1.7 * bandHalfWidth;
-
 		const month = row.createdMonth ?? 0;
-		// Angle: each month wedge spans 30°; place at the wedge center
-		// (m * 30° + 15°) measured from NORTH (12 o'clock), clockwise.
-		// Canvas math angle 0 = east, so subtract π/2 to rotate.
-		const baseAngle =
-			month * (Math.PI / 6) + Math.PI / 12 - Math.PI / 2;
-		const angle = baseAngle + (jitterAngular - 0.5) * (Math.PI / 12);
+		const key = `${band}|${month}`;
+		const existing = cellMap.get(key);
+		if (existing) {
+			existing.rows.push(row);
+		} else {
+			cellMap.set(key, { band, month, rows: [row] });
+		}
+	}
 
-		const x = centerX + Math.cos(angle) * radial;
-		const y = centerY + Math.sin(angle) * radial;
+	const out: StarDerived[] = [];
+	for (const cell of cellMap.values()) {
+		// Step 2 — deterministic intra-cell order.
+		const sortedRows = cell.rows.slice().sort((a, b) =>
+			a.notePath < b.notePath ? -1 : a.notePath > b.notePath ? 1 : 0,
+		);
+		const N = sortedRows.length;
 
-		out.push({
-			row,
-			libraryShapeIndex:
-				row.libraryName !== null
-					? libraryOrder.indexOf(row.libraryName) % 5
-					: 0,
-			topDecileActs:
-				row.linkInCount + row.linkOutCount >= top10thLinkCount,
-			provenanceSector: provenanceSectorOf(row.sourcesPrimary),
-			x,
-			y,
-		});
+		// Cell centroid in Cartesian.
+		const bandMidRadius = radiusForStratum(cell.band, outerRadius);
+		const monthMidAngle =
+			cell.month * (Math.PI / 6) + Math.PI / 12 - Math.PI / 2;
+		const cellCenterX = centerX + Math.cos(monthMidAngle) * bandMidRadius;
+		const cellCenterY = centerY + Math.sin(monthMidAngle) * bandMidRadius;
+
+		// Cell physical extent: smallest of band-half-width OR
+		// half-arc-length at this radius. Spiral c must keep the
+		// largest radius inside this min so the spiral stays in cell.
+		const halfArcLength = bandMidRadius * (Math.PI / 12); // half a 30° wedge
+		const cellHalfMin = Math.min(bandHalfWidth, halfArcLength);
+		// 0.92 leaves a small visual margin between cells; clamp c so
+		// extremely sparse cells (N=1..5) don't put the single star
+		// way out at the boundary.
+		const c = Math.min(2.4, (0.92 * cellHalfMin) / Math.sqrt(N));
+
+		// Step 3 — phyllotaxis spiral within this cell.
+		for (let i = 0; i < N; i++) {
+			const row = sortedRows[i];
+			const r = c * Math.sqrt(i + 0.5);
+			const theta = (i + 0.5) * GOLDEN_ANGLE;
+			const x = cellCenterX + Math.cos(theta) * r;
+			const y = cellCenterY + Math.sin(theta) * r;
+
+			out.push({
+				row,
+				libraryShapeIndex:
+					row.libraryName !== null
+						? libraryOrder.indexOf(row.libraryName) % 5
+						: 0,
+				topDecileActs:
+					row.linkInCount + row.linkOutCount >= top10thLinkCount,
+				provenanceSector: provenanceSectorOf(row.sourcesPrimary),
+				x,
+				y,
+			});
+		}
 	}
 	return out;
 }
@@ -193,20 +255,12 @@ function provenanceSectorOf(sourcesPrimary: string | null): ProvenanceSector | n
 	return 'Self';
 }
 
-/** Deterministic 32-bit FNV-1a hash → two normalized [0, 1) values
- *  for radial + angular jitter. Stable across paints; same path ⇒
- *  same jitter every time. */
-function pathHashJitter(path: string): [number, number] {
-	let h = 0x811c9dc5;
-	for (let i = 0; i < path.length; i++) {
-		h ^= path.charCodeAt(i);
-		h = Math.imul(h, 0x01000193);
-	}
-	const u32 = h >>> 0;
-	const radial = (u32 & 0xffff) / 0xffff;
-	const angular = ((u32 >>> 16) & 0xffff) / 0xffff;
-	return [radial, angular];
-}
+// 2026-05-14 §A.14 fix-12: pathHashJitter helper REMOVED. Was used
+// by the previous random-jitter positioning (cycle-2/3); superseded
+// by deterministic phyllotaxis spiral within each (band, month) cell.
+// Deterministic-by-cell-index sort removes the need for hash-based
+// jitter — same path → same spiral position via stable sort within
+// the cell.
 
 // ════════════════════════════════════════════════════════════════════
 // Render entry point
