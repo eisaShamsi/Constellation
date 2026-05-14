@@ -216,10 +216,18 @@ function renderStageChannel(
 ): void {
 	ctx.globalAlpha = 1;
 	for (const star of stars) {
-		const stageColor = pipColorForStage(star.row.stage);
-		if (!stageColor) continue;
+		// 2026-05-14 §B.5-fix-1 (Boss-test of §B-preview): Eisa's
+		// universe shows EMPTY Stage mini because his notes don't
+		// have properties_json.stage set to one of the 5 expected
+		// keys. Pre-fix, pipColorForStage returns null for those
+		// → continue → entire mini blank. Now: render unknown
+		// stages as neutral starFill (#cdd5e0) so the mini shows
+		// "no notes have a recognized stage" as gray dots rather
+		// than as confused-blank. The 5 categorical hues still pop
+		// pre-attentively where they apply.
 		const x = star.x * scale + offsetX;
 		const y = star.y * scale + offsetY;
+		const stageColor = pipColorForStage(star.row.stage) ?? PALETTE.starFill;
 		ctx.fillStyle = stageColor;
 		ctx.beginPath();
 		ctx.arc(x, y, 2.8, 0, Math.PI * 2);
