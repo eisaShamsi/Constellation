@@ -155,6 +155,16 @@
 		return { x: ev.clientX - rect.left, y: ev.clientY - rect.top };
 	}
 
+	// 2026-05-14 §A.14 fix-4 (Boss-test #4 feedback): hover tooltip
+	// showed raw notePath ("Research/Botany/Apple Tree Fruit.md").
+	// Extract just the filename-without-.md as the human-readable
+	// title; show the full path as a secondary line for disambiguation
+	// when there are folders in the path.
+	function noteTitle(path: string): string {
+		const last = path.split('/').pop() || path;
+		return last.replace(/\.md$/i, '');
+	}
+
 	function handlePointerMove(ev: PointerEvent): void {
 		const pt = pointerToCanvas(ev);
 		if (!pt) return;
@@ -294,7 +304,10 @@
 			{/if}
 			{#if hoveredPath}
 				<div class="sight-v6-hover-info">
-					{hoveredPath}
+					<span class="sight-v6-hover-title">{noteTitle(hoveredPath)}</span>
+					{#if hoveredPath !== noteTitle(hoveredPath) + '.md' && hoveredPath !== noteTitle(hoveredPath)}
+						<span class="sight-v6-hover-path">{hoveredPath}</span>
+					{/if}
 				</div>
 			{/if}
 			{#if tourVisible}
@@ -393,14 +406,27 @@
 		position: absolute;
 		left: 16px;
 		bottom: 16px;
-		font-size: 11px;
-		color: #a0aabe;
-		padding: 4px 10px;
-		background: rgba(13, 19, 34, 0.92);
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		padding: 6px 12px;
+		background: rgba(13, 19, 34, 0.94);
 		border: 1px solid #2a3245;
 		border-radius: 4px;
 		pointer-events: none;
 		max-width: 60%;
+	}
+	.sight-v6-hover-title {
+		font-size: 12px;
+		font-weight: 500;
+		color: #e8ebf2;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.sight-v6-hover-path {
+		font-size: 10px;
+		color: #5a6275;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;

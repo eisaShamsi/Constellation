@@ -109,12 +109,18 @@ export function computeStarPositions(
 	for (const row of rows) {
 		const band = bandForRawStratum(row.stratum);
 		const bandCenterRadius = radiusForStratum(band, outerRadius);
+		const bandHalfWidth = outerRadius / 10; // 5 bands → each ½-band ≈ 1/10 of outer radius
 		// Jitter: deterministic per note_path so re-renders stay stable.
-		// Hashes the path to two normalized [0, 1) values. Spread ±15%
-		// on the radius and ±π/24 on the angle (~7.5° per side, less
-		// than half a month wedge).
+		// Hashes the path to two normalized [0, 1) values.
+		// 2026-05-14 §A.14 fix-2 (Boss-test #2 feedback): jitter widened
+		// substantially. Original ±15% radial + ±π/24 angular collapsed
+		// thousands of co-stratum/co-month notes into visible blobs.
+		// New: spread across nearly the full band width radially (±0.85 ×
+		// halfWidth) and the full month wedge angularly (±π/12 = full
+		// 30° wedge), so 7,636-note universes show as a textured speckle
+		// instead of opaque masses.
 		const [jitterRadial, jitterAngular] = pathHashJitter(row.notePath);
-		const radial = bandCenterRadius * (1 + (jitterRadial - 0.5) * 0.30);
+		const radial = bandCenterRadius + (jitterRadial - 0.5) * 1.7 * bandHalfWidth;
 
 		const month = row.createdMonth ?? 0;
 		// Angle: each month wedge spans 30°; place at the wedge center
@@ -122,7 +128,7 @@ export function computeStarPositions(
 		// Canvas math angle 0 = east, so subtract π/2 to rotate.
 		const baseAngle =
 			month * (Math.PI / 6) + Math.PI / 12 - Math.PI / 2;
-		const angle = baseAngle + (jitterAngular - 0.5) * (Math.PI / 24);
+		const angle = baseAngle + (jitterAngular - 0.5) * (Math.PI / 12);
 
 		const x = centerX + Math.cos(angle) * radial;
 		const y = centerY + Math.sin(angle) * radial;
@@ -230,7 +236,8 @@ export function renderAnchorDome(
 
 	// 2. 5 strata reference circles
 	ctx.strokeStyle = PALETTE.strataRing;
-	ctx.lineWidth = 0.6;
+	// 2026-05-14 §A.14 fix-1: stroke width 0.6 → 0.9 for chrome legibility
+	ctx.lineWidth = 0.9;
 	for (const r of stratumBandBoundaries(layout.radius)) {
 		ctx.beginPath();
 		ctx.arc(layout.centerX, layout.centerY, r, 0, Math.PI * 2);
@@ -272,10 +279,16 @@ export function renderAnchorDome(
 // Star rendering
 // ════════════════════════════════════════════════════════════════════
 
-const BASE_STAR_RADIUS = 5;        // Concept Paper §2.2 baseline
-const TOP_DECILE_RADIUS = 7;       // §2.2: +40% binary delta
-const PIP_RADIUS_MIN = 1.8;        // §11 invariant 5: foveation threshold
-const PIP_SUPPRESS_BELOW = 1.5;    // §11 invariant 5: suppress under this
+// 2026-05-14 §A.14 fix-3 (Boss-test #2 feedback): star sizing tuned
+// for high-density universes (7,636 notes). Smaller baseline (3.5 vs
+// 5) reduces blob effect when many co-located stars overlap; smaller
+// top-decile delta (+30% vs +40%) prevents huge dominant blobs; pip
+// bumped to 2.4 px and drawn at FULL opacity (not multiplied by star
+// confidence) so the categorical stage signal stays visible even on
+// low-confidence stars where the body is partially transparent.
+const BASE_STAR_RADIUS = 3.5;
+const TOP_DECILE_RADIUS = 4.6;     // +31% delta — Treisman primitive holds
+const PIP_RADIUS = 2.4;            // foveal but visible on low-confidence stars
 
 function drawStars(
 	ctx: CanvasRenderingContext2D,
@@ -292,14 +305,18 @@ function drawStars(
 		drawShape(ctx, star.x, star.y, r, star.libraryShapeIndex);
 		ctx.restore();
 
-		// Stage pip (focal-on-foveation per §11 invariant 5).
+		// Stage pip — full opacity (decoupled from star opacity per
+		// fix-3) so the categorical stage signal survives even on
+		// low-confidence stars. The pip's hue carries the stage; the
+		// star body's opacity carries confidence — two separate
+		// channels per Bertin orthogonality.
 		const pipColor = pipColorForStage(star.row.stage);
-		if (pipColor && PIP_RADIUS_MIN >= PIP_SUPPRESS_BELOW) {
+		if (pipColor) {
 			ctx.save();
-			ctx.globalAlpha = opacity;
+			ctx.globalAlpha = 1;
 			ctx.fillStyle = pipColor;
 			ctx.beginPath();
-			ctx.arc(star.x, star.y, PIP_RADIUS_MIN, 0, Math.PI * 2);
+			ctx.arc(star.x, star.y, PIP_RADIUS, 0, Math.PI * 2);
 			ctx.fill();
 			ctx.restore();
 		}

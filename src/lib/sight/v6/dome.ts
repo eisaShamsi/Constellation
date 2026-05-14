@@ -179,10 +179,14 @@ export function calendarRimSpokes(): number[] {
  */
 export const PALETTE = {
 	// Background + chrome
+	// 2026-05-14 §A.14 fix-1 (Boss-test #2 feedback): chrome too faint
+	// at the install build. Strata rings, calendar text, and stratum
+	// labels all bumped up roughly 40-80% in luminance so they read
+	// clearly without dominating the data.
 	bg: '#080c16',                  // dome background (deep navy-black)
-	strataRing: '#1a1f2e',          // 5 concentric guides, 0.6 px stroke
-	calendarRimText: '#3e4453',     // 12 month labels (mid-gray, 10 px)
-	stratumLabel: '#252b3a',        // vertical-axis labels (faint, italic)
+	strataRing: '#2a3245',          // 5 concentric guides (was #1a1f2e)
+	calendarRimText: '#5a6275',     // 12 month labels (was #3e4453)
+	stratumLabel: '#4a5060',        // vertical-axis labels (was #252b3a)
 	titleText: '#e8ebf2',           // header strip text
 	subtitleText: '#5a6275',
 	statusText: '#7a8295',
