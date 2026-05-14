@@ -295,6 +295,232 @@ pub fn backfill_sight_v6_layout(conn: &mut Connection) -> Result<usize, String> 
     Ok(inserted)
 }
 
+/// Per-tier progress payload emitted by the §A.4 progressive backfill.
+/// JSON serializes to camelCase to match the TypeScript contract in
+/// `src/lib/sight/v6/backfillProgress.ts`.
+///
+/// `tier` is 1..=5 for in-progress events, set to the current tier.
+/// `firstTierComplete` is true once tier 1 has finished writing — this
+/// is the gate the frontend uses to unblock the Sight v6 render
+/// (per Plan §A.4 + Architect §4.1).
+/// `done` is true on the final completion event (after tier 5 + sentinel).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BackfillProgress {
+    pub tier: u8,
+    pub done_rows: u64,
+    pub total_rows: u64,
+    pub first_tier_complete: bool,
+    pub done: bool,
+}
+
+/// Stratum-tier ranges for the progressive backfill (Plan §A.4).
+/// Five tiers, lowest first. Values map raw `sky_nodes.stratum`
+/// (1..=8 from v5's L1..L8 + NULL for unclassified) into the v6
+/// 5-band scheme. The cache stores the raw integer; the frontend
+/// renders the 5 bands per `dome.ts` (§A.8).
+const STRATUM_TIERS: &[(u8, &str)] = &[
+    // Tier 1 — Foundation (renders innermost; first-tier-complete
+    // unblocks the user-facing dome).
+    (1, "stratum_int IN (1, 2)"),
+    // Tier 2 — Working knowledge.
+    (2, "stratum_int IN (3, 4)"),
+    // Tier 3 — Connection layer.
+    (3, "stratum_int IN (5, 6)"),
+    // Tier 4 — Synthesis.
+    (4, "stratum_int = 7"),
+    // Tier 5 — Edge of Knowing + uncategorized.
+    //  stratum_int = 8     → mapped to Edge of Knowing.
+    //  stratum_int IS NULL → notes without sky_nodes; render at the rim.
+    (5, "stratum_int = 8 OR stratum_int IS NULL"),
+];
+
+/// Progressive first-boot backfill: runs 5 stratum-tiered passes
+/// (lowest first), emits `BackfillProgress` after each tier, stamps
+/// the sentinel only after the final tier so an interrupted run
+/// resumes by re-running the tiers (idempotent via INSERT OR REPLACE).
+///
+/// Per Architect Option C3 (locked) + Standing Order resumability:
+/// the user-facing flow uses this variant; first-tier-complete is the
+/// Sight render unblock signal. Synchronous `backfill_sight_v6_layout`
+/// (§A.3) remains as a fallback / repair operation.
+///
+/// `emit_progress` is a closure decoupling this function from Tauri,
+/// so unit tests can verify event ordering without a Tauri context.
+/// In production (§A.5 IPC), the closure wraps `app.emit(...)`.
+pub fn backfill_sight_v6_layout_progressive(
+    conn: &mut Connection,
+    mut emit_progress: impl FnMut(&BackfillProgress),
+) -> Result<usize, String> {
+    use rusqlite::params;
+
+    const SENTINEL_KEY: &str = "mig025_sight_v6_layout_backfill_v1";
+
+    // Sentinel short-circuit: idempotent re-entry.
+    let already_done: Option<i64> = conn
+        .query_row(
+            "SELECT version FROM schema_versions WHERE module = ?1",
+            params![SENTINEL_KEY],
+            |r| r.get(0),
+        )
+        .ok();
+    if already_done.is_some() {
+        let count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM sight_v6_layout", [], |r| r.get(0))
+            .map_err(|e| format!("backfill: count: {}", e))?;
+        // Emit a single done event for the frontend's render gate.
+        emit_progress(&BackfillProgress {
+            tier: 5,
+            done_rows: count as u64,
+            total_rows: count as u64,
+            first_tier_complete: true,
+            done: true,
+        });
+        return Ok(count as usize);
+    }
+
+    // Pre-count expected total rows (== note_meta count). Cheap
+    // (one indexed COUNT). Used for progress-event UX only; doesn't
+    // affect correctness if the universe grows mid-backfill (the
+    // tiers all see the live note_meta state at INSERT time).
+    let total_rows: i64 = conn
+        .query_row("SELECT COUNT(*) FROM note_meta", [], |r| r.get(0))
+        .map_err(|e| format!("backfill: total count: {}", e))?;
+    let total_rows = total_rows as u64;
+
+    let mut done_rows: u64 = 0;
+
+    for &(tier, where_clause) in STRATUM_TIERS {
+        // Each tier is its own transaction for resumability:
+        // a mid-tier crash loses only the current tier's writes.
+        // Already-written rows survive; the next call's tier 1
+        // will see them as INSERT OR REPLACE no-ops at the row
+        // level (still re-derives + writes, but the data shape
+        // is identical).
+        let tx = conn
+            .transaction()
+            .map_err(|e| format!("backfill tier {}: tx: {}", tier, e))?;
+
+        // Same SELECT shape as §A.3 synchronous backfill, with the
+        // tier WHERE clause appended. Wrapped in a CTE so the WHERE
+        // can reference the computed `stratum_int` (you can't filter
+        // on a SELECT-list alias in a flat query).
+        let sql = format!(
+            "INSERT OR REPLACE INTO sight_v6_layout (
+                note_path, stratum, maturity, confidence_alpha, contested,
+                library_name, folder_path, created_month, sources_primary,
+                stage, acts_primary, dominant_link_type, computed_at,
+                link_in_count, link_out_count, frontmatter_key_count, body_chars
+             )
+             SELECT
+                note_path, stratum_int, maturity, confidence_alpha, contested,
+                library_name, folder_path, created_month, sources_primary,
+                stage, acts_primary, dominant_link_type, computed_at,
+                link_in_count, link_out_count, frontmatter_key_count, body_chars
+             FROM (
+                SELECT
+                    nm.path AS note_path,
+                    CASE
+                        WHEN sn.stratum LIKE 'L%' AND length(sn.stratum) >= 2
+                            THEN CAST(SUBSTR(sn.stratum, 2) AS INTEGER)
+                        WHEN sn.stratum GLOB '[1-8]'
+                            THEN CAST(sn.stratum AS INTEGER)
+                        ELSE NULL
+                    END AS stratum_int,
+                    sn.maturity,
+                    (SELECT
+                        CASE confidence
+                            WHEN 'established' THEN 1.0
+                            WHEN 'evidence'    THEN 0.7
+                            WHEN 'contested'   THEN 0.85
+                            ELSE 0.45
+                        END
+                     FROM note_links nl3
+                     WHERE nl3.source_path = nm.path
+                     GROUP BY confidence
+                     ORDER BY COUNT(*) DESC
+                     LIMIT 1) AS confidence_alpha,
+                    CASE WHEN EXISTS (
+                        SELECT 1 FROM note_links nl
+                        WHERE nl.target_path = nm.path
+                          AND nl.link_type = 'contradicts'
+                          AND nl.confidence != 'archived'
+                    ) THEN 1 ELSE 0 END AS contested,
+                    nm.library_name,
+                    CASE
+                        WHEN instr(nm.path, '/') > 0
+                            THEN substr(nm.path, 1, length(nm.path) - length(replace(nm.path, '/', '')) + instr(replace(nm.path, '/', char(0x1f)), char(0x1f)))
+                        ELSE NULL
+                    END AS folder_path,
+                    CASE
+                        WHEN nm.created_at IS NOT NULL
+                            THEN CAST(strftime('%m', nm.created_at, 'unixepoch') AS INTEGER) - 1
+                        ELSE NULL
+                    END AS created_month,
+                    json_extract(nm.sources, '$[0]') AS sources_primary,
+                    json_extract(nm.properties_json, '$.stage') AS stage,
+                    json_extract(nm.properties_json, '$.act') AS acts_primary,
+                    (SELECT nl2.link_type FROM note_links nl2
+                     WHERE nl2.source_path = nm.path
+                     GROUP BY nl2.link_type
+                     ORDER BY COUNT(*) DESC LIMIT 1) AS dominant_link_type,
+                    strftime('%s', 'now') * 1000 AS computed_at,
+                    (SELECT COUNT(*) FROM note_links WHERE target_path = nm.path) AS link_in_count,
+                    (SELECT COUNT(*) FROM note_links WHERE source_path = nm.path) AS link_out_count,
+                    CASE
+                        WHEN nm.properties_json IS NULL OR nm.properties_json = ''
+                            THEN 0
+                        ELSE (SELECT COUNT(*) FROM json_each(nm.properties_json))
+                    END AS frontmatter_key_count,
+                    COALESCE(length(nm.body_text), 0) AS body_chars
+                FROM note_meta nm
+                LEFT JOIN sky_nodes sn ON sn.path = nm.path
+             )
+             WHERE {}",
+            where_clause
+        );
+
+        let tier_inserted = tx
+            .execute(&sql, [])
+            .map_err(|e| format!("backfill tier {}: insert: {}", tier, e))?;
+
+        tx.commit()
+            .map_err(|e| format!("backfill tier {}: commit: {}", tier, e))?;
+
+        done_rows = done_rows.saturating_add(tier_inserted as u64);
+
+        emit_progress(&BackfillProgress {
+            tier,
+            done_rows,
+            total_rows,
+            first_tier_complete: tier >= 1,
+            done: false,
+        });
+    }
+
+    // Stamp the sentinel only AFTER all 5 tiers complete.
+    // An interrupt before this point leaves the sentinel unset →
+    // the next call re-runs the tiers (cheap thanks to INSERT
+    // OR REPLACE no-ops on already-cached rows).
+    conn.execute(
+        "INSERT OR REPLACE INTO schema_versions (module, version, updated_at)
+         VALUES (?1, 1, strftime('%s', 'now'))",
+        params![SENTINEL_KEY],
+    )
+    .map_err(|e| format!("backfill: stamp sentinel: {}", e))?;
+
+    // Final completion event.
+    emit_progress(&BackfillProgress {
+        tier: 5,
+        done_rows,
+        total_rows,
+        first_tier_complete: true,
+        done: true,
+    });
+
+    Ok(done_rows as usize)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -831,5 +1057,239 @@ mod tests {
             )
             .unwrap();
         assert_eq!(a_contested, 0);
+    }
+
+    // ── §A.4 progressive backfill tests ──────────────────────────────
+
+    /// Helper: build a richer fixture with notes spanning multiple
+    /// stratum tiers so the 5-tier loop has work to do per tier.
+    fn multi_tier_universe_db() -> Connection {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE note_meta (
+                path TEXT PRIMARY KEY,
+                name TEXT NOT NULL DEFAULT '',
+                library_name TEXT NOT NULL DEFAULT '',
+                modified INTEGER NOT NULL DEFAULT 0,
+                properties_json TEXT DEFAULT '{}',
+                body_text TEXT DEFAULT '',
+                created_at INTEGER,
+                sources TEXT DEFAULT NULL
+            );
+            CREATE TABLE note_links (
+                source_path TEXT NOT NULL,
+                target_path TEXT NOT NULL,
+                link_type TEXT NOT NULL,
+                confidence TEXT NOT NULL DEFAULT 'hypothesis'
+            );
+            CREATE TABLE sky_nodes (
+                path TEXT PRIMARY KEY,
+                stratum TEXT,
+                maturity TEXT
+            );
+            CREATE TABLE schema_versions (
+                module TEXT PRIMARY KEY,
+                version INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL DEFAULT 0
+            );
+            -- One note per tier band (1..=8 + NULL); 10 notes total.
+            INSERT INTO note_meta (path, library_name) VALUES
+                ('s1.md', 'Lib'), ('s2.md', 'Lib'),
+                ('s3.md', 'Lib'), ('s4.md', 'Lib'),
+                ('s5.md', 'Lib'), ('s6.md', 'Lib'),
+                ('s7.md', 'Lib'),
+                ('s8.md', 'Lib'),
+                ('orphan-a.md', 'Lib'), ('orphan-b.md', 'Lib');
+            INSERT INTO sky_nodes (path, stratum) VALUES
+                ('s1.md', 'L1'), ('s2.md', 'L2'),
+                ('s3.md', 'L3'), ('s4.md', 'L4'),
+                ('s5.md', 'L5'), ('s6.md', 'L6'),
+                ('s7.md', 'L7'),
+                ('s8.md', 'L8');
+            -- orphan-a.md and orphan-b.md have no sky_nodes entry → stratum NULL
+            -- → swept by tier 5.",
+        )
+        .unwrap();
+        conn
+    }
+
+    #[test]
+    fn progressive_backfill_writes_all_rows_across_5_tiers() {
+        let mut conn = multi_tier_universe_db();
+        ensure_sight_v6_layout_table(&conn).unwrap();
+
+        let inserted = backfill_sight_v6_layout_progressive(&mut conn, |_| {}).unwrap();
+        assert_eq!(inserted, 10, "all 10 fixture notes backfilled across tiers");
+
+        let count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM sight_v6_layout", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(count, 10);
+    }
+
+    #[test]
+    fn progressive_backfill_emits_one_event_per_tier_plus_done() {
+        let mut conn = multi_tier_universe_db();
+        ensure_sight_v6_layout_table(&conn).unwrap();
+
+        let mut events: Vec<BackfillProgress> = Vec::new();
+        backfill_sight_v6_layout_progressive(&mut conn, |p| events.push(p.clone())).unwrap();
+
+        // 5 per-tier events + 1 final done event = 6 total.
+        assert_eq!(events.len(), 6, "expected 5 tier events + 1 done");
+        assert_eq!(events[0].tier, 1);
+        assert_eq!(events[1].tier, 2);
+        assert_eq!(events[2].tier, 3);
+        assert_eq!(events[3].tier, 4);
+        assert_eq!(events[4].tier, 5);
+
+        // Only the LAST event has done=true.
+        assert!(!events[0].done && !events[1].done && !events[2].done
+                && !events[3].done && !events[4].done);
+        assert!(events[5].done, "final event must be done");
+    }
+
+    #[test]
+    fn progressive_backfill_first_tier_complete_unblocks_render() {
+        let mut conn = multi_tier_universe_db();
+        ensure_sight_v6_layout_table(&conn).unwrap();
+
+        let mut events: Vec<BackfillProgress> = Vec::new();
+        backfill_sight_v6_layout_progressive(&mut conn, |p| events.push(p.clone())).unwrap();
+
+        // first_tier_complete is true on every event from tier 1 onward
+        // (including the done event). This is the render-unblock signal
+        // the frontend gates on.
+        for ev in &events {
+            assert!(ev.first_tier_complete, "tier {} should signal first_tier_complete", ev.tier);
+        }
+    }
+
+    #[test]
+    fn progressive_backfill_done_rows_increases_monotonically() {
+        let mut conn = multi_tier_universe_db();
+        ensure_sight_v6_layout_table(&conn).unwrap();
+
+        let mut events: Vec<BackfillProgress> = Vec::new();
+        backfill_sight_v6_layout_progressive(&mut conn, |p| events.push(p.clone())).unwrap();
+
+        let mut last = 0u64;
+        for ev in &events {
+            assert!(ev.done_rows >= last, "done_rows must monotonically increase: {} → {}", last, ev.done_rows);
+            assert!(ev.done_rows <= ev.total_rows, "done_rows ({}) <= total_rows ({})", ev.done_rows, ev.total_rows);
+            last = ev.done_rows;
+        }
+        // Final event reports all rows done.
+        assert_eq!(events.last().unwrap().done_rows, 10);
+    }
+
+    #[test]
+    fn progressive_backfill_stamps_sentinel_only_after_final_tier() {
+        let mut conn = multi_tier_universe_db();
+        ensure_sight_v6_layout_table(&conn).unwrap();
+
+        backfill_sight_v6_layout_progressive(&mut conn, |_| {}).unwrap();
+
+        let version: i64 = conn
+            .query_row(
+                "SELECT version FROM schema_versions
+                 WHERE module = 'mig025_sight_v6_layout_backfill_v1'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(version, 1);
+    }
+
+    #[test]
+    fn progressive_backfill_short_circuits_when_sentinel_set() {
+        let mut conn = multi_tier_universe_db();
+        ensure_sight_v6_layout_table(&conn).unwrap();
+
+        // First call: full progressive run.
+        backfill_sight_v6_layout_progressive(&mut conn, |_| {}).unwrap();
+
+        // Second call: should short-circuit on the sentinel and emit
+        // a SINGLE done event (not 6).
+        let mut events: Vec<BackfillProgress> = Vec::new();
+        let returned =
+            backfill_sight_v6_layout_progressive(&mut conn, |p| events.push(p.clone())).unwrap();
+
+        assert_eq!(returned, 10);
+        assert_eq!(events.len(), 1, "short-circuit emits 1 done event, not 6");
+        assert!(events[0].done);
+        assert!(events[0].first_tier_complete);
+        assert_eq!(events[0].done_rows, 10);
+        assert_eq!(events[0].total_rows, 10);
+    }
+
+    #[test]
+    fn progressive_backfill_assigns_orphans_to_tier_5() {
+        // Notes without a sky_nodes entry (NULL stratum) must be
+        // swept by tier 5. This is the "Edge of Knowing + uncategorized"
+        // bucket per the STRATUM_TIERS table.
+        let mut conn = multi_tier_universe_db();
+        ensure_sight_v6_layout_table(&conn).unwrap();
+
+        // Track how many rows the cache has after each tier event.
+        let mut row_counts_per_event: Vec<u64> = Vec::new();
+        backfill_sight_v6_layout_progressive(&mut conn, |p| row_counts_per_event.push(p.done_rows)).unwrap();
+
+        // After tier 4: 7 stratum-classified rows (s1..s7) inserted
+        //   wait — tier 1 inserts 2 (s1, s2), tier 2 inserts 2 (s3, s4),
+        //   tier 3 inserts 2 (s5, s6), tier 4 inserts 1 (s7), tier 5
+        //   inserts 3 (s8 + 2 orphans). Cumulative: 2, 4, 6, 7, 10.
+        assert_eq!(&row_counts_per_event[0..5], &[2u64, 4, 6, 7, 10]);
+
+        // Both orphans landed in cache:
+        let orphan_count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM sight_v6_layout WHERE note_path LIKE 'orphan-%'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(orphan_count, 2);
+
+        // Orphans have NULL stratum:
+        let null_stratum_count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM sight_v6_layout WHERE stratum IS NULL",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(null_stratum_count, 2);
+    }
+
+    #[test]
+    fn progressive_backfill_resumability_when_sentinel_missing() {
+        // Simulate an interrupted run: cache has some rows but
+        // sentinel was never stamped. Re-running must complete.
+        let mut conn = multi_tier_universe_db();
+        ensure_sight_v6_layout_table(&conn).unwrap();
+
+        // Pre-populate ONE row to mimic a partial first run.
+        conn.execute(
+            "INSERT INTO sight_v6_layout (note_path, stratum, computed_at)
+             VALUES ('s1.md', 1, 0)",
+            [],
+        )
+        .unwrap();
+        // Sentinel intentionally NOT set — simulating mid-tier interrupt.
+
+        let inserted = backfill_sight_v6_layout_progressive(&mut conn, |_| {}).unwrap();
+        assert_eq!(inserted, 10, "resumed run completes all 10 notes");
+
+        // Sentinel now set.
+        let version: i64 = conn
+            .query_row(
+                "SELECT version FROM schema_versions
+                 WHERE module = 'mig025_sight_v6_layout_backfill_v1'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(version, 1);
     }
 }
