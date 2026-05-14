@@ -310,6 +310,17 @@
 			resizeObserver = new ResizeObserver(() => syncCanvasSize());
 			resizeObserver.observe(canvasHostEl);
 		}
+		// 2026-05-14 §A.14 fix-11 (Boss-test cycle 3.1 zoom dead): the
+		// Svelte template `onwheel={handleWheel}` did not fire in the
+		// release build — likely Tauri WebView2 + Svelte 5 wheel-event
+		// quirk, possibly passive-by-default. Switch to imperative
+		// addEventListener with explicit { passive: false } so
+		// preventDefault() works and the handler is guaranteed to run.
+		// The template binding is removed to avoid potential double-
+		// firing on some platforms.
+		if (canvasEl) {
+			canvasEl.addEventListener('wheel', handleWheel, { passive: false });
+		}
 		startWarmCache();
 		// §A.11 — fire the tour if user hasn't seen it yet. Snapshot
 		// (no $store subscription needed for the show-once gate).
@@ -323,6 +334,10 @@
 		backfillProgress.stop();
 		resizeObserver?.disconnect();
 		resizeObserver = null;
+		// §A.14 fix-11 — match the addEventListener in onMount.
+		if (canvasEl) {
+			canvasEl.removeEventListener('wheel', handleWheel);
+		}
 	});
 
 	// React to backfill render-ready: load layout once tier 1 done.
@@ -382,10 +397,26 @@
 				bind:this={canvasEl}
 				class="sight-v6-canvas"
 				class:has-hover={hoveredPath !== null}
+				class:is-dragging={dragState?.moved}
 				onpointermove={handlePointerMove}
+				onpointerdown={handlePointerDown}
+				onpointerup={handlePointerUp}
 				onpointerleave={handlePointerLeave}
 				onclick={handleClick}
+				onkeydown={handleKey}
+				tabindex="0"
 			></canvas>
+			<!-- §A.14 fix-11: zoom indicator. Renders ONLY when zoom != 1.0
+			     so it doesn't clutter the default view. If wheel fires and
+			     state updates, this badge appears + reflects zoom level even
+			     if the render pipeline is broken — clean diagnostic for
+			     "did wheel fire" vs "did render apply". Cmd-0 hides it
+			     by resetting zoom to 1. -->
+			{#if zoomScale !== 1 || panX !== 0 || panY !== 0}
+				<div class="sight-v6-zoom-badge">
+					zoom: {zoomScale.toFixed(2)}× · pan: {Math.round(panX)},{Math.round(panY)} · Ctrl-0 reset
+				</div>
+			{/if}
 			{#if !backfillProgress.renderReady}
 				<div class="sight-v6-loading">
 					{#if backfillProgress.progress}
@@ -479,6 +510,20 @@
 	}
 	.sight-v6-canvas:focus {
 		outline: none;
+	}
+
+	.sight-v6-zoom-badge {
+		position: absolute;
+		right: 16px;
+		top: 16px;
+		font-size: 11px;
+		color: #7dd3fc;
+		padding: 4px 10px;
+		background: rgba(13, 19, 34, 0.92);
+		border: 1px solid #3b5998;
+		border-radius: 4px;
+		pointer-events: none;
+		font-variant-numeric: tabular-nums;
 	}
 
 	.sight-v6-loading {
