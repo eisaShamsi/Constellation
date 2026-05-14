@@ -20,7 +20,9 @@
 -->
 <script lang="ts">
 	import { onMount, onDestroy, untrack } from 'svelte';
+	import { get } from 'svelte/store';
 	import { invoke } from '@tauri-apps/api/core';
+	import { appSettings, saveSettings } from '$lib/libraries/store';
 	import { backfillProgress } from './backfillProgress.svelte';
 	import {
 		renderAnchorDome,
@@ -36,6 +38,7 @@
 		type FacetFilters,
 	} from './facets';
 	import FacetSidebar from './facetSidebar.svelte';
+	import Tour from './tour.svelte';
 	import type { LayoutCacheRow, LinkEdge, StarDerived, FacetId } from './types';
 
 	let { onOpenNote = (_path: string, _libraryName: string) => {} }: {
@@ -58,6 +61,20 @@
 	// ── §A.10 facet state ──────────────────────────────────────────
 	let filters = $state<FacetFilters>(emptyFilters());
 	let sidebarExpanded = $state(false);
+
+	// ── §A.11 first-boot tour state ────────────────────────────────
+	// Snapshot at mount: if tourSeen is false/undefined, show the
+	// 4-step orientation overlay. Updates persist via saveSettings.
+	let tourVisible = $state(false);
+
+	function dismissTour(): void {
+		tourVisible = false;
+		appSettings.update((s) => ({
+			...s,
+			sight: { ...s.sight, tourSeen: true },
+		}));
+		saveSettings();
+	}
 
 	// Filtered row set + recomputed facet counts (Hearst preview).
 	const filteredRows = $derived(applyFilters(rows, filters));
@@ -186,6 +203,12 @@
 			resizeObserver.observe(canvasHostEl);
 		}
 		startWarmCache();
+		// §A.11 — fire the tour if user hasn't seen it yet. Snapshot
+		// (no $store subscription needed for the show-once gate).
+		const settingsSnapshot = get(appSettings);
+		if (!settingsSnapshot.sight?.tourSeen) {
+			tourVisible = true;
+		}
 	});
 
 	onDestroy(() => {
@@ -273,6 +296,9 @@
 				<div class="sight-v6-hover-info">
 					{hoveredPath}
 				</div>
+			{/if}
+			{#if tourVisible}
+				<Tour onComplete={dismissTour} />
 			{/if}
 		</div>
 	</div>

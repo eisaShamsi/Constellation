@@ -3449,6 +3449,12 @@ export interface AppSettings {
 		 *  active Folder. If saved value's scope target is no longer in
 		 *  context (e.g., active Library closed), falls back to 'universe'. */
 		lastScope?: 'universe' | 'library' | 'folder';
+		/** MIG-025 §A.11 — Sight v6 first-boot tour state. Per Concept
+		 *  Paper v4.0 §11 invariant 10: tour fires on first-ever Sight v6
+		 *  open and is auto-skipped on subsequent opens. Help → Sight tour
+		 *  re-fires by clearing this flag (wired in §C.10 alongside the
+		 *  register chip). Default false (tour shows on first launch). */
+		tourSeen?: boolean;
 	};
 	/** AI/LLM integration preferences */
 	ai?: {
@@ -3614,6 +3620,11 @@ export const DEFAULT_SETTINGS: AppSettings = {
 		// first-launch mode) + D-V3 universe-default scope.
 		lastMode: 'R',
 		lastScope: 'universe',
+		// MIG-025 §A.11 — Sight v6 tour default false: first-ever Sight
+		// v6 open shows the orientation overlay (Concept Paper §11
+		// invariant 10). User dismissal sets this true; Help → Sight
+		// tour clears it back to false.
+		tourSeen: false,
 	},
 	customShortcuts: {},
 	linkPills: {
