@@ -40,6 +40,9 @@ mod lenses;
 // MIG-024 §2 — Sight v5 layout cache + IPCs (per Concept Paper v3.1
 // §12.1; D-V4 per-note × 1 row strategy; D-V3 user-toggleable scope).
 pub mod sight_v5;
+// MIG-025 §A — Sight v6 layout cache + IPCs (per Concept Paper v4.0
+// §9.3; B2 dual-mount with v5 through Phases 1–3, v5 deleted in §D.6).
+pub mod sight_v6;
 // MIG-013 §1A: visibility widened so the offline `build_concept_vectors`
 // [[bin]] can call `lexicon::parse`. The M11 zero-diff invariant covers
 // `src-tauri/src/lexicon/**` (the data + module sources), not `lib.rs`.

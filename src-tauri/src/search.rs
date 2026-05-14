@@ -1543,6 +1543,14 @@ fn init_db(path: &Path) -> Result<Connection, String> {
         .map_err(|e| format!("Failed to create sight_v5_layout table (MIG-024 §2): {}", e))?;
     crate::sight_v5::ensure_sight_v5_invalidation_trigger(&conn)
         .map_err(|e| format!("Failed to create sight_v5_layout triggers (MIG-024 §2): {}", e))?;
+    // MIG-025 §A.2 — Sight v6 cache schema + invalidation triggers.
+    // Coexists with v5 per B2 dual-mount; both invalidation trigger
+    // families fire on every note_meta UPDATE / DELETE through Phases
+    // 1-3. §D.6 (Phase 4) drops the v5 surface in one atomic migration.
+    crate::sight_v6::ensure_sight_v6_layout_table(&conn)
+        .map_err(|e| format!("Failed to create sight_v6_layout table (MIG-025 §A.2): {}", e))?;
+    crate::sight_v6::ensure_sight_v6_invalidation_trigger(&conn)
+        .map_err(|e| format!("Failed to create sight_v6_layout triggers (MIG-025 §A.2): {}", e))?;
     // Missing-index fix for the backfill's contested-detection EXISTS
     // subquery + any future inbound-link query (Layer 2 diagnostic
     // already plans to read this in MIG-025). idx_link_target on
