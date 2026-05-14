@@ -179,14 +179,16 @@ export function calendarRimSpokes(): number[] {
  */
 export const PALETTE = {
 	// Background + chrome
-	// 2026-05-14 §A.14 fix-1 (Boss-test #2 feedback): chrome too faint
-	// at the install build. Strata rings, calendar text, and stratum
-	// labels all bumped up roughly 40-80% in luminance so they read
-	// clearly without dominating the data.
+	// 2026-05-14 §A.14 fix-1 (Boss-test cycle 1): chrome bumped 40-80%.
+	// 2026-05-14 §A.14 fix-6 (Boss-test cycle 2): Eisa "fonts need to
+	// be clearer. Change the font color to white at 100% opacity."
+	// Calendar months go to near-white; stratum italic labels go to
+	// readable mid-bright (still italic for hierarchy). Strata rings
+	// stay at the cycle-1 #2a3245 — they're geometry, not text.
 	bg: '#080c16',                  // dome background (deep navy-black)
-	strataRing: '#2a3245',          // 5 concentric guides (was #1a1f2e)
-	calendarRimText: '#5a6275',     // 12 month labels (was #3e4453)
-	stratumLabel: '#4a5060',        // vertical-axis labels (was #252b3a)
+	strataRing: '#2a3245',          // 5 concentric guides (cycle-1)
+	calendarRimText: '#e8ebf2',     // 12 month labels — near-white per Eisa
+	stratumLabel: '#a0aabe',        // vertical-axis labels — readable mid-bright
 	titleText: '#e8ebf2',           // header strip text
 	subtitleText: '#5a6275',
 	statusText: '#7a8295',

@@ -52,6 +52,19 @@
 	let canvasHeight = $state(0);
 	let dpr = $state(1);
 
+	// 2026-05-14 §A.14 fix-9 (Boss-test cycle 2 feature ask): zoom + pan.
+	// Eisa: "If we enabled zoom-in/out, it would be more helpful to get
+	// closer to the stars." Wheel = zoom-toward-cursor; left-drag = pan.
+	// At dense centroids the user can zoom in to inspect individual
+	// stars even when the unzoomed view shows brightened texture.
+	let zoomScale = $state(1);
+	let panX = $state(0);
+	let panY = $state(0);
+	const ZOOM_MIN = 0.5;
+	const ZOOM_MAX = 8;
+	let dragState: { startSx: number; startSy: number; startPanX: number; startPanY: number; moved: boolean } | null = null;
+	const DRAG_THRESHOLD = 4; // px before pointermove counts as drag, not click
+
 	// ── Data state ─────────────────────────────────────────────────
 	let rows = $state<LayoutCacheRow[]>([]);
 	let links = $state<LinkEdge[]>([]);
@@ -88,7 +101,13 @@
 		if (!canvasEl) return;
 		const ctx = canvasEl.getContext('2d');
 		if (!ctx) return;
-		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+		// §A.14 fix-9: combined transform = DPR × zoomScale + pan offset.
+		// Render math runs in CSS pixels for the unzoomed canvas; the
+		// zoom+pan + DPR factors compose into setTransform.
+		const sx = dpr * zoomScale;
+		const tx = dpr * panX;
+		const ty = dpr * panY;
+		ctx.setTransform(sx, 0, 0, sx, tx, ty);
 		// Filter the visible link set to edges where BOTH endpoints
 		// survive the facet filter — keeps the dome readable when the
 		// user narrows the universe.
@@ -152,7 +171,14 @@
 	function pointerToCanvas(ev: { clientX: number; clientY: number }): { x: number; y: number } | null {
 		if (!canvasEl) return null;
 		const rect = canvasEl.getBoundingClientRect();
-		return { x: ev.clientX - rect.left, y: ev.clientY - rect.top };
+		// Screen → canvas-CSS-pixel.
+		const sx = ev.clientX - rect.left;
+		const sy = ev.clientY - rect.top;
+		// §A.14 fix-9: convert screen → world (unzoomed) coordinates.
+		// The renderer draws in world space transformed by zoomScale+pan;
+		// hit-test must invert the transform to compare against world-
+		// coord star positions.
+		return { x: (sx - panX) / zoomScale, y: (sy - panY) / zoomScale };
 	}
 
 	// 2026-05-14 §A.14 fix-4 (Boss-test #4 feedback): hover tooltip
@@ -166,16 +192,48 @@
 	}
 
 	function handlePointerMove(ev: PointerEvent): void {
+		// §A.14 fix-9: drag-pan support. When mouse button held + moved
+		// past DRAG_THRESHOLD, treat as pan rather than hover.
+		if (dragState && (ev.buttons & 1) === 1) {
+			const dx = ev.clientX - dragState.startSx;
+			const dy = ev.clientY - dragState.startSy;
+			if (!dragState.moved && Math.hypot(dx, dy) > DRAG_THRESHOLD) {
+				dragState.moved = true;
+			}
+			if (dragState.moved) {
+				panX = dragState.startPanX + dx;
+				panY = dragState.startPanY + dy;
+				paint();
+				return;
+			}
+		}
 		const pt = pointerToCanvas(ev);
 		if (!pt) return;
-		const hit = starHitTest(stars, pt.x, pt.y);
+		// Hit-test tolerance is in screen px; divide by zoom for world px.
+		const hit = starHitTest(stars, pt.x, pt.y, 9 / zoomScale);
 		if (hit !== hoveredPath) {
 			hoveredPath = hit;
 			paint();
 		}
 	}
 
+	function handlePointerDown(ev: PointerEvent): void {
+		// §A.14 fix-9: start of potential drag-pan.
+		dragState = {
+			startSx: ev.clientX,
+			startSy: ev.clientY,
+			startPanX: panX,
+			startPanY: panY,
+			moved: false,
+		};
+	}
+
+	function handlePointerUp(): void {
+		dragState = null;
+	}
+
 	function handlePointerLeave(): void {
+		dragState = null;
 		if (hoveredPath !== null) {
 			hoveredPath = null;
 			paint();
@@ -183,13 +241,53 @@
 	}
 
 	function handleClick(ev: MouseEvent): void {
+		// §A.14 fix-9: ignore clicks that were actually drags.
+		if (dragState?.moved) {
+			dragState = null;
+			return;
+		}
 		const pt = pointerToCanvas(ev);
 		if (!pt) return;
-		const hit = starHitTest(stars, pt.x, pt.y);
+		const hit = starHitTest(stars, pt.x, pt.y, 9 / zoomScale);
 		if (!hit) return;
 		const row = rows.find((r) => r.notePath === hit);
 		if (row && row.libraryName) {
 			onOpenNote(row.notePath, row.libraryName);
+		}
+	}
+
+	// §A.14 fix-9: mouse-wheel zoom-toward-cursor.
+	function handleWheel(ev: WheelEvent): void {
+		ev.preventDefault();
+		if (!canvasEl) return;
+		const rect = canvasEl.getBoundingClientRect();
+		const sx = ev.clientX - rect.left;
+		const sy = ev.clientY - rect.top;
+		// World point under cursor BEFORE zoom.
+		const wx = (sx - panX) / zoomScale;
+		const wy = (sy - panY) / zoomScale;
+		// Zoom: positive deltaY (scroll down) zooms OUT; smooth ratio.
+		const factor = ev.deltaY < 0 ? 1.15 : 1 / 1.15;
+		const nextScale = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoomScale * factor));
+		if (nextScale === zoomScale) return;
+		// Adjust pan so the world point under cursor stays under cursor.
+		panX = sx - wx * nextScale;
+		panY = sy - wy * nextScale;
+		zoomScale = nextScale;
+		paint();
+	}
+
+	// §A.14 fix-9: keyboard escape resets zoom + pan as a last-resort
+	// "I lost the dome" recovery. Esc still also closes Sight v6 via
+	// +layout.svelte's escape handler — that handler runs FIRST when
+	// nothing-zoomed; this resets when zoomed.
+	function handleKey(ev: KeyboardEvent): void {
+		if (ev.key === '0' && (ev.ctrlKey || ev.metaKey)) {
+			ev.preventDefault();
+			zoomScale = 1;
+			panX = 0;
+			panY = 0;
+			paint();
 		}
 	}
 
@@ -375,6 +473,12 @@
 
 	.sight-v6-canvas.has-hover {
 		cursor: pointer;
+	}
+	.sight-v6-canvas.is-dragging {
+		cursor: grabbing;
+	}
+	.sight-v6-canvas:focus {
+		outline: none;
 	}
 
 	.sight-v6-loading {

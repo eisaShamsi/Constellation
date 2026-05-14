@@ -279,58 +279,67 @@ export function renderAnchorDome(
 // Star rendering
 // ════════════════════════════════════════════════════════════════════
 
-// 2026-05-14 §A.14 fix-3 (Boss-test #2 feedback): star sizing tuned
-// for high-density universes (7,636 notes). Smaller baseline (3.5 vs
-// 5) reduces blob effect when many co-located stars overlap; smaller
-// top-decile delta (+30% vs +40%) prevents huge dominant blobs; pip
-// bumped to 2.4 px and drawn at FULL opacity (not multiplied by star
-// confidence) so the categorical stage signal stays visible even on
-// low-confidence stars where the body is partially transparent.
-const BASE_STAR_RADIUS = 3.5;
-const TOP_DECILE_RADIUS = 4.6;     // +31% delta — Treisman primitive holds
-const PIP_RADIUS = 2.4;            // foveal but visible on low-confidence stars
+// 2026-05-14 §A.14 fix-3 (Boss-test cycle 1): smaller baseline, smaller
+//                    top-decile delta, pip bumped to 2.4 px + full opacity.
+// 2026-05-14 §A.14 fix-7 (Boss-test cycle 2): density-aware rendering.
+//   The cycle-2 build still showed solid white blobs in Eisa's 7,650-note
+//   centroid (1-2 strata × 1-2 months) because even at full band+month
+//   jitter, ~3,800 notes pile into the same ~100 px region (~30 stars
+//   per pixel-spot at 3.5 px). Real fix: shrink star bodies AND drop per-
+//   star body opacity so overlapping bodies BLEND ADDITIVELY — dense
+//   clusters become brighter texture, sparse areas show distinct shapes.
+//   The dome reads as a star chart instead of a thresholded mask.
+// 2026-05-14 §A.14 fix-8 (Boss-test cycle 2): two-pass rendering.
+//   ALL star bodies in pass 1; ALL pips in pass 2. So pips survive
+//   in dense clusters where bodies overlap (cycle-2 each star drew its
+//   pip then the next star's body covered it).
+const BASE_STAR_RADIUS = 2.2;       // was 3.5 — smaller for density tolerance
+const TOP_DECILE_RADIUS = 2.9;      // +32% delta — still pre-attentive
+const PIP_RADIUS = 1.8;             // pip stays foveal-on-foveation
+// Per-star body opacity multiplier. Combined with confidenceAlpha:
+// a hypothesis (0.45) star renders at 0.45 × 0.55 = 0.25 opacity;
+// established (1.0) at 0.55. Overlapping bodies accumulate.
+const BODY_OPACITY_MULT = 0.55;
 
 function drawStars(
 	ctx: CanvasRenderingContext2D,
 	stars: StarDerived[],
 	highlightedPath: string | null,
 ): void {
+	// PASS 1: all star bodies (additive blend via lower per-star alpha).
+	ctx.fillStyle = PALETTE.starFill;
 	for (const star of stars) {
 		const r = star.topDecileActs ? TOP_DECILE_RADIUS : BASE_STAR_RADIUS;
-		const opacity = star.row.confidenceAlpha ?? 0.45;
-
-		ctx.save();
+		const opacity = (star.row.confidenceAlpha ?? 0.45) * BODY_OPACITY_MULT;
 		ctx.globalAlpha = opacity;
-		ctx.fillStyle = PALETTE.starFill;
 		drawShape(ctx, star.x, star.y, r, star.libraryShapeIndex);
-		ctx.restore();
+	}
 
-		// Stage pip — full opacity (decoupled from star opacity per
-		// fix-3) so the categorical stage signal survives even on
-		// low-confidence stars. The pip's hue carries the stage; the
-		// star body's opacity carries confidence — two separate
-		// channels per Bertin orthogonality.
+	// PASS 2: all pips on top of bodies (full opacity per Bertin
+	// orthogonality — pip hue carries categorical stage signal,
+	// independent of confidence). With pass-2 ordering, the pip
+	// is the LAST thing drawn at any (x,y), so it stays visible
+	// in dense clusters where bodies overlap.
+	ctx.globalAlpha = 1;
+	for (const star of stars) {
 		const pipColor = pipColorForStage(star.row.stage);
-		if (pipColor) {
-			ctx.save();
-			ctx.globalAlpha = 1;
-			ctx.fillStyle = pipColor;
-			ctx.beginPath();
-			ctx.arc(star.x, star.y, PIP_RADIUS, 0, Math.PI * 2);
-			ctx.fill();
-			ctx.restore();
-		}
+		if (!pipColor) continue;
+		ctx.fillStyle = pipColor;
+		ctx.beginPath();
+		ctx.arc(star.x, star.y, PIP_RADIUS, 0, Math.PI * 2);
+		ctx.fill();
+	}
 
-		// Linked-brushing highlight ring (gold, full opacity).
-		if (highlightedPath !== null && star.row.notePath === highlightedPath) {
-			ctx.save();
-			ctx.globalAlpha = 1;
+	// PASS 3: highlighted-brushing ring (above everything).
+	if (highlightedPath !== null) {
+		const star = stars.find((s) => s.row.notePath === highlightedPath);
+		if (star) {
+			const r = star.topDecileActs ? TOP_DECILE_RADIUS : BASE_STAR_RADIUS;
 			ctx.strokeStyle = PALETTE.highlightedRing;
 			ctx.lineWidth = 1.8;
 			ctx.beginPath();
 			ctx.arc(star.x, star.y, r + 4, 0, Math.PI * 2);
 			ctx.stroke();
-			ctx.restore();
 		}
 	}
 }
