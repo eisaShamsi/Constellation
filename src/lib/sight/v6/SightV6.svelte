@@ -39,7 +39,8 @@
 	} from './facets';
 	import FacetSidebar from './facetSidebar.svelte';
 	import Tour from './tour.svelte';
-	import type { LayoutCacheRow, LinkEdge, StarDerived, FacetId } from './types';
+	import MiniDome from './MiniDome.svelte';
+	import type { LayoutCacheRow, LinkEdge, StarDerived, FacetId, MiniDomeChannel } from './types';
 
 	let { onOpenNote = (_path: string, _libraryName: string) => {} }: {
 		onOpenNote?: (path: string, libraryName: string) => void;
@@ -87,6 +88,14 @@
 	// Snapshot at mount: if tourSeen is false/undefined, show the
 	// 4-step orientation overlay. Updates persist via saveSettings.
 	let tourVisible = $state(false);
+
+	// ── §B.1 mini-domes diagnostics visibility ─────────────────────
+	// Default-simple per Concept Paper §6: mini-domes hidden on
+	// every Sight open. Cmd-D / Ctrl-D toggles visibility within
+	// the session. Pro mode (§B.10) will read appSettings.sight.proMode
+	// and override the default-hidden initial state.
+	let diagnosticsVisible = $state(false);
+	const MINI_DOME_CHANNELS: MiniDomeChannel[] = ['confidence', 'stage', 'acts', 'provenance'];
 
 	function dismissTour(): void {
 		tourVisible = false;
@@ -290,6 +299,8 @@
 	// "I lost the dome" recovery. Esc still also closes Sight v6 via
 	// +layout.svelte's escape handler — that handler runs FIRST when
 	// nothing-zoomed; this resets when zoomed.
+	// §B.1: also handles Cmd-D / Ctrl-D for mini-domes diagnostics
+	// toggle. Listed in Concept Paper §5 gesture grammar.
 	function handleKey(ev: KeyboardEvent): void {
 		if (ev.key === '0' && (ev.ctrlKey || ev.metaKey)) {
 			ev.preventDefault();
@@ -297,6 +308,12 @@
 			panX = 0;
 			panY = 0;
 			paint();
+		} else if ((ev.key === 'd' || ev.key === 'D') && (ev.ctrlKey || ev.metaKey) && !ev.shiftKey) {
+			// Cmd-D / Ctrl-D — toggle mini-domes diagnostics visibility.
+			// Excludes Shift to avoid colliding with §B.10's Cmd-Shift-D
+			// for Pro mode persistent toggle.
+			ev.preventDefault();
+			diagnosticsVisible = !diagnosticsVisible;
 		}
 	}
 
@@ -401,7 +418,7 @@
 			onExpandToggle={handleSidebarExpandToggle}
 		/>
 
-		<div bind:this={canvasHostEl} class="sight-v6-canvas-host">
+		<div bind:this={canvasHostEl} class="sight-v6-canvas-host" class:has-minis={diagnosticsVisible}>
 			<canvas
 				bind:this={canvasEl}
 				class="sight-v6-canvas"
@@ -452,6 +469,19 @@
 				<Tour onComplete={dismissTour} />
 			{/if}
 		</div>
+
+		{#if diagnosticsVisible}
+			<!-- §B.1: 2×2 mini-domes grid. Skeleton renders chrome
+			     (background + stratum bands + channel title) only;
+			     channel-specific star renderers fill in §B.2–§B.5. -->
+			<div class="sight-v6-minis-grid">
+				{#each MINI_DOME_CHANNELS as channel (channel)}
+					<div class="sight-v6-mini-cell">
+						<MiniDome {channel} stars={filteredRows.length > 0 ? stars : []} highlightedPath={hoveredPath} />
+					</div>
+				{/each}
+			</div>
+		{/if}
 	</div>
 </div>
 
@@ -500,6 +530,30 @@
 		position: relative;
 		overflow: hidden;
 		min-width: 0;
+	}
+	/* §B.1: when mini-domes visible, anchor compresses to ~60%
+	   of remaining horizontal space; minis grid takes ~40%. */
+	.sight-v6-canvas-host.has-minis {
+		flex: 0 1 60%;
+	}
+
+	.sight-v6-minis-grid {
+		flex: 0 1 40%;
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		grid-template-rows: 1fr 1fr;
+		gap: 8px;
+		padding: 8px;
+		min-width: 0;
+		min-height: 0;
+	}
+	.sight-v6-mini-cell {
+		position: relative;
+		min-width: 0;
+		min-height: 0;
+		border: 1px solid #1a1f2e;
+		border-radius: 4px;
+		overflow: hidden;
 	}
 
 	.sight-v6-canvas {
