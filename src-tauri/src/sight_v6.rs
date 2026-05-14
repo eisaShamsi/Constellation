@@ -521,6 +521,162 @@ pub fn backfill_sight_v6_layout_progressive(
     Ok(done_rows as usize)
 }
 
+// ════════════════════════════════════════════════════════════════════
+// Tauri command IPCs (§A.5)
+// ════════════════════════════════════════════════════════════════════
+
+/// Read the full v6 layout cache. No scope param: facet-sidebar
+/// filtering is performed on the frontend per Architect §1.4 (the
+/// facet sidebar holds the cross-filter state and dispatches over
+/// the in-memory row set; the IPC returns the universe-scoped data).
+#[tauri::command]
+pub fn sight_v6_get_layout(app: tauri::AppHandle) -> Result<Vec<LayoutCacheRow>, String> {
+    use tauri::Manager;
+    let search_state = app.state::<crate::search::SearchState>();
+    let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
+    let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
+
+    const SQL: &str =
+        "SELECT note_path, stratum, maturity, confidence_alpha, contested,
+                library_name, folder_path, created_month, sources_primary,
+                stage, acts_primary, dominant_link_type, computed_at,
+                link_in_count, link_out_count, frontmatter_key_count, body_chars
+         FROM sight_v6_layout";
+
+    let mut stmt = conn.prepare(SQL).map_err(|e| format!("prepare: {}", e))?;
+    let row_iter = stmt
+        .query_map([], row_to_layout)
+        .map_err(|e| format!("query: {}", e))?;
+
+    let mut out = Vec::new();
+    for r in row_iter {
+        out.push(r.map_err(|e| format!("row: {}", e))?);
+    }
+    Ok(out)
+}
+
+fn row_to_layout(row: &rusqlite::Row) -> rusqlite::Result<LayoutCacheRow> {
+    let contested: i64 = row.get(4)?;
+    Ok(LayoutCacheRow {
+        note_path: row.get(0)?,
+        stratum: row.get(1)?,
+        maturity: row.get(2)?,
+        confidence_alpha: row.get(3)?,
+        contested: contested != 0,
+        library_name: row.get(5)?,
+        folder_path: row.get(6)?,
+        created_month: row.get(7)?,
+        sources_primary: row.get(8)?,
+        stage: row.get(9)?,
+        acts_primary: row.get(10)?,
+        dominant_link_type: row.get(11)?,
+        computed_at: row.get(12)?,
+        link_in_count: row.get(13)?,
+        link_out_count: row.get(14)?,
+        frontmatter_key_count: row.get(15)?,
+        body_chars: row.get(16)?,
+    })
+}
+
+/// Read the typed-link edges between a set of visible notes — used
+/// by the anchor dome's connector-line rendering (§A.9). Returns
+/// only edges where BOTH endpoints are in the visible set (other
+/// edges are off-screen).
+///
+/// The Concept Paper §2.2 fade rule (lines auto-fade above 800
+/// visible) is implemented frontend-side; the IPC returns the full
+/// matching edge set so the frontend has the data to fade rather
+/// than a hard truncation that hides relationships.
+#[tauri::command]
+pub fn sight_v6_get_link_set_for_notes(
+    app: tauri::AppHandle,
+    paths: Vec<String>,
+) -> Result<Vec<LinkEdge>, String> {
+    if paths.is_empty() {
+        return Ok(Vec::new());
+    }
+    use tauri::Manager;
+    let search_state = app.state::<crate::search::SearchState>();
+    let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
+    let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
+
+    // Build comma-separated placeholder list for the IN clauses.
+    let placeholders = std::iter::repeat("?")
+        .take(paths.len())
+        .collect::<Vec<_>>()
+        .join(",");
+    let sql = format!(
+        "SELECT source_path, target_path, link_type, confidence
+         FROM note_links
+         WHERE source_path IN ({}) AND target_path IN ({})",
+        placeholders, placeholders
+    );
+
+    let mut stmt = conn.prepare(&sql).map_err(|e| format!("prepare: {}", e))?;
+
+    // Bind paths twice (once for source IN, once for target IN).
+    let mut bindings: Vec<&dyn rusqlite::ToSql> = Vec::with_capacity(paths.len() * 2);
+    for p in &paths {
+        bindings.push(p);
+    }
+    for p in &paths {
+        bindings.push(p);
+    }
+    let row_iter = stmt
+        .query_map(rusqlite::params_from_iter(bindings.iter()), |row| {
+            Ok(LinkEdge {
+                source_path: row.get(0)?,
+                target_path: row.get(1)?,
+                link_type: row.get(2)?,
+                confidence: row.get(3)?,
+            })
+        })
+        .map_err(|e| format!("query: {}", e))?;
+
+    let mut out = Vec::new();
+    for r in row_iter {
+        out.push(r.map_err(|e| format!("row: {}", e))?);
+    }
+    Ok(out)
+}
+
+/// Idle-prewarm IPC — fired by the frontend's `requestIdleCallback`
+/// after `boot:hydrated` (or eagerly on the first SightV6 mount).
+/// Runs the §A.4 progressive backfill in the foreground (the IPC is
+/// async-friendly because each tier transaction is short, and the
+/// Tauri event stream gives the frontend live progress updates).
+///
+/// If the backfill sentinel is set (fresh install AND already-
+/// completed earlier session), the progressive function short-
+/// circuits and emits a single done event so the frontend's
+/// renderReady gate flips immediately.
+///
+/// Returns the total cache row count after completion.
+#[tauri::command]
+pub fn sight_v6_warm_cache(app: tauri::AppHandle) -> Result<usize, String> {
+    use tauri::{Emitter, Manager};
+
+    // Clone the AppHandle so it can move into the closure capturing
+    // the emit callback. The closure cannot borrow `app` directly
+    // because the same `app` is used to acquire the DB guard.
+    let app_for_emit = app.clone();
+
+    let search_state = app.state::<crate::search::SearchState>();
+    let mut db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
+    let conn = db_guard.as_mut().ok_or("Search database not initialized")?;
+
+    backfill_sight_v6_layout_progressive(conn, |progress| {
+        // Best-effort emit: if no listener is attached, that's
+        // acceptable (the frontend may have unmounted Sight or
+        // never opened it).
+        let _ = app_for_emit.emit("sight-v6-backfill-progress", progress.clone());
+    })
+}
+
+// ════════════════════════════════════════════════════════════════════
+// Tests
+// ════════════════════════════════════════════════════════════════════
+
 #[cfg(test)]
 mod tests {
     use super::*;

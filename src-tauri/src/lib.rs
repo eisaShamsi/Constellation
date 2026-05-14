@@ -356,6 +356,10 @@ pub fn run() {
             sight_v5::sight_v5_get_universe_snapshot_hash,
             sight_v5::sight_v5_get_link_set_for_notes,
             sight_v5::sight_v5_warm_cache,
+            // MIG-025 §A.5 — Sight v6 layout cache IPCs
+            sight_v6::sight_v6_get_layout,
+            sight_v6::sight_v6_get_link_set_for_notes,
+            sight_v6::sight_v6_warm_cache,
             // MIG-021v2 §1F'.b — bulk Approve All / Reject All
             sources::bulk_ops::sources_accept_all_pending,
             sources::bulk_ops::sources_bulk_accept_cancel,
