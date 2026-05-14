@@ -1,6 +1,17 @@
 /**
  * Sight engine flags — MIG-017 (v2 disable), MIG-018 (v3 build), MIG-019 (v4 pivot), MIG-024 (v5 build).
  *
+ * USER-FACING NAMES (per MIG-025 §A.15, 2026-05-14):
+ *   • v6 → "Constellation Sight" — the canonical Sight (anchor dome + facets + mini-domes)
+ *   • v2 → "Constellation Nervous System (CNS)" — connection-traversal view kept
+ *           alongside v6 per Eisa's A/B-test verdict (post-`db8326a`).
+ *   • Internal v-numbers (v2…v6), file names (`SightV6.svelte`, `ConstellationSight2.svelte`,
+ *     `sight_v6.rs`, `sight.rs`), engine flags (`SIGHT_V2_ENABLED`, `SIGHT_V6_ENABLED`),
+ *     IPC names (`constellation_sight_*`, `sight_v6_*`), and i18n key paths
+ *     (`lens.title`, `sight.v6.title`) are RETAINED as architectural-history
+ *     record. Same precedent as MIG-005 ("Lens" → "Sight"): user-facing labels
+ *     change, internals don't.
+ *
  * v2 Sight (`ConstellationSight2.svelte` + `sight.rs` + `constellation_sight_*` IPCs)
  * is preserved on disk as a known-good fallback. Flip `SIGHT_V2_ENABLED` to
  * `true` and rebuild to bring v2 back for diagnostics.

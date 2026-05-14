@@ -417,8 +417,8 @@
       "semanticSearchDesc": "اكتشف الملاحظات المرتبطة مفاهيمياً عبر 100 لغة باستخدام الذكاء الاصطناعي (بدون إنترنت)",
       "constellationMap": "Constellation Map",
       "constellationMapDesc": "Sunburst visualization of knowledge structure",
-      "constellationSight": "Constellation Sight",
-      "constellationSightDesc": "Gravity-well knowledge visualization with analytics",
+      "constellationSight": "Constellation Nervous System (CNS)",
+      "constellationSightDesc": "Connection-traversal view of your universe — Universe Health metrics, communities, top bridges, and structural-gap (\"Blind Spot\") analysis.",
       "constellationSightV3": "Constellation Sight",
       "constellationSightV3Desc": "تصور المعرفة كخريطة نجوم — رؤية كامل العالم في لمحة",
       "notesNavigator": "متصفح الملاحظات",
@@ -521,7 +521,7 @@
       "fanout": "توزيع وانسَ"
     },
     "sight": {
-      "intro": "Constellation Sight v3 — تصور خريطة النجوم لعالم المعرفة لديك.",
+      "intro": "Constellation Sight — anchor-dome view of your universe with stratum × time positioning, density-gradient at default zoom, and per-channel mini-domes.",
       "projection": {
         "label": "الإسقاط",
         "lambert": "Lambert (متساوي المساحة)",
@@ -2356,7 +2356,7 @@
     }
   },
   "lens": {
-    "title": "بصيرة كونستليشن",
+    "title": "Constellation Nervous System (CNS)",
     "universeHealth": "صحة الكون المعرفي",
     "modularity": "التماسك",
     "dominance": "الهيمنة",

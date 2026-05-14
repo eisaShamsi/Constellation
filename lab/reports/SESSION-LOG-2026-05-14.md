@@ -256,4 +256,108 @@ None. SO #6 orientation bumped same-commit-as-change (v2.01 in commit `3e829f6`)
 
 ---
 
-*End of session log 2026-05-14. §A.2 begins in the next turn.*
+*Original session-log close at §A.2 retained above for chronological honesty.*
+
+---
+
+## §A.3 → §A.14 + §B.1 → §B.5 catch-up summary (logged retroactively, 2026-05-14 PM)
+
+**SO #1 drift:** the cascade went all the way through Phase 1 ship + Phase 2 §B.5 without inline session-log updates. Each commit landed cleanly to `main`; this section back-fills the log so a fresh session can reconstruct the turn order without git-archeology.
+
+**§A.3 → §A.13 (Phase 1 build, 11 commits):**
+- `baa4a95` §A.3 backfill skeleton + 8 tests
+- `a38b256` §A.4 progressive backfill + Tauri events + frontend store
+- `970d2bf` §A.5 three Tauri IPCs (`sight_v6_warm_cache`, `_get_layout`, `_get_link_set_for_notes`)
+- `b981129` §A.6 frontend types + module skeleton
+- `7a948e9` §A.7 mount in `+layout.svelte` (B2 dual-mount, dock button, Esc handler)
+- `5b3e10b` §A.8 anchor dome chrome (5 strata, calendar rim, labels)
+- `e5b2334` §A.9 anchor stars + lines + IPC integration + hit-test
+- `c4b7e7b` §A.10 facet sidebar (Hearst Flamenco)
+- `c84989b` §A.11 first-boot orientation tour (4-step skippable)
+- `1048ab1` §A.12 settings migration + 4 new v6 fields
+- `251d630` §A.13 CI perf-harness skeletons (vitest+playwright deferred to phase 4)
+
+**§A.14 Boss-test cycle (16 fixes across 7 NSIS builds, ratified at cycle-3.7 with "Ship"):**
+- `d0e683c` fix-1..4 — chrome contrast, jitter widening (±15% → ±85%), smaller stars (5 px ⌀), hover-title (`noteTitle()` extraction)
+- `3c70896` fix-5 — `applyParsedSettings` shared helper. **Root cause:** `loadSettings()` in store.ts had ZERO callers; the boot-bundle path in `+layout.svelte` was the de-facto load path and had drifted from `loadSettings`. The migration was dead code on one path. Extracted shared helper as single source of truth.
+- `6acde74` fix-6..9 — brighter chrome (#1a1f2e → #2a3245), additive density blending, two-pass render (bodies pass 1, pips pass 2), wheel-zoom + drag-pan + Cmd-0 reset
+- `59523f1` fix-10 — zoom regression: `clear+bg` in identity transform (was being clipped by the zoom transform)
+- `f79d26f` fix-11 — `addEventListener` wheel binding. **Root cause (Working Agreement #4 violation):** the original fix-9 multi-edit batch silently left the canvas markup unfinished; Svelte's template binding never actually wired up. Replaced with explicit `addEventListener` + completion of the canvas markup. Lesson: post-edit verification is mandatory on multi-file batches.
+- `d70ceb1` fix-12 — phyllotaxis spiral packing (Option C/Path A per Eisa's Architect-vs-NIST web-search choice)
+- `1efadb5` fix-13 — node sizing 5 px ⌀ at max zoom; default → density chart, zoom reveals individuals
+- `989507a` Revert fix-12 — Eisa A/B test verdict: jitter wins ("Perfect!")
+- `ecabc16` fix-15 — all notes render as circles (drop library-shape encoding at small sizes per Eisa: "I want all the notes to take a circular shape")
+- `f8de004` fix-16 — hover-ring screen-padded (constant 4-px in screen space) + `ZOOM_MAX` 8× → 24×
+
+**§A.14 SHIP MOMENT — `8cdb73c`:** `SIGHT_V6_ENABLED = true` permanent on `main`. Eisa's "Ship" message recorded. Phase 1 deliverable closed.
+
+**§B.1 → §B.5 (Phase 2 mini-domes, 4 commits):**
+- `cd5cc15` §B.1 — mini-dome Svelte wrapper + renderer skeleton + 2×2 grid + Cmd-D toggle
+- `d15488a` §B.2-§B.5 — four channel renderers (Confidence opacity / Stage hue / Acts size / Provenance sectors) + anchor→mini coord scaling
+- `d455a8f` §B.5-fix-1 — Stage mini renders unknown-stage values as neutral gray (was returning `null` from `pipColorForStage` → `if (!stageColor) continue` skipped every node, mini was empty)
+- `db8326a` §B-fix-2/3 + engine — visible mini chrome (stratum rings full opacity, was 0.04) + 1.5-px mini node ⌀ + **engine.ts side-by-side test config: `SIGHT_V5_ENABLED = false`, `SIGHT_V2_ENABLED = true`** so Eisa can A/B v2 vs v6.
+
+**Eisa's verdict (post-`db8326a`):** "Sight v2 = Working. I decided to keep it." → A/B test concluded; v2 stays alongside v6 permanently. v5 stays disabled.
+
+**Naming decision (this turn, 2026-05-14 PM):**
+1. Eisa: "We have to think about renaming it. What do you think?" → spawned 5-SME panel (UX, LIS, Brand, Cross-Civ, Cog-Psych).
+2. SME synthesis recommended Atlas + Threads or Sight + Threads (Cross-Civ killed "Web" for Arabic/Persian dignity loss).
+3. **Eisa rejected both. Final pick: v6 = "Constellation Sight", v2 = "Constellation Nervous System (CNS)"** — biological/anatomical metaphor pairing (Sight = sensory, CNS = neural). Cross-civ clean across all 15 locales.
+4. Eisa-confirmed grammar: **"Nervous System"** (canonical English anatomical term, matches the well-known CNS = Central Nervous System acronym referent), not "Nerve System" (translation-artifact register).
+
+---
+
+## §A.15 Predecessor → Replacement entry (per Predecessor Lookup Rule)
+
+**Function in hand:** rename Sight v6 user-facing label "Constellation Sight v6" → **"Constellation Sight"**, and rename Sight v2 user-facing label "Constellation Sight" (lens-mounted) → **"Constellation Nervous System (CNS)"**.
+
+### Predecessor (where the user-facing strings live now)
+
+| Surface | File | Line | Current value | Predecessor MIG |
+|---|---|---|---|---|
+| v6 dock-button title | `src/routes/+layout.svelte` | 4492 | `title={$t('sight.v6.title') \|\| 'Constellation Sight'}` `aria-label="Constellation Sight v6"` | MIG-025 §A.7 |
+| v6 mount-block title | `src/routes/+layout.svelte` | 5390 | `<span class="star-title">{$t('sight.v6.title') \|\| 'Constellation Sight'}</span>` | MIG-025 §A.7 |
+| v2 dock-button title | `src/routes/+layout.svelte` | 4431 | `title={$t('lens.title') \|\| 'Constellation Sight'}` (no aria-label) | MIG-017 (lens predecessor: pre-PJ-039 "Lens" naming) |
+| v2 i18n leaf — `lens.title` | `src/lib/i18n/{15 locales}.json` | en:2396 / ar:2358 / others vary | `"Constellation Sight"` in all 15 | MIG-017 |
+| v2 plug-in label | `src/lib/i18n/{15 locales}.json` | en:353 / others:420 | `"constellationSight": "Constellation Sight"` in all 15 | MIG-017 |
+| v2 plug-in description | `src/lib/i18n/{15 locales}.json` | en:354 / others:421 | `"Gravity-well knowledge visualization with analytics"` (English in all 15 — translation drift) | MIG-017 |
+| Settings → Sight section intro | `src/lib/i18n/{15 locales}.json` | en:522 (block at 521) | `"Constellation Sight v3 — star-chart visualization of your knowledge universe."` (stale; refers to retired v3) | MIG-018 |
+
+### Replacement (where the user-facing strings will live after this commit)
+
+**Default per the Rule: same place.** No file relocation, no new i18n key paths, no settings-flag rename.
+
+| Surface | New value | Notes |
+|---|---|---|
+| v6 dock-button title | `aria-label="Constellation Sight"` (drop "v6"); fallback already `'Constellation Sight'` | Matches the canonical Sight identity post-ship |
+| v6 mount-block title | unchanged (already renders "Constellation Sight" via fallback) | No edit needed; documented for completeness |
+| v2 dock-button title | i18n value of `lens.title` becomes `"Constellation Nervous System (CNS)"` | Same key, same call site |
+| v2 plug-in label | `"constellationSight": "Constellation Nervous System (CNS)"` | Same key |
+| v2 plug-in description | `"constellationSightDesc": "Connection-traversal view of your universe — Universe Health metrics, communities, top bridges, and structural-gap (\"Blind Spot\") analysis."` | Reflects what v2 actually does (Universe Health card + bridge/community detection per `lens.*` keys) |
+| Settings → Sight section intro | `"Constellation Sight — anchor-dome view of your universe with stratum × time positioning, density-gradient at default zoom, and per-channel mini-domes."` | Drops the stale v3 reference; describes v6 |
+
+### Internal symbols KEPT unchanged (per Lens-precedent / architectural-history convention)
+
+- File names: `SightV6.svelte`, `MiniDome.svelte`, `ConstellationSight2.svelte`, `sight_v6.rs`, `sight.rs`
+- IPC names: `constellation_sight_*`, `sight_v6_*`
+- Engine flags: `SIGHT_V2_ENABLED`, `SIGHT_V6_ENABLED`
+- Settings flags: `enabledFeatures.constellationSight`, `enabledFeatures.constellationSightV6`
+- State variables: `sightV6Active`, `lensActive`
+- i18n key paths: `lens.title`, `sight.v6.title`, `plugins.constellationSight*` (KEY names; only VALUES change)
+- All "Sight v6" / "Sight v2" references in code comments (architectural-history record)
+- The 16-fix lineage block in `engine.ts`
+
+### What's NOT in this commit (deferred — flagged as doc-drift in orientation v2.03)
+
+- **Help docs.** The existing `docs/help.uConstellation.World/Constellation Sight/Constellation Sight.md` describes Sight **v5** (six cognitive-lens modes — R/L/T/C/S/A/P). v2 has **no dedicated help doc** (the existing `Lens/Lens.md` is about DQL queries, an unrelated feature). Both need full rewrites — separate commit because the rewrites are not mechanical and need fresh prose for both Sight v6 and CNS v2. Carries through to 14 language mirrors (`docs/help.{lang}/`).
+- **User Manual.** `docs/User Manual.md` Sight chapter is similarly stale.
+- **Locale translations of the new descriptions.** Only English values are changing in this commit; the 14 other locales already had English values for these keys (translation drift predates this commit). A future translation pass can localize.
+- **`.docx` redistribution.** Pre-built `Constellation User Manual.docx` etc. regenerate later from the .md sources.
+
+### Boss approval logged
+
+- 2026-05-14 PM, message: "Then, it is going to be: Constellation Nervous System (CNS)" — confirmed final naming (after grammar clarification "Nervous" not "Nerve"). Cascade approved per Plan-Approval-Equals-Build-Approval; only stop is the user-testable installer.
+
+---
+
+*End of session log 2026-05-14. §A.15 commit lands next; build follows.*
