@@ -3455,6 +3455,38 @@ export interface AppSettings {
 		 *  re-fires by clearing this flag (wired in §C.10 alongside the
 		 *  register chip). Default false (tour shows on first launch). */
 		tourSeen?: boolean;
+		/** MIG-025 §A.12 — Sight v6 Pro-mode persistence (Concept Paper
+		 *  §6.4). Cmd-Shift-D toggles. Default false: Default-simple
+		 *  state on every open. True = sidebar + register chip + mini-
+		 *  domes all expanded by default. */
+		proMode?: boolean;
+		/** MIG-025 §A.12 — active epistemic register (Concept Paper §4).
+		 *  7 registers shipped in v6.0 per Eisa's locked decision. Anchor-
+		 *  dome only; mini-domes stay culturally neutral per §7. */
+		activeRegister?:
+			| 'aristotelian'
+			| 'pramana'
+			| 'masadir'
+			| 'polanyi'
+			| 'dignaga'
+			| 'ishraqi'
+			| 'mohist-san-biao';
+		/** MIG-025 §A.12 + Plan §A.4/§A.10 — mini-dome hex-bin aggregation
+		 *  threshold. Above this many visible notes per mini, the mini
+		 *  switches to hex-bin rendering with count badges. Default 5000
+		 *  per Concept Paper §3.4. Tunable per Plan UX-SME condition. */
+		hexBinThreshold?: number;
+		/** MIG-025 §A.12 + Concept Paper §2.2 — connector-line auto-fade
+		 *  threshold on the anchor dome. Above this many visible link
+		 *  edges, line opacity drops to 0.18 (vs default 0.55) to prevent
+		 *  overplotting. Default 800. */
+		linkFadeThreshold?: number;
+		/** MIG-025 §A.12 — sentinel: stamps true after the one-shot v5→v6
+		 *  settings migration runs. Migration is quiet (no user dialog);
+		 *  drops `lastMode` (no v6 equivalent) and stamps this flag.
+		 *  `lastScope` stays in the file as a dead key (harmless; v5 still
+		 *  reads it correctly during the B2 dual-mount window). */
+		v6MigrationDone?: boolean;
 	};
 	/** AI/LLM integration preferences */
 	ai?: {
@@ -3625,6 +3657,17 @@ export const DEFAULT_SETTINGS: AppSettings = {
 		// invariant 10). User dismissal sets this true; Help → Sight
 		// tour clears it back to false.
 		tourSeen: false,
+		// MIG-025 §A.12 — Sight v6 v6.0 defaults per Concept Paper.
+		// Default-simple chrome (proMode=false) + Aristotelian register
+		// (the explicit Western-classical default per §4.1.1).
+		// Hex-bin / link-fade thresholds match Concept Paper §2.2/§3.4.
+		proMode: false,
+		activeRegister: 'aristotelian',
+		hexBinThreshold: 5000,
+		linkFadeThreshold: 800,
+		// v6MigrationDone left undefined intentionally — the §A.12
+		// migration sets it to true on first run. Existing v5-installed
+		// Universes will run the migration once on first v6.0 boot.
 	},
 	customShortcuts: {},
 	linkPills: {
@@ -3736,6 +3779,29 @@ export async function loadSettings() {
 				// new lastMode/lastScope defaults.
 				sight: { ...DEFAULT_SETTINGS.sight, ...((parsed.sight as Record<string, unknown>) || {}) },
 			});
+
+			// ── §A.12 — Sight v5 → v6 settings migration ────────────────
+			// One-shot, quiet (no user dialog). Stamps v6MigrationDone=true
+			// to prevent re-running. Per Architect Option G1 (locked):
+			//   - lastMode is dropped (v6 has no modes; the field has no
+			//     v6 equivalent). Removed from in-memory state; saveSettings
+			//     persists the deletion to disk on the next debounced write.
+			//   - lastScope is intentionally LEFT IN THE FILE as a dead key.
+			//     v6 ignores it; v5 still reads it correctly during the B2
+			//     dual-mount window (Phases 1-3). §D.6 (Phase 4) deletes
+			//     the field along with the v5 module set.
+			// Idempotent: if v6MigrationDone is already true (from a prior
+			// session), the block short-circuits.
+			const sightSnapshot = (parsed.sight as Record<string, unknown>) || {};
+			if (!sightSnapshot.v6MigrationDone) {
+				appSettings.update((s) => {
+					const nextSight = { ...s.sight, v6MigrationDone: true };
+					// Drop lastMode if present (no v6 equivalent).
+					delete (nextSight as Record<string, unknown>).lastMode;
+					return { ...s, sight: nextSight };
+				});
+				saveSettings();
+			}
 		}
 	} catch { /* ignore */ }
 }
