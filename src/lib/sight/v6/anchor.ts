@@ -228,11 +228,28 @@ export function renderAnchorDome(
 	const { locale = 'en', clear = true, highlightedPath = null } = options;
 	const layout = computeDomeLayout(width, height);
 
-	if (clear) ctx.clearRect(0, 0, width, height);
-
-	// 1. Background
-	ctx.fillStyle = PALETTE.bg;
-	ctx.fillRect(0, 0, width, height);
+	// 2026-05-14 §A.14 fix-10 (Boss-test cycle 3 zoom regression):
+	// clear + background must run in IDENTITY transform space so they
+	// always cover the full canvas backing store, regardless of caller-
+	// applied zoom/pan transforms (FIX-9). Pre-fix, at zoom > 1 these
+	// only filled the upper-left fraction of the canvas — the rest of
+	// the screen showed stale frame contents and zoom appeared to do
+	// nothing. The save/restore pattern preserves the caller's transform
+	// for the rest of the dome rendering (which DOES run in caller
+	// space — that's what makes zoom-toward-cursor work).
+	if (clear) {
+		ctx.save();
+		ctx.setTransform(1, 0, 0, 1, 0, 0);
+		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+		ctx.fillStyle = PALETTE.bg;
+		ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+		ctx.restore();
+	} else {
+		// Even when caller manages clear, paint the bg in caller-space
+		// so the dome's local viewport gets the right base color.
+		ctx.fillStyle = PALETTE.bg;
+		ctx.fillRect(0, 0, width, height);
+	}
 
 	// 2. 5 strata reference circles
 	ctx.strokeStyle = PALETTE.strataRing;
