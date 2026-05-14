@@ -17,9 +17,20 @@ This session captures the convergence of ~3 days of Sight redesign work into a b
 | `a38b256` | §A.4 — Progressive backfill via Tauri events + frontend store (MIG-025) | 2 | 557 |
 | `970d2bf` | §A.5 — Three Sight v6 Tauri IPCs + handler registration (MIG-025) | 2 | 160 |
 | `b981129` | §A.6 — Sight v6 frontend types + module skeleton (MIG-025) | 3 | 427 |
+| `7a948e9` | §A.7 — Mount Sight v6 alongside v5 in +layout.svelte (MIG-025) | 3 | 67 |
+| `5b3e10b` | §A.8 — Anchor dome chrome render: 5 strata + calendar rim + labels (MIG-025) | 3 | 403 |
+| `e5b2334` | §A.9 — Anchor dome stars + lines + IPC integration (MIG-025) | 2 | 559 |
+| `c4b7e7b` | §A.10 — Facet sidebar with Hearst Flamenco cross-filter (MIG-025) | 3 | 633 |
+| `c84989b` | §A.11 — Sight v6 first-boot orientation tour (MIG-025) | 3 | 245 |
+| `1048ab1` | §A.12 — Sight v5 → v6 settings migration + 4 new v6 fields (MIG-025) | 1 | 66 |
+| `251d630` | §A.13 — Sight v6 CI perf-harness skeletons (MIG-025) | 4 | 311 |
 
-Branch: `main` (all 7 commits on primary repo, per Working Agreement #2).
-Total: 29 files, ~10,493 insertions across the MIG-025 cascade.
+Branch: `main` (all 14 commits on primary repo, per Working Agreement #2).
+Total: ~46 files touched, ~12,000+ insertions across the MIG-025 §A cascade.
+
+**Phase 1 build complete (§A.1 → §A.13).** §A.14 ship gate is the
+next user-testable point — stops cascade for Eisa Boss-test of
+Sight v6.0.
 
 ### Cascade lineage
 
@@ -43,15 +54,29 @@ b981129  §A.6 — frontend types + anchor.ts stubs + SightV6.svelte placeholder
 
 ### Phase 1 progress
 
-Backend (§A.1–§A.5): **complete**.
-Frontend skeleton (§A.6): **complete**.
-Mount (§A.7): **next turn**.
-Render (§A.8–§A.9): pending.
-Sidebar (§A.10): pending.
-Tour (§A.11): pending.
-Settings migration (§A.12): pending.
-CI harness (§A.13): pending.
-Ship gate (§A.14): **stops cascade for Boss-test of Sight v6.0**.
+| Step | Status |
+|---|---|
+| Backend (§A.1–§A.5) | ✅ complete |
+| Frontend skeleton (§A.6) | ✅ complete |
+| Mount in +layout.svelte (§A.7) | ✅ complete |
+| Anchor chrome render (§A.8) | ✅ complete |
+| Anchor stars + lines + IPC (§A.9) | ✅ complete |
+| Facet sidebar + cross-filter (§A.10) | ✅ complete |
+| First-boot tour (§A.11) | ✅ complete |
+| Settings migration (§A.12) | ✅ complete |
+| CI perf-harness skeletons (§A.13) | ✅ complete |
+| Ship gate (§A.14) | 🛑 **Boss-test gate** |
+
+**§A.14 verification checklist** (per Concept Paper v4.0 §13.1):
+
+- [ ] Anchor dome renders all 6 pre-attentive channels per §3.1
+- [ ] Default-simple layout satisfies §6.2 (≥80% anchor)
+- [ ] Facet sidebar cross-filters across all 6 facets including Folder
+- [ ] First-boot tour fires once, skippable, persisted via `tourSeen`
+- [ ] All §5 gestures work except mini-dome cross-filter (mini-domes don't exist yet)
+- [ ] v5 module set still present + reachable via dock toggle (B2)
+- [ ] CI perf gate harness present (runners deferred to §D.4)
+- [ ] Settings migration runs cleanly on a v5-state Universe
 
 ---
 
