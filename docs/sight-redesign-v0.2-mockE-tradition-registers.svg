@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" font-family="Inter, system-ui, sans-serif">
+  <!--
+    Sight redesign · v0.2 · Mock E · Tradition Registers (NEW — Cross-Civ SME proposal)
+    ──────────────────────────────────────────────────────────────────────────────────
+    Philosophy: cultural neutrality solved by making the cultural frame EXPLICIT and
+    SWITCHABLE. The user picks the epistemic tradition; the dome remaps accordingly.
+
+    This mock shows the pramāṇa register as the active view, with thumbnails of
+    masādir and Polanyi registers at the top.
+
+    Pramāṇa register:
+      • 4 quadrants by source-kind (Nyāya fourfold)
+        NE = pratyakṣa (perception)
+        SE = anumāna (inference)
+        SW = upamāna (analogy/comparison)
+        NW = śabda (testimony)
+      • Radial within quadrant = certainty in that source's own terms
+      • Angular within quadrant = time
+  -->
+
+  <!-- background -->
+  <rect width="1200" height="800" fill="#080c16"/>
+
+  <!-- title -->
+  <text x="600" y="32" fill="#e8ebf2" font-size="18" text-anchor="middle" font-weight="500" letter-spacing="0.5">Constellation Sight — Tradition Register</text>
+
+  <!-- register selector chips -->
+  <g transform="translate(600, 56)" text-anchor="middle">
+    <!-- pramāṇa active -->
+    <g transform="translate(-100, 0)">
+      <rect x="-48" y="-13" width="96" height="26" rx="13" fill="#1e2a45" stroke="#7dd3fc" stroke-width="1.4"/>
+      <text y="5" fill="#7dd3fc" font-size="11" font-weight="600">pramāṇa</text>
+    </g>
+    <!-- masādir -->
+    <g transform="translate(10, 0)">
+      <rect x="-44" y="-13" width="88" height="26" rx="13" fill="#1a1f2e" stroke="#3a4255"/>
+      <text y="5" fill="#7a8295" font-size="11" font-weight="500">masādir</text>
+    </g>
+    <!-- Polanyi -->
+    <g transform="translate(110, 0)">
+      <rect x="-42" y="-13" width="84" height="26" rx="13" fill="#1a1f2e" stroke="#3a4255"/>
+      <text y="5" fill="#7a8295" font-size="11" font-weight="500">Polanyi</text>
+    </g>
+  </g>
+
+  <!-- =========== MAIN DOME — pramāṇa register =========== -->
+  <g>
+    <!-- 4 quadrant divider lines (faint) -->
+    <g stroke="#2a3245" stroke-width="0.8" opacity="0.7">
+      <line x1="600" y1="160" x2="600" y2="780"/>
+      <line x1="290" y1="470" x2="910" y2="470"/>
+    </g>
+
+    <!-- strata reference rings (radial = certainty within source) -->
+    <g fill="none" stroke="#1a1f2e" stroke-width="0.5">
+      <circle cx="600" cy="470" r="60"/>
+      <circle cx="600" cy="470" r="120"/>
+      <circle cx="600" cy="470" r="180"/>
+      <circle cx="600" cy="470" r="240"/>
+      <circle cx="600" cy="470" r="300"/>
+    </g>
+
+    <!-- quadrant labels (outer edge) -->
+    <g font-size="11" font-weight="500" font-style="italic">
+      <text x="780" y="240" fill="#a0aabe" text-anchor="middle">pratyakṣa</text>
+      <text x="780" y="258" fill="#5a6275" font-size="9" font-style="normal" text-anchor="middle">perception</text>
+
+      <text x="780" y="710" fill="#a0aabe" text-anchor="middle">anumāna</text>
+      <text x="780" y="728" fill="#5a6275" font-size="9" font-style="normal" text-anchor="middle">inference</text>
+
+      <text x="420" y="710" fill="#a0aabe" text-anchor="middle">upamāna</text>
+      <text x="420" y="728" fill="#5a6275" font-size="9" font-style="normal" text-anchor="middle">analogy</text>
+
+      <text x="420" y="240" fill="#a0aabe" text-anchor="middle">śabda</text>
+      <text x="420" y="258" fill="#5a6275" font-size="9" font-style="normal" text-anchor="middle">testimony</text>
+    </g>
+
+    <!-- certainty rings labels (inside, faint, only on one quadrant for legibility) -->
+    <g font-size="8" fill="#3a4150" text-anchor="middle">
+      <text x="660" y="425" font-style="italic">certain</text>
+      <text x="720" y="385" font-style="italic">probable</text>
+      <text x="780" y="345" font-style="italic">tentative</text>
+    </g>
+
+    <!-- ===== NE QUADRANT — pratyakṣa stars (empirical/perceptual notes) ===== -->
+    <g>
+      <g transform="translate(640, 430)" opacity="0.95"><circle r="4" fill="#7dd3fc"/><circle r="1.1" fill="#4ade80"/></g>
+      <g transform="translate(660, 410)" opacity="0.85"><circle r="4" fill="#7dd3fc"/><circle r="1.1" fill="#22d3ee"/></g>
+      <g transform="translate(680, 390)" opacity="0.9"><rect x="-4" y="-4" width="8" height="8" fill="#fda4af"/><circle r="1.1" fill="#4ade80"/></g>
+      <g transform="translate(710, 370)" opacity="0.75"><circle r="3.8" fill="#7dd3fc"/><circle r="1" fill="#facc15"/></g>
+      <g transform="translate(720, 410)" opacity="0.7"><rect x="-3.5" y="-3.5" width="7" height="7" fill="#fde68a" transform="rotate(45)"/><circle r="0.9" fill="#4ade80"/></g>
+      <g transform="translate(750, 350)" opacity="0.88"><rect x="-4" y="-4" width="8" height="8" fill="#fda4af"/><circle r="1.1" fill="#22d3ee"/></g>
+      <g transform="translate(780, 330)" opacity="0.8"><circle r="4" fill="#7dd3fc"/><circle r="1.1" fill="#a78bfa"/></g>
+      <g transform="translate(800, 310)" opacity="0.65"><circle r="3.5" fill="#7dd3fc"/><circle r="0.9" fill="#facc15"/></g>
+    </g>
+
+    <!-- ===== SE QUADRANT — anumāna stars (inferential / reasoned) ===== -->
+    <g>
+      <g transform="translate(640, 510)" opacity="0.95"><circle r="4" fill="#7dd3fc"/><circle r="1.1" fill="#4ade80"/></g>
+      <g transform="translate(660, 530)" opacity="0.78"><rect x="-4" y="-4" width="8" height="8" fill="#fda4af"/><circle r="1.1" fill="#22d3ee"/></g>
+      <g transform="translate(680, 550)" opacity="0.85"><rect x="-5.2" y="-5.2" width="10.4" height="10.4" fill="#fde68a" transform="rotate(45)"/><circle r="1.3" fill="#22d3ee"/></g>
+      <g transform="translate(710, 575)" opacity="0.72"><circle r="3.8" fill="#7dd3fc"/><circle r="1" fill="#a78bfa"/></g>
+      <g transform="translate(745, 605)" opacity="0.65"><rect x="-3.5" y="-3.5" width="7" height="7" fill="#fde68a" transform="rotate(45)"/><circle r="0.9" fill="#facc15"/></g>
+      <g transform="translate(780, 630)" opacity="0.5"><rect x="-3.5" y="-3.5" width="7" height="7" fill="#fda4af"/><circle r="0.9" fill="#a78bfa"/></g>
+    </g>
+
+    <!-- ===== SW QUADRANT — upamāna stars (analogical) ===== -->
+    <g>
+      <g transform="translate(560, 510)" opacity="0.9"><circle r="4" fill="#7dd3fc"/><circle r="1.1" fill="#22d3ee"/></g>
+      <g transform="translate(540, 535)" opacity="0.85"><rect x="-4" y="-4" width="8" height="8" fill="#fda4af"/><circle r="1.1" fill="#4ade80"/></g>
+      <g transform="translate(510, 570)" opacity="0.75"><circle r="3.5" fill="#7dd3fc"/><circle r="0.9" fill="#facc15"/></g>
+      <g transform="translate(480, 600)" opacity="0.6"><rect x="-3.5" y="-3.5" width="7" height="7" fill="#fde68a" transform="rotate(45)"/><circle r="0.9" fill="#a78bfa"/></g>
+      <g transform="translate(450, 625)" opacity="0.45"><circle r="3" fill="#7dd3fc"/><circle r="0.8" fill="#94a3b8"/></g>
+    </g>
+
+    <!-- ===== NW QUADRANT — śabda stars (testimonial, scriptural, authoritative) ===== -->
+    <g>
+      <g transform="translate(560, 430)" opacity="0.95"><circle r="4" fill="#7dd3fc"/><circle r="1.1" fill="#4ade80"/></g>
+      <g transform="translate(540, 405)" opacity="0.88"><rect x="-4" y="-4" width="8" height="8" fill="#fda4af"/><circle r="1.1" fill="#22d3ee"/></g>
+      <g transform="translate(510, 370)" opacity="0.82"><rect x="-5.2" y="-5.2" width="10.4" height="10.4" fill="#fde68a" transform="rotate(45)"/><circle r="1.4" fill="#4ade80"/></g>
+      <g transform="translate(480, 340)" opacity="0.75"><circle r="3.8" fill="#7dd3fc"/><circle r="1" fill="#a78bfa"/></g>
+      <g transform="translate(450, 315)" opacity="0.6"><rect x="-3.5" y="-3.5" width="7" height="7" fill="#fda4af"/><circle r="0.9" fill="#facc15"/></g>
+      <g transform="translate(420, 290)" opacity="0.5"><circle r="3" fill="#7dd3fc"/><circle r="0.8" fill="#94a3b8"/></g>
+    </g>
+
+    <!-- center marker -->
+    <circle cx="600" cy="470" r="2" fill="#5a6275"/>
+
+    <!-- explanatory note at bottom of dome -->
+    <g transform="translate(600, 770)" font-size="9" fill="#5a6275" text-anchor="middle">
+      <text>radial = certainty within source · angular within quadrant = time · channels from §3 apply</text>
+    </g>
+  </g>
+
+  <!-- =========== TOP THUMBNAILS — masādir + Polanyi previews =========== -->
+  <g transform="translate(20, 120)">
+    <text x="80" y="0" fill="#a0aabe" font-size="10" font-weight="500" letter-spacing="0.5" text-anchor="middle">masādir register</text>
+    <text x="80" y="14" fill="#5a6275" font-size="8" text-anchor="middle">Sunni uṣūl — concentric authority</text>
+    <!-- concentric circles in masādir order -->
+    <g fill="none" stroke="#cdd5e0" stroke-width="0.6">
+      <circle cx="80" cy="80" r="16"/>
+      <circle cx="80" cy="80" r="28"/>
+      <circle cx="80" cy="80" r="40"/>
+      <circle cx="80" cy="80" r="52"/>
+    </g>
+    <!-- inner-to-outer labels -->
+    <g font-size="7" fill="#7a8295" text-anchor="middle">
+      <text x="80" y="62">Qur'an</text>
+      <text x="80" y="48">sunnah</text>
+      <text x="80" y="34">ijmāʿ</text>
+      <text x="80" y="20">qiyās</text>
+    </g>
+    <!-- sample stars -->
+    <g>
+      <circle cx="82" cy="80" r="1.6" fill="#7dd3fc" opacity="0.95"/>
+      <circle cx="86" cy="74" r="1.6" fill="#fda4af" opacity="0.85"/>
+      <circle cx="92" cy="68" r="1.6" fill="#7dd3fc" opacity="0.8"/>
+      <circle cx="100" cy="58" r="1.6" fill="#fde68a" opacity="0.7"/>
+      <circle cx="110" cy="48" r="1.6" fill="#fda4af" opacity="0.65"/>
+      <circle cx="68" cy="68" r="1.6" fill="#7dd3fc" opacity="0.88"/>
+      <circle cx="60" cy="80" r="1.6" fill="#fda4af" opacity="0.78"/>
+      <circle cx="80" cy="100" r="1.6" fill="#7dd3fc" opacity="0.82"/>
+      <circle cx="50" cy="90" r="1.6" fill="#fde68a" opacity="0.6"/>
+    </g>
+  </g>
+
+  <g transform="translate(1040, 120)">
+    <text x="80" y="0" fill="#a0aabe" font-size="10" font-weight="500" letter-spacing="0.5" text-anchor="middle">Polanyi register</text>
+    <text x="80" y="14" fill="#5a6275" font-size="8" text-anchor="middle">tacit / explicit gradient</text>
+    <!-- fog overlay implied via radial gradient -->
+    <defs>
+      <radialGradient id="E-fog" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#cdd5e0" stop-opacity="0"/>
+        <stop offset="100%" stop-color="#cdd5e0" stop-opacity="0.45"/>
+      </radialGradient>
+    </defs>
+    <!-- base dome -->
+    <g fill="none" stroke="#cdd5e0" stroke-width="0.6">
+      <circle cx="80" cy="80" r="52"/>
+    </g>
+    <!-- fog overlay (denser at edges = more tacit; center = more explicit) -->
+    <circle cx="80" cy="80" r="52" fill="url(#E-fog)"/>
+    <!-- inner label -->
+    <text x="80" y="80" font-size="7" fill="#7a8295" text-anchor="middle">explicit</text>
+    <text x="80" y="40" font-size="7" fill="#7a8295" text-anchor="middle">tacit fog</text>
+    <!-- sample stars (only inner explicit ones clearly visible) -->
+    <g>
+      <circle cx="80" cy="82" r="1.8" fill="#7dd3fc" opacity="0.95"/>
+      <circle cx="86" cy="76" r="1.8" fill="#fda4af" opacity="0.92"/>
+      <circle cx="74" cy="86" r="1.8" fill="#fde68a" opacity="0.88"/>
+      <circle cx="92" cy="88" r="1.6" fill="#7dd3fc" opacity="0.7"/>
+      <circle cx="68" cy="72" r="1.6" fill="#fda4af" opacity="0.65"/>
+      <circle cx="100" cy="100" r="1.4" fill="#7dd3fc" opacity="0.4"/>
+      <circle cx="60" cy="60" r="1.4" fill="#fde68a" opacity="0.35"/>
+      <circle cx="110" cy="60" r="1.4" fill="#fda4af" opacity="0.3"/>
+      <circle cx="40" cy="90" r="1.2" fill="#7dd3fc" opacity="0.25"/>
+    </g>
+  </g>
+
+  <!-- chrome -->
+  <g transform="translate(600, 90)" font-size="9" fill="#5a6275" text-anchor="middle">
+    <text>switching registers remaps the dome's semantics; the underlying note set is unchanged</text>
+  </g>
+</svg>

@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" font-family="Inter, system-ui, sans-serif">
+  <!--
+    Sight redesign · Mock A · Suwaidi Pure
+    ───────────────────────────────────────
+    Philosophy: trust the data; minimum chrome; all five lens channels
+    always on at low-key opacity. The chart speaks for itself, the way
+    the Suwaidi northern-hemisphere star chart does. No toggle bar.
+    No isolated channels. The user reads the gestalt.
+
+    Spatial anchor (locked across A/B/C):
+      • radial   = stratum (Foundation → Edge of Knowing)
+      • angular  = month of creation (Jan top, clockwise)
+      • tint     = library color (always on)
+
+    Lens channels (locked, all-on):
+      L (Links)      → faint constellation lines between linked notes
+      C (Confidence) → star opacity / brightness
+      S (Stage)      → tiny core pip color
+      A (Acts)       → small adjacent dot when act-density is high
+      P (Provenance) → thin outer ring color (5 source types)
+  -->
+
+  <defs>
+    <radialGradient id="A-lib1" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#7dd3fc" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#7dd3fc" stop-opacity="0.35"/>
+    </radialGradient>
+    <radialGradient id="A-lib2" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fda4af" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#fda4af" stop-opacity="0.35"/>
+    </radialGradient>
+    <radialGradient id="A-lib3" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fde68a" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#fde68a" stop-opacity="0.35"/>
+    </radialGradient>
+  </defs>
+
+  <!-- background -->
+  <rect width="1200" height="800" fill="#080c16"/>
+
+  <!-- faint deep-space dots -->
+  <g fill="#1a2030" opacity="0.55">
+    <circle cx="120" cy="180" r="0.5"/>
+    <circle cx="280" cy="90"  r="0.6"/>
+    <circle cx="950" cy="220" r="0.5"/>
+    <circle cx="1100" cy="340" r="0.7"/>
+    <circle cx="80"  cy="450" r="0.5"/>
+    <circle cx="1130" cy="620" r="0.6"/>
+    <circle cx="180" cy="680" r="0.5"/>
+    <circle cx="1020" cy="760" r="0.5"/>
+  </g>
+
+  <!-- title block -->
+  <text x="600" y="42" fill="#e8ebf2" font-size="20" text-anchor="middle" font-weight="500" letter-spacing="0.5">Constellation Sight</text>
+  <text x="600" y="64" fill="#5a6370" font-size="11" text-anchor="middle" letter-spacing="0.3">My Universe · 7,636 notes · 2,041 links · 5 libraries</text>
+  <text x="600" y="80" fill="#3a4150" font-size="9"  text-anchor="middle" letter-spacing="0.4">Mock A · Suwaidi Pure</text>
+
+  <!-- strata reference circles (Suwaidi-style thin guides) -->
+  <g fill="none" stroke="#1a1f2e" stroke-width="0.6">
+    <circle cx="600" cy="450" r="64"/>
+    <circle cx="600" cy="450" r="128"/>
+    <circle cx="600" cy="450" r="192"/>
+    <circle cx="600" cy="450" r="256"/>
+    <circle cx="600" cy="450" r="320"/>
+  </g>
+
+  <!-- calendar rim (months at r ≈ 340, clockwise from top) -->
+  <g fill="#3e4453" font-size="10" text-anchor="middle">
+    <text x="600" y="120">JAN</text>
+    <text x="770" y="155">FEB</text>
+    <text x="894" y="260">MAR</text>
+    <text x="940" y="404">APR</text>
+    <text x="940" y="498">MAY</text>
+    <text x="894" y="640">JUN</text>
+    <text x="770" y="745">JUL</text>
+    <text x="600" y="780">AUG</text>
+    <text x="430" y="745">SEP</text>
+    <text x="306" y="640">OCT</text>
+    <text x="260" y="498">NOV</text>
+    <text x="260" y="404">DEC</text>
+  </g>
+
+  <!-- stratum labels (faint, italic, along the vertical axis) -->
+  <g fill="#252b3a" font-size="9" font-style="italic" font-weight="300" text-anchor="middle">
+    <text x="600" y="395">FOUNDATION</text>
+    <text x="600" y="331">WORKING</text>
+    <text x="600" y="267">CONNECTION</text>
+    <text x="600" y="203">SYNTHESIS</text>
+    <text x="600" y="139">EDGE OF KNOWING</text>
+  </g>
+
+  <!-- constellation lines (faint, suggesting cognitive cluster shapes) -->
+  <g stroke="#2c3450" stroke-width="0.5" fill="none" opacity="0.6">
+    <!-- foundational cluster -->
+    <path d="M 595 410 Q 605 395 615 410"/>
+    <path d="M 580 420 L 595 410"/>
+    <path d="M 615 410 Q 625 420 620 435"/>
+    <!-- working-to-connection bridge -->
+    <path d="M 640 330 Q 680 310 720 340"/>
+    <path d="M 720 340 L 750 320"/>
+    <!-- edge of knowing (sparse) -->
+    <path d="M 550 165 Q 590 145 630 165"/>
+    <!-- rare cross-stratum link -->
+    <path d="M 595 410 Q 700 280 800 220" opacity="0.4"/>
+    <!-- right-side cluster -->
+    <path d="M 770 470 L 800 460"/>
+    <path d="M 800 460 Q 820 450 815 480"/>
+    <!-- left-side cluster -->
+    <path d="M 470 470 L 440 460"/>
+    <path d="M 440 460 Q 420 440 405 465"/>
+    <!-- a contradicts link (would render differently in production) -->
+    <path d="M 540 350 L 580 360" stroke-dasharray="2 2" opacity="0.5"/>
+  </g>
+
+  <!-- stars (~28 instances) — each: outer halo = library tint, core pip = stage, opacity = confidence -->
+  <g>
+    <!-- foundation cluster -->
+    <g transform="translate(595, 410)"><circle r="4"   fill="url(#A-lib1)" opacity="0.95"/><circle r="1.1" fill="#4ade80"/></g>
+    <g transform="translate(605, 405)"><circle r="3.5" fill="url(#A-lib1)" opacity="0.85"/><circle r="0.9" fill="#22d3ee"/></g>
+    <g transform="translate(615, 410)"><circle r="3.8" fill="url(#A-lib2)" opacity="0.9"/><circle r="1"   fill="#4ade80"/></g>
+    <g transform="translate(580, 420)"><circle r="3.2" fill="url(#A-lib1)" opacity="0.75"/><circle r="0.9" fill="#facc15"/></g>
+    <g transform="translate(620, 435)"><circle r="3"   fill="url(#A-lib3)" opacity="0.7"/><circle r="0.8" fill="#4ade80"/></g>
+
+    <!-- working -->
+    <g transform="translate(640, 330)"><circle r="3.4" fill="url(#A-lib2)" opacity="0.88"/><circle r="0.9" fill="#22d3ee"/></g>
+    <g transform="translate(680, 320)"><circle r="3"   fill="url(#A-lib1)" opacity="0.8"/><circle r="0.9" fill="#a78bfa"/></g>
+    <g transform="translate(720, 340)"><circle r="3.6" fill="url(#A-lib3)" opacity="0.9"/><circle r="1"   fill="#4ade80"/></g>
+    <g transform="translate(750, 320)"><circle r="2.8" fill="url(#A-lib1)" opacity="0.65"/><circle r="0.7" fill="#facc15"/></g>
+
+    <!-- connection -->
+    <g transform="translate(550, 280)"><circle r="3.2" fill="url(#A-lib2)" opacity="0.78"/><circle r="0.9" fill="#22d3ee"/></g>
+    <g transform="translate(650, 270)"><circle r="3"   fill="url(#A-lib1)" opacity="0.72"/><circle r="0.8" fill="#a78bfa"/></g>
+    <g transform="translate(700, 260)"><circle r="2.8" fill="url(#A-lib3)" opacity="0.7"/><circle r="0.8" fill="#22d3ee"/></g>
+
+    <!-- synthesis (sparser) -->
+    <g transform="translate(580, 215)"><circle r="2.8" fill="url(#A-lib3)" opacity="0.6"/><circle r="0.7" fill="#facc15"/></g>
+    <g transform="translate(650, 210)"><circle r="3.2" fill="url(#A-lib1)" opacity="0.85"/><circle r="0.9" fill="#22d3ee"/></g>
+
+    <!-- edge of knowing (very sparse — diagnostic: opportunity for growth) -->
+    <g transform="translate(595, 160)"><circle r="2.5" fill="url(#A-lib2)" opacity="0.5"/><circle r="0.7" fill="#a78bfa"/></g>
+    <g transform="translate(630, 170)"><circle r="2.2" fill="url(#A-lib1)" opacity="0.4"/><circle r="0.6" fill="#94a3b8"/></g>
+
+    <!-- right cluster (across strata, recent months) -->
+    <g transform="translate(770, 470)"><circle r="3.4" fill="url(#A-lib3)" opacity="0.85"/><circle r="0.9" fill="#4ade80"/></g>
+    <g transform="translate(800, 460)"><circle r="3"   fill="url(#A-lib3)" opacity="0.78"/><circle r="0.9" fill="#22d3ee"/></g>
+    <g transform="translate(815, 480)"><circle r="2.8" fill="url(#A-lib1)" opacity="0.7"/><circle r="0.8" fill="#a78bfa"/></g>
+
+    <!-- left cluster -->
+    <g transform="translate(470, 470)"><circle r="3.2" fill="url(#A-lib2)" opacity="0.82"/><circle r="0.9" fill="#facc15"/></g>
+    <g transform="translate(440, 460)"><circle r="3"   fill="url(#A-lib2)" opacity="0.75"/><circle r="0.8" fill="#22d3ee"/></g>
+    <g transform="translate(405, 465)"><circle r="2.6" fill="url(#A-lib1)" opacity="0.65"/><circle r="0.7" fill="#94a3b8"/></g>
+
+    <!-- bottom curve (older months) -->
+    <g transform="translate(540, 350)"><circle r="3.4" fill="url(#A-lib1)" opacity="0.85"/><circle r="0.9" fill="#a78bfa"/></g>
+    <g transform="translate(620, 720)"><circle r="3.4" fill="url(#A-lib1)" opacity="0.9"/><circle r="0.9" fill="#4ade80"/></g>
+    <g transform="translate(640, 700)"><circle r="3"   fill="url(#A-lib3)" opacity="0.82"/><circle r="0.9" fill="#22d3ee"/></g>
+    <g transform="translate(580, 700)"><circle r="2.8" fill="url(#A-lib2)" opacity="0.75"/><circle r="0.8" fill="#facc15"/></g>
+
+    <!-- diagnostic: a couple of dormant orphans far edge -->
+    <g transform="translate(380, 200)"><circle r="2"   fill="url(#A-lib3)" opacity="0.35"/><circle r="0.5" fill="#94a3b8"/></g>
+    <g transform="translate(870, 230)"><circle r="2"   fill="url(#A-lib2)" opacity="0.3"/> <circle r="0.5" fill="#94a3b8"/></g>
+  </g>
+
+  <!-- corner legend (low-key, single block) -->
+  <g transform="translate(28, 660)" font-size="10" fill="#5a6270">
+    <text fill="#7a8090" font-weight="500">Story-at-glance encoding</text>
+    <text y="18">position · radial = stratum (foundation → edge), angular = month</text>
+    <text y="34">tint    · library color</text>
+    <text y="50">brightness · confidence (faint = hypothesis · bright = established)</text>
+    <text y="66">core hue · stage (green = established · blue = fresh · violet = growing</text>
+    <text y="80">                       yellow = at-risk · gray = dormant)</text>
+    <text y="96">lines · typed links between notes (dashed = contradicts)</text>
+  </g>
+
+  <!-- diagnostic indicator (top-right, lo-key) -->
+  <g transform="translate(1170, 100)" font-size="10" fill="#5a6270" text-anchor="end">
+    <text fill="#7a8090" font-weight="500">universe state</text>
+    <text y="16">healthy · 64%</text>
+    <text y="30">at-risk · 28%</text>
+    <text y="44">dormant · 8%</text>
+    <text y="68" fill="#3a4150">last viewed</text>
+    <text y="82">today, 18:29</text>
+  </g>
+</svg>

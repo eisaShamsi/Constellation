@@ -1,0 +1,309 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 750" font-family="Inter, system-ui, sans-serif">
+  <!--
+    Sight redesign · v0.3 · Register Chip Detail (7 registers)
+    ──────────────────────────────────────────────────────────
+    Each register is shown as a 240×240 thumbnail showing the anchor dome's
+    semantic axes under that register. Cross-Civ SME's round-2 corrections
+    are applied:
+      • pramāṇa  → no radial-certainty rings; internal pramāṇa structure
+      • masādir  → categorical kinds, not nested ladder; extension chips
+      • Polanyi  → fog INVERTED (denser at center, clear at edges)
+    New registers added:
+      • Aristotelian (default — the implicit Western-classical reading)
+      • Dignāga two-pramāṇa (Buddhist)
+      • Suhrawardi Ishrāqī (presence-knowledge, emanation)
+      • Mohist sān biǎo (three standards, pragmatist)
+  -->
+
+  <rect width="1400" height="750" fill="#080c16"/>
+
+  <!-- title -->
+  <text x="700" y="40" fill="#e8ebf2" font-size="20" text-anchor="middle" font-weight="500" letter-spacing="0.5">Sight Register Chip — Seven Epistemic Frames</text>
+  <text x="700" y="62" fill="#7a8295" font-size="11" text-anchor="middle">switching a register remaps the anchor dome's semantic axes only · mini-domes stay culturally neutral</text>
+
+  <!-- top row: 4 registers -->
+
+  <!-- 1. Aristotelian (default) -->
+  <g transform="translate(80, 100)">
+    <rect width="280" height="280" rx="6" fill="#0c1322" stroke="#7dd3fc" stroke-width="1.4"/>
+    <text x="140" y="22" fill="#7dd3fc" font-size="11" font-weight="600" text-anchor="middle">Aristotelian ●</text>
+    <text x="140" y="38" fill="#5a6275" font-size="9" text-anchor="middle">default · stratum-as-maturity</text>
+    <!-- standard stratified dome -->
+    <g transform="translate(140, 165)">
+      <g fill="none" stroke="#2a3245" stroke-width="0.5">
+        <circle r="22"/><circle r="44"/><circle r="66"/><circle r="88"/><circle r="105"/>
+      </g>
+      <text x="0" y="-12" fill="#5a6275" font-size="7" text-anchor="middle">edge</text>
+      <text x="0" y="105" fill="#5a6275" font-size="7" text-anchor="middle">foundation</text>
+      <!-- sample stars -->
+      <circle cx="0" cy="80" r="2.4" fill="#cdd5e0" opacity="0.95"/>
+      <circle cx="-12" cy="70" r="2.4" fill="#cdd5e0" opacity="0.85"/>
+      <circle cx="14" cy="76" r="2.4" fill="#cdd5e0" opacity="0.9"/>
+      <circle cx="20" cy="40" r="2.2" fill="#cdd5e0" opacity="0.8"/>
+      <circle cx="-25" cy="30" r="2.2" fill="#cdd5e0" opacity="0.75"/>
+      <circle cx="0" cy="0" r="2" fill="#cdd5e0" opacity="0.6"/>
+      <circle cx="-30" cy="-40" r="1.8" fill="#cdd5e0" opacity="0.5"/>
+      <circle cx="40" cy="-60" r="1.6" fill="#cdd5e0" opacity="0.4"/>
+    </g>
+    <text x="140" y="265" fill="#7a8295" font-size="9" text-anchor="middle">radial = stratum · angular = time</text>
+  </g>
+
+  <!-- 2. pramāṇa (rewritten) -->
+  <g transform="translate(400, 100)">
+    <rect width="280" height="280" rx="6" fill="#0c1322" stroke="#3a4255"/>
+    <text x="140" y="22" fill="#cdd5e0" font-size="11" font-weight="600" text-anchor="middle">pramāṇa</text>
+    <text x="140" y="38" fill="#5a6275" font-size="9" text-anchor="middle">Nyāya fourfold · kinds-not-levels</text>
+    <!-- 4 quadrants, NO radial-certainty rings -->
+    <g transform="translate(140, 165)">
+      <circle r="105" fill="none" stroke="#2a3245" stroke-width="0.5"/>
+      <!-- quadrant dividers -->
+      <g stroke="#2a3245" stroke-width="0.6" opacity="0.7">
+        <line x1="0" y1="-105" x2="0" y2="105"/>
+        <line x1="-105" y1="0" x2="105" y2="0"/>
+      </g>
+      <!-- NO radial certainty rings — radial encodes pramāṇa-internal structure -->
+      <g fill="none" stroke="#1a1f2e" stroke-width="0.3" stroke-dasharray="1 3">
+        <!-- subtle internal-structure hint, distinct per quadrant -->
+        <circle r="35"/>
+        <circle r="70"/>
+      </g>
+      <!-- labels at quadrant edges -->
+      <g font-size="7" fill="#a0aabe" text-anchor="middle">
+        <text x="55" y="-75">pratyakṣa</text>
+        <text x="60" y="-65" font-size="6" fill="#5a6275">perception</text>
+        <text x="55" y="85">anumāna</text>
+        <text x="60" y="95" font-size="6" fill="#5a6275">inference</text>
+        <text x="-55" y="85">upamāna</text>
+        <text x="-60" y="95" font-size="6" fill="#5a6275">analogy</text>
+        <text x="-55" y="-75">śabda</text>
+        <text x="-60" y="-65" font-size="6" fill="#5a6275">testimony</text>
+      </g>
+      <!-- sample stars per quadrant -->
+      <g fill="#cdd5e0">
+        <circle cx="30" cy="-40" r="2.2" opacity="0.9"/>
+        <circle cx="50" cy="-25" r="2.2" opacity="0.85"/>
+        <circle cx="70" cy="-50" r="2" opacity="0.8"/>
+        <circle cx="35" cy="50" r="2.2" opacity="0.88"/>
+        <circle cx="55" cy="35" r="2.2" opacity="0.78"/>
+        <circle cx="75" cy="60" r="2" opacity="0.7"/>
+        <circle cx="-30" cy="50" r="2.2" opacity="0.82"/>
+        <circle cx="-55" cy="35" r="2" opacity="0.75"/>
+        <circle cx="-30" cy="-40" r="2.2" opacity="0.9"/>
+        <circle cx="-55" cy="-25" r="2.2" opacity="0.85"/>
+        <circle cx="-70" cy="-50" r="2" opacity="0.78"/>
+      </g>
+    </g>
+    <text x="140" y="265" fill="#7a8295" font-size="9" text-anchor="middle">quadrant = pramāṇa-kind · radial stays stratum</text>
+  </g>
+
+  <!-- 3. masādir (rewritten) -->
+  <g transform="translate(720, 100)">
+    <rect width="280" height="280" rx="6" fill="#0c1322" stroke="#3a4255"/>
+    <text x="140" y="22" fill="#cdd5e0" font-size="11" font-weight="600" text-anchor="middle">masādir</text>
+    <text x="140" y="38" fill="#5a6275" font-size="9" text-anchor="middle">Sunni uṣūl · categorical kinds</text>
+    <!-- 4 SECTORS as kinds, not concentric ladder -->
+    <g transform="translate(140, 165)">
+      <circle r="100" fill="none" stroke="#2a3245" stroke-width="0.5"/>
+      <!-- 4 sector dividers -->
+      <g stroke="#2a3245" stroke-width="0.6">
+        <line x1="0" y1="-100" x2="0" y2="100"/>
+        <line x1="-100" y1="0" x2="100" y2="0"/>
+      </g>
+      <g font-size="7" fill="#a0aabe" text-anchor="middle">
+        <text x="55" y="-72">Qur'an</text>
+        <text x="55" y="80">sunnah</text>
+        <text x="-55" y="80">ijmāʿ</text>
+        <text x="-55" y="-72">qiyās</text>
+      </g>
+      <!-- small mark indicating qaṭʿī vs ẓannī kind difference -->
+      <g font-size="6" fill="#5a6275" font-style="italic" text-anchor="middle">
+        <text x="55" y="-58">naṣṣ · qaṭʿī</text>
+        <text x="55" y="94">naṣṣ · ẓannī</text>
+        <text x="-55" y="94">ijtihādī</text>
+        <text x="-55" y="-58">ijtihādī</text>
+      </g>
+      <!-- stars per sector -->
+      <g fill="#cdd5e0">
+        <circle cx="40" cy="-50" r="2.2" opacity="0.9"/>
+        <circle cx="60" cy="-30" r="2.2" opacity="0.85"/>
+        <circle cx="40" cy="50" r="2.2" opacity="0.85"/>
+        <circle cx="60" cy="35" r="2.2" opacity="0.78"/>
+        <circle cx="-40" cy="50" r="2.2" opacity="0.82"/>
+        <circle cx="-60" cy="35" r="2" opacity="0.75"/>
+        <circle cx="-40" cy="-50" r="2.2" opacity="0.88"/>
+        <circle cx="-60" cy="-30" r="2.2" opacity="0.8"/>
+      </g>
+    </g>
+    <!-- extension chips -->
+    <g transform="translate(140, 250)" font-size="6.5" text-anchor="middle">
+      <g transform="translate(-90, 0)"><rect x="-22" y="-7" width="44" height="14" rx="7" fill="#1a1f2e" stroke="#3a4255"/><text y="3" fill="#7a8295">istiḥsān</text></g>
+      <g transform="translate(-30, 0)"><rect x="-22" y="-7" width="44" height="14" rx="7" fill="#1a1f2e" stroke="#3a4255"/><text y="3" fill="#7a8295">istiṣḥāb</text></g>
+      <g transform="translate(30, 0)"><rect x="-22" y="-7" width="44" height="14" rx="7" fill="#1a1f2e" stroke="#3a4255"/><text y="3" fill="#7a8295">maṣlaḥa</text></g>
+      <g transform="translate(80, 0)"><rect x="-18" y="-7" width="36" height="14" rx="7" fill="#1a1f2e" stroke="#3a4255"/><text y="3" fill="#7a8295">ʿurf</text></g>
+    </g>
+  </g>
+
+  <!-- 4. Polanyi (rewritten — fog inverted) -->
+  <g transform="translate(1040, 100)">
+    <rect width="280" height="280" rx="6" fill="#0c1322" stroke="#3a4255"/>
+    <text x="140" y="22" fill="#cdd5e0" font-size="11" font-weight="600" text-anchor="middle">Polanyi</text>
+    <text x="140" y="38" fill="#5a6275" font-size="9" text-anchor="middle">tacit/explicit · fog at center</text>
+    <defs>
+      <radialGradient id="polanyi-fog-v3" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#cdd5e0" stop-opacity="0.55"/>
+        <stop offset="50%" stop-color="#cdd5e0" stop-opacity="0.2"/>
+        <stop offset="100%" stop-color="#cdd5e0" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <g transform="translate(140, 165)">
+      <circle r="105" fill="none" stroke="#2a3245" stroke-width="0.5"/>
+      <!-- fog DENSER at center (inverted from v0.2) -->
+      <circle r="105" fill="url(#polanyi-fog-v3)"/>
+      <!-- center label -->
+      <text x="0" y="3" font-size="8" fill="#7a8295" text-anchor="middle" font-style="italic">tacit core</text>
+      <text x="0" y="-95" font-size="7" fill="#7a8295" text-anchor="middle">explicit · articulable</text>
+      <!-- stars: peripheral explicit ones visible, central tacit ones obscured -->
+      <g fill="#cdd5e0">
+        <!-- outer/explicit -->
+        <circle cx="0" cy="95" r="2.4" opacity="0.95"/>
+        <circle cx="60" cy="80" r="2.4" opacity="0.92"/>
+        <circle cx="-60" cy="80" r="2.4" opacity="0.9"/>
+        <circle cx="80" cy="-50" r="2.4" opacity="0.9"/>
+        <circle cx="-80" cy="-50" r="2.4" opacity="0.88"/>
+        <circle cx="40" cy="-90" r="2.2" opacity="0.85"/>
+        <circle cx="-40" cy="-90" r="2.2" opacity="0.85"/>
+        <!-- mid -->
+        <circle cx="0" cy="50" r="2" opacity="0.5"/>
+        <circle cx="40" cy="20" r="2" opacity="0.45"/>
+        <circle cx="-40" cy="20" r="2" opacity="0.45"/>
+        <!-- inner/tacit (almost invisible) -->
+        <circle cx="10" cy="10" r="1.6" opacity="0.18"/>
+        <circle cx="-15" cy="-15" r="1.6" opacity="0.16"/>
+        <circle cx="20" cy="-20" r="1.4" opacity="0.14"/>
+      </g>
+    </g>
+    <text x="140" y="265" fill="#7a8295" font-size="9" text-anchor="middle">fog dense at proximal pole</text>
+  </g>
+
+  <!-- bottom row: 3 new registers -->
+
+  <!-- 5. Dignāga two-pramāṇa -->
+  <g transform="translate(240, 420)">
+    <rect width="280" height="280" rx="6" fill="#0c1322" stroke="#3a4255"/>
+    <text x="140" y="22" fill="#cdd5e0" font-size="11" font-weight="600" text-anchor="middle">Dignāga</text>
+    <text x="140" y="38" fill="#5a6275" font-size="9" text-anchor="middle">Buddhist two-pramāṇa</text>
+    <g transform="translate(140, 165)">
+      <circle r="105" fill="none" stroke="#2a3245" stroke-width="0.5"/>
+      <!-- vertical split: left=pratyakṣa, right=anumāna; śabda and upamāna absent -->
+      <line x1="0" y1="-105" x2="0" y2="105" stroke="#2a3245" stroke-width="0.8"/>
+      <g font-size="7" fill="#a0aabe" text-anchor="middle">
+        <text x="-55" y="-85">pratyakṣa</text>
+        <text x="55" y="-85">anumāna</text>
+        <text x="-55" y="-72" font-size="6" fill="#5a6275">perception</text>
+        <text x="55" y="-72" font-size="6" fill="#5a6275">inference</text>
+      </g>
+      <!-- explicit "rejected" callouts -->
+      <g font-size="7" fill="#5a6275" font-style="italic" text-anchor="middle">
+        <text x="0" y="50">śabda · rejected</text>
+        <text x="0" y="65">upamāna · rejected</text>
+      </g>
+      <!-- stars (only two hemispheres populated) -->
+      <g fill="#cdd5e0">
+        <circle cx="-40" cy="-30" r="2.4" opacity="0.9"/>
+        <circle cx="-60" cy="-10" r="2.4" opacity="0.85"/>
+        <circle cx="-30" cy="10" r="2.4" opacity="0.8"/>
+        <circle cx="-80" cy="-40" r="2.2" opacity="0.75"/>
+        <circle cx="-50" cy="40" r="2.2" opacity="0.7"/>
+        <circle cx="40" cy="-30" r="2.4" opacity="0.88"/>
+        <circle cx="60" cy="-10" r="2.4" opacity="0.82"/>
+        <circle cx="30" cy="10" r="2.4" opacity="0.78"/>
+        <circle cx="80" cy="-40" r="2.2" opacity="0.72"/>
+        <circle cx="50" cy="40" r="2.2" opacity="0.68"/>
+      </g>
+    </g>
+    <text x="140" y="265" fill="#7a8295" font-size="9" text-anchor="middle">two valid sources · two absent by design</text>
+  </g>
+
+  <!-- 6. Suhrawardi Ishrāqī -->
+  <g transform="translate(560, 420)">
+    <rect width="280" height="280" rx="6" fill="#0c1322" stroke="#3a4255"/>
+    <text x="140" y="22" fill="#cdd5e0" font-size="11" font-weight="600" text-anchor="middle">Suhrawardi Ishrāqī</text>
+    <text x="140" y="38" fill="#5a6275" font-size="9" text-anchor="middle">ʿilm ḥuḍūrī · presence + emanation</text>
+    <defs>
+      <radialGradient id="ishraqi-glow" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#fde68a" stop-opacity="0.85"/>
+        <stop offset="40%" stop-color="#fbbf24" stop-opacity="0.45"/>
+        <stop offset="100%" stop-color="#fbbf24" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <g transform="translate(140, 165)">
+      <circle r="105" fill="none" stroke="#2a3245" stroke-width="0.5"/>
+      <!-- luminous central core -->
+      <circle r="60" fill="url(#ishraqi-glow)"/>
+      <circle r="6" fill="#fde68a"/>
+      <text x="0" y="-78" font-size="7" fill="#a0aabe" text-anchor="middle">acquired knowledge</text>
+      <text x="0" y="20" font-size="6" fill="#1a1f2e" text-anchor="middle" font-style="italic">ḥuḍūrī</text>
+      <!-- emanation rings -->
+      <g fill="none" stroke="#fbbf24" stroke-width="0.4" opacity="0.5" stroke-dasharray="2 4">
+        <circle r="40"/>
+        <circle r="75"/>
+        <circle r="100"/>
+      </g>
+      <!-- peripheral discursive stars -->
+      <g fill="#cdd5e0">
+        <circle cx="60" cy="-70" r="2.2" opacity="0.85"/>
+        <circle cx="-60" cy="-70" r="2.2" opacity="0.82"/>
+        <circle cx="80" cy="40" r="2.2" opacity="0.78"/>
+        <circle cx="-80" cy="40" r="2.2" opacity="0.78"/>
+        <circle cx="0" cy="85" r="2.2" opacity="0.88"/>
+        <circle cx="50" cy="-30" r="2" opacity="0.65"/>
+        <circle cx="-50" cy="-30" r="2" opacity="0.65"/>
+      </g>
+    </g>
+    <text x="140" y="265" fill="#7a8295" font-size="9" text-anchor="middle">presence at core · emanation outward</text>
+  </g>
+
+  <!-- 7. Mohist sān biǎo -->
+  <g transform="translate(880, 420)">
+    <rect width="280" height="280" rx="6" fill="#0c1322" stroke="#3a4255"/>
+    <text x="140" y="22" fill="#cdd5e0" font-size="11" font-weight="600" text-anchor="middle">Mohist sān biǎo 三表</text>
+    <text x="140" y="38" fill="#5a6275" font-size="9" text-anchor="middle">three standards · pragmatist</text>
+    <g transform="translate(140, 165)">
+      <circle r="105" fill="none" stroke="#2a3245" stroke-width="0.5"/>
+      <!-- three horizontal arcs/zones -->
+      <g fill="none" stroke="#2a3245" stroke-width="0.5">
+        <path d="M -100 -35 Q 0 -50 100 -35"/>
+        <path d="M -100 35 Q 0 50 100 35"/>
+      </g>
+      <!-- zone labels -->
+      <g font-size="7" fill="#a0aabe" text-anchor="middle">
+        <text x="0" y="-75">historical precedent</text>
+        <text x="0" y="-65" font-size="6" fill="#5a6275" font-style="italic">本 root</text>
+        <text x="0" y="5">observational evidence</text>
+        <text x="0" y="15" font-size="6" fill="#5a6275" font-style="italic">原 origin</text>
+        <text x="0" y="80">social benefit</text>
+        <text x="0" y="90" font-size="6" fill="#5a6275" font-style="italic">用 use</text>
+      </g>
+      <!-- stars per zone -->
+      <g fill="#cdd5e0">
+        <circle cx="-50" cy="-50" r="2.4" opacity="0.85"/>
+        <circle cx="0" cy="-60" r="2.4" opacity="0.88"/>
+        <circle cx="50" cy="-50" r="2.4" opacity="0.82"/>
+        <circle cx="-60" cy="-20" r="2.2" opacity="0.78"/>
+        <circle cx="-50" cy="20" r="2.4" opacity="0.88"/>
+        <circle cx="0" cy="30" r="2.4" opacity="0.85"/>
+        <circle cx="50" cy="20" r="2.4" opacity="0.82"/>
+        <circle cx="-50" cy="60" r="2.4" opacity="0.78"/>
+        <circle cx="0" cy="70" r="2.4" opacity="0.85"/>
+        <circle cx="50" cy="60" r="2.4" opacity="0.8"/>
+      </g>
+    </g>
+    <text x="140" y="265" fill="#7a8295" font-size="9" text-anchor="middle">three standards · time-orthogonal</text>
+  </g>
+
+  <!-- bottom note -->
+  <g transform="translate(700, 720)" font-size="9" fill="#5a6275" text-anchor="middle">
+    <text>switching a register affects the anchor dome only · mini-domes stay channel-isolated and culturally neutral</text>
+  </g>
+</svg>

@@ -1,0 +1,394 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 900" font-family="Inter, system-ui, sans-serif">
+  <!--
+    Sight redesign · v0.3 · Full Layout (Option D Locked)
+    ──────────────────────────────────────────────────────
+    Four zones: register chip (title), facet sidebar (left), anchor dome (center),
+    four mini-domes (right 2×2 grid).
+
+    Commits:
+      • Library = shape only with NEUTRAL FILL (#cdd5e0). No library hue.
+      • Mini-domes preserve stratum rings at 0.04 opacity.
+      • Mini-domes are clickable filters (Hearst Flamenco). Click highlighting shown.
+      • Register chip with 7 registers; Aristotelian active by default.
+      • Facet sidebar with live counts.
+      • Linked brushing: one note highlighted across all 5 views.
+  -->
+
+  <!-- background -->
+  <rect width="1400" height="900" fill="#080c16"/>
+
+  <!-- ===================== TITLE + REGISTER CHIP ===================== -->
+  <text x="40" y="38" fill="#e8ebf2" font-size="18" font-weight="500" letter-spacing="0.5">Constellation Sight</text>
+  <text x="40" y="58" fill="#5a6370" font-size="11">My Universe · 7,636 notes · 2,041 links · 5 libraries</text>
+
+  <!-- register chip row -->
+  <g transform="translate(610, 50)" font-size="10" text-anchor="middle">
+    <text x="0" y="-12" fill="#5a6275" font-size="9" letter-spacing="0.5">EPISTEMIC REGISTER</text>
+
+    <g transform="translate(-280, 0)"><rect x="-40" y="-12" width="80" height="24" rx="12" fill="#1a1f2e" stroke="#3a4255"/><text y="4" fill="#7a8295">pramāṇa</text></g>
+    <g transform="translate(-190, 0)"><rect x="-38" y="-12" width="76" height="24" rx="12" fill="#1a1f2e" stroke="#3a4255"/><text y="4" fill="#7a8295">masādir</text></g>
+    <g transform="translate(-100, 0)"><rect x="-38" y="-12" width="76" height="24" rx="12" fill="#1a1f2e" stroke="#3a4255"/><text y="4" fill="#7a8295">Polanyi</text></g>
+    <!-- active register: Aristotelian -->
+    <g transform="translate(0, 0)"><rect x="-50" y="-12" width="100" height="24" rx="12" fill="#1e2a45" stroke="#7dd3fc" stroke-width="1.4"/><text y="4" fill="#7dd3fc" font-weight="600">Aristotelian ●</text></g>
+    <g transform="translate(100, 0)"><rect x="-38" y="-12" width="76" height="24" rx="12" fill="#1a1f2e" stroke="#3a4255"/><text y="4" fill="#7a8295">Dignāga</text></g>
+    <g transform="translate(190, 0)"><rect x="-40" y="-12" width="80" height="24" rx="12" fill="#1a1f2e" stroke="#3a4255"/><text y="4" fill="#7a8295">Ishrāqī</text></g>
+    <g transform="translate(280, 0)"><rect x="-44" y="-12" width="88" height="24" rx="12" fill="#1a1f2e" stroke="#3a4255"/><text y="4" fill="#7a8295">Mohist sān biǎo</text></g>
+  </g>
+
+  <!-- universe state top-right -->
+  <g transform="translate(1370, 38)" font-size="10" fill="#5a6370" text-anchor="end">
+    <text fill="#a0aabe" font-weight="500">universe state</text>
+    <text y="14">healthy 64% · at-risk 28% · dormant 8%</text>
+  </g>
+
+  <!-- ===================== FACET SIDEBAR ===================== -->
+  <g transform="translate(30, 105)">
+    <rect width="180" height="700" fill="#0c1322" stroke="#1a1f2e" stroke-width="1" rx="4"/>
+
+    <text x="14" y="22" fill="#a0aabe" font-size="10" letter-spacing="0.5" font-weight="500">FACETS</text>
+
+    <!-- Folder -->
+    <g transform="translate(14, 42)">
+      <text fill="#cdd5e0" font-size="11" font-weight="500">▼ Folder</text>
+      <g font-size="10" fill="#7a8295">
+        <text y="20">Research</text><text x="154" y="20" text-anchor="end" fill="#a0aabe">1,247</text>
+        <text y="38">Projects</text><text x="154" y="38" text-anchor="end" fill="#a0aabe">892</text>
+        <text y="56">Reading-notes</text><text x="154" y="56" text-anchor="end" fill="#a0aabe">563</text>
+        <text y="74" fill="#5a6275" font-style="italic">+ 12 more</text>
+      </g>
+    </g>
+
+    <!-- Library -->
+    <g transform="translate(14, 144)">
+      <text fill="#cdd5e0" font-size="11" font-weight="500">▼ Library</text>
+      <g font-size="10" fill="#7a8295">
+        <circle cx="6" cy="18" r="4" fill="#cdd5e0"/><text x="18" y="22">Research</text><text x="154" y="22" text-anchor="end" fill="#a0aabe">3,124</text>
+        <rect x="2" y="34" width="8" height="8" fill="#cdd5e0"/><text x="18" y="42">Projects</text><text x="154" y="42" text-anchor="end" fill="#a0aabe">2,447</text>
+        <rect x="2" y="54" width="7" height="7" fill="#cdd5e0" transform="rotate(45 5.5 57.5)"/><text x="18" y="62">Personal</text><text x="154" y="62" text-anchor="end" fill="#a0aabe">1,205</text>
+        <polygon points="6,72 10,80 2,80" fill="#cdd5e0"/><text x="18" y="82">Reading</text><text x="154" y="82" text-anchor="end" fill="#a0aabe">560</text>
+        <polygon points="6,92 10,95 10,100 6,103 2,100 2,95" fill="#cdd5e0"/><text x="18" y="102">Reference</text><text x="154" y="102" text-anchor="end" fill="#a0aabe">300</text>
+      </g>
+    </g>
+
+    <!-- Stratum -->
+    <g transform="translate(14, 282)">
+      <text fill="#cdd5e0" font-size="11" font-weight="500">▼ Stratum</text>
+      <g font-size="10" fill="#7a8295">
+        <text y="20">Foundation</text><text x="154" y="20" text-anchor="end" fill="#a0aabe">1,856</text>
+        <text y="38">Working</text><text x="154" y="38" text-anchor="end" fill="#a0aabe">2,103</text>
+        <text y="56">Connection</text><text x="154" y="56" text-anchor="end" fill="#a0aabe">1,247</text>
+        <text y="74">Synthesis</text><text x="154" y="74" text-anchor="end" fill="#a0aabe">924</text>
+        <text y="92">Edge of Knowing</text><text x="154" y="92" text-anchor="end" fill="#a0aabe">506</text>
+      </g>
+    </g>
+
+    <!-- Confidence -->
+    <g transform="translate(14, 402)">
+      <text fill="#cdd5e0" font-size="11" font-weight="500">▼ Confidence</text>
+      <g font-size="10" fill="#7a8295">
+        <text y="20">hypothesis</text><text x="154" y="20" text-anchor="end" fill="#a0aabe">812</text>
+        <text y="38">evidence</text><text x="154" y="38" text-anchor="end" fill="#a0aabe">2,567</text>
+        <text y="56">established</text><text x="154" y="56" text-anchor="end" fill="#a0aabe">3,894</text>
+        <text y="74">contested</text><text x="154" y="74" text-anchor="end" fill="#a0aabe">363</text>
+      </g>
+    </g>
+
+    <!-- Stage -->
+    <g transform="translate(14, 502)">
+      <text fill="#cdd5e0" font-size="11" font-weight="500">▼ Stage</text>
+      <g font-size="10" fill="#7a8295">
+        <circle cx="6" cy="18" r="3" fill="#4ade80"/><text x="18" y="22">established</text><text x="154" y="22" text-anchor="end" fill="#a0aabe">3,141</text>
+        <circle cx="6" cy="36" r="3" fill="#22d3ee"/><text x="18" y="40">fresh</text><text x="154" y="40" text-anchor="end" fill="#a0aabe">1,247</text>
+        <circle cx="6" cy="54" r="3" fill="#a78bfa"/><text x="18" y="58">growing</text><text x="154" y="58" text-anchor="end" fill="#a0aabe">1,038</text>
+        <circle cx="6" cy="72" r="3" fill="#facc15"/><text x="18" y="76">at-risk</text><text x="154" y="76" text-anchor="end" fill="#a0aabe">1,254</text>
+        <circle cx="6" cy="90" r="3" fill="#94a3b8"/><text x="18" y="94">dormant</text><text x="154" y="94" text-anchor="end" fill="#a0aabe">956</text>
+      </g>
+    </g>
+
+    <!-- Provenance -->
+    <g transform="translate(14, 620)">
+      <text fill="#cdd5e0" font-size="11" font-weight="500">▼ Provenance</text>
+      <g font-size="10" fill="#7a8295">
+        <text y="20">Self</text><text x="154" y="20" text-anchor="end" fill="#a0aabe">1,247</text>
+        <text y="38">Read</text><text x="154" y="38" text-anchor="end" fill="#a0aabe">3,894</text>
+        <text y="56">Heard</text><text x="154" y="56" text-anchor="end" fill="#a0aabe">563</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ===================== ANCHOR DOME ===================== -->
+  <g transform="translate(0, 0)">
+    <text x="560" y="135" fill="#7dd3fc" font-size="11" text-anchor="middle" font-weight="500" letter-spacing="0.5">ANCHOR — stratum × time × library (Aristotelian register)</text>
+
+    <!-- strata circles -->
+    <g fill="none" stroke="#1a1f2e" stroke-width="0.6">
+      <circle cx="560" cy="490" r="56"/>
+      <circle cx="560" cy="490" r="112"/>
+      <circle cx="560" cy="490" r="168"/>
+      <circle cx="560" cy="490" r="224"/>
+      <circle cx="560" cy="490" r="280"/>
+    </g>
+
+    <!-- calendar rim -->
+    <g fill="#3e4453" font-size="9" text-anchor="middle">
+      <text x="560" y="200">JAN</text>
+      <text x="700" y="232">FEB</text>
+      <text x="815" y="320">MAR</text>
+      <text x="855" y="442">APR</text>
+      <text x="855" y="540">MAY</text>
+      <text x="815" y="660">JUN</text>
+      <text x="700" y="748">JUL</text>
+      <text x="560" y="780">AUG</text>
+      <text x="420" y="748">SEP</text>
+      <text x="305" y="660">OCT</text>
+      <text x="265" y="540">NOV</text>
+      <text x="265" y="442">DEC</text>
+    </g>
+
+    <!-- stratum labels -->
+    <g fill="#252b3a" font-size="9" font-style="italic" font-weight="300" text-anchor="middle">
+      <text x="560" y="445">FOUNDATION</text>
+      <text x="560" y="389">WORKING</text>
+      <text x="560" y="333">CONNECTION</text>
+      <text x="560" y="277">SYNTHESIS</text>
+      <text x="560" y="221">EDGE OF KNOWING</text>
+    </g>
+
+    <!-- constellation lines (link type via color) -->
+    <g fill="none" stroke-width="0.6" opacity="0.55">
+      <path d="M 555 450 Q 565 435 575 450" stroke="#4ade80"/>
+      <path d="M 540 460 L 555 450" stroke="#4ade80"/>
+      <path d="M 575 450 Q 585 460 580 475" stroke="#4ade80"/>
+      <path d="M 600 380 Q 640 360 680 390" stroke="#fb923c"/>
+      <path d="M 680 390 L 710 370" stroke="#fb923c"/>
+      <path d="M 500 330 Q 540 310 580 330" stroke="#60a5fa"/>
+      <path d="M 555 450 Q 660 320 760 260" stroke="#a78bfa" opacity="0.4"/>
+      <path d="M 730 510 L 760 500" stroke="#22d3ee"/>
+      <path d="M 760 500 Q 780 490 775 520" stroke="#22d3ee"/>
+      <path d="M 430 510 L 400 500" stroke="#f472b6"/>
+      <path d="M 500 390 L 540 400" stroke="#f87171" stroke-dasharray="2 2"/>
+    </g>
+
+    <!-- stars — SHAPE for library, NEUTRAL FILL (#cdd5e0). opacity = confidence, pip = stage, size+40% = top acts -->
+    <g>
+      <!-- foundation cluster -->
+      <g transform="translate(555, 450)" opacity="0.95"><circle r="5" fill="#cdd5e0"/><circle r="1.8" fill="#4ade80"/></g>
+      <g transform="translate(565, 445)" opacity="0.85"><circle r="5" fill="#cdd5e0"/><circle r="1.6" fill="#22d3ee"/></g>
+      <g transform="translate(575, 450)" opacity="0.9"><rect x="-5" y="-5" width="10" height="10" fill="#cdd5e0"/><circle r="1.8" fill="#4ade80"/></g>
+      <g transform="translate(540, 460)" opacity="0.75"><circle r="5" fill="#cdd5e0"/><circle r="1.5" fill="#facc15"/></g>
+      <g transform="translate(580, 475)" opacity="0.7"><rect x="-4.5" y="-4.5" width="9" height="9" fill="#cdd5e0" transform="rotate(45)"/><circle r="1.5" fill="#4ade80"/></g>
+
+      <!-- working -->
+      <g transform="translate(600, 380)" opacity="0.88"><rect x="-5" y="-5" width="10" height="10" fill="#cdd5e0"/><circle r="1.6" fill="#22d3ee"/></g>
+      <g transform="translate(640, 365)" opacity="0.8"><circle r="5" fill="#cdd5e0"/><circle r="1.6" fill="#a78bfa"/></g>
+      <!-- top-acts star (+40%, 7px) -->
+      <g transform="translate(680, 390)" opacity="0.9"><rect x="-7" y="-7" width="14" height="14" fill="#cdd5e0" transform="rotate(45)"/><circle r="2.4" fill="#4ade80"/></g>
+      <g transform="translate(710, 370)" opacity="0.65"><circle r="4.5" fill="#cdd5e0"/><circle r="1.4" fill="#facc15"/></g>
+
+      <!-- connection -->
+      <g transform="translate(500, 330)" opacity="0.78"><rect x="-5" y="-5" width="10" height="10" fill="#cdd5e0"/><circle r="1.6" fill="#22d3ee"/></g>
+      <g transform="translate(580, 330)" opacity="0.72"><circle r="5" fill="#cdd5e0"/><circle r="1.5" fill="#a78bfa"/></g>
+      <!-- HIGHLIGHTED star (linked brushing demo) -->
+      <g transform="translate(620, 310)" opacity="1">
+        <circle r="11" fill="none" stroke="#fbbf24" stroke-width="1.8"/>
+        <rect x="-7" y="-7" width="14" height="14" fill="#cdd5e0" transform="rotate(45)"/>
+        <circle r="2.4" fill="#22d3ee"/>
+      </g>
+
+      <!-- synthesis -->
+      <g transform="translate(530, 265)" opacity="0.6"><rect x="-4.5" y="-4.5" width="9" height="9" fill="#cdd5e0" transform="rotate(45)"/><circle r="1.4" fill="#facc15"/></g>
+      <g transform="translate(600, 260)" opacity="0.85"><circle r="5" fill="#cdd5e0"/><circle r="1.6" fill="#22d3ee"/></g>
+
+      <!-- edge of knowing -->
+      <g transform="translate(550, 215)" opacity="0.5"><rect x="-4.5" y="-4.5" width="9" height="9" fill="#cdd5e0"/><circle r="1.4" fill="#a78bfa"/></g>
+      <g transform="translate(585, 220)" opacity="0.4"><circle r="4" fill="#cdd5e0"/><circle r="1.2" fill="#94a3b8"/></g>
+
+      <!-- right cluster -->
+      <g transform="translate(730, 510)" opacity="0.85"><rect x="-7" y="-7" width="14" height="14" fill="#cdd5e0" transform="rotate(45)"/><circle r="2.4" fill="#4ade80"/></g>
+      <g transform="translate(760, 500)" opacity="0.78"><rect x="-4.5" y="-4.5" width="9" height="9" fill="#cdd5e0" transform="rotate(45)"/><circle r="1.5" fill="#22d3ee"/></g>
+      <g transform="translate(775, 520)" opacity="0.7"><circle r="4.5" fill="#cdd5e0"/><circle r="1.4" fill="#a78bfa"/></g>
+
+      <!-- left cluster -->
+      <g transform="translate(430, 510)" opacity="0.82"><rect x="-5" y="-5" width="10" height="10" fill="#cdd5e0"/><circle r="1.6" fill="#facc15"/></g>
+      <g transform="translate(400, 500)" opacity="0.75"><rect x="-4.5" y="-4.5" width="9" height="9" fill="#cdd5e0"/><circle r="1.4" fill="#22d3ee"/></g>
+
+      <!-- bottom -->
+      <g transform="translate(580, 720)" opacity="0.9"><circle r="5" fill="#cdd5e0"/><circle r="1.6" fill="#4ade80"/></g>
+      <g transform="translate(620, 705)" opacity="0.82"><rect x="-4.5" y="-4.5" width="9" height="9" fill="#cdd5e0" transform="rotate(45)"/><circle r="1.5" fill="#22d3ee"/></g>
+
+      <!-- diagnostic orphans -->
+      <g transform="translate(360, 290)" opacity="0.35"><rect x="-3.5" y="-3.5" width="7" height="7" fill="#cdd5e0" transform="rotate(45)"/><circle r="0.9" fill="#94a3b8"/></g>
+      <g transform="translate(820, 320)" opacity="0.3"><rect x="-3.5" y="-3.5" width="7" height="7" fill="#cdd5e0"/><circle r="0.9" fill="#94a3b8"/></g>
+    </g>
+  </g>
+
+  <!-- divider between anchor and minis -->
+  <line x1="890" y1="115" x2="890" y2="810" stroke="#1a1f2e" stroke-width="1"/>
+
+  <!-- ===================== 4 MINI-DOMES ===================== -->
+  <!-- helper: each mini has stratum bands preserved at 0.04 opacity -->
+
+  <!-- mini 1: CONFIDENCE (top-left) -->
+  <g transform="translate(910, 130)">
+    <text x="110" y="14" fill="#a0aabe" font-size="10" text-anchor="middle" font-weight="500" letter-spacing="0.5">CONFIDENCE — opacity</text>
+    <text x="110" y="28" fill="#5a6275" font-size="8" text-anchor="middle">click a band to cross-filter all views</text>
+    <!-- stratum bands preserved at low opacity -->
+    <g fill="none" stroke="#3a4255" stroke-width="0.4" opacity="0.5">
+      <circle cx="110" cy="135" r="20"/>
+      <circle cx="110" cy="135" r="40"/>
+      <circle cx="110" cy="135" r="60"/>
+      <circle cx="110" cy="135" r="80"/>
+      <circle cx="110" cy="135" r="100"/>
+    </g>
+    <!-- stars: uniform hue, opacity varies -->
+    <g fill="#cdd5e0">
+      <circle cx="108" cy="123" r="2.4" opacity="0.95"/>
+      <circle cx="114" cy="125" r="2.4" opacity="0.85"/>
+      <circle cx="120" cy="120" r="2.4" opacity="0.9"/>
+      <circle cx="100" cy="130" r="2.4" opacity="0.75"/>
+      <circle cx="125" cy="140" r="2.4" opacity="0.7"/>
+      <circle cx="145" cy="105" r="2.4" opacity="0.88"/>
+      <circle cx="160" cy="100" r="2.4" opacity="0.8"/>
+      <!-- HIGHLIGHTED -->
+      <circle cx="170" cy="110" r="3.6" opacity="1" stroke="#fbbf24" stroke-width="1.2"/>
+      <circle cx="70" cy="105" r="2.4" opacity="0.78"/>
+      <circle cx="85" cy="85" r="2.4" opacity="0.72"/>
+      <circle cx="105" cy="65" r="2.2" opacity="0.6"/>
+      <circle cx="130" cy="60" r="2.2" opacity="0.85"/>
+      <circle cx="115" cy="40" r="2" opacity="0.5"/>
+      <circle cx="180" cy="165" r="2.4" opacity="0.85"/>
+      <circle cx="190" cy="160" r="2.2" opacity="0.78"/>
+      <circle cx="45" cy="165" r="2.4" opacity="0.82"/>
+      <circle cx="30" cy="160" r="2.2" opacity="0.75"/>
+      <circle cx="105" cy="210" r="2.4" opacity="0.9"/>
+    </g>
+  </g>
+
+  <!-- mini 2: STAGE (top-right) -->
+  <g transform="translate(1150, 130)">
+    <text x="110" y="14" fill="#a0aabe" font-size="10" text-anchor="middle" font-weight="500" letter-spacing="0.5">STAGE — hue (full-disk)</text>
+    <text x="110" y="28" fill="#5a6275" font-size="8" text-anchor="middle">stage pops pre-attentively here</text>
+    <g fill="none" stroke="#3a4255" stroke-width="0.4" opacity="0.5">
+      <circle cx="110" cy="135" r="20"/>
+      <circle cx="110" cy="135" r="40"/>
+      <circle cx="110" cy="135" r="60"/>
+      <circle cx="110" cy="135" r="80"/>
+      <circle cx="110" cy="135" r="100"/>
+    </g>
+    <!-- full-disk hue (no pip; the full mark IS the stage color) -->
+    <g>
+      <circle cx="108" cy="123" r="2.8" fill="#4ade80"/>
+      <circle cx="114" cy="125" r="2.8" fill="#22d3ee"/>
+      <circle cx="120" cy="120" r="2.8" fill="#4ade80"/>
+      <circle cx="100" cy="130" r="2.8" fill="#facc15"/>
+      <circle cx="125" cy="140" r="2.8" fill="#4ade80"/>
+      <circle cx="145" cy="105" r="2.8" fill="#22d3ee"/>
+      <circle cx="160" cy="100" r="2.8" fill="#a78bfa"/>
+      <!-- HIGHLIGHTED — fresh (cyan) -->
+      <circle cx="170" cy="110" r="3.6" fill="#22d3ee" stroke="#fbbf24" stroke-width="1.2"/>
+      <circle cx="70" cy="105" r="2.8" fill="#22d3ee"/>
+      <circle cx="85" cy="85" r="2.8" fill="#a78bfa"/>
+      <circle cx="105" cy="65" r="2.6" fill="#facc15"/>
+      <circle cx="130" cy="60" r="2.6" fill="#22d3ee"/>
+      <circle cx="115" cy="40" r="2.4" fill="#94a3b8"/>
+      <circle cx="180" cy="165" r="2.8" fill="#4ade80"/>
+      <circle cx="190" cy="160" r="2.6" fill="#22d3ee"/>
+      <circle cx="45" cy="165" r="2.8" fill="#facc15"/>
+      <circle cx="30" cy="160" r="2.6" fill="#22d3ee"/>
+      <circle cx="105" cy="210" r="2.8" fill="#4ade80"/>
+    </g>
+  </g>
+
+  <!-- mini 3: ACTS (bottom-left) -->
+  <g transform="translate(910, 425)">
+    <text x="110" y="14" fill="#a0aabe" font-size="10" text-anchor="middle" font-weight="500" letter-spacing="0.5">ACTS — size (top decile)</text>
+    <text x="110" y="28" fill="#5a6275" font-size="8" text-anchor="middle">3 hotspots visible at one glance</text>
+    <g fill="none" stroke="#3a4255" stroke-width="0.4" opacity="0.5">
+      <circle cx="110" cy="135" r="20"/>
+      <circle cx="110" cy="135" r="40"/>
+      <circle cx="110" cy="135" r="60"/>
+      <circle cx="110" cy="135" r="80"/>
+      <circle cx="110" cy="135" r="100"/>
+    </g>
+    <!-- binary: small dots (1.5) and large top-acts (6) -->
+    <g fill="#cdd5e0">
+      <circle cx="108" cy="123" r="1.5"/>
+      <circle cx="114" cy="125" r="1.5"/>
+      <circle cx="120" cy="120" r="1.5"/>
+      <circle cx="100" cy="130" r="1.5"/>
+      <circle cx="125" cy="140" r="1.5"/>
+      <circle cx="145" cy="105" r="1.5"/>
+      <circle cx="160" cy="100" r="1.5"/>
+      <!-- top-decile + highlighted -->
+      <circle cx="170" cy="110" r="6" fill="#fbbf24" stroke="#fbbf24" stroke-width="1.2"/>
+      <circle cx="70" cy="105" r="1.5"/>
+      <circle cx="85" cy="85" r="1.5"/>
+      <circle cx="105" cy="65" r="1.5"/>
+      <!-- top-decile -->
+      <circle cx="130" cy="60" r="5.5"/>
+      <circle cx="115" cy="40" r="1.3"/>
+      <!-- top-decile -->
+      <circle cx="180" cy="165" r="5.5"/>
+      <circle cx="190" cy="160" r="1.3"/>
+      <circle cx="45" cy="165" r="1.5"/>
+      <circle cx="30" cy="160" r="1.3"/>
+      <circle cx="105" cy="210" r="1.5"/>
+    </g>
+  </g>
+
+  <!-- mini 4: PROVENANCE (bottom-right) -->
+  <g transform="translate(1150, 425)">
+    <text x="110" y="14" fill="#a0aabe" font-size="10" text-anchor="middle" font-weight="500" letter-spacing="0.5">PROVENANCE — 5 sectors</text>
+    <text x="110" y="28" fill="#5a6275" font-size="8" text-anchor="middle">click a sector to filter (e.g., "Read")</text>
+    <!-- stratum bands -->
+    <g fill="none" stroke="#3a4255" stroke-width="0.4" opacity="0.4">
+      <circle cx="110" cy="135" r="20"/>
+      <circle cx="110" cy="135" r="40"/>
+      <circle cx="110" cy="135" r="60"/>
+      <circle cx="110" cy="135" r="80"/>
+      <circle cx="110" cy="135" r="100"/>
+    </g>
+    <!-- 5 sector wedges at low opacity -->
+    <g opacity="0.18">
+      <path d="M 110 135 L 110 35 A 100 100 0 0 1 205 105 Z" fill="#7dd3fc"/>
+      <path d="M 110 135 L 205 105 A 100 100 0 0 1 205 165 Z" fill="#fda4af"/>
+      <path d="M 110 135 L 205 165 A 100 100 0 0 1 110 235 Z" fill="#fde68a"/>
+      <path d="M 110 135 L 110 235 A 100 100 0 0 1 15 165 Z" fill="#a78bfa"/>
+      <path d="M 110 135 L 15 165 A 100 100 0 0 1 110 35 Z" fill="#4ade80"/>
+    </g>
+    <!-- sector labels -->
+    <g font-size="8" fill="#a0aabe" text-anchor="middle">
+      <text x="150" y="60">Self</text>
+      <text x="185" y="135">Read</text>
+      <text x="150" y="215">Heard</text>
+      <text x="50" y="215">Reasoned</text>
+      <text x="50" y="60">Tradition</text>
+    </g>
+    <!-- stars per sector -->
+    <g fill="#cdd5e0">
+      <circle cx="148" cy="80" r="2.2"/>
+      <circle cx="156" cy="90" r="2.2"/>
+      <circle cx="180" cy="135" r="2.2"/>
+      <circle cx="190" cy="148" r="2.2"/>
+      <circle cx="145" cy="200" r="2.2"/>
+      <circle cx="65" cy="180" r="2.2"/>
+      <circle cx="75" cy="200" r="2.2"/>
+      <circle cx="85" cy="75" r="2.2"/>
+      <circle cx="105" cy="60" r="2.2"/>
+      <!-- HIGHLIGHTED in Read sector -->
+      <circle cx="180" cy="110" r="3.6" fill="#cdd5e0" stroke="#fbbf24" stroke-width="1.2"/>
+    </g>
+  </g>
+
+  <!-- linked-brushing legend -->
+  <g transform="translate(1150, 720)" font-size="9" fill="#fbbf24" text-anchor="middle">
+    <text x="110">★ highlighted star appears in all 5 views</text>
+  </g>
+
+  <!-- ===================== BOTTOM GESTURE STRIP ===================== -->
+  <line x1="30" y1="830" x2="1370" y2="830" stroke="#1a1f2e" stroke-width="1"/>
+  <g transform="translate(700, 858)" font-size="9" fill="#5a6275" text-anchor="middle">
+    <text>right-click stratum to isolate · click facet to filter · click mini-dome category to cross-filter all views · hover star for detail · Esc to reset · Cmd-F to search</text>
+  </g>
+</svg>
