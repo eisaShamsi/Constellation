@@ -1,14 +1,16 @@
 <!--
-  MIG-025 §A.6/§A.7/§A.8/§A.9 — Sight v6 main component.
+  MIG-025 §A.6/§A.7/§A.8/§A.9/§A.10 — Sight v6 main component.
 
-  §A.6 — placeholder mount
-  §A.7 — wired into +layout.svelte (B2 dual-mount)
-  §A.8 — chrome paints (5 strata + calendar rim + labels)
-  §A.9 — IPC integration: warm_cache → render_ready event → load
-         layout + links → compute positions → paint stars + lines.
-         Pointer events → hit-test → openNote callback.
+  §A.6  — placeholder mount
+  §A.7  — wired into +layout.svelte (B2 dual-mount)
+  §A.8  — chrome paints (5 strata + calendar rim + labels)
+  §A.9  — IPC integration: warm_cache → render_ready event → load
+          layout + links → compute positions → paint stars + lines.
+          Pointer events → hit-test → openNote callback.
+  §A.10 — facet sidebar (Hearst Flamenco, 6 facets, Folder TOP).
+          Filter state held in this component; facets.ts does the
+          filter logic + Hearst preview-count computation.
 
-  §A.10 lands the facet sidebar (cross-filter + Folder visibility).
   §A.11 lands the first-boot tour.
   §A.12 lands the v5→v6 settings migration.
   §A.13 lands the CI perf harness.
@@ -26,23 +28,40 @@
 		computeDomeLayout,
 		starHitTest,
 	} from './anchor';
-	import type { LayoutCacheRow, LinkEdge, StarDerived } from './types';
+	import {
+		emptyFilters,
+		applyFilters,
+		computeFacetCounts,
+		toggleFilter,
+		type FacetFilters,
+	} from './facets';
+	import FacetSidebar from './facetSidebar.svelte';
+	import type { LayoutCacheRow, LinkEdge, StarDerived, FacetId } from './types';
 
 	let { onOpenNote = (_path: string, _libraryName: string) => {} }: {
 		onOpenNote?: (path: string, libraryName: string) => void;
 	} = $props();
 
+	// ── Canvas state ───────────────────────────────────────────────
 	let canvasEl = $state<HTMLCanvasElement | null>(null);
 	let canvasHostEl = $state<HTMLDivElement | null>(null);
 	let canvasWidth = $state(0);
 	let canvasHeight = $state(0);
 	let dpr = $state(1);
 
-	// Data state — populated after backfillProgress.renderReady flips.
+	// ── Data state ─────────────────────────────────────────────────
 	let rows = $state<LayoutCacheRow[]>([]);
 	let links = $state<LinkEdge[]>([]);
 	let stars = $state<StarDerived[]>([]);
 	let hoveredPath = $state<string | null>(null);
+
+	// ── §A.10 facet state ──────────────────────────────────────────
+	let filters = $state<FacetFilters>(emptyFilters());
+	let sidebarExpanded = $state(false);
+
+	// Filtered row set + recomputed facet counts (Hearst preview).
+	const filteredRows = $derived(applyFilters(rows, filters));
+	const facets = $derived(computeFacetCounts(rows, filters));
 
 	let resizeObserver: ResizeObserver | null = null;
 
@@ -53,7 +72,14 @@
 		const ctx = canvasEl.getContext('2d');
 		if (!ctx) return;
 		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-		renderAnchorDome(ctx, stars, links, canvasWidth, canvasHeight, {
+		// Filter the visible link set to edges where BOTH endpoints
+		// survive the facet filter — keeps the dome readable when the
+		// user narrows the universe.
+		const visiblePaths = new Set(filteredRows.map((r) => r.notePath));
+		const visibleLinks = links.filter(
+			(l) => visiblePaths.has(l.sourcePath) && visiblePaths.has(l.targetPath),
+		);
+		renderAnchorDome(ctx, stars, visibleLinks, canvasWidth, canvasHeight, {
 			locale: navigator.language ?? 'en',
 			highlightedPath: hoveredPath,
 		});
@@ -72,12 +98,12 @@
 	}
 
 	function recomputeStars(): void {
-		if (rows.length === 0 || canvasWidth === 0 || canvasHeight === 0) {
+		if (filteredRows.length === 0 || canvasWidth === 0 || canvasHeight === 0) {
 			stars = [];
 			return;
 		}
 		const layout = computeDomeLayout(canvasWidth, canvasHeight);
-		stars = computeStarPositions(rows, layout.centerX, layout.centerY, layout.radius);
+		stars = computeStarPositions(filteredRows, layout.centerX, layout.centerY, layout.radius);
 	}
 
 	// ── Data load ─────────────────────────────────────────────────
@@ -86,8 +112,6 @@
 		try {
 			rows = await invoke<LayoutCacheRow[]>('sight_v6_get_layout');
 			recomputeStars();
-			// Fetch the link set for the visible notes. The IPC returns
-			// only edges where BOTH endpoints are in the visible set.
 			if (rows.length > 0) {
 				const paths = rows.map((r) => r.notePath);
 				links = await invoke<LinkEdge[]>('sight_v6_get_link_set_for_notes', { paths });
@@ -142,6 +166,16 @@
 		}
 	}
 
+	// ── §A.10 facet handlers ──────────────────────────────────────
+
+	function handleFacetToggle(facet: FacetId, categoryId: string): void {
+		filters = toggleFilter(filters, facet, categoryId);
+	}
+
+	function handleSidebarExpandToggle(): void {
+		sidebarExpanded = !sidebarExpanded;
+	}
+
 	// ── Lifecycle ─────────────────────────────────────────────────
 
 	onMount(async () => {
@@ -151,8 +185,6 @@
 			resizeObserver = new ResizeObserver(() => syncCanvasSize());
 			resizeObserver.observe(canvasHostEl);
 		}
-		// Kick off the backfill (idempotent: short-circuits if sentinel
-		// is already stamped from a prior session).
 		startWarmCache();
 	});
 
@@ -162,60 +194,87 @@
 		resizeObserver = null;
 	});
 
-	// React to backfill render-ready signal: load the layout once
-	// the first stratum tier is complete (per §A.4 progressive
-	// strategy + Concept Paper §9.3 render-readiness gate).
+	// React to backfill render-ready: load layout once tier 1 done.
 	$effect(() => {
 		if (backfillProgress.renderReady) {
 			untrack(() => loadLayoutAndLinks());
 		}
 	});
 
-	// Repaint on geometry change (handled in syncCanvasSize too,
-	// but $effect catches DPR / window resize that bypass the
-	// ResizeObserver path).
+	// Repaint on geometry change.
 	$effect(() => {
 		void canvasWidth;
 		void canvasHeight;
 		void dpr;
 		untrack(() => paint());
 	});
+
+	// §A.10 — repaint AND recompute star positions when the filtered
+	// row set changes (filter toggled or sidebar expand/collapse
+	// changes layout). Stars are positioned over filteredRows so
+	// the dome re-sizes the visible point cloud.
+	$effect(() => {
+		void filteredRows;
+		untrack(() => {
+			recomputeStars();
+			paint();
+		});
+	});
+
+	// Repaint on sidebar expand/collapse (changes canvas-host width).
+	// Use a microtask so the layout stabilizes before syncCanvasSize.
+	$effect(() => {
+		void sidebarExpanded;
+		queueMicrotask(() => {
+			untrack(() => syncCanvasSize());
+		});
+	});
 </script>
 
 <div class="sight-v6-root">
 	<div class="sight-v6-header">
 		<span class="sight-v6-title">Constellation Sight</span>
-		<span class="sight-v6-subtitle">v6.0 — anchor dome only (Phase 1)</span>
+		<span class="sight-v6-subtitle">v6.0 — anchor dome + facets (Phase 1)</span>
 	</div>
 
-	<div bind:this={canvasHostEl} class="sight-v6-canvas-host">
-		<canvas
-			bind:this={canvasEl}
-			class="sight-v6-canvas"
-			class:has-hover={hoveredPath !== null}
-			onpointermove={handlePointerMove}
-			onpointerleave={handlePointerLeave}
-			onclick={handleClick}
-		></canvas>
-		{#if !backfillProgress.renderReady}
-			<div class="sight-v6-loading">
-				{#if backfillProgress.progress}
-					Sight v6 cache: tier {backfillProgress.progress.tier}/5
-					({backfillProgress.progress.doneRows}/{backfillProgress.progress.totalRows})
-				{:else}
-					Preparing Sight v6 cache…
-				{/if}
-			</div>
-		{:else if !backfillProgress.done}
-			<div class="sight-v6-loading sight-v6-loading-bg">
-				Tier {backfillProgress.progress?.tier}/5 streaming…
-			</div>
-		{/if}
-		{#if hoveredPath}
-			<div class="sight-v6-hover-info">
-				{hoveredPath}
-			</div>
-		{/if}
+	<div class="sight-v6-body">
+		<FacetSidebar
+			{facets}
+			{filters}
+			expanded={sidebarExpanded}
+			onToggle={handleFacetToggle}
+			onExpandToggle={handleSidebarExpandToggle}
+		/>
+
+		<div bind:this={canvasHostEl} class="sight-v6-canvas-host">
+			<canvas
+				bind:this={canvasEl}
+				class="sight-v6-canvas"
+				class:has-hover={hoveredPath !== null}
+				onpointermove={handlePointerMove}
+				onpointerleave={handlePointerLeave}
+				onclick={handleClick}
+			></canvas>
+			{#if !backfillProgress.renderReady}
+				<div class="sight-v6-loading">
+					{#if backfillProgress.progress}
+						Sight v6 cache: tier {backfillProgress.progress.tier}/5
+						({backfillProgress.progress.doneRows}/{backfillProgress.progress.totalRows})
+					{:else}
+						Preparing Sight v6 cache…
+					{/if}
+				</div>
+			{:else if !backfillProgress.done}
+				<div class="sight-v6-loading sight-v6-loading-bg">
+					Tier {backfillProgress.progress?.tier}/5 streaming…
+				</div>
+			{/if}
+			{#if hoveredPath}
+				<div class="sight-v6-hover-info">
+					{hoveredPath}
+				</div>
+			{/if}
+		</div>
 	</div>
 </div>
 
@@ -251,10 +310,19 @@
 		color: #5a6275;
 	}
 
+	.sight-v6-body {
+		flex: 1 1 auto;
+		display: flex;
+		flex-direction: row;
+		min-height: 0;
+		overflow: hidden;
+	}
+
 	.sight-v6-canvas-host {
 		flex: 1 1 auto;
 		position: relative;
 		overflow: hidden;
+		min-width: 0;
 	}
 
 	.sight-v6-canvas {
