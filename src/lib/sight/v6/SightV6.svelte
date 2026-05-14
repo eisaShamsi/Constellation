@@ -17,8 +17,9 @@
   Concept Paper:    docs/Constellation-Sight-Concept-Paper-v4.0.md
 -->
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount, onDestroy, untrack } from 'svelte';
 	import { backfillProgress } from './backfillProgress.svelte';
+	import { renderAnchorDome } from './anchor';
 
 	// Signature mirrors SightV5 so +layout.svelte can pass the same
 	// (path, libraryName) → openNoteTab callback to either engine
@@ -28,21 +29,77 @@
 	} = $props();
 
 	let canvasEl = $state<HTMLCanvasElement | null>(null);
+	let canvasHostEl = $state<HTMLDivElement | null>(null);
+	let canvasWidth = $state(0);
+	let canvasHeight = $state(0);
+	let dpr = $state(1);
+
+	let resizeObserver: ResizeObserver | null = null;
+
+	function paint(): void {
+		if (!canvasEl) return;
+		const ctx = canvasEl.getContext('2d');
+		if (!ctx) return;
+		// CSS-pixel layout dimensions (logical units) — render math runs
+		// in CSS pixels; the DPR scaling happens in the canvas backing
+		// store via setTransform below.
+		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+		renderAnchorDome(
+			ctx,
+			[],          // §A.9 will pass real stars
+			[],          // §A.9 will pass real link edges
+			canvasWidth,
+			canvasHeight,
+			{ locale: navigator.language ?? 'en' },
+		);
+	}
+
+	function syncCanvasSize(): void {
+		if (!canvasEl || !canvasHostEl) return;
+		const rect = canvasHostEl.getBoundingClientRect();
+		canvasWidth = rect.width;
+		canvasHeight = rect.height;
+		dpr = Math.max(1, window.devicePixelRatio || 1);
+		// Set the canvas backing store to DPR-scaled physical pixels;
+		// CSS keeps it at logical CSS-pixel size via the .sight-v6-canvas
+		// {position:absolute, inset:0} block below.
+		canvasEl.width = Math.max(1, Math.floor(canvasWidth * dpr));
+		canvasEl.height = Math.max(1, Math.floor(canvasHeight * dpr));
+		paint();
+	}
 
 	onMount(async () => {
 		// §A.4 progressive backfill listener — start as soon as we mount.
 		// renderReady flips when tier 1 completes; the anchor dome (§A.8/9)
-		// will gate its first paint on this signal.
+		// will gate its first STAR paint on this signal. The CHROME
+		// (strata rings, calendar rim, labels) renders immediately so the
+		// user sees the dome instantly — no blank-screen-while-warming.
 		await backfillProgress.start();
+		syncCanvasSize();
+		if (canvasHostEl) {
+			resizeObserver = new ResizeObserver(() => syncCanvasSize());
+			resizeObserver.observe(canvasHostEl);
+		}
 	});
 
 	onDestroy(() => {
 		backfillProgress.stop();
+		resizeObserver?.disconnect();
+		resizeObserver = null;
 	});
 
-	// silence unused-variable lint for the placeholder; §A.9 will use these.
+	// Re-paint when geometry changes. The chrome is render-ready
+	// without backfill; star+line paints (§A.9) will gate on
+	// backfillProgress.renderReady.
 	$effect(() => {
-		void canvasEl;
+		void canvasWidth;
+		void canvasHeight;
+		void dpr;
+		untrack(() => paint());
+	});
+
+	// silence unused-prop lint; §A.9 wires onOpenNote to star clicks.
+	$effect(() => {
 		void onOpenNote;
 	});
 </script>
@@ -53,7 +110,7 @@
 		<span class="sight-v6-subtitle">v6.0 — under construction</span>
 	</div>
 
-	<div class="sight-v6-canvas-host">
+	<div bind:this={canvasHostEl} class="sight-v6-canvas-host">
 		<canvas bind:this={canvasEl} class="sight-v6-canvas"></canvas>
 		{#if !backfillProgress.renderReady}
 			<div class="sight-v6-loading">
