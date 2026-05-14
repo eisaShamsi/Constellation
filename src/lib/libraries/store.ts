@@ -3748,61 +3748,79 @@ export const LINK_TYPE_NAMES = [
 
 export const appSettings = writable<AppSettings>(DEFAULT_SETTINGS);
 
+/**
+ * §A.14 fix-5 (Boss-test #7) — single source of truth for parsed-
+ * settings hydration. Both `loadSettings()` (per-call path) AND the
+ * `+layout.svelte` boot-bundle handler call this so they cannot drift.
+ *
+ * Pre-fix: `loadSettings()` had a comprehensive merge with all nested
+ * defaults (sight, cece, panelPlacements, index, etc.) AND the §A.12
+ * v5→v6 migration block. The boot-bundle path at +layout.svelte:1880
+ * had its OWN inline merge that was missing four nested-key merges
+ * AND missing the migration entirely. Result: on every Boss user's
+ * machine, the v6 defaults never landed in-memory and the migration
+ * never ran. Surfaced 2026-05-14 by Eisa's screenshot showing only
+ * 4 sight keys persisted.
+ */
+export function applyParsedSettings(parsed: Record<string, unknown>): void {
+	if (!parsed || Object.keys(parsed).length === 0) return;
+
+	// Migrate: old default nodeSize was 4, new default is 1.5
+	const savedSkyView = (parsed.skyView as Record<string, unknown>) || {};
+	if (savedSkyView.nodeSize === 4) savedSkyView.nodeSize = 1.5;
+
+	appSettings.set({
+		...DEFAULT_SETTINGS,
+		...(parsed as Partial<AppSettings>),
+		skyView: { ...DEFAULT_SETTINGS.skyView, ...savedSkyView },
+		index: { ...DEFAULT_SETTINGS.index, ...((parsed.index as Record<string, unknown>) || {}) },
+		security: { ...DEFAULT_SETTINGS.security, ...((parsed.security as Record<string, unknown>) || {}) },
+		enabledFeatures: { ...DEFAULT_SETTINGS.enabledFeatures, ...((parsed.enabledFeatures as Record<string, boolean>) ?? (parsed.enabledPlugins as Record<string, boolean>) ?? {}) },
+		customShortcuts: { ...((parsed.customShortcuts as Record<string, string>) || {}) },
+		// Merge panel placements so existing users get new-panel defaults
+		// automatically when we add a new PanelId in a future release.
+		panelPlacements: { ...DEFAULT_SETTINGS.panelPlacements, ...((parsed.panelPlacements as Record<PanelId, PanelSlot>) || {}) },
+		// MIG-021v3 V3-§11 audit fix — preserve cece sub-keys across
+		// settings round-trip. Without this merge, a user who sets
+		// reasoningTrailVisibility but leaves backgroundScan implicit
+		// would get the saved object overwriting the default for
+		// any newly-added sub-keys in a future release.
+		cece: { ...DEFAULT_SETTINGS.cece, ...((parsed.cece as Record<string, unknown>) || {}) },
+		// MIG-024 §1 — same V3-§11 AT RISK pattern for sight: a
+		// user who sets projection but leaves lastMode implicit
+		// would otherwise get the saved object overwriting the
+		// new lastMode/lastScope defaults.
+		sight: { ...DEFAULT_SETTINGS.sight, ...((parsed.sight as Record<string, unknown>) || {}) },
+	});
+
+	// ── §A.12 — Sight v5 → v6 settings migration ────────────────
+	// One-shot, quiet (no user dialog). Stamps v6MigrationDone=true
+	// to prevent re-running. Per Architect Option G1 (locked):
+	//   - lastMode is dropped (v6 has no modes; the field has no
+	//     v6 equivalent). Removed from in-memory state; saveSettings
+	//     persists the deletion to disk on the next debounced write.
+	//   - lastScope is intentionally LEFT IN THE FILE as a dead key.
+	//     v6 ignores it; v5 still reads it correctly during the B2
+	//     dual-mount window (Phases 1-3). §D.6 (Phase 4) deletes
+	//     the field along with the v5 module set.
+	// Idempotent: if v6MigrationDone is already true (from a prior
+	// session), the block short-circuits.
+	const sightSnapshot = (parsed.sight as Record<string, unknown>) || {};
+	if (!sightSnapshot.v6MigrationDone) {
+		appSettings.update((s) => {
+			const nextSight = { ...s.sight, v6MigrationDone: true };
+			// Drop lastMode if present (no v6 equivalent).
+			delete (nextSight as Record<string, unknown>).lastMode;
+			return { ...s, sight: nextSight };
+		});
+		saveSettings();
+	}
+}
+
 export async function loadSettings() {
 	try {
 		const parsed = await invoke<Record<string, unknown>>('read_universe_settings');
-		if (parsed && Object.keys(parsed).length > 0) {
-			// Migrate: old default nodeSize was 4, new default is 1.5
-		const savedSkyView = (parsed.skyView as Record<string, unknown>) || {};
-		if (savedSkyView.nodeSize === 4) savedSkyView.nodeSize = 1.5;
-
-		appSettings.set({
-				...DEFAULT_SETTINGS,
-				...(parsed as Partial<AppSettings>),
-				skyView: { ...DEFAULT_SETTINGS.skyView, ...savedSkyView },
-				index: { ...DEFAULT_SETTINGS.index, ...((parsed.index as Record<string, unknown>) || {}) },
-				security: { ...DEFAULT_SETTINGS.security, ...((parsed.security as Record<string, unknown>) || {}) },
-				enabledFeatures: { ...DEFAULT_SETTINGS.enabledFeatures, ...((parsed.enabledFeatures as Record<string, boolean>) ?? (parsed.enabledPlugins as Record<string, boolean>) ?? {}) },
-				customShortcuts: { ...((parsed.customShortcuts as Record<string, string>) || {}) },
-				// Merge panel placements so existing users get new-panel defaults
-				// automatically when we add a new PanelId in a future release.
-				panelPlacements: { ...DEFAULT_SETTINGS.panelPlacements, ...((parsed.panelPlacements as Record<PanelId, PanelSlot>) || {}) },
-				// MIG-021v3 V3-§11 audit fix — preserve cece sub-keys across
-				// settings round-trip. Without this merge, a user who sets
-				// reasoningTrailVisibility but leaves backgroundScan implicit
-				// would get the saved object overwriting the default for
-				// any newly-added sub-keys in a future release.
-				cece: { ...DEFAULT_SETTINGS.cece, ...((parsed.cece as Record<string, unknown>) || {}) },
-				// MIG-024 §1 — same V3-§11 AT RISK pattern for sight: a
-				// user who sets projection but leaves lastMode implicit
-				// would otherwise get the saved object overwriting the
-				// new lastMode/lastScope defaults.
-				sight: { ...DEFAULT_SETTINGS.sight, ...((parsed.sight as Record<string, unknown>) || {}) },
-			});
-
-			// ── §A.12 — Sight v5 → v6 settings migration ────────────────
-			// One-shot, quiet (no user dialog). Stamps v6MigrationDone=true
-			// to prevent re-running. Per Architect Option G1 (locked):
-			//   - lastMode is dropped (v6 has no modes; the field has no
-			//     v6 equivalent). Removed from in-memory state; saveSettings
-			//     persists the deletion to disk on the next debounced write.
-			//   - lastScope is intentionally LEFT IN THE FILE as a dead key.
-			//     v6 ignores it; v5 still reads it correctly during the B2
-			//     dual-mount window (Phases 1-3). §D.6 (Phase 4) deletes
-			//     the field along with the v5 module set.
-			// Idempotent: if v6MigrationDone is already true (from a prior
-			// session), the block short-circuits.
-			const sightSnapshot = (parsed.sight as Record<string, unknown>) || {};
-			if (!sightSnapshot.v6MigrationDone) {
-				appSettings.update((s) => {
-					const nextSight = { ...s.sight, v6MigrationDone: true };
-					// Drop lastMode if present (no v6 equivalent).
-					delete (nextSight as Record<string, unknown>).lastMode;
-					return { ...s, sight: nextSight };
-				});
-				saveSettings();
-			}
-		}
+		applyParsedSettings(parsed);
 	} catch { /* ignore */ }
 }
 

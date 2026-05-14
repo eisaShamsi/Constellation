@@ -28,7 +28,7 @@
 		flushAllTabsInLibrary, markCascading, clearCascading, clearAllCascading,
 		tabsInLibrary, quickCapture,
 		loadBookmarks, addBookmark, removeBookmark, isBookmarked, bookmarks,
-		loadSettings, updateSettings, appSettings, DEFAULT_SETTINGS,
+		loadSettings, updateSettings, appSettings, DEFAULT_SETTINGS, applyParsedSettings,
 		loadWorkspaces, workspaces,
 		resolveWikilinkCrossLibrary,
 		buildDefaultFrontmatter,
@@ -1871,21 +1871,17 @@
 			// do in $lib/libraries/store.ts + propertyTypeRegistry.ts.
 			libraries.set(bundle.libraries);
 
-			// Settings — merge with DEFAULT_SETTINGS (same logic as loadSettings).
+			// Settings — single source of truth via applyParsedSettings
+			// (store.ts). Pre-§A.14-fix-5 this was an inline merge that
+			// drifted from loadSettings() — missed sight, cece,
+			// panelPlacements, index nested merges + the §A.12 migration.
+			// Result: v6 defaults never landed + migration never ran on
+			// real user settings (only loadSettings() hit them, but
+			// loadSettings() has zero callers — boot-bundle is the only
+			// load path). Eisa's 2026-05-14 Boss-test surfaced this.
 			try {
-				const parsed = bundle.settings as any;
-				if (parsed && Object.keys(parsed).length > 0) {
-					const savedSkyView = parsed.skyView || {};
-					if (savedSkyView.nodeSize === 4) savedSkyView.nodeSize = 1.5;
-					appSettings.set({
-						...DEFAULT_SETTINGS,
-						...parsed,
-						skyView: { ...DEFAULT_SETTINGS.skyView, ...savedSkyView },
-						security: { ...DEFAULT_SETTINGS.security, ...(parsed.security || {}) },
-						enabledFeatures: { ...DEFAULT_SETTINGS.enabledFeatures, ...(parsed.enabledFeatures ?? parsed.enabledPlugins ?? {}) },
-						customShortcuts: { ...(parsed.customShortcuts || {}) },
-					});
-				}
+				const parsed = (bundle.settings as Record<string, unknown>) || {};
+				applyParsedSettings(parsed);
 			} catch { /* settings schema mismatch — fall through with defaults */ }
 
 			// Bookmarks / Workspaces — arrays set directly.
