@@ -61,7 +61,15 @@
 	let panX = $state(0);
 	let panY = $state(0);
 	const ZOOM_MIN = 0.5;
-	const ZOOM_MAX = 8;
+	// 2026-05-14 §A.14 fix-16: ZOOM_MAX bumped 8 → 24 per Eisa's request
+	// "I want to zoom in further, closer to the nodes, 3 times as much."
+	// At 24× zoom, baseline node renders at 7.5 px screen radius (15 px
+	// diameter — well past the spec'd 5 px). Aliasing artifacts from
+	// sub-pixel rendering disappear; nodes render as crisp anti-aliased
+	// circles. ZOOM_MAX_FOR_SIZING in anchor.ts stays at 8 so the world-
+	// coord radius math (= 2.5 / 8 = 0.3125) is unchanged — bump only
+	// affects how far the user can wheel in.
+	const ZOOM_MAX = 24;
 	let dragState: { startSx: number; startSy: number; startPanX: number; startPanY: number; moved: boolean } | null = null;
 	const DRAG_THRESHOLD = 4; // px before pointermove counts as drag, not click
 
@@ -118,6 +126,7 @@
 		renderAnchorDome(ctx, stars, visibleLinks, canvasWidth, canvasHeight, {
 			locale: navigator.language ?? 'en',
 			highlightedPath: hoveredPath,
+			zoomScale: zoomScale,
 		});
 	}
 

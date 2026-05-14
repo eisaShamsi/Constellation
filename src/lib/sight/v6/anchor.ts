@@ -223,9 +223,19 @@ export function renderAnchorDome(
 	links: LinkEdge[],
 	width: number,
 	height: number,
-	options: { locale?: string; clear?: boolean; highlightedPath?: string | null } = {},
+	options: {
+		locale?: string;
+		clear?: boolean;
+		highlightedPath?: string | null;
+		zoomScale?: number;
+	} = {},
 ): void {
-	const { locale = 'en', clear = true, highlightedPath = null } = options;
+	const {
+		locale = 'en',
+		clear = true,
+		highlightedPath = null,
+		zoomScale = 1,
+	} = options;
 	const layout = computeDomeLayout(width, height);
 
 	// 2026-05-14 §A.14 fix-10 (Boss-test cycle 3 zoom regression):
@@ -288,7 +298,7 @@ export function renderAnchorDome(
 
 	// 6. Stars (top of stack)
 	if (stars.length > 0) {
-		drawStars(ctx, stars, highlightedPath);
+		drawStars(ctx, stars, highlightedPath, zoomScale);
 	}
 }
 
@@ -343,6 +353,7 @@ function drawStars(
 	ctx: CanvasRenderingContext2D,
 	stars: StarDerived[],
 	highlightedPath: string | null,
+	zoomScale: number = 1,
 ): void {
 	// PASS 1: all star bodies (additive blend via lower per-star alpha).
 	// 2026-05-14 §A.14 fix-15: all notes render as CIRCLES per Eisa's
@@ -382,10 +393,19 @@ function drawStars(
 		const star = stars.find((s) => s.row.notePath === highlightedPath);
 		if (star) {
 			const r = star.topDecileActs ? TOP_DECILE_RADIUS : BASE_STAR_RADIUS;
+			// 2026-05-14 §A.14 fix-16 (Boss-test cycle 3.6): ring screen
+			// padding stays constant 4 px regardless of zoom. Pre-fix the
+			// "+4" was world units, so at max zoom the ring became 32+ px
+			// world × zoom = absurd halo around a 5-px node. Now: ring
+			// world radius = node world radius + 4/zoomScale, yielding
+			// node_screen_radius + 4 px screen halo at any zoom.
+			// Linewidth 1.8 world also scales with zoom; divide by zoom
+			// to keep stroke at constant ~1.8 px screen.
+			const screenPadding = 4 / Math.max(zoomScale, 0.01);
 			ctx.strokeStyle = PALETTE.highlightedRing;
-			ctx.lineWidth = 1.8;
+			ctx.lineWidth = 1.8 / Math.max(zoomScale, 0.01);
 			ctx.beginPath();
-			ctx.arc(star.x, star.y, r + 4, 0, Math.PI * 2);
+			ctx.arc(star.x, star.y, r + screenPadding, 0, Math.PI * 2);
 			ctx.stroke();
 		}
 	}
