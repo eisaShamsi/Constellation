@@ -364,13 +364,34 @@ export function renderAnchorDome(
 //   ALL star bodies in pass 1; ALL pips in pass 2. So pips survive
 //   in dense clusters where bodies overlap (cycle-2 each star drew its
 //   pip then the next star's body covered it).
-const BASE_STAR_RADIUS = 2.2;       // was 3.5 — smaller for density tolerance
-const TOP_DECILE_RADIUS = 2.9;      // +32% delta — still pre-attentive
-const PIP_RADIUS = 1.8;             // pip stays foveal-on-foveation
-// Per-star body opacity multiplier. Combined with confidenceAlpha:
-// a hypothesis (0.45) star renders at 0.45 × 0.55 = 0.25 opacity;
-// established (1.0) at 0.55. Overlapping bodies accumulate.
-const BODY_OPACITY_MULT = 0.55;
+// 2026-05-14 §A.14 fix-13 (Boss-test cycle 3.3 redesign): Eisa's spec —
+//   node size at maximum zoom = 5 px diameter (= 2.5 px radius). The
+//   wheel-zoom transform scales world coords by zoomScale (max 8×), so
+//   the world-space radius must be 2.5 / 8 = 0.3125 px. This means:
+//     • Default zoom (1×): nodes at 0.625 px diameter — sub-pixel.
+//       Each node contributes ~30% pixel coverage; with additive
+//       blending (BODY_OPACITY_MULT × confidenceAlpha), dense areas
+//       saturate naturally and sparse outliers appear as faint specks.
+//       The default view becomes a true DENSITY CHART rather than a
+//       constellation of discrete blobs.
+//     • Mid zoom (~4×): nodes at 2.5 px diameter — visible specks.
+//       Spiral structure (per fix-12 phyllotaxis) starts to emerge.
+//     • Max zoom (8×): nodes at the spec'd 5 px diameter — clean,
+//       readable individuals. Library shape distinguishable; pip
+//       color legible; top-decile +32% size visibly bigger.
+//   Converts the pipeline from "constellation at all zooms" (which
+//   failed at 7,650-note density) into "density chart at default
+//   + individual stars at zoom" — semantic-zoom pattern Datashader,
+//   Tableau, Bokeh converge on, achieved without a separate
+//   aggregation pass.
+const ZOOM_MAX_FOR_SIZING = 8;                            // mirrors ZOOM_MAX in SightV6.svelte
+const BASE_STAR_RADIUS = 2.5 / ZOOM_MAX_FOR_SIZING;       // 0.3125 → 5 px diameter @ 8× zoom
+const TOP_DECILE_RADIUS = BASE_STAR_RADIUS * 1.32;        // ~0.41 → 6.6 px @ 8× (+32% delta)
+const PIP_RADIUS = BASE_STAR_RADIUS * 0.6;                // ~0.19 → 3 px @ 8× (60% of body)
+// Per-star body opacity multiplier. Bumped from 0.55 (cycle-2/3)
+// to 0.7 because smaller nodes need more per-node alpha to remain
+// visible in sparse areas at default zoom.
+const BODY_OPACITY_MULT = 0.7;
 
 function drawStars(
 	ctx: CanvasRenderingContext2D,
