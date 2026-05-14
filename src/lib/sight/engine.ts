@@ -81,8 +81,13 @@
 //   lab/reports/MIG-025-SIGHT-V6-ARCHITECT.md
 //   lab/reports/MIG-025-SIGHT-V6-PLAN.md
 //   lab/reports/SESSION-LOG-2026-05-14.md
-export const SIGHT_V2_ENABLED = false;
+// 2026-05-14 §B-preview Eisa request: side-by-side test of v2 vs v6.
+// v5 disabled, v2 re-enabled. v2 mount/dock-button wiring in
+// +layout.svelte:64 + 4421 + 4864 + 5142 still intact since MIG-017.
+// This is a TEST CONFIGURATION — not a permanent ship moment. Revert
+// to v5+v6 if A/B comparison concludes against v2.
+export const SIGHT_V2_ENABLED = true;
 export const SIGHT_V3_ENABLED = false;
 export const SIGHT_V4_ENABLED = false;
-export const SIGHT_V5_ENABLED = true;
+export const SIGHT_V5_ENABLED = false;
 export const SIGHT_V6_ENABLED = true;

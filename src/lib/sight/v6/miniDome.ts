@@ -90,13 +90,20 @@ export function renderMiniDome(
 	ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 	ctx.restore();
 
-	// Pass 1: stratum reference rings (0.04 opacity per Concept Paper §3.3).
-	// Thin gray strokes; serve as the radial-anchor metaphor's preserved
-	// frame. Without them, mini-dome stars float without context.
+	// Pass 1: stratum reference rings.
+	// 2026-05-14 §B-fix-2 (Eisa Boss-test §B-preview-2): "Should the
+	// mini-domes have their own inner circles ... If yes, then why
+	// isn't it visible?" — they were rendered at globalAlpha 0.04 per
+	// Concept Paper §3.3 spec, which made them effectively invisible
+	// against the dark background. Bumped to full opacity (PALETTE
+	// .strataRing #2a3245 is dark enough that 1.0 alpha still reads
+	// as "supporting actor", not as dominating chrome). Anchor uses
+	// the same color at 0.9-px stroke; minis use 0.5-px stroke (since
+	// minis are smaller, thinner stroke keeps the visual weight
+	// proportional).
 	ctx.save();
-	ctx.globalAlpha = 0.04;
 	ctx.strokeStyle = PALETTE.strataRing;
-	ctx.lineWidth = 0.6;
+	ctx.lineWidth = 0.5;
 	for (const r of stratumBandBoundaries(layout.radius)) {
 		ctx.beginPath();
 		ctx.arc(layout.centerX, layout.centerY, r, 0, Math.PI * 2);
@@ -181,6 +188,13 @@ function renderConfidenceChannel(
 	offsetX: number,
 	offsetY: number,
 ): void {
+	// 2026-05-14 §B-fix-3 (Eisa Boss-test §B-preview-2): "I want to
+	// have the mini-domes nodes at 3/2px in diameter." 1.5-px ⌀ =
+	// 0.75-px radius. Was 2.8-px radius (5.6-px ⌀). Smaller dots
+	// emphasize density-as-signal in the minis (matching the anchor's
+	// "tiny nodes for density at default + zoom for individuals" design
+	// philosophy from cycle-3.4). Acts mini keeps the binary contrast
+	// with proportionally-sized top-decile (4× ratio preserved).
 	ctx.fillStyle = PALETTE.starFill;
 	for (const star of stars) {
 		const opacity = star.row.confidenceAlpha ?? 0.45;
@@ -188,7 +202,7 @@ function renderConfidenceChannel(
 		const y = star.y * scale + offsetY;
 		ctx.globalAlpha = opacity;
 		ctx.beginPath();
-		ctx.arc(x, y, 2.8, 0, Math.PI * 2);
+		ctx.arc(x, y, 0.75, 0, Math.PI * 2);
 		ctx.fill();
 	}
 	ctx.globalAlpha = 1;
@@ -230,7 +244,8 @@ function renderStageChannel(
 		const stageColor = pipColorForStage(star.row.stage) ?? PALETTE.starFill;
 		ctx.fillStyle = stageColor;
 		ctx.beginPath();
-		ctx.arc(x, y, 2.8, 0, Math.PI * 2);
+		// §B-fix-3: 0.75 radius (1.5 px ⌀) per Eisa spec.
+		ctx.arc(x, y, 0.75, 0, Math.PI * 2);
 		ctx.fill();
 	}
 }
@@ -248,10 +263,13 @@ function renderActsChannel(
 	offsetX: number,
 	offsetY: number,
 ): void {
+	// §B-fix-3: baseline 0.75 radius (1.5 px ⌀) per Eisa spec; top-
+	// decile keeps the 4× ratio = 3 px radius (6 px ⌀) so hot-spots
+	// remain pre-attentively distinct.
 	ctx.fillStyle = PALETTE.starFill;
 	ctx.globalAlpha = 1;
 	for (const star of stars) {
-		const r = star.topDecileActs ? 6 : 1.5;
+		const r = star.topDecileActs ? 3 : 0.75;
 		const x = star.x * scale + offsetX;
 		const y = star.y * scale + offsetY;
 		ctx.beginPath();
@@ -319,12 +337,13 @@ function renderProvenanceChannel(
 	ctx.restore();
 
 	// Stars — re-positioned per provenance sector × stratum.
+	// §B-fix-3: 0.75 radius (1.5 px ⌀) per Eisa spec.
 	ctx.fillStyle = PALETTE.starFill;
 	ctx.globalAlpha = 1;
 	for (const star of stars) {
 		const pos = provenancePositionFor(star, layout);
 		ctx.beginPath();
-		ctx.arc(pos.x, pos.y, 2, 0, Math.PI * 2);
+		ctx.arc(pos.x, pos.y, 0.75, 0, Math.PI * 2);
 		ctx.fill();
 	}
 }
