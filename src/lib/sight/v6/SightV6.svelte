@@ -1,29 +1,33 @@
 <!--
-  MIG-025 §A.6 — Sight v6 main component (placeholder).
+  MIG-025 §A.6/§A.7/§A.8/§A.9 — Sight v6 main component.
 
-  This is the §A.6 skeleton mount: header strip + canvas div + a
-  visible "Sight v6 (under construction)" placeholder so the §A.7
-  +layout.svelte mount block has a concrete component to import.
+  §A.6 — placeholder mount
+  §A.7 — wired into +layout.svelte (B2 dual-mount)
+  §A.8 — chrome paints (5 strata + calendar rim + labels)
+  §A.9 — IPC integration: warm_cache → render_ready event → load
+         layout + links → compute positions → paint stars + lines.
+         Pointer events → hit-test → openNote callback.
 
-  §A.8 lands the anchor dome chrome (5 strata, calendar rim, labels).
-  §A.9 lands the anchor stars + lines (channel encoding).
-  §A.10 lands the facet sidebar.
-  §A.11 lands the first-boot tour overlay.
-  §B (Phase 2) lands the four mini-domes + cross-filter.
-  §C (Phase 3) lands the register chip + 4 production registers.
-  §D (Phase 4) lands the 3 v1-preview registers + tests + v5 deletion.
+  §A.10 lands the facet sidebar (cross-filter + Folder visibility).
+  §A.11 lands the first-boot tour.
+  §A.12 lands the v5→v6 settings migration.
+  §A.13 lands the CI perf harness.
 
   Visual contract: docs/sight-redesign-v0.3-full-layout.svg
   Concept Paper:    docs/Constellation-Sight-Concept-Paper-v4.0.md
 -->
 <script lang="ts">
 	import { onMount, onDestroy, untrack } from 'svelte';
+	import { invoke } from '@tauri-apps/api/core';
 	import { backfillProgress } from './backfillProgress.svelte';
-	import { renderAnchorDome } from './anchor';
+	import {
+		renderAnchorDome,
+		computeStarPositions,
+		computeDomeLayout,
+		starHitTest,
+	} from './anchor';
+	import type { LayoutCacheRow, LinkEdge, StarDerived } from './types';
 
-	// Signature mirrors SightV5 so +layout.svelte can pass the same
-	// (path, libraryName) → openNoteTab callback to either engine
-	// without per-engine adapter logic.
 	let { onOpenNote = (_path: string, _libraryName: string) => {} }: {
 		onOpenNote?: (path: string, libraryName: string) => void;
 	} = $props();
@@ -34,24 +38,25 @@
 	let canvasHeight = $state(0);
 	let dpr = $state(1);
 
+	// Data state — populated after backfillProgress.renderReady flips.
+	let rows = $state<LayoutCacheRow[]>([]);
+	let links = $state<LinkEdge[]>([]);
+	let stars = $state<StarDerived[]>([]);
+	let hoveredPath = $state<string | null>(null);
+
 	let resizeObserver: ResizeObserver | null = null;
+
+	// ── Render ────────────────────────────────────────────────────
 
 	function paint(): void {
 		if (!canvasEl) return;
 		const ctx = canvasEl.getContext('2d');
 		if (!ctx) return;
-		// CSS-pixel layout dimensions (logical units) — render math runs
-		// in CSS pixels; the DPR scaling happens in the canvas backing
-		// store via setTransform below.
 		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-		renderAnchorDome(
-			ctx,
-			[],          // §A.9 will pass real stars
-			[],          // §A.9 will pass real link edges
-			canvasWidth,
-			canvasHeight,
-			{ locale: navigator.language ?? 'en' },
-		);
+		renderAnchorDome(ctx, stars, links, canvasWidth, canvasHeight, {
+			locale: navigator.language ?? 'en',
+			highlightedPath: hoveredPath,
+		});
 	}
 
 	function syncCanvasSize(): void {
@@ -60,26 +65,95 @@
 		canvasWidth = rect.width;
 		canvasHeight = rect.height;
 		dpr = Math.max(1, window.devicePixelRatio || 1);
-		// Set the canvas backing store to DPR-scaled physical pixels;
-		// CSS keeps it at logical CSS-pixel size via the .sight-v6-canvas
-		// {position:absolute, inset:0} block below.
 		canvasEl.width = Math.max(1, Math.floor(canvasWidth * dpr));
 		canvasEl.height = Math.max(1, Math.floor(canvasHeight * dpr));
+		recomputeStars();
 		paint();
 	}
 
+	function recomputeStars(): void {
+		if (rows.length === 0 || canvasWidth === 0 || canvasHeight === 0) {
+			stars = [];
+			return;
+		}
+		const layout = computeDomeLayout(canvasWidth, canvasHeight);
+		stars = computeStarPositions(rows, layout.centerX, layout.centerY, layout.radius);
+	}
+
+	// ── Data load ─────────────────────────────────────────────────
+
+	async function loadLayoutAndLinks(): Promise<void> {
+		try {
+			rows = await invoke<LayoutCacheRow[]>('sight_v6_get_layout');
+			recomputeStars();
+			// Fetch the link set for the visible notes. The IPC returns
+			// only edges where BOTH endpoints are in the visible set.
+			if (rows.length > 0) {
+				const paths = rows.map((r) => r.notePath);
+				links = await invoke<LinkEdge[]>('sight_v6_get_link_set_for_notes', { paths });
+			}
+			paint();
+		} catch (err) {
+			console.error('[Sight v6] loadLayoutAndLinks failed:', err);
+		}
+	}
+
+	async function startWarmCache(): Promise<void> {
+		try {
+			await invoke<number>('sight_v6_warm_cache');
+		} catch (err) {
+			console.error('[Sight v6] warm_cache failed:', err);
+		}
+	}
+
+	// ── Pointer events ────────────────────────────────────────────
+
+	function pointerToCanvas(ev: { clientX: number; clientY: number }): { x: number; y: number } | null {
+		if (!canvasEl) return null;
+		const rect = canvasEl.getBoundingClientRect();
+		return { x: ev.clientX - rect.left, y: ev.clientY - rect.top };
+	}
+
+	function handlePointerMove(ev: PointerEvent): void {
+		const pt = pointerToCanvas(ev);
+		if (!pt) return;
+		const hit = starHitTest(stars, pt.x, pt.y);
+		if (hit !== hoveredPath) {
+			hoveredPath = hit;
+			paint();
+		}
+	}
+
+	function handlePointerLeave(): void {
+		if (hoveredPath !== null) {
+			hoveredPath = null;
+			paint();
+		}
+	}
+
+	function handleClick(ev: MouseEvent): void {
+		const pt = pointerToCanvas(ev);
+		if (!pt) return;
+		const hit = starHitTest(stars, pt.x, pt.y);
+		if (!hit) return;
+		const row = rows.find((r) => r.notePath === hit);
+		if (row && row.libraryName) {
+			onOpenNote(row.notePath, row.libraryName);
+		}
+	}
+
+	// ── Lifecycle ─────────────────────────────────────────────────
+
 	onMount(async () => {
-		// §A.4 progressive backfill listener — start as soon as we mount.
-		// renderReady flips when tier 1 completes; the anchor dome (§A.8/9)
-		// will gate its first STAR paint on this signal. The CHROME
-		// (strata rings, calendar rim, labels) renders immediately so the
-		// user sees the dome instantly — no blank-screen-while-warming.
 		await backfillProgress.start();
 		syncCanvasSize();
 		if (canvasHostEl) {
 			resizeObserver = new ResizeObserver(() => syncCanvasSize());
 			resizeObserver.observe(canvasHostEl);
 		}
+		// Kick off the backfill (idempotent: short-circuits if sentinel
+		// is already stamped from a prior session).
+		startWarmCache();
 	});
 
 	onDestroy(() => {
@@ -88,30 +162,41 @@
 		resizeObserver = null;
 	});
 
-	// Re-paint when geometry changes. The chrome is render-ready
-	// without backfill; star+line paints (§A.9) will gate on
-	// backfillProgress.renderReady.
+	// React to backfill render-ready signal: load the layout once
+	// the first stratum tier is complete (per §A.4 progressive
+	// strategy + Concept Paper §9.3 render-readiness gate).
+	$effect(() => {
+		if (backfillProgress.renderReady) {
+			untrack(() => loadLayoutAndLinks());
+		}
+	});
+
+	// Repaint on geometry change (handled in syncCanvasSize too,
+	// but $effect catches DPR / window resize that bypass the
+	// ResizeObserver path).
 	$effect(() => {
 		void canvasWidth;
 		void canvasHeight;
 		void dpr;
 		untrack(() => paint());
 	});
-
-	// silence unused-prop lint; §A.9 wires onOpenNote to star clicks.
-	$effect(() => {
-		void onOpenNote;
-	});
 </script>
 
 <div class="sight-v6-root">
 	<div class="sight-v6-header">
 		<span class="sight-v6-title">Constellation Sight</span>
-		<span class="sight-v6-subtitle">v6.0 — under construction</span>
+		<span class="sight-v6-subtitle">v6.0 — anchor dome only (Phase 1)</span>
 	</div>
 
 	<div bind:this={canvasHostEl} class="sight-v6-canvas-host">
-		<canvas bind:this={canvasEl} class="sight-v6-canvas"></canvas>
+		<canvas
+			bind:this={canvasEl}
+			class="sight-v6-canvas"
+			class:has-hover={hoveredPath !== null}
+			onpointermove={handlePointerMove}
+			onpointerleave={handlePointerLeave}
+			onclick={handleClick}
+		></canvas>
 		{#if !backfillProgress.renderReady}
 			<div class="sight-v6-loading">
 				{#if backfillProgress.progress}
@@ -124,6 +209,11 @@
 		{:else if !backfillProgress.done}
 			<div class="sight-v6-loading sight-v6-loading-bg">
 				Tier {backfillProgress.progress?.tier}/5 streaming…
+			</div>
+		{/if}
+		{#if hoveredPath}
+			<div class="sight-v6-hover-info">
+				{hoveredPath}
 			</div>
 		{/if}
 	</div>
@@ -173,6 +263,11 @@
 		width: 100%;
 		height: 100%;
 		display: block;
+		cursor: default;
+	}
+
+	.sight-v6-canvas.has-hover {
+		cursor: pointer;
 	}
 
 	.sight-v6-loading {
@@ -198,5 +293,22 @@
 		font-size: 10px;
 		color: #5a6275;
 		opacity: 0.7;
+	}
+
+	.sight-v6-hover-info {
+		position: absolute;
+		left: 16px;
+		bottom: 16px;
+		font-size: 11px;
+		color: #a0aabe;
+		padding: 4px 10px;
+		background: rgba(13, 19, 34, 0.92);
+		border: 1px solid #2a3245;
+		border-radius: 4px;
+		pointer-events: none;
+		max-width: 60%;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 </style>
