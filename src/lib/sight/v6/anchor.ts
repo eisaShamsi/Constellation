@@ -345,12 +345,21 @@ function drawStars(
 	highlightedPath: string | null,
 ): void {
 	// PASS 1: all star bodies (additive blend via lower per-star alpha).
+	// 2026-05-14 §A.14 fix-15: all notes render as CIRCLES per Eisa's
+	// spec ("I want all the notes to take a circular shape"). Library
+	// identity no longer encoded on the star body — at the new tiny
+	// node sizes (5 px ⌀ at max zoom), shape distinguishability was
+	// already weak. Library is still surfaced via hover tooltip + the
+	// facet sidebar (with shape glyphs as legend keys, not on stars).
+	// libraryShapeIndex stays in StarDerived for future surfaces.
 	ctx.fillStyle = PALETTE.starFill;
 	for (const star of stars) {
 		const r = star.topDecileActs ? TOP_DECILE_RADIUS : BASE_STAR_RADIUS;
 		const opacity = (star.row.confidenceAlpha ?? 0.45) * BODY_OPACITY_MULT;
 		ctx.globalAlpha = opacity;
-		drawShape(ctx, star.x, star.y, r, star.libraryShapeIndex);
+		ctx.beginPath();
+		ctx.arc(star.x, star.y, r, 0, Math.PI * 2);
+		ctx.fill();
 	}
 
 	// PASS 2: all pips on top of bodies (full opacity per Bertin
