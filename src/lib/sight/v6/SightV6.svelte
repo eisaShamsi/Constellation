@@ -20,8 +20,11 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { backfillProgress } from './backfillProgress.svelte';
 
-	let { onOpenNote = (_path: string) => {} }: {
-		onOpenNote?: (path: string) => void;
+	// Signature mirrors SightV5 so +layout.svelte can pass the same
+	// (path, libraryName) → openNoteTab callback to either engine
+	// without per-engine adapter logic.
+	let { onOpenNote = (_path: string, _libraryName: string) => {} }: {
+		onOpenNote?: (path: string, libraryName: string) => void;
 	} = $props();
 
 	let canvasEl = $state<HTMLCanvasElement | null>(null);

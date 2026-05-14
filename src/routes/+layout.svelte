@@ -65,7 +65,8 @@
 	import SightV3 from '$lib/sight/v3/SightV3.svelte';
 	import SightV4 from '$lib/sight/v4/SightV4.svelte';
 	import SightV5 from '$lib/sight/v5/SightV5.svelte';
-	import { SIGHT_V2_ENABLED, SIGHT_V3_ENABLED, SIGHT_V4_ENABLED, SIGHT_V5_ENABLED } from '$lib/sight/engine';
+	import SightV6 from '$lib/sight/v6/SightV6.svelte';
+	import { SIGHT_V2_ENABLED, SIGHT_V3_ENABLED, SIGHT_V4_ENABLED, SIGHT_V5_ENABLED, SIGHT_V6_ENABLED } from '$lib/sight/engine';
 	import { detectClusters, computeStructuralGaps, computeUniverseHealth, buildCommunityProfiles, stratumWeightedCentrality, suggestBridges, type StructuralGap, type UniverseHealth, type ClusterInfo, type CommunityProfile } from '$lib/graph/clusterEngine';
 	import OrgChart from '$lib/components/OrgChart.svelte';
 	import EmojiIconPicker from '$lib/components/EmojiIconPicker.svelte';
@@ -750,6 +751,10 @@
 	let sightV4Active = $state(false);
 	// MIG-024 §1 — Sight v5 mount state. Gated false until §6 v5 ship moment.
 	let sightV5Active = $state(false);
+	// MIG-025 §A.7 — Sight v6 mount state. Gated false until §A.14 ship gate
+	// clears (Phase 1 of MIG-025 / Concept Paper v4.0). Mutually exclusive
+	// with v5 per B2 dual-mount; one engine renders at a time.
+	let sightV6Active = $state(false);
 	let lensCentrality = $state<Map<string, number>>(new Map());
 	let lensCommunities = $state<ClusterInfo[]>([]);
 	let lensCommunityAssignments = $state<Map<string, number>>(new Map());
@@ -1044,7 +1049,7 @@
 	const isHome = $derived(page.url.pathname === '/');
 	const isDashboardVisible = $derived(isHome && !$activeTab && $libraries.length > 0 && $appSettings.showDashboard);
 	/** True when any full-page function is active — disables sidebars and split pane */
-	const fullPageActive = $derived(showSkyView || showGlobalTasks || showIndex || showExpressionForge || showSenseMakingCanvas || showConstellationMap || showOrgChart || showKnowledgeHealth || lensActive || sightV3Active || sightV4Active || sightV5Active || showSearchHub || showInspector360 || isDashboardVisible);
+	const fullPageActive = $derived(showSkyView || showGlobalTasks || showIndex || showExpressionForge || showSenseMakingCanvas || showConstellationMap || showOrgChart || showKnowledgeHealth || lensActive || sightV3Active || sightV4Active || sightV5Active || sightV6Active || showSearchHub || showInspector360 || isDashboardVisible);
 
 	// Shared disable/title logic for the three layout-bar buttons (left sidebar,
 	// split-view, right sidebar). Any overlay mode that takes over the editor
@@ -1703,7 +1708,7 @@
 			{ id: 'quick-capture', name: $t('commands.quickCapture'), shortcut: sc('quick-capture'), icon: '⚡', action: handleQuickCapture, category: 'File' },
 			{ id: 'new-base', name: $t('commands.newBase'), shortcut: sc('new-base'), icon: '▦', action: handleNewBase, category: 'File' },
 			{ id: 'quick-switch', name: $t('commands.quickSwitcher'), shortcut: sc('quick-switch'), icon: '🔍', action: () => { showCommandPalette = false; showQuickSwitcher = true; }, category: 'Navigation' },
-			{ id: 'search', name: $t('commands.searchLibrary'), shortcut: sc('search'), icon: '🔎', action: () => { showSearchHub = true; searchHubInitialQuery = ''; showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; showInspector360 = false; /* fullPageActive $effect handles sidebar snapshot */ }, category: 'Navigation' },
+			{ id: 'search', name: $t('commands.searchLibrary'), shortcut: sc('search'), icon: '🔎', action: () => { showSearchHub = true; searchHubInitialQuery = ''; showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; sightV6Active = false; showInspector360 = false; /* fullPageActive $effect handles sidebar snapshot */ }, category: 'Navigation' },
 			{ id: 'daily-note', name: $t('commands.dailyNote'), shortcut: sc('daily-note'), icon: '📅', action: handleOpenDailyNote, category: 'Daily Notes' },
 			{ id: 'toggle-edit', name: $t('commands.toggleEdit'), shortcut: sc('toggle-edit'), icon: '✏️', action: () => { const tab = get(focusedTab); if (tab) toggleEditMode(tab.id); }, category: 'Editor' },
 			{ id: 'star-view', name: $t('commands.skyView'), shortcut: sc('star-view'), icon: '🕸️', action: () => { showSkyView = !showSkyView; showConstellationMap = false; }, category: 'View' },
@@ -2938,6 +2943,7 @@
 			if (sightV3Active) { sightV3Active = false; return; }
 			if (sightV4Active) { sightV4Active = false; return; }
 			if (sightV5Active) { sightV5Active = false; return; }
+			if (sightV6Active) { sightV6Active = false; return; }
 			if (showOrgChart) { showOrgChart = false; return; }
 			if (sidebarMode === 'skyview') { sidebarMode = 'tree'; return; }
 			if (showGlobalTasks) { showGlobalTasks = false; return; }
@@ -3616,7 +3622,7 @@
 	function handleTagClick(tag: string) {
 		searchHubInitialQuery = `#${tag}`;
 		showSearchHub = true;
-		showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; showInspector360 = false;
+		showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; sightV6Active = false; showInspector360 = false;
 		/* fullPageActive $effect handles sidebar snapshot */
 	}
 
@@ -4355,7 +4361,7 @@
 				showSearchHub = !showSearchHub;
 				if (showSearchHub) {
 					searchHubInitialQuery = '';
-					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; showInspector360 = false;
+					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; sightV6Active = false; showInspector360 = false;
 				}
 				searchHubReturnPending = false;
 				/* fullPageActive $effect handles sidebar snapshot on entry/exit */
@@ -4451,7 +4457,7 @@
 			<button class="dock-btn" class:active={sightV4Active} onclick={() => {
 				if (!sightV4Active) {
 					sightV4Active = true;
-					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showInspector360 = false; lensActive = false; sightV3Active = false; sightV5Active = false; lensReturnPending = false;
+					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showInspector360 = false; lensActive = false; sightV3Active = false; sightV5Active = false; sightV6Active = false; lensReturnPending = false;
 				} else {
 					sightV4Active = false;
 				}
@@ -4466,11 +4472,28 @@
 			<button class="dock-btn" class:active={sightV5Active} onclick={() => {
 				if (!sightV5Active) {
 					sightV5Active = true;
-					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showInspector360 = false; lensActive = false; sightV3Active = false; sightV4Active = false; lensReturnPending = false;
+					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showInspector360 = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV6Active = false; lensReturnPending = false;
 				} else {
 					sightV5Active = false;
 				}
 			}} title={$t('sight.v5.title') || 'Constellation Sight v5'} aria-label="Constellation Sight v5">
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+			</button>
+			{/if}
+			<!-- MIG-025 §A.7 — Sight v6 dock button. Coordinated Views per
+			     Concept Paper v4.0. B2 dual-mount: appears alongside v5 only
+			     when SIGHT_V6_ENABLED is true (dev-flag gating per Architect
+			     Option B2). User-settings flag is `constellationSightV6`
+			     (fresh name; not the v3-era `constellationSightV3` quirk). -->
+			{#if SIGHT_V6_ENABLED && $appSettings.enabledFeatures?.constellationSightV6 !== false}
+			<button class="dock-btn" class:active={sightV6Active} onclick={() => {
+				if (!sightV6Active) {
+					sightV6Active = true;
+					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showInspector360 = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; lensReturnPending = false;
+				} else {
+					sightV6Active = false;
+				}
+			}} title={$t('sight.v6.title') || 'Constellation Sight'} aria-label="Constellation Sight v6">
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
 			</button>
 			{/if}
@@ -4849,7 +4872,7 @@
 				</button>
 			{/if}
 			{#if searchHubReturnPending}
-				<button class="index-return-btn" onclick={() => { showSearchHub = true; searchHubReturnPending = false; showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; showInspector360 = false; }}>
+				<button class="index-return-btn" onclick={() => { showSearchHub = true; searchHubReturnPending = false; showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; sightV6Active = false; showInspector360 = false; }}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
 					{$t('searchHub.title')}
 				</button>
@@ -5357,6 +5380,26 @@
 							const color = lib ? (libraryColorMap[libraryName] || '#7c3aed') : '#7c3aed';
 							openNoteTab(path, libraryName, color);
 							sightV5Active = false;
+						}}
+					/>
+				</div>
+			{:else if sightV6Active && SIGHT_V6_ENABLED}
+				<!-- MIG-025 §A.7 — Constellation Sight v6 mount block.
+				     Coordinated Views per Concept Paper v4.0: anchor dome +
+				     facet sidebar + 4 mini-domes + 7-register chip. §A.6
+				     ships the placeholder; §A.8/§A.9 land the anchor render;
+				     §A.10 lands the sidebar; §A.11 lands the tour. -->
+				<div class="star-fullscreen sight-v6-fullscreen">
+					<div class="star-header">
+						<span class="star-title">{$t('sight.v6.title') || 'Constellation Sight'}</span>
+						<button class="star-close" onclick={() => sightV6Active = false}>×</button>
+					</div>
+					<SightV6
+						onOpenNote={(path: string, libraryName: string) => {
+							const lib = $libraryStats.find(l => l.name === libraryName);
+							const color = lib ? (libraryColorMap[libraryName] || '#7c3aed') : '#7c3aed';
+							openNoteTab(path, libraryName, color);
+							sightV6Active = false;
 						}}
 					/>
 				</div>

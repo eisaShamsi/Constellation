@@ -3396,6 +3396,12 @@ export interface AppSettings {
 		// reuse). Independent toggle: a user can enable v3 without
 		// touching v2's vestigial flag.
 		constellationSightV3: boolean;
+		// MIG-025 §A.7: v6 user-settings flag. Fresh name (not the
+		// v3-era `constellationSightV3` quirk that v5 reused) per
+		// Eisa's locked decision 2026-05-14. v6 dock button + mount
+		// in `+layout.svelte` gate on `SIGHT_V6_ENABLED && $appSettings
+		// .enabledFeatures?.constellationSightV6 !== false`.
+		constellationSightV6: boolean;
 		emojiIconPicker: boolean;
 		inspector360: boolean;
 	};
@@ -3585,6 +3591,11 @@ export const DEFAULT_SETTINGS: AppSettings = {
 		// SIGHT_V3_ENABLED const short-circuits the gate regardless
 		// of this user setting, mirroring v2's MIG-017 disable pattern.
 		constellationSightV3: true,
+		// MIG-025 §A.7: v6 default-on once SIGHT_V6_ENABLED flips
+		// to true at the §A.14 ship gate (after Eisa's Boss-test of
+		// Sight v6.0 passes). Until then the SIGHT_V6_ENABLED const
+		// short-circuits the gate regardless of this user setting.
+		constellationSightV6: true,
 		emojiIconPicker: true,
 		inspector360: true,
 	},
