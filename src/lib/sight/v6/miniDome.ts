@@ -25,8 +25,9 @@
  * (§B.6) or cross-filter (§B.7) yet.
  */
 
-import type { StarDerived, MiniDomeChannel, LayoutCacheRow } from './types';
+import type { StarDerived, MiniDomeChannel, LayoutCacheRow, ProvenanceSector } from './types';
 import { PALETTE, stratumBandBoundaries } from './dome';
+import { pipColorForStage, type DomeLayout } from './anchor';
 
 export interface MiniDomeLayout {
 	centerX: number;
@@ -68,10 +69,18 @@ export function renderMiniDome(
 	channel: MiniDomeChannel,
 	width: number,
 	height: number,
+	anchorLayout: DomeLayout,
 	options: { highlightedPath?: string | null } = {},
 ): void {
 	const { highlightedPath = null } = options;
 	const layout = computeMiniDomeLayout(width, height);
+	// Coordinate transform: anchor world coords → mini canvas coords.
+	// Channel renderers consume StarDerived.x/y (anchor coords) and
+	// re-project per star via this scale + offset. Provenance channel
+	// (§B.5) ignores this scale and uses its own sector layout.
+	const scale = layout.radius / anchorLayout.radius;
+	const offsetX = layout.centerX - anchorLayout.centerX * scale;
+	const offsetY = layout.centerY - anchorLayout.centerY * scale;
 
 	// Pass 0: clear + background (identity transform safe).
 	ctx.save();
@@ -111,13 +120,13 @@ export function renderMiniDome(
 	// positions so linked brushing in §B.6 matches up trivially.
 	switch (channel) {
 		case 'confidence':
-			renderConfidenceChannel(ctx, stars, layout);
+			renderConfidenceChannel(ctx, stars, scale, offsetX, offsetY);
 			break;
 		case 'stage':
-			renderStageChannel(ctx, stars, layout);
+			renderStageChannel(ctx, stars, scale, offsetX, offsetY);
 			break;
 		case 'acts':
-			renderActsChannel(ctx, stars, layout);
+			renderActsChannel(ctx, stars, scale, offsetX, offsetY);
 			break;
 		case 'provenance':
 			renderProvenanceChannel(ctx, stars, layout);
@@ -126,15 +135,26 @@ export function renderMiniDome(
 
 	// Pass 4: highlighted-brushing ring (§B.6 implementation).
 	// Skeleton: matches anchor.ts pattern; renders gold ring around
-	// the matching star if any.
+	// the matching star if any. Uses anchor→mini scale for non-
+	// provenance channels; provenance gets its own coords (§B.5).
 	if (highlightedPath !== null) {
 		const star = stars.find((s) => s.row.notePath === highlightedPath);
 		if (star) {
+			let hx: number;
+			let hy: number;
+			if (channel === 'provenance') {
+				const p = provenancePositionFor(star, computeMiniDomeLayout(width, height));
+				hx = p.x;
+				hy = p.y;
+			} else {
+				hx = star.x * scale + offsetX;
+				hy = star.y * scale + offsetY;
+			}
 			ctx.save();
 			ctx.strokeStyle = PALETTE.highlightedRing;
 			ctx.lineWidth = 1.4;
 			ctx.beginPath();
-			ctx.arc(star.x, star.y, 6, 0, Math.PI * 2);
+			ctx.arc(hx, hy, 6, 0, Math.PI * 2);
 			ctx.stroke();
 			ctx.restore();
 		}
@@ -145,42 +165,201 @@ export function renderMiniDome(
 // Channel-specific renderers (§B.2–§B.5 stubs)
 // ════════════════════════════════════════════════════════════════════
 
-/** §B.2: opacity-only rendering — uniform 2.8 px discs, alpha = confidenceAlpha. */
+/** §B.2: opacity-only rendering — uniform 2.8 px discs, alpha =
+ *  confidenceAlpha. Per Concept Paper §2.3: this mini-dome ISOLATES
+ *  the confidence channel — no pip, no shape variation, no top-decile
+ *  size delta. The visible signal is purely opacity gradient.
+ *
+ *  Star fill is neutral (PALETTE.starFill); the alpha multiplier
+ *  is the channel. Hypothesis stars (alpha 0.45) appear faint;
+ *  established stars (alpha 1.0) appear crisp. Pre-attentive opacity
+ *  per Mackinlay encoding-effectiveness ranking. */
 function renderConfidenceChannel(
-	_ctx: CanvasRenderingContext2D,
-	_stars: StarDerived[],
-	_layout: MiniDomeLayout,
+	ctx: CanvasRenderingContext2D,
+	stars: StarDerived[],
+	scale: number,
+	offsetX: number,
+	offsetY: number,
 ): void {
-	// §B.2 implementation pending.
+	ctx.fillStyle = PALETTE.starFill;
+	for (const star of stars) {
+		const opacity = star.row.confidenceAlpha ?? 0.45;
+		const x = star.x * scale + offsetX;
+		const y = star.y * scale + offsetY;
+		ctx.globalAlpha = opacity;
+		ctx.beginPath();
+		ctx.arc(x, y, 2.8, 0, Math.PI * 2);
+		ctx.fill();
+	}
+	ctx.globalAlpha = 1;
 }
 
-/** §B.3: full-disk hue per stage (no pip). 5 categorical colors. */
+/** §B.3: full-disk hue per stage (no pip). 5 categorical colors per
+ *  Concept Paper §3.4 stage palette:
+ *    established → green   #4ade80
+ *    fresh       → cyan    #22d3ee
+ *    growing     → violet  #a78bfa
+ *    at-risk     → yellow  #facc15
+ *    dormant     → gray    #94a3b8
+ *
+ *  Per Concept Paper §2.3: this mini-dome ISOLATES stage. Full-disk
+ *  hue (the entire mark IS the stage color) is pre-attentive — Stage
+ *  pops here in a way it never does on the anchor (where it's a tiny
+ *  ~3 px pip at max zoom). 2.8 px discs match the confidence channel's
+ *  baseline size for visual consistency across minis. */
 function renderStageChannel(
-	_ctx: CanvasRenderingContext2D,
-	_stars: StarDerived[],
-	_layout: MiniDomeLayout,
+	ctx: CanvasRenderingContext2D,
+	stars: StarDerived[],
+	scale: number,
+	offsetX: number,
+	offsetY: number,
 ): void {
-	// §B.3 implementation pending.
+	ctx.globalAlpha = 1;
+	for (const star of stars) {
+		const stageColor = pipColorForStage(star.row.stage);
+		if (!stageColor) continue;
+		const x = star.x * scale + offsetX;
+		const y = star.y * scale + offsetY;
+		ctx.fillStyle = stageColor;
+		ctx.beginPath();
+		ctx.arc(x, y, 2.8, 0, Math.PI * 2);
+		ctx.fill();
+	}
 }
 
-/** §B.4: binary size — top-decile = 6 px filled disc; rest = 1.5 px dot. */
+/** §B.4: binary size — top-decile = 6 px filled disc; rest = 1.5 px
+ *  dot. Per Concept Paper §2.3: this mini-dome ISOLATES the acts
+ *  channel — top-decile-acts notes (computed by anchor's
+ *  computeStarPositions as `topDecileActs: boolean`) become visible
+ *  hot-spots; the rest fade to background. Pre-attentive size delta
+ *  per Treisman primitive (>30% threshold honored: 6/1.5 = 4× ratio). */
 function renderActsChannel(
-	_ctx: CanvasRenderingContext2D,
-	_stars: StarDerived[],
-	_layout: MiniDomeLayout,
+	ctx: CanvasRenderingContext2D,
+	stars: StarDerived[],
+	scale: number,
+	offsetX: number,
+	offsetY: number,
 ): void {
-	// §B.4 implementation pending.
+	ctx.fillStyle = PALETTE.starFill;
+	ctx.globalAlpha = 1;
+	for (const star of stars) {
+		const r = star.topDecileActs ? 6 : 1.5;
+		const x = star.x * scale + offsetX;
+		const y = star.y * scale + offsetY;
+		ctx.beginPath();
+		ctx.arc(x, y, r, 0, Math.PI * 2);
+		ctx.fill();
+	}
 }
 
 /** §B.5: 5 angular sectors (Self/Read/Heard/Reasoned/Tradition).
- *  Re-positions stars from anchor positions to provenance-sector
- *  layout (different geometry than other minis). */
+ *  Per Concept Paper §2.3: this mini-dome ISOLATES provenance via
+ *  RE-POSITIONING — angular sector = source bucket; radial = stratum
+ *  (preserved from anchor). Sector dividers visible at 0.2 opacity.
+ *  Sector labels at outer rim.
+ *
+ *  This is the only mini-dome with its own positioning math (other
+ *  three reuse anchor's stratum × time layout). Linked-brushing
+ *  position lookup (§B.6) uses provenancePositionFor() helper. */
+const PROVENANCE_SECTORS: ProvenanceSector[] = [
+	'Self',
+	'Read',
+	'Heard',
+	'Reasoned',
+	'Tradition',
+];
+
 function renderProvenanceChannel(
-	_ctx: CanvasRenderingContext2D,
-	_stars: StarDerived[],
-	_layout: MiniDomeLayout,
+	ctx: CanvasRenderingContext2D,
+	stars: StarDerived[],
+	layout: MiniDomeLayout,
 ): void {
-	// §B.5 implementation pending.
+	const sectorCount = PROVENANCE_SECTORS.length;
+	const sectorAngle = (Math.PI * 2) / sectorCount;
+	// Top of dome = -π/2 (canvas math); first sector starts there.
+
+	// Sector dividers — 5 lines from center to outer radius.
+	ctx.save();
+	ctx.globalAlpha = 0.2;
+	ctx.strokeStyle = PALETTE.strataRing;
+	ctx.lineWidth = 0.6;
+	for (let i = 0; i < sectorCount; i++) {
+		const angle = -Math.PI / 2 + i * sectorAngle;
+		ctx.beginPath();
+		ctx.moveTo(layout.centerX, layout.centerY);
+		ctx.lineTo(
+			layout.centerX + Math.cos(angle) * layout.radius,
+			layout.centerY + Math.sin(angle) * layout.radius,
+		);
+		ctx.stroke();
+	}
+	ctx.restore();
+
+	// Sector labels at outer rim.
+	ctx.save();
+	ctx.fillStyle = PALETTE.subtitleText;
+	ctx.font = '8px Inter, system-ui, sans-serif';
+	ctx.textAlign = 'center';
+	ctx.textBaseline = 'middle';
+	const labelRadius = layout.radius - 6;
+	for (let i = 0; i < sectorCount; i++) {
+		const angle = -Math.PI / 2 + i * sectorAngle + sectorAngle / 2;
+		const lx = layout.centerX + Math.cos(angle) * labelRadius;
+		const ly = layout.centerY + Math.sin(angle) * labelRadius;
+		ctx.fillText(PROVENANCE_SECTORS[i], lx, ly);
+	}
+	ctx.restore();
+
+	// Stars — re-positioned per provenance sector × stratum.
+	ctx.fillStyle = PALETTE.starFill;
+	ctx.globalAlpha = 1;
+	for (const star of stars) {
+		const pos = provenancePositionFor(star, layout);
+		ctx.beginPath();
+		ctx.arc(pos.x, pos.y, 2, 0, Math.PI * 2);
+		ctx.fill();
+	}
+}
+
+/** Compute provenance-mini-dome position for a star. Used by render
+ *  + by linked-brushing ring-placement lookup. Deterministic per
+ *  notePath via FNV-1a hash for intra-sector jitter. */
+function provenancePositionFor(
+	star: StarDerived,
+	layout: MiniDomeLayout,
+): { x: number; y: number } {
+	const sector = star.provenanceSector ?? 'Self';
+	const sectorIdx = PROVENANCE_SECTORS.indexOf(sector);
+	const sectorAngle = (Math.PI * 2) / PROVENANCE_SECTORS.length;
+	// Sector center angle (canvas math: -π/2 = top, clockwise).
+	const sectorCenterAngle =
+		-Math.PI / 2 + sectorIdx * sectorAngle + sectorAngle / 2;
+	// Deterministic hash → jitter within sector.
+	const [jitterRadial, jitterAngular] = pathHash2(star.row.notePath);
+	// Radial: place between 0.15 × radius and 0.85 × radius (avoid
+	// center crowding + give label space at rim). Stratum NOT preserved
+	// here — the provenance mini visualizes by source primarily.
+	const radial = layout.radius * (0.15 + jitterRadial * 0.7);
+	// Angular: ±0.4 × sector half-arc (most of the wedge).
+	const angularJitter = (jitterAngular - 0.5) * sectorAngle * 0.8;
+	const angle = sectorCenterAngle + angularJitter;
+	return {
+		x: layout.centerX + Math.cos(angle) * radial,
+		y: layout.centerY + Math.sin(angle) * radial,
+	};
+}
+
+/** Local FNV-1a hash → two normalized [0,1) values. Internal helper
+ *  for §B.5 provenance jitter; mirrors the now-restored pathHashJitter
+ *  in anchor.ts but kept here to avoid an import cycle. */
+function pathHash2(path: string): [number, number] {
+	let h = 0x811c9dc5;
+	for (let i = 0; i < path.length; i++) {
+		h ^= path.charCodeAt(i);
+		h = Math.imul(h, 0x01000193);
+	}
+	const u32 = h >>> 0;
+	return [(u32 & 0xffff) / 0xffff, ((u32 >>> 16) & 0xffff) / 0xffff];
 }
 
 // ════════════════════════════════════════════════════════════════════

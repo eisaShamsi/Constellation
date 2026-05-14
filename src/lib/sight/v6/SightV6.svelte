@@ -29,6 +29,7 @@
 		computeStarPositions,
 		computeDomeLayout,
 		starHitTest,
+		type DomeLayout,
 	} from './anchor';
 	import {
 		emptyFilters,
@@ -96,6 +97,12 @@
 	// and override the default-hidden initial state.
 	let diagnosticsVisible = $state(false);
 	const MINI_DOME_CHANNELS: MiniDomeChannel[] = ['confidence', 'stage', 'acts', 'provenance'];
+
+	// Anchor layout snapshot for mini-domes — they need it to scale
+	// star positions from anchor world coords to mini canvas coords.
+	const anchorLayout: DomeLayout = $derived(
+		computeDomeLayout(canvasWidth, canvasHeight),
+	);
 
 	function dismissTour(): void {
 		tourVisible = false;
@@ -477,7 +484,12 @@
 			<div class="sight-v6-minis-grid">
 				{#each MINI_DOME_CHANNELS as channel (channel)}
 					<div class="sight-v6-mini-cell">
-						<MiniDome {channel} stars={filteredRows.length > 0 ? stars : []} highlightedPath={hoveredPath} />
+						<MiniDome
+							{channel}
+							stars={filteredRows.length > 0 ? stars : []}
+							{anchorLayout}
+							highlightedPath={hoveredPath}
+						/>
 					</div>
 				{/each}
 			</div>

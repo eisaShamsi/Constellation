@@ -472,7 +472,7 @@ function drawShape(
 	}
 }
 
-function pipColorForStage(stage: string | null): string | null {
+export function pipColorForStage(stage: string | null): string | null {
 	switch (stage as LifecycleStage | null) {
 		case 'established': return PALETTE.stageEstablished;
 		case 'fresh':       return PALETTE.stageFresh;

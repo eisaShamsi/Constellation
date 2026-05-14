@@ -14,14 +14,17 @@
 	import { onMount, onDestroy, untrack } from 'svelte';
 	import type { StarDerived, MiniDomeChannel } from './types';
 	import { renderMiniDome } from './miniDome';
+	import type { DomeLayout } from './anchor';
 
 	let {
 		channel,
 		stars,
+		anchorLayout,
 		highlightedPath = null,
 	}: {
 		channel: MiniDomeChannel;
 		stars: StarDerived[];
+		anchorLayout: DomeLayout;
 		highlightedPath?: string | null;
 	} = $props();
 
@@ -48,7 +51,7 @@
 		const ctx = canvasEl.getContext('2d');
 		if (!ctx) return;
 		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-		renderMiniDome(ctx, stars, channel, canvasWidth, canvasHeight, {
+		renderMiniDome(ctx, stars, channel, canvasWidth, canvasHeight, anchorLayout, {
 			highlightedPath,
 		});
 	}
@@ -66,10 +69,11 @@
 		resizeObserver = null;
 	});
 
-	// Repaint on star set or highlight change.
+	// Repaint on star set, anchor layout, or highlight change.
 	$effect(() => {
 		void stars;
 		void highlightedPath;
+		void anchorLayout;
 		untrack(() => paint());
 	});
 </script>
