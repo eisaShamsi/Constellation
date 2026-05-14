@@ -65,7 +65,74 @@ b981129  §A.6 — frontend types + anchor.ts stubs + SightV6.svelte placeholder
 | First-boot tour (§A.11) | ✅ complete |
 | Settings migration (§A.12) | ✅ complete |
 | CI perf-harness skeletons (§A.13) | ✅ complete |
-| Ship gate (§A.14) | 🛑 **Boss-test gate** |
+| Ship gate (§A.14) | ✅ **PASSED** — v6.0 SHIPPED |
+
+### §A.14 ship gate: 7 NSIS Boss-test cycles, 16 fixes
+
+After Eisa's first cycle-1 Boss-test, 7 NSIS build cycles + 16 incremental fixes cleared the spec. Eisa accepted cycle-3.7 with "Ship".
+
+**Cycle log** (each cycle = full Tauri build + NSIS bundle, ~1m 30s Rust compile + ~30s bundle):
+
+| Cycle | What changed | Boss-test verdict |
+|---|---|---|
+| 1 | First v6.0 NSIS build | 1✅/2❌/3✅/4⚠/5✅/6✅/7❌/8 N/A — chrome faint, blobs, no tooltip title, settings not migrating |
+| 2 | fix-1..4 (chrome, jitter, sizing, hover-title) | Test 7 still failed (settings didn't migrate) |
+| 2-investigate | fix-5 root-cause: boot-bundle merge drift; loadSettings has zero callers | Single-line discovery, reusable applyParsedSettings extracted |
+| 3 | fix-5 (settings) + fix-6..9 (chrome, blending, two-pass, zoom) | Test 7 PASS; zoom regression broke wheel |
+| 3.1 | fix-10 (zoom regression: identity-transform clear) | Zoom still broken (root cause was deeper) |
+| 3.2 | fix-11 (real wheel binding via addEventListener; canvas markup completed) | Zoom WORKS; clusters still hard to read |
+| 3.3 | fix-12 phyllotaxis spiral packing | Sunflower-pretty but not solving meaning at scale |
+| 3.4 | fix-13 5px-at-max-zoom node sizing | Reasonably better; nodes meaningful at zoom |
+| 3.5 | revert fix-12 (jitter wins A/B) | "Perfect!" for default + zoom — natural starfield |
+| 3.6 | fix-15 all-circle nodes | Stage PASSED |
+| 3.7 | fix-16 hover-ring screen-padded + ZOOM_MAX 8→24 | **"Ship"** |
+
+### Architectural truths discovered (carry forward to future MIGs)
+
+1. **Sight is a diagnostic, not a navigator.** The 7,650-note dome shows the universe's *shape* via density gradient at default zoom. Identifying individual notes requires the workflow filter (sidebar) → zoom (wheel) → click. Trying to make individual notes visible at default zoom is fighting the math.
+2. **Boot-bundle drift is a real cross-cutting risk.** `loadSettings()` had ZERO callers in src; the boot-bundle path in `+layout.svelte` was the de-facto load path and had drifted from `loadSettings()`. My §A.12 migration block was dead code. Fix-5 extracted `applyParsedSettings()` as the single source of truth. **Worth a §N audit follow-up** to verify no other parsed-settings consumers exist OR settings-mutation paths bypass the load merge.
+3. **Working Agreement #4 multi-edit verification.** Fix-9 (`6acde74`) claimed it wired the canvas markup but the Edit tool silently failed on one of nine edits mid-batch. Handlers existed but were never bound. Fix-11 (cycle-3.1) caught it via the addEventListener fallback. **Lesson**: multi-edit batches need explicit grep-verification afterward, OR parallel-agent review per Working Agreement #4. Cost: 1 extra Boss-test cycle + a fresh NSIS build.
+4. **Phyllotaxis is mathematically pretty but not what users want for a "star chart".** A/B tested vs random jitter; jitter won perceptually because it reads as a natural starfield rather than a designed sunflower. Phyllotaxis stays in v0.x design history; v4.1 might revisit if specific use case emerges.
+
+### Ship-day commits (in order)
+
+| # | Commit | Subject |
+|---|---|---|
+| 1 | `3e829f6` | docs(sight): MIG-025 opens — Concept Paper v4.0 + Architect + Plan |
+| 2 | `a0c0af5` | §A.1 — Add SIGHT_V6_ENABLED feature flag |
+| 3 | `aa17e10` | §A.2 — Sight v6 cache schema + invalidation triggers |
+| 4 | `baa4a95` | §A.3 — Sight v6 backfill skeleton + sentinel + 8 tests |
+| 5 | `a38b256` | §A.4 — Progressive backfill via Tauri events + frontend store |
+| 6 | `970d2bf` | §A.5 — Three Sight v6 Tauri IPCs |
+| 7 | `b981129` | §A.6 — Sight v6 frontend types + module skeleton |
+| 8 | `42c4f40` | docs(session-log): MIG-025 §A.1–§A.6 cascade summary |
+| 9 | `7a948e9` | §A.7 — Mount Sight v6 alongside v5 in +layout.svelte |
+| 10 | `5b3e10b` | §A.8 — Anchor dome chrome render |
+| 11 | `e5b2334` | §A.9 — Anchor dome stars + lines + IPC integration |
+| 12 | `c4b7e7b` | §A.10 — Facet sidebar with Hearst Flamenco cross-filter |
+| 13 | `c84989b` | §A.11 — Sight v6 first-boot orientation tour |
+| 14 | `1048ab1` | §A.12 — Sight v5 → v6 settings migration + 4 new v6 fields |
+| 15 | `251d630` | §A.13 — Sight v6 CI perf-harness skeletons |
+| 16 | `5796f18` | docs(session-log): MIG-025 Phase 1 build complete (§A.1 → §A.13) |
+| 17 | `d0e683c` | §A.14 fix-1..4 — Boss-test cycle 1 fixes |
+| 18 | `3c70896` | §A.14 fix-5 — boot-bundle settings merge + migration drift fix |
+| 19 | `6acde74` | §A.14 fix-6..9 — density-aware rendering + zoom/pan |
+| 20 | `59523f1` | §A.14 fix-10 — zoom regression: clear+bg in identity transform |
+| 21 | `f79d26f` | §A.14 fix-11 — actually wire wheel/drag/keys to the canvas |
+| 22 | `d70ceb1` | §A.14 fix-12 — phyllotaxis spiral packing |
+| 23 | `1efadb5` | §A.14 fix-13 — node size 5px @ max zoom; default → density chart |
+| 24 | `989507a` | Revert fix-12 (jitter wins A/B) |
+| 25 | `ecabc16` | §A.14 fix-15 — all notes render as circles |
+| 26 | `f8de004` | §A.14 fix-16 — hover-ring matches node + zoom 8× → 24× |
+| 27 | (this commit) | **§A.14 SHIP — Sight v6.0 (MIG-025)** + orientation v2.02 + session log |
+
+**~27 commits in one day. ~12,000+ insertions across ~50 files. 25 Rust unit tests passing. v6.0 live on `main`.**
+
+### Phase 2 opens
+
+§B Phase 2 (mini-domes + cross-filter brushing + Pro mode) is queued per Plan §A.2. ~4 weeks. Then §C (register chip + 4 production registers, 5 wk), then §D (3 v1-preview registers + CI hardening + v5 deletion, 3 wk).
+
+**v4.1 polish targets** (post-Phase 4): hex-bin aggregation, register-aware mini-domes, library-tint recognition aid, three v1-preview registers polish, pramāṇa internal-structure, color-accessibility variant.
 
 **§A.14 verification checklist** (per Concept Paper v4.0 §13.1):
 

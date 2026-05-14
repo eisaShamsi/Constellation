@@ -38,15 +38,51 @@
 // MIG-025 §A.1 (2026-05-14): SIGHT_V6_ENABLED added per Concept Paper v4.0
 // (ratified 2026-05-13). v6 specifies the next implementation, replacing
 // v5's seven-mode toggle architecture with Coordinated Views (anchor dome
-// + 4 mini-domes + facet sidebar + 7-register chip). Phased build per
-// MIG-025 Plan §A→§D over ~21 wk; v5 stays mounted via dual-flag (B2)
-// until §D.6 deletes it. Flag stays false until §A.14 ship gate clears
-// and Eisa tests Sight v6.0. See:
+// + facet sidebar at Phase 1; 4 mini-domes Phase 2; 7-register chip Phase
+// 3). Phased build per MIG-025 Plan §A→§D over ~21 wk; v5 stays mounted
+// via dual-flag (B2) until §D.6 deletes it.
+//
+// MIG-025 §A.14 SHIP MOMENT (2026-05-14): Sight v6.0 ships after a
+// 16-fix cycle through 7 NSIS Boss-test builds. Eisa accepted cycle-3.7
+// ("Ship"). Phase 1 deliverable:
+//   • Anchor dome with stratum × time × all-circle nodes; default-zoom
+//     density-gradient view; wheel-zoom up to 24× for "crystal-clear"
+//     individual node inspection.
+//   • Hearst Flamenco facet sidebar (6 facets, Folder TOP, live counts).
+//   • First-boot 4-step orientation tour.
+//   • B2 dual-mount: v5 still reachable via its dock button.
+//   • v5→v6 settings migration (lastMode dropped, lastScope preserved
+//     as dead key, v6MigrationDone sentinel stamped).
+//
+// 16 fixes across the cycle:
+//   1-4: chrome contrast, jitter widening, smaller stars, hover-title
+//   5  : applyParsedSettings shared helper (fixed boot-bundle drift —
+//        loadSettings() had zero callers, the migration was dead code)
+//   6-9: brighter chrome, additive density blending, two-pass render,
+//        wheel-zoom + drag-pan + Cmd-0 reset
+//   10 : zoom regression — clear+bg in identity transform
+//   11 : addEventListener wheel binding (Svelte template binding silent-
+//        failed in cycle-3 multi-edit batch — Working Agreement #4 lesson)
+//   12 : phyllotaxis spiral packing (later reverted via A/B test)
+//   13 : node sizing 5 px ⌀ at max zoom — converts default view to true
+//        density chart; zoom reveals individuals
+//   14 : revert phyllotaxis (jitter wins A/B per Eisa)
+//   15 : all-circle nodes (drop library-shape encoding at small sizes)
+//   16 : hover-ring screen-padded + ZOOM_MAX 8→24× for crystal-clear
+//
+// Phase 2 (§B) opens next: 4 mini-domes + cross-filter brushing + Pro
+// mode toggle. v4.1 polish targets allocated separately (hex-bin
+// aggregation for 50k+-note universes, library-tint recognition aid,
+// etc.).
+//
+// References:
 //   docs/Constellation-Sight-Concept-Paper-v4.0.md
+//   docs/Constellation Orientation & Onboarding v2.02.md (this commit)
 //   lab/reports/MIG-025-SIGHT-V6-ARCHITECT.md
 //   lab/reports/MIG-025-SIGHT-V6-PLAN.md
+//   lab/reports/SESSION-LOG-2026-05-14.md
 export const SIGHT_V2_ENABLED = false;
 export const SIGHT_V3_ENABLED = false;
 export const SIGHT_V4_ENABLED = false;
 export const SIGHT_V5_ENABLED = true;
-export const SIGHT_V6_ENABLED = false;
+export const SIGHT_V6_ENABLED = true;
