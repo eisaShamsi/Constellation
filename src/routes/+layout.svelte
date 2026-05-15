@@ -4429,7 +4429,7 @@
 				}
 				/* fullPageActive $effect handles sidebar snapshot */
 			}} title={$t('lens.title') || 'Constellation Sight'}>
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.5"/><line x1="12" y1="9.5" x2="12" y2="5"/><circle cx="12" cy="3.5" r="1.5"/><line x1="10.2" y1="13.8" x2="5.5" y2="18.5"/><circle cx="4" cy="20" r="1.5"/><line x1="13.8" y1="13.8" x2="18.5" y2="18.5"/><circle cx="20" cy="20" r="1.5"/></svg>
 			</button>
 			{/if}
 			<!-- MIG-018 (PJ-038): v3 Sight dock button (star-chart engine) — RETIRED.
@@ -4490,7 +4490,7 @@
 					sightV6Active = false;
 				}
 			}} title={$t('sight.v6.title') || 'Constellation Sight'} aria-label="Constellation Sight">
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
 			</button>
 			{/if}
 			{#if $appSettings.enabledFeatures?.inspector360 !== false}

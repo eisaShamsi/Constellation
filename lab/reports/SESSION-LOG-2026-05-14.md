@@ -360,4 +360,30 @@ None. SO #6 orientation bumped same-commit-as-change (v2.01 in commit `3e829f6`)
 
 ---
 
-*End of session log 2026-05-14. §A.15 commit lands next; build follows.*
+## §A.15 fix-1 — Eisa test feedback (Boss-test cycle 1)
+
+**Test build:** `Constellation_0.3.4_x64-setup.A15-rename.exe` (`67363369`)
+
+**Step 1.1 fail:** v6 dock-button tooltip showed literal `"sight.v6.title"` instead of "Constellation Sight".
+- **Root cause:** the i18n key `sight.v6.title` was never defined in any locale (only referenced in code with `|| 'Constellation Sight'` fallback). The `t()` impl in `src/lib/i18n/index.ts:130-140` returns the key string itself on miss; the `||` fallback in `+layout.svelte:4492` never fires because the key string is truthy. Same shape as the §104/§113 Untyped-label bug.
+- **Fix:** add `sight.v6.title: "Constellation Sight"` as a sibling of `sight.v5` in `en.json` (top-level sight block, line 2362). i18n fallback chain (active locale → en → key, per index.ts:43 comment) auto-resolves it for all 14 other locales — no per-locale edit needed.
+
+**Step 1.2 design request:** swap dock icons + design new icon for CNS.
+- Eisa: "I want Sight to have CNS icon, the eye, and I want you to create a suitable icon that represents CNS."
+- **Move:** eye SVG (`<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle r=3/>`) from CNS dock-button (line 4432) to v6 Sight dock-button (line 4493). Sight = sensory organ = eye.
+- **New CNS icon:** stylized neuron — central soma + three dendrites with synaptic-bouton terminals (cell body `circle r=2.5` at center, three `line+circle r=1.5` branches at top, lower-left, lower-right). Lucide-style 2px outline, viewBox 24x24. Renders as a clear branching nerve-cell pictogram at 16x16.
+- The star polygon now appears only on the disabled v3/v4/v5 dock buttons (legacy code paths gated false).
+
+**Step 2.1 pass.** "Constellation Nervous System (CNS)" + new description rendering correctly in Settings → Core Plug-Ins.
+
+**Step 2.2 finding (NOT a rename bug — pre-existing structural gap):**
+- There is no separate "Sight" section in the Settings sidebar.
+- The `settings.sight.intro` i18n key updated in §A.15 is **orphaned** (no Settings UI component currently consumes it).
+- Eisa pointed out the "Knowledge Management" section (which has an eye icon) — but that section is the legacy **Lens query (DQL) system** ("Switch View" / "Load Lenses" loads custom DQL view definitions stored as `.lens` files), NOT the CNS visualization settings. Different feature, despite the eye icon.
+- **Allocated as a future MIG:** add a proper "Sight" Settings section that surfaces the v6 settings (`proMode`, `hexBinThreshold`, `linkFadeThreshold`, `tourSeen`) currently stored in `appSettings.sight` but not exposed in any UI. Would also use the orphaned `settings.sight.intro` key.
+
+**Files in this fix commit:** `src/lib/i18n/en.json`, `src/routes/+layout.svelte`, this session log.
+
+---
+
+*End of session log 2026-05-14. §A.15 fix-1 commit lands next; rebuild + test cycle 2 follows.*
