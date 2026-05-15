@@ -2173,7 +2173,7 @@
     "legendGapDesc": "構造的ギャップ — 切断された領域間の盲点",
     "legendCluster": "色付き領域",
     "legendClusterDesc": "コミュニティ境界 — 密接に接続されたトピッククラスタ",
-    "returnToLens": "Sightに戻る",
+    "returnToLens": "Return to CNS",
     "fitToScreen": "画面に合わせる",
     "searchAll": "すべて検索... (Enter)",
     "searchTitles": "タイトル検索...",

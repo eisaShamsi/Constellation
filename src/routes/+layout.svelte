@@ -558,6 +558,10 @@
 	let orgChartReturnPending = $state(false); // show "Return to OrgChart" button on note tab
 	let lensReturnPending = $state(false);
 	let skyViewReturnPending = $state(false);
+	// MIG-025 §B.6-fix-5 — show "Return to Sight" button on note tab
+	// after the user clicks a star in Sight v6 (anchor or promoted mini)
+	// to open a note. Mirrors lensReturnPending pattern.
+	let sightV6ReturnPending = $state(false);
 
 	// "Note as organism" — flanking Backlinks/Outgoing panels only render
 	// when the user arrived at the note by clicking a Sky-View node. This
@@ -4485,9 +4489,10 @@
 			<button class="dock-btn" class:active={sightV6Active} onclick={() => {
 				if (!sightV6Active) {
 					sightV6Active = true;
-					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showInspector360 = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; lensReturnPending = false;
+					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showInspector360 = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; lensReturnPending = false; sightV6ReturnPending = false;
 				} else {
 					sightV6Active = false;
+					sightV6ReturnPending = false;
 				}
 			}} title={$t('sight.v6.title') || 'Constellation Sight'} aria-label="Constellation Sight">
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -4864,7 +4869,18 @@
 			{#if lensReturnPending && SIGHT_V2_ENABLED}
 				<button class="index-return-btn" onclick={() => { lensActive = true; lensReturnPending = false; }}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-					{$t('lens.returnToLens') || 'Return to Lens'}
+					{$t('lens.returnToLens') || 'Return to CNS'}
+				</button>
+			{/if}
+			<!-- MIG-025 §B.6-fix-5 — Return to Sight (v6) button. Eisa cycle-3
+			     ask: "I want a dedicated 'Return-to-Sight button' in-editor button."
+			     Mirrors the lensReturnPending pattern. Visible only when the user
+			     opened a note from Sight v6 (anchor click OR promoted-mini click);
+			     clearing sets sightV6Active=true to re-open Sight. -->
+			{#if sightV6ReturnPending && SIGHT_V6_ENABLED}
+				<button class="index-return-btn" onclick={() => { sightV6Active = true; sightV6ReturnPending = false; }}>
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+					{$t('sight.v6.returnToSight') || 'Return to Sight'}
 				</button>
 			{/if}
 			{#if searchHubReturnPending}
@@ -5396,6 +5412,10 @@
 							const color = lib ? (libraryColorMap[libraryName] || '#7c3aed') : '#7c3aed';
 							openNoteTab(path, libraryName, color);
 							sightV6Active = false;
+							// §B.6-fix-5: surface the Return-to-Sight button on
+							// the note tab so the user can jump back to v6
+							// without hunting for the dock icon.
+							sightV6ReturnPending = true;
 						}}
 					/>
 				</div>

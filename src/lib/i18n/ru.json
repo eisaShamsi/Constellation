@@ -2173,7 +2173,7 @@
     "legendGapDesc": "Структурный разрыв — слепая зона между изолированными областями",
     "legendCluster": "Цветная область",
     "legendClusterDesc": "Граница сообщества — плотно связанный тематический кластер",
-    "returnToLens": "Вернуться к Линзе",
+    "returnToLens": "Return to CNS",
     "fitToScreen": "По размеру экрана",
     "searchAll": "Искать всё... (Enter)",
     "searchTitles": "Искать в заголовках...",

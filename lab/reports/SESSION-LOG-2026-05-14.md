@@ -605,4 +605,39 @@ State is local — each promotion creates a fresh MiniDome instance (because pri
 
 ---
 
-*End of session log 2026-05-14. §B.6-fix-4 commit + build complete; Eisa cycle-4 test next.*
+## §B.6-fix-5 — Return-to-Sight button + §A.15 oversight fix (2026-05-15)
+
+**Eisa cycle-3 follow-up:** "I want a dedicated 'Return-to-Sight button' in-editor button."
+
+**Pattern:** mirrors the existing `lensReturnPending` flow for v2 (CNS):
+- State flag `sightV6ReturnPending = $state(false)` lives in `+layout.svelte`.
+- When the user clicks a star in v6 (anchor or promoted mini), the `onOpenNote` callback in the SightV6 mount block sets `sightV6ReturnPending = true` after closing v6.
+- The tab-bar return-buttons section renders a `{#if sightV6ReturnPending && SIGHT_V6_ENABLED}` button that re-opens v6 + clears the flag.
+- The v6 dock button onclick clears the flag in both branches (open + close).
+
+**§A.15 oversight caught + fixed in same commit:** the existing `lens.returnToLens` button label was "Return to Sight" — a label that was correct before §A.15 (when v2 was branded "Sight") but wrong after the §A.15 rename (v2 is now CNS). Updated value to "Return to CNS" in all 15 locales (some had translated values for "Sight" — `Zurück zur Sight` / `Voltar à Sight` / `Sightに戻る` etc.; per §A.15 brand-English convention, all collapse to "Return to CNS"). Also updated the fallback string in `+layout.svelte:4867` from "Return to Lens" → "Return to CNS".
+
+### Files (16, ~39 insertions, ~18 deletions)
+
+**i18n changes (15 locales):**
+- en.json: ADDED `sight.v6.returnToSight = "Return to Sight"` (sibling of `sight.v6.title`); UPDATED `lens.returnToLens` value: "Return to Sight" → "Return to CNS".
+- 14 other locales (ar, de, es, fa, fr, he, hi, ja, ko, pt, ru, tr, ur, zh): UPDATED `lens.returnToLens` value to "Return to CNS" (English brand per §A.15 convention; replaced previously-translated values).
+
+**+layout.svelte changes:**
+- Line 559 area: ADDED `let sightV6ReturnPending = $state(false)` next to existing return-pending flags.
+- Line 4485 v6 dock button onclick: ADDED `sightV6ReturnPending = false` in both branches (when activating + when deactivating v6).
+- Line 4867 lens return button fallback: UPDATED `'Return to Lens'` → `'Return to CNS'` (matches the i18n value change).
+- Line 4869 area: NEW `{#if sightV6ReturnPending && SIGHT_V6_ENABLED}` block rendering the Return-to-Sight button (mirrors the lensReturnPending pattern exactly — same SVG icon, same `index-return-btn` class, same i18n key access).
+- Line 5394 v6 mount onOpenNote: ADDED `sightV6ReturnPending = true` after `sightV6Active = false`.
+
+### Out of scope (intentional)
+
+Other dock buttons (Sky View, Map, Index, OrgChart) currently reset `lensReturnPending` but NOT `sightV6ReturnPending`. Cosmetic — the worst case is a stale Return-to-Sight button after navigating elsewhere. Click still works (re-opens v6). Future polish would clear `sightV6ReturnPending` on every dock button click for full consistency; not blocking.
+
+### Build artifact
+
+`Constellation_0.3.4_x64-setup.B6-fix5.exe` (this commit) — Return-to-Sight button + lens-return-label CNS fix on top of §B.6-fix-4 (cursor + 5px nodes + Reset View + zoom on promoted).
+
+---
+
+*End of session log 2026-05-14. §B.6-fix-5 commit + build complete; Eisa cycle-5 test next.*

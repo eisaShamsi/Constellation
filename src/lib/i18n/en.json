@@ -2360,7 +2360,8 @@
       }
     },
     "v6": {
-      "title": "Constellation Sight"
+      "title": "Constellation Sight",
+      "returnToSight": "Return to Sight"
     }
   },
   "sightV3": {
@@ -2412,7 +2413,7 @@
     "advanced": "Advanced",
     "layerPeeling": "Layer Peeling",
     "tagEdges": "Tag Edges",
-    "returnToLens": "Return to Sight",
+    "returnToLens": "Return to CNS",
     "fitToScreen": "Fit to screen",
     "searchAll": "Search all... (Enter)",
     "searchTitles": "Search titles...",
