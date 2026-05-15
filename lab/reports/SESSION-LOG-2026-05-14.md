@@ -712,4 +712,43 @@ Now empty-area clicks (>3 px from any star) reliably fall through to `if (compac
 
 ---
 
-*End of session log 2026-05-14. §B.6-fix-7 commit + build complete; Eisa cycle-7 test next.*
+## §B.6-fix-8 — promoted dot 2px + repaint-on-channel-change bug (2026-05-15)
+
+**Eisa cycle-7 verdict:**
+- Stage 1: "Make it 2px instead of 5px (for every mini dome star who becomes the main dome)."
+- Stage 2: real bug — "after I clicked the Confidence mini (top-right). It disappeared, and Acts is still at the main dome."
+- Stage 3: PASS.
+
+### Stage 2 root-cause analysis
+
+Looking at Eisa's screenshot:
+- Primary slot title: "ACTS — size (top decile)" (stale)
+- Mini grid shows 4 minis: Universe, Stage (top), Acts, Provenance (bottom)
+- Confidence is missing from the grid
+
+Mini grid is correct: `{#each ALL_SLOTS as slot (slot)} {#if slot !== primaryChannel} ... {/each}` skips whichever channel is primary. So if Confidence is missing → `primaryChannel === 'confidence'`. The state DID update.
+
+But the primary slot canvas still showed Acts visual + Acts title. The bug: my MiniDome `$effect` for repaint only watched `stars / highlightedPath / anchorLayout` — NOT `channel` or `compact`. When SightV6 swaps `primaryChannel` from 'acts' → 'confidence', Svelte reuses the same MiniDome component instance in the `{:else}` branch and just updates the `channel` prop. Without the prop in the effect's dependency list, paint() never fires on the channel change. Canvas shows the stale 'acts' render until something else (hover, resize, etc.) triggers a repaint.
+
+### Fixes (2 lines + 2 lines, both in MiniDome.svelte)
+
+**Fix A — Promoted dot size 2px:**
+- `paint()`: `dotRadius: compact ? 0.75 : 2.5` → `dotRadius: compact ? 0.75 : 1`
+- 1-radius = 2-px ⌀ per Eisa cycle-7. Acts top-decile stays flattened (the `dotRadius < 1` check in renderActsChannel is false for value 1, so top-decile = base = 1 = 2-px ⌀).
+
+**Fix B — Repaint on channel/compact change:**
+- `$effect`: added `void channel; void compact;` to dependencies.
+- Now any prop change (including channel swap in primary slot) triggers paint().
+
+### Files (2, ~16 insertions, ~3 deletions)
+
+- `src/lib/sight/v6/MiniDome.svelte`: paint() dotRadius constant + $effect dependency list + comment blocks for both.
+- `lab/reports/SESSION-LOG-2026-05-14.md`: this entry.
+
+### Build artifact
+
+`Constellation_0.3.4_x64-setup.B6-fix8.exe` (this commit).
+
+---
+
+*End of session log 2026-05-14. §B.6-fix-8 commit + build complete; Eisa cycle-8 test next.*

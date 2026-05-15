@@ -92,10 +92,14 @@
 		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 		// §B.6-fix-3: when promoted to the primary slot (compact=false),
 		// scale dots up so individual stars are visible at the larger
-		// canvas size. §B.6-fix-4 (Eisa cycle-3 Stage 2/3): 5-px ⌀ per
-		// Eisa's spec → radius 2.5 (was 3 in fix-3). Top-decile in
-		// Acts preserves its 4× ratio relative to base (2.5 × 4 = 10 px
-		// when promoted).
+		// canvas size.
+		// §B.6-fix-8 (Eisa cycle-7 Stage 1): promoted dot size revised
+		// from 5-px ⌀ (radius 2.5) → 2-px ⌀ (radius 1). Eisa: "Make it
+		// 2px instead of 5px (for every mini dome star who becomes the
+		// main dome)." With Acts top-decile already flattened to base
+		// in fix-7 (no multiplier when promoted, since dotRadius=1 fails
+		// the `< 1` check), all promoted-slot dots now render at uniform
+		// 2-px ⌀ regardless of channel.
 		// §B.6-fix-4d: also apply zoom/pan transform when promoted so
 		// the user can zoom in to inspect detail (parallels the anchor
 		// canvas zoom behavior). transform = identity when compact.
@@ -107,7 +111,7 @@
 		}
 		renderMiniDome(ctx, stars, channel, canvasWidth, canvasHeight, anchorLayout, {
 			highlightedPath,
-			dotRadius: compact ? 0.75 : 2.5,
+			dotRadius: compact ? 0.75 : 1,
 		});
 	}
 
@@ -288,11 +292,22 @@
 		untrack(() => paint());
 	});
 
-	// Repaint on star set, anchor layout, or highlight change.
+	// Repaint on star set, anchor layout, highlight change, OR
+	// channel/compact change.
+	// §B.6-fix-8 (Eisa cycle-7 Stage 2): when SightV6 swaps a different
+	// channel into the primary slot, Svelte reuses the same MiniDome
+	// component instance and just updates the `channel` prop. Without
+	// `void channel; void compact;` in this effect, paint() never fires
+	// on the swap — the canvas keeps showing the previous channel's
+	// render (e.g., user clicks Confidence to promote, but primary
+	// slot keeps showing Acts visual + Acts title until something else
+	// triggers paint). Added both to the dependency list.
 	$effect(() => {
 		void stars;
 		void highlightedPath;
 		void anchorLayout;
+		void channel;
+		void compact;
 		untrack(() => paint());
 	});
 </script>
