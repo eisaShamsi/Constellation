@@ -546,6 +546,7 @@
 						onHover={(path) => { hoveredPath = path; }}
 						compact={false}
 						onOpenNote={handlePromotedOpenNote}
+						onFacetFilter={handleFacetToggle}
 					/>
 				</div>
 			{/if}
@@ -592,6 +593,11 @@
 							     the note. Click on empty space promotes (per
 							     fix-3); the mini's handleClick hit-tests
 							     first, so star vs empty is unambiguous. -->
+							<!-- §B.7 — onFacetFilter dispatched on Shift+click on a
+							     star; reuses the existing handleFacetToggle handler
+							     (same pipeline the facet sidebar uses), so the cross-
+							     filter applies uniformly across all 5 surfaces via
+							     filteredRows → recomputeStars → repaint. -->
 							<MiniDome
 								channel={slot}
 								stars={filteredRows.length > 0 ? stars : []}
@@ -601,6 +607,7 @@
 								compact={true}
 								onPromote={handlePromote}
 								onOpenNote={handlePromotedOpenNote}
+								onFacetFilter={handleFacetToggle}
 							/>
 						</div>
 					{/if}

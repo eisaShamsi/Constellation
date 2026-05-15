@@ -12,8 +12,9 @@
 -->
 <script lang="ts">
 	import { onMount, onDestroy, untrack } from 'svelte';
-	import type { StarDerived, SlotChannel } from './types';
+	import type { StarDerived, SlotChannel, FacetId } from './types';
 	import { renderMiniDome, miniDomeHitTest } from './miniDome';
+	import { confidenceLevelOf } from './facets';
 	import type { DomeLayout } from './anchor';
 
 	let {
@@ -25,6 +26,7 @@
 		compact = true,
 		onPromote = () => {},
 		onOpenNote = () => {},
+		onFacetFilter = () => {},
 	}: {
 		channel: SlotChannel;
 		stars: StarDerived[];
@@ -48,6 +50,13 @@
 		 *  compact (this mini occupies the primary slot). Parent uses
 		 *  this to open the note in the editor. */
 		onOpenNote?: (notePath: string) => void;
+		/** §B.7 — fires on Shift+click on a star: cross-filter the
+		 *  universe to the star's category in this mini's channel.
+		 *  Parent (SightV6) routes this to its facet filter state via
+		 *  `toggleFilter(filters, facetId, categoryId)` so all 5 views
+		 *  re-render with only matching notes. No-op for Acts (no facet
+		 *  exists for acts) and Anchor (no channel-specific category). */
+		onFacetFilter?: (facetId: FacetId, categoryId: string) => void;
 	} = $props();
 
 	let canvasEl = $state<HTMLCanvasElement | null>(null);
@@ -245,7 +254,34 @@
 		const tol = compact ? 3 : 5 / zoomScale;
 		const hit = miniDomeHitTest(stars, x, y, channel, anchorLayout, canvasWidth, canvasHeight, tol);
 		if (hit) {
-			// Star click: same in both slots → open the note.
+			// §B.7 — Shift+click on a star = cross-filter the universe
+			// to that star's category in this mini's channel (Stage /
+			// Confidence / Provenance). Plain click = open the note.
+			// Acts and Anchor channels have no corresponding facet so
+			// Shift+click is a no-op there (falls through silently).
+			if (ev.shiftKey) {
+				const star = stars.find((s) => s.row.notePath === hit);
+				if (star) {
+					let facetId: FacetId | null = null;
+					let categoryId: string | null = null;
+					if (channel === 'stage' && star.row.stage) {
+						facetId = 'stage';
+						categoryId = star.row.stage;
+					} else if (channel === 'confidence') {
+						facetId = 'confidence';
+						categoryId = confidenceLevelOf(star.row);
+					} else if (channel === 'provenance' && star.provenanceSector) {
+						facetId = 'provenance';
+						categoryId = star.provenanceSector;
+					}
+					// channel === 'acts' or 'anchor': no facet → no-op
+					if (facetId && categoryId) {
+						onFacetFilter(facetId, categoryId);
+					}
+				}
+				return;
+			}
+			// Plain click on star: same in both slots → open the note.
 			onOpenNote(hit);
 			return;
 		}

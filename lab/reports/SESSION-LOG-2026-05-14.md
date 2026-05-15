@@ -751,4 +751,46 @@ But the primary slot canvas still showed Acts visual + Acts title. The bug: my M
 
 ---
 
-*End of session log 2026-05-14. §B.6-fix-8 commit + build complete; Eisa cycle-8 test next.*
+## §B.6 cycle-8 PASS — §B.6 closed (2026-05-15)
+
+**Eisa cycle-8 verdict:** Stages 2-5 all PASS. The channel-swap repaint bug is gone; promoted dot size is 2px; Acts no longer blobs; empty-area swap is reliable.
+
+§B.6 — Phase 2's bidirectional linked brushing + dome-swap interaction model — closed after 8 fix iterations across 5 days of build + test cycling.
+
+---
+
+## §B.7 — cross-filter from mini-dome category click (Shift-click) (2026-05-15)
+
+**Eisa picked Option B** from the three §B.7 UX options I proposed (sidebar-only / Shift-click / Provenance-only). Option B: plain click on star = open note (current); Shift-click on star = filter universe to that star's category in the channel that mini represents.
+
+### Implementation (3 files, ~80 insertions)
+
+**`src/lib/sight/v6/MiniDome.svelte`:**
+- New `onFacetFilter?: (facetId: FacetId, categoryId: string) => void` prop with default no-op.
+- `handleClick`: after star hit-test succeeds and BEFORE the open-note branch, check `ev.shiftKey`. If true, look up the StarDerived from `stars.find(...)`, compute `(facetId, categoryId)` per channel:
+  - `stage` → `('stage', star.row.stage)` (raw value, may be Living Link or Concept Paper vocabulary)
+  - `confidence` → `('confidence', confidenceLevelOf(star.row))` (uses existing facets.ts discretization: alpha → hypothesis/evidence/established/contested)
+  - `provenance` → `('provenance', star.provenanceSector)` (already pre-computed in StarDerived)
+  - `acts` / `anchor` → no-op (no corresponding facet)
+- Imports `confidenceLevelOf` from `./facets` and `FacetId` from `./types`.
+
+**`src/lib/sight/v6/SightV6.svelte`:**
+- Both the primary-slot `<MiniDome compact={false}>` and the mini-grid `<MiniDome compact={true}>` instances now receive `onFacetFilter={handleFacetToggle}` — reusing the existing handler that the facet sidebar uses (`filters = toggleFilter(filters, facet, categoryId)`). Cross-filter applies uniformly across all 5 surfaces via the existing `filteredRows → recomputeStars → repaint` data flow.
+
+**`src/lib/sight/v6/facets.ts`:**
+- `buildStageFacet` enumerates stages **dynamically** from row data instead of hardcoding the 5-stage `LifecycleStage` Concept Paper list. Display order: Living Link lifecycle progression (Spark → Birth → Growth → Maturity → Dormancy → Renewal → Archival) first, Concept Paper v4.0 vocabulary second, any other strings found in data third (descending count). Only stages present in data appear (zero-count chips suppressed).
+- Without this fix, Shift+click on a Living Link star (e.g., spark) would apply the filter correctly via string equality in `applyFilters`, but the active filter chip wouldn't appear in the sidebar — user couldn't see or remove it.
+
+### UX
+
+- **Plain click on a star** in any dome (anchor / promoted mini / compact mini) → open note (unchanged).
+- **Shift+click on a star** in Stage / Confidence / Provenance mini → toggle filter on that star's category. All 5 surfaces re-render to show only matching notes. Repeat Shift+click on same category → clear filter (toggle behavior). Sidebar chip also reflects the active filter.
+- **Shift+click on Acts / Anchor stars** → no-op (no facet exists).
+
+### Build artifact
+
+`Constellation_0.3.4_x64-setup.B7-crossfilter.exe` (this commit).
+
+---
+
+*End of session log 2026-05-14. §B.7 commit + build complete; Eisa cycle-1 test next.*

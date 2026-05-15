@@ -259,12 +259,40 @@ function buildStageFacet(rows: LayoutCacheRow[], filters: FacetFilters): Facet {
 	for (const r of subset) {
 		if (r.stage) counts.set(r.stage, (counts.get(r.stage) ?? 0) + 1);
 	}
-	const order: LifecycleStage[] = ['established', 'fresh', 'growing', 'at-risk', 'dormant'];
-	const cats: FacetCategory[] = order.map((s) => ({
-		id: s,
-		label: s,
-		count: counts.get(s) ?? 0,
-	}));
+	// §B.7 (2026-05-15): enumerate stages dynamically. The previous
+	// hardcoded `LifecycleStage` list (established / fresh / growing /
+	// at-risk / dormant) is the Concept Paper v4.0 vocabulary, but
+	// CLAUDE.md's Living Link Architecture defines the canonical
+	// lifecycle as Spark → Birth → Growth → Maturity → Dormancy →
+	// Renewal → Archival — and that's what user data actually contains
+	// (Eisa's universe: 99.3% of stage values are Living Link tokens).
+	// Without dynamic enumeration, Shift+click filtering on a Living
+	// Link star would apply the filter correctly (string equality in
+	// applyFilters) but the resulting chip wouldn't appear in the
+	// sidebar — the user couldn't see or remove the active filter.
+	//
+	// Display order: Living Link lifecycle progression (most common
+	// in user data), then Concept Paper v4.0 vocabulary, then any
+	// other strings found in data (descending count). Only stages
+	// present in the data appear; zero-count chips are suppressed
+	// to keep the sidebar focused on what's actionable.
+	const orderedKnown: string[] = [
+		'spark', 'birth', 'growth', 'maturity', 'dormancy', 'renewal', 'archival',
+		'established', 'fresh', 'growing', 'at-risk', 'dormant',
+	];
+	const cats: FacetCategory[] = [];
+	const seen = new Set<string>();
+	for (const s of orderedKnown) {
+		if (counts.has(s)) {
+			cats.push({ id: s, label: s, count: counts.get(s) ?? 0 });
+			seen.add(s);
+		}
+	}
+	for (const [id, count] of [...counts.entries()].sort((a, b) => b[1] - a[1])) {
+		if (!seen.has(id)) {
+			cats.push({ id, label: id, count });
+		}
+	}
 	return { id: 'stage', label: 'Stage', categories: cats };
 }
 
