@@ -672,4 +672,44 @@ The mini's `handleClick` hit-tests first. Hit → open. Miss + compact → promo
 
 ---
 
-*End of session log 2026-05-14. §B.6-fix-6 commit + build complete; Eisa cycle-6 test next.*
+## §B.6-fix-7 — Acts promoted blob + tighter click tolerance (2026-05-15)
+
+**Eisa cycle-6 verdict:**
+- Stage 2 (compact-mini star click opens note): PASS.
+- Stage 3 (compact-mini empty-area click promotes): PASS-with-issues:
+  - **Promoted node size feedback:** "the node size must be 5px when the mini-dome is promoted" — looking at the Acts-promoted screenshot, the top-decile blob (~764 notes at 4× ratio = 20-px ⌀ each) overlapped into a solid white mass.
+  - **Direct mini-to-mini swap:** "still isn't working 100%."
+- Stage 4-6: PASS.
+
+### Two fixes
+
+**Fix A — Acts top-decile flattens to base radius in promoted mode** (`miniDome.ts renderActsChannel`):
+
+The 4× top-decile ratio gives Acts its binary-size signal. In compact (mini slot, dotRadius 0.75 → top-decile 3 = 6-px ⌀), the contrast helps hot-spots stand out in a tiny canvas. In promoted (dotRadius 2.5 → top-decile would be 10 = 20-px ⌀), the same ratio creates an overlapping blob with Eisa's 7,645-note universe (~764 top-decile notes cluster densely).
+
+Fix: `topDecileRadius = dotRadius < 1 ? dotRadius * 4 : dotRadius`. Detects compact vs promoted via the dotRadius value (only two values are ever passed: 0.75 and 2.5). Compact keeps the 4× contrast; promoted flattens to base 5-px ⌀ for ALL Acts nodes. Acts loses its size-channel signal in promoted mode — but Eisa's spec is unambiguous ("5px"), and the channel identity can be preserved through the title strip alone. If size signal is wanted back later, redesign options include: border thickness, fill-pattern, or hue intensity for top-decile.
+
+**Fix B — Tighter click hit-test tolerance** (`MiniDome.svelte handleClick`):
+
+Root cause of "swap by empty-area click isn't working 100%": the hover hit-test tolerance is 12 px (intentionally generous for hover discoverability). I was using the SAME 12-px tolerance for click hit-test. So a click 5-12 px from a star fell into the "star hit" branch and called `onOpenNote` → opened a note instead of promoting. Eisa perceived this as the swap intermittently failing.
+
+Fix: separate tolerances for click vs hover.
+- Click in compact: tolerance 3 px (matches the 0.75-radius dot + small margin)
+- Click in promoted: tolerance 5 px / zoomScale (matches the 2.5-radius dot + small margin, scales with zoom)
+- Hover (handlePointerMove): unchanged at 12 px (discoverability)
+
+Now empty-area clicks (>3 px from any star) reliably fall through to `if (compact) onPromote(channel)`.
+
+### Files (3, ~32 insertions, ~5 deletions)
+
+- `src/lib/sight/v6/miniDome.ts`: `renderActsChannel` topDecileRadius formula + comment block.
+- `src/lib/sight/v6/MiniDome.svelte`: handleClick tolerance constant + comment block.
+- `lab/reports/SESSION-LOG-2026-05-14.md`: this entry.
+
+### Build artifact
+
+`Constellation_0.3.4_x64-setup.B6-fix7.exe` (this commit).
+
+---
+
+*End of session log 2026-05-14. §B.6-fix-7 commit + build complete; Eisa cycle-7 test next.*

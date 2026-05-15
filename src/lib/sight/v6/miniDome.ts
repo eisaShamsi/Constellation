@@ -303,11 +303,18 @@ function renderActsChannel(
 	// decile keeps the 4× ratio = 3 px radius (6 px ⌀) so hot-spots
 	// remain pre-attentively distinct.
 	// 2026-05-15 §B.6-fix-3: dotRadius parameterized for promoted
-	// (primary-slot) rendering. Top-decile preserves the 4× ratio
-	// regardless of base size.
+	// (primary-slot) rendering.
+	// 2026-05-15 §B.6-fix-7 (Eisa cycle-6 Stage 3): the 4× ratio at
+	// promoted scale (10-px radius = 20-px ⌀ for ~764 top-decile notes)
+	// overlapped into a solid blob. Eisa: "the node size must be 5px
+	// when the mini-dome is promoted." Drop the multiplier in promoted
+	// mode (top-decile = base radius); keep 4× only in compact (mini
+	// slot) where the small canvas needs the contrast for hot-spots
+	// to read at all. Detect via dotRadius value: < 1 = compact, >= 1
+	// = promoted (only two values used in practice: 0.75 and 2.5).
 	ctx.fillStyle = PALETTE.starFill;
 	ctx.globalAlpha = 1;
-	const topDecileRadius = dotRadius * 4;
+	const topDecileRadius = dotRadius < 1 ? dotRadius * 4 : dotRadius;
 	for (const star of stars) {
 		const r = star.topDecileActs ? topDecileRadius : dotRadius;
 		const x = star.x * scale + offsetX;

@@ -229,7 +229,16 @@
 			x = (x - panX) / zoomScale;
 			y = (y - panY) / zoomScale;
 		}
-		const tol = compact ? 12 : 12 / zoomScale;
+		// §B.6-fix-7 (Eisa cycle-6 Stage 3): "Shuffling between mini-domes
+		// by clicking the empty area of the respective mini-dome still
+		// isn't working 100%." Root cause: hover tolerance was 12 px in
+		// both directions, so a click 5-12 px from a star fell into the
+		// "star hit" branch and opened a note instead of promoting.
+		// Tighter CLICK tolerance now matches the actual rendered dot
+		// radius — compact dot is 0.75, promoted dot is 2.5 — so empty-
+		// area clicks reliably fall through to promote. Hover tolerance
+		// (handlePointerMove) stays at 12 px for discoverability.
+		const tol = compact ? 3 : 5 / zoomScale;
 		const hit = miniDomeHitTest(stars, x, y, channel, anchorLayout, canvasWidth, canvasHeight, tol);
 		if (hit) {
 			// Star click: same in both slots → open the note.
