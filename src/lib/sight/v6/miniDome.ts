@@ -27,7 +27,7 @@
 
 import type { StarDerived, MiniDomeChannel, LayoutCacheRow, ProvenanceSector } from './types';
 import { PALETTE, stratumBandBoundaries } from './dome';
-import { pipColorForStage, type DomeLayout } from './anchor';
+import { pipColorForStage, starHitTest, type DomeLayout } from './anchor';
 
 export interface MiniDomeLayout {
 	centerX: number;
@@ -404,6 +404,66 @@ function channelTitle(channel: MiniDomeChannel): string {
 		case 'provenance':
 			return 'PROVENANCE — 5 sectors';
 	}
+}
+
+/**
+ * §B.6 — channel-aware hit-test for mini-dome canvases. Returns the
+ * notePath of the star under the cursor (within `tolerance` canvas-
+ * space pixels) or null. Used by MiniDome.svelte's pointermove handler
+ * to dispatch hover events upward, completing the bidirectional linked-
+ * brushing loop (anchor ↔ all 4 minis).
+ *
+ * Per-channel logic:
+ *   • provenance — stars are positioned by sector × jittered radial
+ *                  (provenancePositionFor); iterate stars and pick
+ *                  the closest within tolerance in canvas space.
+ *   • confidence/stage/acts — stars share the anchor's stratum × time
+ *                  positions, scaled into mini space by `scale`. Convert
+ *                  the cursor's canvas coords back to anchor world
+ *                  coords (inverse of the render transform) and reuse
+ *                  anchor's `starHitTest`. World tolerance scales as
+ *                  tolerance/scale so the on-screen tolerance stays
+ *                  constant in canvas pixels regardless of mini size.
+ */
+export function miniDomeHitTest(
+	stars: StarDerived[],
+	canvasX: number,
+	canvasY: number,
+	channel: MiniDomeChannel,
+	anchorLayout: DomeLayout,
+	miniWidth: number,
+	miniHeight: number,
+	tolerance: number = 12,
+): string | null {
+	const layout = computeMiniDomeLayout(miniWidth, miniHeight);
+	if (channel === 'provenance') {
+		let bestPath: string | null = null;
+		let bestDistSq = tolerance * tolerance;
+		for (const star of stars) {
+			const pos = provenancePositionFor(star, layout);
+			const dx = canvasX - pos.x;
+			const dy = canvasY - pos.y;
+			const d2 = dx * dx + dy * dy;
+			if (d2 < bestDistSq) {
+				bestDistSq = d2;
+				bestPath = star.row.notePath;
+			}
+		}
+		return bestPath;
+	}
+	// Non-provenance: invert the render transform.
+	// renderMiniDome maps (star.x, star.y) →
+	//   (star.x * scale + offsetX, star.y * scale + offsetY)
+	// where offsetX = layout.centerX - anchorLayout.centerX * scale,
+	//       offsetY = layout.centerY - anchorLayout.centerY * scale.
+	// Inverse: (canvasX, canvasY) →
+	//   ((canvasX - layout.centerX) / scale + anchorLayout.centerX,
+	//    (canvasY - layout.centerY) / scale + anchorLayout.centerY)
+	const scale = layout.radius / anchorLayout.radius;
+	if (scale === 0) return null;
+	const ax = (canvasX - layout.centerX) / scale + anchorLayout.centerX;
+	const ay = (canvasY - layout.centerY) / scale + anchorLayout.centerY;
+	return starHitTest(stars, ax, ay, tolerance / scale);
 }
 
 /** Compute Universe-wide context for channel rendering. Currently

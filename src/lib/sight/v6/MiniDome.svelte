@@ -13,7 +13,7 @@
 <script lang="ts">
 	import { onMount, onDestroy, untrack } from 'svelte';
 	import type { StarDerived, MiniDomeChannel } from './types';
-	import { renderMiniDome } from './miniDome';
+	import { renderMiniDome, miniDomeHitTest } from './miniDome';
 	import type { DomeLayout } from './anchor';
 
 	let {
@@ -21,11 +21,18 @@
 		stars,
 		anchorLayout,
 		highlightedPath = null,
+		onHover = () => {},
 	}: {
 		channel: MiniDomeChannel;
 		stars: StarDerived[];
 		anchorLayout: DomeLayout;
 		highlightedPath?: string | null;
+		/** §B.6 — fired when the cursor moves over a star (or null
+		 *  when the cursor moves off all stars / leaves the canvas).
+		 *  The parent (SightV6) owns the canonical hoveredPath; the
+		 *  mini only PROPOSES via onHover() and receives the resolved
+		 *  value back through the highlightedPath prop. */
+		onHover?: (path: string | null) => void;
 	} = $props();
 
 	let canvasEl = $state<HTMLCanvasElement | null>(null);
@@ -56,6 +63,27 @@
 		});
 	}
 
+	// §B.6 — pointer hit-test → dispatch hover upward to SightV6, which
+	// updates its canonical hoveredPath. The new value flows back to ALL
+	// 4 minis (and the anchor) via the highlightedPath prop, completing
+	// the bidirectional linked-brushing loop with a single source of truth.
+	function handlePointerMove(ev: PointerEvent): void {
+		if (!canvasEl) return;
+		const rect = canvasEl.getBoundingClientRect();
+		const x = ev.clientX - rect.left;
+		const y = ev.clientY - rect.top;
+		const hit = miniDomeHitTest(stars, x, y, channel, anchorLayout, canvasWidth, canvasHeight);
+		if (hit !== highlightedPath) {
+			onHover(hit);
+		}
+	}
+
+	function handlePointerLeave(): void {
+		if (highlightedPath !== null) {
+			onHover(null);
+		}
+	}
+
 	onMount(() => {
 		syncCanvasSize();
 		if (hostEl) {
@@ -79,7 +107,13 @@
 </script>
 
 <div bind:this={hostEl} class="mini-dome-host">
-	<canvas bind:this={canvasEl} class="mini-dome-canvas"></canvas>
+	<canvas
+		bind:this={canvasEl}
+		class="mini-dome-canvas"
+		class:has-hover={highlightedPath !== null}
+		onpointermove={handlePointerMove}
+		onpointerleave={handlePointerLeave}
+	></canvas>
 </div>
 
 <style>
@@ -96,5 +130,9 @@
 		width: 100%;
 		height: 100%;
 		display: block;
+		cursor: default;
+	}
+	.mini-dome-canvas.has-hover {
+		cursor: pointer;
 	}
 </style>

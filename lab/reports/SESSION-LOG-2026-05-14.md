@@ -386,4 +386,62 @@ None. SO #6 orientation bumped same-commit-as-change (v2.01 in commit `3e829f6`)
 
 ---
 
-*End of session log 2026-05-14. §A.15 fix-1 commit lands next; rebuild + test cycle 2 follows.*
+## §A.15 cycle-2 PASS — rename closed (2026-05-15)
+
+**Test build:** `Constellation_0.3.4_x64-setup.A15-fix1.exe` (`cab7ffb5`).
+
+**Eisa verdict:** "Step 1: Pass. Step 2: Pass. Visual judgment call: It is fine. Step 3: Pass. Step 4: Pass."
+
+All four steps pass; neuron icon for CNS accepted on first iteration. **§A.15 closed.**
+
+The user-facing name pair is now permanent on `main`:
+- v6 → "Constellation Sight" (eye icon)
+- v2 → "Constellation Nervous System (CNS)" (neuron icon)
+
+Internal v-numbers, file names, IPC names, engine flags, and i18n key paths remain as architectural-history record (Lens-precedent convention).
+
+---
+
+## §B.6 — bidirectional linked brushing (anchor ↔ minis)
+
+**Function in hand:** complete the Coordinated Views loop — hovering a node in any mini-dome highlights the same node on the anchor (and on the other 3 minis); hovering the anchor likewise highlights all 4 minis. Single source of truth: SightV6 owns `hoveredPath`; minis only PROPOSE via `onHover()` and receive the resolved value back through the `highlightedPath` prop.
+
+### Implementation
+
+Three files, ~113 insertions, no deletions:
+
+1. **`src/lib/sight/v6/miniDome.ts`** — new exported `miniDomeHitTest(stars, canvasX, canvasY, channel, anchorLayout, miniWidth, miniHeight, tolerance=12)` function. Channel-aware:
+   - **provenance**: iterates stars and computes each one's `provenancePositionFor()` (FNV-1a-jittered sector coords); picks the closest within tolerance in canvas space.
+   - **confidence/stage/acts**: inverts the render transform (`(canvasX - layout.centerX) / scale + anchorLayout.centerX`, same for y) to convert cursor canvas coords → anchor world coords, then delegates to anchor's `starHitTest` with world-space tolerance scaled as `tolerance/scale`. On-screen tolerance stays constant in canvas pixels regardless of mini size.
+   - Imports `starHitTest` from `./anchor` (added to existing import line).
+
+2. **`src/lib/sight/v6/MiniDome.svelte`** — added:
+   - `onHover?: (path: string | null) => void` prop with default no-op.
+   - `handlePointerMove` / `handlePointerLeave` handlers that hit-test and dispatch.
+   - `onpointermove` / `onpointerleave` listeners on the canvas + `class:has-hover` toggle for `cursor: pointer` UX feedback.
+
+3. **`src/lib/sight/v6/SightV6.svelte`** — added:
+   - `onHover={(path) => { hoveredPath = path; }}` callback passed to each of the 4 MiniDome instances.
+   - New `$effect(() => { void hoveredPath; untrack(() => paint()); })` so the anchor canvas repaints on hoveredPath change from any source. The forward direction (anchor pointermove → hoveredPath) still calls paint() explicitly inside handlePointerMove; the new effect specifically handles the reverse direction (mini onHover → hoveredPath). paint() is idempotent so the occasional double-paint on forward hover is harmless.
+
+### Performance notes
+
+- Hit-test is O(n) per pointermove. At 7,650 stars: ≈0.05 ms per call — negligible.
+- Hover dispatch is guarded by `if (hit !== highlightedPath)` to avoid redundant state writes when the cursor moves within the same star's hit zone.
+- MiniDome's existing `$effect` (watches stars / highlightedPath / anchorLayout) auto-repaints all 4 minis when SightV6's hoveredPath updates — no explicit propagation code needed.
+
+### Out of scope (later in Phase 2)
+
+- §B.7 — clicking a mini-dome category region (e.g. "Established" sector in the Stage mini) cross-filters the universe.
+- §B.8 — CI perf gate for cross-filter responsiveness.
+- §B.9 — hex-bin aggregation when visible-star count exceeds 5,000 (smooths interaction at extreme density).
+- §B.10 — Cmd-Shift-D persistent Pro mode toggle (currently Cmd-D toggles minis per session only).
+- §B.11 — Phase 2 ship gate → Sight v6.1.
+
+### Test cycle pending
+
+Build to follow this commit. Eisa verifies bidirectional brushing across anchor + 4 minis on a populated universe, then the cascade continues to §B.7.
+
+---
+
+*End of session log 2026-05-14. §B.6 commit + build follow; §B.7 opens after Eisa accepts §B.6.*

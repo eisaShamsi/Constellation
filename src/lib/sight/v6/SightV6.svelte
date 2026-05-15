@@ -408,6 +408,17 @@
 			untrack(() => syncCanvasSize());
 		});
 	});
+
+	// §B.6 — repaint anchor when hoveredPath changes from any source.
+	// Forward direction (anchor pointermove → hoveredPath) already calls
+	// paint() explicitly inside handlePointerMove. Reverse direction
+	// (mini-dome onHover → hoveredPath) needs this effect to redraw the
+	// anchor's gold highlight ring. paint() is idempotent so the
+	// occasional double-paint on forward-direction hover is harmless.
+	$effect(() => {
+		void hoveredPath;
+		untrack(() => paint());
+	});
 </script>
 
 <div class="sight-v6-root">
@@ -489,6 +500,7 @@
 							stars={filteredRows.length > 0 ? stars : []}
 							{anchorLayout}
 							highlightedPath={hoveredPath}
+							onHover={(path) => { hoveredPath = path; }}
 						/>
 					</div>
 				{/each}
