@@ -554,4 +554,55 @@ Two visual fixes, no architectural changes:
 
 ---
 
-*End of session log 2026-05-14. §B.6-fix-3 commit + build complete; Eisa test cycle 3 next.*
+## §B.6 cycle-3 PASS-with-feedback + §B.6-fix-4 (2026-05-15)
+
+**Cycle-3 test builds:** B6-fix2.exe (`062529ac`) + B6-fix3.exe (`9f2c1732`).
+
+**Eisa cycle-3 verdict:**
+- Stage 1 (cursor): mostly OK except cursor doesn't show pointer over mini canvases.
+- Stage 2 / Stage 3 (palette): pass for distinguishability, but promoted node size needs to be 5px (radius 2.5).
+- Stage 4 (demoted anchor mini): fine.
+- Stage 5 (linked brushing across swap): pass.
+- Stage 6 (swap-back via demoted anchor): true.
+- Stage 7 (swap UX): "I don't like how the swap works. Now, if I want to swap to any other mini-dome, I first have to click the demoted anchor dome in the top left, then click the one I want." Eisa wants direct mini → mini swap, plus a Reset View button to return to default.
+- Stage 8 (open note from promoted): pass, but needs Return-to-Sight button.
+- General finding: zoom is disabled on promoted mini — needs to work on whatever's in the primary slot.
+
+### §B.6-fix-4 implementation
+
+Four sub-fixes, two files (MiniDome.svelte + SightV6.svelte), ~204 insertions:
+
+**Fix 4a — Cursor pointer on mini canvases (MiniDome.svelte CSS):**
+Changed `.mini-dome-canvas { cursor: default }` → `cursor: pointer` for the default (compact / mini-slot) state. The whole canvas IS a click target (clicking promotes the channel), so pointer cursor signals the affordance. Added `.is-promoted` cascade: in promoted slot, cursor reverts to default with `.has-hover` toggling pointer over stars and `.is-dragging` showing grabbing during drag-pan. Stage 7 swap-UX issue likely traces to missing pointer cursor → user couldn't tell the mini was clickable, so fell back to the anchor-mediated workaround. Direct mini → mini swap was already wired (handlePromote dispatches regardless of current primary); the cursor fix makes the affordance visible.
+
+**Fix 4b — Promoted node size 5px ⌀ (MiniDome.svelte paint):**
+Changed `dotRadius: compact ? 0.75 : 3` → `dotRadius: compact ? 0.75 : 2.5` per Eisa Stage 2/3. Acts top-decile preserves its 4× ratio relative to base (2.5 × 4 = 10 px when promoted).
+
+**Fix 4c — Reset View button (SightV6.svelte):**
+Added `handleResetView()`: sets `primaryChannel = 'anchor'`, resets `zoomScale = 1`, `panX = panY = 0`. Header gains a button visible only when the layout has been changed away from default (`primaryChannel !== 'anchor' || zoomScale !== 1 || panX !== 0 || panY !== 0`). Style: subtle neutral background, brighter on hover. Sits at the right edge of the header strip via `margin-left: auto`. Per Eisa Stage 7 ask.
+
+**Fix 4d — Zoom + pan + drag + Cmd-0 on promoted MiniDome (MiniDome.svelte):**
+Added local `zoomScale / panX / panY / dragState` state + `ZOOM_MIN=0.5`, `ZOOM_MAX=24`, `DRAG_THRESHOLD=4` constants. New handlers:
+- `handleWheel`: zoom-toward-cursor; mirrors SightV6's anchor handleWheel exactly.
+- `handlePointerDown`: start drag-pan.
+- `handlePointerUp`: end drag.
+- `handleKey`: Cmd-0 / Ctrl-0 reset (parity with anchor).
+- `handlePointerMove` extended: drag-pan path when `!compact && dragState && (buttons & 1)`. Hit-test inverts zoom transform for hover detection (`x = (x - panX) / zoomScale`, similar for y; tolerance scaled `12 / zoomScale` so screen hit zone stays constant).
+- `handleClick` extended: ignores drag-clicks via `dragState?.moved` guard; inverts transform for hit-test (mirrors `handlePointerMove`).
+- `paint()` applies zoom transform via `setTransform(dpr * zoomScale, 0, 0, dpr * zoomScale, dpr * panX, dpr * panY)` when `!compact`. Compact path keeps identity-ish transform `(dpr, 0, 0, dpr, 0, 0)` as before.
+- Wheel listener attached via `$effect` keyed on `canvasEl` (re-attaches on canvas remount; cleanup detaches from old element). Mirrors SightV6's pattern. Imperative `addEventListener` retained per §A.14 fix-11 lesson (Tauri WebView2 + Svelte 5 onwheel silent-fails in release builds).
+- New `$effect` watching zoom/pan/dragState triggers paint() so the transform reapplies on state change.
+- Canvas markup: added `tabindex={compact ? -1 : 0}` (focusable for keyboard events when promoted), `onpointerdown`, `onpointerup`, `onkeydown`, `class:is-dragging={dragState?.moved}`.
+
+State is local — each promotion creates a fresh MiniDome instance (because primary-slot and mini-grid live at different DOM positions in the SightV6 markup), so zoom resets to 1 automatically on every fresh promotion.
+
+### Out of scope (carries over)
+
+- **Return-to-Sight button after opening a note from promoted view:** the existing dock eye icon already returns to Sight from any opened note (closes/opens Sight). Asking Eisa whether the dock icon is sufficient or if he wants a dedicated in-editor button (the latter touches NotePane / +layout.svelte, not Sight).
+- **Promoted-mini full anchor chrome** (calendar rim + stratum text labels + connection lines): still deferred from §B.6-fix-3. Not addressed in fix-4.
+
+**Build artifact:** `Constellation_0.3.4_x64-setup.B6-fix4.exe` (this commit).
+
+---
+
+*End of session log 2026-05-14. §B.6-fix-4 commit + build complete; Eisa cycle-4 test next.*

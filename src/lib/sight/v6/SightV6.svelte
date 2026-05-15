@@ -421,6 +421,16 @@
 		panY = 0;
 	}
 
+	// §B.6-fix-4c (Eisa cycle-3 Stage 7): explicit "Reset View" returns
+	// to the default layout — anchor in primary slot + zoom 1 + no pan.
+	// Header button exposes this when there's something to reset.
+	function handleResetView(): void {
+		primaryChannel = 'anchor';
+		zoomScale = 1;
+		panX = 0;
+		panY = 0;
+	}
+
 	// React to backfill render-ready: load layout once tier 1 done.
 	$effect(() => {
 		if (backfillProgress.renderReady) {
@@ -473,6 +483,15 @@
 	<div class="sight-v6-header">
 		<span class="sight-v6-title">Constellation Sight</span>
 		<span class="sight-v6-subtitle">v6.0 — anchor dome + facets (Phase 1)</span>
+		<!-- §B.6-fix-4c — Reset View button. Visible when the layout
+		     has been changed away from the default (anchor primary at
+		     zoom 1.0). Clicking returns to default in one tap, no need
+		     to manually swap back through the demoted-anchor mini. -->
+		{#if primaryChannel !== 'anchor' || zoomScale !== 1 || panX !== 0 || panY !== 0}
+			<button class="sight-v6-reset-btn" onclick={handleResetView} title="Return to anchor dome at default zoom (Reset View)">
+				Reset View
+			</button>
+		{/if}
 	</div>
 
 	<div class="sight-v6-body">
@@ -614,6 +633,28 @@
 	.sight-v6-subtitle {
 		font-size: 11px;
 		color: #5a6275;
+	}
+
+	/* §B.6-fix-4c — Reset View button. Lives at the right edge of the
+	   header strip via margin-left:auto. Subtle by default; visible
+	   on hover. Designed not to compete with the title. */
+	.sight-v6-reset-btn {
+		margin-left: auto;
+		padding: 4px 12px;
+		font-size: 11px;
+		font-family: inherit;
+		color: #e8ebf2;
+		background: rgba(58, 67, 90, 0.55);
+		border: 1px solid #3b5998;
+		border-radius: 4px;
+		cursor: pointer;
+		transition: background 0.12s ease;
+	}
+	.sight-v6-reset-btn:hover {
+		background: rgba(74, 90, 130, 0.85);
+	}
+	.sight-v6-reset-btn:active {
+		background: rgba(58, 67, 90, 0.85);
 	}
 
 	.sight-v6-body {

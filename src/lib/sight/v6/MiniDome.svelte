@@ -57,6 +57,23 @@
 	let dpr = $state(1);
 	let resizeObserver: ResizeObserver | null = null;
 
+	// §B.6-fix-4d (Eisa cycle-3 General Finding: "we need to make sure
+	// that the zoom function is enabled in any dome that gets enlarged"):
+	// zoom + pan state, ACTIVE only when compact=false (promoted slot).
+	// Mini-slot (compact=true) renderings keep an identity transform and
+	// these vars are inert. Mirrors the anchor canvas pattern in
+	// SightV6.svelte (zoomScale / panX / panY / dragState / DRAG_THRESHOLD).
+	// State is local — each promotion creates a fresh MiniDome instance
+	// (because primary-slot and mini-grid live at different DOM positions),
+	// so zoom resets to 1 on every fresh promotion automatically.
+	let zoomScale = $state(1);
+	let panX = $state(0);
+	let panY = $state(0);
+	let dragState = $state<{ startSx: number; startSy: number; startPanX: number; startPanY: number; moved: boolean } | null>(null);
+	const ZOOM_MIN = 0.5;
+	const ZOOM_MAX = 24;
+	const DRAG_THRESHOLD = 4;
+
 	function syncCanvasSize(): void {
 		if (!canvasEl || !hostEl) return;
 		const rect = hostEl.getBoundingClientRect();
@@ -74,12 +91,23 @@
 		if (!ctx) return;
 		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 		// §B.6-fix-3: when promoted to the primary slot (compact=false),
-		// scale dots up 4× (0.75 → 3) so individual stars are visible at
-		// the larger canvas size. Top-decile in Acts preserves its 4×
-		// ratio relative to base (3 × 4 = 12 px when promoted).
+		// scale dots up so individual stars are visible at the larger
+		// canvas size. §B.6-fix-4 (Eisa cycle-3 Stage 2/3): 5-px ⌀ per
+		// Eisa's spec → radius 2.5 (was 3 in fix-3). Top-decile in
+		// Acts preserves its 4× ratio relative to base (2.5 × 4 = 10 px
+		// when promoted).
+		// §B.6-fix-4d: also apply zoom/pan transform when promoted so
+		// the user can zoom in to inspect detail (parallels the anchor
+		// canvas zoom behavior). transform = identity when compact.
+		if (!compact) {
+			const sx = dpr * zoomScale;
+			const tx = dpr * panX;
+			const ty = dpr * panY;
+			ctx.setTransform(sx, 0, 0, sx, tx, ty);
+		}
 		renderMiniDome(ctx, stars, channel, canvasWidth, canvasHeight, anchorLayout, {
 			highlightedPath,
-			dotRadius: compact ? 0.75 : 3,
+			dotRadius: compact ? 0.75 : 2.5,
 		});
 	}
 
@@ -87,20 +115,91 @@
 	// updates its canonical hoveredPath. The new value flows back to ALL
 	// 4 minis (and the anchor) via the highlightedPath prop, completing
 	// the bidirectional linked-brushing loop with a single source of truth.
+	// §B.6-fix-4d: when promoted (!compact), ALSO handles drag-pan and
+	// inverts the zoom transform for hit-test.
 	function handlePointerMove(ev: PointerEvent): void {
 		if (!canvasEl) return;
+		// Drag-pan path (only meaningful when promoted with active drag).
+		if (!compact && dragState && (ev.buttons & 1) === 1) {
+			const dx = ev.clientX - dragState.startSx;
+			const dy = ev.clientY - dragState.startSy;
+			if (!dragState.moved && Math.hypot(dx, dy) > DRAG_THRESHOLD) {
+				dragState.moved = true;
+			}
+			if (dragState.moved) {
+				panX = dragState.startPanX + dx;
+				panY = dragState.startPanY + dy;
+				return;
+			}
+		}
 		const rect = canvasEl.getBoundingClientRect();
-		const x = ev.clientX - rect.left;
-		const y = ev.clientY - rect.top;
-		const hit = miniDomeHitTest(stars, x, y, channel, anchorLayout, canvasWidth, canvasHeight);
+		let x = ev.clientX - rect.left;
+		let y = ev.clientY - rect.top;
+		// Invert zoom transform for hit-test when promoted.
+		if (!compact) {
+			x = (x - panX) / zoomScale;
+			y = (y - panY) / zoomScale;
+		}
+		// World tolerance scales inversely with zoom so the screen
+		// hit zone stays constant in screen pixels.
+		const tol = compact ? 12 : 12 / zoomScale;
+		const hit = miniDomeHitTest(stars, x, y, channel, anchorLayout, canvasWidth, canvasHeight, tol);
 		if (hit !== highlightedPath) {
 			onHover(hit);
 		}
 	}
 
 	function handlePointerLeave(): void {
+		dragState = null;
 		if (highlightedPath !== null) {
 			onHover(null);
+		}
+	}
+
+	// §B.6-fix-4d — drag-pan start + end (only meaningful in promoted).
+	function handlePointerDown(ev: PointerEvent): void {
+		if (compact) return;
+		dragState = {
+			startSx: ev.clientX,
+			startSy: ev.clientY,
+			startPanX: panX,
+			startPanY: panY,
+			moved: false,
+		};
+	}
+
+	function handlePointerUp(): void {
+		if (compact) return;
+		dragState = null;
+	}
+
+	// §B.6-fix-4d — wheel = zoom-toward-cursor. Mirrors SightV6's
+	// handleWheel for the anchor canvas. Active only when promoted.
+	function handleWheel(ev: WheelEvent): void {
+		if (compact) return;
+		ev.preventDefault();
+		if (!canvasEl) return;
+		const rect = canvasEl.getBoundingClientRect();
+		const sx = ev.clientX - rect.left;
+		const sy = ev.clientY - rect.top;
+		const wx = (sx - panX) / zoomScale;
+		const wy = (sy - panY) / zoomScale;
+		const factor = ev.deltaY < 0 ? 1.15 : 1 / 1.15;
+		const nextScale = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoomScale * factor));
+		if (nextScale === zoomScale) return;
+		panX = sx - wx * nextScale;
+		panY = sy - wy * nextScale;
+		zoomScale = nextScale;
+	}
+
+	// §B.6-fix-4d — Cmd-0 / Ctrl-0 reset zoom + pan (parity with anchor).
+	function handleKey(ev: KeyboardEvent): void {
+		if (compact) return;
+		if (ev.key === '0' && (ev.ctrlKey || ev.metaKey)) {
+			ev.preventDefault();
+			zoomScale = 1;
+			panX = 0;
+			panY = 0;
 		}
 	}
 
@@ -111,16 +210,27 @@
 	// Non-compact (primary slot): click on a star → open it in the
 	//   editor; click on empty area → no-op (use the demoted-anchor
 	//   mini-slot click to swap back).
+	// §B.6-fix-4d: ignore clicks that were actually drag-pans (per
+	//   anchor's pattern in SightV6.handleClick).
 	function handleClick(ev: MouseEvent): void {
 		if (compact) {
 			onPromote(channel);
 			return;
 		}
+		if (dragState?.moved) {
+			dragState = null;
+			return;
+		}
 		if (!canvasEl) return;
 		const rect = canvasEl.getBoundingClientRect();
-		const x = ev.clientX - rect.left;
-		const y = ev.clientY - rect.top;
-		const hit = miniDomeHitTest(stars, x, y, channel, anchorLayout, canvasWidth, canvasHeight);
+		let x = ev.clientX - rect.left;
+		let y = ev.clientY - rect.top;
+		if (!compact) {
+			x = (x - panX) / zoomScale;
+			y = (y - panY) / zoomScale;
+		}
+		const tol = compact ? 12 : 12 / zoomScale;
+		const hit = miniDomeHitTest(stars, x, y, channel, anchorLayout, canvasWidth, canvasHeight, tol);
 		if (hit) {
 			onOpenNote(hit);
 		}
@@ -139,6 +249,30 @@
 		resizeObserver = null;
 	});
 
+	// §B.6-fix-4d — wheel listener via $effect so it re-attaches on
+	// every canvas mount. Mirrors SightV6's pattern (which exists for
+	// the same reason: the anchor canvas mounts/unmounts on dome-swap).
+	// Imperative addEventListener is required (Tauri WebView2 + Svelte 5
+	// onwheel silent-fails in release builds — §A.14 fix-11 lesson).
+	$effect(() => {
+		const el = canvasEl;
+		if (!el) return;
+		el.addEventListener('wheel', handleWheel, { passive: false });
+		return () => {
+			el.removeEventListener('wheel', handleWheel);
+		};
+	});
+
+	// §B.6-fix-4d — repaint when zoom or pan changes (only meaningful
+	// when promoted, but the effect fires regardless and paint() is
+	// idempotent).
+	$effect(() => {
+		void zoomScale;
+		void panX;
+		void panY;
+		untrack(() => paint());
+	});
+
 	// Repaint on star set, anchor layout, or highlight change.
 	$effect(() => {
 		void stars;
@@ -154,9 +288,14 @@
 		class="mini-dome-canvas"
 		class:has-hover={highlightedPath !== null}
 		class:is-promoted={!compact}
+		class:is-dragging={dragState?.moved}
 		onpointermove={handlePointerMove}
+		onpointerdown={handlePointerDown}
+		onpointerup={handlePointerUp}
 		onpointerleave={handlePointerLeave}
 		onclick={handleClick}
+		onkeydown={handleKey}
+		tabindex={compact ? -1 : 0}
 	></canvas>
 </div>
 
@@ -174,9 +313,22 @@
 		width: 100%;
 		height: 100%;
 		display: block;
+		/* §B.6-fix-4 (Eisa cycle-3 Stage 1.3): cursor: pointer always
+		   on a mini in a mini slot — clicking anywhere promotes the
+		   channel into the primary slot, so the whole canvas is a
+		   click target. The pointer cursor signals this affordance. */
+		cursor: pointer;
+	}
+	/* When promoted to the primary slot (compact=false), the canvas
+	   becomes a regular inspection surface: click on a star opens
+	   the note; click on empty area is a no-op. Cursor reflects: */
+	.mini-dome-canvas.is-promoted {
 		cursor: default;
 	}
-	.mini-dome-canvas.has-hover {
+	.mini-dome-canvas.is-promoted.has-hover {
 		cursor: pointer;
+	}
+	.mini-dome-canvas.is-promoted.is-dragging {
+		cursor: grabbing;
 	}
 </style>
