@@ -12,7 +12,7 @@
 -->
 <script lang="ts">
 	import { onMount, onDestroy, untrack } from 'svelte';
-	import type { StarDerived, MiniDomeChannel } from './types';
+	import type { StarDerived, SlotChannel } from './types';
 	import { renderMiniDome, miniDomeHitTest } from './miniDome';
 	import type { DomeLayout } from './anchor';
 
@@ -22,8 +22,11 @@
 		anchorLayout,
 		highlightedPath = null,
 		onHover = () => {},
+		compact = true,
+		onPromote = () => {},
+		onOpenNote = () => {},
 	}: {
-		channel: MiniDomeChannel;
+		channel: SlotChannel;
 		stars: StarDerived[];
 		anchorLayout: DomeLayout;
 		highlightedPath?: string | null;
@@ -33,6 +36,18 @@
 		 *  mini only PROPOSES via onHover() and receives the resolved
 		 *  value back through the highlightedPath prop. */
 		onHover?: (path: string | null) => void;
+		/** §B.6-fix-3 — compact=true is the small mini-slot rendering
+		 *  (current default). compact=false is the promoted primary-
+		 *  slot rendering: bigger dots (dotRadius 3 instead of 0.75),
+		 *  and clicks open notes instead of dispatching promote. */
+		compact?: boolean;
+		/** §B.6-fix-3 — fires when the canvas is clicked while compact
+		 *  (mini slot). Parent uses this to swap primary slots. */
+		onPromote?: (channel: SlotChannel) => void;
+		/** §B.6-fix-3 — fires when the cursor clicks a star while NOT
+		 *  compact (this mini occupies the primary slot). Parent uses
+		 *  this to open the note in the editor. */
+		onOpenNote?: (notePath: string) => void;
 	} = $props();
 
 	let canvasEl = $state<HTMLCanvasElement | null>(null);
@@ -58,8 +73,13 @@
 		const ctx = canvasEl.getContext('2d');
 		if (!ctx) return;
 		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+		// §B.6-fix-3: when promoted to the primary slot (compact=false),
+		// scale dots up 4× (0.75 → 3) so individual stars are visible at
+		// the larger canvas size. Top-decile in Acts preserves its 4×
+		// ratio relative to base (3 × 4 = 12 px when promoted).
 		renderMiniDome(ctx, stars, channel, canvasWidth, canvasHeight, anchorLayout, {
 			highlightedPath,
+			dotRadius: compact ? 0.75 : 3,
 		});
 	}
 
@@ -81,6 +101,28 @@
 	function handlePointerLeave(): void {
 		if (highlightedPath !== null) {
 			onHover(null);
+		}
+	}
+
+	// §B.6-fix-3 — click dispatch.
+	// Compact (mini slot): click anywhere → swap this channel into the
+	//   primary slot (Eisa cycle-2 ask: "click on every mini-dome to
+	//   enlarge it to the same size as the anchor dome").
+	// Non-compact (primary slot): click on a star → open it in the
+	//   editor; click on empty area → no-op (use the demoted-anchor
+	//   mini-slot click to swap back).
+	function handleClick(ev: MouseEvent): void {
+		if (compact) {
+			onPromote(channel);
+			return;
+		}
+		if (!canvasEl) return;
+		const rect = canvasEl.getBoundingClientRect();
+		const x = ev.clientX - rect.left;
+		const y = ev.clientY - rect.top;
+		const hit = miniDomeHitTest(stars, x, y, channel, anchorLayout, canvasWidth, canvasHeight);
+		if (hit) {
+			onOpenNote(hit);
 		}
 	}
 
@@ -111,8 +153,10 @@
 		bind:this={canvasEl}
 		class="mini-dome-canvas"
 		class:has-hover={highlightedPath !== null}
+		class:is-promoted={!compact}
 		onpointermove={handlePointerMove}
 		onpointerleave={handlePointerLeave}
+		onclick={handleClick}
 	></canvas>
 </div>
 

@@ -41,7 +41,7 @@
 	import FacetSidebar from './facetSidebar.svelte';
 	import Tour from './tour.svelte';
 	import MiniDome from './MiniDome.svelte';
-	import type { LayoutCacheRow, LinkEdge, StarDerived, FacetId, MiniDomeChannel } from './types';
+	import type { LayoutCacheRow, LinkEdge, StarDerived, FacetId, MiniDomeChannel, SlotChannel } from './types';
 
 	let { onOpenNote = (_path: string, _libraryName: string) => {} }: {
 		onOpenNote?: (path: string, libraryName: string) => void;
@@ -97,6 +97,18 @@
 	// and override the default-hidden initial state.
 	let diagnosticsVisible = $state(false);
 	const MINI_DOME_CHANNELS: MiniDomeChannel[] = ['confidence', 'stage', 'acts', 'provenance'];
+
+	// §B.6-fix-3 — dome-swap state. `primaryChannel` is whichever of
+	// the 5 surfaces currently occupies the large primary canvas slot.
+	// Default 'anchor' = the universe-baseline view (renderAnchorDome
+	// with full chrome). Click any mini → promote it to primary;
+	// click the demoted anchor (now in a mini slot) → swap back.
+	// Per Eisa cycle-2: "click on every mini-dome to enlarge it to
+	// the same size as the anchor dome ... the user could switch
+	// between all the domes (including the main one) to check their
+	// details."
+	const ALL_SLOTS: SlotChannel[] = ['anchor', 'confidence', 'stage', 'acts', 'provenance'];
+	let primaryChannel = $state<SlotChannel>('anchor');
 
 	// Anchor layout snapshot for mini-domes — they need it to scale
 	// star positions from anchor world coords to mini canvas coords.
@@ -343,17 +355,6 @@
 			resizeObserver = new ResizeObserver(() => syncCanvasSize());
 			resizeObserver.observe(canvasHostEl);
 		}
-		// 2026-05-14 §A.14 fix-11 (Boss-test cycle 3.1 zoom dead): the
-		// Svelte template `onwheel={handleWheel}` did not fire in the
-		// release build — likely Tauri WebView2 + Svelte 5 wheel-event
-		// quirk, possibly passive-by-default. Switch to imperative
-		// addEventListener with explicit { passive: false } so
-		// preventDefault() works and the handler is guaranteed to run.
-		// The template binding is removed to avoid potential double-
-		// firing on some platforms.
-		if (canvasEl) {
-			canvasEl.addEventListener('wheel', handleWheel, { passive: false });
-		}
 		startWarmCache();
 		// §A.11 — fire the tour if user hasn't seen it yet. Snapshot
 		// (no $store subscription needed for the show-once gate).
@@ -367,11 +368,58 @@
 		backfillProgress.stop();
 		resizeObserver?.disconnect();
 		resizeObserver = null;
-		// §A.14 fix-11 — match the addEventListener in onMount.
-		if (canvasEl) {
-			canvasEl.removeEventListener('wheel', handleWheel);
-		}
 	});
+
+	// §B.6-fix-3 — wheel listener moved out of onMount and into a
+	// $effect keyed on canvasEl, because the anchor canvas now mounts/
+	// unmounts based on primaryChannel (dome-swap). When primaryChannel
+	// flips between 'anchor' and a mini channel, canvasEl rebinds; the
+	// effect re-attaches the listener to the new element and the cleanup
+	// detaches from the old. Replaces the §A.14 fix-11 onMount block.
+	// Imperative addEventListener kept (NOT Svelte template binding) per
+	// the original fix-11 lesson — Tauri WebView2 + Svelte 5 onwheel
+	// silent-fails in release builds.
+	$effect(() => {
+		const el = canvasEl;
+		if (!el) return;
+		el.addEventListener('wheel', handleWheel, { passive: false });
+		return () => {
+			el.removeEventListener('wheel', handleWheel);
+		};
+	});
+
+	// §B.6-fix-3 — re-sync canvas dimensions after the primary slot
+	// swaps. Mounting a fresh canvas via {#if} doesn't fire the
+	// ResizeObserver (host size unchanged), so syncCanvasSize must be
+	// called explicitly when canvasEl rebinds.
+	$effect(() => {
+		void canvasEl;
+		void primaryChannel;
+		untrack(() => {
+			if (canvasEl) syncCanvasSize();
+		});
+	});
+
+	// §B.6-fix-3 — promoted-mini click → open note. Looks up the row
+	// to find libraryName, then dispatches the parent's onOpenNote.
+	function handlePromotedOpenNote(notePath: string): void {
+		const row = rows.find((r) => r.notePath === notePath);
+		if (row && row.libraryName) {
+			onOpenNote(notePath, row.libraryName);
+		}
+	}
+
+	// §B.6-fix-3 — swap a different channel into the primary slot.
+	// Resets zoom + pan (the previous slot's transform doesn't apply
+	// to the new primary). hoveredPath stays — linked brushing is
+	// continuous across swaps.
+	function handlePromote(slot: SlotChannel): void {
+		if (slot === primaryChannel) return;
+		primaryChannel = slot;
+		zoomScale = 1;
+		panX = 0;
+		panY = 0;
+	}
 
 	// React to backfill render-ready: load layout once tier 1 done.
 	$effect(() => {
@@ -437,28 +485,49 @@
 		/>
 
 		<div bind:this={canvasHostEl} class="sight-v6-canvas-host" class:has-minis={diagnosticsVisible}>
-			<canvas
-				bind:this={canvasEl}
-				class="sight-v6-canvas"
-				class:has-hover={hoveredPath !== null}
-				class:is-dragging={dragState?.moved}
-				onpointermove={handlePointerMove}
-				onpointerdown={handlePointerDown}
-				onpointerup={handlePointerUp}
-				onpointerleave={handlePointerLeave}
-				onclick={handleClick}
-				onkeydown={handleKey}
-				tabindex="0"
-			></canvas>
-			<!-- §A.14 fix-11: zoom indicator. Renders ONLY when zoom != 1.0
-			     so it doesn't clutter the default view. If wheel fires and
-			     state updates, this badge appears + reflects zoom level even
-			     if the render pipeline is broken — clean diagnostic for
-			     "did wheel fire" vs "did render apply". Cmd-0 hides it
-			     by resetting zoom to 1. -->
-			{#if zoomScale !== 1 || panX !== 0 || panY !== 0}
-				<div class="sight-v6-zoom-badge">
-					zoom: {zoomScale.toFixed(2)}× · pan: {Math.round(panX)},{Math.round(panY)} · Ctrl-0 reset
+			{#if primaryChannel === 'anchor'}
+				<canvas
+					bind:this={canvasEl}
+					class="sight-v6-canvas"
+					class:has-hover={hoveredPath !== null}
+					class:is-dragging={dragState?.moved}
+					onpointermove={handlePointerMove}
+					onpointerdown={handlePointerDown}
+					onpointerup={handlePointerUp}
+					onpointerleave={handlePointerLeave}
+					onclick={handleClick}
+					onkeydown={handleKey}
+					tabindex="0"
+				></canvas>
+				<!-- §A.14 fix-11: zoom indicator. Renders ONLY when zoom != 1.0
+				     so it doesn't clutter the default view. If wheel fires and
+				     state updates, this badge appears + reflects zoom level even
+				     if the render pipeline is broken — clean diagnostic for
+				     "did wheel fire" vs "did render apply". Cmd-0 hides it
+				     by resetting zoom to 1. -->
+				{#if zoomScale !== 1 || panX !== 0 || panY !== 0}
+					<div class="sight-v6-zoom-badge">
+						zoom: {zoomScale.toFixed(2)}× · pan: {Math.round(panX)},{Math.round(panY)} · Ctrl-0 reset
+					</div>
+				{/if}
+			{:else}
+				<!-- §B.6-fix-3 — promoted mini in primary slot. Fills the
+				     canvas-host space. Uses MiniDome with compact=false so
+				     the channel renders with bigger dots (radius 3 vs 0.75)
+				     and a click on a star opens it in the editor (callback
+				     wired below to handlePromotedOpenNote). The original
+				     anchor canvas is unmounted; its zoom/pan state resets
+				     when the user swaps anchor back into primary. -->
+				<div class="sight-v6-promoted-host">
+					<MiniDome
+						channel={primaryChannel}
+						stars={filteredRows.length > 0 ? stars : []}
+						{anchorLayout}
+						highlightedPath={hoveredPath}
+						onHover={(path) => { hoveredPath = path; }}
+						compact={false}
+						onOpenNote={handlePromotedOpenNote}
+					/>
 				</div>
 			{/if}
 			{#if !backfillProgress.renderReady}
@@ -489,20 +558,26 @@
 		</div>
 
 		{#if diagnosticsVisible}
-			<!-- §B.1: 2×2 mini-domes grid. Skeleton renders chrome
-			     (background + stratum bands + channel title) only;
-			     channel-specific star renderers fill in §B.2–§B.5. -->
+			<!-- §B.1: 2×2 mini-domes grid. Channel-specific renderers per §B.2-§B.5.
+			     §B.6-fix-3: iterates ALL_SLOTS (anchor + 4 channels) skipping the
+			     primary, so the demoted anchor takes the slot vacated by whichever
+			     channel was promoted. Click any mini → handlePromote swaps it into
+			     the primary slot. -->
 			<div class="sight-v6-minis-grid">
-				{#each MINI_DOME_CHANNELS as channel (channel)}
-					<div class="sight-v6-mini-cell">
-						<MiniDome
-							{channel}
-							stars={filteredRows.length > 0 ? stars : []}
-							{anchorLayout}
-							highlightedPath={hoveredPath}
-							onHover={(path) => { hoveredPath = path; }}
-						/>
-					</div>
+				{#each ALL_SLOTS as slot (slot)}
+					{#if slot !== primaryChannel}
+						<div class="sight-v6-mini-cell">
+							<MiniDome
+								channel={slot}
+								stars={filteredRows.length > 0 ? stars : []}
+								{anchorLayout}
+								highlightedPath={hoveredPath}
+								onHover={(path) => { hoveredPath = path; }}
+								compact={true}
+								onPromote={handlePromote}
+							/>
+						</div>
+					{/if}
 				{/each}
 			</div>
 		{/if}
@@ -587,6 +662,17 @@
 		height: 100%;
 		display: block;
 		cursor: default;
+	}
+
+	/* §B.6-fix-3 — promoted mini wrapper. Fills the canvas-host the
+	   same way the anchor canvas does (absolute inset 0). The MiniDome
+	   inside has its own host div + ResizeObserver, so size changes
+	   propagate naturally. */
+	.sight-v6-promoted-host {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
 	}
 
 	.sight-v6-canvas.has-hover {

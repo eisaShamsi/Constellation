@@ -148,6 +148,18 @@ export type MiniDomeChannel =
 	| 'acts'
 	| 'provenance';
 
+/**
+ * §B.6-fix-3 (2026-05-15) — broader slot identifier covering the
+ * 4 mini-dome channels PLUS 'anchor' (the universe-as-cream-stars
+ * baseline view). Used by the dome-swap layout in SightV6.svelte
+ * where any of the 5 slots can occupy the primary canvas at any
+ * time. Distinct from MiniDomeChannel because cross-filter category
+ * gestures (`filter-mini-dome-category`) and the facet sidebar
+ * specifically exclude 'anchor' — only the channel mini-domes have
+ * categorical filterable buckets.
+ */
+export type SlotChannel = MiniDomeChannel | 'anchor';
+
 // ════════════════════════════════════════════════════════════════════
 // Register chip (Concept Paper §4)
 // ════════════════════════════════════════════════════════════════════

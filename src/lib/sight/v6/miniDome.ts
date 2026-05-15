@@ -25,7 +25,7 @@
  * (§B.6) or cross-filter (§B.7) yet.
  */
 
-import type { StarDerived, MiniDomeChannel, LayoutCacheRow, ProvenanceSector } from './types';
+import type { StarDerived, MiniDomeChannel, SlotChannel, LayoutCacheRow, ProvenanceSector } from './types';
 import { PALETTE, stratumBandBoundaries } from './dome';
 import { pipColorForStage, starHitTest, type DomeLayout } from './anchor';
 
@@ -66,13 +66,13 @@ export function computeMiniDomeLayout(width: number, height: number): MiniDomeLa
 export function renderMiniDome(
 	ctx: CanvasRenderingContext2D,
 	stars: StarDerived[],
-	channel: MiniDomeChannel,
+	channel: SlotChannel,
 	width: number,
 	height: number,
 	anchorLayout: DomeLayout,
-	options: { highlightedPath?: string | null } = {},
+	options: { highlightedPath?: string | null; dotRadius?: number } = {},
 ): void {
-	const { highlightedPath = null } = options;
+	const { highlightedPath = null, dotRadius = 0.75 } = options;
 	const layout = computeMiniDomeLayout(width, height);
 	// Coordinate transform: anchor world coords → mini canvas coords.
 	// Channel renderers consume StarDerived.x/y (anchor coords) and
@@ -138,17 +138,20 @@ export function renderMiniDome(
 	// `computeStarPositions` — mini-domes inherit the same world-space
 	// positions so linked brushing in §B.6 matches up trivially.
 	switch (channel) {
+		case 'anchor':
+			renderAnchorChannel(ctx, stars, scale, offsetX, offsetY, dotRadius);
+			break;
 		case 'confidence':
-			renderConfidenceChannel(ctx, stars, scale, offsetX, offsetY);
+			renderConfidenceChannel(ctx, stars, scale, offsetX, offsetY, dotRadius);
 			break;
 		case 'stage':
-			renderStageChannel(ctx, stars, scale, offsetX, offsetY);
+			renderStageChannel(ctx, stars, scale, offsetX, offsetY, dotRadius);
 			break;
 		case 'acts':
-			renderActsChannel(ctx, stars, scale, offsetX, offsetY);
+			renderActsChannel(ctx, stars, scale, offsetX, offsetY, dotRadius);
 			break;
 		case 'provenance':
-			renderProvenanceChannel(ctx, stars, layout);
+			renderProvenanceChannel(ctx, stars, layout, dotRadius);
 			break;
 	}
 
@@ -214,6 +217,7 @@ function renderConfidenceChannel(
 	scale: number,
 	offsetX: number,
 	offsetY: number,
+	dotRadius: number = 0.75,
 ): void {
 	// 2026-05-14 §B-fix-3 (Eisa Boss-test §B-preview-2): "I want to
 	// have the mini-domes nodes at 3/2px in diameter." 1.5-px ⌀ =
@@ -222,6 +226,10 @@ function renderConfidenceChannel(
 	// "tiny nodes for density at default + zoom for individuals" design
 	// philosophy from cycle-3.4). Acts mini keeps the binary contrast
 	// with proportionally-sized top-decile (4× ratio preserved).
+	// 2026-05-15 §B.6-fix-3: dotRadius now parameterized — caller (the
+	// dome-swap layout in SightV6) passes 0.75 for compact mini slots
+	// and a larger value (~3) when the channel is promoted to the
+	// primary slot, where bigger dots are needed for inspection.
 	ctx.fillStyle = PALETTE.starFill;
 	for (const star of stars) {
 		const opacity = star.row.confidenceAlpha ?? 0.45;
@@ -229,7 +237,7 @@ function renderConfidenceChannel(
 		const y = star.y * scale + offsetY;
 		ctx.globalAlpha = opacity;
 		ctx.beginPath();
-		ctx.arc(x, y, 0.75, 0, Math.PI * 2);
+		ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
 		ctx.fill();
 	}
 	ctx.globalAlpha = 1;
@@ -254,6 +262,7 @@ function renderStageChannel(
 	scale: number,
 	offsetX: number,
 	offsetY: number,
+	dotRadius: number = 0.75,
 ): void {
 	ctx.globalAlpha = 1;
 	for (const star of stars) {
@@ -271,8 +280,7 @@ function renderStageChannel(
 		const stageColor = pipColorForStage(star.row.stage) ?? PALETTE.starFill;
 		ctx.fillStyle = stageColor;
 		ctx.beginPath();
-		// §B-fix-3: 0.75 radius (1.5 px ⌀) per Eisa spec.
-		ctx.arc(x, y, 0.75, 0, Math.PI * 2);
+		ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
 		ctx.fill();
 	}
 }
@@ -289,14 +297,19 @@ function renderActsChannel(
 	scale: number,
 	offsetX: number,
 	offsetY: number,
+	dotRadius: number = 0.75,
 ): void {
 	// §B-fix-3: baseline 0.75 radius (1.5 px ⌀) per Eisa spec; top-
 	// decile keeps the 4× ratio = 3 px radius (6 px ⌀) so hot-spots
 	// remain pre-attentively distinct.
+	// 2026-05-15 §B.6-fix-3: dotRadius parameterized for promoted
+	// (primary-slot) rendering. Top-decile preserves the 4× ratio
+	// regardless of base size.
 	ctx.fillStyle = PALETTE.starFill;
 	ctx.globalAlpha = 1;
+	const topDecileRadius = dotRadius * 4;
 	for (const star of stars) {
-		const r = star.topDecileActs ? 3 : 0.75;
+		const r = star.topDecileActs ? topDecileRadius : dotRadius;
 		const x = star.x * scale + offsetX;
 		const y = star.y * scale + offsetY;
 		ctx.beginPath();
@@ -326,6 +339,7 @@ function renderProvenanceChannel(
 	ctx: CanvasRenderingContext2D,
 	stars: StarDerived[],
 	layout: MiniDomeLayout,
+	dotRadius: number = 0.75,
 ): void {
 	const sectorCount = PROVENANCE_SECTORS.length;
 	const sectorAngle = (Math.PI * 2) / sectorCount;
@@ -365,12 +379,38 @@ function renderProvenanceChannel(
 
 	// Stars — re-positioned per provenance sector × stratum.
 	// §B-fix-3: 0.75 radius (1.5 px ⌀) per Eisa spec.
+	// §B.6-fix-3: dotRadius parameterized for promoted slot.
 	ctx.fillStyle = PALETTE.starFill;
 	ctx.globalAlpha = 1;
 	for (const star of stars) {
 		const pos = provenancePositionFor(star, layout);
 		ctx.beginPath();
-		ctx.arc(pos.x, pos.y, 0.75, 0, Math.PI * 2);
+		ctx.arc(pos.x, pos.y, dotRadius, 0, Math.PI * 2);
+		ctx.fill();
+	}
+}
+
+/** §B.6-fix-3: render the anchor view as a channel option (used when
+ *  anchor is demoted into a mini slot, OR when 'anchor' is the
+ *  promoted primary slot). Plain neutral cream stars — no encoding —
+ *  matching the anchor dome's baseline appearance. Uses the same
+ *  stratum × time positioning the other 3 spatial-shared channels
+ *  use (confidence/stage/acts), so linked brushing still aligns. */
+function renderAnchorChannel(
+	ctx: CanvasRenderingContext2D,
+	stars: StarDerived[],
+	scale: number,
+	offsetX: number,
+	offsetY: number,
+	dotRadius: number = 0.75,
+): void {
+	ctx.fillStyle = PALETTE.starFill;
+	ctx.globalAlpha = 1;
+	for (const star of stars) {
+		const x = star.x * scale + offsetX;
+		const y = star.y * scale + offsetY;
+		ctx.beginPath();
+		ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
 		ctx.fill();
 	}
 }
@@ -420,8 +460,10 @@ function pathHash2(path: string): [number, number] {
 // Helpers
 // ════════════════════════════════════════════════════════════════════
 
-function channelTitle(channel: MiniDomeChannel): string {
+function channelTitle(channel: SlotChannel): string {
 	switch (channel) {
+		case 'anchor':
+			return 'UNIVERSE — primary view';
 		case 'confidence':
 			return 'CONFIDENCE — opacity';
 		case 'stage':
@@ -456,7 +498,7 @@ export function miniDomeHitTest(
 	stars: StarDerived[],
 	canvasX: number,
 	canvasY: number,
-	channel: MiniDomeChannel,
+	channel: SlotChannel,
 	anchorLayout: DomeLayout,
 	miniWidth: number,
 	miniHeight: number,

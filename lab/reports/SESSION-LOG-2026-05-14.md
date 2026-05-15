@@ -500,4 +500,58 @@ Extended the switch from 5 cases (Concept Paper v4.0 vocabulary: established/fre
 
 ---
 
-*End of session log 2026-05-14. §B.6-fix-1 commit + build follow; §B.7 opens after Eisa accepts §B.6 cycle-2.*
+## §B.6 cycle-2 PASS-with-feedback + §B.6-fix-2 + §B.6-fix-3 (2026-05-15)
+
+**Cycle-2 test build:** `Constellation_0.3.4_x64-setup.B6-fix1.exe` (`1764a2a9`).
+
+**Eisa cycle-2 verdict:**
+- Stage 1 (mini visibility): OK.
+- Stage 2 (Stage palette): "I can see a blueish color spreading on the mini-dome. It is almost impossible to distinguish all the colors you mentioned." → §B.6-fix-2 Fix A below.
+- Stage 3 (chrome match): re-confirmed; promoted minis "shall follow the anchor dome scheme" → addressed in §B.6-fix-3 dome-swap below (promoted minis use bigger dots; full anchor chrome on promoted view is polish for later).
+- Stage 4 (gold ring): "It's clearer, but keep its previous size; don't enlarge it as you did." → §B.6-fix-2 Fix B below.
+- New feature ask: "click on every mini-dome to enlarge it to the same size as the anchor dome ... the user could switch between all the domes (including the main one) to check their details." → §B.6-fix-3 below.
+
+### §B.6-fix-2 (commit `062529ac`) — palette + ring
+
+Two visual fixes, no architectural changes:
+
+**Fix A — Stage palette differentiation:** added `PALETTE.stageBirth = '#fb923c'` (orange) as a 6th stage color slot in `dome.ts`. Re-mapped `birth` from `PALETTE.stageGrowing` (violet) to `PALETTE.stageBirth` (orange) in `anchor.ts pipColorForStage`. Now spark/birth/growth/maturity render as cyan/orange/violet/green — the two dominant categories (spark 49% + birth 40% = 89%) sit on opposite warm-cool axis sides instead of blurring as cyan-violet.
+
+**Fix B — Gold ring revert:** radius 9 → 6 per Eisa "keep its previous size; don't enlarge it as you did." Kept the 4-px halo (the real visibility win) and stroke 2.2 (halo handles contrast; thicker gold reads more confidently than the original 1.4 even at smaller radius).
+
+### §B.6-fix-3 — dome-swap feature
+
+**Function in hand:** click any mini-dome to promote it into the primary anchor slot at full size; the previous primary (anchor or another channel) demotes into the vacated mini slot. Click any demoted slot to swap back. Per Eisa cycle-2 ask.
+
+**Architecture:** introduced a parallel type `SlotChannel = MiniDomeChannel | 'anchor'` in `types.ts` for the 5-slot layout (the 4 mini channels + anchor). Kept `MiniDomeChannel` narrow because cross-filter category gestures (`filter-mini-dome-category`) and the facet sidebar specifically exclude 'anchor' — only categorical channels are filterable buckets.
+
+**Files (4, ~252 insertions):**
+
+1. **`src/lib/sight/v6/types.ts`** — add `SlotChannel` type.
+
+2. **`src/lib/sight/v6/miniDome.ts`** — `renderMiniDome` and `miniDomeHitTest` and `channelTitle` now accept `SlotChannel`. New `renderAnchorChannel` function (plain neutral cream stars at the same stratum × time positions used by confidence/stage/acts — keeps linked brushing aligned). Added 'anchor' dispatch case in `renderMiniDome`. Channel renderers (confidence/stage/acts/provenance/anchor) now accept a `dotRadius` parameter (default 0.75 for compact mini slots; promoted slots pass 3 for inspectable size). Acts top-decile preserves its 4× ratio relative to base (3 × 4 = 12 px when promoted).
+
+3. **`src/lib/sight/v6/MiniDome.svelte`** — three new props:
+   - `compact: boolean = true` — controls dot size and click semantics.
+   - `onPromote?: (channel: SlotChannel) => void` — fires on click when compact (mini slot) → swap.
+   - `onOpenNote?: (notePath: string) => void` — fires on star-click when not compact (primary slot) → open in editor.
+   - `handleClick` dispatches based on `compact`. New `class:is-promoted={!compact}` for CSS hooks.
+
+4. **`src/lib/sight/v6/SightV6.svelte`** — orchestration:
+   - `ALL_SLOTS: SlotChannel[]` constant.
+   - `primaryChannel = $state<SlotChannel>('anchor')` — default unchanged.
+   - **Wheel listener moved out of `onMount` into a `$effect` keyed on `canvasEl`** — the anchor canvas now mounts/unmounts via `{#if primaryChannel === 'anchor'}`, so the listener must re-attach on every rebind. Cleanup detaches from the old element. Replaces the §A.14 fix-11 onMount block. Imperative `addEventListener` retained per fix-11 lesson (Tauri WebView2 + Svelte 5 `onwheel` silent-fails in release builds).
+   - Companion `$effect` for `canvasEl + primaryChannel` calls `syncCanvasSize` after canvas rebind (ResizeObserver doesn't fire on `{#if}` mount because host size is unchanged).
+   - `handlePromote(slot)`: sets `primaryChannel = slot`, resets `zoomScale = 1`, `panX = panY = 0` (previous slot's transform doesn't apply to new primary).
+   - `handlePromotedOpenNote(notePath)`: looks up libraryName via `rows.find()`, dispatches parent `onOpenNote(notePath, libraryName)`.
+   - Markup: canvas wrapped in `{#if primaryChannel === 'anchor'}{:else}<MiniDome compact={false}>{/if}`. Mini grid iterates `ALL_SLOTS` skipping `primaryChannel` (so demoted anchor takes the vacated slot). New `.sight-v6-promoted-host` CSS for the absolute-positioned promoted-mini wrapper.
+
+**Out of scope (deferred polish):** promoted-mini does NOT yet render anchor's full chrome (calendar rim + stratum text labels + connection lines). Only the bigger dots + brighter base chrome. If Eisa wants full anchor-style chrome on promoted minis, that's §B.6-fix-4 work — requires extracting renderAnchorDome's chrome rendering into a shareable function and wiring it into the promoted-mini path.
+
+**Build artifacts:**
+- `Constellation_0.3.4_x64-setup.B6-fix2.exe` (`062529ac` — palette + ring only)
+- `Constellation_0.3.4_x64-setup.B6-fix3.exe` (this commit — adds dome-swap on top of fix-2)
+
+---
+
+*End of session log 2026-05-14. §B.6-fix-3 commit + build complete; Eisa test cycle 3 next.*
