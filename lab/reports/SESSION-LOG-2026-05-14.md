@@ -640,4 +640,36 @@ Other dock buttons (Sky View, Map, Index, OrgChart) currently reset `lensReturnP
 
 ---
 
-*End of session log 2026-05-14. §B.6-fix-5 commit + build complete; Eisa cycle-5 test next.*
+## §B.6-fix-6 — unified star-click semantics across all dome slots (2026-05-15)
+
+**Eisa cycle-5 verdict:**
+- Stage 2 (Return-to-Sight from anchor): PASS. **Follow-up:** "why is clicking on any star to open its note limited to the anchor dome? I want to check any notes by clicking on any star, either through the main dome or the mini-domes."
+- Stage 3 (Return-to-Sight from promoted mini): "if I click on a star in a mini-dome, it shall open that note. And if I want to promote that mini-dome to be a main one it will be through the dome space itself, not the stars."
+- Stage 4 (Return-to-CNS label): PASS. Eisa confirmed CNS click-behavior intent (single click → preview side panel + outgoing/incoming links; double click → open note); that's existing CNS UX and stays unchanged.
+- Stage 5.3 (both buttons coexisting): observed only Return-to-Sight (single button). Eisa: "it is enough. We don't want to have both; there is no logical reason for it." Current code already gives this in the typical sequence (v6 dock-button onclick clears `lensReturnPending`); no fix needed.
+
+### Fix design
+
+Click semantics now unified across compact (mini slot) AND non-compact (primary slot):
+- **Star click** → `onOpenNote(notePath)` (open in editor) — works in any dome.
+- **Empty-space click** → channel-specific:
+  - compact (mini slot): `onPromote(channel)` (swap into primary slot, per fix-3 + cycle-3 ask).
+  - non-compact (primary slot): no-op (use the demoted-anchor mini-slot click, OR the header Reset View button).
+
+The mini's `handleClick` hit-tests first. Hit → open. Miss + compact → promote. Miss + non-compact → no-op. Cleaner mental model than the previous "compact = always promote, non-compact = open if star".
+
+### Files (3, ~30 insertions, ~13 deletions)
+
+**`src/lib/sight/v6/MiniDome.svelte` `handleClick`:** restructured to hit-test first regardless of `compact`. Drag-click guard (`dragState?.moved`) stays at top. Star hit calls `onOpenNote(hit)`. Miss falls through to `if (compact) onPromote(channel)`. Zoom-transform inversion only applied in non-compact (compact has identity transform).
+
+**`src/lib/sight/v6/SightV6.svelte`:** the mini-grid `<MiniDome compact={true}>` instances now also receive `onOpenNote={handlePromotedOpenNote}` (was only passed to the promoted slot before). Same `handlePromotedOpenNote` callback handles both — looks up libraryName via `rows.find()` and dispatches the parent's `onOpenNote(path, libraryName)`.
+
+**Out of scope (intentional):** click-promote from compact and click-open from compact share the same canvas. Click on a star opens; click on empty promotes. There's no UI hint about WHICH part of the canvas does what — visually it just feels like "click on a star" vs "click anywhere else". If Eisa wants explicit visual cue (e.g., a small "promote" icon in the corner of each mini), that's polish for a future fix.
+
+### Build artifact
+
+`Constellation_0.3.4_x64-setup.B6-fix6.exe` (this commit) — adds unified star-click semantics on top of fix-5 (Return-to-Sight + lens label CNS).
+
+---
+
+*End of session log 2026-05-14. §B.6-fix-6 commit + build complete; Eisa cycle-6 test next.*

@@ -203,28 +203,28 @@
 		}
 	}
 
-	// §B.6-fix-3 — click dispatch.
-	// Compact (mini slot): click anywhere → swap this channel into the
-	//   primary slot (Eisa cycle-2 ask: "click on every mini-dome to
-	//   enlarge it to the same size as the anchor dome").
-	// Non-compact (primary slot): click on a star → open it in the
-	//   editor; click on empty area → no-op (use the demoted-anchor
-	//   mini-slot click to swap back).
-	// §B.6-fix-4d: ignore clicks that were actually drag-pans (per
-	//   anchor's pattern in SightV6.handleClick).
+	// §B.6-fix-6 (Eisa cycle-5 Stages 2+3): click semantics unified
+	// across compact + non-compact. Star click → open the note in EITHER
+	// slot ("I want to check any notes by clicking on any star, either
+	// through the main dome or the mini-domes"). Empty-space click →
+	// channel-specific:
+	//   • compact (mini slot): promote into primary slot ("if I want to
+	//     promote that mini-dome to be a main one it will be through
+	//     the dome space itself, not the stars").
+	//   • non-compact (primary slot): no-op — use the demoted-anchor
+	//     mini-slot click to swap back, or the header Reset View button.
+	// §B.6-fix-4d: ignore clicks that were actually drag-pans.
 	function handleClick(ev: MouseEvent): void {
-		if (compact) {
-			onPromote(channel);
-			return;
-		}
+		if (!canvasEl) return;
 		if (dragState?.moved) {
 			dragState = null;
 			return;
 		}
-		if (!canvasEl) return;
 		const rect = canvasEl.getBoundingClientRect();
 		let x = ev.clientX - rect.left;
 		let y = ev.clientY - rect.top;
+		// Invert zoom transform for hit-test in promoted slot only;
+		// compact mini canvases have identity transform.
 		if (!compact) {
 			x = (x - panX) / zoomScale;
 			y = (y - panY) / zoomScale;
@@ -232,7 +232,13 @@
 		const tol = compact ? 12 : 12 / zoomScale;
 		const hit = miniDomeHitTest(stars, x, y, channel, anchorLayout, canvasWidth, canvasHeight, tol);
 		if (hit) {
+			// Star click: same in both slots → open the note.
 			onOpenNote(hit);
+			return;
+		}
+		// Empty-space click: only meaningful in compact (promote).
+		if (compact) {
+			onPromote(channel);
 		}
 	}
 

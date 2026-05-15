@@ -586,6 +586,12 @@
 				{#each ALL_SLOTS as slot (slot)}
 					{#if slot !== primaryChannel}
 						<div class="sight-v6-mini-cell">
+							<!-- §B.6-fix-6: onOpenNote also passed to compact
+							     mini-grid instances per Eisa cycle-5: a star
+							     click in any dome (mini or primary) opens
+							     the note. Click on empty space promotes (per
+							     fix-3); the mini's handleClick hit-tests
+							     first, so star vs empty is unambiguous. -->
 							<MiniDome
 								channel={slot}
 								stars={filteredRows.length > 0 ? stars : []}
@@ -594,6 +600,7 @@
 								onHover={(path) => { hoveredPath = path; }}
 								compact={true}
 								onPromote={handlePromote}
+								onOpenNote={handlePromotedOpenNote}
 							/>
 						</div>
 					{/if}
