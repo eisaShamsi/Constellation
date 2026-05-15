@@ -130,6 +130,15 @@
 	const filteredRows = $derived(applyFilters(rows, filters));
 	const facets = $derived(computeFacetCounts(rows, filters));
 
+	// §B.7-fix-2 (Eisa cycle-2 ghost mode): set of notePaths that pass
+	// the current filter. null when no filter active (skip the ghost
+	// pathway entirely → all stars render at full encoding). Renderers
+	// (anchor + mini channel renderers) check this set per-star and
+	// fade non-members to GHOST_ALPHA (0.15).
+	const matchedPaths = $derived(
+		filtersEmpty(filters) ? null : new Set(filteredRows.map((r) => r.notePath)),
+	);
+
 	let resizeObserver: ResizeObserver | null = null;
 
 	// ── Render ────────────────────────────────────────────────────
@@ -156,6 +165,7 @@
 			locale: navigator.language ?? 'en',
 			highlightedPath: hoveredPath,
 			zoomScale: zoomScale,
+			matchedPaths,
 		});
 	}
 
@@ -172,12 +182,19 @@
 	}
 
 	function recomputeStars(): void {
-		if (filteredRows.length === 0 || canvasWidth === 0 || canvasHeight === 0) {
+		// §B.7-fix-2 (Eisa cycle-2 ghost mode): compute star positions
+		// from the FULL universe (rows), not the filtered subset. The
+		// filter only controls which stars render at full opacity vs
+		// faded ghost (via matchedPaths). This way the user can hover
+		// AND Shift+click on a non-matched ghost star to add its category
+		// to the filter — multi-select within a facet works directly
+		// from the dome instead of requiring sidebar chip interaction.
+		if (rows.length === 0 || canvasWidth === 0 || canvasHeight === 0) {
 			stars = [];
 			return;
 		}
 		const layout = computeDomeLayout(canvasWidth, canvasHeight);
-		stars = computeStarPositions(filteredRows, layout.centerX, layout.centerY, layout.radius);
+		stars = computeStarPositions(rows, layout.centerX, layout.centerY, layout.radius);
 	}
 
 	// ── Data load ─────────────────────────────────────────────────
@@ -454,16 +471,25 @@
 		untrack(() => paint());
 	});
 
-	// §A.10 — repaint AND recompute star positions when the filtered
-	// row set changes (filter toggled or sidebar expand/collapse
-	// changes layout). Stars are positioned over filteredRows so
-	// the dome re-sizes the visible point cloud.
+	// §A.10 — repaint AND recompute star positions when the row set
+	// changes (data load or refresh).
+	// §B.7-fix-2 — recompute is now driven by `rows` (full universe),
+	// not `filteredRows`. Filter changes only need a repaint, not a
+	// star-position recompute, because stars are positioned over the
+	// full universe and ghost-rendering happens per-star at paint time.
 	$effect(() => {
-		void filteredRows;
+		void rows;
 		untrack(() => {
 			recomputeStars();
 			paint();
 		});
+	});
+
+	// Repaint when filter set changes (matchedPaths updates, ghost
+	// rendering needs to refresh).
+	$effect(() => {
+		void filteredRows;
+		untrack(() => paint());
 	});
 
 	// Repaint on sidebar expand/collapse (changes canvas-host width).
@@ -558,13 +584,14 @@
 				<div class="sight-v6-promoted-host">
 					<MiniDome
 						channel={primaryChannel}
-						stars={filteredRows.length > 0 ? stars : []}
+						stars={stars}
 						{anchorLayout}
 						highlightedPath={hoveredPath}
 						onHover={(path) => { hoveredPath = path; }}
 						compact={false}
 						onOpenNote={handlePromotedOpenNote}
 						onFacetFilter={handleFacetToggle}
+						{matchedPaths}
 					/>
 				</div>
 			{/if}
@@ -618,7 +645,7 @@
 							     filteredRows → recomputeStars → repaint. -->
 							<MiniDome
 								channel={slot}
-								stars={filteredRows.length > 0 ? stars : []}
+								stars={stars}
 								{anchorLayout}
 								highlightedPath={hoveredPath}
 								onHover={(path) => { hoveredPath = path; }}
@@ -626,6 +653,7 @@
 								onPromote={handlePromote}
 								onOpenNote={handlePromotedOpenNote}
 								onFacetFilter={handleFacetToggle}
+								{matchedPaths}
 							/>
 						</div>
 					{/if}

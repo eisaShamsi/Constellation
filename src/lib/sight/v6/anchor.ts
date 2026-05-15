@@ -228,6 +228,7 @@ export function renderAnchorDome(
 		clear?: boolean;
 		highlightedPath?: string | null;
 		zoomScale?: number;
+		matchedPaths?: Set<string> | null;
 	} = {},
 ): void {
 	const {
@@ -235,6 +236,7 @@ export function renderAnchorDome(
 		clear = true,
 		highlightedPath = null,
 		zoomScale = 1,
+		matchedPaths = null,
 	} = options;
 	const layout = computeDomeLayout(width, height);
 
@@ -298,7 +300,7 @@ export function renderAnchorDome(
 
 	// 6. Stars (top of stack)
 	if (stars.length > 0) {
-		drawStars(ctx, stars, highlightedPath, zoomScale);
+		drawStars(ctx, stars, highlightedPath, zoomScale, matchedPaths);
 	}
 }
 
@@ -354,7 +356,16 @@ function drawStars(
 	stars: StarDerived[],
 	highlightedPath: string | null,
 	zoomScale: number = 1,
+	matchedPaths: Set<string> | null = null,
 ): void {
+	// 2026-05-15 §B.7-fix-2 (Eisa cycle-2 ghost mode): when a facet
+	// filter is active, render NON-matching stars at low opacity (ghost)
+	// instead of hiding them entirely. Lets the user Shift+click a faded
+	// star to ADD its category to the filter — multi-select within a
+	// facet works directly from the dome instead of requiring sidebar
+	// chip interaction. matchedPaths === null means no filter active
+	// (all stars render at full encoding).
+	const GHOST_ALPHA = 0.15;
 	// PASS 1: all star bodies (additive blend via lower per-star alpha).
 	// 2026-05-14 §A.14 fix-15: all notes render as CIRCLES per Eisa's
 	// spec ("I want all the notes to take a circular shape"). Library
@@ -366,7 +377,10 @@ function drawStars(
 	ctx.fillStyle = PALETTE.starFill;
 	for (const star of stars) {
 		const r = star.topDecileActs ? TOP_DECILE_RADIUS : BASE_STAR_RADIUS;
-		const opacity = (star.row.confidenceAlpha ?? 0.45) * BODY_OPACITY_MULT;
+		const isMatched = matchedPaths === null || matchedPaths.has(star.row.notePath);
+		const opacity = isMatched
+			? (star.row.confidenceAlpha ?? 0.45) * BODY_OPACITY_MULT
+			: GHOST_ALPHA;
 		ctx.globalAlpha = opacity;
 		ctx.beginPath();
 		ctx.arc(star.x, star.y, r, 0, Math.PI * 2);
@@ -378,15 +392,20 @@ function drawStars(
 	// independent of confidence). With pass-2 ordering, the pip
 	// is the LAST thing drawn at any (x,y), so it stays visible
 	// in dense clusters where bodies overlap.
-	ctx.globalAlpha = 1;
+	// Ghost stars: pip drawn at GHOST_ALPHA so the encoding is faintly
+	// visible (helpful context for "what category is this ghost in?")
+	// without dominating.
 	for (const star of stars) {
 		const pipColor = pipColorForStage(star.row.stage);
 		if (!pipColor) continue;
+		const isMatched = matchedPaths === null || matchedPaths.has(star.row.notePath);
+		ctx.globalAlpha = isMatched ? 1 : GHOST_ALPHA;
 		ctx.fillStyle = pipColor;
 		ctx.beginPath();
 		ctx.arc(star.x, star.y, PIP_RADIUS, 0, Math.PI * 2);
 		ctx.fill();
 	}
+	ctx.globalAlpha = 1;
 
 	// PASS 3: highlighted-brushing ring (above everything).
 	if (highlightedPath !== null) {

@@ -27,6 +27,7 @@
 		onPromote = () => {},
 		onOpenNote = () => {},
 		onFacetFilter = () => {},
+		matchedPaths = null,
 	}: {
 		channel: SlotChannel;
 		stars: StarDerived[];
@@ -57,6 +58,12 @@
 		 *  re-render with only matching notes. No-op for Acts (no facet
 		 *  exists for acts) and Anchor (no channel-specific category). */
 		onFacetFilter?: (facetId: FacetId, categoryId: string) => void;
+		/** §B.7-fix-2 — ghost mode. When non-null, indicates which stars
+		 *  match the current facet filter; non-matching stars render at
+		 *  low opacity (GHOST_ALPHA) so the user can still see and
+		 *  Shift+click them to ADD their category to the filter. null
+		 *  means no filter active — all stars render at full encoding. */
+		matchedPaths?: Set<string> | null;
 	} = $props();
 
 	let canvasEl = $state<HTMLCanvasElement | null>(null);
@@ -128,6 +135,7 @@
 			highlightedPath,
 			dotRadius: compact ? 0.75 : 1,
 			zoomScale: compact ? 1 : zoomScale,
+			matchedPaths,
 		});
 	}
 
@@ -351,6 +359,7 @@
 		void anchorLayout;
 		void channel;
 		void compact;
+		void matchedPaths;
 		untrack(() => paint());
 	});
 </script>

@@ -829,4 +829,60 @@ But the primary slot canvas still showed Acts visual + Acts title. The bug: my M
 
 ---
 
-*End of session log 2026-05-14. §B.7-fix-1 commit + build complete; Eisa cycle-2 test next.*
+## §B.7-fix-2 — ghost mode for multi-select from dome (2026-05-15)
+
+**Eisa cycle-2 verdict:**
+- Stage 1: PASS (zoom-aware ring works at all zoom levels).
+- Stage 2: PASS (ring stays bounded when zoomed).
+- Stage 3.8: BUG — "When I Shift+click a cyan (spark) star, all the orange star disappear. I can selected only through the 'Facets'." Multi-select within a facet (e.g., spark + birth) impossible from dome because the orange (birth) stars vanish from the filtered render → user can't Shift+click them to add.
+- Stage 4: PASS (Shift+click on anchor is silent).
+- Stage 5: PASS (regressions clean).
+
+### Root cause + fix design
+
+The §B.7 cycle-1 implementation used `filteredRows` for star rendering — non-matched stars literally weren't drawn. To Shift+click a spark star and ADD it to a {birth} filter, the user would need spark stars to be visible to click, but they weren't (filter hid them). Catch-22.
+
+Standard viz pattern (Tableau / Vega / Datashader): show ALL stars regardless of filter; render non-matched at low opacity (ghost). Hit-test still works on all stars. User Shift+clicks a faded ghost star → adds its category to filter → ghost becomes full-opacity.
+
+Implementation: `recomputeStars` switched from `filteredRows` to `rows` (full universe). New `matchedPaths` derived from `filteredRows` as a `Set<notePath>` — null when no filter active (skip ghost pathway). All renderers (anchor + 5 channel renderers) accept `matchedPaths` and apply `GHOST_ALPHA = 0.15` per non-matched star.
+
+### Files (4, ~115 insertions)
+
+**`src/lib/sight/v6/anchor.ts`:**
+- `renderAnchorDome` options gain `matchedPaths?: Set<string> | null`.
+- `drawStars` accepts `matchedPaths`. PASS 1 (bodies): non-matched render at GHOST_ALPHA instead of `confidenceAlpha * BODY_OPACITY_MULT`. PASS 2 (pips): non-matched pips render at GHOST_ALPHA so the categorical signal is faintly visible (helpful context).
+
+**`src/lib/sight/v6/miniDome.ts`:**
+- `renderMiniDome` options gain `matchedPaths`. Threaded through to all 5 channel renderers.
+- All 5 channel renderers (`renderAnchorChannel`, `renderConfidenceChannel`, `renderStageChannel`, `renderActsChannel`, `renderProvenanceChannel`) accept `matchedPaths` and apply `GHOST_ALPHA` per non-matched star.
+
+**`src/lib/sight/v6/MiniDome.svelte`:**
+- `matchedPaths?: Set<string> | null` prop; passed to `renderMiniDome` options.
+- Added to `$effect` dependency list so paint re-runs on filter change.
+
+**`src/lib/sight/v6/SightV6.svelte`:**
+- `recomputeStars` uses `rows` (full universe) instead of `filteredRows` — comment block explains the pivot.
+- New `matchedPaths` derived: `filtersEmpty(filters) ? null : new Set(filteredRows.map((r) => r.notePath))`.
+- `paint()` (anchor) passes `matchedPaths` to `renderAnchorDome`.
+- Mini-grid + promoted `<MiniDome>` instances pass `{matchedPaths}`.
+- Star recompute `$effect` now keyed on `rows` only (not `filteredRows`), since stars depend only on universe data; new sibling `$effect` keyed on `filteredRows` triggers paint when filter changes (no recompute needed).
+- Mini `stars={...}` simplified to always pass `stars` (gating on `filteredRows.length` no longer meaningful since stars come from `rows`).
+
+### UX
+
+- **No filter active:** all stars render at full encoding (current behavior, no visual change).
+- **Filter active:** matched stars at full encoding, non-matched at GHOST_ALPHA (0.15). Ghost stars are visible but faded.
+- **Shift+click on ghost star:** adds its category to the filter (since it goes through the existing onFacetFilter → toggleFilter path). The ghost lights up to full encoding.
+- **Multi-select sequence:** Shift+click cyan star → filter to {spark}, orange stars become ghosts. Shift+click an orange ghost → filter becomes {spark, birth}, both colors at full encoding.
+
+### Connection lines unchanged
+
+`visibleLinks` filter in `paint()` still uses `filteredRows`-derived path set — only matched-to-matched links render. Non-matched ghost stars don't show their link relationships. Correct semantically (the focus is on the filtered relationships).
+
+### Build artifact
+
+`Constellation_0.3.4_x64-setup.B7-fix2.exe` (this commit).
+
+---
+
+*End of session log 2026-05-14. §B.7-fix-2 commit + build complete; Eisa cycle-3 test next.*

@@ -70,9 +70,19 @@ export function renderMiniDome(
 	width: number,
 	height: number,
 	anchorLayout: DomeLayout,
-	options: { highlightedPath?: string | null; dotRadius?: number; zoomScale?: number } = {},
+	options: {
+		highlightedPath?: string | null;
+		dotRadius?: number;
+		zoomScale?: number;
+		matchedPaths?: Set<string> | null;
+	} = {},
 ): void {
-	const { highlightedPath = null, dotRadius = 0.75, zoomScale = 1 } = options;
+	const {
+		highlightedPath = null,
+		dotRadius = 0.75,
+		zoomScale = 1,
+		matchedPaths = null,
+	} = options;
 	const layout = computeMiniDomeLayout(width, height);
 	// Coordinate transform: anchor world coords → mini canvas coords.
 	// Channel renderers consume StarDerived.x/y (anchor coords) and
@@ -139,19 +149,19 @@ export function renderMiniDome(
 	// positions so linked brushing in §B.6 matches up trivially.
 	switch (channel) {
 		case 'anchor':
-			renderAnchorChannel(ctx, stars, scale, offsetX, offsetY, dotRadius);
+			renderAnchorChannel(ctx, stars, scale, offsetX, offsetY, dotRadius, matchedPaths);
 			break;
 		case 'confidence':
-			renderConfidenceChannel(ctx, stars, scale, offsetX, offsetY, dotRadius);
+			renderConfidenceChannel(ctx, stars, scale, offsetX, offsetY, dotRadius, matchedPaths);
 			break;
 		case 'stage':
-			renderStageChannel(ctx, stars, scale, offsetX, offsetY, dotRadius);
+			renderStageChannel(ctx, stars, scale, offsetX, offsetY, dotRadius, matchedPaths);
 			break;
 		case 'acts':
-			renderActsChannel(ctx, stars, scale, offsetX, offsetY, dotRadius);
+			renderActsChannel(ctx, stars, scale, offsetX, offsetY, dotRadius, matchedPaths);
 			break;
 		case 'provenance':
-			renderProvenanceChannel(ctx, stars, layout, dotRadius);
+			renderProvenanceChannel(ctx, stars, layout, dotRadius, matchedPaths);
 			break;
 	}
 
@@ -228,21 +238,17 @@ function renderConfidenceChannel(
 	offsetX: number,
 	offsetY: number,
 	dotRadius: number = 0.75,
+	matchedPaths: Set<string> | null = null,
 ): void {
-	// 2026-05-14 §B-fix-3 (Eisa Boss-test §B-preview-2): "I want to
-	// have the mini-domes nodes at 3/2px in diameter." 1.5-px ⌀ =
-	// 0.75-px radius. Was 2.8-px radius (5.6-px ⌀). Smaller dots
-	// emphasize density-as-signal in the minis (matching the anchor's
-	// "tiny nodes for density at default + zoom for individuals" design
-	// philosophy from cycle-3.4). Acts mini keeps the binary contrast
-	// with proportionally-sized top-decile (4× ratio preserved).
-	// 2026-05-15 §B.6-fix-3: dotRadius now parameterized — caller (the
-	// dome-swap layout in SightV6) passes 0.75 for compact mini slots
-	// and a larger value (~3) when the channel is promoted to the
-	// primary slot, where bigger dots are needed for inspection.
+	// 2026-05-15 §B.7-fix-2 (Eisa cycle-2 ghost mode): when a facet
+	// filter is active, render NON-matching stars at GHOST_ALPHA (0.15)
+	// so user can Shift+click them to add to filter. matchedPaths===null
+	// means no filter active (current behavior — per-star confidenceAlpha).
+	const GHOST_ALPHA = 0.15;
 	ctx.fillStyle = PALETTE.starFill;
 	for (const star of stars) {
-		const opacity = star.row.confidenceAlpha ?? 0.45;
+		const isMatched = matchedPaths === null || matchedPaths.has(star.row.notePath);
+		const opacity = isMatched ? (star.row.confidenceAlpha ?? 0.45) : GHOST_ALPHA;
 		const x = star.x * scale + offsetX;
 		const y = star.y * scale + offsetY;
 		ctx.globalAlpha = opacity;
@@ -273,26 +279,21 @@ function renderStageChannel(
 	offsetX: number,
 	offsetY: number,
 	dotRadius: number = 0.75,
+	matchedPaths: Set<string> | null = null,
 ): void {
-	ctx.globalAlpha = 1;
+	const GHOST_ALPHA = 0.15;
 	for (const star of stars) {
-		// 2026-05-14 §B.5-fix-1 (Boss-test of §B-preview): Eisa's
-		// universe shows EMPTY Stage mini because his notes don't
-		// have properties_json.stage set to one of the 5 expected
-		// keys. Pre-fix, pipColorForStage returns null for those
-		// → continue → entire mini blank. Now: render unknown
-		// stages as neutral starFill (#cdd5e0) so the mini shows
-		// "no notes have a recognized stage" as gray dots rather
-		// than as confused-blank. The 5 categorical hues still pop
-		// pre-attentively where they apply.
 		const x = star.x * scale + offsetX;
 		const y = star.y * scale + offsetY;
 		const stageColor = pipColorForStage(star.row.stage) ?? PALETTE.starFill;
+		const isMatched = matchedPaths === null || matchedPaths.has(star.row.notePath);
+		ctx.globalAlpha = isMatched ? 1 : GHOST_ALPHA;
 		ctx.fillStyle = stageColor;
 		ctx.beginPath();
 		ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
 		ctx.fill();
 	}
+	ctx.globalAlpha = 1;
 }
 
 /** §B.4: binary size — top-decile = 6 px filled disc; rest = 1.5 px
@@ -308,6 +309,7 @@ function renderActsChannel(
 	offsetX: number,
 	offsetY: number,
 	dotRadius: number = 0.75,
+	matchedPaths: Set<string> | null = null,
 ): void {
 	// §B-fix-3: baseline 0.75 radius (1.5 px ⌀) per Eisa spec; top-
 	// decile keeps the 4× ratio = 3 px radius (6 px ⌀) so hot-spots
@@ -322,17 +324,21 @@ function renderActsChannel(
 	// slot) where the small canvas needs the contrast for hot-spots
 	// to read at all. Detect via dotRadius value: < 1 = compact, >= 1
 	// = promoted (only two values used in practice: 0.75 and 2.5).
+	// §B.7-fix-2: ghost non-matched stars at GHOST_ALPHA when filter active.
+	const GHOST_ALPHA = 0.15;
 	ctx.fillStyle = PALETTE.starFill;
-	ctx.globalAlpha = 1;
 	const topDecileRadius = dotRadius < 1 ? dotRadius * 4 : dotRadius;
 	for (const star of stars) {
 		const r = star.topDecileActs ? topDecileRadius : dotRadius;
 		const x = star.x * scale + offsetX;
 		const y = star.y * scale + offsetY;
+		const isMatched = matchedPaths === null || matchedPaths.has(star.row.notePath);
+		ctx.globalAlpha = isMatched ? 1 : GHOST_ALPHA;
 		ctx.beginPath();
 		ctx.arc(x, y, r, 0, Math.PI * 2);
 		ctx.fill();
 	}
+	ctx.globalAlpha = 1;
 }
 
 /** §B.5: 5 angular sectors (Self/Read/Heard/Reasoned/Tradition).
@@ -357,7 +363,9 @@ function renderProvenanceChannel(
 	stars: StarDerived[],
 	layout: MiniDomeLayout,
 	dotRadius: number = 0.75,
+	matchedPaths: Set<string> | null = null,
 ): void {
+	const GHOST_ALPHA = 0.15;
 	const sectorCount = PROVENANCE_SECTORS.length;
 	const sectorAngle = (Math.PI * 2) / sectorCount;
 	// Top of dome = -π/2 (canvas math); first sector starts there.
@@ -397,14 +405,17 @@ function renderProvenanceChannel(
 	// Stars — re-positioned per provenance sector × stratum.
 	// §B-fix-3: 0.75 radius (1.5 px ⌀) per Eisa spec.
 	// §B.6-fix-3: dotRadius parameterized for promoted slot.
+	// §B.7-fix-2: ghost-mode for non-matched stars.
 	ctx.fillStyle = PALETTE.starFill;
-	ctx.globalAlpha = 1;
 	for (const star of stars) {
 		const pos = provenancePositionFor(star, layout);
+		const isMatched = matchedPaths === null || matchedPaths.has(star.row.notePath);
+		ctx.globalAlpha = isMatched ? 1 : GHOST_ALPHA;
 		ctx.beginPath();
 		ctx.arc(pos.x, pos.y, dotRadius, 0, Math.PI * 2);
 		ctx.fill();
 	}
+	ctx.globalAlpha = 1;
 }
 
 /** §B.6-fix-3: render the anchor view as a channel option (used when
@@ -420,16 +431,20 @@ function renderAnchorChannel(
 	offsetX: number,
 	offsetY: number,
 	dotRadius: number = 0.75,
+	matchedPaths: Set<string> | null = null,
 ): void {
+	const GHOST_ALPHA = 0.15;
 	ctx.fillStyle = PALETTE.starFill;
-	ctx.globalAlpha = 1;
 	for (const star of stars) {
 		const x = star.x * scale + offsetX;
 		const y = star.y * scale + offsetY;
+		const isMatched = matchedPaths === null || matchedPaths.has(star.row.notePath);
+		ctx.globalAlpha = isMatched ? 1 : GHOST_ALPHA;
 		ctx.beginPath();
 		ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
 		ctx.fill();
 	}
+	ctx.globalAlpha = 1;
 }
 
 /** Compute provenance-mini-dome position for a star. Used by render
