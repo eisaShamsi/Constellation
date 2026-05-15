@@ -101,9 +101,15 @@ export function renderMiniDome(
 	// the same color at 0.9-px stroke; minis use 0.5-px stroke (since
 	// minis are smaller, thinner stroke keeps the visual weight
 	// proportional).
+	// 2026-05-15 §B.6-fix-1 (Boss-test cycle 1.4): Eisa: "I want the
+	// mini-domes' inner circles, font color, and opacity to match the
+	// anchor dome exactly." Stroke width bumped 0.5 → 0.9 to match the
+	// anchor's stratum-ring stroke (anchor.ts:267). Visual weight is
+	// now identical between anchor and minis — the radial-anchor
+	// metaphor reads consistently across all 5 surfaces.
 	ctx.save();
 	ctx.strokeStyle = PALETTE.strataRing;
-	ctx.lineWidth = 0.5;
+	ctx.lineWidth = 0.9;
 	for (const r of stratumBandBoundaries(layout.radius)) {
 		ctx.beginPath();
 		ctx.arc(layout.centerX, layout.centerY, r, 0, Math.PI * 2);
@@ -112,8 +118,14 @@ export function renderMiniDome(
 	ctx.restore();
 
 	// Pass 2: channel title text top-center.
+	// 2026-05-15 §B.6-fix-1 (Boss-test cycle 1.4): bumped from
+	// PALETTE.subtitleText (faint #5a6275) to PALETTE.titleText
+	// (bright cream #e8ebf2) to match the anchor's header-strip text
+	// color. The mini titles were too faint to read against the dark
+	// background; now they read as confident labels at the same
+	// visual weight as the anchor's "Constellation Sight" title.
 	ctx.save();
-	ctx.fillStyle = PALETTE.subtitleText;
+	ctx.fillStyle = PALETTE.titleText;
 	ctx.font = '10px Inter, system-ui, sans-serif';
 	ctx.textAlign = 'center';
 	ctx.textBaseline = 'top';
@@ -157,11 +169,26 @@ export function renderMiniDome(
 				hx = star.x * scale + offsetX;
 				hy = star.y * scale + offsetY;
 			}
+			// 2026-05-15 §B.6-fix-1 (Boss-test Stage 2.3): Eisa: "it is
+			// hard to see the gold ring on the mini-domes because of
+			// the background." Bumped radius 6 → 9 (50% larger) and
+			// stroke 1.4 → 2.2 (57% thicker). Also added a 1-px dark
+			// halo stroke just outside the gold so the ring pops
+			// against the dark background — without the halo, the
+			// gold edge anti-aliases into the background and washes
+			// out at the mini's small scale.
 			ctx.save();
-			ctx.strokeStyle = PALETTE.highlightedRing;
-			ctx.lineWidth = 1.4;
+			// Halo (drawn first, underneath the gold).
+			ctx.strokeStyle = PALETTE.bg;
+			ctx.lineWidth = 4;
 			ctx.beginPath();
-			ctx.arc(hx, hy, 6, 0, Math.PI * 2);
+			ctx.arc(hx, hy, 9, 0, Math.PI * 2);
+			ctx.stroke();
+			// Gold ring on top.
+			ctx.strokeStyle = PALETTE.highlightedRing;
+			ctx.lineWidth = 2.2;
+			ctx.beginPath();
+			ctx.arc(hx, hy, 9, 0, Math.PI * 2);
 			ctx.stroke();
 			ctx.restore();
 		}

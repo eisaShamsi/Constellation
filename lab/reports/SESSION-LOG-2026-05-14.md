@@ -444,4 +444,60 @@ Build to follow this commit. Eisa verifies bidirectional brushing across anchor 
 
 ---
 
-*End of session log 2026-05-14. §B.6 commit + build follow; §B.7 opens after Eisa accepts §B.6.*
+## §B.6 cycle-1 PASS + §B.6-fix-1 (2026-05-15)
+
+**Test build:** `Constellation_0.3.4_x64-setup.B6-brushing.exe` (`9fe9b615`).
+
+**Eisa cycle-1 verdict:**
+- Stages 3-7 (bidirectional brushing): **PASS** in all directions including the Provenance mini's special hit-test.
+- Stage 1.4 (mini chrome): **FAIL** — "I want the mini-domes' inner circles, font color, and opacity to match the anchor dome exactly."
+- Stage 2.3 (gold ring visibility): **FAIL** — "it is hard to see the gold ring on the mini-domes because of the background."
+- **Architectural question:** "Why are the Confidence, Stage, and Acts domes almost identical? Do they execute the same algorithm?"
+
+### Diagnosis (data-driven, not speculative)
+
+Queried `sight_v6_layout` on Eisa's active universe (`Eisa Cognitive Knowledge`, 7,645 notes):
+
+| Channel | Field | Fill state | Result |
+|---|---|---|---|
+| Confidence | `confidence_alpha` | 98.5% at 0.45 (default), 1.5% NULL — **zero variation** | mini renders uniform-opacity dot cloud |
+| Stage | `stage` | 99.3% non-null but uses Living Link vocabulary (spark 48.8%, birth 39.9%, growth 9.7%, maturity 0.8%) — **renderer recognized 0%** | falls back to neutral gray for all → looks identical to Confidence |
+| Acts | `acts_primary` 100% NULL; `link_in+out` well-distributed (0–19+) | **link-count fallback works** — top-decile 6-px discs visible | only mini with actual signal in current data |
+| Provenance | `sources_primary` 98.2% NULL | sector layout makes it look distinct regardless | will populate as Eisa approves CECE's 4,475 pending suggestions |
+
+**Root cause for "three minis look identical":** the data isn't differentiating them. The renderers ARE distinct (opacity / hue / size), but with confidence locked at default and stage vocabulary mismatched, opacity-uniform + hue-fallback-to-gray + size-fallback-to-link-count all produce nearly the same output.
+
+### CECE impact map (separate Boss question)
+
+Verified: CECE has already classified 4,475 of 7,645 notes (58%); the bottleneck is the **Source Review approval workflow**, not classifier compute. CECE writes only to `note_meta.sources` + `note_meta.content_type`. Impact tiers:
+
+- **Tier 1 (visible on approval):** Provenance mini, Sight facet sidebar Provenance counts, Source Review queue, NotePane chips, `.md` frontmatter (file-over-app durability).
+- **Tier 2 (ambient):** CECE reliability/active-learning, Sibling Disambiguation prompts, `note_state_history` temporal index.
+- **Tier 3 (untouched):** Confidence/Stage/Acts minis, Sky View, Constellation Map, CNS, Search.
+
+So running the classifier helps **only Provenance**. Stage needs the renderer fix below; Confidence needs a separate UI/automation MIG.
+
+### §B.6-fix-1 implementation
+
+Three fixes, two files, ~65 insertions:
+
+**Fix A — `src/lib/sight/v6/anchor.ts` `pipColorForStage`:**
+Extended the switch from 5 cases (Concept Paper v4.0 vocabulary: established/fresh/growing/at-risk/dormant) to 12 cases by adding the 7 Living Link Architecture stages (spark/birth/growth/maturity/dormancy/renewal/archival per `CLAUDE.md`). Living Link → palette mapping documented inline. The original 5 stay as fallbacks for any legacy frontmatter. `birth` and `growth` collapse to the same violet (would need a 6th palette color to distinguish — Concept Paper §3.4 spec is 5 slots).
+
+**Fix B — `src/lib/sight/v6/miniDome.ts` mini chrome matches anchor:**
+- Stratum-ring `lineWidth`: 0.5 → 0.9 (matches anchor's `anchor.ts:267`).
+- Channel-title color: `PALETTE.subtitleText` (faint #5a6275) → `PALETTE.titleText` (bright cream #e8ebf2). Mini titles now read at the same visual weight as the anchor's "Constellation Sight" header.
+
+**Fix C — `src/lib/sight/v6/miniDome.ts` gold ring visibility (Pass 4):**
+- Radius: 6 → 9 (50% larger).
+- Stroke: 1.4 → 2.2 (57% thicker).
+- Added a 4-px-wide background-colored "halo" stroke drawn UNDER the gold ring (same radius). The halo gives the gold a dark outline that pops against the dark background; without it the gold edge anti-aliased into the background and washed out at mini scale.
+
+### Out of scope (carried as future MIGs)
+
+- **Confidence-population MIG** (PJ-NNN to be allocated): no UI/automation currently writes confidence values to notes; everything stays at the default 0.45 alpha. Needs either a NotePane confidence picker or a heuristic that infers confidence from link weight + lifecycle stage.
+- **Sight Settings UI section** (already on the list): would surface v6's stored settings (proMode, hexBinThreshold, linkFadeThreshold, tourSeen) to the user. Currently they exist in `appSettings.sight` but no Settings panel reads them.
+
+---
+
+*End of session log 2026-05-14. §B.6-fix-1 commit + build follow; §B.7 opens after Eisa accepts §B.6 cycle-2.*

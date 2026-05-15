@@ -473,12 +473,45 @@ function drawShape(
 }
 
 export function pipColorForStage(stage: string | null): string | null {
-	switch (stage as LifecycleStage | null) {
+	// MIG-025 §B.6-fix-1 (2026-05-15): the Concept Paper v4.0 palette
+	// originally recognized 5 abstract stages (established / fresh /
+	// growing / at-risk / dormant). Eisa's universe (and the project's
+	// own Living Link Architecture per CLAUDE.md) uses the 7-stage
+	// lifecycle (Spark → Birth → Growth → Maturity → Dormancy →
+	// Renewal → Archival). 99.3% of his 7,645 notes were falling back
+	// to neutral gray because the renderer didn't recognize that
+	// vocabulary, making the Stage mini visually indistinguishable
+	// from the Confidence mini. Both vocabularies are now recognized;
+	// the original 5 stay as fallbacks for any legacy frontmatter.
+	//
+	// Mapping (Living Link stage → Concept-Paper color slot):
+	//   spark     → fresh (cyan)        — newly sparked idea
+	//   birth     → growing (violet)    — taking form
+	//   growth    → growing (violet)    — actively in motion (same energy as birth)
+	//   maturity  → established (green) — fully formed
+	//   dormancy  → dormant (gray)      — inactive
+	//   renewal   → at-risk (yellow)    — recently revisited / re-emerging
+	//   archival  → dormant (gray)      — closed
+	//
+	// `birth` and `growth` collapse to the same violet — distinguishing
+	// them would require a 6th palette color (currently 5 slots per
+	// Concept Paper §3.4 spec).
+	if (stage === null) return null;
+	switch (stage) {
+		// Concept Paper v4.0 vocabulary (kept as fallbacks).
 		case 'established': return PALETTE.stageEstablished;
 		case 'fresh':       return PALETTE.stageFresh;
 		case 'growing':     return PALETTE.stageGrowing;
 		case 'at-risk':     return PALETTE.stageAtRisk;
 		case 'dormant':     return PALETTE.stageDormant;
+		// Living Link Architecture vocabulary (Eisa's actual data).
+		case 'spark':       return PALETTE.stageFresh;
+		case 'birth':       return PALETTE.stageGrowing;
+		case 'growth':      return PALETTE.stageGrowing;
+		case 'maturity':    return PALETTE.stageEstablished;
+		case 'dormancy':    return PALETTE.stageDormant;
+		case 'renewal':     return PALETTE.stageAtRisk;
+		case 'archival':    return PALETTE.stageDormant;
 		default:            return null;
 	}
 }
