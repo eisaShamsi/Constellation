@@ -505,13 +505,18 @@ export function pipColorForStage(stage: string | null): string | null {
 		case 'at-risk':     return PALETTE.stageAtRisk;
 		case 'dormant':     return PALETTE.stageDormant;
 		// Living Link Architecture vocabulary (Eisa's actual data).
-		case 'spark':       return PALETTE.stageFresh;
-		case 'birth':       return PALETTE.stageGrowing;
-		case 'growth':      return PALETTE.stageGrowing;
-		case 'maturity':    return PALETTE.stageEstablished;
-		case 'dormancy':    return PALETTE.stageDormant;
-		case 'renewal':     return PALETTE.stageAtRisk;
-		case 'archival':    return PALETTE.stageDormant;
+		// 2026-05-15 §B.6-fix-2 (Boss-test cycle 2): birth split out from
+		// stageGrowing (violet) to stageBirth (orange) so spark/birth/growth
+		// render as cyan/orange/violet instead of cyan/violet/violet. The two
+		// dominant categories (spark 49% + birth 40% = 89%) now sit on
+		// opposite sides of the warm-cool axis instead of blurring together.
+		case 'spark':       return PALETTE.stageFresh;       // cyan
+		case 'birth':       return PALETTE.stageBirth;       // orange (NEW)
+		case 'growth':      return PALETTE.stageGrowing;     // violet
+		case 'maturity':    return PALETTE.stageEstablished; // green
+		case 'dormancy':    return PALETTE.stageDormant;     // gray
+		case 'renewal':     return PALETTE.stageAtRisk;      // yellow
+		case 'archival':    return PALETTE.stageDormant;     // gray
 		default:            return null;
 	}
 }

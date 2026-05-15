@@ -169,26 +169,26 @@ export function renderMiniDome(
 				hx = star.x * scale + offsetX;
 				hy = star.y * scale + offsetY;
 			}
-			// 2026-05-15 §B.6-fix-1 (Boss-test Stage 2.3): Eisa: "it is
-			// hard to see the gold ring on the mini-domes because of
-			// the background." Bumped radius 6 → 9 (50% larger) and
-			// stroke 1.4 → 2.2 (57% thicker). Also added a 1-px dark
-			// halo stroke just outside the gold so the ring pops
-			// against the dark background — without the halo, the
-			// gold edge anti-aliases into the background and washes
-			// out at the mini's small scale.
+			// 2026-05-15 §B.6-fix-2 (Boss-test cycle 2 Stage 4): radius
+			// reverted 9 → 6 per Eisa "It's clearer, but keep its
+			// previous size; don't enlarge it as you did." The dark
+			// halo (background-colored stroke under the gold) was the
+			// real visibility win — kept at 4-px width. Stroke stays at
+			// 2.2 since the halo handles the contrast work and a
+			// thicker gold reads more confidently than the original
+			// 1.4 even at the smaller radius.
 			ctx.save();
 			// Halo (drawn first, underneath the gold).
 			ctx.strokeStyle = PALETTE.bg;
 			ctx.lineWidth = 4;
 			ctx.beginPath();
-			ctx.arc(hx, hy, 9, 0, Math.PI * 2);
+			ctx.arc(hx, hy, 6, 0, Math.PI * 2);
 			ctx.stroke();
 			// Gold ring on top.
 			ctx.strokeStyle = PALETTE.highlightedRing;
 			ctx.lineWidth = 2.2;
 			ctx.beginPath();
-			ctx.arc(hx, hy, 9, 0, Math.PI * 2);
+			ctx.arc(hx, hy, 6, 0, Math.PI * 2);
 			ctx.stroke();
 			ctx.restore();
 		}

@@ -197,9 +197,18 @@ export const PALETTE = {
 	starFill: '#cdd5e0',            // NEUTRAL — library encoded by shape only
 	highlightedRing: '#fbbf24',     // gold ring on hover/selection (linked brushing)
 
-	// Stage hues (5 categorical, used as inner pip on anchor + full disk in mini)
+	// Stage hues (6 categorical, used as inner pip on anchor + full disk in mini)
+	// 2026-05-15 §B.6-fix-2: added stageBirth (orange) per Eisa cycle-2 feedback —
+	// "I can see a blueish color spreading on the mini-dome. It is almost
+	// impossible to distinguish all the colors you mentioned." With cyan (spark
+	// 49%) + violet (birth 40% + growth 10%) as the two dominant slots, 89% of
+	// notes rendered in the cyan-violet visual register and blurred into a
+	// single blueish field. Splitting birth → orange gives the two largest
+	// categories maximally distinct hues (cyan vs orange = warm/cool axis,
+	// CIE Delta-E ≫ 30).
 	stageEstablished: '#4ade80',    // green
 	stageFresh:        '#22d3ee',    // cyan
+	stageBirth:        '#fb923c',    // orange — NEW (Living Link 'birth')
 	stageGrowing:      '#a78bfa',    // violet
 	stageAtRisk:       '#facc15',    // yellow
 	stageDormant:      '#94a3b8',    // gray
