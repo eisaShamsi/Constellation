@@ -793,4 +793,40 @@ But the primary slot canvas still showed Acts visual + Acts title. The bug: my M
 
 ---
 
-*End of session log 2026-05-14. §B.7 commit + build complete; Eisa cycle-1 test next.*
+## §B.7 cycle-1 PASS-with-feedback + §B.7-fix-1 (2026-05-15)
+
+**Eisa cycle-1 verdict:**
+- Stage 1: cross-filter applied ("Result: It worked per your test"), but two issues:
+  1. Ctrl+D delayed at first — focus issue (deferred; eventually works)
+  2. Gold ring too large: "It has to match the node size, even when zooming in"
+  3. Ask: "We need to add a count of affected notes when shift-clicking"
+- Stages 2, 3: PASS (multi-channel filter, Confidence filter both work).
+- Stage 4: BUG — "Shift+click a star on the anchor dome switch me to the note in the editor."
+- Stages 5, 6: PASS (plain click + empty-area swap regressions clean).
+
+### §B.7-fix-1 — three fixes
+
+**Fix A — Zoom-aware hover ring** (`miniDome.ts renderMiniDome` Pass 4): the previous code drew the ring at hardcoded world-radius 6 with line widths 4 + 2.2. With promoted MiniDome's zoom transform applied, those scaled multiplicatively → at zoom 24× the ring became ~144 px on screen. New formula: `ringRadiusWorld = dotRadius + 1.5 / zoomScale`, `haloLineWidth = 2 / zoomScale`, `goldLineWidth = 1 / zoomScale`. Result: ring sits ~1.5 screen-px outside the node at any zoom level; halo and gold strokes stay at constant 2/1 px screen widths. Compact path passes `zoomScale=1` (identity transform applied), so formula reduces to `0.75 + 1.5 = 2.25` world ≈ 4.5-px ⌀ ring around 1.5-px ⌀ dots — visible without dominating.
+
+**Fix B — Shift+click on anchor = no-op** (`SightV6.svelte handleClick`): the anchor dome uses SightV6's own `handleClick`, NOT MiniDome's. My §B.7 Shift detection lived only in MiniDome, so Shift+click on anchor stars fell through to `onOpenNote` → opened the note (Eisa Stage 4 bug). Added `if (ev.shiftKey) return;` early-out — anchor has no channel-specific category (it's the universe-baseline view), so no-op is correct per the design.
+
+**Fix C — Filter affected-count badge** (`SightV6.svelte` header): when any facet filter is active (`!filtersEmpty(filters)`), the header shows `X / Y notes` in a small gold-tinted badge between the subtitle and the Reset View button. User sees the immediate impact of a Shift+click without inspecting the sidebar. Imports `filtersEmpty` from `./facets`.
+
+### Out of scope (deferred)
+
+- **Ctrl+D focus delay.** Eisa noted but said it eventually works. Lower priority. Fix would be making it a window-level keydown handler instead of canvas-level — touches keyboard handling. If Eisa flags it as blocking, do in fix-2.
+
+### Files (3, ~70 insertions, ~10 deletions)
+
+- `src/lib/sight/v6/miniDome.ts`: renderMiniDome signature + Pass 4 ring formula.
+- `src/lib/sight/v6/MiniDome.svelte`: pass `zoomScale` option in paint().
+- `src/lib/sight/v6/SightV6.svelte`: handleClick Shift early-out, header filter-count badge, CSS, import filtersEmpty.
+- `lab/reports/SESSION-LOG-2026-05-14.md`: this entry.
+
+### Build artifact
+
+`Constellation_0.3.4_x64-setup.B7-fix1.exe` (this commit).
+
+---
+
+*End of session log 2026-05-14. §B.7-fix-1 commit + build complete; Eisa cycle-2 test next.*

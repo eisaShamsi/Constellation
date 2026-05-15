@@ -36,6 +36,7 @@
 		applyFilters,
 		computeFacetCounts,
 		toggleFilter,
+		filtersEmpty,
 		type FacetFilters,
 	} from './facets';
 	import FacetSidebar from './facetSidebar.svelte';
@@ -283,6 +284,13 @@
 			dragState = null;
 			return;
 		}
+		// §B.7-fix-1 (Eisa cycle-1 Stage 4): Shift+click on the anchor
+		// dome is a no-op. Anchor has no channel-specific category
+		// (it's the universe-baseline view), so cross-filter doesn't
+		// apply here. Without this guard, Shift+click fell through to
+		// onOpenNote and opened the note instead of being silent — the
+		// guard mirrors MiniDome's handling for 'anchor' / 'acts' channels.
+		if (ev.shiftKey) return;
 		const pt = pointerToCanvas(ev);
 		if (!pt) return;
 		const hit = starHitTest(stars, pt.x, pt.y, 9 / zoomScale);
@@ -483,6 +491,16 @@
 	<div class="sight-v6-header">
 		<span class="sight-v6-title">Constellation Sight</span>
 		<span class="sight-v6-subtitle">v6.0 — anchor dome + facets (Phase 1)</span>
+		<!-- §B.7-fix-1 (Eisa cycle-1 Stage 1 ask: "we need to add a
+		     count of affected notes when shift-clicking"): when any
+		     facet filter is active, show the filtered/total count in
+		     the header so the user sees the immediate impact of their
+		     Shift+click without needing to inspect the sidebar. -->
+		{#if !filtersEmpty(filters)}
+			<span class="sight-v6-filter-count" title="Filtered notes / total notes">
+				{filteredRows.length.toLocaleString()} / {rows.length.toLocaleString()} notes
+			</span>
+		{/if}
 		<!-- §B.6-fix-4c — Reset View button. Visible when the layout
 		     has been changed away from the default (anchor primary at
 		     zoom 1.0). Clicking returns to default in one tap, no need
@@ -649,9 +667,27 @@
 		color: #5a6275;
 	}
 
+	/* §B.7-fix-1 — filter affected-count badge. Shows X/Y notes when
+	   any facet filter is active. Subtle but readable. Sits before the
+	   Reset View button via margin-left:auto on the count (which pushes
+	   it right-aligned with the button to its right when both visible). */
+	.sight-v6-filter-count {
+		margin-left: auto;
+		padding: 4px 10px;
+		font-size: 11px;
+		color: #fbbf24;
+		font-variant-numeric: tabular-nums;
+		background: rgba(58, 67, 90, 0.35);
+		border: 1px solid rgba(251, 191, 36, 0.4);
+		border-radius: 4px;
+	}
+
 	/* §B.6-fix-4c — Reset View button. Lives at the right edge of the
 	   header strip via margin-left:auto. Subtle by default; visible
-	   on hover. Designed not to compete with the title. */
+	   on hover. Designed not to compete with the title.
+	   §B.7-fix-1: when filter-count badge is also visible, the badge
+	   takes the margin-left:auto and the button sits next to it via
+	   a smaller fixed margin. */
 	.sight-v6-reset-btn {
 		margin-left: auto;
 		padding: 4px 12px;
@@ -663,6 +699,9 @@
 		border-radius: 4px;
 		cursor: pointer;
 		transition: background 0.12s ease;
+	}
+	.sight-v6-filter-count + .sight-v6-reset-btn {
+		margin-left: 8px;
 	}
 	.sight-v6-reset-btn:hover {
 		background: rgba(74, 90, 130, 0.85);

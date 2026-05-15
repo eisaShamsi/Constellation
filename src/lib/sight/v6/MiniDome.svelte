@@ -118,9 +118,16 @@
 			const ty = dpr * panY;
 			ctx.setTransform(sx, 0, 0, sx, tx, ty);
 		}
+		// §B.7-fix-1: pass zoomScale so renderMiniDome's hover-ring math
+		// can scale inversely with zoom, keeping screen-pixel ring size
+		// bounded at any zoom level. Compact path uses identity transform
+		// so zoomScale=1 here (the local zoomScale state is inert in
+		// compact mode anyway, since handleWheel/handlePointerDown
+		// early-return on `if (compact) return`).
 		renderMiniDome(ctx, stars, channel, canvasWidth, canvasHeight, anchorLayout, {
 			highlightedPath,
 			dotRadius: compact ? 0.75 : 1,
+			zoomScale: compact ? 1 : zoomScale,
 		});
 	}
 

@@ -70,9 +70,9 @@ export function renderMiniDome(
 	width: number,
 	height: number,
 	anchorLayout: DomeLayout,
-	options: { highlightedPath?: string | null; dotRadius?: number } = {},
+	options: { highlightedPath?: string | null; dotRadius?: number; zoomScale?: number } = {},
 ): void {
-	const { highlightedPath = null, dotRadius = 0.75 } = options;
+	const { highlightedPath = null, dotRadius = 0.75, zoomScale = 1 } = options;
 	const layout = computeMiniDomeLayout(width, height);
 	// Coordinate transform: anchor world coords → mini canvas coords.
 	// Channel renderers consume StarDerived.x/y (anchor coords) and
@@ -172,26 +172,36 @@ export function renderMiniDome(
 				hx = star.x * scale + offsetX;
 				hy = star.y * scale + offsetY;
 			}
-			// 2026-05-15 §B.6-fix-2 (Boss-test cycle 2 Stage 4): radius
-			// reverted 9 → 6 per Eisa "It's clearer, but keep its
-			// previous size; don't enlarge it as you did." The dark
-			// halo (background-colored stroke under the gold) was the
-			// real visibility win — kept at 4-px width. Stroke stays at
-			// 2.2 since the halo handles the contrast work and a
-			// thicker gold reads more confidently than the original
-			// 1.4 even at the smaller radius.
+			// 2026-05-15 §B.7-fix-1 (Eisa cycle-1 Stage 1.3): "Why is
+			// the gold circle large? It has to match the node size,
+			// even when zooming in." Previously: hardcoded radius 6
+			// + line widths 4/2.2 in world coords. With promoted zoom
+			// transform applied, those scaled multiplicatively → at
+			// zoom 24× the ring became ~144px on screen (vs 48px node).
+			// New formula: ring radius = dotRadius + 1.5/zoomScale and
+			// stroke widths scale as 1/zoomScale, so the on-screen
+			// ring sits ~1.5 screen-px outside the node + the halo and
+			// gold strokes stay at ~constant 2/1px screen widths
+			// regardless of zoom level. Ring "hugs" the node at any
+			// zoom instead of ballooning. Compact slot passes
+			// zoomScale=1 (no transform applied), so formula reduces
+			// to dotRadius + 1.5 = ~2.25 world ≈ 4.5-px ⌀ ring around
+			// 1.5-px ⌀ dots — visible marker without dominating.
+			const ringRadiusWorld = dotRadius + 1.5 / zoomScale;
+			const haloLineWidth = 2 / zoomScale;
+			const goldLineWidth = 1 / zoomScale;
 			ctx.save();
 			// Halo (drawn first, underneath the gold).
 			ctx.strokeStyle = PALETTE.bg;
-			ctx.lineWidth = 4;
+			ctx.lineWidth = haloLineWidth;
 			ctx.beginPath();
-			ctx.arc(hx, hy, 6, 0, Math.PI * 2);
+			ctx.arc(hx, hy, ringRadiusWorld, 0, Math.PI * 2);
 			ctx.stroke();
 			// Gold ring on top.
 			ctx.strokeStyle = PALETTE.highlightedRing;
-			ctx.lineWidth = 2.2;
+			ctx.lineWidth = goldLineWidth;
 			ctx.beginPath();
-			ctx.arc(hx, hy, 6, 0, Math.PI * 2);
+			ctx.arc(hx, hy, ringRadiusWorld, 0, Math.PI * 2);
 			ctx.stroke();
 			ctx.restore();
 		}
