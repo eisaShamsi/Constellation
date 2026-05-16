@@ -142,6 +142,29 @@
 		filtersEmpty(filters) ? null : new Set(filteredRows.map((r) => r.notePath)),
 	);
 
+	// §B.9 (2026-05-16) — density-aggregation mode. Active when the
+	// matched (or all-when-no-filter) star count exceeds
+	// `appSettings.sight.hexBinThreshold` (default 5000 per Concept
+	// Paper §3.4). Above the threshold, channel renderers switch
+	// per-star alpha from full encoding to a low value (~0.3) so
+	// overlapping stars additive-blend into a perceptual density
+	// gradient — the dense regions read as "more stars here" without
+	// every dot needing to be individually visible.
+	//
+	// This is a lightweight stand-in for the full d3-hexbin
+	// aggregation the Concept Paper specifies for v6.1. Real
+	// hex-binning (compute bins → render hexagons with dominant-value
+	// fill + count badge) lands as v6.2 polish (PJ-NNN allocated
+	// post-ship). For Eisa's 7,645-note universe, the lightweight
+	// density mode is sufficient — discrete dots remain visible
+	// enough to hit-test, but dense clusters no longer look like
+	// solid blobs of cream.
+	const densityMode = $derived.by(() => {
+		const threshold = $appSettings.sight?.hexBinThreshold ?? 5000;
+		const count = matchedPaths === null ? rows.length : matchedPaths.size;
+		return count > threshold;
+	});
+
 	// §B.7-fix-3 (Eisa cycle-3 ask): when a star is hovered anywhere in
 	// Sight, derive its per-facet category values so the FacetSidebar
 	// can highlight the matching chips. Reverse direction of the
@@ -189,6 +212,7 @@
 			highlightedPath: hoveredPath,
 			zoomScale: zoomScale,
 			matchedPaths,
+			densityMode,
 		});
 	}
 
@@ -568,7 +592,7 @@
 <div class="sight-v6-root">
 	<div class="sight-v6-header">
 		<span class="sight-v6-title">Constellation Sight</span>
-		<span class="sight-v6-subtitle">v6.0 — anchor dome + facets (Phase 1)</span>
+		<span class="sight-v6-subtitle">v6.1 — Coordinated Views (Phase 2)</span>
 		<!-- §B.10 — small "EXTENDED" indicator when the persistent
 		     extended-view setting is on (Cmd-Shift-D toggles). Per
 		     Concept Paper §11 invariant 9 (no persistent toggle bars),
@@ -723,6 +747,7 @@
 								onOpenNote={handlePromotedOpenNote}
 								onFacetFilter={handleFacetToggle}
 								{matchedPaths}
+							{densityMode}
 							/>
 						</div>
 					{/if}

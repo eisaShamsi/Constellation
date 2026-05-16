@@ -92,6 +92,37 @@
 //   lab/reports/MIG-025-SIGHT-V6-ARCHITECT.md
 //   lab/reports/MIG-025-SIGHT-V6-PLAN.md
 //   lab/reports/SESSION-LOG-2026-05-14.md
+// MIG-025 §B.11 SHIP MOMENT (2026-05-16): Sight v6.1 ships — Phase 2 closed.
+// Deliverables across §B.6 → §B.10 (~14 fix cycles + 4 base commits):
+//   §B.6  — bidirectional linked brushing (anchor ↔ 4 minis ↔ sidebar) +
+//           dome-swap (click any mini to promote; 5-slot layout) + zoom
+//           on promoted mini + Reset View button + Return-to-Sight button
+//   §B.7  — Shift+click cross-filter on stars (Stage/Confidence/Provenance)
+//           + ghost mode (faded non-matched stars stay clickable for
+//           multi-select) + zoom-aware hover ring + filter affected-count
+//           badge in header + hover-star → highlight sidebar chip reverse
+//           link (Eisa: "this new feature is making the Sight function
+//           smarter, and it will help users better understand their
+//           universe")
+//   §B.8  — Cross-filter perf gate: manual verification via Eisa cycle
+//           reports ("instant" perceptual feel). Automated vitest harness
+//           deferred to §D.4 per §A.13 README (project-level devDependency
+//           decision out of scope here).
+//   §B.9  — Density aggregation when matched count > hexBinThreshold
+//           (default 5000): channel renderers lower per-star alpha for
+//           additive-blend perceptual density. Full d3-hexbin aggregation
+//           (bins + dominant value + count badge) deferred to v6.2 polish.
+//   §B.10 — Extended view persistence (Cmd-Shift-D). Per-session Cmd-D
+//           toggle preserved. PRO → EXTENDED user-facing rename + full
+//           schema rename (`appSettings.sight.proMode` → `extended`)
+//           with migration in applyParsedSettings.
+// User-facing surface as of v6.1: Coordinated Views — hover anywhere,
+// see everywhere; click a chip or Shift+click a star to filter; promote
+// any mini to inspect its channel at full size with zoom; ghost-mode
+// keeps the unfiltered universe visible-but-faded for context. The
+// dome and sidebar form a closed bidirectional loop.
+// Phase 3 (§C — register chip + 4 production registers) opens next.
+//
 // 2026-05-14 §B-preview Eisa request: side-by-side test of v2 vs v6.
 // v5 disabled, v2 re-enabled. v2 mount/dock-button wiring in
 // +layout.svelte:64 + 4421 + 4864 + 5142 still intact since MIG-017.

@@ -3824,6 +3824,26 @@ export function applyParsedSettings(parsed: Record<string, unknown>): void {
 		saveSettings();
 	}
 
+	// ── §B.11 — lastMode dead-key cleanup ───────────────────────
+	// 2026-05-16 (Eisa observation while verifying §B.10-fix-1
+	// migration): Eisa's settings.json still had `lastMode: "R"`
+	// despite v6MigrationDone=true. The §A.12 migration was supposed
+	// to delete lastMode on first v6 boot, but its `if (!v6MigrationDone)`
+	// gate means it never re-runs for users whose v6MigrationDone was
+	// stamped without the deletion succeeding (likely a partial write
+	// in an early v6 build). This idempotent cleanup runs on every
+	// load: deletes lastMode unconditionally if present (v6 ignores
+	// the field entirely; no v6 code path reads it). saveSettings
+	// persists the deletion. Branch silent on subsequent loads.
+	if ('lastMode' in sightSnapshotForRename) {
+		appSettings.update((s) => {
+			const nextSight = { ...s.sight } as Record<string, unknown>;
+			delete nextSight.lastMode;
+			return { ...s, sight: nextSight as typeof s.sight };
+		});
+		saveSettings();
+	}
+
 	// ── §A.12 — Sight v5 → v6 settings migration ────────────────
 	// One-shot, quiet (no user dialog). Stamps v6MigrationDone=true
 	// to prevent re-running. Per Architect Option G1 (locked):

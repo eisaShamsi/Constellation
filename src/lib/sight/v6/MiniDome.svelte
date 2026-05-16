@@ -28,6 +28,7 @@
 		onOpenNote = () => {},
 		onFacetFilter = () => {},
 		matchedPaths = null,
+		densityMode = false,
 	}: {
 		channel: SlotChannel;
 		stars: StarDerived[];
@@ -64,6 +65,11 @@
 		 *  Shift+click them to ADD their category to the filter. null
 		 *  means no filter active — all stars render at full encoding. */
 		matchedPaths?: Set<string> | null;
+		/** §B.9 — density-aggregation mode. When true, channel renderers
+		 *  switch to additive-blend low-alpha rendering (overlapping
+		 *  stars merge into perceptual density texture). Parent computes
+		 *  from `appSettings.sight.hexBinThreshold` vs matched count. */
+		densityMode?: boolean;
 	} = $props();
 
 	let canvasEl = $state<HTMLCanvasElement | null>(null);
@@ -136,6 +142,7 @@
 			dotRadius: compact ? 0.75 : 1,
 			zoomScale: compact ? 1 : zoomScale,
 			matchedPaths,
+			densityMode,
 		});
 	}
 
@@ -360,6 +367,7 @@
 		void channel;
 		void compact;
 		void matchedPaths;
+		void densityMode;
 		untrack(() => paint());
 	});
 </script>

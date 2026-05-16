@@ -75,6 +75,7 @@ export function renderMiniDome(
 		dotRadius?: number;
 		zoomScale?: number;
 		matchedPaths?: Set<string> | null;
+		densityMode?: boolean;
 	} = {},
 ): void {
 	const {
@@ -82,6 +83,7 @@ export function renderMiniDome(
 		dotRadius = 0.75,
 		zoomScale = 1,
 		matchedPaths = null,
+		densityMode = false,
 	} = options;
 	const layout = computeMiniDomeLayout(width, height);
 	// Coordinate transform: anchor world coords → mini canvas coords.
@@ -149,19 +151,19 @@ export function renderMiniDome(
 	// positions so linked brushing in §B.6 matches up trivially.
 	switch (channel) {
 		case 'anchor':
-			renderAnchorChannel(ctx, stars, scale, offsetX, offsetY, dotRadius, matchedPaths);
+			renderAnchorChannel(ctx, stars, scale, offsetX, offsetY, dotRadius, matchedPaths, densityMode);
 			break;
 		case 'confidence':
-			renderConfidenceChannel(ctx, stars, scale, offsetX, offsetY, dotRadius, matchedPaths);
+			renderConfidenceChannel(ctx, stars, scale, offsetX, offsetY, dotRadius, matchedPaths, densityMode);
 			break;
 		case 'stage':
-			renderStageChannel(ctx, stars, scale, offsetX, offsetY, dotRadius, matchedPaths);
+			renderStageChannel(ctx, stars, scale, offsetX, offsetY, dotRadius, matchedPaths, densityMode);
 			break;
 		case 'acts':
-			renderActsChannel(ctx, stars, scale, offsetX, offsetY, dotRadius, matchedPaths);
+			renderActsChannel(ctx, stars, scale, offsetX, offsetY, dotRadius, matchedPaths, densityMode);
 			break;
 		case 'provenance':
-			renderProvenanceChannel(ctx, stars, layout, dotRadius, matchedPaths);
+			renderProvenanceChannel(ctx, stars, layout, dotRadius, matchedPaths, densityMode);
 			break;
 	}
 
@@ -239,16 +241,21 @@ function renderConfidenceChannel(
 	offsetY: number,
 	dotRadius: number = 0.75,
 	matchedPaths: Set<string> | null = null,
+	densityMode: boolean = false,
 ): void {
-	// 2026-05-15 §B.7-fix-2 (Eisa cycle-2 ghost mode): when a facet
-	// filter is active, render NON-matching stars at GHOST_ALPHA (0.15)
-	// so user can Shift+click them to add to filter. matchedPaths===null
-	// means no filter active (current behavior — per-star confidenceAlpha).
+	// 2026-05-15 §B.7-fix-2: ghost mode (non-matched at GHOST_ALPHA).
+	// 2026-05-16 §B.9: density mode (matched count > threshold): use
+	// MATCHED_DENSITY_ALPHA so overlapping stars additive-blend into
+	// a perceptual density gradient instead of individual dots.
 	const GHOST_ALPHA = 0.15;
+	const MATCHED_DENSITY_ALPHA = 0.35;
+	const GHOST_DENSITY_ALPHA = 0.05;
 	ctx.fillStyle = PALETTE.starFill;
 	for (const star of stars) {
 		const isMatched = matchedPaths === null || matchedPaths.has(star.row.notePath);
-		const opacity = isMatched ? (star.row.confidenceAlpha ?? 0.45) : GHOST_ALPHA;
+		const opacity = isMatched
+			? (densityMode ? MATCHED_DENSITY_ALPHA : (star.row.confidenceAlpha ?? 0.45))
+			: (densityMode ? GHOST_DENSITY_ALPHA : GHOST_ALPHA);
 		const x = star.x * scale + offsetX;
 		const y = star.y * scale + offsetY;
 		ctx.globalAlpha = opacity;
@@ -280,14 +287,20 @@ function renderStageChannel(
 	offsetY: number,
 	dotRadius: number = 0.75,
 	matchedPaths: Set<string> | null = null,
+	densityMode: boolean = false,
 ): void {
+	// §B.9 density mode: lower alpha for additive blending when too many.
 	const GHOST_ALPHA = 0.15;
+	const MATCHED_DENSITY_ALPHA = 0.35;
+	const GHOST_DENSITY_ALPHA = 0.05;
 	for (const star of stars) {
 		const x = star.x * scale + offsetX;
 		const y = star.y * scale + offsetY;
 		const stageColor = pipColorForStage(star.row.stage) ?? PALETTE.starFill;
 		const isMatched = matchedPaths === null || matchedPaths.has(star.row.notePath);
-		ctx.globalAlpha = isMatched ? 1 : GHOST_ALPHA;
+		ctx.globalAlpha = isMatched
+			? (densityMode ? MATCHED_DENSITY_ALPHA : 1)
+			: (densityMode ? GHOST_DENSITY_ALPHA : GHOST_ALPHA);
 		ctx.fillStyle = stageColor;
 		ctx.beginPath();
 		ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
@@ -310,22 +323,13 @@ function renderActsChannel(
 	offsetY: number,
 	dotRadius: number = 0.75,
 	matchedPaths: Set<string> | null = null,
+	densityMode: boolean = false,
 ): void {
-	// §B-fix-3: baseline 0.75 radius (1.5 px ⌀) per Eisa spec; top-
-	// decile keeps the 4× ratio = 3 px radius (6 px ⌀) so hot-spots
-	// remain pre-attentively distinct.
-	// 2026-05-15 §B.6-fix-3: dotRadius parameterized for promoted
-	// (primary-slot) rendering.
-	// 2026-05-15 §B.6-fix-7 (Eisa cycle-6 Stage 3): the 4× ratio at
-	// promoted scale (10-px radius = 20-px ⌀ for ~764 top-decile notes)
-	// overlapped into a solid blob. Eisa: "the node size must be 5px
-	// when the mini-dome is promoted." Drop the multiplier in promoted
-	// mode (top-decile = base radius); keep 4× only in compact (mini
-	// slot) where the small canvas needs the contrast for hot-spots
-	// to read at all. Detect via dotRadius value: < 1 = compact, >= 1
-	// = promoted (only two values used in practice: 0.75 and 2.5).
-	// §B.7-fix-2: ghost non-matched stars at GHOST_ALPHA when filter active.
+	// Acts: 4× top-decile ratio in compact, no ratio in promoted (§B.6-fix-7).
+	// §B.7-fix-2: ghost non-matched. §B.9: density mode lowers alpha.
 	const GHOST_ALPHA = 0.15;
+	const MATCHED_DENSITY_ALPHA = 0.35;
+	const GHOST_DENSITY_ALPHA = 0.05;
 	ctx.fillStyle = PALETTE.starFill;
 	const topDecileRadius = dotRadius < 1 ? dotRadius * 4 : dotRadius;
 	for (const star of stars) {
@@ -333,7 +337,9 @@ function renderActsChannel(
 		const x = star.x * scale + offsetX;
 		const y = star.y * scale + offsetY;
 		const isMatched = matchedPaths === null || matchedPaths.has(star.row.notePath);
-		ctx.globalAlpha = isMatched ? 1 : GHOST_ALPHA;
+		ctx.globalAlpha = isMatched
+			? (densityMode ? MATCHED_DENSITY_ALPHA : 1)
+			: (densityMode ? GHOST_DENSITY_ALPHA : GHOST_ALPHA);
 		ctx.beginPath();
 		ctx.arc(x, y, r, 0, Math.PI * 2);
 		ctx.fill();
@@ -364,8 +370,11 @@ function renderProvenanceChannel(
 	layout: MiniDomeLayout,
 	dotRadius: number = 0.75,
 	matchedPaths: Set<string> | null = null,
+	densityMode: boolean = false,
 ): void {
 	const GHOST_ALPHA = 0.15;
+	const MATCHED_DENSITY_ALPHA = 0.35;
+	const GHOST_DENSITY_ALPHA = 0.05;
 	const sectorCount = PROVENANCE_SECTORS.length;
 	const sectorAngle = (Math.PI * 2) / sectorCount;
 	// Top of dome = -π/2 (canvas math); first sector starts there.
@@ -403,14 +412,15 @@ function renderProvenanceChannel(
 	ctx.restore();
 
 	// Stars — re-positioned per provenance sector × stratum.
-	// §B-fix-3: 0.75 radius (1.5 px ⌀) per Eisa spec.
-	// §B.6-fix-3: dotRadius parameterized for promoted slot.
-	// §B.7-fix-2: ghost-mode for non-matched stars.
+	// §B-fix-3: 0.75 radius (1.5 px ⌀). §B.6-fix-3: dotRadius parameterized.
+	// §B.7-fix-2: ghost-mode. §B.9: density-mode lowers alpha.
 	ctx.fillStyle = PALETTE.starFill;
 	for (const star of stars) {
 		const pos = provenancePositionFor(star, layout);
 		const isMatched = matchedPaths === null || matchedPaths.has(star.row.notePath);
-		ctx.globalAlpha = isMatched ? 1 : GHOST_ALPHA;
+		ctx.globalAlpha = isMatched
+			? (densityMode ? MATCHED_DENSITY_ALPHA : 1)
+			: (densityMode ? GHOST_DENSITY_ALPHA : GHOST_ALPHA);
 		ctx.beginPath();
 		ctx.arc(pos.x, pos.y, dotRadius, 0, Math.PI * 2);
 		ctx.fill();
@@ -432,14 +442,19 @@ function renderAnchorChannel(
 	offsetY: number,
 	dotRadius: number = 0.75,
 	matchedPaths: Set<string> | null = null,
+	densityMode: boolean = false,
 ): void {
 	const GHOST_ALPHA = 0.15;
+	const MATCHED_DENSITY_ALPHA = 0.35;
+	const GHOST_DENSITY_ALPHA = 0.05;
 	ctx.fillStyle = PALETTE.starFill;
 	for (const star of stars) {
 		const x = star.x * scale + offsetX;
 		const y = star.y * scale + offsetY;
 		const isMatched = matchedPaths === null || matchedPaths.has(star.row.notePath);
-		ctx.globalAlpha = isMatched ? 1 : GHOST_ALPHA;
+		ctx.globalAlpha = isMatched
+			? (densityMode ? MATCHED_DENSITY_ALPHA : 1)
+			: (densityMode ? GHOST_DENSITY_ALPHA : GHOST_ALPHA);
 		ctx.beginPath();
 		ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
 		ctx.fill();

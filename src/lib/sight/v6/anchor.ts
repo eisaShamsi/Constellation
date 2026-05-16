@@ -229,6 +229,7 @@ export function renderAnchorDome(
 		highlightedPath?: string | null;
 		zoomScale?: number;
 		matchedPaths?: Set<string> | null;
+		densityMode?: boolean;
 	} = {},
 ): void {
 	const {
@@ -237,7 +238,16 @@ export function renderAnchorDome(
 		highlightedPath = null,
 		zoomScale = 1,
 		matchedPaths = null,
+		densityMode: _densityMode = false,
 	} = options;
+	// §B.9 — densityMode accepted for API symmetry with renderMiniDome
+	// but currently unused: the anchor already renders bodies at
+	// BODY_OPACITY_MULT (0.7) for the existing density-via-additive-
+	// blending baseline (see drawStars Pass 1 comment), so dense regions
+	// already read as "more stars here" without an explicit mode switch.
+	// Future polish (v6.2 hex-bin) could use this flag to swap to true
+	// hex-bin rendering at very high counts.
+	void _densityMode;
 	const layout = computeDomeLayout(width, height);
 
 	// 2026-05-14 §A.14 fix-10 (Boss-test cycle 3 zoom regression):

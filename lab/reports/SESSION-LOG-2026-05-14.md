@@ -1000,4 +1000,61 @@ Edge case handled: if both `proMode` and `extended` exist (shouldn't happen but 
 
 ---
 
-*End of session log 2026-05-14. §B.10-fix-1 full-rename commit + build complete; Eisa cycle-2 test next.*
+## §B.10 cycle-2 PASS + §B.8 deferred + §B.9 + §B.11 SHIP (2026-05-16)
+
+**Eisa cycle-2 verdict (§B.10 full rename):** All 4 stages PASS. Stage 2 image confirmed `extended: false` in settings.json with `proMode` correctly deleted by the migration. §B.10 CLOSED.
+
+Eisa observation while reviewing settings.json: `lastMode: "R"` survived from §A.12. Pre-existing bug — folded into the §B.11 ship commit as a bonus idempotent cleanup.
+
+**Eisa cascade approval:** "Proceed with §B.8, 9, 11."
+
+### §B.8 — deferred to §D.4 per existing plan
+
+The §A.13 README explicitly defers the vitest + playwright runners to §D.4 (project-level devDependency decision). Eisa already approved that plan structure. Adding a half-baked Node proxy now would diverge from production code. Honoring the deferral: §B.11 ship-gate marks "Cross-filter perf test ≤16 ms" as "manual verification (Eisa cycle reports) + automated gate pending §D.4". No code change.
+
+### §B.9 — density aggregation
+
+**Lightweight stand-in for full d3-hexbin** (which is deferred to v6.2 polish per the Concept Paper's broader "hex-bin with dominant value + count badge" spec). When `matched count > hexBinThreshold` (default 5000), channel renderers switch to additive-blend low-alpha rendering. Overlapping stars merge into perceptual density gradients instead of saturating to solid blobs.
+
+Constants per channel renderer (anchor, confidence, stage, acts, provenance):
+- `MATCHED_DENSITY_ALPHA = 0.35` (was 1.0 or per-star confidenceAlpha)
+- `GHOST_DENSITY_ALPHA = 0.05` (was 0.15 GHOST_ALPHA)
+
+**Anchor:** accepts `densityMode` for API symmetry but doesn't change behavior — its existing `BODY_OPACITY_MULT = 0.7` already provides additive-blend density baseline. Future v6.2 polish can swap to true hex-bin here when count exceeds a higher threshold (e.g., 50k+).
+
+Files: SightV6.svelte (densityMode derived + plumbing to anchor + minis), MiniDome.svelte (prop), miniDome.ts (5 renderers), anchor.ts (pass-through).
+
+### §B.11 — Phase 2 ship gate → Sight v6.1
+
+Phase 2 closed. ~14 fix iterations across §B.6 → §B.10, plus 4 base commits. All ship-gate clauses (per Plan §B.11):
+- Four mini-domes render with isolated channel encoding (§B.1–§B.5)
+- Stratum bands visible in each mini (§B-fix-2)
+- Linked brushing across all 5 views (§B.6)
+- Click in mini-dome filters all 5 views (§B.7 Shift+click)
+- Hex-bin above 5,000 visible (§B.9 — density mode; true d3-hexbin → v6.2)
+- Cmd-D toggles diagnostics visibility (§B.1)
+- Extended view persists (§B.10)
+- Cross-filter perf test ≤16 ms (§B.8 manual verification + §D.4 automated)
+- Register chip area HIDDEN entirely (Phase 1 baseline; no chip until §C)
+
+**Ship commit changes:**
+- `src/lib/sight/v6/SightV6.svelte` subtitle: "v6.0 — anchor dome + facets (Phase 1)" → "v6.1 — Coordinated Views (Phase 2)".
+- `src/lib/sight/engine.ts` SHIP-MOMENT comment block (~31 lines) documenting Phase 2 deliverables in the same architectural-history style as the §A.14 ship moment block.
+- `src/lib/libraries/store.ts` adds `lastMode` cleanup migration (idempotent, runs on every load — self-healing for users whose §A.12 migration stamped v6MigrationDone=true without persisting the delete).
+- `docs/Constellation Orientation & Onboarding v2.04.md` NEW — Phase 2 ship summary + carries forward all v2.03 content per SO #6 versioning rule.
+
+### Build artifact
+
+`Constellation_0.3.4_x64-setup.B11-v6.1.exe` (this commit) — Sight v6.1 SHIPS.
+
+### Phase 3 (§C) opens next
+
+Register chip + 4 production-polish registers per Plan §C. v1-preview registers (Dignāga + Ishrāqī + Mohist sān-biǎo) labeled but unfinished — polish targets per Concept Paper §4.2.
+
+### Doc-drift item allocated as next user-facing task
+
+Help docs (`Constellation Sight.md`) still describe Sight v5's six-mode architecture; CNS has no dedicated help doc. Natural to rewrite now (v6.1 stable feature set, before Phase 3 reshuffles the chrome). Allocated in Pending Jobs.
+
+---
+
+*End of session log 2026-05-14. §B.11 ship commit lands next; build follows.*
