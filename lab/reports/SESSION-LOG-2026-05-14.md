@@ -1375,3 +1375,34 @@ Per Plan §C.3: "Star quadrant assignment from a frontmatter `pramana_kind` fiel
 - Stage 3: 4 italic wedge labels visible (pratyakṣa NE, anumāna SE, upamāna SW, śabda NW) at ~88% of outer rim.
 - Stage 4: mini-domes (if EXTENDED on) remain **unchanged** in encoding — they still show Confidence/Stage/Acts/Provenance, register-agnostic.
 - Stage 5: switch back to Aristotelian → stars return to their original positions; dividers + labels disappear.
+
+### §C.3-fix-1 — Mini-dome register-isolation bug fix (2026-05-16)
+
+Eisa Stage 3 FAIL during §C.3 Boss-test: **"The Provenance is the same as before, yet the other three are similar to the anchor dome"** + 3 screenshots showing CONFIDENCE / STAGE / ACTS minis rendering the pramāṇa NE-quadrant pile-up instead of their own channel encodings.
+
+**Root cause** — Concept Paper §11 invariant 6 (register isolation) violated. The mini-dome renderers Confidence / Stage / Acts work by recoloring / resizing / fading the stars **in place** — they read the parent's `stars` array directly and don't redistribute. The Provenance mini was fine because it self-positions into 5 angle sectors (its own layout, ignores incoming xy). When §C.2 made `stars` carry register-remapped positions for the anchor, the 3 in-place minis inherited the remap automatically.
+
+**Fix** — two star arrays in SightV6.svelte, both maintained in `recomputeStars`:
+
+| Array | Positions | Consumer |
+|---|---|---|
+| `stars` | register-remapped (`activeRegister.remapStarPosition(...)`) | anchor only |
+| `starsDefault` | default Aristotelian (no register passed to computeStarPositions) | both `<MiniDome>` instances |
+
+For Aristotelian (or null register), `stars === starsDefault` (avoids redundant computation). For pramāṇa / masādir / Polanyi / Ishrāqī / Mohist sān biǎo, the two arrays diverge — anchor shows the register's geometry, mini-domes stay culturally neutral.
+
+**Linked brushing crosses cleanly** — `hoveredPath` is the notePath string which both arrays share. When the user hovers a star in the anchor (at NE-quadrant pramāṇa position), the gold-ring highlight in each mini-dome lands at the SAME row's default-Aristotelian position. When hovering a mini star (at default position), the anchor highlight lands at the register-remapped position. Brushing identity preserved via notePath, surface coordinates resolved independently per surface.
+
+**Hit-test correctness** — anchor hit-test uses `stars` (register-remapped, matches drawn positions); mini hit-test uses `starsDefault` (default positions, matches drawn positions). Each surface's hit-test agrees with what's visually on that surface.
+
+**Files**
+- `src/lib/sight/v6/SightV6.svelte` — new `starsDefault` $state alongside `stars`; `recomputeStars` computes both (with optimization: when activeRegister is null, `stars = starsDefault` to avoid the redundant compute); both `<MiniDome>` instances changed from `stars={stars}` to `stars={starsDefault}`; comment block at the $state declaration documents the two-array contract and the architectural commitment.
+
+**Boss re-test expectation**
+- Stage 1 (Aristotelian baseline) still PASS.
+- Stage 2 (pramāṇa redistribution on anchor) still PASS.
+- Stage 3 (mini-domes register-isolated): **now PASS** — CONFIDENCE / STAGE / ACTS minis render their channel encodings on full-circle Aristotelian positions, identical to how they render when Aristotelian is the active register. Provenance unchanged from previous (was already correct).
+- Stage 4 (cycle through other registers) still PASS.
+- Stage 5 (round-trip + persistence) still PASS.
+
+On all-PASS, cascade resumes to §C.4 (masādir — 4 sectors + 4 extension chips below the dome).

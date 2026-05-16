@@ -84,7 +84,28 @@
 	// ── Data state ─────────────────────────────────────────────────
 	let rows = $state<LayoutCacheRow[]>([]);
 	let links = $state<LinkEdge[]>([]);
+	// §C.3-fix-1 (Eisa cycle-1 Stage 3 FAIL: "The Provenance is the same
+	// as before, yet the other three are similar to the anchor dome"):
+	// register isolation per Concept Paper §11 invariant 6 requires that
+	// mini-domes NEVER inherit the anchor's register-remapped positions.
+	// Provenance was fine because it self-positions into 5 angle sectors;
+	// Confidence / Stage / Acts read the anchor `stars` array directly
+	// (they only recolor / resize / fade in place), so they were
+	// inheriting pramāṇa's NE-quadrant pile-up.
+	//   - `stars`        — register-REMAPPED positions, used by anchor.
+	//                       For Aristotelian == default Aristotelian.
+	//                       For pramāṇa / masādir / Polanyi / etc.
+	//                       == register.remapStarPosition(...).
+	//   - `starsDefault` — ALWAYS default Aristotelian positions,
+	//                       used by mini-domes. Register-agnostic so the
+	//                       4 minis stay culturally neutral regardless
+	//                       of which register the chip is on.
+	// Linked brushing (hover anchor → highlight mini, hover mini →
+	// highlight anchor) works via notePath lookup which both arrays
+	// share, so brushing crosses cleanly between the two coordinate
+	// systems.
 	let stars = $state<StarDerived[]>([]);
+	let starsDefault = $state<StarDerived[]>([]);
 	let hoveredPath = $state<string | null>(null);
 
 	// ── §A.10 facet state ──────────────────────────────────────────
@@ -250,21 +271,36 @@
 		// from the dome instead of requiring sidebar chip interaction.
 		if (rows.length === 0 || canvasWidth === 0 || canvasHeight === 0) {
 			stars = [];
+			starsDefault = [];
 			return;
 		}
 		const layout = computeDomeLayout(canvasWidth, canvasHeight);
-		// §C.2 — look up the active register module and pass it to
-		// computeStarPositions. For Aristotelian (default), the module's
-		// remapStarPosition is identity → dome renders identical to v6.1.
-		// For pramāṇa (§C.3) / masādir (§C.4) / Polanyi (§C.5) — once
-		// those modules ship — the remap moves stars into the register's
-		// geometric vocabulary. If activeRegister is unset or has no
-		// module (incremental build state), register is null and
-		// computeStarPositions falls back to default Aristotelian.
+		// §C.3-fix-1 — compute TWO star arrays so mini-domes stay
+		// register-agnostic per Concept Paper §11 invariant 6.
+		//
+		// `starsDefault` (no register arg → null → default Aristotelian
+		// positions) is consumed by the 4 mini-dome instances. Result:
+		// Confidence / Stage / Acts / Provenance always show the full-
+		// circle stratum × time arrangement regardless of which register
+		// the chip is on.
+		//
+		// `stars` (with the active register) is consumed by the anchor.
+		// For Aristotelian → identity → same as starsDefault. For
+		// pramāṇa / masādir / Polanyi / Ishrāqī / Mohist sān biǎo (as
+		// each module ships) → register.remapStarPosition rearranges
+		// stars into the register's geometric vocabulary.
+		//
+		// Linked brushing crosses cleanly: hoveredPath is the notePath
+		// string which both arrays share; the gold-ring highlight in
+		// each surface lands at that surface's own coordinate for the
+		// matching row.
 		const activeRegister = getRegisterById(
 			$appSettings.sight?.activeRegister as RegisterId | undefined,
 		);
-		stars = computeStarPositions(rows, layout.centerX, layout.centerY, layout.radius, activeRegister);
+		starsDefault = computeStarPositions(rows, layout.centerX, layout.centerY, layout.radius);
+		stars = activeRegister
+			? computeStarPositions(rows, layout.centerX, layout.centerY, layout.radius, activeRegister)
+			: starsDefault;
 	}
 
 	// ── Data load ─────────────────────────────────────────────────
@@ -730,7 +766,7 @@
 				<div class="sight-v6-promoted-host">
 					<MiniDome
 						channel={primaryChannel}
-						stars={stars}
+						stars={starsDefault}
 						{anchorLayout}
 						highlightedPath={hoveredPath}
 						onHover={(path) => { hoveredPath = path; }}
@@ -791,7 +827,7 @@
 							     filteredRows → recomputeStars → repaint. -->
 							<MiniDome
 								channel={slot}
-								stars={stars}
+								stars={starsDefault}
 								{anchorLayout}
 								highlightedPath={hoveredPath}
 								onHover={(path) => { hoveredPath = path; }}
