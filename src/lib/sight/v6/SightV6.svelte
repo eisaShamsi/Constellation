@@ -188,6 +188,22 @@
 		return count > threshold;
 	});
 
+	// §C.4 — extension chips from the active register. masādir is the
+	// only register that ships extensionChips in Phase 3 (4 supplementary
+	// sources per Concept Paper §4.1.3: istiḥsān, istiṣḥāb, maṣlaḥa
+	// mursalah, ʿurf). The chip row renders as a positioned-absolute
+	// HTML overlay below the anchor canvas (see template). Returns null
+	// when no register is active or the active register has no extension
+	// chips → conditional render is suppressed entirely.
+	const registerExtensionChips = $derived.by((): string[] | null => {
+		const reg = getRegisterById(
+			$appSettings.sight?.activeRegister as RegisterId | undefined,
+		);
+		if (!reg?.extensionChips) return null;
+		const chips = reg.extensionChips();
+		return chips.length === 0 ? null : chips;
+	});
+
 	// §B.7-fix-3 (Eisa cycle-3 ask): when a star is hovered anywhere in
 	// Sight, derive its per-facet category values so the FacetSidebar
 	// can highlight the matching chips. Reverse direction of the
@@ -755,6 +771,24 @@
 						zoom: {zoomScale.toFixed(2)}× · pan: {Math.round(panX)},{Math.round(panY)} · Ctrl-0 reset
 					</div>
 				{/if}
+				<!-- §C.4 — extension chips overlay. Active for masādir (the
+				     only Phase-3 register with supplementary sources per
+				     §4.1.3: istiḥsān / istiṣḥāb / maṣlaḥa mursalah / ʿurf).
+				     Position absolute at the bottom-center of the canvas
+				     host so the chip row sits below the dome without
+				     stealing canvas height. Pointer-events: none on the
+				     wrapper so the chips don't intercept dome hover/click;
+				     they are display-only in §C.4 (per-note opt-in via
+				     `masadir_source` frontmatter ships in §C.4-fix-N). -->
+				{#if registerExtensionChips}
+					<div class="sight-v6-extension-chips" role="list" aria-label="Additional masādir sources">
+						{#each registerExtensionChips as chip (chip)}
+							<span class="extension-chip" role="listitem" title="Additional masādir source (display-only in v6.2; per-note opt-in via frontmatter ships in a follow-up)">
+								{chip}
+							</span>
+						{/each}
+					</div>
+				{/if}
 			{:else}
 				<!-- §B.6-fix-3 — promoted mini in primary slot. Fills the
 				     canvas-host space. Uses MiniDome with compact=false so
@@ -1022,6 +1056,40 @@
 		border-radius: 4px;
 		pointer-events: none;
 		font-variant-numeric: tabular-nums;
+	}
+
+	/* §C.4 — extension chips overlay for masādir register. A small
+	   horizontal row of italic-styled chip badges at the bottom-center
+	   of the canvas-host, ~16 px above the bottom edge. pointer-events
+	   none on the wrapper so the chips don't interfere with anchor dome
+	   gestures; individual chips re-enable pointer-events for the hover
+	   tooltip (title attribute). Visual style is intentionally close to
+	   the stratum labels — italic, muted color, sits as soft chrome
+	   rather than as an active control. */
+	.sight-v6-extension-chips {
+		position: absolute;
+		left: 50%;
+		bottom: 16px;
+		transform: translateX(-50%);
+		display: flex;
+		gap: 8px;
+		pointer-events: none;
+		z-index: 2;
+	}
+	.sight-v6-extension-chips .extension-chip {
+		pointer-events: auto;
+		display: inline-flex;
+		align-items: center;
+		padding: 3px 9px;
+		font-family: inherit;
+		font-style: italic;
+		font-size: 10px;
+		color: #a0a8ba;
+		background: rgba(58, 67, 90, 0.35);
+		border: 1px solid rgba(160, 168, 186, 0.30);
+		border-radius: 3px;
+		cursor: help;
+		white-space: nowrap;
 	}
 
 	.sight-v6-loading {

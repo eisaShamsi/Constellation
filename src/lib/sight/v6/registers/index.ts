@@ -22,6 +22,7 @@
 import type { RegisterId, RegisterModule } from '../types';
 import { aristotelian } from './aristotelian';
 import { pramana } from './pramana';
+import { masadir } from './masadir';
 
 /**
  * The registered modules. Keyed by RegisterId for O(1) lookup.
@@ -38,7 +39,7 @@ import { pramana } from './pramana';
 const REGISTRY: Partial<Record<RegisterId, RegisterModule>> = {
 	aristotelian,
 	pramana,
-	// masadir — §C.4
+	masadir,
 	// polanyi — §C.5
 	// ishraqi — §D.2 (v1-preview)
 	// 'mohist-san-biao' — §D.3 (v1-preview)
@@ -66,4 +67,4 @@ export function allRegisters(): RegisterModule[] {
 	return Object.values(REGISTRY).filter((m): m is RegisterModule => m !== undefined);
 }
 
-export { aristotelian, pramana };
+export { aristotelian, pramana, masadir };

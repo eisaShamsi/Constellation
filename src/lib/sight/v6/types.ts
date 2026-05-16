@@ -259,6 +259,22 @@ export interface RegisterModule {
 	 * registers with no sector structure (Aristotelian, Polanyi).
 	 */
 	sectorDividers?: (layout: RegisterLayout) => SectorSpec[];
+	/**
+	 * Optional extension chips rendered below the anchor dome (e.g.,
+	 * masādir's 4 supplementary sources: istiḥsān, istiṣḥāb, maṣlaḥa
+	 * mursalah, ʿurf, per Concept Paper §4.1.3). These are visual
+	 * reminders that the register's full epistemic vocabulary includes
+	 * supplementary categories beyond the 4 main sectors — not
+	 * separate dome regions, but additional categories the user can
+	 * tag notes with (post-§C.4-fix-N when Rust-side extraction lands).
+	 *
+	 * Return an array of plain string labels (kept English/transliterated
+	 * per the brand convention). The SightV6 host renders them as a row
+	 * of small HTML badges below the anchor canvas. Omit (or return [])
+	 * for registers with no extension category — Aristotelian, pramāṇa,
+	 * Polanyi, Ishrāqī, Mohist sān biǎo all omit this.
+	 */
+	extensionChips?: () => string[];
 }
 
 // ════════════════════════════════════════════════════════════════════

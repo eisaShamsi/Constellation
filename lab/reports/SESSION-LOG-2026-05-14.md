@@ -1406,3 +1406,49 @@ For Aristotelian (or null register), `stars === starsDefault` (avoids redundant 
 - Stage 5 (round-trip + persistence) still PASS.
 
 On all-PASS, cascade resumes to §C.4 (masādir — 4 sectors + 4 extension chips below the dome).
+
+### §C.3 re-test (post §C.3-fix-1) — Eisa result: ALL PASS (2026-05-16)
+
+Stages 1–5 green against commit `359dcdf4`. Anchor still shows pramāṇa NE-cluster; all 4 mini-domes now render their channel encodings against default Aristotelian positions (Confidence / Stage / Acts no longer mirror the anchor's NE-quadrant pile-up; Provenance unchanged). Linked brushing crosses cleanly between anchor (register-remapped) and minis (default) via notePath identity. §C.3 + §C.3-fix-1 marked **completed**; §C.4 opens.
+
+### §C.4 — masādir register (4 sectors + 4 extension chips) (2026-05-16)
+
+Same 4-quadrant geometry as pramāṇa, different cultural framing. Adds a new `extensionChips?: () => string[]` field to the register-module contract for the 4 supplementary sources.
+
+**Files**
+- NEW `src/lib/sight/v6/registers/masadir.ts` (~140 lines: identical structure to pramana.ts with Qur'an / sunnah / ijmāʿ / qiyās labels, default-to-Qur'an behavior, identical hash-jitter logic, plus the new `extensionChips()` callback returning the 4 supplementary labels)
+- `src/lib/sight/v6/types.ts` — `RegisterModule` contract gains `extensionChips?: () => string[]` with full docblock
+- `src/lib/sight/v6/registers/index.ts` — masadir imported + added to REGISTRY + re-exported
+- `src/lib/sight/v6/SightV6.svelte` — new `registerExtensionChips` $derived (looks up active register, calls `extensionChips()` if present, returns null when absent or empty); new HTML overlay block inside the canvas-host that conditionally renders the chip row when `registerExtensionChips` is non-null; new CSS for `.sight-v6-extension-chips` + `.extension-chip` (position absolute at bottom-center of canvas-host, italic muted-grey chips, pointer-events scoped so hover tooltips work without intercepting dome gestures)
+
+**Geometry shipped (Concept Paper §4.1.3)**
+- 4 sectors:
+  - **NE** = Qur'an
+  - **SE** = sunnah
+  - **SW** = ijmāʿ
+  - **NW** = qiyās
+- Same 4-quadrant divider cross + wedge labels as pramāṇa (drawn by the existing `drawSectorDividers` helper added in §C.3 — register-agnostic by design, just consumes the SectorSpec[] each register returns).
+- Within each sector: radial preserved (stratum encoding), angular = month + per-note hash jitter clamped to [0.03, 0.97] of the 90° wedge — same approach as pramana.ts.
+
+**Extension chips (NEW UI surface)**
+4 supplementary sources per §4.1.3 rendered as a row of small italic chip badges at the bottom-center of the canvas-host:
+- **istiḥsān** (juristic preference)
+- **istiṣḥāb** (presumption of continuity)
+- **maṣlaḥa mursalah** (unrestricted public interest)
+- **ʿurf** (custom)
+
+These are **display-only in v6.2** — they don't yet drive any layout behavior. Per-note opt-in via `masadir_source: istihsan` (etc.) frontmatter ships in §C.4-fix-N once Rust-side extraction lands. The chip row is positioned-absolute at the canvas-host bottom-center; `pointer-events: none` on the wrapper so they don't intercept dome gestures, scoped back to `auto` on individual chips so the tooltip title attribute works on hover.
+
+**Default-Qur'an behavior**
+Per Plan §C.4: "Star sector assignment from `masadir_source` frontmatter field (default Qur'an if absent)." Since `masadirSource` isn't extracted into LayoutCacheRow yet, all stars pile into the NE Qur'an quadrant (same single-quadrant cluster shape as pramāṇa's pratyakṣa default).
+
+**Sub-sector annotations (naṣṣ / ijtihādī / qaṭʿī / ẓannī) deferred**
+The Concept Paper §4.1.3 specifies sub-classifications per sector (e.g., Qur'an is naṣṣ + qaṭʿī; sunnah depends on mutawātir vs ahad; ijmāʿ + qiyās are ijtihādī). These don't fit cleanly under a single per-sector annotation — they're sub-sector distinctions. Deferred to a §C.4-fix-N variant; the §C.4 ship covers the 4 main sectors + 4 extension chips per Plan.
+
+**Boss-test expectations (§C.4 ship gate per Plan)**
+- Stage 1 — switch chip to `masādir` → stars **redistribute to NE quadrant** (same single-quadrant shape as pramāṇa, since both default to NE for unclassified notes).
+- Stage 2 — 4 wedge labels visible: **Qur'an** NE, **sunnah** SE, **ijmāʿ** SW, **qiyās** NW. 4 divider strokes form the cross pattern.
+- Stage 3 — **4 extension chips visible** at the bottom-center of the dome area: `istiḥsān` · `istiṣḥāb` · `maṣlaḥa mursalah` · `ʿurf`. Italic muted-grey styling. Hover any chip → tooltip explains the display-only status.
+- Stage 4 — mini-domes UNCHANGED (channel-isolation via the §C.3-fix-1 starsDefault wiring).
+- Stage 5 — switch back to Aristotelian → stars return + dividers + labels disappear + extension chips disappear.
+- Stage 6 — switch to pramāṇa → wedge labels change to Sanskrit (pratyakṣa / anumāna / upamāna / śabda) + NO extension chips (pramāṇa has no `extensionChips()`).
