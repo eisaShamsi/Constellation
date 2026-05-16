@@ -45,6 +45,7 @@
 	import FacetSidebar from './facetSidebar.svelte';
 	import Tour from './tour.svelte';
 	import MiniDome from './MiniDome.svelte';
+	import RegisterChip from './registerChip.svelte';
 	import type { LayoutCacheRow, LinkEdge, StarDerived, FacetId, MiniDomeChannel, SlotChannel } from './types';
 
 	let { onOpenNote = (_path: string, _libraryName: string) => {} }: {
@@ -592,7 +593,17 @@
 <div class="sight-v6-root">
 	<div class="sight-v6-header">
 		<span class="sight-v6-title">Constellation Sight</span>
-		<span class="sight-v6-subtitle">v6.1 — Coordinated Views (Phase 2)</span>
+		<span class="sight-v6-subtitle">v6.2 — Registers (Phase 3)</span>
+		<!-- §C.1 — Register chip. Sits between the subtitle and the
+		     EXTENDED badge per Concept Paper §2.5. Default state shows
+		     only the active register (collapsed); click to expand the
+		     full 7-chip row. Click any chip → switches activeRegister
+		     (writes to appSettings.sight.activeRegister via the canonical
+		     update+saveSettings pattern; partial-ships §C.8 persistence).
+		     Hover any chip → English secondary label tooltip per §11
+		     invariant. v1-preview registers (Dignāga / Suhrawardi
+		     Ishrāqī / Mohist sān biǎo) carry a "preview" badge per §4.2. -->
+		<RegisterChip />
 		<!-- §B.10 — small "EXTENDED" indicator when the persistent
 		     extended-view setting is on (Cmd-Shift-D toggles). Per
 		     Concept Paper §11 invariant 9 (no persistent toggle bars),

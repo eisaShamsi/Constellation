@@ -1223,3 +1223,40 @@ Phase 3 §C — register chip + 4 production-polish registers (Aristotelian defa
 ---
 
 *Session log 2026-05-14 closed at v2.07. Phase 3 §C opens the next entry.*
+
+---
+
+## MIG-025 Phase 3 §C opens — register chip + 4 production registers + manifests (2026-05-16)
+
+Phase 2 (§B.x) shipped Sight v6.1 (Coordinated Views). Phase 3 (§C.x) ships Sight v6.2 (Registers). Per the canonical Plan at `lab/reports/MIG-025-SIGHT-V6-PLAN.md` lines 181–245 (10 build steps + 1 ship gate).
+
+### Locked decisions for §C (Eisa, 2026-05-16, before §C.1)
+
+1. **Ship label**: Sight v6.2 — Registers. The orientation's "v6.2 d3-hexbin polish" item rolls to v6.3 (or v6.2.x mini).
+2. **Translation cascade for §C.7 manifests**: English + 14 translations in same §C ship commit (98 files total). Doc-drift never opens.
+3. **§C.9 vitest harness**: Manual verification in ship gate. Automated harness deferred to §D.4 (same defer as Phase 2 perf-test).
+
+### §C.1 — Register chip component (ship + push, awaiting Boss test 2026-05-16)
+
+**Files**
+- NEW `src/lib/sight/v6/registerChip.svelte` (~210 lines: 7-register definition table, collapsed/expanded state machine, click-outside + Escape collapse, canonical update+saveSettings write pattern, dark-palette styling)
+- `src/lib/sight/v6/SightV6.svelte` — `RegisterChip` import + mount between `.sight-v6-subtitle` and the EXTENDED conditional; subtitle bumped `v6.1 — Coordinated Views (Phase 2)` → `v6.2 — Registers (Phase 3)`
+
+**Behavior shipped**
+- Collapsed default: single chip showing the active register's name + blue dot (e.g., `Aristotelian ●`).
+- Click collapsed chip → expands to a horizontal row of all 7 registers in canonical order: Aristotelian / pramāṇa / masādir / Polanyi (production) then Dignāga / Suhrawardi Ishrāqī / Mohist sān biǎo (v1-preview, with muted-gold `preview` badge).
+- Active register highlighted with blue stroke + dot per Concept Paper §2.5.
+- Click any register chip → writes `appSettings.sight.activeRegister` via canonical `appSettings.update(...) + saveSettings()` pattern (same idiom as §B.10 Cmd-Shift-D extended toggle); chip auto-collapses.
+- Hover any chip → English secondary label tooltip per Concept Paper §2.5 + §11 invariant 7 (e.g., `pramāṇa — Nyāya fourfold valid means of knowing`).
+- Click outside the chip area → collapses. Escape → collapses.
+- v1-preview chips carry `preview` badge in muted-gold (`#c9a155`) deliberately distinct from the EXTENDED badge gold (`#fbbf24`) so the eye can distinguish them.
+
+**Cross-step partial-ship**
+- §C.8 (`activeRegister` persistence) partial-ships in §C.1 because the write pattern is trivial enough to combine. The schema field already existed at `store.ts:3471-3478` from §A.12; only the chip writer remained. §C.8 verification clause ("click pramāṇa, quit, relaunch → opens with pramāṇa active") is now testable.
+
+**Not yet built (visible side-effect missing in §C.1)**
+- §C.2 ships the actual register modules — until then, switching register changes the chip's blue-dot location but the anchor dome does NOT visibly re-render based on the new register. The Boss test for §C.1 only verifies UI behavior (collapsed → expanded, tooltips, active highlight, click-to-switch + persist). The anchor re-render is §C.2's responsibility.
+
+### Cascade plan from here
+
+§C.2 (register module pattern + Aristotelian identity remap) → §C.3 (pramāṇa quadrants) → §C.4 (masādir sectors) → §C.5 (Polanyi fog) → §C.6 (switch transition) → §C.7 (7 manifests + 14 translations, 98 files) → §C.10 (Help → Sight tour re-fire) → §C.9 (manual channel-isolation verification) → §C.11 (ship gate Boss test). Each step pauses for Boss verification per the Testing Instructions Rule.
