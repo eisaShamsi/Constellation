@@ -1057,4 +1057,38 @@ Help docs (`Constellation Sight.md`) still describe Sight v5's six-mode architec
 
 ---
 
-*End of session log 2026-05-14. §B.11 ship commit lands next; build follows.*
+## §B.11 cycle-1 PASS — Sight v6.1 USER-VALIDATED (2026-05-16)
+
+**Test build:** `Constellation_0.3.4_x64-setup.B11-v6.1.exe` (`fc392b46`).
+
+**Eisa verdict:** All 7 stages PASS.
+- Stage 1: subtitle "v6.1 — Coordinated Views (Phase 2)" ✓
+- Stage 2: settings.json shows `extended: true`, NO `proMode`, NO `lastMode`, `lastScope: "universe"` preserved ✓
+- Stage 3: density mode active on unfiltered minis ✓
+- Stage 4: filter below threshold → discrete-dot mode kicks back in ✓
+- Stages 5-7: full regression sweep on §B.6 / §B.7 / §B.10 — all clean ✓
+
+**Sight v6.1 is now officially shipped + user-validated.** Phase 2 closed.
+
+### Phase 2 retrospective
+
+~14 fix iterations across §B.6 → §B.10 + 4 base commits + 1 ship commit. ~7 build-test cycles with Eisa. Major architectural pivots within the phase:
+- §B.6-fix-3 dome-swap (Eisa's "click any mini to enlarge" feature request — added 5-slot promote/demote layout)
+- §B.7-fix-2 ghost mode (Eisa's "I can only select through Facets" feedback — switched from filtered-render to full-render-with-fade)
+- §B.7-fix-3 reverse-link sidebar highlight (Eisa: "this is making the Sight function smarter")
+- §B.10-fix-1 full rename proMode → extended (Eisa: "even the internal field name has to change")
+- §B.11 bonus lastMode cleanup (Eisa observation during cycle-2 verification)
+
+Each pivot was Boss-driven, not architect-driven. The Phase 2 design we ended up shipping is meaningfully better than the Phase 2 design the original Plan specified — testament to the cycle-test discipline.
+
+### Next pivots
+
+User-facing direction has natural ordering:
+1. **Help-doc rewrite** (Sight + CNS + User Manual) — long-deferred since §A.15. Now v6.1 is stable, the natural moment.
+2. **Phase 3 §C** — register chip + 4 production-polish registers.
+
+Decision pending from Eisa.
+
+---
+
+*End of session log 2026-05-14. Sight v6.1 shipped + user-validated. Next pivot pending Boss decision.*
