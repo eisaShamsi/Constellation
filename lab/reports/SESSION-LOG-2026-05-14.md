@@ -1188,3 +1188,38 @@ With §A.15 documentation drift fully closed across all 15 locales, the natural 
 ---
 
 *End of session log 2026-05-14. Translation cascade closes the v2.05 → v2.06 sequence; Phase 3 §C opens next on Eisa's signal.*
+
+---
+
+## Universal Orientation doc + orientation v2.07 (2026-05-16)
+
+**Eisa request:** *"Before proceeding with Phase 3 §C, I want you to write a universal orientation file about what Constellation is and what it is not. Why? I want to update Claude Chat on Constellation's progress so far. Sometimes, I chat with it and ask it to develop research to enhance Constellation."*
+
+### New file
+
+**`docs/Constellation — Universal Orientation.md`** — ~3,500 words, 364 lines, no version suffix. Self-contained briefing for an outside AI (Claude Chat) tasked with researching Constellation. 15 sections covering identity, the negation list, formulation-vs-management distinction, the Five Acts, knowledge hierarchy, Living Link Architecture, the surfaces, multilingual-by-design, local-first + file-over-app, performance philosophy, current state, constraints, good-vs-bad research question shapes, vocabulary cheat-sheet, paste-anywhere one-paragraph summary.
+
+Filename has no version suffix; refreshed in place when project state diverges meaningfully from content. Distinct from the versioned `Constellation Orientation & Onboarding vX.Y.md` series, which remains the internal Claude Code record.
+
+### Orientation v2.07
+
+SO #6 trigger fires (new documentation surface ships for the first time). Bumps v2.06 → v2.07 in the same commit per the inline-bump rule. v2.06 preserved alongside per the versioning rule. v2.07 preamble explains the new file's purpose, contents, and location, so future Claude Code sessions know it exists and what it's for.
+
+### Scope verified before writing
+
+Asked Eisa two questions before drafting: scope (Full briefing / Executive brief / Philosophy-only) and location (`docs/` versioned-style filename / `Public Briefing` framing / repo root). Both Recommended chosen: **Full briefing** at `docs/Constellation — Universal Orientation.md`.
+
+### What this commit does NOT do
+
+- No code touched.
+- No feature change.
+- No translation refresh.
+- No new MIG opened.
+
+### Next pivot
+
+Phase 3 §C — register chip + 4 production-polish registers (Aristotelian default + pramāṇa + masādir + Polanyi) — opens on Eisa's signal.
+
+---
+
+*Session log 2026-05-14 closed at v2.07. Phase 3 §C opens the next entry.*
