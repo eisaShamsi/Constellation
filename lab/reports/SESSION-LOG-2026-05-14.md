@@ -1091,4 +1091,37 @@ Decision pending from Eisa.
 
 ---
 
-*End of session log 2026-05-14. Sight v6.1 shipped + user-validated. Next pivot pending Boss decision.*
+## Help-doc rewrite — English source + User Manual + orientation v2.05 (2026-05-16)
+
+**Eisa pivot:** "Help-doc rewrite > Phase 3 §C ... Proceed, including the 14 language mirrors (docs/help.{lang}/...). Translation."
+
+Long-deferred drift (carried since §A.15) now addressed in two stages:
+- **This commit:** English source for both help docs + User Manual update + orientation v2.05.
+- **Follow-up commit:** 14 language mirrors (28 new files across `docs/help.{ar,de,es,fa,fr,he,hi,ja,ko,pt,ru,tr,ur,zh}/`) + orientation v2.06.
+
+Splitting the work: English known-good now; translations are heavier content that benefits from its own focused commit + log entry.
+
+### English help docs (this commit)
+
+**`docs/help.uConstellation.World/Constellation Sight/Constellation Sight.md`** — full rewrite for v6.1 Coordinated Views (~200 lines). Sections: What Is It / Why Does It Matter / How to Open / What You See (header + anchor + 4 minis + demoted-anchor + sidebar) / Interaction table (12 gestures) / Ghost Mode multi-select / Density Mode / Extended View / When Sight Is Most Useful / Related Surfaces. Replaces the v5 six-mode toggle content; aligned with the live B11-v6.1.exe surface Eisa just validated.
+
+**`docs/help.uConstellation.World/Constellation Nervous System/Constellation Nervous System.md`** — NEW (CNS had no dedicated help doc; `Lens.md` was about DQL queries, unrelated). ~130 lines covering Universe Health card + four metrics, gravity well + community detection, Top Bridges (synthesis points), Communities, Blind Spots (structural gaps), single-click-preview / double-click-open interaction pattern (Eisa-locked design 2026-05-16: "First click will display the respective note and the outgoing/incoming links. A double click will open that note. This the way we designed it, and it will remain this way."), and a CNS-vs-Sight orientation footer.
+
+### User Manual updates (this commit)
+
+- **Section 8 — Constellation Sight** rewritten for v6.1 (concise reference + pointer to in-app help topic).
+- **Section 8b — Constellation Nervous System (CNS)** NEW (mirrors help-doc structure at User-Manual brevity).
+- **Section 10d — Sight v5** marked SUPERSEDED with a header pointing readers to Section 8.
+- TOC updated: Section 8 link anchor corrected (was `#constellation-lens` from the old Lens naming); Section 8b added.
+
+### Orientation v2.05 (this commit)
+
+Bumps v2.04 → v2.05 in same commit per SO #6 (help topic ships + restructures + doc-drift item from §12 is fixed are all listed triggers). v2.04 preserved alongside per the versioning rule. The v2.05 entry is honest about state: declares English source DONE, translations PENDING next commit.
+
+### Follow-up commit (v2.06) — translation cascade
+
+28 new files: 2 help docs × 14 languages. Each translation carries a frontmatter `translation_status: AI-generated 2026-05-16 — native-speaker review recommended`. Eisa (Arabic-native) can review `ar` directly; other 13 are best-effort.
+
+---
+
+*End of session log 2026-05-14. Help-doc English commit + v2.05 land next; translation cascade follows.*

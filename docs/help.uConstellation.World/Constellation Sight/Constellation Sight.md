@@ -2,140 +2,152 @@
 aliases:
   - Constellation Sight
   - Sight
-  - Star Chart
-  - Knowledge Lens
-  - Cognitive Lens
-  - Universe Health
-description: The Constellation Sight visualizes your entire knowledge universe as a celestial-hemisphere star chart. Each note is a star; libraries are wedges around the rim; the most-central notes sit near the pole. Multiple modes let you read the same universe through different cognitive lenses.
+  - Coordinated Views
+  - Anchor Dome
+  - Mini-Domes
+  - Sight v6
+description: Constellation Sight visualizes your entire knowledge universe as a stratified anchor dome with four coordinated mini-domes that re-encode the same notes through different channels (Confidence, Stage, Acts, Provenance). Hover anywhere to see everywhere; click sidebar chips or Shift+click stars to filter; promote any mini to inspect at full size with zoom. The dome and the facet sidebar form a closed bidirectional loop.
 ---
 
 # Constellation Sight
 
 ## What Is It?
 
-Imagine looking at the night sky from the northern hemisphere on a clear evening. The brightest stars cluster near the celestial pole. Constellations spread across the sky in regions you can navigate by. The Milky Way arcs faintly across the dome.
+Constellation Sight is the **diagnostic instrument** for your knowledge universe. A central **anchor dome** shows every note positioned by **stratum** (how foundational the thinking is) and **time** (when it was created), with four **mini-domes** alongside that re-encode the same universe through different channels: **Confidence**, **Stage**, **Acts**, and **Provenance**.
 
-The Constellation Sight does this for your knowledge. Every note is a star on a parchment-cream sky. The most-connected notes sit near the center of the dome. The peripheral ones spread to the rim. Each library gets its own colored wedge. A small panel on the side lists every library by number and color — so you can read the chart at a glance.
+It answers one question, with five complementary lenses: **"How is my Epistemic Content shaped and organized?"**
 
-It answers: **"What does my knowledge system look like, and how healthy is it?"**
-
----
+Hover any star in any dome and the same note lights up in all five surfaces — gold ring on the star, gold tint on the matching sidebar chips. Click a sidebar chip and all five views narrow. Shift+click a star in the Stage mini and the universe filters to that lifecycle stage instantly. Click empty space in any mini and that mini "promotes" into the big primary slot at full size, while the previous primary demotes into the vacated mini slot. Dome and sidebar form a closed bidirectional loop — read your universe from any angle, narrow it with any gesture.
 
 ## Why Does It Matter?
 
-Most note-taking apps show you what you wrote. The Constellation Sight shows you the *shape* of what you know — where your thinking is concentrated, where it's thin, and how ideas connect across libraries.
+Most note-taking apps show you what you wrote. Constellation Sight shows you the **shape** of what you know.
 
-The chart is also a **multi-instrument**. The same universe can be viewed through six different cognitive lenses (Regions, Link Types, Time, Confidence, Stages, Acts). Stars don't move between lenses — only how the chart organizes them changes. A note that sits at the center under Regions but flies to the rim under Confidence is telling you something diagnostic.
+- Where is your thinking **concentrated**? (the density gradient in the anchor)
+- What's still **early-stage** vs **stable foundation**? (the Stage mini's color gradient)
+- Which notes are **load-bearing** vs which are **isolated**? (the Acts mini's size encoding)
+- Where did each idea **come from** — your own thinking, reading, hearing, tradition? (the Provenance mini's sector layout)
+- How **confident** are you in your conclusions? (the Confidence mini's opacity gradient)
 
----
+A note sitting at the center of the anchor (high connectivity → load-bearing) but in cyan in the Stage mini (`spark` — just barely started) is telling you something diagnostic: a load-bearing idea that hasn't matured yet. Coordinated Views reveals these mismatches at a glance.
 
 ## How to Open It
 
-1. Click the **star icon** (Sight) in the left ribbon.
-2. The dome renders silently — no progress bar in normal use; the chart appears when ready (typically 2–5 seconds on large universes).
-3. To close: click the **(×)** button in the header bar at the top, or press **Esc**.
-
----
+1. Click the **eye icon** in the dock at the left edge of Constellation.
+2. The anchor dome renders within 2–5 seconds on most universes.
+3. To close: click the **(×)** in the top-right of the Sight header, or press **Esc**.
 
 ## What You See
 
-### The Dome
+### The Header Strip
 
-A circular chart of stars on a cream parchment background — Suwaidi northern-hemisphere chart aesthetic. Each star is a note in your universe. The polar layout means:
+Top of the Sight view, left to right:
+- **"Constellation Sight"** — the title.
+- **"v6.1 — Coordinated Views (Phase 2)"** — the version subtitle.
+- **"X / Y notes"** badge in gold — visible only when a filter is active; shows how many notes match the current filter out of your universe total.
+- **"EXTENDED"** badge in gold small-caps — visible only when Extended view is on (see Cmd-Shift-D below).
+- **"Reset View"** button — visible only when the layout has been changed away from the default; one click restores anchor primary + zoom 1.0.
+- **(×)** close button — top-right, always present.
 
-- **Center → rim (radius) = how central the note is.** Most-connected hubs sit near the pole; peripheral leaves spread to the rim.
-- **Around the rim (azimuth) = which library the note lives in.** Libraries are arranged in wedges, sized proportional to note count.
+### The Anchor Dome (Primary Slot)
 
-### The Library Legend
+The large cream-on-dark dome in the center of the body:
+- **Stratum rings** — 5 concentric circles. The innermost ring is your most foundational notes; the outer rim is your latest sparks. Stratum encodes the **depth** of thinking as radial distance.
+- **Calendar rim** — 12 month labels around the outside (Gregorian by default; configurable in Settings to add Hijri, Solar Hijri, Hebrew).
+- **Stratum labels** — italic text in the upper portion, naming each stratum band.
+- **Stars** — every note in your universe drawn as a small cream dot, positioned by stratum × time. Density-rendered: dense regions read as soft texture; sparse regions show individual dots.
+- **Connection lines** — typed-link edges between notes, drawn at low opacity beneath the stars. Only renders between visible (filtered-in) notes.
+- **Hover ring** — a gold circle appears around any star the cursor is over.
 
-A panel on the left side of the screen (or the right side if your Universe name reads right-to-left, like Arabic / Hebrew / Persian) lists every library:
+### The Four Mini-Domes
 
-- **UNIVERSE caption** at the top — your Universe's name in italic blue serif.
-- **Numbered list of libraries.** Each row has a colored circular badge (the library's color), the library name, and the note count.
-- The same numbers appear **around the rim of the dome** in the matching color, so you can navigate by glancing between the legend and the chart.
+Right side of the Sight body, in a 2×2 grid. Hidden by default; revealed with **Ctrl+D** (session-only) or **Ctrl+Shift+D** (persistent — see Extended view).
 
-### The Universe Health Card
+Each mini renders the same universe through one encoding:
 
-Anchored above the dome:
+1. **CONFIDENCE — opacity.** Notes you're more confident in render brighter; tentative notes fade. Encoded as per-note `confidenceAlpha`: hypothesis = 0.45, evidence = 0.7, established = 1.0, contested = 0.85.
+2. **STAGE — hue (full-disk).** Each note gets a categorical color based on its lifecycle stage:
+   - **Cyan** = `spark` (newly sparked idea)
+   - **Orange** = `birth` (taking form)
+   - **Violet** = `growth` (actively in motion)
+   - **Green** = `maturity` (fully formed)
+   - **Yellow** = `renewal` (recently revisited)
+   - **Gray** = `dormancy` / `archival` (inactive / closed)
+3. **ACTS — size (top decile).** Top-10%-by-link-count notes render as bigger dots; the rest stay small. Hot-spots pop pre-attentively.
+4. **PROVENANCE — 5 sectors.** Stars are re-positioned into 5 angular sectors: **Self / Read / Heard / Reasoned / Tradition**. Tells you where each idea came from.
 
-- **UNIVERSE HEALTH** caption.
-- A gold roundel with the overall score (e.g., **91 / 100**).
-- Four metrics flanking the roundel: **Modularity**, **Dominance**, **Entropy**, **Connectivity**.
-- Each metric has a colored status pill (**HEALTHY** / **CAUTION** / **IMBALANCED**).
+### The Demoted Anchor (When a Mini Is Promoted)
 
-### The Universe Name
+If you've promoted any mini to the primary slot, the anchor demotes into the vacated mini slot. There it renders as **plain neutral cream dots** (no channel encoding — just the universe baseline at small scale) with the title **"UNIVERSE — primary view"**. Click empty space inside it to swap the anchor back into the primary slot.
 
-A blue-serif italic header above the dome (and below the Universe Health card) shows your Universe's name. Renders right-to-left for RTL languages automatically.
+### The Facet Sidebar (Left Edge)
 
-### The Stars
+A collapsible panel with **6 filter facet groups**, each showing categories with live counts:
 
-Each star is a small colored dot:
+- **Folder** — your folder hierarchy (TOP facet per design)
+- **Library** — your library names
+- **Stratum** — Foundation / Roots / Trunk / Branches / Twigs / Edge of Knowing
+- **Confidence** — Hypothesis / Evidence / Established / Contested
+- **Stage** — Spark / Birth / Growth / Maturity / Dormancy / Renewal / Archival (and any other stage values present in your data)
+- **Provenance** — Self / Read / Heard / Reasoned / Tradition
 
-- **Color = library.** Every star in the same library shares one color (deterministic per library).
-- **Size = total link count.** Most-connected notes are biggest; sizes are capped so no star dwarfs the others.
-- **Thin black outline** on every star for contrast against the cream background.
-- **Stars don't touch each other** — a repulsion algorithm keeps a 9 px minimum gap so the chart stays readable.
-
----
+Click the **▶** tab at the edge to expand the sidebar. Click any chip to toggle it as a filter. Counts in the OTHER facets rebalance to show what's available given the active filter set (Hearst Flamenco preview pattern).
 
 ## Interaction
 
 | Gesture | Effect |
-|---------|--------|
-| **Hover a star** | A tooltip appears near the cursor: the note's title (bold), community, centrality rank. |
-| **Click a star** | A gold ring appears around the star; its links radiate out as dark-amber lines; connected neighbour stars get thin gold rings. The right-side panel slides in with note details. |
-| **Double-click a star** | Opens the note in the editor. |
-| **Click empty space** | Clears the selection; lines and rings disappear; side panel slides out. |
-| **Mouse wheel over the chart** | Zoom the entire chart in/out. Everything scales together — the dome, the library legend, the Universe Health card, the Universe-name header. Like a magnifying glass over a fixed page. Range: 0.4× to 5×. |
-| **Click + drag empty space** | Pan the chart. Drag threshold is 4 px so short clicks still hit stars. |
-| **Reset View** *(bottom-left button)* | Always visible. Muted when at default zoom/pan; prominent when not. One click returns the chart to canonical view. |
-| **Esc** | Cascading. First press clears the selected star. Second press resets zoom and pan. Third press closes the Sight. |
+|---|---|
+| **Hover a star** anywhere | Gold ring on the same star in all 5 surfaces (anchor + 4 minis). Matching chips in the sidebar tint gold. Tooltip near the cursor shows the note's title. |
+| **Plain click a star** | Opens the note in the editor. A **"Return to Sight"** button appears in the note's tab bar so you can jump back. |
+| **Shift+click a star** in Stage / Confidence / Provenance mini | Toggles a filter on that star's category. All 5 surfaces re-render with only matching notes. Multi-select within a facet: Shift+click another category to ADD it. Shift+click on the same category again to remove. |
+| **Shift+click a star** in Acts mini or on the anchor | No-op. Acts and anchor have no channel-specific facet category. |
+| **Click empty area of a mini-dome** | That mini swaps into the primary slot at full size; the previous primary demotes into the vacated mini slot. Click any other mini's empty area to shuffle. |
+| **Wheel-zoom (primary slot)** | Zooms toward the cursor. Range: 0.5× to 24×. |
+| **Click+drag empty space** (primary slot) | Pans the view. 4-px drag threshold so short clicks still hit stars. |
+| **Ctrl+0 / Cmd+0** | Resets zoom + pan to default on the primary slot. |
+| **Ctrl+D / Cmd+D** | Toggles the mini-domes visibility — **session only**. Doesn't persist. |
+| **Ctrl+Shift+D / Cmd+Shift+D** | Toggles **Extended view** — persistent. When on, minis are visible on every Sight open. "EXTENDED" badge appears in the header. |
+| **Click sidebar chip** | Toggle that facet category into the filter set. All 5 surfaces and the count badge re-render. |
+| **Reset View button** | Returns to anchor primary at zoom 1.0. Visible only when the layout has been changed. |
+| **Esc** | Closes Sight. |
 
-The (×) close button at the top-right and the right-side note panel (slides in when a star is selected) stay anchored to the window — they don't scale with the lens zoom.
+## Ghost Mode — Multi-Select from the Dome
 
-### The Note Side Panel
+When any filter is active, non-matching stars stay visible but render at **low opacity (15%)** instead of disappearing. This means:
 
-When you click a star, the right-side panel slides in showing:
+- You can still SEE where the non-matching stars are.
+- You can hover them (gold ring still appears).
+- You can **Shift+click them to ADD their category to the filter**.
 
-- **The note's title** at the top.
-- **Community** — the Louvain cluster the note belongs to (notes that frequently link to each other share a community, regardless of library).
-- **Centrality rank** — where this note ranks among all notes in the universe by centrality (e.g., #12 of 247).
-- **Incoming links** — how many notes link TO this note.
-- **Outgoing links** — how many notes this note links to.
-- **Connected notes (N)** — a clickable list of every note linked to this one (up to 50). Each row shows a small colored dot (the linked note's library color), the note's title, and the library name. **Click any row** to recentre the panel on that connected note — Sight stays open, you don't switch to the editor. This lets you walk the graph one hop at a time, exploring the neighbourhood of an idea without leaving the dome.
-- **Open in editor** — a button at the bottom that switches to the standard Editor pane on the selected note.
+So "I want both spark AND birth notes" works directly from the dome:
+1. Shift+click a cyan (spark) star → filter becomes `{spark}`. Orange (birth) stars become ghosts.
+2. Shift+click a faded orange ghost → filter becomes `{spark, birth}`. Both colors at full opacity again.
 
-The connected-notes list makes the side panel a *navigation surface*, not just an information display. You can chase a thought from one note to its supporters, contrasts, exemplars, and back — all by clicking dots in a list.
+You never have to leave the dome to compose multi-category filters within a facet.
 
----
+## Density Mode
 
-## The Six Modes (cognitive lenses)
+When the visible (matched) star count exceeds the density threshold (default **5,000**), the mini-domes switch to a **perceptual density rendering** — overlapping stars additive-blend into a soft texture instead of saturating to solid blobs. Below 5,000, mini-domes render as discrete dots at full encoding.
 
-Sight isn't just one chart — it's six chart **modes**, each with its own way of organizing the dome. Color (library) stays the same across all modes; only the *meaning* of position and size changes.
+The threshold is configurable in Settings (`appSettings.sight.hexBinThreshold`). The anchor dome already uses additive-blend density rendering as its baseline, so it looks the same in either mode.
 
-| Mode | What the rim shows | What the radius means | What the size means | Asks |
-|------|--------------------|------------------------|----------------------|------|
-| **R · Regions** *(default, ready)* | Library | Centrality rank | Total degree | "Where in my cosmos does this idea live?" |
-| **L · Link Types** *(ready)* | Dominant outgoing link type | Type diversity | Outgoing links | "What kind of reasoning?" |
-| **T · Time** *(ready)* | Creation date wedge (year, month) | Recency | Age | "When did it emerge, and is it still alive?" |
-| **C · Confidence** *(coming soon)* | Dominant confidence | Certainty homogeneity | Link count | "How certain?" |
-| **S · Stages** *(coming soon)* | Dominant lifecycle stage | Avg link weight | Traversal count | "How alive?" |
-| **A · Acts** *(coming soon)* | Which Act produced the note | Synthesis depth | Connections | "Where in the formulation arc?" |
+## Extended View
 
-**Today's build:** Regions is the default; the toggle UI to switch to other modes is shipping in the next phase. Stars will migrate between (X, Y, Z) positions with a 600 ms eased animation when modes switch — same patient, different scan.
+Pressing **Ctrl+Shift+D** (or **Cmd+Shift+D** on Mac) toggles "Extended view" — when on, the mini-domes are visible by default every time you open Sight. The state persists across Sight closes, app restarts, and reboots (stored as `appSettings.sight.extended`). A small **"EXTENDED"** badge in the header shows when it's active.
 
----
+The per-session Ctrl+D toggle still works inside Extended view to temporarily hide the minis without flipping the persistent setting.
 
-## Tips
+## When Sight Is Most Useful
 
-- **Read the chart by region first.** Glance at the colored wedges and rim numbers, then check the legend for what each wedge means.
-- **Look for outliers.** A star sitting alone near the center of an empty wedge is a hub note in a small library — likely an important bridge.
-- **Use Esc liberally.** Three presses always returns you to the main app, regardless of what state the chart is in.
-- **Zoom in for detail.** Wheel-zoom in to inspect a dense wedge; wheel-zoom out to see the whole knowledge cosmos at once. Reset View snaps back instantly.
-- **The Universe Health card is your compass.** Modularity below 0.3 ("CAUTION") suggests your knowledge is too tangled; Dominance above 50 % ("CAUTION") suggests one library is swallowing your thinking; Entropy below 1 ("IMBALANCED") suggests low diversity. Watch these metrics over time as you grow your knowledge graph.
+- **Audit your knowledge shape** — open Sight after a writing session to see how the new notes fit into your universe.
+- **Find blind spots** — sectors of the dome with few notes might be areas to explore.
+- **Spot load-bearing weakness** — a centrally-positioned note in early-stage color (cyan = spark) tells you you're depending on something not yet matured.
+- **Filter and inspect** — Shift+click cross-filter narrows the universe; promote any mini to study a channel at full size with zoom.
+- **Track epistemic provenance** — promote the Provenance mini to see how your knowledge is sourced across Self / Read / Heard / Reasoned / Tradition.
 
----
+## Related Surfaces
 
-## Concept paper
-
-For the design philosophy and architecture: see `docs/Constellation-Sight-v3-Concept-Paper-v1.1.md` (the design paper, updated for v4) and `docs/SIGHT-V3-VISUAL-SPEC.md` (the per-mode (X, Y, Z) grammar specification).
+- **Constellation Nervous System (CNS)** — the complementary visualization (neuron-shape icon next to the Sight eye icon in the dock). CNS shows the **connection-traversal** view: Universe Health metrics, top bridges between communities, structural-gap "Blind Spots". If Sight is the sensory shape of your universe, CNS is its neural connections.
+- **Constellation Map** — sunburst visualization of knowledge hierarchy.
+- **Sky View** — graph-based link visualization (literal connection diagrams).
+- **Index panel** — term-browser sidebar; complementary to Sight's spatial view.
