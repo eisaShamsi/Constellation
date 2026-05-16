@@ -885,4 +885,45 @@ Implementation: `recomputeStars` switched from `filteredRows` to `rows` (full un
 
 ---
 
-*End of session log 2026-05-14. §B.7-fix-2 commit + build complete; Eisa cycle-3 test next.*
+## §B.7-fix-3 — reverse-link: hover star → highlight sidebar chips (2026-05-16)
+
+**Eisa cycle-3 verdict (against §B.7-fix-2):**
+- Stages 1, 2, 4, 5, 6, 7: PASS.
+- Stage 3 PASS with observations:
+  1. "I have to give some time between shift-clicking a star" — paint-latency feedback (state updates synchronously; visual updates land a frame later, perceived as lag on rapid clicks).
+  2. "If two or more stars are overlapping, the shift-click won't work, I have to choose an isolated star, otherwise it won't select the intended color" — inherent to hit-test-closest-in-tolerance; 3-px tolerance in compact slot catches multiple stars; only nearest wins.
+- **New feature ask:** "When the Facets sidebar is open, whenever the user hovers a star over any dome, I want the related type highlighted within the facets panel."
+
+### Known limitations (deferred)
+
+Stage 3 observations are noted but not actively fixed in this commit:
+- **Click-debounce delay:** workaround is to pace clicks. If becomes blocking, options are (a) Click queue + lock during repaint, (b) State-snapshot read before each click resolves.
+- **Overlap ambiguity:** workaround is to zoom (promoted mini wheel zoom) or use sidebar chips. Heuristic options for later: prefer-ghost when filter active (closest non-matched wins when both matched + ghost are within tolerance), or hit-test-on-color (only stars matching the most-clicked recent color count).
+
+### §B.7-fix-3 implementation
+
+Reverse companion to the forward filter direction: when a star is hovered anywhere in Sight, the sidebar chips matching the star's facet values get a subtle gold tint. The user can read "this is a `birth`-stage / `Self`-provenance / `Research`-library note" at a glance from the sidebar without opening the note.
+
+**Six facets covered:** folder, library, stratum, confidence, stage, provenance — same six the sidebar already renders.
+
+### Files (2, ~50 insertions)
+
+**`src/lib/sight/v6/facetSidebar.svelte`:**
+- New `hoveredFacetValues?: Partial<Record<FacetId, string>> | null` prop with default `null`.
+- New helper `isHovered(facetId, categoryId)` returns true when `hoveredFacetValues[facetId] === categoryId`.
+- Chip markup gains `class:is-hovered={isHovered(...)}`.
+- CSS: `.facet-cat-row.is-hovered` styled with gold tint (`#fbbf24` text + 8% gold background) matching the dome's hover ring color. Stacks with `.active` — if a chip is BOTH active filter AND matches the hovered star, both styles apply (gold takes precedence with stronger background).
+
+**`src/lib/sight/v6/SightV6.svelte`:**
+- New imports from `./facets`: `confidenceLevelOf`, `provenanceSectorOf`.
+- New import from `./dome`: `bandForRawStratum`.
+- New `hoveredFacetValues = $derived.by(...)`: looks up the hovered row, extracts its per-facet values (folder=row.folderPath, library=row.libraryName, stratum=bandForRawStratum(row.stratum), confidence=confidenceLevelOf(row), stage=row.stage, provenance=provenanceSectorOf(row.sourcesPrimary)). Returns null when no star hovered or row not found.
+- `<FacetSidebar {hoveredFacetValues} />` prop passed through.
+
+### Build artifact
+
+`Constellation_0.3.4_x64-setup.B7-fix3.exe` (this commit).
+
+---
+
+*End of session log 2026-05-14. §B.7-fix-3 commit + build complete; Eisa cycle-4 test next.*

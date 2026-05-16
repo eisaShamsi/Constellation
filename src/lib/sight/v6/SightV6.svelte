@@ -37,8 +37,11 @@
 		computeFacetCounts,
 		toggleFilter,
 		filtersEmpty,
+		confidenceLevelOf,
+		provenanceSectorOf,
 		type FacetFilters,
 	} from './facets';
+	import { bandForRawStratum } from './dome';
 	import FacetSidebar from './facetSidebar.svelte';
 	import Tour from './tour.svelte';
 	import MiniDome from './MiniDome.svelte';
@@ -138,6 +141,26 @@
 	const matchedPaths = $derived(
 		filtersEmpty(filters) ? null : new Set(filteredRows.map((r) => r.notePath)),
 	);
+
+	// §B.7-fix-3 (Eisa cycle-3 ask): when a star is hovered anywhere in
+	// Sight, derive its per-facet category values so the FacetSidebar
+	// can highlight the matching chips. Reverse direction of the
+	// existing forward-link (click chip → filter dome). Six facets:
+	// folder / library / stratum / confidence / stage / provenance.
+	// null when no star hovered → sidebar reverts to no-highlight state.
+	const hoveredFacetValues = $derived.by(() => {
+		if (!hoveredPath) return null;
+		const row = rows.find((r) => r.notePath === hoveredPath);
+		if (!row) return null;
+		return {
+			folder: row.folderPath ?? undefined,
+			library: row.libraryName ?? undefined,
+			stratum: bandForRawStratum(row.stratum),
+			confidence: confidenceLevelOf(row),
+			stage: row.stage ?? undefined,
+			provenance: provenanceSectorOf(row.sourcesPrimary),
+		} as Partial<Record<FacetId, string>>;
+	});
 
 	let resizeObserver: ResizeObserver | null = null;
 
@@ -545,6 +568,7 @@
 			expanded={sidebarExpanded}
 			onToggle={handleFacetToggle}
 			onExpandToggle={handleSidebarExpandToggle}
+			{hoveredFacetValues}
 		/>
 
 		<div bind:this={canvasHostEl} class="sight-v6-canvas-host" class:has-minis={diagnosticsVisible}>

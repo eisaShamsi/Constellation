@@ -25,17 +25,29 @@
 		onToggle,
 		expanded,
 		onExpandToggle,
+		hoveredFacetValues = null,
 	}: {
 		facets: Facet[];
 		filters: FacetFilters;
 		onToggle: (facet: FacetId, categoryId: string) => void;
 		expanded: boolean;
 		onExpandToggle: () => void;
+		/** §B.7-fix-3 — when the user hovers a star anywhere in Sight, the
+		 *  parent (SightV6) computes the hovered star's value per facet
+		 *  and passes it here. Each chip whose (facetId, categoryId) matches
+		 *  the hovered values gets a `is-hovered` class for subtle gold tint.
+		 *  Reverse companion to the forward direction (click chip → filter
+		 *  dome). null when no star is hovered. */
+		hoveredFacetValues?: Partial<Record<FacetId, string>> | null;
 	} = $props();
 
 	function isActive(facetId: FacetId, categoryId: string): boolean {
 		const set = filters[facetId] as Set<string>;
 		return set.has(categoryId);
+	}
+
+	function isHovered(facetId: FacetId, categoryId: string): boolean {
+		return hoveredFacetValues?.[facetId] === categoryId;
 	}
 </script>
 
@@ -73,6 +85,7 @@
 									type="button"
 									class="facet-cat-row"
 									class:active={isActive(facet.id, cat.id)}
+									class:is-hovered={isHovered(facet.id, cat.id)}
 									onclick={() => onToggle(facet.id, cat.id)}
 									title={`${facet.label}: ${cat.label} (${cat.count})`}
 								>
@@ -198,6 +211,23 @@
 	}
 	.facet-cat-row.active .facet-cat-count {
 		color: #7dd3fc;
+	}
+	/* §B.7-fix-3 — hover-linked chip. When the user hovers a star in
+	   any dome, the chips matching that star's facet values get a gold
+	   tint (same hue as the hover ring) so the user can read the
+	   star's identity at a glance from the sidebar. Stacks with .active
+	   — if a chip is both active AND matches the hovered star, both
+	   styles apply (the gold border on top of the cyan active text). */
+	.facet-cat-row.is-hovered {
+		color: #fbbf24;
+		background: rgba(251, 191, 36, 0.08);
+	}
+	.facet-cat-row.is-hovered .facet-cat-count {
+		color: #fbbf24;
+	}
+	.facet-cat-row.active.is-hovered {
+		color: #fbbf24;
+		background: rgba(251, 191, 36, 0.12);
 	}
 	.facet-cat-label {
 		flex: 1 1 auto;
