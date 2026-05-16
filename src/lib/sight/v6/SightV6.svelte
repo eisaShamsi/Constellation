@@ -97,8 +97,8 @@
 	// ── §B.1 mini-domes diagnostics visibility ─────────────────────
 	// Default-simple per Concept Paper §6: mini-domes hidden on
 	// every Sight open. Cmd-D / Ctrl-D toggles visibility within
-	// the session. Pro mode (§B.10) will read appSettings.sight.proMode
-	// and override the default-hidden initial state.
+	// the session. Extended view (§B.10) reads appSettings.sight.extended
+	// and overrides the default-hidden initial state.
 	let diagnosticsVisible = $state(false);
 	const MINI_DOME_CHANNELS: MiniDomeChannel[] = ['confidence', 'stage', 'acts', 'provenance'];
 
@@ -377,26 +377,30 @@
 			paint();
 		} else if ((ev.key === 'd' || ev.key === 'D') && (ev.ctrlKey || ev.metaKey) && !ev.shiftKey) {
 			// Cmd-D / Ctrl-D — toggle mini-domes diagnostics visibility.
-			// Session-only — does NOT touch persistent sight.proMode.
+			// Session-only — does NOT touch persistent sight.extended.
 			// Excludes Shift to avoid colliding with Cmd-Shift-D below.
 			ev.preventDefault();
 			diagnosticsVisible = !diagnosticsVisible;
 		} else if ((ev.key === 'd' || ev.key === 'D') && (ev.ctrlKey || ev.metaKey) && ev.shiftKey) {
-			// §B.10 — Cmd-Shift-D / Ctrl-Shift-D — toggle Pro mode
-			// PERSISTENTLY. Pro mode = minis default-visible on every
-			// Sight open (instead of default-hidden). State stored in
-			// appSettings.sight.proMode; survives across sessions via
-			// saveSettings. Also flips diagnosticsVisible to match the
-			// new proMode value, so the toggle has immediate effect
+			// §B.10 — Cmd-Shift-D / Ctrl-Shift-D — toggle the extended-view
+			// setting PERSISTENTLY. Extended view = minis default-visible
+			// on every Sight open (instead of default-hidden). State
+			// stored in appSettings.sight.extended; survives across
+			// sessions via saveSettings. Also flips diagnosticsVisible
+			// to match the new value, so the toggle has immediate effect
 			// in the current session.
+			// §B.10-fix-1 (Eisa cycle-1, 2026-05-16): field name renamed
+			// `proMode` → `extended` per Eisa: "Pro" overpromised, the
+			// feature only controls default view extent. Migration in
+			// applyParsedSettings carries existing users' values forward.
 			ev.preventDefault();
-			const newProMode = !($appSettings.sight?.proMode ?? false);
+			const newExtended = !($appSettings.sight?.extended ?? false);
 			appSettings.update((s) => ({
 				...s,
-				sight: { ...s.sight, proMode: newProMode },
+				sight: { ...s.sight, extended: newExtended },
 			}));
 			saveSettings();
-			diagnosticsVisible = newProMode;
+			diagnosticsVisible = newExtended;
 		}
 	}
 
@@ -422,16 +426,17 @@
 		startWarmCache();
 		// §A.11 — fire the tour if user hasn't seen it yet. Snapshot
 		// (no $store subscription needed for the show-once gate).
-		// §B.10 — also read sight.proMode here: if Pro mode was enabled
-		// in a previous session (via Cmd-Shift-D), default
+		// §B.10 — also read sight.extended here: if extended view was
+		// enabled in a previous session (via Cmd-Shift-D), default
 		// diagnosticsVisible=true so the minis are shown on this open.
 		// Per-session Cmd-D toggle (handleKey case below) still works
-		// to temporarily hide the minis without touching proMode.
+		// to temporarily hide the minis without touching the persistent
+		// extended setting.
 		const settingsSnapshot = get(appSettings);
 		if (!settingsSnapshot.sight?.tourSeen) {
 			tourVisible = true;
 		}
-		if (settingsSnapshot.sight?.proMode) {
+		if (settingsSnapshot.sight?.extended) {
 			diagnosticsVisible = true;
 		}
 	});
@@ -564,13 +569,20 @@
 	<div class="sight-v6-header">
 		<span class="sight-v6-title">Constellation Sight</span>
 		<span class="sight-v6-subtitle">v6.0 — anchor dome + facets (Phase 1)</span>
-		<!-- §B.10 — tiny "PRO" indicator when persistent Pro mode is on
-		     (Cmd-Shift-D toggles). Per Concept Paper §11 invariant 9 (no
-		     persistent toggle bars), this is informational only — clicking
-		     it doesn't toggle. Cmd-Shift-D is the toggle. -->
-		{#if $appSettings.sight?.proMode}
-			<span class="sight-v6-pro-badge" title="Pro mode is ON — minis default-visible on every Sight open. Cmd-Shift-D to toggle.">
-				PRO
+		<!-- §B.10 — small "EXTENDED" indicator when the persistent
+		     extended-view setting is on (Cmd-Shift-D toggles). Per
+		     Concept Paper §11 invariant 9 (no persistent toggle bars),
+		     this is informational only — clicking it doesn't toggle.
+		     Cmd-Shift-D is the toggle.
+		     §B.10-fix-1 (Eisa cycle-1, 2026-05-16): full rename —
+		     user-facing label "Pro" → "Extended" AND internal field
+		     name `proMode` → `extended` per Eisa: "even the internal
+		     appSettings.sight.proMode field name has to change."
+		     Settings migration in applyParsedSettings carries forward
+		     existing users' values. -->
+		{#if $appSettings.sight?.extended}
+			<span class="sight-v6-pro-badge" title="Extended view is ON — minis default-visible on every Sight open. Cmd-Shift-D to toggle.">
+				EXTENDED
 			</span>
 		{/if}
 		<!-- §B.7-fix-1 (Eisa cycle-1 Stage 1 ask: "we need to add a
@@ -752,8 +764,11 @@
 		color: #5a6275;
 	}
 
-	/* §B.10 — Pro mode indicator. Tiny gold-on-dark tag immediately
-	   right of the subtitle. Not a button — Cmd-Shift-D is the toggle. */
+	/* §B.10 — Extended-view indicator (user-facing label "EXTENDED";
+	   internal field also renamed to `extended` per §B.10-fix-1).
+	   Tiny gold-on-dark tag immediately right of the subtitle. Not a
+	   button — Cmd-Shift-D is the toggle. CSS class name `.sight-v6-
+	   pro-badge` kept (DOM-only identifier, no architectural meaning). */
 	.sight-v6-pro-badge {
 		display: inline-flex;
 		align-items: center;

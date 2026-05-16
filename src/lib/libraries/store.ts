@@ -3455,11 +3455,16 @@ export interface AppSettings {
 		 *  re-fires by clearing this flag (wired in §C.10 alongside the
 		 *  register chip). Default false (tour shows on first launch). */
 		tourSeen?: boolean;
-		/** MIG-025 §A.12 — Sight v6 Pro-mode persistence (Concept Paper
-		 *  §6.4). Cmd-Shift-D toggles. Default false: Default-simple
-		 *  state on every open. True = sidebar + register chip + mini-
-		 *  domes all expanded by default. */
-		proMode?: boolean;
+		/** MIG-025 §A.12 — Sight v6 extended-view persistence (Concept
+		 *  Paper §6.4). Cmd-Shift-D toggles. Default false: Default-
+		 *  simple state on every open. True = sidebar + register chip
+		 *  + mini-domes all expanded by default.
+		 *  §B.10-fix-1 (Eisa cycle-1, 2026-05-16): renamed from
+		 *  `proMode` because "Pro" overpromised — the feature only
+		 *  controls default view extent, not professional capabilities.
+		 *  Migration in `applyParsedSettings` copies old `proMode`
+		 *  value into `extended` for existing users. */
+		extended?: boolean;
 		/** MIG-025 §A.12 — active epistemic register (Concept Paper §4).
 		 *  7 registers shipped in v6.0 per Eisa's locked decision. Anchor-
 		 *  dome only; mini-domes stay culturally neutral per §7. */
@@ -3658,10 +3663,13 @@ export const DEFAULT_SETTINGS: AppSettings = {
 		// tour clears it back to false.
 		tourSeen: false,
 		// MIG-025 §A.12 — Sight v6 v6.0 defaults per Concept Paper.
-		// Default-simple chrome (proMode=false) + Aristotelian register
+		// Default-simple chrome (extended=false) + Aristotelian register
 		// (the explicit Western-classical default per §4.1.1).
 		// Hex-bin / link-fade thresholds match Concept Paper §2.2/§3.4.
-		proMode: false,
+		// §B.10-fix-1 (2026-05-16): `extended` was named `proMode` until
+		// Eisa's cycle-1 review; migration in applyParsedSettings carries
+		// existing users' values forward.
+		extended: false,
 		activeRegister: 'aristotelian',
 		hexBinThreshold: 5000,
 		linkFadeThreshold: 800,
@@ -3792,6 +3800,29 @@ export function applyParsedSettings(parsed: Record<string, unknown>): void {
 		// new lastMode/lastScope defaults.
 		sight: { ...DEFAULT_SETTINGS.sight, ...((parsed.sight as Record<string, unknown>) || {}) },
 	});
+
+	// ── §B.10-fix-1 — proMode → extended rename migration ───────
+	// 2026-05-16, Eisa cycle-1: rename for honest naming ("Pro"
+	// overpromised). One-shot per-user; idempotent (subsequent loads
+	// have no proMode key in parsed.sight so the branch is silent).
+	// Order: runs BEFORE the v6MigrationDone block below so that any
+	// existing extended value already set by the user (rare race
+	// condition) takes precedence over a legacy proMode read.
+	const sightSnapshotForRename = (parsed.sight as Record<string, unknown>) || {};
+	if ('proMode' in sightSnapshotForRename) {
+		appSettings.update((s) => {
+			const nextSight = { ...s.sight } as Record<string, unknown>;
+			// Only copy if extended wasn't already explicitly set (avoid
+			// overwriting a value the user set on a later build).
+			if (!('extended' in sightSnapshotForRename) || nextSight.extended === undefined) {
+				nextSight.extended = sightSnapshotForRename.proMode as boolean;
+			}
+			// Drop the legacy key; saveSettings persists the deletion.
+			delete nextSight.proMode;
+			return { ...s, sight: nextSight as typeof s.sight };
+		});
+		saveSettings();
+	}
 
 	// ── §A.12 — Sight v5 → v6 settings migration ────────────────
 	// One-shot, quiet (no user dialog). Stamps v6MigrationDone=true

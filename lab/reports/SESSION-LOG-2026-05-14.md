@@ -958,4 +958,46 @@ Reverse companion to the forward filter direction: when a star is hovered anywhe
 
 ---
 
-*End of session log 2026-05-14. §B.10 commit + build complete; Eisa cycle-1 test next.*
+## §B.10 cycle-1 PASS + §B.10-fix-1 FULL RENAME (2026-05-16)
+
+**Eisa cycle-1 verdict:** All 5 stages PASS — including the optional `settings.json` on-disk verification (proMode field correctly persisted).
+
+**Naming feedback:** "When you mentioned the 'Pro' mode, I thought we would have an additional feature to make the Sight function more professional. But we've got an extended view feature, nothing else. So, I suggest we rename this feature to 'Extended', not 'Pro'."
+
+I initially proposed renaming only the user-facing label per Lens-precedent (keep `proMode` field name as architectural-history record). **Eisa rejected the partial rename**: "even the internal appSettings.sight.proMode field name has to change." Full rename, schema included.
+
+### Rationale for the full rename (vs the Lens-precedent partial)
+
+Lens-precedent kept old internal names because the Lens → Sight rename was a recent re-brand of a years-old feature with broad code-history surface. `proMode` is days old — no significant code-history to preserve. Renaming now is cheap. Eisa's instinct here is right: dead naming in the schema would confuse the next developer reading store.ts.
+
+### Files (2, ~80 changes)
+
+**`src/lib/libraries/store.ts`:**
+- Schema type: `proMode?: boolean` → `extended?: boolean` (line 3458 area). Doc comment updated to explain the rename + migration.
+- Default value: `proMode: false` → `extended: false` (line 3664 area).
+- **NEW migration in `applyParsedSettings`** (line 3804 area): runs BEFORE the existing v6MigrationDone block. If parsed settings have a legacy `proMode` key, copy its value to `extended` (only when `extended` isn't already explicitly set — avoids overwriting a value the user set on a later build during a race), then delete the legacy `proMode` key. `saveSettings` persists the deletion. One-shot per user; idempotent (subsequent loads have no proMode key so the branch is silent).
+
+**`src/lib/sight/v6/SightV6.svelte`:** all 12 references updated.
+- `$appSettings.sight?.proMode` → `$appSettings.sight?.extended` (3 active reads in handleKey, onMount, and badge `{#if}`).
+- Local var `newProMode` → `newExtended` (in handleKey).
+- `appSettings.update` payload: `sight: { ...s.sight, proMode: newProMode }` → `sight: { ...s.sight, extended: newExtended }`.
+- 6 comment blocks updated to reference `extended` (the new active name); 2 retain `proMode` mentions where they're explicitly documenting the rename / migration history.
+- CSS class name `.sight-v6-pro-badge` kept (DOM-only identifier, no architectural meaning — renaming would force a cascading CSS update with no semantic benefit).
+
+### Migration on user load
+
+Existing users (Eisa included) have `settings.json` with `proMode: <bool>`. On first load with the renamed schema:
+1. `applyParsedSettings` reads parsed JSON, sees legacy `proMode` key.
+2. Copies value to `extended`; deletes `proMode`.
+3. `saveSettings()` debounce-writes the migrated state back to disk.
+4. After the next persist, `settings.json` has `extended: <bool>` and no `proMode` key. Migration self-clears (subsequent loads see no `proMode` to migrate).
+
+Edge case handled: if both `proMode` and `extended` exist (shouldn't happen but might during a partial-update race), the `extended` value wins. Migration won't overwrite it.
+
+### Build artifact
+
+`Constellation_0.3.4_x64-setup.B10-fix1.exe` (the full-rename build). An in-flight intermediate build (`bujnhu5g3`, label-only rename, started before Eisa's clarification) was discarded — its binary is superseded by the full-rename build.
+
+---
+
+*End of session log 2026-05-14. §B.10-fix-1 full-rename commit + build complete; Eisa cycle-2 test next.*
