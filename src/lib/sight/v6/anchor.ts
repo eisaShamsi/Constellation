@@ -32,6 +32,7 @@ import type {
 	TypedLinkKind,
 	LifecycleStage,
 	RegisterModule,
+	SectorSpec,
 } from './types';
 import {
 	PALETTE,
@@ -222,6 +223,51 @@ function provenanceSectorOf(sourcesPrimary: string | null): ProvenanceSector | n
 	return 'Self';
 }
 
+/** §C.3 — Draw register-supplied sector dividers + wedge labels onto
+ *  the anchor. Called once per paint with the active register's
+ *  computed SectorSpec[]. For each sector, draws a stroke from the
+ *  dome center to `angleStart` at the outer rim, then places `label`
+ *  (if present) at the wedge midpoint at 88% of outer radius.
+ *
+ *  The angle convention is canvas math: 0 = east, increases clockwise
+ *  (canvas y inverted). Per-register modules in `registers/` produce
+ *  SectorSpec[] in this convention. */
+function drawSectorDividers(
+	ctx: CanvasRenderingContext2D,
+	layout: DomeLayout,
+	sectors: SectorSpec[],
+): void {
+	if (sectors.length === 0) return;
+	ctx.save();
+	// Divider strokes — same color as strata rings (chrome family) but
+	// slightly heavier so they read as "category boundary" not "axis tick".
+	ctx.strokeStyle = PALETTE.strataRing;
+	ctx.lineWidth = 1.2;
+	for (const sec of sectors) {
+		const x2 = layout.centerX + Math.cos(sec.angleStart) * layout.radius;
+		const y2 = layout.centerY + Math.sin(sec.angleStart) * layout.radius;
+		ctx.beginPath();
+		ctx.moveTo(layout.centerX, layout.centerY);
+		ctx.lineTo(x2, y2);
+		ctx.stroke();
+	}
+	// Wedge-center labels — same italic Inter as stratum labels but
+	// slightly larger (10 px vs 9 px) so they read at one glance.
+	ctx.fillStyle = PALETTE.stratumLabel;
+	ctx.font = 'italic 10px Inter, system-ui, sans-serif';
+	ctx.textAlign = 'center';
+	ctx.textBaseline = 'middle';
+	const labelRadius = layout.radius * 0.88;
+	for (const sec of sectors) {
+		if (!sec.label) continue;
+		const midAngle = (sec.angleStart + sec.angleEnd) / 2;
+		const lx = layout.centerX + Math.cos(midAngle) * labelRadius;
+		const ly = layout.centerY + Math.sin(midAngle) * labelRadius;
+		ctx.fillText(sec.label, lx, ly);
+	}
+	ctx.restore();
+}
+
 /** Deterministic 32-bit FNV-1a hash → two normalized [0, 1) values
  *  for radial + angular jitter. Stable across paints; same path ⇒
  *  same jitter every time. */
@@ -259,6 +305,14 @@ export function renderAnchorDome(
 		zoomScale?: number;
 		matchedPaths?: Set<string> | null;
 		densityMode?: boolean;
+		// §C.2 — active epistemic register. When provided, the register's
+		// optional `sectorDividers(layout)` callback is invoked and its
+		// returned SectorSpec[] is drawn as quadrant/sector boundary
+		// strokes + center-of-wedge labels. For Aristotelian and Polanyi
+		// this is absent (no register-drawn dividers). For pramāṇa
+		// (§C.3) and masādir (§C.4) this is 4 sectors. Star positions
+		// themselves are remapped in computeStarPositions, not here.
+		register?: RegisterModule | null;
 	} = {},
 ): void {
 	const {
@@ -268,6 +322,7 @@ export function renderAnchorDome(
 		zoomScale = 1,
 		matchedPaths = null,
 		densityMode: _densityMode = false,
+		register = null,
 	} = options;
 	// §B.9 — densityMode accepted for API symmetry with renderMiniDome
 	// but currently unused: the anchor already renders bodies at
@@ -310,6 +365,28 @@ export function renderAnchorDome(
 		ctx.beginPath();
 		ctx.arc(layout.centerX, layout.centerY, r, 0, Math.PI * 2);
 		ctx.stroke();
+	}
+
+	// 2.5 §C.3 — Register-supplied sector dividers + labels.
+	//      Drawn AFTER strata circles so dividers visibly cross the
+	//      rings; drawn BEFORE the calendar rim and stratum labels so
+	//      those text labels stay on top and remain legible. For
+	//      registers without sector structure (Aristotelian, Polanyi)
+	//      this is a no-op — sectorDividers is undefined and the if
+	//      branch short-circuits. For pramāṇa (§C.3) the result is
+	//      4 quadrant lines + 4 wedge-center labels (pratyakṣa, anumāna,
+	//      upamāna, śabda); for masādir (§C.4) the same shape with
+	//      different labels (Qur'an, sunnah, ijmāʿ, qiyās).
+	if (register?.sectorDividers) {
+		drawSectorDividers(
+			ctx,
+			layout,
+			register.sectorDividers({
+				centerX: layout.centerX,
+				centerY: layout.centerY,
+				radius: layout.radius,
+			}),
+		);
 	}
 
 	// 3. Calendar rim labels (12 months, locale-aware)

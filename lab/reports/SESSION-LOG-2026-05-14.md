@@ -1337,3 +1337,41 @@ Per Concept Paper §11 invariant 6: register remap affects the anchor ONLY. The 
 
 **Pre-cascade verification (§C.2 ship gate)**
 The §C.2 verification clause is "Active register Aristotelian → anchor renders identical to v6.1 dome." This is the Boss test — confirms the wiring doesn't disturb the v6.1 visuals. Boss test: open Sight, confirm dome looks identical to the §C.1-fix-1 build; switch chip to pramāṇa / masādir / Polanyi / Ishrāqī / Mohist sān biǎo, confirm dome does NOT change (expected — those modules don't ship until §C.3+); switch back to Aristotelian.
+
+### §C.2 — Eisa re-test result: ALL PASS (2026-05-16)
+
+Stage 1–4 green against commit `8a8ee84f`. Dome under Aristotelian renders pixel-identical to §C.1-fix-1; non-Aristotelian chip selections leave the dome untouched (correct fallback); persistence + Esc fix still work. §C.2 marked **completed**; §C.3 opens.
+
+### §C.3 — pramāṇa register (4 quadrants) (2026-05-16)
+
+First step where switching the chip produces a **visible** dome rearrangement.
+
+**Files**
+- NEW `src/lib/sight/v6/registers/pramana.ts` (~130 lines: 4-quadrant remap with stratum preserved as radial + month-as-angular within wedge + per-note hash jitter; QUADRANT_START_ANGLES / QUADRANT_LABELS constants; `pramanaKindOf` helper that defaults all notes to `pratyaksha` per Plan; local pathHash01 FNV-1a duplicating anchor.ts logic so registers/ stays decoupled from the renderer)
+- `src/lib/sight/v6/registers/index.ts` — pramana imported + added to REGISTRY + re-exported
+- `src/lib/sight/v6/anchor.ts` — `renderAnchorDome` signature gained optional `register?: RegisterModule | null` param; new step **2.5** between strata circles (step 2) and calendar rim (step 3) calls `register.sectorDividers(layout)` and dispatches to the new private `drawSectorDividers(ctx, layout, sectors)` helper. The helper draws one stroke per `sec.angleStart` from center to outer rim, then places `sec.label` (if present) at the wedge midpoint at 88% of outer radius. Reuses `PALETTE.strataRing` for stroke color (chrome-family consistency) and `PALETTE.stratumLabel` for label fill. Stroke width 1.2 (vs strata circles' 0.9) so dividers read as category boundary not axis tick.
+- `src/lib/sight/v6/SightV6.svelte` — paint() now reads `getRegisterById($appSettings.sight?.activeRegister)` and passes it through as `register:` in the renderAnchorDome options.
+
+**Geometry shipped**
+- 4 quadrants per Concept Paper §4.1.2:
+  - **NE** = pratyakṣa (perception)
+  - **SE** = anumāna (inference)
+  - **SW** = upamāna (analogy/comparison)
+  - **NW** = śabda (testimony)
+- Quadrant divider strokes visible (cross/+ pattern through center).
+- Wedge-center labels: italicized Sanskrit transliterations with proper diacritics (pratyakṣa, anumāna, upamāna, śabda) at 88% of outer rim.
+- Within each quadrant: radial = stratum (Foundation rings preserved), angular = month + per-note hash jitter clamped to [0.03, 0.97] of the 90° wedge.
+
+**Default-pratyakṣa behavior**
+Per Plan §C.3: "Star quadrant assignment from a frontmatter `pramana_kind` field (default: pratyakṣa if absent)." §C.3 ships with all notes defaulting to pratyakṣa because LayoutCacheRow doesn't yet carry `pramanaKind` (Rust-side extraction is a follow-up). Result: when the chip switches to pramāṇa, **all stars redistribute to the NE quadrant**, spread out across the wedge by month + hash. The 3 other quadrants render their divider lines + labels but contain no stars. This is the philosophically defensible default (Concept Paper §4.1.2 framing: all knowledge starts as direct perception until reflectively reclassified) and matches the Plan verbatim. Per-note opt-in via frontmatter ships in a §C.3-fix-N follow-up once Rust-side extraction lands.
+
+**Wiring honors §11 invariants**
+- Invariant 6 (register isolation): the `register` param flows only into anchor.ts's renderAnchorDome and computeStarPositions. MiniDome.svelte's call to its renderer does NOT receive the param — mini-domes continue to render Confidence/Stage/Acts/Provenance with no register awareness. §C.9 manual verification at ship gate will iterate `allRegisters()` and confirm mini-domes stay constant when switching registers.
+- Invariant 7 (manifest + citation): pramana.ts header comment carries the Nyāya-Sūtra 1.1.3 + Mohanty + Matilal citations from Concept Paper §4.1.2 inline. The `docs/registers/pramana.md` manifest ships in §C.7.
+
+**Boss-test expectations (§C.3 ship gate per Plan)**
+- Stage 1: switch chip to pramāṇa → stars **visibly leave their Aristotelian positions and pile into the NE quadrant**, spread by month within the wedge.
+- Stage 2: 4 quadrant divider lines visible (cross pattern through center).
+- Stage 3: 4 italic wedge labels visible (pratyakṣa NE, anumāna SE, upamāna SW, śabda NW) at ~88% of outer rim.
+- Stage 4: mini-domes (if EXTENDED on) remain **unchanged** in encoding — they still show Confidence/Stage/Acts/Provenance, register-agnostic.
+- Stage 5: switch back to Aristotelian → stars return to their original positions; dividers + labels disappear.

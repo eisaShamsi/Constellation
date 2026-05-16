@@ -209,12 +209,22 @@
 		const visibleLinks = links.filter(
 			(l) => visiblePaths.has(l.sourcePath) && visiblePaths.has(l.targetPath),
 		);
+		// §C.3 — pass the active register so renderAnchorDome can draw
+		// the register's sector dividers + labels (e.g., pramāṇa's 4
+		// quadrant lines + wedge labels). Star positions themselves are
+		// already remapped at recomputeStars time (§C.2). For Aristotelian
+		// and Polanyi this is a no-op — sectorDividers is undefined on
+		// those modules.
+		const activeRegister = getRegisterById(
+			$appSettings.sight?.activeRegister as RegisterId | undefined,
+		);
 		renderAnchorDome(ctx, stars, visibleLinks, canvasWidth, canvasHeight, {
 			locale: navigator.language ?? 'en',
 			highlightedPath: hoveredPath,
 			zoomScale: zoomScale,
 			matchedPaths,
 			densityMode,
+			register: activeRegister,
 		});
 	}
 
