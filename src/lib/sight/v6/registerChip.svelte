@@ -3,21 +3,28 @@
 
   Location: Sight title bar, mounted between subtitle and EXTENDED badge.
   Per Concept Paper §2.5: default state collapsed, shows current active
-  register only (e.g., "Aristotelian ●"). Click → expand to show all 6
+  register only (e.g., "Aristotelian ●"). Click → expand to show all 5
   registers. Active register has blue stroke + dot. Hover any chip → English
   secondary label tooltip per Concept Paper §2.5 + §11 invariant.
 
-  v1-preview registers (Suhrawardi Ishrāqī, Mohist sān biǎo) per §4.2 carry
-  a "preview" badge — they ship fully functional in v6 but with v4.1 polish
-  targets for deeper internal structure.
+  v1-preview register (Mohist sān biǎo) per §4.2 carries a "preview" badge —
+  it ships fully functional in v6 but with v4.1 polish targets for deeper
+  internal structure.
+
+  §C.4-religious-rule (Eisa 2026-05-16): Suhrawardi Ishrāqī register
+  EXCLUDED entirely per the new top-principal religious-lineage rule (see
+  orientation v2.09). The Ishrāqī tradition is overwhelmingly absorbed into
+  Twelver Shīʿī ḥikma (Mulla Sadra, Sabzavari, modern Qom curriculum) and
+  is also fundamentally religious-mystical rather than philosophical-
+  epistemological. The register set shrinks from 6 to 5. Concept Paper
+  §4.2.2 (Ishrāqī geometry spec) and Plan §D.2 (Ishrāqī build step) both
+  carry EXCLUDED notes; the RegisterId type no longer admits 'ishraqi';
+  a settings migration in store.ts applyParsedSettings rewrites any
+  persisted 'ishraqi' value back to 'aristotelian'.
 
   §C.1-fix-1 (Eisa 2026-05-16): Dignāga register EXCLUDED entirely per
   Eisa's direction "don't include the 'Dignāga' at all in any of Constellation
-  functions". The register set shrinks from 7 to 6. Concept Paper §4.2.1
-  (Dignāga geometry spec) and Plan §D.1 (Dignāga build step) both carry
-  EXCLUDED notes; the RegisterId type no longer admits 'dignaga'; a settings
-  migration in store.ts applyParsedSettings rewrites any persisted
-  'dignaga' value back to 'aristotelian'.
+  functions". Same exclusion mechanism as Ishrāqī above.
 
   §C.1-fix-1 (Eisa 2026-05-16): Esc-while-chip-expanded bug fixed.
   Previously chip Esc handler was on document (bubble phase) but
@@ -34,8 +41,8 @@
 
   Brand-name register labels are kept English per the §A.15 brand convention
   (same precedent as Constellation, Sight, CNS, Confidence). The cultural
-  diacritics (pramāṇa, masādir, Suhrawardi Ishrāqī, Mohist sān biǎo) are
-  Unicode and render in any modern font stack.
+  diacritics (pramāṇa, masādir, Mohist sān biǎo) are Unicode and render in
+  any modern font stack.
 
   Concept Paper: docs/Constellation-Sight-Concept-Paper-v4.0.md §2.5, §4.1, §4.2
   Plan:         lab/reports/MIG-025-SIGHT-V6-PLAN.md §C.1
@@ -44,11 +51,13 @@
 	import { appSettings, saveSettings } from '$lib/libraries/store';
 	import type { RegisterId } from './types';
 
-	// Six registers in canonical order: 4 production-polish first (§4.1),
-	// then 2 v1-preview (§4.2). Tooltip prose distills each register's
+	// Five registers in canonical order: 4 production-polish first (§4.1),
+	// then 1 v1-preview (§4.2). Tooltip prose distills each register's
 	// English secondary label per Concept Paper §2.5 + §4.1/§4.2.
-	// §C.1-fix-1: Dignāga register excluded entirely (was index 4); the
-	// 'dignaga' RegisterId is also removed from the type union.
+	// §C.1-fix-1: Dignāga register excluded entirely (was 7 → 6).
+	// §C.4-religious-rule: Suhrawardi Ishrāqī also excluded (was 6 → 5)
+	//   per the new top-principal religious-lineage rule. The 'dignaga'
+	//   and 'ishraqi' literals are both removed from RegisterId.
 	type RegisterDef = {
 		id: RegisterId;
 		name: string;          // chip label (kept English per §A.15 brand convention)
@@ -80,12 +89,6 @@
 			name: 'Polanyi',
 			tooltip: 'Polanyi — modern pluralism, tacit as the proximal pole',
 			preview: false,
-		},
-		{
-			id: 'ishraqi',
-			name: 'Suhrawardi Ishrāqī',
-			tooltip: 'Suhrawardi Ishrāqī — presence-knowledge as foundation (v1 preview)',
-			preview: true,
 		},
 		{
 			id: 'mohist-san-biao',

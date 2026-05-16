@@ -165,25 +165,35 @@ export type SlotChannel = MiniDomeChannel | 'anchor';
 // ════════════════════════════════════════════════════════════════════
 
 /**
- * The 6 epistemic registers in v1. Aristotelian is default;
+ * The 5 epistemic registers in v1. Aristotelian is default;
  * pramāṇa/masādir/Polanyi are production polish (4.1.x) per Eisa's
- * polish-tiered decision; Ishrāqī/Mohist are v1-preview labeled,
- * polish target v4.1 per Concept Paper §4.2.
+ * polish-tiered decision; Mohist is v1-preview labeled, polish
+ * target v4.1 per Concept Paper §4.2.
  *
  * §C.1-fix-1 (Eisa 2026-05-16): Dignāga register EXCLUDED entirely
  * per Eisa's direction "don't include the 'Dignāga' at all in any
  * of Constellation functions". The 'dignaga' literal is removed
- * from this union. A settings migration in store.ts applyParsedSettings
- * rewrites any persisted activeRegister: 'dignaga' value back to
- * 'aristotelian' for users who selected it during §C.1 testing.
- * Concept Paper §4.2.1 and Plan §D.1 both carry EXCLUDED notes.
+ * from this union.
+ *
+ * §C.4-religious-rule (Eisa 2026-05-16): Suhrawardi Ishrāqī register
+ * also EXCLUDED entirely per the new top-principal religious-lineage
+ * rule (see orientation v2.09): non-Abrahamic religious-source frames
+ * are out; for Islamic, Sunni-only. The Ishrāqī tradition was
+ * overwhelmingly absorbed into Twelver Shīʿī ḥikma (Mulla Sadra,
+ * Sabzavari, modern Qom seminary curriculum) and is fundamentally
+ * religious-mystical rather than philosophical-epistemological. The
+ * 'ishraqi' literal is removed from this union.
+ *
+ * Settings migrations in store.ts applyParsedSettings rewrite both
+ * persisted 'dignaga' and 'ishraqi' values back to 'aristotelian'.
+ * Concept Paper §4.2.1 (Dignāga) and §4.2.2 (Ishrāqī) both carry
+ * EXCLUDED notes; Plan §D.1 and §D.2 both carry SUPERSEDED notes.
  */
 export type RegisterId =
 	| 'aristotelian'
 	| 'pramana'
 	| 'masadir'
 	| 'polanyi'
-	| 'ishraqi'
 	| 'mohist-san-biao';
 
 // ════════════════════════════════════════════════════════════════════

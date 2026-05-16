@@ -256,10 +256,13 @@ MIG-025 builds Sight v6 as a four-phase rollout (§A=v6.0, §B=v6.1, §C=v6.2, �
 ~~**Action**: Left hemisphere = pratyakṣa, right hemisphere = anumāna. Center labeled "rejected: śabda, upamāna" per Concept Paper §4.2.1 — the absence is the feature.~~
 ~~**Verification**: Active Dignāga → 2-hemisphere split; center labels visible; chip badge shows "preview".~~
 
-### §D.2 — Suhrawardi Ishrāqī register (luminous center + 3 emanation rings)
-**Files**: new `src/lib/sight/v6/registers/ishraqi.ts`.
-**Action**: Small gold disc center + emanation glow + 3 dashed concentric rings outward; peripheral stars = ʿilm ḥuṣūlī. Per §4.2.2.
-**Verification**: Active Ishrāqī → gold core + emanation rings visible.
+### §D.2 — Suhrawardi Ishrāqī register — **SUPERSEDED / EXCLUDED** (Eisa 2026-05-16, §C.4-religious-rule)
+
+> **Status**: EXCLUDED from Constellation entirely per the new top-principal religious-lineage rule (orientation v2.09): "when dealing with religious references, no non-Abrahamic; for Islamic, Sunni only." The Ishrāqī tradition (Suhrawardi, 1154–1191) was overwhelmingly absorbed into Twelver Shīʿī ḥikma (Mulla Sadra, Sabzavari, modern Qom curriculum) — failing the Sunni-only restriction — and is fundamentally religious-mystical rather than philosophical-epistemological. No chip option, no register module, no manifest, no Phase 4 build step. The 'ishraqi' literal is removed from `RegisterId` (types.ts) and from the `activeRegister` union (store.ts); a migration block rewrites any persisted `'ishraqi'` value back to `'aristotelian'`. Concept Paper §4.2.2 carries a matching EXCLUDED note. §D's remaining v1-preview step is §D.3 (Mohist sān biǎo).
+
+~~**Files**: new `src/lib/sight/v6/registers/ishraqi.ts`.~~
+~~**Action**: Small gold disc center + emanation glow + 3 dashed concentric rings outward; peripheral stars = ʿilm ḥuṣūlī. Per §4.2.2.~~
+~~**Verification**: Active Ishrāqī → gold core + emanation rings visible.~~
 
 ### §D.3 — Mohist sān biǎo register (3 horizontal zones, "v1 preview" label)
 **Files**: new `src/lib/sight/v6/registers/mohist-san-biao.ts`.

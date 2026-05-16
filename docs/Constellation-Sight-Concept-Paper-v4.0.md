@@ -303,7 +303,7 @@ All 7 registers ship in Sight v6.0. Four at **production polish**, three at **v1
 **Citation**: Polanyi, *Personal Knowledge* (1958), ch. 4; *The Tacit Dimension* (1966), p. 10 ("we can know more than we can tell").
 **Why inversion from v0.2 matters**: v0.2 had fog dense at edges, which inverts Polanyi's actual argument. v6 fixes this.
 
-### 4.2 v1 preview, v4.1 polish target (2 registers, was 3 before §C.1-fix-1)
+### 4.2 v1 preview, v4.1 polish target (1 register, originally 3 — Dignāga + Ishrāqī excluded by product decision)
 
 These ship fully functional in v6.2 but with explicit "v1 preview" labeling on the chip + tooltip. Geometry implemented; deeper internal structure deferred.
 
@@ -318,12 +318,16 @@ These ship fully functional in v6.2 but with explicit "v1 preview" labeling on t
 **Citation**: Dignāga, *Pramāṇasamuccaya* I.2; Hattori, *Dignāga, On Perception* (1968).
 **v4.1 polish (not applicable post-exclusion)**: render pratyakṣa as svalakṣaṇa-instances and anumāna as sāmānya-lakṣaṇa categorization explicitly.
 
-#### 4.2.2 Suhrawardi Ishrāqī
+#### 4.2.2 Suhrawardi Ishrāqī — **EXCLUDED in v6 (Eisa 2026-05-16, §C.4-religious-rule)**
+
+> **Status**: NOT shipping in Constellation. Per the new top-principal religious-lineage rule (orientation v2.09): "when dealing with religious references, no non-Abrahamic; for Islamic, Sunni only." The Ishrāqī tradition was overwhelmingly absorbed into Twelver Shīʿī ḥikma (Mulla Sadra, Sabzavari, modern Qom seminary curriculum), failing the Sunni-only restriction. Independently, it is fundamentally religious-mystical theology (ʿilm ḥuḍūrī, mystical presence-knowledge) rather than philosophical-epistemological scholarship. No chip option, no register module, no manifest. The 'ishraqi' literal is removed from RegisterId; Plan §D.2 carries a matching SUPERSEDED note; a settings migration rewrites any persisted `activeRegister: 'ishraqi'` back to `'aristotelian'`. The §4.2.2 specification below is preserved as scholarly background but is no longer a build target.
+
+*Original spec (preserved for academic reference, not for build):*
 
 **Geometry**: luminous central core (`ʿilm ḥuḍūrī` — knowledge by presence) rendered as a small gold disc surrounded by an emanation glow. Three concentric emanation rings outward (dashed). Peripheral stars represent discursive/acquired knowledge (`ʿilm ḥuṣūlī`).
 **Cultural framing**: Persian-Islamic Ishrāqī tradition; presence-knowledge as irreducible epistemic foundation.
 **Citation**: Suhrawardi, *Ḥikmat al-Ishrāq* §I.5; Walbridge, *The Wisdom of the Mystic East* (2001).
-**v4.1 polish**: render the emanation rings as labeled `anwār al-anwār` hierarchy (qāhir / mudabbir / etc.) per Suhrawardi's metaphysics.
+**v4.1 polish (not applicable post-exclusion)**: render the emanation rings as labeled `anwār al-anwār` hierarchy (qāhir / mudabbir / etc.) per Suhrawardi's metaphysics.
 
 #### 4.2.3 Mohist sān biǎo 三表
 

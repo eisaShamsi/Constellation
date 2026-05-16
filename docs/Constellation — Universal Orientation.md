@@ -259,7 +259,7 @@ The discipline pays off on large Universes (7,600+ notes verified in real use). 
   - **pramāṇa** — the Indian epistemology frame (perception, inference, testimony, etc.)
   - **masādir** — the classical Islamic sources-of-knowledge frame
   - **Polanyi** — tacit knowledge / personal knowledge frame
-  Plus v1-preview registers labeled but unfinished: Ishrāqī, Mohist sān-biǎo. *(Dignāga was originally on this list; permanently excluded 2026-05-16 by product decision.)*
+  Plus v1-preview register labeled but unfinished: Mohist sān-biǎo. *(Dignāga + Suhrawardi Ishrāqī were originally on this list; both permanently excluded 2026-05-16 — Dignāga by direct product decision, Ishrāqī under the religious-lineage rule that ships in orientation v2.09.)*
 - **Living Link Architecture P2-P5** — lifecycle stage transitions in real use, weight decay/growth in real use, traversal-count display in panels, link search by all 8 properties.
 - **Sight Settings UI section** — dedicated Settings tab for Sight preferences.
 - **Confidence-population workflow** — UI for assigning confidence to existing links.

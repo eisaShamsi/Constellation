@@ -1452,3 +1452,46 @@ The Concept Paper §4.1.3 specifies sub-classifications per sector (e.g., Qur'an
 - Stage 4 — mini-domes UNCHANGED (channel-isolation via the §C.3-fix-1 starsDefault wiring).
 - Stage 5 — switch back to Aristotelian → stars return + dividers + labels disappear + extension chips disappear.
 - Stage 6 — switch to pramāṇa → wedge labels change to Sanskrit (pratyakṣa / anumāna / upamāna / śabda) + NO extension chips (pramāṇa has no `extensionChips()`).
+
+### §C.4 — Eisa re-test result: ALL PASS (2026-05-16)
+
+Stages 1–4 green against commit `b6b5743a`. Stars redistribute to NE Qur'an quadrant; 4 wedge labels + 4 divider strokes + 4 extension chips visible; mini-domes unchanged (channel-isolation honored); persistence + Esc all still work.
+
+But Eisa surfaced a substantive design concern in the same Boss-test message: **"The 'masādir' method is limited to the Islamic studies of the Quran and Hadith, and we cannot generalize it to be used for the knowledge cognition as a whole. Saying that, I reach a finding, or it is more a question: Why are we limited to those methods? ... The Arabic heritage is rich and has other methods, and I am sure other cultures have the same."**
+
+§C.4 marked **completed** for code purposes; the Phase 3 §C cascade as originally designed is **paused** pending architectural reframe (see religious-lineage-rule entry below).
+
+### Religious-lineage rule + Ishrāqī exclusion + research findings (post-§C.4, 2026-05-16)
+
+Eisa's design concern triggered a Stop-On-Correction Rule + research-before-decide cycle:
+
+1. Two parallel research agents launched (Working Agreement #5 cross-check):
+   - Agent 1 (candidate registers): ~25 candidates surveyed across Arabic-non-religious, African, Latin American decolonial, East Asian, Indigenous, modern Western, Jewish, Hindu, Buddhist, feminist traditions. Key finding §3: many strong traditions resist the sectoral-register format altogether (Daoism is anti-categorical; Māori whakapapa is relational-cartographic; Yoruba Ifá is combinatorial 16×16 matrix; Inuit QI is values-and-practice not category; standpoint epistemology is meta-coordinate not category). Architectural implication: Constellation may need to support multiple register-shapes, not just sectoral.
+   - Agent 2 (user-definable architecture): 4 approaches surveyed (declarative JSON, bounded DSL, sandboxed code, TypeScript plugin). Key finding: dominant mature pattern is HYBRID (declarative baseline + plugin layer for behavior — Obsidian Bases + plugins, VS Code manifest + activation, Quarto YAML + Lua, Microsoft 365 declarative agents + actions). Constellation's specific combination (declarative + Wasm-sandboxed + file-over-app + per-record geometry function) is novel ground in PKM — no precedent.
+
+2. Eisa then locked the design rule: *"When we are going to deal with religious references, don't include any non-Abrahamic religious references, and when dealing with Islamic ones, don't consider any Shīʿī reference at all. But when dealing with other heritage or culture scholars, the door is open."*
+
+3. Interpretation locked via AskUserQuestion: **strict religious-lineage** (if the lineage is religious, it's out, even if modern academic treatment is philosophical). pramāṇa + Mohist sān biǎo grandfathered (already in production); Suhrawardi Ishrāqī cut now.
+
+4. Eight surfaces updated in lockstep (same §C.1-fix-1-style cascade as Dignāga):
+   - `src/lib/sight/v6/registerChip.svelte` — REGISTERS array entry removed (was index 4 between Polanyi and Mohist); header comments updated to "5 registers" + diacritic list updated
+   - `src/lib/sight/v6/types.ts` — `RegisterId` union literal `'ishraqi'` removed; comment block updated with religious-lineage rule reference + cross-link to orientation v2.09
+   - `src/lib/libraries/store.ts` — `activeRegister?:` union literal removed; new idempotent migration block rewrites persisted `'ishraqi'` → `'aristotelian'`; comment block updated
+   - `lab/reports/MIG-025-SIGHT-V6-PLAN.md` §D.2 — SUPERSEDED / EXCLUDED with original 3-bullet spec struck through
+   - `docs/Constellation-Sight-Concept-Paper-v4.0.md` §4.2.2 — EXCLUDED note + original spec preserved for academic reference; §4.2 heading updated ("1 register, originally 3")
+   - `docs/Constellation — Universal Orientation.md` — v1-preview list edited; Ishrāqī removed with parenthetical
+   - `docs/Constellation Orientation & Onboarding v2.09.md` — NEW; documents the rule + the exclusion + the filtered candidate menu (~16 candidates remaining post-rule) + the still-pending architecture decisions
+
+5. Phase 3 §C cascade as originally designed is **paused**. The right next move is a fresh MIG (MIG-026?) for register-set expansion + user-definable architecture, with its own /architect → /plan phases. Polanyi (§C.5), Mohist (§D.3), §C.7 manifests, the rest of §C all defer to the new MIG.
+
+### What's still pending Eisa direction
+
+1. Eisa finishes reading Agent 1's full candidate report
+2. Register-shape decision (sectoral-only / multi-shape / sectoral+chip-overlay) — still open after AskUserQuestion ("Let me read what they wrote first.")
+3. Curated-baseline picks from the ~16 filtered candidates
+4. User-definable architecture approach (one of Agent 2's 4 options, or hybrid)
+5. Draft MIG-026 architect doc once 1–4 are locked
+
+### Phase 2 ship (Sight v6.1) remains intact
+
+None of this disturbs the v6.1 ship (commit `f295b296`). The 4 currently-working registers (Aristotelian, pramāṇa, masādir, Polanyi-as-chip-placeholder) and the Mohist chip placeholder all stay; only Ishrāqī comes out (and Polanyi's working module wasn't built, just the chip — same status as Ishrāqī was). Users on the C4-masadir build don't lose anything functional in this change.

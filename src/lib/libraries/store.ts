@@ -3466,19 +3466,21 @@ export interface AppSettings {
 		 *  value into `extended` for existing users. */
 		extended?: boolean;
 		/** MIG-025 §A.12 — active epistemic register (Concept Paper §4).
-		 *  6 registers shipped in v6.2 (4 production + 2 v1-preview) per
+		 *  5 registers shipped in v6.2 (4 production + 1 v1-preview) per
 		 *  Eisa's locked decision. Anchor-dome only; mini-domes stay
 		 *  culturally neutral per §7.
-		 *  §C.1-fix-1 (Eisa 2026-05-16): Dignāga register EXCLUDED
-		 *  entirely. The 'dignaga' literal is removed from this union;
-		 *  a migration block in applyParsedSettings below rewrites any
-		 *  persisted 'dignaga' value back to 'aristotelian'. */
+		 *  §C.1-fix-1 (Eisa 2026-05-16): Dignāga register EXCLUDED.
+		 *  §C.4-religious-rule (Eisa 2026-05-16): Suhrawardi Ishrāqī
+		 *  also EXCLUDED per the new top-principal religious-lineage
+		 *  rule (orientation v2.09). The 'dignaga' and 'ishraqi'
+		 *  literals are both removed from this union; migration blocks
+		 *  in applyParsedSettings below rewrite both persisted values
+		 *  back to 'aristotelian'. */
 		activeRegister?:
 			| 'aristotelian'
 			| 'pramana'
 			| 'masadir'
 			| 'polanyi'
-			| 'ishraqi'
 			| 'mohist-san-biao';
 		/** MIG-025 §A.12 + Plan §A.4/§A.10 — mini-dome hex-bin aggregation
 		 *  threshold. Above this many visible notes per mini, the mini
@@ -3860,6 +3862,26 @@ export function applyParsedSettings(parsed: Record<string, unknown>): void {
 	// 'dignaga' value so the branch is silent. saveSettings persists
 	// the rewrite to disk.
 	if (sightSnapshotForRename.activeRegister === 'dignaga') {
+		appSettings.update((s) => ({
+			...s,
+			sight: { ...s.sight, activeRegister: 'aristotelian' },
+		}));
+		saveSettings();
+	}
+
+	// ── §C.4-religious-rule — Ishrāqī register exclusion migration ─
+	// 2026-05-16, Eisa direction post-§C.4: new top-principal rule —
+	// "when dealing with religious references, no non-Abrahamic; for
+	// Islamic, Sunni only." The Ishrāqī tradition (Suhrawardi 1154–
+	// 1191) was overwhelmingly absorbed into Twelver Shīʿī ḥikma
+	// (Mulla Sadra, Sabzavari, modern Qom curriculum) — failing the
+	// Sunni-only restriction — and is fundamentally religious-mystical
+	// rather than philosophical-epistemological. Same shape as the
+	// Dignāga block above: if a user clicked the Ishrāqī chip during
+	// v6.2-pre-religious-rule testing, rewrite back to 'aristotelian'.
+	// Idempotent: subsequent loads have no 'ishraqi' value so the
+	// branch is silent. saveSettings persists the rewrite to disk.
+	if (sightSnapshotForRename.activeRegister === 'ishraqi') {
 		appSettings.update((s) => ({
 			...s,
 			sight: { ...s.sight, activeRegister: 'aristotelian' },
