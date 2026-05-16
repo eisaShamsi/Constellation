@@ -46,7 +46,8 @@
 	import Tour from './tour.svelte';
 	import MiniDome from './MiniDome.svelte';
 	import RegisterChip from './registerChip.svelte';
-	import type { LayoutCacheRow, LinkEdge, StarDerived, FacetId, MiniDomeChannel, SlotChannel } from './types';
+	import { getRegisterById } from './registers';
+	import type { LayoutCacheRow, LinkEdge, StarDerived, FacetId, MiniDomeChannel, SlotChannel, RegisterId } from './types';
 
 	let { onOpenNote = (_path: string, _libraryName: string) => {} }: {
 		onOpenNote?: (path: string, libraryName: string) => void;
@@ -242,7 +243,18 @@
 			return;
 		}
 		const layout = computeDomeLayout(canvasWidth, canvasHeight);
-		stars = computeStarPositions(rows, layout.centerX, layout.centerY, layout.radius);
+		// §C.2 — look up the active register module and pass it to
+		// computeStarPositions. For Aristotelian (default), the module's
+		// remapStarPosition is identity → dome renders identical to v6.1.
+		// For pramāṇa (§C.3) / masādir (§C.4) / Polanyi (§C.5) — once
+		// those modules ship — the remap moves stars into the register's
+		// geometric vocabulary. If activeRegister is unset or has no
+		// module (incremental build state), register is null and
+		// computeStarPositions falls back to default Aristotelian.
+		const activeRegister = getRegisterById(
+			$appSettings.sight?.activeRegister as RegisterId | undefined,
+		);
+		stars = computeStarPositions(rows, layout.centerX, layout.centerY, layout.radius, activeRegister);
 	}
 
 	// ── Data load ─────────────────────────────────────────────────
@@ -587,6 +599,26 @@
 	$effect(() => {
 		void hoveredPath;
 		untrack(() => paint());
+	});
+
+	// §C.2 — recompute + repaint when the active epistemic register
+	// changes. Reads $appSettings.sight.activeRegister so this effect
+	// re-fires whenever registerChip.svelte writes a new id. The
+	// recompute is necessary because each star's (x, y) is now a
+	// function of the register's remapStarPosition; with Aristotelian
+	// active the values are identical to default so this is a no-op
+	// repaint, but for pramāṇa / masādir / Polanyi / Ishrāqī / Mohist
+	// (once their modules ship) the stars actually move into new
+	// positions. Wrapped in untrack so the internal writes inside
+	// recomputeStars + paint don't trigger infinite re-runs. Reading
+	// `void` of the optional chain short-circuits cleanly when
+	// $appSettings.sight is undefined (very-early-boot edge case).
+	$effect(() => {
+		void $appSettings.sight?.activeRegister;
+		untrack(() => {
+			recomputeStars();
+			paint();
+		});
 	});
 </script>
 

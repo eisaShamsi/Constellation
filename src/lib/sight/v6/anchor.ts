@@ -31,6 +31,7 @@ import type {
 	ProvenanceSector,
 	TypedLinkKind,
 	LifecycleStage,
+	RegisterModule,
 } from './types';
 import {
 	PALETTE,
@@ -98,12 +99,29 @@ export function computeStarPositions(
 	centerX: number,
 	centerY: number,
 	outerRadius: number,
+	// §C.2 — active epistemic register. When provided, the default
+	// Aristotelian position (computed below) is passed through
+	// `register.remapStarPosition(row, defaultPos, layout)` before
+	// being stored. For Aristotelian this is identity (no change);
+	// for pramāṇa (§C.3) / masādir (§C.4) / Polanyi (§C.5) etc.,
+	// the remap moves the star into the register's geometric
+	// vocabulary (quadrants / sectors / fog gradient). Optional so
+	// existing callers and tests that don't yet pass a register
+	// continue to render in default Aristotelian. Per Concept Paper
+	// §11 invariant 6: register remap affects the anchor ONLY —
+	// mini-domes never see this parameter.
+	register?: RegisterModule | null,
 ): StarDerived[] {
 	if (rows.length === 0) return [];
 
 	// Pre-compute Universe-wide context.
 	const libraryOrder = uniqueSortedLibraries(rows);
 	const top10thLinkCount = topDecileLinkCount(rows);
+
+	// §C.2 — pre-build the layout payload passed to the register's
+	// remap callback. Same shape as DomeLayout but plain object so
+	// registers don't need to import anchor.ts.
+	const registerLayout = { centerX, centerY, radius: outerRadius };
 
 	const out: StarDerived[] = [];
 	for (const row of rows) {
@@ -130,8 +148,19 @@ export function computeStarPositions(
 			month * (Math.PI / 6) + Math.PI / 12 - Math.PI / 2;
 		const angle = baseAngle + (jitterAngular - 0.5) * (Math.PI / 12);
 
-		const x = centerX + Math.cos(angle) * radial;
-		const y = centerY + Math.sin(angle) * radial;
+		const defaultX = centerX + Math.cos(angle) * radial;
+		const defaultY = centerY + Math.sin(angle) * radial;
+
+		// §C.2 — apply active register's remap. For Aristotelian this
+		// returns the input unchanged (identity remap). For other
+		// registers (§C.3+), this redistributes the star into the
+		// register's geometric vocabulary. When `register` is null/
+		// undefined (e.g., chip-selected register has no module shipped
+		// yet, or test caller didn't pass one), we fall back to the
+		// default Aristotelian position.
+		const remapped = register
+			? register.remapStarPosition(row, { x: defaultX, y: defaultY }, registerLayout)
+			: { x: defaultX, y: defaultY };
 
 		out.push({
 			row,
@@ -142,8 +171,8 @@ export function computeStarPositions(
 			topDecileActs:
 				row.linkInCount + row.linkOutCount >= top10thLinkCount,
 			provenanceSector: provenanceSectorOf(row.sourcesPrimary),
-			x,
-			y,
+			x: remapped.x,
+			y: remapped.y,
 		});
 	}
 	return out;

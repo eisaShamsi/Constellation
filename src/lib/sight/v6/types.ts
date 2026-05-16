@@ -187,6 +187,81 @@ export type RegisterId =
 	| 'mohist-san-biao';
 
 // ════════════════════════════════════════════════════════════════════
+// Register module contract (Concept Paper §4 + Plan §C.2)
+// ════════════════════════════════════════════════════════════════════
+
+/**
+ * Dome layout passed to register callbacks — centerX/centerY are the
+ * pixel center of the anchor dome in world-space (un-zoomed), radius
+ * is the outer-rim radius. Same shape as anchor.DomeLayout but
+ * referenced here to keep registers/* free of upstream imports.
+ */
+export interface RegisterLayout {
+	centerX: number;
+	centerY: number;
+	radius: number;
+}
+
+/**
+ * Optional sector divider stroke spec returned by a register module's
+ * sectorDividers() callback. Used by pramāṇa (4 quadrants, §C.3),
+ * masādir (4 sectors, §C.4), etc. For Aristotelian (§C.2) the
+ * dividers are absent — the 5 concentric stratum bands are the visual
+ * structure, drawn by dome.ts not by the register.
+ *
+ * Angles are in canvas math convention: 0 = EAST, increases clockwise
+ * (since canvas y-axis is inverted), measured in radians.
+ */
+export interface SectorSpec {
+	angleStart: number;
+	angleEnd: number;
+	label?: string;
+}
+
+/**
+ * Register module contract — each of the 6 epistemic registers
+ * (aristotelian, pramana, masadir, polanyi, ishraqi, mohist-san-biao)
+ * exports one of these via `src/lib/sight/v6/registers/<id>.ts`.
+ *
+ * Per Concept Paper §4.3 + §7 + §11 invariant 6: registers remap the
+ * anchor dome's spatial semantics ONLY; mini-domes stay culturally
+ * neutral. This is the architectural commitment that prevents
+ * rhetorical pluralism — see the mini-dome stipulation in §7.
+ *
+ * MIG-025 §C.2 ships the module pattern + aristotelian (identity
+ * remap). §C.3 ships pramāṇa; §C.4 masādir; §C.5 Polanyi; §D.2
+ * Suhrawardi Ishrāqī; §D.3 Mohist sān biǎo.
+ */
+export interface RegisterModule {
+	id: RegisterId;
+	/** English brand label (matches the chip label in registerChip.svelte). */
+	name: string;
+	/**
+	 * Given a star's row data and its default Aristotelian position,
+	 * return the position under this register. For Aristotelian, this
+	 * is identity. For pramāṇa, this redistributes to 4 quadrants by
+	 * row.pramana_kind frontmatter field (§C.3). Etc.
+	 *
+	 * Implementations MUST be deterministic per (row, defaultPos) — the
+	 * anchor renderer calls this once per star per recompute, and the
+	 * hit-test relies on the same x/y being returned for the same row
+	 * on a subsequent call.
+	 */
+	remapStarPosition(
+		row: LayoutCacheRow,
+		defaultPos: { x: number; y: number },
+		layout: RegisterLayout,
+	): { x: number; y: number };
+	/**
+	 * Optional sector divider strokes to draw on the anchor under this
+	 * register (e.g., pramāṇa's 4 quadrant dividers in §C.3). Called
+	 * once per paint with the current layout. Return [] or omit for
+	 * registers with no sector structure (Aristotelian, Polanyi).
+	 */
+	sectorDividers?: (layout: RegisterLayout) => SectorSpec[];
+}
+
+// ════════════════════════════════════════════════════════════════════
 // Gesture grammar (Concept Paper §5)
 // ════════════════════════════════════════════════════════════════════
 

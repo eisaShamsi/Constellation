@@ -1305,3 +1305,35 @@ Eisa re-runs §C.1 Stage 1–7 against the §C.1-fix-1 build. Expectations:
 - Stage 5 persistence: if Eisa had clicked Dignāga during Stage 1 testing and then this fix landed, the migration rewrites the setting to Aristotelian on first boot of the fix build — no error, just silent rewrite.
 
 On all-PASS, cascade resumes to §C.2.
+
+### §C.1 + §C.1-fix-1 — Eisa re-test result: ALL PASS (2026-05-16)
+
+Stage 1–7 all green against the §C.1-fix-1 build (commit `4a62abc0`). Esc-while-chip-expanded now collapses the chip instead of closing Sight. The 6-register chip row renders correctly (no Dignāga anywhere). §C.1 + §C.1-fix-1 marked **completed**; §C.2 opens next.
+
+### §C.2 — Register module pattern + Aristotelian (identity remap) (2026-05-16)
+
+**Files**
+- NEW directory `src/lib/sight/v6/registers/`
+- NEW `src/lib/sight/v6/registers/aristotelian.ts` (~35 lines: identity remap, no sectorDividers)
+- NEW `src/lib/sight/v6/registers/index.ts` (~70 lines: REGISTRY + `getRegisterById` lookup + `allRegisters` enumerator for §C.9 test)
+- `src/lib/sight/v6/types.ts` — added 3 interfaces: `RegisterLayout`, `SectorSpec`, `RegisterModule` (the contract every register module fulfills)
+- `src/lib/sight/v6/anchor.ts` — `computeStarPositions` signature gained optional `register?: RegisterModule | null` param; default Aristotelian position computed as before, then passed through `register.remapStarPosition(row, defaultPos, layout)` if register provided; falls back to defaultPos when register is null (incremental-build state)
+- `src/lib/sight/v6/SightV6.svelte` — imports `getRegisterById`; `recomputeStars` looks up active register via `getRegisterById($appSettings.sight?.activeRegister)` and passes to `computeStarPositions`; new `$effect` re-fires `recomputeStars + paint` when `activeRegister` changes (so switching the chip triggers re-render)
+
+**Behavior shipped**
+- Active register Aristotelian → anchor renders **identical** to v6.1 dome (identity remap means defaultPos passes through unchanged).
+- Switching the chip to any other register (pramāṇa / masādir / Polanyi / Suhrawardi Ishrāqī / Mohist sān biǎo) currently has no visible effect on the dome — those modules don't exist yet, `getRegisterById` returns null, anchor falls back to default Aristotelian positions. **This is expected for §C.2.** §C.3 adds pramāṇa and the chip-switch starts producing visible dome rearrangement.
+- The `$effect` wiring is in place so future register modules light up automatically when added to the registry.
+
+**Module contract (Concept Paper §4.3)**
+Each register module exports a `RegisterModule`:
+- `id: RegisterId`
+- `name: string` (English brand label matching the chip)
+- `remapStarPosition(row, defaultPos, layout) → {x, y}` — deterministic per (row, defaultPos)
+- `sectorDividers?: (layout) → SectorSpec[]` — optional, for registers with quadrant/sector structure (pramāṇa, masādir)
+
+**Architectural commitment honored**
+Per Concept Paper §11 invariant 6: register remap affects the anchor ONLY. The mini-dome renderer never sees the `register` param (MiniDome.svelte's call to `computeStarPositions` doesn't exist — minis read pre-computed positions from `stars`, which is the anchor-side computation. After §C.2 those positions carry the active register's remap, BUT mini-domes re-position by channel, not by anchor-space xy). To verify this holds, §C.9 will iterate `allRegisters()` and assert mini-dome encodings don't change.
+
+**Pre-cascade verification (§C.2 ship gate)**
+The §C.2 verification clause is "Active register Aristotelian → anchor renders identical to v6.1 dome." This is the Boss test — confirms the wiring doesn't disturb the v6.1 visuals. Boss test: open Sight, confirm dome looks identical to the §C.1-fix-1 build; switch chip to pramāṇa / masādir / Polanyi / Ishrāqī / Mohist sān biǎo, confirm dome does NOT change (expected — those modules don't ship until §C.3+); switch back to Aristotelian.
