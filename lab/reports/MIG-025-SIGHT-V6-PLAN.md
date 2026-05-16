@@ -248,10 +248,13 @@ MIG-025 builds Sight v6 as a four-phase rollout (§A=v6.0, §B=v6.1, §C=v6.2, �
 
 ## §D — Phase 4 (Sight v6.3) — 3 v1-preview registers + CI hardening + v5 deletion
 
-### §D.1 — Dignāga register (vertical hemisphere split, "v1 preview" label)
-**Files**: new `src/lib/sight/v6/registers/dignaga.ts`; chip tooltip shows "v1 preview — polish in v4.1".
-**Action**: Left hemisphere = pratyakṣa, right hemisphere = anumāna. Center labeled "rejected: śabda, upamāna" per Concept Paper §4.2.1 — the absence is the feature.
-**Verification**: Active Dignāga → 2-hemisphere split; center labels visible; chip badge shows "preview".
+### §D.1 — Dignāga register — **SUPERSEDED / EXCLUDED** (Eisa 2026-05-16, §C.1-fix-1)
+
+> **Status**: EXCLUDED from Constellation entirely. Per Eisa's direction during §C.1 Stage 2 Boss-test review: "don't include the 'Dignāga' at all in any of Constellation functions." The Dignāga register is permanently out — no chip option, no register module, no manifest, no Phase 4 build step. The 'dignaga' literal is removed from `RegisterId` (types.ts) and from the `activeRegister` union (store.ts); a migration block rewrites any persisted `'dignaga'` value back to `'aristotelian'`. Concept Paper §4.2.1 carries a matching EXCLUDED note. The register set shrinks from 7 to 6 (4 production + 2 v1-preview). §D's remaining v1-preview steps are §D.2 (Suhrawardi Ishrāqī) and §D.3 (Mohist sān biǎo).
+
+~~**Files**: new `src/lib/sight/v6/registers/dignaga.ts`; chip tooltip shows "v1 preview — polish in v4.1".~~
+~~**Action**: Left hemisphere = pratyakṣa, right hemisphere = anumāna. Center labeled "rejected: śabda, upamāna" per Concept Paper §4.2.1 — the absence is the feature.~~
+~~**Verification**: Active Dignāga → 2-hemisphere split; center labels visible; chip badge shows "preview".~~
 
 ### §D.2 — Suhrawardi Ishrāqī register (luminous center + 3 emanation rings)
 **Files**: new `src/lib/sight/v6/registers/ishraqi.ts`.

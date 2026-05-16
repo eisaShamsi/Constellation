@@ -165,17 +165,24 @@ export type SlotChannel = MiniDomeChannel | 'anchor';
 // ════════════════════════════════════════════════════════════════════
 
 /**
- * The 7 epistemic registers in v1. Aristotelian is default;
+ * The 6 epistemic registers in v1. Aristotelian is default;
  * pramāṇa/masādir/Polanyi are production polish (4.1.x) per Eisa's
- * 7-in-v1 + polish-tiered decision; Dignāga/Ishrāqī/Mohist are
- * v1-preview labeled, polish target v4.1 per Concept Paper §4.2.
+ * polish-tiered decision; Ishrāqī/Mohist are v1-preview labeled,
+ * polish target v4.1 per Concept Paper §4.2.
+ *
+ * §C.1-fix-1 (Eisa 2026-05-16): Dignāga register EXCLUDED entirely
+ * per Eisa's direction "don't include the 'Dignāga' at all in any
+ * of Constellation functions". The 'dignaga' literal is removed
+ * from this union. A settings migration in store.ts applyParsedSettings
+ * rewrites any persisted activeRegister: 'dignaga' value back to
+ * 'aristotelian' for users who selected it during §C.1 testing.
+ * Concept Paper §4.2.1 and Plan §D.1 both carry EXCLUDED notes.
  */
 export type RegisterId =
 	| 'aristotelian'
 	| 'pramana'
 	| 'masadir'
 	| 'polanyi'
-	| 'dignaga'
 	| 'ishraqi'
 	| 'mohist-san-biao';
 

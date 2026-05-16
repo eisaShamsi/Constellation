@@ -3,13 +3,29 @@
 
   Location: Sight title bar, mounted between subtitle and EXTENDED badge.
   Per Concept Paper §2.5: default state collapsed, shows current active
-  register only (e.g., "Aristotelian ●"). Click → expand to show all 7
+  register only (e.g., "Aristotelian ●"). Click → expand to show all 6
   registers. Active register has blue stroke + dot. Hover any chip → English
   secondary label tooltip per Concept Paper §2.5 + §11 invariant.
 
-  v1-preview registers (Dignāga, Suhrawardi Ishrāqī, Mohist sān biǎo) per
-  §4.2 carry a "preview" badge — they ship fully functional in v6 but with
-  v4.1 polish targets for deeper internal structure.
+  v1-preview registers (Suhrawardi Ishrāqī, Mohist sān biǎo) per §4.2 carry
+  a "preview" badge — they ship fully functional in v6 but with v4.1 polish
+  targets for deeper internal structure.
+
+  §C.1-fix-1 (Eisa 2026-05-16): Dignāga register EXCLUDED entirely per
+  Eisa's direction "don't include the 'Dignāga' at all in any of Constellation
+  functions". The register set shrinks from 7 to 6. Concept Paper §4.2.1
+  (Dignāga geometry spec) and Plan §D.1 (Dignāga build step) both carry
+  EXCLUDED notes; the RegisterId type no longer admits 'dignaga'; a settings
+  migration in store.ts applyParsedSettings rewrites any persisted
+  'dignaga' value back to 'aristotelian'.
+
+  §C.1-fix-1 (Eisa 2026-05-16): Esc-while-chip-expanded bug fixed.
+  Previously chip Esc handler was on document (bubble phase) but
+  +layout.svelte:2335 registers the global Esc-closes-Sight handler on
+  document in capture phase — Layout's handler fired first and closed Sight.
+  Fix: chip handler now registers on window (which sits OUTSIDE document
+  in the capture chain) in capture phase. stopPropagation + preventDefault
+  kill the event before it reaches the Layout handler.
 
   §C.1 partial-ships §C.8: clicking a chip writes activeRegister to
   appSettings.sight via the canonical update+saveSettings pattern (same as
@@ -18,8 +34,8 @@
 
   Brand-name register labels are kept English per the §A.15 brand convention
   (same precedent as Constellation, Sight, CNS, Confidence). The cultural
-  diacritics (pramāṇa, masādir, Dignāga, Suhrawardi Ishrāqī, Mohist sān biǎo)
-  are Unicode and render in any modern font stack.
+  diacritics (pramāṇa, masādir, Suhrawardi Ishrāqī, Mohist sān biǎo) are
+  Unicode and render in any modern font stack.
 
   Concept Paper: docs/Constellation-Sight-Concept-Paper-v4.0.md §2.5, §4.1, §4.2
   Plan:         lab/reports/MIG-025-SIGHT-V6-PLAN.md §C.1
@@ -28,9 +44,11 @@
 	import { appSettings, saveSettings } from '$lib/libraries/store';
 	import type { RegisterId } from './types';
 
-	// Seven registers in canonical order: 4 production-polish first (§4.1),
-	// then 3 v1-preview (§4.2). Tooltip prose distills each register's
+	// Six registers in canonical order: 4 production-polish first (§4.1),
+	// then 2 v1-preview (§4.2). Tooltip prose distills each register's
 	// English secondary label per Concept Paper §2.5 + §4.1/§4.2.
+	// §C.1-fix-1: Dignāga register excluded entirely (was index 4); the
+	// 'dignaga' RegisterId is also removed from the type union.
 	type RegisterDef = {
 		id: RegisterId;
 		name: string;          // chip label (kept English per §A.15 brand convention)
@@ -62,12 +80,6 @@
 			name: 'Polanyi',
 			tooltip: 'Polanyi — modern pluralism, tacit as the proximal pole',
 			preview: false,
-		},
-		{
-			id: 'dignaga',
-			name: 'Dignāga',
-			tooltip: 'Dignāga — Buddhist epistemological critique, two pramāṇas only (v1 preview)',
-			preview: true,
 		},
 		{
 			id: 'ishraqi',
@@ -116,17 +128,36 @@
 	function handleKey(ev: KeyboardEvent) {
 		if (ev.key === 'Escape' && expanded) {
 			expanded = false;
+			// §C.1-fix-1: kill the event before Layout's capture-phase
+			// global handler (+layout.svelte:2335) sees it and closes
+			// Sight. stopPropagation + preventDefault are belt-and-braces;
+			// the real fix is registering on `window` (capture) below so
+			// we run BEFORE Layout's `document` (capture) handler.
 			ev.stopPropagation();
+			ev.preventDefault();
 		}
 	}
 
 	$effect(() => {
 		if (!expanded) return;
 		document.addEventListener('mousedown', handleOutsideClick);
-		document.addEventListener('keydown', handleKey);
+		// §C.1-fix-1 (Eisa cycle-1 Stage 6 step 4-5 FAIL: "When I pressed
+		// Esc Sight was closed"): chip handler must beat +layout.svelte's
+		// global Esc-closes-Sight handler. Layout's handler is on
+		// `document` in capture phase; ours goes on `window` in capture
+		// phase. Capture order is window → document → ... so a window
+		// capture handler fires BEFORE any document capture handler. The
+		// stopPropagation inside handleKey then prevents the event from
+		// continuing the capture journey down to document. Result:
+		// Esc-while-chip-expanded collapses the chip and Sight stays open.
+		// Esc-while-chip-collapsed is unaffected (this effect only mounts
+		// while `expanded` is true).
+		window.addEventListener('keydown', handleKey, true);
 		return () => {
 			document.removeEventListener('mousedown', handleOutsideClick);
-			document.removeEventListener('keydown', handleKey);
+			// Third arg must match addEventListener's capture flag (true)
+			// or removeEventListener silently no-ops.
+			window.removeEventListener('keydown', handleKey, true);
 		};
 	});
 </script>

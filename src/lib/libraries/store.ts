@@ -3466,14 +3466,18 @@ export interface AppSettings {
 		 *  value into `extended` for existing users. */
 		extended?: boolean;
 		/** MIG-025 §A.12 — active epistemic register (Concept Paper §4).
-		 *  7 registers shipped in v6.0 per Eisa's locked decision. Anchor-
-		 *  dome only; mini-domes stay culturally neutral per §7. */
+		 *  6 registers shipped in v6.2 (4 production + 2 v1-preview) per
+		 *  Eisa's locked decision. Anchor-dome only; mini-domes stay
+		 *  culturally neutral per §7.
+		 *  §C.1-fix-1 (Eisa 2026-05-16): Dignāga register EXCLUDED
+		 *  entirely. The 'dignaga' literal is removed from this union;
+		 *  a migration block in applyParsedSettings below rewrites any
+		 *  persisted 'dignaga' value back to 'aristotelian'. */
 		activeRegister?:
 			| 'aristotelian'
 			| 'pramana'
 			| 'masadir'
 			| 'polanyi'
-			| 'dignaga'
 			| 'ishraqi'
 			| 'mohist-san-biao';
 		/** MIG-025 §A.12 + Plan §A.4/§A.10 — mini-dome hex-bin aggregation
@@ -3841,6 +3845,25 @@ export function applyParsedSettings(parsed: Record<string, unknown>): void {
 			delete nextSight.lastMode;
 			return { ...s, sight: nextSight as typeof s.sight };
 		});
+		saveSettings();
+	}
+
+	// ── §C.1-fix-1 — Dignāga register exclusion migration ───────
+	// 2026-05-16, Eisa Stage 2 review of §C.1: "don't include the
+	// 'Dignāga' at all in any of Constellation functions". The
+	// 'dignaga' literal is removed from RegisterId and from the
+	// activeRegister union above. This block rewrites any persisted
+	// activeRegister: 'dignaga' (could exist if a user clicked the
+	// Dignāga chip during §C.1 testing before this fix shipped) back
+	// to 'aristotelian' so the chip's blue-dot indicator resolves to
+	// a valid register entry. Idempotent: subsequent loads have no
+	// 'dignaga' value so the branch is silent. saveSettings persists
+	// the rewrite to disk.
+	if (sightSnapshotForRename.activeRegister === 'dignaga') {
+		appSettings.update((s) => ({
+			...s,
+			sight: { ...s.sight, activeRegister: 'aristotelian' },
+		}));
 		saveSettings();
 	}
 

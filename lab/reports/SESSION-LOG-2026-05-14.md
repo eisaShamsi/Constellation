@@ -1259,4 +1259,49 @@ Phase 2 (§B.x) shipped Sight v6.1 (Coordinated Views). Phase 3 (§C.x) ships Si
 
 ### Cascade plan from here
 
-§C.2 (register module pattern + Aristotelian identity remap) → §C.3 (pramāṇa quadrants) → §C.4 (masādir sectors) → §C.5 (Polanyi fog) → §C.6 (switch transition) → §C.7 (7 manifests + 14 translations, 98 files) → §C.10 (Help → Sight tour re-fire) → §C.9 (manual channel-isolation verification) → §C.11 (ship gate Boss test). Each step pauses for Boss verification per the Testing Instructions Rule.
+§C.2 (register module pattern + Aristotelian identity remap) → §C.3 (pramāṇa quadrants) → §C.4 (masādir sectors) → §C.5 (Polanyi fog) → §C.6 (switch transition) → §C.7 (6 manifests + 14 translations, 84 files post-Dignāga-exclusion) → §C.10 (Help → Sight tour re-fire) → §C.9 (manual channel-isolation verification) → §C.11 (ship gate Boss test). Each step pauses for Boss verification per the Testing Instructions Rule.
+
+### §C.1-fix-1 — Dignāga exclusion + Esc-while-chip-expanded bug fix (2026-05-16)
+
+Eisa Stage 1 Boss-test of §C.1 returned: **Stages 1, 2, 3, 4, 5, 7 PASS. Stage 6 Step 4-5 FAIL** (Esc while chip expanded closed Sight instead of just collapsing the chip). Plus a new product direction: **"don't include the 'Dignāga' at all in any of Constellation functions."**
+
+#### Dignāga exclusion (product decision, permanent)
+
+Register set shrinks from 7 to 6 (4 production-polish + 2 v1-preview). Six surfaces updated in lockstep so doc-drift never opens:
+
+1. `src/lib/sight/v6/registerChip.svelte` — REGISTERS array entry removed (was index 4); header comment updated.
+2. `src/lib/sight/v6/types.ts` — `RegisterId` union literal `'dignaga'` removed; comment block updated.
+3. `src/lib/libraries/store.ts` — `activeRegister?:` union literal removed; new idempotent migration block in `applyParsedSettings` rewrites any persisted `activeRegister: 'dignaga'` value back to `'aristotelian'`.
+4. `lab/reports/MIG-025-SIGHT-V6-PLAN.md` §D.1 — marked SUPERSEDED / EXCLUDED with the 3-bullet spec struck through.
+5. `docs/Constellation-Sight-Concept-Paper-v4.0.md` §4.2.1 — section header "Dignāga — EXCLUDED in v6" with status note; original geometry/citation prose preserved as scholarly background but explicitly labeled "preserved for academic reference, not for build". §4.2 heading updated: "(2 registers, was 3 before §C.1-fix-1)".
+6. `docs/Constellation — Universal Orientation.md` — v1-preview register list edited; Dignāga removed with a brief parenthetical noting the exclusion date.
+
+Downstream effects:
+- Phase 4 §D loses §D.1; only §D.2 (Suhrawardi Ishrāqī) and §D.3 (Mohist sān biǎo) remain as v1-preview build steps.
+- §C.7 manifest count drops from 7 to 6 → translation cascade drops from 98 files to **84** (6 manifests × 14 locales).
+
+#### Esc bug fix
+
+**Root cause**: `+layout.svelte:2335` registers the global "Esc closes Sight overlays" handler on `document` in **capture phase**. The §C.1 chip handler was on `document` in **bubble phase**. Capture-phase handlers fire before bubble-phase handlers, so Layout's close-Sight handler ran first; the chip's `stopPropagation()` never even executed.
+
+**Fix**: chip handler now registers on `window` (which sits outside `document` in the capture chain) in capture phase. `stopPropagation()` + `preventDefault()` kill the event before it propagates down to Layout's document-capture handler. Capture order is `window → document → ...`, so a `window` capture handler fires BEFORE any `document` capture handler. Belt-and-braces in the handler body for defence-in-depth.
+
+Code diff (registerChip.svelte):
+```
+- document.addEventListener('keydown', handleKey);
++ window.addEventListener('keydown', handleKey, true);  // capture, beats Layout's document-capture handler
+```
+
+#### Orientation v2.08
+
+Bumped v2.07 → v2.08 in same commit per SO #6 (subsystem ships a product change + multi-file doc cascade). v2.07 preserved alongside per the versioning rule. The v2.08 preamble documents both the Dignāga exclusion (with the 6-surface table) and the Esc bug fix (with root cause + fix mechanics).
+
+#### Re-test plan
+
+Eisa re-runs §C.1 Stage 1–7 against the §C.1-fix-1 build. Expectations:
+- Stage 2 now shows **6 chips** (was 7): Aristotelian / pramāṇa / masādir / Polanyi / Suhrawardi Ishrāqī / Mohist sān biǎo. No Dignāga chip anywhere.
+- Stage 3 hover tooltips: 5 chip tooltips + the preview-badge tooltip (Dignāga tooltip not present).
+- Stage 6 Step 4-5 NOW PASSES — Esc-while-chip-expanded collapses the chip and Sight stays open.
+- Stage 5 persistence: if Eisa had clicked Dignāga during Stage 1 testing and then this fix landed, the migration rewrites the setting to Aristotelian on first boot of the fix build — no error, just silent rewrite.
+
+On all-PASS, cascade resumes to §C.2.

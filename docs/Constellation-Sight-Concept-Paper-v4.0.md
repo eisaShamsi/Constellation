@@ -303,16 +303,20 @@ All 7 registers ship in Sight v6.0. Four at **production polish**, three at **v1
 **Citation**: Polanyi, *Personal Knowledge* (1958), ch. 4; *The Tacit Dimension* (1966), p. 10 ("we can know more than we can tell").
 **Why inversion from v0.2 matters**: v0.2 had fog dense at edges, which inverts Polanyi's actual argument. v6 fixes this.
 
-### 4.2 v1 preview, v4.1 polish target (3 registers)
+### 4.2 v1 preview, v4.1 polish target (2 registers, was 3 before §C.1-fix-1)
 
-These ship fully functional in v6.0 but with explicit "v1 preview" labeling on the chip + tooltip. Geometry implemented; deeper internal structure deferred.
+These ship fully functional in v6.2 but with explicit "v1 preview" labeling on the chip + tooltip. Geometry implemented; deeper internal structure deferred.
 
-#### 4.2.1 Dignāga
+#### 4.2.1 Dignāga — **EXCLUDED in v6 (Eisa 2026-05-16, §C.1-fix-1)**
+
+> **Status**: NOT shipping in Constellation. Per Eisa's direction during §C.1 Stage 2 Boss-test review of the register chip: "don't include the 'Dignāga' at all in any of Constellation functions." The Dignāga register is permanently excluded — no chip option, no register module, no manifest. The 'dignaga' literal is removed from the RegisterId type union; Plan §D.1 carries a matching SUPERSEDED note; a settings migration rewrites any persisted `activeRegister: 'dignaga'` back to `'aristotelian'`. The §4.2.1 specification below is preserved as scholarly background but is no longer a build target.
+
+*Original spec (preserved for academic reference, not for build):*
 
 **Geometry**: vertical hemisphere split. Left hemisphere = pratyakṣa (perception only). Right hemisphere = anumāna (inference only). Center marked with explicit "rejected" labels for śabda and upamāna.
 **Cultural framing**: Buddhist epistemological critique; only two valid pramāṇas. The absence is a *feature*, not a gap.
 **Citation**: Dignāga, *Pramāṇasamuccaya* I.2; Hattori, *Dignāga, On Perception* (1968).
-**v4.1 polish**: render pratyakṣa as svalakṣaṇa-instances and anumāna as sāmānya-lakṣaṇa categorization explicitly.
+**v4.1 polish (not applicable post-exclusion)**: render pratyakṣa as svalakṣaṇa-instances and anumāna as sāmānya-lakṣaṇa categorization explicitly.
 
 #### 4.2.2 Suhrawardi Ishrāqī
 
