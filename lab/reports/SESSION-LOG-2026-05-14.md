@@ -1124,4 +1124,67 @@ Bumps v2.04 → v2.05 in same commit per SO #6 (help topic ships + restructures 
 
 ---
 
-*End of session log 2026-05-14. Help-doc English commit + v2.05 land next; translation cascade follows.*
+## Translation cascade — 14 language mirrors + orientation v2.06 (2026-05-16)
+
+The v2.05 follow-up commit promised at line 1100 is this one.
+
+**28 new files created** — 2 help docs × 14 non-English locales:
+
+| Locale | Sight.md | CNS.md |
+|---|---|---|
+| ar (Arabic) | ✓ | ✓ |
+| de (German) | ✓ | ✓ |
+| es (Spanish) | ✓ | ✓ |
+| fa (Persian) | ✓ | ✓ |
+| fr (French) | ✓ | ✓ |
+| he (Hebrew) | ✓ | ✓ |
+| hi (Hindi) | ✓ | ✓ |
+| ja (Japanese) | ✓ | ✓ |
+| ko (Korean) | ✓ | ✓ |
+| pt (Portuguese) | ✓ | ✓ |
+| ru (Russian) | ✓ | ✓ |
+| tr (Turkish) | ✓ | ✓ |
+| ur (Urdu) | ✓ | ✓ |
+| zh (Chinese) | ✓ | ✓ |
+
+### Translation conventions applied uniformly
+
+- **Brand names kept in English** — Constellation, Sight, CNS, Confidence, Stage, Acts, Provenance, EXTENDED, HEALTHY, CAUTION, IMBALANCED. Same precedent as §A.15.
+- **Lifecycle stage code names kept in English** — `spark`, `birth`, `growth`, `maturity`, `dormancy`, `renewal`, `archival` (they map to YAML on disk; localizing would break notes).
+- **Schema enum values kept in English** — Stratum (Foundation / Roots / ...), Confidence (Hypothesis / Evidence / ...), Stage (Spark / Birth / ...), Provenance (Self / Read / Heard / Reasoned / Tradition).
+- **Keyboard tokens literal** — Ctrl+D, Cmd+Shift+D, Esc, Shift+click.
+- **UI button labels literal** — "Return to Sight", "Return to CNS", "Reset View", "(×)".
+- **Prose translated** — section headings, body, interaction tables, "When most useful" lists, "Related Surfaces" footers.
+- **RTL languages (ar, fa, he, ur)** — prose flows RTL in rendered markdown; brand tokens stay LTR inline.
+
+### Frontmatter disclosure (uniform)
+
+```yaml
+---
+translation_status: AI-generated 2026-05-16 — native-speaker review recommended
+language: <code>
+source: docs/help.uConstellation.World/...
+aliases: [...localized...]
+description: <localized one-paragraph summary>
+---
+```
+
+Future native-speaker reviewers can grep for `translation_status: AI-generated 2026-05-16` to locate every file in this cascade.
+
+### Orientation v2.06
+
+Bumps v2.05 → v2.06 in same commit per SO #6 (translation cascade closes v2.05's explicit pending item). v2.05 preserved alongside per the versioning rule. The v2.06 entry documents convention + per-language word-counts + closes the §A.15 documentation-drift cycle across all 15 locales.
+
+### What this commit deliberately does NOT do
+
+- **No User Manual translation refresh.** `docs/help.{lang}/User Manual.md` still has v5-vintage Section 8/8b/10d in the 14 mirror locales. Separate cascade; the in-app help topic (which IS in this commit) is what users actually see when they click Help.
+- **No native-speaker review.** Disclosed as `AI-generated`; Eisa routes through reviewers per existing workflow.
+- **No code touched.** Pure documentation commit.
+
+### Next pivots
+
+With §A.15 documentation drift fully closed across all 15 locales, the natural next pivot is **Phase 3 §C** (register chip + 4 production-polish registers). User Manual translation refresh queued for whenever Eisa wants to schedule it.
+
+---
+
+*End of session log 2026-05-14. Translation cascade closes the v2.05 → v2.06 sequence; Phase 3 §C opens next on Eisa's signal.*
