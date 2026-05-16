@@ -926,4 +926,36 @@ Reverse companion to the forward filter direction: when a star is hovered anywhe
 
 ---
 
-*End of session log 2026-05-14. §B.7-fix-3 commit + build complete; Eisa cycle-4 test next.*
+## §B.7 cycle-4 PASS — full §B.7 closed (2026-05-16)
+
+**Eisa cycle-4 verdict:** All 5 stages PASS for reverse-link feature. Eisa: "I think this new feature is making the Sight function smarter, and it will help users better understand their universe."
+
+§B.7 cycle-CLOSED across 3 fix iterations (cross-filter Shift+click + zoom-aware ring + ghost mode + reverse link).
+
+---
+
+## §B.10 — Pro mode persistence (2026-05-16)
+
+**Scope:** Cmd-Shift-D / Ctrl-Shift-D toggles a PERSISTENT "Pro mode" via `appSettings.sight.proMode` (already in the schema since §A.12 settings migration; default `false`). Pro mode = minis default-visible on every Sight open. Per-session Cmd-D / Ctrl-D toggle still works (untouched), so user can temporarily hide the minis in a Pro-mode session without flipping persistent state. Small "PRO" badge in the header when active — per Concept Paper §11 invariant 9 (no persistent toggle bars), the badge is informational only, not a click-target. The shortcut is the toggle.
+
+### Files (1, +52)
+
+**`src/lib/sight/v6/SightV6.svelte`:**
+- `onMount` snapshot extended: if `settingsSnapshot.sight?.proMode` is true, set `diagnosticsVisible = true` so minis are shown on this Sight open.
+- `handleKey` new branch: when Cmd-Shift-D / Ctrl-Shift-D fires (note: `!ev.shiftKey` exclusion in the existing Cmd-D branch prevents collision), toggle `appSettings.sight.proMode`, persist via `saveSettings()`, and update `diagnosticsVisible` to match.
+- Header: small "PRO" badge (gold-tinted, small caps, tooltip explains Cmd-Shift-D toggle) rendered when `$appSettings.sight?.proMode` is truthy.
+
+### UX
+
+- **Default state (out of box):** proMode false, minis hidden until user presses Ctrl-D.
+- **After first Cmd-Shift-D:** proMode true, minis show. Next Sight open also shows minis. Header displays "PRO" badge.
+- **Per-session Cmd-D during Pro mode:** toggles `diagnosticsVisible` in current session only. Doesn't change proMode. Next Sight open: minis show again (since proMode is still true).
+- **Cmd-Shift-D again:** proMode false, minis hide. PRO badge disappears. Next Sight open: minis hidden (default).
+
+### Build artifact
+
+`Constellation_0.3.4_x64-setup.B10-promode.exe` (this commit).
+
+---
+
+*End of session log 2026-05-14. §B.10 commit + build complete; Eisa cycle-1 test next.*

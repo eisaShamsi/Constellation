@@ -377,10 +377,26 @@
 			paint();
 		} else if ((ev.key === 'd' || ev.key === 'D') && (ev.ctrlKey || ev.metaKey) && !ev.shiftKey) {
 			// Cmd-D / Ctrl-D — toggle mini-domes diagnostics visibility.
-			// Excludes Shift to avoid colliding with §B.10's Cmd-Shift-D
-			// for Pro mode persistent toggle.
+			// Session-only — does NOT touch persistent sight.proMode.
+			// Excludes Shift to avoid colliding with Cmd-Shift-D below.
 			ev.preventDefault();
 			diagnosticsVisible = !diagnosticsVisible;
+		} else if ((ev.key === 'd' || ev.key === 'D') && (ev.ctrlKey || ev.metaKey) && ev.shiftKey) {
+			// §B.10 — Cmd-Shift-D / Ctrl-Shift-D — toggle Pro mode
+			// PERSISTENTLY. Pro mode = minis default-visible on every
+			// Sight open (instead of default-hidden). State stored in
+			// appSettings.sight.proMode; survives across sessions via
+			// saveSettings. Also flips diagnosticsVisible to match the
+			// new proMode value, so the toggle has immediate effect
+			// in the current session.
+			ev.preventDefault();
+			const newProMode = !($appSettings.sight?.proMode ?? false);
+			appSettings.update((s) => ({
+				...s,
+				sight: { ...s.sight, proMode: newProMode },
+			}));
+			saveSettings();
+			diagnosticsVisible = newProMode;
 		}
 	}
 
@@ -406,9 +422,17 @@
 		startWarmCache();
 		// §A.11 — fire the tour if user hasn't seen it yet. Snapshot
 		// (no $store subscription needed for the show-once gate).
+		// §B.10 — also read sight.proMode here: if Pro mode was enabled
+		// in a previous session (via Cmd-Shift-D), default
+		// diagnosticsVisible=true so the minis are shown on this open.
+		// Per-session Cmd-D toggle (handleKey case below) still works
+		// to temporarily hide the minis without touching proMode.
 		const settingsSnapshot = get(appSettings);
 		if (!settingsSnapshot.sight?.tourSeen) {
 			tourVisible = true;
+		}
+		if (settingsSnapshot.sight?.proMode) {
+			diagnosticsVisible = true;
 		}
 	});
 
@@ -540,6 +564,15 @@
 	<div class="sight-v6-header">
 		<span class="sight-v6-title">Constellation Sight</span>
 		<span class="sight-v6-subtitle">v6.0 — anchor dome + facets (Phase 1)</span>
+		<!-- §B.10 — tiny "PRO" indicator when persistent Pro mode is on
+		     (Cmd-Shift-D toggles). Per Concept Paper §11 invariant 9 (no
+		     persistent toggle bars), this is informational only — clicking
+		     it doesn't toggle. Cmd-Shift-D is the toggle. -->
+		{#if $appSettings.sight?.proMode}
+			<span class="sight-v6-pro-badge" title="Pro mode is ON — minis default-visible on every Sight open. Cmd-Shift-D to toggle.">
+				PRO
+			</span>
+		{/if}
 		<!-- §B.7-fix-1 (Eisa cycle-1 Stage 1 ask: "we need to add a
 		     count of affected notes when shift-clicking"): when any
 		     facet filter is active, show the filtered/total count in
@@ -717,6 +750,23 @@
 	.sight-v6-subtitle {
 		font-size: 11px;
 		color: #5a6275;
+	}
+
+	/* §B.10 — Pro mode indicator. Tiny gold-on-dark tag immediately
+	   right of the subtitle. Not a button — Cmd-Shift-D is the toggle. */
+	.sight-v6-pro-badge {
+		display: inline-flex;
+		align-items: center;
+		padding: 2px 7px;
+		font-size: 9px;
+		font-weight: 600;
+		letter-spacing: 0.6px;
+		color: #fbbf24;
+		background: rgba(251, 191, 36, 0.10);
+		border: 1px solid rgba(251, 191, 36, 0.45);
+		border-radius: 3px;
+		cursor: help;
+		font-variant: small-caps;
 	}
 
 	/* §B.7-fix-1 — filter affected-count badge. Shows X/Y notes when
