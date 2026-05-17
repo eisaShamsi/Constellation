@@ -45,9 +45,9 @@
 	import FacetSidebar from './facetSidebar.svelte';
 	import Tour from './tour.svelte';
 	import MiniDome from './MiniDome.svelte';
-	import RegisterChip from './registerChip.svelte';
-	import { getRegisterById } from './registers';
-	import type { LayoutCacheRow, LinkEdge, StarDerived, FacetId, MiniDomeChannel, SlotChannel, RegisterId } from './types';
+	import TraditionChip from './traditionChip.svelte';
+	import { getTraditionById } from './traditions';
+	import type { LayoutCacheRow, LinkEdge, StarDerived, FacetId, MiniDomeChannel, SlotChannel, TraditionId } from './types';
 
 	let { onOpenNote = (_path: string, _libraryName: string) => {} }: {
 		onOpenNote?: (path: string, libraryName: string) => void;
@@ -86,20 +86,20 @@
 	let links = $state<LinkEdge[]>([]);
 	// §C.3-fix-1 (Eisa cycle-1 Stage 3 FAIL: "The Provenance is the same
 	// as before, yet the other three are similar to the anchor dome"):
-	// register isolation per Concept Paper §11 invariant 6 requires that
-	// mini-domes NEVER inherit the anchor's register-remapped positions.
+	// tradition isolation per Concept Paper §11 invariant 6 requires that
+	// mini-domes NEVER inherit the anchor's tradition-remapped positions.
 	// Provenance was fine because it self-positions into 5 angle sectors;
 	// Confidence / Stage / Acts read the anchor `stars` array directly
 	// (they only recolor / resize / fade in place), so they were
 	// inheriting pramāṇa's NE-quadrant pile-up.
-	//   - `stars`        — register-REMAPPED positions, used by anchor.
+	//   - `stars`        — tradition-REMAPPED positions, used by anchor.
 	//                       For Aristotelian == default Aristotelian.
 	//                       For pramāṇa / masādir / Polanyi / etc.
-	//                       == register.remapStarPosition(...).
+	//                       == tradition.remapStarPosition(...).
 	//   - `starsDefault` — ALWAYS default Aristotelian positions,
-	//                       used by mini-domes. Register-agnostic so the
+	//                       used by mini-domes. Tradition-agnostic so the
 	//                       4 minis stay culturally neutral regardless
-	//                       of which register the chip is on.
+	//                       of which tradition the chip is on.
 	// Linked brushing (hover anchor → highlight mini, hover mini →
 	// highlight anchor) works via notePath lookup which both arrays
 	// share, so brushing crosses cleanly between the two coordinate
@@ -188,16 +188,16 @@
 		return count > threshold;
 	});
 
-	// §C.4 — extension chips from the active register. masādir is the
-	// only register that ships extensionChips in Phase 3 (4 supplementary
+	// §C.4 — extension chips from the active tradition. masādir is the
+	// only tradition that ships extensionChips in Phase 3 (4 supplementary
 	// sources per Concept Paper §4.1.3: istiḥsān, istiṣḥāb, maṣlaḥa
 	// mursalah, ʿurf). The chip row renders as a positioned-absolute
 	// HTML overlay below the anchor canvas (see template). Returns null
-	// when no register is active or the active register has no extension
+	// when no tradition is active or the active tradition has no extension
 	// chips → conditional render is suppressed entirely.
-	const registerExtensionChips = $derived.by((): string[] | null => {
-		const reg = getRegisterById(
-			$appSettings.sight?.activeRegister as RegisterId | undefined,
+	const traditionExtensionChips = $derived.by((): string[] | null => {
+		const reg = getTraditionById(
+			$appSettings.sight?.activeTradition as TraditionId | undefined,
 		);
 		if (!reg?.extensionChips) return null;
 		const chips = reg.extensionChips();
@@ -246,14 +246,14 @@
 		const visibleLinks = links.filter(
 			(l) => visiblePaths.has(l.sourcePath) && visiblePaths.has(l.targetPath),
 		);
-		// §C.3 — pass the active register so renderAnchorDome can draw
-		// the register's sector dividers + labels (e.g., pramāṇa's 4
+		// §C.3 — pass the active tradition so renderAnchorDome can draw
+		// the tradition's sector dividers + labels (e.g., pramāṇa's 4
 		// quadrant lines + wedge labels). Star positions themselves are
 		// already remapped at recomputeStars time (§C.2). For Aristotelian
 		// and Polanyi this is a no-op — sectorDividers is undefined on
 		// those modules.
-		const activeRegister = getRegisterById(
-			$appSettings.sight?.activeRegister as RegisterId | undefined,
+		const activeTradition = getTraditionById(
+			$appSettings.sight?.activeTradition as TraditionId | undefined,
 		);
 		renderAnchorDome(ctx, stars, visibleLinks, canvasWidth, canvasHeight, {
 			locale: navigator.language ?? 'en',
@@ -261,7 +261,7 @@
 			zoomScale: zoomScale,
 			matchedPaths,
 			densityMode,
-			register: activeRegister,
+			tradition: activeTradition,
 		});
 	}
 
@@ -292,30 +292,30 @@
 		}
 		const layout = computeDomeLayout(canvasWidth, canvasHeight);
 		// §C.3-fix-1 — compute TWO star arrays so mini-domes stay
-		// register-agnostic per Concept Paper §11 invariant 6.
+		// tradition-agnostic per Concept Paper §11 invariant 6.
 		//
-		// `starsDefault` (no register arg → null → default Aristotelian
+		// `starsDefault` (no tradition arg → null → default Aristotelian
 		// positions) is consumed by the 4 mini-dome instances. Result:
 		// Confidence / Stage / Acts / Provenance always show the full-
-		// circle stratum × time arrangement regardless of which register
+		// circle stratum × time arrangement regardless of which tradition
 		// the chip is on.
 		//
-		// `stars` (with the active register) is consumed by the anchor.
+		// `stars` (with the active tradition) is consumed by the anchor.
 		// For Aristotelian → identity → same as starsDefault. For
 		// pramāṇa / masādir / Polanyi / Ishrāqī / Mohist sān biǎo (as
-		// each module ships) → register.remapStarPosition rearranges
-		// stars into the register's geometric vocabulary.
+		// each module ships) → tradition.remapStarPosition rearranges
+		// stars into the tradition's geometric vocabulary.
 		//
 		// Linked brushing crosses cleanly: hoveredPath is the notePath
 		// string which both arrays share; the gold-ring highlight in
 		// each surface lands at that surface's own coordinate for the
 		// matching row.
-		const activeRegister = getRegisterById(
-			$appSettings.sight?.activeRegister as RegisterId | undefined,
+		const activeTradition = getTraditionById(
+			$appSettings.sight?.activeTradition as TraditionId | undefined,
 		);
 		starsDefault = computeStarPositions(rows, layout.centerX, layout.centerY, layout.radius);
-		stars = activeRegister
-			? computeStarPositions(rows, layout.centerX, layout.centerY, layout.radius, activeRegister)
+		stars = activeTradition
+			? computeStarPositions(rows, layout.centerX, layout.centerY, layout.radius, activeTradition)
 			: starsDefault;
 	}
 
@@ -663,11 +663,11 @@
 		untrack(() => paint());
 	});
 
-	// §C.2 — recompute + repaint when the active epistemic register
-	// changes. Reads $appSettings.sight.activeRegister so this effect
-	// re-fires whenever registerChip.svelte writes a new id. The
+	// §C.2 — recompute + repaint when the active epistemic tradition
+	// changes. Reads $appSettings.sight.activeTradition so this effect
+	// re-fires whenever traditionChip.svelte writes a new id. The
 	// recompute is necessary because each star's (x, y) is now a
-	// function of the register's remapStarPosition; with Aristotelian
+	// function of the tradition's remapStarPosition; with Aristotelian
 	// active the values are identical to default so this is a no-op
 	// repaint, but for pramāṇa / masādir / Polanyi / Ishrāqī / Mohist
 	// (once their modules ship) the stars actually move into new
@@ -676,7 +676,7 @@
 	// `void` of the optional chain short-circuits cleanly when
 	// $appSettings.sight is undefined (very-early-boot edge case).
 	$effect(() => {
-		void $appSettings.sight?.activeRegister;
+		void $appSettings.sight?.activeTradition;
 		untrack(() => {
 			recomputeStars();
 			paint();
@@ -688,16 +688,16 @@
 	<div class="sight-v6-header">
 		<span class="sight-v6-title">Constellation Sight</span>
 		<span class="sight-v6-subtitle">v6.2 — Registers (Phase 3)</span>
-		<!-- §C.1 — Register chip. Sits between the subtitle and the
+		<!-- §C.1 — Tradition chip. Sits between the subtitle and the
 		     EXTENDED badge per Concept Paper §2.5. Default state shows
-		     only the active register (collapsed); click to expand the
-		     full 7-chip row. Click any chip → switches activeRegister
-		     (writes to appSettings.sight.activeRegister via the canonical
+		     only the active tradition (collapsed); click to expand the
+		     full 7-chip row. Click any chip → switches activeTradition
+		     (writes to appSettings.sight.activeTradition via the canonical
 		     update+saveSettings pattern; partial-ships §C.8 persistence).
 		     Hover any chip → English secondary label tooltip per §11
-		     invariant. v1-preview registers (Dignāga / Suhrawardi
+		     invariant. v1-preview traditions (Dignāga / Suhrawardi
 		     Ishrāqī / Mohist sān biǎo) carry a "preview" badge per §4.2. -->
-		<RegisterChip />
+		<TraditionChip />
 		<!-- §B.10 — small "EXTENDED" indicator when the persistent
 		     extended-view setting is on (Cmd-Shift-D toggles). Per
 		     Concept Paper §11 invariant 9 (no persistent toggle bars),
@@ -772,7 +772,7 @@
 					</div>
 				{/if}
 				<!-- §C.4 — extension chips overlay. Active for masādir (the
-				     only Phase-3 register with supplementary sources per
+				     only Phase-3 tradition with supplementary sources per
 				     §4.1.3: istiḥsān / istiṣḥāb / maṣlaḥa mursalah / ʿurf).
 				     Position absolute at the bottom-center of the canvas
 				     host so the chip row sits below the dome without
@@ -780,9 +780,9 @@
 				     wrapper so the chips don't intercept dome hover/click;
 				     they are display-only in §C.4 (per-note opt-in via
 				     `masadir_source` frontmatter ships in §C.4-fix-N). -->
-				{#if registerExtensionChips}
+				{#if traditionExtensionChips}
 					<div class="sight-v6-extension-chips" role="list" aria-label="Additional masādir sources">
-						{#each registerExtensionChips as chip (chip)}
+						{#each traditionExtensionChips as chip (chip)}
 							<span class="extension-chip" role="listitem" title="Additional masādir source (display-only in v6.2; per-note opt-in via frontmatter ships in a follow-up)">
 								{chip}
 							</span>
@@ -1058,7 +1058,7 @@
 		font-variant-numeric: tabular-nums;
 	}
 
-	/* §C.4 — extension chips overlay for masādir register. A small
+	/* §C.4 — extension chips overlay for masādir tradition. A small
 	   horizontal row of italic-styled chip badges at the bottom-center
 	   of the canvas-host, ~16 px above the bottom edge. pointer-events
 	   none on the wrapper so the chips don't interfere with anchor dome

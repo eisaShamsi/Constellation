@@ -138,9 +138,9 @@ export interface Facet {
 
 /**
  * Each mini-dome isolates one channel. Per §7 (Western-analytic
- * stipulation), these channel labels are constant across all 7
- * registers in v1 — the register chip remaps the anchor dome's
- * spatial semantics only.
+ * stipulation), these channel labels are constant across all
+ * scholarly traditions in v1 — the tradition chip remaps the
+ * anchor dome's spatial semantics only.
  */
 export type MiniDomeChannel =
 	| 'confidence'
@@ -161,35 +161,40 @@ export type MiniDomeChannel =
 export type SlotChannel = MiniDomeChannel | 'anchor';
 
 // ════════════════════════════════════════════════════════════════════
-// Register chip (Concept Paper §4)
+// Tradition chip (Concept Paper §4 — renamed in MIG-026 Phase 0 / K1)
 // ════════════════════════════════════════════════════════════════════
+//
+// MIG-026 Phase 0 — K1 full rename: "register" → "tradition" throughout
+// (per Eisa's locked Direction A+D and the architect §3.K choice).
+// The historical commit chain still uses "register" in MIG-025-era
+// commits (§C.1-fix-1, §C.4-religious-rule); migration block in
+// store.ts rewrites persisted `activeRegister` → `activeTradition`.
 
 /**
- * The 5 epistemic registers in v1. Aristotelian is default;
- * pramāṇa/masādir/Polanyi are production polish (4.1.x) per Eisa's
- * polish-tiered decision; Mohist is v1-preview labeled, polish
- * target v4.1 per Concept Paper §4.2.
+ * The 5 baseline scholarly traditions shipping in v6.2 (and through
+ * MIG-026 Phase 0 rename). Aristotelian is default; pramāṇa/masādir/
+ * Polanyi are production polish (4.1.x); Mohist is v1-preview, polish
+ * target v4.1 per Concept Paper §4.2. MIG-026 Phases γ–θ add 19 more
+ * to bring the curated baseline to 24 traditions.
  *
- * §C.1-fix-1 (Eisa 2026-05-16): Dignāga register EXCLUDED entirely
+ * §C.1-fix-1 (Eisa 2026-05-16): Dignāga tradition EXCLUDED entirely
  * per Eisa's direction "don't include the 'Dignāga' at all in any
- * of Constellation functions". The 'dignaga' literal is removed
- * from this union.
+ * of Constellation functions". The 'dignaga' literal is not in this
+ * union.
  *
- * §C.4-religious-rule (Eisa 2026-05-16): Suhrawardi Ishrāqī register
- * also EXCLUDED entirely per the new top-principal religious-lineage
- * rule (see orientation v2.09): non-Abrahamic religious-source frames
- * are out; for Islamic, Sunni-only. The Ishrāqī tradition was
- * overwhelmingly absorbed into Twelver Shīʿī ḥikma (Mulla Sadra,
- * Sabzavari, modern Qom seminary curriculum) and is fundamentally
- * religious-mystical rather than philosophical-epistemological. The
- * 'ishraqi' literal is removed from this union.
+ * §C.4-religious-rule (Eisa 2026-05-16): Suhrawardi Ishrāqī tradition
+ * also EXCLUDED per the top-principal religious-lineage rule
+ * (orientation v2.09): non-Abrahamic religious-source frames are
+ * out; for Islamic, Sunni-only. The 'ishraqi' literal is not in
+ * this union.
  *
- * Settings migrations in store.ts applyParsedSettings rewrite both
- * persisted 'dignaga' and 'ishraqi' values back to 'aristotelian'.
- * Concept Paper §4.2.1 (Dignāga) and §4.2.2 (Ishrāqī) both carry
- * EXCLUDED notes; Plan §D.1 and §D.2 both carry SUPERSEDED notes.
+ * Settings migrations in store.ts applyParsedSettings rewrite
+ * persisted 'dignaga' and 'ishraqi' values back to 'aristotelian'
+ * (plus the MIG-026 Phase 0 rename block rewrites 'activeRegister'
+ * → 'activeTradition'). Concept Paper §4.2.1 (Dignāga) and §4.2.2
+ * (Ishrāqī) carry EXCLUDED notes.
  */
-export type RegisterId =
+export type TraditionId =
 	| 'aristotelian'
 	| 'pramana'
 	| 'masadir'
@@ -197,27 +202,27 @@ export type RegisterId =
 	| 'mohist-san-biao';
 
 // ════════════════════════════════════════════════════════════════════
-// Register module contract (Concept Paper §4 + Plan §C.2)
+// Tradition module contract (Concept Paper §4 + Plan §C.2)
 // ════════════════════════════════════════════════════════════════════
 
 /**
- * Dome layout passed to register callbacks — centerX/centerY are the
+ * Dome layout passed to tradition callbacks — centerX/centerY are the
  * pixel center of the anchor dome in world-space (un-zoomed), radius
  * is the outer-rim radius. Same shape as anchor.DomeLayout but
- * referenced here to keep registers/* free of upstream imports.
+ * referenced here to keep traditions/* free of upstream imports.
  */
-export interface RegisterLayout {
+export interface TraditionLayout {
 	centerX: number;
 	centerY: number;
 	radius: number;
 }
 
 /**
- * Optional sector divider stroke spec returned by a register module's
+ * Optional sector divider stroke spec returned by a tradition module's
  * sectorDividers() callback. Used by pramāṇa (4 quadrants, §C.3),
  * masādir (4 sectors, §C.4), etc. For Aristotelian (§C.2) the
  * dividers are absent — the 5 concentric stratum bands are the visual
- * structure, drawn by dome.ts not by the register.
+ * structure, drawn by dome.ts not by the tradition.
  *
  * Angles are in canvas math convention: 0 = EAST, increases clockwise
  * (since canvas y-axis is inverted), measured in radians.
@@ -229,26 +234,31 @@ export interface SectorSpec {
 }
 
 /**
- * Register module contract — each of the 6 epistemic registers
- * (aristotelian, pramana, masadir, polanyi, ishraqi, mohist-san-biao)
- * exports one of these via `src/lib/sight/v6/registers/<id>.ts`.
+ * Tradition module contract — each of the curated baseline traditions
+ * exports one of these via `src/lib/sight/v6/traditions/<id>.ts`.
  *
- * Per Concept Paper §4.3 + §7 + §11 invariant 6: registers remap the
+ * Per Concept Paper §4.3 + §7 + §11 invariant 6: traditions remap the
  * anchor dome's spatial semantics ONLY; mini-domes stay culturally
  * neutral. This is the architectural commitment that prevents
  * rhetorical pluralism — see the mini-dome stipulation in §7.
  *
- * MIG-025 §C.2 ships the module pattern + aristotelian (identity
- * remap). §C.3 ships pramāṇa; §C.4 masādir; §C.5 Polanyi; §D.2
- * Suhrawardi Ishrāqī; §D.3 Mohist sān biǎo.
+ * MIG-025 §C.2 shipped the module pattern + aristotelian (identity
+ * remap). §C.3 shipped pramāṇa; §C.4 masādir. MIG-026 Phase γ
+ * adds Polanyi + Mohist sān biǎo; Phases δ–θ add the 19 new
+ * traditions to bring the curated baseline to 24.
+ *
+ * MIG-026 Phase α extends this interface with `shape` discriminator
+ * + shape-specific spec fields (RingSpec, LadderSpec, RelationalSpec,
+ * CyclicFlowSpec, BinaryFlowSpec, GradientSpec, HorizontalBandsSpec).
+ * Phase 0 (this rename) preserves the existing interface unchanged.
  */
-export interface RegisterModule {
-	id: RegisterId;
-	/** English brand label (matches the chip label in registerChip.svelte). */
+export interface TraditionModule {
+	id: TraditionId;
+	/** English brand label (matches the chip label in traditionChip.svelte). */
 	name: string;
 	/**
 	 * Given a star's row data and its default Aristotelian position,
-	 * return the position under this register. For Aristotelian, this
+	 * return the position under this tradition. For Aristotelian, this
 	 * is identity. For pramāṇa, this redistributes to 4 quadrants by
 	 * row.pramana_kind frontmatter field (§C.3). Etc.
 	 *
@@ -260,20 +270,20 @@ export interface RegisterModule {
 	remapStarPosition(
 		row: LayoutCacheRow,
 		defaultPos: { x: number; y: number },
-		layout: RegisterLayout,
+		layout: TraditionLayout,
 	): { x: number; y: number };
 	/**
 	 * Optional sector divider strokes to draw on the anchor under this
-	 * register (e.g., pramāṇa's 4 quadrant dividers in §C.3). Called
+	 * tradition (e.g., pramāṇa's 4 quadrant dividers in §C.3). Called
 	 * once per paint with the current layout. Return [] or omit for
-	 * registers with no sector structure (Aristotelian, Polanyi).
+	 * traditions with no sector structure (Aristotelian, Polanyi).
 	 */
-	sectorDividers?: (layout: RegisterLayout) => SectorSpec[];
+	sectorDividers?: (layout: TraditionLayout) => SectorSpec[];
 	/**
 	 * Optional extension chips rendered below the anchor dome (e.g.,
 	 * masādir's 4 supplementary sources: istiḥsān, istiṣḥāb, maṣlaḥa
 	 * mursalah, ʿurf, per Concept Paper §4.1.3). These are visual
-	 * reminders that the register's full epistemic vocabulary includes
+	 * reminders that the tradition's full epistemic vocabulary includes
 	 * supplementary categories beyond the 4 main sectors — not
 	 * separate dome regions, but additional categories the user can
 	 * tag notes with (post-§C.4-fix-N when Rust-side extraction lands).
@@ -281,8 +291,8 @@ export interface RegisterModule {
 	 * Return an array of plain string labels (kept English/transliterated
 	 * per the brand convention). The SightV6 host renders them as a row
 	 * of small HTML badges below the anchor canvas. Omit (or return [])
-	 * for registers with no extension category — Aristotelian, pramāṇa,
-	 * Polanyi, Ishrāqī, Mohist sān biǎo all omit this.
+	 * for traditions with no extension category — Aristotelian, pramāṇa,
+	 * Polanyi, Mohist sān biǎo all omit this.
 	 */
 	extensionChips?: () => string[];
 }
@@ -298,13 +308,13 @@ export interface RegisterModule {
  */
 export type GestureEvent =
 	| { kind: 'expand-sidebar' }
-	| { kind: 'expand-register-chip' }
+	| { kind: 'expand-tradition-chip' }
 	| { kind: 'show-diagnostics' }              // Cmd-D / button
 	| { kind: 'pro-mode-toggle' }                // Cmd-Shift-D persistent
 	| { kind: 'isolate-stratum'; stratum: number }
 	| { kind: 'filter-facet'; facet: FacetId; categoryId: string }
 	| { kind: 'filter-mini-dome-category'; channel: MiniDomeChannel; categoryId: string }
-	| { kind: 'select-register'; register: RegisterId }
+	| { kind: 'select-tradition'; tradition: TraditionId }
 	| { kind: 'hover-star'; notePath: string | null }
 	| { kind: 'click-star'; notePath: string }
 	| { kind: 'reset' }                          // Esc

@@ -31,7 +31,7 @@ import type {
 	ProvenanceSector,
 	TypedLinkKind,
 	LifecycleStage,
-	RegisterModule,
+	TraditionModule,
 	SectorSpec,
 } from './types';
 import {
@@ -100,18 +100,19 @@ export function computeStarPositions(
 	centerX: number,
 	centerY: number,
 	outerRadius: number,
-	// §C.2 — active epistemic register. When provided, the default
+	// §C.2 — active scholarly tradition. When provided, the default
 	// Aristotelian position (computed below) is passed through
-	// `register.remapStarPosition(row, defaultPos, layout)` before
+	// `tradition.remapStarPosition(row, defaultPos, layout)` before
 	// being stored. For Aristotelian this is identity (no change);
-	// for pramāṇa (§C.3) / masādir (§C.4) / Polanyi (§C.5) etc.,
-	// the remap moves the star into the register's geometric
+	// for pramāṇa (§C.3) / masādir (§C.4) / Polanyi (Phase γ) etc.,
+	// the remap moves the star into the tradition's geometric
 	// vocabulary (quadrants / sectors / fog gradient). Optional so
-	// existing callers and tests that don't yet pass a register
+	// existing callers and tests that don't yet pass a tradition
 	// continue to render in default Aristotelian. Per Concept Paper
-	// §11 invariant 6: register remap affects the anchor ONLY —
+	// §11 invariant 6: tradition remap affects the anchor ONLY —
 	// mini-domes never see this parameter.
-	register?: RegisterModule | null,
+	// MIG-026 Phase 0 — K1 rename: "tradition" → "tradition" throughout.
+	tradition?: TraditionModule | null,
 ): StarDerived[] {
 	if (rows.length === 0) return [];
 
@@ -119,10 +120,10 @@ export function computeStarPositions(
 	const libraryOrder = uniqueSortedLibraries(rows);
 	const top10thLinkCount = topDecileLinkCount(rows);
 
-	// §C.2 — pre-build the layout payload passed to the register's
+	// §C.2 — pre-build the layout payload passed to the tradition's
 	// remap callback. Same shape as DomeLayout but plain object so
-	// registers don't need to import anchor.ts.
-	const registerLayout = { centerX, centerY, radius: outerRadius };
+	// traditions don't need to import anchor.ts.
+	const traditionLayout = { centerX, centerY, radius: outerRadius };
 
 	const out: StarDerived[] = [];
 	for (const row of rows) {
@@ -152,15 +153,15 @@ export function computeStarPositions(
 		const defaultX = centerX + Math.cos(angle) * radial;
 		const defaultY = centerY + Math.sin(angle) * radial;
 
-		// §C.2 — apply active register's remap. For Aristotelian this
+		// §C.2 — apply active tradition's remap. For Aristotelian this
 		// returns the input unchanged (identity remap). For other
-		// registers (§C.3+), this redistributes the star into the
-		// register's geometric vocabulary. When `register` is null/
-		// undefined (e.g., chip-selected register has no module shipped
+		// traditions (§C.3+), this redistributes the star into the
+		// tradition's geometric vocabulary. When `tradition` is null/
+		// undefined (e.g., chip-selected tradition has no module shipped
 		// yet, or test caller didn't pass one), we fall back to the
 		// default Aristotelian position.
-		const remapped = register
-			? register.remapStarPosition(row, { x: defaultX, y: defaultY }, registerLayout)
+		const remapped = tradition
+			? tradition.remapStarPosition(row, { x: defaultX, y: defaultY }, traditionLayout)
 			: { x: defaultX, y: defaultY };
 
 		out.push({
@@ -223,14 +224,14 @@ function provenanceSectorOf(sourcesPrimary: string | null): ProvenanceSector | n
 	return 'Self';
 }
 
-/** §C.3 — Draw register-supplied sector dividers + wedge labels onto
- *  the anchor. Called once per paint with the active register's
+/** §C.3 — Draw tradition-supplied sector dividers + wedge labels onto
+ *  the anchor. Called once per paint with the active tradition's
  *  computed SectorSpec[]. For each sector, draws a stroke from the
  *  dome center to `angleStart` at the outer rim, then places `label`
  *  (if present) at the wedge midpoint at 88% of outer radius.
  *
  *  The angle convention is canvas math: 0 = east, increases clockwise
- *  (canvas y inverted). Per-register modules in `registers/` produce
+ *  (canvas y inverted). Per-tradition modules in `traditions/` produce
  *  SectorSpec[] in this convention. */
 function drawSectorDividers(
 	ctx: CanvasRenderingContext2D,
@@ -305,14 +306,14 @@ export function renderAnchorDome(
 		zoomScale?: number;
 		matchedPaths?: Set<string> | null;
 		densityMode?: boolean;
-		// §C.2 — active epistemic register. When provided, the register's
+		// §C.2 — active epistemic tradition. When provided, the tradition's
 		// optional `sectorDividers(layout)` callback is invoked and its
 		// returned SectorSpec[] is drawn as quadrant/sector boundary
 		// strokes + center-of-wedge labels. For Aristotelian and Polanyi
-		// this is absent (no register-drawn dividers). For pramāṇa
+		// this is absent (no tradition-drawn dividers). For pramāṇa
 		// (§C.3) and masādir (§C.4) this is 4 sectors. Star positions
 		// themselves are remapped in computeStarPositions, not here.
-		register?: RegisterModule | null;
+		tradition?: TraditionModule | null;
 	} = {},
 ): void {
 	const {
@@ -322,7 +323,7 @@ export function renderAnchorDome(
 		zoomScale = 1,
 		matchedPaths = null,
 		densityMode: _densityMode = false,
-		register = null,
+		tradition = null,
 	} = options;
 	// §B.9 — densityMode accepted for API symmetry with renderMiniDome
 	// but currently unused: the anchor already renders bodies at
@@ -367,21 +368,21 @@ export function renderAnchorDome(
 		ctx.stroke();
 	}
 
-	// 2.5 §C.3 — Register-supplied sector dividers + labels.
+	// 2.5 §C.3 — Tradition-supplied sector dividers + labels.
 	//      Drawn AFTER strata circles so dividers visibly cross the
 	//      rings; drawn BEFORE the calendar rim and stratum labels so
 	//      those text labels stay on top and remain legible. For
-	//      registers without sector structure (Aristotelian, Polanyi)
+	//      traditions without sector structure (Aristotelian, Polanyi)
 	//      this is a no-op — sectorDividers is undefined and the if
 	//      branch short-circuits. For pramāṇa (§C.3) the result is
 	//      4 quadrant lines + 4 wedge-center labels (pratyakṣa, anumāna,
 	//      upamāna, śabda); for masādir (§C.4) the same shape with
 	//      different labels (Qur'an, sunnah, ijmāʿ, qiyās).
-	if (register?.sectorDividers) {
+	if (tradition?.sectorDividers) {
 		drawSectorDividers(
 			ctx,
 			layout,
-			register.sectorDividers({
+			tradition.sectorDividers({
 				centerX: layout.centerX,
 				centerY: layout.centerY,
 				radius: layout.radius,

@@ -45,14 +45,14 @@ The reference image — the Al-Suwaidi northern-hemisphere star chart Eisa surfa
 
 | Aspect | v3.1 / Sight v5 | v4.0 / Sight v6 |
 |---|---|---|
-| Architecture | Seven-mode toggle bar (R · L · T · C · S · A · P) showing 1/7 of the cognitive portrait at any moment | Coordinated views: anchor dome + 4 mini-domes + facet sidebar + register chip |
+| Architecture | Seven-mode toggle bar (R · L · T · C · S · A · P) showing 1/7 of the cognitive portrait at any moment | Coordinated views: anchor dome + 4 mini-domes + facet sidebar + tradition chip |
 | First-touch story | User had to mentally compose seven mode-switches into a portrait | Whole story visible at one glance via the anchor dome; diagnostics one gesture away |
-| Cultural framing | Implicit Western-classical (Aristotelian stratification) | Seven explicit epistemic registers (Aristotelian default + 6 others); register chip on title bar |
+| Cultural framing | Implicit Western-classical (Aristotelian stratification) | Seven explicit epistemic traditions (Aristotelian default + 6 others); tradition chip on title bar |
 | Channel encoding | Five lens channels stacked on one star with three confound pairs | Six pre-attentive channels + one focal + two deferred, no confounds, Bertin-clean |
 | Library identity | Color tint (saturation gradient) | Shape only with neutral fill (`#cdd5e0`); color reserved for stage hue and link-type hue |
 | Toggle/control bar | Persistent 7-mode bar | No persistent control bar; gestures replace toggles |
 | Provenance | Encoded on every star (outer ring color) | Off the always-on star; available via facet sidebar + dedicated provenance mini-dome |
-| Default chrome | All-on | **Default-simple**: anchor dome + collapsed sidebar + collapsed register chip + "Show diagnostics" affordance. Pro-mode opt-in |
+| Default chrome | All-on | **Default-simple**: anchor dome + collapsed sidebar + collapsed tradition chip + "Show diagnostics" affordance. Pro-mode opt-in |
 
 The honest read of why v3.1 needed to be superseded: v5 passed every capability test but failed the outcome test (Eisa's 2026-05-13 verdict: *"Looking at the modes, it is confusing! Again, what is Sight telling? What is unique about Sight? NOTHING!"*). The redesign exists because the seven-mode toggle architecture, however well executed, does not satisfy the Suwaidi criterion.
 
@@ -65,7 +65,7 @@ The honest read of why v3.1 needed to be superseded: v5 passed every capability 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │  Constellation Sight                                                          │
-│  [Aristotelian ●]  (collapsed register chip — click to expand)                │  ← title bar
+│  [Aristotelian ●]  (collapsed tradition chip — click to expand)                │  ← title bar
 ├────────────┬──────────────────────────────────┬──────────────────────────────┤
 │            │                                  │  ┌──────────┐  ┌──────────┐  │
 │  Filters   │                                  │  │ CONFID.  │  │  STAGE   │  │
@@ -83,11 +83,11 @@ The honest read of why v3.1 needed to be superseded: v5 passed every capability 
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
-**Default state on first open: only the anchor dome is visible.** Sidebar collapsed to a tab. Register chip collapsed to a single label. Mini-domes hidden. This is the Suwaidi-grade view that satisfies §1.2.
+**Default state on first open: only the anchor dome is visible.** Sidebar collapsed to a tab. Tradition chip collapsed to a single label. Mini-domes hidden. This is the Suwaidi-grade view that satisfies §1.2.
 
 **Engaged state**: any of three gestures expand chrome:
 - Click sidebar tab → facets unfold (full sidebar visible)
-- Click register chip label → register options expand inline
+- Click tradition chip label → tradition options expand inline
 - Cmd-D or "Show diagnostics" button → four mini-domes slide in from the right
 
 ### 2.2 The anchor dome (left-center, ~640×640 px target render)
@@ -182,18 +182,18 @@ Each facet category is clickable. Click → all views filter, counts in OTHER fa
 
 **Folder is the top facet** because round-2 and round-3 LIS critique flagged it as missing from v0.2; v6 surfaces it.
 
-**Universe** is implicit (the canvas = current Universe). For federated cUniverse view, a Universe selector chip will appear next to the register chip in v4.1.
+**Universe** is implicit (the canvas = current Universe). For federated cUniverse view, a Universe selector chip will appear next to the tradition chip in v4.1.
 
-### 2.5 The register chip (title bar)
+### 2.5 The tradition chip (title bar)
 
-The cross-civilizational lens. Seven epistemic registers, each remaps the anchor dome's semantic axes. **Applies to anchor dome only**; mini-domes stay culturally neutral (see §7).
+The cross-civilizational lens. Seven epistemic traditions, each remaps the anchor dome's semantic axes. **Applies to anchor dome only**; mini-domes stay culturally neutral (see §7).
 
-**Default state**: collapsed, shows current active register only (e.g., `Aristotelian ●`).
+**Default state**: collapsed, shows current active tradition only (e.g., `Aristotelian ●`).
 **Engaged state**: click to expand the full chip row showing all 7 options.
-**Active register highlight**: blue stroke + dot indicator.
+**Active tradition highlight**: blue stroke + dot indicator.
 **Hover any chip**: English secondary label appears as tooltip (e.g., *"pramāṇa — Nyāya fourfold valid means of knowing"*) — this is mandatory in v6 (round-3 UX SME Condition #9).
 
-The seven registers and their geometries are specified in §4.
+The seven traditions and their geometries are specified in §4.
 
 ---
 
@@ -269,11 +269,11 @@ Two uses of hue (Stage + Link line) co-render on the anchor dome but in spatiall
 
 ---
 
-## §4 — The seven registers (v1 scope, polish-tiered)
+## §4 — The seven traditions (v1 scope, polish-tiered)
 
-All 7 registers ship in Sight v6.0. Four at **production polish**, three at **v1 preview** with explicit "polish in v4.1" labeling.
+All 7 traditions ship in Sight v6.0. Four at **production polish**, three at **v1 preview** with explicit "polish in v4.1" labeling.
 
-### 4.1 Production polish (4 registers, v1 ship-ready)
+### 4.1 Production polish (4 traditions, v1 ship-ready)
 
 #### 4.1.1 Aristotelian (default)
 
@@ -303,13 +303,13 @@ All 7 registers ship in Sight v6.0. Four at **production polish**, three at **v1
 **Citation**: Polanyi, *Personal Knowledge* (1958), ch. 4; *The Tacit Dimension* (1966), p. 10 ("we can know more than we can tell").
 **Why inversion from v0.2 matters**: v0.2 had fog dense at edges, which inverts Polanyi's actual argument. v6 fixes this.
 
-### 4.2 v1 preview, v4.1 polish target (1 register, originally 3 — Dignāga + Ishrāqī excluded by product decision)
+### 4.2 v1 preview, v4.1 polish target (1 tradition, originally 3 — Dignāga + Ishrāqī excluded by product decision)
 
 These ship fully functional in v6.2 but with explicit "v1 preview" labeling on the chip + tooltip. Geometry implemented; deeper internal structure deferred.
 
 #### 4.2.1 Dignāga — **EXCLUDED in v6 (Eisa 2026-05-16, §C.1-fix-1)**
 
-> **Status**: NOT shipping in Constellation. Per Eisa's direction during §C.1 Stage 2 Boss-test review of the register chip: "don't include the 'Dignāga' at all in any of Constellation functions." The Dignāga register is permanently excluded — no chip option, no register module, no manifest. The 'dignaga' literal is removed from the RegisterId type union; Plan §D.1 carries a matching SUPERSEDED note; a settings migration rewrites any persisted `activeRegister: 'dignaga'` back to `'aristotelian'`. The §4.2.1 specification below is preserved as scholarly background but is no longer a build target.
+> **Status**: NOT shipping in Constellation. Per Eisa's direction during §C.1 Stage 2 Boss-test review of the tradition chip: "don't include the 'Dignāga' at all in any of Constellation functions." The Dignāga tradition is permanently excluded — no chip option, no tradition module, no manifest. The 'dignaga' literal is removed from the TraditionId type union; Plan §D.1 carries a matching SUPERSEDED note; a settings migration rewrites any persisted `activeTradition: 'dignaga'` back to `'aristotelian'`. The §4.2.1 specification below is preserved as scholarly background but is no longer a build target.
 
 *Original spec (preserved for academic reference, not for build):*
 
@@ -320,7 +320,7 @@ These ship fully functional in v6.2 but with explicit "v1 preview" labeling on t
 
 #### 4.2.2 Suhrawardi Ishrāqī — **EXCLUDED in v6 (Eisa 2026-05-16, §C.4-religious-rule)**
 
-> **Status**: NOT shipping in Constellation. Per the new top-principal religious-lineage rule (orientation v2.09): "when dealing with religious references, no non-Abrahamic; for Islamic, Sunni only." The Ishrāqī tradition was overwhelmingly absorbed into Twelver Shīʿī ḥikma (Mulla Sadra, Sabzavari, modern Qom seminary curriculum), failing the Sunni-only restriction. Independently, it is fundamentally religious-mystical theology (ʿilm ḥuḍūrī, mystical presence-knowledge) rather than philosophical-epistemological scholarship. No chip option, no register module, no manifest. The 'ishraqi' literal is removed from RegisterId; Plan §D.2 carries a matching SUPERSEDED note; a settings migration rewrites any persisted `activeRegister: 'ishraqi'` back to `'aristotelian'`. The §4.2.2 specification below is preserved as scholarly background but is no longer a build target.
+> **Status**: NOT shipping in Constellation. Per the new top-principal religious-lineage rule (orientation v2.09): "when dealing with religious references, no non-Abrahamic; for Islamic, Sunni only." The Ishrāqī tradition was overwhelmingly absorbed into Twelver Shīʿī ḥikma (Mulla Sadra, Sabzavari, modern Qom seminary curriculum), failing the Sunni-only restriction. Independently, it is fundamentally religious-mystical theology (ʿilm ḥuḍūrī, mystical presence-knowledge) rather than philosophical-epistemological scholarship. No chip option, no tradition module, no manifest. The 'ishraqi' literal is removed from TraditionId; Plan §D.2 carries a matching SUPERSEDED note; a settings migration rewrites any persisted `activeTradition: 'ishraqi'` back to `'aristotelian'`. The §4.2.2 specification below is preserved as scholarly background but is no longer a build target.
 
 *Original spec (preserved for academic reference, not for build):*
 
@@ -332,17 +332,17 @@ These ship fully functional in v6.2 but with explicit "v1 preview" labeling on t
 #### 4.2.3 Mohist sān biǎo 三表
 
 **Geometry**: three horizontal zones (not radial): historical precedent (top, 本 root), observational evidence (middle, 原 origin), social benefit (bottom, 用 use). Angular = time *across* zones (chronology orthogonal to standards).
-**Cultural framing**: early Chinese pragmatist register; the three standards are *tests* of doctrines, not a time-ordering.
+**Cultural framing**: early Chinese pragmatist tradition; the three standards are *tests* of doctrines, not a time-ordering.
 **Citation**: *Mozi* "Fei Ming" 非命 ch. 35; Lloyd, *Disciplines in the Making* (2009), ch. 4.
 **v4.1 polish**: cross-reference each zone with named application examples; differentiate sān biǎo's role from sān fa 三法 (three methods).
 
-### 4.3 Register chip behavior
+### 4.3 Tradition chip behavior
 
-**Switching a register**: only the anchor dome's spatial semantics change. Mini-domes, facet sidebar, and gesture grammar are unchanged. The user's current filters (from sidebar or mini-dome clicks) remain applied.
+**Switching a tradition**: only the anchor dome's spatial semantics change. Mini-domes, facet sidebar, and gesture grammar are unchanged. The user's current filters (from sidebar or mini-dome clicks) remain applied.
 
-**Highlighted-star behavior during register switch** (Info Design SME Condition, round 3): when a star is highlighted via linked brushing and the user switches register, the star's *anchor-dome position* changes (it now sits in a different quadrant or zone) but its *mini-dome positions* remain. v6 animates the anchor-dome position transition over 400ms so the user can track where the star moved (v4.1 polish; v6 v6.0 ships with instant snap + a brief flash to maintain identity).
+**Highlighted-star behavior during tradition switch** (Info Design SME Condition, round 3): when a star is highlighted via linked brushing and the user switches tradition, the star's *anchor-dome position* changes (it now sits in a different quadrant or zone) but its *mini-dome positions* remain. v6 animates the anchor-dome position transition over 400ms so the user can track where the star moved (v4.1 polish; v6 v6.0 ships with instant snap + a brief flash to maintain identity).
 
-**Register definitions** as version-controlled manifest (LIS SME Condition, round 3): each register defined in `docs/registers/<id>.md` with schema `{id, name, citation, geometry_spec, sectors, exclusions, extensions, version, changelog}`. Citation surfaced via "ⓘ" affordance on the chip.
+**Tradition definitions** as version-controlled manifest (LIS SME Condition, round 3): each tradition defined in `docs/traditions/<id>.md` with schema `{id, name, citation, geometry_spec, sectors, exclusions, extensions, version, changelog}`. Citation surfaced via "ⓘ" affordance on the chip.
 
 ---
 
@@ -353,7 +353,7 @@ Sight has no persistent toggle controls. All interaction is through gestures.
 | Gesture | Effect | Default state vs Engaged state |
 |---|---|---|
 | Click sidebar tab "Filters ▶" | Expand facet sidebar | Triggers Engaged |
-| Click "Aristotelian ●" label in title | Expand register chip row | Triggers Engaged |
+| Click "Aristotelian ●" label in title | Expand tradition chip row | Triggers Engaged |
 | Cmd-D or click "Show diagnostics" button | Reveal mini-domes (slide in from right) | Triggers Engaged |
 | Click any facet category | Cross-filter all views; facet counts rebalance | — |
 | Click a mini-dome category | Cross-filter all views | — |
@@ -362,8 +362,8 @@ Sight has no persistent toggle controls. All interaction is through gestures.
 | Hover a stratum band | Diagnostic popover (count, confidence avg, stage breakdown, acts %, link density) | — |
 | Hover a star | Side popover with full lens breakdown | — |
 | Click a star | Open note in editor | — |
-| Click a register chip | Re-frame anchor dome's semantic axes | — |
-| Hover a register chip | English tooltip ("pramāṇa — Nyāya fourfold valid means of knowing") | — |
+| Click a tradition chip | Re-frame anchor dome's semantic axes | — |
+| Hover a tradition chip | English tooltip ("pramāṇa — Nyāya fourfold valid means of knowing") | — |
 | Esc | Reset filters, close popovers, collapse expanded chrome back to default | Returns to default |
 | Cmd-F | Search overlay highlights matching stars, dims non-matches | — |
 | Cmd-Shift-D | Toggle Pro mode permanently in Settings (persistent default) | — |
@@ -384,13 +384,13 @@ This is the most important interaction model commitment in v6. It is what makes 
 
 ### 6.1 Default state (first open, every time)
 
-- Anchor dome visible (full canvas devoted to it minus title strip + collapsed sidebar tab + collapsed register label).
+- Anchor dome visible (full canvas devoted to it minus title strip + collapsed sidebar tab + collapsed tradition label).
 - Sidebar collapsed to a tab on the left edge ("Filters ▶" label, 20 px wide).
-- Register chip collapsed to a single label in the title bar (current register name + dot).
+- Tradition chip collapsed to a single label in the title bar (current tradition name + dot).
 - Mini-domes hidden. A subtle "Show diagnostics" link in the top-right corner.
 - Status strip at bottom shows: universe note count + healthy/at-risk/dormant percentages.
 
-Total visible interactive surfaces in default state: **4** (anchor dome + sidebar tab + register label + diagnostics link). This is well below v0.3's full-engaged count of 10.
+Total visible interactive surfaces in default state: **4** (anchor dome + sidebar tab + tradition label + diagnostics link). This is well below v0.3's full-engaged count of 10.
 
 ### 6.2 The Suwaidi-fidelity guarantee
 
@@ -400,7 +400,7 @@ In default state, the anchor dome occupies **≥80% of the visible canvas (exclu
 
 Any single click expands one zone:
 - Click sidebar tab → sidebar slides out to 180 px width, anchor dome compresses to remaining space (anchor still readable).
-- Click register label → register row expands inline at the top.
+- Click tradition label → tradition row expands inline at the top.
 - Click "Show diagnostics" or press Cmd-D → mini-domes slide in from right, anchor dome compresses to ~60% width.
 
 Each expansion is **independent**. The user can engage any subset.
@@ -411,7 +411,7 @@ If the user prefers always-expanded chrome, **Cmd-Shift-D toggles Pro mode** as 
 
 ### 6.5 The fidelity vs. engineering trade
 
-v6 ships every engineered surface (mini-domes, register chip, facet sidebar) — none of this work is wasted. The only thing that changes is **default chrome visibility**. The Suwaidi-grade story-at-glance reads on first open; the user discovers deeper surfaces as they engage. This honors both Eisa's stated outcome criterion AND the panel's verdict that the engineered surface is valuable.
+v6 ships every engineered surface (mini-domes, tradition chip, facet sidebar) — none of this work is wasted. The only thing that changes is **default chrome visibility**. The Suwaidi-grade story-at-glance reads on first open; the user discovers deeper surfaces as they engage. This honors both Eisa's stated outcome criterion AND the panel's verdict that the engineered surface is valuable.
 
 ---
 
@@ -419,11 +419,11 @@ v6 ships every engineered surface (mini-domes, register chip, facet sidebar) —
 
 The four mini-domes encode Confidence, Stage, Acts, and Provenance. These channel names are derived from the analytic-Western tradition (Bayesian confidence; lifecycle staging; activity quantiles; sourcing categories).
 
-**v6 explicitly stipulates**: the mini-dome channel names are **by-stipulation labels for the underlying note metadata**, not claims about the universal structure of knowledge. The metadata fields in the SQLite store (`confidence`, `lifecycle_stage`, `act_density`, `provenance_source`) are what they are regardless of register.
+**v6 explicitly stipulates**: the mini-dome channel names are **by-stipulation labels for the underlying note metadata**, not claims about the universal structure of knowledge. The metadata fields in the SQLite store (`confidence`, `lifecycle_stage`, `act_density`, `provenance_source`) are what they are regardless of tradition.
 
-**The register chip remaps the anchor dome's spatial semantics only**; mini-dome channel labels stay constant across registers in v6.0. This is the architectural commitment that prevents rhetorical pluralism — the cultural framing is honest about what it does and doesn't do.
+**The tradition chip remaps the anchor dome's spatial semantics only**; mini-dome channel labels stay constant across traditions in v6.0. This is the architectural commitment that prevents rhetorical pluralism — the cultural framing is honest about what it does and doesn't do.
 
-**v4.1 enhancement** (deferred): register-aware mini-dome relabeling. When the masādir register is active, the Confidence mini-dome relabels its axis as qaṭʿī/ẓannī; the Provenance mini-dome relabels sectors as the four uṣūl sources. When Dignāga is active, the Provenance mini-dome collapses to two sectors (pratyakṣa, anumāna). This is purely relabeling — the underlying metadata is unchanged. Estimated cost: ~3 weeks engineering.
+**v4.1 enhancement** (deferred): tradition-aware mini-dome relabeling. When the masādir tradition is active, the Confidence mini-dome relabels its axis as qaṭʿī/ẓannī; the Provenance mini-dome relabels sectors as the four uṣūl sources. When Dignāga is active, the Provenance mini-dome collapses to two sectors (pratyakṣa, anumāna). This is purely relabeling — the underlying metadata is unchanged. Estimated cost: ~3 weeks engineering.
 
 ---
 
@@ -452,9 +452,9 @@ Stage palette (5 hues) and Link palette (9 hues) audited at build time. Co-rende
 
 Anchor pip diameter ≥1.8 px at default zoom. At zoom levels where pip would render <1.5 px, pip is suppressed entirely (Stage falls back to mini-dome only). This prevents the "claimed but invisible" channel failure mode.
 
-### 8.6 Register manifest contract
+### 8.6 Tradition manifest contract
 
-Each register defined in `docs/registers/<id>.md` with the schema in §4.3. Cross-Civ corrections (pramāṇa, masādir, Polanyi) are checked into version control. Any register geometry change requires a PR with citation update.
+Each tradition defined in `docs/traditions/<id>.md` with the schema in §4.3. Cross-Civ corrections (pramāṇa, masādir, Polanyi) are checked into version control. Any tradition geometry change requires a PR with citation update.
 
 ---
 
@@ -470,8 +470,8 @@ New directory: `src/lib/sight/v6/`.
 | `anchor.ts` | Anchor dome Canvas-2D renderer | `src/lib/sight/v5/render.ts` (substantial rebuild — multi-channel, no mode toggle) |
 | `miniDome.ts` | Single mini-dome renderer (instantiated 4×, parameterized by channel) | New |
 | `facetSidebar.svelte` | Facet sidebar with cross-filter logic | New |
-| `registerChip.svelte` | Register chip with collapse/expand + tooltip | New |
-| `registers/<id>.ts` | Per-register geometry remap (7 files, one per register) | New |
+| `traditionChip.svelte` | Tradition chip with collapse/expand + tooltip | New |
+| `traditions/<id>.ts` | Per-tradition geometry remap (7 files, one per tradition) | New |
 | `gestures.ts` | Gesture dispatch (right-click, click-filter, hover, Esc, Cmd-F, Cmd-D) | Partial in `src/lib/sight/v5/SightV5.svelte` (extracted + extended) |
 | `tour.svelte` | First-boot orientation overlay | New |
 | `types.ts` | TypeScript contracts | `src/lib/sight/v5/types.ts` (rebuilt) |
@@ -488,7 +488,7 @@ The Concept Paper supports staged shipping. Each phase delivers user-visible val
 
 - Anchor dome with full channel encoding (shape, opacity, pip, size, lines).
 - Facet sidebar with 6 facets, live counts, cross-filter logic.
-- Default-simple layout: anchor + collapsed sidebar tab + collapsed register label + Show-diagnostics link.
+- Default-simple layout: anchor + collapsed sidebar tab + collapsed tradition label + Show-diagnostics link.
 - First-boot orientation tour.
 - All gestures except mini-dome cross-filter (no mini-domes yet).
 - **Ships as Sight v6.0.** Replaces Sight v5 on `main`.
@@ -504,17 +504,17 @@ The Concept Paper supports staged shipping. Each phase delivers user-visible val
 - **Ships as Sight v6.1.**
 - **Effort**: ~4 weeks.
 
-#### Phase 3 — Register chip + 4 production-polish registers (Sight v6.2)
+#### Phase 3 — Tradition chip + 4 production-polish traditions (Sight v6.2)
 
-- Register chip with collapse/expand, English hover labels.
+- Tradition chip with collapse/expand, English hover labels.
 - Aristotelian (default), pramāṇa, masādir, Polanyi at production polish.
-- Per-register `registers/<id>.ts` geometry remap modules.
-- Register manifest at `docs/registers/`.
-- Register switch animation (anchor-dome position transition, 400ms).
+- Per-tradition `traditions/<id>.ts` geometry remap modules.
+- Tradition manifest at `docs/traditions/`.
+- Tradition switch animation (anchor-dome position transition, 400ms).
 - **Ships as Sight v6.2.**
 - **Effort**: ~5 weeks.
 
-#### Phase 4 — 3 v1-preview registers + polish + final tests (Sight v6.3)
+#### Phase 4 — 3 v1-preview traditions + polish + final tests (Sight v6.3)
 
 - Dignāga, Suhrawardi Ishrāqī, Mohist sān biǎo at v1-preview polish with explicit labels.
 - Channel orthogonality automated test in CI.
@@ -533,23 +533,23 @@ The Concept Paper supports staged shipping. Each phase delivers user-visible val
 - SQLite cache migration: `sight_v5_layout` table is dropped; new `sight_v6_layout` table created with sentinel version field. Backfill runs on first boot in background with progress in status bar (resumable per Standing Order).
 - User-facing: a Settings note explaining the upgrade appears once at first v6.0 launch. No mid-edit interruption.
 
-### 9.4 Risk register
+### 9.4 Risk tradition
 
 | Risk | Severity | Mitigation |
 |---|---|---|
 | Phase-1-only ship feels incomplete | Medium | Default-simple state means most users won't notice missing mini-domes for a while; "Show diagnostics" gesture exists but renders a "coming in v6.1" placeholder. |
-| Register implementation cost overruns | High | Polish tiering: 4 production + 3 v1-preview. Preview labeling sets user expectation. |
+| Tradition implementation cost overruns | High | Polish tiering: 4 production + 3 v1-preview. Preview labeling sets user expectation. |
 | Performance fails at >10k notes | Medium | Hex-bin aggregation fallback at ≥5,000 visible. WebGL upgrade path reserved for v6.4 if needed. |
-| Cross-Civ register critique resurfaces | Low | Citation manifests in `docs/registers/` + v4.1 polish targets named explicitly. |
+| Cross-Civ tradition critique resurfaces | Low | Citation manifests in `docs/traditions/` + v4.1 polish targets named explicitly. |
 | User misses removed v5 modes (R/L/T/C/S/A/P) | Low | First-boot tour explains the new model. Settings → Help has a "v5 → v6 migration guide." |
 | Library color loss feels austere | Medium | v4.1 escape hatch: low-saturation tint as recognition aid (optional). |
 | Folder-on-dome request resurfaces | Low | Sidebar surfaces Folder. If users push for dome encoding, revisit in v4.1. |
-| Register-switch animation creates motion sickness | Low | Animation respects `prefers-reduced-motion`; falls back to instant snap. |
+| Tradition-switch animation creates motion sickness | Low | Animation respects `prefers-reduced-motion`; falls back to instant snap. |
 
 ### 9.5 Tech stack
 
 - **Frontend**: Svelte 5 + Canvas 2D rendering. SVG only for static legend icons. No WebGL in v6 (reserved for future).
-- **Geometry / layout math**: TypeScript pure functions in `anchor.ts`, `miniDome.ts`, per-register modules.
+- **Geometry / layout math**: TypeScript pure functions in `anchor.ts`, `miniDome.ts`, per-tradition modules.
 - **Aggregation**: `d3-hexbin` (proven library; do not roll your own).
 - **Backend**: Rust (`sight_v6.rs`); SQLite cache; Tauri events for live updates.
 - **Test framework**: existing vitest + playwright stack. New invariant tests for channel orthogonality and Suwaidi-fidelity guarantee.
@@ -562,9 +562,9 @@ Deferred items, prioritized:
 
 1. **Pramāṇa internal-structure rendering** (per-quadrant: indriya-artha-sannikarṣa loci, etc.).
 2. **Dignāga, Ishrāqī, Mohist polish** (v1-preview → production).
-3. **Register-aware mini-dome relabeling** (§7 enhancement).
+3. **Tradition-aware mini-dome relabeling** (§7 enhancement).
 4. **Color-accessibility variant** (high-contrast / colorblind-safe palette).
-5. **Animated transitions** (register switch refinements, mini-dome reveal eased animation).
+5. **Animated transitions** (tradition switch refinements, mini-dome reveal eased animation).
 6. **Universe selector chip** for cUniverse federation view.
 7. **Library color recognition aid** (low-saturation tint, opt-in setting).
 8. **Layer 3 (Recommendations) and Layer 4 (Coaching)** — the post-diagnostic guidance the v3.1 paper named but v6 only foundations.
@@ -580,8 +580,8 @@ These are v4.x work, not v6.x work. The Concept Paper bump (v4.0 → v4.1 → ..
 3. **Cross-filter performance**: ≤16 ms on 7,636 notes × 5 views.
 4. **CIE Delta-E ≥30**: between any two co-rendered hues at build time.
 5. **Pip foveation threshold**: anchor pip ≥1.8 px at default zoom, suppressed below 1.5 px.
-6. **Register isolation**: register chip remaps anchor dome only; mini-domes stay culturally neutral.
-7. **Register manifest**: each register's geometry is documented + citation-tracked in version control.
+6. **Tradition isolation**: tradition chip remaps anchor dome only; mini-domes stay culturally neutral.
+7. **Tradition manifest**: each tradition's geometry is documented + citation-tracked in version control.
 8. **Folder visibility**: Folder is a first-class facet in the sidebar.
 9. **Gesture chrome**: no persistent toggle bars. All interaction via gestures + sidebar/chip/mini-dome clicks.
 10. **First-boot tour**: 4 steps, skippable, always re-available in Help.
@@ -595,7 +595,7 @@ A future change that violates any of these is, by definition, no longer Sight v6
 - `docs/Constellation-Sight-Concept-Paper-v3.1.md` is **superseded** by this document. v3.1 remains on disk as historical record.
 - The implemented Sight v5 (current `main`) is **superseded** by Sight v6 (specified here). v5 sunset per §9.3.
 - All v0.x design concept docs (`sight-redesign-design-concept-v0.1.md`, `v0.2.md`, `v0.3.md`) are **archived as design conversation history**. v4.0 is the binding contract; v0.x are the artifacts that led to it.
-- All v0.x mock SVGs are **historical record**. The v0.3 full-layout + register-chip detail SVGs remain the visual reference for Sight v6 implementation.
+- All v0.x mock SVGs are **historical record**. The v0.3 full-layout + tradition-chip detail SVGs remain the visual reference for Sight v6 implementation.
 
 ---
 
@@ -622,11 +622,11 @@ At each phase ship, the following must hold:
 - [ ] Pro mode persists across sessions.
 
 ### After Phase 3 (Sight v6.2)
-- [ ] All 4 production-polish registers (Aristotelian, pramāṇa, masādir, Polanyi) render correctly per §4.1.
-- [ ] Hover tooltip on each register chip shows English secondary label.
-- [ ] Register switch animation runs at 400ms with motion-reduce respect.
-- [ ] Register manifests in `docs/registers/` are present with citations.
-- [ ] Mini-dome channels unchanged across register switches (§7 stipulation honored).
+- [ ] All 4 production-polish traditions (Aristotelian, pramāṇa, masādir, Polanyi) render correctly per §4.1.
+- [ ] Hover tooltip on each tradition chip shows English secondary label.
+- [ ] Tradition switch animation runs at 400ms with motion-reduce respect.
+- [ ] Tradition manifests in `docs/traditions/` are present with citations.
+- [ ] Mini-dome channels unchanged across tradition switches (§7 stipulation honored).
 
 ### After Phase 4 (Sight v6.3)
 - [ ] Dignāga, Ishrāqī, Mohist sān biǎo render with "v1 preview" labels.
@@ -648,14 +648,14 @@ The Phase-4 verification is the v6.0 ship gate. Until every box is checked, Sigh
 | `docs/Constellation-Sight-Concept-Paper-v3.1.md` | v3.1 (superseded, historical) |
 | `docs/sight-redesign-design-concept-v0.3.md` | The design conversation that converged to v4.0 |
 | `docs/sight-redesign-v0.3-full-layout.svg` | Visual reference for Sight v6 layout |
-| `docs/sight-redesign-v0.3-register-chip-detail.svg` | Visual reference for the 7 registers |
-| `docs/registers/aristotelian.md` | (TBD — to be created in Phase 3) |
-| `docs/registers/pramana.md` | (TBD) |
-| `docs/registers/masadir.md` | (TBD) |
-| `docs/registers/polanyi.md` | (TBD) |
-| `docs/registers/dignaga.md` | (TBD) |
-| `docs/registers/ishraqi.md` | (TBD) |
-| `docs/registers/mohist-san-biao.md` | (TBD) |
+| `docs/sight-redesign-v0.3-tradition-chip-detail.svg` | Visual reference for the 7 traditions |
+| `docs/traditions/aristotelian.md` | (TBD — to be created in Phase 3) |
+| `docs/traditions/pramana.md` | (TBD) |
+| `docs/traditions/masadir.md` | (TBD) |
+| `docs/traditions/polanyi.md` | (TBD) |
+| `docs/traditions/dignaga.md` | (TBD) |
+| `docs/traditions/ishraqi.md` | (TBD) |
+| `docs/traditions/mohist-san-biao.md` | (TBD) |
 
 ## Appendix B — Cross-references
 
@@ -681,12 +681,12 @@ The 14 spec-level conditions from those verdicts are integrated into this contra
 - §3.1 honest channel tier ledger (cluster gestalt as emergent, not pre-attentive)
 - §3.3 shape-weight normalization
 - §3.4 CIE Delta-E ≥30 invariant
-- §4 register manifest contract + citation tracking
+- §4 tradition manifest contract + citation tracking
 - §4.1.4 Polanyi fog inversion
-- §4.2 polish tiering (3 registers labeled "v1 preview")
-- §4.3 register-switch animation behavior
+- §4.2 polish tiering (3 traditions labeled "v1 preview")
+- §4.3 tradition-switch animation behavior
 - §5 first-boot tour
-- §5 English hover tooltips on register chips
+- §5 English hover tooltips on tradition chips
 - §6 Default-simple / Pro-opt-in interaction model
 - §7 Western-analytic stipulation for mini-dome channels
 - §8.3 measured performance budget (16ms cross-filter)
@@ -697,7 +697,7 @@ The 14 spec-level conditions from those verdicts are integrated into this contra
 
 ## Appendix D — The redesign journey, in one paragraph
 
-Sight was originally Lens, renamed Sight, then iterated through v2/v3/v4/v5 implementations against Concept Paper v3.0 → v3.1. v5 shipped a seven-mode toggle bar (R · L · T · C · S · A · P) that passed every capability test but failed Eisa's outcome test ("the modes are confusing... what is unique about Sight? NOTHING!"). Eisa surfaced the Al-Suwaidi northern-hemisphere star chart as the design north star and asked for a one-mode redesign that "tells the whole story at one glance." The redesign worked through three SME-panel rounds: v0.1 (3 mock-ups, 6 SMEs surfaced 3 structural problems), v0.2 (5 options responding to round-1 critique, panel converged on Option D with composite 72 vs. 63/59/56/54), v0.3 (Option D locked, 5 panel adjustments + 7 registers + shape-only library + honest channel-tier labels). Round 3 returned unanimous GO WITH CONDITIONS. Eisa made the final calls on register count (ship 7 in v1, polish-tiered), default chrome density (Default-simple / Pro-opt-in), and mini-dome ontology (Western-analytic by stipulation), then delegated three remaining tensions back to design judgment — those calls are now baked into this contract. The pramāṇa prose ↔ SVG mismatch (Cross-Civ SME's one hard condition) is settled before v4.0 ratification. The contract specifies the build for Sight v6, replacing v5 on `main`, in four phases over ~18 weeks.
+Sight was originally Lens, renamed Sight, then iterated through v2/v3/v4/v5 implementations against Concept Paper v3.0 → v3.1. v5 shipped a seven-mode toggle bar (R · L · T · C · S · A · P) that passed every capability test but failed Eisa's outcome test ("the modes are confusing... what is unique about Sight? NOTHING!"). Eisa surfaced the Al-Suwaidi northern-hemisphere star chart as the design north star and asked for a one-mode redesign that "tells the whole story at one glance." The redesign worked through three SME-panel rounds: v0.1 (3 mock-ups, 6 SMEs surfaced 3 structural problems), v0.2 (5 options responding to round-1 critique, panel converged on Option D with composite 72 vs. 63/59/56/54), v0.3 (Option D locked, 5 panel adjustments + 7 traditions + shape-only library + honest channel-tier labels). Round 3 returned unanimous GO WITH CONDITIONS. Eisa made the final calls on tradition count (ship 7 in v1, polish-tiered), default chrome density (Default-simple / Pro-opt-in), and mini-dome ontology (Western-analytic by stipulation), then delegated three remaining tensions back to design judgment — those calls are now baked into this contract. The pramāṇa prose ↔ SVG mismatch (Cross-Civ SME's one hard condition) is settled before v4.0 ratification. The contract specifies the build for Sight v6, replacing v5 on `main`, in four phases over ~18 weeks.
 
 ---
 

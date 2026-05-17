@@ -49,7 +49,7 @@
 // MIG-025 §A.1 (2026-05-14): SIGHT_V6_ENABLED added per Concept Paper v4.0
 // (ratified 2026-05-13). v6 specifies the next implementation, replacing
 // v5's seven-mode toggle architecture with Coordinated Views (anchor dome
-// + facet sidebar at Phase 1; 4 mini-domes Phase 2; 7-register chip Phase
+// + facet sidebar at Phase 1; 4 mini-domes Phase 2; tradition chip Phase
 // 3). Phased build per MIG-025 Plan §A→§D over ~21 wk; v5 stays mounted
 // via dual-flag (B2) until §D.6 deletes it.
 //
@@ -121,7 +121,7 @@
 // any mini to inspect its channel at full size with zoom; ghost-mode
 // keeps the unfiltered universe visible-but-faded for context. The
 // dome and sidebar form a closed bidirectional loop.
-// Phase 3 (§C — register chip + 4 production registers) opens next.
+// Phase 3 (§C — tradition chip + 4 production traditions) opens next.
 //
 // 2026-05-14 §B-preview Eisa request: side-by-side test of v2 vs v6.
 // v5 disabled, v2 re-enabled. v2 mount/dock-button wiring in

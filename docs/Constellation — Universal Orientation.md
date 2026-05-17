@@ -254,12 +254,12 @@ The discipline pays off on large Universes (7,600+ notes verified in real use). 
 
 ### In active development (or queued next)
 
-- **Phase 3 §C — Register chips.** Four production-polish registers each providing a different epistemic frame:
+- **Phase 3 §C — Tradition chips.** Four production-polish traditions each providing a different epistemic frame:
   - **Aristotelian** (default) — the four causes / syllogistic frame
   - **pramāṇa** — the Indian epistemology frame (perception, inference, testimony, etc.)
   - **masādir** — the classical Islamic sources-of-knowledge frame
   - **Polanyi** — tacit knowledge / personal knowledge frame
-  Plus v1-preview register labeled but unfinished: Mohist sān-biǎo. *(Dignāga + Suhrawardi Ishrāqī were originally on this list; both permanently excluded 2026-05-16 — Dignāga by direct product decision, Ishrāqī under the religious-lineage rule that ships in orientation v2.09.)*
+  Plus v1-preview tradition labeled but unfinished: Mohist sān-biǎo. *(Dignāga + Suhrawardi Ishrāqī were originally on this list; both permanently excluded 2026-05-16 — Dignāga by direct product decision, Ishrāqī under the religious-lineage rule that ships in orientation v2.09. MIG-026 Phase 0 renames the "register" concept to "tradition" throughout.)*
 - **Living Link Architecture P2-P5** — lifecycle stage transitions in real use, weight decay/growth in real use, traversal-count display in panels, link search by all 8 properties.
 - **Sight Settings UI section** — dedicated Settings tab for Sight preferences.
 - **Confidence-population workflow** — UI for assigning confidence to existing links.
@@ -288,7 +288,7 @@ If a proposed feature breaks any of these, it does not ship — regardless of ho
 2. **Local first.** All data on the user's device. No telemetry. Works fully offline.
 3. **Every keystroke instant.** No feature may regress typing latency on a 7,600-note Universe.
 4. **Multilingual by design.** No layout, font, cursor, or input assumption may break for any of the 15 languages.
-5. **Constraint as design.** FocusPane has no toolbar. Sight v6 has no register chip. These are not gaps; they ARE the design.
+5. **Constraint as design.** FocusPane has no toolbar. These are not gaps; they ARE the design.
 6. **Reversibility.** Archival, not deletion. Every operation can be undone.
 7. **No proprietary formats.** Everything is standard Markdown + YAML frontmatter + SQLite.
 8. **No silent file modification.** Every change to a `.md` file comes from an explicit user action.

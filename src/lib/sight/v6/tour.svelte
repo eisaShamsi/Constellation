@@ -5,7 +5,7 @@
     - 4 skippable steps
     - Auto-skipped on subsequent opens (gated on `appSettings.sight.tourSeen`)
     - Always re-available via Help → Sight tour (clears tourSeen flag —
-      wired in §C.10 when the register chip ships)
+      wired in §C.10 when the tradition chip ships)
 
   v6.0 ships a centered card layout (no spotlight effect on the
   underlying canvas — that's a v4.1 polish target). Esc dismisses;

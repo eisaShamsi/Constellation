@@ -4,14 +4,14 @@
 **Date:** 2026-05-14
 **Status:** Plan ready for Boss review.
 **Locked option pack:** A1, B2, C3, D1, E1, F3, G1, H1, I1; Phase-2 chip hidden until Phase 3.
-**Reference contract:** `docs/Constellation-Sight-Concept-Paper-v4.0.md` §13 ship-gates; `docs/sight-redesign-v0.3-full-layout.svg` + `docs/sight-redesign-v0.3-register-chip-detail.svg` visual contract.
+**Reference contract:** `docs/Constellation-Sight-Concept-Paper-v4.0.md` §13 ship-gates; `docs/sight-redesign-v0.3-full-layout.svg` + `docs/sight-redesign-v0.3-tradition-chip-detail.svg` visual contract.
 **Architect:** `lab/reports/MIG-025-SIGHT-V6-ARCHITECT.md` (territory + invariants).
 
 ---
 
 ## §0 — Scope summary
 
-MIG-025 builds Sight v6 as a four-phase rollout (§A=v6.0, §B=v6.1, §C=v6.2, §D=v6.3) inside one MIG with one Architect (done), one Plan (this), one Audit (after §D). v5 stays mounted via `SIGHT_V6_ENABLED` dev flag through Phases 1–3, then v5 is deleted in Phase 4. SQLite cache rebuilds progressively in the background via Tauri events with status-bar progress; Sight v6 is render-ready when the first stratum tier completes (not all rows). The seven register manifests land together in Phase 3 alongside the geometry. The first-boot tour fires once on the first-ever Sight v6 open via a `tourSeen` flag. Continuous CI perf gating (vitest + playwright) is plumbed in Phase 1 so Phases 2–4 inherit it. v5 settings are read once on first v6.0 boot: `lastScope` carries forward, `lastMode` is dropped silently. v0.3 mock SVGs are the binding visual contract.
+MIG-025 builds Sight v6 as a four-phase rollout (§A=v6.0, §B=v6.1, §C=v6.2, §D=v6.3) inside one MIG with one Architect (done), one Plan (this), one Audit (after §D). v5 stays mounted via `SIGHT_V6_ENABLED` dev flag through Phases 1–3, then v5 is deleted in Phase 4. SQLite cache rebuilds progressively in the background via Tauri events with status-bar progress; Sight v6 is render-ready when the first stratum tier completes (not all rows). The seven tradition manifests land together in Phase 3 alongside the geometry. The first-boot tour fires once on the first-ever Sight v6 open via a `tourSeen` flag. Continuous CI perf gating (vitest + playwright) is plumbed in Phase 1 so Phases 2–4 inherit it. v5 settings are read once on first v6.0 boot: `lastScope` carries forward, `lastMode` is dropped silently. v0.3 mock SVGs are the binding visual contract.
 
 ---
 
@@ -42,13 +42,13 @@ MIG-025 builds Sight v6 as a four-phase rollout (§A=v6.0, §B=v6.1, §C=v6.2, �
 **Risk-mitigation**: Architect §4.1 first-boot block; Standing Order resumability honored (sentinel only on final tier — interrupted runs resume by re-running tiers).
 
 ### §A.5 — Tauri IPC commands for v6 (mirror v5 surface, drop `scope_kind` parameter)
-**Files**: `src-tauri/src/sight_v6.rs` (add `sight_v6_warm_cache`, `sight_v6_get_layout`, `sight_v6_get_link_set_for_notes`); `src-tauri/src/lib.rs:352–355` (register handlers in `tauri::generate_handler!` alongside v5).
+**Files**: `src-tauri/src/sight_v6.rs` (add `sight_v6_warm_cache`, `sight_v6_get_layout`, `sight_v6_get_link_set_for_notes`); `src-tauri/src/lib.rs:352–355` (tradition handlers in `tauri::generate_handler!` alongside v5).
 **Action**: `sight_v6_get_layout(app)` returns the full layout (no scope param — facet sidebar filters frontend-side per Architect §1.4). `sight_v6_get_link_set_for_notes` caps at 800 lines per Concept Paper §2.2 (vs. v5's 2000). `sight_v6_warm_cache` triggers progressive backfill.
 **Verification**: Rust unit tests for each IPC; smoke test from Svelte console (`invoke('sight_v6_get_layout')`) returns rows.
 **Risk-mitigation**: Architect §1.4 — drop the unused `sight_v5_get_universe_snapshot_hash` pattern; v6 will reuse `compute_universe_snapshot_hash` for live-update polling later.
 
 ### §A.6 — Frontend types + module skeleton (`src/lib/sight/v6/`)
-**Files**: new `src/lib/sight/v6/types.ts` (`LayoutCacheRow`, `LinkEdge`, `Facet`, `FacetCategory`, `RegisterId`, `MiniDomeChannel`, `GestureEvent`); new `src/lib/sight/v6/SightV6.svelte` (placeholder mount with header strip + canvas div); new `src/lib/sight/v6/anchor.ts` (stub exports for `renderAnchorDome`, `computeStarPositions`, `starHitTest`).
+**Files**: new `src/lib/sight/v6/types.ts` (`LayoutCacheRow`, `LinkEdge`, `Facet`, `FacetCategory`, `TraditionId`, `MiniDomeChannel`, `GestureEvent`); new `src/lib/sight/v6/SightV6.svelte` (placeholder mount with header strip + canvas div); new `src/lib/sight/v6/anchor.ts` (stub exports for `renderAnchorDome`, `computeStarPositions`, `starHitTest`).
 **Action**: Skeletons only — no rendering yet. Mode/scope unions deleted; `LayoutCacheRow` extended with the 4 new columns + `topDecileActs: boolean`, `provenanceSector: 'Self'|'Read'|'Heard'|'Reasoned'|'Tradition'`, `libraryShapeIndex: number`.
 **Verification**: `npm run check` clean; importable from `+layout.svelte` even though not mounted yet.
 **Risk-mitigation**: Architect §1.1 disposition — locks the v6 module surface.
@@ -84,7 +84,7 @@ MIG-025 builds Sight v6 as a four-phase rollout (§A=v6.0, §B=v6.1, §C=v6.2, �
 **Risk-mitigation**: Concept Paper §11 invariant 10 (first-boot tour).
 
 ### §A.12 — Settings migration: read v5 once, map `lastScope` forward, drop `lastMode`
-**Files**: `src/lib/libraries/store.ts` (one-shot migration block in store init); add `appSettings.sight.proMode?: boolean`, `tourSeen?: boolean`, `activeRegister?: RegisterId`, `hexBinThreshold?: number`, `linkFadeThreshold?: number` to schema.
+**Files**: `src/lib/libraries/store.ts` (one-shot migration block in store init); add `appSettings.sight.proMode?: boolean`, `tourSeen?: boolean`, `activeTradition?: TraditionId`, `hexBinThreshold?: number`, `linkFadeThreshold?: number` to schema.
 **Action**: On first v6.0 boot per Universe, read `appSettings.sight.lastScope` if present → store as `appSettings.sight.activeFolderFacet` (or equivalent); delete `appSettings.sight.lastMode`; stamp `sight.v6MigrationDone=true` to avoid re-migration. Quiet — no user dialog.
 **Verification**: Universe with v5 settings (`lastMode='C'`, `lastScope='library'`) opened in v6 build: settings file post-launch shows `lastMode` removed, `activeFolderFacet` populated from `lastScope`, `v6MigrationDone=true`. Re-launch: no second migration.
 **Risk-mitigation**: G1 lock — Architect §4.3 rollback survives (v5 still reads `lastScope` if it stays in the file; we drop only `lastMode`).
@@ -160,7 +160,7 @@ MIG-025 builds Sight v6 as a four-phase rollout (§A=v6.0, §B=v6.1, §C=v6.2, �
 
 ### §B.10 — Pro mode persistence (Cmd-Shift-D, default-state override)
 **Files**: `gestures.ts` (Cmd-Shift-D handler); `SightV6.svelte` (read `appSettings.sight.proMode` at mount; if true, expand all chrome on first paint).
-**Action**: Cmd-Shift-D toggles `proMode` in settings; persisted across sessions. Default false. Pro mode = sidebar expanded + register chip expanded + mini-domes shown on every Sight open.
+**Action**: Cmd-Shift-D toggles `proMode` in settings; persisted across sessions. Default false. Pro mode = sidebar expanded + tradition chip expanded + mini-domes shown on every Sight open.
 **Verification**: Cmd-Shift-D → all chrome expands; quit + relaunch → still expanded. Cmd-Shift-D again → returns to default-simple; persists.
 
 ### §B.11 — Phase 2 ship gate (Concept Paper §13.2 verification clauses)
@@ -172,60 +172,60 @@ MIG-025 builds Sight v6 as a four-phase rollout (§A=v6.0, §B=v6.1, §C=v6.2, �
 - [ ] Cmd-D toggles diagnostics visibility.
 - [ ] Pro mode persists across sessions.
 - [ ] Cross-filter perf test ≤16 ms on 7,636 × 5 views.
-- [ ] Register chip area HIDDEN entirely (per locked Phase-2-chip decision).
+- [ ] Tradition chip area HIDDEN entirely (per locked Phase-2-chip decision).
 
 **Ship as Sight v6.1.**
 
 ---
 
-## §C — Phase 3 (Sight v6.2) — Register chip + 4 production registers + manifests
+## §C — Phase 3 (Sight v6.2) — Tradition chip + 4 production traditions + manifests
 
-### §C.1 — Register chip component (collapsed-by-default, click-to-expand)
-**Files**: new `src/lib/sight/v6/registerChip.svelte`; `SightV6.svelte` (mount in title bar).
-**Action**: Default state: single label `Aristotelian ●`. Click → expand row showing all 7 chips. Active register has blue stroke + dot. Hover any chip → English secondary label tooltip per Concept Paper §2.5 + §11 invariant.
+### §C.1 — Tradition chip component (collapsed-by-default, click-to-expand)
+**Files**: new `src/lib/sight/v6/traditionChip.svelte`; `SightV6.svelte` (mount in title bar).
+**Action**: Default state: single label `Aristotelian ●`. Click → expand row showing all 7 chips. Active tradition has blue stroke + dot. Hover any chip → English secondary label tooltip per Concept Paper §2.5 + §11 invariant.
 **Verification**: Title bar shows collapsed chip; click → 7-chip row appears; hover pramāṇa → "pramāṇa — Nyāya fourfold valid means of knowing" tooltip.
 
-### §C.2 — Register module pattern + Aristotelian (default geometry)
-**Files**: new `src/lib/sight/v6/registers/index.ts` (registry); new `src/lib/sight/v6/registers/aristotelian.ts` (geometry: radial=stratum, angular=time — same as default).
-**Action**: Each register exports `{id, name, remapStarPosition(row, defaultPos): {x,y}, sectorDividers?: SectorSpec[]}`. Aristotelian is the identity remap.
-**Verification**: Active register Aristotelian → anchor renders identical to v6.1 dome.
+### §C.2 — Tradition module pattern + Aristotelian (default geometry)
+**Files**: new `src/lib/sight/v6/traditions/index.ts` (registry); new `src/lib/sight/v6/traditions/aristotelian.ts` (geometry: radial=stratum, angular=time — same as default).
+**Action**: Each tradition exports `{id, name, remapStarPosition(row, defaultPos): {x,y}, sectorDividers?: SectorSpec[]}`. Aristotelian is the identity remap.
+**Verification**: Active tradition Aristotelian → anchor renders identical to v6.1 dome.
 
-### §C.3 — pramāṇa register (4 quadrants)
-**Files**: new `src/lib/sight/v6/registers/pramana.ts`.
+### §C.3 — pramāṇa tradition (4 quadrants)
+**Files**: new `src/lib/sight/v6/traditions/pramana.ts`.
 **Action**: NE pratyakṣa, SE anumāna, SW upamāna, NW śabda. Quadrant divider strokes visible. Radial=stratum within quadrant, angular=time within quadrant. Star quadrant assignment from a frontmatter `pramana_kind` field (default: pratyakṣa if absent, with sidebar facet hint).
-**Verification**: Switch register chip → stars redistribute across 4 quadrants; dividers visible; mini-domes unchanged.
-**Risk-mitigation**: Concept Paper §11 invariant 6 (register isolation: anchor only).
+**Verification**: Switch tradition chip → stars redistribute across 4 quadrants; dividers visible; mini-domes unchanged.
+**Risk-mitigation**: Concept Paper §11 invariant 6 (tradition isolation: anchor only).
 
-### §C.4 — masādir register (4 categorical sectors + 4 extension chips)
-**Files**: new `src/lib/sight/v6/registers/masadir.ts`.
+### §C.4 — masādir tradition (4 categorical sectors + 4 extension chips)
+**Files**: new `src/lib/sight/v6/traditions/masadir.ts`.
 **Action**: NE Qur'an, SE sunnah, SW ijmāʿ, NW qiyās; sector annotations (naṣṣ vs ijtihādī; qaṭʿī vs ẓannī). 4 extension chips below the dome (istiḥsān, istiṣḥāb, maṣlaḥa mursalah, ʿurf). Star sector assignment from `masadir_source` frontmatter field.
 **Verification**: Active masādir → 4 sectors + 4 extension chips render; per Mustaṣfā citation (§4.1.3).
 
-### §C.5 — Polanyi register (tacit/explicit fog gradient)
-**Files**: new `src/lib/sight/v6/registers/polanyi.ts`.
+### §C.5 — Polanyi tradition (tacit/explicit fog gradient)
+**Files**: new `src/lib/sight/v6/traditions/polanyi.ts`.
 **Action**: Single dome, fog **dense at center** (tacit core 0.14–0.18 opacity), **clear at edges** (explicit periphery 0.85–0.95). Inverted from v0.2 per §4.1.4.
 **Verification**: Active Polanyi → visible fog gradient inside-out; opacity inversion visible.
 
-### §C.6 — Register switch transition (instant snap + brief flash, motion-reduce respect)
+### §C.6 — Tradition switch transition (instant snap + brief flash, motion-reduce respect)
 **Files**: `SightV6.svelte` (transition handler); `gestures.ts` (`prefers-reduced-motion` check).
 **Action**: v6.0 ships with instant snap + 200 ms identity flash on highlighted star. Animated 400 ms transition is v4.1 polish target.
-**Verification**: Switch register with a hovered star → flash visible; with `prefers-reduced-motion: reduce` → no flash, just snap.
+**Verification**: Switch tradition with a hovered star → flash visible; with `prefers-reduced-motion: reduce` → no flash, just snap.
 
-### §C.7 — Register manifests (`docs/registers/*.md` × 7, all created here per H1)
-**Files**: new `docs/registers/aristotelian.md`, `docs/registers/pramana.md`, `docs/registers/masadir.md`, `docs/registers/polanyi.md`, `docs/registers/dignaga.md`, `docs/registers/ishraqi.md`, `docs/registers/mohist-san-biao.md`.
+### §C.7 — Tradition manifests (`docs/traditions/*.md` × 7, all created here per H1)
+**Files**: new `docs/traditions/aristotelian.md`, `docs/traditions/pramana.md`, `docs/traditions/masadir.md`, `docs/traditions/polanyi.md`, `docs/traditions/dignaga.md`, `docs/traditions/ishraqi.md`, `docs/traditions/mohist-san-biao.md`.
 **Action**: Each follows schema `{id, name, citation, geometry_spec, sectors, exclusions, extensions, version, changelog}` per Concept Paper §4.3 + §11 invariant 7. Citations from §4.1/§4.2 of Concept Paper.
 **Verification**: All 7 files exist; citation field populated; ⓘ chip affordance opens the file in editor.
 **Risk-mitigation**: Concept Paper §11 invariant 7.
 
-### §C.8 — `activeRegister` persistence + frontend store wiring
-**Files**: `appSettings.sight.activeRegister: RegisterId` consumed; `SightV6.svelte` initial state; `registerChip.svelte` writes on selection.
+### §C.8 — `activeTradition` persistence + frontend store wiring
+**Files**: `appSettings.sight.activeTradition: TraditionId` consumed; `SightV6.svelte` initial state; `traditionChip.svelte` writes on selection.
 **Action**: Default `aristotelian`. Saves on click. Restores on reopen.
 **Verification**: Click pramāṇa, quit, relaunch → opens with pramāṇa active.
 
-### §C.9 — Mini-dome stipulation honored (channels stay constant across registers)
-**Files**: assertion test in `tests/sight-v6/register-isolation.test.ts`.
-**Action**: Programmatically switch through all 7 registers; assert mini-dome channel labels + spatial encoding unchanged. Per Concept Paper §7 + §11 invariant 6.
-**Verification**: Test green for all 7 registers.
+### §C.9 — Mini-dome stipulation honored (channels stay constant across traditions)
+**Files**: assertion test in `tests/sight-v6/tradition-isolation.test.ts`.
+**Action**: Programmatically switch through all 7 traditions; assert mini-dome channel labels + spatial encoding unchanged. Per Concept Paper §7 + §11 invariant 6.
+**Verification**: Test green for all 7 traditions.
 **Risk-mitigation**: Concept Paper §11 invariant 6 — automated.
 
 ### §C.10 — "Help → Sight tour" affordance (re-fires tour from §A.11)
@@ -235,37 +235,37 @@ MIG-025 builds Sight v6 as a four-phase rollout (§A=v6.0, §B=v6.1, §C=v6.2, �
 **Risk-mitigation**: Concept Paper §11 invariant 10.
 
 ### §C.11 — Phase 3 ship gate (Concept Paper §13.3 verification clauses)
-- [ ] All 4 production-polish registers render correctly per §4.1.
+- [ ] All 4 production-polish traditions render correctly per §4.1.
 - [ ] Hover tooltip on each chip shows English secondary label.
-- [ ] Register switch animation runs (instant + flash for v6.0; 400 ms eased = v4.1 polish target).
-- [ ] All 7 register manifests in `docs/registers/` with citations.
-- [ ] Mini-dome channels unchanged across register switches (test green).
+- [ ] Tradition switch animation runs (instant + flash for v6.0; 400 ms eased = v4.1 polish target).
+- [ ] All 7 tradition manifests in `docs/traditions/` with citations.
+- [ ] Mini-dome channels unchanged across tradition switches (test green).
 - [ ] Help → Sight tour re-fires the orientation overlay.
 
 **Ship as Sight v6.2.**
 
 ---
 
-## §D — Phase 4 (Sight v6.3) — 3 v1-preview registers + CI hardening + v5 deletion
+## §D — Phase 4 (Sight v6.3) — 3 v1-preview traditions + CI hardening + v5 deletion
 
-### §D.1 — Dignāga register — **SUPERSEDED / EXCLUDED** (Eisa 2026-05-16, §C.1-fix-1)
+### §D.1 — Dignāga tradition — **SUPERSEDED / EXCLUDED** (Eisa 2026-05-16, §C.1-fix-1)
 
-> **Status**: EXCLUDED from Constellation entirely. Per Eisa's direction during §C.1 Stage 2 Boss-test review: "don't include the 'Dignāga' at all in any of Constellation functions." The Dignāga register is permanently out — no chip option, no register module, no manifest, no Phase 4 build step. The 'dignaga' literal is removed from `RegisterId` (types.ts) and from the `activeRegister` union (store.ts); a migration block rewrites any persisted `'dignaga'` value back to `'aristotelian'`. Concept Paper §4.2.1 carries a matching EXCLUDED note. The register set shrinks from 7 to 6 (4 production + 2 v1-preview). §D's remaining v1-preview steps are §D.2 (Suhrawardi Ishrāqī) and §D.3 (Mohist sān biǎo).
+> **Status**: EXCLUDED from Constellation entirely. Per Eisa's direction during §C.1 Stage 2 Boss-test review: "don't include the 'Dignāga' at all in any of Constellation functions." The Dignāga tradition is permanently out — no chip option, no tradition module, no manifest, no Phase 4 build step. The 'dignaga' literal is removed from `TraditionId` (types.ts) and from the `activeTradition` union (store.ts); a migration block rewrites any persisted `'dignaga'` value back to `'aristotelian'`. Concept Paper §4.2.1 carries a matching EXCLUDED note. The tradition set shrinks from 7 to 6 (4 production + 2 v1-preview). §D's remaining v1-preview steps are §D.2 (Suhrawardi Ishrāqī) and §D.3 (Mohist sān biǎo).
 
-~~**Files**: new `src/lib/sight/v6/registers/dignaga.ts`; chip tooltip shows "v1 preview — polish in v4.1".~~
+~~**Files**: new `src/lib/sight/v6/traditions/dignaga.ts`; chip tooltip shows "v1 preview — polish in v4.1".~~
 ~~**Action**: Left hemisphere = pratyakṣa, right hemisphere = anumāna. Center labeled "rejected: śabda, upamāna" per Concept Paper §4.2.1 — the absence is the feature.~~
 ~~**Verification**: Active Dignāga → 2-hemisphere split; center labels visible; chip badge shows "preview".~~
 
-### §D.2 — Suhrawardi Ishrāqī register — **SUPERSEDED / EXCLUDED** (Eisa 2026-05-16, §C.4-religious-rule)
+### §D.2 — Suhrawardi Ishrāqī tradition — **SUPERSEDED / EXCLUDED** (Eisa 2026-05-16, §C.4-religious-rule)
 
-> **Status**: EXCLUDED from Constellation entirely per the new top-principal religious-lineage rule (orientation v2.09): "when dealing with religious references, no non-Abrahamic; for Islamic, Sunni only." The Ishrāqī tradition (Suhrawardi, 1154–1191) was overwhelmingly absorbed into Twelver Shīʿī ḥikma (Mulla Sadra, Sabzavari, modern Qom curriculum) — failing the Sunni-only restriction — and is fundamentally religious-mystical rather than philosophical-epistemological. No chip option, no register module, no manifest, no Phase 4 build step. The 'ishraqi' literal is removed from `RegisterId` (types.ts) and from the `activeRegister` union (store.ts); a migration block rewrites any persisted `'ishraqi'` value back to `'aristotelian'`. Concept Paper §4.2.2 carries a matching EXCLUDED note. §D's remaining v1-preview step is §D.3 (Mohist sān biǎo).
+> **Status**: EXCLUDED from Constellation entirely per the new top-principal religious-lineage rule (orientation v2.09): "when dealing with religious references, no non-Abrahamic; for Islamic, Sunni only." The Ishrāqī tradition (Suhrawardi, 1154–1191) was overwhelmingly absorbed into Twelver Shīʿī ḥikma (Mulla Sadra, Sabzavari, modern Qom curriculum) — failing the Sunni-only restriction — and is fundamentally religious-mystical rather than philosophical-epistemological. No chip option, no tradition module, no manifest, no Phase 4 build step. The 'ishraqi' literal is removed from `TraditionId` (types.ts) and from the `activeTradition` union (store.ts); a migration block rewrites any persisted `'ishraqi'` value back to `'aristotelian'`. Concept Paper §4.2.2 carries a matching EXCLUDED note. §D's remaining v1-preview step is §D.3 (Mohist sān biǎo).
 
-~~**Files**: new `src/lib/sight/v6/registers/ishraqi.ts`.~~
+~~**Files**: new `src/lib/sight/v6/traditions/ishraqi.ts`.~~
 ~~**Action**: Small gold disc center + emanation glow + 3 dashed concentric rings outward; peripheral stars = ʿilm ḥuṣūlī. Per §4.2.2.~~
 ~~**Verification**: Active Ishrāqī → gold core + emanation rings visible.~~
 
-### §D.3 — Mohist sān biǎo register (3 horizontal zones, "v1 preview" label)
-**Files**: new `src/lib/sight/v6/registers/mohist-san-biao.ts`.
+### §D.3 — Mohist sān biǎo tradition (3 horizontal zones, "v1 preview" label)
+**Files**: new `src/lib/sight/v6/traditions/mohist-san-biao.ts`.
 **Action**: 3 horizontal zones — top 本, middle 原, bottom 用. Angular = time across zones. Per §4.2.3.
 **Verification**: Active sān biǎo → 3 horizontal zones visible; chip badge shows "preview".
 
@@ -301,20 +301,20 @@ MIG-025 builds Sight v6 as a four-phase rollout (§A=v6.0, §B=v6.1, §C=v6.2, �
 
 ---
 
-## §E — Risk register cross-reference
+## §E — Risk tradition cross-reference
 
 | Architect §4 risk | Severity | Mitigation steps |
 |---|---|---|
 | First-boot block on 7,636-note backfill | Medium | §A.4 progressive backfill + status-bar progress; render-ready on first stratum tier. |
-| Mid-Phase-2-shipped behavior of register chip | — | Locked: hidden in v6.1 (§B.11), appears in v6.2 (§C.1). |
+| Mid-Phase-2-shipped behavior of tradition chip | — | Locked: hidden in v6.1 (§B.11), appears in v6.2 (§C.1). |
 | Rollback v6.x → v5 regression | Low (B2) | §A.1 + §A.7 + §D.6 — flip `SIGHT_V6_ENABLED=false`, v5 dock returns; cache rows survive. |
 | Dual-trigger throughput during Phases 1–3 | Low | §A.2 indexed DELETE only; §D.6 closes the window. |
 | Schema-version sentinel race | Low | §A.3 `mig025_*` prefix prevents collision with `mig024_*`. |
 | Phase-1-only ship feels incomplete | Medium | §A.7 dock toggle; default-simple state (§A.8–§A.10) + tour (§A.11) hides minimum-viable feel. |
-| Register implementation cost overruns | High | §D.1–§D.3 explicit "v1 preview" labels set expectations per §4.2. |
+| Tradition implementation cost overruns | High | §D.1–§D.3 explicit "v1 preview" labels set expectations per §4.2. |
 | Performance fails at >10k notes | Medium | §B.9 hex-bin aggregation; §B.8 + §D.4 CI gates catch regressions early. |
 | Library color loss feels austere | Medium | Out of scope (§G item — v4.1 escape hatch). |
-| Register-switch animation creates motion sickness | Low | §C.6 motion-reduce respect; v6.0 ships instant snap. |
+| Tradition-switch animation creates motion sickness | Low | §C.6 motion-reduce respect; v6.0 ships instant snap. |
 
 ---
 
@@ -329,7 +329,7 @@ MIG-025 builds Sight v6 as a four-phase rollout (§A=v6.0, §B=v6.1, §C=v6.2, �
 4. v6 `sight_v6_layout` rows stay in DB — they don't conflict with anything.
 5. `tourSeen=true` survives — re-enabling v6 later won't re-fire tour.
 6. Settings: `lastScope` was preserved in §A.12 (only `lastMode` was deleted) — v5 reads `lastScope` correctly; no data loss.
-7. `activeRegister`, `proMode`, `hexBinThreshold` settings stay in file but are unread by v5 — harmless dead keys.
+7. `activeTradition`, `proMode`, `hexBinThreshold` settings stay in file but are unread by v5 — harmless dead keys.
 
 **Post-rollback**: file a follow-up MIG to root-cause and re-attempt v6 cutover.
 
@@ -341,9 +341,9 @@ MIG-025 builds Sight v6 as a four-phase rollout (§A=v6.0, §B=v6.1, §C=v6.2, �
 
 1. Pramāṇa internal-structure rendering (per-quadrant indriya-artha-sannikarṣa loci, etc.).
 2. Dignāga / Ishrāqī / Mohist polish (v1-preview → production).
-3. Register-aware mini-dome relabeling (§7 enhancement).
+3. Tradition-aware mini-dome relabeling (§7 enhancement).
 4. Color-accessibility variant (high-contrast / colorblind-safe palette).
-5. 400 ms eased register switch animation.
+5. 400 ms eased tradition switch animation.
 6. Universe selector chip for cUniverse federation.
 7. Library color recognition aid (low-saturation tint, opt-in setting).
 8. Layer 3 (Recommendations) and Layer 4 (Coaching).
@@ -356,7 +356,7 @@ MIG-025 builds Sight v6 as a four-phase rollout (§A=v6.0, §B=v6.1, §C=v6.2, �
 
 All three locked per Eisa's answers:
 
-1. **Frontmatter source for register sector assignment** (§C.3, §C.4): **LOCKED → frontmatter convention.** New frontmatter fields `pramana_kind` (values: `pratyaksa | anumana | upamana | sabda`) and `masadir_source` (values: `quran | sunnah | ijma | qiyas | istihsan | istishab | maslaha | urf`) populated by the user. Notes without the field render in a default bucket (pramāṇa default = pratyaksa quadrant; masādir default = qiyās quadrant) with a sidebar facet hint inviting the user to fill in. Cross-Civ SMEs reviewed this pattern in round-3.
+1. **Frontmatter source for tradition sector assignment** (§C.3, §C.4): **LOCKED → frontmatter convention.** New frontmatter fields `pramana_kind` (values: `pratyaksa | anumana | upamana | sabda`) and `masadir_source` (values: `quran | sunnah | ijma | qiyas | istihsan | istishab | maslaha | urf`) populated by the user. Notes without the field render in a default bucket (pramāṇa default = pratyaksa quadrant; masādir default = qiyās quadrant) with a sidebar facet hint inviting the user to fill in. Cross-Civ SMEs reviewed this pattern in round-3.
 
 2. **Help menu integration for "Sight tour" re-fire** (§C.10): **LOCKED → existing Help menu in `+layout.svelte`.** Add menu item "Sight tour" alongside existing Help entries. Standard PKM-tool affordance pattern.
 

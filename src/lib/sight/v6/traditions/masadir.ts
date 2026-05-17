@@ -1,5 +1,6 @@
 /**
- * MIG-025 §C.4 — masādir register (4 sectors + 4 extension chips).
+ * MIG-025 §C.4 — masādir tradition (4 sectors + 4 extension chips).
+ * MIG-026 Phase 0 — K1 rename: "register" → "tradition" throughout.
  *
  * Per Concept Paper §4.1.3:
  *   Geometry         4 categorical sectors (NOT concentric ladder):
@@ -43,7 +44,7 @@
  * Concept Paper: docs/Constellation-Sight-Concept-Paper-v4.0.md §4.1.3
  * Plan:          lab/reports/MIG-025-SIGHT-V6-PLAN.md §C.4
  */
-import type { LayoutCacheRow, RegisterLayout, RegisterModule, SectorSpec } from '../types';
+import type { LayoutCacheRow, TraditionLayout, TraditionModule, SectorSpec } from '../types';
 
 type MasadirSource = 'quran' | 'sunnah' | 'ijma' | 'qiyas';
 
@@ -104,8 +105,8 @@ function masadirSourceOf(_row: LayoutCacheRow): MasadirSource {
 }
 
 /** FNV-1a 32-bit hash → normalized [0, 1). Same as pramana.ts's
- *  pathHash01 — duplicated locally so registers/ stays decoupled from
- *  anchor.ts. The mild duplication is intentional: register modules
+ *  pathHash01 — duplicated locally so traditions/ stays decoupled from
+ *  anchor.ts. The mild duplication is intentional: tradition modules
  *  should be self-contained. */
 function pathHash01(path: string): number {
 	let h = 0x811c9dc5;
@@ -116,11 +117,11 @@ function pathHash01(path: string): number {
 	return ((h >>> 0) & 0xffff) / 0xffff;
 }
 
-export const masadir: RegisterModule = {
+export const masadir: TraditionModule = {
 	id: 'masadir',
 	name: 'masādir',
 
-	remapStarPosition: (row: LayoutCacheRow, defaultPos, layout: RegisterLayout) => {
+	remapStarPosition: (row: LayoutCacheRow, defaultPos, layout: TraditionLayout) => {
 		const source = masadirSourceOf(row);
 		const startAngle = QUADRANT_START_ANGLES[source];
 
@@ -146,7 +147,7 @@ export const masadir: RegisterModule = {
 		};
 	},
 
-	sectorDividers: (_layout: RegisterLayout): SectorSpec[] => {
+	sectorDividers: (_layout: TraditionLayout): SectorSpec[] => {
 		return QUADRANT_ORDER.map((source): SectorSpec => {
 			const start = QUADRANT_START_ANGLES[source];
 			return {

@@ -1,5 +1,6 @@
 /**
- * MIG-025 §C.3 — pramāṇa register (4 quadrants).
+ * MIG-025 §C.3 — pramāṇa tradition (4 quadrants).
+ * MIG-026 Phase 0 — K1 rename: "register" → "tradition" throughout.
  *
  * Per Concept Paper §4.1.2:
  *   Geometry         4 quadrants for the Nyāya valid means of knowing:
@@ -34,13 +35,13 @@
  *     so notes spread out by creation time inside their quadrant rather
  *     than overlapping at a single point.
  *
- * Dignāga register is EXCLUDED entirely per §C.1-fix-1 — this is the
- * ONLY pramāṇa-tradition register that ships in Constellation.
+ * Dignāga tradition is EXCLUDED entirely per §C.1-fix-1 — this is the
+ * ONLY pramāṇa-tradition that ships in Constellation.
  *
  * Concept Paper: docs/Constellation-Sight-Concept-Paper-v4.0.md §4.1.2
  * Plan:          lab/reports/MIG-025-SIGHT-V6-PLAN.md §C.3
  */
-import type { LayoutCacheRow, RegisterLayout, RegisterModule, SectorSpec } from '../types';
+import type { LayoutCacheRow, TraditionLayout, TraditionModule, SectorSpec } from '../types';
 
 type PramanaKind = 'pratyaksha' | 'anumana' | 'upamana' | 'shabda';
 
@@ -94,7 +95,7 @@ function pramanaKindOf(_row: LayoutCacheRow): PramanaKind {
  *  per-note angular jitter so multiple notes of the same month + same
  *  quadrant spread out within their wedge instead of stacking at a
  *  single point. Duplicates anchor.ts's pathHashJitter logic locally
- *  to keep registers/ free of cross-module imports from the renderer. */
+ *  to keep traditions/ free of cross-module imports from the renderer. */
 function pathHash01(path: string): number {
 	let h = 0x811c9dc5;
 	for (let i = 0; i < path.length; i++) {
@@ -104,11 +105,11 @@ function pathHash01(path: string): number {
 	return ((h >>> 0) & 0xffff) / 0xffff;
 }
 
-export const pramana: RegisterModule = {
+export const pramana: TraditionModule = {
 	id: 'pramana',
 	name: 'pramāṇa',
 
-	remapStarPosition: (row: LayoutCacheRow, defaultPos, layout: RegisterLayout) => {
+	remapStarPosition: (row: LayoutCacheRow, defaultPos, layout: TraditionLayout) => {
 		const kind = pramanaKindOf(row);
 		const startAngle = QUADRANT_START_ANGLES[kind];
 
@@ -137,7 +138,7 @@ export const pramana: RegisterModule = {
 		};
 	},
 
-	sectorDividers: (_layout: RegisterLayout): SectorSpec[] => {
+	sectorDividers: (_layout: TraditionLayout): SectorSpec[] => {
 		return QUADRANT_ORDER.map((kind): SectorSpec => {
 			const start = QUADRANT_START_ANGLES[kind];
 			return {

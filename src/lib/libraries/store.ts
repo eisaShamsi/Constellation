@@ -3465,18 +3465,22 @@ export interface AppSettings {
 		 *  Migration in `applyParsedSettings` copies old `proMode`
 		 *  value into `extended` for existing users. */
 		extended?: boolean;
-		/** MIG-025 §A.12 — active epistemic register (Concept Paper §4).
-		 *  5 registers shipped in v6.2 (4 production + 1 v1-preview) per
+		/** MIG-025 §A.12 — active scholarly tradition (Concept Paper §4).
+		 *  5 traditions shipped in v6.2 (4 production + 1 v1-preview) per
 		 *  Eisa's locked decision. Anchor-dome only; mini-domes stay
-		 *  culturally neutral per §7.
-		 *  §C.1-fix-1 (Eisa 2026-05-16): Dignāga register EXCLUDED.
+		 *  culturally neutral per §7. MIG-026 Phases γ–θ extend to 24
+		 *  curated traditions.
+		 *  §C.1-fix-1 (Eisa 2026-05-16): Dignāga tradition EXCLUDED.
 		 *  §C.4-religious-rule (Eisa 2026-05-16): Suhrawardi Ishrāqī
-		 *  also EXCLUDED per the new top-principal religious-lineage
+		 *  also EXCLUDED per the top-principal religious-lineage
 		 *  rule (orientation v2.09). The 'dignaga' and 'ishraqi'
-		 *  literals are both removed from this union; migration blocks
-		 *  in applyParsedSettings below rewrite both persisted values
-		 *  back to 'aristotelian'. */
-		activeRegister?:
+		 *  literals are both removed from this union.
+		 *  MIG-026 Phase 0 — K1 full rename: field renamed from
+		 *  `activeRegister` to `activeTradition`. Migration block in
+		 *  applyParsedSettings rewrites legacy `activeRegister` → new
+		 *  `activeTradition` field; subsequent dignaga/ishraqi blocks
+		 *  rewrite to `activeTradition`. */
+		activeTradition?:
 			| 'aristotelian'
 			| 'pramana'
 			| 'masadir'
@@ -3676,7 +3680,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
 		// Eisa's cycle-1 review; migration in applyParsedSettings carries
 		// existing users' values forward.
 		extended: false,
-		activeRegister: 'aristotelian',
+		activeTradition: 'aristotelian',
 		hexBinThreshold: 5000,
 		linkFadeThreshold: 800,
 		// v6MigrationDone left undefined intentionally — the §A.12
@@ -3850,21 +3854,49 @@ export function applyParsedSettings(parsed: Record<string, unknown>): void {
 		saveSettings();
 	}
 
-	// ── §C.1-fix-1 — Dignāga register exclusion migration ───────
+	// ── MIG-026 Phase 0 — K1 rename: activeRegister → activeTradition ─
+	// 2026-05-17, MIG-026 Phase 0 (K1 full rename "register" →
+	// "tradition" throughout). Legacy users have `activeRegister: <id>`
+	// in settings.json. This block copies it to `activeTradition` and
+	// deletes `activeRegister`. Runs BEFORE the dignaga/ishraqi
+	// migration blocks below so those see the snapshot's
+	// `activeRegister` field (still present in snapshot since the
+	// snapshot was read once at top), but write to the new
+	// `activeTradition` field name.
+	// Idempotent: subsequent loads have no `activeRegister` key in
+	// the snapshot so the branch is silent. saveSettings persists.
+	if ('activeRegister' in sightSnapshotForRename) {
+		appSettings.update((s) => {
+			const nextSight = { ...s.sight } as Record<string, unknown>;
+			if (!('activeTradition' in sightSnapshotForRename) || nextSight.activeTradition === undefined) {
+				nextSight.activeTradition = sightSnapshotForRename.activeRegister;
+			}
+			delete nextSight.activeRegister;
+			return { ...s, sight: nextSight as typeof s.sight };
+		});
+		saveSettings();
+	}
+
+	// ── §C.1-fix-1 — Dignāga tradition exclusion migration ──────
 	// 2026-05-16, Eisa Stage 2 review of §C.1: "don't include the
 	// 'Dignāga' at all in any of Constellation functions". The
-	// 'dignaga' literal is removed from RegisterId and from the
-	// activeRegister union above. This block rewrites any persisted
+	// 'dignaga' literal is removed from TraditionId and from the
+	// activeTradition union above. This block rewrites any persisted
 	// activeRegister: 'dignaga' (could exist if a user clicked the
 	// Dignāga chip during §C.1 testing before this fix shipped) back
 	// to 'aristotelian' so the chip's blue-dot indicator resolves to
-	// a valid register entry. Idempotent: subsequent loads have no
+	// a valid tradition entry. Idempotent: subsequent loads have no
 	// 'dignaga' value so the branch is silent. saveSettings persists
 	// the rewrite to disk.
-	if (sightSnapshotForRename.activeRegister === 'dignaga') {
+	// MIG-026 Phase 0: this block now WRITES to `activeTradition`
+	// (the renamed field) but READS from the snapshot's still-present
+	// legacy `activeRegister` key. The rename block above already
+	// migrated the field name in the store.
+	if (sightSnapshotForRename.activeRegister === 'dignaga' ||
+	    sightSnapshotForRename.activeTradition === 'dignaga') {
 		appSettings.update((s) => ({
 			...s,
-			sight: { ...s.sight, activeRegister: 'aristotelian' },
+			sight: { ...s.sight, activeTradition: 'aristotelian' },
 		}));
 		saveSettings();
 	}
@@ -3881,10 +3913,14 @@ export function applyParsedSettings(parsed: Record<string, unknown>): void {
 	// v6.2-pre-religious-rule testing, rewrite back to 'aristotelian'.
 	// Idempotent: subsequent loads have no 'ishraqi' value so the
 	// branch is silent. saveSettings persists the rewrite to disk.
-	if (sightSnapshotForRename.activeRegister === 'ishraqi') {
+	// MIG-026 Phase 0: also accepts persisted 'ishraqi' under the new
+	// `activeTradition` key (edge case: user downgraded after migration
+	// then re-upgraded).
+	if (sightSnapshotForRename.activeRegister === 'ishraqi' ||
+	    sightSnapshotForRename.activeTradition === 'ishraqi') {
 		appSettings.update((s) => ({
 			...s,
-			sight: { ...s.sight, activeRegister: 'aristotelian' },
+			sight: { ...s.sight, activeTradition: 'aristotelian' },
 		}));
 		saveSettings();
 	}

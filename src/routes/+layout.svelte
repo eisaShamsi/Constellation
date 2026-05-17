@@ -5398,7 +5398,7 @@
 			{:else if sightV6Active && SIGHT_V6_ENABLED}
 				<!-- MIG-025 §A.7 — Constellation Sight v6 mount block.
 				     Coordinated Views per Concept Paper v4.0: anchor dome +
-				     facet sidebar + 4 mini-domes + 7-register chip. §A.6
+				     facet sidebar + 4 mini-domes + tradition chip. §A.6
 				     ships the placeholder; §A.8/§A.9 land the anchor render;
 				     §A.10 lands the sidebar; §A.11 lands the tour. -->
 				<div class="star-fullscreen sight-v6-fullscreen">

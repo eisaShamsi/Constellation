@@ -1536,6 +1536,54 @@ Architect doc updated with §9 closing the loop (LOCKED choices + revised phase 
 
 Next deliverable: Plan phase doc at `lab/reports/MIG-026-SIGHT-REGISTER-EXPANSION-PLAN.md`. Plan-Approval-Equals-Build-Approval kicks in once Plan approved.
 
+### MIG-026 Plan doc shipped + approved (2026-05-17)
+
+Plan doc landed: `lab/reports/MIG-026-SIGHT-REGISTER-EXPANSION-PLAN.md` (643 lines). 21 commits across 10 main phases + 11 sub-phases. Eisa: "Approved" — Plan-Approval-Equals-Build-Approval triggers. Build cascade opens with Phase 0.
+
+### MIG-026 Phase 0 — K1 full rename (register → tradition) (2026-05-17)
+
+Per Plan §2. Rename-only refactor; zero user-visible behavior change. Foundation phase before all subsequent Phase α–μ work.
+
+**Files touched** (~16 files):
+- **git mv**:
+  - `src/lib/sight/v6/registers/` → `traditions/` (folder rename — 4 files: index.ts + 3 modules)
+  - `src/lib/sight/v6/registerChip.svelte` → `traditionChip.svelte`
+- **Code rename**:
+  - `src/lib/sight/v6/types.ts` — `RegisterId` → `TraditionId`, `RegisterModule` → `TraditionModule`, `RegisterLayout` → `TraditionLayout`; GestureEvent kinds `'expand-register-chip'` → `'expand-tradition-chip'`, `'select-register'` → `'select-tradition'`; comment block + MIG-026 Phase 0 note added
+  - `src/lib/sight/v6/traditions/index.ts` — wholesale rewrite: `REGISTRY` keyed by `TraditionId`; `getRegisterById` → `getTraditionById`; `allRegisters` → `allTraditions`; comment block updated with MIG-026 Phase 0 note + phase decomposition reference
+  - `src/lib/sight/v6/traditions/aristotelian.ts` — type names renamed; comment updated
+  - `src/lib/sight/v6/traditions/pramana.ts` — type names renamed; `registers/` → `traditions/` in comment; "register" → "tradition" in comments
+  - `src/lib/sight/v6/traditions/masadir.ts` — type names renamed; "register" → "tradition" in comments
+  - `src/lib/sight/v6/traditionChip.svelte` — wholesale rewrite: `RegisterId` → `TraditionId`, `RegisterDef` → `TraditionDef`, `REGISTERS` → `TRADITIONS`, `activeRegister` → `activeTradition`, CSS classes `register-chip-*` → `tradition-chip-*`, `aria-label="Epistemic register"` → `"Scholarly tradition"`, title attr "Active epistemic register" → "Active scholarly tradition", MIG-026 Phase 0 note added
+  - `src/lib/sight/v6/anchor.ts` — type imports renamed; param `register?` → `tradition?`; all "register" in comments → "tradition" (case-preserving)
+  - `src/lib/sight/v6/SightV6.svelte` — imports renamed; `getRegisterById` → `getTraditionById`; `activeRegister` → `activeTradition`; `registerExtensionChips` → `traditionExtensionChips`; `<RegisterChip />` → `<TraditionChip />`; all "register" in comments → "tradition"
+  - `src/lib/libraries/store.ts` — schema field `activeRegister?:` → `activeTradition?:`; DEFAULT_SETTINGS rename; comment block updated; **NEW** MIG-026 Phase 0 migration block in applyParsedSettings (rewrites legacy `activeRegister` → `activeTradition`, deletes old key); existing dignaga/ishraqi migration blocks updated to write `activeTradition` AND check both old and new field names
+- **Comment touches**:
+  - `src/lib/sight/v6/tour.svelte:8` — "register chip" → "tradition chip"
+  - `src/lib/sight/engine.ts:52` — "7-register chip" → "tradition chip"
+  - `src/lib/sight/engine.ts:124` — "register chip + 4 production registers" → "tradition chip + 4 production traditions"
+  - `src/routes/+layout.svelte:5401` — "7-register chip" → "tradition chip"
+- **Spec docs**:
+  - `docs/Constellation-Sight-Concept-Paper-v4.0.md` — blanket `register` → `tradition` + `Register` → `Tradition` (73 occurrences, all Sight-epistemic concept)
+  - `lab/reports/MIG-025-SIGHT-V6-PLAN.md` — blanket rename (same)
+  - `docs/Constellation — Universal Orientation.md` — 3 targeted edits: line 257 "Register chips" → "Tradition chips" + "production-polish registers" → "production-polish traditions"; line 262 "v1-preview register" → "v1-preview tradition" + parenthetical updated to note MIG-026 Phase 0 rename; line 291 deleted stale "Sight v6 has no register chip" claim (Sight v6.2 has a tradition chip; renaming would compound the staleness)
+- **NOT touched in Phase 0**:
+  - Subtitle "v6.2 — Registers (Phase 3)" in SightV6.svelte template line 690 — bumps in Phase α to "v6.3 — Traditions (Phase 1)" per Plan §3
+  - `src/lib/sight/v6/dome.ts:205` "visual register" — different sense (color/music register), not Sight-epistemic
+  - `src/lib/i18n/en.json:1665` "No libraries registered" — verb sense
+  - Various unrelated `register*` patterns elsewhere (CM6, property registry, UniverseSetup, etc.)
+
+**Migration block additions in store.ts**:
+- NEW Phase 0 block: `if ('activeRegister' in sightSnapshotForRename)` → copy to `activeTradition`, delete old key, saveSettings
+- UPDATED dignaga block: checks both `snapshot.activeRegister === 'dignaga'` (legacy path) and `snapshot.activeTradition === 'dignaga'` (edge case); writes `activeTradition: 'aristotelian'`
+- UPDATED ishraqi block: same pattern
+
+**Build verification**: `npm run check` passes with 3 pre-existing errors (LinkLifecycle dedupe in store.ts:2470 — see memory `project_link_lifecycle_dedupe_fix.md`; PropertyEditor.svelte type issue ×2 — pre-existing) and 304 warnings (mostly unused CSS selectors). **Zero new errors introduced by Phase 0 rename.**
+
+**Behavior shipped**: zero user-visible behavior change. Chip still says "Aristotelian ●" (or whatever the user had selected). All 5 currently-shipping traditions still work. Settings persist via migration. Subtitle still reads "v6.2 — Registers (Phase 3)" (Phase α bumps it).
+
+**Boss-test expectation** (per Plan §2): light verification — open Sight, confirm chip works, switch traditions, confirm settings persist after quit+relaunch.
+
 ### Phase 2 ship (Sight v6.1) remains intact
 
 None of this disturbs the v6.1 ship (commit `f295b296`). The 4 currently-working registers (Aristotelian, pramāṇa, masādir, Polanyi-as-chip-placeholder) and the Mohist chip placeholder all stay; only Ishrāqī comes out (and Polanyi's working module wasn't built, just the chip — same status as Ishrāqī was). Users on the C4-masadir build don't lose anything functional in this change.
