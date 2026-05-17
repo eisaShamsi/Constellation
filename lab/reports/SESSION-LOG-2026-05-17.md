@@ -352,5 +352,60 @@ count 1397 → 1399 (the two new tradition modules).
 Build kicked off for Phase γ .exe (task `bw1tm020g`). Boss-test
 instructions surface when the .exe is ready.
 
+## Phase γ Boss test — Stage 1/3/4 PASS · Stage 2 PARTIAL · §γ-fix-1
+
+Eisa Boss-tested the Phase γ .exe (`MIG026-phase-gamma.exe`,
+mtime 13:37). Four screenshots:
+
+- **Stage 1 (Polanyi)**: PASS — fog gradient visible (dense at
+  center, fading to rim); 'tacit' label at dome center; 'explicit'
+  label at bottom rim; Aristotelian-default star positions
+  preserved under the fog.
+- **Stage 2 (Mohist sān biǎo)**: **PARTIAL** — 2 divider lines
+  clipped correctly to the dome chord; bilingual labels visible at
+  left edge of each band (本 běn · root / 原 yuán · origin / 用 yòng
+  · use); stars redistributed into the 3 bands. **But Eisa**:
+  *"The stars are hardly visible."* The 7,341 stars spread across
+  3 bands × ~1/3 of the dome each = no overlap density = low-alpha
+  dots from density-mode dissolve into the bg.
+- **Stage 3 (extended view, Polanyi active)**: PASS — 4 mini-domes
+  unchanged (Aristotelian-default layout preserved; tradition
+  isolation invariant §11.6 holds).
+- **Stage 4 (revert to Aristotelian)**: PASS — fog disappears,
+  Connection cluster back in place, no residual chrome from Mohist
+  or Polanyi.
+
+### Root cause for Stage 2 dimness
+
+Density mode (§B.9, MIG-025) was tuned for Aristotelian's
+concentrated stratum-by-time clusters. With 7,341 stars > the
+5,000 threshold, density mode is always on for Eisa; per-star
+alpha drops to ~0.3 so overlapping dots additive-blend into a
+milky-way texture in dense regions. In Aristotelian the Connection
+cluster occupies ~5% of dome area → high overlap → reads bright.
+In Mohist horizontal-bands the same 7,341 stars spread across
+~100% of dome area → no overlap → individual dots dissolve.
+
+### §γ-fix-1
+
+`SightV6.svelte`:
+- New `$derived anchorDensityMode` reads `densityMode` AND gates on
+  `tradition.shape`; returns false for spread shapes.
+- `renderAnchorDome` receives `anchorDensityMode` instead of the
+  universe-wide `densityMode`.
+- `<MiniDome />` still receives `densityMode` (its layout is always
+  Aristotelian-default, so density mode still benefits it).
+
+Currently only `horizontal-bands` (Mohist) is treated as a spread
+shape; the list will extend as future spread shapes ship (grid
+Phase ε.2, rings Phase ε.1, relational Phase θ.1 — they share the
+uniform-distribution property).
+
+**Commit**: `63c7776` — MIG-026 §γ-fix-1 — disable density mode
+for spread-shape traditions. 1 file changed, +33 / −1.
+
+Build for §γ-fix-1 .exe kicked off (task `bqs7f1kbq`). Boss re-test
+instructions surface when ready.
+
 ---
 
