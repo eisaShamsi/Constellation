@@ -708,5 +708,51 @@ pramana rotation. 3 files changed, +48 / −11.
 
 Build for fix-1 .exe kicked off (task `b8g10k4ln`).
 
+## §δ.2-fix-1 PASS · Phase δ CLOSED
+
+Eisa "Check 1 / Check 2 / Check 3: Pass." Phase δ closes
+cleanly. Modern Western family complete (6 traditions: polanyi /
+peirce / habermas / dewey / husserl / longino). Pramana cleanup
+applied (NE/SE/SW/NW → E/S/W/N geometric position; categorical
+meaning unchanged).
+
+## Phase ε direction: cascade ε.1 → ε.2 → ε.3
+
+Eisa selected "Continue all of Phase ε" via AskUserQuestion. Per
+Plan §7 recommendation ("3 sub-phases — each registers a
+substantially different shape, so worth separate Boss tests"),
+cascading through ε.1 → ε.2 → ε.3 with separate test cycles each.
+
+## MIG-026 §ε.1 — Ibn Rushd burhān (code shipped)
+
+First Arabic / Islamic family tradition. Reuses `drawRingBoundaries`
+already implemented in §δ.2 for Husserl — no new renderer needed.
+
+### Files (5)
+
+- `types.ts` — TraditionId += 'ibn-rushd-burhan'
+- `store.ts` — activeTradition union extended
+- `traditions/ibn-rushd-burhan.ts` (NEW) — 4 concentric zones:
+  burhān (0-25%) / jadal (25-50%) / khaṭāba (50-75%) / shiʿr
+  (75-100%). Default-all-to-shiʿr (lowest demonstrative force —
+  defensible: most notes start as imaginative association before
+  being elevated). Citation: Ibn Rushd, *Faṣl al-Maqāl* §§ 7-15.
+- `traditions/index.ts` — REGISTRY entry; FAMILIES['arabic-islamic
+  -beyond'].traditions = ['ibn-rushd-burhan'] (was empty)
+- `traditionChip.svelte` — TRADITIONS_META entry
+
+### Verification
+
+`npm run check`: 3 pre-existing errors. Zero new. File count
+1404 → 1405.
+
+### Commit
+
+`73d6e6a` — MIG-026 §ε.1 — Ibn Rushd burhān ladder (rings, 4
+zones). 5 files changed, +144 / −6.
+
+Build kicked off (task `b7hv9tpfc`). Boss test surfaces when .exe
+ready.
+
 ---
 
