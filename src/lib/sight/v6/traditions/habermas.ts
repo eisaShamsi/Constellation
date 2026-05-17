@@ -46,14 +46,21 @@ import type { LayoutCacheRow, TraditionLayout, TraditionModule, SectorSpec } fro
 type HabermasInterest = 'technical' | 'practical' | 'emancipatory';
 
 /** Sector start angles in canvas math convention (0 = east, increases
- *  clockwise because canvas y is inverted). Three 120° sectors starting
- *  at north (top of dome) and proceeding clockwise. Same geometric
- *  layout as Peirce but different conceptual content. */
+ *  clockwise because canvas y is inverted). Three 120° sectors offset
+ *  by 30° CW from the cardinal vertical axis so dividers don't collide
+ *  with the stratum labels on the +y vertical axis. Same geometric
+ *  layout + same offset as Peirce; see peirce.ts SECTOR_START block
+ *  for the §δ.1-fix-1 rationale.
+ *
+ *  technical:    -π/3 .. π/3      (1 o'clock → 5 o'clock, NE+E wedge)
+ *  practical:    π/3 .. π         (5 o'clock → 9 o'clock, S+SW wedge)
+ *  emancipatory: π .. -π/3        (9 o'clock → 1 o'clock, NW+N wedge, includes 12 o'clock) */
 const SECTOR_ARC = (2 * Math.PI) / 3;
+const SECTOR_ROTATION_OFFSET = Math.PI / 6;
 const SECTOR_START: Record<HabermasInterest, number> = {
-	technical: -Math.PI / 2,
-	practical: -Math.PI / 2 + SECTOR_ARC,
-	emancipatory: -Math.PI / 2 + 2 * SECTOR_ARC,
+	technical: -Math.PI / 2 + SECTOR_ROTATION_OFFSET,
+	practical: -Math.PI / 2 + SECTOR_ROTATION_OFFSET + SECTOR_ARC,
+	emancipatory: -Math.PI / 2 + SECTOR_ROTATION_OFFSET + 2 * SECTOR_ARC,
 };
 
 const SECTOR_LABELS: Record<HabermasInterest, string> = {

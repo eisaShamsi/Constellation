@@ -38,17 +38,27 @@ import type { LayoutCacheRow, TraditionLayout, TraditionModule, SectorSpec } fro
 type PeirceCategory = 'firstness' | 'secondness' | 'thirdness';
 
 /** Sector start angles in canvas math convention (0 = east, increases
- *  clockwise because canvas y is inverted). Three 120° sectors starting
- *  at north (top of dome) and proceeding clockwise.
+ *  clockwise because canvas y is inverted). Three 120° sectors offset
+ *  by 30° CW from the cardinal vertical axis so dividers don't collide
+ *  with the stratum labels (FOUNDATION, WORKING, …, EDGE OF KNOWING)
+ *  which sit on the +y vertical axis from dome center.
  *
- *  Firstness:  -π/2 .. -π/2 + 2π/3   (12 o'clock to 4 o'clock, NE wedge)
- *  Secondness: -π/2 + 2π/3 .. -π/2 + 4π/3   (4 o'clock to 8 o'clock, S wedge)
- *  Thirdness:  -π/2 + 4π/3 .. -π/2 + 2π    (8 o'clock to 12 o'clock, NW wedge) */
+ *  §δ.1-fix-1 (Eisa Boss test 2026-05-17): pre-fix, the first sector
+ *  started at -π/2 (12 o'clock) — the top divider overlapped the
+ *  stratum labels. Rotated by +π/6 so the top divider is at
+ *  -π/3 (~1 o'clock), with the vertical axis falling safely INSIDE
+ *  the Thirdness sector (no divider there). Same fix applied to
+ *  habermas.ts which shares this geometry.
+ *
+ *  Firstness:  -π/3 .. -π/3 + 2π/3 = π/3      (1 o'clock → 5 o'clock, NE+E wedge)
+ *  Secondness: π/3 .. π/3 + 2π/3 = π          (5 o'clock → 9 o'clock, S+SW wedge)
+ *  Thirdness:  π .. π + 2π/3 ≡ -π/3           (9 o'clock → 1 o'clock, NW+N wedge, includes 12 o'clock) */
 const SECTOR_ARC = (2 * Math.PI) / 3;
+const SECTOR_ROTATION_OFFSET = Math.PI / 6;
 const SECTOR_START: Record<PeirceCategory, number> = {
-	firstness: -Math.PI / 2,
-	secondness: -Math.PI / 2 + SECTOR_ARC,
-	thirdness: -Math.PI / 2 + 2 * SECTOR_ARC,
+	firstness: -Math.PI / 2 + SECTOR_ROTATION_OFFSET,
+	secondness: -Math.PI / 2 + SECTOR_ROTATION_OFFSET + SECTOR_ARC,
+	thirdness: -Math.PI / 2 + SECTOR_ROTATION_OFFSET + 2 * SECTOR_ARC,
 };
 
 const SECTOR_LABELS: Record<PeirceCategory, string> = {
