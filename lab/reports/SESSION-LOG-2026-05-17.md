@@ -582,5 +582,80 @@ Habermas sectors 30° CW. 2 files changed, +31 / −14.
 Build kicked off for §δ.1-fix-1 .exe (task `b9maz6sl4`). Boss
 re-test instructions surface when ready.
 
+## §δ.1-fix-1 PASS · Phase δ.1 CLOSED
+
+Eisa: "All Pass" on `MIG026-phase-delta-1-fix1.exe`. Phase δ.1
+closes cleanly: Peirce + Habermas both render 3-sector layouts with
+vertical-axis-cleared dividers.
+
+## MIG-026 §δ.2 — Dewey + Husserl + Longino (code shipped)
+
+Cascading directly into δ.2 per Plan §6.2. Three new tradition
+modules + 2 stub renderers fleshed out.
+
+### Files (8)
+
+- `types.ts` — TraditionId extended with `dewey` + `husserl` +
+  `longino`
+- `store.ts:3483` — activeTradition literal union extended (the
+  type-duplicate flagged for ship-gate)
+- `anchor.ts`:
+  - `drawRingBoundaries` IMPLEMENTED (was stub originally scheduled
+    for Phase ε.1 / Ibn Rushd; pulled forward because Husserl is the
+    first ring-shape tradition)
+  - `drawCyclicFlow` IMPLEMENTED (was stub, scheduled for δ.2 = same
+    phase). Ring at 75% radius + segment-divider ticks + segment
+    labels at 85% radius + flow chevron arrows on the path
+- `traditions/dewey.ts` (NEW) — 5-stage pattern of inquiry (cyclic-
+  flow); Dewey 1938
+- `traditions/husserl.ts` (NEW) — 4 regional ontologies (concentric-
+  rings: formal / material-nature / animal-nature / spirit); Husserl
+  1913
+- `traditions/longino.ts` (NEW) — 4-cell sectoral with 45° rotation
+  (avoids cardinal-axis divider collision per §δ.1-fix-1 principle);
+  Longino 2002
+- `traditions/index.ts` — REGISTRY + FAMILIES['modern-western']
+  (now lists all 6 family members) + imports + re-exports
+- `traditionChip.svelte` — TRADITIONS_META entries
+
+### Architecture notes
+
+`drawRingBoundaries` pulled forward — subsequent ring-shape phases
+(Ibn Rushd ε.1, PaRDeS ζ.1, Maldonado-Torres θ.3) inherit the
+implementation without needing to write it themselves. Similar
+pulled-forward dynamic for the `_chrome` plumbing in MIG-027 →
+Phase γ inherited theme-awareness for free.
+
+Longino uses the 4-sector pattern from pramana but with a 45° (π/4)
+rotation offset — same principle as §δ.1-fix-1 for the 3-sector
+pattern. Dividers land at NE/SE/SW/NW positions, avoiding the
+vertical-axis stratum labels.
+
+### Verification
+
+`npm run check`: 3 pre-existing errors. Zero new. File count
+1401 → 1404.
+
+### Commit
+
+`d672f23` — MIG-026 §δ.2 — Dewey (cyclic) + Husserl (rings) +
+Longino (sectoral). 8 files changed, +586 / −29.
+
+### Modern Western family complete
+
+All 6 traditions in the family now have implemented modules:
+
+| Tradition | Shape | Phase shipped |
+|---|---|---|
+| Polanyi | gradient | γ |
+| Peirce | sectoral 3-cell | δ.1 |
+| Habermas | sectoral 3-cell | δ.1 |
+| Dewey | cyclic-flow 5-segment | δ.2 |
+| Husserl | rings 4-zone | δ.2 |
+| Longino | sectoral 4-cell | δ.2 |
+
+Build kicked off for Phase δ.2 .exe (task `b3138lbyg`). Boss-test
+instructions surface when ready.
+
 ---
 
