@@ -496,7 +496,10 @@ function drawCyclicFlow(
 	//    on the ring path, pointing clockwise (tangent to the ring at
 	//    that angle). The chevron is rendered as two short strokes
 	//    forming a ">" shape pointing in the clockwise tangent direction.
-	const chevronSize = 4;
+	//    §δ.2-fix-1 (Eisa 2026-05-17): chevronSize bumped 4 → 8 (2× the
+	//    initial Phase δ.2 value) per Boss feedback "Enlarge it 2x" —
+	//    the smaller arrows didn't read as direction markers at 1× zoom.
+	const chevronSize = 8;
 	for (let i = 0; i < n; i++) {
 		const midAngle = startAngle + (i + 0.5) * segmentArc;
 		// Tangent direction at midAngle, clockwise = perpendicular to

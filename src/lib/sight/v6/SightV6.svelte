@@ -218,8 +218,22 @@
 		const tradition = getTraditionById(
 			$appSettings.sight?.activeTradition as TraditionId | undefined,
 		);
-		if (tradition?.shape === 'horizontal-bands') return 2;
-		return 0;
+		// §γ-fix-2 + §δ.2-fix-1: per-shape boost values tuned by Boss
+		// across iterations. horizontal-bands (Mohist) at +2 px; cyclic-
+		// flow (Dewey) and rings (Husserl) at +1.5 px — their spread
+		// patterns differ from horizontal-bands (narrower ring band /
+		// concentric zones vs full-dome 3 stripes) so they need less
+		// of a bump. Future spread-shapes (grid, relational) join here
+		// as their phases ship.
+		switch (tradition?.shape) {
+			case 'horizontal-bands':
+				return 2;
+			case 'cyclic-flow':
+			case 'rings':
+				return 1.5;
+			default:
+				return 0;
+		}
 	});
 
 	// §C.4 — extension chips from the active tradition. masādir is the

@@ -48,15 +48,35 @@ type PramanaKind = 'pratyaksha' | 'anumana' | 'upamana' | 'shabda';
 /** Quadrant start angles in canvas math convention (0 = east, increases
  *  clockwise because canvas y is inverted). Each quadrant spans π/2 rad.
  *
- *  NE (upper right) = pratyakṣa   = angles −π/2 .. 0
- *  SE (lower right) = anumāna     = angles 0    .. π/2
- *  SW (lower left)  = upamāna     = angles π/2  .. π
- *  NW (upper left)  = śabda       = angles π    .. 3π/2  (≡ −π .. −π/2) */
+ *  §δ.2-fix-1 (Eisa Boss test 2026-05-17 side discovery): pre-fix the
+ *  quadrants started at the cardinal axes (-π/2 = north, 0 = east,
+ *  etc.), which made the top divider stroke run straight up through
+ *  the stratum labels (FOUNDATION, WORKING, CONNECTION, SYNTHESIS,
+ *  EDGE OF KNOWING) on the +y axis. Eisa flagged this when testing
+ *  pramana during the δ.2 cycle — same root cause as §δ.1-fix-1 for
+ *  Peirce + Habermas (3-sector) and the deliberate Longino offset
+ *  (4-sector). Applying the half-wedge offset (π/4 for a 4-sector
+ *  pattern) shifts dividers off the cardinal axes to NE/SE/SW/NW
+ *  positions; the vertical axis falls cleanly inside the śabda
+ *  quadrant.
+ *
+ *  Post-fix quadrant positions (geometric, not cultural):
+ *    pratyakṣa  = angles -π/4 .. π/4    (1:30 → 4:30, E wedge)
+ *    anumāna    = angles π/4 .. 3π/4    (4:30 → 7:30, S wedge)
+ *    upamāna    = angles 3π/4 .. 5π/4   (7:30 → 10:30, W wedge)
+ *    śabda      = angles 5π/4 .. 7π/4   (10:30 → 1:30, N wedge, includes +y axis)
+ *
+ *  Cultural mapping (Concept Paper §4.1.2): the pramāṇas remain
+ *  CATEGORICAL "kinds, not levels" — the visual quadrant they occupy
+ *  is purely a layout choice. The Concept Paper's NE/SE/SW/NW
+ *  description becomes E/S/W/N after this rotation, which is a doc-
+ *  drift item flagged for §4.1.2 update at MIG-026 ship-gate. */
+const QUADRANT_ROTATION_OFFSET = Math.PI / 4;
 const QUADRANT_START_ANGLES: Record<PramanaKind, number> = {
-	pratyaksha: -Math.PI / 2,
-	anumana: 0,
-	upamana: Math.PI / 2,
-	shabda: Math.PI,
+	pratyaksha: -Math.PI / 2 + QUADRANT_ROTATION_OFFSET,
+	anumana: 0 + QUADRANT_ROTATION_OFFSET,
+	upamana: Math.PI / 2 + QUADRANT_ROTATION_OFFSET,
+	shabda: Math.PI + QUADRANT_ROTATION_OFFSET,
 };
 
 /** Display labels rendered in the dome chrome at each quadrant's wedge
