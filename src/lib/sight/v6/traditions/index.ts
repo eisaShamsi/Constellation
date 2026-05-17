@@ -35,6 +35,7 @@ import { dewey } from './dewey';
 import { husserl } from './husserl';
 import { longino } from './longino';
 import { ibnRushdBurhan } from './ibn-rushd-burhan';
+import { shatibiMaqasid } from './shatibi-maqasid';
 
 /**
  * The registered tradition modules. Keyed by TraditionId for O(1)
@@ -46,7 +47,8 @@ import { ibnRushdBurhan } from './ibn-rushd-burhan';
  * Phase δ.1:    peirce (sectoral), habermas (sectoral)
  * Phase δ.2:    dewey (cyclic-flow), husserl (rings), longino (sectoral)
  * Phase ε.1:    ibn-rushd-burhan (rings, 4 zones)
- * Phases ε.2–θ: the 13 remaining newcomers across the remaining shapes
+ * Phase ε.2:    shatibi-maqasid (grid, 3×5 = 15 cells)
+ * Phases ε.3–θ: the 12 remaining newcomers across the remaining shapes
  */
 const REGISTRY: Partial<Record<TraditionId, TraditionModule>> = {
 	aristotelian,
@@ -60,7 +62,8 @@ const REGISTRY: Partial<Record<TraditionId, TraditionModule>> = {
 	husserl,
 	longino,
 	'ibn-rushd-burhan': ibnRushdBurhan,
-	// (Phases ε.2–θ add the 13 remaining traditions per the MIG-026 Plan)
+	'shatibi-maqasid': shatibiMaqasid,
+	// (Phases ε.3–θ add the 12 remaining traditions per the MIG-026 Plan)
 };
 
 /**
@@ -128,9 +131,9 @@ export const FAMILIES: Record<FamilyId, { label: string; traditions: TraditionId
 	},
 	'arabic-islamic-beyond': {
 		label: 'Arabic / Islamic beyond uṣūl',
-		// Phase ε.1 adds ibn-rushd-burhan; ε.2 will add shatibi-maqasid;
+		// Phase ε.1 added ibn-rushd-burhan; ε.2 adds shatibi-maqasid;
 		// ε.3 will add ibn-khaldun-umran.
-		traditions: ['ibn-rushd-burhan'],
+		traditions: ['ibn-rushd-burhan', 'shatibi-maqasid'],
 	},
 	'modern-western': {
 		label: 'Modern Western',
@@ -188,4 +191,5 @@ export {
 	husserl,
 	longino,
 	ibnRushdBurhan,
+	shatibiMaqasid,
 };

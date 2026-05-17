@@ -205,7 +205,8 @@ export type TraditionId =
 	| 'dewey'
 	| 'husserl'
 	| 'longino'
-	| 'ibn-rushd-burhan';
+	| 'ibn-rushd-burhan'
+	| 'shatibi-maqasid';
 
 // ════════════════════════════════════════════════════════════════════
 // Tradition module contract (Concept Paper §4 + Plan §C.2)

@@ -120,6 +120,12 @@
 			scope: 'For Islamic Aristotelian commentary tradition: burhān (apodictic demonstration, innermost), jadal (dialectic), khaṭāba (rhetoric), shiʿr (poetics, outermost).',
 			preview: false,
 		},
+		'shatibi-maqasid': {
+			name: 'Shāṭibī maqāṣid',
+			tooltip: 'al-Shāṭibī — maqāṣid al-sharīʿa: 5 universal essentials × 3 tiers of necessity (15-cell grid)',
+			scope: 'For Sunni Islamic legal-purpose analysis: each note at the intersection of an essential (dīn / nafs / ʿaql / nasl / māl) and a tier (ḍarūriyyāt / ḥājiyyāt / taḥsīniyyāt).',
+			preview: false,
+		},
 	};
 
 	let dropdownOpen = $state(false);
