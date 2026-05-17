@@ -239,6 +239,7 @@
 				return 2;
 			case 'cyclic-flow':
 			case 'rings':
+			case 'ladder':
 				return 1.5;
 			default:
 				return 0;

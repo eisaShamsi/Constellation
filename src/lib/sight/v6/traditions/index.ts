@@ -38,6 +38,7 @@ import { ibnRushdBurhan } from './ibn-rushd-burhan';
 import { shatibiMaqasid } from './shatibi-maqasid';
 import { ibnKhaldunUmran } from './ibn-khaldun-umran';
 import { pardes } from './pardes';
+import { maimonideanProphecy } from './maimonidean-prophecy';
 
 /**
  * The registered tradition modules. Keyed by TraditionId for O(1)
@@ -52,7 +53,8 @@ import { pardes } from './pardes';
  * Phase ε.2:    shatibi-maqasid (grid, 3×5 = 15 cells)
  * Phase ε.3:    ibn-khaldun-umran (binary-flow, 2 horizontal bands)
  * Phase ζ.1:    pardes (rings, 4 zones)
- * Phases ζ.2–θ: the 10 remaining newcomers across the remaining shapes
+ * Phase ζ.2:    maimonidean-prophecy (ladder spiral, 11 steps)
+ * Phases ζ.3–θ: the 9 remaining newcomers across the remaining shapes
  */
 const REGISTRY: Partial<Record<TraditionId, TraditionModule>> = {
 	aristotelian,
@@ -69,7 +71,8 @@ const REGISTRY: Partial<Record<TraditionId, TraditionModule>> = {
 	'shatibi-maqasid': shatibiMaqasid,
 	'ibn-khaldun-umran': ibnKhaldunUmran,
 	pardes,
-	// (Phases ζ.2–θ add the 10 remaining traditions per the MIG-026 Plan)
+	'maimonidean-prophecy': maimonideanProphecy,
+	// (Phases ζ.3–θ add the 9 remaining traditions per the MIG-026 Plan)
 };
 
 /**
@@ -149,9 +152,9 @@ export const FAMILIES: Record<FamilyId, { label: string; traditions: TraditionId
 	},
 	'jewish-abrahamic': {
 		label: 'Jewish (Abrahamic)',
-		// Phase ζ.1 adds pardes; ζ.2 will add maimonidean-prophecy;
+		// Phase ζ.1 added pardes; ζ.2 adds maimonidean-prophecy;
 		// ζ.3 will add talmudic-middot.
-		traditions: ['pardes'],
+		traditions: ['pardes', 'maimonidean-prophecy'],
 	},
 	'east-asian-confucian': {
 		label: 'East Asian Confucian',
@@ -201,4 +204,5 @@ export {
 	shatibiMaqasid,
 	ibnKhaldunUmran,
 	pardes,
+	maimonideanProphecy,
 };

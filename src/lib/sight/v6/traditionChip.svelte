@@ -138,6 +138,12 @@
 			scope: 'For Jewish hermeneutical analysis: peshat (literal, innermost) → remez (allusion) → derash (interpretive) → sod (mystical, outermost).',
 			preview: false,
 		},
+		'maimonidean-prophecy': {
+			name: 'Maimonidean prophecy',
+			tooltip: 'Maimonides — 11 degrees of prophecy in Guide of the Perplexed II:45 (spiral ladder)',
+			scope: 'For Jewish philosophical theology: 11 ascending degrees of prophetic experience, from ruaḥ ha-qodesh (holy spirit, innermost) to angel-vision-while-awake (Moses-level, outermost).',
+			preview: false,
+		},
 	};
 
 	let dropdownOpen = $state(false);

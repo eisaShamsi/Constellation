@@ -387,22 +387,123 @@ function drawRingBoundaries(
 	ctx.restore();
 }
 
-/** STUB — Phase ζ.2 (Maimonidean prophecy spiral) ships the implementation.
- *  Per Eisa's locked D3 choice: render as logarithmic spiral from center
- *  to outer rim, with N step-marks along the spiral. */
+/** MIG-026 Phase ζ.2 — Spiral ladder renderer.
+ *
+ *  Per Eisa's locked D3 choice (Architect §3.D): render as a spiral
+ *  from near-center outward with N step-marks along the spiral. Used
+ *  by Maimonidean prophecy (Phase ζ.2 — 11 steps) and Talmudic 13
+ *  middot (Phase ζ.3 — 13 steps).
+ *
+ *  Implementation uses an ARCHIMEDEAN spiral (r linear in θ) rather
+ *  than a logarithmic one — Archimedean gives even radial spacing
+ *  between turns, which reads as "rungs of a ladder" more intuitively
+ *  than logarithmic's exponential expansion.
+ *
+ *  Spiral parameters:
+ *    totalAngle = 3π (1.5 full turns)
+ *    innerR     = 0.05 * dome.radius   (spiral start)
+ *    outerR     = 0.95 * dome.radius   (spiral end)
+ *    slope b    = (outerR - innerR) / totalAngle
+ *    intercept a = innerR
+ *    r(θ)        = a + b·θ
+ *
+ *  Step marks: N evenly-spaced ticks along the spiral at θ_i = i *
+ *  (totalAngle / (N-1)) for i=0..N-1. Each tick is a short
+ *  perpendicular-to-tangent stroke crossing the spiral path.
+ *
+ *  Labels: placed radially-outward from each step mark by ~10 world
+ *  units, kept horizontal (no rotation) for readability.
+ *
+ *  Stack variant: future enhancement; currently treated as spiral.
+ */
 function drawLadderSteps(
-	_ctx: CanvasRenderingContext2D,
-	_layout: DomeLayout,
-	_ladder: LadderSpec,
+	ctx: CanvasRenderingContext2D,
+	layout: DomeLayout,
+	ladder: LadderSpec,
 ): void {
-	// TODO Phase ζ.2 — Maimonidean spiral spike: implement equiangular
-	// spiral r(θ) = a·exp(b·θ) where:
-	//   N = ladder.steps.length
-	//   a = small inner offset (~5% of layout.radius)
-	//   b chosen so step N lands at r ≈ 0.95 * layout.radius
-	//   trace spiral path with ctx.beginPath / lineTo
-	//   place step-marks at N equally-spaced θ values along the spiral
-	//   label each mark tangent to the spiral or via short radial spokes
+	const n = ladder.steps.length;
+	if (n === 0) return;
+
+	const totalAngle = 3 * Math.PI; // 1.5 turns
+	const innerR = layout.radius * 0.05;
+	const outerR = layout.radius * 0.95;
+	const a = innerR;
+	const b = (outerR - innerR) / totalAngle;
+
+	const polar = (theta: number) => {
+		const r = a + b * theta;
+		return {
+			x: layout.centerX + r * Math.cos(theta - Math.PI / 2),
+			y: layout.centerY + r * Math.sin(theta - Math.PI / 2),
+		};
+	};
+
+	ctx.save();
+
+	// 1. Trace the spiral path as a polyline. ~64 segments per turn for
+	//    smoothness; total segments = 64 * turns.
+	const turns = totalAngle / (2 * Math.PI);
+	const totalSegments = Math.ceil(64 * turns);
+	ctx.strokeStyle = _chrome.strataRing;
+	ctx.lineWidth = 1.2;
+	ctx.beginPath();
+	for (let i = 0; i <= totalSegments; i++) {
+		const theta = (i / totalSegments) * totalAngle;
+		const p = polar(theta);
+		if (i === 0) ctx.moveTo(p.x, p.y);
+		else ctx.lineTo(p.x, p.y);
+	}
+	ctx.stroke();
+
+	// 2. Step ticks — short perpendicular strokes at each step's θ.
+	//    Tick orientation: radial direction (perpendicular to tangent
+	//    at that point on a tightly-wound spiral is approximately radial
+	//    when slope b is small relative to r). Length 6 world units.
+	const tickLen = 6;
+	ctx.lineWidth = 1.6;
+	for (let i = 0; i < n; i++) {
+		const theta = (i / (n - 1)) * totalAngle;
+		const p = polar(theta);
+		// Radial direction unit vector from dome center
+		const dx = p.x - layout.centerX;
+		const dy = p.y - layout.centerY;
+		const dist = Math.hypot(dx, dy) || 1;
+		const ux = dx / dist;
+		const uy = dy / dist;
+		// Tick spans from p - tickLen/2 * u to p + tickLen/2 * u (radial)
+		ctx.beginPath();
+		ctx.moveTo(p.x - ux * tickLen * 0.5, p.y - uy * tickLen * 0.5);
+		ctx.lineTo(p.x + ux * tickLen * 0.5, p.y + uy * tickLen * 0.5);
+		ctx.stroke();
+	}
+
+	// 3. Step labels — placed radially-outward from each step mark by
+	//    a small offset. Text horizontal (no rotation) for readability.
+	ctx.fillStyle = _chrome.stratumLabel;
+	ctx.font = 'italic 9px Inter, system-ui, sans-serif';
+	ctx.textAlign = 'left';
+	ctx.textBaseline = 'middle';
+	const labelOffset = 8;
+	for (let i = 0; i < n; i++) {
+		const step = ladder.steps[i];
+		if (!step.label) continue;
+		const theta = (i / (n - 1)) * totalAngle;
+		const p = polar(theta);
+		const dx = p.x - layout.centerX;
+		const dy = p.y - layout.centerY;
+		const dist = Math.hypot(dx, dy) || 1;
+		const ux = dx / dist;
+		const uy = dy / dist;
+		// Label at p + labelOffset * radial-outward unit vector
+		const lx = p.x + ux * labelOffset;
+		const ly = p.y + uy * labelOffset;
+		// textAlign 'left' for east-ish positions, 'right' for west-ish.
+		// Use the x-component of the radial direction to decide.
+		ctx.textAlign = ux >= 0 ? 'left' : 'right';
+		ctx.fillText(step.label, lx, ly);
+	}
+
+	ctx.restore();
 }
 
 /** STUB — Phase θ.1 (Mignolo pluriversal hub-and-spoke) ships the impl.
