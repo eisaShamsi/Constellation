@@ -491,5 +491,49 @@ Per the test instruction surfaced post-fix-2, the next options are:
    by the same .exe.
 3. **Pivot** to something else (CNS theming MIG-028 etc.).
 
+## Eisa direction: Cascade into Phase δ.1 (Peirce + Habermas)
+
+## MIG-026 §δ.1 — Peirce + Habermas (code shipped)
+
+Both new modules are 3-sector sectoral shapes — they reuse the
+existing `drawSectorDividers` renderer (no new shape implementation
+needed). Each defaults all stars to first sector per Plan §6.1
+because LayoutCacheRow doesn't yet carry the frontmatter field;
+per-note opt-in ships as a §δ.1-fix-N follow-up once Rust-side
+extraction lands.
+
+### Files (6)
+
+- `types.ts` — TraditionId extended with 'peirce' + 'habermas'
+- `traditions/peirce.ts` (NEW) — 3 sectors: Firstness (NE) /
+  Secondness (S) / Thirdness (NW); citation Peirce 1867
+- `traditions/habermas.ts` (NEW) — 3 sectors: technical /
+  practical / emancipatory; citation Habermas 1968
+- `traditions/index.ts` — REGISTRY + FAMILIES['modern-western']
+  + imports + re-exports
+- `traditionChip.svelte` — TRADITIONS_META entries (display
+  name, tooltip, scope, preview=false)
+- `store.ts:3483` — activeTradition literal union extended
+  with the 2 new IDs
+
+### Doc-drift flagged
+
+`store.ts:3483-3490` carries a duplicate of the TraditionId
+literal union (used as the persisted `activeTradition` field
+type). Every TraditionId extension requires updating this duplicate
+too. Better long-term: import `TraditionId` directly from types.ts
+or generate the schema type from a single source. Flagging for
+MIG-026 ship-gate cleanup; not blocking.
+
+### Commit
+
+`51b853a8` — MIG-026 §δ.1 — Peirce + Habermas. 6 files changed,
++289 / −7. File count 1399 → 1401.
+
+Build kicked off for Phase δ.1 .exe (task `bqi20hjew`). Boss-test
+instructions surface when the .exe is ready (per Plan §6.1: 2-stage
+cycle — each tradition switch, confirm 3-sector layout + labels +
+mini-isolation).
+
 ---
 
