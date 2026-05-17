@@ -31,6 +31,9 @@ import { polanyi } from './polanyi';
 import { mohistSanBiao } from './mohist-san-biao';
 import { peirce } from './peirce';
 import { habermas } from './habermas';
+import { dewey } from './dewey';
+import { husserl } from './husserl';
+import { longino } from './longino';
 
 /**
  * The registered tradition modules. Keyed by TraditionId for O(1)
@@ -40,7 +43,8 @@ import { habermas } from './habermas';
  * Phase 0:      aristotelian, pramana, masadir
  * Phase γ:      polanyi (gradient), mohist-san-biao (horizontal-bands)
  * Phase δ.1:    peirce (sectoral), habermas (sectoral)
- * Phases δ.2–θ: the 17 remaining newcomers across the remaining shapes
+ * Phase δ.2:    dewey (cyclic-flow), husserl (rings), longino (sectoral)
+ * Phases ε–θ:   the 14 remaining newcomers across the remaining shapes
  */
 const REGISTRY: Partial<Record<TraditionId, TraditionModule>> = {
 	aristotelian,
@@ -50,7 +54,10 @@ const REGISTRY: Partial<Record<TraditionId, TraditionModule>> = {
 	'mohist-san-biao': mohistSanBiao,
 	peirce,
 	habermas,
-	// (Phases δ.2–θ add the 17 remaining traditions per the MIG-026 Plan)
+	dewey,
+	husserl,
+	longino,
+	// (Phases ε–θ add the 14 remaining traditions per the MIG-026 Plan)
 };
 
 /**
@@ -123,9 +130,9 @@ export const FAMILIES: Record<FamilyId, { label: string; traditions: TraditionId
 	},
 	'modern-western': {
 		label: 'Modern Western',
-		// Phase γ added polanyi; Phase δ.1 adds peirce + habermas;
-		// Phase δ.2 will add dewey, husserl, longino.
-		traditions: ['polanyi', 'peirce', 'habermas'],
+		// Phase γ added polanyi; Phase δ.1 added peirce + habermas;
+		// Phase δ.2 adds dewey + husserl + longino. Family complete.
+		traditions: ['polanyi', 'peirce', 'habermas', 'dewey', 'husserl', 'longino'],
 	},
 	'jewish-abrahamic': {
 		label: 'Jewish (Abrahamic)',
@@ -165,4 +172,15 @@ export const TRADITION_TO_FAMILY: Map<TraditionId, FamilyId> = (() => {
 	return m;
 })();
 
-export { aristotelian, pramana, masadir, polanyi, mohistSanBiao, peirce, habermas };
+export {
+	aristotelian,
+	pramana,
+	masadir,
+	polanyi,
+	mohistSanBiao,
+	peirce,
+	habermas,
+	dewey,
+	husserl,
+	longino,
+};

@@ -96,6 +96,24 @@
 			scope: 'For knowledge classified by orientation: prediction/control (technical), mutual understanding (practical), reflection/liberation (emancipatory).',
 			preview: false,
 		},
+		dewey: {
+			name: 'Dewey',
+			tooltip: 'Dewey — pragmatist 5-stage pattern of inquiry (cyclic flow)',
+			scope: 'For knowledge as the resolution of an indeterminate situation through inquiry: indeterminate → problem → hypothesis → reasoning → testing (and back).',
+			preview: false,
+		},
+		husserl: {
+			name: 'Husserl',
+			tooltip: 'Husserl — phenomenological regional ontologies (4 concentric zones)',
+			scope: 'For knowledge classified by ontological region: formal ontology (center), material nature, animal nature, spirit / Geist (outer).',
+			preview: false,
+		},
+		longino: {
+			name: 'Longino',
+			tooltip: 'Longino — Critical Contextual Empiricism, 4 norms of objective inquiry',
+			scope: 'For social conditions of objectivity: venues (public forums), uptake (response to criticism), public standards (shared criteria), tempered equality (credentialed disagreement).',
+			preview: false,
+		},
 	};
 
 	let dropdownOpen = $state(false);

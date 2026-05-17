@@ -317,19 +317,74 @@ function drawSectorDividers(
 //     removed in the phase that implements the shape) so we know
 //     when a tradition we haven't built yet gets selected
 
-/** STUB — Phase ε.1 (Ibn Rushd burhān ladder) ships the implementation.
- *  Draws N concentric ring boundaries at the radial fractions specified
- *  in `rings`, with optional labels at the midpoint of each annulus. */
+/** MIG-026 Phase δ.2 — Concentric ring boundary strokes + labels.
+ *
+ *  Originally scheduled for Phase ε.1 (Ibn Rushd burhān ladder) but
+ *  pulled forward to δ.2 because Husserl's regional ontologies is the
+ *  first ring-shaped tradition to ship (geometric-shape audit in
+ *  orientation v2.10 puts Husserl in the "Concentric rings" category
+ *  alongside Ibn Rushd, PaRDeS, and Maldonado-Torres).
+ *
+ *  For each RingSpec, draws an arc at `radiusFrac * layout.radius` and
+ *  places `label` (if present) at the midpoint of the annulus along
+ *  the -y axis (top vertical) shifted slightly so it doesn't collide
+ *  with the existing stratum labels (which sit at the centers of the
+ *  5 strata bands at centerY - r). We offset the ring labels along the
+ *  +x axis (east, 3 o'clock) instead — clean and consistent across
+ *  ring-shape traditions.
+ *
+ *  Stroke color = _chrome.strataRing (chrome family — same as the
+ *  base strata circles in step 2). Line width 1.2 px world-units
+ *  (matches drawSectorDividers convention).
+ */
 function drawRingBoundaries(
-	_ctx: CanvasRenderingContext2D,
-	_layout: DomeLayout,
-	_rings: RingSpec[],
+	ctx: CanvasRenderingContext2D,
+	layout: DomeLayout,
+	rings: RingSpec[],
 ): void {
-	// TODO Phase ε.1: implement concentric ring boundary strokes + labels
-	// per LadderSpec spec. Sketch:
-	//   for each RingSpec, draw arc at radius = radiusFrac * layout.radius
-	//   place label at midpoint of annulus along +y axis (or another spoke)
-	//   stroke style: _chrome.strataRing; lineWidth: 1.2 (chrome-consistent)
+	if (rings.length === 0) return;
+	ctx.save();
+
+	// 1. Ring boundary arcs at the requested radial fractions.
+	ctx.strokeStyle = _chrome.strataRing;
+	ctx.lineWidth = 1.2;
+	for (const ring of rings) {
+		const r = ring.radiusFrac * layout.radius;
+		ctx.beginPath();
+		ctx.arc(layout.centerX, layout.centerY, r, 0, Math.PI * 2);
+		ctx.stroke();
+	}
+
+	// 2. Annulus labels. Each ring's label sits at the midpoint between
+	//    its boundary and the next-larger boundary (or the outer rim if
+	//    this is the outermost ring), along the +x axis (east, 3 o'clock)
+	//    so it doesn't collide with the stratum labels on the +y axis.
+	//    Sort rings by radiusFrac to ensure midpoint math uses adjacent
+	//    boundaries.
+	const sortedRings = [...rings].sort((a, b) => a.radiusFrac - b.radiusFrac);
+	ctx.fillStyle = _chrome.stratumLabel;
+	ctx.font = 'italic 10px Inter, system-ui, sans-serif';
+	ctx.textAlign = 'left';
+	ctx.textBaseline = 'middle';
+	for (let i = 0; i < sortedRings.length; i++) {
+		const ring = sortedRings[i];
+		if (!ring.label) continue;
+		const innerFrac = i === 0 ? 0 : sortedRings[i - 1].radiusFrac;
+		const outerFrac = ring.radiusFrac;
+		const midFrac = (innerFrac + outerFrac) / 2;
+		const lx = layout.centerX + midFrac * layout.radius + 4; // +4 px world inset right
+		const ly = layout.centerY;
+		ctx.fillText(ring.label, lx, ly);
+	}
+
+	// 3. If the largest ring boundary is < 1.0 (i.e. there's an outer
+	//    annulus beyond the last specified boundary), label that annulus
+	//    too — its inner edge is the largest specified boundary, outer
+	//    is the dome rim (radiusFrac 1.0). Caller decides what label to
+	//    use by including a RingSpec with radiusFrac=1.0 and the desired
+	//    label; this block intentionally does NOT auto-generate a label.
+
+	ctx.restore();
 }
 
 /** STUB — Phase ζ.2 (Maimonidean prophecy spiral) ships the implementation.
@@ -365,18 +420,115 @@ function drawRelationalGraph(
 	//   labels: outside each cluster bubble (radial-outward placement)
 }
 
-/** STUB — Phase δ.2 (Dewey pattern of inquiry) ships the implementation.
- *  Renders N segments in a ring with arrow flow indicating sequence. */
+/** MIG-026 Phase δ.2 — Cyclic-flow ring + segment labels + flow arrows.
+ *
+ *  Draws a single ring path at ~75% radius divided into N equal arc-
+ *  segments. Each segment gets a label at its midpoint (radial-outward
+ *  position so labels sit between the ring path and the outer rim).
+ *  Chevron arrows on the path indicate clockwise sequence flow
+ *  (segment N → wraps to segment 1, matching the cyclic nature of
+ *  Dewey's pattern of inquiry).
+ *
+ *  Stroke colors from _chrome (chrome family) so the cyclic ring +
+ *  arrows track the active theme. Segment dividers (short radial
+ *  ticks crossing the ring path) help separate adjacent segments
+ *  visually so the sequence reads as N distinct stages, not one
+ *  continuous loop.
+ */
 function drawCyclicFlow(
-	_ctx: CanvasRenderingContext2D,
-	_layout: DomeLayout,
-	_cyclic: CyclicFlowSpec,
+	ctx: CanvasRenderingContext2D,
+	layout: DomeLayout,
+	cyclic: CyclicFlowSpec,
 ): void {
-	// TODO Phase δ.2 — Dewey: implement
-	//   draw a circular path at ~75% radius
-	//   divide into N arc-segments (each spans 2π/N)
-	//   place segment label at midpoint of each arc (radial-outward)
-	//   add chevron-arrows on the path indicating clockwise flow
+	const n = cyclic.segments.length;
+	if (n === 0) return;
+
+	ctx.save();
+	const ringRadius = layout.radius * 0.75;
+	const segmentArc = (2 * Math.PI) / n;
+	// Start at -π/2 (12 o'clock) so the first segment's leading edge
+	// is at top. Sequence then proceeds clockwise.
+	const startAngle = -Math.PI / 2;
+
+	// 1. Main ring path at 75% radius.
+	ctx.strokeStyle = _chrome.strataRing;
+	ctx.lineWidth = 1.2;
+	ctx.beginPath();
+	ctx.arc(layout.centerX, layout.centerY, ringRadius, 0, Math.PI * 2);
+	ctx.stroke();
+
+	// 2. Segment divider ticks (short radial strokes at each segment
+	//    boundary, crossing the ring path). 4 px world (~half on each
+	//    side of the ring path).
+	const tickHalfLen = 4;
+	for (let i = 0; i < n; i++) {
+		const a = startAngle + i * segmentArc;
+		const cosA = Math.cos(a);
+		const sinA = Math.sin(a);
+		const x1 = layout.centerX + (ringRadius - tickHalfLen) * cosA;
+		const y1 = layout.centerY + (ringRadius - tickHalfLen) * sinA;
+		const x2 = layout.centerX + (ringRadius + tickHalfLen) * cosA;
+		const y2 = layout.centerY + (ringRadius + tickHalfLen) * sinA;
+		ctx.beginPath();
+		ctx.moveTo(x1, y1);
+		ctx.lineTo(x2, y2);
+		ctx.stroke();
+	}
+
+	// 3. Segment labels at midpoint of each arc, placed slightly outside
+	//    the ring path (at ~85% radius) so they don't overlap the ring
+	//    stroke itself.
+	ctx.fillStyle = _chrome.stratumLabel;
+	ctx.font = 'italic 10px Inter, system-ui, sans-serif';
+	ctx.textAlign = 'center';
+	ctx.textBaseline = 'middle';
+	const labelRadius = layout.radius * 0.85;
+	for (let i = 0; i < n; i++) {
+		const seg = cyclic.segments[i];
+		if (!seg.label) continue;
+		const midAngle = startAngle + (i + 0.5) * segmentArc;
+		const lx = layout.centerX + labelRadius * Math.cos(midAngle);
+		const ly = layout.centerY + labelRadius * Math.sin(midAngle);
+		ctx.fillText(seg.label, lx, ly);
+	}
+
+	// 4. Flow chevron arrows. One small arrow at each segment midpoint
+	//    on the ring path, pointing clockwise (tangent to the ring at
+	//    that angle). The chevron is rendered as two short strokes
+	//    forming a ">" shape pointing in the clockwise tangent direction.
+	const chevronSize = 4;
+	for (let i = 0; i < n; i++) {
+		const midAngle = startAngle + (i + 0.5) * segmentArc;
+		// Tangent direction at midAngle, clockwise = perpendicular to
+		// the radial direction, +π/2 added to the radial angle.
+		const tangentAngle = midAngle + Math.PI / 2;
+		const cx = layout.centerX + ringRadius * Math.cos(midAngle);
+		const cy = layout.centerY + ringRadius * Math.sin(midAngle);
+		const tx = Math.cos(tangentAngle);
+		const ty = Math.sin(tangentAngle);
+		// Chevron tip at (cx, cy); two wings extending backward.
+		const wingBackAngle1 = tangentAngle + Math.PI - Math.PI / 4;
+		const wingBackAngle2 = tangentAngle + Math.PI + Math.PI / 4;
+		const wx1 = cx + chevronSize * Math.cos(wingBackAngle1);
+		const wy1 = cy + chevronSize * Math.sin(wingBackAngle1);
+		const wx2 = cx + chevronSize * Math.cos(wingBackAngle2);
+		const wy2 = cy + chevronSize * Math.sin(wingBackAngle2);
+		// Push the chevron slightly forward of the segment midpoint so
+		// the tip points into the next segment (suggests "flow into next").
+		const tipPushX = cx + tx * 2;
+		const tipPushY = cy + ty * 2;
+		const wx1Adj = wx1 + tx * 2;
+		const wy1Adj = wy1 + ty * 2;
+		const wx2Adj = wx2 + tx * 2;
+		const wy2Adj = wy2 + ty * 2;
+		ctx.beginPath();
+		ctx.moveTo(wx1Adj, wy1Adj);
+		ctx.lineTo(tipPushX, tipPushY);
+		ctx.lineTo(wx2Adj, wy2Adj);
+		ctx.stroke();
+	}
+
+	ctx.restore();
 }
 
 /** STUB — Phase ε.3 (Ibn Khaldūn ʿumrān cyclic binary) ships the impl.

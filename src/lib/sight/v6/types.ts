@@ -201,7 +201,10 @@ export type TraditionId =
 	| 'polanyi'
 	| 'mohist-san-biao'
 	| 'peirce'
-	| 'habermas';
+	| 'habermas'
+	| 'dewey'
+	| 'husserl'
+	| 'longino';
 
 // ════════════════════════════════════════════════════════════════════
 // Tradition module contract (Concept Paper §4 + Plan §C.2)
