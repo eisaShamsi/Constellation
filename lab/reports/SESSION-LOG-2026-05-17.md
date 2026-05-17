@@ -535,5 +535,52 @@ instructions surface when the .exe is ready (per Plan §6.1: 2-stage
 cycle — each tradition switch, confirm 3-sector layout + labels +
 mini-isolation).
 
+## Phase δ.1 Boss test — Stage 1 + 2 PARTIAL, Stage 3 PASS · §δ.1-fix-1
+
+Eisa Boss-tested `MIG026-phase-delta-1.exe` (mtime 17:09). Two
+screenshots:
+
+- **Stage 1 (Peirce)**: 3 sectors + labels (Firstness/Secondness/
+  Thirdness) render correctly. **But**: top divider stroke runs
+  vertically from dome center straight UP — directly through the
+  +y axis where the stratum labels FOUNDATION / WORKING /
+  CONNECTION / SYNTHESIS / EDGE OF KNOWING sit. Stratum labels
+  paint on top of the divider per paint order (step 5 vs 2.5) but
+  the visual collision is distracting — divider stroke shows
+  through the gaps between letters.
+- **Stage 2 (Habermas)**: same remark — identical geometry to
+  Peirce so same vertical-axis collision.
+- **Stage 3 (revert to Aristotelian)**: PASS.
+
+### §δ.1-fix-1
+
+Rotate the 3-sector pattern by +π/6 (30° clockwise) so the first
+sector starts at -π/3 (~1 o'clock) and the vertical axis falls
+INSIDE the third sector (no divider on the +y line).
+
+Post-fix layout (both Peirce + Habermas):
+
+| Sector | Angular extent | Peirce label | Habermas label |
+|---|---|---|---|
+| First | 1 o'clock → 5 o'clock (NE+E) | Firstness | technical |
+| Middle | 5 o'clock → 9 o'clock (S+SW) | Secondness | practical |
+| Third | 9 o'clock → 1 o'clock (NW+N, includes 12 o'clock) | Thirdness | emancipatory |
+
+The 12 o'clock direction (where stratum labels live) is now safely
+inside the third sector — no divider stroke crosses it.
+
+**Pramana NOT updated** — it has the same architectural pattern
+(4 quadrants starting at -π/2 with cardinal-axis dividers) and
+would have the same collision if redistributed. Per Concept Paper
+§4.1.2 the pramāṇa labels are documented at NE/SE/SW/NW positions,
+so a rotation would change documented cultural mapping. Deferred
+to a separate fix if Eisa flags it. Logging as a known issue.
+
+**Commit**: `c9d0d98` — MIG-026 §δ.1-fix-1 — rotate Peirce +
+Habermas sectors 30° CW. 2 files changed, +31 / −14.
+
+Build kicked off for §δ.1-fix-1 .exe (task `b9maz6sl4`). Boss
+re-test instructions surface when ready.
+
 ---
 
