@@ -26,8 +26,15 @@
  */
 
 import type { StarDerived, MiniDomeChannel, SlotChannel, LayoutCacheRow, ProvenanceSector } from './types';
-import { PALETTE, stratumBandBoundaries } from './dome';
+import { PALETTE, CHROME_PALETTE_DARK_FALLBACK, stratumBandBoundaries, type ChromePalette } from './dome';
 import { pipColorForStage, starHitTest, type DomeLayout } from './anchor';
+
+// MIG-027 — module-level chrome palette (same pattern as anchor.ts).
+// renderMiniDome sets this at the top of each paint from the caller's
+// chromePalette option. Helper functions in this file read chrome
+// colors via _chrome.* (theme-aware) and semantic colors via
+// PALETTE.stageX / PALETTE.linkX (theme-agnostic categorical).
+let _chrome: ChromePalette = CHROME_PALETTE_DARK_FALLBACK;
 
 export interface MiniDomeLayout {
 	centerX: number;
@@ -76,6 +83,10 @@ export function renderMiniDome(
 		zoomScale?: number;
 		matchedPaths?: Set<string> | null;
 		densityMode?: boolean;
+		// MIG-027 — theme-aware chrome palette. MiniDome.svelte's
+		// paint() reads via readChromePalette(canvasEl); if not
+		// provided, defaults to dark fallback.
+		chromePalette?: ChromePalette;
 	} = {},
 ): void {
 	const {
@@ -84,7 +95,10 @@ export function renderMiniDome(
 		zoomScale = 1,
 		matchedPaths = null,
 		densityMode = false,
+		chromePalette = CHROME_PALETTE_DARK_FALLBACK,
 	} = options;
+	// MIG-027 — set the module-level chrome state for this paint.
+	_chrome = chromePalette;
 	const layout = computeMiniDomeLayout(width, height);
 	// Coordinate transform: anchor world coords → mini canvas coords.
 	// Channel renderers consume StarDerived.x/y (anchor coords) and
@@ -98,7 +112,7 @@ export function renderMiniDome(
 	ctx.save();
 	ctx.setTransform(1, 0, 0, 1, 0, 0);
 	ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-	ctx.fillStyle = PALETTE.bg;
+	ctx.fillStyle = _chrome.bg;
 	ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 	ctx.restore();
 
@@ -120,7 +134,7 @@ export function renderMiniDome(
 	// now identical between anchor and minis — the radial-anchor
 	// metaphor reads consistently across all 5 surfaces.
 	ctx.save();
-	ctx.strokeStyle = PALETTE.strataRing;
+	ctx.strokeStyle = _chrome.strataRing;
 	ctx.lineWidth = 0.9;
 	for (const r of stratumBandBoundaries(layout.radius)) {
 		ctx.beginPath();
@@ -131,13 +145,13 @@ export function renderMiniDome(
 
 	// Pass 2: channel title text top-center.
 	// 2026-05-15 §B.6-fix-1 (Boss-test cycle 1.4): bumped from
-	// PALETTE.subtitleText (faint #5a6275) to PALETTE.titleText
+	// _chrome.subtitleText (faint #5a6275) to _chrome.titleText
 	// (bright cream #e8ebf2) to match the anchor's header-strip text
 	// color. The mini titles were too faint to read against the dark
 	// background; now they read as confident labels at the same
 	// visual weight as the anchor's "Constellation Sight" title.
 	ctx.save();
-	ctx.fillStyle = PALETTE.titleText;
+	ctx.fillStyle = _chrome.titleText;
 	ctx.font = '10px Inter, system-ui, sans-serif';
 	ctx.textAlign = 'center';
 	ctx.textBaseline = 'top';
@@ -204,7 +218,7 @@ export function renderMiniDome(
 			const goldLineWidth = 1 / zoomScale;
 			ctx.save();
 			// Halo (drawn first, underneath the gold).
-			ctx.strokeStyle = PALETTE.bg;
+			ctx.strokeStyle = _chrome.bg;
 			ctx.lineWidth = haloLineWidth;
 			ctx.beginPath();
 			ctx.arc(hx, hy, ringRadiusWorld, 0, Math.PI * 2);
@@ -229,7 +243,7 @@ export function renderMiniDome(
  *  the confidence channel — no pip, no shape variation, no top-decile
  *  size delta. The visible signal is purely opacity gradient.
  *
- *  Star fill is neutral (PALETTE.starFill); the alpha multiplier
+ *  Star fill is neutral (_chrome.starFill); the alpha multiplier
  *  is the channel. Hypothesis stars (alpha 0.45) appear faint;
  *  established stars (alpha 1.0) appear crisp. Pre-attentive opacity
  *  per Mackinlay encoding-effectiveness ranking. */
@@ -250,7 +264,7 @@ function renderConfidenceChannel(
 	const GHOST_ALPHA = 0.15;
 	const MATCHED_DENSITY_ALPHA = 0.35;
 	const GHOST_DENSITY_ALPHA = 0.05;
-	ctx.fillStyle = PALETTE.starFill;
+	ctx.fillStyle = _chrome.starFill;
 	for (const star of stars) {
 		const isMatched = matchedPaths === null || matchedPaths.has(star.row.notePath);
 		const opacity = isMatched
@@ -296,7 +310,7 @@ function renderStageChannel(
 	for (const star of stars) {
 		const x = star.x * scale + offsetX;
 		const y = star.y * scale + offsetY;
-		const stageColor = pipColorForStage(star.row.stage) ?? PALETTE.starFill;
+		const stageColor = pipColorForStage(star.row.stage) ?? _chrome.starFill;
 		const isMatched = matchedPaths === null || matchedPaths.has(star.row.notePath);
 		ctx.globalAlpha = isMatched
 			? (densityMode ? MATCHED_DENSITY_ALPHA : 1)
@@ -330,7 +344,7 @@ function renderActsChannel(
 	const GHOST_ALPHA = 0.15;
 	const MATCHED_DENSITY_ALPHA = 0.35;
 	const GHOST_DENSITY_ALPHA = 0.05;
-	ctx.fillStyle = PALETTE.starFill;
+	ctx.fillStyle = _chrome.starFill;
 	const topDecileRadius = dotRadius < 1 ? dotRadius * 4 : dotRadius;
 	for (const star of stars) {
 		const r = star.topDecileActs ? topDecileRadius : dotRadius;
@@ -382,7 +396,7 @@ function renderProvenanceChannel(
 	// Sector dividers — 5 lines from center to outer radius.
 	ctx.save();
 	ctx.globalAlpha = 0.2;
-	ctx.strokeStyle = PALETTE.strataRing;
+	ctx.strokeStyle = _chrome.strataRing;
 	ctx.lineWidth = 0.6;
 	for (let i = 0; i < sectorCount; i++) {
 		const angle = -Math.PI / 2 + i * sectorAngle;
@@ -398,7 +412,7 @@ function renderProvenanceChannel(
 
 	// Sector labels at outer rim.
 	ctx.save();
-	ctx.fillStyle = PALETTE.subtitleText;
+	ctx.fillStyle = _chrome.subtitleText;
 	ctx.font = '8px Inter, system-ui, sans-serif';
 	ctx.textAlign = 'center';
 	ctx.textBaseline = 'middle';
@@ -414,7 +428,7 @@ function renderProvenanceChannel(
 	// Stars — re-positioned per provenance sector × stratum.
 	// §B-fix-3: 0.75 radius (1.5 px ⌀). §B.6-fix-3: dotRadius parameterized.
 	// §B.7-fix-2: ghost-mode. §B.9: density-mode lowers alpha.
-	ctx.fillStyle = PALETTE.starFill;
+	ctx.fillStyle = _chrome.starFill;
 	for (const star of stars) {
 		const pos = provenancePositionFor(star, layout);
 		const isMatched = matchedPaths === null || matchedPaths.has(star.row.notePath);
@@ -447,7 +461,7 @@ function renderAnchorChannel(
 	const GHOST_ALPHA = 0.15;
 	const MATCHED_DENSITY_ALPHA = 0.35;
 	const GHOST_DENSITY_ALPHA = 0.05;
-	ctx.fillStyle = PALETTE.starFill;
+	ctx.fillStyle = _chrome.starFill;
 	for (const star of stars) {
 		const x = star.x * scale + offsetX;
 		const y = star.y * scale + offsetY;

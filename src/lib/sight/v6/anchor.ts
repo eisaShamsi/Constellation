@@ -12,7 +12,7 @@
  *   size +40%   → top-decile acts (binary, pre-attentive)
  *   line color  → typed-link kind (auto-fade above 800 visible)
  *
- * Star fill is NEUTRAL (PALETTE.starFill = #cdd5e0) per §4 commit;
+ * Star fill is NEUTRAL (_chrome.starFill = #cdd5e0) per §4 commit;
  * library identity rides on shape only — no library hue.
  *
  * Per §11 invariants:
@@ -43,13 +43,28 @@ import type {
 } from './types';
 import {
 	PALETTE,
+	CHROME_PALETTE_DARK_FALLBACK,
 	STRATUM_BANDS,
 	STRATUM_LABELS,
 	bandForRawStratum,
 	calendarRimMonths,
 	radiusForStratum,
 	stratumBandBoundaries,
+	type ChromePalette,
 } from './dome';
+
+// MIG-027 — Module-level chrome state. Set at the top of every
+// renderAnchorDome call from the caller's chromePalette option (or
+// the dark fallback). All helper functions in this file (drawStars,
+// drawConnectorLines, drawSectorDividers, etc.) read chrome colors
+// via this module-level reference so they pick up theme-aware values
+// without per-call parameter plumbing.
+//
+// Safe because Sight renders one dome at a time; renderAnchorDome is
+// the single entry point; helpers are called only within its call
+// stack so the per-render assignment is stable for the duration of
+// the paint.
+let _chrome: ChromePalette = CHROME_PALETTE_DARK_FALLBACK;
 
 // ════════════════════════════════════════════════════════════════════
 // Layout
@@ -249,7 +264,7 @@ function drawSectorDividers(
 	ctx.save();
 	// Divider strokes — same color as strata rings (chrome family) but
 	// slightly heavier so they read as "category boundary" not "axis tick".
-	ctx.strokeStyle = PALETTE.strataRing;
+	ctx.strokeStyle = _chrome.strataRing;
 	ctx.lineWidth = 1.2;
 	for (const sec of sectors) {
 		const x2 = layout.centerX + Math.cos(sec.angleStart) * layout.radius;
@@ -261,7 +276,7 @@ function drawSectorDividers(
 	}
 	// Wedge-center labels — same italic Inter as stratum labels but
 	// slightly larger (10 px vs 9 px) so they read at one glance.
-	ctx.fillStyle = PALETTE.stratumLabel;
+	ctx.fillStyle = _chrome.stratumLabel;
 	ctx.font = 'italic 10px Inter, system-ui, sans-serif';
 	ctx.textAlign = 'center';
 	ctx.textBaseline = 'middle';
@@ -314,7 +329,7 @@ function drawRingBoundaries(
 	// per LadderSpec spec. Sketch:
 	//   for each RingSpec, draw arc at radius = radiusFrac * layout.radius
 	//   place label at midpoint of annulus along +y axis (or another spoke)
-	//   stroke style: PALETTE.strataRing; lineWidth: 1.2 (chrome-consistent)
+	//   stroke style: _chrome.strataRing; lineWidth: 1.2 (chrome-consistent)
 }
 
 /** STUB — Phase ζ.2 (Maimonidean prophecy spiral) ships the implementation.
@@ -458,6 +473,12 @@ export function renderAnchorDome(
 		// (§C.3) and masādir (§C.4) this is 4 sectors. Star positions
 		// themselves are remapped in computeStarPositions, not here.
 		tradition?: TraditionModule | null;
+		// MIG-027 — theme-aware chrome palette. Caller computes via
+		// `readChromePalette(canvasHostEl)` (from dome.ts) so colors
+		// track the active interface theme automatically. Falls back
+		// to dark when absent (preserves pre-MIG-027 behavior for
+		// any caller that hasn't migrated).
+		chromePalette?: ChromePalette;
 	} = {},
 ): void {
 	const {
@@ -468,7 +489,15 @@ export function renderAnchorDome(
 		matchedPaths = null,
 		densityMode: _densityMode = false,
 		tradition = null,
+		chromePalette = CHROME_PALETTE_DARK_FALLBACK,
 	} = options;
+	// MIG-027 — set the module-level chrome state for the duration of
+	// this paint. All helper functions in this file (drawStars,
+	// drawConnectorLines, drawSectorDividers, etc.) read chrome colors
+	// via the `_chrome` reference at the top of the file. Safe because
+	// Sight renders one dome at a time + helpers are called only
+	// within renderAnchorDome's call stack.
+	_chrome = chromePalette;
 	// §B.9 — densityMode accepted for API symmetry with renderMiniDome
 	// but currently unused: the anchor already renders bodies at
 	// BODY_OPACITY_MULT (0.7) for the existing density-via-additive-
@@ -492,18 +521,18 @@ export function renderAnchorDome(
 		ctx.save();
 		ctx.setTransform(1, 0, 0, 1, 0, 0);
 		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-		ctx.fillStyle = PALETTE.bg;
+		ctx.fillStyle = _chrome.bg;
 		ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 		ctx.restore();
 	} else {
 		// Even when caller manages clear, paint the bg in caller-space
 		// so the dome's local viewport gets the right base color.
-		ctx.fillStyle = PALETTE.bg;
+		ctx.fillStyle = _chrome.bg;
 		ctx.fillRect(0, 0, width, height);
 	}
 
 	// 2. 5 strata reference circles
-	ctx.strokeStyle = PALETTE.strataRing;
+	ctx.strokeStyle = _chrome.strataRing;
 	// 2026-05-14 §A.14 fix-1: stroke width 0.6 → 0.9 for chrome legibility
 	ctx.lineWidth = 0.9;
 	for (const r of stratumBandBoundaries(layout.radius)) {
@@ -559,7 +588,7 @@ export function renderAnchorDome(
 	}
 
 	// 3. Calendar rim labels (12 months, locale-aware)
-	ctx.fillStyle = PALETTE.calendarRimText;
+	ctx.fillStyle = _chrome.calendarRimText;
 	ctx.font = '10px Inter, system-ui, sans-serif';
 	ctx.textAlign = 'center';
 	ctx.textBaseline = 'middle';
@@ -568,7 +597,7 @@ export function renderAnchorDome(
 	}
 
 	// 4. Stratum labels along the vertical axis
-	ctx.fillStyle = PALETTE.stratumLabel;
+	ctx.fillStyle = _chrome.stratumLabel;
 	ctx.font = 'italic 9px Inter, system-ui, sans-serif';
 	ctx.textAlign = 'center';
 	ctx.textBaseline = 'middle';
@@ -659,7 +688,7 @@ function drawStars(
 	// already weak. Library is still surfaced via hover tooltip + the
 	// facet sidebar (with shape glyphs as legend keys, not on stars).
 	// libraryShapeIndex stays in StarDerived for future surfaces.
-	ctx.fillStyle = PALETTE.starFill;
+	ctx.fillStyle = _chrome.starFill;
 	for (const star of stars) {
 		const r = star.topDecileActs ? TOP_DECILE_RADIUS : BASE_STAR_RADIUS;
 		const isMatched = matchedPaths === null || matchedPaths.has(star.row.notePath);

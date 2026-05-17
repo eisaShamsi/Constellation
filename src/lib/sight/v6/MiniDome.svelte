@@ -16,6 +16,8 @@
 	import { renderMiniDome, miniDomeHitTest } from './miniDome';
 	import { confidenceLevelOf } from './facets';
 	import type { DomeLayout } from './anchor';
+	import { readChromePalette } from './dome';
+	import { appSettings } from '$lib/libraries/store';
 
 	let {
 		channel,
@@ -137,14 +139,29 @@
 		// so zoomScale=1 here (the local zoomScale state is inert in
 		// compact mode anyway, since handleWheel/handlePointerDown
 		// early-return on `if (compact) return`).
+		// MIG-027 — pull theme-aware chrome palette from CSS vars at
+		// paint time. Same pattern as SightV6.svelte's paint().
+		const chromePalette = readChromePalette(canvasEl);
 		renderMiniDome(ctx, stars, channel, canvasWidth, canvasHeight, anchorLayout, {
 			highlightedPath,
 			dotRadius: compact ? 0.75 : 1,
 			zoomScale: compact ? 1 : zoomScale,
 			matchedPaths,
 			densityMode,
+			chromePalette,
 		});
 	}
+
+	// MIG-027 — repaint mini-dome when interface theme changes. Mirrors
+	// the SightV6 anchor's theme-change $effect: reads activeThemeId +
+	// colorScheme as dependencies, untracks the paint() call to avoid
+	// loop. paint() reads CSS vars via readChromePalette so they pick
+	// up the new theme.
+	$effect(() => {
+		void $appSettings.activeThemeId;
+		void $appSettings.colorScheme;
+		untrack(() => paint());
+	});
 
 	// §B.6 — pointer hit-test → dispatch hover upward to SightV6, which
 	// updates its canonical hoveredPath. The new value flows back to ALL

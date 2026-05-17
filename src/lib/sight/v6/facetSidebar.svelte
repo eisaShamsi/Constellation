@@ -107,10 +107,10 @@
 		flex: 0 0 auto;
 		width: 20px;
 		height: 100%;
-		background: #0c1322;
+		background: var(--background-secondary, #0c1322);
 		border: 0;
-		border-right: 1px solid #1a1f2e;
-		color: #5a6275;
+		border-right: 1px solid var(--background-modifier-border, #1a1f2e);
+		color: var(--text-faint, #5a6275);
 		cursor: pointer;
 		font-size: 10px;
 		display: flex;
@@ -120,8 +120,8 @@
 		transition: background 0.12s;
 	}
 	.facet-tab:hover {
-		background: #13192b;
-		color: #a0aabe;
+		background: var(--background-modifier-hover, #13192b);
+		color: var(--text-muted, #a0aabe);
 	}
 	.facet-tab-glyph {
 		writing-mode: vertical-rl;
@@ -134,9 +134,9 @@
 		flex: 0 0 180px;
 		display: flex;
 		flex-direction: column;
-		background: #0c1322;
-		border-right: 1px solid #1a1f2e;
-		color: #cdd5e0;
+		background: var(--background-secondary, #0c1322);
+		border-right: 1px solid var(--background-modifier-border, #1a1f2e);
+		color: var(--text-normal, #cdd5e0);
 		font-family: var(--interface-font, 'Inter', system-ui, sans-serif);
 		font-size: 11px;
 		overflow: hidden;
@@ -148,24 +148,24 @@
 		align-items: center;
 		justify-content: space-between;
 		padding: 10px 14px;
-		border-bottom: 1px solid #1a1f2e;
+		border-bottom: 1px solid var(--background-modifier-border, #1a1f2e);
 	}
 	.facet-sidebar-title {
 		font-size: 10px;
 		font-weight: 500;
 		letter-spacing: 0.5px;
-		color: #a0aabe;
+		color: var(--text-muted, #a0aabe);
 	}
 	.facet-sidebar-collapse {
 		background: transparent;
 		border: 0;
-		color: #5a6275;
+		color: var(--text-faint, #5a6275);
 		cursor: pointer;
 		font-size: 12px;
 		padding: 0;
 		line-height: 1;
 	}
-	.facet-sidebar-collapse:hover { color: #a0aabe; }
+	.facet-sidebar-collapse:hover { color: var(--text-muted, #a0aabe); }
 
 	.facet-sidebar-body {
 		flex: 1 1 auto;
@@ -179,7 +179,7 @@
 	.facet-group-label {
 		font-size: 11px;
 		font-weight: 500;
-		color: #cdd5e0;
+		color: var(--text-normal, #cdd5e0);
 		margin-bottom: 4px;
 	}
 
@@ -196,7 +196,7 @@
 		padding: 3px 0;
 		background: transparent;
 		border: 0;
-		color: #7a8295;
+		color: var(--text-muted, #7a8295);
 		font-size: 10px;
 		text-align: left;
 		cursor: pointer;
@@ -204,13 +204,13 @@
 		font-family: inherit;
 	}
 	.facet-cat-row:hover {
-		color: #cdd5e0;
+		color: var(--text-normal, #cdd5e0);
 	}
 	.facet-cat-row.active {
-		color: #7dd3fc;
+		color: var(--text-accent, #7dd3fc);
 	}
 	.facet-cat-row.active .facet-cat-count {
-		color: #7dd3fc;
+		color: var(--text-accent, #7dd3fc);
 	}
 	/* §B.7-fix-3 — hover-linked chip. When the user hovers a star in
 	   any dome, the chips matching that star's facet values get a gold
@@ -238,7 +238,7 @@
 	}
 	.facet-cat-count {
 		flex: 0 0 auto;
-		color: #a0aabe;
+		color: var(--text-muted, #a0aabe);
 		font-variant-numeric: tabular-nums;
 	}
 </style>

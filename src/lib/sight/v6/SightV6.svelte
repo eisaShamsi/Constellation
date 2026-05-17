@@ -41,7 +41,7 @@
 		provenanceSectorOf,
 		type FacetFilters,
 	} from './facets';
-	import { bandForRawStratum } from './dome';
+	import { bandForRawStratum, readChromePalette } from './dome';
 	import FacetSidebar from './facetSidebar.svelte';
 	import Tour from './tour.svelte';
 	import MiniDome from './MiniDome.svelte';
@@ -255,6 +255,15 @@
 		const activeTradition = getTraditionById(
 			$appSettings.sight?.activeTradition as TraditionId | undefined,
 		);
+		// MIG-027 — read chrome colors from CSS variables on the canvas
+		// host element. The document body's CSS vars are set by
+		// +layout.svelte's theme $effect (which calls deriveThemeVariables
+		// on the active theme's 5 colors); so they cascade to canvasHostEl
+		// and any descendant. Computed at every paint so theme changes
+		// take effect on the next render (the theme-change $effect
+		// further down in this file forces a repaint on activeThemeId
+		// transitions).
+		const chromePalette = readChromePalette(canvasHostEl);
 		renderAnchorDome(ctx, stars, visibleLinks, canvasWidth, canvasHeight, {
 			locale: navigator.language ?? 'en',
 			highlightedPath: hoveredPath,
@@ -262,6 +271,7 @@
 			matchedPaths,
 			densityMode,
 			tradition: activeTradition,
+			chromePalette,
 		});
 	}
 
@@ -663,6 +673,19 @@
 		untrack(() => paint());
 	});
 
+	// MIG-027 — repaint anchor when the active interface theme changes.
+	// Reads $appSettings.activeThemeId (set by SettingsModal theme
+	// picker) and $appSettings.colorScheme (system/light/dark for
+	// auto-pairing). +layout.svelte's theme $effect updates document.body's
+	// CSS variables synchronously when these change; our paint() then
+	// re-reads the new CSS-var values via readChromePalette. No recompute
+	// needed — star positions are theme-independent.
+	$effect(() => {
+		void $appSettings.activeThemeId;
+		void $appSettings.colorScheme;
+		untrack(() => paint());
+	});
+
 	// §C.2 — recompute + repaint when the active epistemic tradition
 	// changes. Reads $appSettings.sight.activeTradition so this effect
 	// re-fires whenever traditionChip.svelte writes a new id. The
@@ -887,8 +910,11 @@
 		flex-direction: column;
 		width: 100%;
 		height: 100%;
-		background: #080c16;
-		color: #e8ebf2;
+		/* MIG-027 — theme-aware. Background + text follow active
+		   interface theme via CSS vars set on document.body by
+		   +layout.svelte's theme $effect. */
+		background: var(--background-primary, #080c16);
+		color: var(--text-normal, #e8ebf2);
 		font-family: var(--interface-font, 'Inter', system-ui, sans-serif);
 	}
 
@@ -898,7 +924,7 @@
 		align-items: baseline;
 		gap: 12px;
 		padding: 14px 24px;
-		border-bottom: 1px solid #1a1f2e;
+		border-bottom: 1px solid var(--background-modifier-border, #1a1f2e);
 	}
 
 	.sight-v6-title {
@@ -909,7 +935,7 @@
 
 	.sight-v6-subtitle {
 		font-size: 11px;
-		color: #5a6275;
+		color: var(--text-muted, #5a6275);
 	}
 
 	/* §B.10 — Extended-view indicator (user-facing label "EXTENDED";
@@ -958,9 +984,9 @@
 		padding: 4px 12px;
 		font-size: 11px;
 		font-family: inherit;
-		color: #e8ebf2;
-		background: rgba(58, 67, 90, 0.55);
-		border: 1px solid #3b5998;
+		color: var(--text-normal, #e8ebf2);
+		background: var(--background-secondary, rgba(58, 67, 90, 0.55));
+		border: 1px solid var(--text-accent, #3b5998);
 		border-radius: 4px;
 		cursor: pointer;
 		transition: background 0.12s ease;
@@ -969,10 +995,10 @@
 		margin-left: 8px;
 	}
 	.sight-v6-reset-btn:hover {
-		background: rgba(74, 90, 130, 0.85);
+		background: var(--background-modifier-hover, rgba(74, 90, 130, 0.85));
 	}
 	.sight-v6-reset-btn:active {
-		background: rgba(58, 67, 90, 0.85);
+		background: var(--interactive-hover, rgba(58, 67, 90, 0.85));
 	}
 
 	.sight-v6-body {
@@ -1009,7 +1035,7 @@
 		position: relative;
 		min-width: 0;
 		min-height: 0;
-		border: 1px solid #1a1f2e;
+		border: 1px solid var(--background-modifier-border, #1a1f2e);
 		border-radius: 4px;
 		overflow: hidden;
 	}
@@ -1049,10 +1075,10 @@
 		right: 16px;
 		top: 16px;
 		font-size: 11px;
-		color: #7dd3fc;
+		color: var(--text-accent, #7dd3fc);
 		padding: 4px 10px;
-		background: rgba(13, 19, 34, 0.92);
-		border: 1px solid #3b5998;
+		background: var(--background-secondary, rgba(13, 19, 34, 0.92));
+		border: 1px solid var(--text-accent, #3b5998);
 		border-radius: 4px;
 		pointer-events: none;
 		font-variant-numeric: tabular-nums;
@@ -1084,9 +1110,9 @@
 		font-family: inherit;
 		font-style: italic;
 		font-size: 10px;
-		color: #a0a8ba;
-		background: rgba(58, 67, 90, 0.35);
-		border: 1px solid rgba(160, 168, 186, 0.30);
+		color: var(--text-muted, #a0a8ba);
+		background: var(--background-secondary, rgba(58, 67, 90, 0.35));
+		border: 1px solid var(--background-modifier-border, rgba(160, 168, 186, 0.30));
 		border-radius: 3px;
 		cursor: help;
 		white-space: nowrap;

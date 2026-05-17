@@ -311,8 +311,9 @@
 		align-items: center;
 		gap: 4px;
 		padding: 2px;
-		background: rgba(58, 67, 90, 0.35);
-		border: 1px solid rgba(59, 89, 152, 0.55);
+		/* MIG-027 — theme-aware chip-row container */
+		background: var(--background-secondary, rgba(58, 67, 90, 0.35));
+		border: 1px solid var(--background-modifier-border, rgba(59, 89, 152, 0.55));
 		border-radius: 5px;
 	}
 
@@ -324,7 +325,7 @@
 		padding: 3px 9px;
 		font-size: 11px;
 		font-family: inherit;
-		color: #c8cdd9;
+		color: var(--text-muted, #c8cdd9);
 		background: transparent;
 		border: 1px solid transparent;
 		border-radius: 3px;
@@ -333,16 +334,16 @@
 		white-space: nowrap;
 	}
 	.tradition-chip:hover {
-		color: #e8ebf2;
-		background: rgba(74, 90, 130, 0.35);
+		color: var(--text-normal, #e8ebf2);
+		background: var(--background-modifier-hover, rgba(74, 90, 130, 0.35));
 	}
 	.tradition-chip.is-active {
-		color: #e8ebf2;
-		border-color: #3b5998;
-		background: rgba(59, 89, 152, 0.18);
+		color: var(--text-normal, #e8ebf2);
+		border-color: var(--text-accent, #3b5998);
+		background: hsla(var(--accent-h, 220), var(--accent-s, 50%), 50%, 0.18);
 	}
 	.tradition-chip.is-active:hover {
-		background: rgba(59, 89, 152, 0.28);
+		background: hsla(var(--accent-h, 220), var(--accent-s, 50%), 50%, 0.28);
 	}
 
 	/* "All ▾" dropdown trigger. */
@@ -353,23 +354,23 @@
 		padding: 3px 9px;
 		font-size: 11px;
 		font-family: inherit;
-		color: #a0a8ba;
+		color: var(--text-muted, #a0a8ba);
 		background: transparent;
-		border: 1px dashed rgba(160, 168, 186, 0.40);
+		border: 1px dashed var(--background-modifier-border, rgba(160, 168, 186, 0.40));
 		border-radius: 3px;
 		cursor: pointer;
 		transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
 		white-space: nowrap;
 	}
 	.tradition-chip-all-trigger:hover {
-		color: #e8ebf2;
-		background: rgba(74, 90, 130, 0.35);
-		border-color: rgba(160, 168, 186, 0.65);
+		color: var(--text-normal, #e8ebf2);
+		background: var(--background-modifier-hover, rgba(74, 90, 130, 0.35));
+		border-color: var(--text-muted, rgba(160, 168, 186, 0.65));
 	}
 	.tradition-chip-all-trigger.is-open {
-		color: #e8ebf2;
-		background: rgba(59, 89, 152, 0.22);
-		border-color: #3b5998;
+		color: var(--text-normal, #e8ebf2);
+		background: hsla(var(--accent-h, 220), var(--accent-s, 50%), 50%, 0.22);
+		border-color: var(--text-accent, #3b5998);
 		border-style: solid;
 	}
 	.trigger-chevron {
@@ -391,8 +392,9 @@
 		width: 6px;
 		height: 6px;
 		border-radius: 50%;
-		background: #3b5998;
-		box-shadow: 0 0 4px rgba(59, 89, 152, 0.6);
+		/* MIG-027 — active-tradition indicator uses theme accent */
+		background: var(--text-accent, #3b5998);
+		box-shadow: 0 0 4px hsla(var(--accent-h, 220), var(--accent-s, 50%), 50%, 0.6);
 	}
 
 	.chip-preview-badge {
@@ -420,10 +422,11 @@
 		max-height: 70vh;
 		overflow-y: auto;
 		padding: 6px 0;
-		background: rgba(13, 19, 34, 0.98);
-		border: 1px solid rgba(59, 89, 152, 0.55);
+		/* MIG-027 — theme-aware dropdown surface */
+		background: var(--background-secondary, rgba(13, 19, 34, 0.98));
+		border: 1px solid var(--background-modifier-border, rgba(59, 89, 152, 0.55));
 		border-radius: 5px;
-		box-shadow: 0 6px 24px rgba(0, 0, 0, 0.55);
+		box-shadow: var(--shadow-l, 0 6px 24px rgba(0, 0, 0, 0.55));
 		z-index: 50;
 	}
 
@@ -442,30 +445,30 @@
 		letter-spacing: 0.8px;
 		text-transform: uppercase;
 		font-variant: small-caps;
-		color: #7b8499;
+		color: var(--text-muted, #7b8499);
 		background: transparent;
 		border: none;
 		cursor: pointer;
 		text-align: left;
 	}
 	.tradition-chip-family-header:hover {
-		color: #c8cdd9;
+		color: var(--text-normal, #c8cdd9);
 	}
 	.family-chevron {
 		display: inline-block;
 		font-size: 9px;
 		transition: transform 0.15s ease;
-		color: #5a6275;
+		color: var(--text-faint, #5a6275);
 	}
 	.family-chevron.is-expanded {
 		transform: rotate(90deg);
-		color: #7b8499;
+		color: var(--text-muted, #7b8499);
 	}
 	.family-label {
 		font-weight: 600;
 	}
 	.family-count {
-		color: #5a6275;
+		color: var(--text-faint, #5a6275);
 		font-weight: 400;
 		font-size: 9px;
 	}
@@ -483,13 +486,13 @@
 		padding: 0 4px 0 22px;
 	}
 	.tradition-row.is-active {
-		background: rgba(59, 89, 152, 0.12);
+		background: hsla(var(--accent-h, 220), var(--accent-s, 50%), 50%, 0.12);
 	}
 	.tradition-row:hover {
-		background: rgba(74, 90, 130, 0.18);
+		background: var(--background-modifier-hover, rgba(74, 90, 130, 0.18));
 	}
 	.tradition-row.is-active:hover {
-		background: rgba(59, 89, 152, 0.20);
+		background: hsla(var(--accent-h, 220), var(--accent-s, 50%), 50%, 0.20);
 	}
 
 	.tradition-row-name-btn {
@@ -500,7 +503,7 @@
 		gap: 2px;
 		padding: 8px 10px;
 		font-family: inherit;
-		color: #e8ebf2;
+		color: var(--text-normal, #e8ebf2);
 		background: transparent;
 		border: none;
 		border-radius: 3px;
@@ -514,7 +517,7 @@
 	.tradition-row-scope {
 		font-size: 10px;
 		font-style: italic;
-		color: #7b8499;
+		color: var(--text-muted, #7b8499);
 		line-height: 1.35;
 	}
 
@@ -525,7 +528,9 @@
 		justify-content: center;
 		width: 28px;
 		font-size: 14px;
-		color: #5a6275;
+		/* Pin star color stays semantic-gold (matches EXTENDED badge
+		   gold convention); not theme-derived. */
+		color: var(--text-faint, #5a6275);
 		background: transparent;
 		border: none;
 		border-radius: 3px;

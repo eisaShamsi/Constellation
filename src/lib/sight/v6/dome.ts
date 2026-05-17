@@ -177,38 +177,49 @@ export function calendarRimSpokes(): number[] {
  * CIE Delta-E ≥30 between any two co-rendered hues — verified at
  * §D.4 build gate per Concept Paper §11 invariant 4.
  */
-export const PALETTE = {
-	// Background + chrome
-	// 2026-05-14 §A.14 fix-1 (Boss-test cycle 1): chrome bumped 40-80%.
-	// 2026-05-14 §A.14 fix-6 (Boss-test cycle 2): Eisa "fonts need to
-	// be clearer. Change the font color to white at 100% opacity."
-	// Calendar months go to near-white; stratum italic labels go to
-	// readable mid-bright (still italic for hierarchy). Strata rings
-	// stay at the cycle-1 #2a3245 — they're geometry, not text.
-	bg: '#080c16',                  // dome background (deep navy-black)
-	strataRing: '#2a3245',          // 5 concentric guides (cycle-1)
-	calendarRimText: '#e8ebf2',     // 12 month labels — near-white per Eisa
-	stratumLabel: '#a0aabe',        // vertical-axis labels — readable mid-bright
-	titleText: '#e8ebf2',           // header strip text
-	subtitleText: '#5a6275',
-	statusText: '#7a8295',
+/**
+ * MIG-027 (2026-05-17) — split PALETTE into theme-aware chrome
+ * colors + theme-agnostic semantic colors.
+ *
+ * Before: PALETTE was a single const with hardcoded dark values for
+ * everything. Sight always rendered in its dark "starfield" palette
+ * regardless of the user's active interface theme.
+ *
+ * After: chrome colors (bg, strataRing, label text, starFill) are
+ * derived at paint time from the document's CSS variables — they
+ * automatically follow whatever theme is active. Semantic colors
+ * (stage hues, link types, gold highlight ring) stay categorical
+ * since their meaning depends on the hue, not the theme — cyan is
+ * always 'spark' regardless of whether the UI is light or dark.
+ *
+ * The legacy `PALETTE` export below stays as a backwards-compat
+ * default; it merges the dark-fallback chrome with semantic colors,
+ * so callers that haven't migrated yet still get the original
+ * appearance. New canvas-drawing code should use
+ * `readChromePalette(el)` to get theme-aware values + import
+ * `SEMANTIC_COLORS` directly for stage/link hues.
+ */
 
-	// Star encoding
-	starFill: '#cdd5e0',            // NEUTRAL — library encoded by shape only
-	highlightedRing: '#fbbf24',     // gold ring on hover/selection (linked brushing)
+/**
+ * MIG-027 — Theme-agnostic categorical hues (stage, link-type,
+ * highlight). These do NOT change with theme since their meaning
+ * is tied to the hue itself (cyan = spark, green = established,
+ * gold = hover-highlight). Kept as a single const for ergonomic
+ * import across canvas renderers.
+ */
+export const SEMANTIC_COLORS = {
+	// Gold hover/selection ring (linked brushing across surfaces)
+	highlightedRing: '#fbbf24',
 
-	// Stage hues (6 categorical, used as inner pip on anchor + full disk in mini)
-	// 2026-05-15 §B.6-fix-2: added stageBirth (orange) per Eisa cycle-2 feedback —
-	// "I can see a blueish color spreading on the mini-dome. It is almost
-	// impossible to distinguish all the colors you mentioned." With cyan (spark
-	// 49%) + violet (birth 40% + growth 10%) as the two dominant slots, 89% of
-	// notes rendered in the cyan-violet visual register and blurred into a
-	// single blueish field. Splitting birth → orange gives the two largest
-	// categories maximally distinct hues (cyan vs orange = warm/cool axis,
-	// CIE Delta-E ≫ 30).
+	// Stage hues (6 categorical, used as inner pip on anchor + full
+	// disk in mini). Per Concept Paper §3.4 + §11 invariant 4: CIE
+	// Delta-E ≥30 between any two co-rendered hues.
+	// 2026-05-15 §B.6-fix-2: added stageBirth (orange) per Eisa cycle-2
+	// feedback — splitting birth from growth gives the two largest
+	// categories maximally distinct hues (cyan vs orange).
 	stageEstablished: '#4ade80',    // green
-	stageFresh:        '#22d3ee',    // cyan
-	stageBirth:        '#fb923c',    // orange — NEW (Living Link 'birth')
+	stageFresh:        '#22d3ee',    // cyan — Living Link 'spark'
+	stageBirth:        '#fb923c',    // orange — Living Link 'birth'
 	stageGrowing:      '#a78bfa',    // violet
 	stageAtRisk:       '#facc15',    // yellow
 	stageDormant:      '#94a3b8',    // gray
@@ -223,4 +234,103 @@ export const PALETTE = {
 	linkPartOf:       '#f472b6',
 	linkAssociative:  '#94a3b8',
 	linkSupersedes:   '#fde68a',
+} as const;
+
+/**
+ * MIG-027 — Theme-aware chrome palette. The 8 fields below are
+ * derived at paint time from the document body's CSS variables
+ * (which the +layout.svelte $effect updates whenever activeThemeId
+ * or system color-scheme changes — see store.ts deriveThemeVariables).
+ *
+ * `readChromePalette(el)` reads the live values; if CSS vars are
+ * unavailable (e.g., very-early-boot, SSR), it falls back to the
+ * dark constants below.
+ */
+export interface ChromePalette {
+	bg: string;
+	strataRing: string;
+	calendarRimText: string;
+	stratumLabel: string;
+	titleText: string;
+	subtitleText: string;
+	statusText: string;
+	starFill: string;
+}
+
+/** MIG-027 — Dark-theme fallback chrome palette. Original Sight v6
+ *  cycle-1/cycle-2 values; used when CSS variables are unavailable
+ *  (early boot, SSR) or when a tradition renderer doesn't pass a
+ *  palette to the chrome-drawing helper.
+ *
+ *  2026-05-14 §A.14 fix-1 (Boss-test cycle 1): chrome bumped 40-80%.
+ *  2026-05-14 §A.14 fix-6 (Boss-test cycle 2): Eisa "fonts need to
+ *  be clearer. Change the font color to white at 100% opacity."
+ *  Calendar months go to near-white; stratum italic labels go to
+ *  readable mid-bright (still italic for hierarchy). Strata rings
+ *  stay at the cycle-1 #2a3245 — they're geometry, not text. */
+export const CHROME_PALETTE_DARK_FALLBACK: ChromePalette = {
+	bg: '#080c16',                  // dome background (deep navy-black)
+	strataRing: '#2a3245',          // 5 concentric guides
+	calendarRimText: '#e8ebf2',     // 12 month labels — near-white
+	stratumLabel: '#a0aabe',        // vertical-axis labels — mid-bright italic
+	titleText: '#e8ebf2',           // header strip text
+	subtitleText: '#5a6275',
+	statusText: '#7a8295',
+	starFill: '#cdd5e0',            // NEUTRAL — library encoded by shape only
+};
+
+/**
+ * MIG-027 — Read theme-aware chrome palette from CSS variables on a
+ * DOM element (typically the Sight canvas-host element). Returns the
+ * dark fallback when DOM/CSS-vars are unavailable.
+ *
+ * The CSS variables are applied to document.body by +layout.svelte's
+ * theme $effect (which calls deriveThemeVariables on the active
+ * theme's 5 colors). So any element in the document tree inherits
+ * the active theme's vars; reading them with getComputedStyle gives
+ * the live theme-correct values.
+ *
+ * Field mapping (MIG-027 design choices):
+ *   bg              → --background-primary       (main app bg)
+ *   strataRing      → --background-modifier-border (subtle geometry color)
+ *   calendarRimText → --text-normal              (primary text — month labels)
+ *   stratumLabel    → --text-muted               (secondary — italic labels)
+ *   titleText       → --text-normal
+ *   subtitleText    → --text-faint
+ *   statusText      → --text-muted
+ *   starFill        → --text-normal              (stars get theme text color
+ *                                                 so they invert: cream on dark,
+ *                                                 dark on light)
+ */
+export function readChromePalette(el: HTMLElement | null): ChromePalette {
+	if (!el || typeof document === 'undefined') {
+		return CHROME_PALETTE_DARK_FALLBACK;
+	}
+	const cs = getComputedStyle(el);
+	const get = (name: string, fallback: string) =>
+		cs.getPropertyValue(name).trim() || fallback;
+	return {
+		bg: get('--background-primary', CHROME_PALETTE_DARK_FALLBACK.bg),
+		strataRing: get('--background-modifier-border', CHROME_PALETTE_DARK_FALLBACK.strataRing),
+		calendarRimText: get('--text-normal', CHROME_PALETTE_DARK_FALLBACK.calendarRimText),
+		stratumLabel: get('--text-muted', CHROME_PALETTE_DARK_FALLBACK.stratumLabel),
+		titleText: get('--text-normal', CHROME_PALETTE_DARK_FALLBACK.titleText),
+		subtitleText: get('--text-faint', CHROME_PALETTE_DARK_FALLBACK.subtitleText),
+		statusText: get('--text-muted', CHROME_PALETTE_DARK_FALLBACK.statusText),
+		starFill: get('--text-normal', CHROME_PALETTE_DARK_FALLBACK.starFill),
+	};
+}
+
+/**
+ * Legacy unified palette. Merges the dark-fallback chrome with
+ * semantic colors. Kept for backwards-compat with consumers that
+ * haven't migrated to readChromePalette + SEMANTIC_COLORS yet.
+ *
+ * New code: import SEMANTIC_COLORS + use readChromePalette(el).
+ * Mid-MIG-027 transition: existing consumers continue to work
+ * unchanged via PALETTE; consumers are updated incrementally.
+ */
+export const PALETTE = {
+	...CHROME_PALETTE_DARK_FALLBACK,
+	...SEMANTIC_COLORS,
 } as const;

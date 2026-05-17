@@ -1657,6 +1657,82 @@ Per Plan §4 + Architect §3.A. Major UI rebuild — replaces the inline-row-of-
 
 **Boss-test required** (per Plan §4): full multi-stage cycle covering layout, expansion, pin/unpin, family collapse, persistence, Esc behavior.
 
+### Boss pivot — MIG-026 PAUSED at Phase β; MIG-027 (Sight theme inheritance) opens (2026-05-17)
+
+Eisa pasted back the MIG-027 spawn_task prompt verbatim mid-Phase-β-build, signaling "do this now, not as background chip." Stop-On-Correction Rule fires; MIG-026 cascade pauses at Phase β (build still completing — produces a .exe with Phase α+β changes that can be tested later); MIG-027 opens as the active function-in-hand.
+
+AskUserQuestion locked 2 decisions:
+1. **Full theming for Sight in light theme** — light = inverted (light bg, dark stars, light chrome). Dark stays as-is. Loses "looking at a sky" aesthetic in light mode but gains theme-coherence.
+2. **Cascade priority: NOW** — pause MIG-026 at Phase β; ship MIG-027; resume Phase γ with theme-aware multi-shape renderers. Means Phases γ–θ (the 19 new tradition modules + their renderers) build theme-aware from the start; no retrofit later.
+
+Research surfaced that Constellation already has a full theme system (NOT inventing one):
+- `ConstellationTheme` interface: 5-color palette + `type: 'light' | 'dark'`
+- `deriveThemeVariables()` derives ~30 CSS variables
+- 6 built-in themes (Constellation Light/Dark, Nord Light/Dark, Solarized Light/Dark)
+- `appSettings.activeThemeId` stores user choice
+- `+layout.svelte:1469-1510` $effect applies CSS vars to `document.body.style` + sets `theme-light` / `theme-dark` class
+- CSS variables: `--background-primary`, `--text-normal`, `--text-muted`, `--text-faint`, `--text-accent`, `--background-modifier-border`, `--background-modifier-hover`, `--accent-h/s/l`, etc.
+
+Sight just needs to subscribe — not invent — the system. Refactor is bounded.
+
+### MIG-027 — Sight theme inheritance (2026-05-17)
+
+**Single-subsystem refactor** (Sight only, no Rust/schema). Skipping formal /architect+/plan ceremony per CLAUDE.md Migration Rule guidance ("single-subsystem refactors don't need /migration").
+
+**Files touched** (7 files):
+
+- `src/lib/sight/v6/dome.ts` — split `PALETTE` into 3 exports:
+  - NEW `SEMANTIC_COLORS` const — theme-agnostic categorical hues (highlightedRing gold + 6 stage colors + 9 link-type colors). These don't change with theme; cyan is always 'spark' regardless of light/dark.
+  - NEW `ChromePalette` interface — 8 theme-aware chrome fields (bg, strataRing, calendarRimText, stratumLabel, titleText, subtitleText, statusText, starFill)
+  - NEW `CHROME_PALETTE_DARK_FALLBACK` const — original Sight v6 dark values, used when CSS vars unavailable
+  - NEW `readChromePalette(el)` function — reads computed CSS-var values from a DOM element; falls back to dark constants
+  - Legacy `PALETTE` const preserved (merges dark-fallback chrome + semantic) for backwards compatibility with consumers still mid-refactor
+- `src/lib/sight/v6/anchor.ts`:
+  - Imports `ChromePalette`, `CHROME_PALETTE_DARK_FALLBACK`
+  - Module-level `let _chrome: ChromePalette = CHROME_PALETTE_DARK_FALLBACK` — set at the top of every `renderAnchorDome` call from the caller's `chromePalette` option
+  - All `PALETTE.bg/strataRing/calendarRimText/stratumLabel/starFill` references → `_chrome.X` (chrome family); `PALETTE.highlightedRing/stageX/linkX` references stay (semantic)
+  - `renderAnchorDome` options extended with optional `chromePalette?: ChromePalette` (default dark fallback)
+- `src/lib/sight/v6/miniDome.ts` — same `_chrome` pattern as anchor.ts; same replacements for PALETTE chrome refs; `renderMiniDome` options gain `chromePalette?` parameter
+- `src/lib/sight/v6/SightV6.svelte`:
+  - Imports `readChromePalette` from `./dome`
+  - `paint()` calls `readChromePalette(canvasHostEl)` and passes via `chromePalette:` option to `renderAnchorDome`
+  - NEW `$effect` watches `$appSettings.activeThemeId` + `$appSettings.colorScheme`; triggers `paint()` (wrapped in `untrack`) on theme change
+  - CSS sweep: root bg/text, header border, subtitle, reset button (bg + color + border + hover/active states), mini-cell border, zoom badge (color + bg + border), extension chip (color + bg + border) — all use `var(--...)` with hex fallback
+- `src/lib/sight/v6/MiniDome.svelte`:
+  - Imports `readChromePalette` from `./dome` + `appSettings` from store
+  - `paint()` reads chromePalette via `readChromePalette(canvasEl)` + passes to `renderMiniDome`
+  - NEW `$effect` watches theme change; triggers `paint()` (uses already-imported `untrack`)
+- `src/lib/sight/v6/traditionChip.svelte` CSS sweep:
+  - chip inline row bg/border, individual chip text/hover/active (active uses `hsla(var(--accent-h), var(--accent-s), 50%, 0.18)` for tint), "All ▾" trigger (text/bg/border, hover, is-open state), chip dot bg (uses `var(--text-accent)`) + box-shadow accent-derived, dropdown panel bg/border/box-shadow, family header (text color + chevron + count), tradition rows (active state via accent-derived hsla, hover via modifier-hover, name text via text-normal, scope strip via text-muted), pin star color (semantic gold preserved)
+- `src/lib/sight/v6/facetSidebar.svelte` CSS sweep: 8 hex literals → CSS vars via `replace_all` per color:
+  - `#0c1322` → `var(--background-secondary)` (panel surface)
+  - `#13192b` → `var(--background-modifier-hover)`
+  - `#1a1f2e` → `var(--background-modifier-border)`
+  - `#5a6275` → `var(--text-faint)`
+  - `#a0aabe` → `var(--text-muted)`
+  - `#cdd5e0` → `var(--text-normal)`
+  - `#7a8295` → `var(--text-muted)`
+  - `#7dd3fc` → `var(--text-accent)`
+  - Semantic gold (`#fbbf24` + gold rgbas) preserved (EXTENDED badge convention)
+
+**Behavior shipped**:
+- Sight (anchor + mini-domes + chip + sidebar + header chrome) automatically follows the user's active interface theme.
+- Switch to Constellation Light / Nord Light / Solarized Light → Sight inverts: light background, dark stars, light chrome.
+- Switch back to dark theme → original dark starfield aesthetic restored.
+- Theme transition: synchronous; both anchor and mini-domes repaint on the theme-change `$effect`. No visible lag.
+- Semantic colors preserved across themes: stage hues (cyan/orange/violet/etc.) stay categorical; gold highlight ring stays gold; EXTENDED badge stays gold.
+
+**Build verification**: `npm run check` passes with same 3 pre-existing errors. Zero new errors.
+
+**Boss-test required**: switch interface theme in Settings → Appearance to Constellation Light (or Nord Light, or Solarized Light); open Sight; verify chrome + dome + chip + sidebar + mini-domes all read theme-correct.
+
+**Architectural note** (forward implication for MIG-026 Phase γ–θ):
+The 19 new tradition modules ship in Phases γ–θ. Their renderers (`drawRingBoundaries`, `drawLadderSteps`, `drawRelationalGraph`, `drawCyclicFlow`, `drawBinaryFlow`, `drawGradientFog`, `drawHorizontalBands`) — currently no-op stubs — will be implemented to use `_chrome` for chrome colors (just like `drawSectorDividers` already does after MIG-027). Phase γ onward inherits theme-awareness automatically; no retrofit needed.
+
+**Not in MIG-027 scope** (deferred):
+- CNS (Constellation Nervous System) — likely has same dark-only assumption; out of MIG-027 spawn_task scope. If Eisa wants it themed too, that's MIG-028 or a §-fix-N.
+- Sight legacy versions (v3, v4, v5) — same dark-only assumption; intentionally not touched since they're deprecated/dual-mounted only.
+
 ### Phase 2 ship (Sight v6.1) remains intact
 
 None of this disturbs the v6.1 ship (commit `f295b296`). The 4 currently-working registers (Aristotelian, pramāṇa, masādir, Polanyi-as-chip-placeholder) and the Mohist chip placeholder all stay; only Ishrāqī comes out (and Polanyi's working module wasn't built, just the chip — same status as Ishrāqī was). Users on the C4-masadir build don't lose anything functional in this change.
