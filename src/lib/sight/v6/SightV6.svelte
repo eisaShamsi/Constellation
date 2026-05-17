@@ -218,15 +218,23 @@
 		const tradition = getTraditionById(
 			$appSettings.sight?.activeTradition as TraditionId | undefined,
 		);
-		// §γ-fix-2 + §δ.2-fix-1: per-shape boost values tuned by Boss
-		// across iterations. horizontal-bands (Mohist) at +2 px; cyclic-
-		// flow (Dewey) and rings (Husserl) at +1.5 px — their spread
-		// patterns differ from horizontal-bands (narrower ring band /
-		// concentric zones vs full-dome 3 stripes) so they need less
-		// of a bump. Future spread-shapes (grid, relational) join here
-		// as their phases ship.
+		// §γ-fix-2 + §δ.2-fix-1 + §ε.2-fix-1: per-shape boost values
+		// tuned by Boss across iterations. Two tiers:
+		//   +2 px — VERY spread shapes (stars scattered across many
+		//           large cells; need bigger dots to read individually):
+		//             horizontal-bands (Mohist, 3 full-width stripes)
+		//             grid             (Shāṭibī, 15 cells)
+		//   +1.5 px — MODERATELY spread shapes (narrower spread regions
+		//             — ring bands or concentric zones):
+		//             cyclic-flow (Dewey, 75% ring band)
+		//             rings       (Husserl, Ibn Rushd — 4 nested zones)
+		//   0 px — CLUSTER shapes (default-tight Aristotelian-style
+		//          concentration; additive blending serves):
+		//             sectoral, gradient
+		// Future spread-shapes (relational) join as their phases ship.
 		switch (tradition?.shape) {
 			case 'horizontal-bands':
+			case 'grid':
 				return 2;
 			case 'cyclic-flow':
 			case 'rings':
