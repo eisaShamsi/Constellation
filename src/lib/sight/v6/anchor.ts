@@ -396,36 +396,186 @@ function drawBinaryFlow(
 	//   optional center label (Wang Yangming's liángzhī)
 }
 
-/** STUB — Phase γ (Polanyi tacit/explicit fog) ships the implementation.
- *  Applies an opacity gradient across the dome based on radial distance
- *  from center. */
+/** MIG-026 Phase γ — Polanyi tacit/explicit fog overlay.
+ *
+ *  Paints a radial alpha-modulated fog (bg-colored translucent overlay)
+ *  across the dome circle. The fog is dense at center (low star
+ *  visibility = the tacit pole — "acknowledged but inarticulable") and
+ *  sparse at the edge (high star visibility = the explicit pole —
+ *  "what you can articulate"). Per Polanyi (1966), tacit and explicit
+ *  are a continuum, not a binary; the radial gradient encodes that
+ *  continuum visually.
+ *
+ *  Dispatched AFTER stars (see anchor.ts step 6.5) so the fog actually
+ *  overlays the star layer. Stratum labels and the calendar rim are
+ *  drawn before stars (steps 4-5), so they also get fogged at center —
+ *  conceptually consistent with the Polanyi metaphor (the inner
+ *  stratum "FOUNDATION" is least articulable; the outer rim "EDGE OF
+ *  KNOWING" is most articulable).
+ *
+ *  Fog color = _chrome.bg so it reads as "the background seeping into
+ *  the stars" rather than as a colored overlay. Adapts to both dark
+ *  and light themes since _chrome.bg is theme-aware (MIG-027).
+ */
 function drawGradientFog(
-	_ctx: CanvasRenderingContext2D,
-	_layout: DomeLayout,
-	_gradient: GradientSpec,
+	ctx: CanvasRenderingContext2D,
+	layout: DomeLayout,
+	gradient: GradientSpec,
 ): void {
-	// TODO Phase γ — Polanyi: implement
-	//   create radial Canvas gradient: center = gradient.centerOpacity,
-	//                                  edge = gradient.edgeOpacity
-	//   fill the dome circle with this gradient as overlay
-	//   stars beneath inherit the gradient's modulation
-	//   optional centerLabel / edgeLabel placed at radial endpoints
+	// Fog alpha at each radial endpoint = 1 - (star visibility there).
+	// Star visibility at center = gradient.centerOpacity (typically ~0.18).
+	// Star visibility at edge   = gradient.edgeOpacity   (typically ~0.95).
+	// So fog alpha at center    = ~0.82 (mostly opaque fog → stars hidden).
+	// And fog alpha at edge     = ~0.05 (mostly clear → stars visible).
+	const fogCenterAlpha = Math.max(0, Math.min(1, 1 - gradient.centerOpacity));
+	const fogEdgeAlpha = Math.max(0, Math.min(1, 1 - gradient.edgeOpacity));
+
+	const bg = parseRgb(_chrome.bg);
+
+	ctx.save();
+	const grad = ctx.createRadialGradient(
+		layout.centerX, layout.centerY, 0,
+		layout.centerX, layout.centerY, layout.radius,
+	);
+	grad.addColorStop(0, `rgba(${bg.r}, ${bg.g}, ${bg.b}, ${fogCenterAlpha})`);
+	grad.addColorStop(1, `rgba(${bg.r}, ${bg.g}, ${bg.b}, ${fogEdgeAlpha})`);
+	ctx.fillStyle = grad;
+	ctx.beginPath();
+	ctx.arc(layout.centerX, layout.centerY, layout.radius, 0, Math.PI * 2);
+	ctx.fill();
+
+	// Optional centerLabel / edgeLabel — placed at the radial endpoints
+	// in the same italic font as stratum labels (chrome family). Center
+	// label sits at the dome center; edge label sits just inside the
+	// bottom rim (chosen over top rim because the +y direction is where
+	// stratum labels do NOT live — top has FOUNDATION/WORKING/etc.).
+	if (gradient.centerLabel || gradient.edgeLabel) {
+		ctx.fillStyle = _chrome.stratumLabel;
+		ctx.font = 'italic 10px Inter, system-ui, sans-serif';
+		ctx.textAlign = 'center';
+		ctx.textBaseline = 'middle';
+		if (gradient.centerLabel) {
+			ctx.fillText(gradient.centerLabel, layout.centerX, layout.centerY);
+		}
+		if (gradient.edgeLabel) {
+			ctx.fillText(
+				gradient.edgeLabel,
+				layout.centerX,
+				layout.centerY + layout.radius * 0.92,
+			);
+		}
+	}
+	ctx.restore();
 }
 
-/** STUB — Phase γ (Mohist sān biǎo 3 zones) ships the implementation.
- *  Divides the dome into N horizontal bands with labels. */
+/** MIG-026 Phase γ — Mohist sān biǎo 3 horizontal bands.
+ *
+ *  Divides the dome circle into N equal-height horizontal bands by
+ *  drawing N−1 horizontal divider strokes across the dome chord. Each
+ *  band's label is placed at the left edge just inside the dome rim
+ *  (so it doesn't overlap with the calendar rim text outside the dome).
+ *
+ *  Divider strokes are clipped to the dome circle so they don't escape
+ *  the rim. Stroke color matches strata rings (chrome family) per the
+ *  drawSectorDividers convention — these are category boundaries, not
+ *  text. Labels use the stratum-label chrome color and italic font for
+ *  visual consistency with the rest of the dome chrome.
+ *
+ *  Per Mohist sān biǎo: 3 bands top-to-bottom are
+ *    本 (běn, root)   — top
+ *    原 (yuán, origin) — middle
+ *    用 (yòng, use)    — bottom
+ */
 function drawHorizontalBands(
-	_ctx: CanvasRenderingContext2D,
-	_layout: DomeLayout,
-	_bands: HorizontalBandsSpec,
+	ctx: CanvasRenderingContext2D,
+	layout: DomeLayout,
+	bands: HorizontalBandsSpec,
 ): void {
-	// TODO Phase γ — Mohist: implement
-	//   N = bands.bands.length
-	//   for each band index i, draw horizontal line at y = layout.centerY
-	//     - layout.radius + (i + 1) * (2 * layout.radius / N) within the
-	//     dome circle (clip to dome bounds)
-	//   place band label at left edge of band (just inside dome)
-	//   stars get placed in their band by the tradition's remapStarPosition
+	const n = bands.bands.length;
+	if (n === 0) return;
+
+	ctx.save();
+
+	// 1. Divider strokes — N−1 horizontal lines clipped to the dome.
+	//    The dome spans y ∈ [centerY − radius, centerY + radius]. Each
+	//    band has height 2r/N; dividers sit between bands at:
+	//      y_i = centerY − r + i * (2r/N)   for i = 1 .. N−1
+	//    At each divider y, the chord half-width is √(r² − (y − centerY)²).
+	ctx.strokeStyle = _chrome.strataRing;
+	ctx.lineWidth = 1.2;
+	const bandHeight = (2 * layout.radius) / n;
+	for (let i = 1; i < n; i++) {
+		const y = layout.centerY - layout.radius + i * bandHeight;
+		const dy = y - layout.centerY;
+		const halfChord = Math.sqrt(
+			Math.max(0, layout.radius * layout.radius - dy * dy),
+		);
+		ctx.beginPath();
+		ctx.moveTo(layout.centerX - halfChord, y);
+		ctx.lineTo(layout.centerX + halfChord, y);
+		ctx.stroke();
+	}
+
+	// 2. Band labels — placed at the left edge of each band, ~92% of
+	//    the chord half-width from the band's vertical center. Same
+	//    italic font + chrome color as stratum labels for consistency.
+	ctx.fillStyle = _chrome.stratumLabel;
+	ctx.font = 'italic 10px Inter, system-ui, sans-serif';
+	ctx.textAlign = 'left';
+	ctx.textBaseline = 'middle';
+	for (let i = 0; i < n; i++) {
+		const band = bands.bands[i];
+		if (!band.label) continue;
+		const yCenter = layout.centerY - layout.radius + (i + 0.5) * bandHeight;
+		const dy = yCenter - layout.centerY;
+		const halfChord = Math.sqrt(
+			Math.max(0, layout.radius * layout.radius - dy * dy),
+		);
+		// Position label inside the band at ~92% of the left half-chord
+		// so it sits clearly within the dome but doesn't crowd the rim.
+		const lx = layout.centerX - halfChord * 0.92;
+		ctx.fillText(band.label, lx, yCenter);
+	}
+
+	ctx.restore();
+}
+
+/** Parse a CSS color string (`#rgb`, `#rrggbb`, `rgb(r,g,b)`, or
+ *  `rgba(r,g,b,a)`) into RGB components. Used by drawGradientFog to
+ *  build alpha-varying gradient stops from the theme bg color (which
+ *  arrives from getComputedStyle as either hex or `rgb(...)` depending
+ *  on theme definition).
+ *
+ *  Falls back to the dark-fallback bg (#080c16) on parse failure —
+ *  ensures the renderer always returns a valid color rather than NaN.
+ */
+function parseRgb(c: string): { r: number; g: number; b: number } {
+	const trimmed = c.trim();
+	// #rgb / #rrggbb
+	if (trimmed.startsWith('#')) {
+		const hex = trimmed.slice(1);
+		if (hex.length === 3) {
+			return {
+				r: parseInt(hex[0] + hex[0], 16),
+				g: parseInt(hex[1] + hex[1], 16),
+				b: parseInt(hex[2] + hex[2], 16),
+			};
+		}
+		if (hex.length === 6) {
+			return {
+				r: parseInt(hex.slice(0, 2), 16),
+				g: parseInt(hex.slice(2, 4), 16),
+				b: parseInt(hex.slice(4, 6), 16),
+			};
+		}
+	}
+	// rgb(r,g,b) / rgba(r,g,b,a)
+	const m = trimmed.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+	if (m) {
+		return { r: parseInt(m[1], 10), g: parseInt(m[2], 10), b: parseInt(m[3], 10) };
+	}
+	// Fallback: dark-theme bg
+	return { r: 8, g: 12, b: 22 };
 }
 
 /** Deterministic 32-bit FNV-1a hash → two normalized [0, 1) values
@@ -541,20 +691,27 @@ export function renderAnchorDome(
 		ctx.stroke();
 	}
 
-	// 2.5 — Tradition-shape dispatch.
+	// 2.5 — Tradition-shape dispatch (CHROME shapes — under stars).
 	//      Drawn AFTER strata circles so any shape overlays visibly cross
 	//      the rings; drawn BEFORE the calendar rim and stratum labels so
 	//      those text labels stay on top and remain legible.
 	//
 	//      §C.3/§C.4 (MIG-025): sectoral dispatch for pramāṇa + masādir.
-	//      MIG-026 Phase α (this commit): extended with full multi-shape
-	//      dispatch — sectoral / rings / grid / ladder / relational /
-	//      cyclic-flow / binary-flow / gradient / horizontal-bands.
-	//      Each shape's renderer helper is a private function below;
-	//      Phase α ships stubs for the 7 new shapes that subsequent
-	//      phases fill in (γ: gradient + horizontal-bands; δ.2: cyclic-
-	//      flow; ε.1: rings; ε.2: grid; ε.3 + θ.2 + η.2: binary-flow;
-	//      ζ.2 + ζ.3: ladder; θ.1 + θ.5: relational).
+	//      MIG-026 Phase α: extended with full multi-shape dispatch.
+	//      MIG-026 Phase γ: gradient (Polanyi) moved to a second dispatch
+	//      point at step 7 (AFTER stars) because gradient is an OVERLAY,
+	//      not chrome — its purpose is to modulate star visibility, which
+	//      requires painting after stars are drawn. All other shapes
+	//      remain under stars as chrome.
+	//
+	//      Phase coverage:
+	//        γ:    gradient (after stars) + horizontal-bands
+	//        δ.2:  cyclic-flow
+	//        ε.1:  rings
+	//        ε.2:  grid
+	//        ε.3 / θ.2 / η.2: binary-flow
+	//        ζ.2 / ζ.3:       ladder
+	//        θ.1 / θ.5:       relational
 	if (tradition) {
 		const traditionLayout = {
 			centerX: layout.centerX,
@@ -579,12 +736,10 @@ export function renderAnchorDome(
 		if (tradition.binaryFlowSpec) {
 			drawBinaryFlow(ctx, layout, tradition.binaryFlowSpec(traditionLayout));
 		}
-		if (tradition.gradientSpec) {
-			drawGradientFog(ctx, layout, tradition.gradientSpec(traditionLayout));
-		}
 		if (tradition.horizontalBandsSpec) {
 			drawHorizontalBands(ctx, layout, tradition.horizontalBandsSpec(traditionLayout));
 		}
+		// NOTE: gradient dispatch is at step 7 below (post-stars).
 	}
 
 	// 3. Calendar rim labels (12 months, locale-aware)
@@ -612,9 +767,24 @@ export function renderAnchorDome(
 		drawConnectorLines(ctx, stars, links);
 	}
 
-	// 6. Stars (top of stack)
+	// 6. Stars (top of stack — but see step 7 for overlay shapes)
 	if (stars.length > 0) {
 		drawStars(ctx, stars, highlightedPath, zoomScale, matchedPaths);
+	}
+
+	// 7. Tradition-shape dispatch (OVERLAY shapes — over stars).
+	//    MIG-026 Phase γ — Polanyi's gradient fog. Painted AFTER stars
+	//    so the fog actually modulates star visibility (a fog painted
+	//    BEFORE stars at step 2.5 would be invisible — stars would just
+	//    cover it). For Aristotelian/pramāṇa/masādir/Mohist this is a
+	//    no-op because their modules don't define gradientSpec.
+	if (tradition?.gradientSpec) {
+		const traditionLayout = {
+			centerX: layout.centerX,
+			centerY: layout.centerY,
+			radius: layout.radius,
+		};
+		drawGradientFog(ctx, layout, tradition.gradientSpec(traditionLayout));
 	}
 }
 

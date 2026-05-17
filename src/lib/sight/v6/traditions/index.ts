@@ -27,22 +27,24 @@ import type { TraditionId, TraditionModule } from '../types';
 import { aristotelian } from './aristotelian';
 import { pramana } from './pramana';
 import { masadir } from './masadir';
+import { polanyi } from './polanyi';
+import { mohistSanBiao } from './mohist-san-biao';
 
 /**
  * The registered tradition modules. Keyed by TraditionId for O(1)
  * lookup. Entries are added incrementally as MIG-026 phases ship the
  * remaining tradition modules.
  *
- * Phase 0 (currently): aristotelian, pramana, masadir
- * Phase γ (next):       polanyi, mohist-san-biao
- * Phases δ–θ:           the 19 new traditions per the MIG-026 Plan
+ * Phase 0:      aristotelian, pramana, masadir
+ * Phase γ:      polanyi (gradient), mohist-san-biao (horizontal-bands)
+ * Phases δ–θ:   the 19 newcomers across the remaining shapes
  */
 const REGISTRY: Partial<Record<TraditionId, TraditionModule>> = {
 	aristotelian,
 	pramana,
 	masadir,
-	// polanyi — Phase γ
-	// 'mohist-san-biao' — Phase γ
+	polanyi,
+	'mohist-san-biao': mohistSanBiao,
 	// (Phases δ–θ add the 19 new traditions per the MIG-026 Plan)
 };
 
@@ -157,4 +159,4 @@ export const TRADITION_TO_FAMILY: Map<TraditionId, FamilyId> = (() => {
 	return m;
 })();
 
-export { aristotelian, pramana, masadir };
+export { aristotelian, pramana, masadir, polanyi, mohistSanBiao };
