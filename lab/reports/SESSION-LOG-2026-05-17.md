@@ -819,5 +819,68 @@ Single switch-case change in SightV6.svelte.
 
 Build for fix-1 .exe kicked off (task `b6bv0suey`).
 
+## §ε.2-fix-1 PASS
+
+Eisa: "Better. Passed" — Shāṭibī grid stars now visible at +2 px.
+Phase ε.2 closes (Shāṭibī maqāṣid complete).
+
+## MIG-026 §ε.3 — Ibn Khaldūn ʿumrān (code shipped)
+
+Final Arabic / Islamic family tradition + implements the last of
+the Phase α stub renderers (drawBinaryFlow). Phase ε closes here.
+
+### Files (7)
+
+- `types.ts` + `store.ts` — TraditionId / activeTradition += ibn-khaldun-umran
+- `anchor.ts` — `drawBinaryFlow` IMPLEMENTED (was stub). Currently
+  supports HORIZONTAL-BAND layout (cellA top, cellB bottom). Future
+  binary-flow traditions with different layouts (Dussel concentric
+  in θ.2, Wang Yangming hemispheres in η.2) extend via a layout
+  discriminator on BinaryFlowSpec. Flow arrows: 'a-to-b' (right
+  down), 'b-to-a' (right up), 'bidirectional' (both right),
+  'cyclic' (left up + right down = rotational circulation, used
+  by Ibn Khaldūn).
+- `traditions/ibn-khaldun-umran.ts` (NEW) — shape='binary-flow',
+  ḥaḍarī top / badawī bottom, flowDirection='cyclic'. Stars
+  hash-bucketed 50/50 so both bands populate visibly.
+  Citation: Ibn Khaldūn, *Muqaddimah* (1377) book I §§ 1-5.
+- `traditions/index.ts` — REGISTRY entry; FAMILIES['arabic-islamic-
+  beyond'] now lists all 3 family members (family complete).
+- `traditionChip.svelte` — TRADITIONS_META entry.
+- `SightV6.svelte` — `binary-flow` added to +2 star-boost tier
+  (joins horizontal-bands + grid as very-spread shapes).
+
+### Verification
+
+`npm run check`: 3 pre-existing errors. Zero new. File count
+1406 → 1407.
+
+### Commit
+
+`4ba6e24c` — MIG-026 §ε.3 — Ibn Khaldūn ʿumrān (binary-flow + new
+renderer). 7 files changed, +253 / −20.
+
+### Architectural milestone
+
+**All 9 TraditionShape values now have at least one shipped
+tradition + working renderer**:
+
+| Shape | First tradition | Phase |
+|---|---|---|
+| sectoral | Aristotelian (and pramāṇa, masādir) | (pre-MIG-026) |
+| gradient | Polanyi | γ |
+| horizontal-bands | Mohist sān biǎo | γ |
+| cyclic-flow | Dewey | δ.2 |
+| rings | Husserl | δ.2 |
+| grid | Shāṭibī maqāṣid | ε.2 |
+| binary-flow | Ibn Khaldūn ʿumrān | ε.3 |
+| ladder | (still stub) | Phase ζ.2 (Maimonidean spiral) |
+| relational | (still stub) | Phase θ.1 (Mignolo hub-and-spoke) |
+
+7 of 9 shape renderers fully implemented; 2 stubs remain for later
+phases.
+
+Build kicked off (task `bwvt5d011`).
+
 ---
 
