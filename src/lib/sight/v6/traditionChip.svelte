@@ -168,6 +168,36 @@
 			scope: 'For Korean Neo-Confucian debate: 2×2 grid mapping the lǐ (principle) vs qì (psychophysical force) axis against the 四端 (4 sprouts) vs 七情 (7 emotions) axis.',
 			preview: false,
 		},
+		'mignolo-pluriversal': {
+			name: 'Mignolo pluriversal',
+			tooltip: 'Walter Mignolo — pluriversality: 5 decolonial positions around the modernity/totality hub',
+			scope: 'For Latin American decolonial analysis: central modernity/totality hub + 5 outer cluster bubbles (epistemic disobedience, border thinking, delinking, decolonial gnosis, pluriversal world).',
+			preview: false,
+		},
+		'dussel-transmodernity': {
+			name: 'Dussel transmodernity',
+			tooltip: 'Enrique Dussel — totality (inner disc) ↔ exteriority (outer ring) with bidirectional analectic flow',
+			scope: 'For liberation philosophy: concentric binary-flow with inner totality (modernity\'s encompassing system) and outer exteriority (what totality excludes — the colonized, the poor, the Other).',
+			preview: false,
+		},
+		'maldonado-torres': {
+			name: 'Maldonado-Torres',
+			tooltip: 'Nelson Maldonado-Torres — three tiers of coloniality (power / knowledge / being)',
+			scope: 'For decolonial analysis of persistent colonial structures: 3 concentric tiers — coloniality of power (political/economic, innermost), coloniality of knowledge (epistemic, middle), coloniality of being (ontological/existential, outermost).',
+			preview: false,
+		},
+		'akan-wiredu': {
+			name: 'Akan Wiredu',
+			tooltip: 'Kwasi Wiredu — Akan epistemic vocabulary reconstructed for conceptual decolonization',
+			scope: 'For African analytic philosophy: 3 Akan categories — nokware (truth / correspondence), ahonyam (well-being / reality-fittingness), adwene (mind / reflective thought).',
+			preview: false,
+		},
+		ibuanyidanda: {
+			name: 'Ibuanyidanda',
+			tooltip: 'Innocent Asouzu — complementary ontology: every being constituted through its complementary relations to the missing link',
+			scope: 'For African philosophy of complementarity: central "missing link" hub + 5 entity-clusters (self / other / community / tradition / transcendence), each constitutively related to the unifying complementarity.',
+			preview: false,
+		},
 	};
 
 	let dropdownOpen = $state(false);

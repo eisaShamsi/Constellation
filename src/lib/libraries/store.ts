@@ -3499,7 +3499,12 @@ export interface AppSettings {
 			| 'talmudic-middot'
 			| 'mencian-sprouts'
 			| 'wang-yangming'
-			| 'korean-songnihak';
+			| 'korean-songnihak'
+			| 'mignolo-pluriversal'
+			| 'dussel-transmodernity'
+			| 'maldonado-torres'
+			| 'akan-wiredu'
+			| 'ibuanyidanda';
 		/** MIG-026 Phase β — Favorite traditions pinned to the inline
 		 *  chip row (A6 hybrid: 4 favorites visible inline + dropdown
 		 *  for rest). Array order = display order. The chip UI shows

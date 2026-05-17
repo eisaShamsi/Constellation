@@ -43,6 +43,11 @@ import { talmudicMiddot } from './talmudic-middot';
 import { mencianSprouts } from './mencian-sprouts';
 import { wangYangming } from './wang-yangming';
 import { koreanSongnihak } from './korean-songnihak';
+import { mignoloPluriversal } from './mignolo-pluriversal';
+import { dusselTransmodernity } from './dussel-transmodernity';
+import { maldonadoTorres } from './maldonado-torres';
+import { akanWiredu } from './akan-wiredu';
+import { ibuanyidanda } from './ibuanyidanda';
 
 /**
  * The registered tradition modules. Keyed by TraditionId for O(1)
@@ -62,7 +67,12 @@ import { koreanSongnihak } from './korean-songnihak';
  * Phase η.1:    mencian-sprouts (sectoral 4-cell + center ring xìn)
  * Phase η.2:    wang-yangming (binary-flow vertical)
  * Phase η.3:    korean-songnihak (sectoral 4-cell, 2×2 grid concept)
- * Phase θ:      the 5 remaining newcomers (Latin American + African)
+ * Phase θ.1:    mignolo-pluriversal (relational hub-and-spoke)
+ * Phase θ.2:    dussel-transmodernity (binary-flow concentric)
+ * Phase θ.3:    maldonado-torres (rings, 3 zones)
+ * Phase θ.4:    akan-wiredu (sectoral 3-cell)
+ * Phase θ.5:    ibuanyidanda (relational hub-and-spoke)
+ * REGISTRY COMPLETE — all 24 curated baseline traditions shipped.
  */
 const REGISTRY: Partial<Record<TraditionId, TraditionModule>> = {
 	aristotelian,
@@ -84,7 +94,11 @@ const REGISTRY: Partial<Record<TraditionId, TraditionModule>> = {
 	'mencian-sprouts': mencianSprouts,
 	'wang-yangming': wangYangming,
 	'korean-songnihak': koreanSongnihak,
-	// (Phase θ adds the 5 remaining traditions per the MIG-026 Plan)
+	'mignolo-pluriversal': mignoloPluriversal,
+	'dussel-transmodernity': dusselTransmodernity,
+	'maldonado-torres': maldonadoTorres,
+	'akan-wiredu': akanWiredu,
+	ibuanyidanda,
 };
 
 /**
@@ -179,14 +193,14 @@ export const FAMILIES: Record<FamilyId, { label: string; traditions: TraditionId
 	},
 	'african-philosophical': {
 		label: 'African philosophical',
-		// Phase θ will add: 'akan-wiredu', 'ibuanyidanda'
-		traditions: [],
+		// Phase θ adds akan-wiredu (θ.4) + ibuanyidanda (θ.5). Family complete.
+		traditions: ['akan-wiredu', 'ibuanyidanda'],
 	},
 	'latin-decolonial': {
 		label: 'Latin American decolonial',
-		// Phase θ will add: 'mignolo-pluriversal', 'dussel-transmodernity',
-		// 'maldonado-torres'
-		traditions: [],
+		// Phase θ adds mignolo (θ.1) + dussel (θ.2) + maldonado-torres (θ.3).
+		// Family complete.
+		traditions: ['mignolo-pluriversal', 'dussel-transmodernity', 'maldonado-torres'],
 	},
 };
 
@@ -221,4 +235,9 @@ export {
 	mencianSprouts,
 	wangYangming,
 	koreanSongnihak,
+	mignoloPluriversal,
+	dusselTransmodernity,
+	maldonadoTorres,
+	akanWiredu,
+	ibuanyidanda,
 };

@@ -506,19 +506,107 @@ function drawLadderSteps(
 	ctx.restore();
 }
 
-/** STUB — Phase θ.1 (Mignolo pluriversal hub-and-spoke) ships the impl.
- *  Per Eisa's locked E3 choice: render as central hub disc + N outer
- *  clusters with connecting lines. */
+/** MIG-026 Phase θ.1 — Relational hub-and-spoke renderer.
+ *
+ *  Per Eisa's locked E3 choice (Architect §3.E): central hub disc +
+ *  N outer cluster bubbles with connecting spoke lines. Used by
+ *  Mignolo pluriversal (Phase θ.1 — modernity hub + N subaltern
+ *  positions) and Ibuanyidanda (Phase θ.5 — "missing link" hub +
+ *  N complementary entities).
+ *
+ *  Layout:
+ *    Hub:      small disc at dome center (radius ~10% of dome.radius);
+ *              hub label inside disc
+ *    Clusters: N positions around a ring at ~65% radius, evenly
+ *              spaced angularly starting at -π/2 + π/N (rotated
+ *              half-wedge from top to avoid 12 o'clock collision)
+ *    Bubbles:  small filled discs (radius ~6% of dome.radius) at
+ *              each cluster position
+ *    Spokes:   straight line from hub edge to bubble edge
+ *    Labels:   outside each bubble, placed radially outward at ~78%
+ *              radius, text-align flipped based on east/west side
+ *
+ *  Chrome via _chrome.* for theme-aware drawing.
+ */
 function drawRelationalGraph(
-	_ctx: CanvasRenderingContext2D,
-	_layout: DomeLayout,
-	_relational: RelationalSpec,
+	ctx: CanvasRenderingContext2D,
+	layout: DomeLayout,
+	relational: RelationalSpec,
 ): void {
-	// TODO Phase θ.1 — hub-and-spoke spike: implement
-	//   hub: small disc at layout center, label = relational.hubLabel
-	//   clusters: N positions around the rim at angles 2π·i/N, each with
-	//     a small cluster-bubble and a connecting line back to hub
-	//   labels: outside each cluster bubble (radial-outward placement)
+	const n = relational.clusters.length;
+	if (n === 0) return;
+
+	ctx.save();
+
+	const hubRadius = layout.radius * 0.10;
+	const bubbleRadius = layout.radius * 0.06;
+	const ringRadius = layout.radius * 0.65;
+	const labelRadius = layout.radius * 0.78;
+	const startAngle = -Math.PI / 2 + Math.PI / n; // half-wedge offset from top
+
+	// 1. Hub disc at center
+	ctx.fillStyle = _chrome.bg;
+	ctx.strokeStyle = _chrome.strataRing;
+	ctx.lineWidth = 1.4;
+	ctx.beginPath();
+	ctx.arc(layout.centerX, layout.centerY, hubRadius, 0, Math.PI * 2);
+	ctx.fill();
+	ctx.stroke();
+
+	// 2. Spokes from hub edge → each cluster's bubble edge
+	ctx.strokeStyle = _chrome.strataRing;
+	ctx.lineWidth = 1.0;
+	for (let i = 0; i < n; i++) {
+		const a = startAngle + (i * 2 * Math.PI) / n;
+		const cosA = Math.cos(a);
+		const sinA = Math.sin(a);
+		// Spoke from (centerX + hubR·cos, centerY + hubR·sin) to
+		// (centerX + (ringR - bubbleR)·cos, centerY + (ringR - bubbleR)·sin)
+		const x1 = layout.centerX + hubRadius * cosA;
+		const y1 = layout.centerY + hubRadius * sinA;
+		const x2 = layout.centerX + (ringRadius - bubbleRadius) * cosA;
+		const y2 = layout.centerY + (ringRadius - bubbleRadius) * sinA;
+		ctx.beginPath();
+		ctx.moveTo(x1, y1);
+		ctx.lineTo(x2, y2);
+		ctx.stroke();
+	}
+
+	// 3. Cluster bubbles (filled discs at each ring position)
+	ctx.fillStyle = _chrome.bg;
+	ctx.strokeStyle = _chrome.strataRing;
+	ctx.lineWidth = 1.2;
+	for (let i = 0; i < n; i++) {
+		const a = startAngle + (i * 2 * Math.PI) / n;
+		const cx = layout.centerX + ringRadius * Math.cos(a);
+		const cy = layout.centerY + ringRadius * Math.sin(a);
+		ctx.beginPath();
+		ctx.arc(cx, cy, bubbleRadius, 0, Math.PI * 2);
+		ctx.fill();
+		ctx.stroke();
+	}
+
+	// 4. Hub label inside hub disc
+	ctx.fillStyle = _chrome.stratumLabel;
+	ctx.font = 'italic 10px Inter, system-ui, sans-serif';
+	ctx.textAlign = 'center';
+	ctx.textBaseline = 'middle';
+	ctx.fillText(relational.hubLabel, layout.centerX, layout.centerY);
+
+	// 5. Cluster labels outside each bubble (radial-outward), with
+	//    textAlign auto-flip based on east/west side for readability.
+	ctx.font = 'italic 9px Inter, system-ui, sans-serif';
+	for (let i = 0; i < n; i++) {
+		const cluster = relational.clusters[i];
+		if (!cluster.label) continue;
+		const a = startAngle + (i * 2 * Math.PI) / n;
+		const lx = layout.centerX + labelRadius * Math.cos(a);
+		const ly = layout.centerY + labelRadius * Math.sin(a);
+		ctx.textAlign = Math.cos(a) >= 0 ? 'left' : 'right';
+		ctx.fillText(cluster.label, lx, ly);
+	}
+
+	ctx.restore();
 }
 
 /** MIG-026 Phase δ.2 — Cyclic-flow ring + segment labels + flow arrows.
@@ -664,6 +752,10 @@ function drawBinaryFlow(
 	const layoutVariant = binary.layout ?? 'horizontal';
 	if (layoutVariant === 'vertical') {
 		drawBinaryFlowVertical(ctx, layout, binary);
+		return;
+	}
+	if (layoutVariant === 'concentric') {
+		drawBinaryFlowConcentric(ctx, layout, binary);
 		return;
 	}
 
@@ -990,6 +1082,108 @@ function drawBinaryFlowVertical(
 		// zhī and xíng.
 		drawHArrow(layout.centerX - arrowFromX, layout.centerX - arrowToX);
 		drawHArrow(layout.centerX + arrowFromX, layout.centerX + arrowToX);
+	}
+
+	ctx.restore();
+}
+
+/** MIG-026 §θ.2 — Concentric-layout binary-flow renderer.
+ *
+ *  Used by Dussel transmodernity for the totality (inner disc) ↔
+ *  exteriority (outer ring) bifurcation with directional flow arrows.
+ *
+ *  Layout:
+ *    Inner disc (radius ~40%) = cellA (totality)
+ *    Outer ring (40-95%)       = cellB (exteriority)
+ *    Ring boundary stroke at 40% radius
+ *    cellA label inside inner disc (or just below center)
+ *    cellB label inside outer annulus along +x axis
+ *    centerLabel optional (above cellA label)
+ *
+ *  Flow arrows: radial, drawn at the +y axis from inner to outer
+ *  (a-to-b = outward from totality to exteriority — the "analectic
+ *  moment" in Dussel where exteriority interrupts totality) or
+ *  inward (b-to-a) or both (bidirectional/cyclic).
+ */
+function drawBinaryFlowConcentric(
+	ctx: CanvasRenderingContext2D,
+	layout: DomeLayout,
+	binary: BinaryFlowSpec,
+): void {
+	ctx.save();
+
+	// 1. Ring boundary at 40% radius
+	const ringFrac = 0.40;
+	const ringR = layout.radius * ringFrac;
+	ctx.strokeStyle = _chrome.strataRing;
+	ctx.lineWidth = 1.2;
+	ctx.beginPath();
+	ctx.arc(layout.centerX, layout.centerY, ringR, 0, Math.PI * 2);
+	ctx.stroke();
+
+	// 2. Cell labels
+	ctx.fillStyle = _chrome.stratumLabel;
+	ctx.font = 'italic 11px Inter, system-ui, sans-serif';
+	ctx.textBaseline = 'middle';
+	// cellA: inside inner disc, at center (or slightly below center if
+	// centerLabel is also set)
+	ctx.textAlign = 'center';
+	if (binary.centerLabel) {
+		ctx.fillText(binary.centerLabel, layout.centerX, layout.centerY - 6);
+		ctx.fillText(binary.cellA.label, layout.centerX, layout.centerY + 8);
+	} else {
+		ctx.fillText(binary.cellA.label, layout.centerX, layout.centerY);
+	}
+	// cellB: inside outer annulus along +x axis (between ringR and outer
+	// rim), placed at ~70% radius
+	ctx.textAlign = 'left';
+	const cellBX = layout.centerX + layout.radius * 0.70 + 4;
+	ctx.fillText(binary.cellB.label, cellBX, layout.centerY);
+
+	// 3. Flow arrows — radial, drawn at the -x axis (~9 o'clock, west)
+	//    so they don't collide with cellB label on the +x axis.
+	ctx.strokeStyle = _chrome.stratumLabel;
+	ctx.lineWidth = 1.4;
+	const arrowFromR = layout.radius * 0.20; // start inside inner disc
+	const arrowToR = layout.radius * 0.55;   // end inside outer ring
+	const tipSize = 4;
+	const dir = binary.flowDirection;
+
+	const drawRadialArrow = (fromR: number, toR: number) => {
+		// Arrow drawn along the -x axis (west direction). Tail at
+		// (centerX - fromR, centerY), tip at (centerX - toR, centerY).
+		const fromX = layout.centerX - fromR;
+		const toX = layout.centerX - toR;
+		ctx.beginPath();
+		ctx.moveTo(fromX, layout.centerY);
+		ctx.lineTo(toX, layout.centerY);
+		ctx.stroke();
+		// Chevron tip at toX (going outward = leftward, so wings on the right)
+		const goingOutward = toR > fromR;
+		const wingX = goingOutward ? toX + tipSize : toX - tipSize;
+		ctx.beginPath();
+		ctx.moveTo(wingX, layout.centerY - tipSize);
+		ctx.lineTo(toX, layout.centerY);
+		ctx.lineTo(wingX, layout.centerY + tipSize);
+		ctx.stroke();
+	};
+
+	if (dir === 'a-to-b') {
+		// totality → exteriority (outward = from inner disc to outer ring)
+		drawRadialArrow(arrowFromR, arrowToR);
+	} else if (dir === 'b-to-a') {
+		drawRadialArrow(arrowToR, arrowFromR);
+	} else {
+		// 'bidirectional' / 'cyclic': two arrows in opposite directions
+		// stacked slightly offset on +y direction.
+		ctx.save();
+		ctx.translate(0, -6);
+		drawRadialArrow(arrowFromR, arrowToR);
+		ctx.restore();
+		ctx.save();
+		ctx.translate(0, +6);
+		drawRadialArrow(arrowToR, arrowFromR);
+		ctx.restore();
 	}
 
 	ctx.restore();

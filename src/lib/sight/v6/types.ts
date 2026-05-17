@@ -213,7 +213,12 @@ export type TraditionId =
 	| 'talmudic-middot'
 	| 'mencian-sprouts'
 	| 'wang-yangming'
-	| 'korean-songnihak';
+	| 'korean-songnihak'
+	| 'mignolo-pluriversal'
+	| 'dussel-transmodernity'
+	| 'maldonado-torres'
+	| 'akan-wiredu'
+	| 'ibuanyidanda';
 
 // ════════════════════════════════════════════════════════════════════
 // Tradition module contract (Concept Paper §4 + Plan §C.2)
@@ -384,7 +389,7 @@ export interface BinaryFlowSpec {
 	 *  reads from labels alone. Future layouts (e.g., 'concentric'
 	 *  for Dussel θ.2 with inner disc + outer ring) extend the union
 	 *  as their phases ship. */
-	layout?: 'horizontal' | 'vertical';
+	layout?: 'horizontal' | 'vertical' | 'concentric';
 }
 
 /**

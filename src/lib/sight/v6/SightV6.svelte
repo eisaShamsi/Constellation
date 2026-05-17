@@ -236,6 +236,7 @@
 			case 'horizontal-bands':
 			case 'grid':
 			case 'binary-flow':
+			case 'relational':
 				return 2;
 			case 'cyclic-flow':
 			case 'rings':
