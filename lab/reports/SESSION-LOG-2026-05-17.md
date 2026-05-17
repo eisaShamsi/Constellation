@@ -799,5 +799,25 @@ emerges as their union.
 
 Build kicked off (task `bg57s9iw3`). Boss test surfaces when ready.
 
+## §ε.2 PARTIAL → §ε.2-fix-1
+
+Eisa: "Just bump the stars 2x." The 15-cell grid renders correctly
+but stars too small to read. Same pattern as Mohist (very-spread
+shape needs +2 px boost).
+
+**§ε.2-fix-1**: extend `anchorStarRadiusBoostScreenPx` to add
+'grid' to the +2 tier. Two-tier pattern now formalized in the
+comment block:
+- **+2 px** — VERY spread shapes (horizontal-bands, grid)
+- **+1.5 px** — MODERATELY spread shapes (cyclic-flow, rings)
+- **0 px** — CLUSTER shapes (sectoral, gradient)
+
+Single switch-case change in SightV6.svelte.
+
+**Commit**: `e7d53fc1` — MIG-026 §ε.2-fix-1 — add 'grid' shape to
++2 star radius boost tier. 1 file changed, +15 / −7.
+
+Build for fix-1 .exe kicked off (task `b6bv0suey`).
+
 ---
 
