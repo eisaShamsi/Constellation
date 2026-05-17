@@ -125,5 +125,88 @@ preview chip, pin star — intentionally theme-agnostic).
 Build kicked off for `MIG027-theme-fix1.exe`. Boss re-test instructions
 will follow when the .exe is ready.
 
+## fix-1 build complete — installer surfaced
+
+Build finished in 1m 38s, exit code 0. Same 41 Rust warnings as the
+fresh build (pre-existing, no new). Same signing warning at end
+(informational; doesn't block installer output).
+
+Installer artifact copied with `MIG027-theme-fix1` suffix marker:
+
+```
+E:\مشاريع كلاود\Constellation\src-tauri\target\release\bundle\nsis\Constellation_0.3.4_x64-setup.MIG027-theme-fix1.exe
+```
+
+Stage 1.1 re-test instructions surfaced to Eisa: hover a star (verify
+hover-info bar matches theme), Shift+click to add a filter (verify
+filter-count badge matches theme), check the chip row reads cleanly.
+Then Stage 2 — restore to dark + sanity check Nord Light + Solarized
+Light.
+
+---
+
+## Stage 1.1 PARTIAL · MIG-027 §-fix-2
+
+Boss re-tested fix-1 .exe on Constellation Light. Chips read correctly,
+hover-info inverted, filter badge bg corrected. New issue surfaced
+with three close-up screenshots:
+
+> "Still needs enhancement. We have to find a suitable replacement
+> for the gold color."
+
+The gold itself (`#fbbf24` bright amber) washes out on cream / off-
+white backgrounds. Screenshots showed:
+
+- `is-hovered` facet rows reading as pale peach on cream (color + bg
+  both faint)
+- Filter-count badge "3,596 / 7,341 notes" with gold text barely
+  distinguishable from cream
+- Canvas hover ring around stars: visible but soft
+
+**Root cause**: `#fbbf24` (amber-400) is intentionally bright for
+dark themes; on light themes that brightness reads as pale wash. The
+SEMANTIC vs CHROME split in the original MIG-027 misclassified
+`highlightedRing` as semantic (theme-agnostic) — it's actually an
+interaction affordance and needs to adapt across themes like the
+rest of chrome.
+
+**Fix**: introduce theme-conditional CSS vars for the gold family.
+
+  `SightV6.svelte` CSS — define 4 vars on `.sight-v6-root`:
+  - `--sight-highlight` (text/foreground color)
+  - `--sight-highlight-bg-soft` (subtle bg tint)
+  - `--sight-highlight-bg-strong` (stronger bg tint)
+  - `--sight-highlight-border-soft` (border color)
+
+  Default (dark themes): bright amber `#fbbf24` + matching alphas.
+  `:global(body.theme-light) .sight-v6-root` override: deep amber
+  `#b45309` (Tailwind amber-700) + matching alphas. Keeps the gold
+  semantic feel; only luminosity adapts so it reads cleanly on cream.
+
+**Sweep** — 3 DOM consumers + 2 canvas consumers + 1 source declaration:
+
+  SightV6.svelte:
+  - `.sight-v6-pro-badge` (EXTENDED indicator)
+  - `.sight-v6-filter-count` (X/Y notes badge)
+
+  facetSidebar.svelte:
+  - `.facet-cat-row.is-hovered` (hover-linked from star)
+  - `.facet-cat-row.active.is-hovered` (stacked hover + active)
+
+  dome.ts: `highlightedRing` PROMOTED from SEMANTIC_COLORS to
+  ChromePalette. `readChromePalette()` reads `--sight-highlight` CSS
+  var. `PALETTE` legacy const unchanged at runtime (sourced from
+  chrome side of the spread; no consumer broke; grep confirmed no
+  external imports of `SEMANTIC_COLORS.highlightedRing`).
+
+  anchor.ts:738 + miniDome.ts:227 — `PALETTE.highlightedRing` →
+  `_chrome.highlightedRing` (theme-aware canvas hover ring).
+
+**Commit**: `593af51` — MIG-027 §-fix-2 — semantic gold theme-aware.
+5 files changed, +78 / −25.
+
+Build kicked off for `MIG027-theme-fix2.exe`. Boss re-test
+instructions will follow when the .exe is ready.
+
 ---
 
