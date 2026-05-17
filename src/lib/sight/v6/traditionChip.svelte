@@ -132,6 +132,12 @@
 			scope: 'For Islamic philosophical historiography: ḥaḍarī (sedentary/urban) above, badawī (nomadic/rural) below; cyclic arrows convey the bidirectional generational cycle of ʿaṣabiyya rise + decay.',
 			preview: false,
 		},
+		pardes: {
+			name: 'PaRDeS',
+			tooltip: 'PaRDeS — 4 levels of Torah interpretation, literal to mystical (Hebrew acronym)',
+			scope: 'For Jewish hermeneutical analysis: peshat (literal, innermost) → remez (allusion) → derash (interpretive) → sod (mystical, outermost).',
+			preview: false,
+		},
 	};
 
 	let dropdownOpen = $state(false);

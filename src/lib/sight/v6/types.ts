@@ -207,7 +207,8 @@ export type TraditionId =
 	| 'longino'
 	| 'ibn-rushd-burhan'
 	| 'shatibi-maqasid'
-	| 'ibn-khaldun-umran';
+	| 'ibn-khaldun-umran'
+	| 'pardes';
 
 // ════════════════════════════════════════════════════════════════════
 // Tradition module contract (Concept Paper §4 + Plan §C.2)
