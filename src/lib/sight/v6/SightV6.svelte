@@ -189,30 +189,37 @@
 	});
 
 	// MIG-026 §γ-fix-1 — anchor-only override of density mode for
-	// spread-shape traditions. Density mode was tuned for Aristotelian
-	// where stars concentrate in stratum-by-time clusters; overlapping
-	// low-alpha dots additive-blend into a milky-way texture. For
-	// traditions that REDISTRIBUTE stars uniformly across the dome
-	// (currently horizontal-bands; future grid + rings will share the
-	// same property), the spread destroys the overlap density, and
-	// low-alpha individual dots dissolve into the bg — Eisa cycle-1
-	// Stage 2 PARTIAL: "The stars are hardly visible." Disabling
-	// density mode for spread shapes restores per-star full alpha so
-	// individual notes read clearly in their assigned zone.
-	//
-	// Mini-domes keep `densityMode` (above) unchanged — they always
-	// render the Aristotelian-default layout regardless of active
-	// tradition, so they still benefit from density mode's overlap-
-	// aggregation when the universe is dense.
+	// spread-shape traditions. Reserved for when the anchor renderer
+	// actually consumes densityMode (currently anchor.ts treats it as
+	// API-symmetric-but-unused — see anchor.ts step §B.9 comment).
+	// Mini-domes keep `densityMode` (above) unchanged.
 	const anchorDensityMode = $derived.by(() => {
 		if (!densityMode) return false;
 		const tradition = getTraditionById(
 			$appSettings.sight?.activeTradition as TraditionId | undefined,
 		);
-		// Spread shapes: horizontal-bands (Mohist). Future spread shapes
-		// (grid, rings, relational) join this list as their phases ship.
 		if (tradition?.shape === 'horizontal-bands') return false;
 		return true;
+	});
+
+	// MIG-026 §γ-fix-2 (Eisa Boss test 2026-05-17) — anchor star radius
+	// boost in SCREEN pixels for spread-shape traditions. The default
+	// BASE_STAR_RADIUS (5 px ⌀ @ 8× zoom = ~0.6 px ⌀ @ 1× zoom) was
+	// tuned for Aristotelian's concentrated clusters where overlapping
+	// sub-pixel dots additive-blend into a milky-way texture. In spread
+	// layouts (Mohist horizontal-bands; future grid/rings/relational)
+	// stars don't overlap and individual sub-pixel dots dissolve into
+	// the bg. Boss test 2026-05-17: "I think it is not completely
+	// visible because of the star's size. Let's pump up the size by
+	// 2px, just for this type." +2 px to the body radius (~4 px to the
+	// visible diameter) reads clearly in spread layouts without making
+	// cluster-style layouts look gloopy.
+	const anchorStarRadiusBoostScreenPx = $derived.by(() => {
+		const tradition = getTraditionById(
+			$appSettings.sight?.activeTradition as TraditionId | undefined,
+		);
+		if (tradition?.shape === 'horizontal-bands') return 2;
+		return 0;
 	});
 
 	// §C.4 — extension chips from the active tradition. masādir is the
@@ -296,12 +303,16 @@
 			highlightedPath: hoveredPath,
 			zoomScale: zoomScale,
 			matchedPaths,
-			// MIG-026 §γ-fix-1: spread-shape traditions (horizontal-bands)
-			// disable density mode for the anchor so individual stars
-			// remain visible after redistribution. Mini-domes still use
-			// the universe-wide densityMode (their layout is always
-			// Aristotelian-default, so density mode still benefits them).
+			// MIG-026 §γ-fix-1: anchor-only density-mode override for
+			// spread-shape traditions (reserved scaffolding; anchor
+			// renderer currently treats densityMode as API-symmetric-
+			// but-unused — see anchor.ts §B.9 comment).
 			densityMode: anchorDensityMode,
+			// MIG-026 §γ-fix-2: anchor-only star radius boost for
+			// spread-shape traditions. 2 px for Mohist horizontal-bands
+			// (and future grid/rings/relational); 0 for cluster-style
+			// shapes (Aristotelian / pramāṇa / masādir / Polanyi).
+			starRadiusBoostScreenPx: anchorStarRadiusBoostScreenPx,
 			tradition: activeTradition,
 			chromePalette,
 		});

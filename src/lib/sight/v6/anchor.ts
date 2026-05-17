@@ -629,6 +629,16 @@ export function renderAnchorDome(
 		// to dark when absent (preserves pre-MIG-027 behavior for
 		// any caller that hasn't migrated).
 		chromePalette?: ChromePalette;
+		/** MIG-026 §γ-fix-2 (2026-05-17) — per-paint star radius boost
+		 *  in SCREEN pixels (zoom-invariant). Used by spread-shape
+		 *  traditions (Mohist horizontal-bands; future grid/rings/
+		 *  relational) where stars redistribute uniformly across the
+		 *  dome and the default sub-pixel-at-1×-zoom size dissolves
+		 *  into the bg. Boss-test cycle 2026-05-17 found Mohist stars
+		 *  needed +2 px to read clearly. Aristotelian/pramāṇa/masādir/
+		 *  Polanyi keep the default 0 boost (cluster-style layouts
+		 *  benefit from sub-pixel sizes via additive blending). */
+		starRadiusBoostScreenPx?: number;
 	} = {},
 ): void {
 	const {
@@ -640,6 +650,7 @@ export function renderAnchorDome(
 		densityMode: _densityMode = false,
 		tradition = null,
 		chromePalette = CHROME_PALETTE_DARK_FALLBACK,
+		starRadiusBoostScreenPx = 0,
 	} = options;
 	// MIG-027 — set the module-level chrome state for the duration of
 	// this paint. All helper functions in this file (drawStars,
@@ -769,7 +780,7 @@ export function renderAnchorDome(
 
 	// 6. Stars (top of stack — but see step 7 for overlay shapes)
 	if (stars.length > 0) {
-		drawStars(ctx, stars, highlightedPath, zoomScale, matchedPaths);
+		drawStars(ctx, stars, highlightedPath, zoomScale, matchedPaths, starRadiusBoostScreenPx);
 	}
 
 	// 7. Tradition-shape dispatch (OVERLAY shapes — over stars).
@@ -841,6 +852,7 @@ function drawStars(
 	highlightedPath: string | null,
 	zoomScale: number = 1,
 	matchedPaths: Set<string> | null = null,
+	radiusBoostScreenPx: number = 0,
 ): void {
 	// 2026-05-15 §B.7-fix-2 (Eisa cycle-2 ghost mode): when a facet
 	// filter is active, render NON-matching stars at low opacity (ghost)
@@ -850,6 +862,20 @@ function drawStars(
 	// chip interaction. matchedPaths === null means no filter active
 	// (all stars render at full encoding).
 	const GHOST_ALPHA = 0.15;
+	// MIG-026 §γ-fix-2 (Eisa Boss test 2026-05-17): per-paint star radius
+	// boost in SCREEN pixels (zoom-invariant). Spread-shape traditions
+	// (Mohist horizontal-bands; future grid/rings/relational) redistribute
+	// stars uniformly across the dome instead of clustering them, which
+	// destroys the additive-blending milky-way texture Aristotelian-style
+	// concentration produces. The default star size (5 px ⌀ at 8× zoom →
+	// ~0.6 px ⌀ at 1× zoom) was tuned for the cluster case; in spread
+	// layouts individual sub-pixel dots dissolve into the bg even with
+	// density mode off. The boost adds N CSS-pixels to the body+pip
+	// radius (and the hover ring picks up the same boost so the brushing
+	// halo stays visually correct). 1/zoomScale because the canvas
+	// transform scales coordinates by zoomScale; dividing keeps the boost
+	// constant in SCREEN px regardless of zoom level.
+	const radiusBoostWorld = radiusBoostScreenPx / Math.max(zoomScale, 0.01);
 	// PASS 1: all star bodies (additive blend via lower per-star alpha).
 	// 2026-05-14 §A.14 fix-15: all notes render as CIRCLES per Eisa's
 	// spec ("I want all the notes to take a circular shape"). Library
@@ -860,7 +886,8 @@ function drawStars(
 	// libraryShapeIndex stays in StarDerived for future surfaces.
 	ctx.fillStyle = _chrome.starFill;
 	for (const star of stars) {
-		const r = star.topDecileActs ? TOP_DECILE_RADIUS : BASE_STAR_RADIUS;
+		const r = (star.topDecileActs ? TOP_DECILE_RADIUS : BASE_STAR_RADIUS)
+			+ radiusBoostWorld;
 		const isMatched = matchedPaths === null || matchedPaths.has(star.row.notePath);
 		const opacity = isMatched
 			? (star.row.confidenceAlpha ?? 0.45) * BODY_OPACITY_MULT
@@ -879,6 +906,9 @@ function drawStars(
 	// Ghost stars: pip drawn at GHOST_ALPHA so the encoding is faintly
 	// visible (helpful context for "what category is this ghost in?")
 	// without dominating.
+	// MIG-026 §γ-fix-2: pip scales proportionally to body — 60% of the
+	// body boost keeps the original pip:body 0.6 ratio in spread shapes.
+	const pipBoostWorld = radiusBoostWorld * 0.6;
 	for (const star of stars) {
 		const pipColor = pipColorForStage(star.row.stage);
 		if (!pipColor) continue;
@@ -886,7 +916,7 @@ function drawStars(
 		ctx.globalAlpha = isMatched ? 1 : GHOST_ALPHA;
 		ctx.fillStyle = pipColor;
 		ctx.beginPath();
-		ctx.arc(star.x, star.y, PIP_RADIUS, 0, Math.PI * 2);
+		ctx.arc(star.x, star.y, PIP_RADIUS + pipBoostWorld, 0, Math.PI * 2);
 		ctx.fill();
 	}
 	ctx.globalAlpha = 1;
@@ -895,7 +925,8 @@ function drawStars(
 	if (highlightedPath !== null) {
 		const star = stars.find((s) => s.row.notePath === highlightedPath);
 		if (star) {
-			const r = star.topDecileActs ? TOP_DECILE_RADIUS : BASE_STAR_RADIUS;
+			const r = (star.topDecileActs ? TOP_DECILE_RADIUS : BASE_STAR_RADIUS)
+				+ radiusBoostWorld;
 			// 2026-05-14 §A.14 fix-16 (Boss-test cycle 3.6): ring screen
 			// padding stays constant 4 px regardless of zoom. Pre-fix the
 			// "+4" was world units, so at max zoom the ring became 32+ px
