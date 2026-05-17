@@ -208,5 +208,75 @@ rest of chrome.
 Build kicked off for `MIG027-theme-fix2.exe`. Boss re-test
 instructions will follow when the .exe is ready.
 
+## fix-2 build complete — installer surfaced
+
+Build finished, exit code 0. Installer copied with `MIG027-theme-fix2`
+suffix marker:
+
+```
+E:\مشاريع كلاود\Constellation\src-tauri\target\release\bundle\nsis\Constellation_0.3.4_x64-setup.MIG027-theme-fix2.exe
+```
+
+Mtime: 2026-05-17 12:50. (fix-1 was 12:28; fix-2 is 12:50 — Eisa
+checks the binary mtime per Stage 0 of the test convention.)
+
+Stage 1.2 re-test instructions surfaced.
+
+## Stage 1.2 PASS
+
+Eisa: **Pass.** Screenshot confirmed:
+- Filter-count badge "3,596 / 7,341 notes" top-right — reads as saturated deep amber, clearly legible on cream bg
+- Hover-linked facet rows in left sidebar (Connection 3,150, hypothesis 3,596, birth 2,963, Self 3,596, تاريخ عربي وإسلامي 207) — all deep amber, no pale-peach wash
+- EXTENDED indicator (after Ctrl+Shift+D) — deep amber, visible
+- Canvas hover rings around stars in both the anchor dome AND the ACTS mini-dome — deep amber, visible against cream
+
+Stage 2 (dark-theme regression check) sent next to verify the
+`:global(body.theme-light)` override hasn't broken the dark variant
+that Stage 1 originally passed on.
+
+## Stage 2 PASS
+
+Eisa screenshot on Constellation Dark confirmed no regression:
+- Bright lemon-amber filter-count badge
+- Bright amber hover rings around the star in main dome + every
+  visible mini-dome
+- Bright amber hover-linked facets (Religion & Comparative Tra…,
+  Connection, hypothesis, birth, Self)
+- Bright amber EXTENDED indicator
+- Dark navy hover-info bar with light text — correct for dark theme
+
+The `:global(body.theme-light) .sight-v6-root` override is correctly
+isolated to light themes; dark theme is untouched. Stage 2.5 (Nord
+Light + Solarized Light sanity) sent next.
+
+## Stage 2.5 PASS · MIG-027 SHIPPED
+
+Eisa: **Pass.** Both Nord Light and Solarized Light screenshots
+confirmed the deep-amber treatment is consistent across all three
+light themes (Constellation Light, Nord Light, Solarized Light).
+The `body.theme-light` body class is the right hook — it fires
+across all three light variants automatically.
+
+Observation flagged but not blocking: on Solarized Light the dome
+stars look slightly more muted than on Nord / Constellation Light.
+This is theme-inherent (Solarized's intentionally-low-contrast cream
+overlays onto the SEMANTIC stage hues with less differentiation
+than the other palettes). Keeping the chrome/semantic split intact
+means we don't address this; making stage hues theme-aware would
+contradict the architectural choice. Boss acknowledged not-a-bug.
+
+**MIG-027 closes here.** Five Boss-test cycles all PASS; no further
+fixes pending; the chrome plumbing is in place for Phases γ → θ of
+MIG-026 to inherit theme-awareness automatically without retrofit.
+
+Final commit cascade for MIG-027:
+- `686ee58` MIG-027 — Sight theme inheritance (initial)
+- `2f190dc` MIG-027 §-fix-1 — chip contrast + missed theme leaks
+- `593af51` MIG-027 §-fix-2 — semantic gold theme-aware
+- Plus session log + orientation v2.12 in the SHIP-gate commit
+
+Cascading to MIG-026 Phase γ (Polanyi + Mohist tradition modules)
+next — the original 21-step Plan resumes from the pause point.
+
 ---
 
