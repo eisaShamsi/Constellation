@@ -657,5 +657,56 @@ All 6 traditions in the family now have implemented modules:
 Build kicked off for Phase δ.2 .exe (task `b3138lbyg`). Boss-test
 instructions surface when ready.
 
+## Phase δ.2 Boss test outcomes + §δ.2-fix-1
+
+Eisa screenshots:
+- **Stage 1 (Dewey)** PARTIAL: "Stars = bumping it 1.5px. Chevron
+  arrows = Enlarge it 2x."
+- **Stage 2 (Husserl)** PARTIAL: "Stars = bumping it 1.5px."
+- **Stage 3 (Longino)** PASS.
+- **Side discovery on pramana**: "Top dividing line collides with
+  the strata title." — same root cause as §δ.1-fix-1; deliberately
+  left untouched in fix-1 to preserve Concept Paper §4.1.2 cultural
+  mapping; now Eisa wants it fixed.
+
+### §δ.2-fix-1 (3 changes in one commit)
+
+1. **Star radius boost extended to cyclic-flow + rings** —
+   `SightV6.svelte::anchorStarRadiusBoostScreenPx` now returns:
+   - 2 px for `horizontal-bands` (existing Mohist)
+   - **1.5 px for `cyclic-flow`** (NEW Dewey)
+   - **1.5 px for `rings`** (NEW Husserl)
+   - 0 for everything else
+
+   The 1.5 vs 2 difference reflects that Dewey's stars sit in a
+   narrow band around the 75% ring (less spread than horizontal-
+   bands' full-dome stripes) and Husserl's stars sit in concentric
+   zones (same partial-spread property).
+
+2. **Chevron arrow size doubled** — `anchor.ts::drawCyclicFlow`
+   `chevronSize: 4 → 8`. The smaller arrows didn't read as
+   direction markers at 1× zoom; doubling makes the clockwise-flow
+   indication unmistakable.
+
+3. **Pramana quadrants rotated by +π/4** — `pramana.ts`. Same
+   off-axis principle as §δ.1-fix-1 (Peirce+Habermas at +π/6 for
+   3-sector) and Longino (+π/4 for 4-sector). The pramāṇa quadrants
+   shift visual position:
+   - pratyakṣa: NE → E
+   - anumāna: SE → S
+   - upamāna: SW → W
+   - śabda: NW → N (now contains +y axis cleanly)
+
+   Doc-drift flagged: Concept Paper §4.1.2 currently describes the
+   quadrants as NE/SE/SW/NW. The pramāṇas remain "kinds, not levels"
+   (their categorical meaning unchanged); only the geometric
+   position shifts. Update Concept Paper §4.1.2 at MIG-026
+   ship-gate.
+
+**Commit**: `b6a4574` — MIG-026 §δ.2-fix-1 — star size + chevron +
+pramana rotation. 3 files changed, +48 / −11.
+
+Build for fix-1 .exe kicked off (task `b8g10k4ln`).
+
 ---
 
