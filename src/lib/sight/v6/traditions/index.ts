@@ -40,6 +40,9 @@ import { ibnKhaldunUmran } from './ibn-khaldun-umran';
 import { pardes } from './pardes';
 import { maimonideanProphecy } from './maimonidean-prophecy';
 import { talmudicMiddot } from './talmudic-middot';
+import { mencianSprouts } from './mencian-sprouts';
+import { wangYangming } from './wang-yangming';
+import { koreanSongnihak } from './korean-songnihak';
 
 /**
  * The registered tradition modules. Keyed by TraditionId for O(1)
@@ -56,7 +59,10 @@ import { talmudicMiddot } from './talmudic-middot';
  * Phase ζ.1:    pardes (rings, 4 zones)
  * Phase ζ.2:    maimonidean-prophecy (ladder spiral, 11 steps)
  * Phase ζ.3:    talmudic-middot (ladder spiral, 13 steps)
- * Phases η–θ:   the 8 remaining newcomers across the remaining shapes
+ * Phase η.1:    mencian-sprouts (sectoral 4-cell + center ring xìn)
+ * Phase η.2:    wang-yangming (binary-flow vertical)
+ * Phase η.3:    korean-songnihak (sectoral 4-cell, 2×2 grid concept)
+ * Phase θ:      the 5 remaining newcomers (Latin American + African)
  */
 const REGISTRY: Partial<Record<TraditionId, TraditionModule>> = {
 	aristotelian,
@@ -75,7 +81,10 @@ const REGISTRY: Partial<Record<TraditionId, TraditionModule>> = {
 	pardes,
 	'maimonidean-prophecy': maimonideanProphecy,
 	'talmudic-middot': talmudicMiddot,
-	// (Phases η–θ add the 8 remaining traditions per the MIG-026 Plan)
+	'mencian-sprouts': mencianSprouts,
+	'wang-yangming': wangYangming,
+	'korean-songnihak': koreanSongnihak,
+	// (Phase θ adds the 5 remaining traditions per the MIG-026 Plan)
 };
 
 /**
@@ -161,8 +170,8 @@ export const FAMILIES: Record<FamilyId, { label: string; traditions: TraditionId
 	},
 	'east-asian-confucian': {
 		label: 'East Asian Confucian',
-		// Phase η will add: 'mencian-sprouts', 'wang-yangming', 'korean-songnihak'
-		traditions: [],
+		// Phase η adds all 3 in one cascade. Family complete.
+		traditions: ['mencian-sprouts', 'wang-yangming', 'korean-songnihak'],
 	},
 	'chinese-pragmatist': {
 		label: 'Chinese pragmatist',
@@ -209,4 +218,7 @@ export {
 	pardes,
 	maimonideanProphecy,
 	talmudicMiddot,
+	mencianSprouts,
+	wangYangming,
+	koreanSongnihak,
 };

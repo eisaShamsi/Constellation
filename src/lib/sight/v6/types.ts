@@ -210,7 +210,10 @@ export type TraditionId =
 	| 'ibn-khaldun-umran'
 	| 'pardes'
 	| 'maimonidean-prophecy'
-	| 'talmudic-middot';
+	| 'talmudic-middot'
+	| 'mencian-sprouts'
+	| 'wang-yangming'
+	| 'korean-songnihak';
 
 // ════════════════════════════════════════════════════════════════════
 // Tradition module contract (Concept Paper §4 + Plan §C.2)
@@ -372,6 +375,16 @@ export interface BinaryFlowSpec {
 	cellB: { label: string };
 	flowDirection: 'a-to-b' | 'b-to-a' | 'bidirectional' | 'cyclic';
 	centerLabel?: string;
+	/** MIG-026 §η.2 (2026-05-17) — layout discriminator. 'horizontal'
+	 *  (default, used by Ibn Khaldūn ʿumrān ε.3) puts cellA above
+	 *  and cellB below a horizontal divider at the dome equator.
+	 *  'vertical' (used by Wang Yangming η.2) puts cellA on the left
+	 *  and cellB on the right; no central divider is drawn (would
+	 *  collide with the +y stratum labels) so the binary structure
+	 *  reads from labels alone. Future layouts (e.g., 'concentric'
+	 *  for Dussel θ.2 with inner disc + outer ring) extend the union
+	 *  as their phases ship. */
+	layout?: 'horizontal' | 'vertical';
 }
 
 /**

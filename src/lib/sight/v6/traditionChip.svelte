@@ -150,6 +150,24 @@
 			scope: 'For Talmudic hermeneutics: 13 logical rules ascending from simplest (kal va-chomer = a fortiori inference) to most complex (reconciliation of contradictory verses).',
 			preview: false,
 		},
+		'mencian-sprouts': {
+			name: 'Mencian sprouts',
+			tooltip: 'Mencius — 4 moral sprouts (端 duān) + optional central xìn (信 trustworthiness)',
+			scope: 'For Confucian moral psychology: 4 innate sprouts → 4 cardinal virtues (compassion → rén, shame → yì, deference → lǐ, right-wrong → zhì); central xìn binds them.',
+			preview: false,
+		},
+		'wang-yangming': {
+			name: 'Wang Yangming',
+			tooltip: 'Wang Yangming — zhī-xíng héyī: knowing and acting unified through innate moral knowing',
+			scope: 'For Neo-Confucian moral epistemology: zhī (knowing) ↔ liángzhī (innate moral knowing, center) ↔ xíng (acting). Bidirectional flow conveys the unity of knowledge and action.',
+			preview: false,
+		},
+		'korean-songnihak': {
+			name: 'Korean Sŏngnihak',
+			tooltip: 'Yi T\'oegye + Yi Yulgok — Four-Seven debate: lǐ vs qì × 四端 vs 七情 (16th-c. Korean Neo-Confucian)',
+			scope: 'For Korean Neo-Confucian debate: 2×2 grid mapping the lǐ (principle) vs qì (psychophysical force) axis against the 四端 (4 sprouts) vs 七情 (7 emotions) axis.',
+			preview: false,
+		},
 	};
 
 	let dropdownOpen = $state(false);

@@ -661,6 +661,12 @@ function drawBinaryFlow(
 	layout: DomeLayout,
 	binary: BinaryFlowSpec,
 ): void {
+	const layoutVariant = binary.layout ?? 'horizontal';
+	if (layoutVariant === 'vertical') {
+		drawBinaryFlowVertical(ctx, layout, binary);
+		return;
+	}
+
 	ctx.save();
 
 	// 1. Horizontal divider stroke across the dome equator (y = centerY),
@@ -892,6 +898,98 @@ function drawHorizontalBands(
 		// so it sits clearly within the dome but doesn't crowd the rim.
 		const lx = layout.centerX - halfChord * 0.92;
 		ctx.fillText(band.label, lx, yCenter);
+	}
+
+	ctx.restore();
+}
+
+/** MIG-026 §η.2 — Vertical-layout binary-flow renderer.
+ *
+ *  Used by Wang Yangming for the zhī (left) ↔ liángzhī (center) ↔
+ *  xíng (right) tripartite structure. Deliberately NO central
+ *  divider stroke — a vertical line through (centerX, *) would cross
+ *  every stratum label on the +y axis. The binary structure reads
+ *  from labels alone, with bidirectional horizontal arrows showing
+ *  the center-mediated bidirectional flow.
+ *
+ *  Layout:
+ *    cellA label    — left side at ~(-0.65r, 0)
+ *    cellB label    — right side at ~(+0.65r, 0)
+ *    centerLabel    — exact dome center
+ *    Arrows         — for 'bidirectional': two arrows on each side
+ *                     pointing OUT from center (→ cellA on the left
+ *                     side, ← cellA, both arrows on right side
+ *                     pointing right etc.), suggesting that the
+ *                     center mediates the flow in both directions
+ *                     'cyclic'         — same as bidirectional
+ *                     'a-to-b'         — arrow from cellA to cellB
+ *                                         passing through center
+ *                     'b-to-a'         — opposite
+ */
+function drawBinaryFlowVertical(
+	ctx: CanvasRenderingContext2D,
+	layout: DomeLayout,
+	binary: BinaryFlowSpec,
+): void {
+	ctx.save();
+
+	// 1. Cell labels — left and right sides at vertical center.
+	ctx.fillStyle = _chrome.stratumLabel;
+	ctx.font = 'italic 11px Inter, system-ui, sans-serif';
+	ctx.textBaseline = 'middle';
+	const sideOffset = layout.radius * 0.65;
+	ctx.textAlign = 'right';
+	ctx.fillText(binary.cellA.label, layout.centerX - sideOffset, layout.centerY);
+	ctx.textAlign = 'left';
+	ctx.fillText(binary.cellB.label, layout.centerX + sideOffset, layout.centerY);
+
+	// 2. Center label (optional). For Wang Yangming this is liángzhī.
+	if (binary.centerLabel) {
+		ctx.font = 'italic 10px Inter, system-ui, sans-serif';
+		ctx.textAlign = 'center';
+		ctx.fillText(binary.centerLabel, layout.centerX, layout.centerY);
+	}
+
+	// 3. Flow arrows — horizontal, on each side. Drawn between the
+	//    center area (~20% radius from center) and the cell label
+	//    position (~50% radius). Arrow tips per flowDirection.
+	ctx.strokeStyle = _chrome.stratumLabel;
+	ctx.lineWidth = 1.4;
+	const arrowFromX = layout.radius * 0.20;  // distance from center
+	const arrowToX = layout.radius * 0.50;    // distance from center to arrow tip
+	const tipSize = 4;
+	const dir = binary.flowDirection;
+
+	const drawHArrow = (xStart: number, xEnd: number) => {
+		const goingRight = xEnd > xStart;
+		ctx.beginPath();
+		ctx.moveTo(xStart, layout.centerY);
+		ctx.lineTo(xEnd, layout.centerY);
+		ctx.stroke();
+		// Chevron tip at xEnd
+		const tipX = xEnd;
+		const wingX = goingRight ? tipX - tipSize : tipX + tipSize;
+		ctx.beginPath();
+		ctx.moveTo(wingX, layout.centerY - tipSize);
+		ctx.lineTo(tipX, layout.centerY);
+		ctx.lineTo(wingX, layout.centerY + tipSize);
+		ctx.stroke();
+	};
+
+	if (dir === 'a-to-b') {
+		// Single rightward arrow from left of center to right (cellA →
+		// cellB). Drawn as one continuous line crossing the center.
+		drawHArrow(layout.centerX - arrowToX, layout.centerX + arrowToX);
+	} else if (dir === 'b-to-a') {
+		drawHArrow(layout.centerX + arrowToX, layout.centerX - arrowToX);
+	} else {
+		// 'bidirectional' and 'cyclic' both render as two outward
+		// arrows: center → cellA (leftward) AND center → cellB
+		// (rightward). The pattern conveys "center mediates the flow
+		// to both sides" which fits Wang Yangming's liángzhī unifying
+		// zhī and xíng.
+		drawHArrow(layout.centerX - arrowFromX, layout.centerX - arrowToX);
+		drawHArrow(layout.centerX + arrowFromX, layout.centerX + arrowToX);
 	}
 
 	ctx.restore();
