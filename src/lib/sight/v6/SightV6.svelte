@@ -235,6 +235,7 @@
 		switch (tradition?.shape) {
 			case 'horizontal-bands':
 			case 'grid':
+			case 'binary-flow':
 				return 2;
 			case 'cyclic-flow':
 			case 'rings':

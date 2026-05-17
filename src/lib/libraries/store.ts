@@ -3492,7 +3492,8 @@ export interface AppSettings {
 			| 'husserl'
 			| 'longino'
 			| 'ibn-rushd-burhan'
-			| 'shatibi-maqasid';
+			| 'shatibi-maqasid'
+			| 'ibn-khaldun-umran';
 		/** MIG-026 Phase β — Favorite traditions pinned to the inline
 		 *  chip row (A6 hybrid: 4 favorites visible inline + dropdown
 		 *  for rest). Array order = display order. The chip UI shows

@@ -534,21 +534,122 @@ function drawCyclicFlow(
 	ctx.restore();
 }
 
-/** STUB — Phase ε.3 (Ibn Khaldūn ʿumrān cyclic binary) ships the impl.
- *  Renders 2 cells (typically inner disc + outer ring, or top/bottom
- *  bands) with directional flow arrows. */
+/** MIG-026 Phase ε.3 — Binary-flow renderer: 2 cells + flow arrows.
+ *
+ *  Currently implements the HORIZONTAL-BAND layout (cellA above,
+ *  cellB below, horizontal divider at dome equator). Used by Ibn
+ *  Khaldūn ʿumrān (Phase ε.3). Future binary-flow traditions with
+ *  different layouts (Dussel concentric in θ.2, Wang Yangming
+ *  hemispheres in η.2) will be supported by extending this renderer
+ *  with a layout discriminator on BinaryFlowSpec when those phases
+ *  ship.
+ *
+ *  Flow arrows (per BinaryFlowSpec.flowDirection):
+ *    'a-to-b'        — single down-arrow on the right side (cellA top → cellB bottom)
+ *    'b-to-a'        — single up-arrow on the right side (cellB → cellA)
+ *    'bidirectional' — both arrows stacked on the right side
+ *    'cyclic'        — up-arrow on the LEFT side + down-arrow on
+ *                       the RIGHT side, suggesting rotational
+ *                       circulation (Ibn Khaldūn: bedouin↔urban cycle
+ *                       over generations)
+ *
+ *  Chrome via _chrome.* for theme-aware drawing.
+ */
 function drawBinaryFlow(
-	_ctx: CanvasRenderingContext2D,
-	_layout: DomeLayout,
-	_binary: BinaryFlowSpec,
+	ctx: CanvasRenderingContext2D,
+	layout: DomeLayout,
+	binary: BinaryFlowSpec,
 ): void {
-	// TODO Phase ε.3 — Ibn Khaldūn (cyclic), Phase θ.2 — Dussel (a→b),
-	// Phase η.2 — Wang Yangming (bidirectional with center):
-	//   cell A + cell B layout depends on tradition (horizontal split
-	//   for ʿumrān; concentric for Dussel; left/right hemisphere for
-	//   Wang Yangming)
-	//   flow arrow per binary.flowDirection
-	//   optional center label (Wang Yangming's liángzhī)
+	ctx.save();
+
+	// 1. Horizontal divider stroke across the dome equator (y = centerY),
+	//    clipped to the dome circle (chord half-width = radius at y=0).
+	ctx.strokeStyle = _chrome.strataRing;
+	ctx.lineWidth = 1.2;
+	ctx.beginPath();
+	ctx.moveTo(layout.centerX - layout.radius, layout.centerY);
+	ctx.lineTo(layout.centerX + layout.radius, layout.centerY);
+	ctx.stroke();
+
+	// 2. Cell labels — placed at the vertical-center of each band
+	//    along the +x axis (3 o'clock direction) so they don't collide
+	//    with stratum labels on the +y axis or with the calendar rim
+	//    outside the dome.
+	ctx.fillStyle = _chrome.stratumLabel;
+	ctx.font = 'italic 11px Inter, system-ui, sans-serif';
+	ctx.textAlign = 'right';
+	ctx.textBaseline = 'middle';
+	// cellA = top band (centerY - r/2 area), cellB = bottom band
+	// (centerY + r/2 area). Labels at +x axis at 90% of half-chord.
+	const topBandY = layout.centerY - layout.radius / 2;
+	const bottomBandY = layout.centerY + layout.radius / 2;
+	const topHalfChord = Math.sqrt(
+		Math.max(0, layout.radius * layout.radius - (layout.radius / 2) ** 2),
+	);
+	const labelX = layout.centerX + topHalfChord * 0.85;
+	ctx.fillText(binary.cellA.label, labelX, topBandY);
+	ctx.fillText(binary.cellB.label, labelX, bottomBandY);
+
+	// 3. Optional center label (e.g., Wang Yangming's liángzhī sits at
+	//    the equator between the two cells). Placed at dome center.
+	if (binary.centerLabel) {
+		ctx.font = 'italic 10px Inter, system-ui, sans-serif';
+		ctx.textAlign = 'center';
+		ctx.fillText(binary.centerLabel, layout.centerX, layout.centerY);
+	}
+
+	// 4. Flow arrows. Arrow shape: curved arc with chevron tip. Drawn
+	//    at offset radii (~40% of dome radius) so arrows fit visibly
+	//    inside the bands without colliding with labels.
+	ctx.strokeStyle = _chrome.stratumLabel;
+	ctx.lineWidth = 1.4;
+	const arrowOffsetX = layout.radius * 0.40;
+	const arrowYHigh = layout.centerY - layout.radius * 0.25;
+	const arrowYLow = layout.centerY + layout.radius * 0.25;
+	const dir = binary.flowDirection;
+
+	const drawArrow = (
+		x: number,
+		yFrom: number,
+		yTo: number,
+	) => {
+		// Vertical line from yFrom to yTo with chevron tip at yTo.
+		ctx.beginPath();
+		ctx.moveTo(x, yFrom);
+		ctx.lineTo(x, yTo);
+		ctx.stroke();
+		// Chevron at yTo (3 px wings pointing back along the stroke
+		// direction).
+		const tipSize = 4;
+		const goingDown = yTo > yFrom;
+		const wingY = goingDown ? yTo - tipSize : yTo + tipSize;
+		ctx.beginPath();
+		ctx.moveTo(x - tipSize, wingY);
+		ctx.lineTo(x, yTo);
+		ctx.lineTo(x + tipSize, wingY);
+		ctx.stroke();
+	};
+
+	if (dir === 'a-to-b') {
+		// cellA (top) → cellB (bottom): down-arrow on right side.
+		drawArrow(layout.centerX + arrowOffsetX, arrowYHigh, arrowYLow);
+	} else if (dir === 'b-to-a') {
+		// cellB → cellA: up-arrow on right side.
+		drawArrow(layout.centerX + arrowOffsetX, arrowYLow, arrowYHigh);
+	} else if (dir === 'bidirectional') {
+		// Both arrows stacked on right side.
+		drawArrow(layout.centerX + arrowOffsetX, arrowYHigh, arrowYLow);
+		drawArrow(layout.centerX + arrowOffsetX - 12, arrowYLow, arrowYHigh);
+	} else if (dir === 'cyclic') {
+		// Cycle: up-arrow on LEFT side + down-arrow on RIGHT side =
+		// rotational circulation. Conveys "the two cells flow into
+		// each other over time" (Ibn Khaldūn's ʿumrān: bedouin →
+		// urban → decay → bedouin).
+		drawArrow(layout.centerX - arrowOffsetX, arrowYLow, arrowYHigh);
+		drawArrow(layout.centerX + arrowOffsetX, arrowYHigh, arrowYLow);
+	}
+
+	ctx.restore();
 }
 
 /** MIG-026 Phase γ — Polanyi tacit/explicit fog overlay.

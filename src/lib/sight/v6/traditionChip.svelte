@@ -126,6 +126,12 @@
 			scope: 'For Sunni Islamic legal-purpose analysis: each note at the intersection of an essential (dīn / nafs / ʿaql / nasl / māl) and a tier (ḍarūriyyāt / ḥājiyyāt / taḥsīniyyāt).',
 			preview: false,
 		},
+		'ibn-khaldun-umran': {
+			name: 'Ibn Khaldūn ʿumrān',
+			tooltip: 'Ibn Khaldūn — ʿilm al-ʿumrān: bedouin↔urban cyclical civilizational dynamic',
+			scope: 'For Islamic philosophical historiography: ḥaḍarī (sedentary/urban) above, badawī (nomadic/rural) below; cyclic arrows convey the bidirectional generational cycle of ʿaṣabiyya rise + decay.',
+			preview: false,
+		},
 	};
 
 	let dropdownOpen = $state(false);
