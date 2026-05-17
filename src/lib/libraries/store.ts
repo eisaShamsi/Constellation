@@ -3495,7 +3495,8 @@ export interface AppSettings {
 			| 'shatibi-maqasid'
 			| 'ibn-khaldun-umran'
 			| 'pardes'
-			| 'maimonidean-prophecy';
+			| 'maimonidean-prophecy'
+			| 'talmudic-middot';
 		/** MIG-026 Phase β — Favorite traditions pinned to the inline
 		 *  chip row (A6 hybrid: 4 favorites visible inline + dropdown
 		 *  for rest). Array order = display order. The chip UI shows

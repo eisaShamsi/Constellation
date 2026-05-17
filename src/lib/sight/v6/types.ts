@@ -209,7 +209,8 @@ export type TraditionId =
 	| 'shatibi-maqasid'
 	| 'ibn-khaldun-umran'
 	| 'pardes'
-	| 'maimonidean-prophecy';
+	| 'maimonidean-prophecy'
+	| 'talmudic-middot';
 
 // ════════════════════════════════════════════════════════════════════
 // Tradition module contract (Concept Paper §4 + Plan §C.2)

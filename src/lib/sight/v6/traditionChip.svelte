@@ -144,6 +144,12 @@
 			scope: 'For Jewish philosophical theology: 11 ascending degrees of prophetic experience, from ruaḥ ha-qodesh (holy spirit, innermost) to angel-vision-while-awake (Moses-level, outermost).',
 			preview: false,
 		},
+		'talmudic-middot': {
+			name: 'Talmudic 13 middot',
+			tooltip: 'Rabbi Yishmael — 13 hermeneutical rules for interpreting Torah (Baraita d\'Rabbi Yishmael, Sifra intro)',
+			scope: 'For Talmudic hermeneutics: 13 logical rules ascending from simplest (kal va-chomer = a fortiori inference) to most complex (reconciliation of contradictory verses).',
+			preview: false,
+		},
 	};
 
 	let dropdownOpen = $state(false);
