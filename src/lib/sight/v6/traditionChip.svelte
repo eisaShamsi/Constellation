@@ -84,6 +84,18 @@
 			scope: 'For doctrines tested by historical precedent / observational evidence / social benefit.',
 			preview: true,
 		},
+		peirce: {
+			name: 'Peirce',
+			tooltip: 'Peirce — American pragmatist, 3 phaneroscopic categories (Firstness / Secondness / Thirdness)',
+			scope: 'For phenomenological classification: quality/feeling (Firstness), reaction/relation (Secondness), mediation/law (Thirdness).',
+			preview: false,
+		},
+		habermas: {
+			name: 'Habermas',
+			tooltip: 'Habermas — Frankfurt School critical theory, 3 knowledge-constitutive interests',
+			scope: 'For knowledge classified by orientation: prediction/control (technical), mutual understanding (practical), reflection/liberation (emancipatory).',
+			preview: false,
+		},
 	};
 
 	let dropdownOpen = $state(false);

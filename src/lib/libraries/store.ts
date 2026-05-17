@@ -3485,7 +3485,9 @@ export interface AppSettings {
 			| 'pramana'
 			| 'masadir'
 			| 'polanyi'
-			| 'mohist-san-biao';
+			| 'mohist-san-biao'
+			| 'peirce'
+			| 'habermas';
 		/** MIG-026 Phase β — Favorite traditions pinned to the inline
 		 *  chip row (A6 hybrid: 4 favorites visible inline + dropdown
 		 *  for rest). Array order = display order. The chip UI shows

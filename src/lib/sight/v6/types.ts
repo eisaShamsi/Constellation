@@ -199,7 +199,9 @@ export type TraditionId =
 	| 'pramana'
 	| 'masadir'
 	| 'polanyi'
-	| 'mohist-san-biao';
+	| 'mohist-san-biao'
+	| 'peirce'
+	| 'habermas';
 
 // ════════════════════════════════════════════════════════════════════
 // Tradition module contract (Concept Paper §4 + Plan §C.2)
