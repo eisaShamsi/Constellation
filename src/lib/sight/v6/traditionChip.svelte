@@ -114,6 +114,12 @@
 			scope: 'For social conditions of objectivity: venues (public forums), uptake (response to criticism), public standards (shared criteria), tempered equality (credentialed disagreement).',
 			preview: false,
 		},
+		'ibn-rushd-burhan': {
+			name: 'Ibn Rushd burhān',
+			tooltip: 'Ibn Rushd (Averroes) — 4 concentric demonstrative arts ranked by epistemic force',
+			scope: 'For Islamic Aristotelian commentary tradition: burhān (apodictic demonstration, innermost), jadal (dialectic), khaṭāba (rhetoric), shiʿr (poetics, outermost).',
+			preview: false,
+		},
 	};
 
 	let dropdownOpen = $state(false);

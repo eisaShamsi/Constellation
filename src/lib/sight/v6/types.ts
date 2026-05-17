@@ -204,7 +204,8 @@ export type TraditionId =
 	| 'habermas'
 	| 'dewey'
 	| 'husserl'
-	| 'longino';
+	| 'longino'
+	| 'ibn-rushd-burhan';
 
 // ════════════════════════════════════════════════════════════════════
 // Tradition module contract (Concept Paper §4 + Plan §C.2)
