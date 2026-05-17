@@ -317,7 +317,12 @@
 		border-radius: 5px;
 	}
 
-	/* Individual favorite chip (same compact style as MIG-025 §C.1). */
+	/* Individual favorite chip (same compact style as MIG-025 §C.1).
+	   MIG-027 §-fix-1: inactive-chip text uses --text-normal (not
+	   --text-muted) so chips read at full contrast on light themes too.
+	   The active vs inactive distinction is carried by the border + bg
+	   tint + dot (not by text dimness), so full-contrast text is safe
+	   in both themes. */
 	.tradition-chip {
 		display: inline-flex;
 		align-items: center;
@@ -325,7 +330,7 @@
 		padding: 3px 9px;
 		font-size: 11px;
 		font-family: inherit;
-		color: var(--text-muted, #c8cdd9);
+		color: var(--text-normal, #c8cdd9);
 		background: transparent;
 		border: 1px solid transparent;
 		border-radius: 3px;
@@ -346,7 +351,9 @@
 		background: hsla(var(--accent-h, 220), var(--accent-s, 50%), 50%, 0.28);
 	}
 
-	/* "All ▾" dropdown trigger. */
+	/* "All ▾" dropdown trigger.
+	   MIG-027 §-fix-1: text bumped to --text-normal so the trigger is
+	   readable on light themes (where --text-muted goes too faint). */
 	.tradition-chip-all-trigger {
 		display: inline-flex;
 		align-items: center;
@@ -354,7 +361,7 @@
 		padding: 3px 9px;
 		font-size: 11px;
 		font-family: inherit;
-		color: var(--text-muted, #a0a8ba);
+		color: var(--text-normal, #a0a8ba);
 		background: transparent;
 		border: 1px dashed var(--background-modifier-border, rgba(160, 168, 186, 0.40));
 		border-radius: 3px;

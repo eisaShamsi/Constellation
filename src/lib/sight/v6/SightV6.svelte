@@ -961,14 +961,17 @@
 	/* §B.7-fix-1 — filter affected-count badge. Shows X/Y notes when
 	   any facet filter is active. Subtle but readable. Sits before the
 	   Reset View button via margin-left:auto on the count (which pushes
-	   it right-aligned with the button to its right when both visible). */
+	   it right-aligned with the button to its right when both visible).
+	   MIG-027 §-fix-1: background bumped to --background-secondary so
+	   it reads correctly on light themes; gold text + gold border stay
+	   semantic (filter-active = gold, theme-independent). */
 	.sight-v6-filter-count {
 		margin-left: auto;
 		padding: 4px 10px;
 		font-size: 11px;
 		color: #fbbf24;
 		font-variant-numeric: tabular-nums;
-		background: rgba(58, 67, 90, 0.35);
+		background: var(--background-secondary, rgba(58, 67, 90, 0.35));
 		border: 1px solid rgba(251, 191, 36, 0.4);
 		border-radius: 4px;
 	}
@@ -1118,16 +1121,19 @@
 		white-space: nowrap;
 	}
 
+	/* MIG-027 §-fix-1: bg + border + text bumped to theme vars. Originally
+	   hardcoded to dark-theme values; leaked through during light-theme
+	   Boss test. */
 	.sight-v6-loading {
 		position: absolute;
 		left: 50%;
 		top: 50%;
 		transform: translate(-50%, -50%);
 		font-size: 12px;
-		color: #7a8295;
+		color: var(--text-muted, #7a8295);
 		padding: 8px 16px;
-		background: rgba(13, 19, 34, 0.85);
-		border: 1px solid #2a3245;
+		background: var(--background-secondary, rgba(13, 19, 34, 0.85));
+		border: 1px solid var(--background-modifier-border, #2a3245);
 		border-radius: 6px;
 		pointer-events: none;
 	}
@@ -1139,10 +1145,13 @@
 		bottom: 16px;
 		transform: none;
 		font-size: 10px;
-		color: #5a6275;
+		color: var(--text-faint, #5a6275);
 		opacity: 0.7;
 	}
 
+	/* MIG-027 §-fix-1: hover-info was the most visible leak in Boss
+	   test — dark navy box on cream bg. All four properties now
+	   theme-aware. */
 	.sight-v6-hover-info {
 		position: absolute;
 		left: 16px;
@@ -1151,8 +1160,8 @@
 		flex-direction: column;
 		gap: 2px;
 		padding: 6px 12px;
-		background: rgba(13, 19, 34, 0.94);
-		border: 1px solid #2a3245;
+		background: var(--background-secondary, rgba(13, 19, 34, 0.94));
+		border: 1px solid var(--background-modifier-border, #2a3245);
 		border-radius: 4px;
 		pointer-events: none;
 		max-width: 60%;
@@ -1160,14 +1169,14 @@
 	.sight-v6-hover-title {
 		font-size: 12px;
 		font-weight: 500;
-		color: #e8ebf2;
+		color: var(--text-normal, #e8ebf2);
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
 	.sight-v6-hover-path {
 		font-size: 10px;
-		color: #5a6275;
+		color: var(--text-faint, #5a6275);
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
