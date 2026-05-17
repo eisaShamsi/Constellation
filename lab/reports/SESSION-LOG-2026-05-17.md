@@ -450,5 +450,46 @@ for spread shapes. 2 files changed, +68 / −26.
 
 Build kicked off for §γ-fix-2 .exe (task `bavn19gz3`).
 
+## §γ-fix-2 PASS · Phase γ CLOSED
+
+Eisa Boss-tested `MIG026-phase-gamma-fix2.exe` (mtime 16:46). Verdict:
+*"Pass. Now it is readable."* Screenshot shows the 3 Mohist bands
+(本 běn · root / 原 yuán · origin / 用 yòng · use) all populated with
+clearly-visible cyan/orange/purple star dots at the bumped size; no
+regression on the cluster-style layouts.
+
+**Phase γ CLOSED.** Cumulative trail:
+
+| Step | Commit | Outcome |
+|---|---|---|
+| γ initial | `2c5e901` | Polanyi + Mohist code; Stage 1 PASS, Stage 2 PARTIAL (Mohist stars dim), Stages 3+4 PASS |
+| §γ-fix-1 | `63c7776` | Misdiagnosis — anchorDensityMode override (anchor voids densityMode per §B.9); had no visible effect |
+| §γ-fix-2 | `be14ab2` | Real fix — per-shape star radius +2 CSS px boost for horizontal-bands. Eisa-diagnosed: "pump up the size by 2px, just for this type." |
+
+**Per-shape boost feature now in the architecture** — Phase ε.1
+(rings), ε.2 (grid), θ.1 (relational hub-and-spoke), and θ.5
+(complementary hub-and-spoke) will reuse the same `starRadiusBoostScreenPx`
+mechanism by adding their shapes to the `anchorStarRadiusBoostScreenPx`
+$derived check. No new code needed for those phases; just one-line
+additions when they ship.
+
+**Theme-awareness check** — both new modules (Polanyi gradient +
+Mohist horizontal-bands) inherit theme correctness for free via
+MIG-027's `_chrome` plumbing. Validated in Eisa's screenshot
+(cream bg correctly under both shapes' chrome).
+
+### Awaiting next direction
+
+Per the test instruction surfaced post-fix-2, the next options are:
+
+1. **Cascade into Phase δ** (Modern Western family — 5 new
+   traditions in 2 sub-phases: δ.1 = Peirce sectoral + Habermas
+   sectoral; δ.2 = Dewey cyclic-flow + Husserl rings + Longino
+   sectoral). Substantial cascade (~1.5 days per Plan).
+2. **Phase β chip-UI interaction test deferred from earlier**
+   (pin/unpin star, family browse, dropdown open/close) — covered
+   by the same .exe.
+3. **Pivot** to something else (CNS theming MIG-028 etc.).
+
 ---
 
