@@ -280,3 +280,77 @@ next — the original 21-step Plan resumes from the pause point.
 
 ---
 
+## MIG-026 §γ — Polanyi + Mohist sān biǎo (code shipped)
+
+Phase γ resumes the MIG-026 cascade after the MIG-027 pivot
+closes. Two new tradition modules + 2 renderer implementations + 1
+dispatch architecture refactor (gradient = overlay vs. chrome under
+stars).
+
+**Commit**: `2c5e901` — MIG-026 §γ — Polanyi (gradient) + Mohist
+sān biǎo (horizontal-bands) modules. 4 files changed, +455 / −43.
+
+### Files
+
+- `src/lib/sight/v6/traditions/polanyi.ts` — NEW
+  - shape: 'gradient', remapStarPosition = identity (per Plan:
+    Polanyi doesn't redistribute; it modulates visibility)
+  - gradientSpec: centerOpacity 0.18 / edgeOpacity 0.95 / labels
+    'tacit' (center) + 'explicit' (edge)
+- `src/lib/sight/v6/traditions/mohist-san-biao.ts` — NEW
+  - shape: 'horizontal-bands', remapStarPosition hash-buckets stars
+    into 3 zones (本 běn / 原 yuán / 用 yòng); 2 independent hashes
+    for vertical+horizontal jitter avoid diagonal stripe artifacts;
+    x clipped to dome circle at each y
+  - horizontalBandsSpec: 3 bands with bilingual labels (Chinese
+    character + transliteration + English gloss)
+- `src/lib/sight/v6/traditions/index.ts` — REGISTRY adds both
+  entries + imports + re-exports
+- `src/lib/sight/v6/anchor.ts` — drawGradientFog + drawHorizontal-
+  Bands implemented (theme-aware via _chrome.*); parseRgb helper
+  added for the gradient overlay; dispatch refactored to split
+  gradient (post-stars) from chrome shapes (pre-stars)
+
+### Dispatch architecture refactor
+
+Gradient is conceptually different from other shapes: it's an
+OVERLAY that modulates stars (must paint after stars), not chrome
+under stars (which paints before). The dispatch was split into two
+points:
+
+- **Step 2.5** (pre-stars / under-chrome): sectoral / rings /
+  ladder / relational / cyclic-flow / binary-flow / horizontal-
+  bands. These are geometric strokes that text labels paint over.
+- **Step 7** (post-stars / overlay): gradient. The fog paints over
+  the star layer (and over stratum labels — conceptually consistent
+  with the Polanyi metaphor that things at center are "less
+  articulable", including their labels).
+
+### Theme-awareness inheritance
+
+Both new renderers paint via `_chrome.*` (bg, strataRing,
+stratumLabel) — they automatically follow the active interface
+theme courtesy of MIG-027's chrome-palette plumbing. No per-theme
+retrofit needed. This validates the Plan's claim that Phases γ → θ
+build theme-aware from the start.
+
+### Verification
+
+`npm run check`: 3 pre-existing errors (store.ts LinkLifecycle
+dedupe + 2 PropertyEditor types per memory). Zero new errors. File
+count 1397 → 1399 (the two new tradition modules).
+
+### Boss-test (Stages 1-4, per Plan §5)
+
+- Stage 1: switch chip to Polanyi → fog gradient visible
+- Stage 2: switch chip to Mohist sān biǎo → 3 horizontal bands
+- Stage 3: open extended view (Cmd-Shift-D) → 4 mini-domes
+  UNCHANGED on both
+- Stage 4: switch back to Aristotelian → both chrome additions
+  cleanly disappear
+
+Build kicked off for Phase γ .exe (task `bw1tm020g`). Boss-test
+instructions surface when the .exe is ready.
+
+---
+
