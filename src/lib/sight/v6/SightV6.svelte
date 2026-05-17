@@ -188,6 +188,33 @@
 		return count > threshold;
 	});
 
+	// MIG-026 §γ-fix-1 — anchor-only override of density mode for
+	// spread-shape traditions. Density mode was tuned for Aristotelian
+	// where stars concentrate in stratum-by-time clusters; overlapping
+	// low-alpha dots additive-blend into a milky-way texture. For
+	// traditions that REDISTRIBUTE stars uniformly across the dome
+	// (currently horizontal-bands; future grid + rings will share the
+	// same property), the spread destroys the overlap density, and
+	// low-alpha individual dots dissolve into the bg — Eisa cycle-1
+	// Stage 2 PARTIAL: "The stars are hardly visible." Disabling
+	// density mode for spread shapes restores per-star full alpha so
+	// individual notes read clearly in their assigned zone.
+	//
+	// Mini-domes keep `densityMode` (above) unchanged — they always
+	// render the Aristotelian-default layout regardless of active
+	// tradition, so they still benefit from density mode's overlap-
+	// aggregation when the universe is dense.
+	const anchorDensityMode = $derived.by(() => {
+		if (!densityMode) return false;
+		const tradition = getTraditionById(
+			$appSettings.sight?.activeTradition as TraditionId | undefined,
+		);
+		// Spread shapes: horizontal-bands (Mohist). Future spread shapes
+		// (grid, rings, relational) join this list as their phases ship.
+		if (tradition?.shape === 'horizontal-bands') return false;
+		return true;
+	});
+
 	// §C.4 — extension chips from the active tradition. masādir is the
 	// only tradition that ships extensionChips in Phase 3 (4 supplementary
 	// sources per Concept Paper §4.1.3: istiḥsān, istiṣḥāb, maṣlaḥa
@@ -269,7 +296,12 @@
 			highlightedPath: hoveredPath,
 			zoomScale: zoomScale,
 			matchedPaths,
-			densityMode,
+			// MIG-026 §γ-fix-1: spread-shape traditions (horizontal-bands)
+			// disable density mode for the anchor so individual stars
+			// remain visible after redistribution. Mini-domes still use
+			// the universe-wide densityMode (their layout is always
+			// Aristotelian-default, so density mode still benefits them).
+			densityMode: anchorDensityMode,
 			tradition: activeTradition,
 			chromePalette,
 		});
