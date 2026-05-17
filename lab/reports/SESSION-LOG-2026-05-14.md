@@ -1518,6 +1518,24 @@ Orientation v2.09 → v2.10 captures the lock + the geometric audit + the still-
 
 No code touched in this commit — purely a doc-bump locking the curated-baseline picks. All 19 newcomers wait for the MIG-026 build cascade.
 
+### MIG-026 Architect doc + §5.5/§8 lock + orientation v2.11 (2026-05-17)
+
+Per Migration Rule step 1, drafted `lab/reports/MIG-026-SIGHT-REGISTER-EXPANSION-ARCHITECT.md` (522 lines). 8 sections: territory + invariants + 12 design choices + migration concerns + risks + phase decomposition + decisions log + open architectural choices.
+
+Eisa reviewed + locked the 6 remaining §5.5/§8 architectural choices:
+- Chip UI: A3+A6 (family categorization + 4 favorites + dropdown hybrid) — heavier than A1 Recommended
+- Ladder shape: D3 (spiral N-step) — more novel than D2 Recommended; needs spiral path math
+- Relational shape: E3 (hub-and-spoke) — matches Recommended
+- Plugin loader: H1 (dynamic import in v6.3, Obsidian-trust) — materially heavier than H5 (defer) Recommended; adds Phase κ.2
+- Disclosure: J3+J5 — matches Recommended
+- Terminology: K1 (full rename throughout) — substantially heavier than K2 (UI-only) Recommended; adds Phase 0 (rename-first) before any new code
+
+4 of 6 picks heavier than Recommendeds. Eisa chose fidelity over speed; consistent with "Get it right" priority.
+
+Architect doc updated with §9 closing the loop (LOCKED choices + revised phase decomposition). Orientation v2.10 → v2.11 bumped capturing the lock + the honest scope-expansion estimate (~10 main phases / 21 build-and-test cycles / 3-4 weeks).
+
+Next deliverable: Plan phase doc at `lab/reports/MIG-026-SIGHT-REGISTER-EXPANSION-PLAN.md`. Plan-Approval-Equals-Build-Approval kicks in once Plan approved.
+
 ### Phase 2 ship (Sight v6.1) remains intact
 
 None of this disturbs the v6.1 ship (commit `f295b296`). The 4 currently-working registers (Aristotelian, pramāṇa, masādir, Polanyi-as-chip-placeholder) and the Mohist chip placeholder all stay; only Ishrāqī comes out (and Polanyi's working module wasn't built, just the chip — same status as Ishrāqī was). Users on the C4-masadir build don't lose anything functional in this change.

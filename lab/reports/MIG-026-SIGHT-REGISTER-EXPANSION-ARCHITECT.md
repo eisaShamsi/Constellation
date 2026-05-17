@@ -517,6 +517,55 @@ If Eisa accepts the Recommendeds (or comments on the few he wants to change), I 
 
 ---
 
+---
+
+## §9 — §5.5 / §8 LOCKED (Eisa 2026-05-17, post-Architect-review)
+
+Eisa reviewed the Architect doc and locked the 6 remaining architectural choices. Scope-honest comparison vs my §8 Recommendeds:
+
+| Choice | Locked | Was-Recommended | Scope delta |
+|---|---|---|---|
+| §3.A Chip UI redesign | **A3 + A6** (family categorization + 4 favorites + dropdown for rest) | A1 (multi-row inline) | **Heavier** — Phase β grows into proper UI component with collapsible family headers, favorites pin/unpin, dropdown panel, favorites persistence in `appSettings.sight.favoriteTraditions: TraditionId[]` |
+| §3.D Ladder renderer | **D3** (spiral N-step) | D2 (vertical step-list) | **Novel** — needs spiral path math (logarithmic or Fibonacci parametrization), canvas curve rendering, N-step labels along the spiral; Phase ζ.2 becomes a mini-spike |
+| §3.E Relational renderer | **E3** (hub-and-spoke fixed layout) | E3 (same) | Match |
+| §3.H Plugin loader | **H1** (dynamic import in v6.3, Obsidian-trust model) | H5 (defer to v6.4) | **Materially heavier** — adds Phase κ.2 with full TS plugin loader + default-off + manual enable UX + per-plugin consent flow + error-handling-on-load + plugin-validation contract |
+| §3.J Disclosure | **J3 + J5** (ⓘ opens manifest + scope strip under expanded chip) | J3 + J5 (same) | Match |
+| §3.K Terminology reframe | **K1** (full rename throughout) | K2 (UI-only) | **Substantially heavier** — full codebase rename: `RegisterId` → `TraditionId`, `RegisterModule` → `TraditionModule`, `registerChip.svelte` → `traditionChip.svelte`, `registers/` → `traditions/`, `appSettings.sight.activeRegister` → `activeTradition` (with migration block); Concept Paper §4 rename; comment blocks throughout; i18n keys; help docs. Adds Phase 0 (rename-first) before any new work. |
+
+**4 of 6 locked picks are heavier than my Recommendeds.** Eisa is choosing fidelity over speed, consistent with the "Get it right — take the time" priority locked earlier.
+
+### Revised MIG-026 scope estimate
+
+| Original estimate (Recommendeds path) | Revised estimate (Eisa's locked path) |
+|---|---|
+| ~6 main phases | ~10 main phases with 11 sub-phases = 21 build-and-test cycles |
+| ~2 weeks focused work | ~3–4 weeks focused work |
+| ~5,000 lines code change | ~10,000–15,000 lines code change |
+| ~10 commits | ~25–30 commits |
+| Translation cascade ~336 files (single follow-up commit) | Translation cascade ~336 files (single follow-up commit) — unchanged |
+
+### Phase decomposition (revised per locked choices, replaces §6 sketch)
+
+- **Phase 0 — K1 full rename ("register" → "tradition")** — must come before any new code. ~1 day. Settings migration + idempotent re-load.
+- **Phase α — architecture foundation** — TraditionModule contract extended (shape discriminator + RingSpec, LadderSpec, RelationalSpec, CyclicFlowSpec, BinaryFlowSpec); private renderers stub-added to anchor.ts (drawRingBoundaries, drawLadderSteps, drawRelationalGraph, drawCyclicFlow, drawBinaryFlow); existing 5 traditions declare their `shape`.
+- **Phase β — A3+A6 chip UI redesign** — family categorization + 4 favorites + dropdown for rest. ~2 days.
+- **Phase γ — Polanyi + Mohist modules** (fulfilling old §C.5 + §D.3). Polanyi = gradient renderer; Mohist = horizontal-bands renderer.
+- **Phase δ — Modern Western family** (5 traditions, sub-divided δ.1/δ.2)
+- **Phase ε — Arabic Islamic family** (3 traditions, sub-divided ε.1/ε.2/ε.3)
+- **Phase ζ — Jewish family** (3 traditions; ζ.2 = Maimonidean D3-spiral, which is the new ladder renderer)
+- **Phase η — East Asian family** (3 traditions, sub-divided η.1/η.2/η.3)
+- **Phase θ — Latin American + African families** (5 traditions, sub-divided θ.1–θ.5; θ.1 + θ.5 = Mignolo + Ibuanyidanda E3 hub-and-spoke relational, which is the new relational renderer)
+- **Phase ι — disclosure layer + manifests** (ι.1 = 24 English manifests; ι.2 = J3 ⓘ + J5 scope strip)
+- **Phase κ — user-definable layer** (κ.1 = declarative JSON + JSON Schema + loader; κ.2 = H1 TS plugin loader with Obsidian-trust + default-off + consent flow)
+- **Phase λ — translation cascade** (English in main MIG ship + 14-locale cascade in follow-up commit per §A.15 precedent)
+- **Phase μ — ship gate** (channel-isolation test, perf test on 24-tradition switch, Concept Paper v4.0 → v4.1, Boss-test cycle, orientation v-bump)
+
+### Open questions REMAINING after §5.5/§8 lock
+
+None at the Architect level — Plan phase locks per-phase verification clauses, commit boundaries, and exact file lists. Move to Plan.
+
+---
+
 **End of MIG-026 Architect doc.**
 
-Awaiting Eisa review. After review + acceptance of §8 choices, the Plan phase doc lands at `lab/reports/MIG-026-SIGHT-REGISTER-EXPANSION-PLAN.md`.
+Architect APPROVED via Eisa's §5.5/§8 picks 2026-05-17. Plan phase doc lands next at `lab/reports/MIG-026-SIGHT-REGISTER-EXPANSION-PLAN.md`.
