@@ -1486,11 +1486,37 @@ Eisa's design concern triggered a Stop-On-Correction Rule + research-before-deci
 
 ### What's still pending Eisa direction
 
-1. Eisa finishes reading Agent 1's full candidate report
-2. Register-shape decision (sectoral-only / multi-shape / sectoral+chip-overlay) — still open after AskUserQuestion ("Let me read what they wrote first.")
-3. Curated-baseline picks from the ~16 filtered candidates
+1. Eisa finishes reading Agent 1's full candidate report ✅ DONE (2026-05-17 — see below)
+2. Register-shape decision (sectoral-only / multi-shape / sectoral+chip-overlay) — still open
+3. Curated-baseline picks from the ~16 filtered candidates ✅ DONE (2026-05-17 — see below)
 4. User-definable architecture approach (one of Agent 2's 4 options, or hybrid)
-5. Draft MIG-026 architect doc once 1–4 are locked
+5. Draft MIG-026 architect doc once 2 + 4 are locked
+
+### Curated-baseline picks locked + orientation v2.10 (2026-05-17)
+
+Eisa, after reading the persisted Agent 1 candidate report (`docs/research/MIG-026-candidate-registers.md`), made his selection from the post-religious-lineage-filter menu. Picks listed family-by-family in his message; tabulation:
+
+**INCLUDED (19 new + 5 existing = 24 total)**
+- Arabic/Islamic (3): Ibn Rushd burhān ladder, Shāṭibī maqāṣid, Ibn Khaldūn ʿumrān
+- African (2): Akan Wiredu, Ibuanyidanda
+- Latin American decolonial (3): Mignolo pluriversal, Dussel transmodernity, Maldonado-Torres
+- East Asian (3): Mencian 4 sprouts, Wang Yangming liángzhī, Korean Sŏngnihak Four-Seven
+- Modern Western (5): Peirce, Dewey, Husserl, Habermas, Longino
+- Jewish (3): PaRDeS, Maimonidean prophecy, Talmudic 13 middot
+- Already shipping (5): Aristotelian, pramāṇa, masādir, Polanyi, Mohist sān biǎo
+
+**EXCLUDED beyond the religious-lineage rule (8)**
+- Arabic/Islamic: Muʿtazilī, Ikhwān al-Ṣafāʾ tripartite, Modern Arab hermeneutics cluster
+- Latin American: Quijano's coloniality matrix
+- Feminist/Standpoint: Collins's matrix-of-domination, Harding/Haraway standpoint
+- (Twelver Shīʿī uṣūl already excluded by rule but Eisa confirmed)
+- Indigenous family blanket-excluded (4 candidates already filtered by rule + confirmed by Eisa)
+
+**Geometric-shape audit** done; surfaced that 16 of 19 newcomers fit sectoral or close variants (sectors, rings, grids, cyclic-with-flow); 3 of 19 (Maimonidean prophecy 11-step, Talmudic 13 middot, Ibuanyidanda relational, Mignolo pluriversal network) want genuinely different shapes — ladder and relational. This concretizes the register-shape question that has been pending since the agent reports.
+
+Orientation v2.09 → v2.10 captures the lock + the geometric audit + the still-pending decisions (register-shape and user-definable approach). v2.09 preserved alongside per versioning rule.
+
+No code touched in this commit — purely a doc-bump locking the curated-baseline picks. All 19 newcomers wait for the MIG-026 build cascade.
 
 ### Phase 2 ship (Sight v6.1) remains intact
 
