@@ -754,5 +754,50 @@ zones). 5 files changed, +144 / −6.
 Build kicked off (task `b7hv9tpfc`). Boss test surfaces when .exe
 ready.
 
+## §ε.1 PASS
+
+Eisa: "Pass" — Ibn Rushd burhān verified. Stars cluster in shiʿr
+outer annulus as designed, 4 ring labels visible along +x axis.
+Phase ε.1 closes.
+
+## MIG-026 §ε.2 — Shāṭibī maqāṣid (code shipped)
+
+Second Arabic / Islamic family tradition. The maqāṣid grid is the
+first GRID-shape tradition — composed via existing renderers
+(drawSectorDividers + drawRingBoundaries) rather than a new
+drawGrid implementation. The tradition module provides BOTH
+callbacks; the anchor dispatcher fires both; the visual grid
+emerges as their union.
+
+### Geometry
+
+- 3 ring tiers radial: ḍarūriyyāt (0-33%) / ḥājiyyāt (33-67%) /
+  taḥsīniyyāt (67-100%)
+- 5 sectors angular: dīn / nafs / ʿaql / nasl / māl — rotated π/4
+  (45°) CW from cardinal, same as Longino. Dividers at -45°/27°/
+  99°/171°/243° (no cardinal-axis collisions). Sector 0 contains
+  the +x axis so ring labels along that axis don't cross any
+  divider; sector 4 contains the +y axis (12 o'clock) without a
+  divider crossing it, so stratum labels stay clear.
+- 15 cells total. Stars hash-distributed across all cells per Plan
+  ("stars distributed across cells").
+
+### Files (5)
+
+`types.ts` + `store.ts` + `shatibi-maqasid.ts` (NEW) +
+`traditions/index.ts` + `traditionChip.svelte`.
+
+### Verification
+
+`npm run check`: 3 pre-existing errors. Zero new. File count
+1405 → 1406.
+
+### Commit
+
+`ad9978f0` — MIG-026 §ε.2 — Shāṭibī maqāṣid al-sharīʿa (3×5 grid).
+5 files changed, +190 / −6.
+
+Build kicked off (task `bg57s9iw3`). Boss test surfaces when ready.
+
 ---
 
