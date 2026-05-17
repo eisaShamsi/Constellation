@@ -687,7 +687,7 @@
 <div class="sight-v6-root">
 	<div class="sight-v6-header">
 		<span class="sight-v6-title">Constellation Sight</span>
-		<span class="sight-v6-subtitle">v6.2 — Registers (Phase 3)</span>
+		<span class="sight-v6-subtitle">v6.3 — Traditions (Phase 1)</span>
 		<!-- §C.1 — Tradition chip. Sits between the subtitle and the
 		     EXTENDED badge per Concept Paper §2.5. Default state shows
 		     only the active tradition (collapsed); click to expand the

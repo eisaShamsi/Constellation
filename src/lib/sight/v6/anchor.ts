@@ -33,6 +33,13 @@ import type {
 	LifecycleStage,
 	TraditionModule,
 	SectorSpec,
+	RingSpec,
+	LadderSpec,
+	RelationalSpec,
+	CyclicFlowSpec,
+	BinaryFlowSpec,
+	GradientSpec,
+	HorizontalBandsSpec,
 } from './types';
 import {
 	PALETTE,
@@ -269,6 +276,143 @@ function drawSectorDividers(
 	ctx.restore();
 }
 
+// ════════════════════════════════════════════════════════════════════
+// MIG-026 Phase α — Multi-shape tradition renderer stubs
+// ════════════════════════════════════════════════════════════════════
+//
+// Seven stub renderers for the new tradition shapes introduced in
+// MIG-026 (architecture foundation lands stubs only; subsequent
+// phases fill in the actual drawing per the Plan):
+//
+//   drawRingBoundaries    — Phase ε.1 (Ibn Rushd burhān) implements
+//   drawLadderSteps       — Phase ζ.2 (Maimonidean spiral) implements
+//   drawRelationalGraph   — Phase θ.1 (Mignolo hub-and-spoke) implements
+//   drawCyclicFlow        — Phase δ.2 (Dewey inquiry) implements
+//   drawBinaryFlow        — Phase ε.3 (Ibn Khaldūn ʿumrān) implements
+//   drawGradientFog       — Phase γ (Polanyi) implements
+//   drawHorizontalBands   — Phase γ (Mohist sān biǎo) implements
+//
+// Each stub:
+//   - Accepts the proper signature so the dispatch in step 2.5
+//     type-checks against TraditionModule's spec callbacks
+//   - Is a no-op (early return) so dispatching to a stub during
+//     Phase α has zero visual effect — Aristotelian/pramāṇa/masādir
+//     continue to render via the existing drawSectorDividers
+//   - Logs `console.warn` on first call (mid-phase debugging aid;
+//     removed in the phase that implements the shape) so we know
+//     when a tradition we haven't built yet gets selected
+
+/** STUB — Phase ε.1 (Ibn Rushd burhān ladder) ships the implementation.
+ *  Draws N concentric ring boundaries at the radial fractions specified
+ *  in `rings`, with optional labels at the midpoint of each annulus. */
+function drawRingBoundaries(
+	_ctx: CanvasRenderingContext2D,
+	_layout: DomeLayout,
+	_rings: RingSpec[],
+): void {
+	// TODO Phase ε.1: implement concentric ring boundary strokes + labels
+	// per LadderSpec spec. Sketch:
+	//   for each RingSpec, draw arc at radius = radiusFrac * layout.radius
+	//   place label at midpoint of annulus along +y axis (or another spoke)
+	//   stroke style: PALETTE.strataRing; lineWidth: 1.2 (chrome-consistent)
+}
+
+/** STUB — Phase ζ.2 (Maimonidean prophecy spiral) ships the implementation.
+ *  Per Eisa's locked D3 choice: render as logarithmic spiral from center
+ *  to outer rim, with N step-marks along the spiral. */
+function drawLadderSteps(
+	_ctx: CanvasRenderingContext2D,
+	_layout: DomeLayout,
+	_ladder: LadderSpec,
+): void {
+	// TODO Phase ζ.2 — Maimonidean spiral spike: implement equiangular
+	// spiral r(θ) = a·exp(b·θ) where:
+	//   N = ladder.steps.length
+	//   a = small inner offset (~5% of layout.radius)
+	//   b chosen so step N lands at r ≈ 0.95 * layout.radius
+	//   trace spiral path with ctx.beginPath / lineTo
+	//   place step-marks at N equally-spaced θ values along the spiral
+	//   label each mark tangent to the spiral or via short radial spokes
+}
+
+/** STUB — Phase θ.1 (Mignolo pluriversal hub-and-spoke) ships the impl.
+ *  Per Eisa's locked E3 choice: render as central hub disc + N outer
+ *  clusters with connecting lines. */
+function drawRelationalGraph(
+	_ctx: CanvasRenderingContext2D,
+	_layout: DomeLayout,
+	_relational: RelationalSpec,
+): void {
+	// TODO Phase θ.1 — hub-and-spoke spike: implement
+	//   hub: small disc at layout center, label = relational.hubLabel
+	//   clusters: N positions around the rim at angles 2π·i/N, each with
+	//     a small cluster-bubble and a connecting line back to hub
+	//   labels: outside each cluster bubble (radial-outward placement)
+}
+
+/** STUB — Phase δ.2 (Dewey pattern of inquiry) ships the implementation.
+ *  Renders N segments in a ring with arrow flow indicating sequence. */
+function drawCyclicFlow(
+	_ctx: CanvasRenderingContext2D,
+	_layout: DomeLayout,
+	_cyclic: CyclicFlowSpec,
+): void {
+	// TODO Phase δ.2 — Dewey: implement
+	//   draw a circular path at ~75% radius
+	//   divide into N arc-segments (each spans 2π/N)
+	//   place segment label at midpoint of each arc (radial-outward)
+	//   add chevron-arrows on the path indicating clockwise flow
+}
+
+/** STUB — Phase ε.3 (Ibn Khaldūn ʿumrān cyclic binary) ships the impl.
+ *  Renders 2 cells (typically inner disc + outer ring, or top/bottom
+ *  bands) with directional flow arrows. */
+function drawBinaryFlow(
+	_ctx: CanvasRenderingContext2D,
+	_layout: DomeLayout,
+	_binary: BinaryFlowSpec,
+): void {
+	// TODO Phase ε.3 — Ibn Khaldūn (cyclic), Phase θ.2 — Dussel (a→b),
+	// Phase η.2 — Wang Yangming (bidirectional with center):
+	//   cell A + cell B layout depends on tradition (horizontal split
+	//   for ʿumrān; concentric for Dussel; left/right hemisphere for
+	//   Wang Yangming)
+	//   flow arrow per binary.flowDirection
+	//   optional center label (Wang Yangming's liángzhī)
+}
+
+/** STUB — Phase γ (Polanyi tacit/explicit fog) ships the implementation.
+ *  Applies an opacity gradient across the dome based on radial distance
+ *  from center. */
+function drawGradientFog(
+	_ctx: CanvasRenderingContext2D,
+	_layout: DomeLayout,
+	_gradient: GradientSpec,
+): void {
+	// TODO Phase γ — Polanyi: implement
+	//   create radial Canvas gradient: center = gradient.centerOpacity,
+	//                                  edge = gradient.edgeOpacity
+	//   fill the dome circle with this gradient as overlay
+	//   stars beneath inherit the gradient's modulation
+	//   optional centerLabel / edgeLabel placed at radial endpoints
+}
+
+/** STUB — Phase γ (Mohist sān biǎo 3 zones) ships the implementation.
+ *  Divides the dome into N horizontal bands with labels. */
+function drawHorizontalBands(
+	_ctx: CanvasRenderingContext2D,
+	_layout: DomeLayout,
+	_bands: HorizontalBandsSpec,
+): void {
+	// TODO Phase γ — Mohist: implement
+	//   N = bands.bands.length
+	//   for each band index i, draw horizontal line at y = layout.centerY
+	//     - layout.radius + (i + 1) * (2 * layout.radius / N) within the
+	//     dome circle (clip to dome bounds)
+	//   place band label at left edge of band (just inside dome)
+	//   stars get placed in their band by the tradition's remapStarPosition
+}
+
 /** Deterministic 32-bit FNV-1a hash → two normalized [0, 1) values
  *  for radial + angular jitter. Stable across paints; same path ⇒
  *  same jitter every time. */
@@ -368,26 +512,50 @@ export function renderAnchorDome(
 		ctx.stroke();
 	}
 
-	// 2.5 §C.3 — Tradition-supplied sector dividers + labels.
-	//      Drawn AFTER strata circles so dividers visibly cross the
-	//      rings; drawn BEFORE the calendar rim and stratum labels so
-	//      those text labels stay on top and remain legible. For
-	//      traditions without sector structure (Aristotelian, Polanyi)
-	//      this is a no-op — sectorDividers is undefined and the if
-	//      branch short-circuits. For pramāṇa (§C.3) the result is
-	//      4 quadrant lines + 4 wedge-center labels (pratyakṣa, anumāna,
-	//      upamāna, śabda); for masādir (§C.4) the same shape with
-	//      different labels (Qur'an, sunnah, ijmāʿ, qiyās).
-	if (tradition?.sectorDividers) {
-		drawSectorDividers(
-			ctx,
-			layout,
-			tradition.sectorDividers({
-				centerX: layout.centerX,
-				centerY: layout.centerY,
-				radius: layout.radius,
-			}),
-		);
+	// 2.5 — Tradition-shape dispatch.
+	//      Drawn AFTER strata circles so any shape overlays visibly cross
+	//      the rings; drawn BEFORE the calendar rim and stratum labels so
+	//      those text labels stay on top and remain legible.
+	//
+	//      §C.3/§C.4 (MIG-025): sectoral dispatch for pramāṇa + masādir.
+	//      MIG-026 Phase α (this commit): extended with full multi-shape
+	//      dispatch — sectoral / rings / grid / ladder / relational /
+	//      cyclic-flow / binary-flow / gradient / horizontal-bands.
+	//      Each shape's renderer helper is a private function below;
+	//      Phase α ships stubs for the 7 new shapes that subsequent
+	//      phases fill in (γ: gradient + horizontal-bands; δ.2: cyclic-
+	//      flow; ε.1: rings; ε.2: grid; ε.3 + θ.2 + η.2: binary-flow;
+	//      ζ.2 + ζ.3: ladder; θ.1 + θ.5: relational).
+	if (tradition) {
+		const traditionLayout = {
+			centerX: layout.centerX,
+			centerY: layout.centerY,
+			radius: layout.radius,
+		};
+		if (tradition.sectorDividers) {
+			drawSectorDividers(ctx, layout, tradition.sectorDividers(traditionLayout));
+		}
+		if (tradition.ringBoundaries) {
+			drawRingBoundaries(ctx, layout, tradition.ringBoundaries(traditionLayout));
+		}
+		if (tradition.ladderSteps) {
+			drawLadderSteps(ctx, layout, tradition.ladderSteps(traditionLayout));
+		}
+		if (tradition.relationalSpec) {
+			drawRelationalGraph(ctx, layout, tradition.relationalSpec(traditionLayout));
+		}
+		if (tradition.cyclicFlowSpec) {
+			drawCyclicFlow(ctx, layout, tradition.cyclicFlowSpec(traditionLayout));
+		}
+		if (tradition.binaryFlowSpec) {
+			drawBinaryFlow(ctx, layout, tradition.binaryFlowSpec(traditionLayout));
+		}
+		if (tradition.gradientSpec) {
+			drawGradientFog(ctx, layout, tradition.gradientSpec(traditionLayout));
+		}
+		if (tradition.horizontalBandsSpec) {
+			drawHorizontalBands(ctx, layout, tradition.horizontalBandsSpec(traditionLayout));
+		}
 	}
 
 	// 3. Calendar rim labels (12 months, locale-aware)

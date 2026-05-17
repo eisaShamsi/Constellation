@@ -32,6 +32,11 @@ import type { LayoutCacheRow, TraditionLayout, TraditionModule } from '../types'
 export const aristotelian: TraditionModule = {
 	id: 'aristotelian',
 	name: 'Aristotelian',
+	// MIG-026 Phase α — shape discriminator. Aristotelian is sectoral
+	// by convention (the dome's 5 stratum bands + 12 month wedges are
+	// drawn by dome.ts always-on chrome, not by the tradition itself).
+	shape: 'sectoral',
 	remapStarPosition: (_row: LayoutCacheRow, defaultPos, _layout: TraditionLayout) => defaultPos,
-	// sectorDividers intentionally omitted (no tradition-drawn dividers).
+	// sectorDividers intentionally omitted (no tradition-drawn dividers
+	// — Aristotelian's identity remap defers to dome.ts chrome).
 };

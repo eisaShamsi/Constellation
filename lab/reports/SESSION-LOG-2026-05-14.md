@@ -1584,6 +1584,36 @@ Per Plan §2. Rename-only refactor; zero user-visible behavior change. Foundatio
 
 **Boss-test expectation** (per Plan §2): light verification — open Sight, confirm chip works, switch traditions, confirm settings persist after quit+relaunch.
 
+### MIG-026 Phase 0 — Eisa Boss-test result: PASS (2026-05-17)
+
+Stage 1 PASS. Rename took effect cleanly; no visible regressions.
+
+**General note from Eisa**: "I want Sight to follow the interface theme. Now it is using the Lighter theme." — Sight v6 currently uses hardcoded dark palette throughout (CSS in SightV6.svelte + PALETTE consts in anchor.ts + dome.ts + miniDome.ts + chip + sidebar). This is orthogonal to MIG-026 (which is about tradition architecture). Spawned as a separate background task chip with full audit scope + clarifying questions (full theming vs chrome-only; what theme modes exist beyond light/dark). Should open as MIG-027 or as a tagged backlog item; do NOT fold into MIG-026.
+
+### MIG-026 Phase α — Architecture foundation (multi-shape TraditionModule + 7 stub renderers) (2026-05-17)
+
+Per Plan §3. Architectural scaffold for the 8 tradition shapes (sectoral, rings, grid, ladder, relational, cyclic-flow, binary-flow, gradient, horizontal-bands). Zero user-visible change except subtitle bump.
+
+**Files touched** (5 files):
+- `src/lib/sight/v6/types.ts`:
+  - NEW `TraditionShape` discriminator union (9 values per Architect §3.B B1)
+  - NEW 7 spec interfaces: `RingSpec`, `LadderSpec`, `RelationalSpec`, `CyclicFlowSpec`, `BinaryFlowSpec`, `GradientSpec`, `HorizontalBandsSpec` — each with docblock referencing the phase that fills it in
+  - `TraditionModule` interface extended: `shape: TraditionShape` discriminator (required); + 7 new optional shape-specific spec callbacks (`ringBoundaries`, `ladderSteps`, `relationalSpec`, `cyclicFlowSpec`, `binaryFlowSpec`, `gradientSpec`, `horizontalBandsSpec`). Existing `sectorDividers` and `extensionChips` preserved.
+- `src/lib/sight/v6/anchor.ts`:
+  - Type imports extended with 7 new spec types
+  - `renderAnchorDome` step 2.5 dispatch extended: replaces the single `if (tradition?.sectorDividers)` with a full 8-branch dispatch chain checking each spec callback. Single `traditionLayout` object built once per paint.
+  - NEW 7 private stub renderers added after `drawSectorDividers`: `drawRingBoundaries`, `drawLadderSteps`, `drawRelationalGraph`, `drawCyclicFlow`, `drawBinaryFlow`, `drawGradientFog`, `drawHorizontalBands`. Each is a no-op early-return with a TODO docblock referencing the phase that ships the implementation (γ: gradient + horizontal-bands; δ.2: cyclic-flow; ε.1: rings; ε.3: binary-flow; ζ.2: ladder; θ.1: relational).
+- `src/lib/sight/v6/traditions/aristotelian.ts`: declares `shape: 'sectoral'`
+- `src/lib/sight/v6/traditions/pramana.ts`: declares `shape: 'sectoral'`
+- `src/lib/sight/v6/traditions/masadir.ts`: declares `shape: 'sectoral'`
+- `src/lib/sight/v6/SightV6.svelte`: subtitle bumped `v6.2 — Registers (Phase 3)` → `v6.3 — Traditions (Phase 1)` (Phase α-locked per Plan §3)
+
+**Behavior shipped**: zero user-visible behavior change — except the subtitle now reads `v6.3 — Traditions (Phase 1)`. The 3 existing traditions (Aristotelian, pramāṇa, masādir) continue to render identically; the new shape stubs are no-ops that never get invoked because no shipping tradition uses the new shapes yet.
+
+**Build verification**: `npm run check` passes. Same 3 pre-existing errors (LinkLifecycle dedupe + PropertyEditor type issue ×2 — pre-existing, deferred per memory `project_link_lifecycle_dedupe_fix.md`). **Zero new errors introduced by Phase α.**
+
+**Boss-test NOT required** per Plan §3 (pure refactor). Subtitle bump is the only visible change; spot-check sufficient. Move directly to Phase β.
+
 ### Phase 2 ship (Sight v6.1) remains intact
 
 None of this disturbs the v6.1 ship (commit `f295b296`). The 4 currently-working registers (Aristotelian, pramāṇa, masādir, Polanyi-as-chip-placeholder) and the Mohist chip placeholder all stay; only Ishrāqī comes out (and Polanyi's working module wasn't built, just the chip — same status as Ishrāqī was). Users on the C4-masadir build don't lose anything functional in this change.

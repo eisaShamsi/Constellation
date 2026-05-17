@@ -120,6 +120,9 @@ function pathHash01(path: string): number {
 export const masadir: TraditionModule = {
 	id: 'masadir',
 	name: 'masādir',
+	// MIG-026 Phase α — shape discriminator. 4 sectors of Sunni
+	// uṣūl al-fiqh = sectoral shape.
+	shape: 'sectoral',
 
 	remapStarPosition: (row: LayoutCacheRow, defaultPos, layout: TraditionLayout) => {
 		const source = masadirSourceOf(row);

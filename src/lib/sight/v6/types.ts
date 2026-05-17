@@ -218,11 +218,54 @@ export interface TraditionLayout {
 }
 
 /**
+ * Tradition geometric shape discriminator (MIG-026 Phase α).
+ *
+ * Each tradition declares its `shape` so the anchor renderer can
+ * dispatch to the right per-shape renderer. New shapes added in
+ * MIG-026 cover the 19 newcomer traditions:
+ *
+ * - `sectoral`         — 4-or-N pie quadrants (Aristotelian as identity,
+ *                        pramāṇa 4 quadrants, masādir 4 sectors,
+ *                        Mencian 4 sprouts, Peirce 3, Habermas 3,
+ *                        Longino 4, Akan Wiredu 2-3)
+ * - `rings`            — concentric ring boundaries (Ibn Rushd burhān
+ *                        ladder 4, PaRDeS 4, Maldonado-Torres 3,
+ *                        Husserl regional ontologies central+petals)
+ * - `grid`             — 2D sectoral × ring (Shāṭibī maqāṣid 3×5,
+ *                        Korean Sŏngnihak 2×2)
+ * - `ladder`           — N-step ladder (D3 spiral by Eisa pick;
+ *                        Maimonidean prophecy 11, Talmudic 13)
+ * - `relational`       — node-link / network (E3 hub-and-spoke by
+ *                        Eisa pick; Mignolo pluriversal, Ibuanyidanda)
+ * - `cyclic-flow`      — N-segment ring + arrow flow (Dewey inquiry 5)
+ * - `binary-flow`      — 2-cell + directional flow (Dussel transmodernity,
+ *                        Ibn Khaldūn ʿumrān, Wang Yangming)
+ * - `gradient`         — continuous opacity gradient (Polanyi tacit-
+ *                        explicit fog)
+ * - `horizontal-bands` — N horizontal zones (Mohist sān biǎo 3)
+ *
+ * Phase 0 + α preserve the existing 3 modules as `shape: 'sectoral'`.
+ * Phase γ adds Polanyi (`gradient`) + Mohist (`horizontal-bands`).
+ * Phases δ–θ add the 19 newcomers across the remaining shapes.
+ */
+export type TraditionShape =
+	| 'sectoral'
+	| 'rings'
+	| 'grid'
+	| 'ladder'
+	| 'relational'
+	| 'cyclic-flow'
+	| 'binary-flow'
+	| 'gradient'
+	| 'horizontal-bands';
+
+/**
  * Optional sector divider stroke spec returned by a tradition module's
- * sectorDividers() callback. Used by pramāṇa (4 quadrants, §C.3),
- * masādir (4 sectors, §C.4), etc. For Aristotelian (§C.2) the
- * dividers are absent — the 5 concentric stratum bands are the visual
- * structure, drawn by dome.ts not by the tradition.
+ * sectorDividers() callback. Used by sectoral-shaped traditions
+ * (pramāṇa, masādir, Mencian, Peirce, etc.). For Aristotelian (which
+ * is `shape: 'sectoral'` with identity remap) the dividers are absent
+ * — the 5 concentric stratum bands are the visual structure, drawn
+ * by dome.ts not by the tradition.
  *
  * Angles are in canvas math convention: 0 = EAST, increases clockwise
  * (since canvas y-axis is inverted), measured in radians.
@@ -231,6 +274,123 @@ export interface SectorSpec {
 	angleStart: number;
 	angleEnd: number;
 	label?: string;
+}
+
+/**
+ * MIG-026 Phase α — Concentric ring boundary spec for `shape: 'rings'`
+ * (and the ring component of `shape: 'grid'`). Used by Ibn Rushd
+ * burhān ladder (Phase ε.1), PaRDeS (Phase ζ.1), Maldonado-Torres
+ * (Phase θ.3), Husserl regional ontologies (Phase δ.2).
+ *
+ * `radiusFrac` is the ring boundary expressed as a fraction of the
+ * outer dome radius (0.0 = center, 1.0 = outer rim). Boundaries are
+ * drawn as concentric arcs at these fractions. Labels are placed at
+ * the midpoint of the ring annulus along a chosen radial spoke
+ * (renderer decides — typically along the +y axis for legibility).
+ */
+export interface RingSpec {
+	radiusFrac: number;
+	label?: string;
+}
+
+/**
+ * MIG-026 Phase α — Ladder step spec for `shape: 'ladder'`. Used by
+ * Maimonidean prophecy (Phase ζ.2 — D3 spiral, 11 steps) and Talmudic
+ * 13 middot (Phase ζ.3 — spiral, 13 steps).
+ *
+ * Per Eisa's locked D3 choice in Architect §3.D: ladder is rendered
+ * as a logarithmic spiral from center to outer rim, with N step-marks
+ * along the spiral. The `variant` discriminator allows future ladder
+ * shapes (stack, fan) without breaking the interface.
+ *
+ * Phase ζ.2 spike implements the spiral path math (likely
+ * equiangular: r(θ) = a·exp(b·θ) where a and b are derived from N).
+ */
+export interface LadderSpec {
+	variant: 'spiral' | 'stack';
+	steps: { label: string }[];
+}
+
+/**
+ * MIG-026 Phase α — Relational/network spec for `shape: 'relational'`.
+ * Used by Mignolo pluriversal (Phase θ.1 — hub-and-spoke) and
+ * Ibuanyidanda (Phase θ.5 — complementary hub-and-spoke).
+ *
+ * Per Eisa's locked E3 choice in Architect §3.E: relational shape
+ * is rendered as a central disc (hub) + N outer clusters (spokes),
+ * with lines connecting each cluster to the hub. The `variant`
+ * discriminator allows future relational shapes (force-directed,
+ * radial-tree) without breaking the interface.
+ *
+ * For Mignolo: hub = "modernity/totality"; clusters = subaltern
+ * positions (e.g., Andean / Yoruba / Māori).
+ * For Ibuanyidanda: hub = "missing link"; every entity-cluster
+ * connects to it (complementary ontology).
+ */
+export interface RelationalSpec {
+	variant: 'hub-and-spoke';
+	hubLabel: string;
+	clusters: { label: string }[];
+}
+
+/**
+ * MIG-026 Phase α — Cyclic-flow spec for `shape: 'cyclic-flow'`. Used
+ * by Dewey's pattern of inquiry (Phase δ.2 — 5-segment ring with
+ * chronological arrow flow).
+ *
+ * Renderer draws N segments arranged in a ring + curved arrow flow
+ * indicating sequence direction. Sequence wraps (segment N → segment 1).
+ */
+export interface CyclicFlowSpec {
+	segments: { label: string }[];
+}
+
+/**
+ * MIG-026 Phase α — Binary-flow spec for `shape: 'binary-flow'`. Used
+ * by Dussel transmodernity (Phase θ.2), Ibn Khaldūn ʿumrān (Phase
+ * ε.3), Wang Yangming (Phase η.2).
+ *
+ * Two cells (typically inner/outer disc, or left/right hemispheres)
+ * with a directional flow arrow between them. The arrow direction is
+ * tradition-specific (Dussel: exteriority → totality / analectic;
+ * Ibn Khaldūn: badawī → ḥaḍarī → badawī cyclic; Wang Yangming:
+ * zhī ↔ xíng bidirectional via central liángzhī).
+ */
+export interface BinaryFlowSpec {
+	cellA: { label: string };
+	cellB: { label: string };
+	flowDirection: 'a-to-b' | 'b-to-a' | 'bidirectional' | 'cyclic';
+	centerLabel?: string;
+}
+
+/**
+ * MIG-026 Phase α — Gradient spec for `shape: 'gradient'`. Used by
+ * Polanyi (Phase γ — tacit/explicit fog gradient).
+ *
+ * Renderer applies an opacity gradient across the dome based on
+ * radial distance from center. `centerOpacity` typically 0.14–0.18
+ * (tacit core, intentionally low so stars there read as
+ * "acknowledged but inarticulable"); `edgeOpacity` typically
+ * 0.85–0.95 (explicit periphery, clearly readable).
+ */
+export interface GradientSpec {
+	centerOpacity: number;
+	edgeOpacity: number;
+	centerLabel?: string;
+	edgeLabel?: string;
+}
+
+/**
+ * MIG-026 Phase α — Horizontal bands spec for `shape: 'horizontal-bands'`.
+ * Used by Mohist sān biǎo (Phase γ — 3 horizontal zones: 本/root,
+ * 原/origin, 用/use).
+ *
+ * Renderer divides the dome into N horizontal bands (top to bottom)
+ * with band labels. Stars are placed in their band by frontmatter
+ * field (default to the topmost band if absent).
+ */
+export interface HorizontalBandsSpec {
+	bands: { label: string }[];
 }
 
 /**
@@ -243,19 +403,24 @@ export interface SectorSpec {
  * rhetorical pluralism — see the mini-dome stipulation in §7.
  *
  * MIG-025 §C.2 shipped the module pattern + aristotelian (identity
- * remap). §C.3 shipped pramāṇa; §C.4 masādir. MIG-026 Phase γ
- * adds Polanyi + Mohist sān biǎo; Phases δ–θ add the 19 new
- * traditions to bring the curated baseline to 24.
- *
- * MIG-026 Phase α extends this interface with `shape` discriminator
- * + shape-specific spec fields (RingSpec, LadderSpec, RelationalSpec,
- * CyclicFlowSpec, BinaryFlowSpec, GradientSpec, HorizontalBandsSpec).
- * Phase 0 (this rename) preserves the existing interface unchanged.
+ * remap, sectoral). §C.3 shipped pramāṇa (sectoral); §C.4 masādir
+ * (sectoral). MIG-026 Phase α (this commit) extends the interface
+ * with the `shape` discriminator + shape-specific optional spec
+ * callbacks. Phase γ adds Polanyi (`gradient`) + Mohist sān biǎo
+ * (`horizontal-bands`); Phases δ–θ add the 19 newcomers across
+ * the remaining shapes.
  */
 export interface TraditionModule {
 	id: TraditionId;
 	/** English brand label (matches the chip label in traditionChip.svelte). */
 	name: string;
+	/**
+	 * MIG-026 Phase α — geometric shape discriminator. The anchor
+	 * renderer dispatches to the right per-shape renderer based on
+	 * this field. Each value gates which of the optional spec
+	 * callbacks below is meaningful for this tradition.
+	 */
+	shape: TraditionShape;
 	/**
 	 * Given a star's row data and its default Aristotelian position,
 	 * return the position under this tradition. For Aristotelian, this
@@ -273,20 +438,62 @@ export interface TraditionModule {
 		layout: TraditionLayout,
 	): { x: number; y: number };
 	/**
-	 * Optional sector divider strokes to draw on the anchor under this
-	 * tradition (e.g., pramāṇa's 4 quadrant dividers in §C.3). Called
-	 * once per paint with the current layout. Return [] or omit for
-	 * traditions with no sector structure (Aristotelian, Polanyi).
+	 * Optional sector divider strokes for `shape: 'sectoral'` or
+	 * `shape: 'grid'` traditions. Drawn by anchor.ts's
+	 * drawSectorDividers helper.
 	 */
 	sectorDividers?: (layout: TraditionLayout) => SectorSpec[];
 	/**
+	 * MIG-026 Phase α — Optional ring boundary strokes for
+	 * `shape: 'rings'` or `shape: 'grid'` traditions. Drawn by
+	 * anchor.ts's drawRingBoundaries helper (stub in Phase α; filled
+	 * in Phase ε.1 for the first ring-shape tradition).
+	 */
+	ringBoundaries?: (layout: TraditionLayout) => RingSpec[];
+	/**
+	 * MIG-026 Phase α — Optional ladder spec for `shape: 'ladder'`
+	 * traditions. Drawn by anchor.ts's drawLadderSteps helper (stub
+	 * in Phase α; filled in Phase ζ.2 — Maimonidean spiral spike).
+	 */
+	ladderSteps?: (layout: TraditionLayout) => LadderSpec;
+	/**
+	 * MIG-026 Phase α — Optional relational spec for `shape:
+	 * 'relational'` traditions. Drawn by anchor.ts's drawRelationalGraph
+	 * helper (stub in Phase α; filled in Phase θ.1 — Mignolo hub-and-
+	 * spoke spike).
+	 */
+	relationalSpec?: (layout: TraditionLayout) => RelationalSpec;
+	/**
+	 * MIG-026 Phase α — Optional cyclic-flow spec for `shape:
+	 * 'cyclic-flow'` traditions. Drawn by anchor.ts's drawCyclicFlow
+	 * helper (stub in Phase α; filled in Phase δ.2 — Dewey inquiry).
+	 */
+	cyclicFlowSpec?: (layout: TraditionLayout) => CyclicFlowSpec;
+	/**
+	 * MIG-026 Phase α — Optional binary-flow spec for `shape:
+	 * 'binary-flow'` traditions. Drawn by anchor.ts's drawBinaryFlow
+	 * helper (stub in Phase α; filled in Phase ε.3 — Ibn Khaldūn
+	 * ʿumrān).
+	 */
+	binaryFlowSpec?: (layout: TraditionLayout) => BinaryFlowSpec;
+	/**
+	 * MIG-026 Phase α — Optional gradient spec for `shape: 'gradient'`
+	 * traditions. Drawn by anchor.ts's drawGradientFog helper (stub
+	 * in Phase α; filled in Phase γ — Polanyi).
+	 */
+	gradientSpec?: (layout: TraditionLayout) => GradientSpec;
+	/**
+	 * MIG-026 Phase α — Optional horizontal-bands spec for `shape:
+	 * 'horizontal-bands'` traditions. Drawn by anchor.ts's
+	 * drawHorizontalBands helper (stub in Phase α; filled in Phase γ
+	 * — Mohist sān biǎo).
+	 */
+	horizontalBandsSpec?: (layout: TraditionLayout) => HorizontalBandsSpec;
+	/**
 	 * Optional extension chips rendered below the anchor dome (e.g.,
 	 * masādir's 4 supplementary sources: istiḥsān, istiṣḥāb, maṣlaḥa
-	 * mursalah, ʿurf, per Concept Paper §4.1.3). These are visual
-	 * reminders that the tradition's full epistemic vocabulary includes
-	 * supplementary categories beyond the 4 main sectors — not
-	 * separate dome regions, but additional categories the user can
-	 * tag notes with (post-§C.4-fix-N when Rust-side extraction lands).
+	 * mursalah, ʿurf, per Concept Paper §4.1.3). Independent of
+	 * `shape` — any tradition can carry extension chips.
 	 *
 	 * Return an array of plain string labels (kept English/transliterated
 	 * per the brand convention). The SightV6 host renders them as a row

@@ -108,6 +108,9 @@ function pathHash01(path: string): number {
 export const pramana: TraditionModule = {
 	id: 'pramana',
 	name: 'pramāṇa',
+	// MIG-026 Phase α — shape discriminator. 4 quadrants of Nyāya
+	// pramāṇas = sectoral shape.
+	shape: 'sectoral',
 
 	remapStarPosition: (row: LayoutCacheRow, defaultPos, layout: TraditionLayout) => {
 		const kind = pramanaKindOf(row);
