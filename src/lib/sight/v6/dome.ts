@@ -201,16 +201,21 @@ export function calendarRimSpokes(): number[] {
  */
 
 /**
- * MIG-027 — Theme-agnostic categorical hues (stage, link-type,
- * highlight). These do NOT change with theme since their meaning
- * is tied to the hue itself (cyan = spark, green = established,
- * gold = hover-highlight). Kept as a single const for ergonomic
- * import across canvas renderers.
+ * MIG-027 — Theme-agnostic categorical hues (stage, link-type).
+ * These do NOT change with theme since their meaning is tied to
+ * the hue itself (cyan = spark, green = established). Kept as a
+ * single const for ergonomic import across canvas renderers.
+ *
+ * MIG-027 §-fix-2 (2026-05-17): `highlightedRing` moved OUT of
+ * SEMANTIC_COLORS into ChromePalette. Rationale: it's an
+ * interaction affordance (visual treatment when user hovers
+ * something), not a data category like stage hue. It also needs
+ * to adapt across themes — bright amber works on dark bg but
+ * washes out on cream bg; the chrome side reads the
+ * `--sight-highlight` CSS var which is theme-conditional via
+ * +layout.svelte's theme classes.
  */
 export const SEMANTIC_COLORS = {
-	// Gold hover/selection ring (linked brushing across surfaces)
-	highlightedRing: '#fbbf24',
-
 	// Stage hues (6 categorical, used as inner pip on anchor + full
 	// disk in mini). Per Concept Paper §3.4 + §11 invariant 4: CIE
 	// Delta-E ≥30 between any two co-rendered hues.
@@ -255,6 +260,14 @@ export interface ChromePalette {
 	subtitleText: string;
 	statusText: string;
 	starFill: string;
+	/** MIG-027 §-fix-2: gold hover/selection ring used in linked
+	 *  brushing across surfaces (anchor highlight, mini-dome hover ring).
+	 *  Reads --sight-highlight CSS var which defaults to bright amber
+	 *  (#fbbf24) on dark themes and a deeper amber (#b45309) on light
+	 *  themes via body.theme-light override in SightV6.svelte. Promoted
+	 *  from SEMANTIC_COLORS because it's an interaction affordance, not
+	 *  a data-category color, and it needs to adapt across themes. */
+	highlightedRing: string;
 }
 
 /** MIG-027 — Dark-theme fallback chrome palette. Original Sight v6
@@ -277,6 +290,7 @@ export const CHROME_PALETTE_DARK_FALLBACK: ChromePalette = {
 	subtitleText: '#5a6275',
 	statusText: '#7a8295',
 	starFill: '#cdd5e0',            // NEUTRAL — library encoded by shape only
+	highlightedRing: '#fbbf24',     // §-fix-2: bright amber — default for dark themes
 };
 
 /**
@@ -318,6 +332,12 @@ export function readChromePalette(el: HTMLElement | null): ChromePalette {
 		subtitleText: get('--text-faint', CHROME_PALETTE_DARK_FALLBACK.subtitleText),
 		statusText: get('--text-muted', CHROME_PALETTE_DARK_FALLBACK.statusText),
 		starFill: get('--text-normal', CHROME_PALETTE_DARK_FALLBACK.starFill),
+		// §-fix-2: --sight-highlight is set on .sight-v6-root + overridden
+		// by :global(body.theme-light) .sight-v6-root in SightV6.svelte.
+		// CSS vars cascade through DOM, so reading from the canvas host
+		// (a descendant of .sight-v6-root) picks up the theme-conditional
+		// value automatically.
+		highlightedRing: get('--sight-highlight', CHROME_PALETTE_DARK_FALLBACK.highlightedRing),
 	};
 }
 

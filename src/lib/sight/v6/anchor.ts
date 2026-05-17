@@ -735,7 +735,9 @@ function drawStars(
 			// Linewidth 1.8 world also scales with zoom; divide by zoom
 			// to keep stroke at constant ~1.8 px screen.
 			const screenPadding = 4 / Math.max(zoomScale, 0.01);
-			ctx.strokeStyle = PALETTE.highlightedRing;
+			// MIG-027 §-fix-2: theme-aware hover ring (deep amber on light
+			// themes, bright amber on dark; reads --sight-highlight CSS var)
+			ctx.strokeStyle = _chrome.highlightedRing;
 			ctx.lineWidth = 1.8 / Math.max(zoomScale, 0.01);
 			ctx.beginPath();
 			ctx.arc(star.x, star.y, r + screenPadding, 0, Math.PI * 2);

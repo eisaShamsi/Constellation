@@ -223,8 +223,10 @@ export function renderMiniDome(
 			ctx.beginPath();
 			ctx.arc(hx, hy, ringRadiusWorld, 0, Math.PI * 2);
 			ctx.stroke();
-			// Gold ring on top.
-			ctx.strokeStyle = PALETTE.highlightedRing;
+			// Gold ring on top. MIG-027 §-fix-2: theme-aware via _chrome
+			// (reads --sight-highlight CSS var; deep amber on light, bright
+			// amber on dark)
+			ctx.strokeStyle = _chrome.highlightedRing;
 			ctx.lineWidth = goldLineWidth;
 			ctx.beginPath();
 			ctx.arc(hx, hy, ringRadiusWorld, 0, Math.PI * 2);

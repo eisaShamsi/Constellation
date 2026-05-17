@@ -916,6 +916,30 @@
 		background: var(--background-primary, #080c16);
 		color: var(--text-normal, #e8ebf2);
 		font-family: var(--interface-font, 'Inter', system-ui, sans-serif);
+
+		/* MIG-027 §-fix-2 — Sight highlight color (the "this is your
+		   current focus / active filter / hover-linked context" indicator).
+		   Originally #fbbf24 (bright amber) hardcoded — works on dark
+		   themes, washes out on cream/white themes. Theme-conditional vars
+		   below override for light themes via :global(body.theme-light)
+		   so the same semantic meaning carries cleanly across both. The
+		   :global() prefix is needed because body.theme-light lives outside
+		   the component scope (set by +layout.svelte's theme $effect on
+		   document.body). */
+		--sight-highlight: #fbbf24;
+		--sight-highlight-bg-soft: rgba(251, 191, 36, 0.10);
+		--sight-highlight-bg-strong: rgba(251, 191, 36, 0.18);
+		--sight-highlight-border-soft: rgba(251, 191, 36, 0.45);
+	}
+	:global(body.theme-light) .sight-v6-root {
+		/* Light-theme highlight: amber-700 (#b45309). Deeper, more
+		   saturated; passes WCAG AA contrast on cream / off-white
+		   backgrounds. Bg / border alphas slightly nudged up for the
+		   darker hue. */
+		--sight-highlight: #b45309;
+		--sight-highlight-bg-soft: rgba(180, 83, 9, 0.10);
+		--sight-highlight-bg-strong: rgba(180, 83, 9, 0.16);
+		--sight-highlight-border-soft: rgba(180, 83, 9, 0.55);
 	}
 
 	.sight-v6-header {
@@ -950,9 +974,10 @@
 		font-size: 9px;
 		font-weight: 600;
 		letter-spacing: 0.6px;
-		color: #fbbf24;
-		background: rgba(251, 191, 36, 0.10);
-		border: 1px solid rgba(251, 191, 36, 0.45);
+		/* MIG-027 §-fix-2: theme-aware semantic highlight */
+		color: var(--sight-highlight);
+		background: var(--sight-highlight-bg-soft);
+		border: 1px solid var(--sight-highlight-border-soft);
 		border-radius: 3px;
 		cursor: help;
 		font-variant: small-caps;
@@ -962,17 +987,18 @@
 	   any facet filter is active. Subtle but readable. Sits before the
 	   Reset View button via margin-left:auto on the count (which pushes
 	   it right-aligned with the button to its right when both visible).
-	   MIG-027 §-fix-1: background bumped to --background-secondary so
-	   it reads correctly on light themes; gold text + gold border stay
-	   semantic (filter-active = gold, theme-independent). */
+	   MIG-027 §-fix-2: text + border use --sight-highlight (theme-aware
+	   semantic gold — bright amber on dark, deep amber on light). The
+	   filter-active = gold semantic is preserved; only the luminosity
+	   adapts so it reads on both themes. */
 	.sight-v6-filter-count {
 		margin-left: auto;
 		padding: 4px 10px;
 		font-size: 11px;
-		color: #fbbf24;
+		color: var(--sight-highlight);
 		font-variant-numeric: tabular-nums;
 		background: var(--background-secondary, rgba(58, 67, 90, 0.35));
-		border: 1px solid rgba(251, 191, 36, 0.4);
+		border: 1px solid var(--sight-highlight-border-soft);
 		border-radius: 4px;
 	}
 

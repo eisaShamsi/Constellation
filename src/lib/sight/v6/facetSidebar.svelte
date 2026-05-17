@@ -217,17 +217,20 @@
 	   tint (same hue as the hover ring) so the user can read the
 	   star's identity at a glance from the sidebar. Stacks with .active
 	   — if a chip is both active AND matches the hovered star, both
-	   styles apply (the gold border on top of the cyan active text). */
+	   styles apply (the gold border on top of the cyan active text).
+	   MIG-027 §-fix-2: text + bg use --sight-highlight (theme-aware
+	   gold). The vars cascade from .sight-v6-root which is the ancestor
+	   in DOM. Light theme → deeper amber that reads on cream. */
 	.facet-cat-row.is-hovered {
-		color: #fbbf24;
-		background: rgba(251, 191, 36, 0.08);
+		color: var(--sight-highlight);
+		background: var(--sight-highlight-bg-soft);
 	}
 	.facet-cat-row.is-hovered .facet-cat-count {
-		color: #fbbf24;
+		color: var(--sight-highlight);
 	}
 	.facet-cat-row.active.is-hovered {
-		color: #fbbf24;
-		background: rgba(251, 191, 36, 0.12);
+		color: var(--sight-highlight);
+		background: var(--sight-highlight-bg-strong);
 	}
 	.facet-cat-label {
 		flex: 1 1 auto;
