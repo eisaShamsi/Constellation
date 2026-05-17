@@ -1,227 +1,304 @@
 <!--
-  MIG-025 §C.1 — Tradition chip component (renamed from Register chip).
-  MIG-026 Phase 0 — K1 full rename: "register" → "tradition" throughout.
+  MIG-026 Phase β — A3+A6 chip UI rebuild.
 
-  Location: Sight title bar, mounted between subtitle and EXTENDED badge.
-  Per Concept Paper §2.5: default state collapsed, shows current active
-  tradition only (e.g., "Aristotelian ●"). Click → expand to show all 5
-  baseline traditions (MIG-026 Phases γ–θ add 19 more to bring the
-  curated set to 24). Active tradition has blue stroke + dot. Hover any
-  chip → English secondary label tooltip per Concept Paper §2.5 +
-  §11 invariant.
+  Inherits from MIG-025 §C.1 chip (collapsed/expanded toggle) +
+  §C.1-fix-1 Esc bug fix + MIG-026 Phase 0 rename.
 
-  v1-preview tradition (Mohist sān biǎo) per §4.2 carries a "preview"
-  badge — it ships fully functional in v6 but with v4.1 polish targets
-  for deeper internal structure.
+  NEW in Phase β: family-categorized dropdown (A3) + 4 favorites
+  pinned inline (A6). Replaces the previous inline-row-of-N pattern
+  which doesn't scale to 24 traditions.
 
-  §C.4-religious-rule (Eisa 2026-05-16): Suhrawardi Ishrāqī tradition
-  EXCLUDED entirely per the new top-principal religious-lineage rule
-  (orientation v2.09). The Ishrāqī tradition was overwhelmingly absorbed
-  into Twelver Shīʿī ḥikma (Mulla Sadra, Sabzavari, modern Qom curriculum)
-  and is fundamentally religious-mystical rather than philosophical-
-  epistemological. The tradition set shrunk from 6 to 5. Concept Paper
-  §4.2.2 and Plan §D.2 both carry EXCLUDED notes; the TraditionId type
-  no longer admits 'ishraqi'; a settings migration in store.ts
-  applyParsedSettings rewrites any persisted 'ishraqi' value back to
-  'aristotelian'.
+  Layout structure:
+  - Inline row (always visible): 4 favorite chips + "All ▾" dropdown
+    trigger. Active tradition has blue stroke + dot. Hover shows
+    English secondary label tooltip.
+  - Dropdown panel (toggled by All trigger): family-collapsible
+    accordion. Each family section shows ≥1 tradition with name +
+    scope-strip + pin/unpin star toggle. Click any tradition to
+    switch active + close dropdown. Pin toggle adds/removes from
+    favoriteTraditions (max 4 inline; rest live in dropdown).
+  - Esc closes dropdown (still uses window+capture pattern from
+    §C.1-fix-1 to beat Layout's global Esc-closes-Sight handler).
+  - Click outside dropdown closes it (mousedown listener on document).
 
-  §C.1-fix-1 (Eisa 2026-05-16): Dignāga tradition EXCLUDED entirely
-  per Eisa's direction. Same exclusion mechanism as Ishrāqī above.
+  Favorites persistence: appSettings.sight.favoriteTraditions
+  (string[]). Default ['aristotelian', 'pramana', 'masadir', 'polanyi'].
+  Order = display order. First 4 shown inline; rest visible in
+  dropdown with "★" (pinned) state.
 
-  §C.1-fix-1 (Eisa 2026-05-16): Esc-while-chip-expanded bug fix.
-  Previously chip Esc handler was on document (bubble phase) but
-  +layout.svelte registers the global Esc-closes-Sight handler on
-  document in capture phase — Layout's handler fired first and closed
-  Sight. Fix: chip handler now registers on window (which sits OUTSIDE
-  document in the capture chain) in capture phase. stopPropagation +
-  preventDefault kill the event before it reaches the Layout handler.
+  Scope strips: hardcoded in TRADITIONS_META for Phase β. Phase ι.2
+  (J3 + J5 disclosure layer) will replace with manifest reads —
+  manifests at docs/traditions/<id>.md provide canonical scope text.
 
-  §C.1 partial-ships §C.8: clicking a chip writes activeTradition to
-  appSettings.sight via the canonical update+saveSettings pattern (same
-  as Cmd-Shift-D extended toggle at SightV6.svelte §B.10). The anchor-
-  re-render based on activeTradition happens in §C.2 (tradition modules).
-
-  Brand-name tradition labels are kept English per the §A.15 brand
-  convention (same precedent as Constellation, Sight, CNS, Confidence).
-  The cultural diacritics (pramāṇa, masādir, Mohist sān biǎo) are
-  Unicode and render in any modern font stack.
+  Brand-name tradition labels stay English per §A.15 brand convention.
+  Cultural diacritics (pramāṇa, masādir, Mohist sān biǎo, etc.)
+  render via Unicode in any modern font stack.
 
   Concept Paper: docs/Constellation-Sight-Concept-Paper-v4.0.md §2.5, §4.1, §4.2
-  Plan:         lab/reports/MIG-025-SIGHT-V6-PLAN.md §C.1 +
-                 lab/reports/MIG-026-SIGHT-REGISTER-EXPANSION-PLAN.md §2
+  Plan:          lab/reports/MIG-026-SIGHT-REGISTER-EXPANSION-PLAN.md §4 (Phase β)
+  Architect:     §3.A choice A3+A6
 -->
 <script lang="ts">
 	import { appSettings, saveSettings } from '$lib/libraries/store';
 	import type { TraditionId } from './types';
+	import { FAMILIES, type FamilyId } from './traditions';
 
-	// Five baseline traditions in canonical order: 4 production-polish first
-	// (§4.1), then 1 v1-preview (§4.2). Tooltip prose distills each
-	// tradition's English secondary label per Concept Paper §2.5 + §4.1/§4.2.
-	// §C.1-fix-1: Dignāga tradition excluded entirely (was 7 → 6).
-	// §C.4-religious-rule: Suhrawardi Ishrāqī also excluded (was 6 → 5)
-	//   per the new top-principal religious-lineage rule. The 'dignaga'
-	//   and 'ishraqi' literals are both removed from TraditionId.
-	// MIG-026 Phases γ–θ extend this list to 24 traditions.
-	type TraditionDef = {
-		id: TraditionId;
+	// Per-tradition metadata (name, tooltip, scope, preview flag).
+	// Hardcoded here for Phase β; Phase ι.2 replaces scope reads with
+	// manifest fetches from docs/traditions/<id>.md.
+	type TraditionMeta = {
 		name: string;          // chip label (kept English per §A.15 brand convention)
-		tooltip: string;       // hover tooltip per §2.5
+		tooltip: string;       // hover tooltip per Concept Paper §2.5
+		scope: string;         // scope strip per Plan §4 + J5
 		preview: boolean;      // v1-preview badge per §4.2
 	};
 
-	const TRADITIONS: TraditionDef[] = [
-		{
-			id: 'aristotelian',
+	const TRADITIONS_META: Record<TraditionId, TraditionMeta> = {
+		aristotelian: {
 			name: 'Aristotelian',
 			tooltip: 'Aristotelian — Western-classical, knowledge as maturity gradient',
+			scope: 'For any content; the default Sight grammar (stratum × time).',
 			preview: false,
 		},
-		{
-			id: 'pramana',
+		pramana: {
 			name: 'pramāṇa',
 			tooltip: 'pramāṇa — Nyāya fourfold valid means of knowing',
+			scope: 'For epistemological analysis of cognitive acts: perception, inference, analogy, testimony.',
 			preview: false,
 		},
-		{
-			id: 'masadir',
+		masadir: {
 			name: 'masādir',
 			tooltip: 'masādir — Sunni uṣūl al-fiqh, sources as kinds of proof',
+			scope: 'For Sunni Islamic legal-scholarly content. Not designed for secular or non-Islamic content.',
 			preview: false,
 		},
-		{
-			id: 'polanyi',
+		polanyi: {
 			name: 'Polanyi',
 			tooltip: 'Polanyi — modern pluralism, tacit as the proximal pole',
+			scope: 'For knowledge with a tacit-vs-explicit dimension; what you know vs. what you can articulate.',
 			preview: false,
 		},
-		{
-			id: 'mohist-san-biao',
+		'mohist-san-biao': {
 			name: 'Mohist sān biǎo',
 			tooltip: 'Mohist sān biǎo — three standards as tests of doctrines (v1 preview)',
+			scope: 'For doctrines tested by historical precedent / observational evidence / social benefit.',
 			preview: true,
 		},
-	];
+	};
 
-	let expanded = $state(false);
+	let dropdownOpen = $state(false);
 	let rootEl = $state<HTMLDivElement | null>(null);
+	// Track which family sections are expanded in the dropdown.
+	// Default: all families expanded so user sees the full menu on first open.
+	let expandedFamilies = $state<Set<FamilyId>>(new Set(Object.keys(FAMILIES) as FamilyId[]));
 
 	const activeId = $derived<TraditionId>(
 		($appSettings.sight?.activeTradition as TraditionId | undefined) ?? 'aristotelian'
 	);
-	const activeDef = $derived(TRADITIONS.find((t) => t.id === activeId) ?? TRADITIONS[0]);
 
-	function handleCollapsedClick() {
-		expanded = !expanded;
+	// Favorite ids from settings (default: 4 production traditions).
+	const favoriteIds = $derived<TraditionId[]>(
+		($appSettings.sight?.favoriteTraditions as TraditionId[] | undefined) ??
+			['aristotelian', 'pramana', 'masadir', 'polanyi']
+	);
+
+	// Inline chips = first 4 favorites that have metadata. (TraditionId
+	// guarantees the meta exists for shipping traditions; we filter
+	// defensively in case settings.json contains a value that's been
+	// excluded since last save — same pattern as the dignaga/ishraqi
+	// migration safeguards in store.ts.)
+	const inlineChips = $derived<TraditionId[]>(
+		favoriteIds.filter((id) => id in TRADITIONS_META).slice(0, 4)
+	);
+
+	// Families that have ≥1 tradition listed in FAMILIES. Mohist's
+	// 'chinese-pragmatist' family appears even before Phase γ ships
+	// the Mohist module (clicking the chip writes activeTradition;
+	// dome fall-back to Aristotelian positions until Phase γ lands
+	// the module). Empty families (Phase ε/ζ/η/θ pending) are hidden.
+	type FamilySection = { id: FamilyId; label: string; traditions: TraditionId[] };
+	const familiesWithTraditions = $derived<FamilySection[]>(
+		(Object.entries(FAMILIES) as [FamilyId, { label: string; traditions: TraditionId[] }][])
+			.filter(([, fam]) => fam.traditions.length > 0)
+			.map(([id, fam]) => ({ id, label: fam.label, traditions: fam.traditions }))
+	);
+
+	function activeMeta(id: TraditionId): TraditionMeta {
+		return TRADITIONS_META[id] ?? TRADITIONS_META.aristotelian;
 	}
 
-	function handleSelect(id: TraditionId) {
-		// Canonical write pattern (matches SightV6 §B.10 extended toggle):
-		// immutable update on appSettings.sight, then saveSettings() to persist.
+	function isFavorite(id: TraditionId): boolean {
+		return favoriteIds.includes(id);
+	}
+
+	function handleChipClick(id: TraditionId) {
+		// Canonical write pattern (matches §B.10 extended toggle).
 		appSettings.update((s) => ({
 			...s,
 			sight: { ...s.sight, activeTradition: id },
 		}));
 		saveSettings();
-		expanded = false;
+		// Close dropdown after switch (chip stays inline).
+		dropdownOpen = false;
 	}
 
-	// Collapse on outside click + Escape so the chip behaves like a popover.
+	function handleAllClick() {
+		dropdownOpen = !dropdownOpen;
+	}
+
+	function handleFamilyToggle(familyId: FamilyId) {
+		const next = new Set(expandedFamilies);
+		if (next.has(familyId)) {
+			next.delete(familyId);
+		} else {
+			next.add(familyId);
+		}
+		expandedFamilies = next;
+	}
+
+	function handlePinToggle(id: TraditionId) {
+		const current = [...favoriteIds];
+		const idx = current.indexOf(id);
+		if (idx >= 0) {
+			// Unpin: remove from list.
+			current.splice(idx, 1);
+		} else {
+			// Pin: append to end of list. Inline shows first 4; if
+			// favorites > 4, the new one is in the dropdown until user
+			// unpins one of the inline 4.
+			current.push(id);
+		}
+		appSettings.update((s) => ({
+			...s,
+			sight: { ...s.sight, favoriteTraditions: current },
+		}));
+		saveSettings();
+	}
+
+	// Click-outside closes dropdown.
 	function handleOutsideClick(ev: MouseEvent) {
-		if (!expanded || !rootEl) return;
+		if (!dropdownOpen || !rootEl) return;
 		if (!rootEl.contains(ev.target as Node)) {
-			expanded = false;
+			dropdownOpen = false;
 		}
 	}
+
+	// Esc closes dropdown. Same window+capture pattern as §C.1-fix-1
+	// to beat Layout's global Esc-closes-Sight handler.
 	function handleKey(ev: KeyboardEvent) {
-		if (ev.key === 'Escape' && expanded) {
-			expanded = false;
-			// §C.1-fix-1: kill the event before Layout's capture-phase
-			// global handler sees it and closes Sight. stopPropagation +
-			// preventDefault are belt-and-braces; the real fix is
-			// registering on `window` (capture) below so we run BEFORE
-			// Layout's `document` (capture) handler.
+		if (ev.key === 'Escape' && dropdownOpen) {
+			dropdownOpen = false;
 			ev.stopPropagation();
 			ev.preventDefault();
 		}
 	}
 
 	$effect(() => {
-		if (!expanded) return;
+		if (!dropdownOpen) return;
 		document.addEventListener('mousedown', handleOutsideClick);
-		// §C.1-fix-1 (Eisa cycle-1 Stage 6 step 4-5 FAIL: "When I pressed
-		// Esc Sight was closed"): chip handler must beat +layout.svelte's
-		// global Esc-closes-Sight handler. Layout's handler is on
-		// `document` in capture phase; ours goes on `window` in capture
-		// phase. Capture order is window → document → ... so a window
-		// capture handler fires BEFORE any document capture handler. The
-		// stopPropagation inside handleKey then prevents the event from
-		// continuing the capture journey down to document. Result:
-		// Esc-while-chip-expanded collapses the chip and Sight stays open.
-		// Esc-while-chip-collapsed is unaffected (this effect only mounts
-		// while `expanded` is true).
 		window.addEventListener('keydown', handleKey, true);
 		return () => {
 			document.removeEventListener('mousedown', handleOutsideClick);
-			// Third arg must match addEventListener's capture flag (true)
-			// or removeEventListener silently no-ops.
 			window.removeEventListener('keydown', handleKey, true);
 		};
 	});
 </script>
 
 <div bind:this={rootEl} class="tradition-chip-root">
-	{#if !expanded}
+	<!-- Inline row: 4 favorite chips + All trigger -->
+	<div class="tradition-chip-inline-row">
+		{#each inlineChips as id (id)}
+			{@const meta = activeMeta(id)}
+			<button
+				class="tradition-chip"
+				class:is-active={id === activeId}
+				class:is-preview={meta.preview}
+				type="button"
+				title={meta.tooltip}
+				onclick={() => handleChipClick(id)}
+			>
+				<span class="chip-name">{meta.name}</span>
+				{#if id === activeId}
+					<span class="chip-dot" aria-hidden="true"></span>
+				{/if}
+				{#if meta.preview}
+					<span class="chip-preview-badge" title="v1 preview — deeper internal structure is a v4.1 polish target">preview</span>
+				{/if}
+			</button>
+		{/each}
 		<button
-			class="tradition-chip-collapsed"
+			class="tradition-chip-all-trigger"
+			class:is-open={dropdownOpen}
 			type="button"
-			onclick={handleCollapsedClick}
-			title="Active scholarly tradition. Click to switch."
-			aria-haspopup="listbox"
-			aria-expanded="false"
+			onclick={handleAllClick}
+			title="Show all scholarly traditions"
+			aria-haspopup="true"
+			aria-expanded={dropdownOpen}
 		>
-			<span class="chip-name">{activeDef.name}</span>
-			<span class="chip-dot" aria-hidden="true"></span>
+			All <span class="trigger-chevron" class:is-open={dropdownOpen}>▾</span>
 		</button>
-	{:else}
-		<div class="tradition-chip-expanded" role="listbox" aria-label="Scholarly tradition">
-			{#each TRADITIONS as trad (trad.id)}
-				<button
-					class="tradition-chip"
-					class:is-active={trad.id === activeId}
-					class:is-preview={trad.preview}
-					type="button"
-					role="option"
-					aria-selected={trad.id === activeId}
-					title={trad.tooltip}
-					onclick={() => handleSelect(trad.id)}
-				>
-					<span class="chip-name">{trad.name}</span>
-					{#if trad.id === activeId}
-						<span class="chip-dot" aria-hidden="true"></span>
+	</div>
+
+	<!-- Dropdown panel (family-categorized accordion) -->
+	{#if dropdownOpen}
+		<div class="tradition-chip-dropdown" role="dialog" aria-label="Scholarly traditions">
+			{#each familiesWithTraditions as fam (fam.id)}
+				{@const isExpanded = expandedFamilies.has(fam.id)}
+				<div class="tradition-chip-family-section">
+					<button
+						class="tradition-chip-family-header"
+						class:is-expanded={isExpanded}
+						type="button"
+						onclick={() => handleFamilyToggle(fam.id)}
+						aria-expanded={isExpanded}
+					>
+						<span class="family-chevron" class:is-expanded={isExpanded}>▶</span>
+						<span class="family-label">{fam.label}</span>
+						<span class="family-count">({fam.traditions.length})</span>
+					</button>
+					{#if isExpanded}
+						<ul class="tradition-chip-family-list">
+							{#each fam.traditions as id (id)}
+								{@const meta = activeMeta(id)}
+								{@const fav = isFavorite(id)}
+								<li class="tradition-row" class:is-active={id === activeId}>
+									<button
+										class="tradition-row-name-btn"
+										type="button"
+										onclick={() => handleChipClick(id)}
+										title={meta.tooltip}
+									>
+										<span class="chip-name">{meta.name}</span>
+										{#if id === activeId}
+											<span class="chip-dot" aria-hidden="true"></span>
+										{/if}
+										{#if meta.preview}
+											<span class="chip-preview-badge">preview</span>
+										{/if}
+										<span class="tradition-row-scope">{meta.scope}</span>
+									</button>
+									<button
+										class="tradition-row-pin-btn"
+										class:is-pinned={fav}
+										type="button"
+										onclick={() => handlePinToggle(id)}
+										title={fav ? 'Unpin from favorites' : 'Pin to favorites (inline row)'}
+										aria-label={fav ? 'Unpin from favorites' : 'Pin to favorites'}
+									>
+										{fav ? '★' : '☆'}
+									</button>
+								</li>
+							{/each}
+						</ul>
 					{/if}
-					{#if trad.preview}
-						<span class="chip-preview-badge" title="v1 preview — deeper internal structure is a v4.1 polish target">preview</span>
-					{/if}
-				</button>
+				</div>
 			{/each}
 		</div>
 	{/if}
 </div>
 
 <style>
-	/* §C.1 — Tradition chip. Sits in the Sight title bar between subtitle
-	   and EXTENDED badge. Collapsed default shows only the active tradition;
-	   click expands to a horizontal row of baseline traditions (5 today; 24
-	   after MIG-026 Phases γ–θ ship; Phase β replaces inline-row with a
-	   family-categorized A3+A6 hybrid).
-
-	   Color palette derived from the existing header palette:
-	   - chip background:  rgba(58, 67, 90, 0.35)  (same as filter-count)
-	   - active border:    #3b5998                 (blue, same as Reset View)
-	   - preview accent:   #c9a155                 (muted gold, distinct
-	                                                from the #fbbf24 used by
-	                                                EXTENDED so the eye can
-	                                                distinguish them). */
+	/* MIG-026 Phase β — A3+A6 chip UI styles. */
 
 	.tradition-chip-root {
 		display: inline-flex;
@@ -229,25 +306,7 @@
 		position: relative;
 	}
 
-	.tradition-chip-collapsed {
-		display: inline-flex;
-		align-items: center;
-		gap: 6px;
-		padding: 3px 10px;
-		font-size: 11px;
-		font-family: inherit;
-		color: #e8ebf2;
-		background: rgba(58, 67, 90, 0.35);
-		border: 1px solid #3b5998;
-		border-radius: 4px;
-		cursor: pointer;
-		transition: background 0.12s ease;
-	}
-	.tradition-chip-collapsed:hover {
-		background: rgba(74, 90, 130, 0.55);
-	}
-
-	.tradition-chip-expanded {
+	.tradition-chip-inline-row {
 		display: inline-flex;
 		align-items: center;
 		gap: 4px;
@@ -257,6 +316,7 @@
 		border-radius: 5px;
 	}
 
+	/* Individual favorite chip (same compact style as MIG-025 §C.1). */
 	.tradition-chip {
 		display: inline-flex;
 		align-items: center;
@@ -283,6 +343,42 @@
 	}
 	.tradition-chip.is-active:hover {
 		background: rgba(59, 89, 152, 0.28);
+	}
+
+	/* "All ▾" dropdown trigger. */
+	.tradition-chip-all-trigger {
+		display: inline-flex;
+		align-items: center;
+		gap: 3px;
+		padding: 3px 9px;
+		font-size: 11px;
+		font-family: inherit;
+		color: #a0a8ba;
+		background: transparent;
+		border: 1px dashed rgba(160, 168, 186, 0.40);
+		border-radius: 3px;
+		cursor: pointer;
+		transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+		white-space: nowrap;
+	}
+	.tradition-chip-all-trigger:hover {
+		color: #e8ebf2;
+		background: rgba(74, 90, 130, 0.35);
+		border-color: rgba(160, 168, 186, 0.65);
+	}
+	.tradition-chip-all-trigger.is-open {
+		color: #e8ebf2;
+		background: rgba(59, 89, 152, 0.22);
+		border-color: #3b5998;
+		border-style: solid;
+	}
+	.trigger-chevron {
+		font-size: 9px;
+		line-height: 1;
+		transition: transform 0.18s ease;
+	}
+	.trigger-chevron.is-open {
+		transform: rotate(180deg);
 	}
 
 	.chip-name {
@@ -312,5 +408,137 @@
 		border-radius: 2px;
 		text-transform: uppercase;
 		font-variant: small-caps;
+	}
+
+	/* Dropdown panel. */
+	.tradition-chip-dropdown {
+		position: absolute;
+		top: calc(100% + 6px);
+		left: 0;
+		min-width: 340px;
+		max-width: 460px;
+		max-height: 70vh;
+		overflow-y: auto;
+		padding: 6px 0;
+		background: rgba(13, 19, 34, 0.98);
+		border: 1px solid rgba(59, 89, 152, 0.55);
+		border-radius: 5px;
+		box-shadow: 0 6px 24px rgba(0, 0, 0, 0.55);
+		z-index: 50;
+	}
+
+	.tradition-chip-family-section {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.tradition-chip-family-header {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		padding: 8px 14px 6px 14px;
+		font-size: 10px;
+		font-weight: 600;
+		letter-spacing: 0.8px;
+		text-transform: uppercase;
+		font-variant: small-caps;
+		color: #7b8499;
+		background: transparent;
+		border: none;
+		cursor: pointer;
+		text-align: left;
+	}
+	.tradition-chip-family-header:hover {
+		color: #c8cdd9;
+	}
+	.family-chevron {
+		display: inline-block;
+		font-size: 9px;
+		transition: transform 0.15s ease;
+		color: #5a6275;
+	}
+	.family-chevron.is-expanded {
+		transform: rotate(90deg);
+		color: #7b8499;
+	}
+	.family-label {
+		font-weight: 600;
+	}
+	.family-count {
+		color: #5a6275;
+		font-weight: 400;
+		font-size: 9px;
+	}
+
+	.tradition-chip-family-list {
+		list-style: none;
+		margin: 0;
+		padding: 0 0 4px 0;
+	}
+
+	.tradition-row {
+		display: flex;
+		align-items: stretch;
+		gap: 4px;
+		padding: 0 4px 0 22px;
+	}
+	.tradition-row.is-active {
+		background: rgba(59, 89, 152, 0.12);
+	}
+	.tradition-row:hover {
+		background: rgba(74, 90, 130, 0.18);
+	}
+	.tradition-row.is-active:hover {
+		background: rgba(59, 89, 152, 0.20);
+	}
+
+	.tradition-row-name-btn {
+		flex: 1 1 auto;
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 2px;
+		padding: 8px 10px;
+		font-family: inherit;
+		color: #e8ebf2;
+		background: transparent;
+		border: none;
+		border-radius: 3px;
+		cursor: pointer;
+		text-align: left;
+	}
+	.tradition-row-name-btn > .chip-name {
+		font-size: 12px;
+		font-weight: 500;
+	}
+	.tradition-row-scope {
+		font-size: 10px;
+		font-style: italic;
+		color: #7b8499;
+		line-height: 1.35;
+	}
+
+	.tradition-row-pin-btn {
+		flex: 0 0 auto;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 28px;
+		font-size: 14px;
+		color: #5a6275;
+		background: transparent;
+		border: none;
+		border-radius: 3px;
+		cursor: pointer;
+		transition: color 0.12s ease;
+	}
+	.tradition-row-pin-btn:hover {
+		color: #c9a155;
+	}
+	.tradition-row-pin-btn.is-pinned {
+		color: #c9a155;
+	}
+	.tradition-row-pin-btn.is-pinned:hover {
+		color: #d4b072;
 	}
 </style>

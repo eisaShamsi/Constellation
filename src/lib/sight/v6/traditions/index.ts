@@ -1,24 +1,27 @@
 /**
- * MIG-025 §C.2 — Tradition registry (renamed from Register registry).
+ * MIG-025 §C.2 — Tradition registry.
  * MIG-026 Phase 0 — K1 full rename: "register" → "tradition" throughout.
+ * MIG-026 Phase β — adds FAMILIES const for the A3+A6 chip UI
+ *   (family-categorized dropdown + 4 favorites inline).
  *
- * Central lookup table for the curated baseline traditions. Each tradition's
- * module lives in this directory as `<id>.ts` and exports a single
- * `TraditionModule` const. This index re-exports them and provides a
- * `getTraditionById` lookup used by anchor.ts and SightV6.svelte.
+ * Central lookup table for the curated baseline traditions. Each
+ * tradition's module lives in this directory as `<id>.ts` and exports
+ * a single `TraditionModule` const. This index re-exports them and
+ * provides:
+ *   - `getTraditionById(id)`  — O(1) lookup
+ *   - `allTraditions()`        — enumeration for §C.9 channel-iso test
+ *   - `FAMILIES` const         — family groupings used by the chip
+ *                                dropdown UI in Phase β
  *
- * Phase 0 of MIG-026 ships the rename only; the existing 3 modules
- * (Aristotelian, pramāṇa, masādir) continue to work under the renamed
- * namespace. Phase γ adds Polanyi + Mohist; Phases δ–θ add the 19 new
- * traditions per the MIG-026 Plan.
+ * Phase 0 (rename) ships the existing 3 modules (Aristotelian,
+ * pramāṇa, masādir) under the renamed namespace. Phase α adds the
+ * multi-shape architecture. Phase β rebuilds the chip UI per A3+A6.
+ * Phase γ adds Polanyi + Mohist modules. Phases δ–θ add the 19 new
+ * traditions to bring the curated baseline to 24.
  *
- * Per Concept Paper §11 invariant 7: each tradition's geometry is
- * documented + citation-tracked in a manifest at `docs/traditions/<id>.md`
- * (manifests ship in Phase ι.1).
- *
- * Dignāga + Suhrawardi Ishrāqī excluded entirely per §C.1-fix-1 + §C.4-
- * religious-rule (Eisa 2026-05-16) — not in this registry, not in
- * TraditionId, not in store.ts.
+ * Dignāga + Suhrawardi Ishrāqī excluded entirely per §C.1-fix-1 +
+ * §C.4-religious-rule — not in this registry, not in TraditionId,
+ * not in store.ts.
  */
 import type { TraditionId, TraditionModule } from '../types';
 import { aristotelian } from './aristotelian';
@@ -30,14 +33,9 @@ import { masadir } from './masadir';
  * lookup. Entries are added incrementally as MIG-026 phases ship the
  * remaining tradition modules.
  *
- * Phase 0 (MIG-026, this rename): aristotelian, pramana, masadir
- * Phase γ (next):                  polanyi, mohist-san-biao
- * Phase δ:                         peirce, dewey, husserl, habermas, longino
- * Phase ε:                         ibn-rushd-burhan, shatibi-maqasid, ibn-khaldun-umran
- * Phase ζ:                         pardes, maimonidean-prophecy, talmudic-middot
- * Phase η:                         mencian-sprouts, wang-yangming, korean-songnihak
- * Phase θ:                         mignolo-pluriversal, dussel-transmodernity,
- *                                  maldonado-torres, akan-wiredu, ibuanyidanda
+ * Phase 0 (currently): aristotelian, pramana, masadir
+ * Phase γ (next):       polanyi, mohist-san-biao
+ * Phases δ–θ:           the 19 new traditions per the MIG-026 Plan
  */
 const REGISTRY: Partial<Record<TraditionId, TraditionModule>> = {
 	aristotelian,
@@ -69,5 +67,94 @@ export function getTraditionById(id: TraditionId | undefined | null): TraditionM
 export function allTraditions(): TraditionModule[] {
 	return Object.values(REGISTRY).filter((m): m is TraditionModule => m !== undefined);
 }
+
+// ════════════════════════════════════════════════════════════════════
+// MIG-026 Phase β — Family taxonomy for the A3+A6 chip dropdown UI
+// ════════════════════════════════════════════════════════════════════
+//
+// 10 family groupings used by the chip dropdown panel (per the
+// MIG-026 Plan v2.11 + Architect §3.A). The dropdown shows one
+// section per family that has ≥1 tradition with a shipping module;
+// families with no shipped modules are hidden until their phase
+// lands. The label is the section header text shown in the dropdown.
+
+/** Family identifier — used by chip dropdown + tradition-to-family
+ *  mapping. Stable across MIG phases. */
+export type FamilyId =
+	| 'western-classical'
+	| 'indian-nyaya'
+	| 'sunni-islamic-usul'
+	| 'arabic-islamic-beyond'
+	| 'modern-western'
+	| 'jewish-abrahamic'
+	| 'east-asian-confucian'
+	| 'chinese-pragmatist'
+	| 'african-philosophical'
+	| 'latin-decolonial';
+
+/** Per-family display label + list of constituent traditions. The
+ *  list includes traditions that will ship in future phases (so the
+ *  taxonomy is stable across MIG-026); the dropdown UI filters to
+ *  show only families with ≥1 module currently registered. */
+export const FAMILIES: Record<FamilyId, { label: string; traditions: TraditionId[] }> = {
+	'western-classical': {
+		label: 'Western classical',
+		traditions: ['aristotelian'],
+	},
+	'indian-nyaya': {
+		label: 'Indian Nyāya',
+		traditions: ['pramana'],
+	},
+	'sunni-islamic-usul': {
+		label: 'Sunni Islamic uṣūl',
+		traditions: ['masadir'],
+	},
+	'arabic-islamic-beyond': {
+		label: 'Arabic / Islamic beyond uṣūl',
+		// Phase ε will add: 'ibn-rushd-burhan', 'shatibi-maqasid', 'ibn-khaldun-umran'
+		traditions: [],
+	},
+	'modern-western': {
+		label: 'Modern Western',
+		// Phase γ adds polanyi; Phase δ adds peirce, dewey, husserl, habermas, longino
+		traditions: ['polanyi'],
+	},
+	'jewish-abrahamic': {
+		label: 'Jewish (Abrahamic)',
+		// Phase ζ will add: 'pardes', 'maimonidean-prophecy', 'talmudic-middot'
+		traditions: [],
+	},
+	'east-asian-confucian': {
+		label: 'East Asian Confucian',
+		// Phase η will add: 'mencian-sprouts', 'wang-yangming', 'korean-songnihak'
+		traditions: [],
+	},
+	'chinese-pragmatist': {
+		label: 'Chinese pragmatist',
+		traditions: ['mohist-san-biao'],
+	},
+	'african-philosophical': {
+		label: 'African philosophical',
+		// Phase θ will add: 'akan-wiredu', 'ibuanyidanda'
+		traditions: [],
+	},
+	'latin-decolonial': {
+		label: 'Latin American decolonial',
+		// Phase θ will add: 'mignolo-pluriversal', 'dussel-transmodernity',
+		// 'maldonado-torres'
+		traditions: [],
+	},
+};
+
+/** Reverse lookup: tradition → family. Computed once at module load. */
+export const TRADITION_TO_FAMILY: Map<TraditionId, FamilyId> = (() => {
+	const m = new Map<TraditionId, FamilyId>();
+	for (const [familyId, family] of Object.entries(FAMILIES)) {
+		for (const tradId of family.traditions) {
+			m.set(tradId, familyId as FamilyId);
+		}
+	}
+	return m;
+})();
 
 export { aristotelian, pramana, masadir };

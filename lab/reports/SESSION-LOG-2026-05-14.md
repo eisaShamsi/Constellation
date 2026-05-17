@@ -1614,6 +1614,49 @@ Per Plan §3. Architectural scaffold for the 8 tradition shapes (sectoral, rings
 
 **Boss-test NOT required** per Plan §3 (pure refactor). Subtitle bump is the only visible change; spot-check sufficient. Move directly to Phase β.
 
+### MIG-026 Phase β — A3+A6 chip UI redesign (2026-05-17)
+
+Per Plan §4 + Architect §3.A. Major UI rebuild — replaces the inline-row-of-N chip pattern (which doesn't scale beyond ~7 chips) with a hybrid layout: 4 favorites pinned inline + dropdown for the rest, dropdown contents family-categorized.
+
+**Files touched** (3 files):
+- `src/lib/sight/v6/traditions/index.ts`:
+  - NEW `FamilyId` type (10 family identifiers across the MIG-026 24-tradition scope)
+  - NEW `FAMILIES: Record<FamilyId, { label, traditions }>` const — taxonomy stable across phases; empty families hidden from chip dropdown until their phase adds modules
+  - NEW `TRADITION_TO_FAMILY: Map<TraditionId, FamilyId>` — reverse lookup (computed once at module load)
+- `src/lib/libraries/store.ts`:
+  - NEW `favoriteTraditions?: string[]` field in `appSettings.sight` schema with docblock
+  - DEFAULT_SETTINGS gains `favoriteTraditions: ['aristotelian', 'pramana', 'masadir', 'polanyi']`
+- `src/lib/sight/v6/traditionChip.svelte`:
+  - **Wholesale rewrite** (~360 lines): replaces collapsed-single + expanded-inline-row pattern with always-visible inline-row-of-4-favorites + dropdown trigger
+  - NEW `TRADITIONS_META` const — name + tooltip + scope + preview per tradition (hardcoded; Phase ι.2 replaces with manifest reads from `docs/traditions/<id>.md`)
+  - NEW $state: `dropdownOpen`, `expandedFamilies: Set<FamilyId>` (default all expanded)
+  - NEW $derived: `activeId`, `favoriteIds`, `inlineChips` (first 4 favorites), `familiesWithTraditions` (families with ≥1 tradition listed)
+  - NEW handlers: `handleChipClick`, `handleAllClick`, `handleFamilyToggle`, `handlePinToggle`
+  - Carries forward §C.1-fix-1 click-outside + Esc fix (window+capture handler beats Layout's global Esc-closes-Sight handler)
+  - HTML structure: `.tradition-chip-root` → `.tradition-chip-inline-row` (favorites + "All ▾" trigger) + conditional `.tradition-chip-dropdown` (family-collapsible accordion); each tradition row has name + scope-strip + pin/unpin star
+  - CSS: ~150 lines covering inline chips (carry-forward styles) + dropdown trigger (dashed border default; solid when open) + dropdown panel (positioned-absolute, z-index 50, max-height 70vh with scroll, dark background rgba(13,19,34,0.98) with box-shadow) + family headers (uppercase small-caps with chevron) + tradition rows (active highlight + pin star hover)
+
+**Behavior shipped** (current 5-tradition state):
+- Inline row: `Aristotelian`, `pramāṇa`, `masādir`, `Polanyi` (4 favorites by default) + `All ▾` trigger
+- Click any inline chip → switches active + persists (same as before)
+- Click `All ▾` → dropdown opens
+- Dropdown shows 5 family sections (Western classical, Indian Nyāya, Sunni Islamic uṣūl, Modern Western, Chinese pragmatist), each with 1 tradition for the current state (families with 0 traditions hidden — Phase ε/ζ/η/θ-pending)
+- Each tradition row shows: name + scope-strip (italic, ~10px) + pin star (★ pinned, ☆ unpinned)
+- Click tradition row name → switches active + closes dropdown
+- Click pin star → toggles favorite; if pinning would bring count > 4, the new one lives in dropdown until user unpins one of the inline 4
+- Family chevron → toggle that family's collapse
+- Click outside dropdown → closes
+- Esc while dropdown open → closes (Sight stays open, per §C.1-fix-1 fix preserved)
+- Active tradition: blue stroke + dot on whichever surface (inline or dropdown row)
+- Polanyi + Mohist still display as chip placeholders (modules ship in Phase γ); clicking them sets activeTradition but dome falls back to default Aristotelian positions (no visible re-render until Phase γ)
+
+**Family taxonomy decisions** (Plan §4 + Architect §3.A):
+10 family IDs span the full MIG-026 24-tradition scope. Empty families (`arabic-islamic-beyond`, `jewish-abrahamic`, `east-asian-confucian`, `african-philosophical`, `latin-decolonial`) are listed in FAMILIES with `traditions: []` and hidden from the dropdown UI until their phase adds modules. Family labels match the MIG-026 Plan vocabulary (so users reading the orientation doc + the chip UI see consistent terminology).
+
+**Build verification**: `npm run check` passes with the same 3 pre-existing errors. **Zero new errors introduced.**
+
+**Boss-test required** (per Plan §4): full multi-stage cycle covering layout, expansion, pin/unpin, family collapse, persistence, Esc behavior.
+
 ### Phase 2 ship (Sight v6.1) remains intact
 
 None of this disturbs the v6.1 ship (commit `f295b296`). The 4 currently-working registers (Aristotelian, pramāṇa, masādir, Polanyi-as-chip-placeholder) and the Mohist chip placeholder all stay; only Ishrāqī comes out (and Polanyi's working module wasn't built, just the chip — same status as Ishrāqī was). Users on the C4-masadir build don't lose anything functional in this change.

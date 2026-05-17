@@ -3486,6 +3486,19 @@ export interface AppSettings {
 			| 'masadir'
 			| 'polanyi'
 			| 'mohist-san-biao';
+		/** MIG-026 Phase β — Favorite traditions pinned to the inline
+		 *  chip row (A6 hybrid: 4 favorites visible inline + dropdown
+		 *  for rest). Array order = display order. The chip UI shows
+		 *  the first 4 elements inline; the rest live in the dropdown
+		 *  with a pin/unpin toggle. Default: the 4 production-polish
+		 *  traditions currently shipping (Aristotelian, pramāṇa,
+		 *  masādir, Polanyi). User can re-order or replace via pin/
+		 *  unpin in the dropdown UI.
+		 *
+		 *  When MIG-026 Phases γ–θ add 19 more traditions, those new
+		 *  ones do NOT auto-pin — they appear in the dropdown by
+		 *  default; user opts in by pinning. */
+		favoriteTraditions?: string[];
 		/** MIG-025 §A.12 + Plan §A.4/§A.10 — mini-dome hex-bin aggregation
 		 *  threshold. Above this many visible notes per mini, the mini
 		 *  switches to hex-bin rendering with count badges. Default 5000
@@ -3681,6 +3694,10 @@ export const DEFAULT_SETTINGS: AppSettings = {
 		// existing users' values forward.
 		extended: false,
 		activeTradition: 'aristotelian',
+		// MIG-026 Phase β default favorites: the 4 production-polish
+		// traditions currently shipping. User can re-order via chip
+		// dropdown pin/unpin.
+		favoriteTraditions: ['aristotelian', 'pramana', 'masadir', 'polanyi'],
 		hexBinThreshold: 5000,
 		linkFadeThreshold: 800,
 		// v6MigrationDone left undefined intentionally — the §A.12
