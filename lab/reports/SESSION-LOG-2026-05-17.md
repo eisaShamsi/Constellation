@@ -407,5 +407,48 @@ for spread-shape traditions. 1 file changed, +33 / −1.
 Build for §γ-fix-1 .exe kicked off (task `bqs7f1kbq`). Boss re-test
 instructions surface when ready.
 
+## §γ-fix-1 misdiagnosis · §γ-fix-2 (real fix: star radius +2px)
+
+Boss re-tested fix-1.exe. Step 3 + Step 4 PASS. Step 2 still
+PARTIAL — Eisa diagnosed correctly: *"I think it is not completely
+visible because of the star's size. Let's pump up the size by 2px,
+just for this type."*
+
+**Acknowledged: §γ-fix-1 was a misdiagnosis.** The `densityMode`
+parameter in `renderAnchorDome` is accepted-but-voided (anchor.ts
+line 658: `void _densityMode;`) per the §B.9 comment that explicitly
+says the anchor renders bodies at BODY_OPACITY_MULT (0.7) regardless
+of densityMode. So passing `anchorDensityMode: false` had no visible
+effect on the anchor (only mini-domes actually consume densityMode).
+
+Real issue: BASE_STAR_RADIUS = 0.3125 world units → ~0.6 px diameter
+at 1× zoom. Tuned for Aristotelian's concentrated clusters where
+sub-pixel dots additive-blend into the milky-way texture. In Mohist's
+spread layout, no overlap → individual sub-pixel dots dissolve.
+
+### §γ-fix-2
+
+  anchor.ts:
+  - `drawStars` gains `radiusBoostScreenPx: number = 0`. Converted
+    to world units via `1 / zoomScale` so the boost stays constant
+    in screen pixels regardless of zoom level.
+  - Boost applied to body radius (Pass 1) + pip radius proportionally
+    (× 0.6 to preserve original ratio) + highlight ring radius
+    (Pass 3, so brushing halo stays visually correct).
+  - `renderAnchorDome` options gain `starRadiusBoostScreenPx?: number`,
+    passed through to drawStars.
+
+  SightV6.svelte:
+  - New `$derived anchorStarRadiusBoostScreenPx` returns 2 for
+    `horizontal-bands`, 0 otherwise.
+  - renderAnchorDome receives the boost.
+  - Updated `anchorDensityMode` comment to acknowledge it's reserved
+    scaffolding (currently no-op on anchor; reserved for v6.2 hex-bin).
+
+**Commit**: `be14ab2` — MIG-026 §γ-fix-2 — star radius +2px boost
+for spread shapes. 2 files changed, +68 / −26.
+
+Build kicked off for §γ-fix-2 .exe (task `bavn19gz3`).
+
 ---
 
