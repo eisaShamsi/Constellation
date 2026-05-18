@@ -73,164 +73,40 @@
 	} = $props();
 
 	// Per-tradition metadata (name, tooltip, scope, preview flag).
-	// Hardcoded here for Phase β; Phase ι.2 replaces scope reads with
-	// manifest fetches from docs/traditions/<id>.md.
+	//
+	// MIG-026 §λ-fix-2 (2026-05-18): the day-one Standing Order "when
+	// user switches language, EVERYTHING translates" applies. Name,
+	// tooltip, and scope now resolve via $t() at render time from
+	// `sight.v6.tradition.list.<id>.{name|tooltip|scope}` keys. The
+	// META map below carries the `preview` flag only; the literal
+	// strings live in the i18n locale files where they get
+	// proper-native-equivalent translations (per the same SO:
+	// مصادر, not مَسَادِر).
 	type TraditionMeta = {
-		name: string;          // chip label (kept English per §A.15 brand convention)
-		tooltip: string;       // hover tooltip per Concept Paper §2.5
-		scope: string;         // scope strip per Plan §4 + J5
-		preview: boolean;      // v1-preview badge per §4.2
+		name: string;          // chip label, resolved via $t at render time
+		tooltip: string;       // hover tooltip, resolved via $t
+		scope: string;         // scope strip, resolved via $t
+		preview: boolean;      // v1-preview badge per §4.2 (data-only flag)
 	};
 
-	const TRADITIONS_META: Record<TraditionId, TraditionMeta> = {
-		aristotelian: {
-			name: 'Aristotelian',
-			tooltip: 'Aristotelian — Western-classical, knowledge as maturity gradient',
-			scope: 'For any content; the default Sight grammar (stratum × time).',
+	const CURATED_TRADITION_IDS: TraditionId[] = [
+		'aristotelian', 'pramana', 'masadir', 'polanyi', 'mohist-san-biao',
+		'peirce', 'habermas', 'dewey', 'husserl', 'longino',
+		'ibn-rushd-burhan', 'shatibi-maqasid', 'ibn-khaldun-umran',
+		'pardes', 'maimonidean-prophecy', 'talmudic-middot',
+		'mencian-sprouts', 'wang-yangming', 'korean-songnihak',
+		'mignolo-pluriversal', 'dussel-transmodernity', 'maldonado-torres',
+		'akan-wiredu', 'ibuanyidanda',
+	];
+
+	function curatedMeta(id: TraditionId): TraditionMeta {
+		return {
+			name: $t(`sight.v6.tradition.list.${id}.name`),
+			tooltip: $t(`sight.v6.tradition.list.${id}.tooltip`),
+			scope: $t(`sight.v6.tradition.list.${id}.scope`),
 			preview: false,
-		},
-		pramana: {
-			name: 'pramāṇa',
-			tooltip: 'pramāṇa — Nyāya fourfold valid means of knowing',
-			scope: 'For epistemological analysis of cognitive acts: perception, inference, analogy, testimony.',
-			preview: false,
-		},
-		masadir: {
-			name: 'masādir',
-			tooltip: 'masādir — Sunni uṣūl al-fiqh, sources as kinds of proof',
-			scope: 'For Sunni Islamic legal-scholarly content. Not designed for secular or non-Islamic content.',
-			preview: false,
-		},
-		polanyi: {
-			name: 'Polanyi',
-			tooltip: 'Polanyi — modern pluralism, tacit as the proximal pole',
-			scope: 'For knowledge with a tacit-vs-explicit dimension; what you know vs. what you can articulate.',
-			preview: false,
-		},
-		'mohist-san-biao': {
-			name: 'Mohist sān biǎo',
-			tooltip: 'Mohist sān biǎo — three standards as tests of doctrines',
-			scope: 'For doctrines tested by historical precedent / observational evidence / social benefit.',
-			// §θ-fix-1: removed PREVIEW badge — Mohist has been working
-			// through Phase γ + 5 subsequent phase tests with Boss PASS
-			// each time; the "v1 preview" qualifier no longer fits.
-			preview: false,
-		},
-		peirce: {
-			name: 'Peirce',
-			tooltip: 'Peirce — American pragmatist, 3 phaneroscopic categories (Firstness / Secondness / Thirdness)',
-			scope: 'For phenomenological classification: quality/feeling (Firstness), reaction/relation (Secondness), mediation/law (Thirdness).',
-			preview: false,
-		},
-		habermas: {
-			name: 'Habermas',
-			tooltip: 'Habermas — Frankfurt School critical theory, 3 knowledge-constitutive interests',
-			scope: 'For knowledge classified by orientation: prediction/control (technical), mutual understanding (practical), reflection/liberation (emancipatory).',
-			preview: false,
-		},
-		dewey: {
-			name: 'Dewey',
-			tooltip: 'Dewey — pragmatist 5-stage pattern of inquiry (cyclic flow)',
-			scope: 'For knowledge as the resolution of an indeterminate situation through inquiry: indeterminate → problem → hypothesis → reasoning → testing (and back).',
-			preview: false,
-		},
-		husserl: {
-			name: 'Husserl',
-			tooltip: 'Husserl — phenomenological regional ontologies (4 concentric zones)',
-			scope: 'For knowledge classified by ontological region: formal ontology (center), material nature, animal nature, spirit / Geist (outer).',
-			preview: false,
-		},
-		longino: {
-			name: 'Longino',
-			tooltip: 'Longino — Critical Contextual Empiricism, 4 norms of objective inquiry',
-			scope: 'For social conditions of objectivity: venues (public forums), uptake (response to criticism), public standards (shared criteria), tempered equality (credentialed disagreement).',
-			preview: false,
-		},
-		'ibn-rushd-burhan': {
-			name: 'Ibn Rushd burhān',
-			tooltip: 'Ibn Rushd (Averroes) — 4 concentric demonstrative arts ranked by epistemic force',
-			scope: 'For Islamic Aristotelian commentary tradition: burhān (apodictic demonstration, innermost), jadal (dialectic), khaṭāba (rhetoric), shiʿr (poetics, outermost).',
-			preview: false,
-		},
-		'shatibi-maqasid': {
-			name: 'Shāṭibī maqāṣid',
-			tooltip: 'al-Shāṭibī — maqāṣid al-sharīʿa: 5 universal essentials × 3 tiers of necessity (15-cell grid)',
-			scope: 'For Sunni Islamic legal-purpose analysis: each note at the intersection of an essential (dīn / nafs / ʿaql / nasl / māl) and a tier (ḍarūriyyāt / ḥājiyyāt / taḥsīniyyāt).',
-			preview: false,
-		},
-		'ibn-khaldun-umran': {
-			name: 'Ibn Khaldūn ʿumrān',
-			tooltip: 'Ibn Khaldūn — ʿilm al-ʿumrān: bedouin↔urban cyclical civilizational dynamic',
-			scope: 'For Islamic philosophical historiography: ḥaḍarī (sedentary/urban) above, badawī (nomadic/rural) below; cyclic arrows convey the bidirectional generational cycle of ʿaṣabiyya rise + decay.',
-			preview: false,
-		},
-		pardes: {
-			name: 'PaRDeS',
-			tooltip: 'PaRDeS — 4 levels of Torah interpretation, literal to mystical (Hebrew acronym)',
-			scope: 'For Jewish hermeneutical analysis: peshat (literal, innermost) → remez (allusion) → derash (interpretive) → sod (mystical, outermost).',
-			preview: false,
-		},
-		'maimonidean-prophecy': {
-			name: 'Maimonidean prophecy',
-			tooltip: 'Maimonides — 11 degrees of prophecy in Guide of the Perplexed II:45 (spiral ladder)',
-			scope: 'For Jewish philosophical theology: 11 ascending degrees of prophetic experience, from ruaḥ ha-qodesh (holy spirit, innermost) to angel-vision-while-awake (Moses-level, outermost).',
-			preview: false,
-		},
-		'talmudic-middot': {
-			name: 'Talmudic 13 middot',
-			tooltip: 'Rabbi Yishmael — 13 hermeneutical rules for interpreting Torah (Baraita d\'Rabbi Yishmael, Sifra intro)',
-			scope: 'For Talmudic hermeneutics: 13 logical rules ascending from simplest (kal va-chomer = a fortiori inference) to most complex (reconciliation of contradictory verses).',
-			preview: false,
-		},
-		'mencian-sprouts': {
-			name: 'Mencian sprouts',
-			tooltip: 'Mencius — 4 moral sprouts (端 duān) + optional central xìn (信 trustworthiness)',
-			scope: 'For Confucian moral psychology: 4 innate sprouts → 4 cardinal virtues (compassion → rén, shame → yì, deference → lǐ, right-wrong → zhì); central xìn binds them.',
-			preview: false,
-		},
-		'wang-yangming': {
-			name: 'Wang Yangming',
-			tooltip: 'Wang Yangming — zhī-xíng héyī: knowing and acting unified through innate moral knowing',
-			scope: 'For Neo-Confucian moral epistemology: zhī (knowing) ↔ liángzhī (innate moral knowing, center) ↔ xíng (acting). Bidirectional flow conveys the unity of knowledge and action.',
-			preview: false,
-		},
-		'korean-songnihak': {
-			name: 'Korean Sŏngnihak',
-			tooltip: 'Yi T\'oegye + Yi Yulgok — Four-Seven debate: lǐ vs qì × 四端 vs 七情 (16th-c. Korean Neo-Confucian)',
-			scope: 'For Korean Neo-Confucian debate: 2×2 grid mapping the lǐ (principle) vs qì (psychophysical force) axis against the 四端 (4 sprouts) vs 七情 (7 emotions) axis.',
-			preview: false,
-		},
-		'mignolo-pluriversal': {
-			name: 'Mignolo pluriversal',
-			tooltip: 'Walter Mignolo — pluriversality: 5 decolonial positions around the modernity/totality hub',
-			scope: 'For Latin American decolonial analysis: central modernity/totality hub + 5 outer cluster bubbles (epistemic disobedience, border thinking, delinking, decolonial gnosis, pluriversal world).',
-			preview: false,
-		},
-		'dussel-transmodernity': {
-			name: 'Dussel transmodernity',
-			tooltip: 'Enrique Dussel — totality (inner disc) ↔ exteriority (outer ring) with bidirectional analectic flow',
-			scope: 'For liberation philosophy: concentric binary-flow with inner totality (modernity\'s encompassing system) and outer exteriority (what totality excludes — the colonized, the poor, the Other).',
-			preview: false,
-		},
-		'maldonado-torres': {
-			name: 'Maldonado-Torres',
-			tooltip: 'Nelson Maldonado-Torres — three tiers of coloniality (power / knowledge / being)',
-			scope: 'For decolonial analysis of persistent colonial structures: 3 concentric tiers — coloniality of power (political/economic, innermost), coloniality of knowledge (epistemic, middle), coloniality of being (ontological/existential, outermost).',
-			preview: false,
-		},
-		'akan-wiredu': {
-			name: 'Akan Wiredu',
-			tooltip: 'Kwasi Wiredu — Akan epistemic vocabulary reconstructed for conceptual decolonization',
-			scope: 'For African analytic philosophy: 3 Akan categories — nokware (truth / correspondence), ahonyam (well-being / reality-fittingness), adwene (mind / reflective thought).',
-			preview: false,
-		},
-		ibuanyidanda: {
-			name: 'Ibuanyidanda',
-			tooltip: 'Innocent Asouzu — complementary ontology: every being constituted through its complementary relations to the missing link',
-			scope: 'For African philosophy of complementarity: central "missing link" hub + 5 entity-clusters (self / other / community / tradition / transcendence), each constitutively related to the unifying complementarity.',
-			preview: false,
-		},
-	};
+		};
+	}
 
 	let dropdownOpen = $state(false);
 	let rootEl = $state<HTMLDivElement | null>(null);
@@ -270,11 +146,11 @@
 	});
 
 	// Inline chips = first 4 favorites that have metadata. Now checks
-	// both TRADITIONS_META (curated) and the userTraditionMeta map so
+	// CURATED_TRADITION_IDS (curated) and the userTraditionMeta map so
 	// a user-defined tradition pinned via the dropdown's star surfaces
 	// inline correctly.
 	const inlineChips = $derived<string[]>(
-		favoriteIds.filter((id) => id in TRADITIONS_META || id in userTraditionMeta).slice(0, 4)
+		favoriteIds.filter((id) => CURATED_TRADITION_IDS.includes(id as TraditionId) || id in userTraditionMeta).slice(0, 4)
 	);
 
 	// Families that have ≥1 tradition listed in FAMILIES. Mohist's
@@ -289,13 +165,18 @@
 	// (the field is reserved for κ.2 where it can mix into curated
 	// families with permission-style consent).
 	type FamilySection = { id: string; label: string; traditions: string[] };
+	// MIG-026 §λ-fix-2 — family.label resolves via $t() at render
+	// time from sight.v6.tradition.family.<id> keys. FAMILIES.label
+	// in traditions/index.ts is still the EN source-of-truth fallback
+	// (used when a locale's family key is missing — i18n fallback
+	// chain handles this gracefully).
 	const familiesWithTraditions = $derived.by<FamilySection[]>(() => {
 		const curated = (Object.entries(FAMILIES) as [FamilyId, { label: string; traditions: TraditionId[] }][])
 			.filter(([, fam]) => fam.traditions.length > 0)
-			.map(([id, fam]) => ({
+			.map(([id, _fam]) => ({
 				id: id as string,
-				label: fam.label,
-				traditions: fam.traditions as string[],
+				label: $t(`sight.v6.tradition.family.${id}`),
+				traditions: _fam.traditions as string[],
 			}));
 		if (userTraditions.length > 0) {
 			curated.push({
@@ -308,11 +189,12 @@
 	});
 
 	function activeMeta(id: string): TraditionMeta {
-		const curated = TRADITIONS_META[id as TraditionId];
-		if (curated) return curated;
+		if (CURATED_TRADITION_IDS.includes(id as TraditionId)) {
+			return curatedMeta(id as TraditionId);
+		}
 		const user = userTraditionMeta[id];
 		if (user) return user;
-		return TRADITIONS_META.aristotelian;
+		return curatedMeta('aristotelian');
 	}
 
 	function isFavorite(id: string): boolean {

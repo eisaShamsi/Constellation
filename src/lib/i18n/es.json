@@ -1678,6 +1678,140 @@
       "title": "Constellation Sight",
       "returnToSight": "Volver a Sight",
       "tradition": {
+        "family": {
+          "western-classical": "Clásica occidental",
+          "indian-nyaya": "Nyāya indio",
+          "sunni-islamic-usul": "Uṣūl al-fiqh sunní",
+          "arabic-islamic-beyond": "Árabe / islámica más allá de los uṣūl",
+          "modern-western": "Occidental moderna",
+          "jewish-abrahamic": "Judía (abrahámica)",
+          "east-asian-confucian": "Confuciana de Asia Oriental",
+          "chinese-pragmatist": "Pragmatista china",
+          "african-philosophical": "Filosófica africana",
+          "latin-decolonial": "Decolonial latinoamericana"
+        },
+        "list": {
+          "aristotelian": {
+            "name": "Aristotélica",
+            "tooltip": "Aristotélica — clásica occidental, el conocimiento como gradiente de madurez",
+            "scope": "Para cualquier contenido; la gramática Sight por defecto (estrato × tiempo)."
+          },
+          "pramana": {
+            "name": "pramāṇa",
+            "tooltip": "pramāṇa — los cuatro medios válidos de conocimiento del Nyāya",
+            "scope": "Para el análisis epistemológico de actos cognitivos: percepción, inferencia, analogía, testimonio."
+          },
+          "masadir": {
+            "name": "masādir",
+            "tooltip": "masādir — uṣūl al-fiqh sunní, las fuentes como tipos de prueba",
+            "scope": "Para contenido jurídico-académico islámico sunní. No diseñado para contenido secular o no islámico."
+          },
+          "polanyi": {
+            "name": "Polanyi",
+            "tooltip": "Polanyi — pluralismo moderno, lo tácito como polo proximal",
+            "scope": "Para conocimiento con dimensión tácita-explícita; lo que sabes frente a lo que puedes articular."
+          },
+          "mohist-san-biao": {
+            "name": "Sān biǎo mohísta",
+            "tooltip": "Sān biǎo mohísta — tres patrones para examinar doctrinas",
+            "scope": "Para doctrinas examinadas por precedente histórico / evidencia observacional / beneficio social."
+          },
+          "peirce": {
+            "name": "Peirce",
+            "tooltip": "Peirce — pragmatista estadounidense, 3 categorías faneroscópicas (Primeridad / Segundidad / Terceridad)",
+            "scope": "Para clasificación fenomenológica: cualidad/sentimiento (Primeridad), reacción/relación (Segundidad), mediación/ley (Terceridad)."
+          },
+          "habermas": {
+            "name": "Habermas",
+            "tooltip": "Habermas — teoría crítica de la Escuela de Frankfurt, 3 intereses constitutivos del conocimiento",
+            "scope": "Para conocimiento clasificado por orientación: predicción/control (técnico), entendimiento mutuo (práctico), reflexión/liberación (emancipatorio)."
+          },
+          "dewey": {
+            "name": "Dewey",
+            "tooltip": "Dewey — patrón pragmatista de la indagación en 5 etapas (flujo cíclico)",
+            "scope": "Para conocimiento como resolución de una situación indeterminada mediante indagación: indeterminado → problema → hipótesis → razonamiento → prueba (y vuelta)."
+          },
+          "husserl": {
+            "name": "Husserl",
+            "tooltip": "Husserl — ontologías regionales fenomenológicas (4 zonas concéntricas)",
+            "scope": "Para conocimiento clasificado por región ontológica: ontología formal (centro), naturaleza material, naturaleza animal, espíritu / Geist (exterior)."
+          },
+          "longino": {
+            "name": "Longino",
+            "tooltip": "Longino — Empirismo Contextual Crítico, 4 normas de indagación objetiva",
+            "scope": "Para las condiciones sociales de la objetividad: foros (espacios públicos), recepción (respuesta a la crítica), patrones públicos (criterios compartidos), igualdad templada (desacuerdo entre acreditados)."
+          },
+          "ibn-rushd-burhan": {
+            "name": "Burhān de Ibn Rushd",
+            "tooltip": "Ibn Rushd (Averroes) — 4 artes demostrativas concéntricas jerarquizadas por fuerza epistémica",
+            "scope": "Para la tradición islámica de comentario aristotélico: burhān (demostración apodíctica, interior), jadal (dialéctica), khaṭāba (retórica), shiʿr (poética, exterior)."
+          },
+          "shatibi-maqasid": {
+            "name": "Maqāṣid de al-Shāṭibī",
+            "tooltip": "al-Shāṭibī — maqāṣid al-sharīʿa: 5 esenciales universales × 3 grados de necesidad (rejilla de 15 celdas)",
+            "scope": "Para el análisis de propósitos jurídicos islámicos sunníes: cada nota en la intersección de un esencial (dīn / nafs / ʿaql / nasl / māl) y un grado (ḍarūriyyāt / ḥājiyyāt / taḥsīniyyāt)."
+          },
+          "ibn-khaldun-umran": {
+            "name": "ʿUmrān de Ibn Jaldún",
+            "tooltip": "Ibn Jaldún — ʿilm al-ʿumrān: dinámica civilizatoria cíclica beduina ↔ urbana",
+            "scope": "Para historiografía filosófica islámica: ḥaḍarī (sedentario/urbano) arriba, badawī (nómada/rural) abajo; las flechas cíclicas transmiten el ciclo generacional bidireccional de auge y declive de la ʿaṣabiyya."
+          },
+          "pardes": {
+            "name": "PaRDeS",
+            "tooltip": "PaRDeS — 4 niveles de interpretación de la Torá, de lo literal a lo místico (acrónimo hebreo)",
+            "scope": "Para el análisis hermenéutico judío: peshat (literal, interior) → remez (alusión) → derash (interpretativo) → sod (místico, exterior)."
+          },
+          "maimonidean-prophecy": {
+            "name": "Profecía maimonideana",
+            "tooltip": "Maimónides — 11 grados de profecía en la Guía de los Perplejos II:45 (escalera espiral)",
+            "scope": "Para la teología filosófica judía: 11 grados ascendentes de experiencia profética, desde ruaḥ ha-qodesh (espíritu santo, interior) hasta visión angélica en vigilia (nivel de Moisés, exterior)."
+          },
+          "talmudic-middot": {
+            "name": "13 middot talmúdicas",
+            "tooltip": "Rabí Yishmael — 13 reglas hermenéuticas para interpretar la Torá (Baraita d'Rabbi Yishmael, introducción al Sifra)",
+            "scope": "Para la hermenéutica talmúdica: 13 reglas lógicas ascendentes desde la más simple (kal va-chomer = inferencia a fortiori) hasta la más compleja (reconciliación de versículos contradictorios)."
+          },
+          "mencian-sprouts": {
+            "name": "Brotes mencianos (孟子 四端)",
+            "tooltip": "Mencio — 4 brotes morales (端 duān) + xìn central opcional (信 fiabilidad)",
+            "scope": "Para la psicología moral confuciana: 4 brotes innatos → 4 virtudes cardinales (compasión → rén, vergüenza → yì, deferencia → lǐ, distinción del bien y mal → zhì); el xìn central las une."
+          },
+          "wang-yangming": {
+            "name": "Wang Yangming (王陽明)",
+            "tooltip": "Wang Yangming — zhī-xíng héyī: conocer y actuar unificados por el saber moral innato",
+            "scope": "Para la epistemología moral neoconfuciana: zhī (conocer) ↔ liángzhī (saber moral innato, centro) ↔ xíng (actuar). El flujo bidireccional transmite la unidad de conocimiento y acción."
+          },
+          "korean-songnihak": {
+            "name": "Sŏngnihak coreano (성리학)",
+            "tooltip": "Yi T'oegye + Yi Yulgok — debate de los Cuatro-Siete: lǐ vs qì × 四端 vs 七情 (neoconfucianismo coreano, s. XVI)",
+            "scope": "Para el debate neoconfuciano coreano: rejilla 2×2 que cruza el eje lǐ (principio) vs qì (fuerza psicofísica) contra el eje 四端 (4 brotes) vs 七情 (7 emociones)."
+          },
+          "mignolo-pluriversal": {
+            "name": "Pluriversal de Mignolo",
+            "tooltip": "Walter Mignolo — pluriversalidad: 5 posiciones decoloniales en torno al núcleo modernidad/totalidad",
+            "scope": "Para el análisis decolonial latinoamericano: núcleo central modernidad/totalidad + 5 burbujas-clúster exteriores (desobediencia epistémica, pensamiento fronterizo, desvinculación, gnosis decolonial, mundo pluriversal)."
+          },
+          "dussel-transmodernity": {
+            "name": "Transmodernidad de Dussel",
+            "tooltip": "Enrique Dussel — totalidad (disco interno) ↔ exterioridad (anillo externo) con flujo analéctico bidireccional",
+            "scope": "Para la filosofía de la liberación: flujo binario concéntrico con totalidad interior (sistema englobante de la modernidad) y exterioridad exterior (lo que la totalidad excluye — el colonizado, el pobre, el Otro)."
+          },
+          "maldonado-torres": {
+            "name": "Maldonado-Torres",
+            "tooltip": "Nelson Maldonado-Torres — tres niveles de colonialidad (poder / saber / ser)",
+            "scope": "Para el análisis decolonial de estructuras coloniales persistentes: 3 niveles concéntricos — colonialidad del poder (político/económico, interior), colonialidad del saber (epistémica, medio), colonialidad del ser (ontológico/existencial, exterior)."
+          },
+          "akan-wiredu": {
+            "name": "Akan de Wiredu",
+            "tooltip": "Kwasi Wiredu — vocabulario epistémico akan reconstruido para la descolonización conceptual",
+            "scope": "Para la filosofía analítica africana: 3 categorías akan — nokware (verdad / correspondencia), ahonyam (bienestar / ajuste a la realidad), adwene (mente / pensamiento reflexivo)."
+          },
+          "ibuanyidanda": {
+            "name": "Ibuanyidanda",
+            "tooltip": "Innocent Asouzu — ontología complementaria: todo ser se constituye por sus relaciones complementarias con el eslabón perdido",
+            "scope": "Para la filosofía africana de la complementariedad: núcleo central del «eslabón perdido» + 5 clústeres de entidades (yo / otro / comunidad / tradición / trascendencia), cada uno constitutivamente relacionado con la complementariedad unificadora."
+          }
+        },
         "chip": {
           "allTrigger": "Todas",
           "allTriggerTooltip": "Mostrar todas las tradiciones académicas",

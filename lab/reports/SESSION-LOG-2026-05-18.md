@@ -862,6 +862,136 @@ Build kicked off for the Phase λ .exe.
 ### What's next: Phase μ
 
 Per Plan §14: ship gate + 3-agent audit.
+
+---
+
+## §λ-fix-2 — Full chip-dropdown localization
+
+**Function in hand**: act on Eisa's restated day-one Standing Order
+(2026-05-18 mid-Phase λ Boss test): when user switches language,
+EVERYTHING translates — AND with native-equivalent words, not
+transliterations. The Arabic UI screenshot showed chip names
+("masādir", "Ibn Rushd burhān", "Aristotelian"), family section
+headers ("WESTERN CLASSICAL", "SUNNI ISLAMIC UṢŪL", etc.), and
+manifest content using transliterations (مَسَادِر) instead of native
+Arabic words (مصادر). This fix-2 closes the chip-dropdown subset
+of that gap; subsequent fixes (§λ-fix-3, §λ-fix-4) tackle the
+canvas labels + per-tradition sectors + tour + native-quality
+audit of the manifest translations.
+
+### What landed
+
+1. **`traditionChip.svelte` refactor**:
+   - Old hardcoded `TRADITIONS_META` literal map (24 traditions ×
+     3 fields = 72 hardcoded English strings) DELETED outright per
+     CLAUDE.md "avoid backwards-compatibility hacks like renaming
+     unused _vars".
+   - Replaced with `CURATED_TRADITION_IDS` array + `curatedMeta(id)`
+     helper that resolves name + tooltip + scope via `$t()` at
+     render time from `sight.v6.tradition.list.<id>.{name|tooltip|scope}`
+     keys.
+   - `activeMeta(id)` dispatches: curated → `curatedMeta`; user-
+     defined → existing `userTraditionMeta` lookup; fallback →
+     `curatedMeta('aristotelian')`.
+   - Family headers in dropdown now `$t('sight.v6.tradition.family.<id>')`
+     instead of hardcoded `FAMILIES[id].label`.
+
+2. **`en.json` additions** under `sight.v6.tradition`:
+   - `family.*` — 10 family-section labels (English literals matching
+     the existing `FAMILIES` source-of-truth from
+     `traditions/index.ts`).
+   - `list.<id>.{name|tooltip|scope}` — 24 traditions × 3 = 72 strings.
+     English literals copied verbatim from the prior in-component
+     hardcoded map.
+
+3. **`ar.json` additions** under `sight.v6.tradition`:
+   - `family.*` — 10 labels in proper Arabic (e.g. الكلاسيكية الغربية,
+     أصول الفقه السنّي, ما بعد الاستعمار في أمريكا اللاتينية).
+   - `list.<id>.{name|tooltip|scope}` — 24 × 3 = 72 strings in proper
+     Arabic. Tradition names use NATIVE-EQUIVALENT Arabic where it
+     exists (مصادر, مقاصد الشاطبي, عمران ابن خلدون, برهان ابن رشد,
+     نبوّة موسى بن ميمون, الأرسطية, etc.) — NOT transliterations
+     written in Arabic letters. Proper nouns without translation
+     (Polanyi → بولاني; Peirce → بيرس; Wang Yangming → وانغ يانغ
+     مينغ; Mignolo → مينولو; etc.) use canonical scholarly Arabic
+     transliteration. East Asian + Hebrew traditions carry native
+     script (孟子 四端, 王陽明, 성리학, פַּרְדֵּ"ס) inline where
+     scholarly convention prefers it.
+
+4. **13-locale backfill via parallel agent**:
+   - Agent shipped `sight.v6.tradition.family.*` + `sight.v6.tradition.list.*`
+     to 13 non-en/non-ar locales (de, es, fa, fr, he, hi, ja, ko, pt,
+     ru, tr, ur, zh).
+   - STRICT brief enforced native-equivalent translation per the
+     Standing Order. Sample agent decisions: de family "Westliche
+     Klassik" not "Aristotelian"; zh "西方古典" not transliteration;
+     tr "Sünni usûlü'l-fıkh" using established Turkish-Islamic
+     scholarly vocabulary; CJK locales use native CJK script for
+     East Asian Confucian traditions; ja "孟子の四端" / zh "孟子
+     四端" / ko "맹자 사단(孟子 四端)" for Mencian sprouts.
+   - All 13 files JSON-valid; structure check confirms 10 family +
+     24 list × (name + tooltip + scope) in every locale.
+
+### Architecture
+
+- **Pattern**: data files hold KEY STEMS (or just rely on consumer
+  to construct keys); Svelte components resolve via `$t()` at render
+  time. The literal English source remains in `en.json` (canonical
+  source-of-truth); falls through the i18n fallback chain
+  (locale → en → key) when a locale's translation is missing.
+- **Standing Order alignment**: the day-one rule "EVERYTHING
+  translates" is now enforced in the chip dropdown surface. Prior
+  §A.15 / v2.06 "brand names stay English" interpretation was MY
+  misreading; the day-one rule overrules it. Brand product names
+  (Constellation, Sight, CNS) still stay English-Latin because
+  they are product nouns, not concept words — but every concept
+  word + family label + tradition name uses the locale-native
+  equivalent.
+- **Translation quality**: en + ar hand-written; 13 locales via
+  agent with explicit native-equivalent brief. Spot-check Boss test
+  will surface any quality issues per locale; manifest body
+  translations (the 336 files from Phase λ.2.b) get a separate
+  re-audit pass in §λ-fix-4.
+
+### Verification
+
+`npm run check`: 3 pre-existing errors (PJ-012 + 2 PropertyEditor),
+0 new. File count unchanged. All 15 locale JSONs parse valid.
+
+### Plan §λ-fix-2 verification clause (Boss test)
+
+- **Stage 0**: install + verify mtime
+- **Stage 1**: Switch to Arabic UI → open Sight → All ▾ → confirm
+  family headers in Arabic, tradition names in Arabic (مصادر, not
+  مَسَادِر), scope strips in Arabic.
+- **Stage 2**: Try other locales (de, zh, etc.) for cross-locale
+  spot-check.
+- Manifest modal already localizes via §λ-fix-1; this fix-2 closes
+  the chip dropdown gap.
+
+Build kicked off for §λ-fix-2.
+
+### What's still NOT localized (queued for §λ-fix-3+)
+
+- Dome stratum labels (FOUNDATION / WORKING / CONNECTION / SYNTHESIS
+  / EDGE OF KNOWING) drawn on canvas in anchor.ts via `STRATUM_LABELS`
+- Per-tradition dome sector labels (Qur'an, sunnah, etc.) in each
+  tradition module's `QUADRANT_LABELS` / `ZONE_LABELS`
+- Extension chips (istiḥsān, etc.) in masadir.ts `EXTENSION_CHIP_LABELS`
+- Calendar rim months (already Intl-localized via `Intl.DateTimeFormat`,
+  but the active locale needs to be threaded into the renderer)
+- First-boot tour STEPS in tour.svelte
+- Header subtitle "v6.3 — Traditions (Phase 1)"
+- User-defined plugin's synthesized manifest template in SightV6's
+  `synthesizeUserManifest`
+
+### What's still NOT quality-audited (queued for §λ-fix-4)
+
+- The 336 manifest translations from Phase λ.2.b (may contain
+  transliteration-in-target-script issues like the مَسَادِر case)
+- The 22 chip+banner i18n keys × 13 locales backfilled in Phase λ
+  (also AI-generated; possible same issue)
+- Existing i18n keys throughout the project from prior cascades
 - μ.1 — channel-isolation test (vitest): iterate all 24 traditions,
   assert mini-domes stay constant per Concept Paper §11 invariant 6
 - μ.2 — performance test (vitest): switch through all 24 on a

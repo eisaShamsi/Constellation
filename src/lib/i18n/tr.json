@@ -2116,6 +2116,140 @@
       "title": "Constellation Sight",
       "returnToSight": "Sight'a dön",
       "tradition": {
+        "family": {
+          "western-classical": "Batı klasik",
+          "indian-nyaya": "Hint Nyāya",
+          "sunni-islamic-usul": "Sünni usûlü'l-fıkh",
+          "arabic-islamic-beyond": "Arap / İslam (usûlün ötesinde)",
+          "modern-western": "Modern Batı",
+          "jewish-abrahamic": "Yahudi (İbrahimî)",
+          "east-asian-confucian": "Doğu Asya Konfüçyüsçü",
+          "chinese-pragmatist": "Çin pragmatistliği",
+          "african-philosophical": "Afrika felsefî",
+          "latin-decolonial": "Latin Amerika dekolonyal"
+        },
+        "list": {
+          "aristotelian": {
+            "name": "Aristotelesçi",
+            "tooltip": "Aristotelesçi — Batı klasik; bilgi olgunluk eğimi olarak",
+            "scope": "Her tür içerik için; varsayılan Sight grameri (katman × zaman)."
+          },
+          "pramana": {
+            "name": "pramāṇa",
+            "tooltip": "pramāṇa — Nyāya'nın dört geçerli bilgi aracı",
+            "scope": "Bilişsel edimlerin epistemolojik çözümlemesi için: algı, çıkarım, kıyas, tanıklık."
+          },
+          "masadir": {
+            "name": "masādir (mesâdir)",
+            "tooltip": "masādir — Sünni usûlü'l-fıkh; kanıt türleri olarak kaynaklar",
+            "scope": "Sünni İslam hukukî-ilmî içerik için. Seküler veya İslam dışı içerik için tasarlanmamıştır."
+          },
+          "polanyi": {
+            "name": "Polanyi",
+            "tooltip": "Polanyi — modern çoğulculuk; örtük bilgi (tacit) yakın kutup olarak",
+            "scope": "Örtük-açık boyutu olan bilgi için; bildiğiniz ile dile getirebildiğiniz arasındaki ayrım."
+          },
+          "mohist-san-biao": {
+            "name": "Mohist sān biǎo",
+            "tooltip": "Mohist sān biǎo — öğretileri sınamak için üç ölçüt",
+            "scope": "Tarihsel emsal / gözlemsel kanıt / toplumsal yarar ile sınanan öğretiler için."
+          },
+          "peirce": {
+            "name": "Peirce",
+            "tooltip": "Peirce — Amerikan pragmatisti; 3 phaneroskopik kategori (Birincilik / İkincilik / Üçüncülük)",
+            "scope": "Fenomenolojik sınıflama için: nitelik/duyum (Birincilik), tepki/ilişki (İkincilik), aracılık/yasa (Üçüncülük)."
+          },
+          "habermas": {
+            "name": "Habermas",
+            "tooltip": "Habermas — Frankfurt Okulu eleştirel kuramı; 3 bilgi-kurucu çıkar",
+            "scope": "Yönelime göre sınıflandırılan bilgi için: tahmin/denetim (teknik), karşılıklı anlayış (pratik), düşünüm/özgürleşme (emansipatorik)."
+          },
+          "dewey": {
+            "name": "Dewey",
+            "tooltip": "Dewey — pragmatistic 5 aşamalı soruşturma deseni (döngüsel akış)",
+            "scope": "Soruşturma yoluyla belirsiz bir durumun çözümü olarak bilgi için: belirsiz → sorun → hipotez → akıl yürütme → sınama (ve geri dönüş)."
+          },
+          "husserl": {
+            "name": "Husserl",
+            "tooltip": "Husserl — fenomenolojik bölgesel ontolojiler (4 eşmerkezli alan)",
+            "scope": "Ontolojik bölgeye göre sınıflandırılan bilgi için: biçimsel ontoloji (merkez), maddî doğa, hayvansal doğa, ruh / Geist (dış)."
+          },
+          "longino": {
+            "name": "Longino",
+            "tooltip": "Longino — Eleştirel Bağlamsal Empirisizm; nesnel soruşturmanın 4 normu",
+            "scope": "Nesnelliğin toplumsal koşulları için: forumlar (kamusal mecralar), eleştiriye yanıt verme (uptake), paylaşılan kamusal ölçütler, ölçülü eşitlik (yetkin uzmanlar arasında ayrılık)."
+          },
+          "ibn-rushd-burhan": {
+            "name": "İbn Rüşd burhân",
+            "tooltip": "İbn Rüşd (Averroes) — epistemik güce göre sıralı 4 eşmerkezli ispat sanatı",
+            "scope": "İslam Aristotelesçi şerh geleneği için: burhân (apodiktik ispat, içte), cedel (diyalektik), hatâbe (retorik), şi'r (poetika, dışta)."
+          },
+          "shatibi-maqasid": {
+            "name": "Şâtıbî maqāṣid",
+            "tooltip": "eş-Şâtıbî — maqāṣid eş-şerîʿa: 5 evrensel zarûriyât × 3 gereklilik derecesi (15 hücreli ızgara)",
+            "scope": "Sünni İslam hukuk amaç çözümlemesi için: her not bir aslî esas (dîn / nefs / akl / nesl / mâl) ile bir derece (ḍarūriyyāt / ḥājiyyāt / taḥsīniyyāt) kesişiminde."
+          },
+          "ibn-khaldun-umran": {
+            "name": "İbn Haldun ʿumrân",
+            "tooltip": "İbn Haldun — ʿilm el-ʿumrân: bedevî ↔ hadarî döngüsel medenî dinamik",
+            "scope": "İslam felsefî tarih yazımı için: ḥaḍarī (yerleşik/şehirli) üstte, badawī (göçebe/kırsal) altta; döngüsel oklar ʿaṣabiyye'nin yükseliş ve düşüşünün iki yönlü kuşak döngüsünü iletir."
+          },
+          "pardes": {
+            "name": "PaRDeS",
+            "tooltip": "PaRDeS — Tora yorumunun 4 düzeyi, lafzîden tasavvufîye (İbranice akronim)",
+            "scope": "Yahudi hermenötik çözümlemesi için: peshat (lafzî, içte) → remez (ima) → derash (yorumsal) → sod (tasavvufî, dışta)."
+          },
+          "maimonidean-prophecy": {
+            "name": "Maimonides nübüvveti",
+            "tooltip": "Maimonides — Delaletü'l-Hâirîn II:45'te nübüvvetin 11 derecesi (spiral merdiven)",
+            "scope": "Yahudi felsefî teolojisi için: nübüvvet deneyiminin 11 yükselen derecesi, ruaḥ ha-qodesh (kutsal ruh, içte) ile uyanıkken melek görüşü (Musa düzeyi, dışta) arasında."
+          },
+          "talmudic-middot": {
+            "name": "Talmudik 13 middot",
+            "tooltip": "Rabbi Yişmael — Tora yorumu için 13 hermenötik kural (Baraita d'Rabbi Yishmael, Sifra önsözü)",
+            "scope": "Talmudik hermenötik için: en basitinden (kal va-chomer = a fortiori çıkarım) en karmaşığına (çelişkili ayetlerin uzlaştırılması) 13 yükselen mantıksal kural."
+          },
+          "mencian-sprouts": {
+            "name": "Mensiyusçu filizler (孟子 四端)",
+            "tooltip": "Mensiyus — 4 ahlâkî filiz (端 duān) + isteğe bağlı merkezî xìn (信 güvenilirlik)",
+            "scope": "Konfüçyüsçü ahlâk psikolojisi için: 4 doğuştan filiz → 4 ana erdem (merhamet → rén, utanç → yì, hürmet → lǐ, doğru-yanlış → zhì); merkezî xìn bunları bağlar."
+          },
+          "wang-yangming": {
+            "name": "Wang Yangming (王陽明)",
+            "tooltip": "Wang Yangming — zhī-xíng héyī: doğuştan ahlâkî bilgi yoluyla bilme ve eylemin birliği",
+            "scope": "Neo-Konfüçyüsçü ahlâkî epistemoloji için: zhī (bilme) ↔ liángzhī (doğuştan ahlâkî bilgi, merkez) ↔ xíng (eyleme). İki yönlü akış bilgi ile eylemin birliğini iletir."
+          },
+          "korean-songnihak": {
+            "name": "Kore Sŏngnihak (성리학)",
+            "tooltip": "Yi T'oegye + Yi Yulgok — Dört-Yedi tartışması: lǐ ile qì × 四端 ile 七情 (16. yüzyıl Kore Neo-Konfüçyüsçülüğü)",
+            "scope": "Kore Neo-Konfüçyüsçü tartışması için: lǐ (ilke) ile qì (psiko-fiziksel kuvvet) eksenini 四端 (4 filiz) ile 七情 (7 duygu) eksenine eşleyen 2×2 ızgara."
+          },
+          "mignolo-pluriversal": {
+            "name": "Mignolo plüriversal",
+            "tooltip": "Walter Mignolo — plüriversallik: modernite/bütünsellik merkezi etrafında 5 dekolonyal konum",
+            "scope": "Latin Amerika dekolonyal çözümlemesi için: merkezî modernite/bütünsellik göbeği + 5 dış küme balonu (epistemik itaatsizlik, sınır düşüncesi, ayrılma, dekolonyal gnoz, plüriversal dünya)."
+          },
+          "dussel-transmodernity": {
+            "name": "Dussel transmodernite",
+            "tooltip": "Enrique Dussel — bütünsellik (iç disk) ↔ dışsallık (dış halka) ile iki yönlü analektik akış",
+            "scope": "Kurtuluş felsefesi için: eşmerkezli ikili akış — iç bütünsellik (moderniteyi kuşatan sistem) ve dış dışsallık (bütünselliğin dışladığı — sömürgeleştirilen, yoksul, Öteki)."
+          },
+          "maldonado-torres": {
+            "name": "Maldonado-Torres",
+            "tooltip": "Nelson Maldonado-Torres — sömürgeliliğin üç katmanı (iktidar / bilgi / varlık)",
+            "scope": "Kalıcı sömürge yapılarının dekolonyal çözümlemesi için: 3 eşmerkezli katman — iktidarın sömürgeliliği (siyasal/iktisadî, içte), bilginin sömürgeliliği (epistemik, ortada), varlığın sömürgeliliği (ontolojik/varoluşsal, dışta)."
+          },
+          "akan-wiredu": {
+            "name": "Akan Wiredu",
+            "tooltip": "Kwasi Wiredu — kavramsal dekolonizasyon için yeniden inşa edilen Akan epistemik söz dağarcığı",
+            "scope": "Afrika analitik felsefesi için: 3 Akan kategorisi — nokware (hakikat / örtüşme), ahonyam (esenlik / gerçekliğe uygunluk), adwene (zihin / düşünümsel düşünce)."
+          },
+          "ibuanyidanda": {
+            "name": "Ibuanyidanda",
+            "tooltip": "Innocent Asouzu — tümleyici ontoloji: her varlık kayıp halkayla tümleyici ilişkileri yoluyla teşekkül eder",
+            "scope": "Afrika tümleyicilik felsefesi için: merkezî «kayıp halka» göbeği + 5 varlık kümesi (öz / öteki / cemaat / gelenek / aşkın), her biri birleştirici tümleyiciliğe yapıcı biçimde bağlı."
+          }
+        },
         "chip": {
           "allTrigger": "Tümü",
           "allTriggerTooltip": "Tüm bilimsel gelenekleri göster",
