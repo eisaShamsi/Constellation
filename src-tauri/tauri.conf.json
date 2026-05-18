@@ -29,7 +29,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: asset: https: http: http://asset.localhost; font-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost https: http://asset.localhost",
+      "csp": "default-src 'self'; script-src 'self' 'unsafe-inline' http://asset.localhost; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: asset: https: http: http://asset.localhost; font-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost https: http://asset.localhost",
       "assetProtocol": {
         "enable": true,
         "scope": {

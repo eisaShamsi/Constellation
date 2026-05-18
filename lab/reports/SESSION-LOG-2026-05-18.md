@@ -728,3 +728,71 @@ Per Plan §13: translation cascade.
   files at `docs/traditions/<lang>/<id>.md`. ~1 day (AI-generated
   with disclosure header per §A.15 precedent).
 
+---
+
+## §κ.2-fix-1 — CSP allows http://asset.localhost in script-src
+
+**Function in hand**: unblock the asset:// dynamic import that Eisa's
+Boss test surfaced in Stage 2 Outcome B.
+
+### What Eisa saw
+
+Stage 1 PASS (consent banner appeared correctly), then clicked
+"Enable plugin" → Stage 2 Outcome B with banner:
+
+> Plugin failed to load
+> SAMPLE-PLUGIN.js: import failed: Failed to fetch dynamically
+> imported module: http://asset.localhost/E%3A%5CConstellation%20Universes%5CEisa%20Cognitive%20Knowledge%5C.constellation%5Ctraditions%5CSAMPLE-PLUGIN.js
+
+### Root cause
+
+CSP `script-src 'self' 'unsafe-inline'` blocked the Tauri asset
+protocol URL. `connect-src` already had `http://asset.localhost`
+(that's why the fetch component of dynamic import succeeded as
+a network request), but `script-src` is what gates SCRIPT
+EXECUTION — including the module-parse + execute step that
+dynamic `import()` does after fetching.
+
+The fix is one line in `tauri.conf.json::app.security.csp`:
+add `http://asset.localhost` to the `script-src` directive.
+
+Post-fix CSP:
+```
+script-src 'self' 'unsafe-inline' http://asset.localhost
+```
+
+### Security analysis
+
+- Asset protocol scope is `["**/*"]` (already in tauri.conf.json) —
+  the webview can already FETCH any local file via asset://.
+  Allowing SCRIPT EXECUTION of those files is a strict superset
+  of fetch, but the threat model is unchanged: an attacker with
+  write access to the user's filesystem can already harm them.
+- `unsafe-eval` stays OFF — no eval / new Function() / dynamic
+  code generation. Plugin code is parsed by the real ESM parser,
+  not by an interpreter we control.
+- `unsafe-inline` stays ON for style + script (pre-existing
+  weakness; not regressed).
+- The XSS surface is bounded by what `unsafe-inline` already
+  permits. Adding `http://asset.localhost` to script-src doesn't
+  expand the XSS attack surface beyond that ceiling.
+
+### Files
+
+1 file changed:
+- `src-tauri/src/tauri.conf.json` — single-line CSP edit on the
+  `script-src` directive.
+
+### Boss re-test instructions
+
+Re-run Stage 2 from the §κ.2 test:
+1. Open Constellation (or restart if already open).
+2. Open Sight → consent banner appears again for SAMPLE-PLUGIN.js
+   (the previous "Enable" did persist to settings, but if the file
+   was tracked as enabled but failed to load, it might show up
+   pending again — either way, click "Enable plugin").
+3. Pending banner disappears → expect "Three Acts (sample plugin)"
+   in chip dropdown → expect Stage 3 to work.
+
+Build kicked off for §κ.2-fix-1.
+
