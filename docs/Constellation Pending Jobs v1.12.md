@@ -1,6 +1,45 @@
 # Constellation Pending Jobs
 
-**Version 1.11 | 2026-05-12**
+**Version 1.12 | 2026-05-18**
+
+> **What changed in v1.12** (MIG-026 SHIPPED — Sight v6.3 24-tradition expansion + full 15-locale localization · Phase μ ship-gate audit closed clean · 5 new PJs filed for deferred polish):
+>
+> ### MIG-026 SHIPPED
+>
+> 24-tradition expansion + 9 shape renderers + user-definable layer (declarative JSON + TS plugin loader) + full localization across 15 locales — all merged on `main` between Phase γ (2026-05-17 evening) and Phase μ (2026-05-18). Boss-validated across 3 stages (Arabic-localization Stage 1 + RTL-chevron polish Stage 2 + cross-locale spot-check Stage 3 in zh / de / ru: **all PASS**). Phase μ Migration Rule audit (3 parallel agents on invariants / drift / migration-path) returned **zero blockers**: all 10 invariants PASS, 2 advisories, 1 high-severity doc-drift (this PJ file's v1.11 header), 2 low-severity drift items.
+>
+> ### MIG-026 collision finally resolved
+>
+> v1.11 reserved MIG-026 for "Sight v5 Layer 3 recommendation (V3-§7.b llama.cpp wiring)" — that allocation was contradicted when MIG-026 was actually opened in 2026-05-17 as the Sight v6.3 24-tradition expansion. The Layer-3 recommendation work folds into a future MIG-029 or later (TBD). MIG-027 is also reallocated: it shipped 2026-05-17 evening as Sight-follows-the-interface-theme (chrome/semantic color split), not the Sight v5 Layer 4 coaching workstream.
+>
+> ### 5 new PJs filed
+>
+> - **PJ-052 — Concept Paper v4.1** (the scholarly prose bump documenting all 24 traditions × 9 shape renderers; ~9,500 words of new content per Plan §14.3; deferred from Phase μ as a focused single-session task).
+> - **PJ-053 — λ-fix-6 native-quality translation re-audit** (deeper polish pass on agent-backfilled de/ru/fr/es/hi/pt locales: ~70 transliteration-without-gloss items + ~25 wrong-script Latin in Cyrillic/Devanagari locales + 3 pt-PT vs pt-BR dialect drift).
+> - **PJ-054 — Sight v6 vitest test runner** (Plan §14.1 channel-isolation + §14.2 perf tests are blocked on the deferred vitest runner; write both `tradition-isolation.test.ts` and `tradition-perf.test.ts` when runner ships).
+> - **PJ-055 — User-plugin label schema warning** (advisory from Phase μ migration-path audit: literal plugin labels shaped like dotted i18n key paths could collide with the global key namespace; document in `docs/traditions/schema/tradition.v1.schema.json`).
+> - **PJ-056 — MIG-026 drift cleanup** (low-severity: `dome.ts:57-64` STRATUM_LABELS comment misidentifies the real consumer; 24 unused `name:` literals in tradition modules + 10 unused `FAMILIES[*].label` literals + 2 stale doc comments in `types.ts:444` and `traditions/index.ts:169-172`; single-file cleanup, no behavior change).
+>
+> ### What did NOT close in v1.12
+>
+> - PJ-005 (MIG-007 Links Settings) — still open.
+> - PJ-002 (cid_cn collision scrub) — still open.
+> - PJ-008 / PJ-009 (typed-link duplication) — still open.
+> - PJ-044/046/047/048/049/050 — MIG-022 polish backlog — still open.
+>
+> ### What did close (recap)
+>
+> No prior-open PJ closed by this cascade. The 5 new PJs (052–056) are all newly filed.
+>
+> ### Top of queue rotates
+>
+> 1. **PJ-052** — Concept Paper v4.1 (the scholarly closeout for MIG-026; reads orientation v2.14 + the 24 tradition modules; ~2 days focused writing).
+> 2. **PJ-053** — λ-fix-6 native-quality translation re-audit.
+> 3. **MIG-024** — Sight v5 visual foundation Architect doc (carried from v1.11).
+> 4. **MIG-022 §N** — final integration audit + close-out.
+> 5. **PJ-005** — MIG-007 Links Settings tab.
+>
+> **Done count after v1.12**: 7 (unchanged). **Cancelled**: 1. **Rejected**: 1. **Open PJs**: 56 (was 51).
 
 > **What changed in v1.11** (Sight v5 Concept Paper canonical · MIG-022 collision resolved · MIG-024 / 025 / 026 / 027 reserved · 1 new PJ filed):
 >

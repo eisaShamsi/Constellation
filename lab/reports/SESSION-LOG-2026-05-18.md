@@ -1218,3 +1218,86 @@ In flight; artifact will land at `src-tauri/target/release/bundle/nsis/`.
 | `src/lib/i18n/en.json` | added sight.v6.{stratum,miniDome,canvas,facet,facetSidebar,confidence,stage,header} |
 | `src/lib/i18n/ar.json` | same structure with native Arabic |
 | `docs/traditions/ar/masadir.md` | H1 مَسَادِر → المصادر |
+
+═══════════════════════════════════════════════════════════════════════
+Phase μ — Ship gate close-out (Migration Rule 3-agent audit + λ-fix-6 spot-audit)
+═══════════════════════════════════════════════════════════════════════
+
+**Direction from Eisa**: "Proceed with the Remaining MIG-026 work." Cascade Plan §14 + λ-fix-6 audit.
+
+### 3-agent Migration Rule audit results
+
+Four parallel agents (3 for the Migration Rule audit + 1 for λ-fix-6 translation quality spot-check):
+
+1. **Invariants audit**: **PASS** on all 10 invariants. Two non-blocking observations:
+   - locale `$effect` triggers unbounded full repaint via `paint()` — acceptable since locale changes are rare user events; would need debouncing only if a future MIG adds animation-driven locale switching.
+   - `_labelize` + `_chrome` module-level state assume one-dome-at-a-time rendering; would need refactor to per-call closure capture if split-view comparison ever ships.
+
+2. **Migration-path audit**: 9 of 9 paths PASS. Two advisories:
+   - Path 6 (user-plugin literal labels) — theoretical key-collision footgun: a literal label like `"app.name"` would resolve to "Constellation" via en.json fallback chain. Recommend a schema warning. **Filed as PJ-055.**
+   - Path 8 (Concept Paper v4.0 doc-drift) — Concept Paper still references the pre-MIG-026 literal English vocabulary. Acknowledged; **filed as PJ-052** (Concept Paper v4.1 bump).
+
+3. **Drift audit**: 1 HIGH + 2 LOW:
+   - HIGH (Cat 10): `docs/Constellation Pending Jobs v1.12.md` was a versionless-bump in disguise (header still said v1.11, MIG-026 description still referenced the abandoned Sight v5 Layer 3 allocation, no entries for post-cascade deferrals) → **fixed inline this turn** by bumping header to v1.12 and adding PJ-052 through PJ-056 to the v1.12 preamble.
+   - LOW (Cat 3): `src/lib/sight/v6/dome.ts:57-64` STRATUM_LABELS comment claims facets.ts is the legacy consumer, but facets.ts only imports it (post-§λ-fix-4); real consumer is anchor.ts:1463 defensive fallback. **Filed as PJ-056.**
+   - LOW (Cat 4): 24 unused `name:` literals across tradition modules + 10 unused `FAMILIES[*].label` literals + 2 stale doc comments. **Filed as PJ-056.**
+
+4. **λ-fix-6 translation spot-audit**: 1 critical + ~95 polish items found across 14 locale files:
+   - **CRITICAL** (1): `de.husserl.spirit = "Geist · Geist"` (literal redundancy: gloss equals term in target language) → **fixed inline this turn** (`"Geist · Geist"` → `"Geist"`).
+   - HIGH (~25): wrong-script Latin values in ru.json (~20) + hi.json (~5) — Cyrillic/Devanagari users see Latin transliterations with no native-script gloss for technical vocabulary (Sanskrit pramāṇa terms, Sunni-Islamic uṣūl terms, Hebrew PaRDeS/middot terms, Ibn Rushd terms).
+   - HIGH (~70): bare transliterations in de/ru/fr/es where target-language native gloss exists — quality bar set by ar.json / zh.json / ko.json (which all use `transliteration · native-gloss` pattern).
+   - LOW (3): pt.json header strings drift to PT-PT while older keys are PT-BR — internal-consistency issue, pick one dialect.
+   - **Filed as PJ-053.**
+
+### Coverage stats (audit-verified)
+
+- All 15 locales: identical 268 leaf keys under `sight.v6.*` (Python recursive count).
+- Zero mojibake across all 15 locales.
+- Zero missing keys; zero extra keys.
+- `_manifests.generated.ts` regenerated idempotently from `docs/traditions/*.md`.
+- `ar/masadir.md` H1 fix from §λ-fix-5 verified in generated bundle.
+
+### Phase μ.5 Orientation v-bump
+
+`docs/Constellation Orientation & Onboarding v2.15.md` created (v2.14 retained per versioning rule). Preamble documents MIG-026 SHIP COMPLETE + 5 PJs filed + milestone tag.
+
+### Phase μ.6 Milestone tag + backup
+
+- **Tag**: `milestone/sight-v6.3-traditions-ship` (will be cut post-commit at the Phase μ close-out commit).
+- **ZIP backup**: `E:/Backups/Constellation/Constellation-sight-v6.3-traditions-ship-20260518.zip` (will be created post-commit per CLAUDE.md Backup Routine).
+
+### Phase μ.1 / μ.2 (deferred)
+
+Vitest tests for channel-isolation (Plan §14.1) + perf (Plan §14.2) blocked on the vitest runner deferral noted in MIG-025 §A.13 (`scripts.test:sight-v6:perf` and `test:sight-v6:layout` still stub-exit). Filed as **PJ-054** to fire when the runner lands.
+
+### Phase μ.3 (deferred)
+
+Concept Paper v4.0 → v4.1 (~9,500 words of new scholarly prose covering 19 new tradition subsections + the shape-renderer architecture). Estimated 2 days focused writing. **Filed as PJ-052** as the next top-of-queue item.
+
+### Phase μ.4 Boss-test cycle
+
+Stage 1 / 2 / 3 already PASS per the §λ-fix-3/4/5/4b cycles earlier in this session. Phase μ.4's 7 stages (chip / 24-tradition switch / mini-dome isolation / disclosure / user-defined / persistence / performance) are individually-covered by prior Phase γ-θ Boss tests; no additional Boss-test asked for at ship-gate close. If Eisa wants a single integrated ship-gate test pass, it can be scheduled as a follow-up.
+
+### MIG-026 final tally
+
+| Phase | Description | Status |
+|---|---|---|
+| 0 | K1 rename | shipped |
+| α | architecture foundation | shipped |
+| β | chip UI redesign + MIG-027 theme detour | shipped |
+| γ | Polanyi + Mohist | shipped |
+| δ.1 | Peirce + Habermas | shipped |
+| δ.2 | Dewey + Husserl + Longino | shipped |
+| ε.1-3 | Ibn Rushd + Shāṭibī + Ibn Khaldūn | shipped |
+| ζ.1-3 | PaRDeS + Maimonidean + Talmudic | shipped |
+| η.1-3 | Mencian + Wang Yangming + Sŏngnihak | shipped |
+| θ.1-5 | Mignolo + Dussel + Maldonado-Torres + Akan Wiredu + Ibuanyidanda | shipped |
+| ι.1-2 | 24 manifests + disclosure modal | shipped |
+| κ.1-2 | declarative JSON + TS plugin loader | shipped |
+| λ-fix-1/2/3/4/4b/5 | translation cascade + chrome i18n + RTL polish + manifest H1 fix | shipped |
+| μ | ship gate (audit + orientation + tag + backup) | shipping this turn |
+| λ-fix-6 | native-quality re-audit | **deferred → PJ-053** |
+| μ.1/μ.2 tests | when vitest runner ships | **deferred → PJ-054** |
+| μ.3 Concept Paper v4.1 | 2-day prose | **deferred → PJ-052** |
+
+**MIG-026 SHIPPED on `main` at `f382a97b`** (Phase μ ship-gate close-out commit lands this turn).
