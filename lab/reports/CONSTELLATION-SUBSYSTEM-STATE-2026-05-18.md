@@ -10,12 +10,58 @@
 
 ## Read order on session open
 
-1. `docs/Constellation Orientation & Onboarding v2.13.md` — canonical orientation; first read every session
-2. **This document** — subsystem state snapshot
-3. `lab/reports/MIG-026-HANDOVER-2026-05-18.md` — MIG-026-specific bridge (state of the just-shipped 24-tradition cascade + remaining ι/κ/λ/μ)
-4. `docs/Constellation Pending Jobs v1.11.md` — canonical PJ list (51 jobs across 9 sections; new MIG-026 PJs to be filed as v1.12)
-5. `lab/reports/SESSION-LOG-2026-05-18.md` + `lab/reports/SESSION-LOG-2026-05-17.md` — operational context (today + yesterday)
-6. `CLAUDE.md` — standing operating rules (top-principals, working agreement, SO, basic rules)
+> **Boss directive 2026-05-18**: read the LAST 30 ORIENTATION VERSIONS — not just the highest-version file. This is a deliberate deviation from the CLAUDE.md SO #6 instruction ("Each session reads only the highest-version file, but the trail behind it is durable"). The reason: each version's **What changed in vX.Y** preamble captures historical decisions / what shipped when / why direction shifted — information the v2.13 body alone does not preserve. Reading the 30-version trail gives the trajectory that produced the current state.
+>
+> The 30 versions span 2026-05-08 (v1.84) through 2026-05-18 (v2.13) — roughly 10 days of decisions including the entire Sight v6 → MIG-025 → MIG-026 → MIG-027 cascade + most of the MIG-022 Sources/CECE work.
+
+### Required reads (in this order)
+
+**1. The 30-orientation trail** (read each one's top-of-file preamble; the bodies stay roughly consistent across versions — focus on the v-bump preambles for trajectory):
+
+```
+docs/Constellation Orientation & Onboarding v1.84.md
+docs/Constellation Orientation & Onboarding v1.85.md
+docs/Constellation Orientation & Onboarding v1.86.md
+docs/Constellation Orientation & Onboarding v1.87.md
+docs/Constellation Orientation & Onboarding v1.88.md
+docs/Constellation Orientation & Onboarding v1.89.md
+docs/Constellation Orientation & Onboarding v1.90.md
+docs/Constellation Orientation & Onboarding v1.91.md
+docs/Constellation Orientation & Onboarding v1.92.md
+docs/Constellation Orientation & Onboarding v1.93.md
+docs/Constellation Orientation & Onboarding v1.94.md
+docs/Constellation Orientation & Onboarding v1.95.md
+docs/Constellation Orientation & Onboarding v1.96.md
+docs/Constellation Orientation & Onboarding v1.97.md
+docs/Constellation Orientation & Onboarding v1.98.md
+docs/Constellation Orientation & Onboarding v1.99.md
+docs/Constellation Orientation & Onboarding v2.00.md
+docs/Constellation Orientation & Onboarding v2.01.md
+docs/Constellation Orientation & Onboarding v2.02.md
+docs/Constellation Orientation & Onboarding v2.03.md
+docs/Constellation Orientation & Onboarding v2.04.md
+docs/Constellation Orientation & Onboarding v2.05.md
+docs/Constellation Orientation & Onboarding v2.06.md
+docs/Constellation Orientation & Onboarding v2.07.md
+docs/Constellation Orientation & Onboarding v2.08.md
+docs/Constellation Orientation & Onboarding v2.09.md
+docs/Constellation Orientation & Onboarding v2.10.md
+docs/Constellation Orientation & Onboarding v2.11.md
+docs/Constellation Orientation & Onboarding v2.12.md
+docs/Constellation Orientation & Onboarding v2.13.md   ← canonical current state (full body read)
+```
+
+**Read strategy**: for v1.84 through v2.12, the **What changed in vX.Y** preamble at the top of each file is the key content. The body sections (§1 onwards) are mostly consistent across versions — read the body in full from v2.13 (the current canonical state) and use the older preambles to understand the trajectory that produced it.
+
+**2. This document** — subsystem state snapshot for at-a-glance current architecture
+
+**3. `lab/reports/MIG-026-HANDOVER-2026-05-18.md`** — MIG-026-specific bridge (24-tradition cascade detail + remaining ι/κ/λ/μ + MIG-026-derived PJs to file in v1.12)
+
+**4. `docs/Constellation Pending Jobs v1.11.md`** — canonical PJ list (51 jobs across 9 sections; new MIG-026 PJs pending v1.12 bump)
+
+**5. `lab/reports/SESSION-LOG-2026-05-18.md`** + `lab/reports/SESSION-LOG-2026-05-17.md` — operational context (today + yesterday)
+
+**6. `CLAUDE.md`** — standing operating rules (BASIC RULE + Working Agreement + 6 top principals + 8 Standing Orders + Performance Rule 8)
 
 ---
 
