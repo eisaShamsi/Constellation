@@ -543,3 +543,188 @@ Obsidian-trust security model). Adds `appSettings.sight.enabledTraditionPlugins:
 string[]` and consent-prompt UI for first-detection. ~2 days.
 HIGH risk per Architect §3.H.
 
+---
+
+## Phase κ.2 — JS plugin loader (Path A: asset:// + native ESM)
+
+**Function in hand**: ship the user-defined JS plugin loader per Plan
+§12.2, using Path A (Tauri asset:// + native dynamic `import()` of
+`.js` files only) after the CSP `no-unsafe-eval` architectural
+surprise was surfaced + Eisa picked Path A.
+
+### Why .js and not .ts (Plan deviation)
+
+Constellation's CSP forbids `unsafe-eval` (LL-019, orientation §3.4).
+Runtime TypeScript transpilation would require either `unsafe-eval`
+(security regression) or a bundled transpiler executed under
+`unsafe-eval` — both unacceptable. Native dynamic `import()` of a
+real URL doesn't trigger eval; it's standard ESM. Tauri's asset
+protocol (`convertFileSrc(absPath)` → `asset://localhost/...`)
+provides the URL.
+
+Users author TS on their side, compile to JS via `tsc`, drop the
+JS into `.constellation/traditions/`. Matches Obsidian's plugin
+pattern exactly. Documented in the commit message + README + the
+SAMPLE-PLUGIN.js header.
+
+### Files
+
+7 files changed + 2 new:
+
+- **NEW Rust IPC** `sight_v6_read_user_plugins` in `sight_v6.rs` —
+  scans `<active_universe>/.constellation/traditions/*.js`,
+  returns `Vec<UserPluginFileDto { filename, absPath }>` (absolute
+  path so the frontend can `convertFileSrc` to asset:// URL).
+  Mirrors `sight_v6_read_user_traditions`'s graceful behavior
+  (missing dir → empty result; non-`.js` skipped).
+- **MODIFIED** `src-tauri/src/lib.rs` — register the new IPC.
+- **NEW** `src/lib/sight/v6/traditions/pluginLoader.ts` —
+  `loadPluginRegistry(enabledFilenames)` returns
+  `{ loaded, pending, failed }`. For each plugin path:
+  - If not in `enabledFilenames` → mark pending-consent.
+  - Else: `await import(convertFileSrc(absPath))`, validate the
+    default export's shape (id pattern + name + shape + remap
+    function + per-shape spec callbacks), build a UserTraditionModule
+    that wraps the user's callbacks in try/catch so runtime throws
+    degrade gracefully (skipped chrome / default position) instead
+    of crashing.
+- **MODIFIED** `src/lib/libraries/store.ts` — new
+  `appSettings.sight.enabledTraditionPlugins?: string[]` (default
+  unset → empty). User consent per filename.
+- **MODIFIED** `src/lib/sight/v6/SightV6.svelte`:
+  - Imports plugin loader + types.
+  - New state: `pluginPending`, `pluginFailed`.
+  - New `reloadUserDefinedRegistry()` consolidates JSON + plugin
+    loading into one path (called from onMount + handleEnablePlugin).
+    JSON ids win on plugin id collision; merged list passed to
+    chip via existing `userTraditions` prop.
+  - New `handleEnablePlugin(filename)` writes the filename into
+    settings + re-runs the registry load (the plugin then moves
+    from pending → loaded or → failed).
+  - New `handleDismissPluginFailure` + `handleDismissPluginPending`
+    let the user hide a banner for the current session (file still
+    detected on next Sight open).
+  - NEW banner UI inside sight-v6-root between header and body:
+    pending plugin banner with "Enable plugin" button + dismiss ×;
+    failed plugin banner with error message inline + dismiss ×.
+    Theme-aware via MIG-027 CSS vars.
+- **NEW** `docs/traditions/schema/SAMPLE-PLUGIN.js` — copyable
+  template demonstrating the contract. Identical 3-wedge sectoral
+  shape as `EXAMPLE.json` but with arbitrary `remapStarPosition`
+  + inline `fnv1a` helper.
+- **MODIFIED** `docs/traditions/README.md` — replaced the "TS
+  plugin loader (Phase κ.2 — not shipped yet)" section with the
+  full κ.2 documentation: why .js not .ts, module contract,
+  self-contained-files rule, security model, failure handling,
+  disabling instructions.
+
+### Architecture decisions
+
+1. **Path A — asset:// + native ESM, no eval.** Satisfies the
+   `no-unsafe-eval` CSP without modifications. Tauri's asset
+   protocol is already enabled with wildcard allow per
+   `tauri.conf.json` (orientation §3.4).
+2. **.js only, no runtime TS transpilation.** Document the
+   deviation from Plan; provide the Obsidian-pattern `tsc`
+   workflow for users who want TS.
+3. **Per-filename consent persisted in settings.** Mirrors
+   Obsidian's first-detection consent model. Banner displays the
+   absolute path so the user can verify which file they're
+   trusting.
+4. **JS plugins share USER_REGISTRY with JSON declaratives.**
+   Both flow through `registerUserTraditions` + the chip's
+   userTraditions prop. JSON wins on id collision (rare;
+   `user-` prefix + per-source de-dup makes it unlikely).
+5. **Banner UI inside sight-v6-root, between header and body.**
+   Prominent without obscuring the dome. Dismissable per-banner.
+   Theme-aware (light + dark variants).
+6. **Per-callback try/catch in pluginLoader.** A plugin that
+   crashes inside `remapStarPosition` degrades the affected note
+   to default Aristotelian position; the dome keeps rendering.
+   A plugin's `sectorDividers` throwing skips that chrome; the
+   stars still draw. Per Working Agreement #4: defensive
+   isolation prevents one bad plugin from breaking the whole
+   Sight surface.
+7. **Self-contained plugin files.** Plugin .js cannot use
+   `import` statements (Vite doesn't see them at build time;
+   runtime URL resolution is constrained). Helpers must be
+   inlined. Documented in README + SAMPLE-PLUGIN.js header.
+
+### Verification
+
+`npm run check`: 3 pre-existing errors (PJ-012 + 2 PropertyEditor),
+0 new. File count 1420 → 1421 (the new pluginLoader.ts).
+
+### Cross-cutting risk review (per Working Agreement #4)
+
+- **CSP compliance**: tested architecturally. asset:// URLs are
+  served by the Tauri asset handler with appropriate MIME for
+  JS module loading. Native dynamic `import()` of asset:// avoids
+  the eval restriction.
+- **Security posture**: Obsidian-trust model. Documented prominently.
+  Consent banner displays absolute path. User assumes risk per
+  trust decision.
+- **Bundle weight**: +8KB for pluginLoader.ts. No new deps.
+- **Reactivity**: SightV6's reloadUserDefinedRegistry is called on
+  mount + after settings update; userTraditions $state propagates
+  to the chip via prop.
+- **Failure modes**: per-plugin try/catch isolates failures.
+  Banner UI surfaces errors to the user without requiring devtools
+  (which don't open in release binaries — saved memory note).
+- **i18n**: banner text + module-contract validation messages are
+  English-only in κ.2. Phase λ adds i18n keys.
+
+### Plan §12.2 verification clause (Boss test stages)
+
+Stages 0-3 + an additional Stage 4 for the error case:
+
+- **Stage 0**: install + verify mtime
+- **Stage 1**: copy SAMPLE-PLUGIN.js into
+  `<Universe>/.constellation/traditions/`, restart, see consent
+  banner above the dome with "Enable plugin" button
+- **Stage 2**: click "Enable plugin", banner disappears, dome
+  re-renders, plugin appears in chip dropdown's "User-defined"
+  section (alongside the JSON example from κ.1)
+- **Stage 3**: switch to it, dome re-arranges per the plugin's
+  remapStarPosition function (3 wedges of stars)
+- **Stage 4**: break the plugin (rename `export default` to
+  `export defualt` to introduce a syntax error), restart, confirm
+  error banner appears with the failure message inline
+
+Build kicked off for the Phase κ.2 .exe.
+
+### Plan §12.2 vs reality
+
+| Plan §12.2 said | What shipped |
+|---|---|
+| `.ts` plugin loader | `.js` plugin loader (Path A deviation, CSP forced) |
+| `dynamic import()` | Tauri asset:// + native dynamic `import()` |
+| Obsidian-trust + manual enable | ✓ same |
+| `enabledTraditionPlugins: string[]` setting | ✓ same |
+| Plugin-load error UI | ✓ banner UI inside sight-v6-root |
+
+The deviation from `.ts` → `.js` is documented prominently
+(commit message + README + SAMPLE-PLUGIN.js header). TS-on-the-
+side + tsc compile-step is the user workflow.
+
+### MIG-028 commitment
+
+Per Eisa's 2026-05-18 direction ("Both, sequenced: κ.2 first,
+builder UI as MIG-028"): after MIG-026 ships (post-μ), open
+**MIG-028 — in-app tradition builder UI**. A Settings UI where
+the user picks a shape, slides sector angles, types labels,
+with live dome preview. Generates the JSON behind the scenes.
+~3-5 days estimated. Real UX win for non-technical users.
+
+Will be filed as a PJ in Pending Jobs v1.12 at the MIG-026 ship
+gate, alongside the other MIG-026-derived PJs from the handover.
+
+### What's next: Phase λ
+
+Per Plan §13: translation cascade.
+- λ.1 already shipped (English manifests + i18n keys in main
+  cascade)
+- λ.2 — 14-locale translation cascade of the 24 manifests = 336
+  files at `docs/traditions/<lang>/<id>.md`. ~1 day (AI-generated
+  with disclosure header per §A.15 precedent).
+

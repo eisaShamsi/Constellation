@@ -178,9 +178,93 @@ The full schema reference is at
 - One bad file does NOT prevent other files in the folder from
   loading.
 
-### TS plugin loader (Phase κ.2 — not shipped yet)
+## JavaScript plugins (Phase κ.2 — 2026-05-18)
 
-For traditions that need arbitrary remap functions or shapes
-beyond the 4 declarative ones, Phase κ.2 will add a TS plugin
-loader with Obsidian-trust security model. Until then, the
-declarative JSON layer is the only user-extension path.
+For traditions that need arbitrary remap logic or shapes outside
+the 4 declarative ones (`grid`, `ladder`, `relational`,
+`cyclic-flow`, `binary-flow`), drop a `.js` file at
+`<Universe>/.constellation/traditions/<id>.js`. On next Sight
+open, a **consent banner** appears asking you to enable the plugin.
+Click **Enable plugin** → it's auto-loaded on every subsequent
+Sight open until you remove the file or the filename from
+`appSettings.sight.enabledTraditionPlugins`.
+
+### Why .js and not .ts
+
+Constellation's Content Security Policy forbids `unsafe-eval` (per
+LL-019 + orientation §3.4) so runtime TypeScript transpilation
+isn't an option. Author in `.ts` on your side, compile to `.js`
+with `tsc`, drop the `.js` into the traditions folder. Matches
+Obsidian's plugin pattern exactly.
+
+### Template
+
+Start from `docs/traditions/schema/SAMPLE-PLUGIN.js`. It defines
+the same 3-wedge sectoral as `EXAMPLE.json`, but as a `.js` file
+with an arbitrary `remapStarPosition` function so you can edit
+the logic.
+
+### Module contract
+
+The plugin file MUST `export default` an object with these
+fields:
+
+- `id` — required. Must match `^user-[a-z0-9][a-z0-9-]{2,40}$`.
+- `name` — required (non-empty string).
+- `shape` — required. One of all 9 supported shapes (`sectoral`,
+  `rings`, `grid`, `ladder`, `relational`, `cyclic-flow`,
+  `binary-flow`, `gradient`, `horizontal-bands`).
+- `remapStarPosition(row, defaultPos, layout) → {x, y}` —
+  required. Must be deterministic per `(row, defaultPos)` so
+  hit-test + repaint return the same coordinates.
+
+Optional per-shape spec callbacks (depending on chosen shape):
+
+- `sectorDividers(layout) → SectorSpec[]`
+- `ringBoundaries(layout) → RingSpec[]`
+- `horizontalBandsSpec(layout) → HorizontalBandsSpec`
+- `gradientSpec(layout) → GradientSpec`
+
+Optional metadata:
+
+- `family` — defaults to `user-defined`.
+- `tooltip`, `scope`, `citation` — surface in chip + ⓘ modal.
+
+### Self-contained files only
+
+Plugin files run via native dynamic `import()` of a Tauri asset://
+URL. They **cannot** use `import` statements to pull in other
+modules — Vite's bundler doesn't see them at build time, and
+runtime URL resolution is constrained. Inline any helper functions
+you need (see `SAMPLE-PLUGIN.js` for the pattern).
+
+### Security model (Obsidian-trust)
+
+Per Architect §3.H: enabling a plugin is a **full-trust** decision.
+Once enabled, the plugin runs with the same privileges as the
+main app (can call any Tauri IPC, manipulate state, etc.). The
+consent banner displays the absolute path so you can verify which
+file you're enabling. Only enable plugins from sources you trust.
+
+### Failure handling
+
+- Plugin file is malformed JS or doesn't export default → banner
+  surfaces the error inline ("import failed: <reason>"). Other
+  plugins + curated + JSON declarative still work.
+- Plugin module's default export doesn't match the contract →
+  banner surfaces the validation message ("id must match …",
+  "shape must be one of …", etc.).
+- Plugin's `remapStarPosition` throws at runtime → the loader
+  catches per-call and falls back to default Aristotelian
+  position for that note. Other notes + other traditions
+  unaffected.
+
+### Disabling a plugin
+
+Two options:
+1. Remove the filename from
+   `<Universe>/.constellation/settings.json` →
+   `sight.enabledTraditionPlugins` array, then restart.
+2. Delete the `.js` file from
+   `<Universe>/.constellation/traditions/`. Constellation
+   silently stops loading it.

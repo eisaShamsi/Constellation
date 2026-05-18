@@ -48,6 +48,11 @@
 	import TraditionChip from './traditionChip.svelte';
 	import { getTraditionById, registerUserTraditions } from './traditions';
 	import { loadUserTraditions, type UserTraditionModule } from './traditions/userDefinedLoader';
+	import {
+		loadPluginRegistry,
+		type PendingPlugin,
+		type FailedPlugin,
+	} from './traditions/pluginLoader';
 	import type { LayoutCacheRow, LinkEdge, StarDerived, FacetId, MiniDomeChannel, SlotChannel, TraditionId } from './types';
 	import { marked } from 'marked';
 
@@ -126,7 +131,14 @@
 	// the dropdown can render them alongside curated families. Also
 	// pushed into the index.ts USER_REGISTRY so the anchor renderer's
 	// getTraditionById lookup resolves user ids correctly.
+	//
+	// MIG-026 Phase κ.2 — userTraditions now bundles BOTH JSON-
+	// declarative and .js-plugin entries. Both go through the same
+	// USER_REGISTRY + chip dropdown surface. The plugin loader's
+	// pending/failed lists drive the consent + error banner UI below.
 	let userTraditions = $state<UserTraditionModule[]>([]);
+	let pluginPending = $state<PendingPlugin[]>([]);
+	let pluginFailed = $state<FailedPlugin[]>([]);
 
 	// ── §B.1 mini-domes diagnostics visibility ─────────────────────
 	// Default-simple per Concept Paper §6: mini-domes hidden on
@@ -248,6 +260,78 @@
 	function closeManifestModal(): void {
 		manifestModalId = null;
 		manifestContent = null;
+	}
+
+	// ── MIG-026 Phase κ.1 + κ.2 — user-defined registry reload ─────
+	// Single helper that runs both the JSON declarative loader (κ.1)
+	// and the .js plugin loader (κ.2), merges results into one user-
+	// tradition list, and updates the chip + anchor renderer state.
+	// Called from onMount and also from handleEnablePlugin (after the
+	// user accepts a pending plugin's consent prompt).
+	async function reloadUserDefinedRegistry(): Promise<void> {
+		// 1) JSON declarative
+		let json: UserTraditionModule[] = [];
+		try {
+			json = await loadUserTraditions();
+		} catch (err) {
+			console.warn('[sight-v6] JSON user-tradition load failed:', err);
+		}
+		// 2) JS plugins (gated by consent — appSettings.sight.enabledTraditionPlugins)
+		let pluginLoaded: UserTraditionModule[] = [];
+		try {
+			const enabled = ($appSettings.sight?.enabledTraditionPlugins as string[] | undefined) ?? [];
+			const result = await loadPluginRegistry(enabled);
+			pluginLoaded = result.loaded;
+			pluginPending = result.pending;
+			pluginFailed = result.failed;
+		} catch (err) {
+			console.warn('[sight-v6] plugin load failed:', err);
+		}
+		// Merge: JSON first, then plugins. Plugin id collisions with
+		// JSON ids skip the plugin (JSON wins) — matches the schema's
+		// first-write-wins de-dup. Curated ids cannot collide because
+		// of the `user-` prefix rule.
+		const seen = new Set(json.map((t) => t.id));
+		const merged: UserTraditionModule[] = [...json];
+		for (const p of pluginLoaded) {
+			if (seen.has(p.id)) {
+				console.warn(
+					`[sight-v6] plugin id ${p.id} collides with a JSON tradition; plugin skipped`,
+				);
+				continue;
+			}
+			merged.push(p);
+		}
+		userTraditions = merged;
+		registerUserTraditions(merged);
+		if (merged.length > 0) {
+			recomputeStars();
+			paint();
+		}
+	}
+
+	function handleEnablePlugin(filename: string): void {
+		const current = ($appSettings.sight?.enabledTraditionPlugins as string[] | undefined) ?? [];
+		if (current.includes(filename)) return;
+		appSettings.update((s) => ({
+			...s,
+			sight: {
+				...s.sight,
+				enabledTraditionPlugins: [...current, filename],
+			},
+		}));
+		saveSettings();
+		// Reload: the freshly-enabled plugin moves from pending → loaded
+		// (or → failed if its module shape is invalid).
+		void reloadUserDefinedRegistry();
+	}
+
+	function handleDismissPluginFailure(filename: string): void {
+		pluginFailed = pluginFailed.filter((f) => f.filename !== filename);
+	}
+
+	function handleDismissPluginPending(filename: string): void {
+		pluginPending = pluginPending.filter((p) => p.filename !== filename);
 	}
 
 	// Strip the YAML frontmatter block (between the first pair of `---`
@@ -733,20 +817,7 @@
 		// + skip. Anchor renderer + chip dropdown re-read on next
 		// repaint cycle automatically (the $effect on activeTradition
 		// already triggers a recompute when settings change).
-		try {
-			const loaded = await loadUserTraditions();
-			registerUserTraditions(loaded);
-			userTraditions = loaded;
-			if (loaded.length > 0) {
-				console.log(
-					`[sight-v6] loaded ${loaded.length} user-defined tradition(s) from .constellation/traditions/`,
-				);
-				recomputeStars();
-				paint();
-			}
-		} catch (err) {
-			console.warn('[sight-v6] user-tradition load failed (continuing without):', err);
-		}
+		await reloadUserDefinedRegistry();
 		// §A.11 — fire the tour if user hasn't seen it yet. Snapshot
 		// (no $store subscription needed for the show-once gate).
 		// §B.10 — also read sight.extended here: if extended view was
@@ -975,6 +1046,67 @@
 			</button>
 		{/if}
 	</div>
+
+	<!-- MIG-026 Phase κ.2 — plugin consent + error banners. Sits
+	     between header and body so it's prominent without obscuring
+	     the dome. Each entry is independently dismissible (×). Pending
+	     entries show an "Enable plugin" button that writes the
+	     filename into appSettings.sight.enabledTraditionPlugins and
+	     re-runs the loader. Failed entries show the error inline so
+	     the plugin author can fix without needing devtools (which
+	     don't open in release binaries — see memory note). -->
+	{#if pluginPending.length > 0 || pluginFailed.length > 0}
+		<div class="sight-v6-plugin-banners">
+			{#each pluginPending as p (p.filename)}
+				<div class="sight-v6-plugin-banner is-pending">
+					<div class="banner-body">
+						<strong class="banner-title">Tradition plugin detected</strong>
+						<div class="banner-detail">
+							<code>{p.filename}</code> is a tradition plugin file. Enabling
+							runs the plugin's code with full app privileges
+							(Obsidian-trust model). Only enable plugins from sources
+							you trust.
+						</div>
+						<div class="banner-path" title={p.absPath}>{p.absPath}</div>
+					</div>
+					<div class="banner-actions">
+						<button
+							class="banner-btn banner-btn-primary"
+							type="button"
+							onclick={() => handleEnablePlugin(p.filename)}
+						>Enable plugin</button>
+						<button
+							class="banner-btn banner-btn-dismiss"
+							type="button"
+							onclick={() => handleDismissPluginPending(p.filename)}
+							aria-label="Dismiss until next Sight open"
+							title="Dismiss for this session (the banner returns next time Sight opens until you enable or remove the file)"
+						>×</button>
+					</div>
+				</div>
+			{/each}
+			{#each pluginFailed as f (f.filename)}
+				<div class="sight-v6-plugin-banner is-failed">
+					<div class="banner-body">
+						<strong class="banner-title">Plugin failed to load</strong>
+						<div class="banner-detail">
+							<code>{f.filename}</code>: {f.error}
+						</div>
+						<div class="banner-path" title={f.absPath}>{f.absPath}</div>
+					</div>
+					<div class="banner-actions">
+						<button
+							class="banner-btn banner-btn-dismiss"
+							type="button"
+							onclick={() => handleDismissPluginFailure(f.filename)}
+							aria-label="Dismiss"
+							title="Dismiss this error message (fix the plugin then restart Constellation to retry)"
+						>×</button>
+					</div>
+				</div>
+			{/each}
+		</div>
+	{/if}
 
 	<div class="sight-v6-body">
 		<FacetSidebar
@@ -1595,5 +1727,103 @@
 		margin: 18px 0;
 		border: none;
 		border-top: 1px solid var(--background-modifier-border, #2a3245);
+	}
+
+	/* MIG-026 Phase κ.2 — plugin consent + error banner styles. */
+	.sight-v6-plugin-banners {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		padding: 8px 16px 0;
+	}
+	.sight-v6-plugin-banner {
+		display: flex;
+		gap: 12px;
+		align-items: flex-start;
+		padding: 10px 14px;
+		border: 1px solid var(--background-modifier-border, #2a3245);
+		border-radius: 6px;
+		background: var(--background-secondary, rgba(20, 30, 50, 0.5));
+		color: var(--text-normal, #cdd5e0);
+		font-family: var(--interface-font, 'Inter', system-ui, sans-serif);
+		font-size: 12px;
+		line-height: 1.4;
+	}
+	.sight-v6-plugin-banner.is-pending {
+		/* Theme-aware amber tint to draw attention without alarm */
+		border-color: rgba(180, 130, 40, 0.6);
+	}
+	.sight-v6-plugin-banner.is-failed {
+		/* Theme-aware rose tint for errors */
+		border-color: rgba(200, 70, 70, 0.6);
+		background: var(--background-secondary, rgba(35, 20, 25, 0.5));
+	}
+	.banner-body {
+		flex: 1 1 auto;
+		min-width: 0;
+	}
+	.banner-title {
+		display: block;
+		font-weight: 600;
+		font-size: 12px;
+		color: var(--text-normal, #e8ebf2);
+		margin-bottom: 3px;
+	}
+	.banner-detail {
+		color: var(--text-muted, #9aa3b8);
+		font-size: 11px;
+	}
+	.banner-detail :global(code) {
+		padding: 0 4px;
+		font-family: var(--mono-font, 'Fira Code', monospace);
+		font-size: 10.5px;
+		background: var(--background-modifier-hover, rgba(255, 255, 255, 0.08));
+		border-radius: 2px;
+	}
+	.banner-path {
+		margin-top: 3px;
+		font-family: var(--mono-font, 'Fira Code', monospace);
+		font-size: 9.5px;
+		color: var(--text-faint, #5a6275);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.banner-actions {
+		flex: 0 0 auto;
+		display: flex;
+		align-items: center;
+		gap: 4px;
+	}
+	.banner-btn {
+		padding: 4px 10px;
+		font-size: 11px;
+		font-family: inherit;
+		background: transparent;
+		border: 1px solid var(--background-modifier-border, #3b5998);
+		border-radius: 3px;
+		color: var(--text-normal, #c8cdd9);
+		cursor: pointer;
+		transition: background 0.12s ease, color 0.12s ease;
+	}
+	.banner-btn-primary {
+		background: hsla(var(--accent-h, 220), var(--accent-s, 50%), 50%, 0.18);
+		color: var(--text-normal, #e8ebf2);
+		border-color: var(--text-accent, #3b5998);
+	}
+	.banner-btn-primary:hover {
+		background: hsla(var(--accent-h, 220), var(--accent-s, 50%), 50%, 0.32);
+	}
+	.banner-btn-dismiss {
+		min-width: 26px;
+		padding: 2px 6px;
+		font-size: 16px;
+		line-height: 1;
+		color: var(--text-faint, #7a8295);
+		border-color: transparent;
+	}
+	.banner-btn-dismiss:hover {
+		color: var(--text-normal, #e8ebf2);
+		background: var(--background-modifier-hover, rgba(255, 255, 255, 0.08));
 	}
 </style>

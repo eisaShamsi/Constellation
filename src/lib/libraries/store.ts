@@ -3524,6 +3524,15 @@ export interface AppSettings {
 		 *  ones do NOT auto-pin — they appear in the dropdown by
 		 *  default; user opts in by pinning. */
 		favoriteTraditions?: string[];
+		/** MIG-026 Phase κ.2 — user-approved tradition plugin filenames.
+		 *  When a `.js` plugin file is detected in
+		 *  `<Universe>/.constellation/traditions/`, the first-detection
+		 *  consent banner asks the user to enable it by filename. Enabled
+		 *  filenames persist here; the loader auto-imports them on each
+		 *  Sight mount. Removing a filename here disables the plugin
+		 *  (no uninstall — the plugin just stops loading). Default empty
+		 *  per the Obsidian-trust security model (Architect §3.H). */
+		enabledTraditionPlugins?: string[];
 		/** MIG-025 §A.12 + Plan §A.4/§A.10 — mini-dome hex-bin aggregation
 		 *  threshold. Above this many visible notes per mini, the mini
 		 *  switches to hex-bin rendering with count badges. Default 5000

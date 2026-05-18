@@ -763,6 +763,88 @@ pub fn sight_v6_read_user_traditions(
 }
 
 // ════════════════════════════════════════════════════════════════════
+// MIG-026 Phase κ.2 — user-defined TS plugin reader (paths only)
+// ════════════════════════════════════════════════════════════════════
+
+/// One user-plugin file under <Universe>/.constellation/traditions/.
+/// Unlike `UserTraditionFileDto`, this returns the absolute on-disk
+/// path (not the file content) so the frontend can convert it to a
+/// Tauri asset:// URL via `convertFileSrc` and load it via native
+/// dynamic `import()` — avoiding `eval`/`new Function` which the
+/// Constellation CSP blocks (`no 'unsafe-eval'` per orientation §3.4).
+///
+/// Filename + abs path are both returned so the chip + settings can
+/// display friendly names while the loader holds the resolvable path.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UserPluginFileDto {
+    pub filename: String,
+    pub abs_path: String,
+}
+
+/// Scan the active Universe's `.constellation/traditions/` directory
+/// and return absolute paths to every `.js` file (excluding the
+/// `schema/` subdirectory and non-JS files).
+///
+/// Per Phase κ.2 Path A: we return paths so the frontend can use
+/// `convertFileSrc()` to produce asset:// URLs that satisfy CSP
+/// without needing `unsafe-eval`. TypeScript files (`.ts`) are NOT
+/// supported in v1 of the plugin loader — Vite can't transpile at
+/// runtime and a runtime transpiler would require `unsafe-eval`.
+/// Users author `.ts` and compile to `.js` on their side (the
+/// Obsidian pattern).
+///
+/// Graceful behavior matches `sight_v6_read_user_traditions`: missing
+/// directory → empty result; non-`.js` files skipped silently.
+#[tauri::command]
+pub fn sight_v6_read_user_plugins(
+    app: tauri::AppHandle,
+) -> Result<Vec<UserPluginFileDto>, String> {
+    let universe_root = crate::universe::active_universe_dir(&app)
+        .map_err(|e| format!("active universe: {}", e))?;
+    let traditions_dir = crate::universe::constellation_dir(&universe_root).join("traditions");
+
+    if !traditions_dir.exists() {
+        return Ok(Vec::new());
+    }
+
+    let entries = std::fs::read_dir(&traditions_dir)
+        .map_err(|e| format!("read_dir({}): {}", traditions_dir.display(), e))?;
+
+    let mut out = Vec::new();
+    for entry_result in entries {
+        let entry = match entry_result {
+            Ok(e) => e,
+            Err(e) => {
+                eprintln!("[sight_v6_read_user_plugins] skipping entry: {}", e);
+                continue;
+            }
+        };
+        let path = entry.path();
+        if path.is_dir() {
+            continue;
+        }
+        let ext_is_js = path
+            .extension()
+            .and_then(|e| e.to_str())
+            .map(|s| s.eq_ignore_ascii_case("js"))
+            .unwrap_or(false);
+        if !ext_is_js {
+            continue;
+        }
+        let filename = path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("<unknown>")
+            .to_string();
+        let abs_path = path.to_string_lossy().to_string();
+        out.push(UserPluginFileDto { filename, abs_path });
+    }
+    out.sort_by(|a, b| a.filename.cmp(&b.filename));
+    Ok(out)
+}
+
+// ════════════════════════════════════════════════════════════════════
 // Tests
 // ════════════════════════════════════════════════════════════════════
 
