@@ -400,3 +400,146 @@ Per Plan §12: user-definable tradition layer.
 - κ.2 — TS plugin loader with Obsidian-trust security model (~2 days,
   HIGH risk per Architect §3.H)
 
+---
+
+## Phase κ.1 — Declarative JSON user-tradition layer (code shipped)
+
+**Function in hand**: ship the declarative loader that lets users
+author tradition JSON files at `<Universe>/.constellation/traditions/`
+and have them appear in the chip dropdown alongside curated
+baselines, per Plan §12.1.
+
+### What landed
+
+8 files changed + 2 new:
+
+- **NEW** `docs/traditions/schema/tradition.v1.schema.json` — JSON
+  Schema Draft-07 spec for the v1 user-tradition format. Required
+  fields: `schema_version: 1`, `id` (must start with `user-`
+  prefix), `name`, `shape` (one of `sectoral` / `rings` /
+  `horizontal-bands` / `gradient`). Per-shape required specs:
+  `sectorDividers` / `rings` / `horizontalBands` / `gradient`
+  object. Optional: `family`, `tooltip`, `scope`, `citation`.
+- **NEW** `docs/traditions/schema/EXAMPLE.json` — copyable
+  template: 3-sector sectoral demo (observation / connection /
+  synthesis). Eisa copies this into his Universe to test.
+- **NEW** Rust IPC `sight_v6_read_user_traditions` in
+  `src-tauri/src/sight_v6.rs` — scans
+  `<active_universe>/.constellation/traditions/*.json` (excluding
+  `schema/` subfolder + non-JSON files), returns `Vec<{filename,
+  content}>` with deterministic filename sort. Graceful: missing
+  dir → empty result; bad file → skip + stderr warn; other files
+  still load.
+- **MODIFIED** `src-tauri/src/lib.rs` — register the new IPC.
+- **NEW** `src/lib/sight/v6/traditions/userDefinedLoader.ts` —
+  frontend loader: calls the IPC, parses + validates each file
+  against the v1 schema (hand-rolled validator — keeps dep surface
+  small), constructs `UserTraditionModule` from the spec, returns
+  the list. Schema-version mismatch → console.warn + skip. Duplicate
+  ids → first-wins + warn.
+- **MODIFIED** `src/lib/sight/v6/traditions/index.ts` — adds
+  `USER_REGISTRY: Map<string, UserTraditionModule>` side-map +
+  `registerUserTraditions()` setter + `allUserTraditions()` reader.
+  `getTraditionById` widened to `TraditionId | string`, returns
+  `TraditionModule | null` (cast UserTraditionModule →
+  TraditionModule at the boundary; structurally compatible for
+  renderer purposes).
+- **MODIFIED** `src/lib/libraries/store.ts:3483` — `activeTradition`
+  type widened with `| (string & {})` to accept user-prefixed ids
+  while preserving literal autocomplete for curated names.
+- **MODIFIED** `src/lib/sight/v6/SightV6.svelte` — onMount calls
+  `loadUserTraditions() → registerUserTraditions()`, stores result
+  in `userTraditions: $state` and passes via prop to TraditionChip.
+  `handleOpenManifest` now branches on `user-` prefix: curated
+  traditions use the bundled `_manifests.generated.ts`; user ones
+  synthesize markdown inline from the UserTraditionModule's name +
+  scope + citation fields.
+- **MODIFIED** `src/lib/sight/v6/traditionChip.svelte` — accepts
+  `userTraditions: UserTraditionModule[]` prop, synthesizes a
+  `userTraditionMeta` lookup, appends a synthetic "User-defined"
+  family section to the dropdown when `userTraditions.length > 0`.
+  All click handlers (chip click, pin toggle, manifest open) widened
+  to `string` ids so user-prefixed ids work identically.
+- **MODIFIED** `docs/traditions/README.md` — added "User-defined
+  traditions" section documenting the setup, required fields,
+  per-shape specs, validation behavior, and the κ.2 forward-look.
+
+### Architecture decisions
+
+1. **Source of truth = the JSON files.** No DB schema, no in-app
+   editing UI. Users author + drop files; the loader reads on next
+   Sight mount. This matches Constellation's file-over-app principle
+   from CLAUDE.md.
+2. **Hand-rolled validator, no AJV dep.** The v1 schema is small
+   (~10 fields + 4 per-shape specs); a hand-rolled validator stays
+   ~100 LOC, emits Constellation-specific warnings, and avoids
+   adding a runtime dep. AJV would be the right call for v2+ if
+   the schema grows substantially.
+3. **`user-` prefix mandatory.** Prevents id collisions with
+   curated traditions (which never start with `user-`). The schema
+   pattern `^user-[a-z0-9][a-z0-9-]{2,40}$` is enforced at load
+   time.
+4. **Cast UserTraditionModule → TraditionModule at the registry
+   boundary.** The two types differ only in the id field (string vs
+   TraditionId literal union). All renderer-consumed fields are
+   identical. `getTraditionById` returns TraditionModule | null
+   uniformly so anchor.ts + miniDome.ts + computeStarPositions don't
+   need signature changes.
+5. **Sight-mount-time load, not eager-boot.** The IPC fires only
+   when SightV6 mounts (not on Constellation boot). Cost: one fs
+   scan per Sight open. Users without Sight active pay zero.
+6. **One bad file doesn't break the chip.** Per-file try/catch in
+   the loader; failures log + skip; other files still load. Matches
+   the resilience pattern of the curated-tradition incremental
+   shipping.
+7. **`family` field reserved for κ.2.** v1 schema accepts `family`
+   but the chip always groups user traditions in a synthetic
+   "User-defined" section at the bottom (regardless of the field
+   value). κ.2 will surface the family-mixing logic with a per-file
+   consent prompt.
+
+### Verification
+
+`npm run check`: 3 pre-existing errors (PJ-012 LinkLifecycle.fresh +
+2 PropertyEditor union types — same baseline), 0 new. File count
+1419 → 1420 (the new `userDefinedLoader.ts`).
+
+### Cross-cutting risk review (per Working Agreement #4)
+
+- **fs scan latency**: directory scan + per-file read at Sight
+  mount. For typical user dir (0–10 files), <50ms. No keystroke
+  hot-path impact.
+- **Bundle weight**: +12KB for userDefinedLoader.ts. No new deps.
+- **Reactivity**: registerUserTraditions populates the Map
+  synchronously before recomputeStars/paint fire. Chip's
+  userTraditions prop is a Svelte `$state` so prop change triggers
+  re-render of dropdown.
+- **Security**: file paths constrained to
+  `<active_universe>/.constellation/traditions/*.json`. No
+  directory traversal, no symlink follow. Read-only access.
+- **Settings migration**: not needed (existing `activeTradition`
+  string compatible).
+- **i18n**: chip's "User-defined" section label, schema warnings,
+  console messages — all English in κ.1. Phase λ adds i18n keys.
+
+### Plan §12.1 verification clause (Boss test stages)
+
+- **Stage 0**: install + verify mtime
+- **Stage 1**: copy EXAMPLE.json into `<Universe>/.constellation/traditions/`,
+  restart, see "User-defined" section in chip dropdown
+- **Stage 2**: click the test tradition's chip, dome re-arranges
+  per declarative sectors
+- **Stage 3**: edit JSON to set `schema_version: 99`, restart,
+  confirm warning + graceful skip
+
+Build kicked off for the Phase κ.1 .exe.
+
+### What's next: Phase κ.2
+
+Per Plan §12.2: TS plugin loader. Files: NEW
+`src/lib/sight/v6/traditions/pluginLoader.ts` (dynamic `import()`
+scanner of `<Universe>/.constellation/traditions/*.ts` with
+Obsidian-trust security model). Adds `appSettings.sight.enabledTraditionPlugins:
+string[]` and consent-prompt UI for first-detection. ~2 days.
+HIGH risk per Architect §3.H.
+

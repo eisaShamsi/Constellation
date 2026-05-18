@@ -360,6 +360,8 @@ pub fn run() {
             sight_v6::sight_v6_get_layout,
             sight_v6::sight_v6_get_link_set_for_notes,
             sight_v6::sight_v6_warm_cache,
+            // MIG-026 §κ.1 — user-defined tradition reader
+            sight_v6::sight_v6_read_user_traditions,
             // MIG-021v2 §1F'.b — bulk Approve All / Reject All
             sources::bulk_ops::sources_accept_all_pending,
             sources::bulk_ops::sources_bulk_accept_cancel,

@@ -1,0 +1,126 @@
+{
+	"$schema": "https://json-schema.org/draft-07/schema#",
+	"$id": "https://constellation.app/schema/tradition.v1.schema.json",
+	"title": "Constellation user-defined tradition (v1)",
+	"description": "Declarative spec for a user-authored scholarly tradition. Drop one of these JSON files at `<Universe>/.constellation/traditions/<id>.json`. On Sight open, valid files are loaded into the chip dropdown alongside the curated baselines. The JSON Schema fields here are the v1 contract; future versions will be additive (introduced as v2, v3 schemas alongside v1, preserving older files).",
+	"type": "object",
+	"required": ["schema_version", "id", "name", "shape"],
+	"additionalProperties": false,
+	"properties": {
+		"schema_version": {
+			"description": "Schema version. v1 is the only version Constellation 0.3.x recognizes. A mismatched version causes the file to be skipped with a console warning.",
+			"const": 1
+		},
+		"id": {
+			"description": "Stable identifier for the tradition. MUST start with `user-` prefix to namespace away from curated tradition ids. Letters, digits, and hyphens only.",
+			"type": "string",
+			"pattern": "^user-[a-z0-9][a-z0-9-]{2,40}$"
+		},
+		"name": {
+			"description": "Display label for the chip. 1–60 characters.",
+			"type": "string",
+			"minLength": 1,
+			"maxLength": 60
+		},
+		"shape": {
+			"description": "Geometric shape for the anchor dome. v1 supports 4 declarative shapes. Other shapes (grid, ladder, relational, cyclic-flow, binary-flow) require more complex layout math and are intended for the κ.2 TS plugin loader.",
+			"enum": ["sectoral", "rings", "horizontal-bands", "gradient"]
+		},
+		"family": {
+			"description": "Family group for the chip dropdown. Defaults to 'user-defined' if omitted. Existing family ids: western-classical, indian-nyaya, sunni-islamic-usul, arabic-islamic-beyond, modern-western, jewish-abrahamic, east-asian-confucian, chinese-pragmatist, african-philosophical, latin-decolonial.",
+			"type": "string",
+			"default": "user-defined"
+		},
+		"tooltip": {
+			"description": "Hover tooltip in the chip dropdown. Plain text, up to 240 characters.",
+			"type": "string",
+			"maxLength": 240
+		},
+		"scope": {
+			"description": "Scope strip below the tradition name in the chip dropdown. Plain text, up to 240 characters. Should describe when to use vs. not use this tradition.",
+			"type": "string",
+			"maxLength": 240
+		},
+		"sectorDividers": {
+			"description": "For shape='sectoral'. Array of sectors with angular extent (degrees, 0=east, increases clockwise) + label. Stars are hash-bucketed across sectors deterministically (per-note frontmatter opt-in is a future enhancement).",
+			"type": "array",
+			"minItems": 2,
+			"maxItems": 8,
+			"items": {
+				"type": "object",
+				"required": ["angleStartDeg", "angleEndDeg", "label"],
+				"additionalProperties": false,
+				"properties": {
+					"angleStartDeg": { "type": "number", "minimum": -360, "maximum": 360 },
+					"angleEndDeg": { "type": "number", "minimum": -360, "maximum": 360 },
+					"label": { "type": "string", "minLength": 1, "maxLength": 40 }
+				}
+			}
+		},
+		"rings": {
+			"description": "For shape='rings'. Array of concentric ring zones with inner/outer fractions of the dome radius (0..1) + label. Stars are hash-bucketed across rings.",
+			"type": "array",
+			"minItems": 2,
+			"maxItems": 8,
+			"items": {
+				"type": "object",
+				"required": ["innerFrac", "outerFrac", "label"],
+				"additionalProperties": false,
+				"properties": {
+					"innerFrac": { "type": "number", "minimum": 0, "maximum": 1 },
+					"outerFrac": { "type": "number", "minimum": 0, "maximum": 1 },
+					"label": { "type": "string", "minLength": 1, "maxLength": 40 }
+				}
+			}
+		},
+		"horizontalBands": {
+			"description": "For shape='horizontal-bands'. Array of band labels (top to bottom). Stars are hash-bucketed across bands.",
+			"type": "array",
+			"minItems": 2,
+			"maxItems": 6,
+			"items": {
+				"type": "object",
+				"required": ["label"],
+				"additionalProperties": false,
+				"properties": {
+					"label": { "type": "string", "minLength": 1, "maxLength": 40 }
+				}
+			}
+		},
+		"gradient": {
+			"description": "For shape='gradient'. Radial opacity overlay (Polanyi pattern). Identity remap — stars stay at Aristotelian positions; visibility modulates by radial position.",
+			"type": "object",
+			"required": ["centerOpacity", "edgeOpacity"],
+			"additionalProperties": false,
+			"properties": {
+				"centerOpacity": { "type": "number", "minimum": 0, "maximum": 1 },
+				"edgeOpacity": { "type": "number", "minimum": 0, "maximum": 1 },
+				"centerLabel": { "type": "string", "maxLength": 40 },
+				"edgeLabel": { "type": "string", "maxLength": 40 }
+			}
+		},
+		"citation": {
+			"description": "Optional Chicago-style scholarly citation, shown at the bottom of the chip's ⓘ disclosure modal. Plain text, multiple lines OK.",
+			"type": "string",
+			"maxLength": 2000
+		}
+	},
+	"allOf": [
+		{
+			"if": { "properties": { "shape": { "const": "sectoral" } } },
+			"then": { "required": ["sectorDividers"] }
+		},
+		{
+			"if": { "properties": { "shape": { "const": "rings" } } },
+			"then": { "required": ["rings"] }
+		},
+		{
+			"if": { "properties": { "shape": { "const": "horizontal-bands" } } },
+			"then": { "required": ["horizontalBands"] }
+		},
+		{
+			"if": { "properties": { "shape": { "const": "gradient" } } },
+			"then": { "required": ["gradient"] }
+		}
+	]
+}

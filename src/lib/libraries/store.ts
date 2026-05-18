@@ -3504,7 +3504,13 @@ export interface AppSettings {
 			| 'dussel-transmodernity'
 			| 'maldonado-torres'
 			| 'akan-wiredu'
-			| 'ibuanyidanda';
+			| 'ibuanyidanda'
+			// MIG-026 Phase κ.1 — user-defined tradition ids (matched by
+			// the v1 JSON schema's `^user-[a-z0-9][a-z0-9-]{2,40}$`
+			// pattern). The `string` widener admits any user-prefixed id;
+			// runtime validation in userDefinedLoader enforces the actual
+			// pattern + de-dupes against curated literals.
+			| (string & {});
 		/** MIG-026 Phase β — Favorite traditions pinned to the inline
 		 *  chip row (A6 hybrid: 4 favorites visible inline + dropdown
 		 *  for rest). Array order = display order. The chip UI shows

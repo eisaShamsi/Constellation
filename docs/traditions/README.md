@@ -102,3 +102,85 @@ The pending follow-up is filed as a Pending Job (see
 
 Translations live at `docs/traditions/<lang>/<id>.md` (Phase λ
 follow-up; not yet present).
+
+## User-defined traditions (Phase κ.1 — 2026-05-18)
+
+You can author your own traditions as **declarative JSON files**
+without writing TypeScript. They appear in the chip dropdown
+alongside the curated baseline.
+
+### Setup
+
+1. In your active Universe, create the folder
+   `<Universe>/.constellation/traditions/` if it doesn't already
+   exist.
+2. Drop a JSON file into it. The filename must end in `.json` —
+   anything else (including subfolders) is ignored.
+3. Restart Constellation. On Sight open, the file loads.
+
+### Template
+
+Start from `docs/traditions/schema/EXAMPLE.json`. Copy it into your
+Universe's traditions folder, rename to anything ending in `.json`,
+and edit the `id`, `name`, `family`, sector labels, and angles to
+make your own.
+
+The full schema reference is at
+`docs/traditions/schema/tradition.v1.schema.json`.
+
+### Required fields (all v1 schemas)
+
+- `schema_version: 1` — the only version this Constellation build
+  recognizes. A mismatched value causes the file to be skipped with
+  a console warning (Plan §12.1 Stage 3).
+- `id` — must start with `user-` prefix; pattern
+  `^user-[a-z0-9][a-z0-9-]{2,40}$`. Namespaces user traditions away
+  from curated ones.
+- `name` — display label, 1–60 chars.
+- `shape` — one of `sectoral`, `rings`, `horizontal-bands`,
+  `gradient`. Other shapes (grid, ladder, relational, cyclic-flow,
+  binary-flow) need the κ.2 TS plugin loader.
+
+### Per-shape required spec
+
+- `sectoral` → `sectorDividers` array (2–8 entries, each with
+  `angleStartDeg`, `angleEndDeg`, `label`).
+- `rings` → `rings` array (2–8 entries, each with `innerFrac`,
+  `outerFrac`, `label`).
+- `horizontal-bands` → `horizontalBands` array (2–6 entries, each
+  with `label`).
+- `gradient` → `gradient` object with `centerOpacity`,
+  `edgeOpacity`, optional labels.
+
+### Optional fields
+
+- `family` — defaults to `user-defined` (groups all user traditions
+  under a "User-defined" section at the bottom of the dropdown).
+- `tooltip`, `scope`, `citation` — surfaced in the chip tooltip,
+  scope strip, and ⓘ disclosure modal respectively.
+
+### Behavior
+
+- The chip dropdown gets a new "User-defined" section at the bottom
+  listing every valid user tradition (filename-sorted).
+- Click a user-tradition row → dome re-arranges per the declarative
+  shape (stars are hash-bucketed across sectors/rings/bands
+  deterministically until per-note frontmatter integration ships).
+- Click the ⓘ button on a user-tradition row → modal shows a
+  synthesized manifest with the JSON's name, scope, and citation.
+
+### Validation behavior
+
+- Missing required fields → file skipped with a console warning
+  naming the file + the specific violation.
+- Schema version mismatch (e.g. `schema_version: 99`) → file
+  skipped with a console warning.
+- One bad file does NOT prevent other files in the folder from
+  loading.
+
+### TS plugin loader (Phase κ.2 — not shipped yet)
+
+For traditions that need arbitrary remap functions or shapes
+beyond the 4 declarative ones, Phase κ.2 will add a TS plugin
+loader with Obsidian-trust security model. Until then, the
+declarative JSON layer is the only user-extension path.

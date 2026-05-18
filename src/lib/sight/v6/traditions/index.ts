@@ -24,6 +24,7 @@
  * not in store.ts.
  */
 import type { TraditionId, TraditionModule } from '../types';
+import type { UserTraditionModule } from './userDefinedLoader';
 import { aristotelian } from './aristotelian';
 import { pramana } from './pramana';
 import { masadir } from './masadir';
@@ -101,6 +102,46 @@ const REGISTRY: Partial<Record<TraditionId, TraditionModule>> = {
 	ibuanyidanda,
 };
 
+// ════════════════════════════════════════════════════════════════════
+// MIG-026 Phase κ.1 — user-defined traditions side-map
+// ════════════════════════════════════════════════════════════════════
+//
+// User-authored declarative tradition JSON files load at Sight mount
+// (via userDefinedLoader.loadUserTraditions()) and are registered
+// here in a Map keyed by their `user-` prefixed string id. The
+// curated REGISTRY above stays type-safe (closed TraditionId union);
+// the user side-map accepts any string id matching the v1 schema's
+// `^user-[a-z0-9][a-z0-9-]{2,40}$` pattern.
+//
+// getTraditionById + allTraditions check both maps so the chip,
+// anchor renderer, and channel-isolation test all see user traditions
+// alongside the curated set.
+//
+// Lifecycle: registerUserTraditions REPLACES the side-map contents
+// (called once per Universe switch). The chip + renderer re-read
+// via getTraditionById on every paint, so no manual cache
+// invalidation needed.
+
+const USER_REGISTRY = new Map<string, UserTraditionModule>();
+
+/** Replace the user-tradition side-map with the given list. Called
+ *  once per Sight mount + once per Universe switch. Passing an empty
+ *  list clears the map (useful for switching to a Universe with no
+ *  user traditions). */
+export function registerUserTraditions(modules: UserTraditionModule[]): void {
+	USER_REGISTRY.clear();
+	for (const m of modules) {
+		USER_REGISTRY.set(m.id, m);
+	}
+}
+
+/** Read-only view of user-defined traditions, for the chip dropdown.
+ *  Returns modules in registration order (which is filename order
+ *  per the Rust IPC's sort). */
+export function allUserTraditions(): UserTraditionModule[] {
+	return Array.from(USER_REGISTRY.values());
+}
+
 /**
  * Look up a tradition module by id. Returns null when the requested
  * tradition has no module yet (incremental build state) so callers
@@ -108,19 +149,50 @@ const REGISTRY: Partial<Record<TraditionId, TraditionModule>> = {
  *
  * Accepts undefined/null for ergonomic call sites that read directly
  * from `$appSettings.sight?.activeTradition` (which is optional).
+ *
+ * MIG-026 Phase κ.1: the id type widened from `TraditionId` to
+ * `TraditionId | string` so user-defined traditions (with `user-`
+ * prefix string ids) resolve cleanly. Lookup order: curated REGISTRY
+ * first, then USER_REGISTRY. Curated ids cannot collide with user
+ * ids because the schema's `^user-` prefix rule prevents it.
+ *
+ * UserTraditionModule is structurally compatible with TraditionModule
+ * for every field the renderers read (shape, remapStarPosition,
+ * sectorDividers, ringBoundaries, horizontalBandsSpec, gradientSpec).
+ * The only difference is `id: string` vs `id: TraditionId`. Renderers
+ * never read id; the cast at the registry boundary keeps the consumer
+ * API stable as `TraditionModule | null`.
  */
-export function getTraditionById(id: TraditionId | undefined | null): TraditionModule | null {
+export function getTraditionById(
+	id: TraditionId | string | undefined | null,
+): TraditionModule | null {
 	if (!id) return null;
-	return REGISTRY[id] ?? null;
+	const curated = REGISTRY[id as TraditionId];
+	if (curated) return curated;
+	const user = USER_REGISTRY.get(id);
+	// Renderer-safe cast: UserTraditionModule is structurally a
+	// TraditionModule modulo the id type. All renderer-consumed
+	// fields are identical.
+	return user ? (user as unknown as TraditionModule) : null;
 }
 
 /**
  * All currently-registered tradition modules. Used by the channel-
  * isolation test (Phase μ.1) to iterate through every tradition and
  * assert the mini-domes stay constant.
+ *
+ * MIG-026 Phase κ.1: now includes user-defined traditions registered
+ * via registerUserTraditions(), cast to TraditionModule at the
+ * boundary (same justification as getTraditionById above).
  */
 export function allTraditions(): TraditionModule[] {
-	return Object.values(REGISTRY).filter((m): m is TraditionModule => m !== undefined);
+	const curated = Object.values(REGISTRY).filter(
+		(m): m is TraditionModule => m !== undefined,
+	);
+	const user = Array.from(USER_REGISTRY.values()).map(
+		(m) => m as unknown as TraditionModule,
+	);
+	return [...curated, ...user];
 }
 
 // ════════════════════════════════════════════════════════════════════

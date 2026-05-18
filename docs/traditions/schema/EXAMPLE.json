@@ -1,0 +1,15 @@
+{
+	"schema_version": 1,
+	"id": "user-example-three-acts",
+	"name": "Three Acts (example)",
+	"shape": "sectoral",
+	"family": "user-defined",
+	"tooltip": "Example user-defined tradition — knowledge as observation, connection, or synthesis.",
+	"scope": "Example sectoral split into 3 wedges. Copy this file as a template; edit id, name, and sector labels to make your own.",
+	"sectorDividers": [
+		{ "angleStartDeg": -60, "angleEndDeg": 60, "label": "observation" },
+		{ "angleStartDeg": 60, "angleEndDeg": 180, "label": "connection" },
+		{ "angleStartDeg": 180, "angleEndDeg": 300, "label": "synthesis" }
+	],
+	"citation": "Example — not a real scholarly tradition. Authored as a template for the κ.1 user-defined declarative loader (MIG-026 Phase κ.1, 2026-05-18)."
+}

@@ -42,6 +42,7 @@
 	import { appSettings, saveSettings } from '$lib/libraries/store';
 	import type { TraditionId } from './types';
 	import { FAMILIES, type FamilyId } from './traditions';
+	import type { UserTraditionModule } from './traditions/userDefinedLoader';
 
 	// MIG-026 Phase ι.2 — disclosure-layer callbacks.
 	//
@@ -53,12 +54,21 @@
 	// `onDropdownClose()` fires whenever the dropdown closes (Esc,
 	// click-outside, tradition switch). The parent uses this to cascade-
 	// close the manifest modal so it never floats over a closed dropdown.
+	//
+	// MIG-026 Phase κ.1 — userTraditions prop carries any declarative
+	// JSON traditions loaded from <Universe>/.constellation/traditions/
+	// by SightV6's mount handler. The chip surfaces these in a
+	// "User-defined" section at the bottom of the dropdown alongside
+	// curated families. Empty array (default) hides the section so users
+	// without any user traditions see no extra UI noise.
 	let {
-		openManifest = (_id: TraditionId) => {},
+		openManifest = (_id: string) => {},
 		onDropdownClose = () => {},
+		userTraditions = [] as UserTraditionModule[],
 	}: {
-		openManifest?: (id: TraditionId) => void;
+		openManifest?: (id: string) => void;
 		onDropdownClose?: () => void;
+		userTraditions?: UserTraditionModule[];
 	} = $props();
 
 	// Per-tradition metadata (name, tooltip, scope, preview flag).
@@ -225,25 +235,45 @@
 	let rootEl = $state<HTMLDivElement | null>(null);
 	// Track which family sections are expanded in the dropdown.
 	// Default: all families expanded so user sees the full menu on first open.
-	let expandedFamilies = $state<Set<FamilyId>>(new Set(Object.keys(FAMILIES) as FamilyId[]));
+	// MIG-026 Phase κ.1 — synthetic 'user-defined' family id added to
+	// the expanded-set so user traditions show on first open too.
+	let expandedFamilies = $state<Set<string>>(
+		new Set<string>([...(Object.keys(FAMILIES) as string[]), 'user-defined']),
+	);
 
-	const activeId = $derived<TraditionId>(
-		($appSettings.sight?.activeTradition as TraditionId | undefined) ?? 'aristotelian'
+	const activeId = $derived<string>(
+		($appSettings.sight?.activeTradition as string | undefined) ?? 'aristotelian',
 	);
 
 	// Favorite ids from settings (default: 4 production traditions).
-	const favoriteIds = $derived<TraditionId[]>(
-		($appSettings.sight?.favoriteTraditions as TraditionId[] | undefined) ??
+	const favoriteIds = $derived<string[]>(
+		($appSettings.sight?.favoriteTraditions as string[] | undefined) ??
 			['aristotelian', 'pramana', 'masadir', 'polanyi']
 	);
 
-	// Inline chips = first 4 favorites that have metadata. (TraditionId
-	// guarantees the meta exists for shipping traditions; we filter
-	// defensively in case settings.json contains a value that's been
-	// excluded since last save — same pattern as the dignaga/ishraqi
-	// migration safeguards in store.ts.)
-	const inlineChips = $derived<TraditionId[]>(
-		favoriteIds.filter((id) => id in TRADITIONS_META).slice(0, 4)
+	// Per-tradition lookup for user-defined entries (built from the prop).
+	// Maps a user id (e.g. 'user-example-three-acts') to its TraditionMeta-
+	// shaped record. Synthesized from UserTraditionModule fields so the
+	// dropdown rendering code can treat curated + user entries uniformly.
+	const userTraditionMeta = $derived.by<Record<string, TraditionMeta>>(() => {
+		const m: Record<string, TraditionMeta> = {};
+		for (const t of userTraditions) {
+			m[t.id] = {
+				name: t.name,
+				tooltip: t.tooltip || t.name,
+				scope: t.scope || '',
+				preview: false,
+			};
+		}
+		return m;
+	});
+
+	// Inline chips = first 4 favorites that have metadata. Now checks
+	// both TRADITIONS_META (curated) and the userTraditionMeta map so
+	// a user-defined tradition pinned via the dropdown's star surfaces
+	// inline correctly.
+	const inlineChips = $derived<string[]>(
+		favoriteIds.filter((id) => id in TRADITIONS_META || id in userTraditionMeta).slice(0, 4)
 	);
 
 	// Families that have ≥1 tradition listed in FAMILIES. Mohist's
@@ -251,22 +281,44 @@
 	// the Mohist module (clicking the chip writes activeTradition;
 	// dome fall-back to Aristotelian positions until Phase γ lands
 	// the module). Empty families (Phase ε/ζ/η/θ pending) are hidden.
-	type FamilySection = { id: FamilyId; label: string; traditions: TraditionId[] };
-	const familiesWithTraditions = $derived<FamilySection[]>(
-		(Object.entries(FAMILIES) as [FamilyId, { label: string; traditions: TraditionId[] }][])
+	//
+	// MIG-026 Phase κ.1: synthetic 'user-defined' section appended
+	// at the bottom when userTraditions.length > 0. All user-defined
+	// modules go there regardless of their JSON's `family` field
+	// (the field is reserved for κ.2 where it can mix into curated
+	// families with permission-style consent).
+	type FamilySection = { id: string; label: string; traditions: string[] };
+	const familiesWithTraditions = $derived.by<FamilySection[]>(() => {
+		const curated = (Object.entries(FAMILIES) as [FamilyId, { label: string; traditions: TraditionId[] }][])
 			.filter(([, fam]) => fam.traditions.length > 0)
-			.map(([id, fam]) => ({ id, label: fam.label, traditions: fam.traditions }))
-	);
+			.map(([id, fam]) => ({
+				id: id as string,
+				label: fam.label,
+				traditions: fam.traditions as string[],
+			}));
+		if (userTraditions.length > 0) {
+			curated.push({
+				id: 'user-defined',
+				label: 'User-defined',
+				traditions: userTraditions.map((t) => t.id),
+			});
+		}
+		return curated;
+	});
 
-	function activeMeta(id: TraditionId): TraditionMeta {
-		return TRADITIONS_META[id] ?? TRADITIONS_META.aristotelian;
+	function activeMeta(id: string): TraditionMeta {
+		const curated = TRADITIONS_META[id as TraditionId];
+		if (curated) return curated;
+		const user = userTraditionMeta[id];
+		if (user) return user;
+		return TRADITIONS_META.aristotelian;
 	}
 
-	function isFavorite(id: TraditionId): boolean {
+	function isFavorite(id: string): boolean {
 		return favoriteIds.includes(id);
 	}
 
-	function handleChipClick(id: TraditionId) {
+	function handleChipClick(id: string) {
 		// Canonical write pattern (matches §B.10 extended toggle).
 		appSettings.update((s) => ({
 			...s,
@@ -281,7 +333,7 @@
 		dropdownOpen = !dropdownOpen;
 	}
 
-	function handleFamilyToggle(familyId: FamilyId) {
+	function handleFamilyToggle(familyId: string) {
 		const next = new Set(expandedFamilies);
 		if (next.has(familyId)) {
 			next.delete(familyId);
@@ -291,7 +343,7 @@
 		expandedFamilies = next;
 	}
 
-	function handlePinToggle(id: TraditionId) {
+	function handlePinToggle(id: string) {
 		const current = [...favoriteIds];
 		const idx = current.indexOf(id);
 		if (idx >= 0) {
@@ -352,7 +404,7 @@
 	// openManifest callback; explicitly does NOT close the dropdown so
 	// the user can dismiss the modal and return to the dropdown to
 	// pick another tradition's manifest.
-	function handleManifestClick(ev: MouseEvent, id: TraditionId) {
+	function handleManifestClick(ev: MouseEvent, id: string) {
 		ev.stopPropagation();
 		openManifest(id);
 	}

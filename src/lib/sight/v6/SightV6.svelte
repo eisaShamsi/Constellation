@@ -46,7 +46,8 @@
 	import Tour from './tour.svelte';
 	import MiniDome from './MiniDome.svelte';
 	import TraditionChip from './traditionChip.svelte';
-	import { getTraditionById } from './traditions';
+	import { getTraditionById, registerUserTraditions } from './traditions';
+	import { loadUserTraditions, type UserTraditionModule } from './traditions/userDefinedLoader';
 	import type { LayoutCacheRow, LinkEdge, StarDerived, FacetId, MiniDomeChannel, SlotChannel, TraditionId } from './types';
 	import { marked } from 'marked';
 
@@ -118,6 +119,15 @@
 	// 4-step orientation overlay. Updates persist via saveSettings.
 	let tourVisible = $state(false);
 
+	// ── MIG-026 Phase κ.1 — user-defined traditions ────────────────
+	// Populated at mount by loadUserTraditions() (which reads
+	// <Universe>/.constellation/traditions/*.json via the
+	// sight_v6_read_user_traditions IPC). Passed to TraditionChip so
+	// the dropdown can render them alongside curated families. Also
+	// pushed into the index.ts USER_REGISTRY so the anchor renderer's
+	// getTraditionById lookup resolves user ids correctly.
+	let userTraditions = $state<UserTraditionModule[]>([]);
+
 	// ── §B.1 mini-domes diagnostics visibility ─────────────────────
 	// Default-simple per Concept Paper §6: mini-domes hidden on
 	// every Sight open. Cmd-D / Ctrl-D toggles visibility within
@@ -166,19 +176,62 @@
 	// (via the chip's onDropdownClose callback). The cascade-close
 	// prevents the modal from floating over a closed dropdown after
 	// Esc / click-outside / tradition switch.
-	let manifestModalId = $state<TraditionId | null>(null);
+	let manifestModalId = $state<string | null>(null);
 	let manifestContent = $state<string | null>(null);
 	const manifestModalOpen = $derived(manifestModalId !== null);
 
-	async function handleOpenManifest(id: TraditionId): Promise<void> {
+	/** Synthesize a manifest markdown body from a UserTraditionModule.
+	 *  User-defined traditions don't have a pre-bundled .md file (they
+	 *  ship as JSON specs); the modal renders this synthesized view
+	 *  with the user's name + scope + citation inline. The structure
+	 *  mirrors the curated manifests so the modal styling carries
+	 *  over without changes. */
+	function synthesizeUserManifest(t: UserTraditionModule): string {
+		const parts: string[] = [
+			`# ${t.name}`,
+			'',
+			`**Family**: ${t.family || 'user-defined'} · **Shape**: ${t.shape} · **id**: \`${t.id}\``,
+			'',
+			'## Scope',
+			'',
+			t.scope || '_(no scope provided in the JSON spec)_',
+		];
+		if (t.tooltip && t.tooltip !== t.name) {
+			parts.push('', '## Tooltip', '', t.tooltip);
+		}
+		if (t.citation) {
+			parts.push('', '## Citation', '', t.citation);
+		}
+		parts.push(
+			'',
+			'---',
+			'',
+			'_User-defined tradition (MIG-026 Phase κ.1 declarative loader). The full v1 schema reference lives at `docs/traditions/schema/tradition.v1.schema.json`._',
+		);
+		return parts.join('\n');
+	}
+
+	async function handleOpenManifest(id: string): Promise<void> {
 		manifestModalId = id;
 		manifestContent = null; // show loading state while the import resolves
+		// User-defined traditions (matched by the user- prefix) carry
+		// their manifest content inline in the loaded UserTraditionModule.
+		// No bundle import needed — synthesize directly.
+		if (id.startsWith('user-')) {
+			const t = userTraditions.find((u) => u.id === id);
+			if (manifestModalId === id) {
+				manifestContent = t
+					? synthesizeUserManifest(t)
+					: `# Couldn't load manifest\n\nThe user-defined tradition **${id}** is no longer registered. Try restarting Constellation.`;
+			}
+			return;
+		}
 		try {
 			const mod = await import('./traditions/_manifests.generated');
 			// Defensive: ignore if the user closed or switched while the
 			// import was in flight.
 			if (manifestModalId === id) {
-				manifestContent = mod.getManifest(id);
+				manifestContent = mod.getManifest(id as TraditionId);
 			}
 		} catch (err) {
 			// Should not happen in practice — the file is bundled at
@@ -673,6 +726,27 @@
 			resizeObserver.observe(canvasHostEl);
 		}
 		startWarmCache();
+		// MIG-026 Phase κ.1 — load user-defined traditions from the
+		// active Universe's .constellation/traditions/ folder. The
+		// IPC + validator are designed to be best-effort: missing
+		// directory → empty result, malformed files → console.warn
+		// + skip. Anchor renderer + chip dropdown re-read on next
+		// repaint cycle automatically (the $effect on activeTradition
+		// already triggers a recompute when settings change).
+		try {
+			const loaded = await loadUserTraditions();
+			registerUserTraditions(loaded);
+			userTraditions = loaded;
+			if (loaded.length > 0) {
+				console.log(
+					`[sight-v6] loaded ${loaded.length} user-defined tradition(s) from .constellation/traditions/`,
+				);
+				recomputeStars();
+				paint();
+			}
+		} catch (err) {
+			console.warn('[sight-v6] user-tradition load failed (continuing without):', err);
+		}
 		// §A.11 — fire the tour if user hasn't seen it yet. Snapshot
 		// (no $store subscription needed for the show-once gate).
 		// §B.10 — also read sight.extended here: if extended view was
@@ -860,7 +934,11 @@
 		     Hover any chip → English secondary label tooltip per §11
 		     invariant. v1-preview traditions (Dignāga / Suhrawardi
 		     Ishrāqī / Mohist sān biǎo) carry a "preview" badge per §4.2. -->
-		<TraditionChip openManifest={handleOpenManifest} onDropdownClose={closeManifestModal} />
+		<TraditionChip
+			openManifest={handleOpenManifest}
+			onDropdownClose={closeManifestModal}
+			{userTraditions}
+		/>
 		<!-- §B.10 — small "EXTENDED" indicator when the persistent
 		     extended-view setting is on (Cmd-Shift-D toggles). Per
 		     Concept Paper §11 invariant 9 (no persistent toggle bars),

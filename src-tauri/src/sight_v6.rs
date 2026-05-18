@@ -674,6 +674,95 @@ pub fn sight_v6_warm_cache(app: tauri::AppHandle) -> Result<usize, String> {
 }
 
 // ════════════════════════════════════════════════════════════════════
+// MIG-026 Phase κ.1 — user-defined tradition file reader
+// ════════════════════════════════════════════════════════════════════
+
+/// One user-tradition file under <Universe>/.constellation/traditions/.
+/// The Rust side returns the raw filename + JSON content; the frontend
+/// loader (userDefinedLoader.ts) validates against
+/// docs/traditions/schema/tradition.v1.schema.json and constructs the
+/// runtime TraditionModule from the spec.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UserTraditionFileDto {
+    pub filename: String,
+    pub content: String,
+}
+
+/// Scan the active Universe's `.constellation/traditions/` directory
+/// and return the contents of every `.json` file (excluding the
+/// `schema/` subdirectory and non-JSON files).
+///
+/// Graceful behavior:
+/// - Directory missing → returns Ok(vec![]). The user has no user-
+///   defined traditions; not an error.
+/// - File read fails → skipped + warning emitted on stderr. Other
+///   files still load. (Keeps one bad file from breaking the chip.)
+/// - Returns raw content strings; schema validation is the frontend's
+///   responsibility (so validation errors can surface to the user
+///   with file-specific UI per Plan §12.1 Stage 3).
+#[tauri::command]
+pub fn sight_v6_read_user_traditions(
+    app: tauri::AppHandle,
+) -> Result<Vec<UserTraditionFileDto>, String> {
+    let universe_root = crate::universe::active_universe_dir(&app)
+        .map_err(|e| format!("active universe: {}", e))?;
+    let traditions_dir = crate::universe::constellation_dir(&universe_root).join("traditions");
+
+    if !traditions_dir.exists() {
+        return Ok(Vec::new());
+    }
+
+    let entries = std::fs::read_dir(&traditions_dir)
+        .map_err(|e| format!("read_dir({}): {}", traditions_dir.display(), e))?;
+
+    let mut out = Vec::new();
+    for entry_result in entries {
+        let entry = match entry_result {
+            Ok(e) => e,
+            Err(e) => {
+                eprintln!("[sight_v6_read_user_traditions] skipping entry: {}", e);
+                continue;
+            }
+        };
+        let path = entry.path();
+        // Skip subdirectories (notably `schema/` which hosts the spec).
+        if path.is_dir() {
+            continue;
+        }
+        // Skip non-JSON files.
+        let ext_is_json = path
+            .extension()
+            .and_then(|e| e.to_str())
+            .map(|s| s.eq_ignore_ascii_case("json"))
+            .unwrap_or(false);
+        if !ext_is_json {
+            continue;
+        }
+        let filename = path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("<unknown>")
+            .to_string();
+        match std::fs::read_to_string(&path) {
+            Ok(content) => out.push(UserTraditionFileDto { filename, content }),
+            Err(e) => {
+                eprintln!(
+                    "[sight_v6_read_user_traditions] skipping {} ({}): {}",
+                    filename,
+                    path.display(),
+                    e
+                );
+            }
+        }
+    }
+    // Deterministic order so the chip dropdown lists user traditions in
+    // a stable order across restarts.
+    out.sort_by(|a, b| a.filename.cmp(&b.filename));
+    Ok(out)
+}
+
+// ════════════════════════════════════════════════════════════════════
 // Tests
 // ════════════════════════════════════════════════════════════════════
 
