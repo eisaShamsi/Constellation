@@ -55,6 +55,7 @@
 	} from './traditions/pluginLoader';
 	import type { LayoutCacheRow, LinkEdge, StarDerived, FacetId, MiniDomeChannel, SlotChannel, TraditionId } from './types';
 	import { marked } from 'marked';
+	import { t } from '$lib/i18n';
 
 	let { onOpenNote = (_path: string, _libraryName: string) => {} }: {
 		onOpenNote?: (path: string, libraryName: string) => void;
@@ -1060,12 +1061,9 @@
 			{#each pluginPending as p (p.filename)}
 				<div class="sight-v6-plugin-banner is-pending">
 					<div class="banner-body">
-						<strong class="banner-title">Tradition plugin detected</strong>
+						<strong class="banner-title">{$t('sight.v6.tradition.plugin.pendingTitle')}</strong>
 						<div class="banner-detail">
-							<code>{p.filename}</code> is a tradition plugin file. Enabling
-							runs the plugin's code with full app privileges
-							(Obsidian-trust model). Only enable plugins from sources
-							you trust.
+							{$t('sight.v6.tradition.plugin.pendingBody', { filename: p.filename })}
 						</div>
 						<div class="banner-path" title={p.absPath}>{p.absPath}</div>
 					</div>
@@ -1074,13 +1072,13 @@
 							class="banner-btn banner-btn-primary"
 							type="button"
 							onclick={() => handleEnablePlugin(p.filename)}
-						>Enable plugin</button>
+						>{$t('sight.v6.tradition.plugin.enableButton')}</button>
 						<button
 							class="banner-btn banner-btn-dismiss"
 							type="button"
 							onclick={() => handleDismissPluginPending(p.filename)}
-							aria-label="Dismiss until next Sight open"
-							title="Dismiss for this session (the banner returns next time Sight opens until you enable or remove the file)"
+							aria-label={$t('sight.v6.tradition.plugin.dismissPendingAriaLabel')}
+							title={$t('sight.v6.tradition.plugin.dismissPendingTooltip')}
 						>×</button>
 					</div>
 				</div>
@@ -1088,7 +1086,7 @@
 			{#each pluginFailed as f (f.filename)}
 				<div class="sight-v6-plugin-banner is-failed">
 					<div class="banner-body">
-						<strong class="banner-title">Plugin failed to load</strong>
+						<strong class="banner-title">{$t('sight.v6.tradition.plugin.failedTitle')}</strong>
 						<div class="banner-detail">
 							<code>{f.filename}</code>: {f.error}
 						</div>
@@ -1099,8 +1097,8 @@
 							class="banner-btn banner-btn-dismiss"
 							type="button"
 							onclick={() => handleDismissPluginFailure(f.filename)}
-							aria-label="Dismiss"
-							title="Dismiss this error message (fix the plugin then restart Constellation to retry)"
+							aria-label={$t('sight.v6.tradition.plugin.dismissFailedAriaLabel')}
+							title={$t('sight.v6.tradition.plugin.dismissFailedTooltip')}
 						>×</button>
 					</div>
 				</div>
@@ -1280,15 +1278,15 @@
 					class="sight-v6-manifest-close"
 					type="button"
 					onclick={closeManifestModal}
-					title="Close manifest (Esc also works)"
-					aria-label="Close manifest"
+					title={$t('sight.v6.tradition.manifest.closeTooltip')}
+					aria-label={$t('sight.v6.tradition.manifest.closeAriaLabel')}
 				>×</button>
 				{#if manifestContent}
 					<article class="sight-v6-manifest-body">
 						{@html renderManifestMarkdown(manifestContent)}
 					</article>
 				{:else}
-					<div class="sight-v6-manifest-loading">Loading manifest…</div>
+					<div class="sight-v6-manifest-loading">{$t('sight.v6.tradition.manifest.loading')}</div>
 				{/if}
 			</div>
 		</div>

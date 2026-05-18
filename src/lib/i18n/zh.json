@@ -2111,6 +2111,42 @@
     "show": "显示仪表盘",
     "hide": "隐藏仪表盘"
   },
+  "sight": {
+    "v6": {
+      "title": "Constellation Sight",
+      "returnToSight": "返回 Sight",
+      "tradition": {
+        "chip": {
+          "allTrigger": "全部",
+          "allTriggerTooltip": "显示所有学术传统",
+          "previewBadge": "预览",
+          "previewBadgeTooltip": "v1 预览 — 更深层的内部结构是 v4.1 的打磨目标",
+          "manifestButtonTooltip": "阅读此传统的完整学术宣言(引用、谱系、范围、批评)",
+          "manifestButtonAriaLabel": "打开宣言",
+          "pinTooltip": "固定到收藏夹(内联行)",
+          "unpinTooltip": "从收藏夹取消固定",
+          "pinAriaLabel": "固定到收藏夹",
+          "unpinAriaLabel": "从收藏夹取消固定",
+          "userDefinedFamily": "用户自定义"
+        },
+        "manifest": {
+          "closeTooltip": "关闭宣言(Esc 也可用)",
+          "closeAriaLabel": "关闭宣言",
+          "loading": "正在加载宣言…"
+        },
+        "plugin": {
+          "pendingTitle": "检测到传统插件",
+          "pendingBody": "{filename} 是一个传统插件文件。启用将以完整应用程序权限运行插件代码(Obsidian 信任模型)。仅启用来自您信任的来源的插件。",
+          "enableButton": "启用插件",
+          "dismissPendingTooltip": "本次会话忽略(在您启用或删除文件之前,下次打开 Sight 时横幅将再次出现)",
+          "dismissPendingAriaLabel": "忽略直至下次打开 Sight",
+          "failedTitle": "插件加载失败",
+          "dismissFailedTooltip": "忽略此错误消息(修复插件后重新启动 Constellation 重试)",
+          "dismissFailedAriaLabel": "忽略"
+        }
+      }
+    }
+  },
   "sightV3": {
     "title": "Constellation Sight",
     "placeholder": "Sight v3 — projection foundation (MIG-018 §1E)",

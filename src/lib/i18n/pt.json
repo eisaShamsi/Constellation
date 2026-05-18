@@ -2111,6 +2111,42 @@
     "show": "Mostrar painel",
     "hide": "Ocultar painel"
   },
+  "sight": {
+    "v6": {
+      "title": "Constellation Sight",
+      "returnToSight": "Voltar para Sight",
+      "tradition": {
+        "chip": {
+          "allTrigger": "Todas",
+          "allTriggerTooltip": "Mostrar todas as tradições acadêmicas",
+          "previewBadge": "prévia",
+          "previewBadgeTooltip": "Prévia v1 — uma estrutura interna mais profunda é um objetivo de polimento da v4.1",
+          "manifestButtonTooltip": "Ler o manifesto acadêmico completo desta tradição (citação, linhagem, escopo, crítica)",
+          "manifestButtonAriaLabel": "Abrir manifesto",
+          "pinTooltip": "Fixar nos favoritos (linha em linha)",
+          "unpinTooltip": "Desafixar dos favoritos",
+          "pinAriaLabel": "Fixar nos favoritos",
+          "unpinAriaLabel": "Desafixar dos favoritos",
+          "userDefinedFamily": "Definido pelo usuário"
+        },
+        "manifest": {
+          "closeTooltip": "Fechar manifesto (Esc também funciona)",
+          "closeAriaLabel": "Fechar manifesto",
+          "loading": "Carregando manifesto…"
+        },
+        "plugin": {
+          "pendingTitle": "Plugin de tradição detectado",
+          "pendingBody": "{filename} é um arquivo de plugin de tradição. Habilitá-lo executa o código do plugin com todos os privilégios do aplicativo (modelo de confiança Obsidian). Habilite apenas plugins de fontes em que você confie.",
+          "enableButton": "Habilitar plugin",
+          "dismissPendingTooltip": "Dispensar nesta sessão (o aviso voltará na próxima vez que o Sight for aberto até que você habilite ou remova o arquivo)",
+          "dismissPendingAriaLabel": "Dispensar até a próxima abertura do Sight",
+          "failedTitle": "Falha ao carregar o plugin",
+          "dismissFailedTooltip": "Dispensar esta mensagem de erro (corrija o plugin e reinicie o Constellation para tentar novamente)",
+          "dismissFailedAriaLabel": "Dispensar"
+        }
+      }
+    }
+  },
   "sightV3": {
     "title": "Constellation Sight",
     "placeholder": "Sight v3 — projection foundation (MIG-018 §1E)",

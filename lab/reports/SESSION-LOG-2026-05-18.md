@@ -730,7 +730,153 @@ Per Plan §13: translation cascade.
 
 ---
 
-## §κ.2-fix-1 — CSP allows http://asset.localhost in script-src
+## Phase λ — 14-locale manifest translation cascade + chip i18n
+
+**Function in hand**: ship 14-locale translations of all 24
+manifests + the chip / banner / manifest-modal i18n keys so non-
+English users see Sight's tradition surface in their language.
+
+### What landed
+
+**λ.2.b — 14-locale manifest translations (336 NEW files)**
+
+Five parallel agents shipped the 24 manifests in 14 locales each:
+- Agent 1 (RTL trio): ar, fa, he — 72 files
+- Agent 2 (Indic+Urdu): hi, ur — 48 files
+- Agent 3 (European Latin): de, es, fr, pt — 96 files
+- Agent 4 (CJK): ja, ko, zh — 72 files
+- Agent 5 (Slavic+Turkic): ru, tr — 48 files
+
+Total: 14 × 24 = 336 NEW translation files at
+`docs/traditions/<lang>/<id>.md`. Verified: every locale folder has
+24 files; every file carries the disclosure frontmatter
+`translation_status: AI-generated 2026-05-18 — native-speaker
+review recommended` per the §A.15 / v2.06 precedent.
+
+Translation conventions (locked across all agents):
+- Brand names stay English-Latin: Constellation, Sight, CNS,
+  Confidence, Stage, Acts, etc.
+- Tradition names stay in canonical transliteration with diacritics:
+  pramāṇa, masādir, Ibn Rushd burhān, PaRDeS, etc.
+- Concept names within traditions stay in scholarly transliteration:
+  nokware, dīn, peshat, rén, yì, etc.
+- Frontmatter field names + values unchanged; `translation_status:`
+  added as one new line under `changelog:`.
+- Citation: heading + connector words translate; book/author/publisher
+  names stay in original script.
+- East Asian Confucian manifests use native CJK headings where
+  appropriate (Mencian 孟子 四端, Wang Yangming 王陽明, Korean
+  성리학) per the CJK agent's locale-specific judgment.
+
+**Sample-verified**: `docs/traditions/ar/pramana.md` reads naturally
+in Arabic with scholarly transliterations preserved (pratyakṣa,
+śabda, arthāpatti, anupalabdhi, Sāṃkhya, Mīmāṃsā, Dignāga,
+Dharmakīrti); Plan §13.2 verification clause satisfied.
+
+**λ.2.a — Chip + manifest-modal + plugin-banner i18n (15 locales,
+22 keys)**
+
+New i18n block `sight.v6.tradition.*` (3 sub-trees: chip, manifest,
+plugin) added to all 15 locale .json files:
+
+- `chip.allTrigger` + `allTriggerTooltip` — the "All ▾" dropdown
+  trigger
+- `chip.previewBadge` + `previewBadgeTooltip` — the v1-preview pill
+- `chip.manifestButtonTooltip` + `manifestButtonAriaLabel` — the
+  ⓘ button per row
+- `chip.pinTooltip` + `unpinTooltip` + `pinAriaLabel` +
+  `unpinAriaLabel` — the ☆/★ pin button
+- `chip.userDefinedFamily` — the synthetic "User-defined" section
+  label
+- `manifest.closeTooltip` + `closeAriaLabel` + `loading` — the
+  manifest modal close button + loading state
+- `plugin.pendingTitle` + `pendingBody` (with `{filename}` interp)
+  + `enableButton` + `dismissPendingTooltip` +
+  `dismissPendingAriaLabel` — the consent banner
+- `plugin.failedTitle` + `dismissFailedTooltip` +
+  `dismissFailedAriaLabel` — the failure banner
+
+en + ar populated by hand (canonical English + reference Arabic);
+the 13 other locales backfilled via one parallel agent (de, es, fa,
+fr, he, hi, ja, ko, pt, ru, tr, ur, zh). Each locale's `sight.v6`
+block inserted as a top-level sibling of `sightV3`; no duplicates
+introduced (verified: each locale has exactly 1 top-level `sight`
+key after backfill).
+
+Code consumers updated:
+- `src/lib/sight/v6/traditionChip.svelte` — imports `t` from
+  `$lib/i18n`; all hardcoded strings (All trigger, preview badge,
+  ⓘ tooltips, pin tooltips, user-defined family label) now go
+  through `$t()`.
+- `src/lib/sight/v6/SightV6.svelte` — imports `t`; plugin pending
+  banner + failed banner + manifest modal close button + loading
+  string all go through `$t()`. Pending banner body uses
+  interpolation: `$t('sight.v6.tradition.plugin.pendingBody',
+  { filename })`.
+
+### Architecture decisions
+
+1. **Parallel-agent translation per §A.15 / v2.06 precedent.** 5
+   agents grouped by language family. Each agent reads the 24
+   English manifests once, then writes 24 × (its locale count)
+   translations. Avoided 14 individual agents (excessive overhead)
+   and avoided 1 sequential agent (excessive wall-clock).
+2. **Hand-author en + ar; agent for the 13 backfill.** Same pattern
+   as V3-§8.r1.e / V3-§10.D.2 — keep canonical-source + native-
+   speaker reference under direct control; bulk-translate the rest
+   via batched agent.
+3. **`translation_status` frontmatter disclosure.** Every translated
+   file invites native-speaker review. Reviewers can grep for
+   `translation_status: AI-generated 2026-05-18` to find every file
+   in this cascade.
+4. **i18n fallback chain unchanged.** The runtime `t` store falls
+   back locale → en → key (per `src/lib/i18n/index.ts:130-139`),
+   so missing keys never break the UI — they show English. The
+   new `sight.v6.tradition.*` block is now present in all 15
+   locales, so this fallback is academic for the chip strings.
+5. **Disabled families stay hidden.** The `userDefinedFamily` label
+   only renders when `userTraditions.length > 0` — non-plugin users
+   never see a translated label that has nothing under it.
+
+### Verification
+
+`npm run check`: 3 pre-existing errors (PJ-012 + 2 PropertyEditor),
+0 new. File count 1421 (no new TS files; just new .md + .json
+entries). All 15 locale JSONs parse valid.
+
+### Plan §13.2 verification clause (Boss test)
+
+Per Plan: light Boss spot-check — `docs/traditions/ar/pramana.md`
+should contain a readable Arabic translation. CONFIRMED (visible in
+my Read above this commit). Additional verification surfaces:
+- Switch Constellation interface language to a non-en/non-ar locale
+  (e.g. Spanish) → chip dropdown's "All ▾" trigger, scope strips,
+  ⓘ tooltip, pin tooltips, manifest modal chrome, plugin banners
+  all render in the chosen language.
+- Click ⓘ on Aristotelian → manifest modal opens with the locale-
+  appropriate translated content (e.g. ja/aristotelian.md for
+  Japanese UI).
+
+Build kicked off for the Phase λ .exe.
+
+### What's next: Phase μ
+
+Per Plan §14: ship gate + 3-agent audit.
+- μ.1 — channel-isolation test (vitest): iterate all 24 traditions,
+  assert mini-domes stay constant per Concept Paper §11 invariant 6
+- μ.2 — performance test (vitest): switch through all 24 on a
+  7,600-note universe, assert no perf regression vs Aristotelian
+  baseline
+- μ.3 — Concept Paper v4.0 → v4.1 (new file alongside v4.0)
+- μ.4 — Boss-test cycle multi-stage
+- μ.5 — orientation v-bump (v2.13 → v2.14 documenting MIG-026 ship
+  + the MIG-028 commitment + the 6 MIG-026-derived PJs filed)
+- μ.6 — backup routine (`git tag milestone/sight-v6.3-traditions-ship`
+  + ZIP archive)
+
+The vitest harness pieces (μ.1, μ.2) were deferred to §D.4 per
+MIG-025 §A.13; will need to assess whether to do them now or
+fold into the deferred MIG-025 §D.4.
 
 **Function in hand**: unblock the asset:// dynamic import that Eisa's
 Boss test surfaced in Stage 2 Outcome B.

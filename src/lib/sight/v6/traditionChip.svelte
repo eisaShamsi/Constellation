@@ -40,6 +40,7 @@
 -->
 <script lang="ts">
 	import { appSettings, saveSettings } from '$lib/libraries/store';
+	import { t } from '$lib/i18n';
 	import type { TraditionId } from './types';
 	import { FAMILIES, type FamilyId } from './traditions';
 	import type { UserTraditionModule } from './traditions/userDefinedLoader';
@@ -299,8 +300,8 @@
 		if (userTraditions.length > 0) {
 			curated.push({
 				id: 'user-defined',
-				label: 'User-defined',
-				traditions: userTraditions.map((t) => t.id),
+				label: $t('sight.v6.tradition.chip.userDefinedFamily'),
+				traditions: userTraditions.map((ut) => ut.id),
 			});
 		}
 		return curated;
@@ -428,7 +429,7 @@
 					<span class="chip-dot" aria-hidden="true"></span>
 				{/if}
 				{#if meta.preview}
-					<span class="chip-preview-badge" title="v1 preview — deeper internal structure is a v4.1 polish target">preview</span>
+					<span class="chip-preview-badge" title={$t('sight.v6.tradition.chip.previewBadgeTooltip')}>{$t('sight.v6.tradition.chip.previewBadge')}</span>
 				{/if}
 			</button>
 		{/each}
@@ -437,11 +438,11 @@
 			class:is-open={dropdownOpen}
 			type="button"
 			onclick={handleAllClick}
-			title="Show all scholarly traditions"
+			title={$t('sight.v6.tradition.chip.allTriggerTooltip')}
 			aria-haspopup="true"
 			aria-expanded={dropdownOpen}
 		>
-			All <span class="trigger-chevron" class:is-open={dropdownOpen}>▾</span>
+			{$t('sight.v6.tradition.chip.allTrigger')} <span class="trigger-chevron" class:is-open={dropdownOpen}>▾</span>
 		</button>
 	</div>
 
@@ -479,7 +480,7 @@
 											<span class="chip-dot" aria-hidden="true"></span>
 										{/if}
 										{#if meta.preview}
-											<span class="chip-preview-badge">preview</span>
+											<span class="chip-preview-badge">{$t('sight.v6.tradition.chip.previewBadge')}</span>
 										{/if}
 										<span class="tradition-row-scope">{meta.scope}</span>
 									</button>
@@ -487,8 +488,8 @@
 										class="tradition-row-info-btn"
 										type="button"
 										onclick={(ev) => handleManifestClick(ev, id)}
-										title="Read the full scholarly manifest for this tradition (citation, lineage, scope, critique)"
-										aria-label="Open manifest"
+										title={$t('sight.v6.tradition.chip.manifestButtonTooltip')}
+										aria-label={$t('sight.v6.tradition.chip.manifestButtonAriaLabel')}
 									>
 										ⓘ
 									</button>
@@ -497,8 +498,8 @@
 										class:is-pinned={fav}
 										type="button"
 										onclick={() => handlePinToggle(id)}
-										title={fav ? 'Unpin from favorites' : 'Pin to favorites (inline row)'}
-										aria-label={fav ? 'Unpin from favorites' : 'Pin to favorites'}
+										title={fav ? $t('sight.v6.tradition.chip.unpinTooltip') : $t('sight.v6.tradition.chip.pinTooltip')}
+										aria-label={fav ? $t('sight.v6.tradition.chip.unpinAriaLabel') : $t('sight.v6.tradition.chip.pinAriaLabel')}
 									>
 										{fav ? '★' : '☆'}
 									</button>

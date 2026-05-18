@@ -2361,7 +2361,37 @@
     },
     "v6": {
       "title": "Constellation Sight",
-      "returnToSight": "Return to Sight"
+      "returnToSight": "Return to Sight",
+      "tradition": {
+        "chip": {
+          "allTrigger": "All",
+          "allTriggerTooltip": "Show all scholarly traditions",
+          "previewBadge": "preview",
+          "previewBadgeTooltip": "v1 preview — deeper internal structure is a v4.1 polish target",
+          "manifestButtonTooltip": "Read the full scholarly manifest for this tradition (citation, lineage, scope, critique)",
+          "manifestButtonAriaLabel": "Open manifest",
+          "pinTooltip": "Pin to favorites (inline row)",
+          "unpinTooltip": "Unpin from favorites",
+          "pinAriaLabel": "Pin to favorites",
+          "unpinAriaLabel": "Unpin from favorites",
+          "userDefinedFamily": "User-defined"
+        },
+        "manifest": {
+          "closeTooltip": "Close manifest (Esc also works)",
+          "closeAriaLabel": "Close manifest",
+          "loading": "Loading manifest…"
+        },
+        "plugin": {
+          "pendingTitle": "Tradition plugin detected",
+          "pendingBody": "{filename} is a tradition plugin file. Enabling runs the plugin's code with full app privileges (Obsidian-trust model). Only enable plugins from sources you trust.",
+          "enableButton": "Enable plugin",
+          "dismissPendingTooltip": "Dismiss for this session (the banner returns next time Sight opens until you enable or remove the file)",
+          "dismissPendingAriaLabel": "Dismiss until next Sight open",
+          "failedTitle": "Plugin failed to load",
+          "dismissFailedTooltip": "Dismiss this error message (fix the plugin then restart Constellation to retry)",
+          "dismissFailedAriaLabel": "Dismiss"
+        }
+      }
     }
   },
   "sightV3": {

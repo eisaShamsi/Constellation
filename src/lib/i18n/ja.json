@@ -2111,6 +2111,42 @@
     "show": "ダッシュボード表示",
     "hide": "ダッシュボード非表示"
   },
+  "sight": {
+    "v6": {
+      "title": "Constellation Sight",
+      "returnToSight": "Sight に戻る",
+      "tradition": {
+        "chip": {
+          "allTrigger": "すべて",
+          "allTriggerTooltip": "すべての学術的伝統を表示",
+          "previewBadge": "プレビュー",
+          "previewBadgeTooltip": "v1 プレビュー — より深い内部構造は v4.1 の調整目標です",
+          "manifestButtonTooltip": "この伝統の完全な学術マニフェストを読む(引用、系譜、範囲、批評)",
+          "manifestButtonAriaLabel": "マニフェストを開く",
+          "pinTooltip": "お気に入りに固定(インライン行)",
+          "unpinTooltip": "お気に入りから固定解除",
+          "pinAriaLabel": "お気に入りに固定",
+          "unpinAriaLabel": "お気に入りから固定解除",
+          "userDefinedFamily": "ユーザー定義"
+        },
+        "manifest": {
+          "closeTooltip": "マニフェストを閉じる(Esc も使えます)",
+          "closeAriaLabel": "マニフェストを閉じる",
+          "loading": "マニフェストを読み込み中…"
+        },
+        "plugin": {
+          "pendingTitle": "伝統プラグインを検出しました",
+          "pendingBody": "{filename} は伝統プラグインファイルです。有効化するとプラグインのコードがアプリの全権限で実行されます(Obsidian の信頼モデル)。信頼できるソースのプラグインのみを有効化してください。",
+          "enableButton": "プラグインを有効化",
+          "dismissPendingTooltip": "このセッションでは閉じる(ファイルを有効化または削除するまで、次回 Sight を開くとバナーが再表示されます)",
+          "dismissPendingAriaLabel": "次回 Sight を開くまで閉じる",
+          "failedTitle": "プラグインの読み込みに失敗しました",
+          "dismissFailedTooltip": "このエラーメッセージを閉じる(プラグインを修正してから Constellation を再起動して再試行してください)",
+          "dismissFailedAriaLabel": "閉じる"
+        }
+      }
+    }
+  },
   "sightV3": {
     "title": "Constellation Sight",
     "placeholder": "Sight v3 — projection foundation (MIG-018 §1E)",

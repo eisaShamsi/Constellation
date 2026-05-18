@@ -1673,6 +1673,42 @@
     "show": "نمایش داشبورد",
     "hide": "مخفی کردن داشبورد"
   },
+  "sight": {
+    "v6": {
+      "title": "Constellation Sight",
+      "returnToSight": "بازگشت به Sight",
+      "tradition": {
+        "chip": {
+          "allTrigger": "همه",
+          "allTriggerTooltip": "نمایش همه سنت‌های علمی",
+          "previewBadge": "پیش‌نمایش",
+          "previewBadgeTooltip": "پیش‌نمایش v1 — ساختار داخلی عمیق‌تر هدف صیقل v4.1 است",
+          "manifestButtonTooltip": "بیانیه علمی کامل این سنت را بخوانید (استناد، تبار، دامنه، نقد)",
+          "manifestButtonAriaLabel": "باز کردن بیانیه",
+          "pinTooltip": "سنجاق به علاقه‌مندی‌ها (ردیف درون‌خطی)",
+          "unpinTooltip": "برداشتن سنجاق از علاقه‌مندی‌ها",
+          "pinAriaLabel": "سنجاق به علاقه‌مندی‌ها",
+          "unpinAriaLabel": "برداشتن سنجاق از علاقه‌مندی‌ها",
+          "userDefinedFamily": "تعریف‌شده توسط کاربر"
+        },
+        "manifest": {
+          "closeTooltip": "بستن بیانیه (Esc هم کار می‌کند)",
+          "closeAriaLabel": "بستن بیانیه",
+          "loading": "در حال بارگذاری بیانیه…"
+        },
+        "plugin": {
+          "pendingTitle": "افزونه سنت شناسایی شد",
+          "pendingBody": "{filename} یک فایل افزونه سنت است. فعال‌سازی، کد افزونه را با تمام مجوزهای برنامه اجرا می‌کند (مدل اعتماد Obsidian). فقط افزونه‌هایی از منابع مورد اعتماد را فعال کنید.",
+          "enableButton": "فعال‌سازی افزونه",
+          "dismissPendingTooltip": "نادیده گرفتن برای این جلسه (در باز شدن بعدی Sight این بنر بازمی‌گردد تا زمانی که فایل را فعال یا حذف کنید)",
+          "dismissPendingAriaLabel": "نادیده گرفتن تا باز شدن بعدی Sight",
+          "failedTitle": "بارگذاری افزونه با شکست مواجه شد",
+          "dismissFailedTooltip": "نادیده گرفتن این پیام خطا (افزونه را تعمیر کنید سپس Constellation را برای تلاش مجدد راه‌اندازی کنید)",
+          "dismissFailedAriaLabel": "نادیده گرفتن"
+        }
+      }
+    }
+  },
   "sightV3": {
     "title": "Constellation Sight",
     "placeholder": "Sight v3 — projection foundation (MIG-018 §1E)",

@@ -2111,6 +2111,42 @@
     "show": "대시보드 표시",
     "hide": "대시보드 숨기기"
   },
+  "sight": {
+    "v6": {
+      "title": "Constellation Sight",
+      "returnToSight": "Sight로 돌아가기",
+      "tradition": {
+        "chip": {
+          "allTrigger": "전체",
+          "allTriggerTooltip": "모든 학술적 전통 표시",
+          "previewBadge": "미리보기",
+          "previewBadgeTooltip": "v1 미리보기 — 더 깊은 내부 구조는 v4.1 다듬기 목표입니다",
+          "manifestButtonTooltip": "이 전통의 전체 학술 매니페스트 읽기(인용, 계보, 범위, 비평)",
+          "manifestButtonAriaLabel": "매니페스트 열기",
+          "pinTooltip": "즐겨찾기에 고정(인라인 행)",
+          "unpinTooltip": "즐겨찾기에서 고정 해제",
+          "pinAriaLabel": "즐겨찾기에 고정",
+          "unpinAriaLabel": "즐겨찾기에서 고정 해제",
+          "userDefinedFamily": "사용자 정의"
+        },
+        "manifest": {
+          "closeTooltip": "매니페스트 닫기(Esc도 가능)",
+          "closeAriaLabel": "매니페스트 닫기",
+          "loading": "매니페스트 로드 중…"
+        },
+        "plugin": {
+          "pendingTitle": "전통 플러그인이 감지되었습니다",
+          "pendingBody": "{filename}은(는) 전통 플러그인 파일입니다. 활성화하면 플러그인의 코드가 앱의 모든 권한으로 실행됩니다(Obsidian 신뢰 모델). 신뢰할 수 있는 소스의 플러그인만 활성화하세요.",
+          "enableButton": "플러그인 활성화",
+          "dismissPendingTooltip": "이 세션에서 닫기(파일을 활성화하거나 제거할 때까지 다음 Sight 열기 시 배너가 다시 나타납니다)",
+          "dismissPendingAriaLabel": "다음 Sight 열기 시까지 닫기",
+          "failedTitle": "플러그인 로드 실패",
+          "dismissFailedTooltip": "이 오류 메시지 닫기(플러그인을 수정한 후 Constellation을 다시 시작하여 재시도하세요)",
+          "dismissFailedAriaLabel": "닫기"
+        }
+      }
+    }
+  },
   "sightV3": {
     "title": "Constellation Sight",
     "placeholder": "Sight v3 — projection foundation (MIG-018 §1E)",

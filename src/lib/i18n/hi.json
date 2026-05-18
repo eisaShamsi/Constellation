@@ -2111,6 +2111,42 @@
     "show": "डैशबोर्ड दिखाएं",
     "hide": "डैशबोर्ड छुपाएं"
   },
+  "sight": {
+    "v6": {
+      "title": "Constellation Sight",
+      "returnToSight": "Sight पर वापस जाएं",
+      "tradition": {
+        "chip": {
+          "allTrigger": "सभी",
+          "allTriggerTooltip": "सभी विद्वत्तापूर्ण परंपराएं दिखाएं",
+          "previewBadge": "पूर्वावलोकन",
+          "previewBadgeTooltip": "v1 पूर्वावलोकन — गहरी आंतरिक संरचना v4.1 परिष्करण का लक्ष्य है",
+          "manifestButtonTooltip": "इस परंपरा का पूरा विद्वत्तापूर्ण घोषणापत्र पढ़ें (उद्धरण, वंशावली, दायरा, समालोचना)",
+          "manifestButtonAriaLabel": "घोषणापत्र खोलें",
+          "pinTooltip": "पसंदीदा में पिन करें (इनलाइन पंक्ति)",
+          "unpinTooltip": "पसंदीदा से अनपिन करें",
+          "pinAriaLabel": "पसंदीदा में पिन करें",
+          "unpinAriaLabel": "पसंदीदा से अनपिन करें",
+          "userDefinedFamily": "उपयोगकर्ता द्वारा परिभाषित"
+        },
+        "manifest": {
+          "closeTooltip": "घोषणापत्र बंद करें (Esc भी काम करता है)",
+          "closeAriaLabel": "घोषणापत्र बंद करें",
+          "loading": "घोषणापत्र लोड हो रहा है…"
+        },
+        "plugin": {
+          "pendingTitle": "परंपरा प्लगइन का पता चला",
+          "pendingBody": "{filename} एक परंपरा प्लगइन फ़ाइल है। सक्षम करने से प्लगइन का कोड पूर्ण ऐप विशेषाधिकारों के साथ चलता है (Obsidian-विश्वास मॉडल)। केवल उन स्रोतों से प्लगइन सक्षम करें जिन पर आप भरोसा करते हैं।",
+          "enableButton": "प्लगइन सक्षम करें",
+          "dismissPendingTooltip": "इस सत्र के लिए खारिज करें (अगली बार Sight खुलने पर बैनर वापस आएगा जब तक आप फ़ाइल को सक्षम या हटा नहीं देते)",
+          "dismissPendingAriaLabel": "अगली Sight खुलने तक खारिज करें",
+          "failedTitle": "प्लगइन लोड करने में विफल",
+          "dismissFailedTooltip": "इस त्रुटि संदेश को खारिज करें (प्लगइन ठीक करें फिर पुनः प्रयास के लिए Constellation को पुनः आरंभ करें)",
+          "dismissFailedAriaLabel": "खारिज करें"
+        }
+      }
+    }
+  },
   "sightV3": {
     "title": "Constellation Sight",
     "placeholder": "Sight v3 — projection foundation (MIG-018 §1E)",

@@ -2111,6 +2111,42 @@
     "show": "Panoyu göster",
     "hide": "Panoyu gizle"
   },
+  "sight": {
+    "v6": {
+      "title": "Constellation Sight",
+      "returnToSight": "Sight'a dön",
+      "tradition": {
+        "chip": {
+          "allTrigger": "Tümü",
+          "allTriggerTooltip": "Tüm bilimsel gelenekleri göster",
+          "previewBadge": "önizleme",
+          "previewBadgeTooltip": "v1 önizlemesi — daha derin iç yapı v4.1 cila hedefidir",
+          "manifestButtonTooltip": "Bu geleneğin tam bilimsel manifestosunu okuyun (alıntı, soy, kapsam, eleştiri)",
+          "manifestButtonAriaLabel": "Manifestoyu aç",
+          "pinTooltip": "Favorilere sabitle (satır içi sıra)",
+          "unpinTooltip": "Favorilerden sabitlemeyi kaldır",
+          "pinAriaLabel": "Favorilere sabitle",
+          "unpinAriaLabel": "Favorilerden sabitlemeyi kaldır",
+          "userDefinedFamily": "Kullanıcı tanımlı"
+        },
+        "manifest": {
+          "closeTooltip": "Manifestoyu kapat (Esc de çalışır)",
+          "closeAriaLabel": "Manifestoyu kapat",
+          "loading": "Manifesto yükleniyor…"
+        },
+        "plugin": {
+          "pendingTitle": "Gelenek eklentisi algılandı",
+          "pendingBody": "{filename} bir gelenek eklenti dosyasıdır. Etkinleştirme, eklentinin kodunu tam uygulama ayrıcalıklarıyla çalıştırır (Obsidian güven modeli). Yalnızca güvendiğiniz kaynaklardan gelen eklentileri etkinleştirin.",
+          "enableButton": "Eklentiyi etkinleştir",
+          "dismissPendingTooltip": "Bu oturum için kapat (dosyayı etkinleştirene veya kaldırana kadar Sight bir sonraki açılışta banner geri döner)",
+          "dismissPendingAriaLabel": "Bir sonraki Sight açılışına kadar kapat",
+          "failedTitle": "Eklenti yüklenemedi",
+          "dismissFailedTooltip": "Bu hata mesajını kapat (eklentiyi düzeltin ve yeniden denemek için Constellation'ı yeniden başlatın)",
+          "dismissFailedAriaLabel": "Kapat"
+        }
+      }
+    }
+  },
   "sightV3": {
     "title": "Constellation Sight",
     "placeholder": "Sight v3 — projection foundation (MIG-018 §1E)",

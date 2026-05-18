@@ -1673,6 +1673,42 @@
     "show": "הצג לוח בקרה",
     "hide": "הסתר לוח בקרה"
   },
+  "sight": {
+    "v6": {
+      "title": "Constellation Sight",
+      "returnToSight": "חזרה ל-Sight",
+      "tradition": {
+        "chip": {
+          "allTrigger": "הכל",
+          "allTriggerTooltip": "הצג את כל המסורות המלומדות",
+          "previewBadge": "תצוגה מקדימה",
+          "previewBadgeTooltip": "תצוגה מקדימה v1 — מבנה פנימי עמוק יותר הוא יעד ליטוש של v4.1",
+          "manifestButtonTooltip": "קרא את המניפסט המלומד המלא של מסורת זו (ציטוט, שושלת, היקף, ביקורת)",
+          "manifestButtonAriaLabel": "פתח את המניפסט",
+          "pinTooltip": "הצמד למועדפים (שורה מוטמעת)",
+          "unpinTooltip": "הסר הצמדה ממועדפים",
+          "pinAriaLabel": "הצמד למועדפים",
+          "unpinAriaLabel": "הסר הצמדה ממועדפים",
+          "userDefinedFamily": "מוגדר על ידי המשתמש"
+        },
+        "manifest": {
+          "closeTooltip": "סגור את המניפסט (Esc גם פועל)",
+          "closeAriaLabel": "סגור את המניפסט",
+          "loading": "טוען מניפסט…"
+        },
+        "plugin": {
+          "pendingTitle": "זוהה תוסף מסורת",
+          "pendingBody": "{filename} הוא קובץ תוסף מסורת. הפעלתו מריצה את קוד התוסף עם מלוא הרשאות האפליקציה (מודל אמון Obsidian). הפעל רק תוספים ממקורות שאתה סומך עליהם.",
+          "enableButton": "הפעל תוסף",
+          "dismissPendingTooltip": "התעלם לסשן הזה (הבאנר יחזור בפעם הבאה ש-Sight ייפתח עד שתפעיל או תסיר את הקובץ)",
+          "dismissPendingAriaLabel": "התעלם עד פתיחת Sight הבאה",
+          "failedTitle": "טעינת התוסף נכשלה",
+          "dismissFailedTooltip": "התעלם מהודעת השגיאה הזו (תקן את התוסף ואז הפעל מחדש את Constellation כדי לנסות שוב)",
+          "dismissFailedAriaLabel": "התעלם"
+        }
+      }
+    }
+  },
   "sightV3": {
     "title": "Constellation Sight",
     "placeholder": "Sight v3 — projection foundation (MIG-018 §1E)",

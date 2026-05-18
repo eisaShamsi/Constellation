@@ -2321,6 +2321,40 @@
         "provenance": "معظم كونك غير مُسنَد. نمط المصدر يكشف شكل محتواك المعرفي بمجرد تصنيف الملاحظات.",
         "classify": "صنِّف عبر مراجعة المصادر ←"
       }
+    },
+    "v6": {
+      "title": "Constellation Sight",
+      "returnToSight": "العودة إلى Sight",
+      "tradition": {
+        "chip": {
+          "allTrigger": "الكل",
+          "allTriggerTooltip": "إظهار جميع التقاليد العلمية",
+          "previewBadge": "معاينة",
+          "previewBadgeTooltip": "معاينة v1 — البنية الداخلية الأعمق هي هدف صقل v4.1",
+          "manifestButtonTooltip": "اقرأ البيان العلمي الكامل لهذا التقليد (المرجع، النَّسَب، النطاق، النقد)",
+          "manifestButtonAriaLabel": "فتح البيان",
+          "pinTooltip": "تثبيت في المفضّلة (الصف الداخلي)",
+          "unpinTooltip": "إلغاء التثبيت من المفضّلة",
+          "pinAriaLabel": "تثبيت في المفضّلة",
+          "unpinAriaLabel": "إلغاء التثبيت من المفضّلة",
+          "userDefinedFamily": "مُعرَّف بواسطة المستخدم"
+        },
+        "manifest": {
+          "closeTooltip": "إغلاق البيان (Esc يعمل أيضًا)",
+          "closeAriaLabel": "إغلاق البيان",
+          "loading": "جارٍ تحميل البيان…"
+        },
+        "plugin": {
+          "pendingTitle": "تمّ اكتشاف إضافة تقليد",
+          "pendingBody": "{filename} هو ملف إضافة تقليد. التفعيل يُشغِّل شيفرة الإضافة بصلاحيات التطبيق الكاملة (نموذج ثقة Obsidian). لا تُفعِّل إلا الإضافات من مصادر تثق بها.",
+          "enableButton": "تفعيل الإضافة",
+          "dismissPendingTooltip": "تجاهُل لهذه الجلسة (يعود الإشعار في فتح Sight التالي إلى أن تُفعِّل الملف أو تُزيله)",
+          "dismissPendingAriaLabel": "تجاهُل حتى فتح Sight التالي",
+          "failedTitle": "فشل تحميل الإضافة",
+          "dismissFailedTooltip": "تجاهُل رسالة الخطأ (أصلح الإضافة ثم أعِد تشغيل Constellation لإعادة المحاولة)",
+          "dismissFailedAriaLabel": "تجاهُل"
+        }
+      }
     }
   },
   "sightV3": {

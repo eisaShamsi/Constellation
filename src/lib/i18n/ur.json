@@ -1673,6 +1673,42 @@
     "show": "ڈیش بورڈ دکھائیں",
     "hide": "ڈیش بورڈ چھپائیں"
   },
+  "sight": {
+    "v6": {
+      "title": "Constellation Sight",
+      "returnToSight": "Sight پر واپس جائیں",
+      "tradition": {
+        "chip": {
+          "allTrigger": "تمام",
+          "allTriggerTooltip": "تمام علمی روایات دکھائیں",
+          "previewBadge": "پیش منظر",
+          "previewBadgeTooltip": "v1 پیش منظر — گہری اندرونی ساخت v4.1 صیقل کا ہدف ہے",
+          "manifestButtonTooltip": "اس روایت کا مکمل علمی منشور پڑھیں (حوالہ، سلسلہ، دائرہ، تنقید)",
+          "manifestButtonAriaLabel": "منشور کھولیں",
+          "pinTooltip": "پسندیدہ میں پن کریں (ان لائن قطار)",
+          "unpinTooltip": "پسندیدہ سے ان پن کریں",
+          "pinAriaLabel": "پسندیدہ میں پن کریں",
+          "unpinAriaLabel": "پسندیدہ سے ان پن کریں",
+          "userDefinedFamily": "صارف کا متعین کردہ"
+        },
+        "manifest": {
+          "closeTooltip": "منشور بند کریں (Esc بھی کام کرتا ہے)",
+          "closeAriaLabel": "منشور بند کریں",
+          "loading": "منشور لوڈ ہو رہا ہے…"
+        },
+        "plugin": {
+          "pendingTitle": "روایت پلگ ان کا پتہ چلا",
+          "pendingBody": "{filename} ایک روایت پلگ ان فائل ہے۔ فعال کرنے سے پلگ ان کا کوڈ ایپ کے مکمل اختیارات کے ساتھ چلتا ہے (Obsidian اعتماد ماڈل)۔ صرف ان ذرائع سے پلگ ان فعال کریں جن پر آپ اعتماد کرتے ہیں۔",
+          "enableButton": "پلگ ان فعال کریں",
+          "dismissPendingTooltip": "اس سیشن کے لیے رد کریں (جب تک آپ فائل کو فعال یا ہٹا نہیں دیتے، اگلی بار Sight کھولنے پر بینر واپس آئے گا)",
+          "dismissPendingAriaLabel": "اگلی Sight کھلنے تک رد کریں",
+          "failedTitle": "پلگ ان لوڈ کرنے میں ناکامی",
+          "dismissFailedTooltip": "یہ خرابی کا پیغام رد کریں (پلگ ان ٹھیک کریں پھر دوبارہ کوشش کے لیے Constellation کو دوبارہ شروع کریں)",
+          "dismissFailedAriaLabel": "رد کریں"
+        }
+      }
+    }
+  },
   "sightV3": {
     "title": "Constellation Sight",
     "placeholder": "Sight v3 — projection foundation (MIG-018 §1E)",
