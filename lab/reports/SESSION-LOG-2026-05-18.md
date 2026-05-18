@@ -1301,3 +1301,64 @@ Stage 1 / 2 / 3 already PASS per the §λ-fix-3/4/5/4b cycles earlier in this se
 | μ.3 Concept Paper v4.1 | 2-day prose | **deferred → PJ-052** |
 
 **MIG-026 SHIPPED on `main` at `f382a97b`** (Phase μ ship-gate close-out commit lands this turn).
+
+═══════════════════════════════════════════════════════════════════════
+PJ-052 — Concept Paper v4.1 (next top-of-queue → DONE same-day)
+═══════════════════════════════════════════════════════════════════════
+
+Eisa: "Proceed" → cascade through the post-ship Pending Jobs queue.
+PJ-052 (Concept Paper v4.1) was next top.
+
+### Delivered
+
+`docs/Constellation-Sight-Concept-Paper-v4.1.md` — 919 lines /
+~14,242 words. Single background-agent pass with rich-source brief
+(v4.0 prose + 24 tradition manifests + orientation v2.15 §4 +
+24 tradition modules). v4.0 preserved alongside per versioning rule.
+
+Structural deltas vs v4.0:
+- §3.5 new: 9 shape renderers (sectoral / concentric / grid / ladder
+  spiral / relational hub-and-spoke / cyclic flow / binary flow ×3
+  layouts / gradient fog / horizontal bands).
+- §3.6 new: user-definable plugin layer (declarative JSON + TS
+  plugin loader + Obsidian-trust consent + asset:// dynamic import +
+  CSP add).
+- §4.1 expanded §4.1.1 → §4.1.24 (24 traditions, ~400 words each,
+  hero / cultural framing / geometry / scope / critique / citation
+  skeleton).
+- §4.2 trimmed to §4.2.1 Mohist-only as the v1-preview survivor
+  that matured to full ship.
+- §11 invariants 12 (i18n labelize) + 13 (plugin label passthrough)
+  added.
+- §8.7 channel-isolation invariant (post-μ.1) added.
+- §4.1.2 pramāṇa + §4.1.3 masādir doc-drift corrected E/S/W/N
+  (post §δ.2-fix-1 / §θ-fix-1 rotations).
+
+Agent flagged 3 honest unknowns: v6.0/v6.1/v6.2 ship dates inferred
+from orientation context; Mignolo satellite cluster labels written
+from manifest prose vs .ts module. None blocking; folded into PJ-057.
+
+### Agent-surfaced doc-drift → PJ-057
+
+(a) v4.0 §4.2.3 Mohist citation says *Mòzǐ* ch. 35; shipped
+manifest cites Book IX — pick one canonical citation.
+(b) `Sight-vNext-MockB1-Toggle.svg` + `sight-redesign-v0.2-mockE-
+tradition-registers.svg` show pre-expansion 7-tradition state;
+need fresh 24-tradition variants.
+(c) Concept Paper §9.1 + orientation §17 should footnote that
+`_manifests.generated.ts` is prebuild-generated.
+
+### PJ ledger updates (v1.12 preamble)
+
+- PJ-052: marked DONE 2026-05-18.
+- PJ-056: marked PARTIAL — 3 doc comments fixed inline in `e63ee0c7`;
+  literal-deletion phase stays open (type-required + canonical EN
+  fallback documentation).
+- PJ-057 NEW: Post-MIG-026 doc-drift (3 items above).
+- Top-of-queue rotated: PJ-053 (λ-fix-6) now top since PJ-052 closed.
+
+### Cited commit ref correction
+
+Agent's draft referenced ship-tag commit as `f382a97b` (the last
+§λ-fix commit); the actual milestone tag was cut at `99e4ed37`
+(the Phase μ ship-gate commit). Corrected inline before commit.

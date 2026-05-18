@@ -14,11 +14,12 @@
 >
 > ### 5 new PJs filed
 >
-> - **PJ-052 — Concept Paper v4.1** (the scholarly prose bump documenting all 24 traditions × 9 shape renderers; ~9,500 words of new content per Plan §14.3; deferred from Phase μ as a focused single-session task).
+> - **PJ-052 — Concept Paper v4.1** — **DONE 2026-05-18** (`docs/Constellation-Sight-Concept-Paper-v4.1.md`, 919 lines / ~14,242 words; 24 tradition subsections at ~400 words each + new §3.5 nine-shape-renderer architecture + §3.6 user-definable plugin layer + invariants 12+13 on $t labelize + plugin label passthrough + §4.2 trimmed to Mohist-only v1-preview survivor + §4.1.2 pramāṇa / §4.1.3 masādir doc-drift corrected E/S/W/N). Three additional doc-drift items surfaced during the write — folded into **PJ-057** (below).
 > - **PJ-053 — λ-fix-6 native-quality translation re-audit** (deeper polish pass on agent-backfilled de/ru/fr/es/hi/pt locales: ~70 transliteration-without-gloss items + ~25 wrong-script Latin in Cyrillic/Devanagari locales + 3 pt-PT vs pt-BR dialect drift).
 > - **PJ-054 — Sight v6 vitest test runner** (Plan §14.1 channel-isolation + §14.2 perf tests are blocked on the deferred vitest runner; write both `tradition-isolation.test.ts` and `tradition-perf.test.ts` when runner ships).
 > - **PJ-055 — User-plugin label schema warning** (advisory from Phase μ migration-path audit: literal plugin labels shaped like dotted i18n key paths could collide with the global key namespace; document in `docs/traditions/schema/tradition.v1.schema.json`).
-> - **PJ-056 — MIG-026 drift cleanup** (low-severity: `dome.ts:57-64` STRATUM_LABELS comment misidentifies the real consumer; 24 unused `name:` literals in tradition modules + 10 unused `FAMILIES[*].label` literals + 2 stale doc comments in `types.ts:444` and `traditions/index.ts:169-172`; single-file cleanup, no behavior change).
+> - **PJ-056 — MIG-026 drift cleanup** — **PARTIAL** (3 doc comments fixed inline 2026-05-18 in commit `e63ee0c7`: dome.ts STRATUM_LABELS comment, types.ts:444 TraditionModule.name comment, traditions/index.ts:222 FAMILIES.label comment. Literal-deletion phase — 24 dead `name:` literals + 10 dead `FAMILIES[*].label` literals — stays open because the literals are still type-required by `TraditionModule`/`FamilyEntry` and serve as the canonical English source-of-truth that en.json mirrors. Fully closing this PJ requires deciding whether to make the type field optional, switch to a separate "literal-EN-fallback" registry, or accept the duplication as documentation. Defer until a focused design choice can be made).
+> - **PJ-057 — Post-MIG-026 doc-drift surfaced during Concept Paper v4.1 write** (3 items): (a) v4.0 §4.2.3 Mohist citation says *Mòzǐ* ch. 35; the shipped manifest cites Book IX — pick one canonical citation. (b) `docs/Sight-vNext-MockB1-Toggle.svg` and `docs/sight-redesign-v0.2-mockE-tradition-registers.svg` show pre-expansion 7-tradition state; needs a fresh 24-tradition variant. (c) Concept Paper §9.1 (and the orientation §17 list of unread files) should footnote that `_manifests.generated.ts` is prebuild-generated and must regenerate when manifests change. All low-severity P3 polish.
 >
 > ### What did NOT close in v1.12
 >
@@ -33,13 +34,13 @@
 >
 > ### Top of queue rotates
 >
-> 1. **PJ-052** — Concept Paper v4.1 (the scholarly closeout for MIG-026; reads orientation v2.14 + the 24 tradition modules; ~2 days focused writing).
-> 2. **PJ-053** — λ-fix-6 native-quality translation re-audit.
-> 3. **MIG-024** — Sight v5 visual foundation Architect doc (carried from v1.11).
-> 4. **MIG-022 §N** — final integration audit + close-out.
-> 5. **PJ-005** — MIG-007 Links Settings tab.
+> 1. **PJ-053** — λ-fix-6 native-quality translation re-audit (now top since PJ-052 closed same-day).
+> 2. **MIG-024** — Sight v5 visual foundation Architect doc (carried from v1.11).
+> 3. **MIG-022 §N** — final integration audit + close-out.
+> 4. **PJ-005** — MIG-007 Links Settings tab.
+> 5. **PJ-054** — Sight v6 vitest test runner (blocks Plan §14.1+§14.2 tests).
 >
-> **Done count after v1.12**: 7 (unchanged). **Cancelled**: 1. **Rejected**: 1. **Open PJs**: 56 (was 51).
+> **Done count after v1.12**: 8 (+1 — PJ-052 Concept Paper v4.1 closed same-day). **Cancelled**: 1. **Rejected**: 1. **Open PJs**: 56 (PJ-052 closed; PJ-057 new; PJ-056 partial-closed but kept Open).
 
 > **What changed in v1.11** (Sight v5 Concept Paper canonical · MIG-022 collision resolved · MIG-024 / 025 / 026 / 027 reserved · 1 new PJ filed):
 >
