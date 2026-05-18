@@ -1432,3 +1432,151 @@ specific issues (the well-defined pattern is now established).
 NSIS build kicked off in background after the polish; will copy as
 `Constellation_0.3.4_x64-setup.MIG026-phase-lambda-fix6.exe` per
 Eisa convention when complete.
+
+═══════════════════════════════════════════════════════════════════════
+State-of-standing record (per SO #5) — 2026-05-18 post-MIG-026 close
+═══════════════════════════════════════════════════════════════════════
+
+Triggered by Eisa: "Audit the remaining work to determine what has been
+stopped, closed, or remains valid." Per Standing Order #5, recorded
+into the session log before any pivot to new work.
+
+Source: 3 parallel agent audits (MIG entries / PJ-001–040 / PJ-041–057).
+Cross-checked against orientation v2.15, Pending Jobs v1.12, current
+code state, and recent commits on `main`.
+
+### (a) Verified-shipped and protected
+
+**MIGs (18 shipped):**
+- MIG-001, 003, 004 (filename + identity foundation)
+- MIG-008 (Create-Dialog), MIG-009 (Lens→Sight rename)
+- MIG-010, 011, 012 (Index lexical bridge / filter / search)
+- MIG-013 (CTSE), MIG-014 (stage taxonomy), MIG-015 (chunked migration)
+- MIG-017 (v2 Sight disabled), MIG-021v3 (CECE classifier)
+- MIG-025 (reallocated to Sight v6 foundation; shipped)
+- MIG-026 (24-tradition expansion + 9 shape renderers + plugin
+  layer + 15-locale full localization) — SHIPPED this session at
+  milestone tag `milestone/sight-v6.3-traditions-ship` (commit
+  99e4ed37); polish through PJ-052/053/055/056 partial; final
+  artifact `Constellation_0.3.4_x64-setup.MIG026-phase-lambda-fix6.exe`
+- MIG-027 (Sight theme inheritance)
+
+**PJs (18 terminal/shipped):**
+- Terminal: PJ-001/006/007 (Done), PJ-025/026/027 (Obsolete),
+  PJ-034 (Cancelled partial), PJ-037 (Rejected), PJ-039 (Done)
+- Shipped (body stale): PJ-035 (closed in MIG-019 §2B 16063735),
+  PJ-040 (closed in MIG-022 §D c072700)
+- Shipped (MIG-022 cascade): PJ-041/042/043/045
+- Shipped (MIG-026 this session): PJ-052/053/055
+
+### (b) At-risk / in-flight / superseded
+
+**MIGs SUPERSEDED (3):**
+- MIG-018 — Sight v3 projection foundation, shipped 2026-05-07 then
+  v3 retired by v6 pivot
+- MIG-019 — Sight v3 density + calendar + search + universe-health,
+  pivoted mid-flight to v4 then v5/v6 (commit 29ce0101 "v3 → v4
+  clean-slate pivot"); v2.15 §8 still lists as "🟢 Next-up" — DOC DRIFT
+- MIG-024 — Sight v5 Layer 1 visual foundation, shipped §1-6 then
+  superseded by v6 before §N could close; v2.15 §733 explicitly
+  marks "obsoleted by MIG-025"
+
+**MIGs ABANDONED (2):**
+- MIG-016 — Sight instant-toggle perf, cancelled partial-ship
+  2026-05-07
+- MIG-020 — Layer peeling + v2 retire, orphaned (v3 retired before
+  MIG-020 opened; zero commits)
+
+**PJs SUPERSEDED (1):**
+- PJ-038 — Sight v3 build umbrella, superseded by v6 / MIG-024 →
+  MIG-027 cascade; ledger still says "In-Progress"
+
+### (c) Known-broken / DOC DRIFT requiring inline fix
+
+1. **Pending Jobs v1.12 top-of-queue lists MIG-024 as #1** — OBSOLETE.
+   Should be MIG-022 §N or PJ-005 (MIG-007 Links Settings).
+2. **PJ-035 body says Open** — actually shipped in MIG-019 §2B.
+3. **PJ-040 body says Open** — actually shipped in MIG-022 §D.
+4. **PJ-038 status In-Progress** — actually SUPERSEDED by Sight v6.
+5. **Orientation v2.15 §8 Migrations table** — MIG-019 marked "Next-up"
+   (stale, should be SUPERSEDED); MIG-020/021/022/023/024/025 rows
+   missing or partial; MIG-026 row predates this session's ship-gate
+   commit and needs status refresh to "Closed 2026-05-18 milestone tag
+   sight-v6.3-traditions-ship".
+
+### (d) Pending but not started — STILL-OPEN-VALID
+
+**MIGs (5):**
+- **MIG-002** Enrichment Persistence — §7-10 pending; no PJ-NNN
+  tracks it; deprioritized indefinitely
+- **MIG-006** Wikilink Rename Cascade — §4-11 pending after BUG-015
+  incident + §3 redo
+- **MIG-007** Links Settings tab — same as PJ-005; no Architect
+  doc yet
+- **MIG-022 §N** — Final integration audit + close-out; can fire now
+- **MIG-023** — Warrant Research Concept Paper; reserved since
+  2026-05-11; not started
+
+**PJs (36 total, by priority):**
+
+P1 (next-up candidates):
+- PJ-002 — cid_cn collision scrub utility (boot-time, opt-in)
+- PJ-003 — Rename-collision popup (Override/Rename/Cancel)
+- PJ-004 — NSIS bundling lock workaround
+- PJ-005 — MIG-007 Links Settings tab (top-of-queue carry-forward)
+
+P2 (substantive):
+- PJ-008, PJ-009 — Typed-link duplication pair (single-file fixes)
+- PJ-010 — Unlinked Mentions frontmatter alias bleed
+- PJ-011 — Constellation Map issues (perf + tooltip + search)
+- PJ-012 — LinkLifecycle.fresh TS error (single-line)
+- PJ-013 — apply_lens dead-code deletion (decided 2026-05-09)
+- PJ-014 — 13-locale User Manual backfill
+- PJ-016/017/018/019 — Bundle: MIG-013 cleanup MIG (4 PJs in 1)
+- PJ-021 — Sky View WTD audit
+- PJ-022/023/024 — Backlinks/Outgoing/Tag-browser cache layers
+- PJ-028/029/033 — Stage-taxonomy follow-ups (dash splitting,
+  drift, dir="auto")
+- PJ-044/046/047/048/049/050 — MIG-022 polish backlog (6 items
+  sitting since 2026-05-09; zero progress)
+- PJ-054 — Sight v6 vitest test runner
+- PJ-056 — MIG-026 drift (literal-deletion phase)
+- PJ-057 — Post-MIG-026 doc-drift (3 items)
+
+P3 (housekeeping / accept):
+- PJ-020 (on-hold), PJ-030/031/032 (deferred-acceptable)
+- PJ-051 — Mock B1 SVG update (overlaps with PJ-057)
+
+### (e) NEEDS-USER-DECISION
+
+5 items where the audit can't determine status without Eisa input:
+
+1. **MIG-005 Alias-aware in-memory inbound** (Steps 4-8 pending since
+   fabrication catch) — resume or formally abandon?
+2. **PJ-015 360.3D Stratification Matrix guidance doc** (Blocked) —
+   has 360.3D Stage 3 stabilized enough to unblock?
+3. **PJ-036 Sight layer-peeling** — does Sight v6's facet sidebar
+   replace this need, or still ship "hide top-N centrality nodes"?
+4. **PJ-056 sub-question** — literal-deletion strategy: make
+   TraditionModule.name optional, switch to a separate literal-EN
+   registry, or accept the duplication as documentation?
+5. **MIG-022 §N close-out** — fire now (parallel-ready), or wait
+   until after the next major cascade?
+
+### Grand tally
+
+| Category | MIGs | PJs |
+|---|---|---|
+| Shipped | 18 | 18 |
+| Superseded | 3 | 1 |
+| Abandoned | 2 | 0 |
+| Still-open-valid | 5 | 36 |
+| Needs-decision | 1 | 3 |
+
+**Real top-of-queue** (after ledger cleanup):
+1. PJ-005 — MIG-007 Links Settings tab (P1, user-facing)
+2. PJ-002 — cid_cn collision scrub (P1, mini-MIG)
+3. PJ-003 — Rename-collision popup (P1, UX)
+4. PJ-008/PJ-009 — Typed-link duplication pair (P2, single-file)
+5. MIG-022 §N close-out
+6. PJ-016/017/018/019 bundle — MIG-013 cleanup MIG

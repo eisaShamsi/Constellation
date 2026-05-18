@@ -18,7 +18,7 @@
 > - **PJ-053 — λ-fix-6 native-quality translation re-audit** — **DONE 2026-05-18** (4 parallel polish agents). 192 keys polished across 7 locales: ru (35 — wrong-script Cyrillic + transliteration glosses), hi (23 — wrong-script Devanagari + glosses), de + fr + es (42 each — bare transliteration → `transliteration · native-gloss` pattern), pt (6 — PT-PT → PT-BR dialect unification beyond the audit's named 3), zh (2 — extension aria/tooltip transliteration → native Chinese). Now every Sunni-Islamic, Sanskrit pramāṇa, Hebrew PaRDeS/middot, Greek/Latin Husserl, and Arabic Ibn Rushd / Shāṭibī technical term in the 7 polished locales carries a target-language gloss matching the ar/zh/ko quality bar.
 > - **PJ-054 — Sight v6 vitest test runner** (Plan §14.1 channel-isolation + §14.2 perf tests are blocked on the deferred vitest runner; write both `tradition-isolation.test.ts` and `tradition-perf.test.ts` when runner ships).
 > - **PJ-055 — User-plugin label schema warning** — **DONE 2026-05-18** in commit `e63ee0c7`. `docs/traditions/schema/tradition.v1.schema.json` top-level description now warns that dotted-path-shaped literal labels would collide with Constellation's own i18n key namespace.
-> - **PJ-056 — MIG-026 drift cleanup** — **PARTIAL** (3 doc comments fixed inline 2026-05-18 in commit `e63ee0c7`: dome.ts STRATUM_LABELS comment, types.ts:444 TraditionModule.name comment, traditions/index.ts:222 FAMILIES.label comment. Literal-deletion phase — 24 dead `name:` literals + 10 dead `FAMILIES[*].label` literals — stays open because the literals are still type-required by `TraditionModule`/`FamilyEntry` and serve as the canonical English source-of-truth that en.json mirrors. Fully closing this PJ requires deciding whether to make the type field optional, switch to a separate "literal-EN-fallback" registry, or accept the duplication as documentation. Defer until a focused design choice can be made).
+> - **PJ-056 — MIG-026 drift cleanup** — **DONE 2026-05-18** (3 stale doc comments fixed inline in commit `e63ee0c7`: dome.ts STRATUM_LABELS, types.ts:444 TraditionModule.name, traditions/index.ts:222 FAMILIES.label). The literal-deletion phase (24 `name:` literals + 10 `FAMILIES[*].label` literals) is **closed by Eisa decision 2026-05-18**: accept the duplication as documentation. The literals serve as the canonical English source-of-truth that en.json mirrors and as a defensive renderer fallback for the unsupported-locale + missing-en-entry edge case. No further work planned.
 > - **PJ-057 — Post-MIG-026 doc-drift surfaced during Concept Paper v4.1 write** (3 items): (a) v4.0 §4.2.3 Mohist citation says *Mòzǐ* ch. 35; the shipped manifest cites Book IX — pick one canonical citation. (b) `docs/Sight-vNext-MockB1-Toggle.svg` and `docs/sight-redesign-v0.2-mockE-tradition-registers.svg` show pre-expansion 7-tradition state; needs a fresh 24-tradition variant. (c) Concept Paper §9.1 (and the orientation §17 list of unread files) should footnote that `_manifests.generated.ts` is prebuild-generated and must regenerate when manifests change. All low-severity P3 polish.
 >
 > ### What did NOT close in v1.12
@@ -32,15 +32,32 @@
 >
 > No prior-open PJ closed by this cascade. The 5 new PJs (052–056) are all newly filed.
 >
+> ### Post-MIG-026 §μ state-of-standing closures (2026-05-18 turn-late, Eisa decisions)
+>
+> Triggered by an Eisa-requested triage of all remaining work. The 3-agent audit (MIG entries / PJ-001-040 / PJ-041-057) surfaced 5 NEEDS-DECISION items. Eisa rulings:
+>
+> - **MIG-005** Alias-aware in-memory inbound — **ABANDONED**. Steps 1-3 (`§121/§122/§123`) stay shipped; Steps 4-8 abandoned after the fabrication-catch pause. Reason: low leverage given current priorities.
+> - **PJ-015** 360.3D Stratification Matrix guidance doc — **ABANDONED**. Reason: matrix-UX dependency hasn't moved; doc was low-leverage. Refile fresh if user-facing need surfaces.
+> - **PJ-036** Sight layer peeling — **ABANDONED**. Reason: Sight v6's facet sidebar substitutes for the mechanic; the v2 Concept Paper §2.2 mechanism is no longer relevant under v6 architecture.
+> - **PJ-056** literal-deletion sub-question — **CLOSED as documentation**. The 24 `name:` + 10 `FAMILIES.label` literals stay; they're canonical EN source-of-truth + defensive renderer fallback.
+> - **MIG-022 §N** — **PROCEEDING NOW**. Final integration audit + close-out; this turn.
+>
+> ### Drift fixed during the audit (ledger reflected reality after the closures)
+>
+> - **PJ-035** body status "Open" → **DONE in MIG-019 §2B** (`16063735`). Milky Way density wash shipped the TF-IDF mechanic.
+> - **PJ-040** body status "Open" → **DONE in MIG-022 §D** (`c072700`). Already noted in v1.11 preamble; body never flipped.
+> - **PJ-038** body status "In-Progress" → **SUPERSEDED by Sight v6 / MIG-024 → MIG-027**. The 3-MIG Sight v3 trajectory was abandoned at commit `29ce0101`.
+>
 > ### Top of queue rotates
 >
-> 1. **MIG-024** — Sight v5 visual foundation Architect doc (carried from v1.11; now top since PJ-052 + PJ-053 both closed same-day).
-> 2. **MIG-022 §N** — final integration audit + close-out.
-> 3. **PJ-005** — MIG-007 Links Settings tab.
-> 4. **PJ-054** — Sight v6 vitest test runner (blocks Plan §14.1+§14.2 tests).
-> 5. **PJ-055** — User-plugin schema warning. **DONE 2026-05-18** in `e63ee0c7`; included in PJ-053's same-cascade as `tradition.v1.schema.json` description update. (Listed here for visibility; the actual PJ-055 entry above is marked.)
+> 1. **MIG-022 §N** — final integration audit + close-out (firing this turn per Eisa direction).
+> 2. **PJ-005** — MIG-007 Links Settings tab (P1 user-facing; no Architect yet).
+> 3. **PJ-002** — `cid_cn` collision scrub utility (P1 mini-MIG).
+> 4. **PJ-003** — Rename-collision popup (P1 UX).
+> 5. **PJ-008 + PJ-009** — Typed-link duplication pair (P2 single-file fixes).
+> 6. **PJ-016/017/018/019 bundle** — MIG-013 cleanup MIG (4 PJs → 1 MIG).
 >
-> **Done count after v1.12**: 10 (+3 — PJ-052 Concept Paper v4.1 + PJ-053 λ-fix-6 + PJ-055 schema warning all closed 2026-05-18). **Cancelled**: 1. **Rejected**: 1. **Open PJs**: 54 (PJ-052/053/055 closed; PJ-057 new; PJ-056 partial-closed but kept Open).
+> **Done count after v1.12 post-audit**: 12 (+5 — PJ-052 Concept Paper v4.1 + PJ-053 λ-fix-6 + PJ-055 schema warning + PJ-056 drift cleanup + PJ-035 status-correction + PJ-040 status-correction). **Cancelled / Abandoned**: 4 (PJ-015 + PJ-036 abandoned 2026-05-18; PJ-034 retained from earlier; MIG-005 abandoned). **Rejected**: 1 (PJ-037). **Superseded**: 1 (PJ-038). **Open PJs**: 48.
 
 > **What changed in v1.11** (Sight v5 Concept Paper canonical · MIG-022 collision resolved · MIG-024 / 025 / 026 / 027 reserved · 1 new PJ filed):
 >
@@ -399,7 +416,7 @@ Disabled v2 Sight (`ConstellationSight2.svelte` + the v2 dock button + the v2 mo
 
 ### PJ-040 — UA-short-circuit on partial frontmatter discards other catalogers' votes on the unfilled axis
 
-**Status.** Open · **Severity.** P2 · **Effort.** Single PR (~1 commit) · **Filed.** 2026-05-11 (Gate 2 Stage 6 observation)
+**Status.** **DONE 2026-05-11** in MIG-022 §D commit `c072700` (refactored to per-axis dispatch; both SOURCES and CONTENT TYPE sections now appear on cards with partial frontmatter). Body entry retained as historical record. · **Severity.** P2 · **Effort.** Single PR (~1 commit) · **Filed.** 2026-05-11 (Gate 2 Stage 6 observation)
 
 When the User-Authority cataloger short-circuits the synthesis (because frontmatter has at least one axis populated), `user_authority_short_circuit` in `src-tauri/src/cece/synthesis.rs:120-167` produces an `AxisDecision` for BOTH axes hardcoded to `regime: ConfidenceRegime::Unanimous`, with `primary` taken from UA's per-axis vote. If UA only voiced on horizontal (frontmatter has `sources:` but not `content_type:`), the vertical axis gets `primary: None` and `regime: Unanimous` — vacuously settled. The result: the OTHER catalogers' vertical-axis votes (Linguistic + Structural + Semantic + Graph) are discarded entirely; the suggestion record has no vertical entry; the Source Review card renders with NO CONTENT TYPE section.
 
@@ -710,15 +727,13 @@ Pre-existing svelte-check error at `store.ts:2212`: `Property 'fresh' is missing
 
 ### PJ-015 — 360.3D Stratification Matrix guidance doc
 
-**Status.** Blocked · **Severity.** P2 · **Effort.** Single doc (~2000 words)
+**Status.** **ABANDONED 2026-05-18** (Eisa decision during post-MIG-026 state-of-standing triage) · **Severity.** P2 · **Effort.** Single doc (~2000 words)
 
-Boss-requested teaching doc on how to read / interpret the 360.3D Stratification Matrix. Three reads (Position / Profile / Absence), mental shapes catalogue, matrix → action examples. Modeled after the Index Guidance doc.
+Originally a Boss-requested teaching doc on how to read / interpret the 360.3D Stratification Matrix (Three reads — Position / Profile / Absence, mental shapes catalogue, matrix → action examples). Blocked indefinitely on 360.3D Stage 3 closure + matrix UX stabilization.
 
-**Blocked on:** 360.3D Stage 3 closing + matrix UX stabilizing — writing the guidance before the UI settles produces stale doc.
+**Why abandoned**: Eisa's call 2026-05-18 — the matrix-UX dependency hasn't moved, the doc is low-leverage given other priorities, and 360.3D itself may not need a separate guidance doc. If a user-facing need surfaces later it can be filed fresh.
 
-**Source.** `project_360_3d_matrix_guidance_doc.md`.
-
-**Acceptance.** New doc at `docs/help.uConstellation.World/360.3D/Stratification Matrix Guidance.md`. Translated to ar (en first, others queued via PJ-014 backfill pattern).
+**Source.** `project_360_3d_matrix_guidance_doc.md` (memory note retained as historical record).
 
 ---
 
@@ -951,7 +966,7 @@ The Sight Concept Paper v1.1 (`docs/Constellation-Sight-Concept-Paper-v1.1.md`) 
 
 ### PJ-035 — Sight content-similarity TF-IDF edges
 
-**Status.** Open · **Severity.** P2 · **Effort.** Multi-step (vector compute + cache + integration)
+**Status.** **DONE (within MIG-019 §2B)** in commit `16063735` "MIG-019 §2B — Milky Way density wash (PJ-035) + Settings toggle". The PJ-035 mechanic shipped under MIG-019's Milky Way band per the v3 inheritance promise. v1.11/v1.12 preamble never updated to reflect this; corrected in v1.12 §μ state-of-standing audit (2026-05-18). · **Severity.** P2 · **Effort.** Multi-step (vector compute + cache + integration)
 
 **The InfraNodus-defining mechanic.** v2 Sight wires explicit-wikilink edges (weight 1.0) and shared-tag edges (weight 0.6) into its graph build. The third edge type from the Concept Paper §3.3 — **content similarity (weight 0.3, TF-IDF cosine)** — is not implemented. This is the mechanic that lets Sight surface *latent* connections — notes that talk about the same topic without being explicitly linked. Without it, Sight cannot detect structural gaps that span un-linked-but-related clusters.
 
@@ -965,15 +980,11 @@ The Sight Concept Paper v1.1 (`docs/Constellation-Sight-Concept-Paper-v1.1.md`) 
 
 ### PJ-036 — Sight layer peeling
 
-**Status.** Open · **Severity.** P3 · **Effort.** Single feature (compute + UI toggle)
+**Status.** **ABANDONED 2026-05-18** (Eisa decision during post-MIG-026 state-of-standing triage — Sight v6's facet sidebar substitutes for the layer-peeling need; the v2 Concept Paper §2.2 mechanic 5 is no longer relevant under the v6 architecture). · **Severity.** P3 · **Effort.** Single feature (compute + UI toggle)
 
-**The "remove the obvious to reveal the subtle" mechanic.** v2 Sight does not implement the Concept Paper §2.2 mechanic 5 — *layer peeling* — where the user temporarily hides the top-N centrality nodes (typically MOC / index notes) and the analytics recompute on the residual graph. This reveals secondary structure beneath the dominant nodes.
+Originally proposed in `docs/Constellation-Sight-Concept-Paper-v1.1.md` §2.2 as the "remove the obvious to reveal the subtle" mechanic — hide top-N centrality nodes (typically MOC / index notes) and recompute analytics on the residual graph. Intended to be inheritable into v3 as a "hide brightest stars" toggle.
 
-**Source.** `docs/Constellation-Sight-Concept-Paper-v1.1.md` §2.2 + §3.2 + §12 truth-status row.
-
-**Acceptance.** A "Peel layer" toggle in Sight's sidebar. When activated, hide top-N nodes (N user-configurable, default 10) by centrality and re-run Brandes / Louvain / structural-gaps / universe-health on the residual graph. Secondary clusters and bridges become visible; user can iterate (peel again to reveal a third layer).
-
-**Inheritable into v3 (PJ-038)**: in v3's star-chart aesthetic, layer peeling becomes a **"hide brightest stars"** toggle — visually obvious instead of buried in a menu. Same compute, cleaner UX.
+**Why abandoned**: Sight v6 ships a facet sidebar (`facetSidebar.svelte`) with 6 facet groups (Folder / Library / Stratum / Confidence / Stage / Provenance), each filtering to a subset of stars. The user can already isolate secondary structure by negative-selecting the dominant nodes' facets — the same diagnostic Outcome layer-peeling promised, delivered through a different UI metaphor that fits v6's tradition-aware grammar.
 
 ---
 
@@ -995,7 +1006,7 @@ The two surfaces remain independent. Map is the "shape" view (radial sunburst, o
 
 ### PJ-038 — Sight v3 build with own dedicated Concept Paper
 
-**Status.** **In-Progress** (MIG-018 closed 2026-05-07; MIG-019 next-up; MIG-020 final) · **Severity.** P1 · **Effort.** Multi-MIG (1 of 3 done)
+**Status.** **SUPERSEDED (by Sight v6 / MIG-024 → MIG-027)** — marked at v1.12 §μ state-of-standing audit (2026-05-18). The Sight v3 trajectory was abandoned mid-flight (commit `29ce0101` "MIG-019 §0 — Sight v3 → v4 clean-slate pivot") in favor of the v4 redesign, which itself superseded into v5 then v6 (the radial-anchor + mini-domes + tradition-chip architecture that just shipped under MIG-026). `SIGHT_V3_ENABLED = false` in `engine.ts`; `SIGHT_V6_ENABLED = true`. PJ-052 + PJ-053 (Sight v6 follow-ups) closed under MIG-026. The 3-MIG decomposition described in this entry's body (MIG-018 / MIG-019 / MIG-020) is no longer the live trajectory. · **Severity.** P1 (was) · **Effort.** Multi-MIG (was)
 
 **Phase 1 of 3 — MIG-018 closed Done (2026-05-07)**: projection foundation. Star-chart visualization with graph-distance Landmark-MDS embedding (Rust `sight_layout::compute_layout_embedding`), Lambert + stereographic projections (user-toggle in Settings → Sight), constellation territories drawn as Suwaidi warm-cream + gold soft-fill polygons (cycled by Louvain community id), faint connector lines at rest (Eisa's design call: visible structure without dominating attention), hover/click/double-click interactivity with side panel, RTL-aware tooltip + side panel. Six-phase cascade (§1A schema → §1B Landmark-MDS compute → §1C frontend skeleton → §1D star rendering + projection toggle → §1E territories + lines + interactivity [Boss-test gate] → §1F audit + close-out). 5 unit tests passing. Three-agent audit CLEAN (0 P0/P1/P2/P3). `SIGHT_V3_ENABLED = true` committed. Full record: `lab/reports/MIG-018-V3-PROJECTION-FOUNDATION-{ARCHITECT,PLAN,AUDIT}.md`.
 
