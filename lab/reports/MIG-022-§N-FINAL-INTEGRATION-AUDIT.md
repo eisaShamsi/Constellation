@@ -139,3 +139,41 @@ When you lock D-N1 + D-N2:
 ---
 
 **End of MIG-022 §N audit.** Awaiting Eisa's lock on D-N1 + D-N2 to officially close MIG-022.
+
+---
+
+## §8 · Close-out 2026-05-18 (retroactive Eisa decisions)
+
+The §1-§7 audit landed 2026-05-12 awaiting Eisa's D-N1 + D-N2 locks. The cascade that followed answered both implicitly via shipped commits before any explicit lock ceremony; this section records the retroactive close-out.
+
+### §8.1 — D-N1 lock (trigger-coverage P1)
+
+**Decision: (α) UPSERT in `index_note`.** Landed in commit `1240984d` titled *"MIG-024 §0 — UPSERT in index_note closes MIG-022 §N P1 trigger gap"*. The canonical note-save path now uses `INSERT ... ON CONFLICT(path) DO UPDATE SET ...` instead of `DELETE FROM note_meta` + `INSERT INTO note_meta`; the `note_state_history_au` trigger fires on the UPDATE side of the UPSERT, capturing every frontmatter edit (not just CECE classifier writes).
+
+The §3.3 recommendation had ranked (β) Rust-side explicit diff as preferred, but the shipped fix took (α) — likely chosen for simpler code surface + the trigger contract staying the single source of truth. Both options satisfied the §B contract; (α) is what shipped.
+
+### §8.2 — D-N2 lock (timing)
+
+**Decision: (a) Fix inside MIG-024 §0** — implicitly chosen by virtue of where the UPSERT landed.
+
+### §8.3 — Polish items disposition (F2–F8)
+
+| Finding | Status at close-out |
+|---|---|
+| **F1 (P1)** §B.4 IPCs have zero frontend consumers | RESOLVES-WITH-MIG-025; Sight v5/v6 history-read consumer never built directly (Sight v6's tradition-aware shape went a different direction); IPCs remain registered + tested. No active action; future Sight diagnostic layer can wire them. |
+| **F2 (P2)** Dead-code `_suppress_unused` shim at `synthesis.rs:455-458` | OPEN — cleanup backlog. Not filed as standalone PJ. |
+| **F3 / F4 (P2)** Magic numbers (0.80 cutoff; 1.0/0.7/0.4/0.0 multipliers) | OPEN — cleanup backlog. Calibration-provenance comment would close. |
+| **F5 (P2)** `compose_reasoning` English fallback alongside i18n template — no drift test | OPEN — test gap. |
+| **F6 (P3)** Stale comment `vertical_taxonomy.rs:18-21` | OPEN — single-line doc fix. |
+| **F7 (P3)** Duplicate trigger SQL at `history.rs:107-133` + `:238-264` | OPEN — extract to `const TRIGGER_SQL`. |
+| **F8 (P3)** 137 i18n keys missing from 13 non-en/ar locales (pre-existing) | Partially resolved by MIG-026 §λ + §λ-fix-3/4/5/6 which backfilled the Sight v6 namespace across all 15 locales (192 polish edits). The pre-MIG-022 i18n gap from MIG-021/021v2 wasn't directly addressed; still affects non-Sight surfaces. PJ-014 (13-locale User Manual backfill) is the related open item. |
+
+### §8.4 — PJ-044 / PJ-046 / PJ-047 / PJ-048 / PJ-049 / PJ-050
+
+The §N audit ran in parallel with the MIG-022 Boss-Test Gate 3, which produced 6 polish items filed as PJ-044 through PJ-050. Per the post-MIG-026 state-of-standing audit (2026-05-18), all 6 remain Open with zero post-ship commits. They sit in the polish backlog and could ship as a single MIG-022-polish bundle if Eisa prioritizes UI polish over new MIG work.
+
+### §8.5 — Final MIG-022 status
+
+**MIG-022 → DONE 2026-05-18.** §0 + §D + §E + §A + §B.1-§B.4 all shipped + tested + audited; §B.5 + §B.6 contradicted-and-deferred-by-design (Sight v3 was the planned consumer, retired); §N P1 fix landed in MIG-024 §0; §N P2/P3 polish backlog continues as 6 open PJs.
+
+**Commit chain**: §0 `d626ae7` → §D `c072700` → §E (7 commits) → §A (8 commits) → §B.1-B.4 (4 commits) → §N audit (4 docs 2026-05-12) → §N P1 fix `1240984d` → close-out record (this section, 2026-05-18).

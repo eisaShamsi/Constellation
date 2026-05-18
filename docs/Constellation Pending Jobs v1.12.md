@@ -40,7 +40,7 @@
 > - **PJ-015** 360.3D Stratification Matrix guidance doc — **ABANDONED**. Reason: matrix-UX dependency hasn't moved; doc was low-leverage. Refile fresh if user-facing need surfaces.
 > - **PJ-036** Sight layer peeling — **ABANDONED**. Reason: Sight v6's facet sidebar substitutes for the mechanic; the v2 Concept Paper §2.2 mechanism is no longer relevant under v6 architecture.
 > - **PJ-056** literal-deletion sub-question — **CLOSED as documentation**. The 24 `name:` + 10 `FAMILIES.label` literals stay; they're canonical EN source-of-truth + defensive renderer fallback.
-> - **MIG-022 §N** — **PROCEEDING NOW**. Final integration audit + close-out; this turn.
+> - **MIG-022 §N** — **CLOSED 2026-05-18** (this turn). The §N audit landed 2026-05-12 (4 docs at `lab/reports/MIG-022-§N-*.md`) but Eisa never explicitly locked D-N1/D-N2; the P1 trigger-coverage fix shipped in commit `1240984d` (MIG-024 §0 UPSERT) implicitly chose option (α) + timing (a). Retroactive §8 close-out section appended to `MIG-022-§N-FINAL-INTEGRATION-AUDIT.md` recording the close. **MIG-022 status → DONE**. P2/P3 polish items (F2-F7) remain in cleanup backlog as future polish MIG; F8 (i18n gap) partially resolved by MIG-026 §λ across all 15 locales.
 >
 > ### Drift fixed during the audit (ledger reflected reality after the closures)
 >
@@ -48,14 +48,14 @@
 > - **PJ-040** body status "Open" → **DONE in MIG-022 §D** (`c072700`). Already noted in v1.11 preamble; body never flipped.
 > - **PJ-038** body status "In-Progress" → **SUPERSEDED by Sight v6 / MIG-024 → MIG-027**. The 3-MIG Sight v3 trajectory was abandoned at commit `29ce0101`.
 >
-> ### Top of queue rotates
+> ### Top of queue rotates (post-MIG-022 §N close)
 >
-> 1. **MIG-022 §N** — final integration audit + close-out (firing this turn per Eisa direction).
-> 2. **PJ-005** — MIG-007 Links Settings tab (P1 user-facing; no Architect yet).
-> 3. **PJ-002** — `cid_cn` collision scrub utility (P1 mini-MIG).
-> 4. **PJ-003** — Rename-collision popup (P1 UX).
-> 5. **PJ-008 + PJ-009** — Typed-link duplication pair (P2 single-file fixes).
-> 6. **PJ-016/017/018/019 bundle** — MIG-013 cleanup MIG (4 PJs → 1 MIG).
+> 1. **PJ-005 / MIG-007** — Links Settings tab (P1 user-facing; no Architect yet).
+> 2. **PJ-002** — `cid_cn` collision scrub utility (P1 mini-MIG).
+> 3. **PJ-003** — Rename-collision popup (P1 UX).
+> 4. **PJ-008 + PJ-009** — Typed-link duplication pair (P2 single-file fixes).
+> 5. **PJ-016/017/018/019 bundle** — MIG-013 cleanup MIG (4 PJs → 1 MIG).
+> 6. **MIG-023** — Constellation Warrant Research workstream (Concept Paper first).
 >
 > **Done count after v1.12 post-audit**: 12 (+5 — PJ-052 Concept Paper v4.1 + PJ-053 λ-fix-6 + PJ-055 schema warning + PJ-056 drift cleanup + PJ-035 status-correction + PJ-040 status-correction). **Cancelled / Abandoned**: 4 (PJ-015 + PJ-036 abandoned 2026-05-18; PJ-034 retained from earlier; MIG-005 abandoned). **Rejected**: 1 (PJ-037). **Superseded**: 1 (PJ-038). **Open PJs**: 48.
 

@@ -1580,3 +1580,62 @@ P3 (housekeeping / accept):
 4. PJ-008/PJ-009 — Typed-link duplication pair (P2, single-file)
 5. MIG-022 §N close-out
 6. PJ-016/017/018/019 bundle — MIG-013 cleanup MIG
+
+═══════════════════════════════════════════════════════════════════════
+MIG-022 §N close-out (turn-late discovery: §N audit already ran 2026-05-12)
+═══════════════════════════════════════════════════════════════════════
+
+Per Eisa decision: "MIG-022 §N: Proceed."
+
+### Discovery
+
+Before spawning new §N audit agents, checked `lab/reports/` and found
+the 3-agent §N audit was ALREADY RUN on 2026-05-12:
+- `MIG-022-§N-AUDIT-INVARIANTS.md` (10 HOLDS / 0 AT RISK / 0 VIOLATED)
+- `MIG-022-§N-AUDIT-DRIFT.md` (0 P0 / 1 P1 / 4 P2 / 3 P3)
+- `MIG-022-§N-AUDIT-MIGRATION-PATH.md` (3 PASS / 1 FAIL / 3 UNVERIFIED)
+- `MIG-022-§N-FINAL-INTEGRATION-AUDIT.md` (consolidated verdict)
+
+The one P1 finding (trigger-coverage gap — `note_state_history_au`
+trigger doesn't fire on `index_note`'s DELETE+INSERT pattern) was
+explicitly recommended to be fixed via option (β) Rust-side diff +
+timing (a) inside MIG-024 §0.
+
+Git log search surfaced commit `1240984d` titled "MIG-024 §0 —
+UPSERT in index_note closes MIG-022 §N P1 trigger gap" — meaning the
+fix actually shipped via option (α) UPSERT (not the recommended β),
+inside MIG-024 §0 (correct timing).
+
+So MIG-022 §N was de-facto closed at 2026-05-12 (audit) → MIG-024 §0
+(P1 fix `1240984d`); only the formal close-out ceremony never ran.
+
+### Formal close-out (this turn)
+
+1. Appended §8 "Close-out 2026-05-18 (retroactive Eisa decisions)"
+   section to `MIG-022-§N-FINAL-INTEGRATION-AUDIT.md` recording:
+   - D-N1 lock: (α) UPSERT — landed in `1240984d`
+   - D-N2 lock: (a) Fix inside MIG-024 §0 — implicitly chosen
+   - F2-F8 polish items: 6 remain in cleanup backlog; F1 resolves-
+     with-future-Sight-diagnostic-layer; F8 partially resolved by
+     MIG-026 §λ.
+   - PJ-044/046/047/048/049/050: 6 polish PJs sit untouched.
+   - MIG-022 status → DONE.
+
+2. Pending Jobs v1.12 preamble updated: MIG-022 §N "PROCEEDING NOW"
+   → "CLOSED 2026-05-18". Top-of-queue rotated.
+
+3. Orientation v2.15 → v2.16:
+   - New preamble documents the post-MIG-026 state-of-standing
+     audit closures (4 abandons + 3 status corrections) + MIG-022
+     §N formal close.
+   - §8 Migrations table fully refreshed: 27 rows covering MIG-001
+     through MIG-027; previously had gap at MIG-020 → MIG-025 +
+     stale MIG-019 "Next-up" + stale MIG-026 "In flight".
+
+### Final state
+
+- MIG-022 status: **DONE** (was "In-Progress" since 2026-05-11 §A
+  Gate 3 PASS; §N audit complete; §N P1 fix shipped; formal
+  ceremony done this turn).
+- Pending Jobs Done count: 12 → **13** (+MIG-022 §N close).
+- Orientation v2.15 → **v2.16** (preserving v2.15).
