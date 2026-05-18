@@ -55,7 +55,7 @@
 	} from './traditions/pluginLoader';
 	import type { LayoutCacheRow, LinkEdge, StarDerived, FacetId, MiniDomeChannel, SlotChannel, TraditionId } from './types';
 	import { marked } from 'marked';
-	import { t } from '$lib/i18n';
+	import { t, locale } from '$lib/i18n';
 
 	let { onOpenNote = (_path: string, _libraryName: string) => {} }: {
 		onOpenNote?: (path: string, libraryName: string) => void;
@@ -244,7 +244,13 @@
 			// Defensive: ignore if the user closed or switched while the
 			// import was in flight.
 			if (manifestModalId === id) {
-				manifestContent = mod.getManifest(id as TraditionId);
+				// MIG-026 §λ-fix-1 — pass the active i18n locale so the
+				// modal renders the locale-appropriate translation.
+				// getManifest falls back to English when a translation
+				// is missing, so this is safe across all 15 supported
+				// locales + any future ones.
+				const activeLocale = $locale as Parameters<typeof mod.getManifest>[1];
+				manifestContent = mod.getManifest(id as TraditionId, activeLocale);
 			}
 		} catch (err) {
 			// Should not happen in practice — the file is bundled at
