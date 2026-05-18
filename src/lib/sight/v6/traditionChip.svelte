@@ -80,9 +80,12 @@
 		},
 		'mohist-san-biao': {
 			name: 'Mohist sān biǎo',
-			tooltip: 'Mohist sān biǎo — three standards as tests of doctrines (v1 preview)',
+			tooltip: 'Mohist sān biǎo — three standards as tests of doctrines',
 			scope: 'For doctrines tested by historical precedent / observational evidence / social benefit.',
-			preview: true,
+			// §θ-fix-1: removed PREVIEW badge — Mohist has been working
+			// through Phase γ + 5 subsequent phase tests with Boss PASS
+			// each time; the "v1 preview" qualifier no longer fits.
+			preview: false,
 		},
 		peirce: {
 			name: 'Peirce',

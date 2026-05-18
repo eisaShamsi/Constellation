@@ -51,15 +51,31 @@ type MasadirSource = 'quran' | 'sunnah' | 'ijma' | 'qiyas';
 /** Quadrant start angles in canvas math convention (0 = east, increases
  *  clockwise because canvas y is inverted). Each sector spans π/2 rad.
  *
- *  NE (upper right) = Qur'an  = angles −π/2 .. 0
- *  SE (lower right) = sunnah  = angles 0    .. π/2
- *  SW (lower left)  = ijmāʿ   = angles π/2  .. π
- *  NW (upper left)  = qiyās   = angles π    .. 3π/2  (≡ −π .. −π/2) */
+ *  §θ-fix-1 (Eisa Boss test 2026-05-17, audit during Phase θ verification):
+ *  same vertical-axis divider collision as pramāṇa pre-§δ.2-fix-1.
+ *  Pre-fix, the quadrants started at the cardinal axes (-π/2 = north,
+ *  0 = east, etc.), which made the top divider stroke run straight up
+ *  through the stratum labels on the +y axis. Applying the same +π/4
+ *  half-wedge offset shifts dividers to NE/SE/SW/NW positions; the
+ *  vertical axis falls cleanly inside the qiyās quadrant.
+ *
+ *  Post-fix quadrant positions (geometric):
+ *    Qur'an   = angles -π/4 .. π/4    (1:30 → 4:30, E wedge)
+ *    sunnah   = angles π/4 .. 3π/4    (4:30 → 7:30, S wedge)
+ *    ijmāʿ    = angles 3π/4 .. 5π/4   (7:30 → 10:30, W wedge)
+ *    qiyās    = angles 5π/4 .. 7π/4   (10:30 → 1:30, N wedge, includes +y axis)
+ *
+ *  Cultural mapping (Concept Paper §4.1.3): the 4 sources remain
+ *  CATEGORICAL "kinds of proof". The Concept Paper's NE/SE/SW/NW
+ *  description becomes E/S/W/N after this rotation — same doc-drift
+ *  item logged at MIG-026 ship-gate (paired with pramāṇa's identical
+ *  flag from §δ.2-fix-1). */
+const QUADRANT_ROTATION_OFFSET = Math.PI / 4;
 const QUADRANT_START_ANGLES: Record<MasadirSource, number> = {
-	quran: -Math.PI / 2,
-	sunnah: 0,
-	ijma: Math.PI / 2,
-	qiyas: Math.PI,
+	quran: -Math.PI / 2 + QUADRANT_ROTATION_OFFSET,
+	sunnah: 0 + QUADRANT_ROTATION_OFFSET,
+	ijma: Math.PI / 2 + QUADRANT_ROTATION_OFFSET,
+	qiyas: Math.PI + QUADRANT_ROTATION_OFFSET,
 };
 
 /** Display labels rendered in the dome chrome at each sector's wedge

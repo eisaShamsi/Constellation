@@ -237,6 +237,13 @@
 			case 'grid':
 			case 'binary-flow':
 			case 'relational':
+			case 'gradient':
+				// §θ-fix-1 (Eisa Boss test 2026-05-17): 'gradient' added
+				// to the +2 tier per "bump the star's size by 2px" for
+				// Polanyi. Polanyi doesn't redistribute stars (identity
+				// remap — stars stay in their Aristotelian cluster) but
+				// the fog overlay reduces visibility; +2 px compensates
+				// so individual stars in the tacit zone remain readable.
 				return 2;
 			case 'cyclic-flow':
 			case 'rings':

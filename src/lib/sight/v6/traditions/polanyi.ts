@@ -61,11 +61,16 @@ export const polanyi: TraditionModule = {
 		//   centerOpacity ≈ 0.14–0.18 (tacit core: stars there read as
 		//     "acknowledged but inarticulable")
 		//   edgeOpacity   ≈ 0.85–0.95 (explicit periphery: clearly readable)
-		// Picked 0.18 / 0.95 as a balanced first cut — leaves enough
-		// signal at center for hover/click to still hit, but unmistakably
-		// fades stars compared to the periphery.
+		// §θ-fix-1 (Eisa Boss test 2026-05-17): "raise its opacity" —
+		// centerOpacity raised 0.18 → 0.40 so tacit-zone stars are
+		// moderately visible (40% rather than 18%). The metaphor still
+		// reads (center is dimmer than edge), but stars remain
+		// individually recognizable. Combined with the +2 px star-radius
+		// boost added to the 'gradient' shape (SightV6.svelte switch),
+		// stars at center now read clearly without losing the tacit-to-
+		// explicit gradient signal.
 		return {
-			centerOpacity: 0.18,
+			centerOpacity: 0.40,
 			edgeOpacity: 0.95,
 			centerLabel: 'tacit',
 			edgeLabel: 'explicit',
