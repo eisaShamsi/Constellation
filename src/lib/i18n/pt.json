@@ -2308,7 +2308,7 @@
           },
           "ibn-khaldun-umran": {
             "hadari": "ḥaḍarī · sedentário",
-            "badawi": "badawī · nómada"
+            "badawi": "badawī · nômade"
           },
           "ibn-rushd-burhan": {
             "burhan": "burhān",
@@ -2332,7 +2332,7 @@
           },
           "longino": {
             "venues": "fóruns",
-            "uptake": "receção",
+            "uptake": "recepção",
             "publicStandards": "padrões públicos",
             "temperedEquality": "igualdade temperada"
           },
@@ -2376,7 +2376,7 @@
             "xin": "信 xìn"
           },
           "mignolo-pluriversal": {
-            "epistemicDisobedience": "desobediência epistémica",
+            "epistemicDisobedience": "desobediência epistêmica",
             "borderThinking": "pensamento de fronteira",
             "delinking": "desvinculação",
             "decolonialGnosis": "gnose descolonial",
@@ -2454,7 +2454,7 @@
       },
       "miniDome": {
         "title": {
-          "anchor": "UNIVERSO — vista principal",
+          "anchor": "UNIVERSO — visualização principal",
           "confidence": "CONFIANÇA — opacidade",
           "stage": "ETAPA — tom (disco completo)",
           "acts": "ATOS — tamanho (decil superior)",
@@ -2507,11 +2507,11 @@
       "header": {
         "subtitle": "v6.3 — Tradições (Fase 1)",
         "extendedBadge": "ESTENDIDO",
-        "extendedTooltip": "A vista estendida está LIGADA — os mini-domos são exibidos por defeito sempre que o Sight é aberto. Cmd-Shift-D para alternar.",
+        "extendedTooltip": "A visualização estendida está LIGADA — os mini-domos são exibidos por padrão sempre que o Sight é aberto. Cmd-Shift-D para alternar.",
         "filterCountTooltip": "Notas filtradas / notas totais",
         "filterCountSuffix": "notas",
-        "resetViewLabel": "Repor vista",
-        "resetViewTooltip": "Voltar ao domo principal com zoom por defeito (Repor vista)"
+        "resetViewLabel": "Redefinir visualização",
+        "resetViewTooltip": "Voltar ao domo principal com zoom padrão (Redefinir visualização)"
       }
     }
   },

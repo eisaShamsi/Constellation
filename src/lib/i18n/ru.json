@@ -2334,10 +2334,10 @@
             "badawi": "badawī · кочевой"
           },
           "ibn-rushd-burhan": {
-            "burhan": "burhān",
-            "jadal": "jadal",
-            "khataba": "khaṭāba",
-            "shir": "shiʿr"
+            "burhan": "burhān · доказательство",
+            "jadal": "jadal · диалектика",
+            "khataba": "khaṭāba · риторика",
+            "shir": "shiʿr · поэзия"
           },
           "ibuanyidanda": {
             "self": "я",
@@ -2382,21 +2382,21 @@
             "extensionTooltip": "Дополнительный источник масадир (только для отображения в v6.2; включение по заметкам через frontmatter будет добавлено позже)",
             "quran": "Коран",
             "sunnah": "сунна",
-            "ijma": "ijmāʿ",
-            "qiyas": "qiyās",
+            "ijma": "ijmāʿ · иджма",
+            "qiyas": "qiyās · аналогия",
             "extension": {
-              "istihsan": "istiḥsān",
-              "istishab": "istiṣḥāb",
-              "maslahaMursalah": "maṣlaḥa mursalah",
-              "urf": "ʿurf"
+              "istihsan": "istiḥsān · истихсан",
+              "istishab": "istiṣḥāb · истисхаб",
+              "maslahaMursalah": "maṣlaḥa mursalah · маслаха мурсала",
+              "urf": "ʿurf · обычай"
             }
           },
           "mencian-sprouts": {
-            "ceyin": "惻隱 cèyǐn",
-            "xiuwu": "羞惡 xiūwù",
-            "cirang": "辭讓 círàng",
-            "shifei": "是非 shìfēi",
-            "xin": "信 xìn"
+            "ceyin": "惻隱 cèyǐn · сострадание",
+            "xiuwu": "羞惡 xiūwù · стыд",
+            "cirang": "辭讓 círàng · уступчивость",
+            "shifei": "是非 shìfēi · различение",
+            "xin": "信 xìn · доверие"
           },
           "mignolo-pluriversal": {
             "epistemicDisobedience": "эпистемическое неповиновение",
@@ -2412,10 +2412,10 @@
             "yong": "用 yòng · использование"
           },
           "pardes": {
-            "peshat": "peshat",
-            "remez": "remez",
-            "derash": "derash",
-            "sod": "sod"
+            "peshat": "peshat · буквальный",
+            "remez": "remez · намёк",
+            "derash": "derash · толкование",
+            "sod": "sod · сокровенный"
           },
           "peirce": {
             "firstness": "Первичность",
@@ -2427,33 +2427,33 @@
             "explicit": "явное"
           },
           "pramana": {
-            "pratyaksha": "pratyakṣa",
-            "anumana": "anumāna",
-            "upamana": "upamāna",
-            "shabda": "śabda"
+            "pratyaksha": "pratyakṣa · восприятие",
+            "anumana": "anumāna · логический вывод",
+            "upamana": "upamāna · сравнение",
+            "shabda": "śabda · свидетельство"
           },
           "shatibi-maqasid": {
             "tier": {
-              "daruriyyat": "ḍarūriyyāt",
-              "hajiyyat": "ḥājiyyāt",
-              "tahsiniyyat": "taḥsīniyyāt"
+              "daruriyyat": "ḍarūriyyāt · необходимости",
+              "hajiyyat": "ḥājiyyāt · нужды",
+              "tahsiniyyat": "taḥsīniyyāt · улучшения"
             },
             "essential": {
-              "din": "dīn",
-              "nafs": "nafs",
-              "aql": "ʿaql",
-              "nasl": "nasl",
-              "mal": "māl"
+              "din": "dīn · вера",
+              "nafs": "nafs · жизнь",
+              "aql": "ʿaql · разум",
+              "nasl": "nasl · потомство",
+              "mal": "māl · имущество"
             }
           },
           "talmudic-middot": {
-            "kalVaChomer": "1 · kal va-chomer",
-            "gezeraShava": "2 · gezera shava",
-            "binyanAv1": "3 · binyan av (1 стих)",
-            "binyanAv2": "4 · binyan av (2 стиха)",
-            "kelalUPerat": "5 · kelal u-perat",
-            "peratUKelal": "6 · perat u-kelal",
-            "kpk": "7 · k-p-k",
+            "kalVaChomer": "1 · kal va-chomer · от лёгкого к тяжёлому",
+            "gezeraShava": "2 · gezera shava · словесная аналогия",
+            "binyanAv1": "3 · binyan av (1 стих) · построение от одного стиха",
+            "binyanAv2": "4 · binyan av (2 стиха) · построение от двух стихов",
+            "kelalUPerat": "5 · kelal u-perat · общее затем частное",
+            "peratUKelal": "6 · perat u-kelal · частное затем общее",
+            "kpk": "7 · k-p-k · общее-частное-общее",
             "specialPurpose": "8 · особое назначение",
             "extractedLighter": "9 · выведенное (более лёгкое)",
             "extractedDifferent": "10 · выведенное (отличное)",

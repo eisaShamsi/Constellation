@@ -2378,8 +2378,8 @@
             "being": "存在"
           },
           "masadir": {
-            "extensionAriaLabel": "马萨迪尔附加来源",
-            "extensionTooltip": "附加的马萨迪尔来源(在 v6.2 中仅供显示;按笔记启用通过前端事项将在后续版本提供)",
+            "extensionAriaLabel": "附加伊斯兰法源(uṣūl 之外)",
+            "extensionTooltip": "附加的伊斯兰法源(v6.2 仅供显示;按笔记启用通过前端事项将在后续版本提供)",
             "quran": "古兰经",
             "sunnah": "圣行",
             "ijma": "公议",

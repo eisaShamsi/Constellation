@@ -1873,10 +1873,10 @@
             "badawi": "badawī · nomade"
           },
           "ibn-rushd-burhan": {
-            "burhan": "burhān",
-            "jadal": "jadal",
-            "khataba": "khaṭāba",
-            "shir": "shiʿr"
+            "burhan": "burhān · démonstration",
+            "jadal": "jadal · dialectique",
+            "khataba": "khaṭāba · rhétorique",
+            "shir": "shiʿr · poésie"
           },
           "ibuanyidanda": {
             "self": "soi",
@@ -1887,10 +1887,10 @@
             "missingLink": "chaînon manquant"
           },
           "korean-songnihak": {
-            "liSa": "lǐ · 四端",
-            "liChil": "lǐ · 七情",
-            "qiChil": "qì · 七情",
-            "qiSa": "qì · 四端"
+            "liSa": "lǐ · 四端 (quatre commencements)",
+            "liChil": "lǐ · 七情 (sept sentiments)",
+            "qiChil": "qì · 七情 (sept sentiments)",
+            "qiSa": "qì · 四端 (quatre commencements)"
           },
           "longino": {
             "venues": "tribunes",
@@ -1920,22 +1920,22 @@
             "extensionAriaLabel": "Sources masādir supplémentaires",
             "extensionTooltip": "Source masādir supplémentaire (affichage uniquement en v6.2 ; activation par note via frontmatter dans une version ultérieure)",
             "quran": "Coran",
-            "sunnah": "sunnah",
-            "ijma": "ijmāʿ",
-            "qiyas": "qiyās",
+            "sunnah": "sunna",
+            "ijma": "ijmāʿ · consensus",
+            "qiyas": "qiyās · analogie",
             "extension": {
-              "istihsan": "istiḥsān",
-              "istishab": "istiṣḥāb",
-              "maslahaMursalah": "maṣlaḥa mursalah",
-              "urf": "ʿurf"
+              "istihsan": "istiḥsān · préférence",
+              "istishab": "istiṣḥāb · continuité",
+              "maslahaMursalah": "maṣlaḥa mursalah · intérêt général",
+              "urf": "ʿurf · coutume"
             }
           },
           "mencian-sprouts": {
-            "ceyin": "惻隱 cèyǐn",
-            "xiuwu": "羞惡 xiūwù",
-            "cirang": "辭讓 círàng",
-            "shifei": "是非 shìfēi",
-            "xin": "信 xìn"
+            "ceyin": "惻隱 cèyǐn · compassion",
+            "xiuwu": "羞惡 xiūwù · pudeur",
+            "cirang": "辭讓 círàng · déférence",
+            "shifei": "是非 shìfēi · discernement",
+            "xin": "信 xìn · sincérité"
           },
           "mignolo-pluriversal": {
             "epistemicDisobedience": "désobéissance épistémique",
@@ -1951,10 +1951,10 @@
             "yong": "用 yòng · usage"
           },
           "pardes": {
-            "peshat": "peshat",
-            "remez": "remez",
-            "derash": "derash",
-            "sod": "sod"
+            "peshat": "peshat · sens littéral",
+            "remez": "remez · allusion",
+            "derash": "derash · interprétation",
+            "sod": "sod · sens secret"
           },
           "peirce": {
             "firstness": "Priméité",
@@ -1966,33 +1966,33 @@
             "explicit": "explicite"
           },
           "pramana": {
-            "pratyaksha": "pratyakṣa",
-            "anumana": "anumāna",
-            "upamana": "upamāna",
-            "shabda": "śabda"
+            "pratyaksha": "pratyakṣa · perception",
+            "anumana": "anumāna · inférence",
+            "upamana": "upamāna · comparaison",
+            "shabda": "śabda · témoignage"
           },
           "shatibi-maqasid": {
             "tier": {
-              "daruriyyat": "ḍarūriyyāt",
-              "hajiyyat": "ḥājiyyāt",
-              "tahsiniyyat": "taḥsīniyyāt"
+              "daruriyyat": "ḍarūriyyāt · nécessités",
+              "hajiyyat": "ḥājiyyāt · besoins",
+              "tahsiniyyat": "taḥsīniyyāt · améliorations"
             },
             "essential": {
-              "din": "dīn",
-              "nafs": "nafs",
-              "aql": "ʿaql",
-              "nasl": "nasl",
-              "mal": "māl"
+              "din": "dīn · religion",
+              "nafs": "nafs · vie",
+              "aql": "ʿaql · raison",
+              "nasl": "nasl · descendance",
+              "mal": "māl · biens"
             }
           },
           "talmudic-middot": {
-            "kalVaChomer": "1 · kal va-chomer",
-            "gezeraShava": "2 · gezera shava",
+            "kalVaChomer": "1 · kal va-chomer · du léger au lourd",
+            "gezeraShava": "2 · gezera shava · analogie de mots",
             "binyanAv1": "3 · binyan av (1 verset)",
             "binyanAv2": "4 · binyan av (2 versets)",
-            "kelalUPerat": "5 · kelal u-perat",
-            "peratUKelal": "6 · perat u-kelal",
-            "kpk": "7 · k-p-k",
+            "kelalUPerat": "5 · kelal u-perat · général et particulier",
+            "peratUKelal": "6 · perat u-kelal · particulier et général",
+            "kpk": "7 · k-p-k · général-particulier-général",
             "specialPurpose": "8 · finalité spéciale",
             "extractedLighter": "9 · extrait (plus léger)",
             "extractedDifferent": "10 · extrait (différent)",
@@ -2003,7 +2003,7 @@
           "wang-yangming": {
             "zhi": "知 zhī · connaître",
             "xing": "行 xíng · agir",
-            "liangzhi": "良知 liángzhī"
+            "liangzhi": "良知 liángzhī · savoir inné"
           }
         }
       },

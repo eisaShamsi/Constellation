@@ -2334,10 +2334,10 @@
             "badawi": "badawī · खानाबदोश"
           },
           "ibn-rushd-burhan": {
-            "burhan": "burhān",
-            "jadal": "jadal",
-            "khataba": "khaṭāba",
-            "shir": "shiʿr"
+            "burhan": "burhān · बुरहान (अकाट्य प्रदर्शन)",
+            "jadal": "jadal · जदल (द्वंद्ववाद)",
+            "khataba": "khaṭāba · ख़ताबा (वाग्मिता)",
+            "shir": "shiʿr · शिअ्र (काव्य)"
           },
           "ibuanyidanda": {
             "self": "स्वयं",
@@ -2382,13 +2382,13 @@
             "extensionTooltip": "अतिरिक्त मसादिर स्रोत (v6.2 में केवल प्रदर्शन के लिए; प्रति-नोट सक्षमीकरण frontmatter के माध्यम से आगामी रिलीज़ में आएगा)",
             "quran": "क़ुरआन",
             "sunnah": "सुन्नह",
-            "ijma": "ijmāʿ",
-            "qiyas": "qiyās",
+            "ijma": "ijmāʿ · इज्मा",
+            "qiyas": "qiyās · क़ियास",
             "extension": {
-              "istihsan": "istiḥsān",
-              "istishab": "istiṣḥāb",
-              "maslahaMursalah": "maṣlaḥa mursalah",
-              "urf": "ʿurf"
+              "istihsan": "istiḥsān · इस्तिहसान",
+              "istishab": "istiṣḥāb · इस्तिशहाब",
+              "maslahaMursalah": "maṣlaḥa mursalah · मसलहा मुर्सला",
+              "urf": "ʿurf · उर्फ़"
             }
           },
           "mencian-sprouts": {
@@ -2412,10 +2412,10 @@
             "yong": "用 yòng · उपयोग"
           },
           "pardes": {
-            "peshat": "peshat",
-            "remez": "remez",
-            "derash": "derash",
-            "sod": "sod"
+            "peshat": "peshat · अक्षरशः",
+            "remez": "remez · संकेत",
+            "derash": "derash · व्याख्या",
+            "sod": "sod · रहस्य"
           },
           "peirce": {
             "firstness": "प्रथमता",
@@ -2434,26 +2434,26 @@
           },
           "shatibi-maqasid": {
             "tier": {
-              "daruriyyat": "ḍarūriyyāt",
-              "hajiyyat": "ḥājiyyāt",
-              "tahsiniyyat": "taḥsīniyyāt"
+              "daruriyyat": "ḍarūriyyāt · ज़रूरियात",
+              "hajiyyat": "ḥājiyyāt · हाजियात",
+              "tahsiniyyat": "taḥsīniyyāt · तहसीनियात"
             },
             "essential": {
-              "din": "dīn",
-              "nafs": "nafs",
-              "aql": "ʿaql",
-              "nasl": "nasl",
-              "mal": "māl"
+              "din": "dīn · दीन (धर्म)",
+              "nafs": "nafs · नफ़्स (जीवन)",
+              "aql": "ʿaql · अक़्ल (बुद्धि)",
+              "nasl": "nasl · नस्ल (वंश)",
+              "mal": "māl · माल (संपत्ति)"
             }
           },
           "talmudic-middot": {
-            "kalVaChomer": "1 · kal va-chomer",
-            "gezeraShava": "2 · gezera shava",
+            "kalVaChomer": "1 · kal va-chomer (हल्के से भारी)",
+            "gezeraShava": "2 · gezera shava (शब्द-सादृश्य)",
             "binyanAv1": "3 · binyan av (1 श्लोक)",
             "binyanAv2": "4 · binyan av (2 श्लोक)",
-            "kelalUPerat": "5 · kelal u-perat",
-            "peratUKelal": "6 · perat u-kelal",
-            "kpk": "7 · k-p-k",
+            "kelalUPerat": "5 · kelal u-perat (सामान्य और विशेष)",
+            "peratUKelal": "6 · perat u-kelal (विशेष और सामान्य)",
+            "kpk": "7 · k-p-k (सामान्य-विशेष-सामान्य)",
             "specialPurpose": "8 · विशेष प्रयोजन",
             "extractedLighter": "9 · निष्कर्षित (हल्का)",
             "extractedDifferent": "10 · निष्कर्षित (भिन्न)",

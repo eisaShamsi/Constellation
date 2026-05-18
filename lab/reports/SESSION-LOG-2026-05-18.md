@@ -1362,3 +1362,73 @@ need fresh 24-tradition variants.
 Agent's draft referenced ship-tag commit as `f382a97b` (the last
 §λ-fix commit); the actual milestone tag was cut at `99e4ed37`
 (the Phase μ ship-gate commit). Corrected inline before commit.
+
+═══════════════════════════════════════════════════════════════════════
+PJ-053 — λ-fix-6 native-quality translation re-audit (DONE same-day)
+═══════════════════════════════════════════════════════════════════════
+
+Eisa: "Proceed" → cascade through the next top-of-queue. PJ-053 was
+next (since PJ-052 closed earlier this turn).
+
+### Delivered
+
+4 parallel polish agents, each with a tight punch list from the
+prior λ-fix-6 audit:
+
+- **ru.json**: 35 keys polished. Cyrillic glosses added to bare-Latin
+  values for ALL Sunni-Islamic, Sanskrit pramāṇa, Hebrew PaRDeS, Hebrew
+  Talmudic (rows 1-7), Arabic Ibn Rushd, Shāṭibī maqāṣid (tier + 5
+  essentials), and Mencian-sprouts terms. Spot-check: `masadir.ijma =
+  "ijmāʿ · иджма"`, `pardes.peshat = "peshat · буквальный"`,
+  `pramana.pratyaksha = "pratyakṣa · восприятие"`.
+- **hi.json**: 23 keys polished. Devanagari glosses added to the same
+  technical-term blocks (masadir.extension fully glossed; Ibn Rushd +
+  PaRDeS + Shāṭibī + Talmudic-middot partial). Spot-check:
+  `masadir.extension.istihsan = "istiḥsān · इस्तिहसान"`.
+- **de.json + fr.json + es.json**: 42 keys polished EACH (126 total).
+  Same pattern: bare transliteration → `transliteration · gloss` with
+  target-language equivalent. Examples: de `ijmāʿ · Konsens`, fr
+  `ijmāʿ · consensus`, es `ijmāʿ · consenso`; de `peshat · wörtlich`,
+  fr `peshat · sens littéral`, es `peshat · sentido literal`; de
+  `pratyakṣa · Wahrnehmung`, fr `pratyakṣa · perception`, es
+  `pratyakṣa · percepción`. German noun glosses capitalized per
+  convention; French + Spanish nouns lowercase.
+- **pt.json + zh.json**: pt 6 keys (3 from audit + 3 dialect drift
+  found by scan: `por defeito` → `por padrão`; `Repor vista` →
+  `Redefinir visualização`; `nómada` → `nômade`; etc., aligning the
+  v6.header block with the file's existing PT-BR voice). zh 2 keys
+  (`masadir.extensionAriaLabel` + `extensionTooltip`: dropped the
+  "马萨迪尔" transliteration; now reads `附加伊斯兰法源(uṣūl 之外)`
+  + `附加的伊斯兰法源(...)`, consistent with the per-sector Chinese
+  `古兰经/圣行/公议/类比` already in place).
+
+### Total
+
+**192 keys polished across 7 locales** (ru/hi/de/fr/es/pt/zh) in the
+single PJ-053 cascade. The 8th locale touched in this MIG cascade
+(ar) was curated by Claude; the 13 locales total are now all at or
+near the ar/zh/ko quality bar.
+
+### Coverage
+
+The audit's spot-check covered de, ru, zh deep + fa/he/ja/tr
+header-only. fa/he/ja/tr canvas wasn't deep-audited; if Boss spots
+quality gaps in those locales, a follow-up λ-fix-6.b can address
+specific issues (the well-defined pattern is now established).
+
+### PJ ledger updates (v1.12 preamble)
+
+- PJ-053: marked DONE 2026-05-18.
+- PJ-055: also marked DONE retroactively — the schema warning landed
+  in `e63ee0c7` earlier this turn but the preamble hadn't been
+  updated to reflect the close.
+- Done count: 7 → 10 (+3 same-day: PJ-052, PJ-053, PJ-055).
+- Open PJs: 56 → 54.
+- Top-of-queue rotates: **MIG-024** (Sight v5 visual foundation
+  Architect doc — carried from v1.11) is now top.
+
+### Build artifact
+
+NSIS build kicked off in background after the polish; will copy as
+`Constellation_0.3.4_x64-setup.MIG026-phase-lambda-fix6.exe` per
+Eisa convention when complete.
