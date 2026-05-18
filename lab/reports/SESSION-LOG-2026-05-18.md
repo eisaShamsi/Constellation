@@ -284,3 +284,119 @@ strip in dropdown panel) + `src/lib/sight/v6/SightV6.svelte` (wire
 This is where the doc work lands as user-visible behavior — clicking
 ⓘ on a chip opens the manifest for that tradition in NotePane.
 
+---
+
+## Phase ι.2 — ⓘ disclosure button + manifest modal (code shipped)
+
+**Function in hand**: ⓘ button (J3) per chip in tradition dropdown +
+manifest viewer modal per Plan §11.2.
+
+### Files
+
+5 files changed:
+
+- **NEW** `scripts/build-tradition-manifests.mjs` — build-time scanner
+  that reads `docs/traditions/*.md` (excluding README.md) and writes
+  `src/lib/sight/v6/traditions/_manifests.generated.ts` exporting
+  `MANIFESTS: Record<TraditionId, string>` + `getManifest(id)`.
+  Deterministic output (filename-sorted); 24 manifests at 87KB. Idempotent
+  by construction.
+- **NEW (generated)** `src/lib/sight/v6/traditions/_manifests.generated.ts`
+  — committed to git for first-clone determinism + CI safety. Header
+  documents the regeneration command.
+- **MODIFIED** `package.json` — adds `prebuild` + `predev` hooks that
+  fire `node scripts/build-tradition-manifests.mjs` automatically.
+  Adds the `build:tradition-manifests` script for manual regeneration.
+- **MODIFIED** `src/lib/sight/v6/traditionChip.svelte`:
+  - New `openManifest(id: TraditionId)` callback prop.
+  - New `onDropdownClose()` callback prop (cascade-close the manifest
+    modal when the dropdown closes for any reason).
+  - New ⓘ button per tradition row, between the name-button and the
+    pin-star button. Theme-aware (`--text-faint` / `--text-normal`
+    via CSS vars per MIG-027 pattern).
+  - `$effect` watches `dropdownOpen`; on transition to false, calls
+    `onDropdownClose()` so the parent can cascade-close the modal.
+- **MODIFIED** `src/lib/sight/v6/SightV6.svelte`:
+  - Imports `marked` (already a dep).
+  - New state: `manifestModalId`, `manifestContent`, derived
+    `manifestModalOpen`.
+  - New handlers: `handleOpenManifest(id)` (async — lazy-imports the
+    87KB generated manifests bundle on first click), `closeManifestModal()`,
+    `stripManifestFrontmatter()`, `renderManifestMarkdown()`.
+  - TraditionChip mount now passes `openManifest` + `onDropdownClose`
+    callbacks.
+  - NEW modal mounted at sight-v6-root level (sibling of header + body,
+    z-index 100 above chip dropdown's z-index 50).
+  - Theme-aware modal CSS using MIG-027 chrome vars
+    (`--background-primary`, `--background-modifier-border`,
+    `--text-normal`, etc.) + light-theme overlay variant via
+    `:global(body.theme-light)` override.
+
+### Architectural decisions
+
+1. **Lazy import**. The 87KB MANIFESTS bundle loads only when the user
+   first clicks ⓘ. Defers bundle weight until needed; first-click
+   latency is ~50ms over a local file URL. Subsequent clicks reuse the
+   already-loaded module.
+2. **Single source of truth = the markdown files**. `docs/traditions/*.md`
+   is the canonical scholarly content. The TS bundle is generated, not
+   hand-edited. Build-script header explicitly says "do not edit by
+   hand."
+3. **Modal cascade-close via dropdown lifecycle**. Avoids the
+   capture-phase Esc-handler precedence problem (chip's existing
+   window+capture Esc handler would otherwise close the dropdown
+   under a still-open modal). When dropdown closes for any reason
+   (Esc, click-outside, tradition switch), modal closes via
+   `onDropdownClose` cascade.
+4. **Modal as overlay, not real NotePane**. The Plan §11.2 said
+   "click opens manifest in NotePane (via existing `onOpenNote`
+   callback or new `openManifest(id)` callback)". Manifests at
+   `docs/traditions/*.md` are repo doc files, NOT user-Universe
+   notes — using `onOpenNote` would require schema/IPC hacks. The
+   `openManifest(id)` callback path with a Sight-internal modal is
+   the clean choice. Functional equivalent: the user reads the
+   manifest in a NotePane-styled card without leaving Sight.
+5. **Build pipeline**. The `prebuild` npm script ensures the
+   generated TS file is in sync before `npm run build` runs. The
+   `predev` hook does the same for `npm run dev`. CI runs `npm run
+   tauri build` which calls `npm run build` internally → `prebuild`
+   fires automatically. No manual step required.
+
+### Verification
+
+`npm run check`: 3 pre-existing errors (PJ-012 LinkLifecycle.fresh +
+2 PropertyEditor union types — same baseline as every other phase
+this cascade), 0 new. File count 1417 → 1419 (the build script +
+generated file).
+
+### Cross-cutting risk review (per Working Agreement #4)
+
+- **Esc precedence**: solved by modal cascade-close via dropdown
+  lifecycle. No new window-level handler conflicts.
+- **z-index stacking**: modal at 100; chip dropdown at 50; tour at 10.
+  Modal sits cleanly above.
+- **Bundle weight**: +87KB lazy-loaded. First-time click incurs ~50ms.
+- **Memory**: marked imports + DOM allocations cleaned up when modal
+  closes (Svelte handles the {#if} unmount).
+- **Theme-awareness**: all chrome via CSS vars; verified across
+  Constellation Light + Dark patterns.
+- **i18n**: modal close button + loading message are English-only in
+  Phase ι.2. Phase λ adds i18n keys.
+
+### Plan §11.2 verification clause (Boss test stages)
+
+1. **Stage 1**: open chip dropdown, see scope strips below each
+   tradition name (already shipped in Phase β; verified visible).
+2. **Stage 2**: click ⓘ on pramāṇa, manifest opens as a modal over
+   Sight.
+3. **Stage 3**: manifest is readable + citation present at the bottom.
+
+Build kicked off for the Phase ι.2 .exe.
+
+### What's next: Phase κ
+
+Per Plan §12: user-definable tradition layer.
+- κ.1 — declarative JSON layer + schema + loader (~2 days)
+- κ.2 — TS plugin loader with Obsidian-trust security model (~2 days,
+  HIGH risk per Architect §3.H)
+

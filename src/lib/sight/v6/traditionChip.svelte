@@ -43,6 +43,24 @@
 	import type { TraditionId } from './types';
 	import { FAMILIES, type FamilyId } from './traditions';
 
+	// MIG-026 Phase ι.2 — disclosure-layer callbacks.
+	//
+	// `openManifest(id)` fires when the user clicks the ⓘ button in the
+	// dropdown next to a tradition row. The parent (SightV6.svelte)
+	// resolves the id to the bundled manifest markdown and renders it in
+	// a modal overlay.
+	//
+	// `onDropdownClose()` fires whenever the dropdown closes (Esc,
+	// click-outside, tradition switch). The parent uses this to cascade-
+	// close the manifest modal so it never floats over a closed dropdown.
+	let {
+		openManifest = (_id: TraditionId) => {},
+		onDropdownClose = () => {},
+	}: {
+		openManifest?: (id: TraditionId) => void;
+		onDropdownClose?: () => void;
+	} = $props();
+
 	// Per-tradition metadata (name, tooltip, scope, preview flag).
 	// Hardcoded here for Phase β; Phase ι.2 replaces scope reads with
 	// manifest fetches from docs/traditions/<id>.md.
@@ -319,6 +337,25 @@
 			window.removeEventListener('keydown', handleKey, true);
 		};
 	});
+
+	// MIG-026 Phase ι.2 — cascade-close the parent's manifest modal
+	// whenever the dropdown closes. Prevents the modal from floating
+	// over a closed dropdown after an Esc / click-outside / tradition
+	// switch. The effect fires on every dropdownOpen transition; the
+	// parent's closeManifestModal is idempotent (no-op when already
+	// closed) so the on-mount fire is harmless.
+	$effect(() => {
+		if (!dropdownOpen) onDropdownClose();
+	});
+
+	// MIG-026 Phase ι.2 — ⓘ button click handler. Calls the parent's
+	// openManifest callback; explicitly does NOT close the dropdown so
+	// the user can dismiss the modal and return to the dropdown to
+	// pick another tradition's manifest.
+	function handleManifestClick(ev: MouseEvent, id: TraditionId) {
+		ev.stopPropagation();
+		openManifest(id);
+	}
 </script>
 
 <div bind:this={rootEl} class="tradition-chip-root">
@@ -393,6 +430,15 @@
 											<span class="chip-preview-badge">preview</span>
 										{/if}
 										<span class="tradition-row-scope">{meta.scope}</span>
+									</button>
+									<button
+										class="tradition-row-info-btn"
+										type="button"
+										onclick={(ev) => handleManifestClick(ev, id)}
+										title="Read the full scholarly manifest for this tradition (citation, lineage, scope, critique)"
+										aria-label="Open manifest"
+									>
+										ⓘ
 									</button>
 									<button
 										class="tradition-row-pin-btn"
@@ -669,5 +715,31 @@
 	}
 	.tradition-row-pin-btn.is-pinned:hover {
 		color: #d4b072;
+	}
+
+	/* MIG-026 Phase ι.2 — ⓘ disclosure button. Sits between the
+	   row-name button and the pin star. Theme-aware text color via
+	   --text-faint / --text-normal CSS vars (set by the active theme
+	   in +layout.svelte) so the button reads correctly on both light
+	   and dark themes. Click opens the bundled manifest in a modal
+	   inside SightV6 (parent handles state + render). */
+	.tradition-row-info-btn {
+		flex: 0 0 auto;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 28px;
+		font-size: 14px;
+		line-height: 1;
+		color: var(--text-faint, #5a6275);
+		background: transparent;
+		border: none;
+		border-radius: 3px;
+		cursor: pointer;
+		transition: color 0.12s ease, background 0.12s ease;
+	}
+	.tradition-row-info-btn:hover {
+		color: var(--text-normal, #c8cdd9);
+		background: var(--background-modifier-hover, rgba(74, 90, 130, 0.18));
 	}
 </style>

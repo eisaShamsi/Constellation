@@ -48,6 +48,7 @@
 	import TraditionChip from './traditionChip.svelte';
 	import { getTraditionById } from './traditions';
 	import type { LayoutCacheRow, LinkEdge, StarDerived, FacetId, MiniDomeChannel, SlotChannel, TraditionId } from './types';
+	import { marked } from 'marked';
 
 	let { onOpenNote = (_path: string, _libraryName: string) => {} }: {
 		onOpenNote?: (path: string, libraryName: string) => void;
@@ -150,6 +151,65 @@
 			sight: { ...s.sight, tourSeen: true },
 		}));
 		saveSettings();
+	}
+
+	// ── MIG-026 Phase ι.2 — manifest disclosure modal ──────────────
+	// State + handlers for the in-Sight tradition-manifest viewer. The
+	// ⓘ button in the chip dropdown calls handleOpenManifest(id); the
+	// modal renders the bundled markdown via marked + lazy import of
+	// _manifests.generated.ts (defers ~87KB of doc strings until the
+	// user first asks to see one).
+	//
+	// Lifecycle is tied to the chip dropdown: closeManifestModal fires
+	// (a) when the X button is clicked, (b) when the click-outside-card
+	// overlay is clicked, (c) automatically when the dropdown closes
+	// (via the chip's onDropdownClose callback). The cascade-close
+	// prevents the modal from floating over a closed dropdown after
+	// Esc / click-outside / tradition switch.
+	let manifestModalId = $state<TraditionId | null>(null);
+	let manifestContent = $state<string | null>(null);
+	const manifestModalOpen = $derived(manifestModalId !== null);
+
+	async function handleOpenManifest(id: TraditionId): Promise<void> {
+		manifestModalId = id;
+		manifestContent = null; // show loading state while the import resolves
+		try {
+			const mod = await import('./traditions/_manifests.generated');
+			// Defensive: ignore if the user closed or switched while the
+			// import was in flight.
+			if (manifestModalId === id) {
+				manifestContent = mod.getManifest(id);
+			}
+		} catch (err) {
+			// Should not happen in practice — the file is bundled at
+			// build time via the prebuild script. Surface the error in
+			// the modal body so a user can report it rather than seeing
+			// a blank card.
+			console.error('[sight-v6] failed to load manifest', err);
+			if (manifestModalId === id) {
+				manifestContent = `# Couldn't load manifest\n\nThe scholarly manifest for **${id}** could not be loaded. This usually means the bundle is stale — try restarting Constellation. If it persists, the build script \`scripts/build-tradition-manifests.mjs\` may need to be re-run.`;
+			}
+		}
+	}
+
+	function closeManifestModal(): void {
+		manifestModalId = null;
+		manifestContent = null;
+	}
+
+	// Strip the YAML frontmatter block (between the first pair of `---`
+	// fences) so the rendered HTML doesn't show the raw metadata as a
+	// table or horizontal rule. Leaves the body markdown intact.
+	function stripManifestFrontmatter(md: string): string {
+		if (!md.startsWith('---\n')) return md;
+		const end = md.indexOf('\n---\n', 4);
+		if (end === -1) return md;
+		return md.slice(end + 5);
+	}
+
+	function renderManifestMarkdown(md: string): string {
+		const body = stripManifestFrontmatter(md);
+		return marked.parse(body, { async: false }) as string;
 	}
 
 	// Filtered row set + recomputed facet counts (Hearst preview).
@@ -800,7 +860,7 @@
 		     Hover any chip → English secondary label tooltip per §11
 		     invariant. v1-preview traditions (Dignāga / Suhrawardi
 		     Ishrāqī / Mohist sān biǎo) carry a "preview" badge per §4.2. -->
-		<TraditionChip />
+		<TraditionChip openManifest={handleOpenManifest} onDropdownClose={closeManifestModal} />
 		<!-- §B.10 — small "EXTENDED" indicator when the persistent
 		     extended-view setting is on (Cmd-Shift-D toggles). Per
 		     Concept Paper §11 invariant 9 (no persistent toggle bars),
@@ -981,6 +1041,48 @@
 			</div>
 		{/if}
 	</div>
+
+	<!-- MIG-026 Phase ι.2 — manifest disclosure modal. Mounted at
+	     sight-v6-root level (sibling of header + body) so it overlays
+	     the entire Sight surface — including the chip dropdown — when
+	     the user clicks ⓘ on a tradition row. Click outside the card
+	     or click the X to close; the chip's onDropdownClose cascade
+	     also closes the modal when the dropdown closes for any other
+	     reason (Esc, click-outside, tradition switch). -->
+	{#if manifestModalOpen}
+		<div
+			class="sight-v6-manifest-overlay"
+			role="dialog"
+			aria-modal="true"
+			aria-label="Tradition manifest"
+			onclick={closeManifestModal}
+			onkeydown={(e) => { if (e.key === 'Escape') closeManifestModal(); }}
+			tabindex="-1"
+		>
+			<div
+				class="sight-v6-manifest-card"
+				onclick={(ev) => ev.stopPropagation()}
+				onkeydown={(ev) => ev.stopPropagation()}
+				role="document"
+				tabindex="-1"
+			>
+				<button
+					class="sight-v6-manifest-close"
+					type="button"
+					onclick={closeManifestModal}
+					title="Close manifest (Esc also works)"
+					aria-label="Close manifest"
+				>×</button>
+				{#if manifestContent}
+					<article class="sight-v6-manifest-body">
+						{@html renderManifestMarkdown(manifestContent)}
+					</article>
+				{:else}
+					<div class="sight-v6-manifest-loading">Loading manifest…</div>
+				{/if}
+			</div>
+		</div>
+	{/if}
 </div>
 
 <style>
@@ -1286,5 +1388,134 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+	}
+
+	/* MIG-026 Phase ι.2 — manifest disclosure modal styles. Theme-aware
+	   via MIG-027 CSS vars; chrome inherits the active interface theme
+	   automatically (Constellation Light / Dark / Nord / Solarized). */
+	.sight-v6-manifest-overlay {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 32px;
+		background: rgba(8, 12, 22, 0.65);
+		backdrop-filter: blur(2px);
+		z-index: 100;
+	}
+	:global(body.theme-light) .sight-v6-manifest-overlay {
+		background: rgba(220, 220, 220, 0.55);
+	}
+
+	.sight-v6-manifest-card {
+		position: relative;
+		max-width: 720px;
+		width: 100%;
+		max-height: 100%;
+		overflow-y: auto;
+		padding: 32px 36px 28px;
+		background: var(--background-primary, #0c1322);
+		border: 1px solid var(--background-modifier-border, #2a3245);
+		border-radius: 8px;
+		box-shadow: var(--shadow-l, 0 12px 36px rgba(0, 0, 0, 0.5));
+		color: var(--text-normal, #cdd5e0);
+		font-family: var(--interface-font, 'Inter', system-ui, sans-serif);
+		line-height: 1.55;
+	}
+
+	.sight-v6-manifest-close {
+		position: absolute;
+		top: 10px;
+		right: 12px;
+		width: 30px;
+		height: 30px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 22px;
+		line-height: 1;
+		color: var(--text-faint, #7a8295);
+		background: transparent;
+		border: none;
+		border-radius: 4px;
+		cursor: pointer;
+		transition: color 0.12s ease, background 0.12s ease;
+	}
+	.sight-v6-manifest-close:hover {
+		color: var(--text-normal, #e8ebf2);
+		background: var(--background-modifier-hover, rgba(255, 255, 255, 0.08));
+	}
+
+	.sight-v6-manifest-loading {
+		padding: 40px 0;
+		text-align: center;
+		color: var(--text-muted, #7b8499);
+		font-size: 13px;
+	}
+
+	.sight-v6-manifest-body :global(h1) {
+		margin: 0 0 8px;
+		font-size: 22px;
+		font-weight: 600;
+		color: var(--text-normal, #e8ebf2);
+		letter-spacing: 0.2px;
+	}
+	.sight-v6-manifest-body :global(h2) {
+		margin: 22px 0 6px;
+		font-size: 14px;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 1px;
+		color: var(--text-muted, #9aa3b8);
+	}
+	.sight-v6-manifest-body :global(h3) {
+		margin: 14px 0 4px;
+		font-size: 13px;
+		font-weight: 600;
+		color: var(--text-normal, #e8ebf2);
+	}
+	.sight-v6-manifest-body :global(p) {
+		margin: 0 0 10px;
+		font-size: 13px;
+		color: var(--text-normal, #c8cdd9);
+	}
+	.sight-v6-manifest-body :global(strong) {
+		color: var(--text-normal, #e8ebf2);
+		font-weight: 600;
+	}
+	.sight-v6-manifest-body :global(em) {
+		font-style: italic;
+		color: var(--text-muted, #9aa3b8);
+	}
+	.sight-v6-manifest-body :global(ul),
+	.sight-v6-manifest-body :global(ol) {
+		margin: 0 0 12px 22px;
+		padding: 0;
+	}
+	.sight-v6-manifest-body :global(li) {
+		font-size: 13px;
+		margin: 0 0 4px;
+		color: var(--text-normal, #c8cdd9);
+	}
+	.sight-v6-manifest-body :global(code) {
+		padding: 1px 5px;
+		font-family: var(--mono-font, 'Fira Code', monospace);
+		font-size: 12px;
+		background: var(--background-secondary, rgba(40, 50, 70, 0.5));
+		border-radius: 3px;
+		color: var(--text-accent, #7dd3fc);
+	}
+	.sight-v6-manifest-body :global(blockquote) {
+		margin: 8px 0;
+		padding: 4px 12px;
+		border-left: 3px solid var(--background-modifier-border, #3b5998);
+		color: var(--text-muted, #9aa3b8);
+		font-style: italic;
+	}
+	.sight-v6-manifest-body :global(hr) {
+		margin: 18px 0;
+		border: none;
+		border-top: 1px solid var(--background-modifier-border, #2a3245);
 	}
 </style>
