@@ -54,14 +54,21 @@ export const STRATUM_BANDS: StratumBand[] = [
 	'edge-of-knowing',
 ];
 
-/** English-literal stratum labels. Used by facets.ts (until that
- *  surface migrates to $t in §λ-fix-4) and as the canonical English
- *  source-of-truth that the i18n en.json values mirror.
+/** English-literal stratum labels. Kept as the canonical English
+ *  source-of-truth that en.json mirrors at `sight.v6.stratum.<band>`,
+ *  AND as a defensive fallback in `anchor.ts` (when the renderer's
+ *  labelize call returns the raw key unchanged — i.e. when an
+ *  unsupported locale + missing en entry leaves the i18n chain with
+ *  nothing to resolve — anchor falls back to this map so the dome
+ *  still reads as English instead of as raw key text).
  *
- *  MIG-026 §λ-fix-3 (2026-05-18): the on-canvas renderer now
- *  resolves labels via $t() through STRATUM_LABEL_KEYS below; this
- *  literal map is kept ONLY for facets.ts's legacy consumer + as
- *  documentation of the canonical English text. */
+ *  MIG-026 §λ-fix-3 (2026-05-18): the on-canvas renderer resolves
+ *  labels via $t() through STRATUM_LABEL_KEYS below.
+ *  MIG-026 §μ drift audit (2026-05-18): an earlier version of this
+ *  comment said the literal map was "kept ONLY for facets.ts's
+ *  legacy consumer" — that claim was stale after facets.ts migrated
+ *  to i18n keys in §λ-fix-4. The actual remaining consumer is
+ *  anchor.ts's defensive fallback at the stratum-label draw call. */
 export const STRATUM_LABELS: Record<StratumBand, string> = {
 	foundation: 'FOUNDATION',
 	working: 'WORKING',

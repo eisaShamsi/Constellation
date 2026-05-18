@@ -222,7 +222,13 @@ export type FamilyId =
 /** Per-family display label + list of constituent traditions. The
  *  list includes traditions that will ship in future phases (so the
  *  taxonomy is stable across MIG-026); the dropdown UI filters to
- *  show only families with ≥1 module currently registered. */
+ *  show only families with ≥1 module currently registered.
+ *
+ *  MIG-026 §μ drift note (2026-05-18): the `label` field below is
+ *  the canonical English source-of-truth that mirrors en.json at
+ *  `sight.v6.tradition.family.<id>`; the chip dropdown itself
+ *  renders via `$t()` since §λ-fix-2, so these literals aren't a
+ *  runtime input for curated families. Kept as documentation. */
 export const FAMILIES: Record<FamilyId, { label: string; traditions: TraditionId[] }> = {
 	'western-classical': {
 		label: 'Western classical',

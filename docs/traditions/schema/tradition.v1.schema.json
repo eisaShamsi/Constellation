@@ -2,7 +2,7 @@
 	"$schema": "https://json-schema.org/draft-07/schema#",
 	"$id": "https://constellation.app/schema/tradition.v1.schema.json",
 	"title": "Constellation user-defined tradition (v1)",
-	"description": "Declarative spec for a user-authored scholarly tradition. Drop one of these JSON files at `<Universe>/.constellation/traditions/<id>.json`. On Sight open, valid files are loaded into the chip dropdown alongside the curated baselines. The JSON Schema fields here are the v1 contract; future versions will be additive (introduced as v2, v3 schemas alongside v1, preserving older files).",
+	"description": "Declarative spec for a user-authored scholarly tradition. Drop one of these JSON files at `<Universe>/.constellation/traditions/<id>.json`. On Sight open, valid files are loaded into the chip dropdown alongside the curated baselines. The JSON Schema fields here are the v1 contract; future versions will be additive (introduced as v2, v3 schemas alongside v1, preserving older files). NOTE on label strings (`name`, `tooltip`, `scope`, every `label` field, `gradient.centerLabel`, `gradient.edgeLabel`): these render as literal text via the i18n `$t(key)` resolver and fall through the active-locale → en → raw-key fallback chain. Plain labels (e.g. `\"my-sector\"`, `\"Phase 1\"`) pass through unchanged. AVOID labels that look like dotted i18n key paths (`\"app.name\"`, `\"sight.v6.stratum.foundation\"`) — they will accidentally resolve to a translated string from Constellation's own key namespace instead of rendering as the literal you wrote. (Advisory from MIG-026 §μ migration-path audit.)",
 	"type": "object",
 	"required": ["schema_version", "id", "name", "shape"],
 	"additionalProperties": false,

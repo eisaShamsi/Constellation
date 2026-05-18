@@ -441,7 +441,16 @@ export interface HorizontalBandsSpec {
  */
 export interface TraditionModule {
 	id: TraditionId;
-	/** English brand label (matches the chip label in traditionChip.svelte). */
+	/** English brand label. For CURATED traditions this is the
+	 *  canonical English source-of-truth that mirrors the en.json value
+	 *  at `sight.v6.tradition.list.<id>.name`; the chip itself renders
+	 *  via `$t()` since §λ-fix-2, so this literal isn't a runtime input
+	 *  for curated modules. For USER-DEFINED traditions (loaded via
+	 *  userDefinedLoader / pluginLoader), this IS the chip label since
+	 *  user-defined modules don't ship i18n key entries.
+	 *  MIG-026 §μ drift audit (2026-05-18): an earlier version of this
+	 *  comment said "matches the chip label in traditionChip.svelte"
+	 *  which was stale after the §λ-fix-2 i18n migration. */
 	name: string;
 	/**
 	 * MIG-026 Phase α — geometric shape discriminator. The anchor
