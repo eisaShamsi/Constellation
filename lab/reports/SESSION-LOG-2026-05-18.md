@@ -194,8 +194,93 @@ The cascade pattern across Phases γ → θ + 5 fix-iterations validated:
 ff81e2a9  MIG-026 §θ — Latin American + African families + closes 24-tradition baseline
 b5acd123  MIG-026 §θ-fix-1 — 4 polish items from Phase θ Boss test
 e8391ca7  MIG-026 §θ-fix-2 — +2 size for sectoral + raised opacity globally
+75fc0be6  SO — MIG-026 baseline foundation SHIP gate (orientation v2.13 + session log)
 ```
 
 Plus the SHIP-gate commit (this log + orientation v2.13) to follow.
 
 ---
+
+## Phase ι.1 — 24 tradition manifests shipped
+
+**Function in hand**: drafting the 24 manifests at `docs/traditions/<id>.md`
+per Plan §11.1 — the canonical scholarly content that the ⓘ disclosure
+button (ι.2) will surface.
+
+**Direction picked by Eisa** (session resumption 2026-05-18 post-handover):
+"Work on the remaining: Phases ι (manifests + disclosure) · κ
+(user-definable) · λ (translations) · μ (ship gate + audit)" — full
+cascade through MIG-026 remainder, in order.
+
+### What landed
+
+25 files created at `docs/traditions/`:
+
+- `README.md` — index + format key
+- 24 manifests, one per tradition:
+  - **Baselines (5)**: aristotelian, pramana, masadir, polanyi,
+    mohist-san-biao
+  - **Modern Western (5)**: peirce, habermas, dewey, husserl, longino
+  - **Arabic / Islamic beyond uṣūl (3)**: ibn-rushd-burhan,
+    shatibi-maqasid, ibn-khaldun-umran
+  - **Jewish (Abrahamic) (3)**: pardes, maimonidean-prophecy,
+    talmudic-middot
+  - **East Asian Confucian (3)**: mencian-sprouts, wang-yangming,
+    korean-songnihak
+  - **Latin American decolonial (3)**: mignolo-pluriversal,
+    dussel-transmodernity, maldonado-torres
+  - **African philosophical (2)**: akan-wiredu, ibuanyidanda
+
+### Manifest structure
+
+Each manifest carries the YAML frontmatter `id / name / family / shape /
+version / changelog` plus six prose sections: Hero metaphor, Scope,
+Applicability, Lineage, Critique, Citation. Per-note frontmatter field
+documented for each tradition (e.g. `pramana_kind`, `masadir_source`,
+`maqasid_tier`+`maqasid_essential`, etc.) — these are pending the
+Rust-side `LayoutCacheRow` extension that the MIG-026 handover already
+flagged as a separate PJ.
+
+### Grounding sources (no fabrication)
+
+- `docs/research/MIG-026-candidate-registers.md` — Agent 1 research
+  with full Chicago-style citations + honest scope statements for the
+  19 new traditions.
+- The 5 pre-existing baseline tradition modules' JSDocs
+  (`src/lib/sight/v6/traditions/<id>.ts`) for Aristotelian, pramāṇa,
+  masādir, Polanyi, Mohist sān biǎo.
+- `src/lib/sight/v6/traditions/index.ts::FAMILIES` for the 10 family
+  groupings.
+- `lab/reports/MIG-026-SIGHT-REGISTER-EXPANSION-PLAN.md` §11.1 for
+  the structural spec.
+
+No invented citations, function names, or scholarly attributions. Each
+critique section honestly surfaces the contested points (e.g. Wang
+Yangming's akrasia objection, Mignolo's performative-tension problem,
+Wiredu's ethnophilosophy concern, the religious-lineage exclusions
+where they bear on the tradition).
+
+### Folder rename honored
+
+Per Plan §11.1 decision: `docs/traditions/` (NOT `docs/registers/`)
+— honors the K1 full rename from Phase 0.
+
+### Verification clause per Plan §11.1
+
+> **light Boss spot-check** — open `docs/traditions/aristotelian.md`
+> and `docs/traditions/maimonidean-prophecy.md`; confirm format
+> consistent + scope-statements present.
+
+Doc-only commit, no build needed. Eisa can spot-check directly in his
+text editor.
+
+### What's next: Phase ι.2
+
+Per Plan §11.2: ⓘ button per chip (J3) + scope strip (J5) in dropdown.
+Files: `src/lib/sight/v6/traditionChip.svelte` (add ⓘ icon + scope
+strip in dropdown panel) + `src/lib/sight/v6/SightV6.svelte` (wire
+`openManifest(id)` callback). Estimated 1 day.
+
+This is where the doc work lands as user-visible behavior — clicking
+ⓘ on a chip opens the manifest for that tradition in NotePane.
+
