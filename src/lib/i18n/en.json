@@ -2362,6 +2362,29 @@
     "v6": {
       "title": "Constellation Sight",
       "returnToSight": "Return to Sight",
+      "stratum": {
+        "foundation": "FOUNDATION",
+        "working": "WORKING",
+        "connection": "CONNECTION",
+        "synthesis": "SYNTHESIS",
+        "edge-of-knowing": "EDGE OF KNOWING"
+      },
+      "miniDome": {
+        "title": {
+          "anchor": "UNIVERSE — primary view",
+          "confidence": "CONFIDENCE — opacity",
+          "stage": "STAGE — hue (full-disk)",
+          "acts": "ACTS — size (top decile)",
+          "provenance": "PROVENANCE — 5 sectors"
+        },
+        "provenance": {
+          "self": "Self",
+          "read": "Read",
+          "heard": "Heard",
+          "reasoned": "Reasoned",
+          "tradition": "Tradition"
+        }
+      },
       "tradition": {
         "family": {
           "western-classical": "Western classical",
@@ -2524,7 +2547,218 @@
           "failedTitle": "Plugin failed to load",
           "dismissFailedTooltip": "Dismiss this error message (fix the plugin then restart Constellation to retry)",
           "dismissFailedAriaLabel": "Dismiss"
+        },
+        "canvas": {
+          "akan-wiredu": {
+            "nokware": "nokware · truth",
+            "ahonyam": "ahonyam · well-being",
+            "adwene": "adwene · mind"
+          },
+          "dewey": {
+            "indeterminate": "indeterminate",
+            "problem": "problem",
+            "hypothesis": "hypothesis",
+            "reasoning": "reasoning",
+            "testing": "testing"
+          },
+          "dussel-transmodernity": {
+            "totality": "totality",
+            "exteriority": "exteriority"
+          },
+          "habermas": {
+            "technical": "technical",
+            "practical": "practical",
+            "emancipatory": "emancipatory"
+          },
+          "husserl": {
+            "formal": "formal ontology",
+            "materialNature": "material nature",
+            "animalNature": "animal nature",
+            "spirit": "spirit · Geist"
+          },
+          "ibn-khaldun-umran": {
+            "hadari": "ḥaḍarī · sedentary",
+            "badawi": "badawī · nomadic"
+          },
+          "ibn-rushd-burhan": {
+            "burhan": "burhān",
+            "jadal": "jadal",
+            "khataba": "khaṭāba",
+            "shir": "shiʿr"
+          },
+          "ibuanyidanda": {
+            "self": "self",
+            "other": "other",
+            "community": "community",
+            "tradition": "tradition",
+            "transcendence": "transcendence",
+            "missingLink": "missing link"
+          },
+          "korean-songnihak": {
+            "liSa": "lǐ · 四端",
+            "liChil": "lǐ · 七情",
+            "qiChil": "qì · 七情",
+            "qiSa": "qì · 四端"
+          },
+          "longino": {
+            "venues": "venues",
+            "uptake": "uptake",
+            "publicStandards": "public standards",
+            "temperedEquality": "tempered equality"
+          },
+          "maimonidean-prophecy": {
+            "ruahHaQodesh": "1 · ruaḥ ha-qodesh",
+            "sleepVision": "2 · sleep vision",
+            "daytimeAllegory": "3 · daytime allegory",
+            "voiceInVision": "4 · voice in vision",
+            "speakingPerson": "5 · speaking person",
+            "speakingAngel": "6 · speaking angel",
+            "speakingManForm": "7 · speaking man-form",
+            "allegoryAwake": "8 · allegory awake",
+            "voiceWhileAwake": "9 · voice while awake",
+            "manFormAwake": "10 · man-form awake",
+            "angelAwake": "11 · angel awake"
+          },
+          "maldonado-torres": {
+            "power": "power",
+            "knowledge": "knowledge",
+            "being": "being"
+          },
+          "masadir": {
+            "extensionAriaLabel": "Additional masādir sources",
+            "extensionTooltip": "Additional masādir source (display-only in v6.2; per-note opt-in via frontmatter ships in a follow-up)",
+            "quran": "Qur'an",
+            "sunnah": "sunnah",
+            "ijma": "ijmāʿ",
+            "qiyas": "qiyās",
+            "extension": {
+              "istihsan": "istiḥsān",
+              "istishab": "istiṣḥāb",
+              "maslahaMursalah": "maṣlaḥa mursalah",
+              "urf": "ʿurf"
+            }
+          },
+          "mencian-sprouts": {
+            "ceyin": "惻隱 cèyǐn",
+            "xiuwu": "羞惡 xiūwù",
+            "cirang": "辭讓 círàng",
+            "shifei": "是非 shìfēi",
+            "xin": "信 xìn"
+          },
+          "mignolo-pluriversal": {
+            "epistemicDisobedience": "epistemic disobedience",
+            "borderThinking": "border thinking",
+            "delinking": "delinking",
+            "decolonialGnosis": "decolonial gnosis",
+            "pluriversalWorld": "pluriversal world",
+            "modernityTotality": "modernity / totality"
+          },
+          "mohist-san-biao": {
+            "ben": "本 běn · root",
+            "yuan": "原 yuán · origin",
+            "yong": "用 yòng · use"
+          },
+          "pardes": {
+            "peshat": "peshat",
+            "remez": "remez",
+            "derash": "derash",
+            "sod": "sod"
+          },
+          "peirce": {
+            "firstness": "Firstness",
+            "secondness": "Secondness",
+            "thirdness": "Thirdness"
+          },
+          "polanyi": {
+            "tacit": "tacit",
+            "explicit": "explicit"
+          },
+          "pramana": {
+            "pratyaksha": "pratyakṣa",
+            "anumana": "anumāna",
+            "upamana": "upamāna",
+            "shabda": "śabda"
+          },
+          "shatibi-maqasid": {
+            "tier": {
+              "daruriyyat": "ḍarūriyyāt",
+              "hajiyyat": "ḥājiyyāt",
+              "tahsiniyyat": "taḥsīniyyāt"
+            },
+            "essential": {
+              "din": "dīn",
+              "nafs": "nafs",
+              "aql": "ʿaql",
+              "nasl": "nasl",
+              "mal": "māl"
+            }
+          },
+          "talmudic-middot": {
+            "kalVaChomer": "1 · kal va-chomer",
+            "gezeraShava": "2 · gezera shava",
+            "binyanAv1": "3 · binyan av (1 verse)",
+            "binyanAv2": "4 · binyan av (2 verses)",
+            "kelalUPerat": "5 · kelal u-perat",
+            "peratUKelal": "6 · perat u-kelal",
+            "kpk": "7 · k-p-k",
+            "specialPurpose": "8 · special purpose",
+            "extractedLighter": "9 · extracted (lighter)",
+            "extractedDifferent": "10 · extracted (different)",
+            "fromContext": "11 · from context",
+            "fromEnd": "12 · from end",
+            "reconciliation": "13 · reconciliation"
+          },
+          "wang-yangming": {
+            "zhi": "知 zhī · knowing",
+            "xing": "行 xíng · acting",
+            "liangzhi": "良知 liángzhī"
+          }
         }
+      },
+      "facet": {
+        "folder": "Folder",
+        "library": "Library",
+        "stratum": "Stratum",
+        "confidence": "Confidence",
+        "stage": "Stage",
+        "provenance": "Provenance"
+      },
+      "facetSidebar": {
+        "title": "FACETS",
+        "expandAriaLabel": "Expand facet filters",
+        "filtersTooltip": "Filters",
+        "ariaLabel": "Sight facet filters",
+        "collapseAriaLabel": "Collapse facet filters",
+        "collapseTooltip": "Collapse"
+      },
+      "confidence": {
+        "hypothesis": "hypothesis",
+        "evidence": "evidence",
+        "established": "established",
+        "contested": "contested"
+      },
+      "stage": {
+        "spark": "spark",
+        "birth": "birth",
+        "growth": "growth",
+        "maturity": "maturity",
+        "dormancy": "dormancy",
+        "renewal": "renewal",
+        "archival": "archival",
+        "established": "established",
+        "fresh": "fresh",
+        "growing": "growing",
+        "at-risk": "at-risk",
+        "dormant": "dormant"
+      },
+      "header": {
+        "subtitle": "v6.3 — Traditions (Phase 1)",
+        "extendedBadge": "EXTENDED",
+        "extendedTooltip": "Extended view is ON — minis default-visible on every Sight open. Cmd-Shift-D to toggle.",
+        "filterCountTooltip": "Filtered notes / total notes",
+        "filterCountSuffix": "notes",
+        "resetViewLabel": "Reset View",
+        "resetViewTooltip": "Return to anchor dome at default zoom (Reset View)"
       }
     }
   },

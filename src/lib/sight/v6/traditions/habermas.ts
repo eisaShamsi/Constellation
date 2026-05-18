@@ -63,10 +63,11 @@ const SECTOR_START: Record<HabermasInterest, number> = {
 	emancipatory: -Math.PI / 2 + SECTOR_ROTATION_OFFSET + 2 * SECTOR_ARC,
 };
 
+// MIG-026 §λ-fix-3 — i18n keys; English values live in src/lib/i18n/en.json
 const SECTOR_LABELS: Record<HabermasInterest, string> = {
-	technical: 'technical',
-	practical: 'practical',
-	emancipatory: 'emancipatory',
+	technical: 'sight.v6.tradition.canvas.habermas.technical',
+	practical: 'sight.v6.tradition.canvas.habermas.practical',
+	emancipatory: 'sight.v6.tradition.canvas.habermas.emancipatory',
 };
 
 const SECTOR_ORDER: HabermasInterest[] = ['technical', 'practical', 'emancipatory'];

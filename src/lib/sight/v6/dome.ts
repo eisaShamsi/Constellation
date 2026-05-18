@@ -54,15 +54,33 @@ export const STRATUM_BANDS: StratumBand[] = [
 	'edge-of-knowing',
 ];
 
-/** Human-readable label per stratum band (for the on-canvas label text
- *  along the vertical axis). i18n: these will move to $t() at v4.1
- *  polish; v6.0 ships English-only labels (Concept Paper §10 deferred). */
+/** English-literal stratum labels. Used by facets.ts (until that
+ *  surface migrates to $t in §λ-fix-4) and as the canonical English
+ *  source-of-truth that the i18n en.json values mirror.
+ *
+ *  MIG-026 §λ-fix-3 (2026-05-18): the on-canvas renderer now
+ *  resolves labels via $t() through STRATUM_LABEL_KEYS below; this
+ *  literal map is kept ONLY for facets.ts's legacy consumer + as
+ *  documentation of the canonical English text. */
 export const STRATUM_LABELS: Record<StratumBand, string> = {
 	foundation: 'FOUNDATION',
 	working: 'WORKING',
 	connection: 'CONNECTION',
 	synthesis: 'SYNTHESIS',
 	'edge-of-knowing': 'EDGE OF KNOWING',
+};
+
+/** i18n key per stratum band — for the on-canvas anchor renderer
+ *  (anchor.ts). Resolves via $t() at draw time so the dome's
+ *  vertical-axis labels (FOUNDATION → الأساس → 基础 → etc.) follow
+ *  the user's active locale. The key path matches the en.json /
+ *  ar.json / ... structure at sight.v6.stratum.<band>. */
+export const STRATUM_LABEL_KEYS: Record<StratumBand, string> = {
+	foundation: 'sight.v6.stratum.foundation',
+	working: 'sight.v6.stratum.working',
+	connection: 'sight.v6.stratum.connection',
+	synthesis: 'sight.v6.stratum.synthesis',
+	'edge-of-knowing': 'sight.v6.stratum.edge-of-knowing',
 };
 
 // ════════════════════════════════════════════════════════════════════

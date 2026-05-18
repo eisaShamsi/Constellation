@@ -2115,6 +2115,29 @@
     "v6": {
       "title": "Constellation Sight",
       "returnToSight": "返回 Sight",
+      "stratum": {
+        "foundation": "基础",
+        "working": "工作",
+        "connection": "连接",
+        "synthesis": "综合",
+        "edge-of-knowing": "认知边缘"
+      },
+      "miniDome": {
+        "title": {
+          "anchor": "宇宙 — 主视图",
+          "confidence": "信心 — 不透明度",
+          "stage": "阶段 — 色相(整盘)",
+          "acts": "行动 — 大小(前 10% 分位)",
+          "provenance": "来源 — 5 个扇区"
+        },
+        "provenance": {
+          "self": "自我",
+          "read": "阅读",
+          "heard": "听闻",
+          "reasoned": "推理",
+          "tradition": "传统"
+        }
+      },
       "tradition": {
         "family": {
           "western-classical": "西方古典",
@@ -2277,7 +2300,218 @@
           "failedTitle": "插件加载失败",
           "dismissFailedTooltip": "忽略此错误消息(修复插件后重新启动 Constellation 重试)",
           "dismissFailedAriaLabel": "忽略"
+        },
+        "canvas": {
+          "akan-wiredu": {
+            "nokware": "nokware · 真理",
+            "ahonyam": "ahonyam · 福祉",
+            "adwene": "adwene · 心智"
+          },
+          "dewey": {
+            "indeterminate": "不确定",
+            "problem": "问题",
+            "hypothesis": "假设",
+            "reasoning": "推理",
+            "testing": "检验"
+          },
+          "dussel-transmodernity": {
+            "totality": "总体性",
+            "exteriority": "外在性"
+          },
+          "habermas": {
+            "technical": "技术",
+            "practical": "实践",
+            "emancipatory": "解放"
+          },
+          "husserl": {
+            "formal": "形式本体论",
+            "materialNature": "物质自然",
+            "animalNature": "动物自然",
+            "spirit": "精神 · Geist"
+          },
+          "ibn-khaldun-umran": {
+            "hadari": "ḥaḍarī · 定居",
+            "badawi": "badawī · 游牧"
+          },
+          "ibn-rushd-burhan": {
+            "burhan": "burhān · 必然论证",
+            "jadal": "jadal · 辩证",
+            "khataba": "khaṭāba · 修辞",
+            "shir": "shiʿr · 诗艺"
+          },
+          "ibuanyidanda": {
+            "self": "自我",
+            "other": "他者",
+            "community": "共同体",
+            "tradition": "传统",
+            "transcendence": "超越",
+            "missingLink": "缺失之环"
+          },
+          "korean-songnihak": {
+            "liSa": "理 · 四端",
+            "liChil": "理 · 七情",
+            "qiChil": "氣 · 七情",
+            "qiSa": "氣 · 四端"
+          },
+          "longino": {
+            "venues": "公共论坛",
+            "uptake": "对批评的回应",
+            "publicStandards": "公共标准",
+            "temperedEquality": "调和的平等"
+          },
+          "maimonidean-prophecy": {
+            "ruahHaQodesh": "1 · ruaḥ ha-qodesh · 圣灵",
+            "sleepVision": "2 · 睡眠中的异象",
+            "daytimeAllegory": "3 · 白昼的寓象",
+            "voiceInVision": "4 · 异象中的声音",
+            "speakingPerson": "5 · 言说之人",
+            "speakingAngel": "6 · 言说之天使",
+            "speakingManForm": "7 · 言说之人形",
+            "allegoryAwake": "8 · 清醒中的寓象",
+            "voiceWhileAwake": "9 · 清醒中的声音",
+            "manFormAwake": "10 · 清醒中的人形",
+            "angelAwake": "11 · 清醒中的天使"
+          },
+          "maldonado-torres": {
+            "power": "权力",
+            "knowledge": "知识",
+            "being": "存在"
+          },
+          "masadir": {
+            "extensionAriaLabel": "马萨迪尔附加来源",
+            "extensionTooltip": "附加的马萨迪尔来源(在 v6.2 中仅供显示;按笔记启用通过前端事项将在后续版本提供)",
+            "quran": "古兰经",
+            "sunnah": "圣行",
+            "ijma": "公议",
+            "qiyas": "类比",
+            "extension": {
+              "istihsan": "istiḥsān · 优选",
+              "istishab": "istiṣḥāb · 继续",
+              "maslahaMursalah": "maṣlaḥa mursalah · 公益",
+              "urf": "ʿurf · 习俗"
+            }
+          },
+          "mencian-sprouts": {
+            "ceyin": "惻隱 cèyǐn · 恻隐",
+            "xiuwu": "羞惡 xiūwù · 羞恶",
+            "cirang": "辭讓 círàng · 辞让",
+            "shifei": "是非 shìfēi · 是非",
+            "xin": "信 xìn · 信实"
+          },
+          "mignolo-pluriversal": {
+            "epistemicDisobedience": "知识不服从",
+            "borderThinking": "边界思维",
+            "delinking": "脱钩",
+            "decolonialGnosis": "去殖民诺斯",
+            "pluriversalWorld": "多元宇宙世界",
+            "modernityTotality": "现代性 / 总体性"
+          },
+          "mohist-san-biao": {
+            "ben": "本 běn · 根源",
+            "yuan": "原 yuán · 由来",
+            "yong": "用 yòng · 效用"
+          },
+          "pardes": {
+            "peshat": "peshat · 字面义",
+            "remez": "remez · 暗示",
+            "derash": "derash · 解释",
+            "sod": "sod · 秘义"
+          },
+          "peirce": {
+            "firstness": "第一性",
+            "secondness": "第二性",
+            "thirdness": "第三性"
+          },
+          "polanyi": {
+            "tacit": "默会",
+            "explicit": "明示"
+          },
+          "pramana": {
+            "pratyaksha": "pratyakṣa · 现量",
+            "anumana": "anumāna · 比量",
+            "upamana": "upamāna · 譬量",
+            "shabda": "śabda · 声量"
+          },
+          "shatibi-maqasid": {
+            "tier": {
+              "daruriyyat": "ḍarūriyyāt · 必要",
+              "hajiyyat": "ḥājiyyāt · 需要",
+              "tahsiniyyat": "taḥsīniyyāt · 完善"
+            },
+            "essential": {
+              "din": "dīn · 宗教",
+              "nafs": "nafs · 生命",
+              "aql": "ʿaql · 理智",
+              "nasl": "nasl · 后裔",
+              "mal": "māl · 财产"
+            }
+          },
+          "talmudic-middot": {
+            "kalVaChomer": "1 · kal va-chomer · 由轻及重",
+            "gezeraShava": "2 · gezera shava · 词义类比",
+            "binyanAv1": "3 · binyan av(一节经文)",
+            "binyanAv2": "4 · binyan av(两节经文)",
+            "kelalUPerat": "5 · kelal u-perat · 总与分",
+            "peratUKelal": "6 · perat u-kelal · 分与总",
+            "kpk": "7 · 总-分-总",
+            "specialPurpose": "8 · 特殊目的",
+            "extractedLighter": "9 · 提取(较轻)",
+            "extractedDifferent": "10 · 提取(不同)",
+            "fromContext": "11 · 由语境而出",
+            "fromEnd": "12 · 由结尾而出",
+            "reconciliation": "13 · 调和"
+          },
+          "wang-yangming": {
+            "zhi": "知 zhī · 知",
+            "xing": "行 xíng · 行",
+            "liangzhi": "良知 liángzhī · 良知"
+          }
         }
+      },
+      "facet": {
+        "folder": "文件夹",
+        "library": "图书馆",
+        "stratum": "层位",
+        "confidence": "信心",
+        "stage": "阶段",
+        "provenance": "来源"
+      },
+      "facetSidebar": {
+        "title": "刻面",
+        "expandAriaLabel": "展开刻面筛选器",
+        "filtersTooltip": "筛选器",
+        "ariaLabel": "Sight 刻面筛选器",
+        "collapseAriaLabel": "折叠刻面筛选器",
+        "collapseTooltip": "折叠"
+      },
+      "confidence": {
+        "hypothesis": "假设",
+        "evidence": "证据",
+        "established": "确立",
+        "contested": "存在争议"
+      },
+      "stage": {
+        "spark": "火花",
+        "birth": "诞生",
+        "growth": "成长",
+        "maturity": "成熟",
+        "dormancy": "休眠",
+        "renewal": "更新",
+        "archival": "归档",
+        "established": "确立",
+        "fresh": "新鲜",
+        "growing": "生长",
+        "at-risk": "面临风险",
+        "dormant": "休眠"
+      },
+      "header": {
+        "subtitle": "v6.3 — 传统(第 1 阶段)",
+        "extendedBadge": "扩展",
+        "extendedTooltip": "扩展视图已开启 — 每次打开 Sight 时小视图默认可见。Cmd-Shift-D 切换。",
+        "filterCountTooltip": "已筛选笔记 / 全部笔记",
+        "filterCountSuffix": "条笔记",
+        "resetViewLabel": "重置视图",
+        "resetViewTooltip": "返回锚定圆顶并恢复默认缩放(重置视图)"
       }
     }
   },

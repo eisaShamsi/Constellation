@@ -81,11 +81,12 @@ const QUADRANT_START_ANGLES: Record<MasadirSource, number> = {
 /** Display labels rendered in the dome chrome at each sector's wedge
  *  center per Concept Paper §4.1.3. Arabic transliterations with proper
  *  diacritics (ʿ for ʿayn; macrons for long vowels). */
+// MIG-026 §λ-fix-3 — i18n keys; English values live in src/lib/i18n/en.json
 const QUADRANT_LABELS: Record<MasadirSource, string> = {
-	quran: "Qur'an",
-	sunnah: 'sunnah',
-	ijma: 'ijmāʿ',
-	qiyas: 'qiyās',
+	quran: 'sight.v6.tradition.canvas.masadir.quran',
+	sunnah: 'sight.v6.tradition.canvas.masadir.sunnah',
+	ijma: 'sight.v6.tradition.canvas.masadir.ijma',
+	qiyas: 'sight.v6.tradition.canvas.masadir.qiyas',
 };
 
 const QUADRANT_ORDER: MasadirSource[] = ['quran', 'sunnah', 'ijma', 'qiyas'];
@@ -97,11 +98,12 @@ const QUADRANT_ORDER: MasadirSource[] = ['quran', 'sunnah', 'ijma', 'qiyas'];
  *  extends beyond the 4 main sectors. Per-note opt-in via frontmatter
  *  (`masadir_source: istihsan` etc.) ships in §C.4-fix-N once
  *  Rust-side extraction lands. */
+// MIG-026 §λ-fix-3 — i18n keys; English values live in src/lib/i18n/en.json
 const EXTENSION_CHIP_LABELS: readonly string[] = [
-	'istiḥsān',
-	'istiṣḥāb',
-	'maṣlaḥa mursalah',
-	'ʿurf',
+	'sight.v6.tradition.canvas.masadir.extension.istihsan',
+	'sight.v6.tradition.canvas.masadir.extension.istishab',
+	'sight.v6.tradition.canvas.masadir.extension.maslahaMursalah',
+	'sight.v6.tradition.canvas.masadir.extension.urf',
 ];
 
 /** Determine a note's masādir source sector.

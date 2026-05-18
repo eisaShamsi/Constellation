@@ -2115,6 +2115,29 @@
     "v6": {
       "title": "Constellation Sight",
       "returnToSight": "Вернуться к Sight",
+      "stratum": {
+        "foundation": "ОСНОВА",
+        "working": "РАБОТА",
+        "connection": "СВЯЗЬ",
+        "synthesis": "СИНТЕЗ",
+        "edge-of-knowing": "ГРАНИЦА ЗНАНИЯ"
+      },
+      "miniDome": {
+        "title": {
+          "anchor": "ВСЕЛЕННАЯ — основной вид",
+          "confidence": "УВЕРЕННОСТЬ — непрозрачность",
+          "stage": "СТАДИЯ — оттенок (полный диск)",
+          "acts": "ДЕЙСТВИЯ — размер (верхний дециль)",
+          "provenance": "ПРОИСХОЖДЕНИЕ — 5 секторов"
+        },
+        "provenance": {
+          "self": "Сам",
+          "read": "Прочитано",
+          "heard": "Услышано",
+          "reasoned": "Выведено",
+          "tradition": "Традиция"
+        }
+      },
       "tradition": {
         "family": {
           "western-classical": "Западная классическая",
@@ -2277,7 +2300,218 @@
           "failedTitle": "Не удалось загрузить плагин",
           "dismissFailedTooltip": "Отклонить это сообщение об ошибке (исправьте плагин, затем перезапустите Constellation для повторной попытки)",
           "dismissFailedAriaLabel": "Отклонить"
+        },
+        "canvas": {
+          "akan-wiredu": {
+            "nokware": "nokware · истина",
+            "ahonyam": "ahonyam · благополучие",
+            "adwene": "adwene · ум"
+          },
+          "dewey": {
+            "indeterminate": "неопределённое",
+            "problem": "проблема",
+            "hypothesis": "гипотеза",
+            "reasoning": "рассуждение",
+            "testing": "проверка"
+          },
+          "dussel-transmodernity": {
+            "totality": "целостность",
+            "exteriority": "внешность"
+          },
+          "habermas": {
+            "technical": "техническое",
+            "practical": "практическое",
+            "emancipatory": "эмансипаторное"
+          },
+          "husserl": {
+            "formal": "формальная онтология",
+            "materialNature": "материальная природа",
+            "animalNature": "животная природа",
+            "spirit": "дух · Geist"
+          },
+          "ibn-khaldun-umran": {
+            "hadari": "ḥaḍarī · осёдлый",
+            "badawi": "badawī · кочевой"
+          },
+          "ibn-rushd-burhan": {
+            "burhan": "burhān",
+            "jadal": "jadal",
+            "khataba": "khaṭāba",
+            "shir": "shiʿr"
+          },
+          "ibuanyidanda": {
+            "self": "я",
+            "other": "другой",
+            "community": "община",
+            "tradition": "традиция",
+            "transcendence": "трансцендентное",
+            "missingLink": "недостающее звено"
+          },
+          "korean-songnihak": {
+            "liSa": "lǐ · 四端",
+            "liChil": "lǐ · 七情",
+            "qiChil": "qì · 七情",
+            "qiSa": "qì · 四端"
+          },
+          "longino": {
+            "venues": "площадки",
+            "uptake": "восприятие",
+            "publicStandards": "публичные стандарты",
+            "temperedEquality": "умеренное равенство"
+          },
+          "maimonidean-prophecy": {
+            "ruahHaQodesh": "1 · ruaḥ ha-qodesh",
+            "sleepVision": "2 · видение во сне",
+            "daytimeAllegory": "3 · дневная аллегория",
+            "voiceInVision": "4 · голос в видении",
+            "speakingPerson": "5 · говорящий человек",
+            "speakingAngel": "6 · говорящий ангел",
+            "speakingManForm": "7 · говорящая человекоподобная форма",
+            "allegoryAwake": "8 · аллегория наяву",
+            "voiceWhileAwake": "9 · голос наяву",
+            "manFormAwake": "10 · человекоподобная форма наяву",
+            "angelAwake": "11 · ангел наяву"
+          },
+          "maldonado-torres": {
+            "power": "власть",
+            "knowledge": "знание",
+            "being": "бытие"
+          },
+          "masadir": {
+            "extensionAriaLabel": "Дополнительные источники масадир",
+            "extensionTooltip": "Дополнительный источник масадир (только для отображения в v6.2; включение по заметкам через frontmatter будет добавлено позже)",
+            "quran": "Коран",
+            "sunnah": "сунна",
+            "ijma": "ijmāʿ",
+            "qiyas": "qiyās",
+            "extension": {
+              "istihsan": "istiḥsān",
+              "istishab": "istiṣḥāb",
+              "maslahaMursalah": "maṣlaḥa mursalah",
+              "urf": "ʿurf"
+            }
+          },
+          "mencian-sprouts": {
+            "ceyin": "惻隱 cèyǐn",
+            "xiuwu": "羞惡 xiūwù",
+            "cirang": "辭讓 círàng",
+            "shifei": "是非 shìfēi",
+            "xin": "信 xìn"
+          },
+          "mignolo-pluriversal": {
+            "epistemicDisobedience": "эпистемическое неповиновение",
+            "borderThinking": "пограничное мышление",
+            "delinking": "расцепление",
+            "decolonialGnosis": "деколониальный гнозис",
+            "pluriversalWorld": "плюриверсальный мир",
+            "modernityTotality": "современность / целостность"
+          },
+          "mohist-san-biao": {
+            "ben": "本 běn · корень",
+            "yuan": "原 yuán · истоки",
+            "yong": "用 yòng · использование"
+          },
+          "pardes": {
+            "peshat": "peshat",
+            "remez": "remez",
+            "derash": "derash",
+            "sod": "sod"
+          },
+          "peirce": {
+            "firstness": "Первичность",
+            "secondness": "Вторичность",
+            "thirdness": "Третичность"
+          },
+          "polanyi": {
+            "tacit": "неявное",
+            "explicit": "явное"
+          },
+          "pramana": {
+            "pratyaksha": "pratyakṣa",
+            "anumana": "anumāna",
+            "upamana": "upamāna",
+            "shabda": "śabda"
+          },
+          "shatibi-maqasid": {
+            "tier": {
+              "daruriyyat": "ḍarūriyyāt",
+              "hajiyyat": "ḥājiyyāt",
+              "tahsiniyyat": "taḥsīniyyāt"
+            },
+            "essential": {
+              "din": "dīn",
+              "nafs": "nafs",
+              "aql": "ʿaql",
+              "nasl": "nasl",
+              "mal": "māl"
+            }
+          },
+          "talmudic-middot": {
+            "kalVaChomer": "1 · kal va-chomer",
+            "gezeraShava": "2 · gezera shava",
+            "binyanAv1": "3 · binyan av (1 стих)",
+            "binyanAv2": "4 · binyan av (2 стиха)",
+            "kelalUPerat": "5 · kelal u-perat",
+            "peratUKelal": "6 · perat u-kelal",
+            "kpk": "7 · k-p-k",
+            "specialPurpose": "8 · особое назначение",
+            "extractedLighter": "9 · выведенное (более лёгкое)",
+            "extractedDifferent": "10 · выведенное (отличное)",
+            "fromContext": "11 · из контекста",
+            "fromEnd": "12 · из окончания",
+            "reconciliation": "13 · примирение"
+          },
+          "wang-yangming": {
+            "zhi": "知 zhī · знание",
+            "xing": "行 xíng · действие",
+            "liangzhi": "良知 liángzhī"
+          }
         }
+      },
+      "facet": {
+        "folder": "Папка",
+        "library": "Библиотека",
+        "stratum": "Страта",
+        "confidence": "Уверенность",
+        "stage": "Стадия",
+        "provenance": "Происхождение"
+      },
+      "facetSidebar": {
+        "title": "ФАСЕТЫ",
+        "expandAriaLabel": "Развернуть фильтры фасетов",
+        "filtersTooltip": "Фильтры",
+        "ariaLabel": "Фильтры фасетов Sight",
+        "collapseAriaLabel": "Свернуть фильтры фасетов",
+        "collapseTooltip": "Свернуть"
+      },
+      "confidence": {
+        "hypothesis": "гипотеза",
+        "evidence": "доказательство",
+        "established": "установлено",
+        "contested": "оспариваемое"
+      },
+      "stage": {
+        "spark": "искра",
+        "birth": "рождение",
+        "growth": "рост",
+        "maturity": "зрелость",
+        "dormancy": "покой",
+        "renewal": "обновление",
+        "archival": "архивация",
+        "established": "установлено",
+        "fresh": "свежее",
+        "growing": "растущее",
+        "at-risk": "под угрозой",
+        "dormant": "спящее"
+      },
+      "header": {
+        "subtitle": "v6.3 — Традиции (Фаза 1)",
+        "extendedBadge": "РАСШИРЕННЫЙ",
+        "extendedTooltip": "Расширенный вид ВКЛ — мини-виды видны по умолчанию при каждом открытии Sight. Cmd-Shift-D для переключения.",
+        "filterCountTooltip": "Отфильтрованные заметки / всего заметок",
+        "filterCountSuffix": "заметок",
+        "resetViewLabel": "Сбросить вид",
+        "resetViewTooltip": "Вернуться к якорному куполу с зумом по умолчанию (Сбросить вид)"
       }
     }
   },

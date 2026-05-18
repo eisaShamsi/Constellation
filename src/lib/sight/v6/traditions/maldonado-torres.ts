@@ -44,10 +44,11 @@ type ColonialityTier = 0 | 1 | 2; // power / knowledge / being
 
 const RING_BOUNDARIES_FRAC = [0.33, 0.67];
 
+// MIG-026 §λ-fix-3 — i18n keys; English values live in src/lib/i18n/en.json
 const TIER_LABELS: Record<ColonialityTier, string> = {
-	0: 'power',
-	1: 'knowledge',
-	2: 'being',
+	0: 'sight.v6.tradition.canvas.maldonado-torres.power',
+	1: 'sight.v6.tradition.canvas.maldonado-torres.knowledge',
+	2: 'sight.v6.tradition.canvas.maldonado-torres.being',
 };
 
 function pathHash01(path: string): number {

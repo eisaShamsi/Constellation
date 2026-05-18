@@ -46,6 +46,7 @@ import {
 	CHROME_PALETTE_DARK_FALLBACK,
 	STRATUM_BANDS,
 	STRATUM_LABELS,
+	STRATUM_LABEL_KEYS,
 	bandForRawStratum,
 	calendarRimMonths,
 	radiusForStratum,
@@ -65,6 +66,24 @@ import {
 // stack so the per-render assignment is stable for the duration of
 // the paint.
 let _chrome: ChromePalette = CHROME_PALETTE_DARK_FALLBACK;
+
+/**
+ * MIG-026 §λ-fix-3 — module-level i18n label resolver, set by
+ * renderAnchorDome at the top of each paint. Helper draw functions
+ * (drawSectorDividers, drawRingBoundaries, drawLadderSteps,
+ * drawRelationalGraph, drawCyclicFlow, drawBinaryFlow*, drawHorizontalBands,
+ * drawGradientFog) read this via the `_labelize` reference instead
+ * of taking it as an extra parameter — mirrors the `_chrome` pattern
+ * above. Safe because Sight renders one dome at a time and helpers
+ * are only called within renderAnchorDome's call stack.
+ *
+ * Curated tradition modules write i18n keys into their label fields
+ * (e.g. 'sight.v6.tradition.masadir.sector.quran'); `_labelize` then
+ * resolves via $t() at draw time. User-defined plugins ship literal
+ * labels which pass through `_labelize` unchanged (the i18n fallback
+ * chain returns the input string when it doesn't match any key).
+ */
+let _labelize: (key: string) => string = (key: string) => key;
 
 // ════════════════════════════════════════════════════════════════════
 // Layout
@@ -286,7 +305,7 @@ function drawSectorDividers(
 		const midAngle = (sec.angleStart + sec.angleEnd) / 2;
 		const lx = layout.centerX + Math.cos(midAngle) * labelRadius;
 		const ly = layout.centerY + Math.sin(midAngle) * labelRadius;
-		ctx.fillText(sec.label, lx, ly);
+		ctx.fillText(_labelize(sec.label), lx, ly);
 	}
 	ctx.restore();
 }
@@ -374,7 +393,7 @@ function drawRingBoundaries(
 		const midFrac = (innerFrac + outerFrac) / 2;
 		const lx = layout.centerX + midFrac * layout.radius + 4; // +4 px world inset right
 		const ly = layout.centerY;
-		ctx.fillText(ring.label, lx, ly);
+		ctx.fillText(_labelize(ring.label), lx, ly);
 	}
 
 	// 3. If the largest ring boundary is < 1.0 (i.e. there's an outer
@@ -500,7 +519,7 @@ function drawLadderSteps(
 		// textAlign 'left' for east-ish positions, 'right' for west-ish.
 		// Use the x-component of the radial direction to decide.
 		ctx.textAlign = ux >= 0 ? 'left' : 'right';
-		ctx.fillText(step.label, lx, ly);
+		ctx.fillText(_labelize(step.label), lx, ly);
 	}
 
 	ctx.restore();
@@ -591,7 +610,7 @@ function drawRelationalGraph(
 	ctx.font = 'italic 10px Inter, system-ui, sans-serif';
 	ctx.textAlign = 'center';
 	ctx.textBaseline = 'middle';
-	ctx.fillText(relational.hubLabel, layout.centerX, layout.centerY);
+	ctx.fillText(_labelize(relational.hubLabel), layout.centerX, layout.centerY);
 
 	// 5. Cluster labels outside each bubble (radial-outward), with
 	//    textAlign auto-flip based on east/west side for readability.
@@ -603,7 +622,7 @@ function drawRelationalGraph(
 		const lx = layout.centerX + labelRadius * Math.cos(a);
 		const ly = layout.centerY + labelRadius * Math.sin(a);
 		ctx.textAlign = Math.cos(a) >= 0 ? 'left' : 'right';
-		ctx.fillText(cluster.label, lx, ly);
+		ctx.fillText(_labelize(cluster.label), lx, ly);
 	}
 
 	ctx.restore();
@@ -678,7 +697,7 @@ function drawCyclicFlow(
 		const midAngle = startAngle + (i + 0.5) * segmentArc;
 		const lx = layout.centerX + labelRadius * Math.cos(midAngle);
 		const ly = layout.centerY + labelRadius * Math.sin(midAngle);
-		ctx.fillText(seg.label, lx, ly);
+		ctx.fillText(_labelize(seg.label), lx, ly);
 	}
 
 	// 4. Flow chevron arrows. One small arrow at each segment midpoint
@@ -786,15 +805,15 @@ function drawBinaryFlow(
 		Math.max(0, layout.radius * layout.radius - (layout.radius / 2) ** 2),
 	);
 	const labelX = layout.centerX + topHalfChord * 0.85;
-	ctx.fillText(binary.cellA.label, labelX, topBandY);
-	ctx.fillText(binary.cellB.label, labelX, bottomBandY);
+	ctx.fillText(_labelize(binary.cellA.label), labelX, topBandY);
+	ctx.fillText(_labelize(binary.cellB.label), labelX, bottomBandY);
 
 	// 3. Optional center label (e.g., Wang Yangming's liángzhī sits at
 	//    the equator between the two cells). Placed at dome center.
 	if (binary.centerLabel) {
 		ctx.font = 'italic 10px Inter, system-ui, sans-serif';
 		ctx.textAlign = 'center';
-		ctx.fillText(binary.centerLabel, layout.centerX, layout.centerY);
+		ctx.fillText(_labelize(binary.centerLabel), layout.centerX, layout.centerY);
 	}
 
 	// 4. Flow arrows. Arrow shape: curved arc with chevron tip. Drawn
@@ -910,11 +929,11 @@ function drawGradientFog(
 		ctx.textAlign = 'center';
 		ctx.textBaseline = 'middle';
 		if (gradient.centerLabel) {
-			ctx.fillText(gradient.centerLabel, layout.centerX, layout.centerY);
+			ctx.fillText(_labelize(gradient.centerLabel), layout.centerX, layout.centerY);
 		}
 		if (gradient.edgeLabel) {
 			ctx.fillText(
-				gradient.edgeLabel,
+				_labelize(gradient.edgeLabel),
 				layout.centerX,
 				layout.centerY + layout.radius * 0.92,
 			);
@@ -989,7 +1008,7 @@ function drawHorizontalBands(
 		// Position label inside the band at ~92% of the left half-chord
 		// so it sits clearly within the dome but doesn't crowd the rim.
 		const lx = layout.centerX - halfChord * 0.92;
-		ctx.fillText(band.label, lx, yCenter);
+		ctx.fillText(_labelize(band.label), lx, yCenter);
 	}
 
 	ctx.restore();
@@ -1031,15 +1050,15 @@ function drawBinaryFlowVertical(
 	ctx.textBaseline = 'middle';
 	const sideOffset = layout.radius * 0.65;
 	ctx.textAlign = 'right';
-	ctx.fillText(binary.cellA.label, layout.centerX - sideOffset, layout.centerY);
+	ctx.fillText(_labelize(binary.cellA.label), layout.centerX - sideOffset, layout.centerY);
 	ctx.textAlign = 'left';
-	ctx.fillText(binary.cellB.label, layout.centerX + sideOffset, layout.centerY);
+	ctx.fillText(_labelize(binary.cellB.label), layout.centerX + sideOffset, layout.centerY);
 
 	// 2. Center label (optional). For Wang Yangming this is liángzhī.
 	if (binary.centerLabel) {
 		ctx.font = 'italic 10px Inter, system-ui, sans-serif';
 		ctx.textAlign = 'center';
-		ctx.fillText(binary.centerLabel, layout.centerX, layout.centerY);
+		ctx.fillText(_labelize(binary.centerLabel), layout.centerX, layout.centerY);
 	}
 
 	// 3. Flow arrows — horizontal, on each side. Drawn between the
@@ -1129,16 +1148,16 @@ function drawBinaryFlowConcentric(
 	// centerLabel is also set)
 	ctx.textAlign = 'center';
 	if (binary.centerLabel) {
-		ctx.fillText(binary.centerLabel, layout.centerX, layout.centerY - 6);
-		ctx.fillText(binary.cellA.label, layout.centerX, layout.centerY + 8);
+		ctx.fillText(_labelize(binary.centerLabel), layout.centerX, layout.centerY - 6);
+		ctx.fillText(_labelize(binary.cellA.label), layout.centerX, layout.centerY + 8);
 	} else {
-		ctx.fillText(binary.cellA.label, layout.centerX, layout.centerY);
+		ctx.fillText(_labelize(binary.cellA.label), layout.centerX, layout.centerY);
 	}
 	// cellB: inside outer annulus along +x axis (between ringR and outer
 	// rim), placed at ~70% radius
 	ctx.textAlign = 'left';
 	const cellBX = layout.centerX + layout.radius * 0.70 + 4;
-	ctx.fillText(binary.cellB.label, cellBX, layout.centerY);
+	ctx.fillText(_labelize(binary.cellB.label), cellBX, layout.centerY);
 
 	// 3. Flow arrows — radial, drawn at the -x axis (~9 o'clock, west)
 	//    so they don't collide with cellB label on the +x axis.
@@ -1288,6 +1307,19 @@ export function renderAnchorDome(
 		 *  Polanyi keep the default 0 boost (cluster-style layouts
 		 *  benefit from sub-pixel sizes via additive blending). */
 		starRadiusBoostScreenPx?: number;
+		/** MIG-026 §λ-fix-3 — i18n label resolver. When provided,
+		 *  the renderer uses it to translate every on-canvas label
+		 *  (stratum labels + per-tradition sector/zone/ring/etc.
+		 *  labels) from i18n key → locale-appropriate string. When
+		 *  absent (defensive fallback), returns the key string
+		 *  literally — gives English-key text instead of crashing
+		 *  but is visibly wrong, so callers SHOULD provide it.
+		 *
+		 *  Curated traditions write i18n keys into their label
+		 *  fields; user-defined plugins write literal labels (which
+		 *  pass through labelize unchanged because they don't match
+		 *  any key — the i18n fallback chain handles this). */
+		labelize?: (key: string) => string;
 	} = {},
 ): void {
 	const {
@@ -1300,6 +1332,7 @@ export function renderAnchorDome(
 		tradition = null,
 		chromePalette = CHROME_PALETTE_DARK_FALLBACK,
 		starRadiusBoostScreenPx = 0,
+		labelize = (key: string) => key,
 	} = options;
 	// MIG-027 — set the module-level chrome state for the duration of
 	// this paint. All helper functions in this file (drawStars,
@@ -1308,6 +1341,10 @@ export function renderAnchorDome(
 	// Sight renders one dome at a time + helpers are called only
 	// within renderAnchorDome's call stack.
 	_chrome = chromePalette;
+	// MIG-026 §λ-fix-3 — same pattern for the i18n label resolver,
+	// so helper draw functions can localize labels without adding a
+	// parameter to every signature.
+	_labelize = labelize;
 	// §B.9 — densityMode accepted for API symmetry with renderMiniDome
 	// but currently unused: the anchor already renders bodies at
 	// BODY_OPACITY_MULT (0.7) for the existing density-via-additive-
@@ -1412,13 +1449,19 @@ export function renderAnchorDome(
 	}
 
 	// 4. Stratum labels along the vertical axis
+	// MIG-026 §λ-fix-3 — labels resolve via labelize($t) so the on-
+	// canvas vertical-axis text follows the active locale. Falls back
+	// to the English literal via STRATUM_LABELS if labelize wasn't
+	// provided (defensive — see options.labelize comment above).
 	ctx.fillStyle = _chrome.stratumLabel;
 	ctx.font = 'italic 9px Inter, system-ui, sans-serif';
 	ctx.textAlign = 'center';
 	ctx.textBaseline = 'middle';
 	for (const band of STRATUM_BANDS) {
 		const r = radiusForStratum(band, layout.radius);
-		ctx.fillText(STRATUM_LABELS[band], layout.centerX, layout.centerY - r);
+		const resolved = labelize(STRATUM_LABEL_KEYS[band]);
+		const text = resolved === STRATUM_LABEL_KEYS[band] ? STRATUM_LABELS[band] : resolved;
+		ctx.fillText(text, layout.centerX, layout.centerY - r);
 	}
 
 	// 5. Connector lines (under stars). Auto-fade above 800 visible

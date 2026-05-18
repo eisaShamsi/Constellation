@@ -88,9 +88,10 @@ export const dusselTransmodernity: TraditionModule = {
 	},
 
 	binaryFlowSpec: (_layout: TraditionLayout): BinaryFlowSpec => {
+		// MIG-026 §λ-fix-3 — i18n keys; English values live in src/lib/i18n/en.json
 		return {
-			cellA: { label: 'totality' },
-			cellB: { label: 'exteriority' },
+			cellA: { label: 'sight.v6.tradition.canvas.dussel-transmodernity.totality' },
+			cellB: { label: 'sight.v6.tradition.canvas.dussel-transmodernity.exteriority' },
 			flowDirection: 'bidirectional',
 			layout: 'concentric',
 		};

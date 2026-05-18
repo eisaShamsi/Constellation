@@ -1677,6 +1677,29 @@
     "v6": {
       "title": "Constellation Sight",
       "returnToSight": "חזרה ל-Sight",
+      "stratum": {
+        "foundation": "יסוד",
+        "working": "עבודה",
+        "connection": "חיבור",
+        "synthesis": "סינתזה",
+        "edge-of-knowing": "קצה הידיעה"
+      },
+      "miniDome": {
+        "title": {
+          "anchor": "יקום — תצוגה ראשית",
+          "confidence": "ביטחון — שקיפות",
+          "stage": "שלב — גוון (דיסק מלא)",
+          "acts": "פעולות — גודל (עשירון עליון)",
+          "provenance": "מקור — 5 מגזרים"
+        },
+        "provenance": {
+          "self": "עצמי",
+          "read": "נקרא",
+          "heard": "נשמע",
+          "reasoned": "מנומק",
+          "tradition": "מסורת"
+        }
+      },
       "tradition": {
         "family": {
           "western-classical": "קלאסית מערבית",
@@ -1839,7 +1862,218 @@
           "failedTitle": "טעינת התוסף נכשלה",
           "dismissFailedTooltip": "התעלם מהודעת השגיאה הזו (תקן את התוסף ואז הפעל מחדש את Constellation כדי לנסות שוב)",
           "dismissFailedAriaLabel": "התעלם"
+        },
+        "canvas": {
+          "akan-wiredu": {
+            "nokware": "nokware · אמת",
+            "ahonyam": "ahonyam · רווחה",
+            "adwene": "adwene · שכל"
+          },
+          "dewey": {
+            "indeterminate": "בלתי-מוגדר",
+            "problem": "בעיה",
+            "hypothesis": "השערה",
+            "reasoning": "היסק",
+            "testing": "בחינה"
+          },
+          "dussel-transmodernity": {
+            "totality": "טוטליות",
+            "exteriority": "חיצוניות"
+          },
+          "habermas": {
+            "technical": "טכני",
+            "practical": "פרקטי",
+            "emancipatory": "אמנציפטורי"
+          },
+          "husserl": {
+            "formal": "אונטולוגיה צורנית",
+            "materialNature": "טבע חומרי",
+            "animalNature": "טבע חייתי",
+            "spirit": "רוח · Geist"
+          },
+          "ibn-khaldun-umran": {
+            "hadari": "חַדַ'רי · יושבני",
+            "badawi": "בַּדַוי · נוודי"
+          },
+          "ibn-rushd-burhan": {
+            "burhan": "בורהאן",
+            "jadal": "ג'דל",
+            "khataba": "חַ'טאבה",
+            "shir": "שִעְר"
+          },
+          "ibuanyidanda": {
+            "self": "עצמי",
+            "other": "אחר",
+            "community": "קהילה",
+            "tradition": "מסורת",
+            "transcendence": "טרנסצנדנטיות",
+            "missingLink": "החוליה החסרה"
+          },
+          "korean-songnihak": {
+            "liSa": "lǐ · 四端 (ארבעת הניצנים)",
+            "liChil": "lǐ · 七情 (שבעת הרגשות)",
+            "qiChil": "qì · 七情 (שבעת הרגשות)",
+            "qiSa": "qì · 四端 (ארבעת הניצנים)"
+          },
+          "longino": {
+            "venues": "זירות",
+            "uptake": "קליטה",
+            "publicStandards": "אמות-מידה ציבוריות",
+            "temperedEquality": "שוויון ממותן"
+          },
+          "maimonidean-prophecy": {
+            "ruahHaQodesh": "1 · רוח הקודש",
+            "sleepVision": "2 · חזון בשינה",
+            "daytimeAllegory": "3 · משל ביום",
+            "voiceInVision": "4 · קול בחזון",
+            "speakingPerson": "5 · אדם מדבר",
+            "speakingAngel": "6 · מלאך מדבר",
+            "speakingManForm": "7 · דמות-אדם מדברת",
+            "allegoryAwake": "8 · משל בהקיץ",
+            "voiceWhileAwake": "9 · קול בהקיץ",
+            "manFormAwake": "10 · דמות-אדם בהקיץ",
+            "angelAwake": "11 · מלאך בהקיץ"
+          },
+          "maldonado-torres": {
+            "power": "כוח",
+            "knowledge": "ידע",
+            "being": "הוויה"
+          },
+          "masadir": {
+            "extensionAriaLabel": "מקורות מַצַאדִר נוספים",
+            "extensionTooltip": "מקור מַצַאדִר נוסף (לתצוגה בלבד ב-v6.2; הצטרפות לפי פתק דרך frontmatter בעדכון המשך)",
+            "quran": "קוראן",
+            "sunnah": "סוּנה",
+            "ijma": "אִג'מאע",
+            "qiyas": "קִיאס",
+            "extension": {
+              "istihsan": "אִסְתִחְסאן",
+              "istishab": "אִסְתִצְחאב",
+              "maslahaMursalah": "מַצְלַחה מוּרְסַלה",
+              "urf": "עֻרְף"
+            }
+          },
+          "mencian-sprouts": {
+            "ceyin": "惻隱 cèyǐn · חמלה",
+            "xiuwu": "羞惡 xiūwù · בושה",
+            "cirang": "辭讓 círàng · התרפסות",
+            "shifei": "是非 shìfēi · צדק-עוול",
+            "xin": "信 xìn · אמינות"
+          },
+          "mignolo-pluriversal": {
+            "epistemicDisobedience": "אי-ציות אפיסטמי",
+            "borderThinking": "חשיבה גבולית",
+            "delinking": "ניתוק",
+            "decolonialGnosis": "גנוסיס דקולוניאלי",
+            "pluriversalWorld": "עולם פלוריוורסלי",
+            "modernityTotality": "מודרניות / טוטליות"
+          },
+          "mohist-san-biao": {
+            "ben": "本 běn · שורש",
+            "yuan": "原 yuán · מקור",
+            "yong": "用 yòng · שימוש"
+          },
+          "pardes": {
+            "peshat": "פשט",
+            "remez": "רמז",
+            "derash": "דרש",
+            "sod": "סוד"
+          },
+          "peirce": {
+            "firstness": "ראשוניות",
+            "secondness": "שניוניות",
+            "thirdness": "שלישיוניות"
+          },
+          "polanyi": {
+            "tacit": "שתוּק",
+            "explicit": "מפורש"
+          },
+          "pramana": {
+            "pratyaksha": "pratyakṣa · תפיסה",
+            "anumana": "anumāna · היסק",
+            "upamana": "upamāna · אנלוגיה",
+            "shabda": "śabda · עדות"
+          },
+          "shatibi-maqasid": {
+            "tier": {
+              "daruriyyat": "דַ'רוּריאת",
+              "hajiyyat": "חאג'יאת",
+              "tahsiniyyat": "תחסיניאת"
+            },
+            "essential": {
+              "din": "דין",
+              "nafs": "נפש",
+              "aql": "עקל",
+              "nasl": "נסל",
+              "mal": "מאל"
+            }
+          },
+          "talmudic-middot": {
+            "kalVaChomer": "1 · קל וחומר",
+            "gezeraShava": "2 · גזרה שווה",
+            "binyanAv1": "3 · בניין אב (פסוק אחד)",
+            "binyanAv2": "4 · בניין אב (שני פסוקים)",
+            "kelalUPerat": "5 · כלל ופרט",
+            "peratUKelal": "6 · פרט וכלל",
+            "kpk": "7 · כלל-פרט-כלל",
+            "specialPurpose": "8 · ייחוד מטרה",
+            "extractedLighter": "9 · יצא מן הכלל להקל",
+            "extractedDifferent": "10 · יצא מן הכלל לדון בעניין אחר",
+            "fromContext": "11 · מן ההקשר",
+            "fromEnd": "12 · מן הסוף",
+            "reconciliation": "13 · יישוב סתירה"
+          },
+          "wang-yangming": {
+            "zhi": "知 zhī · ידיעה",
+            "xing": "行 xíng · מעשה",
+            "liangzhi": "良知 liángzhī · ידיעה מוסרית מולדת"
+          }
         }
+      },
+      "facet": {
+        "folder": "תיקייה",
+        "library": "ספרייה",
+        "stratum": "רובד",
+        "confidence": "ביטחון",
+        "stage": "שלב",
+        "provenance": "מקור"
+      },
+      "facetSidebar": {
+        "title": "פנים",
+        "expandAriaLabel": "הרחב מסנני פנים",
+        "filtersTooltip": "מסננים",
+        "ariaLabel": "מסנני פנים של Sight",
+        "collapseAriaLabel": "כווץ מסנני פנים",
+        "collapseTooltip": "כווץ"
+      },
+      "confidence": {
+        "hypothesis": "השערה",
+        "evidence": "ראיה",
+        "established": "מבוסס",
+        "contested": "שנוי במחלוקת"
+      },
+      "stage": {
+        "spark": "ניצוץ",
+        "birth": "לידה",
+        "growth": "צמיחה",
+        "maturity": "בשלות",
+        "dormancy": "תרדמה",
+        "renewal": "התחדשות",
+        "archival": "ארכיון",
+        "established": "מבוסס",
+        "fresh": "טרי",
+        "growing": "צומח",
+        "at-risk": "בסיכון",
+        "dormant": "רדום"
+      },
+      "header": {
+        "subtitle": "v6.3 — מסורות (שלב 1)",
+        "extendedBadge": "מורחב",
+        "extendedTooltip": "תצוגה מורחבת פעילה — מיני-תצוגות מוצגות כברירת מחדל בכל פתיחת Sight. Cmd-Shift-D להחלפה.",
+        "filterCountTooltip": "פתקים מסוננים / סך הפתקים",
+        "filterCountSuffix": "פתקים",
+        "resetViewLabel": "אפס תצוגה",
+        "resetViewTooltip": "חזרה לכיפת העוגן בזום ברירת המחדל (אפס תצוגה)"
       }
     }
   },

@@ -61,10 +61,11 @@ const SECTOR_START: Record<PeirceCategory, number> = {
 	thirdness: -Math.PI / 2 + SECTOR_ROTATION_OFFSET + 2 * SECTOR_ARC,
 };
 
+// MIG-026 §λ-fix-3 — i18n keys; English values live in src/lib/i18n/en.json
 const SECTOR_LABELS: Record<PeirceCategory, string> = {
-	firstness: 'Firstness',
-	secondness: 'Secondness',
-	thirdness: 'Thirdness',
+	firstness: 'sight.v6.tradition.canvas.peirce.firstness',
+	secondness: 'sight.v6.tradition.canvas.peirce.secondness',
+	thirdness: 'sight.v6.tradition.canvas.peirce.thirdness',
 };
 
 const SECTOR_ORDER: PeirceCategory[] = ['firstness', 'secondness', 'thirdness'];

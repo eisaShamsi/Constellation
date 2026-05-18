@@ -2325,6 +2325,29 @@
     "v6": {
       "title": "Constellation Sight",
       "returnToSight": "العودة إلى Sight",
+      "stratum": {
+        "foundation": "الأساس",
+        "working": "العمل",
+        "connection": "الربط",
+        "synthesis": "التركيب",
+        "edge-of-knowing": "حافة المعرفة"
+      },
+      "miniDome": {
+        "title": {
+          "anchor": "الكون — العرض الرئيسي",
+          "confidence": "الثقة — الشفافية",
+          "stage": "المرحلة — اللون (قرص كامل)",
+          "acts": "الأفعال — الحجم (العشير الأعلى)",
+          "provenance": "المصدر — 5 قطاعات"
+        },
+        "provenance": {
+          "self": "الذات",
+          "read": "مقروء",
+          "heard": "مسموع",
+          "reasoned": "استدلال",
+          "tradition": "تقليد"
+        }
+      },
       "tradition": {
         "family": {
           "western-classical": "الكلاسيكية الغربية",
@@ -2487,7 +2510,218 @@
           "failedTitle": "فشل تحميل الإضافة",
           "dismissFailedTooltip": "تجاهُل رسالة الخطأ (أصلح الإضافة ثم أعِد تشغيل Constellation لإعادة المحاولة)",
           "dismissFailedAriaLabel": "تجاهُل"
+        },
+        "canvas": {
+          "akan-wiredu": {
+            "nokware": "nokware · الصدق",
+            "ahonyam": "ahonyam · الرخاء",
+            "adwene": "adwene · العقل"
+          },
+          "dewey": {
+            "indeterminate": "غير محدد",
+            "problem": "مشكلة",
+            "hypothesis": "فرضية",
+            "reasoning": "استدلال",
+            "testing": "اختبار"
+          },
+          "dussel-transmodernity": {
+            "totality": "الكُلِّيَّة",
+            "exteriority": "الخارجية"
+          },
+          "habermas": {
+            "technical": "تقني",
+            "practical": "عملي",
+            "emancipatory": "تحرري"
+          },
+          "husserl": {
+            "formal": "الأنطولوجيا الصورية",
+            "materialNature": "الطبيعة المادية",
+            "animalNature": "الطبيعة الحيوانية",
+            "spirit": "الروح · Geist"
+          },
+          "ibn-khaldun-umran": {
+            "hadari": "حَضَري",
+            "badawi": "بَدَوي"
+          },
+          "ibn-rushd-burhan": {
+            "burhan": "برهان",
+            "jadal": "جدل",
+            "khataba": "خطابة",
+            "shir": "شِعر"
+          },
+          "ibuanyidanda": {
+            "self": "الذات",
+            "other": "الآخر",
+            "community": "المجتمع",
+            "tradition": "التقليد",
+            "transcendence": "التسامي",
+            "missingLink": "الحلقة المفقودة"
+          },
+          "korean-songnihak": {
+            "liSa": "lǐ · 四端 (المبادئ الأربعة)",
+            "liChil": "lǐ · 七情 (المشاعر السبعة)",
+            "qiChil": "qì · 七情 (المشاعر السبعة)",
+            "qiSa": "qì · 四端 (المبادئ الأربعة)"
+          },
+          "longino": {
+            "venues": "منابر",
+            "uptake": "تبنّي",
+            "publicStandards": "معايير عامة",
+            "temperedEquality": "مساواة معتدلة"
+          },
+          "maimonidean-prophecy": {
+            "ruahHaQodesh": "1 · روح القدس",
+            "sleepVision": "2 · رؤيا منام",
+            "daytimeAllegory": "3 · تمثيل نهاري",
+            "voiceInVision": "4 · صوت في رؤيا",
+            "speakingPerson": "5 · شخص يتكلم",
+            "speakingAngel": "6 · ملاك يتكلم",
+            "speakingManForm": "7 · هيئة بشرية تتكلم",
+            "allegoryAwake": "8 · تمثيل في اليقظة",
+            "voiceWhileAwake": "9 · صوت في اليقظة",
+            "manFormAwake": "10 · هيئة بشرية في اليقظة",
+            "angelAwake": "11 · ملاك في اليقظة"
+          },
+          "maldonado-torres": {
+            "power": "السلطة",
+            "knowledge": "المعرفة",
+            "being": "الكينونة"
+          },
+          "masadir": {
+            "extensionAriaLabel": "مصادر تكميلية لأصول الفقه",
+            "extensionTooltip": "مصدر تكميلي ضمن المصادر (للعرض فقط في v6.2؛ تفعيل لكل ملاحظة عبر الواجهة الأمامية لاحقًا)",
+            "quran": "القرآن",
+            "sunnah": "السنة",
+            "ijma": "الإجماع",
+            "qiyas": "القياس",
+            "extension": {
+              "istihsan": "الاستحسان",
+              "istishab": "الاستصحاب",
+              "maslahaMursalah": "المصلحة المرسلة",
+              "urf": "العُرف"
+            }
+          },
+          "mencian-sprouts": {
+            "ceyin": "惻隱 cèyǐn · الرحمة",
+            "xiuwu": "羞惡 xiūwù · الحياء",
+            "cirang": "辭讓 círàng · التواضع",
+            "shifei": "是非 shìfēi · التمييز",
+            "xin": "信 xìn · الصدق"
+          },
+          "mignolo-pluriversal": {
+            "epistemicDisobedience": "العصيان المعرفي",
+            "borderThinking": "التفكير الحدودي",
+            "delinking": "الانفكاك",
+            "decolonialGnosis": "المعرفة المُحرَّرة من الاستعمار",
+            "pluriversalWorld": "العالم التعددي",
+            "modernityTotality": "الحداثة / الكُلِّيَّة"
+          },
+          "mohist-san-biao": {
+            "ben": "本 běn · الأصل",
+            "yuan": "原 yuán · المنشأ",
+            "yong": "用 yòng · الاستعمال"
+          },
+          "pardes": {
+            "peshat": "peshat · المعنى الحرفي",
+            "remez": "remez · التلميح",
+            "derash": "derash · التأويل",
+            "sod": "sod · السرّ"
+          },
+          "peirce": {
+            "firstness": "الأوَّلِيَّة",
+            "secondness": "الثانوية",
+            "thirdness": "الثالثية"
+          },
+          "polanyi": {
+            "tacit": "ضمني",
+            "explicit": "صريح"
+          },
+          "pramana": {
+            "pratyaksha": "pratyakṣa · الإدراك المباشر",
+            "anumana": "anumāna · الاستنباط",
+            "upamana": "upamāna · القياس",
+            "shabda": "śabda · الشهادة"
+          },
+          "shatibi-maqasid": {
+            "tier": {
+              "daruriyyat": "ضروريات",
+              "hajiyyat": "حاجيات",
+              "tahsiniyyat": "تحسينيات"
+            },
+            "essential": {
+              "din": "الدين",
+              "nafs": "النفس",
+              "aql": "العقل",
+              "nasl": "النسل",
+              "mal": "المال"
+            }
+          },
+          "talmudic-middot": {
+            "kalVaChomer": "1 · kal va-chomer (من الأخفّ إلى الأثقل)",
+            "gezeraShava": "2 · gezera shava (المقايسة اللفظية)",
+            "binyanAv1": "3 · binyan av (من آية واحدة)",
+            "binyanAv2": "4 · binyan av (من آيتين)",
+            "kelalUPerat": "5 · kelal u-perat (العام والخاص)",
+            "peratUKelal": "6 · perat u-kelal (الخاص والعام)",
+            "kpk": "7 · k-p-k (العام-الخاص-العام)",
+            "specialPurpose": "8 · غرض خاص",
+            "extractedLighter": "9 · مُستخرَج (الأخف)",
+            "extractedDifferent": "10 · مُستخرَج (المختلف)",
+            "fromContext": "11 · من السياق",
+            "fromEnd": "12 · من النهاية",
+            "reconciliation": "13 · التوفيق"
+          },
+          "wang-yangming": {
+            "zhi": "知 zhī · العلم",
+            "xing": "行 xíng · العمل",
+            "liangzhi": "良知 liángzhī · المعرفة الفطرية"
+          }
         }
+      },
+      "facet": {
+        "folder": "المجلد",
+        "library": "المكتبة",
+        "stratum": "الطبقة",
+        "confidence": "الثقة",
+        "stage": "المرحلة",
+        "provenance": "المصدر"
+      },
+      "facetSidebar": {
+        "title": "الأوجه",
+        "expandAriaLabel": "توسيع مرشحات الأوجه",
+        "filtersTooltip": "المرشحات",
+        "ariaLabel": "مرشحات أوجه Sight",
+        "collapseAriaLabel": "طي مرشحات الأوجه",
+        "collapseTooltip": "طي"
+      },
+      "confidence": {
+        "hypothesis": "فرضية",
+        "evidence": "دليل",
+        "established": "ثابتة",
+        "contested": "متنازع عليها"
+      },
+      "stage": {
+        "spark": "شرارة",
+        "birth": "ولادة",
+        "growth": "نمو",
+        "maturity": "نضج",
+        "dormancy": "سُبات",
+        "renewal": "تجديد",
+        "archival": "أرشفة",
+        "established": "ثابتة",
+        "fresh": "طازجة",
+        "growing": "نامية",
+        "at-risk": "في خطر",
+        "dormant": "خاملة"
+      },
+      "header": {
+        "subtitle": "v6.3 — التقاليد (المرحلة 1)",
+        "extendedBadge": "موسَّع",
+        "extendedTooltip": "العرض الموسَّع مُفعَّل — تظهر العروض المصغرة افتراضيًا في كل فتح لـ Sight. Cmd-Shift-D للتبديل.",
+        "filterCountTooltip": "الملاحظات المُرشَّحة / إجمالي الملاحظات",
+        "filterCountSuffix": "ملاحظة",
+        "resetViewLabel": "إعادة ضبط العرض",
+        "resetViewTooltip": "العودة إلى القبة المرساة عند الزوم الافتراضي (إعادة ضبط العرض)"
       }
     }
   },

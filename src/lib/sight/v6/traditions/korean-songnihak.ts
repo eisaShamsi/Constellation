@@ -49,11 +49,12 @@ const SECTOR_START: Record<SongnihakCell, number> = {
 	'qi-sa': -Math.PI / 2 + SECTOR_ROTATION_OFFSET + 3 * SECTOR_ARC,      // N wedge
 };
 
+// MIG-026 §λ-fix-3 — i18n keys; English values live in src/lib/i18n/en.json
 const SECTOR_LABELS: Record<SongnihakCell, string> = {
-	'li-sa': 'lǐ · 四端',
-	'li-chil': 'lǐ · 七情',
-	'qi-chil': 'qì · 七情',
-	'qi-sa': 'qì · 四端',
+	'li-sa': 'sight.v6.tradition.canvas.korean-songnihak.liSa',
+	'li-chil': 'sight.v6.tradition.canvas.korean-songnihak.liChil',
+	'qi-chil': 'sight.v6.tradition.canvas.korean-songnihak.qiChil',
+	'qi-sa': 'sight.v6.tradition.canvas.korean-songnihak.qiSa',
 };
 
 const SECTOR_ORDER: SongnihakCell[] = ['li-sa', 'li-chil', 'qi-chil', 'qi-sa'];

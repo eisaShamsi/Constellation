@@ -540,7 +540,11 @@
 		// transitions).
 		const chromePalette = readChromePalette(canvasHostEl);
 		renderAnchorDome(ctx, stars, visibleLinks, canvasWidth, canvasHeight, {
-			locale: navigator.language ?? 'en',
+			// MIG-026 §λ-fix-3 — was navigator.language, which leaks the
+			// browser locale into calendar-month rendering even when the
+			// user picked a different interface language. Now follows
+			// the app locale so January in EN, يناير in AR, 一月 in ZH.
+			locale: $locale ?? 'en',
 			highlightedPath: hoveredPath,
 			zoomScale: zoomScale,
 			matchedPaths,
@@ -556,6 +560,13 @@
 			starRadiusBoostScreenPx: anchorStarRadiusBoostScreenPx,
 			tradition: activeTradition,
 			chromePalette,
+			// MIG-026 §λ-fix-3 — pass the active i18n resolver so the
+			// renderer translates stratum labels + per-tradition sector/
+			// zone/ring labels into the user's preferred language. Falls
+			// back to the literal key string for any unknown key (which
+			// is also how user-defined plugins ship literal labels
+			// without an i18n entry — they pass through unchanged).
+			labelize: $t,
 		});
 	}
 
@@ -978,6 +989,17 @@
 		untrack(() => paint());
 	});
 
+	// MIG-026 §λ-fix-3 — repaint anchor when the active interface
+	// locale changes. The renderAnchorDome call captures $locale + $t
+	// at paint time; an interface-language switch must trigger a re-
+	// paint so all on-canvas text (stratum labels, calendar months,
+	// per-tradition sector/zone/ring labels) updates immediately. No
+	// star-position recompute needed — positions are locale-independent.
+	$effect(() => {
+		void $locale;
+		untrack(() => paint());
+	});
+
 	// §C.2 — recompute + repaint when the active epistemic tradition
 	// changes. Reads $appSettings.sight.activeTradition so this effect
 	// re-fires whenever traditionChip.svelte writes a new id. The
@@ -1001,8 +1023,8 @@
 
 <div class="sight-v6-root">
 	<div class="sight-v6-header">
-		<span class="sight-v6-title">Constellation Sight</span>
-		<span class="sight-v6-subtitle">v6.3 — Traditions (Phase 1)</span>
+		<span class="sight-v6-title">{$t('sight.v6.title')}</span>
+		<span class="sight-v6-subtitle">{$t('sight.v6.header.subtitle')}</span>
 		<!-- §C.1 — Tradition chip. Sits between the subtitle and the
 		     EXTENDED badge per Concept Paper §2.5. Default state shows
 		     only the active tradition (collapsed); click to expand the
@@ -1029,8 +1051,8 @@
 		     Settings migration in applyParsedSettings carries forward
 		     existing users' values. -->
 		{#if $appSettings.sight?.extended}
-			<span class="sight-v6-pro-badge" title="Extended view is ON — minis default-visible on every Sight open. Cmd-Shift-D to toggle.">
-				EXTENDED
+			<span class="sight-v6-pro-badge" title={$t('sight.v6.header.extendedTooltip')}>
+				{$t('sight.v6.header.extendedBadge')}
 			</span>
 		{/if}
 		<!-- §B.7-fix-1 (Eisa cycle-1 Stage 1 ask: "we need to add a
@@ -1039,8 +1061,8 @@
 		     the header so the user sees the immediate impact of their
 		     Shift+click without needing to inspect the sidebar. -->
 		{#if !filtersEmpty(filters)}
-			<span class="sight-v6-filter-count" title="Filtered notes / total notes">
-				{filteredRows.length.toLocaleString()} / {rows.length.toLocaleString()} notes
+			<span class="sight-v6-filter-count" title={$t('sight.v6.header.filterCountTooltip')}>
+				{filteredRows.length.toLocaleString()} / {rows.length.toLocaleString()} {$t('sight.v6.header.filterCountSuffix')}
 			</span>
 		{/if}
 		<!-- §B.6-fix-4c — Reset View button. Visible when the layout
@@ -1048,8 +1070,8 @@
 		     zoom 1.0). Clicking returns to default in one tap, no need
 		     to manually swap back through the demoted-anchor mini. -->
 		{#if primaryChannel !== 'anchor' || zoomScale !== 1 || panX !== 0 || panY !== 0}
-			<button class="sight-v6-reset-btn" onclick={handleResetView} title="Return to anchor dome at default zoom (Reset View)">
-				Reset View
+			<button class="sight-v6-reset-btn" onclick={handleResetView} title={$t('sight.v6.header.resetViewTooltip')}>
+				{$t('sight.v6.header.resetViewLabel')}
 			</button>
 		{/if}
 	</div>
@@ -1158,10 +1180,19 @@
 				     they are display-only in §C.4 (per-note opt-in via
 				     `masadir_source` frontmatter ships in §C.4-fix-N). -->
 				{#if traditionExtensionChips}
-					<div class="sight-v6-extension-chips" role="list" aria-label="Additional masādir sources">
-						{#each traditionExtensionChips as chip (chip)}
-							<span class="extension-chip" role="listitem" title="Additional masādir source (display-only in v6.2; per-note opt-in via frontmatter ships in a follow-up)">
-								{chip}
+					<div
+						class="sight-v6-extension-chips"
+						role="list"
+						aria-label={$t('sight.v6.tradition.canvas.masadir.extensionAriaLabel')}
+					>
+						{#each traditionExtensionChips as chipKey (chipKey)}
+							<span
+								class="extension-chip"
+								role="listitem"
+								dir="auto"
+								title={$t('sight.v6.tradition.canvas.masadir.extensionTooltip')}
+							>
+								{$t(chipKey)}
 							</span>
 						{/each}
 					</div>

@@ -46,10 +46,11 @@ const SECTOR_START: Record<WireduCategory, number> = {
 	adwene: -Math.PI / 2 + SECTOR_ROTATION_OFFSET + 2 * SECTOR_ARC,
 };
 
+// MIG-026 §λ-fix-3 — i18n keys; English values live in src/lib/i18n/en.json
 const SECTOR_LABELS: Record<WireduCategory, string> = {
-	nokware: 'nokware · truth',
-	ahonyam: 'ahonyam · well-being',
-	adwene: 'adwene · mind',
+	nokware: 'sight.v6.tradition.canvas.akan-wiredu.nokware',
+	ahonyam: 'sight.v6.tradition.canvas.akan-wiredu.ahonyam',
+	adwene: 'sight.v6.tradition.canvas.akan-wiredu.adwene',
 };
 
 const SECTOR_ORDER: WireduCategory[] = ['nokware', 'ahonyam', 'adwene'];

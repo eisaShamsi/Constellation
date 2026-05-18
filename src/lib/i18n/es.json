@@ -1839,7 +1839,241 @@
           "failedTitle": "El plugin no se pudo cargar",
           "dismissFailedTooltip": "Descartar este mensaje de error (arregla el plugin y luego reinicia Constellation para reintentar)",
           "dismissFailedAriaLabel": "Descartar"
+        },
+        "canvas": {
+          "akan-wiredu": {
+            "nokware": "nokware · verdad",
+            "ahonyam": "ahonyam · bienestar",
+            "adwene": "adwene · mente"
+          },
+          "dewey": {
+            "indeterminate": "indeterminado",
+            "problem": "problema",
+            "hypothesis": "hipótesis",
+            "reasoning": "razonamiento",
+            "testing": "prueba"
+          },
+          "dussel-transmodernity": {
+            "totality": "totalidad",
+            "exteriority": "exterioridad"
+          },
+          "habermas": {
+            "technical": "técnico",
+            "practical": "práctico",
+            "emancipatory": "emancipatorio"
+          },
+          "husserl": {
+            "formal": "ontología formal",
+            "materialNature": "naturaleza material",
+            "animalNature": "naturaleza animal",
+            "spirit": "espíritu · Geist"
+          },
+          "ibn-khaldun-umran": {
+            "hadari": "ḥaḍarī · sedentario",
+            "badawi": "badawī · nómada"
+          },
+          "ibn-rushd-burhan": {
+            "burhan": "burhān",
+            "jadal": "jadal",
+            "khataba": "khaṭāba",
+            "shir": "shiʿr"
+          },
+          "ibuanyidanda": {
+            "self": "uno mismo",
+            "other": "otro",
+            "community": "comunidad",
+            "tradition": "tradición",
+            "transcendence": "trascendencia",
+            "missingLink": "eslabón perdido"
+          },
+          "korean-songnihak": {
+            "liSa": "lǐ · 四端",
+            "liChil": "lǐ · 七情",
+            "qiChil": "qì · 七情",
+            "qiSa": "qì · 四端"
+          },
+          "longino": {
+            "venues": "foros",
+            "uptake": "recepción",
+            "publicStandards": "estándares públicos",
+            "temperedEquality": "igualdad atemperada"
+          },
+          "maimonidean-prophecy": {
+            "ruahHaQodesh": "1 · ruaḥ ha-qodesh",
+            "sleepVision": "2 · visión en sueños",
+            "daytimeAllegory": "3 · alegoría diurna",
+            "voiceInVision": "4 · voz en visión",
+            "speakingPerson": "5 · persona que habla",
+            "speakingAngel": "6 · ángel que habla",
+            "speakingManForm": "7 · figura humana que habla",
+            "allegoryAwake": "8 · alegoría en vigilia",
+            "voiceWhileAwake": "9 · voz en vigilia",
+            "manFormAwake": "10 · figura humana en vigilia",
+            "angelAwake": "11 · ángel en vigilia"
+          },
+          "maldonado-torres": {
+            "power": "poder",
+            "knowledge": "conocimiento",
+            "being": "ser"
+          },
+          "masadir": {
+            "extensionAriaLabel": "Fuentes adicionales de masādir",
+            "extensionTooltip": "Fuente adicional de masādir (solo visualización en v6.2; la activación por nota mediante frontmatter llegará en una versión posterior)",
+            "quran": "Corán",
+            "sunnah": "sunnah",
+            "ijma": "ijmāʿ",
+            "qiyas": "qiyās",
+            "extension": {
+              "istihsan": "istiḥsān",
+              "istishab": "istiṣḥāb",
+              "maslahaMursalah": "maṣlaḥa mursalah",
+              "urf": "ʿurf"
+            }
+          },
+          "mencian-sprouts": {
+            "ceyin": "惻隱 cèyǐn",
+            "xiuwu": "羞惡 xiūwù",
+            "cirang": "辭讓 círàng",
+            "shifei": "是非 shìfēi",
+            "xin": "信 xìn"
+          },
+          "mignolo-pluriversal": {
+            "epistemicDisobedience": "desobediencia epistémica",
+            "borderThinking": "pensamiento fronterizo",
+            "delinking": "desvinculación",
+            "decolonialGnosis": "gnosis decolonial",
+            "pluriversalWorld": "mundo pluriversal",
+            "modernityTotality": "modernidad / totalidad"
+          },
+          "mohist-san-biao": {
+            "ben": "本 běn · raíz",
+            "yuan": "原 yuán · origen",
+            "yong": "用 yòng · uso"
+          },
+          "pardes": {
+            "peshat": "peshat",
+            "remez": "remez",
+            "derash": "derash",
+            "sod": "sod"
+          },
+          "peirce": {
+            "firstness": "Primeridad",
+            "secondness": "Segundidad",
+            "thirdness": "Terceridad"
+          },
+          "polanyi": {
+            "tacit": "tácito",
+            "explicit": "explícito"
+          },
+          "pramana": {
+            "pratyaksha": "pratyakṣa",
+            "anumana": "anumāna",
+            "upamana": "upamāna",
+            "shabda": "śabda"
+          },
+          "shatibi-maqasid": {
+            "tier": {
+              "daruriyyat": "ḍarūriyyāt",
+              "hajiyyat": "ḥājiyyāt",
+              "tahsiniyyat": "taḥsīniyyāt"
+            },
+            "essential": {
+              "din": "dīn",
+              "nafs": "nafs",
+              "aql": "ʿaql",
+              "nasl": "nasl",
+              "mal": "māl"
+            }
+          },
+          "talmudic-middot": {
+            "kalVaChomer": "1 · kal va-chomer",
+            "gezeraShava": "2 · gezera shava",
+            "binyanAv1": "3 · binyan av (1 versículo)",
+            "binyanAv2": "4 · binyan av (2 versículos)",
+            "kelalUPerat": "5 · kelal u-perat",
+            "peratUKelal": "6 · perat u-kelal",
+            "kpk": "7 · k-p-k",
+            "specialPurpose": "8 · propósito especial",
+            "extractedLighter": "9 · extraído (más ligero)",
+            "extractedDifferent": "10 · extraído (diferente)",
+            "fromContext": "11 · desde el contexto",
+            "fromEnd": "12 · desde el final",
+            "reconciliation": "13 · reconciliación"
+          },
+          "wang-yangming": {
+            "zhi": "知 zhī · saber",
+            "xing": "行 xíng · actuar",
+            "liangzhi": "良知 liángzhī"
+          }
         }
+      },
+      "stratum": {
+        "foundation": "FUNDAMENTO",
+        "working": "EN CURSO",
+        "connection": "CONEXIÓN",
+        "synthesis": "SÍNTESIS",
+        "edge-of-knowing": "BORDE DEL SABER"
+      },
+      "miniDome": {
+        "title": {
+          "anchor": "UNIVERSO — vista principal",
+          "confidence": "CONFIANZA — opacidad",
+          "stage": "ETAPA — tono (disco completo)",
+          "acts": "ACTOS — tamaño (decil superior)",
+          "provenance": "PROCEDENCIA — 5 sectores"
+        },
+        "provenance": {
+          "self": "Propio",
+          "read": "Leído",
+          "heard": "Oído",
+          "reasoned": "Razonado",
+          "tradition": "Tradición"
+        }
+      },
+      "facet": {
+        "folder": "Carpeta",
+        "library": "Biblioteca",
+        "stratum": "Estrato",
+        "confidence": "Confianza",
+        "stage": "Etapa",
+        "provenance": "Procedencia"
+      },
+      "facetSidebar": {
+        "title": "FACETAS",
+        "expandAriaLabel": "Expandir filtros de facetas",
+        "filtersTooltip": "Filtros",
+        "ariaLabel": "Filtros de facetas de Sight",
+        "collapseAriaLabel": "Contraer filtros de facetas",
+        "collapseTooltip": "Contraer"
+      },
+      "confidence": {
+        "hypothesis": "hipótesis",
+        "evidence": "evidencia",
+        "established": "establecido",
+        "contested": "controvertido"
+      },
+      "stage": {
+        "spark": "chispa",
+        "birth": "nacimiento",
+        "growth": "crecimiento",
+        "maturity": "madurez",
+        "dormancy": "latencia",
+        "renewal": "renovación",
+        "archival": "archivado",
+        "established": "establecido",
+        "fresh": "fresco",
+        "growing": "creciendo",
+        "at-risk": "en riesgo",
+        "dormant": "latente"
+      },
+      "header": {
+        "subtitle": "v6.3 — Tradiciones (Fase 1)",
+        "extendedBadge": "AMPLIADO",
+        "extendedTooltip": "La vista ampliada está ACTIVADA — los mini-domos se muestran por defecto cada vez que se abre Sight. Cmd-Shift-D para alternar.",
+        "filterCountTooltip": "Notas filtradas / notas totales",
+        "filterCountSuffix": "notas",
+        "resetViewLabel": "Restablecer vista",
+        "resetViewTooltip": "Volver al domo principal con el zoom por defecto (Restablecer vista)"
       }
     }
   },

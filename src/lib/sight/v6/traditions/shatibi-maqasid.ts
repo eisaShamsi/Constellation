@@ -52,18 +52,20 @@ type MaqasidEssential = 0 | 1 | 2 | 3 | 4; // dīn / nafs / ʿaql / nasl / māl
 
 const TIER_BOUNDARIES_FRAC = [0.33, 0.67];
 
+// MIG-026 §λ-fix-3 — i18n keys; English values live in src/lib/i18n/en.json
 const TIER_LABELS: Record<MaqasidTier, string> = {
-	0: 'ḍarūriyyāt',
-	1: 'ḥājiyyāt',
-	2: 'taḥsīniyyāt',
+	0: 'sight.v6.tradition.canvas.shatibi-maqasid.tier.daruriyyat',
+	1: 'sight.v6.tradition.canvas.shatibi-maqasid.tier.hajiyyat',
+	2: 'sight.v6.tradition.canvas.shatibi-maqasid.tier.tahsiniyyat',
 };
 
+// MIG-026 §λ-fix-3 — i18n keys; English values live in src/lib/i18n/en.json
 const ESSENTIAL_LABELS: Record<MaqasidEssential, string> = {
-	0: 'dīn',
-	1: 'nafs',
-	2: 'ʿaql',
-	3: 'nasl',
-	4: 'māl',
+	0: 'sight.v6.tradition.canvas.shatibi-maqasid.essential.din',
+	1: 'sight.v6.tradition.canvas.shatibi-maqasid.essential.nafs',
+	2: 'sight.v6.tradition.canvas.shatibi-maqasid.essential.aql',
+	3: 'sight.v6.tradition.canvas.shatibi-maqasid.essential.nasl',
+	4: 'sight.v6.tradition.canvas.shatibi-maqasid.essential.mal',
 };
 
 /** Sector start angles in canvas math convention. 5 sectors of 2π/5

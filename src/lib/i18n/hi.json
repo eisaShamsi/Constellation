@@ -2115,6 +2115,29 @@
     "v6": {
       "title": "Constellation Sight",
       "returnToSight": "Sight पर वापस जाएं",
+      "stratum": {
+        "foundation": "आधार",
+        "working": "कार्यरत",
+        "connection": "संबंध",
+        "synthesis": "संश्लेषण",
+        "edge-of-knowing": "ज्ञान का छोर"
+      },
+      "miniDome": {
+        "title": {
+          "anchor": "ब्रह्मांड — मुख्य दृश्य",
+          "confidence": "विश्वास — अपारदर्शिता",
+          "stage": "चरण — रंग (पूर्ण डिस्क)",
+          "acts": "क्रियाएं — आकार (शीर्ष दशमक)",
+          "provenance": "स्रोत — 5 क्षेत्र"
+        },
+        "provenance": {
+          "self": "स्वयं",
+          "read": "पढ़ा",
+          "heard": "सुना",
+          "reasoned": "तर्क-संगत",
+          "tradition": "परंपरा"
+        }
+      },
       "tradition": {
         "family": {
           "western-classical": "पश्चिमी शास्त्रीय",
@@ -2277,7 +2300,218 @@
           "failedTitle": "प्लगइन लोड करने में विफल",
           "dismissFailedTooltip": "इस त्रुटि संदेश को खारिज करें (प्लगइन ठीक करें फिर पुनः प्रयास के लिए Constellation को पुनः आरंभ करें)",
           "dismissFailedAriaLabel": "खारिज करें"
+        },
+        "canvas": {
+          "akan-wiredu": {
+            "nokware": "nokware · सत्य",
+            "ahonyam": "ahonyam · कल्याण",
+            "adwene": "adwene · मन"
+          },
+          "dewey": {
+            "indeterminate": "अनिर्णीत",
+            "problem": "समस्या",
+            "hypothesis": "परिकल्पना",
+            "reasoning": "तर्क",
+            "testing": "परीक्षण"
+          },
+          "dussel-transmodernity": {
+            "totality": "समग्रता",
+            "exteriority": "बाह्यता"
+          },
+          "habermas": {
+            "technical": "तकनीकी",
+            "practical": "व्यावहारिक",
+            "emancipatory": "मुक्तिकामी"
+          },
+          "husserl": {
+            "formal": "रूपात्मक सत्तामीमांसा",
+            "materialNature": "भौतिक प्रकृति",
+            "animalNature": "जंतु प्रकृति",
+            "spirit": "आत्मा · Geist"
+          },
+          "ibn-khaldun-umran": {
+            "hadari": "ḥaḍarī · स्थायी",
+            "badawi": "badawī · खानाबदोश"
+          },
+          "ibn-rushd-burhan": {
+            "burhan": "burhān",
+            "jadal": "jadal",
+            "khataba": "khaṭāba",
+            "shir": "shiʿr"
+          },
+          "ibuanyidanda": {
+            "self": "स्वयं",
+            "other": "अन्य",
+            "community": "समुदाय",
+            "tradition": "परंपरा",
+            "transcendence": "पारलौकिक",
+            "missingLink": "लुप्त कड़ी"
+          },
+          "korean-songnihak": {
+            "liSa": "lǐ · 四端",
+            "liChil": "lǐ · 七情",
+            "qiChil": "qì · 七情",
+            "qiSa": "qì · 四端"
+          },
+          "longino": {
+            "venues": "मंच",
+            "uptake": "स्वीकार्यता",
+            "publicStandards": "सार्वजनिक मानदंड",
+            "temperedEquality": "संशोधित समानता"
+          },
+          "maimonidean-prophecy": {
+            "ruahHaQodesh": "1 · ruaḥ ha-qodesh",
+            "sleepVision": "2 · निद्रा-दर्शन",
+            "daytimeAllegory": "3 · दिवस-रूपक",
+            "voiceInVision": "4 · दर्शन में स्वर",
+            "speakingPerson": "5 · बोलता मनुष्य",
+            "speakingAngel": "6 · बोलता दूत",
+            "speakingManForm": "7 · बोलती मानव-आकृति",
+            "allegoryAwake": "8 · जागते में रूपक",
+            "voiceWhileAwake": "9 · जागते में स्वर",
+            "manFormAwake": "10 · जागते में मानव-आकृति",
+            "angelAwake": "11 · जागते में दूत"
+          },
+          "maldonado-torres": {
+            "power": "शक्ति",
+            "knowledge": "ज्ञान",
+            "being": "सत्ता"
+          },
+          "masadir": {
+            "extensionAriaLabel": "अतिरिक्त मसादिर स्रोत",
+            "extensionTooltip": "अतिरिक्त मसादिर स्रोत (v6.2 में केवल प्रदर्शन के लिए; प्रति-नोट सक्षमीकरण frontmatter के माध्यम से आगामी रिलीज़ में आएगा)",
+            "quran": "क़ुरआन",
+            "sunnah": "सुन्नह",
+            "ijma": "ijmāʿ",
+            "qiyas": "qiyās",
+            "extension": {
+              "istihsan": "istiḥsān",
+              "istishab": "istiṣḥāb",
+              "maslahaMursalah": "maṣlaḥa mursalah",
+              "urf": "ʿurf"
+            }
+          },
+          "mencian-sprouts": {
+            "ceyin": "惻隱 cèyǐn",
+            "xiuwu": "羞惡 xiūwù",
+            "cirang": "辭讓 círàng",
+            "shifei": "是非 shìfēi",
+            "xin": "信 xìn"
+          },
+          "mignolo-pluriversal": {
+            "epistemicDisobedience": "ज्ञानमीमांसीय अनाज्ञाकारिता",
+            "borderThinking": "सीमावर्ती चिंतन",
+            "delinking": "विसंबंधन",
+            "decolonialGnosis": "विउपनिवेशी ज्ञान",
+            "pluriversalWorld": "प्लूरीवर्सल विश्व",
+            "modernityTotality": "आधुनिकता / समग्रता"
+          },
+          "mohist-san-biao": {
+            "ben": "本 běn · मूल",
+            "yuan": "原 yuán · उद्गम",
+            "yong": "用 yòng · उपयोग"
+          },
+          "pardes": {
+            "peshat": "peshat",
+            "remez": "remez",
+            "derash": "derash",
+            "sod": "sod"
+          },
+          "peirce": {
+            "firstness": "प्रथमता",
+            "secondness": "द्वितीयता",
+            "thirdness": "तृतीयता"
+          },
+          "polanyi": {
+            "tacit": "प्रच्छन्न",
+            "explicit": "स्पष्ट"
+          },
+          "pramana": {
+            "pratyaksha": "प्रत्यक्ष",
+            "anumana": "अनुमान",
+            "upamana": "उपमान",
+            "shabda": "शब्द"
+          },
+          "shatibi-maqasid": {
+            "tier": {
+              "daruriyyat": "ḍarūriyyāt",
+              "hajiyyat": "ḥājiyyāt",
+              "tahsiniyyat": "taḥsīniyyāt"
+            },
+            "essential": {
+              "din": "dīn",
+              "nafs": "nafs",
+              "aql": "ʿaql",
+              "nasl": "nasl",
+              "mal": "māl"
+            }
+          },
+          "talmudic-middot": {
+            "kalVaChomer": "1 · kal va-chomer",
+            "gezeraShava": "2 · gezera shava",
+            "binyanAv1": "3 · binyan av (1 श्लोक)",
+            "binyanAv2": "4 · binyan av (2 श्लोक)",
+            "kelalUPerat": "5 · kelal u-perat",
+            "peratUKelal": "6 · perat u-kelal",
+            "kpk": "7 · k-p-k",
+            "specialPurpose": "8 · विशेष प्रयोजन",
+            "extractedLighter": "9 · निष्कर्षित (हल्का)",
+            "extractedDifferent": "10 · निष्कर्षित (भिन्न)",
+            "fromContext": "11 · संदर्भ से",
+            "fromEnd": "12 · अंत से",
+            "reconciliation": "13 · समन्वय"
+          },
+          "wang-yangming": {
+            "zhi": "知 zhī · जानना",
+            "xing": "行 xíng · करना",
+            "liangzhi": "良知 liángzhī"
+          }
         }
+      },
+      "facet": {
+        "folder": "फ़ोल्डर",
+        "library": "लाइब्रेरी",
+        "stratum": "स्तर",
+        "confidence": "विश्वास",
+        "stage": "चरण",
+        "provenance": "स्रोत"
+      },
+      "facetSidebar": {
+        "title": "पहलू",
+        "expandAriaLabel": "पहलू फ़िल्टर विस्तारित करें",
+        "filtersTooltip": "फ़िल्टर",
+        "ariaLabel": "Sight पहलू फ़िल्टर",
+        "collapseAriaLabel": "पहलू फ़िल्टर समेटें",
+        "collapseTooltip": "समेटें"
+      },
+      "confidence": {
+        "hypothesis": "परिकल्पना",
+        "evidence": "प्रमाण",
+        "established": "स्थापित",
+        "contested": "विवादास्पद"
+      },
+      "stage": {
+        "spark": "स्फुलिंग",
+        "birth": "जन्म",
+        "growth": "वृद्धि",
+        "maturity": "परिपक्वता",
+        "dormancy": "सुप्तावस्था",
+        "renewal": "नवीकरण",
+        "archival": "पुरालेखन",
+        "established": "स्थापित",
+        "fresh": "नवीन",
+        "growing": "बढ़ता हुआ",
+        "at-risk": "जोखिम में",
+        "dormant": "सुप्त"
+      },
+      "header": {
+        "subtitle": "v6.3 — परंपराएं (चरण 1)",
+        "extendedBadge": "विस्तृत",
+        "extendedTooltip": "विस्तृत दृश्य चालू — हर Sight खुलने पर मिनी-डोम डिफ़ॉल्ट रूप से दिखाई देंगे। Cmd-Shift-D टॉगल करने के लिए।",
+        "filterCountTooltip": "फ़िल्टर किए गए नोट / कुल नोट",
+        "filterCountSuffix": "नोट",
+        "resetViewLabel": "दृश्य रीसेट करें",
+        "resetViewTooltip": "डिफ़ॉल्ट ज़ूम पर एंकर डोम पर वापस जाएं (दृश्य रीसेट करें)"
       }
     }
   },

@@ -110,9 +110,10 @@ export const ibnKhaldunUmran: TraditionModule = {
 	},
 
 	binaryFlowSpec: (_layout: TraditionLayout): BinaryFlowSpec => {
+		// MIG-026 §λ-fix-3 — i18n keys; English values live in src/lib/i18n/en.json
 		return {
-			cellA: { label: 'ḥaḍarī · sedentary' },
-			cellB: { label: 'badawī · nomadic' },
+			cellA: { label: 'sight.v6.tradition.canvas.ibn-khaldun-umran.hadari' },
+			cellB: { label: 'sight.v6.tradition.canvas.ibn-khaldun-umran.badawi' },
 			flowDirection: 'cyclic',
 		};
 	},

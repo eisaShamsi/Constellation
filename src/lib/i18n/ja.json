@@ -2115,6 +2115,29 @@
     "v6": {
       "title": "Constellation Sight",
       "returnToSight": "Sight に戻る",
+      "stratum": {
+        "foundation": "基礎",
+        "working": "作業中",
+        "connection": "接続",
+        "synthesis": "統合",
+        "edge-of-knowing": "認知の縁"
+      },
+      "miniDome": {
+        "title": {
+          "anchor": "ユニバース — 主表示",
+          "confidence": "確信 — 不透明度",
+          "stage": "段階 — 色相(全ディスク)",
+          "acts": "アクト — サイズ(上位 10 分位)",
+          "provenance": "出所 — 5 セクター"
+        },
+        "provenance": {
+          "self": "自己",
+          "read": "読了",
+          "heard": "聞了",
+          "reasoned": "推論",
+          "tradition": "伝統"
+        }
+      },
       "tradition": {
         "family": {
           "western-classical": "西洋古典",
@@ -2277,7 +2300,218 @@
           "failedTitle": "プラグインの読み込みに失敗しました",
           "dismissFailedTooltip": "このエラーメッセージを閉じる(プラグインを修正してから Constellation を再起動して再試行してください)",
           "dismissFailedAriaLabel": "閉じる"
+        },
+        "canvas": {
+          "akan-wiredu": {
+            "nokware": "nokware · 真理",
+            "ahonyam": "ahonyam · 良き生",
+            "adwene": "adwene · 心"
+          },
+          "dewey": {
+            "indeterminate": "不確定",
+            "problem": "問題",
+            "hypothesis": "仮説",
+            "reasoning": "推論",
+            "testing": "検証"
+          },
+          "dussel-transmodernity": {
+            "totality": "全体性",
+            "exteriority": "外在性"
+          },
+          "habermas": {
+            "technical": "技術的",
+            "practical": "実践的",
+            "emancipatory": "解放的"
+          },
+          "husserl": {
+            "formal": "形相的存在論",
+            "materialNature": "物質的自然",
+            "animalNature": "動物的自然",
+            "spirit": "精神 · Geist"
+          },
+          "ibn-khaldun-umran": {
+            "hadari": "ḥaḍarī · 定住",
+            "badawi": "badawī · 遊牧"
+          },
+          "ibn-rushd-burhan": {
+            "burhan": "burhān · 必然的論証",
+            "jadal": "jadal · 弁証",
+            "khataba": "khaṭāba · 修辞",
+            "shir": "shiʿr · 詩学"
+          },
+          "ibuanyidanda": {
+            "self": "自己",
+            "other": "他者",
+            "community": "共同体",
+            "tradition": "伝統",
+            "transcendence": "超越",
+            "missingLink": "欠けた環"
+          },
+          "korean-songnihak": {
+            "liSa": "理 · 四端",
+            "liChil": "理 · 七情",
+            "qiChil": "氣 · 七情",
+            "qiSa": "氣 · 四端"
+          },
+          "longino": {
+            "venues": "公共フォーラム",
+            "uptake": "批判への応答",
+            "publicStandards": "公共基準",
+            "temperedEquality": "調整された平等"
+          },
+          "maimonidean-prophecy": {
+            "ruahHaQodesh": "1 · ruaḥ ha-qodesh · 聖霊",
+            "sleepVision": "2 · 睡眠中の幻視",
+            "daytimeAllegory": "3 · 昼間の寓意",
+            "voiceInVision": "4 · 幻視中の声",
+            "speakingPerson": "5 · 語りかける人",
+            "speakingAngel": "6 · 語りかける天使",
+            "speakingManForm": "7 · 語りかける人の姿",
+            "allegoryAwake": "8 · 覚醒中の寓意",
+            "voiceWhileAwake": "9 · 覚醒中の声",
+            "manFormAwake": "10 · 覚醒中の人の姿",
+            "angelAwake": "11 · 覚醒中の天使"
+          },
+          "maldonado-torres": {
+            "power": "権力",
+            "knowledge": "知",
+            "being": "存在"
+          },
+          "masadir": {
+            "extensionAriaLabel": "マサーディルの追加源泉",
+            "extensionTooltip": "マサーディルの追加源泉(v6.2 では表示のみ。ノート単位のオプトインはフロントマター経由で後続バージョンで提供)",
+            "quran": "クルアーン",
+            "sunnah": "スンナ",
+            "ijma": "イジュマー",
+            "qiyas": "キヤース",
+            "extension": {
+              "istihsan": "istiḥsān · イスティフサーン",
+              "istishab": "istiṣḥāb · イスティスハーブ",
+              "maslahaMursalah": "maṣlaḥa mursalah · 公益",
+              "urf": "ʿurf · 慣習"
+            }
+          },
+          "mencian-sprouts": {
+            "ceyin": "惻隠 cèyǐn · 惻隠",
+            "xiuwu": "羞悪 xiūwù · 羞悪",
+            "cirang": "辞讓 círàng · 辞讓",
+            "shifei": "是非 shìfēi · 是非",
+            "xin": "信 xìn · 信"
+          },
+          "mignolo-pluriversal": {
+            "epistemicDisobedience": "認識的不服従",
+            "borderThinking": "境界的思考",
+            "delinking": "デリンキング",
+            "decolonialGnosis": "脱植民地グノーシス",
+            "pluriversalWorld": "プルリバーサルな世界",
+            "modernityTotality": "近代性 / 全体性"
+          },
+          "mohist-san-biao": {
+            "ben": "本 běn · 根本",
+            "yuan": "原 yuán · 由来",
+            "yong": "用 yòng · 効用"
+          },
+          "pardes": {
+            "peshat": "peshat · 字義",
+            "remez": "remez · 暗示",
+            "derash": "derash · 解釈",
+            "sod": "sod · 秘義"
+          },
+          "peirce": {
+            "firstness": "第一性",
+            "secondness": "第二性",
+            "thirdness": "第三性"
+          },
+          "polanyi": {
+            "tacit": "暗黙",
+            "explicit": "明示"
+          },
+          "pramana": {
+            "pratyaksha": "pratyakṣa · 現量",
+            "anumana": "anumāna · 比量",
+            "upamana": "upamāna · 譬喩量",
+            "shabda": "śabda · 聖言量"
+          },
+          "shatibi-maqasid": {
+            "tier": {
+              "daruriyyat": "ḍarūriyyāt · 必須",
+              "hajiyyat": "ḥājiyyāt · 必要",
+              "tahsiniyyat": "taḥsīniyyāt · 補完"
+            },
+            "essential": {
+              "din": "dīn · 宗教",
+              "nafs": "nafs · 生命",
+              "aql": "ʿaql · 理性",
+              "nasl": "nasl · 子孫",
+              "mal": "māl · 財産"
+            }
+          },
+          "talmudic-middot": {
+            "kalVaChomer": "1 · kal va-chomer · 軽きより重きへ",
+            "gezeraShava": "2 · gezera shava · 言葉の類比",
+            "binyanAv1": "3 · binyan av(1 節から)",
+            "binyanAv2": "4 · binyan av(2 節から)",
+            "kelalUPerat": "5 · kelal u-perat · 全と部",
+            "peratUKelal": "6 · perat u-kelal · 部と全",
+            "kpk": "7 · 全-部-全",
+            "specialPurpose": "8 · 特別の目的",
+            "extractedLighter": "9 · 抽出(より軽い)",
+            "extractedDifferent": "10 · 抽出(異なる)",
+            "fromContext": "11 · 文脈から",
+            "fromEnd": "12 · 末尾から",
+            "reconciliation": "13 · 調停"
+          },
+          "wang-yangming": {
+            "zhi": "知 zhī · 知",
+            "xing": "行 xíng · 行",
+            "liangzhi": "良知 liángzhī · 良知"
+          }
         }
+      },
+      "facet": {
+        "folder": "フォルダ",
+        "library": "ライブラリ",
+        "stratum": "層位",
+        "confidence": "確信",
+        "stage": "段階",
+        "provenance": "出所"
+      },
+      "facetSidebar": {
+        "title": "ファセット",
+        "expandAriaLabel": "ファセットフィルタを展開",
+        "filtersTooltip": "フィルタ",
+        "ariaLabel": "Sight ファセットフィルタ",
+        "collapseAriaLabel": "ファセットフィルタを折りたたむ",
+        "collapseTooltip": "折りたたむ"
+      },
+      "confidence": {
+        "hypothesis": "仮説",
+        "evidence": "証拠",
+        "established": "確立",
+        "contested": "係争中"
+      },
+      "stage": {
+        "spark": "閃き",
+        "birth": "誕生",
+        "growth": "成長",
+        "maturity": "成熟",
+        "dormancy": "休眠",
+        "renewal": "更新",
+        "archival": "アーカイブ",
+        "established": "確立",
+        "fresh": "新鮮",
+        "growing": "成長中",
+        "at-risk": "リスクあり",
+        "dormant": "休眠中"
+      },
+      "header": {
+        "subtitle": "v6.3 — 伝統(フェーズ 1)",
+        "extendedBadge": "拡張",
+        "extendedTooltip": "拡張ビュー オン — Sight を開くたびにミニが既定で表示されます。Cmd-Shift-D で切替。",
+        "filterCountTooltip": "フィルタ済みノート / 全ノート",
+        "filterCountSuffix": "件のノート",
+        "resetViewLabel": "ビューをリセット",
+        "resetViewTooltip": "アンカードームを既定ズームに戻す(ビューをリセット)"
       }
     }
   },

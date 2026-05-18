@@ -50,12 +50,13 @@ import type {
 	RelationalSpec,
 } from '../types';
 
+// MIG-026 §λ-fix-3 — i18n keys; English values live in src/lib/i18n/en.json
 const CLUSTER_LABELS = [
-	'self',
-	'other',
-	'community',
-	'tradition',
-	'transcendence',
+	'sight.v6.tradition.canvas.ibuanyidanda.self',
+	'sight.v6.tradition.canvas.ibuanyidanda.other',
+	'sight.v6.tradition.canvas.ibuanyidanda.community',
+	'sight.v6.tradition.canvas.ibuanyidanda.tradition',
+	'sight.v6.tradition.canvas.ibuanyidanda.transcendence',
 ];
 
 const N_CLUSTERS = CLUSTER_LABELS.length; // 5
@@ -106,7 +107,7 @@ export const ibuanyidanda: TraditionModule = {
 	relationalSpec: (_layout: TraditionLayout): RelationalSpec => {
 		return {
 			variant: 'hub-and-spoke',
-			hubLabel: 'missing link',
+			hubLabel: 'sight.v6.tradition.canvas.ibuanyidanda.missingLink',
 			clusters: CLUSTER_LABELS.map((label) => ({ label })),
 		};
 	},

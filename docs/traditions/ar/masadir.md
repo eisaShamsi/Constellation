@@ -9,7 +9,7 @@ changelog:
 translation_status: AI-generated 2026-05-18 — native-speaker review recommended
 ---
 
-# مَسَادِر
+# المصادر
 
 **العائلة**: أصول الفقه السنّي · **الشكل**: قطاعي (4 أرباع + 4 رقائق توسعية)
 

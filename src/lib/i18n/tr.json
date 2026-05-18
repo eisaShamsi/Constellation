@@ -2115,6 +2115,29 @@
     "v6": {
       "title": "Constellation Sight",
       "returnToSight": "Sight'a dön",
+      "stratum": {
+        "foundation": "TEMEL",
+        "working": "ÇALIŞIYOR",
+        "connection": "BAĞLANTI",
+        "synthesis": "SENTEZ",
+        "edge-of-knowing": "BİLGİNİN SINIRI"
+      },
+      "miniDome": {
+        "title": {
+          "anchor": "EVREN — birincil görünüm",
+          "confidence": "GÜVEN — opaklık",
+          "stage": "AŞAMA — renk (tam disk)",
+          "acts": "EYLEMLER — boyut (üst onluk)",
+          "provenance": "KAYNAK — 5 sektör"
+        },
+        "provenance": {
+          "self": "Kendi",
+          "read": "Okunan",
+          "heard": "Duyulan",
+          "reasoned": "Akıl yürütülmüş",
+          "tradition": "Gelenek"
+        }
+      },
       "tradition": {
         "family": {
           "western-classical": "Batı klasik",
@@ -2277,7 +2300,218 @@
           "failedTitle": "Eklenti yüklenemedi",
           "dismissFailedTooltip": "Bu hata mesajını kapat (eklentiyi düzeltin ve yeniden denemek için Constellation'ı yeniden başlatın)",
           "dismissFailedAriaLabel": "Kapat"
+        },
+        "canvas": {
+          "akan-wiredu": {
+            "nokware": "nokware · hakikat",
+            "ahonyam": "ahonyam · esenlik",
+            "adwene": "adwene · zihin"
+          },
+          "dewey": {
+            "indeterminate": "belirsiz",
+            "problem": "sorun",
+            "hypothesis": "hipotez",
+            "reasoning": "akıl yürütme",
+            "testing": "sınama"
+          },
+          "dussel-transmodernity": {
+            "totality": "bütünsellik",
+            "exteriority": "dışsallık"
+          },
+          "habermas": {
+            "technical": "teknik",
+            "practical": "pratik",
+            "emancipatory": "emansipatorik"
+          },
+          "husserl": {
+            "formal": "biçimsel ontoloji",
+            "materialNature": "maddî doğa",
+            "animalNature": "hayvansal doğa",
+            "spirit": "ruh · Geist"
+          },
+          "ibn-khaldun-umran": {
+            "hadari": "ḥaḍarī · yerleşik",
+            "badawi": "badawī · göçebe"
+          },
+          "ibn-rushd-burhan": {
+            "burhan": "burhân",
+            "jadal": "cedel",
+            "khataba": "hatâbe",
+            "shir": "şi'r"
+          },
+          "ibuanyidanda": {
+            "self": "öz",
+            "other": "öteki",
+            "community": "cemaat",
+            "tradition": "gelenek",
+            "transcendence": "aşkın",
+            "missingLink": "kayıp halka"
+          },
+          "korean-songnihak": {
+            "liSa": "lǐ · 四端",
+            "liChil": "lǐ · 七情",
+            "qiChil": "qì · 七情",
+            "qiSa": "qì · 四端"
+          },
+          "longino": {
+            "venues": "mecralar",
+            "uptake": "yanıt verme",
+            "publicStandards": "kamusal ölçütler",
+            "temperedEquality": "ölçülü eşitlik"
+          },
+          "maimonidean-prophecy": {
+            "ruahHaQodesh": "1 · ruaḥ ha-qodesh",
+            "sleepVision": "2 · uyku görüşü",
+            "daytimeAllegory": "3 · gündüz alegorisi",
+            "voiceInVision": "4 · görüşte ses",
+            "speakingPerson": "5 · konuşan kişi",
+            "speakingAngel": "6 · konuşan melek",
+            "speakingManForm": "7 · konuşan insan-suret",
+            "allegoryAwake": "8 · uyanıkken alegori",
+            "voiceWhileAwake": "9 · uyanıkken ses",
+            "manFormAwake": "10 · uyanıkken insan-suret",
+            "angelAwake": "11 · uyanıkken melek"
+          },
+          "maldonado-torres": {
+            "power": "iktidar",
+            "knowledge": "bilgi",
+            "being": "varlık"
+          },
+          "masadir": {
+            "extensionAriaLabel": "Ek masādir kaynakları",
+            "extensionTooltip": "Ek masādir kaynağı (v6.2'de yalnızca görüntüleme; not başına frontmatter ile etkinleştirme bir sonraki sürümde gelir)",
+            "quran": "Kur'an",
+            "sunnah": "sünnet",
+            "ijma": "icmâ",
+            "qiyas": "kıyas",
+            "extension": {
+              "istihsan": "istiḥsân",
+              "istishab": "istiṣḥâb",
+              "maslahaMursalah": "maṣlaḥa mursalah",
+              "urf": "örf"
+            }
+          },
+          "mencian-sprouts": {
+            "ceyin": "惻隱 cèyǐn",
+            "xiuwu": "羞惡 xiūwù",
+            "cirang": "辭讓 círàng",
+            "shifei": "是非 shìfēi",
+            "xin": "信 xìn"
+          },
+          "mignolo-pluriversal": {
+            "epistemicDisobedience": "epistemik itaatsizlik",
+            "borderThinking": "sınır düşüncesi",
+            "delinking": "ayrılma",
+            "decolonialGnosis": "dekolonyal gnoz",
+            "pluriversalWorld": "plüriversal dünya",
+            "modernityTotality": "modernite / bütünsellik"
+          },
+          "mohist-san-biao": {
+            "ben": "本 běn · kök",
+            "yuan": "原 yuán · köken",
+            "yong": "用 yòng · kullanım"
+          },
+          "pardes": {
+            "peshat": "peshat",
+            "remez": "remez",
+            "derash": "derash",
+            "sod": "sod"
+          },
+          "peirce": {
+            "firstness": "Birincilik",
+            "secondness": "İkincilik",
+            "thirdness": "Üçüncülük"
+          },
+          "polanyi": {
+            "tacit": "örtük",
+            "explicit": "açık"
+          },
+          "pramana": {
+            "pratyaksha": "pratyakṣa",
+            "anumana": "anumāna",
+            "upamana": "upamāna",
+            "shabda": "śabda"
+          },
+          "shatibi-maqasid": {
+            "tier": {
+              "daruriyyat": "ḍarūriyyāt",
+              "hajiyyat": "ḥājiyyāt",
+              "tahsiniyyat": "taḥsīniyyāt"
+            },
+            "essential": {
+              "din": "dîn",
+              "nafs": "nefs",
+              "aql": "akl",
+              "nasl": "nesl",
+              "mal": "mâl"
+            }
+          },
+          "talmudic-middot": {
+            "kalVaChomer": "1 · kal va-chomer",
+            "gezeraShava": "2 · gezera shava",
+            "binyanAv1": "3 · binyan av (1 ayet)",
+            "binyanAv2": "4 · binyan av (2 ayet)",
+            "kelalUPerat": "5 · kelal u-perat",
+            "peratUKelal": "6 · perat u-kelal",
+            "kpk": "7 · k-p-k",
+            "specialPurpose": "8 · özel amaç",
+            "extractedLighter": "9 · çıkarılan (hafif)",
+            "extractedDifferent": "10 · çıkarılan (farklı)",
+            "fromContext": "11 · bağlamdan",
+            "fromEnd": "12 · sondan",
+            "reconciliation": "13 · uzlaştırma"
+          },
+          "wang-yangming": {
+            "zhi": "知 zhī · bilme",
+            "xing": "行 xíng · eyleme",
+            "liangzhi": "良知 liángzhī"
+          }
         }
+      },
+      "facet": {
+        "folder": "Klasör",
+        "library": "Kitaplık",
+        "stratum": "Katman",
+        "confidence": "Güven",
+        "stage": "Aşama",
+        "provenance": "Kaynak"
+      },
+      "facetSidebar": {
+        "title": "FASETLER",
+        "expandAriaLabel": "Faset filtrelerini genişlet",
+        "filtersTooltip": "Filtreler",
+        "ariaLabel": "Sight faset filtreleri",
+        "collapseAriaLabel": "Faset filtrelerini daralt",
+        "collapseTooltip": "Daralt"
+      },
+      "confidence": {
+        "hypothesis": "hipotez",
+        "evidence": "kanıt",
+        "established": "yerleşik",
+        "contested": "tartışmalı"
+      },
+      "stage": {
+        "spark": "kıvılcım",
+        "birth": "doğuş",
+        "growth": "büyüme",
+        "maturity": "olgunluk",
+        "dormancy": "uyku",
+        "renewal": "yenilenme",
+        "archival": "arşivleme",
+        "established": "yerleşik",
+        "fresh": "taze",
+        "growing": "büyüyen",
+        "at-risk": "risk altında",
+        "dormant": "uyuyan"
+      },
+      "header": {
+        "subtitle": "v6.3 — Gelenekler (Aşama 1)",
+        "extendedBadge": "GENİŞLETİLMİŞ",
+        "extendedTooltip": "Genişletilmiş görünüm AÇIK — mini-dom'lar her Sight açılışında varsayılan olarak görünür. Geçiş için Cmd-Shift-D.",
+        "filterCountTooltip": "Filtrelenmiş notlar / toplam notlar",
+        "filterCountSuffix": "not",
+        "resetViewLabel": "Görünümü Sıfırla",
+        "resetViewTooltip": "Varsayılan yakınlaştırmada çıpa kubbesine dön (Görünümü Sıfırla)"
       }
     }
   },

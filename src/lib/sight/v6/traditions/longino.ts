@@ -60,11 +60,12 @@ const SECTOR_START: Record<LonginoNorm, number> = {
 	temperedEquality: -Math.PI / 2 + SECTOR_ROTATION_OFFSET + 3 * SECTOR_ARC,
 };
 
+// MIG-026 §λ-fix-3 — i18n keys; English values live in src/lib/i18n/en.json
 const SECTOR_LABELS: Record<LonginoNorm, string> = {
-	venues: 'venues',
-	uptake: 'uptake',
-	publicStandards: 'public standards',
-	temperedEquality: 'tempered equality',
+	venues: 'sight.v6.tradition.canvas.longino.venues',
+	uptake: 'sight.v6.tradition.canvas.longino.uptake',
+	publicStandards: 'sight.v6.tradition.canvas.longino.publicStandards',
+	temperedEquality: 'sight.v6.tradition.canvas.longino.temperedEquality',
 };
 
 const SECTOR_ORDER: LonginoNorm[] = ['venues', 'uptake', 'publicStandards', 'temperedEquality'];

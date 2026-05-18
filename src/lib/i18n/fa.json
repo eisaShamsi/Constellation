@@ -1677,6 +1677,29 @@
     "v6": {
       "title": "Constellation Sight",
       "returnToSight": "بازگشت به Sight",
+      "stratum": {
+        "foundation": "بنیان",
+        "working": "کار",
+        "connection": "پیوند",
+        "synthesis": "ترکیب",
+        "edge-of-knowing": "لبهٔ دانش"
+      },
+      "miniDome": {
+        "title": {
+          "anchor": "کیهان — نمای اصلی",
+          "confidence": "اعتماد — شفافیت",
+          "stage": "مرحله — رنگ (دیسک کامل)",
+          "acts": "افعال — اندازه (دهک برتر)",
+          "provenance": "منشأ — ۵ بخش"
+        },
+        "provenance": {
+          "self": "خود",
+          "read": "خوانده",
+          "heard": "شنیده",
+          "reasoned": "استدلال‌شده",
+          "tradition": "سنت"
+        }
+      },
       "tradition": {
         "family": {
           "western-classical": "کلاسیک غربی",
@@ -1839,7 +1862,218 @@
           "failedTitle": "بارگذاری افزونه با شکست مواجه شد",
           "dismissFailedTooltip": "نادیده گرفتن این پیام خطا (افزونه را تعمیر کنید سپس Constellation را برای تلاش مجدد راه‌اندازی کنید)",
           "dismissFailedAriaLabel": "نادیده گرفتن"
+        },
+        "canvas": {
+          "akan-wiredu": {
+            "nokware": "nokware · حقیقت",
+            "ahonyam": "ahonyam · بهروزی",
+            "adwene": "adwene · ذهن"
+          },
+          "dewey": {
+            "indeterminate": "نامتعین",
+            "problem": "مسئله",
+            "hypothesis": "فرضیه",
+            "reasoning": "استدلال",
+            "testing": "آزمون"
+          },
+          "dussel-transmodernity": {
+            "totality": "کلیت",
+            "exteriority": "بیرونیت"
+          },
+          "habermas": {
+            "technical": "فنی",
+            "practical": "عملی",
+            "emancipatory": "رهایی‌بخش"
+          },
+          "husserl": {
+            "formal": "هستی‌شناسی صوری",
+            "materialNature": "طبیعت مادی",
+            "animalNature": "طبیعت حیوانی",
+            "spirit": "روح · Geist"
+          },
+          "ibn-khaldun-umran": {
+            "hadari": "حضری",
+            "badawi": "بدوی"
+          },
+          "ibn-rushd-burhan": {
+            "burhan": "برهان",
+            "jadal": "جدل",
+            "khataba": "خطابه",
+            "shir": "شعر"
+          },
+          "ibuanyidanda": {
+            "self": "خود",
+            "other": "دیگری",
+            "community": "جماعت",
+            "tradition": "سنت",
+            "transcendence": "متعالی",
+            "missingLink": "حلقهٔ گمشده"
+          },
+          "korean-songnihak": {
+            "liSa": "lǐ · 四端 (چهار جوانه)",
+            "liChil": "lǐ · 七情 (هفت احساس)",
+            "qiChil": "qì · 七情 (هفت احساس)",
+            "qiSa": "qì · 四端 (چهار جوانه)"
+          },
+          "longino": {
+            "venues": "محافل",
+            "uptake": "پذیرش",
+            "publicStandards": "معیارهای عمومی",
+            "temperedEquality": "برابری تعدیل‌یافته"
+          },
+          "maimonidean-prophecy": {
+            "ruahHaQodesh": "۱ · روح‌القدس",
+            "sleepVision": "۲ · رؤیای خواب",
+            "daytimeAllegory": "۳ · تمثیل روزانه",
+            "voiceInVision": "۴ · صدا در رؤیا",
+            "speakingPerson": "۵ · شخص سخنگو",
+            "speakingAngel": "۶ · فرشتهٔ سخنگو",
+            "speakingManForm": "۷ · هیئت بشری سخنگو",
+            "allegoryAwake": "۸ · تمثیل در بیداری",
+            "voiceWhileAwake": "۹ · صدا در بیداری",
+            "manFormAwake": "۱۰ · هیئت بشری در بیداری",
+            "angelAwake": "۱۱ · فرشته در بیداری"
+          },
+          "maldonado-torres": {
+            "power": "قدرت",
+            "knowledge": "معرفت",
+            "being": "هستی"
+          },
+          "masadir": {
+            "extensionAriaLabel": "منابع تکمیلی مصادر",
+            "extensionTooltip": "منبع تکمیلی مصادر (در v6.2 فقط نمایشی؛ فعال‌سازی برای هر یادداشت از طریق frontmatter در نسخهٔ بعد)",
+            "quran": "قرآن",
+            "sunnah": "سنت",
+            "ijma": "اجماع",
+            "qiyas": "قیاس",
+            "extension": {
+              "istihsan": "استحسان",
+              "istishab": "استصحاب",
+              "maslahaMursalah": "مصلحت مرسله",
+              "urf": "عرف"
+            }
+          },
+          "mencian-sprouts": {
+            "ceyin": "惻隱 cèyǐn · شفقت",
+            "xiuwu": "羞惡 xiūwù · شرم",
+            "cirang": "辭讓 círàng · احترام",
+            "shifei": "是非 shìfēi · تمیز",
+            "xin": "信 xìn · امانت"
+          },
+          "mignolo-pluriversal": {
+            "epistemicDisobedience": "نافرمانی معرفتی",
+            "borderThinking": "اندیشهٔ مرزی",
+            "delinking": "گسستن پیوند",
+            "decolonialGnosis": "گنوسیس پسااستعماری",
+            "pluriversalWorld": "جهان تکثرگرا",
+            "modernityTotality": "مدرنیته / کلیت"
+          },
+          "mohist-san-biao": {
+            "ben": "本 běn · ریشه",
+            "yuan": "原 yuán · منشأ",
+            "yong": "用 yòng · کاربرد"
+          },
+          "pardes": {
+            "peshat": "peshat · معنای ظاهری",
+            "remez": "remez · اشاره",
+            "derash": "derash · تفسیر",
+            "sod": "sod · راز"
+          },
+          "peirce": {
+            "firstness": "نخستی",
+            "secondness": "دومی",
+            "thirdness": "سومی"
+          },
+          "polanyi": {
+            "tacit": "ضمنی",
+            "explicit": "صریح"
+          },
+          "pramana": {
+            "pratyaksha": "pratyakṣa · ادراک مستقیم",
+            "anumana": "anumāna · استنباط",
+            "upamana": "upamāna · قیاس",
+            "shabda": "śabda · شهادت"
+          },
+          "shatibi-maqasid": {
+            "tier": {
+              "daruriyyat": "ضروریات",
+              "hajiyyat": "حاجیات",
+              "tahsiniyyat": "تحسینیات"
+            },
+            "essential": {
+              "din": "دین",
+              "nafs": "نفس",
+              "aql": "عقل",
+              "nasl": "نسل",
+              "mal": "مال"
+            }
+          },
+          "talmudic-middot": {
+            "kalVaChomer": "۱ · kal va-chomer (قیاس اولی)",
+            "gezeraShava": "۲ · gezera shava (تشابه لفظی)",
+            "binyanAv1": "۳ · binyan av (از یک آیه)",
+            "binyanAv2": "۴ · binyan av (از دو آیه)",
+            "kelalUPerat": "۵ · kelal u-perat (عام و خاص)",
+            "peratUKelal": "۶ · perat u-kelal (خاص و عام)",
+            "kpk": "۷ · k-p-k (عام-خاص-عام)",
+            "specialPurpose": "۸ · غرض خاص",
+            "extractedLighter": "۹ · مستخرج (سبک‌تر)",
+            "extractedDifferent": "۱۰ · مستخرج (متفاوت)",
+            "fromContext": "۱۱ · از سیاق",
+            "fromEnd": "۱۲ · از پایان",
+            "reconciliation": "۱۳ · تطبیق"
+          },
+          "wang-yangming": {
+            "zhi": "知 zhī · دانستن",
+            "xing": "行 xíng · کردار",
+            "liangzhi": "良知 liángzhī · معرفت فطری"
+          }
         }
+      },
+      "facet": {
+        "folder": "پوشه",
+        "library": "کتابخانه",
+        "stratum": "طبقه",
+        "confidence": "اعتماد",
+        "stage": "مرحله",
+        "provenance": "منشأ"
+      },
+      "facetSidebar": {
+        "title": "وجوه",
+        "expandAriaLabel": "گسترش فیلترهای وجوه",
+        "filtersTooltip": "فیلترها",
+        "ariaLabel": "فیلترهای وجوه Sight",
+        "collapseAriaLabel": "جمع کردن فیلترهای وجوه",
+        "collapseTooltip": "جمع کردن"
+      },
+      "confidence": {
+        "hypothesis": "فرضیه",
+        "evidence": "شواهد",
+        "established": "تثبیت‌شده",
+        "contested": "مورد مناقشه"
+      },
+      "stage": {
+        "spark": "جرقه",
+        "birth": "تولد",
+        "growth": "رشد",
+        "maturity": "پختگی",
+        "dormancy": "سکون",
+        "renewal": "تجدید",
+        "archival": "بایگانی",
+        "established": "تثبیت‌شده",
+        "fresh": "تازه",
+        "growing": "در حال رشد",
+        "at-risk": "در خطر",
+        "dormant": "خاموش"
+      },
+      "header": {
+        "subtitle": "v6.3 — سنت‌ها (مرحلهٔ ۱)",
+        "extendedBadge": "گسترده",
+        "extendedTooltip": "نمای گسترده روشن است — نماهای کوچک به طور پیش‌فرض در هر باز شدن Sight نمایش داده می‌شوند. Cmd-Shift-D برای تغییر.",
+        "filterCountTooltip": "یادداشت‌های فیلترشده / کل یادداشت‌ها",
+        "filterCountSuffix": "یادداشت",
+        "resetViewLabel": "بازنشانی نما",
+        "resetViewTooltip": "بازگشت به گنبد لنگر در زوم پیش‌فرض (بازنشانی نما)"
       }
     }
   },

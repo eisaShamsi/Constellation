@@ -49,11 +49,12 @@ type PardesLevel = 0 | 1 | 2 | 3; // peshat / remez / derash / sod
 
 const RING_BOUNDARIES_FRAC = [0.25, 0.50, 0.75];
 
+// MIG-026 §λ-fix-3 — i18n keys; English values live in src/lib/i18n/en.json
 const ZONE_LABELS: Record<PardesLevel, string> = {
-	0: 'peshat',
-	1: 'remez',
-	2: 'derash',
-	3: 'sod',
+	0: 'sight.v6.tradition.canvas.pardes.peshat',
+	1: 'sight.v6.tradition.canvas.pardes.remez',
+	2: 'sight.v6.tradition.canvas.pardes.derash',
+	3: 'sight.v6.tradition.canvas.pardes.sod',
 };
 
 function pathHash01(path: string): number {

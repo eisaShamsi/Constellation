@@ -93,11 +93,12 @@ export const wangYangming: TraditionModule = {
 	},
 
 	binaryFlowSpec: (_layout: TraditionLayout): BinaryFlowSpec => {
+		// MIG-026 §λ-fix-3 — i18n keys; English values live in src/lib/i18n/en.json
 		return {
-			cellA: { label: '知 zhī · knowing' },
-			cellB: { label: '行 xíng · acting' },
+			cellA: { label: 'sight.v6.tradition.canvas.wang-yangming.zhi' },
+			cellB: { label: 'sight.v6.tradition.canvas.wang-yangming.xing' },
 			flowDirection: 'bidirectional',
-			centerLabel: '良知 liángzhī',
+			centerLabel: 'sight.v6.tradition.canvas.wang-yangming.liangzhi',
 			layout: 'vertical',
 		};
 	},

@@ -1677,6 +1677,29 @@
     "v6": {
       "title": "Constellation Sight",
       "returnToSight": "Sight پر واپس جائیں",
+      "stratum": {
+        "foundation": "بنیاد",
+        "working": "کام",
+        "connection": "ربط",
+        "synthesis": "ترکیب",
+        "edge-of-knowing": "جان کاری کا کنارہ"
+      },
+      "miniDome": {
+        "title": {
+          "anchor": "کائنات — بنیادی منظر",
+          "confidence": "اعتماد — شفافیت",
+          "stage": "مرحلہ — رنگ (مکمل قرص)",
+          "acts": "افعال — حجم (سب سے بلند دس فیصد)",
+          "provenance": "ماخذ — 5 شعبے"
+        },
+        "provenance": {
+          "self": "ذات",
+          "read": "پڑھا گیا",
+          "heard": "سنا گیا",
+          "reasoned": "استدلال کیا گیا",
+          "tradition": "روایت"
+        }
+      },
       "tradition": {
         "family": {
           "western-classical": "مغربی کلاسیکی",
@@ -1839,7 +1862,218 @@
           "failedTitle": "پلگ ان لوڈ کرنے میں ناکامی",
           "dismissFailedTooltip": "یہ خرابی کا پیغام رد کریں (پلگ ان ٹھیک کریں پھر دوبارہ کوشش کے لیے Constellation کو دوبارہ شروع کریں)",
           "dismissFailedAriaLabel": "رد کریں"
+        },
+        "canvas": {
+          "akan-wiredu": {
+            "nokware": "nokware · سچائی",
+            "ahonyam": "ahonyam · بہبود",
+            "adwene": "adwene · ذہن"
+          },
+          "dewey": {
+            "indeterminate": "غیر متعین",
+            "problem": "مسئلہ",
+            "hypothesis": "مفروضہ",
+            "reasoning": "استدلال",
+            "testing": "آزمائش"
+          },
+          "dussel-transmodernity": {
+            "totality": "کلیت",
+            "exteriority": "بیرونیت"
+          },
+          "habermas": {
+            "technical": "تکنیکی",
+            "practical": "عملی",
+            "emancipatory": "تحریکی"
+          },
+          "husserl": {
+            "formal": "صوری وجودیات",
+            "materialNature": "مادی فطرت",
+            "animalNature": "حیوانی فطرت",
+            "spirit": "روح · Geist"
+          },
+          "ibn-khaldun-umran": {
+            "hadari": "حضری · شہری",
+            "badawi": "بدوی · خانہ بدوش"
+          },
+          "ibn-rushd-burhan": {
+            "burhan": "برہان",
+            "jadal": "جدل",
+            "khataba": "خطابہ",
+            "shir": "شعر"
+          },
+          "ibuanyidanda": {
+            "self": "ذات",
+            "other": "دیگر",
+            "community": "جماعت",
+            "tradition": "روایت",
+            "transcendence": "متعالی",
+            "missingLink": "گمشدہ کڑی"
+          },
+          "korean-songnihak": {
+            "liSa": "lǐ · 四端 (چار پھوٹ)",
+            "liChil": "lǐ · 七情 (سات جذبات)",
+            "qiChil": "qì · 七情 (سات جذبات)",
+            "qiSa": "qì · 四端 (چار پھوٹ)"
+          },
+          "longino": {
+            "venues": "محافل",
+            "uptake": "قبول",
+            "publicStandards": "عوامی معیارات",
+            "temperedEquality": "تعدیل شدہ مساوات"
+          },
+          "maimonidean-prophecy": {
+            "ruahHaQodesh": "1 · روح القدس",
+            "sleepVision": "2 · خواب کا مشاہدہ",
+            "daytimeAllegory": "3 · دن کی تمثیل",
+            "voiceInVision": "4 · مشاہدے میں آواز",
+            "speakingPerson": "5 · بولنے والا شخص",
+            "speakingAngel": "6 · بولنے والا فرشتہ",
+            "speakingManForm": "7 · بولتی ہوئی انسانی صورت",
+            "allegoryAwake": "8 · بیداری میں تمثیل",
+            "voiceWhileAwake": "9 · بیداری میں آواز",
+            "manFormAwake": "10 · بیداری میں انسانی صورت",
+            "angelAwake": "11 · بیداری میں فرشتہ"
+          },
+          "maldonado-torres": {
+            "power": "اقتدار",
+            "knowledge": "علم",
+            "being": "وجود"
+          },
+          "masadir": {
+            "extensionAriaLabel": "اضافی مصادر کے ذرائع",
+            "extensionTooltip": "اضافی مصدر (v6.2 میں صرف نمائشی؛ ہر نوٹ پر اختیاری شرکت frontmatter کے ذریعے بعد میں آئے گی)",
+            "quran": "قرآن",
+            "sunnah": "سنت",
+            "ijma": "اجماع",
+            "qiyas": "قیاس",
+            "extension": {
+              "istihsan": "استحسان",
+              "istishab": "استصحاب",
+              "maslahaMursalah": "مصلحت مرسلہ",
+              "urf": "عرف"
+            }
+          },
+          "mencian-sprouts": {
+            "ceyin": "惻隱 cèyǐn · شفقت",
+            "xiuwu": "羞惡 xiūwù · شرم",
+            "cirang": "辭讓 círàng · ادب",
+            "shifei": "是非 shìfēi · تمیز",
+            "xin": "信 xìn · امانت"
+          },
+          "mignolo-pluriversal": {
+            "epistemicDisobedience": "معرفتی نافرمانی",
+            "borderThinking": "سرحدی فکر",
+            "delinking": "انفصال",
+            "decolonialGnosis": "استعمار کش گنوسیس",
+            "pluriversalWorld": "تکثیری-عالمی دنیا",
+            "modernityTotality": "جدیدیت / کلیت"
+          },
+          "mohist-san-biao": {
+            "ben": "本 běn · جڑ",
+            "yuan": "原 yuán · منبع",
+            "yong": "用 yòng · استعمال"
+          },
+          "pardes": {
+            "peshat": "peshat · لفظی معنی",
+            "remez": "remez · اشارہ",
+            "derash": "derash · تفسیر",
+            "sod": "sod · باطن"
+          },
+          "peirce": {
+            "firstness": "اولیّت",
+            "secondness": "ثانویت",
+            "thirdness": "ثالثیت"
+          },
+          "polanyi": {
+            "tacit": "خاموش",
+            "explicit": "صریح"
+          },
+          "pramana": {
+            "pratyaksha": "pratyakṣa · براہ راست مشاہدہ",
+            "anumana": "anumāna · استدلال",
+            "upamana": "upamāna · قیاس",
+            "shabda": "śabda · شہادت"
+          },
+          "shatibi-maqasid": {
+            "tier": {
+              "daruriyyat": "ضروریات",
+              "hajiyyat": "حاجیات",
+              "tahsiniyyat": "تحسینیات"
+            },
+            "essential": {
+              "din": "دین",
+              "nafs": "نفس",
+              "aql": "عقل",
+              "nasl": "نسل",
+              "mal": "مال"
+            }
+          },
+          "talmudic-middot": {
+            "kalVaChomer": "1 · kal va-chomer (قیاس اولیٰ)",
+            "gezeraShava": "2 · gezera shava (لفظی مماثلت)",
+            "binyanAv1": "3 · binyan av (ایک آیت سے)",
+            "binyanAv2": "4 · binyan av (دو آیات سے)",
+            "kelalUPerat": "5 · kelal u-perat (عام اور خاص)",
+            "peratUKelal": "6 · perat u-kelal (خاص اور عام)",
+            "kpk": "7 · k-p-k (عام-خاص-عام)",
+            "specialPurpose": "8 · خصوصی مقصد",
+            "extractedLighter": "9 · مستخرج (ہلکا)",
+            "extractedDifferent": "10 · مستخرج (مختلف)",
+            "fromContext": "11 · سیاق سے",
+            "fromEnd": "12 · انجام سے",
+            "reconciliation": "13 · تطبیق"
+          },
+          "wang-yangming": {
+            "zhi": "知 zhī · جاننا",
+            "xing": "行 xíng · عمل",
+            "liangzhi": "良知 liángzhī · فطری علم"
+          }
         }
+      },
+      "facet": {
+        "folder": "فولڈر",
+        "library": "لائبریری",
+        "stratum": "طبقہ",
+        "confidence": "اعتماد",
+        "stage": "مرحلہ",
+        "provenance": "ماخذ"
+      },
+      "facetSidebar": {
+        "title": "پہلو",
+        "expandAriaLabel": "پہلو فلٹرز پھیلائیں",
+        "filtersTooltip": "فلٹرز",
+        "ariaLabel": "Sight کے پہلو فلٹرز",
+        "collapseAriaLabel": "پہلو فلٹرز سمیٹیں",
+        "collapseTooltip": "سمیٹیں"
+      },
+      "confidence": {
+        "hypothesis": "مفروضہ",
+        "evidence": "ثبوت",
+        "established": "مستحکم",
+        "contested": "متنازع"
+      },
+      "stage": {
+        "spark": "چنگاری",
+        "birth": "پیدائش",
+        "growth": "نمو",
+        "maturity": "پختگی",
+        "dormancy": "خاموشی",
+        "renewal": "تجدید",
+        "archival": "محفوظ",
+        "established": "مستحکم",
+        "fresh": "تازہ",
+        "growing": "بڑھتا ہوا",
+        "at-risk": "خطرے میں",
+        "dormant": "ساکت"
+      },
+      "header": {
+        "subtitle": "v6.3 — روایات (مرحلہ 1)",
+        "extendedBadge": "توسیع شدہ",
+        "extendedTooltip": "توسیع شدہ منظر فعال ہے — منی-منظر Sight کھولنے پر بطور ڈیفالٹ نظر آتے ہیں۔ Cmd-Shift-D برائے تبدیلی۔",
+        "filterCountTooltip": "فلٹر شدہ نوٹ / کل نوٹ",
+        "filterCountSuffix": "نوٹ",
+        "resetViewLabel": "منظر بحال کریں",
+        "resetViewTooltip": "ڈیفالٹ زوم پر اینکر گنبد پر واپس جائیں (منظر بحال کریں)"
       }
     }
   },

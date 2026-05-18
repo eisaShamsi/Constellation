@@ -57,10 +57,11 @@ type MohistZone = 0 | 1 | 2;
  *  Chinese characters first (the philosophical primary), transliteration
  *  + English gloss second. The renderer in anchor.ts uses these in the
  *  HorizontalBandsSpec.bands[].label field. */
+// MIG-026 §λ-fix-3 — i18n keys; English values live in src/lib/i18n/en.json
 const ZONE_LABELS: Record<MohistZone, string> = {
-	0: '本 běn · root',     // top band — historical precedent
-	1: '原 yuán · origin',  // middle band — observational evidence
-	2: '用 yòng · use',     // bottom band — practical benefit
+	0: 'sight.v6.tradition.canvas.mohist-san-biao.ben',     // top band — historical precedent
+	1: 'sight.v6.tradition.canvas.mohist-san-biao.yuan',    // middle band — observational evidence
+	2: 'sight.v6.tradition.canvas.mohist-san-biao.yong',    // bottom band — practical benefit
 };
 
 /** FNV-1a 32-bit hash of a string → normalized [0, 1) value. Used for

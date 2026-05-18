@@ -203,10 +203,13 @@ function buildFolderFacet(rows: LayoutCacheRow[], filters: FacetFilters): Facet 
 	for (const r of subset) {
 		if (r.folderPath) counts.set(r.folderPath, (counts.get(r.folderPath) ?? 0) + 1);
 	}
+	// MIG-026 §λ-fix-4 — folder names are user data, NOT translated.
+	// `label: id` keeps the user's folder path; the sidebar wraps every
+	// label in $t which acts as identity for unknown keys.
 	const cats: FacetCategory[] = [...counts.entries()]
 		.map(([id, count]) => ({ id, label: id, count }))
 		.sort((a, b) => b.count - a.count); // most-populated first
-	return { id: 'folder', label: 'Folder', categories: cats };
+	return { id: 'folder', label: 'sight.v6.facet.folder', categories: cats };
 }
 
 function buildLibraryFacet(rows: LayoutCacheRow[], filters: FacetFilters): Facet {
@@ -215,10 +218,11 @@ function buildLibraryFacet(rows: LayoutCacheRow[], filters: FacetFilters): Facet
 	for (const r of subset) {
 		if (r.libraryName) counts.set(r.libraryName, (counts.get(r.libraryName) ?? 0) + 1);
 	}
+	// MIG-026 §λ-fix-4 — library names are user data, NOT translated.
 	const cats: FacetCategory[] = [...counts.entries()]
 		.map(([id, count]) => ({ id, label: id, count }))
 		.sort((a, b) => a.id.localeCompare(b.id)); // stable alpha order — matches libraryShapeIndex assignment
-	return { id: 'library', label: 'Library', categories: cats };
+	return { id: 'library', label: 'sight.v6.facet.library', categories: cats };
 }
 
 function buildStratumFacet(rows: LayoutCacheRow[], filters: FacetFilters): Facet {
@@ -229,12 +233,14 @@ function buildStratumFacet(rows: LayoutCacheRow[], filters: FacetFilters): Facet
 		counts.set(band, (counts.get(band) ?? 0) + 1);
 	}
 	// Stable order: inner→outer per STRATUM_BANDS.
+	// MIG-026 §λ-fix-4 — labels become i18n keys; sidebar wraps in $t.
+	// Keys live at sight.v6.stratum.<band> in every locale file.
 	const cats: FacetCategory[] = STRATUM_BANDS.map((b) => ({
 		id: b,
-		label: titleCase(STRATUM_LABELS[b]),
+		label: `sight.v6.stratum.${b}`,
 		count: counts.get(b) ?? 0,
 	}));
-	return { id: 'stratum', label: 'Stratum', categories: cats };
+	return { id: 'stratum', label: 'sight.v6.facet.stratum', categories: cats };
 }
 
 function buildConfidenceFacet(rows: LayoutCacheRow[], filters: FacetFilters): Facet {
@@ -245,12 +251,13 @@ function buildConfidenceFacet(rows: LayoutCacheRow[], filters: FacetFilters): Fa
 		counts.set(c, (counts.get(c) ?? 0) + 1);
 	}
 	const order: ConfidenceLevel[] = ['hypothesis', 'evidence', 'established', 'contested'];
+	// MIG-026 §λ-fix-4 — i18n keys at sight.v6.confidence.<level>.
 	const cats: FacetCategory[] = order.map((c) => ({
 		id: c,
-		label: c,
+		label: `sight.v6.confidence.${c}`,
 		count: counts.get(c) ?? 0,
 	}));
-	return { id: 'confidence', label: 'Confidence', categories: cats };
+	return { id: 'confidence', label: 'sight.v6.facet.confidence', categories: cats };
 }
 
 function buildStageFacet(rows: LayoutCacheRow[], filters: FacetFilters): Facet {
@@ -280,11 +287,15 @@ function buildStageFacet(rows: LayoutCacheRow[], filters: FacetFilters): Facet {
 		'spark', 'birth', 'growth', 'maturity', 'dormancy', 'renewal', 'archival',
 		'established', 'fresh', 'growing', 'at-risk', 'dormant',
 	];
+	// MIG-026 §λ-fix-4 — labels become i18n keys for the known stages
+	// (sight.v6.stage.<id>). Custom user-defined stages keep their raw
+	// string as the label; $t in the sidebar acts as identity for any
+	// key that doesn't resolve in the active locale + en fallback.
 	const cats: FacetCategory[] = [];
 	const seen = new Set<string>();
 	for (const s of orderedKnown) {
 		if (counts.has(s)) {
-			cats.push({ id: s, label: s, count: counts.get(s) ?? 0 });
+			cats.push({ id: s, label: `sight.v6.stage.${s}`, count: counts.get(s) ?? 0 });
 			seen.add(s);
 		}
 	}
@@ -293,7 +304,7 @@ function buildStageFacet(rows: LayoutCacheRow[], filters: FacetFilters): Facet {
 			cats.push({ id, label: id, count });
 		}
 	}
-	return { id: 'stage', label: 'Stage', categories: cats };
+	return { id: 'stage', label: 'sight.v6.facet.stage', categories: cats };
 }
 
 function buildProvenanceFacet(rows: LayoutCacheRow[], filters: FacetFilters): Facet {
@@ -304,12 +315,16 @@ function buildProvenanceFacet(rows: LayoutCacheRow[], filters: FacetFilters): Fa
 		counts.set(p, (counts.get(p) ?? 0) + 1);
 	}
 	const order: ProvenanceSector[] = ['Self', 'Read', 'Heard', 'Reasoned', 'Tradition'];
+	// MIG-026 §λ-fix-4 — i18n keys at sight.v6.miniDome.provenance.<lower>.
+	// Reuses the same key namespace already defined for mini-dome canvas
+	// labels so a single translation entry serves both the sidebar chip
+	// and the canvas sector label.
 	const cats: FacetCategory[] = order.map((p) => ({
 		id: p,
-		label: p,
+		label: `sight.v6.miniDome.provenance.${p.toLowerCase()}`,
 		count: counts.get(p) ?? 0,
 	}));
-	return { id: 'provenance', label: 'Provenance', categories: cats };
+	return { id: 'provenance', label: 'sight.v6.facet.provenance', categories: cats };
 }
 
 // ════════════════════════════════════════════════════════════════════

@@ -36,6 +36,14 @@ import { pipColorForStage, starHitTest, type DomeLayout } from './anchor';
 // PALETTE.stageX / PALETTE.linkX (theme-agnostic categorical).
 let _chrome: ChromePalette = CHROME_PALETTE_DARK_FALLBACK;
 
+// MIG-026 §λ-fix-3 — module-level i18n label resolver (same pattern
+// as anchor.ts _labelize). renderMiniDome sets this from the caller's
+// `labelize` option; renderProvenanceChannel + the channel-title pass
+// read via _labelize(key) to localize on-canvas text. Defaults to
+// identity so the canvas still paints (with English keys) if a caller
+// forgets to wire it.
+let _labelize: (key: string) => string = (key) => key;
+
 export interface MiniDomeLayout {
 	centerX: number;
 	centerY: number;
@@ -87,6 +95,12 @@ export function renderMiniDome(
 		// paint() reads via readChromePalette(canvasEl); if not
 		// provided, defaults to dark fallback.
 		chromePalette?: ChromePalette;
+		// MIG-026 §λ-fix-3 — i18n label resolver. Same contract as
+		// renderAnchorDome.labelize: when provided, the channel-title
+		// pass and the provenance sector-label pass run text through
+		// labelize(key). When absent, falls back to identity (English
+		// key text). Callers should provide $t.
+		labelize?: (key: string) => string;
 	} = {},
 ): void {
 	const {
@@ -96,9 +110,12 @@ export function renderMiniDome(
 		matchedPaths = null,
 		densityMode = false,
 		chromePalette = CHROME_PALETTE_DARK_FALLBACK,
+		labelize = (key: string) => key,
 	} = options;
 	// MIG-027 — set the module-level chrome state for this paint.
 	_chrome = chromePalette;
+	// MIG-026 §λ-fix-3 — same module-level pattern for i18n.
+	_labelize = labelize;
 	const layout = computeMiniDomeLayout(width, height);
 	// Coordinate transform: anchor world coords → mini canvas coords.
 	// Channel renderers consume StarDerived.x/y (anchor coords) and
@@ -155,7 +172,7 @@ export function renderMiniDome(
 	ctx.font = '10px Inter, system-ui, sans-serif';
 	ctx.textAlign = 'center';
 	ctx.textBaseline = 'top';
-	ctx.fillText(channelTitle(channel), layout.centerX, 4);
+	ctx.fillText(_labelize(channelTitleKey(channel)), layout.centerX, 4);
 	ctx.restore();
 
 	// Pass 3: dispatch to channel-specific renderer (skeletons stub
@@ -380,6 +397,20 @@ const PROVENANCE_SECTORS: ProvenanceSector[] = [
 	'Tradition',
 ];
 
+/** MIG-026 §λ-fix-3 — parallel i18n keys for the provenance sector
+ *  labels above. The literal English bucket names stay in
+ *  PROVENANCE_SECTORS because they're matched against StarDerived
+ *  .provenanceSector (the same literal value lives on the row from
+ *  the Rust side) — those identifiers must NOT be translated. Only
+ *  the on-canvas label text is localized via this parallel array. */
+const PROVENANCE_SECTOR_LABEL_KEYS: string[] = [
+	'sight.v6.miniDome.provenance.self',
+	'sight.v6.miniDome.provenance.read',
+	'sight.v6.miniDome.provenance.heard',
+	'sight.v6.miniDome.provenance.reasoned',
+	'sight.v6.miniDome.provenance.tradition',
+];
+
 function renderProvenanceChannel(
 	ctx: CanvasRenderingContext2D,
 	stars: StarDerived[],
@@ -423,7 +454,7 @@ function renderProvenanceChannel(
 		const angle = -Math.PI / 2 + i * sectorAngle + sectorAngle / 2;
 		const lx = layout.centerX + Math.cos(angle) * labelRadius;
 		const ly = layout.centerY + Math.sin(angle) * labelRadius;
-		ctx.fillText(PROVENANCE_SECTORS[i], lx, ly);
+		ctx.fillText(_labelize(PROVENANCE_SECTOR_LABEL_KEYS[i]), lx, ly);
 	}
 	ctx.restore();
 
@@ -523,18 +554,26 @@ function pathHash2(path: string): [number, number] {
 // Helpers
 // ════════════════════════════════════════════════════════════════════
 
-function channelTitle(channel: SlotChannel): string {
+/** MIG-026 §λ-fix-3 — return i18n key for the mini-dome channel title.
+ *  Keys live under `sight.v6.miniDome.title.<channel>` in every locale
+ *  file. The rendered text passes through `_labelize` (set from the
+ *  caller's $t store) so it always matches the active interface
+ *  language. The old `channelTitle` returned hardcoded English strings
+ *  and was the entry-point for the Arabic Boss-test gap on
+ *  2026-05-18 (mini-dome titles read "CONFIDENCE — opacity" instead
+ *  of localized form). */
+function channelTitleKey(channel: SlotChannel): string {
 	switch (channel) {
 		case 'anchor':
-			return 'UNIVERSE — primary view';
+			return 'sight.v6.miniDome.title.anchor';
 		case 'confidence':
-			return 'CONFIDENCE — opacity';
+			return 'sight.v6.miniDome.title.confidence';
 		case 'stage':
-			return 'STAGE — hue (full-disk)';
+			return 'sight.v6.miniDome.title.stage';
 		case 'acts':
-			return 'ACTS — size (top decile)';
+			return 'sight.v6.miniDome.title.acts';
 		case 'provenance':
-			return 'PROVENANCE — 5 sectors';
+			return 'sight.v6.miniDome.title.provenance';
 	}
 }
 

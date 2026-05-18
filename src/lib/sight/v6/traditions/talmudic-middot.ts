@@ -50,20 +50,21 @@ import type {
 	LadderSpec,
 } from '../types';
 
+// MIG-026 §λ-fix-3 — i18n keys; English values live in src/lib/i18n/en.json
 const STEP_LABELS = [
-	'1 · kal va-chomer',
-	'2 · gezera shava',
-	'3 · binyan av (1 verse)',
-	'4 · binyan av (2 verses)',
-	'5 · kelal u-perat',
-	'6 · perat u-kelal',
-	'7 · k-p-k',
-	'8 · special purpose',
-	'9 · extracted (lighter)',
-	'10 · extracted (different)',
-	'11 · from context',
-	'12 · from end',
-	'13 · reconciliation',
+	'sight.v6.tradition.canvas.talmudic-middot.kalVaChomer',
+	'sight.v6.tradition.canvas.talmudic-middot.gezeraShava',
+	'sight.v6.tradition.canvas.talmudic-middot.binyanAv1',
+	'sight.v6.tradition.canvas.talmudic-middot.binyanAv2',
+	'sight.v6.tradition.canvas.talmudic-middot.kelalUPerat',
+	'sight.v6.tradition.canvas.talmudic-middot.peratUKelal',
+	'sight.v6.tradition.canvas.talmudic-middot.kpk',
+	'sight.v6.tradition.canvas.talmudic-middot.specialPurpose',
+	'sight.v6.tradition.canvas.talmudic-middot.extractedLighter',
+	'sight.v6.tradition.canvas.talmudic-middot.extractedDifferent',
+	'sight.v6.tradition.canvas.talmudic-middot.fromContext',
+	'sight.v6.tradition.canvas.talmudic-middot.fromEnd',
+	'sight.v6.tradition.canvas.talmudic-middot.reconciliation',
 ];
 
 const N_STEPS = STEP_LABELS.length; // 13

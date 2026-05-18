@@ -65,11 +65,12 @@ const SECTOR_START: Record<MencianSprout, number> = {
 	shifei: -Math.PI / 2 + SECTOR_ROTATION_OFFSET + 3 * SECTOR_ARC,     // N wedge
 };
 
+// MIG-026 §λ-fix-3 — i18n keys; English values live in src/lib/i18n/en.json
 const SECTOR_LABELS: Record<MencianSprout, string> = {
-	ceyin: '惻隱 cèyǐn',
-	xiuwu: '羞惡 xiūwù',
-	cirang: '辭讓 círàng',
-	shifei: '是非 shìfēi',
+	ceyin: 'sight.v6.tradition.canvas.mencian-sprouts.ceyin',
+	xiuwu: 'sight.v6.tradition.canvas.mencian-sprouts.xiuwu',
+	cirang: 'sight.v6.tradition.canvas.mencian-sprouts.cirang',
+	shifei: 'sight.v6.tradition.canvas.mencian-sprouts.shifei',
 };
 
 const SECTOR_ORDER: MencianSprout[] = ['ceyin', 'xiuwu', 'cirang', 'shifei'];
@@ -142,6 +143,6 @@ export const mencianSprouts: TraditionModule = {
 		// virtue label (xìn / 信 / trustworthiness). drawRingBoundaries
 		// places the label in the annulus from 0 to 15% — i.e., inside
 		// the central disc — so it reads as "this innermost zone is xìn".
-		return [{ radiusFrac: XIN_RING_FRAC, label: '信 xìn' }];
+		return [{ radiusFrac: XIN_RING_FRAC, label: 'sight.v6.tradition.canvas.mencian-sprouts.xin' }];
 	},
 };

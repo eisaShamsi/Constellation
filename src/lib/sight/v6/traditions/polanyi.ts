@@ -69,11 +69,12 @@ export const polanyi: TraditionModule = {
 		// boost added to the 'gradient' shape (SightV6.svelte switch),
 		// stars at center now read clearly without losing the tacit-to-
 		// explicit gradient signal.
+		// MIG-026 §λ-fix-3 — i18n keys; English values live in src/lib/i18n/en.json
 		return {
 			centerOpacity: 0.40,
 			edgeOpacity: 0.95,
-			centerLabel: 'tacit',
-			edgeLabel: 'explicit',
+			centerLabel: 'sight.v6.tradition.canvas.polanyi.tacit',
+			edgeLabel: 'sight.v6.tradition.canvas.polanyi.explicit',
 		};
 	},
 };

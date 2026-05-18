@@ -45,12 +45,13 @@ import type {
 
 type DeweyStage = 0 | 1 | 2 | 3 | 4;
 
+// MIG-026 §λ-fix-3 — i18n keys; English values live in src/lib/i18n/en.json
 const STAGE_LABELS = [
-	'indeterminate',
-	'problem',
-	'hypothesis',
-	'reasoning',
-	'testing',
+	'sight.v6.tradition.canvas.dewey.indeterminate',
+	'sight.v6.tradition.canvas.dewey.problem',
+	'sight.v6.tradition.canvas.dewey.hypothesis',
+	'sight.v6.tradition.canvas.dewey.reasoning',
+	'sight.v6.tradition.canvas.dewey.testing',
 ] as const;
 
 const STAGE_ARC = (2 * Math.PI) / 5;

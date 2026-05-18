@@ -49,11 +49,12 @@ type BurhanKind = 0 | 1 | 2 | 3; // burhan / jadal / khataba / shir
 
 const RING_BOUNDARIES_FRAC = [0.25, 0.50, 0.75];
 
+// MIG-026 §λ-fix-3 — i18n keys; English values live in src/lib/i18n/en.json
 const ZONE_LABELS: Record<BurhanKind, string> = {
-	0: 'burhān',
-	1: 'jadal',
-	2: 'khaṭāba',
-	3: 'shiʿr',
+	0: 'sight.v6.tradition.canvas.ibn-rushd-burhan.burhan',
+	1: 'sight.v6.tradition.canvas.ibn-rushd-burhan.jadal',
+	2: 'sight.v6.tradition.canvas.ibn-rushd-burhan.khataba',
+	3: 'sight.v6.tradition.canvas.ibn-rushd-burhan.shir',
 };
 
 function pathHash01(path: string): number {

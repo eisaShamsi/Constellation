@@ -2115,6 +2115,29 @@
     "v6": {
       "title": "Constellation Sight",
       "returnToSight": "Sight로 돌아가기",
+      "stratum": {
+        "foundation": "기초",
+        "working": "작업",
+        "connection": "연결",
+        "synthesis": "종합",
+        "edge-of-knowing": "앎의 끝"
+      },
+      "miniDome": {
+        "title": {
+          "anchor": "유니버스 — 기본 보기",
+          "confidence": "확신 — 불투명도",
+          "stage": "단계 — 색조(전체 디스크)",
+          "acts": "행위 — 크기(상위 10분위)",
+          "provenance": "출처 — 5개 섹터"
+        },
+        "provenance": {
+          "self": "자기",
+          "read": "읽음",
+          "heard": "들음",
+          "reasoned": "추론",
+          "tradition": "전통"
+        }
+      },
       "tradition": {
         "family": {
           "western-classical": "서양 고전",
@@ -2277,7 +2300,218 @@
           "failedTitle": "플러그인 로드 실패",
           "dismissFailedTooltip": "이 오류 메시지 닫기(플러그인을 수정한 후 Constellation을 다시 시작하여 재시도하세요)",
           "dismissFailedAriaLabel": "닫기"
+        },
+        "canvas": {
+          "akan-wiredu": {
+            "nokware": "nokware · 진리",
+            "ahonyam": "ahonyam · 좋은 삶",
+            "adwene": "adwene · 마음"
+          },
+          "dewey": {
+            "indeterminate": "미결정",
+            "problem": "문제",
+            "hypothesis": "가설",
+            "reasoning": "추론",
+            "testing": "검증"
+          },
+          "dussel-transmodernity": {
+            "totality": "총체성",
+            "exteriority": "외재성"
+          },
+          "habermas": {
+            "technical": "기술적",
+            "practical": "실천적",
+            "emancipatory": "해방적"
+          },
+          "husserl": {
+            "formal": "형식적 존재론",
+            "materialNature": "물질적 자연",
+            "animalNature": "동물적 자연",
+            "spirit": "정신 · Geist"
+          },
+          "ibn-khaldun-umran": {
+            "hadari": "ḥaḍarī · 정주",
+            "badawi": "badawī · 유목"
+          },
+          "ibn-rushd-burhan": {
+            "burhan": "burhān · 필증적 논증",
+            "jadal": "jadal · 변증",
+            "khataba": "khaṭāba · 수사",
+            "shir": "shiʿr · 시학"
+          },
+          "ibuanyidanda": {
+            "self": "자아",
+            "other": "타자",
+            "community": "공동체",
+            "tradition": "전통",
+            "transcendence": "초월",
+            "missingLink": "잃어버린 고리"
+          },
+          "korean-songnihak": {
+            "liSa": "리(理) · 사단(四端)",
+            "liChil": "리(理) · 칠정(七情)",
+            "qiChil": "기(氣) · 칠정(七情)",
+            "qiSa": "기(氣) · 사단(四端)"
+          },
+          "longino": {
+            "venues": "공론장",
+            "uptake": "비판 수용",
+            "publicStandards": "공적 기준",
+            "temperedEquality": "조정된 평등"
+          },
+          "maimonidean-prophecy": {
+            "ruahHaQodesh": "1 · ruaḥ ha-qodesh · 성령",
+            "sleepVision": "2 · 수면 중 환영",
+            "daytimeAllegory": "3 · 낮의 비유",
+            "voiceInVision": "4 · 환영 속 음성",
+            "speakingPerson": "5 · 말하는 사람",
+            "speakingAngel": "6 · 말하는 천사",
+            "speakingManForm": "7 · 말하는 인간 형상",
+            "allegoryAwake": "8 · 깨어 있을 때의 비유",
+            "voiceWhileAwake": "9 · 깨어 있을 때의 음성",
+            "manFormAwake": "10 · 깨어 있을 때의 인간 형상",
+            "angelAwake": "11 · 깨어 있을 때의 천사"
+          },
+          "maldonado-torres": {
+            "power": "권력",
+            "knowledge": "지식",
+            "being": "존재"
+          },
+          "masadir": {
+            "extensionAriaLabel": "마사디르 추가 원천",
+            "extensionTooltip": "추가 마사디르 원천(v6.2에서는 표시 전용; 노트별 옵트인은 프런트매터를 통해 후속 버전에서 제공)",
+            "quran": "꾸란",
+            "sunnah": "순나",
+            "ijma": "이즈마",
+            "qiyas": "끼야스",
+            "extension": {
+              "istihsan": "istiḥsān · 이스티흐산",
+              "istishab": "istiṣḥāb · 이스티스하브",
+              "maslahaMursalah": "maṣlaḥa mursalah · 공익",
+              "urf": "ʿurf · 관습"
+            }
+          },
+          "mencian-sprouts": {
+            "ceyin": "측은 惻隱 cèyǐn",
+            "xiuwu": "수오 羞惡 xiūwù",
+            "cirang": "사양 辭讓 círàng",
+            "shifei": "시비 是非 shìfēi",
+            "xin": "신 信 xìn"
+          },
+          "mignolo-pluriversal": {
+            "epistemicDisobedience": "인식적 불복종",
+            "borderThinking": "경계 사유",
+            "delinking": "디링킹",
+            "decolonialGnosis": "탈식민적 그노시스",
+            "pluriversalWorld": "플루리버설 세계",
+            "modernityTotality": "근대성 / 총체성"
+          },
+          "mohist-san-biao": {
+            "ben": "본 本 běn · 근본",
+            "yuan": "원 原 yuán · 유래",
+            "yong": "용 用 yòng · 효용"
+          },
+          "pardes": {
+            "peshat": "peshat · 문자적 의미",
+            "remez": "remez · 암시",
+            "derash": "derash · 해석",
+            "sod": "sod · 비의"
+          },
+          "peirce": {
+            "firstness": "제일성",
+            "secondness": "제이성",
+            "thirdness": "제삼성"
+          },
+          "polanyi": {
+            "tacit": "암묵",
+            "explicit": "명시"
+          },
+          "pramana": {
+            "pratyaksha": "pratyakṣa · 현량(現量)",
+            "anumana": "anumāna · 비량(比量)",
+            "upamana": "upamāna · 비유량",
+            "shabda": "śabda · 성언량(聖言量)"
+          },
+          "shatibi-maqasid": {
+            "tier": {
+              "daruriyyat": "ḍarūriyyāt · 필수",
+              "hajiyyat": "ḥājiyyāt · 필요",
+              "tahsiniyyat": "taḥsīniyyāt · 보완"
+            },
+            "essential": {
+              "din": "dīn · 종교",
+              "nafs": "nafs · 생명",
+              "aql": "ʿaql · 이성",
+              "nasl": "nasl · 후손",
+              "mal": "māl · 재산"
+            }
+          },
+          "talmudic-middot": {
+            "kalVaChomer": "1 · kal va-chomer · 약함에서 강함으로",
+            "gezeraShava": "2 · gezera shava · 단어 유추",
+            "binyanAv1": "3 · binyan av(1절에서)",
+            "binyanAv2": "4 · binyan av(2절에서)",
+            "kelalUPerat": "5 · kelal u-perat · 총칙과 부분",
+            "peratUKelal": "6 · perat u-kelal · 부분과 총칙",
+            "kpk": "7 · 총-부-총",
+            "specialPurpose": "8 · 특별 목적",
+            "extractedLighter": "9 · 추출(더 가벼움)",
+            "extractedDifferent": "10 · 추출(다름)",
+            "fromContext": "11 · 문맥에서",
+            "fromEnd": "12 · 끝에서",
+            "reconciliation": "13 · 조화"
+          },
+          "wang-yangming": {
+            "zhi": "지 知 zhī · 앎",
+            "xing": "행 行 xíng · 행함",
+            "liangzhi": "양지 良知 liángzhī"
+          }
         }
+      },
+      "facet": {
+        "folder": "폴더",
+        "library": "라이브러리",
+        "stratum": "층위",
+        "confidence": "확신",
+        "stage": "단계",
+        "provenance": "출처"
+      },
+      "facetSidebar": {
+        "title": "패싯",
+        "expandAriaLabel": "패싯 필터 펼치기",
+        "filtersTooltip": "필터",
+        "ariaLabel": "Sight 패싯 필터",
+        "collapseAriaLabel": "패싯 필터 접기",
+        "collapseTooltip": "접기"
+      },
+      "confidence": {
+        "hypothesis": "가설",
+        "evidence": "증거",
+        "established": "확립됨",
+        "contested": "이견 있음"
+      },
+      "stage": {
+        "spark": "불꽃",
+        "birth": "탄생",
+        "growth": "성장",
+        "maturity": "성숙",
+        "dormancy": "휴면",
+        "renewal": "갱신",
+        "archival": "보관",
+        "established": "확립됨",
+        "fresh": "신선함",
+        "growing": "성장 중",
+        "at-risk": "위험",
+        "dormant": "휴면 중"
+      },
+      "header": {
+        "subtitle": "v6.3 — 전통(1단계)",
+        "extendedBadge": "확장",
+        "extendedTooltip": "확장 보기 켜짐 — Sight를 열 때마다 미니가 기본으로 표시됩니다. Cmd-Shift-D로 전환.",
+        "filterCountTooltip": "필터링된 노트 / 전체 노트",
+        "filterCountSuffix": "개의 노트",
+        "resetViewLabel": "보기 재설정",
+        "resetViewTooltip": "기본 줌의 앵커 돔으로 돌아가기(보기 재설정)"
       }
     }
   },

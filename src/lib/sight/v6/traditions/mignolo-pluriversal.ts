@@ -45,12 +45,13 @@ import type {
 	RelationalSpec,
 } from '../types';
 
+// MIG-026 §λ-fix-3 — i18n keys; English values live in src/lib/i18n/en.json
 const CLUSTER_LABELS = [
-	'epistemic disobedience',
-	'border thinking',
-	'delinking',
-	'decolonial gnosis',
-	'pluriversal world',
+	'sight.v6.tradition.canvas.mignolo-pluriversal.epistemicDisobedience',
+	'sight.v6.tradition.canvas.mignolo-pluriversal.borderThinking',
+	'sight.v6.tradition.canvas.mignolo-pluriversal.delinking',
+	'sight.v6.tradition.canvas.mignolo-pluriversal.decolonialGnosis',
+	'sight.v6.tradition.canvas.mignolo-pluriversal.pluriversalWorld',
 ];
 
 const N_CLUSTERS = CLUSTER_LABELS.length; // 5
@@ -106,7 +107,7 @@ export const mignoloPluriversal: TraditionModule = {
 	relationalSpec: (_layout: TraditionLayout): RelationalSpec => {
 		return {
 			variant: 'hub-and-spoke',
-			hubLabel: 'modernity / totality',
+			hubLabel: 'sight.v6.tradition.canvas.mignolo-pluriversal.modernityTotality',
 			clusters: CLUSTER_LABELS.map((label) => ({ label })),
 		};
 	},

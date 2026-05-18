@@ -1072,3 +1072,149 @@ Re-run Stage 2 from the §κ.2 test:
 
 Build kicked off for §κ.2-fix-1.
 
+
+═══════════════════════════════════════════════════════════════════════
+§λ-fix-3 / λ-fix-4 / λ-fix-5 — Sight v6 full canvas + chrome localization cascade
+═══════════════════════════════════════════════════════════════════════
+
+**Standing-Order driver.** Boss-test on 2026-05-18 surfaced that after
+§λ-fix-2 (chip dropdown localized), every other on-canvas + chrome
+string in Sight v6 was still in English when the active locale was
+Arabic. The Boss reiterated the Full Localization Standing Order:
+"When a user switches to their preferred language, the app should
+fully adapt to it. It means everything." Confirmed not a new rule —
+day-one principal. Direction: "Cascade through now (this session)" —
+ship λ-fix-3, λ-fix-4, λ-fix-5 in one session.
+
+Also surfaced: the Arabic مَسَادِر misspelling Eisa flagged in the
+manifest H1 ("Arabic equivalent for 'masdir' is 'مصادر' not
+'مسادر'"). Fixed inline as part of §λ-fix-5.
+
+### λ-fix-3 — Dome canvas labels
+
+Wired `_labelize(key) → $t(key)` end-to-end for every on-canvas
+text the anchor + mini-dome renderers emit. Five concrete pieces:
+
+1. **`anchor.ts`**: added `labelize` option to `renderAnchorDome`
+   (defaults to identity). Module-level `_labelize` state mirrors
+   the existing `_chrome` pattern so the dozens of draw helpers
+   (`drawSectorDividers`, `drawRingBoundaries`, `drawLadderSteps`,
+   `drawRelationalGraph`, `drawCyclicFlow`, `drawBinaryFlow*`,
+   `drawHorizontalBands`, `drawGradientFog`) translate without
+   needing a parameter added to every signature. Every `fillText`
+   call now goes through `_labelize`. Stratum labels resolve via
+   the existing `STRATUM_LABEL_KEYS` map at
+   `sight.v6.stratum.{foundation|working|connection|synthesis|edge-of-knowing}`.
+
+2. **`miniDome.ts`**: same `labelize` option + module-level
+   `_labelize`. Replaced hardcoded `channelTitle()` (returned
+   English strings) with `channelTitleKey()` (returns
+   `sight.v6.miniDome.title.<channel>` keys). Added a parallel
+   `PROVENANCE_SECTOR_LABEL_KEYS` array so the 5 sector wedges
+   (Self/Read/Heard/Reasoned/Tradition) translate while the bucket
+   identifiers stay literal (they're matched against Rust-side
+   `StarDerived.provenanceSector` data).
+
+3. **23 of 24 tradition modules** refactored to write i18n keys
+   in their label arrays (`QUADRANT_LABELS`, `ZONE_LABELS`,
+   `SECTOR_LABELS`, `CLUSTER_LABELS`, `STEP_LABELS`, `TIER_LABELS`,
+   `ESSENTIAL_LABELS`, `STAGE_LABELS`, `binaryFlowSpec.cellA/B/centerLabel`,
+   `gradientFog.centerLabel/edgeLabel`, `relationalSpec.hubLabel`,
+   `ringBoundaries[].label`, plus masadir's `EXTENSION_CHIP_LABELS`).
+   aristotelian is the 24th — no on-canvas labels, audited only.
+   First spawn-an-agent attempt false-reported success without
+   actually editing the .ts files (verified by re-read); did it
+   manually via 23 Edits. Total: 110 new canvas keys.
+
+4. **`SightV6.svelte`**: `renderAnchorDome` call now passes
+   `labelize: $t` and `locale: $locale ?? 'en'` (was
+   `navigator.language` — leaked browser locale into calendar
+   month rendering). New `$effect(() => { void $locale; …paint() })`
+   for repaint-on-locale-change. Extension chip render wrapped in
+   `$t(chipKey)` plus `dir="auto"` for natural directionality of
+   Arabic chip text.
+
+5. **`MiniDome.svelte`**: same `labelize: $t` wiring + same
+   `$locale` repaint effect.
+
+### λ-fix-4 — Facet sidebar + header chrome + RTL count-spacing
+
+`facetSidebar.svelte`: all hardcoded strings (FACETS title, Filters
+tooltip, expand/collapse aria-labels, sidebar aria-label) now flow
+through `$t`. Per-row label + count now use `{$t(facet.label)}` and
+`{$t(cat.label)}` — `facets.ts` was refactored in parallel so that
+`facet.label` and the static category labels (Foundation, Hypothesis,
+Self, Established etc.) emit i18n keys, while user-domain values
+(folder paths, library names, custom stage names) stay as literals
+(the `$t` fallback chain handles unknown keys by returning them
+unchanged).
+
+**`facet-cat-label` RTL bug fix**: `padding-right: 6px` →
+`padding-inline-end: 6px`. The old physical-direction padding kept
+the gap on the right side of the label, which in Arabic put the
+count flush against the label — that's the "549Biology" mash the
+Boss screenshot showed. Logical property flips correctly in RTL.
+
+`SightV6.svelte` header chrome: title, subtitle ("v6.3 — Traditions
+(Phase 1)"), EXTENDED badge + tooltip, filter count suffix ("notes"),
+Reset View button label + tooltip — all wrapped in `$t`.
+
+### λ-fix-5 — Arabic masadir manifest title fix
+
+`docs/traditions/ar/masadir.md` H1: `مَسَادِر` → `المصادر`.
+Per Eisa: "Arabic equivalent for 'masdir' is 'مصادر' not 'مسادر'."
+The diacritical-marked form was an AI-translation error; corrected
+to the canonical Arabic word for "sources" (with definite article
+ال matching the manifest's voice). Other ar manifest titles
+audited — مَسَادِر was the canonical violation; remaining ones
+flagged for §λ-fix-6 polish.
+
+### i18n keys added
+
+en.json + ar.json got the full sight.v6 canvas+facet+header subtree:
+- 5 stratum labels
+- 5 mini-dome titles + 5 provenance sector labels
+- 110 per-tradition canvas labels (23 traditions × 2–15 labels each)
+- 6 facet group names + 6 facet sidebar chrome strings
+- 4 confidence levels + 12 stage names (canonical Living Link 7 + Concept-Paper-v4.0 5)
+- 7 header chrome strings (subtitle, EXTENDED badge + tooltip, filter
+  count, Reset View label + tooltip, count suffix)
+
+Arabic translations curated for native quality, especially for the
+Arabic-tradition modules (masadir = القرآن/السنة/الإجماع/القياس +
+extension chips; shatibi-maqasid = ضروريات/حاجيات/تحسينيات + 5
+essentials; ibn-rushd-burhan = برهان/جدل/خطابة/شِعر; ibn-khaldun
+عمران = حضري/بدوي).
+
+### 13-locale backfill (in flight)
+
+Four parallel agents kicked off (RTL ME / CJK / European Romance+
+German / Russian+Hindi+Turkish) to populate the same sight.v6
+subtree in fa.json / he.json / ur.json / es.json / fr.json /
+de.json / pt.json / zh.json / ja.json / ko.json / ru.json /
+hi.json / tr.json. None of those 13 locales currently has ANY
+`sight` namespace, so the agents add the entire subtree under
+each. Each brief includes the Boss's Standing Order on
+native-equivalent quality (no transliteration when a native word
+exists) and instructs preservation of original-script tradition
+terms with native gloss after `·` (mirroring how ar.json handles
+e.g. `pratyakṣa · الإدراك المباشر`).
+
+### NSIS build
+
+In flight; artifact will land at `src-tauri/target/release/bundle/nsis/`.
+
+### Files touched (manual edits this turn)
+
+| File | Change |
+|---|---|
+| `src/lib/sight/v6/anchor.ts` | wrapped remaining `fillText` calls with `_labelize` (drawHorizontalBands, drawBinaryFlowVertical, drawBinaryFlowConcentric) |
+| `src/lib/sight/v6/miniDome.ts` | `_labelize` module state, `channelTitleKey()`, `PROVENANCE_SECTOR_LABEL_KEYS`, labelize through fillText |
+| `src/lib/sight/v6/SightV6.svelte` | `labelize: $t` + `locale: $locale` to renderAnchorDome; $effect for `$locale` repaint; extension chip render via $t + dir="auto"; header chrome all-strings via $t |
+| `src/lib/sight/v6/MiniDome.svelte` | t/locale import; labelize: $t to renderMiniDome; $effect for $locale repaint |
+| `src/lib/sight/v6/traditions/*.ts` (23 files) | label fields → i18n keys |
+| `src/lib/sight/v6/facets.ts` | facet.label + static cat.label → i18n keys |
+| `src/lib/sight/v6/facetSidebar.svelte` | t import; all chrome strings via $t; RTL count-spacing fix (padding-inline-end) |
+| `src/lib/i18n/en.json` | added sight.v6.{stratum,miniDome,canvas,facet,facetSidebar,confidence,stage,header} |
+| `src/lib/i18n/ar.json` | same structure with native Arabic |
+| `docs/traditions/ar/masadir.md` | H1 مَسَادِر → المصادر |

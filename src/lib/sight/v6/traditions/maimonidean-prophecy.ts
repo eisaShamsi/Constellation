@@ -50,18 +50,19 @@ import type {
 	LadderSpec,
 } from '../types';
 
+// MIG-026 §λ-fix-3 — i18n keys; English values live in src/lib/i18n/en.json
 const STEP_LABELS = [
-	'1 · ruaḥ ha-qodesh',
-	'2 · sleep vision',
-	'3 · daytime allegory',
-	'4 · voice in vision',
-	'5 · speaking person',
-	'6 · speaking angel',
-	'7 · speaking man-form',
-	'8 · allegory awake',
-	'9 · voice while awake',
-	'10 · man-form awake',
-	'11 · angel awake',
+	'sight.v6.tradition.canvas.maimonidean-prophecy.ruahHaQodesh',
+	'sight.v6.tradition.canvas.maimonidean-prophecy.sleepVision',
+	'sight.v6.tradition.canvas.maimonidean-prophecy.daytimeAllegory',
+	'sight.v6.tradition.canvas.maimonidean-prophecy.voiceInVision',
+	'sight.v6.tradition.canvas.maimonidean-prophecy.speakingPerson',
+	'sight.v6.tradition.canvas.maimonidean-prophecy.speakingAngel',
+	'sight.v6.tradition.canvas.maimonidean-prophecy.speakingManForm',
+	'sight.v6.tradition.canvas.maimonidean-prophecy.allegoryAwake',
+	'sight.v6.tradition.canvas.maimonidean-prophecy.voiceWhileAwake',
+	'sight.v6.tradition.canvas.maimonidean-prophecy.manFormAwake',
+	'sight.v6.tradition.canvas.maimonidean-prophecy.angelAwake',
 ];
 
 const N_STEPS = STEP_LABELS.length; // 11

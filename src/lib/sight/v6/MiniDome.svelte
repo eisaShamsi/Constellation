@@ -18,6 +18,10 @@
 	import type { DomeLayout } from './anchor';
 	import { readChromePalette } from './dome';
 	import { appSettings } from '$lib/libraries/store';
+	// MIG-026 §λ-fix-3 — mini-dome canvas labels (channel titles +
+	// provenance sector labels) go through $t so they match the active
+	// interface language. Same wiring pattern as SightV6.svelte.
+	import { t, locale } from '$lib/i18n';
 
 	let {
 		channel,
@@ -149,6 +153,10 @@
 			matchedPaths,
 			densityMode,
 			chromePalette,
+			// MIG-026 §λ-fix-3 — i18n resolver for channel title +
+			// provenance sector labels. Locale-change repaint is wired
+			// via the $effect below ($locale tracked → paint).
+			labelize: $t,
 		});
 	}
 
@@ -160,6 +168,14 @@
 	$effect(() => {
 		void $appSettings.activeThemeId;
 		void $appSettings.colorScheme;
+		untrack(() => paint());
+	});
+
+	// MIG-026 §λ-fix-3 — repaint when the active interface locale
+	// changes so the channel title + provenance sector labels update
+	// immediately. Same pattern as SightV6's locale $effect.
+	$effect(() => {
+		void $locale;
 		untrack(() => paint());
 	});
 

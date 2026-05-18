@@ -48,11 +48,12 @@ type HusserlRegion = 0 | 1 | 2 | 3; // formal / material-nature / animal-nature 
  *  0.25-0.50; zone 2 in 0.50-0.75; zone 3 in 0.75-1.00. */
 const RING_BOUNDARIES_FRAC = [0.25, 0.50, 0.75];
 
+// MIG-026 §λ-fix-3 — i18n keys; English values live in src/lib/i18n/en.json
 const ZONE_LABELS: Record<HusserlRegion, string> = {
-	0: 'formal ontology',
-	1: 'material nature',
-	2: 'animal nature',
-	3: 'spirit · Geist',
+	0: 'sight.v6.tradition.canvas.husserl.formal',
+	1: 'sight.v6.tradition.canvas.husserl.materialNature',
+	2: 'sight.v6.tradition.canvas.husserl.animalNature',
+	3: 'sight.v6.tradition.canvas.husserl.spirit',
 };
 
 function pathHash01(path: string): number {

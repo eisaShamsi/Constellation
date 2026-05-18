@@ -82,11 +82,12 @@ const QUADRANT_START_ANGLES: Record<PramanaKind, number> = {
 /** Display labels rendered in the dome chrome at each quadrant's wedge
  *  center per Concept Paper §4.1.2. Sanskrit transliteration with proper
  *  diacritics. */
+// MIG-026 §λ-fix-3 — i18n keys; English values live in src/lib/i18n/en.json
 const QUADRANT_LABELS: Record<PramanaKind, string> = {
-	pratyaksha: 'pratyakṣa',
-	anumana: 'anumāna',
-	upamana: 'upamāna',
-	shabda: 'śabda',
+	pratyaksha: 'sight.v6.tradition.canvas.pramana.pratyaksha',
+	anumana: 'sight.v6.tradition.canvas.pramana.anumana',
+	upamana: 'sight.v6.tradition.canvas.pramana.upamana',
+	shabda: 'sight.v6.tradition.canvas.pramana.shabda',
 };
 
 const QUADRANT_ORDER: PramanaKind[] = ['pratyaksha', 'anumana', 'upamana', 'shabda'];

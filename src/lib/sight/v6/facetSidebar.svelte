@@ -18,6 +18,14 @@
 <script lang="ts">
 	import type { Facet, FacetId } from './types';
 	import type { FacetFilters } from './facets';
+	// MIG-026 §λ-fix-4 — facet sidebar labels (FACETS title, facet
+	// group names, category names like Foundation/Hypothesis/Self/
+	// Established) all flow through $t. facets.ts now writes i18n keys
+	// in label fields; $t resolves them per active locale and falls
+	// back to the literal string for unknown keys (which is what
+	// folder/library/custom-stage names are — user data passes through
+	// unchanged).
+	import { t } from '$lib/i18n';
 
 	let {
 		facets,
@@ -56,28 +64,28 @@
 		type="button"
 		class="facet-tab"
 		onclick={onExpandToggle}
-		aria-label="Expand facet filters"
-		title="Filters"
+		aria-label={$t('sight.v6.facetSidebar.expandAriaLabel')}
+		title={$t('sight.v6.facetSidebar.filtersTooltip')}
 	>
 		<span class="facet-tab-glyph" aria-hidden="true">▶</span>
 	</button>
 {:else}
-	<aside class="facet-sidebar" aria-label="Sight facet filters">
+	<aside class="facet-sidebar" aria-label={$t('sight.v6.facetSidebar.ariaLabel')}>
 		<div class="facet-sidebar-header">
-			<span class="facet-sidebar-title">FACETS</span>
+			<span class="facet-sidebar-title">{$t('sight.v6.facetSidebar.title')}</span>
 			<button
 				type="button"
 				class="facet-sidebar-collapse"
 				onclick={onExpandToggle}
-				aria-label="Collapse facet filters"
-				title="Collapse"
+				aria-label={$t('sight.v6.facetSidebar.collapseAriaLabel')}
+				title={$t('sight.v6.facetSidebar.collapseTooltip')}
 			>◀</button>
 		</div>
 
 		<div class="facet-sidebar-body">
 			{#each facets as facet (facet.id)}
 				<div class="facet-group">
-					<div class="facet-group-label">▼ {facet.label}</div>
+					<div class="facet-group-label" dir="auto">▼ {$t(facet.label)}</div>
 					<ul class="facet-cat-list">
 						{#each facet.categories as cat (cat.id)}
 							<li>
@@ -87,9 +95,9 @@
 									class:active={isActive(facet.id, cat.id)}
 									class:is-hovered={isHovered(facet.id, cat.id)}
 									onclick={() => onToggle(facet.id, cat.id)}
-									title={`${facet.label}: ${cat.label} (${cat.count})`}
+									title={`${$t(facet.label)}: ${$t(cat.label)} (${cat.count})`}
 								>
-									<span class="facet-cat-label">{cat.label}</span>
+									<span class="facet-cat-label" dir="auto">{$t(cat.label)}</span>
 									<span class="facet-cat-count">{cat.count.toLocaleString()}</span>
 								</button>
 							</li>
@@ -237,7 +245,13 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
-		padding-right: 6px;
+		/* MIG-026 §λ-fix-4 — logical property so the gap between the
+		   label and the count flips correctly in RTL. The old
+		   padding-right kept the gap on the right side of the label,
+		   which in Arabic put the count flush against the label
+		   producing the "549Biology" mash that the Boss flagged on
+		   2026-05-18. */
+		padding-inline-end: 6px;
 	}
 	.facet-cat-count {
 		flex: 0 0 auto;
