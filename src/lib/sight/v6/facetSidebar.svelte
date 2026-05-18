@@ -136,6 +136,14 @@
 		font-size: 10px;
 		letter-spacing: 1px;
 	}
+	/* MIG-026 §λ-fix-4b — mirror the expand-arrow chevron in RTL.
+	   In LTR the sidebar lives at the left edge and `▶` points into
+	   the expand direction. In RTL the sidebar lives at the right
+	   edge so the same semantic ("click to expand") points the other
+	   way. scaleX(-1) flips the Unicode triangle glyph in-place. */
+	:global([dir="rtl"]) .facet-tab-glyph {
+		transform: scaleX(-1);
+	}
 
 	/* ── Expanded panel ───────────────────────────────────────── */
 	.facet-sidebar {
@@ -174,6 +182,13 @@
 		line-height: 1;
 	}
 	.facet-sidebar-collapse:hover { color: var(--text-muted, #a0aabe); }
+	/* MIG-026 §λ-fix-4b — same mirror logic for the collapse chevron.
+	   In LTR `◀` points back toward the left edge (where the sidebar
+	   collapses to). In RTL the sidebar collapses to the right edge,
+	   so the same semantic should point right; flip the glyph. */
+	:global([dir="rtl"]) .facet-sidebar-collapse {
+		transform: scaleX(-1);
+	}
 
 	.facet-sidebar-body {
 		flex: 1 1 auto;
