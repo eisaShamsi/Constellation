@@ -238,12 +238,17 @@
 			case 'binary-flow':
 			case 'relational':
 			case 'gradient':
-				// §θ-fix-1 (Eisa Boss test 2026-05-17): 'gradient' added
-				// to the +2 tier per "bump the star's size by 2px" for
-				// Polanyi. Polanyi doesn't redistribute stars (identity
-				// remap — stars stay in their Aristotelian cluster) but
-				// the fog overlay reduces visibility; +2 px compensates
-				// so individual stars in the tacit zone remain readable.
+			case 'sectoral':
+				// §θ-fix-2 (Eisa Boss test 2026-05-18): 'sectoral' added
+				// to the +2 tier per "bump the stars by 2px, raise the
+				// opacity" for ALL sectoral traditions (Aristotelian +
+				// pramāṇa + masādir + Peirce + Habermas + Longino +
+				// Mencian sprouts + Korean Sŏngnihak + Akan Wiredu).
+				// The opacity boost happens via BODY_OPACITY_MULT raised
+				// 0.7 → 1.0 in anchor.ts (affects all traditions); the
+				// size boost is per-shape here.
+				// §θ-fix-1: 'gradient' (Polanyi) — fog overlay reduces
+				// visibility, +2 px compensates.
 				return 2;
 			case 'cyclic-flow':
 			case 'rings':

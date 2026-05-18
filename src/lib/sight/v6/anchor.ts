@@ -1490,10 +1490,17 @@ const ZOOM_MAX_FOR_SIZING = 8;                            // mirrors ZOOM_MAX in
 const BASE_STAR_RADIUS = 2.5 / ZOOM_MAX_FOR_SIZING;       // 0.3125 → 5 px diameter @ 8× zoom
 const TOP_DECILE_RADIUS = BASE_STAR_RADIUS * 1.32;        // ~0.41 → 6.6 px @ 8× (+32% delta)
 const PIP_RADIUS = BASE_STAR_RADIUS * 0.6;                // ~0.19 → 3 px @ 8× (60% of body)
-// Per-star body opacity multiplier. Bumped from 0.55 (cycle-2/3)
-// to 0.7 because smaller nodes need more per-node alpha to remain
+// Per-star body opacity multiplier. Bumped from 0.55 (cycle-2/3) to
+// 0.7 because smaller nodes need more per-node alpha to remain
 // visible in sparse areas at default zoom.
-const BODY_OPACITY_MULT = 0.7;
+// §θ-fix-2 (Eisa Boss test 2026-05-18): 0.7 → 1.0 per "raise the
+// opacity" across all sectoral traditions. With the multiplier at
+// 1.0, per-star alpha equals confidenceAlpha directly (e.g., 0.45
+// for default-confidence stars), making individual dots noticeably
+// more visible. Aristotelian's dense Connection-band cluster becomes
+// brighter (slight density-blob risk) but Eisa explicitly asked for
+// this treatment for Aristotelian alongside the other sectorals.
+const BODY_OPACITY_MULT = 1.0;
 
 function drawStars(
 	ctx: CanvasRenderingContext2D,
