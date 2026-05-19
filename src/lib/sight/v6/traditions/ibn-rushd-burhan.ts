@@ -84,8 +84,19 @@ function pathHash01Alt(path: string): number {
  *  this unconditionally returns 3 (shiʿr / outermost). Per-note
  *  opt-in ships as a §ε.1-fix-N follow-up.
  */
-function burhanKindOf(_row: LayoutCacheRow): BurhanKind {
-	return 3;
+function burhanKindOf(row: LayoutCacheRow): BurhanKind {
+	// MIG-029 §ν.3 (2026-05-19) — read from frontmatter `burhan_kind`
+	// via row.burhanKind. Allowed values: 'burhan' / 'jadal' / 'khataba'
+	// / 'shir' mapped to ring indices 0..3 respectively. Falls back to
+	// 3 (shiʿr — outermost, lowest demonstrative force per Plan §7.1
+	// default) when absent or invalid.
+	switch (row.burhanKind) {
+		case 'burhan':  return 0;
+		case 'jadal':   return 1;
+		case 'khataba': return 2;
+		case 'shir':    return 3;
+		default:        return 3;
+	}
 }
 
 export const ibnRushdBurhan: TraditionModule = {

@@ -102,13 +102,22 @@ function pathHash01Alt(path: string): number {
  *  frontmatter once the Rust-side extraction lands as a §γ-fix-N.
  */
 function mohistZoneOf(row: LayoutCacheRow): MohistZone {
-	// TODO post-§γ: when LayoutCacheRow gains `mohistZone: string | null`,
-	// switch on the value here. For now, hash-bucket into 3 zones.
-	const bucket = Math.floor(pathHash01(row.notePath) * 3);
-	// Defensive clamp — pathHash01 returns [0, 1) so * 3 yields [0, 3)
-	// and floor yields 0/1/2; the clamp guards against exact-1.0 edge
-	// cases from any future hash impl change.
-	return (bucket >= 2 ? 2 : (bucket <= 0 ? 0 : 1)) as MohistZone;
+	// MIG-029 §ν.3 (2026-05-19) — read from frontmatter `mohist_zone`
+	// via row.mohistZone. Allowed values: 'ben' / 'yuan' / 'yong'
+	// mapped to band indices 0/1/2 respectively. Falls back to
+	// hash-bucketing across the 3 zones when absent or invalid
+	// (preserves pre-MIG-029 behavior for un-opted-in notes — better
+	// than collapsing all notes into a single band, which would make
+	// the 3-band Mohist visualization analytically inert).
+	switch (row.mohistZone) {
+		case 'ben':  return 0;
+		case 'yuan': return 1;
+		case 'yong': return 2;
+		default: {
+			const bucket = Math.floor(pathHash01(row.notePath) * 3);
+			return (bucket >= 2 ? 2 : (bucket <= 0 ? 0 : 1)) as MohistZone;
+		}
+	}
 }
 
 export const mohistSanBiao: TraditionModule = {

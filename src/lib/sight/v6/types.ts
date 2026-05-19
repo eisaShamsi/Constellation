@@ -46,6 +46,23 @@ export interface LayoutCacheRow {
 	linkOutCount: number;
 	frontmatterKeyCount: number;
 	bodyChars: number;
+	// MIG-029 §ν.1 (2026-05-19) — Per-note tradition-kind frontmatter
+	// fields. Null when the frontmatter key is absent; the per-tradition
+	// renderer falls back to its default bucket. Invalid values fall to
+	// default at the renderer's switch-default. Field/value table:
+	// docs/User Manual.md "Per-note tradition fields" chapter.
+	// Type definitions for the allowed value sets per field live in the
+	// per-tradition module (`MasadirSource`, `PramanaKind`, etc.) and
+	// are narrowed at read time via a switch.
+	masadirSource: string | null;
+	pramanaKind: string | null;
+	burhanKind: string | null;
+	pardesLevel: string | null;
+	peirceCategory: string | null;
+	habermasInterest: string | null;
+	mencianSprout: string | null;
+	mohistZone: string | null;
+	songnihakCell: string | null;
 }
 
 /**

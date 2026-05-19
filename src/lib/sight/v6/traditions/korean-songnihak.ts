@@ -68,10 +68,19 @@ function pathHash01(path: string): number {
 	return ((h >>> 0) & 0xffff) / 0xffff;
 }
 
-function songnihakCellOf(_row: LayoutCacheRow): SongnihakCell {
-	// TODO post-§η.3: read from frontmatter `songnihak_cell`.
-	// Default to lǐ · 四端 (T'oegye's classical position).
-	return 'li-sa';
+function songnihakCellOf(row: LayoutCacheRow): SongnihakCell {
+	// MIG-029 §ν.3 (2026-05-19) — read from frontmatter
+	// `songnihak_cell` via row.songnihakCell. Falls back to
+	// 'li-sa' (T'oegye's classical position) when absent or invalid.
+	switch (row.songnihakCell) {
+		case 'li-sa':
+		case 'li-chil':
+		case 'qi-chil':
+		case 'qi-sa':
+			return row.songnihakCell;
+		default:
+			return 'li-sa';
+	}
 }
 
 export const koreanSongnihak: TraditionModule = {

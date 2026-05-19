@@ -496,6 +496,48 @@ Klicken Sie auf das Rastersymbol, um die Seitenleiste zu oeffnen. Zeigt: Univers
 
 Zahnradsymbol: Passen Sie Linkstrichstaerke, Deckkraft und Pfeilgroesse an. Einstellungen bleiben sitzungsuebergreifend erhalten.
 
+### 8a. Tradition-Felder pro Notiz (MIG-029)
+
+Der Tradition-Chip oben links in Sight ermoeglicht es Ihnen, die Kuppel durch 24 wissenschaftliche Traditionen in 10 epistemischen Familien neu zu rahmen. Fuer neun dieser Traditionen (die mit sektor-, konzentrischen oder leiterfoermigen Formen) kann jede Notiz **explizit klassifiziert** werden ueber ein Feld im Frontmatter. Notizen ohne dieses Feld landen in einem sinnvollen, traditions-spezifischen Standard-Bucket; Notizen MIT dem Feld landen im Bucket, den Sie benannt haben.
+
+Fuegen Sie das Feld zum YAML-Frontmatter einer Notiz hinzu:
+
+```yaml
+---
+masadir_source: sunnah
+---
+```
+
+Wechseln Sie zum Chip dieser Tradition → Ihre Notiz landet in deren benanntem Sektor statt im Standard.
+
+**Erlaubte Felder und Werte:**
+
+| Tradition | Frontmatter-Feld | Erlaubte Werte | Standard bei Abwesenheit |
+|---|---|---|---|
+| **masādir** (sunnitisches uṣūl al-fiqh) | `masadir_source` | `quran` / `sunnah` / `ijma` / `qiyas` | `quran` |
+| **pramāṇa** (indisches Nyāya) | `pramana_kind` | `pratyaksha` / `anumana` / `upamana` / `shabda` | `pratyaksha` |
+| **Ibn Rushd burhān** | `burhan_kind` | `burhan` / `jadal` / `khataba` / `shir` | `shir` (aeusserster Ring) |
+| **PaRDeS** (juedische Hermeneutik) | `pardes_level` | `peshat` / `remez` / `derash` / `sod` | `peshat` |
+| **Peirce** (3 phaneroskopische Kategorien) | `peirce_category` | `firstness` / `secondness` / `thirdness` | `firstness` |
+| **Habermas** (3 Erkenntnisinteressen) | `habermas_interest` | `technical` / `practical` / `emancipatory` | `technical` |
+| **Menzianische Keime** (4 moralische Keime) | `mencian_sprout` | `ceyin` / `xiuwu` / `cirang` / `shifei` | `ceyin` |
+| **Mohistische sān biǎo** (3 Standards) | `mohist_zone` | `ben` / `yuan` / `yong` | per Hash auf 3 Zonen verteilt |
+| **Koreanisches Sŏngnihak** (Vier-Sieben-Debatte) | `songnihak_cell` | `li-sa` / `li-chil` / `qi-chil` / `qi-sa` | `li-sa` |
+
+**Verhalten:**
+- Wenn Sie einen Wert schreiben, den die Tradition nicht erkennt (Tippfehler oder erfunden), landet die Notiz im Standard-Bucket. Kein Absturz, kein Rendering-Fehler.
+- Frontmatter-Aenderungen propagieren automatisch — speichern Sie die Notiz → das naechste Rendern der Kuppel spiegelt die Aenderung wider.
+- Dasselbe Feld wird nur von seiner benannten Tradition gelesen. `masadir_source: sunnah` auf einer Notiz hat keinen Effekt, wenn Sie zu PaRDeS oder Peirce wechseln — jede Tradition liest ihr eigenes Feld unabhaengig.
+- Dies ist der explizitste Weg, die raeumliche Grammatik der Kuppel zu kontrollieren. Ohne diese Felder ist die Geometrie korrekt, aber jede Notiz landet standardmaessig im selben Bucket; mit ihnen wird der Chip analytisch aussagekraeftig.
+
+**Traditionen ohne Felder pro Notiz** (bucketisieren derzeit alle Sterne mit anderen Mitteln — Ordner / Bibliothek / Hash):
+
+- Aristotelisch (Standard, keine Neuzuordnung)
+- Polanyi (Gradienten-Nebel; keine Sektorisierung)
+- Husserl, Longino, Shāṭibī maqāṣid, Maimonidische Prophetie, Talmudische 13 middot, Wang Yangming, Mignolo pluriversal, Dussel Transmoderne, Maldonado-Torres, Akan Wiredu, Ibn Khaldūn ʿumrān, Ibuanyidanda
+
+(Zukuenftige Migrationen koennen Frontmatter-Felder pro Notiz fuer diese hinzufuegen, sobald Nutzerbedarf aufkommt.)
+
 ---
 
 ## 9. Zweiter Bildschirm

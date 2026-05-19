@@ -115,11 +115,20 @@ const EXTENSION_CHIP_LABELS: readonly string[] = [
  *  unconditionally returns `quran`. The user can later opt notes into
  *  sunnah / ijmāʿ / qiyās by adding `masadir_source: sunnah` (etc.) to
  *  frontmatter, once the Rust-side extraction ships. */
-function masadirSourceOf(_row: LayoutCacheRow): MasadirSource {
-	// TODO post-§C.4: when LayoutCacheRow gains `masadirSource: string | null`,
-	// switch on the value here. For now, all notes default to Qur'an
-	// per Plan verbatim.
-	return 'quran';
+function masadirSourceOf(row: LayoutCacheRow): MasadirSource {
+	// MIG-029 §ν.3 (2026-05-19) — read from frontmatter `masadir_source`
+	// via the layout-cache row's `masadirSource` field. Falls back to
+	// `quran` (Plan §C.4 default) when absent or invalid. Defensive
+	// switch keeps unknown values out of the renderer's quadrant math.
+	switch (row.masadirSource) {
+		case 'quran':
+		case 'sunnah':
+		case 'ijma':
+		case 'qiyas':
+			return row.masadirSource;
+		default:
+			return 'quran';
+	}
 }
 
 /** FNV-1a 32-bit hash → normalized [0, 1). Same as pramana.ts's

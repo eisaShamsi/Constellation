@@ -75,10 +75,18 @@ function pathHash01Alt(path: string): number {
 	return (((h >>> 16) & 0xffff)) / 0xffff;
 }
 
-function pardesLevelOf(_row: LayoutCacheRow): PardesLevel {
-	// TODO post-§ζ.1: read from frontmatter `pardes_level`.
-	// Default to peshat (innermost, literal foundation).
-	return 0;
+function pardesLevelOf(row: LayoutCacheRow): PardesLevel {
+	// MIG-029 §ν.3 (2026-05-19) — read from frontmatter `pardes_level`
+	// via row.pardesLevel. Allowed values: 'peshat' / 'remez' / 'derash'
+	// / 'sod' mapped to ring indices 0..3 respectively. Falls back to
+	// peshat (innermost, literal foundation) when absent or invalid.
+	switch (row.pardesLevel) {
+		case 'peshat': return 0;
+		case 'remez':  return 1;
+		case 'derash': return 2;
+		case 'sod':    return 3;
+		default:       return 0;
+	}
 }
 
 export const pardes: TraditionModule = {

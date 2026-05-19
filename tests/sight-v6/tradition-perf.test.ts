@@ -42,6 +42,17 @@ function syntheticUniverse(n: number): LayoutCacheRow[] {
 			linkOutCount: i % 13,
 			frontmatterKeyCount: i % 5,
 			bodyChars: 100 + (i % 200),
+			// MIG-029 §ν.1: tradition-kind frontmatter fields null →
+			// per-tradition default bucket (preserves pre-MIG-029 behavior).
+			masadirSource: null,
+			pramanaKind: null,
+			burhanKind: null,
+			pardesLevel: null,
+			peirceCategory: null,
+			habermasInterest: null,
+			mencianSprout: null,
+			mohistZone: null,
+			songnihakCell: null,
 		});
 	}
 	return out;

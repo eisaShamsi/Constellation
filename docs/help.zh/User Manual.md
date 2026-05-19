@@ -496,6 +496,48 @@ Constellation Sight 将您的整个知识系统可视化为引力井图。它回
 
 齿轮图标：调整链接描边粗细、不透明度和箭头大小。设置在会话间持久保存。
 
+### 8a. 每篇笔记的传统字段（MIG-029）
+
+Sight 左上角的传统芯片让您能够通过分布于 10 个认知论族群中的 24 个学术传统来重新构建穹顶。对于其中 9 个传统（扇区式 / 同心圆式 / 阶梯式形状的传统），每篇笔记都可以通过 frontmatter 字段被**明确分类**。没有该字段的笔记会落入每个传统下合理的默认桶；带有该字段的笔记则会落入您所命名的桶中。
+
+将该字段添加到笔记的 YAML frontmatter 中：
+
+```yaml
+---
+masadir_source: sunnah
+---
+```
+
+切换到该传统的芯片 → 您的笔记将落入它的命名扇区，而非默认位置。
+
+**允许的字段及其值：**
+
+| 传统 | frontmatter 字段 | 允许的值 | 缺失时的默认值 |
+|---|---|---|---|
+| **马萨迪尔（masādir）**（逊尼派伊斯兰教法学原理 uṣūl al-fiqh） | `masadir_source` | `quran` / `sunnah` / `ijma` / `qiyas` | `quran` |
+| **量（pramāṇa）**（印度正理派 Nyāya） | `pramana_kind` | `pratyaksha` / `anumana` / `upamana` / `shabda` | `pratyaksha` |
+| **伊本·鲁世德的布尔汉（burhān）** | `burhan_kind` | `burhan` / `jadal` / `khataba` / `shir` | `shir`（最外环） |
+| **帕尔德斯（PaRDeS）**（犹太诠释学） | `pardes_level` | `peshat` / `remez` / `derash` / `sod` | `peshat` |
+| **皮尔斯**（3 种现象学范畴） | `peirce_category` | `firstness` / `secondness` / `thirdness` | `firstness` |
+| **哈贝马斯**（3 种知识旨趣） | `habermas_interest` | `technical` / `practical` / `emancipatory` | `technical` |
+| **孟子四端**（4 种道德萌芽） | `mencian_sprout` | `ceyin` / `xiuwu` / `cirang` / `shifei` | `ceyin` |
+| **墨家三表（sān biǎo）**（3 个标准） | `mohist_zone` | `ben` / `yuan` / `yong` | 用哈希分布到 3 个区域 |
+| **朝鲜性理学**（四七之辩） | `songnihak_cell` | `li-sa` / `li-chil` / `qi-chil` / `qi-sa` | `li-sa` |
+
+**行为：**
+- 如果您写入传统不识别的值（打字错误或编造的值），笔记将落入默认桶。无崩溃，无渲染故障。
+- frontmatter 的更改会自动传播 — 保存笔记 → 穹顶的下一次渲染将反映此更改。
+- 同一字段仅由其命名的传统读取。在笔记上设置 `masadir_source: sunnah` 在您切换到 PaRDeS 或皮尔斯时没有任何影响 — 每个传统独立读取其自己的字段。
+- 这是控制穹顶空间语法最明确的方式。没有这些字段，几何结构是正确的，但每篇笔记都默认落入同一个桶；有了它们，芯片才在分析意义上变得有意义。
+
+**没有每篇笔记字段的传统**（目前通过其他方式分桶所有星点 — 文件夹 / 库 / 哈希）：
+
+- 亚里士多德式（默认，无重新映射）
+- 波兰尼（渐变雾；无扇区化）
+- 胡塞尔、朗吉诺、沙提比的玛卡西德（maqāṣid）、迈蒙尼德式预言、塔木德 13 米多特（middot）、王阳明、米尼奥洛的多元宇宙性（pluriversal）、杜塞尔的超现代（transmodernity）、马尔多纳多-托雷斯、阿坎（维雷杜）、伊本·赫勒敦的乌姆兰（ʿumrān）、伊布安伊丹达
+
+（未来的迁移可能会随着用户需求的出现，为这些传统也添加每篇笔记的 frontmatter 字段。）
+
 ---
 
 ## 9. 第二屏幕

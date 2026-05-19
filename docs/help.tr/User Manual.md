@@ -496,6 +496,48 @@ Izgara simgesine tiklayarak yan cubugu acin. Gosterir: Evren Saglik puani (0-100
 
 Disli simgesi: baglanti cizgi kalinligini, opakligini ve ok boyutunu ayarlayin. Ayarlar oturumlar arasinda kalici olarak saklanir.
 
+### 8a. Not basina gelenek alanlari (MIG-029)
+
+Sight'in sol ust kosesindeki gelenek cipi, 10 epistemik aile icindeki 24 akademik gelenek araciligiyla kubbeyi yeniden cerceveletmenize olanak tanir. Bu geleneklerden dokuzu icin (sektoryel / es merkezli / merdiven sekilli olanlar), her not frontmatter alani araciligiyla **acikca siniflandirilabilir**. Alan icermeyen notlar, gelenege ozgu makul bir varsayilan kovaya duser; alani OLAN notlar ise sizin adlandirdiginiz kovaya duser.
+
+Notun YAML frontmatter'ina alani ekleyin:
+
+```yaml
+---
+masadir_source: sunnah
+---
+```
+
+O gelenegin cipine gecin → notunuz varsayilanin yerine adlandirilmis sektorune duser.
+
+**Izin verilen alanlar ve degerler:**
+
+| Gelenek | frontmatter alani | Izin verilen degerler | Yoklugunda varsayilan |
+|---|---|---|---|
+| **masādir (mesâdir)** (Sunni uṣūl al-fiqh) | `masadir_source` | `quran` / `sunnah` / `ijma` / `qiyas` | `quran` |
+| **pramāṇa** (Hint Nyāya) | `pramana_kind` | `pratyaksha` / `anumana` / `upamana` / `shabda` | `pratyaksha` |
+| **İbn Rüşd burhân** | `burhan_kind` | `burhan` / `jadal` / `khataba` / `shir` | `shir` (en dis halka) |
+| **PaRDeS** (Yahudi yorumbilim) | `pardes_level` | `peshat` / `remez` / `derash` / `sod` | `peshat` |
+| **Peirce** (3 faneroskopik kategori) | `peirce_category` | `firstness` / `secondness` / `thirdness` | `firstness` |
+| **Habermas** (3 bilgi ilgisi) | `habermas_interest` | `technical` / `practical` / `emancipatory` | `technical` |
+| **Mensiyusçu filizler** (4 ahlaki filiz) | `mencian_sprout` | `ceyin` / `xiuwu` / `cirang` / `shifei` | `ceyin` |
+| **Mohist sān biǎo** (3 standart) | `mohist_zone` | `ben` / `yuan` / `yong` | hash ile 3 bolgeye dagilmis |
+| **Kore Sŏngnihak** (Dort-Yedi tartismasi) | `songnihak_cell` | `li-sa` / `li-chil` / `qi-chil` / `qi-sa` | `li-sa` |
+
+**Davranis:**
+- Gelenek tarafindan taninmayan bir deger yazarsaniz (yazim hatasi veya uydurma), not varsayilan kovaya duser. Cokme yok, render hatasi yok.
+- Frontmatter degisiklikleri otomatik olarak yayilir — notu kaydedin → kubbenin bir sonraki render'i degisikligi yansitir.
+- Ayni alan sadece kendi adini tasiyan gelenek tarafindan okunur. Bir nota `masadir_source: sunnah` ayarlamak, PaRDeS veya Peirce'e gectiginizde hicbir etki yapmaz — her gelenek kendi alanini bagimsiz olarak okur.
+- Bu, kubbenin uzamsal gramerini kontrol etmenin en acik yoludur. Bu alanlar olmadan, geometri dogrudur ama her not ayni varsayilan kovaya duser; bu alanlarla, cip analitik olarak anlamli hale gelir.
+
+**Not basina alani olmayan gelenekler** (su anda diger araclarla tum yildizlari kovaliyor — klasor / kitaplik / hash):
+
+- Aristotelesçi (varsayilan, yeniden eslestirme yok)
+- Polanyi (gradyan sis; sektorlestirme yok)
+- Husserl, Longino, Şâtıbî maqāṣid, Maimonides nübüvveti, Talmudik 13 middot, Wang Yangming, Mignolo plüriversal, Dussel transmodernite, Maldonado-Torres, Akan Wiredu, İbn Haldun ʿumrân, Ibuanyidanda
+
+(Gelecekteki gocler, kullanici talebi belirginlestikce bu gelenekler icin de not basina frontmatter alanlari ekleyebilir.)
+
 ---
 
 ## 9. İkinci Ekran

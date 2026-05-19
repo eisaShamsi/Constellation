@@ -828,6 +828,48 @@ Click the **eye icon** in the dock at the left edge of Constellation. The anchor
 
 For the full reference — every visual element, every interaction nuance, density mode, the facet sidebar's 6 facet groups — see the in-app help topic **Constellation Sight** under Help → Knowledge Formulation.
 
+### 8a. Per-note tradition fields (MIG-029)
+
+The tradition chip in the top-left of Sight lets you re-frame the dome through 24 scholarly traditions across 10 epistemic families. For nine of those traditions (the sectoral / concentric / ladder shapes), each note can be **explicitly classified** via a frontmatter field. Notes without the field land in a sensible per-tradition default bucket; notes WITH the field land in the bucket you've named.
+
+Add the field to a note's YAML frontmatter:
+
+```yaml
+---
+masadir_source: sunnah
+---
+```
+
+Switch to that tradition's chip → your note lands in its named sector instead of the default.
+
+**Allowed fields and values:**
+
+| Tradition | Frontmatter field | Allowed values | Default if absent |
+|---|---|---|---|
+| **masādir** (Sunni uṣūl al-fiqh) | `masadir_source` | `quran` / `sunnah` / `ijma` / `qiyas` | `quran` |
+| **pramāṇa** (Indian Nyāya) | `pramana_kind` | `pratyaksha` / `anumana` / `upamana` / `shabda` | `pratyaksha` |
+| **Ibn Rushd burhān** | `burhan_kind` | `burhan` / `jadal` / `khataba` / `shir` | `shir` (outermost ring) |
+| **PaRDeS** (Jewish hermeneutics) | `pardes_level` | `peshat` / `remez` / `derash` / `sod` | `peshat` |
+| **Peirce** (3 phaneroscopic categories) | `peirce_category` | `firstness` / `secondness` / `thirdness` | `firstness` |
+| **Habermas** (3 knowledge interests) | `habermas_interest` | `technical` / `practical` / `emancipatory` | `technical` |
+| **Mencian sprouts** (4 moral sprouts) | `mencian_sprout` | `ceyin` / `xiuwu` / `cirang` / `shifei` | `ceyin` |
+| **Mohist sān biǎo** (3 standards) | `mohist_zone` | `ben` / `yuan` / `yong` | hash-bucketed across 3 zones |
+| **Korean Sŏngnihak** (Four-Seven debate) | `songnihak_cell` | `li-sa` / `li-chil` / `qi-chil` / `qi-sa` | `li-sa` |
+
+**Behavior:**
+- If you write a value the tradition doesn't recognize (typo or invented), the note lands in the default bucket. No crash, no rendering glitch.
+- Frontmatter changes propagate automatically — save the note → the dome's next render reflects the change.
+- The same field is read only by its named tradition. Setting `masadir_source: sunnah` on a note has no effect when you switch to PaRDeS or Peirce — each tradition reads its own field, independently.
+- This is the most explicit way to control the dome's spatial grammar. Without these fields, the geometry is correct but every note defaults to the same bucket; with them, the chip is analytically meaningful.
+
+**Traditions without per-note fields** (currently bucket all stars by other means — folder / library / hash):
+
+- Aristotelian (the default, no remap)
+- Polanyi (gradient fog; no sectoring)
+- Husserl, Longino, Shāṭibī maqāṣid, Maimonidean prophecy, Talmudic 13 middot, Wang Yangming, Mignolo pluriversal, Dussel transmodernity, Maldonado-Torres, Akan Wiredu, Ibn Khaldūn ʿumrān, Ibuanyidanda
+
+(Future MIGs may add per-note frontmatter fields for these as user demand surfaces.)
+
 ---
 
 ## 8b. Constellation Nervous System (CNS)

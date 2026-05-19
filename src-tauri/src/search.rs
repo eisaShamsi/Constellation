@@ -1550,6 +1550,11 @@ fn init_db(path: &Path) -> Result<Connection, String> {
         .map_err(|e| format!("Failed to create sight_v6_layout table (MIG-025 §A.2): {}", e))?;
     crate::sight_v6::ensure_sight_v6_invalidation_trigger(&conn)
         .map_err(|e| format!("Failed to create sight_v6_layout triggers (MIG-025 §A.2): {}", e))?;
+    // MIG-029 §ν.2 — idempotent ALTER TABLE for pre-MIG-029 databases
+    // (adds 9 nullable tradition-kind frontmatter columns if absent).
+    // Fresh installs created above already have them.
+    crate::sight_v6::ensure_sight_v6_layout_tradition_columns(&conn)
+        .map_err(|e| format!("Failed to add MIG-029 tradition columns: {}", e))?;
     // Missing-index fix for the backfill's contested-detection EXISTS
     // subquery + any future inbound-link query (Layer 2 diagnostic
     // already plans to read this in MIG-025). idx_link_target on

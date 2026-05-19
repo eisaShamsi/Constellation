@@ -496,6 +496,48 @@ Cliquez sur l'icone de grille pour ouvrir la barre laterale. Affiche : score de 
 
 Icone d'engrenage : ajustez l'epaisseur du trait de lien, l'opacite et la taille des fleches. Les parametres persistent entre les sessions.
 
+### 8a. Champs de tradition par note (MIG-029)
+
+La puce de tradition en haut a gauche de Sight vous permet de recadrer la coupole a travers 24 traditions savantes reparties en 10 familles epistemiques. Pour neuf de ces traditions (celles aux formes sectorielle / concentrique / en echelle), chaque note peut etre **classifiee explicitement** via un champ dans le frontmatter. Les notes sans le champ tombent dans un compartiment par defaut raisonnable propre a la tradition ; les notes AVEC le champ tombent dans le compartiment que vous avez nomme.
+
+Ajoutez le champ au frontmatter YAML d'une note :
+
+```yaml
+---
+masadir_source: sunnah
+---
+```
+
+Passez a la puce de cette tradition → votre note tombera dans son secteur nomme au lieu du defaut.
+
+**Champs autorises et valeurs :**
+
+| Tradition | Champ frontmatter | Valeurs autorisees | Defaut si absent |
+|---|---|---|---|
+| **masādir** (uṣūl al-fiqh sunnite) | `masadir_source` | `quran` / `sunnah` / `ijma` / `qiyas` | `quran` |
+| **pramāṇa** (Nyāya indien) | `pramana_kind` | `pratyaksha` / `anumana` / `upamana` / `shabda` | `pratyaksha` |
+| **Burhān d'Ibn Rushd** | `burhan_kind` | `burhan` / `jadal` / `khataba` / `shir` | `shir` (anneau le plus exterieur) |
+| **PaRDeS** (hermeneutique juive) | `pardes_level` | `peshat` / `remez` / `derash` / `sod` | `peshat` |
+| **Peirce** (3 categories phaneroscopiques) | `peirce_category` | `firstness` / `secondness` / `thirdness` | `firstness` |
+| **Habermas** (3 interets de connaissance) | `habermas_interest` | `technical` / `practical` / `emancipatory` | `technical` |
+| **Germes menciens** (4 germes moraux) | `mencian_sprout` | `ceyin` / `xiuwu` / `cirang` / `shifei` | `ceyin` |
+| **Sān biǎo mohiste** (3 standards) | `mohist_zone` | `ben` / `yuan` / `yong` | distribue par hash sur 3 zones |
+| **Sŏngnihak coreen** (debat Quatre-Sept) | `songnihak_cell` | `li-sa` / `li-chil` / `qi-chil` / `qi-sa` | `li-sa` |
+
+**Comportement :**
+- Si vous ecrivez une valeur que la tradition ne reconnait pas (faute de frappe ou invention), la note tombe dans le compartiment par defaut. Pas de plantage, pas de pepin d'affichage.
+- Les changements de frontmatter se propagent automatiquement — sauvegardez la note → le prochain rendu de la coupole refletera le changement.
+- Le meme champ n'est lu que par sa tradition nommee. Definir `masadir_source: sunnah` sur une note n'a aucun effet quand vous passez a PaRDeS ou Peirce — chaque tradition lit son propre champ de facon independante.
+- C'est la facon la plus explicite de controler la grammaire spatiale de la coupole. Sans ces champs, la geometrie est correcte mais chaque note tombe par defaut dans le meme compartiment ; avec eux, la puce devient analytiquement significative.
+
+**Traditions sans champs par note** (regroupent actuellement toutes les etoiles par d'autres moyens — dossier / bibliotheque / hash) :
+
+- Aristotélicienne (par defaut, pas de remappage)
+- Polanyi (brouillard degrade ; pas de sectorisation)
+- Husserl, Longino, Maqāṣid d'al-Shāṭibī, Prophétie maïmonidienne, 13 middot talmudiques, Wang Yangming, Pluriversel de Mignolo, Transmodernité de Dussel, Maldonado-Torres, Akan de Wiredu, ʿUmrān d'Ibn Khaldūn, Ibuanyidanda
+
+(De futures migrations pourront ajouter des champs frontmatter par note pour celles-ci a mesure que la demande des utilisateurs emerge.)
+
 ---
 
 ## 9. Second ecran

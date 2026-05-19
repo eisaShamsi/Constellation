@@ -496,6 +496,48 @@ Clique no icone de grade para abrir a barra lateral. Mostra: pontuacao de Saude 
 
 Icone de engrenagem: ajuste a espessura do traco do link, opacidade e tamanho da seta. As configuracoes persistem entre sessoes.
 
+### 8a. Campos de tradicao por nota (MIG-029)
+
+O chip de tradicao no canto superior esquerdo de Sight permite reenquadrar a cupula atraves de 24 tradicoes academicas em 10 familias epistemicas. Para nove dessas tradicoes (as de forma setorial / concentrica / em escada), cada nota pode ser **classificada explicitamente** via um campo no frontmatter. Notas sem o campo caem num cubo padrao sensato especifico da tradicao; notas COM o campo caem no cubo que voce nomeou.
+
+Adicione o campo ao frontmatter YAML de uma nota:
+
+```yaml
+---
+masadir_source: sunnah
+---
+```
+
+Mude para o chip dessa tradicao → sua nota cairá no setor nomeado dela em vez do padrao.
+
+**Campos permitidos e valores:**
+
+| Tradicao | Campo frontmatter | Valores permitidos | Padrao se ausente |
+|---|---|---|---|
+| **masādir** (uṣūl al-fiqh sunita) | `masadir_source` | `quran` / `sunnah` / `ijma` / `qiyas` | `quran` |
+| **pramāṇa** (Nyāya indiano) | `pramana_kind` | `pratyaksha` / `anumana` / `upamana` / `shabda` | `pratyaksha` |
+| **Burhān de Ibn Rushd** | `burhan_kind` | `burhan` / `jadal` / `khataba` / `shir` | `shir` (anel mais externo) |
+| **PaRDeS** (hermeneutica judaica) | `pardes_level` | `peshat` / `remez` / `derash` / `sod` | `peshat` |
+| **Peirce** (3 categorias faneroscopicas) | `peirce_category` | `firstness` / `secondness` / `thirdness` | `firstness` |
+| **Habermas** (3 interesses de conhecimento) | `habermas_interest` | `technical` / `practical` / `emancipatory` | `technical` |
+| **Brotos mencianos** (4 brotos morais) | `mencian_sprout` | `ceyin` / `xiuwu` / `cirang` / `shifei` | `ceyin` |
+| **Sān biǎo moísta** (3 padroes) | `mohist_zone` | `ben` / `yuan` / `yong` | distribuido por hash em 3 zonas |
+| **Sŏngnihak coreano** (debate Quatro-Sete) | `songnihak_cell` | `li-sa` / `li-chil` / `qi-chil` / `qi-sa` | `li-sa` |
+
+**Comportamento:**
+- Se voce escrever um valor que a tradicao nao reconhece (erro de digitacao ou inventado), a nota cai no cubo padrao. Sem crash, sem falha de renderizacao.
+- Mudancas no frontmatter propagam automaticamente — salve a nota → a proxima renderizacao da cupula refletira a mudanca.
+- O mesmo campo so e lido pela tradicao com seu nome. Definir `masadir_source: sunnah` numa nota nao tem efeito quando voce muda para PaRDeS ou Peirce — cada tradicao le seu proprio campo de forma independente.
+- Esta e a forma mais explicita de controlar a gramatica espacial da cupula. Sem esses campos, a geometria esta correta mas cada nota cai no mesmo cubo padrao; com eles, o chip torna-se analiticamente significativo.
+
+**Tradicoes sem campos por nota** (atualmente agrupam todas as estrelas por outros meios — pasta / biblioteca / hash):
+
+- Aristotélica (padrao, sem remapeamento)
+- Polanyi (nevoa gradiente; sem setorizacao)
+- Husserl, Longino, Maqāṣid de al-Shāṭibī, Profecia maimonideana, 13 middot talmúdicas, Wang Yangming, Pluriversal de Mignolo, Transmodernidade de Dussel, Maldonado-Torres, Akan de Wiredu, ʿUmrān de Ibn Khaldūn, Ibuanyidanda
+
+(Migracoes futuras podem adicionar campos frontmatter por nota para estas a medida que a demanda dos usuarios surgir.)
+
 ---
 
 ## 9. Segunda Tela

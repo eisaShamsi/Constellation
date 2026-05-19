@@ -90,10 +90,19 @@ function pathHash01(path: string): number {
 	return ((h >>> 0) & 0xffff) / 0xffff;
 }
 
-function mencianSproutOf(_row: LayoutCacheRow): MencianSprout {
-	// TODO post-§η.1: read from frontmatter `mencian_sprout`.
-	// Default to cèyǐn (compassion — first in Mencius's enumeration).
-	return 'ceyin';
+function mencianSproutOf(row: LayoutCacheRow): MencianSprout {
+	// MIG-029 §ν.3 (2026-05-19) — read from frontmatter `mencian_sprout`
+	// via row.mencianSprout. Falls back to cèyǐn (compassion — first
+	// in Mencius's enumeration) when absent or invalid.
+	switch (row.mencianSprout) {
+		case 'ceyin':
+		case 'xiuwu':
+		case 'cirang':
+		case 'shifei':
+			return row.mencianSprout;
+		default:
+			return 'ceyin';
+	}
 }
 
 export const mencianSprouts: TraditionModule = {

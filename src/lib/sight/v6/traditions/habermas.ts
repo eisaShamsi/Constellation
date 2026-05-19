@@ -81,10 +81,18 @@ const SECTOR_ORDER: HabermasInterest[] = ['technical', 'practical', 'emancipator
  *  so this unconditionally returns 'technical'. Per-note frontmatter
  *  integration ships in a follow-up.
  */
-function habermasInterestOf(_row: LayoutCacheRow): HabermasInterest {
-	// TODO post-§δ.1: when LayoutCacheRow gains `habermasInterest:
-	// string | null`, switch on the value here.
-	return 'technical';
+function habermasInterestOf(row: LayoutCacheRow): HabermasInterest {
+	// MIG-029 §ν.3 (2026-05-19) — read from frontmatter
+	// `habermas_interest` via row.habermasInterest. Falls back to
+	// 'technical' when absent or invalid (Plan §6.1 default).
+	switch (row.habermasInterest) {
+		case 'technical':
+		case 'practical':
+		case 'emancipatory':
+			return row.habermasInterest;
+		default:
+			return 'technical';
+	}
 }
 
 /** FNV-1a 32-bit hash of a string → normalized [0, 1) value. Local

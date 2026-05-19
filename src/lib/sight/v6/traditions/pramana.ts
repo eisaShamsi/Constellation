@@ -105,11 +105,22 @@ const QUADRANT_ORDER: PramanaKind[] = ['pratyaksha', 'anumana', 'upamana', 'shab
  *  `pramana_kind: anumana` (etc.) to frontmatter, once the Rust-side
  *  extraction ships in a follow-up.
  */
-function pramanaKindOf(_row: LayoutCacheRow): PramanaKind {
-	// TODO post-§C.3: when LayoutCacheRow gains `pramanaKind: string | null`,
-	// switch on the value here. For now, all notes default to pratyakṣa
-	// per Plan verbatim.
-	return 'pratyaksha';
+function pramanaKindOf(row: LayoutCacheRow): PramanaKind {
+	// MIG-029 §ν.3 (2026-05-19) — read from frontmatter `pramana_kind`
+	// via the layout-cache row's `pramanaKind` field. Falls back to
+	// pratyakṣa (the philosophical default per Plan §C.3) when the
+	// frontmatter key is absent OR its value is not one of the 4
+	// allowed kinds. Defends against typos by treating unknown values
+	// as default rather than crashing the renderer.
+	switch (row.pramanaKind) {
+		case 'pratyaksha':
+		case 'anumana':
+		case 'upamana':
+		case 'shabda':
+			return row.pramanaKind;
+		default:
+			return 'pratyaksha';
+	}
 }
 
 /** FNV-1a 32-bit hash of a string → normalized [0, 1) value. Used for

@@ -28,7 +28,7 @@
 //! cache columns + Universe-wide context (acts distribution, library
 //! ordering); they don't need their own cache columns.
 //!
-//! Sentinel chain isolated from v5: `mig025_sight_v6_layout_backfill_v1`
+//! Sentinel chain isolated from v5: `mig029_sight_v6_layout_backfill_v2`
 //! (allocated for §A.3 backfill; not consumed by this skeleton).
 //!
 //! References:
@@ -65,6 +65,23 @@ pub struct LayoutCacheRow {
     pub link_out_count: i64,
     pub frontmatter_key_count: i64,
     pub body_chars: i64,
+    // MIG-029 §ν.1 (2026-05-19) — Per-note tradition-kind frontmatter
+    // fields. Optional: when the frontmatter key is absent, the field
+    // is None and the per-tradition renderer falls back to its default
+    // bucket (see lab/reports/MIG-029-FRONTMATTER-WIRING-ARCHITECT.md
+    // §5 for the per-tradition field/value table). Invalid values are
+    // also accepted as None at the renderer's switch-default. Each
+    // field's allowed value set is documented in the User Manual
+    // chapter "Per-note tradition fields" (added in MIG-029 §ν.4).
+    pub masadir_source: Option<String>,
+    pub pramana_kind: Option<String>,
+    pub burhan_kind: Option<String>,
+    pub pardes_level: Option<String>,
+    pub peirce_category: Option<String>,
+    pub habermas_interest: Option<String>,
+    pub mencian_sprout: Option<String>,
+    pub mohist_zone: Option<String>,
+    pub songnihak_cell: Option<String>,
 }
 
 /// One typed-link edge between two visible notes — read by the anchor
@@ -103,7 +120,20 @@ pub fn ensure_sight_v6_layout_table(conn: &Connection) -> Result<(), String> {
             link_in_count           INTEGER NOT NULL DEFAULT 0,
             link_out_count          INTEGER NOT NULL DEFAULT 0,
             frontmatter_key_count   INTEGER NOT NULL DEFAULT 0,
-            body_chars              INTEGER NOT NULL DEFAULT 0
+            body_chars              INTEGER NOT NULL DEFAULT 0,
+            -- MIG-029 §ν.1 (2026-05-19) — per-note tradition-kind
+            -- frontmatter fields. Fresh installs get them as part of
+            -- this CREATE; existing databases pick them up via
+            -- `ensure_sight_v6_layout_tradition_columns` below.
+            masadir_source          TEXT,
+            pramana_kind            TEXT,
+            burhan_kind             TEXT,
+            pardes_level            TEXT,
+            peirce_category         TEXT,
+            habermas_interest       TEXT,
+            mencian_sprout          TEXT,
+            mohist_zone             TEXT,
+            songnihak_cell          TEXT
         );
         CREATE INDEX IF NOT EXISTS idx_sight_v6_layout_library
             ON sight_v6_layout(library_name);
@@ -111,6 +141,59 @@ pub fn ensure_sight_v6_layout_table(conn: &Connection) -> Result<(), String> {
             ON sight_v6_layout(folder_path);",
     )
     .map_err(|e| format!("ensure_sight_v6_layout_table: {}", e))
+}
+
+/// MIG-029 §ν.2 — idempotent ALTER TABLE for the 9 per-note
+/// tradition-kind columns. Required for databases that pre-date
+/// MIG-029 (where `CREATE TABLE IF NOT EXISTS` finds the table
+/// already there and skips it, leaving columns absent).
+///
+/// Uses `PRAGMA table_info` to check which columns are present,
+/// then `ALTER TABLE ADD COLUMN` for any missing. All new columns
+/// are nullable so the migration is non-breaking for existing rows.
+///
+/// Idempotent: safe to call on every boot. Cost on a 7,636-note
+/// universe: ~milliseconds (PRAGMA + up to 9 ALTERs on an indexed
+/// table; each ALTER is O(1) for nullable columns in SQLite 3+).
+pub fn ensure_sight_v6_layout_tradition_columns(conn: &Connection) -> Result<(), String> {
+    use std::collections::HashSet;
+    let mut existing: HashSet<String> = HashSet::new();
+    let mut stmt = conn
+        .prepare("PRAGMA table_info(sight_v6_layout)")
+        .map_err(|e| format!("ensure_sight_v6_layout_tradition_columns: prepare: {}", e))?;
+    let rows = stmt
+        .query_map([], |r| r.get::<_, String>(1))
+        .map_err(|e| format!("ensure_sight_v6_layout_tradition_columns: query: {}", e))?;
+    for row in rows {
+        if let Ok(name) = row {
+            existing.insert(name);
+        }
+    }
+    drop(stmt);
+
+    const NEW_COLS: &[&str] = &[
+        "masadir_source",
+        "pramana_kind",
+        "burhan_kind",
+        "pardes_level",
+        "peirce_category",
+        "habermas_interest",
+        "mencian_sprout",
+        "mohist_zone",
+        "songnihak_cell",
+    ];
+    for col in NEW_COLS {
+        if !existing.contains(*col) {
+            let sql = format!("ALTER TABLE sight_v6_layout ADD COLUMN {} TEXT", col);
+            conn.execute(&sql, []).map_err(|e| {
+                format!(
+                    "ensure_sight_v6_layout_tradition_columns: add {}: {}",
+                    col, e
+                )
+            })?;
+        }
+    }
+    Ok(())
 }
 
 /// Cache-invalidation triggers. Coexists with v5's triggers per B2;
@@ -155,7 +238,11 @@ pub fn compute_universe_snapshot_hash(conn: &Connection) -> Result<String, Strin
 
 /// First-boot backfill: populate `sight_v6_layout` for all existing
 /// notes. Idempotent via `schema_versions` sentinel
-/// `'mig025_sight_v6_layout_backfill_v1'`. Resumable via the
+/// `'mig029_sight_v6_layout_backfill_v2'` (bumped from MIG-025's
+/// `v1` in MIG-029 §ν.2 to force re-derive on existing universes
+/// so the 9 new tradition-kind frontmatter columns get populated;
+/// pre-MIG-029 universes had v1 stamped and would otherwise short-
+/// circuit). Resumable via the
 /// INSERT OR REPLACE pattern (re-running over an existing row is a
 /// no-op for that row's data; the WHOLE bulk INSERT runs atomically
 /// in a transaction so a mid-run interrupt rolls back cleanly).
@@ -180,9 +267,13 @@ pub fn compute_universe_snapshot_hash(conn: &Connection) -> Result<String, Strin
 pub fn backfill_sight_v6_layout(conn: &mut Connection) -> Result<usize, String> {
     use rusqlite::params;
 
-    const SENTINEL_KEY: &str = "mig025_sight_v6_layout_backfill_v1";
+    // MIG-029 §ν.2: sentinel bumped v1 → v2 so existing universes
+    // re-derive the cache once with the 9 new tradition-kind columns
+    // populated. Pre-MIG-029 databases had the v1 sentinel stamped
+    // and would otherwise short-circuit, leaving the new columns NULL.
+    const SENTINEL_KEY: &str = "mig029_sight_v6_layout_backfill_v2";
 
-    // Check sentinel: if v1 already done, return cache count and exit.
+    // Check sentinel: if v2 already done, return cache count and exit.
     let already_done: Option<i64> = conn
         .query_row(
             "SELECT version FROM schema_versions WHERE module = ?1",
@@ -218,7 +309,10 @@ pub fn backfill_sight_v6_layout(conn: &mut Connection) -> Result<usize, String> 
                 note_path, stratum, maturity, confidence_alpha, contested,
                 library_name, folder_path, created_month, sources_primary,
                 stage, acts_primary, dominant_link_type, computed_at,
-                link_in_count, link_out_count, frontmatter_key_count, body_chars
+                link_in_count, link_out_count, frontmatter_key_count, body_chars,
+                masadir_source, pramana_kind, burhan_kind, pardes_level,
+                peirce_category, habermas_interest, mencian_sprout, mohist_zone,
+                songnihak_cell
              )
              SELECT
                 nm.path,
@@ -275,7 +369,21 @@ pub fn backfill_sight_v6_layout(conn: &mut Connection) -> Result<usize, String> 
                         THEN 0
                     ELSE (SELECT COUNT(*) FROM json_each(nm.properties_json))
                 END AS frontmatter_key_count,
-                COALESCE(length(nm.body_text), 0) AS body_chars
+                COALESCE(length(nm.body_text), 0) AS body_chars,
+                -- MIG-029 §ν.2 — per-note tradition-kind frontmatter
+                -- extraction. Same json_extract pattern used above
+                -- for `stage` + `acts_primary`. NULL when the key is
+                -- absent or the JSON is empty/invalid — renderer
+                -- treats NULL as the default bucket per tradition.
+                json_extract(nm.properties_json, '$.masadir_source')   AS masadir_source,
+                json_extract(nm.properties_json, '$.pramana_kind')     AS pramana_kind,
+                json_extract(nm.properties_json, '$.burhan_kind')      AS burhan_kind,
+                json_extract(nm.properties_json, '$.pardes_level')     AS pardes_level,
+                json_extract(nm.properties_json, '$.peirce_category')  AS peirce_category,
+                json_extract(nm.properties_json, '$.habermas_interest') AS habermas_interest,
+                json_extract(nm.properties_json, '$.mencian_sprout')   AS mencian_sprout,
+                json_extract(nm.properties_json, '$.mohist_zone')      AS mohist_zone,
+                json_extract(nm.properties_json, '$.songnihak_cell')   AS songnihak_cell
              FROM note_meta nm
              LEFT JOIN sky_nodes sn ON sn.path = nm.path",
             [],
@@ -356,7 +464,11 @@ pub fn backfill_sight_v6_layout_progressive(
 ) -> Result<usize, String> {
     use rusqlite::params;
 
-    const SENTINEL_KEY: &str = "mig025_sight_v6_layout_backfill_v1";
+    // MIG-029 §ν.2: sentinel bumped v1 → v2 so existing universes
+    // re-derive the cache once with the 9 new tradition-kind columns
+    // populated. Same chunked-tier emit pattern as v1; pre-MIG-029
+    // universes pay one extra re-derive pass on first MIG-029 boot.
+    const SENTINEL_KEY: &str = "mig029_sight_v6_layout_backfill_v2";
 
     // Sentinel short-circuit: idempotent re-entry.
     let already_done: Option<i64> = conn
@@ -412,13 +524,19 @@ pub fn backfill_sight_v6_layout_progressive(
                 note_path, stratum, maturity, confidence_alpha, contested,
                 library_name, folder_path, created_month, sources_primary,
                 stage, acts_primary, dominant_link_type, computed_at,
-                link_in_count, link_out_count, frontmatter_key_count, body_chars
+                link_in_count, link_out_count, frontmatter_key_count, body_chars,
+                masadir_source, pramana_kind, burhan_kind, pardes_level,
+                peirce_category, habermas_interest, mencian_sprout, mohist_zone,
+                songnihak_cell
              )
              SELECT
                 note_path, stratum_int, maturity, confidence_alpha, contested,
                 library_name, folder_path, created_month, sources_primary,
                 stage, acts_primary, dominant_link_type, computed_at,
-                link_in_count, link_out_count, frontmatter_key_count, body_chars
+                link_in_count, link_out_count, frontmatter_key_count, body_chars,
+                masadir_source, pramana_kind, burhan_kind, pardes_level,
+                peirce_category, habermas_interest, mencian_sprout, mohist_zone,
+                songnihak_cell
              FROM (
                 SELECT
                     nm.path AS note_path,
@@ -474,7 +592,19 @@ pub fn backfill_sight_v6_layout_progressive(
                             THEN 0
                         ELSE (SELECT COUNT(*) FROM json_each(nm.properties_json))
                     END AS frontmatter_key_count,
-                    COALESCE(length(nm.body_text), 0) AS body_chars
+                    COALESCE(length(nm.body_text), 0) AS body_chars,
+                    -- MIG-029 §ν.2 — per-note tradition-kind frontmatter
+                    -- extraction (progressive backfill mirror of the
+                    -- synchronous variant above).
+                    json_extract(nm.properties_json, '$.masadir_source')    AS masadir_source,
+                    json_extract(nm.properties_json, '$.pramana_kind')      AS pramana_kind,
+                    json_extract(nm.properties_json, '$.burhan_kind')       AS burhan_kind,
+                    json_extract(nm.properties_json, '$.pardes_level')      AS pardes_level,
+                    json_extract(nm.properties_json, '$.peirce_category')   AS peirce_category,
+                    json_extract(nm.properties_json, '$.habermas_interest') AS habermas_interest,
+                    json_extract(nm.properties_json, '$.mencian_sprout')    AS mencian_sprout,
+                    json_extract(nm.properties_json, '$.mohist_zone')       AS mohist_zone,
+                    json_extract(nm.properties_json, '$.songnihak_cell')    AS songnihak_cell
                 FROM note_meta nm
                 LEFT JOIN sky_nodes sn ON sn.path = nm.path
              )
@@ -542,7 +672,10 @@ pub fn sight_v6_get_layout(app: tauri::AppHandle) -> Result<Vec<LayoutCacheRow>,
         "SELECT note_path, stratum, maturity, confidence_alpha, contested,
                 library_name, folder_path, created_month, sources_primary,
                 stage, acts_primary, dominant_link_type, computed_at,
-                link_in_count, link_out_count, frontmatter_key_count, body_chars
+                link_in_count, link_out_count, frontmatter_key_count, body_chars,
+                masadir_source, pramana_kind, burhan_kind, pardes_level,
+                peirce_category, habermas_interest, mencian_sprout, mohist_zone,
+                songnihak_cell
          FROM sight_v6_layout";
 
     let mut stmt = conn.prepare(SQL).map_err(|e| format!("prepare: {}", e))?;
@@ -577,6 +710,17 @@ fn row_to_layout(row: &rusqlite::Row) -> rusqlite::Result<LayoutCacheRow> {
         link_out_count: row.get(14)?,
         frontmatter_key_count: row.get(15)?,
         body_chars: row.get(16)?,
+        // MIG-029 §ν.1 — tradition-kind frontmatter fields (read in
+        // same order as the SELECT above, indices 17..=25).
+        masadir_source: row.get(17)?,
+        pramana_kind: row.get(18)?,
+        burhan_kind: row.get(19)?,
+        pardes_level: row.get(20)?,
+        peirce_category: row.get(21)?,
+        habermas_interest: row.get(22)?,
+        mencian_sprout: row.get(23)?,
+        mohist_zone: row.get(24)?,
+        songnihak_cell: row.get(25)?,
     })
 }
 
@@ -1239,7 +1383,7 @@ mod tests {
         let version: i64 = conn
             .query_row(
                 "SELECT version FROM schema_versions
-                 WHERE module = 'mig025_sight_v6_layout_backfill_v1'",
+                 WHERE module = 'mig029_sight_v6_layout_backfill_v2'",
                 [],
                 |r| r.get(0),
             )
@@ -1465,7 +1609,7 @@ mod tests {
         let version: i64 = conn
             .query_row(
                 "SELECT version FROM schema_versions
-                 WHERE module = 'mig025_sight_v6_layout_backfill_v1'",
+                 WHERE module = 'mig029_sight_v6_layout_backfill_v2'",
                 [],
                 |r| r.get(0),
             )
@@ -1557,7 +1701,7 @@ mod tests {
         let version: i64 = conn
             .query_row(
                 "SELECT version FROM schema_versions
-                 WHERE module = 'mig025_sight_v6_layout_backfill_v1'",
+                 WHERE module = 'mig029_sight_v6_layout_backfill_v2'",
                 [],
                 |r| r.get(0),
             )
