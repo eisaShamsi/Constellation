@@ -43,6 +43,12 @@ mod lenses;
 // MIG-025 §A — Sight v6 layout cache + IPCs (per Concept Paper v4.0
 // §9.3; was B2 dual-mounted with v5; v5 retired in MIG-028).
 pub mod sight_v6;
+// MIG-036 P1 (2026-05-19) — Sight v7 Form-Aligns-To-Purpose redesign.
+// B2 dual-mount with v6: both modules coexist during v7 dev. v7
+// reuses sight_v6's cache schema (LayoutCacheRow shape unchanged);
+// v7's IPCs land in P3+ as they're built. See
+// lab/reports/MIG-036-SIGHT-V7-ARCHITECT.md.
+pub mod sight_v7;
 // MIG-013 §1A: visibility widened so the offline `build_concept_vectors`
 // [[bin]] can call `lexicon::parse`. The M11 zero-diff invariant covers
 // `src-tauri/src/lexicon/**` (the data + module sources), not `lib.rs`.

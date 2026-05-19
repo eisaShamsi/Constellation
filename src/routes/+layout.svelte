@@ -66,7 +66,9 @@
 	import SightV4 from '$lib/sight/v4/SightV4.svelte';
 	// MIG-028 (2026-05-18): SightV5 import retired with the v5 module set.
 	import SightV6 from '$lib/sight/v6/SightV6.svelte';
-	import { SIGHT_V2_ENABLED, SIGHT_V3_ENABLED, SIGHT_V4_ENABLED, SIGHT_V6_ENABLED } from '$lib/sight/engine';
+	// MIG-036 P1 (2026-05-19): SightV7 parallel mount per B2 dual-mount.
+	import SightV7 from '$lib/sight/v7/SightV7.svelte';
+	import { SIGHT_V2_ENABLED, SIGHT_V3_ENABLED, SIGHT_V4_ENABLED, SIGHT_V6_ENABLED, SIGHT_V7_ENABLED } from '$lib/sight/engine';
 	import { detectClusters, computeStructuralGaps, computeUniverseHealth, buildCommunityProfiles, stratumWeightedCentrality, suggestBridges, type StructuralGap, type UniverseHealth, type ClusterInfo, type CommunityProfile } from '$lib/graph/clusterEngine';
 	import OrgChart from '$lib/components/OrgChart.svelte';
 	import EmojiIconPicker from '$lib/components/EmojiIconPicker.svelte';
@@ -762,6 +764,9 @@
 	// clears (Phase 1 of MIG-025 / Concept Paper v4.0). Mutually exclusive
 	// with v5 per B2 dual-mount; one engine renders at a time.
 	let sightV6Active = $state(false);
+	// MIG-036 P1 (2026-05-19) — Sight v7 mount state. B2 dual-mount with
+	// v6 during the Form-Aligns-To-Purpose redesign cascade.
+	let sightV7Active = $state(false);
 	let lensCentrality = $state<Map<string, number>>(new Map());
 	let lensCommunities = $state<ClusterInfo[]>([]);
 	let lensCommunityAssignments = $state<Map<string, number>>(new Map());
@@ -4488,6 +4493,22 @@
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
 			</button>
 			{/if}
+			<!-- MIG-036 P1 (2026-05-19) — Sight v7 dock button. B2 dual-mount
+			     with v6 during the Form-Aligns-To-Purpose redesign cascade.
+			     Visible only when SIGHT_V7_ENABLED flag is true (dev flag,
+			     false on release builds during v7 dev). -->
+			{#if SIGHT_V7_ENABLED}
+			<button class="dock-btn" class:active={sightV7Active} onclick={() => {
+				if (!sightV7Active) {
+					sightV7Active = true;
+					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showInspector360 = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; sightV6Active = false; lensReturnPending = false; sightV6ReturnPending = false;
+				} else {
+					sightV7Active = false;
+				}
+			}} title="Constellation Sight (v7 — Form-Aligns-To-Purpose)" aria-label="Constellation Sight v7">
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>
+			</button>
+			{/if}
 			{#if $appSettings.enabledFeatures?.inspector360 !== false}
 			<button class="dock-btn" class:active={showInspector360} onclick={() => {
 				showInspector360 = !showInspector360;
@@ -5387,6 +5408,25 @@
 							// the note tab so the user can jump back to v6
 							// without hunting for the dock icon.
 							sightV6ReturnPending = true;
+						}}
+					/>
+				</div>
+			{:else if sightV7Active && SIGHT_V7_ENABLED}
+				<!-- MIG-036 P1 (2026-05-19) — Sight v7 placeholder mount.
+				     B2 dual-mount with v6 during the Form-Aligns-To-Purpose
+				     redesign. P1 ships scaffolding only; subsequent phases
+				     fill in the Hybrid X+Y rendering. -->
+				<div class="star-fullscreen sight-v7-fullscreen">
+					<div class="star-header">
+						<span class="star-title">{$t('sight.v6.title') || 'Constellation Sight'} (v7)</span>
+						<button class="star-close" onclick={() => sightV7Active = false}>×</button>
+					</div>
+					<SightV7
+						onOpenNote={(path: string, libraryName: string) => {
+							const lib = $libraryStats.find(l => l.name === libraryName);
+							const color = lib ? (libraryColorMap[libraryName] || '#7c3aed') : '#7c3aed';
+							openNoteTab(path, libraryName, color);
+							sightV7Active = false;
 						}}
 					/>
 				</div>

@@ -137,3 +137,10 @@ export const SIGHT_V4_ENABLED = false;
 // docs at lab/reports/MIG-024-SIGHT-V5-* stay on disk as historical
 // record.
 export const SIGHT_V6_ENABLED = true;
+// MIG-036 P1 (2026-05-19) — Sight v7 Form-Aligns-To-Purpose redesign.
+// B2 dual-mount with v6: both flags can be true during v7 dev so
+// dev-flag toggles let Boss compare v6 vs v7 side-by-side. v7 lives
+// in src/lib/sight/v7/ + src-tauri/src/sight_v7.rs in parallel. Once
+// v7 ships + stabilizes, SIGHT_V6_ENABLED → false (and v6 retirement
+// in MIG-037). See lab/reports/MIG-036-SIGHT-V7-ARCHITECT.md.
+export const SIGHT_V7_ENABLED = false;
