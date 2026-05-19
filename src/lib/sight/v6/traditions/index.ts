@@ -49,6 +49,11 @@ import { dusselTransmodernity } from './dussel-transmodernity';
 import { maldonadoTorres } from './maldonado-torres';
 import { akanWiredu } from './akan-wiredu';
 import { ibuanyidanda } from './ibuanyidanda';
+// MIG-037 P1 (2026-05-19) — Time Dome added under v6.3 surgical-edits
+// pivot. Identity-remap module mirroring current Aristotelian
+// behavior; the architectural split (Aristotelian → pure-radial,
+// Time Dome → opts into calendar rim) lands in Phase 2.
+import { timeDome } from './timeDome';
 
 /**
  * The registered tradition modules. Keyed by TraditionId for O(1)
@@ -100,6 +105,7 @@ const REGISTRY: Partial<Record<TraditionId, TraditionModule>> = {
 	'maldonado-torres': maldonadoTorres,
 	'akan-wiredu': akanWiredu,
 	ibuanyidanda,
+	'time-dome': timeDome,
 };
 
 // ════════════════════════════════════════════════════════════════════
@@ -206,8 +212,20 @@ export function allTraditions(): TraditionModule[] {
 // lands. The label is the section header text shown in the dropdown.
 
 /** Family identifier — used by chip dropdown + tradition-to-family
- *  mapping. Stable across MIG phases. */
+ *  mapping. Stable across MIG phases.
+ *
+ *  MIG-037 P1 (2026-05-19) — 'time' family added under v6.3
+ *  surgical-edits pivot. Time Dome doesn't fit any cultural family
+ *  (it's a temporal-grammar dome, not a scholarly tradition), so it
+ *  gets its own family group. Currently contains only `time-dome`;
+ *  future time-aware variants (e.g., academic-calendar dome,
+ *  lunar-calendar dome) would land here. The chip dropdown is
+ *  expected to surface this family prominently (Eisa direction:
+ *  "Time group at top" — dropdown reorder is a follow-up polish
+ *  item; for now the family slots in wherever the existing
+ *  iteration order places it). */
 export type FamilyId =
+	| 'time'
 	| 'western-classical'
 	| 'indian-nyaya'
 	| 'sunni-islamic-usul'
@@ -230,6 +248,16 @@ export type FamilyId =
  *  renders via `$t()` since §λ-fix-2, so these literals aren't a
  *  runtime input for curated families. Kept as documentation. */
 export const FAMILIES: Record<FamilyId, { label: string; traditions: TraditionId[] }> = {
+	// MIG-037 P1 (2026-05-19) — Time family. Placed FIRST in object
+	// iteration order so it surfaces at the TOP of the chip dropdown
+	// per Eisa's "Time group at top" direction (without a custom
+	// reorder; relies on object insertion order which is stable in
+	// modern JS engines and how the FAMILIES iteration in
+	// traditionChip.svelte ends up rendering sections).
+	time: {
+		label: 'Time',
+		traditions: ['time-dome'],
+	},
 	'western-classical': {
 		label: 'Western classical',
 		traditions: ['aristotelian'],
@@ -318,4 +346,5 @@ export {
 	maldonadoTorres,
 	akanWiredu,
 	ibuanyidanda,
+	timeDome,
 };

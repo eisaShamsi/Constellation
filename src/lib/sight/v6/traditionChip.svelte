@@ -97,6 +97,8 @@
 		'mencian-sprouts', 'wang-yangming', 'korean-songnihak',
 		'mignolo-pluriversal', 'dussel-transmodernity', 'maldonado-torres',
 		'akan-wiredu', 'ibuanyidanda',
+		// MIG-037 P1 (2026-05-19) — Time Dome added under v6.3 pivot.
+		'time-dome',
 	];
 
 	function curatedMeta(id: TraditionId): TraditionMeta {

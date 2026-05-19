@@ -251,3 +251,129 @@ screenshot Boss-test."
 - **PJ-060** — `index_note` cache-hit short-circuit fix (separate
   mini-MIG; affects MIG-029 frontmatter-driven movement which v7
   inherits)
+
+---
+
+## Boss test: MIG-036 P3 (commit `e1153fe8` + fix-1 `0a0bc58a`)
+
+- **Stage 1**: PASS with two findings:
+  - My docs said "right-side dock" — the dock is on the LEFT. My
+    error, corrected in mental model.
+  - qiyās blob at NORTH overlapped with the CONNECTION stratum
+    label on the +y vertical axis.
+- **Stage 2** (hover): PASS
+- **Stage 3** (click): PASS (informational)
+
+### Fix: MIG-036 P3-fix-1 (commit `0a0bc58a`)
+
+Root cause: P3 inherited v6 masādir's +π/4 wedge-rotation offset
+(originally from §θ-fix-1 to push wedge dividers off cardinal axes;
+the wedge midpoints landed at E/S/W/N as a side effect). v6 was
+fine because individual stars scattered across each wedge with hash
+jitter, so stratum labels sat BESIDE the stars; v7 collapsed each
+wedge to one density blob exactly on the cardinal axis.
+
+Fix: cells now at diagonals (NE/SE/SW/NW per Concept Paper §4.1.3
+original geometry, before v6's rotation). v7 doesn't draw wedge
+dividers so the rotation hack is unnecessary. New rebuild
+(MIG036-P3-fix1, unsuffixed at `src-tauri/target/release/bundle/nsis/`)
+ready for Boss test — but pivot intervened (see below).
+
+---
+
+## Pivot: v7 cascade → v6.3 surgical edits (Eisa decision)
+
+**Eisa's question (verbatim)**: "Why do we have to reinvent the
+whole Sight function? We have already reached an advanced level in
+v6. Why don't we change the necessary items? Waiting for your
+honest answer."
+
+Honest answer surfaced + accepted: v7 was over-engineered for the
+three problems it set out to solve. The Form-Aligns-To-Purpose rule
+is a *constraint on design*, not a justification for *rewriting
+working code*. When Eisa said "Stop patching, and try to restructure
+the whole thing if needed" in the MIG-029 cycle, I read "restructure"
+as "rewrite the contract" — that was an overcorrection.
+
+Working Agreement #5 (cross-check against proven methods) also
+applied here in retrospect: mature visualization systems extend
+their existing contract rather than rewriting it for cleanness. I
+optimized for "cleanest possible new contract" when the right call
+was "smallest disruption to a working system that fixes the problem."
+
+**Eisa decision**: Path A — pivot to v6.3 surgical edits. v7 stays
+on disk under `SIGHT_V7_ENABLED` (flag flipped back to false) as
+the fallback if v6.3 hits a wall. If v6.3 succeeds, v7 modules
+become candidates for retirement in a future MIG.
+
+**Plan approved**: Phases 1 → 2 → 3 of v6.3 (MIG-037).
+
+  - Phase 1: Time Dome added as new tradition (identity remap)
+  - Phase 2: Calendar rim opt-in flag; Aristotelian re-frame to
+    pure-radial (design call surfaced at Phase 2 boundary before
+    code)
+  - Phase 3: Density blobs at wedge midpoints. Reuses v7's
+    `density.ts` as a pure-function primitive — the only piece of
+    v7 work salvaged into v6.3 directly.
+
+---
+
+## Commit: MIG-037 P1 — Time Dome added (this commit)
+
+The proper home for the time-aware view that v6 had implicitly
+inherited inside Aristotelian. Per Eisa's direction: "If
+Aristotelian is just to display the time, then why are we calling
+it this? Instead, the Traditions (including Aristotelian) should
+look at the knowledge-cognition lens based on their design. If I
+want to display time, I will call this 'the Time Dome'."
+
+### What ships
+
+- `src/lib/sight/engine.ts` — `SIGHT_V7_ENABLED` flipped back to
+  `false` (Eisa sub-decision approved). v7 dock button no longer
+  appears; v7 module code stays on disk dormant.
+- `src/lib/sight/v6/types.ts` — `'time-dome'` added to TraditionId
+  union (25th curated tradition).
+- `src/lib/sight/v6/traditions/timeDome.ts` — NEW. Identity-remap
+  tradition module mirroring current Aristotelian behavior (stratum
+  × time, calendar rim around outer edge). Phase 2 adds the
+  `showCalendarRim: true` opt-in to differentiate it from
+  Aristotelian (which will become pure-radial).
+- `src/lib/sight/v6/traditions/index.ts` — import + REGISTRY entry
+  + new `'time'` FamilyId + new FAMILIES `time` entry (placed FIRST
+  in object iteration order so it surfaces at the top of the chip
+  dropdown per Eisa's "Time group at top" direction; relies on JS
+  insertion-order stability + the FAMILIES iteration pattern in
+  traditionChip.svelte). Export added to bottom block.
+- `src/lib/sight/v6/traditionChip.svelte` — `'time-dome'` added to
+  CURATED_TRADITION_IDS.
+- `src/lib/i18n/{15 locales}.json` — Time Dome i18n entries (name,
+  tooltip, scope) + family label, propagated to all 15 locales with
+  proper native translations (no transliterations) per the
+  full-localization standing order.
+- `scripts/add-time-dome-i18n.mjs` — NEW one-shot propagation
+  script; kept on disk as a record of the i18n addition (similar
+  to how migrations stay readable post-execution).
+
+### Verification
+
+- Type-check: 3 pre-existing errors, zero from Phase 1
+  (1467 → 1468 files — the new timeDome.ts).
+- i18n: en + ar spot-check confirms entries land cleanly with the
+  correct native translations.
+- Boss test (separate message after rebuild): open Sight, switch
+  the tradition chip dropdown to the new "Time" group at the top,
+  pick "Time Dome", confirm it renders identically to Aristotelian
+  (same star positions, calendar rim around the outer edge). At
+  this phase Time Dome is a visual twin of Aristotelian; Phase 2
+  is what makes them architecturally distinct.
+
+### What Phase 1 does NOT ship
+
+- Calendar rim opt-in flag (Phase 2)
+- Aristotelian pure-radial reframe (Phase 2)
+- Density-mode opt-in for any tradition (Phase 3)
+- Dropdown reorder (Time always at top regardless of object
+  iteration) — relies on insertion-order convention for now;
+  explicit reorder is a polish item if the convention fails
+

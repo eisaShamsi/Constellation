@@ -235,7 +235,17 @@ export type TraditionId =
 	| 'dussel-transmodernity'
 	| 'maldonado-torres'
 	| 'akan-wiredu'
-	| 'ibuanyidanda';
+	| 'ibuanyidanda'
+	// MIG-037 P1 (2026-05-19) — Time Dome. New tradition added under the
+	// v6.3 surgical-edits pivot (Eisa direction post-MIG-036 P3). Time
+	// Dome is the proper home for the time-aware view (calendar rim +
+	// per-star month positioning) per the Form-Aligns-To-Purpose rule:
+	// Aristotelian's job is the maturity-ladder reading; time deserves
+	// its own dome instead of being smuggled into Aristotelian's
+	// angular axis. Phase 2 makes the calendar rim opt-in and pivots
+	// Aristotelian to pure-radial; Phase 3 brings density mode to
+	// categorical traditions. See lab/reports/SESSION-LOG-2026-05-19.md.
+	| 'time-dome';
 
 // ════════════════════════════════════════════════════════════════════
 // Tradition module contract (Concept Paper §4 + Plan §C.2)

@@ -150,4 +150,12 @@ export const SIGHT_V6_ENABLED = true;
 // button now appears next to it. P11 ship-gate retires the flag
 // entirely (always-on); flipping back to false rolls v7 out of the
 // dock in case of mid-cascade regression.
-export const SIGHT_V7_ENABLED = true;
+//
+// MIG-037 P1 (2026-05-19) — Eisa pivot: v7 dormant, v6.3 active.
+// After P3-fix-1 Eisa decided v7 is over-engineered for the three
+// problems it set out to solve (hash-jitter filler, calendar-rim
+// conflict, Aristotelian-as-time naming). v6.3 fixes the same three
+// problems surgically on top of v6's proven foundation. v7 stays
+// on disk as a fallback if v6.3 hits a wall. Flag flips back to
+// false to hide the v7 dock button during the v6.3 cascade.
+export const SIGHT_V7_ENABLED = false;
