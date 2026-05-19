@@ -72,12 +72,9 @@ const SECTOR_ORDER: PeirceCategory[] = ['firstness', 'secondness', 'thirdness'];
 
 /** Determine a note's Peirce category.
  *
- *  Per Plan §6.1: read from frontmatter `peirce_category` field; default
- *  Firstness if absent.
- *
- *  §δ.1 ship: LayoutCacheRow does not yet carry `peirceCategory`, so
- *  this unconditionally returns 'firstness'. Per-note frontmatter
- *  integration ships in a follow-up once Rust-side extraction lands.
+ *  Reads frontmatter `peirce_category` via `row.peirceCategory`
+ *  (extracted Rust-side in MIG-029 §ν.2). Falls back to Firstness
+ *  when absent or invalid (Plan §6.1 default).
  */
 function peirceCategoryOf(row: LayoutCacheRow): PeirceCategory {
 	// MIG-029 §ν.3 (2026-05-19) — read from frontmatter

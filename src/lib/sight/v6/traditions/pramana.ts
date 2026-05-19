@@ -94,16 +94,11 @@ const QUADRANT_ORDER: PramanaKind[] = ['pratyaksha', 'anumana', 'upamana', 'shab
 
 /** Determine a note's pramāṇa quadrant.
  *
- *  Per Plan §C.3: read from frontmatter `pramana_kind` field; default
- *  pratyakṣa if absent.
- *
- *  §C.3 ship: LayoutCacheRow does not yet carry `pramanaKind`, so this
- *  unconditionally returns `pratyaksha`. The philosophical default is
- *  defensible: all knowledge starts as direct perception until
- *  reflectively reclassified as inference / analogy / testimony.
- *  Users opt their notes into other quadrants by adding
- *  `pramana_kind: anumana` (etc.) to frontmatter, once the Rust-side
- *  extraction ships in a follow-up.
+ *  Reads frontmatter `pramana_kind` via `row.pramanaKind` (extracted
+ *  Rust-side in MIG-029 §ν.2). Falls back to pratyakṣa when absent or
+ *  invalid — the philosophical default per Plan §C.3 (all knowledge
+ *  starts as direct perception until reflectively reclassified as
+ *  inference / analogy / testimony).
  */
 function pramanaKindOf(row: LayoutCacheRow): PramanaKind {
 	// MIG-029 §ν.3 (2026-05-19) — read from frontmatter `pramana_kind`

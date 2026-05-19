@@ -36,10 +36,11 @@
  * polish target for a §C.4-fix-N variant once the spec settles.
  *
  * Extension chips: 4 supplementary sources per §4.1.3, rendered as a row
- * of HTML badges below the canvas-host by SightV6.svelte. They are visual
- * reminders — for now — that the user can opt notes into istiḥsān /
- * istiṣḥāb / maṣlaḥa mursalah / ʿurf once Rust-side frontmatter
- * extraction lands. They have no effect on the dome layout in §C.4.
+ * of HTML badges below the canvas-host by SightV6.svelte. They are
+ * display-only — the 4 extension sources (istiḥsān / istiṣḥāb /
+ * maṣlaḥa mursalah / ʿurf) are visual reminders of the broader uṣūl
+ * vocabulary; they do not drive the dome layout (which uses the 4 main
+ * quadrants only, per masadirSourceOf below).
  *
  * Concept Paper: docs/Constellation-Sight-Concept-Paper-v4.0.md §4.1.3
  * Plan:          lab/reports/MIG-025-SIGHT-V6-PLAN.md §C.4
@@ -108,13 +109,9 @@ const EXTENSION_CHIP_LABELS: readonly string[] = [
 
 /** Determine a note's masādir source sector.
  *
- *  Per Plan §C.4: read from frontmatter `masadir_source` field; default
- *  Qur'an if absent.
- *
- *  §C.4 ship: LayoutCacheRow does not yet carry `masadirSource`, so this
- *  unconditionally returns `quran`. The user can later opt notes into
- *  sunnah / ijmāʿ / qiyās by adding `masadir_source: sunnah` (etc.) to
- *  frontmatter, once the Rust-side extraction ships. */
+ *  Reads frontmatter `masadir_source` via `row.masadirSource`
+ *  (extracted Rust-side in MIG-029 §ν.2). Falls back to `quran` when
+ *  absent or invalid (Plan §C.4 default). */
 function masadirSourceOf(row: LayoutCacheRow): MasadirSource {
 	// MIG-029 §ν.3 (2026-05-19) — read from frontmatter `masadir_source`
 	// via the layout-cache row's `masadirSource` field. Falls back to

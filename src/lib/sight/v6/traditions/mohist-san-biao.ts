@@ -30,9 +30,11 @@
  *
  * Zone assignment (Plan §5): from a frontmatter `mohist_zone` field
  * with values `ben` / `yuan` / `yong`; default deterministic-hash to one
- * of the three if absent. §γ ships with the hash-based fallback because
- * LayoutCacheRow does not yet carry `mohistZone`; per-note frontmatter
- * integration ships as a follow-up once the Rust-side extraction lands.
+ * of the three when absent. Frontmatter extraction wired Rust-side in
+ * MIG-029 §ν.2; the hash-bucket fallback is preserved as the default
+ * (instead of collapsing un-opted-in notes into a single band) so the
+ * 3-band Mohist visualization stays analytically meaningful even for
+ * universes where users haven't classified every note.
  *
  * Within each band:
  *   - vertical: jittered within the band's y-range using a deterministic
@@ -92,14 +94,12 @@ function pathHash01Alt(path: string): number {
 
 /** Determine a note's sān biǎo zone.
  *
- *  Per Plan §5: read from frontmatter `mohist_zone` field (values:
- *  'ben' | 'yuan' | 'yong'); default deterministic-hash to one of the
- *  three if absent.
- *
- *  §γ ship: LayoutCacheRow does not yet carry `mohistZone`, so this
- *  unconditionally hash-buckets the notePath into 0/1/2. Users opt
- *  notes into specific zones by adding `mohist_zone: ben` (etc.) to
- *  frontmatter once the Rust-side extraction lands as a §γ-fix-N.
+ *  Reads frontmatter `mohist_zone` via `row.mohistZone` (extracted
+ *  Rust-side in MIG-029 §ν.2). Allowed values: 'ben' / 'yuan' / 'yong'
+ *  mapped to band indices 0/1/2 respectively. Falls back to a
+ *  deterministic hash-bucket across the 3 zones when absent or invalid
+ *  (preserves analytically-meaningful distribution for un-opted-in
+ *  notes; see module-level note above).
  */
 function mohistZoneOf(row: LayoutCacheRow): MohistZone {
 	// MIG-029 §ν.3 (2026-05-19) — read from frontmatter `mohist_zone`

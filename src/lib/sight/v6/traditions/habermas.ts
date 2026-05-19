@@ -74,12 +74,9 @@ const SECTOR_ORDER: HabermasInterest[] = ['technical', 'practical', 'emancipator
 
 /** Determine a note's Habermas knowledge-interest.
  *
- *  Per Plan §6.1: read from frontmatter `habermas_interest` field;
- *  default 'technical' if absent.
- *
- *  §δ.1 ship: LayoutCacheRow does not yet carry `habermasInterest`,
- *  so this unconditionally returns 'technical'. Per-note frontmatter
- *  integration ships in a follow-up.
+ *  Reads frontmatter `habermas_interest` via `row.habermasInterest`
+ *  (extracted Rust-side in MIG-029 §ν.2). Falls back to 'technical'
+ *  when absent or invalid (Plan §6.1 default).
  */
 function habermasInterestOf(row: LayoutCacheRow): HabermasInterest {
 	// MIG-029 §ν.3 (2026-05-19) — read from frontmatter
