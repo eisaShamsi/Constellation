@@ -147,6 +147,16 @@ Tauri v2 desktop app (Rust + SvelteKit/Svelte 5) — a Personal Knowledge Formul
 - Prefer CSS-only solutions over JavaScript. Prefer Rust over JavaScript for computation.
 - When in doubt, do less.
 
+### Form-Aligns-To-Purpose *(top-principal — 2026-05-19)*
+
+Every visual element, interaction, or computational layer in Constellation must serve its core cognitive purpose. Each function's design and behavior must be aligned with what it answers. Do NOT add visual filler, decorative axes, padding-only positions, or non-meaningful spread to occupy space that the chosen geometric primitive *affords* but the cognitive content does not *require*. If the chosen primitive has degrees of freedom that the answer doesn't fill, change the primitive — don't fill the freedom with noise to look complete.
+
+**Special application — traditions.** A tradition in Constellation Sight is a *cognitive lens* — each one frames knowledge through a specific epistemic grammar (Aristotelian maturity gradient; masādir kinds-of-proof; pramāṇa valid means of knowing; PaRDeS interpretive levels; Mencian sprouts; Mohist sān biǎo; etc.). The visual rendering of a tradition must express *that specific grammar and nothing else*. Don't import dimensions from other traditions just because the dome geometry has them available; if a tradition's grammar is purely radial, the angular axis vanishes from its rendering; if a tradition's grammar is categorical, within-category positions are not "free space" to fill with hash-jitter — they are *cognitive non-existence*. The tradition's purpose is its visual contract.
+
+**Canonical violation prevented**: 2026-05-19 — proposed hash-jittering notes inside Aristotelian's stratum rings to "use" the angular axis the dome geometry exposes, when Aristotelian's actual epistemic grammar is purely radial (a maturity gradient) and the angular axis has no meaning in that frame. The right move is to change the rendering primitive so the unused dimension goes away — not to fill it with synthetic noise so the geometry "looks complete." Same principle applies whenever a categorical tradition currently jitters within-cell; the fix is the primitive, not the filler.
+
+This rule sits alongside Constraint as Design (which forbids adding features without justification). Form-Aligns-To-Purpose forbids adding *visual / structural noise* within features without cognitive justification. Together they mean: every feature must justify its existence AND every part of every feature must justify its presence within it.
+
 ### Language-First by Design
 - Constellation supports all languages simultaneously, from the ground up by design.
 - Per-line bidirectional text (bidiPlugin) is a core architectural feature, not an add-on.
