@@ -686,11 +686,27 @@ pub fn sight_v6_get_layout(app: tauri::AppHandle) -> Result<Vec<LayoutCacheRow>,
     let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
     let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
 
-    // MIG-029 §ν.5-fix — opportunistic refill of missing rows. Same
-    // SELECT shape as the §A.3 synchronous backfill but with a WHERE
-    // NOT IN clause that restricts to rows the AU trigger has deleted.
-    // INSERT OR REPLACE keeps the semantics idempotent if a row
-    // already exists (write race with another caller; harmless).
+    // MIG-029 §ν.5-fix-2 (2026-05-19) — opportunistic refill of
+    // missing OR STALE rows. The first attempt (§ν.5-fix-1) only
+    // caught missing rows (WHERE NOT IN), but Boss-test showed that
+    // on Eisa's universe the AU trigger fires + the cache row is
+    // ALSO subsequently rewritten by some other code path (likely
+    // the v6 backfill running on warm_cache or a settings-watcher
+    // re-derive) with the stale-at-derivation-time properties_json.
+    // So the row was present but stale.
+    //
+    // Fix-2 widens the refill condition to include staleness:
+    // `svl.computed_at < nm.modified * 1000`. note_meta.modified
+    // is the file mtime in seconds since epoch; computed_at is
+    // milliseconds since epoch when the cache row was derived.
+    // If the note was modified after the cache row was computed,
+    // re-derive.
+    //
+    // Result: any note edited since its cache row was last computed
+    // gets re-derived on the next Sight open, picking up new
+    // frontmatter values (`masadir_source`, `pramana_kind`, etc.)
+    // immediately. Missing rows (computed_at IS NULL via the LEFT
+    // JOIN) also refill.
     let refill_sql = "INSERT OR REPLACE INTO sight_v6_layout (
                 note_path, stratum, maturity, confidence_alpha, contested,
                 library_name, folder_path, created_month, sources_primary,
@@ -766,7 +782,9 @@ pub fn sight_v6_get_layout(app: tauri::AppHandle) -> Result<Vec<LayoutCacheRow>,
                 json_extract(nm.properties_json, '$.songnihak_cell')    AS songnihak_cell
              FROM note_meta nm
              LEFT JOIN sky_nodes sn ON sn.path = nm.path
-             WHERE nm.path NOT IN (SELECT note_path FROM sight_v6_layout)";
+             LEFT JOIN sight_v6_layout svl ON svl.note_path = nm.path
+             WHERE svl.note_path IS NULL
+                OR svl.computed_at < nm.modified * 1000";
     conn.execute(refill_sql, [])
         .map_err(|e| format!("sight_v6_get_layout: refill: {}", e))?;
 
