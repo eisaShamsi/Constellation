@@ -686,27 +686,29 @@ pub fn sight_v6_get_layout(app: tauri::AppHandle) -> Result<Vec<LayoutCacheRow>,
     let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
     let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
 
-    // MIG-029 §ν.5-fix-2 (2026-05-19) — opportunistic refill of
-    // missing OR STALE rows. The first attempt (§ν.5-fix-1) only
-    // caught missing rows (WHERE NOT IN), but Boss-test showed that
-    // on Eisa's universe the AU trigger fires + the cache row is
-    // ALSO subsequently rewritten by some other code path (likely
-    // the v6 backfill running on warm_cache or a settings-watcher
-    // re-derive) with the stale-at-derivation-time properties_json.
-    // So the row was present but stale.
+    // MIG-029 fix-3 (2026-05-19) — always re-derive ALL cache rows
+    // on every get_layout call.
     //
-    // Fix-2 widens the refill condition to include staleness:
-    // `svl.computed_at < nm.modified * 1000`. note_meta.modified
-    // is the file mtime in seconds since epoch; computed_at is
-    // milliseconds since epoch when the cache row was derived.
-    // If the note was modified after the cache row was computed,
-    // re-derive.
+    // History: fix-1 refilled only missing rows; fix-2 widened to
+    // missing-OR-stale via a `svl.computed_at < nm.modified * 1000`
+    // check. Both failed Boss-test — the edited notes still landed
+    // in the default wedge. Root cause was likely a stale
+    // `note_meta.modified` (the `index_note` cache-hit short-circuit
+    // at search.rs:3004 returns early when the cached `modified`
+    // matches the file's `modified`, so frontmatter-only edits via
+    // NotePane don't always propagate `modified` forward — making
+    // the stale-check ineffective).
     //
-    // Result: any note edited since its cache row was last computed
-    // gets re-derived on the next Sight open, picking up new
-    // frontmatter values (`masadir_source`, `pramana_kind`, etc.)
-    // immediately. Missing rows (computed_at IS NULL via the LEFT
-    // JOIN) also refill.
+    // fix-3: drop the WHERE clause entirely. Always rebuild the
+    // entire `sight_v6_layout` table from `note_meta` on every
+    // get_layout call. INSERT OR REPLACE makes this idempotent. Cost
+    // on a 7K-note universe: a few hundred ms per call. Sight
+    // open is rare (manual user action) so the cost is acceptable.
+    //
+    // The sentinel-gated background backfill is now redundant for
+    // correctness (it remains useful as a boot-time prewarm that
+    // means the FIRST get_layout call is faster — most rows are
+    // unchanged so INSERT OR REPLACE is cheap).
     let refill_sql = "INSERT OR REPLACE INTO sight_v6_layout (
                 note_path, stratum, maturity, confidence_alpha, contested,
                 library_name, folder_path, created_month, sources_primary,
@@ -781,10 +783,7 @@ pub fn sight_v6_get_layout(app: tauri::AppHandle) -> Result<Vec<LayoutCacheRow>,
                 json_extract(nm.properties_json, '$.mohist_zone')       AS mohist_zone,
                 json_extract(nm.properties_json, '$.songnihak_cell')    AS songnihak_cell
              FROM note_meta nm
-             LEFT JOIN sky_nodes sn ON sn.path = nm.path
-             LEFT JOIN sight_v6_layout svl ON svl.note_path = nm.path
-             WHERE svl.note_path IS NULL
-                OR svl.computed_at < nm.modified * 1000";
+             LEFT JOIN sky_nodes sn ON sn.path = nm.path";
     conn.execute(refill_sql, [])
         .map_err(|e| format!("sight_v6_get_layout: refill: {}", e))?;
 
