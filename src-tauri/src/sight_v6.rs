@@ -661,12 +661,114 @@ pub fn backfill_sight_v6_layout_progressive(
 /// filtering is performed on the frontend per Architect §1.4 (the
 /// facet sidebar holds the cross-filter state and dispatches over
 /// the in-memory row set; the IPC returns the universe-scoped data).
+///
+/// MIG-029 §ν.5-fix (2026-05-19) — Boss-test catch: opportunistic
+/// refill of missing cache rows before the SELECT. The
+/// `sight_v6_layout_invalidate_au` trigger DELETEs cache rows on
+/// every `note_meta` UPDATE (the trigger can't do an inline re-derive
+/// because the cache fill query requires multi-table joins not
+/// expressible in a trigger body). Without an explicit re-insert,
+/// any note edited since the last full backfill is silently MISSING
+/// from Sight — including any frontmatter change (e.g. adding
+/// `masadir_source: sunnah` would invisibly drop the note from the
+/// dome instead of moving it to the sunnah wedge).
+///
+/// The opportunistic refill below derives + INSERTs any cache rows
+/// that exist in `note_meta` but are missing from `sight_v6_layout`,
+/// then runs the read. Cost: O(N) JOIN over note_meta on the first
+/// post-edit Sight open (then 0 cost on subsequent reads until the
+/// next edit). For typical 7K-note universes with a handful of
+/// recent edits, the refill is sub-millisecond.
 #[tauri::command]
 pub fn sight_v6_get_layout(app: tauri::AppHandle) -> Result<Vec<LayoutCacheRow>, String> {
     use tauri::Manager;
     let search_state = app.state::<crate::search::SearchState>();
     let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
     let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
+
+    // MIG-029 §ν.5-fix — opportunistic refill of missing rows. Same
+    // SELECT shape as the §A.3 synchronous backfill but with a WHERE
+    // NOT IN clause that restricts to rows the AU trigger has deleted.
+    // INSERT OR REPLACE keeps the semantics idempotent if a row
+    // already exists (write race with another caller; harmless).
+    let refill_sql = "INSERT OR REPLACE INTO sight_v6_layout (
+                note_path, stratum, maturity, confidence_alpha, contested,
+                library_name, folder_path, created_month, sources_primary,
+                stage, acts_primary, dominant_link_type, computed_at,
+                link_in_count, link_out_count, frontmatter_key_count, body_chars,
+                masadir_source, pramana_kind, burhan_kind, pardes_level,
+                peirce_category, habermas_interest, mencian_sprout, mohist_zone,
+                songnihak_cell
+             )
+             SELECT
+                nm.path,
+                CASE
+                    WHEN sn.stratum LIKE 'L%' AND length(sn.stratum) >= 2
+                        THEN CAST(SUBSTR(sn.stratum, 2) AS INTEGER)
+                    WHEN sn.stratum GLOB '[1-8]'
+                        THEN CAST(sn.stratum AS INTEGER)
+                    ELSE NULL
+                END AS stratum,
+                sn.maturity,
+                (SELECT
+                    CASE confidence
+                        WHEN 'established' THEN 1.0
+                        WHEN 'evidence'    THEN 0.7
+                        WHEN 'contested'   THEN 0.85
+                        ELSE 0.45
+                    END
+                 FROM note_links nl3
+                 WHERE nl3.source_path = nm.path
+                 GROUP BY confidence
+                 ORDER BY COUNT(*) DESC
+                 LIMIT 1) AS confidence_alpha,
+                CASE WHEN EXISTS (
+                    SELECT 1 FROM note_links nl
+                    WHERE nl.target_path = nm.path
+                      AND nl.link_type = 'contradicts'
+                      AND nl.confidence != 'archived'
+                ) THEN 1 ELSE 0 END AS contested,
+                nm.library_name,
+                CASE
+                    WHEN instr(nm.path, '/') > 0
+                        THEN substr(nm.path, 1, length(nm.path) - length(replace(nm.path, '/', '')) + instr(replace(nm.path, '/', char(0x1f)), char(0x1f)))
+                    ELSE NULL
+                END AS folder_path,
+                CASE
+                    WHEN nm.created_at IS NOT NULL
+                        THEN CAST(strftime('%m', nm.created_at, 'unixepoch') AS INTEGER) - 1
+                    ELSE NULL
+                END AS created_month,
+                json_extract(nm.sources, '$[0]') AS sources_primary,
+                json_extract(nm.properties_json, '$.stage') AS stage,
+                json_extract(nm.properties_json, '$.act') AS acts_primary,
+                (SELECT nl2.link_type FROM note_links nl2
+                 WHERE nl2.source_path = nm.path
+                 GROUP BY nl2.link_type
+                 ORDER BY COUNT(*) DESC LIMIT 1) AS dominant_link_type,
+                strftime('%s', 'now') * 1000 AS computed_at,
+                (SELECT COUNT(*) FROM note_links WHERE target_path = nm.path) AS link_in_count,
+                (SELECT COUNT(*) FROM note_links WHERE source_path = nm.path) AS link_out_count,
+                CASE
+                    WHEN nm.properties_json IS NULL OR nm.properties_json = ''
+                        THEN 0
+                    ELSE (SELECT COUNT(*) FROM json_each(nm.properties_json))
+                END AS frontmatter_key_count,
+                COALESCE(length(nm.body_text), 0) AS body_chars,
+                json_extract(nm.properties_json, '$.masadir_source')    AS masadir_source,
+                json_extract(nm.properties_json, '$.pramana_kind')      AS pramana_kind,
+                json_extract(nm.properties_json, '$.burhan_kind')       AS burhan_kind,
+                json_extract(nm.properties_json, '$.pardes_level')      AS pardes_level,
+                json_extract(nm.properties_json, '$.peirce_category')   AS peirce_category,
+                json_extract(nm.properties_json, '$.habermas_interest') AS habermas_interest,
+                json_extract(nm.properties_json, '$.mencian_sprout')    AS mencian_sprout,
+                json_extract(nm.properties_json, '$.mohist_zone')       AS mohist_zone,
+                json_extract(nm.properties_json, '$.songnihak_cell')    AS songnihak_cell
+             FROM note_meta nm
+             LEFT JOIN sky_nodes sn ON sn.path = nm.path
+             WHERE nm.path NOT IN (SELECT note_path FROM sight_v6_layout)";
+    conn.execute(refill_sql, [])
+        .map_err(|e| format!("sight_v6_get_layout: refill: {}", e))?;
 
     const SQL: &str =
         "SELECT note_path, stratum, maturity, confidence_alpha, contested,
