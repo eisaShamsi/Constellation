@@ -37,11 +37,11 @@ mod classifier;
 // CONTENT-ENGINE-ARCHITECT.md for the architecture spec.
 pub mod cece;
 mod lenses;
-// MIG-024 §2 — Sight v5 layout cache + IPCs (per Concept Paper v3.1
-// §12.1; D-V4 per-note × 1 row strategy; D-V3 user-toggleable scope).
-pub mod sight_v5;
+// MIG-028 (2026-05-18) — Sight v5 module retired with the v5 codebase.
+// Plan/Architect docs at lab/reports/MIG-024-SIGHT-V5-* stay on disk
+// as historical record.
 // MIG-025 §A — Sight v6 layout cache + IPCs (per Concept Paper v4.0
-// §9.3; B2 dual-mount with v5 through Phases 1–3, v5 deleted in §D.6).
+// §9.3; was B2 dual-mounted with v5; v5 retired in MIG-028).
 pub mod sight_v6;
 // MIG-013 §1A: visibility widened so the offline `build_concept_vectors`
 // [[bin]] can call `lexicon::parse`. The M11 zero-diff invariant covers
@@ -351,11 +351,7 @@ pub fn run() {
             // MIG-022 §B.4 — note state history query API
             cece::history::cece_get_note_history,
             cece::history::cece_query_history,
-            // MIG-024 §2 — Sight v5 layout cache IPCs
-            sight_v5::sight_v5_get_layout,
-            sight_v5::sight_v5_get_universe_snapshot_hash,
-            sight_v5::sight_v5_get_link_set_for_notes,
-            sight_v5::sight_v5_warm_cache,
+            // MIG-028 (2026-05-18): 4 sight_v5_* IPCs retired with the v5 module set.
             // MIG-025 §A.5 — Sight v6 layout cache IPCs
             sight_v6::sight_v6_get_layout,
             sight_v6::sight_v6_get_link_set_for_notes,

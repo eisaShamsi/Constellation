@@ -131,5 +131,9 @@
 export const SIGHT_V2_ENABLED = true;
 export const SIGHT_V3_ENABLED = false;
 export const SIGHT_V4_ENABLED = false;
-export const SIGHT_V5_ENABLED = false;
+// MIG-028 (2026-05-18) — SIGHT_V5_ENABLED retired with the v5 module
+// set. v5 was unreachable via this flag since the v6 ship; the flag
+// + module are now fully removed from the build. The v5 Plan/Architect
+// docs at lab/reports/MIG-024-SIGHT-V5-* stay on disk as historical
+// record.
 export const SIGHT_V6_ENABLED = true;

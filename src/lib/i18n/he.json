@@ -1896,10 +1896,10 @@
             "badawi": "בַּדַוי · נוודי"
           },
           "ibn-rushd-burhan": {
-            "burhan": "בורהאן",
-            "jadal": "ג'דל",
-            "khataba": "חַ'טאבה",
-            "shir": "שִעְר"
+            "burhan": "בורהאן · הוכחה דמונסטרטיבית",
+            "jadal": "ג'דל · דיאלקטיקה",
+            "khataba": "חַ'טאבה · רטוריקה",
+            "shir": "שִעְר · פואטיקה"
           },
           "ibuanyidanda": {
             "self": "עצמי",
@@ -1943,14 +1943,14 @@
             "extensionAriaLabel": "מקורות מַצַאדִר נוספים",
             "extensionTooltip": "מקור מַצַאדִר נוסף (לתצוגה בלבד ב-v6.2; הצטרפות לפי פתק דרך frontmatter בעדכון המשך)",
             "quran": "קוראן",
-            "sunnah": "סוּנה",
-            "ijma": "אִג'מאע",
-            "qiyas": "קִיאס",
+            "sunnah": "סוּנה · מסורת הנביא",
+            "ijma": "אִג'מאע · קונצנזוס",
+            "qiyas": "קִיאס · אנלוגיה",
             "extension": {
-              "istihsan": "אִסְתִחְסאן",
-              "istishab": "אִסְתִצְחאב",
-              "maslahaMursalah": "מַצְלַחה מוּרְסַלה",
-              "urf": "עֻרְף"
+              "istihsan": "אִסְתִחְסאן · העדפה",
+              "istishab": "אִסְתִצְחאב · המשכיות",
+              "maslahaMursalah": "מַצְלַחה מוּרְסַלה · אינטרס ציבורי",
+              "urf": "עֻרְף · מנהג"
             }
           },
           "mencian-sprouts": {
@@ -1996,16 +1996,16 @@
           },
           "shatibi-maqasid": {
             "tier": {
-              "daruriyyat": "דַ'רוּריאת",
-              "hajiyyat": "חאג'יאת",
-              "tahsiniyyat": "תחסיניאת"
+              "daruriyyat": "דַ'רוּריאת · הכרחיות",
+              "hajiyyat": "חאג'יאת · צרכים",
+              "tahsiniyyat": "תחסיניאת · שכלולים"
             },
             "essential": {
-              "din": "דין",
-              "nafs": "נפש",
-              "aql": "עקל",
-              "nasl": "נסל",
-              "mal": "מאל"
+              "din": "דין · דת",
+              "nafs": "נפש · חיים",
+              "aql": "עקל · שכל",
+              "nasl": "נסל · צאצאים",
+              "mal": "מאל · רכוש"
             }
           },
           "talmudic-middot": {

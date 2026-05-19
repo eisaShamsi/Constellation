@@ -1,8 +1,5 @@
-// @ts-nocheck
-// ↑ vitest/playwright runners deferred to §D.4 per tests/sight-v6/README.md.
-// This file is harness-ready source; type-check skipped here so svelte-check
-// doesn't fail on absent vitest types. Wires into the type tree in §D.4
-// when the runner devDep lands.
+// MIG-030 (2026-05-18): vitest runner now installed. @ts-nocheck removed.
+// Run with: npm run test:sight-v6:perf
 
 /**
  * MIG-025 §A.13 — Sight v6 render-budget performance test (vitest).

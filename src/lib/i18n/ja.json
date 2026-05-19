@@ -2348,10 +2348,10 @@
             "missingLink": "欠けた環"
           },
           "korean-songnihak": {
-            "liSa": "理 · 四端",
-            "liChil": "理 · 七情",
-            "qiChil": "氣 · 七情",
-            "qiSa": "氣 · 四端"
+            "liSa": "理(り) · 四端(したん)",
+            "liChil": "理(り) · 七情(しちじょう)",
+            "qiChil": "氣(き) · 七情(しちじょう)",
+            "qiSa": "氣(き) · 四端(したん)"
           },
           "longino": {
             "venues": "公共フォーラム",
@@ -2385,18 +2385,18 @@
             "ijma": "イジュマー",
             "qiyas": "キヤース",
             "extension": {
-              "istihsan": "istiḥsān · イスティフサーン",
-              "istishab": "istiṣḥāb · イスティスハーブ",
+              "istihsan": "istiḥsān · 善とみなす",
+              "istishab": "istiṣḥāb · 推定継続",
               "maslahaMursalah": "maṣlaḥa mursalah · 公益",
               "urf": "ʿurf · 慣習"
             }
           },
           "mencian-sprouts": {
-            "ceyin": "惻隠 cèyǐn · 惻隠",
-            "xiuwu": "羞悪 xiūwù · 羞悪",
-            "cirang": "辞讓 círàng · 辞讓",
-            "shifei": "是非 shìfēi · 是非",
-            "xin": "信 xìn · 信"
+            "ceyin": "惻隠 cèyǐn · 哀れみ",
+            "xiuwu": "羞悪 xiūwù · 羞恥",
+            "cirang": "辞讓 círàng · 譲り合い",
+            "shifei": "是非 shìfēi · 善悪の判断",
+            "xin": "信 xìn · 誠実"
           },
           "mignolo-pluriversal": {
             "epistemicDisobedience": "認識的不服従",
@@ -2462,9 +2462,9 @@
             "reconciliation": "13 · 調停"
           },
           "wang-yangming": {
-            "zhi": "知 zhī · 知",
-            "xing": "行 xíng · 行",
-            "liangzhi": "良知 liángzhī · 良知"
+            "zhi": "知 zhī · 知ること",
+            "xing": "行 xíng · 行うこと",
+            "liangzhi": "良知 liángzhī · 生得の良知"
           }
         }
       },

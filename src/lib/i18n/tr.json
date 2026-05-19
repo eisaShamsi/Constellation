@@ -2348,10 +2348,10 @@
             "missingLink": "kayıp halka"
           },
           "korean-songnihak": {
-            "liSa": "lǐ · 四端",
-            "liChil": "lǐ · 七情",
-            "qiChil": "qì · 七情",
-            "qiSa": "qì · 四端"
+            "liSa": "lǐ · 四端 (Dört Başlangıç)",
+            "liChil": "lǐ · 七情 (Yedi Duygu)",
+            "qiChil": "qì · 七情 (Yedi Duygu)",
+            "qiSa": "qì · 四端 (Dört Başlangıç)"
           },
           "longino": {
             "venues": "mecralar",
@@ -2360,7 +2360,7 @@
             "temperedEquality": "ölçülü eşitlik"
           },
           "maimonidean-prophecy": {
-            "ruahHaQodesh": "1 · ruaḥ ha-qodesh",
+            "ruahHaQodesh": "1 · ruaḥ ha-qodesh · kutsal ruh",
             "sleepVision": "2 · uyku görüşü",
             "daytimeAllegory": "3 · gündüz alegorisi",
             "voiceInVision": "4 · görüşte ses",
@@ -2385,18 +2385,18 @@
             "ijma": "icmâ",
             "qiyas": "kıyas",
             "extension": {
-              "istihsan": "istiḥsân",
-              "istishab": "istiṣḥâb",
-              "maslahaMursalah": "maṣlaḥa mursalah",
+              "istihsan": "istiḥsân · tercih",
+              "istishab": "istiṣḥâb · süreklilik",
+              "maslahaMursalah": "maṣlaḥa mursalah · kamu yararı",
               "urf": "örf"
             }
           },
           "mencian-sprouts": {
-            "ceyin": "惻隱 cèyǐn",
-            "xiuwu": "羞惡 xiūwù",
-            "cirang": "辭讓 círàng",
-            "shifei": "是非 shìfēi",
-            "xin": "信 xìn"
+            "ceyin": "惻隱 cèyǐn · şefkat",
+            "xiuwu": "羞惡 xiūwù · utanç",
+            "cirang": "辭讓 círàng · alçakgönüllülük",
+            "shifei": "是非 shìfēi · ayırt etme",
+            "xin": "信 xìn · doğruluk"
           },
           "mignolo-pluriversal": {
             "epistemicDisobedience": "epistemik itaatsizlik",
@@ -2412,10 +2412,10 @@
             "yong": "用 yòng · kullanım"
           },
           "pardes": {
-            "peshat": "peshat",
-            "remez": "remez",
-            "derash": "derash",
-            "sod": "sod"
+            "peshat": "peshat · sözel anlam",
+            "remez": "remez · imâ",
+            "derash": "derash · yorum",
+            "sod": "sod · sır"
           },
           "peirce": {
             "firstness": "Birincilik",
@@ -2427,16 +2427,16 @@
             "explicit": "açık"
           },
           "pramana": {
-            "pratyaksha": "pratyakṣa",
-            "anumana": "anumāna",
-            "upamana": "upamāna",
-            "shabda": "śabda"
+            "pratyaksha": "pratyakṣa · algı",
+            "anumana": "anumāna · çıkarım",
+            "upamana": "upamāna · karşılaştırma",
+            "shabda": "śabda · tanıklık"
           },
           "shatibi-maqasid": {
             "tier": {
-              "daruriyyat": "ḍarūriyyāt",
-              "hajiyyat": "ḥājiyyāt",
-              "tahsiniyyat": "taḥsīniyyāt"
+              "daruriyyat": "ḍarūriyyāt · zorunluluklar",
+              "hajiyyat": "ḥājiyyāt · ihtiyaçlar",
+              "tahsiniyyat": "taḥsīniyyāt · iyileştirmeler"
             },
             "essential": {
               "din": "dîn",
@@ -2447,13 +2447,13 @@
             }
           },
           "talmudic-middot": {
-            "kalVaChomer": "1 · kal va-chomer",
-            "gezeraShava": "2 · gezera shava",
+            "kalVaChomer": "1 · kal va-chomer · hafiften ağıra",
+            "gezeraShava": "2 · gezera shava · sözcük benzeşmesi",
             "binyanAv1": "3 · binyan av (1 ayet)",
             "binyanAv2": "4 · binyan av (2 ayet)",
-            "kelalUPerat": "5 · kelal u-perat",
-            "peratUKelal": "6 · perat u-kelal",
-            "kpk": "7 · k-p-k",
+            "kelalUPerat": "5 · kelal u-perat · genel ve özel",
+            "peratUKelal": "6 · perat u-kelal · özel ve genel",
+            "kpk": "7 · k-p-k · genel-özel-genel",
             "specialPurpose": "8 · özel amaç",
             "extractedLighter": "9 · çıkarılan (hafif)",
             "extractedDifferent": "10 · çıkarılan (farklı)",
@@ -2464,7 +2464,7 @@
           "wang-yangming": {
             "zhi": "知 zhī · bilme",
             "xing": "行 xíng · eyleme",
-            "liangzhi": "良知 liángzhī"
+            "liangzhi": "良知 liángzhī · doğuştan bilgi"
           }
         }
       },

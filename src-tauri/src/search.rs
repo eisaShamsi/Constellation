@@ -1533,20 +1533,19 @@ fn init_db(path: &Path) -> Result<Connection, String> {
     // any non-trivial universe. The bulk-insert turned the app boot
     // into a multi-minute thrash.
     //
-    // Fix: schema-only setup here (cheap, microseconds). The
-    // backfill itself runs LAZILY via the `sight_v5_warm_cache` IPC
-    // — called once on first SightV5.svelte mount, with a loading
-    // state. Users who never open Sight v5 don't pay the cost.
-    // Plus: add an index on note_links.target_path so the lazy
-    // backfill (and any other contested-detection query) is fast.
-    crate::sight_v5::ensure_sight_v5_layout_table(&conn)
-        .map_err(|e| format!("Failed to create sight_v5_layout table (MIG-024 §2): {}", e))?;
-    crate::sight_v5::ensure_sight_v5_invalidation_trigger(&conn)
-        .map_err(|e| format!("Failed to create sight_v5_layout triggers (MIG-024 §2): {}", e))?;
+    // MIG-028 (2026-05-18): v5 layout schema setup retired with the
+    // v5 module set. The one-time DROP cleanup below removes the
+    // orphan sight_v5_layout table + invalidation trigger from any
+    // pre-MIG-028 database. SQLite IF EXISTS makes this idempotent
+    // and a no-op on fresh installs.
+    conn.execute_batch(
+        "DROP TRIGGER IF EXISTS sight_v5_layout_invalidate_au; \
+         DROP TABLE IF EXISTS sight_v5_layout;",
+    )
+    .map_err(|e| format!("Failed to drop MIG-028 v5 schema cleanup: {}", e))?;
     // MIG-025 §A.2 — Sight v6 cache schema + invalidation triggers.
-    // Coexists with v5 per B2 dual-mount; both invalidation trigger
-    // families fire on every note_meta UPDATE / DELETE through Phases
-    // 1-3. §D.6 (Phase 4) drops the v5 surface in one atomic migration.
+    // (Was B2 dual-mounted alongside v5 through MIG-025/026; v5 retired
+    // in MIG-028.)
     crate::sight_v6::ensure_sight_v6_layout_table(&conn)
         .map_err(|e| format!("Failed to create sight_v6_layout table (MIG-025 §A.2): {}", e))?;
     crate::sight_v6::ensure_sight_v6_invalidation_trigger(&conn)

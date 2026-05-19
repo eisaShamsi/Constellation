@@ -763,7 +763,7 @@ Directory: `src/lib/sight/v6/`.
 | `traditions/index.ts` | Tradition registry + family groupings + user side-map |
 | `traditions/userDefinedLoader.ts` | Tier-1 JSON loader + schema validation |
 | `traditions/pluginLoader.ts` | Tier-2 JS plugin loader + consent banner + asset:// import |
-| `traditions/_manifests.generated.ts` | Prebuild-regenerated manifest summary from .md files |
+| `traditions/_manifests.generated.ts` | Prebuild-regenerated bundle of all per-tradition `docs/traditions/**/<id>.md` manifests across all 15 locales. **Never edit this file directly** — `scripts/build-tradition-manifests.mjs` regenerates it on every `npm install` / `npm run build`. The .md files are the source of truth; the .ts is the bundled artifact the chip's ⓘ disclosure modal reads at runtime. |
 | `gestures.ts` | Gesture dispatch (right-click, click-filter, hover, Esc, Cmd-F, Cmd-D) |
 | `tour.svelte` | First-boot orientation overlay |
 | `types.ts` | TypeScript contracts (`TraditionId`, `TraditionShape`, `TraditionModule`, etc.) |
@@ -781,7 +781,7 @@ The Concept Paper version (v4.0 → v4.1) and the implementation version (v6.0 �
 
 ### 9.3 Migration from Sight v5 → Sight v6 (completed)
 
-v5 was removed at MIG-025 §A. Settings migration: `sight_v5_*` keys read once at v6.0 first boot, mapped where possible, then deleted. SQLite cache: `sight_v5_layout` dropped; `sight_v6_layout` created with sentinel version field. Settings migration for excluded traditions: `activeTradition: 'dignaga' | 'ishraqi'` → `'aristotelian'`.
+v5 was made unreachable at MIG-017 (flag-off only) and fully **retired in MIG-028 (2026-05-18)** — the `src/lib/sight/v5/` module set, `src-tauri/src/sight_v5.rs`, the 4 `sight_v5_*` IPCs, and the `SIGHT_V5_ENABLED` flag are all removed from the build. The `sight_v5_layout` table + invalidation trigger are dropped from existing databases on the first MIG-028-build boot via an idempotent `DROP TABLE IF EXISTS` / `DROP TRIGGER IF EXISTS` in `init_db`. The MIG-024 Plan/Architect docs at `lab/reports/MIG-024-SIGHT-V5-*.md` stay on disk as historical record. Settings migration for excluded traditions: `activeTradition: 'dignaga' | 'ishraqi'` → `'aristotelian'`.
 
 ### 9.4 Tech stack
 

@@ -13,8 +13,9 @@
 		"build:tradition-manifests": "node scripts/build-tradition-manifests.mjs",
 		"predev": "node scripts/build-tradition-manifests.mjs",
 		"prebuild": "node scripts/build-tradition-manifests.mjs",
-		"test:sight-v6:perf": "echo 'MIG-025 §A.13: vitest runner deferred to §D.4. See tests/sight-v6/README.md.' && exit 0",
-		"test:sight-v6:layout": "echo 'MIG-025 §A.13: playwright runner deferred to §D.4. See tests/sight-v6/README.md.' && exit 0"
+		"test:sight-v6:perf": "vitest run tests/sight-v6/perf.test.ts tests/sight-v6/tradition-perf.test.ts",
+		"test:sight-v6:layout": "echo 'Layout-fidelity playwright runner still deferred. See tests/sight-v6/README.md.' && exit 0",
+		"test:sight-v6": "vitest run tests/sight-v6/"
 	},
 	"license": "MIT",
 	"dependencies": {
@@ -59,6 +60,7 @@
 		"svelte": "^5.0.0",
 		"svelte-check": "^4.0.0",
 		"typescript": "~5.6.2",
-		"vite": "^6.0.3"
+		"vite": "^6.0.3",
+		"vitest": "^4.1.6"
 	}
 }

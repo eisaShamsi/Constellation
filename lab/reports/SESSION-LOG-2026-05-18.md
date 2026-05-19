@@ -1639,3 +1639,88 @@ So MIG-022 §N was de-facto closed at 2026-05-12 (audit) → MIG-024 §0
   ceremony done this turn).
 - Pending Jobs Done count: 12 → **13** (+MIG-022 §N close).
 - Orientation v2.15 → **v2.16** (preserving v2.15).
+
+═══════════════════════════════════════════════════════════════════════
+Sight delivery cascade — Tiers 1-3 + Sight v5 retirement (2026-05-19)
+═══════════════════════════════════════════════════════════════════════
+
+Per Eisa direction: "We will proceed with Tiers 1-3 and drop Tier 4.
+Whatever is related to Sight v5 shall be abandoned."
+
+### MIGs shipped this turn (4 closed + 2 Architect-deferred)
+
+- **MIG-028** — Sight v5 retirement. v5 module set + sight_v5.rs + 4
+  IPCs + SIGHT_V5_ENABLED flag + dock button + modal mount all
+  deleted; init_db now drops sight_v5_layout table + invalidation
+  trigger via idempotent IF EXISTS migration. MIG-024 Plan/Architect
+  docs preserved as historical record. Both builds green. NSIS:
+  `Constellation_0.3.4_x64-setup.MIG028-sight-v5-retirement.exe`.
+
+- **MIG-030** — Sight v6 vitest runner + 2 tests (closes PJ-054).
+  Installed vitest@4.1.6; wired test:sight-v6 scripts; wrote
+  vitest.config.ts + tradition-isolation.test.ts + tradition-perf.test.ts.
+  58/58 tests pass across 3 files.
+
+- **MIG-031** — λ-fix-6.b fa/he/ja/tr canvas deep audit. 4 parallel
+  polish agents. fa: 0 edits (already polished). he: 17. ja: 12 incl.
+  5 bug fixes. tr: 28. Total 57 keys. All 15 locales now at ar/zh/ko
+  quality bar.
+
+- **MIG-032** — Tier 3 housekeeping. PJ-057.a Mohist citation: no-op
+  (already correct). PJ-057.c prebuild footnote: added to Concept
+  Paper §9.1 + §9.3. PJ-057.b SVG mocks: deferred (visual design).
+
+### Architect-deferred (next session)
+
+- **MIG-029** — Per-note frontmatter wiring for tradition-kind fields.
+  Cross-subsystem MIG; needs proper /migration discipline. Closes the
+  8 TODO comments scattered across habermas/korean-songnihak/masadir/
+  mencian-sprouts/mohist-san-biao/pardes/peirce/pramana.
+
+- **MIG-033** — Wasm/QuickJS sandbox for TS plugin layer. Large
+  security uplift. Replace Obsidian-trust H1 with sandboxed execution.
+
+### Tier 4 (formally abandoned per Eisa)
+
+The original Sight v5 vision's Layer 2 (diagnostic) / Layer 3
+(recommendation) / Layer 4 (coaching) workstreams are formally
+abandoned. Sight v6's facet sidebar + tradition-aware shape
+renderers provide a different design direction.
+
+### Sight delivery scoreboard
+
+| Tier item | Status |
+|---|---|
+| 1.1 Per-note frontmatter wiring | Architect-deferred → MIG-029 |
+| 1.2 vitest runner (PJ-054) | **DONE** in MIG-030 |
+| 1.3 fa/he/ja/tr canvas | **DONE** in MIG-031 |
+| 2.4 Wasm sandbox | Architect-deferred → MIG-033 |
+| 2.5 v4.1 per-tradition polish | Reserved → MIG-034 |
+| 2.6 Federation tradition behavior | Reserved → MIG-035 |
+| 3.7 PJ-057.a (citation) | **DONE** (no-op) |
+| 3.7 PJ-057.c (prebuild footnote) | **DONE** in MIG-032 |
+| 3.7 PJ-057.b (SVG mocks) | Deferred (visual design) |
+| 4 Layer 2/3/4 vision | **ABANDONED** per Eisa |
+| Sight v5 codebase | **RETIRED** in MIG-028 |
+
+### Orientation + PJ ledger
+
+- Orientation v2.16 → **v2.17** (preserving v2.16). §8 Migrations
+  table adds rows for MIG-028/029/030/031/032/033/034/035.
+- Pending Jobs v1.12: PJ-054 marked DONE.
+- Done count: 13 → **14** (+1: PJ-054).
+- Open PJs: 48 → **47**.
+
+### Files touched
+
+- Deleted: src/lib/sight/v5/ (7 files), src-tauri/src/sight_v5.rs
+- Modified: src-tauri/src/{lib.rs, search.rs, sight_v6.rs},
+  src/lib/sight/engine.ts, src/routes/+layout.svelte
+- Added: tests/sight-v6/{tradition-isolation,tradition-perf}.test.ts,
+  vitest.config.ts
+- Modified: tests/sight-v6/perf.test.ts (removed @ts-nocheck),
+  package.json (vitest dep + script wiring)
+- Locale polish: src/lib/i18n/{he,ja,tr}.json (fa already polished)
+- Docs: Concept Paper v4.1 §9.1 + §9.3 (prebuild footnote + v5
+  retirement note); Pending Jobs v1.12 (PJ-054 DONE);
+  Orientation v2.17 (NEW, full §8 table refresh).

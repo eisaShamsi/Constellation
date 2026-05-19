@@ -64,9 +64,9 @@
 	import ConstellationSight from '$lib/components/ConstellationSight2.svelte';
 	import SightV3 from '$lib/sight/v3/SightV3.svelte';
 	import SightV4 from '$lib/sight/v4/SightV4.svelte';
-	import SightV5 from '$lib/sight/v5/SightV5.svelte';
+	// MIG-028 (2026-05-18): SightV5 import retired with the v5 module set.
 	import SightV6 from '$lib/sight/v6/SightV6.svelte';
-	import { SIGHT_V2_ENABLED, SIGHT_V3_ENABLED, SIGHT_V4_ENABLED, SIGHT_V5_ENABLED, SIGHT_V6_ENABLED } from '$lib/sight/engine';
+	import { SIGHT_V2_ENABLED, SIGHT_V3_ENABLED, SIGHT_V4_ENABLED, SIGHT_V6_ENABLED } from '$lib/sight/engine';
 	import { detectClusters, computeStructuralGaps, computeUniverseHealth, buildCommunityProfiles, stratumWeightedCentrality, suggestBridges, type StructuralGap, type UniverseHealth, type ClusterInfo, type CommunityProfile } from '$lib/graph/clusterEngine';
 	import OrgChart from '$lib/components/OrgChart.svelte';
 	import EmojiIconPicker from '$lib/components/EmojiIconPicker.svelte';
@@ -753,7 +753,10 @@
 	// renders at a time; the SIGHT_V*_ENABLED gates enforce this.
 	let sightV3Active = $state(false);
 	let sightV4Active = $state(false);
-	// MIG-024 §1 — Sight v5 mount state. Gated false until §6 v5 ship moment.
+	// MIG-024 §1 — Sight v5 mount state. RETIRED MIG-028 (2026-05-18) —
+	// the v5 module set is fully removed from the build. Variable pinned
+	// false; remaining references in mutex-clear lines are harmless no-ops.
+	// Cleanup of those references is a future polish item.
 	let sightV5Active = $state(false);
 	// MIG-025 §A.7 — Sight v6 mount state. Gated false until §A.14 ship gate
 	// clears (Phase 1 of MIG-025 / Concept Paper v4.0). Mutually exclusive
@@ -4465,21 +4468,8 @@
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
 			</button>
 			{/if}
-			<!-- MIG-024 v5 Sight dock button — Layer 1 visual foundation per
-			     Concept Paper v3.1. Mutually exclusive with v4 in production
-			     (V5 ship moment in §6 flips V4 false, V5 true). -->
-			{#if SIGHT_V5_ENABLED && $appSettings.enabledFeatures?.constellationSightV3 !== false}
-			<button class="dock-btn" class:active={sightV5Active} onclick={() => {
-				if (!sightV5Active) {
-					sightV5Active = true;
-					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showInspector360 = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV6Active = false; lensReturnPending = false;
-				} else {
-					sightV5Active = false;
-				}
-			}} title={$t('sight.v5.title') || 'Constellation Sight v5'} aria-label="Constellation Sight v5">
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-			</button>
-			{/if}
+			<!-- MIG-028 (2026-05-18): v5 Sight dock button retired with the v5 module set. -->
+
 			<!-- MIG-025 §A.7 — Sight v6 dock button. Coordinated Views per
 			     Concept Paper v4.0. B2 dual-mount: appears alongside v5 only
 			     when SIGHT_V6_ENABLED is true (dev-flag gating per Architect
@@ -5375,26 +5365,7 @@
 						}}
 					/>
 				</div>
-			{:else if sightV5Active && SIGHT_V5_ENABLED}
-				<!-- Constellation Sight v5 — Layer 1 visual foundation per
-				     Concept Paper v3.1 §12.1. Inherits v4's flex-child mount
-				     pattern (fix to v3's position:fixed overlay catastrophe).
-				     §1 skeleton + §3 dome + §4 modes/scope + §5 stars +
-				     side panel + interactivity. -->
-				<div class="star-fullscreen sight-v5-fullscreen">
-					<div class="star-header">
-						<span class="star-title">{$t('sight.v5.title') || 'Constellation Sight v5'}</span>
-						<button class="star-close" onclick={() => sightV5Active = false}>×</button>
-					</div>
-					<SightV5
-						onOpenNote={(path: string, libraryName: string) => {
-							const lib = $libraryStats.find(l => l.name === libraryName);
-							const color = lib ? (libraryColorMap[libraryName] || '#7c3aed') : '#7c3aed';
-							openNoteTab(path, libraryName, color);
-							sightV5Active = false;
-						}}
-					/>
-				</div>
+			<!-- MIG-028 (2026-05-18): v5 Sight modal block retired with the v5 module set. -->
 			{:else if sightV6Active && SIGHT_V6_ENABLED}
 				<!-- MIG-025 §A.7 — Constellation Sight v6 mount block.
 				     Coordinated Views per Concept Paper v4.0: anchor dome +

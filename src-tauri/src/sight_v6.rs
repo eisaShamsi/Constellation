@@ -79,10 +79,11 @@ pub struct LinkEdge {
     pub confidence: String,
 }
 
-/// Idempotent table + index creation. Called once per `init_db`
-/// alongside `ensure_sight_v5_layout_table` per B2 dual-mount.
-/// Same covering-index strategy as v5 (Library + Folder are the
-/// hot facet-sidebar filters per Concept Paper §2.4 + §3.2).
+/// Idempotent table + index creation. Called once per `init_db`.
+/// Covering-index strategy: Library + Folder are the hot facet-
+/// sidebar filters per Concept Paper §2.4 + §3.2.
+/// (Was B2 dual-mounted alongside `ensure_sight_v5_layout_table`
+/// through MIG-025/026; v5 retired in MIG-028 2026-05-18.)
 pub fn ensure_sight_v6_layout_table(conn: &Connection) -> Result<(), String> {
     conn.execute_batch(
         "CREATE TABLE IF NOT EXISTS sight_v6_layout (
@@ -165,8 +166,9 @@ pub fn compute_universe_snapshot_hash(conn: &Connection) -> Result<String, Strin
 /// progressive variant). This synchronous variant is kept for unit
 /// tests + as a fallback / repair operation.
 ///
-/// Mirrors `sight_v5::backfill_sight_v5_layout` (with the same fix-7
-/// confidence_alpha aggregation) and adds the 4 new v6 columns:
+/// (Historical: mirrored the retired `sight_v5::backfill_sight_v5_layout`
+/// with the same fix-7 confidence_alpha aggregation pattern before
+/// v5 retirement in MIG-028.) Adds the 4 new v6 columns beyond v5:
 ///   - link_in_count: subquery over note_links.target_path
 ///   - link_out_count: subquery over note_links.source_path
 ///   - frontmatter_key_count: COUNT over json_each(properties_json),
@@ -1027,69 +1029,12 @@ mod tests {
         assert_eq!(h2, "1-100-0-0");
     }
 
-    #[test]
-    fn dual_mount_v5_and_v6_caches_coexist() {
-        // Both v5 and v6 functions can be called against the same DB
-        // without collision. v5's table/triggers are not affected
-        // by v6's table/triggers, and vice versa. This is the B2
-        // dual-mount invariant from the Architect doc §3 Option B.
-        let conn = empty_universe_db();
-        // Pretend v5 schema is already there by creating v5-shaped
-        // table + AU trigger directly.
-        conn.execute_batch(
-            "CREATE TABLE sight_v5_layout (
-                note_path TEXT PRIMARY KEY,
-                computed_at INTEGER NOT NULL DEFAULT 0
-            );
-            CREATE TRIGGER sight_v5_layout_invalidate_au
-            AFTER UPDATE ON note_meta
-            BEGIN
-                DELETE FROM sight_v5_layout WHERE note_path = OLD.path;
-            END;",
-        )
-        .unwrap();
-
-        // Now add v6 alongside.
-        ensure_sight_v6_layout_table(&conn).unwrap();
-        ensure_sight_v6_invalidation_trigger(&conn).unwrap();
-
-        // Both tables exist.
-        let table_count: i64 = conn
-            .query_row(
-                "SELECT COUNT(*) FROM sqlite_master \
-                 WHERE type='table' AND name IN ('sight_v5_layout', 'sight_v6_layout')",
-                [],
-                |r| r.get(0),
-            )
-            .unwrap();
-        assert_eq!(table_count, 2);
-
-        // INSERT a row into both caches; UPDATE note_meta;
-        // both rows get DELETEd (each cache's trigger fires).
-        conn.execute("INSERT INTO note_meta (path, modified) VALUES ('c.md', 100)", [])
-            .unwrap();
-        conn.execute("INSERT INTO sight_v5_layout (note_path) VALUES ('c.md')", [])
-            .unwrap();
-        conn.execute(
-            "INSERT INTO sight_v6_layout (note_path, computed_at) VALUES ('c.md', 0)",
-            [],
-        )
-        .unwrap();
-        conn.execute(
-            "UPDATE note_meta SET modified = 200 WHERE path = 'c.md'",
-            [],
-        )
-        .unwrap();
-
-        let v5_count: i64 = conn
-            .query_row("SELECT COUNT(*) FROM sight_v5_layout", [], |r| r.get(0))
-            .unwrap();
-        let v6_count: i64 = conn
-            .query_row("SELECT COUNT(*) FROM sight_v6_layout", [], |r| r.get(0))
-            .unwrap();
-        assert_eq!(v5_count, 0, "v5 trigger should fire and DELETE the v5 row");
-        assert_eq!(v6_count, 0, "v6 trigger should fire and DELETE the v6 row");
-    }
+    // MIG-028 (2026-05-18): `dual_mount_v5_and_v6_caches_coexist` test
+    // retired with the Sight v5 module set. It verified the B2 dual-
+    // mount invariant from the original Architect doc §3 Option B —
+    // that v5 and v6 schemas could coexist without trigger collision.
+    // With v5 fully retired, the invariant is no longer testable nor
+    // architecturally meaningful.
 
     // ── §A.3 backfill tests ─────────────────────────────────────────
 
