@@ -19,7 +19,8 @@
 > - **PJ-054 — Sight v6 vitest test runner** — **DONE 2026-05-19** in MIG-030. Installed `vitest@4.1.6`; wrote `tradition-isolation.test.ts` (Plan §14.1, channel-isolation invariant for all 24 traditions) + `tradition-perf.test.ts` (Plan §14.2, ≤16ms switch on 7,636-note universe) + `vitest.config.ts` (scope: exclude worktree duplicates + the still-deferred playwright layout-fidelity test). **58/58 tests pass.**
 > - **PJ-055 — User-plugin label schema warning** — **DONE 2026-05-18** in commit `e63ee0c7`. `docs/traditions/schema/tradition.v1.schema.json` top-level description now warns that dotted-path-shaped literal labels would collide with Constellation's own i18n key namespace.
 > - **PJ-056 — MIG-026 drift cleanup** — **DONE 2026-05-18** (3 stale doc comments fixed inline in commit `e63ee0c7`: dome.ts STRATUM_LABELS, types.ts:444 TraditionModule.name, traditions/index.ts:222 FAMILIES.label). The literal-deletion phase (24 `name:` literals + 10 `FAMILIES[*].label` literals) is **closed by Eisa decision 2026-05-18**: accept the duplication as documentation. The literals serve as the canonical English source-of-truth that en.json mirrors and as a defensive renderer fallback for the unsupported-locale + missing-en-entry edge case. No further work planned.
-> - **PJ-057 — Post-MIG-026 doc-drift surfaced during Concept Paper v4.1 write** (3 items): (a) v4.0 §4.2.3 Mohist citation says *Mòzǐ* ch. 35; the shipped manifest cites Book IX — pick one canonical citation. (b) `docs/Sight-vNext-MockB1-Toggle.svg` and `docs/sight-redesign-v0.2-mockE-tradition-registers.svg` show pre-expansion 7-tradition state; needs a fresh 24-tradition variant. (c) Concept Paper §9.1 (and the orientation §17 list of unread files) should footnote that `_manifests.generated.ts` is prebuild-generated and must regenerate when manifests change. All low-severity P3 polish.
+> - **PJ-057 — Post-MIG-026 doc-drift surfaced during Concept Paper v4.1 write** (3 items): (a) v4.0 §4.2.3 Mohist citation says *Mòzǐ* ch. 35; the shipped manifest cites Book IX — pick one canonical citation. (b) `docs/Sight-vNext-MockB1-Toggle.svg` and `docs/sight-redesign-v0.2-mockE-tradition-registers.svg` show pre-expansion 7-tradition state; needs a fresh 24-tradition variant. (c) Concept Paper §9.1 (and the orientation §17 list of unread files) should footnote that `_manifests.generated.ts` is prebuild-generated and must regenerate when manifests change. **(a)** no-op 2026-05-19 (v4.1 already cites manifest-canonical form); **(c)** DONE 2026-05-19 in `f327d758` (Concept Paper §9.1/§9.3 updated); **(b)** still open (visual design work).
+> - **PJ-058 — Constellation Sight Subsystem Concept Paper v1.0** — **DONE 2026-05-19**. New ~6,700-word scholarly document at `docs/Constellation-Sight-Subsystem-Concept-Paper-v1.0.md` defining Sight as a subsystem of Constellation, enumerating its 8 functions (F1-F8), placing it in the 4-stratum subsystem map (structural / authoring / diagnostic-visualization / infrastructure), documenting its 8 architectural invariants (I1-I8), and tracing v2 → v6.3 subsystem history. Complement to the existing `Constellation-Sight-Concept-Paper-v4.1.md` (internal-design contract): subsystem paper = "what Sight is in Constellation"; v4.1 = "how Sight is built internally". Filed + delivered same-turn per Eisa direction.
 >
 > ### What did NOT close in v1.12
 >
@@ -58,6 +59,19 @@
 > 6. **MIG-023** — Constellation Warrant Research workstream (Concept Paper first).
 >
 > **Done count after v1.12 post-audit**: 12 (+5 — PJ-052 Concept Paper v4.1 + PJ-053 λ-fix-6 + PJ-055 schema warning + PJ-056 drift cleanup + PJ-035 status-correction + PJ-040 status-correction). **Cancelled / Abandoned**: 4 (PJ-015 + PJ-036 abandoned 2026-05-18; PJ-034 retained from earlier; MIG-005 abandoned). **Rejected**: 1 (PJ-037). **Superseded**: 1 (PJ-038). **Open PJs**: 48.
+>
+> ### Post-2026-05-18 same-day rollup (2026-05-19 Sight delivery cascade)
+>
+> Eisa cascade direction: "Proceed with Tiers 1-3 and drop Tier 4. Whatever is related to Sight v5 shall be abandoned." Then: "Add to it developing Constellation Sight Concept paper."
+>
+> Closed same-day this turn:
+> - **PJ-054** — Sight v6 vitest test runner — DONE in MIG-030 (`f327d758`). 58/58 tests pass.
+> - **PJ-057.a** + **PJ-057.c** — Mohist citation no-op + prebuild footnote in Concept Paper §9 — DONE in MIG-032 (`f327d758`).
+> - **PJ-058** — Constellation Sight Subsystem Concept Paper v1.0 — DONE this turn (~6,700 words; new doc at `docs/Constellation-Sight-Subsystem-Concept-Paper-v1.0.md`).
+>
+> Plus: **MIG-028** (Sight v5 retirement) + **MIG-030** (vitest) + **MIG-031** (λ-fix-6.b fa/he/ja/tr canvas polish — 57 keys across 3 locales) + **MIG-032** (Tier 3 housekeeping) all shipped in `f327d758` (the Sight delivery cascade). Plus **BUG-fix** (Sight anchor Shift+click) shipped in `4b20795b`.
+>
+> **Done count after 2026-05-19 rollup**: 12 → **15** (+3 — PJ-054 + PJ-057.a/c + PJ-058). **Open PJs**: 48 → **45**.
 
 > **What changed in v1.11** (Sight v5 Concept Paper canonical · MIG-022 collision resolved · MIG-024 / 025 / 026 / 027 reserved · 1 new PJ filed):
 >
