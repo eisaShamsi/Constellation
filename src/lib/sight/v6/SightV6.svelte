@@ -728,17 +728,33 @@
 			dragState = null;
 			return;
 		}
-		// §B.7-fix-1 (Eisa cycle-1 Stage 4): Shift+click on the anchor
-		// dome is a no-op. Anchor has no channel-specific category
-		// (it's the universe-baseline view), so cross-filter doesn't
-		// apply here. Without this guard, Shift+click fell through to
-		// onOpenNote and opened the note instead of being silent — the
-		// guard mirrors MiniDome's handling for 'anchor' / 'acts' channels.
-		if (ev.shiftKey) return;
 		const pt = pointerToCanvas(ev);
 		if (!pt) return;
 		const hit = starHitTest(stars, pt.x, pt.y, 9 / zoomScale);
+		// §B.7-fix-1 (Eisa cycle-1 Stage 4): Shift+click on EMPTY anchor
+		// canvas is a silent no-op (without this guard, the click fell
+		// through to onOpenNote with a stale hoveredPath under earlier
+		// pre-§B.7 code paths). On a STAR hit, however, Shift+click is
+		// the cross-filter gesture — see §B.7-fix-3 below.
 		if (!hit) return;
+		// §B.7-fix-3 (Eisa 2026-05-19): Shift+click on a star adds the
+		// star's stratum band to the active filter set. The anchor's
+		// primary encoding axis is stratum × time, so stratum is the
+		// natural "channel" the anchor's shift-gesture should target
+		// — mirroring the per-channel mini-dome shift-click pattern.
+		// Plain click → open the note (unchanged). The previous over-
+		// broad `if (ev.shiftKey) return` at the top of this function
+		// silenced ALL anchor shift-clicks, including the ones on
+		// stars where the user meant to add to filter; that fix has
+		// been narrowed to only the empty-canvas case above.
+		if (ev.shiftKey) {
+			const row = rows.find((r) => r.notePath === hit);
+			if (row) {
+				const band = bandForRawStratum(row.stratum);
+				filters = toggleFilter(filters, 'stratum', band);
+			}
+			return;
+		}
 		const row = rows.find((r) => r.notePath === hit);
 		if (row && row.libraryName) {
 			onOpenNote(row.notePath, row.libraryName);
