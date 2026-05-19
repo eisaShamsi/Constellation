@@ -17,6 +17,11 @@ export default defineConfig({
 			'tests/sight-v6/perf.test.ts',
 			'tests/sight-v6/tradition-isolation.test.ts',
 			'tests/sight-v6/tradition-perf.test.ts',
+			// MIG-036 P2 (2026-05-19) — Sight v7 rendering primitives.
+			// Files live in tests/sight-v6/ for now; renaming the directory
+			// is a polish item for the v7 close-out.
+			'tests/sight-v6/v7-density.test.ts',
+			'tests/sight-v6/v7-stack.test.ts',
 		],
 		exclude: [
 			'**/node_modules/**',
