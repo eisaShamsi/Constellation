@@ -143,4 +143,11 @@ export const SIGHT_V6_ENABLED = true;
 // in src/lib/sight/v7/ + src-tauri/src/sight_v7.rs in parallel. Once
 // v7 ships + stabilizes, SIGHT_V6_ENABLED → false (and v6 retirement
 // in MIG-037). See lab/reports/MIG-036-SIGHT-V7-ARCHITECT.md.
-export const SIGHT_V7_ENABLED = false;
+//
+// MIG-036 P3 (2026-05-19) — flipped to TRUE so the universe-view
+// dispatcher + masādir-v7 sample land in Boss-test builds. v6 stays
+// reachable via its own dock button (B2 dual-mount); the v7 dock
+// button now appears next to it. P11 ship-gate retires the flag
+// entirely (always-on); flipping back to false rolls v7 out of the
+// dock in case of mid-cascade regression.
+export const SIGHT_V7_ENABLED = true;
