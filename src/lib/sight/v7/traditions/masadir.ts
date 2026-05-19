@@ -26,16 +26,41 @@ import type {
 // Geometry
 // ════════════════════════════════════════════════════════════════════
 
-/** Same 4-quadrant rotation v6 used (+π/4 offset so quadrant
- *  dividers don't run through the vertical/horizontal axes where
- *  stratum labels live). Cell centers land at compass East / South
- *  / West / North after this rotation. */
-const QUADRANT_ROTATION_OFFSET = Math.PI / 4;
+/** Cell centers at diagonal NE / SE / SW / NW positions per Concept
+ *  Paper §4.1.3 (the original geometry before v6's +π/4 rotation
+ *  shifted them to cardinal E/S/W/N).
+ *
+ *  Why diagonals and not cardinals: stratum labels (FOUNDATION /
+ *  WORKING / CONNECTION / SYNTHESIS / EDGE OF KNOWING) sit on the
+ *  +y vertical axis at multiple radii. Any cell on the vertical
+ *  axis collides with them — v6 avoided this by spreading individual
+ *  stars across each wedge with hash jitter, so the stratum labels
+ *  showed BESIDE the stars rather than on top of them. v7 collapses
+ *  each wedge to one density blob at the cell center; that blob
+ *  MUST live off the +y axis to stay clear of the stratum labels.
+ *  Diagonals are equidistant from both axes and avoid the +x axis
+ *  too (where calendar rim labels would sit if a tradition opted
+ *  into them — masādir doesn't, but the geometry is forward-
+ *  compatible).
+ *
+ *  Why v7 doesn't need v6's wedge-divider rotation: v7 doesn't
+ *  draw wedge dividers at all (per the Form-Aligns-To-Purpose
+ *  redesign — the cell IS the unit, not a bounded slice of the
+ *  dome). So the +π/4 offset v6 added (§θ-fix-1) to push dividers
+ *  off the cardinal axes is unnecessary here; cells land at the
+ *  Concept Paper's original NE/SE/SW/NW positions directly.
+ *
+ *  Canvas math convention: 0 = EAST, +π/2 = SOUTH (canvas y is
+ *  inverted from math), +π = WEST, -π/2 = NORTH.
+ *
+ *  MIG-036 P3-fix-1 (Eisa Boss test 2026-05-19): pre-fix had cells
+ *  at cardinal E/S/W/N (v6's rotation preserved); qiyās blob at N
+ *  overlapped with the CONNECTION stratum label. */
 const CELL_CENTER_ANGLES = {
-	quran: -Math.PI / 2 + QUADRANT_ROTATION_OFFSET + Math.PI / 4, // E
-	sunnah: 0 + QUADRANT_ROTATION_OFFSET + Math.PI / 4, // S
-	ijma: Math.PI / 2 + QUADRANT_ROTATION_OFFSET + Math.PI / 4, // W
-	qiyas: Math.PI + QUADRANT_ROTATION_OFFSET + Math.PI / 4, // N
+	quran: -Math.PI / 4, // NE (top-right)
+	sunnah: Math.PI / 4, // SE (bottom-right)
+	ijma: (3 * Math.PI) / 4, // SW (bottom-left)
+	qiyas: -(3 * Math.PI) / 4, // NW (top-left)
 } as const;
 
 /** Cell centers sit at 55% of the dome radius from the dome center
