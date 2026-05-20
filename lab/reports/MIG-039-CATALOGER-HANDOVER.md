@@ -11,7 +11,7 @@ Before anything else:
 1. Read `CLAUDE.md` (project rules — top-principal rules apply).
 2. Read this whole handover.
 3. Read `docs/Constellation-CECE-Concept-Paper-v1.0.md` (what CECE is + the naming rationale).
-4. **⚠️ The orientation doc is STALE.** The highest version is `docs/Constellation Orientation & Onboarding v2.17.md`, which **predates all of 2026-05-19's work**. Do NOT trust it for current state. The accurate end-of-2026-05-19 state is in `lab/reports/SESSION-LOG-2026-05-19.md`. **A v2.18 orientation bump is outstanding SO #6 debt** (see §6) — strongly consider doing it before/with this build.
+4. **Orientation is current at v2.18.** Read `docs/Constellation Orientation & Onboarding v2.18.md` — its "What changed in v2.18" preamble captures all of 2026-05-19's work (the Sight pivot, CECE → The Cataloger, version 0.1, Wings). The finest-grained detail (commit-by-commit) is in `lab/reports/SESSION-LOG-2026-05-19.md`. (Earlier drafts of this handover warned the orientation was stale at v2.17 — that debt was cleared at session end; v2.18 is the trustworthy current state.)
 
 ## 1. The goal (one line)
 
@@ -92,11 +92,11 @@ A full-page view component: a header titled "The Cataloger" + the `ClassifierSca
 - **Testing Instructions Rule**: the Boss test must read as a tutorial.
 - **Plan Approval = Build Approval**: Eisa approved this MIG-039 plan + the name; cascade the build, stop only at the Boss-test verification.
 - **SO #1**: log progress to `lab/reports/SESSION-LOG-2026-05-20.md` (new day) as you go.
-- **SO #6 (OUTSTANDING DEBT)**: orientation is at v2.17, stale since before 2026-05-19. A **v2.18 bump** is owed, capturing: MIG-037 P1 (Time Dome), MIG-038 (Sight+Map disabled + Wings charter), version 0.1.0, CECE Concept Paper + "The Cataloger" naming, and (when done) MIG-039. Address this early.
+- **SO #6**: orientation is current at **v2.18** (bumped at the end of the 2026-05-19 session — captures the Sight pivot, CECE → The Cataloger, version 0.1, Wings). When MIG-039 ships, bump to **v2.19** in the same commit, adding The Cataloger's left-dock arrival.
 
 ## 9. Suggested kickoff prompt (what Eisa pastes into the new session)
 
-> Pick up **MIG-039 — build "The Cataloger"** (the CECE left-dock Core Plug-in). Read `lab/reports/MIG-039-CATALOGER-HANDOVER.md` for the full self-contained plan, then cascade the build per its §7, stopping at the Boss-test verification. Also handle the outstanding orientation v2.18 bump (§8) capturing 2026-05-19's work.
+> Pick up **MIG-039 — build "The Cataloger"** (the CECE left-dock Core Plug-in). Read `lab/reports/MIG-039-CATALOGER-HANDOVER.md` for the full self-contained plan, then cascade the build per its §7, stopping at the Boss-test verification. When it ships, bump orientation v2.18 → v2.19 in the same commit.
 
 ---
 
