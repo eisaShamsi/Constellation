@@ -377,3 +377,169 @@ want to display time, I will call this 'the Time Dome'."
   iteration) — relies on insertion-order convention for now;
   explicit reorder is a polish item if the convention fails
 
+---
+
+## EOD pivots — Sight v6.3 frozen, plugin externalization postponed
+
+After Phase 1 PASS Boss test, three consecutive Eisa pivots:
+
+### Pivot 1 — "Why reinvent Sight?"
+
+Eisa challenged the v6.3 cascade itself: "Why have I created Constellation? What does it represent? Why am I going through all these complex operations? To prove what?"
+
+The challenge anchored on the foundational doc (`docs/CONSTELLATION-KNOWLEDGE-FORMULATION.md`) and the User Manual's opening: Constellation cultivates *wisdom* through the *living link system*; visualizations are downstream readers, not the core mission. After research-grounded design discussion (Aristotelian epistemology via Stanford EP + IEP), Eisa pivoted to:
+
+### Pivot 2 — "Sight + Map become plugins, not core"
+
+Decision: Sight and Constellation Map both get externalized from core. Plugin API is hybrid (JS plugins + core Rust IPCs). Community / distribution model deferred. Eisa: "No more Sight as a core plug-in. But… we are going to make it an external plug-in."
+
+### Pivot 3 — "Postpone plugin work, audit first"
+
+Within minutes of the plugin-extraction pivot, Eisa pivoted again: "No. I will postpone the Plug-in for now. Instead, I want to audit the Constellation application. To identify where we stand and to plan the way ahead."
+
+All three pivots accepted. Sight v6.3 Phase 2 + Phase 3 frozen. Plugin extraction work not started. MIG-037 P1 (Time Dome) stays on `main` as shipped (Phase 1 only). MIG-036 v7 cascade stays on `main` as dormant fallback. No reverts.
+
+---
+
+## State-of-Application Audit (SO #5)
+
+Snapshot generated 2026-05-19 from three parallel research agents reading: Orientation v2.17 (4568 lines, canonical state-of-architecture), Pending Jobs v1.12 (canonical PJ tracker), session logs of last 7 days, memory entries, git log of last 10 days, codebase grep for BUG-NNN markers.
+
+### Headline state
+
+**Constellation is in a mature, near-ship state.** 18 subsystems verified-shipped and Boss-validated with milestone tags. Codebase clean on `main` (zero uncommitted changes, no divergent feature branches). Two Sight cascades sit at coherent stopping points — both can be paused indefinitely without regression risk. Backlog: 48 open Pending Jobs, dominated by P2/P3 polish (not blockers). **One P1 surprise**: PJ-060 (the `index_note` cache short-circuit) blocks Sight v6.3 P2/P3 AND fixes MIG-029 frontmatter movement that's been failing for weeks. Single most-leveraged fix on the board.
+
+### (a) Verified-shipped and protected
+
+18 subsystems with closure MIGs + protective invariants:
+
+| Subsystem | Closure | Protective invariant |
+|---|---|---|
+| Typed Links Architecture | MIG-001 | Write-time derivation; confidence levels; decay formula |
+| Knowledge Strata (8-level) | MIG-001 | Write-time cache; sky_nodes triggers |
+| Maturity Lifecycle | MIG-001 | Write-time derivation; state machine |
+| Living Link Architecture P0-P5 | MIG-004 | 7 link types; 4 confidence levels; 8 properties |
+| Trails | MIG-001 | Write-time derivation |
+| Arabic Morphological Engine L1-L5 | MIG-010 | 5-layer; tashkeel/hamza normalization; L2 protected list (1196); L3 FST mmap; L4 corpus ranking; L5 per-Universe overrides |
+| Alias-aware Wikilink Resolution | MIG-004 | 3-tier resolution (name → alias → lowercase) |
+| Lexical Bridge (6 modules) | MIG-010 | FTS5 + custom constellation tokenizer; proper-noun protected list |
+| 360° Inspector | MIG-010 | Stratification Matrix; 8×8 grid; dedup-by-path; hover-only labels |
+| Sight v6.3 Traditions (24 curated + user-definable) | MIG-026 | channel-isolation invariant; per-shape boost; full 15-locale localization |
+| Sight v6 Theme Inheritance | MIG-027 | Chrome/semantic color split; theme-aware CSS vars; dark fallback |
+| Create-Dialog Standardization | MIG-008 | Modal entry point; 12 file kinds |
+| Index Lexical Bridge | MIG-010 | Per-note cache; trigram overlap scoring |
+| Index Filter Bridge | MIG-011 | Per-note derivation; category enumeration |
+| Index Search Engine | MIG-012 | Full-text ranking; lexeme boosts |
+| Note-Stage Taxonomy | MIG-014 | 7 discrete stages; dash-encoded frontmatter |
+| Chunked v2 Sentinel Migration | MIG-015 | Status-bar UI; atomicity guarantees |
+| File-Over-App Protocol | §10.8 | Read-only invariant; file ACID contract |
+
+Plus today's additions: **MIG-037 P1** (Time Dome added, Phase 1 only), **CLAUDE.md** (Form-Aligns-To-Purpose rule added).
+
+### (b) At-risk / in-flight / uncommitted
+
+- **MIG-036 v7 cascade** — DORMANT. P1+P2+P3+P3-fix-1 commits on `main`; `SIGHT_V7_ENABLED = false`. Code isolated; salvage value: `density.ts` pure functions reused by v6.3 Phase 3 (which is itself frozen). Risk: low. Fallback if v6.3 is ever revisited.
+- **MIG-037 v6.3** — Phase 1 SHIPPED, Phases 2+3 FROZEN per today's pivot. Phase 2 design decision (Aristotelian pure-radial reframe) never approved; Phase 3 (density blobs) never started.
+- **MIG-029 frontmatter wiring** — BLOCKED. 6 commits attempted (§ν.1–§ν.6 + 3 fixes). Root cause identified: `index_note` cache-hit short-circuit at `search.rs:3004`. Carried as PJ-060.
+- **Plugin extraction work** — DISCUSSED and POSTPONED. No code, no Architect doc.
+- **Tree state**: clean. No uncommitted changes. No divergent branches.
+
+### (c) Known-broken
+
+6 items, all graceful-degradation or pre-existing deferrals:
+
+| ID | Subsystem | Issue | Severity | Status |
+|---|---|---|---|---|
+| PJ-012 | Frontend TS | `LinkLifecycle.fresh` missing in union; `npm run check` error at `store.ts:2212` | P2 | Deferred post-CE |
+| PJ-028 | Staging | `splitStage('-concept')` empty lifecycle (leading-dash edge) | P2 | Open, graceful |
+| PJ-029 | Staging | Concept Paper §6.1 vs `commitStage` multi-dash drift | P2 | Open, policy pending |
+| PJ-033 | Localization | NotePane stage badge `<span>` lacks `dir="auto"` (Arabic bidi edge) | P3 | Open, ~1-line fix |
+| BUG-001 mem | Note Lifecycle | Phantom duplicate notes — root cause appears resolved, citation kept | Minor | Resolved |
+| BUG-015 mem | Svelte | onDestroy corrupts target body — appears mitigated | Minor | Mitigated |
+
+**No production blockers. No runtime crashes. No data-corruption bugs open.**
+
+### (d) Pending but not started
+
+**48 open Pending Jobs**, clustering into 7 categories:
+
+| Category | Count | Priority range |
+|---|---|---|
+| Mini-MIGs | 4 | P1–P2 |
+| Larger MIGs (Links / Map / Rule 8) | 11 | P1–P2 |
+| Bug fixes (link panels / search / features) | 6 | P2–P3 |
+| Docs (User Manual backfill) | 1 | P2 |
+| Cleanup (schema / i18n / dead code) | 6 | P2–P3 |
+| Rule 8 audit (persistence / caching) | 4 | P2 |
+| MIG-014 §2F follow-ups (staging / localization) | 6 | P2–P3 |
+| Carried forward (PJ-059 Sight search; PJ-060 cache short-circuit) | 2 | P1–P3 |
+
+**PJ-060** (P1 blocker) is the critical finding: filed today, not yet in v1.12 tracker. Fixes the cache invalidation that's been blocking MIG-029 + would unblock Sight v6.3 P2/P3 if v6.3 is ever revisited.
+
+Other notable open PJs by area:
+
+- **Links surfaces**: PJ-005 (MIG-007 Links Settings tab), PJ-008 (Outgoing duplication), PJ-009 (Backlinks duplication), PJ-010 (Unlinked Mentions alias bleed) — all isolated single-file or small-MIG work
+- **Map backlog (PJ-011)**: 3 bundled issues (D3 perf/memory, tooltip shows canonical filename not human title, search highlight missing)
+- **i18n gaps**: PJ-041 (cataloger reasoning hardcoded EN), PJ-042 (`self_reported_confidence` enum bypasses i18n), PJ-043 (taxonomy labels en+ar only, missing 13 locales = ~3,300 translations)
+- **In-app Help viewer (PJ-049)**: Help files in 15 locales exist, no UI surface to show them
+- **Cleanup batch**: PJ-016 (drop `term_vocab.bridge_concept_id`), PJ-017 (drop `term_embeddings`), PJ-018 (drop `index.semanticSearchEnabled` flag), PJ-019 (drop `searchHub.concept` i18n) — all dead-code/dead-data, intentionally deferred 2-3 sessions for safety, now safe to batch
+- **Build reliability (PJ-004)**: NSIS bundling `os error 32` when app is running — affects CI
+
+### (e) Documentation drift
+
+Items in orientation v2.17 §17 (canonical drift register):
+
+| Item | Status |
+|---|---|
+| `store.ts:3483` TraditionId literal-union duplicate (should import from `types.ts`) | OPEN since v2.13 |
+| Concept Paper §4.1.2 pramāṇa "NE/SE/SW/NW" stale notation | RESOLVED in v4.1 (`d3d09d89` 2026-05-14) — remove from §17 in v2.18 |
+| Concept Paper §4.1.3 masādir same geometry drift | RESOLVED in v4.1 — remove from §17 in v2.18 |
+| §8 Migrations table coverage gap | RESOLVED in v2.16 — already removed |
+| PJ-055 plugin-label collision schema warning | OPEN since v2.15 |
+
+**New drift items from today's work** (to add to §17 in v2.18):
+
+- v7 cascade + MIG-037 P1 (added to source but orientation not yet bumped)
+- Plugin externalization discussed (no decision committed; document as "considered + postponed")
+- State-of-app audit run (this entry)
+- Time Dome added as 25th tradition → Concept Paper v4.1 traditions table needs 1-row addition
+
+**User Manual staleness** (PJ-014 + §17): not read in full since pre-MIG-026; full re-read against shipped v6.3 + v7 surfaces would itemize gaps. Deferred to a future User Manual rebuild MIG.
+
+### Confidence notes from the audit
+
+- High confidence: shipping states, today's pivots, drift register
+- Moderate gap: actual extent of User Manual staleness (only TOC + opening verified)
+- PJ-060 scope is inferred from context; no Architect doc exists yet
+
+---
+
+## End-of-day state, 2026-05-19
+
+**Where Constellation is:** A mature 18-subsystem PKM application with 24-tradition Sight + theme inheritance + full living link architecture + complete Arabic engine, all shipping cleanly. Three Sight-redesign attempts today (v7, v6.3, plugin externalization) all paused at coherent stopping points. Backlog clustered into 7 work streams, dominated by polish, with one P1 fix (PJ-060) that has outsized leverage.
+
+**What's pending Eisa decision:** the way-ahead — which work stream to pick up first, given the audit findings.
+
+---
+
+## Plugin pivot + CECE focus (post-audit)
+
+After the audit, Eisa set a concrete direction (superseding the earlier "postpone plugin"):
+
+1. **Version → 0.1.0** (`26fe4f43`) — JS configs were drifted to 0.3.4; aligned to Cargo.toml + Eisa's "Constellation will be v.0.1."
+2. **Sight + Map disabled** (`57cd7638`, MIG-038) — Sight via `SIGHT_V6_ENABLED=false`; Map via `loadSettings` force-off. Code intact for later detachment.
+3. **Constellation Wings chartered** (`57cd7638`) — `docs/Constellation Wings/Charter v0.1.md`. The External Plug-in subsystem becomes its own sub-project, DEFERRED until Eisa schedules. Captures the Tauri-single-binary-Rust constraint, the two-layer (isolate-now / load-later) model, the hybrid-API decision, cross-check sources.
+4. **Plugin taxonomy clarified** — "Core Plug-in" = a main-LEFT-DOCK feature (like Sky View / CNS / Index), staying in the app. "External Plugin" = detached (Sight, Map → Wings). CECE is the first Core Plug-in.
+
+### CECE Concept Paper v1.0 (this commit)
+
+`docs/Constellation-CECE-Concept-Paper-v1.0.md` — NEW. Eisa: "write/update the CECE concept paper. And based on its core concept we will decide on the proper naming." Grounded in `epistemic-content-EN.md` (the 5-civilization foundation) + an as-built code map (cece/ + classifier/ + sources/).
+
+**Core concept**: CECE classifies each note on two axes — *what kind of knowledge* (content-type: 5 branches) and *where it came from* (source: 11 sources) — making the **epistemic texture** of the universe visible.
+
+**Key accuracy finding (honest)**: CECE ships as a **5-cataloger heuristic ensemble** (User-Authority, Structural, Linguistic, Graph, Semantic). The 6th — **Reasoning (local LLM, Qwen3-4B via llama.cpp)** — is **designed but NOT wired** (abstains on every note). Background auto-scan also not wired (manual-only). User-facing copy must not claim "AI/LLM classification" as shipped.
+
+**Naming decision (pending Eisa)**: "Source Review" names only the source axis, undersells the content-type half. §10 of the paper lays out candidates (The Cataloger / Epistemic Lens / Provenance / Epistemic Content / Ways of Knowing) with my recommendation = **"The Cataloger"** (spans both axes, matches the engine's own cataloger architecture, warm + human). Awaiting Eisa's pick before finalizing the name + building the left-dock feature.
+
+**Next after naming**: build the CECE left-dock Core Plug-in (dock button + full-page view reusing SourceReviewPanel + ClassifierScanProgressStrip); right-sidebar Source Review tab stays as-is until the dock view is done.
+
