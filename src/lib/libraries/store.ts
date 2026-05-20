@@ -3844,7 +3844,15 @@ export function applyParsedSettings(parsed: Record<string, unknown>): void {
 		skyView: { ...DEFAULT_SETTINGS.skyView, ...savedSkyView },
 		index: { ...DEFAULT_SETTINGS.index, ...((parsed.index as Record<string, unknown>) || {}) },
 		security: { ...DEFAULT_SETTINGS.security, ...((parsed.security as Record<string, unknown>) || {}) },
-		enabledFeatures: { ...DEFAULT_SETTINGS.enabledFeatures, ...((parsed.enabledFeatures as Record<string, boolean>) ?? (parsed.enabledPlugins as Record<string, boolean>) ?? {}) },
+		// MIG-038 (2026-05-19) — Map DISABLED pre-Wings. The trailing
+		// `constellationMap: false` override force-disables Constellation
+		// Map even for users who previously enabled it (the dock button +
+		// command-palette entry both gate on enabledFeatures.constellationMap
+		// === true). Sight is disabled separately via SIGHT_V6_ENABLED=false
+		// in sight/engine.ts. Both keep their code intact for later
+		// detachment into standalone Constellation Plugins under the
+		// "Constellation Wings" sub-project. Reversible: delete the override.
+		enabledFeatures: { ...DEFAULT_SETTINGS.enabledFeatures, ...((parsed.enabledFeatures as Record<string, boolean>) ?? (parsed.enabledPlugins as Record<string, boolean>) ?? {}), constellationMap: false },
 		customShortcuts: { ...((parsed.customShortcuts as Record<string, string>) || {}) },
 		// Merge panel placements so existing users get new-panel defaults
 		// automatically when we add a new PanelId in a future release.

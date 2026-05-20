@@ -136,7 +136,14 @@ export const SIGHT_V4_ENABLED = false;
 // + module are now fully removed from the build. The v5 Plan/Architect
 // docs at lab/reports/MIG-024-SIGHT-V5-* stay on disk as historical
 // record.
-export const SIGHT_V6_ENABLED = true;
+// MIG-038 (2026-05-19) — Sight DISABLED pre-Wings. Eisa directive:
+// detach Sight + Map from core, package each as a standalone
+// "Constellation Plugin" in due time (the External Plug-in subsystem
+// = the "Constellation Wings" sub-project). First step is to disable
+// them. Flipping this to false hides the v6 dock button, the modal
+// mount, and the return button — all Sight code stays on disk for the
+// later detachment under Wings. Reversible: flip back to true.
+export const SIGHT_V6_ENABLED = false;
 // MIG-036 P1 (2026-05-19) — Sight v7 Form-Aligns-To-Purpose redesign.
 // B2 dual-mount with v6: both flags can be true during v7 dev so
 // dev-flag toggles let Boss compare v6 vs v7 side-by-side. v7 lives
