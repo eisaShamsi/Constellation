@@ -1472,6 +1472,9 @@ fn init_db(path: &Path) -> Result<Connection, String> {
         .map_err(|e| format!("Failed to ensure note_meta.sources column (MIG-021): {}", e))?;
     crate::sources::ensure_sources_suggestions_table(&conn)
         .map_err(|e| format!("Failed to create sources_suggestions table (MIG-021): {}", e))?;
+    // MIG-040 (NSC): note_summaries cache table. Idempotent no-op if present.
+    crate::nsc::ensure_note_summaries_table(&conn)
+        .map_err(|e| format!("Failed to create note_summaries table (MIG-040): {}", e))?;
 
     // MIG-021v2 §1A' — Content-type subsystem schema. Idempotent
     // ALTER for the new `content_type` column on `note_meta`. No-op

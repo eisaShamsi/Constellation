@@ -2806,6 +2806,12 @@
 	},
 	"cataloger": {
 		"title": "Classificador",
-		"tagline": "Classifique cada nota pelo seu tipo de conhecimento e pela sua fonte."
+		"tagline": "Classifique cada nota pelo seu tipo de conhecimento e pela sua fonte.",
+		"classifyNote": "Classificar uma nota…",
+		"searchNotes": "Pesquisar notas…",
+		"noNotesFound": "Nenhuma nota encontrada"
+	},
+	"nsc": {
+		"summary": "Resumo"
 	}
 }

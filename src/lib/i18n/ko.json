@@ -2806,6 +2806,12 @@
 	},
 	"cataloger": {
 		"title": "분류기",
-		"tagline": "각 노트를 지식의 종류와 출처에 따라 분류합니다."
+		"tagline": "각 노트를 지식의 종류와 출처에 따라 분류합니다.",
+		"classifyNote": "노트 분류…",
+		"searchNotes": "노트 검색…",
+		"noNotesFound": "노트를 찾을 수 없음"
+	},
+	"nsc": {
+		"summary": "요약"
 	}
 }

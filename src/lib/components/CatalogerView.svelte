@@ -13,6 +13,13 @@
   ensemble (the local-LLM "Reasoning" cataloger is designed-but-not-wired)
   and scans are MANUAL-only. No copy here calls this "AI" or implies
   automatic background classification.
+
+  MIG-039 note-picker: "Classify a note…" button opens an inline search
+  popover so the user can classify any note from the full-page view (no
+  open-note context is required). Uses the existing constellation_search
+  IPC (lexical mode, limit 10) for the search, then dispatches the
+  constellation:classify-and-show window event so the embedded
+  SourceReviewPanel and the right-sidebar instance both update.
 -->
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
@@ -27,8 +34,15 @@
     onNoteClick?: (path: string, name: string) => void;
     /** Close the full-page view (back to the editor). */
     onClose?: () => void;
+    /**
+     * MIG-039: passed from +layout.svelte as `visible={showCataloger}`.
+     * Forwarded to SourceReviewPanel so it reloads its queue whenever the
+     * Cataloger is reopened (picks up notes classified via the right-sidebar
+     * "Classify open note" button while the Cataloger was hidden).
+     */
+    visible?: boolean;
   }
-  let { onNoteClick, onClose }: Props = $props();
+  let { onNoteClick, onClose, visible = true }: Props = $props();
 
   type ScanPhase = 'start' | 'progress' | 'done' | 'cancelled' | 'error';
   let scanRunning = $state(false);
@@ -43,7 +57,98 @@
     }
   }
 
+  // ── Note-picker ─────────────────────────────────────────────────────────
+  // "Classify a note…" button: opens a compact inline search-and-pick
+  // popover so the Cataloger can classify any note without needing an
+  // open-note context.  Uses constellation_search (lexical, limit 10) to
+  // find candidates; dispatches constellation:classify-and-show so both
+  // SRP instances (this one + the right-sidebar) update their queues.
+
+  type PickerResult = { name: string; path: string };
+
+  let showPicker = $state(false);
+  let pickerQuery = $state('');
+  let pickerResults = $state<PickerResult[]>([]);
+  let pickerLoading = $state(false);
+  let pickerClassifying = $state(false);
+  let pickerError = $state<string | null>(null);
+  let pickerDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+  async function searchPickerNotes(query: string) {
+    if (!query.trim()) { pickerResults = []; return; }
+    pickerLoading = true;
+    try {
+      const results = await invoke<Array<{ name: string; path: string }>>('constellation_search', {
+        request: { query, mode: 'lexical', limit: 10, include_snippet: false },
+      });
+      pickerResults = results.map(r => ({ name: r.name, path: r.path }));
+    } catch (e) {
+      console.error('[Cataloger picker] search failed:', e);
+      pickerResults = [];
+    } finally {
+      pickerLoading = false;
+    }
+  }
+
+  function onPickerInput(e: Event) {
+    pickerQuery = (e.target as HTMLInputElement).value;
+    if (pickerDebounceTimer) clearTimeout(pickerDebounceTimer);
+    pickerDebounceTimer = setTimeout(() => {
+      void searchPickerNotes(pickerQuery);
+    }, 300);
+  }
+
+  async function classifyPickedNote(path: string) {
+    if (pickerClassifying) return;
+    pickerClassifying = true;
+    pickerError = null;
+    try {
+      // Run the classifier.  We don't need the return value — the window
+      // event below tells all SRP instances to fetch the fresh result.
+      await invoke('classifier_suggest_for_note', { notePath: path });
+      // Notify the embedded SRP + the right-sidebar SRP.
+      window.dispatchEvent(
+        new CustomEvent('constellation:classify-and-show', { detail: { notePath: path } }),
+      );
+      closePicker();
+    } catch (e) {
+      pickerError = String(e);
+    } finally {
+      pickerClassifying = false;
+    }
+  }
+
+  function closePicker() {
+    showPicker = false;
+    pickerQuery = '';
+    pickerResults = [];
+    pickerError = null;
+    if (pickerDebounceTimer) { clearTimeout(pickerDebounceTimer); pickerDebounceTimer = null; }
+  }
+
+  // Escape handling. +layout's global keydown handler is registered on
+  // `document` in the CAPTURE phase and closes the full-page Cataloger on
+  // Escape (`+layout.svelte` ~line 2963). Capture runs outermost→innermost, so
+  // that handler fires BEFORE any bubble-phase handler here — a plain
+  // stopPropagation in the picker can't preempt it (the Cataloger would close
+  // instead of just the picker — Stage-3 #7 bug, 2026-05-20). We listen on
+  // `window`, which is OUTSIDE `document` in the capture path, so this runs
+  // first: while the picker is open we consume Escape and close only the
+  // picker. When the picker is closed this is a no-op and Escape flows to the
+  // global handler as before (closing the Cataloger).
+  function onWindowKeydownCapture(e: KeyboardEvent) {
+    if (e.key === 'Escape' && showPicker) {
+      e.stopPropagation();
+      closePicker();
+    }
+  }
+
+  // ── Scan status ─────────────────────────────────────────────────────────
+
   onMount(async () => {
+    // Window-capture Escape handler (see onWindowKeydownCapture). Capture phase
+    // so it runs before +layout's document-capture handler.
+    window.addEventListener('keydown', onWindowKeydownCapture, true);
     // Recover an in-progress scan started elsewhere (Settings, on-startup).
     try {
       const status = await invoke<{ running: boolean }>('classifier_scan_status');
@@ -60,6 +165,8 @@
 
   onDestroy(() => {
     unlisten?.();
+    window.removeEventListener('keydown', onWindowKeydownCapture, true);
+    if (pickerDebounceTimer) clearTimeout(pickerDebounceTimer);
   });
 </script>
 
@@ -73,6 +180,58 @@
         </p>
       </div>
       <div class="cataloger-actions">
+        <!-- Note-picker: search and classify any note from the full-page view -->
+        <div class="cataloger-picker-wrapper">
+          <button
+            class="cataloger-pick-btn"
+            onclick={() => { showPicker = !showPicker; if (!showPicker) closePicker(); }}
+            title={$t('cataloger.classifyNote') || 'Classify a note…'}
+          >
+            {$t('cataloger.classifyNote') || 'Classify a note…'}
+          </button>
+
+          {#if showPicker}
+            <div
+              class="cataloger-picker"
+              role="dialog"
+              aria-label={$t('cataloger.classifyNote') || 'Classify a note'}
+            >
+              <input
+                class="cataloger-picker-input"
+                type="text"
+                placeholder={$t('cataloger.searchNotes') || 'Search notes…'}
+                value={pickerQuery}
+                oninput={onPickerInput}
+                autofocus
+                aria-label={$t('cataloger.searchNotes') || 'Search notes'}
+              />
+              {#if pickerLoading}
+                <div class="cataloger-picker-state">…</div>
+              {:else if pickerResults.length > 0}
+                <ul class="cataloger-picker-results" role="listbox">
+                  {#each pickerResults as result}
+                    <li role="option" aria-selected="false">
+                      <button
+                        class="cataloger-picker-result"
+                        onclick={() => classifyPickedNote(result.path)}
+                        disabled={pickerClassifying}
+                        title={result.path}
+                      >
+                        {result.name}
+                      </button>
+                    </li>
+                  {/each}
+                </ul>
+              {:else if pickerQuery.trim()}
+                <div class="cataloger-picker-state">{$t('cataloger.noNotesFound') || 'No notes found'}</div>
+              {/if}
+              {#if pickerError}
+                <div class="cataloger-picker-error">{pickerError}</div>
+              {/if}
+            </div>
+          {/if}
+        </div>
+
         <button class="cataloger-scan-btn" onclick={startScan} disabled={scanRunning}>
           {scanRunning
             ? ($t('settings.classifier.scanRunning') || 'Running…')
@@ -100,6 +259,7 @@
 
     <div class="cataloger-queue">
       <SourceReviewPanel
+        {visible}
         onNoteClick={(path, name) => onNoteClick?.(path, name)}
       />
     </div>
@@ -155,6 +315,94 @@
     gap: 8px;
     flex-shrink: 0;
   }
+
+  /* ── Note-picker ─────────────────────────────────────────── */
+  .cataloger-picker-wrapper {
+    position: relative;
+  }
+  .cataloger-pick-btn {
+    border: 1px solid var(--background-modifier-border, rgba(0,0,0,0.15));
+    background: transparent;
+    color: var(--text-normal, #222);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .cataloger-pick-btn:hover {
+    background: var(--background-modifier-hover, rgba(0,0,0,0.06));
+  }
+  /* Popover: floats below the button, RTL-aware via inset-inline-end. */
+  .cataloger-picker {
+    position: absolute;
+    top: calc(100% + 6px);
+    inset-inline-end: 0;
+    width: 300px;
+    background: var(--background-primary, #fff);
+    border: 1px solid var(--background-modifier-border, rgba(0,0,0,0.15));
+    border-radius: 8px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.13);
+    z-index: 200;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .cataloger-picker-input {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid var(--background-modifier-border, rgba(0,0,0,0.15));
+    border-radius: 5px;
+    font-size: 0.85rem;
+    background: var(--background-secondary, #f5f5f5);
+    color: var(--text-normal, #222);
+    outline: none;
+    box-sizing: border-box;
+  }
+  .cataloger-picker-input:focus {
+    border-color: var(--interactive-accent, #7c3aed);
+  }
+  .cataloger-picker-results {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 220px;
+    overflow-y: auto;
+  }
+  .cataloger-picker-result {
+    display: block;
+    width: 100%;
+    text-align: start;
+    padding: 6px 10px;
+    border: none;
+    background: transparent;
+    color: var(--text-normal, #222);
+    font-size: 0.83rem;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .cataloger-picker-result:hover:not(:disabled) {
+    background: var(--background-modifier-hover, rgba(0,0,0,0.06));
+  }
+  .cataloger-picker-result:disabled { opacity: 0.55; cursor: not-allowed; }
+  .cataloger-picker-state {
+    font-size: 0.8rem;
+    color: var(--text-muted, #888);
+    padding: 4px 10px;
+    text-align: center;
+  }
+  .cataloger-picker-error {
+    font-size: 0.78rem;
+    color: var(--text-error, #c00);
+    padding: 4px 10px;
+  }
+
+  /* ── Scan button ─────────────────────────────────────────── */
   .cataloger-scan-btn {
     border: 1px solid var(--interactive-accent, #7c3aed);
     background: var(--interactive-accent, #7c3aed);

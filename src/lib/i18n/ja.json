@@ -2806,6 +2806,12 @@
 	},
 	"cataloger": {
 		"title": "分類器",
-		"tagline": "各ノートを知識の種類と出典で分類します。"
+		"tagline": "各ノートを知識の種類と出典で分類します。",
+		"classifyNote": "ノートを分類…",
+		"searchNotes": "ノートを検索…",
+		"noNotesFound": "ノートが見つかりません"
+	},
+	"nsc": {
+		"summary": "要約"
 	}
 }

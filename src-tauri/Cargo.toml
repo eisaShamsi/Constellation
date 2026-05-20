@@ -59,6 +59,10 @@ tempfile = "3"
 # Linguistic Cataloger surface-token lookup. Without it, Cyrillic /
 # Persian / Urdu look-alike codepoints silently bypass the lexicon.
 unicode-normalization = "0.1"
+# MIG-040 (NSC): Unicode UAX #29 sentence segmentation for the Note Summary
+# Creator's language-agnostic sentence splitter (CJK / Arabic / Indic). The
+# proven cross-language standard; pure-Rust, MIT/Apache-2.0.
+unicode-segmentation = "1"
 tauri-plugin-updater = "2.10.0"
 tauri-plugin-process = "2.3.1"
 # M3: compact, read-only morphological index. BurntSushi's `fst` crate —

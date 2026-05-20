@@ -32,6 +32,8 @@ mod sight;
 mod sight_layout;
 mod sources;
 mod classifier;
+// MIG-040: Note Summary Creator (NSC) — extractive embedding-based TextRank.
+mod nsc;
 // MIG-021v3 V3-§1 — Constellation Epistemic Content Engine (CECE).
 // Cataloger Ensemble Architecture. See lab/reports/MIG-021v3-EPISTEMIC-
 // CONTENT-ENGINE-ARCHITECT.md for the architecture spec.
@@ -351,6 +353,9 @@ pub fn run() {
             classifier::cece_resolve_disambiguation,
             // MIG-021v3 V3-§9.C.2 — dual-axis reliability update IPC
             classifier::cece_record_correction_for_card,
+            // MIG-040 — Note Summary Creator (NSC) batched + single get-or-compute.
+            nsc::nsc_get_summaries_for_notes,
+            nsc::nsc_get_summary,
             // MIG-021v3 V3-§10.A — per-Library calibration view data
             cece::reliability::cece_get_reliability_for_active_library,
             cece::reliability::cece_get_active_library_root,

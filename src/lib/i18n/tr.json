@@ -2806,6 +2806,12 @@
 	},
 	"cataloger": {
 		"title": "Sınıflandırıcı",
-		"tagline": "Her notu bilgi türüne ve kaynağına göre sınıflandırın."
+		"tagline": "Her notu bilgi türüne ve kaynağına göre sınıflandırın.",
+		"classifyNote": "Notu sınıflandır…",
+		"searchNotes": "Notları ara…",
+		"noNotesFound": "Not bulunamadı"
+	},
+	"nsc": {
+		"summary": "Özet"
 	}
 }

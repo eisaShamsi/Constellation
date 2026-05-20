@@ -183,7 +183,9 @@ pub(crate) fn run_embedding(engine: &EmbeddingEngine, text: &str) -> Result<Vec<
 ///
 /// Returns one Vec<f32> per input text in input order. The caller is
 /// responsible for the "passage: " / "query: " prefix.
-fn run_embedding_batch(engine: &EmbeddingEngine, texts: &[String]) -> Result<Vec<Vec<f32>>, String> {
+// MIG-040 (NSC): pub(crate) so the Note Summary Creator can batch-embed a
+// note's sentences for extractive TextRank without a second ONNX session.
+pub(crate) fn run_embedding_batch(engine: &EmbeddingEngine, texts: &[String]) -> Result<Vec<Vec<f32>>, String> {
     if texts.is_empty() {
         return Ok(Vec::new());
     }

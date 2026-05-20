@@ -5161,6 +5161,7 @@
 		{#if catalogerEverOpened}
 			<div class="cataloger-overlay" class:cataloger-visible={showCataloger}>
 				<CatalogerView
+					visible={showCataloger}
 					onNoteClick={(path, name) => {
 						const lib = $libraryStats.find(l => path.startsWith(l.path));
 						if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');

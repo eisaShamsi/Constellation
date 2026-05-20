@@ -199,6 +199,91 @@
   let renderCap = $state(RENDER_BATCH);
   let visibleQueue = $derived(filteredQueue.slice(0, renderCap));
 
+  // ── MIG-040 (NSC): per-note summaries shown under each card title. Fetched
+  //    once per visible note via the batched, cache-first IPC (zero per-card
+  //    IPC, same lesson as the render cap). `summaryRequested` is a PLAIN Set
+  //    (not reactive) so the effect reads only `visibleQueue` and writes
+  //    `summaries` — never reading + writing the same reactive (Rule 2).
+  type NoteSummaryEntry = { path: string; summary: string; source: string };
+  let summaries = $state<Map<string, { summary: string; source: string }>>(new Map());
+  const summaryRequested = new Set<string>();
+  // MIG-040 fix: NSC must be GENTLE. The first cut eagerly computed summaries
+  // for all ~80 visible notes at once and re-fired on every scan reload,
+  // spiking embedding work (the regression Eisa caught). Now we fill in small
+  // chunks, debounced, and PAUSE while a classifier scan runs — so NSC never
+  // piles up or fights the scanner for the embedding engine.
+  let summaryScanRunning = $state(false);
+  const SUMMARY_CHUNK = 6;
+  let summaryFillTimer: ReturnType<typeof setTimeout> | null = null;
+
+  async function fetchSummaries(paths: string[]) {
+    try {
+      const entries = await invoke<NoteSummaryEntry[]>('nsc_get_summaries_for_notes', { notePaths: paths });
+      const next = new Map(summaries);
+      for (const e of entries) next.set(e.path, { summary: e.summary, source: e.source });
+      // Mark paths that returned nothing (no body) as empty so we don't refetch.
+      for (const p of paths) if (!next.has(p)) next.set(p, { summary: '', source: '' });
+      summaries = next;
+    } catch (e) {
+      console.error('[NSC] fetch summaries failed:', e);
+    }
+  }
+
+  function scheduleSummaryFill() {
+    if (summaryFillTimer) return;
+    summaryFillTimer = setTimeout(() => {
+      summaryFillTimer = null;
+      void fillNextSummaryChunk();
+    }, 500);
+  }
+
+  async function fillNextSummaryChunk() {
+    // Hold off entirely while a scan is running — summaries can wait.
+    if (summaryScanRunning) {
+      scheduleSummaryFill();
+      return;
+    }
+    const pending = visibleQueue.map(r => r.note_path).filter(p => !summaryRequested.has(p));
+    if (pending.length === 0) return;
+    const chunk = pending.slice(0, SUMMARY_CHUNK);
+    for (const p of chunk) summaryRequested.add(p);
+    await fetchSummaries(chunk);
+    if (pending.length > chunk.length) scheduleSummaryFill(); // more to do
+  }
+
+  // Re-trigger gentle filling when the visible set changes OR a scan ends. The
+  // effect does NO heavy work — it only schedules the throttled, chunked,
+  // scan-paused filler. Reads visibleQueue + summaryScanRunning; writes
+  // neither (no Rule-2 violation).
+  $effect(() => {
+    visibleQueue;
+    summaryScanRunning;
+    scheduleSummaryFill();
+  });
+
+  // MIG-039 — reload the queue when the Cataloger is reopened so notes
+  // classified via the right-sidebar "Classify open note" button appear
+  // without the user having to hit the manual refresh icon.
+  //
+  // Design: `_srp_was_closed` is a plain (non-reactive) JS variable so the
+  // effect tracks ONLY `visible` — no Rule-2 violation.  On first mount
+  // (visible = true, _srp_was_closed = false) the guard skips the reload;
+  // `onMount` already called `loadQueue()`.  When the Cataloger is closed
+  // (visible → false) we flip the flag.  On the next open (visible → true,
+  // _srp_was_closed = true) we call `loadQueue()` to hydrate with anything
+  // classified in the meantime.
+  //
+  // Right-sidebar instances use the default `visible = true` and the flag
+  // never flips, so no spurious reload on them.
+  let _srp_was_closed = false;
+  $effect(() => {
+    if (!visible) {
+      _srp_was_closed = true;
+      return;
+    }
+    if (_srp_was_closed) loadQueue();
+  });
+
   /** Filter chip definitions for the queueFilter row. Recomputes when
    *  i18n locale changes (the labels read $t) or when filterCounts
    *  shifts. Declared as $derived so the template can iterate without
@@ -479,12 +564,19 @@
    */
   async function resolveDisambiguation(notePath: string, axis: 'horizontal' | 'vertical', chosenId: string) {
     try {
-      await invoke('cece_resolve_disambiguation', {
+      // MIG-040 (both-axes-split bugfix): the command returns the updated
+      // record when the OTHER axis is still Split — keep the card (it now
+      // shows only that axis's chips) — or null when both axes are resolved.
+      const updated = await invoke<SuggestionRecord | null>('cece_resolve_disambiguation', {
         notePath,
         axis,
         chosenId,
       });
-      queue = queue.filter(r => r.note_path !== notePath);
+      if (updated) {
+        queue = queue.map(r => (r.note_path === notePath ? updated : r));
+      } else {
+        queue = queue.filter(r => r.note_path !== notePath);
+      }
       bumpTrustCalCount(); // V3-§8.r5.3 — counts as a calibration review
     } catch (e) {
       error = String(e);
@@ -562,9 +654,19 @@
   let {
     onNoteClick = (_p: string, _n: string) => {},
     activeNotePath = null,
+    visible = true,
   }: {
     onNoteClick?: (path: string, name: string) => void;
     activeNotePath?: string | null;
+    /**
+     * MIG-039: CatalogerView passes `visible={showCataloger}` so the queue
+     * reloads automatically when the full-page Cataloger is reopened — picking
+     * up notes that were classified via the right-sidebar "Classify open note"
+     * button while the Cataloger was hidden.  Right-sidebar instances omit
+     * this prop (defaults to `true`; the `_srp_was_closed` guard prevents
+     * spurious reloads on their first render).
+     */
+    visible?: boolean;
   } = $props();
 
   let queue = $state<SuggestionRecord[]>([]);
@@ -603,6 +705,14 @@
         notePath: activeNotePath,
       });
       queue = [record, ...queue.filter(r => r.note_path !== record.note_path)];
+      // MIG-039 cross-instance sync: notify other SRP instances (e.g. the Cataloger)
+      // so they also show the freshly-classified note without a page reload.
+      // The local instance self-guards via the `if (classifying) return` check
+      // inside handleClassifyAndShow (classifying is still true here — the finally
+      // block hasn't run yet — so the local listener exits immediately).
+      window.dispatchEvent(
+        new CustomEvent('constellation:classify-and-show', { detail: { notePath: record.note_path } }),
+      );
     } catch (e) {
       error = String(e);
     } finally {
@@ -862,6 +972,9 @@
     const { listen } = await import('@tauri-apps/api/event');
     const unlisten = await listen<{ phase: string }>('classifier:scan', (ev) => {
       const phase = ev.payload?.phase;
+      // MIG-040: pause NSC summary computation while the scanner is using
+      // the embedding engine; resume when it finishes.
+      summaryScanRunning = phase === 'start' || phase === 'progress';
       if (phase === 'progress' || phase === 'done' || phase === 'cancelled') {
         scheduleQueueReload();
       }
@@ -899,6 +1012,7 @@
     window.removeEventListener('constellation:classify-and-show', handleClassifyAndShow);
     if (highlightTimeout) clearTimeout(highlightTimeout);
     if (scanReloadTimer) clearTimeout(scanReloadTimer);
+    if (summaryFillTimer) clearTimeout(summaryFillTimer); // MIG-040
     scanUnlisten?.();
     bulkUnlisten?.();
   });
@@ -1100,6 +1214,7 @@
         {@const isSplit = cardNeedsUserCall(record)}
         {@const isStrongMajority = composite && !isSplit && (composite.horizontal.regime === 'strong_majority' || composite.vertical.regime === 'strong_majority')}
         {@const showTrail = isTrailOpen(record.note_path, !!composite)}
+        {@const summaryText = summaries.get(record.note_path)?.summary ?? ''}
         <li class="srp-card"
             class:srp-just-added={highlightedPath === record.note_path}
             class:srp-split-regime={isSplit}>
@@ -1142,6 +1257,16 @@
               </span>
             {/if}
           </div>
+
+          {#if summaryText}
+            <!-- MIG-040 (NSC): the note's summary (author's frontmatter summary
+                 if present, else an extractive TextRank summary). dir="auto"
+                 for any-language / RTL text. -->
+            <div class="srp-summary" dir="auto">
+              <span class="srp-summary-label">{$t('nsc.summary') || 'Summary'}</span>
+              {summaryText}
+            </div>
+          {/if}
 
           {#if composite && (isSplit || isStrongMajority || trustCalActive)}
             <!-- Reasoning trail surface.
@@ -1483,6 +1608,27 @@
   .srp-show-more-note {
     font-size: 0.72rem;
     color: var(--text-muted);
+  }
+  /* MIG-040 (NSC): the per-card note summary, under the title. */
+  .srp-summary {
+    margin: 2px 0 8px;
+    padding: 6px 10px;
+    border-inline-start: 2px solid var(--interactive-accent, #7c3aed);
+    background: var(--background-modifier-hover, rgba(0,0,0,0.03));
+    border-radius: 0 4px 4px 0;
+    font-size: 0.82rem;
+    line-height: 1.45;
+    color: var(--text-muted, #555);
+  }
+  .srp-summary-label {
+    display: inline-block;
+    margin-inline-end: 6px;
+    font-size: 0.66rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--interactive-accent, #7c3aed);
+    opacity: 0.85;
   }
   .srp-card {
     background: var(--background-secondary, #fbf8ec);

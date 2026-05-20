@@ -3009,6 +3009,12 @@
 	},
 	"cataloger": {
 		"title": "The Cataloger",
-		"tagline": "Classify each note by its kind of knowledge and its source."
+		"tagline": "Classify each note by its kind of knowledge and its source.",
+		"classifyNote": "Classify a note…",
+		"searchNotes": "Search notes…",
+		"noNotesFound": "No notes found"
+	},
+	"nsc": {
+		"summary": "Summary"
 	}
 }

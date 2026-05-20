@@ -2806,6 +2806,12 @@
 	},
 	"cataloger": {
 		"title": "Klassifikator",
-		"tagline": "Klassifiziere jede Notiz nach ihrer Wissensart und ihrer Quelle."
+		"tagline": "Klassifiziere jede Notiz nach ihrer Wissensart und ihrer Quelle.",
+		"classifyNote": "Notiz klassifizieren…",
+		"searchNotes": "Notizen suchen…",
+		"noNotesFound": "Keine Notizen gefunden"
+	},
+	"nsc": {
+		"summary": "Zusammenfassung"
 	}
 }

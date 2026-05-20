@@ -291,24 +291,27 @@ pub fn cece_record_correction_for_card(
 /// the composite_json before writing, identify the other axis's
 /// primary if the other axis is not Split, and write both axes
 /// in sequence.
+///
+/// MIG-040 bugfix (Eisa, 2026-05-20): when a card is Split on BOTH axes,
+/// picking one axis used to clear the whole suggestion (card vanished) and
+/// left the other axis unclassified. Now, if the OTHER axis is still Split,
+/// the suggestion is re-inserted with the resolved axis marked settled, so
+/// the card stays in place showing only the remaining axis. The command
+/// returns the updated record (Some) when the card should stay, or None when
+/// both axes are decided and the card should be removed.
 #[tauri::command]
 pub fn cece_resolve_disambiguation(
     app: tauri::AppHandle,
     note_path: String,
     axis: String,
     chosen_id: String,
-) -> Result<(), String> {
-    // Snapshot the composite_json from the suggestion row BEFORE any
-    // write happens. Need it for two purposes:
-    //   (1) extract_other_axis_settled — find the OTHER axis's settled
-    //       primary so r7's auto-write can co-write it
-    //   (2) V3-§9.C.2 reliability update — pass to
-    //       cece_record_correction_for_card after writes complete
-    //
-    // After the writes call clear_suggestions, this row is gone, so
-    // we MUST snapshot before. Best-effort: if the row is missing or
-    // the JSON is malformed, both (1) and (2) become no-ops.
-    let composite_snapshot: Option<String> = {
+) -> Result<Option<crate::sources::SuggestionRecord>, String> {
+    // Snapshot the FULL prior suggestion BEFORE any write — set_manual clears
+    // the row. We need composite_json (to detect whether the OTHER axis is
+    // still Split + to re-insert) and suggestions / tier / created_at (to
+    // re-insert preserving queue position). Best-effort: a missing row leaves
+    // the snapshot None and the branches below no-op.
+    let prior: Option<crate::sources::SuggestionRecord> = {
         let search_state = app.state::<crate::search::SearchState>();
         let db_guard = search_state
             .db
@@ -317,34 +320,74 @@ pub fn cece_resolve_disambiguation(
         let conn = db_guard
             .as_ref()
             .ok_or("Search database not initialized")?;
-        conn.query_row(
-            "SELECT composite_json FROM sources_suggestions WHERE note_path = ?1",
-            rusqlite::params![&note_path],
-            |r| r.get::<_, Option<String>>(0),
-        )
-        .ok()
-        .flatten()
+        crate::sources::read_suggestions(conn, &note_path).ok().flatten()
     };
+    let composite_snapshot: Option<String> = prior.as_ref().and_then(|r| r.composite_json.clone());
+
+    // Is the axis OTHER than the one being resolved ALSO Split (still awaiting
+    // the user's pick)? If so, resolving THIS axis must NOT discard the card.
+    let other_axis_still_split = composite_snapshot
+        .as_deref()
+        .map(|json| other_axis_needs_disambiguation(json, &axis))
+        .unwrap_or(false);
+    // The other axis's settled primary (None when the other axis is Split).
     let other_axis_settled: Option<String> = composite_snapshot
         .as_deref()
         .and_then(|json| extract_other_axis_settled(json, &axis));
 
-    // Apply the user's pick on the disambiguated axis. This call
-    // also clears the suggestion row.
+    // Apply the user's pick on the disambiguated axis. This writes frontmatter
+    // + the note_meta mirror + the correction log, AND clears the suggestion row.
     let chosen_id_for_reliability = chosen_id.clone();
     match axis.as_str() {
         "horizontal" => {
-            crate::sources::sources_set_manual(app.clone(), note_path.clone(), vec![chosen_id])?;
+            crate::sources::sources_set_manual(app.clone(), note_path.clone(), vec![chosen_id.clone()])?;
         }
         "vertical" => {
-            crate::sources::content_type_set_manual(app.clone(), note_path.clone(), vec![chosen_id])?;
+            crate::sources::content_type_set_manual(app.clone(), note_path.clone(), vec![chosen_id.clone()])?;
         }
         other => return Err(format!("Unknown axis: {}", other)),
     }
 
-    // Also write the other axis's settled primary, if it had one.
-    // The suggestion row is already cleared above; this just writes
-    // the frontmatter + DB mirror.
+    if other_axis_still_split {
+        // Re-insert the suggestion with the resolved axis marked settled, so
+        // the card stays in the queue showing ONLY the remaining (still-Split)
+        // axis's chips. created_at is preserved so the card keeps its place.
+        if let (Some(prior_rec), Some(snap)) = (prior.as_ref(), composite_snapshot.as_deref()) {
+            let mutated = mark_axis_resolved(snap, &axis, &chosen_id);
+            let suggestions_json = serde_json::to_string(&prior_rec.suggestions)
+                .map_err(|e| format!("re-serialize suggestions: {}", e))?;
+            let search_state = app.state::<crate::search::SearchState>();
+            let db_guard = search_state.db.lock().map_err(|e| format!("DB lock: {}", e))?;
+            let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
+            conn.execute(
+                "INSERT OR REPLACE INTO sources_suggestions
+                 (note_path, suggestions_json, classifier_tier, created_at, composite_json)
+                 VALUES (?1, ?2, ?3, ?4, ?5)",
+                rusqlite::params![note_path, suggestions_json, prior_rec.classifier_tier, prior_rec.created_at, mutated],
+            )
+            .map_err(|e| format!("re-insert suggestion: {}", e))?;
+        }
+
+        // Reliability: record only the axis the user just resolved; the other
+        // axis's correction is recorded when the user picks it.
+        if let Some(blob) = composite_snapshot.clone() {
+            let (h_pick, v_pick) = match axis.as_str() {
+                "horizontal" => (vec![chosen_id_for_reliability.clone()], Vec::<String>::new()),
+                "vertical" => (Vec::<String>::new(), vec![chosen_id_for_reliability.clone()]),
+                _ => (Vec::<String>::new(), Vec::<String>::new()),
+            };
+            let _ = cece_record_correction_for_card(app.clone(), note_path.clone(), blob, h_pick, v_pick);
+        }
+
+        // Return the updated record so the frontend keeps + refreshes the card.
+        let search_state = app.state::<crate::search::SearchState>();
+        let db_guard = search_state.db.lock().map_err(|e| format!("DB lock: {}", e))?;
+        let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
+        return Ok(crate::sources::read_suggestions(conn, &note_path).ok().flatten());
+    }
+
+    // ── Other axis already settled (or absent): original r7 behavior. ──
+    // Co-write the other axis's settled primary, if it had one.
     let other_id_for_reliability = other_axis_settled.clone();
     if let Some(other_id) = other_axis_settled {
         match axis.as_str() {
@@ -358,11 +401,7 @@ pub fn cece_resolve_disambiguation(
         }
     }
 
-    // V3-§9.C.2 — Update per-cataloger reliability for BOTH axes from
-    // the composite_json snapshot we took BEFORE the writes. Without
-    // this call, the dual-axis writes above would silently skip
-    // reliability updates because the per-axis IPCs no longer call
-    // update_reliability_from_correction (moved out post-V3-§9.C.2).
+    // V3-§9.C.2 — reliability for BOTH axes from the pre-write snapshot.
     if let Some(blob) = composite_snapshot {
         let (h_pick, v_pick) = match axis.as_str() {
             "horizontal" => (
@@ -375,16 +414,52 @@ pub fn cece_resolve_disambiguation(
             ),
             _ => (vec![], vec![]),
         };
-        let _ = cece_record_correction_for_card(
-            app,
-            note_path,
-            blob,
-            h_pick,
-            v_pick,
-        );
+        let _ = cece_record_correction_for_card(app, note_path, blob, h_pick, v_pick);
     }
 
-    Ok(())
+    Ok(None)
+}
+
+/// Does the axis OTHER than `picked_axis` still need disambiguation (i.e. is
+/// it also Split)? Used so resolving one axis of a both-Split card doesn't
+/// discard the card before the user resolves the other axis.
+fn other_axis_needs_disambiguation(composite_json: &str, picked_axis: &str) -> bool {
+    let value: serde_json::Value = match serde_json::from_str(composite_json) {
+        Ok(v) => v,
+        Err(_) => return false,
+    };
+    let other_key = match picked_axis {
+        "horizontal" => "vertical",
+        "vertical" => "horizontal",
+        _ => return false,
+    };
+    value
+        .get(other_key)
+        .and_then(|o| o.get("needs_user_disambiguation_between"))
+        .and_then(|v| v.as_array())
+        .map(|a| !a.is_empty())
+        .unwrap_or(false)
+}
+
+/// Return a copy of `composite_json` with `axis` marked resolved: its
+/// `needs_user_disambiguation_between` cleared, `regime` settled, and
+/// `primary` set to the user's pick. The other axis is untouched. On parse
+/// failure, returns the input unchanged.
+fn mark_axis_resolved(composite_json: &str, axis: &str, chosen_id: &str) -> String {
+    let mut value: serde_json::Value = match serde_json::from_str(composite_json) {
+        Ok(v) => v,
+        Err(_) => return composite_json.to_string(),
+    };
+    let key = match axis {
+        "horizontal" | "vertical" => axis,
+        _ => return composite_json.to_string(),
+    };
+    if let Some(obj) = value.get_mut(key).and_then(|a| a.as_object_mut()) {
+        obj.insert("needs_user_disambiguation_between".to_string(), serde_json::Value::Null);
+        obj.insert("regime".to_string(), serde_json::Value::String("strong_majority".to_string()));
+        obj.insert("primary".to_string(), serde_json::Value::String(chosen_id.to_string()));
+    }
+    serde_json::to_string(&value).unwrap_or_else(|_| composite_json.to_string())
 }
 
 /// V3-§8.r7 — Parse the composite JSON to extract the OTHER axis's
@@ -424,7 +499,7 @@ fn extract_other_axis_settled(composite_json: &str, picked_axis: &str) -> Option
 
 #[cfg(test)]
 mod r7_tests {
-    use super::extract_other_axis_settled;
+    use super::{extract_other_axis_settled, mark_axis_resolved, other_axis_needs_disambiguation};
 
     #[test]
     fn extracts_vertical_primary_when_horizontal_picked() {
@@ -445,6 +520,44 @@ mod r7_tests {
             "vertical":{"primary":"x","regime":"split","needs_user_disambiguation_between":["x","y"]}
         }"#;
         assert!(extract_other_axis_settled(json, "horizontal").is_none());
+    }
+
+    // MIG-040 — both-axes-split disambiguation bugfix helpers.
+    #[test]
+    fn other_axis_needs_disambiguation_detects_both_split() {
+        let both = r#"{
+            "horizontal":{"primary":"a","regime":"split","needs_user_disambiguation_between":["a","b"]},
+            "vertical":{"primary":"x","regime":"split","needs_user_disambiguation_between":["x","y"]}
+        }"#;
+        // Picking either axis leaves the OTHER one still Split.
+        assert!(other_axis_needs_disambiguation(both, "horizontal"));
+        assert!(other_axis_needs_disambiguation(both, "vertical"));
+
+        let only_h = r#"{
+            "horizontal":{"primary":"a","regime":"split","needs_user_disambiguation_between":["a","b"]},
+            "vertical":{"primary":"x","regime":"unanimous","needs_user_disambiguation_between":null}
+        }"#;
+        // Picking horizontal -> vertical is settled, not Split.
+        assert!(!other_axis_needs_disambiguation(only_h, "horizontal"));
+    }
+
+    #[test]
+    fn mark_axis_resolved_settles_only_the_picked_axis() {
+        let both = r#"{
+            "horizontal":{"primary":"a","regime":"split","needs_user_disambiguation_between":["a","b"]},
+            "vertical":{"primary":"x","regime":"split","needs_user_disambiguation_between":["x","y"]}
+        }"#;
+        let out = mark_axis_resolved(both, "horizontal", "a");
+        let v: serde_json::Value = serde_json::from_str(&out).unwrap();
+        // Horizontal is now settled on the user's pick.
+        assert!(v["horizontal"]["needs_user_disambiguation_between"].is_null());
+        assert_eq!(v["horizontal"]["primary"], "a");
+        assert_ne!(v["horizontal"]["regime"], "split");
+        // Vertical is untouched — still Split, so the card keeps its chips.
+        assert_eq!(
+            v["vertical"]["needs_user_disambiguation_between"],
+            serde_json::json!(["x", "y"])
+        );
     }
 
     #[test]

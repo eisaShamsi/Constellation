@@ -2806,6 +2806,12 @@
 	},
 	"cataloger": {
 		"title": "分类器",
-		"tagline": "按知识类型与来源对每条笔记进行分类。"
+		"tagline": "按知识类型与来源对每条笔记进行分类。",
+		"classifyNote": "分类笔记…",
+		"searchNotes": "搜索笔记…",
+		"noNotesFound": "未找到笔记"
+	},
+	"nsc": {
+		"summary": "摘要"
 	}
 }

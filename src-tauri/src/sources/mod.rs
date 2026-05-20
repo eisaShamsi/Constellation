@@ -696,17 +696,24 @@ pub fn sources_list_pending_suggestions(
 
     // V3-§8: select composite_json too. Fall back to the old shape
     // when the column doesn't exist (pre-V3-§8 DBs).
+    // MIG-040: newest-first. The review queue can hold thousands of pending
+    // suggestions and the frontend renders only the first RENDER_BATCH (80)
+    // cards. Ordering newest-first puts a just-classified note at the TOP — in
+    // view immediately — matching the live "Classify open note" path, which
+    // prepends. (Was ASC, which buried freshly-classified notes at position
+    // ~7200, beyond the render cap — the "scan didn't update the list" report,
+    // 2026-05-20.) `note_path` is the stable tiebreak for same-second batches.
     let mut stmt = match conn.prepare(
         "SELECT note_path, suggestions_json, classifier_tier, created_at, composite_json
          FROM sources_suggestions
-         ORDER BY created_at ASC",
+         ORDER BY created_at DESC, note_path ASC",
     ) {
         Ok(s) => s,
         Err(_) => conn
             .prepare(
                 "SELECT note_path, suggestions_json, classifier_tier, created_at
                  FROM sources_suggestions
-                 ORDER BY created_at ASC",
+                 ORDER BY created_at DESC, note_path ASC",
             )
             .map_err(|e| format!("prepare list (legacy): {}", e))?,
     };
