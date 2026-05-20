@@ -599,7 +599,8 @@
 		"expressionForge": "مصنع التعبير",
 		"senseMakingCanvas": "لوحة الإدراك",
 		"inspector360": "المنظار الكروي",
-		"constellationMap": "خريطة المعرفة"
+		"constellationMap": "خريطة المعرفة",
+		"cataloger": "المُصنِّف"
 	},
 	"actions": {
 		"untitled": "بدون عنوان",
@@ -638,7 +639,8 @@
 		"constellationMap": "خريطة المعرفة",
 		"settings": "الإعدادات",
 		"importNotes": "استيراد الملاحظات",
-		"knowledgeHealth": "صحة المعرفة"
+		"knowledgeHealth": "صحة المعرفة",
+		"cataloger": "المُصنِّف"
 	},
 	"sidebar": {
 		"searchPlaceholder": "بحث...",
@@ -1191,7 +1193,9 @@
 			"revelation/non-recited": "الوحي غير المتلوّ",
 			"revelation/modes-of-receiving": "أوجُه نزول الوحي",
 			"unclassifiable": "غير قابل للتصنيف"
-		}
+		},
+		"queueShowMore": "عرض المزيد",
+		"queueShowingCount": "عرض {shown} من {total}"
 	},
 	"classifierScan": {
 		"label": "جارٍ تصنيف الملاحظات…",
@@ -3004,5 +3008,9 @@
 			"label": "جارٍ ترحيل فهرس المصطلحات",
 			"done": "اكتمل ترحيل فهرس المصطلحات"
 		}
+	},
+	"cataloger": {
+		"title": "المُصنِّف",
+		"tagline": "صنّف كل ملاحظة حسب نوع معرفتها ومصدرها."
 	}
 }

@@ -599,7 +599,8 @@
 		"senseMakingCanvas": "Anlam Oluşturma Tuvali",
 		"inspector360": "360.3D Denetçi",
 		"constellationMap": "Bilgi Haritası",
-		"newLibrary": "Yeni kütüphane"
+		"newLibrary": "Yeni kütüphane",
+		"cataloger": "Sınıflandırıcı"
 	},
 	"actions": {
 		"untitled": "Başlıksız",
@@ -637,7 +638,8 @@
 		"constellationMap": "Bilgi Haritası",
 		"settings": "Ayarlar",
 		"importNotes": "Notları içe aktar",
-		"knowledgeHealth": "Bilgi sağlığı"
+		"knowledgeHealth": "Bilgi sağlığı",
+		"cataloger": "Sınıflandırıcı"
 	},
 	"sidebar": {
 		"searchPlaceholder": "Ara...",
@@ -1189,7 +1191,9 @@
 			"revelation/non-recited": "Tilavet edilmeyen vahiy (Sünnet)",
 			"revelation/modes-of-receiving": "Vahyin alınış tarzları",
 			"unclassifiable": "Sınıflandırılamaz"
-		}
+		},
+		"queueShowMore": "Daha fazla göster",
+		"queueShowingCount": "{total} öğeden {shown} tanesi gösteriliyor"
 	},
 	"tasksPanel": {
 		"all": "Tümü",
@@ -2799,5 +2803,9 @@
 			"inspiration": "Mistik veya yaratıcı kavrayış (ilham)",
 			"revelation": "Kutsal metin veya peygamberî aktarım (vahiy)"
 		}
+	},
+	"cataloger": {
+		"title": "Sınıflandırıcı",
+		"tagline": "Her notu bilgi türüne ve kaynağına göre sınıflandırın."
 	}
 }

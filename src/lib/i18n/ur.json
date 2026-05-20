@@ -599,7 +599,8 @@
 		"senseMakingCanvas": "معنی سازی کینوس",
 		"inspector360": "360.3D معائنہ کار",
 		"constellationMap": "علم کا نقشہ",
-		"newLibrary": "نئی لائبریری"
+		"newLibrary": "نئی لائبریری",
+		"cataloger": "درجہ بند"
 	},
 	"actions": {
 		"untitled": "بغیر عنوان",
@@ -637,7 +638,8 @@
 		"constellationMap": "علم کا نقشہ",
 		"settings": "ترتیبات",
 		"importNotes": "نوٹس درآمد کریں",
-		"knowledgeHealth": "علم کی صحت"
+		"knowledgeHealth": "علم کی صحت",
+		"cataloger": "درجہ بند"
 	},
 	"sidebar": {
 		"searchPlaceholder": "تلاش...",
@@ -2766,7 +2768,9 @@
 			"revelation/non-recited": "غیر متلو وحی (سنت)",
 			"revelation/modes-of-receiving": "وحی کی وصولی کے طریقے",
 			"unclassifiable": "غیر قابل درجہ بندی"
-		}
+		},
+		"queueShowMore": "مزید دکھائیں",
+		"queueShowingCount": "{total} میں سے {shown} دکھائے جا رہے ہیں"
 	},
 	"migrationProgress": {
 		"termVocabV2": {
@@ -2799,5 +2803,9 @@
 			"inspiration": "عرفانی یا تخلیقی ادراک (الہام)",
 			"revelation": "مقدس متن یا نبوی نقل (وحی)"
 		}
+	},
+	"cataloger": {
+		"title": "درجہ بند",
+		"tagline": "ہر نوٹ کو اس کے علم کی نوعیت اور ماخذ کے مطابق درجہ بند کریں۔"
 	}
 }

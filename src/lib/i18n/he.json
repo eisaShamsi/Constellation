@@ -599,7 +599,8 @@
 		"senseMakingCanvas": "קנבס יצירת משמעות",
 		"inspector360": "מפקח 360.3D",
 		"constellationMap": "מפת ידע",
-		"newLibrary": "ספרייה חדשה"
+		"newLibrary": "ספרייה חדשה",
+		"cataloger": "המסווג"
 	},
 	"actions": {
 		"untitled": "ללא כותרת",
@@ -637,7 +638,8 @@
 		"constellationMap": "מפת ידע",
 		"settings": "הגדרות",
 		"importNotes": "ייבוא הערות",
-		"knowledgeHealth": "בריאות הידע"
+		"knowledgeHealth": "בריאות הידע",
+		"cataloger": "המסווג"
 	},
 	"sidebar": {
 		"searchPlaceholder": "חיפוש...",
@@ -2766,7 +2768,9 @@
 			"revelation/non-recited": "התגלות לא-מקריאה (סונה)",
 			"revelation/modes-of-receiving": "אופני קבלת ההתגלות",
 			"unclassifiable": "בלתי ניתן לסיווג"
-		}
+		},
+		"queueShowMore": "הצג עוד",
+		"queueShowingCount": "מציג {shown} מתוך {total}"
 	},
 	"migrationProgress": {
 		"termVocabV2": {
@@ -2799,5 +2803,9 @@
 			"inspiration": "תפיסה מיסטית או יצירתית (אל-איל'האם)",
 			"revelation": "מסירת טקסט קדוש או נבואי (אל-ווחי)"
 		}
+	},
+	"cataloger": {
+		"title": "המסווג",
+		"tagline": "סווג כל פתק לפי סוג הידע שלו ומקורו."
 	}
 }

@@ -71,6 +71,7 @@
 	import { SIGHT_V2_ENABLED, SIGHT_V3_ENABLED, SIGHT_V4_ENABLED, SIGHT_V6_ENABLED, SIGHT_V7_ENABLED } from '$lib/sight/engine';
 	import { detectClusters, computeStructuralGaps, computeUniverseHealth, buildCommunityProfiles, stratumWeightedCentrality, suggestBridges, type StructuralGap, type UniverseHealth, type ClusterInfo, type CommunityProfile } from '$lib/graph/clusterEngine';
 	import OrgChart from '$lib/components/OrgChart.svelte';
+	import CatalogerView from '$lib/components/CatalogerView.svelte';
 	import EmojiIconPicker from '$lib/components/EmojiIconPicker.svelte';
 	import SlotIcon from '$lib/components/SlotIcon.svelte';
 	import SearchHub from '$lib/components/SearchHub.svelte';
@@ -459,6 +460,8 @@
 	}
 	let showSkyView = $state(false);
 	let showOrgChart = $state(false);
+	// MIG-039 — The Cataloger (CECE) left-dock full-page view.
+	let showCataloger = $state(false);
 	// Shared selection path — when an item is clicked in any sidebar mode, OrgChart highlights it
 	let skyViewSelectedPath = $state<string | string[] | null>(null);
 
@@ -596,8 +599,10 @@
 	// close/reopen, reset on Universe switch. See LL-022.
 	let mapEverOpened = $state(false);
 	let orgChartEverOpened = $state(false);
+	let catalogerEverOpened = $state(false);
 	$effect(() => { if (showConstellationMap) mapEverOpened = true; });
 	$effect(() => { if (showOrgChart) orgChartEverOpened = true; });
+	$effect(() => { if (showCataloger) catalogerEverOpened = true; });
 	$effect(() => { if (showInspector360) inspector360EverOpened = true; });
 
 	// Sky View inspect-mode lockout recovery. When the user clicks an SV node,
@@ -1061,7 +1066,7 @@
 	const isHome = $derived(page.url.pathname === '/');
 	const isDashboardVisible = $derived(isHome && !$activeTab && $libraries.length > 0 && $appSettings.showDashboard);
 	/** True when any full-page function is active — disables sidebars and split pane */
-	const fullPageActive = $derived(showSkyView || showGlobalTasks || showIndex || showExpressionForge || showSenseMakingCanvas || showConstellationMap || showOrgChart || showKnowledgeHealth || lensActive || sightV3Active || sightV4Active || sightV5Active || sightV6Active || showSearchHub || showInspector360 || isDashboardVisible);
+	const fullPageActive = $derived(showSkyView || showGlobalTasks || showIndex || showExpressionForge || showSenseMakingCanvas || showConstellationMap || showOrgChart || showCataloger || showKnowledgeHealth || lensActive || sightV3Active || sightV4Active || sightV5Active || sightV6Active || showSearchHub || showInspector360 || isDashboardVisible);
 
 	// Shared disable/title logic for the three layout-bar buttons (left sidebar,
 	// split-view, right sidebar). Any overlay mode that takes over the editor
@@ -1720,7 +1725,7 @@
 			{ id: 'quick-capture', name: $t('commands.quickCapture'), shortcut: sc('quick-capture'), icon: '⚡', action: handleQuickCapture, category: 'File' },
 			{ id: 'new-base', name: $t('commands.newBase'), shortcut: sc('new-base'), icon: '▦', action: handleNewBase, category: 'File' },
 			{ id: 'quick-switch', name: $t('commands.quickSwitcher'), shortcut: sc('quick-switch'), icon: '🔍', action: () => { showCommandPalette = false; showQuickSwitcher = true; }, category: 'Navigation' },
-			{ id: 'search', name: $t('commands.searchLibrary'), shortcut: sc('search'), icon: '🔎', action: () => { showSearchHub = true; searchHubInitialQuery = ''; showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; sightV6Active = false; showInspector360 = false; /* fullPageActive $effect handles sidebar snapshot */ }, category: 'Navigation' },
+			{ id: 'search', name: $t('commands.searchLibrary'), shortcut: sc('search'), icon: '🔎', action: () => { showSearchHub = true; searchHubInitialQuery = ''; showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showCataloger = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; sightV6Active = false; showInspector360 = false; /* fullPageActive $effect handles sidebar snapshot */ }, category: 'Navigation' },
 			{ id: 'daily-note', name: $t('commands.dailyNote'), shortcut: sc('daily-note'), icon: '📅', action: handleOpenDailyNote, category: 'Daily Notes' },
 			{ id: 'toggle-edit', name: $t('commands.toggleEdit'), shortcut: sc('toggle-edit'), icon: '✏️', action: () => { const tab = get(focusedTab); if (tab) toggleEditMode(tab.id); }, category: 'Editor' },
 			{ id: 'star-view', name: $t('commands.skyView'), shortcut: sc('star-view'), icon: '🕸️', action: () => { showSkyView = !showSkyView; showConstellationMap = false; }, category: 'View' },
@@ -1745,6 +1750,7 @@
 			{ id: 'nav-forward', name: $t('commands.navForward'), shortcut: sc('nav-forward'), icon: '→', action: navigateForward, category: 'Navigation' },
 			{ id: 'workspaces', name: $t('commands.workspaces'), shortcut: sc('workspaces'), icon: '🗂️', action: () => { showCommandPalette = false; showWorkspaces = true; }, category: 'View' },
 			{ id: 'index', name: $t('commands.index'), shortcut: sc('index'), icon: '📖', action: () => { showCommandPalette = false; showIndex = !showIndex; showSkyView = false; showGlobalTasks = false; showConstellationMap = false; showInspector360 = false; indexReturnPending = false; }, category: 'Navigation' },
+			{ id: 'cataloger', name: $t('commands.cataloger') || 'The Cataloger', icon: '🗃️', action: () => { showCommandPalette = false; showCataloger = !showCataloger; if (showCataloger) { showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showKnowledgeHealth = false; showInspector360 = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; sightV6Active = false; } }, category: 'View' },
 			{ id: 'review-pulse', name: $t('commands.reviewDueNotes') || 'Review due notes', icon: '📋', action: () => { showCommandPalette = false; rightSidebarOpen = true; rightSidebarTab = 'review'; const lib = get(libraries)[0]; if (lib) invoke<any[]>('get_due_notes', { libraryPath: lib.path }).then(notes => { dueNotes = notes; }).catch(() => {}); }, category: 'View' },
 			{ id: 'open-trail', name: $t('commands.openTrail') || 'Open Trail', icon: '🛤️', action: async () => {
 				showCommandPalette = false;
@@ -2059,6 +2065,7 @@
 		// this reset the user would see stale data from the prior Universe.
 		mapEverOpened = false;
 		orgChartEverOpened = false;
+		catalogerEverOpened = false;
 		inspector360EverOpened = false;
 		inspector360Data = null;
 		inspector360BackStack = [];
@@ -2953,6 +2960,7 @@
 			if (sightV5Active) { sightV5Active = false; return; }
 			if (sightV6Active) { sightV6Active = false; return; }
 			if (showOrgChart) { showOrgChart = false; return; }
+			if (showCataloger) { showCataloger = false; return; }
 			if (sidebarMode === 'skyview') { sidebarMode = 'tree'; return; }
 			if (showGlobalTasks) { showGlobalTasks = false; return; }
 			if (showIndex) { showIndex = false; return; }
@@ -3630,7 +3638,7 @@
 	function handleTagClick(tag: string) {
 		searchHubInitialQuery = `#${tag}`;
 		showSearchHub = true;
-		showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; sightV6Active = false; showInspector360 = false;
+		showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showCataloger = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; sightV6Active = false; showInspector360 = false;
 		/* fullPageActive $effect handles sidebar snapshot */
 	}
 
@@ -4369,7 +4377,7 @@
 				showSearchHub = !showSearchHub;
 				if (showSearchHub) {
 					searchHubInitialQuery = '';
-					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; sightV6Active = false; showInspector360 = false;
+					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showCataloger = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; sightV6Active = false; showInspector360 = false;
 				}
 				searchHubReturnPending = false;
 				/* fullPageActive $effect handles sidebar snapshot on entry/exit */
@@ -4391,7 +4399,7 @@
 			<button class="dock-btn" class:active={showKnowledgeHealth} onclick={() => {
 				showKnowledgeHealth = !showKnowledgeHealth;
 				if (showKnowledgeHealth) {
-					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showInspector360 = false;
+					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showCataloger = false; showInspector360 = false;
 				}
 			}} title={$t('ribbon.knowledgeHealth') || 'Knowledge Health'}>
 				<SlotIcon slot="dock.knowledgeHealth">
@@ -4406,7 +4414,7 @@
 				</SlotIcon>
 			</button>
 			{#if $appSettings.enabledFeatures?.skyView !== false}
-			<button class="dock-btn" class:active={showSkyView} onclick={() => { showSkyView = !showSkyView; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showKnowledgeHealth = false; showInspector360 = false; }} title={$t('ribbon.graphView') || 'Sky View'}>
+			<button class="dock-btn" class:active={showSkyView} onclick={() => { showSkyView = !showSkyView; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showKnowledgeHealth = false; showInspector360 = false; showCataloger = false; }} title={$t('ribbon.graphView') || 'Sky View'}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><circle cx="18" cy="6" r="3"/><path d="M6 9v6M9 6h6M15 18h-6"/></svg>
 			</button>
 			{/if}
@@ -4421,12 +4429,23 @@
 			</a>
 			{/if}
 			{#if $appSettings.enabledFeatures?.index !== false}
-			<button class="dock-btn" class:active={showIndex} onclick={() => { showIndex = !showIndex; showSkyView = false; showGlobalTasks = false; showConstellationMap = false; showInspector360 = false; indexReturnPending = false; }} title={$t('ribbon.index')}>
+			<button class="dock-btn" class:active={showIndex} onclick={() => { showIndex = !showIndex; showSkyView = false; showGlobalTasks = false; showConstellationMap = false; showInspector360 = false; showCataloger = false; indexReturnPending = false; }} title={$t('ribbon.index')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M8 7h6"/><path d="M8 11h8"/></svg>
 			</button>
 			{/if}
+			{#if $appSettings.enabledFeatures?.cece !== false}
+			<button class="dock-btn" class:active={showCataloger} onclick={() => {
+				showCataloger = !showCataloger;
+				if (showCataloger) {
+					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showKnowledgeHealth = false; showInspector360 = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; sightV6Active = false;
+				}
+				/* fullPageActive $effect handles sidebar snapshot */
+			}} title={$t('ribbon.cataloger') || 'The Cataloger'}>
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+			</button>
+			{/if}
 			{#if $appSettings.enabledFeatures?.constellationMap === true}
-			<button class="dock-btn" class:active={showConstellationMap} onclick={() => { showConstellationMap = !showConstellationMap; showSkyView = false; showGlobalTasks = false; showIndex = false; showInspector360 = false; mapReturnPending = false; }} title={$t('ribbon.constellationMap') || 'Constellation Map'}>
+			<button class="dock-btn" class:active={showConstellationMap} onclick={() => { showConstellationMap = !showConstellationMap; showSkyView = false; showGlobalTasks = false; showIndex = false; showInspector360 = false; showCataloger = false; mapReturnPending = false; }} title={$t('ribbon.constellationMap') || 'Constellation Map'}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
 			</button>
 			{/if}
@@ -4435,7 +4454,7 @@
 			{#if SIGHT_V2_ENABLED && $appSettings.enabledFeatures?.constellationSight !== false}
 			<button class="dock-btn" class:active={lensActive} onclick={() => {
 				if (!lensActive) {
-					toggleLens(); showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showInspector360 = false; lensReturnPending = false;
+					toggleLens(); showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showCataloger = false; showInspector360 = false; lensReturnPending = false;
 				} else {
 					lensActive = false;
 				}
@@ -4451,7 +4470,7 @@
 			<button class="dock-btn" class:active={sightV3Active} onclick={() => {
 				if (!sightV3Active) {
 					sightV3Active = true;
-					sightV4Active = false; showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showInspector360 = false; lensActive = false; lensReturnPending = false;
+					sightV4Active = false; showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showCataloger = false; showInspector360 = false; lensActive = false; lensReturnPending = false;
 				} else {
 					sightV3Active = false;
 				}
@@ -4465,7 +4484,7 @@
 			<button class="dock-btn" class:active={sightV4Active} onclick={() => {
 				if (!sightV4Active) {
 					sightV4Active = true;
-					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showInspector360 = false; lensActive = false; sightV3Active = false; sightV5Active = false; sightV6Active = false; lensReturnPending = false;
+					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showCataloger = false; showInspector360 = false; lensActive = false; sightV3Active = false; sightV5Active = false; sightV6Active = false; lensReturnPending = false;
 				} else {
 					sightV4Active = false;
 				}
@@ -4484,7 +4503,7 @@
 			<button class="dock-btn" class:active={sightV6Active} onclick={() => {
 				if (!sightV6Active) {
 					sightV6Active = true;
-					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showInspector360 = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; lensReturnPending = false; sightV6ReturnPending = false;
+					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showCataloger = false; showInspector360 = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; lensReturnPending = false; sightV6ReturnPending = false;
 				} else {
 					sightV6Active = false;
 					sightV6ReturnPending = false;
@@ -4501,7 +4520,7 @@
 			<button class="dock-btn" class:active={sightV7Active} onclick={() => {
 				if (!sightV7Active) {
 					sightV7Active = true;
-					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showInspector360 = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; sightV6Active = false; lensReturnPending = false; sightV6ReturnPending = false;
+					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showCataloger = false; showInspector360 = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; sightV6Active = false; lensReturnPending = false; sightV6ReturnPending = false;
 				} else {
 					sightV7Active = false;
 				}
@@ -4514,7 +4533,7 @@
 				showInspector360 = !showInspector360;
 				if (showInspector360) {
 					showSkyView = false; showGlobalTasks = false; showIndex = false;
-					showConstellationMap = false; showOrgChart = false; lensActive = false;
+					showConstellationMap = false; showOrgChart = false; showCataloger = false; lensActive = false;
 					showKnowledgeHealth = false; showSearchHub = false;
 					showExpressionForge = false; showSenseMakingCanvas = false;
 				}
@@ -4895,13 +4914,13 @@
 				</button>
 			{/if}
 			{#if searchHubReturnPending}
-				<button class="index-return-btn" onclick={() => { showSearchHub = true; searchHubReturnPending = false; showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; sightV6Active = false; showInspector360 = false; }}>
+				<button class="index-return-btn" onclick={() => { showSearchHub = true; searchHubReturnPending = false; showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showCataloger = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; sightV6Active = false; showInspector360 = false; }}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
 					{$t('searchHub.title')}
 				</button>
 			{/if}
 			{#if skyViewReturnPending}
-				<button class="index-return-btn" onclick={() => { showSkyView = true; skyViewReturnPending = false; showSearchHub = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; lensActive = false; }}>
+				<button class="index-return-btn" onclick={() => { showSkyView = true; skyViewReturnPending = false; showSearchHub = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showCataloger = false; lensActive = false; }}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
 					{$t('layout.skyViewTitle') || 'Sky View'}
 				</button>
@@ -5137,6 +5156,21 @@
 			</div>
 		{/if}
 
+		<!-- The Cataloger overlay (MIG-039) — CECE left-dock Core Plug-in,
+		     lazy-mounted (LL-022). Right-sidebar Source Review tab is unchanged. -->
+		{#if catalogerEverOpened}
+			<div class="cataloger-overlay" class:cataloger-visible={showCataloger}>
+				<CatalogerView
+					onNoteClick={(path, name) => {
+						const lib = $libraryStats.find(l => path.startsWith(l.path));
+						if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
+						showCataloger = false;
+					}}
+					onClose={() => { showCataloger = false; }}
+				/>
+			</div>
+		{/if}
+
 		<!-- Constellation Sight v3 (MIG-018, PJ-038) — Pixi-based star-chart engine.
 		     Outer SIGHT_V3_ENABLED gate prevents the overlay from mounting when v3
 		     is disabled in committed source (default through §1A–§1E; flipped to
@@ -5228,7 +5262,7 @@
 		</div>
 
 		<!-- Content -->
-		<div class="content-area" class:content-hidden={showIndex || showConstellationMap || showOrgChart || lensActive || showSearchHub || showInspector360} onmouseover={handleWikilinkHover} onmouseout={handleWikilinkLeave}>
+		<div class="content-area" class:content-hidden={showIndex || showConstellationMap || showOrgChart || showCataloger || lensActive || showSearchHub || showInspector360} onmouseover={handleWikilinkHover} onmouseout={handleWikilinkLeave}>
 			{#if showSkyView}
 				<div class="star-fullscreen">
 					<div class="star-header">
@@ -7164,12 +7198,12 @@
 		overflow: hidden;
 	}
 
-	.index-overlay, .map-overlay, .orgchart-overlay, .inspector360-overlay {
+	.index-overlay, .map-overlay, .orgchart-overlay, .inspector360-overlay, .cataloger-overlay {
 		display: none; flex: 1; overflow: hidden;
 		background: var(--background-primary, #fff);
 		min-height: 0;
 	}
-	.index-overlay.index-visible, .map-overlay.map-visible, .orgchart-overlay.orgchart-visible, .inspector360-overlay.inspector360-visible { display: flex; flex-direction: column; }
+	.index-overlay.index-visible, .map-overlay.map-visible, .orgchart-overlay.orgchart-visible, .inspector360-overlay.inspector360-visible, .cataloger-overlay.cataloger-visible { display: flex; flex-direction: column; }
 
 	.index-return-btn {
 		display: flex; align-items: center; gap: 4px;

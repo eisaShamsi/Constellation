@@ -599,7 +599,8 @@
 		"senseMakingCanvas": "센스메이킹 캔버스",
 		"inspector360": "360.3D 인스펙터",
 		"constellationMap": "지식 맵",
-		"newLibrary": "새 라이브러리"
+		"newLibrary": "새 라이브러리",
+		"cataloger": "분류기"
 	},
 	"actions": {
 		"untitled": "제목 없음",
@@ -637,7 +638,8 @@
 		"constellationMap": "지식 맵",
 		"settings": "설정",
 		"importNotes": "노트 가져오기",
-		"knowledgeHealth": "지식 건강도"
+		"knowledgeHealth": "지식 건강도",
+		"cataloger": "분류기"
 	},
 	"sidebar": {
 		"searchPlaceholder": "검색...",
@@ -1189,7 +1191,9 @@
 			"revelation/non-recited": "낭송되지 않은 계시 (순나)",
 			"revelation/modes-of-receiving": "계시를 받는 양식들",
 			"unclassifiable": "분류 불가"
-		}
+		},
+		"queueShowMore": "더 보기",
+		"queueShowingCount": "{total}개 중 {shown}개 표시"
 	},
 	"tasksPanel": {
 		"all": "전체",
@@ -2799,5 +2803,9 @@
 			"inspiration": "신비적 또는 창조적 통찰 (al-ilham)",
 			"revelation": "성스러운 문헌 또는 예언적 전승 (al-wahy)"
 		}
+	},
+	"cataloger": {
+		"title": "분류기",
+		"tagline": "각 노트를 지식의 종류와 출처에 따라 분류합니다."
 	}
 }

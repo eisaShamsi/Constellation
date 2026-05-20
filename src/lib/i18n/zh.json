@@ -599,7 +599,8 @@
 		"senseMakingCanvas": "意义构建画布",
 		"inspector360": "360.3D检查器",
 		"constellationMap": "知识地图",
-		"newLibrary": "新建库"
+		"newLibrary": "新建库",
+		"cataloger": "分类器"
 	},
 	"actions": {
 		"untitled": "未命名",
@@ -637,7 +638,8 @@
 		"constellationMap": "知识地图",
 		"settings": "设置",
 		"importNotes": "导入笔记",
-		"knowledgeHealth": "知识健康度"
+		"knowledgeHealth": "知识健康度",
+		"cataloger": "分类器"
 	},
 	"sidebar": {
 		"searchPlaceholder": "搜索...",
@@ -1189,7 +1191,9 @@
 			"revelation/non-recited": "非诵读启示 (圣行)",
 			"revelation/modes-of-receiving": "接受启示的方式",
 			"unclassifiable": "不可分类"
-		}
+		},
+		"queueShowMore": "显示更多",
+		"queueShowingCount": "显示 {total} 条中的 {shown} 条"
 	},
 	"tasksPanel": {
 		"all": "全部",
@@ -2799,5 +2803,9 @@
 			"inspiration": "神秘或创造性领悟 (al-ilham)",
 			"revelation": "圣典或先知传承 (al-wahy)"
 		}
+	},
+	"cataloger": {
+		"title": "分类器",
+		"tagline": "按知识类型与来源对每条笔记进行分类。"
 	}
 }

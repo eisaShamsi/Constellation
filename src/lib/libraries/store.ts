@@ -3404,6 +3404,10 @@ export interface AppSettings {
 		constellationSightV6: boolean;
 		emojiIconPicker: boolean;
 		inspector360: boolean;
+		// MIG-039: CECE ("The Cataloger") left-dock Core Plug-in. Gates the
+		// dock button + full-page view in +layout.svelte. Distinct from the
+		// `cece` settings object below (engine config). Default ON.
+		cece: boolean;
 	};
 	/**
 	 * MIG-018 (PJ-038) — Sight v3 settings namespace.
@@ -3698,6 +3702,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
 		constellationSightV6: true,
 		emojiIconPicker: true,
 		inspector360: true,
+		// MIG-039: The Cataloger ships ON by default (first Core Plug-in).
+		cece: true,
 	},
 	// MIG-018 §1D + MIG-019 §2B/§2C/§2E: Sight v3 settings.
 	// projection: Lambert (equal-area) by default.

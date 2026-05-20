@@ -599,7 +599,8 @@
 		"senseMakingCanvas": "Tela de sentido",
 		"inspector360": "Inspetor 360.3D",
 		"constellationMap": "Mapa do conhecimento",
-		"newLibrary": "Nova biblioteca"
+		"newLibrary": "Nova biblioteca",
+		"cataloger": "Classificador"
 	},
 	"actions": {
 		"untitled": "Sem título",
@@ -637,7 +638,8 @@
 		"constellationMap": "Mapa do conhecimento",
 		"settings": "Configurações",
 		"importNotes": "Importar notas",
-		"knowledgeHealth": "Saúde do conhecimento"
+		"knowledgeHealth": "Saúde do conhecimento",
+		"cataloger": "Classificador"
 	},
 	"sidebar": {
 		"searchPlaceholder": "Pesquisar...",
@@ -1189,7 +1191,9 @@
 			"revelation/non-recited": "Revelação não recitada (Suna)",
 			"revelation/modes-of-receiving": "Modos de receção da revelação",
 			"unclassifiable": "Não classificável"
-		}
+		},
+		"queueShowMore": "Mostrar mais",
+		"queueShowingCount": "Mostrando {shown} de {total}"
 	},
 	"tasksPanel": {
 		"all": "Todas",
@@ -2799,5 +2803,9 @@
 			"inspiration": "Apreensão mística ou criativa (al-ilham)",
 			"revelation": "Transmissão de texto sagrado ou profética (al-wahy)"
 		}
+	},
+	"cataloger": {
+		"title": "Classificador",
+		"tagline": "Classifique cada nota pelo seu tipo de conhecimento e pela sua fonte."
 	}
 }

@@ -599,7 +599,8 @@
 		"senseMakingCanvas": "Sinngebungsleinwand",
 		"inspector360": "360.3D-Inspektor",
 		"constellationMap": "Wissenskarte",
-		"newLibrary": "Neue Bibliothek"
+		"newLibrary": "Neue Bibliothek",
+		"cataloger": "Klassifikator"
 	},
 	"actions": {
 		"untitled": "Unbenannt",
@@ -637,7 +638,8 @@
 		"constellationMap": "Wissenskarte",
 		"settings": "Einstellungen",
 		"importNotes": "Notizen importieren",
-		"knowledgeHealth": "Wissensgesundheit"
+		"knowledgeHealth": "Wissensgesundheit",
+		"cataloger": "Klassifikator"
 	},
 	"sidebar": {
 		"searchPlaceholder": "Suchen...",
@@ -2766,7 +2768,9 @@
 			"revelation/modes-of-receiving": "Modi des Offenbarungsempfangs",
 			"unclassifiable": "Nicht klassifizierbar"
 		},
-		"_translation_note": "KI-generierte Übersetzung; eine muttersprachliche Überprüfung steht aus. Bitte Korrekturen über das Projekt-Repository einreichen."
+		"_translation_note": "KI-generierte Übersetzung; eine muttersprachliche Überprüfung steht aus. Bitte Korrekturen über das Projekt-Repository einreichen.",
+		"queueShowMore": "Mehr anzeigen",
+		"queueShowingCount": "{shown} von {total} angezeigt"
 	},
 	"migrationProgress": {
 		"termVocabV2": {
@@ -2799,5 +2803,9 @@
 			"inspiration": "Mystische oder kreative Erkenntnis (al-ilham)",
 			"revelation": "Heilige-Text- oder prophetische Überlieferung (al-wahy)"
 		}
+	},
+	"cataloger": {
+		"title": "Klassifikator",
+		"tagline": "Klassifiziere jede Notiz nach ihrer Wissensart und ihrer Quelle."
 	}
 }

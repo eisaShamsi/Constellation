@@ -599,7 +599,8 @@
 		"senseMakingCanvas": "بوم معنایابی",
 		"inspector360": "بازرس کروی",
 		"constellationMap": "نقشه دانش",
-		"newLibrary": "کتابخانه جدید"
+		"newLibrary": "کتابخانه جدید",
+		"cataloger": "دسته‌بند"
 	},
 	"actions": {
 		"untitled": "بدون عنوان",
@@ -637,7 +638,8 @@
 		"constellationMap": "نقشه دانش",
 		"settings": "تنظیمات",
 		"importNotes": "وارد کردن یادداشت‌ها",
-		"knowledgeHealth": "سلامت دانش"
+		"knowledgeHealth": "سلامت دانش",
+		"cataloger": "دسته‌بند"
 	},
 	"sidebar": {
 		"searchPlaceholder": "جستجو...",
@@ -2766,7 +2768,9 @@
 			"revelation/non-recited": "وحی غیر متلوّ (سنّت)",
 			"revelation/modes-of-receiving": "انحاء دریافت وحی",
 			"unclassifiable": "غیر قابل طبقه‌بندی"
-		}
+		},
+		"queueShowMore": "نمایش بیشتر",
+		"queueShowingCount": "نمایش {shown} از {total}"
 	},
 	"migrationProgress": {
 		"termVocabV2": {
@@ -2799,5 +2803,9 @@
 			"inspiration": "ادراک عرفانی یا خلاق (الهام)",
 			"revelation": "تبلیغ متن مقدس یا نبوی (وحی)"
 		}
+	},
+	"cataloger": {
+		"title": "دسته‌بند",
+		"tagline": "هر یادداشت را بر اساس نوع دانش و منبع آن دسته‌بندی کنید."
 	}
 }

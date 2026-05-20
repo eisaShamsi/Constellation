@@ -597,7 +597,8 @@
 		"expressionForge": "Expression Forge",
 		"senseMakingCanvas": "Sense-Making Canvas",
 		"inspector360": "360.3D Inspector",
-		"constellationMap": "Constellation Map"
+		"constellationMap": "Constellation Map",
+		"cataloger": "The Cataloger"
 	},
 	"actions": {
 		"untitled": "Untitled",
@@ -635,7 +636,8 @@
 		"constellationMap": "Constellation Map",
 		"knowledgeHealth": "Knowledge Health",
 		"settings": "Settings",
-		"importNotes": "Import notes"
+		"importNotes": "Import notes",
+		"cataloger": "The Cataloger"
 	},
 	"picker": {
 		"title": "Emoji & Icons",
@@ -1229,7 +1231,9 @@
 			"revelation/non-recited": "Non-recited revelation (Sunnah)",
 			"revelation/modes-of-receiving": "Modes of receiving revelation",
 			"unclassifiable": "Unclassifiable"
-		}
+		},
+		"queueShowMore": "Show more",
+		"queueShowingCount": "Showing {shown} of {total}"
 	},
 	"classifierScan": {
 		"label": "Classifying notes…",
@@ -3002,5 +3006,9 @@
 			"label": "Migrating term index",
 			"done": "Term index migration complete"
 		}
+	},
+	"cataloger": {
+		"title": "The Cataloger",
+		"tagline": "Classify each note by its kind of knowledge and its source."
 	}
 }

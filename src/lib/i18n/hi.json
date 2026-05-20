@@ -599,7 +599,8 @@
 		"senseMakingCanvas": "अर्थ-निर्माण कैनवास",
 		"inspector360": "360.3D इंस्पेक्टर",
 		"constellationMap": "ज्ञान मानचित्र",
-		"newLibrary": "नई लाइब्रेरी"
+		"newLibrary": "नई लाइब्रेरी",
+		"cataloger": "वर्गीकारक"
 	},
 	"actions": {
 		"untitled": "बिना शीर्षक",
@@ -637,7 +638,8 @@
 		"constellationMap": "ज्ञान मानचित्र",
 		"settings": "सेटिंग्स",
 		"importNotes": "नोट्स आयात करें",
-		"knowledgeHealth": "ज्ञान स्वास्थ्य"
+		"knowledgeHealth": "ज्ञान स्वास्थ्य",
+		"cataloger": "वर्गीकारक"
 	},
 	"sidebar": {
 		"searchPlaceholder": "खोजें...",
@@ -1189,7 +1191,9 @@
 			"revelation/non-recited": "अपठित प्रकटन (सुन्ना)",
 			"revelation/modes-of-receiving": "प्रकटन प्राप्ति के प्रकार",
 			"unclassifiable": "अवर्गीकृत"
-		}
+		},
+		"queueShowMore": "और दिखाएँ",
+		"queueShowingCount": "{total} में से {shown} दिखा रहे हैं"
 	},
 	"tasksPanel": {
 		"all": "सभी",
@@ -2799,5 +2803,9 @@
 			"inspiration": "रहस्यमय या रचनात्मक बोध (अल-इल्हाम)",
 			"revelation": "पवित्र-पाठ या प्रवृति-संचरण (अल-वही)"
 		}
+	},
+	"cataloger": {
+		"title": "वर्गीकारक",
+		"tagline": "प्रत्येक नोट को उसके ज्ञान के प्रकार और स्रोत के अनुसार वर्गीकृत करें।"
 	}
 }

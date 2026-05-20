@@ -599,7 +599,8 @@
 		"senseMakingCanvas": "センスメイキングキャンバス",
 		"inspector360": "360.3Dインスペクター",
 		"constellationMap": "ナレッジマップ",
-		"newLibrary": "新しいライブラリ"
+		"newLibrary": "新しいライブラリ",
+		"cataloger": "分類器"
 	},
 	"actions": {
 		"untitled": "無題",
@@ -637,7 +638,8 @@
 		"constellationMap": "ナレッジマップ",
 		"settings": "設定",
 		"importNotes": "ノートをインポート",
-		"knowledgeHealth": "知識の健全性"
+		"knowledgeHealth": "知識の健全性",
+		"cataloger": "分類器"
 	},
 	"sidebar": {
 		"searchPlaceholder": "検索...",
@@ -1189,7 +1191,9 @@
 			"revelation/non-recited": "誦読されない啓示 (スンナ)",
 			"revelation/modes-of-receiving": "啓示を受ける諸様式",
 			"unclassifiable": "分類不能"
-		}
+		},
+		"queueShowMore": "もっと表示",
+		"queueShowingCount": "{total} 件中 {shown} 件を表示"
 	},
 	"tasksPanel": {
 		"all": "すべて",
@@ -2799,5 +2803,9 @@
 			"inspiration": "神秘的または創造的な把握 (al-ilham)",
 			"revelation": "聖典または預言的伝承 (al-wahy)"
 		}
+	},
+	"cataloger": {
+		"title": "分類器",
+		"tagline": "各ノートを知識の種類と出典で分類します。"
 	}
 }

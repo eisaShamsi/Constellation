@@ -599,7 +599,8 @@
 		"senseMakingCanvas": "Lienzo de sentido",
 		"inspector360": "Inspector 360.3D",
 		"constellationMap": "Mapa del conocimiento",
-		"newLibrary": "Nueva biblioteca"
+		"newLibrary": "Nueva biblioteca",
+		"cataloger": "Clasificador"
 	},
 	"actions": {
 		"untitled": "Sin título",
@@ -637,7 +638,8 @@
 		"constellationMap": "Mapa del conocimiento",
 		"settings": "Ajustes",
 		"importNotes": "Importar notas",
-		"knowledgeHealth": "Salud del conocimiento"
+		"knowledgeHealth": "Salud del conocimiento",
+		"cataloger": "Clasificador"
 	},
 	"sidebar": {
 		"searchPlaceholder": "Buscar...",
@@ -2766,7 +2768,9 @@
 			"revelation/modes-of-receiving": "Modos de recepción de la revelación",
 			"unclassifiable": "No clasificable"
 		},
-		"_translation_note": "Traducción generada por IA; pendiente de revisión por hablante nativo. Por favor envía correcciones a través del repositorio del proyecto."
+		"_translation_note": "Traducción generada por IA; pendiente de revisión por hablante nativo. Por favor envía correcciones a través del repositorio del proyecto.",
+		"queueShowMore": "Mostrar más",
+		"queueShowingCount": "Mostrando {shown} de {total}"
 	},
 	"migrationProgress": {
 		"termVocabV2": {
@@ -2799,5 +2803,9 @@
 			"inspiration": "Aprehensión mística o creativa (al-ilham)",
 			"revelation": "Transmisión de texto sagrado o profética (al-wahy)"
 		}
+	},
+	"cataloger": {
+		"title": "Clasificador",
+		"tagline": "Clasifica cada nota por su tipo de conocimiento y su fuente."
 	}
 }

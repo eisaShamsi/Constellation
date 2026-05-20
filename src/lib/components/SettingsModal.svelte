@@ -309,6 +309,9 @@
 				{ id: 'pagePreview', name: $t('settings.plugins.pagePreview') || 'Page Preview', desc: $t('settings.plugins.pagePreviewDesc') || 'Preview notes on link hover', icon: '👁️' },
 				{ id: 'tags', name: $t('settings.plugins.tags') || 'Tags', desc: $t('settings.plugins.tagsDesc') || 'View and browse all tags', icon: '🏷️' },
 				{ id: 'index', name: $t('settings.plugins.index') || 'Index', desc: $t('settings.plugins.indexDesc') || 'Collect and browse terms from all notes', icon: '📑' },
+				// MIG-039 — The Cataloger (CECE) Core Plug-in. id maps to enabledFeatures.cece;
+				// reuses the already-localized cataloger.title / cataloger.tagline keys.
+				{ id: 'cece', name: $t('cataloger.title') || 'The Cataloger', desc: $t('cataloger.tagline') || 'Classify each note by its kind of knowledge and its source.', icon: '🗃️' },
 				{ id: 'semanticSearch', name: $t('settings.plugins.semanticSearch') || 'Semantic Search', desc: $t('settings.plugins.semanticSearchDesc') || 'Find conceptually related notes using AI', icon: '🧠' },
 			]
 		},

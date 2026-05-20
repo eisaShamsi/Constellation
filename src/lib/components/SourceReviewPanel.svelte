@@ -79,13 +79,26 @@
   };
 
   /** Parse the composite_json blob lazily; returns null on legacy rows. */
+  // MIG-039 perf: memoize the JSON.parse of composite_json. filterCounts,
+  // splitAwareSkipCount, filteredQueue, AND the per-card render each call
+  // parseComposite for every record; on a 4,000+ row queue that re-parsed
+  // every blob many times per reactive pass (a big contributor to the lag /
+  // memory pressure Eisa hit). Keyed by the immutable composite_json string,
+  // so unchanged rows stay cached across scan reloads. Component-local — GC'd
+  // with the instance.
+  const _compositeCache = new Map<string, CompositeAssignment | null>();
   function parseComposite(record: SuggestionRecord): CompositeAssignment | null {
     if (!record.composite_json) return null;
+    const hit = _compositeCache.get(record.composite_json);
+    if (hit !== undefined) return hit;
+    let parsed: CompositeAssignment | null;
     try {
-      return JSON.parse(record.composite_json) as CompositeAssignment;
+      parsed = JSON.parse(record.composite_json) as CompositeAssignment;
     } catch {
-      return null;
+      parsed = null;
     }
+    _compositeCache.set(record.composite_json, parsed);
+    return parsed;
   }
 
   /**
@@ -177,6 +190,15 @@
     });
   });
 
+  // MIG-039 perf: cap how many cards actually render. The full queue can be
+  // thousands of rows; rendering them all (each a complex card with nested
+  // loops) is what froze the app on a large universe. Filter counts + Approve
+  // All still operate on the full queue — only the DOM is bounded. "Show more"
+  // reveals the next batch on demand. Reset to one batch when the filter changes.
+  const RENDER_BATCH = 80;
+  let renderCap = $state(RENDER_BATCH);
+  let visibleQueue = $derived(filteredQueue.slice(0, renderCap));
+
   /** Filter chip definitions for the queueFilter row. Recomputes when
    *  i18n locale changes (the labels read $t) or when filterCounts
    *  shifts. Declared as $derived so the template can iterate without
@@ -210,13 +232,20 @@
     return horizontalAgrees && verticalAgrees ? '✓' : '✗';
   }
 
-  /** Per-card "show reasoning trail" expand state. */
+  /** Per-card reasoning-trail override. A trail can be open-by-default (the
+   *  trust-cal banner, or the 'always' visibility pref), so two sets are
+   *  needed: `expandedTrails` force-opens, `collapsedTrails` force-closes.
+   *  With only an "expanded" set the chevron was a no-op on default-open
+   *  cards — "Hide reasoning" did nothing (Eisa, 2026-05-20). MIG-039 fix. */
   let expandedTrails = $state(new Set<string>());
-  function toggleTrail(notePath: string) {
-    const next = new Set(expandedTrails);
-    if (next.has(notePath)) next.delete(notePath);
-    else next.add(notePath);
-    expandedTrails = next;
+  let collapsedTrails = $state(new Set<string>());
+  function toggleTrail(notePath: string, currentlyOpen: boolean) {
+    const exp = new Set(expandedTrails);
+    const col = new Set(collapsedTrails);
+    if (currentlyOpen) { exp.delete(notePath); col.add(notePath); }
+    else { col.delete(notePath); exp.add(notePath); }
+    expandedTrails = exp;
+    collapsedTrails = col;
   }
 
   /**
@@ -261,6 +290,9 @@
    * with no cece preferences).
    */
   function isTrailOpen(notePath: string, hasComposite: boolean): boolean {
+    // Explicit user clicks win over any default-open rule below, so the
+    // chevron can always collapse/expand a trail (MIG-039 fix).
+    if (collapsedTrails.has(notePath)) return false;
     if (expandedTrails.has(notePath)) return true;
     const visibilityPref = $appSettings.cece?.reasoningTrailVisibility ?? 'on_disagreement';
     if (visibilityPref === 'always' && hasComposite) return true;
@@ -936,7 +968,7 @@
             disabled={f.count === 0 && f.key !== 'all'}
             role="tab"
             aria-selected={queueFilter === f.key}
-            onclick={() => queueFilter = f.key}
+            onclick={() => { queueFilter = f.key; renderCap = RENDER_BATCH; }}
             title={f.label}
           >
             {f.label} <span class="srp-filter-count">({f.count})</span>
@@ -1061,7 +1093,7 @@
       </div>
     {/if}
     <ul class="srp-list">
-      {#each filteredQueue as record (record.note_path)}
+      {#each visibleQueue as record (record.note_path)}
         {@const horizontalSuggestions = record.suggestions.filter(s => s.axis === 'horizontal')}
         {@const verticalSuggestions = record.suggestions.filter(s => s.axis === 'vertical')}
         {@const composite = parseComposite(record)}
@@ -1117,7 +1149,7 @@
                  V3-§8.r5.3: also default-open during the first
                  TRUST_CAL_THRESHOLD reviews (trust-calibration period). -->
             <div class="srp-trail-toggle">
-              <button class="srp-trail-btn" onclick={() => toggleTrail(record.note_path)}>
+              <button class="srp-trail-btn" onclick={() => toggleTrail(record.note_path, showTrail)}>
                 {#if showTrail}{$t('cece.trail.collapse') || '▾ Hide reasoning'}{:else}{$t('cece.trail.expand') || '▸ Why this classification?'}{/if}
               </button>
               {#if isSplit}
@@ -1330,6 +1362,18 @@
         </li>
       {/each}
     </ul>
+    {#if filteredQueue.length > visibleQueue.length}
+      <div class="srp-show-more">
+        <button class="srp-btn" onclick={() => renderCap += RENDER_BATCH}>
+          {$t('cece.queueShowMore') || 'Show more'}
+        </button>
+        <span class="srp-show-more-note">
+          {($t('cece.queueShowingCount') || 'Showing {shown} of {total}')
+            .replace('{shown}', visibleQueue.length.toLocaleString())
+            .replace('{total}', filteredQueue.length.toLocaleString())}
+        </span>
+      </div>
+    {/if}
   {/if}
 </div>
 
@@ -1426,6 +1470,19 @@
     padding: 0 8px 8px;
     overflow-y: auto;
     flex: 1;
+  }
+  /* MIG-039 — "Show more" footer for the render-capped queue. */
+  .srp-show-more {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 8px 16px;
+    flex-shrink: 0;
+  }
+  .srp-show-more-note {
+    font-size: 0.72rem;
+    color: var(--text-muted);
   }
   .srp-card {
     background: var(--background-secondary, #fbf8ec);

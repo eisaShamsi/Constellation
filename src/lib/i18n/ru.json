@@ -599,7 +599,8 @@
 		"senseMakingCanvas": "Холст осмысления",
 		"inspector360": "Инспектор 360.3D",
 		"constellationMap": "Карта знаний",
-		"newLibrary": "Новая библиотека"
+		"newLibrary": "Новая библиотека",
+		"cataloger": "Классификатор"
 	},
 	"actions": {
 		"untitled": "Без названия",
@@ -637,7 +638,8 @@
 		"constellationMap": "Карта знаний",
 		"settings": "Настройки",
 		"importNotes": "Импорт заметок",
-		"knowledgeHealth": "Здоровье знаний"
+		"knowledgeHealth": "Здоровье знаний",
+		"cataloger": "Классификатор"
 	},
 	"sidebar": {
 		"searchPlaceholder": "Поиск...",
@@ -1189,7 +1191,9 @@
 			"revelation/non-recited": "Невозвещаемое откровение (Сунна)",
 			"revelation/modes-of-receiving": "Способы получения откровения",
 			"unclassifiable": "Неклассифицируемое"
-		}
+		},
+		"queueShowMore": "Показать ещё",
+		"queueShowingCount": "Показано {shown} из {total}"
 	},
 	"tasksPanel": {
 		"all": "Все",
@@ -2799,5 +2803,9 @@
 			"inspiration": "Мистическое или творческое постижение (al-ilham)",
 			"revelation": "Передача священного текста или пророческая (al-wahy)"
 		}
+	},
+	"cataloger": {
+		"title": "Классификатор",
+		"tagline": "Классифицируйте каждую заметку по виду знания и его источнику."
 	}
 }
