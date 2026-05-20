@@ -136,7 +136,15 @@ Candidate names, each measured against the core concept:
 
 **My recommendation for your decision**: **"The Cataloger"** (or simply **"Cataloger"**) as the user-facing dock name, with **CECE** retained as the internal engine name (exactly as Sky View / Sight keep internal v-numbers). Rationale: it's the only candidate that naturally spans *both* axes (a cataloger classifies an item by multiple facets — kind and origin), it matches the engine's own architecture (six catalogers), it's a warm human word rather than an abstract one, and it carries the library-science lineage that fits a knowledge-formulation tool. The dock tooltip can carry the fuller phrase ("Cataloger — classify each note's kind and source of knowledge").
 
-**This is your call, not mine.** The paper's job was to surface the core concept so the name can follow it. Pick from the table (or propose another), and I'll (a) finalize the name across this paper's title + the 15-locale i18n, then (b) build the left-dock feature under that name.
+### DECISION (Eisa, 2026-05-19): **The Cataloger**
+
+The user-facing name is **The Cataloger**. The internal engine name stays **CECE** (Constellation Epistemic Content Engine) — same pattern as Sky View / Sight keeping their internal names. So:
+
+- **User-facing** (dock button, dock view title, tooltip, Settings toggle, help text): "The Cataloger" / "Cataloger".
+- **Internal** (Rust modules `cece/`, IPC names `classifier_*` / `sources_*`, this Concept Paper's engine label, code comments): "CECE".
+- The existing right-sidebar **Source Review** panel keeps its name for now (it's the per-note review surface); the left-dock view is "The Cataloger" (the universe-wide home).
+
+**Open localization sub-decision**: "Cataloger" diverges across languages between the *cataloger/indexer* sense (library science — Arabic مُفهرِس) and the *classifier* sense (Arabic مُصنِّف). Since Eisa is Arabic-native and the project's standing order requires the right native equivalent, the Arabic term (and the cataloger-vs-classifier sense across the other 13 locales) is flagged for Eisa's confirmation during the build's i18n step.
 
 ## §11 — Future workstreams
 
@@ -149,4 +157,4 @@ Candidate names, each measured against the core concept:
 
 ---
 
-*Concept Paper v1.0, cut 2026-05-19. Companion to the implementation contract in `lab/reports/MIG-021v3-EPISTEMIC-CONTENT-ENGINE-ARCHITECT.md` and the intellectual foundation in `docs/epistemic-content-EN.md`. This paper's title + filename will be revised to the chosen user-facing name (§10) once Eisa decides; until then it carries the internal "CECE" label.*
+*Concept Paper v1.0, cut 2026-05-19. Companion to the implementation contract in `lab/reports/MIG-021v3-EPISTEMIC-CONTENT-ENGINE-ARCHITECT.md` and the intellectual foundation in `docs/epistemic-content-EN.md`. The paper keeps the internal "CECE" engine label by design (§10 decision); the user-facing name is "The Cataloger." The filename stays `Constellation-CECE-Concept-Paper` since CECE is the durable internal name.*
