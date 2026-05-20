@@ -144,7 +144,7 @@ The user-facing name is **The Cataloger**. The internal engine name stays **CECE
 - **Internal** (Rust modules `cece/`, IPC names `classifier_*` / `sources_*`, this Concept Paper's engine label, code comments): "CECE".
 - The existing right-sidebar **Source Review** panel keeps its name for now (it's the per-note review surface); the left-dock view is "The Cataloger" (the universe-wide home).
 
-**Open localization sub-decision**: "Cataloger" diverges across languages between the *cataloger/indexer* sense (library science — Arabic مُفهرِس) and the *classifier* sense (Arabic مُصنِّف). Since Eisa is Arabic-native and the project's standing order requires the right native equivalent, the Arabic term (and the cataloger-vs-classifier sense across the other 13 locales) is flagged for Eisa's confirmation during the build's i18n step.
+**Localization decision (Eisa, 2026-05-19): Arabic = المُصنِّف** (*al-muṣannif*, "the classifier"). Eisa chose the *classifier* sense over the cataloger/indexer sense (مُفهرِس). Guidance for the remaining 13 locales at the build's i18n step: follow the **classifier sense** (the concept Eisa anchored on), not the literal library-"cataloger" word — e.g., 分类器 (zh), 分類器 (ja), 분류기 (ko), Klassifikator (de), Clasificador (es), Classificateur (fr), Sınıflandırıcı (tr), Классификатор (ru), वर्गीकारक (hi), دسته‌بند (fa), המסווג (he), درجہ بند (ur), Classificador (pt). The English user-facing brand stays **"The Cataloger"** (the chosen English name); non-English locales render the classifier-sense equivalent. Final 13-locale values to be confirmed during the build.
 
 ## §11 — Future workstreams
 

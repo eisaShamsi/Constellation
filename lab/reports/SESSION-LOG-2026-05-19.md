@@ -543,3 +543,21 @@ After the audit, Eisa set a concrete direction (superseding the earlier "postpon
 
 **Next after naming**: build the CECE left-dock Core Plug-in (dock button + full-page view reusing SourceReviewPanel + ClassifierScanProgressStrip); right-sidebar Source Review tab stays as-is until the dock view is done.
 
+### Naming decided + build handed off (EOD)
+
+- **Name decided** (`feec7b12`): user-facing **"The Cataloger"**; internal engine stays **CECE**.
+- **Arabic decided**: **المُصنِّف** (*al-muṣannif*, classifier sense — Eisa chose classifier over the cataloger/indexer sense مُفهرِس). Other 13 locales follow the classifier sense. Recorded in Concept Paper §10.
+- **Build deferred to a fresh session** per Eisa. Wrote a self-contained handover: `lab/reports/MIG-039-CATALOGER-HANDOVER.md` — covers the goal, what's done, what-not-to-touch, the accuracy caveats (LLM not wired; manual scans), the ~18-site `+layout.svelte` build plan (mirror OrgChart), i18n, verification + Boss test, and the kickoff prompt.
+
+### ⚠️ Outstanding SO #6 debt — orientation bump owed
+
+Orientation is at **v2.17**, stale since before 2026-05-19. A **v2.18 bump** is owed, capturing today's full set: MIG-037 P1 (Time Dome), MIG-038 (Sight+Map disabled + Wings charter), version 0.1.0, CECE Concept Paper + "The Cataloger" naming. Flagged in the MIG-039 handover §8 as an early task for the next session. Acknowledged as deferred (session ending at Eisa's direction); not silently dropped.
+
+### Commits today (chronological)
+
+`30f1d6a7` (Form-Aligns rule) → `b6dcbdef` (MIG-036 Architect) → `22eb7cee` (v7 P1) → `9a2497a0` (v7 P2) → `e1153fe8` (v7 P3) → `0a0bc58a` (v7 P3-fix-1) → `bb221fe4` (MIG-037 P1 Time Dome) → `26fe4f43` (version 0.1.0) → `57cd7638` (MIG-038 disables + Wings) → `9ab0d193` (CECE Concept Paper) → `feec7b12` (name decided) → (this commit: Arabic term + MIG-039 handover).
+
+### Net state at EOD 2026-05-19
+
+Constellation v0.1, clean `main`. Sight + Map disabled (→ Wings, deferred). CECE = next core feature, conceptually defined + named ("The Cataloger" / المُصنِّف), build handed to a fresh session via MIG-039 handover. Sight v7 dormant; Sight v6.3 frozen (Time Dome shipped, Phases 2-3 not built). Backlog from the audit (~48 PJs) untouched. Orientation v2.18 bump owed.
+
