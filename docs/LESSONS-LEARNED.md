@@ -505,7 +505,41 @@ exactly enough to undo a new feature.
 
 ---
 
-*Last updated: 2026-04-22 (LL-023 added after Tier 1 panel-placement
-regression on the Backlinks tab)*
-*For: Constellation — Boot Criterion 2 investigation (closed) + Rule 8
-follow-up + Tier 1 panel-placement shipped*
+## LL-024: Never Scan the Whole Vault on the Read Path — Use the Index
+
+**Symptom (2026-05-21):** every note open lagged ~5 s with stuttering scroll —
+*independent of the opened note's size or media*, and it re-lagged on every
+reopen.
+
+**Root cause:** the Unlinked Mentions feature (`scan_unlinked_mentions`,
+`libraries.rs`) walked the entire library tree and `fs::read_to_string` +
+regex-scanned **every** `.md` file (7,646 of them) on **every** note open,
+uncached. Reading thousands of files pegged CPU/disk and starved the WebView's
+scroll rendering for ~5 s. The "size-independent" tell is the giveaway: the
+cost was scanning the *other* notes, not the one being opened.
+
+**Fix:** select candidates from the always-current FTS index (`notes_fts`
+phrase MATCH on the Arabic-normalized title → JOIN note_meta → ≤300
+candidates), then run the exact original verification (wikilink-strip +
+word-boundary regex) on only those few files. ~50× fewer reads → sub-100 ms.
+
+**Rule:** any feature answering a "which notes relate to X?" question must read
+the index, never walk the filesystem on the read path. If you find a `read_dir`
++ `read_to_string` loop firing on note open / panel focus / tab change, it's a
+bug — route it through FTS, or maintain the answer at write time (Rule 8).
+Known remaining offender to migrate: `scan_library_tags` (boot/Dashboard).
+
+**Companion lesson — the WAL high-water mark:** the same session found a
+372 MB `search.db-wal` adding ~1.1 s to every boot. Passive auto-checkpoints
+reset the WAL's reuse position but **never shrink the FILE** — a past heavy
+write (re-index / backfill) leaves a high-water mark forever. Run
+`PRAGMA wal_checkpoint(TRUNCATE)` on a background connection (off the boot
+path) to reclaim it, and set `synchronous=NORMAL` — safe here because the
+search index is ephemeral (rebuilt from the `.md` files), and it makes writes
+(note-create / typing) far faster.
+
+---
+
+*Last updated: 2026-05-21 (LL-024 added after the ~5 s note-open lag —
+full-vault scan on every open — and the 372 MB WAL boot regression)*
+*For: Constellation — note-open performance + WAL hygiene + boot < 2 s push*
