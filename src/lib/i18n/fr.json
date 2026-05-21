@@ -2775,7 +2775,8 @@
 	"migrationProgress": {
 		"termVocabV2": {
 			"label": "Migration de l'index des termes",
-			"done": "Migration de l'index des termes terminée"
+			"done": "Migration de l'index des termes terminée",
+			"compacting": "Compactage de l’index de recherche…"
 		}
 	},
 	"sources": {

@@ -2775,7 +2775,8 @@
 	"migrationProgress": {
 		"termVocabV2": {
 			"label": "Begriffsindex wird migriert",
-			"done": "Migration des Begriffsindex abgeschlossen"
+			"done": "Migration des Begriffsindex abgeschlossen",
+			"compacting": "Suchindex wird komprimiert…"
 		}
 	},
 	"sources": {

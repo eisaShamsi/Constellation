@@ -12,14 +12,19 @@
 	import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 	import { t } from '$lib/i18n';
 
+	// MIG-041: `vacuum_start` / `vacuum_done` are the one-time disk-compaction
+	// (VACUUM) phase that runs after the bigram purge. VACUUM is opaque (no
+	// chunk progress), so those phases show an indeterminate "Compacting…"
+	// label with no counts.
+	type Phase = 'start' | 'progress' | 'done' | 'vacuum_start' | 'vacuum_done';
 	interface ProgressEvent {
-		phase: 'start' | 'progress' | 'done';
-		total: number;
+		phase: Phase;
+		total?: number;
 		completed?: number;
 	}
 
 	let visible = $state(false);
-	let phase = $state<'start' | 'progress' | 'done' | null>(null);
+	let phase = $state<Phase | null>(null);
 	let total = $state(0);
 	let completed = $state(0);
 
@@ -27,24 +32,31 @@
 	let unlisten: UnlistenFn | null = null;
 
 	const fmt = (n: number) => n.toLocaleString();
+	const cancelHide = () => { if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; } };
+	const scheduleHide = () => {
+		cancelHide();
+		hideTimer = setTimeout(() => { visible = false; phase = null; }, 4000);
+	};
 
 	onMount(async () => {
 		unlisten = await listen<ProgressEvent>('migration:term_vocab_v2', (ev) => {
 			const p = ev.payload;
 			phase = p.phase;
-			total = p.total;
+			if (typeof p.total === 'number') total = p.total;
 			if (p.phase === 'start') {
 				completed = 0;
 				visible = true;
+				cancelHide();
 			} else if (p.phase === 'progress') {
 				completed = p.completed ?? completed;
-			} else if (p.phase === 'done') {
-				completed = total;
-				if (hideTimer) clearTimeout(hideTimer);
-				hideTimer = setTimeout(() => {
-					visible = false;
-					phase = null;
-				}, 4000);
+			} else if (p.phase === 'vacuum_start') {
+				// Compaction begins — keep the strip up (cancel any pending
+				// hide scheduled by the purge's `done`) with no counts.
+				visible = true;
+				cancelHide();
+			} else if (p.phase === 'done' || p.phase === 'vacuum_done') {
+				if (p.phase === 'done') completed = total;
+				scheduleHide();
 			}
 		});
 	});
@@ -58,11 +70,15 @@
 {#if visible}
 	<div class="mig-progress-strip" role="status" aria-live="polite">
 		<span class="mig-progress-label">
-			{phase === 'done'
-				? $t('migrationProgress.termVocabV2.done')
-				: $t('migrationProgress.termVocabV2.label')}
+			{#if phase === 'vacuum_start'}
+				{$t('migrationProgress.termVocabV2.compacting') || 'Compacting search index…'}
+			{:else if phase === 'done' || phase === 'vacuum_done'}
+				{$t('migrationProgress.termVocabV2.done')}
+			{:else}
+				{$t('migrationProgress.termVocabV2.label')}
+			{/if}
 		</span>
-		{#if phase !== 'done'}
+		{#if phase === 'start' || phase === 'progress'}
 			<span class="mig-progress-counts">— {fmt(completed)} / {fmt(total)}</span>
 		{/if}
 	</div>

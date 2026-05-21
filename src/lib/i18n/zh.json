@@ -2775,7 +2775,8 @@
 	"migrationProgress": {
 		"termVocabV2": {
 			"label": "正在迁移术语索引",
-			"done": "术语索引迁移完成"
+			"done": "术语索引迁移完成",
+			"compacting": "正在压缩搜索索引…"
 		}
 	},
 	"sources": {

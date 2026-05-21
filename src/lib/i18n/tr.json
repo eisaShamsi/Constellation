@@ -2775,7 +2775,8 @@
 	"migrationProgress": {
 		"termVocabV2": {
 			"label": "Terim dizini taşınıyor",
-			"done": "Terim dizini taşıma tamamlandı"
+			"done": "Terim dizini taşıma tamamlandı",
+			"compacting": "Arama dizini sıkıştırılıyor…"
 		}
 	},
 	"sources": {

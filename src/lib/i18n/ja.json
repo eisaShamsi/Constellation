@@ -2775,7 +2775,8 @@
 	"migrationProgress": {
 		"termVocabV2": {
 			"label": "用語インデックスを移行中",
-			"done": "用語インデックスの移行が完了しました"
+			"done": "用語インデックスの移行が完了しました",
+			"compacting": "検索インデックスを最適化中…"
 		}
 	},
 	"sources": {

@@ -134,6 +134,15 @@ pub(crate) const NOTE_META_SCHEMA_VERSION: i64 = 1;
 /// |         | (`run_bigram_purge`). Stamped 3 on completion.             |
 pub(crate) const TERM_VOCAB_BRIDGE_SCHEMA_VERSION: i64 = 3;
 
+/// MIG-041 §C — one-time `VACUUM` to reclaim the disk freed by the bigram
+/// purge. Tracked separately from the purge (`term_vocab_bridge`) so it can
+/// run / retry independently: the purge frees ~0.6 GB of pages to the
+/// freelist; this returns them to the OS (the file shrinks). VACUUM holds an
+/// exclusive lock for its full duration (minutes on a multi-GB DB) and cannot
+/// be chunked — so it runs exactly once. Stamped 1 once it has run (or been
+/// skipped because the freelist was too small to be worth the pause).
+const TERM_VOCAB_VACUUM_SCHEMA_VERSION: i64 = 1;
+
 /// MIG-002 §4 — SQL fragment that computes sky_nodes.stratum (1–8) from
 /// the same five signals as strata.rs::compute_stratum:
 ///
@@ -614,14 +623,23 @@ pub fn maybe_schedule_bigram_purge(app: tauri::AppHandle) {
         let Some(conn) = guard.as_ref() else {
             return;
         };
-        let stored: i64 = conn
+        let bridge: i64 = conn
             .query_row(
                 "SELECT version FROM schema_versions WHERE module = 'term_vocab_bridge'",
                 [],
                 |row| row.get(0),
             )
             .unwrap_or(0);
-        stored < TERM_VOCAB_BRIDGE_SCHEMA_VERSION
+        let vacuum: i64 = conn
+            .query_row(
+                "SELECT version FROM schema_versions WHERE module = 'term_vocab_vacuum'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap_or(0);
+        // Wake the worker if EITHER the purge OR the one-time VACUUM is
+        // still pending (the VACUUM can lag the purge if it was interrupted).
+        bridge < TERM_VOCAB_BRIDGE_SCHEMA_VERSION || vacuum < TERM_VOCAB_VACUUM_SCHEMA_VERSION
     };
     if !needs_run {
         return;
@@ -649,92 +667,130 @@ fn run_bigram_purge(app: &tauri::AppHandle) -> Result<(), String> {
 
     let state = app.state::<SearchState>();
 
-    // Re-check inside the worker — the migration could have completed
-    // between maybe_schedule's pre-check and this thread starting (e.g.
-    // a second ensure_search_db_ready triggered by a window swap).
-    let total = {
+    // ── Part 1 — purge bigram rows from term_vocab (once) ────────────────
+    // Re-check inside the worker — the purge could have completed between
+    // maybe_schedule's pre-check and this thread starting (e.g. a second
+    // ensure_search_db_ready from a window swap).
+    let bridge_stored: i64 = {
         let guard = state.db.lock().map_err(|e| e.to_string())?;
         let conn = guard.as_ref().ok_or("DB not initialized")?;
-        let stored: i64 = conn
-            .query_row(
-                "SELECT version FROM schema_versions WHERE module = 'term_vocab_bridge'",
-                [],
-                |row| row.get(0),
-            )
-            .unwrap_or(0);
-        if stored >= TERM_VOCAB_BRIDGE_SCHEMA_VERSION {
-            return Ok(());
-        }
-        count_remaining_bigram_rows(conn).map_err(|e| e.to_string())?
+        conn.query_row(
+            "SELECT version FROM schema_versions WHERE module = 'term_vocab_bridge'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap_or(0)
     };
-
-    // No work to do — just stamp and exit. (Fresh DB common case.)
-    if total == 0 {
-        let mut guard = state.db.lock().map_err(|e| e.to_string())?;
-        let conn = guard.as_mut().ok_or("DB not initialized")?;
-        conn.execute(
-            "INSERT OR REPLACE INTO schema_versions (module, version, updated_at) VALUES ('term_vocab_bridge', ?1, strftime('%s','now'))",
-            rusqlite::params![TERM_VOCAB_BRIDGE_SCHEMA_VERSION],
-        ).map_err(|e| format!("Failed to stamp schema_versions.term_vocab_bridge: {}", e))?;
-        return Ok(());
-    }
-
-    // Announce start — frontend strip appears.
-    let _ = app.emit("migration:term_vocab_v2", serde_json::json!({
-        "phase": "start",
-        "total": total,
-    }));
-
-    // Run the chunked migration. Drop + re-acquire the DB mutex around
-    // each chunk so concurrent IPC callers (note saves, search queries,
-    // anything that holds `state.db.lock()`) see ~10ms availability
-    // windows between chunks. §1D audit P0 fix: the original §1A
-    // helper held the mutex for the whole loop, which contradicted
-    // the §1B design contract "between chunks the runtime briefly
-    // yields, allowing other DB callers to interleave." The lock is
-    // now released between chunks; the brief sleep below ensures the
-    // OS scheduler actually gives waiting threads a turn before this
-    // worker re-acquires.
-    let mut processed: u64 = 0;
-    loop {
-        let affected = {
+    if bridge_stored < TERM_VOCAB_BRIDGE_SCHEMA_VERSION {
+        let total = {
             let guard = state.db.lock().map_err(|e| e.to_string())?;
             let conn = guard.as_ref().ok_or("DB not initialized")?;
-            delete_bigram_rows_chunk(conn, CHUNK_SIZE)
-                .map_err(|e| format!("bigram purge chunk failed: {}", e))?
-        }; // mutex dropped here — other callers can interleave
-        if affected == 0 { break; }
-        processed += affected;
-        let _ = app.emit("migration:term_vocab_v2", serde_json::json!({
-            "phase": "progress",
-            "completed": processed,
-            "total": total,
-        }));
-        // Brief yield so other DB callers can actually acquire the
-        // mutex before this worker re-acquires for the next chunk.
-        // 10ms is small relative to the chunk's 200-400ms duration
-        // (≤5% slowdown) but long enough to guarantee the OS
-        // scheduler interleaves waiting threads.
-        std::thread::sleep(std::time::Duration::from_millis(10));
-    }
-
-    // Stamp on success. Crash-recoverable by construction — if we
-    // failed mid-loop above, we'd have returned an error and the stamp
-    // would not land; next boot retries.
-    {
-        let mut guard = state.db.lock().map_err(|e| e.to_string())?;
-        let conn = guard.as_mut().ok_or("DB not initialized")?;
+            count_remaining_bigram_rows(conn).map_err(|e| e.to_string())?
+        };
+        if total > 0 {
+            // Announce start — frontend strip appears.
+            let _ = app.emit("migration:term_vocab_v2", serde_json::json!({
+                "phase": "start",
+                "total": total,
+            }));
+            // Chunked DELETE. Drop + re-acquire the DB mutex around each chunk
+            // so concurrent IPC callers (note saves, search queries) see ~10ms
+            // availability windows between chunks (§1D audit P0 pattern). The
+            // brief sleep guarantees the OS scheduler hands a waiting thread a
+            // turn before this worker re-acquires.
+            let mut processed: u64 = 0;
+            loop {
+                let affected = {
+                    let guard = state.db.lock().map_err(|e| e.to_string())?;
+                    let conn = guard.as_ref().ok_or("DB not initialized")?;
+                    delete_bigram_rows_chunk(conn, CHUNK_SIZE)
+                        .map_err(|e| format!("bigram purge chunk failed: {}", e))?
+                }; // mutex dropped here — other callers can interleave
+                if affected == 0 {
+                    break;
+                }
+                processed += affected;
+                let _ = app.emit("migration:term_vocab_v2", serde_json::json!({
+                    "phase": "progress",
+                    "completed": processed,
+                    "total": total,
+                }));
+                std::thread::sleep(std::time::Duration::from_millis(10));
+            }
+            // Announce done (purge phase).
+            let _ = app.emit("migration:term_vocab_v2", serde_json::json!({
+                "phase": "done",
+                "total": processed,
+            }));
+        }
+        // Stamp the purge done. Crash-recoverable: a mid-loop failure returns
+        // Err above before this lands, so the next boot retries.
+        let guard = state.db.lock().map_err(|e| e.to_string())?;
+        let conn = guard.as_ref().ok_or("DB not initialized")?;
         conn.execute(
             "INSERT OR REPLACE INTO schema_versions (module, version, updated_at) VALUES ('term_vocab_bridge', ?1, strftime('%s','now'))",
             rusqlite::params![TERM_VOCAB_BRIDGE_SCHEMA_VERSION],
         ).map_err(|e| format!("Failed to stamp schema_versions.term_vocab_bridge: {}", e))?;
     }
 
-    // Announce done.
-    let _ = app.emit("migration:term_vocab_v2", serde_json::json!({
-        "phase": "done",
-        "total": processed,
-    }));
+    // ── Part 2 — reclaim freed disk with a one-time VACUUM (MIG-041 §C) ────
+    // The purge frees ~0.6 GB of pages to the freelist but leaves the file
+    // size unchanged; VACUUM rewrites the DB to return that space to the OS.
+    // VACUUM holds an exclusive lock for its full duration (minutes on a
+    // multi-GB DB) and CANNOT be chunked — so it runs exactly once, gated by
+    // its own stamp, only when there is meaningful space to reclaim.
+    // Boss decision (2026-05-21): automatic, once, after the purge.
+    let vacuum_stored: i64 = {
+        let guard = state.db.lock().map_err(|e| e.to_string())?;
+        let conn = guard.as_ref().ok_or("DB not initialized")?;
+        conn.query_row(
+            "SELECT version FROM schema_versions WHERE module = 'term_vocab_vacuum'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap_or(0)
+    };
+    if vacuum_stored < TERM_VOCAB_VACUUM_SCHEMA_VERSION {
+        // Only VACUUM when there is real space to reclaim — skips the no-op
+        // case (a fresh DB that never held bigrams has a tiny freelist).
+        // ~10k pages × 4 KiB ≈ 40 MB.
+        const VACUUM_FREELIST_THRESHOLD: i64 = 10_000;
+        let freelist_pages: i64 = {
+            let guard = state.db.lock().map_err(|e| e.to_string())?;
+            let conn = guard.as_ref().ok_or("DB not initialized")?;
+            conn.query_row("PRAGMA freelist_count", [], |row| row.get(0))
+                .unwrap_or(0)
+        };
+        if freelist_pages > VACUUM_FREELIST_THRESHOLD {
+            // The strip shows an indeterminate "Compacting…" state (VACUUM has
+            // no chunk progress) and the DB is unavailable until it finishes.
+            let _ = app.emit("migration:term_vocab_v2", serde_json::json!({
+                "phase": "vacuum_start",
+            }));
+            // VACUUM on the shared connection: holds the mutex (and the whole
+            // DB) for its duration, so every other DB caller waits. On failure
+            // (e.g. SQLITE_FULL — VACUUM needs ~2× the DB size in temp space)
+            // we return Err WITHOUT stamping, so the next boot retries; the
+            // purge stamp already landed, so that retry skips Part 1.
+            {
+                let guard = state.db.lock().map_err(|e| e.to_string())?;
+                let conn = guard.as_ref().ok_or("DB not initialized")?;
+                conn.execute_batch("VACUUM;")
+                    .map_err(|e| format!("term_vocab VACUUM failed: {}", e))?;
+            }
+            let _ = app.emit("migration:term_vocab_v2", serde_json::json!({
+                "phase": "vacuum_done",
+            }));
+        }
+        // Stamp the VACUUM step done (whether we ran it or skipped a tiny
+        // freelist) so this is a one-time check.
+        let guard = state.db.lock().map_err(|e| e.to_string())?;
+        let conn = guard.as_ref().ok_or("DB not initialized")?;
+        conn.execute(
+            "INSERT OR REPLACE INTO schema_versions (module, version, updated_at) VALUES ('term_vocab_vacuum', ?1, strftime('%s','now'))",
+            rusqlite::params![TERM_VOCAB_VACUUM_SCHEMA_VERSION],
+        ).map_err(|e| format!("Failed to stamp schema_versions.term_vocab_vacuum: {}", e))?;
+    }
 
     Ok(())
 }

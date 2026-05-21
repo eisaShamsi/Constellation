@@ -2775,7 +2775,8 @@
 	"migrationProgress": {
 		"termVocabV2": {
 			"label": "용어 색인 마이그레이션 중",
-			"done": "용어 색인 마이그레이션 완료"
+			"done": "용어 색인 마이그레이션 완료",
+			"compacting": "검색 인덱스 압축 중…"
 		}
 	},
 	"sources": {
