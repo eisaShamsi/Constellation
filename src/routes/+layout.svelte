@@ -1890,6 +1890,27 @@
 			// do in $lib/libraries/store.ts + propertyTypeRegistry.ts.
 			libraries.set(bundle.libraries);
 
+			// Warm-boot fix (2026-05-21): seed `libraryStats` from the library
+			// list NOW so the sidebar's library sections render immediately
+			// (~0.4 s). The sidebar derives `ownLibraries`/`universeNotesStats`
+			// from `$libraryStats`, which was previously empty until the
+			// `get_all_library_stats` IPC finished (~1.5–3 s on a cold DB) — the
+			// measured cause of "the universe is blank until ~2.5 s, then comes
+			// to life at once" (boot-perf round 2: sidebar_populated_ms dropped
+			// 2452 → 423 ms with this seed). star_count/folder_count/recent_stars
+			// are placeholders (the count badge is hidden when 0); the
+			// fire-and-forget `loadAllStats()` in the post-hydration fan-out
+			// fills the real values a moment later, so badges just pop in.
+			libraryStats.set(bundle.libraries.map(lib => ({
+				library_id: lib.id,
+				name: lib.name,
+				path: lib.path,
+				star_count: 0,
+				folder_count: 0,
+				recent_stars: [],
+				is_universe_notes: lib.is_universe_notes,
+			})));
+
 			// Settings — single source of truth via applyParsedSettings
 			// (store.ts). Pre-§A.14-fix-5 this was an inline merge that
 			// drifted from loadSettings() — missed sight, cece,

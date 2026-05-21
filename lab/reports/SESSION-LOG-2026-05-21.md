@@ -82,3 +82,31 @@ The auto-after-paint trigger was the boot regressor; removed it.
 `svelte-check`: 3 pre-existing errors, 0 new.
 
 Build running for Boss test: (1) boot < 2 s, (2) WAL shrank, (3) the manual "Build all summaries" button works + progress strip + cancel. Commit after pass (likely two: WAL hygiene; backfill manual-only).
+
+Shipped + pushed: `a532eaeb` (WAL hygiene), `a338d9e2` (backfill manual-only), `6aa37e0d` (orientation v2.21 + LL-024). Boss-confirmed: WAL 372→0, boot ~4s→~3s, instant typing.
+
+## Boot < 2s investigation — bundle dead-end + the real DB finding (2026-05-21, SO #5 triage)
+
+**Goal**: Boss wants warm boot < 2 s. Pursued the "lazy-load heavy views to shrink the boot bundle" lever (Obsidian/Rule-6 research said this is the path).
+
+**Lazy-load GraphMindView (PIXI) — built, measured, REVERTED.** Converted to a $state holder loaded on first `showSkyView` + `{#if GraphMindView}` guards. Objective win: largest boot chunk 3.28 MB → split (PIXI now a lazy chunk). svelte-check 0 new errors; Sky View works. **BUT Boss-measured warm boot unchanged (3 s before & after).** Conclusion: **the JS bundle parse is NOT the warm-boot bottleneck** — bundle-splitting is a dead end here. Reverted (`git checkout +layout.svelte`) at Boss request; tree clean.
+
+**Cold-boot chaos diagnosed = OS file-cache, not code.** After installing a build, boots were wild (84 s, 53 s, 12 s) then settled to 3 s (tries 5–7). `boot-perf` from a 26 s boot: `ensure_db` = 23.4 s, WAL = 0.4 MB. The Rust boot path is byte-identical to the fast WAL build → the variance is the OS reading the **2.35 GB** DB cold from disk (install + AV evicting/scanning). Note Navigator plug-in exonerated (try 3 = 53 s with it OFF).
+
+**DB audit (read-only) — the real bloat.** 2.35 GB, only ~0.11 GB reclaimable by VACUUM (4.7% free). `term_vocab` = **5,730,175 rows** (~50 K stems + **5.68 M bigrams**, ~1.7 GB) — matches MIG-013's known bigram blow-up. `ctse/search.rs` filters to single stems and **skips bigrams** (`search.rs:193`), and `bridge_concept_id` is dead schema (`search.rs:50`). So the 5.68 M bigrams may be ~1.7 GB of dead weight — NEEDS confirmation that nothing reads them before removal. Removing them → ~70 % DB shrink → fast cold boots + lighter app. Embeddings tiny (366 rows); links normal (232 K).
+
+**NEW finding (Boss observation):** during the warm 3 s, "the app stays unpopulated for the whole 3 s, then the whole universe comes to life at once." This contradicts the instrumented `hydrated`=0.9 s — the populated UI (file tree + note) does NOT paint early; everything paints together at ~3 s. Suggests a render/reactivity gate (the heavy graph cascade or file-tree paint blocking the main thread) delays first meaningful paint until ~graph_ready. This — not the bundle — is the warm-boot lever if it's fixable.
+
+**State**: tree clean on `origin/main` (6aa37e0d). Open directions: (A) the "paints-all-at-once-at-3s" render gate (warm-boot lever, aligned with <2 s goal + the new data); (B) term_vocab bigram shrink (cold-boot lever, ~1.7 GB, careful search-engine migration); (C) accept 3 s. Awaiting Boss direction.
+
+## WARM-BOOT CRACKED — sidebar gated on per-library counts (2026-05-21)
+
+Boss chose (A) the render gate, via his own "switch-off-and-measure" idea — executed as instrumentation, not feature-toggling.
+
+**Definitive measurement** (MutationObserver on `.sidebar-content` + longtask recorder, written via a final report at the populating mutation): `sidebar_node_timeline: [[398,0],[2452,97]]` — sidebar DOM EMPTY (0 nodes) until 2452 ms, then populated. `boot_long_tasks: []` (no blocking), heartbeat max 108 ms (thread responsive). So **Svelte renders the sidebar LATE** (not a paint/present delay). Correlated with `load_all_stats_wall_ms: 1580`.
+
+**Root cause**: the sidebar's library sections derive from `$libraryStats` (`ownLibraries` = `$derived($libraryStats.filter(...))`, `universeNotesStats`), which is populated only when `loadAllStats()` → `get_all_library_stats` (libraries.rs:382) finishes — a per-library NOTE-COUNT query against the cold 2.35 GB DB, ~1.5–3 s. The note list (`allNotes`) is ready at 0.86 s, but the sidebar waits on the COUNTS it doesn't need to draw.
+
+**Fix** (`+layout.svelte`, after `libraries.set(bundle.libraries)`): seed `libraryStats` from `bundle.libraries` immediately (placeholder `star_count/folder_count/recent_stars`; badge hidden when 0); `loadAllStats()` enriches later. **Boss-confirmed: sidebar_populated_ms 2452 → 423 ms** (universe structure now appears at ~0.4 s; images show 18 libraries instantly). svelte-check 0 new errors. Diagnostic instrumentation reverted; only the seed committed.
+
+**Remaining**: the note-counts (badges + "7,652 notes") still trail in at ~3.5 s via `get_all_library_stats` (cosmetic — app fully usable at 0.4 s). Boss chose to speed these up next (likely replace per-library counts with one grouped `COUNT(*) ... GROUP BY library` query). Tracked next.
