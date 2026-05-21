@@ -12,6 +12,8 @@ O painel Source Review é onde a Constellation pede que você revise as classifi
 
 Este tópico explica cada parte de um cartão Source Review, o que os pontos coloridos significam, quando confiar no motor e como navegar por centenas de cartões sem rolar para sempre.
 
+> **Dois lugares, um painel.** Os cartões descritos aqui aparecem tanto na aba **Source Review** na barra lateral à direita quanto na visão de página inteira do **Classificador** (o ícone de cartões empilhados na doca à esquerda). São o mesmo painel e o mesmo motor. O Classificador dá à fila a janela inteira, mais um seletor de notas e um botão "Gerar todos os resumos" — veja o tópico **Classificador**. Tudo abaixo se aplica aos cartões em qualquer um dos lugares.
+
 ---
 
 ## O que o CECE realmente faz
@@ -153,6 +155,12 @@ O filtro resolve o problema da agulha no palheiro quando sua fila tem centenas d
 
 ---
 
+## O resumo da nota sob cada cartão
+
+Sob o título de cada cartão fica uma breve linha de **Resumo** — algumas frases que lhe dizem do que a nota trata, para que você possa decidir como classificá-la sem abri-la. O Constellation sempre mostra um resumo que *você* escreveu (um campo de frontmatter `summary:` / `description:` / `abstract:` / `excerpt:`, ou um callout `> [!summary]` / `[!abstract]` / `[!tldr]` no corpo) e só gera um quando você não escreveu. Os resumos gerados são extrativos — as próprias frases mais centrais da nota — e nunca são escritos de volta no seu arquivo. O detalhe completo está no tópico **Resumos das Notas**.
+
+---
+
 ## Ações por cartão
 
 Cada cartão tem quatro ações na parte inferior (ou três em cartões Split onde Disambig substitui Accept/Edit):
@@ -229,6 +237,8 @@ Abra Configurações → Intelligence → CECE → Per-Library calibration. A ta
 
 ## Tópicos relacionados
 
+- **Classificador** — o lar de página inteira para esses cartões, com um seletor de notas ("Classificar uma nota…") e um botão "Gerar todos os resumos".
+- **Resumos das Notas** — como a linha de Resumo sob cada cartão é produzida, e a precedência que prioriza o autor e sempre prefere as suas próprias palavras.
 - **Cognitive Engine** — a filosofia mais ampla de formulação do conhecimento na qual o CECE se encaixa.
 - **Properties** — os campos de frontmatter `sources:` e `content_type:` nos quais o CECE escreve.
 - **Knowledge Hierarchy** — como Source × Content Type se encaixa na estrutura Universe / Library / Folder / Note.

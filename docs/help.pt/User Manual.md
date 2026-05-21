@@ -704,7 +704,28 @@ Por padrão, o CECE classifica notas apenas quando você pede (clique direito ou
 - **Ao salvar a nota** — classifica cada nota ~1,5 segundos depois que você para de digitar (cavalga sobre o salvamento debounced existente; nunca dispara por tecla pressionada; a digitação permanece instantânea)
 - **Ao iniciar o aplicativo** — escaneia notas não classificadas uma vez por lançamento
 
-Para mais detalhes (cada status de ponto, cada chip de regra, passos clique a clique de cenários comuns), consulte o tópico **Revisão de Origem** no sistema de ajuda.
+### O Classificador — o lar de página inteira
+
+Os mesmos cartões também vivem em uma visão de página inteira chamada **Classificador**, aberta a partir do **ícone de cartões empilhados na doca à esquerda**. É o mesmo motor e a mesma fila, recebendo a janela inteira em vez de uma aba estreita da barra lateral — e adiciona dois controles que a aba da barra lateral nunca teve:
+
+- **Classificar uma nota…** — uma caixa de busca que permite classificar *qualquer* nota pelo nome, sem abri-la primeiro. Digite algumas letras, escolha a nota, e um cartão novo aparece na fila.
+- **Gerar todos os resumos** — pré-computa o resumo da nota (veja abaixo) para cada nota que não tem um, em segundo plano, com progresso na barra de status.
+
+Um botão **Iniciar varredura** (a mesma varredura de todo o universo que as Configurações) e uma faixa de progresso ao vivo completam o cabeçalho. Feche o Classificador com o **(×)** ou **Esc**. (Quando a caixa de busca *Classificar uma nota…* está aberta, o primeiro **Esc** fecha apenas essa caixa.)
+
+Uma nota sobre nomenclatura: **o Classificador** é a *sala* (a visão de página inteira); **os catalogadores** são as *seis lentes* dentro do motor que votam em cada cartão. Não confunda os dois.
+
+### Resumos das notas
+
+Sob o título de cada cartão fica um breve **Resumo** — algumas frases que dizem do que a nota trata, para que você possa classificá-la sem abri-la. O Constellation sempre prefere um resumo que *você* escreveu e só gera um quando você não escreveu:
+
+1. Um **campo de frontmatter** `summary:` / `description:` / `abstract:` / `excerpt:`, usado literalmente.
+2. Um **callout** `> [!summary]` / `[!abstract]` / `[!tldr]` no corpo, usado literalmente.
+3. Caso contrário, um resumo **gerado** — as três frases mais centrais da nota, extraídas (nunca inventadas) e mostradas na ordem original.
+
+Os resumos gerados são **somente leitura** — o Constellation nunca escreve um de volta na sua nota (File-Over-App), e tudo é computado **no seu dispositivo**. Se você quer que um resumo viva no arquivo, escreva um você mesmo e o Constellation mostrará o seu em vez disso.
+
+Para mais detalhes (cada status de ponto, cada chip de regra, passos clique a clique de cenários comuns), consulte os tópicos **Revisão de Origem**, **Classificador** e **Resumos das Notas** no sistema de ajuda.
 
 ---
 

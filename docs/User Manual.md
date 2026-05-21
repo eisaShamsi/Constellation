@@ -1076,7 +1076,28 @@ By default, CECE classifies notes only when you ask it to (right-click or Settin
 - **On note save** — classify each note ~1.5 seconds after you stop typing (rides the existing debounced save; never fires per-keystroke; typing stays instant)
 - **On app start** — scan unclassified notes once per launch
 
-For deeper detail (every dot status, every rule chip, click-by-click walkthroughs of common scenarios), see the **Source Review** topic in the help system.
+### The Cataloger — the full-page home
+
+The same cards also live in a full-page view called **the Cataloger**, opened from the **stacked-cards icon in the left dock**. It is the same engine and the same queue, given the whole window instead of a narrow sidebar tab — and it adds two controls the sidebar tab never had:
+
+- **Classify a note…** — a search box that lets you classify *any* note by name, without opening it first. Type a few letters, pick the note, and a fresh card appears in the queue.
+- **Build all summaries** — pre-computes the note summary (see below) for every note that lacks one, in the background, with progress in the status bar.
+
+A **Start scan** button (the same universe-wide scan as Settings) and a live progress strip round out the header. Close the Cataloger with the **(×)** or **Esc**. (When the *Classify a note…* search box is open, the first **Esc** closes just that box.)
+
+A naming note: **the Cataloger** is the *room* (the full-page view); **the catalogers** are the *six lenses* inside the engine that vote on each card. Don't confuse the two.
+
+### Note summaries
+
+Under each card's title sits a short **Summary** — a few sentences telling you what the note is about, so you can classify it without opening it. Constellation always prefers a summary *you* wrote and only generates one when you haven't:
+
+1. A `summary:` / `description:` / `abstract:` / `excerpt:` **frontmatter field**, used verbatim.
+2. A `> [!summary]` / `[!abstract]` / `[!tldr]` **callout** in the body, used verbatim.
+3. Otherwise, a **generated** summary — the note's three most-central sentences, extracted (never invented) and shown in original order.
+
+Generated summaries are **read-only** — Constellation never writes one back into your note (File-Over-App), and everything is computed **on your device**. If you want a summary to live in the file, write one yourself and Constellation will show yours instead.
+
+For deeper detail (every dot status, every rule chip, click-by-click walkthroughs), see the **Source Review**, **The Cataloger**, and **Note Summaries** topics in the help system.
 
 ---
 

@@ -704,7 +704,28 @@ Varsayılan olarak CECE notları yalnızca siz istediğinizde sınıflandırır 
 - **Not kaydında** — yazmayı bıraktıktan ~1,5 saniye sonra her notu sınıflandırır (mevcut gecikmeli kaydetmenin üzerine biner; asla tuş başına tetiklenmez; yazma anında kalır)
 - **Uygulama başlangıcında** — her başlatmada bir kez sınıflandırılmamış notları tarar
 
-Daha derin ayrıntı için (her nokta durumu, her kural çipi, yaygın senaryoların tıklama-tıklama yönergeleri) yardım sistemindeki **Kaynak Gözden Geçirme** konusuna bakın.
+### Sınıflandırıcı — tam pencere ana yer
+
+Aynı kartlar, **sol dock'taki istiflenmiş kartlar simgesinden** açılan, **Sınıflandırıcı** adlı tam pencere bir görünümde de yaşar. Dar bir kenar çubuğu sekmesi yerine tüm pencere verilmiş aynı motor ve aynı kuyruktur — ve kenar çubuğu sekmesinin hiç sahip olmadığı iki kontrol ekler:
+
+- **Notu sınıflandır…** — *herhangi bir* notu önce açmadan adıyla sınıflandırmanıza olanak tanıyan bir arama kutusu. Birkaç harf yazın, notu seçin ve kuyrukta yeni bir kart görünür.
+- **Tüm özetleri oluştur** — bir özeti olmayan her not için not özetini (aşağıya bakın) arka planda, ilerleme durum çubuğunda olacak şekilde önceden hesaplar.
+
+Bir **Taramayı başlat** düğmesi (Ayarlar'dakiyle aynı evren çapında tarama) ve canlı bir ilerleme şeridi başlığı tamamlar. Sınıflandırıcıyı **(×)** veya **Esc** ile kapatın. (*Notu sınıflandır…* arama kutusu açıkken, ilk **Esc** yalnızca o kutuyu kapatır.)
+
+Adlandırmaya dair bir not: **Sınıflandırıcı** *odadır* (tam pencere görünümü); **kataloglayıcılar** ise motorun içinde her kart üzerinde oy kullanan *altı mercektir*. İkisini karıştırmayın.
+
+### Not özetleri
+
+Her kartın başlığının altında kısa bir **Özet** durur — notu açmadan sınıflandırabilmeniz için ne hakkında olduğunu söyleyen birkaç cümle. Constellation her zaman *sizin* yazdığınız bir özeti tercih eder ve yalnızca yazmadığınızda bir tane üretir:
+
+1. Bir `summary:` / `description:` / `abstract:` / `excerpt:` **frontmatter alanı**, harfi harfine kullanılır.
+2. Gövdedeki bir `> [!summary]` / `[!abstract]` / `[!tldr]` **çağrı kutusu**, harfi harfine kullanılır.
+3. Aksi takdirde, **üretilmiş** bir özet — notun en merkezi üç cümlesi, çıkarılmış (asla icat edilmemiş) ve orijinal sırasıyla gösterilmiş.
+
+Üretilmiş özetler **salt okunurdur** — Constellation bir tanesini notunuza asla geri yazmaz (File-Over-App) ve her şey **cihazınızda** hesaplanır. Bir özetin dosyada yaşamasını istiyorsanız, kendiniz bir tane yazın; Constellation o zaman sizinkini gösterir.
+
+Daha derin ayrıntı için (her nokta durumu, her kural çipi, tıklama-tıklama yönergeleri) yardım sistemindeki **Kaynak Gözden Geçirme**, **Sınıflandırıcı** ve **Not Özetleri** konularına bakın.
 
 ---
 

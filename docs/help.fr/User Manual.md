@@ -704,7 +704,23 @@ Par défaut, CECE classifie les notes uniquement lorsque vous le lui demandez (c
 - **À l'enregistrement de la note** — classifie chaque note ~1,5 seconde après que vous arrêtez de taper (chevauche l'enregistrement debounced existant ; ne se déclenche jamais à chaque frappe ; la frappe reste instantanée)
 - **Au démarrage de l'application** — scanne les notes non classifiées une fois par lancement
 
-Pour plus de détails (chaque statut de point, chaque chip de règle, parcours clic par clic des scénarios courants), consultez le sujet **Révision des Sources** dans le système d'aide.
+### Le Classificateur — l'accueil pleine page
+Les mêmes cartes vivent aussi dans une vue pleine page appelée **le Classificateur**, ouverte depuis l'**icône en cartes empilées dans le dock à gauche**. C'est le même moteur et la même file d'attente, dotés de toute la fenêtre au lieu d'un onglet étroit du sidebar — et il ajoute deux contrôles que l'onglet du sidebar n'a jamais eus :
+- **Classer une note…** — une boîte de recherche qui vous permet de classer *n'importe quelle* note par son nom, sans l'ouvrir d'abord. Tapez quelques lettres, choisissez la note, et une carte fraîche apparaît dans la file d'attente.
+- **Générer tous les résumés** — pré-calcule le résumé de note (voir ci-dessous) pour chaque note qui n'en a pas, en arrière-plan, avec la progression dans la barre d'état.
+
+Un bouton **Démarrer l'analyse** (le même scan à l'échelle de l'univers que dans Paramètres) et une barre de progression en direct complètent l'en-tête. Fermez le Classificateur avec le **(×)** ou **Esc**. (Lorsque la boîte de recherche *Classer une note…* est ouverte, le premier **Esc** ferme uniquement cette boîte.)
+Une note sur les noms : **le Classificateur** est la *pièce* (la vue pleine page) ; **les catalogueurs** sont les *six lentilles* à l'intérieur du moteur qui votent sur chaque carte. Ne confondez pas les deux.
+
+### Résumés de notes
+Sous le titre de chaque carte se trouve un court **Résumé** — quelques phrases qui vous disent de quoi parle la note, pour que vous puissiez la classer sans l'ouvrir. Constellation préfère toujours un résumé que *vous* avez écrit et n'en génère un que lorsque vous ne l'avez pas fait :
+1. Un **champ de frontmatter** `summary:` / `description:` / `abstract:` / `excerpt:`, utilisé tel quel.
+2. Un **callout** `> [!summary]` / `[!abstract]` / `[!tldr]` dans le corps, utilisé tel quel.
+3. Sinon, un résumé **généré** — les trois phrases les plus centrales de la note, extraites (jamais inventées) et affichées dans leur ordre d'origine.
+
+Les résumés générés sont en **lecture seule** — Constellation n'en réécrit jamais un dans votre note (File-Over-App), et tout est calculé **sur votre appareil**. Si vous voulez qu'un résumé vive dans le fichier, écrivez-en un vous-même et Constellation affichera le vôtre à la place.
+
+Pour plus de détails (chaque statut de point, chaque chip de règle, parcours clic par clic des scénarios courants), consultez les sujets **Révision des Sources**, **The Cataloger** (le Classificateur) et **Note Summaries** dans le système d'aide.
 
 ---
 

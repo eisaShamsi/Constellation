@@ -704,7 +704,28 @@ Standardmäßig klassifiziert CECE Notizen nur, wenn du es darum bittest (Rechts
 - **Beim Speichern der Notiz** — klassifiziere jede Notiz ~1,5 Sekunden nachdem du aufhörst zu tippen (reitet auf dem bestehenden debounced Speichern; wird nie pro Tastendruck ausgelöst; Tippen bleibt sofort)
 - **Beim Programmstart** — scanne unklassifizierte Notizen einmal pro Start
 
-Für tiefere Details (jeder Punkt-Status, jeder Regel-Chip, Klick-für-Klick-Anleitungen häufiger Szenarien) siehe das Thema **Quellen-Prüfung** im Hilfesystem.
+### Der Klassifikator — die Vollfenster-Startseite
+
+Dieselben Karten leben auch in einer Vollfenster-Ansicht namens **Klassifikator**, geöffnet über das **Symbol mit den gestapelten Karten im Dock am linken Rand**. Es ist dieselbe Engine und dieselbe Warteschlange, ihr aber das ganze Fenster statt eines schmalen Seitenleisten-Tabs gegeben — und es fügt zwei Steuerelemente hinzu, die der Seitenleisten-Tab nie hatte:
+
+- **Notiz klassifizieren…** — ein Suchfeld, mit dem du *jede* Notiz nach Namen klassifizieren kannst, ohne sie zuerst zu öffnen. Tippe ein paar Buchstaben, wähle die Notiz, und eine frische Karte erscheint in der Warteschlange.
+- **Alle Zusammenfassungen erstellen** — berechnet die Notizzusammenfassung (siehe unten) für jede Notiz, die keine hat, im Hintergrund vor, mit Fortschritt in der Statusleiste.
+
+Eine Schaltfläche **Scan starten** (derselbe universumsweite Scan wie in den Einstellungen) und ein Live-Fortschrittsstreifen runden den Header ab. Schließe den Klassifikator mit **(×)** oder **Esc**. (Wenn das Suchfeld *Notiz klassifizieren…* geöffnet ist, schließt das erste **Esc** nur dieses Feld.)
+
+Ein Hinweis zur Benennung: **der Klassifikator** ist der *Raum* (die Vollfenster-Ansicht); **die Katalogisierer** sind die *sechs Linsen* innerhalb der Engine, die über jede Karte abstimmen. Verwechsle die beiden nicht.
+
+### Notizzusammenfassungen
+
+Unter dem Titel jeder Karte sitzt eine kurze **Zusammenfassung** — ein paar Sätze, die dir sagen, worum es in der Notiz geht, sodass du sie klassifizieren kannst, ohne sie zu öffnen. Constellation bevorzugt immer eine Zusammenfassung, die *du* geschrieben hast, und generiert nur dann eine, wenn du es nicht getan hast:
+
+1. Ein **Frontmatter-Feld** `summary:` / `description:` / `abstract:` / `excerpt:`, wortgetreu verwendet.
+2. Ein **Callout** `> [!summary]` / `[!abstract]` / `[!tldr]` im Text, wortgetreu verwendet.
+3. Andernfalls eine **generierte** Zusammenfassung — die drei zentralsten Sätze der Notiz, extrahiert (nie erfunden) und in der ursprünglichen Reihenfolge angezeigt.
+
+Generierte Zusammenfassungen sind **schreibgeschützt** — Constellation schreibt niemals eine in deine Notiz zurück (File-Over-App), und alles wird **auf deinem Gerät** berechnet. Wenn du möchtest, dass eine Zusammenfassung in der Datei lebt, schreibe selbst eine, und Constellation zeigt stattdessen deine an.
+
+Für tiefere Details (jeder Punkt-Status, jeder Regel-Chip, Klick-für-Klick-Anleitungen) siehe die Themen **Quellen-Prüfung**, **The Cataloger** und **Note Summaries** im Hilfesystem.
 
 ---
 

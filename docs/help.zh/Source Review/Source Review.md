@@ -8,6 +8,8 @@ Source Review 面板是 Constellation 请求你审阅由 **Constellation 认知�
 
 本主题解释 Source Review 卡片的每个部分、彩色圆点的含义、何时信任引擎,以及如何在不无尽滚动的情况下浏览数百张卡片。
 
+> **两处地方,同一个面板。** 这里描述的卡片同时出现在右侧边栏的 **Source Review** 标签页中,以及全页的**分类器** (Cataloger) 视图中(左侧停靠栏里的层叠卡片图标)。它们是同一个面板和同一个引擎。分类器把队列交给整个窗口,外加一个笔记选择器和一个「生成全部摘要」按钮 — 参见 **The Cataloger** 主题。下面的一切都适用于任一处的卡片。
+
 ---
 
 ## CECE 实际做什么
@@ -149,6 +151,12 @@ Source Review 面板是 Constellation 请求你审阅由 **Constellation 认知�
 
 ---
 
+## 每张卡片下的笔记摘要
+
+每张卡片的标题下方有一行简短的**摘要** — 几句话告诉你这条笔记讲的是什么,让你无需打开它就能决定如何分类。Constellation 始终显示*你*写的摘要(一个 `summary:` / `description:` / `abstract:` / `excerpt:` frontmatter 字段,或正文中的一个 `> [!summary]` / `[!abstract]` / `[!tldr]` callout),只有在你没写时才生成一段。生成的摘要是抽取式的 — 笔记自身最核心的句子 — 并且从不写回你的文件。完整细节在 **Note Summaries** 主题中。
+
+---
+
 ## 每张卡片的操作
 
 每张卡片底部都有四个操作(在意见分歧的卡片上为三个,因为消歧替代了接受/编辑):
@@ -225,6 +233,8 @@ Source Review 队列可以以两种方式增长:
 
 ## 相关主题
 
+- **The Cataloger**(分类器) — 这些卡片的全页主页,带有笔记选择器(「分类笔记…」)和一个「生成全部摘要」按钮。
+- **Note Summaries**(笔记摘要) — 每张卡片下的摘要行是如何产生的,以及那条始终优先采用你自己文字的作者优先优先级。
 - **认知引擎** — CECE 所属的更广泛的知识形成哲学。
 - **属性** — CECE 写入的 `sources:` 和 `content_type:` frontmatter 字段。
 - **知识层级** — Source × 内容类型如何融入 Universe / Library / Folder / Note 结构。

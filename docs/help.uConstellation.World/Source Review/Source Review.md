@@ -6,6 +6,8 @@ The Source Review panel is where Constellation asks you to review classification
 
 This topic explains every part of a Source Review card, what the colored dots mean, when to trust the engine, and how to navigate hundreds of cards without scrolling forever.
 
+> **Two places, one panel.** The cards described here appear both in the **Source Review** tab in the right sidebar and in the full-page **Cataloger** view (the stacked-cards icon in the left dock). They are the same panel and the same engine. The Cataloger gives the queue the whole window plus a note-picker and a "Build all summaries" button — see the **The Cataloger** topic. Everything below applies to the cards in either place.
+
 ---
 
 ## What CECE actually does
@@ -147,6 +149,12 @@ The filter solves the needle-in-haystack problem when your queue has hundreds of
 
 ---
 
+## The note summary under each card
+
+Under each card's title sits a short **Summary** line — a few sentences that tell you what the note is about, so you can decide how to classify it without opening it. Constellation always shows a summary *you* wrote (a `summary:` / `description:` / `abstract:` / `excerpt:` frontmatter field, or a `> [!summary]` / `[!abstract]` / `[!tldr]` callout in the body) and only generates one when you haven't. Generated summaries are extractive — the note's own most-central sentences — and are never written back into your file. Full detail is in the **Note Summaries** topic.
+
+---
+
 ## Per-card actions
 
 Every card has four actions at the bottom (or three on Split cards where Disambig replaces Accept/Edit):
@@ -223,6 +231,8 @@ Open Settings → Intelligence → CECE → Per-Library calibration. The table s
 
 ## Related topics
 
+- **The Cataloger** — the full-page home for these cards, with a note-picker ("Classify a note…") and a "Build all summaries" button.
+- **Note Summaries** — how the Summary line under each card is produced, and the author-first precedence that always prefers your own words.
 - **Cognitive Engine** — the broader knowledge formulation philosophy CECE fits into.
 - **Properties** — the `sources:` and `content_type:` frontmatter fields CECE writes to.
 - **Knowledge Hierarchy** — how Source × Content Type fits into the Universe / Library / Folder / Note structure.

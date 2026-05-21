@@ -12,6 +12,8 @@ Le panneau Source Review est l'endroit où Constellation vous demande de révise
 
 Cette rubrique explique chaque partie d'une carte Source Review, ce que signifient les pastilles colorées, quand faire confiance au moteur et comment naviguer dans des centaines de cartes sans défiler indéfiniment.
 
+> **Deux endroits, un seul panneau.** Les cartes décrites ici apparaissent à la fois dans l'onglet **Source Review** du sidebar à droite et dans la vue pleine page du **Classificateur** (l'icône en cartes empilées dans le dock à gauche). C'est le même panneau et le même moteur. Le Classificateur donne à la file d'attente toute la fenêtre, plus un sélecteur de notes et un bouton « Générer tous les résumés » — voir la rubrique **The Cataloger** (le Classificateur). Tout ce qui suit s'applique aux cartes dans l'un ou l'autre endroit.
+
 ---
 
 ## Ce que CECE fait réellement
@@ -153,6 +155,12 @@ Le filtre résout le problème de l'aiguille dans la botte de foin lorsque votre
 
 ---
 
+## Le résumé de note sous chaque carte
+
+Sous le titre de chaque carte se trouve une courte ligne **Résumé** — quelques phrases qui vous disent de quoi parle la note, pour que vous puissiez décider comment la classer sans l'ouvrir. Constellation affiche toujours un résumé que *vous* avez écrit (un champ de frontmatter `summary:` / `description:` / `abstract:` / `excerpt:`, ou un callout `> [!summary]` / `[!abstract]` / `[!tldr]` dans le corps) et n'en génère un que lorsque vous ne l'avez pas fait. Les résumés générés sont extractifs — les phrases les plus centrales de la note elle-même — et ne sont jamais réécrits dans votre fichier. Le détail complet se trouve dans la rubrique **Note Summaries**.
+
+---
+
 ## Actions par carte
 
 Chaque carte a quatre actions en bas (ou trois sur les cartes Split où Disambig remplace Accept/Edit) :
@@ -229,6 +237,8 @@ Ouvrez Paramètres → Intelligence → CECE → Per-Library calibration. Le tab
 
 ## Rubriques connexes
 
+- **The Cataloger** (le Classificateur) — l'accueil pleine page de ces cartes, avec un sélecteur de notes (« Classer une note… ») et un bouton « Générer tous les résumés ».
+- **Note Summaries** — comment la ligne Résumé sous chaque carte est produite, et la priorité donnée d'abord à l'auteur qui préfère toujours vos propres mots.
 - **Cognitive Engine** — la philosophie plus large de formulation des connaissances dans laquelle s'inscrit CECE.
 - **Properties** — les champs de frontmatter `sources:` et `content_type:` dans lesquels CECE écrit.
 - **Knowledge Hierarchy** — comment Source × Content Type s'inscrit dans la structure Universe / Library / Folder / Note.

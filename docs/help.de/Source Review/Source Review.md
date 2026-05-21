@@ -12,6 +12,8 @@ Das Source-Review-Panel ist der Ort, an dem Constellation Sie bittet, die von de
 
 Dieses Thema erklärt jeden Teil einer Source-Review-Karte, was die farbigen Punkte bedeuten, wann Sie der Engine vertrauen können und wie Sie durch Hunderte von Karten navigieren, ohne endlos zu scrollen.
 
+> **Zwei Orte, ein Panel.** Die hier beschriebenen Karten erscheinen sowohl im **Source-Review**-Tab in der rechten Seitenleiste als auch in der Vollfenster-Ansicht **Klassifikator** (das Symbol mit den gestapelten Karten im Dock am linken Rand). Es sind dasselbe Panel und dieselbe Engine. Der Klassifikator gibt der Warteschlange das ganze Fenster plus einen Notiz-Picker und eine Schaltfläche „Alle Zusammenfassungen erstellen" — siehe das Thema **The Cataloger**. Alles unten Stehende gilt für die Karten an beiden Orten.
+
 ---
 
 ## Was CECE tatsächlich tut
@@ -153,6 +155,12 @@ Der Filter löst das Nadel-im-Heuhaufen-Problem, wenn Ihre Warteschlange Hundert
 
 ---
 
+## Die Notizzusammenfassung unter jeder Karte
+
+Unter dem Titel jeder Karte sitzt eine kurze **Zusammenfassung**-Zeile — ein paar Sätze, die Ihnen sagen, worum es in der Notiz geht, sodass Sie entscheiden können, wie Sie sie klassifizieren, ohne sie zu öffnen. Constellation zeigt immer eine Zusammenfassung, die *Sie* geschrieben haben (ein Frontmatter-Feld `summary:` / `description:` / `abstract:` / `excerpt:` oder ein Callout `> [!summary]` / `[!abstract]` / `[!tldr]` im Text), und generiert nur dann eine, wenn Sie es nicht getan haben. Generierte Zusammenfassungen sind extraktiv — die zentralsten Sätze der Notiz selbst — und werden niemals in Ihre Datei zurückgeschrieben. Vollständige Details finden sich im Thema **Note Summaries**.
+
+---
+
 ## Aktionen pro Karte
 
 Jede Karte hat unten vier Aktionen (oder drei auf Split-Karten, bei denen Disambig Accept/Edit ersetzt):
@@ -229,6 +237,8 @@ Verwenden Sie die Filter-Chips. Beginnen Sie mit **Catalogers agreed** (Stempelk
 
 ## Verwandte Themen
 
+- **The Cataloger** — die Vollfenster-Startseite für diese Karten, mit einem Notiz-Picker („Notiz klassifizieren…") und einer Schaltfläche „Alle Zusammenfassungen erstellen".
+- **Note Summaries** — wie die Zusammenfassungs-Zeile unter jeder Karte erzeugt wird und die Autoren-zuerst-Rangfolge, die immer Ihre eigenen Worte bevorzugt.
 - **Cognitive Engine** — die umfassendere Wissensformulierungsphilosophie, in die CECE passt.
 - **Properties** — die Frontmatter-Felder `sources:` und `content_type:`, in die CECE schreibt.
 - **Knowledge Hierarchy** — wie Source × Content Type in die Universe / Library / Folder / Note-Struktur passt.

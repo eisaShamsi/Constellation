@@ -12,6 +12,8 @@ Kaynak Gözden Geçirme paneli, Constellation'ın **Constellation Epistemic Cont
 
 Bu konu, bir Kaynak Gözden Geçirme kartının her parçasını, renkli noktaların ne anlama geldiğini, motora ne zaman güveneceğinizi ve sonsuza kadar kaydırmadan yüzlerce kart arasında nasıl gezineceğinizi açıklar.
 
+> **İki yer, tek panel.** Burada anlatılan kartlar hem sağ kenar çubuğundaki **Kaynak Gözden Geçirme** sekmesinde hem de tam pencere **Sınıflandırıcı** görünümünde (sol dock'taki istiflenmiş kartlar simgesi) görünür. Bunlar aynı panel ve aynı motordur. Sınıflandırıcı, kuyruğa tüm pencereyi artı bir not seçici ve bir "Tüm özetleri oluştur" düğmesi verir — **Sınıflandırıcı** konusuna bakın. Aşağıdaki her şey her iki yerdeki kartlar için de geçerlidir.
+
 ---
 
 ## CECE aslında ne yapar
@@ -153,6 +155,12 @@ Filtre, kuyruğunuzda yüzlerce kart varken samanlıktaki iğne sorununu çözer
 
 ---
 
+## Her kartın altındaki not özeti
+
+Her kartın başlığının altında kısa bir **Özet** satırı durur — notu açmadan nasıl sınıflandıracağınıza karar verebilmeniz için notun ne hakkında olduğunu söyleyen birkaç cümle. Constellation her zaman *sizin* yazdığınız bir özeti gösterir (bir `summary:` / `description:` / `abstract:` / `excerpt:` frontmatter alanı ya da gövdedeki bir `> [!summary]` / `[!abstract]` / `[!tldr]` çağrı kutusu) ve yalnızca yazmadığınızda bir tane üretir. Üretilmiş özetler çıkarımsaldır — notun kendi en merkezi cümleleri — ve dosyanıza asla geri yazılmaz. Tam ayrıntı **Not Özetleri** konusundadır.
+
+---
+
 ## Kart başına eylemler
 
 Her kartın altta dört eylemi vardır (veya Bölünmüş kartlarda Belirsizlik Giderme'nin Kabul/Düzenle'nin yerini aldığı üç eylem):
@@ -229,6 +237,8 @@ Ayarlar → Zekâ → CECE → Kütüphane bazında kalibrasyon'u açın. Tablo,
 
 ## İlgili konular
 
+- **Sınıflandırıcı** — bu kartların tam pencere ana yeri, bir not seçici ("Notu sınıflandır…") ve bir "Tüm özetleri oluştur" düğmesiyle.
+- **Not Özetleri** — her kartın altındaki Özet satırının nasıl üretildiği ve her zaman kendi sözlerinizi tercih eden yazar-öncelikli öncelik sırası.
 - **[Cognitive Engine](../Cognitive%20Engine/Cognitive%20Engine.md)** — CECE'nin içine yerleştiği daha geniş bilgi formülasyon felsefesi.
 - **[Properties](../Properties/Properties.md)** — CECE'nin yazdığı `sources:` ve `content_type:` frontmatter alanları.
 - **[Knowledge Hierarchy](../Knowledge%20Hierarchy/Knowledge%20Hierarchy.md)** — Kaynak × İçerik Türü'nün Evren / Kütüphane / Klasör / Not yapısına nasıl uyduğu.
