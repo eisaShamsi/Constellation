@@ -500,12 +500,14 @@ fn ensure_note_meta_mig003_column(conn: &Connection) -> rusqlite::Result<()> {
 /// (`TEXT` with no NOT NULL) so existing rows accept the wider schema
 /// without backfill.
 ///
-/// **Dead schema as of §1D Option B** — nothing reads or writes this
-/// column on the live CTSE path. Cross-language search runs entirely at
-/// query time via the in-memory `concept_lemmas` map (see
-/// `ctse::search::ctse_search_terms_by_concept`). The column survives
-/// as forward-compat; the only writer is the v2 sentinel migration
-/// below, which one-shot pre-marks bigram rows as defensive cleanup.
+/// **Dead schema as of §1D Option B** — nothing reads this column on the
+/// live CTSE path. Cross-language search runs entirely at query time via
+/// the in-memory `concept_lemmas` map (see
+/// `ctse::search::ctse_search_terms_by_concept`). The column survives as
+/// forward-compat; `ctse::hooks::apply_delta` only ever writes it as NULL.
+/// MIG-041 retired the v2 sentinel that used to pre-mark bigram rows —
+/// those rows are now deleted, not marked. Dropping the column entirely is
+/// a deferred optional cleanup (it would need its own DROP COLUMN migration).
 fn ensure_term_vocab_bridge_column(conn: &Connection) -> rusqlite::Result<()> {
     let mut have_col = false;
     {

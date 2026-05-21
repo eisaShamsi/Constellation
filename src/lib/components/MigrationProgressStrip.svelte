@@ -1,8 +1,10 @@
 <script lang="ts">
-	// MIG-015 §1C — Status-bar strip that listens for the deferred
-	// term_vocab v2 sentinel migration's progress events. The strip is
-	// hidden until a `start` event arrives, shows running counts via
-	// `progress` events, and disappears 4 seconds after `done`.
+	// MIG-015 §1C / MIG-041 — Status-bar strip for the deferred term_vocab
+	// maintenance worker. Originally the v2 bigram-sentinel migration; MIG-041
+	// repurposed the channel as the bigram PURGE (chunked DELETE) followed by a
+	// one-time VACUUM ("compacting") phase. Hidden until a `start`/`vacuum_start`
+	// event arrives, shows running counts via `progress`, and disappears 4
+	// seconds after `done`/`vacuum_done`.
 	//
 	// Per Law 2.7 — single source of truth: state lives entirely in
 	// this component (the migration is a transient UI signal, not a
