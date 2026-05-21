@@ -126,7 +126,13 @@ pub(crate) const NOTE_META_SCHEMA_VERSION: i64 = 1;
 /// |         | this migration is now defensive-only — it ensures any      |
 /// |         | future writer that does read the column never sees stale   |
 /// |         | NULL bigram rows.                                           |
-pub(crate) const TERM_VOCAB_BRIDGE_SCHEMA_VERSION: i64 = 2;
+/// |       3 | MIG-041 — one-shot DELETE of every bigram row from         |
+/// |         | `term_vocab`. The rows are redundant with the `notes_fts`  |
+/// |         | index and unread (ctse/search.rs skips bigrams; MIG-041    |
+/// |         | §A stops writing them). Supersedes the v2 sentinel: a DB   |
+/// |         | at version < 3 runs the chunked background purge           |
+/// |         | (`run_bigram_purge`). Stamped 3 on completion.             |
+pub(crate) const TERM_VOCAB_BRIDGE_SCHEMA_VERSION: i64 = 3;
 
 /// MIG-002 §4 — SQL fragment that computes sky_nodes.stratum (1–8) from
 /// the same five signals as strata.rs::compute_stratum:
@@ -517,76 +523,62 @@ fn ensure_term_vocab_bridge_column(conn: &Connection) -> rusqlite::Result<()> {
     Ok(())
 }
 
-/// MIG-013 §1D — bulk-sentinel every NULL bigram row.
+/// MIG-041 — purge every bigram row from `term_vocab`.
 ///
 /// On a real Constellation library the FTS5 tokenizer emits both stems
-/// AND bigrams (joined by `BIGRAM_SEP` = U+001F) so phrase queries
-/// match. Bigrams correctly belong in `term_vocab` (the Index panel
-/// and other surfaces consume them), but they are not lexicon-
-/// resolvable — the M11 graph keys are single lemmas, never two-word
-/// internal sentinel-joined pairs.
+/// AND bigrams (joined by `BIGRAM_SEP` = U+001F). The bigrams live in the
+/// `notes_fts` index — where phrase / Arabic matching reads them via the
+/// `notes_vocab` dictionary view — AND were *also* mirrored into the
+/// `term_vocab` shadow table. But nothing reads them from `term_vocab`:
+/// the query-time concept expansion in `ctse::search` skips bigrams, and
+/// MIG-041 §A stops writing them. On a 7,600-note corpus they were ~5.19M
+/// of ~5.73M rows (~90%), ~0.6 GB of dead weight. This one-shot migration
+/// deletes them.
 ///
-/// **Why this migration still exists after §1D Option B**: the column
-/// is now dead schema, so this UPDATE doesn't affect any live read
-/// path. It survives as defensive cleanup for forward-compat. If a
-/// future feature ever reactivates `bridge_concept_id` reads, that
-/// future feature inherits a column where bigram rows are
-/// pre-sentinelled rather than NULL — saving the same iteration cost
-/// the original §1D backfill would have hit.
+/// **Supersedes** the MIG-013 §1D / MIG-015 v2 sentinel (which merely set
+/// the dead `bridge_concept_id` of the same rows to `'-'`): a DB at
+/// `schema_versions.term_vocab_bridge < 3` runs this purge instead.
 ///
-/// **Boot-time cost on pre-MIG-013 DBs**: a 7,600-note Arabic+English
-/// corpus produces ~50K stems and ~5.7M bigrams. MIG-015 (PJ-001)
-/// closed the boot-blocking variant: the migration now runs in a
-/// background worker that chunks the UPDATE in 100k-row batches,
-/// dropping + re-acquiring the DB mutex around each chunk so other
-/// IPC callers see ~10ms availability windows between chunks. Status
-/// strip in `MigrationProgressStrip.svelte` shows progress.
+/// **Boot cost**: none — runs in a background worker
+/// (`maybe_schedule_bigram_purge`) that chunks the DELETE in 100k-row
+/// batches, dropping + re-acquiring the DB mutex around each chunk so
+/// other IPC callers see ~10ms availability windows. Status strip in
+/// `MigrationProgressStrip.svelte` shows progress.
 ///
-/// Idempotent: only NULL bigram rows are touched. Real concept ids
-/// (`c:…`) and prior `'-'` sentinels are untouched. Re-running the
-/// migration is a no-op.
-/// MIG-015 §1A — count `term_vocab` rows still requiring the v2 bigram
-/// sentinel. Cheap query — exists only to populate the `total` field of
-/// the initial progress event so the status-bar strip can show
-/// "Migrating term index — 0 / N" before the first chunk runs.
-fn count_pending_v2_sentinel_rows(conn: &Connection) -> rusqlite::Result<u64> {
+/// **Resumable / crash-safe**: each chunk deletes rows matching the bigram
+/// predicate, so re-entry from a partial run simply continues with the
+/// bigram rows that remain. Re-running after completion is a no-op.
+///
+/// Count of bigram rows still present — populates the `total` for the
+/// progress strip before the first chunk runs.
+fn count_remaining_bigram_rows(conn: &Connection) -> rusqlite::Result<u64> {
     conn.query_row(
         "SELECT COUNT(*) FROM term_vocab \
-         WHERE bridge_concept_id IS NULL \
-           AND term LIKE '%' || CHAR(31) || '%'",
+         WHERE term LIKE '%' || CHAR(31) || '%'",
         [],
         |row| row.get::<_, i64>(0).map(|n| n as u64),
     )
 }
 
-/// MIG-015 §1A — single-chunk variant of `sentinel_bigram_rows`. The
-/// caller drives the loop and is responsible for dropping +
-/// re-acquiring the DB mutex around each call so concurrent IPC
-/// callers see availability windows between chunks. (The original
-/// §1A `sentinel_bigram_rows_chunked` helper held the mutex for the
-/// whole loop — §1D audit P0 fix.)
+/// Delete a single chunk of bigram rows. The caller drives the loop and
+/// drops + re-acquires the DB mutex around each call so concurrent IPC
+/// callers see availability windows between chunks.
 ///
-/// SQLite-portable shape: stock SQLite doesn't support `UPDATE ... LIMIT N`
-/// (requires `SQLITE_ENABLE_UPDATE_DELETE_LIMIT`), so we use the
-/// idiomatic `UPDATE ... WHERE rowid IN (SELECT rowid ... LIMIT N)`.
+/// SQLite-portable shape: stock SQLite doesn't support `DELETE ... LIMIT N`
+/// (requires `SQLITE_ENABLE_UPDATE_DELETE_LIMIT`), so we use the idiomatic
+/// `DELETE ... WHERE rowid IN (SELECT rowid ... LIMIT N)`.
 ///
-/// Returns the number of rows affected by this single chunk. 0 means
-/// no more pending rows; caller should break out of its loop.
-///
-/// Crash-recoverable by construction — the WHERE clause excludes
-/// already-sentinelled rows, so a re-entry from a prior partial run
-/// picks up where it left off without journaling state.
-fn sentinel_bigram_rows_chunk(
+/// Returns the number of rows deleted by this chunk. 0 means no bigram
+/// rows remain; the caller should break out of its loop.
+fn delete_bigram_rows_chunk(
     conn: &Connection,
     chunk_size: u32,
 ) -> rusqlite::Result<u64> {
     let affected = conn.execute(
-        "UPDATE term_vocab \
-            SET bridge_concept_id = '-' \
+        "DELETE FROM term_vocab \
           WHERE rowid IN ( \
             SELECT rowid FROM term_vocab \
-             WHERE bridge_concept_id IS NULL \
-               AND term LIKE '%' || CHAR(31) || '%' \
+             WHERE term LIKE '%' || CHAR(31) || '%' \
              LIMIT ?1 \
           )",
         rusqlite::params![chunk_size],
@@ -594,7 +586,7 @@ fn sentinel_bigram_rows_chunk(
     Ok(affected)
 }
 
-/// MIG-015 §1B — entry point for the deferred v2 sentinel migration.
+/// MIG-041 — entry point for the deferred one-time bigram purge.
 /// Called from `ensure_search_db_ready` after `init_db` completes and
 /// the connection is in state. Mirrors the `sky_backfill::maybe_schedule`
 /// pattern: cheap pre-check on the main thread; spawn a worker thread
@@ -606,9 +598,9 @@ fn sentinel_bigram_rows_chunk(
 ///   - `done { total }`          — fired once on successful completion
 ///
 /// Stamps `schema_versions.term_vocab_bridge = TERM_VOCAB_BRIDGE_SCHEMA_VERSION`
-/// on success. Failure leaves the stamp at its prior value so the next
-/// boot retries.
-pub fn maybe_schedule_v2_sentinel_migration(app: tauri::AppHandle) {
+/// (= 3) on success. Failure leaves the stamp at its prior value so the
+/// next boot retries.
+pub fn maybe_schedule_bigram_purge(app: tauri::AppHandle) {
     use tauri::Manager;
 
     // Cheap pre-check on the main thread — avoids spawning a worker for
@@ -637,23 +629,22 @@ pub fn maybe_schedule_v2_sentinel_migration(app: tauri::AppHandle) {
 
     let app_bg = app.clone();
     std::thread::spawn(move || {
-        if let Err(e) = run_v2_sentinel_migration(&app_bg) {
-            eprintln!("[search] term_vocab v2 sentinel migration task failed: {}", e);
+        if let Err(e) = run_bigram_purge(&app_bg) {
+            eprintln!("[search] term_vocab bigram purge task failed: {}", e);
         }
     });
 }
 
-/// Body of the deferred migration. Holds the DB mutex for the duration
-/// of the chunked loop — each chunk is fast (200-400ms on commodity
-/// SSD), so the lock window per chunk is small. Between chunks the
-/// runtime briefly yields, allowing other DB callers to interleave.
-fn run_v2_sentinel_migration(app: &tauri::AppHandle) -> Result<(), String> {
+/// Body of the deferred bigram purge. Chunks a DELETE over the bigram
+/// rows, dropping + re-acquiring the DB mutex between chunks so other DB
+/// callers interleave. Each chunk is fast (~200-400ms on commodity SSD).
+fn run_bigram_purge(app: &tauri::AppHandle) -> Result<(), String> {
     use tauri::{Emitter, Manager};
 
-    /// 100k-row chunks. Empirical SSD UPDATE throughput is 250-500k rows/sec,
-    /// so each chunk completes in 200-400ms. On a 5.7M-row migration that's
-    /// ~50-100 progress updates total — visible motion in the UI without
-    /// flooding the Tauri event channel.
+    /// 100k-row chunks. Empirical SSD DELETE throughput is comparable to
+    /// UPDATE (~250-500k rows/sec), so each chunk completes in ~200-400ms.
+    /// On a ~5.2M-row purge that's ~50 progress updates total — visible
+    /// motion in the UI without flooding the Tauri event channel.
     const CHUNK_SIZE: u32 = 100_000;
 
     let state = app.state::<SearchState>();
@@ -674,7 +665,7 @@ fn run_v2_sentinel_migration(app: &tauri::AppHandle) -> Result<(), String> {
         if stored >= TERM_VOCAB_BRIDGE_SCHEMA_VERSION {
             return Ok(());
         }
-        count_pending_v2_sentinel_rows(conn).map_err(|e| e.to_string())?
+        count_remaining_bigram_rows(conn).map_err(|e| e.to_string())?
     };
 
     // No work to do — just stamp and exit. (Fresh DB common case.)
@@ -709,8 +700,8 @@ fn run_v2_sentinel_migration(app: &tauri::AppHandle) -> Result<(), String> {
         let affected = {
             let guard = state.db.lock().map_err(|e| e.to_string())?;
             let conn = guard.as_ref().ok_or("DB not initialized")?;
-            sentinel_bigram_rows_chunk(conn, CHUNK_SIZE)
-                .map_err(|e| format!("v2 sentinel chunk failed: {}", e))?
+            delete_bigram_rows_chunk(conn, CHUNK_SIZE)
+                .map_err(|e| format!("bigram purge chunk failed: {}", e))?
         }; // mutex dropped here — other callers can interleave
         if affected == 0 { break; }
         processed += affected;
@@ -1647,22 +1638,19 @@ fn init_db(path: &Path) -> Result<Connection, String> {
     ensure_term_vocab_bridge_column(&conn)
         .map_err(|e| format!("Failed to ensure term_vocab.bridge_concept_id: {}", e))?;
 
-    // Step v1→v2 — bulk-sentinel bigram rows. MIG-015 (PJ-001) defers
-    // this step off the boot critical path. On Boss-equivalent libraries
-    // (~5.7M term_vocab rows), the bulk UPDATE blocks for 30-90 sec
-    // with no UI feedback. We now only DETECT pending here; the actual
-    // UPDATE runs in a deferred async task scheduled from
-    // `ensure_search_db_ready` via `maybe_schedule_v2_sentinel_migration`.
+    // Step → v3 — MIG-041 purges bigram rows from term_vocab off the boot
+    // critical path. On large libraries (~5.2M bigram rows) a bulk DELETE
+    // would block boot for tens of seconds with no UI feedback. We only
+    // DETECT pending here; the chunked DELETE runs in a deferred async task
+    // scheduled from `ensure_search_db_ready` via `maybe_schedule_bigram_purge`.
     //
-    // Schema-version stamping also moves into the deferred task's
-    // success path. If the user kills the app mid-migration,
-    // schema_versions.term_vocab_bridge stays at its prior value and
-    // the next boot picks up where left off via the WHERE clause's
-    // `bridge_concept_id IS NULL` filter (crash-recoverable by
-    // construction — no journal table, no checkpointing).
+    // Schema-version stamping happens in the deferred task's success path.
+    // If the user kills the app mid-purge, schema_versions.term_vocab_bridge
+    // stays at its prior value and the next boot resumes via the bigram
+    // predicate (crash-recoverable by construction — no journal table).
     if stored_term_vocab_bridge_version < TERM_VOCAB_BRIDGE_SCHEMA_VERSION {
         diag_log(path, &format!(
-            "[search] init_db: term_vocab v2 sentinel migration deferred to async task (stored version = {})",
+            "[search] init_db: term_vocab bigram purge deferred to async task (stored version = {})",
             stored_term_vocab_bridge_version,
         ));
     }
@@ -4514,14 +4502,13 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
     // immediately so this doesn't extend boot time.
     crate::sky_backfill::maybe_schedule(app.clone());
 
-    // MIG-015 (PJ-001) §1B: schedule the deferred term_vocab v2 sentinel
-    // migration on a background thread. No-op if the schema stamp is
-    // already at v2 OR if there are no rows pending. On a pre-MIG-013
-    // library (~5.7M rows) this avoids the 30-90 sec boot freeze that
-    // the inline single-statement UPDATE used to cause; the user gets
-    // a fully-painted UI immediately and the chunked migration runs in
-    // the background with status-bar progress emit.
-    maybe_schedule_v2_sentinel_migration(app.clone());
+    // MIG-041: schedule the one-time term_vocab bigram purge on a
+    // background thread. No-op if the schema stamp is already at v3 OR if
+    // no bigram rows remain. On a large library (~5.2M bigram rows) the
+    // chunked DELETE runs in the background with status-bar progress; the
+    // user gets a fully-painted UI immediately. Supersedes the MIG-015 v2
+    // sentinel (same chunk + mutex-yield pattern, DELETE instead of UPDATE).
+    maybe_schedule_bigram_purge(app.clone());
 
     // WAL hygiene: shrink the on-disk write-ahead log shortly after boot and
     // keep it small. Runs once (this fn early-returns once the DB is set) on a
