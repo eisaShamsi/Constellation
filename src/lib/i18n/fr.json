@@ -2813,5 +2813,16 @@
 	},
 	"nsc": {
 		"summary": "Résumé"
+	},
+	"nscBackfill": {
+		"label": "Création des résumés de notes…",
+		"done": "Résumés prêts",
+		"cancelled": "Création annulée",
+		"error": "Erreur lors de la création",
+		"cancelling": "Annulation…",
+		"cancel": "Annuler",
+		"cancelTitle": "Annuler la création",
+		"buildNow": "Générer tous les résumés",
+		"buildNowTitle": "Précalcule un résumé pour chaque note qui n’en a pas. S’exécute en arrière-plan ; progression dans la barre d’état ; annulable à tout moment."
 	}
 }

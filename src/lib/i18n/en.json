@@ -3016,5 +3016,16 @@
 	},
 	"nsc": {
 		"summary": "Summary"
+	},
+	"nscBackfill": {
+		"label": "Building note summaries…",
+		"done": "Summaries ready",
+		"cancelled": "Summary build cancelled",
+		"error": "Summary build error",
+		"cancelling": "Cancelling…",
+		"cancel": "Cancel",
+		"cancelTitle": "Cancel summary build",
+		"buildNow": "Build all summaries",
+		"buildNowTitle": "Pre-compute a summary for every note that lacks one. Runs in the background; progress shows in the status bar; cancel any time."
 	}
 }

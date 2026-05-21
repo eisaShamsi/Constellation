@@ -2813,5 +2813,16 @@
 	},
 	"nsc": {
 		"summary": "Zusammenfassung"
+	},
+	"nscBackfill": {
+		"label": "Notizzusammenfassungen werden erstellt…",
+		"done": "Zusammenfassungen bereit",
+		"cancelled": "Erstellung abgebrochen",
+		"error": "Fehler bei der Erstellung",
+		"cancelling": "Wird abgebrochen…",
+		"cancel": "Abbrechen",
+		"cancelTitle": "Erstellung abbrechen",
+		"buildNow": "Alle Zusammenfassungen erstellen",
+		"buildNowTitle": "Berechnet im Hintergrund für jede Notiz ohne Zusammenfassung eine. Fortschritt in der Statusleiste; jederzeit abbrechbar."
 	}
 }

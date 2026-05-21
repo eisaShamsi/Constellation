@@ -272,6 +272,8 @@ pub fn run() {
         .manage(embeddings::EmbeddingState { engine: std::sync::Mutex::new(None), term_embed_cancel: std::sync::atomic::AtomicBool::new(false) })
         // MIG-021v2 §1F' — background scan state.
         .manage(classifier::scan_job::ScanState::new())
+        // MIG-040 — NSC summary backfill state (Rule 8 first-time population).
+        .manage(nsc::backfill::NscBackfillState::new())
         // MIG-021v2 §1F'.b — bulk Approve All state.
         .manage(sources::bulk_ops::BulkAcceptState::new())
         .invoke_handler({
@@ -356,6 +358,10 @@ pub fn run() {
             // MIG-040 — Note Summary Creator (NSC) batched + single get-or-compute.
             nsc::nsc_get_summaries_for_notes,
             nsc::nsc_get_summary,
+            // MIG-040 — NSC summary backfill (background, resumable).
+            nsc::backfill::nsc_backfill_start,
+            nsc::backfill::nsc_backfill_cancel,
+            nsc::backfill::nsc_backfill_status,
             // MIG-021v3 V3-§10.A — per-Library calibration view data
             cece::reliability::cece_get_reliability_for_active_library,
             cece::reliability::cece_get_active_library_root,

@@ -24,6 +24,9 @@ use std::hash::{Hash, Hasher};
 use tauri::Manager;
 use unicode_segmentation::UnicodeSegmentation;
 
+/// Background, resumable summary backfill (Rule 8 first-time population).
+pub mod backfill;
+
 /// How a summary was produced (mirrored to the frontend as `summary_source`).
 pub const SOURCE_FRONTMATTER: &str = "frontmatter";
 pub const SOURCE_CALLOUT: &str = "callout";
@@ -453,7 +456,7 @@ pub fn ensure_note_summaries_table(conn: &rusqlite::Connection) -> rusqlite::Res
 ///   v2 (2026-05-20): author `> [!summary]` callouts now take precedence over a
 ///                    generated extractive summary (previously only frontmatter
 ///                    did) — every pre-v2 cached summary must recompute.
-const NSC_ALGO_VERSION: &str = "v2";
+pub(crate) const NSC_ALGO_VERSION: &str = "v2";
 
 /// Fast non-cryptographic hash of the body, for cache invalidation. Prefixed
 /// with `NSC_ALGO_VERSION` so an algorithm change invalidates the whole cache.
@@ -497,7 +500,9 @@ pub fn nsc_get_summary(
 
 /// Cache-first get-or-compute for one note. Reads note_meta once, checks the
 /// cache against the current body hash, computes + caches on miss/stale.
-fn get_or_compute_cached(
+/// `pub(crate)` so the background backfill worker (`nsc::backfill`) can drive
+/// it note-by-note.
+pub(crate) fn get_or_compute_cached(
     app: &tauri::AppHandle,
     note_path: &str,
 ) -> Result<Option<NoteSummaryEntry>, String> {

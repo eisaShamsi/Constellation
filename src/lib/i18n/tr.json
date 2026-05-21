@@ -2813,5 +2813,16 @@
 	},
 	"nsc": {
 		"summary": "Özet"
+	},
+	"nscBackfill": {
+		"label": "Not özetleri oluşturuluyor…",
+		"done": "Özetler hazır",
+		"cancelled": "Özet oluşturma iptal edildi",
+		"error": "Özet oluşturma hatası",
+		"cancelling": "İptal ediliyor…",
+		"cancel": "İptal",
+		"cancelTitle": "Özet oluşturmayı iptal et",
+		"buildNow": "Tüm özetleri oluştur",
+		"buildNowTitle": "Özeti olmayan her not için özeti önceden hesaplar. Arka planda çalışır; ilerleme durum çubuğunda görünür; istediğiniz zaman iptal edebilirsiniz."
 	}
 }

@@ -2813,5 +2813,16 @@
 	},
 	"nsc": {
 		"summary": "摘要"
+	},
+	"nscBackfill": {
+		"label": "正在生成笔记摘要…",
+		"done": "摘要已就绪",
+		"cancelled": "已取消摘要生成",
+		"error": "摘要生成出错",
+		"cancelling": "正在取消…",
+		"cancel": "取消",
+		"cancelTitle": "取消摘要生成",
+		"buildNow": "生成全部摘要",
+		"buildNowTitle": "为每条没有摘要的笔记预先计算摘要。在后台运行；进度显示在状态栏；可随时取消。"
 	}
 }

@@ -2813,5 +2813,16 @@
 	},
 	"nsc": {
 		"summary": "Resumen"
+	},
+	"nscBackfill": {
+		"label": "Generando resúmenes de notas…",
+		"done": "Resúmenes listos",
+		"cancelled": "Generación de resúmenes cancelada",
+		"error": "Error al generar resúmenes",
+		"cancelling": "Cancelando…",
+		"cancel": "Cancelar",
+		"cancelTitle": "Cancelar la generación",
+		"buildNow": "Generar todos los resúmenes",
+		"buildNowTitle": "Calcula por adelantado un resumen para cada nota que no lo tiene. Se ejecuta en segundo plano; el progreso aparece en la barra de estado; puedes cancelar cuando quieras."
 	}
 }

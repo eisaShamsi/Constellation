@@ -57,6 +57,25 @@
     }
   }
 
+  // ── Summary backfill (MANUAL) ─────────────────────────────────────────────
+  // "Build all summaries" pre-computes the summary for every note that lacks a
+  // current one (progress shows in the status-bar strip). Manual only (Boss
+  // decision 2026-05-21) — it is never started on boot, so it can't touch
+  // startup time. Summaries also still fill lazily as cards scroll into view.
+  type BackfillPhase = 'start' | 'progress' | 'done' | 'cancelled' | 'error';
+  let backfillRunning = $state(false);
+  let unlistenBackfill: UnlistenFn | null = null;
+
+  async function startBackfill() {
+    try {
+      await invoke('nsc_backfill_start');
+      backfillRunning = true;
+    } catch (e) {
+      // The idempotent guard errors if a run is already going — not fatal.
+      console.error('[Cataloger] nsc_backfill_start failed:', e);
+    }
+  }
+
   // ── Note-picker ─────────────────────────────────────────────────────────
   // "Classify a note…" button: opens a compact inline search-and-pick
   // popover so the Cataloger can classify any note without needing an
@@ -161,10 +180,22 @@
       const p = ev.payload.phase;
       scanRunning = p === 'start' || p === 'progress';
     });
+    // Recover an in-progress backfill + track its lifecycle for the button.
+    try {
+      const bf = await invoke<{ running: boolean }>('nsc_backfill_status');
+      backfillRunning = bf.running;
+    } catch (e) {
+      console.error('[Cataloger] nsc_backfill_status failed:', e);
+    }
+    unlistenBackfill = await listen<{ phase: BackfillPhase }>('nsc:backfill', (ev) => {
+      const p = ev.payload.phase;
+      backfillRunning = p === 'start' || p === 'progress';
+    });
   });
 
   onDestroy(() => {
     unlisten?.();
+    unlistenBackfill?.();
     window.removeEventListener('keydown', onWindowKeydownCapture, true);
     if (pickerDebounceTimer) clearTimeout(pickerDebounceTimer);
   });
@@ -231,6 +262,17 @@
             </div>
           {/if}
         </div>
+
+        <button
+          class="cataloger-pick-btn"
+          onclick={startBackfill}
+          disabled={backfillRunning}
+          title={$t('nscBackfill.buildNowTitle') || 'Pre-compute a summary for every note that lacks one (runs in the background; progress shows in the status bar)'}
+        >
+          {backfillRunning
+            ? ($t('nscBackfill.label') || 'Building note summaries…')
+            : ($t('nscBackfill.buildNow') || 'Build all summaries')}
+        </button>
 
         <button class="cataloger-scan-btn" onclick={startScan} disabled={scanRunning}>
           {scanRunning

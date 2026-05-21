@@ -60,3 +60,25 @@ Diagnostic answers ("every note", "lags again on reopen") ruled out a one-time w
 **Fix (`libraries.rs`, Rust-only, frontend contract unchanged):** candidate selection now uses the always-current `notes_fts` index — Arabic-normalized phrase MATCH for the title → JOIN note_meta → ≤300 candidate (path, library_name), `ORDER BY bm25`. Then the EXACT original gate runs on just those candidates: read raw file, strip wikilinks, word-boundary regex, build context + human title, cap 50. ~50× fewer file reads → sub-100ms vs ~5s. Removed `scan_unlinked_recursive` (dead). Kept the frontend debounced effect as-is (now cheap enough). Minor deliberate narrowing: a title mentioned ONLY in another note's frontmatter (not body) is no longer surfaced (FTS indexes body, not frontmatter) — arguably more correct for "unlinked mentions." `cargo check` clean. Build running for Boss before/after test.
 
 Note: other full-vault scanners exist (e.g. `scan_library_tags`, `libraries.rs:2123` — boot/Dashboard cost) — separate, not the note-open culprit; candidates for the same FTS treatment later. WAL hygiene (372 MB) still pending — would further speed the FTS query + boot.
+
+Committed `b7e17603` (note-open fix) + pushed `e48a0f04`+`b7e17603` to origin/main (Eisa: push now).
+
+## Boot < 2s push — WAL hygiene + backfill manual-only (2026-05-21)
+
+Eisa set a hard goal: **boot in < 2 seconds**, and chose WAL cleanup as the next task + decided the parked backfill becomes **manual-only**.
+
+### WAL hygiene (`search.rs`, committed-pending)
+Confirmed `search.db-wal` = 372.8 MB (healthy = a few MB); boot trace shows DB-open (`ensure_db`) ≈ 1.1 s — the WAL traversal. Root: passive auto-checkpoints reset the WAL reuse position but never shrink the FILE; a past heavy write (re-index/backfill) left a 372 MB high-water mark; nothing runs TRUNCATE. No long-lived reader pins it (`cache.rs::open_reader` is short-lived per read), so TRUNCATE is safe. Index is EPHEMERAL (rebuilt from `.md`) → `synchronous=NORMAL` carries no real durability risk.
+- `init_db`: added `PRAGMA synchronous=NORMAL; busy_timeout=5000; mmap_size=268435456;` on the main connection.
+- `spawn_wal_checkpoint_daemon(path)`: own connection; sleeps 20 s post-boot, `PRAGMA wal_checkpoint(TRUNCATE)`, then every 5 min. Called once from `ensure_search_db_ready` (which early-returns after first init). `cargo check` clean.
+
+### Backfill → manual-only (Boss decision)
+The auto-after-paint trigger was the boot regressor; removed it.
+- `+layout.svelte`: removed the `setTimeout(nsc_backfill_start, 8000)` auto-trigger (kept the footer `NscBackfillProgressStrip`).
+- `CatalogerView.svelte`: added a **"Build all summaries"** button (outline style) → `invoke('nsc_backfill_start')`; `backfillRunning` tracked via `nsc:backfill` listener + `nsc_backfill_status` recovery; listener cleaned up in `onDestroy`.
+- `SettingsModal.svelte`: removed the "Pre-build note summaries" toggle.
+- `store.ts`: removed `AppSettings.nsc.backfillEnabled` (interface + default + merge) — no longer referenced.
+- i18n: `nscBackfill.buildNow` + `buildNowTitle` ×15 (replaced the obsolete `settingName`/`settingDesc` via the rewritten `scripts/add-nsc-backfill-i18n.mjs`).
+`svelte-check`: 3 pre-existing errors, 0 new.
+
+Build running for Boss test: (1) boot < 2 s, (2) WAL shrank, (3) the manual "Build all summaries" button works + progress strip + cancel. Commit after pass (likely two: WAL hygiene; backfill manual-only).

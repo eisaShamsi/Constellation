@@ -104,6 +104,7 @@
 	import LockScreen from '$lib/components/LockScreen.svelte';
 	import MigrationProgressStrip from '$lib/components/MigrationProgressStrip.svelte';
 	import ClassifierScanProgressStrip from '$lib/components/ClassifierScanProgressStrip.svelte';
+	import NscBackfillProgressStrip from '$lib/components/NscBackfillProgressStrip.svelte';
 	import LibrarySwitcher from '$lib/components/LibrarySwitcher.svelte';
 	import LibraryManager from '$lib/components/LibraryManager.svelte';
 	import LibraryPicker from '$lib/components/LibraryPicker.svelte';
@@ -2115,6 +2116,14 @@
 				});
 			}, 5000);
 		}
+
+		// MIG-040 — NSC summary backfill is MANUAL (Boss decision 2026-05-21):
+		// it is NOT started on boot. The auto-after-paint trigger here used to
+		// force the embedding-model load + a full-Universe embed pass ~8 s in,
+		// which made the app feel like it was still booting for ~20 s. Instant
+		// boot is a hard requirement, so the backfill now runs only when the
+		// user presses "Build all summaries" in the Cataloger. Summaries still
+		// fill lazily on-demand as cards scroll into view (no boot cost).
 
 		// Listen for template picker requests from CodeMirrorEditor /template slash command
 		window.addEventListener('constellation:open-template-picker', handleTemplatePicker);
@@ -6444,6 +6453,7 @@
 		<div class="sb-center">
 			<MigrationProgressStrip />
 			<ClassifierScanProgressStrip />
+				<NscBackfillProgressStrip />
 		</div>
 		<div class="sb-right">
 			{#if sidebarTab}
