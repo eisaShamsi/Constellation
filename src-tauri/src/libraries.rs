@@ -378,29 +378,92 @@ pub struct StarInfo {
 /// of synchronous wait. Without `(async)` those seconds are paid on the UI
 /// thread, starving every other boot-fan-out IPC behind it — including
 /// `cache_boot_snapshot_core`, which is Boot Criterion 2's critical path.
+/// Aggregate per-library note counts + ancestor directories from `note_meta`
+/// (the index), keyed by `library_name`. Sequential `let` bindings so the
+/// `SearchState` borrow + MutexGuard live for the whole read (avoids the
+/// `if let` temporary-lifetime trap). Best-effort: any failure → empty map
+/// (callers fall back to 0 counts, which the count badge hides).
+fn aggregate_library_counts(
+    app: &tauri::AppHandle,
+) -> std::collections::HashMap<String, (u32, std::collections::HashSet<String>)> {
+    use std::collections::{HashMap, HashSet};
+    use tauri::Manager;
+    let mut agg: HashMap<String, (u32, HashSet<String>)> = HashMap::new();
+    if crate::search::ensure_search_db_ready(app).is_err() {
+        return agg;
+    }
+    let state = app.state::<crate::search::SearchState>();
+    let guard = match state.db.lock() {
+        Ok(g) => g,
+        Err(_) => return agg,
+    };
+    let conn = match guard.as_ref() {
+        Some(c) => c,
+        None => return agg,
+    };
+    let mut stmt = match conn.prepare("SELECT library_name, path FROM note_meta") {
+        Ok(s) => s,
+        Err(_) => return agg,
+    };
+    let rows = match stmt.query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))) {
+        Ok(r) => r,
+        Err(_) => return agg,
+    };
+    for (lib_name, path) in rows.flatten() {
+        let entry = agg.entry(lib_name).or_insert_with(|| (0u32, HashSet::new()));
+        entry.0 += 1;
+        // Walk the note's ancestor directories; break once we hit one already
+        // recorded (its ancestors are too).
+        let mut cur = Path::new(&path).parent();
+        while let Some(dir) = cur {
+            let s = dir.to_string_lossy().to_string();
+            if s.is_empty() || !entry.1.insert(s) {
+                break;
+            }
+            cur = dir.parent();
+        }
+    }
+    agg
+}
+
 #[tauri::command(async)]
 pub fn get_all_library_stats(app: tauri::AppHandle) -> Vec<LibraryStats> {
     let libraries = load_all_libraries(&app);
-    // PERF: Parallelize per-library scans. On a 16-library Universe the sequential
-    // walk was the first awaited call on boot — ~7,600 stat calls back-to-back
-    // plus 160 preview reads. Using std threads (no new dep) the disk/CPU runs
-    // concurrently and wall-time drops roughly 10×.
-    let handles: Vec<_> = libraries.into_iter().map(|v| {
-        std::thread::spawn(move || {
-            let (star_count, folder_count) = count_contents(Path::new(&v.path));
-            let recent_stars = get_recent_notes(Path::new(&v.path), &v.id, &v.name, 10);
-            LibraryStats {
-                library_id: v.id.clone(),
-                name: v.name.clone(),
-                path: v.path.clone(),
-                star_count,
-                folder_count,
-                recent_stars,
-                is_universe_notes: v.is_universe_notes,
+
+    // Counts come from the always-current index (`note_meta`), NOT a filesystem
+    // walk. The old impl stat-walked every library's tree (~7,600 stat calls,
+    // cold) + read preview files — the measured ~1.5–3 s "note-counts trail in
+    // at ~3.5 s" cost after the universe structure already painted. `note_meta`
+    // already has every note with its `library_name`, so one indexed read +
+    // in-memory aggregation gives the same numbers in milliseconds. Same lesson
+    // as LL-024 (read the index, don't walk the vault). `recent_stars` is unused
+    // in the UI (verified) — dropped, so we skip the preview reads entirely.
+    //
+    // `star_count` = notes per library (exact). `folder_count` = distinct
+    // ancestor directories of those notes that sit under the library root —
+    // i.e. folders that contain notes (directly or transitively). This can miss
+    // a truly empty folder, but matches the old "count folders" intent for the
+    // Dashboard stat closely while costing nothing.
+    let agg = aggregate_library_counts(&app);
+
+    libraries.into_iter().map(|v| {
+        let (star_count, folder_count) = match agg.get(&v.name) {
+            Some((count, dirs)) => {
+                let n = dirs.iter().filter(|d| d.len() > v.path.len() && d.starts_with(&v.path)).count() as u32;
+                (*count, n)
             }
-        })
-    }).collect();
-    handles.into_iter().filter_map(|h| h.join().ok()).collect()
+            None => (0, 0),
+        };
+        LibraryStats {
+            library_id: v.id,
+            name: v.name,
+            path: v.path,
+            star_count,
+            folder_count,
+            recent_stars: Vec::new(),
+            is_universe_notes: v.is_universe_notes,
+        }
+    }).collect()
 }
 
 /// Search across all libraries for notes matching a query.
@@ -466,86 +529,6 @@ pub fn search_stars(app: tauri::AppHandle, query: String) -> Vec<StarInfo> {
 
     results.truncate(200); // Limit results
     results
-}
-
-fn count_contents(dir: &Path) -> (u32, u32) {
-    let mut stars = 0u32;
-    let mut folders = 0u32;
-    count_recursive(dir, &mut stars, &mut folders, 0);
-    (stars, folders)
-}
-
-fn count_recursive(dir: &Path, stars: &mut u32, folders: &mut u32, depth: u32) {
-    if depth > 20 { return; } // Prevent stack overflow from deep/circular structures
-    let read_dir = match fs::read_dir(dir) {
-        Ok(rd) => rd,
-        Err(_) => return,
-    };
-    for entry in read_dir.flatten() {
-        let path = entry.path();
-        let name = entry.file_name().to_string_lossy().to_string();
-        if name.starts_with('.') { continue; }
-        // Skip symlinks to prevent circular recursion
-        if entry.file_type().map(|ft| ft.is_symlink()).unwrap_or(false) { continue; }
-
-        if path.is_dir() {
-            *folders += 1;
-            count_recursive(&path, stars, folders, depth + 1);
-        } else if path.extension().map(|e| e == "md").unwrap_or(false) {
-            *stars += 1;
-        }
-    }
-}
-
-fn get_recent_notes(dir: &Path, library_id: &str, library_name: &str, limit: usize) -> Vec<StarInfo> {
-    // PERF: Collect metadata only (no file content reads). On a 7,600-note Universe
-    // the previous impl read every .md file's content just to pick the 10 most
-    // recent — that's the disk thrashing on boot. We now defer preview reads to
-    // the top-N files after sorting, turning ~7,600 reads into ~10 per library.
-    let mut meta: Vec<(String, std::path::PathBuf, u64)> = Vec::new();
-    collect_recent_meta_recursive(dir, &mut meta, 0);
-    // Partial-sort by modified DESC, keep top `limit` — using a simple full sort
-    // is fine at O(n log n) on metadata-only tuples (no I/O inside the compare).
-    meta.sort_by(|a, b| b.2.cmp(&a.2));
-    meta.truncate(limit);
-    meta.into_iter().map(|(name, path, modified)| {
-        let preview = fs::read_to_string(&path)
-            .unwrap_or_default()
-            .lines()
-            .filter(|l| !l.starts_with('#') && !l.starts_with("---") && !l.trim().is_empty())
-            .take(2)
-            .collect::<Vec<_>>()
-            .join(" ");
-        let preview = safe_truncate(&preview, 120);
-        StarInfo {
-            name: name.trim_end_matches(".md").to_string(),
-            path: path.to_string_lossy().to_string(),
-            library_id: library_id.to_string(),
-            library_name: library_name.to_string(),
-            modified,
-            preview,
-        }
-    }).collect()
-}
-
-fn collect_recent_meta_recursive(dir: &Path, out: &mut Vec<(String, std::path::PathBuf, u64)>, depth: u32) {
-    if depth > 20 { return; }
-    let read_dir = match fs::read_dir(dir) { Ok(rd) => rd, Err(_) => return };
-    for entry in read_dir.flatten() {
-        let path = entry.path();
-        let name = entry.file_name().to_string_lossy().to_string();
-        if name.starts_with('.') { continue; }
-        if entry.file_type().map(|ft| ft.is_symlink()).unwrap_or(false) { continue; }
-        if path.is_dir() {
-            collect_recent_meta_recursive(&path, out, depth + 1);
-        } else if path.extension().map(|e| e == "md").unwrap_or(false) {
-            let modified = entry.metadata()
-                .and_then(|m| m.modified())
-                .map(|t| t.duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs())
-                .unwrap_or(0);
-            out.push((name, path, modified));
-        }
-    }
 }
 
 /// Safely truncate a string to approximately `max_len` characters.
