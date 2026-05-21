@@ -2030,94 +2030,103 @@ pub fn scan_unlinked_mentions(
     // regex crate's parser.
     let wikilink_strip_re = regex::Regex::new(r"!?\[\[[^\]]*\]\]").unwrap();
 
+    // ── Candidate selection via the always-current FTS index (was: walk the
+    // whole library tree and read every .md on every note open). Find notes
+    // whose body mentions the title in milliseconds instead of thousands of
+    // file reads (Performance Rule 3 — no heavy scan on the read path). The
+    // raw-content check below is the EXACT gate (same wikilink-strip + word-
+    // boundary regex as before), so an over-inclusive candidate set never
+    // affects correctness — FTS only narrows 7,600 notes down to the few that
+    // could possibly match. Title is Arabic-normalized to match the indexed
+    // body text; a phrase query keeps multi-word titles adjacent.
+    let normalized = crate::arabic::normalizer::normalize_stripped(&note_name);
+    let phrase = normalized.replace('"', " ");
+    let phrase = phrase.trim();
+    if phrase.is_empty() {
+        return Ok(Vec::new());
+    }
+    let fts_query = format!("\"{}\"", phrase);
+
+    // Preserve the original scope: only notes under one of the passed,
+    // registered library paths.
+    let scoped_paths: Vec<String> = library_paths
+        .iter()
+        .filter(|(_, p)| registered.iter().any(|v| &v.path == p))
+        .map(|(_, p)| p.clone())
+        .collect();
+
+    // Pull candidate (path, library_name) from the index. Capped generously —
+    // the verification loop stops at `cap` real matches.
+    let candidates: Vec<(String, String)> = {
+        use tauri::Manager;
+        crate::search::ensure_search_db_ready(&app)?;
+        let search_state = app.state::<crate::search::SearchState>();
+        let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
+        let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
+        let mut stmt = conn
+            .prepare(
+                "SELECT note_meta.path, note_meta.library_name
+                 FROM notes_fts
+                 JOIN note_meta ON notes_fts.rowid = note_meta.rowid
+                 WHERE notes_fts MATCH ?1
+                 ORDER BY bm25(notes_fts)
+                 LIMIT 300",
+            )
+            .map_err(|e| format!("prepare unlinked-mentions FTS: {}", e))?;
+        let rows = stmt
+            .query_map(rusqlite::params![fts_query], |row| {
+                Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+            })
+            .map_err(|e| format!("query unlinked-mentions FTS: {}", e))?;
+        rows.filter_map(|r| r.ok()).collect()
+    };
+
+    // ── Verify each candidate against the RAW file (UNCHANGED logic): strip
+    // wikilinks so a `[[Title]]` link is not counted, require a non-wikilinked
+    // word-boundary occurrence, build the context snippet + human title.
+    // Reads only the candidate files, never the whole vault.
     let mut results = Vec::new();
     let cap = 50usize;
-
-    for (library_name, library_path) in &library_paths {
-        if !registered.iter().any(|v| &v.path == library_path) { continue; }
-        scan_unlinked_recursive(
-            Path::new(library_path),
-            &note_path,
-            &word_re,
-            &wikilink_strip_re,
-            library_name,
-            &mut results,
-            cap,
-            0,
-        );
+    for (path, library_name) in candidates {
         if results.len() >= cap { break; }
+        if path == note_path { continue; } // skip self
+        if !scoped_paths.is_empty() && !scoped_paths.iter().any(|lp| path.starts_with(lp.as_str())) {
+            continue;
+        }
+        let content = match fs::read_to_string(&path) {
+            Ok(c) => c,
+            Err(_) => continue,
+        };
+        let stripped = wikilink_strip_re.replace_all(&content, "");
+        if let Some(m) = word_re.find(&stripped) {
+            let pos = m.start();
+            let line_start = stripped[..pos].rfind('\n').map(|i| i + 1).unwrap_or(0);
+            let line_end = stripped[pos..].find('\n').map(|i| pos + i).unwrap_or(stripped.len());
+            let context = safe_truncate(&stripped[line_start..line_end], 120);
+            // Prefer frontmatter title over file stem so canonical filenames
+            // display as their human title in the panel.
+            let source_name = extract_frontmatter_title(&content)
+                .unwrap_or_else(|| Path::new(&path).file_stem()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or("")
+                    .to_string());
+            results.push(NoteLink {
+                source_path: path.clone(),
+                source_name,
+                target: String::new(),
+                context,
+                library_name,
+                link_type: None,
+                annotation: String::new(),
+                weight: 1.0,
+                traversal_count: 0,
+                last_traversed: String::new(),
+                confidence: String::new(),
+            });
+        }
     }
 
     Ok(results)
-}
-
-fn scan_unlinked_recursive(
-    dir: &Path,
-    note_path: &str,
-    word_re: &regex::Regex,
-    wikilink_strip_re: &regex::Regex,
-    library_name: &str,
-    results: &mut Vec<NoteLink>,
-    cap: usize,
-    depth: u32,
-) {
-    if depth > 20 || results.len() >= cap { return; }
-    let read_dir = match fs::read_dir(dir) {
-        Ok(rd) => rd,
-        Err(_) => return,
-    };
-    for entry in read_dir.flatten() {
-        if results.len() >= cap { return; }
-        let path = entry.path();
-        let name = entry.file_name().to_string_lossy().to_string();
-        if name.starts_with('.') { continue; }
-        if entry.file_type().map(|ft| ft.is_symlink()).unwrap_or(false) { continue; }
-
-        if path.is_dir() {
-            scan_unlinked_recursive(&path, note_path, word_re, wikilink_strip_re, library_name, results, cap, depth + 1);
-        } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
-            // Skip self
-            if path.to_string_lossy() == note_path { continue; }
-
-            if let Ok(content) = fs::read_to_string(&path) {
-                // Strip every wikilink (regular and embed) before searching
-                // so an active-note title that appears INSIDE wikilink
-                // markup — e.g. `[[Apple Tree Fruit|supports]]` or
-                // `[[Apple Tree Fruit]]` — is not counted as an unlinked
-                // mention. Only occurrences outside any wikilink survive.
-                let stripped = wikilink_strip_re.replace_all(&content, "");
-
-                if let Some(m) = word_re.find(&stripped) {
-                    let pos = m.start();
-                    let line_start = stripped[..pos].rfind('\n').map(|i| i + 1).unwrap_or(0);
-                    let line_end = stripped[pos..].find('\n').map(|i| pos + i).unwrap_or(stripped.len());
-                    let context = safe_truncate(&stripped[line_start..line_end], 120);
-
-                    // Prefer frontmatter title over file stem so canonical
-                    // filenames (`20260426T140940Z_NOTE_11B4`) display as
-                    // their human title (`Lunch Plan`) in the panel.
-                    let source_name = extract_frontmatter_title(&content)
-                        .unwrap_or_else(|| path.file_stem()
-                            .and_then(|s| s.to_str())
-                            .unwrap_or("")
-                            .to_string());
-                    results.push(NoteLink {
-                        source_path: path.to_string_lossy().to_string(),
-                        source_name,
-                        target: String::new(),
-                        context,
-                        library_name: library_name.to_string(),
-                        link_type: None,
-                        annotation: String::new(),
-                        weight: 1.0,
-                        traversal_count: 0,
-                        last_traversed: String::new(),
-                        confidence: String::new(),
-                    });
-                }
-            }
-        }
-    }
 }
 
 /// Scan all tags across a library. **Walks every `.md` file** via
