@@ -94,6 +94,16 @@ fn token_counts(body: &str) -> HashMap<String, u32> {
     let tokens = crate::fts5_tokenizer::tokenize_to_vec(clipped, stopwords_cached());
     let mut counts: HashMap<String, u32> = HashMap::with_capacity(tokens.len());
     for t in tokens {
+        // MIG-041: term_vocab stores SINGLE STEMS ONLY. Skip bigrams
+        // (two stems joined by BIGRAM_SEP = 0x1F). They are redundant with
+        // the FTS5 `notes_fts` index — which is what the Index panel,
+        // phrase search, and Arabic matching read (`notes_vocab`) — and
+        // nothing reads them from `term_vocab` (the query-time concept
+        // expansion in `ctse::search` skips them on read, same predicate).
+        // Writing them here only bloated the table (~90% of its rows).
+        if t.as_bytes().contains(&crate::fts5_tokenizer::BIGRAM_SEP) {
+            continue;
+        }
         *counts.entry(t).or_insert(0) += 1;
     }
     counts
@@ -311,6 +321,35 @@ mod tests {
         let know = count_row(&conn, "knowledge").expect("'knowledge' inserted");
         assert_eq!(know.0, 1);
         assert_eq!(know.1, 1);
+    }
+
+    /// MIG-041: `term_vocab` stores single stems only. Two same-script
+    /// words form a bigram in the FTS5 token stream, but that bigram must
+    /// NOT be written as a `term_vocab` row anymore — only the two stems.
+    #[test]
+    fn bigrams_are_not_written_to_term_vocab() {
+        let conn = Connection::open_in_memory().unwrap();
+        make_term_vocab(&conn);
+        // "knowledge book" → stems "knowledge" + "book" (same script) would
+        // emit the bigram "knowledge\x1Fbook" in the FTS5 token stream.
+        on_note_indexed(&conn, "n.md", None, "knowledge book").unwrap();
+
+        assert!(count_row(&conn, "knowledge").is_some(), "single stem 'knowledge' present");
+        assert!(count_row(&conn, "book").is_some(), "single stem 'book' present");
+
+        let bigram_rows: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM term_vocab WHERE term LIKE '%' || CHAR(31) || '%'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(bigram_rows, 0, "MIG-041: no bigram rows may be written to term_vocab");
+
+        let total: i64 = conn
+            .query_row("SELECT COUNT(*) FROM term_vocab", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(total, 2, "only the two single stems are stored");
     }
 
     /// Deleting a note subtracts its term contributions and tombstones
