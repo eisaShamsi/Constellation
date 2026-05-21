@@ -1308,6 +1308,22 @@ fn init_db(path: &Path) -> Result<Connection, String> {
     // Enable WAL mode for concurrent reads
     conn.execute_batch("PRAGMA journal_mode=WAL;").map_err(|e| e.to_string())?;
 
+    // Fast-open / fast-write settings. The search index is EPHEMERAL — it is
+    // rebuilt from the `.md` files (the source of truth) and updated
+    // incrementally — so we don't need FULL durability:
+    //   - synchronous=NORMAL: corruption-safe under WAL, far fewer fsyncs than
+    //     the FULL default → much faster for the many small indexer writes. The
+    //     only failure mode is losing the last transaction(s) on a power cut,
+    //     which is harmless here (the index just re-derives from disk).
+    //   - busy_timeout: writers + the WAL-checkpoint daemon wait briefly under
+    //     contention instead of erroring with "database is locked".
+    //   - mmap_size: memory-map up to 256 MB for faster reads on the large
+    //     (multi-GB) index.
+    conn.execute_batch(
+        "PRAGMA synchronous=NORMAL; PRAGMA busy_timeout=5000; PRAGMA mmap_size=268435456;",
+    )
+    .map_err(|e| format!("fast-open pragmas: {}", e))?;
+
     // MIG-002 §6: enable recursive triggers.
     //
     // SQLite defaults `recursive_triggers = OFF` for backwards compat.
@@ -4437,6 +4453,36 @@ pub fn constellation_link_archived(app: tauri::AppHandle) -> Result<Vec<serde_js
 /// `cache_boot_snapshot` call saw `None` and reported a cold cache, defeating
 /// the whole cache-first boot. Splitting this in two is what makes the
 /// cache-first boot actually work on 2nd+ launches.
+/// Background WAL hygiene: keep the on-disk write-ahead log small so every
+/// database open stays fast.
+///
+/// Passive auto-checkpoints (the default) reset the WAL's reuse position but
+/// NEVER shrink the WAL FILE on disk — so a past heavy write burst (a re-index
+/// or a backfill) leaves a large `-wal` on disk (observed: 372 MB), and the
+/// first reader on every subsequent open must traverse it (~1 s of boot).
+/// This daemon TRUNCATE-checkpoints the WAL shortly after boot (off the
+/// critical path) and then periodically. It uses its OWN connection: SQLite
+/// coordinates the checkpoint with the main connection at the WAL level, so
+/// this never touches `SearchState`'s mutex. Safe because the index is
+/// ephemeral — a checkpoint can't lose source-of-truth data.
+fn spawn_wal_checkpoint_daemon(path: PathBuf) {
+    std::thread::spawn(move || {
+        // Let boot fully settle before the first (and largest) checkpoint.
+        std::thread::sleep(std::time::Duration::from_secs(20));
+        loop {
+            if let Ok(conn) = Connection::open(&path) {
+                let _ = conn.busy_timeout(std::time::Duration::from_secs(10));
+                // TRUNCATE merges the WAL into the main DB and shrinks the file
+                // back to ~0. Best-effort: if a reader is mid-query it may not
+                // fully truncate this pass — the next pass mops up.
+                let _ = conn.execute_batch("PRAGMA wal_checkpoint(TRUNCATE);");
+            }
+            // Periodic hygiene — near-instant once the WAL is already small.
+            std::thread::sleep(std::time::Duration::from_secs(300));
+        }
+    });
+}
+
 pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
     let state = app.state::<SearchState>();
     {
@@ -4476,6 +4522,11 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
     // a fully-painted UI immediately and the chunked migration runs in
     // the background with status-bar progress emit.
     maybe_schedule_v2_sentinel_migration(app.clone());
+
+    // WAL hygiene: shrink the on-disk write-ahead log shortly after boot and
+    // keep it small. Runs once (this fn early-returns once the DB is set) on a
+    // background thread with its own connection — no boot-time cost.
+    spawn_wal_checkpoint_daemon(path);
 
     Ok(())
 }
