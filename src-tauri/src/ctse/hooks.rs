@@ -16,18 +16,18 @@
 //! ## What this hook does NOT do anymore
 //!
 //! Earlier §1C drafts also fast-path-resolved each new term to its
-//! M11 concept ID and stored the result in `term_vocab.bridge_concept_id`
-//! for use in cross-language search. **That column is now dead schema**
-//! (left in place for forward-compat, but never read or written from
-//! the hook). Cross-language search runs entirely at query time —
-//! `ctse::search::ctse_search_by_concept` embeds the user query, finds
-//! top-K M11 concepts, and expands them to multilingual lemmas in
-//! memory. Pre-computing the term→concept map per save was a Working
-//! Agreement #5 violation: the dominant industry pattern (Lucene
-//! `SynonymGraphFilter`, SQLite FTS5 Method 2, CLIR query-translation,
+//! M11 concept ID and stored the result in a `term_vocab.bridge_concept_id`
+//! column for use in cross-language search. That approach was abandoned;
+//! **MIG-042 dropped the column entirely** (it had been inert dead schema
+//! since the §1D pivot — never read, written only as NULL). Cross-language
+//! search runs entirely at query time — `ctse::search::ctse_search_by_concept`
+//! embeds the user query, finds top-K M11 concepts, and expands them to
+//! multilingual lemmas in memory. Pre-computing the term→concept map per
+//! save was a Working Agreement #5 violation: the dominant industry pattern
+//! (Lucene `SynonymGraphFilter`, SQLite FTS5 Method 2, CLIR query-translation,
 //! Primo controlled-vocabulary expansion) all do query-time expansion,
 //! not document-side concept tagging. Removing the per-save fast-path
-//! call eliminates the bigram-explosion + slow-path-takes-hours
+//! call eliminated the bigram-explosion + slow-path-takes-hours
 //! pathology entirely.
 //!
 //! What's left here is the bare ledger: maintain `(doc_count,
@@ -164,8 +164,8 @@ fn apply_delta(conn: &Connection, delta: &HashMap<String, Delta>) -> Result<(), 
         .map_err(|e| format!("term_vocab update prepare failed: {}", e))?;
     let mut insert_stmt = conn
         .prepare(
-            "INSERT INTO term_vocab (term, doc_count, total_count, bridge_concept_id) \
-             VALUES (?1, ?2, ?3, NULL)",
+            "INSERT INTO term_vocab (term, doc_count, total_count) \
+             VALUES (?1, ?2, ?3)",
         )
         .map_err(|e| format!("term_vocab insert prepare failed: {}", e))?;
 
@@ -243,12 +243,13 @@ mod tests {
     use rusqlite::Connection;
 
     fn make_term_vocab(conn: &Connection) {
+        // Mirrors the production base schema (search.rs init_db) — single
+        // stems only, no bridge_concept_id (dropped in MIG-042).
         conn.execute_batch(
             "CREATE TABLE term_vocab (
                 term TEXT PRIMARY KEY,
                 doc_count INTEGER NOT NULL,
-                total_count INTEGER NOT NULL,
-                bridge_concept_id TEXT
+                total_count INTEGER NOT NULL
             );",
         )
         .unwrap();

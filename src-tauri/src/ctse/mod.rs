@@ -30,9 +30,9 @@
 //! `SynonymGraphFilter`, SQLite FTS5 Method 2, CLIR query
 //! translation, Primo controlled-vocabulary expansion — runs
 //! synonym/concept expansion at query time, not at index time.
-//! Constellation now does the same. The `bridge_concept_id`
-//! column stays as dead schema (idempotent migrations preserved
-//! for forward-compat); nothing reads or writes it.
+//! Constellation now does the same. (The `bridge_concept_id`
+//! column the eager-tagging draft added was inert dead schema,
+//! never read; MIG-042 dropped it.)
 //!
 //! ## M11 zero-touch
 //!

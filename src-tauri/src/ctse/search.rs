@@ -46,10 +46,10 @@
 //!   expansion runs at query time so the index doesn't need to be
 //!   re-tagged when the vocabulary changes.
 //!
-//! Constellation's CTSE follows the same pattern. The
-//! `term_vocab.bridge_concept_id` column is dead schema; nothing
-//! reads or writes it. Adding a new M11 release picks up automatically
-//! on the next query.
+//! Constellation's CTSE follows the same pattern. (MIG-042 dropped the
+//! `term_vocab.bridge_concept_id` column that an earlier eager-tagging
+//! draft used — it was inert dead schema, never read.) Adding a new M11
+//! release picks up automatically on the next query.
 //!
 //! ## Cost profile
 //!

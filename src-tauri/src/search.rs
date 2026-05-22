@@ -102,14 +102,18 @@ pub(crate) const NOTE_META_SCHEMA_VERSION: i64 = 1;
 
 /// MIG-013 §1C/§1D — `term_vocab.bridge_concept_id` schema version.
 ///
-/// **Status: dead schema as of §1D Option B.** The column was originally
+/// **Status: column DROPPED by MIG-042.** The column was originally
 /// designed to hold per-term M11 concept IDs populated at write time
 /// (fast path) and via a slow-path `ctse_run_backfill` job. Both paths
 /// were retired when CTSE pivoted to query-time concept expansion
 /// (Lucene `SynonymGraphFilter` / SQLite FTS5 Method 2 / CLIR
-/// query-translation pattern; see `ctse/mod.rs` and `ctse/search.rs`).
-/// The column and its v1/v2 migrations are preserved as forward-compat
-/// in case a future "deep concept tagging" feature wants the surface.
+/// query-translation pattern; see `ctse/mod.rs` and `ctse/search.rs`),
+/// leaving the column inert dead schema (never read, written only as
+/// NULL). MIG-042 dropped it via its own one-time `term_vocab_dropcol`
+/// gate (see `run_bigram_purge` Part 3). This constant + the lineage
+/// table below remain the history of the bridge *module* (the chunked
+/// bigram purge stamps it 3); the column's removal is tracked separately
+/// by `TERM_VOCAB_DROPCOL_SCHEMA_VERSION`.
 ///
 /// | version | change                                                      |
 /// |--------:|-------------------------------------------------------------|
@@ -132,6 +136,11 @@ pub(crate) const NOTE_META_SCHEMA_VERSION: i64 = 1;
 /// |         | §A stops writing them). Supersedes the v2 sentinel: a DB   |
 /// |         | at version < 3 runs the chunked background purge           |
 /// |         | (`run_bigram_purge`). Stamped 3 on completion.             |
+///
+/// MIG-042 then dropped the `bridge_concept_id` column itself: the
+/// `ensure_term_vocab_bridge_column` add-path was removed (fresh DBs
+/// never create the column) and existing DBs drop it once via
+/// `term_vocab_dropcol`. The table above is retained as history.
 pub(crate) const TERM_VOCAB_BRIDGE_SCHEMA_VERSION: i64 = 3;
 
 /// MIG-041 §C — one-time `VACUUM` to reclaim the disk freed by the bigram
@@ -142,6 +151,17 @@ pub(crate) const TERM_VOCAB_BRIDGE_SCHEMA_VERSION: i64 = 3;
 /// be chunked — so it runs exactly once. Stamped 1 once it has run (or been
 /// skipped because the freelist was too small to be worth the pause).
 const TERM_VOCAB_VACUUM_SCHEMA_VERSION: i64 = 1;
+
+/// MIG-042 — one-time DROP of the dead `term_vocab.bridge_concept_id` column.
+/// Tracked as its own module (like `term_vocab_vacuum`) so it gates + retries
+/// independently of the purge/VACUUM. The drop runs as Part 3 of
+/// `run_bigram_purge` (reusing that worker's daemon-pause + retry-on-busy +
+/// self-checkpoint), so it never blocks boot and is concurrency-safe. `DROP
+/// COLUMN` is an atomic table rewrite (rolls back if interrupted); the index
+/// `idx_term_vocab_bridge_concept_id` is dropped first (SQLite refuses to drop
+/// an indexed column). Stamped 1 once the column is gone (or was already
+/// absent — fresh DBs never had it). Idempotent + crash-safe by construction.
+const TERM_VOCAB_DROPCOL_SCHEMA_VERSION: i64 = 1;
 
 /// MIG-002 §4 — SQL fragment that computes sky_nodes.stratum (1–8) from
 /// the same five signals as strata.rs::compute_stratum:
@@ -494,46 +514,6 @@ fn ensure_note_meta_mig003_column(conn: &Connection) -> rusqlite::Result<()> {
     Ok(())
 }
 
-/// MIG-013 §1C — ensure `term_vocab` has the `bridge_concept_id` column
-/// and its supporting index. Idempotent: probes `PRAGMA table_info` and
-/// ALTERs only if the column is missing. The column is nullable
-/// (`TEXT` with no NOT NULL) so existing rows accept the wider schema
-/// without backfill.
-///
-/// **Dead schema as of §1D Option B** — nothing reads this column on the
-/// live CTSE path. Cross-language search runs entirely at query time via
-/// the in-memory `concept_lemmas` map (see
-/// `ctse::search::ctse_search_terms_by_concept`). The column survives as
-/// forward-compat; `ctse::hooks::apply_delta` only ever writes it as NULL.
-/// MIG-041 retired the v2 sentinel that used to pre-mark bigram rows —
-/// those rows are now deleted, not marked. Dropping the column entirely is
-/// a deferred optional cleanup (it would need its own DROP COLUMN migration).
-fn ensure_term_vocab_bridge_column(conn: &Connection) -> rusqlite::Result<()> {
-    let mut have_col = false;
-    {
-        let mut stmt = conn.prepare("PRAGMA table_info(term_vocab)")?;
-        let rows = stmt.query_map([], |row| row.get::<_, String>(1))?;
-        for col in rows {
-            if col?.as_str() == "bridge_concept_id" {
-                have_col = true;
-            }
-        }
-    }
-    if !have_col {
-        conn.execute_batch(
-            "ALTER TABLE term_vocab ADD COLUMN bridge_concept_id TEXT;",
-        )?;
-    }
-    // Always ensure the index — `CREATE INDEX IF NOT EXISTS` is cheap
-    // and covers the case where the column existed but the index was
-    // dropped or never created (defensive idempotency).
-    conn.execute_batch(
-        "CREATE INDEX IF NOT EXISTS idx_term_vocab_bridge_concept_id
-             ON term_vocab (bridge_concept_id);",
-    )?;
-    Ok(())
-}
-
 /// MIG-041 — purge every bigram row from `term_vocab`.
 ///
 /// On a real Constellation library the FTS5 tokenizer emits both stems
@@ -597,6 +577,34 @@ fn delete_bigram_rows_chunk(
     Ok(affected)
 }
 
+/// MIG-042 — true if `term_vocab` still has the dead `bridge_concept_id`
+/// column. Fresh DBs created after MIG-042 never have it; existing DBs carry
+/// it until the one-time drop runs. Cheap `PRAGMA table_info` probe.
+fn term_vocab_has_bridge_column(conn: &Connection) -> rusqlite::Result<bool> {
+    let mut stmt = conn.prepare("PRAGMA table_info(term_vocab)")?;
+    let rows = stmt.query_map([], |row| row.get::<_, String>(1))?;
+    for col in rows {
+        if col?.as_str() == "bridge_concept_id" {
+            return Ok(true);
+        }
+    }
+    Ok(false)
+}
+
+/// MIG-042 — drop the dead `bridge_concept_id` column (and its index) from
+/// `term_vocab`. The index MUST be dropped first: SQLite refuses
+/// `ALTER TABLE … DROP COLUMN` on an indexed column. `DROP COLUMN` is an
+/// atomic table rewrite — if interrupted it rolls back fully, so an unstamped
+/// gate simply retries on the next boot. `DROP INDEX IF EXISTS` makes the
+/// pair re-entrant (a retry after the index alone was dropped is a no-op on
+/// the index, then drops the column). Caller guarantees the column is present.
+fn drop_bridge_concept_id_column(conn: &Connection) -> rusqlite::Result<()> {
+    conn.execute_batch(
+        "DROP INDEX IF EXISTS idx_term_vocab_bridge_concept_id;\n\
+         ALTER TABLE term_vocab DROP COLUMN bridge_concept_id;",
+    )
+}
+
 /// MIG-041 fix — set while the one-time bigram purge worker runs so the WAL
 /// checkpoint daemon (`spawn_wal_checkpoint_daemon`) PAUSES. They were
 /// colliding: the daemon's periodic `wal_checkpoint(TRUNCATE)` grew slow as the
@@ -623,14 +631,17 @@ fn is_transient_lock(e: &rusqlite::Error) -> bool {
 /// pattern: cheap pre-check on the main thread; spawn a worker thread
 /// only when work is actually needed.
 ///
-/// Emits `migration:term_vocab_v2` Tauri events with three phases:
+/// The purge phase emits `migration:term_vocab_v2` Tauri events:
 ///   - `start { total }`         — fired once at the beginning (skipped if total is 0)
 ///   - `progress { completed, total }` — fired after each non-empty chunk
 ///   - `done { total }`          — fired once on successful completion
+/// (The VACUUM emits `vacuum_start`/`vacuum_done`; the MIG-042 column drop is
+/// silent — sub-second, diagnostics.log only.)
 ///
-/// Stamps `schema_versions.term_vocab_bridge = TERM_VOCAB_BRIDGE_SCHEMA_VERSION`
-/// (= 3) on success. Failure leaves the stamp at its prior value so the
-/// next boot retries.
+/// Stamps each step's gate on success — `term_vocab_bridge` (=3, purge),
+/// `term_vocab_vacuum` (=1), `term_vocab_dropcol` (=1, MIG-042) — so each is
+/// one-time + independently re-entrant. Failure leaves the relevant stamp at
+/// its prior value so the next boot retries that step.
 pub fn maybe_schedule_bigram_purge(app: tauri::AppHandle) {
     use tauri::Manager;
 
@@ -659,9 +670,21 @@ pub fn maybe_schedule_bigram_purge(app: tauri::AppHandle) {
                 |row| row.get(0),
             )
             .unwrap_or(0);
-        // Wake the worker if EITHER the purge OR the one-time VACUUM is
-        // still pending (the VACUUM can lag the purge if it was interrupted).
-        bridge < TERM_VOCAB_BRIDGE_SCHEMA_VERSION || vacuum < TERM_VOCAB_VACUUM_SCHEMA_VERSION
+        let dropcol: i64 = conn
+            .query_row(
+                "SELECT version FROM schema_versions WHERE module = 'term_vocab_dropcol'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap_or(0);
+        // Wake the worker if the purge, the one-time VACUUM, OR the MIG-042
+        // column drop is still pending (any can lag the others if interrupted;
+        // on an already-purged DB only the drop remains). `init_db` pre-stamps
+        // `term_vocab_dropcol` when the column is already absent, so a clean DB
+        // never reaches here just for the drop.
+        bridge < TERM_VOCAB_BRIDGE_SCHEMA_VERSION
+            || vacuum < TERM_VOCAB_VACUUM_SCHEMA_VERSION
+            || dropcol < TERM_VOCAB_DROPCOL_SCHEMA_VERSION
     };
     if !needs_run {
         return;
@@ -675,12 +698,15 @@ pub fn maybe_schedule_bigram_purge(app: tauri::AppHandle) {
     });
 }
 
-/// Body of the deferred bigram purge + one-time VACUUM. Chunks a DELETE over
-/// the bigram rows, releasing the DB mutex between chunks so the app stays
-/// responsive. MIG-041 fix: it now (a) PAUSES the WAL checkpoint daemon for the
-/// duration (no more daemon-vs-purge collision), (b) RETRIES transient lock
-/// errors instead of dying, (c) self-checkpoints to bound the WAL while the
-/// daemon is paused, and (d) logs progress + errors to `diagnostics.log`.
+/// Body of the deferred bigram purge + one-time VACUUM + MIG-042 column drop.
+/// Three independently-gated parts run in order: (1) chunked bigram DELETE
+/// (`term_vocab_bridge`), (2) one-time VACUUM (`term_vocab_vacuum`), (3) drop
+/// the dead `bridge_concept_id` column (`term_vocab_dropcol`). Each releases
+/// the DB mutex between units so the app stays responsive. MIG-041 fix: it
+/// (a) PAUSES the WAL checkpoint daemon for the whole duration (no more
+/// daemon-vs-worker collision), (b) RETRIES transient lock errors instead of
+/// dying, (c) self-checkpoints to bound the WAL while the daemon is paused,
+/// and (d) logs progress + errors to `diagnostics.log`.
 fn run_bigram_purge(app: &tauri::AppHandle) -> Result<(), String> {
     use tauri::{Emitter, Manager};
     use std::sync::atomic::Ordering;
@@ -875,6 +901,84 @@ fn run_bigram_purge(app: &tauri::AppHandle) -> Result<(), String> {
             ).map_err(|e| format!("Failed to stamp schema_versions.term_vocab_vacuum: {}", e))?;
         }
         log("[search] bigram purge: compaction step complete (term_vocab_vacuum stamped 1)");
+    }
+
+    // ── Part 3 — drop the dead `bridge_concept_id` column (MIG-042) ──────
+    // The column has been inert dead schema since the §1D query-time pivot
+    // (never read; written only as NULL; MIG-042 removed the write + add
+    // paths). Dropping it is pure schema hygiene — no user-visible effect, so
+    // it emits NO progress events (the strip would only flash for a sub-second
+    // op); the diagnostics.log trail is kept (the MIG-041 lesson). It runs LAST,
+    // after the purge shrank the table, so the atomic `DROP COLUMN` rewrite is
+    // over the small post-purge row set (~538k), not the full pre-purge ~5.7M.
+    // Reuses this worker's daemon-pause + retry-on-busy + self-checkpoint, so it
+    // never blocks boot and can't collide with the WAL daemon.
+    let dropcol_stored: i64 = {
+        let guard = state.db.lock().map_err(|e| e.to_string())?;
+        let conn = guard.as_ref().ok_or("DB not initialized")?;
+        conn.query_row(
+            "SELECT version FROM schema_versions WHERE module = 'term_vocab_dropcol'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap_or(0)
+    };
+    if dropcol_stored < TERM_VOCAB_DROPCOL_SCHEMA_VERSION {
+        let has_col = {
+            let guard = state.db.lock().map_err(|e| e.to_string())?;
+            let conn = guard.as_ref().ok_or("DB not initialized")?;
+            term_vocab_has_bridge_column(conn).map_err(|e| e.to_string())?
+        };
+        if has_col {
+            log("[search] term_vocab: dropping dead bridge_concept_id column (MIG-042)");
+            let started = std::time::Instant::now();
+            // Retry transient locks instead of dying (mirrors the chunk loop).
+            let mut attempt: u32 = 0;
+            loop {
+                let r = {
+                    let guard = state.db.lock().map_err(|e| e.to_string())?;
+                    let conn = guard.as_ref().ok_or("DB not initialized")?;
+                    drop_bridge_concept_id_column(conn)
+                };
+                match r {
+                    Ok(()) => break,
+                    Err(ref e) if is_transient_lock(e) && attempt < MAX_CHUNK_RETRIES => {
+                        attempt += 1;
+                        log(&format!("[search] term_vocab: drop column busy/locked, retry {} ({})", attempt, e));
+                        std::thread::sleep(std::time::Duration::from_millis(
+                            (250u64 * attempt as u64).min(3000),
+                        ));
+                    }
+                    Err(e) => {
+                        return Err(format!("bridge_concept_id drop failed after retries: {}", e));
+                    }
+                }
+            }
+            // Bound the WAL before the daemon resumes (the rewrite added pages).
+            {
+                let guard = state.db.lock().map_err(|e| e.to_string())?;
+                let conn = guard.as_ref().ok_or("DB not initialized")?;
+                let _ = conn.execute_batch("PRAGMA wal_checkpoint(TRUNCATE);");
+            }
+            log(&format!(
+                "[search] term_vocab: bridge_concept_id dropped in {:.1}s",
+                started.elapsed().as_secs_f64()
+            ));
+        } else {
+            log("[search] term_vocab: bridge_concept_id already absent — nothing to drop (MIG-042)");
+        }
+        // Stamp the drop done (whether we dropped it or it was already absent)
+        // so this is a one-time check. Crash-safe: a mid-drop failure returns
+        // Err above before this lands, so the next boot retries.
+        {
+            let guard = state.db.lock().map_err(|e| e.to_string())?;
+            let conn = guard.as_ref().ok_or("DB not initialized")?;
+            conn.execute(
+                "INSERT OR REPLACE INTO schema_versions (module, version, updated_at) VALUES ('term_vocab_dropcol', ?1, strftime('%s','now'))",
+                rusqlite::params![TERM_VOCAB_DROPCOL_SCHEMA_VERSION],
+            ).map_err(|e| format!("Failed to stamp schema_versions.term_vocab_dropcol: {}", e))?;
+        }
+        log("[search] term_vocab: MIG-042 drop step complete (term_vocab_dropcol stamped 1)");
     }
 
     Ok(())
@@ -1686,11 +1790,25 @@ fn init_db(path: &Path) -> Result<Connection, String> {
     //
     // MIG-028 (2026-05-18): v5 layout schema setup retired with the
     // v5 module set. The one-time DROP cleanup below removes the
-    // orphan sight_v5_layout table + invalidation trigger from any
+    // orphan sight_v5_layout table + invalidation triggers from any
     // pre-MIG-028 database. SQLite IF EXISTS makes this idempotent
     // and a no-op on fresh installs.
+    //
+    // BUG-020 / MIG-042 FIX (2026-05-22): the original MIG-028 cleanup
+    // dropped only the AFTER-UPDATE trigger (`_au`) and the table — it
+    // MISSED the AFTER-DELETE trigger (`_ad`). Dropping the table while
+    // `_ad` (on note_meta) survived left it referencing a missing table,
+    // so EVERY `DELETE FROM note_meta` failed with "no such table:
+    // sight_v5_layout". In `reindex_delete_note` that error is swallowed
+    // (`let _ =`), so deleted notes silently GHOSTED in the index; any
+    // `?`-propagating delete path errored outright. It also blocked
+    // MIG-042's `ALTER TABLE term_vocab DROP COLUMN` (DROP COLUMN
+    // re-validates the WHOLE schema). Dropping `_ad` here fixes note
+    // deletion on boot AND unblocks the deferred column drop (Part 3 of
+    // run_bigram_purge runs after this, so the schema is clean by then).
     conn.execute_batch(
         "DROP TRIGGER IF EXISTS sight_v5_layout_invalidate_au; \
+         DROP TRIGGER IF EXISTS sight_v5_layout_invalidate_ad; \
          DROP TABLE IF EXISTS sight_v5_layout;",
     )
     .map_err(|e| format!("Failed to drop MIG-028 v5 schema cleanup: {}", e))?;
@@ -1706,13 +1824,10 @@ fn init_db(path: &Path) -> Result<Connection, String> {
     // Fresh installs created above already have them.
     crate::sight_v6::ensure_sight_v6_layout_tradition_columns(&conn)
         .map_err(|e| format!("Failed to add MIG-029 tradition columns: {}", e))?;
-    // Missing-index fix for the backfill's contested-detection EXISTS
-    // subquery + any future inbound-link query (Layer 2 diagnostic
-    // already plans to read this in MIG-025). idx_link_target on
-    // target_name exists; target_path is the path-based join key.
-    conn.execute_batch(
-        "CREATE INDEX IF NOT EXISTS idx_link_target_path ON note_links(target_path);"
-    ).map_err(|e| format!("Failed to create idx_link_target_path: {}", e))?;
+    // (BUG-021: the `idx_link_target_path` creation that used to sit here ran
+    // BEFORE `CREATE TABLE note_links` further down, so on a fresh DB init_db
+    // aborted with "no such table: note_links" — leaving the index half-built
+    // and the universe showing 0 notes. Moved into the note_links batch below.)
 
     // Create embeddings table for semantic search (Phase 2)
     conn.execute_batch("
@@ -1725,12 +1840,15 @@ fn init_db(path: &Path) -> Result<Connection, String> {
     ").map_err(|e| format!("Failed to create note_embeddings: {}", e))?;
 
     // (MIG-012 `term_embeddings` table retired by MIG-013 §1C: the
-    // per-library term-embedding pipeline was replaced by the CTSE
-    // Bridge Adapter — `term_vocab.bridge_concept_id` resolves to one
-    // of M11's ~20K curated concepts whose vectors are baked at build
-    // time. The retired table is left untouched on disk for any DB
-    // that still has it; future cleanup may DROP it but is not
-    // required for correctness.)
+    // per-library term-embedding pipeline was replaced by query-time
+    // concept expansion in `ctse::search` over M11's ~20K curated
+    // concepts (vectors baked at build time) — see `ctse/mod.rs`. An
+    // early §1C draft instead pre-resolved each term to an M11 concept
+    // in a `term_vocab.bridge_concept_id` column, but that document-side
+    // approach was abandoned for the query-time pattern and MIG-042
+    // dropped the column. The retired `term_embeddings` table is left
+    // untouched on disk for any DB that still has it; future cleanup may
+    // DROP it but is not required for correctness.)
 
     // MIG-012-fix-8 — shadow vocabulary table for fast term enumeration.
     // Replaces direct queries against `notes_vocab` (fts5vocab virtual
@@ -1773,11 +1891,35 @@ fn init_db(path: &Path) -> Result<Connection, String> {
         )
         .unwrap_or(0);
 
-    // Step v0→v1 — column + index. Idempotent on every boot
-    // regardless of stored version (the helper probes `PRAGMA
-    // table_info` and only ALTERs when missing). Cheap.
-    ensure_term_vocab_bridge_column(&conn)
-        .map_err(|e| format!("Failed to ensure term_vocab.bridge_concept_id: {}", e))?;
+    // (MIG-042 removed the v0→v1 `bridge_concept_id` column-add step that
+    // used to run here. Fresh DBs never create the column; existing DBs
+    // drop it once via the deferred `term_vocab_dropcol` migration —
+    // pre-staged below so a clean DB never wakes the worker for it.)
+
+    // MIG-042 pre-stage — if the column is ALREADY absent (fresh DB, or this
+    // DB already ran the drop), stamp `term_vocab_dropcol` here so
+    // `maybe_schedule_bigram_purge` doesn't spawn a worker just to discover
+    // there's nothing to drop. When the column is still present we leave the
+    // gate unstamped → the worker's Part 3 drops it once, off the boot path.
+    // On probe error we default to "present" (don't stamp) so the worker still
+    // gets a chance — never silently skip a real drop.
+    {
+        let dropcol_stored: i64 = conn
+            .query_row(
+                "SELECT version FROM schema_versions WHERE module = 'term_vocab_dropcol'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap_or(0);
+        if dropcol_stored < TERM_VOCAB_DROPCOL_SCHEMA_VERSION
+            && !term_vocab_has_bridge_column(&conn).unwrap_or(true)
+        {
+            let _ = conn.execute(
+                "INSERT OR REPLACE INTO schema_versions (module, version, updated_at) VALUES ('term_vocab_dropcol', ?1, strftime('%s','now'))",
+                rusqlite::params![TERM_VOCAB_DROPCOL_SCHEMA_VERSION],
+            );
+        }
+    }
 
     // Step → v3 — MIG-041 purges bigram rows from term_vocab off the boot
     // critical path. On large libraries (~5.2M bigram rows) a bulk DELETE
@@ -1925,6 +2067,11 @@ fn init_db(path: &Path) -> Result<Connection, String> {
         );
         CREATE INDEX IF NOT EXISTS idx_link_source ON note_links(source_path);
         CREATE INDEX IF NOT EXISTS idx_link_target ON note_links(target_name);
+        -- target_path is the path-based join key (MIG-025 Layer-2 diagnostic +
+        -- contested-detection EXISTS subquery). BUG-021: moved here from before
+        -- the table so it is created AFTER note_links exists (a fresh-DB init
+        -- previously aborted creating it too early).
+        CREATE INDEX IF NOT EXISTS idx_link_target_path ON note_links(target_path);
         CREATE INDEX IF NOT EXISTS idx_link_type ON note_links(link_type);
         CREATE INDEX IF NOT EXISTS idx_link_weight ON note_links(weight);
         CREATE INDEX IF NOT EXISTS idx_link_confidence ON note_links(confidence);
@@ -5776,9 +5923,14 @@ mod tests_m8c {
             ("/notes/d.md", "كتاب مفيد"),
         ] {
             let body_normalised = super::normalize_arabic_for_search(body);
+            // cid_cn is NOT NULL DEFAULT '' with a UNIQUE index — seed a
+            // distinct value per row (the path) so multiple seed rows don't
+            // collide on ''. (Previously this seed never reached the unique
+            // index because init_db aborted earlier; BUG-021 fixed that, so the
+            // seed must now respect the cid_cn uniqueness production enforces.)
             conn.execute(
-                "INSERT INTO note_meta(path, name, library_name, modified, body_text) \
-                 VALUES (?1, ?2, ?3, 0, ?4)",
+                "INSERT INTO note_meta(path, name, library_name, modified, body_text, cid_cn) \
+                 VALUES (?1, ?2, ?3, 0, ?4, ?1)",
                 params![path, "note", "testlib", body_normalised],
             )
             .expect("seed");
@@ -5871,12 +6023,15 @@ mod tests_m12 {
 
     #[test]
     fn unknown_word_falls_back_to_none() {
-        // "quasar" is Latin script so detect_source_lang returns
+        // "zxqwborple" is Latin script so detect_source_lang returns
         // Some(Lang::En), but the lemma isn't in the corpus. Expansion
         // echoes only the source lemma → single-term expr → no " OR " →
-        // we return None so the caller falls back to `quasar*`.
+        // we return None so the caller falls back to `zxqwborple*`.
+        // (Was "quasar" until 2026-05-22 — it was since added to
+        //  lexicon_v1.tsv, so it now bridges. Use a guaranteed
+        //  out-of-corpus nonsense token that no lexicon will ever carry.)
         assert!(
-            expanded_match_query("quasar").is_none(),
+            expanded_match_query("zxqwborple").is_none(),
             "unknown words must NOT take the bridge — prefix fallback \
              preserves today's recall for out-of-corpus queries"
         );
@@ -6504,5 +6659,108 @@ mod m14_bench {
             worst_c_p99,
             BUDGET_P99_NS,
         );
+    }
+}
+
+#[cfg(test)]
+mod mig042_dropcol {
+    //! MIG-042 — dropping the dead `term_vocab.bridge_concept_id` column.
+    use super::{drop_bridge_concept_id_column, term_vocab_has_bridge_column};
+    use rusqlite::Connection;
+
+    /// Build a pre-MIG-042 `term_vocab`: the dead column + its index + the
+    /// unrelated total_count index + some rows (incl. an Arabic term + the
+    /// legacy `'-'` sentinel value the old v2 migration wrote).
+    fn make_legacy_term_vocab(conn: &Connection) {
+        conn.execute_batch(
+            "CREATE TABLE term_vocab (
+                term TEXT PRIMARY KEY,
+                doc_count INTEGER NOT NULL,
+                total_count INTEGER NOT NULL,
+                bridge_concept_id TEXT
+            );
+            CREATE INDEX idx_term_vocab_total_count ON term_vocab (total_count DESC);
+            CREATE INDEX idx_term_vocab_bridge_concept_id ON term_vocab (bridge_concept_id);
+            INSERT INTO term_vocab (term, doc_count, total_count, bridge_concept_id)
+              VALUES ('book', 3, 7, NULL), ('knowledge', 2, 4, '-'), ('معرفة', 1, 1, NULL);",
+        )
+        .unwrap();
+    }
+
+    fn index_exists(conn: &Connection, name: &str) -> bool {
+        let n: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name=?1",
+                [name],
+                |r| r.get(0),
+            )
+            .unwrap();
+        n > 0
+    }
+
+    #[test]
+    fn drop_removes_column_and_index_preserves_rows() {
+        let conn = Connection::open_in_memory().unwrap();
+        make_legacy_term_vocab(&conn);
+
+        assert!(term_vocab_has_bridge_column(&conn).unwrap(), "precondition: column present");
+        assert!(index_exists(&conn, "idx_term_vocab_bridge_concept_id"), "precondition: bridge index present");
+        let before: i64 = conn.query_row("SELECT COUNT(*) FROM term_vocab", [], |r| r.get(0)).unwrap();
+        assert_eq!(before, 3);
+
+        drop_bridge_concept_id_column(&conn).expect("drop should succeed");
+
+        // Column gone; bridge index gone; the unrelated index survives.
+        assert!(!term_vocab_has_bridge_column(&conn).unwrap(), "column dropped");
+        assert!(!index_exists(&conn, "idx_term_vocab_bridge_concept_id"), "bridge index dropped");
+        assert!(index_exists(&conn, "idx_term_vocab_total_count"), "unrelated index survives");
+
+        // Rows + their kept columns preserved exactly.
+        let after: i64 = conn.query_row("SELECT COUNT(*) FROM term_vocab", [], |r| r.get(0)).unwrap();
+        assert_eq!(after, 3, "all rows preserved");
+        let book: (i64, i64) = conn
+            .query_row(
+                "SELECT doc_count, total_count FROM term_vocab WHERE term='book'",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!(book, (3, 7), "kept columns intact");
+
+        // Writes still work against the narrowed schema (the post-drop INSERT
+        // shape, matching ctse::hooks::apply_delta).
+        conn.execute("INSERT INTO term_vocab (term, doc_count, total_count) VALUES ('new', 1, 1)", [])
+            .unwrap();
+        let total: i64 = conn.query_row("SELECT COUNT(*) FROM term_vocab", [], |r| r.get(0)).unwrap();
+        assert_eq!(total, 4);
+    }
+
+    #[test]
+    fn fresh_schema_has_no_column() {
+        // The post-MIG-042 base schema (search.rs init_db) — no bridge column,
+        // so the probe is false and the worker's Part 3 stamps without dropping.
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE term_vocab (
+                term TEXT PRIMARY KEY,
+                doc_count INTEGER NOT NULL,
+                total_count INTEGER NOT NULL
+            );",
+        )
+        .unwrap();
+        assert!(!term_vocab_has_bridge_column(&conn).unwrap(), "fresh DB never has the column");
+    }
+
+    #[test]
+    fn drop_is_reentrant_when_index_already_gone() {
+        // Crash matrix: killed AFTER DROP INDEX but BEFORE DROP COLUMN. A retry
+        // must still succeed (the helper's `DROP INDEX IF EXISTS` no-ops).
+        let conn = Connection::open_in_memory().unwrap();
+        make_legacy_term_vocab(&conn);
+        conn.execute_batch("DROP INDEX idx_term_vocab_bridge_concept_id;").unwrap();
+        assert!(term_vocab_has_bridge_column(&conn).unwrap(), "column still present after index-only drop");
+
+        drop_bridge_concept_id_column(&conn).expect("re-entry should succeed with index already gone");
+        assert!(!term_vocab_has_bridge_column(&conn).unwrap(), "column dropped on re-entry");
     }
 }
