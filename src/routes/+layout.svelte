@@ -2034,7 +2034,29 @@
 		{
 			const t0 = performance.now();
 			loadAllStats()
-				.then(() => { loadAllStatsWallMs = Math.round(performance.now() - t0); })
+				.then(() => {
+					loadAllStatsWallMs = Math.round(performance.now() - t0);
+					// BUG-022 — auto-recover an empty search index. If the active
+					// universe has libraries but ZERO indexed notes, its index
+					// never finished building (a prior failed init like BUG-021, a
+					// wiped/restored DB, or files synced in while the app was
+					// closed). Build it once in the background — the SAME builder
+					// `add_library` uses (`constellation_search_init` →
+					// `reconcile_filesystem`). Runs on boot AND universe-switch
+					// (both go through initializeApp).
+					//
+					// GATED ON EMPTY: an already-indexed universe has star_count>0,
+					// so this never fires for it — the ZERO BOOT-TIME WALKS rule is
+					// preserved for the common case. After the build, re-load stats
+					// so the sidebar/status bar note count updates from 0 → N.
+					const stats = get(libraryStats);
+					const totalIndexed = stats.reduce((sum, s) => sum + (s.star_count || 0), 0);
+					if (totalIndexed === 0 && stats.length > 0) {
+						initSearchIndex()
+							.then(() => { searchEngineReady = true; return loadAllStats(); })
+							.catch(() => {});
+					}
+				})
 				.catch(() => { loadAllStatsWallMs = Math.round(performance.now() - t0); });
 		}
 	}

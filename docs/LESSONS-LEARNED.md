@@ -538,8 +538,71 @@ path) to reclaim it, and set `synchronous=NORMAL` — safe here because the
 search index is ephemeral (rebuilt from the `.md` files), and it makes writes
 (note-create / typing) far faster.
 
+## LL-025: Test DB Migrations Under Live App Concurrency — Not Just an Isolated Copy
+
+**Symptom (2026-05-21 → 22):** MIG-041's chunked bigram purge passed an isolated
+copy-test, then **stalled at exactly 600k rows for ~7 hours** on the live DB.
+MIG-042's copy-test (on a copy of the *real* DB) caught a totally different
+blocker — an orphaned trigger (BUG-020) — that no synthetic in-memory fixture
+contained.
+
+**Root cause:** an isolated copy has no running app, no WAL-checkpoint daemon, no
+concurrent IPC, and none of the field-accumulated schema cruft a real DB carries.
+MIG-041 died on a `SQLITE_BUSY` collision with the daemon; MIG-042 would have
+died on a leftover trigger from MIG-028. Neither was reproducible without the
+real DB and/or live concurrency.
+
+**Rule:** a one-time DB migration MUST be (a) `SQLITE_BUSY`-resilient (retry, not
+fatal), (b) coordinated with every other background DB user (pause the WAL daemon
+via a shared flag for the duration), and (c) tested on a **copy of the real
+production DB**, not a clean synthetic one — the real DB is where orphaned
+triggers, partial-migration states, and odd column values live. Run the *exact*
+shipped DDL against that copy before touching the live DB.
+
+## LL-026: A `CREATE INDEX` Before Its `CREATE TABLE` Crashes Fresh-DB Init — and `IF NOT EXISTS` Hides It
+
+**Symptom (2026-05-22, BUG-021):** brand-new / rebuilt universes failed to
+initialize their search index ("no such table: note_links"); existing universes
+were fine. Surfaced first as 4 long-failing `tests_m8c` unit tests, then bit a
+real universe ("Eisa Universe") that left it stuck at "0 notes."
+
+**Root cause:** `init_db` ran `CREATE INDEX … idx_link_target_path ON note_links`
+(added during MIG-025) ~200 lines **before** `CREATE TABLE note_links`. On an
+**existing** DB the table already exists, so `CREATE INDEX IF NOT EXISTS`
+no-ops — the bug is invisible. On a **fresh** DB (a new universe, or any
+`needs_rebuild` path that deletes + recreates the file) the index statement
+aborts the whole init.
+
+**Rule:** in any schema-bootstrap routine, **every `CREATE INDEX`/trigger must
+come after the `CREATE TABLE` it references.** `IF NOT EXISTS` is not a safety
+net — it actively *masks* ordering bugs on populated DBs, so a fresh-DB unit test
+(init_db on an empty file) is mandatory and must stay green. If long-failing
+"fresh DB" tests exist, treat them as a live latent bug, not test noise.
+
+## LL-027: Removing an Automatic Maintenance Pass for Performance Requires a *Verified* Recovery Path
+
+**Symptom (2026-05-22, BUG-022):** a universe whose index was empty (BUG-021's
+victims, a wiped/restored DB, or files synced in while the app was closed)
+displayed "0 notes" forever with **no automatic or manual way to rebuild** —
+even after the crash that emptied it was fixed.
+
+**Root cause:** the warm-boot "ZERO BOOT-TIME WALKS" optimization removed the
+boot-time index walk (correct — it was thrashing every boot). Its code comment
+said the walk was "now triggered by the file watcher / Settings → Rebuild Index /
+a first-launch empty-cache modal." But two of those three were **never actually
+built**: there is no "Rebuild Index" button, and the empty-cache prompt is
+first-launch-only, not per-universe. So an empty index had no recovery.
+
+**Rule:** when you delete an automatic maintenance/recovery pass for performance,
+you must ship the replacement recovery path **in the same change** and **verify
+it exists** — never trust a comment that says "now handled by X" without grepping
+for X's implementation. Prefer a *gated* automatic recovery (here: rebuild only
+when the index is empty, so the perf win is preserved for the common case) over a
+manual button the user has to know to click.
+
 ---
 
-*Last updated: 2026-05-21 (LL-024 added after the ~5 s note-open lag —
-full-vault scan on every open — and the 372 MB WAL boot regression)*
-*For: Constellation — note-open performance + WAL hygiene + boot < 2 s push*
+*Last updated: 2026-05-22 (LL-025/026/027 added after the MIG-042 session —
+live-concurrency migration testing, index-before-table fresh-DB crash (BUG-021),
+and the empty-index-no-recovery gap (BUG-022))*
+*For: Constellation — DB migration safety + schema-bootstrap ordering + index recovery*
