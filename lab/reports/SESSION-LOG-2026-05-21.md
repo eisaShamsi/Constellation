@@ -136,3 +136,37 @@ The overdue user-facing help for MIG-039 (The Cataloger) and MIG-040 (NSC summar
 **Verification (all 14 PASS):** 28 new files all full-length (Cataloger 164–166 L vs 166 EN; Note Summaries 134–136 L vs 135 EN — no truncation); frontmatter correct; canonical title present in both edited files per language; code tokens (`[!summary]`, `summary:`) preserved; ZERO leftover English headings in any translated file; Arabic spot-read clean (مراجعة المصادر reused, room-vs-lenses distinction intact). Native-review nuances flagged by agents (zh `分类器组件` for the six lenses; ur `مصادر کا جائزہ` vs `ماخذ کا جائزہ`; he `פתק` vs `רשומה`) — covered by the `native-speaker review recommended` banner.
 
 **State:** all help-doc changes are uncommitted in the working tree (net: 2 EN new topics + EN Source Review + EN User Manual, plus 14×[2 new topics + Source Review + User Manual] = 60 files). NOT committed — awaiting Boss go for PCS (which will bundle the orientation touch per SO #6, since two help topics shipped). Next after PCS: term_vocab bigram shrink (PJ #26).
+
+*(Help docs PCS'd: commit `bae5ee11`, orientation v2.23, pushed to origin/main.)*
+
+## MIG-041 — remove term_vocab bigrams (full /migration cascade) (2026-05-21)
+
+Boss said "Go now — full migration" on PJ #26. Ran the four-phase /migration workflow.
+
+**Architect + Plan** (`docs/MIG-041-term-vocab-bigram-shrink-ARCHITECT.md`): the key insight that de-risked everything — bigrams live in TWO stores. `notes_fts`/`notes_vocab` (FTS5 index + its dictionary view) is what the Index panel / phrase / Arabic actually read — UNTOUCHED. `term_vocab` (CTSE shadow table) is where the redundant copy lived — and `ctse/search.rs` already skips bigrams on read, so its 5.19M bigram rows (90.6% of the table) were dead weight. Honest payoff: ~0.6 GB / 26% (corrected down from the earlier 1.7 GB/70% overestimate); real prize = hygiene + retiring the MIG-015 boot-blocker.
+
+**Current DB (grounded):** term_vocab 5,730,181 rows = 5,191,533 bigrams (90.6%) + 538,648 stems. DB 2.35 GB.
+
+**Phase A** (`83a8453c`) — stop writing bigrams: filter `BIGRAM_SEP` (0x1F) tokens in `ctse::hooks::token_counts` (single chokepoint for save+delete; FTS5 `emit_word` path untouched). New unit test; 5/5 hooks tests pass.
+
+**Phase B** (`0d8c0cd9`) — one-time chunked DELETE purge: transformed the obsolete MIG-015 v2-sentinel worker (UPDATE→DELETE) into `run_bigram_purge`/`maybe_schedule_bigram_purge`; schema counter `term_vocab_bridge` 2→3; background, resumable, mutex-yielded; reuses `migration:term_vocab_v2` event (zero frontend change). **Verified on a copy of the real 2.35 GB DB:** removed all 5,191,527 bigrams, 538,648 stems remain + stay queryable, integrity ok (~9 min background — non-blocking).
+
+**Phase C** (`e1daf018`) — automatic one-time VACUUM (Boss decision: "Automatic once after upgrade"). Surfaced an architectural surprise FIRST: my plan said "VACUUM = tens of seconds, never blocks" — the copy-test proved it's **5.6 min holding an exclusive lock** (SQLite can't chunk it). Stopped + surfaced + got the decision. Implemented: Part 2 of the worker runs VACUUM once, gated by a separate `term_vocab_vacuum=1` stamp (retries if interrupted; VACUUM is atomic), only when `freelist_count > 10k pages` (skips fresh-DB no-op), graceful on SQLITE_FULL. Strip shows "Compacting…" (new i18n key ×15 locales; `vacuum_start`/`vacuum_done` phases). cargo check + svelte-check clean (0 new errors).
+
+**Phase D** (`be24388a`) — doc cleanup: the "remove v2-sentinel functions" was folded into Phase B's transform (no dead code); `bridge_concept_id` column drop DEFERRED (harmless dead schema; drop needs its own migration). Fixed two stale comments.
+
+**Phase E — audit (3 parallel agents): invariants PASS · no drift FAIL · 7/7 migration paths PASS.** Decisive confirmation: the scheduler wakes on `vacuum<1` independently of `bridge<3` (closes the mid-VACUUM-interrupt gap). WAL daemon vs VACUUM collision = benign (SQLITE_BUSY swallowed, retries). Non-fault note: sustained low disk → VACUUM retries each boot (intended).
+
+**State:** Phases A–E committed locally (`be24388a` HEAD), NOT pushed. Release build running for the Boss in-app test (Stage 0 mtime check → launch → watch purge + compaction strip → confirm search/Index/≈similar work + DB ~2.35→1.75 GB). PCS (push A–E + this log + orientation v2.24) held until the in-app test passes.
+
+### MIG-041 in-app test #1 — STALLED at 600k (concurrency bug found) + fix (2026-05-22)
+
+First live run **stalled after exactly 600k rows** (6 chunks) and sat frozen ~7 hours (Boss left it overnight). Not a clean interrupt — a real bug. I initially mis-guessed "app closed after a minute"; Boss corrected ("7 hours straight"). **Root cause** (confirmed via `diagnostics.log` + code, after stopping to diagnose): the chunked purge worker (shared `state.db` conn, `busy_timeout`=5s) was **fatal-on-error**, and the **WAL checkpoint daemon** (`spawn_wal_checkpoint_daemon`, own conn, `wal_checkpoint(TRUNCATE)` every 5 min) collided with it — as the purge's deletions filled the WAL, the daemon's TRUNCATE grew slow; a collision returned `SQLITE_BUSY` past the 5s timeout → the worker's `?` propagated → thread exited → migration dead for the session. **My copy-test missed it** (isolated copy = no daemon, no concurrency — the exact blind spot Working Agreement #5 warns about; the audit's drift agent checked daemon-vs-VACUUM but not daemon-vs-purge-worker).
+
+**Four-part fix** (`search.rs`, Boss-approved): (1) `MIGRATION_ACTIVE` atomic flag pauses the WAL daemon for the whole migration (drop-guard clears it on every exit); (2) chunk DELETE **retries** transient `SQLITE_BUSY`/`locked` (≤120× backoff) instead of dying; (3) worker **self-checkpoints** every 1M rows (TRUNCATE) to bound the WAL while the daemon is paused; (4) full **`diag_log`** trail (start/progress/retry/done/VACUUM/errors) so it's never inference again. cargo check clean. Even a double-spawn race is benign (retry covers it).
+
+### MIG-041 in-app test #2 — VALIDATED end-to-end on the live 2.35 GB DB (2026-05-22)
+
+Resumed from 600k; `diagnostics.log` captured the whole run: `starting — 4591533 to delete` → checkpointed at 1M/2M/3M/4M → `deleted 4591533 rows in 799.9s` → `term_vocab_bridge stamped 3` → `compacting (VACUUM) — freelist 125061 pages` → `VACUUM done in 339.6s` → `term_vocab_vacuum stamped 1`. **Final live DB: term_vocab 538,648 · bigrams 0 · stems 538,648 · bridge=3 · vacuum=1 · integrity ok · file 2.35→1.75 GB (26%).** Boss confirmed ("Done!"). Restore point `search.db.pre-mig041-20260521.bak` still in place (can be deleted).
+
+**MIG-041 outcome:** Phases A–E (`83a8453c`/`0d8c0cd9`/`e1daf018`/`be24388a`) + the concurrency fix (this commit) + orientation v2.24. Shipped + Boss-validated. Lesson: **migrations must be tested under live concurrency, not just on an isolated DB copy** — add to the migration checklist.

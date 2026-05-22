@@ -597,6 +597,26 @@ fn delete_bigram_rows_chunk(
     Ok(affected)
 }
 
+/// MIG-041 fix — set while the one-time bigram purge worker runs so the WAL
+/// checkpoint daemon (`spawn_wal_checkpoint_daemon`) PAUSES. They were
+/// colliding: the daemon's periodic `wal_checkpoint(TRUNCATE)` grew slow as the
+/// purge's deletions filled the WAL, and a collision returned `SQLITE_BUSY`
+/// that aborted the (then non-resilient) worker after ~600k rows. With the
+/// daemon paused + the worker retrying transient locks + self-checkpointing,
+/// the purge runs uncontended.
+static MIGRATION_ACTIVE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// True for transient SQLite lock errors that a one-time migration should wait
+/// out and retry rather than treat as fatal.
+fn is_transient_lock(e: &rusqlite::Error) -> bool {
+    matches!(
+        e,
+        rusqlite::Error::SqliteFailure(f, _)
+            if f.code == rusqlite::ErrorCode::DatabaseBusy
+                || f.code == rusqlite::ErrorCode::DatabaseLocked
+    )
+}
+
 /// MIG-041 — entry point for the deferred one-time bigram purge.
 /// Called from `ensure_search_db_ready` after `init_db` completes and
 /// the connection is in state. Mirrors the `sky_backfill::maybe_schedule`
@@ -655,24 +675,48 @@ pub fn maybe_schedule_bigram_purge(app: tauri::AppHandle) {
     });
 }
 
-/// Body of the deferred bigram purge. Chunks a DELETE over the bigram
-/// rows, dropping + re-acquiring the DB mutex between chunks so other DB
-/// callers interleave. Each chunk is fast (~200-400ms on commodity SSD).
+/// Body of the deferred bigram purge + one-time VACUUM. Chunks a DELETE over
+/// the bigram rows, releasing the DB mutex between chunks so the app stays
+/// responsive. MIG-041 fix: it now (a) PAUSES the WAL checkpoint daemon for the
+/// duration (no more daemon-vs-purge collision), (b) RETRIES transient lock
+/// errors instead of dying, (c) self-checkpoints to bound the WAL while the
+/// daemon is paused, and (d) logs progress + errors to `diagnostics.log`.
 fn run_bigram_purge(app: &tauri::AppHandle) -> Result<(), String> {
     use tauri::{Emitter, Manager};
+    use std::sync::atomic::Ordering;
 
-    /// 100k-row chunks. Empirical SSD DELETE throughput is comparable to
-    /// UPDATE (~250-500k rows/sec), so each chunk completes in ~200-400ms.
-    /// On a ~5.2M-row purge that's ~50 progress updates total — visible
-    /// motion in the UI without flooding the Tauri event channel.
+    /// 100k-row chunks (~200-400ms each on SSD): ~50 progress updates total.
     const CHUNK_SIZE: u32 = 100_000;
+    /// Self-checkpoint the WAL every this many deleted rows. The external WAL
+    /// daemon is PAUSED during the migration (MIGRATION_ACTIVE), so the worker
+    /// bounds its own WAL growth here instead of letting it balloon.
+    const CHECKPOINT_EVERY: u64 = 1_000_000;
+    /// Per-chunk retry budget for transient locks before giving up (then the
+    /// next boot resumes). 120 × up-to-3s backoff ≈ minutes of patience.
+    const MAX_CHUNK_RETRIES: u32 = 120;
 
     let state = app.state::<SearchState>();
+    let log_path = db_path(app).ok();
+    let log = |msg: &str| {
+        if let Some(p) = log_path.as_deref() {
+            diag_log(p, msg);
+        }
+    };
+
+    // Pause the WAL checkpoint daemon for the whole migration. The guard clears
+    // the flag on EVERY exit path (early return, error, normal completion).
+    struct ActiveGuard;
+    impl Drop for ActiveGuard {
+        fn drop(&mut self) {
+            MIGRATION_ACTIVE.store(false, Ordering::Relaxed);
+        }
+    }
+    MIGRATION_ACTIVE.store(true, Ordering::Relaxed);
+    let _active = ActiveGuard;
 
     // ── Part 1 — purge bigram rows from term_vocab (once) ────────────────
     // Re-check inside the worker — the purge could have completed between
-    // maybe_schedule's pre-check and this thread starting (e.g. a second
-    // ensure_search_db_ready from a window swap).
+    // maybe_schedule's pre-check and this thread starting.
     let bridge_stored: i64 = {
         let guard = state.db.lock().map_err(|e| e.to_string())?;
         let conn = guard.as_ref().ok_or("DB not initialized")?;
@@ -690,58 +734,91 @@ fn run_bigram_purge(app: &tauri::AppHandle) -> Result<(), String> {
             count_remaining_bigram_rows(conn).map_err(|e| e.to_string())?
         };
         if total > 0 {
-            // Announce start — frontend strip appears.
+            log(&format!("[search] bigram purge: starting — {} bigram rows to delete", total));
             let _ = app.emit("migration:term_vocab_v2", serde_json::json!({
                 "phase": "start",
                 "total": total,
             }));
-            // Chunked DELETE. Drop + re-acquire the DB mutex around each chunk
-            // so concurrent IPC callers (note saves, search queries) see ~10ms
-            // availability windows between chunks (§1D audit P0 pattern). The
-            // brief sleep guarantees the OS scheduler hands a waiting thread a
-            // turn before this worker re-acquires.
+            let started = std::time::Instant::now();
             let mut processed: u64 = 0;
+            let mut since_ckpt: u64 = 0;
             loop {
+                // One chunk, retrying transient lock contention (SQLITE_BUSY /
+                // locked) instead of aborting the whole one-time migration.
                 let affected = {
-                    let guard = state.db.lock().map_err(|e| e.to_string())?;
-                    let conn = guard.as_ref().ok_or("DB not initialized")?;
-                    delete_bigram_rows_chunk(conn, CHUNK_SIZE)
-                        .map_err(|e| format!("bigram purge chunk failed: {}", e))?
-                }; // mutex dropped here — other callers can interleave
+                    let mut attempt: u32 = 0;
+                    loop {
+                        let r = {
+                            let guard = state.db.lock().map_err(|e| e.to_string())?;
+                            let conn = guard.as_ref().ok_or("DB not initialized")?;
+                            delete_bigram_rows_chunk(conn, CHUNK_SIZE)
+                        }; // mutex dropped here — other callers can interleave
+                        match r {
+                            Ok(n) => break n,
+                            Err(ref e) if is_transient_lock(e) && attempt < MAX_CHUNK_RETRIES => {
+                                attempt += 1;
+                                log(&format!("[search] bigram purge: chunk busy/locked, retry {} ({})", attempt, e));
+                                std::thread::sleep(std::time::Duration::from_millis(
+                                    (250u64 * attempt as u64).min(3000),
+                                ));
+                            }
+                            Err(e) => {
+                                return Err(format!("bigram purge chunk failed after retries: {}", e));
+                            }
+                        }
+                    }
+                };
                 if affected == 0 {
                     break;
                 }
                 processed += affected;
+                since_ckpt += affected;
                 let _ = app.emit("migration:term_vocab_v2", serde_json::json!({
                     "phase": "progress",
                     "completed": processed,
                     "total": total,
                 }));
+                // Bound the WAL ourselves (the daemon is paused). The worker
+                // holds the mutex here and the daemon has no open connection,
+                // so this TRUNCATE is uncontended; best-effort either way.
+                if since_ckpt >= CHECKPOINT_EVERY {
+                    {
+                        let guard = state.db.lock().map_err(|e| e.to_string())?;
+                        let conn = guard.as_ref().ok_or("DB not initialized")?;
+                        let _ = conn.execute_batch("PRAGMA wal_checkpoint(TRUNCATE);");
+                    }
+                    since_ckpt = 0;
+                    log(&format!("[search] bigram purge: {} / {} (checkpointed)", processed, total));
+                }
                 std::thread::sleep(std::time::Duration::from_millis(10));
             }
-            // Announce done (purge phase).
+            log(&format!("[search] bigram purge: deleted {} rows in {:.1}s", processed, started.elapsed().as_secs_f64()));
             let _ = app.emit("migration:term_vocab_v2", serde_json::json!({
                 "phase": "done",
                 "total": processed,
             }));
         }
         // Stamp the purge done. Crash-recoverable: a mid-loop failure returns
-        // Err above before this lands, so the next boot retries.
-        let guard = state.db.lock().map_err(|e| e.to_string())?;
-        let conn = guard.as_ref().ok_or("DB not initialized")?;
-        conn.execute(
-            "INSERT OR REPLACE INTO schema_versions (module, version, updated_at) VALUES ('term_vocab_bridge', ?1, strftime('%s','now'))",
-            rusqlite::params![TERM_VOCAB_BRIDGE_SCHEMA_VERSION],
-        ).map_err(|e| format!("Failed to stamp schema_versions.term_vocab_bridge: {}", e))?;
+        // Err above before this lands, so the next boot resumes.
+        {
+            let guard = state.db.lock().map_err(|e| e.to_string())?;
+            let conn = guard.as_ref().ok_or("DB not initialized")?;
+            conn.execute(
+                "INSERT OR REPLACE INTO schema_versions (module, version, updated_at) VALUES ('term_vocab_bridge', ?1, strftime('%s','now'))",
+                rusqlite::params![TERM_VOCAB_BRIDGE_SCHEMA_VERSION],
+            ).map_err(|e| format!("Failed to stamp schema_versions.term_vocab_bridge: {}", e))?;
+        }
+        log("[search] bigram purge: complete (term_vocab_bridge stamped 3)");
     }
 
     // ── Part 2 — reclaim freed disk with a one-time VACUUM (MIG-041 §C) ────
-    // The purge frees ~0.6 GB of pages to the freelist but leaves the file
-    // size unchanged; VACUUM rewrites the DB to return that space to the OS.
-    // VACUUM holds an exclusive lock for its full duration (minutes on a
-    // multi-GB DB) and CANNOT be chunked — so it runs exactly once, gated by
-    // its own stamp, only when there is meaningful space to reclaim.
-    // Boss decision (2026-05-21): automatic, once, after the purge.
+    // The purge frees ~0.6 GB of pages to the freelist but leaves the file size
+    // unchanged; VACUUM rewrites the DB to return that space to the OS. VACUUM
+    // holds an exclusive lock for its full duration (minutes on a multi-GB DB)
+    // and CANNOT be chunked — so it runs exactly once, gated by its own stamp,
+    // only when there is meaningful space to reclaim. The WAL daemon is paused
+    // (MIGRATION_ACTIVE) so it won't contend. Boss decision (2026-05-21):
+    // automatic, once, after the purge.
     let vacuum_stored: i64 = {
         let guard = state.db.lock().map_err(|e| e.to_string())?;
         let conn = guard.as_ref().ok_or("DB not initialized")?;
@@ -764,11 +841,13 @@ fn run_bigram_purge(app: &tauri::AppHandle) -> Result<(), String> {
                 .unwrap_or(0)
         };
         if freelist_pages > VACUUM_FREELIST_THRESHOLD {
+            log(&format!("[search] bigram purge: compacting (VACUUM) — freelist {} pages", freelist_pages));
             // The strip shows an indeterminate "Compacting…" state (VACUUM has
             // no chunk progress) and the DB is unavailable until it finishes.
             let _ = app.emit("migration:term_vocab_v2", serde_json::json!({
                 "phase": "vacuum_start",
             }));
+            let started = std::time::Instant::now();
             // VACUUM on the shared connection: holds the mutex (and the whole
             // DB) for its duration, so every other DB caller waits. On failure
             // (e.g. SQLITE_FULL — VACUUM needs ~2× the DB size in temp space)
@@ -780,18 +859,22 @@ fn run_bigram_purge(app: &tauri::AppHandle) -> Result<(), String> {
                 conn.execute_batch("VACUUM;")
                     .map_err(|e| format!("term_vocab VACUUM failed: {}", e))?;
             }
+            log(&format!("[search] bigram purge: VACUUM done in {:.1}s", started.elapsed().as_secs_f64()));
             let _ = app.emit("migration:term_vocab_v2", serde_json::json!({
                 "phase": "vacuum_done",
             }));
         }
         // Stamp the VACUUM step done (whether we ran it or skipped a tiny
         // freelist) so this is a one-time check.
-        let guard = state.db.lock().map_err(|e| e.to_string())?;
-        let conn = guard.as_ref().ok_or("DB not initialized")?;
-        conn.execute(
-            "INSERT OR REPLACE INTO schema_versions (module, version, updated_at) VALUES ('term_vocab_vacuum', ?1, strftime('%s','now'))",
-            rusqlite::params![TERM_VOCAB_VACUUM_SCHEMA_VERSION],
-        ).map_err(|e| format!("Failed to stamp schema_versions.term_vocab_vacuum: {}", e))?;
+        {
+            let guard = state.db.lock().map_err(|e| e.to_string())?;
+            let conn = guard.as_ref().ok_or("DB not initialized")?;
+            conn.execute(
+                "INSERT OR REPLACE INTO schema_versions (module, version, updated_at) VALUES ('term_vocab_vacuum', ?1, strftime('%s','now'))",
+                rusqlite::params![TERM_VOCAB_VACUUM_SCHEMA_VERSION],
+            ).map_err(|e| format!("Failed to stamp schema_versions.term_vocab_vacuum: {}", e))?;
+        }
+        log("[search] bigram purge: compaction step complete (term_vocab_vacuum stamped 1)");
     }
 
     Ok(())
@@ -4516,6 +4599,15 @@ fn spawn_wal_checkpoint_daemon(path: PathBuf) {
         // Let boot fully settle before the first (and largest) checkpoint.
         std::thread::sleep(std::time::Duration::from_secs(20));
         loop {
+            // MIG-041 fix: stand down while the one-time bigram purge / VACUUM
+            // runs. A TRUNCATE here collides with the migration at the WAL level
+            // (and used to abort the purge with SQLITE_BUSY after ~600k rows).
+            // Poll back every 15s; the migration clears the flag when done and
+            // the next pass mops up the WAL it accumulated.
+            if MIGRATION_ACTIVE.load(std::sync::atomic::Ordering::Relaxed) {
+                std::thread::sleep(std::time::Duration::from_secs(15));
+                continue;
+            }
             if let Ok(conn) = Connection::open(&path) {
                 let _ = conn.busy_timeout(std::time::Duration::from_secs(10));
                 // TRUNCATE merges the WAL into the main DB and shrinks the file
