@@ -60,3 +60,21 @@ Three of the four fixes share `search.rs`; strict 4-way per-concern commits woul
 - MIG-041's dead `bridge_concept_id` column is now **dropped** (MIG-042) — that deferred item is closed.
 - **The missing "Settings → Rebuild Index" button** (referenced in `+layout.svelte` comments but never implemented) — BUG-022's auto-recover covers the *empty* case; a manual rebuild for a *stale/corrupt-but-non-empty* index is still unbuilt. Candidate follow-up (Eisa chose "auto-build only" for now).
 - Other universes flagged `user_version=0` (e.g. "Constellation Test") will self-heal on next open via BUG-021 + BUG-022.
+
+## 10. Late-session: NSC Core Plug-in design captured (Eisa direction)
+
+After the MIG-042 cascade closed (pushed at 780713b6), Eisa picked the next direction from the post-session menu: **grow the NSC into a standalone Core Plug-in serving every Constellation function** (his stated future direction from the handover). Design-first per the project pattern.
+
+**Vision elicited (4 questions, locked):**
+1. **Shape:** Both — a shared summary *service* + a left-dock *view*.
+2. **Dock-view purpose:** **Universe Digest** — skim the whole KB at summary-level without opening notes.
+3. **Service reach:** **all surfaces** (full coverage is the target; sequenced sensibly).
+4. **Digest granularity:** **tiered Library → Folder → 1-line headline**, expandable to the full summary.
+
+**Five design decisions locked** (during validation): name = **"Digest"**; **stored** `headline` column; Digest **spans cUniverse children** from v1; **extractive only** (abstractive deferred); **default sort = recency**.
+
+**Artifacts written:**
+- `docs/Constellation-NSC-Concept-Paper-v2.0.md` — elevates NSC from subsystem (v1.0, MIG-040) to Core Plug-in. Two pillars: shared service + Universe Digest. Reuses engine/cache/content-hash/backfill. Phasing = 3 `/migration`s.
+- `docs/MIG-043-nsc-coreplugin-phase1-ARCHITECT.md` — Phase 1: engine `headline` variant (top-1 TextRank) + additive nullable column + shared frontend summary store + migrate SourceReviewPanel as no-behavior-change refactor + wire 2 first surfaces (search results + editor header). 6 steps A–F; low-moderate risk; rollback safe both ways.
+
+**Next:** PCS the design docs (this commit) + orientation v2.26 bump, then cascade Build Steps A–F (Eisa direction: "PCS + Orientation > And cascade the Build (Steps A–F)").
