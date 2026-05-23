@@ -20,7 +20,7 @@ description: Notizzusammenfassungen geben Ihnen einen kurzen Abriss einer Notiz 
 
 > *Wenn Sie eine Zusammenfassung geschrieben haben, verwendet Constellation Ihre. Es schreibt nur dann eine, wenn Sie es nicht getan haben — und selbst dann niemals in Ihre Datei.*
 
-Eine **Notizzusammenfassung** ist ein kurzer Abriss einer Notiz — ein paar Sätze, die Ihnen auf einen Blick sagen, worum es in der Notiz geht. Zusammenfassungen werden vom **Note Summary Creator (NSC)** erzeugt. Heute erscheinen sie unter dem Titel jeder Notiz in der **Klassifikator**- / **Source-Review**-Warteschlange, sodass Sie entscheiden können, wie eine Karte zu klassifizieren ist, ohne die Notiz dahinter zu öffnen.
+Eine **Notizzusammenfassung** ist ein kurzer Abriss einer Notiz — ein paar Sätze, die Ihnen auf einen Blick sagen, worum es in der Notiz geht. Zusammenfassungen werden vom **Note Summary Creator (NSC)** erzeugt. Sie sehen sie an drei Stellen: unter dem Titel jeder Karte in der **Klassifikator**- / **Source-Review**-Warteschlange (wo Sie entscheiden, wie eine Karte zu klassifizieren ist, ohne die Notiz dahinter zu öffnen), als feine kursive Zeile unter jedem Treffer in den **Suchergebnissen** (die Ihnen sagt, *worum* eine Notiz geht, neben dem Ausschnitt, der zeigt, warum sie traf), und als schmales Band über der Notiz, wenn Sie sie im **Editor** öffnen (damit der Kern der Notiz beim Lesen oder Schreiben im Kontext bleibt).
 
 Dieses Thema erklärt, woher Zusammenfassungen kommen, die strikte Rangfolge, die immer *Ihre* Worte denen der Maschine vorzieht, wie die generierten Zusammenfassungen aufgebaut werden und wie man sie für eine ganze Library auf einmal vorberechnet.
 
@@ -72,13 +72,17 @@ Alles wird **auf Ihrem Gerät** berechnet. Kein Notiztext wird jemals irgendwohi
 
 ---
 
-## Wann Zusammenfassungen erscheinen und wie sie sich füllen
+## Wo Zusammenfassungen erscheinen und wie sie sich füllen
 
-Zusammenfassungen tauchen unter dem Notiztitel auf jeder Karte in der **Klassifikator**- / **Source-Review**-Warteschlange auf.
+Zusammenfassungen tauchen überall in Constellation dort auf, wo eine Notiz erscheint:
 
-Standardmäßig füllen sie sich **träge und behutsam**: Während Karten ins Sichtfeld scrollen, berechnet Constellation ihre Zusammenfassungen in kleinen Mengen und pausiert immer dann, wenn ein Library-Klassifizierungsscan läuft, sodass die beiden niemals um Ressourcen konkurrieren. Das hält die App reaktionsfähig — Sie sehen eine Karte möglicherweise kurz, bevor ihre Zusammenfassung erscheint, dann taucht die Zusammenfassung einen Moment später auf.
+- **Klassifikator- / Source-Review-Warteschlange** — unter dem Titel jeder Karte (die ursprüngliche Stelle — siehe *Der Klassifikator*).
+- **Suchergebnisse** — eine feine kursive Zeile unter jedem Treffer, unter dem Ausschnitt. Der Ausschnitt zeigt, *warum* ein Ergebnis zu Ihrer Anfrage passt; die Zusammenfassungszeile zeigt, *worum* die Notiz geht. Zusammen lassen sie Sie Ergebnisse überfliegen, ohne irgendetwas zu öffnen.
+- **Editor** — ein schmales, gedämpftes Band über dem Notiztext, wenn Sie eine Notiz öffnen, damit der Kern der Notiz beim Lesen oder Schreiben im Kontext bleibt. Das Band blendet sich aus, wenn noch keine Zusammenfassung vorhanden ist (eine brandneue Notiz oder eine, deren Zusammenfassung noch berechnet wird).
 
-Wenn Sie lieber jede Zusammenfassung im Voraus bereit haben möchten, verwenden Sie **Alle Zusammenfassungen erstellen**.
+Standardmäßig füllen sich Zusammenfassungen **träge und behutsam**: Während Karten ins Sichtfeld scrollen, während Suchergebnisse erscheinen oder während Sie eine Notiz öffnen, berechnet Constellation die fehlenden Zusammenfassungen in kleinen Mengen und pausiert immer dann, wenn ein Library-Klassifizierungsscan läuft, sodass die beiden niemals um Ressourcen konkurrieren. Das hält die App reaktionsfähig — Sie sehen eine Karte / ein Ergebnis / eine geöffnete Notiz möglicherweise kurz, bevor ihre Zusammenfassung erscheint, dann taucht die Zusammenfassung einen Moment später auf.
+
+Wenn Sie lieber jede Zusammenfassung im Voraus bereit haben möchten — damit jede Stelle Zusammenfassungen sofort anzeigt —, verwenden Sie **Alle Zusammenfassungen erstellen**.
 
 ---
 

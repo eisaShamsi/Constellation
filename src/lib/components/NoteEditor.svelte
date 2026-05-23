@@ -23,6 +23,11 @@
 	import { detectDir } from '$lib/utils';
 	import { get } from 'svelte/store';
 	import NotePane from './NotePane.svelte';
+	// MIG-043 Phase 1 — show the active note's NSC summary headline in a thin
+	// band above the editor so the user has "what is this note about" in
+	// context. Cache-first/batched via the shared store; subscribes only when
+	// the active note (tab.path) changes — never on every keystroke.
+	import { getSummaryFor } from '$lib/nsc/summaryStore';
 
 	/** Minimal tab shape — any object with these fields works */
 	interface TabLike {
@@ -89,6 +94,22 @@
 	let body = $derived(parsed.body);
 	let noteDir = $derived(detectDir(body) || $dir);
 	let stage = $derived(parsed.properties.find((p: FrontmatterProperty) => p.key.toLowerCase() === 'stage')?.value ?? '');
+
+	// MIG-043 Phase 1 — the active note's NSC summary headline (1-line).
+	// Fetched via the shared NSC store when tab.path changes. The store is
+	// cache-first + file-watcher-invalidated, so this fires at most one IPC
+	// per tab open + one more when the note is re-saved (the watcher drops the
+	// cached entry, and the next render triggers a re-fetch).
+	let activeHeadline = $state<string>('');
+	$effect(() => {
+		const p = tab.path;
+		if (!p) { activeHeadline = ''; return; }
+		// Read-and-write of different reactive vars — no Rule 2 loop.
+		void getSummaryFor(p).then((entry) => {
+			// Guard: tab may have switched while we awaited; only commit if still current.
+			if (tab.path === p) activeHeadline = entry?.headline ?? '';
+		}).catch(() => { /* keep prior value on transient errors */ });
+	});
 
 	// Save guard — prevents double saves
 	let saving = false;
@@ -295,6 +316,13 @@
 </script>
 
 {#key tab.id + '|' + tab.path + '|' + (tab.reloadVersion ?? 0)}
+<div class="ne-wrap">
+	{#if activeHeadline}
+		<!-- MIG-043 Phase 1 — NSC summary headline band. Thin, muted, italic.
+		     Hidden when empty (no summary yet / lazy-fill in flight). UX
+		     placement is the initial pass; iterate after Boss-test. -->
+		<div class="ne-summary-band" dir="auto" title={activeHeadline}>{activeHeadline}</div>
+	{/if}
 <NotePane
 	value={body}
 	title={tab.name.replace(/\.md$/, '')}
@@ -330,4 +358,30 @@
 	highlightTerm={tab.highlightTerm ?? ''}
 	onlinkclick={handleLinkClick}
 />
+</div>
 {/key}
+
+<style>
+	/* MIG-043 Phase 1 — wrapper makes the summary band + NotePane stack
+	 * vertically without breaking NotePane's existing full-height layout. */
+	.ne-wrap {
+		display: flex;
+		flex-direction: column;
+		height: 100%;
+		min-height: 0;
+	}
+	.ne-wrap > :global(*:last-child) { flex: 1 1 auto; min-height: 0; }
+	.ne-summary-band {
+		flex: 0 0 auto;
+		padding: 4px 12px;
+		font-size: 0.78rem;
+		font-style: italic;
+		color: var(--text-muted);
+		background: var(--background-secondary, transparent);
+		border-bottom: 1px solid var(--background-modifier-border, transparent);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		line-height: 1.4;
+	}
+</style>

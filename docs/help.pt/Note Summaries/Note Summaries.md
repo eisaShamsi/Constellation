@@ -19,7 +19,7 @@ description: Os Resumos das Notas lhe dão um breve resumo em linguagem simples 
 
 > *Se você escreveu um resumo, o Constellation usa o seu. Ele só escreve um quando você não escreveu — e mesmo assim, nunca no seu arquivo.*
 
-Um **Resumo da Nota** é um breve resumo de uma nota — algumas frases que lhe dizem do que a nota trata num relance. Os resumos são produzidos pelo **Note Summary Creator (NSC)**. Hoje eles aparecem sob o título de cada nota na fila do **Classificador** / **Revisão de Origem**, para que você possa decidir como classificar um cartão sem abrir a nota por trás dele.
+Um **Resumo da Nota** é um breve resumo de uma nota — algumas frases que lhe dizem do que a nota trata num relance. Os resumos são produzidos pelo **Note Summary Creator (NSC)**. Você os verá em três lugares: sob o título de cada cartão na fila do **Classificador** / **Revisão de Origem** (onde você decide como classificar um cartão sem abrir a nota por trás dele), como uma linha tênue em itálico sob cada resultado nos **Resultados de busca** (que lhe diz *sobre o que* uma nota é, ao lado do trecho que mostra por que ela correspondeu), e como uma faixa fina acima da nota quando você a abre no **Editor** (para que a essência da nota esteja em contexto enquanto você lê ou escreve).
 
 Este tópico explica de onde vêm os resumos, a ordem estrita de precedência que sempre prefere *as suas* palavras às da máquina, como os resumos gerados são construídos, e como pré-computá-los para uma Biblioteca inteira de uma vez.
 
@@ -71,13 +71,17 @@ Tudo é computado **no seu dispositivo.** Nenhum texto de nota é jamais enviado
 
 ---
 
-## Quando os resumos aparecem, e como eles se preenchem
+## Onde os resumos aparecem, e como eles se preenchem
 
-Os resumos aparecem sob o título da nota em cada cartão na fila do **Classificador** / **Revisão de Origem**.
+Os resumos surgem por todo o Constellation onde quer que uma nota apareça:
 
-Por padrão eles se preenchem **preguiçosamente e gentilmente**: à medida que os cartões rolam para dentro da visão, o Constellation computa seus resumos alguns de cada vez, pausando sempre que uma varredura de classificação da Biblioteca está em execução para que os dois nunca competam por recursos. Isto mantém o aplicativo responsivo — você pode ver brevemente um cartão antes que seu resumo apareça, e então o resumo surge um momento depois.
+- **Fila do Classificador / Revisão de Origem** — sob o título de cada cartão (a superfície original — veja *O Classificador*).
+- **Resultados de busca** — uma linha tênue em itálico sob cada resultado, abaixo do trecho. O trecho mostra *por que* um resultado correspondeu à sua consulta; a linha de resumo mostra *sobre o que* a nota é. Juntos, eles lhe permitem percorrer os resultados sem abrir nada.
+- **Editor** — uma faixa fina e suave acima do corpo da nota quando você abre uma nota, para que a essência da nota esteja em contexto enquanto você lê ou escreve. A faixa se esconde quando ainda não há resumo (uma nota recém-criada ou uma cujo resumo ainda está sendo computado).
 
-Se você preferir ter cada resumo pronto com antecedência, use **Gerar todos os resumos**.
+Por padrão os resumos se preenchem **preguiçosamente e gentilmente**: à medida que os cartões rolam para dentro da visão, à medida que os resultados de busca aparecem, ou quando você abre uma nota, o Constellation computa os resumos ausentes alguns de cada vez, pausando sempre que uma varredura de classificação da Biblioteca está em execução para que os dois nunca competam por recursos. Isto mantém o aplicativo responsivo — você pode ver brevemente um cartão / resultado / nota aberta antes que seu resumo apareça, e então o resumo surge um momento depois.
+
+Se você preferir ter cada resumo pronto com antecedência — para que cada superfície mostre os resumos instantaneamente — use **Gerar todos os resumos**.
 
 ---
 

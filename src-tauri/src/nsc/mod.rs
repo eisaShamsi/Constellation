@@ -58,8 +58,15 @@ const SUMMARY_CALLOUT_TYPES: [&str; 3] = ["summary", "abstract", "tldr"];
 #[derive(Debug, Clone)]
 pub struct NoteSummary {
     pub summary: String,
-    /// One of SOURCE_FRONTMATTER / SOURCE_EXTRACTIVE / SOURCE_OPENING.
+    /// One of SOURCE_FRONTMATTER / SOURCE_CALLOUT / SOURCE_EXTRACTIVE / SOURCE_OPENING.
     pub source: String,
+    /// MIG-043 Phase 1 — the 1-line headline for the Universe Digest's tier
+    /// rendering (and any surface that wants a compact single-sentence view).
+    /// For author-summary sources (frontmatter / callout) this is the first
+    /// sentence of the author's text; for extractive it is the highest-ranked
+    /// single TextRank sentence; for opening fallback it is the opening text.
+    /// Always non-empty when `summary` is non-empty.
+    pub headline: String,
 }
 
 // ─── Public entry point ────────────────────────────────────────────────
@@ -85,14 +92,19 @@ fn summarize_from_parts(
 ) -> Result<NoteSummary, String> {
     // 1. Author's frontmatter summary.
     if let Some(fm) = frontmatter_summary(properties_json) {
-        return Ok(NoteSummary { summary: fm, source: SOURCE_FRONTMATTER.to_string() });
+        // Headline = first sentence of the author's text (author authority
+        // extends to the headline — invariant 2). A one-line frontmatter
+        // summary is its own headline (first_sentence falls back to the text).
+        let headline = first_sentence(&fm);
+        return Ok(NoteSummary { summary: fm, source: SOURCE_FRONTMATTER.to_string(), headline });
     }
     // 2. Author's summary callout in the body. `body_text` is markdown-stripped
     //    AND Arabic-normalized, so we read the raw file to recover the callout
     //    and the author's exact wording (diacritics preserved). One read, only
     //    here — when the note has no frontmatter summary on a cache miss.
     if let Some(callout) = file_callout_summary(note_path) {
-        return Ok(NoteSummary { summary: callout, source: SOURCE_CALLOUT.to_string() });
+        let headline = first_sentence(&callout);
+        return Ok(NoteSummary { summary: callout, source: SOURCE_CALLOUT.to_string(), headline });
     }
     // 3. Generated extractive summary.
     summarize_body(app, body_text)
@@ -221,9 +233,14 @@ fn summarize_body(app: &tauri::AppHandle, body_text: &str) -> Result<NoteSummary
         if all.is_empty() {
             let open = opening_text(bounded);
             let source = if open.is_empty() { SOURCE_EXTRACTIVE } else { SOURCE_OPENING };
-            return Ok(NoteSummary { summary: open, source: source.to_string() });
+            // Opening fallback: headline = first sentence of the opening text
+            // (or empty when there's nothing at all).
+            let headline = if open.is_empty() { String::new() } else { first_sentence(&open) };
+            return Ok(NoteSummary { summary: open, source: source.to_string(), headline });
         }
-        return Ok(NoteSummary { summary: all.join(" "), source: SOURCE_EXTRACTIVE.to_string() });
+        // Few-sentence path (no ranking): headline = leading (first) sentence.
+        let headline = all.first().cloned().unwrap_or_default();
+        return Ok(NoteSummary { summary: all.join(" "), source: SOURCE_EXTRACTIVE.to_string(), headline });
     }
 
     // Cap how many sentences we embed/rank — downsample evenly so the summary
@@ -245,9 +262,18 @@ fn summarize_body(app: &tauri::AppHandle, body_text: &str) -> Result<NoteSummary
         crate::embeddings::run_embedding_batch(engine, &prefixed)?
     };
 
-    let top = textrank_top_k(&embeddings, TARGET_SENTENCES);
-    let summary = top.iter().map(|&i| sentences[i].as_str()).collect::<Vec<_>>().join(" ");
-    Ok(NoteSummary { summary, source: SOURCE_EXTRACTIVE.to_string() })
+    let pick = textrank_pick(&embeddings, TARGET_SENTENCES);
+    let summary = pick.top_k_doc_order.iter()
+        .map(|&i| sentences[i].as_str())
+        .collect::<Vec<_>>()
+        .join(" ");
+    // Headline = the SINGLE highest-ranked sentence (top-1 by score) — the
+    // most central idea, not necessarily the first in document order. Falls
+    // back to the leading sentence on the (unreachable) None branch.
+    let headline = pick.top_1_by_rank
+        .and_then(|i| sentences.get(i).cloned())
+        .unwrap_or_default();
+    Ok(NoteSummary { summary, source: SOURCE_EXTRACTIVE.to_string(), headline })
 }
 
 /// Split text into sentences using the Unicode UAX#29 standard, with a
@@ -287,17 +313,48 @@ pub(crate) fn split_sentences(text: &str) -> Vec<String> {
     primary
 }
 
+/// First sentence of a text. MIG-043 Phase 1 — used by `summarize_from_parts`
+/// to derive the 1-line headline for author-summary sources (frontmatter +
+/// callout). The author's first sentence wins (invariant 2 — author authority
+/// extends to the headline). Falls back to the trimmed full text if `split_sentences`
+/// finds no boundary (a one-line author summary is its own headline).
+pub(crate) fn first_sentence(text: &str) -> String {
+    split_sentences(text)
+        .into_iter()
+        .next()
+        .unwrap_or_else(|| text.trim().to_string())
+}
+
+/// TextRank result — what `textrank_pick` returns to its caller.
+/// MIG-043 Phase 1 added `top_1_by_rank` for the 1-line Universe Digest
+/// headline (free to compute — the same score sort already happens).
+#[derive(Debug, Clone, Default)]
+pub(crate) struct TextRankPick {
+    /// Top-k sentences IN ORIGINAL DOCUMENT ORDER (for the joined summary).
+    pub top_k_doc_order: Vec<usize>,
+    /// The SINGLE highest-ranked sentence (for the 1-line headline).
+    /// `None` only when there are no sentences at all.
+    pub top_1_by_rank: Option<usize>,
+}
+
 /// TextRank: rank sentences by weighted-PageRank centrality over a cosine-
-/// similarity graph, return the indices of the top-k sentences IN ORIGINAL
-/// DOCUMENT ORDER. `embeddings[i]` must be L2-normalized (so cosine = dot),
-/// which `run_embedding_batch` guarantees.
-pub(crate) fn textrank_top_k(embeddings: &[Vec<f32>], k: usize) -> Vec<usize> {
+/// similarity graph. Returns BOTH the top-k indices IN ORIGINAL DOCUMENT
+/// ORDER (for the joined summary) AND the SINGLE highest-ranked-by-score
+/// index (for the 1-line headline) — both from one score pass.
+/// `embeddings[i]` must be L2-normalized (so cosine = dot), which
+/// `run_embedding_batch` guarantees.
+pub(crate) fn textrank_pick(embeddings: &[Vec<f32>], k: usize) -> TextRankPick {
     let n = embeddings.len();
     if n == 0 {
-        return Vec::new();
+        return TextRankPick::default();
     }
     if n <= k {
-        return (0..n).collect();
+        // Too few sentences to rank: take them all in doc order; with no score
+        // signal the first sentence is the sensible headline fallback.
+        return TextRankPick {
+            top_k_doc_order: (0..n).collect(),
+            top_1_by_rank: Some(0),
+        };
     }
 
     // Weighted adjacency = clamped cosine similarity, no self-loops.
@@ -345,16 +402,22 @@ pub(crate) fn textrank_top_k(embeddings: &[Vec<f32>], k: usize) -> Vec<usize> {
         }
     }
 
-    // Top-k by score, then restore original document order.
+    // Top-k by score, then restore original document order. `idx[0]` is the
+    // single highest-ranked sentence (the headline) — captured before the
+    // truncate + doc-order-sort that yields the joined summary.
     let mut idx: Vec<usize> = (0..n).collect();
     idx.sort_by(|&a, &b| {
         score[b]
             .partial_cmp(&score[a])
             .unwrap_or(std::cmp::Ordering::Equal)
     });
+    let top_1 = idx.first().copied();
     let mut top: Vec<usize> = idx.into_iter().take(k).collect();
     top.sort_unstable();
-    top
+    TextRankPick {
+        top_k_doc_order: top,
+        top_1_by_rank: top_1,
+    }
 }
 
 /// Cosine similarity of two L2-normalized vectors (= dot product).
@@ -426,27 +489,60 @@ fn read_note_meta(app: &tauri::AppHandle, note_path: &str) -> Result<(String, Op
 // ─── Summary cache + batched delivery (Rule 8 / no per-card IPC) ────────
 
 /// One cached/computed summary for a note (serialized to the frontend).
+/// MIG-043 Phase 1 added `headline` — old frontends that only deserialize
+/// `path`/`summary`/`source` keep working (they just ignore the new field).
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct NoteSummaryEntry {
     pub path: String,
     pub summary: String,
     pub source: String,
+    /// The 1-line headline (top-1 TextRank sentence for extractive;
+    /// first sentence of the author's text for frontmatter/callout).
+    /// Empty only on the legacy lazy-fill path before the row recomputes.
+    #[serde(default)]
+    pub headline: String,
 }
 
 /// Idempotent: create the `note_summaries` cache table. Called from
 /// `search::init_db`. Keyed by note path; `content_hash` (over body_text)
 /// drives invalidation when the note changes. Cascade-deletes with the note.
+///
+/// MIG-043 Phase 1 added `headline TEXT` (nullable) for the Universe Digest's
+/// 1-line tier rendering. Fresh DBs include it from the CREATE TABLE; existing
+/// pre-MIG-043 DBs get it via an idempotent `ALTER ... ADD COLUMN` below.
+/// Existing rows have NULL headline until the next `get_or_compute_cached`
+/// pass (lazy fill) — a NULL headline is treated as a cache miss so the
+/// next read recomputes both `summary` and `headline` together.
 pub fn ensure_note_summaries_table(conn: &rusqlite::Connection) -> rusqlite::Result<()> {
     conn.execute_batch(
         "CREATE TABLE IF NOT EXISTS note_summaries (
             path TEXT PRIMARY KEY,
             summary TEXT NOT NULL,
             source TEXT NOT NULL,
+            headline TEXT,
             content_hash TEXT NOT NULL,
             updated_at INTEGER NOT NULL,
             FOREIGN KEY (path) REFERENCES note_meta(path) ON DELETE CASCADE
         );",
     )?;
+    // MIG-043 — idempotent ALTER for pre-MIG-043 DBs that already have the
+    // table but lack the `headline` column. Probe `PRAGMA table_info` and
+    // ALTER only when missing. Pattern mirrors `ensure_term_vocab_bridge_column`
+    // (predecessor add-path before MIG-042 dropped it).
+    let mut have_headline = false;
+    {
+        let mut stmt = conn.prepare("PRAGMA table_info(note_summaries)")?;
+        let rows = stmt.query_map([], |row| row.get::<_, String>(1))?;
+        for col in rows {
+            if col?.as_str() == "headline" {
+                have_headline = true;
+                break;
+            }
+        }
+    }
+    if !have_headline {
+        conn.execute_batch("ALTER TABLE note_summaries ADD COLUMN headline TEXT;")?;
+    }
     Ok(())
 }
 
@@ -514,20 +610,30 @@ pub(crate) fn get_or_compute_cached(
         let search_state = app.state::<crate::search::SearchState>();
         let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
         let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
-        let cached: Option<(String, String, String)> = conn
+        // MIG-043 Phase 1: SELECT includes the nullable `headline` column.
+        // A NULL (or empty) headline is treated as a cache miss so pre-MIG-043
+        // rows lazy-fill `headline` on next read — recomputing `summary` + `headline`
+        // together (both come from one ranking pass, so the extra cost is one
+        // PageRank per legacy row, amortized as users browse).
+        let cached: Option<(String, String, Option<String>, String)> = conn
             .query_row(
-                "SELECT summary, source, content_hash FROM note_summaries WHERE path = ?1",
+                "SELECT summary, source, headline, content_hash FROM note_summaries WHERE path = ?1",
                 rusqlite::params![note_path],
-                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)),
             )
             .ok();
-        if let Some((summary, source, ch)) = cached {
+        if let Some((summary, source, headline, ch)) = cached {
             if ch == hash {
-                return Ok(Some(NoteSummaryEntry {
-                    path: note_path.to_string(),
-                    summary,
-                    source,
-                }));
+                if let Some(headline) = headline.filter(|h| !h.is_empty()) {
+                    return Ok(Some(NoteSummaryEntry {
+                        path: note_path.to_string(),
+                        summary,
+                        source,
+                        headline,
+                    }));
+                }
+                // Fresh content_hash but NULL/empty headline (legacy row) →
+                // fall through to recompute so the headline gets filled.
             }
         }
     }
@@ -547,9 +653,9 @@ pub(crate) fn get_or_compute_cached(
         let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
         let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
         let _ = conn.execute(
-            "INSERT OR REPLACE INTO note_summaries (path, summary, source, content_hash, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5)",
-            rusqlite::params![note_path, result.summary, result.source, hash, now],
+            "INSERT OR REPLACE INTO note_summaries (path, summary, source, headline, content_hash, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            rusqlite::params![note_path, result.summary, result.source, result.headline, hash, now],
         );
     }
 
@@ -557,6 +663,7 @@ pub(crate) fn get_or_compute_cached(
         path: note_path.to_string(),
         summary: result.summary,
         source: result.source,
+        headline: result.headline,
     }))
 }
 
@@ -604,7 +711,10 @@ mod tests {
     #[test]
     fn textrank_returns_all_when_few() {
         let emb = vec![vec![1.0, 0.0], vec![0.0, 1.0]];
-        assert_eq!(textrank_top_k(&emb, 3), vec![0, 1]);
+        let pick = textrank_pick(&emb, 3);
+        assert_eq!(pick.top_k_doc_order, vec![0, 1]);
+        // n <= k: no ranking, top-1 falls back to the first sentence.
+        assert_eq!(pick.top_1_by_rank, Some(0));
     }
 
     #[test]
@@ -621,7 +731,10 @@ mod tests {
             vec![1.0, 0.0],
             vec![0.0, 1.0],
         ];
-        assert_eq!(textrank_top_k(&emb, 3), vec![0, 1, 2]);
+        let pick = textrank_pick(&emb, 3);
+        assert_eq!(pick.top_k_doc_order, vec![0, 1, 2]);
+        // With actual rankings, top_1_by_rank must be one of the indices.
+        assert!(matches!(pick.top_1_by_rank, Some(0) | Some(1) | Some(2)));
     }
 
     #[test]
@@ -721,5 +834,35 @@ mod tests {
         // No-op when already within the cap.
         let small = vec!["a".to_string(), "b".to_string()];
         assert_eq!(downsample(&small, 40), small);
+    }
+
+    // ── MIG-043 Phase 1 — headline tests ────────────────────────────
+
+    /// `first_sentence` returns the first UAX#29 sentence of a multi-sentence
+    /// text, including its trailing punctuation. This is the headline for an
+    /// author-summary (frontmatter / callout) — author authority preserved.
+    #[test]
+    fn first_sentence_returns_first_of_many() {
+        let h = first_sentence("Hello world. Second sentence here. Third one.");
+        assert!(h.starts_with("Hello world"), "got {:?}", h);
+        assert!(!h.contains("Second"), "must not include subsequent sentences, got {:?}", h);
+    }
+
+    /// One-line author summary (no sentence boundary): `first_sentence` falls
+    /// back to the full trimmed text. Single-sentence frontmatter summaries
+    /// are their own headlines.
+    #[test]
+    fn first_sentence_falls_back_to_full_text() {
+        let h = first_sentence("  a single-line summary with no terminal punctuation  ");
+        assert_eq!(h, "a single-line summary with no terminal punctuation");
+    }
+
+    /// Arabic input: `first_sentence` still returns just the first sentence
+    /// (UAX#29 handles Arabic full-stop + Arabic question mark).
+    #[test]
+    fn first_sentence_arabic() {
+        let h = first_sentence("هذا الجزء الأول. والثاني هنا.");
+        assert!(h.starts_with("هذا الجزء الأول"), "got {:?}", h);
+        assert!(!h.contains("الثاني"), "must not include second sentence, got {:?}", h);
     }
 }

@@ -11,6 +11,12 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import { invoke } from '@tauri-apps/api/core';
+  // MIG-043 Phase 1 — shared NSC summary store (cache-first, batched, coalesced).
+  // Replaces this component's prior direct `invoke('nsc_get_summaries_for_notes')`.
+  // Behavior here is unchanged; we just funnel the IPC through the shared
+  // store so future surfaces (search results, editor header, the Digest)
+  // share the cache + dedup with this panel.
+  import { getSummariesFor } from '$lib/nsc/summaryStore';
   import { t, locale, type Locale } from '$lib/i18n';
   import { appSettings } from '$lib/libraries/store';
   import TaxonomyTreePicker from '$lib/sources/TaxonomyTreePicker.svelte';
@@ -199,12 +205,17 @@
   let renderCap = $state(RENDER_BATCH);
   let visibleQueue = $derived(filteredQueue.slice(0, renderCap));
 
-  // ── MIG-040 (NSC): per-note summaries shown under each card title. Fetched
-  //    once per visible note via the batched, cache-first IPC (zero per-card
-  //    IPC, same lesson as the render cap). `summaryRequested` is a PLAIN Set
-  //    (not reactive) so the effect reads only `visibleQueue` and writes
-  //    `summaries` — never reading + writing the same reactive (Rule 2).
-  type NoteSummaryEntry = { path: string; summary: string; source: string };
+  // ── MIG-040 (NSC) / MIG-043 Phase 1: per-note summaries shown under each
+  //    card title. Fetched once per visible note via the shared NSC store's
+  //    batched cache-first API (zero per-card IPC, same lesson as the render
+  //    cap). `summaryRequested` is a PLAIN Set (not reactive) so the effect
+  //    reads only `visibleQueue` and writes `summaries` — never reading +
+  //    writing the same reactive (Rule 2).
+  // (MIG-043 Phase 1: deleted the local `NoteSummaryEntry` type alias here —
+  // it predated the shared store and missed the `headline` field; surfaces
+  // now use the canonical `NoteSummaryEntry` from `$lib/nsc/summaryStore`.
+  // SRP itself doesn't render `headline`, so its local `summaries` map keeps
+  // its narrow `{summary, source}` shape — no behavior change.)
   let summaries = $state<Map<string, { summary: string; source: string }>>(new Map());
   const summaryRequested = new Set<string>();
   // MIG-040 fix: NSC must be GENTLE. The first cut eagerly computed summaries
@@ -218,9 +229,13 @@
 
   async function fetchSummaries(paths: string[]) {
     try {
-      const entries = await invoke<NoteSummaryEntry[]>('nsc_get_summaries_for_notes', { notePaths: paths });
+      // MIG-043 Phase 1: shared store handles cache + batching + coalescing
+      // across surfaces. SRP's own `summaryRequested` set still scopes the
+      // gentle-fill scheduling here; the store prevents duplicate IPC when
+      // any other surface (post-Phase 1) asks for the same path.
+      const map = await getSummariesFor(paths);
       const next = new Map(summaries);
-      for (const e of entries) next.set(e.path, { summary: e.summary, source: e.source });
+      for (const e of map.values()) next.set(e.path, { summary: e.summary, source: e.source });
       // Mark paths that returned nothing (no body) as empty so we don't refetch.
       for (const p of paths) if (!next.has(p)) next.set(p, { summary: '', source: '' });
       summaries = next;

@@ -13,7 +13,7 @@ description: Note Summaries give you a short, plain-language précis of a note s
 
 > *If you wrote a summary, Constellation uses yours. It only writes one when you haven't — and even then, never into your file.*
 
-A **Note Summary** is a short précis of a note — a few sentences that tell you what the note is about at a glance. Summaries are produced by the **Note Summary Creator (NSC)**. Today they appear under each note's title in the **Cataloger** / **Source Review** queue, so you can decide how to classify a card without opening the note behind it.
+A **Note Summary** is a short précis of a note — a few sentences that tell you what the note is about at a glance. Summaries are produced by the **Note Summary Creator (NSC)**. You'll see them in three places: under each card's title in the **Cataloger** / **Source Review** queue (where you decide how to classify a card without opening the note behind it), as a faint italic line under each hit in **Search results** (telling you what a note is *about* alongside the snippet that shows why it matched), and as a thin band above the note when you open it in the **Editor** (so the note's gist is in-context as you read or write).
 
 This topic explains where summaries come from, the strict order of precedence that always prefers *your* words over the machine's, how the generated summaries are built, and how to pre-compute them for a whole Library at once.
 
@@ -65,13 +65,17 @@ Everything is computed **on your device.** No note text is ever sent anywhere to
 
 ---
 
-## When summaries appear, and how they fill in
+## Where summaries appear, and how they fill in
 
-Summaries show up under the note title on each card in the **Cataloger** / **Source Review** queue.
+Summaries surface across Constellation wherever a note shows up:
 
-By default they fill in **lazily and gently**: as cards scroll into view, Constellation computes their summaries a few at a time, pausing whenever a Library classification scan is running so the two never compete for resources. This keeps the app responsive — you may briefly see a card before its summary appears, then the summary pops in a moment later.
+- **Cataloger / Source Review queue** — under each card's title (the original surface — see *The Cataloger*).
+- **Search results** — a faint italic line under each hit, beneath the snippet. The snippet shows *why* a result matched your query; the summary line shows what the note is *about*. Together they let you scan results without opening anything.
+- **Editor** — a thin muted band above the note body when you open a note, so the note's gist is in-context as you read or write. The band hides itself when there's no summary yet (a brand-new note, or one whose summary is still being computed).
 
-If you'd rather have every summary ready ahead of time, use **Build all summaries**.
+By default summaries fill in **lazily and gently**: as cards scroll into view, as search results appear, or as you open a note, Constellation computes the missing summaries a few at a time, pausing whenever a Library classification scan is running so the two never compete for resources. This keeps the app responsive — you may briefly see a card / result / opened note before its summary appears, then the summary pops in a moment later.
+
+If you'd rather have every summary ready ahead of time — so every surface shows summaries instantly — use **Build all summaries**.
 
 ---
 

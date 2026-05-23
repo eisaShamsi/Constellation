@@ -19,7 +19,7 @@ description: Les Résumés de notes vous donnent un précis court et en langage 
 
 > *Si vous avez écrit un résumé, Constellation utilise le vôtre. Il n'en écrit un que lorsque vous ne l'avez pas fait — et même alors, jamais dans votre fichier.*
 
-Un **Résumé de note** est un précis court d'une note — quelques phrases qui vous disent de quoi parle la note d'un coup d'œil. Les résumés sont produits par le **Note Summary Creator (NSC)**. Aujourd'hui ils apparaissent sous le titre de chaque note dans la file d'attente du **Classificateur** / **Source Review**, pour que vous puissiez décider comment classer une carte sans ouvrir la note qui se trouve derrière.
+Un **Résumé de note** est un précis court d'une note — quelques phrases qui vous disent de quoi parle la note d'un coup d'œil. Les résumés sont produits par le **Note Summary Creator (NSC)**. Vous les verrez à trois endroits : sous le titre de chaque carte dans la file d'attente du **Classificateur** / **Source Review** (où vous décidez comment classer une carte sans ouvrir la note qui se trouve derrière), comme une fine ligne en italique sous chaque résultat dans les **Résultats de recherche** (qui vous dit *de quoi* parle une note, à côté de l'extrait qui montre pourquoi elle a correspondu), et comme un mince bandeau au-dessus de la note lorsque vous l'ouvrez dans l'**Éditeur** (pour que l'essence de la note soit en contexte pendant que vous lisez ou écrivez).
 
 Cette rubrique explique d'où viennent les résumés, l'ordre de priorité strict qui préfère toujours *vos* mots à ceux de la machine, comment les résumés générés sont construits, et comment les pré-calculer pour toute une Library d'un coup.
 
@@ -71,13 +71,17 @@ Tout est calculé **sur votre appareil.** Aucun texte de note n'est jamais envoy
 
 ---
 
-## Quand les résumés apparaissent, et comment ils se remplissent
+## Où les résumés apparaissent, et comment ils se remplissent
 
-Les résumés s'affichent sous le titre de la note sur chaque carte dans la file d'attente du **Classificateur** / **Source Review**.
+Les résumés surgissent à travers Constellation partout où une note apparaît :
 
-Par défaut ils se remplissent **paresseusement et en douceur** : à mesure que les cartes défilent dans la vue, Constellation calcule leurs résumés quelques-uns à la fois, en faisant une pause chaque fois qu'un scan de classification de Library est en cours pour que les deux ne se disputent jamais les ressources. Cela garde l'app réactive — vous pouvez brièvement voir une carte avant que son résumé n'apparaisse, puis le résumé surgit un instant plus tard.
+- **File d'attente du Classificateur / Source Review** — sous le titre de chaque carte (la surface d'origine — voir *Le Classificateur*).
+- **Résultats de recherche** — une fine ligne en italique sous chaque résultat, sous l'extrait. L'extrait montre *pourquoi* un résultat a correspondu à votre requête ; la ligne de résumé montre *de quoi* parle la note. Ensemble ils vous permettent de parcourir les résultats sans rien ouvrir.
+- **Éditeur** — un mince bandeau atténué au-dessus du corps de la note lorsque vous ouvrez une note, pour que l'essence de la note soit en contexte pendant que vous lisez ou écrivez. Le bandeau se cache lorsqu'il n'y a pas encore de résumé (une note toute neuve, ou une dont le résumé est encore en cours de calcul).
 
-Si vous préférez avoir chaque résumé prêt à l'avance, utilisez **Générer tous les résumés**.
+Par défaut les résumés se remplissent **paresseusement et en douceur** : à mesure que les cartes défilent dans la vue, à mesure que les résultats de recherche apparaissent, ou à mesure que vous ouvrez une note, Constellation calcule les résumés manquants quelques-uns à la fois, en faisant une pause chaque fois qu'un scan de classification de Library est en cours pour que les deux ne se disputent jamais les ressources. Cela garde l'app réactive — vous pouvez brièvement voir une carte / un résultat / une note ouverte avant que son résumé n'apparaisse, puis le résumé surgit un instant plus tard.
+
+Si vous préférez avoir chaque résumé prêt à l'avance — pour que chaque surface affiche les résumés instantanément — utilisez **Générer tous les résumés**.
 
 ---
 

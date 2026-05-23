@@ -8,6 +8,10 @@
 	} from '$lib/libraries/store';
 	import { readSearchHistory, addSearchHistory, clearSearchHistory, relativeTime } from '$lib/libraries/searchHistory';
 	import { detectDir } from '$lib/utils';
+	// MIG-043 Phase 1 — pull NSC summary headlines for visible results so each
+	// hit shows what the note IS ABOUT (alongside the snippet, which shows why
+	// it matched). Cache-first + batched via the shared store; zero per-row IPC.
+	import { getSummariesFor } from '$lib/nsc/summaryStore';
 
 	let {
 		initialQuery = '',
@@ -36,6 +40,34 @@
 
 	// Category collapse state
 	let collapsed = $state<Record<string, boolean>>({});
+
+	// MIG-043 Phase 1 — NSC summary HEADLINES (1-line top-1 TextRank sentence)
+	// keyed by note path. Rendered under each result's snippet to tell the user
+	// what the note IS ABOUT. Fetched cache-first/batched via the shared store
+	// whenever the visible result set changes; the store dedups so re-firing on
+	// re-render is cheap (no per-row IPC — Rule 3).
+	let summaryHeadlines = $state<Map<string, string>>(new Map());
+
+	$effect(() => {
+		// Collect all currently-visible result paths. `allFlatResults` is the
+		// existing $derived that already unifies both advanced and basic-mode
+		// results (used by keyboard selection), so it's the right single source.
+		const paths = new Set<string>();
+		for (const r of allFlatResults) paths.add(r.path);
+		// Also include any grouped-advanced results not in the flat (defensive —
+		// in practice allFlatResults covers advanced via filteredResults).
+		for (const g of advancedGroups) for (const r of g.results) paths.add(r.path);
+		if (paths.size === 0) return;
+		void getSummariesFor(Array.from(paths)).then((map) => {
+			let changed = false;
+			const next = new Map(summaryHeadlines);
+			for (const e of map.values()) {
+				const h = e.headline ?? '';
+				if (next.get(e.path) !== h) { next.set(e.path, h); changed = true; }
+			}
+			if (changed) summaryHeadlines = next;
+		});
+	});
 
 	let searchInput: HTMLInputElement;
 
@@ -466,6 +498,9 @@
 											{#if r.snippet}
 												<div class="sh-item-snippet">{@html highlightInText(r.snippet)}</div>
 											{/if}
+											{#if summaryHeadlines.get(r.path)}
+												<div class="sh-item-headline" dir="auto">{summaryHeadlines.get(r.path)}</div>
+											{/if}
 										</button>
 									{/each}
 								</div>
@@ -510,6 +545,9 @@
 						{#if r.snippet && !rustDir}
 							<div class="sh-item-snippet">{@html highlightInText(r.snippet)}</div>
 						{/if}
+						{#if summaryHeadlines.get(r.path)}
+							<div class="sh-item-headline" dir="auto">{summaryHeadlines.get(r.path)}</div>
+						{/if}
 					</button>
 				{/each}
 
@@ -552,6 +590,9 @@
 														{@html highlightInText(formatSnippetForCategory(cat, r))}
 													{/if}
 												</div>
+											{/if}
+											{#if summaryHeadlines.get(r.path)}
+												<div class="sh-item-headline" dir="auto">{summaryHeadlines.get(r.path)}</div>
 											{/if}
 										</button>
 									{/each}
@@ -734,6 +775,19 @@
 	.sh-item-snippet :global(mark.sh-hl-tag) {
 		background: color-mix(in srgb, #f472b6 30%, transparent);
 		color: var(--text-normal);
+	}
+	/* MIG-043 Phase 1 — NSC summary headline (top-1 sentence) under each
+	 * result. Distinct from the snippet (query-context) by being italic +
+	 * faint. Single-line ellipsis keeps row height controlled. */
+	.sh-item-headline {
+		font-size: 0.7rem;
+		color: var(--text-faint);
+		font-style: italic;
+		margin-top: 2px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		line-height: 1.4;
 	}
 	.sh-item-name :global(mark) {
 		background: color-mix(in srgb, var(--interactive-accent) 25%, transparent);

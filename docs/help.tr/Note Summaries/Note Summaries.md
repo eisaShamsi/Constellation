@@ -19,7 +19,7 @@ description: Not Özetleri, bir notu açmadan hakkında yargıya varabilmeniz i�
 
 > *Bir özet yazdıysanız, Constellation sizinkini kullanır. Yalnızca yazmadığınızda bir tane yazar — ve o zaman bile, asla dosyanıza değil.*
 
-Bir **Not Özeti**, bir notun kısa bir özetidir — notun bir bakışta ne hakkında olduğunu söyleyen birkaç cümle. Özetler, **Note Summary Creator (NSC)** tarafından üretilir. Bugün her notun başlığının altında **Sınıflandırıcı** / **Kaynak Gözden Geçirme** kuyruğunda görünürler, böylece arkasındaki notu açmadan bir kartı nasıl sınıflandıracağınıza karar verebilirsiniz.
+Bir **Not Özeti**, bir notun kısa bir özetidir — notun bir bakışta ne hakkında olduğunu söyleyen birkaç cümle. Özetler, **Note Summary Creator (NSC)** tarafından üretilir. Üç yerde göreceksiniz: **Sınıflandırıcı** / **Kaynak Gözden Geçirme** kuyruğundaki her kartın başlığının altında (arkasındaki notu açmadan bir kartı nasıl sınıflandıracağınıza karar verdiğiniz yer), **Arama sonuçlarındaki** her sonucun altında soluk italik bir satır olarak (size bir notun ne *hakkında* olduğunu, neden eşleştiğini gösteren parçacıkla birlikte söyler) ve notu **Düzenleyici**'de açtığınızda notun üstünde ince bir şerit olarak (okuduğunuz ya da yazdığınız sırada notun özü bağlam içinde kalsın diye).
 
 Bu konu, özetlerin nereden geldiğini, *sizin* sözlerinizi her zaman makineninkine tercih eden katı öncelik sırasını, üretilmiş özetlerin nasıl inşa edildiğini ve bunları bir Kütüphanenin tamamı için tek seferde nasıl önceden hesaplayacağınızı açıklar.
 
@@ -71,13 +71,17 @@ Her şey **cihazınızda** hesaplanır. Hiçbir not metni özetlenmek üzere hi�
 
 ---
 
-## Özetler ne zaman görünür ve nasıl dolar
+## Özetler nerede görünür ve nasıl dolar
 
-Özetler, **Sınıflandırıcı** / **Kaynak Gözden Geçirme** kuyruğundaki her kartta notun başlığının altında görünür.
+Özetler, Constellation boyunca bir notun göründüğü her yerde belirir:
 
-Varsayılan olarak **tembelce ve nazikçe** dolarlar: kartlar görünüme kaydıkça, Constellation özetlerini birkaçı bir arada hesaplar, bir Kütüphane sınıflandırma taraması çalışırken duraklayarak ikisinin kaynaklar için asla yarışmamasını sağlar. Bu, uygulamayı duyarlı tutar — bir kartı özetinden önce kısaca görebilirsiniz, sonra özet bir an sonra belirir.
+- **Sınıflandırıcı / Kaynak Gözden Geçirme kuyruğu** — her kartın başlığının altında (özgün yüzey — *Sınıflandırıcı*'ya bakın).
+- **Arama sonuçları** — her sonucun altında, parçacığın altında soluk italik bir satır. Parçacık bir sonucun sorgunuzla *neden* eşleştiğini gösterir; özet satırı notun ne *hakkında* olduğunu gösterir. Birlikte, hiçbir şeyi açmadan sonuçları taramanıza olanak tanırlar.
+- **Düzenleyici** — bir notu açtığınızda not gövdesinin üstünde ince ve sönük bir şerit, okuduğunuz ya da yazdığınız sırada notun özü bağlam içinde kalsın diye. Henüz bir özet olmadığında (yepyeni bir not ya da özeti hâlâ hesaplanmakta olan bir not), şerit kendini gizler.
 
-Her özetin önceden hazır olmasını tercih ederseniz, **Tüm özetleri oluştur**'u kullanın.
+Varsayılan olarak özetler **tembelce ve nazikçe** dolar: kartlar görünüme kaydıkça, arama sonuçları belirdikçe ya da bir notu açtıkça, Constellation eksik özetleri birkaçı bir arada hesaplar, bir Kütüphane sınıflandırma taraması çalışırken duraklayarak ikisinin kaynaklar için asla yarışmamasını sağlar. Bu, uygulamayı duyarlı tutar — bir kartı / sonucu / açılmış bir notu özetinden önce kısaca görebilirsiniz, sonra özet bir an sonra belirir.
+
+Her özetin önceden hazır olmasını tercih ederseniz — her yüzeyin özetleri anında göstermesi için — **Tüm özetleri oluştur**'u kullanın.
 
 ---
 
