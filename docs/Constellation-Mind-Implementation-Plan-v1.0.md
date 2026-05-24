@@ -326,17 +326,34 @@ All Rust changes land in a NEW `src-tauri/src/mind/` module. The existing intell
 
 ### 10.3 Combined verdict for the RoutedProvider context
 
-Both models are nominally Apache-2.0 and there is **no cross-license conflict** at the surface. RoutedProvider can dispatch between them. Two structural caveats:
+Both models are nominally Apache-2.0 and there is **no cross-license conflict** at the surface. RoutedProvider can dispatch between them.
 
-- **Fanar's Gemma ancestry** means Constellation should ship a single combined "Model notices" panel covering Apache-2.0, Gemma Terms, and both citations regardless of which provider is active.
-- **Jais's gate** is the operational blocker — until it is resolved, only Fanar can be a true zero-friction default. Jais ships as a user-installable provider, not a bundled-default, unless we mirror or Inception ungates.
+- **Fanar's Gemma ancestry** is handled by §10.5 Q1 lock — Constellation ships a single combined "Model notices" panel covering Apache-2.0, Gemma Terms, and both citations regardless of which provider is active.
+- **Jais's gate** is resolved by §10.5 Q3 lock — Constellation hosts an Apache-2.0-compliant mirror of the official GGUF, so Jais ships as a co-default alongside Fanar without HF-token friction.
 
-### 10.4 Open questions requiring Eisa's decision (before Phase 0b locks)
+### 10.4 Open questions — RESOLVED (see §10.5)
 
-1. **Gemma upstream — accept QCRI's relabel or also ship Gemma notices?** Two options: (a) trust QCRI's Apache-2.0 relabel and ship as-is; (b) defensively ship Gemma notices + email QCRI/HBKU to confirm they have a Google agreement. *Recommendation: (b)* — costs nothing in code, removes the only legal cloud.
-2. **Fanar GGUF — quantize in-house or depend on `mradermacher`?** In-house removes a third-party trust dependency but adds build-pipeline work. *Recommendation: in-house* for a bundled-default.
-3. **Jais gate — how to handle?** Options: (a) drop Jais as co-default, keep as user-installable provider only; (b) require an HF token paste on first launch; (c) host an Apache-2.0-compliant mirror. *Recommendation: (a) for v1*, revisit (c) after talking to Inception. **This affects Plan §1 Decision #1 (loading strategy)** — if Jais is user-installable rather than co-default, "hot-swap vs Performance Mode" only applies after the user explicitly installs it.
-4. **Attribution placement.** Where the "Powered by" / citation block lives — Settings → About panel is the conventional spot; needs explicit choice.
+The four open questions that gated Phase 0b decisions closed 2026-05-24 with Eisa's lock. See §10.5 for the four locked decisions and their downstream implications.
+
+### 10.5 Locked decisions (PF-1 close + Eisa go, 2026-05-24)
+
+These four answers are durable inputs to MIG-047 (Phase 0b) and every later Mind phase. They are not re-litigated.
+
+| # | Question | **Lock** | Implication |
+|---|---|---|---|
+| Q1 | Gemma upstream — accept QCRI's Apache-2.0 relabel or also ship Gemma notices? | **Defensive Gemma notices too.** | The combined "Model notices" panel (§10.3) carries Apache-2.0 + Gemma Terms + Gemma Prohibited Use link + Fanar BibTeX, regardless of which provider is active. Removes the only legal cloud. |
+| Q2 | Fanar GGUF — quantize in-house from official QCRI safetensors, or depend on `mradermacher/Fanar-1-9B-i1-GGUF`? | **In-house quantization.** | Constellation's release build pipeline gains a Q4_K_M quantization step that runs against `QCRI/Fanar-1-9B-Instruct` safetensors and emits the GGUF Constellation distributes. Removes the third-party trust dependency. MIG-047 land item. |
+| Q3 | Jais HF gate — drop from co-default / require HF-token paste / host an Apache-2.0-compliant mirror? | **Constellation-hosted mirror.** | This **unblocks Jais as a co-default**. Plan §1 Decision #1 (hot-swap default + Performance Mode toggle) now applies to BOTH models from first install. Constellation's release pipeline gains: (a) a fetch of `inceptionai/Jais-2-8B-Chat-GGUF` (Q4_K_M.gguf, 4.8 GiB) via an Inception-authenticated step, (b) re-host on a Constellation-controlled CDN/static-hosting endpoint with Apache-2.0 notices traveling (LICENSE + citation + "redistributed under Apache-2.0 from inceptionai/Jais-2-8B-Chat-GGUF"). **MIG-047 must address the hosting endpoint choice** (GitHub Releases / S3 / Cloudflare R2 / Constellation domain) and the release-pipeline mirror-refresh cadence (every Jais release? on-demand?). |
+| Q4 | Attribution placement — where the "Powered by" / citation block lives. | **Settings → About panel.** | Conventional placement; matches the existing app shape. MIG-048 (Phase 1 frontend) land item. |
+
+**Cascading implications for downstream phases:**
+
+- **MIG-047 (Phase 0b)** — Architect must add a "Mirror infrastructure" §6 row covering the Jais GGUF mirror (hosting endpoint, refresh cadence, Apache-2.0 notice file). The in-house Fanar quantization pipeline also lives in MIG-047. The bench (`mistral.rs` vs `llama-cpp-2`) and tool-use benchmark proceed as planned.
+- **MIG-050 (Phase 2.5 RoutedProvider)** — both models load from Constellation-controlled URLs at first launch; the routing log explicitly shows which model was downloaded from which Constellation endpoint. Plan §1 Decision #1 (hot-swap default) is now load-tested against BOTH models from day one.
+- **MIG-048 (Phase 1)** — Settings → About panel gets the combined Model Notices block: Apache-2.0 (Fanar) + Gemma Terms + Gemma Prohibited Use link + Fanar BibTeX + Apache-2.0 (Jais, redistributed via Constellation mirror) + Jais citation. Help docs in all 15 locales describe the bundled models + mirror provenance.
+- **Operational** — Constellation needs a static-hosting story (the mirror). Choosing GitHub Releases is the lowest-friction path (already paid for by the existing repo; LFS or release assets handle 4.8 GiB; no new account). S3 / R2 / a custom CDN are alternatives with their own cost/latency profiles. **Decision deferred to MIG-047 Architect.**
+
+**The original recommendations were superseded by Eisa's locks** — Q3 in particular: my recommendation was "(a) drop from co-default for v1, revisit (c) after talking to Inception." Eisa went straight to (c). This is a bolder Phase 1 trajectory: both models from day one. Worth noting because it changes the Phase 0b → 2.5 sequencing (RoutedProvider value lands sooner now that both models are real on first install).
 
 **Primary sources (verified 2026-05-24):**
 - [QCRI/Fanar-1-9B model card](https://huggingface.co/QCRI/Fanar-1-9B)

@@ -138,3 +138,31 @@ Eisa decision queue:
 3. **Next session focus** — proceed straight to MIG-047 (Phase 0b Architect) or pause to address the four 10.4 questions first?
 
 No Boss-test required for Phase 0a (Plan §4: "No Boss test yet"). The 18 unit tests are the verification surface.
+
+---
+
+## 4. PF-1 §10.4 closed — four locks landed in Plan §10.5
+
+After the Phase 0a push, Eisa answered the four open questions from Plan §10.4. The Plan now carries the locked decisions as `§10.5 Locked decisions (PF-1 close + Eisa go, 2026-05-24)`:
+
+| # | Question | Lock |
+|---|---|---|
+| Q1 | Gemma upstream | **Defensive Gemma notices too.** Combined "Model notices" panel ships Apache + Gemma Terms + Gemma Prohibited Use + Fanar BibTeX. |
+| Q2 | Fanar GGUF source | **In-house quantization** from official QCRI safetensors via release pipeline. |
+| Q3 | Jais HF gate | **Constellation-hosted mirror** of `Jais-2-8B-Chat-GGUF`. **Unblocks Jais as co-default** — Plan §1 Decision #1 (hot-swap + Performance Mode) now applies to BOTH models from first install. |
+| Q4 | Attribution placement | **Settings → About panel.** |
+
+**Q3 is the consequential one.** My original recommendation was "(a) drop from co-default for v1, revisit (c) after talking to Inception." Eisa went straight to (c). This changes the Phase 0b → 2.5 trajectory: both models become real on first install rather than one bundled + one user-installable. RoutedProvider value lands sooner; bench discipline at Phase 0b must measure BOTH models from the start; mirror infrastructure (hosting endpoint, refresh cadence, Apache-2.0 notice file) becomes a MIG-047 land item.
+
+### Cascading work added to MIG-047 (Phase 0b)
+
+The Phase 0b Architect (when written) must add these items beyond the originally-scoped runtime micro-bench + tool-use benchmark + first-launch download flow:
+
+- **In-house Fanar Q4_K_M quantization** — release-pipeline step that runs against `QCRI/Fanar-1-9B-Instruct` safetensors and emits the GGUF Constellation distributes.
+- **Jais GGUF mirror** — release-pipeline step that fetches `inceptionai/Jais-2-8B-Chat-GGUF` (Q4_K_M.gguf, 4.8 GiB) via Inception-authenticated step, re-hosts on a Constellation-controlled endpoint with Apache-2.0 notices traveling (LICENSE + citation + "redistributed under Apache-2.0 from inceptionai/Jais-2-8B-Chat-GGUF").
+- **Hosting-endpoint choice** — GitHub Releases (lowest-friction; already paid for; LFS or release assets handle 4.8 GiB) vs S3 vs Cloudflare R2 vs custom CDN. Each has cost / latency / DX tradeoffs. **Decision deferred to MIG-047 Architect.**
+- **Combined Model Notices block** for Settings → About (lands in MIG-048 Phase 1 frontend, but the Notices text is finalized in MIG-047 once the mirror endpoint is chosen).
+
+### Session close
+
+Phase 0a SHIPPED and pushed. PF-1 §10.4 closed. Next session opens with MIG-047 (Phase 0b Architect) — and now has four extra deliverables baked in that the original Architect outline (`docs/MIG-046-...-ARCHITECT.md` §8 "What Phase 0a explicitly does not decide") flagged as Phase 0b territory.
