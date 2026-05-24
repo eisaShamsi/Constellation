@@ -3,6 +3,8 @@
 	import { t } from '$lib/i18n';
 	import { get } from 'svelte/store';
 	import { invoke } from '@tauri-apps/api/core';
+	// MIG-044 Phase 2 — NSC summary headlines under each linked/unlinked row.
+	import { getSummariesFor } from '$lib/nsc/summaryStore';
 
 	// Pill colors + shape now come from $appSettings.linkPills so the user
 	// can tune them from Settings → Appearance → Living Link Pills. The
@@ -117,6 +119,31 @@
 			: unlinkedMentions
 	);
 
+	// MIG-044 Phase 2 — NSC summary headlines.
+	// Cache-first, batched fetch via the shared store; merges into the local
+	// Map with a `changed` guard so identical fetches don't re-fire the
+	// downstream renders. Path is the row's `path` (note path on disk).
+	let summaryHeadlines = $state<Map<string, string>>(new Map());
+	$effect(() => {
+		const paths = new Set<string>();
+		for (const bl of filteredBacklinks) if (bl.path) paths.add(bl.path);
+		for (const ul of filteredUnlinked)  if (ul.path) paths.add(ul.path);
+		if (paths.size === 0) return;
+		const list = Array.from(paths);
+		(async () => {
+			try {
+				const entries = await getSummariesFor(list);
+				let changed = false;
+				const next = new Map(summaryHeadlines);
+				for (const [path, entry] of entries) {
+					const h = entry.headline ?? '';
+					if (h && next.get(path) !== h) { next.set(path, h); changed = true; }
+				}
+				if (changed) summaryHeadlines = next;
+			} catch { /* ignore — surfaces just render without the headline */ }
+		})();
+	});
+
 	function getLibraryColor(libraryName: string): string {
 		return libraryColorMap[libraryName] || '#7c3aed';
 	}
@@ -185,6 +212,9 @@
 					{#if bl.annotation}
 						<span class="bl-annotation" title={bl.annotation}>“{displayAnnotation(bl.annotation)}”</span>
 					{/if}
+					{#if summaryHeadlines.get(bl.path)}
+						<span class="bl-headline" dir="auto" title={summaryHeadlines.get(bl.path)}>{summaryHeadlines.get(bl.path)}</span>
+					{/if}
 				</button>
 			{/each}
 		{:else if showLinked}
@@ -214,6 +244,9 @@
 							{/if}
 						</span>
 						<span class="bl-context">{ul.context}</span>
+						{#if summaryHeadlines.get(ul.path)}
+							<span class="bl-headline" dir="auto" title={summaryHeadlines.get(ul.path)}>{summaryHeadlines.get(ul.path)}</span>
+						{/if}
 					</button>
 					<button class="bl-link-btn" title="Link it" onclick={(e) => linkMention(ul.path, e)}>
 						<svg width="12" height="12" viewBox="0 0 16 16" fill="none">
@@ -293,6 +326,14 @@
 	.bl-annotation {
 		display: block; margin-top: 2px;
 		color: var(--interactive-accent); font-size: 0.7rem; font-style: italic;
+		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+	}
+	/* MIG-044 Phase 2 — NSC summary headline under each row.
+	   Same visual grammar as SearchHub's .sh-item-headline and
+	   NoteEditor's .ne-summary-band: italic, muted, single-line ellipsis. */
+	.bl-headline {
+		display: block; margin-top: 2px;
+		color: var(--text-faint); font-size: 0.7rem; font-style: italic;
 		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 	}
 	.bl-empty { color: var(--color-base-40); font-size: 0.78rem; padding: 4px 0; }

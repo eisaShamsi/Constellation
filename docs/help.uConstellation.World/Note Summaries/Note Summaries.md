@@ -6,14 +6,14 @@ aliases:
   - NSC
   - Note Summary Creator
   - Build all summaries
-description: Note Summaries give you a short, plain-language précis of a note so you can judge it without opening it. Constellation always honors a summary you wrote yourself — in frontmatter or a summary callout — and only generates one when you haven't. Generated summaries are extractive (the note's own most-central sentences), read-only (never written back into your file), and computed entirely on your device.
+description: Note Summaries give you a short, plain-language précis of a note so you can judge it without opening it. Constellation always honors a summary you wrote yourself — in frontmatter or a summary callout — and only generates one when you haven't. Generated summaries are extractive (the note's own most-central sentences), read-only (never written back into your file), and computed entirely on your device. Summaries appear across the app wherever a note shows up — the Cataloger, Search results, the Editor band, the Backlinks panel, the Outgoing links panel, the Index, and the Sky View hover.
 ---
 
 # Note Summaries
 
 > *If you wrote a summary, Constellation uses yours. It only writes one when you haven't — and even then, never into your file.*
 
-A **Note Summary** is a short précis of a note — a few sentences that tell you what the note is about at a glance. Summaries are produced by the **Note Summary Creator (NSC)**. You'll see them in three places: under each card's title in the **Cataloger** / **Source Review** queue (where you decide how to classify a card without opening the note behind it), as a faint italic line under each hit in **Search results** (telling you what a note is *about* alongside the snippet that shows why it matched), and as a thin band above the note when you open it in the **Editor** (so the note's gist is in-context as you read or write).
+A **Note Summary** is a short précis of a note — a few sentences that tell you what the note is about at a glance. Summaries are produced by the **Note Summary Creator (NSC)**. You'll see them **across the whole app, wherever a note shows up**: under each card's title in the **Cataloger** / **Source Review** queue (where you decide how to classify a card without opening the note behind it), as a faint italic line under each hit in **Search results** (telling you what a note is *about* alongside the snippet that shows why it matched), as a thin band above the note when you open it in the **Editor** (so the note's gist is in-context as you read or write), under each linked source in the **Backlinks** panel and each linked target in the **Outgoing links** panel (so a long list of related notes scans as ideas rather than just titles), under each note-mention when you expand a term in the **Index** (so a term's notes are recognizable at a glance), and inside the **Sky View** hover tooltip when you point at a bubble (so a busy graph stays readable without clicking through).
 
 This topic explains where summaries come from, the strict order of precedence that always prefers *your* words over the machine's, how the generated summaries are built, and how to pre-compute them for a whole Library at once.
 
@@ -72,8 +72,12 @@ Summaries surface across Constellation wherever a note shows up:
 - **Cataloger / Source Review queue** — under each card's title (the original surface — see *The Cataloger*).
 - **Search results** — a faint italic line under each hit, beneath the snippet. The snippet shows *why* a result matched your query; the summary line shows what the note is *about*. Together they let you scan results without opening anything.
 - **Editor** — a thin muted band above the note body when you open a note, so the note's gist is in-context as you read or write. The band hides itself when there's no summary yet (a brand-new note, or one whose summary is still being computed).
+- **Backlinks panel** — under each source row that links to the note you're reading. A long list of inbound mentions becomes scannable: you read the linking note's gist as a single italic line beneath its title, without having to open each one to remember what it is.
+- **Outgoing links panel** — under each target row that the note you're reading links out to. Same shape as Backlinks; you see at a glance what each outgoing connection is about.
+- **Index** — when you expand a term, each note that uses the term shows the summary as a faint line beneath its title (and beneath the matched-context snippet, when one is present). A term that appears in dozens of notes becomes a list of ideas rather than just filenames.
+- **Sky View hover** — when you hover a bubble in the **Sky View** graph, the floating tooltip shows the note's name on the first line and its summary headline on a second italic line, so you can read what a bubble *means* without leaving the graph.
 
-By default summaries fill in **lazily and gently**: as cards scroll into view, as search results appear, or as you open a note, Constellation computes the missing summaries a few at a time, pausing whenever a Library classification scan is running so the two never compete for resources. This keeps the app responsive — you may briefly see a card / result / opened note before its summary appears, then the summary pops in a moment later.
+By default summaries fill in **lazily and gently**: as cards scroll into view, as search results appear, as you open a note, or as you expand a term / hover a bubble, Constellation computes the missing summaries a few at a time, pausing whenever a Library classification scan is running so the two never compete for resources. This keeps the app responsive — you may briefly see a card / result / opened note / row / tooltip before its summary appears, then the summary pops in a moment later.
 
 If you'd rather have every summary ready ahead of time — so every surface shows summaries instantly — use **Build all summaries**.
 

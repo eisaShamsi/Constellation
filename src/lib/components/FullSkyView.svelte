@@ -1,6 +1,12 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { t } from '$lib/i18n';
+	// MIG-044 Phase 2 (correction) — NSC summary headline in the hover
+	// tooltip. Initially deferred on a "no existing tooltip surface"
+	// technicality; Boss test failed Stage 1.4 because Sky View is one
+	// feature in the user's mind regardless of which mode. Wiring here
+	// matches the SkyView.svelte pattern exactly.
+	import { getSummaryFor } from '$lib/nsc/summaryStore';
 
 	interface SkyNode {
 		id: string;
@@ -77,6 +83,17 @@
 	let linkIdx: { si: number; ti: number }[] = [];
 	let hoveredIdx = -1;
 	let showControls = false;
+
+	// MIG-044 Phase 2 (correction) — hover tooltip state. FullSkyView had
+	// no tooltip surface before; this adds one matching SkyView.svelte's
+	// `.graph-tooltip` shape (name on line 1, headline on line 2).
+	let tooltipText = $state('');
+	let tooltipX = $state(0);
+	let tooltipY = $state(0);
+	let tooltipVisible = $state(false);
+	let tooltipHeadline = $state('');
+	let tooltipHeadlinePath = ''; // last node path fetched — skip refetch on jitter
+	let tooltipHeadlineToken = 0; // monotonic; stale promises ignored
 
 	// View transform (pan + zoom)
 	let viewX = 0;
@@ -458,13 +475,41 @@
 		}
 
 		const rect = canvasEl.getBoundingClientRect();
-		const { wx, wy } = screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
+		const localX = e.clientX - rect.left;
+		const localY = e.clientY - rect.top;
+		const { wx, wy } = screenToWorld(localX, localY);
 		const idx = findNodeAt(wx, wy);
 
 		if (idx !== hoveredIdx) {
 			hoveredIdx = idx;
 			canvasEl.style.cursor = idx >= 0 ? 'pointer' : 'grab';
 			if (!simRunning) draw();
+		}
+
+		// MIG-044 Phase 2 (correction) — drive the HTML tooltip alongside
+		// the canvas hover. Tooltip is positioned in canvas-local coords so
+		// it tracks the cursor without depending on page scroll. Headline
+		// fetched lazily via the shared store (cache-first); the monotonic
+		// token guards against stale promises winning when the user hovers
+		// quickly across multiple bubbles.
+		if (idx >= 0) {
+			const node = nodePos[idx].node;
+			tooltipText = node.name;
+			tooltipX = localX + 14;
+			tooltipY = localY - 10;
+			tooltipVisible = true;
+			if (node.path !== tooltipHeadlinePath) {
+				tooltipHeadlinePath = node.path;
+				tooltipHeadline = ''; // clear stale text immediately
+				const myToken = ++tooltipHeadlineToken;
+				const targetPath = node.path;
+				getSummaryFor(targetPath).then((entry) => {
+					if (myToken !== tooltipHeadlineToken) return; // superseded
+					tooltipHeadline = entry?.headline ?? '';
+				}).catch(() => { /* ignore */ });
+			}
+		} else {
+			tooltipVisible = false;
 		}
 	}
 
@@ -561,8 +606,26 @@
 		onmouseup={handleMouseUp}
 		onclick={handleClick}
 		onwheel={handleWheel}
-		onmouseleave={() => { dragging = false; hoveredIdx = -1; if (!simRunning) draw(); }}
+		onmouseleave={() => {
+			dragging = false;
+			hoveredIdx = -1;
+			// MIG-044 Phase 2 (correction) — clear tooltip + the cached path so re-hover refetches.
+			tooltipVisible = false;
+			tooltipHeadlinePath = '';
+			tooltipHeadline = '';
+			if (!simRunning) draw();
+		}}
 	></canvas>
+
+	<!-- MIG-044 Phase 2 (correction) — hover tooltip (two-line: name + headline) -->
+	{#if tooltipVisible}
+		<div class="graph-tooltip" style="left: {tooltipX}px; top: {tooltipY}px;" dir="auto">
+			<div class="graph-tooltip-name">{tooltipText}</div>
+			{#if tooltipHeadline}
+				<div class="graph-tooltip-headline" title={tooltipHeadline}>{tooltipHeadline}</div>
+			{/if}
+		</div>
+	{/if}
 
 	<!-- Legend -->
 	{#if libraryColorMap.size > 1}
@@ -689,6 +752,41 @@
 		width: 100%;
 		height: 100%;
 		cursor: grab;
+	}
+
+	/* MIG-044 Phase 2 (correction) — hover tooltip. Two-line layout:
+	   name on top, optional NSC summary headline below in muted italic.
+	   pointer-events:none so the tooltip never blocks the canvas mouse
+	   handling. max-width caps long headlines; ellipsis on both lines. */
+	.graph-tooltip {
+		position: absolute;
+		pointer-events: none;
+		background: var(--background-primary);
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 6px;
+		padding: 4px 10px;
+		font-size: 0.8rem;
+		color: var(--text-normal);
+		box-shadow: var(--shadow-s);
+		max-width: 320px;
+		z-index: 10;
+		display: flex;
+		flex-direction: column;
+		gap: 1px;
+	}
+	.graph-tooltip-name {
+		font-weight: 500;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.graph-tooltip-headline {
+		font-size: 0.7rem;
+		font-style: italic;
+		color: var(--text-faint);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
 	/* Settings toggle button */

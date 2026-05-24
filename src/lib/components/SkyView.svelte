@@ -2,6 +2,8 @@
 	import { onMount, onDestroy, untrack } from 'svelte';
 	import { t } from '$lib/i18n';
 	import * as d3 from 'd3';
+	// MIG-044 Phase 2 — NSC summary headline in the hover tooltip.
+	import { getSummaryFor } from '$lib/nsc/summaryStore';
 
 	interface SkyNode extends d3.SimulationNodeDatum {
 		id: string;
@@ -67,6 +69,14 @@
 	let tooltipX = $state(0);
 	let tooltipY = $state(0);
 	let tooltipVisible = $state(false);
+	// MIG-044 Phase 2 — NSC summary headline shown under the node name in
+	// the hover tooltip. The architect doc mentioned an "inspector"; SkyView
+	// has no rich inspector — its on-canvas node info IS the tooltip, so the
+	// headline lands there. Click still opens the note in the editor (which
+	// has the Phase-1 summary band).
+	let tooltipHeadline = $state('');
+	let tooltipHeadlinePath = ''; // last node path fetched — skip refetch on jitter
+	let tooltipHeadlineToken = 0; // monotonic; stale promises ignored
 
 	// Legend click bounds
 	let legendBounds: { x: number; y: number; w: number; h: number; lineH: number; padY: number } | null = null;
@@ -585,6 +595,20 @@
 			tooltipY = e.offsetY - 10;
 			tooltipVisible = true;
 			canvasEl.style.cursor = 'pointer';
+			// MIG-044 Phase 2 — fetch the headline lazily for the hovered
+			// node. Cache-first via the shared store, so re-hover is free.
+			// Stale-promise guard via a monotonic token so the LATEST hover
+			// wins regardless of fetch latency.
+			if (node.path !== tooltipHeadlinePath) {
+				tooltipHeadlinePath = node.path;
+				tooltipHeadline = ''; // clear stale text immediately
+				const myToken = ++tooltipHeadlineToken;
+				const targetPath = node.path;
+				getSummaryFor(targetPath).then((entry) => {
+					if (myToken !== tooltipHeadlineToken) return; // superseded
+					tooltipHeadline = entry?.headline ?? '';
+				}).catch(() => { /* ignore */ });
+			}
 		} else {
 			tooltipVisible = false;
 			canvasEl.style.cursor = 'grab';
@@ -604,6 +628,9 @@
 	function handleMouseLeave(_e: MouseEvent) {
 		hoveredNode = null;
 		tooltipVisible = false;
+		// MIG-044 Phase 2 — drop the cached path so re-hover refetches.
+		tooltipHeadlinePath = '';
+		tooltipHeadline = '';
 		draw();
 	}
 
@@ -1082,8 +1109,11 @@
 
 		<canvas bind:this={canvasEl}></canvas>
 		{#if tooltipVisible}
-			<div class="graph-tooltip" style="left: {tooltipX}px; top: {tooltipY}px;">
-				{tooltipText}
+			<div class="graph-tooltip" style="left: {tooltipX}px; top: {tooltipY}px;" dir="auto">
+				<div class="graph-tooltip-name">{tooltipText}</div>
+				{#if tooltipHeadline}
+					<div class="graph-tooltip-headline" title={tooltipHeadline}>{tooltipHeadline}</div>
+				{/if}
 			</div>
 		{/if}
 		{#if !compact && nodeCountInfo}
@@ -1121,7 +1151,12 @@
 		display: flex; align-items: center; justify-content: center;
 		color: var(--text-faint); font-size: 0.85rem;
 	}
-	.star-tooltip {
+	/* Hover tooltip — was a dead `.star-tooltip` selector (no matching
+	   class in the template); renamed in MIG-044 Phase 2 to match the
+	   actual `.graph-tooltip` element + extended for the NSC headline
+	   subline. The container is now two stacked lines; both ellipsis at
+	   max-width so a long headline doesn't blow the canvas. */
+	.graph-tooltip {
 		position: absolute;
 		pointer-events: none;
 		background: var(--background-primary);
@@ -1129,11 +1164,27 @@
 		border-radius: 6px;
 		padding: 4px 10px;
 		font-size: 0.8rem;
-		font-weight: 500;
 		color: var(--text-normal);
 		box-shadow: var(--shadow-s);
-		white-space: nowrap;
+		max-width: 320px;
 		z-index: 10;
+		display: flex;
+		flex-direction: column;
+		gap: 1px;
+	}
+	.graph-tooltip-name {
+		font-weight: 500;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.graph-tooltip-headline {
+		font-size: 0.7rem;
+		font-style: italic;
+		color: var(--text-faint);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
 	/* ─── Controls Toggle Button ─── */

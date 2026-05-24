@@ -600,9 +600,36 @@ for X's implementation. Prefer a *gated* automatic recovery (here: rebuild only
 when the index is empty, so the perf win is preserved for the common case) over a
 manual button the user has to know to click.
 
+## LL-028: Windows + Tauri Release Builds Silently Fail to Update `build/` While the App is Running
+
+**Symptom (2026-05-23, MIG-044 Phase 2):** `npm run tauri build` reported `✓ built in 1m 31s` + produced a fresh `.exe` and NSIS installer, but the embedded SvelteKit bundle (`build/_app/immutable/chunks/*.js`) was **stale** — new code (`tooltipHeadline`, `.local-star-tooltip`) literally wasn't in the output. Two consecutive Boss installs shipped stale bundles. Burned an hour chasing "why doesn't my Svelte change appear" before noticing the actual EPERM.
+
+**Root cause:** when Constellation is running (or even just shutting down — `msedgewebview2.exe` instances often persist 30-60s after the parent process exits), Windows file locks prevent SvelteKit's `adapter-static` from deleting the `build/` directory. The Vite compilation runs to completion; the `adapt(): rimraf build/` step throws `EPERM, Permission denied` but the tauri-CLI wrapper does NOT propagate that as a build failure — it logs the error and proceeds to Rust compile + bundle, producing a fresh `.exe` that embeds the OLD `build/` contents.
+
+**Rule:**
+- **Before any `npm run tauri build`**: `tasklist | grep -iE "constellation|msedgewebview2"`. If anything matches, fully close the app and wait for the WebView2 processes to exit (or kill them).
+- **After any "successful" build that includes a user-visible CSS class or template change**: bundle-grep verify with `grep -rh "<unique-token>" build/_app/immutable/` — if the unique token doesn't appear, the build silently failed to copy. Don't ship a Boss-test install on an unverified build.
+- If you see `EPERM, Permission denied: ...build` anywhere in the build output, treat it as a HARD FAILURE even though the CLI doesn't.
+
+## LL-029: Predecessor Lookup Before Editing — Grep the Import Graph, Not the File Name
+
+**Symptom (2026-05-23, MIG-044 Phase 2 §4):** spent two build cycles wiring tooltip headlines into `SkyView.svelte` and then `FullSkyView.svelte` — both shipped Boss-test installs that visibly failed. Bundle-grep eventually revealed neither file was in the bundle: **both are dead code**. The actually-rendered Sky View component is `LocalSkyView.svelte` (despite the "Local" prefix suggesting second-screen-only). A single `grep -r "import.*SkyView" src/` would have answered this in 2 seconds — it was never run.
+
+**Root cause:** file-name authority was assumed. "Sky View bubble inspector" → `SkyView.svelte`. The reasoning sounded right (matches the feature name, the file exists, has the relevant types and hover logic). What wasn't verified: that anything actually *uses* the file. `+layout.svelte` only imports `LocalSkyView`. `SkyView.svelte` and `FullSkyView.svelte` are stale relics of some past refactor that nobody deleted. Vite tree-shakes them; the fixes compiled correctly but were unreachable code.
+
+**Rule:** Before editing any `.svelte` component to wire a user-visible feature, **`grep -r "import.*ComponentName" src/`**. File names are not the source of truth; the import graph is. This applies especially when:
+- The repo has multiple components with similar names (`SkyView` / `FullSkyView` / `LocalSkyView`; `MapPane` / `GlobalMap` / etc.).
+- A past refactor split or renamed components but left the old files in place.
+- The architect doc names a feature (not a file) — never assume the file name matches.
+
+This is the BASIC RULE in the wiring-task domain: don't make up which file is "the right one" — verify it. **Promotes to Predecessor Lookup Rule application:** the predecessor of "the Sky View hover surface" is whatever component is actually mounted in the visible panel, not whatever has the matching filename. Write the Predecessor → Replacement entry against the import graph, not the file tree.
+
+**Follow-up addition (same session, GraphMindView miss):** A name-pattern grep is insufficient — the full-window "Sky View" turned out to be `<GraphMindView>` (filename doesn't contain "SkyView" at all), missed even after the first grep cycle. The fix: when wiring a feature, **enumerate every mounted component for that feature** by grep'ing the layout for `<[A-Z]\w*` template renders and reading the conditional branches around the feature flag (e.g. `showSkyView`, `showMap`). Look for components that LOOK unrelated by name but render under the feature's flag. A 2-second grep for `<[A-Z]\w*` in `+layout.svelte` filtered through the feature-flag block would have caught GraphMindView from the start.
+
 ---
 
-*Last updated: 2026-05-22 (LL-025/026/027 added after the MIG-042 session —
-live-concurrency migration testing, index-before-table fresh-DB crash (BUG-021),
-and the empty-index-no-recovery gap (BUG-022))*
-*For: Constellation — DB migration safety + schema-bootstrap ordering + index recovery*
+*Last updated: 2026-05-23 (LL-028/029 added after the MIG-044 Phase 2 Sky View
+correction arc — Windows file-lock silent-build-failure during Tauri release
+build, and the BASIC RULE / Predecessor Lookup violation that wired the wrong
+.svelte file twice before grep-verifying the import graph)*
+*For: Constellation — release-build verification + file-name vs. import-graph discipline*

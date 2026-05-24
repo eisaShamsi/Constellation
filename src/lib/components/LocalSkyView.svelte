@@ -1,5 +1,12 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
+	// MIG-044 Phase 2 (correction #2) — NSC summary headline in the hover
+	// tooltip. The two earlier corrections wired SkyView.svelte and
+	// FullSkyView.svelte; both turned out to be dead code (no static
+	// importer in the source tree — confirmed via `grep -r "import.*SkyView" src/`).
+	// The component actually mounted in the right-side panel AND the second
+	// screen is THIS file, LocalSkyView. Wiring lands here.
+	import { getSummaryFor } from '$lib/nsc/summaryStore';
 
 	interface SkyNode {
 		id: string;
@@ -32,6 +39,19 @@
 	let nodePositions: { node: SkyNode; x: number; y: number; r: number }[] = [];
 	let resizeObserver: ResizeObserver | null = null;
 	let hoveredNode: SkyNode | null = null;
+
+	// MIG-044 Phase 2 (correction #2) — hover tooltip state.
+	// Two-line shape: name on top, NSC summary headline below in muted
+	// italic. Tooltip positioned in canvas-local coords (anchor the parent
+	// `.local-star` is already position: relative). Headline fetched
+	// lazily via the shared store with a monotonic stale-promise guard.
+	let tooltipText = $state('');
+	let tooltipX = $state(0);
+	let tooltipY = $state(0);
+	let tooltipVisible = $state(false);
+	let tooltipHeadline = $state('');
+	let tooltipHeadlinePath = '';
+	let tooltipHeadlineToken = 0;
 
 	const LIBRARY_COLORS = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#06b6d4', '#84cc16'];
 	let libraryColorMap = new Map<string, string>();
@@ -173,6 +193,47 @@
 			canvasEl.style.cursor = found ? 'pointer' : 'default';
 			draw();
 		}
+
+		// MIG-044 Phase 2 (correction #2) — drive HTML tooltip alongside
+		// the canvas hover detection. Position in canvas-local coords so
+		// it tracks the cursor without depending on page scroll. Headline
+		// fetched lazily; the monotonic token guards stale promises.
+		if (found) {
+			tooltipText = found.name.replace(/\.md$/, '');
+			// Edge-aware positioning: default right of cursor; flip left if
+			// the tooltip would overflow the canvas; same shape vertically.
+			// Width/height are upper bounds from CSS (max-width 240, ~80h).
+			const panelW = canvasEl.clientWidth;
+			const panelH = canvasEl.clientHeight;
+			const W = 240, H = 80, PAD = 8;
+			tooltipX = (x + 14 + W + PAD > panelW) ? Math.max(PAD, x - W - 14) : x + 14;
+			tooltipY = (y - 10 + H + PAD > panelH) ? Math.max(PAD, y - H - 14) : y - 10;
+			tooltipVisible = true;
+			if (found.path !== tooltipHeadlinePath) {
+				tooltipHeadlinePath = found.path;
+				tooltipHeadline = '';
+				const myToken = ++tooltipHeadlineToken;
+				const targetPath = found.path;
+				getSummaryFor(targetPath).then((entry) => {
+					if (myToken !== tooltipHeadlineToken) return;
+					tooltipHeadline = entry?.headline ?? '';
+				}).catch(() => { /* ignore */ });
+			}
+		} else {
+			tooltipVisible = false;
+		}
+	}
+
+	function handleMouseLeave() {
+		// MIG-044 Phase 2 (correction #2) — clear hover + tooltip together.
+		if (hoveredNode !== null) {
+			hoveredNode = null;
+			if (canvasEl) canvasEl.style.cursor = 'default';
+			draw();
+		}
+		tooltipVisible = false;
+		tooltipHeadlinePath = '';
+		tooltipHeadline = '';
 	}
 
 	function handleClick(e: MouseEvent) {
@@ -209,8 +270,18 @@
 	<canvas
 		bind:this={canvasEl}
 		onmousemove={handleMouseMove}
+		onmouseleave={handleMouseLeave}
 		onclick={handleClick}
 	></canvas>
+	<!-- MIG-044 Phase 2 (correction #2) — hover tooltip (name + headline) -->
+	{#if tooltipVisible}
+		<div class="local-star-tooltip" style="left: {tooltipX}px; top: {tooltipY}px;" dir="auto">
+			<div class="local-star-tooltip-name">{tooltipText}</div>
+			{#if tooltipHeadline}
+				<div class="local-star-tooltip-headline" title={tooltipHeadline}>{tooltipHeadline}</div>
+			{/if}
+		</div>
+	{/if}
 </div>
 
 <style>
@@ -225,5 +296,52 @@
 		display: block;
 		width: 100%;
 		height: 100%;
+	}
+	/* MIG-044 Phase 2 (correction #2) — hover tooltip. Two-line layout,
+	   pointer-events:none so it never blocks canvas mouse handling.
+	   Class name is intentionally namespaced (.local-star-tooltip*) to
+	   keep Svelte's scoped CSS pruner from clipping it. */
+	.local-star-tooltip {
+		position: absolute;
+		pointer-events: none;
+		background: var(--background-primary);
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 6px;
+		padding: 4px 10px;
+		font-size: 0.8rem;
+		color: var(--text-normal);
+		box-shadow: var(--shadow-s);
+		/* Narrower than before (was 320) — keeps the tooltip inside the
+		   typical SV panel width even when the bubble is near the right
+		   edge. Combined with the JS-side flip in handleMouseMove. */
+		max-width: 240px;
+		z-index: 10;
+		display: flex;
+		flex-direction: column;
+		gap: 1px;
+	}
+	.local-star-tooltip-name {
+		font-weight: 500;
+		/* Name stays single-line + ellipsis: note names are usually short
+		   and a wrapped name reads awkwardly above a wrapped headline. */
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.local-star-tooltip-headline {
+		font-size: 0.7rem;
+		font-style: italic;
+		color: var(--text-faint);
+		line-height: 1.35;
+		/* Allow the headline to wrap to multiple lines so users see the
+		   full first sentence instead of "…military" truncation. Cap to
+		   3 lines so the tooltip stays compact for long summaries. */
+		display: -webkit-box;
+		-webkit-line-clamp: 3;
+		line-clamp: 3;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+		word-wrap: break-word;
+		overflow-wrap: anywhere;
 	}
 </style>

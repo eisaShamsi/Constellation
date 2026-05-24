@@ -2,6 +2,8 @@
 	import { openNoteTab, libraries, resolveWikilinkCrossLibrary, appSettings, setLinkConfidence, archiveLink, type LinkConfidence } from '$lib/libraries/store';
 	import { t } from '$lib/i18n';
 	import { get } from 'svelte/store';
+	// MIG-044 Phase 2 — NSC summary headlines under each outgoing-link row.
+	import { getSummariesFor } from '$lib/nsc/summaryStore';
 
 	// Pill colors + shape come from $appSettings.linkPills — matches
 	// BacklinksPanel. User-configurable via Settings → Appearance.
@@ -74,6 +76,49 @@
 	}
 
 	let showOutgoing = $state(true);
+
+	// MIG-044 Phase 2 — NSC summary headlines, keyed by `link.target` (the
+	// wikilink string the user wrote, since `NoteLink` carries no
+	// `target_path`). The $effect fires on tab switch (when `outgoingLinks`
+	// changes ref) — NOT on every render — so the per-target resolve calls
+	// + one batched summaries fetch are bounded to ~once-per-tab-open.
+	let summaryHeadlines = $state<Map<string, string>>(new Map());
+	$effect(() => {
+		const visibleTargets = outgoingLinks.map(l => l.target).filter(Boolean);
+		if (visibleTargets.length === 0 || !libraryPath) return;
+		(async () => {
+			try {
+				// Resolve targets to file paths in parallel (small N — outgoing
+				// lists rarely exceed a few dozen rows).
+				const resolved = await Promise.all(
+					visibleTargets.map((target) =>
+						resolveWikilinkCrossLibrary(libraryPath, target)
+							.then((r) => ({ target, path: r?.path ?? null as string | null }))
+							.catch(() => ({ target, path: null as string | null }))
+					)
+				);
+				const targetByPath = new Map<string, string>();
+				const pathsToFetch: string[] = [];
+				for (const r of resolved) {
+					if (r.path) {
+						targetByPath.set(r.path, r.target);
+						pathsToFetch.push(r.path);
+					}
+				}
+				if (pathsToFetch.length === 0) return;
+				const entries = await getSummariesFor(pathsToFetch);
+				let changed = false;
+				const next = new Map(summaryHeadlines);
+				for (const [path, entry] of entries) {
+					const target = targetByPath.get(path);
+					if (!target) continue;
+					const h = entry.headline ?? '';
+					if (h && next.get(target) !== h) { next.set(target, h); changed = true; }
+				}
+				if (changed) summaryHeadlines = next;
+			} catch { /* ignore — surface just renders without headlines */ }
+		})();
+	});
 
 	// Confidence popover — mirrors BacklinksPanel.
 	let confMenu = $state<{ x: number; y: number; sourcePath: string; targetName: string; current: LinkConfidence } | null>(null);
@@ -150,6 +195,9 @@
 				{#if link.annotation}
 					<span class="ol-annotation" title={link.annotation}>“{displayAnnotation(link.annotation)}”</span>
 				{/if}
+				{#if summaryHeadlines.get(link.target)}
+					<span class="ol-headline" dir="auto" title={summaryHeadlines.get(link.target)}>{summaryHeadlines.get(link.target)}</span>
+				{/if}
 			</button>
 		{/each}
 	{:else if showOutgoing}
@@ -213,6 +261,14 @@
 	.ol-annotation {
 		display: block; margin-top: 2px;
 		color: var(--interactive-accent); font-size: 0.7rem; font-style: italic;
+		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+	}
+	/* MIG-044 Phase 2 — NSC summary headline under each outgoing-link row.
+	   Matches the shared visual grammar (SearchHub / NoteEditor / Backlinks):
+	   italic, muted, single-line ellipsis. */
+	.ol-headline {
+		display: block; margin-top: 2px;
+		color: var(--text-faint); font-size: 0.7rem; font-style: italic;
 		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 	}
 	.ol-empty { color: var(--color-base-40); font-size: 0.78rem; padding: 4px 0; }

@@ -20,6 +20,16 @@
 	import { computeSemanticLinks, type EmbeddingProgress } from '$lib/graph/semanticEngine';
 	import { detectClusters, type ClusterResult } from '$lib/graph/clusterEngine';
 	import { invoke } from '@tauri-apps/api/core';
+	// MIG-044 Phase 2 (correction #3) — NSC summary headline in the
+	// main full-window Sky View's hover tooltip. Earlier corrections
+	// wired LocalSkyView (the embedded panel) — but the full-window
+	// mode is THIS component (`<GraphMindView>` at `+layout.svelte:5331`),
+	// gated by `showSkyView`. The earlier Sky View grep ran against
+	// "import.*SkyView" patterns and missed this one because its file
+	// is named GraphMindView, not "*SkyView*". Recorded as a follow-up
+	// in LL-029: import-graph greps must cover ALL files that render
+	// a feature, not just files matching the feature's name.
+	import { getSummaryFor } from '$lib/nsc/summaryStore';
 
 	// RTL-aware directional symbols
 	const arrowIncoming = $derived($isRTLStore ? '→' : '←');
@@ -91,6 +101,16 @@
 	let wikiAuto = $state<{name: string; path: string; libraryName: string}[]>([]);
 	let wikiAutoIdx = $state(-1);
 	let hoveredName = $state<string | null>(null);
+	// MIG-044 Phase 2 (correction #3) — NSC headline state for the hover
+	// tooltip. `hoveredHeadlinePath` is the path of the last fetched node
+	// (skip refetch on jitter); the monotonic token guards stale promises.
+	// Cursor coords are tracked via container `onmousemove` so the
+	// tooltip can track-and-flip at panel edges.
+	let hoveredHeadline = $state<string>('');
+	let hoveredHeadlinePath = '';
+	let hoveredHeadlineToken = 0;
+	let tooltipX = $state(0);
+	let tooltipY = $state(0);
 	let nodeCount = $state(0);
 	let edgeCount = $state(0);
 	let mocCount = $state(0);
@@ -700,7 +720,28 @@
 				}
 				onNodeClick?.(path, lib, searchVisible && searchQuery ? searchQuery : undefined);
 			},
-			onNodeHover: (node) => { hoveredName = node?.name ?? null; onNodeHover?.(node); },
+			onNodeHover: (node) => {
+				hoveredName = node?.name ?? null;
+				// MIG-044 Phase 2 (correction #3) — fetch the headline lazily
+				// for the hovered node. Cache-first via the shared store;
+				// monotonic token guards stale promises.
+				if (node?.path) {
+					if (node.path !== hoveredHeadlinePath) {
+						hoveredHeadlinePath = node.path;
+						hoveredHeadline = '';
+						const myToken = ++hoveredHeadlineToken;
+						const targetPath = node.path;
+						getSummaryFor(targetPath).then((entry) => {
+							if (myToken !== hoveredHeadlineToken) return;
+							hoveredHeadline = entry?.headline ?? '';
+						}).catch(() => { /* ignore */ });
+					}
+				} else {
+					hoveredHeadlinePath = '';
+					hoveredHeadline = '';
+				}
+				onNodeHover?.(node);
+			},
 			onStatsReady: (nc, ec, mc) => { nodeCount = nc; edgeCount = ec; mocCount = mc; },
 			onContextMenu: (node, x, y) => { contextMenu = { node, x, y }; },
 			onFocusChange: (active, name) => { focusActive = active; focusNodeName = name ?? ''; if (!active) { breadcrumb = []; focusDirection = 'all'; } },
@@ -728,7 +769,29 @@
 	});
 </script>
 
-<div class="gm-container" bind:this={containerEl}>
+<!-- svelte-ignore a11y_no_static_element_interactions a11y_no_noninteractive_element_interactions -->
+<div class="gm-container" bind:this={containerEl}
+	onmousemove={(e) => {
+		// MIG-044 Phase 2 (correction #3) — track cursor coords in
+		// container-local space for the hover tooltip. GraphEngine owns
+		// the canvas events; this container-level handler runs after
+		// they bubble up, doesn't interfere with hit-testing. Tooltip
+		// flips to left/up when near right/bottom edges so it stays
+		// inside the panel.
+		if (!containerEl) return;
+		const rect = containerEl.getBoundingClientRect();
+		const x = e.clientX - rect.left;
+		const y = e.clientY - rect.top;
+		const W = 280, H = 80, PAD = 8;
+		tooltipX = (x + 14 + W + PAD > rect.width) ? Math.max(PAD, x - W - 14) : x + 14;
+		tooltipY = (y - 10 + H + PAD > rect.height) ? Math.max(PAD, y - H - 14) : y - 10;
+	}}
+	onmouseleave={() => {
+		// MIG-044 Phase 2 (correction #3) — clear hover headline state on
+		// leave so re-entry refetches even for the same node.
+		hoveredHeadlinePath = '';
+		hoveredHeadline = '';
+	}}>
 	<!-- Toolbar -->
 	<div class="gm-toolbar" dir="auto">
 		<div class="gm-toolbar-left">
@@ -1045,6 +1108,20 @@
 		{/if}
 	</div>
 
+	<!-- MIG-044 Phase 2 (correction #3) — hover tooltip with NSC headline.
+	     Two-line layout: name (single-line + ellipsis) + headline (up to
+	     3 lines, wraps). Edge-aware positioning via the container's
+	     onmousemove handler. Same visual grammar as LocalSkyView's
+	     tooltip — the user sees the same shape across both Sky View modes. -->
+	{#if hoveredName}
+		<div class="gm-tooltip" style="left: {tooltipX}px; top: {tooltipY}px;" dir="auto">
+			<div class="gm-tooltip-name">{hoveredName}</div>
+			{#if hoveredHeadline}
+				<div class="gm-tooltip-headline" title={hoveredHeadline}>{hoveredHeadline}</div>
+			{/if}
+		</div>
+	{/if}
+
 	<!-- Legend (toggled by palette button in the right toolbar).
 	     Always renders when legendVisible: the header's mode buttons
 	     need to stay reachable even when the active mode has no data,
@@ -1147,6 +1224,47 @@
 		height: 100%;
 		overflow: hidden;
 		background: var(--background-secondary);
+	}
+
+	/* MIG-044 Phase 2 (correction #3) — hover tooltip. Two-line layout,
+	   pointer-events:none so it never blocks GraphEngine's canvas
+	   handling. Class names namespaced to .gm-tooltip-* so Svelte's
+	   scoped CSS pruner keeps the rules. Width capped at 280 + 3-line
+	   line-clamp on the headline so long summaries wrap, not truncate. */
+	.gm-tooltip {
+		position: absolute;
+		pointer-events: none;
+		background: var(--background-primary);
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 6px;
+		padding: 4px 10px;
+		font-size: 0.8rem;
+		color: var(--text-normal);
+		box-shadow: var(--shadow-s);
+		max-width: 280px;
+		z-index: 30;
+		display: flex;
+		flex-direction: column;
+		gap: 1px;
+	}
+	.gm-tooltip-name {
+		font-weight: 500;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.gm-tooltip-headline {
+		font-size: 0.7rem;
+		font-style: italic;
+		color: var(--text-faint);
+		line-height: 1.35;
+		display: -webkit-box;
+		-webkit-line-clamp: 3;
+		line-clamp: 3;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+		word-wrap: break-word;
+		overflow-wrap: anywhere;
 	}
 
 	/* Toolbar */

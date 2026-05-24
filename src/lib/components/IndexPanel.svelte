@@ -16,6 +16,8 @@
 		writeIndexHistoryEntry,
 	} from '$lib/libraries/store';
 	import VirtualList from '$lib/components/VirtualList.svelte';
+	// MIG-044 Phase 2 — NSC summary headlines under each mention row.
+	import { getSummariesFor } from '$lib/nsc/summaryStore';
 
 	const SNIPPET_MARK_START_CODE = SNIPPET_MARK_START.charCodeAt(0);
 	const SNIPPET_MARK_END_CODE = SNIPPET_MARK_END.charCodeAt(0);
@@ -82,6 +84,37 @@
 	// Keeps the initial IPC payload tiny (terms only; no mentions pre-loaded).
 	let mentionsCache = $state<Map<string, IndexMention[]>>(new Map());
 	let loadingMentions = $state<Set<string>>(new Set());
+
+	// MIG-044 Phase 2 — NSC summary headlines for the mentions of every
+	// currently-expanded term. Cache-first, batched via the shared store.
+	// The $effect's only tracked dep is `mentionsCache.size`; reads of the
+	// cache itself + writes to `summaryHeadlines` happen inside untrack,
+	// matching the Rule-2 pattern already used by the mentionsCache
+	// invalidation effect above.
+	let summaryHeadlines = $state<Map<string, string>>(new Map());
+	$effect(() => {
+		void mentionsCache.size; // re-fire when a term expands / mentions arrive
+		untrack(() => {
+			const paths = new Set<string>();
+			for (const list of mentionsCache.values()) {
+				for (const m of list) if (m.note_path) paths.add(m.note_path);
+			}
+			if (paths.size === 0) return;
+			const list = Array.from(paths);
+			(async () => {
+				try {
+					const entries = await getSummariesFor(list);
+					let changed = false;
+					const next = new Map(summaryHeadlines);
+					for (const [path, entry] of entries) {
+						const h = entry.headline ?? '';
+						if (h && next.get(path) !== h) { next.set(path, h); changed = true; }
+					}
+					if (changed) summaryHeadlines = next;
+				} catch { /* ignore — surface just renders without headlines */ }
+			})();
+		});
+	});
 
 	// Re-fetch when the parent invalidates. Body wrapped in `untrack` so
 	// reading `mentionsCache.size` doesn't accidentally make the cache
@@ -755,6 +788,9 @@
 	const ROW_HEIGHT_MENTION_PLAIN = 22;
 	/** Mention row with a one-line FTS5 snippet beneath the note name. */
 	const ROW_HEIGHT_MENTION_SNIPPET = 40;
+	/** MIG-044 Phase 2 — extra room reserved BELOW a mention row when its
+	 *  NSC headline is loaded. Matches the .gp-ref-headline line height. */
+	const ROW_HEIGHT_MENTION_HEADLINE = 16;
 	const ROW_HEIGHT_EXPAND_PAD = 12;
 	const ROW_HEIGHT_EXPAND_MIN = 32;
 	/** Co-occurrence strip height: header line + one row of wrapping chips.
@@ -765,6 +801,11 @@
 	const ROW_HEIGHT_COOCCUR_CHIPS = 56;
 
 	const rows = $derived.by((): VRow[] => {
+		// MIG-044 Phase 2 — re-derive when summaryHeadlines arrive so the
+		// VirtualList sees a new prop ref and re-runs getRowHeight against
+		// the now-larger rows. Contents are unchanged; the ref change is the
+		// signal. Without this, headlines render but clip to the old height.
+		void summaryHeadlines.size;
 		const out: VRow[] = [];
 		if (sortMode === 'freq') {
 			for (const entry of freqEntries) {
@@ -794,9 +835,13 @@
 		let total = ROW_HEIGHT_EXPAND_PAD;
 		// Sum per-mention heights — a mention with a FTS5 snippet needs
 		// room for both the note name and the one-line context beneath it.
+		// MIG-044 Phase 2: also reserve room for the NSC headline line,
+		// but ONLY when it's loaded (rows without headlines stay compact).
 		if (list && list.length > 0) {
 			for (const m of list) {
-				total += m.snippet ? ROW_HEIGHT_MENTION_SNIPPET : ROW_HEIGHT_MENTION_PLAIN;
+				let h = m.snippet ? ROW_HEIGHT_MENTION_SNIPPET : ROW_HEIGHT_MENTION_PLAIN;
+				if (summaryHeadlines.get(m.note_path)) h += ROW_HEIGHT_MENTION_HEADLINE;
+				total += h;
 			}
 		}
 		// Co-occurrence strip: reserve space whenever we're loading or
@@ -1252,6 +1297,9 @@
 											{#if part.mark}<mark class="gp-ref-hit">{part.text}</mark>{:else}{part.text}{/if}
 										{/each}
 									</span>
+								{/if}
+								{#if summaryHeadlines.get(mention.note_path)}
+									<span class="gp-ref-headline" dir="auto" title={summaryHeadlines.get(mention.note_path)}>{summaryHeadlines.get(mention.note_path)}</span>
 								{/if}
 							</button>
 						{/each}
@@ -1779,6 +1827,20 @@
 		border-radius: 2px;
 		padding: 0 2px;
 		font-weight: 600;
+	}
+	/* MIG-044 Phase 2 — NSC summary headline under each mention row.
+	   Shares the cross-surface visual grammar: italic, muted, single-line
+	   ellipsis. Renders below the snippet (or below the name if no snippet). */
+	.gp-ref-headline {
+		display: block;
+		font-size: 0.68rem;
+		line-height: 1.35;
+		color: var(--text-faint);
+		font-style: italic;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		text-align: start;
 	}
 
 	/* ── Co-occurring terms chip strip ── */
