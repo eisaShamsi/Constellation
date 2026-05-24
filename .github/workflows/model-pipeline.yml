@@ -102,12 +102,14 @@ jobs:
 
       - name: Download safetensors from Hugging Face (Fanar is PUBLIC; no auth needed)
         env:
-          HF_HUB_ENABLE_HF_TRANSFER: '1'   # fast parallel download
+          # `huggingface-cli` was removed in huggingface_hub >= 0.30 — use `hf`.
+          # The `HF_HUB_ENABLE_HF_TRANSFER` env var is similarly deprecated;
+          # the modern equivalent is `HF_XET_HIGH_PERFORMANCE=1` (Xet protocol
+          # is the new high-throughput download backend).
+          HF_XET_HIGH_PERFORMANCE: '1'
         run: |
           mkdir -p safetensors
-          huggingface-cli download "${HF_REPO}" \
-            --local-dir safetensors \
-            --local-dir-use-symlinks False
+          hf download "${HF_REPO}" --local-dir safetensors
           echo "Downloaded ${HF_REPO}:"
           ls -lh safetensors/
 
