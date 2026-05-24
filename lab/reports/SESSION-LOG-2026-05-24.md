@@ -166,3 +166,63 @@ The Phase 0b Architect (when written) must add these items beyond the originally
 ### Session close
 
 Phase 0a SHIPPED and pushed. PF-1 §10.4 closed. Next session opens with MIG-047 (Phase 0b Architect) — and now has four extra deliverables baked in that the original Architect outline (`docs/MIG-046-...-ARCHITECT.md` §8 "What Phase 0a explicitly does not decide") flagged as Phase 0b territory.
+
+---
+
+## 5. MIG-047 Phase 0b — Architect through Audit (continuation, same day)
+
+The Phase 0b cascade ran in this same session per Eisa's "Proceed" + "Path A" greenlight.
+
+### Architect (commit `e1c8c4d4`)
+- `docs/MIG-047-constellation-mind-phase0b-real-inference-ARCHITECT.md` (298 lines).
+- Surfaced the architectural surprise: `mistral.rs` does NOT list Jais support; `llama-cpp-2` inherits Jais via upstream llama.cpp but carries the CECE V3-§7 deferred Windows-MSVC cmake risk. Four design options laid out for Eisa.
+- Eisa's four locks:
+  - **§4 A:** A4 — `mistralrs` for Fanar in 0b; `llama-cpp-2` added in Phase 2.5 for Jais. Jais is KEPT (per §10.5 Q3 intent), just staged.
+  - **§4 D:** "No cloud service at all. Local-first." — overrides §10.5 Q3's "Constellation-hosted mirror"; falls back to **GitHub Releases with file-splitting**. Plan §10.5 Q3 row updated with the Override Note (commit `e1c8c4d4`).
+  - **§4 F:** Bench (Step H) runs AFTER real LocalProvider lands (Step G).
+  - **Quant for v1:** Q4_K_M only.
+
+### Build cascade Steps A → H (six commits)
+
+- **§A** (`a6e35b5a`) — `.github/workflows/model-pipeline.yml` (on-demand workflow: download QCRI safetensors → `convert_hf_to_gguf.py` → `llama-quantize` → `split -b 1700M` → SHA-256 sidecars → assemble `manifest.json` + `LICENSE.txt` → publish to GH Release `models/<id>-v1`). `src-tauri/resources/models.json` (bundled catalog, placeholder SHA-256 until first workflow run).
+- **§D** (`634327fd`) — `mind/providers/local_embedding.rs` wrapping the existing `embeddings.rs` ONNX pipeline (multilingual-e5-small, 384-dim). Zero new ONNX session; HMSE retrieval unaffected. 1 new test; 19/19 mind tests pass.
+- **§E** (`f17a4459`) — `mind/model_install/{mod,manifest,download,verify,registry,commands}.rs`. Five new IPC commands: `mind_install_model` / `mind_list_catalog` / `mind_list_installed_models` / `mind_active_model` / `mind_set_active_model`. Chunked download + SHA-256 verify + Arc-cloned forwarder. `sha2 = "0.10"` + `hex = "0.4"` added to Cargo.toml. 14 new tests; 33/33 mind tests pass.
+- **§F** (`39fa7258`) — `src/lib/components/MindSettings.svelte` (Svelte 5 component) wired into `SettingsModal.svelte` as new sidebar entry between Intelligence and Security. EN + AR i18n keys added; 13 other locales fall back via `||` pattern (will land alongside Phase 1).
+- **§C** (`54c49c43`) — `mind/providers/local.rs` (real `LocalProvider` wrapping `mistralrs 0.8.1`); existing stub moved to `local_stub.rs` via `git mv`. Used a parallel research agent to read the actual `mistralrs` source on GitHub (docs.rs build was broken at fetch time) — confirmed `GgufModelBuilder` API, `Stream<'_>` borrow lifetime, OpenAI-style tool schema, engine-reboot mitigation pattern (mistralrs #2147). `mistralrs = "0.8.1"` + `futures = "0.3"` added. 5 new tests; 38/38 mind tests pass. First-time cargo build with mistralrs: 5m18s.
+- **§G** (`62a5a842`) — `mind_start_turn` now loads the user's active model from `mind::model_install::registry`, instantiates real `LocalProvider`, drives a real turn through `mistralrs`. If no active model, emits `StreamEvent::Error` pointing to Settings → Mind.
+- **§B + §H** (`c6e075b7`) — Two `[[bin]]` targets in `src-tauri/build_assets/`: `bench_runtime` (model-load + first-token + sustained tokens/sec across 3 prompts; includes Arabic greeting for Boss-test Stage 0 verdict) and `bench_tool_use` (10 starter prompts × 4-tool palette × three pass/fail axes: tool-call validity, argument fidelity, coherent reply). Both compile clean; running needs the Fanar GGUF on disk. `pub mod mind;` widened from `mod mind;` so the bins can reach `constellation_lib::mind::providers::LocalProvider`.
+
+### §I — 3-agent audit summary
+
+Three parallel Explore agents (4A invariants / 4B drift / 4C migration-path) audited the full `e1c8c4d4..HEAD` range.
+
+**4A Invariants — 9 hold, 1 flagged-then-resolved as false positive, 1 cannot-determine-deferred.**
+- All 10 from MIG-047 §3 hold EXCEPT:
+- **INV-8 FALSE POSITIVE — RESOLVED:** Agent flagged "Tauri HTTP capability missing for `mind_install_model`'s reqwest calls." This is incorrect — backend Rust `reqwest::Client::new()` calls (like the 5 in `src-tauri/src/ai/mod.rs:87,131,177,252,334` for OpenAI/Anthropic/Gemini/Ollama) do NOT need Tauri capability scoping. Capability scoping (`http:default` etc.) applies to the JS-side `@tauri-apps/api/http` plugin in the webview; native backend Rust HTTP is trusted code with full network access. The existing `ai/mod.rs` pattern has been in production without HTTP capability and works fine. The `mind/` outbound-HTTP invariant is satisfied by code-review confirming we only fetch FROM the model URLs (no PUT/POST/exfiltration); no Tauri capability change needed. **No code fix required.**
+- **INV-7 cannot-determine:** `docs/models/MODEL-NOTICES.md` (named in Architect §2.3) was deferred — the per-release `LICENSE.txt` (which the workflow assembles inline, see model-pipeline.yml lines 174-243) carries the canonical Apache + Gemma + BibTeX text. Phase 1 (MIG-048) reads from the LICENSE.txt to populate Settings → About — at that point, a separate `MODEL-NOTICES.md` doc may or may not be needed. Deferring the decision is harmless in 0b.
+
+**4B Drift — CLEAN.** 10 drift vectors all clean. Only LOW finding: 13 locales not yet translated for the new `settings.mind.*` keys (known, has `||` fallback pattern, will land alongside Phase 1's chat surface).
+
+**4C Migration path — 7 PASS + 1 NEEDS-FIX (deferred).**
+- S1 (fresh install, no model) PASS
+- S2 (install Fanar from picker) PASS
+- S3 (install both models) PASS (structurally; Jais is 2.5)
+- S4 (mid-download interrupt) PASS
+- S5 (corrupted cache on load) NEEDS-FIX: the runtime path detects corruption (mistralrs load fails → InferenceError → StreamEvent::Error in chat), but the Settings → Mind UI doesn't proactively re-verify SHA-256 on startup and show "Re-install" affordance. Phase 1 polish; out of 0b scope per Architect §8.
+- S6 (rollback to MIG-046) PASS
+- S7 (existing 7,600-note universe) PASS — no boot regression
+- S8 (Cargo.toml diff bounded) PASS — only `mistralrs` + `futures` + `sha2` + `hex` added
+
+**Net audit verdict:** Phase 0b code is ready for Boss-test Stage 0. No code fixes surfaced. Two follow-up items recorded for Phase 1 / MIG-048 (S5 corrupted-cache UX + 13-locale i18n translation).
+
+### §J — open (awaits Boss-test Stage 0)
+
+Pending Eisa actions for §J completion:
+1. **Trigger model-pipeline workflow** at https://github.com/eisaShamsi/Constellation/actions → "Model Pipeline (Constellation Mind)" → Run with `model=fanar-1-9b-q4km, version=v1`. Expected: ~45-60 min on ubuntu-latest.
+2. **Send the final SHA-256** from workflow output (logged in the "Compute final SHA-256 + size BEFORE splitting" step). Small commit updates `models.json::final_sha256`.
+3. **Install Fanar** via the running app's Settings → Mind → Install button (after a fresh `cargo build` to pick up MIG-047).
+4. **Run bench_runtime** + paste output into `lab/reports/MIG-047-bench-runtime-2026-MM-DD.md`.
+5. **Run bench_tool_use** + paste output into `lab/reports/MIG-047-bench-tool-use-2026-MM-DD.md`.
+6. **Confirm Boss-test Stage 0** — open chat (when Phase 1 ships) OR invoke `mind_start_turn` from a dev script with "مرحبا، كيف حالك؟" → coherent Arabic response within 5s.
+
+Once 1-6 close, §J ships: orientation v2.32 bump documenting Phase 0b shipped + bundled-default lock (Fanar) + bench results; MoCh entry; first MIG-047 help-doc topic in all 15 locales (`docs/help.*/Constellation Mind/`); PCS gate.
