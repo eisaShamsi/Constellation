@@ -60,6 +60,14 @@ mod search;
 mod sky_backfill;
 mod map;
 mod maturity;
+// MIG-046 Phase 0a (Constellation Mind) — Inference Abstraction Skeleton.
+// Two traits (InferenceProvider + EmbeddingProvider), three stub providers,
+// Tauri Channel<StreamEvent> IPC, ChatOrchestrator skeleton, in-process
+// telemetry. Parallel to `ai/` (cloud bridge), `cece/catalogers/reasoning.rs`
+// (CECE's local-LLM stub), and `embeddings.rs` (ONNX embedding engine) —
+// 0a touches none of them. See docs/Constellation-Mind-Concept-Paper-v1.1.md
+// + docs/MIG-046-constellation-mind-phase0a-inference-abstraction-ARCHITECT.md.
+mod mind;
 mod perf_trace;
 mod provenance;
 mod review;
