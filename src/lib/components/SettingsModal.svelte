@@ -12,6 +12,7 @@
 	import { downloadJSON, pickJSONFile } from '$lib/utils';
 	import IconOverrideSettings from './IconOverrideSettings.svelte';
 	import ArabicOverridesPanel from './ArabicOverridesPanel.svelte';
+	import MindSettings from './MindSettings.svelte';
 	import PerLibraryCalibrationView from './PerLibraryCalibrationView.svelte';
 	import ConfirmDialog from './ConfirmDialog.svelte';
 	import { notifySettingsChanged } from '$lib/secondScreen';
@@ -259,6 +260,11 @@
 		// when SIGHT_V3_ENABLED is false (committed default through §1E).
 		...(SIGHT_V3_ENABLED ? [{ id: 'sight', label: $t('settings.sections.sight') || 'Sight', icon: 'eye' }] : []),
 		{ id: 'intelligence', label: $t('settings.sections.intelligence'), icon: 'bot' },
+		// MIG-047 Phase 0b §F — Constellation Mind (local LLM layer).
+		// Distinct from `intelligence` above (which is the cloud AI bridge);
+		// `mind` is local-first inference with Constellation-managed installed
+		// models. See docs/Constellation-Mind-Concept-Paper-v1.1.md.
+		{ id: 'mind', label: $t('settings.sections.mind') || 'Constellation Mind', icon: 'brain' },
 		{ id: 'security', label: $t('settings.sections.security'), icon: 'shield' },
 		{ id: 'knowledge', label: $t('settings.sections.knowledge') || 'Knowledge Management', icon: 'brain' },
 		{ id: 'index', label: $t('settings.sections.index') || 'Index', icon: 'list' },
@@ -1712,6 +1718,8 @@
 					</div>
 
 				<!-- ═══ INTELLIGENCE (AI) ═══ -->
+				{:else if activeSection === 'mind'}
+					<MindSettings />
 				{:else if activeSection === 'intelligence'}
 					<p class="section-intro">{$t('settings.intelligence.intro')}</p>
 

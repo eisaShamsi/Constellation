@@ -12,6 +12,7 @@
 			"skyview": "Sky View & Links",
 			"sight": "Sight",
 			"intelligence": "Intelligence",
+			"mind": "Constellation Mind",
 			"security": "Security & Privacy",
 			"appearance": "Appearance",
 			"keyboard": "Hotkeys",
@@ -399,6 +400,33 @@
 			"scanDesc": "Walks every note in the Universe that has neither sources nor content type set yet, asks the local Tier-1 classifier (e5-small embeddings, no internet) for a suggestion, and queues the result in the Source Review panel for your approval. Resumable: close mid-scan and the next start picks up from where it stopped. Typing stays instant — the scan runs on a background thread.",
 			"scanStart": "Start scan",
 			"scanRunning": "Running…"
+		},
+		"mind": {
+			"intro": "Constellation Mind is the local Large Language Model layer. It runs entirely on your device — no cloud — and only speaks about your notes when you ask. Install a model below to enable chat with your Universe.",
+			"loadError": "Could not load model catalog",
+			"contextWindow": "Context",
+			"install": "Install",
+			"setActive": "Set active",
+			"licenseNotes": "License notes",
+			"releaseNotes": "Release",
+			"badge": {
+				"notReady": "Not yet ready",
+				"available": "Available",
+				"installed": "Installed",
+				"active": "Active"
+			},
+			"hint": {
+				"notReady": "This model is queued for the next Constellation release. The hash placeholder (\"TBD-…\") will be replaced once the model-pipeline workflow has run."
+			},
+			"progress": {
+				"fetchingManifest": "Fetching manifest…",
+				"downloadingPart": "Downloading part",
+				"partVerified": "Part verified",
+				"assembling": "Assembling parts…",
+				"verifyingFinal": "Verifying final hash…",
+				"done": "Installed.",
+				"failed": "Failed"
+			}
 		},
 		"intelligence": {
 			"intro": "Configure AI providers, skills, and privacy controls for your libraries.",

@@ -319,6 +319,7 @@ pub fn run() {
             mind::commands::mind_telemetry_snapshot,
             // MIG-047 Phase 0b §E — model install + registry IPCs.
             mind::model_install::commands::mind_install_model,
+            mind::model_install::commands::mind_list_catalog,
             mind::model_install::commands::mind_list_installed_models,
             mind::model_install::commands::mind_active_model,
             mind::model_install::commands::mind_set_active_model,

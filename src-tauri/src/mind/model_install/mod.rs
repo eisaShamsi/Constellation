@@ -33,7 +33,8 @@ pub mod registry;
 pub mod verify;
 
 pub use commands::{
-    mind_active_model, mind_install_model, mind_list_installed_models, mind_set_active_model,
+    mind_active_model, mind_install_model, mind_list_catalog, mind_list_installed_models,
+    mind_set_active_model,
 };
 pub use download::DownloadProgress;
 pub use manifest::{ModelEntry, ModelsCatalog, ReleaseManifest, ReleasePart};

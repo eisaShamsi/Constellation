@@ -286,6 +286,13 @@ fn register_installed(
     Ok(())
 }
 
+/// Return the bundled `models.json` catalog so the Settings UI can list
+/// installable models with their display names + sizes + license info.
+#[tauri::command]
+pub async fn mind_list_catalog(app: AppHandle) -> Result<ModelsCatalog, String> {
+    load_catalog(&app)
+}
+
 #[tauri::command]
 pub async fn mind_list_installed_models(app: AppHandle) -> Result<InstalledModelsRegistry, String> {
     InstalledModelsRegistry::load_from(&app_data_dir(&app)?)
