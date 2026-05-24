@@ -102,27 +102,35 @@ jobs:
 
       - name: Download safetensors from Hugging Face (Fanar is PUBLIC; no auth needed)
         env:
-          # Python snapshot_download is more robust than the `hf` CLI under
-          # unauthenticated rate-limits — the CLI silently stalls after the
-          # first few files. Python lets us specify resume_download + add an
-          # explicit timeout. Use HF_TOKEN if set (workflow Secrets); else
-          # rely on the public-repo path.
-          HF_XET_HIGH_PERFORMANCE: '1'
+          # Previous attempts: hf CLI stalled + Python snapshot_download
+          # SIGTERM'd at 22s into the large-file phase. Suspect Xet protocol
+          # memory pressure on the free-tier runner. Disable Xet and use
+          # sequential per-file download via hf_hub_download (single worker;
+          # one file at a time; minimal memory footprint).
+          HF_XET_HIGH_PERFORMANCE: '0'
+          HF_HUB_DISABLE_XET: '1'
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           mkdir -p safetensors
           python - <<'PY'
-          import os, sys
-          from huggingface_hub import snapshot_download
+          import os
+          from huggingface_hub import HfApi, hf_hub_download
+          repo = os.environ["HF_REPO"]
           token = os.environ.get("HF_TOKEN") or None
-          path = snapshot_download(
-              repo_id=os.environ["HF_REPO"],
-              local_dir="safetensors",
-              repo_type="model",
-              token=token,
-              max_workers=4,
-          )
-          print(f"Downloaded to: {path}")
+          api = HfApi(token=token)
+          files = [f for f in api.list_repo_files(repo) if not f.startswith(".")]
+          print(f"Repo {repo} has {len(files)} files; downloading sequentially:")
+          for i, fname in enumerate(files, 1):
+              print(f"  [{i}/{len(files)}] {fname}", flush=True)
+              hf_hub_download(
+                  repo_id=repo,
+                  filename=fname,
+                  local_dir="safetensors",
+                  token=token,
+                  force_download=False,
+                  resume_download=True,
+              )
+          print("All files fetched.")
           PY
           echo "Files:"
           ls -lh safetensors/
