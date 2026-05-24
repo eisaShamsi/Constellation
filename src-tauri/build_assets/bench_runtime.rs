@@ -51,10 +51,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!();
     println!("- **Model:** `{model_id}`");
     println!("- **Path:** `{}`", model_path.display());
-    println!(
-        "- **Runtime:** mistral.rs {} (CPU-only, no PagedAttention)",
-        env!("CARGO_PKG_VERSION")
-    );
+    println!("- **Runtime:** llama-cpp-2 (CPU-only, llama.cpp pinned upstream)");
     println!("- **Date:** {}", chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC"));
     println!();
 

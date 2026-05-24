@@ -65,19 +65,28 @@ async-trait = "0.1"
 # MIT/Apache-2.0; widely used in the Rust ecosystem.
 sha2 = "0.10"
 hex = "0.4"
-# MIG-047 Phase 0b §C: real local LLM inference for Constellation Mind.
-# Per Eisa's §4 A lock (A4): mistral.rs in 0b for Fanar; llama-cpp-2
-# added later in Phase 2.5 for Jais. mistral.rs is pure Rust on top of
-# Candle — no cmake / C++ chain on Windows MSVC (the CECE V3-§7
-# deferred risk does NOT apply here; that concern was about
-# llama-cpp-2 specifically). First-class tool-call support + Gemma 2
-# listed (Fanar's base architecture). MIT licensed.
-mistralrs = "0.8.1"
-# MIG-047 Phase 0b §C: mistralrs's `Model::stream_chat_request` returns
-# a `futures::Stream<'_>`; consumers (incl. our LocalProvider) need
-# `futures::StreamExt::next()` to drain it. Pure-Rust; standard.
-# MIT/Apache-2.0.
-futures = "0.3"
+# MIG-047 Phase 0b §C-v2 (2026-05-24, after §C-v1 panic): swapped
+# mistral.rs → llama-cpp-2 for the LocalProvider runtime.
+#
+# Why the swap: mistral.rs 0.8.1's GGUF loader does NOT include a
+# `gemma2` architecture handler; it panics at first model load
+# (mistralrs-core/src/gguf/content.rs:151 — "Unknown GGUF architecture
+# `gemma2`"). The README's Gemma 2 listing is the safetensors path,
+# not the GGUF path. Fanar's quantized GGUF advertises gemma2, so it
+# never loads. llama-cpp-2 wraps upstream llama.cpp which has full
+# Gemma 2 GGUF support (the same llama.cpp that quantized Fanar in
+# our model-pipeline workflow). Eisa's revised lock (Path A): take
+# the cmake/MSVC risk now rather than deferring to Phase 2.5 — gives
+# us a single runtime for both Fanar (now) and Jais (Phase 2.5).
+#
+# Windows MSVC build: requires cmake on PATH at build time. cmake
+# lives at `C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\
+# Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe`
+# (VS Build Tools 18). Cargo invocations from this repo must prepend
+# that dir to PATH.
+#
+# MIT/Apache-2.0 licensed. utilityai/llama-cpp-rs is the upstream.
+llama-cpp-2 = "0.1.146"
 rfd = "0.15"
 notify = "7"
 regex = "1"

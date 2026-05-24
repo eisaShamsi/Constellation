@@ -125,13 +125,20 @@ mod tests {
     }
 
     #[test]
-    fn model_entry_not_ready_while_sha_is_tbd() {
+    fn model_entry_ready_to_install_after_workflow_run() {
+        // After the first model-pipeline.yml workflow run (2026-05-24,
+        // run id 26364885496), models.json's final_sha256 was populated
+        // with the actual hash. The bundled file ships ready-to-install.
+        // Previous version of this test asserted the inverse ("starts with
+        // TBD") to catch shipping an unverifiable download; flipped now
+        // that the real hash is in.
         let raw = include_str!("../../../resources/models.json");
         let parsed: ModelsCatalog = serde_json::from_str(raw).unwrap();
         let fanar = &parsed.models[0];
-        // Before first workflow run, sha256 starts with "TBD-".
-        assert!(fanar.final_sha256.starts_with("TBD"));
-        assert!(!fanar.is_ready_to_install());
+        assert!(!fanar.final_sha256.starts_with("TBD"));
+        assert_eq!(fanar.final_sha256.len(), 64); // SHA-256 hex
+        assert!(fanar.final_size_bytes > 0);
+        assert!(fanar.is_ready_to_install());
     }
 
     #[test]
