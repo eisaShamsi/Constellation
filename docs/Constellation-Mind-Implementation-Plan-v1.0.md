@@ -299,9 +299,53 @@ All Rust changes land in a NEW `src-tauri/src/mind/` module. The existing intell
 
 ---
 
-## 10. License verdicts (TBD — fills at PF-1 close)
+## 10. License verdicts (PF-1 close — 2026-05-24)
 
-*To be appended after PF-1 — license read for Fanar-1-9B and Jais-2-8B. Until populated, MIG-046 cannot lock bundled-default model identity for first-launch download.*
+### 10.1 Fanar-1-9B
+
+- **Canonical home:** [QCRI/Fanar-1-9B](https://huggingface.co/QCRI/Fanar-1-9B) (base) and [QCRI/Fanar-1-9B-Instruct](https://huggingface.co/QCRI/Fanar-1-9B-Instruct) (instruct).
+- **Q4_K_M GGUF:** **Not officially published by QCRI** — community quants only at [mradermacher/Fanar-1-9B-i1-GGUF](https://huggingface.co/mradermacher/Fanar-1-9B-i1-GGUF) (Q4_K_M, 5.38 GB, no gating).
+- **License name (as declared by QCRI):** [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
+- **CRITICAL upstream caveat:** Fanar-1-9B is a continued pretraining of `google/gemma-2-9b`. QCRI's card states: *"We continually pretrain the `google/gemma-2-9b` model on 1T Arabic and English tokens"* and *"This model is licensed under the Apache 2.0 License"* — **but does NOT acknowledge any upstream Gemma License obligation.** The Gemma Terms of Use normally bind derivatives and require the Gemma notice + prohibited-use list to travel with redistribution. QCRI's relabel to Apache-2.0 alone is contested as a matter of upstream contract. **Unverified whether QCRI obtained a separate agreement with Google.**
+- **Redistribution for first-launch download:** (a) **permitted** under both Apache-2.0 and Gemma Terms; (b) **permitted**; (c) **permitted** (commercial output use allowed under both readings); (d) **permitted with conditions** — bundled installer must carry Gemma + Apache notices.
+- **Acceptable Use Policy:** Per QCRI card, content not to be used to generate or spread harmful, illegal, or misleading content; not suitable for high-stakes decisions. [Gemma Prohibited Use Policy](https://ai.google.dev/gemma/prohibited_use_policy) *also* applies on the upstream-derivative reading.
+- **Attribution requirements:** BibTeX citation requested for Fanar 2025 (arXiv:2501.13944). Gemma notice should travel if the upstream license applies.
+- **Gating:** None on the QCRI repo.
+- **Verdict for Constellation Mind bundling:** **GO with conditions** — (1) ship Apache-2.0 notice + Fanar BibTeX in the About panel; (2) **also ship Gemma notice + Gemma Prohibited Use link** defensively until QCRI clarifies the upstream agreement; (3) for the Q4_K_M weights, either quantize in-house from the official safetensors in Constellation's build pipeline, OR depend on `mradermacher/Fanar-1-9B-i1-GGUF` (Apache-2.0, no gating, third-party — pin a specific revision).
+
+### 10.2 Jais-2-8B-Chat
+
+- **Canonical home:** [inceptionai/Jais-2-8B-Chat](https://huggingface.co/inceptionai/Jais-2-8B-Chat) and **official GGUF** at [inceptionai/Jais-2-8B-Chat-GGUF](https://huggingface.co/inceptionai/Jais-2-8B-Chat-GGUF).
+- **Q4_K_M GGUF:** **Officially published** by Inception — `Q4_K_M.gguf` (4.8 GiB) on the GGUF repo above.
+- **License name:** [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0) (tagged `apache-2.0` on the card; no separate LICENSE file linked).
+- **Redistribution for first-launch download:** (a) **permitted** by Apache-2.0 in principle, **BUT blocked operationally by the HF gate** — see below; (b) **permitted**; (c) **permitted** (card explicitly lists commercial use cases); (d) **permitted with conditions** (Apache notice + citation).
+- **Acceptable Use Policy:** Card lists "Inappropriate Use Cases" (hate speech, misinformation, sensitive PII, high-stakes decisions without human oversight). Standard for an open model.
+- **Attribution requirements:** Citation requested (Jais 2 Technical Report, IFM, 2025).
+- **Deal-breaker — gating:** **Both `Jais-2-8B-Chat` and `Jais-2-8B-Chat-GGUF` are GATED:** *"You need to agree to share your contact information to access this model."* Requires Hugging Face login + click-through. **Unattended first-launch download is NOT possible** unless the user has already accepted the gate on a logged-in HF account and supplies a token, OR Inception lifts the gate, OR Constellation hosts an Apache-2.0-compliant mirror.
+- **Verdict for Constellation Mind bundling:** **GO with conditions** — Apache-2.0 itself is fine, but **the gate blocks the chosen distribution model.** Three viable paths: (i) prompt the user on first-launch to obtain an HF token + paste it (degrades the local-first UX promise); (ii) **mirror the GGUF** on a Constellation-controlled CDN — Apache-2.0 §4 permits redistribution provided notices travel; (iii) request Inception to ungate the GGUF repo for desktop-app integrations.
+
+### 10.3 Combined verdict for the RoutedProvider context
+
+Both models are nominally Apache-2.0 and there is **no cross-license conflict** at the surface. RoutedProvider can dispatch between them. Two structural caveats:
+
+- **Fanar's Gemma ancestry** means Constellation should ship a single combined "Model notices" panel covering Apache-2.0, Gemma Terms, and both citations regardless of which provider is active.
+- **Jais's gate** is the operational blocker — until it is resolved, only Fanar can be a true zero-friction default. Jais ships as a user-installable provider, not a bundled-default, unless we mirror or Inception ungates.
+
+### 10.4 Open questions requiring Eisa's decision (before Phase 0b locks)
+
+1. **Gemma upstream — accept QCRI's relabel or also ship Gemma notices?** Two options: (a) trust QCRI's Apache-2.0 relabel and ship as-is; (b) defensively ship Gemma notices + email QCRI/HBKU to confirm they have a Google agreement. *Recommendation: (b)* — costs nothing in code, removes the only legal cloud.
+2. **Fanar GGUF — quantize in-house or depend on `mradermacher`?** In-house removes a third-party trust dependency but adds build-pipeline work. *Recommendation: in-house* for a bundled-default.
+3. **Jais gate — how to handle?** Options: (a) drop Jais as co-default, keep as user-installable provider only; (b) require an HF token paste on first launch; (c) host an Apache-2.0-compliant mirror. *Recommendation: (a) for v1*, revisit (c) after talking to Inception. **This affects Plan §1 Decision #1 (loading strategy)** — if Jais is user-installable rather than co-default, "hot-swap vs Performance Mode" only applies after the user explicitly installs it.
+4. **Attribution placement.** Where the "Powered by" / citation block lives — Settings → About panel is the conventional spot; needs explicit choice.
+
+**Primary sources (verified 2026-05-24):**
+- [QCRI/Fanar-1-9B model card](https://huggingface.co/QCRI/Fanar-1-9B)
+- [QCRI/Fanar-1-9B-Instruct model card](https://huggingface.co/QCRI/Fanar-1-9B-Instruct)
+- [inceptionai/Jais-2-8B-Chat model card](https://huggingface.co/inceptionai/Jais-2-8B-Chat)
+- [inceptionai/Jais-2-8B-Chat-GGUF repo](https://huggingface.co/inceptionai/Jais-2-8B-Chat-GGUF)
+- [mradermacher/Fanar-1-9B-i1-GGUF](https://huggingface.co/mradermacher/Fanar-1-9B-i1-GGUF) (community quant)
+- [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0)
+- [Gemma Prohibited Use Policy](https://ai.google.dev/gemma/prohibited_use_policy)
 
 ---
 
