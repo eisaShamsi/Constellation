@@ -1,0 +1,26 @@
+{
+  "$schema_version": 1,
+  "$doc": "MIG-047 Phase 0b — installable models for Constellation Mind. This file is bundled as a Tauri resource (src-tauri/tauri.conf.json → bundle.resources). The Tauri-side model-install command reads it at startup; the install flow uses the URL pattern + final_sha256 to fetch + verify each model. Final SHA-256 values are TBD until the model-pipeline.yml workflow has been run once per model; the install command refuses to install any model whose sha256 begins with 'TBD' to avoid shipping an unverifiable download.",
+  "models": [
+    {
+      "id": "fanar-1-9b-q4km",
+      "version": "v1",
+      "display_name": "Fanar 1.9B (Q4_K_M)",
+      "display_name_ar": "فَنار 1.9B (Q4_K_M)",
+      "description": "Qatar Computing Research Institute's Arabic-first 9B model, instruction-tuned, deliberately Sunni-aware. Continued pretraining of google/gemma-2-9b. Recommended bundled default for Constellation Mind.",
+      "description_ar": "نموذج عربي ٩ مليار مُعامل من معهد قطر لبحوث الحوسبة (QCRI)، مُدرَّب على التعليمات، مُحاذى مع المنظور السُنّي. تدريب مكمَّل لنموذج google/gemma-2-9b. الموصى به افتراضيًا لـ Constellation Mind.",
+      "model_family": "fanar",
+      "quantization": "Q4_K_M",
+      "language_focus": ["ar", "en"],
+      "context_window": 8192,
+      "license": "Apache-2.0",
+      "license_notes_url": "https://github.com/eisaShamsi/Constellation/releases/download/models/fanar-1-9b-q4km-v1/LICENSE.txt",
+      "manifest_url": "https://github.com/eisaShamsi/Constellation/releases/download/models/fanar-1-9b-q4km-v1/manifest.json",
+      "release_url": "https://github.com/eisaShamsi/Constellation/releases/tag/models/fanar-1-9b-q4km-v1",
+      "$comment_sha256": "Replace 'TBD-...' below after the first model-pipeline.yml workflow run, with the final_sha256 from the produced manifest.json. The Tauri-side install command refuses to install while the value starts with 'TBD'.",
+      "final_sha256": "TBD-after-first-workflow-run",
+      "final_size_bytes": 0
+    }
+  ],
+  "$todo": "Phase 2.5 / MIG-050 adds the jais-2-8b-chat-q4km entry once llama-cpp-2 is wired and the gated HF fetch is set up in the workflow."
+}
