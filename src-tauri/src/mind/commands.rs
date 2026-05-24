@@ -23,7 +23,12 @@ use tauri::ipc::Channel;
 
 use crate::mind::events::StreamEvent;
 use crate::mind::provider::{ChatMessage, ChatRole, GenParams, InferenceProvider};
-use crate::mind::providers::LocalProvider;
+// Step C of MIG-047 renamed the deterministic stub to `LocalStubProvider`
+// and introduced a real `LocalProvider` that loads a GGUF via mistralrs.
+// This `mind_start_turn` keeps the stub binding for now; Step G (next
+// commit) refactors to instantiate the real `LocalProvider` against the
+// active model from the install registry.
+use crate::mind::providers::LocalStubProvider;
 use crate::mind::telemetry::{self, TelemetrySnapshot};
 
 /// Request shape for `mind_start_turn`.
@@ -43,17 +48,21 @@ pub struct StartTurnRequest {
 
 /// Start one conversational turn and stream events to the frontend.
 ///
-/// Phase 0a behaviour: always uses the `LocalProvider` stub (Step B). The
-/// command returns immediately after spawning the streaming task — the
-/// task drains the provider's receiver and forwards each event to the
-/// frontend `Channel`. A terminal `Done` or `Error` event closes the
-/// channel.
+/// Phase 0a behaviour: always uses the `LocalStubProvider` (deterministic
+/// stub from MIG-046 §B). The command returns immediately after spawning
+/// the streaming task — the task drains the provider's receiver and
+/// forwards each event to the frontend `Channel`. A terminal `Done` or
+/// `Error` event closes the channel.
+///
+/// **Step G (MIG-047, next commit) refactors this to:** read the active
+/// model from `mind::model_install::registry`; instantiate the real
+/// `LocalProvider` against that model's GGUF path; drive a real turn.
 #[tauri::command]
 pub async fn mind_start_turn(
     request: StartTurnRequest,
     on_event: Channel<StreamEvent>,
 ) -> Result<(), String> {
-    let provider = LocalProvider::new();
+    let provider = LocalStubProvider::new();
 
     let messages = vec![ChatMessage {
         role: ChatRole::User,

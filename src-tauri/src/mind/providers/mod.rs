@@ -16,9 +16,11 @@
 pub mod cloud;
 pub mod local;
 pub mod local_embedding;
+pub mod local_stub;
 pub mod offline;
 
 pub use cloud::CloudProvider;
 pub use local::LocalProvider;
 pub use local_embedding::LocalEmbeddingProvider;
+pub use local_stub::LocalStubProvider;
 pub use offline::OfflineProvider;

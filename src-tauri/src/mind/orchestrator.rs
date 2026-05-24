@@ -401,11 +401,11 @@ impl ChatOrchestrator {
 mod tests {
     use super::*;
     use crate::mind::provider::{ChatRole, ProviderCapabilities, ToolSchema};
-    use crate::mind::providers::LocalProvider;
+    use crate::mind::providers::LocalStubProvider;
 
     #[tokio::test]
     async fn turn_completes_with_local_stub_no_tools() {
-        let provider: Arc<dyn InferenceProvider> = Arc::new(LocalProvider::new());
+        let provider: Arc<dyn InferenceProvider> = Arc::new(LocalStubProvider::new());
         let dispatcher: Arc<dyn ToolDispatcher> = Arc::new(CannedDispatcher);
         let mut orch = ChatOrchestrator::new(provider, dispatcher);
 
@@ -439,7 +439,7 @@ mod tests {
 
     #[tokio::test]
     async fn turn_completes_one_tool_round_with_local_stub() {
-        let provider: Arc<dyn InferenceProvider> = Arc::new(LocalProvider::new());
+        let provider: Arc<dyn InferenceProvider> = Arc::new(LocalStubProvider::new());
         let dispatcher: Arc<dyn ToolDispatcher> = Arc::new(CannedDispatcher);
         let mut orch = ChatOrchestrator::new(provider, dispatcher);
 
@@ -609,7 +609,7 @@ mod tests {
 
     #[tokio::test]
     async fn turn_increments_per_instance_telemetry_counters() {
-        let provider: Arc<dyn InferenceProvider> = Arc::new(LocalProvider::new());
+        let provider: Arc<dyn InferenceProvider> = Arc::new(LocalStubProvider::new());
         let dispatcher: Arc<dyn ToolDispatcher> = Arc::new(CannedDispatcher);
         let counters = Arc::new(TelemetryCounters::new());
         let mut orch = ChatOrchestrator::new(provider, dispatcher)

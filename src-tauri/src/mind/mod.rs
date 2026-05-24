@@ -48,5 +48,7 @@ pub use provider::{
     ChatMessage, ChatRole, EmbeddingCapabilities, EmbeddingProvider, FinishReason, GenParams,
     InferenceError, InferenceProvider, ProviderCapabilities, TokenUsage, ToolChoice, ToolSchema,
 };
-pub use providers::{CloudProvider, LocalEmbeddingProvider, LocalProvider, OfflineProvider};
+pub use providers::{
+    CloudProvider, LocalEmbeddingProvider, LocalProvider, LocalStubProvider, OfflineProvider,
+};
 pub use telemetry::TelemetrySnapshot;

@@ -50,6 +50,19 @@ async-trait = "0.1"
 # MIT/Apache-2.0; widely used in the Rust ecosystem.
 sha2 = "0.10"
 hex = "0.4"
+# MIG-047 Phase 0b §C: real local LLM inference for Constellation Mind.
+# Per Eisa's §4 A lock (A4): mistral.rs in 0b for Fanar; llama-cpp-2
+# added later in Phase 2.5 for Jais. mistral.rs is pure Rust on top of
+# Candle — no cmake / C++ chain on Windows MSVC (the CECE V3-§7
+# deferred risk does NOT apply here; that concern was about
+# llama-cpp-2 specifically). First-class tool-call support + Gemma 2
+# listed (Fanar's base architecture). MIT licensed.
+mistralrs = "0.8.1"
+# MIG-047 Phase 0b §C: mistralrs's `Model::stream_chat_request` returns
+# a `futures::Stream<'_>`; consumers (incl. our LocalProvider) need
+# `futures::StreamExt::next()` to drain it. Pure-Rust; standard.
+# MIT/Apache-2.0.
+futures = "0.3"
 rfd = "0.15"
 notify = "7"
 regex = "1"
