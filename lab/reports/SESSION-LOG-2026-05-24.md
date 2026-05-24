@@ -64,8 +64,8 @@ Per the Architect §5:
 - [x] **§C — Tauri IPC + `Channel<StreamEvent>` + telemetry scaffold** (`2e432a61`). New `src-tauri/src/mind/{commands.rs, telemetry.rs}`. Two `#[tauri::command]`s: `mind_start_turn(request, on_event: Channel<StreamEvent>)` spawns `tauri::async_runtime::spawn` task; `mind_telemetry_snapshot() -> TelemetrySnapshot` returns zeros (§E wires real counters). `lib.rs:invoke_handler!` gains the two `mind::commands::*` entries alongside untouched `ai::*` (invariant 1). 11/11 mind tests pass.
 - [x] **§D — `ChatOrchestrator` skeleton + MA-4 budget + MA-5 framing hook** (`b3dae04b`). New `src-tauri/src/mind/orchestrator.rs`. `turn()` wraps the §B Pattern-B protocol in an outer `loop { stream = generate(); … }` exiting only on Done(Stop/Length/Cancelled) — resolves the Concept-Paper-v1.1-§10.3 single-iteration depiction. `tool_rounds` counter + `max_tool_rounds_per_turn` budget injection of `{status: "aborted_tool_budget_exceeded", limit, guidance}`. `framing::as_tool_result` central sanitizer landed (no-op in 0a; Phase 1 swaps for real `<tool_result>` framing). `LoopingToolCallProvider` test helper exercises the budget-abort path; 15/15 mind tests pass.
 - [x] **§E — real telemetry atomics wired through `turn()`** (`1f5f64ce`). `TelemetryCounters` (AtomicU64 + Mutex<String>) + `record_*`/`snapshot` methods + `OnceLock<Arc<TelemetryCounters>>` global for the IPC. Orchestrator holds `Arc<TelemetryCounters>` (defaults to `telemetry::global()`; tests inject via `with_counters()`). `turn()` records `set_active_provider` on entry, `record_tool_call` per accepted ToolCall, `record_budget_exceeded` once per turn that hits MA-4, `record_error` on Error/no-Done, `record_turn(latency_ms, tokens_in, tokens_out)` on Stop/Length/Cancelled. 18/18 mind tests pass — new tests `per_instance_counters_increment_independently`, `global_snapshot_starts_at_zero`, `turn_increments_per_instance_telemetry_counters`, `budget_abort_records_one_budget_hit_in_telemetry`.
-- [x] **§F — 3-agent audit complete, all PASS** (this commit).
-- [ ] Step G — SO + docs + PCS gate
+- [x] **§F — 3-agent audit complete, all PASS** (`e7e3dab2`).
+- [x] **§G — SO closure + orientation v2.31 + MoCh** (this commit). PCS gate now awaits Eisa's explicit go to push.
 
 ### §F — Audit summary (3 parallel Explore agents)
 
@@ -100,3 +100,41 @@ Briefed agents with audit range `e2df4a69..HEAD` (in retrospect: that range **ex
   - S6 (test isolation): every telemetry-touching test uses `.with_counters(Arc::new(TelemetryCounters::new()))` — zero direct writes to `telemetry::global()` from tests.
 
 **Net audit conclusion:** Phase 0a Steps A–E land cleanly. No code fixes needed. Step G can proceed to PCS gate.
+
+---
+
+## 3. Phase 0a closure (§G)
+
+Six Build commits all green, audit clean, trait surface locked. The `src-tauri/src/mind/` module is real and consumable; the strategic moat the Concept Paper described is in place.
+
+### What's in place after Phase 0a
+
+- **Trait surface** (`mind/provider.rs`) — `InferenceProvider` + `EmbeddingProvider` split per MA-1, ready to admit real `mistral.rs` / `llama-cpp-2` (Phase 0b), `RoutedProvider` (Phase 2.5), real `CloudProvider` (Phase 5), `LocalEmbeddingProvider` wrapping `embeddings.rs` (Phase 0b/1).
+- **Three stub providers** (`mind/providers/`) — `LocalProvider`, `CloudProvider`, `OfflineProvider`, all deterministic, all exercise the trait surface end-to-end with 10 unit tests in `mind::providers::*`.
+- **Tauri IPC contract** (`mind/commands.rs`) — `mind_start_turn(request, Channel<StreamEvent>)` + `mind_telemetry_snapshot()`. Wired in `lib.rs` alongside untouched `ai::*`. Phase 1 refactors `mind_start_turn` to use the orchestrator.
+- **ChatOrchestrator skeleton** (`mind/orchestrator.rs`) — `turn()` honors Pattern B (generate-restart) outer loop, MA-4 tool-call budget abort, MA-5 framing-hook placeholder. 4 integration tests exercise the full call graph.
+- **Telemetry atomics** (`mind/telemetry.rs`) — `TelemetryCounters` per-instance or via `telemetry::global()` for the IPC. Test isolation via `.with_counters()`. 2 telemetry unit tests + 2 orchestrator-via-counters tests.
+- **18/18 tests pass** in the `mind::` module.
+
+### Phase 0a → Phase 0b handoff
+
+Phase 0b (MIG-047) opens with these 0a deliverables in hand. The first 0b tasks:
+1. **One-day micro-bench** — `mistral.rs` vs `llama-cpp-2` (Plan §1 Decision #4) on Q4_K_M Fanar / Jais on dev hardware.
+2. **PF-1 §10.4 open-question resolution** with Eisa (Gemma notices? Fanar GGUF source? Jais gate? attribution placement?) — these affect 0b's model-install flow and bundled-default identity.
+3. **Real `LocalProvider`** — swap the §B stub for the chosen runtime, wired against the trait surface unchanged from §A.
+4. **Tool-use reliability benchmark** — 50 representative prompts × Fanar vs Jais × measured success rate on the eventual tool palette schemas (`create_note`, `link_notes`, `search_notes`).
+5. **Bench report** + bundled-default recommendation for Eisa's lock-in.
+6. **First-launch download flow** + model picker UI (frontend).
+
+Phase 0b is the **first Boss-testable phase**. Plan §4: "Open chat, type `مرحبا، كيف حالك؟`, receive coherent Arabic response within 5s on standard laptop."
+
+### PCS gate
+
+All Phase 0a commits (`29459ed0..` current Step G) live on local `main` only. `origin/ConstellationMain` is 1612 commits behind. Push requires Eisa's explicit go.
+
+Eisa decision queue:
+1. **PCS green to push** Phase 0a bundle? (single-PR or push-direct-to-main per project convention.)
+2. **PF-1 §10.4 open questions** — settle before MIG-047 Architect.
+3. **Next session focus** — proceed straight to MIG-047 (Phase 0b Architect) or pause to address the four 10.4 questions first?
+
+No Boss-test required for Phase 0a (Plan §4: "No Boss test yet"). The 18 unit tests are the verification surface.
