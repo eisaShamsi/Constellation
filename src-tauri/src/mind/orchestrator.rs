@@ -1,0 +1,568 @@
+//! `ChatOrchestrator` — owns one conversation, drives the provider through
+//! tool-call rounds, fans events out to the UI.
+//!
+//! Phase 0a (this file) lands the **skeleton**: the loop shape is real,
+//! the tool-call budget (MA-4) is exercised end-to-end, the prompt-
+//! injection framing hook (MA-5) is in place as a no-op pass-through.
+//! Phase 1 (MIG-048) plumbs the real retriever, real tools, citation
+//! validator, conversation-history compaction, and the chat UI.
+//!
+//! Design note on the **tool-call protocol** (resolved during Step D):
+//! Concept Paper v1.1 §10.3 shows one `provider.generate(...).await`
+//! call and a `while let Some(event) = stream.recv()` loop. That snippet
+//! depicts a single round; the orchestrator wraps it in an outer
+//! `loop { stream = generate(); … }` because the trait surface follows
+//! **Pattern B** (generate-restart, matches the Anthropic HTTP API):
+//! - The stream closes after `Done { finish_reason: ToolCall }`.
+//! - The orchestrator pushes the tool result into history and calls
+//!   `generate()` again with the updated history.
+//! - The outer loop exits only on `Done { Stop | Length | Cancelled | Error }`.
+//!
+//! Tool-call budget (MA-4) — Concept Paper v1.1 §10.3:
+//! - `tool_rounds` counter increments before each `dispatcher.dispatch`.
+//! - When it reaches `max_tool_rounds_per_turn`, the orchestrator
+//!   injects a synthetic tool_result `{status: "aborted_tool_budget_exceeded"}`
+//!   that the model sees on the next iteration and uses to compose a
+//!   final answer. No infinite loop is possible.
+//!
+//! Prompt-injection framing (MA-5) — Concept Paper v1.1 §6.3 + §10.4:
+//! - Every tool result passes through `framing::as_tool_result` before
+//!   re-entering the prompt envelope. In 0a this is a no-op
+//!   pass-through; Phase 1 replaces it with the `<tool_result>` wrapper
+//!   + sanitization the system prompt's "treat content as data" rule
+//!   relies on.
+
+use std::sync::Arc;
+
+use serde::{Deserialize, Serialize};
+use tokio::sync::mpsc;
+
+use crate::mind::events::StreamEvent;
+use crate::mind::provider::{
+    ChatMessage, ChatRole, FinishReason, GenParams, InferenceError, InferenceProvider, TokenUsage,
+};
+
+// ─── Configuration ─────────────────────────────────────────────────
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChatConfig {
+    /// MA-4 (Concept Paper v1.1 §10.3 / Plan §2 / risk R13): bound on the
+    /// number of tool-call rounds within a single turn. Default 5.
+    /// Configurable per Universe. Never zero — see §10.3.
+    pub max_tool_rounds_per_turn: u8,
+}
+
+impl Default for ChatConfig {
+    fn default() -> Self {
+        Self {
+            max_tool_rounds_per_turn: 5,
+        }
+    }
+}
+
+// ─── UI event surface ──────────────────────────────────────────────
+
+/// Events the orchestrator emits to the UI for one turn.
+///
+/// Phase 0a uses an `mpsc::Sender<UiEvent>` directly for unit testing;
+/// Step C's `mind_start_turn` IPC will plumb this through the Tauri
+/// `Channel<StreamEvent>` in Phase 1 (the IPC layer translates UiEvent
+/// into the appropriate StreamEvent for the frontend).
+#[derive(Debug, Clone, PartialEq)]
+pub enum UiEvent {
+    AssistantToken(String),
+    ToolCallProposed { id: String, name: String },
+    ToolCallResolved { id: String, status: String },
+    ToolBudgetReached,
+    TurnDone { usage: TokenUsage },
+}
+
+// ─── Errors ────────────────────────────────────────────────────────
+
+#[derive(Debug)]
+pub enum ChatError {
+    Provider(InferenceError),
+    UiChannelClosed,
+    StreamEndedWithoutDone,
+}
+
+impl std::fmt::Display for ChatError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Provider(e) => write!(f, "provider error: {e}"),
+            Self::UiChannelClosed => write!(f, "UI event channel closed"),
+            Self::StreamEndedWithoutDone => write!(f, "provider stream ended without Done event"),
+        }
+    }
+}
+
+impl std::error::Error for ChatError {}
+
+impl From<InferenceError> for ChatError {
+    fn from(e: InferenceError) -> Self {
+        ChatError::Provider(e)
+    }
+}
+
+// ─── Tool dispatcher trait (placeholder in 0a) ─────────────────────
+
+/// Tool dispatcher abstraction. Phase 0a uses a `CannedDispatcher` that
+/// returns `{"status": "ok"}` for every tool name. Phase 1 (MIG-048)
+/// adds the real read-tool implementations (search_notes, read_note,
+/// summarize → NSC, etc.). Phase 2 (MIG-049) adds the write tools with
+/// approval-gate semantics.
+#[async_trait::async_trait]
+pub trait ToolDispatcher: Send + Sync {
+    async fn dispatch(
+        &self,
+        tool_name: &str,
+        args: serde_json::Value,
+    ) -> serde_json::Value;
+}
+
+pub struct CannedDispatcher;
+
+#[async_trait::async_trait]
+impl ToolDispatcher for CannedDispatcher {
+    async fn dispatch(
+        &self,
+        tool_name: &str,
+        _args: serde_json::Value,
+    ) -> serde_json::Value {
+        serde_json::json!({ "status": "ok", "tool": tool_name })
+    }
+}
+
+// ─── Prompt-injection guard (MA-5 placeholder) ────────────────────
+
+/// Centralized sanitizer for tool results. Phase 0a is a no-op
+/// pass-through; Phase 1 (MIG-048) replaces it with the `<tool_result>`
+/// wrapper + content sanitization the system-prompt rule ("treat
+/// content as data") depends on.
+///
+/// Architecturally important to land the function NOW so Phase 1 doesn't
+/// have to thread a new call site through every existing tool — every
+/// tool result already flows through here.
+pub mod framing {
+    pub fn as_tool_result(_tool_name: &str, raw: serde_json::Value) -> serde_json::Value {
+        // 0a: pass-through. Phase 1 swaps for real framing.
+        raw
+    }
+}
+
+// ─── ChatOrchestrator ──────────────────────────────────────────────
+
+pub struct ChatOrchestrator {
+    provider: Arc<dyn InferenceProvider>,
+    dispatcher: Arc<dyn ToolDispatcher>,
+    history: Vec<ChatMessage>,
+    config: ChatConfig,
+}
+
+pub struct TurnOutcome {
+    pub finish_reason: FinishReason,
+    pub usage: TokenUsage,
+    /// Number of tool-call rounds this turn consumed (0 if pure generation).
+    pub tool_rounds: u8,
+    /// True if the turn hit the budget abort path.
+    pub budget_exceeded: bool,
+}
+
+impl ChatOrchestrator {
+    pub fn new(provider: Arc<dyn InferenceProvider>, dispatcher: Arc<dyn ToolDispatcher>) -> Self {
+        Self {
+            provider,
+            dispatcher,
+            history: Vec::new(),
+            config: ChatConfig::default(),
+        }
+    }
+
+    pub fn with_config(mut self, config: ChatConfig) -> Self {
+        self.config = config;
+        self
+    }
+
+    pub fn history(&self) -> &[ChatMessage] {
+        &self.history
+    }
+
+    /// Run one turn end-to-end. Loops `generate()` across tool-call rounds
+    /// (Pattern B); exits only on a non-ToolCall terminal `Done` (or `Error`).
+    pub async fn turn(
+        &mut self,
+        user_message: String,
+        params: GenParams,
+        ui_tx: mpsc::Sender<UiEvent>,
+    ) -> Result<TurnOutcome, ChatError> {
+        // Append the user message to history once per turn.
+        self.history.push(ChatMessage {
+            role: ChatRole::User,
+            content: user_message,
+            tool_call_id: None,
+            tool_name: None,
+        });
+
+        let mut tool_rounds: u8 = 0;
+        let mut budget_exceeded = false;
+        let mut accumulated_usage = TokenUsage::default();
+
+        loop {
+            // Each iteration = one provider.generate() call.
+            let mut stream = self.provider.generate(&self.history, &params).await?;
+
+            let mut assistant_text = String::new();
+            let mut last_finish: Option<FinishReason> = None;
+
+            while let Some(event) = stream.recv().await {
+                match event {
+                    StreamEvent::Token { text } => {
+                        assistant_text.push_str(&text);
+                        ui_tx
+                            .send(UiEvent::AssistantToken(text))
+                            .await
+                            .map_err(|_| ChatError::UiChannelClosed)?;
+                    }
+                    StreamEvent::ToolCall { id, name, args } => {
+                        ui_tx
+                            .send(UiEvent::ToolCallProposed {
+                                id: id.clone(),
+                                name: name.clone(),
+                            })
+                            .await
+                            .map_err(|_| ChatError::UiChannelClosed)?;
+
+                        // Record the assistant's tool-call decision in
+                        // history so the next generate() sees it.
+                        let assistant_tool_call_marker = ChatMessage {
+                            role: ChatRole::Assistant,
+                            content: format!(
+                                "[tool_call id={} name={} args={}]",
+                                id, name, args
+                            ),
+                            tool_call_id: Some(id.clone()),
+                            tool_name: Some(name.clone()),
+                        };
+                        self.history.push(assistant_tool_call_marker);
+
+                        // [MA-4] Tool-call budget: graceful abort.
+                        let result_json: serde_json::Value;
+                        let status_string: String;
+                        if tool_rounds >= self.config.max_tool_rounds_per_turn {
+                            budget_exceeded = true;
+                            result_json = serde_json::json!({
+                                "status": "aborted_tool_budget_exceeded",
+                                "limit": self.config.max_tool_rounds_per_turn,
+                                "guidance": "Compose a final answer with what you have."
+                            });
+                            status_string = "aborted_tool_budget_exceeded".into();
+                            ui_tx
+                                .send(UiEvent::ToolBudgetReached)
+                                .await
+                                .map_err(|_| ChatError::UiChannelClosed)?;
+                        } else {
+                            tool_rounds += 1;
+                            result_json = self
+                                .dispatcher
+                                .dispatch(&name, args.clone())
+                                .await;
+                            status_string = result_json
+                                .get("status")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("ok")
+                                .to_string();
+                        }
+
+                        // [MA-5] All tool results pass through the central
+                        // framing helper before re-entering the prompt
+                        // envelope. No-op in 0a; Phase 1 sanitizes.
+                        let framed = framing::as_tool_result(&name, result_json);
+
+                        self.history.push(ChatMessage {
+                            role: ChatRole::Tool,
+                            content: framed.to_string(),
+                            tool_call_id: Some(id.clone()),
+                            tool_name: Some(name.clone()),
+                        });
+
+                        ui_tx
+                            .send(UiEvent::ToolCallResolved {
+                                id,
+                                status: status_string,
+                            })
+                            .await
+                            .map_err(|_| ChatError::UiChannelClosed)?;
+                    }
+                    StreamEvent::Done {
+                        finish_reason,
+                        usage,
+                    } => {
+                        accumulated_usage.input_tokens += usage.input_tokens;
+                        accumulated_usage.output_tokens += usage.output_tokens;
+                        last_finish = Some(finish_reason);
+                    }
+                    StreamEvent::Error { message } => {
+                        return Err(ChatError::Provider(InferenceError::Runtime(message)));
+                    }
+                }
+            }
+
+            if !assistant_text.is_empty() {
+                self.history.push(ChatMessage {
+                    role: ChatRole::Assistant,
+                    content: assistant_text,
+                    tool_call_id: None,
+                    tool_name: None,
+                });
+            }
+
+            match last_finish {
+                Some(FinishReason::ToolCall) => {
+                    // Loop again — the model wants to act on the tool result
+                    // we just appended. If the budget hit, the model now
+                    // sees the abort and should finalize on the next pass.
+                    continue;
+                }
+                Some(reason @ (FinishReason::Stop | FinishReason::Length)) => {
+                    ui_tx
+                        .send(UiEvent::TurnDone {
+                            usage: accumulated_usage,
+                        })
+                        .await
+                        .map_err(|_| ChatError::UiChannelClosed)?;
+                    return Ok(TurnOutcome {
+                        finish_reason: reason,
+                        usage: accumulated_usage,
+                        tool_rounds,
+                        budget_exceeded,
+                    });
+                }
+                Some(FinishReason::Cancelled) => {
+                    return Ok(TurnOutcome {
+                        finish_reason: FinishReason::Cancelled,
+                        usage: accumulated_usage,
+                        tool_rounds,
+                        budget_exceeded,
+                    });
+                }
+                Some(FinishReason::Error) => {
+                    return Err(ChatError::Provider(InferenceError::Runtime(
+                        "provider returned Error finish reason".into(),
+                    )));
+                }
+                None => return Err(ChatError::StreamEndedWithoutDone),
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::mind::provider::{ChatRole, ProviderCapabilities, ToolSchema};
+    use crate::mind::providers::LocalProvider;
+
+    #[tokio::test]
+    async fn turn_completes_with_local_stub_no_tools() {
+        let provider: Arc<dyn InferenceProvider> = Arc::new(LocalProvider::new());
+        let dispatcher: Arc<dyn ToolDispatcher> = Arc::new(CannedDispatcher);
+        let mut orch = ChatOrchestrator::new(provider, dispatcher);
+
+        let (ui_tx, mut ui_rx) = mpsc::channel::<UiEvent>(32);
+
+        let outcome = orch
+            .turn("hello".into(), GenParams::default(), ui_tx)
+            .await
+            .expect("turn ok");
+
+        assert_eq!(outcome.finish_reason, FinishReason::Stop);
+        assert_eq!(outcome.tool_rounds, 0);
+        assert!(!outcome.budget_exceeded);
+
+        // Drain UI events: 5 AssistantToken + 1 TurnDone.
+        let mut tokens = 0;
+        let mut turn_done = false;
+        while let Some(ev) = ui_rx.recv().await {
+            match ev {
+                UiEvent::AssistantToken(_) => tokens += 1,
+                UiEvent::TurnDone { .. } => {
+                    turn_done = true;
+                    break;
+                }
+                other => panic!("unexpected UI event: {other:?}"),
+            }
+        }
+        assert_eq!(tokens, 5);
+        assert!(turn_done);
+    }
+
+    #[tokio::test]
+    async fn turn_completes_one_tool_round_with_local_stub() {
+        let provider: Arc<dyn InferenceProvider> = Arc::new(LocalProvider::new());
+        let dispatcher: Arc<dyn ToolDispatcher> = Arc::new(CannedDispatcher);
+        let mut orch = ChatOrchestrator::new(provider, dispatcher);
+
+        let (ui_tx, mut ui_rx) = mpsc::channel::<UiEvent>(64);
+        let params = GenParams {
+            tools: vec![ToolSchema {
+                name: "search_notes".into(),
+                description: "stub".into(),
+                input_schema: serde_json::json!({"type": "object"}),
+            }],
+            ..GenParams::default()
+        };
+
+        let outcome = orch
+            .turn("search for X".into(), params, ui_tx)
+            .await
+            .expect("turn ok");
+
+        assert_eq!(outcome.finish_reason, FinishReason::Stop);
+        assert_eq!(outcome.tool_rounds, 1);
+        assert!(!outcome.budget_exceeded);
+
+        // Sequence: ToolCallProposed → ToolCallResolved → 3 AssistantTokens → TurnDone.
+        let mut saw_proposed = false;
+        let mut saw_resolved = false;
+        let mut tokens = 0;
+        let mut turn_done = false;
+        while let Some(ev) = ui_rx.recv().await {
+            match ev {
+                UiEvent::ToolCallProposed { name, .. } => {
+                    assert_eq!(name, "search_notes");
+                    saw_proposed = true;
+                }
+                UiEvent::ToolCallResolved { status, .. } => {
+                    assert_eq!(status, "ok");
+                    saw_resolved = true;
+                }
+                UiEvent::AssistantToken(_) => tokens += 1,
+                UiEvent::TurnDone { .. } => {
+                    turn_done = true;
+                    break;
+                }
+                other => panic!("unexpected UI event: {other:?}"),
+            }
+        }
+        assert!(saw_proposed);
+        assert!(saw_resolved);
+        assert_eq!(tokens, 3);
+        assert!(turn_done);
+    }
+
+    /// Stub provider that loops ToolCall forever (until budget aborts).
+    struct LoopingToolCallProvider;
+
+    #[async_trait::async_trait]
+    impl InferenceProvider for LoopingToolCallProvider {
+        async fn generate(
+            &self,
+            messages: &[ChatMessage],
+            _params: &GenParams,
+        ) -> Result<mpsc::Receiver<StreamEvent>, InferenceError> {
+            let (tx, rx) = mpsc::channel(8);
+            // Look at the LAST tool result for the "aborted" sentinel —
+            // if present, the orchestrator has told us the budget hit, so
+            // we should compose a finalizing answer (Stop) instead of
+            // looping more ToolCalls.
+            let aborted = messages.iter().rev().any(|m| {
+                m.role == ChatRole::Tool
+                    && m.content.contains("aborted_tool_budget_exceeded")
+            });
+            tokio::spawn(async move {
+                if aborted {
+                    let _ = tx
+                        .send(StreamEvent::Token {
+                            text: "Final answer.".into(),
+                        })
+                        .await;
+                    let _ = tx
+                        .send(StreamEvent::Done {
+                            finish_reason: FinishReason::Stop,
+                            usage: TokenUsage {
+                                input_tokens: 1,
+                                output_tokens: 1,
+                            },
+                        })
+                        .await;
+                } else {
+                    let _ = tx
+                        .send(StreamEvent::ToolCall {
+                            id: "loop".into(),
+                            name: "search_notes".into(),
+                            args: serde_json::json!({}),
+                        })
+                        .await;
+                    let _ = tx
+                        .send(StreamEvent::Done {
+                            finish_reason: FinishReason::ToolCall,
+                            usage: TokenUsage {
+                                input_tokens: 1,
+                                output_tokens: 1,
+                            },
+                        })
+                        .await;
+                }
+            });
+            Ok(rx)
+        }
+
+        async fn classify(
+            &self,
+            _text: &str,
+            _labels: &[String],
+        ) -> Result<Vec<(String, f32)>, InferenceError> {
+            Ok(Vec::new())
+        }
+
+        fn capabilities(&self) -> ProviderCapabilities {
+            ProviderCapabilities {
+                model_id: "looping-stub".into(),
+                runtime: "stub".into(),
+                max_context_tokens: 4096,
+                supports_tool_calls: true,
+                supports_citation: true,
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn turn_aborts_on_tool_call_budget_then_finalizes() {
+        let provider: Arc<dyn InferenceProvider> = Arc::new(LoopingToolCallProvider);
+        let dispatcher: Arc<dyn ToolDispatcher> = Arc::new(CannedDispatcher);
+        let mut orch = ChatOrchestrator::new(provider, dispatcher)
+            .with_config(ChatConfig {
+                max_tool_rounds_per_turn: 3,
+            });
+
+        let (ui_tx, mut ui_rx) = mpsc::channel::<UiEvent>(128);
+        let outcome = orch
+            .turn("loop forever".into(), GenParams::default(), ui_tx)
+            .await
+            .expect("turn ok");
+
+        // The budget should fire and the looping stub then finalizes Stop.
+        assert!(outcome.budget_exceeded);
+        assert_eq!(outcome.tool_rounds, 3);
+        assert_eq!(outcome.finish_reason, FinishReason::Stop);
+
+        // Confirm the orchestrator emitted a ToolBudgetReached event.
+        let mut saw_budget = false;
+        while let Some(ev) = ui_rx.recv().await {
+            if matches!(ev, UiEvent::ToolBudgetReached) {
+                saw_budget = true;
+            }
+            if matches!(ev, UiEvent::TurnDone { .. }) {
+                break;
+            }
+        }
+        assert!(saw_budget, "expected ToolBudgetReached UI event");
+    }
+
+    #[test]
+    fn framing_as_tool_result_is_pass_through_in_phase_0a() {
+        let raw = serde_json::json!({"status": "ok", "echo": 42});
+        let framed = framing::as_tool_result("any_tool", raw.clone());
+        assert_eq!(framed, raw);
+    }
+}

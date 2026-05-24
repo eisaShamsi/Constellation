@@ -33,11 +33,16 @@
 
 pub mod commands;
 pub mod events;
+pub mod orchestrator;
 pub mod provider;
 pub mod providers;
 pub mod telemetry;
 
 pub use events::StreamEvent;
+pub use orchestrator::{
+    framing, CannedDispatcher, ChatConfig, ChatError, ChatOrchestrator, ToolDispatcher,
+    TurnOutcome, UiEvent,
+};
 pub use provider::{
     ChatMessage, ChatRole, EmbeddingCapabilities, EmbeddingProvider, FinishReason, GenParams,
     InferenceError, InferenceProvider, ProviderCapabilities, TokenUsage, ToolChoice, ToolSchema,
