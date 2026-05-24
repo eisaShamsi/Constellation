@@ -18,17 +18,15 @@
 //! `mind_start_turn` invocation; closed naturally when the task drops the
 //! sender (the channel's drop signals the frontend's `onmessage` close).
 
+use std::path::PathBuf;
+
 use serde::Deserialize;
 use tauri::ipc::Channel;
+use tauri::AppHandle;
 
 use crate::mind::events::StreamEvent;
 use crate::mind::provider::{ChatMessage, ChatRole, GenParams, InferenceProvider};
-// Step C of MIG-047 renamed the deterministic stub to `LocalStubProvider`
-// and introduced a real `LocalProvider` that loads a GGUF via mistralrs.
-// This `mind_start_turn` keeps the stub binding for now; Step G (next
-// commit) refactors to instantiate the real `LocalProvider` against the
-// active model from the install registry.
-use crate::mind::providers::LocalStubProvider;
+use crate::mind::providers::LocalProvider;
 use crate::mind::telemetry::{self, TelemetrySnapshot};
 
 /// Request shape for `mind_start_turn`.
@@ -48,21 +46,45 @@ pub struct StartTurnRequest {
 
 /// Start one conversational turn and stream events to the frontend.
 ///
-/// Phase 0a behaviour: always uses the `LocalStubProvider` (deterministic
-/// stub from MIG-046 §B). The command returns immediately after spawning
-/// the streaming task — the task drains the provider's receiver and
-/// forwards each event to the frontend `Channel`. A terminal `Done` or
-/// `Error` event closes the channel.
+/// Phase 0b behaviour (MIG-047 §G): resolves the user's currently-active
+/// model via `mind_active_model`, instantiates a real `LocalProvider`
+/// against that model's GGUF path, and drives one turn. The command
+/// returns immediately after spawning the streaming task — the task
+/// drains the provider's receiver and forwards each event to the
+/// frontend `Channel`. A terminal `Done` or `Error` event closes the
+/// channel.
 ///
-/// **Step G (MIG-047, next commit) refactors this to:** read the active
-/// model from `mind::model_install::registry`; instantiate the real
-/// `LocalProvider` against that model's GGUF path; drive a real turn.
+/// If no model is installed/active, emits a single `StreamEvent::Error`
+/// pointing the user to Settings → Mind and returns `Err(...)`. The
+/// chat UI (Phase 1 / MIG-048) renders this inline as a "install a
+/// model first" notice.
 #[tauri::command]
 pub async fn mind_start_turn(
+    app: AppHandle,
     request: StartTurnRequest,
     on_event: Channel<StreamEvent>,
 ) -> Result<(), String> {
-    let provider = LocalStubProvider::new();
+    // Resolve the active model from the install registry.
+    let active = match crate::mind::model_install::commands::mind_active_model(app.clone()).await {
+        Ok(Some(m)) => m,
+        Ok(None) => {
+            let msg = "No active Constellation Mind model. \
+                       Open Settings → Mind to install one.";
+            let _ = on_event.send(StreamEvent::Error {
+                message: msg.to_string(),
+            });
+            return Err(msg.to_string());
+        }
+        Err(e) => {
+            let msg = format!("Failed to read installed-model registry: {e}");
+            let _ = on_event.send(StreamEvent::Error {
+                message: msg.clone(),
+            });
+            return Err(msg);
+        }
+    };
+
+    let provider = LocalProvider::new(PathBuf::from(&active.file_path), active.id.clone());
 
     let messages = vec![ChatMessage {
         role: ChatRole::User,
