@@ -1533,7 +1533,21 @@
 		"fileExplorer": "Datei-Explorer",
 		"notesNavigator": "Notizen-Navigator",
 		"orgChart": "Organigramm",
-		"notesManagement": "Notizenverwaltung"
+		"notesManagement": "Notizenverwaltung",
+		"digest": "Universum-Digest"
+	},
+	"digest": {
+		"title": "Universum-Digest",
+		"empty": "Noch keine Notizen anzuzeigen.",
+		"scaffolding": "Digest ist bereit — Inhalt kommt in Schritt B.",
+		"filterPlaceholder": "Notizen, Schlagzeilen, Zusammenfassungen filtern...",
+		"sortRecency": "Nach Aktualität sortieren",
+		"sortAlpha": "Alphabetisch sortieren",
+		"showCUniverse": "Verlinkte Universen anzeigen",
+		"hideCUniverse": "Verlinkte Universen ausblenden",
+		"collapse": "Einklappen",
+		"expand": "Aufklappen",
+		"noSummary": "Noch keine Zusammenfassung."
 	},
 	"orgChart": {
 		"title": "Organigramm",

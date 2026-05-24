@@ -1973,7 +1973,21 @@
 		"fileExplorer": "Dosya Gezgini",
 		"notesNavigator": "Not Gezgini",
 		"orgChart": "Organizasyon Şeması",
-		"notesManagement": "Not Yönetimi"
+		"notesManagement": "Not Yönetimi",
+		"digest": "Evren Özeti"
+	},
+	"digest": {
+		"title": "Evren Özeti",
+		"empty": "Henüz gösterilecek not yok.",
+		"scaffolding": "Özet hazır — içerik B Adımı'nda gelecek.",
+		"filterPlaceholder": "Notları, başlıkları, özetleri filtrele...",
+		"sortRecency": "Yeniliğe göre sırala",
+		"sortAlpha": "Alfabetik olarak sırala",
+		"showCUniverse": "Bağlı evrenleri göster",
+		"hideCUniverse": "Bağlı evrenleri gizle",
+		"collapse": "Daralt",
+		"expand": "Genişlet",
+		"noSummary": "Henüz özet yok."
 	},
 	"orgChart": {
 		"title": "Organizasyon Şeması",

@@ -1533,7 +1533,21 @@
 		"fileExplorer": "סייר קבצים",
 		"notesNavigator": "נווט הערות",
 		"orgChart": "תרשים ארגוני",
-		"notesManagement": "ניהול הערות"
+		"notesManagement": "ניהול הערות",
+		"digest": "תקציר היקום"
+	},
+	"digest": {
+		"title": "תקציר היקום",
+		"empty": "עדיין אין פתקים להצגה.",
+		"scaffolding": "התקציר מוכן — התוכן מגיע בשלב B.",
+		"filterPlaceholder": "סינון פתקים, כותרות, תקצירים...",
+		"sortRecency": "מיון לפי עדכניות",
+		"sortAlpha": "מיון אלפביתי",
+		"showCUniverse": "הצג יקומים מקושרים",
+		"hideCUniverse": "הסתר יקומים מקושרים",
+		"collapse": "כיווץ",
+		"expand": "הרחבה",
+		"noSummary": "עדיין אין תקציר."
 	},
 	"orgChart": {
 		"title": "תרשים ארגוני",

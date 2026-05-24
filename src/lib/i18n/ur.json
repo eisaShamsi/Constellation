@@ -1533,7 +1533,21 @@
 		"fileExplorer": "فائل ایکسپلورر",
 		"notesNavigator": "نوٹس نیویگیٹر",
 		"orgChart": "تنظیمی چارٹ",
-		"notesManagement": "نوٹس مینجمنٹ"
+		"notesManagement": "نوٹس مینجمنٹ",
+		"digest": "کائنات کا خلاصہ"
+	},
+	"digest": {
+		"title": "کائنات کا خلاصہ",
+		"empty": "ابھی دکھانے کے لیے کوئی نوٹ نہیں۔",
+		"scaffolding": "خلاصہ تیار ہے — مواد مرحلہ B میں آتا ہے۔",
+		"filterPlaceholder": "نوٹس، سرخیاں، خلاصے فلٹر کریں...",
+		"sortRecency": "تازگی کے مطابق ترتیب",
+		"sortAlpha": "حروفِ تہجی کے مطابق ترتیب",
+		"showCUniverse": "منسلک کائناتیں دکھائیں",
+		"hideCUniverse": "منسلک کائناتیں چھپائیں",
+		"collapse": "سکیڑیں",
+		"expand": "پھیلائیں",
+		"noSummary": "ابھی کوئی خلاصہ نہیں۔"
 	},
 	"orgChart": {
 		"title": "تنظیمی چارٹ",

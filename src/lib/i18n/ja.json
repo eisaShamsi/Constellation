@@ -1973,7 +1973,21 @@
 		"fileExplorer": "ファイルエクスプローラー",
 		"notesNavigator": "ノートナビゲーター",
 		"orgChart": "組織図",
-		"notesManagement": "ノート管理"
+		"notesManagement": "ノート管理",
+		"digest": "宇宙ダイジェスト"
+	},
+	"digest": {
+		"title": "宇宙ダイジェスト",
+		"empty": "まだ表示するノートはありません。",
+		"scaffolding": "ダイジェストの準備ができました — コンテンツはステップ B で配置されます。",
+		"filterPlaceholder": "ノート、見出し、要約をフィルタ...",
+		"sortRecency": "新しさ順に並び替え",
+		"sortAlpha": "アルファベット順に並び替え",
+		"showCUniverse": "リンクされた宇宙を表示",
+		"hideCUniverse": "リンクされた宇宙を非表示",
+		"collapse": "折りたたむ",
+		"expand": "展開",
+		"noSummary": "まだ要約はありません。"
 	},
 	"orgChart": {
 		"title": "組織図",

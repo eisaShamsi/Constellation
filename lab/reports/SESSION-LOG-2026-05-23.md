@@ -122,3 +122,59 @@ Wired `GraphMindView.svelte`:
 
 ### Validation
 - Boss live test pending. Build kicked off after svelte-check; targets `src-tauri/target/release/constellation.exe` for Eisa's preferred `.exe` install (`feedback_prefer_exe_over_msi`).
+
+---
+
+## 5. MIG-045 Phase 3 — Universe Digest left-dock view (SHIPPED + Boss-validated, the third pillar of the NSC Core Plug-in)
+
+The work crossed midnight from 2026-05-23 into 2026-05-24; per the daily-log convention this is one continuous narrative under the day the cascade started. Eisa's "PCS-3 > MIG-045 Phase 3" directive (after Phase 2 PCS-3 commit `a7e1a5bf` pushed) green-lit the cascade.
+
+### Architect doc
+- `docs/MIG-045-nsc-coreplugin-phase3-ARCHITECT.md` — locked decisions enumerated (name "Digest", stored headline, cUniverse federation in scope v1, extractive only, recency sort, tiered Library→Folder→Headline), 10 invariants laid down, 5 design options (placement / expansion / federation / toolbar / data source / fetch strategy) each with chosen + rejected variants, 7-step Plan (A–G), 6-scenario migration-path matrix, risk summary.
+
+### Build Steps A–E
+- **Step A — DigestPane skeleton:** new `src/lib/components/DigestPane.svelte` with toolbar shell + empty placeholder. Wired into `+layout.svelte` (extended `sidebarMode` type to include `'digest'`, new mode-tab button, render branch with `<DigestPane>`, escape-handler entry). Extended `SidebarMode` in `src/lib/secondScreen.ts`. New `digest.*` i18n block + `navigator.digest` key in `src/lib/i18n/en.json`.
+- **Step B — Tiered tree derivation:** `treeRows: VRow[]` `$derived.by` from `nodes + libraries`. VRow types: `'library-header' | 'folder-header' | 'note'` (expanded summary handled inline within the note row, not as a separate VRow kind). Path-separator-agnostic `folderOf()` helper. Bucket-by-libraryName-then-folder, sort folders + notes per `sortMode` ('recency' default → max child createdAt desc; 'alpha' → name asc), emit headers + rows.
+- **Step C — Headline fetch + render + inline expansion:** `summaryHeadlines: Map<path,string>` + `fullSummaries: Map<path,string>` + `expanded: Set<path>` `$state`. `$effect` over `treeRows` → `getSummariesFor(visiblePaths)` → merge with `changed` guard. Each note row shows name + faint italic headline; when expanded, the full summary appears inline with multi-line wrap. Toggle handler `toggleExpand(path)`.
+- **Step D — Filter + sort:** `passesFilter(node)` reads name + headline + full summary case-insensitively. Filter applies in `treeRows` derivation — folders/libraries with zero passing notes are skipped entirely (no empty headers). Sort toggle button (clock ↔ bars icon). **cUniverse on/off toggle REMOVED from v1** — identifying child-universe libraries requires a `universe_id` field on `LibraryInfo` (a Rust change, violating the frontend-only invariant). Federation still works via the existing flatten; v1 just doesn't offer a UI toggle. Documented inline in `DigestPane.svelte:43-50`.
+- **Step E — VirtualList wiring + row heights:** `VirtualList` mounted with `items={treeRows}`, `getItemHeight={getRowHeight}`, `scrollResetKey={`${sortMode}|${filterQuery}`}`, `overscan={10}`. Per-row heights: library-header = 30, folder-header = 24, note base = 22 + 14 (headline if loaded) + dynamic expanded-summary height (clamped to 14 lines). svelte-check 0 new across all 5 steps.
+
+### Step F — `/simplify` + 2-agent audit (caught + fixed 2 issues BEFORE Boss test)
+The audit ran in parallel with the first build. **Both issues were caught before any Boss-test install shipped**, which is meaningfully better than the Phase 2 saga (3 wrong-target wirings caught DURING Boss test).
+
+- **Audit #1 (invariants + drift)** — 10/10 invariants checked. **Two findings:**
+  - **Rule-2 violation** (HIGH): the headline-fetch `$effect` read `summaryHeadlines` / `fullSummaries` via `new Map(...)` AND wrote to them. Combined with `passesFilter` (used in the `treeRows` derivation) reading the same Maps, this created a potential self-fire loop. Fix: wrap the effect body in `untrack(() => { ... })` (same pattern as `IndexPanel.svelte:90-101` / `134-163`). Only `treeRows` remains as the tracked dep.
+  - **a11y nested-interactive** (MEDIUM): the row was a `<div role="button">` containing a `<button>` for the note name → Svelte's compiler warning + would be flagged by strict a11y. Fix: row is now a plain layout `<div>` (no role) with THREE sibling buttons — chevron-only (toggles expand), name (opens note), headline (also toggles expand — wider expand target). Each interactive is keyboard-accessible; no nesting.
+- **Audit #2 (migration-path)** — 6/6 scenarios PASS. Fresh DB + existing DB + mid-backfill + universe switch + rollback to MIG-044 + cUniverse runtime add/remove all clean. SidebarMode type extension verified across both `secondScreen.ts:229` and `+layout.svelte:265`; `SecondScreenPage.svelte` uses `if/else-if` not `switch`, so `'digest'` falls through to the note-companion (architect doc §3 defers SS mount).
+
+### Bundle verification (per LL-028)
+Build #7 (after audit fixes): bundle-grep confirms `dg-chev-btn`, `dg-note-headline`, `DigestPane`, `dg-library-header` all present (2 lines each = CSS rule + template attribute). `untrack(` present in the chunk that contains DigestPane. Installer fresh at 11:01:29.
+
+### Boss test (Stage 1, 8 tests) — PASS
+- Test 1.1 — Dock entry appears ✅
+- Test 1.2 — Open the Digest ✅
+- Test 1.3 — Headlines fill in ✅
+- Test 1.4 — Click-to-expand ✅
+- Test 1.5 — Click name opens note ✅
+- Test 1.6 — Filter narrows correctly (incl. multi-tier collapse) ✅
+- Test 1.7 — Sort toggle switches recency↔alphabetical ✅
+- Test 1.8 — Smooth scroll on 7,600+ note library ✅
+
+Eisa: *"Pass. You've created an amazing function, Claude. Thank you!"*
+
+### Step G — SO + 15-locale help additions + PCS-4
+- **New help topic in English:** `docs/help.uConstellation.World/The Digest/The Digest.md` — what the Digest is, why it exists, full UX walkthrough, common workflows, what's NOT in v1.
+- **14-locale translation** of the new help topic + the Note Summaries 8th-surface update + the `digest.*` i18n strings — dispatched as a single background sub-agent (3 concerns × 14 locales).
+- **Note Summaries help** updated in all 15 locales: 8th surface (Universe Digest) added, intro paragraph + frontmatter description extended, closing "lazy-fill" paragraph mentions "scroll the Digest" gesture.
+- **Orientation v2.29** (new file alongside v2.28).
+- **Session log §5** (this section).
+- **MoCh fresh file** `docs/MoCh/MoCh-2026-05-24-0900.md` for the Phase 3 work.
+- **PCS-4** — pending Eisa explicit go.
+
+### The NSC Core Plug-in roadmap is now SHIPPED end-to-end
+Three months of work, three MIGs, all live:
+- MIG-043 (2026-05-23): engine `headline` + shared `summaryStore` + 2 surfaces.
+- MIG-044 (2026-05-23): 5 remaining surfaces wired (with 3 wrong-target wirings caught + fixed → LL-028/029).
+- MIG-045 (2026-05-24): the Universe Digest pane (both audit issues caught + fixed BEFORE Boss test — proof the LL-028/029 discipline compounds).
+
+The "summary service feeding every Constellation function" half of Concept Paper v2.0 + the "dock view to skim the whole knowledge base at summary level" half are both delivered. Phase 4 work (if any) is at Eisa's direction — no MIG-046 currently planned.

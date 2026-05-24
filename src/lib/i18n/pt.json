@@ -1973,7 +1973,21 @@
 		"fileExplorer": "Explorador de ficheiros",
 		"notesNavigator": "Navegador de notas",
 		"orgChart": "Organograma",
-		"notesManagement": "Gestão de notas"
+		"notesManagement": "Gestão de notas",
+		"digest": "Resumo do Universo"
+	},
+	"digest": {
+		"title": "Resumo do Universo",
+		"empty": "Ainda não há notas para mostrar.",
+		"scaffolding": "Resumo pronto — o conteúdo chega na Etapa B.",
+		"filterPlaceholder": "Filtrar notas, manchetes, resumos...",
+		"sortRecency": "Ordenar por recência",
+		"sortAlpha": "Ordenar alfabeticamente",
+		"showCUniverse": "Mostrar universos vinculados",
+		"hideCUniverse": "Ocultar universos vinculados",
+		"collapse": "Recolher",
+		"expand": "Expandir",
+		"noSummary": "Sem resumo ainda."
 	},
 	"orgChart": {
 		"title": "Organograma",

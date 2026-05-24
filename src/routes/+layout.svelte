@@ -47,6 +47,8 @@
 	import type { WorkspaceBaseEntry } from '$lib/bases/store';
 	import type { BaseDefinition } from '$lib/bases/types';
 	import FileTree from '$lib/components/FileTree.svelte';
+	// MIG-045 Phase 3 — Universe Digest left-dock pane.
+	import DigestPane from '$lib/components/DigestPane.svelte';
 	import NotebookNavigator from '$lib/components/NotebookNavigator.svelte';
 	import NotePane from '$lib/components/NotePane.svelte';
 	import NoteEditor from '$lib/components/NoteEditor.svelte';
@@ -260,7 +262,7 @@
 		tabCtxMenu = null;
 	}
 	// searchMode removed — Search Hub is the single search experience
-	let sidebarMode = $state<'tree' | 'list' | 'skyview'>('tree');
+	let sidebarMode = $state<'tree' | 'list' | 'skyview' | 'digest'>('tree');
 	// CE Phase 9: Multi-Lens Views
 	let availableLenses = $state<any[]>([]);
 	let activeLensId = $state('');
@@ -3014,6 +3016,7 @@
 			if (showOrgChart) { showOrgChart = false; return; }
 			if (showCataloger) { showCataloger = false; return; }
 			if (sidebarMode === 'skyview') { sidebarMode = 'tree'; return; }
+			if (sidebarMode === 'digest') { sidebarMode = 'tree'; return; }
 			if (showGlobalTasks) { showGlobalTasks = false; return; }
 			if (showIndex) { showIndex = false; return; }
 			if (showTemplatePicker) { showTemplatePicker = false; return; }
@@ -4643,6 +4646,11 @@
 						<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/></svg>
 					</button>
 					{/if}
+					<!-- MIG-045 Phase 3 — Universe Digest mode tab. Reads through the
+					     same summaryStore as every other Phase 1/2 surface; no new IPC. -->
+					<button class="mode-tab" class:active={sidebarMode === 'digest'} onclick={() => { if (sidebarMode !== 'digest') { if (sidebarMode === 'tree') preTreeWidth = leftSidebarWidth; sidebarMode = 'digest'; leftSidebarWidth = Math.max(leftSidebarWidth, 360); emitSidebarModeChanged('digest'); } }} title={$t('navigator.digest') || 'Universe Digest'}>
+						<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h18M3 12h12M3 17h6"/><circle cx="19" cy="17" r="2"/></svg>
+					</button>
 					<!-- OrgChart and Sky View buttons moved to left dock bar -->
 					{#if sidebarMode === 'tree' }
 						<button class="mode-tab" onclick={cycleSortOrder} title={getSortTooltip()}>
@@ -4676,6 +4684,15 @@
 						onNoteClick={(path, name) => handleNoteClick(path, name)}
 						onClose={() => sidebarMode = 'tree'}
 						embedded={true}
+					/>
+				{:else if sidebarMode === 'digest'}
+					<!-- MIG-045 Phase 3 — Universe Digest. Reads existing
+					     skyNodes + libraries arrays (already populated for
+					     the Sky View); no new IPC, no new schema. -->
+					<DigestPane
+						nodes={skyNodes}
+						libraries={$libraries}
+						onNoteClick={(path, libName) => handleNoteClick(path, libName)}
 					/>
 				{:else if activeLensId && lensEntries}
 					<!-- CE Phase 9: Lens view -->

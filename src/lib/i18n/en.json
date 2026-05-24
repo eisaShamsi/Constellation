@@ -2164,7 +2164,21 @@
 		"fileExplorer": "File Explorer",
 		"notesNavigator": "Notes Navigator",
 		"orgChart": "Organization Chart",
-		"notesManagement": "Notes Management"
+		"notesManagement": "Notes Management",
+		"digest": "Universe Digest"
+	},
+	"digest": {
+		"title": "Universe Digest",
+		"empty": "No notes to show yet.",
+		"scaffolding": "Digest is ready — content lands in Step B.",
+		"filterPlaceholder": "Filter notes, headlines, summaries...",
+		"sortRecency": "Sort by recency",
+		"sortAlpha": "Sort alphabetically",
+		"showCUniverse": "Show linked universes",
+		"hideCUniverse": "Hide linked universes",
+		"collapse": "Collapse",
+		"expand": "Expand",
+		"noSummary": "No summary yet."
 	},
 	"orgChart": {
 		"title": "Organization Chart",

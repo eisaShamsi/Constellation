@@ -1973,7 +1973,21 @@
 		"fileExplorer": "파일 탐색기",
 		"notesNavigator": "노트 탐색기",
 		"orgChart": "조직도",
-		"notesManagement": "노트 관리"
+		"notesManagement": "노트 관리",
+		"digest": "우주 다이제스트"
+	},
+	"digest": {
+		"title": "우주 다이제스트",
+		"empty": "아직 표시할 노트가 없습니다.",
+		"scaffolding": "다이제스트 준비 완료 — 콘텐츠는 단계 B에서 들어옵니다.",
+		"filterPlaceholder": "노트, 헤드라인, 요약 필터링...",
+		"sortRecency": "최신순으로 정렬",
+		"sortAlpha": "알파벳순으로 정렬",
+		"showCUniverse": "링크된 우주 표시",
+		"hideCUniverse": "링크된 우주 숨김",
+		"collapse": "접기",
+		"expand": "펼치기",
+		"noSummary": "아직 요약 없음."
 	},
 	"orgChart": {
 		"title": "조직도",

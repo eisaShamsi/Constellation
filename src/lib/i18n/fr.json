@@ -1533,7 +1533,21 @@
 		"fileExplorer": "Explorateur de fichiers",
 		"notesNavigator": "Navigateur de notes",
 		"orgChart": "Organigramme",
-		"notesManagement": "Gestion des notes"
+		"notesManagement": "Gestion des notes",
+		"digest": "Digest de l'Univers"
+	},
+	"digest": {
+		"title": "Digest de l'Univers",
+		"empty": "Aucune note à afficher pour l'instant.",
+		"scaffolding": "Digest prêt — le contenu arrive à l'Étape B.",
+		"filterPlaceholder": "Filtrer notes, titres, résumés...",
+		"sortRecency": "Trier par récence",
+		"sortAlpha": "Trier alphabétiquement",
+		"showCUniverse": "Afficher les univers liés",
+		"hideCUniverse": "Masquer les univers liés",
+		"collapse": "Replier",
+		"expand": "Développer",
+		"noSummary": "Pas encore de résumé."
 	},
 	"orgChart": {
 		"title": "Organigramme",

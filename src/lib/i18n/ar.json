@@ -2141,7 +2141,21 @@
 		"fileExplorer": "مستعرض الملفات",
 		"notesNavigator": "متصفح الملاحظات",
 		"orgChart": "المخطط التنظيمي",
-		"notesManagement": "إدارة الملاحظات"
+		"notesManagement": "إدارة الملاحظات",
+		"digest": "موجز الكون"
+	},
+	"digest": {
+		"title": "موجز الكون",
+		"empty": "لا توجد ملاحظات للعرض بعد.",
+		"scaffolding": "الموجز جاهز — المحتوى يصل في الخطوة B.",
+		"filterPlaceholder": "صفِّ الملاحظات والعناوين والملخّصات...",
+		"sortRecency": "الترتيب بحسب الحداثة",
+		"sortAlpha": "الترتيب أبجديًّا",
+		"showCUniverse": "إظهار الأكوان المرتبطة",
+		"hideCUniverse": "إخفاء الأكوان المرتبطة",
+		"collapse": "طيّ",
+		"expand": "توسيع",
+		"noSummary": "لا يوجد ملخّص بعد."
 	},
 	"orgChart": {
 		"title": "مخطط هيكلي",

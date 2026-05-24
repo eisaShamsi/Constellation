@@ -1973,7 +1973,21 @@
 		"fileExplorer": "文件浏览器",
 		"notesNavigator": "笔记导航",
 		"orgChart": "组织图",
-		"notesManagement": "笔记管理"
+		"notesManagement": "笔记管理",
+		"digest": "宇宙摘要"
+	},
+	"digest": {
+		"title": "宇宙摘要",
+		"empty": "暂无可显示的笔记。",
+		"scaffolding": "摘要已就绪 — 内容将在步骤 B 中加载。",
+		"filterPlaceholder": "筛选笔记、标题、摘要...",
+		"sortRecency": "按最近排序",
+		"sortAlpha": "按字母排序",
+		"showCUniverse": "显示链接的宇宙",
+		"hideCUniverse": "隐藏链接的宇宙",
+		"collapse": "折叠",
+		"expand": "展开",
+		"noSummary": "暂无摘要。"
 	},
 	"orgChart": {
 		"title": "组织结构图",
