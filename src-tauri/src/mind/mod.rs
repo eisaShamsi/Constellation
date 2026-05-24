@@ -31,9 +31,11 @@
 //! - `src-tauri/src/embeddings.rs` — ONNX embedding pipeline (Phase 0b/1 wraps as `LocalEmbeddingProvider`)
 //! - `src-tauri/src/nsc/` — the `summarize` tool delegates here in Phase 1 / MIG-048
 
+pub mod commands;
 pub mod events;
 pub mod provider;
 pub mod providers;
+pub mod telemetry;
 
 pub use events::StreamEvent;
 pub use provider::{
@@ -41,3 +43,4 @@ pub use provider::{
     InferenceError, InferenceProvider, ProviderCapabilities, TokenUsage, ToolChoice, ToolSchema,
 };
 pub use providers::{CloudProvider, LocalProvider, OfflineProvider};
+pub use telemetry::TelemetrySnapshot;

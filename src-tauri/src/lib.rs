@@ -312,6 +312,11 @@ pub fn run() {
             ai::ai_send_message,
             ai::ai_validate_connection,
             ai::ai_list_models,
+            // MIG-046 Phase 0a (Constellation Mind) — Step C IPC contract.
+            // Two commands: one streams turn events via Channel<StreamEvent>,
+            // one returns in-process telemetry counters (zeros until Step E).
+            mind::commands::mind_start_turn,
+            mind::commands::mind_telemetry_snapshot,
             libraries::list_libraries,
             libraries::add_library,
             libraries::remove_library,
