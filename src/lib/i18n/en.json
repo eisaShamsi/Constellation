@@ -2170,7 +2170,6 @@
 	"digest": {
 		"title": "Universe Digest",
 		"empty": "No notes to show yet.",
-		"scaffolding": "Digest is ready — content lands in Step B.",
 		"filterPlaceholder": "Filter notes, headlines, summaries...",
 		"sortRecency": "Sort by recency",
 		"sortAlpha": "Sort alphabetically",

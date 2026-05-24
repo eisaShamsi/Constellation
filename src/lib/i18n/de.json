@@ -1539,7 +1539,6 @@
 	"digest": {
 		"title": "Universum-Digest",
 		"empty": "Noch keine Notizen anzuzeigen.",
-		"scaffolding": "Digest ist bereit — Inhalt kommt in Schritt B.",
 		"filterPlaceholder": "Notizen, Schlagzeilen, Zusammenfassungen filtern...",
 		"sortRecency": "Nach Aktualität sortieren",
 		"sortAlpha": "Alphabetisch sortieren",

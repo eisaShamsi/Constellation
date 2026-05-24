@@ -1539,7 +1539,6 @@
 	"digest": {
 		"title": "Digest de l'Univers",
 		"empty": "Aucune note à afficher pour l'instant.",
-		"scaffolding": "Digest prêt — le contenu arrive à l'Étape B.",
 		"filterPlaceholder": "Filtrer notes, titres, résumés...",
 		"sortRecency": "Trier par récence",
 		"sortAlpha": "Trier alphabétiquement",

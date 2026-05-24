@@ -1979,7 +1979,6 @@
 	"digest": {
 		"title": "Evren Özeti",
 		"empty": "Henüz gösterilecek not yok.",
-		"scaffolding": "Özet hazır — içerik B Adımı'nda gelecek.",
 		"filterPlaceholder": "Notları, başlıkları, özetleri filtrele...",
 		"sortRecency": "Yeniliğe göre sırala",
 		"sortAlpha": "Alfabetik olarak sırala",

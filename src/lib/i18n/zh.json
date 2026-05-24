@@ -1979,7 +1979,6 @@
 	"digest": {
 		"title": "宇宙摘要",
 		"empty": "暂无可显示的笔记。",
-		"scaffolding": "摘要已就绪 — 内容将在步骤 B 中加载。",
 		"filterPlaceholder": "筛选笔记、标题、摘要...",
 		"sortRecency": "按最近排序",
 		"sortAlpha": "按字母排序",

@@ -1539,7 +1539,6 @@
 	"digest": {
 		"title": "Resumen del Universo",
 		"empty": "Aún no hay notas para mostrar.",
-		"scaffolding": "Resumen listo — el contenido llega en el Paso B.",
 		"filterPlaceholder": "Filtrar notas, titulares, resúmenes...",
 		"sortRecency": "Ordenar por recencia",
 		"sortAlpha": "Ordenar alfabéticamente",
