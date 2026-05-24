@@ -33,6 +33,7 @@
 
 pub mod commands;
 pub mod events;
+pub mod model_install;
 pub mod orchestrator;
 pub mod provider;
 pub mod providers;

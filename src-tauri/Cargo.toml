@@ -45,6 +45,11 @@ tokio = { version = "1", features = ["full"] }
 # (mistral.rs / llama-cpp-2 / candle — those land in Phase 0b).
 # MIT/Apache-2.0 licensed.
 async-trait = "0.1"
+# MIG-047 Phase 0b §E: SHA-256 + hex for model-install download
+# verification. Tiny pure-Rust crates (~50 KB combined); both
+# MIT/Apache-2.0; widely used in the Rust ecosystem.
+sha2 = "0.10"
+hex = "0.4"
 rfd = "0.15"
 notify = "7"
 regex = "1"

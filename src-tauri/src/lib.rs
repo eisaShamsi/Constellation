@@ -314,9 +314,14 @@ pub fn run() {
             ai::ai_list_models,
             // MIG-046 Phase 0a (Constellation Mind) — Step C IPC contract.
             // Two commands: one streams turn events via Channel<StreamEvent>,
-            // one returns in-process telemetry counters (zeros until Step E).
+            // one returns in-process telemetry counters.
             mind::commands::mind_start_turn,
             mind::commands::mind_telemetry_snapshot,
+            // MIG-047 Phase 0b §E — model install + registry IPCs.
+            mind::model_install::commands::mind_install_model,
+            mind::model_install::commands::mind_list_installed_models,
+            mind::model_install::commands::mind_active_model,
+            mind::model_install::commands::mind_set_active_model,
             libraries::list_libraries,
             libraries::add_library,
             libraries::remove_library,
