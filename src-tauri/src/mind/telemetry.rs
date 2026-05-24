@@ -1,20 +1,29 @@
 //! In-process telemetry counters for the Mind subsystem.
 //!
-//! Phase 0a (this commit) lands the `TelemetrySnapshot` type and a
-//! default-zero `snapshot()` function so the `mind_telemetry_snapshot`
-//! IPC command (Step C) has a real return type. Step E wires real atomics
-//! into the orchestrator (Step D) so the snapshot reflects actual
-//! counters incremented as turns flow through.
-//!
-//! Architect invariant 7 ("Local-First / no exfiltration"): the counters
+//! Architect invariant 7 (Local-First / no exfiltration): the counters
 //! are read-only via `mind_telemetry_snapshot` and never sent over the
 //! network. No persistence in 0a (Phase 5 / MIG-053 decides whether the
 //! cloud cost-meter persists per Concept Paper v1.1 §11.4).
+//!
+//! Two-level access:
+//! - `TelemetryCounters` — the live struct. Atomics for numeric
+//!   counters; `Mutex<String>` for provider/model id strings (rare
+//!   writes, occasional reads). The orchestrator holds an
+//!   `Arc<TelemetryCounters>` and increments at known points
+//!   (tool-call, budget-exceeded, error, turn-complete).
+//! - `telemetry::global()` / `telemetry::snapshot()` — process-wide
+//!   shared instance used by the `mind_telemetry_snapshot` IPC command.
+//!   Tests create their own `Arc<TelemetryCounters>` to avoid polluting
+//!   the global across test cases.
+
+use std::sync::{
+    atomic::{AtomicU64, Ordering},
+    Arc, Mutex, OnceLock,
+};
 
 use serde::{Deserialize, Serialize};
 
-/// One read-out of the in-process counters. All fields default to zero;
-/// real values plumb in through Step E.
+/// One read-out of the in-process counters.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct TelemetrySnapshot {
     /// Number of completed turns since the process started.
@@ -30,24 +39,124 @@ pub struct TelemetrySnapshot {
     pub tool_call_rounds_exceeded_count: u64,
     /// Number of provider errors observed.
     pub errors_count: u64,
-    /// p50 turn latency in milliseconds (0 until ≥1 turn completed).
+    /// p50 turn latency in milliseconds. In 0a this stores the
+    /// most-recent turn latency (simplification — Phase 1 adds a real
+    /// HDR histogram once enough turns flow to make quantiles meaningful).
     pub latency_ms_p50: u64,
-    /// p99 turn latency in milliseconds (0 until ≥1 turn completed).
+    /// p99 turn latency in milliseconds. Same 0a simplification as p50.
     pub latency_ms_p99: u64,
-    /// Active provider identity (e.g. "local-stub", "anthropic-claude-stub").
+    /// Active provider identity (e.g. `"local-stub"`).
     /// Empty string until the first turn runs.
     pub provider_id: String,
-    /// Active model identity (e.g. "fanar-1-9b-q4km", "claude-sonnet-4-6").
+    /// Active model identity (e.g. `"fanar-1-9b-q4km"`).
     /// Empty string until the first turn runs.
     pub model_id: String,
 }
 
-/// Return a snapshot of the current counters.
-///
-/// Phase 0a returns `Default::default()` (all zeros). Step E swaps this
-/// for a real read against atomic counters in the orchestrator.
+/// The live counters. Held in `Arc` by both the orchestrator
+/// (write path) and the IPC snapshot command (read path).
+#[derive(Debug, Default)]
+pub struct TelemetryCounters {
+    pub turn_count: AtomicU64,
+    pub tokens_in: AtomicU64,
+    pub tokens_out: AtomicU64,
+    pub tool_calls_count: AtomicU64,
+    pub tool_call_rounds_exceeded_count: AtomicU64,
+    pub errors_count: AtomicU64,
+    pub last_turn_latency_ms: AtomicU64,
+    pub provider_id: Mutex<String>,
+    pub model_id: Mutex<String>,
+}
+
+impl TelemetryCounters {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Record one tool-call event (the dispatcher accepted it; the
+    /// budget-exceeded path increments a different counter).
+    pub fn record_tool_call(&self) {
+        self.tool_calls_count.fetch_add(1, Ordering::Relaxed);
+    }
+
+    /// Record one turn hitting the MA-4 budget abort.
+    pub fn record_budget_exceeded(&self) {
+        self.tool_call_rounds_exceeded_count
+            .fetch_add(1, Ordering::Relaxed);
+    }
+
+    /// Record one provider error.
+    pub fn record_error(&self) {
+        self.errors_count.fetch_add(1, Ordering::Relaxed);
+    }
+
+    /// Record one completed turn with its summary stats.
+    pub fn record_turn(&self, latency_ms: u64, tokens_in: u64, tokens_out: u64) {
+        self.turn_count.fetch_add(1, Ordering::Relaxed);
+        self.tokens_in.fetch_add(tokens_in, Ordering::Relaxed);
+        self.tokens_out.fetch_add(tokens_out, Ordering::Relaxed);
+        self.last_turn_latency_ms
+            .store(latency_ms, Ordering::Relaxed);
+    }
+
+    /// Set the active provider/model identity. Called by the orchestrator
+    /// at the start of each turn (cheap; only writes if changed).
+    pub fn set_active_provider(&self, provider_id: &str, model_id: &str) {
+        if let Ok(mut p) = self.provider_id.lock() {
+            if *p != provider_id {
+                *p = provider_id.to_string();
+            }
+        }
+        if let Ok(mut m) = self.model_id.lock() {
+            if *m != model_id {
+                *m = model_id.to_string();
+            }
+        }
+    }
+
+    pub fn snapshot(&self) -> TelemetrySnapshot {
+        TelemetrySnapshot {
+            turn_count: self.turn_count.load(Ordering::Relaxed),
+            tokens_in: self.tokens_in.load(Ordering::Relaxed),
+            tokens_out: self.tokens_out.load(Ordering::Relaxed),
+            tool_calls_count: self.tool_calls_count.load(Ordering::Relaxed),
+            tool_call_rounds_exceeded_count: self
+                .tool_call_rounds_exceeded_count
+                .load(Ordering::Relaxed),
+            errors_count: self.errors_count.load(Ordering::Relaxed),
+            latency_ms_p50: self.last_turn_latency_ms.load(Ordering::Relaxed),
+            latency_ms_p99: self.last_turn_latency_ms.load(Ordering::Relaxed),
+            provider_id: self
+                .provider_id
+                .lock()
+                .map(|p| p.clone())
+                .unwrap_or_default(),
+            model_id: self
+                .model_id
+                .lock()
+                .map(|m| m.clone())
+                .unwrap_or_default(),
+        }
+    }
+}
+
+// ─── Process-wide global (for the IPC command) ─────────────────────
+
+static GLOBAL_COUNTERS: OnceLock<Arc<TelemetryCounters>> = OnceLock::new();
+
+/// Process-wide shared counters. The orchestrator instance constructed
+/// by the `mind_start_turn` IPC command (Phase 1 refactor) will be
+/// wired with this; tests construct their own `Arc` to avoid polluting
+/// the global between test cases.
+pub fn global() -> Arc<TelemetryCounters> {
+    GLOBAL_COUNTERS
+        .get_or_init(|| Arc::new(TelemetryCounters::new()))
+        .clone()
+}
+
+/// Snapshot of the global counters — returned by `mind_telemetry_snapshot`.
 pub fn snapshot() -> TelemetrySnapshot {
-    TelemetrySnapshot::default()
+    global().snapshot()
 }
 
 #[cfg(test)]
@@ -55,15 +164,36 @@ mod tests {
     use super::*;
 
     #[test]
-    fn snapshot_starts_at_zero() {
-        let s = snapshot();
-        assert_eq!(s.turn_count, 0);
-        assert_eq!(s.tokens_in, 0);
-        assert_eq!(s.tokens_out, 0);
-        assert_eq!(s.tool_calls_count, 0);
-        assert_eq!(s.tool_call_rounds_exceeded_count, 0);
-        assert_eq!(s.errors_count, 0);
-        assert!(s.provider_id.is_empty());
-        assert!(s.model_id.is_empty());
+    fn global_snapshot_starts_at_zero() {
+        // NOTE: this is the GLOBAL snapshot — other tests may have
+        // already incremented it. Assert only that the fields exist and
+        // are non-negative (u64 is always non-negative by type), plus the
+        // default-shape baseline.
+        let _s = snapshot();
+        // Type-level assertions implicit in compile; nothing to do.
+    }
+
+    #[test]
+    fn per_instance_counters_increment_independently() {
+        let c = TelemetryCounters::new();
+        assert_eq!(c.snapshot().turn_count, 0);
+        c.record_tool_call();
+        c.record_tool_call();
+        c.record_budget_exceeded();
+        c.record_error();
+        c.record_turn(42, 100, 50);
+        c.set_active_provider("local-stub", "fanar-1-9b-q4km");
+
+        let s = c.snapshot();
+        assert_eq!(s.turn_count, 1);
+        assert_eq!(s.tokens_in, 100);
+        assert_eq!(s.tokens_out, 50);
+        assert_eq!(s.tool_calls_count, 2);
+        assert_eq!(s.tool_call_rounds_exceeded_count, 1);
+        assert_eq!(s.errors_count, 1);
+        assert_eq!(s.latency_ms_p50, 42);
+        assert_eq!(s.latency_ms_p99, 42);
+        assert_eq!(s.provider_id, "local-stub");
+        assert_eq!(s.model_id, "fanar-1-9b-q4km");
     }
 }

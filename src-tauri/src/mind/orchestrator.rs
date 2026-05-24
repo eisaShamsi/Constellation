@@ -33,6 +33,7 @@
 //!   relies on.
 
 use std::sync::Arc;
+use std::time::Instant;
 
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc;
@@ -41,6 +42,7 @@ use crate::mind::events::StreamEvent;
 use crate::mind::provider::{
     ChatMessage, ChatRole, FinishReason, GenParams, InferenceError, InferenceProvider, TokenUsage,
 };
+use crate::mind::telemetry::{self, TelemetryCounters};
 
 // ─── Configuration ─────────────────────────────────────────────────
 
@@ -157,6 +159,7 @@ pub struct ChatOrchestrator {
     dispatcher: Arc<dyn ToolDispatcher>,
     history: Vec<ChatMessage>,
     config: ChatConfig,
+    counters: Arc<TelemetryCounters>,
 }
 
 pub struct TurnOutcome {
@@ -175,11 +178,19 @@ impl ChatOrchestrator {
             dispatcher,
             history: Vec::new(),
             config: ChatConfig::default(),
+            counters: telemetry::global(),
         }
     }
 
     pub fn with_config(mut self, config: ChatConfig) -> Self {
         self.config = config;
+        self
+    }
+
+    /// Inject a per-instance counters Arc. Used in tests to avoid
+    /// polluting the global counter state across cases.
+    pub fn with_counters(mut self, counters: Arc<TelemetryCounters>) -> Self {
+        self.counters = counters;
         self
     }
 
@@ -195,6 +206,13 @@ impl ChatOrchestrator {
         params: GenParams,
         ui_tx: mpsc::Sender<UiEvent>,
     ) -> Result<TurnOutcome, ChatError> {
+        // Record the active provider/model identity for diagnostics.
+        let caps = self.provider.capabilities();
+        self.counters.set_active_provider(&caps.runtime, &caps.model_id);
+
+        // Start the turn timer (Step E — telemetry).
+        let turn_start = Instant::now();
+
         // Append the user message to history once per turn.
         self.history.push(ChatMessage {
             role: ChatRole::User,
@@ -249,7 +267,12 @@ impl ChatOrchestrator {
                         let result_json: serde_json::Value;
                         let status_string: String;
                         if tool_rounds >= self.config.max_tool_rounds_per_turn {
-                            budget_exceeded = true;
+                            if !budget_exceeded {
+                                // Count one budget hit per turn, not per
+                                // subsequent ToolCall after the hit.
+                                self.counters.record_budget_exceeded();
+                                budget_exceeded = true;
+                            }
                             result_json = serde_json::json!({
                                 "status": "aborted_tool_budget_exceeded",
                                 "limit": self.config.max_tool_rounds_per_turn,
@@ -262,6 +285,7 @@ impl ChatOrchestrator {
                                 .map_err(|_| ChatError::UiChannelClosed)?;
                         } else {
                             tool_rounds += 1;
+                            self.counters.record_tool_call();
                             result_json = self
                                 .dispatcher
                                 .dispatch(&name, args.clone())
@@ -302,6 +326,7 @@ impl ChatOrchestrator {
                         last_finish = Some(finish_reason);
                     }
                     StreamEvent::Error { message } => {
+                        self.counters.record_error();
                         return Err(ChatError::Provider(InferenceError::Runtime(message)));
                     }
                 }
@@ -324,6 +349,12 @@ impl ChatOrchestrator {
                     continue;
                 }
                 Some(reason @ (FinishReason::Stop | FinishReason::Length)) => {
+                    let latency_ms = turn_start.elapsed().as_millis() as u64;
+                    self.counters.record_turn(
+                        latency_ms,
+                        accumulated_usage.input_tokens as u64,
+                        accumulated_usage.output_tokens as u64,
+                    );
                     ui_tx
                         .send(UiEvent::TurnDone {
                             usage: accumulated_usage,
@@ -338,6 +369,12 @@ impl ChatOrchestrator {
                     });
                 }
                 Some(FinishReason::Cancelled) => {
+                    let latency_ms = turn_start.elapsed().as_millis() as u64;
+                    self.counters.record_turn(
+                        latency_ms,
+                        accumulated_usage.input_tokens as u64,
+                        accumulated_usage.output_tokens as u64,
+                    );
                     return Ok(TurnOutcome {
                         finish_reason: FinishReason::Cancelled,
                         usage: accumulated_usage,
@@ -346,11 +383,15 @@ impl ChatOrchestrator {
                     });
                 }
                 Some(FinishReason::Error) => {
+                    self.counters.record_error();
                     return Err(ChatError::Provider(InferenceError::Runtime(
                         "provider returned Error finish reason".into(),
                     )));
                 }
-                None => return Err(ChatError::StreamEndedWithoutDone),
+                None => {
+                    self.counters.record_error();
+                    return Err(ChatError::StreamEndedWithoutDone);
+                }
             }
         }
     }
@@ -564,5 +605,70 @@ mod tests {
         let raw = serde_json::json!({"status": "ok", "echo": 42});
         let framed = framing::as_tool_result("any_tool", raw.clone());
         assert_eq!(framed, raw);
+    }
+
+    #[tokio::test]
+    async fn turn_increments_per_instance_telemetry_counters() {
+        let provider: Arc<dyn InferenceProvider> = Arc::new(LocalProvider::new());
+        let dispatcher: Arc<dyn ToolDispatcher> = Arc::new(CannedDispatcher);
+        let counters = Arc::new(TelemetryCounters::new());
+        let mut orch = ChatOrchestrator::new(provider, dispatcher)
+            .with_counters(counters.clone());
+
+        let (ui_tx, mut ui_rx) = mpsc::channel::<UiEvent>(64);
+        let params = GenParams {
+            tools: vec![ToolSchema {
+                name: "search_notes".into(),
+                description: "stub".into(),
+                input_schema: serde_json::json!({"type": "object"}),
+            }],
+            ..GenParams::default()
+        };
+        let outcome = orch
+            .turn("first turn".into(), params, ui_tx)
+            .await
+            .expect("turn ok");
+        // Drain remaining UI events so the channel can close cleanly.
+        while ui_rx.recv().await.is_some() {}
+
+        let s = counters.snapshot();
+        assert_eq!(s.turn_count, 1, "snapshot: {:?}", s);
+        assert_eq!(s.tool_calls_count, 1);
+        assert_eq!(s.tool_call_rounds_exceeded_count, 0);
+        assert_eq!(s.errors_count, 0);
+        // LocalProvider stub's round-1 usage is in=10/out=5, round-2 is
+        // in=18/out=3 → accumulated 28 / 8.
+        assert_eq!(s.tokens_in, 28);
+        assert_eq!(s.tokens_out, 8);
+        assert_eq!(s.provider_id, "stub");
+        assert_eq!(s.model_id, "local-stub");
+        assert_eq!(outcome.tool_rounds, 1);
+    }
+
+    #[tokio::test]
+    async fn budget_abort_records_one_budget_hit_in_telemetry() {
+        let provider: Arc<dyn InferenceProvider> = Arc::new(LoopingToolCallProvider);
+        let dispatcher: Arc<dyn ToolDispatcher> = Arc::new(CannedDispatcher);
+        let counters = Arc::new(TelemetryCounters::new());
+        let mut orch = ChatOrchestrator::new(provider, dispatcher)
+            .with_config(ChatConfig {
+                max_tool_rounds_per_turn: 2,
+            })
+            .with_counters(counters.clone());
+
+        let (ui_tx, mut ui_rx) = mpsc::channel::<UiEvent>(128);
+        let outcome = orch
+            .turn("loop".into(), GenParams::default(), ui_tx)
+            .await
+            .expect("turn ok");
+        while ui_rx.recv().await.is_some() {}
+
+        let s = counters.snapshot();
+        assert!(outcome.budget_exceeded);
+        assert_eq!(s.tool_call_rounds_exceeded_count, 1,
+            "exactly one budget hit per turn, even if multiple ToolCalls after");
+        assert_eq!(s.tool_calls_count, 2,
+            "the two pre-budget ToolCalls were dispatched");
+        assert_eq!(s.turn_count, 1);
     }
 }
