@@ -67,7 +67,12 @@ mod maturity;
 // (CECE's local-LLM stub), and `embeddings.rs` (ONNX embedding engine) —
 // 0a touches none of them. See docs/Constellation-Mind-Concept-Paper-v1.1.md
 // + docs/MIG-046-constellation-mind-phase0a-inference-abstraction-ARCHITECT.md.
-mod mind;
+//
+// MIG-047 §B/§H widened visibility from `mod` to `pub mod` so the
+// standalone bench `[[bin]]` targets in src-tauri/build_assets/ can
+// `use constellation_lib::mind::providers::LocalProvider;`. No
+// behavioral change for in-crate consumers.
+pub mod mind;
 mod perf_trace;
 mod provenance;
 mod review;

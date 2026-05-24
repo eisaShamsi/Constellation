@@ -27,6 +27,21 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 name = "build_concept_vectors"
 path = "build_assets/build_concept_vectors.rs"
 
+# MIG-047 Phase 0b §B — Runtime micro-bench (model-load latency,
+# first-token latency, sustained tokens/sec). Run on dev hardware
+# with --model <path> after the model-pipeline workflow has produced
+# the GGUF + the user has installed it.
+[[bin]]
+name = "bench_runtime"
+path = "build_assets/bench_runtime.rs"
+
+# MIG-047 Phase 0b §H — Tool-use reliability benchmark over a fixed
+# prompt suite. Scores tool-call validity, argument fidelity, and
+# coherent-reply post-tool-result.
+[[bin]]
+name = "bench_tool_use"
+path = "build_assets/bench_tool_use.rs"
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
