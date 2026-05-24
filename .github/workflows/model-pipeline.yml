@@ -102,15 +102,29 @@ jobs:
 
       - name: Download safetensors from Hugging Face (Fanar is PUBLIC; no auth needed)
         env:
-          # `huggingface-cli` was removed in huggingface_hub >= 0.30 — use `hf`.
-          # The `HF_HUB_ENABLE_HF_TRANSFER` env var is similarly deprecated;
-          # the modern equivalent is `HF_XET_HIGH_PERFORMANCE=1` (Xet protocol
-          # is the new high-throughput download backend).
+          # Python snapshot_download is more robust than the `hf` CLI under
+          # unauthenticated rate-limits — the CLI silently stalls after the
+          # first few files. Python lets us specify resume_download + add an
+          # explicit timeout. Use HF_TOKEN if set (workflow Secrets); else
+          # rely on the public-repo path.
           HF_XET_HIGH_PERFORMANCE: '1'
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           mkdir -p safetensors
-          hf download "${HF_REPO}" --local-dir safetensors
-          echo "Downloaded ${HF_REPO}:"
+          python - <<'PY'
+          import os, sys
+          from huggingface_hub import snapshot_download
+          token = os.environ.get("HF_TOKEN") or None
+          path = snapshot_download(
+              repo_id=os.environ["HF_REPO"],
+              local_dir="safetensors",
+              repo_type="model",
+              token=token,
+              max_workers=4,
+          )
+          print(f"Downloaded to: {path}")
+          PY
+          echo "Files:"
           ls -lh safetensors/
 
       - name: Convert safetensors → FP16 GGUF
