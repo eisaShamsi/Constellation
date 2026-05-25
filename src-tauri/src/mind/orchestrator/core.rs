@@ -53,6 +53,7 @@ use crate::mind::telemetry::{self, TelemetryCounters};
 
 use super::citation_validator;
 use super::dispatcher::ToolDispatcher;
+use super::history;
 use super::prompt;
 
 // ─── Configuration ─────────────────────────────────────────────────
@@ -285,6 +286,25 @@ impl ChatOrchestrator {
         let mut citation_retry_used = false;
 
         loop {
+            // §K: trim oldest pairs from history if envelope exceeds
+            // the budget. UI history (rendered in MindChatPane) stays
+            // verbatim — only `self.history` is trimmed. Decision E2.
+            match history::trim_to_budget(
+                &mut self.history,
+                history::DEFAULT_CONTEXT_BUDGET_TOKENS,
+            ) {
+                history::TrimOutcome::Fits | history::TrimOutcome::TrimmedTo(_) => {}
+                history::TrimOutcome::OversizedTurn => {
+                    let msg = "turn exceeds context budget".to_string();
+                    let _ = ui_tx
+                        .send(UiEvent::Error {
+                            message: msg.clone(),
+                        })
+                        .await;
+                    return Err(ChatError::Provider(InferenceError::Runtime(msg)));
+                }
+            }
+
             // Each iteration = one provider.generate() call.
             let mut stream = self.provider.generate(&self.history, &params).await?;
 

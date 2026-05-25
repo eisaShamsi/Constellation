@@ -27,6 +27,7 @@ pub mod citation_validator;
 pub mod core;
 pub mod dispatcher;
 pub mod gbnf;
+pub mod history;
 pub mod prompt;
 pub mod tools;
 
