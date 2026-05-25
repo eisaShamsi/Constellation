@@ -1,10 +1,12 @@
 use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 // tauri::Manager unused — removed
+// HashSet was used by §A for in-memory columns_detected dedup; §C replaced
+// that with a SQL DISTINCT query so HashSet is no longer needed here.
 
 // ─── Security ───
 
@@ -447,29 +449,31 @@ pub fn query_base(
     // Build ORDER BY
     let order_sql = build_order_clause(&definition.sorts);
 
-    // Combine into final SQL
+    // Combine source + filter into a single WHERE expression — used by both the
+    // main row query and the §C columns_detected query.
+    let combined_where = if filter_sql.is_empty() {
+        source_where.clone()
+    } else {
+        format!("{} AND {}", source_where, filter_sql)
+    };
+    let mut combined_params: Vec<String> = source_params;
+    combined_params.extend(filter_params);
+
+    // Build the main row query
     let mut sql = format!(
         "SELECT path, name, library_name, modified, properties_json FROM note_meta WHERE {}",
-        source_where
+        combined_where
     );
-    if !filter_sql.is_empty() {
-        sql.push_str(" AND ");
-        sql.push_str(&filter_sql);
-    }
     if !order_sql.is_empty() {
         sql.push(' ');
         sql.push_str(&order_sql);
     }
 
-    // Collect all params in the order they appear in the SQL (source first, then filters)
-    let mut all_params: Vec<String> = source_params;
-    all_params.extend(filter_params);
-
     // Execute
     let mut stmt = conn.prepare(&sql)
         .map_err(|e| format!("Failed to prepare query_base SQL: {}\nSQL: {}", e, sql))?;
     let row_iter = stmt.query_map(
-        rusqlite::params_from_iter(all_params.iter()),
+        rusqlite::params_from_iter(combined_params.iter()),
         |row| {
             let path: String = row.get(0)?;
             let name: String = row.get(1)?;
@@ -481,15 +485,10 @@ pub fn query_base(
     ).map_err(|e| format!("Failed to execute query_base SQL: {}", e))?;
 
     let mut rows: Vec<BaseRow> = Vec::new();
-    let mut columns_detected_set: HashSet<String> = HashSet::new();
-
     for row_result in row_iter {
         let (path, name, library_name, modified, properties_json) =
             row_result.map_err(|e| format!("Failed to read query_base row: {}", e))?;
         let properties = parse_properties_json(&properties_json);
-        for key in properties.keys() {
-            columns_detected_set.insert(key.clone());
-        }
         let library_path = library_path_map.get(&library_name).cloned().unwrap_or_default();
         rows.push(BaseRow {
             file_path: path,
@@ -502,8 +501,11 @@ pub fn query_base(
     }
 
     let total_count = rows.len();
-    let mut columns_detected: Vec<String> = columns_detected_set.into_iter().collect();
-    columns_detected.sort();
+
+    // §C — columns_detected via SQL json_each (replaces the in-memory HashSet dedup).
+    // Operates on the same filtered row set as the main query (same WHERE), so the
+    // distinct property keys returned are exactly those of the FILTERED notes.
+    let columns_detected = detect_columns_sql(&conn, &combined_where, &combined_params)?;
 
     let query_time_ms = start.elapsed().as_millis() as u64;
 
@@ -737,6 +739,46 @@ fn build_order_clause(sorts: &[SortRule]) -> String {
         .collect();
 
     format!("ORDER BY {}", parts.join(", "))
+}
+
+/// §C — `columns_detected` via SQL json_each.
+///
+/// Runs a `SELECT DISTINCT key FROM note_meta, json_each(properties_json)
+/// WHERE <combined WHERE>` against the same filter shape as the main query.
+/// Returns property keys sorted ascending (same shape as the §A in-memory
+/// dedup it replaces).
+fn detect_columns_sql(
+    conn: &Connection,
+    where_sql: &str,
+    where_params: &[String],
+) -> Result<Vec<String>, String> {
+    let sql = format!(
+        "SELECT DISTINCT json_each.key \
+         FROM note_meta, json_each(note_meta.properties_json) \
+         WHERE {} \
+         ORDER BY json_each.key",
+        where_sql
+    );
+    let mut stmt = conn
+        .prepare(&sql)
+        .map_err(|e| format!("Failed to prepare detect_columns_sql: {}\nSQL: {}", e, sql))?;
+    let rows = stmt
+        .query_map(
+            rusqlite::params_from_iter(where_params.iter()),
+            |row| row.get::<_, String>(0),
+        )
+        .map_err(|e| format!("Failed to execute detect_columns_sql: {}", e))?;
+
+    let mut keys: Vec<String> = Vec::new();
+    for row_result in rows {
+        let key = row_result.map_err(|e| format!("Failed to read column key: {}", e))?;
+        // Defensive: skip any non-string keys (json_each returns the column index for arrays;
+        // properties_json is always an object so this should never trigger, but be safe).
+        if !key.is_empty() {
+            keys.push(key);
+        }
+    }
+    Ok(keys)
 }
 
 /// Translate a property name to the SQL expression that yields its value.
