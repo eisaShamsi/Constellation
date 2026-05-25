@@ -50,32 +50,57 @@ pub fn scan_citations(text: &str) -> Vec<String> {
         .collect()
 }
 
-/// Check whether the given note `path` exists in `note_meta`.
-///
-/// Returns `false` if the path isn't found, the search DB isn't
-/// initialized, or any SQL error occurs (validator errs on the side
-/// of "couldn't verify → invalid" so a degraded path doesn't silently
-/// pass bad citations).
-pub fn note_path_exists(app: &tauri::AppHandle, path: &str) -> bool {
+/// Verification outcome for one path lookup. Distinguishes "the DB
+/// confirmed the path is missing" (Missing) from "the DB couldn't be
+/// queried" (Unverifiable). MIG-048 §M audit flagged the P1 risk that
+/// a fail-CLOSED policy would mark every citation invalid on a fresh
+/// install where the SearchState DB hasn't been opened yet.
+#[derive(Debug, PartialEq, Eq)]
+enum PathVerdict {
+    Exists,
+    Missing,
+    Unverifiable,
+}
+
+fn verify_path(app: &tauri::AppHandle, path: &str) -> PathVerdict {
     let state = app.state::<SearchState>();
     let db_guard = match state.db.lock() {
         Ok(g) => g,
-        Err(_) => return false,
+        Err(_) => return PathVerdict::Unverifiable,
     };
     let conn = match db_guard.as_ref() {
         Some(c) => c,
-        None => return false,
+        None => return PathVerdict::Unverifiable,
     };
-    conn.query_row(
+    match conn.query_row(
         "SELECT 1 FROM note_meta WHERE path = ?1 LIMIT 1",
         params![path],
         |_row| Ok(()),
-    )
-    .is_ok()
+    ) {
+        Ok(()) => PathVerdict::Exists,
+        Err(rusqlite::Error::QueryReturnedNoRows) => PathVerdict::Missing,
+        // Any other SQL error → treat as unverifiable, not missing.
+        Err(_) => PathVerdict::Unverifiable,
+    }
+}
+
+/// Public wrapper retained for callers that only need a boolean
+/// answer (tests, future callers). The boolean conflates Missing +
+/// Unverifiable but most callers only care whether the path is real.
+pub fn note_path_exists(app: &tauri::AppHandle, path: &str) -> bool {
+    matches!(verify_path(app, path), PathVerdict::Exists)
 }
 
 /// Validate every `[note:X]` reference in `text`. Returns
 /// `(valid_paths, invalid_paths)` (both deduplicated).
+///
+/// Fail-OPEN policy (§M P1 caveat fix): when the search DB is
+/// unavailable (uninitialized / lock poisoned / SQL error other than
+/// "no rows"), the path is treated as `valid` rather than `invalid`.
+/// This avoids the failure mode where the validator marks EVERY
+/// citation invalid on a fresh install and the user sees the warning
+/// prefix constantly. Validation only catches REAL fabrications when
+/// the DB CAN confirm the path is missing.
 pub fn scan_and_verify(app: &tauri::AppHandle, text: &str) -> (Vec<String>, Vec<String>) {
     let mut valid: Vec<String> = Vec::new();
     let mut invalid: Vec<String> = Vec::new();
@@ -85,10 +110,11 @@ pub fn scan_and_verify(app: &tauri::AppHandle, text: &str) -> (Vec<String>, Vec<
         if !seen.insert(path.clone()) {
             continue;
         }
-        if note_path_exists(app, &path) {
-            valid.push(path);
-        } else {
-            invalid.push(path);
+        match verify_path(app, &path) {
+            PathVerdict::Exists => valid.push(path),
+            PathVerdict::Missing => invalid.push(path),
+            // Fail open — treat as valid when verification is not possible.
+            PathVerdict::Unverifiable => valid.push(path),
         }
     }
 
