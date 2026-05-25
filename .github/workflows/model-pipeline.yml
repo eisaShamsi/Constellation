@@ -50,7 +50,11 @@ jobs:
     env:
       MODEL_ID: ${{ inputs.model }}
       MODEL_VERSION: ${{ inputs.version }}
-      RELEASE_TAG: models/${{ inputs.model }}-${{ inputs.version }}
+      # Hyphen-joined (NOT models/{model}-{version}) — GitHub release-asset
+      # URL routing breaks on slash-in-tag (returns 404 for the public
+      # download URL pattern even though the API reports correct URLs).
+      # Hyphen-separated tags route cleanly through both API + public URL.
+      RELEASE_TAG: models-${{ inputs.model }}-${{ inputs.version }}
       HF_REPO: 'QCRI/Fanar-1-9B-Instruct'
       OUTPUT_NAME: 'fanar-1-9b-q4km.gguf'
 

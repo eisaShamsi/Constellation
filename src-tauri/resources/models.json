@@ -14,9 +14,9 @@
       "language_focus": ["ar", "en"],
       "context_window": 8192,
       "license": "Apache-2.0",
-      "license_notes_url": "https://github.com/eisaShamsi/Constellation/releases/download/models/fanar-1-9b-q4km-v1/LICENSE.txt",
-      "manifest_url": "https://github.com/eisaShamsi/Constellation/releases/download/models/fanar-1-9b-q4km-v1/manifest.json",
-      "release_url": "https://github.com/eisaShamsi/Constellation/releases/tag/models/fanar-1-9b-q4km-v1",
+      "license_notes_url": "https://github.com/eisaShamsi/Constellation/releases/download/models-fanar-1-9b-q4km-v1/LICENSE.txt",
+      "manifest_url": "https://github.com/eisaShamsi/Constellation/releases/download/models-fanar-1-9b-q4km-v1/manifest.json",
+      "release_url": "https://github.com/eisaShamsi/Constellation/releases/tag/models-fanar-1-9b-q4km-v1",
       "$comment_sha256": "Updated 2026-05-24 from the first model-pipeline.yml workflow run (run id 26364885496). The release's manifest.json carries the same final_sha256.",
       "final_sha256": "7d18ceeeed17be54700fc9a4f7ebc101f589c589a4a9a8bccd10d2b442fe2c7a",
       "final_size_bytes": 5382480448
