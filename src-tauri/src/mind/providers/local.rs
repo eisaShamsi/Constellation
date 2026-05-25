@@ -180,12 +180,13 @@ fn run_inference(
 ) -> Result<(), InferenceError> {
     // MIG-048 §D: the default LlamaContextParams sets n_ctx to 512 which
     // is far too small for a Phase 1 chat turn (a system prompt with
-    // tools + 6 tool descriptions easily exceeds 500 tokens). Bump to
-    // 4096 — leaves room for the user message + accumulated history +
-    // ~1000 tokens of response. Fanar's max context is 8192; we
-    // conservatively use half to keep KV cache RAM modest.
+    // tools + 6 tool descriptions easily exceeds 500 tokens). Boss-test
+    // §I (2026-05-25) hit "Insufficient Space of 512" on the first turn.
+    // Bump to Fanar's full 8192-token context — matches the budget
+    // history::DEFAULT_CONTEXT_BUDGET_TOKENS (6500) leaves room for under,
+    // and KV cache RAM (~168 MB at f16) is modest on modern hardware.
     let ctx_params = LlamaContextParams::default()
-        .with_n_ctx(std::num::NonZeroU32::new(4096));
+        .with_n_ctx(std::num::NonZeroU32::new(8192));
     let mut ctx = model
         .new_context(backend, ctx_params)
         .map_err(|e| InferenceError::Runtime(format!("new_context: {e}")))?;
@@ -201,8 +202,15 @@ fn run_inference(
         ));
     }
 
-    // Feed prompt tokens in a single batch.
-    let mut batch = LlamaBatch::new(512, 1);
+    // Feed prompt tokens in a single batch. Capacity must accommodate
+    // the full tokenized prompt — when §F added the canonical system
+    // prompt + tool-palette inline (~400-600 tokens), the original 512
+    // hard-cap overflowed on real chat turns ("Insufficient Space of
+    // 512" runtime error caught in Boss-test §I 2026-05-25). Size to
+    // match n_ctx (8192) so the batch can hold any prompt the trim
+    // budget (6500 tokens) lets through.
+    let batch_capacity = (n_prompt as usize).max(8192);
+    let mut batch = LlamaBatch::new(batch_capacity, 1);
     for (i, token) in tokens_list.iter().enumerate() {
         let is_last = i as i32 == n_prompt - 1;
         batch
