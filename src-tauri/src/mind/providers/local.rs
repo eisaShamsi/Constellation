@@ -32,9 +32,10 @@ use llama_cpp_2::{
 };
 
 use crate::mind::events::StreamEvent;
+use crate::mind::orchestrator::gbnf;
 use crate::mind::provider::{
     ChatMessage, ChatRole, FinishReason, GenParams, InferenceError, InferenceProvider,
-    ProviderCapabilities, TokenUsage,
+    ProviderCapabilities, TokenUsage, ToolSchema,
 };
 
 /// Process-wide llama.cpp backend. Constructed once on first model load
@@ -106,13 +107,16 @@ impl InferenceProvider for LocalProvider {
         let max_tokens = params.max_tokens as i32;
         let temperature = params.temperature;
         let top_p = params.top_p;
+        // MIG-048 §D: tool palette is owned by the spawned task so the
+        // grammar string can outlive the &GenParams borrow.
+        let tools = params.tools.clone();
 
         let (tx, rx) = mpsc::channel(64);
 
         // Drive inference on the blocking pool (decode/sample are sync + heavy).
         tokio::task::spawn_blocking(move || {
             let result = run_inference(
-                &model, backend, &prompt, max_tokens, temperature, top_p, &tx,
+                &model, backend, &prompt, max_tokens, temperature, top_p, &tools, &tx,
             );
             if let Err(e) = result {
                 let _ = tx.blocking_send(StreamEvent::Error {
@@ -154,9 +158,16 @@ impl InferenceProvider for LocalProvider {
     }
 }
 
+/// The exact byte sequence that signals the start of a tool-call JSON.
+/// Matches `gbnf::trigger_word()` — kept here as `&str` for ergonomic
+/// `String::find`.
+const TOOL_CALL_TRIGGER: &str = r#"{"tool":"#;
+
 /// One inference run: tokenize → decode prompt → sample tokens until
 /// EOS / `max_tokens` / frontend closes. Emits `StreamEvent::Token`s
-/// per generated token + a terminal `Done` event.
+/// per generated token + a terminal `Done` event — OR a single
+/// `StreamEvent::ToolCall` + `Done { ToolCall }` when the model emits
+/// a tool-call JSON (gated by GBNF grammar when `tools` non-empty).
 fn run_inference(
     model: &LlamaModel,
     backend: &LlamaBackend,
@@ -164,9 +175,17 @@ fn run_inference(
     max_tokens: i32,
     temperature: f32,
     top_p: f32,
+    tools: &[ToolSchema],
     tx: &mpsc::Sender<StreamEvent>,
 ) -> Result<(), InferenceError> {
-    let ctx_params = LlamaContextParams::default();
+    // MIG-048 §D: the default LlamaContextParams sets n_ctx to 512 which
+    // is far too small for a Phase 1 chat turn (a system prompt with
+    // tools + 6 tool descriptions easily exceeds 500 tokens). Bump to
+    // 4096 — leaves room for the user message + accumulated history +
+    // ~1000 tokens of response. Fanar's max context is 8192; we
+    // conservatively use half to keep KV cache RAM modest.
+    let ctx_params = LlamaContextParams::default()
+        .with_n_ctx(std::num::NonZeroU32::new(4096));
     let mut ctx = model
         .new_context(backend, ctx_params)
         .map_err(|e| InferenceError::Runtime(format!("new_context: {e}")))?;
@@ -193,17 +212,53 @@ fn run_inference(
     ctx.decode(&mut batch)
         .map_err(|e| InferenceError::Runtime(format!("decode prompt: {e}")))?;
 
-    // Sampler chain: temperature → top-p → dist (random with seed).
-    let mut sampler = LlamaSampler::chain_simple([
-        LlamaSampler::temp(temperature),
-        LlamaSampler::top_p(top_p, 1),
-        LlamaSampler::dist(42),
-    ]);
+    // Sampler chain. Grammar (if any) goes FIRST so it filters candidate
+    // tokens before temperature/top-p/dist make the final pick. We use
+    // `grammar_lazy` — the grammar only enforces shape AFTER the trigger
+    // byte sequence `{"tool":` appears in the output. Up until then
+    // the model can emit any prose (including starting with `{` for
+    // unrelated reasons — code blocks, equations, etc.).
+    let mut samplers: Vec<LlamaSampler> = Vec::with_capacity(4);
+    if !tools.is_empty() {
+        let grammar_str = gbnf::from_tools(tools);
+        let g = LlamaSampler::grammar_lazy(
+            model,
+            &grammar_str,
+            "tool-call",
+            [gbnf::trigger_word()],
+            &[],
+        )
+        .map_err(|e| InferenceError::Runtime(format!("grammar_lazy init: {e:?}")))?;
+        samplers.push(g);
+    }
+    samplers.push(LlamaSampler::temp(temperature));
+    samplers.push(LlamaSampler::top_p(top_p, 1));
+    samplers.push(LlamaSampler::dist(42));
+    let mut sampler = LlamaSampler::chain_simple(samplers);
 
     let mut n_cur = n_prompt;
     let n_len = n_prompt + max_tokens;
     let mut tokens_emitted: u32 = 0;
     let mut frontend_closed = false;
+
+    // Streaming + tool-call detection state.
+    //
+    // `total_text` accumulates every emitted piece so we can search for
+    // the trigger word (`{"tool":` — 8 bytes) without losing visibility
+    // when it spans multiple BPE tokens. `emitted_len` tracks how many
+    // bytes of `total_text` have already been forwarded as `Token`
+    // events. The invariant: the trailing
+    // `TOOL_CALL_TRIGGER.len() - 1 = 7` bytes of `total_text` are NEVER
+    // emitted until we're sure they aren't the start of a forming
+    // trigger — this is the safety window. When the trigger appears,
+    // we emit the prose prefix as one Token and start `tool_buf`
+    // accumulation; when `gbnf::try_parse_tool_call` succeeds, we emit
+    // `ToolCall` + `Done { ToolCall }` and return early.
+    let mut total_text = String::new();
+    let mut emitted_len: usize = 0;
+    let mut in_tool_call = false;
+    let mut tool_buf = String::new();
+    const HOLD_BACK: usize = 7; // TOOL_CALL_TRIGGER.len() - 1
 
     while n_cur < n_len {
         let token = sampler.sample(&ctx, batch.n_tokens() - 1);
@@ -216,19 +271,72 @@ fn run_inference(
         let piece = match model.token_to_str(token, Special::Tokenize) {
             Ok(s) => s,
             // Multi-byte UTF-8 split across tokens may produce an Err
-            // mid-character; emit empty and let the next token complete it.
+            // mid-character; treat as empty and let the next token complete it.
             Err(_) => String::new(),
         };
 
         tokens_emitted += 1;
-        if !frontend_closed
-            && tx
-                .blocking_send(StreamEvent::Token { text: piece })
-                .is_err()
-        {
-            // Frontend dropped — keep generating to drain llama's KV state
-            // cleanly, but stop forwarding events.
-            frontend_closed = true;
+
+        if !piece.is_empty() {
+            if in_tool_call {
+                tool_buf.push_str(&piece);
+                if let Ok(Some((tool_name, args))) = gbnf::try_parse_tool_call(&tool_buf) {
+                    let id = format!("call_{}", chrono::Utc::now().timestamp_micros());
+                    let _ = tx.blocking_send(StreamEvent::ToolCall {
+                        id,
+                        name: tool_name,
+                        args,
+                    });
+                    let _ = tx.blocking_send(StreamEvent::Done {
+                        finish_reason: FinishReason::ToolCall,
+                        usage: TokenUsage {
+                            input_tokens: n_prompt as u32,
+                            output_tokens: tokens_emitted,
+                        },
+                    });
+                    return Ok(());
+                }
+            } else {
+                total_text.push_str(&piece);
+                // Trigger search — only over the slice we haven't yet emitted.
+                if let Some(rel_idx) = total_text[emitted_len..].find(TOOL_CALL_TRIGGER) {
+                    let trigger_abs = emitted_len + rel_idx;
+                    // Emit prose between emitted_len and the trigger.
+                    if trigger_abs > emitted_len {
+                        let prose = total_text[emitted_len..trigger_abs].to_string();
+                        if !frontend_closed
+                            && tx
+                                .blocking_send(StreamEvent::Token { text: prose })
+                                .is_err()
+                        {
+                            frontend_closed = true;
+                        }
+                    }
+                    tool_buf = total_text[trigger_abs..].to_string();
+                    in_tool_call = true;
+                    emitted_len = total_text.len();
+                } else {
+                    // No trigger yet — emit everything except the trailing
+                    // safety window. Use a UTF-8-safe char boundary for the
+                    // cut so we never split a multi-byte codepoint.
+                    let target_end = total_text.len().saturating_sub(HOLD_BACK);
+                    let mut safe_end = target_end;
+                    while safe_end > emitted_len && !total_text.is_char_boundary(safe_end) {
+                        safe_end -= 1;
+                    }
+                    if safe_end > emitted_len {
+                        let chunk = total_text[emitted_len..safe_end].to_string();
+                        if !frontend_closed
+                            && tx
+                                .blocking_send(StreamEvent::Token { text: chunk })
+                                .is_err()
+                        {
+                            frontend_closed = true;
+                        }
+                        emitted_len = safe_end;
+                    }
+                }
+            }
         }
 
         batch.clear();
@@ -238,6 +346,16 @@ fn run_inference(
         n_cur += 1;
         ctx.decode(&mut batch)
             .map_err(|e| InferenceError::Runtime(format!("decode iter[{n_cur}]: {e}")))?;
+    }
+
+    // End-of-stream flush: emit any held-back prose / partial tool-call.
+    if !in_tool_call && emitted_len < total_text.len() && !frontend_closed {
+        let tail = total_text[emitted_len..].to_string();
+        let _ = tx.blocking_send(StreamEvent::Token { text: tail });
+    } else if in_tool_call && !tool_buf.is_empty() && !frontend_closed {
+        // Mid-tool-call EOS — surface the partial JSON so the user sees
+        // the model's incomplete intent.
+        let _ = tx.blocking_send(StreamEvent::Token { text: tool_buf.clone() });
     }
 
     let finish_reason = if n_cur >= n_len {

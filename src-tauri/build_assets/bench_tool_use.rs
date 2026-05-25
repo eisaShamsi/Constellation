@@ -343,18 +343,59 @@ struct PromptOutcome {
     preview: String,
 }
 
+/// Minimal tool-use system prompt for the bench. MIG-048 §D added GBNF
+/// grammar constraint, but grammar only ensures tool-call JSON is
+/// well-formed IF the model chooses to emit one — it doesn't force the
+/// choice. The model needs to KNOW tools exist AND see an example.
+/// Phase 1 §F builds the canonical Arabic-first system prompt; here
+/// we use an aggressive few-shot bench stand-in to test whether
+/// Fanar will follow tool-use instructions at all.
+fn bench_system_prompt(tools: &[ToolSchema]) -> String {
+    let tool_lines: Vec<String> = tools
+        .iter()
+        .map(|t| format!("- {}: {}", t.name, t.description))
+        .collect();
+    format!(
+        "You are a knowledge assistant. You have access to these tools to read the user's notes:\n\
+         {tool_lines}\n\n\
+         IMPORTANT: When the user asks about their notes, you MUST call a tool. \
+         Do not answer from your own knowledge. The user's notes contain information you cannot \
+         access without using a tool.\n\n\
+         To call a tool, respond with ONLY a single JSON object on its own, no prose around it. \
+         Format: {{\"tool\":\"<name>\",\"args\":{{<arguments>}}}}\n\n\
+         Example 1:\n\
+         User: Show me what I wrote about machine learning.\n\
+         Assistant: {{\"tool\":\"search_notes\",\"args\":{{\"query\":\"machine learning\"}}}}\n\n\
+         Example 2:\n\
+         User: What's in the file at /home/user/notes/project.md?\n\
+         Assistant: {{\"tool\":\"read_note\",\"args\":{{\"path\":\"/home/user/notes/project.md\"}}}}\n\n\
+         Example 3:\n\
+         User: Find notes similar to /home/user/notes/topic.md\n\
+         Assistant: {{\"tool\":\"find_similar\",\"args\":{{\"path\":\"/home/user/notes/topic.md\"}}}}",
+        tool_lines = tool_lines.join("\n")
+    )
+}
+
 async fn score_prompt(
     provider: &LocalProvider,
     p: &Prompt,
     tools: &[ToolSchema],
 ) -> Result<PromptOutcome, Box<dyn std::error::Error>> {
-    // Round 1: ask the model with tools available.
-    let messages_r1 = vec![ChatMessage {
-        role: ChatRole::User,
-        content: p.user_message.into(),
-        tool_call_id: None,
-        tool_name: None,
-    }];
+    // Round 1: ask the model with tools available, primed by a system prompt.
+    let messages_r1 = vec![
+        ChatMessage {
+            role: ChatRole::System,
+            content: bench_system_prompt(tools),
+            tool_call_id: None,
+            tool_name: None,
+        },
+        ChatMessage {
+            role: ChatRole::User,
+            content: p.user_message.into(),
+            tool_call_id: None,
+            tool_name: None,
+        },
+    ];
     let params = GenParams {
         max_tokens: 256,
         tools: tools.to_vec(),
@@ -366,8 +407,12 @@ async fn score_prompt(
         provider.generate(&messages_r1, &params).await?;
     let mut tool_call: Option<(String, String, serde_json::Value)> = None;
     let mut round1_finish: Option<FinishReason> = None;
+    let mut round1_text = String::new();
     while let Some(ev) = rx.recv().await {
         match ev {
+            StreamEvent::Token { text } => {
+                round1_text.push_str(&text);
+            }
             StreamEvent::ToolCall { id, name, args } => {
                 tool_call = Some((id, name, args));
             }
@@ -383,7 +428,6 @@ async fn score_prompt(
                     preview: format!("ERR: {message}"),
                 });
             }
-            _ => {}
         }
     }
 
@@ -396,18 +440,32 @@ async fn score_prompt(
         None => (false, false, String::new(), String::new()),
     };
 
-    // If round 1 didn't tool-call, skip round 2.
+    // If round 1 didn't tool-call, skip round 2 but capture the
+    // prose preview so we can see what Fanar said instead.
     if !tool_call_valid || round1_finish != Some(FinishReason::ToolCall) {
+        let preview = if round1_text.trim().is_empty() {
+            "(no tool call; empty)".into()
+        } else {
+            let trimmed = round1_text.trim();
+            let n = trimmed.chars().take(80).collect::<String>();
+            format!("(prose) {}{}", n, if trimmed.chars().count() > 80 { "…" } else { "" })
+        };
         return Ok(PromptOutcome {
             tool_call_valid,
             arg_keyword_present,
             coherent_reply: false,
-            preview: "(no tool call)".into(),
+            preview,
         });
     }
 
     // Round 2: inject canned tool result, ask for follow-up.
     let messages_r2 = vec![
+        ChatMessage {
+            role: ChatRole::System,
+            content: bench_system_prompt(tools),
+            tool_call_id: None,
+            tool_name: None,
+        },
         ChatMessage {
             role: ChatRole::User,
             content: p.user_message.into(),
