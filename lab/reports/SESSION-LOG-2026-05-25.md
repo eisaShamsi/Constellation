@@ -88,3 +88,99 @@ Reports: [MIG-048-M-audit-consolidated-2026-05-25.md](MIG-048-M-audit-consolidat
 conversation on Eisa Cognitive Knowledge universe; Eisa reads a 50-turn
 sample; target ≥90% citation faithfulness. If passed, Phase 1 closes
 fully and Phase 2 (MIG-049 — write tools + approval modal) can begin.
+
+---
+
+## SAME-DAY REVERT — Constellation Mind REMOVED at Eisa's call (a9cf4d62)
+
+After the §N Phase 1 SHIPPED commit landed and Eisa Boss-tested the NSIS
+installer (the rebuilt version that included the n_ctx + batch fix +
+tool-result caps), the verdict landed:
+
+> *"My general question: If the LLM is using the search_note tool, then
+> what is special about it? I can search if I want to. It is NOT worth it."*
+> *"Revert back to the prior LLM design and build. Constellation will
+> not have it at this stage. Clean and do the necessary housekeeping."*
+
+The Phase 1 plumbing WAS correct (chat tab visible, tool call dispatched
+via the real RealToolDispatcher, tokens streamed through the
+ChatOrchestrator → bridge → Channel<StreamEvent>, citation discipline
+machinery operated). But Fanar 1.9B at 5 tok/s CPU made every turn
+~70 seconds; an LLM-mediated search on top of the existing SearchHub
+didn't earn that cost. The cross-language synthesis case
+(Canopus ↔ سهيل) — where an LLM would have visibly outperformed
+lexical search — wasn't yet plumbed into `search_notes`'s tool wrapper.
+The app also crashed on the third Boss-test turn (context-window edge
+despite the §N follow-up fixes).
+
+### What the revert deleted
+
+85 files changed, −13,442 / +5,194 lines (the lopsided ratio: ~30
+MIG-046/047/048 commits collapsing into one revert). Scope:
+- `src-tauri/src/mind/` — entire module
+- `src-tauri/build_assets/bench_runtime.rs` + `bench_tool_use.rs`
+- `src-tauri/resources/models.json`
+- `src-tauri/Cargo.toml` — async-trait / sha2 / hex / llama-cpp-2 deps;
+  `bench_*` `[[bin]]` entries
+- `src-tauri/tauri.conf.json` — `bundle.resources` reverted to
+  `["models/*"]`
+- `src-tauri/src/lib.rs` — `pub mod mind`, 8 mind IPC commands,
+  `.setup()` pre-warm hook
+- `src-tauri/src/search.rs` — `constellation_search_recent` +
+  `constellation_graph_neighbors` + `mig048_tests`
+- 5 `Mind*.svelte` components
+- `src/routes/+layout.svelte` — chat sidebar mode + button + mount
+- `src/lib/secondScreen.ts` — `'chat'` from `SidebarMode`
+- `src/lib/components/SettingsModal.svelte` — Mind section
+- 15 i18n JSON files — all `mind.chat.*` / `settings.mind.*` keys
+- `.github/workflows/model-pipeline.yml`
+- MIG-046 / 047 / 048 Architect docs + Concept Paper + Plan
+- 15-locale help-doc Constellation Mind topic
+
+### Out-of-tree cleanup (Eisa-authorized)
+
+- `%APPDATA%\world.uconstellation.app\models\fanar-1-9b-q4km-v1.gguf`
+  (5.13 GB) — removed.
+- `installed_models.json` registry — removed.
+- GitHub Release `models-fanar-1-9b-q4km-v1` + git tag + 4 split-chunk
+  artifacts — deleted via `gh release delete ... --cleanup-tag`.
+
+### What was KEPT (history trail)
+
+- This session log + all MIG-046/047/048 bench + audit reports.
+- `docs/MoCh/MoCh-2026-05-2{3,4,5}*.md` — conversation history.
+- `docs/Constellation Orientation & Onboarding v2.30.md` through
+  `v2.33.md` — immutable per SO #6.
+- `ai/mod.rs`, `cece/`, `embeddings.rs`, `nsc/` — pre-Mind surfaces,
+  untouched throughout the MIG-046/047/048 cascade by design.
+
+### What's new
+
+- `docs/Constellation Orientation & Onboarding v2.34.md` — preamble
+  documents the revert + 6 lessons preserved for any future Mind
+  re-attempt:
+  1. GPU acceleration is the gating issue (5 tok/s CPU isn't viable
+     for interactive chat).
+  2. Cross-language synthesis is the value-add to lead with — not
+     plain keyword lookup.
+  3. `tauri::AppHandle` as struct field breaks test-binary DLL load
+     (`STATUS_ENTRYPOINT_NOT_FOUND`).
+  4. GBNF eager grammar crashes llama.cpp on `prose | tool-call`
+     alternation — use `grammar_lazy` with trigger word.
+  5. `LlamaBatch::new(N, 1)` capacity must track `n_ctx`; default 512
+     overflows on any real prompt with a system message + tools.
+  6. Tool result payloads need defense-in-depth size caps (per-tool
+     AND dispatcher-level) to avoid round-2 context overflow.
+
+### Verified clean
+
+- `cargo check --lib` — 0 errors, 42 warnings (all pre-existing
+  dead-code in non-Mind code).
+- `svelte-check` — 3 errors (all pre-existing: `LinkLifecycle.fresh`
+  in store.ts, 2 PropertyEditor union-type issues); 0 new.
+
+### Strategic next direction
+
+Mind is shelved. The Architect-Plan-Build-Audit machinery proved
+itself even though the feature didn't ship — that's the meta-takeaway.
+Next migration target pending Eisa's direction.
