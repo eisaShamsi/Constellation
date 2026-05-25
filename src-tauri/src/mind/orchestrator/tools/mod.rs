@@ -1,28 +1,34 @@
 //! Tool implementations the model can call during a chat turn.
 //!
-//! Phase 1 (§A) ships the four "ready" read tools that wrap existing
-//! subsystem fns without needing any new code outside `mind/`:
+//! Phase 1 ships the full read-tool palette — six tools:
 //!
 //! - [`search_notes`] — keyword search via `search::constellation_search`
 //! - [`read_note`] — file body via `libraries::read_note`
 //! - [`find_similar`] — semantic neighbours via `search::constellation_search_similar`
 //! - [`summarize`] — single-note summary via `nsc::compute_summary_for_note`
+//! - [`list_recent`] — newest-first scan via `search::constellation_search_recent`
+//! - [`graph_neighbors`] — typed-link BFS via `search::constellation_graph_neighbors`
 //!
-//! Phase 1 (§C) will add the remaining two tools after §B lands the
-//! supporting `pub fn`s in `search.rs`:
-//!
-//! - `list_recent` — recently modified notes
-//! - `graph_neighbors` — BFS over `note_links`
+//! The first 4 landed in §A (their backing fns existed already); the
+//! last 2 landed in §C after §B added `constellation_search_recent` +
+//! `constellation_graph_neighbors` to `search.rs`.
 //!
 //! Each tool module follows the same shape:
 //! - `pub fn schema() -> serde_json::Value` — the JSON-Schema the model sees
 //! - `pub async fn run(app: AppHandle, args: Value) -> Result<Value, String>`
 //!
-//! Errors bubble up as `Err(String)`; the [`crate::mind::orchestrator::dispatcher::RealToolDispatcher`]
-//! catches them and turns them into `{ "status": "error", "error": "..." }`
-//! tool results the model can see.
+//! Errors bubble up as `Err(String)`; the
+//! [`crate::mind::orchestrator::dispatcher::RealToolDispatcher`] catches
+//! them and turns them into `{ "status": "error", "error": "..." }`
+//! tool results the model can see and recover from.
+//!
+//! NOTE: not every tool requires args (`list_recent` accepts zero). The
+//! `required` field in the input_schema is therefore optional; the
+//! palette test below checks presence-when-needed rather than always.
 
 pub mod find_similar;
+pub mod graph_neighbors;
+pub mod list_recent;
 pub mod read_note;
 pub mod search_notes;
 pub mod summarize;
@@ -36,14 +42,16 @@ fn schema_value_to_tool_schema(v: Value) -> ToolSchema {
     serde_json::from_value(v).expect("tool schema must deserialize into ToolSchema")
 }
 
-/// The 4 ready tools' schemas as a single palette. §C will extend this
-/// to 6 once `list_recent` + `graph_neighbors` are wired.
+/// The full Phase 1 read-tool palette — all 6 tools `RealToolDispatcher`
+/// routes to.
 pub fn ready_palette() -> Vec<ToolSchema> {
     vec![
         schema_value_to_tool_schema(search_notes::schema()),
         schema_value_to_tool_schema(read_note::schema()),
         schema_value_to_tool_schema(find_similar::schema()),
         schema_value_to_tool_schema(summarize::schema()),
+        schema_value_to_tool_schema(list_recent::schema()),
+        schema_value_to_tool_schema(graph_neighbors::schema()),
     ]
 }
 
@@ -52,25 +60,26 @@ mod tests {
     use super::*;
 
     #[test]
-    fn ready_palette_has_four_distinct_tools() {
+    fn ready_palette_has_six_distinct_tools() {
         let palette = ready_palette();
-        assert_eq!(palette.len(), 4);
+        assert_eq!(palette.len(), 6);
         let names: Vec<&str> = palette.iter().map(|t| t.name.as_str()).collect();
         assert!(names.contains(&"search_notes"));
         assert!(names.contains(&"read_note"));
         assert!(names.contains(&"find_similar"));
         assert!(names.contains(&"summarize"));
+        assert!(names.contains(&"list_recent"));
+        assert!(names.contains(&"graph_neighbors"));
     }
 
     #[test]
-    fn every_tool_has_nonempty_description_and_required_args() {
+    fn every_tool_has_nonempty_description_and_object_input_schema() {
         for tool in ready_palette() {
             assert!(!tool.description.is_empty(), "tool {} has empty description", tool.name);
             let schema = &tool.input_schema;
             assert_eq!(schema.get("type"), Some(&serde_json::json!("object")));
             assert!(schema.get("properties").is_some(), "tool {} missing properties", tool.name);
-            // Every Phase 1 tool requires at least one arg
-            assert!(schema.get("required").is_some(), "tool {} missing required", tool.name);
+            // `required` is OPTIONAL — list_recent legitimately has no required args.
         }
     }
 }

@@ -77,7 +77,8 @@ impl ToolDispatcher for RealToolDispatcher {
             "read_note" => tools::read_note::run(app, args).await,
             "find_similar" => tools::find_similar::run(app, args).await,
             "summarize" => tools::summarize::run(app, args).await,
-            // §C will add: "list_recent", "graph_neighbors"
+            "list_recent" => tools::list_recent::run(app, args).await,
+            "graph_neighbors" => tools::graph_neighbors::run(app, args).await,
             other => Err(format!("unknown tool: {other}")),
         };
 
