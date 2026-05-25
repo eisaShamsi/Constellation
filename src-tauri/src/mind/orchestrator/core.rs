@@ -51,6 +51,7 @@ use crate::mind::provider::{
 };
 use crate::mind::telemetry::{self, TelemetryCounters};
 
+use super::citation_validator;
 use super::dispatcher::ToolDispatcher;
 use super::prompt;
 
@@ -169,12 +170,24 @@ pub mod framing {
 
 // ─── ChatOrchestrator ──────────────────────────────────────────────
 
+/// Citation validator hook: takes the most recent assistant text,
+/// returns the list of unresolved `[note:<path>]` paths. Phase 1 §G
+/// production hook calls into `citation_validator::scan_and_verify`
+/// with an `AppHandle`. Tests pass `None` (validation is skipped).
+pub type CitationValidatorHook =
+    Box<dyn Fn(&str) -> Vec<String> + Send + Sync + 'static>;
+
 pub struct ChatOrchestrator {
     provider: Arc<dyn InferenceProvider>,
     dispatcher: Arc<dyn ToolDispatcher>,
     history: Vec<ChatMessage>,
     config: ChatConfig,
     counters: Arc<TelemetryCounters>,
+    /// MIG-048 §G: optional citation-validator closure. The closure
+    /// owns whatever resources it needs (an `AppHandle` clone in
+    /// production; nothing in tests). When `None`, the orchestrator
+    /// skips citation checks (Phase 0a behaviour).
+    citation_validator: Option<CitationValidatorHook>,
 }
 
 pub struct TurnOutcome {
@@ -194,6 +207,7 @@ impl ChatOrchestrator {
             history: Vec::new(),
             config: ChatConfig::default(),
             counters: telemetry::global(),
+            citation_validator: None,
         }
     }
 
@@ -206,6 +220,15 @@ impl ChatOrchestrator {
     /// polluting the global counter state across cases.
     pub fn with_counters(mut self, counters: Arc<TelemetryCounters>) -> Self {
         self.counters = counters;
+        self
+    }
+
+    /// MIG-048 §G: inject the citation validator hook. The closure is
+    /// called once per turn after the model emits `Done(Stop|Length)`;
+    /// any returned paths are treated as unresolved and trigger the
+    /// 1-retry feedback loop (decision C1).
+    pub fn with_citation_validator(mut self, hook: CitationValidatorHook) -> Self {
+        self.citation_validator = Some(hook);
         self
     }
 
@@ -258,6 +281,8 @@ impl ChatOrchestrator {
         let mut tool_rounds: u8 = 0;
         let mut budget_exceeded = false;
         let mut accumulated_usage = TokenUsage::default();
+        // §G: citation-retry budget. Decision C1 — one retry per turn.
+        let mut citation_retry_used = false;
 
         loop {
             // Each iteration = one provider.generate() call.
@@ -391,6 +416,51 @@ impl ChatOrchestrator {
                     continue;
                 }
                 Some(reason @ (FinishReason::Stop | FinishReason::Length)) => {
+                    // §G: citation validation before finalizing.
+                    if let Some(validator) = self.citation_validator.as_ref() {
+                        // Most-recent assistant text = the Assistant message
+                        // we just pushed above. If non-empty, scan it.
+                        let last_assistant_text = self
+                            .history
+                            .iter()
+                            .rev()
+                            .find(|m| m.role == ChatRole::Assistant)
+                            .map(|m| m.content.clone())
+                            .unwrap_or_default();
+
+                        if !last_assistant_text.is_empty() {
+                            let invalid = validator(&last_assistant_text);
+
+                            if !invalid.is_empty() {
+                                if !citation_retry_used {
+                                    // First failure → re-prompt with feedback.
+                                    citation_retry_used = true;
+                                    let feedback =
+                                        citation_validator::feedback_message(&invalid);
+                                    self.history.push(ChatMessage {
+                                        role: ChatRole::System,
+                                        content: feedback,
+                                        tool_call_id: None,
+                                        tool_name: None,
+                                    });
+                                    continue;
+                                }
+                                // Second failure → warn the user inline.
+                                let warning =
+                                    citation_validator::warning_prefix(&invalid);
+                                if ui_tx
+                                    .send(UiEvent::AssistantToken(warning))
+                                    .await
+                                    .is_err()
+                                {
+                                    // Frontend closed — surface the channel
+                                    // error like every other UI send path.
+                                    return Err(ChatError::UiChannelClosed);
+                                }
+                            }
+                        }
+                    }
+
                     let latency_ms = turn_start.elapsed().as_millis() as u64;
                     self.counters.record_turn(
                         latency_ms,

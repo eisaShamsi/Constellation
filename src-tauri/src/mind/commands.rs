@@ -134,8 +134,25 @@ pub async fn mind_start_turn(
 
     // Spawn the orchestrator turn. Drops `ui_tx` on completion, which
     // closes the bridge's `ui_rx`, which lets the bridge task exit.
+    //
+    // §G: build the citation-validator closure here so the AppHandle
+    // clone is owned by the closure (not by the orchestrator struct).
+    // This keeps the orchestrator's surface free of tauri::AppHandle
+    // and lets unit tests construct an orchestrator without a runtime.
+    let app_for_validator = app.clone();
+    let citation_hook: crate::mind::orchestrator::CitationValidatorHook =
+        Box::new(move |text: &str| {
+            let (_valid, invalid) =
+                crate::mind::orchestrator::citation_validator::scan_and_verify(
+                    &app_for_validator,
+                    text,
+                );
+            invalid
+        });
+
     tauri::async_runtime::spawn(async move {
-        let mut orch = ChatOrchestrator::new(provider, dispatcher);
+        let mut orch = ChatOrchestrator::new(provider, dispatcher)
+            .with_citation_validator(citation_hook);
 
         // GenParams with the full Phase 1 read-tool palette so the model
         // knows which tools it may call. The LocalProvider's run_inference

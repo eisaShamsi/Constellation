@@ -86,7 +86,8 @@ PRINCIPLES
 - ONE tool per turn. After the tool returns, you may call another tool OR respond in prose. Do not chain calls in one response.
 
 CITATION RULE
-- Every factual claim drawn from the user's notes MUST cite the source by note id: [note:UUID].
+- Every factual claim drawn from the user's notes MUST cite the source by note path: [note:<file path>].
+- The path is the value of the `path` field in any tool result you received (search_notes results, read_note response, etc.).
 - If retrieval returns nothing relevant, say so plainly. Never fabricate.
 - A claim with no citation is a claim from your own training data, not from their notes — clearly mark these as "general knowledge" if you must include them.
 
@@ -115,7 +116,7 @@ mod tests {
     fn default_system_prompt_mentions_citation_rule() {
         let p = default_system_prompt();
         assert!(p.contains("CITATION RULE"));
-        assert!(p.contains("[note:UUID]"));
+        assert!(p.contains("[note:<file path>]"));
     }
 
     #[test]

@@ -23,6 +23,7 @@
 //! - `history.rs` (§K) — sliding-window E2 trim
 //! - `gbnf.rs` (§D) — JSON-Schema → GBNF grammar for the local sampler
 
+pub mod citation_validator;
 pub mod core;
 pub mod dispatcher;
 pub mod gbnf;
@@ -30,6 +31,6 @@ pub mod prompt;
 pub mod tools;
 
 pub use core::{
-    framing, ChatConfig, ChatError, ChatOrchestrator, TurnOutcome, UiEvent,
+    framing, ChatConfig, ChatError, ChatOrchestrator, CitationValidatorHook, TurnOutcome, UiEvent,
 };
 pub use dispatcher::{CannedDispatcher, RealToolDispatcher, ToolDispatcher};
