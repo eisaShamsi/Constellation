@@ -50,7 +50,7 @@
       "icons/icon.ico"
     ],
     "createUpdaterArtifacts": true,
-    "resources": ["models/*", "resources/*"]
+    "resources": ["models/*"]
   },
   "plugins": {
     "updater": {

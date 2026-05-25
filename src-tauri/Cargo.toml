@@ -27,21 +27,6 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 name = "build_concept_vectors"
 path = "build_assets/build_concept_vectors.rs"
 
-# MIG-047 Phase 0b §B — Runtime micro-bench (model-load latency,
-# first-token latency, sustained tokens/sec). Run on dev hardware
-# with --model <path> after the model-pipeline workflow has produced
-# the GGUF + the user has installed it.
-[[bin]]
-name = "bench_runtime"
-path = "build_assets/bench_runtime.rs"
-
-# MIG-047 Phase 0b §H — Tool-use reliability benchmark over a fixed
-# prompt suite. Scores tool-call validity, argument fidelity, and
-# coherent-reply post-tool-result.
-[[bin]]
-name = "bench_tool_use"
-path = "build_assets/bench_tool_use.rs"
-
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
@@ -52,41 +37,6 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 reqwest = { version = "0.12", features = ["json"] }
 tokio = { version = "1", features = ["full"] }
-# MIG-046 Phase 0a (Constellation Mind): proc macro for `async fn` in
-# dyn-compatible traits. Required by `mind::provider::InferenceProvider`
-# and `EmbeddingProvider` so the `ChatOrchestrator` (Step D) can hold
-# `Arc<dyn InferenceProvider>`. Tiny, zero-runtime-cost; not a "heavy"
-# dep in the model-runtime sense the Architect §3 invariant 3 prohibits
-# (mistral.rs / llama-cpp-2 / candle — those land in Phase 0b).
-# MIT/Apache-2.0 licensed.
-async-trait = "0.1"
-# MIG-047 Phase 0b §E: SHA-256 + hex for model-install download
-# verification. Tiny pure-Rust crates (~50 KB combined); both
-# MIT/Apache-2.0; widely used in the Rust ecosystem.
-sha2 = "0.10"
-hex = "0.4"
-# MIG-047 Phase 0b §C-v2 (2026-05-24, after §C-v1 panic): swapped
-# mistral.rs → llama-cpp-2 for the LocalProvider runtime.
-#
-# Why the swap: mistral.rs 0.8.1's GGUF loader does NOT include a
-# `gemma2` architecture handler; it panics at first model load
-# (mistralrs-core/src/gguf/content.rs:151 — "Unknown GGUF architecture
-# `gemma2`"). The README's Gemma 2 listing is the safetensors path,
-# not the GGUF path. Fanar's quantized GGUF advertises gemma2, so it
-# never loads. llama-cpp-2 wraps upstream llama.cpp which has full
-# Gemma 2 GGUF support (the same llama.cpp that quantized Fanar in
-# our model-pipeline workflow). Eisa's revised lock (Path A): take
-# the cmake/MSVC risk now rather than deferring to Phase 2.5 — gives
-# us a single runtime for both Fanar (now) and Jais (Phase 2.5).
-#
-# Windows MSVC build: requires cmake on PATH at build time. cmake
-# lives at `C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\
-# Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe`
-# (VS Build Tools 18). Cargo invocations from this repo must prepend
-# that dir to PATH.
-#
-# MIT/Apache-2.0 licensed. utilityai/llama-cpp-rs is the upstream.
-llama-cpp-2 = "0.1.146"
 rfd = "0.15"
 notify = "7"
 regex = "1"

@@ -60,19 +60,6 @@ mod search;
 mod sky_backfill;
 mod map;
 mod maturity;
-// MIG-046 Phase 0a (Constellation Mind) — Inference Abstraction Skeleton.
-// Two traits (InferenceProvider + EmbeddingProvider), three stub providers,
-// Tauri Channel<StreamEvent> IPC, ChatOrchestrator skeleton, in-process
-// telemetry. Parallel to `ai/` (cloud bridge), `cece/catalogers/reasoning.rs`
-// (CECE's local-LLM stub), and `embeddings.rs` (ONNX embedding engine) —
-// 0a touches none of them. See docs/Constellation-Mind-Concept-Paper-v1.1.md
-// + docs/MIG-046-constellation-mind-phase0a-inference-abstraction-ARCHITECT.md.
-//
-// MIG-047 §B/§H widened visibility from `mod` to `pub mod` so the
-// standalone bench `[[bin]]` targets in src-tauri/build_assets/ can
-// `use constellation_lib::mind::providers::LocalProvider;`. No
-// behavioral change for in-crate consumers.
-pub mod mind;
 mod perf_trace;
 mod provenance;
 mod review;
@@ -317,18 +304,6 @@ pub fn run() {
             ai::ai_send_message,
             ai::ai_validate_connection,
             ai::ai_list_models,
-            // MIG-046 Phase 0a (Constellation Mind) — Step C IPC contract.
-            // Two commands: one streams turn events via Channel<StreamEvent>,
-            // one returns in-process telemetry counters.
-            mind::commands::mind_start_turn,
-            mind::commands::mind_telemetry_snapshot,
-            mind::commands::mind_prewarm_active_model,
-            // MIG-047 Phase 0b §E — model install + registry IPCs.
-            mind::model_install::commands::mind_install_model,
-            mind::model_install::commands::mind_list_catalog,
-            mind::model_install::commands::mind_list_installed_models,
-            mind::model_install::commands::mind_active_model,
-            mind::model_install::commands::mind_set_active_model,
             libraries::list_libraries,
             libraries::add_library,
             libraries::remove_library,
@@ -574,19 +549,6 @@ pub fn run() {
                 perf_trace::record(invoke.message.command());
                 inner(invoke)
             }
-        })
-        .setup(|app| {
-            // MIG-048 §J — pre-warm the active Constellation Mind model
-            // on app start so the user's first chat turn pays warm
-            // latency (~1-1.5 s) instead of cold (~9-11 s). Spawned on
-            // tauri::async_runtime — never blocks startup. If no model
-            // is installed/active, this is a silent no-op. Failures
-            // are swallowed — the next real turn will re-load.
-            let handle = app.handle().clone();
-            tauri::async_runtime::spawn(async move {
-                let _ = crate::mind::commands::mind_prewarm_active_model(handle).await;
-            });
-            Ok(())
         })
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {

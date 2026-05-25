@@ -1949,7 +1949,6 @@
 	},
 	"navigator": {
 		"title": "Navegador",
-		"chat": "Conversa",
 		"folders": "Pastas",
 		"tags": "Tags",
 		"properties": "Propriedades",
@@ -2839,18 +2838,5 @@
 		"cancelTitle": "Cancelar a geração",
 		"buildNow": "Gerar todos os resumos",
 		"buildNowTitle": "Pré-calcula um resumo para cada nota que não tem um. Executa em segundo plano; o progresso aparece na barra de status; pode cancelar a qualquer momento."
-	},
-	"mind": {
-		"chat": {
-			"paneTitle": "Mente do Constellation",
-			"emptyHint": "Pergunte-me qualquer coisa sobre as suas notas. Cito cada afirmação à sua fonte.",
-			"composerPlaceholder": "Pergunte sobre as suas notas…",
-			"sendTooltip": "Enviar (Enter)",
-			"clearTooltip": "Limpar conversa",
-			"toolCallLabel": "Ferramenta",
-			"thinking": "A pensar…",
-			"noModel": "Nenhum modelo Constellation Mind ativo. Abra Definições → Mind para instalar um.",
-			"errorBanner": "Erro do Mind"
-		}
 	}
 }

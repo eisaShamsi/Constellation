@@ -1509,7 +1509,6 @@
 	},
 	"navigator": {
 		"title": "Navigator",
-		"chat": "Chat",
 		"folders": "Ordner",
 		"tags": "Tags",
 		"properties": "Eigenschaften",
@@ -2839,18 +2838,5 @@
 		"cancelTitle": "Erstellung abbrechen",
 		"buildNow": "Alle Zusammenfassungen erstellen",
 		"buildNowTitle": "Berechnet im Hintergrund für jede Notiz ohne Zusammenfassung eine. Fortschritt in der Statusleiste; jederzeit abbrechbar."
-	},
-	"mind": {
-		"chat": {
-			"paneTitle": "Constellation Mind",
-			"emptyHint": "Frag mich alles zu deinen Notizen. Ich belege jede Aussage mit der Quelle.",
-			"composerPlaceholder": "Frag zu deinen Notizen…",
-			"sendTooltip": "Senden (Enter)",
-			"clearTooltip": "Konversation löschen",
-			"toolCallLabel": "Werkzeug",
-			"thinking": "Denke nach…",
-			"noModel": "Kein Constellation-Mind-Modell aktiv. Öffne Einstellungen → Mind, um eines zu installieren.",
-			"errorBanner": "Mind-Fehler"
-		}
 	}
 }

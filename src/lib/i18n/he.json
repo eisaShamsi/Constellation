@@ -1509,7 +1509,6 @@
 	},
 	"navigator": {
 		"title": "נווט",
-		"chat": "צ'אט",
 		"folders": "תיקיות",
 		"tags": "תגיות",
 		"properties": "מאפיינים",
@@ -2839,18 +2838,5 @@
 		"cancelTitle": "ביטול בניית התקצירים",
 		"buildNow": "בניית כל התקצירים",
 		"buildNowTitle": "מחשב מראש תקציר לכל הערה שאין לה. פועל ברקע; ההתקדמות מוצגת בשורת המצב; ניתן לבטל בכל עת."
-	},
-	"mind": {
-		"chat": {
-			"paneTitle": "תודעת Constellation",
-			"emptyHint": "שאל אותי כל דבר על ההערות שלך. אני מצטט כל קביעה למקור שלה.",
-			"composerPlaceholder": "שאל על ההערות שלך…",
-			"sendTooltip": "שליחה (Enter)",
-			"clearTooltip": "ניקוי השיחה",
-			"toolCallLabel": "כלי",
-			"thinking": "חושב…",
-			"noModel": "אין מודל Constellation Mind פעיל. פתח הגדרות ← Mind כדי להתקין אחד.",
-			"errorBanner": "שגיאת Mind"
-		}
 	}
 }

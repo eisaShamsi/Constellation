@@ -226,7 +226,7 @@ export function onSkyViewClick(callback: (node: SkyViewNodeInfo) => void): Promi
 /*  Sidebar mode sync events                                            */
 /* ------------------------------------------------------------------ */
 
-export type SidebarMode = 'tree' | 'list' | 'skyview' | 'digest' | 'chat';
+export type SidebarMode = 'tree' | 'list' | 'skyview' | 'digest';
 
 /** Main → Second Screen: sidebar mode changed */
 export async function emitSidebarModeChanged(mode: SidebarMode): Promise<void> {

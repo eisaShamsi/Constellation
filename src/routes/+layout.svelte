@@ -49,7 +49,6 @@
 	import FileTree from '$lib/components/FileTree.svelte';
 	// MIG-045 Phase 3 — Universe Digest left-dock pane.
 	import DigestPane from '$lib/components/DigestPane.svelte';
-	import MindChatPane from '$lib/components/MindChatPane.svelte';
 	import NotebookNavigator from '$lib/components/NotebookNavigator.svelte';
 	import NotePane from '$lib/components/NotePane.svelte';
 	import NoteEditor from '$lib/components/NoteEditor.svelte';
@@ -263,7 +262,7 @@
 		tabCtxMenu = null;
 	}
 	// searchMode removed — Search Hub is the single search experience
-	let sidebarMode = $state<'tree' | 'list' | 'skyview' | 'digest' | 'chat'>('tree');
+	let sidebarMode = $state<'tree' | 'list' | 'skyview' | 'digest'>('tree');
 	// CE Phase 9: Multi-Lens Views
 	let availableLenses = $state<any[]>([]);
 	let activeLensId = $state('');
@@ -4652,12 +4651,6 @@
 					<button class="mode-tab" class:active={sidebarMode === 'digest'} onclick={() => { if (sidebarMode !== 'digest') { if (sidebarMode === 'tree') preTreeWidth = leftSidebarWidth; sidebarMode = 'digest'; leftSidebarWidth = Math.max(leftSidebarWidth, 360); emitSidebarModeChanged('digest'); } }} title={$t('navigator.digest') || 'Universe Digest'}>
 						<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h18M3 12h12M3 17h6"/><circle cx="19" cy="17" r="2"/></svg>
 					</button>
-					<!-- MIG-048 §I — Constellation Mind chat mode (Eisa-locked
-					     decision D1: left dock). Drives mind/orchestrator via
-					     mind_start_turn IPC. -->
-					<button class="mode-tab" class:active={sidebarMode === 'chat'} onclick={() => { if (sidebarMode !== 'chat') { if (sidebarMode === 'tree') preTreeWidth = leftSidebarWidth; sidebarMode = 'chat'; leftSidebarWidth = Math.max(leftSidebarWidth, 400); emitSidebarModeChanged('chat'); } }} title={$t('navigator.chat') || 'Chat with your notes'}>
-						<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-					</button>
 					<!-- OrgChart and Sky View buttons moved to left dock bar -->
 					{#if sidebarMode === 'tree' }
 						<button class="mode-tab" onclick={cycleSortOrder} title={getSortTooltip()}>
@@ -4701,11 +4694,6 @@
 						libraries={$libraries}
 						onNoteClick={(path, libName) => handleNoteClick(path, libName)}
 					/>
-				{:else if sidebarMode === 'chat'}
-					<!-- MIG-048 §I — Chat surface in the left dock. The component
-					     owns its conversation state and drives mind/orchestrator
-					     via mind_start_turn. -->
-					<MindChatPane />
 				{:else if activeLensId && lensEntries}
 					<!-- CE Phase 9: Lens view -->
 					<div class="section-label">🔍 {availableLenses.find((l: any) => l.id === activeLensId)?.name ?? 'Lens'}</div>

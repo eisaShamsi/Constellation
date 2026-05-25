@@ -1509,7 +1509,6 @@
 	},
 	"navigator": {
 		"title": "Navigateur",
-		"chat": "Discussion",
 		"folders": "Dossiers",
 		"tags": "Étiquettes",
 		"properties": "Propriétés",
@@ -2839,18 +2838,5 @@
 		"cancelTitle": "Annuler la création",
 		"buildNow": "Générer tous les résumés",
 		"buildNowTitle": "Précalcule un résumé pour chaque note qui n’en a pas. S’exécute en arrière-plan ; progression dans la barre d’état ; annulable à tout moment."
-	},
-	"mind": {
-		"chat": {
-			"paneTitle": "Esprit Constellation",
-			"emptyHint": "Demande-moi tout ce que tu veux sur tes notes. Je cite chaque affirmation à sa source.",
-			"composerPlaceholder": "Demande à propos de tes notes…",
-			"sendTooltip": "Envoyer (Entrée)",
-			"clearTooltip": "Effacer la conversation",
-			"toolCallLabel": "Outil",
-			"thinking": "Réflexion…",
-			"noModel": "Aucun modèle Constellation Mind actif. Ouvre Paramètres → Mind pour en installer un.",
-			"errorBanner": "Erreur Mind"
-		}
 	}
 }
