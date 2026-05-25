@@ -1,5 +1,52 @@
 # Session log — 2026-05-25
 
+## Bases design — Concept Paper v1.0 → v1.3 cascade (Block 3, evening)
+
+After the Mind revert (`a9cf4d62`) and the handover prep (`07a05964`), the fresh-start Bases design conversation produced a **four-version Concept Paper in one continuous session with all 9 design decisions locked.** No code change — design artifacts only.
+
+### What landed
+
+**Concept Paper line (4 versions, all preserved):**
+- `docs/Constellation-Base-Concept-Paper-v1.0.md` — pre-decisions draft. 15 sections, 8 open questions in §13.
+- `docs/Constellation-Base-Concept-Paper-v1.1.md` — 7 of 8 closed. Headlines unconditional + context-aware rendering; all Living Link dimensions queryable; Five Acts as both shapes; Host-Note Assemblage accelerated to Phase 1.5; Federation auto-default; Wings bidirectional; Cell-edit on typed links → Phase 7.
+- `docs/Constellation-Base-Concept-Paper-v1.2.md` — all 8 closed. §6.10 added (360.3D Bridge: 10 cognitive dimensions as Bases columns, Phase 2.5) + §7.2 (Open-in-360.3D row gesture, Phase 1.5) + §9 fourth differentiator + §10.8 architectural mandate.
+- `docs/Constellation-Base-Concept-Paper-v1.3.md` — all 9 closed (the canonical version). §6.11 added (CNS Bridge: 6 measurements as Bases columns, Phase 2.6, with freshness strategy α/β/γ deferred to Phase 2.6 Architect doc) + §7.3 (Open-in-CNS gesture, Phase 1.5) + §7.4 (the three-surface workflow named) + §9 fifth differentiator + §10.9 architectural mandate + §11 reverse-CNS out of scope.
+
+**Memory:**
+- `memory/project_sight_map_disabled_2026_05_19.md` (NEW) — canonical current-state record for Sight + Map being moved to Constellation Wings per MIG-038. Older Sight memos preserved + flagged as superseded.
+- `memory/MEMORY.md` updated.
+
+**This file:**
+- Three blocks today — Block 1 = MIG-048 ship cascade (morning), Block 2 = Mind revert (afternoon), Block 3 = Bases Concept Paper (evening).
+
+**MoCh:**
+- `docs/MoCh/MoCh-2026-05-25-1800.md` — direct Boss ↔ Claude conversation trace for Block 3.
+
+**Orientation:**
+- Bumped to v2.35 (`docs/Constellation Orientation & Onboarding v2.35.md`). v2.34 preserved.
+
+### The 9 decisions locked
+
+| # | Question | Resolution | Phase |
+|---|---|---|---|
+| 1 | Headlines | Unconditional default; context-aware rendering | — |
+| 2 | Living Link dimensions | All (8 properties + lifecycle + aggregates + relational) | 2 |
+| 3 | Five Acts templates | Both read-only system + editable copies (with `derivedFrom` lineage) | 5 |
+| 4 | Host-Note Assemblage | Accelerate to Phase 1.5 | 1.5 |
+| 5 | Federation default | Auto; `selected_vaults` becomes opt-OUT | 4 |
+| 6 | Bases ↔ 360.3D | All 10 CE dimensions as columns + Open-in-360.3D row gesture | 2.5 / 1.5 |
+| 7 | Wings integration | Bidirectional (exposes data + consumes column types) | when Wings ships |
+| 8 | Cell-edit on typed links | Phase 7 | 7 |
+| 9 | Bases ↔ CNS | All 6 CNS measurements as columns + Open-in-CNS row gesture; freshness deferred | 2.6 / 1.5 |
+
+### What's next
+
+**MIG-049 — Bases Phase 1: Rule 8 Migration.** Architect doc to follow as a separate commit per `/migration` discipline (Architect → Plan → Build → Audit). The `bases_cache` SQLite table, triggers on `note_meta` + `note_links`, `query_base` becomes a cheap SQL lookup. No new user-visible features beyond instant performance.
+
+**Number reuse note:** MIG-049 was previously allocated to Mind Phase 2 (write tools + approval modal — never built; reverted along with MIG-046/047/048 cascade). Reused here for Bases Phase 1.
+
+---
+
 ## MIG-048 Phase 1 — Read-only conversational RAG SHIPPED (§A–§N)
 
 Phase 1 of the Constellation Mind Implementation Plan v1.0 landed in
