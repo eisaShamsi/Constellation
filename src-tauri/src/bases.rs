@@ -1,5 +1,6 @@
+use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
@@ -382,98 +383,127 @@ fn parse_base_yaml(content: &str) -> Result<BaseDefinition, String> {
         .map_err(|e| format!("Invalid base file format: {}", e))
 }
 
+// ─── MIG-054 §A — SQL-backed query_base (Rule 8 compliance) ───
+//
+// Reads from note_meta.properties_json (write-time-derived frontmatter)
+// instead of walking the filesystem. The cache the v1.4 Concept Paper §10.1
+// mandate calls for already exists: note_meta is write-time-maintained by
+// every upstream save / file-watcher / backfill path.
+//
+// Source types handled here (§A): "folder", "all", and legacy "vault" (the
+// latter translated inline so existing .base files continue to work).
+// Source type "tag" is implemented in §B via notes_fts MATCH; until then
+// it returns an explicit error.
+//
+// 8 filter operators: is / is_not / contains / not_contains / gt / lt /
+// is_empty / is_not_empty — all translated to json_extract expressions.
+//
+// columns_detected uses in-memory dedup in §A; §C upgrades to a json_each
+// SQL query.
+
 #[tauri::command]
 pub fn query_base(
-    _app: tauri::AppHandle,
+    app: tauri::AppHandle,
     definition: BaseDefinition,
     library_paths: Vec<(String, String)>, // (library_name, library_path) pairs
 ) -> Result<BaseQueryResult, String> {
     let start = Instant::now();
-    let mut rows = Vec::new();
 
     // Filter libraries by selectedLibraries (empty = all libraries)
-    let active_libs: Vec<&(String, String)> = if definition.source.selected_vaults.is_empty() {
-        library_paths.iter().collect()
+    let active_libs: Vec<String> = if definition.source.selected_vaults.is_empty() {
+        library_paths.iter().map(|(n, _)| n.clone()).collect()
     } else {
         library_paths.iter()
             .filter(|(vname, _)| definition.source.selected_vaults.contains(vname))
+            .map(|(n, _)| n.clone())
             .collect()
     };
 
-    match definition.source.source_type.as_str() {
-        "folder" => {
-            let folder = definition.source.path.as_deref().unwrap_or("");
-            for (vname, vpath) in &active_libs {
-                let full_path = Path::new(vpath).join(folder);
-                if full_path.exists() && full_path.is_dir() {
-                    scan_folder(
-                        &full_path,
-                        vname,
-                        vpath,
-                        definition.source.include_subfolders,
-                        &mut rows,
-                    );
-                }
-            }
+    // Empty active_libs → empty result, no need to hit the DB
+    if active_libs.is_empty() {
+        return Ok(BaseQueryResult {
+            rows: Vec::new(),
+            total_count: 0,
+            query_time_ms: start.elapsed().as_millis() as u64,
+            columns_detected: Vec::new(),
+        });
+    }
+
+    let library_path_map: HashMap<String, String> = library_paths.into_iter().collect();
+
+    // Open the search DB
+    let db_path = crate::search::db_path(&app)
+        .map_err(|e| format!("Failed to resolve search DB path: {}", e))?;
+    let conn = Connection::open(&db_path)
+        .map_err(|e| format!("Failed to open search DB: {}", e))?;
+
+    // Build the WHERE clause for the source type
+    let (source_where, source_params) =
+        build_source_where(&definition.source, &active_libs, &library_path_map)?;
+
+    // Build filter clauses
+    let (filter_sql, filter_params) = build_filter_clauses(&definition.filters);
+
+    // Build ORDER BY
+    let order_sql = build_order_clause(&definition.sorts);
+
+    // Combine into final SQL
+    let mut sql = format!(
+        "SELECT path, name, library_name, modified, properties_json FROM note_meta WHERE {}",
+        source_where
+    );
+    if !filter_sql.is_empty() {
+        sql.push_str(" AND ");
+        sql.push_str(&filter_sql);
+    }
+    if !order_sql.is_empty() {
+        sql.push(' ');
+        sql.push_str(&order_sql);
+    }
+
+    // Collect all params in the order they appear in the SQL (source first, then filters)
+    let mut all_params: Vec<String> = source_params;
+    all_params.extend(filter_params);
+
+    // Execute
+    let mut stmt = conn.prepare(&sql)
+        .map_err(|e| format!("Failed to prepare query_base SQL: {}\nSQL: {}", e, sql))?;
+    let row_iter = stmt.query_map(
+        rusqlite::params_from_iter(all_params.iter()),
+        |row| {
+            let path: String = row.get(0)?;
+            let name: String = row.get(1)?;
+            let library_name: String = row.get(2)?;
+            let modified: i64 = row.get(3)?;
+            let properties_json: String = row.get::<_, Option<String>>(4)?.unwrap_or_default();
+            Ok((path, name, library_name, modified, properties_json))
+        },
+    ).map_err(|e| format!("Failed to execute query_base SQL: {}", e))?;
+
+    let mut rows: Vec<BaseRow> = Vec::new();
+    let mut columns_detected_set: HashSet<String> = HashSet::new();
+
+    for row_result in row_iter {
+        let (path, name, library_name, modified, properties_json) =
+            row_result.map_err(|e| format!("Failed to read query_base row: {}", e))?;
+        let properties = parse_properties_json(&properties_json);
+        for key in properties.keys() {
+            columns_detected_set.insert(key.clone());
         }
-        "tag" => {
-            let tag = definition.source.tag.as_deref().unwrap_or("");
-            for (vname, vpath) in &active_libs {
-                scan_by_tag(
-                    Path::new(vpath),
-                    vname,
-                    vpath,
-                    tag,
-                    &mut rows,
-                );
-            }
-        }
-        "all" => {
-            for (vname, vpath) in &active_libs {
-                scan_folder(
-                    Path::new(vpath),
-                    vname,
-                    vpath,
-                    true,
-                    &mut rows,
-                );
-            }
-        }
-        // Legacy "vault" type: treat as "all" with selectedVaults=[library]
-        "vault" => {
-            let target = definition.source.selected_vaults.first()
-                .or(definition.source.path.as_ref())
-                .cloned()
-                .unwrap_or_default();
-            for (vname, vpath) in &library_paths {
-                if *vname == target {
-                    scan_folder(Path::new(vpath), vname, vpath, true, &mut rows);
-                    break;
-                }
-            }
-        }
-        _ => return Err(format!("Unknown source type: {}", definition.source.source_type)),
+        let library_path = library_path_map.get(&library_name).cloned().unwrap_or_default();
+        rows.push(BaseRow {
+            file_path: path,
+            file_name: name.trim_end_matches(".md").to_string(),
+            library_name,
+            library_path,
+            properties,
+            modified: modified as u64,
+        });
     }
 
     let total_count = rows.len();
-
-    // Apply filters
-    apply_filters(&mut rows, &definition.filters);
-
-    // Detect all property keys across results (for auto-column discovery)
-    let mut columns_detected: Vec<String> = Vec::new();
-    let mut seen_keys = std::collections::HashSet::new();
-    for row in &rows {
-        for key in row.properties.keys() {
-            if seen_keys.insert(key.clone()) {
-                columns_detected.push(key.clone());
-            }
-        }
-    }
+    let mut columns_detected: Vec<String> = columns_detected_set.into_iter().collect();
     columns_detected.sort();
-
-    // Apply sorts
-    apply_sorts_fixed(&mut rows, &definition.sorts);
 
     let query_time_ms = start.elapsed().as_millis() as u64;
 
@@ -483,6 +513,211 @@ pub fn query_base(
         query_time_ms,
         columns_detected,
     })
+}
+
+// ─── §A helpers: SQL builders + JSON parsing ───
+
+/// Parse a `note_meta.properties_json` TEXT value into a HashMap<String, String>.
+/// Arrays are joined with ", " to match the old `parse_frontmatter` behavior; objects
+/// are serialized back to JSON; null becomes empty string.
+fn parse_properties_json(json_str: &str) -> HashMap<String, String> {
+    let mut props = HashMap::new();
+    if json_str.is_empty() || json_str == "{}" {
+        return props;
+    }
+    let value: serde_json::Value = match serde_json::from_str(json_str) {
+        Ok(v) => v,
+        Err(_) => return props,
+    };
+    if let serde_json::Value::Object(map) = value {
+        for (key, val) in map {
+            let str_val = match val {
+                serde_json::Value::String(s) => s,
+                serde_json::Value::Number(n) => n.to_string(),
+                serde_json::Value::Bool(b) => b.to_string(),
+                serde_json::Value::Null => String::new(),
+                serde_json::Value::Array(arr) => arr
+                    .iter()
+                    .map(|v| match v {
+                        serde_json::Value::String(s) => s.clone(),
+                        other => other.to_string().trim_matches('"').to_string(),
+                    })
+                    .collect::<Vec<_>>()
+                    .join(", "),
+                serde_json::Value::Object(_) => val.to_string(),
+            };
+            props.insert(key, str_val);
+        }
+    }
+    props
+}
+
+/// Build the WHERE clause for the source type. Returns (sql_fragment, params).
+/// Params are bound for `library_name IN (?, ?, ...)`; path patterns are inlined
+/// with single-quote escaping (LIKE patterns can't be parameterized cleanly).
+fn build_source_where(
+    source: &BaseSource,
+    active_libs: &[String],
+    library_paths: &HashMap<String, String>,
+) -> Result<(String, Vec<String>), String> {
+    let lib_placeholders: Vec<&str> = (0..active_libs.len()).map(|_| "?").collect();
+    let lib_in = format!("library_name IN ({})", lib_placeholders.join(", "));
+
+    match source.source_type.as_str() {
+        "all" => Ok((lib_in, active_libs.to_vec())),
+        "folder" => {
+            let folder = source.path.as_deref().unwrap_or("");
+            let sep = std::path::MAIN_SEPARATOR;
+            let mut path_clauses: Vec<String> = Vec::new();
+            for lib in active_libs {
+                if let Some(lib_path) = library_paths.get(lib) {
+                    // Construct the prefix: <lib_path><sep><folder><sep> (or <lib_path><sep> if folder empty)
+                    let prefix = if folder.is_empty() {
+                        format!("{}{}", lib_path, sep)
+                    } else {
+                        format!("{}{}{}{}", lib_path, sep, folder, sep)
+                    };
+                    // Escape single-quotes for SQL string literal
+                    let escaped = prefix.replace('\'', "''");
+                    if source.include_subfolders {
+                        path_clauses.push(format!("path LIKE '{}%'", escaped));
+                    } else {
+                        // Direct children only — no further separator allowed after the prefix
+                        path_clauses.push(format!(
+                            "(path LIKE '{esc}%' AND path NOT LIKE '{esc}%{sep_esc}%')",
+                            esc = escaped,
+                            sep_esc = sep.to_string().replace('\'', "''")
+                        ));
+                    }
+                }
+            }
+            let path_or = if path_clauses.is_empty() {
+                "1=0".to_string()
+            } else {
+                format!("({})", path_clauses.join(" OR "))
+            };
+            Ok((format!("{} AND {}", lib_in, path_or), active_libs.to_vec()))
+        }
+        "tag" => {
+            // §A scope: tag implementation deferred to §B (FTS5 MATCH).
+            // Until §B lands, existing tag-source Bases return an explicit error.
+            Err(
+                "Tag source type — MIG-054 §B implements this via FTS5; \
+                 until then, please use 'folder' or 'all' source types."
+                    .to_string(),
+            )
+        }
+        "vault" => {
+            // Legacy "vault" source type: translate inline to "all" + selected_libraries = [target].
+            // §D retires the source-type literal entirely (rewrites on save); §A handles the
+            // read-path so existing legacy .base files continue to work.
+            let target = source
+                .selected_vaults
+                .first()
+                .cloned()
+                .or_else(|| source.path.clone())
+                .unwrap_or_default();
+            if target.is_empty() {
+                return Err(
+                    "Legacy 'vault' source type with no target library — base file is malformed."
+                        .to_string(),
+                );
+            }
+            Ok(("library_name = ?".to_string(), vec![target]))
+        }
+        other => Err(format!("Unknown source type: {}", other)),
+    }
+}
+
+/// Build the filter clauses for the WHERE. Returns (sql_fragment, params_in_order).
+fn build_filter_clauses(filters: &[FilterRule]) -> (String, Vec<String>) {
+    let mut clauses: Vec<String> = Vec::new();
+    let mut params: Vec<String> = Vec::new();
+
+    for filter in filters {
+        let prop_expr = property_sql_expression(&filter.property);
+
+        let clause = match filter.operator.as_str() {
+            "is" => {
+                params.push(filter.value.to_lowercase());
+                format!("LOWER({}) = ?", prop_expr)
+            }
+            "is_not" => {
+                params.push(filter.value.to_lowercase());
+                format!("(LOWER({}) IS NULL OR LOWER({}) <> ?)", prop_expr, prop_expr)
+            }
+            "contains" => {
+                params.push(format!("%{}%", filter.value.to_lowercase()));
+                format!("LOWER({}) LIKE ?", prop_expr)
+            }
+            "not_contains" => {
+                params.push(format!("%{}%", filter.value.to_lowercase()));
+                format!("({} IS NULL OR LOWER({}) NOT LIKE ?)", prop_expr, prop_expr)
+            }
+            "gt" => {
+                params.push(filter.value.clone());
+                format!("CAST({} AS REAL) > CAST(? AS REAL)", prop_expr)
+            }
+            "lt" => {
+                params.push(filter.value.clone());
+                format!("CAST({} AS REAL) < CAST(? AS REAL)", prop_expr)
+            }
+            "is_empty" => {
+                format!("({} IS NULL OR {} = '')", prop_expr, prop_expr)
+            }
+            "is_not_empty" => {
+                format!("({} IS NOT NULL AND {} <> '')", prop_expr, prop_expr)
+            }
+            _ => "1=1".to_string(), // unknown operator: no-op filter
+        };
+        clauses.push(clause);
+    }
+
+    let filter_sql = if clauses.is_empty() {
+        String::new()
+    } else {
+        clauses.join(" AND ")
+    };
+    (filter_sql, params)
+}
+
+/// Build the ORDER BY clause for the given sorts.
+fn build_order_clause(sorts: &[SortRule]) -> String {
+    if sorts.is_empty() {
+        return String::new();
+    }
+    let parts: Vec<String> = sorts
+        .iter()
+        .map(|sort| {
+            let prop_expr = property_sql_expression(&sort.property);
+            let direction = if sort.direction == "desc" { "DESC" } else { "ASC" };
+            // COLLATE NOCASE for case-insensitive string sort; numeric comparison falls out
+            // of CAST in the WHERE path. Sort here is lexicographic; behavioral equivalence
+            // matches the old apply_sorts_fixed which fell back to lowercased string compare
+            // when numeric parsing failed.
+            format!("{} COLLATE NOCASE {}", prop_expr, direction)
+        })
+        .collect();
+
+    format!("ORDER BY {}", parts.join(", "))
+}
+
+/// Translate a property name to the SQL expression that yields its value.
+/// Special properties: file_name, modified. Everything else is a json_extract.
+fn property_sql_expression(property: &str) -> String {
+    if property == "file_name" {
+        // Match the old behavioral semantics: file_name is the name without .md suffix.
+        // SQLite has no clean suffix-strip; use CASE WHEN to handle the optional .md.
+        "CASE WHEN name LIKE '%.md' THEN substr(name, 1, length(name) - 3) ELSE name END"
+            .to_string()
+    } else if property == "modified" {
+        "modified".to_string()
+    } else {
+        // Use the JSON path '$.\"<prop>\"' form for safety — handles property names with spaces,
+        // dots, special characters. Escape any embedded single-quotes and double-quotes.
+        let escaped = property.replace('\'', "''").replace('"', "\\\"");
+        format!("json_extract(properties_json, '$.\"{}\"')", escaped)
+    }
 }
 
 /// Fixed sorting that handles owned strings properly.
@@ -896,5 +1131,372 @@ fn format_yaml_value(value: &str) -> String {
         format!("\"{}\"", value.replace('\\', "\\\\").replace('"', "\\\""))
     } else {
         value.to_string()
+    }
+}
+
+// ─── MIG-054 §A — Unit tests for the SQL-builder helpers ───
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ── parse_properties_json ──
+
+    #[test]
+    fn parse_properties_json_empty() {
+        assert_eq!(parse_properties_json("").len(), 0);
+        assert_eq!(parse_properties_json("{}").len(), 0);
+    }
+
+    #[test]
+    fn parse_properties_json_string_value() {
+        let m = parse_properties_json(r#"{"status":"in-progress"}"#);
+        assert_eq!(m.get("status"), Some(&"in-progress".to_string()));
+    }
+
+    #[test]
+    fn parse_properties_json_number_value() {
+        let m = parse_properties_json(r#"{"pages":42}"#);
+        assert_eq!(m.get("pages"), Some(&"42".to_string()));
+    }
+
+    #[test]
+    fn parse_properties_json_bool_value() {
+        let m = parse_properties_json(r#"{"done":true}"#);
+        assert_eq!(m.get("done"), Some(&"true".to_string()));
+    }
+
+    #[test]
+    fn parse_properties_json_null_value() {
+        let m = parse_properties_json(r#"{"author":null}"#);
+        assert_eq!(m.get("author"), Some(&"".to_string()));
+    }
+
+    #[test]
+    fn parse_properties_json_array_value() {
+        let m = parse_properties_json(r#"{"tags":["a","b","c"]}"#);
+        assert_eq!(m.get("tags"), Some(&"a, b, c".to_string()));
+    }
+
+    #[test]
+    fn parse_properties_json_arabic_keys_and_values() {
+        let m = parse_properties_json(r#"{"العنوان":"عيسى","العمر":42}"#);
+        assert_eq!(m.get("العنوان"), Some(&"عيسى".to_string()));
+        assert_eq!(m.get("العمر"), Some(&"42".to_string()));
+    }
+
+    #[test]
+    fn parse_properties_json_invalid_returns_empty() {
+        assert_eq!(parse_properties_json("not json").len(), 0);
+    }
+
+    // ── property_sql_expression ──
+
+    #[test]
+    fn property_sql_expression_file_name() {
+        let s = property_sql_expression("file_name");
+        assert!(s.contains("substr(name"));
+        assert!(s.contains(".md"));
+    }
+
+    #[test]
+    fn property_sql_expression_modified() {
+        assert_eq!(property_sql_expression("modified"), "modified");
+    }
+
+    #[test]
+    fn property_sql_expression_regular() {
+        let s = property_sql_expression("status");
+        assert!(s.contains("json_extract"));
+        assert!(s.contains("status"));
+    }
+
+    #[test]
+    fn property_sql_expression_with_double_quote() {
+        let s = property_sql_expression("foo\"bar");
+        assert!(s.contains("foo\\\"bar"));
+    }
+
+    #[test]
+    fn property_sql_expression_arabic() {
+        let s = property_sql_expression("عنوان");
+        assert!(s.contains("عنوان"));
+    }
+
+    // ── build_filter_clauses ──
+
+    #[test]
+    fn build_filter_clauses_empty() {
+        let (sql, params) = build_filter_clauses(&[]);
+        assert_eq!(sql, "");
+        assert_eq!(params.len(), 0);
+    }
+
+    #[test]
+    fn build_filter_clauses_is() {
+        let filters = vec![FilterRule {
+            property: "status".to_string(),
+            operator: "is".to_string(),
+            value: "Done".to_string(),
+        }];
+        let (sql, params) = build_filter_clauses(&filters);
+        assert!(sql.contains("LOWER("));
+        assert!(sql.contains("= ?"));
+        assert_eq!(params, vec!["done".to_string()]);
+    }
+
+    #[test]
+    fn build_filter_clauses_is_not() {
+        let filters = vec![FilterRule {
+            property: "status".to_string(),
+            operator: "is_not".to_string(),
+            value: "Done".to_string(),
+        }];
+        let (sql, params) = build_filter_clauses(&filters);
+        assert!(sql.contains("IS NULL OR"));
+        assert!(sql.contains("<> ?"));
+        assert_eq!(params, vec!["done".to_string()]);
+    }
+
+    #[test]
+    fn build_filter_clauses_contains() {
+        let filters = vec![FilterRule {
+            property: "tags".to_string(),
+            operator: "contains".to_string(),
+            value: "Aristotle".to_string(),
+        }];
+        let (sql, params) = build_filter_clauses(&filters);
+        assert!(sql.contains("LIKE ?"));
+        assert_eq!(params, vec!["%aristotle%".to_string()]);
+    }
+
+    #[test]
+    fn build_filter_clauses_gt() {
+        let filters = vec![FilterRule {
+            property: "pages".to_string(),
+            operator: "gt".to_string(),
+            value: "100".to_string(),
+        }];
+        let (sql, params) = build_filter_clauses(&filters);
+        assert!(sql.contains("CAST"));
+        assert!(sql.contains("> CAST"));
+        assert_eq!(params, vec!["100".to_string()]);
+    }
+
+    #[test]
+    fn build_filter_clauses_lt() {
+        let filters = vec![FilterRule {
+            property: "pages".to_string(),
+            operator: "lt".to_string(),
+            value: "100".to_string(),
+        }];
+        let (sql, params) = build_filter_clauses(&filters);
+        assert!(sql.contains("< CAST"));
+        assert_eq!(params, vec!["100".to_string()]);
+    }
+
+    #[test]
+    fn build_filter_clauses_is_empty_no_param() {
+        let filters = vec![FilterRule {
+            property: "status".to_string(),
+            operator: "is_empty".to_string(),
+            value: "".to_string(),
+        }];
+        let (sql, params) = build_filter_clauses(&filters);
+        assert!(sql.contains("IS NULL"));
+        assert_eq!(params.len(), 0);
+    }
+
+    #[test]
+    fn build_filter_clauses_is_not_empty_no_param() {
+        let filters = vec![FilterRule {
+            property: "status".to_string(),
+            operator: "is_not_empty".to_string(),
+            value: "".to_string(),
+        }];
+        let (sql, params) = build_filter_clauses(&filters);
+        assert!(sql.contains("IS NOT NULL"));
+        assert_eq!(params.len(), 0);
+    }
+
+    #[test]
+    fn build_filter_clauses_multiple_anded() {
+        let filters = vec![
+            FilterRule {
+                property: "status".to_string(),
+                operator: "is".to_string(),
+                value: "done".to_string(),
+            },
+            FilterRule {
+                property: "tags".to_string(),
+                operator: "contains".to_string(),
+                value: "aristotle".to_string(),
+            },
+        ];
+        let (sql, params) = build_filter_clauses(&filters);
+        assert!(sql.contains(" AND "));
+        assert_eq!(params.len(), 2);
+    }
+
+    // ── build_order_clause ──
+
+    #[test]
+    fn build_order_clause_empty() {
+        assert_eq!(build_order_clause(&[]), "");
+    }
+
+    #[test]
+    fn build_order_clause_single_desc() {
+        let sorts = vec![SortRule {
+            property: "modified".to_string(),
+            direction: "desc".to_string(),
+        }];
+        let sql = build_order_clause(&sorts);
+        assert!(sql.starts_with("ORDER BY"));
+        assert!(sql.contains("modified"));
+        assert!(sql.contains("DESC"));
+    }
+
+    #[test]
+    fn build_order_clause_default_asc() {
+        let sorts = vec![SortRule {
+            property: "file_name".to_string(),
+            direction: "asc".to_string(),
+        }];
+        let sql = build_order_clause(&sorts);
+        assert!(sql.contains("ASC"));
+    }
+
+    #[test]
+    fn build_order_clause_multi() {
+        let sorts = vec![
+            SortRule {
+                property: "stratum".to_string(),
+                direction: "desc".to_string(),
+            },
+            SortRule {
+                property: "file_name".to_string(),
+                direction: "asc".to_string(),
+            },
+        ];
+        let sql = build_order_clause(&sorts);
+        assert!(sql.contains(","));
+        assert!(sql.contains("DESC"));
+        assert!(sql.contains("ASC"));
+    }
+
+    // ── build_source_where ──
+
+    fn test_lib_paths() -> HashMap<String, String> {
+        let mut m = HashMap::new();
+        m.insert("Lib1".to_string(), format!("{sep}path{sep}to{sep}Lib1", sep = std::path::MAIN_SEPARATOR));
+        m.insert("Lib2".to_string(), format!("{sep}path{sep}to{sep}Lib2", sep = std::path::MAIN_SEPARATOR));
+        m
+    }
+
+    #[test]
+    fn build_source_where_all() {
+        let source = BaseSource {
+            source_type: "all".to_string(),
+            path: None,
+            tag: None,
+            include_subfolders: true,
+            selected_vaults: Vec::new(),
+        };
+        let active_libs = vec!["Lib1".to_string(), "Lib2".to_string()];
+        let (sql, params) = build_source_where(&source, &active_libs, &test_lib_paths()).unwrap();
+        assert!(sql.starts_with("library_name IN"));
+        assert_eq!(params.len(), 2);
+    }
+
+    #[test]
+    fn build_source_where_folder_subfolders_included() {
+        let source = BaseSource {
+            source_type: "folder".to_string(),
+            path: Some("Projects".to_string()),
+            tag: None,
+            include_subfolders: true,
+            selected_vaults: Vec::new(),
+        };
+        let active_libs = vec!["Lib1".to_string()];
+        let (sql, _) = build_source_where(&source, &active_libs, &test_lib_paths()).unwrap();
+        assert!(sql.contains("library_name IN"));
+        assert!(sql.contains("path LIKE"));
+        assert!(sql.contains("Projects"));
+        // No NOT LIKE restriction when subfolders included
+        assert!(!sql.contains("NOT LIKE"));
+    }
+
+    #[test]
+    fn build_source_where_folder_no_subfolders() {
+        let source = BaseSource {
+            source_type: "folder".to_string(),
+            path: Some("Projects".to_string()),
+            tag: None,
+            include_subfolders: false,
+            selected_vaults: Vec::new(),
+        };
+        let active_libs = vec!["Lib1".to_string()];
+        let (sql, _) = build_source_where(&source, &active_libs, &test_lib_paths()).unwrap();
+        // When subfolders excluded, the NOT LIKE restriction appears
+        assert!(sql.contains("NOT LIKE"));
+    }
+
+    #[test]
+    fn build_source_where_tag_returns_error_pending_section_b() {
+        let source = BaseSource {
+            source_type: "tag".to_string(),
+            path: None,
+            tag: Some("foo".to_string()),
+            include_subfolders: true,
+            selected_vaults: Vec::new(),
+        };
+        let active_libs = vec!["Lib1".to_string()];
+        let result = build_source_where(&source, &active_libs, &test_lib_paths());
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("§B"));
+    }
+
+    #[test]
+    fn build_source_where_legacy_vault_from_path() {
+        let source = BaseSource {
+            source_type: "vault".to_string(),
+            path: Some("Lib1".to_string()),
+            tag: None,
+            include_subfolders: true,
+            selected_vaults: Vec::new(),
+        };
+        let active_libs = vec!["Lib1".to_string()];
+        let (sql, params) = build_source_where(&source, &active_libs, &test_lib_paths()).unwrap();
+        assert!(sql.contains("library_name = ?"));
+        assert_eq!(params, vec!["Lib1".to_string()]);
+    }
+
+    #[test]
+    fn build_source_where_legacy_vault_selected_wins_over_path() {
+        let source = BaseSource {
+            source_type: "vault".to_string(),
+            path: Some("Lib1".to_string()),
+            tag: None,
+            include_subfolders: true,
+            selected_vaults: vec!["Lib2".to_string()],
+        };
+        let active_libs = vec!["Lib1".to_string(), "Lib2".to_string()];
+        let (_, params) = build_source_where(&source, &active_libs, &test_lib_paths()).unwrap();
+        assert_eq!(params, vec!["Lib2".to_string()]); // selected_vaults wins
+    }
+
+    #[test]
+    fn build_source_where_unknown_returns_error() {
+        let source = BaseSource {
+            source_type: "unknown_type".to_string(),
+            path: None,
+            tag: None,
+            include_subfolders: true,
+            selected_vaults: Vec::new(),
+        };
+        let active_libs = vec!["Lib1".to_string()];
+        let result = build_source_where(&source, &active_libs, &test_lib_paths());
+        assert!(result.is_err());
     }
 }
