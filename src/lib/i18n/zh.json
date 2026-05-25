@@ -1949,6 +1949,7 @@
 	},
 	"navigator": {
 		"title": "导航器",
+		"chat": "聊天",
 		"folders": "文件夹",
 		"tags": "标签",
 		"properties": "属性",
@@ -2838,5 +2839,18 @@
 		"cancelTitle": "取消摘要生成",
 		"buildNow": "生成全部摘要",
 		"buildNowTitle": "为每条没有摘要的笔记预先计算摘要。在后台运行；进度显示在状态栏；可随时取消。"
+	},
+	"mind": {
+		"chat": {
+			"paneTitle": "Constellation 心智",
+			"emptyHint": "向我提问任何关于你笔记的问题。我会为每个论断引用其来源。",
+			"composerPlaceholder": "询问你的笔记…",
+			"sendTooltip": "发送（Enter）",
+			"clearTooltip": "清除对话",
+			"toolCallLabel": "工具",
+			"thinking": "正在思考…",
+			"noModel": "没有活跃的 Constellation 心智模型。打开 设置 → 心智 来安装一个。",
+			"errorBanner": "心智错误"
+		}
 	}
 }

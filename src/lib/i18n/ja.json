@@ -1949,6 +1949,7 @@
 	},
 	"navigator": {
 		"title": "ナビゲーター",
+		"chat": "チャット",
 		"folders": "フォルダ",
 		"tags": "タグ",
 		"properties": "プロパティ",
@@ -2838,5 +2839,18 @@
 		"cancelTitle": "要約の作成をキャンセル",
 		"buildNow": "すべての要約を作成",
 		"buildNowTitle": "要約のない各ノートの要約を事前計算します。バックグラウンドで実行され、進捗はステータスバーに表示され、いつでもキャンセルできます。"
+	},
+	"mind": {
+		"chat": {
+			"paneTitle": "Constellation マインド",
+			"emptyHint": "ノートについて何でも聞いてください。すべての主張に出典を示します。",
+			"composerPlaceholder": "ノートについて質問する…",
+			"sendTooltip": "送信 (Enter)",
+			"clearTooltip": "会話をクリア",
+			"toolCallLabel": "ツール",
+			"thinking": "考えています…",
+			"noModel": "アクティブな Constellation マインドモデルがありません。設定 → マインド を開いてインストールしてください。",
+			"errorBanner": "マインドエラー"
+		}
 	}
 }

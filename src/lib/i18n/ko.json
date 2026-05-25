@@ -1949,6 +1949,7 @@
 	},
 	"navigator": {
 		"title": "네비게이터",
+		"chat": "채팅",
 		"folders": "폴더",
 		"tags": "태그",
 		"properties": "속성",
@@ -2838,5 +2839,18 @@
 		"cancelTitle": "요약 생성 취소",
 		"buildNow": "모든 요약 생성",
 		"buildNowTitle": "요약이 없는 각 노트의 요약을 미리 계산합니다. 백그라운드에서 실행되며 진행 상황은 상태 표시줄에 표시되고 언제든지 취소할 수 있습니다."
+	},
+	"mind": {
+		"chat": {
+			"paneTitle": "Constellation 마인드",
+			"emptyHint": "노트에 대해 무엇이든 물어보세요. 모든 주장에 출처를 표시합니다.",
+			"composerPlaceholder": "노트에 대해 질문…",
+			"sendTooltip": "보내기 (Enter)",
+			"clearTooltip": "대화 지우기",
+			"toolCallLabel": "도구",
+			"thinking": "생각 중…",
+			"noModel": "활성화된 Constellation 마인드 모델이 없습니다. 설정 → 마인드를 열어 설치하세요.",
+			"errorBanner": "마인드 오류"
+		}
 	}
 }

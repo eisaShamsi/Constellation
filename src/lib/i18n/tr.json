@@ -1949,6 +1949,7 @@
 	},
 	"navigator": {
 		"title": "Gezgin",
+		"chat": "Sohbet",
 		"folders": "Klasörler",
 		"tags": "Etiketler",
 		"properties": "Özellikler",
@@ -2838,5 +2839,18 @@
 		"cancelTitle": "Özet oluşturmayı iptal et",
 		"buildNow": "Tüm özetleri oluştur",
 		"buildNowTitle": "Özeti olmayan her not için özeti önceden hesaplar. Arka planda çalışır; ilerleme durum çubuğunda görünür; istediğiniz zaman iptal edebilirsiniz."
+	},
+	"mind": {
+		"chat": {
+			"paneTitle": "Constellation Zihin",
+			"emptyHint": "Notlarınız hakkında ne isterseniz sorun. Her iddiayı kaynağına atıfla belirtirim.",
+			"composerPlaceholder": "Notlarınız hakkında sorun…",
+			"sendTooltip": "Gönder (Enter)",
+			"clearTooltip": "Konuşmayı temizle",
+			"toolCallLabel": "Araç",
+			"thinking": "Düşünüyor…",
+			"noModel": "Etkin bir Constellation Zihin modeli yok. Yüklemek için Ayarlar → Zihin'i açın.",
+			"errorBanner": "Zihin hatası"
+		}
 	}
 }
