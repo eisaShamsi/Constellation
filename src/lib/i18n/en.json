@@ -2168,6 +2168,7 @@
 	},
 	"navigator": {
 		"title": "Navigator",
+		"chat": "Chat",
 		"folders": "Folders",
 		"tags": "Tags",
 		"properties": "Properties",
@@ -3069,5 +3070,18 @@
 		"cancelTitle": "Cancel summary build",
 		"buildNow": "Build all summaries",
 		"buildNowTitle": "Pre-compute a summary for every note that lacks one. Runs in the background; progress shows in the status bar; cancel any time."
+	},
+	"mind": {
+		"chat": {
+			"paneTitle": "Constellation Mind",
+			"emptyHint": "Ask me anything about your notes. I cite every claim to its source.",
+			"composerPlaceholder": "Ask about your notes…",
+			"sendTooltip": "Send (Enter)",
+			"clearTooltip": "Clear conversation",
+			"toolCallLabel": "Tool",
+			"thinking": "Thinking…",
+			"noModel": "No Constellation Mind model is active. Open Settings → Mind to install one.",
+			"errorBanner": "Mind error"
+		}
 	}
 }
