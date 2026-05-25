@@ -1,13 +1,14 @@
 //! Tauri IPC commands for the Mind subsystem.
 //!
-//! Two commands ship in Phase 0a:
+//! Two commands ship in Phase 0a, with §E (MIG-048) refactoring
+//! `mind_start_turn` to drive through `ChatOrchestrator`:
+//!
 //! - `mind_start_turn` — opens a `tauri::ipc::Channel<StreamEvent>`,
-//!   spawns a task that drives a provider through one turn, pushes
-//!   events to the channel until a terminal event. Returns immediately
-//!   so the frontend can begin awaiting events.
+//!   spawns a task that drives one turn through the orchestrator,
+//!   bridging `UiEvent` to `StreamEvent` for the frontend.
 //! - `mind_telemetry_snapshot` — returns the current in-process counters
-//!   (`telemetry::snapshot()`). Phase 0a returns all zeros; Step E wires
-//!   real atomics into the orchestrator.
+//!   (`telemetry::snapshot()`). The orchestrator increments those
+//!   counters internally during each turn.
 //!
 //! Wired into `lib.rs:invoke_handler` alongside the existing `ai::*`
 //! entries. The `ai::*` commands are left strictly untouched (Architect
@@ -15,49 +16,54 @@
 //!
 //! Streaming primitive: `tauri::ipc::Channel<T>` — Tauri v2's first-class
 //! typed-event channel (Architect §4 Option C1). One channel per
-//! `mind_start_turn` invocation; closed naturally when the task drops the
-//! sender (the channel's drop signals the frontend's `onmessage` close).
+//! `mind_start_turn` invocation; closed naturally when the spawned task
+//! drops the sender (the channel's drop signals the frontend's
+//! `onmessage` close).
 
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use serde::Deserialize;
 use tauri::ipc::Channel;
 use tauri::AppHandle;
+use tokio::sync::mpsc;
 
 use crate::mind::events::StreamEvent;
-use crate::mind::provider::{ChatMessage, ChatRole, GenParams, InferenceProvider};
+use crate::mind::orchestrator::{ChatOrchestrator, RealToolDispatcher, ToolDispatcher, UiEvent};
+use crate::mind::provider::{GenParams, InferenceProvider};
 use crate::mind::providers::LocalProvider;
 use crate::mind::telemetry::{self, TelemetrySnapshot};
 
 /// Request shape for `mind_start_turn`.
 ///
-/// Phase 0a only needs `user_message`; later phases add `conversation_id`
-/// (so the orchestrator can resume history), provider selection, and
-/// per-turn override flags. Keeping the type explicit now means future
-/// fields land additively.
+/// `conversation_id` is reserved for Phase 1.x — when the orchestrator
+/// gains persistent multi-turn history keyed on this. Each call today
+/// is single-turn (history starts empty).
 #[derive(Debug, Deserialize)]
 pub struct StartTurnRequest {
     pub user_message: String,
-    /// Reserved for Phase 1+ (orchestrator history is keyed on this).
-    /// Present in 0a so the frontend contract is stable.
     #[serde(default)]
     pub conversation_id: String,
 }
 
 /// Start one conversational turn and stream events to the frontend.
 ///
-/// Phase 0b behaviour (MIG-047 §G): resolves the user's currently-active
-/// model via `mind_active_model`, instantiates a real `LocalProvider`
-/// against that model's GGUF path, and drives one turn. The command
-/// returns immediately after spawning the streaming task — the task
-/// drains the provider's receiver and forwards each event to the
-/// frontend `Channel`. A terminal `Done` or `Error` event closes the
-/// channel.
+/// §E (MIG-048) wiring:
+/// 1. Resolve active model via `mind_active_model`.
+/// 2. Construct `LocalProvider` against the model's GGUF path.
+/// 3. Construct `RealToolDispatcher::new(app)` — the orchestrator
+///    routes tool calls through this.
+/// 4. Spawn the orchestrator turn on the Tauri async runtime. The
+///    orchestrator emits `UiEvent`s on an internal mpsc channel; a
+///    second spawned task translates each `UiEvent` to the
+///    corresponding `StreamEvent` and forwards it on the Tauri
+///    `Channel<StreamEvent>`.
+/// 5. Returns immediately — the frontend's `onmessage` handler drains
+///    events until a terminal `Done` / `Error`.
 ///
 /// If no model is installed/active, emits a single `StreamEvent::Error`
-/// pointing the user to Settings → Mind and returns `Err(...)`. The
-/// chat UI (Phase 1 / MIG-048) renders this inline as a "install a
-/// model first" notice.
+/// and returns `Err(...)`. The chat UI (§H) renders this inline as an
+/// "install a model first" notice.
 #[tauri::command]
 pub async fn mind_start_turn(
     app: AppHandle,
@@ -84,33 +90,72 @@ pub async fn mind_start_turn(
         }
     };
 
-    let provider = LocalProvider::new(PathBuf::from(&active.file_path), active.id.clone());
+    let provider: Arc<dyn InferenceProvider> = Arc::new(LocalProvider::new(
+        PathBuf::from(&active.file_path),
+        active.id.clone(),
+    ));
+    let dispatcher: Arc<dyn ToolDispatcher> = Arc::new(RealToolDispatcher::new(app.clone()));
 
-    let messages = vec![ChatMessage {
-        role: ChatRole::User,
-        content: request.user_message,
-        tool_call_id: None,
-        tool_name: None,
-    }];
-    let params = GenParams::default();
+    let user_message = request.user_message;
 
+    // The orchestrator emits UiEvent; a bridge task translates each
+    // UiEvent into the appropriate StreamEvent for the frontend channel.
+    let (ui_tx, mut ui_rx) = mpsc::channel::<UiEvent>(64);
+
+    // Spawn the bridge task. Lives until ui_rx closes (orchestrator
+    // task drops its sender on turn completion).
+    let on_event_bridge = on_event.clone();
     tauri::async_runtime::spawn(async move {
-        match provider.generate(&messages, &params).await {
-            Ok(mut rx) => {
-                while let Some(ev) = rx.recv().await {
-                    // `send` returns Err when the frontend has dropped
-                    // the channel (user dismissed the chat, navigated
-                    // away). Stop draining quietly in that case.
-                    if on_event.send(ev).is_err() {
-                        break;
-                    }
+        while let Some(ev) = ui_rx.recv().await {
+            let stream_ev = match ev {
+                UiEvent::AssistantToken(text) => Some(StreamEvent::Token { text }),
+                UiEvent::ToolCallProposed { id, name, args } => {
+                    Some(StreamEvent::ToolCall { id, name, args })
+                }
+                UiEvent::TurnDone {
+                    finish_reason,
+                    usage,
+                } => Some(StreamEvent::Done {
+                    finish_reason,
+                    usage,
+                }),
+                UiEvent::Error { message } => Some(StreamEvent::Error { message }),
+                // Internal accounting only — no frontend signal.
+                UiEvent::ToolCallResolved { .. } | UiEvent::ToolBudgetReached => None,
+            };
+            if let Some(se) = stream_ev {
+                if on_event_bridge.send(se).is_err() {
+                    // Frontend dropped — stop translating.
+                    break;
                 }
             }
-            Err(e) => {
-                let _ = on_event.send(StreamEvent::Error {
+        }
+    });
+
+    // Spawn the orchestrator turn. Drops `ui_tx` on completion, which
+    // closes the bridge's `ui_rx`, which lets the bridge task exit.
+    tauri::async_runtime::spawn(async move {
+        let mut orch = ChatOrchestrator::new(provider, dispatcher);
+
+        // GenParams with the full Phase 1 read-tool palette so the model
+        // knows which tools it may call. The LocalProvider's run_inference
+        // installs GBNF grammar gate on this list (§D).
+        let params = GenParams {
+            max_tokens: 1024,
+            tools: crate::mind::orchestrator::tools::ready_palette(),
+            ..GenParams::default()
+        };
+
+        if let Err(e) = orch.turn(user_message, params, ui_tx.clone()).await {
+            // The orchestrator already emitted UiEvent::Error before
+            // returning Err in §E. The extra send here covers the
+            // ChatError::UiChannelClosed case where the bridge already
+            // exited — best-effort, ignored on failure.
+            let _ = ui_tx
+                .send(UiEvent::Error {
                     message: e.to_string(),
-                });
-            }
+                })
+                .await;
         }
     });
 
@@ -119,9 +164,10 @@ pub async fn mind_start_turn(
 
 /// Read out the current in-process telemetry counters.
 ///
-/// Phase 0a returns all zeros (`telemetry::snapshot()` is a stub). Step E
-/// wires real counters through the orchestrator.
+/// The orchestrator increments these counters during each turn (Step E
+/// of MIG-046, exercised end-to-end by §E of MIG-048).
 #[tauri::command]
 pub async fn mind_telemetry_snapshot() -> Result<TelemetrySnapshot, String> {
     Ok(telemetry::snapshot())
 }
+

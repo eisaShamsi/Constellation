@@ -82,10 +82,33 @@ impl Default for ChatConfig {
 #[derive(Debug, Clone, PartialEq)]
 pub enum UiEvent {
     AssistantToken(String),
-    ToolCallProposed { id: String, name: String },
-    ToolCallResolved { id: String, status: String },
+    /// MIG-048 §E: `args` added so the IPC bridge can forward the call
+    /// to the frontend with full payload (the StreamEvent::ToolCall the
+    /// frontend awaits carries `id` + `name` + `args`).
+    ToolCallProposed {
+        id: String,
+        name: String,
+        args: serde_json::Value,
+    },
+    ToolCallResolved {
+        id: String,
+        status: String,
+    },
     ToolBudgetReached,
-    TurnDone { usage: TokenUsage },
+    /// MIG-048 §E: `finish_reason` added so the IPC bridge can map to
+    /// StreamEvent::Done { finish_reason, usage } without a side-channel
+    /// to TurnOutcome.
+    TurnDone {
+        finish_reason: FinishReason,
+        usage: TokenUsage,
+    },
+    /// MIG-048 §E: terminal error path. Previously the orchestrator
+    /// returned `Err(ChatError)` for provider failures with no UI event;
+    /// the IPC bridge now needs an event to translate into
+    /// StreamEvent::Error.
+    Error {
+        message: String,
+    },
 }
 
 // ─── Errors ────────────────────────────────────────────────────────
@@ -226,6 +249,7 @@ impl ChatOrchestrator {
                             .send(UiEvent::ToolCallProposed {
                                 id: id.clone(),
                                 name: name.clone(),
+                                args: args.clone(),
                             })
                             .await
                             .map_err(|_| ChatError::UiChannelClosed)?;
@@ -307,6 +331,12 @@ impl ChatOrchestrator {
                     }
                     StreamEvent::Error { message } => {
                         self.counters.record_error();
+                        // MIG-048 §E: surface error to UI bridge BEFORE returning.
+                        let _ = ui_tx
+                            .send(UiEvent::Error {
+                                message: message.clone(),
+                            })
+                            .await;
                         return Err(ChatError::Provider(InferenceError::Runtime(message)));
                     }
                 }
@@ -337,6 +367,7 @@ impl ChatOrchestrator {
                     );
                     ui_tx
                         .send(UiEvent::TurnDone {
+                            finish_reason: reason,
                             usage: accumulated_usage,
                         })
                         .await
@@ -355,6 +386,14 @@ impl ChatOrchestrator {
                         accumulated_usage.input_tokens as u64,
                         accumulated_usage.output_tokens as u64,
                     );
+                    // MIG-048 §E: emit TurnDone for the IPC bridge.
+                    ui_tx
+                        .send(UiEvent::TurnDone {
+                            finish_reason: FinishReason::Cancelled,
+                            usage: accumulated_usage,
+                        })
+                        .await
+                        .map_err(|_| ChatError::UiChannelClosed)?;
                     return Ok(TurnOutcome {
                         finish_reason: FinishReason::Cancelled,
                         usage: accumulated_usage,
@@ -364,12 +403,23 @@ impl ChatOrchestrator {
                 }
                 Some(FinishReason::Error) => {
                     self.counters.record_error();
-                    return Err(ChatError::Provider(InferenceError::Runtime(
-                        "provider returned Error finish reason".into(),
-                    )));
+                    let msg = "provider returned Error finish reason".to_string();
+                    // MIG-048 §E: surface error to UI bridge BEFORE returning.
+                    let _ = ui_tx
+                        .send(UiEvent::Error {
+                            message: msg.clone(),
+                        })
+                        .await;
+                    return Err(ChatError::Provider(InferenceError::Runtime(msg)));
                 }
                 None => {
                     self.counters.record_error();
+                    // MIG-048 §E: surface error to UI bridge BEFORE returning.
+                    let _ = ui_tx
+                        .send(UiEvent::Error {
+                            message: "provider stream ended without Done event".into(),
+                        })
+                        .await;
                     return Err(ChatError::StreamEndedWithoutDone);
                 }
             }
