@@ -41,8 +41,8 @@ pub mod telemetry;
 
 pub use events::StreamEvent;
 pub use orchestrator::{
-    framing, CannedDispatcher, ChatConfig, ChatError, ChatOrchestrator, ToolDispatcher,
-    TurnOutcome, UiEvent,
+    framing, CannedDispatcher, ChatConfig, ChatError, ChatOrchestrator, RealToolDispatcher,
+    ToolDispatcher, TurnOutcome, UiEvent,
 };
 pub use provider::{
     ChatMessage, ChatRole, EmbeddingCapabilities, EmbeddingProvider, FinishReason, GenParams,

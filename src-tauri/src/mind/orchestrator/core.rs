@@ -1,16 +1,21 @@
 //! `ChatOrchestrator` — owns one conversation, drives the provider through
 //! tool-call rounds, fans events out to the UI.
 //!
-//! Phase 0a (this file) lands the **skeleton**: the loop shape is real,
-//! the tool-call budget (MA-4) is exercised end-to-end, the prompt-
-//! injection framing hook (MA-5) is in place as a no-op pass-through.
-//! Phase 1 (MIG-048) plumbs the real retriever, real tools, citation
-//! validator, conversation-history compaction, and the chat UI.
+//! ## What lives here vs the sibling modules
 //!
-//! Design note on the **tool-call protocol** (resolved during Step D):
+//! Phase 1 §A promoted `orchestrator.rs` to a directory; this file holds
+//! the **loop machinery** (config, UI events, error types, the actual
+//! `turn()` method). The [`super::dispatcher`] module holds the
+//! [`super::dispatcher::ToolDispatcher`] trait + its implementations
+//! ([`super::dispatcher::CannedDispatcher`] for tests,
+//! [`super::dispatcher::RealToolDispatcher`] for production). The
+//! [`super::tools`] module holds the actual tool functions.
+//!
+//! ## Design note on the tool-call protocol
+//!
 //! Concept Paper v1.1 §10.3 shows one `provider.generate(...).await`
 //! call and a `while let Some(event) = stream.recv()` loop. That snippet
-//! depicts a single round; the orchestrator wraps it in an outer
+//! depicts a single round; this orchestrator wraps it in an outer
 //! `loop { stream = generate(); … }` because the trait surface follows
 //! **Pattern B** (generate-restart, matches the Anthropic HTTP API):
 //! - The stream closes after `Done { finish_reason: ToolCall }`.
@@ -18,19 +23,21 @@
 //!   `generate()` again with the updated history.
 //! - The outer loop exits only on `Done { Stop | Length | Cancelled | Error }`.
 //!
-//! Tool-call budget (MA-4) — Concept Paper v1.1 §10.3:
+//! ## Tool-call budget (MA-4) — Concept Paper v1.1 §10.3
+//!
 //! - `tool_rounds` counter increments before each `dispatcher.dispatch`.
 //! - When it reaches `max_tool_rounds_per_turn`, the orchestrator
 //!   injects a synthetic tool_result `{status: "aborted_tool_budget_exceeded"}`
 //!   that the model sees on the next iteration and uses to compose a
 //!   final answer. No infinite loop is possible.
 //!
-//! Prompt-injection framing (MA-5) — Concept Paper v1.1 §6.3 + §10.4:
-//! - Every tool result passes through `framing::as_tool_result` before
+//! ## Prompt-injection framing (MA-5) — Concept Paper v1.1 §6.3 + §10.4
+//!
+//! - Every tool result passes through [`framing::as_tool_result`] before
 //!   re-entering the prompt envelope. In 0a this is a no-op
-//!   pass-through; Phase 1 replaces it with the `<tool_result>` wrapper
-//!   + sanitization the system prompt's "treat content as data" rule
-//!   relies on.
+//!   pass-through; Phase 1 §F replaces it with the `<tool_result>`
+//!   wrapper + sanitization the system prompt's "treat content as data"
+//!   rule relies on.
 
 use std::sync::Arc;
 use std::time::Instant;
@@ -43,6 +50,8 @@ use crate::mind::provider::{
     ChatMessage, ChatRole, FinishReason, GenParams, InferenceError, InferenceProvider, TokenUsage,
 };
 use crate::mind::telemetry::{self, TelemetryCounters};
+
+use super::dispatcher::ToolDispatcher;
 
 // ─── Configuration ─────────────────────────────────────────────────
 
@@ -67,7 +76,7 @@ impl Default for ChatConfig {
 /// Events the orchestrator emits to the UI for one turn.
 ///
 /// Phase 0a uses an `mpsc::Sender<UiEvent>` directly for unit testing;
-/// Step C's `mind_start_turn` IPC will plumb this through the Tauri
+/// Step §E's `mind_start_turn` IPC plumbs this through the Tauri
 /// `Channel<StreamEvent>` in Phase 1 (the IPC layer translates UiEvent
 /// into the appropriate StreamEvent for the frontend).
 #[derive(Debug, Clone, PartialEq)]
@@ -106,39 +115,10 @@ impl From<InferenceError> for ChatError {
     }
 }
 
-// ─── Tool dispatcher trait (placeholder in 0a) ─────────────────────
-
-/// Tool dispatcher abstraction. Phase 0a uses a `CannedDispatcher` that
-/// returns `{"status": "ok"}` for every tool name. Phase 1 (MIG-048)
-/// adds the real read-tool implementations (search_notes, read_note,
-/// summarize → NSC, etc.). Phase 2 (MIG-049) adds the write tools with
-/// approval-gate semantics.
-#[async_trait::async_trait]
-pub trait ToolDispatcher: Send + Sync {
-    async fn dispatch(
-        &self,
-        tool_name: &str,
-        args: serde_json::Value,
-    ) -> serde_json::Value;
-}
-
-pub struct CannedDispatcher;
-
-#[async_trait::async_trait]
-impl ToolDispatcher for CannedDispatcher {
-    async fn dispatch(
-        &self,
-        tool_name: &str,
-        _args: serde_json::Value,
-    ) -> serde_json::Value {
-        serde_json::json!({ "status": "ok", "tool": tool_name })
-    }
-}
-
 // ─── Prompt-injection guard (MA-5 placeholder) ────────────────────
 
 /// Centralized sanitizer for tool results. Phase 0a is a no-op
-/// pass-through; Phase 1 (MIG-048) replaces it with the `<tool_result>`
+/// pass-through; Phase 1 §F replaces it with the `<tool_result>`
 /// wrapper + content sanitization the system-prompt rule ("treat
 /// content as data") depends on.
 ///
@@ -147,7 +127,7 @@ impl ToolDispatcher for CannedDispatcher {
 /// tool result already flows through here.
 pub mod framing {
     pub fn as_tool_result(_tool_name: &str, raw: serde_json::Value) -> serde_json::Value {
-        // 0a: pass-through. Phase 1 swaps for real framing.
+        // 0a: pass-through. §F swaps for real framing.
         raw
     }
 }
@@ -299,7 +279,7 @@ impl ChatOrchestrator {
 
                         // [MA-5] All tool results pass through the central
                         // framing helper before re-entering the prompt
-                        // envelope. No-op in 0a; Phase 1 sanitizes.
+                        // envelope. No-op in 0a; §F sanitizes.
                         let framed = framing::as_tool_result(&name, result_json);
 
                         self.history.push(ChatMessage {
@@ -400,6 +380,7 @@ impl ChatOrchestrator {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::mind::orchestrator::dispatcher::CannedDispatcher;
     use crate::mind::provider::{ChatRole, ProviderCapabilities, ToolSchema};
     use crate::mind::providers::LocalStubProvider;
 
