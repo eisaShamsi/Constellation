@@ -6,7 +6,7 @@ aliases:
   - Fanar
   - AI Chat
   - Personal AI
-description: Constellation Mind is Constellation's local Large Language Model layer — an AI you can chat with about your own notes, running entirely on your device. Phase 0b shipped 2026-05-24 with the Fanar-1-9B Arabic-first model installable from Settings → Mind. The chat surface lands in Phase 1.
+description: Constellation Mind is Constellation's local Large Language Model layer — an AI you can chat with about your own notes, running entirely on your device. Phase 1 shipped 2026-05-25 with the chat surface in the left dock, citation-bound answers, and a 6-tool read dispatcher over your Universe.
 ---
 
 # Constellation Mind (عقل Constellation)
@@ -21,12 +21,30 @@ Three things make it distinct from every other "AI for notes" tool:
 2. **Arabic-first.** The bundled-default model is **Fanar-1-9B**, Qatar Computing Research Institute's Arabic-centric Sunni-aware model. Native MSA + Gulf-dialect competence; English is the second language, not the only one.
 3. **Citation-bound.** Every factual claim the AI makes about your notes must cite the source note. Hallucinated citations are caught by a post-generation validator (Phase 1).
 
-## What ships today (Phase 0b — 2026-05-24)
+## What ships today (Phase 1 — 2026-05-25)
 
-- **Settings → Mind panel** — lists installable models (currently just Fanar 1.9B Q4_K_M, ~5 GiB), with an Install button that downloads + verifies the model.
-- **Model installation** — chunked download from a GitHub Release (no third-party cloud), SHA-256 verified per chunk and on the assembled whole.
-- **Real inference runtime** — `llama-cpp-2` (CPU-only in v1) loads the Q4_K_M GGUF and streams tokens.
-- **No chat surface yet** — that's Phase 1 (the next milestone). Today you can install the model and verify it; the conversational UI ships in MIG-048.
+- **Chat surface in the left sidebar.** A new speech-bubble mode button between Digest and the OrgChart/SkyView dock-bar buttons. Click it; the chat pane mounts. Type a question, press Enter, the model reads your notes and answers in your language.
+- **6 read tools.** `search_notes`, `read_note`, `find_similar`, `summarize`, `list_recent`, `graph_neighbors`. Mind picks the right one and calls it; you see the call as a collapsed `▸ Tool: <name>` entry in the chat (expandable to inspect the JSON args).
+- **Citation pills.** Every claim Mind makes about your notes appears as a clickable purple pill: 📎 NoteName. Click it to open the cited note in a new editor tab.
+- **Citation validator.** Post-stream check: every `[note:<path>]` Mind cites is verified against `note_meta`. Unresolved citations trigger a single retry with feedback; if still unresolved, the response gets a `⚠ Verify before trusting.` prefix.
+- **Pre-warm on app start.** First chat turn pays warm latency (~1–1.5s) instead of cold (~9–11s). Mind loads in the background within ~10s of app launch.
+- **Sliding-window history trim.** Long conversations get the oldest turn pairs dropped from what Fanar sees; the UI keeps the full conversation visible.
+- **Settings → Mind panel** (unchanged from Phase 0b) — install models, set the active one.
+- **Model installation** (unchanged) — chunked download from GitHub Releases, SHA-256 verified.
+- **Real inference runtime** (unchanged) — `llama-cpp-2` (CPU-only in v1) loads the Q4_K_M GGUF.
+
+### Chat surface walkthrough
+
+1. **Open the chat tab.** Left sidebar → speech-bubble icon. The chat pane mounts with an empty hint.
+2. **Type a question.** "What did I write recently about Canopus?" Press **Enter**. (Shift+Enter inserts a newline for multi-line composer input.)
+3. **Watch the turn unfold.** Your message appears as a purple bubble on the right. An assistant bubble below has a blinking cursor while Mind thinks. A collapsed tool-call entry appears within 1–2 seconds: `▸ Tool: search_notes`. Click it to expand the JSON args.
+4. **Read the answer.** Mind streams tokens into the assistant bubble. Citations render as clickable purple pills wherever Mind references a note.
+5. **Click a citation** to open the cited note in a new editor tab.
+6. **Clear the conversation** with the 🗑 button in the chat header. (Persistence per-Universe lands in a Phase 1.x polish.)
+
+### Arabic conversations
+
+The chat surface is Arabic-aware per-message. Type a question in Arabic; Fanar replies in Arabic; the bubble auto-flips to RTL. Mixed-script messages flow correctly in either direction.
 
 ## How to install Fanar
 
@@ -37,13 +55,14 @@ Three things make it distinct from every other "AI for notes" tool:
 
 That's it. Until Phase 1 ships the chat surface, the installed model is on standby.
 
-## What's coming in Phase 1 (next milestone)
+## What's coming in Phase 1.x polish + Phase 2
 
-- **Chat surface** — a Constellation panel where you talk to Fanar about your Universe in Arabic or English (RTL-aware per message).
-- **Read tools** — Mind can call `search_notes`, `read_note`, `find_similar`, `list_recent` to ground its answers in your actual notes.
-- **Citation validator** — every claim cites a real note; fabricated `note:UUID` references are rejected before they reach you.
-- **Pre-warm on app start** — Mind loads in the background so your first chat doesn't pay the 10-second cold-load.
-- **Conversation history** — saved per Universe; promotable to a Note.
+**Phase 1.x polish queue** (additive on top of what shipped in Phase 1):
+- Per-Universe conversation persistence (today the chat resets when you switch sidebar modes).
+- Real tokenizer in the history trim budget (today uses a chars/4 heuristic).
+- 13-locale brand-name policy review — current state uses a hybrid pattern ("Constellation" + localized "Mind"); Arabic uses fully-localized "عقل المجرّة".
+
+**Phase 2** — Write tools: Mind proposes edits / new notes / new typed links under your explicit approval. Diff modal + undo journal. Tracked as MIG-049.
 
 See `docs/Constellation-Mind-Concept-Paper-v1.1.md` for the full architecture and `docs/Constellation-Mind-Implementation-Plan-v1.0.md` for the phase-by-phase roadmap.
 
@@ -80,8 +99,16 @@ The full LICENSE.txt lives alongside each model in its release: <https://github.
 
 **Install succeeds, file SHA-256 doesn't match.** A bit-flip on download. Re-install will fetch fresh.
 
-**Chat surface missing.** Phase 1 (MIG-048) hasn't shipped yet. The model can be installed + verified today; the conversation UI lands in the next release.
+**Chat tab doesn't appear in the sidebar.** Either you're on a build older than 2026-05-25 (Phase 1 hadn't shipped), or the build's frontend bundle didn't include the layout change. Re-run the installer.
+
+**"No Constellation Mind model is active" banner in the chat pane.** Settings → Mind doesn't show Active for any model. Install Fanar (the only model in v1) and click Set active.
+
+**First chat turn takes 9+ seconds before tokens appear.** Pre-warm hasn't finished. Either wait ~10 seconds after app launch before sending the first message, OR run a second turn — by then the model is warm and first-token is ~1–1.5 seconds.
+
+**Citation pill clicks open the wrong note (or nothing).** The library-resolver in `MindCitationChip.svelte` does a best-effort prefix match against your registered libraries. If your cited path is outside any registered library root, the chip's openNoteTab call may fail silently. Report the path + expected library so the resolver can be tuned.
+
+**"⚠ unresolved citations" warning appears on every response.** The citation validator failed-open as a Phase 1.x P1 fix (commit `4e978076`), so this should NOT happen when the search DB is unavailable. If it does happen with a fully-indexed Universe, the model is fabricating note paths. Send the response + the actual note titles you have, and the system prompt / validator can be tuned.
 
 ---
 
-*Sub-topics will join this folder as Phase 1 ships: chat-UI walkthrough, citation-chip tap behavior, multi-model picker, second-screen rendering of long chats.*
+*Sub-topics for Phase 1.x and beyond: multi-model picker (Phase 2.5 / MIG-050 adds Jais alongside Fanar); per-Universe conversation persistence; second-screen rendering of long chats; write-tool approval modal (Phase 2 / MIG-049).*
