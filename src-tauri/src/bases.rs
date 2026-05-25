@@ -48,13 +48,18 @@ fn validate_base_path(app: &tauri::AppHandle, file_path: &str) -> Result<(), Str
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BaseSource {
     #[serde(rename = "type")]
-    pub source_type: String,   // "folder" | "tag" | "all"
+    pub source_type: String,   // "folder" | "tag" | "all"  (legacy "vault" is translated to "all" + selected_libraries at parse time; never written)
     pub path: Option<String>,  // folder path (relative to library root)
     pub tag: Option<String>,   // tag filter
     #[serde(rename = "includeSubfolders", default = "default_true")]
     pub include_subfolders: bool,
-    #[serde(rename = "selectedVaults", default)]
-    pub selected_vaults: Vec<String>, // empty = all libraries; populated = only these library names
+    // MIG-054 §D — field renamed from selected_libraries to selected_libraries
+    // (per CLAUDE.md Conventions: Library is Constellation's identity vocabulary).
+    // Serde reads both "selectedLibraries" and the legacy "selectedVaults" alias
+    // for backward compatibility with .base files written before this MIG.
+    // Writes always serialize as "selectedLibraries".
+    #[serde(rename = "selectedLibraries", alias = "selectedVaults", default)]
+    pub selected_libraries: Vec<String>, // empty = all libraries; populated = only these library names
 }
 
 fn default_true() -> bool { true }
@@ -367,13 +372,14 @@ pub fn parse_base_file(app: tauri::AppHandle, file_path: String) -> Result<BaseD
     let content = fs::read_to_string(&file_path)
         .map_err(|e| format!("Failed to read base file: {}", e))?;
 
-    // Parse YAML
-    serde_json::from_str::<BaseDefinition>(&content)
-        .or_else(|_| {
-            // Try parsing as YAML (simple key: value format)
-            parse_base_yaml(&content)
-        })
-        .map_err(|e| format!("Failed to parse base file: {}", e))
+    // Parse JSON (.base files are JSON-shaped despite the extension), fall back to YAML-ish
+    let mut definition: BaseDefinition = serde_json::from_str::<BaseDefinition>(&content)
+        .or_else(|_| parse_base_yaml(&content))
+        .map_err(|e| format!("Failed to parse base file: {}", e))?;
+    // MIG-054 §D — modernize legacy "vault" source type at parse time so re-saved
+    // .base files land in the canonical "all" + selected_libraries shape on disk.
+    modernize_legacy_vault_source(&mut definition);
+    Ok(definition)
 }
 
 /// Simple YAML-like parser for .base files.
@@ -412,11 +418,11 @@ pub fn query_base(
     let start = Instant::now();
 
     // Filter libraries by selectedLibraries (empty = all libraries)
-    let active_libs: Vec<String> = if definition.source.selected_vaults.is_empty() {
+    let active_libs: Vec<String> = if definition.source.selected_libraries.is_empty() {
         library_paths.iter().map(|(n, _)| n.clone()).collect()
     } else {
         library_paths.iter()
-            .filter(|(vname, _)| definition.source.selected_vaults.contains(vname))
+            .filter(|(vname, _)| definition.source.selected_libraries.contains(vname))
             .map(|(n, _)| n.clone())
             .collect()
     };
@@ -651,7 +657,7 @@ fn build_source_where(
             // §D retires the source-type literal entirely (rewrites on save); §A handles the
             // read-path so existing legacy .base files continue to work.
             let target = source
-                .selected_vaults
+                .selected_libraries
                 .first()
                 .cloned()
                 .or_else(|| source.path.clone())
@@ -885,7 +891,7 @@ pub fn create_base(
             path: None,
             tag: None,
             include_subfolders: true,
-            selected_vaults: vec![],
+            selected_libraries: vec![],
         },
         columns: vec![],
         filters: vec![],
@@ -1098,7 +1104,7 @@ pub fn create_workspace_base(
             path: None,
             tag: None,
             include_subfolders: true,
-            selected_vaults: vec![],
+            selected_libraries: vec![],
         },
         columns: vec![],
         filters: vec![],
@@ -1192,8 +1198,48 @@ pub fn parse_workspace_base(
     let content = fs::read_to_string(&file_path)
         .map_err(|e| format!("Failed to read workspace base: {}", e))?;
 
-    serde_json::from_str::<BaseDefinition>(&content)
-        .map_err(|e| format!("Failed to parse workspace base: {}", e))
+    let mut definition: BaseDefinition = serde_json::from_str::<BaseDefinition>(&content)
+        .map_err(|e| format!("Failed to parse workspace base: {}", e))?;
+    // MIG-054 §D — modernize legacy "vault" source type at parse time.
+    modernize_legacy_vault_source(&mut definition);
+    Ok(definition)
+}
+
+/// MIG-054 §D — translate legacy `"vault"` source type into the modernized
+/// `"all"` + `selected_libraries = [target]` shape.
+///
+/// Run at parse time (parse_base_file + parse_workspace_base) so that any
+/// `.base` file the user re-saves after this MIG lands on disk in the modern
+/// shape. Existing legacy files continue to work because:
+///   (a) Serde reads them via the `alias = "selectedVaults"` on the field,
+///       so the BaseDefinition struct populates cleanly.
+///   (b) `build_source_where` keeps a defensive "vault" branch for any
+///       BaseSource constructed programmatically without going through this
+///       parse path (e.g., from tests or future feature work).
+///
+/// The legacy semantics being preserved:
+///   "vault" + path = "LibName"  →  "all" + selected_libraries = ["LibName"]
+///   "vault" + selected_libraries = ["LibName"] (rare)  →  unchanged shape
+fn modernize_legacy_vault_source(definition: &mut BaseDefinition) {
+    if definition.source.source_type != "vault" {
+        return;
+    }
+    // The legacy "vault" source meant: scope to one specific library.
+    // The named library lived in either selected_libraries[0] (preferred) or path (older form).
+    let target = definition
+        .source
+        .selected_libraries
+        .first()
+        .cloned()
+        .or_else(|| definition.source.path.clone())
+        .unwrap_or_default();
+
+    definition.source.source_type = "all".to_string();
+    if !target.is_empty() {
+        definition.source.selected_libraries = vec![target];
+    }
+    // Clear `path` — in the legacy form it was the library name, not a folder path.
+    definition.source.path = None;
 }
 
 /// Format a value for YAML output.
@@ -1480,7 +1526,7 @@ mod tests {
             path: None,
             tag: None,
             include_subfolders: true,
-            selected_vaults: Vec::new(),
+            selected_libraries: Vec::new(),
         };
         let active_libs = vec!["Lib1".to_string(), "Lib2".to_string()];
         let (sql, params) = build_source_where(&source, &active_libs, &test_lib_paths()).unwrap();
@@ -1495,7 +1541,7 @@ mod tests {
             path: Some("Projects".to_string()),
             tag: None,
             include_subfolders: true,
-            selected_vaults: Vec::new(),
+            selected_libraries: Vec::new(),
         };
         let active_libs = vec!["Lib1".to_string()];
         let (sql, _) = build_source_where(&source, &active_libs, &test_lib_paths()).unwrap();
@@ -1513,7 +1559,7 @@ mod tests {
             path: Some("Projects".to_string()),
             tag: None,
             include_subfolders: false,
-            selected_vaults: Vec::new(),
+            selected_libraries: Vec::new(),
         };
         let active_libs = vec!["Lib1".to_string()];
         let (sql, _) = build_source_where(&source, &active_libs, &test_lib_paths()).unwrap();
@@ -1528,7 +1574,7 @@ mod tests {
             path: None,
             tag: Some("aristotle".to_string()),
             include_subfolders: true,
-            selected_vaults: Vec::new(),
+            selected_libraries: Vec::new(),
         };
         let active_libs = vec!["Lib1".to_string()];
         let (sql, params) = build_source_where(&source, &active_libs, &test_lib_paths()).unwrap();
@@ -1551,7 +1597,7 @@ mod tests {
             path: None,
             tag: Some("#aristotle".to_string()),
             include_subfolders: true,
-            selected_vaults: Vec::new(),
+            selected_libraries: Vec::new(),
         };
         let active_libs = vec!["Lib1".to_string()];
         let (_, params) = build_source_where(&source, &active_libs, &test_lib_paths()).unwrap();
@@ -1566,7 +1612,7 @@ mod tests {
             path: None,
             tag: Some("Aristotle".to_string()),
             include_subfolders: true,
-            selected_vaults: Vec::new(),
+            selected_libraries: Vec::new(),
         };
         let active_libs = vec!["Lib1".to_string()];
         let (_, params) = build_source_where(&source, &active_libs, &test_lib_paths()).unwrap();
@@ -1583,7 +1629,7 @@ mod tests {
             path: None,
             tag: Some("الْإمارات".to_string()), // tashkeel sukun on lam
             include_subfolders: true,
-            selected_vaults: Vec::new(),
+            selected_libraries: Vec::new(),
         };
         let active_libs = vec!["Lib1".to_string()];
         let (_, params) = build_source_where(&source, &active_libs, &test_lib_paths()).unwrap();
@@ -1600,7 +1646,7 @@ mod tests {
             path: None,
             tag: Some("".to_string()),
             include_subfolders: true,
-            selected_vaults: Vec::new(),
+            selected_libraries: Vec::new(),
         };
         let active_libs = vec!["Lib1".to_string()];
         let result = build_source_where(&source, &active_libs, &test_lib_paths());
@@ -1616,7 +1662,7 @@ mod tests {
             path: None,
             tag: Some("#".to_string()),
             include_subfolders: true,
-            selected_vaults: Vec::new(),
+            selected_libraries: Vec::new(),
         };
         let active_libs = vec!["Lib1".to_string()];
         let result = build_source_where(&source, &active_libs, &test_lib_paths());
@@ -1630,7 +1676,7 @@ mod tests {
             path: Some("Lib1".to_string()),
             tag: None,
             include_subfolders: true,
-            selected_vaults: Vec::new(),
+            selected_libraries: Vec::new(),
         };
         let active_libs = vec!["Lib1".to_string()];
         let (sql, params) = build_source_where(&source, &active_libs, &test_lib_paths()).unwrap();
@@ -1645,11 +1691,148 @@ mod tests {
             path: Some("Lib1".to_string()),
             tag: None,
             include_subfolders: true,
-            selected_vaults: vec!["Lib2".to_string()],
+            selected_libraries: vec!["Lib2".to_string()],
         };
         let active_libs = vec!["Lib1".to_string(), "Lib2".to_string()];
         let (_, params) = build_source_where(&source, &active_libs, &test_lib_paths()).unwrap();
-        assert_eq!(params, vec!["Lib2".to_string()]); // selected_vaults wins
+        assert_eq!(params, vec!["Lib2".to_string()]); // selected_libraries wins
+    }
+
+    // ── §D — modernize_legacy_vault_source ──
+
+    fn make_base_definition(source: BaseSource) -> BaseDefinition {
+        BaseDefinition {
+            version: 1,
+            name: "test".to_string(),
+            source,
+            columns: vec![],
+            filters: vec![],
+            sorts: vec![],
+            view: "table".to_string(),
+            direction: "auto".to_string(),
+        }
+    }
+
+    #[test]
+    fn modernize_legacy_vault_from_path() {
+        let mut def = make_base_definition(BaseSource {
+            source_type: "vault".to_string(),
+            path: Some("MyLibrary".to_string()),
+            tag: None,
+            include_subfolders: true,
+            selected_libraries: vec![],
+        });
+        modernize_legacy_vault_source(&mut def);
+        assert_eq!(def.source.source_type, "all");
+        assert_eq!(def.source.selected_libraries, vec!["MyLibrary".to_string()]);
+        assert_eq!(def.source.path, None);
+    }
+
+    #[test]
+    fn modernize_legacy_vault_from_selected() {
+        let mut def = make_base_definition(BaseSource {
+            source_type: "vault".to_string(),
+            path: None,
+            tag: None,
+            include_subfolders: true,
+            selected_libraries: vec!["MyLibrary".to_string()],
+        });
+        modernize_legacy_vault_source(&mut def);
+        assert_eq!(def.source.source_type, "all");
+        assert_eq!(def.source.selected_libraries, vec!["MyLibrary".to_string()]);
+        assert_eq!(def.source.path, None);
+    }
+
+    #[test]
+    fn modernize_legacy_vault_selected_wins_over_path() {
+        let mut def = make_base_definition(BaseSource {
+            source_type: "vault".to_string(),
+            path: Some("Lib1".to_string()),
+            tag: None,
+            include_subfolders: true,
+            selected_libraries: vec!["Lib2".to_string()],
+        });
+        modernize_legacy_vault_source(&mut def);
+        assert_eq!(def.source.selected_libraries, vec!["Lib2".to_string()]);
+        assert_eq!(def.source.path, None);
+    }
+
+    #[test]
+    fn modernize_legacy_vault_noop_on_modern_source() {
+        let original = BaseSource {
+            source_type: "folder".to_string(),
+            path: Some("Projects".to_string()),
+            tag: None,
+            include_subfolders: true,
+            selected_libraries: vec!["Lib1".to_string()],
+        };
+        let mut def = make_base_definition(original.clone());
+        modernize_legacy_vault_source(&mut def);
+        assert_eq!(def.source.source_type, "folder");
+        assert_eq!(def.source.path, Some("Projects".to_string()));
+        assert_eq!(def.source.selected_libraries, vec!["Lib1".to_string()]);
+    }
+
+    #[test]
+    fn serde_reads_legacy_selected_vaults_alias() {
+        // Legacy .base file shape — selectedVaults instead of selectedLibraries
+        let json = r#"{
+            "type": "all",
+            "includeSubfolders": true,
+            "selectedVaults": ["Lib1", "Lib2"]
+        }"#;
+        let source: BaseSource = serde_json::from_str(json).unwrap();
+        assert_eq!(source.selected_libraries, vec!["Lib1".to_string(), "Lib2".to_string()]);
+    }
+
+    #[test]
+    fn serde_reads_new_selected_libraries() {
+        // Modern .base file shape
+        let json = r#"{
+            "type": "all",
+            "includeSubfolders": true,
+            "selectedLibraries": ["Lib1"]
+        }"#;
+        let source: BaseSource = serde_json::from_str(json).unwrap();
+        assert_eq!(source.selected_libraries, vec!["Lib1".to_string()]);
+    }
+
+    #[test]
+    fn serde_writes_selected_libraries_not_selected_vaults() {
+        // After save, the modernized field name should land on disk.
+        let source = BaseSource {
+            source_type: "all".to_string(),
+            path: None,
+            tag: None,
+            include_subfolders: true,
+            selected_libraries: vec!["Lib1".to_string()],
+        };
+        let json = serde_json::to_string(&source).unwrap();
+        assert!(json.contains("selectedLibraries"));
+        assert!(!json.contains("selectedVaults"));
+    }
+
+    #[test]
+    fn serde_rejects_both_old_and_new_keys_present() {
+        // When BOTH selectedVaults (legacy alias) AND selectedLibraries (canonical) appear
+        // in the same JSON, serde treats them as duplicates of the same field and fails parsing.
+        //
+        // This is acceptable: in practice no .base file should ever have both keys. Old files
+        // have only `selectedVaults`; new files have only `selectedLibraries`; the parse-then-
+        // save pipeline rewrites old → new and never produces a mixed-key file.
+        //
+        // We document the strictness here so future readers don't try to "fix" the alias
+        // attribute by removing it (which would silently drop legacy file support).
+        let json = r#"{
+            "type": "all",
+            "includeSubfolders": true,
+            "selectedVaults": ["Old"],
+            "selectedLibraries": ["New"]
+        }"#;
+        let result: Result<BaseSource, _> = serde_json::from_str(json);
+        assert!(result.is_err());
+        let err_msg = result.unwrap_err().to_string();
+        assert!(err_msg.contains("duplicate field"), "unexpected error: {}", err_msg);
     }
 
     #[test]
@@ -1659,7 +1842,7 @@ mod tests {
             path: None,
             tag: None,
             include_subfolders: true,
-            selected_vaults: Vec::new(),
+            selected_libraries: Vec::new(),
         };
         let active_libs = vec!["Lib1".to_string()];
         let result = build_source_where(&source, &active_libs, &test_lib_paths());
