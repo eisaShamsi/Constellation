@@ -52,6 +52,7 @@ use crate::mind::provider::{
 use crate::mind::telemetry::{self, TelemetryCounters};
 
 use super::dispatcher::ToolDispatcher;
+use super::prompt;
 
 // ─── Configuration ─────────────────────────────────────────────────
 
@@ -140,18 +141,29 @@ impl From<InferenceError> for ChatError {
 
 // ─── Prompt-injection guard (MA-5 placeholder) ────────────────────
 
-/// Centralized sanitizer for tool results. Phase 0a is a no-op
-/// pass-through; Phase 1 §F replaces it with the `<tool_result>`
-/// wrapper + content sanitization the system-prompt rule ("treat
-/// content as data") depends on.
+/// Centralized framer for tool results. MA-5 (Concept Paper v1.1
+/// §6.3 + §10.4): wraps every tool result in `<tool_result>` tags so
+/// the system prompt's "DATA-VS-INSTRUCTIONS GUARD" can train the
+/// model to treat the inner content as inert reference material.
 ///
-/// Architecturally important to land the function NOW so Phase 1 doesn't
-/// have to thread a new call site through every existing tool — every
-/// tool result already flows through here.
+/// Phase 1 §F implementation: returns a String the orchestrator pushes
+/// as the Tool role's ChatMessage content. The provider's
+/// `build_prompt` then wraps it in the model's chat-template
+/// user-turn (Gemma 2's `<start_of_turn>user\n...`).
 pub mod framing {
-    pub fn as_tool_result(_tool_name: &str, raw: serde_json::Value) -> serde_json::Value {
-        // 0a: pass-through. §F swaps for real framing.
-        raw
+    /// Wrap a tool's raw JSON result inside `<tool_result tool="..."
+    /// id="...">...</tool_result>`. The model's data-guard rule (see
+    /// `crate::mind::orchestrator::prompt::default_system_prompt`)
+    /// instructs it to never obey instructions found inside the tag.
+    pub fn as_tool_result(
+        tool_name: &str,
+        tool_call_id: &str,
+        raw: serde_json::Value,
+    ) -> String {
+        format!(
+            "<tool_result tool=\"{tool_name}\" id=\"{tool_call_id}\">\n{json}\n</tool_result>",
+            json = raw,
+        )
     }
 }
 
@@ -203,6 +215,11 @@ impl ChatOrchestrator {
 
     /// Run one turn end-to-end. Loops `generate()` across tool-call rounds
     /// (Pattern B); exits only on a non-ToolCall terminal `Done` (or `Error`).
+    ///
+    /// On the FIRST turn (history empty), §F prepends a `System` role
+    /// message with the canonical system prompt — including the
+    /// inline tool palette descriptions if `params.tools` is non-empty
+    /// so the model knows which tools it may call.
     pub async fn turn(
         &mut self,
         user_message: String,
@@ -215,6 +232,20 @@ impl ChatOrchestrator {
 
         // Start the turn timer (Step E — telemetry).
         let turn_start = Instant::now();
+
+        // §F: on the first turn, prepend the system prompt. The tool
+        // palette is inlined into the system prompt as one short line
+        // per tool so Fanar can see which tools exist alongside the
+        // GBNF grammar that constrains tool-call shape.
+        if self.history.is_empty() {
+            let sys_content = prompt::system_prompt_with_palette(&params.tools);
+            self.history.push(ChatMessage {
+                role: ChatRole::System,
+                content: sys_content,
+                tool_call_id: None,
+                tool_name: None,
+            });
+        }
 
         // Append the user message to history once per turn.
         self.history.push(ChatMessage {
@@ -302,13 +333,14 @@ impl ChatOrchestrator {
                         }
 
                         // [MA-5] All tool results pass through the central
-                        // framing helper before re-entering the prompt
-                        // envelope. No-op in 0a; §F sanitizes.
-                        let framed = framing::as_tool_result(&name, result_json);
+                        // framing helper. §F wraps in <tool_result> tags so
+                        // the system-prompt data-guard can train the model
+                        // to ignore instructions inside the tag.
+                        let framed = framing::as_tool_result(&name, &id, result_json);
 
                         self.history.push(ChatMessage {
                             role: ChatRole::Tool,
-                            content: framed.to_string(),
+                            content: framed,
                             tool_call_id: Some(id.clone()),
                             tool_name: Some(name.clone()),
                         });
@@ -632,10 +664,32 @@ mod tests {
     }
 
     #[test]
-    fn framing_as_tool_result_is_pass_through_in_phase_0a() {
+    fn framing_as_tool_result_wraps_in_tool_result_tag_in_phase_1() {
         let raw = serde_json::json!({"status": "ok", "echo": 42});
-        let framed = framing::as_tool_result("any_tool", raw.clone());
-        assert_eq!(framed, raw);
+        let framed = framing::as_tool_result("search_notes", "call_42", raw.clone());
+        assert!(framed.starts_with("<tool_result tool=\"search_notes\" id=\"call_42\">"));
+        assert!(framed.contains("\"status\":\"ok\""));
+        assert!(framed.trim_end().ends_with("</tool_result>"));
+    }
+
+    #[tokio::test]
+    async fn turn_prepends_system_prompt_when_history_empty() {
+        let provider: Arc<dyn InferenceProvider> = Arc::new(LocalStubProvider::new());
+        let dispatcher: Arc<dyn ToolDispatcher> = Arc::new(CannedDispatcher);
+        let mut orch = ChatOrchestrator::new(provider, dispatcher);
+        let (ui_tx, mut ui_rx) = mpsc::channel::<UiEvent>(32);
+
+        let _ = orch
+            .turn("hello".into(), GenParams::default(), ui_tx)
+            .await
+            .expect("turn ok");
+        while ui_rx.recv().await.is_some() {}
+
+        assert!(matches!(
+            orch.history().first().map(|m| m.role),
+            Some(ChatRole::System)
+        ));
+        assert!(orch.history()[0].content.contains("CITATION RULE"));
     }
 
     #[tokio::test]

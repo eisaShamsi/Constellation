@@ -26,6 +26,7 @@
 pub mod core;
 pub mod dispatcher;
 pub mod gbnf;
+pub mod prompt;
 pub mod tools;
 
 pub use core::{
