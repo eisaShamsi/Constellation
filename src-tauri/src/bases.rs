@@ -599,13 +599,50 @@ fn build_source_where(
             Ok((format!("{} AND {}", lib_in, path_or), active_libs.to_vec()))
         }
         "tag" => {
-            // §A scope: tag implementation deferred to §B (FTS5 MATCH).
-            // Until §B lands, existing tag-source Bases return an explicit error.
-            Err(
-                "Tag source type — MIG-054 §B implements this via FTS5; \
-                 until then, please use 'folder' or 'all' source types."
-                    .to_string(),
-            )
+            // MIG-054 §B — tag source via SQL.
+            //
+            // Two-pronged match (mirrors the old scan_by_tag):
+            //   (a) Frontmatter tags_json (a JSON array maintained at write time).
+            //       Match either "tag" or "#tag" form, case-insensitive, to be
+            //       defensive about how upstream writers serialize tags.
+            //   (b) Body text — search for literal "#<tag>" as a substring of
+            //       body_text. body_text is Arabic-normalized at write time
+            //       (per orientation §4.6 — tashkeel/tatweel removed); we apply
+            //       the same normalization to the user's tag so multilingual
+            //       hashtag matching works. Case-sensitive LIKE — mirrors the
+            //       old implementation's `content.contains("#<tag_lower>")`.
+            //
+            // Note on FTS5: the Architect §5.4 considered notes_fts MATCH for
+            // body-tag detection, but the default unicode61 tokenizer strips
+            // the leading `#` (treats it as a separator). That would over-match
+            // (every mention of the bare word, not just the #hashtag form).
+            // The LIKE approach preserves OLD semantics exactly.
+            let raw_tag = source
+                .tag
+                .as_deref()
+                .unwrap_or("")
+                .trim_start_matches('#');
+            if raw_tag.is_empty() {
+                return Err("Tag source type requires a tag value.".to_string());
+            }
+            let tag_lower = raw_tag.to_lowercase();
+            let tag_normalized_lower =
+                crate::arabic::normalizer::normalize_stripped(&tag_lower);
+
+            let where_clause = format!(
+                "{lib_in} AND (\
+                 EXISTS (SELECT 1 FROM json_each(tags_json) \
+                         WHERE LOWER(json_each.value) = ? OR LOWER(json_each.value) = ?) \
+                 OR body_text LIKE ?\
+                 )"
+            );
+
+            let mut params: Vec<String> = active_libs.to_vec();
+            params.push(tag_lower.clone());
+            params.push(format!("#{}", tag_lower));
+            params.push(format!("%#{}%", tag_normalized_lower));
+
+            Ok((where_clause, params))
         }
         "vault" => {
             // Legacy "vault" source type: translate inline to "all" + selected_libraries = [target].
@@ -1443,18 +1480,105 @@ mod tests {
     }
 
     #[test]
-    fn build_source_where_tag_returns_error_pending_section_b() {
+    fn build_source_where_tag_sql_shape() {
         let source = BaseSource {
             source_type: "tag".to_string(),
             path: None,
-            tag: Some("foo".to_string()),
+            tag: Some("aristotle".to_string()),
+            include_subfolders: true,
+            selected_vaults: Vec::new(),
+        };
+        let active_libs = vec!["Lib1".to_string()];
+        let (sql, params) = build_source_where(&source, &active_libs, &test_lib_paths()).unwrap();
+        assert!(sql.contains("library_name IN"));
+        assert!(sql.contains("json_each(tags_json)"));
+        assert!(sql.contains("body_text LIKE ?"));
+        // Three tag-related params after the library_name params:
+        //   [Lib1, "aristotle", "#aristotle", "%#aristotle%"]
+        assert_eq!(params.len(), 4);
+        assert_eq!(params[0], "Lib1");
+        assert_eq!(params[1], "aristotle");
+        assert_eq!(params[2], "#aristotle");
+        assert_eq!(params[3], "%#aristotle%");
+    }
+
+    #[test]
+    fn build_source_where_tag_strips_leading_hash_in_user_input() {
+        let source = BaseSource {
+            source_type: "tag".to_string(),
+            path: None,
+            tag: Some("#aristotle".to_string()),
+            include_subfolders: true,
+            selected_vaults: Vec::new(),
+        };
+        let active_libs = vec!["Lib1".to_string()];
+        let (_, params) = build_source_where(&source, &active_libs, &test_lib_paths()).unwrap();
+        assert_eq!(params[1], "aristotle"); // The leading # has been stripped
+        assert_eq!(params[2], "#aristotle"); // The #-prefixed form is built fresh
+    }
+
+    #[test]
+    fn build_source_where_tag_case_normalizes_to_lower() {
+        let source = BaseSource {
+            source_type: "tag".to_string(),
+            path: None,
+            tag: Some("Aristotle".to_string()),
+            include_subfolders: true,
+            selected_vaults: Vec::new(),
+        };
+        let active_libs = vec!["Lib1".to_string()];
+        let (_, params) = build_source_where(&source, &active_libs, &test_lib_paths()).unwrap();
+        assert_eq!(params[1], "aristotle"); // lower-cased
+    }
+
+    #[test]
+    fn build_source_where_tag_arabic_normalizes() {
+        // Arabic tag with tashkeel — the normalize_stripped() pass should strip the diacritic
+        // for the body_text LIKE param (since body_text was Arabic-normalized at write time)
+        // while preserving the raw form for frontmatter tags_json matching.
+        let source = BaseSource {
+            source_type: "tag".to_string(),
+            path: None,
+            tag: Some("الْإمارات".to_string()), // tashkeel sukun on lam
+            include_subfolders: true,
+            selected_vaults: Vec::new(),
+        };
+        let active_libs = vec!["Lib1".to_string()];
+        let (_, params) = build_source_where(&source, &active_libs, &test_lib_paths()).unwrap();
+        // Frontmatter params preserve the user's original form (Arabic was lowercased no-op):
+        assert_eq!(params[1], "الْإمارات");
+        // Body param has the diacritic stripped:
+        assert_eq!(params[3], "%#الإمارات%");
+    }
+
+    #[test]
+    fn build_source_where_tag_empty_returns_error() {
+        let source = BaseSource {
+            source_type: "tag".to_string(),
+            path: None,
+            tag: Some("".to_string()),
             include_subfolders: true,
             selected_vaults: Vec::new(),
         };
         let active_libs = vec!["Lib1".to_string()];
         let result = build_source_where(&source, &active_libs, &test_lib_paths());
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("§B"));
+        assert!(result.unwrap_err().contains("requires a tag"));
+    }
+
+    #[test]
+    fn build_source_where_tag_only_hash_returns_error() {
+        // "#" alone (no actual tag) → after trim_start_matches('#'), empty → error
+        let source = BaseSource {
+            source_type: "tag".to_string(),
+            path: None,
+            tag: Some("#".to_string()),
+            include_subfolders: true,
+            selected_vaults: Vec::new(),
+        };
+        let active_libs = vec!["Lib1".to_string()];
+        let result = build_source_where(&source, &active_libs, &test_lib_paths());
+        assert!(result.is_err());
     }
 
     #[test]
