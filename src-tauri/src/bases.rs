@@ -4,9 +4,20 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
-// tauri::Manager unused — removed
+use tauri::Emitter; // MIG-054 §E — for emit("bases:note_updated", ...) on cell edit
 // HashSet was used by §A for in-memory columns_detected dedup; §C replaced
 // that with a SQL DISTINCT query so HashSet is no longer needed here.
+
+// ─── MIG-054 §E — Cell-edit refresh event payload ───
+//
+// Emitted by `update_note_property` after the file write + immediate
+// note_meta update. Any UI consumer (Bases views, secondary screens,
+// other panels) can listen for `bases:note_updated` and refresh.
+#[derive(Debug, Clone, Serialize)]
+struct BasesNoteUpdatedPayload {
+    path: String,
+    changed_keys: Vec<String>,
+}
 
 // ─── Security ───
 
@@ -943,7 +954,73 @@ pub fn update_note_property(
     let new_content = update_frontmatter_property(&content, &key, &value);
 
     fs::write(&file_path, new_content)
-        .map_err(|e| format!("Failed to write note: {}", e))
+        .map_err(|e| format!("Failed to write note: {}", e))?;
+
+    // MIG-054 §E — Immediate note_meta.properties_json update + cross-view
+    // refresh event.
+    //
+    // The Rule-8-compliant query_base (§A) reads from note_meta.properties_json,
+    // which is maintained by the file-watcher's debounced re-parse (~1.5s window).
+    // Without this immediate update, a Bases view re-query within that window
+    // would return the OLD value — visible as a stale cell. Eisa's Q2 lock
+    // (MIG-054 §10) rejected that latency window as productivity theater.
+    //
+    // Strategy: best-effort write to note_meta NOW; emit an event for ALL
+    // listening Bases views (including this one) to refresh.
+    //
+    // Graceful degradation: if the immediate note_meta update fails (DB locked,
+    // path not yet indexed, etc.), the file write still succeeded and the
+    // file-watcher's later re-parse handles eventual consistency.
+    if let Err(e) = update_note_meta_property_immediate(&app, &file_path, &key, &value) {
+        eprintln!(
+            "[bases §E] note_meta immediate update failed (file-watcher will catch up): {}",
+            e
+        );
+    }
+
+    let payload = BasesNoteUpdatedPayload {
+        path: file_path.clone(),
+        changed_keys: vec![key.clone()],
+    };
+    let _ = app.emit("bases:note_updated", payload);
+
+    Ok(())
+}
+
+/// MIG-054 §E — Immediately update `note_meta.properties_json` for the given
+/// note path. Uses SQLite `json_set` to merge the new (key, value) into the
+/// existing JSON object. If properties_json is NULL or empty, defaults to '{}'
+/// before the merge.
+///
+/// Behavior on missing path: the UPDATE matches 0 rows. Returns Ok(()) — not
+/// an error. The note hasn't been indexed yet; the file-watcher will index
+/// it later (with the correct value already in the file).
+fn update_note_meta_property_immediate(
+    app: &tauri::AppHandle,
+    file_path: &str,
+    key: &str,
+    value: &str,
+) -> Result<(), String> {
+    let db_path = crate::search::db_path(app)
+        .map_err(|e| format!("Failed to resolve search DB path: {}", e))?;
+    let conn = Connection::open(&db_path)
+        .map_err(|e| format!("Failed to open search DB: {}", e))?;
+
+    // Build the JSON path expression. Use $."<key>" form to support property
+    // names with spaces / dots / special characters; escape embedded quotes.
+    let escaped_key = key.replace('\'', "''").replace('"', "\\\"");
+    let json_path = format!("$.\"{}\"", escaped_key);
+
+    let sql = "UPDATE note_meta \
+               SET properties_json = json_set(\
+                   COALESCE(NULLIF(properties_json, ''), '{}'),\
+                   ?, ?) \
+               WHERE path = ?";
+
+    conn.execute(sql, rusqlite::params![&json_path, value, file_path])
+        .map_err(|e| format!("Failed to update note_meta.properties_json: {}", e))?;
+
+    Ok(())
 }
 
 /// Update or insert a single property in a note's YAML frontmatter.
