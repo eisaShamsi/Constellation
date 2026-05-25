@@ -182,6 +182,14 @@
 		try {
 			await invoke('mind_set_active_model', { modelId });
 			await reloadAll();
+			// MIG-048 §J — re-warm the newly-active model so the user's
+			// next chat turn is warm. Fire-and-forget; pre-warm errors
+			// don't block the active-model change.
+			try {
+				await invoke('mind_prewarm_active_model');
+			} catch (_) {
+				/* silent — next real turn re-loads */
+			}
 		} catch (e) {
 			loadError = String(e);
 		} finally {

@@ -188,3 +188,57 @@ pub async fn mind_telemetry_snapshot() -> Result<TelemetrySnapshot, String> {
     Ok(telemetry::snapshot())
 }
 
+/// MIG-048 §J — pre-warm the active model's mmap-resident state so
+/// the first chat turn doesn't pay the ~9-11 s cold-load latency.
+///
+/// Flow:
+/// 1. Resolve the active model (returns Ok(()) silently if no model
+///    is installed/active — pre-warm is a no-op on a fresh install).
+/// 2. Construct a `LocalProvider` and call `provider.generate(...)`
+///    with a single-token cap. This forces `get_model()`'s lazy-load
+///    path to run; the loaded `LlamaModel` lives in the
+///    `OnceCell<Arc<LlamaModel>>` field. Subsequent `mind_start_turn`
+///    calls construct a NEW `LocalProvider` (per turn) — but the
+///    OS-level mmap of the GGUF file is already paged in by the
+///    pre-warm, so re-load latency is dominated by mmap cache hits
+///    rather than disk I/O.
+///
+/// Invoked from:
+/// - `lib.rs::run` setup hook (spawned, so app boot isn't blocked).
+/// - Frontend's MindSettings after `mind_set_active_model` succeeds
+///   (re-warm when the user picks a different model).
+///
+/// Errors during pre-warm are swallowed — the next real turn will
+/// re-load (paying cold latency once) and surface any real issue.
+#[tauri::command]
+pub async fn mind_prewarm_active_model(app: AppHandle) -> Result<(), String> {
+    let active =
+        match crate::mind::model_install::commands::mind_active_model(app.clone()).await {
+            Ok(Some(m)) => m,
+            _ => return Ok(()),
+        };
+
+    // Spawn the load on the blocking pool so this command returns fast.
+    let path = std::path::PathBuf::from(active.file_path);
+    let id = active.id;
+    tauri::async_runtime::spawn(async move {
+        let provider = LocalProvider::new(path, id);
+        // A tiny generate call forces get_model() to lazy-load. We
+        // immediately drop the resulting receiver — the spawned
+        // inference task observes the dropped channel and exits.
+        let params = crate::mind::provider::GenParams {
+            max_tokens: 1,
+            ..crate::mind::provider::GenParams::default()
+        };
+        let messages = vec![crate::mind::provider::ChatMessage {
+            role: crate::mind::provider::ChatRole::User,
+            content: ".".into(),
+            tool_call_id: None,
+            tool_name: None,
+        }];
+        let _ = provider.generate(&messages, &params).await;
+    });
+
+    Ok(())
+}
+

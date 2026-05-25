@@ -322,6 +322,7 @@ pub fn run() {
             // one returns in-process telemetry counters.
             mind::commands::mind_start_turn,
             mind::commands::mind_telemetry_snapshot,
+            mind::commands::mind_prewarm_active_model,
             // MIG-047 Phase 0b §E — model install + registry IPCs.
             mind::model_install::commands::mind_install_model,
             mind::model_install::commands::mind_list_catalog,
@@ -573,6 +574,19 @@ pub fn run() {
                 perf_trace::record(invoke.message.command());
                 inner(invoke)
             }
+        })
+        .setup(|app| {
+            // MIG-048 §J — pre-warm the active Constellation Mind model
+            // on app start so the user's first chat turn pays warm
+            // latency (~1-1.5 s) instead of cold (~9-11 s). Spawned on
+            // tauri::async_runtime — never blocks startup. If no model
+            // is installed/active, this is a silent no-op. Failures
+            // are swallowed — the next real turn will re-load.
+            let handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                let _ = crate::mind::commands::mind_prewarm_active_model(handle).await;
+            });
+            Ok(())
         })
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
