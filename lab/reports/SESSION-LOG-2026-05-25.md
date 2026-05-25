@@ -41,9 +41,64 @@ After the Mind revert (`a9cf4d62`) and the handover prep (`07a05964`), the fresh
 
 ### What's next
 
-**MIG-049 — Bases Phase 1: Rule 8 Migration.** Architect doc to follow as a separate commit per `/migration` discipline (Architect → Plan → Build → Audit). The `bases_cache` SQLite table, triggers on `note_meta` + `note_links`, `query_base` becomes a cheap SQL lookup. No new user-visible features beyond instant performance.
+**MIG-054 — Bases Phase 1: Rule 8 Migration.** Architect doc landed at `docs/MIG-054-bases-rule8-migration-ARCHITECT.md` (v1.1, in this commit set per Block 4) with all five Q1-Q5 uniqueness-aligned answers folded into §2-§7. §10 is now "Decisions Locked" rather than open questions. Plan doc is the next deliverable in the cascade.
 
-**Number reuse note:** MIG-049 was previously allocated to Mind Phase 2 (write tools + approval modal — never built; reverted along with MIG-046/047/048 cascade). Reused here for Bases Phase 1.
+**Number choice:** jumped to MIG-054 (not MIG-049). The reverted-Mind allocation 046-048 is in the historical record; planned-but-never-built 049-053 are released, but reuse smudges the audit trail. Clean break preserves clarity. (The MIG-049 file initially drafted earlier in Block 4 was deleted; v2.35's references to MIG-049 are preserved as a historical record of that intermediate state, with the v2.36 preamble noting the rename.)
+
+## Bases design — Block 4: Q1-Q5 lock + The Cataloger Bridge (late evening)
+
+After the v1.0→v1.3 Concept Paper cascade and the PCS at `b659632c`, Block 4 carried two threads — both still in the same Bases design session, no code change yet.
+
+### Thread 1: Q1-Q5 locked uniqueness-aligned
+
+Eisa's directive: *"Answer the questions in a way that achieves the Constellation Base uniqueness."* Re-framed each question through the five-differentiator lens rather than the easiest-to-ship lens.
+
+- **Q1 — Field-name alignment + retire legacy `"vault"` source type.** "Library" is Constellation's identity vocabulary (per CLAUDE.md Conventions). Fold into Phase 1 step §D.
+- **Q2 — Reject the 1.5s cell-edit latency window.** Dashboard effect (§1) demands instant feedback. Wire `bases:note_updated` Tauri event + immediate `note_meta.properties_json` write.
+- **Q3 — 75 fixtures designed as the foundation suite for Phase 2/2.5/2.6/2.7.** Each future phase extends the same harness.
+- **Q4 — LL-025 copy-test pattern.** Test on a COPY of the Cognitive Knowledge universe DB; only swap live binary after 100% diff-clean.
+- **Q5 — MIG-049 → MIG-054.** Clean break from the reverted-Mind allocation.
+
+### Thread 2: The Cataloger Bridge — v1.4
+
+Eisa: *"And there is another function we forgot to consider. The Cataloger. Go familiarize yourself with it, and update everything accordingly."*
+
+Honest gap caught: v1.3 §6.4 had The Cataloger as a one-paragraph placeholder in Phase 6, when it's a **Core Plug-in** with the same architectural status as CNS. Familiarization pass read `docs/Constellation-CECE-Concept-Paper-v1.0.md` + `docs/help.uConstellation.World/Cognitive Engine/Cognitive Engine.md` + orientation §4.5.
+
+**Concept Paper v1.4 promoted The Cataloger to full §6.12 Bridge treatment:**
+- §6.12 added — CECE Measurements as Bases Columns (the Epistemic Bridge). Source × Content-type, regime state, disambiguation flags.
+- §7.4 added — Open-in-Cataloger row gesture (Phase 1.5).
+- §7.5 reframed — **two threading gestures → three**; **three-surface workflow → four-surface workflow** (Bases / 360.3D / CNS / The Cataloger).
+- §9 — sixth differentiator: epistemic classification queryable across the collection.
+- §10.10 — CECE Bridge architectural mandate.
+- §12 — Phase 2.7 inserted between Phase 2.6 (CNS Bridge) and Phase 3 (NSC Headlines).
+- §13 row 10 added.
+- **Reasoning cataloger explicitly out of scope** (depends on reverted Mind stack).
+
+### What landed in Block 4
+
+- `docs/Constellation-Base-Concept-Paper-v1.4.md` (canonical; supersedes v1.3).
+- `docs/MIG-054-bases-rule8-migration-ARCHITECT.md` (v1.1, Q1-Q5 folded in).
+- `docs/Constellation Orientation & Onboarding v2.36.md` (Cataloger preamble; v2.35 preserved).
+- `docs/MoCh/MoCh-2026-05-25-2100.md` (Block 4 conversation trace).
+- The MIG-049 file deleted (intermediate draft from earlier in Block 4 before Q5 lock).
+
+### The six Constellation Base differentiators (v1.4 §9, was five in v1.3)
+
+1. Living Links as query dimensions.
+2. Summary headlines visible by default, context-aware rendering.
+3. Federation across universes — auto by default.
+4. Cognitive Engine measurements queryable across the collection (the 360.3D Bridge).
+5. Network topology queryable across the collection (the CNS Bridge).
+6. **Epistemic classification queryable across the collection** (the Cataloger Bridge, added v1.4). First PKM in the world.
+
+### What's next
+
+Architect doc MIG-054 is ready for Eisa's approval. After approval: Plan doc → Build cascade. Eisa also still owes the 5-10 representative `.base` files from his Cognitive Knowledge universe to seed the §4.E fixture gold-master tier.
+
+---
+
+## Bases design — Block 3: Concept Paper v1.0 → v1.3 cascade (evening)
 
 ---
 
