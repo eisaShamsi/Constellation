@@ -75,7 +75,13 @@ pub async fn run(app: AppHandle, args: Value) -> Result<Value, String> {
         serde_json::from_value(args).map_err(|e| format!("invalid args: {e}"))?;
 
     let mode = parsed.mode.unwrap_or_else(|| "lexical".to_string());
-    let limit = parsed.limit.unwrap_or(10).min(30);
+    // Phase 1 §N round-2 crash fix (Boss-test 2026-05-25): cap to 5
+    // results + truncate snippet to 120 chars per result. Keeps the
+    // tool result under ~1.5 KB so round-2's prompt envelope
+    // (system + tool_call_marker + tool_result + user) fits within
+    // Fanar's 8192-token context without crashing on the next
+    // generate() call.
+    let limit = parsed.limit.unwrap_or(5).min(5);
 
     let filters = if parsed.libraries.is_some() || parsed.tags.is_some() {
         Some(SearchFilters {
@@ -114,13 +120,21 @@ pub async fn run(app: AppHandle, args: Value) -> Result<Value, String> {
     let json_results: Vec<Value> = results
         .into_iter()
         .map(|r| {
+            // Truncate snippet to 120 chars to keep payload bounded.
+            let snippet_trunc = r.snippet.as_ref().map(|s| {
+                if s.chars().count() <= 120 {
+                    s.clone()
+                } else {
+                    let mut out: String = s.chars().take(117).collect();
+                    out.push_str("…");
+                    out
+                }
+            });
             json!({
                 "name": r.name,
                 "path": r.path,
                 "library_name": r.library_name,
-                "score": r.score,
-                "match_type": r.match_type,
-                "snippet": r.snippet,
+                "snippet": snippet_trunc,
                 "modified": r.modified,
             })
         })

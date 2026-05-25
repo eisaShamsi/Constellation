@@ -53,7 +53,8 @@ pub async fn run(app: AppHandle, args: Value) -> Result<Value, String> {
         serde_json::from_value(args).map_err(|e| format!("invalid args: {e}"))?;
 
     let path = parsed.path.clone();
-    let limit = parsed.limit.unwrap_or(10).min(30);
+    // Phase 1 §N round-2 crash fix: cap to 5 to keep payload bounded.
+    let limit = parsed.limit.unwrap_or(5).min(5);
 
     let results =
         tokio::task::spawn_blocking(move || constellation_search_similar(app, parsed.path, Some(limit)))
@@ -63,12 +64,20 @@ pub async fn run(app: AppHandle, args: Value) -> Result<Value, String> {
     let json_results: Vec<Value> = results
         .into_iter()
         .map(|r| {
+            let snippet_trunc = r.snippet.as_ref().map(|s| {
+                if s.chars().count() <= 120 {
+                    s.clone()
+                } else {
+                    let mut out: String = s.chars().take(117).collect();
+                    out.push_str("…");
+                    out
+                }
+            });
             json!({
                 "name": r.name,
                 "path": r.path,
                 "library_name": r.library_name,
-                "score": r.score,
-                "snippet": r.snippet,
+                "snippet": snippet_trunc,
             })
         })
         .collect();

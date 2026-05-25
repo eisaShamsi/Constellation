@@ -39,14 +39,27 @@ pub async fn run(app: AppHandle, args: Value) -> Result<Value, String> {
         serde_json::from_value(args).map_err(|e| format!("invalid args: {e}"))?;
 
     let path = parsed.path.clone();
-    let content = tokio::task::spawn_blocking(move || read_note(app, parsed.path))
+    let full_content = tokio::task::spawn_blocking(move || read_note(app, parsed.path))
         .await
         .map_err(|e| format!("spawn_blocking join error: {e}"))??;
+
+    // Phase 1 §N round-2 crash fix: cap returned content to ~2000
+    // chars (~500-700 tokens) so the tool result doesn't blow the
+    // round-2 prompt envelope past Fanar's 8192-token context.
+    // Truncation is char-aware (no mid-UTF-8 splits).
+    const MAX_CHARS: usize = 2000;
+    let (content, truncated) = if full_content.chars().count() > MAX_CHARS {
+        let trimmed: String = full_content.chars().take(MAX_CHARS).collect();
+        (trimmed + "\n\n…[content truncated]", true)
+    } else {
+        (full_content.clone(), false)
+    };
 
     Ok(json!({
         "status": "ok",
         "path": path,
         "content": content,
-        "length_chars": content.len(),
+        "length_chars": full_content.len(),
+        "truncated": truncated,
     }))
 }
