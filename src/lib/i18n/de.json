@@ -668,7 +668,8 @@
 		"matchWikilink": "W",
 		"searchHistory": "Letzte Suchen",
 		"clearHistory": "Verlauf löschen",
-		"newLibrary": "Neue Bibliothek"
+		"newLibrary": "Neue Bibliothek",
+		"fiveActs": "Fünf Akte"
 	},
 	"searchHub": {
 		"title": "Search Hub",

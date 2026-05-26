@@ -494,6 +494,10 @@ pub fn run() {
             // `generate_handler!` macro resolves the `__cmd__` shim at
             // the function's definition site, not through re-exports.
             lens::query::execute_lens,
+            // MIG-055 §F — Five Acts sidebar enumerator. Lists `.md` files
+            // in `{universe}/Five Acts/`. Returns FiveActsNoteEntry tuples
+            // with display name + relative path + absolute path.
+            lens::system_notes::list_five_acts_notes,
             universe::list_universes,
             universe::create_universe,
             universe::set_active_universe,

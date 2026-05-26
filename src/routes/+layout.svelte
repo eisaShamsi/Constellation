@@ -46,6 +46,8 @@
 	import { createBase, saveBaseFile, listWorkspaceBases, createWorkspaceBase, saveWorkspaceBase, deleteWorkspaceBase } from '$lib/bases/store';
 	import type { WorkspaceBaseEntry } from '$lib/bases/store';
 	import type { BaseDefinition } from '$lib/bases/types';
+	// MIG-055 §F — Five Acts sidebar section (Constellation Base v1).
+	import { listFiveActsNotes, type FiveActsNoteEntry } from '$lib/lens/store';
 	import FileTree from '$lib/components/FileTree.svelte';
 	// MIG-045 Phase 3 — Universe Digest left-dock pane.
 	import DigestPane from '$lib/components/DigestPane.svelte';
@@ -1052,6 +1054,12 @@
 	let workspaceBases = $state<WorkspaceBaseEntry[]>([]);
 	let workspaceBasesExpanded = $state(true);
 
+	// MIG-055 §F — Five Acts host notes ({universe}/Five Acts/*.md).
+	// Populated by `listFiveActsNotes()` on universe activation; auto-created
+	// by Rust `init_five_acts_system_notes` at boot (idempotent, edit-preserving).
+	let fiveActsNotes = $state<FiveActsNoteEntry[]>([]);
+	let fiveActsExpanded = $state(true);
+
 	// Child universes for sidebar
 	let childUniverses = $state<ChildUniverseInfo[]>([]);
 	let childUniversesExpanded = $state(true);
@@ -1941,6 +1949,10 @@
 			} catch { /* on-demand load on first use */ }
 
 			workspaceBases = bundle.workspace_bases;
+			// MIG-055 §F — load Five Acts host notes alongside the boot bundle.
+			// Not yet part of the bundle IPC (deferred to §J or a future MIG);
+			// fire-and-forget here keeps boot time unchanged (single fs read).
+			listFiveActsNotes().then(n => fiveActsNotes = n).catch(() => {});
 			childUniverses = bundle.child_universes;
 			const map = new Map<string, Set<string>>();
 			for (const cu of bundle.child_universes) {
@@ -1963,6 +1975,8 @@
 				loadWorkspaces().catch(() => {}),
 				loadPropertyTypes().catch(() => {}),
 				listWorkspaceBases().then(b => workspaceBases = b).catch(() => {}),
+				// MIG-055 §F — load Five Acts host notes in the fallback path too.
+				listFiveActsNotes().then(n => fiveActsNotes = n).catch(() => {}),
 				getChildUniverses().then(async (c) => {
 					childUniverses = c;
 					const m = new Map<string, Set<string>>();
@@ -2086,6 +2100,10 @@
 		$activeTabId = null;
 		$focusedTabId = null;
 		workspaceBases = [];
+		// MIG-055 §F — clear Five Acts notes; reloaded by initApp() for the
+		// new universe (init_db on that universe re-creates the system note
+		// if absent, edit-preserving otherwise).
+		fiveActsNotes = [];
 		// A cascade in flight in the previous Universe could leave entries
 		// in cascadingPaths that gate edits in the new one if any path
 		// happens to collide — start the new Universe with a clean slate.
@@ -4715,6 +4733,40 @@
 								<div class="s-meta"><span class="s-lib-name">{bm.libraryName}</span></div>
 							</button>
 						{/each}
+					{/if}
+
+					<!-- MIG-055 §F — Five Acts host notes section.
+					     Lists `.md` files in `{universe}/Five Acts/`. The v1 set
+					     contains "Observation — Recent Captures" auto-created by
+					     Rust `init_five_acts_system_notes` at boot. Clicking an
+					     entry opens the host note as a regular `.md` tab; the
+					     embedded ` ```base ` lens block renders via §D's
+					     LensBlockWidget. -->
+					{#if fiveActsNotes.length > 0}
+						<div class="library-section">
+							<button class="library-header" onclick={() => fiveActsExpanded = !fiveActsExpanded}>
+								<svg class="v-chev" class:expanded={fiveActsExpanded} width="8" height="8" viewBox="0 0 10 10">
+									<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
+								</svg>
+								<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-inline-end: 4px; opacity: 0.6;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+								<span class="library-name">{$t('sidebar.fiveActs')}</span>
+							</button>
+							{#if fiveActsExpanded}
+								<div class="library-tree">
+									{#each fiveActsNotes as note (note.absolute_path)}
+										<button
+											class="ws-base-item"
+											class:active={$activeTab?.path === note.absolute_path}
+											onclick={() => openNoteTab(note.absolute_path, universeNotesStats?.name || activeUniverseName || 'Constellation', libraryColorMap[universeNotesStats?.name || ''] || 'var(--interactive-accent)')}
+											title={note.relative_path}
+										>
+											<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.5; flex-shrink: 0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+											<span class="ws-base-name" dir={detectDir(note.display_name)}>{note.display_name}</span>
+										</button>
+									{/each}
+								</div>
+							{/if}
+						</div>
 					{/if}
 
 					<!-- Workspace Bases section -->

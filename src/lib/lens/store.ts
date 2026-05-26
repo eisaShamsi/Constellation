@@ -62,3 +62,23 @@ export interface LensResult {
 export async function executeLens(lensYaml: string): Promise<LensResult> {
 	return await invoke<LensResult>('execute_lens', { lensYaml });
 }
+
+/** One Five Acts host note entry from the sidebar enumerator. */
+export interface FiveActsNoteEntry {
+	/** File stem (filename without `.md`), e.g. "Observation — Recent Captures". */
+	display_name: string;
+	/** Universe-relative path, e.g. "Five Acts/Observation — Recent Captures.md". */
+	relative_path: string;
+	/** Absolute filesystem path — same file as `universe_root + relative_path`. */
+	absolute_path: string;
+}
+
+/**
+ * Enumerate Five Acts host notes for the sidebar (§F). Returns the
+ * canonical "Observation — Recent Captures" plus any future Five Acts
+ * host notes that ship later (Connection, Tension, Synthesis, Conviction).
+ * Returns an empty array if `{universe}/Five Acts/` doesn't exist.
+ */
+export async function listFiveActsNotes(): Promise<FiveActsNoteEntry[]> {
+	return await invoke<FiveActsNoteEntry[]>('list_five_acts_notes');
+}

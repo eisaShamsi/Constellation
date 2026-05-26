@@ -705,7 +705,8 @@
 		"matchTag": "#",
 		"matchWikilink": "W",
 		"searchHistory": "Recent searches",
-		"clearHistory": "Clear history"
+		"clearHistory": "Clear history",
+		"fiveActs": "Five Acts"
 	},
 	"searchHub": {
 		"title": "Search Hub",

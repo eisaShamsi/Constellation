@@ -669,7 +669,8 @@
 		"matchTag": "#",
 		"matchWikilink": "ر",
 		"searchHistory": "عمليات البحث الأخيرة",
-		"clearHistory": "مسح السجل"
+		"clearHistory": "مسح السجل",
+		"fiveActs": "الأفعال الخمسة"
 	},
 	"searchHub": {
 		"title": "مركز البحث",

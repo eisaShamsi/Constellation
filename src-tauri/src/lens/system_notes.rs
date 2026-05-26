@@ -128,6 +128,43 @@ pub(crate) fn init_at(universe_root: &Path) -> Result<(), String> {
     Ok(())
 }
 
+/// Public Tauri-command DTO. Mirrors the `(display_name, relative_path)`
+/// pair returned by `list_five_acts_notes_at`, but with field names the
+/// frontend can read directly via serde. `absolute_path` is also returned
+/// so the frontend opens the file with the same path resolver it uses
+/// elsewhere (the universe-root prefix isn't needed by the open path).
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct FiveActsNoteEntry {
+    /// File stem (filename without `.md`), e.g., "Observation — Recent Captures".
+    pub display_name: String,
+    /// Universe-relative path, e.g., "Five Acts/Observation — Recent Captures.md".
+    pub relative_path: String,
+    /// Absolute filesystem path (resolves to the same file as `universe_root + relative_path`).
+    pub absolute_path: String,
+}
+
+/// MIG-055 §F — Tauri command. Frontend (`+layout.svelte` sidebar)
+/// calls this to populate the "Five Acts" sidebar section. Returns
+/// the canonical Observation — Recent Captures host note plus any
+/// future Five Acts host notes that ship later (Connection, Tension,
+/// Synthesis, Conviction).
+#[tauri::command]
+pub fn list_five_acts_notes(app: AppHandle) -> Result<Vec<FiveActsNoteEntry>, String> {
+    let universe_dir = crate::universe::active_universe_dir(&app)?;
+    let pairs = list_five_acts_notes_at(&universe_dir)?;
+    Ok(pairs
+        .into_iter()
+        .map(|(display_name, rel)| {
+            let absolute = universe_dir.join(&rel);
+            FiveActsNoteEntry {
+                display_name,
+                relative_path: rel.to_string_lossy().replace('\\', "/"),
+                absolute_path: absolute.to_string_lossy().to_string(),
+            }
+        })
+        .collect())
+}
+
 /// Enumerate the `.md` files in `{universe}/Five Acts/` for the §F sidebar.
 /// Returns `Vec<(display_name, relative_path)>` where `relative_path` is
 /// relative to the universe root (so the frontend can open it via the same
@@ -135,7 +172,6 @@ pub(crate) fn init_at(universe_root: &Path) -> Result<(), String> {
 ///
 /// Empty vec if the directory doesn't exist. Non-fatal — the sidebar
 /// renders an empty section gracefully.
-#[allow(dead_code)] // Wired by §F (sidebar) next step.
 pub fn list_five_acts_notes_at(universe_root: &Path) -> Result<Vec<(String, PathBuf)>, String> {
     let five_acts_dir = universe_root.join(FIVE_ACTS_DIR);
     if !five_acts_dir.is_dir() {
