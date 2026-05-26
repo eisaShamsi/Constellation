@@ -383,6 +383,32 @@ pub struct StarInfo {
 /// `SearchState` borrow + MutexGuard live for the whole read (avoids the
 /// `if let` temporary-lifetime trap). Best-effort: any failure → empty map
 /// (callers fall back to 0 counts, which the count badge hides).
+/// MIG-056 §F — Build the SQL for federated library-count aggregation.
+/// Pure function so the SQL shape is unit-testable without Tauri state.
+///
+/// When `federated_aliases` is empty (no federation, or federation
+/// not ready), returns the single-schema query (existing behavior).
+/// Otherwise returns a UNION ALL across `main` + each cUniverse alias.
+///
+/// Per Architect §7.2 + Agent 3's Citus lesson — each branch carries
+/// its own (potentially zero) WHERE clauses. For aggregation there's
+/// no WHERE; the query reads every note_meta row from every attached
+/// schema and the aggregation happens in Rust (caller).
+fn build_aggregate_counts_sql(federated_aliases: &[String]) -> String {
+    if federated_aliases.is_empty() {
+        return "SELECT library_name, path FROM note_meta".to_string();
+    }
+    let mut parts: Vec<String> =
+        vec!["SELECT library_name, path FROM main.note_meta".to_string()];
+    for alias in federated_aliases {
+        parts.push(format!(
+            "SELECT library_name, path FROM {}.note_meta",
+            alias
+        ));
+    }
+    parts.join(" UNION ALL ")
+}
+
 fn aggregate_library_counts(
     app: &tauri::AppHandle,
 ) -> std::collections::HashMap<String, (u32, std::collections::HashSet<String>)> {
@@ -393,23 +419,96 @@ fn aggregate_library_counts(
         return agg;
     }
     let state = app.state::<crate::search::SearchState>();
-    let guard = match state.db.lock() {
-        Ok(g) => g,
-        Err(_) => return agg,
+
+    // MIG-056 §F — Decide federated vs single-schema path:
+    // - If federation context is ready AND has attached cUniverses
+    //   AND state.federated_conn is populated → federated path
+    // - Otherwise → existing single-schema (state.db) path
+    let federated_aliases: Vec<String> = match state.federation.lock() {
+        Ok(g) if g.is_ready() && !g.attached().is_empty() => {
+            g.attached().iter().map(|(a, _)| a.clone()).collect()
+        }
+        _ => Vec::new(),
     };
-    let conn = match guard.as_ref() {
-        Some(c) => c,
-        None => return agg,
+
+    let sql = build_aggregate_counts_sql(&federated_aliases);
+
+    // Run the query against the appropriate connection.
+    // Returns Vec<(library_name, note_path)>; empty on any error
+    // (the early-returns in this function preserve the empty `agg`
+    // result for graceful degradation).
+    let rows: Vec<(String, String)> = if federated_aliases.is_empty() {
+        // Single-schema path (state.db).
+        let guard = match state.db.lock() {
+            Ok(g) => g,
+            Err(_) => return agg,
+        };
+        let conn = match guard.as_ref() {
+            Some(c) => c,
+            None => return agg,
+        };
+        let mut stmt = match conn.prepare(&sql) {
+            Ok(s) => s,
+            Err(_) => return agg,
+        };
+        let mapped = match stmt.query_map([], |r| {
+            Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
+        }) {
+            Ok(m) => m,
+            Err(_) => return agg,
+        };
+        mapped.flatten().collect()
+    } else {
+        // Federated path (state.federated_conn — main + cu* attached).
+        let guard = match state.federated_conn.lock() {
+            Ok(g) => g,
+            Err(_) => return agg,
+        };
+        match guard.as_ref() {
+            Some(conn) => {
+                let mut stmt = match conn.prepare(&sql) {
+                    Ok(s) => s,
+                    Err(_) => return agg,
+                };
+                let mapped = match stmt.query_map([], |r| {
+                    Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
+                }) {
+                    Ok(m) => m,
+                    Err(_) => return agg,
+                };
+                mapped.flatten().collect()
+            }
+            None => {
+                // federated_conn None despite federation ready — race
+                // between FederationContext.is_ready() and federated_conn
+                // population (background-thread ordering). Fall back to
+                // single-schema by re-querying state.db.
+                drop(guard);
+                let db_guard = match state.db.lock() {
+                    Ok(g) => g,
+                    Err(_) => return agg,
+                };
+                let fallback_conn = match db_guard.as_ref() {
+                    Some(c) => c,
+                    None => return agg,
+                };
+                let fb_sql = build_aggregate_counts_sql(&[]);
+                let mut stmt = match fallback_conn.prepare(&fb_sql) {
+                    Ok(s) => s,
+                    Err(_) => return agg,
+                };
+                let mapped = match stmt.query_map([], |r| {
+                    Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
+                }) {
+                    Ok(m) => m,
+                    Err(_) => return agg,
+                };
+                mapped.flatten().collect()
+            }
+        }
     };
-    let mut stmt = match conn.prepare("SELECT library_name, path FROM note_meta") {
-        Ok(s) => s,
-        Err(_) => return agg,
-    };
-    let rows = match stmt.query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))) {
-        Ok(r) => r,
-        Err(_) => return agg,
-    };
-    for (lib_name, path) in rows.flatten() {
+
+    for (lib_name, path) in rows {
         let entry = agg.entry(lib_name).or_insert_with(|| (0u32, HashSet::new()));
         entry.0 += 1;
         // Walk the note's ancestor directories; break once we hit one already
@@ -4597,7 +4696,44 @@ mod tests {
     //! analyzer's verdict to the tokenizer. Without these, a future
     //! refactor could wire a different stemmer in and the corpus would
     //! still pass while search results quietly regressed.
+    //!
+    //! MIG-056 §F also lives here — see `build_aggregate_counts_sql_*`
+    //! tests at bottom of the module.
     use super::*;
+
+    // ─── MIG-056 §F — build_aggregate_counts_sql shape tests ───
+
+    #[test]
+    fn build_aggregate_counts_sql_empty_federation_is_single_schema() {
+        let sql = build_aggregate_counts_sql(&[]);
+        assert_eq!(sql, "SELECT library_name, path FROM note_meta");
+        assert!(!sql.contains("UNION ALL"));
+        assert!(!sql.contains("main."));
+    }
+
+    #[test]
+    fn build_aggregate_counts_sql_one_cuniverse_unions_main_and_cu0() {
+        let sql = build_aggregate_counts_sql(&["cu0".to_string()]);
+        assert!(sql.contains("SELECT library_name, path FROM main.note_meta"));
+        assert!(sql.contains("UNION ALL"));
+        assert!(sql.contains("SELECT library_name, path FROM cu0.note_meta"));
+    }
+
+    #[test]
+    fn build_aggregate_counts_sql_multiple_cuniverses_chains_unions() {
+        let sql = build_aggregate_counts_sql(&[
+            "cu0".to_string(),
+            "cu1".to_string(),
+            "cu2".to_string(),
+        ]);
+        // Three UNION ALL separators between four parts (main + 3 cu)
+        let union_count = sql.matches("UNION ALL").count();
+        assert_eq!(union_count, 3);
+        assert!(sql.contains("main.note_meta"));
+        assert!(sql.contains("cu0.note_meta"));
+        assert!(sql.contains("cu1.note_meta"));
+        assert!(sql.contains("cu2.note_meta"));
+    }
 
     /// The flagship bug that motivated the Constellation Arabic Engine.
     /// Pre-M6: Light10 stripped the leading و from وائل, producing "ائل"
