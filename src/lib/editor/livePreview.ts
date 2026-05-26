@@ -14,8 +14,10 @@ import {
 import { syntaxTree } from '@codemirror/language';
 import { RangeSetBuilder, StateField, StateEffect } from '@codemirror/state';
 import { convertFileSrc, invoke } from '@tauri-apps/api/core';
-import { mount, unmount, type Component } from 'svelte';
-import LensBlock from '$lib/components/LensBlock.svelte';
+import { get } from 'svelte/store';
+import { t } from '$lib/i18n';
+import { detectDir } from '$lib/utils';
+import type { LensResult, LensRow, DimensionValue } from '$lib/lens/store';
 
 // ─── Path state fields (for resolving image embeds) ───
 export const setLibraryPath       = StateEffect.define<string>();
@@ -702,70 +704,194 @@ class CodeBlockLabelWidget extends WidgetType {
 
 /**
  * MIG-055 §D — Widget for ` ```base ` fenced code blocks (Constellation
- * lenses). Mounts the Svelte component `LensBlock.svelte` inside the
- * widget DOM via Svelte 5's `mount()` / `unmount()` API.
+ * lenses). Pure-DOM implementation — matches the `UniversalEmbedWidget`
+ * pattern in this file (the proven CM6-author-recommended approach for
+ * async-data widgets that replace fenced content).
  *
- * Why a Svelte component (vs. pure DOM like `DataviewLabelWidget`):
- * - The lens fetches data asynchronously and re-renders on result —
- *   reactive `$state` is the cleanest model.
- * - Multilingual UI strings route through `$t()` (which is a Svelte
- *   store, not callable from raw DOM).
- * - The row-click handler and the future Phase 1.5 / 2.5 / 2.6 row
- *   gestures live inside the component, not strewn across this file.
+ * ## Why pure DOM (not a Svelte mount)
  *
- * Lifecycle:
- * - `toDOM()` creates a `<div>` wrapper + mounts LensBlock with the
- *   YAML text. CodeMirror reuses the same widget across re-renders as
- *   long as `eq()` returns true (same YAML text).
- * - `destroy(dom)` is called by CodeMirror when the widget is removed
- *   (e.g., the YAML text changed, or the block was deleted, or the
- *   editor was torn down). We unmount the Svelte component so its
- *   `$effect` cleanup runs and no `executeLens` callback fires into
- *   a destroyed DOM.
+ * The earlier attempt mounted a Svelte 5 component into the widget's
+ * wrapper via `mount(Component, { target: wrap, props })`. It failed
+ * silently in production: the lens block stayed raw because Svelte 5's
+ * `mount()` does NOT run effects (including `onMount`) synchronously —
+ * the component renders its initial empty `loading=true` template into
+ * a detached div, CM6 inserts the empty div, and `onMount` (which
+ * fires `executeLens`) never reliably runs before CM6 measures the
+ * widget at zero content.
  *
- * Cache strategy: NO outer cache here — the Svelte component's `onMount`
- * already fires only once per mount, and Svelte's mount lifecycle plus
- * CodeMirror's `eq()`-based widget reuse give us the right caching for
- * v1. Future phases can add a YAML-keyed result cache if the IPC trip
- * becomes visible (see Plan §C performance budget: <50ms for the
- * canonical Recent Captures lens against the Boss universe).
+ * Source authority for the pure-DOM choice:
+ *   - Marijn Haverbeke (CodeMirror 6 author) — explicitly advises
+ *     against framework mounts in `WidgetType.toDOM()`:
+ *     https://discuss.codemirror.net/t/rendering-react-components-or-similar-in-decoration-todom/3492
+ *   - Svelte 5 official docs (`mount` does not flush effects):
+ *     https://svelte.dev/docs/svelte/imperative-component-api
+ *   - Our own `UniversalEmbedWidget` in this file — production-proven
+ *     async-invoke + imperative-DOM pattern for `![[wikilink]]`
+ *     transclusions; daily-used in Constellation.
+ *
+ * ## Lifecycle
+ *
+ * - `toDOM()` creates the wrapper + immediately paints a loading
+ *   placeholder + kicks off `execute_lens` async. On resolution, the
+ *   loading placeholder is replaced with the rendered rows. On
+ *   rejection, the loading placeholder is replaced with a red error.
+ * - `eq(other)` compares the YAML source — when the user edits anything
+ *   else in the document, the same widget instance is reused (CM6
+ *   short-circuits), no re-fetch.
+ *
+ * ## i18n
+ *
+ * UI strings route through `$lib/i18n`'s `t` store. We use
+ * `get(t)('key')` (imperative store read via `svelte/store`'s `get`)
+ * because we're outside a Svelte component context. If the locale
+ * changes WHILE the widget is rendered, the cached strings won't
+ * re-translate until the next widget re-render (acceptable for v1 —
+ * editor reload picks up the new locale). The fallback English
+ * literal in the `||` clause prevents undefined-key crashes.
  */
 class LensBlockWidget extends WidgetType {
-	private _mounted: ReturnType<typeof mount> | null = null;
-
 	constructor(public lensYaml: string) {
 		super();
 	}
 
 	toDOM() {
 		const wrap = document.createElement('div');
-		wrap.className = 'cm-lens-block-host';
-		// `mount()` from Svelte 5 returns a record of the component's
-		// exported bindings; we keep the handle so `destroy()` can call
-		// `unmount()`. Props are reactive — but in v1, lensYaml is the
-		// only prop and CodeMirror gives us a fresh widget when it
-		// changes (via `eq()`), so we don't need to wire $state here.
-		this._mounted = mount(LensBlock as unknown as Component<{ lensYaml: string }>, {
-			target: wrap,
-			props: { lensYaml: this.lensYaml },
-		});
+		wrap.className = 'cm-lens-block';
+		this._renderLoading(wrap);
+		invoke<LensResult>('execute_lens', { lensYaml: this.lensYaml })
+			.then((res) => {
+				wrap.innerHTML = '';
+				this._renderResult(wrap, res);
+			})
+			.catch((err: unknown) => {
+				wrap.innerHTML = '';
+				const msg =
+					typeof err === 'string'
+						? err
+						: (err as Error)?.message ?? String(err);
+				this._renderError(wrap, msg);
+			});
 		return wrap;
-	}
-
-	destroy(_dom: HTMLElement) {
-		if (this._mounted) {
-			try {
-				unmount(this._mounted);
-			} catch {
-				// Swallow — if the component already unmounted itself we don't
-				// want a destroyed-tree exception to break the editor's update.
-			}
-			this._mounted = null;
-		}
 	}
 
 	eq(other: LensBlockWidget) {
 		return this.lensYaml === other.lensYaml;
+	}
+
+	private _renderLoading(wrap: HTMLDivElement) {
+		const el = document.createElement('div');
+		el.className = 'cm-lens-loading';
+		el.textContent = get(t)('lensBlock.loading') || 'Loading lens…';
+		wrap.appendChild(el);
+	}
+
+	private _renderResult(wrap: HTMLDivElement, res: LensResult) {
+		// ─── Header (lens name + total count) ───
+		const header = document.createElement('div');
+		header.className = 'cm-lens-header';
+
+		const name = document.createElement('h3');
+		name.className = 'cm-lens-name';
+		name.textContent = res.lens_name;
+		name.setAttribute('dir', detectDir(res.lens_name));
+		header.appendChild(name);
+
+		const count = document.createElement('span');
+		count.className = 'cm-lens-count';
+		count.textContent = String(res.total_count);
+		header.appendChild(count);
+
+		wrap.appendChild(header);
+
+		// ─── Body (rows or empty state) ───
+		if (res.rows.length === 0) {
+			const empty = document.createElement('div');
+			empty.className = 'cm-lens-empty';
+			empty.textContent =
+				get(t)('lensBlock.empty') || 'No notes match this lens.';
+			wrap.appendChild(empty);
+		} else {
+			const list = document.createElement('ul');
+			list.className = 'cm-lens-rows';
+			for (const row of res.rows) {
+				list.appendChild(this._renderRow(row));
+			}
+			wrap.appendChild(list);
+		}
+
+		// ─── Footer (query time) ───
+		const footer = document.createElement('div');
+		footer.className = 'cm-lens-footer';
+		const time = document.createElement('span');
+		time.className = 'cm-lens-time';
+		time.textContent = `${res.query_time_ms}ms`;
+		footer.appendChild(time);
+		wrap.appendChild(footer);
+	}
+
+	private _renderRow(row: LensRow): HTMLLIElement {
+		const li = document.createElement('li');
+		li.className = 'cm-lens-row';
+
+		const btn = document.createElement('button');
+		btn.type = 'button';
+		btn.className = 'cm-lens-row-name';
+		btn.textContent = row.name;
+		btn.setAttribute('dir', detectDir(row.name));
+		btn.title = row.note_path;
+		btn.addEventListener('click', () => {
+			// Same custom event UniversalEmbedWidget uses for ![[wikilink]]
+			// transclusions — the app-shell layout listens for this and
+			// opens the note in the active pane.
+			window.dispatchEvent(
+				new CustomEvent('constellation:open-note', {
+					detail: {
+						path: row.note_path,
+						libraryName: row.library_name,
+						libraryPath: row.library_path,
+					},
+				}),
+			);
+		});
+		li.appendChild(btn);
+
+		// The lens may or may not have requested `note.headline` as a column.
+		// If it did and the value is a non-empty Text, render it after a dash.
+		const headlineVal = row.dimensions['note.headline'] as
+			| DimensionValue
+			| undefined;
+		if (typeof headlineVal === 'string' && headlineVal.length > 0) {
+			const sep = document.createElement('span');
+			sep.className = 'cm-lens-row-sep';
+			sep.textContent = '—';
+			li.appendChild(sep);
+
+			const headline = document.createElement('span');
+			headline.className = 'cm-lens-row-headline';
+			headline.textContent = headlineVal;
+			headline.setAttribute('dir', detectDir(headlineVal));
+			li.appendChild(headline);
+		}
+
+		return li;
+	}
+
+	private _renderError(wrap: HTMLDivElement, msg: string) {
+		const el = document.createElement('div');
+		el.className = 'cm-lens-error';
+
+		const label = document.createElement('span');
+		label.className = 'cm-lens-error-label';
+		label.textContent =
+			(get(t)('lensBlock.errorLabel') || 'Lens error') + ':';
+		el.appendChild(label);
+
+		const msgEl = document.createElement('span');
+		msgEl.className = 'cm-lens-error-msg';
+		msgEl.textContent = msg;
+		el.appendChild(msgEl);
+
+		wrap.appendChild(el);
 	}
 }
 
@@ -1324,6 +1450,110 @@ export const livePreviewTheme = EditorView.theme({
 		background: 'none',
 		padding: '0',
 		fontFamily: 'var(--font-monospace-theme)',
+	},
+	// ─── MIG-055 §D — Lens block widget (Constellation Base renderer) ───
+	'.cm-lens-block': {
+		display: 'flex',
+		flexDirection: 'column',
+		border: '1px solid var(--background-modifier-border)',
+		borderRadius: '8px',
+		background: 'var(--background-secondary)',
+		padding: '10px 14px',
+		margin: '8px 0',
+		fontSize: '0.9em',
+	},
+	'.cm-lens-loading': {
+		color: 'var(--text-muted)',
+		fontSize: '0.85em',
+		padding: '4px 0',
+	},
+	'.cm-lens-error': {
+		color: 'var(--text-error, #e53e3e)',
+		fontSize: '0.85em',
+		padding: '4px 0',
+		display: 'flex',
+		gap: '6px',
+		flexWrap: 'wrap',
+	},
+	'.cm-lens-error-label': { fontWeight: '600' },
+	'.cm-lens-error-msg': {
+		fontFamily: 'var(--font-monospace)',
+		whiteSpace: 'pre-wrap',
+	},
+	'.cm-lens-header': {
+		display: 'flex',
+		alignItems: 'baseline',
+		justifyContent: 'space-between',
+		gap: '8px',
+		marginBottom: '8px',
+		paddingBottom: '6px',
+		borderBottom: '1px solid var(--background-modifier-border)',
+	},
+	'.cm-lens-name': {
+		margin: '0',
+		fontSize: '0.95em',
+		fontWeight: '600',
+		color: 'var(--text-normal)',
+	},
+	'.cm-lens-count': {
+		fontSize: '0.75em',
+		color: 'var(--text-muted)',
+		background: 'var(--background-modifier-border)',
+		padding: '1px 8px',
+		borderRadius: '10px',
+	},
+	'.cm-lens-empty': {
+		color: 'var(--text-muted)',
+		fontStyle: 'italic',
+		fontSize: '0.85em',
+		padding: '6px 0',
+		textAlign: 'center',
+	},
+	'.cm-lens-rows': {
+		listStyle: 'none',
+		padding: '0',
+		margin: '0',
+		display: 'flex',
+		flexDirection: 'column',
+		gap: '2px',
+	},
+	'.cm-lens-row': {
+		display: 'flex',
+		alignItems: 'baseline',
+		gap: '6px',
+		padding: '3px 0',
+		flexWrap: 'wrap',
+		borderBottom: '1px dotted transparent',
+	},
+	'.cm-lens-row:hover': {
+		borderBottomColor: 'var(--background-modifier-border)',
+	},
+	'.cm-lens-row-name': {
+		background: 'none',
+		border: 'none',
+		padding: '0',
+		font: 'inherit',
+		color: 'var(--interactive-accent, var(--text-accent))',
+		cursor: 'pointer',
+		textDecoration: 'none',
+		fontWeight: '500',
+	},
+	'.cm-lens-row-name:hover': { textDecoration: 'underline' },
+	'.cm-lens-row-sep': { color: 'var(--text-faint)' },
+	'.cm-lens-row-headline': {
+		color: 'var(--text-muted)',
+		fontStyle: 'italic',
+	},
+	'.cm-lens-footer': {
+		display: 'flex',
+		justifyContent: 'flex-end',
+		marginTop: '8px',
+		paddingTop: '6px',
+		borderTop: '1px solid var(--background-modifier-border)',
+	},
+	'.cm-lens-time': {
+		fontSize: '0.7em',
+		color: 'var(--text-faint)',
 	},
 	'.cm-md-image-widget': {
 		display: 'block',
