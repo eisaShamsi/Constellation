@@ -98,24 +98,38 @@ pub fn execute_lens(app: tauri::AppHandle, lens_yaml: String) -> Result<LensResu
     let federation_ready_and_auto =
         def.scope.federation == FederationMode::Auto && federation_has_attached(&app);
 
-    let rows = if federation_ready_and_auto {
-        // Federated path.
-        let attached_aliases = federation_attached_aliases(&app);
-        let mut schemas: Vec<&str> = vec!["main"];
-        for alias in &attached_aliases {
-            schemas.push(alias.as_str());
+    // Try federated; on any failure (race during universe switch leaves
+    // federated_conn = None; transient lock issues; etc.) fall back to
+    // single-schema. Matches the sibling consumer pattern in
+    // `libraries::aggregate_library_counts` and
+    // `search::federated_lexical_search_or_fallback`. Per the §J drift
+    // audit's P1-1 finding — without this fallback the lens errors out
+    // instead of degrading gracefully (the skip_unavailable semantic).
+    let rows = (|| -> Result<Vec<LensRow>, String> {
+        if federation_ready_and_auto {
+            let attached_aliases = federation_attached_aliases(&app);
+            let mut schemas: Vec<&str> = vec!["main"];
+            for alias in &attached_aliases {
+                schemas.push(alias.as_str());
+            }
+            let built = build_federated_sql(&def, &allowed_libs, &schemas)?;
+            match execute_federated_query(&app, &built, &def, &lib_path_map) {
+                Ok(rows) => return Ok(rows),
+                Err(e) => {
+                    // Race during universe switch, transient lock, etc.
+                    // Log + fall through to single-schema path.
+                    eprintln!("[lens] federated query failed; falling back to single-schema: {}", e);
+                }
+            }
         }
-        let built: BuiltQuery = build_federated_sql(&def, &allowed_libs, &schemas)?;
-        execute_federated_query(&app, &built, &def, &lib_path_map)?
-    } else {
-        // Single-schema fallback path (existing MIG-055 behavior).
-        let built: BuiltQuery = build_sql(&def, &allowed_libs)?;
+        // Single-schema fallback (existing MIG-055 behavior).
+        let built = build_sql(&def, &allowed_libs)?;
         let db_path = crate::search::db_path(&app)
             .map_err(|e| format!("Failed to resolve search DB path: {}", e))?;
         let conn = Connection::open(&db_path)
             .map_err(|e| format!("Failed to open search DB: {}", e))?;
-        execute_query(&conn, &built, &def, &lib_path_map)?
-    };
+        execute_query(&conn, &built, &def, &lib_path_map)
+    })()?;
 
     let total_count = rows.len();
     let query_time_ms = start.elapsed().as_millis() as u64;

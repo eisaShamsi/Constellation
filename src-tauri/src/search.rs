@@ -389,18 +389,23 @@ pub struct SearchState {
     /// universe switch.
     pub federation: Mutex<crate::federation::FederationContext>,
     /// MIG-056 §B.1 — long-lived Connection with cUniverses ATTACHed.
-    /// Opened by the federation background thread; persisted here for
-    /// the lifetime of the active universe. Federated query consumers
-    /// (§E lens, §F status bar, §G global search) use this connection
-    /// when `federation.is_ready()` AND the consumer wants federation.
-    /// Falls back to `db` when this is None or federation not ready.
-    /// Reset on universe switch alongside `db` (via `invalidate_search_state`).
-    ///
-    /// Design rationale (per Architect §6 + the §B.1 amendment): a
-    /// dedicated long-lived federated connection isolates federation
-    /// reads from the write-path `db` connection. Boss-locked Option 3
-    /// from the §E pre-build design check.
+    /// See `federated_conn` doc above.
     pub federated_conn: Mutex<Option<Connection>>,
+    /// MIG-056 §J.1 — federation epoch counter for the background-attach
+    /// race fix. Incremented by `invalidate_search_state` on every
+    /// universe switch. Background-attach threads capture the value at
+    /// start; before writing into `federation` / `federated_conn`, they
+    /// check the counter hasn't advanced. If it has, the universe
+    /// switched mid-attach and their work belongs to a stale universe;
+    /// they abandon it.
+    ///
+    /// Identified by the §J audit's migration-paths agent (Scenario 6:
+    /// "Universe switch during background-attach"). Without this
+    /// counter the result was: FederationContext built for NEW
+    /// universe stored into state alongside a Connection opened against
+    /// OLD universe's search.db. Race window ~10-100ms; reproducible
+    /// by fast double-click in the universe picker.
+    pub federation_generation: std::sync::atomic::AtomicU64,
 }
 
 impl SearchState {
@@ -409,6 +414,7 @@ impl SearchState {
             db: Mutex::new(None),
             federation: Mutex::new(crate::federation::FederationContext::new()),
             federated_conn: Mutex::new(None),
+            federation_generation: std::sync::atomic::AtomicU64::new(0),
         }
     }
 }
@@ -4971,6 +4977,15 @@ fn spawn_wal_checkpoint_daemon(path: PathBuf) {
 /// Surfaced by the MIG-055 §H migration-path audit (Scenario 10).
 pub fn invalidate_search_state(app: &tauri::AppHandle) {
     let state = app.state::<SearchState>();
+
+    // MIG-056 §J.1 — increment federation generation FIRST so any
+    // in-flight background-attach thread sees the bump before we
+    // touch state.db / state.federated_conn / state.federation.
+    // The thread captures the pre-switch generation at start and
+    // checks before writing — mismatch → abandon stale work.
+    state.federation_generation
+        .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+
     // Same bind-then-mutate pattern as `ensure_search_db_ready` — the `if
     // let` shorthand keeps the lock-guard temporary alive across the
     // block in a way that NLL flags as outliving `state`.
@@ -5052,6 +5067,16 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
     // `FederationContext::is_ready()` and fall back to active-only behavior
     // while attach is in progress. Failures inside attach become warnings
     // (skip_unavailable model — Architect §5.2).
+    //
+    // MIG-056 §J.1 — Capture the federation generation BEFORE spawning
+    // the thread. The thread re-checks before writing into state — if the
+    // counter advanced (universe switch happened during attach), the
+    // thread abandons its stale work. Per the §J audit's migration-paths
+    // agent finding (Scenario 6 race).
+    let start_generation = {
+        let s = app.state::<SearchState>();
+        s.federation_generation.load(std::sync::atomic::Ordering::SeqCst)
+    };
     let app_for_federation = app.clone();
     std::thread::spawn(move || {
         // Use a fresh connection for the federation attach — we don't want
@@ -5074,15 +5099,28 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
         match crate::federation::attach_all(&mut conn, &app_for_federation) {
             Ok(ctx) => {
                 let state = app_for_federation.state::<SearchState>();
-                // MIG-056 §B.1 — persist the connection (with attached
-                // cUniverses) into SearchState.federated_conn so §E/§F/§G
-                // federated query consumers can reuse it without
-                // per-query ATTACH overhead. Per the §E pre-build design
-                // check + Boss-locked Option 3.
-                //
-                // Same bind-then-mutate pattern as `invalidate_search_state`
-                // (MIG-055 §H.1) — NLL rejects the `if let` shorthand on
-                // a chained expression like `state.federated_conn.lock()`.
+
+                // MIG-056 §J.1 — check the federation generation hasn't
+                // advanced since we started. If it has, the user switched
+                // universes during our attach window; our result belongs
+                // to the previous universe and would corrupt the new
+                // universe's state if written.
+                let current_gen = state
+                    .federation_generation
+                    .load(std::sync::atomic::Ordering::SeqCst);
+                if current_gen != start_generation {
+                    eprintln!(
+                        "[federation] background-attach abandoned: universe switched mid-attach (gen {} → {})",
+                        start_generation, current_gen
+                    );
+                    // `conn` drops at end of thread — the OLD universe's
+                    // attaches are released. The new universe's
+                    // `ensure_search_db_ready` will run its own attach.
+                    return;
+                }
+
+                // Safe to write — same bind-then-mutate pattern as
+                // `invalidate_search_state` (MIG-055 §H.1).
                 let fed_conn_guard = state.federated_conn.lock();
                 if let Ok(mut g) = fed_conn_guard {
                     *g = Some(conn);
@@ -6051,6 +6089,7 @@ mod tests_m8c {
             db: std::sync::Mutex::new(Some(conn)),
             federation: std::sync::Mutex::new(crate::federation::FederationContext::new()),
             federated_conn: std::sync::Mutex::new(None),
+            federation_generation: std::sync::atomic::AtomicU64::new(0),
         }
     }
 
@@ -6244,6 +6283,7 @@ mod tests_m8c {
             db: std::sync::Mutex::new(Some(conn)),
             federation: std::sync::Mutex::new(crate::federation::FederationContext::new()),
             federated_conn: std::sync::Mutex::new(None),
+            federation_generation: std::sync::atomic::AtomicU64::new(0),
         };
 
         let sentinel = "bulktestsentinel";
