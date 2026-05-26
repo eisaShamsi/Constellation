@@ -36,6 +36,11 @@ pub mod sql_builder;
 pub mod system_notes;
 pub mod validator;
 
+// MIG-055 §G — end-to-end behavioral tests on a synthetic universe.
+// Compiled only under `cfg(test)`.
+#[cfg(test)]
+mod tests;
+
 pub use definition::{
     FederationMode, LensColumn, LensDefinition, LensFilter, LensScope, LensSort, LensView,
     LibrariesSelector, SortDirection,
