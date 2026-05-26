@@ -3633,6 +3633,168 @@ fn lexical_search(conn: &Connection, query: &str, limit: u32) -> Vec<SearchResul
     results.map(|rows| rows.filter_map(|r| r.ok()).collect()).unwrap_or_default()
 }
 
+/// MIG-056 §G — Federated FTS5 lexical search.
+///
+/// Reads federation context from SearchState. If federation is ready AND
+/// has attached cUniverses AND `state.federated_conn` is populated, runs
+/// a UNION ALL FTS5 query across `main.notes_fts` + each cUniverse's
+/// `cu*.notes_fts`. Otherwise falls back to the single-schema
+/// `lexical_search` against the provided `conn`.
+///
+/// Per Architect §6.4.4 + Plan §G. v1 ranking: naive BM25 score
+/// concatenation (Agent 2 recommendation). RRF ranking across schemas
+/// is a future enhancement.
+///
+/// Per Agent 1's SQLite ATTACH research: FTS5 cross-DB queries work
+/// because Constellation's `notes_fts` uses `content=note_meta` and
+/// both live in the same `search.db` file — the "self-contained FTS
+/// table" requirement is met.
+fn federated_lexical_search_or_fallback(
+    app: &tauri::AppHandle,
+    conn: &Connection,
+    query: &str,
+    limit: u32,
+) -> Vec<SearchResult> {
+    let state = app.state::<SearchState>();
+    let federated_aliases: Vec<String> = match state.federation.lock() {
+        Ok(g) if g.is_ready() && !g.attached().is_empty() => {
+            g.attached().iter().map(|(a, _)| a.clone()).collect()
+        }
+        _ => Vec::new(),
+    };
+
+    if federated_aliases.is_empty() {
+        // Single-schema fallback (existing MIG-055 behavior).
+        return lexical_search(conn, query, limit);
+    }
+
+    // Federation path. Open via state.federated_conn (long-lived
+    // Connection with main + cu* attached).
+    let fed_guard = match state.federated_conn.lock() {
+        Ok(g) => g,
+        Err(_) => return lexical_search(conn, query, limit),
+    };
+    let fed_conn = match fed_guard.as_ref() {
+        Some(c) => c,
+        None => {
+            // federated_conn None despite federation ready — race during
+            // background-attach. Single-schema fallback (skip_unavailable
+            // model — Architect §5.2).
+            return lexical_search(conn, query, limit);
+        }
+    };
+
+    federated_lexical_search(fed_conn, query, limit, &federated_aliases)
+}
+
+/// Execute a federated UNION ALL FTS5 query across main + each
+/// cUniverse alias. Returns the same `SearchResult` shape as
+/// `lexical_search` so consumers see the same data shape regardless
+/// of federation. Score ordering preserved via outer ORDER BY.
+fn federated_lexical_search(
+    fed_conn: &Connection,
+    query: &str,
+    limit: u32,
+    federated_aliases: &[String],
+) -> Vec<SearchResult> {
+    // Normalize the query (same path as lexical_search).
+    let normalized = normalize_arabic_for_search(query);
+    let expansion = expanded_match_query(&normalized);
+    let fts_query = match &expansion {
+        Some(e) => e.match_expr.clone(),
+        None => format!("{}*", normalized.replace('"', "")),
+    };
+    let bridge_terms: &[String] = expansion
+        .as_ref()
+        .map(|e| e.bridge_terms_lower.as_slice())
+        .unwrap_or(&[]);
+
+    // Build per-schema SELECT bodies + UNION ALL them.
+    let sql = build_federated_lexical_sql(federated_aliases);
+
+    // Bind the FTS query once per schema branch — N copies of fts_query.
+    // The LIMIT param goes last (after all branches).
+    let mut bound_params: Vec<rusqlite::types::Value> = Vec::new();
+    let total_branches = 1 /* main */ + federated_aliases.len();
+    for _ in 0..total_branches {
+        bound_params.push(rusqlite::types::Value::Text(fts_query.clone()));
+    }
+    bound_params.push(rusqlite::types::Value::Integer(limit as i64));
+
+    let mut stmt = match fed_conn.prepare(&sql) {
+        Ok(s) => s,
+        Err(_) => return Vec::new(),
+    };
+
+    let query_lower = normalized.to_lowercase();
+
+    let results = stmt.query_map(rusqlite::params_from_iter(bound_params.iter()), |row| {
+        let name: String = row.get(1)?;
+        let name_lower = name.to_lowercase();
+        let title_hit = name_lower.contains(&query_lower);
+        let snippet: Option<String> = row.get(5).ok();
+        let body_hit = snippet.as_ref().map_or(false, |s| s.contains("<mark>"));
+
+        let match_type = if title_hit && body_hit {
+            "title".to_string()
+        } else if title_hit {
+            "title".to_string()
+        } else {
+            "content".to_string()
+        };
+
+        let match_via = if title_hit {
+            None
+        } else {
+            snippet
+                .as_deref()
+                .and_then(|s| find_match_via(s, bridge_terms))
+        };
+
+        Ok(SearchResult {
+            path: row.get(0)?,
+            name,
+            library_name: row.get(2)?,
+            modified: row.get(3)?,
+            score: row.get::<_, f64>(4)?.abs(),
+            snippet,
+            match_type,
+            heading_breadcrumb: None,
+            match_via,
+        })
+    });
+
+    match results {
+        Ok(rows) => rows.filter_map(|r| r.ok()).collect(),
+        Err(_) => Vec::new(),
+    }
+}
+
+/// MIG-056 §G — Build the federated UNION ALL SQL for lexical FTS5
+/// search. Pure function so the shape is unit-testable.
+///
+/// Per-branch SELECT mirrors `lexical_search`'s query EXACTLY but
+/// with table refs schema-qualified. Each branch carries its own
+/// `MATCH ?` (predicate-pushdown). Outer ORDER BY by score + LIMIT.
+fn build_federated_lexical_sql(federated_aliases: &[String]) -> String {
+    let mut schemas: Vec<&str> = vec!["main"];
+    for alias in federated_aliases {
+        schemas.push(alias.as_str());
+    }
+    let parts: Vec<String> = schemas.iter().map(|s| {
+        format!(
+            "SELECT {s}.note_meta.path, {s}.note_meta.name, {s}.note_meta.library_name, {s}.note_meta.modified, \
+             bm25({s}.notes_fts, 10.0, 1.0) as score, \
+             snippet({s}.notes_fts, 1, '<mark>', '</mark>', '...', 40) as snip \
+             FROM {s}.notes_fts \
+             JOIN {s}.note_meta ON {s}.notes_fts.rowid = {s}.note_meta.rowid \
+             WHERE {s}.notes_fts MATCH ?",
+            s = s
+        )
+    }).collect();
+    format!("{} ORDER BY score LIMIT ?", parts.join(" UNION ALL "))
+}
+
 /// Output of `expanded_match_query` — the FTS5 MATCH expression plus
 /// the set of bridge terms used to surface "via {lemma}" badges.
 ///
@@ -5111,16 +5273,20 @@ pub fn constellation_search(
             let state = app.state::<SearchState>();
             let db_guard = state.db.lock().map_err(|e| e.to_string())?;
             return match db_guard.as_ref() {
-                Some(c) => execute_search(c, &request),
+                Some(c) => execute_search(&app, c, &request),
                 None => Err("Search index not available".to_string()),
             };
         }
     };
 
-    execute_search(conn, &request)
+    execute_search(&app, conn, &request)
 }
 
-fn execute_search(conn: &Connection, request: &SearchRequest) -> Result<Vec<SearchResult>, String> {
+fn execute_search(
+    app: &tauri::AppHandle,
+    conn: &Connection,
+    request: &SearchRequest,
+) -> Result<Vec<SearchResult>, String> {
     let limit = if request.limit.unwrap_or(0) == 0 { 100000 } else { request.limit.unwrap() };
     let mut results = Vec::new();
 
@@ -5128,7 +5294,10 @@ fn execute_search(conn: &Connection, request: &SearchRequest) -> Result<Vec<Sear
         "lexical" => {
             if let Some(q) = &request.query {
                 if !q.trim().is_empty() {
-                    results = lexical_search(conn, q, limit);
+                    // MIG-056 §G — federate FTS5 lexical search across
+                    // active universe + cUniverses when ready. Falls back
+                    // to single-schema lexical_search when not.
+                    results = federated_lexical_search_or_fallback(app, conn, q, limit);
                 }
             }
         }
@@ -5194,7 +5363,11 @@ fn execute_search(conn: &Connection, request: &SearchRequest) -> Result<Vec<Sear
 
             if let Some(q) = &request.query {
                 if !q.trim().is_empty() {
-                    lexical_results = lexical_search(conn, q, limit * 2);
+                    // MIG-056 §G — hybrid mode also benefits from federated
+                    // lexical (the FTS portion). Semantic + structured stay
+                    // active-only in v1 (out of scope for §G v1; documented
+                    // gap — future MIG can federate them too).
+                    lexical_results = federated_lexical_search_or_fallback(app, conn, q, limit * 2);
                 }
             }
 
@@ -6793,6 +6966,68 @@ mod m14_bench {
             worst_c_p99,
             BUDGET_P99_NS,
         );
+    }
+}
+
+#[cfg(test)]
+mod mig056_federated_search {
+    //! MIG-056 §G — federated FTS5 search SQL builder.
+    use super::build_federated_lexical_sql;
+
+    #[test]
+    fn empty_federation_still_emits_main_only() {
+        // Even with empty federated_aliases the builder still emits a
+        // valid query — just for `main`. (In practice the caller
+        // routes to single-schema `lexical_search` in that case, but
+        // the builder is defensive.)
+        let sql = build_federated_lexical_sql(&[]);
+        assert!(sql.contains("main.notes_fts"));
+        assert!(sql.contains("main.note_meta"));
+        assert!(!sql.contains("UNION ALL"));
+        assert!(sql.contains("ORDER BY score LIMIT ?"));
+    }
+
+    #[test]
+    fn one_cuniverse_emits_main_union_all_cu0() {
+        let sql = build_federated_lexical_sql(&["cu0".to_string()]);
+        assert!(sql.contains("main.notes_fts"));
+        assert!(sql.contains("cu0.notes_fts"));
+        assert_eq!(sql.matches("UNION ALL").count(), 1);
+        // Both branches do their own MATCH (predicate-pushdown contract)
+        assert_eq!(sql.matches("notes_fts MATCH ?").count(), 2);
+        // Each branch does its own JOIN
+        assert_eq!(sql.matches(" JOIN ").count(), 2);
+        // ORDER BY at outer level only — appears once
+        assert_eq!(sql.matches("ORDER BY").count(), 1);
+    }
+
+    #[test]
+    fn multiple_cuniverses_each_have_their_own_match() {
+        let sql = build_federated_lexical_sql(&[
+            "cu0".to_string(),
+            "cu1".to_string(),
+            "cu2".to_string(),
+        ]);
+        assert_eq!(sql.matches("UNION ALL").count(), 3); // main + cu0 + cu1 + cu2 = 4 parts, 3 separators
+        assert_eq!(sql.matches("notes_fts MATCH ?").count(), 4);
+        assert_eq!(sql.matches(" JOIN ").count(), 4);
+        // Each schema referenced
+        for schema in &["main", "cu0", "cu1", "cu2"] {
+            assert!(sql.contains(&format!("{}.notes_fts", schema)));
+            assert!(sql.contains(&format!("{}.note_meta", schema)));
+        }
+    }
+
+    #[test]
+    fn bm25_and_snippet_qualified_per_schema() {
+        // FTS5 functions like bm25() and snippet() must reference the
+        // per-schema FTS table (not unqualified). Verify the builder
+        // qualifies them.
+        let sql = build_federated_lexical_sql(&["cu5".to_string()]);
+        assert!(sql.contains("bm25(main.notes_fts"));
+        assert!(sql.contains("bm25(cu5.notes_fts"));
+        assert!(sql.contains("snippet(main.notes_fts"));
+        assert!(sql.contains("snippet(cu5.notes_fts"));
     }
 }
 
