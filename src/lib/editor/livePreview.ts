@@ -14,6 +14,8 @@ import {
 import { syntaxTree } from '@codemirror/language';
 import { RangeSetBuilder, StateField, StateEffect } from '@codemirror/state';
 import { convertFileSrc, invoke } from '@tauri-apps/api/core';
+import { mount, unmount, type Component } from 'svelte';
+import LensBlock from '$lib/components/LensBlock.svelte';
 
 // ─── Path state fields (for resolving image embeds) ───
 export const setLibraryPath       = StateEffect.define<string>();
@@ -698,6 +700,75 @@ class CodeBlockLabelWidget extends WidgetType {
 	eq(other: CodeBlockLabelWidget) { return this.lang === other.lang; }
 }
 
+/**
+ * MIG-055 §D — Widget for ` ```base ` fenced code blocks (Constellation
+ * lenses). Mounts the Svelte component `LensBlock.svelte` inside the
+ * widget DOM via Svelte 5's `mount()` / `unmount()` API.
+ *
+ * Why a Svelte component (vs. pure DOM like `DataviewLabelWidget`):
+ * - The lens fetches data asynchronously and re-renders on result —
+ *   reactive `$state` is the cleanest model.
+ * - Multilingual UI strings route through `$t()` (which is a Svelte
+ *   store, not callable from raw DOM).
+ * - The row-click handler and the future Phase 1.5 / 2.5 / 2.6 row
+ *   gestures live inside the component, not strewn across this file.
+ *
+ * Lifecycle:
+ * - `toDOM()` creates a `<div>` wrapper + mounts LensBlock with the
+ *   YAML text. CodeMirror reuses the same widget across re-renders as
+ *   long as `eq()` returns true (same YAML text).
+ * - `destroy(dom)` is called by CodeMirror when the widget is removed
+ *   (e.g., the YAML text changed, or the block was deleted, or the
+ *   editor was torn down). We unmount the Svelte component so its
+ *   `$effect` cleanup runs and no `executeLens` callback fires into
+ *   a destroyed DOM.
+ *
+ * Cache strategy: NO outer cache here — the Svelte component's `onMount`
+ * already fires only once per mount, and Svelte's mount lifecycle plus
+ * CodeMirror's `eq()`-based widget reuse give us the right caching for
+ * v1. Future phases can add a YAML-keyed result cache if the IPC trip
+ * becomes visible (see Plan §C performance budget: <50ms for the
+ * canonical Recent Captures lens against the Boss universe).
+ */
+class LensBlockWidget extends WidgetType {
+	private _mounted: ReturnType<typeof mount> | null = null;
+
+	constructor(public lensYaml: string) {
+		super();
+	}
+
+	toDOM() {
+		const wrap = document.createElement('div');
+		wrap.className = 'cm-lens-block-host';
+		// `mount()` from Svelte 5 returns a record of the component's
+		// exported bindings; we keep the handle so `destroy()` can call
+		// `unmount()`. Props are reactive — but in v1, lensYaml is the
+		// only prop and CodeMirror gives us a fresh widget when it
+		// changes (via `eq()`), so we don't need to wire $state here.
+		this._mounted = mount(LensBlock as unknown as Component<{ lensYaml: string }>, {
+			target: wrap,
+			props: { lensYaml: this.lensYaml },
+		});
+		return wrap;
+	}
+
+	destroy(_dom: HTMLElement) {
+		if (this._mounted) {
+			try {
+				unmount(this._mounted);
+			} catch {
+				// Swallow — if the component already unmounted itself we don't
+				// want a destroyed-tree exception to break the editor's update.
+			}
+			this._mounted = null;
+		}
+	}
+
+	eq(other: LensBlockWidget) {
+		return this.lensYaml === other.lensYaml;
+	}
+}
+
 /** Widget shown for dataview code blocks when cursor is outside */
 class DataviewLabelWidget extends WidgetType {
 	query: string;
@@ -837,12 +908,24 @@ function buildDecorations(view: EditorView): DecorationSet {
 								widget: new DataviewLabelWidget(queryText),
 							}) });
 						}
+						// MIG-055 §D — Constellation Base (lens). Replace the block
+						// with a live LensBlock component when cursor is OUT. When
+						// cursor is IN, the YAML stays editable (no decoration).
+						else if (/^```+\s*base\s*$/i.test(info)) {
+							const innerFrom = firstLine.to + 1;
+							const lastLine = doc.lineAt(node.to);
+							const innerTo = lastLine.text.trim().startsWith('```') ? lastLine.from : node.to;
+							const yamlText = innerTo > innerFrom ? doc.sliceString(innerFrom, innerTo) : '';
+							ranges.push({ from: node.from, to: node.to, deco: Decoration.replace({
+								widget: new LensBlockWidget(yamlText),
+							}) });
+						}
 					}
 
-					// Language label for non-dataview code blocks
+					// Language label for non-dataview / non-base code blocks
 					if (!cursorInBlock) {
 						const langMatch = info.match(/^```+\s*(\S+)/);
-						if (langMatch && !/^dataview$/i.test(langMatch[1])) {
+						if (langMatch && !/^dataview$/i.test(langMatch[1]) && !/^base$/i.test(langMatch[1])) {
 							ranges.push({ from: firstLine.to, to: firstLine.to, deco: Decoration.widget({
 								widget: new CodeBlockLabelWidget(langMatch[1]),
 								side: 1,

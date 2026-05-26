@@ -2838,5 +2838,10 @@
 		"cancelTitle": "Erstellung abbrechen",
 		"buildNow": "Alle Zusammenfassungen erstellen",
 		"buildNowTitle": "Berechnet im Hintergrund für jede Notiz ohne Zusammenfassung eine. Fortschritt in der Statusleiste; jederzeit abbrechbar."
+	},
+	"lensBlock": {
+		"loading": "Linse wird geladen…",
+		"errorLabel": "Linsenfehler",
+		"empty": "Keine Notizen entsprechen dieser Linse."
 	}
 }

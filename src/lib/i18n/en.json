@@ -3041,5 +3041,10 @@
 		"cancelTitle": "Cancel summary build",
 		"buildNow": "Build all summaries",
 		"buildNowTitle": "Pre-compute a summary for every note that lacks one. Runs in the background; progress shows in the status bar; cancel any time."
+	},
+	"lensBlock": {
+		"loading": "Loading lens…",
+		"errorLabel": "Lens error",
+		"empty": "No notes match this lens."
 	}
 }

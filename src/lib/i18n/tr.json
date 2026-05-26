@@ -2838,5 +2838,10 @@
 		"cancelTitle": "Özet oluşturmayı iptal et",
 		"buildNow": "Tüm özetleri oluştur",
 		"buildNowTitle": "Özeti olmayan her not için özeti önceden hesaplar. Arka planda çalışır; ilerleme durum çubuğunda görünür; istediğiniz zaman iptal edebilirsiniz."
+	},
+	"lensBlock": {
+		"loading": "Mercek yükleniyor…",
+		"errorLabel": "Mercek hatası",
+		"empty": "Bu mercekle eşleşen not yok."
 	}
 }
