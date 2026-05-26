@@ -2528,6 +2528,156 @@ mod tests {
         assert_eq!(new.rows.len(), 1);
     }
 
+    // ── §G: Performance smoke test on 1000-note synthetic universe ──
+    //
+    // Seeds an in-memory SQLite with 1000 notes carrying diverse frontmatter
+    // shapes + body hashtags, then times representative queries. Asserts each
+    // query_time_ms < 50.
+    //
+    // NOTE: This is a SMOKE TEST. In-memory SQLite is faster than disk;
+    // the real <50ms gate against a 7,600-note universe with on-disk
+    // search.db is verified by Eisa at §I Boss-test. If this perf test
+    // passes (catches O(N^2) bugs or missing-index regressions), the
+    // §I Boss-test is the final validation.
+
+    fn seed_large_universe(n: usize) -> (tempfile::TempDir, Connection, Vec<(String, String)>) {
+        let temp_dir = tempfile::TempDir::new().expect("create temp dir");
+        let library_path = temp_dir.path().to_string_lossy().to_string();
+        let library_name = "PerfLib".to_string();
+
+        let conn = Connection::open_in_memory().expect("open in-memory DB");
+        conn.execute_batch(
+            "CREATE TABLE note_meta (
+                path TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                library_name TEXT NOT NULL,
+                modified INTEGER NOT NULL,
+                properties_json TEXT DEFAULT '{}',
+                tags_json TEXT DEFAULT '[]',
+                body_text TEXT DEFAULT ''
+            );
+            CREATE INDEX idx_note_meta_lib ON note_meta(library_name);",
+        )
+        .expect("create schema + index");
+
+        let statuses = ["active", "done", "archived", "pending", "review"];
+        let priorities = ["low", "medium", "high"];
+        let tags_options = ["philosophy", "ethics", "science", "logic", "history"];
+
+        for i in 0..n {
+            let status = statuses[i % statuses.len()];
+            let priority = priorities[i % priorities.len()];
+            let tag = tags_options[i % tags_options.len()];
+            let title = format!("Note {} on {}", i, tag);
+
+            let mut props = HashMap::new();
+            props.insert("status".to_string(), status.to_string());
+            props.insert("priority".to_string(), priority.to_string());
+            props.insert("title".to_string(), title.clone());
+            props.insert("tags".to_string(), tag.to_string());
+            let properties_json = serde_json::to_string(&props).unwrap();
+
+            let tags_json = serde_json::to_string(&vec![tag]).unwrap();
+
+            let path_str = format!("{}{}note-{:04}.md", library_path, std::path::MAIN_SEPARATOR, i);
+            let file_name = format!("note-{:04}.md", i);
+            let body = if i % 7 == 0 {
+                format!("This note discusses #{} extensively.", tag)
+            } else {
+                format!("Note number {}.", i)
+            };
+
+            conn.execute(
+                "INSERT INTO note_meta (path, name, library_name, modified, properties_json, tags_json, body_text) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                rusqlite::params![
+                    &path_str,
+                    &file_name,
+                    &library_name,
+                    &(1000000 + i as i64),
+                    &properties_json,
+                    &tags_json,
+                    &body
+                ],
+            ).unwrap();
+        }
+
+        let library_paths = vec![(library_name, library_path)];
+        (temp_dir, conn, library_paths)
+    }
+
+    /// Hard ceiling for synthetic-universe perf — well above the <50ms real-disk gate.
+    /// In-memory queries should complete in single-digit ms; we use 200ms as the smoke
+    /// trip-wire to catch O(N²) regressions while avoiding CI flakiness on slow machines.
+    const SYNTH_PERF_MAX_MS: u64 = 200;
+
+    #[test]
+    fn perf_all_source_no_filter_1000_notes() {
+        let (_tmp, conn, lib_paths) = seed_large_universe(1000);
+        let def = make_definition("all", None, None, vec![], vec![]);
+        let result = query_base_with_conn(&conn, def, lib_paths).expect("query");
+        assert_eq!(result.rows.len(), 1000);
+        assert!(
+            result.query_time_ms < SYNTH_PERF_MAX_MS,
+            "all-source query exceeded {}ms: {}ms",
+            SYNTH_PERF_MAX_MS, result.query_time_ms
+        );
+    }
+
+    #[test]
+    fn perf_filter_is_1000_notes() {
+        let (_tmp, conn, lib_paths) = seed_large_universe(1000);
+        let def = make_definition("all", None, None, vec![filter("status", "is", "active")], vec![]);
+        let result = query_base_with_conn(&conn, def, lib_paths).expect("query");
+        // statuses cycle 5-way → 200 matches
+        assert_eq!(result.rows.len(), 200);
+        assert!(
+            result.query_time_ms < SYNTH_PERF_MAX_MS,
+            "filter-is query exceeded {}ms: {}ms",
+            SYNTH_PERF_MAX_MS, result.query_time_ms
+        );
+    }
+
+    #[test]
+    fn perf_filter_contains_1000_notes() {
+        let (_tmp, conn, lib_paths) = seed_large_universe(1000);
+        let def = make_definition("all", None, None, vec![filter("title", "contains", "philosophy")], vec![]);
+        let result = query_base_with_conn(&conn, def, lib_paths).expect("query");
+        assert!(result.rows.len() > 0);
+        assert!(
+            result.query_time_ms < SYNTH_PERF_MAX_MS,
+            "filter-contains query exceeded {}ms: {}ms",
+            SYNTH_PERF_MAX_MS, result.query_time_ms
+        );
+    }
+
+    #[test]
+    fn perf_tag_source_1000_notes() {
+        let (_tmp, conn, lib_paths) = seed_large_universe(1000);
+        let mut def = make_definition("tag", None, Some("philosophy"), vec![], vec![]);
+        def.source.tag = Some("philosophy".to_string());
+        let result = query_base_with_conn(&conn, def, lib_paths).expect("query");
+        assert!(result.rows.len() > 0);
+        // Tag source uses body_text LIKE + json_each(tags_json) — the slowest query path.
+        assert!(
+            result.query_time_ms < SYNTH_PERF_MAX_MS,
+            "tag-source query exceeded {}ms: {}ms",
+            SYNTH_PERF_MAX_MS, result.query_time_ms
+        );
+    }
+
+    #[test]
+    fn perf_sort_by_property_1000_notes() {
+        let (_tmp, conn, lib_paths) = seed_large_universe(1000);
+        let def = make_definition("all", None, None, vec![], vec![sort("title", "asc")]);
+        let result = query_base_with_conn(&conn, def, lib_paths).expect("query");
+        assert_eq!(result.rows.len(), 1000);
+        assert!(
+            result.query_time_ms < SYNTH_PERF_MAX_MS,
+            "sort-by-property query exceeded {}ms: {}ms",
+            SYNTH_PERF_MAX_MS, result.query_time_ms
+        );
+    }
+
     #[test]
     fn equivalence_multilingual_property_keys() {
         let notes = vec![
