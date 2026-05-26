@@ -2844,5 +2844,11 @@
 		"loading": "لینس لوڈ ہو رہا ہے…",
 		"errorLabel": "لینس میں خرابی",
 		"empty": "کوئی نوٹ اس لینس سے میل نہیں کھاتا۔"
+	},
+	"federation": {
+		"warningBadge": "cUniverse دستیاب نہیں",
+		"popupTitle": "فیڈریشن انتباہات",
+		"cuniverseLabel": "cUniverse",
+		"reasonLabel": "وجہ"
 	}
 }

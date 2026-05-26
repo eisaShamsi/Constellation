@@ -2844,5 +2844,11 @@
 		"loading": "Mercek yükleniyor…",
 		"errorLabel": "Mercek hatası",
 		"empty": "Bu mercekle eşleşen not yok."
+	},
+	"federation": {
+		"warningBadge": "cUniverse kullanılamıyor",
+		"popupTitle": "Federasyon uyarıları",
+		"cuniverseLabel": "cUniverse",
+		"reasonLabel": "Neden"
 	}
 }

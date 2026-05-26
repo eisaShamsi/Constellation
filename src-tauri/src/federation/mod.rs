@@ -47,6 +47,28 @@ mod tests;
 pub use attach::attach_all;
 pub use failure::{FederationError, FederationWarning, MigrationError};
 
+/// MIG-056 §H — Tauri command. Returns a snapshot of the federation
+/// warnings. Consumed by the frontend status-bar warning badge +
+/// popup. Empty array when:
+/// - Federation isn't ready yet (boot still in progress)
+/// - No cUniverses are linked
+/// - All cUniverses attached cleanly
+#[tauri::command]
+pub fn federation_get_warnings(
+    app: tauri::AppHandle,
+) -> Vec<FederationWarning> {
+    use tauri::Manager;
+    let state = app.state::<crate::search::SearchState>();
+    // Bind-then-act: NLL rejects `match state.federation.lock() { ... }`
+    // because the `state` binding's lifetime doesn't extend past the
+    // match arms. Same pattern as `invalidate_search_state` (MIG-055 §H.1).
+    let guard = state.federation.lock();
+    match guard {
+        Ok(g) => g.warnings().to_vec(),
+        Err(_) => Vec::new(),
+    }
+}
+
 use std::path::PathBuf;
 
 /// Per-boot federation state, stored in `SearchState.federation`.

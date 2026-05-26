@@ -2844,5 +2844,11 @@
 		"loading": "Linse wird geladen…",
 		"errorLabel": "Linsenfehler",
 		"empty": "Keine Notizen entsprechen dieser Linse."
+	},
+	"federation": {
+		"warningBadge": "cUniverses nicht verfügbar",
+		"popupTitle": "Föderationswarnungen",
+		"cuniverseLabel": "cUniverse",
+		"reasonLabel": "Grund"
 	}
 }

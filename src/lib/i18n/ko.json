@@ -2844,5 +2844,11 @@
 		"loading": "렌즈 로딩 중…",
 		"errorLabel": "렌즈 오류",
 		"empty": "이 렌즈에 일치하는 노트가 없습니다."
+	},
+	"federation": {
+		"warningBadge": "cUniverse 사용 불가",
+		"popupTitle": "페더레이션 경고",
+		"cuniverseLabel": "cUniverse",
+		"reasonLabel": "이유"
 	}
 }

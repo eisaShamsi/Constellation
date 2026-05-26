@@ -2844,5 +2844,11 @@
 		"loading": "טוען עדשה…",
 		"errorLabel": "שגיאת עדשה",
 		"empty": "אין הערות התואמות לעדשה זו."
+	},
+	"federation": {
+		"warningBadge": "יקומי-בן לא זמינים",
+		"popupTitle": "אזהרות פדרציה",
+		"cuniverseLabel": "יקום-בן",
+		"reasonLabel": "סיבה"
 	}
 }

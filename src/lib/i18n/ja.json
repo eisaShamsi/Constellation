@@ -2844,5 +2844,11 @@
 		"loading": "レンズを読み込み中…",
 		"errorLabel": "レンズエラー",
 		"empty": "このレンズに一致するノートはありません。"
+	},
+	"federation": {
+		"warningBadge": "cUniverse 利用不可",
+		"popupTitle": "フェデレーション警告",
+		"cuniverseLabel": "cUniverse",
+		"reasonLabel": "理由"
 	}
 }

@@ -2844,5 +2844,11 @@
 		"loading": "در حال بارگذاری عدسی…",
 		"errorLabel": "خطای عدسی",
 		"empty": "هیچ یادداشتی با این عدسی مطابقت ندارد."
+	},
+	"federation": {
+		"warningBadge": "گیتی‌های فرعی در دسترس نیستند",
+		"popupTitle": "هشدارهای اتحاد",
+		"cuniverseLabel": "گیتی فرعی",
+		"reasonLabel": "دلیل"
 	}
 }

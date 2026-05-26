@@ -2844,5 +2844,11 @@
 		"loading": "Загрузка линзы…",
 		"errorLabel": "Ошибка линзы",
 		"empty": "Ни одна заметка не соответствует этой линзе."
+	},
+	"federation": {
+		"warningBadge": "cUniverse недоступны",
+		"popupTitle": "Предупреждения федерации",
+		"cuniverseLabel": "cUniverse",
+		"reasonLabel": "Причина"
 	}
 }

@@ -48,6 +48,8 @@
 	import type { BaseDefinition } from '$lib/bases/types';
 	// MIG-055 §F — Five Acts sidebar section (Constellation Base v1).
 	import { listFiveActsNotes, type FiveActsNoteEntry } from '$lib/lens/store';
+	// MIG-056 §H — Cross-universe federation warning surface.
+	import { getFederationWarnings, type FederationWarning } from '$lib/federation/store';
 	import FileTree from '$lib/components/FileTree.svelte';
 	// MIG-045 Phase 3 — Universe Digest left-dock pane.
 	import DigestPane from '$lib/components/DigestPane.svelte';
@@ -1060,6 +1062,12 @@
 	let fiveActsNotes = $state<FiveActsNoteEntry[]>([]);
 	let fiveActsExpanded = $state(true);
 
+	// MIG-056 §H — federation warnings (skip_unavailable cUniverses).
+	// Refreshed on boot + on universe switch; surfaces in the status bar
+	// when length > 0. Click → popup with details.
+	let federationWarnings = $state<FederationWarning[]>([]);
+	let showFederationWarningsPopup = $state(false);
+
 	// Child universes for sidebar
 	let childUniverses = $state<ChildUniverseInfo[]>([]);
 	let childUniversesExpanded = $state(true);
@@ -1953,6 +1961,10 @@
 			// Not yet part of the bundle IPC (deferred to §J or a future MIG);
 			// fire-and-forget here keeps boot time unchanged (single fs read).
 			listFiveActsNotes().then(n => fiveActsNotes = n).catch(() => {});
+			// MIG-056 §H — load federation warnings. Fire-and-forget; the
+			// status-bar badge appears once warnings.length > 0. Refreshed
+			// later via setTimeout to catch the background-attach completion.
+			loadFederationWarnings();
 			childUniverses = bundle.child_universes;
 			const map = new Map<string, Set<string>>();
 			for (const cu of bundle.child_universes) {
@@ -1977,6 +1989,8 @@
 				listWorkspaceBases().then(b => workspaceBases = b).catch(() => {}),
 				// MIG-055 §F — load Five Acts host notes in the fallback path too.
 				listFiveActsNotes().then(n => fiveActsNotes = n).catch(() => {}),
+				// MIG-056 §H — load federation warnings in the fallback path too.
+				getFederationWarnings().then(w => federationWarnings = w).catch(() => {}),
 				getChildUniverses().then(async (c) => {
 					childUniverses = c;
 					const m = new Map<string, Set<string>>();
@@ -2084,6 +2098,32 @@
 		await initializeApp();
 	}
 
+	/**
+	 * MIG-056 §H — Load federation warnings + re-poll once after a delay
+	 * to catch the background-attach completion. Background-attach happens
+	 * in a separate Rust thread spawned from `ensure_search_db_ready`;
+	 * the initial fire-and-forget call may run before attach completes
+	 * (returns empty warnings); the delayed re-poll catches anything that
+	 * surfaced during attach.
+	 */
+	async function loadFederationWarnings() {
+		try {
+			federationWarnings = await getFederationWarnings();
+		} catch {
+			federationWarnings = [];
+		}
+		// Re-poll once after ~3s to catch the background-attach completion.
+		// Per Architect §6.3 the attach takes tens-to-low-hundreds ms per
+		// cUniverse; 3s is generous headroom for ≤25 cUniverses.
+		setTimeout(async () => {
+			try {
+				federationWarnings = await getFederationWarnings();
+			} catch {
+				// Keep existing state on error.
+			}
+		}, 3000);
+	}
+
 	async function handleUniverseSwitch() {
 		// Save current state, clear everything, re-init
 		appReady = false;
@@ -2104,6 +2144,10 @@
 		// new universe (init_db on that universe re-creates the system note
 		// if absent, edit-preserving otherwise).
 		fiveActsNotes = [];
+		// MIG-056 §H — clear federation warnings; reloaded by initApp() for
+		// the new universe's cUniverse attach result.
+		federationWarnings = [];
+		showFederationWarningsPopup = false;
 		// A cascade in flight in the previous Universe could leave entries
 		// in cascadingPaths that gate edits in the new one if any path
 		// happens to collide — start the new Universe with a clean slate.
@@ -6594,12 +6638,47 @@
 			<span class="sb-item">{$libraryCount} {$t('statusBar.libraries')}</span>
 			<span class="sb-dot">·</span>
 			<span class="sb-item">{$totalStars} {$t('statusBar.notes')}</span>
+			{#if federationWarnings.length > 0}
+				<!-- MIG-056 §H — Federation warning badge. Surfaces when one
+				     or more cUniverses failed to attach (skip_unavailable
+				     model). Click to see details. -->
+				<span class="sb-dot">·</span>
+				<button class="sb-federation-warning" onclick={() => showFederationWarningsPopup = !showFederationWarningsPopup} title={$t('federation.warningBadge') || 'cUniverses unavailable'}>
+					<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+					{federationWarnings.length}
+				</button>
+			{/if}
 			{#if activeUniverseName}
 				<span class="sb-dot">·</span>
 				<button class="sb-universe" onclick={() => showUniverseManager = true} title={$t('universe.manager.heading')}>
 					<svg width="10" height="10" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><circle cx="100" cy="100" r="30" fill="#534AB7"/><circle cx="100" cy="100" r="19" fill="#3C3489"/><circle cx="45" cy="42" r="24" fill="#378ADD"/><circle cx="130" cy="52" r="20" fill="#7F77DD"/><circle cx="162" cy="110" r="16" fill="#1D9E75"/><circle cx="80" cy="158" r="13" fill="#D85A30"/></svg>
 					{activeUniverseName}
 				</button>
+			{/if}
+
+			<!-- MIG-056 §H — Federation warning popup. Lists each
+			     unavailable cUniverse with its path + reason. -->
+			{#if showFederationWarningsPopup && federationWarnings.length > 0}
+				<div class="federation-popup" role="dialog" onclick={(e) => e.stopPropagation()}>
+					<div class="federation-popup-header">
+						<span>{$t('federation.popupTitle') || 'Federation warnings'}</span>
+						<button class="federation-popup-close" onclick={() => showFederationWarningsPopup = false} title="Close">×</button>
+					</div>
+					<ul class="federation-popup-list">
+						{#each federationWarnings as w}
+							<li class="federation-popup-item">
+								<div class="federation-popup-path" title={w.cuniverse_path}>
+									<span class="federation-popup-label">{$t('federation.cuniverseLabel') || 'cUniverse'}:</span>
+									{w.cuniverse_path}
+								</div>
+								<div class="federation-popup-reason">
+									<span class="federation-popup-label">{$t('federation.reasonLabel') || 'Reason'}:</span>
+									{w.reason}
+								</div>
+							</li>
+						{/each}
+					</ul>
+				</div>
 			{/if}
 		</div>
 	</div>
@@ -7754,6 +7833,61 @@
 		font-size: inherit; font-family: inherit; cursor: pointer; padding: 0;
 	}
 	.sb-universe:hover { color: var(--interactive-accent); }
+
+	/* MIG-056 §H — Federation warning badge + popup */
+	.sb-federation-warning {
+		display: inline-flex; align-items: center; gap: 4px;
+		border: none; background: none; color: var(--text-warning, #d97706);
+		font-size: inherit; font-family: inherit; cursor: pointer; padding: 0;
+	}
+	.sb-federation-warning:hover { color: var(--text-error, #e53e3e); }
+	.federation-popup {
+		position: fixed; bottom: 28px; inset-inline-end: 16px;
+		background: var(--background-primary);
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 6px;
+		box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+		min-width: 280px; max-width: 480px; max-height: 320px;
+		overflow-y: auto;
+		z-index: 1000;
+		font-size: 0.85em;
+	}
+	.federation-popup-header {
+		display: flex; align-items: center; justify-content: space-between;
+		padding: 8px 12px;
+		border-bottom: 1px solid var(--background-modifier-border);
+		font-weight: 600;
+		color: var(--text-warning, #d97706);
+	}
+	.federation-popup-close {
+		background: none; border: none; cursor: pointer;
+		font-size: 1.2em; line-height: 1; padding: 0 4px;
+		color: var(--text-muted);
+	}
+	.federation-popup-close:hover { color: var(--text-normal); }
+	.federation-popup-list {
+		list-style: none; padding: 0; margin: 0;
+	}
+	.federation-popup-item {
+		padding: 8px 12px;
+		border-bottom: 1px dotted var(--background-modifier-border);
+	}
+	.federation-popup-item:last-child { border-bottom: none; }
+	.federation-popup-path {
+		font-family: var(--font-monospace);
+		font-size: 0.85em;
+		word-break: break-all;
+		margin-bottom: 4px;
+	}
+	.federation-popup-reason {
+		color: var(--text-muted);
+		font-style: italic;
+	}
+	.federation-popup-label {
+		font-weight: 600;
+		color: var(--text-faint);
+		margin-inline-end: 4px;
+	}
 
 	/* ═══ RESIZE HANDLES ═══ */
 	.app.resizing { user-select: none; cursor: col-resize; }

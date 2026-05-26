@@ -2844,5 +2844,11 @@
 		"loading": "Cargando lente…",
 		"errorLabel": "Error de lente",
 		"empty": "Ninguna nota coincide con esta lente."
+	},
+	"federation": {
+		"warningBadge": "cUniversos no disponibles",
+		"popupTitle": "Avisos de federación",
+		"cuniverseLabel": "cUniverso",
+		"reasonLabel": "Razón"
 	}
 }

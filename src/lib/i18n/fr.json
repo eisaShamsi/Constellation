@@ -2844,5 +2844,11 @@
 		"loading": "Chargement de la lentille…",
 		"errorLabel": "Erreur de lentille",
 		"empty": "Aucune note ne correspond à cette lentille."
+	},
+	"federation": {
+		"warningBadge": "cUnivers indisponibles",
+		"popupTitle": "Avertissements de fédération",
+		"cuniverseLabel": "cUnivers",
+		"reasonLabel": "Raison"
 	}
 }

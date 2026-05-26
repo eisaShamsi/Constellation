@@ -502,6 +502,11 @@ pub fn run() {
             // in `{universe}/Five Acts/`. Returns FiveActsNoteEntry tuples
             // with display name + relative path + absolute path.
             lens::system_notes::list_five_acts_notes,
+            // MIG-056 §H — Cross-universe federation warning surface.
+            // Returns the current FederationContext.warnings list (per
+            // the skip_unavailable model). Consumed by the frontend
+            // status-bar badge + popup.
+            federation::federation_get_warnings,
             universe::list_universes,
             universe::create_universe,
             universe::set_active_universe,

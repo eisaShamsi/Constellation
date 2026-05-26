@@ -2844,5 +2844,11 @@
 		"loading": "लेंस लोड हो रहा है…",
 		"errorLabel": "लेंस त्रुटि",
 		"empty": "इस लेंस से कोई नोट मेल नहीं खाता।"
+	},
+	"federation": {
+		"warningBadge": "cUniverse उपलब्ध नहीं",
+		"popupTitle": "फेडरेशन चेतावनी",
+		"cuniverseLabel": "cUniverse",
+		"reasonLabel": "कारण"
 	}
 }

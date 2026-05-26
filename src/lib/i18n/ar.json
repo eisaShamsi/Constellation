@@ -3049,5 +3049,11 @@
 		"loading": "جارٍ تحميل العدسة…",
 		"errorLabel": "خطأ في العدسة",
 		"empty": "لا توجد ملاحظات تطابق هذه العدسة."
+	},
+	"federation": {
+		"warningBadge": "أكوان فرعية غير متاحة",
+		"popupTitle": "تحذيرات الاتحاد",
+		"cuniverseLabel": "كون فرعي",
+		"reasonLabel": "السبب"
 	}
 }

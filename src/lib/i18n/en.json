@@ -3047,5 +3047,11 @@
 		"loading": "Loading lens…",
 		"errorLabel": "Lens error",
 		"empty": "No notes match this lens."
+	},
+	"federation": {
+		"warningBadge": "cUniverses unavailable",
+		"popupTitle": "Federation warnings",
+		"cuniverseLabel": "cUniverse",
+		"reasonLabel": "Reason"
 	}
 }
