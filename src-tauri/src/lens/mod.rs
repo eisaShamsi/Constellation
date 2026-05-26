@@ -31,6 +31,8 @@
 pub mod definition;
 pub mod dimensions;
 pub mod parser;
+pub mod query;
+pub mod sql_builder;
 pub mod validator;
 
 pub use definition::{
@@ -41,4 +43,5 @@ pub use dimensions::{
     DimensionDef, DimensionKind, all_dimensions, dimension_names, lookup_dimension,
 };
 pub use parser::{LensError, parse_lens_yaml};
+pub use query::{execute_lens, DimensionValue, LensResult, LensRow};
 pub use validator::validate;

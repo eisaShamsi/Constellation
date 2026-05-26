@@ -45,8 +45,7 @@ pub fn parse_lens_yaml(yaml: &str) -> Result<LensDefinition, LensError> {
 #[cfg(test)]
 mod tests {
     use super::super::definition::{
-        FederationMode, LensColumn, LensFilter, LensSort, LensView, LibrariesSelector,
-        SortDirection,
+        FederationMode, LensView, LibrariesSelector, SortDirection,
     };
     use super::*;
 
