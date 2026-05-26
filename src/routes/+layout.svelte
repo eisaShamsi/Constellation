@@ -2192,12 +2192,25 @@
 		window.addEventListener('constellation:open-template-picker', handleTemplatePicker);
 		document.addEventListener('constellation:show-importer', () => { showImporter = true; });
 
-		// Universal Embed: "open this note" (from transclusion header click)
+		// Universal Embed: "open this note" (from transclusion header click,
+		// or MIG-055 §D LensBlock row-click).
+		//
+		// Detail shape:
+		//   - `path` is REQUIRED (the note's filesystem path).
+		//   - `libraryName` is OPTIONAL — provided by LensBlock so federated
+		//     cUniverse rows resolve to the right library even when their
+		//     path prefix coincidentally matches a different library's path.
+		//     Surfaced by the MIG-055 §H drift audit (P2-2): path-prefix-only
+		//     matching could silently mis-route or fail to open federated
+		//     rows. Prefer the explicit libraryName when the dispatcher
+		//     provides it; fall back to prefix matching for legacy
+		//     dispatchers (UniversalEmbedWidget) that don't.
 		window.addEventListener('constellation:open-note', (e: Event) => {
-			const detail = (e as CustomEvent).detail as { path?: string };
+			const detail = (e as CustomEvent).detail as { path?: string; libraryName?: string; libraryPath?: string };
 			if (!detail?.path) return;
 			const libs = get(libraries);
-			const lib = libs.find(l => detail.path!.startsWith(l.path));
+			let lib = detail.libraryName ? libs.find(l => l.name === detail.libraryName) : undefined;
+			if (!lib) lib = libs.find(l => detail.path!.startsWith(l.path));
 			if (lib) openNoteTab(detail.path!, lib.name, libraryColorMap[lib.name] || '#7c3aed');
 		});
 		// Universal Embed: "open this file externally" (from generic file card)

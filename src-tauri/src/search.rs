@@ -4768,6 +4768,28 @@ fn spawn_wal_checkpoint_daemon(path: PathBuf) {
     });
 }
 
+/// MIG-055 §H audit hotfix — invalidate the cached search-DB connection.
+/// Called from `universe::set_active_universe` so the next
+/// `ensure_search_db_ready` re-opens the DB at the NEW universe's path
+/// (and re-runs `init_five_acts_system_notes` for that universe).
+///
+/// Pre-existing latent bug: without this reset, the connection cached in
+/// `SearchState.db` is for the previous universe; subsequent search /
+/// FTS reads would return stale data, and the Five Acts system-note
+/// bootstrap for the new universe would silently be skipped.
+///
+/// Surfaced by the MIG-055 §H migration-path audit (Scenario 10).
+pub fn invalidate_search_state(app: &tauri::AppHandle) {
+    let state = app.state::<SearchState>();
+    // Same bind-then-mutate pattern as `ensure_search_db_ready` — the `if
+    // let` shorthand keeps the lock-guard temporary alive across the
+    // block in a way that NLL flags as outliving `state`.
+    let guard = state.db.lock();
+    if let Ok(mut db) = guard {
+        *db = None;
+    }
+}
+
 pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
     let state = app.state::<SearchState>();
     {

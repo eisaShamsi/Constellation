@@ -676,6 +676,16 @@ pub fn set_active_universe(app: tauri::AppHandle, id: String) -> Result<(), Stri
     // libraries list is completely different now.
     crate::libraries::invalidate_libraries_cache();
 
+    // MIG-055 §H audit hotfix — also invalidate the search-DB connection
+    // so the next `ensure_search_db_ready` opens the DB at the NEW
+    // universe's path. Surfaced by the §H migration-path audit (Scenario
+    // 10): without this reset, `ensure_search_db_ready` early-returns on
+    // `state.db.is_some()` and the new universe's
+    // `init_five_acts_system_notes` is silently skipped until app
+    // restart. Closes a pre-existing latent bug that MIG-055 was the
+    // first feature to expose.
+    crate::search::invalidate_search_state(&app);
+
     // M8b: load this Universe's Arabic user-override file into the
     // process-wide active store. Consumed by every subsequent FTS5
     // tokenizer call via `arabic::overrides::active()`. Errors are
