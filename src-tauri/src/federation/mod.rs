@@ -44,6 +44,11 @@ pub mod query;
 #[cfg(test)]
 mod tests;
 
+// MIG-056 §I — end-to-end integration tests against synthetic
+// multi-schema federation (real ATTACH + UNION ALL queries).
+#[cfg(test)]
+mod integration_tests;
+
 pub use attach::attach_all;
 pub use failure::{FederationError, FederationWarning, MigrationError};
 
