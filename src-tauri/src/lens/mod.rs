@@ -28,8 +28,17 @@
 //! Each prefix points future readers at the SOURCE surface for the
 //! dimension. The naming is locked across all future phases.
 
+pub mod definition;
 pub mod dimensions;
+pub mod parser;
+pub mod validator;
 
+pub use definition::{
+    FederationMode, LensColumn, LensDefinition, LensFilter, LensScope, LensSort, LensView,
+    LibrariesSelector, SortDirection,
+};
 pub use dimensions::{
     DimensionDef, DimensionKind, all_dimensions, dimension_names, lookup_dimension,
 };
+pub use parser::{LensError, parse_lens_yaml};
+pub use validator::validate;
