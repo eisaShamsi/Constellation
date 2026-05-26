@@ -12,7 +12,7 @@ import {
 	WidgetType,
 } from '@codemirror/view';
 import { syntaxTree } from '@codemirror/language';
-import { RangeSetBuilder, StateField, StateEffect } from '@codemirror/state';
+import { EditorState, RangeSetBuilder, StateField, StateEffect } from '@codemirror/state';
 import { convertFileSrc, invoke } from '@tauri-apps/api/core';
 import { get } from 'svelte/store';
 import { t } from '$lib/i18n';
@@ -895,6 +895,93 @@ class LensBlockWidget extends WidgetType {
 	}
 }
 
+/**
+ * MIG-055 §H.3 — Provide ` ```base ` block-replace decorations via a
+ * StateField, NOT through `livePreviewPlugin` (which is a ViewPlugin).
+ *
+ * ## Why a StateField is mandatory
+ *
+ * CM6's source code rejects multi-line block-replace decorations
+ * sourced from a ViewPlugin. From `view/dist/index.js:2719-2723`:
+ *
+ *   if (this.disallowBlockEffectsFor[index]) {       // true for ViewPlugin
+ *     if (deco.block)
+ *       throw new RangeError("Block decorations may not be specified via plugins");
+ *     if (to > this.view.state.doc.lineAt(from).to)  // crosses line break
+ *       throw new RangeError("Decorations that replace line breaks may not be specified via plugins");
+ *   }
+ *
+ * Our `Decoration.replace({ from: node.from, to: node.to })` for a
+ * fenced YAML block spans multiple lines — crosses line breaks — so
+ * the second branch fires. The throw is raised inside a `requestAnimationFrame`
+ * callback and silently swallowed in release builds (no devtools).
+ * Symptom: the widget never appears, raw YAML stays visible.
+ *
+ * StateField-provided decorations bypass `disallowBlockEffectsFor`.
+ * Same widget, same visual contract, different provider — legal.
+ *
+ * ## Lifecycle
+ *
+ * - `create(state)` — iterate the syntax tree on first mount; build
+ *   decorations for every ` ```base ` block in the document.
+ * - `update(value, tr)` — rebuild ONLY on `tr.docChanged` (selection
+ *   changes don't affect block decorations in v1). Returning the same
+ *   `value` for selection-only transactions makes the StateField
+ *   effectively free for cursor moves.
+ * - `provide: f => EditorView.decorations.from(f)` — register the
+ *   StateField's value as a decoration source. CM6 then includes our
+ *   decorations in its render pipeline WITHOUT the ViewPlugin gate.
+ *
+ * ## Why we always render (no cursor-aware reveal in v1)
+ *
+ * The existing dataview-block pattern in this file hides its widget
+ * when the cursor is inside the block (so the user can edit the
+ * query). That pattern is also broken per the CM6-source authority
+ * (a ViewPlugin can't provide block-replace decorations either way).
+ * v1 of the lens block always renders the widget; to edit the YAML,
+ * toggle livePreview off via the editor's "Source mode" menu
+ * (NotePane already has this toggle). Future enhancement: a
+ * selection-aware variant that does NOT throw — see the dataview
+ * issue ticket for that broader migration.
+ */
+export const baseLensField = StateField.define<DecorationSet>({
+	create(state) {
+		return buildBaseLensDecorations(state);
+	},
+	update(value, tr) {
+		if (tr.docChanged) return buildBaseLensDecorations(tr.state);
+		return value;
+	},
+	provide: (f) => EditorView.decorations.from(f),
+});
+
+function buildBaseLensDecorations(state: EditorState): DecorationSet {
+	const builder = new RangeSetBuilder<Decoration>();
+	const doc = state.doc;
+	syntaxTree(state).iterate({
+		enter(node) {
+			if (node.name !== 'FencedCode') return;
+			const firstLine = doc.lineAt(node.from);
+			const info = firstLine.text.trim();
+			if (!/^```+\s*base\s*$/i.test(info)) return;
+			// Slice the YAML payload between the opening + closing fences.
+			const innerFrom = firstLine.to + 1;
+			const lastLine = doc.lineAt(node.to);
+			const innerTo = lastLine.text.trim().startsWith('```')
+				? lastLine.from
+				: node.to;
+			const yamlText =
+				innerTo > innerFrom ? doc.sliceString(innerFrom, innerTo) : '';
+			builder.add(
+				node.from,
+				node.to,
+				Decoration.replace({ widget: new LensBlockWidget(yamlText) }),
+			);
+		},
+	});
+	return builder.finish();
+}
+
 /** Widget shown for dataview code blocks when cursor is outside */
 class DataviewLabelWidget extends WidgetType {
 	query: string;
@@ -1034,18 +1121,14 @@ function buildDecorations(view: EditorView): DecorationSet {
 								widget: new DataviewLabelWidget(queryText),
 							}) });
 						}
-						// MIG-055 §D — Constellation Base (lens). Replace the block
-						// with a live LensBlock component when cursor is OUT. When
-						// cursor is IN, the YAML stays editable (no decoration).
-						else if (/^```+\s*base\s*$/i.test(info)) {
-							const innerFrom = firstLine.to + 1;
-							const lastLine = doc.lineAt(node.to);
-							const innerTo = lastLine.text.trim().startsWith('```') ? lastLine.from : node.to;
-							const yamlText = innerTo > innerFrom ? doc.sliceString(innerFrom, innerTo) : '';
-							ranges.push({ from: node.from, to: node.to, deco: Decoration.replace({
-								widget: new LensBlockWidget(yamlText),
-							}) });
-						}
+						// MIG-055 §H.3 — `base` lens blocks are NO LONGER handled here.
+						// CM6's `view/dist/index.js:2719-2723` rejects multi-line
+						// block-replace decorations sourced from a ViewPlugin (which
+						// `livePreviewPlugin` is). The throw fires in rAF and is
+						// silently swallowed in release builds. The lens-block
+						// decoration is now provided by the `baseLensField`
+						// StateField defined below — see its docstring for the
+						// CM6-source authority chain.
 					}
 
 					// Language label for non-dataview / non-base code blocks
