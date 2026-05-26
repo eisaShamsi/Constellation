@@ -4852,6 +4852,57 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
         eprintln!("[search] init_five_acts_system_notes failed (non-fatal): {}", e);
     }
 
+    // MIG-056 §B — schedule cross-universe federation attach on a background
+    // thread. Per Architect §3.3 (boot perf invariant): MUST NOT block boot.
+    // The federated query consumers (lens / status bar / search) check
+    // `FederationContext::is_ready()` and fall back to active-only behavior
+    // while attach is in progress. Failures inside attach become warnings
+    // (skip_unavailable model — Architect §5.2).
+    let app_for_federation = app.clone();
+    std::thread::spawn(move || {
+        // Use a fresh connection for the federation attach — we don't want
+        // to contend with the main SearchState.db lock during the attach
+        // window. The FederationContext is then stored in SearchState.federation.
+        let path = match db_path(&app_for_federation) {
+            Ok(p) => p,
+            Err(e) => {
+                eprintln!("[federation] db_path resolution failed (non-fatal): {}", e);
+                return;
+            }
+        };
+        let mut conn = match Connection::open(&path) {
+            Ok(c) => c,
+            Err(e) => {
+                eprintln!("[federation] open dedicated connection failed (non-fatal): {}", e);
+                return;
+            }
+        };
+        match crate::federation::attach_all(&mut conn, &app_for_federation) {
+            Ok(ctx) => {
+                let state = app_for_federation.state::<SearchState>();
+                // Bind-then-mutate: the `if let` shorthand on a chained
+                // expression like `state.federation.lock()` extends the
+                // borrow of `state` past the block, which NLL rejects.
+                // Same pattern as `invalidate_search_state` (MIG-055 §H.1).
+                let guard = state.federation.lock();
+                if let Ok(mut g) = guard {
+                    *g = ctx;
+                } else {
+                    eprintln!("[federation] state.federation Mutex poisoned");
+                }
+            }
+            Err(e) => {
+                eprintln!("[federation] attach_all failed (non-fatal): {}", e);
+            }
+        }
+        // Connection drops at end of thread — the FederationContext's
+        // attached schemas are NOT carried to the main SearchState.db
+        // connection. §D query helpers will issue their own
+        // dedicated-connection-with-attach pattern (or attach against
+        // the main connection on-demand). Plan §D locks the exact pattern.
+        drop(conn);
+    });
+
     Ok(())
 }
 

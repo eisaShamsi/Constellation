@@ -36,11 +36,13 @@
 //! - **§5.4** — ATTACH cap raised from SQLite default 10 to **25**
 //!   at compile time. Enforced in §B's `attach_all`.
 
+pub mod attach;
 pub mod failure;
 
 #[cfg(test)]
 mod tests;
 
+pub use attach::attach_all;
 pub use failure::{FederationError, FederationWarning};
 
 use std::path::PathBuf;
