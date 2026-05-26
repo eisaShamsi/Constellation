@@ -10,15 +10,16 @@
 //!   5. execute        — query the search DB
 //!   6. materialize    — column-position → LensRow.dimensions HashMap
 
-use super::definition::{LensDefinition, LibrariesSelector};
+use super::definition::{FederationMode, LensDefinition, LibrariesSelector};
 use super::dimensions::lookup_dimension;
 use super::parser::parse_lens_yaml;
-use super::sql_builder::{build_sql, BuiltQuery};
+use super::sql_builder::{build_federated_sql, build_sql, BuiltQuery};
 use super::validator::validate;
 use rusqlite::Connection;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::time::Instant;
+use tauri::Manager;
 
 /// Returned to the frontend by `execute_lens`.
 #[derive(Debug, Clone, Serialize)]
@@ -89,16 +90,32 @@ pub fn execute_lens(app: tauri::AppHandle, lens_yaml: String) -> Result<LensResu
         .map(|l| (l.name.clone(), l.path.clone()))
         .collect();
 
-    // 4. Build SQL.
-    let built: BuiltQuery = build_sql(&def, &allowed_libs)?;
+    // 4. Decide: federated path (MIG-056) or single-schema path?
+    // MIG-056 §E: when scope.federation == Auto AND the federation
+    // context is ready AND has cUniverses attached, use the federated
+    // UNION ALL query against state.federated_conn. Otherwise fall
+    // back to the existing single-schema path against state.db.
+    let federation_ready_and_auto =
+        def.scope.federation == FederationMode::Auto && federation_has_attached(&app);
 
-    // 5. Execute.
-    let db_path = crate::search::db_path(&app)
-        .map_err(|e| format!("Failed to resolve search DB path: {}", e))?;
-    let conn = Connection::open(&db_path)
-        .map_err(|e| format!("Failed to open search DB: {}", e))?;
-
-    let rows = execute_query(&conn, &built, &def, &lib_path_map)?;
+    let rows = if federation_ready_and_auto {
+        // Federated path.
+        let attached_aliases = federation_attached_aliases(&app);
+        let mut schemas: Vec<&str> = vec!["main"];
+        for alias in &attached_aliases {
+            schemas.push(alias.as_str());
+        }
+        let built: BuiltQuery = build_federated_sql(&def, &allowed_libs, &schemas)?;
+        execute_federated_query(&app, &built, &def, &lib_path_map)?
+    } else {
+        // Single-schema fallback path (existing MIG-055 behavior).
+        let built: BuiltQuery = build_sql(&def, &allowed_libs)?;
+        let db_path = crate::search::db_path(&app)
+            .map_err(|e| format!("Failed to resolve search DB path: {}", e))?;
+        let conn = Connection::open(&db_path)
+            .map_err(|e| format!("Failed to open search DB: {}", e))?;
+        execute_query(&conn, &built, &def, &lib_path_map)?
+    };
 
     let total_count = rows.len();
     let query_time_ms = start.elapsed().as_millis() as u64;
@@ -209,6 +226,57 @@ fn read_dimension_value(
             .flatten()
             .map(DimensionValue::Text) // v1 — lists stored as JSON; future renders properly
             .unwrap_or(DimensionValue::Null),
+    }
+}
+
+// ─── MIG-056 §E — Federation helpers ───
+
+/// Check whether the federation context has attached cUniverses
+/// AND is ready. False when:
+/// - Boot hasn't reached the background-attach stage yet
+/// - No cUniverses are linked
+/// - `attach_all` failed (all cUniverses landed in warnings)
+fn federation_has_attached(app: &tauri::AppHandle) -> bool {
+    let state = app.state::<crate::search::SearchState>();
+    let guard = state.federation.lock();
+    match guard {
+        Ok(g) => g.is_ready() && !g.attached().is_empty(),
+        Err(_) => false,
+    }
+}
+
+/// Snapshot of the federation's attached schema aliases.
+/// Returns owned `String`s so the caller doesn't hold the Mutex.
+fn federation_attached_aliases(app: &tauri::AppHandle) -> Vec<String> {
+    let state = app.state::<crate::search::SearchState>();
+    let guard = state.federation.lock();
+    match guard {
+        Ok(g) => g.attached().iter().map(|(alias, _)| alias.clone()).collect(),
+        Err(_) => Vec::new(),
+    }
+}
+
+/// Execute a federated query against `SearchState.federated_conn`.
+/// This connection has `main` + each cUniverse alias attached (from
+/// the §B/§B.1 background-thread attach). If the connection is None
+/// (federation not yet ready or attach failed), returns Err and the
+/// caller falls back to the single-schema path.
+fn execute_federated_query(
+    app: &tauri::AppHandle,
+    built: &BuiltQuery,
+    def: &LensDefinition,
+    lib_path_map: &HashMap<String, String>,
+) -> Result<Vec<LensRow>, String> {
+    let state = app.state::<crate::search::SearchState>();
+    let guard = state.federated_conn.lock();
+    match guard {
+        Ok(g) => match g.as_ref() {
+            Some(conn) => execute_query(conn, built, def, lib_path_map),
+            None => Err(
+                "federation: federated_conn is None (background-attach not complete)".to_string(),
+            ),
+        },
+        Err(_) => Err("federation: federated_conn Mutex poisoned".to_string()),
     }
 }
 

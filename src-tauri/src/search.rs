@@ -385,9 +385,22 @@ pub struct SearchState {
     pub db: Mutex<Option<Connection>>,
     /// MIG-056 §A — per-boot cross-universe federation state.
     /// Created empty in `new()`; populated by `federation::attach::attach_all`
-    /// (§B, ships in the next commit) once boot reaches the background-attach
-    /// stage. Reset on universe switch.
+    /// (§B) once boot reaches the background-attach stage. Reset on
+    /// universe switch.
     pub federation: Mutex<crate::federation::FederationContext>,
+    /// MIG-056 §B.1 — long-lived Connection with cUniverses ATTACHed.
+    /// Opened by the federation background thread; persisted here for
+    /// the lifetime of the active universe. Federated query consumers
+    /// (§E lens, §F status bar, §G global search) use this connection
+    /// when `federation.is_ready()` AND the consumer wants federation.
+    /// Falls back to `db` when this is None or federation not ready.
+    /// Reset on universe switch alongside `db` (via `invalidate_search_state`).
+    ///
+    /// Design rationale (per Architect §6 + the §B.1 amendment): a
+    /// dedicated long-lived federated connection isolates federation
+    /// reads from the write-path `db` connection. Boss-locked Option 3
+    /// from the §E pre-build design check.
+    pub federated_conn: Mutex<Option<Connection>>,
 }
 
 impl SearchState {
@@ -395,6 +408,7 @@ impl SearchState {
         SearchState {
             db: Mutex::new(None),
             federation: Mutex::new(crate::federation::FederationContext::new()),
+            federated_conn: Mutex::new(None),
         }
     }
 }
@@ -4802,6 +4816,18 @@ pub fn invalidate_search_state(app: &tauri::AppHandle) {
     if let Ok(mut db) = guard {
         *db = None;
     }
+    // MIG-056 §B.1 — also drop the federated connection. The next
+    // `ensure_search_db_ready` background-thread spawn will rebuild it
+    // for the new active universe + its cUniverses.
+    let fed_guard = state.federated_conn.lock();
+    if let Ok(mut fc) = fed_guard {
+        *fc = None;
+    }
+    // And reset the FederationContext metadata.
+    let fed_ctx_guard = state.federation.lock();
+    if let Ok(mut fc) = fed_ctx_guard {
+        fc.reset();
+    }
 }
 
 pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
@@ -4886,12 +4912,23 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
         match crate::federation::attach_all(&mut conn, &app_for_federation) {
             Ok(ctx) => {
                 let state = app_for_federation.state::<SearchState>();
-                // Bind-then-mutate: the `if let` shorthand on a chained
-                // expression like `state.federation.lock()` extends the
-                // borrow of `state` past the block, which NLL rejects.
-                // Same pattern as `invalidate_search_state` (MIG-055 §H.1).
-                let guard = state.federation.lock();
-                if let Ok(mut g) = guard {
+                // MIG-056 §B.1 — persist the connection (with attached
+                // cUniverses) into SearchState.federated_conn so §E/§F/§G
+                // federated query consumers can reuse it without
+                // per-query ATTACH overhead. Per the §E pre-build design
+                // check + Boss-locked Option 3.
+                //
+                // Same bind-then-mutate pattern as `invalidate_search_state`
+                // (MIG-055 §H.1) — NLL rejects the `if let` shorthand on
+                // a chained expression like `state.federated_conn.lock()`.
+                let fed_conn_guard = state.federated_conn.lock();
+                if let Ok(mut g) = fed_conn_guard {
+                    *g = Some(conn);
+                } else {
+                    eprintln!("[federation] state.federated_conn Mutex poisoned");
+                }
+                let fed_ctx_guard = state.federation.lock();
+                if let Ok(mut g) = fed_ctx_guard {
                     *g = ctx;
                 } else {
                     eprintln!("[federation] state.federation Mutex poisoned");
@@ -4899,14 +4936,10 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
             }
             Err(e) => {
                 eprintln!("[federation] attach_all failed (non-fatal): {}", e);
+                // conn drops at end of thread — federated_conn stays None,
+                // federated consumers fall back to state.db (active-only).
             }
         }
-        // Connection drops at end of thread — the FederationContext's
-        // attached schemas are NOT carried to the main SearchState.db
-        // connection. §D query helpers will issue their own
-        // dedicated-connection-with-attach pattern (or attach against
-        // the main connection on-demand). Plan §D locks the exact pattern.
-        drop(conn);
     });
 
     Ok(())
@@ -5844,6 +5877,7 @@ mod tests_m8c {
         SearchState {
             db: std::sync::Mutex::new(Some(conn)),
             federation: std::sync::Mutex::new(crate::federation::FederationContext::new()),
+            federated_conn: std::sync::Mutex::new(None),
         }
     }
 
@@ -6036,6 +6070,7 @@ mod tests_m8c {
         let state = SearchState {
             db: std::sync::Mutex::new(Some(conn)),
             federation: std::sync::Mutex::new(crate::federation::FederationContext::new()),
+            federated_conn: std::sync::Mutex::new(None),
         };
 
         let sentinel = "bulktestsentinel";

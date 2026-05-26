@@ -118,6 +118,202 @@ pub fn build_sql(
     })
 }
 
+/// MIG-056 §E — Build a federated UNION ALL query across the active
+/// universe (schema alias `main`) + each attached cUniverse (`cu0`…).
+///
+/// Each per-schema SELECT pushes its WHERE clauses down per
+/// Architect §7.2 (predicate-pushdown contract / Agent 3's Citus
+/// lesson). The outer ORDER BY references a sort column by ORDINAL
+/// POSITION (sidesteps SQL alias-name resolution across UNION ALL
+/// branches).
+///
+/// `federated_schemas` MUST include `"main"` as the first entry +
+/// every cUniverse alias from `FederationContext.attached`. Empty
+/// or single-entry lists fall back to the single-schema `build_sql`.
+pub fn build_federated_sql(
+    def: &LensDefinition,
+    allowed_libraries: &[String],
+    federated_schemas: &[&str],
+) -> Result<BuiltQuery, String> {
+    // Degenerate cases — defer to single-schema builder so we keep
+    // one source of truth for the simple path.
+    if federated_schemas.len() <= 1 {
+        return build_sql(def, allowed_libraries);
+    }
+
+    let mut all_parts: Vec<String> = Vec::new();
+    let mut all_params: Vec<rusqlite::types::Value> = Vec::new();
+    let mut dimension_index_map: BTreeMap<usize, String> = BTreeMap::new();
+
+    // Build the dimension_index_map (same across all schemas).
+    // Implicit cols at 0/1/2 (path/name/library_name); declared cols at 3+.
+    let mut col_index = 3;
+    for col in &def.columns {
+        dimension_index_map.insert(col_index, col.dimension.clone());
+        col_index += 1;
+    }
+
+    // ORDER BY columns are appended to the SELECT list after declared
+    // columns (so the outer ORDER BY can reference them by ordinal).
+    // Same shape across all branches.
+    let order_dims: Vec<&str> = def.order.iter().map(|s| s.dimension.as_str()).collect();
+    let order_start_index = col_index;
+
+    for schema in federated_schemas {
+        let (part_sql, mut part_params) =
+            build_per_schema_body(def, allowed_libraries, schema, &order_dims)?;
+        all_parts.push(part_sql);
+        all_params.append(&mut part_params);
+    }
+
+    let mut sql = all_parts.join(" UNION ALL ");
+
+    // Outer ORDER BY using ordinal positions of the appended sort cols.
+    // 1-based in SQLite. The first appended sort col is at position
+    // `order_start_index + 1` (1-based from 0-based index).
+    if !def.order.is_empty() {
+        let mut order_parts: Vec<String> = Vec::new();
+        for (i, sort) in def.order.iter().enumerate() {
+            let dim = lookup_dimension(&sort.dimension).ok_or_else(|| {
+                format!(
+                    "internal: unknown dimension `{}` in order (should have been caught by validator)",
+                    sort.dimension
+                )
+            })?;
+            let dir = match sort.direction {
+                SortDirection::Asc => "ASC",
+                SortDirection::Desc => "DESC",
+            };
+            let collate = match dim.kind {
+                DimensionKind::Text => " COLLATE NOCASE",
+                _ => "",
+            };
+            // 1-based ordinal: implicit cols (3) + declared cols + i
+            let ordinal = order_start_index + i + 1;
+            order_parts.push(format!("{}{} {}", ordinal, collate, dir));
+        }
+        sql.push_str(" ORDER BY ");
+        sql.push_str(&order_parts.join(", "));
+    }
+
+    Ok(BuiltQuery {
+        sql,
+        params: all_params,
+        dimension_index_map,
+    })
+}
+
+/// Build one per-schema SELECT body for the federated UNION ALL.
+/// All table refs are schema-qualified. WHERE clauses are inlined
+/// (predicate-pushdown). Sort columns are appended to the SELECT list
+/// so the outer ORDER BY can reference them by ordinal.
+fn build_per_schema_body(
+    def: &LensDefinition,
+    allowed_libraries: &[String],
+    schema: &str,
+    order_dims: &[&str],
+) -> Result<(String, Vec<rusqlite::types::Value>), String> {
+    let mut select_parts: Vec<String> = Vec::new();
+    let mut joins: HashSet<String> = HashSet::new();
+    let mut where_parts: Vec<String> = Vec::new();
+    let mut params: Vec<rusqlite::types::Value> = Vec::new();
+
+    // Implicit cols (schema-qualified)
+    select_parts.push(format!("{}.note_meta.path", schema));
+    select_parts.push(format!("{}.note_meta.name", schema));
+    select_parts.push(format!("{}.note_meta.library_name", schema));
+
+    // Declared lens columns (schema-qualified by substituting the static
+    // dimension expression's table prefix).
+    for col in &def.columns {
+        let dim = lookup_dimension(&col.dimension).ok_or_else(|| {
+            format!(
+                "internal: unknown dimension `{}` in columns (should have been caught by validator)",
+                col.dimension
+            )
+        })?;
+        select_parts.push(qualify_expr(dim.sql_expression, schema));
+        if let Some(join) = dim.requires_join {
+            joins.insert(qualify_join(join, schema));
+        }
+    }
+
+    // Append sort columns (for outer ORDER BY).
+    for dim_name in order_dims {
+        let dim = lookup_dimension(dim_name).ok_or_else(|| {
+            format!(
+                "internal: unknown dimension `{}` in order (should have been caught by validator)",
+                dim_name
+            )
+        })?;
+        select_parts.push(qualify_expr(dim.sql_expression, schema));
+        if let Some(join) = dim.requires_join {
+            joins.insert(qualify_join(join, schema));
+        }
+    }
+
+    // Library scope.
+    if allowed_libraries.is_empty() {
+        where_parts.push("1=0".to_string());
+    } else {
+        let placeholders: Vec<&str> = (0..allowed_libraries.len()).map(|_| "?").collect();
+        where_parts.push(format!(
+            "{}.note_meta.library_name IN ({})",
+            schema,
+            placeholders.join(", ")
+        ));
+        for lib in allowed_libraries {
+            params.push(rusqlite::types::Value::Text(lib.clone()));
+        }
+    }
+
+    // Filters (predicate-pushdown: each branch's WHERE includes them).
+    for filter in &def.where_clauses {
+        let (clause, mut filter_params, filter_joins) = build_filter_clause(filter)?;
+        // Schema-qualify the filter's column reference.
+        where_parts.push(qualify_expr(&clause, schema));
+        params.append(&mut filter_params);
+        for j in filter_joins {
+            joins.insert(qualify_join(j, schema));
+        }
+    }
+
+    // Assemble per-schema body (NO ORDER BY — applied at outer level).
+    let mut sql = format!(
+        "SELECT {} FROM {}.note_meta",
+        select_parts.join(", "),
+        schema
+    );
+    for join in &joins {
+        sql.push(' ');
+        sql.push_str(join);
+    }
+    if !where_parts.is_empty() {
+        sql.push_str(" WHERE ");
+        sql.push_str(&where_parts.join(" AND "));
+    }
+
+    Ok((sql, params))
+}
+
+/// Substitute unqualified table refs (`note_meta`, `note_summaries`)
+/// with the given schema prefix. Safe because:
+/// - Constellation's dimension `sql_expression` fields use only these
+///   two table names (verified by `dimensions.rs`'s REGISTRY)
+/// - Neither name appears as a substring in column names or string
+///   literals in these expressions
+///
+/// Future dimensions that introduce new table refs must extend this
+/// list (and a test in `dimensions.rs` should pin the table-name set).
+fn qualify_expr(expr: &str, schema: &str) -> String {
+    expr.replace("note_meta", &format!("{}.note_meta", schema))
+        .replace("note_summaries", &format!("{}.note_summaries", schema))
+}
+
+fn qualify_join(join: &str, schema: &str) -> String {
+    qualify_expr(join, schema)
+}
+
 /// Build the SQL clause for one filter. Returns (clause_sql, params, joins_needed).
 fn build_filter_clause(
     filter: &LensFilter,
