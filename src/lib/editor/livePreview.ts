@@ -832,6 +832,16 @@ class LensBlockWidget extends WidgetType {
 	private _renderRow(row: LensRow): HTMLLIElement {
 		const li = document.createElement('li');
 		li.className = 'cm-lens-row';
+		// MIG-055 §H.4 — Row direction follows the note's primary identifier
+		// (its name). Per CLAUDE.md Language-First by Design + RTL Support:
+		// "Use dir attributes, `detectDir()` from `$lib/utils`." Explicit
+		// dir on the row removes dependence on parent/cascade inference —
+		// a CSS or parent change elsewhere can't silently flip Arabic rows
+		// to LTR. The previous version set `dir` only on the button and
+		// the headline span; the row layout (button → dash → headline)
+		// happened to render RTL via implicit cascade for Arabic content,
+		// but the behavior wasn't documented in code.
+		li.setAttribute('dir', detectDir(row.name));
 
 		const btn = document.createElement('button');
 		btn.type = 'button';
