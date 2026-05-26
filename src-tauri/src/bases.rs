@@ -426,6 +426,32 @@ pub fn query_base(
     definition: BaseDefinition,
     library_paths: Vec<(String, String)>, // (library_name, library_path) pairs
 ) -> Result<BaseQueryResult, String> {
+    // Open the search DB and delegate to the connection-aware helper.
+    // This split (added in §F) lets behavioral-equivalence tests inject an
+    // in-memory or test-fixture Connection without needing a Tauri AppHandle.
+    let db_path = crate::search::db_path(&app)
+        .map_err(|e| format!("Failed to resolve search DB path: {}", e))?;
+    let conn = Connection::open(&db_path)
+        .map_err(|e| format!("Failed to open search DB: {}", e))?;
+    query_base_with_conn(&conn, definition, library_paths)
+}
+
+/// MIG-054 §F — Connection-aware variant of query_base.
+///
+/// Used by:
+///   - The public `query_base` Tauri command (which opens the universe's search.db
+///     and delegates here).
+///   - The §F behavioral-equivalence test harness (passes an in-memory Connection
+///     with seeded note_meta data to compare against `query_base_legacy`).
+///
+/// All the SQL building (build_source_where + build_filter_clauses +
+/// build_order_clause + detect_columns_sql) lives here; the Tauri command above
+/// is a thin shim.
+pub(crate) fn query_base_with_conn(
+    conn: &Connection,
+    definition: BaseDefinition,
+    library_paths: Vec<(String, String)>,
+) -> Result<BaseQueryResult, String> {
     let start = Instant::now();
 
     // Filter libraries by selectedLibraries (empty = all libraries)
@@ -449,12 +475,6 @@ pub fn query_base(
     }
 
     let library_path_map: HashMap<String, String> = library_paths.into_iter().collect();
-
-    // Open the search DB
-    let db_path = crate::search::db_path(&app)
-        .map_err(|e| format!("Failed to resolve search DB path: {}", e))?;
-    let conn = Connection::open(&db_path)
-        .map_err(|e| format!("Failed to open search DB: {}", e))?;
 
     // Build the WHERE clause for the source type
     let (source_where, source_params) =
@@ -534,6 +554,119 @@ pub fn query_base(
     })
 }
 
+// ─── MIG-054 §F — Behavioral-equivalence legacy reconstruction ───
+//
+// Reconstructs the OLD (pre-§A) filesystem-walking query_base orchestration
+// using the preserved private helpers (scan_folder, scan_by_tag, apply_filters,
+// apply_sorts_fixed). Called by the §F integration test harness for diff
+// comparison against the new SQL-backed query_base_with_conn.
+//
+// This function will be DELETED once §F's behavioral-equivalence pass is
+// clean and the §J PCS lands; until then, it stays as private test infrastructure.
+
+/// Reconstruct the OLD filesystem-walking `query_base` orchestration for
+/// behavioral-equivalence diffing.
+///
+/// Identical semantics to the pre-§A `query_base`, except:
+///   - Takes `selected_libraries` (the §D rename) instead of `selected_vaults`.
+///   - No Tauri AppHandle — works from raw library paths only.
+///
+/// This function is the "ground truth" the §F test asserts the new SQL path
+/// matches. It will be removed alongside scan_folder / scan_by_tag / apply_filters
+/// / apply_sorts_fixed in §J's cleanup pass.
+#[allow(dead_code)]
+pub(crate) fn query_base_legacy(
+    library_paths: Vec<(String, String)>,
+    definition: BaseDefinition,
+) -> Result<BaseQueryResult, String> {
+    let start = Instant::now();
+    let mut rows: Vec<BaseRow> = Vec::new();
+
+    let active_libs: Vec<&(String, String)> = if definition.source.selected_libraries.is_empty() {
+        library_paths.iter().collect()
+    } else {
+        library_paths
+            .iter()
+            .filter(|(vname, _)| definition.source.selected_libraries.contains(vname))
+            .collect()
+    };
+
+    match definition.source.source_type.as_str() {
+        "folder" => {
+            let folder = definition.source.path.as_deref().unwrap_or("");
+            for (vname, vpath) in &active_libs {
+                let full_path = Path::new(vpath).join(folder);
+                if full_path.exists() && full_path.is_dir() {
+                    scan_folder(
+                        &full_path,
+                        vname,
+                        vpath,
+                        definition.source.include_subfolders,
+                        &mut rows,
+                    );
+                }
+            }
+        }
+        "tag" => {
+            let tag = definition.source.tag.as_deref().unwrap_or("");
+            for (vname, vpath) in &active_libs {
+                scan_by_tag(Path::new(vpath), vname, vpath, tag, &mut rows);
+            }
+        }
+        "all" => {
+            for (vname, vpath) in &active_libs {
+                scan_folder(Path::new(vpath), vname, vpath, true, &mut rows);
+            }
+        }
+        "vault" => {
+            // Legacy "vault" source — scope to one specific library.
+            let target = definition
+                .source
+                .selected_libraries
+                .first()
+                .cloned()
+                .or_else(|| definition.source.path.clone())
+                .unwrap_or_default();
+            for (vname, vpath) in &library_paths {
+                if *vname == target {
+                    scan_folder(Path::new(vpath), vname, vpath, true, &mut rows);
+                    break;
+                }
+            }
+        }
+        other => return Err(format!("Unknown source type: {}", other)),
+    }
+
+    let total_count = rows.len();
+
+    // Apply filters (in-memory)
+    apply_filters(&mut rows, &definition.filters);
+
+    // Detect all property keys (in-memory dedup, the pre-§C shape)
+    let mut columns_detected: Vec<String> = Vec::new();
+    let mut seen_keys = std::collections::HashSet::new();
+    for row in &rows {
+        for key in row.properties.keys() {
+            if seen_keys.insert(key.clone()) {
+                columns_detected.push(key.clone());
+            }
+        }
+    }
+    columns_detected.sort();
+
+    // Apply sorts
+    apply_sorts_fixed(&mut rows, &definition.sorts);
+
+    let query_time_ms = start.elapsed().as_millis() as u64;
+
+    Ok(BaseQueryResult {
+        rows,
+        total_count,
+        query_time_ms,
+        columns_detected,
+    })
+}
+
 // ─── §A helpers: SQL builders + JSON parsing ───
 
 /// Parse a `note_meta.properties_json` TEXT value into a HashMap<String, String>.
@@ -580,7 +713,10 @@ fn build_source_where(
     library_paths: &HashMap<String, String>,
 ) -> Result<(String, Vec<String>), String> {
     let lib_placeholders: Vec<&str> = (0..active_libs.len()).map(|_| "?").collect();
-    let lib_in = format!("library_name IN ({})", lib_placeholders.join(", "));
+    // §F fix — qualify column names with `note_meta.` to avoid ambiguity when
+    // this WHERE clause is reused inside detect_columns_sql (which JOINs
+    // json_each, whose virtual table also has a `path` column).
+    let lib_in = format!("note_meta.library_name IN ({})", lib_placeholders.join(", "));
 
     match source.source_type.as_str() {
         "all" => Ok((lib_in, active_libs.to_vec())),
@@ -599,11 +735,11 @@ fn build_source_where(
                     // Escape single-quotes for SQL string literal
                     let escaped = prefix.replace('\'', "''");
                     if source.include_subfolders {
-                        path_clauses.push(format!("path LIKE '{}%'", escaped));
+                        path_clauses.push(format!("note_meta.path LIKE '{}%'", escaped));
                     } else {
                         // Direct children only — no further separator allowed after the prefix
                         path_clauses.push(format!(
-                            "(path LIKE '{esc}%' AND path NOT LIKE '{esc}%{sep_esc}%')",
+                            "(note_meta.path LIKE '{esc}%' AND note_meta.path NOT LIKE '{esc}%{sep_esc}%')",
                             esc = escaped,
                             sep_esc = sep.to_string().replace('\'', "''")
                         ));
@@ -650,9 +786,9 @@ fn build_source_where(
 
             let where_clause = format!(
                 "{lib_in} AND (\
-                 EXISTS (SELECT 1 FROM json_each(tags_json) \
+                 EXISTS (SELECT 1 FROM json_each(note_meta.tags_json) \
                          WHERE LOWER(json_each.value) = ? OR LOWER(json_each.value) = ?) \
-                 OR body_text LIKE ?\
+                 OR note_meta.body_text LIKE ?\
                  )"
             );
 
@@ -679,7 +815,7 @@ fn build_source_where(
                         .to_string(),
                 );
             }
-            Ok(("library_name = ?".to_string(), vec![target]))
+            Ok(("note_meta.library_name = ?".to_string(), vec![target]))
         }
         other => Err(format!("Unknown source type: {}", other)),
     }
@@ -804,15 +940,17 @@ fn property_sql_expression(property: &str) -> String {
     if property == "file_name" {
         // Match the old behavioral semantics: file_name is the name without .md suffix.
         // SQLite has no clean suffix-strip; use CASE WHEN to handle the optional .md.
-        "CASE WHEN name LIKE '%.md' THEN substr(name, 1, length(name) - 3) ELSE name END"
+        // Qualified with note_meta. to disambiguate when the query JOINs json_each
+        // (which has its own `value` column but not `name`).
+        "CASE WHEN note_meta.name LIKE '%.md' THEN substr(note_meta.name, 1, length(note_meta.name) - 3) ELSE note_meta.name END"
             .to_string()
     } else if property == "modified" {
-        "modified".to_string()
+        "note_meta.modified".to_string()
     } else {
         // Use the JSON path '$.\"<prop>\"' form for safety — handles property names with spaces,
         // dots, special characters. Escape any embedded single-quotes and double-quotes.
         let escaped = property.replace('\'', "''").replace('"', "\\\"");
-        format!("json_extract(properties_json, '$.\"{}\"')", escaped)
+        format!("json_extract(note_meta.properties_json, '$.\"{}\"')", escaped)
     }
 }
 
@@ -1397,13 +1535,13 @@ mod tests {
     #[test]
     fn property_sql_expression_file_name() {
         let s = property_sql_expression("file_name");
-        assert!(s.contains("substr(name"));
+        assert!(s.contains("substr(note_meta.name"));
         assert!(s.contains(".md"));
     }
 
     #[test]
     fn property_sql_expression_modified() {
-        assert_eq!(property_sql_expression("modified"), "modified");
+        assert_eq!(property_sql_expression("modified"), "note_meta.modified");
     }
 
     #[test]
@@ -1607,7 +1745,7 @@ mod tests {
         };
         let active_libs = vec!["Lib1".to_string(), "Lib2".to_string()];
         let (sql, params) = build_source_where(&source, &active_libs, &test_lib_paths()).unwrap();
-        assert!(sql.starts_with("library_name IN"));
+        assert!(sql.starts_with("note_meta.library_name IN"));
         assert_eq!(params.len(), 2);
     }
 
@@ -1655,9 +1793,9 @@ mod tests {
         };
         let active_libs = vec!["Lib1".to_string()];
         let (sql, params) = build_source_where(&source, &active_libs, &test_lib_paths()).unwrap();
-        assert!(sql.contains("library_name IN"));
-        assert!(sql.contains("json_each(tags_json)"));
-        assert!(sql.contains("body_text LIKE ?"));
+        assert!(sql.contains("note_meta.library_name IN"));
+        assert!(sql.contains("json_each(note_meta.tags_json)"));
+        assert!(sql.contains("note_meta.body_text LIKE ?"));
         // Three tag-related params after the library_name params:
         //   [Lib1, "aristotle", "#aristotle", "%#aristotle%"]
         assert_eq!(params.len(), 4);
@@ -1910,6 +2048,497 @@ mod tests {
         assert!(result.is_err());
         let err_msg = result.unwrap_err().to_string();
         assert!(err_msg.contains("duplicate field"), "unexpected error: {}", err_msg);
+    }
+
+    // ─── MIG-054 §F — Behavioral-equivalence integration tests ───
+    //
+    // For each test case: build synthetic .md files in a tempdir + populate an
+    // in-memory note_meta with the SAME parsed properties; run both query_base_legacy
+    // (filesystem walk) and query_base_with_conn (SQL); diff outputs.
+
+    /// One synthetic note: relative path, frontmatter key-value pairs, body text.
+    struct TestNote<'a> {
+        relative_path: &'a str,
+        frontmatter: &'a [(&'a str, &'a str)],
+        body: &'a str,
+    }
+
+    /// Build the file content for a TestNote (YAML frontmatter + body).
+    fn build_note_content(note: &TestNote) -> String {
+        let mut content = String::from("---\n");
+        for (k, v) in note.frontmatter {
+            // Inline-list values get the [a, b, c] form so parse_frontmatter joins with ", "
+            content.push_str(&format!("{}: {}\n", k, v));
+        }
+        content.push_str("---\n\n");
+        content.push_str(note.body);
+        content
+    }
+
+    /// Set up a test environment: temp dir with .md files + in-memory SQLite with note_meta seeded.
+    /// Returns (TempDir guard, Connection, library_paths) ready to pass to both query_base variants.
+    fn setup_test_env(
+        notes: &[TestNote],
+    ) -> (tempfile::TempDir, Connection, Vec<(String, String)>) {
+        let temp_dir = tempfile::TempDir::new().expect("create temp dir");
+        let library_path = temp_dir.path().to_string_lossy().to_string();
+        let library_name = "TestLib".to_string();
+
+        let conn = Connection::open_in_memory().expect("open in-memory DB");
+        conn.execute_batch(
+            "CREATE TABLE note_meta (
+                path TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                library_name TEXT NOT NULL,
+                modified INTEGER NOT NULL,
+                properties_json TEXT DEFAULT '{}',
+                tags_json TEXT DEFAULT '[]',
+                body_text TEXT DEFAULT ''
+            );",
+        )
+        .expect("create note_meta schema");
+
+        for note in notes {
+            // Write the .md file
+            // Build full_path using Path::push per-component so embedded "/" in
+            // relative_path normalizes to native separator (avoids mixed-separator
+            // paths in note_meta that diverge from scan_folder's native paths).
+            let mut full_path = temp_dir.path().to_path_buf();
+            for component in note.relative_path.split('/') {
+                full_path.push(component);
+            }
+            if let Some(parent) = full_path.parent() {
+                std::fs::create_dir_all(parent).unwrap();
+            }
+            let content = build_note_content(note);
+            std::fs::write(&full_path, &content).unwrap();
+
+            // Parse frontmatter via the SAME parser the old query_base uses,
+            // so properties_json reflects what scan_folder would produce
+            let properties = parse_frontmatter(&content).unwrap_or_default();
+            let properties_json = serde_json::to_string(&properties).unwrap();
+
+            // tags_json: parse comma-joined tags from properties, store as JSON array
+            // (mirrors what the real file-watcher / indexer does)
+            let tags: Vec<String> = properties
+                .get("tags")
+                .map(|t| {
+                    t.split(',')
+                        .map(|s| s.trim().to_string())
+                        .filter(|s| !s.is_empty())
+                        .collect()
+                })
+                .unwrap_or_default();
+            let tags_json = serde_json::to_string(&tags).unwrap();
+
+            let modified_secs = std::fs::metadata(&full_path)
+                .unwrap()
+                .modified()
+                .unwrap()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_secs() as i64;
+
+            let path_str = full_path.to_string_lossy().to_string();
+            let file_name = full_path.file_name().unwrap().to_string_lossy().to_string();
+
+            conn.execute(
+                "INSERT INTO note_meta (path, name, library_name, modified, properties_json, tags_json, body_text) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                rusqlite::params![
+                    &path_str,
+                    &file_name,
+                    &library_name,
+                    &modified_secs,
+                    &properties_json,
+                    &tags_json,
+                    &note.body
+                ],
+            ).unwrap();
+        }
+
+        let library_paths = vec![(library_name, library_path)];
+        (temp_dir, conn, library_paths)
+    }
+
+    /// Compare two BaseQueryResults for behavioral equivalence.
+    /// Sorts both row lists by file_path before comparing (sort order is asserted
+    /// separately in sort-specific tests).
+    fn assert_equivalence(
+        legacy: &BaseQueryResult,
+        new: &BaseQueryResult,
+        ctx: &str,
+    ) {
+        assert_eq!(
+            legacy.rows.len(),
+            new.rows.len(),
+            "[{}] rows.len: legacy={} new={}",
+            ctx,
+            legacy.rows.len(),
+            new.rows.len()
+        );
+        assert_eq!(
+            legacy.columns_detected, new.columns_detected,
+            "[{}] columns_detected diverged: legacy={:?} new={:?}",
+            ctx, legacy.columns_detected, new.columns_detected
+        );
+
+        let mut legacy_sorted = legacy.rows.clone();
+        let mut new_sorted = new.rows.clone();
+        legacy_sorted.sort_by(|a, b| a.file_path.cmp(&b.file_path));
+        new_sorted.sort_by(|a, b| a.file_path.cmp(&b.file_path));
+
+        for (lr, nr) in legacy_sorted.iter().zip(new_sorted.iter()) {
+            assert_eq!(
+                lr.file_path, nr.file_path,
+                "[{}] file_path diverged",
+                ctx
+            );
+            assert_eq!(lr.file_name, nr.file_name, "[{}] file_name diverged for {}", ctx, lr.file_path);
+            assert_eq!(
+                lr.library_name, nr.library_name,
+                "[{}] library_name diverged for {}",
+                ctx, lr.file_path
+            );
+            assert_eq!(
+                lr.library_path, nr.library_path,
+                "[{}] library_path diverged for {}",
+                ctx, lr.file_path
+            );
+            assert_eq!(
+                lr.properties, nr.properties,
+                "[{}] properties diverged for {}",
+                ctx, lr.file_path
+            );
+        }
+    }
+
+    /// Build a minimal BaseDefinition for a test case.
+    fn make_definition(
+        source_type: &str,
+        path: Option<&str>,
+        tag: Option<&str>,
+        filters: Vec<FilterRule>,
+        sorts: Vec<SortRule>,
+    ) -> BaseDefinition {
+        BaseDefinition {
+            version: 1,
+            name: "test".to_string(),
+            source: BaseSource {
+                source_type: source_type.to_string(),
+                path: path.map(String::from),
+                tag: tag.map(String::from),
+                include_subfolders: true,
+                selected_libraries: vec![],
+            },
+            columns: vec![],
+            filters,
+            sorts,
+            view: "table".to_string(),
+            direction: "auto".to_string(),
+        }
+    }
+
+    fn filter(prop: &str, op: &str, val: &str) -> FilterRule {
+        FilterRule {
+            property: prop.to_string(),
+            operator: op.to_string(),
+            value: val.to_string(),
+        }
+    }
+
+    fn sort(prop: &str, dir: &str) -> SortRule {
+        SortRule {
+            property: prop.to_string(),
+            direction: dir.to_string(),
+        }
+    }
+
+    fn run_both(
+        conn: &Connection,
+        library_paths: Vec<(String, String)>,
+        def: BaseDefinition,
+    ) -> (BaseQueryResult, BaseQueryResult) {
+        let legacy = query_base_legacy(library_paths.clone(), def.clone())
+            .expect("legacy query");
+        let new = query_base_with_conn(conn, def, library_paths).expect("new query");
+        (legacy, new)
+    }
+
+    // ── §F.1: source-type permutations ──
+
+    #[test]
+    fn equivalence_all_source_no_filter() {
+        let notes = vec![
+            TestNote { relative_path: "a.md", frontmatter: &[("status", "active")], body: "" },
+            TestNote { relative_path: "b.md", frontmatter: &[("status", "done")], body: "" },
+            TestNote { relative_path: "sub/c.md", frontmatter: &[], body: "" },
+        ];
+        let (_tmp, conn, lib_paths) = setup_test_env(&notes);
+        let def = make_definition("all", None, None, vec![], vec![]);
+        let (legacy, new) = run_both(&conn, lib_paths, def);
+        assert_equivalence(&legacy, &new, "all_no_filter");
+        assert_eq!(new.rows.len(), 3);
+    }
+
+    #[test]
+    fn equivalence_folder_source_with_subfolders() {
+        let notes = vec![
+            TestNote { relative_path: "Projects/a.md", frontmatter: &[("kind", "task")], body: "" },
+            TestNote { relative_path: "Projects/nested/b.md", frontmatter: &[("kind", "note")], body: "" },
+            TestNote { relative_path: "OtherFolder/c.md", frontmatter: &[("kind", "task")], body: "" },
+        ];
+        let (_tmp, conn, lib_paths) = setup_test_env(&notes);
+        let def = make_definition("folder", Some("Projects"), None, vec![], vec![]);
+        let (legacy, new) = run_both(&conn, lib_paths, def);
+        assert_equivalence(&legacy, &new, "folder_with_subfolders");
+        assert_eq!(new.rows.len(), 2);
+    }
+
+    #[test]
+    fn equivalence_folder_source_no_subfolders() {
+        let notes = vec![
+            TestNote { relative_path: "Projects/a.md", frontmatter: &[], body: "" },
+            TestNote { relative_path: "Projects/nested/b.md", frontmatter: &[], body: "" },
+        ];
+        let (_tmp, conn, lib_paths) = setup_test_env(&notes);
+        let mut def = make_definition("folder", Some("Projects"), None, vec![], vec![]);
+        def.source.include_subfolders = false;
+        let (legacy, new) = run_both(&conn, lib_paths, def);
+        assert_equivalence(&legacy, &new, "folder_no_subfolders");
+        assert_eq!(new.rows.len(), 1); // only a.md, not the nested one
+    }
+
+    #[test]
+    fn equivalence_tag_source_frontmatter_only() {
+        let notes = vec![
+            TestNote { relative_path: "a.md", frontmatter: &[("tags", "[aristotle, philosophy]")], body: "no body tags" },
+            TestNote { relative_path: "b.md", frontmatter: &[("tags", "[plato]")], body: "" },
+        ];
+        let (_tmp, conn, lib_paths) = setup_test_env(&notes);
+        let def = make_definition("all", None, Some("aristotle"), vec![], vec![]);
+        let mut def = def;
+        def.source.source_type = "tag".to_string();
+        let (legacy, new) = run_both(&conn, lib_paths, def);
+        assert_equivalence(&legacy, &new, "tag_frontmatter_only");
+    }
+
+    #[test]
+    fn equivalence_tag_source_body_only() {
+        let notes = vec![
+            TestNote { relative_path: "a.md", frontmatter: &[], body: "talking about #aristotle here" },
+            TestNote { relative_path: "b.md", frontmatter: &[], body: "no tag mentioned" },
+        ];
+        let (_tmp, conn, lib_paths) = setup_test_env(&notes);
+        let mut def = make_definition("tag", None, Some("aristotle"), vec![], vec![]);
+        def.source.tag = Some("aristotle".to_string());
+        let (legacy, new) = run_both(&conn, lib_paths, def);
+        assert_equivalence(&legacy, &new, "tag_body_only");
+    }
+
+    // ── §F.2: filter operator permutations ──
+
+    #[test]
+    fn equivalence_filter_is() {
+        let notes = vec![
+            TestNote { relative_path: "a.md", frontmatter: &[("status", "active")], body: "" },
+            TestNote { relative_path: "b.md", frontmatter: &[("status", "done")], body: "" },
+        ];
+        let (_tmp, conn, lib_paths) = setup_test_env(&notes);
+        let def = make_definition("all", None, None, vec![filter("status", "is", "active")], vec![]);
+        let (legacy, new) = run_both(&conn, lib_paths, def);
+        assert_equivalence(&legacy, &new, "filter_is");
+        assert_eq!(new.rows.len(), 1);
+    }
+
+    #[test]
+    fn equivalence_filter_is_case_insensitive() {
+        let notes = vec![
+            TestNote { relative_path: "a.md", frontmatter: &[("status", "Active")], body: "" },
+            TestNote { relative_path: "b.md", frontmatter: &[("status", "active")], body: "" },
+            TestNote { relative_path: "c.md", frontmatter: &[("status", "done")], body: "" },
+        ];
+        let (_tmp, conn, lib_paths) = setup_test_env(&notes);
+        let def = make_definition("all", None, None, vec![filter("status", "is", "ACTIVE")], vec![]);
+        let (legacy, new) = run_both(&conn, lib_paths, def);
+        assert_equivalence(&legacy, &new, "filter_is_case_insensitive");
+        assert_eq!(new.rows.len(), 2);
+    }
+
+    #[test]
+    fn equivalence_filter_is_not() {
+        let notes = vec![
+            TestNote { relative_path: "a.md", frontmatter: &[("status", "active")], body: "" },
+            TestNote { relative_path: "b.md", frontmatter: &[("status", "done")], body: "" },
+        ];
+        let (_tmp, conn, lib_paths) = setup_test_env(&notes);
+        let def = make_definition("all", None, None, vec![filter("status", "is_not", "done")], vec![]);
+        let (legacy, new) = run_both(&conn, lib_paths, def);
+        assert_equivalence(&legacy, &new, "filter_is_not");
+    }
+
+    #[test]
+    fn equivalence_filter_contains() {
+        let notes = vec![
+            TestNote { relative_path: "a.md", frontmatter: &[("title", "Aristotle on Ethics")], body: "" },
+            TestNote { relative_path: "b.md", frontmatter: &[("title", "Plato's Republic")], body: "" },
+        ];
+        let (_tmp, conn, lib_paths) = setup_test_env(&notes);
+        let def = make_definition("all", None, None, vec![filter("title", "contains", "aristotle")], vec![]);
+        let (legacy, new) = run_both(&conn, lib_paths, def);
+        assert_equivalence(&legacy, &new, "filter_contains");
+    }
+
+    #[test]
+    fn equivalence_filter_is_empty() {
+        let notes = vec![
+            TestNote { relative_path: "a.md", frontmatter: &[("status", "active")], body: "" },
+            TestNote { relative_path: "b.md", frontmatter: &[], body: "" },
+        ];
+        let (_tmp, conn, lib_paths) = setup_test_env(&notes);
+        let def = make_definition("all", None, None, vec![filter("status", "is_empty", "")], vec![]);
+        let (legacy, new) = run_both(&conn, lib_paths, def);
+        assert_equivalence(&legacy, &new, "filter_is_empty");
+    }
+
+    #[test]
+    fn equivalence_filter_is_not_empty() {
+        let notes = vec![
+            TestNote { relative_path: "a.md", frontmatter: &[("status", "active")], body: "" },
+            TestNote { relative_path: "b.md", frontmatter: &[], body: "" },
+        ];
+        let (_tmp, conn, lib_paths) = setup_test_env(&notes);
+        let def = make_definition("all", None, None, vec![filter("status", "is_not_empty", "")], vec![]);
+        let (legacy, new) = run_both(&conn, lib_paths, def);
+        assert_equivalence(&legacy, &new, "filter_is_not_empty");
+    }
+
+    #[test]
+    fn equivalence_filter_multiple_anded() {
+        let notes = vec![
+            TestNote { relative_path: "a.md", frontmatter: &[("status", "active"), ("priority", "high")], body: "" },
+            TestNote { relative_path: "b.md", frontmatter: &[("status", "active"), ("priority", "low")], body: "" },
+            TestNote { relative_path: "c.md", frontmatter: &[("status", "done"), ("priority", "high")], body: "" },
+        ];
+        let (_tmp, conn, lib_paths) = setup_test_env(&notes);
+        let def = make_definition("all", None, None,
+            vec![filter("status", "is", "active"), filter("priority", "is", "high")],
+            vec![]);
+        let (legacy, new) = run_both(&conn, lib_paths, def);
+        assert_equivalence(&legacy, &new, "filter_multiple_anded");
+        assert_eq!(new.rows.len(), 1);
+    }
+
+    // ── §F.3: sort permutations ──
+
+    #[test]
+    fn equivalence_sort_by_file_name_asc() {
+        let notes = vec![
+            TestNote { relative_path: "c.md", frontmatter: &[], body: "" },
+            TestNote { relative_path: "a.md", frontmatter: &[], body: "" },
+            TestNote { relative_path: "b.md", frontmatter: &[], body: "" },
+        ];
+        let (_tmp, conn, lib_paths) = setup_test_env(&notes);
+        let def = make_definition("all", None, None, vec![], vec![sort("file_name", "asc")]);
+        let (legacy, new) = run_both(&conn, lib_paths, def);
+        assert_equivalence(&legacy, &new, "sort_file_name_asc");
+        // Sort order check: a, b, c
+        assert_eq!(new.rows[0].file_name, "a");
+        assert_eq!(new.rows[1].file_name, "b");
+        assert_eq!(new.rows[2].file_name, "c");
+    }
+
+    #[test]
+    fn equivalence_sort_by_property_desc() {
+        let notes = vec![
+            TestNote { relative_path: "a.md", frontmatter: &[("status", "alpha")], body: "" },
+            TestNote { relative_path: "b.md", frontmatter: &[("status", "charlie")], body: "" },
+            TestNote { relative_path: "c.md", frontmatter: &[("status", "bravo")], body: "" },
+        ];
+        let (_tmp, conn, lib_paths) = setup_test_env(&notes);
+        let def = make_definition("all", None, None, vec![], vec![sort("status", "desc")]);
+        let (legacy, new) = run_both(&conn, lib_paths, def);
+        assert_equivalence(&legacy, &new, "sort_property_desc");
+        // Sort order check: charlie, bravo, alpha
+        assert_eq!(new.rows[0].properties.get("status"), Some(&"charlie".to_string()));
+    }
+
+    // ── §F.4: edge cases ──
+
+    #[test]
+    fn equivalence_empty_universe() {
+        let (_tmp, conn, lib_paths) = setup_test_env(&[]);
+        let def = make_definition("all", None, None, vec![], vec![]);
+        let (legacy, new) = run_both(&conn, lib_paths, def);
+        assert_equivalence(&legacy, &new, "empty_universe");
+        assert_eq!(new.rows.len(), 0);
+    }
+
+    #[test]
+    fn equivalence_filter_yields_zero_rows() {
+        let notes = vec![
+            TestNote { relative_path: "a.md", frontmatter: &[("status", "active")], body: "" },
+        ];
+        let (_tmp, conn, lib_paths) = setup_test_env(&notes);
+        let def = make_definition("all", None, None, vec![filter("status", "is", "nonexistent")], vec![]);
+        let (legacy, new) = run_both(&conn, lib_paths, def);
+        assert_equivalence(&legacy, &new, "filter_yields_zero");
+        assert_eq!(new.rows.len(), 0);
+    }
+
+    #[test]
+    fn equivalence_legacy_vault_source_translation() {
+        let notes = vec![
+            TestNote { relative_path: "a.md", frontmatter: &[], body: "" },
+            TestNote { relative_path: "b.md", frontmatter: &[], body: "" },
+        ];
+        let (_tmp, conn, lib_paths) = setup_test_env(&notes);
+        // Legacy "vault" source with the library name in path
+        let lib_name = lib_paths[0].0.clone();
+        let mut def = make_definition("vault", Some(&lib_name), None, vec![], vec![]);
+        def.source.path = Some(lib_name);
+        let (legacy, new) = run_both(&conn, lib_paths, def);
+        assert_equivalence(&legacy, &new, "legacy_vault");
+        assert_eq!(new.rows.len(), 2);
+    }
+
+    #[test]
+    fn equivalence_columns_detected() {
+        let notes = vec![
+            TestNote { relative_path: "a.md", frontmatter: &[("alpha", "1"), ("bravo", "2")], body: "" },
+            TestNote { relative_path: "b.md", frontmatter: &[("bravo", "3"), ("charlie", "4")], body: "" },
+        ];
+        let (_tmp, conn, lib_paths) = setup_test_env(&notes);
+        let def = make_definition("all", None, None, vec![], vec![]);
+        let (legacy, new) = run_both(&conn, lib_paths, def);
+        assert_equivalence(&legacy, &new, "columns_detected");
+        // Expected: alpha, bravo, charlie (sorted distinct keys across all rows)
+        assert_eq!(new.columns_detected, vec!["alpha", "bravo", "charlie"]);
+    }
+
+    #[test]
+    fn equivalence_multilingual_property_values() {
+        let notes = vec![
+            TestNote { relative_path: "a.md", frontmatter: &[("author", "ابن رشد"), ("topic", "philosophy")], body: "" },
+            TestNote { relative_path: "b.md", frontmatter: &[("author", "Aristotle"), ("topic", "ethics")], body: "" },
+        ];
+        let (_tmp, conn, lib_paths) = setup_test_env(&notes);
+        let def = make_definition("all", None, None, vec![filter("author", "is", "ابن رشد")], vec![]);
+        let (legacy, new) = run_both(&conn, lib_paths, def);
+        assert_equivalence(&legacy, &new, "multilingual_property_values");
+        assert_eq!(new.rows.len(), 1);
+    }
+
+    #[test]
+    fn equivalence_multilingual_property_keys() {
+        let notes = vec![
+            TestNote { relative_path: "a.md", frontmatter: &[("العنوان", "عيسى")], body: "" },
+            TestNote { relative_path: "b.md", frontmatter: &[("العنوان", "محمد")], body: "" },
+        ];
+        let (_tmp, conn, lib_paths) = setup_test_env(&notes);
+        let def = make_definition("all", None, None, vec![filter("العنوان", "is", "عيسى")], vec![]);
+        let (legacy, new) = run_both(&conn, lib_paths, def);
+        assert_equivalence(&legacy, &new, "multilingual_property_keys");
+        assert_eq!(new.rows.len(), 1);
     }
 
     #[test]
