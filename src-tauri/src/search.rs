@@ -5096,6 +5096,28 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
                 return;
             }
         };
+
+        // MIG-056 §K.1 hotfix — Register the custom FTS5 tokenizer on
+        // this fresh Connection BEFORE running any FTS5 MATCH queries.
+        // Per `register_fts5_tokenizer`'s own docstring: "Tokenizer
+        // registration is connection-local in SQLite FTS5 (no global
+        // registry in the `bundled` build)". Without this, federated
+        // FTS5 queries via `federated_lexical_search` silently return
+        // zero results — the tokenizer can't parse `notes_fts` content.
+        //
+        // Surfaced by Boss-test Stage 4: searching for `الرباط` (known
+        // to exist in a cUniverse) returned "No matching notes" because
+        // the federation_conn lacked the tokenizer.
+        if let Err(e) = register_fts5_tokenizer(&mut conn) {
+            eprintln!(
+                "[federation] register_fts5_tokenizer failed (federated FTS5 will return 0 results): {}",
+                e
+            );
+            // Don't bail — non-FTS federated queries (lens, libraryStats)
+            // still work without the tokenizer. Only the global-search
+            // federation path is affected.
+        }
+
         match crate::federation::attach_all(&mut conn, &app_for_federation) {
             Ok(ctx) => {
                 let state = app_for_federation.state::<SearchState>();
