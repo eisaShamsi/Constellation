@@ -164,8 +164,39 @@ pub fn attach_all(
             Ok(()) => {
                 ctx.add_attached(alias, cu_root.clone());
             }
-            Err(reason) => {
-                ctx.warn(cu_root.clone(), reason);
+            Err(reason) if reason.starts_with("schema_incomplete") => {
+                // MIG-056 §C — auto-migrate path (Architect §5.3).
+                // Try to bring the cUniverse's schema up to current
+                // and retry the attach. Failures during migrate
+                // become warnings (skip_unavailable model).
+                match super::migrate::run_migrations_on(&cu_db_path, &active_universe_root) {
+                    Ok(()) => {
+                        // Retry attach after successful migration.
+                        match attach_with_safety(conn, &cu_db_path, &alias) {
+                            Ok(()) => {
+                                ctx.add_attached(alias, cu_root.clone());
+                            }
+                            Err(re_reason) => {
+                                ctx.warn(
+                                    cu_root.clone(),
+                                    format!(
+                                        "auto-migration succeeded but post-migrate attach still failed: {}",
+                                        re_reason
+                                    ),
+                                );
+                            }
+                        }
+                    }
+                    Err(mig_err) => {
+                        ctx.warn(
+                            cu_root.clone(),
+                            format!("auto-migration declined: {}", mig_err),
+                        );
+                    }
+                }
+            }
+            Err(other) => {
+                ctx.warn(cu_root.clone(), other);
             }
         }
     }

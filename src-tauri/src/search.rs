@@ -1546,7 +1546,13 @@ fn ensure_dependent_tables_mig003_indexes(conn: &Connection) -> rusqlite::Result
     Ok(())
 }
 
-fn init_db(path: &Path) -> Result<Connection, String> {
+/// Initialize / upgrade the schema at `path`. Idempotent — safe to
+/// run against an already-initialized search.db (it confirms tables,
+/// runs pending migrations, stamps schema_versions). Called by
+/// `ensure_search_db_ready` for the active universe AND by MIG-056
+/// `federation::migrate::run_migrations_on` for schema-drifted
+/// cUniverses (Architect §5.3 auto-migrate path).
+pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
     let mut conn = Connection::open(path).map_err(|e| format!("Failed to open search.db: {}", e))?;
 
     // Enable WAL mode for concurrent reads

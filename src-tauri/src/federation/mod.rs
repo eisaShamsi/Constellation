@@ -38,12 +38,13 @@
 
 pub mod attach;
 pub mod failure;
+pub mod migrate;
 
 #[cfg(test)]
 mod tests;
 
 pub use attach::attach_all;
-pub use failure::{FederationError, FederationWarning};
+pub use failure::{FederationError, FederationWarning, MigrationError};
 
 use std::path::PathBuf;
 
