@@ -383,11 +383,19 @@ pub struct SearchIndexStats {
 
 pub struct SearchState {
     pub db: Mutex<Option<Connection>>,
+    /// MIG-056 §A — per-boot cross-universe federation state.
+    /// Created empty in `new()`; populated by `federation::attach::attach_all`
+    /// (§B, ships in the next commit) once boot reaches the background-attach
+    /// stage. Reset on universe switch.
+    pub federation: Mutex<crate::federation::FederationContext>,
 }
 
 impl SearchState {
     pub fn new() -> Self {
-        SearchState { db: Mutex::new(None) }
+        SearchState {
+            db: Mutex::new(None),
+            federation: Mutex::new(crate::federation::FederationContext::new()),
+        }
     }
 }
 
@@ -5778,6 +5786,7 @@ mod tests_m8c {
         .expect("seed note_meta");
         SearchState {
             db: std::sync::Mutex::new(Some(conn)),
+            federation: std::sync::Mutex::new(crate::federation::FederationContext::new()),
         }
     }
 
@@ -5969,6 +5978,7 @@ mod tests_m8c {
         }
         let state = SearchState {
             db: std::sync::Mutex::new(Some(conn)),
+            federation: std::sync::Mutex::new(crate::federation::FederationContext::new()),
         };
 
         let sentinel = "bulktestsentinel";

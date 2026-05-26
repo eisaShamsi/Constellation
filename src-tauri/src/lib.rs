@@ -41,6 +41,10 @@ pub mod cece;
 mod lenses;
 // MIG-055 §A — Constellation Base, the lens module (clean rebuild post-MIG-054 revert).
 pub mod lens;
+// MIG-056 §A — Cross-Universe Federation module. Provides FederationContext +
+// (in later steps) attach/migrate/query helpers for the 4 federation consumers
+// (lens / status bar / libraryStats / global search).
+pub mod federation;
 // MIG-028 (2026-05-18) — Sight v5 module retired with the v5 codebase.
 // Plan/Architect docs at lab/reports/MIG-024-SIGHT-V5-* stay on disk
 // as historical record.
