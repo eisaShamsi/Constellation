@@ -1,8 +1,8 @@
 ---
 title: MIG-055 — Constellation Base, Clean Slate (Architect)
-version: 1.0
+version: 1.1
 date: 2026-05-26
-status: Architect doc. Awaiting Eisa's approval before Plan doc.
+status: Architect doc. All 7 §11 open questions locked. Plan doc next.
 direction_holder: Eisa
 drafter: Claude (Opus 4.7)
 predecessor: docs/Constellation-Base-Concept-Paper-v1.4.md (the design north star; unchanged)
@@ -260,15 +260,21 @@ Each phase is its own `/migration` MIG number (MIG-056, MIG-057, ...).
 - The pre-existing `search.rs::parse_frontmatter` bug — not Phase 1's concern. Logged as PJ-NNN if needed.
 - The old MVP files (BaseView.svelte / BaseTableView.svelte / etc.) — left on disk as dead code. Cleanup is a separate housekeeping MIG.
 
-## §11. Open questions for Eisa
+## §11. Decisions Locked 2026-05-26
 
-1. **Dimension prefix convention.** I propose: `note.X` for per-note (name, path, created_at, stratum, maturity, etc.) / `link.X` for Living Link properties / `note.cns.X` for CNS measurements / `note.cece.X` for CECE classifications. Lock this convention or propose alternative?
-2. **System-note location.** The "Observation — Recent Captures" host note needs a path. Candidates: `{universe}/.constellation/system-notes/Five Acts/Observation — Recent Captures.md` (hidden) OR `{universe}/Five Acts/Observation — Recent Captures.md` (user-visible folder). My recommendation: visible folder — the user SEES the Five Acts as a teaching artifact, browseable like any other note.
-3. **System-note edit policy.** If the user edits the system-shipped Observation host note, do we (a) leave their edits (treating it as a user-owned copy after first edit), (b) reset on next boot, (c) prompt? My recommendation: (a) — first edit transfers ownership; the system stops touching it. New universes get a fresh copy.
-4. **Old `.base` files on disk.** Silent ignore OR surfaced via a notice? My recommendation: silent ignore (they're discarded-concept artifacts; surfacing them implies they're recoverable).
-5. **Sidebar label.** The new sidebar entry that replaces the OLD "Bases" — what's it called? "Five Acts" (the cognitive frame) OR "Lenses" (the technical frame) OR something else? My recommendation: "Five Acts" — anchors the user-facing vocabulary to the cognitive model.
-6. **MIG number.** I went with MIG-055 — clean break from MIG-054's reverted code. Confirm or pick a different number.
-7. **The `.base` file extension itself.** Keep `.base` (familiar) OR switch to something new (`.lens`?) given the concept shift? My recommendation: keep `.base` — the user already knows it; the format inside is the change, not the extension.
+Eisa delegated lock authority ("Answer it for me") on 2026-05-26. All 7 §11 questions resolved with reasoned defaults that align with the v1.4 Concept Paper + Constellation's founding principles (Form-Aligns-To-Purpose; knowledge formulation, not management; the §3 refused structure-invitation effect).
+
+| # | Question | Locked Answer | Reason |
+|---|---|---|---|
+| 1 | Dimension prefix convention | `note.X` / `link.X` / `note.cns.X` / `note.cece.X` | Names the source surface in the prefix. `note.X` for per-note properties (name, path, stratum, etc.). `link.X` for Living Link properties (confidence, weight). `note.cns.X` for CNS measurements (community, centrality). `note.cece.X` for CECE classifications (source.primary, content_type.primary). Future readers can locate a dimension by its prefix. Locks a contract for all future phases. |
+| 2 | System-note location | **Visible folder** — `{universe}/Five Acts/<template-name>.md` | Per v1.4 §5.1 Form-Aligns-To-Purpose + §8 "named templates": the Five Acts are *teaching artifacts*. The user encountering them in their universe folder tree learns the cognitive model by browsing. Hidden in `.constellation/` would invisibilize the scaffolding — wrong shape. The visible folder makes the cognitive vocabulary part of the user's everyday navigation. |
+| 3 | System-note edit policy | **Transfer-on-edit** — first user edit transfers ownership; system stops touching that note; new universes get fresh copies | Mirrors v1.4 §8 "both shapes" lock (read-only system Bases + editable copies). The user's edits are sacred — Constellation never silently overwrites them. The `derivedFrom: five-acts.observation` frontmatter marker (added at template-instantiation time) records the lineage but does not enforce read-only. After any user edit, the marker stays but the system no longer touches the note. |
+| 4 | Old `.base` files on disk | **Silent ignore** | They are artifacts of a discarded concept. The new code does NOT parse them (no `parse_base_file` Tauri command exists in MIG-055; no sidebar Bases section lists them; no tab-routing recognizes `.base` extension). Surfacing them with "convert to new format?" would imply recoverability — there is no automatic migration because the data shapes don't align. Users who want them gone can delete; users who don't notice them lose nothing. |
+| 5 | Sidebar label | **"Five Acts"** | The cognitive frame anchors the user-facing vocabulary to the model the Concept Paper v1.4 §8 names. "Lenses" is the technical surface; "Five Acts" is the *purpose*. Form-Aligns-To-Purpose says the label should name the purpose. Internal code can keep `lens` as the Rust/TS module name — same pattern as Sky View / CECE (user-facing name vs internal engine name). |
+| 6 | MIG number | **MIG-055** | Clean break from MIG-054's reverted code. The audit trail benefits: future readers grepping "MIG-054" find the reverted-cleanly-and-restarted record; "MIG-055" is the trajectory that survives. Same uniqueness-aligned reasoning as the MIG-049 → MIG-054 rename earlier in this session. |
+| 7 | `.base` extension | **Keep `.base`** | Familiar to users; the inside format change is what's new, not the extension. The lens-definition YAML lives in inline ` ```base ` code blocks (per v1.4 §7 assemblage) which use `base` as the fenced-code-block language tag — keeping the extension consistent with that tag is one less concept name to learn. Standalone `.base` files (if any ship in future phases) reuse the same parser. |
+
+All 7 closed. Plan doc next.
 
 ## §12. Predecessor and Adjacent Documents
 
