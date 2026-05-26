@@ -52,7 +52,6 @@
 	import NotebookNavigator from '$lib/components/NotebookNavigator.svelte';
 	import NotePane from '$lib/components/NotePane.svelte';
 	import NoteEditor from '$lib/components/NoteEditor.svelte';
-	import BaseTabView from '$lib/components/BaseTabView.svelte';
 	import FocusPane from '$lib/components/FocusPane.svelte';
 	import ContextMenu from '$lib/components/ContextMenu.svelte';
 	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
@@ -5545,10 +5544,7 @@
 							{/if}
 							<!-- svelte-ignore a11y_no_static_element_interactions -->
 							<div class="split-pane-wrap" style="flex:{splitPaneSizes[i] ?? 1}" onclick={() => setFocusedTab(tab.id)}>
-							{#if tab.path && tab.path.endsWith('.base')}
-								<!-- MIG-054 §I.0 — route .base tabs to BaseTabView, not the markdown editor -->
-								<BaseTabView {tab} />
-							{:else if tab.path}
+							{#if tab.path}
 								<NoteEditor
 									{tab}
 									noteNames={allNotes}
@@ -5670,10 +5666,6 @@
 									</div>
 								{/if}
 								<div class="flank-center">
-							{#if $activeTab && $activeTab.path && $activeTab.path.endsWith('.base')}
-								<!-- MIG-054 §I.0 — route .base tabs to BaseTabView, not the markdown editor -->
-								<BaseTabView tab={$activeTab} />
-							{:else}
 							<NoteEditor
 								tab={$activeTab}
 								noteNames={allNotes}
@@ -5729,7 +5721,6 @@
 									}
 								}}
 							/>
-							{/if}
 								</div>
 								{#if backlinksOnRight || outgoingOnRight}
 									<!-- Drag handle + collapse toggle between center editor and right flank -->

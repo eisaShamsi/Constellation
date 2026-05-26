@@ -1,7 +1,6 @@
 // ─── Constellation Bases — Store (IPC bridge) ───
 
 import { invoke } from '@tauri-apps/api/core';
-import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import type { BaseDefinition, BaseQueryResult, BaseRow } from './types';
 
 /**
@@ -88,36 +87,4 @@ export async function deleteWorkspaceBase(filePath: string): Promise<void> {
  */
 export async function parseWorkspaceBase(filePath: string): Promise<BaseDefinition> {
 	return await invoke('parse_workspace_base', { filePath });
-}
-
-// ─── MIG-054 §E — Cell-edit refresh event ───
-
-/**
- * Payload emitted by `update_note_property` after a cell-edit.
- * Any Bases view listening can refresh / re-query to reflect the new value.
- */
-export interface BasesNoteUpdatedPayload {
-	path: string;
-	changed_keys: string[];
-}
-
-/**
- * Listen for `bases:note_updated` events fired after a cell-edit completes
- * (Rust side updates `note_meta.properties_json` immediately + emits this event).
- *
- * Returns an unlisten function — call it on component destroy.
- *
- * Typical use in a Bases view:
- *   let unlisten: UnlistenFn | null = null;
- *   $effect(() => {
- *     onBasesNoteUpdated(() => runQuery()).then(fn => { unlisten = fn; });
- *     return () => unlisten?.();
- *   });
- */
-export async function onBasesNoteUpdated(
-	callback: (payload: BasesNoteUpdatedPayload) => void,
-): Promise<UnlistenFn> {
-	return await listen<BasesNoteUpdatedPayload>('bases:note_updated', (event) => {
-		callback(event.payload);
-	});
 }

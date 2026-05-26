@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { queryBase, saveBaseFile, updateNoteProperty, onBasesNoteUpdated } from '$lib/bases/store';
+	import { queryBase, saveBaseFile, updateNoteProperty } from '$lib/bases/store';
 	import { createDefaultColumn, detectCellType, type BaseDefinition, type BaseQueryResult, type BaseRow, type ColumnDef, type BaseSource } from '$lib/bases/types';
 	import { libraries } from '$lib/libraries/store';
 	import { t, dir } from '$lib/i18n';
@@ -185,25 +185,6 @@
 
 	onMount(() => {
 		runQuery();
-
-		// MIG-054 §E — refresh on cell-edit events emitted by `update_note_property`.
-		// Re-query whenever any note's properties change. This covers two cases:
-		//   1. Another Bases view (or secondary screen) edited a note whose row
-		//      appears in our results — without this, our view would show the
-		//      stale value until the file-watcher's ~1.5s debounce caught up.
-		//   2. THIS view's own cell-edit caused the row to fall out of (or into)
-		//      the current filter — the local optimistic update in handleCellEdit
-		//      kept the row in place, but a re-query reconciles to truth.
-		let unlistenNoteUpdated: (() => void) | null = null;
-		onBasesNoteUpdated(() => {
-			runQuery();
-		}).then((fn) => {
-			unlistenNoteUpdated = fn;
-		});
-
-		return () => {
-			if (unlistenNoteUpdated) unlistenNoteUpdated();
-		};
 	});
 </script>
 
