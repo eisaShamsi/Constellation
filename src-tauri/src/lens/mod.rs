@@ -33,6 +33,7 @@ pub mod dimensions;
 pub mod parser;
 pub mod query;
 pub mod sql_builder;
+pub mod system_notes;
 pub mod validator;
 
 pub use definition::{

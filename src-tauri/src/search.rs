@@ -4812,6 +4812,16 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
     // background thread with its own connection — no boot-time cost.
     spawn_wal_checkpoint_daemon(path);
 
+    // MIG-055 §E — initialize the Five Acts system notes for this universe.
+    // Cheap (one filesystem stat per host note) + idempotent + transfer-on-edit.
+    // If the user has edited the file, the function leaves it alone. If the
+    // file is absent, it's recreated with canonical content. No-fail: log
+    // and continue on any I/O error so a permissions hiccup doesn't abort
+    // search-DB readiness.
+    if let Err(e) = crate::lens::system_notes::init_five_acts_system_notes(app) {
+        eprintln!("[search] init_five_acts_system_notes failed (non-fatal): {}", e);
+    }
+
     Ok(())
 }
 
