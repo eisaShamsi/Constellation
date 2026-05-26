@@ -39,6 +39,8 @@ mod nsc;
 // CONTENT-ENGINE-ARCHITECT.md for the architecture spec.
 pub mod cece;
 mod lenses;
+// MIG-055 §A — Constellation Base, the lens module (clean rebuild post-MIG-054 revert).
+pub mod lens;
 // MIG-028 (2026-05-18) — Sight v5 module retired with the v5 codebase.
 // Plan/Architect docs at lab/reports/MIG-024-SIGHT-V5-* stay on disk
 // as historical record.
