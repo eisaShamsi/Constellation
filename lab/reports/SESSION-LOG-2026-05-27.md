@@ -124,3 +124,40 @@ The federation architecture works. The status bar works. The skip_unavailable mo
 The clean path: commit §K.2 + §K.3 as the federation foundation, ship them, and open separate focused MIGs for the lexicon boundary fix and the input truncation. Bundling everything into the federation MIG would muddle attribution and make audit harder.
 
 Boss decides.
+
+---
+
+## Block 3 (afternoon, continuation) — §L PCS ship + MIG-057 fix
+
+Eisa: "Ship federation now — commit §K.2 + §K.3, ship §L PCS, open MIG-057/058/059 for the other three."
+
+### What shipped in this block
+
+- **Commit `0e094da0` — MIG-056 §K.2+§K.3 — Federation completion.** Stripped diagnostic instrumentation; clean scatter-gather + RRF + libraryStats lifecycle. 833/833 lib tests pass.
+- **Commit `0df05f00` — §L PCS docs.** Orientation v2.37, MoCh-2026-05-27-0900, MIG-057/058/059 stub docs.
+- **Commit `fe1499f5` — docs(i18n) 15-locale help-doc updates.** Five Acts + Constellation Base + federation documented in en (root), ar, de, es, fa, fr, he, hi, ja, ko, pt, ru, tr, ur, zh. Native-script terminology throughout; technical YAML identifiers (schema, view, dimensions, sort, limit, federation) kept in English since users see them verbatim in their lens blocks.
+- **Milestone tag `milestone/mig-055-mig-056-combined`** pushed to origin.
+- **ZIP backup** `E:/Backups/Constellation/Constellation-mig-055-mig-056-20260527.zip` (142 MB).
+
+Eisa: "Proceed." → MIG-057 ship.
+
+- **Commit `9c1b8603` — MIG-057 Lexicon expansion + prefix-wildcard coexistence.** Single-function fix in `expanded_match_query` appending `<input>*` to the OR-expression when expansion fires. 3 new regression tests in `tests_m12`. 836/836 lib tests pass.
+- **Commit `2bf62cbd` — MIG-057 Boss-test tutorial.** Single-stage, `الربا` → `الرباط` retest.
+- **Verified pass** — Eisa screenshot showed `الرباط` at rank 2 (highlighted) with the literal title match, surrounded by the geography cluster (`المرابطون` / `الموحدون` / `الدار البيضاء` / `المغرب` / `مراكش` / `نواكشوط` / `فاس`). Both halves of the fix working as designed.
+- **Orientation v2.38** bumped with MIG-057 in the preamble.
+
+### Remaining open
+
+| MIG | Status | Notes |
+|---|---|---|
+| MIG-057 | ✅ Shipped + verified | Single-function fix; 3 regression tests; rank-2 result confirmed |
+| MIG-058 | Open (stub) | QuickSwitcher Arabic input truncation — Svelte/IME/debounce race |
+| MIG-059 | Open (stub) | Slow per-cUniverse search (~25s) — FTS5 cold-start hypothesis |
+
+Both remaining MIGs are investigation-heavy; neither breaks correctness. Pause point for Eisa to decide tomorrow's priority.
+
+### Today's total
+
+~6 commits across MIG-056 §K.2+§K.3 federation ship + §L PCS docs + 15-locale help-doc i18n + MIG-057 lexicon fix + MIG-057 Boss-test doc + v2.38 orientation bump.
+
+Federation foundation + the first of three follow-up MIGs delivered. State of standing: solid. Federation works. Cross-universe search ranks exact-title matches correctly. UX papercuts (MIG-058 input, MIG-059 perf) catalogued for focused future work.
