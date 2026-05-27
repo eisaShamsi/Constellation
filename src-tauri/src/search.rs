@@ -389,44 +389,33 @@ pub struct SearchState {
     /// universe switch.
     pub federation: Mutex<crate::federation::FederationContext>,
     /// MIG-056 §B.1 — long-lived Connection with cUniverses ATTACHed.
-    /// See `federated_conn` doc above. Used by `aggregate_library_counts`
-    /// (libraryStats) and `execute_lens` — queries that benefit from a
-    /// single UNION ALL across all schemas and do NOT use FTS5 aux funcs.
+    /// Used by EVERY federated query path:
+    ///   - `aggregate_library_counts` (libraryStats) — UNION ALL of
+    ///     `note_meta` across attached schemas (no FTS5 aux funcs).
+    ///   - `execute_lens` — UNION ALL of `note_meta` across attached
+    ///     schemas (no FTS5 aux funcs).
+    ///   - `federated_lexical_search_or_fallback` (post-MIG-058/059
+    ///     Option C) — per-schema single-schema queries with FTS5
+    ///     aux funcs, executed sequentially and merged via RRF in
+    ///     Rust. The aux-function-cannot-schema-qualify constraint
+    ///     from §G/§K.2 only applies to UNION ALL multi-schema
+    ///     queries; single-schema queries with `FROM cu1.notes_fts`
+    ///     resolve `bm25(notes_fts, ...)` correctly to the FROM
+    ///     table (verified by `mig056_federated_search::option_c_*`
+    ///     unit tests).
+    ///
+    /// One warm Connection serves the entire federation. The §K.3
+    /// `federated_search_conns: Vec<Connection>` pool that was added
+    /// to work around the (perceived) FTS5 aux constraint is gone —
+    /// Option C proved it was unnecessary.
     pub federated_conn: Mutex<Option<Connection>>,
-    /// MIG-056 §K.3 — v2 scatter-gather per-cUniverse Connection pool.
-    ///
-    /// **Why a separate Connection per cUniverse**: FTS5 auxiliary
-    /// functions `bm25()` and `snippet()` take a self-referential
-    /// pseudo-column bound to the unqualified original table name. In
-    /// a multi-schema query (UNION ALL across `main.notes_fts` +
-    /// `cu1.notes_fts`), there is no syntactic form that lets each
-    /// branch's `bm25()` resolve to ITS branch's FTS5 table — the
-    /// pseudo-column can't be schema-qualified, can't be table-aliased,
-    /// and unqualified `notes_fts` ambiguously resolves to `main` only.
-    /// The §K.2 hotfix worked around this by dropping `bm25()` /
-    /// `snippet()` entirely; §K.3 restores them by giving each
-    /// cUniverse its OWN Connection where `notes_fts` is unambiguously
-    /// the one in that Connection's only attached schema.
-    ///
-    /// Each entry: `(cuniverse_root_path, Connection)`. The Connection
-    /// is opened against the cUniverse's `search.db` directly (no
-    /// ATTACH), has `register_fts5_tokenizer` called on it, and is
-    /// reused across all federated searches until the universe
-    /// switches (when `invalidate_search_state` drops the whole Vec).
-    ///
-    /// Per-branch results are collected by the scatter-gather
-    /// coordinator in `federated_lexical_search_or_fallback` and merged
-    /// via RRF (Reciprocal Rank Fusion, k=60) — the Lucene/Elasticsearch
-    /// CCS standard merge that doesn't require comparable raw BM25
-    /// scores across branches.
-    pub federated_search_conns: Mutex<Vec<(PathBuf, Connection)>>,
     /// MIG-056 §J.1 — federation epoch counter for the background-attach
     /// race fix. Incremented by `invalidate_search_state` on every
     /// universe switch. Background-attach threads capture the value at
-    /// start; before writing into `federation` / `federated_conn` /
-    /// `federated_search_conns`, they check the counter hasn't advanced.
-    /// If it has, the universe switched mid-attach and their work
-    /// belongs to a stale universe; they abandon it.
+    /// start; before writing into `federation` / `federated_conn`,
+    /// they check the counter hasn't advanced. If it has, the universe
+    /// switched mid-attach and their work belongs to a stale universe;
+    /// they abandon it.
     ///
     /// Identified by the §J audit's migration-paths agent (Scenario 6:
     /// "Universe switch during background-attach"). Without this
@@ -443,7 +432,6 @@ impl SearchState {
             db: Mutex::new(None),
             federation: Mutex::new(crate::federation::FederationContext::new()),
             federated_conn: Mutex::new(None),
-            federated_search_conns: Mutex::new(Vec::new()),
             federation_generation: std::sync::atomic::AtomicU64::new(0),
         }
     }
@@ -3636,8 +3624,59 @@ fn index_library_recursive(conn: &Connection, dir: &Path, library_name: &str, de
 
 // ─── Search Execution ──────────────────────────────────────────
 
-/// Lexical search using FTS5 BM25 ranking.
+/// Lexical search using FTS5 BM25 ranking against the connection's
+/// `main` schema (the default — when the cUniverse hasn't been
+/// federated, `conn` IS the universe's `search.db` opened as main).
 fn lexical_search(conn: &Connection, query: &str, limit: u32) -> Vec<SearchResult> {
+    lexical_search_in_schema(conn, "main", query, limit)
+}
+
+/// MIG-058/MIG-059 v3 (Option C) — single-schema FTS5 search against
+/// an arbitrary schema on `conn`. When `schema == "main"`, this is the
+/// existing single-schema search. When `schema == "cu1"` etc., this
+/// runs the SAME query but rooted at the ATTACHed cUniverse's tables.
+///
+/// ## Why this exists
+///
+/// MIG-056 §K.3 introduced a standalone Connection-pool per cUniverse
+/// for scatter-gather, because the obvious shape
+/// `SELECT bm25(cu1.notes_fts, ...) FROM main.notes_fts UNION ALL
+///  SELECT bm25(cu2.notes_fts, ...) FROM cu2.notes_fts ...` fails at
+/// PREPARE: `bm25(cu1.notes_fts, ...)` is parsed as `schema.column`
+/// not `schema.table`, and FTS5 aux functions don't accept schema-
+/// qualified column references. The standalone-Connection workaround
+/// fixed correctness but cost 15-21s per first-search (FTS5 segment
+/// pages cold on the new Connection — `mmap_size` couldn't help
+/// because the ATTACHed `federated_conn` had warmed only `note_meta`
+/// pages, never `notes_fts` segments).
+///
+/// **Option C, verified by `option_c_*` tests above:** in a SINGLE-
+/// schema `FROM cu1.notes_fts` query (not UNION ALL), the unqualified
+/// `bm25(notes_fts, ...)` correctly resolves to the FROM-clause's
+/// attached `cu1.notes_fts` table — NOT to `main.notes_fts`, even when
+/// main also has a `notes_fts`. Same for `snippet(notes_fts, ...)`.
+///
+/// So we run N separate single-schema queries (one per attached
+/// cUniverse) on the SAME warm `federated_conn` and merge in Rust via
+/// RRF. The standalone-Connection pool is eliminated entirely.
+///
+/// Schema-qualification rules used here (verified by the tests):
+/// - `FROM {schema}.notes_fts` — schema-qualified table (valid)
+/// - `JOIN {schema}.note_meta ON notes_fts.rowid = note_meta.rowid` —
+///   schema-qualified table on both sides; unqualified column refs
+///   on the join condition resolve to the FROM/JOIN tables
+/// - `WHERE notes_fts MATCH ?` — unqualified; resolves to the FROM
+///   table within the single-schema scope
+/// - `bm25(notes_fts, ...)` + `snippet(notes_fts, ...)` — unqualified
+///   aux function arguments; same resolution
+/// - `SELECT note_meta.path, note_meta.name, ...` — unqualified
+///   column refs on the JOIN target; same resolution
+fn lexical_search_in_schema(
+    conn: &Connection,
+    schema: &str,
+    query: &str,
+    limit: u32,
+) -> Vec<SearchResult> {
     // Normalize query for Arabic consistency (same normalization as indexed text)
     let normalized = normalize_arabic_for_search(query);
 
@@ -3664,16 +3703,21 @@ fn lexical_search(conn: &Connection, query: &str, limit: u32) -> Vec<SearchResul
         .map(|e| e.bridge_terms_lower.as_slice())
         .unwrap_or(&[]);
 
-    let mut stmt = match conn.prepare(
-        "SELECT note_meta.path, note_meta.name, note_meta.library_name, note_meta.modified,
-                bm25(notes_fts, 10.0, 1.0) as score,
-                snippet(notes_fts, 1, '<mark>', '</mark>', '...', 40) as snip
-         FROM notes_fts
-         JOIN note_meta ON notes_fts.rowid = note_meta.rowid
-         WHERE notes_fts MATCH ?1
-         ORDER BY score
-         LIMIT ?2"
-    ) {
+    // Schema-qualified FROM/JOIN; unqualified columns + aux functions
+    // (per the option_c_* tests).
+    let sql = format!(
+        "SELECT note_meta.path, note_meta.name, note_meta.library_name, note_meta.modified, \
+                bm25(notes_fts, 10.0, 1.0) as score, \
+                snippet(notes_fts, 1, '<mark>', '</mark>', '...', 40) as snip \
+         FROM {schema}.notes_fts \
+         JOIN {schema}.note_meta ON notes_fts.rowid = note_meta.rowid \
+         WHERE notes_fts MATCH ?1 \
+         ORDER BY score \
+         LIMIT ?2",
+        schema = schema,
+    );
+
+    let mut stmt = match conn.prepare(&sql) {
         Ok(s) => s,
         Err(_) => return Vec::new(),
     };
@@ -3767,12 +3811,13 @@ fn lexical_search(conn: &Connection, query: &str, limit: u32) -> Vec<SearchResul
 ///
 /// - Federation not ready / no attached cUniverses → single-schema
 ///   `lexical_search` on `state.db` (existing MIG-055 behavior).
-/// - `state.federated_search_conns` empty despite federation ready
-///   (race during background-attach) → single-schema fallback.
-/// - Per-cUniverse `lexical_search` returns empty (transient error,
-///   FTS5 cold start, etc.) → that branch contributes no rows to the
-///   RRF merge but the other branches still produce a result. This is
-///   the skip_unavailable model — Architect §5.2.
+/// - `state.federated_conn` is None despite federation context ready
+///   (narrow race during background-attach: ctx write and conn write
+///   happen sequentially) → single-schema fallback.
+/// - Per-schema `lexical_search_in_schema` returns empty (transient
+///   error, etc.) → that branch contributes no rows to the RRF merge
+///   but other branches still produce a result. skip_unavailable
+///   model — Architect §5.2.
 fn federated_lexical_search_or_fallback(
     app: &tauri::AppHandle,
     conn: &Connection,
@@ -3794,66 +3839,68 @@ fn federated_lexical_search_or_fallback(
         return lexical_search(conn, query, limit);
     }
 
-    // Acquire the per-cUniverse Connection pool. If poisoned / empty,
-    // fall back to single-schema (skip_unavailable — Architect §5.2).
-    let search_conns_guard = match state.federated_search_conns.lock() {
+    // MIG-058/MIG-059 v3 (Option C) — drop the standalone-Connection
+    // pool entirely. Use the same warm `federated_conn` (ATTACHed
+    // schemas) for every per-schema search. The aux-function-cannot-
+    // schema-qualify constraint that broke §G's UNION ALL doesn't
+    // apply here: each per-schema SELECT runs on a single attached
+    // schema, with `bm25(notes_fts, ...)` and `snippet(notes_fts, ...)`
+    // resolving via the FROM-clause table (verified by `option_c_*`
+    // unit tests in `mig056_federated_search`).
+    //
+    // Why this is fast: `federated_conn` has libraryStats / lens
+    // queries running through it from boot, so the page cache for
+    // every cUniverse's `note_meta` is already warm. The first FTS5
+    // MATCH on a cUniverse still has to fault in its `notes_fts`
+    // segment pages, but those pages stay warm across subsequent
+    // queries on the same Connection — so search-after-search is
+    // fast. Compared to §K.3's standalone-Connection design, we no
+    // longer have a Connection that's "fresh" relative to the
+    // federation context: there's only ONE Connection, and it gets
+    // warmed by libraryStats during boot.
+    let fed_guard = match state.federated_conn.lock() {
         Ok(g) => g,
         Err(_) => {
-            eprintln!("[federation] federated_search_conns Mutex poisoned — single-schema fallback");
+            eprintln!("[federation] federated_conn Mutex poisoned — single-schema fallback");
             return lexical_search(conn, query, limit);
         }
     };
-    if search_conns_guard.is_empty() {
-        // Race: federation context says ready but the Connection pool
-        // hasn't been populated yet. Should be rare (only the ~ms
-        // between context-write and pool-write in the background
-        // thread). Fall back so the user still gets results from main.
-        return lexical_search(conn, query, limit);
-    }
-
-    // SCATTER — run `lexical_search` once per Connection. Each runs
-    // single-schema where bm25()/snippet() work natively. We pull
-    // `limit * 2` per branch so RRF has enough material to merge from.
-    // Cost: each branch is one PREPARE + step loop — bound by the
-    // per-branch hit count (FTS5 indexes prune most rows). Sequential
-    // is fine; parallelism would add complexity (Send/Sync of
-    // rusqlite::Connection in a MutexGuard).
-    let per_branch_cap = limit.saturating_mul(2).max(20);
-    let mut branches: Vec<Vec<SearchResult>> = Vec::with_capacity(1 + search_conns_guard.len());
-
-    // MIG-058/MIG-059 v2 diagnostic — time each branch's lexical_search
-    // separately so we can see which Connection is the bottleneck and
-    // by how much. Tagged [mig-059-diag-search] so it's easy to grep
-    // alongside the per-cUniverse setup diagnostics.
-    let log_search_time = |label: &str, elapsed_ms: u128, row_count: usize| {
-        if let Ok(p) = db_path(app) {
-            diag_log(
-                &p,
-                &format!(
-                    "[mig-059-diag-search] query={:?} branch={} time_ms={} rows={}",
-                    query, label, elapsed_ms, row_count
-                ),
-            );
+    let fed_conn = match fed_guard.as_ref() {
+        Some(c) => c,
+        None => {
+            // Race: federation context says ready but federated_conn
+            // hasn't been populated yet (the background-attach thread
+            // writes ctx + conn in close succession but the window
+            // exists). Fall back so the user still gets results
+            // from main while we wait.
+            return lexical_search(conn, query, limit);
         }
     };
 
-    // Branch 0 — main universe via the caller-provided connection
-    // (which is `state.db.lock()` from `constellation_search`).
-    let t0 = std::time::Instant::now();
-    let main_results = lexical_search(conn, query, per_branch_cap);
-    log_search_time("main", t0.elapsed().as_millis(), main_results.len());
-    branches.push(main_results);
+    // SCATTER — one single-schema query per branch, all on the SAME
+    // `federated_conn`. Each runs `lexical_search_in_schema(fed_conn,
+    // "main" or "cu0" or "cu1", ...)` which executes the
+    // schema-rooted FROM with unqualified bm25/snippet/MATCH.
+    //
+    // Cost per branch: one PREPARE + step loop. Sequential is fine —
+    // the queries are independent and rusqlite's Connection isn't
+    // Send across threads anyway in a MutexGuard.
+    //
+    // We pull `limit * 2` per branch so RRF has enough material to
+    // merge from.
+    let per_branch_cap = limit.saturating_mul(2).max(20);
+    let mut branches: Vec<Vec<SearchResult>> = Vec::with_capacity(1 + federated_aliases.len());
 
-    // Branches 1..N — one per cUniverse standalone Connection.
-    for (cu_root, cu_conn) in search_conns_guard.iter() {
-        let t = std::time::Instant::now();
-        let cu_results = lexical_search(cu_conn, query, per_branch_cap);
-        log_search_time(
-            &cu_root.display().to_string(),
-            t.elapsed().as_millis(),
-            cu_results.len(),
-        );
-        branches.push(cu_results);
+    // Branch 0 — `main` schema = the active universe's search.db.
+    // Use `fed_conn` here too (NOT `conn`) so the query benefits from
+    // whatever warming federated_conn has done. They both view the
+    // same `main` data; using fed_conn keeps all federated branches
+    // on a single Connection's warm state.
+    branches.push(lexical_search_in_schema(fed_conn, "main", query, per_branch_cap));
+
+    // Branches 1..N — one per cUniverse schema alias (cu0, cu1, ...).
+    for alias in &federated_aliases {
+        branches.push(lexical_search_in_schema(fed_conn, alias, query, per_branch_cap));
     }
 
     // GATHER — RRF merge. Each branch's results are already ranked
@@ -5129,12 +5176,6 @@ pub fn invalidate_search_state(app: &tauri::AppHandle) {
     if let Ok(mut fc) = fed_guard {
         *fc = None;
     }
-    // MIG-056 §K.3 — also drop the per-cUniverse Connection pool.
-    // Same lifecycle as federated_conn: rebuilt on next attach cycle.
-    let fed_search_conns_guard = state.federated_search_conns.lock();
-    if let Ok(mut v) = fed_search_conns_guard {
-        v.clear();
-    }
     // And reset the FederationContext metadata.
     let fed_ctx_guard = state.federation.lock();
     if let Ok(mut fc) = fed_ctx_guard {
@@ -5257,206 +5298,26 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
             Ok(ctx) => {
                 let state = app_for_federation.state::<SearchState>();
 
-                // MIG-056 §K.3 — open standalone per-cUniverse
-                // Connections in addition to the ATTACH-based federated
-                // connection. The scatter-gather coordinator
-                // (`federated_lexical_search_or_fallback`) runs single-
-                // schema BM25 queries against each — FTS5 aux funcs
-                // work in single-schema scope but can't in cross-schema
-                // UNION ALL. See `federated_search_conns` doc on
-                // SearchState for the full rationale.
+                // MIG-058/MIG-059 v3 (Option C) — no per-cUniverse
+                // Connection setup. The ATTACH-based `conn` (which
+                // attach_all has just populated with `cu0`/`cu1`/...
+                // schemas) is the SOLE Connection serving every
+                // federated query: libraryStats UNION ALL, lens UNION
+                // ALL, and now BM25 federated search via per-schema
+                // queries (`FROM cu1.notes_fts ... bm25(notes_fts,...)`).
                 //
-                // Per-cUniverse failure is non-fatal: a failed open or
-                // tokenizer registration just omits that cUniverse from
-                // the search-conns pool, dropping search to the smaller
-                // set of available branches. The cUniverse itself
-                // remains in `ctx.attached` so libraryStats / lens
-                // federation still see it via the ATTACH connection.
-                let mut search_conns: Vec<(std::path::PathBuf, Connection)> = Vec::new();
-                for (_alias, cu_root) in ctx.attached() {
-                    let cu_db_path = cu_root.join(".constellation").join("search.db");
-                    let mut cu_conn = match Connection::open(&cu_db_path) {
-                        Ok(c) => c,
-                        Err(e) => {
-                            eprintln!(
-                                "[federation] open cUniverse Connection failed for {}: {} (omitted from search-conns; libraryStats/lens still see it)",
-                                cu_db_path.display(),
-                                e
-                            );
-                            continue;
-                        }
-                    };
-                    // §K.3 — match the PRAGMA setup that `init_db` does on
-                    // active-universe Connections, so per-branch BM25 sees
-                    // the same FTS5 state. WAL mode is persistent on disk
-                    // (the cUniverse's file already has it from its last
-                    // active-universe boot), but the per-Connection PRAGMAs
-                    // (synchronous, busy_timeout, cache_size, recursive
-                    // triggers) need to be set explicitly. Skipping them
-                    // doesn't affect correctness of BM25 ranking — those
-                    // are write/durability/perf settings — but matching
-                    // active-universe setup eliminates a class of "why
-                    // does it differ" questions.
-                    // §K.3 — match `init_db`'s PRAGMA setup so per-branch BM25
-                    // sees the same FTS5 state on the standalone Connection.
-                    //
-                    // MIG-059 additions (`mmap_size` + `optimize`):
-                    //
-                    // - `mmap_size = 268435456` (256 MB) enables memory-mapped
-                    //   I/O on this Connection. Per sqlite.org/mmap.html, when
-                    //   multiple Connections in the same process mmap the same
-                    //   file, they share the OS-level page mapping — eliminating
-                    //   the cold-cache asymmetry between this standalone
-                    //   Connection (which would otherwise need to fault every
-                    //   FTS5 segment page from disk on first read) and
-                    //   `federated_conn` (which has the file ATTACHed and
-                    //   already paid the page-cost via libraryStats / lens
-                    //   queries earlier in boot). 256 MB is the SQLite-
-                    //   recommended starting value; covers Eisa's 7650-note
-                    //   cUniverse's full FTS5 + note_meta with headroom.
-                    //
-                    // - `PRAGMA optimize` refreshes `sqlite_stat1` for THIS
-                    //   Connection's query planner. Even though init_db on the
-                    //   cUniverse's last active-mode boot populated stat1 on
-                    //   disk, this Connection might have opened during a brief
-                    //   window when the WAL had stat1 changes not yet
-                    //   checkpointed; running optimize here guarantees the
-                    //   planner sees a consistent stat1 view. Documented cost
-                    //   <1ms when stats are already current (sqlite.org/pragma.html
-                    //   #pragma_optimize).
-                    if let Err(e) = cu_conn.execute_batch(
-                        "PRAGMA journal_mode=WAL; \
-                         PRAGMA synchronous=NORMAL; \
-                         PRAGMA busy_timeout=10000; \
-                         PRAGMA cache_size=-65536; \
-                         PRAGMA mmap_size=268435456; \
-                         PRAGMA recursive_triggers=ON;",
-                    ) {
-                        eprintln!(
-                            "[federation] PRAGMA setup failed for {}: {} (continuing — federated search may be slow but correct)",
-                            cu_db_path.display(),
-                            e
-                        );
-                    }
-                    if let Err(e) = register_fts5_tokenizer(&mut cu_conn) {
-                        eprintln!(
-                            "[federation] register_fts5_tokenizer failed for {}: {} (omitted from search-conns)",
-                            cu_db_path.display(),
-                            e
-                        );
-                        continue;
-                    }
-                    // MIG-059 — refresh planner stats AFTER tokenizer registration.
-                    // Non-fatal: if optimize errors the queries still work,
-                    // just with potentially slow plans for OR-of-MATCH expressions.
-                    if let Err(e) = cu_conn.execute_batch("PRAGMA optimize;") {
-                        eprintln!(
-                            "[federation] PRAGMA optimize failed for {}: {} (continuing — search may use static plans)",
-                            cu_db_path.display(),
-                            e
-                        );
-                    }
-
-                    // ── MIG-058/MIG-059 v2 diagnostic instrumentation ──
-                    //
-                    // After §K.3+§K.2 fixes shipped, Eisa's Boss-test showed:
-                    //  • Stage 2 federated search ~15s (down from ~25s) — way
-                    //    below the ~1s research target. PRAGMA optimize was
-                    //    conservative; FTS5 shadow tables may not have been
-                    //    fully analyzed.
-                    //  • Stage 3 Arabic input still truncates — synchronous
-                    //    `filtered` rebuild was eliminated but slow async
-                    //    search still resolves mid-typing.
-                    //
-                    // To choose the right NEXT fix (no more guesses), this
-                    // block captures hard evidence per cUniverse Connection:
-                    //   - sqlite_stat1 contents (what stats does planner see?)
-                    //   - ANALYZE timing (would running it now help?)
-                    //   - EXPLAIN QUERY PLAN for the 9-term OR (actual plan)
-                    //
-                    // All best-effort. Failures swallowed; tag `[mig-059-diag]`
-                    // in diagnostics.log of the ACTIVE universe (so Eisa sees
-                    // everything in one file, not scattered across cUniverses).
-                    let active_log_path = match db_path(&app_for_federation) {
-                        Ok(p) => p,
-                        Err(_) => cu_db_path.clone(), // fallback
-                    };
-                    let log = |line: &str| {
-                        diag_log(&active_log_path, &format!("[mig-059-diag] cu={} | {}", cu_root.display(), line));
-                    };
-
-                    // 1. sqlite_stat1 contents
-                    if let Ok(mut stmt) = cu_conn.prepare(
-                        "SELECT tbl, idx, stat FROM sqlite_stat1"
-                    ) {
-                        let rows: Vec<(String, Option<String>, String)> = stmt
-                            .query_map([], |r| Ok((
-                                r.get::<_, String>(0)?,
-                                r.get::<_, Option<String>>(1)?,
-                                r.get::<_, String>(2)?,
-                            )))
-                            .map(|it| it.filter_map(|r| r.ok()).collect())
-                            .unwrap_or_default();
-                        log(&format!("sqlite_stat1: {} rows", rows.len()));
-                        for (tbl, idx, stat) in rows.iter().take(20) {
-                            log(&format!("  stat1: tbl={} idx={:?} stat={}", tbl, idx, stat));
-                        }
-                        if rows.is_empty() {
-                            log("  sqlite_stat1 is EMPTY — planner has no stats; will use static cost estimates (bad for FTS5 OR-of-MATCH)");
-                        }
-                    } else {
-                        log("sqlite_stat1: prepare failed (table may not exist)");
-                    }
-
-                    // 2. Try a forceful ANALYZE main + INSERT INTO notes_fts('optimize')
-                    //    to see if THAT brings stats up. Time it.
-                    let analyze_start = std::time::Instant::now();
-                    let analyze_result = cu_conn.execute_batch("ANALYZE main;");
-                    let analyze_ms = analyze_start.elapsed().as_millis();
-                    match analyze_result {
-                        Ok(()) => log(&format!("ANALYZE main: {}ms", analyze_ms)),
-                        Err(e) => log(&format!("ANALYZE main: FAILED after {}ms: {}", analyze_ms, e)),
-                    }
-
-                    // 3. Re-dump stat1 after ANALYZE to see if it changed
-                    if let Ok(mut stmt) = cu_conn.prepare(
-                        "SELECT COUNT(*) FROM sqlite_stat1"
-                    ) {
-                        let n: i64 = stmt.query_row([], |r| r.get(0)).unwrap_or(-1);
-                        log(&format!("sqlite_stat1 after ANALYZE: {} rows", n));
-                    }
-
-                    // 4. EXPLAIN QUERY PLAN for the canonical slow query
-                    //    (9-term OR expression matching notes_fts JOIN note_meta)
-                    let plan_sql = "EXPLAIN QUERY PLAN \
-                        SELECT note_meta.path, note_meta.name, note_meta.library_name, note_meta.modified, \
-                               bm25(notes_fts, 10.0, 1.0) as score, \
-                               snippet(notes_fts, 1, '<mark>', '</mark>', '...', 40) as snip \
-                        FROM notes_fts \
-                        JOIN note_meta ON notes_fts.rowid = note_meta.rowid \
-                        WHERE notes_fts MATCH '\"الرباط\" OR \"Rabat\" OR \"ربا\" OR الربا*' \
-                        ORDER BY score \
-                        LIMIT 30";
-                    if let Ok(mut stmt) = cu_conn.prepare(plan_sql) {
-                        let plan_lines: Vec<String> = stmt
-                            .query_map([], |r| {
-                                let id: i64 = r.get(0).unwrap_or(0);
-                                let parent: i64 = r.get(1).unwrap_or(0);
-                                let detail: String = r.get(3).unwrap_or_default();
-                                Ok(format!("  plan: id={} parent={} | {}", id, parent, detail))
-                            })
-                            .map(|it| it.filter_map(|r| r.ok()).collect())
-                            .unwrap_or_default();
-                        log(&format!("EXPLAIN QUERY PLAN ({} steps):", plan_lines.len()));
-                        for line in plan_lines.iter().take(20) {
-                            log(line);
-                        }
-                    } else {
-                        log("EXPLAIN QUERY PLAN: prepare failed");
-                    }
-
-                    search_conns.push((cu_root.clone(), cu_conn));
-                }
+                // The §K.3 standalone-Connection pool is gone:
+                //   - Option C unit tests (`mig056_federated_search::
+                //     option_c_*`) proved the FTS5 aux-function constraint
+                //     that motivated the pool only applied to UNION ALL.
+                //   - Diagnostic v2 evidence confirmed the standalone
+                //     Connections were 15-25× slower than `federated_conn`
+                //     because they had cold FTS5 segment caches that
+                //     `federated_conn`'s libraryStats traffic doesn't
+                //     warm.
+                //
+                // One Connection. One warm cache. Federated search
+                // gets the same warmth as libraryStats.
 
                 // MIG-056 §J.1 — check the federation generation hasn't
                 // advanced since we started. If it has, the user switched
@@ -5471,9 +5332,8 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
                         "[federation] background-attach abandoned: universe switched mid-attach (gen {} → {})",
                         start_generation, current_gen
                     );
-                    // `conn` + `search_conns` drop at end of thread —
-                    // the OLD universe's attaches + per-cUniverse
-                    // Connections are released. The new universe's
+                    // `conn` drops at end of thread — the OLD universe's
+                    // attaches are released. The new universe's
                     // `ensure_search_db_ready` will run its own attach.
                     return;
                 }
@@ -5485,12 +5345,6 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
                     *g = Some(conn);
                 } else {
                     eprintln!("[federation] state.federated_conn Mutex poisoned");
-                }
-                let fed_search_conns_guard = state.federated_search_conns.lock();
-                if let Ok(mut g) = fed_search_conns_guard {
-                    *g = search_conns;
-                } else {
-                    eprintln!("[federation] state.federated_search_conns Mutex poisoned");
                 }
                 let fed_ctx_guard = state.federation.lock();
                 if let Ok(mut g) = fed_ctx_guard {
@@ -6454,7 +6308,6 @@ mod tests_m8c {
             db: std::sync::Mutex::new(Some(conn)),
             federation: std::sync::Mutex::new(crate::federation::FederationContext::new()),
             federated_conn: std::sync::Mutex::new(None),
-            federated_search_conns: std::sync::Mutex::new(Vec::new()),
             federation_generation: std::sync::atomic::AtomicU64::new(0),
         }
     }
@@ -6649,7 +6502,6 @@ mod tests_m8c {
             db: std::sync::Mutex::new(Some(conn)),
             federation: std::sync::Mutex::new(crate::federation::FederationContext::new()),
             federated_conn: std::sync::Mutex::new(None),
-            federated_search_conns: std::sync::Mutex::new(Vec::new()),
             federation_generation: std::sync::atomic::AtomicU64::new(0),
         };
 
@@ -7616,6 +7468,193 @@ mod mig056_federated_search {
             "rank-1 should beat rank-2 by < 2% (got {:.4}); softens the head per Cormack-Clarke",
             ratio
         );
+    }
+
+    // ─── MIG-058/MIG-059 Option C — bm25() on ATTACHed schema ──────
+    //
+    // The diagnostic v2 Boss-test on 2026-05-27 surfaced that the
+    // per-cUniverse standalone Connection (§K.3) takes 15-21s per
+    // search vs the active-mode Connection's ~1s on the same data.
+    // Root cause: FTS5 segment-page cold-cache on a Connection that
+    // hasn't done any FTS5 work yet. `mmap_size` doesn't help because
+    // the ATTACH-based federated_conn (which has warm pages from
+    // libraryStats/lens queries) only reads note_meta, never notes_fts.
+    //
+    // Option C proposes: drop the standalone Connection entirely.
+    // Use the ATTACH-based federated_conn for per-schema BM25 searches
+    // too. The previous failure mode (§K.2: `bm25(cu1.notes_fts, ...)`
+    // returns "no such column" at PREPARE) was specific to UNION ALL
+    // multi-schema queries. In a SINGLE-schema query with `FROM
+    // cu1.notes_fts WHERE notes_fts MATCH ?`, unqualified `notes_fts`
+    // in `bm25(notes_fts, ...)` MIGHT resolve to the FROM-clause
+    // table.
+    //
+    // This test settles whether that's the case. If it passes, the
+    // entire federated_search_conns pool can be deleted and federated
+    // search uses the same warm Connection as libraryStats. If it
+    // fails, we fall back to Option B (per-Connection pre-warm in a
+    // background thread).
+
+    /// Setup: build an in-memory main + a temp-file cu1 with the
+    /// canonical Constellation FTS5 schema (external content). Seed
+    /// distinguishable rows in each so we can verify which schema
+    /// `bm25(notes_fts, ...)` is actually scoring against. Returns the
+    /// main connection with cu1 ATTACHed read-write.
+    fn setup_two_schemas() -> (rusqlite::Connection, tempfile::TempDir) {
+        use rusqlite::Connection;
+        let tmp = tempfile::TempDir::new().unwrap();
+        let cu1_path = tmp.path().join("cu1.search.db");
+
+        // Build cu1's schema + seed rows. Default tokenizer (unicode61)
+        // for the test — Option C's question is about column resolution,
+        // not tokenizer behavior.
+        {
+            let cu1 = Connection::open(&cu1_path).unwrap();
+            cu1.execute_batch(
+                "CREATE TABLE note_meta (
+                    path TEXT PRIMARY KEY,
+                    name TEXT,
+                    library_name TEXT,
+                    modified INTEGER,
+                    body_text TEXT
+                );
+                 CREATE VIRTUAL TABLE notes_fts USING fts5(
+                    name, body_text,
+                    content='note_meta', content_rowid='rowid'
+                 );
+                 INSERT INTO note_meta(rowid, path, name, library_name, modified, body_text)
+                   VALUES (1, '/cu1/a.md', 'rabat_in_cu1', 'cu1_lib', 1000, 'rabat ribbon');
+                 INSERT INTO notes_fts(rowid, name, body_text)
+                   VALUES (1, 'rabat_in_cu1', 'rabat ribbon');",
+            )
+            .unwrap();
+        }
+
+        // Build main with a DIFFERENT seed row so we can tell them apart.
+        let main = Connection::open_in_memory().unwrap();
+        main.execute_batch(
+            "CREATE TABLE note_meta (
+                path TEXT PRIMARY KEY,
+                name TEXT,
+                library_name TEXT,
+                modified INTEGER,
+                body_text TEXT
+            );
+             CREATE VIRTUAL TABLE notes_fts USING fts5(
+                name, body_text,
+                content='note_meta', content_rowid='rowid'
+             );
+             INSERT INTO note_meta(rowid, path, name, library_name, modified, body_text)
+               VALUES (1, '/main/a.md', 'rabat_in_main', 'main_lib', 2000, 'rabat banner');
+             INSERT INTO notes_fts(rowid, name, body_text)
+               VALUES (1, 'rabat_in_main', 'rabat banner');",
+        )
+        .unwrap();
+
+        let path_uri = cu1_path.to_string_lossy().replace('\\', "/");
+        main.execute(
+            &format!("ATTACH DATABASE 'file:{}' AS cu1", path_uri),
+            [],
+        )
+        .unwrap();
+
+        (main, tmp)
+    }
+
+    /// Q1: Does `bm25(notes_fts, ...)` PREPARE in a single-schema
+    /// FROM-attached-table query?
+    #[test]
+    fn option_c_bm25_unqualified_prepares_against_attached_schema() {
+        let (main, _tmp) = setup_two_schemas();
+        let sql = "SELECT note_meta.path, bm25(notes_fts, 10.0, 1.0) as score \
+                   FROM cu1.notes_fts \
+                   JOIN cu1.note_meta ON notes_fts.rowid = note_meta.rowid \
+                   WHERE notes_fts MATCH ? \
+                   ORDER BY score LIMIT 30";
+        let prepared = main.prepare(sql);
+        assert!(
+            prepared.is_ok(),
+            "bm25(notes_fts) with FROM cu1.notes_fts must PREPARE; got {:?}",
+            prepared.err(),
+        );
+    }
+
+    /// Q2: When executed, does `bm25(notes_fts, ...)` score against
+    /// the cu1.notes_fts table (FROM-clause target) or against
+    /// main.notes_fts (which might shadow the unqualified name)?
+    /// The distinguishable seed rows have different paths — we check
+    /// which row comes back.
+    #[test]
+    fn option_c_bm25_unqualified_scores_against_from_attached_table() {
+        let (main, _tmp) = setup_two_schemas();
+        let sql = "SELECT note_meta.path, bm25(notes_fts, 10.0, 1.0) as score \
+                   FROM cu1.notes_fts \
+                   JOIN cu1.note_meta ON notes_fts.rowid = note_meta.rowid \
+                   WHERE notes_fts MATCH ? \
+                   ORDER BY score LIMIT 30";
+        let mut stmt = main.prepare(sql).unwrap();
+        let rows: Vec<(String, f64)> = stmt
+            .query_map(rusqlite::params!["rabat"], |r| {
+                Ok((r.get::<_, String>(0)?, r.get::<_, f64>(1)?))
+            })
+            .unwrap()
+            .filter_map(|r| r.ok())
+            .collect();
+        assert_eq!(rows.len(), 1, "expected exactly one match from cu1");
+        assert_eq!(
+            rows[0].0, "/cu1/a.md",
+            "match must come from cu1 (FROM clause), not main"
+        );
+        // Score should be non-zero (bm25 returned a real ranking).
+        assert!(
+            rows[0].1.abs() > 0.0,
+            "bm25 returned 0.0 — aux function may not be evaluating against cu1.notes_fts"
+        );
+    }
+
+    /// Q3: Does `snippet(notes_fts, ...)` also resolve correctly in
+    /// the same pattern? snippet is the other FTS5 aux function we
+    /// use in lexical_search; needs same treatment.
+    #[test]
+    fn option_c_snippet_unqualified_resolves_against_attached_schema() {
+        let (main, _tmp) = setup_two_schemas();
+        let sql = "SELECT snippet(notes_fts, 1, '<m>', '</m>', '...', 40) as snip \
+                   FROM cu1.notes_fts \
+                   JOIN cu1.note_meta ON notes_fts.rowid = note_meta.rowid \
+                   WHERE notes_fts MATCH ? \
+                   LIMIT 1";
+        let mut stmt = main.prepare(sql).unwrap();
+        let snip: Option<String> = stmt
+            .query_row(rusqlite::params!["ribbon"], |r| r.get(0))
+            .ok();
+        assert!(snip.is_some(), "snippet query should return a row");
+        let snip = snip.unwrap();
+        assert!(
+            snip.contains("<m>ribbon</m>"),
+            "snippet should match cu1's body 'rabat ribbon' (not main's 'rabat banner'); got: {:?}",
+            snip,
+        );
+    }
+
+    /// Q4: When main ALSO has notes_fts and matches the same MATCH
+    /// expression, does the unqualified `notes_fts` in the cu1-FROM
+    /// query still resolve to cu1? (Tests the worst case where main
+    /// could shadow.)
+    #[test]
+    fn option_c_main_having_notes_fts_does_not_shadow_cu1_in_from_clause() {
+        let (main, _tmp) = setup_two_schemas();
+        // Both main and cu1 have rows matching "rabat". The cu1-FROM
+        // query MUST return cu1's row regardless of main's existence.
+        let sql = "SELECT note_meta.path FROM cu1.notes_fts \
+                   JOIN cu1.note_meta ON notes_fts.rowid = note_meta.rowid \
+                   WHERE notes_fts MATCH ?";
+        let mut stmt = main.prepare(sql).unwrap();
+        let paths: Vec<String> = stmt
+            .query_map(rusqlite::params!["rabat"], |r| r.get(0))
+            .unwrap()
+            .filter_map(|r| r.ok())
+            .collect();
+        assert_eq!(paths, vec!["/cu1/a.md".to_string()]);
     }
 }
 
