@@ -5239,6 +5239,44 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
                         );
                         continue;
                     }
+                    // MIG-059 — pre-warm the cu1 Connection to eliminate
+                    // the per-Connection first-query latency that made
+                    // federated search take 15-27s on Eisa's data (vs
+                    // ~1s for the equivalent active-mode query).
+                    //
+                    // Two warm-up steps, both best-effort (failures only
+                    // make the FIRST search slow, not subsequent ones):
+                    //
+                    // 1. **PASSIVE WAL checkpoint.** A cUniverse's WAL
+                    //    isn't checkpointed by the active universe's
+                    //    `spawn_wal_checkpoint_daemon` (that's keyed on
+                    //    the active universe's db_path). If the
+                    //    cUniverse's owner last left a sizable WAL,
+                    //    the first standalone read has to scan the
+                    //    entire WAL for the consistent view — slow.
+                    //    PASSIVE checkpoint merges WAL into main DB if
+                    //    no other reader holds locks; if it can't, it
+                    //    no-ops without blocking. Safe.
+                    //
+                    // 2. **FTS5 vtable init + page-cache warm.** SQLite
+                    //    initializes the FTS5 vtable lazily on first
+                    //    query, faulting hundreds of segment-index
+                    //    pages from disk. Running a trivial `SELECT
+                    //    COUNT(*) FROM notes_fts` here pays that cost
+                    //    upfront, on the background-attach thread, so
+                    //    the user's first search hits warm caches.
+                    //
+                    // Cost: ~50-200ms per cUniverse depending on FTS5
+                    // index size. Paid once at boot, recovered on
+                    // every subsequent search.
+                    let _ = cu_conn.execute_batch("PRAGMA wal_checkpoint(PASSIVE);");
+                    let _ = cu_conn
+                        .query_row::<i64, _, _>(
+                            "SELECT COUNT(*) FROM notes_fts",
+                            [],
+                            |r| r.get(0),
+                        )
+                        .ok();
                     search_conns.push((cu_root.clone(), cu_conn));
                 }
 
