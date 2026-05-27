@@ -5273,6 +5273,69 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
             }
         };
 
+        // MIG-058/MIG-059 Option E — apply the same PRAGMA batch that
+        // active-mode Connections get via `init_db` (plus mmap_size).
+        //
+        // Pre-Option-E, `federated_conn` opened with SQLite defaults:
+        // tiny ~2 MB page cache, no memory-mapped I/O, no busy_timeout.
+        // Once Option C made federated_conn the SOLE Connection serving
+        // federated search (per-schema BM25 queries), its absent PRAGMAs
+        // became the bottleneck — Eisa's Boss-test showed ~13s first
+        // search vs §K.3's ~15s on the same data (a 15% improvement
+        // instead of the expected 10×+).
+        //
+        // What each PRAGMA buys us here:
+        //
+        // - `journal_mode=WAL`: persistent on disk; the cUniverse
+        //   files already have WAL set. Setting it on this Connection
+        //   makes the read path use WAL semantics consistently with
+        //   the cUniverse's prior usage.
+        //
+        // - `synchronous=NORMAL`: faster commits; no effect on reads,
+        //   but keeps any incidental writes (e.g. PRAGMA optimize's
+        //   stat1 updates) cheap.
+        //
+        // - `busy_timeout=10000`: 10s patience on any lock contention.
+        //   Tauri spawns multiple IPC handler threads; without this,
+        //   transient SQLITE_BUSY from a concurrent reader could kill
+        //   a federated search.
+        //
+        // - `cache_size=-65536`: 64 MB per-Connection page cache (vs
+        //   SQLite's 2 MB default). Hot FTS5 segment pages stay in
+        //   memory across the session — the second federated search
+        //   on a cUniverse should land in O(milliseconds) instead of
+        //   re-paging from disk.
+        //
+        // - `mmap_size=268435456`: 256 MB memory-mapped I/O. The
+        //   federation attach connection AND any other Connection in
+        //   this process that opens a cUniverse's search.db share
+        //   their FTS5 segment pages via the OS page cache (per
+        //   sqlite.org/mmap.html). This is the actual mechanism
+        //   that lets libraryStats / lens UNION ALL queries warm the
+        //   pages that federated-search subsequently uses.
+        //
+        // - `recursive_triggers=ON`: matches init_db. Belt-and-braces;
+        //   federation reads don't trigger writes, but if any
+        //   write path runs (e.g. auto-migrate during attach_all,
+        //   §5.3), the recursive trigger semantics match active mode.
+        //
+        // All failures are swallowed: if PRAGMA setup errors for any
+        // reason, the Connection works with whatever defaults stuck,
+        // and federation is still functional just slower.
+        if let Err(e) = conn.execute_batch(
+            "PRAGMA journal_mode=WAL; \
+             PRAGMA synchronous=NORMAL; \
+             PRAGMA busy_timeout=10000; \
+             PRAGMA cache_size=-65536; \
+             PRAGMA mmap_size=268435456; \
+             PRAGMA recursive_triggers=ON;",
+        ) {
+            eprintln!(
+                "[federation] PRAGMA setup on federated_conn failed (non-fatal): {}",
+                e
+            );
+        }
+
         // MIG-056 §K.1 hotfix — Register the custom FTS5 tokenizer on
         // this fresh Connection BEFORE running any FTS5 MATCH queries.
         // Per `register_fts5_tokenizer`'s own docstring: "Tokenizer

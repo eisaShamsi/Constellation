@@ -76,6 +76,17 @@
 	// than via a separate $effect on `filtered`. The old separate
 	// effect fired EVERY time `filtered` updated, including from the
 	// async resolve, which contributed to mid-typing reactive churn.
+	//
+	// MIG-058/MIG-059 Option E — stale-result-discard guard. When the
+	// async `constellationSearch` is slow (10+s on cold federated
+	// FTS5), the user may type more characters while the previous
+	// search is still in-flight. When the stale result resolves, its
+	// reactive cascade (filtered = ..., selectedIndex = 0) would fire
+	// even though the result is for the OLD query — causing visible
+	// flicker and reactive churn that contributes to the perceived
+	// Arabic input truncation. The guard `if (q !== query) return`
+	// drops stale results before they touch state. Same pattern as
+	// Solr `newSearcher` swap-in skip when the searcher is obsolete.
 	$effect(() => {
 		const q = query;
 		clearTimeout(searchTimer);
@@ -94,6 +105,8 @@
 					const req = parseSearchQuery(q);
 					req.limit = 15;
 					const results = await constellationSearch(req);
+					// Option E — discard if user has moved on since search start.
+					if (q !== query) return;
 					const seen = new Set(local.map(n => n.path));
 					const merged = [...local];
 					for (const r of results) {
@@ -107,6 +120,10 @@
 					// federation/search error — fall through with local-only results
 				}
 			}
+			// Option E — final guard before reactive write. Even the
+			// local-filter-only path can be stale if the user pivoted
+			// to a different query while the setTimeout was queued.
+			if (q !== query) return;
 			filtered = next.slice(0, 30);
 			selectedIndex = 0;
 		}, 300);
