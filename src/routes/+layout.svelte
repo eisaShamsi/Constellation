@@ -2115,11 +2115,24 @@
 		// Re-poll once after ~3s to catch the background-attach completion.
 		// Per Architect §6.3 the attach takes tens-to-low-hundreds ms per
 		// cUniverse; 3s is generous headroom for ≤25 cUniverses.
+		//
+		// §K.2 — Also re-fire loadAllStats() so the status-bar notes
+		// count + sidebar library badges pick up federated rows. The
+		// initial loadAllStats() runs in the post-hydration fan-out
+		// BEFORE federation attaches (federation runs in a background
+		// Rust thread); without this re-fire the stats stay frozen at
+		// the pre-attach (active-universe-only) snapshot and the
+		// status bar shows 1101 notes instead of 8751 with cUniverses.
 		setTimeout(async () => {
 			try {
 				federationWarnings = await getFederationWarnings();
 			} catch {
 				// Keep existing state on error.
+			}
+			try {
+				await loadAllStats();
+			} catch {
+				// Keep stale stats on error rather than zeroing.
 			}
 		}, 3000);
 	}

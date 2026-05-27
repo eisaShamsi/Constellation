@@ -389,15 +389,44 @@ pub struct SearchState {
     /// universe switch.
     pub federation: Mutex<crate::federation::FederationContext>,
     /// MIG-056 §B.1 — long-lived Connection with cUniverses ATTACHed.
-    /// See `federated_conn` doc above.
+    /// See `federated_conn` doc above. Used by `aggregate_library_counts`
+    /// (libraryStats) and `execute_lens` — queries that benefit from a
+    /// single UNION ALL across all schemas and do NOT use FTS5 aux funcs.
     pub federated_conn: Mutex<Option<Connection>>,
+    /// MIG-056 §K.3 — v2 scatter-gather per-cUniverse Connection pool.
+    ///
+    /// **Why a separate Connection per cUniverse**: FTS5 auxiliary
+    /// functions `bm25()` and `snippet()` take a self-referential
+    /// pseudo-column bound to the unqualified original table name. In
+    /// a multi-schema query (UNION ALL across `main.notes_fts` +
+    /// `cu1.notes_fts`), there is no syntactic form that lets each
+    /// branch's `bm25()` resolve to ITS branch's FTS5 table — the
+    /// pseudo-column can't be schema-qualified, can't be table-aliased,
+    /// and unqualified `notes_fts` ambiguously resolves to `main` only.
+    /// The §K.2 hotfix worked around this by dropping `bm25()` /
+    /// `snippet()` entirely; §K.3 restores them by giving each
+    /// cUniverse its OWN Connection where `notes_fts` is unambiguously
+    /// the one in that Connection's only attached schema.
+    ///
+    /// Each entry: `(cuniverse_root_path, Connection)`. The Connection
+    /// is opened against the cUniverse's `search.db` directly (no
+    /// ATTACH), has `register_fts5_tokenizer` called on it, and is
+    /// reused across all federated searches until the universe
+    /// switches (when `invalidate_search_state` drops the whole Vec).
+    ///
+    /// Per-branch results are collected by the scatter-gather
+    /// coordinator in `federated_lexical_search_or_fallback` and merged
+    /// via RRF (Reciprocal Rank Fusion, k=60) — the Lucene/Elasticsearch
+    /// CCS standard merge that doesn't require comparable raw BM25
+    /// scores across branches.
+    pub federated_search_conns: Mutex<Vec<(PathBuf, Connection)>>,
     /// MIG-056 §J.1 — federation epoch counter for the background-attach
     /// race fix. Incremented by `invalidate_search_state` on every
     /// universe switch. Background-attach threads capture the value at
-    /// start; before writing into `federation` / `federated_conn`, they
-    /// check the counter hasn't advanced. If it has, the universe
-    /// switched mid-attach and their work belongs to a stale universe;
-    /// they abandon it.
+    /// start; before writing into `federation` / `federated_conn` /
+    /// `federated_search_conns`, they check the counter hasn't advanced.
+    /// If it has, the universe switched mid-attach and their work
+    /// belongs to a stale universe; they abandon it.
     ///
     /// Identified by the §J audit's migration-paths agent (Scenario 6:
     /// "Universe switch during background-attach"). Without this
@@ -414,6 +443,7 @@ impl SearchState {
             db: Mutex::new(None),
             federation: Mutex::new(crate::federation::FederationContext::new()),
             federated_conn: Mutex::new(None),
+            federated_search_conns: Mutex::new(Vec::new()),
             federation_generation: std::sync::atomic::AtomicU64::new(0),
         }
     }
@@ -3639,22 +3669,57 @@ fn lexical_search(conn: &Connection, query: &str, limit: u32) -> Vec<SearchResul
     results.map(|rows| rows.filter_map(|r| r.ok()).collect()).unwrap_or_default()
 }
 
-/// MIG-056 §G — Federated FTS5 lexical search.
+/// MIG-056 §K.3 — v2 scatter-gather federated FTS5 lexical search.
 ///
-/// Reads federation context from SearchState. If federation is ready AND
-/// has attached cUniverses AND `state.federated_conn` is populated, runs
-/// a UNION ALL FTS5 query across `main.notes_fts` + each cUniverse's
-/// `cu*.notes_fts`. Otherwise falls back to the single-schema
-/// `lexical_search` against the provided `conn`.
+/// ## Why scatter-gather (replacing the §G UNION ALL approach)
 ///
-/// Per Architect §6.4.4 + Plan §G. v1 ranking: naive BM25 score
-/// concatenation (Agent 2 recommendation). RRF ranking across schemas
-/// is a future enhancement.
+/// SQLite's FTS5 auxiliary functions (`bm25()`, `snippet()`) take a
+/// self-referential pseudo-column bound to the unqualified original
+/// FTS5 table name. In a multi-schema UNION ALL query each branch
+/// would need `bm25()` to resolve to ITS branch's `notes_fts`, but
+/// the pseudo-column can't be schema-qualified, can't be aliased, and
+/// unqualified `notes_fts` ambiguously resolves to `main` only. The
+/// §K.2 hotfix worked around this by dropping `bm25()`/`snippet()`
+/// and ordering by `modified DESC` — functional but Eisa flagged the
+/// loss of relevance ranking (top result was "most-recently-edited"
+/// not "most relevant").
 ///
-/// Per Agent 1's SQLite ATTACH research: FTS5 cross-DB queries work
-/// because Constellation's `notes_fts` uses `content=note_meta` and
-/// both live in the same `search.db` file — the "self-contained FTS
-/// table" requirement is met.
+/// §K.3 restores BM25 ranking by giving each cUniverse its OWN
+/// Connection. Each per-Connection query runs as single-schema where
+/// `bm25()` / `snippet()` work fine (only one `notes_fts` in scope).
+/// The coordinator collects per-branch ranked Vec<SearchResult>, then
+/// merges them via Reciprocal Rank Fusion (RRF).
+///
+/// ## RRF (Reciprocal Rank Fusion, k=60)
+///
+/// For each unique document path d, its combined score is:
+///
+///   score(d) = Σ over branches: 1 / (k + rank_in_branch(d))
+///
+/// where `rank_in_branch(d)` is 1-indexed (best=1). Documents not in
+/// a branch contribute 0 from that branch.
+///
+/// k=60 is the Cormack & Clarke (2009) constant adopted by Elasticsearch
+/// CCS, Vespa, Lucene MultiSearcher, OpenSearch. It softens the head:
+/// rank-1's contribution is 1/61 ≈ 0.0164 vs rank-2's 1/62 ≈ 0.0161 —
+/// near-equal, so a strong rank-1 in one branch slightly beats a strong
+/// rank-2 in another, but two rank-1s tie and interleave fairly.
+///
+/// RRF avoids the cross-corpus BM25 incomparability problem (two
+/// different FTS5 indexes have different document counts and term
+/// frequencies, so raw scores aren't directly comparable across
+/// branches). It works on RANKS — which are comparable.
+///
+/// ## Fallback behavior
+///
+/// - Federation not ready / no attached cUniverses → single-schema
+///   `lexical_search` on `state.db` (existing MIG-055 behavior).
+/// - `state.federated_search_conns` empty despite federation ready
+///   (race during background-attach) → single-schema fallback.
+/// - Per-cUniverse `lexical_search` returns empty (transient error,
+///   FTS5 cold start, etc.) → that branch contributes no rows to the
+///   RRF merge but the other branches still produce a result. This is
+///   the skip_unavailable model — Architect §5.2.
 fn federated_lexical_search_or_fallback(
     app: &tauri::AppHandle,
     conn: &Connection,
@@ -3670,135 +3735,85 @@ fn federated_lexical_search_or_fallback(
     };
 
     if federated_aliases.is_empty() {
-        // Single-schema fallback (existing MIG-055 behavior).
+        // No attached cUniverses (or federation not yet ready). Fall
+        // back to single-schema lexical_search on state.db — existing
+        // MIG-055 behavior.
         return lexical_search(conn, query, limit);
     }
 
-    // Federation path. Open via state.federated_conn (long-lived
-    // Connection with main + cu* attached).
-    let fed_guard = match state.federated_conn.lock() {
+    // Acquire the per-cUniverse Connection pool. If poisoned / empty,
+    // fall back to single-schema (skip_unavailable — Architect §5.2).
+    let search_conns_guard = match state.federated_search_conns.lock() {
         Ok(g) => g,
-        Err(_) => return lexical_search(conn, query, limit),
-    };
-    let fed_conn = match fed_guard.as_ref() {
-        Some(c) => c,
-        None => {
-            // federated_conn None despite federation ready — race during
-            // background-attach. Single-schema fallback (skip_unavailable
-            // model — Architect §5.2).
+        Err(_) => {
+            eprintln!("[federation] federated_search_conns Mutex poisoned — single-schema fallback");
             return lexical_search(conn, query, limit);
         }
     };
-
-    federated_lexical_search(fed_conn, query, limit, &federated_aliases)
-}
-
-/// Execute a federated UNION ALL FTS5 query across main + each
-/// cUniverse alias. Returns the same `SearchResult` shape as
-/// `lexical_search` so consumers see the same data shape regardless
-/// of federation. Score ordering preserved via outer ORDER BY.
-fn federated_lexical_search(
-    fed_conn: &Connection,
-    query: &str,
-    limit: u32,
-    federated_aliases: &[String],
-) -> Vec<SearchResult> {
-    // Normalize the query (same path as lexical_search).
-    let normalized = normalize_arabic_for_search(query);
-    let expansion = expanded_match_query(&normalized);
-    let fts_query = match &expansion {
-        Some(e) => e.match_expr.clone(),
-        None => format!("{}*", normalized.replace('"', "")),
-    };
-    let bridge_terms: &[String] = expansion
-        .as_ref()
-        .map(|e| e.bridge_terms_lower.as_slice())
-        .unwrap_or(&[]);
-
-    // Build per-schema SELECT bodies + UNION ALL them.
-    let sql = build_federated_lexical_sql(federated_aliases);
-
-    // Bind the FTS query once per schema branch — N copies of fts_query.
-    // The LIMIT param goes last (after all branches).
-    let mut bound_params: Vec<rusqlite::types::Value> = Vec::new();
-    let total_branches = 1 /* main */ + federated_aliases.len();
-    for _ in 0..total_branches {
-        bound_params.push(rusqlite::types::Value::Text(fts_query.clone()));
+    if search_conns_guard.is_empty() {
+        // Race: federation context says ready but the Connection pool
+        // hasn't been populated yet. Should be rare (only the ~ms
+        // between context-write and pool-write in the background
+        // thread). Fall back so the user still gets results from main.
+        return lexical_search(conn, query, limit);
     }
-    bound_params.push(rusqlite::types::Value::Integer(limit as i64));
 
-    let mut stmt = match fed_conn.prepare(&sql) {
-        Ok(s) => s,
-        Err(_) => return Vec::new(),
-    };
+    // SCATTER — run `lexical_search` once per Connection. Each runs
+    // single-schema where bm25()/snippet() work natively. We pull
+    // `limit * 2` per branch so RRF has enough material to merge from.
+    // Cost: each branch is one PREPARE + step loop — bound by the
+    // per-branch hit count (FTS5 indexes prune most rows). Sequential
+    // is fine; parallelism would add complexity (Send/Sync of
+    // rusqlite::Connection in a MutexGuard).
+    let per_branch_cap = limit.saturating_mul(2).max(20);
+    let mut branches: Vec<Vec<SearchResult>> = Vec::with_capacity(1 + search_conns_guard.len());
 
-    let query_lower = normalized.to_lowercase();
+    // Branch 0 — main universe via the caller-provided connection
+    // (which is `state.db.lock()` from `constellation_search`).
+    branches.push(lexical_search(conn, query, per_branch_cap));
 
-    let results = stmt.query_map(rusqlite::params_from_iter(bound_params.iter()), |row| {
-        let name: String = row.get(1)?;
-        let name_lower = name.to_lowercase();
-        let title_hit = name_lower.contains(&query_lower);
-        let snippet: Option<String> = row.get(5).ok();
-        let body_hit = snippet.as_ref().map_or(false, |s| s.contains("<mark>"));
+    // Branches 1..N — one per cUniverse standalone Connection.
+    for (_cu_root, cu_conn) in search_conns_guard.iter() {
+        branches.push(lexical_search(cu_conn, query, per_branch_cap));
+    }
 
-        let match_type = if title_hit && body_hit {
-            "title".to_string()
-        } else if title_hit {
-            "title".to_string()
-        } else {
-            "content".to_string()
-        };
+    // GATHER — RRF merge. Each branch's results are already ranked
+    // best-first by `lexical_search` (it issues `ORDER BY score` against
+    // bm25's negative-better convention, so position 0 = highest BM25).
+    // For each unique path: sum 1/(k + rank_in_branch) across branches.
+    // Since universes don't overlap in v1 (each note belongs to exactly
+    // one universe), each path appears in at most one branch — so RRF
+    // degenerates to "sort all branches' rows by their rank-reciprocal,
+    // top rows from each branch interleave, then second, then third."
+    //
+    // This is exactly the Lucene `MultiSearcher` / Elasticsearch CCS
+    // merge for non-overlapping shards: fairer than picking from one
+    // shard at a time, fairer than top-k-from-each-then-concat.
+    const RRF_K: f64 = 60.0;
+    use std::collections::HashMap;
+    let mut combined: HashMap<String, (SearchResult, f64)> = HashMap::new();
+    for branch in branches {
+        for (idx, result) in branch.into_iter().enumerate() {
+            let rank = (idx + 1) as f64; // 1-indexed
+            let contribution = 1.0 / (RRF_K + rank);
+            combined
+                .entry(result.path.clone())
+                .and_modify(|(_, score)| *score += contribution)
+                .or_insert_with(|| (result, contribution));
+        }
+    }
 
-        let match_via = if title_hit {
-            None
-        } else {
-            snippet
-                .as_deref()
-                .and_then(|s| find_match_via(s, bridge_terms))
-        };
-
-        Ok(SearchResult {
-            path: row.get(0)?,
-            name,
-            library_name: row.get(2)?,
-            modified: row.get(3)?,
-            score: row.get::<_, f64>(4)?.abs(),
-            snippet,
-            match_type,
-            heading_breadcrumb: None,
-            match_via,
-        })
+    // Sort by combined RRF score DESC, take top `limit`.
+    let mut merged: Vec<(SearchResult, f64)> = combined.into_values().collect();
+    merged.sort_by(|a, b| {
+        b.1.partial_cmp(&a.1)
+            .unwrap_or(std::cmp::Ordering::Equal)
     });
-
-    match results {
-        Ok(rows) => rows.filter_map(|r| r.ok()).collect(),
-        Err(_) => Vec::new(),
-    }
-}
-
-/// MIG-056 §G — Build the federated UNION ALL SQL for lexical FTS5
-/// search. Pure function so the shape is unit-testable.
-///
-/// Per-branch SELECT mirrors `lexical_search`'s query EXACTLY but
-/// with table refs schema-qualified. Each branch carries its own
-/// `MATCH ?` (predicate-pushdown). Outer ORDER BY by score + LIMIT.
-fn build_federated_lexical_sql(federated_aliases: &[String]) -> String {
-    let mut schemas: Vec<&str> = vec!["main"];
-    for alias in federated_aliases {
-        schemas.push(alias.as_str());
-    }
-    let parts: Vec<String> = schemas.iter().map(|s| {
-        format!(
-            "SELECT {s}.note_meta.path, {s}.note_meta.name, {s}.note_meta.library_name, {s}.note_meta.modified, \
-             bm25({s}.notes_fts, 10.0, 1.0) as score, \
-             snippet({s}.notes_fts, 1, '<mark>', '</mark>', '...', 40) as snip \
-             FROM {s}.notes_fts \
-             JOIN {s}.note_meta ON {s}.notes_fts.rowid = {s}.note_meta.rowid \
-             WHERE {s}.notes_fts MATCH ?",
-            s = s
-        )
-    }).collect();
-    format!("{} ORDER BY score LIMIT ?", parts.join(" UNION ALL "))
+    merged
+        .into_iter()
+        .take(limit as usize)
+        .map(|(r, _score)| r)
+        .collect()
 }
 
 /// Output of `expanded_match_query` — the FTS5 MATCH expression plus
@@ -5000,6 +5015,12 @@ pub fn invalidate_search_state(app: &tauri::AppHandle) {
     if let Ok(mut fc) = fed_guard {
         *fc = None;
     }
+    // MIG-056 §K.3 — also drop the per-cUniverse Connection pool.
+    // Same lifecycle as federated_conn: rebuilt on next attach cycle.
+    let fed_search_conns_guard = state.federated_search_conns.lock();
+    if let Ok(mut v) = fed_search_conns_guard {
+        v.clear();
+    }
     // And reset the FederationContext metadata.
     let fed_ctx_guard = state.federation.lock();
     if let Ok(mut fc) = fed_ctx_guard {
@@ -5122,6 +5143,70 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
             Ok(ctx) => {
                 let state = app_for_federation.state::<SearchState>();
 
+                // MIG-056 §K.3 — open standalone per-cUniverse
+                // Connections in addition to the ATTACH-based federated
+                // connection. The scatter-gather coordinator
+                // (`federated_lexical_search_or_fallback`) runs single-
+                // schema BM25 queries against each — FTS5 aux funcs
+                // work in single-schema scope but can't in cross-schema
+                // UNION ALL. See `federated_search_conns` doc on
+                // SearchState for the full rationale.
+                //
+                // Per-cUniverse failure is non-fatal: a failed open or
+                // tokenizer registration just omits that cUniverse from
+                // the search-conns pool, dropping search to the smaller
+                // set of available branches. The cUniverse itself
+                // remains in `ctx.attached` so libraryStats / lens
+                // federation still see it via the ATTACH connection.
+                let mut search_conns: Vec<(std::path::PathBuf, Connection)> = Vec::new();
+                for (_alias, cu_root) in ctx.attached() {
+                    let cu_db_path = cu_root.join(".constellation").join("search.db");
+                    let mut cu_conn = match Connection::open(&cu_db_path) {
+                        Ok(c) => c,
+                        Err(e) => {
+                            eprintln!(
+                                "[federation] open cUniverse Connection failed for {}: {} (omitted from search-conns; libraryStats/lens still see it)",
+                                cu_db_path.display(),
+                                e
+                            );
+                            continue;
+                        }
+                    };
+                    // §K.3 — match the PRAGMA setup that `init_db` does on
+                    // active-universe Connections, so per-branch BM25 sees
+                    // the same FTS5 state. WAL mode is persistent on disk
+                    // (the cUniverse's file already has it from its last
+                    // active-universe boot), but the per-Connection PRAGMAs
+                    // (synchronous, busy_timeout, cache_size, recursive
+                    // triggers) need to be set explicitly. Skipping them
+                    // doesn't affect correctness of BM25 ranking — those
+                    // are write/durability/perf settings — but matching
+                    // active-universe setup eliminates a class of "why
+                    // does it differ" questions.
+                    if let Err(e) = cu_conn.execute_batch(
+                        "PRAGMA journal_mode=WAL; \
+                         PRAGMA synchronous=NORMAL; \
+                         PRAGMA busy_timeout=10000; \
+                         PRAGMA cache_size=-65536; \
+                         PRAGMA recursive_triggers=ON;",
+                    ) {
+                        eprintln!(
+                            "[federation] PRAGMA setup failed for {}: {} (continuing — federated search may be slow but correct)",
+                            cu_db_path.display(),
+                            e
+                        );
+                    }
+                    if let Err(e) = register_fts5_tokenizer(&mut cu_conn) {
+                        eprintln!(
+                            "[federation] register_fts5_tokenizer failed for {}: {} (omitted from search-conns)",
+                            cu_db_path.display(),
+                            e
+                        );
+                        continue;
+                    }
+                    search_conns.push((cu_root.clone(), cu_conn));
+                }
+
                 // MIG-056 §J.1 — check the federation generation hasn't
                 // advanced since we started. If it has, the user switched
                 // universes during our attach window; our result belongs
@@ -5135,8 +5220,9 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
                         "[federation] background-attach abandoned: universe switched mid-attach (gen {} → {})",
                         start_generation, current_gen
                     );
-                    // `conn` drops at end of thread — the OLD universe's
-                    // attaches are released. The new universe's
+                    // `conn` + `search_conns` drop at end of thread —
+                    // the OLD universe's attaches + per-cUniverse
+                    // Connections are released. The new universe's
                     // `ensure_search_db_ready` will run its own attach.
                     return;
                 }
@@ -5148,6 +5234,12 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
                     *g = Some(conn);
                 } else {
                     eprintln!("[federation] state.federated_conn Mutex poisoned");
+                }
+                let fed_search_conns_guard = state.federated_search_conns.lock();
+                if let Ok(mut g) = fed_search_conns_guard {
+                    *g = search_conns;
+                } else {
+                    eprintln!("[federation] state.federated_search_conns Mutex poisoned");
                 }
                 let fed_ctx_guard = state.federation.lock();
                 if let Ok(mut g) = fed_ctx_guard {
@@ -6111,6 +6203,7 @@ mod tests_m8c {
             db: std::sync::Mutex::new(Some(conn)),
             federation: std::sync::Mutex::new(crate::federation::FederationContext::new()),
             federated_conn: std::sync::Mutex::new(None),
+            federated_search_conns: std::sync::Mutex::new(Vec::new()),
             federation_generation: std::sync::atomic::AtomicU64::new(0),
         }
     }
@@ -6305,6 +6398,7 @@ mod tests_m8c {
             db: std::sync::Mutex::new(Some(conn)),
             federation: std::sync::Mutex::new(crate::federation::FederationContext::new()),
             federated_conn: std::sync::Mutex::new(None),
+            federated_search_conns: std::sync::Mutex::new(Vec::new()),
             federation_generation: std::sync::atomic::AtomicU64::new(0),
         };
 
@@ -7033,63 +7127,176 @@ mod m14_bench {
 
 #[cfg(test)]
 mod mig056_federated_search {
-    //! MIG-056 §G — federated FTS5 search SQL builder.
-    use super::build_federated_lexical_sql;
+    //! MIG-056 §K.3 — v2 scatter-gather federated FTS5 search.
+    //!
+    //! These tests exercise the RRF merge in pure Rust (no SQLite
+    //! mocking needed — `lexical_search` is exercised by the integration
+    //! suite at `src/federation/integration_tests.rs`). The scatter
+    //! stage is a thin wrapper; the gather stage (RRF) is the new logic
+    //! and where bugs would live.
+    use super::SearchResult;
 
-    #[test]
-    fn empty_federation_still_emits_main_only() {
-        // Even with empty federated_aliases the builder still emits a
-        // valid query — just for `main`. (In practice the caller
-        // routes to single-schema `lexical_search` in that case, but
-        // the builder is defensive.)
-        let sql = build_federated_lexical_sql(&[]);
-        assert!(sql.contains("main.notes_fts"));
-        assert!(sql.contains("main.note_meta"));
-        assert!(!sql.contains("UNION ALL"));
-        assert!(sql.contains("ORDER BY score LIMIT ?"));
-    }
-
-    #[test]
-    fn one_cuniverse_emits_main_union_all_cu0() {
-        let sql = build_federated_lexical_sql(&["cu0".to_string()]);
-        assert!(sql.contains("main.notes_fts"));
-        assert!(sql.contains("cu0.notes_fts"));
-        assert_eq!(sql.matches("UNION ALL").count(), 1);
-        // Both branches do their own MATCH (predicate-pushdown contract)
-        assert_eq!(sql.matches("notes_fts MATCH ?").count(), 2);
-        // Each branch does its own JOIN
-        assert_eq!(sql.matches(" JOIN ").count(), 2);
-        // ORDER BY at outer level only — appears once
-        assert_eq!(sql.matches("ORDER BY").count(), 1);
-    }
-
-    #[test]
-    fn multiple_cuniverses_each_have_their_own_match() {
-        let sql = build_federated_lexical_sql(&[
-            "cu0".to_string(),
-            "cu1".to_string(),
-            "cu2".to_string(),
-        ]);
-        assert_eq!(sql.matches("UNION ALL").count(), 3); // main + cu0 + cu1 + cu2 = 4 parts, 3 separators
-        assert_eq!(sql.matches("notes_fts MATCH ?").count(), 4);
-        assert_eq!(sql.matches(" JOIN ").count(), 4);
-        // Each schema referenced
-        for schema in &["main", "cu0", "cu1", "cu2"] {
-            assert!(sql.contains(&format!("{}.notes_fts", schema)));
-            assert!(sql.contains(&format!("{}.note_meta", schema)));
+    /// Helper — produce a synthetic SearchResult with given path and
+    /// BM25 score (score doesn't affect RRF ranking; it's the position
+    /// in the input Vec that matters).
+    fn r(path: &str) -> SearchResult {
+        SearchResult {
+            path: path.to_string(),
+            name: format!("Note {}", path),
+            library_name: "lib".to_string(),
+            modified: 0,
+            score: 0.0,
+            snippet: None,
+            match_type: "content".to_string(),
+            heading_breadcrumb: None,
+            match_via: None,
         }
     }
 
+    /// Standalone RRF function for unit testing. Mirrors the inline
+    /// loop in `federated_lexical_search_or_fallback` — kept in sync.
+    /// Changing one MUST change the other; the property tests below
+    /// cover the merge semantics.
+    fn rrf_merge(branches: Vec<Vec<SearchResult>>, limit: usize) -> Vec<SearchResult> {
+        const RRF_K: f64 = 60.0;
+        use std::collections::HashMap;
+        let mut combined: HashMap<String, (SearchResult, f64)> = HashMap::new();
+        for branch in branches {
+            for (idx, result) in branch.into_iter().enumerate() {
+                let rank = (idx + 1) as f64;
+                let contribution = 1.0 / (RRF_K + rank);
+                combined
+                    .entry(result.path.clone())
+                    .and_modify(|(_, score)| *score += contribution)
+                    .or_insert_with(|| (result, contribution));
+            }
+        }
+        let mut merged: Vec<(SearchResult, f64)> = combined.into_values().collect();
+        merged.sort_by(|a, b| {
+            b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal)
+        });
+        merged.into_iter().take(limit).map(|(r, _)| r).collect()
+    }
+
     #[test]
-    fn bm25_and_snippet_qualified_per_schema() {
-        // FTS5 functions like bm25() and snippet() must reference the
-        // per-schema FTS table (not unqualified). Verify the builder
-        // qualifies them.
-        let sql = build_federated_lexical_sql(&["cu5".to_string()]);
-        assert!(sql.contains("bm25(main.notes_fts"));
-        assert!(sql.contains("bm25(cu5.notes_fts"));
-        assert!(sql.contains("snippet(main.notes_fts"));
-        assert!(sql.contains("snippet(cu5.notes_fts"));
+    fn empty_branches_yield_empty_result() {
+        let merged = rrf_merge(vec![], 10);
+        assert!(merged.is_empty());
+    }
+
+    #[test]
+    fn single_branch_passes_through_in_rank_order() {
+        // With one branch, RRF degenerates to "preserve input order"
+        // since rank-reciprocal is monotonically decreasing in rank.
+        let branch = vec![r("a"), r("b"), r("c"), r("d")];
+        let merged = rrf_merge(vec![branch], 10);
+        assert_eq!(merged.len(), 4);
+        assert_eq!(merged[0].path, "a");
+        assert_eq!(merged[1].path, "b");
+        assert_eq!(merged[2].path, "c");
+        assert_eq!(merged[3].path, "d");
+    }
+
+    #[test]
+    fn two_branches_interleave_top_ranks() {
+        // Non-overlapping branches: top-1 from each tie at rank 1
+        // (RRF contribution = 1/61 each), then top-2 tie at rank 2,
+        // etc. HashMap iteration order is non-deterministic but for
+        // tied scores any order is correct — assert SET equality at
+        // each rank level.
+        let main_branch = vec![r("main_1"), r("main_2"), r("main_3")];
+        let cu_branch = vec![r("cu_1"), r("cu_2"), r("cu_3")];
+        let merged = rrf_merge(vec![main_branch, cu_branch], 10);
+
+        assert_eq!(merged.len(), 6);
+        // Top 2 are rank-1 from each branch (tied at 1/61)
+        let top2: std::collections::HashSet<&str> =
+            merged.iter().take(2).map(|r| r.path.as_str()).collect();
+        assert!(top2.contains("main_1"));
+        assert!(top2.contains("cu_1"));
+        // Next 2 are rank-2 from each (tied at 1/62)
+        let next2: std::collections::HashSet<&str> =
+            merged.iter().skip(2).take(2).map(|r| r.path.as_str()).collect();
+        assert!(next2.contains("main_2"));
+        assert!(next2.contains("cu_2"));
+        // Last 2 are rank-3 from each
+        let last2: std::collections::HashSet<&str> =
+            merged.iter().skip(4).take(2).map(|r| r.path.as_str()).collect();
+        assert!(last2.contains("main_3"));
+        assert!(last2.contains("cu_3"));
+    }
+
+    #[test]
+    fn three_branches_strong_rank1_wins_over_weaker_rank2s() {
+        // Branch sizes don't matter — only ranks do. A branch with
+        // only 1 result at rank 1 contributes 1/61, same as the rank-1
+        // of any other branch. A rank-2 anywhere is 1/62 (less). So
+        // three rank-1s from three branches all tie, and beat any
+        // rank-2. RRF's classic "fair shard merging" property.
+        let small = vec![r("small_only")];
+        let medium = vec![r("medium_1"), r("medium_2")];
+        let large = vec![r("large_1"), r("large_2"), r("large_3"), r("large_4")];
+        let merged = rrf_merge(vec![small, medium, large], 10);
+
+        assert_eq!(merged.len(), 7);
+        // Rank 1 from each branch — all tied at 1/61.
+        let top3: std::collections::HashSet<&str> =
+            merged.iter().take(3).map(|r| r.path.as_str()).collect();
+        assert!(top3.contains("small_only"));
+        assert!(top3.contains("medium_1"));
+        assert!(top3.contains("large_1"));
+        // After the rank-1 tier: rank-2 from medium + large (tied at 1/62).
+        let rank2_tier: std::collections::HashSet<&str> =
+            merged.iter().skip(3).take(2).map(|r| r.path.as_str()).collect();
+        assert!(rank2_tier.contains("medium_2"));
+        assert!(rank2_tier.contains("large_2"));
+        // Then rank-3 and rank-4, both only from `large`.
+        assert_eq!(merged[5].path, "large_3");
+        assert_eq!(merged[6].path, "large_4");
+    }
+
+    #[test]
+    fn overlapping_paths_accumulate_rrf_contributions() {
+        // Federation v1 universes don't overlap (one note belongs to
+        // one universe), but the RRF code is general-purpose. If the
+        // same path appears in two branches it should sum contributions
+        // and rank higher than non-overlapping rank-1s.
+        let branch_a = vec![r("shared"), r("only_a")];
+        let branch_b = vec![r("shared"), r("only_b")];
+        let merged = rrf_merge(vec![branch_a, branch_b], 10);
+
+        assert_eq!(merged.len(), 3, "shared dedupes; 2 unique + 1 shared = 3");
+        assert_eq!(
+            merged[0].path, "shared",
+            "shared appears at rank 1 in both → contribution = 2/61 > any single 1/61"
+        );
+        // The remaining two are rank-2 from each branch, tied at 1/62.
+        let rest: std::collections::HashSet<&str> =
+            merged.iter().skip(1).map(|r| r.path.as_str()).collect();
+        assert!(rest.contains("only_a"));
+        assert!(rest.contains("only_b"));
+    }
+
+    #[test]
+    fn limit_truncates_final_result() {
+        let branch_a = (1..=10).map(|i| r(&format!("a_{}", i))).collect::<Vec<_>>();
+        let branch_b = (1..=10).map(|i| r(&format!("b_{}", i))).collect::<Vec<_>>();
+        let merged = rrf_merge(vec![branch_a, branch_b], 5);
+        assert_eq!(merged.len(), 5, "respects outer LIMIT");
+    }
+
+    #[test]
+    fn rrf_constant_k60_softens_head() {
+        // The k=60 constant means rank 1's contribution (1/61) is only
+        // ~1.6% higher than rank 2's (1/62). Verify the math.
+        let r1 = 1.0_f64 / 61.0;
+        let r2 = 1.0_f64 / 62.0;
+        let ratio = r1 / r2;
+        assert!(
+            (ratio - 1.0).abs() < 0.02,
+            "rank-1 should beat rank-2 by < 2% (got {:.4}); softens the head per Cormack-Clarke",
+            ratio
+        );
     }
 }
 

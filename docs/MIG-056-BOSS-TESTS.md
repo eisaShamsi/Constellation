@@ -112,7 +112,6 @@ In the sidebar, expand a cUniverse entry (e.g., **Eisa Cognitive Knowledge**). E
 At least one cUniverse library shows a non-zero badge. Reply **"Stage 3 passes"**.
 
 ---
-
 ## Stage 4 — Global search across cUniverses
 
 ### What we're testing
