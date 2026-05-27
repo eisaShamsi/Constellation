@@ -1,7 +1,18 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { invoke } from '@tauri-apps/api/core';
 	import { t } from '$lib/i18n';
 	import { constellationSearch, parseSearchQuery } from '$lib/libraries/store';
+
+	// MIG-058 v2 diagnostic — log keystroke / composition events to the
+	// universe's diagnostics.log via the backend `diag_log_line` command.
+	// Captured: timestamp, event type, current input.value, current
+	// `query` state, composition flag. Pasted by Eisa post-test to see
+	// exactly which keystrokes landed and which got dropped. Fire-and-
+	// forget; failures swallowed so the diag never breaks input.
+	function logKeyDiag(line: string) {
+		invoke('diag_log_line', { line: `[mig-058-diag] ${line}` }).catch(() => {});
+	}
 
 	let {
 		notes = [] as { name: string; path: string; libraryName: string }[],
@@ -146,9 +157,26 @@
 			class="qs-input"
 			placeholder={$t('quickSwitcher.placeholder')}
 			bind:value={query}
-			onkeydown={handleKeydown}
-			oncompositionstart={() => composing = true}
-			oncompositionend={() => composing = false}
+			onkeydown={(e) => {
+				logKeyDiag(`keydown key=${JSON.stringify(e.key)} code=${e.code} keyCode=${e.keyCode} isComposing=${e.isComposing} input.value=${JSON.stringify(inputEl?.value ?? '')} query=${JSON.stringify(query)}`);
+				handleKeydown(e);
+			}}
+			oninput={(e) => {
+				const tgt = e.target as HTMLInputElement;
+				const ie = e as unknown as InputEvent;
+				logKeyDiag(`input inputType=${ie.inputType} data=${JSON.stringify(ie.data)} isComposing=${ie.isComposing} input.value=${JSON.stringify(tgt.value)} query=${JSON.stringify(query)} composing_flag=${composing}`);
+			}}
+			oncompositionstart={(e) => {
+				composing = true;
+				logKeyDiag(`compositionstart data=${JSON.stringify(e.data)} input.value=${JSON.stringify(inputEl?.value ?? '')} query=${JSON.stringify(query)}`);
+			}}
+			oncompositionupdate={(e) => {
+				logKeyDiag(`compositionupdate data=${JSON.stringify(e.data)} input.value=${JSON.stringify(inputEl?.value ?? '')} query=${JSON.stringify(query)}`);
+			}}
+			oncompositionend={(e) => {
+				composing = false;
+				logKeyDiag(`compositionend data=${JSON.stringify(e.data)} input.value=${JSON.stringify(inputEl?.value ?? '')} query=${JSON.stringify(query)}`);
+			}}
 		/>
 		<div class="qs-list">
 			{#each filtered as note, i (note.path)}

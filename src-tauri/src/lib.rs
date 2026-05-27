@@ -430,6 +430,7 @@ pub fn run() {
             search::constellation_search_init,
             search::constellation_search,
             search::constellation_search_reindex,
+            search::diag_log_line,
             search::constellation_search_store_embedding,
             search::constellation_search_similar,
             search::constellation_search_universal,

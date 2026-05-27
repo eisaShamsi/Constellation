@@ -456,6 +456,20 @@ pub(crate) fn db_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     Ok(cdir.join("search.db"))
 }
 
+/// MIG-058/MIG-059 diagnostic — Tauri command for the frontend to write
+/// a tagged line into the universe's `diagnostics.log`. Used by the
+/// QuickSwitcher's keystroke / composition / IME event logger to
+/// capture timing + value-state evidence without devtools (release
+/// builds disable devtools per project policy).
+///
+/// To be removed once MIG-058/MIG-059 v2 close.
+#[tauri::command]
+pub fn diag_log_line(app: tauri::AppHandle, line: String) {
+    if let Ok(p) = db_path(&app) {
+        diag_log(&p, &line);
+    }
+}
+
 /// Append a timestamped line to `<universe>/.constellation/diagnostics.log`.
 ///
 /// Windows Tauri builds are compiled as GUI subsystem so `eprintln!` /
@@ -3807,13 +3821,39 @@ fn federated_lexical_search_or_fallback(
     let per_branch_cap = limit.saturating_mul(2).max(20);
     let mut branches: Vec<Vec<SearchResult>> = Vec::with_capacity(1 + search_conns_guard.len());
 
+    // MIG-058/MIG-059 v2 diagnostic — time each branch's lexical_search
+    // separately so we can see which Connection is the bottleneck and
+    // by how much. Tagged [mig-059-diag-search] so it's easy to grep
+    // alongside the per-cUniverse setup diagnostics.
+    let log_search_time = |label: &str, elapsed_ms: u128, row_count: usize| {
+        if let Ok(p) = db_path(app) {
+            diag_log(
+                &p,
+                &format!(
+                    "[mig-059-diag-search] query={:?} branch={} time_ms={} rows={}",
+                    query, label, elapsed_ms, row_count
+                ),
+            );
+        }
+    };
+
     // Branch 0 — main universe via the caller-provided connection
     // (which is `state.db.lock()` from `constellation_search`).
-    branches.push(lexical_search(conn, query, per_branch_cap));
+    let t0 = std::time::Instant::now();
+    let main_results = lexical_search(conn, query, per_branch_cap);
+    log_search_time("main", t0.elapsed().as_millis(), main_results.len());
+    branches.push(main_results);
 
     // Branches 1..N — one per cUniverse standalone Connection.
-    for (_cu_root, cu_conn) in search_conns_guard.iter() {
-        branches.push(lexical_search(cu_conn, query, per_branch_cap));
+    for (cu_root, cu_conn) in search_conns_guard.iter() {
+        let t = std::time::Instant::now();
+        let cu_results = lexical_search(cu_conn, query, per_branch_cap);
+        log_search_time(
+            &cu_root.display().to_string(),
+            t.elapsed().as_millis(),
+            cu_results.len(),
+        );
+        branches.push(cu_results);
     }
 
     // GATHER — RRF merge. Each branch's results are already ranked
@@ -5316,6 +5356,105 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
                             e
                         );
                     }
+
+                    // ── MIG-058/MIG-059 v2 diagnostic instrumentation ──
+                    //
+                    // After §K.3+§K.2 fixes shipped, Eisa's Boss-test showed:
+                    //  • Stage 2 federated search ~15s (down from ~25s) — way
+                    //    below the ~1s research target. PRAGMA optimize was
+                    //    conservative; FTS5 shadow tables may not have been
+                    //    fully analyzed.
+                    //  • Stage 3 Arabic input still truncates — synchronous
+                    //    `filtered` rebuild was eliminated but slow async
+                    //    search still resolves mid-typing.
+                    //
+                    // To choose the right NEXT fix (no more guesses), this
+                    // block captures hard evidence per cUniverse Connection:
+                    //   - sqlite_stat1 contents (what stats does planner see?)
+                    //   - ANALYZE timing (would running it now help?)
+                    //   - EXPLAIN QUERY PLAN for the 9-term OR (actual plan)
+                    //
+                    // All best-effort. Failures swallowed; tag `[mig-059-diag]`
+                    // in diagnostics.log of the ACTIVE universe (so Eisa sees
+                    // everything in one file, not scattered across cUniverses).
+                    let active_log_path = match db_path(&app_for_federation) {
+                        Ok(p) => p,
+                        Err(_) => cu_db_path.clone(), // fallback
+                    };
+                    let log = |line: &str| {
+                        diag_log(&active_log_path, &format!("[mig-059-diag] cu={} | {}", cu_root.display(), line));
+                    };
+
+                    // 1. sqlite_stat1 contents
+                    if let Ok(mut stmt) = cu_conn.prepare(
+                        "SELECT tbl, idx, stat FROM sqlite_stat1"
+                    ) {
+                        let rows: Vec<(String, Option<String>, String)> = stmt
+                            .query_map([], |r| Ok((
+                                r.get::<_, String>(0)?,
+                                r.get::<_, Option<String>>(1)?,
+                                r.get::<_, String>(2)?,
+                            )))
+                            .map(|it| it.filter_map(|r| r.ok()).collect())
+                            .unwrap_or_default();
+                        log(&format!("sqlite_stat1: {} rows", rows.len()));
+                        for (tbl, idx, stat) in rows.iter().take(20) {
+                            log(&format!("  stat1: tbl={} idx={:?} stat={}", tbl, idx, stat));
+                        }
+                        if rows.is_empty() {
+                            log("  sqlite_stat1 is EMPTY — planner has no stats; will use static cost estimates (bad for FTS5 OR-of-MATCH)");
+                        }
+                    } else {
+                        log("sqlite_stat1: prepare failed (table may not exist)");
+                    }
+
+                    // 2. Try a forceful ANALYZE main + INSERT INTO notes_fts('optimize')
+                    //    to see if THAT brings stats up. Time it.
+                    let analyze_start = std::time::Instant::now();
+                    let analyze_result = cu_conn.execute_batch("ANALYZE main;");
+                    let analyze_ms = analyze_start.elapsed().as_millis();
+                    match analyze_result {
+                        Ok(()) => log(&format!("ANALYZE main: {}ms", analyze_ms)),
+                        Err(e) => log(&format!("ANALYZE main: FAILED after {}ms: {}", analyze_ms, e)),
+                    }
+
+                    // 3. Re-dump stat1 after ANALYZE to see if it changed
+                    if let Ok(mut stmt) = cu_conn.prepare(
+                        "SELECT COUNT(*) FROM sqlite_stat1"
+                    ) {
+                        let n: i64 = stmt.query_row([], |r| r.get(0)).unwrap_or(-1);
+                        log(&format!("sqlite_stat1 after ANALYZE: {} rows", n));
+                    }
+
+                    // 4. EXPLAIN QUERY PLAN for the canonical slow query
+                    //    (9-term OR expression matching notes_fts JOIN note_meta)
+                    let plan_sql = "EXPLAIN QUERY PLAN \
+                        SELECT note_meta.path, note_meta.name, note_meta.library_name, note_meta.modified, \
+                               bm25(notes_fts, 10.0, 1.0) as score, \
+                               snippet(notes_fts, 1, '<mark>', '</mark>', '...', 40) as snip \
+                        FROM notes_fts \
+                        JOIN note_meta ON notes_fts.rowid = note_meta.rowid \
+                        WHERE notes_fts MATCH '\"الرباط\" OR \"Rabat\" OR \"ربا\" OR الربا*' \
+                        ORDER BY score \
+                        LIMIT 30";
+                    if let Ok(mut stmt) = cu_conn.prepare(plan_sql) {
+                        let plan_lines: Vec<String> = stmt
+                            .query_map([], |r| {
+                                let id: i64 = r.get(0).unwrap_or(0);
+                                let parent: i64 = r.get(1).unwrap_or(0);
+                                let detail: String = r.get(3).unwrap_or_default();
+                                Ok(format!("  plan: id={} parent={} | {}", id, parent, detail))
+                            })
+                            .map(|it| it.filter_map(|r| r.ok()).collect())
+                            .unwrap_or_default();
+                        log(&format!("EXPLAIN QUERY PLAN ({} steps):", plan_lines.len()));
+                        for line in plan_lines.iter().take(20) {
+                            log(line);
+                        }
+                    } else {
+                        log("EXPLAIN QUERY PLAN: prepare failed");
+                    }
+
                     search_conns.push((cu_root.clone(), cu_conn));
                 }
 
