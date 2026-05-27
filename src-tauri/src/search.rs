@@ -3010,6 +3010,45 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
         ));
     }
 
+    // MIG-059 — populate `sqlite_stat1` for the query planner.
+    //
+    // FTS5 uses static cost estimates by default and picks
+    // catastrophically bad plans for OR-of-MATCH expressions (the
+    // 9-term lexicon-expanded multilingual OR-list this app produces
+    // for cross-language search). Per the SQLite Forum thread "JOINs
+    // with FTS5 are very slow" (sqlite.org/forum/info/509bdbe534f58f20),
+    // running ANALYZE on the FTS5-shadow tables cut a similar query
+    // from 170s to 0.259s — a 660× speedup. The fix is for the
+    // optimizer to know the actual term-doclist sizes so it merges
+    // doclists in the right order.
+    //
+    // `PRAGMA optimize` is the documented light-touch entry point:
+    // it inspects each table's row counts vs the stale `sqlite_stat1`
+    // entries and runs ANALYZE selectively on tables that would
+    // benefit. Per sqlite.org/pragma.html (#pragma_optimize),
+    // expected cost is <1ms when stats are already current and
+    // ~100-200ms when ANALYZE needs to actually run.
+    //
+    // Critical for federation (MIG-056): when a cUniverse's
+    // `search.db` is opened by the per-cUniverse standalone
+    // Connection later, the planner reads `sqlite_stat1` AT THAT
+    // OPEN, not at query time — so populating it here in `init_db`
+    // means subsequent federated openers inherit good plans without
+    // needing their own ANALYZE pass.
+    //
+    // Failures are non-fatal: if the optimizer errors for any
+    // reason, queries fall back to the un-analyzed static plan
+    // (slow but correct). Surfaced via diag_log so we can spot
+    // regression on user reports.
+    if let Err(e) = conn.execute_batch("PRAGMA optimize;") {
+        diag_log(path, &format!(
+            "[search] init_db: PRAGMA optimize failed (non-fatal — queries will use static plans): {}",
+            e,
+        ));
+    } else {
+        diag_log(path, "[search] init_db: PRAGMA optimize completed (sqlite_stat1 refreshed)");
+    }
+
     Ok(conn)
 }
 
@@ -5218,11 +5257,39 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
                     // are write/durability/perf settings — but matching
                     // active-universe setup eliminates a class of "why
                     // does it differ" questions.
+                    // §K.3 — match `init_db`'s PRAGMA setup so per-branch BM25
+                    // sees the same FTS5 state on the standalone Connection.
+                    //
+                    // MIG-059 additions (`mmap_size` + `optimize`):
+                    //
+                    // - `mmap_size = 268435456` (256 MB) enables memory-mapped
+                    //   I/O on this Connection. Per sqlite.org/mmap.html, when
+                    //   multiple Connections in the same process mmap the same
+                    //   file, they share the OS-level page mapping — eliminating
+                    //   the cold-cache asymmetry between this standalone
+                    //   Connection (which would otherwise need to fault every
+                    //   FTS5 segment page from disk on first read) and
+                    //   `federated_conn` (which has the file ATTACHed and
+                    //   already paid the page-cost via libraryStats / lens
+                    //   queries earlier in boot). 256 MB is the SQLite-
+                    //   recommended starting value; covers Eisa's 7650-note
+                    //   cUniverse's full FTS5 + note_meta with headroom.
+                    //
+                    // - `PRAGMA optimize` refreshes `sqlite_stat1` for THIS
+                    //   Connection's query planner. Even though init_db on the
+                    //   cUniverse's last active-mode boot populated stat1 on
+                    //   disk, this Connection might have opened during a brief
+                    //   window when the WAL had stat1 changes not yet
+                    //   checkpointed; running optimize here guarantees the
+                    //   planner sees a consistent stat1 view. Documented cost
+                    //   <1ms when stats are already current (sqlite.org/pragma.html
+                    //   #pragma_optimize).
                     if let Err(e) = cu_conn.execute_batch(
                         "PRAGMA journal_mode=WAL; \
                          PRAGMA synchronous=NORMAL; \
                          PRAGMA busy_timeout=10000; \
                          PRAGMA cache_size=-65536; \
+                         PRAGMA mmap_size=268435456; \
                          PRAGMA recursive_triggers=ON;",
                     ) {
                         eprintln!(
@@ -5238,6 +5305,16 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
                             e
                         );
                         continue;
+                    }
+                    // MIG-059 — refresh planner stats AFTER tokenizer registration.
+                    // Non-fatal: if optimize errors the queries still work,
+                    // just with potentially slow plans for OR-of-MATCH expressions.
+                    if let Err(e) = cu_conn.execute_batch("PRAGMA optimize;") {
+                        eprintln!(
+                            "[federation] PRAGMA optimize failed for {}: {} (continuing — search may use static plans)",
+                            cu_db_path.display(),
+                            e
+                        );
                     }
                     search_conns.push((cu_root.clone(), cu_conn));
                 }
