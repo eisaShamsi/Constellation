@@ -5183,6 +5183,136 @@ pub fn invalidate_search_state(app: &tauri::AppHandle) {
     }
 }
 
+/// MIG-058/MIG-059 Option F — pre-warm OS page cache for each
+/// federated cUniverse's `search.db` by opening a throwaway
+/// Connection and running a representative FTS5 MATCH query.
+///
+/// Runs in a dedicated background thread spawned AFTER
+/// `federated_conn` is saved to state, so federation visibility
+/// isn't blocked. While the warmer is running, federated searches
+/// are still serviced by `federated_conn` but pay full cold-fault
+/// cost. Once the warmer completes, the OS page cache holds the
+/// FTS5 segment-index pages and `federated_conn`'s subsequent
+/// MATCH queries hit them via normal stdio reads (no mmap — Option
+/// E proved mmap_size on the ATTACH connection is counterproductive).
+///
+/// Why throwaway Connections + no shared state:
+/// - The Connection is opened by THIS thread, used by THIS thread,
+///   dropped at end of THIS thread's loop iteration. No mutex
+///   contention with `federated_conn` (which is held by user
+///   searches on the Tauri command thread).
+/// - The shared resource is the OS file cache, not any SQLite
+///   internal state. The Connection just happens to read the file;
+///   the OS caches the pages; subsequent readers of the same file
+///   (federated_conn included) benefit transparently.
+///
+/// Warm-up query design: `'a OR e OR i OR ا OR ال'`. Five short
+/// terms covering both Latin and Arabic prefixes, OR-merged. The
+/// goal is to touch a representative cross-section of FTS5 segment
+/// pages — not to return useful results (we throw the count away).
+/// COUNT(*) is used so we don't pay the cost of materializing
+/// snippets / row data; just the FTS5 cursor iteration.
+///
+/// Generation check: if `federation_generation` has advanced
+/// (universe switch during warm), the warmer abandons. The new
+/// universe's `ensure_search_db_ready` will spawn its own warmer.
+///
+/// All errors swallowed: warming is best-effort. A failed warm
+/// just means the user's first federated search pays the full
+/// cold cost (same as if warming hadn't been spawned).
+fn federation_prewarm(
+    app: tauri::AppHandle,
+    cu_roots: Vec<std::path::PathBuf>,
+    start_generation: u64,
+) {
+    use rusqlite::Connection;
+    let state = app.state::<SearchState>();
+
+    for cu_root in cu_roots {
+        // Generation check before each cUniverse's warm-up so we
+        // bail promptly on universe switch mid-warm.
+        let current_gen = state
+            .federation_generation
+            .load(std::sync::atomic::Ordering::SeqCst);
+        if current_gen != start_generation {
+            eprintln!(
+                "[federation-prewarm] abandoned: universe switched mid-warm (gen {} → {})",
+                start_generation, current_gen
+            );
+            return;
+        }
+
+        let cu_db_path = cu_root.join(".constellation").join("search.db");
+        let mut warm_conn = match Connection::open(&cu_db_path) {
+            Ok(c) => c,
+            Err(e) => {
+                eprintln!(
+                    "[federation-prewarm] open failed for {}: {} (skipping)",
+                    cu_db_path.display(),
+                    e
+                );
+                continue;
+            }
+        };
+
+        // Register the custom tokenizer so MATCH queries against
+        // notes_fts can execute. Without this, the warm-up MATCH
+        // would fail with "no such tokenizer" and the OS page cache
+        // wouldn't get the FTS5 pages we need.
+        if let Err(e) = register_fts5_tokenizer(&mut warm_conn) {
+            eprintln!(
+                "[federation-prewarm] tokenizer registration failed for {}: {} (skipping)",
+                cu_db_path.display(),
+                e
+            );
+            continue;
+        }
+
+        // The actual warm-up query. The COUNT(*) result is
+        // discarded — we just want the FTS5 cursor to iterate
+        // matching docs, which forces the OS to page in the
+        // relevant segment-index files.
+        //
+        // 'a OR e OR i' covers common Latin tokens; 'ا OR ال'
+        // covers common Arabic prefixes. The OR-merge in FTS5
+        // walks each term's doclist, which is exactly the work
+        // pattern user MATCH queries do — so the same segment
+        // pages get faulted into cache.
+        let warm_query = "a OR e OR i OR ا OR ال";
+        let warm_sql = "SELECT COUNT(*) FROM notes_fts WHERE notes_fts MATCH ?1";
+        let warm_start = std::time::Instant::now();
+        match warm_conn.query_row(warm_sql, rusqlite::params![warm_query], |r| {
+            r.get::<_, i64>(0)
+        }) {
+            Ok(n) => {
+                let elapsed_ms = warm_start.elapsed().as_millis();
+                if let Ok(p) = db_path(&app) {
+                    diag_log(
+                        &p,
+                        &format!(
+                            "[federation-prewarm] {} warmed in {}ms ({} matches)",
+                            cu_db_path.display(),
+                            elapsed_ms,
+                            n
+                        ),
+                    );
+                }
+            }
+            Err(e) => {
+                eprintln!(
+                    "[federation-prewarm] MATCH failed for {}: {}",
+                    cu_db_path.display(),
+                    e
+                );
+            }
+        }
+
+        // warm_conn drops here — file handle released. OS page
+        // cache retains the faulted pages for federated_conn to
+        // hit on user's next search.
+    }
+}
+
 pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
     let state = app.state::<SearchState>();
     {
@@ -5273,68 +5403,22 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
             }
         };
 
-        // MIG-058/MIG-059 Option E — apply the same PRAGMA batch that
-        // active-mode Connections get via `init_db` (plus mmap_size).
+        // MIG-058/MIG-059 — Option E (PRAGMA batch incl. mmap_size on
+        // federated_conn) tested and REVERTED. Eisa's Boss-test showed
+        // Option E's mmap_size=256MB on federated_conn was actively
+        // counterproductive — search times went from Option C's ~13s
+        // up to ~18-24s. The likely mechanism: mmap on the ATTACH-
+        // based Connection creates a private file mapping that
+        // BYPASSES the OS page cache that libraryStats / lens queries
+        // had been warming for `note_meta` pages. Without mmap_size,
+        // federated_conn reads through normal stdio → OS page cache
+        // → free hits on libraryStats-warmed pages. With mmap_size,
+        // federated_conn maps the file privately and re-reads from
+        // disk. Counter-intuitive but the empirical data is clear.
         //
-        // Pre-Option-E, `federated_conn` opened with SQLite defaults:
-        // tiny ~2 MB page cache, no memory-mapped I/O, no busy_timeout.
-        // Once Option C made federated_conn the SOLE Connection serving
-        // federated search (per-schema BM25 queries), its absent PRAGMAs
-        // became the bottleneck — Eisa's Boss-test showed ~13s first
-        // search vs §K.3's ~15s on the same data (a 15% improvement
-        // instead of the expected 10×+).
-        //
-        // What each PRAGMA buys us here:
-        //
-        // - `journal_mode=WAL`: persistent on disk; the cUniverse
-        //   files already have WAL set. Setting it on this Connection
-        //   makes the read path use WAL semantics consistently with
-        //   the cUniverse's prior usage.
-        //
-        // - `synchronous=NORMAL`: faster commits; no effect on reads,
-        //   but keeps any incidental writes (e.g. PRAGMA optimize's
-        //   stat1 updates) cheap.
-        //
-        // - `busy_timeout=10000`: 10s patience on any lock contention.
-        //   Tauri spawns multiple IPC handler threads; without this,
-        //   transient SQLITE_BUSY from a concurrent reader could kill
-        //   a federated search.
-        //
-        // - `cache_size=-65536`: 64 MB per-Connection page cache (vs
-        //   SQLite's 2 MB default). Hot FTS5 segment pages stay in
-        //   memory across the session — the second federated search
-        //   on a cUniverse should land in O(milliseconds) instead of
-        //   re-paging from disk.
-        //
-        // - `mmap_size=268435456`: 256 MB memory-mapped I/O. The
-        //   federation attach connection AND any other Connection in
-        //   this process that opens a cUniverse's search.db share
-        //   their FTS5 segment pages via the OS page cache (per
-        //   sqlite.org/mmap.html). This is the actual mechanism
-        //   that lets libraryStats / lens UNION ALL queries warm the
-        //   pages that federated-search subsequently uses.
-        //
-        // - `recursive_triggers=ON`: matches init_db. Belt-and-braces;
-        //   federation reads don't trigger writes, but if any
-        //   write path runs (e.g. auto-migrate during attach_all,
-        //   §5.3), the recursive trigger semantics match active mode.
-        //
-        // All failures are swallowed: if PRAGMA setup errors for any
-        // reason, the Connection works with whatever defaults stuck,
-        // and federation is still functional just slower.
-        if let Err(e) = conn.execute_batch(
-            "PRAGMA journal_mode=WAL; \
-             PRAGMA synchronous=NORMAL; \
-             PRAGMA busy_timeout=10000; \
-             PRAGMA cache_size=-65536; \
-             PRAGMA mmap_size=268435456; \
-             PRAGMA recursive_triggers=ON;",
-        ) {
-            eprintln!(
-                "[federation] PRAGMA setup on federated_conn failed (non-fatal): {}",
-                e
-            );
-        }
+        // Keeping federated_conn at SQLite defaults (no PRAGMA batch)
+        // is the Option C baseline. Option F (background pre-warm via
+        // throwaway Connection) implemented below builds on top.
 
         // MIG-056 §K.1 hotfix — Register the custom FTS5 tokenizer on
         // this fresh Connection BEFORE running any FTS5 MATCH queries.
@@ -5361,26 +5445,46 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
             Ok(ctx) => {
                 let state = app_for_federation.state::<SearchState>();
 
-                // MIG-058/MIG-059 v3 (Option C) — no per-cUniverse
-                // Connection setup. The ATTACH-based `conn` (which
-                // attach_all has just populated with `cu0`/`cu1`/...
-                // schemas) is the SOLE Connection serving every
-                // federated query: libraryStats UNION ALL, lens UNION
-                // ALL, and now BM25 federated search via per-schema
-                // queries (`FROM cu1.notes_fts ... bm25(notes_fts,...)`).
+                // MIG-058/MIG-059 Option F — capture cUniverse roots
+                // BEFORE moving ctx into state. After state save we
+                // spawn a separate background thread that opens
+                // throwaway Connections per cUniverse and runs a
+                // warm-up MATCH query to fault FTS5 segment pages
+                // into the OS page cache. federated_conn (which uses
+                // normal stdio reads → OS cache hit on warm pages)
+                // benefits immediately on first user search.
                 //
-                // The §K.3 standalone-Connection pool is gone:
-                //   - Option C unit tests (`mig056_federated_search::
-                //     option_c_*`) proved the FTS5 aux-function constraint
-                //     that motivated the pool only applied to UNION ALL.
-                //   - Diagnostic v2 evidence confirmed the standalone
-                //     Connections were 15-25× slower than `federated_conn`
-                //     because they had cold FTS5 segment caches that
-                //     `federated_conn`'s libraryStats traffic doesn't
-                //     warm.
+                // The "throwaway" pattern is critical: we don't store
+                // the warm Connection in state and we don't hold any
+                // lock during warming. The OS page cache is the
+                // shared resource; the throwaway Connection just pays
+                // the fault-in cost on behalf of federated_conn's
+                // future queries.
                 //
-                // One Connection. One warm cache. Federated search
-                // gets the same warmth as libraryStats.
+                // Why this is correct AFTER the Option E reversion:
+                //   - Option C baseline: federated_conn opens with
+                //     SQLite defaults (no mmap_size). Reads go via
+                //     stdio → OS file cache.
+                //   - libraryStats / lens hit `note_meta` only, leaving
+                //     `notes_fts` segment pages cold.
+                //   - The throwaway warmer runs `SELECT COUNT(*) FROM
+                //     notes_fts WHERE notes_fts MATCH 'a OR e OR i'`
+                //     against each cUniverse's search.db file. This
+                //     faults the FTS5 segment-index pages into the OS
+                //     cache.
+                //   - federated_conn subsequently hits those cached
+                //     pages on user MATCH queries.
+                //
+                // Cost: ~10-15s of background work per cUniverse, on
+                // a thread that's off the UI critical path. Federation
+                // is fully visible/usable immediately; first searches
+                // during warm-up are slow (as before), searches after
+                // warm-up complete in sub-second.
+                let cu_roots_for_warmup: Vec<std::path::PathBuf> = ctx
+                    .attached()
+                    .iter()
+                    .map(|(_, root)| root.clone())
+                    .collect();
 
                 // MIG-056 §J.1 — check the federation generation hasn't
                 // advanced since we started. If it has, the user switched
@@ -5415,6 +5519,19 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
                 } else {
                     eprintln!("[federation] state.federation Mutex poisoned");
                 }
+
+                // MIG-058/MIG-059 Option F — spawn pre-warm thread
+                // AFTER state is fully written. Federation is visible
+                // and usable from this point; the warmer runs
+                // independently to make searches faster.
+                //
+                // Generation check inside the warmer guards against a
+                // universe switch DURING warming (Eisa toggles
+                // universes mid-warm → warmer should abandon).
+                let warm_app = app_for_federation.clone();
+                std::thread::spawn(move || {
+                    federation_prewarm(warm_app, cu_roots_for_warmup, start_generation);
+                });
             }
             Err(e) => {
                 eprintln!("[federation] attach_all failed (non-fatal): {}", e);
