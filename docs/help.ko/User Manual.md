@@ -860,13 +860,37 @@ Constellation은 노트 내 작업 체크박스를 지원합니다:
 
 ---
 
-## 16. 렌즈
+## 16. 렌즈와 Constellation Base
 
-렌즈는 노트의 필터링된 뷰를 제공합니다:
+**렌즈**는 관심 있는 속성과 함께 필터링되고 정렬된 노트 목록을 표시하는 저장된 쿼리입니다. Constellation에는 두 가지 방식이 있습니다:
 
-- 태그, 폴더, 속성으로 필터링
-- 이름, 날짜 또는 사용자 정의 속성으로 정렬
-- 렌즈 설정을 저장하여 빠른 접근
+### Constellation Base — 임베디드 렌즈 블록
+
+` ```base ` 코드 블록을 사용하여 모든 Markdown 노트의 본문에 렌즈를 직접 임베드할 수 있습니다:
+
+````markdown
+```base
+schema: 1
+view: list
+dimensions: [note.name, note.created_at]
+sort: [note.created_at, desc]
+limit: 20
+```
+````
+
+노트를 볼 때, 코드 블록은 일치하는 노트를 보여주는 대화형 테이블로 대체됩니다. 라이브 프리뷰에서는 **렌즈** 칩을 클릭하여 블록을 편집할 수 있습니다.
+
+**v1에서 사용 가능한 차원:** `note.name`, `note.path`, `note.created_at`, `note.headline`.
+
+**페더레이션:** 기본적으로 렌즈 블록은 활성 우주와 연결된 각 cUniverse에서 읽습니다. 활성 우주로 제한하려면 YAML에서 `federation: active`를 설정하세요.
+
+### 다섯 가지 행위 (Five Acts) — 내장 렌즈
+
+사이드바의 **Five Acts** 섹션(Workspace Bases 위)에는 `{universe}/Five Acts/*.md`에 Constellation이 큐레이팅한 호스트 노트가 나열됩니다. v1에는 하나가 포함됩니다: **Observation — Recent Captures**(최근 캡처된 20개 노트의 페더레이션 목록). 이러한 노트는 자유롭게 편집할 수 있으며 — Constellation은 편집 내용을 덮어쓰지 않습니다.
+
+### 클래식 렌즈 패널
+
+이전 렌즈 패널(태그, 폴더, 속성으로 필터링)은 **설정 → 패널 → 렌즈**에서 계속 사용할 수 있습니다.
 
 ---
 

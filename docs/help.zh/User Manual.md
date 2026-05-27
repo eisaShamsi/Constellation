@@ -860,13 +860,37 @@ Constellation 支持笔记中的任务复选框：
 
 ---
 
-## 16. 镜头
+## 16. 镜头与 Constellation Base
 
-镜头提供笔记的筛选视图：
+**镜头**是已保存的查询，它显示已筛选并已排序的笔记列表，连同您关心的属性一起呈现。Constellation 提供两种方式：
 
-- 按标签、文件夹、属性筛选
-- 按名称、日期或自定义属性排序
-- 保存镜头配置以便快速访问
+### Constellation Base — 嵌入式镜头块
+
+您可以使用 ` ```base ` 代码块将镜头直接嵌入任何 Markdown 笔记的正文中：
+
+````markdown
+```base
+schema: 1
+view: list
+dimensions: [note.name, note.created_at]
+sort: [note.created_at, desc]
+limit: 20
+```
+````
+
+查看笔记时，代码块会被显示匹配笔记的交互式表格替换。在实时预览中，单击 **镜头** 标签可编辑该块。
+
+**v1 中可用的维度：** `note.name`、`note.path`、`note.created_at`、`note.headline`。
+
+**联邦：** 默认情况下，镜头块从活跃宇宙和每个链接的 cUniverse 中读取。在 YAML 中设置 `federation: active` 以限制为仅活跃宇宙。
+
+### 五幕 (Five Acts) — 内置镜头
+
+侧边栏的 **Five Acts** 部分（在 Workspace Bases 上方）列出 Constellation 在 `{universe}/Five Acts/*.md` 中策划的宿主笔记。v1 包含一个：**Observation — Recent Captures**（最近捕获的 20 条笔记的联邦列表）。您可以自由编辑这些笔记 — Constellation 不会覆盖您的编辑。
+
+### 经典镜头面板
+
+旧版镜头面板（按标签、文件夹、属性筛选）仍可通过 **设置 → 面板 → 镜头** 使用。
 
 ---
 

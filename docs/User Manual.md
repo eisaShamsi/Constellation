@@ -576,6 +576,14 @@ Search history is stored locally on your device and persists across app restarts
 
 The Search Hub is a full-screen search experience. Click the magnifying glass icon in the dock bar to open it. Both sidebars collapse to give maximum space. Type any term and Constellation searches everywhere simultaneously, grouping results into 5 categories: Titles, Contents, Tags, Properties, and Wikilinks. Each category has a collapsible section with a count badge. Click any result to open it in the editor with all occurrences highlighted. A "Return to Search Hub" button appears so you can go back without re-searching.
 
+### Cross-universe federation
+
+When your active universe has one or more cUniverses linked, search results span the federated set — you'll see notes from BOTH your active universe AND each linked cUniverse in the same result list. The status-bar note count reflects the federated total (e.g. "8751 notes" instead of just the active universe's count). Sidebar library badges show per-library counts including cUniverse libraries.
+
+If a cUniverse is unavailable at boot (its `search.db` file is missing, locked by another process, or schema-drifted), a **triangle warning badge** appears in the status bar with a count of skipped cUniverses. Click it to see which cUniverses were skipped and the reason. The rest of the app continues to work — search still spans the cUniverses that DID attach successfully (skip-unavailable model).
+
+To open a cUniverse as the active universe (e.g. to build its missing `search.db`), use the Universe Manager from the sidebar.
+
 ### Link Operators
 
 Constellation supports 6 link-topology search operators:
@@ -1272,13 +1280,48 @@ Open the Calendar from the sidebar.
 
 ---
 
-## 15. Lens
+## 15. Lens & Constellation Base (Five Acts)
 
-Lens provides filtered views of your notes:
+A **Lens** is a saved query that displays a filtered, sorted list of notes alongside whatever properties you care about. Constellation has two ways to use lenses:
 
-- Filter by tags, folders, properties
-- Sort by name, date, or custom properties
-- Save lens configurations for quick access
+### Constellation Base — embedded lens blocks (recommended)
+
+You can drop a lens directly into the body of any markdown note using a ` ```base ` fenced code block:
+
+````markdown
+```base
+schema: 1
+view: list
+dimensions: [note.name, note.created_at]
+sort: [note.created_at, desc]
+limit: 20
+```
+````
+
+When you view the note, the code block is replaced with an interactive table showing matching notes. In Live Preview, click the **Lens** chip to expand and edit the block.
+
+**v1 dimensions available** (more will be added in later releases):
+
+| Dimension | What it shows |
+|-----------|---------------|
+| `note.name` | The note's filename (without `.md`) |
+| `note.path` | The note's full path |
+| `note.created_at` | The note's creation timestamp |
+| `note.headline` | The note's NSC headline (auto-generated summary) |
+
+**Federation:** by default, lens blocks read across the active universe AND every linked cUniverse. If you only want results from the active universe, set `federation: active` in the YAML.
+
+### Five Acts — built-in lenses for the Five Acts of Knowledge Creation
+
+The sidebar's **Five Acts** section (above Workspace Bases) lists Constellation-curated host notes — markdown files at `{universe}/Five Acts/*.md` that come pre-loaded with a `base` block. v1 ships with one:
+
+- **Observation — Recent Captures** — a federated list of the 20 most recently captured notes across your active universe + cUniverses. Click it to see what you've been working on lately.
+
+You can edit these host notes freely. Constellation will not overwrite your edits — if you change the YAML, your version stays. If you delete the file, Constellation will re-create it on next launch (transfer-on-edit policy).
+
+### Legacy Lens panel
+
+The older Lens panel (filter by tags, folders, properties; save configurations) is still available under **Settings → Panels → Lens**. It is non-destructive — your existing saved lenses keep working.
 
 ---
 

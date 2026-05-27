@@ -860,11 +860,35 @@ Abre el Calendario desde la barra lateral.
 
 ## 16. Lens
 
-Lens proporciona vistas filtradas de tus notas:
+Una **Lens** es una consulta guardada que muestra una lista filtrada y ordenada de notas junto con las propiedades que te interesen. Constellation ofrece dos modos:
 
-- Filtra por etiquetas, carpetas, propiedades
-- Ordena por nombre, fecha o propiedades personalizadas
-- Guarda configuraciones de Lens para acceso rapido
+### Constellation Base — bloques de Lens incrustados
+
+Puedes incrustar una Lens directamente en el cuerpo de cualquier nota Markdown usando un bloque de codigo ` ```base `:
+
+````markdown
+```base
+schema: 1
+view: list
+dimensions: [note.name, note.created_at]
+sort: [note.created_at, desc]
+limit: 20
+```
+````
+
+Al ver la nota, el bloque de codigo se reemplaza por una tabla interactiva con las notas que coinciden. En la vista previa en vivo, haz clic en la pastilla **Lens** para editar el bloque.
+
+**Dimensiones disponibles en v1:** `note.name`, `note.path`, `note.created_at`, `note.headline`.
+
+**Federacion:** por defecto, los bloques Lens leen del universo activo Y de cada cUniverso enlazado. Establece `federation: active` en el YAML para limitar al universo activo.
+
+### Five Acts — Lenses integradas
+
+La seccion **Five Acts** de la barra lateral (encima de Workspace Bases) lista notas anfitrionas curadas por Constellation en `{universe}/Five Acts/*.md`. v1 incluye una: **Observation — Recent Captures** (lista federada de las 20 notas mas recientes). Puedes editar estas notas libremente — Constellation no sobrescribira tus cambios.
+
+### Panel Lens clasico
+
+El panel Lens anterior (filtrar por etiquetas, carpetas, propiedades) sigue disponible en **Configuracion → Paneles → Lens**.
 
 ---
 

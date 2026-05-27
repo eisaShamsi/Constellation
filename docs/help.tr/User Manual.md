@@ -860,13 +860,37 @@ Takvimi kenar çubuğundan açın.
 
 ---
 
-## 16. Lens
+## 16. Lens ve Constellation Base
 
-Lens, notlarınızın filtrelenmiş görünümlerini sağlar:
+**Lens**, ilgilendiğiniz özelliklerle birlikte notların filtrelenmiş ve sıralanmış bir listesini gösteren kayıtlı bir sorgudur. Constellation iki yol sunar:
 
-- Etiketlere, klasörlere, özelliklere göre filtreleyin
-- Ada, tarihe veya özel özelliklere göre sıralayın
-- Hızlı erişim için lens yapılandırmalarını kaydedin
+### Constellation Base — gömülü Lens blokları
+
+Bir Lens'i herhangi bir Markdown notunun gövdesine doğrudan bir ` ```base ` kod bloğu kullanarak gömebilirsiniz:
+
+````markdown
+```base
+schema: 1
+view: list
+dimensions: [note.name, note.created_at]
+sort: [note.created_at, desc]
+limit: 20
+```
+````
+
+Notu görüntülediğinizde, kod bloğu eşleşen notları gösteren etkileşimli bir tabloyla değiştirilir. Canlı önizlemede, bloğu düzenlemek için **Lens** çipine tıklayın.
+
+**v1'de kullanılabilen boyutlar:** `note.name`, `note.path`, `note.created_at`, `note.headline`.
+
+**Federasyon:** varsayılan olarak Lens blokları aktif evren VE bağlı her cUniverse'den okur. Yalnızca aktif evrenle sınırlamak için YAML'da `federation: active` ayarlayın.
+
+### Beş Eylem (Five Acts) — yerleşik Lens'ler
+
+Kenar çubuğunun **Five Acts** bölümü (Workspace Bases'ün üzerinde), `{universe}/Five Acts/*.md` altında Constellation tarafından düzenlenmiş ana notları listeler. v1 birini içerir: **Observation — Recent Captures** (en son yakalanan 20 notun federasyonel listesi). Bu notları serbestçe düzenleyebilirsiniz — Constellation düzenlemelerinizin üzerine yazmaz.
+
+### Klasik Lens paneli
+
+Eski Lens paneli (etiketlere, klasörlere, özelliklere göre filtreleme) hâlâ **Ayarlar → Paneller → Lens** üzerinden kullanılabilir.
 
 ---
 

@@ -862,13 +862,37 @@ Constellation نوٹس میں ٹاسک چیک باکسز کی سپورٹ کرت�
 
 ---
 
-## 16. لینز
+## 16. لینز اور Constellation Base
 
-لینز آپ کے نوٹس کے فلٹر شدہ منظر فراہم کرتا ہے:
+**لینز** ایک محفوظ شدہ سوال ہے جو آپ کی دلچسپی کی خصوصیات کے ساتھ نوٹس کی ایک فلٹر شدہ اور ترتیب شدہ فہرست دکھاتا ہے۔ Constellation میں دو طریقے ہیں:
 
-- ٹیگز، فولڈرز، خصوصیات کے مطابق فلٹر کریں
-- نام، تاریخ، یا اپنی مرضی کی خصوصیات سے ترتیب دیں
-- فوری رسائی کے لیے لینز کنفیگریشنز محفوظ کریں
+### Constellation Base — embedded لینز بلاکس
+
+آپ کسی بھی Markdown نوٹ کے متن میں ` ```base ` کوڈ بلاک کے ذریعے لینز کو براہ راست embed کر سکتے ہیں:
+
+````markdown
+```base
+schema: 1
+view: list
+dimensions: [note.name, note.created_at]
+sort: [note.created_at, desc]
+limit: 20
+```
+````
+
+نوٹ دیکھتے وقت، کوڈ بلاک ایک interactive جدول سے بدل جاتا ہے جو ملتے جلتے نوٹس دکھاتا ہے۔ Live Preview میں، بلاک میں ترمیم کرنے کے لیے **لینز** chip پر کلک کریں۔
+
+**v1 میں دستیاب dimensions:** `note.name`, `note.path`, `note.created_at`, `note.headline`.
+
+**Federation:** بطور default، لینز بلاکس فعال کائنات اور ہر منسلک cUniverse سے پڑھتے ہیں۔ صرف فعال کائنات تک محدود کرنے کے لیے YAML میں `federation: active` سیٹ کریں۔
+
+### پانچ اعمال (Five Acts) — built-in لینز
+
+Sidebar کا **Five Acts** سیکشن (Workspace Bases کے اوپر) `{universe}/Five Acts/*.md` میں Constellation کے curated host نوٹس کی فہرست دیتا ہے۔ v1 میں ایک شامل ہے: **Observation — Recent Captures** (سب سے حالیہ capture کیے گئے 20 نوٹس کی ایک federated فہرست)۔ آپ ان نوٹس کو آزادانہ طور پر ترمیم کر سکتے ہیں — Constellation آپ کی ترامیم کو overwrite نہیں کرے گا۔
+
+### کلاسک لینز پینل
+
+پرانا لینز پینل (ٹیگز، فولڈرز، خصوصیات کے مطابق فلٹرنگ) ابھی بھی **ترتیبات → پینلز → لینز** سے دستیاب ہے۔
 
 ---
 

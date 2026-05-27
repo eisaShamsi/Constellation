@@ -862,11 +862,35 @@ Oeffnen Sie den Kalender ueber die Seitenleiste.
 
 ## 16. Lens
 
-Lens bietet gefilterte Ansichten Ihrer Notizen:
+Eine **Lens** ist eine gespeicherte Abfrage, die eine gefilterte und sortierte Liste von Notizen mit den gewuenschten Eigenschaften anzeigt. Constellation bietet zwei Wege:
 
-- Filtern nach Tags, Ordnern, Eigenschaften
-- Sortieren nach Name, Datum oder benutzerdefinierten Eigenschaften
-- Lens-Konfigurationen fuer Schnellzugriff speichern
+### Constellation Base — eingebettete Lens-Bloecke
+
+Sie koennen eine Lens direkt in den Inhalt jeder Markdown-Notiz einbetten, indem Sie einen ` ```base ` Codeblock verwenden:
+
+````markdown
+```base
+schema: 1
+view: list
+dimensions: [note.name, note.created_at]
+sort: [note.created_at, desc]
+limit: 20
+```
+````
+
+Beim Anzeigen der Notiz wird der Codeblock durch eine interaktive Tabelle mit passenden Notizen ersetzt. In der Live-Vorschau klicken Sie auf den **Lens**-Chip, um den Block zu bearbeiten.
+
+**Verfuegbare Dimensionen in v1:** `note.name`, `note.path`, `note.created_at`, `note.headline`.
+
+**Foederation:** Standardmaessig lesen Lens-Bloecke ueber das aktive Universum UND jedes verlinkte cUniverse. Setzen Sie `federation: active` im YAML, um nur das aktive Universum zu durchsuchen.
+
+### Fuenf Akte (Five Acts) — eingebaute Lenses
+
+Der Seitenleisten-Abschnitt **Five Acts** (oberhalb von Workspace Bases) listet von Constellation kuratierte Host-Notizen unter `{universe}/Five Acts/*.md`. v1 enthaelt eine: **Observation — Recent Captures** (foederierte Liste der 20 zuletzt erfassten Notizen). Sie koennen diese Notizen frei bearbeiten — Constellation ueberschreibt Ihre Aenderungen nicht.
+
+### Klassisches Lens-Panel
+
+Das aeltere Lens-Panel (Filterung nach Tags, Ordnern, Eigenschaften) ist weiterhin unter **Einstellungen → Panels → Lens** verfuegbar.
 
 ---
 
