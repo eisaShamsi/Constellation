@@ -238,3 +238,18 @@ If Eisa locks these four, the Plan writes itself: 4-5 commits totaling ~80 lines
 Once Eisa picks A/B/C answers for Q1-Q4 (or confirms the §5 recommendation set), the Plan drafts and Build cascades per Plan-Approval-Equals-Build-Approval.
 
 Audit phase: three parallel agents at the end (invariant-checker, drift-detector, migration-path-validator).
+
+---
+
+## §8 — Locks (Boss decisions — 2026-05-28)
+
+Eisa's picks via AskUserQuestion:
+
+| Question | Lock |
+|---|---|
+| Q1 — Approach | **Option 2** — Rust per-schema loop + merge |
+| Q2 — Node IDs | **Option C** — Keep `id = lower(name)`; rely on `path` for disambiguation |
+| Q3 — Link resolution | **Option B** — Federated resolution across the merged node set with deterministic tiebreak |
+| Q4 — Readiness | **Option A (departed from §5 recommendation)** — All-or-nothing readiness: `is_ready=false` until every schema (`main` + every `cu*`) has stamped sky_schema_version ≥ `SKY_SCHEMA_VERSION`. Conservative; falls back to existing `buildSkyData` legacy path |
+
+Plan drafts next.
