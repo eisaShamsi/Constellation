@@ -3627,8 +3627,12 @@ fn index_library_recursive(conn: &Connection, dir: &Path, library_name: &str, de
 /// Lexical search using FTS5 BM25 ranking against the connection's
 /// `main` schema (the default — when the cUniverse hasn't been
 /// federated, `conn` IS the universe's `search.db` opened as main).
+///
+/// Uses FTS5 native `snippet()` — the active-mode path is fast on
+/// state.db because libraryStats / boot operations have already
+/// warmed the relevant pages.
 fn lexical_search(conn: &Connection, query: &str, limit: u32) -> Vec<SearchResult> {
-    lexical_search_in_schema(conn, "main", query, limit)
+    lexical_search_in_schema(conn, "main", query, limit, /* skip_fts5_snippet */ false)
 }
 
 /// MIG-058/MIG-059 v3 (Option C) — single-schema FTS5 search against
@@ -3676,6 +3680,7 @@ fn lexical_search_in_schema(
     schema: &str,
     query: &str,
     limit: u32,
+    skip_fts5_snippet: bool,
 ) -> Vec<SearchResult> {
     // Normalize query for Arabic consistency (same normalization as indexed text)
     let normalized = normalize_arabic_for_search(query);
@@ -3703,19 +3708,54 @@ fn lexical_search_in_schema(
         .map(|e| e.bridge_terms_lower.as_slice())
         .unwrap_or(&[]);
 
-    // Schema-qualified FROM/JOIN; unqualified columns + aux functions
-    // (per the option_c_* tests).
-    let sql = format!(
-        "SELECT note_meta.path, note_meta.name, note_meta.library_name, note_meta.modified, \
-                bm25(notes_fts, 10.0, 1.0) as score, \
-                snippet(notes_fts, 1, '<mark>', '</mark>', '...', 40) as snip \
-         FROM {schema}.notes_fts \
-         JOIN {schema}.note_meta ON notes_fts.rowid = note_meta.rowid \
-         WHERE notes_fts MATCH ?1 \
-         ORDER BY score \
-         LIMIT ?2",
-        schema = schema,
-    );
+    // MIG-058/MIG-059 Option H — `skip_fts5_snippet` switches the
+    // snippet-generation strategy. Active-mode (skip_fts5_snippet=false)
+    // uses FTS5 native `snippet()` which is fast on a warm Connection.
+    // Federated mode (skip_fts5_snippet=true) selects raw `body_text`
+    // and synthesizes snippets in Rust via `synth_snippet_for_body`.
+    //
+    // Why: for FTS5 with `content='note_meta'` (external content),
+    // `snippet()` calls back into the content table for each matching
+    // row AND re-tokenizes its body_text via the custom constellation
+    // tokenizer (which does Arabic normalization, diacritic stripping,
+    // stopword filtering). For 30 result rows × kilobytes of body_text
+    // × custom tokenizer overhead, this is expensive — and it scales
+    // with result count, not with index size, which is why Option G's
+    // segment merge didn't help.
+    //
+    // The Rust-side path skips the FTS5 tokenizer pass entirely; it
+    // just substring-matches the query in body_text. Snippets are
+    // slightly less precise (we match raw substring not stemmed
+    // tokens) but the FEDERATED federated_lexical_search_or_fallback's
+    // RRF merge doesn't care — only `path`, `name`, `score`, and
+    // `match_type` matter for ranking and display.
+    let sql = if skip_fts5_snippet {
+        format!(
+            "SELECT note_meta.path, note_meta.name, note_meta.library_name, note_meta.modified, \
+                    bm25(notes_fts, 10.0, 1.0) as score, \
+                    note_meta.body_text as body \
+             FROM {schema}.notes_fts \
+             JOIN {schema}.note_meta ON notes_fts.rowid = note_meta.rowid \
+             WHERE notes_fts MATCH ?1 \
+             ORDER BY score \
+             LIMIT ?2",
+            schema = schema,
+        )
+    } else {
+        // Schema-qualified FROM/JOIN; unqualified columns + aux functions
+        // (per the option_c_* tests).
+        format!(
+            "SELECT note_meta.path, note_meta.name, note_meta.library_name, note_meta.modified, \
+                    bm25(notes_fts, 10.0, 1.0) as score, \
+                    snippet(notes_fts, 1, '<mark>', '</mark>', '...', 40) as snip \
+             FROM {schema}.notes_fts \
+             JOIN {schema}.note_meta ON notes_fts.rowid = note_meta.rowid \
+             WHERE notes_fts MATCH ?1 \
+             ORDER BY score \
+             LIMIT ?2",
+            schema = schema,
+        )
+    };
 
     let mut stmt = match conn.prepare(&sql) {
         Ok(s) => s,
@@ -3728,7 +3768,16 @@ fn lexical_search_in_schema(
         let name: String = row.get(1)?;
         let name_lower = name.to_lowercase();
         let title_hit = name_lower.contains(&query_lower);
-        let snippet: Option<String> = row.get(5).ok();
+
+        let snippet: Option<String> = if skip_fts5_snippet {
+            // Read raw body_text; synthesize snippet in Rust.
+            let body: Option<String> = row.get(5).ok();
+            body.as_deref()
+                .and_then(|b| synth_snippet_for_body(b, &query_lower, bridge_terms))
+        } else {
+            // FTS5 returned the snippet directly.
+            row.get(5).ok()
+        };
         let body_hit = snippet.as_ref().map_or(false, |s| s.contains("<mark>"));
 
         let match_type = if title_hit && body_hit {
@@ -3764,6 +3813,67 @@ fn lexical_search_in_schema(
     }).ok();
 
     results.map(|rows| rows.filter_map(|r| r.ok()).collect()).unwrap_or_default()
+}
+
+/// MIG-058/MIG-059 Option H — Rust-side snippet synthesis from raw
+/// body_text. Used when FTS5 native `snippet()` is too expensive
+/// (federated mode, where the per-row tokenizer pass over body_text
+/// is the dominant cost on cold note_meta pages).
+///
+/// Strategy: find the query term (or a bridge term) as a substring
+/// in body_text; extract a ±40-character window with `<mark>` tags.
+/// Falls back to None if no match found (the FTS5 hit might be on
+/// a stem/inflection that doesn't substring-match).
+///
+/// UTF-8 char-boundary safe: walks back/forward respecting multi-byte
+/// boundaries so Arabic/CJK chars don't get split.
+fn synth_snippet_for_body(
+    body_text: &str,
+    query_lower: &str,
+    bridge_terms: &[String],
+) -> Option<String> {
+    if body_text.is_empty() {
+        return None;
+    }
+    let body_lower = body_text.to_lowercase();
+    let mut hit_at: Option<(usize, usize)> = None; // (start_byte, hit_len)
+    if let Some(pos) = body_lower.find(query_lower) {
+        hit_at = Some((pos, query_lower.len()));
+    } else {
+        for bt in bridge_terms {
+            if let Some(pos) = body_lower.find(bt.as_str()) {
+                hit_at = Some((pos, bt.len()));
+                break;
+            }
+        }
+    }
+    let (start_byte, hit_len) = hit_at?;
+    let window_back = 40;
+    let mut window_start = start_byte;
+    let mut steps = 0;
+    while window_start > 0 && steps < window_back {
+        window_start -= 1;
+        while window_start > 0 && !body_text.is_char_boundary(window_start) {
+            window_start -= 1;
+        }
+        steps += 1;
+    }
+    let hit_end = start_byte + hit_len;
+    let mut window_end = hit_end;
+    let mut steps = 0;
+    while window_end < body_text.len() && steps < window_back {
+        window_end += 1;
+        while window_end < body_text.len() && !body_text.is_char_boundary(window_end) {
+            window_end += 1;
+        }
+        steps += 1;
+    }
+    let prefix = if window_start > 0 { "..." } else { "" };
+    let suffix = if window_end < body_text.len() { "..." } else { "" };
+    let before = &body_text[window_start..start_byte];
+    let hit = &body_text[start_byte..hit_end];
+    let after = &body_text[hit_end..window_end];
+    Some(format!("{}{}<mark>{}</mark>{}{}", prefix, before, hit, after, suffix))
 }
 
 /// MIG-056 §K.3 — v2 scatter-gather federated FTS5 lexical search.
@@ -3896,11 +4006,18 @@ fn federated_lexical_search_or_fallback(
     // whatever warming federated_conn has done. They both view the
     // same `main` data; using fed_conn keeps all federated branches
     // on a single Connection's warm state.
-    branches.push(lexical_search_in_schema(fed_conn, "main", query, per_branch_cap));
+    //
+    // skip_fts5_snippet=true on ALL federated branches: per
+    // MIG-058/MIG-059 Option H, FTS5 native snippet() re-tokenizes
+    // body_text via the constellation tokenizer for each result row,
+    // and that's the dominant cost in federated mode (segment merge
+    // didn't fix it because the cost is per-row, not per-segment).
+    // Rust-side substring snippet from raw body_text is much faster.
+    branches.push(lexical_search_in_schema(fed_conn, "main", query, per_branch_cap, true));
 
     // Branches 1..N — one per cUniverse schema alias (cu0, cu1, ...).
     for alias in &federated_aliases {
-        branches.push(lexical_search_in_schema(fed_conn, alias, query, per_branch_cap));
+        branches.push(lexical_search_in_schema(fed_conn, alias, query, per_branch_cap, true));
     }
 
     // GATHER — RRF merge. Each branch's results are already ranked
