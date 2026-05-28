@@ -2843,7 +2843,10 @@
 	"lensBlock": {
 		"loading": "טוען עדשה…",
 		"errorLabel": "שגיאת עדשה",
-		"empty": "אין הערות התואמות לעדשה זו."
+		"empty": "אין הערות התואמות לעדשה זו.",
+		"openIn360Tooltip": "פתח ב-360.3D",
+		"openInCNSTooltip": "פתח ב-CNS",
+		"openInCatalogerTooltip": "פתח במסווג"
 	},
 	"federation": {
 		"warningBadge": "יקומי-בן לא זמינים",

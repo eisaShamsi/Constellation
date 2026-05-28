@@ -2843,7 +2843,10 @@
 	"lensBlock": {
 		"loading": "Chargement de la lentille…",
 		"errorLabel": "Erreur de lentille",
-		"empty": "Aucune note ne correspond à cette lentille."
+		"empty": "Aucune note ne correspond à cette lentille.",
+		"openIn360Tooltip": "Ouvrir dans 360.3D",
+		"openInCNSTooltip": "Ouvrir dans CNS",
+		"openInCatalogerTooltip": "Ouvrir dans Le Catalogueur"
 	},
 	"federation": {
 		"warningBadge": "cUnivers indisponibles",

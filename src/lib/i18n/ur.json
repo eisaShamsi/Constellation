@@ -2843,7 +2843,10 @@
 	"lensBlock": {
 		"loading": "لینس لوڈ ہو رہا ہے…",
 		"errorLabel": "لینس میں خرابی",
-		"empty": "کوئی نوٹ اس لینس سے میل نہیں کھاتا۔"
+		"empty": "کوئی نوٹ اس لینس سے میل نہیں کھاتا۔",
+		"openIn360Tooltip": "360.3D میں کھولیں",
+		"openInCNSTooltip": "CNS میں کھولیں",
+		"openInCatalogerTooltip": "کیٹلاگر میں کھولیں"
 	},
 	"federation": {
 		"warningBadge": "cUniverse دستیاب نہیں",

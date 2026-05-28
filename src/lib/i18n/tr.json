@@ -2843,7 +2843,10 @@
 	"lensBlock": {
 		"loading": "Mercek yükleniyor…",
 		"errorLabel": "Mercek hatası",
-		"empty": "Bu mercekle eşleşen not yok."
+		"empty": "Bu mercekle eşleşen not yok.",
+		"openIn360Tooltip": "360.3D'de aç",
+		"openInCNSTooltip": "CNS'de aç",
+		"openInCatalogerTooltip": "Kataloglayıcı'da aç"
 	},
 	"federation": {
 		"warningBadge": "cUniverse kullanılamıyor",

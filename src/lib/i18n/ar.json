@@ -3048,7 +3048,10 @@
 	"lensBlock": {
 		"loading": "جارٍ تحميل العدسة…",
 		"errorLabel": "خطأ في العدسة",
-		"empty": "لا توجد ملاحظات تطابق هذه العدسة."
+		"empty": "لا توجد ملاحظات تطابق هذه العدسة.",
+		"openIn360Tooltip": "افتح في 360.3D",
+		"openInCNSTooltip": "افتح في النظام العصبي",
+		"openInCatalogerTooltip": "افتح في المُصنِّف"
 	},
 	"federation": {
 		"warningBadge": "أكوان فرعية غير متاحة",

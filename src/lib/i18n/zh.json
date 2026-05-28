@@ -2843,7 +2843,10 @@
 	"lensBlock": {
 		"loading": "正在加载视角…",
 		"errorLabel": "视角错误",
-		"empty": "没有笔记匹配此视角。"
+		"empty": "没有笔记匹配此视角。",
+		"openIn360Tooltip": "在 360.3D 中打开",
+		"openInCNSTooltip": "在 CNS 中打开",
+		"openInCatalogerTooltip": "在编目员中打开"
 	},
 	"federation": {
 		"warningBadge": "cUniverse 不可用",

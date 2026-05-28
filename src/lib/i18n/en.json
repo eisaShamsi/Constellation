@@ -3046,7 +3046,10 @@
 	"lensBlock": {
 		"loading": "Loading lens…",
 		"errorLabel": "Lens error",
-		"empty": "No notes match this lens."
+		"empty": "No notes match this lens.",
+		"openIn360Tooltip": "Open in 360.3D",
+		"openInCNSTooltip": "Open in CNS",
+		"openInCatalogerTooltip": "Open in The Cataloger"
 	},
 	"federation": {
 		"warningBadge": "cUniverses unavailable",

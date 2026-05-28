@@ -2843,7 +2843,10 @@
 	"lensBlock": {
 		"loading": "렌즈 로딩 중…",
 		"errorLabel": "렌즈 오류",
-		"empty": "이 렌즈에 일치하는 노트가 없습니다."
+		"empty": "이 렌즈에 일치하는 노트가 없습니다.",
+		"openIn360Tooltip": "360.3D에서 열기",
+		"openInCNSTooltip": "CNS에서 열기",
+		"openInCatalogerTooltip": "카탈로거에서 열기"
 	},
 	"federation": {
 		"warningBadge": "cUniverse 사용 불가",

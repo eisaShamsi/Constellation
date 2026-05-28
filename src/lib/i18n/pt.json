@@ -2843,7 +2843,10 @@
 	"lensBlock": {
 		"loading": "Carregando lente…",
 		"errorLabel": "Erro de lente",
-		"empty": "Nenhuma nota corresponde a esta lente."
+		"empty": "Nenhuma nota corresponde a esta lente.",
+		"openIn360Tooltip": "Abrir em 360.3D",
+		"openInCNSTooltip": "Abrir em CNS",
+		"openInCatalogerTooltip": "Abrir no Catalogador"
 	},
 	"federation": {
 		"warningBadge": "cUniversos indisponíveis",

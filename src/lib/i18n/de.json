@@ -2843,7 +2843,10 @@
 	"lensBlock": {
 		"loading": "Linse wird geladen…",
 		"errorLabel": "Linsenfehler",
-		"empty": "Keine Notizen entsprechen dieser Linse."
+		"empty": "Keine Notizen entsprechen dieser Linse.",
+		"openIn360Tooltip": "In 360.3D öffnen",
+		"openInCNSTooltip": "In CNS öffnen",
+		"openInCatalogerTooltip": "Im Katalogisierer öffnen"
 	},
 	"federation": {
 		"warningBadge": "cUniverses nicht verfügbar",

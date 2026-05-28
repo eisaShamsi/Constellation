@@ -2843,7 +2843,10 @@
 	"lensBlock": {
 		"loading": "Загрузка линзы…",
 		"errorLabel": "Ошибка линзы",
-		"empty": "Ни одна заметка не соответствует этой линзе."
+		"empty": "Ни одна заметка не соответствует этой линзе.",
+		"openIn360Tooltip": "Открыть в 360.3D",
+		"openInCNSTooltip": "Открыть в CNS",
+		"openInCatalogerTooltip": "Открыть в Каталогизаторе"
 	},
 	"federation": {
 		"warningBadge": "cUniverse недоступны",

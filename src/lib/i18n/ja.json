@@ -2843,7 +2843,10 @@
 	"lensBlock": {
 		"loading": "レンズを読み込み中…",
 		"errorLabel": "レンズエラー",
-		"empty": "このレンズに一致するノートはありません。"
+		"empty": "このレンズに一致するノートはありません。",
+		"openIn360Tooltip": "360.3Dで開く",
+		"openInCNSTooltip": "CNSで開く",
+		"openInCatalogerTooltip": "カタロガーで開く"
 	},
 	"federation": {
 		"warningBadge": "cUniverse 利用不可",
