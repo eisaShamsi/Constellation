@@ -11,7 +11,7 @@
 Until today, the only thing you could do with a lens row was **click the note name** to open it in a regular tab. That covers reading the note — but it doesn't open the note in any of Constellation's deep-read surfaces:
 
 - **360.3D Inspector** — the multi-dimensional view that shows the note's properties as orbiting rings around the note's body.
-- **CNS (Constellation Sight)** — the "where does this note sit in the larger picture" view.
+- **CNS (Constellation Nervous System)** — the gravity-well view that shows Universe Health, Communities, Top Bridges, and Blind Spots. (Internally still wired through `lensActive` / `toggleLens()` — old code names retained; the user-facing label is CNS. Not to be confused with the retired Constellation Sight dome, which is a future plugin candidate.)
 - **The Cataloger** — the structured-cataloguing view (epistemic taxonomy + Sources).
 
 **MIG-060 closes that gap.** Every lens row now carries three small icon buttons on its trailing edge. One click sends the note **directly into the surface you want**:
@@ -58,7 +58,7 @@ The icons are intentionally small (12px) and live faded at 55% opacity until you
 **Failure modes:**
 - *No icons visible at all.* → §B didn't ship to the running binary, OR §D CSS didn't apply. Check that the binary's modification time is AFTER today's commits.
 - *Icons visible but no tooltip on hover.* → §A i18n didn't load, OR the locale file is missing the new keys.
-- *Only 2 icons visible (CNS missing).* → Check **Settings → Features**. If "Constellation Sight" is OFF, that's expected behavior (§B Architect lock Q4). Turn it ON to see all three.
+- *Only 2 icons visible (CNS missing).* → Check **Settings → Core Plug-Ins → "Constellation Nervous System (CNS)"**. If OFF, that's expected behavior (§B Architect lock Q4) — turn it ON to see all three. (Internal note: the user-flag is `enabledFeatures.constellationSight`, kept under the old name from when this surface was called Sight v2; the user-facing label is CNS.)
 
 ---
 
@@ -86,7 +86,9 @@ The icons are intentionally small (12px) and live faded at 55% opacity until you
 
 ### Stage 3 — CNS gesture (only if you have CNS enabled)
 
-**Pre-state:** Stage 1 + Stage 2 passed. **Check Settings → Features → "Constellation Sight" is ON.** If OFF, skip this stage — the CNS icon shouldn't be visible anyway, and §B's gating is correct.
+**About CNS:** Constellation Nervous System — the gravity-well + Universe Health + Communities + Blind Spots surface. Internally still wired through `lensActive` / `toggleLens()` (the names date from when this surface was called "Sight v2"); the user-facing label has been "CNS" since the rename. **CNS is a live, active core surface** — not to be confused with the retired Constellation Sight (the dome view that was carved out to be a future external plugin per MIG-038).
+
+**Pre-state:** Stage 1 + Stage 2 passed. **Check Settings → Core Plug-Ins → "Constellation Nervous System (CNS)" is ON.** If OFF, skip this stage — the CNS icon shouldn't be visible anyway, and §B's gating is correct.
 
 **Action:**
 1. Click the **CNS** icon (the eye-shape icon — middle).
@@ -94,7 +96,7 @@ The icons are intentionally small (12px) and live faded at 55% opacity until you
 
 **Expected post-state:**
 - The clicked note opens as the active tab.
-- The **CNS** (Constellation Sight v2) view activates.
+- The **CNS** view activates (gravity-well overlay).
 - The dock button for CNS is highlighted (active state).
 - CNS is operating on the JUST-CLICKED note.
 
