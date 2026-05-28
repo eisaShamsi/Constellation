@@ -17,6 +17,7 @@ import { convertFileSrc, invoke } from '@tauri-apps/api/core';
 import { get } from 'svelte/store';
 import { t } from '$lib/i18n';
 import { detectDir } from '$lib/utils';
+import { appSettings } from '$lib/libraries/store';
 import type { LensResult, LensRow, DimensionValue } from '$lib/lens/store';
 
 // ─── Path state fields (for resolving image embeds) ───
@@ -882,6 +883,99 @@ class LensBlockWidget extends WidgetType {
 			headline.setAttribute('dir', detectDir(headlineVal));
 			li.appendChild(headline);
 		}
+
+		// MIG-060 §B — Threading-gesture buttons: 360.3D / CNS / Cataloger.
+		// Architect locks: each gesture dispatches `constellation:open-note-in-surface`
+		// with `detail.surface` discriminator. +layout.svelte (§C) opens the host
+		// note in the active pane, then toggles the target surface flag.
+		// `e.stopPropagation()` is critical: the row name button also has a click
+		// handler — without stopPropagation the gesture click would double-fire.
+		const actions = document.createElement('div');
+		actions.className = 'cm-lens-row-actions';
+		// Actions container is logically directionless — `margin-inline-start:auto`
+		// in CSS pushes it to the row's trailing edge regardless of `dir`.
+
+		// ─── 360.3D gesture — always shown ───
+		const btn360 = document.createElement('button');
+		btn360.type = 'button';
+		btn360.className = 'cm-lens-row-action cm-lens-row-action-360';
+		btn360.innerHTML =
+			'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="3" x2="12" y2="9"/><line x1="12" y1="15" x2="12" y2="21"/><line x1="3" y1="12" x2="9" y2="12"/><line x1="15" y1="12" x2="21" y2="12"/></svg>';
+		btn360.title =
+			get(t)('lensBlock.openIn360Tooltip') || 'Open in 360.3D';
+		btn360.setAttribute('aria-label', btn360.title);
+		btn360.addEventListener('click', (e) => {
+			e.stopPropagation();
+			window.dispatchEvent(
+				new CustomEvent('constellation:open-note-in-surface', {
+					detail: {
+						surface: '360.3d',
+						path: row.note_path,
+						libraryName: row.library_name,
+						libraryPath: row.library_path,
+					},
+				}),
+			);
+		});
+		actions.appendChild(btn360);
+
+		// ─── CNS gesture — gated by `enabledFeatures.constellationSight` ───
+		// Architect Q4 / lock §D: hide entirely when CNS is disabled in settings.
+		if (
+			get(appSettings).enabledFeatures?.constellationSight !== false
+		) {
+			const btnCns = document.createElement('button');
+			btnCns.type = 'button';
+			btnCns.className =
+				'cm-lens-row-action cm-lens-row-action-cns';
+			btnCns.innerHTML =
+				'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+			btnCns.title =
+				get(t)('lensBlock.openInCNSTooltip') || 'Open in CNS';
+			btnCns.setAttribute('aria-label', btnCns.title);
+			btnCns.addEventListener('click', (e) => {
+				e.stopPropagation();
+				window.dispatchEvent(
+					new CustomEvent('constellation:open-note-in-surface', {
+						detail: {
+							surface: 'cns',
+							path: row.note_path,
+							libraryName: row.library_name,
+							libraryPath: row.library_path,
+						},
+					}),
+				);
+			});
+			actions.appendChild(btnCns);
+		}
+
+		// ─── Cataloger gesture — always shown ───
+		const btnCat = document.createElement('button');
+		btnCat.type = 'button';
+		btnCat.className =
+			'cm-lens-row-action cm-lens-row-action-cataloger';
+		btnCat.innerHTML =
+			'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>';
+		btnCat.title =
+			get(t)('lensBlock.openInCatalogerTooltip') ||
+			'Open in The Cataloger';
+		btnCat.setAttribute('aria-label', btnCat.title);
+		btnCat.addEventListener('click', (e) => {
+			e.stopPropagation();
+			window.dispatchEvent(
+				new CustomEvent('constellation:open-note-in-surface', {
+					detail: {
+						surface: 'cataloger',
+						path: row.note_path,
+						libraryName: row.library_name,
+						libraryPath: row.library_path,
+					},
+				}),
+			);
+		});
+		actions.appendChild(btnCat);
+
+		li.appendChild(actions);
 
 		return li;
 	}
