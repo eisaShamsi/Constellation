@@ -1543,6 +1543,110 @@ mod tests {
     // resolution, test_per_schema_link_isolation, test_per_schema_alias_
     // isolation) cover Option A correctly.
 
+    // §Q.1 (audit D5 fix) — federated read_links_in_schema concatenates
+    // across schemas without merging. Each universe's note_links rows
+    // appear independently in the combined result.
+    #[test]
+    fn test_federated_links_concatenate_across_schemas() {
+        let main_dir = TempDir::new().unwrap();
+        let cu_dir = TempDir::new().unwrap();
+        let main_db = main_dir.path().join("search.db");
+        let cu_db = cu_dir.path().join("search.db");
+
+        // Build main DB with a note_links row.
+        let conn_m = Connection::open(&main_db).unwrap();
+        conn_m.execute_batch("
+            CREATE TABLE schema_versions (module TEXT PRIMARY KEY, version INTEGER NOT NULL);
+            CREATE TABLE note_links (
+                source_path TEXT NOT NULL, source_name TEXT NOT NULL,
+                target_name TEXT NOT NULL, link_type TEXT NOT NULL DEFAULT '',
+                library_name TEXT NOT NULL DEFAULT '',
+                weight REAL NOT NULL DEFAULT 0.0,
+                traversal_count INTEGER NOT NULL DEFAULT 0,
+                annotation TEXT NOT NULL DEFAULT '',
+                last_traversed TEXT NOT NULL DEFAULT '',
+                confidence TEXT NOT NULL DEFAULT '',
+                status TEXT NOT NULL DEFAULT 'active'
+            );
+            INSERT INTO note_links (source_path, source_name, target_name, link_type, library_name)
+                VALUES ('/m/a.md', 'A', 'B', 'supports', 'MainLib');
+        ").unwrap();
+        drop(conn_m);
+
+        // Build cu0 DB with its own note_links row.
+        let conn_c = Connection::open(&cu_db).unwrap();
+        conn_c.execute_batch("
+            CREATE TABLE schema_versions (module TEXT PRIMARY KEY, version INTEGER NOT NULL);
+            CREATE TABLE note_links (
+                source_path TEXT NOT NULL, source_name TEXT NOT NULL,
+                target_name TEXT NOT NULL, link_type TEXT NOT NULL DEFAULT '',
+                library_name TEXT NOT NULL DEFAULT '',
+                weight REAL NOT NULL DEFAULT 0.0,
+                traversal_count INTEGER NOT NULL DEFAULT 0,
+                annotation TEXT NOT NULL DEFAULT '',
+                last_traversed TEXT NOT NULL DEFAULT '',
+                confidence TEXT NOT NULL DEFAULT '',
+                status TEXT NOT NULL DEFAULT 'active'
+            );
+            INSERT INTO note_links (source_path, source_name, target_name, link_type, library_name)
+                VALUES ('/cu/x.md', 'X', 'Y', 'derives-from', 'ChildLib');
+        ").unwrap();
+        drop(conn_c);
+
+        let conn = Connection::open(&main_db).unwrap();
+        attach_as(&conn, &cu_db, "cu0");
+
+        let mut links: Vec<NoteLink> = Vec::new();
+        links.extend(read_links_in_schema(&conn, "main").unwrap());
+        links.extend(read_links_in_schema(&conn, "cu0").unwrap());
+
+        // Both universes' links present, no merging, no resolution.
+        assert_eq!(links.len(), 2);
+        assert!(links.iter().any(|l| l.source_name == "A" && l.target == "B"));
+        assert!(links.iter().any(|l| l.source_name == "X" && l.target == "Y"));
+    }
+
+    // §Q.2 (audit D5 fix) — federated read_tags_in_schema sums counts
+    // across schemas. Tag "shared" appears in both main (2x) and cu0 (3x)
+    // → final accumulated count is 5.
+    #[test]
+    fn test_federated_tags_sum_across_schemas() {
+        let main_dir = TempDir::new().unwrap();
+        let cu_dir = TempDir::new().unwrap();
+        let main_db = main_dir.path().join("search.db");
+        let cu_db = cu_dir.path().join("search.db");
+
+        // main has 2 notes with tag "shared", 1 with "main-only".
+        let conn_m = Connection::open(&main_db).unwrap();
+        conn_m.execute_batch(r#"
+            CREATE TABLE note_meta (path TEXT PRIMARY KEY, tags_json TEXT NOT NULL DEFAULT '[]');
+            INSERT INTO note_meta VALUES ('/m/a.md', '["shared","main-only"]');
+            INSERT INTO note_meta VALUES ('/m/b.md', '["shared"]');
+        "#).unwrap();
+        drop(conn_m);
+
+        // cu0 has 3 notes with tag "shared", 1 with "cu-only".
+        let conn_c = Connection::open(&cu_db).unwrap();
+        conn_c.execute_batch(r#"
+            CREATE TABLE note_meta (path TEXT PRIMARY KEY, tags_json TEXT NOT NULL DEFAULT '[]');
+            INSERT INTO note_meta VALUES ('/cu/x.md', '["shared","cu-only"]');
+            INSERT INTO note_meta VALUES ('/cu/y.md', '["shared"]');
+            INSERT INTO note_meta VALUES ('/cu/z.md', '["shared"]');
+        "#).unwrap();
+        drop(conn_c);
+
+        let conn = Connection::open(&main_db).unwrap();
+        attach_as(&conn, &cu_db, "cu0");
+
+        let mut tags: HashMap<String, u32> = HashMap::new();
+        read_tags_in_schema(&conn, "main", &mut tags).unwrap();
+        read_tags_in_schema(&conn, "cu0", &mut tags).unwrap();
+
+        assert_eq!(tags.get("shared"), Some(&5), "shared should accumulate to 5 (2 + 3)");
+        assert_eq!(tags.get("main-only"), Some(&1));
+        assert_eq!(tags.get("cu-only"), Some(&1));
+    }
+
     // §G.8 — Q2 Option C: id=lower(name) collisions tolerated, path
     // serves as the disambiguator.
     #[test]

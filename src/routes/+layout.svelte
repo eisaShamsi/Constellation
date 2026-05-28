@@ -2477,8 +2477,13 @@
 		// §J originally only re-invoked _sky → Backlinks/Outgoing stayed stuck
 		// with parent-only data from boot. §N re-invokes _graph too so
 		// allLibraryLinks updates with federated note_links.
+		// MIG-061 §P — empty-overwrite guard: if a federation:ready re-fire
+		// returns empty data (e.g., federated_conn became None mid-universe-
+		// switch race per Audit S6 / D4 finding), don't clobber the good
+		// data we already have. The guard preserves prior allLibraryLinks
+		// when the new payload is smaller AND the current is non-empty.
 		const unlistenFederationReady = await listen('federation:ready', async () => {
-			// Refresh sky (CNS / Sky View)
+			// Refresh sky (CNS / Sky View) — listener already guards isReady.
 			try {
 				type SkySnapshot = {
 					nodes: SkyNode[];
@@ -2487,13 +2492,17 @@
 					timingsMs: Array<[string, number]>;
 				};
 				const sky = await invoke<SkySnapshot>('cache_boot_snapshot_sky');
-				if (sky && sky.isReady) {
+				if (sky && sky.isReady && sky.nodes.length >= skyNodes.length) {
 					skyNodes = sky.nodes;
 					skyLinks = sky.links;
 					skyVersion++;
 				}
 			} catch {}
-			// Refresh graph (Backlinks / Outgoing / Tags / Aliases)
+			// Refresh graph (Backlinks / Outgoing / Tags / Aliases).
+			// BootSnapshotGraph has no isReady field; the §M code returns
+			// empty arrays when federated_conn is None mid-race. So we
+			// guard by "new data must not be empty when current isn't"
+			// (D4 audit finding).
 			try {
 				type GraphSnapshot = {
 					links: NoteLink[];
@@ -2501,7 +2510,9 @@
 					aliases?: Array<{ path: string; aliasLower: string }>;
 				};
 				const graph = await invoke<GraphSnapshot>('cache_boot_snapshot_graph');
-				if (graph) {
+				const newLinksLen = graph?.links?.length ?? 0;
+				const newIsValid = newLinksLen > 0 || allLibraryLinks.length === 0;
+				if (graph && newIsValid) {
 					allLibraryLinks = graph.links ?? [];
 					allLibraryTags = graph.tags ?? {};
 					notePathToAliases = new Map();
