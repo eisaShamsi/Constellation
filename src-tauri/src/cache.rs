@@ -644,6 +644,31 @@ fn read_sky_nodes_raw_in_schema(
         .map_err(|e| format!("prepare nodes ({}): {}", schema, e))?;
     let rows = stmt
         .query_map([], |row| {
+            // MIG-061 §K — flexible stratum read.
+            // The `stratum` column is declared TEXT in the schema
+            // (search.rs:2210) but populated via STRATUM_SQL_EXPR which
+            // computes an INTEGER (1-8). SQLite's loose typing means
+            // SOME rows store the value as INTEGER class, others as TEXT.
+            // The pre-MIG-061 code (and the previous MIG-061 §B revision)
+            // used `row.get::<_, Option<i64>>(4)?` which fails on TEXT-
+            // class rows with "Invalid column type Text at index: 4".
+            //
+            // Surfaced by the §J.3 diagnostic trace: the boot-path call
+            // to cache_boot_snapshot_sky has been silently failing in
+            // production all along; frontend fell back to `buildSkyData`
+            // (the legacy path) which doesn't read sky_nodes at all.
+            //
+            // This read handles both storage classes by inspecting the
+            // raw rusqlite::Value, parsing TEXT to i64 if needed.
+            let stratum: Option<i64> = match row.get_ref(4)? {
+                rusqlite::types::ValueRef::Null => None,
+                rusqlite::types::ValueRef::Integer(i) => Some(i),
+                rusqlite::types::ValueRef::Text(b) => std::str::from_utf8(b)
+                    .ok()
+                    .and_then(|s| s.parse::<i64>().ok()),
+                rusqlite::types::ValueRef::Real(f) => Some(f as i64),
+                rusqlite::types::ValueRef::Blob(_) => None,
+            };
             Ok(SkyNodeOut {
                 id: row.get(0)?,
                 name: row.get(1)?,
@@ -652,7 +677,7 @@ fn read_sky_nodes_raw_in_schema(
                 // Counts filled in during the links scan pass.
                 link_count: 0,
                 outgoing_count: 0,
-                stratum: row.get::<_, Option<i64>>(4)?,
+                stratum,
                 maturity: row.get::<_, Option<String>>(5)?,
                 origin_type: row.get::<_, Option<String>>(6)?,
                 created_at: row.get::<_, Option<i64>>(7)?,
