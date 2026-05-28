@@ -1731,6 +1731,57 @@ export const livePreviewTheme = EditorView.theme({
 		color: 'var(--text-muted)',
 		fontStyle: 'italic',
 	},
+	// MIG-060 §D — Threading-gesture action container + buttons.
+	// `marginInlineStart: 'auto'` is the magic that makes layout
+	// auto-flip: in LTR rows the actions land on the right edge;
+	// in RTL rows (Arabic note names) they land on the left edge.
+	// Logical properties handle both without manual dir checks.
+	'.cm-lens-row-actions': {
+		marginInlineStart: 'auto',
+		display: 'flex',
+		alignItems: 'center',
+		gap: '2px',
+		opacity: '0.55',
+		transition: 'opacity 0.15s',
+	},
+	'.cm-lens-row:hover .cm-lens-row-actions': {
+		opacity: '1',
+	},
+	'.cm-lens-row-action': {
+		width: '20px',
+		height: '20px',
+		padding: '0',
+		display: 'inline-flex',
+		alignItems: 'center',
+		justifyContent: 'center',
+		background: 'transparent',
+		border: 'none',
+		color: 'var(--text-muted)',
+		cursor: 'pointer',
+		borderRadius: '3px',
+		transition: 'background-color 0.12s, color 0.12s',
+	},
+	'.cm-lens-row-action:hover': {
+		background: 'var(--background-modifier-hover)',
+		color: 'var(--text-normal)',
+	},
+	'.cm-lens-row-action svg': {
+		width: '12px',
+		height: '12px',
+		display: 'block',
+	},
+	// Per-surface hue hint on hover — keeps the visual mapping
+	// (360.3D = purple, CNS = teal/cyan, Cataloger = orange/amber)
+	// consistent with the dock buttons' visual identity.
+	'.cm-lens-row-action-360:hover': {
+		color: 'var(--color-purple)',
+	},
+	'.cm-lens-row-action-cns:hover': {
+		color: 'var(--color-cyan)',
+	},
+	'.cm-lens-row-action-cataloger:hover': {
+		color: 'var(--color-orange)',
+	},
 	'.cm-lens-footer': {
 		display: 'flex',
 		justifyContent: 'flex-end',
