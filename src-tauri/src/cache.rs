@@ -999,3 +999,403 @@ pub fn cache_reconcile(app: tauri::AppHandle) -> Result<(), String> {
     });
     Ok(())
 }
+
+// ════════════════════════════════════════════════════════════════════
+// MIG-061 §G — Federation tests for the sky_* reader path.
+//
+// These exercise the new schema-parameterized helpers and the federated
+// readiness gate. They use temp-file SQLite (not :memory:) because the
+// federation path requires ATTACH DATABASE on a populated file. Each
+// test sets up:
+//   - A "main" search.db with sky_nodes / sky_links / note_aliases /
+//     schema_versions tables.
+//   - For federated tests: one or more "cuN" search.db files, ATTACHed
+//     to the main connection.
+//
+// Tests focus on the read-helper layer (read_sky_nodes_raw_in_schema,
+// read_sky_links_raw_in_schema, is_federated_sky_ready). The top-level
+// `cache_boot_snapshot_sky` is not directly testable here because it
+// requires a Tauri AppHandle + SearchState; its behavior is covered
+// indirectly via the helper tests + the §H Boss-test.
+// ════════════════════════════════════════════════════════════════════
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::TempDir;
+
+    /// Create a fresh search.db at `path` with the sky_* + note_aliases
+    /// + schema_versions tables, stamped at SKY_SCHEMA_VERSION (ready).
+    /// Pre-populates with the given nodes + links.
+    fn make_synthetic_sky_db(
+        path: &std::path::Path,
+        nodes: &[(&str, &str, &str, &str)], // (id, name, path, library_name)
+        links: &[(&str, &str, &str)],       // (source_path, target_name, link_type)
+        aliases: &[(&str, &str)],           // (alias_lower, target_path)
+        stamp_ready: bool,
+    ) {
+        let conn = Connection::open(path).unwrap();
+        conn.execute_batch(
+            "CREATE TABLE schema_versions (
+                module TEXT PRIMARY KEY,
+                version INTEGER NOT NULL
+            );
+            CREATE TABLE sky_nodes (
+                path TEXT PRIMARY KEY,
+                id TEXT NOT NULL,
+                name TEXT NOT NULL,
+                library_name TEXT NOT NULL,
+                link_count INTEGER NOT NULL DEFAULT 0,
+                outgoing_count INTEGER NOT NULL DEFAULT 0,
+                stratum TEXT,
+                maturity TEXT,
+                origin_type TEXT,
+                enrichment_dirty INTEGER NOT NULL DEFAULT 0,
+                created_at INTEGER,
+                updated_at INTEGER NOT NULL DEFAULT 0
+            );
+            CREATE TABLE sky_links (
+                source_path TEXT NOT NULL,
+                target_name TEXT NOT NULL,
+                link_type TEXT NOT NULL DEFAULT '',
+                weight REAL NOT NULL DEFAULT 0,
+                count INTEGER NOT NULL DEFAULT 1
+            );
+            CREATE TABLE note_aliases (
+                path TEXT NOT NULL,
+                alias_lower TEXT NOT NULL,
+                added_at INTEGER NOT NULL DEFAULT 0,
+                source TEXT NOT NULL DEFAULT 'frontmatter',
+                PRIMARY KEY (path, alias_lower)
+            );",
+        )
+        .unwrap();
+
+        let version = if stamp_ready {
+            crate::search::SKY_SCHEMA_VERSION as i64
+        } else {
+            (crate::search::SKY_SCHEMA_VERSION as i64) - 1
+        };
+        conn.execute(
+            "INSERT INTO schema_versions (module, version) VALUES ('sky', ?1)",
+            params![version],
+        )
+        .unwrap();
+
+        for (id, name, p, lib) in nodes {
+            conn.execute(
+                "INSERT INTO sky_nodes (path, id, name, library_name) VALUES (?1, ?2, ?3, ?4)",
+                params![p, id, name, lib],
+            )
+            .unwrap();
+        }
+        for (source, target, ltype) in links {
+            conn.execute(
+                "INSERT INTO sky_links (source_path, target_name, link_type) VALUES (?1, ?2, ?3)",
+                params![source, target, ltype],
+            )
+            .unwrap();
+        }
+        for (alias, alias_path) in aliases {
+            conn.execute(
+                "INSERT INTO note_aliases (path, alias_lower, source) VALUES (?1, ?2, 'frontmatter')",
+                params![alias_path, alias],
+            )
+            .unwrap();
+        }
+    }
+
+    fn attach_as(conn: &Connection, db_path: &std::path::Path, alias: &str) {
+        let uri = db_path.to_string_lossy().replace('\\', "/");
+        let sql = format!("ATTACH DATABASE 'file:{}?mode=ro' AS {}", uri, alias);
+        conn.execute(&sql, []).unwrap();
+    }
+
+    // §G.1 — schema="main" returns same as the back-compat shim.
+    #[test]
+    fn test_sky_nodes_raw_in_schema_main_only() {
+        let dir = TempDir::new().unwrap();
+        let db = dir.path().join("search.db");
+        make_synthetic_sky_db(
+            &db,
+            &[("a", "A", "/m/a.md", "Lib"), ("b", "B", "/m/b.md", "Lib")],
+            &[],
+            &[],
+            true,
+        );
+        let conn = Connection::open(&db).unwrap();
+        let result = read_sky_nodes_raw_in_schema(&conn, "main").unwrap();
+        assert_eq!(result.len(), 2);
+        assert!(result.iter().any(|n| n.id == "a"));
+        assert!(result.iter().any(|n| n.id == "b"));
+    }
+
+    // §G.2 — reads from an ATTACHed cUniverse via cu0.sky_nodes.
+    #[test]
+    fn test_sky_nodes_raw_in_schema_attached_cu() {
+        let main_dir = TempDir::new().unwrap();
+        let cu_dir = TempDir::new().unwrap();
+        let main_db = main_dir.path().join("search.db");
+        let cu_db = cu_dir.path().join("search.db");
+        make_synthetic_sky_db(&main_db, &[("m", "M", "/m/m.md", "Main")], &[], &[], true);
+        make_synthetic_sky_db(&cu_db, &[("x", "X", "/cu/x.md", "ChildLib")], &[], &[], true);
+
+        let conn = Connection::open(&main_db).unwrap();
+        attach_as(&conn, &cu_db, "cu0");
+
+        let cu_nodes = read_sky_nodes_raw_in_schema(&conn, "cu0").unwrap();
+        assert_eq!(cu_nodes.len(), 1);
+        assert_eq!(cu_nodes[0].name, "X");
+        assert_eq!(cu_nodes[0].library_name, "ChildLib");
+    }
+
+    // §G.3 — Q4 Option A: single-universe ready returns true.
+    #[test]
+    fn test_federated_sky_ready_single_universe() {
+        let dir = TempDir::new().unwrap();
+        let db = dir.path().join("search.db");
+        make_synthetic_sky_db(&db, &[], &[], &[], true);
+        let conn = Connection::open(&db).unwrap();
+        assert!(is_federated_sky_ready(&conn, &["main".to_string()]));
+    }
+
+    // §G.4 — Q4 Option A: any unstamped schema returns false.
+    #[test]
+    fn test_federated_sky_ready_partial_unstamped() {
+        let main_dir = TempDir::new().unwrap();
+        let cu_dir = TempDir::new().unwrap();
+        let main_db = main_dir.path().join("search.db");
+        let cu_db = cu_dir.path().join("search.db");
+        make_synthetic_sky_db(&main_db, &[], &[], &[], true);  // main READY
+        make_synthetic_sky_db(&cu_db, &[], &[], &[], false);   // cu0 NOT READY
+
+        let conn = Connection::open(&main_db).unwrap();
+        attach_as(&conn, &cu_db, "cu0");
+
+        assert!(
+            !is_federated_sky_ready(&conn, &["main".to_string(), "cu0".to_string()]),
+            "expected NOT ready because cu0 lags on sky_schema_version"
+        );
+    }
+
+    // §G.5 — Q3 Option B: cross-universe link resolution.
+    // Link in cu0 with target_name="X" resolves to cu0's node X.
+    #[test]
+    fn test_federated_link_resolution_cross_universe() {
+        let main_dir = TempDir::new().unwrap();
+        let cu_dir = TempDir::new().unwrap();
+        let main_db = main_dir.path().join("search.db");
+        let cu_db = cu_dir.path().join("search.db");
+        // main has note A; cu0 has note X; cu0 has a link A→X (but A is
+        // in main, not cu0, so source resolution must reach across the
+        // MERGED maps to find A's index).
+        make_synthetic_sky_db(
+            &main_db,
+            &[("a", "A", "/m/a.md", "Main")],
+            &[],
+            &[],
+            true,
+        );
+        make_synthetic_sky_db(
+            &cu_db,
+            &[("x", "X", "/cu/x.md", "ChildLib")],
+            &[("/m/a.md", "X", "")], // A → X cross-universe link
+            &[],
+            true,
+        );
+
+        let conn = Connection::open(&main_db).unwrap();
+        attach_as(&conn, &cu_db, "cu0");
+
+        // Build merged node set: schemas main + cu0
+        let mut nodes: Vec<SkyNodeOut> = Vec::new();
+        nodes.extend(read_sky_nodes_raw_in_schema(&conn, "main").unwrap());
+        nodes.extend(read_sky_nodes_raw_in_schema(&conn, "cu0").unwrap());
+        assert_eq!(nodes.len(), 2);
+
+        let mut path_to_idx: HashMap<String, usize> = HashMap::new();
+        let mut name_to_idx: HashMap<String, usize> = HashMap::new();
+        for (i, n) in nodes.iter().enumerate() {
+            path_to_idx.insert(n.path.clone(), i);
+            name_to_idx.entry(n.name.clone()).or_insert(i);
+        }
+        let alias_to_path: HashMap<String, String> = HashMap::new();
+
+        let links = read_sky_links_raw_in_schema(
+            &conn,
+            "cu0",
+            &path_to_idx,
+            &name_to_idx,
+            &alias_to_path,
+            &mut nodes,
+        )
+        .unwrap();
+
+        // The cu0 link A→X should resolve: source "/m/a.md" → main's A;
+        // target "X" → cu0's X via merged name_to_idx.
+        assert_eq!(links.len(), 1, "exactly one link expected, got: {:?}", links);
+        assert_eq!(links[0].source, "a");
+        assert_eq!(links[0].target, "x");
+        // X's link_count should have been bumped (incoming from A).
+        let x_idx = name_to_idx.get("X").unwrap();
+        assert_eq!(nodes[*x_idx].link_count, 1);
+        // A's outgoing_count should have been bumped (outgoing to X).
+        let a_idx = name_to_idx.get("A").unwrap();
+        assert_eq!(nodes[*a_idx].outgoing_count, 1);
+    }
+
+    // §G.6 — Q3 Option B: name collision across universes → schema-order
+    // (first-insert-wins) determines which universe's node a link
+    // resolves to. main is inserted first, so main wins.
+    #[test]
+    fn test_federated_link_collision_main_wins() {
+        let main_dir = TempDir::new().unwrap();
+        let cu_dir = TempDir::new().unwrap();
+        let main_db = main_dir.path().join("search.db");
+        let cu_db = cu_dir.path().join("search.db");
+        // BOTH universes have a note named "Shared". Path differs.
+        make_synthetic_sky_db(
+            &main_db,
+            &[("shared", "Shared", "/m/shared.md", "Main")],
+            &[("/m/src.md", "Shared", "")], // (orphan src — only target matters here)
+            &[],
+            true,
+        );
+        // Need a real source in main for the link to resolve.
+        let conn = Connection::open(&main_db).unwrap();
+        conn.execute(
+            "INSERT INTO sky_nodes (path, id, name, library_name) VALUES ('/m/src.md', 'src', 'Src', 'Main')",
+            [],
+        ).unwrap();
+
+        make_synthetic_sky_db(
+            &cu_db,
+            &[("shared", "Shared", "/cu/shared.md", "ChildLib")],
+            &[],
+            &[],
+            true,
+        );
+
+        attach_as(&conn, &cu_db, "cu0");
+
+        let mut nodes: Vec<SkyNodeOut> = Vec::new();
+        nodes.extend(read_sky_nodes_raw_in_schema(&conn, "main").unwrap());
+        nodes.extend(read_sky_nodes_raw_in_schema(&conn, "cu0").unwrap());
+
+        let mut path_to_idx: HashMap<String, usize> = HashMap::new();
+        let mut name_to_idx: HashMap<String, usize> = HashMap::new();
+        for (i, n) in nodes.iter().enumerate() {
+            path_to_idx.insert(n.path.clone(), i);
+            name_to_idx.entry(n.name.clone()).or_insert(i);
+        }
+        let alias_to_path: HashMap<String, String> = HashMap::new();
+
+        let links = read_sky_links_raw_in_schema(
+            &conn,
+            "main",
+            &path_to_idx,
+            &name_to_idx,
+            &alias_to_path,
+            &mut nodes,
+        )
+        .unwrap();
+
+        assert_eq!(links.len(), 1);
+        // main inserted first → main's Shared (path /m/shared.md) wins
+        // the name_to_idx slot. The link from main's Src → Shared
+        // resolves to main's Shared, not cu0's Shared.
+        let shared_main_idx = path_to_idx.get("/m/shared.md").unwrap();
+        let shared_cu_idx = path_to_idx.get("/cu/shared.md").unwrap();
+        assert_eq!(nodes[*shared_main_idx].link_count, 1, "main's Shared should receive the link");
+        assert_eq!(nodes[*shared_cu_idx].link_count, 0, "cu0's Shared should NOT receive the link");
+    }
+
+    // §G.7 — Cross-schema alias collision: schema-order winner deterministic.
+    #[test]
+    fn test_federated_alias_collision_deterministic_winner() {
+        let main_dir = TempDir::new().unwrap();
+        let cu_dir = TempDir::new().unwrap();
+        let main_db = main_dir.path().join("search.db");
+        let cu_db = cu_dir.path().join("search.db");
+        // Both universes have alias "foo" but pointing at different paths.
+        make_synthetic_sky_db(
+            &main_db,
+            &[("note_main", "MainNote", "/m/main.md", "Main")],
+            &[],
+            &[("foo", "/m/main.md")],
+            true,
+        );
+        make_synthetic_sky_db(
+            &cu_db,
+            &[("note_cu", "CuNote", "/cu/cu.md", "ChildLib")],
+            &[],
+            &[("foo", "/cu/cu.md")],
+            true,
+        );
+
+        let conn = Connection::open(&main_db).unwrap();
+        attach_as(&conn, &cu_db, "cu0");
+
+        let mut alias_to_path: HashMap<String, String> = HashMap::new();
+        for schema in &["main".to_string(), "cu0".to_string()] {
+            let sql = format!(
+                "SELECT alias_lower, path FROM {}.note_aliases ORDER BY path",
+                schema
+            );
+            let mut stmt = conn.prepare(&sql).unwrap();
+            let rows = stmt
+                .query_map([], |row| {
+                    Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+                })
+                .unwrap();
+            for r in rows {
+                let (alias, path) = r.unwrap();
+                alias_to_path.entry(alias).or_insert(path);
+            }
+        }
+        // main inserted first → main wins the "foo" alias.
+        assert_eq!(alias_to_path.get("foo").map(|s| s.as_str()), Some("/m/main.md"));
+    }
+
+    // §G.8 — Q2 Option C: id=lower(name) collisions tolerated, path
+    // serves as the disambiguator.
+    #[test]
+    fn test_node_id_uniqueness_lower_name_collisions_tolerated() {
+        let main_dir = TempDir::new().unwrap();
+        let cu_dir = TempDir::new().unwrap();
+        let main_db = main_dir.path().join("search.db");
+        let cu_db = cu_dir.path().join("search.db");
+        // Both universes have a note id="foobar", name="FooBar".
+        make_synthetic_sky_db(
+            &main_db,
+            &[("foobar", "FooBar", "/m/foobar.md", "Main")],
+            &[],
+            &[],
+            true,
+        );
+        make_synthetic_sky_db(
+            &cu_db,
+            &[("foobar", "FooBar", "/cu/foobar.md", "ChildLib")],
+            &[],
+            &[],
+            true,
+        );
+
+        let conn = Connection::open(&main_db).unwrap();
+        attach_as(&conn, &cu_db, "cu0");
+
+        let mut nodes: Vec<SkyNodeOut> = Vec::new();
+        nodes.extend(read_sky_nodes_raw_in_schema(&conn, "main").unwrap());
+        nodes.extend(read_sky_nodes_raw_in_schema(&conn, "cu0").unwrap());
+
+        // Both nodes present in the merged result (Q2 Option C: id
+        // collisions tolerated, path disambiguates).
+        assert_eq!(nodes.len(), 2);
+        assert_eq!(nodes.iter().filter(|n| n.id == "foobar").count(), 2);
+        // Paths are distinct → consumers can disambiguate via path.
+        let paths: std::collections::HashSet<_> =
+            nodes.iter().map(|n| n.path.as_str()).collect();
+        assert_eq!(paths.len(), 2);
+        assert!(paths.contains("/m/foobar.md"));
+        assert!(paths.contains("/cu/foobar.md"));
+    }
+}
