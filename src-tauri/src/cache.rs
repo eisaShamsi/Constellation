@@ -531,82 +531,78 @@ pub fn cache_boot_snapshot_sky(app: tauri::AppHandle) -> Result<BootSnapshotSky,
     // per-schema `prepare` is cheap (~µs) on the warm connection;
     // the cost is dominated by row materialization.
 
-    let t2 = Instant::now();
-    // Scan 1: nodes from every schema, concatenated.
-    let mut nodes: Vec<SkyNodeOut> = Vec::new();
-    for schema in &schemas {
-        nodes.extend(read_sky_nodes_raw_in_schema(conn, schema)?);
-    }
-    timings.push(("scan_nodes".into(), t2.elapsed().as_millis() as u64));
-
-    // Build O(1) lookup maps from the MERGED node list.
-    // Q3 Option B: federated link resolution — a wikilink in cu0
-    // targeting "FooBar" resolves to whichever schema has FooBar.
-    // First-insert-wins (schema-order winner) is deterministic because
-    // `nodes` was built in `schemas` order (main, cu0, cu1, ...).
-    let mut path_to_idx: std::collections::HashMap<String, usize> =
-        std::collections::HashMap::with_capacity(nodes.len());
-    let mut name_to_idx: std::collections::HashMap<String, usize> =
-        std::collections::HashMap::with_capacity(nodes.len());
-    for (i, n) in nodes.iter().enumerate() {
-        path_to_idx.insert(n.path.clone(), i);
-        // First-insert-wins for cross-schema name collisions.
-        name_to_idx.entry(n.name.clone()).or_insert(i);
-    }
-
-    // MIG-004 §8: load the alias resolution map. alias_lower → path so
-    // an inbound link targeting an aliased name still resolves to the
-    // renamed note's current row.
+    // MIG-061 §L — per-schema isolation (Q3 → Option A revised per Boss
+    // principle: "the data of Universe A shouldn't be merged/integrated
+    // with Universe B").
     //
-    // MIG-061: load aliases from every schema. First-insert-wins on
-    // cross-schema alias collisions (schema-order deterministic).
+    // Each cUniverse's sky_links resolve ONLY against its own sky_nodes
+    // and its own note_aliases. A wikilink in cu0 that targets a name
+    // existing in cu1 does NOT resolve cross-universe — it stays
+    // unresolved (or falls back to lowercase id) just as it would if
+    // cu0 were viewed standalone, detached from cu1.
+    //
+    // Strict invariant: cu0's behavior must be identical whether
+    // standalone or attached as a cUniverse of B. Federation is a
+    // read-side concatenation, never a runtime merge of resolution
+    // state.
+    //
+    // Memory: per-schema maps are slightly larger total than a merged
+    // map (HashMap overhead × N schemas), but only by HashMap-bucket
+    // overhead — node count is the same. On a 25-universe setup this
+    // is negligible (a few MB).
+    let mut nodes: Vec<SkyNodeOut> = Vec::new();
+    let mut links: Vec<SkyLinkOut> = Vec::new();
+
+    let t2 = Instant::now();
     let t_alias = Instant::now();
-    let mut alias_to_path: std::collections::HashMap<String, String> =
-        std::collections::HashMap::new();
+    let t3 = Instant::now();
     for schema in &schemas {
-        // MIG-004 §10 audit-fix (4A-MED): ORDER BY path makes the
-        // first-insert-wins behavior deterministic on alias collisions.
-        // Without explicit ordering, SQLite's emission order is
-        // implementation-defined (stable in practice, not guaranteed).
-        // Path-sort matches the FS resolver's tiebreak in
-        // libraries.rs::find_note_by_name_or_alias.
-        let sql = format!(
+        // 1. Load this schema's nodes, append to the merged nodes vec.
+        let schema_start = nodes.len();
+        nodes.extend(read_sky_nodes_raw_in_schema(conn, schema)?);
+
+        // 2. Build per-schema maps from THIS schema's nodes only.
+        //    Indices point into the merged `nodes` vec via the
+        //    schema_start offset, so link_count / outgoing_count bumps
+        //    in read_sky_links_raw_in_schema land on the correct rows.
+        let schema_len = nodes.len() - schema_start;
+        let mut path_to_idx: std::collections::HashMap<String, usize> =
+            std::collections::HashMap::with_capacity(schema_len);
+        let mut name_to_idx: std::collections::HashMap<String, usize> =
+            std::collections::HashMap::with_capacity(schema_len);
+        for i in schema_start..nodes.len() {
+            path_to_idx.insert(nodes[i].path.clone(), i);
+            name_to_idx.entry(nodes[i].name.clone()).or_insert(i);
+        }
+
+        // 3. Load this schema's note_aliases. Defensive: older
+        //    cUniverses may lack the table — skip gracefully.
+        let mut alias_to_path: std::collections::HashMap<String, String> =
+            std::collections::HashMap::new();
+        let alias_sql = format!(
             "SELECT alias_lower, path FROM {}.note_aliases ORDER BY path",
             schema
         );
-        // Defensive: some cUniverses on older schemas may not have
-        // note_aliases yet. Skip with a soft error rather than failing
-        // the whole snapshot. (R3 in Plan risks.)
-        let stmt_res = conn.prepare(&sql);
-        let mut stmt = match stmt_res {
-            Ok(s) => s,
-            Err(e) => {
-                // Log via timings to keep the snapshot valid; consumers
-                // see an empty alias map for this schema (orphan-link
-                // resolution falls back to lowercase, which is the same
-                // behavior as a missing alias entry).
-                timings.push((format!("alias_skip:{}:{}", schema, e), 0));
-                continue;
+        match conn.prepare(&alias_sql) {
+            Ok(mut stmt) => {
+                let rows = stmt
+                    .query_map([], |row| {
+                        Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+                    })
+                    .map_err(|e| format!("query aliases ({}): {}", schema, e))?;
+                for r in rows {
+                    let (alias, path) = r.map_err(|e| format!("row aliases ({}): {}", schema, e))?;
+                    alias_to_path.entry(alias).or_insert(path);
+                }
             }
-        };
-        let rows = stmt
-            .query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)))
-            .map_err(|e| format!("query aliases ({}): {}", schema, e))?;
-        for r in rows {
-            let (alias, path) = r.map_err(|e| format!("row aliases ({}): {}", schema, e))?;
-            // First insert wins on collision — deterministic via the
-            // ORDER BY path above + the schema-order loop.
-            alias_to_path.entry(alias).or_insert(path);
+            Err(e) => {
+                timings.push((format!("alias_skip:{}:{}", schema, e), 0));
+            }
         }
-    }
-    timings.push(("scan_aliases".into(), t_alias.elapsed().as_millis() as u64));
 
-    let t3 = Instant::now();
-    // Scan 2: links from every schema, resolved against the MERGED maps.
-    // Q3 Option B: a link from cu0 targeting a name that exists in cu1
-    // resolves cross-universe via the merged name_to_idx.
-    let mut links: Vec<SkyLinkOut> = Vec::new();
-    for schema in &schemas {
+        // 4. Read this schema's links + resolve them against THIS
+        //    schema's maps only. Per Q3 Option A: no cross-universe
+        //    resolution.
         links.extend(read_sky_links_raw_in_schema(
             conn,
             schema,
@@ -616,6 +612,8 @@ pub fn cache_boot_snapshot_sky(app: tauri::AppHandle) -> Result<BootSnapshotSky,
             &mut nodes,
         )?);
     }
+    timings.push(("scan_nodes".into(), t2.elapsed().as_millis() as u64));
+    timings.push(("scan_aliases".into(), t_alias.elapsed().as_millis() as u64));
     timings.push(("scan_links_and_counts".into(), t3.elapsed().as_millis() as u64));
 
     Ok(BootSnapshotSky { nodes, links, is_ready: true, timings_ms: timings })
@@ -1215,28 +1213,38 @@ mod tests {
         );
     }
 
-    // §G.5 — Q3 Option B: cross-universe link resolution.
-    // Link in cu0 with target_name="X" resolves to cu0's node X.
+    // §G.5 (revised under §L) — Q3 Option A: links resolve within-universe.
+    //
+    // Per Boss principle ("data of Universe A shouldn't be merged/integrated
+    // with Universe B"), each schema's sky_links resolve ONLY against that
+    // same schema's sky_nodes. This test sets up two universes with their
+    // own internal A→B links and verifies each resolves correctly + does
+    // NOT cross universe boundaries.
     #[test]
-    fn test_federated_link_resolution_cross_universe() {
+    fn test_within_universe_link_resolution() {
         let main_dir = TempDir::new().unwrap();
         let cu_dir = TempDir::new().unwrap();
         let main_db = main_dir.path().join("search.db");
         let cu_db = cu_dir.path().join("search.db");
-        // main has note A; cu0 has note X; cu0 has a link A→X (but A is
-        // in main, not cu0, so source resolution must reach across the
-        // MERGED maps to find A's index).
+        // main: A → B (both in main).
         make_synthetic_sky_db(
             &main_db,
-            &[("a", "A", "/m/a.md", "Main")],
-            &[],
+            &[
+                ("a", "A", "/m/a.md", "Main"),
+                ("b", "B", "/m/b.md", "Main"),
+            ],
+            &[("/m/a.md", "B", "")], // A → B internal link
             &[],
             true,
         );
+        // cu0: X → Y (both in cu0).
         make_synthetic_sky_db(
             &cu_db,
-            &[("x", "X", "/cu/x.md", "ChildLib")],
-            &[("/m/a.md", "X", "")], // A → X cross-universe link
+            &[
+                ("x", "X", "/cu/x.md", "ChildLib"),
+                ("y", "Y", "/cu/y.md", "ChildLib"),
+            ],
+            &[("/cu/x.md", "Y", "")], // X → Y internal link
             &[],
             true,
         );
@@ -1244,128 +1252,145 @@ mod tests {
         let conn = Connection::open(&main_db).unwrap();
         attach_as(&conn, &cu_db, "cu0");
 
-        // Build merged node set: schemas main + cu0
+        // Per-schema resolution (matches §E §L logic).
         let mut nodes: Vec<SkyNodeOut> = Vec::new();
-        nodes.extend(read_sky_nodes_raw_in_schema(&conn, "main").unwrap());
-        nodes.extend(read_sky_nodes_raw_in_schema(&conn, "cu0").unwrap());
-        assert_eq!(nodes.len(), 2);
-
-        let mut path_to_idx: HashMap<String, usize> = HashMap::new();
-        let mut name_to_idx: HashMap<String, usize> = HashMap::new();
-        for (i, n) in nodes.iter().enumerate() {
-            path_to_idx.insert(n.path.clone(), i);
-            name_to_idx.entry(n.name.clone()).or_insert(i);
+        let mut all_links: Vec<SkyLinkOut> = Vec::new();
+        for schema in &["main", "cu0"] {
+            let schema_start = nodes.len();
+            nodes.extend(read_sky_nodes_raw_in_schema(&conn, schema).unwrap());
+            let mut path_to_idx: HashMap<String, usize> = HashMap::new();
+            let mut name_to_idx: HashMap<String, usize> = HashMap::new();
+            for i in schema_start..nodes.len() {
+                path_to_idx.insert(nodes[i].path.clone(), i);
+                name_to_idx.entry(nodes[i].name.clone()).or_insert(i);
+            }
+            let alias_to_path: HashMap<String, String> = HashMap::new();
+            all_links.extend(
+                read_sky_links_raw_in_schema(
+                    &conn,
+                    schema,
+                    &path_to_idx,
+                    &name_to_idx,
+                    &alias_to_path,
+                    &mut nodes,
+                )
+                .unwrap(),
+            );
         }
-        let alias_to_path: HashMap<String, String> = HashMap::new();
 
-        let links = read_sky_links_raw_in_schema(
-            &conn,
-            "cu0",
-            &path_to_idx,
-            &name_to_idx,
-            &alias_to_path,
-            &mut nodes,
-        )
-        .unwrap();
-
-        // The cu0 link A→X should resolve: source "/m/a.md" → main's A;
-        // target "X" → cu0's X via merged name_to_idx.
-        assert_eq!(links.len(), 1, "exactly one link expected, got: {:?}", links);
-        assert_eq!(links[0].source, "a");
-        assert_eq!(links[0].target, "x");
-        // X's link_count should have been bumped (incoming from A).
-        let x_idx = name_to_idx.get("X").unwrap();
-        assert_eq!(nodes[*x_idx].link_count, 1);
-        // A's outgoing_count should have been bumped (outgoing to X).
-        let a_idx = name_to_idx.get("A").unwrap();
-        assert_eq!(nodes[*a_idx].outgoing_count, 1);
+        // Both links should resolve, each within its own universe.
+        assert_eq!(all_links.len(), 2);
+        // main's A→B
+        assert!(all_links.iter().any(|l| l.source == "a" && l.target == "b"));
+        // cu0's X→Y
+        assert!(all_links.iter().any(|l| l.source == "x" && l.target == "y"));
+        // No cross-universe edges (no A→Y, no X→B).
+        assert!(!all_links.iter().any(|l| l.source == "a" && l.target == "y"));
+        assert!(!all_links.iter().any(|l| l.source == "x" && l.target == "b"));
     }
 
-    // §G.6 — Q3 Option B: name collision across universes → schema-order
-    // (first-insert-wins) determines which universe's node a link
-    // resolves to. main is inserted first, so main wins.
+    // §G.6 (revised under §L) — Q3 Option A strict isolation:
+    // when BOTH universes have a node named "Shared" and BOTH have a
+    // link → "Shared", each link resolves to ITS OWN universe's Shared.
+    // Per-schema resolution; no cross-universe collision.
     #[test]
-    fn test_federated_link_collision_main_wins() {
+    fn test_per_schema_link_isolation() {
         let main_dir = TempDir::new().unwrap();
         let cu_dir = TempDir::new().unwrap();
         let main_db = main_dir.path().join("search.db");
         let cu_db = cu_dir.path().join("search.db");
-        // BOTH universes have a note named "Shared". Path differs.
+        // main has Shared + main_src; main has link main_src → Shared.
         make_synthetic_sky_db(
             &main_db,
-            &[("shared", "Shared", "/m/shared.md", "Main")],
-            &[("/m/src.md", "Shared", "")], // (orphan src — only target matters here)
+            &[
+                ("shared", "Shared", "/m/shared.md", "Main"),
+                ("main_src", "MainSrc", "/m/main_src.md", "Main"),
+            ],
+            &[("/m/main_src.md", "Shared", "")],
             &[],
             true,
         );
-        // Need a real source in main for the link to resolve.
-        let conn = Connection::open(&main_db).unwrap();
-        conn.execute(
-            "INSERT INTO sky_nodes (path, id, name, library_name) VALUES ('/m/src.md', 'src', 'Src', 'Main')",
-            [],
-        ).unwrap();
-
+        // cu0 has Shared + cu_src; cu0 has link cu_src → Shared.
         make_synthetic_sky_db(
             &cu_db,
-            &[("shared", "Shared", "/cu/shared.md", "ChildLib")],
-            &[],
+            &[
+                ("shared", "Shared", "/cu/shared.md", "ChildLib"),
+                ("cu_src", "CuSrc", "/cu/cu_src.md", "ChildLib"),
+            ],
+            &[("/cu/cu_src.md", "Shared", "")],
             &[],
             true,
         );
 
+        let conn = Connection::open(&main_db).unwrap();
         attach_as(&conn, &cu_db, "cu0");
 
         let mut nodes: Vec<SkyNodeOut> = Vec::new();
-        nodes.extend(read_sky_nodes_raw_in_schema(&conn, "main").unwrap());
-        nodes.extend(read_sky_nodes_raw_in_schema(&conn, "cu0").unwrap());
-
-        let mut path_to_idx: HashMap<String, usize> = HashMap::new();
-        let mut name_to_idx: HashMap<String, usize> = HashMap::new();
-        for (i, n) in nodes.iter().enumerate() {
-            path_to_idx.insert(n.path.clone(), i);
-            name_to_idx.entry(n.name.clone()).or_insert(i);
+        for schema in &["main", "cu0"] {
+            let schema_start = nodes.len();
+            nodes.extend(read_sky_nodes_raw_in_schema(&conn, schema).unwrap());
+            let mut path_to_idx: HashMap<String, usize> = HashMap::new();
+            let mut name_to_idx: HashMap<String, usize> = HashMap::new();
+            for i in schema_start..nodes.len() {
+                path_to_idx.insert(nodes[i].path.clone(), i);
+                name_to_idx.entry(nodes[i].name.clone()).or_insert(i);
+            }
+            let alias_to_path: HashMap<String, String> = HashMap::new();
+            let _ = read_sky_links_raw_in_schema(
+                &conn,
+                schema,
+                &path_to_idx,
+                &name_to_idx,
+                &alias_to_path,
+                &mut nodes,
+            )
+            .unwrap();
         }
-        let alias_to_path: HashMap<String, String> = HashMap::new();
 
-        let links = read_sky_links_raw_in_schema(
-            &conn,
-            "main",
-            &path_to_idx,
-            &name_to_idx,
-            &alias_to_path,
-            &mut nodes,
-        )
-        .unwrap();
-
-        assert_eq!(links.len(), 1);
-        // main inserted first → main's Shared (path /m/shared.md) wins
-        // the name_to_idx slot. The link from main's Src → Shared
-        // resolves to main's Shared, not cu0's Shared.
-        let shared_main_idx = path_to_idx.get("/m/shared.md").unwrap();
-        let shared_cu_idx = path_to_idx.get("/cu/shared.md").unwrap();
-        assert_eq!(nodes[*shared_main_idx].link_count, 1, "main's Shared should receive the link");
-        assert_eq!(nodes[*shared_cu_idx].link_count, 0, "cu0's Shared should NOT receive the link");
+        // Both Shared nodes received their own universe's link.
+        // No cross-universe leakage.
+        let main_shared_idx = nodes.iter().position(|n| n.path == "/m/shared.md").unwrap();
+        let cu_shared_idx = nodes.iter().position(|n| n.path == "/cu/shared.md").unwrap();
+        assert_eq!(
+            nodes[main_shared_idx].link_count, 1,
+            "main's Shared receives exactly 1 incoming link (main_src → Shared)"
+        );
+        assert_eq!(
+            nodes[cu_shared_idx].link_count, 1,
+            "cu0's Shared receives exactly 1 incoming link (cu_src → Shared)"
+        );
     }
 
-    // §G.7 — Cross-schema alias collision: schema-order winner deterministic.
+    // §G.7 (revised under §L) — Per-schema aliases.
+    // Same alias "foo" can exist in both main and cu0; each resolves
+    // within its own universe. No global merge.
     #[test]
-    fn test_federated_alias_collision_deterministic_winner() {
+    fn test_per_schema_alias_isolation() {
         let main_dir = TempDir::new().unwrap();
         let cu_dir = TempDir::new().unwrap();
         let main_db = main_dir.path().join("search.db");
         let cu_db = cu_dir.path().join("search.db");
-        // Both universes have alias "foo" but pointing at different paths.
+        // main: alias "foo" → /m/main.md (which has name "MainNote").
+        // main has a link from main_src targeting "foo" (alias).
         make_synthetic_sky_db(
             &main_db,
-            &[("note_main", "MainNote", "/m/main.md", "Main")],
-            &[],
+            &[
+                ("note_main", "MainNote", "/m/main.md", "Main"),
+                ("main_src", "MainSrc", "/m/main_src.md", "Main"),
+            ],
+            &[("/m/main_src.md", "foo", "")],
             &[("foo", "/m/main.md")],
             true,
         );
+        // cu0: alias "foo" → /cu/cu.md (which has name "CuNote").
+        // cu0 has a link from cu_src targeting "foo".
         make_synthetic_sky_db(
             &cu_db,
-            &[("note_cu", "CuNote", "/cu/cu.md", "ChildLib")],
-            &[],
+            &[
+                ("note_cu", "CuNote", "/cu/cu.md", "ChildLib"),
+                ("cu_src", "CuSrc", "/cu/cu_src.md", "ChildLib"),
+            ],
+            &[("/cu/cu_src.md", "foo", "")],
             &[("foo", "/cu/cu.md")],
             true,
         );
@@ -1373,13 +1398,22 @@ mod tests {
         let conn = Connection::open(&main_db).unwrap();
         attach_as(&conn, &cu_db, "cu0");
 
-        let mut alias_to_path: HashMap<String, String> = HashMap::new();
-        for schema in &["main".to_string(), "cu0".to_string()] {
-            let sql = format!(
+        let mut nodes: Vec<SkyNodeOut> = Vec::new();
+        for schema in &["main", "cu0"] {
+            let schema_start = nodes.len();
+            nodes.extend(read_sky_nodes_raw_in_schema(&conn, schema).unwrap());
+            let mut path_to_idx: HashMap<String, usize> = HashMap::new();
+            let mut name_to_idx: HashMap<String, usize> = HashMap::new();
+            for i in schema_start..nodes.len() {
+                path_to_idx.insert(nodes[i].path.clone(), i);
+                name_to_idx.entry(nodes[i].name.clone()).or_insert(i);
+            }
+            let mut alias_to_path: HashMap<String, String> = HashMap::new();
+            let alias_sql = format!(
                 "SELECT alias_lower, path FROM {}.note_aliases ORDER BY path",
                 schema
             );
-            let mut stmt = conn.prepare(&sql).unwrap();
+            let mut stmt = conn.prepare(&alias_sql).unwrap();
             let rows = stmt
                 .query_map([], |row| {
                     Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
@@ -1389,10 +1423,41 @@ mod tests {
                 let (alias, path) = r.unwrap();
                 alias_to_path.entry(alias).or_insert(path);
             }
+            let _ = read_sky_links_raw_in_schema(
+                &conn,
+                schema,
+                &path_to_idx,
+                &name_to_idx,
+                &alias_to_path,
+                &mut nodes,
+            )
+            .unwrap();
         }
-        // main inserted first → main wins the "foo" alias.
-        assert_eq!(alias_to_path.get("foo").map(|s| s.as_str()), Some("/m/main.md"));
+
+        // Each universe's MainNote/CuNote received its own link via the
+        // alias "foo" resolved within its own scope.
+        let main_note_idx = nodes.iter().position(|n| n.path == "/m/main.md").unwrap();
+        let cu_note_idx = nodes.iter().position(|n| n.path == "/cu/cu.md").unwrap();
+        assert_eq!(
+            nodes[main_note_idx].link_count, 1,
+            "main's MainNote receives the link via main's alias foo"
+        );
+        assert_eq!(
+            nodes[cu_note_idx].link_count, 1,
+            "cu0's CuNote receives the link via cu0's alias foo"
+        );
     }
+
+    // §G.6.legacy + §G.7.legacy — REMOVED under §L.
+    //
+    // The pre-§L tests asserted Option B semantics (first-insert-wins
+    // across schemas for both name_to_idx and alias_to_path). Under §L
+    // (Q3 Option A: per-schema isolation), there's no global merge —
+    // each schema resolves only against its own maps. The legacy tests
+    // were testing behavior that no longer exists; deleted rather than
+    // adapted. The replacement tests above (test_within_universe_link_
+    // resolution, test_per_schema_link_isolation, test_per_schema_alias_
+    // isolation) cover Option A correctly.
 
     // §G.8 — Q2 Option C: id=lower(name) collisions tolerated, path
     // serves as the disambiguator.
