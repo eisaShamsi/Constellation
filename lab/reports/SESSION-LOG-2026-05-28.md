@@ -174,3 +174,84 @@ Three scope options surfaced to Eisa (A: mega-MIG / B: 4 pattern-MIGs recommende
 - Findings doc `docs/MIG-061-federation-audit-findings.md`.
 - Milestone tag `milestone/mig-060-base-phase-1.5-shipped`.
 - 15-locale help docs + MoCh deferred to MIG-061+ PCS (will batch together when the first federation fix ships).
+
+---
+
+## Block 4 (evening) — MIG-061 P1 federation fix shipped
+
+The first of the four federation-fix MIGs (Option B locked in Block 3). Federated `cache_boot_snapshot_sky` AND `cache_boot_snapshot_graph` — the two boot-snapshot IPCs that feed CNS, Sky View, Backlinks, Outgoing Links, and (as side effect of §M's graph federation) Tag Browser.
+
+### Architect + Plan committed (2783d622, f35e0b7e)
+
+Four-question Boss lock per Architect §8:
+- Q1: Rust per-schema loop+merge (Option 2)
+- Q2: id=lower(name) tolerated; path disambiguates (Option C)
+- Q3: per-schema link isolation (Option A — strict reading of Boss principle, departed from §5 recommendation of Option B)
+- Q4: all-or-nothing readiness (Option A — departed from §5 recommendation of partial federation)
+
+Wait — Q3 was originally locked Option B; Eisa later (§L) corrected to Option A based on his "no merge" principle. Documented in the Architect §8 update.
+
+### Cascade (17 commits)
+
+| § | Commit |
+|---|---|
+| A | `6b5173fa` get_federated_schemas |
+| B | `76f9f826` read_sky_nodes_raw_in_schema |
+| C | `dc43e753` read_sky_links_raw_in_schema |
+| D | `4df77b6d` is_federated_sky_ready (Q4 all-or-nothing) |
+| E | `ade3a010` cache_boot_snapshot_sky federation loop |
+| G | `1d755755` 8 unit tests |
+| H | `e69417af` Boss-test doc |
+| J | `e05be00a` federation:ready event emit |
+| J.2 | `1a500cf4` listener-order fix + defensive re-invoke |
+| (diag) | `99ae76fb` `1782a123` diagnostic tracing (later removed in §O) |
+| K | `617f4302` **stratum column-type latent bug fix** |
+| L | `c62f8c53` Q3 → Option A per-schema isolation (Boss principle correction) |
+| M | `7f648a55` federate cache_boot_snapshot_graph |
+| N | `0c6f7661` listener re-fetches graph too |
+| O | `25562627` remove diagnostic tracing |
+| P+Q | `3b823085` audit follow-ups (D4 guard + 2 unit tests) |
+
+### Boss-test marathon — 6 stages, 8 binary rebuilds
+
+Stage 2 (federated count) failed THREE consecutive times before §K surfaced the real bug:
+- Build 1: §A-§G shipped → CNS still 987 nodes → §J added event emit.
+- Build 2: §J + §J.2 → still 987 → diagnostic tracing added.
+- Build 3: §J.3 trace → revealed `Invalid column type Text at index: 4, name: stratum` → §K fix.
+- Build 4: §K → CNS shows **8 751 nodes · 233 286 links** ✓ pass.
+
+Stages 4-5 (Backlinks/Outgoing) failed once after Stage 2 passed → §M federated _graph too → Stage 4 = 104 backlinks, Stage 5 = 101 outgoing links ✓.
+
+### Two technical inflection points
+
+1. **§K (stratum column-type bug)** — Pre-MIG-061 latent bug surfaced by the diagnostic trace. `cache_boot_snapshot_sky` has been silently failing in production since the original sky_nodes code was written. Frontend silently fell back to `buildSkyData` (legacy non-federated path). My MIG-061 federation worked correctly but production never reached the federation code because the SQL row-read crashed first.
+
+2. **§L (Eisa's principle correction)** — Boss intervened with the structural insight: *"The Federation should be simple. The app shouldn't reinvent the wheel; the wheel is already there!"* Architect's Q3 lock (Option B = federated link resolution) was corrected to Option A (per-schema isolation). The merge logic in §E was refactored to per-schema loops. Standalone-A behaves identically to A-as-cUniverse-of-B.
+
+### Audit (3 parallel agents)
+
+- **Invariant-check: 8/8 UPHELD** (7 documented + new INV-K for flexible-stratum-read).
+- **Drift detection:**
+  - D4 MEDIUM — empty-overwrite race in listener (fixed in §P).
+  - D5 LOW — no direct unit tests for §M (fixed in §Q).
+  - D6 MEDIUM-positive — §M closes Tag Browser as side effect.
+- **Migration paths: 6/7 PASS** (S1/S2/S3/S5/S6/S7 PASS or degrade gracefully). S4 (pre-MIG-061 rollback after MIG-061 write) FAILs but is pre-existing risk.
+
+### What ships in this commit set (§R PCS)
+
+- Orientation v2.41 (this version) captures MIG-061 close.
+- Session log Block 4 (this section).
+- Milestone tag `milestone/mig-061-cns-federation-shipped`.
+- ZIP backup.
+- 15-locale help-doc updates deferred to MIG-062 batch (Eisa fatigue: 6+ hours of debugging today).
+
+### What's next
+
+- MIG-062 (P3): Federate `list_five_acts_notes` + `list_workspace_bases` filesystem walks. (Tag Browser was P3 originally but is now closed by §M.) Small MIG, ~3 commits.
+- MIG-063 (P2 read): Federate Index entries + Index mentions + Unlinked Mentions + Knowledge Health + right-sidebar previews. ~5 commits.
+- MIG-064 (P2+P4 write): Federate Cataloger + Classifier + NSC + their FK constraint. Architect needs to resolve the schema-design question first.
+
+### Two pending polish items (PJs logged)
+
+- PJ-NNN-A: Sky View node size scale for federated view.
+- PJ-NNN-B: CNS gravity well full-canvas layout when window is maximized.
