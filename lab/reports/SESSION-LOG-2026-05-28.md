@@ -112,3 +112,65 @@ Stage 1-5 of `docs/MIG-060-BOSS-TEST.md`. Per Eisa's staged-tests rule, Claude w
 After MIG-060 closes, the Constellation Base roadmap continues:
 - Phase 2 — Living Link Columns (separate MIG).
 - Phase 2.5+ — Bridges (360.3D / CNS / Cataloger as lens DIMENSIONS, not just gestures).
+
+---
+
+## Block 3 (afternoon) — MIG-060 Boss-test sub-fixes + Federation Audit
+
+Boss-test moved beyond Stage 2 (360.3D) and hit successive surface-focus gaps. Plan had treated all three surfaces uniformly; reality required three custom focus mechanisms.
+
+### MIG-060 sub-fixes
+
+| Commit | What |
+|---|---|
+| `5114ce88` (§C-fix) | CNS focus: `focusNoteId?: string` prop on `ConstellationSight2.svelte`; onMount after `fitToScreen()` finds matching SimNode, sets `selectedNode`, pans canvas. `pendingCnsFocusPath` $state in `+layout.svelte` set before `toggleLens()`, cleared in `onClose` / `onNoteClick`. |
+| `99ae76fb` (diag) | Temporary `diag_log_line` tracing — revealed `focusNode lookup: NO MATCH` for "Eisa ALSHAMSI" because the note isn't in CNS's gravity well (orphan, not in linked subgraph). Reverted in next commit. |
+| `1ce715ed` (§C-fix-2) | Orphan-hide: new `skyNodePathSet` writable store in `libraries/store.ts` mirrored from `skyNodes` via `$effect`. LensBlockWidget skips CNS button render when row's note isn't in the set. Removed diagnostic traces. |
+| `16b31c57` (doc) | Boss-test doc correction: Settings path is **Core Plug-Ins** (not "Features" — fabricated path was a BASIC-RULE violation). Clarified CNS = Constellation Nervous System (live core surface), distinct from retired Constellation Sight (the dome view, future plugin per MIG-038). |
+| `e7baaadb` (§C-fix-3) | Cataloger focus: `case 'cataloger':` branch dispatches `constellation:classify-and-show` (existing event) one rAF after `showCataloger = true`. SourceReviewPanel's listener (already in place from MIG-039) picks up the path and focuses on that note's classification card. |
+
+### Boss-test final verdict
+
+| Stage | Result |
+|---|---|
+| 1 — Visual (3 icons appear) | ✓ pass |
+| 2 — 360.3D gesture | ✓ pass (focusedTab auto-read) |
+| 3 — CNS gesture | ✓ pass on Eisa Cognitive Knowledge universe (single-universe, no federation gap) |
+| Check A — orphan-hide | ✓ pass (CNS icon hidden on orphan rows) |
+| 4 — Cataloger gesture | ✓ pass on linked note; ✗ for orphan/federated note with FK error (pre-existing Cataloger federation gap) |
+| 5 — RTL parity | ✓ already passed in Stage 1 |
+
+MIG-060 ships. The Cataloger FK error during Stage 4 = pre-existing federation gap (not MIG-060's bug) → triggered the audit.
+
+### Federation Audit (Block 3 continued)
+
+Eisa requested broader scope: *"I also want to check how the remaining functions/core plugins are handling Universes with cUniverse(s) included, like mine."*
+
+Four parallel exploration agents surveyed the codebase:
+- Agent 1 — graph surfaces (CNS, Sky View, Map, 360.3D)
+- Agent 2 — Cataloger / Classifier / NSC backends
+- Agent 3 — sidebar panels (Backlinks, Outgoing, Mentions, Tags, Bookmarks, Five Acts, Bases)
+- Agent 4 — search / index / dock surfaces (libraryStats, Search, Lens, Index, Knowledge Health, Federation Warnings, etc.)
+
+Findings doc: `docs/MIG-061-federation-audit-findings.md`. Summary:
+
+- ✓ Federated (4 surfaces): libraryStats, Search Hub, Lens execution, Federation Warnings popup.
+- N/A by design (5): 360.3D, Bookmarks, Global Tasks, Expression Forge / Sense-Making Canvas / Dashboard.
+- ◑ Partial (1): Org Chart (`constellation_map_universe`) — tree includes cUniverses; alias_map parent-only.
+- ✗ Broken (14): CNS, Sky View, Backlinks, Outgoing, Unlinked Mentions, Tag Browser, Five Acts sidebar, Workspace Bases, The Cataloger, Classifier (scan + single-note), NSC Backfill, Index panel (entries + mentions), Knowledge Health, right-sidebar previews.
+
+Four root-cause patterns:
+1. **P1** — `cache_boot_snapshot_sky` not federated → 4 surfaces (CNS, Sky View, Backlinks, Outgoing).
+2. **P2** — Backend uses bare `state.db` instead of `state.federated_conn` → 6 surfaces.
+3. **P3** — Hardcoded `{active_universe}` filesystem paths → 3 surfaces.
+4. **P4** — FK constraints to parent's `note_meta` → compounds P2 for write paths.
+
+Three scope options surfaced to Eisa (A: mega-MIG / B: 4 pattern-MIGs recommended / C: just MIG-061 CNS). Awaiting Boss decision.
+
+### What ships in this commit set (combined MIG-060 §G + Audit PCS)
+
+- Orientation v2.40 capturing both MIG-060 close and audit findings.
+- This session-log update (Block 3).
+- Findings doc `docs/MIG-061-federation-audit-findings.md`.
+- Milestone tag `milestone/mig-060-base-phase-1.5-shipped`.
+- 15-locale help docs + MoCh deferred to MIG-061+ PCS (will batch together when the first federation fix ships).
