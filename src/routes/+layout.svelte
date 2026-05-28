@@ -33,6 +33,7 @@
 		resolveWikilinkCrossLibrary,
 		buildDefaultFrontmatter,
 		linkTraversalBumps, clearLinkTraversalBumps,
+		skyNodePathSet,
 		type FrontmatterProperty, type HeadingItem, type NoteLink, type SkyNode, type SkyLink,
 		type IndexEntry
 	} from '$lib/libraries/store';
@@ -757,6 +758,16 @@
 	// investigation, see docs/LESSONS-LEARNED.md LL-017.
 	let skyNodes = $state.raw<SkyNode[]>([]);
 	let skyLinks = $state.raw<SkyLink[]>([]);
+
+	// MIG-060 §C-fix-2 — keep the `skyNodePathSet` store in sync with the
+	// local `skyNodes` array. LensBlockWidget reads the store to decide
+	// whether to render the CNS gesture button per row (orphans hide it,
+	// since CNS has no node to focus for orphans). Reactive: any time the
+	// graph data refreshes, the store updates and lens widgets get the
+	// new orphan-set on their next render.
+	$effect(() => {
+		skyNodePathSet.set(new Set(skyNodes.map(n => n.path)));
+	});
 
 	// Constellation Lens state
 	let lensActive = $state(false);
@@ -2332,11 +2343,6 @@
 					// component when lensActive flips true, so prop bindings are
 					// fresh on every open.)
 					pendingCnsFocusPath = detail.path;
-					try {
-						invoke('diag_log_line', {
-							line: `[MIG-060 §C-fix] gesture set pendingCnsFocusPath="${detail.path}" (lensActive was ${lensActive})`,
-						}).catch(() => {});
-					} catch {}
 					if (!lensActive) toggleLens();
 					break;
 				case 'cataloger':

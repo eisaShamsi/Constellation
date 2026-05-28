@@ -1014,23 +1014,13 @@
 		// If the focus prop overrides, we replace pan/zoom with the
 		// centered-on-node view; otherwise the fit-to-screen view stands.
 		//
-		// MIG-060 §C-fix-trace — temporary diagnostic logging until Stage 3
-		// retest passes. Writes to <universe>/.constellation/diagnostics.log
-		// via the existing diag_log_line Tauri command (release-build safe;
-		// release builds disable devtools but file logging works).
-		try {
-			const samplePaths = simNodes.slice(0, 5).map(n => n.path);
-			invoke('diag_log_line', {
-				line: `[MIG-060 §C-fix] CNS onMount focus block: focusNoteId=${JSON.stringify(focusNoteId)}, simNodes.length=${simNodes.length}, samplePaths=${JSON.stringify(samplePaths)}`,
-			}).catch(() => {});
-		} catch {}
+		// NO-MATCH fallback: §B's render-time check (MIG-060 §C-fix-2) hides
+		// the CNS gesture for orphan notes, so this branch shouldn't fire
+		// for an orphan. But during boot (when skyNodePathSet is still
+		// empty) the icon may render permissively; the no-match below then
+		// falls back gracefully to the default fit-to-screen view.
 		if (focusNoteId) {
 			const focusNode = simNodes.find(n => n.path === focusNoteId);
-			try {
-				invoke('diag_log_line', {
-					line: `[MIG-060 §C-fix] focusNode lookup: ${focusNode ? `MATCHED id=${focusNode.id} name="${focusNode.name}" x=${focusNode.x} y=${focusNode.y}` : 'NO MATCH'}`,
-				}).catch(() => {});
-			} catch {}
 			if (focusNode) {
 				selectedNode = focusNode;
 				// Hydrate the neighborhood-highlight set so edges + halo render
@@ -1042,11 +1032,6 @@
 				// panX = -focusNode.x * zoom. Same logic for panY.
 				panX = -(focusNode.x ?? 0) * zoom;
 				panY = -(focusNode.y ?? 0) * zoom;
-				try {
-					invoke('diag_log_line', {
-						line: `[MIG-060 §C-fix] applied pan: panX=${panX} panY=${panY} zoom=${zoom}; selectedNode set to ${focusNode.id}`,
-					}).catch(() => {});
-				} catch {}
 				requestDraw();
 			}
 		}

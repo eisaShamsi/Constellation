@@ -17,7 +17,7 @@ import { convertFileSrc, invoke } from '@tauri-apps/api/core';
 import { get } from 'svelte/store';
 import { t } from '$lib/i18n';
 import { detectDir } from '$lib/utils';
-import { appSettings } from '$lib/libraries/store';
+import { appSettings, skyNodePathSet } from '$lib/libraries/store';
 import type { LensResult, LensRow, DimensionValue } from '$lib/lens/store';
 
 // ─── Path state fields (for resolving image embeds) ───
@@ -919,11 +919,21 @@ class LensBlockWidget extends WidgetType {
 		});
 		actions.appendChild(btn360);
 
-		// ─── CNS gesture — gated by `enabledFeatures.constellationSight` ───
-		// Architect Q4 / lock §D: hide entirely when CNS is disabled in settings.
-		if (
-			get(appSettings).enabledFeatures?.constellationSight !== false
-		) {
+		// ─── CNS gesture — gated by (1) the user-settings flag AND
+		// (2) orphan check (MIG-060 §C-fix-2).
+		// (1) Architect Q4 / lock §D: hide entirely when CNS is disabled.
+		// (2) Orphan check: CNS shows the linked subgraph only; a note
+		//     not in `skyNodePathSet` has no SimNode to focus on, so the
+		//     gesture would silently no-op. Hide the icon for orphans.
+		//     Edge case — when `skyNodePathSet` is still empty (boot not
+		//     finished), permissively show the icon; the §C-fix listener
+		//     handles a no-match case gracefully (default fit-to-screen).
+		const cnsEnabled =
+			get(appSettings).enabledFeatures?.constellationSight !== false;
+		const skySet = get(skyNodePathSet);
+		const inGraphOrBooting =
+			skySet.size === 0 || skySet.has(row.note_path);
+		if (cnsEnabled && inGraphOrBooting) {
 			const btnCns = document.createElement('button');
 			btnCns.type = 'button';
 			btnCns.className =

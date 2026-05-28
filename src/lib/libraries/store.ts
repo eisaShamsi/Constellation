@@ -1108,6 +1108,19 @@ const traversalLastWrite = new Map<string, number>();
 // bumps, so keeping them around would double-count.
 export const linkTraversalBumps = writable<Map<string, number>>(new Map());
 
+// MIG-060 §C-fix-2 — Set of note paths that participate in the CNS gravity
+// well (i.e., the linked-subgraph). LensBlockWidget reads this to decide
+// whether to render the CNS gesture button per row: orphan notes get the
+// 360.3D + Cataloger buttons but NOT the CNS button, because CNS has no
+// node to focus for an orphan. Mirrored from `skyNodes` in +layout.svelte
+// whenever the sky data refreshes.
+//
+// Empty set means "we don't know yet" (boot hasn't finished). During that
+// window, the consumer should permissively show the CNS button — better
+// to risk an occasional NO-MATCH fallback (handled gracefully by §C-fix)
+// than to hide a working button.
+export const skyNodePathSet = writable<Set<string>>(new Set());
+
 /** Increment the optimistic bump for a (source, target) pair by 1. Key
  *  format matches the consumers' lookup: `source_path.toLowerCase()|target.toLowerCase()`. */
 export function bumpLinkTraversal(sourcePath: string, targetLower: string) {
