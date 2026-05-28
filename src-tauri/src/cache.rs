@@ -239,11 +239,30 @@ pub fn cache_boot_snapshot_graph(app: tauri::AppHandle) -> Result<BootSnapshotGr
     let _ = crate::search::ensure_search_db_ready(&app);
     timings.push(("ensure_db".into(), t0.elapsed().as_millis() as u64));
 
+    // MIG-061 §M — federate the graph payload across cUniverses.
+    // Same pattern as cache_boot_snapshot_sky (§E + §L): get the
+    // schema list, pick the right connection (bare for single-universe,
+    // federated_conn for multi-schema), loop per schema and concatenate.
+    // Per Boss principle: each universe's note_links / aliases / tags
+    // are independent — no merge, just concatenation.
+    let schemas = get_federated_schemas(&app);
+    let is_federated = schemas.len() > 1;
+
     let t1 = Instant::now();
-    let conn = match open_reader(&app) {
-        Ok(c) => c,
-        Err(_) => {
-            timings.push(("open_reader_err".into(), t1.elapsed().as_millis() as u64));
+    let state = app.state::<crate::search::SearchState>();
+    let bare_conn;
+    let fed_guard;
+    let conn: &Connection;
+    if is_federated {
+        fed_guard = state.federated_conn.lock()
+            .map_err(|e| format!("federated_conn lock poisoned: {}", e))?;
+        if let Some(c) = fed_guard.as_ref() {
+            conn = c;
+        } else {
+            // federated_conn not yet ready — degrade to bare reader
+            // (single-universe payload) for this call. Frontend will
+            // re-invoke via the federation:ready event listener.
+            timings.push(("federated_conn_none".into(), t1.elapsed().as_millis() as u64));
             let server_return_unix_ms = SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .map(|d| d.as_millis())
@@ -257,35 +276,72 @@ pub fn cache_boot_snapshot_graph(app: tauri::AppHandle) -> Result<BootSnapshotGr
                 server_start_unix_ms,
             });
         }
-    };
+    } else {
+        bare_conn = match open_reader(&app) {
+            Ok(c) => c,
+            Err(_) => {
+                timings.push(("open_reader_err".into(), t1.elapsed().as_millis() as u64));
+                let server_return_unix_ms = SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .map(|d| d.as_millis())
+                    .unwrap_or(0);
+                return Ok(BootSnapshotGraph {
+                    aliases: Vec::new(),
+                    links: Vec::new(),
+                    tags: HashMap::new(),
+                    timings_ms: timings,
+                    server_return_unix_ms,
+                    server_start_unix_ms,
+                });
+            }
+        };
+        conn = &bare_conn;
+    }
     timings.push(("open_reader".into(), t1.elapsed().as_millis() as u64));
 
-    // Detect cold cache by counting note_meta rows — if zero, the index
-    // hasn't been built yet and the fallback is pointless.
+    // Detect cold cache by counting note_meta rows ACROSS ALL SCHEMAS
+    // — if every schema is empty, the index hasn't been built yet and
+    // the fallback is pointless.
     let t2 = Instant::now();
-    let note_count: i64 = conn
-        .query_row("SELECT COUNT(*) FROM note_meta", params![], |row| row.get(0))
-        .unwrap_or(0);
+    let mut note_count: i64 = 0;
+    for schema in &schemas {
+        let sql = format!("SELECT COUNT(*) FROM {}.note_meta", schema);
+        note_count += conn.query_row(&sql, params![], |row| row.get::<_, i64>(0)).unwrap_or(0);
+    }
     timings.push(("count_notes".into(), t2.elapsed().as_millis() as u64));
 
+    // MIG-061 §M — read links per schema, concatenate.
     let t3 = Instant::now();
-    let mut links = read_links(&conn)?;
+    let mut links: Vec<NoteLink> = Vec::new();
+    for schema in &schemas {
+        links.extend(read_links_in_schema(conn, schema)?);
+    }
     timings.push(("read_links".into(), t3.elapsed().as_millis() as u64));
 
+    // Legacy fallback: if no typed-link rows in any schema but notes
+    // exist, parse outgoing_links_json from note_meta. Per-schema too.
     if links.is_empty() && note_count > 0 {
         let t3b = Instant::now();
-        links = read_untyped_links_fallback(&conn)?;
+        for schema in &schemas {
+            links.extend(read_untyped_links_fallback_in_schema(conn, schema)?);
+        }
         timings.push(("read_untyped_links_fallback".into(), t3b.elapsed().as_millis() as u64));
     }
 
+    // MIG-061 §M — read tags per schema, accumulate counts into one map.
     let t4 = Instant::now();
-    let tags = read_tags(&conn)?;
+    let mut tags: HashMap<String, u32> = HashMap::new();
+    for schema in &schemas {
+        read_tags_in_schema(conn, schema, &mut tags)?;
+    }
     timings.push(("read_tags".into(), t4.elapsed().as_millis() as u64));
 
-    // MIG-004 §9: include the full alias table in the graph snapshot.
-    // Sub-millisecond on the reference universe (~1.4k rows).
+    // MIG-061 §M — read aliases per schema, concatenate.
     let t_alias = Instant::now();
-    let aliases = read_aliases(&conn)?;
+    let mut aliases: Vec<NoteAliasOut> = Vec::new();
+    for schema in &schemas {
+        aliases.extend(read_aliases_in_schema(conn, schema)?);
+    }
     timings.push(("read_aliases".into(), t_alias.elapsed().as_millis() as u64));
 
     let server_return_unix_ms = SystemTime::now()
@@ -296,22 +352,32 @@ pub fn cache_boot_snapshot_graph(app: tauri::AppHandle) -> Result<BootSnapshotGr
 }
 
 fn read_aliases(conn: &Connection) -> Result<Vec<NoteAliasOut>, String> {
+    read_aliases_in_schema(conn, "main")
+}
+
+/// MIG-061 §M — schema-parameterized variant of read_aliases.
+/// Defensive: cUniverses on older schemas may lack `note_aliases`.
+/// Returns Ok(empty) for those — does not fail the whole graph read.
+fn read_aliases_in_schema(conn: &Connection, schema: &str) -> Result<Vec<NoteAliasOut>, String> {
     // MIG-004 §10 audit-fix (4A-MED): ORDER BY path keeps the
-    // serialized payload stable across boots. Frontend can rely on
-    // ordering for any future deterministic-merge logic; with ~1.4k
-    // rows the ORDER BY is sub-millisecond.
-    let mut stmt = conn
-        .prepare("SELECT path, alias_lower FROM note_aliases ORDER BY path")
-        .map_err(|e| format!("prepare aliases: {}", e))?;
+    // serialized payload stable across boots.
+    let sql = format!(
+        "SELECT path, alias_lower FROM {}.note_aliases ORDER BY path",
+        schema
+    );
+    let mut stmt = match conn.prepare(&sql) {
+        Ok(s) => s,
+        Err(_) => return Ok(Vec::new()), // older schemas — skip gracefully
+    };
     let rows = stmt
         .query_map([], |row| Ok(NoteAliasOut {
             path: row.get(0)?,
             alias_lower: row.get(1)?,
         }))
-        .map_err(|e| format!("query aliases: {}", e))?;
+        .map_err(|e| format!("query aliases ({}): {}", schema, e))?;
     let mut out = Vec::new();
     for r in rows {
-        out.push(r.map_err(|e| format!("row aliases: {}", e))?);
+        out.push(r.map_err(|e| format!("row aliases ({}): {}", schema, e))?);
     }
     Ok(out)
 }
@@ -859,14 +925,24 @@ fn read_notes(conn: &Connection) -> Result<Vec<BootNote>, String> {
 
 /// Read all links from the typed note_links table.
 fn read_links(conn: &Connection) -> Result<Vec<NoteLink>, String> {
+    read_links_in_schema(conn, "main")
+}
+
+/// MIG-061 §M — schema-parameterized variant of read_links.
+/// Reads `{schema}.note_links`. Each cUniverse's note_links table is
+/// independent — per Boss principle (Q3 Option A): the federated graph
+/// payload is a pure concatenation of each universe's own links, with
+/// no cross-universe merge or remapping. Detach a cUniverse and the
+/// remaining universes' link data is unaffected.
+fn read_links_in_schema(conn: &Connection, schema: &str) -> Result<Vec<NoteLink>, String> {
     let mut out = Vec::new();
-    let mut stmt = conn
-        .prepare(
-            "SELECT source_path, source_name, target_name, link_type, library_name,
-                    weight, traversal_count, annotation, last_traversed, confidence
-             FROM note_links WHERE status = 'active'",
-        )
-        .map_err(|e| e.to_string())?;
+    let sql = format!(
+        "SELECT source_path, source_name, target_name, link_type, library_name, \
+                weight, traversal_count, annotation, last_traversed, confidence \
+         FROM {}.note_links WHERE status = 'active'",
+        schema
+    );
+    let mut stmt = conn.prepare(&sql).map_err(|e| format!("prepare links ({}): {}", schema, e))?;
     let rows = stmt
         .query_map([], |row| {
             let source_path: String = row.get(0)?;
@@ -893,7 +969,7 @@ fn read_links(conn: &Connection) -> Result<Vec<NoteLink>, String> {
                 confidence,
             })
         })
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| format!("query links ({}): {}", schema, e))?;
     for r in rows.flatten() {
         out.push(r);
     }
@@ -903,10 +979,19 @@ fn read_links(conn: &Connection) -> Result<Vec<NoteLink>, String> {
 /// Fallback: parse outgoing_links_json from note_meta rows. Used when
 /// note_links is empty but the index has notes — handles legacy indices.
 fn read_untyped_links_fallback(conn: &Connection) -> Result<Vec<NoteLink>, String> {
+    read_untyped_links_fallback_in_schema(conn, "main")
+}
+
+/// MIG-061 §M — schema-parameterized variant of the untyped-links fallback.
+fn read_untyped_links_fallback_in_schema(conn: &Connection, schema: &str) -> Result<Vec<NoteLink>, String> {
     let mut out = Vec::new();
+    let sql = format!(
+        "SELECT path, name, library_name, outgoing_links_json FROM {}.note_meta",
+        schema
+    );
     let mut stmt = conn
-        .prepare("SELECT path, name, library_name, outgoing_links_json FROM note_meta")
-        .map_err(|e| e.to_string())?;
+        .prepare(&sql)
+        .map_err(|e| format!("prepare fallback ({}): {}", schema, e))?;
     let rows = stmt
         .query_map([], |row| {
             Ok((
@@ -944,12 +1029,24 @@ fn read_untyped_links_fallback(conn: &Connection) -> Result<Vec<NoteLink>, Strin
 /// completes in low-millis on modern hardware.
 fn read_tags(conn: &Connection) -> Result<HashMap<String, u32>, String> {
     let mut tags: HashMap<String, u32> = HashMap::new();
-    let mut stmt = conn
-        .prepare("SELECT tags_json FROM note_meta")
-        .map_err(|e| e.to_string())?;
+    read_tags_in_schema(conn, "main", &mut tags)?;
+    Ok(tags)
+}
+
+/// MIG-061 §M — schema-parameterized variant of read_tags.
+/// Accumulates tag counts INTO the supplied map so the caller can
+/// federate across multiple schemas (counts add across universes —
+/// e.g., #project appearing 5 times in main and 3 times in cu0 → 8).
+fn read_tags_in_schema(
+    conn: &Connection,
+    schema: &str,
+    tags: &mut HashMap<String, u32>,
+) -> Result<(), String> {
+    let sql = format!("SELECT tags_json FROM {}.note_meta", schema);
+    let mut stmt = conn.prepare(&sql).map_err(|e| format!("prepare tags ({}): {}", schema, e))?;
     let rows = stmt
         .query_map([], |row| row.get::<_, String>(0))
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| format!("query tags ({}): {}", schema, e))?;
     for r in rows.flatten() {
         let arr: Vec<String> = serde_json::from_str(&r).unwrap_or_default();
         for t in arr {
@@ -959,7 +1056,7 @@ fn read_tags(conn: &Connection) -> Result<HashMap<String, u32>, String> {
             *tags.entry(t).or_insert(0) += 1;
         }
     }
-    Ok(tags)
+    Ok(())
 }
 
 /// Persist the frontend's boot-perf scorecard to
