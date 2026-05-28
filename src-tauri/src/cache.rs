@@ -506,13 +506,27 @@ pub fn cache_boot_snapshot_sky(app: tauri::AppHandle) -> Result<BootSnapshotSky,
     Ok(BootSnapshotSky { nodes, links, is_ready, timings_ms: timings })
 }
 
-fn read_sky_nodes_raw(conn: &Connection) -> Result<Vec<SkyNodeOut>, String> {
+/// MIG-061 §B — schema-parameterized variant of the sky_nodes scan.
+///
+/// `schema` is interpolated as-is into the SQL. Caller MUST pass either
+/// the literal `"main"` or an alias from `get_federated_schemas` (which
+/// only yields validated alphanumeric aliases from `federation::attach::
+/// schema_alias`). Any other source would be a SQL-injection foothold.
+///
+/// Pre-MIG-061 callers used the wrapper `read_sky_nodes_raw(conn)` which
+/// is now defined below as a thin shim that passes `"main"`.
+fn read_sky_nodes_raw_in_schema(
+    conn: &Connection,
+    schema: &str,
+) -> Result<Vec<SkyNodeOut>, String> {
+    let sql = format!(
+        "SELECT id, name, path, library_name, stratum, maturity, origin_type, created_at \
+         FROM {}.sky_nodes",
+        schema
+    );
     let mut stmt = conn
-        .prepare(
-            "SELECT id, name, path, library_name, stratum, maturity, origin_type, created_at
-             FROM sky_nodes",
-        )
-        .map_err(|e| format!("prepare nodes: {}", e))?;
+        .prepare(&sql)
+        .map_err(|e| format!("prepare nodes ({}): {}", schema, e))?;
     let rows = stmt
         .query_map([], |row| {
             Ok(SkyNodeOut {
@@ -529,12 +543,19 @@ fn read_sky_nodes_raw(conn: &Connection) -> Result<Vec<SkyNodeOut>, String> {
                 created_at: row.get::<_, Option<i64>>(7)?,
             })
         })
-        .map_err(|e| format!("query nodes: {}", e))?;
+        .map_err(|e| format!("query nodes ({}): {}", schema, e))?;
     let mut out = Vec::new();
     for r in rows {
-        out.push(r.map_err(|e| format!("row nodes: {}", e))?);
+        out.push(r.map_err(|e| format!("row nodes ({}): {}", schema, e))?);
     }
     Ok(out)
+}
+
+/// Back-compat wrapper preserved for callers (and tests) that don't
+/// need schema parameterization. Identical to pre-MIG-061 behavior.
+#[allow(dead_code)] // Kept for back-compat / clarity; primary call site is §E
+fn read_sky_nodes_raw(conn: &Connection) -> Result<Vec<SkyNodeOut>, String> {
+    read_sky_nodes_raw_in_schema(conn, "main")
 }
 
 fn read_sky_links_raw(
