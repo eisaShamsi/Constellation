@@ -761,6 +761,11 @@
 	// Constellation Lens state
 	let lensActive = $state(false);
 	let lensLoading = $state(false);
+	// MIG-060 §C-fix — when CNS is opened via a lens-row threading gesture,
+	// the gesture sets this to the clicked note's path so ConstellationSight2
+	// can center the gravity well on that node at mount time. Null when CNS
+	// is opened via the dock button (no specific focus target — default view).
+	let pendingCnsFocusPath = $state<string | null>(null);
 	// MIG-018 (PJ-038) — v3 Sight active flag. Independent from lensActive
 	// so a developer flipping SIGHT_V2_ENABLED + SIGHT_V3_ENABLED both true
 	// in a custom build can A/B them. In production exactly one of v2 / v3 / v4
@@ -2321,6 +2326,12 @@
 					showExpressionForge = false; showSenseMakingCanvas = false;
 					sightV3Active = false; sightV4Active = false;
 					sightV5Active = false; sightV6Active = false;
+					// MIG-060 §C-fix — set the focus target BEFORE toggleLens()
+					// so ConstellationSight2 reads it as a $prop at mount time.
+					// (The {#if lensActive && SIGHT_V2_ENABLED} block remounts the
+					// component when lensActive flips true, so prop bindings are
+					// fresh on every open.)
+					pendingCnsFocusPath = detail.path;
 					if (!lensActive) toggleLens();
 					break;
 				case 'cataloger':
@@ -5472,6 +5483,7 @@
 					contradictions={lensContradictions}
 					{libraryColorMap}
 					searchMatchIds={searchHubMatchIds}
+					focusNoteId={pendingCnsFocusPath ?? undefined}
 					onNoteClick={(path, name, highlightTerm) => {
 						const lib = $libraryStats.find(l => path.startsWith(l.path));
 						if (lib) {
@@ -5482,8 +5494,9 @@
 						}
 						lensActive = false;
 						lensReturnPending = true;
+						pendingCnsFocusPath = null;
 					}}
-					onClose={() => { lensActive = false; lensReturnPending = false; }}
+					onClose={() => { lensActive = false; lensReturnPending = false; pendingCnsFocusPath = null; }}
 				/>
 			{/if}
 		</div>

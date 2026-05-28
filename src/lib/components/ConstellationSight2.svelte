@@ -99,6 +99,7 @@
 		searchMatchIds = null as Set<string> | null,
 		onNoteClick,
 		onClose,
+		focusNoteId = undefined as string | undefined,
 	}: {
 		nodes: SkyNode[];
 		links: SkyLink[];
@@ -115,6 +116,14 @@
 		searchMatchIds?: Set<string> | null;
 		onNoteClick?: (path: string, name: string, highlightTerm?: string) => void;
 		onClose?: () => void;
+		// MIG-060 §C-fix — when CNS is opened via a lens-row threading
+		// gesture, the parent passes the clicked note's path here. After
+		// the simulation settles, we set this as `selectedNode` (triggers
+		// existing neighborhood-highlight) and pan so the node is centered
+		// in the canvas. Undefined means "no gesture-initiated focus" —
+		// e.g. when CNS was opened via the dock button — and the default
+		// fit-to-screen view applies unchanged.
+		focusNoteId?: string;
 	} = $props();
 
 	// ─── State ────────────────────────────────────────────────
@@ -999,6 +1008,27 @@
 		fitToScreen();
 		performance.mark('sight:mount:fitToScreen:end');
 		performance.measure('sight:mount:fitToScreen', 'sight:mount:fitToScreen:start', 'sight:mount:fitToScreen:end');
+
+		// MIG-060 §C-fix — focus the gesture-target note (if any).
+		// Runs AFTER fitToScreen so the default view is established first.
+		// If the focus prop overrides, we replace pan/zoom with the
+		// centered-on-node view; otherwise the fit-to-screen view stands.
+		if (focusNoteId) {
+			const focusNode = simNodes.find(n => n.path === focusNoteId);
+			if (focusNode) {
+				selectedNode = focusNode;
+				// Hydrate the neighborhood-highlight set so edges + halo render
+				// the same way they do after a manual node click.
+				neighborIds = neighborMap.get(focusNode.id) ?? new Set();
+				// Canvas draw transform: translate(w/2 + panX, h/2 + panY) scale(zoom).
+				// To make world-(focusNode.x, focusNode.y) land at canvas-center
+				// (w/2, h/2), solve: w/2 + panX + focusNode.x*zoom = w/2  →
+				// panX = -focusNode.x * zoom. Same logic for panY.
+				panX = -(focusNode.x ?? 0) * zoom;
+				panY = -(focusNode.y ?? 0) * zoom;
+				requestDraw();
+			}
+		}
 
 		performance.mark('sight:mount:end');
 		performance.measure('sight:mount:total', 'sight:mount:start', 'sight:mount:end');
