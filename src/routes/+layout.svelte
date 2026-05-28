@@ -2353,6 +2353,21 @@
 					lensActive = false; sightV3Active = false; sightV4Active = false;
 					sightV5Active = false; sightV6Active = false;
 					showCataloger = true;
+					// MIG-060 §C-fix-3 — focus The Cataloger on the clicked note.
+					// CataloferView contains a SourceReviewPanel that listens for
+					// `constellation:classify-and-show` with `detail.notePath` and
+					// classifies + scrolls to that specific note. Defer the
+					// dispatch one animation frame so CataloferView's panel has
+					// mounted (matches the established pattern at
+					// `handleSuggestSourcesForNote`).
+					{
+						const focusPath = detail.path;
+						requestAnimationFrame(() => {
+							window.dispatchEvent(new CustomEvent('constellation:classify-and-show', {
+								detail: { notePath: focusPath },
+							}));
+						});
+					}
 					break;
 			}
 		});
