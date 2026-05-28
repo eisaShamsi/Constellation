@@ -1,6 +1,6 @@
 <script lang="ts">
 	import '$lib/theme.css';
-	import { onMount, onDestroy, untrack } from 'svelte';
+	import { onMount, onDestroy, untrack, tick } from 'svelte';
 	import { dir, t } from '$lib/i18n';
 	import { invoke } from '@tauri-apps/api/core';
 	import { listen } from '@tauri-apps/api/event';
@@ -2269,6 +2269,70 @@
 			let lib = detail.libraryName ? libs.find(l => l.name === detail.libraryName) : undefined;
 			if (!lib) lib = libs.find(l => detail.path!.startsWith(l.path));
 			if (lib) openNoteTab(detail.path!, lib.name, libraryColorMap[lib.name] || '#7c3aed');
+		});
+		// MIG-060 §C — Threading-gesture listener.
+		// LensBlockWidget._renderRow (§B) dispatches this custom event when
+		// the user clicks one of the three threading-gesture buttons on a
+		// lens row. The handler:
+		//   1. Opens the host note in the active pane (same library-resolve
+		//      flow as `constellation:open-note`).
+		//   2. Awaits one tick so the reactive cascade settles.
+		//   3. Clears all other full-page-surface flags, then activates the
+		//      requested surface — same "exclusive surface" pattern the dock
+		//      button onclick handlers use.
+		window.addEventListener('constellation:open-note-in-surface', async (e: Event) => {
+			const detail = (e as CustomEvent).detail as {
+				surface?: '360.3d' | 'cns' | 'cataloger';
+				path?: string;
+				libraryName?: string;
+				libraryPath?: string;
+			};
+			if (!detail?.path || !detail?.surface) return;
+			// Step 1 — open the host note.
+			const libs = get(libraries);
+			let lib = detail.libraryName ? libs.find(l => l.name === detail.libraryName) : undefined;
+			if (!lib) lib = libs.find(l => detail.path!.startsWith(l.path));
+			if (lib) await openNoteTab(detail.path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
+			// Step 2 — settle the reactive cascade so `sidebarTab` / active
+			// tab state is consistent before flipping surface flags.
+			await tick();
+			// Step 3 — activate the requested surface. Each branch clears
+			// every other full-page flag first (mirrors dock-button onclick).
+			switch (detail.surface) {
+				case '360.3d':
+					showSkyView = false; showGlobalTasks = false; showIndex = false;
+					showConstellationMap = false; showOrgChart = false; showCataloger = false;
+					showKnowledgeHealth = false; showSearchHub = false;
+					showExpressionForge = false; showSenseMakingCanvas = false;
+					lensActive = false; sightV3Active = false; sightV4Active = false;
+					sightV5Active = false; sightV6Active = false;
+					showInspector360 = true;
+					break;
+				case 'cns':
+					// CNS gating is enforced at the gesture-render site (§B):
+					// if `constellationSight === false`, the button is not
+					// shown, so this branch should not fire for disabled
+					// users. Defensive re-check kept for safety.
+					if (get(appSettings).enabledFeatures?.constellationSight === false) break;
+					showSkyView = false; showGlobalTasks = false; showIndex = false;
+					showConstellationMap = false; showOrgChart = false; showCataloger = false;
+					showInspector360 = false;
+					showKnowledgeHealth = false; showSearchHub = false;
+					showExpressionForge = false; showSenseMakingCanvas = false;
+					sightV3Active = false; sightV4Active = false;
+					sightV5Active = false; sightV6Active = false;
+					if (!lensActive) toggleLens();
+					break;
+				case 'cataloger':
+					showSkyView = false; showGlobalTasks = false; showIndex = false;
+					showConstellationMap = false; showOrgChart = false; showInspector360 = false;
+					showKnowledgeHealth = false; showSearchHub = false;
+					showExpressionForge = false; showSenseMakingCanvas = false;
+					lensActive = false; sightV3Active = false; sightV4Active = false;
+					sightV5Active = false; sightV6Active = false;
+					showCataloger = true;
+					break;
+			}
 		});
 		// Universal Embed: "open this file externally" (from generic file card)
 		window.addEventListener('constellation:open-external', (e: Event) => {
