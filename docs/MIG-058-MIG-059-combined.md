@@ -1,102 +1,113 @@
 # MIG-058 + MIG-059 — Combined fix (SHIPPED)
 
-**Status:** Shipped 2026-05-27 (commit `05f0e474`).
-**Priority:** P2. Closes two issues from the MIG-056 §K Boss-test: federation search latency + Arabic input truncation.
+**Status:** Shipped 2026-05-28 (commit `c426af7e` + supporting commits).
+**Resolved by:** Options **C + G + H** combined, after 8 iterations that pruned 7 incorrect hypotheses.
 
-## Why combined
+## What both MIGs were about
 
-Two issues, two different root causes, but the fix surface is small for both and they share one verification cycle (rebuild + Eisa retest). The first MIG-059 attempt was a guess (pre-warm via `SELECT COUNT(*) FROM notes_fts`) that broke federation; it got reverted. This time the design is sourced from four parallel research agents covering SQLite FTS5 internals, federated-search per-shard patterns from production systems, SQLite multi-Connection same-file behavior, and Svelte 5 + IME + WebView2 interactions.
+- **MIG-058** — QuickSwitcher Arabic input truncation: when the user typed Arabic at normal pace (300-400ms per char), the input box showed only the first few characters. Pasting or typing very fast worked.
+- **MIG-059** — Federated search latency: 15-25 seconds per first federated FTS5 search on Eisa's cu1 (Eisa Cognitive Knowledge, 7650 notes), vs ~1 second when the same data was the active universe. Same file, same query, same FTS5 engine.
 
-## MIG-059 — Federated search ~25s → ~1s
+Both were caused by the same root issue: federated `lexical_search` was slow, and the slow async resolve was blocking the IPC/event loop long enough to buffer Arabic keystrokes in WebView2. Fix the speed, both close together.
 
-### Root cause (sourced)
+## The actual root cause
 
-**Query-planner-driven, not page-cache-driven.** SQLite FTS5 uses static cost estimates by default and picks catastrophic plans for OR-of-MATCH expressions — exactly our 9-term lexicon-expanded multilingual query. Documented fix on the SQLite Forum:
+SQLite FTS5's native `snippet()` function — used in the SQL to extract highlighted excerpts — does the following for EACH matching result row:
 
-- Dan Kennedy's thread "JOINs with FTS5 are very slow" — running `ANALYZE` cut a similar query from 170s to 0.259s (660× speedup). [Source](https://sqlite.org/forum/info/509bdbe534f58f20).
-- Hipp's measurement: ANALYZE on a 93MB DB takes ~161ms.
-- Per the SQLite docs: *"The query planner loads the content of the statistics tables into memory when the schema is read."* [Source](https://sqlite.org/lang_analyze.html).
+1. Fetch `body_text` from the external content table (`note_meta`).
+2. **Re-tokenize the entire body_text** via the registered tokenizer to find positions of the matched tokens.
+3. Extract a window around the best match, with `<mark>` tags around hits.
 
-`Connection A` (active-mode) was fast because `init_db`'s migrations implicitly populated `sqlite_stat1` and Connection A loaded those stats at schema-parse. `Connection B` (per-cUniverse standalone, opened in §K.3) opens the same file but the planner falls back to static estimates → bad OR-of-MATCH plan → 25× slowdown.
+Constellation uses a custom `constellation` FTS5 tokenizer that does Arabic Unicode normalization, diacritic stripping, stopword filtering, and bigram emission. Running this expensive tokenizer over 30 result rows × kilobytes of body_text per row = ~16 seconds.
 
-**Bonus:** SQLite multi-Connection page caches are SEPARATE 64 MB allocations by default (not shared). `PRAGMA mmap_size` moves the page cache to OS-shared mmap — eliminates the duplicate-cache asymmetry between the ATTACH-based `federated_conn` (warm) and the standalone per-cUniverse Connection (cold). [Source](https://sqlite.org/mmap.html).
+The cost scales with **result count** (30 rows), not with **segment count** or **page cache state** — which is why Options E (PRAGMAs), F (page-cache pre-warm), and G (FTS5 segment merge) couldn't move the needle: they all addressed Connection / index state, but the dominant cost was per-row tokenizer work.
 
-### Backend changes (`src-tauri/src/search.rs`)
+Active mode (when EC Knowledge is the user's active universe) is fast because `state.db` is the only Connection serving everything, and FTS5's `snippet()` benefits from incidental warming via other operations earlier in the session. Federated mode opens a fresh path where nothing has warmed the per-row callback path.
 
-1. **`init_db`: `PRAGMA optimize;`** at end. Populates `sqlite_stat1` on the active universe's `search.db`. <1ms when stats already current; ~160ms when ANALYZE actually runs. Subsequent Connections opening the same file inherit good planner stats.
+## The shipped fix
 
-2. **Per-cUniverse Connection: `PRAGMA mmap_size=268435456` (256 MB)** added to the PRAGMA batch. OS-shared page mapping eliminates the cold-cache asymmetry.
+Three commits, building on each other, all in production code on `main`:
 
-3. **Per-cUniverse Connection: `PRAGMA optimize`** after tokenizer registration. Refreshes planner stats for the standalone Connection's view. Documented <1ms if stats current.
+### Option C — Per-schema queries on the warm `federated_conn` (`fb83797e`)
 
-### What was rejected (and why)
+**Architecture cleanup.** Drop the §K.3 per-cUniverse standalone-Connection pool entirely. Use the ATTACH-based `federated_conn` (which has every cUniverse mounted as `cu0` / `cu1` / ...) for ALL federation paths: libraryStats, lens, AND federated FTS5 search.
 
-- ❌ The reverted `SELECT COUNT(*) FROM notes_fts` pre-warm stays reverted. Agent 3's research confirmed `COUNT(*)` is O(n) on FTS5 segments (must query each individually and merge), not O(1) metadata read — which is why the previous attempt hung federation. [Source: Fedor Indutny's FTS5 structure write-up](https://darksi.de/13.sqlite-fts5-structure/).
-- ❌ The `PRAGMA wal_checkpoint(PASSIVE)` is gone. PASSIVE "doesn't block" other connections but itself runs slowly when nothing is cached. Wrong tool here.
+The §G/§K.2 prohibition on `bm25(schema.notes_fts, ...)` in UNION ALL queries does NOT apply to single-schema queries with `FROM cu1.notes_fts`. In that context, unqualified `bm25(notes_fts, ...)` correctly resolves to the FROM-clause table — verified by 4 new unit tests in `mig056_federated_search::option_c_*`.
 
-## MIG-058 — Arabic input truncation in QuickSwitcher
+The scatter-gather coordinator runs one single-schema query per attached cUniverse, all on the SAME `federated_conn`, merged via RRF in Rust. One Connection, one warm cache, no pool.
 
-### Root cause (sourced)
+### Option G — Background FTS5 segment merge (`4cbdd56a`)
 
-**NOT what was hypothesized.** Agent 4's research found:
+**Periodic FTS5 maintenance, but never run for cUniverses.** The active universe's `init_db` writes 1 row to `note_meta` every boot via `mig003_step3_soft_rebackfill`. Those writes incrementally merge FTS5 segments. cUniverses never see that boot-time write, so their FTS5 indexes accumulate segments without ever being merged.
 
-- **Svelte 5's `bind_value` source explicitly guards against the value-rewrite-during-typing race** I assumed. The source has `if (input === document.activeElement) return` — never rewrites a focused input. AND `if (value !== input.value)` — never rewrites a no-op. The "async resolve breaks IME composition" hypothesis was a phantom. [Source: bind_value source on github main](https://github.com/sveltejs/svelte/blob/main/packages/svelte/src/internal/client/dom/elements/bindings/input.js).
+After federation attaches (and after `federated_conn` is saved to state, so federation visibility isn't blocked), spawn a background thread `federation_prewarm` that opens a throwaway Connection to each cUniverse's `search.db` and runs `INSERT INTO notes_fts(notes_fts) VALUES('optimize')` — the FTS5-documented segment merge command.
 
-- **Arabic 101 keyboard on Windows is a DIRECT keyboard layout, not an IME.** No `compositionstart`/`compositionend` events fire for Arabic. So the React #34485 / Vue v-model "gate on composition events" fix pattern (which solves CJK input bugs) does NOT apply here. [Source: kbdlayout.info/KBDA1](http://kbdlayout.info/KBDA1/).
+Cost: ~30-60s of background work on first invocation per cUniverse (for a 7650-doc index). Persistent: the merged state survives across boots. Subsequent invocations are 0ms (already merged). Idempotent.
 
-The actual cause is **synchronous main-thread pressure**: every keystroke triggered the `filtered` `$derived.by` rebuild (walk 1101 notes + lowercase + substring-match + slice + merge with `extendedResults` + slice) AND the keyed `{#each filtered ... (note.path)}` re-render. Under WebView2 main-thread pressure, Arabic keystrokes can drop at slow typing speeds. Same family of bugs as [CodeMirror discuss #9741](https://discuss.codemirror.net/t/chinese-ime-punctuation-input-loses-every-other-keypress-requires-2-presses-per-character/9741) and [Tauri #3136](https://github.com/tauri-apps/tauri/discussions/3136).
+**Important note on the contribution of Option G:** Option G alone did NOT fix the perf issue (Eisa's boss-test showed segment merge ran successfully but search timing didn't improve). However, Eisa noted that search RESULT QUALITY improved after Option G — likely because BM25 ranking is more accurate on a non-fragmented index. We kept Option G in the shipped state because it (a) costs nothing on subsequent boots, (b) improves ranking quality, and (c) reduces FTS5 maintenance debt for cUniverses generally.
 
-### Frontend changes (`src/lib/components/QuickSwitcher.svelte`)
+### Option H — Bypass FTS5 `snippet()` in federated mode (`c426af7e`)
 
-1. **`filtered` changed from `$derived.by(...)` to `$state<...[]>([])`.** Typing no longer triggers synchronous filter + re-key. The list updates only once per 300ms debounce window. Substring-match logic moved INSIDE the same debounced `$effect` that calls `constellationSearch`.
+**The decisive fix.** Added a `skip_fts5_snippet: bool` parameter to `lexical_search_in_schema`. Federated mode (`true`) selects raw `body_text` instead of calling `snippet()`. Rust then computes the snippet via `synth_snippet_for_body` — a UTF-8 char-boundary-safe substring scan that finds the query (or a bridge term from the lexicon expansion) in body_text and extracts a ±40-character window with `<mark>` tags.
 
-2. **`selectedIndex = 0` reset moved INSIDE the debounced effect.** The old separate `$effect(() => { if (filtered) selectedIndex = 0; })` fired on every filtered change including async resolves; that contributed to mid-typing reactive churn.
+Active mode (`false`) still uses FTS5's native `snippet()`, which is fast on the warm `state.db` Connection.
 
-3. **`oncompositionstart`/`oncompositionend`** added to the input. Sets a `composing` flag; the debounced effect skips while composing. Free insurance for CJK / Indic / any IME-composed input. No effect for Arabic 101 (no composition events), no harm anywhere.
+Federated snippets are slightly less precise than FTS5 native:
+- FTS5 matches stemmed/inflected tokens (it knows what the tokenizer would emit).
+- Rust matches literal substrings.
 
-### What was rejected
+In practice: query for "trees" highlights "trees" in federated mode, may highlight "tree" in active mode. The COUNT and RANKING of results is unchanged — only `<mark>` placement differs.
 
-- ❌ Switch from `bind:value` to manual `oninput` — the Svelte 5 source proves `bind:value` isn't at fault.
-- ❌ "Gate on composition events" as the PRIMARY fix — Arabic 101 doesn't fire these events; the gate would be a no-op for the actual reported bug.
+## What was rejected (and what it taught us)
 
-## Tests
+| Option | Hypothesis | Why it failed | Lesson |
+|---|---|---|---|
+| §K.1 | Tokenizer not registered on federation Connection | Necessary but not sufficient — Stage 4 still failed | Tokenizer is per-Connection in FTS5; needed to register but doesn't address the perf issue |
+| §K.2 | Cross-schema UNION ALL with bm25/snippet was the bug | True for correctness; dropping aux funcs fixed PREPARE-time crashes but lost relevance ranking | FTS5 aux funcs CAN'T be schema-qualified in UNION ALL |
+| §K.3 | Per-cUniverse standalone Connection enables bm25 | Worked for correctness but standalone Connections were 15-25× slower than active | Cold FTS5 segment pages on a fresh Connection |
+| Option E | PRAGMA mmap_size + cache_size on federated_conn | 18s — REGRESSED. mmap on ATTACH bypasses the OS page cache that libraryStats had been warming | Counter-intuitive but empirically clear |
+| Option F | Pre-warm OS page cache via MATCH on throwaway Connection | Returned 0 matches (stopword filter stripped 'a OR e OR i' tokens), 16s | Verify warm-up queries actually iterate the FTS5 cursor |
+| Option G | FTS5 segment merge ('optimize') | Ran successfully — but timing didn't change. Improved RESULT QUALITY though. | Fragmentation wasn't the dominant cost; the per-row tokenizer cost was |
 
-- 836/836 lib tests pass (no regression on the backend changes).
-- `svelte-check`: 0 new errors in `QuickSwitcher.svelte`. 3 pre-existing baseline errors unchanged (LinkLifecycle 'fresh' + 2× PropertyEditor type narrowing).
+## Verification
 
-## Verification path (Boss-test)
+Eisa's Boss-test for the final shipped state (Options C + G + H combined):
 
-1. **Federation status bar** should show federated note count within ~5 seconds of boot — no longer blocked on the reverted pre-warm.
-2. **First federated search** for `الرباط` should return in ~1 second instead of ~25 seconds, with the same result quality as MIG-057's verified output (الرباط at rank 1-2, geography cluster following).
-3. **Arabic slow-typing** should land all characters when typed at 300-400ms per character. Type `الرباط` slowly; input should show the full 6-character word post-typing.
+| Stage | Pre-fix | Post-fix |
+|---|---|---|
+| Federation status bar | 8751 notes + ⚠ 1 | Unchanged (8751 + ⚠ 1) |
+| First federated search (paste `الرباط`) | 16-25 seconds | **Almost instantly** |
+| Second federated search (`الربا`) | 25 seconds | **Under a second** |
+| Arabic slow-typing (`الرباط` at 300-400ms/char) | Truncated to `الرب` or `الربا`, results 30+ seconds late | **Full word lands; results sub-second** |
 
-## Open questions deferred
+## Architectural state post-resolution
 
-- Whether WebView2 fires `compositionstart` for Arabic specifically wasn't definitively answered by primary sources. Agent 4 recommended a 30-second devtools test, but Constellation release builds disable devtools (per `feedback_devtools_dev_only.md`). If the Boss-test for Arabic slow-typing still fails after this commit, that test becomes the next investigation step (likely from a dev build).
+- `SearchState.federated_conn` is the SOLE Connection for every federated query path (libraryStats / lens / search).
+- `SearchState.federated_search_conns` (the §K.3 standalone pool) is gone.
+- `federation_prewarm` background thread runs FTS5 `optimize` per cUniverse after each attach.
+- `lexical_search_in_schema` takes a `skip_fts5_snippet` flag; federated mode passes `true`, active mode passes `false`.
+- `synth_snippet_for_body` is the Rust-side snippet generator.
+- 4 new unit tests in `mig056_federated_search::option_c_*` lock in the single-schema-attached-bm25 contract.
+- 840/840 lib tests pass.
+
+## Future considerations
+
+- The `[federation-prewarm]` background thread logs to `diagnostics.log`. The MAX(segid) diagnostic query is broken (FTS5 shadow tables don't have a `segid` column under that name); the optimize itself works regardless. Could be cleaned up in a future PCS pass.
+- Federated `<mark>` placement may differ from active-mode placement for stemmed/inflected query terms. If users notice + report, the fix is to make `synth_snippet_for_body` also try stemmed variants. Not a current concern.
+- The Option G `INSERT INTO notes_fts(notes_fts) VALUES('optimize')` runs on every boot per cUniverse. The first-boot-per-cUniverse cost is ~30-60s; subsequent boots are 0ms (idempotent). If users have many (10+) cUniverses, first-launch federation visibility might lag by a few minutes total. Could add a `schema_versions` stamp to skip optimize when already-recently-optimized, but the idempotent 0ms cost makes this low-priority.
 
 ## Sources
 
-**SQLite side:**
-- [SQLite Forum: JOINs with FTS5 very slow → ANALYZE fixed 170s→0.259s](https://sqlite.org/forum/info/509bdbe534f58f20)
-- [SQLite Forum: Bad query plans from FTS5 (static cost estimates)](https://sqlite.org/forum/info/e0e30e9eb1998e3c9305aea26957bec804615283969d11c1f9326a6b787526eb)
-- [SQLite ANALYZE docs](https://sqlite.org/lang_analyze.html)
-- [SQLite PRAGMA docs (`optimize`, `mmap_size`)](https://sqlite.org/pragma.html)
+The investigation used these primary sources:
+
+- [SQLite FTS5 docs §11 (optimize)](https://sqlite.org/fts5.html)
+- [SQLite Forum: ANALYZE fix 170s → 0.259s](https://sqlite.org/forum/info/509bdbe534f58f20)
+- [SQLite Forum: Bad query plans from FTS5](https://sqlite.org/forum/info/e0e30e9eb1998e3c9305aea26957bec804615283969d11c1f9326a6b787526eb)
 - [SQLite mmap.html](https://sqlite.org/mmap.html)
 - [SQLite shared-cache (obsolete)](https://sqlite.org/sharedcache.html)
-- [Fedor Indutny: FTS5 structure](https://darksi.de/13.sqlite-fts5-structure/)
-
-**Federated-search patterns:**
 - [Lucene IndexReaderWarmer](https://lucene.apache.org/core/7_3_1/core/org/apache/lucene/index/IndexWriter.IndexReaderWarmer.html)
 - [Solr Caches and Query Warming](https://solr.apache.org/guide/solr/latest/configuration-guide/caches-warming.html)
-- [Elasticsearch CCS gateway pool](https://www.elastic.co/docs/explore-analyze/cross-cluster-search)
-- [Postgres FDW keep_connections](https://www.postgresql.org/docs/current/postgres-fdw.html)
-- [Citus slow-start adaptive executor](https://docs.citusdata.com/en/stable/performance/performance_tuning.html)
+- [Svelte 5 `bind_value` source — focused-input guard](https://github.com/sveltejs/svelte/blob/main/packages/svelte/src/internal/client/dom/elements/bindings/input.js)
+- [Win32 Arabic 101 keyboard (no IME)](http://kbdlayout.info/KBDA1/)
 
-**Svelte / IME / Arabic input:**
-- [Svelte 5 `bind_value` source (focused-input guard + no-op short-circuit)](https://github.com/sveltejs/svelte/blob/main/packages/svelte/src/internal/client/dom/elements/bindings/input.js)
-- [Svelte issue #13196 (bind:value + composition)](https://github.com/sveltejs/svelte/issues/13196)
-- [MDN compositionstart](https://developer.mozilla.org/en-US/docs/Web/API/Element/compositionstart_event)
-- [Win32 Arabic 101 keyboard layout (no IME)](http://kbdlayout.info/KBDA1/)
-- [CodeMirror discuss 9741 — Chinese IME keypress loss in WebView2](https://discuss.codemirror.net/t/chinese-ime-punctuation-input-loses-every-other-keypress-requires-2-presses-per-character/9741)
-- [Tauri discussion #3136 — broken accents/diacritics](https://github.com/tauri-apps/tauri/discussions/3136)
-- [Vue forms guide (v-model IME handling)](https://vuejs.org/guide/essentials/forms.html)
+Plus four parallel research agents on 2026-05-27 covering: SQLite FTS5 cross-Connection perf, federated-search per-shard patterns from production, SQLite multi-Connection same-file behavior, and Svelte/IME/Arabic input.
