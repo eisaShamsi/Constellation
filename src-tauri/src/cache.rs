@@ -43,6 +43,7 @@ use rusqlite::{params, Connection, OpenFlags};
 use serde::Serialize;
 use std::collections::HashMap;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
+use tauri::Manager;
 
 use crate::libraries::NoteLink;
 
@@ -374,6 +375,29 @@ pub struct BootSnapshotSky {
     /// case. Happens mid-back-fill on first boot after the upgrade.
     pub is_ready: bool,
     pub timings_ms: Vec<(String, u64)>,
+}
+
+/// MIG-061 §A — returns the list of schema aliases to query for federated
+/// sky data. Always includes `"main"` first; appends each attached cUniverse
+/// alias (`"cu0"`, `"cu1"`, …) in attach order if federation is ready.
+/// Empty cUniverse list → returns just `["main"]` (single-universe behavior,
+/// identical to pre-MIG-061).
+///
+/// Q3 Option B (federated link resolution): the schema-order is the
+/// deterministic tiebreak for name collisions across universes.
+/// `path_to_idx` / `name_to_idx` are built in this order during the merge
+/// pass; first-insert-wins → schema-order wins.
+fn get_federated_schemas(app: &tauri::AppHandle) -> Vec<String> {
+    let state = app.state::<crate::search::SearchState>();
+    let mut schemas = vec!["main".to_string()];
+    if let Ok(fed) = state.federation.lock() {
+        if fed.is_ready() {
+            for (alias, _path) in fed.attached() {
+                schemas.push(alias.clone());
+            }
+        }
+    }
+    schemas
 }
 
 /// Sky View snapshot from the persisted sky_* tables. Linear in rows,
