@@ -2564,6 +2564,34 @@
 		});
 		cleanupFns.push(() => { try { unlistenSearchReady(); } catch {} });
 
+		// MIG-061 §J — federation:ready listener.
+		// Boot-time `cache_boot_snapshot_sky` runs BEFORE federation completes
+		// (federation attaches in a background thread). When the Rust side
+		// finishes ATTACHing all cUniverses and stores `federated_conn`, it
+		// emits `federation:ready` — we re-invoke `cache_boot_snapshot_sky`
+		// here to pick up the now-federated data. Without this, CNS / Sky View
+		// / Backlinks / Outgoing all show parent-only (~987 of 8 751) for the
+		// entire session until the next boot.
+		const unlistenFederationReady = await listen('federation:ready', async () => {
+			try {
+				type SkySnapshot = {
+					nodes: SkyNode[];
+					links: SkyLink[];
+					isReady: boolean;
+					timingsMs: Array<[string, number]>;
+				};
+				const sky = await invoke<SkySnapshot>('cache_boot_snapshot_sky');
+				if (sky && sky.isReady) {
+					skyNodes = sky.nodes;
+					skyLinks = sky.links;
+					skyVersion++;
+				}
+			} catch (err) {
+				console.warn('[federation:ready] re-invoke of cache_boot_snapshot_sky failed:', err);
+			}
+		});
+		cleanupFns.push(() => { try { unlistenFederationReady(); } catch {} });
+
 		// Semantic search: ONNX engine lazy-loads on first search/embed call
 
 		// Second screen event listeners

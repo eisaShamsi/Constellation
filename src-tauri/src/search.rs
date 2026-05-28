@@ -5687,6 +5687,19 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
                     eprintln!("[federation] state.federation Mutex poisoned");
                 }
 
+                // MIG-061 §J — notify the frontend that federation is ready.
+                // Boot-time `cache_boot_snapshot_sky` runs BEFORE this point
+                // and returns parent-only data; the frontend listens for
+                // this event and re-invokes the snapshot so CNS / Sky View /
+                // Backlinks / Outgoing pick up the federated data.
+                //
+                // Payload kept minimal (just a tick) — the frontend re-
+                // invokes the IPC to get the actual numbers / nodes / links.
+                use tauri::Emitter;
+                let _ = app_for_federation.emit("federation:ready", serde_json::json!({
+                    "generation": current_gen,
+                }));
+
                 // MIG-058/MIG-059 Option F — spawn pre-warm thread
                 // AFTER state is fully written. Federation is visible
                 // and usable from this point; the warmer runs
