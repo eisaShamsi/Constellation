@@ -5688,36 +5688,15 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
                 }
 
                 // MIG-061 §J — notify the frontend that federation is ready.
-                // MIG-061 §J.3-trace — diag_log_line tracing until we see
-                // the event chain working end-to-end.
-                if let Ok(p) = db_path(&app_for_federation) {
-                    let attached_count = {
-                        let g = state.federation.lock();
-                        match g {
-                            Ok(fed) => fed.attached().len(),
-                            Err(_) => 0,
-                        }
-                    };
-                    diag_log(&p, &format!(
-                        "[MIG-061 §J.3] About to emit federation:ready: generation={}, attached_count={}, is_ready={}",
-                        current_gen,
-                        attached_count,
-                        {
-                            let g = state.federation.lock();
-                            match g { Ok(fed) => fed.is_ready(), Err(_) => false }
-                        }
-                    ));
-                }
+                // Boot-time `cache_boot_snapshot_sky` and `cache_boot_snapshot_graph`
+                // run BEFORE this point and return parent-only data; the
+                // frontend listens for this event and re-invokes both
+                // snapshots so CNS / Sky View / Backlinks / Outgoing pick
+                // up the federated data.
                 use tauri::Emitter;
-                let emit_result = app_for_federation.emit("federation:ready", serde_json::json!({
+                let _ = app_for_federation.emit("federation:ready", serde_json::json!({
                     "generation": current_gen,
                 }));
-                if let Ok(p) = db_path(&app_for_federation) {
-                    diag_log(&p, &format!(
-                        "[MIG-061 §J.3] Emit result: {:?}",
-                        emit_result
-                    ));
-                }
 
                 // MIG-058/MIG-059 Option F — spawn pre-warm thread
                 // AFTER state is fully written. Federation is visible

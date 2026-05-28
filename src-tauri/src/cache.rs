@@ -456,25 +456,12 @@ pub struct BootSnapshotSky {
 fn get_federated_schemas(app: &tauri::AppHandle) -> Vec<String> {
     let state = app.state::<crate::search::SearchState>();
     let mut schemas = vec!["main".to_string()];
-    let mut is_ready_observed = false;
-    let mut attached_observed = 0usize;
     if let Ok(fed) = state.federation.lock() {
-        is_ready_observed = fed.is_ready();
-        attached_observed = fed.attached().len();
         if fed.is_ready() {
             for (alias, _path) in fed.attached() {
                 schemas.push(alias.clone());
             }
         }
-    }
-    // MIG-061 §J.3-trace — log what we observed in federation state at
-    // the moment cache_boot_snapshot_sky was called. Helps trace the
-    // race between the boot-time call and federation completion.
-    if let Ok(p) = crate::search::db_path(app) {
-        crate::search::diag_log(&p, &format!(
-            "[MIG-061 §J.3] get_federated_schemas: is_ready={}, attached={}, schemas={:?}",
-            is_ready_observed, attached_observed, schemas
-        ));
     }
     schemas
 }
