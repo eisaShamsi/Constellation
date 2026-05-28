@@ -2459,11 +2459,68 @@
 			return;
 		}
 
+		// MIG-061 §J.2 — federation:ready listener MUST register BEFORE
+		// initializeApp() runs. initializeApp triggers the boot snapshot IPCs,
+		// which call ensure_search_db_ready → spawn the federation attach
+		// thread. On a fast cUniverse setup, attach_all completes + emits
+		// federation:ready BEFORE initializeApp returns. If the listener
+		// registered after that point (as the earlier §J revision did), the
+		// event was dropped — CNS stayed stuck at parent-only data.
+		//
+		// Defensive: on listener registration, immediately invoke
+		// cache_boot_snapshot_sky once. If federation already completed
+		// (event fired and missed), this re-fetch picks up the federated
+		// data. If federation is still pending, the call returns the same
+		// parent-only data the boot path got — no harm — and the live
+		// listener catches the event when it eventually fires.
+		const unlistenFederationReady = await listen('federation:ready', async () => {
+			try {
+				type SkySnapshot = {
+					nodes: SkyNode[];
+					links: SkyLink[];
+					isReady: boolean;
+					timingsMs: Array<[string, number]>;
+				};
+				const sky = await invoke<SkySnapshot>('cache_boot_snapshot_sky');
+				if (sky && sky.isReady) {
+					skyNodes = sky.nodes;
+					skyLinks = sky.links;
+					skyVersion++;
+				}
+			} catch (err) {
+				console.warn('[federation:ready] re-invoke of cache_boot_snapshot_sky failed:', err);
+			}
+		});
+		cleanupFns.push(() => { try { unlistenFederationReady(); } catch {} });
+
 		// initializeApp paints the shell (appReady=true) at its very first
 		// step, then loads data in the background. We `await` its full
 		// completion here so later onMount steps (watcher setup, etc.)
 		// run with a populated libraries store.
 		await initializeApp();
+
+		// MIG-061 §J.2 — defensive re-invoke after initializeApp.
+		// Covers the race where federation:ready fired while initializeApp
+		// was running (listener was already registered above, BUT the IPC
+		// the listener invokes may have been queued behind initializeApp's
+		// own IPCs and resolved with stale data). A second invoke here, AFTER
+		// initializeApp settled, picks up the federated state if it's now
+		// ready. Cheap: one cache_boot_snapshot_sky call (~50ms on Eisa's
+		// universe; the data is freshly cached).
+		try {
+			type SkySnapshot2 = {
+				nodes: SkyNode[];
+				links: SkyLink[];
+				isReady: boolean;
+				timingsMs: Array<[string, number]>;
+			};
+			const sky2 = await invoke<SkySnapshot2>('cache_boot_snapshot_sky');
+			if (sky2 && sky2.isReady && sky2.nodes.length > skyNodes.length) {
+				skyNodes = sky2.nodes;
+				skyLinks = sky2.links;
+				skyVersion++;
+			}
+		} catch {}
 
 		// Listen for file change events from the watcher
 		let pendingTreeRefresh: Set<string> = new Set();
@@ -2564,33 +2621,12 @@
 		});
 		cleanupFns.push(() => { try { unlistenSearchReady(); } catch {} });
 
-		// MIG-061 §J — federation:ready listener.
-		// Boot-time `cache_boot_snapshot_sky` runs BEFORE federation completes
-		// (federation attaches in a background thread). When the Rust side
-		// finishes ATTACHing all cUniverses and stores `federated_conn`, it
-		// emits `federation:ready` — we re-invoke `cache_boot_snapshot_sky`
-		// here to pick up the now-federated data. Without this, CNS / Sky View
-		// / Backlinks / Outgoing all show parent-only (~987 of 8 751) for the
-		// entire session until the next boot.
-		const unlistenFederationReady = await listen('federation:ready', async () => {
-			try {
-				type SkySnapshot = {
-					nodes: SkyNode[];
-					links: SkyLink[];
-					isReady: boolean;
-					timingsMs: Array<[string, number]>;
-				};
-				const sky = await invoke<SkySnapshot>('cache_boot_snapshot_sky');
-				if (sky && sky.isReady) {
-					skyNodes = sky.nodes;
-					skyLinks = sky.links;
-					skyVersion++;
-				}
-			} catch (err) {
-				console.warn('[federation:ready] re-invoke of cache_boot_snapshot_sky failed:', err);
-			}
-		});
-		cleanupFns.push(() => { try { unlistenFederationReady(); } catch {} });
+		// MIG-061 §J — federation:ready listener (registration moved earlier in §J.2).
+		// See the listener block above `await initializeApp()` for the actual
+		// registration. Without that earlier registration, the event fires while
+		// initializeApp is still running (federation completes faster than boot
+		// finishes on a 24-cUniverse universe) and the listener — if registered
+		// here — would miss it.
 
 		// Semantic search: ONNX engine lazy-loads on first search/embed call
 
