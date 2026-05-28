@@ -400,6 +400,30 @@ fn get_federated_schemas(app: &tauri::AppHandle) -> Vec<String> {
     schemas
 }
 
+/// MIG-061 §D — federated readiness gate (Q4 Option A: all-or-nothing).
+///
+/// Returns `true` only if EVERY schema in `schemas` has stamped a
+/// `sky_schema_version >= SKY_SCHEMA_VERSION`. If any schema's
+/// back-fill hasn't completed, returns `false` — and the caller in §E
+/// returns an empty snapshot with `is_ready=false`, which causes the
+/// frontend to fall back to the existing `buildSkyData` legacy path.
+///
+/// Conservative by design: never returns partial data. The next call
+/// (typically after a back-fill stamp event) re-checks all schemas.
+fn is_federated_sky_ready(conn: &Connection, schemas: &[String]) -> bool {
+    for schema in schemas {
+        let sql = format!(
+            "SELECT version FROM {}.schema_versions WHERE module = 'sky'",
+            schema
+        );
+        let v: i64 = conn.query_row(&sql, [], |r| r.get(0)).unwrap_or(0);
+        if v < crate::search::SKY_SCHEMA_VERSION as i64 {
+            return false;
+        }
+    }
+    true
+}
+
 /// Sky View snapshot from the persisted sky_* tables. Linear in rows,
 /// no JS-side iteration, no IPC re-serialization of raw note_links.
 #[tauri::command]
