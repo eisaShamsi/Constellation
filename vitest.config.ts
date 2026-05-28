@@ -22,6 +22,8 @@ export default defineConfig({
 			// is a polish item for the v7 close-out.
 			'tests/sight-v6/v7-density.test.ts',
 			'tests/sight-v6/v7-stack.test.ts',
+			// MIG-060 §E (2026-05-28) — Lens-row threading gestures.
+			'tests/mig-060/host-note-gestures.test.ts',
 		],
 		exclude: [
 			'**/node_modules/**',
