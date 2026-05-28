@@ -2332,6 +2332,11 @@
 					// component when lensActive flips true, so prop bindings are
 					// fresh on every open.)
 					pendingCnsFocusPath = detail.path;
+					try {
+						invoke('diag_log_line', {
+							line: `[MIG-060 §C-fix] gesture set pendingCnsFocusPath="${detail.path}" (lensActive was ${lensActive})`,
+						}).catch(() => {});
+					} catch {}
 					if (!lensActive) toggleLens();
 					break;
 				case 'cataloger':
