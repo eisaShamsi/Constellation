@@ -67,3 +67,48 @@ Back to the Constellation Base roadmap from Concept Paper v1.4. The federation w
 3. **Eisa's "no doctrine of limitation" is the right operating principle.** Each "let's accept this and document" framing I tried got pushed back. The actual fix existed; we just hadn't found it yet.
 
 4. **Diagnostic v2 was load-bearing.** The data Eisa pasted (per-branch timings, sqlite_stat1 contents, EXPLAIN QUERY PLAN, keystroke event log) ruled out hypothesis after hypothesis. Without it, I would have shipped Option E (which regressed) as a guess.
+
+---
+
+## Block 2 (mid-morning) — MIG-060 Phase 1.5 §A-§F (threading gestures)
+
+After MIG-058+059 closed with §L PCS, Eisa confirmed the roadmap return: *"PCS + Orientation > back to the remaining Constellation Base, right?"* → proceed.
+
+The next trunk MIG is **MIG-060 — Constellation Base Phase 1.5: Host-Note Threading Gestures**. Each lens row gets three small icon buttons on its trailing edge that open the host note in 360.3D / CNS / Cataloger — the deep-read surfaces that previously required a dock-click after the note opened.
+
+### Architect + Plan landed in §211adceb (yesterday)
+
+Locked design:
+- Single custom event `constellation:open-note-in-surface` with `detail.surface` discriminator.
+- UI: 3 inline buttons per row; 12px icons; always visible (CNS only gated by user feature flag).
+- Navigation: open host note → `await tick()` → flip target surface flag (exclusive-surface clear pattern).
+- 7-step Plan (§A i18n → §B widget → §C listener → §D CSS → §E tests → §F Boss-test → §G PCS).
+
+### Build cascade (today)
+
+| § | Commit | What shipped |
+|---|--------|-------------|
+| A | `8e76f545` | 45 new i18n keys (15 locales × 3 tooltip strings). Native equivalents per Eisa's full-localization rule. |
+| B | `f8e374c8` | `LensBlockWidget._renderRow` — three buttons per row with stopPropagation + CustomEvent dispatch. CNS gated by `enabledFeatures.constellationSight !== false`. |
+| C | `a8420ab0` | `+layout.svelte` listener — opens host note (`await openNoteTab`), then `await tick()`, then flips the requested surface flag in an exclusive-surface clear. Imports `tick`. |
+| D | `49ac3da6` | CSS for `.cm-lens-row-actions` + per-surface hover hues (purple/cyan/orange). `marginInlineStart:auto` auto-flips LTR↔RTL. |
+| E | `b5e35112` | 52 vitest tests pass (45 i18n parity + 6 surface-discriminator + 1 sanity guard). New `tests/mig-060/` directory + `test:mig-060` npm script. DOM-render tests deferred to §F Boss-test per scope-vs-effort. |
+| F | `77f917dc` | `docs/MIG-060-BOSS-TEST.md` — 5-stage tutorial per Testing Instructions Rule. Eisa runs this next. |
+
+### Verification status
+
+- svelte-check: only the 3 pre-existing errors (no new ones introduced).
+- Vitest: 52/52 pass on the new test suite.
+- Vite frontend build: clean in 1m 53s.
+
+### Awaiting Boss-test
+
+Stage 1-5 of `docs/MIG-060-BOSS-TEST.md`. Per Eisa's staged-tests rule, Claude will surface Stage 1 in chat first, wait for findings, then proceed.
+
+### What's next after Boss-test
+
+§G PCS — orientation v2.40 + MoCh + 15-locale help-doc updates + milestone tag `milestone/mig-060-base-phase-1.5-shipped` + ZIP backup.
+
+After MIG-060 closes, the Constellation Base roadmap continues:
+- Phase 2 — Living Link Columns (separate MIG).
+- Phase 2.5+ — Bridges (360.3D / CNS / Cataloger as lens DIMENSIONS, not just gestures).
