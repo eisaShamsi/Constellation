@@ -2473,7 +2473,10 @@
 		// data. If federation is still pending, the call returns the same
 		// parent-only data the boot path got — no harm — and the live
 		// listener catches the event when it eventually fires.
-		const unlistenFederationReady = await listen('federation:ready', async () => {
+		// MIG-061 §J.3-trace — diagnostic tracing for the event chain.
+		try { invoke('diag_log_line', { line: '[MIG-061 §J.3] FRONTEND: registering federation:ready listener' }).catch(() => {}); } catch {}
+		const unlistenFederationReady = await listen('federation:ready', async (event) => {
+			try { invoke('diag_log_line', { line: `[MIG-061 §J.3] FRONTEND: federation:ready RECEIVED, payload=${JSON.stringify(event.payload)}` }).catch(() => {}); } catch {}
 			try {
 				type SkySnapshot = {
 					nodes: SkyNode[];
@@ -2482,15 +2485,17 @@
 					timingsMs: Array<[string, number]>;
 				};
 				const sky = await invoke<SkySnapshot>('cache_boot_snapshot_sky');
+				try { invoke('diag_log_line', { line: `[MIG-061 §J.3] FRONTEND: re-invoke result: isReady=${sky?.isReady}, nodes.length=${sky?.nodes?.length}` }).catch(() => {}); } catch {}
 				if (sky && sky.isReady) {
 					skyNodes = sky.nodes;
 					skyLinks = sky.links;
 					skyVersion++;
 				}
 			} catch (err) {
-				console.warn('[federation:ready] re-invoke of cache_boot_snapshot_sky failed:', err);
+				try { invoke('diag_log_line', { line: `[MIG-061 §J.3] FRONTEND: re-invoke FAILED: ${err}` }).catch(() => {}); } catch {}
 			}
 		});
+		try { invoke('diag_log_line', { line: '[MIG-061 §J.3] FRONTEND: federation:ready listener REGISTERED' }).catch(() => {}); } catch {}
 		cleanupFns.push(() => { try { unlistenFederationReady(); } catch {} });
 
 		// initializeApp paints the shell (appReady=true) at its very first
@@ -2500,13 +2505,7 @@
 		await initializeApp();
 
 		// MIG-061 §J.2 — defensive re-invoke after initializeApp.
-		// Covers the race where federation:ready fired while initializeApp
-		// was running (listener was already registered above, BUT the IPC
-		// the listener invokes may have been queued behind initializeApp's
-		// own IPCs and resolved with stale data). A second invoke here, AFTER
-		// initializeApp settled, picks up the federated state if it's now
-		// ready. Cheap: one cache_boot_snapshot_sky call (~50ms on Eisa's
-		// universe; the data is freshly cached).
+		try { invoke('diag_log_line', { line: '[MIG-061 §J.3] FRONTEND: defensive re-invoke STARTING after initializeApp' }).catch(() => {}); } catch {}
 		try {
 			type SkySnapshot2 = {
 				nodes: SkyNode[];
@@ -2515,12 +2514,16 @@
 				timingsMs: Array<[string, number]>;
 			};
 			const sky2 = await invoke<SkySnapshot2>('cache_boot_snapshot_sky');
+			try { invoke('diag_log_line', { line: `[MIG-061 §J.3] FRONTEND: defensive re-invoke result: isReady=${sky2?.isReady}, nodes.length=${sky2?.nodes?.length}, skyNodes.length=${skyNodes.length}` }).catch(() => {}); } catch {}
 			if (sky2 && sky2.isReady && sky2.nodes.length > skyNodes.length) {
+				try { invoke('diag_log_line', { line: `[MIG-061 §J.3] FRONTEND: defensive re-invoke UPDATING skyNodes (${skyNodes.length} → ${sky2.nodes.length})` }).catch(() => {}); } catch {}
 				skyNodes = sky2.nodes;
 				skyLinks = sky2.links;
 				skyVersion++;
 			}
-		} catch {}
+		} catch (err) {
+			try { invoke('diag_log_line', { line: `[MIG-061 §J.3] FRONTEND: defensive re-invoke FAILED: ${err}` }).catch(() => {}); } catch {}
+		}
 
 		// Listen for file change events from the watcher
 		let pendingTreeRefresh: Set<string> = new Set();
