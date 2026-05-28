@@ -2473,10 +2473,12 @@
 		// data. If federation is still pending, the call returns the same
 		// parent-only data the boot path got — no harm — and the live
 		// listener catches the event when it eventually fires.
-		// MIG-061 §J.3-trace — diagnostic tracing for the event chain.
-		try { invoke('diag_log_line', { line: '[MIG-061 §J.3] FRONTEND: registering federation:ready listener' }).catch(() => {}); } catch {}
-		const unlistenFederationReady = await listen('federation:ready', async (event) => {
-			try { invoke('diag_log_line', { line: `[MIG-061 §J.3] FRONTEND: federation:ready RECEIVED, payload=${JSON.stringify(event.payload)}` }).catch(() => {}); } catch {}
+		// MIG-061 §N — federation:ready listener (re-fetches BOTH sky AND graph).
+		// §J originally only re-invoked _sky → Backlinks/Outgoing stayed stuck
+		// with parent-only data from boot. §N re-invokes _graph too so
+		// allLibraryLinks updates with federated note_links.
+		const unlistenFederationReady = await listen('federation:ready', async () => {
+			// Refresh sky (CNS / Sky View)
 			try {
 				type SkySnapshot = {
 					nodes: SkyNode[];
@@ -2485,17 +2487,34 @@
 					timingsMs: Array<[string, number]>;
 				};
 				const sky = await invoke<SkySnapshot>('cache_boot_snapshot_sky');
-				try { invoke('diag_log_line', { line: `[MIG-061 §J.3] FRONTEND: re-invoke result: isReady=${sky?.isReady}, nodes.length=${sky?.nodes?.length}` }).catch(() => {}); } catch {}
 				if (sky && sky.isReady) {
 					skyNodes = sky.nodes;
 					skyLinks = sky.links;
 					skyVersion++;
 				}
-			} catch (err) {
-				try { invoke('diag_log_line', { line: `[MIG-061 §J.3] FRONTEND: re-invoke FAILED: ${err}` }).catch(() => {}); } catch {}
-			}
+			} catch {}
+			// Refresh graph (Backlinks / Outgoing / Tags / Aliases)
+			try {
+				type GraphSnapshot = {
+					links: NoteLink[];
+					tags: Record<string, number>;
+					aliases?: Array<{ path: string; aliasLower: string }>;
+				};
+				const graph = await invoke<GraphSnapshot>('cache_boot_snapshot_graph');
+				if (graph) {
+					allLibraryLinks = graph.links ?? [];
+					allLibraryTags = graph.tags ?? {};
+					notePathToAliases = new Map();
+					if (Array.isArray(graph.aliases)) {
+						for (const a of graph.aliases) {
+							const list = notePathToAliases.get(a.path) ?? [];
+							list.push(a.aliasLower);
+							notePathToAliases.set(a.path, list);
+						}
+					}
+				}
+			} catch {}
 		});
-		try { invoke('diag_log_line', { line: '[MIG-061 §J.3] FRONTEND: federation:ready listener REGISTERED' }).catch(() => {}); } catch {}
 		cleanupFns.push(() => { try { unlistenFederationReady(); } catch {} });
 
 		// initializeApp paints the shell (appReady=true) at its very first
@@ -2504,8 +2523,9 @@
 		// run with a populated libraries store.
 		await initializeApp();
 
-		// MIG-061 §J.2 — defensive re-invoke after initializeApp.
-		try { invoke('diag_log_line', { line: '[MIG-061 §J.3] FRONTEND: defensive re-invoke STARTING after initializeApp' }).catch(() => {}); } catch {}
+		// MIG-061 §N — defensive re-invoke after initializeApp.
+		// Refreshes BOTH sky and graph (§N extends §J.2 to cover the graph
+		// payload that feeds Backlinks/Outgoing).
 		try {
 			type SkySnapshot2 = {
 				nodes: SkyNode[];
@@ -2514,16 +2534,32 @@
 				timingsMs: Array<[string, number]>;
 			};
 			const sky2 = await invoke<SkySnapshot2>('cache_boot_snapshot_sky');
-			try { invoke('diag_log_line', { line: `[MIG-061 §J.3] FRONTEND: defensive re-invoke result: isReady=${sky2?.isReady}, nodes.length=${sky2?.nodes?.length}, skyNodes.length=${skyNodes.length}` }).catch(() => {}); } catch {}
 			if (sky2 && sky2.isReady && sky2.nodes.length > skyNodes.length) {
-				try { invoke('diag_log_line', { line: `[MIG-061 §J.3] FRONTEND: defensive re-invoke UPDATING skyNodes (${skyNodes.length} → ${sky2.nodes.length})` }).catch(() => {}); } catch {}
 				skyNodes = sky2.nodes;
 				skyLinks = sky2.links;
 				skyVersion++;
 			}
-		} catch (err) {
-			try { invoke('diag_log_line', { line: `[MIG-061 §J.3] FRONTEND: defensive re-invoke FAILED: ${err}` }).catch(() => {}); } catch {}
-		}
+		} catch {}
+		try {
+			type GraphSnapshot2 = {
+				links: NoteLink[];
+				tags: Record<string, number>;
+				aliases?: Array<{ path: string; aliasLower: string }>;
+			};
+			const graph2 = await invoke<GraphSnapshot2>('cache_boot_snapshot_graph');
+			if (graph2 && graph2.links.length > allLibraryLinks.length) {
+				allLibraryLinks = graph2.links;
+				allLibraryTags = graph2.tags ?? {};
+				if (Array.isArray(graph2.aliases)) {
+					notePathToAliases = new Map();
+					for (const a of graph2.aliases) {
+						const list = notePathToAliases.get(a.path) ?? [];
+						list.push(a.aliasLower);
+						notePathToAliases.set(a.path, list);
+					}
+				}
+			}
+		} catch {}
 
 		// Listen for file change events from the watcher
 		let pendingTreeRefresh: Set<string> = new Set();
