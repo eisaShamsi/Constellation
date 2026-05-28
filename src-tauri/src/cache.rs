@@ -558,16 +558,33 @@ fn read_sky_nodes_raw(conn: &Connection) -> Result<Vec<SkyNodeOut>, String> {
     read_sky_nodes_raw_in_schema(conn, "main")
 }
 
-fn read_sky_links_raw(
+/// MIG-061 §C — schema-parameterized variant of the sky_links scan.
+///
+/// Same SQL-injection-safety rules as `read_sky_nodes_raw_in_schema`:
+/// `schema` MUST be `"main"` or an alphanumeric alias from
+/// `get_federated_schemas`.
+///
+/// Q3 Option B (federated link resolution): the `path_to_idx`,
+/// `name_to_idx`, and `alias_to_path` maps passed in are built across
+/// the MERGED node set (all schemas) by §E. So a link with
+/// `target_name = "FooBar"` from cu0's sky_links resolves to whichever
+/// schema has the FooBar node — first-insert-wins on cross-schema
+/// name collision (schema-order winner: main > cu0 > cu1 > ...).
+fn read_sky_links_raw_in_schema(
     conn: &Connection,
+    schema: &str,
     path_to_idx: &std::collections::HashMap<String, usize>,
     name_to_idx: &std::collections::HashMap<String, usize>,
     alias_to_path: &std::collections::HashMap<String, String>,
     nodes_mut: &mut [SkyNodeOut],
 ) -> Result<Vec<SkyLinkOut>, String> {
+    let sql = format!(
+        "SELECT source_path, target_name, link_type FROM {}.sky_links",
+        schema
+    );
     let mut stmt = conn
-        .prepare("SELECT source_path, target_name, link_type FROM sky_links")
-        .map_err(|e| format!("prepare links: {}", e))?;
+        .prepare(&sql)
+        .map_err(|e| format!("prepare links ({}): {}", schema, e))?;
     let rows = stmt
         .query_map([], |row| {
             let source_path: String = row.get(0)?;
@@ -575,14 +592,14 @@ fn read_sky_links_raw(
             let link_type: String = row.get(2)?;
             Ok((source_path, target_name, link_type))
         })
-        .map_err(|e| format!("query links: {}", e))?;
+        .map_err(|e| format!("query links ({}): {}", schema, e))?;
 
     // Reserve roughly the expected capacity to avoid reallocs. For the
     // target universe (232k links) this saves a handful of vec grows.
     let mut out: Vec<SkyLinkOut> = Vec::with_capacity(256 * 1024);
 
     for r in rows {
-        let (source_path, target_name, link_type) = r.map_err(|e| format!("row links: {}", e))?;
+        let (source_path, target_name, link_type) = r.map_err(|e| format!("row links ({}): {}", schema, e))?;
 
         // Source id comes from the already-loaded node list via path.
         // Orphan edge (source_path not in sky_nodes) gets skipped — we
@@ -646,6 +663,19 @@ fn read_sky_links_raw(
         });
     }
     Ok(out)
+}
+
+/// Back-compat wrapper. Identical to pre-MIG-061 behavior — reads only
+/// from the bare `sky_links` table (which SQLite resolves to `main.sky_links`).
+#[allow(dead_code)] // Kept for back-compat / clarity; primary call site is §E
+fn read_sky_links_raw(
+    conn: &Connection,
+    path_to_idx: &std::collections::HashMap<String, usize>,
+    name_to_idx: &std::collections::HashMap<String, usize>,
+    alias_to_path: &std::collections::HashMap<String, String>,
+    nodes_mut: &mut [SkyNodeOut],
+) -> Result<Vec<SkyLinkOut>, String> {
+    read_sky_links_raw_in_schema(conn, "main", path_to_idx, name_to_idx, alias_to_path, nodes_mut)
 }
 
 /// Back-compat shim — merges `cache_boot_snapshot_core` + `_graph` into the
