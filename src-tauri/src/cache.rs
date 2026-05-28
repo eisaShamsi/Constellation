@@ -426,6 +426,24 @@ fn is_federated_sky_ready(conn: &Connection, schemas: &[String]) -> bool {
 
 /// Sky View snapshot from the persisted sky_* tables. Linear in rows,
 /// no JS-side iteration, no IPC re-serialization of raw note_links.
+///
+/// **MIG-061 (federation):** queries every schema in
+/// `get_federated_schemas()` — `main` plus every attached cUniverse
+/// (`cu0`, `cu1`, …) — and merges the result. The merge:
+///
+/// 1. Resolves Q4 Option A readiness: if any schema lags on
+///    sky_schema_version, returns is_ready=false (frontend falls back
+///    to legacy `buildSkyData`).
+/// 2. Concatenates nodes across all schemas.
+/// 3. Builds `path_to_idx` / `name_to_idx` / `alias_to_path` from the
+///    MERGED node set (Q3 Option B: federated link resolution; cross-
+///    universe wikilinks resolve to whichever schema has the target,
+///    deterministic schema-order winner via first-insert-wins).
+/// 4. Concatenates links across all schemas, resolving each one against
+///    the merged maps.
+///
+/// Single-universe (no cUniverses) behavior is byte-identical to the
+/// pre-MIG-061 path: schemas=["main"], no extra overhead.
 #[tauri::command]
 pub fn cache_boot_snapshot_sky(app: tauri::AppHandle) -> Result<BootSnapshotSky, String> {
     let mut timings: Vec<(String, u64)> = Vec::new();
@@ -434,25 +452,53 @@ pub fn cache_boot_snapshot_sky(app: tauri::AppHandle) -> Result<BootSnapshotSky,
     let _ = crate::search::ensure_search_db_ready(&app);
     timings.push(("ensure_db".into(), t0.elapsed().as_millis() as u64));
 
+    // MIG-061 §A — collect schemas to query.
+    let schemas = get_federated_schemas(&app);
+    let is_federated = schemas.len() > 1;
+
+    // Pick the right connection:
+    //   - Single-universe → bare open_reader (cheaper, no ATTACH state).
+    //   - Federated      → the warm federated_conn (has all cu* ATTACHed).
+    //
+    // `state` lifetime: tauri's State<T> is reference-counted, so binding
+    // it at function scope keeps the underlying `Arc<SearchState>` alive
+    // for as long as `fed_guard` borrows from it.
     let t1 = Instant::now();
-    let conn = open_reader(&app)?;
+    let state = app.state::<crate::search::SearchState>();
+    let bare_conn;
+    let fed_guard;
+    let conn: &Connection;
+    if is_federated {
+        fed_guard = state.federated_conn.lock()
+            .map_err(|e| format!("federated_conn lock poisoned: {}", e))?;
+        if let Some(c) = fed_guard.as_ref() {
+            conn = c;
+        } else {
+            // Federation context advertised cUniverses but federated_conn
+            // is None — context-not-ready race during a universe switch.
+            // Return empty + is_ready=false; frontend falls back.
+            timings.push(("open_reader".into(), t1.elapsed().as_millis() as u64));
+            return Ok(BootSnapshotSky {
+                nodes: Vec::new(),
+                links: Vec::new(),
+                is_ready: false,
+                timings_ms: timings,
+            });
+        }
+    } else {
+        bare_conn = open_reader(&app)?;
+        conn = &bare_conn;
+    }
     timings.push(("open_reader".into(), t1.elapsed().as_millis() as u64));
 
-    // Readiness gate. If the back-fill hasn't stamped yet, return empty
-    // + is_ready=false so the frontend falls back to the legacy path.
-    let stored_version: i64 = conn
-        .query_row(
-            "SELECT version FROM schema_versions WHERE module = 'sky'",
-            [],
-            |row| row.get(0),
-        )
-        .unwrap_or(0);
-    let is_ready = stored_version >= crate::search::SKY_SCHEMA_VERSION;
-    if !is_ready {
+    // MIG-061 §D — federated readiness gate (Q4 Option A: all-or-nothing).
+    // Every schema must have stamped sky_schema_version >= SKY_SCHEMA_VERSION.
+    // If any schema's back-fill is still in flight, return is_ready=false.
+    if !is_federated_sky_ready(conn, &schemas) {
         return Ok(BootSnapshotSky {
             nodes: Vec::new(),
             links: Vec::new(),
-            is_ready,
+            is_ready: false,
             timings_ms: timings,
         });
     }
@@ -467,67 +513,99 @@ pub fn cache_boot_snapshot_sky(app: tauri::AppHandle) -> Result<BootSnapshotSky,
     // Query order matters: nodes first so we can build the
     // path→id / name→idx maps used to resolve link source strings
     // and accumulate incoming counts in a single links pass.
+    //
+    // MIG-061 federation: same strategy, repeated per schema. Each
+    // per-schema `prepare` is cheap (~µs) on the warm connection;
+    // the cost is dominated by row materialization.
 
     let t2 = Instant::now();
-    // Scan 1: nodes, flat.
-    let mut nodes = read_sky_nodes_raw(&conn)?;
+    // Scan 1: nodes from every schema, concatenated.
+    let mut nodes: Vec<SkyNodeOut> = Vec::new();
+    for schema in &schemas {
+        nodes.extend(read_sky_nodes_raw_in_schema(conn, schema)?);
+    }
     timings.push(("scan_nodes".into(), t2.elapsed().as_millis() as u64));
 
-    // Build O(1) lookup maps from the already-loaded node list:
-    //   - path → index (for source resolution in links)
-    //   - name (raw case) → index (for incoming count accumulation)
-    // Same memory, no extra DB work.
+    // Build O(1) lookup maps from the MERGED node list.
+    // Q3 Option B: federated link resolution — a wikilink in cu0
+    // targeting "FooBar" resolves to whichever schema has FooBar.
+    // First-insert-wins (schema-order winner) is deterministic because
+    // `nodes` was built in `schemas` order (main, cu0, cu1, ...).
     let mut path_to_idx: std::collections::HashMap<String, usize> =
         std::collections::HashMap::with_capacity(nodes.len());
     let mut name_to_idx: std::collections::HashMap<String, usize> =
         std::collections::HashMap::with_capacity(nodes.len());
     for (i, n) in nodes.iter().enumerate() {
         path_to_idx.insert(n.path.clone(), i);
-        name_to_idx.insert(n.name.clone(), i);
+        // First-insert-wins for cross-schema name collisions.
+        name_to_idx.entry(n.name.clone()).or_insert(i);
     }
 
     // MIG-004 §8: load the alias resolution map. alias_lower → path so
     // an inbound link targeting an aliased name still resolves to the
-    // renamed note's current row. ~1.4k entries on the reference
-    // universe (~80 KB heap). One scan, no per-row queries.
+    // renamed note's current row.
+    //
+    // MIG-061: load aliases from every schema. First-insert-wins on
+    // cross-schema alias collisions (schema-order deterministic).
     let t_alias = Instant::now();
     let mut alias_to_path: std::collections::HashMap<String, String> =
         std::collections::HashMap::new();
-    {
+    for schema in &schemas {
         // MIG-004 §10 audit-fix (4A-MED): ORDER BY path makes the
         // first-insert-wins behavior deterministic on alias collisions.
         // Without explicit ordering, SQLite's emission order is
         // implementation-defined (stable in practice, not guaranteed).
         // Path-sort matches the FS resolver's tiebreak in
         // libraries.rs::find_note_by_name_or_alias.
-        let mut stmt = conn
-            .prepare("SELECT alias_lower, path FROM note_aliases ORDER BY path")
-            .map_err(|e| format!("prepare aliases: {}", e))?;
+        let sql = format!(
+            "SELECT alias_lower, path FROM {}.note_aliases ORDER BY path",
+            schema
+        );
+        // Defensive: some cUniverses on older schemas may not have
+        // note_aliases yet. Skip with a soft error rather than failing
+        // the whole snapshot. (R3 in Plan risks.)
+        let stmt_res = conn.prepare(&sql);
+        let mut stmt = match stmt_res {
+            Ok(s) => s,
+            Err(e) => {
+                // Log via timings to keep the snapshot valid; consumers
+                // see an empty alias map for this schema (orphan-link
+                // resolution falls back to lowercase, which is the same
+                // behavior as a missing alias entry).
+                timings.push((format!("alias_skip:{}:{}", schema, e), 0));
+                continue;
+            }
+        };
         let rows = stmt
             .query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)))
-            .map_err(|e| format!("query aliases: {}", e))?;
+            .map_err(|e| format!("query aliases ({}): {}", schema, e))?;
         for r in rows {
-            let (alias, path) = r.map_err(|e| format!("row aliases: {}", e))?;
+            let (alias, path) = r.map_err(|e| format!("row aliases ({}): {}", schema, e))?;
             // First insert wins on collision — deterministic via the
-            // ORDER BY path above. Matches FS resolver tiebreak.
+            // ORDER BY path above + the schema-order loop.
             alias_to_path.entry(alias).or_insert(path);
         }
     }
     timings.push(("scan_aliases".into(), t_alias.elapsed().as_millis() as u64));
 
     let t3 = Instant::now();
-    // Scan 2: links, flat — no JOIN. Same loop resolves source
-    // (path → id) and accumulates both link_count (incoming, by target
-    // name) and outgoing_count (by source path). One pass = one set of
-    // counts + the final link list ready for serialization.
-    //
-    // MIG-004 §8: when target_name doesn't match any current note name,
-    // try the alias map before giving up. Fixes the rename-drops-edges
-    // symptom in the Sky View boot payload.
-    let links = read_sky_links_raw(&conn, &path_to_idx, &name_to_idx, &alias_to_path, &mut nodes)?;
+    // Scan 2: links from every schema, resolved against the MERGED maps.
+    // Q3 Option B: a link from cu0 targeting a name that exists in cu1
+    // resolves cross-universe via the merged name_to_idx.
+    let mut links: Vec<SkyLinkOut> = Vec::new();
+    for schema in &schemas {
+        links.extend(read_sky_links_raw_in_schema(
+            conn,
+            schema,
+            &path_to_idx,
+            &name_to_idx,
+            &alias_to_path,
+            &mut nodes,
+        )?);
+    }
     timings.push(("scan_links_and_counts".into(), t3.elapsed().as_millis() as u64));
 
-    Ok(BootSnapshotSky { nodes, links, is_ready, timings_ms: timings })
+    Ok(BootSnapshotSky { nodes, links, is_ready: true, timings_ms: timings })
 }
 
 /// MIG-061 §B — schema-parameterized variant of the sky_nodes scan.
