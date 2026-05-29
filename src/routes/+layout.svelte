@@ -6407,7 +6407,41 @@
 				</button>
 			</div>
 
-			{#if isHome && sidebarTab}
+			{#if rightSidebarTab === 'tags'}
+				<!-- Tags tab — universe-wide; pulled OUT of the note-gate so it
+				     renders with or without an open note, and so the gate below
+				     keeps narrowing sidebarTab non-null for the other panels. -->
+				<div class="rs-section rs-full-height">
+					<div class="rs-header rs-header-with-toggle">
+						<span>{$t('panels.tags')}</span>
+						<span class="rs-tag-toggle">
+							<button class:active={tagView === 'note'} onclick={() => tagView = 'note'}>{$t('panels.tagsThisNote') || 'This note'}</button>
+							<button class:active={tagView === 'all'} onclick={() => tagView = 'all'}>{$t('panels.tagsAll') || 'All tags'}</button>
+						</span>
+					</div>
+					{#if tagView === 'note'}
+						{#if sidebarTab && activeNoteTags.length > 0}
+							<div class="rs-note-tags">
+								{#each activeNoteTags as tag}
+									<button class="rs-tag-chip" onclick={() => handleTagClick(tag)}>
+										<span class="rs-tag-hash">#</span>{tag}
+									</button>
+								{/each}
+							</div>
+						{:else}
+							<div class="rs-empty">{sidebarTab ? $t('panels.noTags') : $t('panels.noNoteSelected')}</div>
+						{/if}
+					{:else}
+						<!-- Universe-wide federated tags (allLibraryTags). Click →
+						     handleTagClick → federated Search Hub. -->
+						{#if Object.keys(allLibraryTags).length > 0}
+							<TagsPanel tags={allLibraryTags} onTagClick={handleTagClick} />
+						{:else}
+							<div class="rs-empty">{$t('panels.noTags')}</div>
+						{/if}
+					{/if}
+				</div>
+			{:else if isHome && sidebarTab}
 				{#if rightSidebarTab === 'properties'}
 					<!-- Properties Panel (interactive editor) -->
 					<div class="rs-section">
@@ -6470,40 +6504,6 @@
 							onConfidenceChange={applyConfidenceLocally}
 							onArchive={applyArchiveLocally}
 						/>
-					</div>
-				{:else if rightSidebarTab === 'tags'}
-					<!-- Tags: 'note' = open note's tags; 'all' = universe-wide
-					     federated tag tree (Tag Browser, task #12). -->
-					<div class="rs-section rs-full-height">
-						<div class="rs-header rs-header-with-toggle">
-							<span>{$t('panels.tags')}</span>
-							<span class="rs-tag-toggle">
-								<button class:active={tagView === 'note'} onclick={() => tagView = 'note'}>{$t('panels.tagsThisNote') || 'This note'}</button>
-								<button class:active={tagView === 'all'} onclick={() => tagView = 'all'}>{$t('panels.tagsAll') || 'All tags'}</button>
-							</span>
-						</div>
-						{#if tagView === 'note'}
-							{#if activeNoteTags.length > 0}
-								<div class="rs-note-tags">
-									{#each activeNoteTags as tag}
-										<button class="rs-tag-chip" onclick={() => handleTagClick(tag)}>
-											<span class="rs-tag-hash">#</span>{tag}
-										</button>
-									{/each}
-								</div>
-							{:else}
-								<div class="rs-empty">{$t('panels.noTags')}</div>
-							{/if}
-						{:else}
-							<!-- Universe-wide federated tags. allLibraryTags already
-							     aggregates parent + cUniverse counts (MIG-061 §M /
-							     MIG-062 §A). Click → handleTagClick → federated Search Hub. -->
-							{#if Object.keys(allLibraryTags).length > 0}
-								<TagsPanel tags={allLibraryTags} onTagClick={handleTagClick} />
-							{:else}
-								<div class="rs-empty">{$t('panels.noTags')}</div>
-							{/if}
-						{/if}
 					</div>
 				{:else if rightSidebarTab === 'star'}
 					<!-- Local star centered on the active note -->
