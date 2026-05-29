@@ -1078,6 +1078,37 @@
 	let fiveActsNotes = $state<FiveActsNoteEntry[]>([]);
 	let fiveActsExpanded = $state(true);
 
+	// MIG-062 §E — federated grouping for the Five Acts + Workspace Bases
+	// sidebar sections. Active-universe entries (no universe_name) render
+	// normally; cUniverse entries group under collapsible per-universe
+	// sub-headers (collapsed by default — Boss "maybe just hide it"). The
+	// expanded-Sets track which cUniverse sub-groups are open.
+	let expandedCuFiveActs = $state<Set<string>>(new Set());
+	let expandedCuBases = $state<Set<string>>(new Set());
+	const fiveActsActive = $derived(fiveActsNotes.filter(n => !n.universe_name));
+	const fiveActsByCu = $derived.by(() => {
+		const m = new Map<string, FiveActsNoteEntry[]>();
+		for (const n of fiveActsNotes) {
+			if (!n.universe_name) continue;
+			(m.get(n.universe_name) ?? m.set(n.universe_name, []).get(n.universe_name)!).push(n);
+		}
+		return m;
+	});
+	const basesActive = $derived(workspaceBases.filter(b => !b.universe_name));
+	const basesByCu = $derived.by(() => {
+		const m = new Map<string, WorkspaceBaseEntry[]>();
+		for (const b of workspaceBases) {
+			if (!b.universe_name) continue;
+			(m.get(b.universe_name) ?? m.set(b.universe_name, []).get(b.universe_name)!).push(b);
+		}
+		return m;
+	});
+	function toggleCuGroup(set: Set<string>, key: string): Set<string> {
+		const next = new Set(set);
+		if (next.has(key)) next.delete(key); else next.add(key);
+		return next;
+	}
+
 	// MIG-056 §H — federation warnings (skip_unavailable cUniverses).
 	// Refreshed on boot + on universe switch; surfaces in the status bar
 	// when length > 0. Click → popup with details.
@@ -2525,6 +2556,13 @@
 					}
 				}
 			} catch {}
+			// MIG-062 §E — re-fetch the federated filesystem-walk surfaces so
+			// cUniverse Five Acts notes + Workspace Bases appear once federation
+			// settles. Manifest-based enum means they're usually present at the
+			// first call, but this re-fetch is cheap insurance + covers the
+			// universe-switch case.
+			try { listFiveActsNotes().then(n => fiveActsNotes = n).catch(() => {}); } catch {}
+			try { listWorkspaceBases().then(b => workspaceBases = b).catch(() => {}); } catch {}
 		});
 		cleanupFns.push(() => { try { unlistenFederationReady(); } catch {} });
 
@@ -5038,7 +5076,7 @@
 							</button>
 							{#if fiveActsExpanded}
 								<div class="library-tree">
-									{#each fiveActsNotes as note (note.absolute_path)}
+									{#each fiveActsActive as note (note.absolute_path)}
 										<button
 											class="ws-base-item"
 											class:active={$activeTab?.path === note.absolute_path}
@@ -5048,6 +5086,28 @@
 											<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.5; flex-shrink: 0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
 											<span class="ws-base-name" dir={detectDir(note.display_name)}>{note.display_name}</span>
 										</button>
+									{/each}
+									<!-- MIG-062 §E — federated cUniverse Five Acts, collapsible per universe -->
+									{#each [...fiveActsByCu] as [cuName, notes] (cuName)}
+										<button class="ws-cu-group" onclick={() => expandedCuFiveActs = toggleCuGroup(expandedCuFiveActs, cuName)} title={cuName}>
+											<svg class="v-chev" class:expanded={expandedCuFiveActs.has(cuName)} width="8" height="8" viewBox="0 0 10 10"><path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/></svg>
+											<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.5; flex-shrink: 0;"><circle cx="12" cy="12" r="6"/><line x1="6" y1="12" x2="18" y2="12"/><path d="M9.5 6.5a8.5 8.5 0 010 11"/><path d="M14.5 6.5a8.5 8.5 0 000 11"/></svg>
+											<span class="ws-cu-group-name" dir={detectDir(cuName)}>{cuName}</span>
+											<span class="child-universe-count">{notes.length}</span>
+										</button>
+										{#if expandedCuFiveActs.has(cuName)}
+											{#each notes as note (note.absolute_path)}
+												<button
+													class="ws-base-item ws-cu-item"
+													class:active={$activeTab?.path === note.absolute_path}
+													onclick={() => window.dispatchEvent(new CustomEvent('constellation:open-note', { detail: { path: note.absolute_path } }))}
+													title={note.relative_path}
+												>
+													<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.5; flex-shrink: 0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+													<span class="ws-base-name" dir={detectDir(note.display_name)}>{note.display_name}</span>
+												</button>
+											{/each}
+										{/if}
 									{/each}
 								</div>
 							{/if}
@@ -5066,7 +5126,7 @@
 							</button>
 							{#if workspaceBasesExpanded}
 								<div class="library-tree">
-									{#each workspaceBases as base}
+									{#each basesActive as base}
 										<button
 											class="ws-base-item"
 											class:active={$activeTab?.path === base.path}
@@ -5084,6 +5144,30 @@
 											<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.5; flex-shrink: 0;"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
 											<span class="ws-base-name">{base.name}</span>
 										</button>
+									{/each}
+									<!-- MIG-062 §E — federated cUniverse bases, collapsible per universe.
+									     READ-ONLY: open-only, NO context menu (deleting/renaming a
+									     cUniverse's base would violate the read-only guarantee). -->
+									{#each [...basesByCu] as [cuName, cuBases] (cuName)}
+										<button class="ws-cu-group" onclick={() => expandedCuBases = toggleCuGroup(expandedCuBases, cuName)} title={cuName}>
+											<svg class="v-chev" class:expanded={expandedCuBases.has(cuName)} width="8" height="8" viewBox="0 0 10 10"><path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/></svg>
+											<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.5; flex-shrink: 0;"><circle cx="12" cy="12" r="6"/><line x1="6" y1="12" x2="18" y2="12"/><path d="M9.5 6.5a8.5 8.5 0 010 11"/><path d="M14.5 6.5a8.5 8.5 0 000 11"/></svg>
+											<span class="ws-cu-group-name" dir={detectDir(cuName)}>{cuName}</span>
+											<span class="child-universe-count">{cuBases.length}</span>
+										</button>
+										{#if expandedCuBases.has(cuName)}
+											{#each cuBases as base (base.path)}
+												<button
+													class="ws-base-item ws-cu-item"
+													class:active={$activeTab?.path === base.path}
+													onclick={() => openNoteTab(base.path, cuName, '#7c3aed')}
+													title={base.name}
+												>
+													<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.5; flex-shrink: 0;"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+													<span class="ws-base-name">{base.name}</span>
+												</button>
+											{/each}
+										{/if}
 									{/each}
 								</div>
 							{/if}
@@ -7279,6 +7363,20 @@
 	.ws-base-item:hover { background: var(--bg-hover); color: var(--text-normal); }
 	.ws-base-item.active { background: var(--bg-active); color: var(--text-normal); }
 	.ws-base-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+	/* MIG-062 §E — federated cUniverse sub-group header (Five Acts / Bases). */
+	.ws-cu-group {
+		display: flex; align-items: center; gap: 5px; width: 100%;
+		padding: 2px 12px 2px 18px; background: none; border: none;
+		color: var(--text-muted); font-size: 0.72rem; font-family: inherit;
+		cursor: pointer; text-align: start; border-radius: 3px;
+	}
+	.ws-cu-group:hover { background: var(--bg-hover); color: var(--text-normal); }
+	.ws-cu-group .v-chev { transition: transform 0.12s; flex-shrink: 0; }
+	.ws-cu-group .v-chev.expanded { transform: rotate(90deg); }
+	.ws-cu-group-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	/* cUniverse items nest one level deeper than active-universe items. */
+	.ws-cu-item { padding-inline-start: 32px; }
 
 	.empty-sidebar { padding: 20px 16px; text-align: center; }
 	.empty-sidebar p { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 10px; }

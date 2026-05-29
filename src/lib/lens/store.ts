@@ -71,6 +71,10 @@ export interface FiveActsNoteEntry {
 	relative_path: string;
 	/** Absolute filesystem path — same file as `universe_root + relative_path`. */
 	absolute_path: string;
+	/** MIG-062 — undefined for the active universe; the cUniverse's display
+	 *  name for a federated entry. The sidebar groups by this into collapsible
+	 *  per-universe sub-groups. */
+	universe_name?: string;
 }
 
 /**

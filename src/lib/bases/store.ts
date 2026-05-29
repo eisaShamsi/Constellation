@@ -51,6 +51,9 @@ export interface WorkspaceBaseEntry {
 	name: string;
 	path: string;
 	modified: number;
+	/** MIG-062 — undefined for the active universe; the cUniverse's display
+	 *  name for a federated entry. Sidebar groups by this. */
+	universe_name?: string;
 }
 
 /**
