@@ -71,15 +71,17 @@
 
 <div class="tags-panel">
 	{#if Object.keys(tags).length > 0}
-		<div class="tp-sort">
-			<button class:active={sortMode === 'az'} onclick={() => sortMode = 'az'} title={$t('tagsPanel.sortAz') || 'A → Z'}>A→Z</button>
-			<button class:active={sortMode === 'za'} onclick={() => sortMode = 'za'} title={$t('tagsPanel.sortZa') || 'Z → A'}>Z→A</button>
-			<button class:active={sortMode === 'count'} onclick={() => sortMode = 'count'} title={$t('tagsPanel.sortCount') || 'By count'}>#</button>
-		</div>
-	{/if}
-	{#if Object.keys(tags).length > 5}
-		<div class="tp-filter">
-			<input type="text" dir="auto" placeholder="Filter tags..." value={filterQuery} oninput={(e) => filterQuery = (e.target as HTMLInputElement).value} />
+		<div class="tp-controls">
+			<div class="tp-sort">
+				<button class:active={sortMode === 'az'} onclick={() => sortMode = 'az'} title={$t('tagsPanel.sortAz') || 'A → Z'}>A→Z</button>
+				<button class:active={sortMode === 'za'} onclick={() => sortMode = 'za'} title={$t('tagsPanel.sortZa') || 'Z → A'}>Z→A</button>
+				<button class:active={sortMode === 'count'} onclick={() => sortMode = 'count'} title={$t('tagsPanel.sortCount') || 'By count'}>#</button>
+			</div>
+			{#if Object.keys(tags).length > 5}
+				<div class="tp-filter">
+					<input type="text" dir="auto" placeholder="Filter tags..." value={filterQuery} oninput={(e) => filterQuery = (e.target as HTMLInputElement).value} />
+				</div>
+			{/if}
 		</div>
 	{/if}
 	{#if Object.keys(tags).length === 0}
@@ -119,6 +121,15 @@
 
 <style>
 	.tags-panel { font-size: 0.8rem; }
+	/* Freeze the sort + filter bar at the top of the scrolling tag list.
+	   Sticky to the .rs-tags-body scrollport; bg bleeds the full width via the
+	   negative inline margin so scrolled tags never show through behind it. */
+	.tp-controls {
+		position: sticky; top: 0; z-index: 2;
+		background: var(--right-sidebar-bg, var(--bg-secondary));
+		margin-inline: -10px; padding-inline: 10px;
+		padding-bottom: 2px;
+	}
 	.tp-filter { padding: 2px 4px 4px; }
 	.tp-sort { display: flex; gap: 3px; padding: 4px 4px 6px; }
 	.tp-sort button {
