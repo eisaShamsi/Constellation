@@ -3060,7 +3060,8 @@
 		"colName": "الاسم",
 		"colHeadline": "الملخص",
 		"colCreated": "تاريخ الإنشاء",
-		"colPath": "المسار"
+		"colPath": "المسار",
+		"rowCap": "عرض أول {n} من أصل {total} صف"
 	},
 	"federation": {
 		"warningBadge": "أكوان فرعية غير متاحة",

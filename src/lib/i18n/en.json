@@ -3058,7 +3058,8 @@
 		"colName": "Name",
 		"colHeadline": "Summary",
 		"colCreated": "Created",
-		"colPath": "Path"
+		"colPath": "Path",
+		"rowCap": "Showing the first {n} of {total} rows"
 	},
 	"federation": {
 		"warningBadge": "cUniverses unavailable",

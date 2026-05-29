@@ -68,6 +68,23 @@
 
 	const cols = $derived(result ? dataColumns(result.columns) : []);
 
+	// MIG-065 §F.2 — render cap (CLAUDE.md Performance Rule 3: virtualize/limit
+	// lists that can exceed 50 items). `execute_lens` returns ALL matching rows
+	// (no SQL LIMIT yet), so over a 7,600-note universe an unscoped base would
+	// hand us thousands of rows; rendering them un-virtualized janks the UI. We
+	// cap the rendered rows and show an honest "showing N of total" notice — no
+	// silent truncation. (Proper row virtualization + an engine-side LIMIT/COUNT
+	// split are logged as a follow-up; this keeps the Simple default fast.)
+	const MAX_RENDER_ROWS = 500;
+	const visibleRows = $derived(result ? result.rows.slice(0, MAX_RENDER_ROWS) : []);
+	// `t` (this project's lookup) falls back active-locale → en → key, and en
+	// always carries `rowCap`, so this resolves even before §L fills the other
+	// 13 locales. Params are strings (the lookup's `Record<string,string>`).
+	const capNotice = $derived.by(() => {
+		if (!result || result.rows.length <= MAX_RENDER_ROWS) return '';
+		return $t('lensBlock.rowCap', { n: String(MAX_RENDER_ROWS), total: String(result.total_count) });
+	});
+
 	/** Open a row's note. Dispatches the same `constellation:open-note` event the
 	 *  Boss-validated inline table uses (handled in `+layout.svelte`), so every
 	 *  base/lens surface shares one open-note path. */
@@ -112,7 +129,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each result.rows as row (row.note_path)}
+						{#each visibleRows as row (row.note_path)}
 							<tr class="base-trow">
 								<td class="cell-name" dir={detectDir(row.name)}>
 									<button
@@ -137,6 +154,9 @@
 		{/if}
 
 		<div class="base-footer">
+			{#if capNotice}
+				<span class="base-cap">{capNotice}</span>
+			{/if}
 			<span class="base-time">{result.query_time_ms}ms</span>
 		</div>
 	{/if}
@@ -249,6 +269,13 @@
 		padding-top: 8px;
 		color: var(--text-faint);
 		font-size: 0.75rem;
+		display: flex;
+		justify-content: space-between;
+		align-items: baseline;
+		gap: 12px;
+	}
+	.base-cap {
+		color: var(--text-muted);
 	}
 
 	.base-state {
