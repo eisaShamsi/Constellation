@@ -3133,6 +3133,83 @@ fn parse_frontmatter(content: &str) -> (HashMap<String, String>, Vec<String>, St
     (properties, tags, body)
 }
 
+#[cfg(test)]
+mod tests_mig065_base_columns {
+    //! MIG-065 §B — pins `parse_frontmatter` → `properties_json` behavior, the
+    //! data foundation the unified Base's familiar table reads via
+    //! `json_extract(properties_json, '$.<key>')`. Proves the SCALAR case (the
+    //! Obsidian-recognizable common case, incl. RTL keys/values) is faithful,
+    //! and characterizes the known limitation for multi-line YAML lists and
+    //! nested objects — deferred to a follow-up parser upgrade + re-index
+    //! (logged as a PJ; the familiar table v1 surfaces scalar columns).
+    use super::parse_frontmatter;
+
+    #[test]
+    fn scalar_fields_are_faithful() {
+        let md = "---\nstatus: done\nauthor: Eisa\npriority: 3\n---\nbody";
+        let (props, _tags, body) = parse_frontmatter(md);
+        assert_eq!(props.get("status").map(String::as_str), Some("done"));
+        assert_eq!(props.get("author").map(String::as_str), Some("Eisa"));
+        assert_eq!(props.get("priority").map(String::as_str), Some("3"));
+        assert!(body.contains("body"));
+        // properties_json is serde_json::to_string(&props) — faithful for scalars.
+        let json = serde_json::to_string(&props).unwrap();
+        assert!(json.contains("\"status\":\"done\""));
+    }
+
+    #[test]
+    fn rtl_keys_and_values_are_faithful() {
+        let md = "---\nالعنوان: مرحبا بالعالم\nالحالة: مكتمل\n---\nنص";
+        let (props, _t, _b) = parse_frontmatter(md);
+        assert_eq!(props.get("العنوان").map(String::as_str), Some("مرحبا بالعالم"));
+        assert_eq!(props.get("الحالة").map(String::as_str), Some("مكتمل"));
+    }
+
+    #[test]
+    fn empty_value_quotes_and_colons_in_value() {
+        let md = "---\nempty:\nquoted: \"hello\"\nurl: https://example.com/x\n---\n";
+        let (props, _t, _b) = parse_frontmatter(md);
+        assert_eq!(props.get("empty").map(String::as_str), Some(""));
+        assert_eq!(props.get("quoted").map(String::as_str), Some("hello"));
+        // first-colon split keeps the remainder intact (URLs / times survive).
+        assert_eq!(props.get("url").map(String::as_str), Some("https://example.com/x"));
+    }
+
+    #[test]
+    fn inline_array_is_stored_as_literal_string() {
+        // v1 shape: inline arrays land as their literal text; the table shows
+        // them as-is. A follow-up upgrade can parse these to JSON arrays.
+        let md = "---\nrelated: [a, b, c]\n---\n";
+        let (props, _t, _b) = parse_frontmatter(md);
+        assert_eq!(props.get("related").map(String::as_str), Some("[a, b, c]"));
+    }
+
+    #[test]
+    fn known_limitation_multiline_list_is_dropped() {
+        // CHARACTERIZATION (not desired end-state): a non-`tags` multi-line YAML
+        // list stores an empty value for the key; the `- item` lines are not
+        // captured. Faithful list/nested storage is a deferred parser upgrade
+        // (needs a re-index). This assertion is flipped intentionally when that
+        // upgrade lands — its presence keeps the limitation visible.
+        let md = "---\nrelated:\n  - alpha\n  - beta\n---\n";
+        let (props, _t, _b) = parse_frontmatter(md);
+        assert_eq!(props.get("related").map(String::as_str), Some(""));
+        assert!(!props.contains_key("alpha"));
+        assert!(!props.contains_key("beta"));
+    }
+
+    #[test]
+    fn tags_are_excluded_from_properties() {
+        // tags live in tags_json, never properties_json — the table won't
+        // double-surface them as a property column.
+        let md = "---\ntags: [x, y]\nstatus: open\n---\n";
+        let (props, tags, _b) = parse_frontmatter(md);
+        assert!(!props.contains_key("tags"));
+        assert!(tags.contains(&"x".to_string()));
+        assert_eq!(props.get("status").map(String::as_str), Some("open"));
+    }
+}
+
 /// Extract outgoing wikilinks from note content.
 /// Applies Arabic normalization for consistent matching with title-based names.
 fn extract_wikilinks(content: &str) -> Vec<String> {
