@@ -375,6 +375,16 @@ export class GraphEngine {
 
 		// Build nodes
 		const sizeMul = this.config.nodeSize / 4;
+		// PJ-10 (post-MIG-061): count-aware damping. cache_boot_snapshot_sky
+		// now returns ALL cUniverse nodes (e.g. 8 751 on Eisa Universe), and
+		// §K finally delivers real `stratum` to the strata-sizing branch — so
+		// foundational nodes render large and crowd the federated view.
+		// Shrink node radius as the rendered set grows past ~1500. Single-
+		// universe graphs (≤1500 nodes; Eisa Cognitive Knowledge ≈ 987) are
+		// UNCHANGED — countDamp = 1. Floor at 0.4 so dense views stay legible.
+		const countDamp = filteredNodes.length <= 1500
+			? 1
+			: Math.max(0.4, Math.sqrt(1500 / filteredNodes.length));
 		this.nodes = filteredNodes.map((n, i) => {
 			nodeIdMap.set(n.id, i);
 			const hexStr = this.config.colorByLibrary ? (colorMap[n.libraryName] || '#a78bfa') : '#a78bfa';
@@ -389,7 +399,7 @@ export class GraphEngine {
 				x: (Math.random() - 0.5) * 800,
 				y: (Math.random() - 0.5) * 800,
 				z: (Math.random() - 0.5) * 400, // 3D depth spread
-				r: Math.max(2, baseR * (n.outgoingCount >= 5 ? 1.6 : 1) * sizeMul),
+				r: Math.max(2, baseR * (n.outgoingCount >= 5 ? 1.6 : 1) * sizeMul * countDamp),
 				color: hexToInt(hexStr),
 				colorHex: hexStr,
 				name: n.name.replace(/\.md$/, ''),
@@ -472,8 +482,12 @@ export class GraphEngine {
 		// Update node sizes if nodeSize changed
 		if ('nodeSize' in partial) {
 			const sizeMul = this.config.nodeSize / 4;
+			// PJ-10: same count-aware damping as the build path.
+			const countDamp = this.nodes.length <= 1500
+				? 1
+				: Math.max(0.4, Math.sqrt(1500 / this.nodes.length));
 			for (const n of this.nodes) {
-				n.r = Math.max(2, (2 + Math.sqrt(n.linkCount) * 1.5) * (n.outgoingCount >= 5 ? 1.6 : 1) * sizeMul);
+				n.r = Math.max(2, (2 + Math.sqrt(n.linkCount) * 1.5) * (n.outgoingCount >= 5 ? 1.6 : 1) * sizeMul * countDamp);
 			}
 		}
 

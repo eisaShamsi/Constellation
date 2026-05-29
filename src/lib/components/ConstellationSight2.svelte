@@ -295,7 +295,13 @@
 	function computeGravityWellLayout() {
 		if (simNodes.length === 0) return;
 
-		const maxR = Math.min(width, height) * 0.45;
+		// PJ-11: grow the well to use more of the canvas. 0.45 → 0.58 of the
+		// shorter dimension. The layout stays radial (centrality = distance
+		// from center, library = angular sector) — we do NOT stretch to an
+		// ellipse, which would distort the centrality encoding (Form-Aligns-
+		// To-Purpose). A circle on a wide screen keeps some horizontal margin
+		// by design; this just makes the circle bigger.
+		const maxR = Math.min(width, height) * 0.58;
 
 		// ── 1. Assign rings by centrality percentile ──
 		const sorted = [...simNodes].sort((a, b) => b.centrality - a.centrality);
@@ -972,7 +978,9 @@
 		}
 		const rangeX = maxX - minX || 1;
 		const rangeY = maxY - minY || 1;
-		zoom = Math.min(width / rangeX, height / rangeY) * 0.85;
+		// PJ-11: tighter fit margin (0.85 → 0.93) so the well uses more of the
+		// canvas after computeGravityWellLayout's larger maxR. Still circular.
+		zoom = Math.min(width / rangeX, height / rangeY) * 0.93;
 		zoom = Math.max(0.1, Math.min(3, zoom));
 		panX = 0; panY = 0;
 		requestDraw();
