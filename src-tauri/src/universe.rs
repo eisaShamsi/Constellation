@@ -422,7 +422,7 @@ fn resolve_libraries_recursive(universe_path: &Path, visited: &mut Vec<PathBuf>)
 /// `arabic::overrides::activate_layered_for_universe` (M8b-v2), and a
 /// natural hook point for any future layered-per-Universe surface (tag
 /// browser federation, sky view merging, etc.).
-fn resolve_child_universe_roots(parent: &Path) -> Vec<PathBuf> {
+pub(crate) fn resolve_child_universe_roots(parent: &Path) -> Vec<PathBuf> {
     let cdir = constellation_dir(parent);
     let meta_path = cdir.join("universe.json");
     let meta_path = if meta_path.exists() {
@@ -444,6 +444,37 @@ fn resolve_child_universe_roots(parent: &Path) -> Vec<PathBuf> {
         .filter_map(|s| fs::canonicalize(s).ok())
         .filter(|p| p.is_dir())
         .collect()
+}
+
+/// MIG-062 §B — recursively resolve ALL cUniverse roots in the federation
+/// tree (direct children, their children, …), de-duplicated and cycle-guarded.
+///
+/// Matches the federated set CNS sees (MIG-061) so the filesystem-walk sidebar
+/// surfaces (Five Acts, Workspace Bases) federate over exactly the same
+/// universes. The active `parent` itself is NOT included — only descendants.
+///
+/// Cycle guard: canonicalized paths in `visited` prevent an A→B→A federation
+/// loop (or a self-referencing universe.json) from spinning forever.
+pub(crate) fn resolve_child_universe_roots_recursive(parent: &Path) -> Vec<PathBuf> {
+    let mut out: Vec<PathBuf> = Vec::new();
+    let mut visited: Vec<PathBuf> = Vec::new();
+    let canon_parent = fs::canonicalize(parent).unwrap_or_else(|_| parent.to_path_buf());
+    visited.push(canon_parent);
+    let mut stack: Vec<PathBuf> = resolve_child_universe_roots(parent);
+    while let Some(root) = stack.pop() {
+        let canon = fs::canonicalize(&root).unwrap_or_else(|_| root.clone());
+        if visited.contains(&canon) {
+            continue; // cycle / duplicate guard
+        }
+        visited.push(canon);
+        // Descend into this cUniverse's own children before recording it,
+        // so the whole subtree is enumerated.
+        for child in resolve_child_universe_roots(&root) {
+            stack.push(child);
+        }
+        out.push(root);
+    }
+    out
 }
 
 // ─── Tauri Commands ───
@@ -1479,5 +1510,84 @@ fn collect_templates_recursive(dir: &Path, templates: &mut Vec<TemplateEntry>) {
                 path: path.to_string_lossy().to_string(),
             });
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::TempDir;
+
+    /// Write a `{root}/universe.json` (the fallback location read by
+    /// `resolve_child_universe_roots`) with the given children.
+    fn write_universe(root: &Path, name: &str, children: &[&Path]) {
+        fs::create_dir_all(root).unwrap();
+        let meta = UniverseMeta {
+            name: name.to_string(),
+            created: "2026-01-01".to_string(),
+            version: 1,
+            children: children
+                .iter()
+                .map(|p| p.to_string_lossy().to_string())
+                .collect(),
+            notes_folder: None,
+        };
+        fs::write(
+            root.join("universe.json"),
+            serde_json::to_string(&meta).unwrap(),
+        )
+        .unwrap();
+    }
+
+    fn canon_set(roots: &[PathBuf]) -> std::collections::HashSet<PathBuf> {
+        roots
+            .iter()
+            .map(|p| fs::canonicalize(p).unwrap_or_else(|_| p.clone()))
+            .collect()
+    }
+
+    // MIG-062 §B — recursive enumeration covers the whole federation tree.
+    #[test]
+    fn recursive_roots_covers_full_federation_tree() {
+        let tmp = TempDir::new().unwrap();
+        let a = tmp.path().join("A");
+        let b = tmp.path().join("B");
+        let c = tmp.path().join("C");
+        let d = tmp.path().join("D");
+        for p in [&a, &b, &c, &d] {
+            fs::create_dir_all(p).unwrap();
+        }
+        // A -> B, C ; B -> D ; C and D are leaves.
+        write_universe(&a, "A", &[&b, &c]);
+        write_universe(&b, "B", &[&d]);
+        write_universe(&c, "C", &[]);
+        write_universe(&d, "D", &[]);
+
+        let roots = resolve_child_universe_roots_recursive(&a);
+        let set = canon_set(&roots);
+        assert_eq!(set.len(), 3, "expected B, C, D — got {:?}", roots);
+        assert!(set.contains(&fs::canonicalize(&b).unwrap()));
+        assert!(set.contains(&fs::canonicalize(&c).unwrap()));
+        assert!(set.contains(&fs::canonicalize(&d).unwrap()));
+        // Parent A is NOT included.
+        assert!(!set.contains(&fs::canonicalize(&a).unwrap()));
+    }
+
+    // MIG-062 §B — a federation cycle (A->B->A) must terminate, not loop.
+    #[test]
+    fn recursive_roots_handles_cycle() {
+        let tmp = TempDir::new().unwrap();
+        let a = tmp.path().join("A");
+        let b = tmp.path().join("B");
+        for p in [&a, &b] {
+            fs::create_dir_all(p).unwrap();
+        }
+        write_universe(&a, "A", &[&b]);
+        write_universe(&b, "B", &[&a]); // cycle back to A
+        let roots = resolve_child_universe_roots_recursive(&a);
+        let set = canon_set(&roots);
+        // Terminates; B is included, A (parent) is guarded out.
+        assert!(set.contains(&fs::canonicalize(&b).unwrap()));
+        assert!(!set.contains(&fs::canonicalize(&a).unwrap()));
     }
 }
