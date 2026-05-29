@@ -48,7 +48,7 @@ cUniverse bases are **open-only** — you can open them to view, but you cannot 
 
 A few things are intentionally *not* federated, because they belong to the universe you're actively in:
 
-- The **per-note Tags panel** (right sidebar) shows the tags of the note you have open — it's about the open note, not the universe.
+- The **per-note Tags panel** (right sidebar Tags tab, *This note* mode) shows the tags of the note you have open — it's about the open note, not the universe. Flip the same tab to **All tags** for the federated, universe-wide **Tag Browser**: a sorted, filterable tree of every tag across the active Universe *and* its cUniverses (sort by A→Z, Z→A, or count; the header, sort bar, and filter stay frozen as you scroll). Click any tag to search it everywhere.
 - **Bookmarks** are scoped to the active Universe.
 - The **`Five Acts/` folder** is hidden from the file tree (in every Universe) because its note is surfaced through the dedicated Five Acts section instead — this avoids showing the same note twice. The file is never deleted; it stays on disk.
 

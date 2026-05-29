@@ -57,3 +57,36 @@ Orientation v2.42, this session log, MoCh-2026-05-29, English Federation help to
 ## What's next
 
 Build the universe-wide Tag Browser (task #12) — Architect first. Then MIG-063 (P2 read-paths), MIG-064 (P2+P4 write-paths).
+
+---
+
+## Tag Browser shipped (task #12) — PCS
+
+The universe-wide Tag Browser — the "new feature queued" from the MIG-062 block — built and Boss-tested across every sub-feature.
+
+| Commit | What |
+|---|---|
+| `ae180dbc` | Lightweight Architect (`docs/TAG-BROWSER-ARCHITECT.md`) — placement / access / click-to-filter / RTL / 15-locale |
+| `6d6bc2b7` | Universe-wide federated tag tree in the right-sidebar Tags tab (`This note | All tags` toggle; reusable `TagsPanel` fed by federated `allLibraryTags`) |
+| `fbda7f86` | Render the Tags tab without an open note (pulled out of the `{#if isHome && sidebarTab}` gate to a top-level branch) |
+| `f80956ee` | Polish (Boss remarks) — right sidebar 340→380 px; live total counter; `.rs-tags-body` scroll region; padded header |
+| `44325ad3` | Sort modes — A→Z / Z→A / by count (`#`, alphabetical tie-break), recursive across every tree level |
+| `e5b56c98` | Freeze sort + filter bar while scrolling — `.tp-controls` `position: sticky; top: 0` + full-width opaque bg |
+
+**Architecture footprint:** reused existing pieces end-to-end — `allLibraryTags` was already federated (MIG-061 §M), `TagsPanel` already existed, `handleTagClick` already routes to the federated Search Hub. Net new backend: **zero** (no IPC, no schema, no federation wiring). Frontend: the toggle + gate fix in `+layout.svelte`, sort + sticky bar in `TagsPanel.svelte`.
+
+**Boss-test (live, Eisa Universe, 21 068 distinct tags):**
+- All-tags tree renders federated, click-to-filter → Search Hub — ✅.
+- Width / counter / scroll / header padding — ✅ (after the polish round).
+- Sort A→Z / Z→A / # — ✅.
+- Header + sort + filter freeze on scroll, only tags move — ✅.
+
+**Federation scorecard unchanged at 8/14** — the Tag Browser was already counted closed in v2.41 (§M) / v2.42 (§A, navigator path); this is the discoverable front-end surface for it, not a new closure.
+
+## §PCS (this block)
+
+Orientation **v2.43** (Tag Browser shipped; v2.42 §"queued" superseded), this session log, `MoCh-2026-05-29-1400`, Federation help topic sentence (All-tags toggle + sort + freeze; 14 translations covered by batch #13), milestone tag `milestone/tag-browser-shipped`, push all unpushed commits, ZIP backup.
+
+## What's next
+
+**MIG-063** (P2 read-paths: Index entries/mentions, Knowledge Health, Unlinked Mentions, right-sidebar previews, Org Chart alias-map) — begins on explicit Eisa go. Then MIG-064 (P2+P4 write-paths). Clean stopping point reached.
