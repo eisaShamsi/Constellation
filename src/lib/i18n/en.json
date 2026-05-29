@@ -3067,7 +3067,16 @@
 		"constellationFields": "Constellation",
 		"readOnly": "read-only",
 		"allFieldsAdded": "All fields added.",
-		"sortBy": "Sort by this column"
+		"sortBy": "Sort by this column",
+		"sort": "Sort",
+		"sortTitle": "Sort",
+		"notSorted": "Not sorted yet.",
+		"toggleDirection": "Toggle direction",
+		"moveUp": "Move up",
+		"moveDown": "Move down",
+		"removeSort": "Remove",
+		"addSort": "Add a column to sort by",
+		"allSorted": "Every sortable column is already in the sort."
 	},
 	"federation": {
 		"warningBadge": "cUniverses unavailable",

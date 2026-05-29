@@ -3069,7 +3069,16 @@
 		"constellationFields": "كوكبة",
 		"readOnly": "للقراءة فقط",
 		"allFieldsAdded": "تمت إضافة كل الحقول.",
-		"sortBy": "رتّب حسب هذا العمود"
+		"sortBy": "رتّب حسب هذا العمود",
+		"sort": "ترتيب",
+		"sortTitle": "ترتيب",
+		"notSorted": "لا يوجد ترتيب بعد.",
+		"toggleDirection": "تبديل الاتجاه",
+		"moveUp": "تحريك لأعلى",
+		"moveDown": "تحريك لأسفل",
+		"removeSort": "إزالة",
+		"addSort": "أضف عمودًا للترتيب حسبه",
+		"allSorted": "كل الأعمدة القابلة للترتيب مُضافة بالفعل."
 	},
 	"federation": {
 		"warningBadge": "أكوان فرعية غير متاحة",

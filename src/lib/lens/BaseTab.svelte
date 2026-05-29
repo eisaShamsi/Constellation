@@ -31,6 +31,7 @@
 	} from '$lib/lens/store';
 	import { dataColumns, columnLabel, renderCellValue, isSortable } from '$lib/lens/tableModel';
 	import BaseColumnPicker from '$lib/lens/BaseColumnPicker.svelte';
+	import BaseSortPanel from '$lib/lens/BaseSortPanel.svelte';
 
 	let {
 		path,
@@ -49,6 +50,7 @@
 	let error = $state<string | null>(null);
 	let loading = $state(true);
 	let pickerOpen = $state(false);
+	let sortPanelOpen = $state(false);
 	let saving = $state(false);
 	let saveError = $state<string | null>(null);
 
@@ -196,23 +198,45 @@
 		<div class="base-header">
 			<h2 class="base-name" dir={detectDir(result.lens_name)}>{result.lens_name}</h2>
 			<span class="base-count">{result.total_count}</span>
-			<div class="add-col-wrap">
-				<button
-					class="add-col-btn"
-					disabled={saving}
-					aria-haspopup="dialog"
-					aria-expanded={pickerOpen}
-					onclick={() => (pickerOpen = !pickerOpen)}
-				>
-					+ {$t('lensBlock.addColumn') || 'Add column'}
-				</button>
-				{#if pickerOpen}
-					<BaseColumnPicker
-						currentColumns={result.columns}
-						onAdd={addColumn}
-						onClose={() => (pickerOpen = false)}
-					/>
-				{/if}
+			<div class="base-actions">
+				<div class="sort-wrap">
+					<button
+						class="action-btn"
+						class:active={result.order.length > 0}
+						disabled={saving}
+						aria-haspopup="dialog"
+						aria-expanded={sortPanelOpen}
+						onclick={() => (sortPanelOpen = !sortPanelOpen)}
+					>
+						↕ {$t('lensBlock.sort') || 'Sort'}{result.order.length > 0 ? ` (${result.order.length})` : ''}
+					</button>
+					{#if sortPanelOpen}
+						<BaseSortPanel
+							order={result.order}
+							columns={result.columns}
+							onChange={persistOrder}
+							onClose={() => (sortPanelOpen = false)}
+						/>
+					{/if}
+				</div>
+				<div class="add-col-wrap">
+					<button
+						class="action-btn"
+						disabled={saving}
+						aria-haspopup="dialog"
+						aria-expanded={pickerOpen}
+						onclick={() => (pickerOpen = !pickerOpen)}
+					>
+						+ {$t('lensBlock.addColumn') || 'Add column'}
+					</button>
+					{#if pickerOpen}
+						<BaseColumnPicker
+							currentColumns={result.columns}
+							onAdd={addColumn}
+							onClose={() => (pickerOpen = false)}
+						/>
+					{/if}
+				</div>
 			</div>
 		</div>
 
@@ -335,12 +359,18 @@
 		font-variant-numeric: tabular-nums;
 	}
 
-	/* §G — "+ Add column" button + picker anchor */
+	/* §G/§G.2 — header action buttons (Sort · + Add column) + popover anchors */
+	.base-actions {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		margin-inline-start: auto; /* push the action group to the trailing edge */
+	}
+	.sort-wrap,
 	.add-col-wrap {
 		position: relative;
-		margin-inline-start: auto; /* push to the trailing edge */
 	}
-	.add-col-btn {
+	.action-btn {
 		background: none;
 		border: 1px solid var(--background-modifier-border);
 		border-radius: 6px;
@@ -351,13 +381,17 @@
 		cursor: pointer;
 		white-space: nowrap;
 	}
-	.add-col-btn:hover:not(:disabled) {
+	.action-btn:hover:not(:disabled) {
 		color: var(--interactive-accent);
 		border-color: var(--interactive-accent);
 	}
-	.add-col-btn:disabled {
+	.action-btn:disabled {
 		opacity: 0.5;
 		cursor: default;
+	}
+	.action-btn.active {
+		color: var(--interactive-accent);
+		border-color: var(--interactive-accent);
 	}
 
 	.base-table-scroll {
