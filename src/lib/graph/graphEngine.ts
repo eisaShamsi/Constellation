@@ -381,10 +381,10 @@ export class GraphEngine {
 		// foundational nodes render large and crowd the federated view.
 		// Shrink node radius as the rendered set grows past ~1500. Single-
 		// universe graphs (≤1500 nodes; Eisa Cognitive Knowledge ≈ 987) are
-		// UNCHANGED — countDamp = 1. Floor 0.18; exponent 0.85 (PJ-10 r2, ~0.22x at 8751 nodes).
+		// UNCHANGED — countDamp = 1. Floor 0.10; exponent 1.2 (PJ-10 r3, ~0.12x at 8751 nodes).
 		const countDamp = filteredNodes.length <= 1500
 			? 1
-			: Math.max(0.18, Math.pow(1500 / filteredNodes.length, 0.85));
+			: Math.max(0.10, Math.pow(1500 / filteredNodes.length, 1.2));
 		this.nodes = filteredNodes.map((n, i) => {
 			nodeIdMap.set(n.id, i);
 			const hexStr = this.config.colorByLibrary ? (colorMap[n.libraryName] || '#a78bfa') : '#a78bfa';
@@ -485,7 +485,7 @@ export class GraphEngine {
 			// PJ-10: same count-aware damping as the build path.
 			const countDamp = this.nodes.length <= 1500
 				? 1
-				: Math.max(0.18, Math.pow(1500 / this.nodes.length, 0.85));
+				: Math.max(0.10, Math.pow(1500 / this.nodes.length, 1.2));
 			for (const n of this.nodes) {
 				n.r = Math.max(2, (2 + Math.sqrt(n.linkCount) * 1.5) * (n.outgoingCount >= 5 ? 1.6 : 1) * sizeMul * countDamp);
 			}
@@ -2165,14 +2165,14 @@ export class GraphEngine {
 
 			// CE Phase 2: Stratum glow halo — complementary color for max contrast
 			if (n.stratum >= 4 && this.nodes.length >= 20) {
-				gfx.circle(sx, sy, r + 5);
+				gfx.circle(sx, sy, r + 5 * (this.nodes.length > 1500 ? 0.5 : 1)); // PJ-10 r3: halve frame in dense mode
 				gfx.fill({ color: complementaryColor(n.color), alpha: (n.stratum - 3) * 0.08 * alpha });
 			}
 
 			// CE Phase 5: Provenance origin glow — blue (received) / amber (discovered)
 			if (n.originType === 'received' || n.originType === 'discovered') {
 				const oColor = n.originType === 'received' ? 0x4A9EFF : 0xFFB347;
-				gfx.circle(sx, sy, r + 6);
+				gfx.circle(sx, sy, r + 6 * (this.nodes.length > 1500 ? 0.5 : 1)); // PJ-10 r3
 				gfx.fill({ color: oColor, alpha: 0.06 * alpha });
 			}
 
@@ -2180,14 +2180,14 @@ export class GraphEngine {
 			if (n.maturity && n.maturity !== 'seed') {
 				const mColor = MATURITY_COLORS[n.maturity] ?? 0x999999;
 				const mAlpha = n.maturity === 'wilting' ? 0.3 : 0.7;
-				gfx.circle(sx, sy, r + 1);
-				gfx.stroke({ width: 1.5, color: mColor, alpha: mAlpha * alpha });
+				gfx.circle(sx, sy, r + 1 * (this.nodes.length > 1500 ? 0.5 : 1)); // PJ-10 r3
+				gfx.stroke({ width: 1.5 * (this.nodes.length > 1500 ? 0.5 : 1), color: mColor, alpha: mAlpha * alpha });
 			}
 
 			// MOC gold ring
 			if (n.outgoingCount >= 5) {
-				gfx.circle(sx, sy, r + 1.5);
-				gfx.stroke({ width: 1.5, color: MOC_RING_COLOR, alpha: alpha });
+				gfx.circle(sx, sy, r + 1.5 * (this.nodes.length > 1500 ? 0.5 : 1)); // PJ-10 r3
+				gfx.stroke({ width: 1.5 * (this.nodes.length > 1500 ? 0.5 : 1), color: MOC_RING_COLOR, alpha: alpha });
 			}
 		}
 
