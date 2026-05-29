@@ -711,14 +711,23 @@ pub struct WorkspaceBaseEntry {
     pub name: String,      // display name from definition
     pub path: String,      // full file path
     pub modified: u64,     // last modified timestamp
+    /// MIG-062 — `None` for the active universe; `Some(name)` for a federated
+    /// cUniverse. The sidebar groups entries by this into collapsible
+    /// per-universe sub-groups. Read-only federation: a cUniverse's bases are
+    /// displayed, never written/moved/deleted (detach is lossless).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub universe_name: Option<String>,
 }
 
-#[tauri::command]
-pub fn list_workspace_bases(app: tauri::AppHandle) -> Result<Vec<WorkspaceBaseEntry>, String> {
-    let dir = workspace_bases_dir(&app)?;
+/// MIG-062 §D — scan ONE bases directory READ-ONLY (no create_dir_all).
+/// Returns entries tagged with `universe_name`. Missing/unreadable dir →
+/// empty Vec (non-fatal). Critical: this never writes into the directory,
+/// so federating over cUniverse bases dirs cannot mutate a cUniverse.
+fn scan_bases_dir(dir: &std::path::Path, universe_name: Option<String>) -> Vec<WorkspaceBaseEntry> {
     let mut entries = Vec::new();
-
-    let read = fs::read_dir(&dir).map_err(|e| format!("Failed to read workspace bases: {}", e))?;
+    let Ok(read) = fs::read_dir(dir) else {
+        return entries; // missing/unreadable — skip (read-only, non-fatal)
+    };
     for entry in read.flatten() {
         let path = entry.path();
         if path.extension().map(|e| e == "base").unwrap_or(false) {
@@ -743,7 +752,29 @@ pub fn list_workspace_bases(app: tauri::AppHandle) -> Result<Vec<WorkspaceBaseEn
                 name,
                 path: path.to_string_lossy().to_string(),
                 modified,
+                universe_name: universe_name.clone(),
             });
+        }
+    }
+    entries
+}
+
+#[tauri::command]
+pub fn list_workspace_bases(app: tauri::AppHandle) -> Result<Vec<WorkspaceBaseEntry>, String> {
+    // Active universe — its bases dir IS created if missing (original
+    // behavior preserved via workspace_bases_dir). universe_name = None.
+    let active_dir = workspace_bases_dir(&app)?;
+    let mut entries = scan_bases_dir(&active_dir, None);
+
+    // MIG-062 §D — federate READ-ONLY over the cUniverse tree. Each
+    // cUniverse's bases are read from its OWN .constellation/bases/ — with
+    // NO create_dir_all, so we never write into a cUniverse. Detaching a
+    // cUniverse leaves its bases intact ("the wheel is already there").
+    if let Ok(active_root) = crate::universe::active_universe_dir(&app) {
+        for cu_root in crate::universe::resolve_child_universe_roots_recursive(&active_root) {
+            let cu_name = crate::universe::universe_display_name(&cu_root);
+            let cu_bases = crate::universe::constellation_dir(&cu_root).join("bases");
+            entries.extend(scan_bases_dir(&cu_bases, Some(cu_name)));
         }
     }
 
