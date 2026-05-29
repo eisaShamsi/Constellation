@@ -33,6 +33,18 @@
 	let allNotesWithMeta: NoteWithMeta[] = $state([]);
 	let folderTrees: FileEntry[] = $state([]);
 	let tagMap: Record<string, number> = $state({});
+	// MIG-062 §A: re-sync tagMap when the federated `initialTags` prop updates.
+	// The federation:ready re-fetch in +layout.svelte refreshes allLibraryTags
+	// → the initialTags prop. Without this, the tag browser stayed frozen at
+	// the mount-time (parent-only) snapshot — federated cUniverse tags never
+	// appeared. Guard on non-empty so a transient empty boot payload never
+	// clobbers a good map. No $effect loop: reads a prop, writes a *different*
+	// $state var, never writes initialTags.
+	$effect(() => {
+		if (Object.keys(initialTags).length > 0) {
+			tagMap = initialTags;
+		}
+	});
 	let loading = $state(true);
 
 	// Browser state
