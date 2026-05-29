@@ -145,3 +145,28 @@ Eisa's direction: *"have both worlds"* — the familiar Obsidian-style Base + th
 **Decisions locked (Eisa, "proceed as you see fit"):** (1) YAML `.base`, old JSON ignored; (2) both standalone files + inline blocks; (3) curated picker + finite aggregations, no formula language v1; (4) one engine (extend `execute_lens`, retire `query_base`); (5) MIG-065 = Simple foundation, then 066 Links / 067 Epistemics; (6) Concept Paper v2.0 reconciliation first. ★ Strong yet Simple by default.
 
 **Artifacts:** `docs/MIG-065-constellation-base-unified-ARCHITECT.md` (dual-world umbrella) + `docs/MIG-065-constellation-base-unified-PLAN.md` (steps §A–§L, gates A→B-blocker→…→K-Boss→L). **Status: awaiting Eisa's Plan approval (the one Migration gate before code).** MIG-063/064 (federation read/write paths) remain queued but Base is now the active workstream.
+
+---
+
+## MIG-065 build cascade — §A–§F shipped (backend complete; §F frontend table → Boss test)
+
+Eisa approved the Plan ("Go"). Cascading; each § a commit with verification.
+
+| § | Commit | What | Verify |
+|---|---|---|---|
+| A | `d8af1d5c` | Concept Paper v2.0 (Dual-World reconciliation; §5.0 Strong-yet-Simple; §3 refusal reframed; roadmap → MIG-065+) | v1.4 preserved |
+| B | `5197749e` | `properties_json` faithful for **scalar** columns (characterization tests; RTL/empty/quotes/colons). Multi-line list/nested **dropped** — deferred parser upgrade (PJ). | 6 tests; blocker cleared for v1 scope |
+| C+D | `a89fc1a9` | Engine: `LensView::Table`; `prop.<key>` frontmatter columns via `resolve_dim` → `json_extract`; Text filters (is/contains/…); federated symmetry. | 94 lens tests |
+| E | `3c411031` | `discover_base_properties` command (federated json_each); **fix**: materializer used `lookup_dimension` (None for prop.*) → `resolve_dim`. | 97 lens tests |
+| F | `76de5ed7` | `LensResult.view`+`columns`; `LensBlockWidget._renderTable` — inline ` ```base view:table ` renders the familiar table (clickable name + declared columns incl. prop.*; RTL; created_at→date). | cargo check clean; tauri build OK (exe 19:44:47) |
+
+**Decisions/notes during build:**
+- **`prop.` prefix** chosen over the Architect's separate `property:` key — same user outcome, zero struct churn, aligns with the prefix-namespace research. Logged in §C+§D commit.
+- **Deferred (PJ candidates):** faithful list/nested `properties_json` (needs re-index); standalone `.base`-file-opens-as-table tab routing (remaining half of §F — inline block ships first); i18n keys `lensBlock.col*` (English fallbacks for the test; 15-locale at §L).
+- **Build infra:** recurring Windows-Defender LNK1104 lock on the debug test binary; rode past with a background retry-with-backoff loop. `cargo check --tests` (no link) used to surface real compile errors cleanly.
+
+**Pending:** §F Boss-test (Stage 1) → then §G (picker), §H (edit-in-place), §I (retire query_base), §J (audit), §K (staged Boss test), §L (PCS).
+
+**§F Boss-test — PASS** (2026-05-29 ~20:10 build). Table renders (15 rows); headers Name/Summary/status (raw-key defect fixed, `d3f9f3c3`); count badge accent+white; RTL note names right-align (cell-level dir). Polish commit `d3f9f3c3`.
+
+**Checkpoint (post-§F):** MIG-065 §A–§F shipped + committed (backend fully test-covered; inline `base view:table` familiar table Boss-validated). Remaining: §F.2 standalone `.base`-file-as-table tab routing (deferred from §F); §G add-column picker (couples to the full-tab table view — best done with §F.2); §H edit-in-place; §I retire `query_base`; §J audit; §K staged Boss test; §L PCS. All MIG-065 commits local (push at §L). Resumable: this log + per-§ commits are the trace.
