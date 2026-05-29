@@ -13,41 +13,63 @@
 	 * `LensBlockWidget._renderTable` can never drift (CLAUDE.md "secure the
 	 * winning — one source of truth").
 	 *
-	 * §F.2 scope = read-only familiar table (Strong-yet-Simple default). The
-	 * "+ Add column" picker + resize/reorder + `columns:` save path land in §G;
-	 * edit-in-place in §H.
+	 * §F.2 shipped the read-only familiar table. §G adds the tiered "+ Add
+	 * column" picker (Your fields / Constellation) + remove-column + the
+	 * `columns:` save path (`update_base_columns`). Filter/sort + resize/reorder
+	 * are §G.2; edit-in-place is §H.
 	 */
+	import { invoke } from '@tauri-apps/api/core';
 	import { t, dir } from '$lib/i18n';
 	import { detectDir } from '$lib/utils';
-	import { executeLens, type LensResult, type LensRow } from '$lib/lens/store';
+	import { executeLens, updateBaseColumns, type LensResult, type LensRow } from '$lib/lens/store';
 	import { dataColumns, columnLabel, renderCellValue } from '$lib/lens/tableModel';
+	import BaseColumnPicker from '$lib/lens/BaseColumnPicker.svelte';
 
 	let {
 		path,
 		content,
 	}: {
-		/** Absolute path of the `.base` file (used as a stable id; the `columns:`
-		 *  write-back in §G/§H targets it). */
+		/** Absolute path of the `.base` file. The source of truth — BaseTab
+		 *  (re-)reads it from disk keyed on this, so an in-tab column edit isn't
+		 *  shadowed by the parent tab's cached `content`. */
 		path: string;
-		/** Raw `.base` YAML text, loaded by `openNoteTab`. */
+		/** Raw `.base` YAML, loaded by `openNoteTab` — used only as an initial
+		 *  seed (avoids a flash before the disk read returns). */
 		content: string;
 	} = $props();
 
 	let result = $state<LensResult | null>(null);
 	let error = $state<string | null>(null);
 	let loading = $state(true);
+	let pickerOpen = $state(false);
+	let saving = $state(false);
+	let saveError = $state<string | null>(null);
 
-	// Re-evaluate whenever the `.base` YAML changes. Per CLAUDE.md Rule 2 (no
-	// $effect loops): the effect's only reactive dependency is `content`; it
-	// writes to disjoint state (`result`/`error`/`loading`) and never reads them
-	// reactively. `lastRun` is a plain (non-$state) var so the guard creates no
-	// reactivity. The captured `reqYaml` check drops out-of-order async results.
+	// The `.base` YAML, owned by this component. Seeded from the `content` prop
+	// to avoid a flash, then (re)loaded from disk keyed on `path` — the file is
+	// the source of truth (the parent tab's cached content can go stale after an
+	// in-tab column edit). Add/remove-column sets this to the YAML returned by
+	// `update_base_columns`, which re-runs the query below. Rule 2-safe: this
+	// effect reads `path`, writes `baseYaml`/`loadedPath`, never reads `baseYaml`.
+	let baseYaml = $state(content ?? '');
+	let loadedPath: string | null = null;
+	$effect(() => {
+		if (path === loadedPath) return; // re-read only when the file changes
+		loadedPath = path;
+		invoke<string>('read_note', { filePath: path })
+			.then((txt) => { baseYaml = txt; })
+			.catch(() => { /* keep the seeded content */ });
+	});
+
+	// Evaluate the lens whenever the YAML changes. Rule 2-safe: depends on
+	// `baseYaml`; writes only result/error/loading; `lastRun` is a plain var.
 	let lastRun: string | null = null;
 	$effect(() => {
-		const yaml = content ?? '';
-		if (yaml === lastRun) return;
-		lastRun = yaml;
-		const reqYaml = yaml;
+		const y = baseYaml ?? '';
+		if (!y.trim()) return; // wait for the disk read to populate baseYaml
+		if (y === lastRun) return;
+		lastRun = y;
+		const reqYaml = y;
 		loading = true;
 		error = null;
 		executeLens(reqYaml)
@@ -67,6 +89,31 @@
 	});
 
 	const cols = $derived(result ? dataColumns(result.columns) : []);
+
+	// ─── §G — add / remove column ───
+	// Both compute the new ordered column list and persist via
+	// `update_base_columns`, which returns the re-serialized YAML; assigning it
+	// to `baseYaml` re-runs the query effect. `note.name` is never offered for
+	// removal (it's the implicit clickable first column).
+	async function persistColumns(columns: string[]) {
+		saving = true;
+		saveError = null;
+		try {
+			baseYaml = await updateBaseColumns(path, columns);
+		} catch (e: unknown) {
+			saveError = typeof e === 'string' ? e : (e as Error)?.message ?? String(e);
+		} finally {
+			saving = false;
+		}
+	}
+	function addColumn(dim: string) {
+		if (!result) return;
+		persistColumns([...result.columns, dim]);
+	}
+	function removeColumn(dim: string) {
+		if (!result || result.columns.length <= 1) return; // a base keeps ≥1 column
+		persistColumns(result.columns.filter((c) => c !== dim));
+	}
 
 	// MIG-065 §F.2 — render cap (CLAUDE.md Performance Rule 3: virtualize/limit
 	// lists that can exceed 50 items). `execute_lens` returns ALL matching rows
@@ -113,6 +160,24 @@
 		<div class="base-header">
 			<h2 class="base-name" dir={detectDir(result.lens_name)}>{result.lens_name}</h2>
 			<span class="base-count">{result.total_count}</span>
+			<div class="add-col-wrap">
+				<button
+					class="add-col-btn"
+					disabled={saving}
+					aria-haspopup="dialog"
+					aria-expanded={pickerOpen}
+					onclick={() => (pickerOpen = !pickerOpen)}
+				>
+					+ {$t('lensBlock.addColumn') || 'Add column'}
+				</button>
+				{#if pickerOpen}
+					<BaseColumnPicker
+						currentColumns={result.columns}
+						onAdd={addColumn}
+						onClose={() => (pickerOpen = false)}
+					/>
+				{/if}
+			</div>
 		</div>
 
 		{#if result.rows.length === 0}
@@ -124,7 +189,17 @@
 						<tr>
 							<th class="th-name">{$t('lensBlock.colName') || 'Name'}</th>
 							{#each cols as c (c)}
-								<th dir="auto">{columnLabel(c, $t)}</th>
+								<th>
+									<span class="th-inner">
+										<span class="th-label" dir="auto">{columnLabel(c, $t)}</span>
+										<button
+											class="th-remove"
+											title={$t('lensBlock.removeColumn') || 'Remove column'}
+											aria-label={$t('lensBlock.removeColumn') || 'Remove column'}
+											onclick={() => removeColumn(c)}
+										>×</button>
+									</span>
+								</th>
 							{/each}
 						</tr>
 					</thead>
@@ -154,6 +229,9 @@
 		{/if}
 
 		<div class="base-footer">
+			{#if saveError}
+				<span class="base-save-error" dir="auto">{saveError}</span>
+			{/if}
 			{#if capNotice}
 				<span class="base-cap">{capNotice}</span>
 			{/if}
@@ -174,7 +252,7 @@
 
 	.base-header {
 		display: flex;
-		align-items: baseline;
+		align-items: center;
 		gap: 10px;
 		margin-bottom: 12px;
 		flex-shrink: 0;
@@ -198,6 +276,31 @@
 		font-size: 0.78rem;
 		font-weight: 600;
 		font-variant-numeric: tabular-nums;
+	}
+
+	/* §G — "+ Add column" button + picker anchor */
+	.add-col-wrap {
+		position: relative;
+		margin-inline-start: auto; /* push to the trailing edge */
+	}
+	.add-col-btn {
+		background: none;
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 6px;
+		padding: 4px 11px;
+		font: inherit;
+		font-size: 0.82rem;
+		color: var(--text-muted);
+		cursor: pointer;
+		white-space: nowrap;
+	}
+	.add-col-btn:hover:not(:disabled) {
+		color: var(--interactive-accent);
+		border-color: var(--interactive-accent);
+	}
+	.add-col-btn:disabled {
+		opacity: 0.5;
+		cursor: default;
 	}
 
 	.base-table-scroll {
@@ -225,6 +328,32 @@
 		font-weight: 600;
 		font-size: 0.8rem;
 		white-space: nowrap;
+	}
+	/* §G — column header with a hover remove (×) */
+	.th-inner {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+	}
+	.th-remove {
+		flex-shrink: 0;
+		background: none;
+		border: none;
+		padding: 0 2px;
+		margin: 0;
+		font: inherit;
+		font-size: 1rem;
+		line-height: 1;
+		color: var(--text-faint);
+		cursor: pointer;
+		opacity: 0;
+		transition: opacity 0.12s;
+	}
+	.base-table th:hover .th-remove {
+		opacity: 1;
+	}
+	.th-remove:hover {
+		color: var(--text-error, #e53e3e);
 	}
 	.base-table td {
 		padding: 6px 12px;
@@ -276,6 +405,9 @@
 	}
 	.base-cap {
 		color: var(--text-muted);
+	}
+	.base-save-error {
+		color: var(--text-error, #e53e3e);
 	}
 
 	.base-state {

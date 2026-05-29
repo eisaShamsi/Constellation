@@ -3059,7 +3059,14 @@
 		"colHeadline": "Summary",
 		"colCreated": "Created",
 		"colPath": "Path",
-		"rowCap": "Showing the first {n} of {total} rows"
+		"rowCap": "Showing the first {n} of {total} rows",
+		"addColumn": "Add column",
+		"removeColumn": "Remove column",
+		"searchFields": "Search fields…",
+		"yourFields": "Your fields",
+		"constellationFields": "Constellation",
+		"readOnly": "read-only",
+		"allFieldsAdded": "All fields added."
 	},
 	"federation": {
 		"warningBadge": "cUniverses unavailable",

@@ -333,6 +333,55 @@ pub fn discover_base_properties(app: tauri::AppHandle) -> Result<Vec<String>, St
     discover_keys(&conn, &["main"])
 }
 
+/// MIG-065 §G — persist a new column list to a standalone `.base` file.
+///
+/// The add-column picker / remove-column gesture computes the new ordered
+/// column list (each entry a registered dimension name like `note.created_at`
+/// OR a `prop.<key>` frontmatter reference). This round-trips the file through
+/// `LensDefinition` — preserving `scope` / `where` / `order` / `view` — and
+/// rewrites only `columns:`. Returns the re-serialized YAML so the caller
+/// (`BaseTab.svelte`) re-renders without a second read.
+///
+/// Security: only `.base` files inside the active universe or a registered
+/// library (reuses `bases::validate_base_path`). Rejects an empty column list
+/// (the validator requires ≥1) and any column that doesn't resolve, so the
+/// file on disk stays valid + queryable.
+#[tauri::command]
+pub fn update_base_columns(
+    app: tauri::AppHandle,
+    file_path: String,
+    columns: Vec<String>,
+) -> Result<String, String> {
+    crate::bases::validate_base_path(&app, &file_path)?;
+    if !file_path.ends_with(".base") {
+        return Err("Not a .base file.".to_string());
+    }
+    if columns.is_empty() {
+        return Err("A base needs at least one column.".to_string());
+    }
+    for c in &columns {
+        if resolve_dim(c).is_none() {
+            return Err(format!("Unknown column dimension: {}", c));
+        }
+    }
+
+    let content = std::fs::read_to_string(&file_path)
+        .map_err(|e| format!("Failed to read base file: {}", e))?;
+    let mut def = parse_lens_yaml(&content).map_err(|e| e.to_string())?;
+    def.columns = columns
+        .into_iter()
+        .map(|d| super::definition::LensColumn { dimension: d })
+        .collect();
+    // Re-validate the modified definition before persisting.
+    validate(&def).map_err(|e| e.to_string())?;
+
+    let yaml = serde_yaml::to_string(&def)
+        .map_err(|e| format!("Failed to serialize base: {}", e))?;
+    std::fs::write(&file_path, &yaml)
+        .map_err(|e| format!("Failed to write base file: {}", e))?;
+    Ok(yaml)
+}
+
 /// Federated key discovery against `SearchState.federated_conn`. `state` is
 /// bound at function scope (not in an `if let`), so the lock guard is valid
 /// throughout — same structure as `execute_federated_query`.

@@ -502,6 +502,9 @@ pub fn run() {
             // MIG-065 §E — frontmatter-key discovery for the Base add-column
             // picker's "Your fields" tier (federated json_each over note_meta).
             lens::query::discover_base_properties,
+            // MIG-065 §G — persist the add/remove-column gesture: rewrite a
+            // `.base` file's `columns:` (round-trip through LensDefinition).
+            lens::query::update_base_columns,
             // MIG-055 §F — Five Acts sidebar enumerator. Lists `.md` files
             // in `{universe}/Five Acts/`. Returns FiveActsNoteEntry tuples
             // with display name + relative path + absolute path.

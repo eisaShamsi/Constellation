@@ -199,3 +199,46 @@ Resize/reorder, column add/remove, and filter/sort **all** require the `.base` `
 
 ### Open-note path
 `BaseTab` dispatches the existing `constellation:open-note` CustomEvent (listener at `+layout.svelte:2316`, resolves library by name then path-prefix) — the SAME path the Boss-validated inline `_renderTable` uses. One open-note path for every base/lens surface.
+
+### §F.2 build — landed (commits, cap, fixtures)
+
+| Commit | What | Verify |
+|---|---|---|
+| `97a8b52d` | `tableModel.ts` (shared) + `BaseTab.svelte` + livePreview refactor (uses tableModel, deleted dup `_labelFor`/`_renderCellValue`) + `.base` routing at both `NoteEditor` mounts in `+layout.svelte`. | svelte-check clean for all 4 files (3 remaining errors are pre-existing: `store.ts:2483` LinkLifecycle.fresh — known deferred; `PropertyEditor.svelte` ×2 — untouched). |
+| `85793fdd` | **Render cap (Perf Rule 3).** `execute_lens` has NO SQL LIMIT (`total_count == rows.len`); over 7,651 notes an unscoped base would render thousands of un-virtualized rows → BaseTab caps at **500** + honest `lensBlock.rowCap` footer ("showing the first N of total"). en+ar added; 13 locales fall back to en. | svelte-check clean. |
+
+**FOLLOW-UP (logged, PJ candidate):** proper row **virtualization** + an **engine-side `LIMIT`/separate `COUNT(*)`** split (so `execute_lens` doesn't materialize/IPC-transfer all 7,651 rows). The 500-cap is a Simple-default stopgap; the real fix lands with §G's engine work or a dedicated step.
+
+### Boss-test fixture + the active-universe finding
+
+- **Anomaly found:** the release registry (`%APPDATA%/world.uconstellation.app/universes.json`) marks **"كون عيسى"** active (4 notes, no `search.db`). But the universe actually worked in is **"Eisa Cognitive Knowledge"** (`E:\Constellation Universes\Eisa Cognitive Knowledge`) — `search.db` 1.77 GB, **7,651 notes**, mtime **2026-05-29 20:16** (the §F test window). No registry lists "Eisa Cognitive Knowledge" — tracked by neither the `world.uconstellation.app` nor the old `com.notesconstellation.app` registry. *(Unresolved why; not blocking — flagged for a later look.)*
+- **Resolution (no blocking question):** staged the test base in **both** universes' `.constellation/bases/` — harmless YAML view files — so whichever the app opens, it's in the Workspace Bases sidebar. `scan_bases_dir` lists any `.base` (JSON-parse fails on YAML → name falls back to the filename stem), so it shows regardless.
+- **Fixture:** `My Notes — overview.base` — minimal valid table lens (no where/order → zero validation risk): `columns: [note.name, note.created_at, prop.created]`. Verified read-only against the real DB: all 3 columns populate; names are Arabic (RTL cell test); `created` frontmatter on 7,646/7,651. Over 7,651 → caps to 500 + notice.
+
+**Pending:** rebuild (must include the cap) → verify binary mtime (Stage 0) → Stage-1 Boss test (open the base, see the familiar table). Then §G.
+
+### §F.2 Stage-1 Boss test — **PASS** (2026-05-29 ~21:08, build mtime 21:05:56)
+
+Eisa opened "My Notes — overview" on **Eisa Cognitive Knowledge**: full-tab table rendered, count badge **7651**, footer **"Showing the first 500 of 7651 rows"** (the cap works), Arabic note names right-aligned (RTL cell test), query **415 ms**. §F.2 validated. Binary mtime (21:05:56) post-dated the cap commit (20:58:20) — Stage 0 confirmed fresh.
+
+### Design insight from the Boss test → shapes §G (the add-column picker)
+
+Eisa's question: *"why two columns both titled Created/created? Is the lowercase one the cid_cn?"* — verified answer: the lowercase **`created`** is the note's **frontmatter `created:` field** (`prop.created`), NOT the cid_cn. It repeats `2026-04-14T09:22:41.795Z` because those notes were **bulk-imported in one batch** (7,587 of 7,651 share that timestamp; only 60 distinct values). The **cid_cn is a separate, unique-per-note field** (`20260414T092241Z_NOTE_24A7` … 1,000+ distinct) — *built from* the same created-timestamp + a unique suffix, which is why they look related. The capital **"Created"** was `note.created_at` (a registered Constellation dim → friendly date); the demo just picked two overlapping date fields — a confusing fixture choice. Fixture swapped to `[note.name, prop.stage, prop.maturity, prop.source]` (fields that actually vary: spark/birth/growth · seed/sapling/evergreen · Wikipedia/ويكيبيديا).
+
+**→ §G requirement (locked by this):** the add-column picker (and ideally the column headers themselves) MUST visually distinguish **"Your fields"** (frontmatter keys, raw names) from **"Constellation fields"** (registered dims, friendly labels, marked computed/read-only) — the Notion/Airtable tiered pattern + Concept Paper §4.4. Eisa's "two Createds" is the canonical motivating case: in the picker they'd sit in different sections ("Created — Constellation" vs "created — your field"), so the overlap reads as intentional, not a bug. Consider a subtle per-column-header marker (icon) for frontmatter vs Constellation columns so the distinction survives after the column is added.
+
+---
+
+## MIG-065 §G — the "+ Add column" picker (build plan + decisions)
+
+**Function in hand:** §G — the tiered add-column picker. The literal embodiment of "power = add a column, never learn to code."
+
+**Scope (tight, landable, Boss-testable):** add-column picker (tiered: **Your fields** = `discover_base_properties` / **Constellation fields** = registered dims, marked read-only) + **remove column** + the **`.base` `columns:` save+reload path**. **Filter/sort builders + resize/reorder are deferred to §G.2** (each its own commit; keeps §G focused on the thesis). Logged regrouping; Plan deliverables unchanged.
+
+**New IPC (additive — Predecessor note):** `lens::query::update_base_columns(app, file_path, columns: Vec<String>) -> Result<String,String>`. Round-trips the `.base` through `parse_lens_yaml` → sets `columns` → `validate` → `serde_yaml::to_string` → write; returns the new YAML so the tab re-renders without a separate read. Security: reuses `bases::validate_base_path` (made `pub(crate)`) — universe/library-scoped; rejects non-`.base`, empty columns, and unresolvable dims. Registered in `lib.rs`. *The old MVP's column save (`save_base_file`, JSON, via the orphaned `BaseView`) is NOT touched — it dies with `query_base` at §I.*
+
+**Reload mechanism:** BaseTab keeps a local `yaml` state seeded from the `content` prop (a `$effect` resyncs when the prop changes — Rule-2-safe: reads `content`, writes `yaml`, never reads `yaml`). Add/remove sets `yaml = <returned YAML>` → the query `$effect` re-runs `executeLens`. The parent tab's cached `content` goes briefly stale (only consumer is BaseTab) — acceptable; refreshed on reopen.
+
+**Constellation-fields source:** frontend `tableModel.ADDABLE_REGISTERED_DIMS = [note.created_at, note.headline, note.path]` (mirrors `dimensions.rs`; `note.name` excluded — always col 1). A `list_base_dimensions` command can replace this when MIG-066+ grow the registry (logged).
+
+**Files:** `bases.rs` (pub(crate) validate_base_path) · `lens/query.rs` (+update_base_columns) · `lib.rs` (+register) · `lens/store.ts` (+discoverBaseProperties, +updateBaseColumns) · `tableModel.ts` (+ADDABLE_REGISTERED_DIMS) · `BaseColumnPicker.svelte` (new) · `BaseTab.svelte` (integrate) · en+ar (`base.*` keys).

@@ -52,6 +52,20 @@ export function dataColumns(columns: string[]): string[] {
 }
 
 /**
+ * MIG-065 §G — registered Constellation dimensions offered in the add-column
+ * picker's "Constellation fields" tier. `note.name` is excluded (it's always
+ * the clickable first column). Mirrors the Rust registry in `dimensions.rs`;
+ * grows with MIG-066+ (link.*, source/content-type, stratum, …). A
+ * `list_base_dimensions` command can replace this once the registry is large
+ * enough to warrant a single backend source.
+ */
+export const ADDABLE_REGISTERED_DIMS: readonly string[] = [
+	'note.created_at',
+	'note.headline',
+	'note.path',
+];
+
+/**
  * Header label for a column dimension. `prop.<key>` columns show the raw
  * frontmatter key (the user's own vocabulary — never translated). Registered
  * dimensions resolve via i18n, falling back to the English literal when the

@@ -8,7 +8,9 @@ use std::time::Instant;
 // ─── Security ───
 
 /// Validate that a file path is within a registered library or the active universe's bases directory.
-fn validate_base_path(app: &tauri::AppHandle, file_path: &str) -> Result<(), String> {
+/// MIG-065 §G — `pub(crate)` so the unified lens engine's `update_base_columns`
+/// reuses the same universe/library scoping when it rewrites a `.base` file.
+pub(crate) fn validate_base_path(app: &tauri::AppHandle, file_path: &str) -> Result<(), String> {
     let target = fs::canonicalize(file_path)
         .or_else(|_| {
             // File may not exist yet (save); canonicalize parent

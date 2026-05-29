@@ -68,6 +68,27 @@ export async function executeLens(lensYaml: string): Promise<LensResult> {
 	return await invoke<LensResult>('execute_lens', { lensYaml });
 }
 
+/**
+ * MIG-065 §G — enumerate the distinct frontmatter keys across the active
+ * universe (+ federated cUniverses). Feeds the "+ Add column" picker's
+ * "Your fields" tier. Cheap (one `json_each` pass); federation-aware.
+ */
+export async function discoverBaseProperties(): Promise<string[]> {
+	return await invoke<string[]>('discover_base_properties');
+}
+
+/**
+ * MIG-065 §G — persist a new ordered column list to a standalone `.base` file.
+ * Each entry is a registered dimension name (`note.created_at`) or a
+ * `prop.<key>` frontmatter reference. Rust round-trips the file through
+ * `LensDefinition` (preserving scope/where/order/view) and returns the
+ * re-serialized YAML, which the caller feeds straight back into `executeLens`
+ * to re-render — no second read needed.
+ */
+export async function updateBaseColumns(filePath: string, columns: string[]): Promise<string> {
+	return await invoke<string>('update_base_columns', { filePath, columns });
+}
+
 /** One Five Acts host note entry from the sidebar enumerator. */
 export interface FiveActsNoteEntry {
 	/** File stem (filename without `.md`), e.g. "Observation — Recent Captures". */

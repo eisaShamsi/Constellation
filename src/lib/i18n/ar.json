@@ -3061,7 +3061,14 @@
 		"colHeadline": "الملخص",
 		"colCreated": "تاريخ الإنشاء",
 		"colPath": "المسار",
-		"rowCap": "عرض أول {n} من أصل {total} صف"
+		"rowCap": "عرض أول {n} من أصل {total} صف",
+		"addColumn": "إضافة عمود",
+		"removeColumn": "إزالة العمود",
+		"searchFields": "ابحث في الحقول…",
+		"yourFields": "حقولك",
+		"constellationFields": "كوكبة",
+		"readOnly": "للقراءة فقط",
+		"allFieldsAdded": "تمت إضافة كل الحقول."
 	},
 	"federation": {
 		"warningBadge": "أكوان فرعية غير متاحة",
