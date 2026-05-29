@@ -21,8 +21,15 @@
 	import { invoke } from '@tauri-apps/api/core';
 	import { t, dir } from '$lib/i18n';
 	import { detectDir } from '$lib/utils';
-	import { executeLens, updateBaseColumns, type LensResult, type LensRow } from '$lib/lens/store';
-	import { dataColumns, columnLabel, renderCellValue } from '$lib/lens/tableModel';
+	import {
+		executeLens,
+		updateBaseColumns,
+		updateBaseOrder,
+		type LensResult,
+		type LensRow,
+		type LensSort,
+	} from '$lib/lens/store';
+	import { dataColumns, columnLabel, renderCellValue, isSortable } from '$lib/lens/tableModel';
 	import BaseColumnPicker from '$lib/lens/BaseColumnPicker.svelte';
 
 	let {
@@ -115,6 +122,35 @@
 		persistColumns(result.columns.filter((c) => c !== dim));
 	}
 
+	// ─── §G.2 — sorting ───
+	/** Current sort direction for a column, or null if it isn't a sort key. */
+	function sortDir(dim: string): 'asc' | 'desc' | null {
+		return result?.order.find((o) => o.dimension === dim)?.direction ?? null;
+	}
+	/** §G.2 — click a header: sort by it ascending → descending → off (single
+	 *  sort; replaces any existing sort). Multi-column sort comes from the panel
+	 *  (§G.2b). Non-sortable columns (path / headline) don't respond. */
+	function cycleSort(dim: string) {
+		if (!result || !isSortable(dim)) return;
+		const cur = sortDir(dim);
+		let next: LensSort[];
+		if (cur === null) next = [{ dimension: dim, direction: 'asc' }];
+		else if (cur === 'asc') next = [{ dimension: dim, direction: 'desc' }];
+		else next = []; // desc → off
+		persistOrder(next);
+	}
+	async function persistOrder(order: LensSort[]) {
+		saving = true;
+		saveError = null;
+		try {
+			baseYaml = await updateBaseOrder(path, order);
+		} catch (e: unknown) {
+			saveError = typeof e === 'string' ? e : (e as Error)?.message ?? String(e);
+		} finally {
+			saving = false;
+		}
+	}
+
 	// MIG-065 §F.2 — render cap (CLAUDE.md Performance Rule 3: virtualize/limit
 	// lists that can exceed 50 items). `execute_lens` returns ALL matching rows
 	// (no SQL LIMIT yet), so over a 7,600-note universe an unscoped base would
@@ -187,11 +223,32 @@
 				<table class="base-table">
 					<thead>
 						<tr>
-							<th class="th-name">{$t('lensBlock.colName') || 'Name'}</th>
+							<th class="th-name">
+								<button
+									class="th-sort can-sort"
+									title={$t('lensBlock.sortBy') || 'Sort by this column'}
+									onclick={() => cycleSort('note.name')}
+								>
+									<span class="th-label">{$t('lensBlock.colName') || 'Name'}</span>
+									{#if sortDir('note.name')}
+										<span class="th-arrow">{sortDir('note.name') === 'asc' ? '↑' : '↓'}</span>
+									{/if}
+								</button>
+							</th>
 							{#each cols as c (c)}
 								<th>
 									<span class="th-inner">
-										<span class="th-label" dir="auto">{columnLabel(c, $t)}</span>
+										<button
+											class="th-sort"
+											class:can-sort={isSortable(c)}
+											title={isSortable(c) ? ($t('lensBlock.sortBy') || 'Sort by this column') : ''}
+											onclick={() => cycleSort(c)}
+										>
+											<span class="th-label" dir="auto">{columnLabel(c, $t)}</span>
+											{#if sortDir(c)}
+												<span class="th-arrow">{sortDir(c) === 'asc' ? '↑' : '↓'}</span>
+											{/if}
+										</button>
 										<button
 											class="th-remove"
 											title={$t('lensBlock.removeColumn') || 'Remove column'}
@@ -334,6 +391,32 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 6px;
+	}
+	/* §G.2 — click-to-sort header button + direction arrow */
+	.th-sort {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		background: none;
+		border: none;
+		padding: 0;
+		margin: 0;
+		font: inherit;
+		color: inherit;
+		cursor: default;
+		text-align: start;
+		white-space: nowrap;
+	}
+	.th-sort.can-sort {
+		cursor: pointer;
+	}
+	.th-sort.can-sort:hover {
+		color: var(--text-normal);
+	}
+	.th-arrow {
+		color: var(--interactive-accent);
+		font-size: 0.9em;
+		font-weight: 700;
 	}
 	.th-remove {
 		flex-shrink: 0;

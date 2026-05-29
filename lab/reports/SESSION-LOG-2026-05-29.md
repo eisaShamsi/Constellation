@@ -241,4 +241,25 @@ Eisa's question: *"why two columns both titled Created/created? Is the lowercase
 
 **Constellation-fields source:** frontend `tableModel.ADDABLE_REGISTERED_DIMS = [note.created_at, note.headline, note.path]` (mirrors `dimensions.rs`; `note.name` excluded — always col 1). A `list_base_dimensions` command can replace this when MIG-066+ grow the registry (logged).
 
-**Files:** `bases.rs` (pub(crate) validate_base_path) · `lens/query.rs` (+update_base_columns) · `lib.rs` (+register) · `lens/store.ts` (+discoverBaseProperties, +updateBaseColumns) · `tableModel.ts` (+ADDABLE_REGISTERED_DIMS) · `BaseColumnPicker.svelte` (new) · `BaseTab.svelte` (integrate) · en+ar (`base.*` keys).
+**Files:** `bases.rs` (pub(crate) validate_base_path) · `lens/query.rs` (+update_base_columns) · `lib.rs` (+register) · `lens/store.ts` (+discoverBaseProperties, +updateBaseColumns) · `tableModel.ts` (+ADDABLE_REGISTERED_DIMS) · `BaseColumnPicker.svelte` (new) · `BaseTab.svelte` (integrate) · en+ar.
+
+**i18n namespace correction:** keys landed under `lensBlock.*` (NOT a new `base.*` namespace) — consistent with the existing `lensBlock.colName`/`rowCap`; avoids a confusing `base` vs the old MVP's `bases` namespace. Keys: `addColumn`/`removeColumn`/`searchFields`/`yourFields`/`constellationFields`/`readOnly`/`allFieldsAdded` (en+ar; `constellationFields` ar = "كوكبة" per the full-localization principle; 13 locales at §L).
+
+**§G build + Boss test — PASS** (commit `eef4d433`; build mtime 21:51:18 > commit 21:43:11). Eisa on **Eisa Cognitive Knowledge**: opened the base (Name·stage·maturity·source), opened the picker → **two sections confirmed** (Your fields / Constellation with read-only tags), added `library` (Your fields) + `Created` (Constellation), removed `source`, **persisted across reopen**. The saved `.base` round-trip is correct + canonical: `columns: [note.name, prop.stage, prop.maturity, prop.library, note.created_at]`, with `scope`/`where: []`/`order: []`/`view: table` serialized out (the expected fuller form from the LensDefinition round-trip). The "two Createds" confusion is resolved — `Created` is unambiguously under *Constellation*. Eisa: *"Wow, I am impressed! Good job."*
+
+**Round-trip note (expected, not a bug):** `update_base_columns` re-serializes the whole `LensDefinition`, so a hand-minimal `.base` becomes the fuller canonical form (scope/where/order emitted) after the first column edit. Semantically identical; re-parses + queries fine. Comments in a hand-edited `.base` would be lost on a UI column edit — acceptable for a machine-managed view file (Obsidian `.base` parity); logged in case we later want a comment-preserving edit.
+
+**Next:** §H (edit-in-place on `prop.*` cells; registered/Name read-only) → §G.2 (filter/sort builders + resize/reorder, deferred from §G) → §I (retire `query_base`) → §J (audit) → §K (staged Boss test) → §L (PCS).
+
+---
+
+## MIG-065 §G.2 — column sorting (Boss asked mid-§G; he chose "Header + multi-sort")
+
+**Trigger:** after §G PASS, Eisa asked *"Are we going to add a sort function for each column?"* → AskUserQuestion → he chose **"Header + multi-sort"** (click-header as the Simple default + a multi-sort layer). Sorting was the part of §G I deferred; bringing it forward now (before §H). Staged build/test: **§G.2a = click-header single-sort** first, then **§G.2b = multi-sort panel**.
+
+**§G.2a — click-header single sort (this commit).** Click a header → asc → desc → off (single sort; replaces). Arrow (↑/↓) marks the active sort. Saved into the `.base` `order:`, persists on reopen.
+- **Backend:** `LensResult` gains `order: Vec<LensSort>` (exposes `def.order` so the table knows the current sort without re-parsing YAML). New IPC `lens::query::update_base_order(file_path, order)` — round-trips through `LensDefinition`, rewrites only `order:`, `validate` rejects a non-sortable dim, returns YAML. Registered in `lib.rs`. **No `dimensions.rs` change** — kept `note.path`/`note.headline` non-sortable (avoids the federated-JOIN-order question for `note.headline`); the frontend mirrors sortability.
+- **Frontend:** `tableModel.isSortable(dim)` (false for `note.path`/`note.headline`, true for `note.name`/`note.created_at`/`prop.*`). `store.LensSort` type + `updateBaseOrder` wrapper. BaseTab: `sortDir`/`cycleSort`/`persistOrder`; Name + data headers are sort buttons (arrow + `sortBy` tooltip; non-sortable headers don't respond). i18n `lensBlock.sortBy` (en+ar).
+- **Verify:** cargo check --lib exit 0; svelte-check clean. Boss test pending.
+
+**§G.2b (next):** multi-sort panel — a "Sort" control listing the `order:` entries (add / remove / reorder priority / direction toggle) for sorting by several columns at once. Click-header stays the quick single-sort; the panel manages multi-level. Uses the same `update_base_order`.

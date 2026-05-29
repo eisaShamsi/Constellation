@@ -10,7 +10,7 @@
 //!   5. execute        — query the search DB
 //!   6. materialize    — column-position → LensRow.dimensions HashMap
 
-use super::definition::{FederationMode, LensDefinition, LensView, LibrariesSelector};
+use super::definition::{FederationMode, LensDefinition, LensSort, LensView, LibrariesSelector};
 use super::dimensions::resolve_dim;
 use super::parser::parse_lens_yaml;
 use super::sql_builder::{build_federated_sql, build_sql, BuiltQuery};
@@ -35,6 +35,10 @@ pub struct LensResult {
     /// MIG-065 §F — declared column dimension names, in order. The table
     /// renders headers in this order (the per-row dimensions map is unordered).
     pub columns: Vec<String>,
+    /// MIG-065 §G.2 — the active sort clauses (`order:` in the `.base`), so the
+    /// table can render sort arrows + cycle direction on header click without
+    /// re-parsing the YAML. Empty = unsorted.
+    pub order: Vec<LensSort>,
 }
 
 /// One row of a lens result.
@@ -151,6 +155,7 @@ pub fn execute_lens(app: tauri::AppHandle, lens_yaml: String) -> Result<LensResu
             LensView::List => "list".to_string(),
         },
         columns: def.columns.iter().map(|c| c.dimension.clone()).collect(),
+        order: def.order.clone(),
     })
 }
 
@@ -375,6 +380,34 @@ pub fn update_base_columns(
     // Re-validate the modified definition before persisting.
     validate(&def).map_err(|e| e.to_string())?;
 
+    let yaml = serde_yaml::to_string(&def)
+        .map_err(|e| format!("Failed to serialize base: {}", e))?;
+    std::fs::write(&file_path, &yaml)
+        .map_err(|e| format!("Failed to write base file: {}", e))?;
+    Ok(yaml)
+}
+
+/// MIG-065 §G.2 — persist the sort order to a standalone `.base` file. The
+/// click-header / multi-sort gesture computes the new ordered `order:` list
+/// (each entry a `{dimension, direction}`); this round-trips the file through
+/// `LensDefinition` (preserving columns/scope/where/view) and rewrites only
+/// `order:`. `validate` rejects a non-sortable dimension, so the file stays
+/// valid. Returns the re-serialized YAML for an immediate re-render.
+#[tauri::command]
+pub fn update_base_order(
+    app: tauri::AppHandle,
+    file_path: String,
+    order: Vec<LensSort>,
+) -> Result<String, String> {
+    crate::bases::validate_base_path(&app, &file_path)?;
+    if !file_path.ends_with(".base") {
+        return Err("Not a .base file.".to_string());
+    }
+    let content = std::fs::read_to_string(&file_path)
+        .map_err(|e| format!("Failed to read base file: {}", e))?;
+    let mut def = parse_lens_yaml(&content).map_err(|e| e.to_string())?;
+    def.order = order;
+    validate(&def).map_err(|e| e.to_string())?;
     let yaml = serde_yaml::to_string(&def)
         .map_err(|e| format!("Failed to serialize base: {}", e))?;
     std::fs::write(&file_path, &yaml)

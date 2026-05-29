@@ -65,6 +65,18 @@ export const ADDABLE_REGISTERED_DIMS: readonly string[] = [
 	'note.path',
 ];
 
+/** Registered dimensions that are NOT sortable in v1 (mirrors `dimensions.rs`:
+ *  `note.path` = arbitrary strings, `note.headline` = JOIN-sourced display-only).
+ *  Everything else — `note.name`, `note.created_at`, and every `prop.<key>`
+ *  frontmatter column — is sortable. Used by the §G.2 click-header sort to
+ *  decide which headers respond. */
+const NON_SORTABLE_REGISTERED = new Set(['note.path', 'note.headline']);
+
+/** Whether a column dimension can be sorted (click-header / multi-sort). */
+export function isSortable(dim: string): boolean {
+	return !NON_SORTABLE_REGISTERED.has(dim);
+}
+
 /**
  * Header label for a column dimension. `prop.<key>` columns show the raw
  * frontmatter key (the user's own vocabulary — never translated). Registered

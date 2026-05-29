@@ -41,6 +41,12 @@ export interface LensRow {
  */
 export type DimensionValue = string | number | boolean | null;
 
+/** One sort clause. Mirrors `LensSort` in Rust (`order:` in the `.base`). */
+export interface LensSort {
+	dimension: string;
+	direction: 'asc' | 'desc';
+}
+
 /** Whole result of a lens evaluation. Mirrors `LensResult` in Rust. */
 export interface LensResult {
 	rows: LensRow[];
@@ -53,6 +59,9 @@ export interface LensResult {
 	/** MIG-065 §F — declared column dimension names, in order (the table
 	 *  renders headers in this order; the per-row dimensions map is unordered). */
 	columns: string[];
+	/** MIG-065 §G.2 — active sort clauses (`order:`), so the table renders sort
+	 *  arrows + cycles direction on header click. Empty = unsorted. */
+	order: LensSort[];
 }
 
 /**
@@ -87,6 +96,16 @@ export async function discoverBaseProperties(): Promise<string[]> {
  */
 export async function updateBaseColumns(filePath: string, columns: string[]): Promise<string> {
 	return await invoke<string>('update_base_columns', { filePath, columns });
+}
+
+/**
+ * MIG-065 §G.2 — persist the sort order to a standalone `.base` file. Each
+ * entry is `{dimension, direction}`; the list order is the sort priority
+ * (first = primary). Rust round-trips through `LensDefinition` (rewriting only
+ * `order:`) and returns the re-serialized YAML for an immediate re-render.
+ */
+export async function updateBaseOrder(filePath: string, order: LensSort[]): Promise<string> {
+	return await invoke<string>('update_base_order', { filePath, order });
 }
 
 /** One Five Acts host note entry from the sidebar enumerator. */

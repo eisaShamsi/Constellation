@@ -505,6 +505,9 @@ pub fn run() {
             // MIG-065 §G — persist the add/remove-column gesture: rewrite a
             // `.base` file's `columns:` (round-trip through LensDefinition).
             lens::query::update_base_columns,
+            // MIG-065 §G.2 — persist the click-header / multi-sort gesture:
+            // rewrite a `.base` file's `order:` (round-trip through LensDefinition).
+            lens::query::update_base_order,
             // MIG-055 §F — Five Acts sidebar enumerator. Lists `.md` files
             // in `{universe}/Five Acts/`. Returns FiveActsNoteEntry tuples
             // with display name + relative path + absolute path.

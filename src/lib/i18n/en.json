@@ -3066,7 +3066,8 @@
 		"yourFields": "Your fields",
 		"constellationFields": "Constellation",
 		"readOnly": "read-only",
-		"allFieldsAdded": "All fields added."
+		"allFieldsAdded": "All fields added.",
+		"sortBy": "Sort by this column"
 	},
 	"federation": {
 		"warningBadge": "cUniverses unavailable",
