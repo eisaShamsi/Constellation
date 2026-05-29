@@ -1336,7 +1336,10 @@
 		"noLinks": "无出链"
 	},
 	"tagsPanel": {
-		"noTags": "无标签"
+		"noTags": "无标签",
+		"sortAz": "按 A → Z 排序",
+		"sortZa": "按 Z → A 排序",
+		"sortCount": "按数量排序"
 	},
 	"indexPanel": {
 		"filterPlaceholder": "筛选术语...",

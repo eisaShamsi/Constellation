@@ -1432,7 +1432,10 @@
 		"noLinks": "لا توجد روابط صادرة"
 	},
 	"tagsPanel": {
-		"noTags": "لا توجد وسوم"
+		"noTags": "لا توجد وسوم",
+		"sortAz": "ترتيب أ → ي",
+		"sortZa": "ترتيب ي → أ",
+		"sortCount": "ترتيب حسب العدد"
 	},
 	"indexPanel": {
 		"filterPlaceholder": "تصفية المصطلحات...",

@@ -16,11 +16,13 @@
 		children: TagNode[];
 	}
 
+	// Tag Browser (#12): sort mode for the tag tree — A→Z, Z→A, or by count.
+	let sortMode = $state<'az' | 'za' | 'count'>('az');
+
 	const tagTree = $derived.by(() => {
 		const root: TagNode[] = [];
-		const sortedTags = Object.entries(tags).sort((a, b) => a[0].localeCompare(b[0]));
-
-		for (const [tag, count] of sortedTags) {
+		// Build the tree (insertion order is irrelevant — sorted below).
+		for (const [tag, count] of Object.entries(tags)) {
 			const parts = tag.split('/');
 			let current = root;
 			let path = '';
@@ -36,6 +38,17 @@
 				current = existing.children;
 			}
 		}
+		// Recursively sort every level by the chosen mode. Count uses a
+		// name tie-break so equal-count tags stay alphabetical.
+		const sortNodes = (nodes: TagNode[]) => {
+			nodes.sort((a, b) => {
+				if (sortMode === 'count') return (b.count - a.count) || a.name.localeCompare(b.name);
+				if (sortMode === 'za') return b.name.localeCompare(a.name);
+				return a.name.localeCompare(b.name);
+			});
+			for (const n of nodes) sortNodes(n.children);
+		};
+		sortNodes(root);
 		return root;
 	});
 
@@ -57,6 +70,13 @@
 </script>
 
 <div class="tags-panel">
+	{#if Object.keys(tags).length > 0}
+		<div class="tp-sort">
+			<button class:active={sortMode === 'az'} onclick={() => sortMode = 'az'} title={$t('tagsPanel.sortAz') || 'A → Z'}>A→Z</button>
+			<button class:active={sortMode === 'za'} onclick={() => sortMode = 'za'} title={$t('tagsPanel.sortZa') || 'Z → A'}>Z→A</button>
+			<button class:active={sortMode === 'count'} onclick={() => sortMode = 'count'} title={$t('tagsPanel.sortCount') || 'By count'}>#</button>
+		</div>
+	{/if}
 	{#if Object.keys(tags).length > 5}
 		<div class="tp-filter">
 			<input type="text" dir="auto" placeholder="Filter tags..." value={filterQuery} oninput={(e) => filterQuery = (e.target as HTMLInputElement).value} />
@@ -100,6 +120,13 @@
 <style>
 	.tags-panel { font-size: 0.8rem; }
 	.tp-filter { padding: 2px 4px 4px; }
+	.tp-sort { display: flex; gap: 3px; padding: 4px 4px 6px; }
+	.tp-sort button {
+		flex: 1; padding: 3px 4px; font-size: 0.66rem; font-family: inherit;
+		background: var(--bg-hover); border: 1px solid var(--border); color: var(--text-muted);
+		cursor: pointer; border-radius: 4px;
+	}
+	.tp-sort button.active { background: var(--interactive-accent, var(--accent)); color: #fff; border-color: transparent; }
 	.tp-filter input {
 		width: 100%; padding: 3px 6px; border: 1px solid var(--border); border-radius: 4px;
 		background: var(--bg); color: var(--text); font-size: 0.75rem; font-family: inherit; outline: none;

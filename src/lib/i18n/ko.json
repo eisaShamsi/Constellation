@@ -1336,7 +1336,10 @@
 		"noLinks": "나가는 링크 없음"
 	},
 	"tagsPanel": {
-		"noTags": "태그 없음"
+		"noTags": "태그 없음",
+		"sortAz": "A → Z 정렬",
+		"sortZa": "Z → A 정렬",
+		"sortCount": "개수순 정렬"
 	},
 	"indexPanel": {
 		"filterPlaceholder": "용어 필터...",

@@ -1336,7 +1336,10 @@
 		"noLinks": "कोई आउटगोइंग लिंक्स नहीं"
 	},
 	"tagsPanel": {
-		"noTags": "कोई टैग नहीं"
+		"noTags": "कोई टैग नहीं",
+		"sortAz": "क्रमबद्ध A → Z",
+		"sortZa": "क्रमबद्ध Z → A",
+		"sortCount": "गिनती के अनुसार क्रमबद्ध"
 	},
 	"indexPanel": {
 		"filterPlaceholder": "शब्द फ़िल्टर करें...",

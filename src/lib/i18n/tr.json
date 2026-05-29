@@ -1336,7 +1336,10 @@
 		"noLinks": "Giden bağlantı yok"
 	},
 	"tagsPanel": {
-		"noTags": "Etiket yok"
+		"noTags": "Etiket yok",
+		"sortAz": "A → Z sırala",
+		"sortZa": "Z → A sırala",
+		"sortCount": "Sayıya göre sırala"
 	},
 	"indexPanel": {
 		"filterPlaceholder": "Terimleri filtrele...",

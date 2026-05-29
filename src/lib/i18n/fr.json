@@ -896,7 +896,10 @@
 		"noLinks": "Aucun lien sortant"
 	},
 	"tagsPanel": {
-		"noTags": "Aucune étiquette"
+		"noTags": "Aucune étiquette",
+		"sortAz": "Trier A → Z",
+		"sortZa": "Trier Z → A",
+		"sortCount": "Trier par nombre"
 	},
 	"indexPanel": {
 		"filterPlaceholder": "Filtrer les termes...",

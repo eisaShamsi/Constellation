@@ -896,7 +896,10 @@
 		"noLinks": "لینک خروجی‌ای نیست"
 	},
 	"tagsPanel": {
-		"noTags": "برچسبی نیست"
+		"noTags": "برچسبی نیست",
+		"sortAz": "مرتب‌سازی الف → ی",
+		"sortZa": "مرتب‌سازی ی → الف",
+		"sortCount": "مرتب‌سازی بر اساس تعداد"
 	},
 	"indexPanel": {
 		"filterPlaceholder": "فیلتر اصطلاحات...",

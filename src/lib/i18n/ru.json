@@ -1336,7 +1336,10 @@
 		"noLinks": "Нет исходящих ссылок"
 	},
 	"tagsPanel": {
-		"noTags": "Нет тегов"
+		"noTags": "Нет тегов",
+		"sortAz": "Сортировать A → Z",
+		"sortZa": "Сортировать Z → A",
+		"sortCount": "Сортировать по количеству"
 	},
 	"indexPanel": {
 		"filterPlaceholder": "Фильтр терминов...",

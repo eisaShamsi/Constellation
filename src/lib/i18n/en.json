@@ -1470,7 +1470,10 @@
 		"noLinks": "No outgoing links"
 	},
 	"tagsPanel": {
-		"noTags": "No tags"
+		"noTags": "No tags",
+		"sortAz": "Sort A → Z",
+		"sortZa": "Sort Z → A",
+		"sortCount": "Sort by count"
 	},
 	"indexPanel": {
 		"filterPlaceholder": "Filter terms...",

@@ -896,7 +896,10 @@
 		"noLinks": "کوئی باہر جانے والے لنکس نہیں"
 	},
 	"tagsPanel": {
-		"noTags": "کوئی ٹیگز نہیں"
+		"noTags": "کوئی ٹیگز نہیں",
+		"sortAz": "ترتیب A → Z",
+		"sortZa": "ترتیب Z → A",
+		"sortCount": "تعداد کے لحاظ سے ترتیب"
 	},
 	"indexPanel": {
 		"filterPlaceholder": "اصطلاحات فلٹر کریں...",

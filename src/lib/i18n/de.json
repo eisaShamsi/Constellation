@@ -896,7 +896,10 @@
 		"noLinks": "Keine ausgehenden Links"
 	},
 	"tagsPanel": {
-		"noTags": "Keine Tags"
+		"noTags": "Keine Tags",
+		"sortAz": "Sortieren A → Z",
+		"sortZa": "Sortieren Z → A",
+		"sortCount": "Nach Anzahl sortieren"
 	},
 	"indexPanel": {
 		"filterPlaceholder": "Begriffe filtern...",

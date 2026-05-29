@@ -896,7 +896,10 @@
 		"noLinks": "אין קישורים יוצאים"
 	},
 	"tagsPanel": {
-		"noTags": "אין תגיות"
+		"noTags": "אין תגיות",
+		"sortAz": "מיון א → ת",
+		"sortZa": "מיון ת → א",
+		"sortCount": "מיון לפי כמות"
 	},
 	"indexPanel": {
 		"filterPlaceholder": "סנן מונחים...",

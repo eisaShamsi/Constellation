@@ -1336,7 +1336,10 @@
 		"noLinks": "Sem links de saída"
 	},
 	"tagsPanel": {
-		"noTags": "Sem tags"
+		"noTags": "Sem tags",
+		"sortAz": "Ordenar A → Z",
+		"sortZa": "Ordenar Z → A",
+		"sortCount": "Ordenar por contagem"
 	},
 	"indexPanel": {
 		"filterPlaceholder": "Filtrar termos...",

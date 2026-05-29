@@ -1336,7 +1336,10 @@
 		"noLinks": "アウトゴーイングリンクなし"
 	},
 	"tagsPanel": {
-		"noTags": "タグなし"
+		"noTags": "タグなし",
+		"sortAz": "A → Z で並べ替え",
+		"sortZa": "Z → A で並べ替え",
+		"sortCount": "数で並べ替え"
 	},
 	"indexPanel": {
 		"filterPlaceholder": "用語を絞り込み...",
