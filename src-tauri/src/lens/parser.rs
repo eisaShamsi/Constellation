@@ -247,9 +247,9 @@ columns:
     }
 
     #[test]
-    fn parse_view_table_currently_rejected_by_enum() {
-        // v1 LensView enum only has `List`. `view: table` should fail at serde level
-        // (the validator would also reject, but parse catches it first).
+    fn parse_view_table_accepted() {
+        // MIG-065 §C — `view: table` is the unified Base's familiar default
+        // surface (was rejected pre-MIG-065 when LensView had only `List`).
         let yaml = r#"
 schema: 1
 lens: "Test"
@@ -257,8 +257,8 @@ columns:
   - dimension: note.name
 view: table
 "#;
-        let result = parse_lens_yaml(yaml);
-        assert!(result.is_err(), "v1 only supports `view: list`; table should fail");
+        let def = parse_lens_yaml(yaml).expect("view: table should parse in MIG-065");
+        assert_eq!(def.view, super::super::definition::LensView::Table);
     }
 
     #[test]

@@ -10,7 +10,7 @@
 //! semantic contract.
 
 use super::definition::{LensColumn, LensDefinition, LensFilter, LensSort};
-use super::dimensions::lookup_dimension;
+use super::dimensions::resolve_dim;
 use super::parser::LensError;
 
 /// The schema version this build of Constellation understands.
@@ -65,9 +65,9 @@ pub fn validate(def: &LensDefinition) -> Result<(), LensError> {
 }
 
 fn validate_column(col: &LensColumn) -> Result<(), LensError> {
-    lookup_dimension(&col.dimension).ok_or_else(|| {
+    resolve_dim(&col.dimension).ok_or_else(|| {
         LensError::Validate(format!(
-            "columns: unknown dimension `{}`",
+            "columns: unknown dimension `{}` (use a registered dimension or `prop.<frontmatter-key>`)",
             col.dimension
         ))
     })?;
@@ -75,9 +75,9 @@ fn validate_column(col: &LensColumn) -> Result<(), LensError> {
 }
 
 fn validate_filter(filter: &LensFilter) -> Result<(), LensError> {
-    let dim = lookup_dimension(&filter.dimension).ok_or_else(|| {
+    let dim = resolve_dim(&filter.dimension).ok_or_else(|| {
         LensError::Validate(format!(
-            "where: unknown dimension `{}`",
+            "where: unknown dimension `{}` (use a registered dimension or `prop.<frontmatter-key>`)",
             filter.dimension
         ))
     })?;
@@ -100,9 +100,9 @@ fn validate_filter(filter: &LensFilter) -> Result<(), LensError> {
 }
 
 fn validate_sort(sort: &LensSort) -> Result<(), LensError> {
-    let dim = lookup_dimension(&sort.dimension).ok_or_else(|| {
+    let dim = resolve_dim(&sort.dimension).ok_or_else(|| {
         LensError::Validate(format!(
-            "order: unknown dimension `{}`",
+            "order: unknown dimension `{}` (use a registered dimension or `prop.<frontmatter-key>`)",
             sort.dimension
         ))
     })?;

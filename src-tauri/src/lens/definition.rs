@@ -192,6 +192,10 @@ pub struct LensColumn {
 #[serde(rename_all = "lowercase")]
 pub enum LensView {
     List,
+    /// MIG-065 §C — the familiar editable table (the unified Base's Simple
+    /// default surface). The engine returns the same rows regardless; `table`
+    /// vs `list` is a frontend rendering distinction.
+    Table,
 }
 
 impl Default for LensView {

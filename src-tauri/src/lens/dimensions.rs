@@ -132,6 +132,88 @@ pub fn dimension_names() -> Vec<&'static str> {
     REGISTRY.iter().map(|d| d.name).collect()
 }
 
+// ─── MIG-065 §C/§D — raw frontmatter property columns ───
+
+/// Prefix marking a raw frontmatter-property column reference.
+/// `prop.<key>` → `json_extract(note_meta.properties_json, '$."<key>"')`.
+/// The unified Base's familiar table references a note's own frontmatter
+/// fields this way, alongside the registered cognitive dimensions. The prefix
+/// keeps the namespace convention consistent with `note.` / future `link.`.
+pub const PROP_PREFIX: &str = "prop.";
+
+/// Filter operators available on a raw frontmatter (Text) property column —
+/// the familiar Obsidian/Notion operator set.
+const PROP_FILTER_OPS: &[&str] = &[
+    "is", "is_not", "contains", "does_not_contain", "is_empty", "is_not_empty",
+];
+
+/// A column/filter/sort reference resolved to its SQL form: either a registered
+/// cognitive dimension (static expression) or a dynamic `prop.<key>` frontmatter
+/// property (`json_extract`). `sql_expression` is owned because the property
+/// case is built per-key at runtime.
+#[derive(Debug, Clone)]
+pub struct ResolvedDim {
+    pub kind: DimensionKind,
+    pub sql_expression: String,
+    pub requires_join: Option<&'static str>,
+    pub sortable: bool,
+    pub filterable: bool,
+    pub filter_ops: Vec<&'static str>,
+    /// `true` when resolved from `prop.<key>` (a read-only frontmatter column);
+    /// `false` for a registered cognitive dimension.
+    pub is_property: bool,
+}
+
+/// Resolve a column reference to its SQL form. Accepts a registered dimension
+/// name (e.g. `note.created_at`) OR a `prop.<key>` frontmatter reference.
+/// Returns `None` for anything else (the validator turns that into an error).
+pub fn resolve_dim(name: &str) -> Option<ResolvedDim> {
+    if let Some(d) = lookup_dimension(name) {
+        return Some(ResolvedDim {
+            kind: d.kind,
+            sql_expression: d.sql_expression.to_string(),
+            requires_join: d.requires_join,
+            sortable: d.sortable,
+            filterable: d.filterable,
+            filter_ops: d.filter_ops.to_vec(),
+            is_property: false,
+        });
+    }
+    if let Some(key) = name.strip_prefix(PROP_PREFIX) {
+        let key = key.trim();
+        if key.is_empty() {
+            return None;
+        }
+        let safe = sanitize_json_key(key);
+        if safe.is_empty() {
+            return None;
+        }
+        return Some(ResolvedDim {
+            kind: DimensionKind::Text,
+            sql_expression: format!(
+                "json_extract(note_meta.properties_json, '$.\"{}\"')",
+                safe
+            ),
+            requires_join: None,
+            sortable: true,
+            filterable: true,
+            filter_ops: PROP_FILTER_OPS.to_vec(),
+            is_property: true,
+        });
+    }
+    None
+}
+
+/// Strip characters that would break the embedded JSON-path string literal
+/// (the path is inlined into SQL, not bound). Frontmatter keys are normally
+/// simple identifiers; quotes / backslashes / control chars are dropped
+/// defensively against injection.
+fn sanitize_json_key(key: &str) -> String {
+    key.chars()
+        .filter(|c| *c != '"' && *c != '\\' && !c.is_control())
+        .collect()
+}
+
 // ─── §A unit tests ───
 
 #[cfg(test)]
@@ -230,5 +312,44 @@ mod tests {
         // re-ordering immediately.
         let names: Vec<&str> = all_dimensions().iter().map(|d| d.name).collect();
         assert_eq!(names, vec!["note.name", "note.path", "note.created_at", "note.headline"]);
+    }
+
+    // ─── MIG-065 §C/§D — resolve_dim (registered + prop.<key>) ───
+
+    #[test]
+    fn resolve_dim_registered_matches_lookup() {
+        let r = resolve_dim("note.created_at").unwrap();
+        assert_eq!(r.sql_expression, "note_meta.created_at");
+        assert_eq!(r.kind, DimensionKind::Timestamp);
+        assert!(!r.is_property);
+        assert!(r.filterable && r.sortable);
+    }
+
+    #[test]
+    fn resolve_dim_property_builds_json_extract() {
+        let r = resolve_dim("prop.status").unwrap();
+        assert!(r.is_property);
+        assert_eq!(r.kind, DimensionKind::Text);
+        assert!(r.sql_expression.contains("json_extract(note_meta.properties_json"));
+        assert!(r.sql_expression.contains("\"status\""));
+        assert!(r.sortable && r.filterable);
+        assert!(r.filter_ops.contains(&"contains"));
+        assert!(r.filter_ops.contains(&"is_empty"));
+    }
+
+    #[test]
+    fn resolve_dim_property_sanitizes_quotes() {
+        // a key with a quote must not break out of the JSON-path literal.
+        let r = resolve_dim("prop.ev\"il").unwrap();
+        assert!(!r.sql_expression.contains("ev\"il"));
+        assert!(r.sql_expression.contains("evil"));
+    }
+
+    #[test]
+    fn resolve_dim_unknown_and_empty_rejected() {
+        assert!(resolve_dim("note.frobnitz").is_none());
+        assert!(resolve_dim("prop.").is_none());
+        assert!(resolve_dim("prop.   ").is_none());
+        assert!(resolve_dim("").is_none());
     }
 }

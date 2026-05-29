@@ -4,12 +4,14 @@
 //! library set into a SQL string + parameter list ready to execute
 //! against the search DB.
 //!
-//! Per Architect §5.1: queries `note_meta` (+ JOINs added per
-//! dimensions used by the lens) — never `properties_json` (which has
-//! pre-existing parser bugs irrelevant to v1's curated dimensions).
+//! Per Architect §5.1: queries `note_meta` (+ JOINs added per dimensions
+//! used by the lens). MIG-065 §D: also reads `note_meta.properties_json`
+//! via `json_extract` for raw frontmatter `prop.<key>` columns — the
+//! unified Base's familiar table. (Scalar frontmatter is faithful per the
+//! §B characterization; list/nested fidelity is a deferred parser upgrade.)
 
 use super::definition::{LensDefinition, LensFilter, LensSort, SortDirection};
-use super::dimensions::{lookup_dimension, DimensionKind};
+use super::dimensions::{resolve_dim, DimensionKind, ResolvedDim};
 use std::collections::{HashSet, BTreeMap};
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -58,7 +60,7 @@ pub fn build_sql(
     //    - A mapping into dimension_index_map for the materializer
     let mut col_index = 3;
     for col in &def.columns {
-        let dim = lookup_dimension(&col.dimension)
+        let dim = resolve_dim(&col.dimension)
             .ok_or_else(|| format!("internal: unknown dimension `{}` in columns (should have been caught by validator)", col.dimension))?;
         select_parts.push(dim.sql_expression.to_string());
         if let Some(join) = dim.requires_join {
@@ -174,7 +176,7 @@ pub fn build_federated_sql(
     if !def.order.is_empty() {
         let mut order_parts: Vec<String> = Vec::new();
         for (i, sort) in def.order.iter().enumerate() {
-            let dim = lookup_dimension(&sort.dimension).ok_or_else(|| {
+            let dim = resolve_dim(&sort.dimension).ok_or_else(|| {
                 format!(
                     "internal: unknown dimension `{}` in order (should have been caught by validator)",
                     sort.dimension
@@ -226,13 +228,13 @@ fn build_per_schema_body(
     // Declared lens columns (schema-qualified by substituting the static
     // dimension expression's table prefix).
     for col in &def.columns {
-        let dim = lookup_dimension(&col.dimension).ok_or_else(|| {
+        let dim = resolve_dim(&col.dimension).ok_or_else(|| {
             format!(
                 "internal: unknown dimension `{}` in columns (should have been caught by validator)",
                 col.dimension
             )
         })?;
-        select_parts.push(qualify_expr(dim.sql_expression, schema));
+        select_parts.push(qualify_expr(&dim.sql_expression, schema));
         if let Some(join) = dim.requires_join {
             joins.insert(qualify_join(join, schema));
         }
@@ -240,13 +242,13 @@ fn build_per_schema_body(
 
     // Append sort columns (for outer ORDER BY).
     for dim_name in order_dims {
-        let dim = lookup_dimension(dim_name).ok_or_else(|| {
+        let dim = resolve_dim(dim_name).ok_or_else(|| {
             format!(
                 "internal: unknown dimension `{}` in order (should have been caught by validator)",
                 dim_name
             )
         })?;
-        select_parts.push(qualify_expr(dim.sql_expression, schema));
+        select_parts.push(qualify_expr(&dim.sql_expression, schema));
         if let Some(join) = dim.requires_join {
             joins.insert(qualify_join(join, schema));
         }
@@ -318,13 +320,15 @@ fn qualify_join(join: &str, schema: &str) -> String {
 fn build_filter_clause(
     filter: &LensFilter,
 ) -> Result<(String, Vec<rusqlite::types::Value>, Vec<&'static str>), String> {
-    let dim = lookup_dimension(&filter.dimension)
+    let dim = resolve_dim(&filter.dimension)
         .ok_or_else(|| format!("internal: unknown dimension `{}` in where (should have been caught by validator)", filter.dimension))?;
 
     // For v1, all filterable dimensions are Timestamp (only `note.created_at`).
     // Future phases extend to Text / Number / Enum / Bool filtering.
     match dim.kind {
-        DimensionKind::Timestamp => build_timestamp_filter(dim, filter),
+        DimensionKind::Timestamp => build_timestamp_filter(&dim, filter),
+        // MIG-065 §D — raw frontmatter `prop.<key>` columns are Text.
+        DimensionKind::Text => build_text_filter(&dim, filter),
         other => Err(format!(
             "internal: dimension `{}` has kind {:?} which is not filterable in v1",
             filter.dimension, other
@@ -333,11 +337,11 @@ fn build_filter_clause(
 }
 
 fn build_timestamp_filter(
-    dim: &super::dimensions::DimensionDef,
+    dim: &ResolvedDim,
     filter: &LensFilter,
 ) -> Result<(String, Vec<rusqlite::types::Value>, Vec<&'static str>), String> {
     let joins: Vec<&'static str> = dim.requires_join.into_iter().collect();
-    let expr = dim.sql_expression;
+    let expr = dim.sql_expression.as_str();
     match filter.op.as_str() {
         "after" => {
             let ts = parse_time_value(&filter.value)?;
@@ -389,6 +393,43 @@ fn build_timestamp_filter(
     }
 }
 
+/// MIG-065 §D — Text-column filters for raw frontmatter `prop.<key>` columns
+/// (the familiar Obsidian/Notion operator set). `is_empty` / `is_not_empty`
+/// bind no parameter; the others bind the filter value once.
+fn build_text_filter(
+    dim: &ResolvedDim,
+    filter: &LensFilter,
+) -> Result<(String, Vec<rusqlite::types::Value>, Vec<&'static str>), String> {
+    let joins: Vec<&'static str> = dim.requires_join.into_iter().collect();
+    let expr = dim.sql_expression.as_str();
+    let val = || rusqlite::types::Value::Text(filter.value.clone());
+    match filter.op.as_str() {
+        "is" => Ok((format!("{} = ?", expr), vec![val()], joins)),
+        "is_not" => Ok((
+            format!("({0} IS NULL OR {0} != ?)", expr),
+            vec![val()],
+            joins,
+        )),
+        "contains" => Ok((
+            format!("{} LIKE '%' || ? || '%'", expr),
+            vec![val()],
+            joins,
+        )),
+        "does_not_contain" => Ok((
+            format!("({0} IS NULL OR {0} NOT LIKE '%' || ? || '%')", expr),
+            vec![val()],
+            joins,
+        )),
+        "is_empty" => Ok((format!("({0} IS NULL OR {0} = '')", expr), vec![], joins)),
+        "is_not_empty" => Ok((
+            format!("({0} IS NOT NULL AND {0} != '')", expr),
+            vec![],
+            joins,
+        )),
+        other => Err(format!("unsupported text filter op: {}", other)),
+    }
+}
+
 fn build_order_clause(sorts: &[LensSort]) -> Result<Option<String>, String> {
     if sorts.is_empty() {
         return Ok(None);
@@ -396,7 +437,7 @@ fn build_order_clause(sorts: &[LensSort]) -> Result<Option<String>, String> {
     let parts: Result<Vec<String>, String> = sorts
         .iter()
         .map(|sort| {
-            let dim = lookup_dimension(&sort.dimension).ok_or_else(|| {
+            let dim = resolve_dim(&sort.dimension).ok_or_else(|| {
                 format!(
                     "internal: unknown dimension `{}` in order (should have been caught by validator)",
                     sort.dimension
@@ -643,5 +684,78 @@ mod tests {
         let built = build_sql(&def, &["Lib1".to_string()]).unwrap();
         assert!(built.sql.contains("note_meta.created_at >= ?"));
         assert_eq!(built.params.len(), 2);
+    }
+
+    // ─── MIG-065 §D — raw frontmatter `prop.<key>` columns ───
+
+    #[test]
+    fn build_sql_property_column_uses_json_extract() {
+        let mut def = base_def();
+        def.columns.push(LensColumn { dimension: "prop.status".to_string() });
+        let built = build_sql(&def, &["Lib1".to_string()]).unwrap();
+        assert!(built.sql.contains("json_extract(note_meta.properties_json"));
+        assert!(built.sql.contains("\"status\""));
+        // declared after note.name (index 3) → prop.status at index 4
+        assert_eq!(built.dimension_index_map.get(&4), Some(&"prop.status".to_string()));
+    }
+
+    #[test]
+    fn build_sql_property_contains_filter() {
+        let mut def = base_def();
+        def.where_clauses = vec![LensFilter {
+            dimension: "prop.status".to_string(),
+            op: "contains".to_string(),
+            value: "done".to_string(),
+        }];
+        let built = build_sql(&def, &["Lib1".to_string()]).unwrap();
+        assert!(built.sql.contains("LIKE '%' || ? || '%'"));
+        assert_eq!(built.params.len(), 2); // 1 library + 1 value
+    }
+
+    #[test]
+    fn build_sql_property_is_empty_binds_no_value() {
+        let mut def = base_def();
+        def.where_clauses = vec![LensFilter {
+            dimension: "prop.status".to_string(),
+            op: "is_empty".to_string(),
+            value: String::new(),
+        }];
+        let built = build_sql(&def, &["Lib1".to_string()]).unwrap();
+        assert!(built.sql.contains("IS NULL OR"));
+        assert_eq!(built.params.len(), 1); // only the library param
+    }
+
+    #[test]
+    fn build_sql_property_sort_uses_collate_nocase() {
+        let mut def = base_def();
+        def.order = vec![LensSort {
+            dimension: "prop.status".to_string(),
+            direction: SortDirection::Asc,
+        }];
+        let built = build_sql(&def, &["Lib1".to_string()]).unwrap();
+        assert!(built.sql.contains("COLLATE NOCASE ASC"));
+        assert!(built.sql.contains("json_extract(note_meta.properties_json"));
+    }
+
+    #[test]
+    fn build_federated_sql_property_column_qualified_per_schema() {
+        let mut def = base_def();
+        def.columns.push(LensColumn { dimension: "prop.status".to_string() });
+        let built =
+            build_federated_sql(&def, &["Lib1".to_string()], &["main", "cu0"]).unwrap();
+        assert!(built.sql.contains("UNION ALL"));
+        assert!(built.sql.contains("json_extract(main.note_meta.properties_json"));
+        assert!(built.sql.contains("json_extract(cu0.note_meta.properties_json"));
+    }
+
+    #[test]
+    fn build_sql_table_view_parses_like_list() {
+        // view: table returns the same SQL shape as list (rendering differs only
+        // on the frontend). This pins that the engine is view-agnostic.
+        let mut def = base_def();
+        def.view = LensView::Table;
+        let built = build_sql(&def, &["Lib1".to_string()]).unwrap();
+        assert!(built.sql.starts_with("SELECT"));
+        assert!(built.sql.contains("FROM note_meta"));
     }
 }
