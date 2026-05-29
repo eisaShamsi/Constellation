@@ -477,6 +477,30 @@ pub(crate) fn resolve_child_universe_roots_recursive(parent: &Path) -> Vec<PathB
     out
 }
 
+/// MIG-062 — display name of the universe rooted at `root`, from its
+/// universe.json `name`. Falls back to the directory name if the manifest
+/// is missing/unreadable. Used to label federated cUniverse sub-groups in
+/// the Five Acts / Workspace Bases sidebar sections.
+pub(crate) fn universe_display_name(root: &Path) -> String {
+    let cdir = constellation_dir(root);
+    let meta_path = if cdir.join("universe.json").exists() {
+        cdir.join("universe.json")
+    } else {
+        root.join("universe.json")
+    };
+    if let Ok(data) = fs::read_to_string(&meta_path) {
+        if let Ok(meta) = serde_json::from_str::<UniverseMeta>(&data) {
+            if !meta.name.is_empty() {
+                return meta.name;
+            }
+        }
+    }
+    root.file_name()
+        .and_then(|s| s.to_str())
+        .unwrap_or("cUniverse")
+        .to_string()
+}
+
 // ─── Tauri Commands ───
 
 /// List all known universes from the registry, with the active one first.

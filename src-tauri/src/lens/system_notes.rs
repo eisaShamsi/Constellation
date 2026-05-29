@@ -141,6 +141,12 @@ pub struct FiveActsNoteEntry {
     pub relative_path: String,
     /// Absolute filesystem path (resolves to the same file as `universe_root + relative_path`).
     pub absolute_path: String,
+    /// MIG-062 — `None` for the active universe; `Some(name)` for a federated
+    /// cUniverse. The sidebar groups entries by this into collapsible
+    /// per-universe sub-groups. Read-only federation: the cUniverse's own
+    /// Five Acts files are displayed, never moved/deleted (detach is lossless).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub universe_name: Option<String>,
 }
 
 /// MIG-055 §F — Tauri command. Frontend (`+layout.svelte` sidebar)
@@ -151,8 +157,8 @@ pub struct FiveActsNoteEntry {
 #[tauri::command]
 pub fn list_five_acts_notes(app: AppHandle) -> Result<Vec<FiveActsNoteEntry>, String> {
     let universe_dir = crate::universe::active_universe_dir(&app)?;
-    let pairs = list_five_acts_notes_at(&universe_dir)?;
-    Ok(pairs
+    // Active universe — universe_name = None.
+    let mut out: Vec<FiveActsNoteEntry> = list_five_acts_notes_at(&universe_dir)?
         .into_iter()
         .map(|(display_name, rel)| {
             let absolute = universe_dir.join(&rel);
@@ -160,9 +166,31 @@ pub fn list_five_acts_notes(app: AppHandle) -> Result<Vec<FiveActsNoteEntry>, St
                 display_name,
                 relative_path: rel.to_string_lossy().replace('\\', "/"),
                 absolute_path: absolute.to_string_lossy().to_string(),
+                universe_name: None,
             }
         })
-        .collect())
+        .collect();
+
+    // MIG-062 §C — federate READ-ONLY over the full cUniverse tree. Each
+    // cUniverse's Five Acts notes are read and displayed; nothing is
+    // written/moved/deleted. The cUniverse keeps its own files, so detaching
+    // it leaves its Five Acts intact (Boss principle: "the wheel is already
+    // there"). A per-cUniverse read failure is non-fatal (skip that one).
+    for cu_root in crate::universe::resolve_child_universe_roots_recursive(&universe_dir) {
+        let cu_name = crate::universe::universe_display_name(&cu_root);
+        if let Ok(pairs) = list_five_acts_notes_at(&cu_root) {
+            for (display_name, rel) in pairs {
+                let absolute = cu_root.join(&rel);
+                out.push(FiveActsNoteEntry {
+                    display_name,
+                    relative_path: rel.to_string_lossy().replace('\\', "/"),
+                    absolute_path: absolute.to_string_lossy().to_string(),
+                    universe_name: Some(cu_name.clone()),
+                });
+            }
+        }
+    }
+    Ok(out)
 }
 
 /// Enumerate the `.md` files in `{universe}/Five Acts/` for the §F sidebar.
