@@ -744,6 +744,8 @@
 		"graphView": "ग्राफ़ दृश्य",
 		"noNoteSelected": "कोई नोट चयनित नहीं",
 		"noTags": "इस नोट में कोई टैग नहीं",
+		"tagsThisNote": "यह नोट",
+		"tagsAll": "सभी टैग",
 		"noConnections": "कोई कनेक्शन नहीं",
 		"tasks": "कार्य",
 		"tasksHeader": "कार्य",

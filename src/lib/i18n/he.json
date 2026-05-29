@@ -744,6 +744,8 @@
 		"graphView": "תצוגת גרף",
 		"noNoteSelected": "לא נבחר פתק",
 		"noTags": "אין תגיות בפתק זה",
+		"tagsThisNote": "פתק זה",
+		"tagsAll": "כל התגיות",
 		"noConnections": "אין חיבורים",
 		"tasks": "משימות",
 		"tasksHeader": "משימות",

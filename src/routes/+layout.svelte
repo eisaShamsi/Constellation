@@ -351,6 +351,10 @@
 	// Right sidebar
 	let rightSidebarOpen = $state(false);
 	let rightSidebarTab = $state<'properties' | 'backlinks' | 'tags' | 'star' | 'tasks' | 'calendar' | 'health' | 'provenance' | 'review' | 'links' | 'inspector360' | 'sourceReview'>('properties');
+	// Tag Browser (#12): the right-sidebar Tags tab toggles between the open
+	// note's tags ('note') and the universe-wide federated tag tree ('all',
+	// fed by allLibraryTags via the reusable TagsPanel).
+	let tagView = $state<'note' | 'all'>('note');
 
 	// ── Sidebar overlay snapshots ───────────────────────────────────────────
 	// Every overlay mode that takes over the editor area (full-page view,
@@ -6468,19 +6472,37 @@
 						/>
 					</div>
 				{:else if rightSidebarTab === 'tags'}
-					<!-- Tags for the active note -->
-					<div class="rs-section">
-						<div class="rs-header">{$t('panels.tags')}</div>
-						{#if activeNoteTags.length > 0}
-							<div class="rs-note-tags">
-								{#each activeNoteTags as tag}
-									<button class="rs-tag-chip" onclick={() => handleTagClick(tag)}>
-										<span class="rs-tag-hash">#</span>{tag}
-									</button>
-								{/each}
-							</div>
+					<!-- Tags: 'note' = open note's tags; 'all' = universe-wide
+					     federated tag tree (Tag Browser, task #12). -->
+					<div class="rs-section rs-full-height">
+						<div class="rs-header rs-header-with-toggle">
+							<span>{$t('panels.tags')}</span>
+							<span class="rs-tag-toggle">
+								<button class:active={tagView === 'note'} onclick={() => tagView = 'note'}>{$t('panels.tagsThisNote') || 'This note'}</button>
+								<button class:active={tagView === 'all'} onclick={() => tagView = 'all'}>{$t('panels.tagsAll') || 'All tags'}</button>
+							</span>
+						</div>
+						{#if tagView === 'note'}
+							{#if activeNoteTags.length > 0}
+								<div class="rs-note-tags">
+									{#each activeNoteTags as tag}
+										<button class="rs-tag-chip" onclick={() => handleTagClick(tag)}>
+											<span class="rs-tag-hash">#</span>{tag}
+										</button>
+									{/each}
+								</div>
+							{:else}
+								<div class="rs-empty">{$t('panels.noTags')}</div>
+							{/if}
 						{:else}
-							<div class="rs-empty">{$t('panels.noTags')}</div>
+							<!-- Universe-wide federated tags. allLibraryTags already
+							     aggregates parent + cUniverse counts (MIG-061 §M /
+							     MIG-062 §A). Click → handleTagClick → federated Search Hub. -->
+							{#if Object.keys(allLibraryTags).length > 0}
+								<TagsPanel tags={allLibraryTags} onTagClick={handleTagClick} />
+							{:else}
+								<div class="rs-empty">{$t('panels.noTags')}</div>
+							{/if}
 						{/if}
 					</div>
 				{:else if rightSidebarTab === 'star'}
@@ -8126,6 +8148,21 @@
 	.rs-header {
 		font-size: 0.78rem; font-weight: 600; color: var(--accent);
 		margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.03em;
+	}
+	/* Tag Browser (#12) — Tags-tab header with the This-note ⇄ All-tags toggle. */
+	.rs-header-with-toggle {
+		display: flex; align-items: center; justify-content: space-between; gap: 8px;
+	}
+	.rs-tag-toggle {
+		display: inline-flex; gap: 2px; text-transform: none; letter-spacing: 0;
+	}
+	.rs-tag-toggle button {
+		padding: 2px 8px; font-size: 0.68rem; font-family: inherit;
+		background: var(--bg-hover); border: 1px solid var(--border); color: var(--text-muted);
+		cursor: pointer; border-radius: 4px;
+	}
+	.rs-tag-toggle button.active {
+		background: var(--interactive-accent, var(--accent)); color: #fff; border-color: transparent;
 	}
 	.rs-prop {
 		display: flex; justify-content: space-between; gap: 8px;

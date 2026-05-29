@@ -782,6 +782,8 @@
 		"graphView": "Graph View",
 		"noNoteSelected": "No note selected",
 		"noTags": "No tags in this note",
+		"tagsThisNote": "This note",
+		"tagsAll": "All tags",
 		"noConnections": "No connections",
 		"tasks": "Tasks",
 		"tasksHeader": "Tasks",

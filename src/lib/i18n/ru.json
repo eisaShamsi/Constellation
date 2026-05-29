@@ -744,6 +744,8 @@
 		"graphView": "Граф",
 		"noNoteSelected": "Заметка не выбрана",
 		"noTags": "Нет тегов в этой заметке",
+		"tagsThisNote": "Эта заметка",
+		"tagsAll": "Все теги",
 		"noConnections": "Нет связей",
 		"tasks": "Задачи",
 		"tasksHeader": "Задачи",

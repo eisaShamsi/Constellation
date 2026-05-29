@@ -744,6 +744,8 @@
 		"graphView": "Grafik Görünümü",
 		"noNoteSelected": "Not seçilmedi",
 		"noTags": "Bu notta etiket yok",
+		"tagsThisNote": "Bu not",
+		"tagsAll": "Tüm etiketler",
 		"noConnections": "Bağlantı yok",
 		"tasks": "Görevler",
 		"tasksHeader": "Görevler",

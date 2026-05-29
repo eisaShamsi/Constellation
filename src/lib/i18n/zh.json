@@ -744,6 +744,8 @@
 		"graphView": "图谱视图",
 		"noNoteSelected": "未选择笔记",
 		"noTags": "此笔记无标签",
+		"tagsThisNote": "此笔记",
+		"tagsAll": "所有标签",
 		"noConnections": "无连接",
 		"tasks": "任务",
 		"tasksHeader": "任务",

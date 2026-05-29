@@ -744,6 +744,8 @@
 		"graphView": "Vista de grafo",
 		"noNoteSelected": "Ninguna nota seleccionada",
 		"noTags": "Sin etiquetas en esta nota",
+		"tagsThisNote": "Esta nota",
+		"tagsAll": "Todas las etiquetas",
 		"noConnections": "Sin conexiones",
 		"tasks": "Tareas",
 		"tasksHeader": "Tareas",

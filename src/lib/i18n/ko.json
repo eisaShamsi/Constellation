@@ -744,6 +744,8 @@
 		"graphView": "그래프 보기",
 		"noNoteSelected": "선택된 노트 없음",
 		"noTags": "이 노트에 태그 없음",
+		"tagsThisNote": "이 노트",
+		"tagsAll": "모든 태그",
 		"noConnections": "연결 없음",
 		"tasks": "작업",
 		"tasksHeader": "작업",

@@ -744,6 +744,8 @@
 		"graphView": "Graphansicht",
 		"noNoteSelected": "Keine Notiz ausgewählt",
 		"noTags": "Keine Tags in dieser Notiz",
+		"tagsThisNote": "Diese Notiz",
+		"tagsAll": "Alle Tags",
 		"noConnections": "Keine Verbindungen",
 		"tasks": "Aufgaben",
 		"tasksHeader": "Aufgaben",

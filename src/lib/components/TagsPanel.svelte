@@ -84,7 +84,7 @@
 		{/if}
 		<button class="tp-tag" onclick={() => onTagClick(node.fullPath)}>
 			<span class="tp-hash">#</span>
-			<span class="tp-name">{node.name}</span>
+			<span class="tp-name" dir="auto">{node.name}</span>
 			{#if node.count > 0}
 				<span class="tp-count">{node.count}</span>
 			{/if}

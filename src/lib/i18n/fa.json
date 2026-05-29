@@ -744,6 +744,8 @@
 		"graphView": "نمای گراف",
 		"noNoteSelected": "یادداشتی انتخاب نشده",
 		"noTags": "برچسبی در این یادداشت نیست",
+		"tagsThisNote": "این یادداشت",
+		"tagsAll": "همه برچسب‌ها",
 		"noConnections": "ارتباطی نیست",
 		"tasks": "وظایف",
 		"tasksHeader": "وظایف",

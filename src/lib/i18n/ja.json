@@ -744,6 +744,8 @@
 		"graphView": "グラフビュー",
 		"noNoteSelected": "ノートが選択されていません",
 		"noTags": "このノートにタグなし",
+		"tagsThisNote": "このノート",
+		"tagsAll": "すべてのタグ",
 		"noConnections": "接続なし",
 		"tasks": "タスク",
 		"tasksHeader": "タスク",

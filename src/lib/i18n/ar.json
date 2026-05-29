@@ -746,6 +746,8 @@
 		"graphView": "عرض الرسم البياني",
 		"noNoteSelected": "لا توجد ملاحظة مفتوحة",
 		"noTags": "لا توجد وسوم في هذه الملاحظة",
+		"tagsThisNote": "هذه الملاحظة",
+		"tagsAll": "كل الوسوم",
 		"noConnections": "لا توجد روابط",
 		"tasks": "المهام",
 		"tasksHeader": "المهام",
