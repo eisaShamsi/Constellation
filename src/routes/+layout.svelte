@@ -3642,6 +3642,27 @@
 		return sorted.map(e => e.children ? { ...e, children: sortEntries(e.children) } : e);
 	}
 
+	// MIG-062 §E.2 — hide the system "Five Acts" folder from library file trees.
+	// Per Boss: the Observation note is surfaced via the dedicated top "Five
+	// Acts" sidebar section (+ federated cUniverse groups), so the folder in
+	// the tree is redundant duplication. READ-ONLY hide — the files stay on
+	// disk. The dedicated section always reflects the ACTIVE universe, so when
+	// the user detaches a cUniverse or switches to it (it becomes active), its
+	// Five Acts is shown there by default. Only the universe-root system folder
+	// is filtered (top level); nested user content is untouched.
+	function hideFiveActsFolder(entries: FileEntry[] | undefined): FileEntry[] {
+		if (!entries) return [];
+		// Recursive: the system folder sits at the universe root, which shows
+		// at the TOP level in the active universe's tree but NESTED (under a
+		// universe-name wrapper) in a federated cUniverse's tree. Strip it at
+		// any depth so both displays are clean. Only the exact system name
+		// "Five Acts" is removed; everything else (incl. nested user content)
+		// is preserved.
+		return entries
+			.filter(e => !(e.is_dir && e.name === 'Five Acts'))
+			.map(e => e.children ? { ...e, children: hideFiveActsFolder(e.children) } : e);
+	}
+
 	function toggleCollapseAll() {
 		if (expandedLibraries.size > 0) {
 			expandedLibraries = new Set();
@@ -5194,7 +5215,7 @@
 							{#if expandedLibraries.has(universeNotesStats.library_id) && libraryTrees[universeNotesStats.library_id]}
 								<div class="library-tree">
 									<FileTree
-									entries={sortEntries(libraryTrees[universeNotesStats.library_id])}
+									entries={sortEntries(hideFiveActsFolder(libraryTrees[universeNotesStats.library_id]))}
 									libraryId={universeNotesStats.library_id}
 									libraryName={universeNotesStats.name}
 									color={libraryColorMap[universeNotesStats.name] || 'var(--interactive-accent)'}
@@ -5248,7 +5269,7 @@
 											{#if expandedLibraries.has(lib.library_id) && libraryTrees[lib.library_id]}
 												<div class="library-tree">
 													<FileTree
-													entries={sortEntries(libraryTrees[lib.library_id])}
+													entries={sortEntries(hideFiveActsFolder(libraryTrees[lib.library_id]))}
 													libraryId={lib.library_id}
 													libraryName={lib.name}
 													color={libraryColorMap[lib.name]}
@@ -5282,7 +5303,7 @@
 							{#if expandedLibraries.has(lib.library_id) && libraryTrees[lib.library_id]}
 								<div class="library-tree">
 									<FileTree
-									entries={sortEntries(libraryTrees[lib.library_id])}
+									entries={sortEntries(hideFiveActsFolder(libraryTrees[lib.library_id]))}
 									libraryId={lib.library_id}
 									libraryName={lib.name}
 									color={libraryColorMap[lib.name]}
