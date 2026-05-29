@@ -428,7 +428,7 @@
 
 	// Sidebar resizing
 	let leftSidebarWidth = $state(300);
-	let rightSidebarWidth = $state(340);
+	let rightSidebarWidth = $state(380); // Tag Browser (#12) + general breathing room (was 340)
 	let resizing = $state<'left' | 'right' | null>(null);
 
 	// Flanking column widths — Tier 1b drag-resize. Initialized from appSettings on load.
@@ -6412,13 +6412,14 @@
 				     renders with or without an open note, and so the gate below
 				     keeps narrowing sidebarTab non-null for the other panels. -->
 				<div class="rs-section rs-full-height">
-					<div class="rs-header rs-header-with-toggle">
-						<span>{$t('panels.tags')}</span>
+					<div class="rs-header rs-header-with-toggle rs-tags-header">
+						<span>{$t('panels.tags')}{#if tagView === 'all' && Object.keys(allLibraryTags).length > 0} <span class="rs-tags-total">{Object.keys(allLibraryTags).length}</span>{/if}</span>
 						<span class="rs-tag-toggle">
 							<button class:active={tagView === 'note'} onclick={() => tagView = 'note'}>{$t('panels.tagsThisNote') || 'This note'}</button>
 							<button class:active={tagView === 'all'} onclick={() => tagView = 'all'}>{$t('panels.tagsAll') || 'All tags'}</button>
 						</span>
 					</div>
+					<div class="rs-tags-body">
 					{#if tagView === 'note'}
 						{#if sidebarTab && activeNoteTags.length > 0}
 							<div class="rs-note-tags">
@@ -6440,6 +6441,7 @@
 							<div class="rs-empty">{$t('panels.noTags')}</div>
 						{/if}
 					{/if}
+					</div>
 				</div>
 			{:else if isHome && sidebarTab}
 				{#if rightSidebarTab === 'properties'}
@@ -8164,7 +8166,10 @@
 	.rs-tag-toggle button.active {
 		background: var(--interactive-accent, var(--accent)); color: #fff; border-color: transparent;
 	}
-	.rs-prop {
+	.rs-tags-header { padding: 12px 12px 8px; margin-bottom: 0; flex-shrink: 0; }
+		.rs-tags-total { font-size: 0.72rem; font-weight: 400; color: var(--text-faint); text-transform: none; letter-spacing: 0; margin-inline-start: 4px; }
+		.rs-tags-body { flex: 1; min-height: 0; overflow-y: auto; padding: 0 10px 10px; }
+		.rs-prop {
 		display: flex; justify-content: space-between; gap: 8px;
 		padding: 3px 0; font-size: 0.8rem;
 	}
