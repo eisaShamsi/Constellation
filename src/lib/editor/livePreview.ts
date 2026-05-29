@@ -880,6 +880,10 @@ class LensBlockWidget extends WidgetType {
 
 			const td0 = document.createElement('td');
 			td0.className = 'cm-lens-cell-name';
+			// MIG-065 §F — RTL note names right-align within their cell (parity
+			// with the data cells; the dir on the button alone wasn't enough —
+			// the cell's text-align follows the cell's own dir).
+			td0.setAttribute('dir', detectDir(row.name));
 			const btn = document.createElement('button');
 			btn.type = 'button';
 			btn.className = 'cm-lens-row-name';
@@ -1831,8 +1835,9 @@ export const livePreviewTheme = EditorView.theme({
 	},
 	'.cm-lens-count': {
 		fontSize: '0.75em',
-		color: 'var(--text-muted)',
-		background: 'var(--background-modifier-border)',
+		fontWeight: '600',
+		color: '#fff',
+		background: 'var(--interactive-accent, var(--library-accent, #6c5ce7))',
 		padding: '1px 8px',
 		borderRadius: '10px',
 	},

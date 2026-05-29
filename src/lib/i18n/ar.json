@@ -3056,7 +3056,11 @@
 		"empty": "لا توجد ملاحظات تطابق هذه العدسة.",
 		"openIn360Tooltip": "افتح في 360.3D",
 		"openInCNSTooltip": "افتح في النظام العصبي",
-		"openInCatalogerTooltip": "افتح في المُصنِّف"
+		"openInCatalogerTooltip": "افتح في المُصنِّف",
+		"colName": "الاسم",
+		"colHeadline": "الملخص",
+		"colCreated": "تاريخ الإنشاء",
+		"colPath": "المسار"
 	},
 	"federation": {
 		"warningBadge": "أكوان فرعية غير متاحة",

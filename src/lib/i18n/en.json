@@ -3054,7 +3054,11 @@
 		"empty": "No notes match this lens.",
 		"openIn360Tooltip": "Open in 360.3D",
 		"openInCNSTooltip": "Open in CNS",
-		"openInCatalogerTooltip": "Open in The Cataloger"
+		"openInCatalogerTooltip": "Open in The Cataloger",
+		"colName": "Name",
+		"colHeadline": "Summary",
+		"colCreated": "Created",
+		"colPath": "Path"
 	},
 	"federation": {
 		"warningBadge": "cUniverses unavailable",
