@@ -19,6 +19,7 @@ import { t } from '$lib/i18n';
 import { detectDir } from '$lib/utils';
 import { appSettings, skyNodePathSet } from '$lib/libraries/store';
 import type { LensResult, LensRow, DimensionValue } from '$lib/lens/store';
+import { dataColumns, columnLabel, renderCellValue } from '$lib/lens/tableModel';
 
 // ─── Path state fields (for resolving image embeds) ───
 export const setLibraryPath       = StateEffect.define<string>();
@@ -857,7 +858,10 @@ class LensBlockWidget extends WidgetType {
 		const table = document.createElement('table');
 		table.className = 'cm-lens-table';
 
-		const dataCols = res.columns.filter((c) => c !== 'note.name');
+		// MIG-065 §F.2 — column semantics live in the shared `tableModel` so this
+		// inline table and the standalone `BaseTab.svelte` can never drift.
+		const tl = (k: string) => get(t)(k);
+		const dataCols = dataColumns(res.columns);
 
 		const thead = document.createElement('thead');
 		const htr = document.createElement('tr');
@@ -866,7 +870,7 @@ class LensBlockWidget extends WidgetType {
 		htr.appendChild(th0);
 		for (const c of dataCols) {
 			const th = document.createElement('th');
-			th.textContent = this._labelFor(c);
+			th.textContent = columnLabel(c, tl);
 			th.setAttribute('dir', 'auto');
 			htr.appendChild(th);
 		}
@@ -896,7 +900,7 @@ class LensBlockWidget extends WidgetType {
 
 			for (const c of dataCols) {
 				const td = document.createElement('td');
-				const text = this._renderCellValue(row.dimensions[c], c);
+				const text = renderCellValue(row.dimensions[c], c);
 				td.textContent = text;
 				if (text) td.setAttribute('dir', detectDir(text));
 				tr.appendChild(td);
@@ -906,40 +910,6 @@ class LensBlockWidget extends WidgetType {
 		table.appendChild(tbody);
 		scroll.appendChild(table);
 		return scroll;
-	}
-
-	/** Friendly header label for a column dimension name. */
-	private _labelFor(dim: string): string {
-		if (dim.startsWith('prop.')) return dim.slice('prop.'.length);
-		switch (dim) {
-			case 'note.name':
-				return get(t)('lensBlock.colName') || 'Name';
-			case 'note.headline':
-				return get(t)('lensBlock.colHeadline') || 'Summary';
-			case 'note.created_at':
-				return get(t)('lensBlock.colCreated') || 'Created';
-			case 'note.path':
-				return get(t)('lensBlock.colPath') || 'Path';
-			default:
-				return dim;
-		}
-	}
-
-	/** Render one cell value to display text. `note.created_at` → locale date. */
-	private _renderCellValue(val: DimensionValue | undefined, dim: string): string {
-		if (val === null || val === undefined) return '';
-		if (typeof val === 'number') {
-			if (dim === 'note.created_at') {
-				try {
-					return new Date(val * 1000).toLocaleDateString();
-				} catch {
-					return String(val);
-				}
-			}
-			return String(val);
-		}
-		if (typeof val === 'boolean') return val ? '✓' : '';
-		return String(val);
 	}
 
 	private _renderRow(row: LensRow): HTMLLIElement {

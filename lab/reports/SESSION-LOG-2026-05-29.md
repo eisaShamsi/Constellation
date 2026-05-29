@@ -170,3 +170,32 @@ Eisa approved the Plan ("Go"). Cascading; each § a commit with verification.
 **§F Boss-test — PASS** (2026-05-29 ~20:10 build). Table renders (15 rows); headers Name/Summary/status (raw-key defect fixed, `d3f9f3c3`); count badge accent+white; RTL note names right-align (cell-level dir). Polish commit `d3f9f3c3`.
 
 **Checkpoint (post-§F):** MIG-065 §A–§F shipped + committed (backend fully test-covered; inline `base view:table` familiar table Boss-validated). Remaining: §F.2 standalone `.base`-file-as-table tab routing (deferred from §F); §G add-column picker (couples to the full-tab table view — best done with §F.2); §H edit-in-place; §I retire `query_base`; §J audit; §K staged Boss test; §L PCS. All MIG-065 commits local (push at §L). Resumable: this log + per-§ commits are the trace.
+
+---
+
+## MIG-065 §F.2 — standalone `.base` file → full-tab table (resume session, 2026-05-29 PM)
+
+**Function in hand:** Constellation Base — the Unified Progressive Base (MIG-065). Governing principle: *Strong yet Simple, by default.*
+
+### Predecessor → Replacement (Predecessor Lookup Rule — written BEFORE any code edit)
+
+- **Where it lives now.** A `.base` file open routes through `openNoteTab()` (`src/lib/libraries/store.ts:1186`; the title-stem strip at :1222 already handles `.base`) and mounts **`NoteEditor`** on the `.base` path — i.e. a `.base` opens as a *plain note*. The old MVP UI family — `BaseView.svelte` + `BaseTableView/BaseCardView/BaseListView/BaseFilterBuilder/BaseSortBuilder`, on `$lib/bases/store.ts` (`queryBase`/`saveBaseFile`/`updateNoteProperty`) + `$lib/bases/types.ts` (`BaseDefinition`/`BaseRow`/`ColumnDef`) — was built (MVP, commit c5b05f5c) but **NEVER wired into tab routing**: `BaseView` is referenced only by its own children (verified by grep). Orphaned.
+- **Where its replacement lives — same place.** The two `NoteEditor` mount points in `src/routes/+layout.svelte` (split mode ~L5996, single mode ~L6117) gain a `.base` branch that mounts a NEW **`src/lib/lens/BaseTab.svelte`**, fed by the surviving engine `execute_lens` (`$lib/lens/store::executeLens`).
+- **What's cut / kept.** §F.2 cuts **nothing user-facing** (the orphaned `BaseView` was never mounted). `query_base` + the rest of `bases.rs` stay until **§I** retires them. `update_note_property` is **KEPT** — reused for §H edit-in-place.
+
+### Intentional deviation from Plan §F (logged, like the `prop.` prefix deviation)
+
+Plan §F says "mounting the **reused** `BaseTableView.svelte`." Build reality made literal reuse the *wrong* kind of reuse:
+1. `BaseTableView` consumes `BaseRow` (`properties: Record<string,string>`) + `ColumnDef` from `$lib/bases/types` — **the very types §I retires.** The surviving engine returns `LensRow` (`dimensions: Record<string,DimensionValue>`) + `columns: string[]`. Reuse would need an adapter + couple the NEW Base to a deleted type.
+2. `ColumnDef` has no read-only/computed flag → §G (picker marks cognitive columns read-only) + §H (edit guards) would need it extended — on a retiring type.
+3. `BaseTableView`'s first column header is a hardcoded English `"Name"` (line 152) → violates invariant #6 (15-locale, day one).
+4. The genuinely **Boss-validated** renderer is the inline `_renderTable` (`livePreview.ts`), NOT the orphaned `BaseTableView`.
+
+**Decision (Option B): secure the *right* winning.** Extract the validated render logic (`dataColumns` / `columnLabel` / `renderCellValue`) into a shared, pure **`src/lib/lens/tableModel.ts`** — one source of truth imported by *both* the inline CM6 widget and the new `BaseTab.svelte`. `BaseTab` is built on the surviving `LensResult` contract → same user outcome (familiar editable table), clean path through §G/§H, zero coupling to retiring types. CLAUDE.md "don't duplicate working code → extract a shared component" is honored by `tableModel.ts`. *(Boss informed in-chat; identical user outcome, internal scaffolding choice — proceeding per Plan-Approval-Equals-Build-Approval.)*
+
+### §F.2 / §G regrouping (commit hygiene)
+
+Resize/reorder, column add/remove, and filter/sort **all** require the `.base` `columns:` rewrite-and-save path. Building half of it in §F.2 then replacing it in §G is waste. So: **§F.2 ships the read-only familiar full-tab table** (the Simple default surface in a tab); the `columns:` save path + resize/reorder + add-column picker land together in **§G**; edit-in-place in **§H**. (Plan deliverables unchanged; only the per-commit grouping shifts — the §-boundaries are my decomposition tool.)
+
+### Open-note path
+`BaseTab` dispatches the existing `constellation:open-note` CustomEvent (listener at `+layout.svelte:2316`, resolves library by name then path-prefix) — the SAME path the Boss-validated inline `_renderTable` uses. One open-note path for every base/lens surface.

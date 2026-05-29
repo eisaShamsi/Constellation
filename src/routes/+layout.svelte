@@ -58,6 +58,7 @@
 	import NotePane from '$lib/components/NotePane.svelte';
 	import NoteEditor from '$lib/components/NoteEditor.svelte';
 	import FocusPane from '$lib/components/FocusPane.svelte';
+	import BaseTab from '$lib/lens/BaseTab.svelte';
 	import ContextMenu from '$lib/components/ContextMenu.svelte';
 	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
 	import CreateItemDialog, { type CreateKind } from '$lib/components/CreateItemDialog.svelte';
@@ -5992,7 +5993,11 @@
 							{/if}
 							<!-- svelte-ignore a11y_no_static_element_interactions -->
 							<div class="split-pane-wrap" style="flex:{splitPaneSizes[i] ?? 1}" onclick={() => setFocusedTab(tab.id)}>
-							{#if tab.path}
+							{#if tab.path && tab.path.endsWith('.base')}
+								<!-- MIG-065 §F.2 — a standalone `.base` file renders as a
+								     full-tab table on the unified `execute_lens` engine. -->
+								<BaseTab path={tab.path} content={tab.content ?? ''} />
+							{:else if tab.path}
 								<NoteEditor
 									{tab}
 									noteNames={allNotes}
@@ -6022,7 +6027,11 @@
 							</div>
 						</div>
 					{:else if $activeTab && $activeTab.path}
-						{#if focusMode}
+						{#if $activeTab.path.endsWith('.base')}
+							<!-- MIG-065 §F.2 — standalone `.base` → full-tab table (no
+							     note-flanks/focus; it's a base, not a note). -->
+							<BaseTab path={$activeTab.path} content={$activeTab.content ?? ''} />
+						{:else if focusMode}
 							{@const _parsed = parseFrontmatter($activeTab.content || '')}
 							<FocusPane
 								value={_parsed.body}
