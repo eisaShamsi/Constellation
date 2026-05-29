@@ -811,6 +811,10 @@ class LensBlockWidget extends WidgetType {
 			empty.textContent =
 				get(t)('lensBlock.empty') || 'No notes match this lens.';
 			wrap.appendChild(empty);
+		} else if (res.view === 'table') {
+			// MIG-065 §F — the familiar editable table (the unified Base's
+			// Simple default surface).
+			wrap.appendChild(this._renderTable(res));
 		} else {
 			const list = document.createElement('ul');
 			list.className = 'cm-lens-rows';
@@ -828,6 +832,110 @@ class LensBlockWidget extends WidgetType {
 		time.textContent = `${res.query_time_ms}ms`;
 		footer.appendChild(time);
 		wrap.appendChild(footer);
+	}
+
+	/** Dispatch the open-note event the app shell listens for (same as the
+	 *  list row's name button). */
+	private _openNote(row: LensRow) {
+		window.dispatchEvent(
+			new CustomEvent('constellation:open-note', {
+				detail: {
+					path: row.note_path,
+					libraryName: row.library_name,
+					libraryPath: row.library_path,
+				},
+			}),
+		);
+	}
+
+	/** MIG-065 §F — render the lens as a familiar table. First column is always
+	 *  the clickable note name; the rest are the lens's declared columns in
+	 *  order (note.name excluded — it IS the name column). */
+	private _renderTable(res: LensResult): HTMLDivElement {
+		const scroll = document.createElement('div');
+		scroll.className = 'cm-lens-table-scroll';
+		const table = document.createElement('table');
+		table.className = 'cm-lens-table';
+
+		const dataCols = res.columns.filter((c) => c !== 'note.name');
+
+		const thead = document.createElement('thead');
+		const htr = document.createElement('tr');
+		const th0 = document.createElement('th');
+		th0.textContent = get(t)('lensBlock.colName') || 'Name';
+		htr.appendChild(th0);
+		for (const c of dataCols) {
+			const th = document.createElement('th');
+			th.textContent = this._labelFor(c);
+			th.setAttribute('dir', 'auto');
+			htr.appendChild(th);
+		}
+		thead.appendChild(htr);
+		table.appendChild(thead);
+
+		const tbody = document.createElement('tbody');
+		for (const row of res.rows) {
+			const tr = document.createElement('tr');
+			tr.className = 'cm-lens-trow';
+
+			const td0 = document.createElement('td');
+			td0.className = 'cm-lens-cell-name';
+			const btn = document.createElement('button');
+			btn.type = 'button';
+			btn.className = 'cm-lens-row-name';
+			btn.textContent = row.name;
+			btn.title = row.note_path;
+			btn.setAttribute('dir', detectDir(row.name));
+			btn.addEventListener('click', () => this._openNote(row));
+			td0.appendChild(btn);
+			tr.appendChild(td0);
+
+			for (const c of dataCols) {
+				const td = document.createElement('td');
+				const text = this._renderCellValue(row.dimensions[c], c);
+				td.textContent = text;
+				if (text) td.setAttribute('dir', detectDir(text));
+				tr.appendChild(td);
+			}
+			tbody.appendChild(tr);
+		}
+		table.appendChild(tbody);
+		scroll.appendChild(table);
+		return scroll;
+	}
+
+	/** Friendly header label for a column dimension name. */
+	private _labelFor(dim: string): string {
+		if (dim.startsWith('prop.')) return dim.slice('prop.'.length);
+		switch (dim) {
+			case 'note.name':
+				return get(t)('lensBlock.colName') || 'Name';
+			case 'note.headline':
+				return get(t)('lensBlock.colHeadline') || 'Summary';
+			case 'note.created_at':
+				return get(t)('lensBlock.colCreated') || 'Created';
+			case 'note.path':
+				return get(t)('lensBlock.colPath') || 'Path';
+			default:
+				return dim;
+		}
+	}
+
+	/** Render one cell value to display text. `note.created_at` → locale date. */
+	private _renderCellValue(val: DimensionValue | undefined, dim: string): string {
+		if (val === null || val === undefined) return '';
+		if (typeof val === 'number') {
+			if (dim === 'note.created_at') {
+				try {
+					return new Date(val * 1000).toLocaleDateString();
+				} catch {
+					return String(val);
+				}
+			}
+			return String(val);
+		}
+		if (typeof val === 'boolean') return val ? '✓' : '';
+		return String(val);
 	}
 
 	private _renderRow(row: LensRow): HTMLLIElement {
@@ -1658,6 +1766,35 @@ export const livePreviewTheme = EditorView.theme({
 		padding: '10px 14px',
 		margin: '8px 0',
 		fontSize: '0.9em',
+	},
+	// ─── MIG-065 §F — familiar table view ───
+	'.cm-lens-table-scroll': {
+		overflowX: 'auto',
+		maxWidth: '100%',
+	},
+	'.cm-lens-table': {
+		borderCollapse: 'collapse',
+		width: '100%',
+		fontSize: '0.92em',
+	},
+	'.cm-lens-table th': {
+		textAlign: 'start',
+		padding: '4px 10px 6px',
+		borderBottom: '1px solid var(--background-modifier-border)',
+		color: 'var(--text-muted)',
+		fontWeight: '600',
+		whiteSpace: 'nowrap',
+	},
+	'.cm-lens-table td': {
+		padding: '4px 10px',
+		borderBottom: '1px solid var(--background-modifier-border-hover, var(--background-modifier-border))',
+		verticalAlign: 'top',
+	},
+	'.cm-lens-trow:hover': {
+		background: 'var(--background-modifier-hover)',
+	},
+	'.cm-lens-cell-name .cm-lens-row-name': {
+		fontWeight: '500',
 	},
 	'.cm-lens-loading': {
 		color: 'var(--text-muted)',

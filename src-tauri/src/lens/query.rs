@@ -10,7 +10,7 @@
 //!   5. execute        — query the search DB
 //!   6. materialize    — column-position → LensRow.dimensions HashMap
 
-use super::definition::{FederationMode, LensDefinition, LibrariesSelector};
+use super::definition::{FederationMode, LensDefinition, LensView, LibrariesSelector};
 use super::dimensions::resolve_dim;
 use super::parser::parse_lens_yaml;
 use super::sql_builder::{build_federated_sql, build_sql, BuiltQuery};
@@ -29,6 +29,12 @@ pub struct LensResult {
     pub query_time_ms: u64,
     pub lens_name: String,
     pub template: Option<String>,
+    /// MIG-065 §F — render shape ("list" | "table"); the frontend renders
+    /// accordingly.
+    pub view: String,
+    /// MIG-065 §F — declared column dimension names, in order. The table
+    /// renders headers in this order (the per-row dimensions map is unordered).
+    pub columns: Vec<String>,
 }
 
 /// One row of a lens result.
@@ -140,6 +146,11 @@ pub fn execute_lens(app: tauri::AppHandle, lens_yaml: String) -> Result<LensResu
         query_time_ms,
         lens_name: def.lens.clone(),
         template: def.template.clone(),
+        view: match def.view {
+            LensView::Table => "table".to_string(),
+            LensView::List => "list".to_string(),
+        },
+        columns: def.columns.iter().map(|c| c.dimension.clone()).collect(),
     })
 }
 

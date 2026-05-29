@@ -48,6 +48,11 @@ export interface LensResult {
 	query_time_ms: number;
 	lens_name: string;
 	template: string | null;
+	/** MIG-065 §F — render shape: "list" | "table". */
+	view: string;
+	/** MIG-065 §F — declared column dimension names, in order (the table
+	 *  renders headers in this order; the per-row dimensions map is unordered). */
+	columns: string[];
 }
 
 /**
