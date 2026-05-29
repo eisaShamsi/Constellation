@@ -492,13 +492,16 @@ pub fn run() {
             bases::delete_workspace_base,
             bases::parse_workspace_base,
             // MIG-055 §C — Constellation Base (lens) execute command.
-            // Clean rebuild post-MIG-054 revert. Curated dimensions only
-            // (no properties_json reads), strict YAML schema, federation-
-            // aware library scoping. Path is `lens::query::execute_lens`
+            // Clean rebuild post-MIG-054 revert. MIG-065: curated dimensions
+            // + raw frontmatter (`prop.*`) columns via json_extract; strict
+            // YAML schema, federation-aware scoping. Path `lens::query::execute_lens`
             // (not the re-exported `lens::execute_lens`) because Tauri's
             // `generate_handler!` macro resolves the `__cmd__` shim at
             // the function's definition site, not through re-exports.
             lens::query::execute_lens,
+            // MIG-065 §E — frontmatter-key discovery for the Base add-column
+            // picker's "Your fields" tier (federated json_each over note_meta).
+            lens::query::discover_base_properties,
             // MIG-055 §F — Five Acts sidebar enumerator. Lists `.md` files
             // in `{universe}/Five Acts/`. Returns FiveActsNoteEntry tuples
             // with display name + relative path + absolute path.

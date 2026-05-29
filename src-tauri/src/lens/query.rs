@@ -11,7 +11,7 @@
 //!   6. materialize    — column-position → LensRow.dimensions HashMap
 
 use super::definition::{FederationMode, LensDefinition, LibrariesSelector};
-use super::dimensions::lookup_dimension;
+use super::dimensions::resolve_dim;
 use super::parser::parse_lens_yaml;
 use super::sql_builder::{build_federated_sql, build_sql, BuiltQuery};
 use super::validator::validate;
@@ -176,10 +176,15 @@ pub(crate) fn execute_query(
             if *col_idx >= row_count {
                 continue; // safety
             }
-            let dim_def = lookup_dimension(dim_name).ok_or_else(|| {
-                format!("internal: column references unknown dimension `{}`", dim_name)
-            })?;
-            let value = read_dimension_value(row, *col_idx, dim_def.kind);
+            // MIG-065 §E — resolve_dim covers both registered dimensions and
+            // `prop.<key>` frontmatter columns (Text kind). Using lookup_dimension
+            // here would error on every prop.* column.
+            let kind = resolve_dim(dim_name)
+                .map(|d| d.kind)
+                .ok_or_else(|| {
+                    format!("internal: column references unknown dimension `{}`", dim_name)
+                })?;
+            let value = read_dimension_value(row, *col_idx, kind);
             dimensions.insert(dim_name.clone(), value);
         }
 
@@ -292,6 +297,75 @@ fn execute_federated_query(
         },
         Err(_) => Err("federation: federated_conn Mutex poisoned".to_string()),
     }
+}
+
+// ─── MIG-065 §E — frontmatter-key discovery (for the add-column picker) ───
+
+/// Enumerate the distinct frontmatter keys present across the active universe
+/// (+ federated cUniverses). Feeds the unified Base's "+ Add column" picker
+/// "Your fields" tier. Cheap: one `json_each` pass over `note_meta`.
+#[tauri::command]
+pub fn discover_base_properties(app: tauri::AppHandle) -> Result<Vec<String>, String> {
+    // Federated path: union keys across main + each attached cUniverse schema.
+    // Falls back to single-schema on any federation hiccup (mirrors execute_lens).
+    if federation_has_attached(&app) {
+        let mut schemas: Vec<String> = vec!["main".to_string()];
+        schemas.extend(federation_attached_aliases(&app));
+        if let Ok(keys) = discover_keys_federated(&app, &schemas) {
+            return Ok(keys);
+        }
+        // any hiccup → fall through to single-schema
+    }
+    let db_path = crate::search::db_path(&app)?;
+    let conn = Connection::open(&db_path)
+        .map_err(|e| format!("Failed to open search DB: {}", e))?;
+    discover_keys(&conn, &["main"])
+}
+
+/// Federated key discovery against `SearchState.federated_conn`. `state` is
+/// bound at function scope (not in an `if let`), so the lock guard is valid
+/// throughout — same structure as `execute_federated_query`.
+fn discover_keys_federated(
+    app: &tauri::AppHandle,
+    schemas: &[String],
+) -> Result<Vec<String>, String> {
+    let schema_refs: Vec<&str> = schemas.iter().map(|s| s.as_str()).collect();
+    let state = app.state::<crate::search::SearchState>();
+    let guard = state
+        .federated_conn
+        .lock()
+        .map_err(|_| "federation: federated_conn Mutex poisoned".to_string())?;
+    match guard.as_ref() {
+        Some(conn) => discover_keys(conn, &schema_refs),
+        None => Err("federation: federated_conn is None".to_string()),
+    }
+}
+
+/// Distinct top-level frontmatter keys across the given schemas, sorted
+/// case-insensitively. `schemas` is `["main"]` for single-universe or
+/// `["main", "cu0", …]` for federated. `properties_json` is always valid JSON
+/// by construction (serde-serialized), so `json_each` never errors here.
+fn discover_keys(conn: &Connection, schemas: &[&str]) -> Result<Vec<String>, String> {
+    let selects: Vec<String> = schemas
+        .iter()
+        .map(|s| {
+            format!(
+                "SELECT je.key AS k FROM {0}.note_meta AS nm, json_each(nm.properties_json) AS je",
+                s
+            )
+        })
+        .collect();
+    let sql = format!(
+        "SELECT DISTINCT k FROM ({}) ORDER BY k COLLATE NOCASE",
+        selects.join(" UNION ALL ")
+    );
+    let mut stmt = conn
+        .prepare(&sql)
+        .map_err(|e| format!("discover_base_properties prepare failed: {}", e))?;
+    let mapped = stmt
+        .query_map([], |r| r.get::<_, String>(0))
+        .map_err(|e| format!("discover_base_properties query failed: {}", e))?;
+    Ok(mapped.flatten().collect())
 }
 
 // ─── §C / §G — Integration tests against in-memory SQLite ───
@@ -566,5 +640,93 @@ mod tests {
         assert_eq!(built.dimension_index_map.get(&3), Some(&"note.name".to_string()));
         assert_eq!(built.dimension_index_map.get(&4), Some(&"note.created_at".to_string()));
         assert_eq!(built.dimension_index_map.get(&5), Some(&"note.headline".to_string()));
+    }
+
+    // ─── MIG-065 §E — prop.* materialization + key discovery ───
+
+    #[test]
+    fn prop_column_materializes_through_execute_query() {
+        let conn = make_test_db();
+        conn.execute(
+            "INSERT INTO note_meta (path, name, library_name, modified, created_at, properties_json) VALUES (?,?,?,?,?,?)",
+            rusqlite::params![
+                "/Lib/a.md", "a", "Lib", now(), now(),
+                r#"{"status":"done","author":"Eisa"}"#
+            ],
+        ).unwrap();
+
+        let def = LensDefinition {
+            schema: 1,
+            lens: "T".to_string(),
+            template: None,
+            scope: LensScope::default(),
+            where_clauses: vec![],
+            order: vec![],
+            columns: vec![
+                LensColumn { dimension: "note.name".to_string() },
+                LensColumn { dimension: "prop.status".to_string() },
+            ],
+            view: LensView::Table,
+        };
+        let built = build_sql(&def, &["Lib".to_string()]).unwrap();
+        let rows = execute_query(&conn, &built, &def, &lib_paths(&[("Lib", "/Lib")])).unwrap();
+        assert_eq!(rows.len(), 1);
+        match rows[0].dimensions.get("prop.status") {
+            Some(DimensionValue::Text(s)) => assert_eq!(s, "done"),
+            other => panic!("expected Text(\"done\"), got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn prop_contains_filter_through_execute_query() {
+        let conn = make_test_db();
+        for (p, st) in [("/a.md", "in-progress"), ("/b.md", "done"), ("/c.md", "blocked")] {
+            conn.execute(
+                "INSERT INTO note_meta (path, name, library_name, modified, created_at, properties_json) VALUES (?,?,?,?,?,?)",
+                rusqlite::params![p, p, "Lib", now(), now(), format!(r#"{{"status":"{}"}}"#, st)],
+            ).unwrap();
+        }
+        let def = LensDefinition {
+            schema: 1,
+            lens: "T".to_string(),
+            template: None,
+            scope: LensScope::default(),
+            where_clauses: vec![LensFilter {
+                dimension: "prop.status".to_string(),
+                op: "contains".to_string(),
+                value: "progress".to_string(),
+            }],
+            order: vec![],
+            columns: vec![LensColumn { dimension: "note.name".to_string() }],
+            view: LensView::Table,
+        };
+        let built = build_sql(&def, &["Lib".to_string()]).unwrap();
+        let rows = execute_query(&conn, &built, &def, &lib_paths(&[("Lib", "/Lib")])).unwrap();
+        assert_eq!(rows.len(), 1, "only the in-progress note should match `contains progress`");
+        assert_eq!(rows[0].name, "/a.md");
+    }
+
+    #[test]
+    fn discover_keys_returns_distinct_sorted() {
+        let conn = make_test_db();
+        conn.execute(
+            "INSERT INTO note_meta (path,name,library_name,modified,created_at,properties_json) VALUES (?,?,?,?,?,?)",
+            rusqlite::params!["/a.md", "a", "L", 1, 1, r#"{"status":"x","author":"y"}"#],
+        ).unwrap();
+        conn.execute(
+            "INSERT INTO note_meta (path,name,library_name,modified,created_at,properties_json) VALUES (?,?,?,?,?,?)",
+            rusqlite::params!["/b.md", "b", "L", 1, 1, r#"{"status":"z","priority":"1"}"#],
+        ).unwrap();
+        conn.execute(
+            "INSERT INTO note_meta (path,name,library_name,modified,created_at,properties_json) VALUES (?,?,?,?,?,?)",
+            rusqlite::params!["/c.md", "c", "L", 1, 1, "{}"],
+        ).unwrap();
+
+        let keys = discover_keys(&conn, &["main"]).unwrap();
+        assert!(keys.contains(&"status".to_string()));
+        assert!(keys.contains(&"author".to_string()));
+        assert!(keys.contains(&"priority".to_string()));
+        // DISTINCT: `status` (in two notes) appears once.
+        assert_eq!(keys.iter().filter(|k| k.as_str() == "status").count(), 1);
     }
 }
