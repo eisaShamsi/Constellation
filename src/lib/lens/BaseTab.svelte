@@ -25,11 +25,19 @@
 		executeLens,
 		updateBaseColumns,
 		updateBaseOrder,
+		updateNoteProperty,
 		type LensResult,
 		type LensRow,
 		type LensSort,
 	} from '$lib/lens/store';
-	import { dataColumns, columnLabel, renderCellValue, isSortable } from '$lib/lens/tableModel';
+	import {
+		dataColumns,
+		columnLabel,
+		renderCellValue,
+		isSortable,
+		isPropColumn,
+		propKey,
+	} from '$lib/lens/tableModel';
 	import BaseColumnPicker from '$lib/lens/BaseColumnPicker.svelte';
 	import BaseSortPanel from '$lib/lens/BaseSortPanel.svelte';
 
@@ -151,6 +159,58 @@
 		} finally {
 			saving = false;
 		}
+	}
+
+	// ─── §H — edit-in-place (frontmatter `prop.*` cells only) ───
+	// Only `prop.<key>` columns are editable (they map to a note's own
+	// frontmatter); registered cognitive dimensions + the Name column are
+	// read-only. A commit writes the note's frontmatter via `update_note_property`
+	// (which also refreshes the index server-side) and optimistically updates the
+	// one cell — no full re-query (Rule 3: never re-render thousands of rows for a
+	// single edit).
+	let editing = $state<{ rowPath: string; dim: string } | null>(null);
+	let editValue = $state('');
+
+	function startEdit(row: LensRow, dim: string) {
+		if (!isPropColumn(dim)) return; // cognitive / Name columns are read-only
+		editing = { rowPath: row.note_path, dim };
+		const v = row.dimensions[dim];
+		editValue = v === null || v === undefined ? '' : String(v);
+	}
+	function cancelEdit() {
+		editing = null;
+	}
+	async function commitEdit(row: LensRow, dim: string) {
+		if (!editing) return;
+		const next = editValue;
+		editing = null;
+		const cur = row.dimensions[dim];
+		const curStr = cur === null || cur === undefined ? '' : String(cur);
+		if (next === curStr) return; // unchanged — nothing to write
+		saving = true;
+		saveError = null;
+		try {
+			await updateNoteProperty(row.note_path, propKey(dim), next);
+			row.dimensions[dim] = next; // optimistic; index already refreshed server-side
+		} catch (e: unknown) {
+			saveError = typeof e === 'string' ? e : (e as Error)?.message ?? String(e);
+		} finally {
+			saving = false;
+		}
+	}
+	function onEditKey(e: KeyboardEvent, row: LensRow, dim: string) {
+		if (e.key === 'Enter') {
+			e.preventDefault();
+			commitEdit(row, dim);
+		} else if (e.key === 'Escape') {
+			e.preventDefault();
+			cancelEdit();
+		}
+	}
+	/** Focus + select an edit input the moment it mounts. */
+	function focusSelect(node: HTMLInputElement) {
+		node.focus();
+		node.select();
 	}
 
 	// MIG-065 §F.2 — render cap (CLAUDE.md Performance Rule 3: virtualize/limit
@@ -300,7 +360,26 @@
 								</td>
 								{#each cols as c (c)}
 									{@const text = renderCellValue(row.dimensions[c], c)}
-									<td dir={text ? detectDir(text) : undefined}>{text}</td>
+									{@const editable = isPropColumn(c)}
+									<td
+										class:editable-cell={editable}
+										dir={text ? detectDir(text) : undefined}
+										title={editable ? ($t('lensBlock.editCell') || 'Double-click to edit') : undefined}
+										ondblclick={editable ? () => startEdit(row, c) : undefined}
+									>
+										{#if editing?.rowPath === row.note_path && editing?.dim === c}
+											<input
+												class="cell-edit"
+												dir="auto"
+												bind:value={editValue}
+												onblur={() => commitEdit(row, c)}
+												onkeydown={(e) => onEditKey(e, row, c)}
+												use:focusSelect
+											/>
+										{:else}
+											{text}
+										{/if}
+									</td>
 								{/each}
 							</tr>
 						{/each}
@@ -484,6 +563,24 @@
 	}
 	.base-trow:hover td {
 		background: var(--background-modifier-hover);
+	}
+	/* §H — editable frontmatter cells (prop.*); cognitive / Name cells stay static */
+	.editable-cell {
+		cursor: text;
+	}
+	.editable-cell:hover {
+		box-shadow: inset 0 0 0 1px var(--interactive-accent);
+	}
+	.cell-edit {
+		width: 100%;
+		box-sizing: border-box;
+		background: var(--background-primary);
+		border: 1.5px solid var(--interactive-accent);
+		border-radius: 4px;
+		padding: 1px 5px;
+		font: inherit;
+		color: var(--text-normal);
+		outline: none;
 	}
 
 	.cell-name {

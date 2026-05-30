@@ -3076,7 +3076,8 @@
 		"moveDown": "Move down",
 		"removeSort": "Remove",
 		"addSort": "Add a column to sort by",
-		"allSorted": "Every sortable column is already in the sort."
+		"allSorted": "Every sortable column is already in the sort.",
+		"editCell": "Double-click to edit"
 	},
 	"federation": {
 		"warningBadge": "cUniverses unavailable",

@@ -108,6 +108,17 @@ export async function updateBaseOrder(filePath: string, order: LensSort[]): Prom
 	return await invoke<string>('update_base_order', { filePath, order });
 }
 
+/**
+ * MIG-065 §H — edit-in-place: write a single frontmatter key on a note (the
+ * row the user edited), then refresh the search index so the table stays
+ * consistent. Only `prop.<key>` (frontmatter) columns are editable; registered
+ * cognitive dimensions are read-only. Reuses the MVP's `update_note_property`
+ * command (kept; the only other caller was the orphaned BaseView).
+ */
+export async function updateNoteProperty(filePath: string, key: string, value: string): Promise<void> {
+	await invoke('update_note_property', { filePath, key, value });
+}
+
 /** One Five Acts host note entry from the sidebar enumerator. */
 export interface FiveActsNoteEntry {
 	/** File stem (filename without `.md`), e.g. "Observation — Recent Captures". */

@@ -608,16 +608,17 @@ pub fn update_note_property(
     key: String,
     value: String,
 ) -> Result<(), String> {
-    // Security: validate path is in a library
+    // Security: validate path is in a library, and capture the library name so
+    // the search index can be refreshed after the write (MIG-065 §H).
     let libraries = crate::libraries::load_libraries_pub(&app);
-    let in_library = libraries.iter().any(|v| {
+    let lib_name = libraries.iter().find(|v| {
         fs::canonicalize(&file_path).ok()
             .and_then(|fp| fs::canonicalize(&v.path).ok().map(|vp| fp.starts_with(vp)))
             .unwrap_or(false)
-    });
-    if !in_library {
+    }).map(|v| v.name.clone());
+    let Some(lib_name) = lib_name else {
         return Err("Access denied: file is not in a registered library.".to_string());
-    }
+    };
 
     let content = fs::read_to_string(&file_path)
         .map_err(|e| format!("Failed to read note: {}", e))?;
@@ -625,7 +626,19 @@ pub fn update_note_property(
     let new_content = update_frontmatter_property(&content, &key, &value);
 
     fs::write(&file_path, new_content)
-        .map_err(|e| format!("Failed to write note: {}", e))
+        .map_err(|e| format!("Failed to write note: {}", e))?;
+
+    // MIG-065 §H — refresh the search index so the Base table (and any later
+    // sort / add-column re-query, which reads `note_meta` — not the file)
+    // reflects the edit immediately. Best-effort: the disk write is the source
+    // of truth; a reindex glitch must not fail the edit (the watcher / next
+    // full reindex would catch it anyway).
+    {
+        use tauri::Manager;
+        let search_state = app.state::<crate::search::SearchState>();
+        let _ = crate::search::reindex_single_note(&search_state, &file_path, &lib_name);
+    }
+    Ok(())
 }
 
 /// Update or insert a single property in a note's YAML frontmatter.
