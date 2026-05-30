@@ -3,7 +3,7 @@
 **Version 1.0 | 2026-05-30**
 **Author of facts:** Eisa ALSHAMSI (project owner, designer, IT Boss)
 **Maintainer:** Claude (consultant / engineer / SME)
-**Status:** Foundation agreed in the 2026-05-30 dialogue; this is the written form for ratification. On sign-off it becomes the canonical source for link-type *semantics and order* — the scattered orderings in code and docs reconcile to it.
+**Status:** **RATIFIED 2026-05-30** — Eisa signed off on the written form *and* the derived order (§7). This is the **canonical source** for link-type semantics and order; CLAUDE.md, the Living-Links Guide, the Knowledge-Formulation spec, and the code all defer to it. The scattered orderings reconcile to §7 (the follow-up ships as a step in MIG-066).
 
 > This paper answers **why** the Living Link exists before it touches **how** it's ordered or built. The practical mechanics live in [`Living-Links-Guide-v1.0.md`](Living-Links-Guide-v1.0.md); the broader philosophy in [`CONSTELLATION-KNOWLEDGE-FORMULATION.md`](CONSTELLATION-KNOWLEDGE-FORMULATION.md). This sits between them: the *concept*.
 
@@ -128,6 +128,6 @@ The arc moves from the **immediate epistemic stance** (do I affirm or deny?) out
 
 ## 9. What this governs + open items
 
-On ratification, this paper is the **single source of truth** for link-type semantics and order; CLAUDE.md, the Guide, the spec, and the code defer to it. Open items: (a) Eisa's sign-off on the written form and the derived order; (b) the reconciliation follow-up (§8); (c) for full rigor, a deeper verification that no shipping tool carries the *living/decay* dimension, and a fuller argumentation-theory grounding (RST, Walton's argumentation schemes) before any external-facing claim.
+This paper is the **single source of truth** for link-type semantics and order; CLAUDE.md, the Guide, the spec, and the code defer to it. **Ratified 2026-05-30.** Remaining: (a) the reconciliation follow-up (§8) — ships as a step in MIG-066; (b) for full rigor, a deeper verification that no shipping tool carries the *living/decay* dimension, and a fuller argumentation-theory grounding (RST, Walton's argumentation schemes) before any external-facing claim.
 
 **Sources:** [Peirce — Fixation of Belief](https://philarchive.org/rec/PEITFO) · [Popper (Stanford Encyclopedia)](https://plato.stanford.edu/entries/popper/) · [IBIS — Rittel](https://en.wikipedia.org/wiki/Issue-based_information_system) · [Roam Discourse Graph](https://oasis-lab.gitbook.io/roamresearch-discourse-graph-extension/fundamentals/what-is-a-discourse-graph)
