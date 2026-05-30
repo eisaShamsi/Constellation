@@ -481,16 +481,12 @@ pub fn run() {
             libraries::clear_index_history,
             watcher::watch_library,
             watcher::unwatch_library,
-            bases::parse_base_file,
-            bases::query_base,
-            bases::save_base_file,
             bases::update_note_property,
             bases::create_base,
             bases::list_workspace_bases,
             bases::create_workspace_base,
             bases::save_workspace_base,
             bases::delete_workspace_base,
-            bases::parse_workspace_base,
             // MIG-055 §C — Constellation Base (lens) execute command.
             // Clean rebuild post-MIG-054 revert. MIG-065: curated dimensions
             // + raw frontmatter (`prop.*`) columns via json_extract; strict

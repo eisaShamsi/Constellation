@@ -44,7 +44,7 @@
 	import { get } from 'svelte/store';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { detectDir, eventToShortcut, normalizeShortcut, getResolvedShortcut, formatShortcut, migratePathKeyedMap, migratePathKeyedMapInPlace, normalizePathKey } from '$lib/utils';
-	import { createBase, saveBaseFile, listWorkspaceBases, createWorkspaceBase, saveWorkspaceBase, deleteWorkspaceBase } from '$lib/bases/store';
+	import { createBase, listWorkspaceBases, createWorkspaceBase, saveWorkspaceBase, deleteWorkspaceBase } from '$lib/bases/store';
 	import type { WorkspaceBaseEntry } from '$lib/bases/store';
 	import type { BaseDefinition } from '$lib/bases/types';
 	// MIG-055 §F — Five Acts sidebar section (Constellation Base v1).
