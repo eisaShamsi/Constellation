@@ -220,6 +220,50 @@
 		node.select();
 	}
 
+	// ─── column reorder (drag a data-column header) ───
+	// Drag a header onto another to move that column to the target's position.
+	// Reuses the §G column save path (`persistColumns` → update_base_columns), so
+	// the new order persists. The Name column is fixed (always the first,
+	// clickable column) and is not draggable.
+	let dragCol = $state<string | null>(null);
+	let dropCol = $state<string | null>(null);
+
+	function onColDragStart(e: DragEvent, dim: string) {
+		dragCol = dim;
+		if (e.dataTransfer) {
+			e.dataTransfer.effectAllowed = 'move';
+			e.dataTransfer.setData('text/plain', dim);
+		}
+	}
+	function onColDragOver(e: DragEvent, dim: string) {
+		if (!dragCol || dragCol === dim) return;
+		e.preventDefault(); // allow the drop
+		dropCol = dim;
+	}
+	function onColDragLeave(dim: string) {
+		if (dropCol === dim) dropCol = null;
+	}
+	function onColDrop(target: string) {
+		const src = dragCol;
+		dragCol = null;
+		dropCol = null;
+		if (!result || !src || src === target) return;
+		const data = dataColumns(result.columns);
+		const from = data.indexOf(src);
+		const to = data.indexOf(target);
+		if (from < 0 || to < 0) return;
+		const next = [...data];
+		const [moved] = next.splice(from, 1);
+		next.splice(to, 0, moved);
+		// Keep note.name (the implicit first/Name column) declared up front.
+		const newCols = result.columns.includes('note.name') ? ['note.name', ...next] : next;
+		persistColumns(newCols);
+	}
+	function onColDragEnd() {
+		dragCol = null;
+		dropCol = null;
+	}
+
 	// MIG-065 §F.2 — render cap (CLAUDE.md Performance Rule 3: virtualize/limit
 	// lists that can exceed 50 items). `execute_lens` returns ALL matching rows
 	// (no SQL LIMIT yet), so over a 7,600-note universe an unscoped base would
@@ -332,7 +376,15 @@
 								</button>
 							</th>
 							{#each cols as c (c)}
-								<th>
+								<th
+									class:drag-over={dropCol === c}
+									draggable="true"
+									ondragstart={(e) => onColDragStart(e, c)}
+									ondragover={(e) => onColDragOver(e, c)}
+									ondragleave={() => onColDragLeave(c)}
+									ondrop={() => onColDrop(c)}
+									ondragend={onColDragEnd}
+								>
 									<span class="th-inner">
 										<button
 											class="th-sort"
@@ -542,6 +594,17 @@
 		color: var(--interactive-accent);
 		font-size: 0.9em;
 		font-weight: 700;
+	}
+	/* §K — drag a data-column header to reorder */
+	.base-table th[draggable='true'] {
+		cursor: grab;
+	}
+	.base-table th[draggable='true']:active {
+		cursor: grabbing;
+	}
+	.base-table th.drag-over {
+		background: var(--background-modifier-hover);
+		box-shadow: inset 0 -2px 0 var(--interactive-accent);
 	}
 	.th-remove {
 		flex-shrink: 0;

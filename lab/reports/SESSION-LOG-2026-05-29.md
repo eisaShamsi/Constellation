@@ -378,3 +378,11 @@ Double-click a `prop.*` (your-field) cell → edit the note's frontmatter value 
 7. Defense-in-depth: a `prop.` prefix check in `update_note_property`; hide edit/column/sort affordances on federated (read-only) rows/bases (UX; the write is already safely rejected by the fix).
 
 **§J verdict:** 2 blockers fixed + verified; HIGH dataview-dependency caught (sweep scope corrected); non-blockers logged. Clean to proceed to §K.
+
+---
+
+## §K — full staged Boss test + Boss-requested column reorder
+
+**§K Stage 1 — PASS** (integrated build mtime 10:13:30): opened "My Notes — overview" on the integrated binary; add-column + sort + edit-in-place all coexist + persist across close/reopen. The whole Simple Base holds together.
+
+**Boss request (Stage 1): column drag-to-reorder.** Implemented in BaseTab (frontend-only, reuses the §G `persistColumns` → `update_base_columns` save path): data-column headers are `draggable`; drag one onto another → that column moves to the target's position → persisted. Name column fixed (not draggable). Drop target shows an accent underline + hover bg; grab/grabbing cursor. svelte-check clean. (Note: this is the resize/reorder I deferred from §F.2 — reorder lands now; column-resize still deferred.)
