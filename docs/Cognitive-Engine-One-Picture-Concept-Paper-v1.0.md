@@ -4,7 +4,7 @@
 
 **Author of facts**: Eisa ALSHAMSI (project owner, designer, IT Boss)
 **Drafter**: Claude (consultant / engineer / SME)
-**Status**: Foundational lens. Ratification pending (the four-vs-five cut — see §3).
+**Status**: Foundational lens — **RATIFIED by Eisa 2026-05-29** (the four-vs-five cut = FOUR; the four names confirmed). The canonical lens for all cognitive-element decisions.
 **Adjacent**: `CONSTELLATION-KNOWLEDGE-FORMULATION.md` (the founding mission), `360.3D-Concept-Paper-v1.0.md` (per-note standing), `Constellation-CECE-Concept-Paper-v1.0.md` (epistemic classification), `Stages-Concept-Paper-v1.2.md`, `Constellation-Base-Concept-Paper-v2.0.md` (the surface this lens organizes).
 
 ---
@@ -159,11 +159,11 @@ The legacy Zettelkasten note-types were a **low-dimensional shadow** of what thi
 
 ---
 
-## 9. Open / to confirm
+## 9. Ratified / open
 
-1. **The four-vs-five cut** — drafter's ruling: **four** (Development · Altitude · Origin · Connection) **+ Conviction as destination**, not a fifth question. Eisa to ratify or redraw.
-2. **The four names** — *Development · Altitude · Origin · Connection*. Confirm, or prefer alternatives (Growth / Elevation / Provenance / Relation …).
-3. **Legacy-value handling** (`literature` decompose-to-Origin vs map-for-sort) — pending Eisa's call, now framed by §6.
+1. **The four-vs-five cut** — ✅ **RATIFIED (Eisa, 2026-05-29): four** (Development · Altitude · Origin · Connection) **+ Conviction as destination**, not a fifth question.
+2. **The four names** — ✅ **RATIFIED: *Development · Altitude · Origin · Connection*.**
+3. **Legacy-value handling** (`literature` decompose-to-Origin vs map-for-sort) — *still open*, now framed by §6; decided when the rank-sorts land.
 
 ---
 
