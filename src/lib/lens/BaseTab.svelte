@@ -180,12 +180,11 @@
 	// single edit).
 	let editing = $state<{ rowPath: string; dim: string } | null>(null);
 	let editValue = $state('');
-	let editOptions = $state<string[]>([]); // existing values for a small-set column → dropdown
+	let editOptions = $state<string[]>([]); // dropdown options for a list-type cell (empty → free text)
 
-	/** Distinct non-empty values of a column across the loaded rows — the edit
-	 *  dropdown suggestions. Only for a SMALL set (a categorical field like
-	 *  maturity / stage / source); a high-cardinality field (title) returns []
-	 *  → plain free-text input. The user can still type a value not in the list. */
+	/** Distinct non-empty values of a column across the loaded rows. Returns []
+	 *  for a high-cardinality field (>max distinct, e.g. title) so it stays a
+	 *  free-text input rather than a giant dropdown. */
 	function distinctValuesFor(dim: string, max: number): string[] {
 		if (!result) return [];
 		const set = new Set<string>();
@@ -198,12 +197,41 @@
 		return [...set].sort();
 	}
 
+	// Canonical, RANK-ordered value sets for known cognitive frontmatter fields.
+	// The edit dropdown lists these in rank order (NOT alphabetical) and offers
+	// the FULL set even when a value isn't present in the loaded rows — so the
+	// user can switch a note to any maturity, not just the ones already in use.
+	// (Only fields whose canonical order is settled are listed; stage / stratum
+	// join when the Cognitive-Engine columns land — see MIG-068.)
+	const KNOWN_VALUE_SETS: Record<string, string[]> = {
+		maturity: ['seed', 'sapling', 'evergreen', 'canonical']
+	};
+
+	/** Option list for editing a cell as a dropdown. A known cognitive field
+	 *  (maturity) → its canonical rank-ordered set, plus any stray/legacy values
+	 *  present in the data, plus the current value. An unknown small-set field →
+	 *  its distinct data values. A high-cardinality field → [] (free text). The
+	 *  current value is always included so it shows as the selected option. */
+	function editOptionsFor(dim: string, current: string): string[] {
+		if (!isPropColumn(dim)) return [];
+		const canonical = KNOWN_VALUE_SETS[propKey(dim).toLowerCase()];
+		const distinct = distinctValuesFor(dim, 50);
+		if (canonical) {
+			const out = [...canonical];
+			for (const v of distinct) if (!out.includes(v)) out.push(v);
+			if (current && !out.includes(current)) out.push(current);
+			return out;
+		}
+		if (distinct.length === 0) return []; // high-cardinality → free text
+		return current && !distinct.includes(current) ? [...distinct, current] : distinct;
+	}
+
 	function startEdit(row: LensRow, dim: string) {
 		if (!isPropColumn(dim)) return; // cognitive / Name columns are read-only
 		editing = { rowPath: row.note_path, dim };
 		const v = row.dimensions[dim];
 		editValue = v === null || v === undefined ? '' : String(v);
-		editOptions = distinctValuesFor(dim, 50);
+		editOptions = editOptionsFor(dim, editValue);
 	}
 	function cancelEdit() {
 		editing = null;
@@ -236,39 +264,69 @@
 		}
 	}
 	/** Focus + select an edit input the moment it mounts. */
-	function focusSelect(node: HTMLInputElement) {
+	function focusSelect(node: HTMLInputElement | HTMLSelectElement) {
 		node.focus();
-		node.select();
+		if (node instanceof HTMLInputElement) node.select(); // text-select only applies to inputs
 	}
 
-	// ─── column reorder (drag a data-column header) ───
-	// Drag a header onto another to move that column to the target's position.
-	// Reuses the §G column save path (`persistColumns` → update_base_columns), so
-	// the new order persists. The Name column is fixed (always the first,
-	// clickable column) and is not draggable.
-	let dragCol = $state<string | null>(null);
-	let dropCol = $state<string | null>(null);
+	// ─── column reorder (pointer-drag a data-column header) ───
+	// Tauri's WebView intercepts native HTML5 drag-and-drop (it reserves it for OS
+	// file-drops), so element drag never reaches the page. We reorder with raw
+	// pointer events instead: press-and-move past a small threshold = a drag;
+	// press-without-move = a normal sort click (handled by the header's own
+	// onclick). Hit-testing reads `data-col` on the header under the cursor.
+	// Reuses the §G save path (`persistColumns` → update_base_columns) so the new
+	// order persists. The Name column is fixed (first, clickable) and not movable.
+	let dragCol = $state<string | null>(null); // column being dragged (null until threshold crossed)
+	let dropCol = $state<string | null>(null); // header currently under the cursor
+	let pressCol: string | null = null; // header pressed (candidate; non-reactive)
+	let pressX = 0;
+	let pressDragging = false;
+	let suppressNextClick = false; // set after a drag so the trailing click doesn't sort
+	const DRAG_THRESHOLD = 5;
 
-	function onColDragStart(e: DragEvent, dim: string) {
-		dragCol = dim;
-		if (e.dataTransfer) {
-			e.dataTransfer.effectAllowed = 'move';
-			e.dataTransfer.setData('text/plain', dim);
+	function headerColAt(x: number, y: number): string | null {
+		const th = (document.elementFromPoint(x, y) as HTMLElement | null)?.closest?.(
+			'th[data-col]'
+		) as HTMLElement | null;
+		return th?.getAttribute('data-col') ?? null;
+	}
+	function onHeaderPointerDown(e: MouseEvent, dim: string) {
+		if (e.button !== 0) return; // left button only
+		if ((e.target as HTMLElement).closest('.th-remove')) return; // let the × button work
+		suppressNextClick = false; // clear any stale flag from a prior drag
+		pressCol = dim;
+		pressX = e.clientX;
+		pressDragging = false;
+		window.addEventListener('mousemove', onHeaderPointerMove);
+		window.addEventListener('mouseup', onHeaderPointerUp);
+	}
+	function onHeaderPointerMove(e: MouseEvent) {
+		if (pressCol == null) return;
+		if (!pressDragging) {
+			if (Math.abs(e.clientX - pressX) < DRAG_THRESHOLD) return;
+			pressDragging = true;
+			dragCol = pressCol; // now visibly dragging
 		}
+		dropCol = headerColAt(e.clientX, e.clientY);
 	}
-	function onColDragOver(e: DragEvent, dim: string) {
-		if (!dragCol || dragCol === dim) return;
-		e.preventDefault(); // allow the drop
-		dropCol = dim;
-	}
-	function onColDragLeave(dim: string) {
-		if (dropCol === dim) dropCol = null;
-	}
-	function onColDrop(target: string) {
-		const src = dragCol;
+	function onHeaderPointerUp() {
+		window.removeEventListener('mousemove', onHeaderPointerMove);
+		window.removeEventListener('mouseup', onHeaderPointerUp);
+		const wasDragging = pressDragging;
+		const src = pressCol;
+		const target = dropCol;
+		pressCol = null;
+		pressDragging = false;
 		dragCol = null;
 		dropCol = null;
-		if (!result || !src || src === target) return;
+		if (wasDragging) {
+			suppressNextClick = true; // the click that follows this mouseup must not sort
+			if (src && target && src !== target) moveColumn(src, target);
+		}
+	}
+	function moveColumn(src: string, target: string) {
+		if (!result || src === target) return;
 		const data = dataColumns(result.columns);
 		const from = data.indexOf(src);
 		const to = data.indexOf(target);
@@ -280,10 +338,14 @@
 		const newCols = result.columns.includes('note.name') ? ['note.name', ...next] : next;
 		persistColumns(newCols);
 	}
-	function onColDragEnd() {
-		dragCol = null;
-		dropCol = null;
-	}
+	// Safety net (Perf Rule 4): if the component unmounts mid-drag, drop the
+	// window-level pointer listeners so they can't leak.
+	$effect(() => {
+		return () => {
+			window.removeEventListener('mousemove', onHeaderPointerMove);
+			window.removeEventListener('mouseup', onHeaderPointerUp);
+		};
+	});
 
 	// ─── legacy → new-format conversion ───
 	// On the user's explicit choice, upgrade an old-MVP `.base` (BaseDefinition
@@ -444,12 +506,7 @@
 			<div class="base-state">{$t('lensBlock.empty') || 'No notes match this base.'}</div>
 		{:else}
 			<div class="base-table-scroll" bind:this={scrollEl} onscroll={onTableScroll}>
-				{#if editing && editOptions.length}
-						<datalist id="base-edit-options">
-							{#each editOptions as opt (opt)}<option value={opt}></option>{/each}
-						</datalist>
-					{/if}
-					<table class="base-table">
+				<table class="base-table">
 					<thead>
 						<tr>
 							<th class="th-name">
@@ -466,13 +523,11 @@
 							</th>
 							{#each cols as c (c)}
 								<th
+									class="th-data"
 									class:drag-over={dropCol === c}
-									draggable="true"
-									ondragstart={(e) => onColDragStart(e, c)}
-									ondragover={(e) => onColDragOver(e, c)}
-									ondragleave={() => onColDragLeave(c)}
-									ondrop={() => onColDrop(c)}
-									ondragend={onColDragEnd}
+									class:dragging={dragCol === c}
+									data-col={c}
+									onmousedown={(e) => onHeaderPointerDown(e, c)}
 								>
 									<span class="th-inner">
 										<span
@@ -481,7 +536,13 @@
 											role="button"
 											tabindex="0"
 											title={isSortable(c) ? ($t('lensBlock.sortBy') || 'Sort by this column') : ''}
-											onclick={() => cycleSort(c)}
+											onclick={() => {
+												if (suppressNextClick) {
+													suppressNextClick = false;
+													return;
+												}
+												cycleSort(c);
+											}}
 											onkeydown={(e) => {
 												if (e.key === 'Enter' || e.key === ' ') {
 													e.preventDefault();
@@ -532,14 +593,35 @@
 										ondblclick={editable ? () => startEdit(row, c) : undefined}
 									>
 										{#if editing?.rowPath === row.note_path && editing?.dim === c}
-											<input
-												class="cell-edit"
-												dir="auto"
-												bind:value={editValue} list={editOptions.length ? 'base-edit-options' : undefined}
-												onblur={() => commitEdit(row, c)}
-												onkeydown={(e) => onEditKey(e, row, c)}
-												use:focusSelect
-											/>
+											{#if editOptions.length}
+												<select
+													class="cell-edit cell-edit-select"
+													dir="auto"
+													bind:value={editValue}
+													onchange={() => commitEdit(row, c)}
+													onblur={() => commitEdit(row, c)}
+													onkeydown={(e) => {
+														if (e.key === 'Escape') {
+															e.preventDefault();
+															cancelEdit();
+														}
+													}}
+													use:focusSelect
+												>
+													{#each editOptions as opt (opt)}
+														<option value={opt}>{opt}</option>
+													{/each}
+												</select>
+											{:else}
+												<input
+													class="cell-edit"
+													dir="auto"
+													bind:value={editValue}
+													onblur={() => commitEdit(row, c)}
+													onkeydown={(e) => onEditKey(e, row, c)}
+													use:focusSelect
+												/>
+											{/if}
 										{:else}
 											{text}
 										{/if}
@@ -695,11 +777,15 @@
 		font-size: 0.9em;
 		font-weight: 700;
 	}
-	/* §K — drag a data-column header to reorder */
-	.base-table th[draggable='true'] {
+	/* §K — pointer-drag a data-column header to reorder */
+	.base-table th.th-data {
 		cursor: grab;
 	}
-	.base-table th[draggable='true']:active {
+	.base-table th.th-data:active {
+		cursor: grabbing;
+	}
+	.base-table th.dragging {
+		opacity: 0.45;
 		cursor: grabbing;
 	}
 	.base-table th.drag-over {
@@ -756,6 +842,10 @@
 		font: inherit;
 		color: var(--text-normal);
 		outline: none;
+	}
+	.cell-edit-select {
+		cursor: pointer;
+		padding-inline-end: 2px;
 	}
 
 	.cell-name {
