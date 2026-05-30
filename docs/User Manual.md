@@ -1280,36 +1280,60 @@ Open the Calendar from the sidebar.
 
 ---
 
-## 15. Lens & Constellation Base (Five Acts)
+## 15. Constellation Base & Lenses
 
-A **Lens** is a saved query that displays a filtered, sorted list of notes alongside whatever properties you care about. Constellation has two ways to use lenses:
+A **Constellation Base** turns a set of notes into a live table — one row per note, one column per property — that you can sort, edit, and reshape **without moving any file**. The same query engine powers it whether you open it as a full tab or embed it inside a note.
 
-### Constellation Base — embedded lens blocks (recommended)
+> The Base is **non-destructive**: it reads your notes in place. A `.base` file holds only the query (which notes, which columns, what order); your Markdown is never copied or changed by the table itself. Governing principle: **"Strong yet Simple, by default"** — the table opens familiar and uncluttered, with the deeper cognitive columns one click away.
 
-You can drop a lens directly into the body of any markdown note using a ` ```base ` fenced code block:
+### The full-tab Base
+
+Open a `.base` file and it fills the tab as an interactive table:
+
+- **Name column first** — click a note's name to open it. Every matching note is a row, with **no row limit** (the table is virtualized, so thousands of notes scroll smoothly).
+- **+ Add column** — pick from **Your fields** (frontmatter properties found in your notes) or **Constellation** (built-in: Name, Path, Created, Summary).
+- **Sort** — click a header to cycle ascending → descending → off; use the **Sort** panel to sort by several columns at once.
+- **Edit in place** — double-click one of your frontmatter cells to change it (list fields like `maturity` show a dropdown of valid values in their natural order); the change is written to the note's YAML on disk. Name and Created are read-only.
+- **Reorder** — drag a column header sideways to move it.
+- **Convert older bases** — a `.base` from Obsidian or an earlier Constellation is detected and left untouched, with a one-click **Convert to Constellation Base** offer.
+
+**New Base** writes a small YAML file for you:
+
+```yaml
+schema: 1
+lens: My Notes
+scope:
+  libraries: all
+  federation: auto
+columns:
+  - dimension: note.name
+view: table
+```
+
+(See the in-app help topic **Bases** for the full walkthrough.)
+
+### Embedded Base blocks (inside a note)
+
+You can drop a Base into the body of any note using a ` ```base ` fenced code block. The minimal form is just the view:
 
 ````markdown
 ```base
-schema: 1
-view: list
-dimensions: [note.name, note.created_at]
-sort: [note.created_at, desc]
-limit: 20
+view: table
 ```
 ````
 
-When you view the note, the code block is replaced with an interactive table showing matching notes. In Live Preview, click the **Lens** chip to expand and edit the block.
-
-**v1 dimensions available** (more will be added in later releases):
+When you view the note, the block becomes the same interactive table. In Live Preview, click the block to expand and edit it. The built-in dimensions you can show as columns:
 
 | Dimension | What it shows |
 |-----------|---------------|
 | `note.name` | The note's filename (without `.md`) |
 | `note.path` | The note's full path |
 | `note.created_at` | The note's creation timestamp |
-| `note.headline` | The note's NSC headline (auto-generated summary) |
+| `note.headline` | The note's auto-generated summary |
 
-**Federation:** by default, lens blocks read across the active universe AND every linked cUniverse. If you only want results from the active universe, set `federation: active` in the YAML.
+Plus any of your own frontmatter properties (added from the **+ Add column** picker).
+
+**Federation:** by default a Base reads across the active Universe **and** every linked cUniverse. To limit results to the active Universe only, set `federation: active` under `scope` in the YAML. Notes from a linked Universe are read-only — you can view and sort them, but editing is reserved for notes you own.
 
 ### Five Acts — built-in lenses for the Five Acts of Knowledge Creation
 

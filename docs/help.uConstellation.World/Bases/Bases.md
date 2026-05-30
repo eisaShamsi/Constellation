@@ -1,242 +1,155 @@
 ---
 aliases:
   - Bases
-  - Database views
-  - Note databases
+  - Constellation Base
+  - Note tables
   - Structured views
   - Base files
-description: Learn how to create and use Bases in Constellation to view, filter, sort, and edit your notes as structured databases with table, card, and list views.
+description: Learn how to use the Constellation Base — a live table of your notes, one row per note and one column per property, that you can sort, edit, and reshape without ever moving a file.
 ---
 
 # Bases
 
-Bases let you view your notes as structured databases. A Base collects notes from a folder (or by tag), reads their [[Properties|frontmatter properties]], and displays them in a dynamic table, card grid, or list view — all without copying or moving your files.
+A **Base** turns a set of your notes into a live table: **one row per note, one column per property**. Nothing is copied or moved — the table reads your notes in place and reflects them as they are right now.
 
-> [!tip] Core principle
-> Bases are **non-destructive**. Your notes stay exactly where they are. A `.base` file is just a small JSON query definition that tells Constellation which notes to show and how to display them.
+> [!tip] Strong yet Simple, by default
+> A Base opens looking familiar and uncluttered — just your notes' names and the fields you care about. Constellation's deeper, cognitive columns are always **one click away**, but they never crowd the first screen. You decide how much structure to pull in.
+
+> [!info] Non-destructive
+> A Base never changes your notes on its own. It is a small `.base` file holding a query — "show these notes, with these columns, in this order." Your Markdown files stay exactly where they are.
+
+---
+
+## Two ways to use a Base
+
+**1. As a full tab.** Open a `.base` file and it fills the tab as an interactive table.
+
+**2. Inside a note.** Drop a fenced code block into any note and it renders inline:
+
+````markdown
+```base
+view: table
+```
+````
+
+Both are powered by the same engine, so they behave identically.
 
 ---
 
 ## Creating a Base
 
-To create a Base, create a file with the `.base` extension in your library. The file contains a JSON definition:
+Use **New Base** from the sidebar (the "+" / New Base action). Constellation writes a small **YAML** `.base` file for you:
 
-```json
-{
-  "version": 1,
-  "name": "My Projects",
-  "source": {
-    "type": "folder",
-    "path": "Projects",
-    "includeSubfolders": true
-  },
-  "columns": [],
-  "filters": [],
-  "sorts": [],
-  "view": "table",
-  "direction": "auto"
-}
+```yaml
+schema: 1
+lens: My Notes
+scope:
+  libraries: all
+  federation: auto
+columns:
+  - dimension: note.name
+view: table
 ```
 
-When you open a `.base` file in Constellation, it renders as an interactive database view instead of a text editor.
+| Field | Meaning |
+|-------|---------|
+| `schema` | Format version (currently `1`). |
+| `lens` | The name shown at the top of the table. |
+| `scope.libraries` | `all`, or a list of specific libraries to include. |
+| `scope.federation` | `auto` — also include notes from any linked Universes (cUniverses). |
+| `columns` | The columns to show. A new Base starts with just the note **Name**. |
+| `view` | `table` (the table is the Base view). |
+
+You rarely need to edit this by hand — the table's own controls (below) write every change back to the file for you.
 
 ---
 
-## Source types
+## The table
 
-The `source` field defines which notes to include:
-
-| Source type | Description | Example |
-|-------------|-------------|---------|
-| `folder` | Notes in a specific folder | `"type": "folder", "path": "Projects"` |
-| `tag` | Notes with a specific tag | `"type": "tag", "tag": "project"` |
-| `library` | All notes in a library | `"type": "library"` |
-
-### Subfolders
-
-When using `folder` source, set `"includeSubfolders": true` to include notes in nested folders.
+- **Name column** — always first. Click a note's name to open it.
+- **Every matching note becomes a row.** There is **no row limit**. The table is *virtualized* — it only draws the rows currently on screen — so a Base over thousands of notes opens instantly and scrolls smoothly.
+- **Per-cell direction** — each value detects its own left-to-right or right-to-left script, so mixed-language tables read correctly.
+- The footer shows how long the query took.
 
 ---
 
-## Views
+## Columns — add, remove, reorder
 
-Bases support three view modes, switchable from the toolbar:
+### Add a column
 
-### Table view
+Click **+ Add column**. The picker is grouped in two:
 
-The default view. Displays notes as rows in a spreadsheet-like table with:
+- **Your fields** — the frontmatter properties Constellation found in your notes (for example `status`, `maturity`, `author`). These are *your* data.
+- **Constellation** — built-in fields the app always knows: **Name**, **Path**, **Created**, and **Summary**.
 
-- **Sortable columns** for each detected property
-- **Resizable columns** — drag the column edge to resize
-- **Reorderable columns** — drag column headers to rearrange
-- **Inline editing** — double-click any cell to edit the value
-- **Type-aware cells** — checkboxes toggle, links are clickable, tags show as pills
+Start typing to filter the list. Fields already in the table are marked so you don't add them twice.
 
-### Card view
+### Remove a column
 
-A responsive grid of cards, ideal for visual browsing. Each card shows the note name and up to 6 properties.
+Hover a column header and click the **×**.
 
-### List view
+### Reorder columns
 
-A compact, single-line-per-note view showing the note name and up to 4 properties. Supports inline editing by double-clicking values.
+**Press and drag a column header sideways.** The whole column lifts (it dims and the header shows a grab outline), and a vertical line marks where it will drop. Release to move it. The Name column stays fixed as the first column.
 
----
-
-## Columns
-
-Columns determine which properties are displayed and in what order.
-
-- If no columns are defined, Constellation **auto-detects** columns from the properties found in your notes
-- You can drag column headers in table view to reorder them
-- Column order is saved to the `.base` file automatically
-
-### Column definition
-
-```json
-{
-  "property": "status",
-  "label": "Status",
-  "width": 150,
-  "visible": true
-}
-```
-
-| Field | Description |
-|-------|-------------|
-| `property` | The frontmatter key to display |
-| `label` | Display name (defaults to property name) |
-| `width` | Column width in pixels (table view) |
-| `visible` | Whether to show the column |
-
----
-
-## Filtering
-
-Click the filter button in the toolbar to open the filter builder. Filters narrow down which notes are displayed.
-
-### Filter operators
-
-| Operator | Description |
-|----------|-------------|
-| is | Exact match |
-| is not | Excludes exact match |
-| contains | Value contains the text |
-| does not contain | Value does not contain the text |
-| greater than | Numeric/date comparison |
-| less than | Numeric/date comparison |
-| is empty | Property has no value |
-| is not empty | Property has a value |
-
-You can add multiple filters — they are combined with AND logic (all filters must match).
-
-> [!tip] Pre-filled new notes
-> When you create a new note from a Base with active "is" filters, the new note's frontmatter is pre-populated with those filter values.
+Every add, remove, and reorder is saved back to the `.base` file automatically.
 
 ---
 
 ## Sorting
 
-Click the sort button in the toolbar to open the sort builder. You can:
+**Click a column header to sort by it.** Each click cycles **ascending → descending → off** (an arrow shows the current direction).
 
-- Sort by any property
-- Choose ascending or descending order
-- Add multiple sort levels (first sort takes priority)
-- Reorder sort levels with the up/down arrows
+For sorting by more than one column, open the **Sort** panel:
 
-Constellation automatically detects numeric values and sorts them numerically rather than alphabetically.
-
----
-
-## Editing notes from a Base
-
-You can edit property values directly from table and list views:
-
-- **Text, number, date**: Double-click the cell to edit, press Enter to save, Escape to cancel
-- **Checkbox**: Click to toggle between true/false
-- **Links**: Click to navigate to the linked note
-
-Changes are saved immediately to the note's frontmatter on disk.
+- Add several columns — the first is the primary sort, the next break ties.
+- Flip any level between ascending and descending.
+- Move levels up or down to change priority, or remove them.
 
 ---
 
-## Toolbar
+## Editing a note from the table
 
-The Base toolbar provides quick access to all features:
+Double-click a cell in one of **your** frontmatter columns to edit it:
 
-| Button | Action |
-|--------|--------|
-| View switcher (table/card/list icons) | Switch between view modes |
-| Filter funnel | Toggle filter builder (badge shows active filter count) |
-| Sort arrows | Toggle sort builder (badge shows active sort count) |
-| Plus (+) | Create a new note in the Base's source folder |
-| Refresh | Re-run the query to pick up external changes |
+- **Free-text fields** — type the new value; **Enter** saves, **Escape** cancels.
+- **List-type fields** (like `maturity`) — a **dropdown** appears with the valid values **in their natural order** (for `maturity`: *seed → sapling → evergreen → canonical*). Pick one, or type your own.
 
----
+The change is written straight to that note's YAML frontmatter on disk, and the table updates in place.
 
-## The `.base` file format
-
-A `.base` file is a plain JSON file with the following structure:
-
-```json
-{
-  "version": 1,
-  "name": "Display Name",
-  "source": { "type": "folder", "path": "..." },
-  "columns": [],
-  "filters": [],
-  "sorts": [],
-  "view": "table",
-  "direction": "auto"
-}
-```
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `version` | number | Schema version (currently 1) |
-| `name` | string | Display name shown in the toolbar |
-| `source` | object | Which notes to query |
-| `columns` | array | Column definitions (empty = auto-detect) |
-| `filters` | array | Active filter rules |
-| `sorts` | array | Active sort rules |
-| `view` | string | Current view mode: `table`, `card`, or `list` |
-| `direction` | string | Text direction: `auto`, `ltr`, or `rtl` |
+> [!note] Read-only columns
+> **Name** and **Created** (and the other built-in Constellation columns) are computed for you, so they aren't editable. Only your own frontmatter fields can be changed here.
 
 ---
 
-## RTL support
+## Opening an older Base
 
-Bases fully support right-to-left layouts:
+If you switch from Obsidian, or from an earlier version of Constellation, your existing `.base` files use an older format.
 
-- Set `"direction": "rtl"` for Arabic/Hebrew content
-- Set `"direction": "auto"` to detect direction from the Base name
-- Individual cell values auto-detect their text direction
-- Column headers, filter/sort builders, and all UI elements respect the direction
+**Your file is never touched.** When Constellation opens one, it shows a calm notice explaining the format is older, and offers a **Convert to Constellation Base** button. Conversion happens **only when you click it** — it upgrades the file in place to the new YAML format (carrying over what it can: the name, the columns, and simple text filters). Until you choose to convert, the original file is left exactly as it was.
 
 ---
 
-## Performance
+## Federation
 
-Bases query your notes directly from disk each time they load. The query time is displayed in the footer (e.g., "42 results in 12ms").
-
-> [!tip] Tips for fast queries
-> - Use `folder` source instead of `library` when possible
-> - Keep your Base focused on specific folders rather than entire libraries
-> - The query engine skips notes without YAML frontmatter automatically
+A Base is Universe-aware. With `federation: auto`, it includes notes from any linked Universes (cUniverses) alongside your own. Notes that live in a linked Universe are read-only — you can view and sort them in the Base, but editing is reserved for notes you own.
 
 ---
 
-## Cross-library support
+## Local-first & file-over-app
 
-Bases work across multiple libraries. The library name is displayed alongside each note in card and list views, helping you identify which library a note belongs to.
+Bases hold no data of their own. Every value you see comes from a real `.md` file on your disk, read live. Delete the `.base` file and your notes are completely unaffected — a Base is just a lens you point at notes you already have.
 
 ---
 
-## Keyboard shortcuts
+## Keyboard & mouse
 
-| Shortcut | Action |
-|----------|--------|
-| Double-click cell | Start editing (table/list view) |
-| Enter | Confirm edit |
-| Escape | Cancel edit |
-| Click checkbox | Toggle value |
-| Click note name | Open note |
+| Action | What it does |
+|--------|--------------|
+| **Click** a column header | Sort by it (ascending → descending → off) |
+| **Drag** a column header | Reorder that column |
+| **Click** the × on a header | Remove that column |
+| **Double-click** a frontmatter cell | Edit it (dropdown for list fields) |
+| **Enter** | Save the edit |
+| **Escape** | Cancel the edit |
+| **Click** a note's name | Open the note |
