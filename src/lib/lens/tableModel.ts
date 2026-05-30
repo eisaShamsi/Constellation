@@ -41,6 +41,10 @@ const REGISTERED_LABELS: Record<string, { key: string; en: string }> = {
 	'note.headline': { key: 'lensBlock.colHeadline', en: 'Summary' },
 	'note.created_at': { key: 'lensBlock.colCreated', en: 'Created' },
 	'note.path': { key: 'lensBlock.colPath', en: 'Path' },
+	// MIG-066 §B — Living-Links columns (the "Connection" question). Localized
+	// across all 15 locales in §F; the English fallback shows until then.
+	'note.outgoing_count': { key: 'lensBlock.colOutgoingCount', en: 'Outgoing links' },
+	'note.link_types': { key: 'lensBlock.colLinkTypes', en: 'Link types' },
 };
 
 /**
@@ -63,6 +67,10 @@ export const ADDABLE_REGISTERED_DIMS: readonly string[] = [
 	'note.created_at',
 	'note.headline',
 	'note.path',
+	// MIG-066 §B — Living-Links columns. Both sortable (not in
+	// NON_SORTABLE_REGISTERED); link_types' sort becomes rank-aware in §D.
+	'note.outgoing_count',
+	'note.link_types',
 ];
 
 /** Registered dimensions that are NOT sortable in v1 (mirrors `dimensions.rs`:

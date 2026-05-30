@@ -42,6 +42,29 @@ A committed `#[ignore]`d benchmark (`bench_reindex_trigger_overhead`, 7,600 note
 
 **§E scoping note:** a legacy nested `ConstellationEditor/` subtree (and a doubly-nested copy) holds the OLD wrong link types (`related-to`/`prerequisite`/`see-also`/`extends`). Per WA#2 (one location), §E edits ONLY the main `src/` + `src-tauri/src/` trees — never the `ConstellationEditor/` copies.
 
+## §B — register the two Living-Links dimensions (Boss-testable)
+
+Registered `note.outgoing_count` (Number → `note_meta.outgoing_count`) and
+`note.link_types` (Text → `note_meta.outgoing_link_types`) in the `dimensions.rs`
+`REGISTRY` (both `sortable`, not filterable, no JOIN — plain materialized-column
+reads, Rule 8), and added them to the frontend picker (`tableModel.ts`
+`ADDABLE_REGISTERED_DIMS` + `REGISTERED_LABELS` with keys `lensBlock.colOutgoingCount`
+/ `lensBlock.colLinkTypes`, English fallback "Outgoing links" / "Link types" until
+§F localizes all 15 locales). Both sortable (not in `NON_SORTABLE_REGISTERED`);
+`link_types`' sort becomes rank-aware in §D.
+
+`discover_keys` reads only `properties_json`, so the new table columns can't leak
+into the picker's "Your fields" — they appear only in the Constellation tier.
+
+**Verify:** 15 `lens::dimensions` tests pass (updated `registry_includes_v1_plus_links`
+to 6, `registry_iteration_is_stable` to include the two, + new
+`link_dimensions_read_materialized_columns_and_sort`). No frontend test pins the
+picker list. Boss test pending (columns appear in **+ Add column → Constellation**
+and populate). §B cell render is the raw materialized value (count as number,
+link_types as the stored canonical string); §C localizes link_types + right-aligns
+the count.
+
 ## Open / next
-- §B (Boss-testable) — register `note.outgoing_count` (Number) + `note.link_types` (Text) in `dimensions.rs` + `ADDABLE_REGISTERED_DIMS`/`REGISTERED_LABELS` (`tableModel.ts`); they appear in **+ Add column → Constellation**.
-- §C/§D/§E/§F/§G per the approved Plan. §D groundwork mapped: rank-aware sort hooks via an optional `sort_expression` on `ResolvedDim`/`DimensionDef` (link_types sorts on the materialized `outgoing_top_rank`); `sql_builder.rs` resolves sort cols at `build_per_schema_body` + outer ORDER BY by ordinal. `discover_keys` reads only `properties_json`, so the new table columns can't leak into the picker's "Your fields".
+- §B Boss test (staged) — verify binary mtime first; then **+ Add column → Constellation** lists **Outgoing links** + **Link types**; add each → columns populate.
+- §C/§D/§E/§F/§G per the approved Plan. §D groundwork mapped: rank-aware sort hooks via an optional `sort_expression` on `ResolvedDim`/`DimensionDef` (link_types sorts on the materialized `outgoing_top_rank`); `sql_builder.rs` resolves sort cols at `build_per_schema_body` + outer ORDER BY by ordinal.
+- **PJ candidate** (from the §A.2 perf dig): `reconcile_filesystem` / `index_library_recursive` re-index EVERY file on every boot reconcile (no content-hash skip) — all note_links trigger families fire per-edge each time. A "skip unchanged" guard would cut every boot's reconcile cost across the board. Flagged for Eisa.

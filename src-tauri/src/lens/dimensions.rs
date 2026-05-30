@@ -5,16 +5,16 @@
 //! expression + optional JOIN tell the `sql_builder` (§C) how to fetch
 //! the value from the search DB.
 //!
-//! ## v1 scope (per Architect §4.1 / §5.2 / Plan §A)
+//! ## Registry (MIG-055 §A v1 + MIG-066 §B Living-Links)
 //!
-//! Four dimensions only. Future phases extend.
-//!
-//! | Name              | Kind      | Sortable | Filterable | Source                                        |
-//! |-------------------|-----------|----------|------------|-----------------------------------------------|
-//! | `note.name`       | Text      | yes      | no         | `note_meta.name`                              |
-//! | `note.path`       | Text      | no       | no         | `note_meta.path`                              |
-//! | `note.created_at` | Timestamp | yes      | yes        | `note_meta.created_at`                        |
-//! | `note.headline`   | Text      | no       | no         | `note_summaries.headline` via LEFT JOIN       |
+//! | Name                  | Kind      | Sortable | Filterable | Source                                  |
+//! |-----------------------|-----------|----------|------------|-----------------------------------------|
+//! | `note.name`           | Text      | yes      | no         | `note_meta.name`                        |
+//! | `note.path`           | Text      | no       | no         | `note_meta.path`                        |
+//! | `note.created_at`     | Timestamp | yes      | yes        | `note_meta.created_at`                  |
+//! | `note.headline`       | Text      | no       | no         | `note_summaries.headline` via LEFT JOIN |
+//! | `note.outgoing_count` | Number    | yes      | no         | `note_meta.outgoing_count` (MIG-066 §A) |
+//! | `note.link_types`     | Text      | yes      | no         | `note_meta.outgoing_link_types` (§A)    |
 //!
 //! Filter ops for `note.created_at`: `after` / `before` / `between` / `within`.
 
@@ -109,6 +109,31 @@ const REGISTRY: &[DimensionDef] = &[
             "LEFT JOIN note_summaries ON note_summaries.path = note_meta.path",
         ),
         sortable: false,
+        filterable: false,
+        filter_ops: &[],
+    },
+    // ─── MIG-066 §B — Living-Links columns (the "Connection" question) ───
+    // Both read the write-time-materialized note_meta columns from §A (plain
+    // column reads — Rule 8). Outgoing-side only in v1 (backlinks → v2; the
+    // columns are honestly outgoing-only). `note.link_types` is the canonical-
+    // ordered string of distinct outgoing typed relations; its rank-aware sort
+    // key (outgoing_top_rank) is wired in §D so sorting it is canonical, not
+    // alphabetical.
+    DimensionDef {
+        name: "note.outgoing_count",
+        kind: DimensionKind::Number,
+        sql_expression: "note_meta.outgoing_count",
+        requires_join: None,
+        sortable: true,
+        filterable: false,
+        filter_ops: &[],
+    },
+    DimensionDef {
+        name: "note.link_types",
+        kind: DimensionKind::Text,
+        sql_expression: "note_meta.outgoing_link_types",
+        requires_join: None,
+        sortable: true,
         filterable: false,
         filter_ops: &[],
     },
@@ -221,13 +246,32 @@ mod tests {
     use super::*;
 
     #[test]
-    fn dimension_registry_includes_4_v1_dimensions() {
+    fn dimension_registry_includes_v1_plus_links_dimensions() {
         let names = dimension_names();
-        assert_eq!(names.len(), 4, "v1 dimension registry must contain exactly 4 dimensions");
+        assert_eq!(names.len(), 6, "registry = 4 MIG-055 v1 dims + 2 MIG-066 Living-Links dims");
         assert!(names.contains(&"note.name"));
         assert!(names.contains(&"note.path"));
         assert!(names.contains(&"note.created_at"));
         assert!(names.contains(&"note.headline"));
+        assert!(names.contains(&"note.outgoing_count"));
+        assert!(names.contains(&"note.link_types"));
+    }
+
+    #[test]
+    fn link_dimensions_read_materialized_columns_and_sort() {
+        // MIG-066 §B — both Living-Links dims resolve to the write-time-materialized
+        // note_meta columns (plain reads, Rule 8), no JOIN, sortable, not filterable.
+        let c = lookup_dimension("note.outgoing_count").expect("note.outgoing_count registered");
+        assert_eq!(c.kind, DimensionKind::Number);
+        assert_eq!(c.sql_expression, "note_meta.outgoing_count");
+        assert!(c.requires_join.is_none());
+        assert!(c.sortable && !c.filterable);
+
+        let t = lookup_dimension("note.link_types").expect("note.link_types registered");
+        assert_eq!(t.kind, DimensionKind::Text);
+        assert_eq!(t.sql_expression, "note_meta.outgoing_link_types");
+        assert!(t.requires_join.is_none());
+        assert!(t.sortable && !t.filterable);
     }
 
     #[test]
@@ -311,7 +355,13 @@ mod tests {
         // This test pins the order so future readers + diff reviewers spot
         // re-ordering immediately.
         let names: Vec<&str> = all_dimensions().iter().map(|d| d.name).collect();
-        assert_eq!(names, vec!["note.name", "note.path", "note.created_at", "note.headline"]);
+        assert_eq!(
+            names,
+            vec![
+                "note.name", "note.path", "note.created_at", "note.headline",
+                "note.outgoing_count", "note.link_types",
+            ]
+        );
     }
 
     // ─── MIG-065 §C/§D — resolve_dim (registered + prop.<key>) ───
