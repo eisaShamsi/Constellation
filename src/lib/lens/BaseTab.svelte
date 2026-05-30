@@ -308,7 +308,8 @@
 			pressDragging = true;
 			dragCol = pressCol; // now visibly dragging
 		}
-		dropCol = headerColAt(e.clientX, e.clientY);
+		const over = headerColAt(e.clientX, e.clientY);
+		if (over !== dropCol) dropCol = over; // write only on change → no redundant reactivity
 	}
 	function onHeaderPointerUp() {
 		window.removeEventListener('mousemove', onHeaderPointerMove);
@@ -505,7 +506,12 @@
 		{#if result.rows.length === 0}
 			<div class="base-state">{$t('lensBlock.empty') || 'No notes match this base.'}</div>
 		{:else}
-			<div class="base-table-scroll" bind:this={scrollEl} onscroll={onTableScroll}>
+			<div
+				class="base-table-scroll"
+				class:reordering={dragCol !== null}
+				bind:this={scrollEl}
+				onscroll={onTableScroll}
+			>
 				<table class="base-table">
 					<thead>
 						<tr>
@@ -588,6 +594,8 @@
 									{@const editable = isPropColumn(c)}
 									<td
 										class:editable-cell={editable}
+										class:col-dragging={dragCol === c}
+										class:col-drop-target={dropCol === c}
 										dir={text ? detectDir(text) : undefined}
 										title={editable ? ($t('lensBlock.editCell') || 'Double-click to edit') : undefined}
 										ondblclick={editable ? () => startEdit(row, c) : undefined}
@@ -778,19 +786,33 @@
 		font-weight: 700;
 	}
 	/* §K — pointer-drag a data-column header to reorder */
+	.base-table th {
+		user-select: none; /* headers never text-select — kills the blue highlight while dragging */
+	}
 	.base-table th.th-data {
 		cursor: grab;
 	}
 	.base-table th.th-data:active {
 		cursor: grabbing;
 	}
-	.base-table th.dragging {
-		opacity: 0.45;
+	/* during an active reorder, suppress selection across the whole grid + grabbing cursor */
+	.base-table-scroll.reordering {
+		user-select: none;
 		cursor: grabbing;
 	}
-	.base-table th.drag-over {
+	/* the whole column being dragged — tint its header AND every visible cell so the
+	   user sees the entire column move, not just the header */
+	.base-table th.dragging,
+	.base-table td.col-dragging {
 		background: var(--background-modifier-hover);
-		box-shadow: inset 0 -2px 0 var(--interactive-accent);
+	}
+	.base-table th.dragging {
+		box-shadow: inset 0 0 0 1.5px var(--interactive-accent);
+	}
+	/* the drop target — a vertical insertion line down the target column */
+	.base-table th.drag-over,
+	.base-table td.col-drop-target {
+		box-shadow: inset 2px 0 0 var(--interactive-accent);
 	}
 	.th-remove {
 		flex-shrink: 0;
