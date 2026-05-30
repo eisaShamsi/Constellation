@@ -77,7 +77,19 @@ The §B Boss test on the real universe (7,651 notes) showed **Outgoing links** p
 
 **Verify:** 884 lib tests pass (+6 parser); svelte-check = 3 pre-existing errors only (zero new); post-apply re-scan shows 644,526 links now `type::X`. `CodeMirrorEditor.svelte:735` wrong list is **dead code** (only a stale comment references it; not mounted) → §E retire.
 
+## Re-index trigger gap (B2 failure → automatic self-heal)
+
+Boss test after the conversion: **A2 (editor renders converted links) PASS; B2 (Link types column) FAIL** — still blank after 25 min. Diagnosed on the live index (`diag_mig066.py` + `check_mtime.py` + diagnostics.log): `note_links.link_type` was **unchanged** — still 232,668 `'relates'` rows, identical to pre-conversion. Even the OLD parser would extract `supports` from `[[supports::X]]`, so this proved **the app never re-read the converted files**.
+
+Root cause: the **"ZERO BOOT-TIME WALKS"** rule (2026-04-15 perf panel, `+layout.svelte:2067`) removed the on-launch filesystem reconcile. A full re-index now fires ONLY from (a) the live file-watcher (only catches changes while running) or (b) a "Rebuild Index" action *referenced in comments but never built*. The conversion happened while the app was closed → the watcher missed it → no boot re-scan → stale index. The `index_note` mtime gate (search.rs:3887) would have re-indexed (cached `1776186181` ≠ file `1780164917`) — it was just never called.
+
+**Eisa's steer: "Shouldn't the indexing happen automatically?"** — correct. The right fix is auto-detection, not a manual button. **`+layout.svelte`:** restored a **deferred (5s) background** `cache_reconcile` in `initializeApp` (runs on boot AND universe-switch). It fires after the critical path has hydrated — boot-to-interactive is structurally unaffected (the original perf concern) — on its own thread, and re-reads ONLY files whose mtime changed (cheap when nothing did; emits `cache-reconciled` to refresh the snapshot). So Constellation now **self-heals after any external bulk change** (sync, restore, the conversion) with zero user action. `invoke('cache_reconcile')` was called 0× before, so this is a clean re-enable.
+
+**Trade-off (honest):** this re-opens the aggressive zero-boot-walks optimization — every boot now does a cheap background stat-scan (~1–3s, deferred, off the critical path). Justified by the auto-detect requirement. First post-conversion boot does the heavy re-index (7,512 changed files) in the background; subsequent boots find nothing changed → cheap. Perf to confirm on Eisa's relaunch (boot stays instant).
+
 ## Open / next
-- **Resume §B Boss test** on the new build (link-type fixes + converted data) — verify binary mtime first; **+ Add column → Constellation** → **Outgoing links** + **Link types**; both now populate (Link types shows real `supports`/`derives-from`/… in canonical order). Confirm the editor renders the converted `[[type::…]]` links with colored badges.
+- **Resume §B Boss test** on the auto-reconcile build — relaunch, wait for the deferred reconcile (~5s + background re-index of the converted files), then reopen the Base → **Link types** populates with real types in canonical order.
+- Editor A2 caveat: Eisa's screenshot showed raw `[[supports::…]]` (likely active-line/source view; he passed A2) — re-confirm clean badge rendering in live-preview after the re-index.
+- Possible follow-up: a manual "Rebuild Index" button (Settings → Index) as a belt-and-suspenders backstop; smarter dirty-check to skip the stat-scan when nothing changed.
 - §C/§D/§E/§F/§G per the approved Plan. §D groundwork mapped: rank-aware sort hooks via an optional `sort_expression` on `ResolvedDim`/`DimensionDef` (link_types sorts on the materialized `outgoing_top_rank`); `sql_builder.rs` resolves sort cols at `build_per_schema_body` + outer ORDER BY by ordinal.
 - **PJ candidate** (from the §A.2 perf dig): `reconcile_filesystem` / `index_library_recursive` re-index EVERY file on every boot reconcile (no content-hash skip) — all note_links trigger families fire per-edge each time. A "skip unchanged" guard would cut every boot's reconcile cost across the board. Flagged for Eisa.

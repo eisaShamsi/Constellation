@@ -2140,6 +2140,14 @@
 				})
 				.catch(() => { loadAllStatsWallMs = Math.round(performance.now() - t0); });
 		}
+		// Auto self-heal: catch bulk external changes (a sync, a restore, or an
+		// external bulk edit made while the app was CLOSED — the live watcher only
+		// sees changes while running). Deferred + background so boot stays instant:
+		// the critical path already hydrated above; this fires ~5s later on
+		// cache_reconcile's own thread and re-reads ONLY files whose mtime changed
+		// (cheap when nothing did). It emits 'cache-reconciled' (listened below) to
+		// refresh the snapshot when done. Runs on boot AND universe-switch.
+		setTimeout(() => { invoke('cache_reconcile').catch(() => {}); }, 5000);
 	}
 
 	async function handleUniverseCreated(entry: UniverseEntry) {
