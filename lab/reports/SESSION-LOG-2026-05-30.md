@@ -64,7 +64,20 @@ and populate). §B cell render is the raw materialized value (count as number,
 link_types as the stored canonical string); §C localizes link_types + right-aligns
 the count.
 
+## Link-Type Syntax Correction (MIG-066 §B prerequisite)
+
+The §B Boss test on the real universe (7,651 notes) showed **Outgoing links** populating + sorting correctly, but **Link types blank everywhere**. Diagnosed on the live index (`diag_mig066.py`): **every** `note_links.link_type` was `'relates'` (232,668 rows, one value). Root cause — a syntax mismatch, NOT a MIG-066 bug: the backend `extract_typed_links` (search.rs:3614) parsed a predicate-FIRST `[[type::target]]` convention (SMW-style) and defaulted to `'relates'`, while the data + the live-preview editor use predicate-LAST `[[target|display|type]]` (type = last segment). So the index stored `'relates'` for all; the panels worked via an annotation-field workaround. (Memory: [[project_note_links_link_type_relates_bug]].)
+
+**Decision (Eisa): "NEVER accept wrong approaches"** — adopt the field-standard **predicate-first `[[type::target|display]]`** (cross-checked: SMW `[[property::value]]`, Dataview `key:: [[value]]` — both predicate-first; Roam discourse-graph optimizes for natural writing) and **convert the real data**, not patch the parser to read the wrong form.
+
+**Shipped (coordinated so nothing breaks mid-cutover):**
+- **Backend** (`search.rs`): rewrote `extract_typed_links` + `parse_link_body` to accept BOTH forms (predicate-first `::`, legacy predicate-last last-segment-as-type) and default untyped to **`associative`** (the canonical null), never `relates`. 6 new `tests_link_parser` (both forms, Arabic, .NET, dedup across forms, empty-target). Stale `relates` comment in `libraries.rs` corrected.
+- **Editor** (`livePreview.ts`): added the predicate-first decoration branch (render `[[type::target|display]]` — show target/display in the type color, hide the `type::` plumbing) + fixed the traversal-chip target to strip the `type::` prefix. (`completions.ts`): added **`supersedes`** (was missing — §E vocab drift) in canonical order + the apply now emits `[[type::target|display]]` from the familiar `[[target|type` muscle-memory flow.
+- **Converter** (`lab/reports/convert_links.py`, one-time, backed-up by Eisa): scoped to the 17 registered library paths; dry-run-first; idempotent (skips `::`); fenced-code-safe; UTF-8/RTL-safe; display preserved verbatim. **Applied: 644,524 links across 7,512 files** → `type::` form. Residual ~6 type-last links are all inside code fences (`find_remaining.py` confirmed `fence=True`) — correctly left as examples.
+
+**Verify:** 884 lib tests pass (+6 parser); svelte-check = 3 pre-existing errors only (zero new); post-apply re-scan shows 644,526 links now `type::X`. `CodeMirrorEditor.svelte:735` wrong list is **dead code** (only a stale comment references it; not mounted) → §E retire.
+
 ## Open / next
-- §B Boss test (staged) — verify binary mtime first; then **+ Add column → Constellation** lists **Outgoing links** + **Link types**; add each → columns populate.
+- **Resume §B Boss test** on the new build (link-type fixes + converted data) — verify binary mtime first; **+ Add column → Constellation** → **Outgoing links** + **Link types**; both now populate (Link types shows real `supports`/`derives-from`/… in canonical order). Confirm the editor renders the converted `[[type::…]]` links with colored badges.
 - §C/§D/§E/§F/§G per the approved Plan. §D groundwork mapped: rank-aware sort hooks via an optional `sort_expression` on `ResolvedDim`/`DimensionDef` (link_types sorts on the materialized `outgoing_top_rank`); `sql_builder.rs` resolves sort cols at `build_per_schema_body` + outer ORDER BY by ordinal.
 - **PJ candidate** (from the §A.2 perf dig): `reconcile_filesystem` / `index_library_recursive` re-index EVERY file on every boot reconcile (no content-hash skip) — all note_links trigger families fire per-edge each time. A "skip unchanged" guard would cut every boot's reconcile cost across the board. Flagged for Eisa.

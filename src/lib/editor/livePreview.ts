@@ -1413,7 +1413,33 @@ function buildDecorations(view: EditorView): DecorationSet {
 					const innerTo = absTo - 2;
 					const raw = m[1];
 					const pipeIndex = raw.indexOf('|');
-					if (pipeIndex >= 0) {
+					// Predicate-FIRST (canonical): [[type::target]] / [[type::target|display]].
+					const colonIdx = raw.indexOf('::');
+					const firstType = (colonIdx > 0 && TYPED_LINK_TYPES.has(raw.slice(0, colonIdx).trim().toLowerCase()))
+						? raw.slice(0, colonIdx).trim().toLowerCase() : '';
+					// Target = first segment, after any `type::` prefix (for the traversal chip).
+					const linkTarget = (firstType
+						? raw.slice(colonIdx + 2).split('|')[0]
+						: (pipeIndex >= 0 ? raw.slice(0, pipeIndex) : raw)
+					).trim().toLowerCase();
+					if (firstType) {
+						const fdeco = typedLinkDecos[firstType] ?? linkDeco;
+						const rest = raw.slice(colonIdx + 2);
+						const restPipe = rest.indexOf('|');
+						if (restPipe >= 0) {
+							// [[type::target|display]] — show display in the type color; hide [[type::target| and ]].
+							const dispFrom = innerFrom + colonIdx + 2 + restPipe + 1;
+							ranges.push({ from: absFrom, to: dispFrom, deco: replaceDeco });
+							ranges.push({ from: dispFrom, to: innerTo, deco: fdeco });
+							ranges.push({ from: innerTo, to: absTo, deco: replaceDeco });
+						} else {
+							// [[type::target]] — show target in the type color; hide [[type:: and ]].
+							const tgtFrom = innerFrom + colonIdx + 2;
+							ranges.push({ from: absFrom, to: tgtFrom, deco: replaceDeco });
+							ranges.push({ from: tgtFrom, to: innerTo, deco: fdeco });
+							ranges.push({ from: innerTo, to: absTo, deco: replaceDeco });
+						}
+					} else if (pipeIndex >= 0) {
 						// Recognize a typed annotation only when it sits after the LAST
 						// pipe. This covers:
 						//   [[note|type]]            — 2-part typed (pipeIndex === lastPipe)
@@ -1462,7 +1488,7 @@ function buildDecorations(view: EditorView): DecorationSet {
 					// the same bytes, since the target is always the first
 					// `|`-delimited segment.
 					if (notePathLower && traversalMap.size > 0) {
-						const targetName = (pipeIndex >= 0 ? raw.slice(0, pipeIndex) : raw).trim().toLowerCase();
+						const targetName = linkTarget;
 						if (targetName) {
 							const count = traversalMap.get(notePathLower + '|' + targetName);
 							if (count && count > 0) {

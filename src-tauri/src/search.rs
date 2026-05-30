@@ -3609,35 +3609,164 @@ struct TypedLink {
     annotation: String,   // user's reasoning (from |annotation syntax)
 }
 
-/// Extract typed links from note content.
-/// Matches: [[type::target|annotation]], [[type::target]], [[target|display]], [[target]]
+/// The 8 canonical typed-link names the parser recognizes (Living-Link Concept
+/// Paper §7). `associative` is the null/untyped default — NOT in this set. Same
+/// 8 as `LINK_TYPE_IN_LIST` (the SQL membership form used by the §A aggregates).
+const PARSER_LINK_TYPES: &[&str] = &[
+    "supports", "contradicts", "causes", "exemplifies",
+    "generalizes", "derives-from", "part-of", "supersedes",
+];
+
+/// Extract typed links from note content. Accepts BOTH forms:
+///   - canonical predicate-FIRST: `[[type::target]]`, `[[type::target|display]]`
+///   - legacy predicate-LAST:     `[[target|type]]`, `[[target|display|type]]`
+///     (the trailing `|` segment is the type when it's one of the 8 canonical
+///     types — the rule the live-preview editor already uses).
+/// Plain `[[target]]` and display-only `[[target|display]]` (tail ∉ types) are
+/// untyped → `associative` (the canonical null), never `relates`.
 fn extract_typed_links(content: &str) -> Vec<TypedLink> {
     use std::sync::OnceLock;
     static RE: OnceLock<regex::Regex> = OnceLock::new();
-    // Matches: [[optional_type::target|optional_annotation]]
-    let re = RE.get_or_init(|| {
-        regex::Regex::new(r"\[\[(?:([a-zA-Z\-]+)::)?([^\]|]+?)(?:\|([^\]]*))?\]\]").unwrap()
-    });
+    // Capture the wikilink body (no nested brackets); parse the type in Rust so
+    // both predicate-first and predicate-last forms share one definition.
+    let re = RE.get_or_init(|| regex::Regex::new(r"\[\[([^\[\]]+)\]\]").unwrap());
     let mut links = Vec::new();
     let mut seen = std::collections::HashSet::<String>::new();
     for cap in re.captures_iter(content) {
-        let link_type = cap.get(1)
-            .map(|m| m.as_str().to_lowercase())
-            .unwrap_or_else(|| "relates".to_string());
-        let target = cap.get(2)
-            .map(|m| m.as_str().trim().to_lowercase())
-            .unwrap_or_default();
-        let annotation = cap.get(3)
-            .map(|m| m.as_str().trim().to_string())
-            .unwrap_or_default();
-
-        if target.is_empty() { continue; }
+        let body = cap.get(1).map(|m| m.as_str()).unwrap_or("");
+        let Some((link_type, target, annotation)) = parse_link_body(body) else { continue; };
         let key = format!("{}::{}", link_type, target);
         if !seen.insert(key) { continue; }
-
         links.push(TypedLink { target, link_type, annotation });
     }
     links
+}
+
+/// Parse one wikilink body into `(link_type, lowercased target, annotation)`.
+/// `None` only when there is no usable target. `annotation` carries the display
+/// / middle segment (preserved as before). Shared by the indexer + its tests.
+fn parse_link_body(body: &str) -> Option<(String, String, String)> {
+    let is_type = |s: &str| PARSER_LINK_TYPES.contains(&s);
+
+    // Predicate-FIRST: "type::rest" where the head is a canonical type.
+    if let Some((head, rest)) = body.split_once("::") {
+        let t = head.trim().to_lowercase();
+        if is_type(&t) {
+            let (target, ann) = match rest.split_once('|') {
+                Some((tg, d)) => (tg, d),
+                None => (rest, ""),
+            };
+            let target = target.trim().to_lowercase();
+            if target.is_empty() { return None; }
+            return Some((t, target, ann.trim().to_string()));
+        }
+        // "::" present but head isn't a known type → fall through (treat as a
+        // normal link whose name happens to contain "::").
+    }
+
+    // Predicate-LAST / untyped: split on '|'.
+    let parts: Vec<&str> = body.split('|').collect();
+    let target = parts[0].trim().to_lowercase();
+    if target.is_empty() { return None; }
+    if parts.len() >= 2 {
+        let last = parts[parts.len() - 1].trim().to_lowercase();
+        if is_type(&last) {
+            // [[target|type]] (2) or [[target|display…|type]] (3+): middle = display.
+            let ann = if parts.len() >= 3 {
+                parts[1..parts.len() - 1].join("|").trim().to_string()
+            } else {
+                String::new()
+            };
+            return Some((last, target, ann));
+        }
+        // Display-only [[target|display]] → untyped; display preserved.
+        return Some(("associative".to_string(), target, parts[1..].join("|").trim().to_string()));
+    }
+    // Plain [[target]].
+    Some(("associative".to_string(), target, String::new()))
+}
+
+#[cfg(test)]
+mod tests_link_parser {
+    //! Link-Type Syntax Correction — `extract_typed_links` / `parse_link_body`
+    //! accept BOTH the canonical predicate-first `[[type::target|display]]` and
+    //! the legacy predicate-last `[[target|display|type]]`, default untyped to
+    //! `associative` (never `relates`), and preserve Arabic + special chars.
+    use super::*;
+
+    fn one(body: &str) -> (String, String, String) {
+        parse_link_body(body).expect("usable target")
+    }
+
+    #[test]
+    fn predicate_first_canonical() {
+        assert_eq!(one("supports::Stone Age"), ("supports".into(), "stone age".into(), String::new()));
+        // type::target|display — display preserved as annotation.
+        assert_eq!(
+            one("supports::Vault (architecture)|vaults"),
+            ("supports".into(), "vault (architecture)".into(), "vaults".into())
+        );
+        // hyphenated types.
+        assert_eq!(one("derives-from::Spain"), ("derives-from".into(), "spain".into(), String::new()));
+        assert_eq!(one("part-of::Column|column"), ("part-of".into(), "column".into(), "column".into()));
+    }
+
+    #[test]
+    fn predicate_last_legacy() {
+        // 2-part [[target|type]].
+        assert_eq!(one("Stone Age|supports"), ("supports".into(), "stone age".into(), String::new()));
+        // 3-part [[target|display|type]] — display kept.
+        assert_eq!(
+            one("Time period|time period|supports"),
+            ("supports".into(), "time period".into(), "time period".into())
+        );
+    }
+
+    #[test]
+    fn untyped_and_display_only_default_associative() {
+        assert_eq!(one("Kingdom of France"), ("associative".into(), "kingdom of france".into(), String::new()));
+        // display-only: tail is not a canonical type → untyped, display preserved.
+        assert_eq!(
+            one("Rangtong and shentong|emptiness of other"),
+            ("associative".into(), "rangtong and shentong".into(), "emptiness of other".into())
+        );
+    }
+
+    #[test]
+    fn arabic_and_special_chars_preserved() {
+        assert_eq!(one("derives-from::العالم الإسلامي"), ("derives-from".into(), "العالم الإسلامي".into(), String::new()));
+        assert_eq!(
+            one("derives-from::عالم (إسلام)|وعلماء"),
+            ("derives-from".into(), "عالم (إسلام)".into(), "وعلماء".into())
+        );
+        assert_eq!(one("causes::.NET"), ("causes".into(), ".net".into(), String::new()));
+    }
+
+    #[test]
+    fn empty_target_rejected() {
+        assert!(parse_link_body("").is_none());
+        assert!(parse_link_body("|supports").is_none());
+        assert!(parse_link_body("supports::").is_none());
+    }
+
+    #[test]
+    fn extract_dedups_and_handles_mixed_forms() {
+        let content = "intro [[supports::A]] mid [[A|supports]] then [[derives-from::B|b]] and plain [[C]].";
+        let links = extract_typed_links(content);
+        // [[supports::A]] and [[A|supports]] dedupe to one (supports::a).
+        assert_eq!(links.len(), 3, "supports::A duplicated across both forms collapses");
+        let mut got: Vec<(String, String)> =
+            links.iter().map(|l| (l.link_type.clone(), l.target.clone())).collect();
+        got.sort();
+        assert_eq!(
+            got,
+            vec![
+                ("associative".into(), "c".into()),
+                ("derives-from".into(), "b".into()),
+                ("supports".into(), "a".into()),
+            ]
+        );
+    }
 }
 
 /// Extract headings from markdown content.

@@ -1966,10 +1966,11 @@ pub struct NoteLink {
     pub context: String,
     pub library_name: String,
     pub link_type: Option<String>,
-    /// User's typed annotation from `[[target|annotation]]` syntax — the
-    /// second parser (`extract_typed_links` in search.rs) stores the
-    /// semantic tag here and leaves `link_type` at the default "relates".
-    /// The UI checks this first when choosing the type-badge color.
+    /// Display / annotation text from the `|` segment of a typed link.
+    /// (Historically the search.rs parser left `link_type` at "relates" and
+    /// stored the type word here; since the Link-Type Syntax Correction
+    /// `extract_typed_links` stores the real type in `link_type` and this field
+    /// carries the display segment.) The UI may read this for the badge color.
     #[serde(default)]
     pub annotation: String,
     /// Living Link weight: `1 + ln(1 + traversal_count)`. Default 1.0 for

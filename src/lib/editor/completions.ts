@@ -88,6 +88,7 @@ export function createTypedLinkCompletion() {
 		{ label: 'generalizes',  detail: 'Abstraction'                },
 		{ label: 'derives-from', detail: 'Provenance / source'        },
 		{ label: 'part-of',      detail: 'Compositional hierarchy'    },
+		{ label: 'supersedes',   detail: 'Replaces an earlier stance' },
 	];
 	return function typedLinkCompletion(context: CompletionContext) {
 		// Match [[note_name| with optional partial type already typed
@@ -102,16 +103,21 @@ export function createTypedLinkCompletion() {
 				label: t.label,
 				detail: t.detail,
 				type: 'keyword',
-				apply: (v: EditorView, _c: Completion, f: number, to: number) => {
+				apply: (v: EditorView, _c: Completion, _f: number, to: number) => {
 					// Consume existing ]] if present, then re-add after type
 					let end = to;
 					const after = v.state.doc.sliceString(to, Math.min(to + 2, v.state.doc.length));
 					if (after === ']]') end = to + 2;
 					else if (after[0] === ']') end = to + 1;
-					const insert = t.label + ']]';
+					// Rebuild the link in canonical predicate-first form:
+					//   [[Target|display|<type>   ->   [[type::Target|display]]
+					const segs = before.text.slice(2).split('|');
+					const target = segs[0];
+					const display = segs.slice(1, -1).join('|');
+					const insert = display ? `[[${t.label}::${target}|${display}]]` : `[[${t.label}::${target}]]`;
 					v.dispatch({
-						changes: { from: f, to: end, insert },
-						selection: { anchor: f + insert.length }
+						changes: { from: before.from, to: end, insert },
+						selection: { anchor: before.from + insert.length }
 					});
 				}
 			}));
