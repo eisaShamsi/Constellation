@@ -448,16 +448,23 @@ fn discover_keys(conn: &Connection, schemas: &[&str]) -> Result<Vec<String>, Str
             )
         })
         .collect();
-    // Filter YAML list-item leakage: the line-based frontmatter parser
-    // (`search::parse_frontmatter`) splits a multi-line list item that contains
-    // a colon — e.g. `  - "Heraclitus: Fragments"` — into a bogus `key: value`,
-    // producing keys like `- "Heraclitus`. Real mapping keys never start with
-    // `- ` (that's list syntax) or a quote, so excluding those cleans the
-    // add-column picker on EXISTING data with no re-index. (Faithful list/nested
-    // materialization is the deferred parser-upgrade + re-index PJ.)
+    // Two filters on the discovered keys:
+    //  1. YAML list-item leakage — the line-based frontmatter parser
+    //     (`search::parse_frontmatter`) splits a multi-line list item that
+    //     contains a colon (e.g. `  - "Heraclitus: Fragments"`) into a bogus
+    //     `key: value`, producing keys like `- "Heraclitus`. Real mapping keys
+    //     never start with `- ` (list syntax) or a quote, so excluding those
+    //     cleans the picker on EXISTING data with no re-index. (Faithful
+    //     list/nested materialization stays the deferred parser-upgrade PJ.)
+    //  2. Reserved keys — Constellation injects `cid_cn` (canonical id), legacy
+    //     `cid`, and `kind` (file kind) into every note's frontmatter as
+    //     plumbing (see `canonical::inject_frontmatter`). They're real keys but
+    //     not something the user curates, so they're hidden from the
+    //     add-column picker's "Your fields".
     let sql = format!(
         "SELECT DISTINCT k FROM ({}) \
          WHERE k NOT LIKE '- %' AND k NOT LIKE '\"%' AND TRIM(k) <> '' \
+         AND k NOT IN ('cid', 'cid_cn', 'kind') \
          ORDER BY k COLLATE NOCASE",
         selects.join(" UNION ALL ")
     );
@@ -541,7 +548,7 @@ mod tests {
             "INSERT INTO note_meta (path, name, library_name, modified, created_at, properties_json) \
              VALUES ('/Lib/a.md', 'a', 'Lib', 1, 1, ?)",
             rusqlite::params![
-                r#"{"status":"active","maturity":"seed","part_of":"","- \"Heraclitus":"Fragments","- \"Mimesis":"Auerbach","\"stray":"x"}"#
+                r#"{"status":"active","maturity":"seed","part_of":"","cid_cn":"20260530T000000Z_NOTE_0001","cid":"old","kind":"note","- \"Heraclitus":"Fragments","- \"Mimesis":"Auerbach","\"stray":"x"}"#
             ],
         )
         .unwrap();
@@ -559,6 +566,14 @@ mod tests {
             "stray quoted key filtered, got: {:?}",
             keys
         );
+        for reserved in ["cid", "cid_cn", "kind"] {
+            assert!(
+                !keys.contains(&reserved.to_string()),
+                "reserved key '{}' hidden, got: {:?}",
+                reserved,
+                keys
+            );
+        }
     }
 
     fn recent_captures_def() -> LensDefinition {
