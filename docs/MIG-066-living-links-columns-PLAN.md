@@ -39,9 +39,17 @@ The two columns are **same-DB / outgoing-side**, so they materialize cleanly wri
   `supports · contradicts · causes · exemplifies · generalizes · derives-from · part-of · supersedes`. (`associative` = the null/untyped synonym, not in the semantic order.) The rank-aware sort uses this index.
 - **Verify (Boss-testable):** sort the Link-types column → notes order by their top-ranked type in **canonical** order (not alphabetical); reverse flips it.
 
-### §E — Reconcile existing surfaces to the canonical order (Concept Paper §8)
-- Align the drift to the ratified order: `Inspector360.svelte` `TYPE_ORDER`, `inspector360.rs` `ALL_LINK_TYPES`, and the **Living-Links Guide §2** → `supports · contradicts · causes · exemplifies · generalizes · derives-from · part-of`; **add `supersedes`** to the 360.3D matrix (parsed today but not displayed there). Bump the Guide to v1.1 in the same commit.
-- **Verify (Boss-testable):** the 360.3D matrix columns read in the canonical order and now include a `supersedes` column; no matrix regression.
+### §E — Reconcile EVERY core Living-Link surface to the Concept Paper (Boss directive)
+The audit found **multiple inconsistent link-type lists**. §E reconciles them all to the ratified order + canonical 8 + `supersedes`, and — to stop drift recurring — introduces a **single shared source of truth** every surface references ("secure the winning — one source, used many times").
+- **One canonical list** (frontend shared module + agree the Rust consts), ordered per Concept Paper §7.
+- **Reconcile each surface:**
+  - `Inspector360.svelte` `TYPE_ORDER` (360.3D matrix) — Camp B order, no `supersedes` → canonical order **+ add a `supersedes` column** (+ `TYPE_COLORS`/`TYPE_LABEL_KEYS`).
+  - `inspector360.rs` `ALL_LINK_TYPES` — add `supersedes` (drives the matrix gap analysis).
+  - `CodeMirrorEditor.svelte` `LINK_TYPES` — **legacy/wrong set** (`related-to`/`prerequisite`/`see-also`/`extends` — not Constellation types) → the canonical 8.
+  - `editor/completions.ts` `LINK_TYPES`, `editor/livePreview.ts` `TYPED_LINK_TYPES`, `store.ts` `KNOWN_LINK_TYPES` → canonical 8 (+ `supersedes`).
+  - Color/label maps (`KnowledgeHealthDashboard`, `SightPanel`) — cover all 8 + `supersedes`.
+  - `Living-Links Guide §2` → canonical order; bump Guide to **v1.1** (SO #6, same commit).
+- **Verify (Boss-testable):** 360.3D matrix reads in canonical order + has a `supersedes` column; the `[[Note|` autocomplete suggests only the canonical 8 (no `related-to`/`see-also`); Backlinks/Outgoing/KHD/Sight link rendering unregressed.
 
 ### §F — Localization + docs
 - New column labels (**Outgoing links**, **Link types**) + the 8 typed-link names (shared by the Base column AND the matrix) if not already localized → fill **all 15 locales**.
