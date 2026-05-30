@@ -34,8 +34,10 @@ pub(crate) fn validate_base_path(app: &tauri::AppHandle, file_path: &str) -> Res
         }
     }
 
-    // Check if path is within any registered library
-    let libraries = crate::libraries::load_libraries_pub(app);
+    // Check if path is within one of the ACTIVE universe's OWN libraries
+    // (non-recursive — MIG-065 §J: a write must never be authorized onto a
+    // read-only cUniverse `.base`; the recursive set would include it).
+    let libraries = crate::libraries::load_libraries(app);
     for lib in &libraries {
         if let Ok(canon_lib) = fs::canonicalize(&lib.path) {
             if target.starts_with(&canon_lib) {
@@ -624,9 +626,11 @@ pub fn update_note_property(
     key: String,
     value: String,
 ) -> Result<(), String> {
-    // Security: validate path is in a library, and capture the library name so
-    // the search index can be refreshed after the write (MIG-065 §H).
-    let libraries = crate::libraries::load_libraries_pub(&app);
+    // Security: validate the path is in one of the ACTIVE universe's OWN
+    // libraries (non-recursive — MIG-065 §J: editing must never write to a
+    // read-only cUniverse note), and capture the library name so the search
+    // index can be refreshed after the write (MIG-065 §H).
+    let libraries = crate::libraries::load_libraries(&app);
     let lib_name = libraries.iter().find(|v| {
         fs::canonicalize(&file_path).ok()
             .and_then(|fp| fs::canonicalize(&v.path).ok().map(|vp| fp.starts_with(vp)))

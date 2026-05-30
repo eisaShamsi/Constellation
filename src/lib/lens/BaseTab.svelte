@@ -56,6 +56,7 @@
 
 	let result = $state<LensResult | null>(null);
 	let error = $state<string | null>(null);
+	let legacy = $state(false); // §J — an old-MVP JSON `.base` (calm notice, not a raw error)
 	let loading = $state(true);
 	let pickerOpen = $state(false);
 	let sortPanelOpen = $state(false);
@@ -89,15 +90,21 @@
 		const reqYaml = y;
 		loading = true;
 		error = null;
+		legacy = false;
 		executeLens(reqYaml)
 			.then((res) => {
 				if (lastRun !== reqYaml) return; // a newer evaluation superseded this one
 				result = res;
 				error = null;
+				legacy = false;
 			})
 			.catch((e: unknown) => {
 				if (lastRun !== reqYaml) return;
-				error = typeof e === 'string' ? e : (e as Error)?.message ?? String(e);
+				// §J — an old-MVP JSON `.base` (BaseDefinition) parses as YAML but
+				// fails the LensDefinition shape. Show a calm "older format" notice
+				// instead of a raw serde error (decision #1: old JSON ignored).
+				legacy = reqYaml.trimStart().startsWith('{');
+				error = legacy ? null : typeof e === 'string' ? e : (e as Error)?.message ?? String(e);
 				result = null;
 			})
 			.finally(() => {
@@ -249,6 +256,11 @@
 <div class="base-tab" dir={$dir} data-base-path={path}>
 	{#if loading && !result}
 		<div class="base-state">{$t('lensBlock.loading') || 'Loading…'}</div>
+	{:else if legacy}
+		<div class="base-state base-legacy" dir="auto">
+			{$t('lensBlock.legacyBase') ||
+				'This base is in an older format and can’t be shown here. Create a new base to replace it.'}
+		</div>
 	{:else if error}
 		<div class="base-state base-error">
 			<span class="base-error-label">{$t('lensBlock.errorLabel') || 'Base error'}</span>
@@ -628,6 +640,10 @@
 		color: var(--text-muted);
 		padding: 12px 0;
 		font-size: 0.9rem;
+	}
+	.base-legacy {
+		max-width: 48ch;
+		line-height: 1.5;
 	}
 	.base-error {
 		display: flex;

@@ -40,7 +40,13 @@ fn libraries_config_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
 }
 
 /// Load registered libraries from the active universe's libraries.json (own libraries only).
-fn load_libraries(app: &tauri::AppHandle) -> Vec<LibraryInfo> {
+/// Load ONLY the active universe's own libraries (its `libraries.json`),
+/// NON-recursively — i.e. WITHOUT the federated cUniverse libraries that
+/// `load_all_libraries`/`resolve_universe_libraries` pull in. `pub(crate)` for
+/// MIG-065 §J: WRITE-path validation must scope to the active universe's own
+/// libraries so an edit never lands on a read-only cUniverse file (the
+/// federated-write blocker). Reads still use the recursive set.
+pub(crate) fn load_libraries(app: &tauri::AppHandle) -> Vec<LibraryInfo> {
     let path = match libraries_config_path(app) {
         Ok(p) => p,
         Err(_) => return vec![],

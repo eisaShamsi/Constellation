@@ -347,3 +347,34 @@ Double-click a `prop.*` (your-field) cell → edit the note's frontmatter value 
 - Orientation still at v2.44 (pre-this-session); the MIG-065 §F.2–§I work + the cognitive-lens paper land in the §L orientation bump.
 
 **FUTURE (Cognitive-Engine-era, logged):** rank-aware sorting (memory `project_ranked_dimensions_sort_by_rank`) — maturity rank `seed→sapling→evergreen→canonical` (wilting = condition); legacy `literature`→Origin/provenance per the lens §6; the four-questions grouping of Base cognitive columns (MIG-066/067/068).
+
+---
+
+## §I-b DONE (`ae28c595`) + §J audit (Boss: "don't stop, proceed")
+
+**§I-b — base creation writes LensDefinition YAML.** `create_base` + `create_workspace_base` build a minimal `LensDefinition` (shared `minimal_base_yaml` helper) → canonical YAML. The sidebar "New Base" now makes a BaseTab-readable base (closing the §F.2 gap); `selectedLibraries` → `scope.libraries`. Frontend swept: `bases/types.ts` deleted, `bases/store.ts` trimmed (no `saveWorkspaceBase`/`BaseDefinition`), `+layout` new-base handler simplified. cargo check 0 errors; svelte-check clean.
+
+**Physical dead-Rust sweep — DEFERRED to §L** (decision 06:30, WA#4: a bulk surgical deletion of ~400 dead lines in `bases.rs` at the end of a marathon is higher-risk than the value; the code is uncallable + documented). Dead spans (current `bases.rs` line map): structs `53-140` (BaseSource/ColumnDef/FilterRule/SortRule/BaseDefinition/BaseRow/BaseQueryResult + `default_*`); `217-535` (scan_folder/scan_by_tag/apply_filters/parse_base_file/parse_base_yaml/query_base/apply_sorts_fixed); `609-619` (save_base_file); `851-884` (save_workspace_base); `907-933` (parse_workspace_base); + the `std::time::Instant` import; + `lib.rs` `save_workspace_base` registration. All confirmed dead by the Explore map. §J's drift agent will re-confirm.
+
+**§J — 3-agent audit launched** (invariants · drift · migration-path), per Migration Phase 4.
+
+### §J audit RESULTS + fixes
+
+**Invariants agent:** 1 Simple-default ✅ · 2 File-Over-App ✅ · 3 Rule-8 (query_base unregistered/unreachable) ✅ · 4 edit-only-frontmatter ✅ · 5 federation parity ✅ · 6 language-first ⚠ (2/15 locales — §L) · 7 perf ⚠ (no SQL LIMIT; inline `_renderTable` uncapped) · 8 backward-tolerant ✅. **No blockers.**
+
+**🔴 BLOCKERS (migration agent, empirically proven) — FIXED this session:**
+- **Federated write to a read-only cUniverse (#4 note edit + #5b base column/sort edit).** Root cause: `update_note_property` + `validate_base_path` validated against `load_libraries_pub` (RECURSIVE — includes each cUniverse's auto `universe_notes` library whose `path == cUniverse root`), so a federated note/base passed the membership check and the write landed on the read-only cUniverse file. Violates MIG-062. Latent on Eisa's machine (كون عيسى declares a cUniverse child but it's not on disk → federation resolves to nothing today) but reachable the instant a cUniverse is present. **FIX:** made `libraries::load_libraries` (active-universe-OWN, non-recursive) `pub(crate)`; re-pointed both write-validations to it. Federated writes now reject loudly (saveError) instead of silently mutating a cUniverse. cargo check clean.
+- **Old JSON `.base` showed a raw serde error (#1)** instead of decision #1's "silently ignored". **FIX:** BaseTab detects a JSON-leading `.base` on parse failure → calm `lensBlock.legacyBase` notice (en+ar) instead of the red serde error. (Also covers the narrow cold-DB `no such table: note_meta` race → same calm path is a follow-up.)
+
+**🟠 HIGH (drift agent) — the §I dead-Rust sweep premise was PARTLY WRONG — corrected:** `scan_folder` / `scan_by_tag` / `apply_filters` / `apply_sorts_fixed` / structs `BaseRow` / `FilterRule` / `SortRule` / `parse_frontmatter` are **LIVE via `dataview.rs`** (the registered `execute_dataview_query`, used by `DataviewBlock.svelte`) — the Explore map missed the dataview subsystem. **Deferring the bulk sweep at 6am (WA#4) prevented breaking the Dataview block.** ✅ **Corrected §L sweep scope — TRULY dead (safe to delete): `query_base`, `parse_base_file`, `parse_base_yaml`, `save_base_file`, `parse_workspace_base` + structs `BaseSource`/`ColumnDef`/`BaseDefinition`/`BaseQueryResult` (modulo `scan_bases_dir`'s `BaseDefinition` name-read). KEEP: scan_folder/scan_by_tag/apply_filters/apply_sorts_fixed/BaseRow/FilterRule/SortRule/parse_frontmatter (dataview). Also: `save_workspace_base` is STILL REGISTERED (`lib.rs`) — vestigial; unregister + remove with the sweep.**
+
+**🟡 NON-BLOCKERS → PJ candidates (allocate at next Pending Jobs bump):**
+1. **Inline `LensBlockWidget._renderTable` (`livePreview.ts:881`) + list view render uncapped** — apply the BaseTab 500-cap to the shared inline renderer (Perf Rule 3 parity).
+2. **Engine-side `LIMIT` + separate `COUNT(*)`** — `execute_lens` materializes/IPC-transfers ALL rows though only 500 render; `total_count = rows.len()`.
+3. **Optimistic edit normalization** — BaseTab stores the raw untrimmed `editValue`; the indexer trims/round-trips via a *different* `parse_frontmatter` → the cell can differ from the stored value until next re-query.
+4. **Frontend↔Rust registry drift (latent)** — `tableModel` hardcodes dim facts (agree today); a `list_base_dimensions` command would be the single source when MIG-066+ extends `dimensions.rs`.
+5. **i18n §L fill** — 22 `lensBlock.*` keys × 13 locales = 286 missing entries (graceful English fallback; cosmetic until §L).
+6. **Non-atomic `fs::write`** for `.base`/frontmatter (codebase-wide; durability PJ).
+7. Defense-in-depth: a `prop.` prefix check in `update_note_property`; hide edit/column/sort affordances on federated (read-only) rows/bases (UX; the write is already safely rejected by the fix).
+
+**§J verdict:** 2 blockers fixed + verified; HIGH dataview-dependency caught (sweep scope corrected); non-blockers logged. Clean to proceed to §K.
