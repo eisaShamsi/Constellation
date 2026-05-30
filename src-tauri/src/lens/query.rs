@@ -448,8 +448,17 @@ fn discover_keys(conn: &Connection, schemas: &[&str]) -> Result<Vec<String>, Str
             )
         })
         .collect();
+    // Filter YAML list-item leakage: the line-based frontmatter parser
+    // (`search::parse_frontmatter`) splits a multi-line list item that contains
+    // a colon — e.g. `  - "Heraclitus: Fragments"` — into a bogus `key: value`,
+    // producing keys like `- "Heraclitus`. Real mapping keys never start with
+    // `- ` (that's list syntax) or a quote, so excluding those cleans the
+    // add-column picker on EXISTING data with no re-index. (Faithful list/nested
+    // materialization is the deferred parser-upgrade + re-index PJ.)
     let sql = format!(
-        "SELECT DISTINCT k FROM ({}) ORDER BY k COLLATE NOCASE",
+        "SELECT DISTINCT k FROM ({}) \
+         WHERE k NOT LIKE '- %' AND k NOT LIKE '\"%' AND TRIM(k) <> '' \
+         ORDER BY k COLLATE NOCASE",
         selects.join(" UNION ALL ")
     );
     let mut stmt = conn
@@ -518,6 +527,38 @@ mod tests {
             )
             .unwrap();
         }
+    }
+
+    #[test]
+    fn discover_keys_filters_yaml_list_item_leakage() {
+        // The line-based frontmatter parser turns a multi-line list item that
+        // contains a colon — e.g. `  - "Heraclitus: Fragments"` — into a bogus
+        // `key: value`, producing keys like `- "Heraclitus`. discover_keys must
+        // hide those (and stray quoted fragments) while keeping real keys, so the
+        // add-column picker only offers genuine fields.
+        let conn = make_test_db();
+        conn.execute(
+            "INSERT INTO note_meta (path, name, library_name, modified, created_at, properties_json) \
+             VALUES ('/Lib/a.md', 'a', 'Lib', 1, 1, ?)",
+            rusqlite::params![
+                r#"{"status":"active","maturity":"seed","part_of":"","- \"Heraclitus":"Fragments","- \"Mimesis":"Auerbach","\"stray":"x"}"#
+            ],
+        )
+        .unwrap();
+        let keys = discover_keys(&conn, &["main"]).unwrap();
+        assert!(keys.contains(&"status".to_string()), "real key kept: {:?}", keys);
+        assert!(keys.contains(&"maturity".to_string()), "real key kept: {:?}", keys);
+        assert!(keys.contains(&"part_of".to_string()), "real list-field key kept: {:?}", keys);
+        assert!(
+            !keys.iter().any(|k| k.starts_with("- ")),
+            "list-item leak filtered, got: {:?}",
+            keys
+        );
+        assert!(
+            !keys.iter().any(|k| k.starts_with('"')),
+            "stray quoted key filtered, got: {:?}",
+            keys
+        );
     }
 
     fn recent_captures_def() -> LensDefinition {
