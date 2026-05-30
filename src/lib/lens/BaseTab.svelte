@@ -285,21 +285,56 @@
 		}
 	}
 
-	// MIG-065 §F.2 — render cap (CLAUDE.md Performance Rule 3: virtualize/limit
-	// lists that can exceed 50 items). `execute_lens` returns ALL matching rows
-	// (no SQL LIMIT yet), so over a 7,600-note universe an unscoped base would
-	// hand us thousands of rows; rendering them un-virtualized janks the UI. We
-	// cap the rendered rows and show an honest "showing N of total" notice — no
-	// silent truncation. (Proper row virtualization + an engine-side LIMIT/COUNT
-	// split are logged as a follow-up; this keeps the Simple default fast.)
-	const MAX_RENDER_ROWS = 500;
-	const visibleRows = $derived(result ? result.rows.slice(0, MAX_RENDER_ROWS) : []);
-	// `t` (this project's lookup) falls back active-locale → en → key, and en
-	// always carries `rowCap`, so this resolves even before §L fills the other
-	// 13 locales. Params are strings (the lookup's `Record<string,string>`).
-	const capNotice = $derived.by(() => {
-		if (!result || result.rows.length <= MAX_RENDER_ROWS) return '';
-		return $t('lensBlock.rowCap', { n: String(MAX_RENDER_ROWS), total: String(result.total_count) });
+	// MIG-065 — row virtualization (CLAUDE.md Performance Rule 3: render only the
+	// rows on screen, regardless of total). Replaces the old 500-row cap — ALL
+	// matching rows are now scrollable while the DOM stays small. (`execute_lens`
+	// still returns every row over IPC; the engine-side LIMIT/COUNT split is a
+	// separate PJ.) Rows are single-line (uniform height), so one measured
+	// row-height drives exact top/bottom spacer math.
+	let scrollEl: HTMLDivElement | undefined = $state();
+	let scrollTop = $state(0);
+	let viewportH = $state(600);
+	let rowH = $state(32);
+	const OVERSCAN = 12;
+	const totalRows = $derived(result ? result.rows.length : 0);
+	const startIndex = $derived(Math.max(0, Math.floor(scrollTop / rowH) - OVERSCAN));
+	const endIndex = $derived(Math.min(totalRows, Math.ceil((scrollTop + viewportH) / rowH) + OVERSCAN));
+	const windowRows = $derived(result ? result.rows.slice(startIndex, endIndex) : []);
+	const topPad = $derived(startIndex * rowH);
+	const botPad = $derived(Math.max(0, (totalRows - endIndex) * rowH));
+
+	let rafPending = false;
+	function onTableScroll() {
+		if (rafPending) return;
+		rafPending = true;
+		requestAnimationFrame(() => {
+			if (scrollEl) {
+				scrollTop = scrollEl.scrollTop;
+				viewportH = scrollEl.clientHeight;
+			}
+			rafPending = false;
+		});
+	}
+
+	// Keep the viewport height in sync (mount + container resize). The $effect
+	// cleanup disconnects the observer (Rule 4). Reads `scrollEl`; writes
+	// `viewportH` (never read here) — Rule-2-safe.
+	$effect(() => {
+		const el = scrollEl;
+		if (!el) return;
+		viewportH = el.clientHeight;
+		const ro = new ResizeObserver(() => {
+			viewportH = el.clientHeight;
+		});
+		ro.observe(el);
+		return () => ro.disconnect();
+	});
+	// Measure the actual (theme/font-dependent) row height once rows render.
+	// Reads `result`/`scrollEl`; writes `rowH` (never read here) — Rule-2-safe.
+	$effect(() => {
+		if (!result || result.rows.length === 0 || !scrollEl) return;
+		const r = scrollEl.querySelector('.base-trow') as HTMLElement | null;
+		if (r && r.offsetHeight > 0) rowH = r.offsetHeight;
 	});
 
 	/** Open a row's note. Dispatches the same `constellation:open-note` event the
@@ -390,7 +425,7 @@
 		{#if result.rows.length === 0}
 			<div class="base-state">{$t('lensBlock.empty') || 'No notes match this base.'}</div>
 		{:else}
-			<div class="base-table-scroll">
+			<div class="base-table-scroll" bind:this={scrollEl} onscroll={onTableScroll}>
 				<table class="base-table">
 					<thead>
 						<tr>
@@ -440,7 +475,10 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each visibleRows as row (row.note_path)}
+						{#if topPad > 0}
+								<tr aria-hidden="true" class="v-spacer"><td colspan={cols.length + 1} style="height:{topPad}px"></td></tr>
+							{/if}
+							{#each windowRows as row (row.note_path)}
 							<tr class="base-trow">
 								<td class="cell-name" dir={detectDir(row.name)}>
 									<button
@@ -478,7 +516,10 @@
 								{/each}
 							</tr>
 						{/each}
-					</tbody>
+					{#if botPad > 0}
+								<tr aria-hidden="true" class="v-spacer"><td colspan={cols.length + 1} style="height:{botPad}px"></td></tr>
+							{/if}
+						</tbody>
 				</table>
 			</div>
 		{/if}
@@ -486,9 +527,6 @@
 		<div class="base-footer">
 			{#if saveError}
 				<span class="base-save-error" dir="auto">{saveError}</span>
-			{/if}
-			{#if capNotice}
-				<span class="base-cap">{capNotice}</span>
 			{/if}
 			<span class="base-time">{result.query_time_ms}ms</span>
 		</div>
@@ -723,8 +761,10 @@
 		align-items: baseline;
 		gap: 12px;
 	}
-	.base-cap {
-		color: var(--text-muted);
+	/* §K — virtualization spacer rows: zero padding/border so the height is exact */
+	.v-spacer td {
+		padding: 0;
+		border: 0;
 	}
 	.base-save-error {
 		color: var(--text-error, #e53e3e);
