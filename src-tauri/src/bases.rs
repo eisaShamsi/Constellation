@@ -3,6 +3,11 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
+// MIG-065 §I-b — base CREATION now writes a minimal LensDefinition YAML (the
+// unified engine's format), not the old BaseDefinition JSON.
+use crate::lens::definition::{
+    FederationMode, LensColumn, LensDefinition, LensScope, LensView, LibrariesSelector,
+};
 // tauri::Manager unused — removed
 
 // ─── Security ───
@@ -523,6 +528,34 @@ pub fn apply_sorts_fixed(rows: &mut Vec<BaseRow>, sorts: &[SortRule]) {
     });
 }
 
+/// MIG-065 §I-b — the minimal `LensDefinition` a freshly-created `.base` holds:
+/// one clickable name column, table view, the chosen scope (all libraries, or a
+/// subset). Serialized to the canonical YAML the unified engine (`execute_lens`
+/// / `BaseTab`) reads — the same shape `update_base_columns` round-trips.
+/// Replaces the old `BaseDefinition` JSON, which `BaseTab` could not parse.
+fn minimal_base_yaml(display_name: String, libraries: Vec<String>) -> Result<String, String> {
+    let def = LensDefinition {
+        schema: 1,
+        lens: display_name,
+        template: None,
+        scope: LensScope {
+            libraries: if libraries.is_empty() {
+                LibrariesSelector::All
+            } else {
+                LibrariesSelector::Subset(libraries)
+            },
+            federation: FederationMode::Auto,
+        },
+        where_clauses: vec![],
+        order: vec![],
+        columns: vec![LensColumn {
+            dimension: "note.name".to_string(),
+        }],
+        view: LensView::Table,
+    };
+    serde_yaml::to_string(&def).map_err(|e| format!("Failed to serialize base: {}", e))
+}
+
 #[tauri::command]
 pub fn create_base(
     app: tauri::AppHandle,
@@ -563,27 +596,10 @@ pub fn create_base(
         return Err("A file with this name already exists.".to_string());
     }
 
-    // Build default BaseDefinition
+    // MIG-065 §I-b — a library-folder base defaults to scope: all; the user
+    // refines scope / columns in BaseTab.
     let display_name = name.trim_end_matches(".base").to_string();
-    let definition = BaseDefinition {
-        version: 1,
-        name: display_name,
-        source: BaseSource {
-            source_type: "all".to_string(),
-            path: None,
-            tag: None,
-            include_subfolders: true,
-            selected_vaults: vec![],
-        },
-        columns: vec![],
-        filters: vec![],
-        sorts: vec![],
-        view: "table".to_string(),
-        direction: "auto".to_string(),
-    };
-
-    let content = serde_json::to_string_pretty(&definition)
-        .map_err(|e| format!("Failed to serialize base: {}", e))?;
+    let content = minimal_base_yaml(display_name, vec![])?;
     fs::write(&file_path, content)
         .map_err(|e| format!("Failed to create base file: {}", e))?;
 
@@ -801,6 +817,7 @@ pub fn list_workspace_bases(app: tauri::AppHandle) -> Result<Vec<WorkspaceBaseEn
 pub fn create_workspace_base(
     app: tauri::AppHandle,
     file_name: String,
+    selected_libraries: Vec<String>,
 ) -> Result<String, String> {
     let dir = workspace_bases_dir(&app)?;
 
@@ -821,26 +838,10 @@ pub fn create_workspace_base(
         return Err("A base with this name already exists.".to_string());
     }
 
+    // MIG-065 §I-b — write a minimal LensDefinition YAML scoped to the chosen
+    // libraries (empty = all), so the sidebar "New Base" opens in BaseTab.
     let display_name = name.trim_end_matches(".base").to_string();
-    let definition = BaseDefinition {
-        version: 1,
-        name: display_name,
-        source: BaseSource {
-            source_type: "all".to_string(),
-            path: None,
-            tag: None,
-            include_subfolders: true,
-            selected_vaults: vec![],
-        },
-        columns: vec![],
-        filters: vec![],
-        sorts: vec![],
-        view: "table".to_string(),
-        direction: "auto".to_string(),
-    };
-
-    let content = serde_json::to_string_pretty(&definition)
-        .map_err(|e| format!("Failed to serialize base: {}", e))?;
+    let content = minimal_base_yaml(display_name, selected_libraries)?;
     fs::write(&file_path, &content)
         .map_err(|e| format!("Failed to create workspace base: {}", e))?;
 

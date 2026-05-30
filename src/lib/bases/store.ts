@@ -1,13 +1,13 @@
 // ─── Constellation Bases — Workspace store (IPC bridge) ───
 //
 // MIG-065 §I — the old live-scan Base MVP (`query_base` + the orphaned
-// `BaseView` family) is retired. What remains here is the SIDEBAR's
-// workspace-base management: list / create / delete the `.base` files shown
-// under the "Bases" section. READING and EDITING a base is the unified lens
-// engine's job (`$lib/lens/store` + `BaseTab.svelte`).
+// `BaseView` family) is retired. What remains is the SIDEBAR's workspace-base
+// management: list / create / delete the `.base` files shown under the "Bases"
+// section. READING and EDITING a base is the unified lens engine's job
+// (`$lib/lens/store` + `BaseTab.svelte`). Base creation (§I-b) writes a minimal
+// `LensDefinition` YAML — there is no `BaseDefinition` on the live path anymore.
 
 import { invoke } from '@tauri-apps/api/core';
-import type { BaseDefinition } from './types';
 
 /** Create a new `.base` file in a library folder. Returns the full path. */
 export async function createBase(folderPath: string, fileName: string): Promise<string> {
@@ -31,14 +31,16 @@ export async function listWorkspaceBases(): Promise<WorkspaceBaseEntry[]> {
 	return await invoke('list_workspace_bases');
 }
 
-/** Create a new `.base` file in the workspace bases directory. Returns the path. */
-export async function createWorkspaceBase(fileName: string): Promise<string> {
-	return await invoke('create_workspace_base', { fileName });
-}
-
-/** Save a workspace base definition. */
-export async function saveWorkspaceBase(filePath: string, definition: BaseDefinition): Promise<void> {
-	return await invoke('save_workspace_base', { filePath, definition });
+/**
+ * MIG-065 §I-b — create a new `.base` in the workspace bases directory as a
+ * minimal `LensDefinition` YAML, scoped to the chosen libraries (empty = all).
+ * Returns the full path. Opens directly in BaseTab.
+ */
+export async function createWorkspaceBase(
+	fileName: string,
+	selectedLibraries: string[] = [],
+): Promise<string> {
+	return await invoke('create_workspace_base', { fileName, selectedLibraries });
 }
 
 /** Delete a workspace base file. */

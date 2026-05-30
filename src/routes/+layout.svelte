@@ -44,9 +44,8 @@
 	import { get } from 'svelte/store';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { detectDir, eventToShortcut, normalizeShortcut, getResolvedShortcut, formatShortcut, migratePathKeyedMap, migratePathKeyedMapInPlace, normalizePathKey } from '$lib/utils';
-	import { createBase, listWorkspaceBases, createWorkspaceBase, saveWorkspaceBase, deleteWorkspaceBase } from '$lib/bases/store';
+	import { createBase, listWorkspaceBases, createWorkspaceBase, deleteWorkspaceBase } from '$lib/bases/store';
 	import type { WorkspaceBaseEntry } from '$lib/bases/store';
-	import type { BaseDefinition } from '$lib/bases/types';
 	// MIG-055 §F — Five Acts sidebar section (Constellation Base v1).
 	import { listFiveActsNotes, type FiveActsNoteEntry } from '$lib/lens/store';
 	// MIG-056 §H — Cross-universe federation warning surface.
@@ -3531,30 +3530,15 @@
 
 			for (let i = 0; i < 100; i++) {
 				try {
-					newPath = await createWorkspaceBase(name);
+					// MIG-065 §I-b — creates a minimal LensDefinition YAML scoped to
+					// the chosen libraries (empty = all); opens directly in BaseTab.
+					newPath = await createWorkspaceBase(name, selectedLibraries);
 					break;
 				} catch {
 					name = `${baseName} ${i + 1}`;
 				}
 			}
 			if (!newPath) return;
-
-			// Overwrite with the user's selected libraries + name
-			const definition: BaseDefinition = {
-				version: 1,
-				name,
-				source: {
-					type: 'all',
-					includeSubfolders: true,
-					selectedLibraries: selectedLibraries.length > 0 ? selectedLibraries : undefined,
-				},
-				columns: [],
-				filters: [],
-				sorts: [],
-				view: 'table',
-				direction: 'auto',
-			};
-			await saveWorkspaceBase(newPath, definition);
 
 			// Refresh workspace bases list
 			workspaceBases = await listWorkspaceBases();
