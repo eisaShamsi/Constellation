@@ -574,6 +574,81 @@ fn ensure_note_meta_mig003_column(conn: &Connection) -> rusqlite::Result<()> {
     Ok(())
 }
 
+/// MIG-066 §A — ensure `note_meta` has the outgoing-link aggregate columns.
+/// Idempotent (probes `PRAGMA table_info`, ALTERs only if missing). These are
+/// maintained write-time by the `note_links_outgoing_*` triggers and a one-shot
+/// background back-fill (gated by `schema_versions.links_outgoing`):
+///   - `outgoing_count`        — number of active links where this note is the source.
+///   - `outgoing_link_types`   — the note's distinct outgoing TYPED link_types,
+///                               stored in the Living-Link Concept Paper §7 canonical
+///                               order (a `, `-joined string; empty when none).
+///   - `outgoing_top_rank`     — the lowest canonical index (1..=8) among those types,
+///                               or `9` when the note has no outgoing typed links — the
+///                               clean SQL sort key for §D rank-aware sort.
+fn ensure_note_meta_mig066_columns(conn: &Connection) -> rusqlite::Result<()> {
+    let mut have_count = false;
+    let mut have_types = false;
+    let mut have_rank = false;
+    {
+        let mut stmt = conn.prepare("PRAGMA table_info(note_meta)")?;
+        let rows = stmt.query_map([], |row| row.get::<_, String>(1))?;
+        for col in rows {
+            match col?.as_str() {
+                "outgoing_count" => have_count = true,
+                "outgoing_link_types" => have_types = true,
+                "outgoing_top_rank" => have_rank = true,
+                _ => {}
+            }
+        }
+    }
+    if !have_count {
+        conn.execute_batch(
+            "ALTER TABLE note_meta ADD COLUMN outgoing_count INTEGER NOT NULL DEFAULT 0;",
+        )?;
+    }
+    if !have_types {
+        conn.execute_batch(
+            "ALTER TABLE note_meta ADD COLUMN outgoing_link_types TEXT NOT NULL DEFAULT '';",
+        )?;
+    }
+    if !have_rank {
+        conn.execute_batch(
+            "ALTER TABLE note_meta ADD COLUMN outgoing_top_rank INTEGER NOT NULL DEFAULT 9;",
+        )?;
+    }
+    Ok(())
+}
+
+/// MIG-066 §A — the 8 canonical typed-link names (Living-Link Concept Paper §7),
+/// as the SQL `WHERE … IN (…)` membership list and a `CASE … END` rank (1..=8).
+/// Shared by the `note_links_outgoing_*` triggers and the back-fill so the
+/// materialized aggregates and their order have one definition.
+const LINK_TYPE_IN_LIST: &str = "('supports','contradicts','causes','exemplifies','generalizes','derives-from','part-of','supersedes')";
+const LINK_TYPE_RANK_CASE: &str = "CASE link_type \
+    WHEN 'supports' THEN 1 WHEN 'contradicts' THEN 2 WHEN 'causes' THEN 3 \
+    WHEN 'exemplifies' THEN 4 WHEN 'generalizes' THEN 5 WHEN 'derives-from' THEN 6 \
+    WHEN 'part-of' THEN 7 WHEN 'supersedes' THEN 8 END";
+
+/// MIG-066 §A — SQL `UPDATE … SET` assignments (no trailing comma) that recompute
+/// the three outgoing aggregates for the note whose `path` matches the source path
+/// expression `src` (e.g. `NEW.source_path`). Used inside the triggers and the
+/// back-fill. `count` includes untyped links; `types`/`top_rank` cover only the 8
+/// canonical types, in canonical order.
+fn outgoing_aggregate_assignments(src: &str) -> String {
+    format!(
+        "outgoing_count = (SELECT COUNT(*) FROM note_links WHERE source_path = {src} AND status = 'active'), \
+         outgoing_link_types = (SELECT COALESCE(GROUP_CONCAT(lt, ', '), '') FROM \
+            (SELECT DISTINCT link_type AS lt FROM note_links \
+             WHERE source_path = {src} AND status = 'active' AND link_type IN {list} \
+             ORDER BY {rank})), \
+         outgoing_top_rank = COALESCE((SELECT MIN({rank}) FROM note_links \
+             WHERE source_path = {src} AND status = 'active' AND link_type IN {list}), 9)",
+        src = src,
+        list = LINK_TYPE_IN_LIST,
+        rank = LINK_TYPE_RANK_CASE,
+    )
+}
+
 /// MIG-041 — purge every bigram row from `term_vocab`.
 ///
 /// On a real Constellation library the FTS5 tokenizer emits both stems
@@ -1747,6 +1822,9 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
     // backfill below (one-shot, gated by schema_versions.note_meta).
     ensure_note_meta_mig003_column(&conn)
         .map_err(|e| format!("Failed to ensure note_meta MIG-003 column: {}", e))?;
+    // MIG-066 §A — outgoing-link aggregate columns (write-time materialized).
+    ensure_note_meta_mig066_columns(&conn)
+        .map_err(|e| format!("Failed to ensure note_meta MIG-066 columns: {}", e))?;
     let stored_note_meta_version: i64 = conn
         .query_row(
             "SELECT version FROM schema_versions WHERE module = 'note_meta'",
@@ -2732,6 +2810,39 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
     ", expr = MATURITY_SQL_EXPR))
     .map_err(|e| format!("Failed to create maturity triggers: {}", e))?;
 
+    // MIG-066 §A — outgoing-link aggregate triggers. When an edge changes, the
+    // SOURCE note's outgoing_count / outgoing_link_types / outgoing_top_rank are
+    // recomputed from note_links (same-DB, source-side → cheap; Rule-8: cost at
+    // write, read is a plain column). No WHEN guard — any insert/delete/update of
+    // an edge for a source recomputes that source's full aggregate (COUNT filters
+    // status='active', so an inactive/archived row recomputes to the same value).
+    conn.execute_batch(&format!("
+        CREATE TRIGGER IF NOT EXISTS note_links_outgoing_ai
+        AFTER INSERT ON note_links
+        BEGIN
+            UPDATE note_meta SET {ins} WHERE path = NEW.source_path;
+        END;
+
+        CREATE TRIGGER IF NOT EXISTS note_links_outgoing_ad
+        AFTER DELETE ON note_links
+        BEGIN
+            UPDATE note_meta SET {del} WHERE path = OLD.source_path;
+        END;
+
+        -- UPDATE covers archive toggle (status), rename cascade (source_path),
+        -- and re-typing (link_type). Recompute both old and new source identities.
+        CREATE TRIGGER IF NOT EXISTS note_links_outgoing_au
+        AFTER UPDATE ON note_links
+        BEGIN
+            UPDATE note_meta SET {del} WHERE path = OLD.source_path;
+            UPDATE note_meta SET {ins} WHERE path = NEW.source_path;
+        END;
+    ",
+        ins = outgoing_aggregate_assignments("NEW.source_path"),
+        del = outgoing_aggregate_assignments("OLD.source_path"),
+    ))
+    .map_err(|e| format!("Failed to create outgoing-link triggers: {}", e))?;
+
     // The one-shot stratum + maturity back-fill for existing sky_nodes
     // rows runs in sky_backfill.rs on a background thread — NOT here.
     // Same reasons as §4: boot-paint-blocking cost + reuse of the
@@ -3131,6 +3242,88 @@ fn parse_frontmatter(content: &str) -> (HashMap<String, String>, Vec<String>, St
     }
 
     (properties, tags, body)
+}
+
+#[cfg(test)]
+mod tests_mig066_outgoing {
+    //! MIG-066 §A — the outgoing-link aggregate triggers, exercising the SHARED
+    //! `outgoing_aggregate_assignments` SQL (the same fragment production uses) so
+    //! the trigger maths, the canonical-order GROUP_CONCAT, and the top-rank key are
+    //! pinned against the bundled SQLite.
+    use super::*;
+    use rusqlite::Connection;
+
+    fn db_with_triggers() -> Connection {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE note_meta (
+                path TEXT PRIMARY KEY,
+                outgoing_count INTEGER NOT NULL DEFAULT 0,
+                outgoing_link_types TEXT NOT NULL DEFAULT '',
+                outgoing_top_rank INTEGER NOT NULL DEFAULT 9
+             );
+             CREATE TABLE note_links (
+                source_path TEXT, target_name TEXT, link_type TEXT, status TEXT DEFAULT 'active'
+             );",
+        )
+        .unwrap();
+        conn.execute_batch(&format!(
+            "CREATE TRIGGER note_links_outgoing_ai AFTER INSERT ON note_links \
+               BEGIN UPDATE note_meta SET {ins} WHERE path = NEW.source_path; END; \
+             CREATE TRIGGER note_links_outgoing_ad AFTER DELETE ON note_links \
+               BEGIN UPDATE note_meta SET {del} WHERE path = OLD.source_path; END; \
+             CREATE TRIGGER note_links_outgoing_au AFTER UPDATE ON note_links \
+               BEGIN UPDATE note_meta SET {del} WHERE path = OLD.source_path; \
+                     UPDATE note_meta SET {ins} WHERE path = NEW.source_path; END;",
+            ins = outgoing_aggregate_assignments("NEW.source_path"),
+            del = outgoing_aggregate_assignments("OLD.source_path"),
+        ))
+        .unwrap();
+        conn
+    }
+
+    fn read(conn: &Connection) -> (i64, String, i64) {
+        conn.query_row(
+            "SELECT outgoing_count, outgoing_link_types, outgoing_top_rank FROM note_meta WHERE path='/a.md'",
+            [],
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn outgoing_aggregates_maintained_by_triggers() {
+        let conn = db_with_triggers();
+        conn.execute("INSERT INTO note_meta (path) VALUES ('/a.md')", []).unwrap();
+
+        // two typed (out of canonical order) + one untyped
+        for (t, lt) in [("T1", "contradicts"), ("T2", "supports"), ("T3", "")] {
+            conn.execute(
+                "INSERT INTO note_links (source_path, target_name, link_type, status) VALUES ('/a.md', ?, ?, 'active')",
+                rusqlite::params![t, lt],
+            )
+            .unwrap();
+        }
+        let (count, types, rank) = read(&conn);
+        assert_eq!(count, 3, "all active outgoing counted (incl. untyped)");
+        assert_eq!(types, "supports, contradicts", "GROUP_CONCAT in canonical order: supports(1) before contradicts(2)");
+        assert_eq!(rank, 1, "top rank = supports = 1");
+
+        // archive the supports edge → types/rank fall back to contradicts; count drops
+        conn.execute("UPDATE note_links SET status='archived' WHERE source_path='/a.md' AND link_type='supports'", []).unwrap();
+        let (count2, types2, rank2) = read(&conn);
+        assert_eq!((count2, types2.as_str(), rank2), (2, "contradicts", 2), "archived edge excluded");
+
+        // delete the untyped edge → count 1, types unchanged
+        conn.execute("DELETE FROM note_links WHERE source_path='/a.md' AND link_type=''", []).unwrap();
+        let (count3, types3, _) = read(&conn);
+        assert_eq!((count3, types3.as_str()), (1, "contradicts"));
+
+        // archive the last typed edge → no typed links: empty types, sentinel rank 9
+        conn.execute("UPDATE note_links SET status='archived' WHERE source_path='/a.md' AND link_type='contradicts'", []).unwrap();
+        let (count4, types4, rank4) = read(&conn);
+        assert_eq!((count4, types4.as_str(), rank4), (0, "", 9), "no active typed links → empty + sentinel rank");
+    }
 }
 
 #[cfg(test)]
