@@ -64,6 +64,7 @@ pub mod sight_v7;
 pub mod lexicon;
 mod search;
 mod sky_backfill;
+mod links_backfill;
 mod map;
 mod maturity;
 mod perf_trace;

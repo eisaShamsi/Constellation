@@ -574,6 +574,14 @@ fn ensure_note_meta_mig003_column(conn: &Connection) -> rusqlite::Result<()> {
     Ok(())
 }
 
+/// MIG-066 §A.2 — gate for the one-shot outgoing-link aggregate back-fill
+/// (`links_backfill.rs`). Parallel to `SKY_SCHEMA_VERSION`: an existing universe
+/// has `schema_versions.links_outgoing` absent (stored 0 < 1), so the back-fill
+/// runs once to recompute the §A.1 columns for notes whose links predate the
+/// `note_links_outgoing_*` triggers; completion stamps it to target. Bumping it
+/// forces a re-run on the next boot.
+pub(crate) const LINKS_OUTGOING_SCHEMA_VERSION: i64 = 1;
+
 /// MIG-066 §A — ensure `note_meta` has the outgoing-link aggregate columns.
 /// Idempotent (probes `PRAGMA table_info`, ALTERs only if missing). These are
 /// maintained write-time by the `note_links_outgoing_*` triggers and a one-shot
@@ -631,10 +639,11 @@ const LINK_TYPE_RANK_CASE: &str = "CASE link_type \
 
 /// MIG-066 §A — SQL `UPDATE … SET` assignments (no trailing comma) that recompute
 /// the three outgoing aggregates for the note whose `path` matches the source path
-/// expression `src` (e.g. `NEW.source_path`). Used inside the triggers and the
-/// back-fill. `count` includes untyped links; `types`/`top_rank` cover only the 8
-/// canonical types, in canonical order.
-fn outgoing_aggregate_assignments(src: &str) -> String {
+/// expression `src` (e.g. `NEW.source_path` in a trigger, or `note_meta.path` for a
+/// correlated back-fill UPDATE). Used inside the triggers and the back-fill. `count`
+/// includes untyped links; `types`/`top_rank` cover only the 8 canonical types, in
+/// canonical order.
+pub(crate) fn outgoing_aggregate_assignments(src: &str) -> String {
     format!(
         "outgoing_count = (SELECT COUNT(*) FROM note_links WHERE source_path = {src} AND status = 'active'), \
          outgoing_link_types = (SELECT COALESCE(GROUP_CONCAT(lt, ', '), '') FROM \
@@ -647,6 +656,64 @@ fn outgoing_aggregate_assignments(src: &str) -> String {
         list = LINK_TYPE_IN_LIST,
         rank = LINK_TYPE_RANK_CASE,
     )
+}
+
+/// MIG-066 §A — create the three outgoing-link aggregate triggers. Extracted from
+/// `init_db` so the §A.2 reconcile path can drop+recreate them around a full
+/// re-index. When an edge changes, the SOURCE note's outgoing_count /
+/// outgoing_link_types / outgoing_top_rank are recomputed from `note_links`
+/// (same-DB, source-side; Rule-8: cost at write, read is a plain column). No WHEN
+/// guard — any insert/delete/update recomputes that source's full aggregate
+/// (COUNT filters status='active', so an archived row recomputes to the same value).
+///
+/// **Why these must be paused for a full re-index:** they fire FOR EACH edge row,
+/// and each fire rescans the source's links — O(N²) across a per-source
+/// DELETE+re-INSERT rebuild (~+17s on a 216k-link universe, measured). So
+/// `reconcile_filesystem` drops them for the bulk walk, then recreates them +
+/// runs `links_backfill::recompute_all_outgoing` once. Live single-edge edits
+/// keep maintaining the columns write-time.
+pub(crate) fn create_outgoing_link_triggers(conn: &Connection) -> Result<(), String> {
+    conn.execute_batch(&format!("
+        CREATE TRIGGER IF NOT EXISTS note_links_outgoing_ai
+        AFTER INSERT ON note_links
+        BEGIN
+            UPDATE note_meta SET {ins} WHERE path = NEW.source_path;
+        END;
+
+        CREATE TRIGGER IF NOT EXISTS note_links_outgoing_ad
+        AFTER DELETE ON note_links
+        BEGIN
+            UPDATE note_meta SET {del} WHERE path = OLD.source_path;
+        END;
+
+        -- UPDATE covers archive toggle (status), rename cascade (source_path),
+        -- and re-typing (link_type). Recompute both old and new source identities.
+        CREATE TRIGGER IF NOT EXISTS note_links_outgoing_au
+        AFTER UPDATE ON note_links
+        BEGIN
+            UPDATE note_meta SET {del} WHERE path = OLD.source_path;
+            UPDATE note_meta SET {ins} WHERE path = NEW.source_path;
+        END;
+    ",
+        ins = outgoing_aggregate_assignments("NEW.source_path"),
+        del = outgoing_aggregate_assignments("OLD.source_path"),
+    ))
+    .map_err(|e| format!("create outgoing-link triggers: {}", e))
+}
+
+/// MIG-066 §A.2 — drop the three outgoing-link aggregate triggers. Used by
+/// `reconcile_filesystem` to suppress the per-edge recompute during a full
+/// re-index; `create_outgoing_link_triggers` + `recompute_all_outgoing` restore
+/// correctness afterward. Idempotent (IF EXISTS). On a crash mid-reconcile the
+/// next boot's `init_db` recreates them (CREATE IF NOT EXISTS) and the next
+/// reconcile repopulates, so a dropped state self-heals.
+pub(crate) fn drop_outgoing_link_triggers(conn: &Connection) -> Result<(), String> {
+    conn.execute_batch(
+        "DROP TRIGGER IF EXISTS note_links_outgoing_ai;
+         DROP TRIGGER IF EXISTS note_links_outgoing_ad;
+         DROP TRIGGER IF EXISTS note_links_outgoing_au;",
+    )
+    .map_err(|e| format!("drop outgoing-link triggers: {}", e))
 }
 
 /// MIG-041 — purge every bigram row from `term_vocab`.
@@ -2810,38 +2877,11 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
     ", expr = MATURITY_SQL_EXPR))
     .map_err(|e| format!("Failed to create maturity triggers: {}", e))?;
 
-    // MIG-066 §A — outgoing-link aggregate triggers. When an edge changes, the
-    // SOURCE note's outgoing_count / outgoing_link_types / outgoing_top_rank are
-    // recomputed from note_links (same-DB, source-side → cheap; Rule-8: cost at
-    // write, read is a plain column). No WHEN guard — any insert/delete/update of
-    // an edge for a source recomputes that source's full aggregate (COUNT filters
-    // status='active', so an inactive/archived row recomputes to the same value).
-    conn.execute_batch(&format!("
-        CREATE TRIGGER IF NOT EXISTS note_links_outgoing_ai
-        AFTER INSERT ON note_links
-        BEGIN
-            UPDATE note_meta SET {ins} WHERE path = NEW.source_path;
-        END;
-
-        CREATE TRIGGER IF NOT EXISTS note_links_outgoing_ad
-        AFTER DELETE ON note_links
-        BEGIN
-            UPDATE note_meta SET {del} WHERE path = OLD.source_path;
-        END;
-
-        -- UPDATE covers archive toggle (status), rename cascade (source_path),
-        -- and re-typing (link_type). Recompute both old and new source identities.
-        CREATE TRIGGER IF NOT EXISTS note_links_outgoing_au
-        AFTER UPDATE ON note_links
-        BEGIN
-            UPDATE note_meta SET {del} WHERE path = OLD.source_path;
-            UPDATE note_meta SET {ins} WHERE path = NEW.source_path;
-        END;
-    ",
-        ins = outgoing_aggregate_assignments("NEW.source_path"),
-        del = outgoing_aggregate_assignments("OLD.source_path"),
-    ))
-    .map_err(|e| format!("Failed to create outgoing-link triggers: {}", e))?;
+    // MIG-066 §A — outgoing-link aggregate triggers. Extracted into
+    // create_outgoing_link_triggers so §A.2's reconcile path can drop+recreate
+    // them around a full re-index (per-edge recompute is O(N²) on a bulk rebuild
+    // — see reconcile_filesystem). Live single-edge edits maintain them write-time.
+    create_outgoing_link_triggers(&conn)?;
 
     // The one-shot stratum + maturity back-fill for existing sky_nodes
     // rows runs in sky_backfill.rs on a background thread — NOT here.
@@ -3323,6 +3363,50 @@ mod tests_mig066_outgoing {
         conn.execute("UPDATE note_links SET status='archived' WHERE source_path='/a.md' AND link_type='contradicts'", []).unwrap();
         let (count4, types4, rank4) = read(&conn);
         assert_eq!((count4, types4.as_str(), rank4), (0, "", 9), "no active typed links → empty + sentinel rank");
+    }
+
+    #[test]
+    fn create_drop_recompute_pause_cycle() {
+        // MIG-066 §A.2 — the reconcile pause: triggers maintain the aggregate when
+        // present; dropping them (the bulk re-index window) stops maintenance; a
+        // recreate + recompute_all_outgoing restores the columns from note_links.
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE note_meta (path TEXT PRIMARY KEY,
+                outgoing_count INTEGER NOT NULL DEFAULT 0,
+                outgoing_link_types TEXT NOT NULL DEFAULT '',
+                outgoing_top_rank INTEGER NOT NULL DEFAULT 9);
+             CREATE TABLE note_links (source_path TEXT, target_name TEXT, link_type TEXT, status TEXT DEFAULT 'active');",
+        )
+        .unwrap();
+        conn.execute("INSERT INTO note_meta (path) VALUES ('/a.md')", []).unwrap();
+
+        // Triggers ON → an edge insert maintains the aggregate write-time.
+        create_outgoing_link_triggers(&conn).unwrap();
+        conn.execute(
+            "INSERT INTO note_links (source_path, target_name, link_type, status) VALUES ('/a.md','T','supports','active')",
+            [],
+        )
+        .unwrap();
+        assert_eq!(read(&conn), (1, "supports".to_string(), 1), "trigger maintains aggregate when present");
+
+        // Triggers DROPPED (the reconcile bulk window) → edge change NOT reflected.
+        drop_outgoing_link_triggers(&conn).unwrap();
+        conn.execute(
+            "INSERT INTO note_links (source_path, target_name, link_type, status) VALUES ('/a.md','T2','contradicts','active')",
+            [],
+        )
+        .unwrap();
+        assert_eq!(read(&conn), (1, "supports".to_string(), 1), "no maintenance while triggers are dropped");
+
+        // Recreate + recompute_all → columns restored from note_links (both edges).
+        create_outgoing_link_triggers(&conn).unwrap();
+        crate::links_backfill::recompute_all_outgoing(&conn).unwrap();
+        assert_eq!(
+            read(&conn),
+            (2, "supports, contradicts".to_string(), 1),
+            "recompute_all restores the aggregate after the paused window"
+        );
     }
 }
 
@@ -5781,6 +5865,14 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
     // immediately so this doesn't extend boot time.
     crate::sky_backfill::maybe_schedule(app.clone());
 
+    // MIG-066 §A.2: schedule the one-time outgoing-link aggregate back-fill on
+    // a background thread. No-op if schema_versions.links_outgoing is already at
+    // target. Recomputes note_meta.outgoing_count / outgoing_link_types /
+    // outgoing_top_rank for notes whose links predate the §A.1 triggers (which
+    // maintain them write-time thereafter). Returns immediately — pure-SQL,
+    // batched, never blocks boot (the MIG-013 lesson).
+    crate::links_backfill::maybe_schedule(app.clone());
+
     // MIG-041: schedule the one-time term_vocab bigram purge on a
     // background thread. No-op if the schema stamp is already at v3 OR if
     // no bigram rows remain. On a large library (~5.2M bigram rows) the
@@ -6016,9 +6108,30 @@ pub fn reconcile_filesystem(app: &tauri::AppHandle) -> Result<SearchIndexStats, 
     // would fail on this connection with "no such tokenizer".
     register_fts5_tokenizer(&mut walk_conn)?;
 
+    // MIG-066 §A.2 — pause the outgoing-link aggregate triggers for the bulk
+    // walk. They recompute a source's whole aggregate on EVERY edge insert/delete;
+    // across the per-source DELETE+re-INSERT rebuild this whole walk performs that
+    // is O(N²) (+17s on a 216k-link universe, measured). Drop them, do the
+    // trigger-free walk, recreate them, then recompute every note's aggregate once
+    // (a cheap direct UPDATE — links_backfill::recompute_all_outgoing). Live
+    // single-edge edits on state.db still maintain the columns write-time; the
+    // recompute closes any gap from edits that raced the trigger-free window
+    // (SQLite's single-writer + busy_timeout keep that recompute conflict-free).
+    walk_conn
+        .busy_timeout(std::time::Duration::from_secs(30))
+        .map_err(|e| format!("walk_conn busy_timeout: {}", e))?;
+    let _ = drop_outgoing_link_triggers(&walk_conn);
+
     let libraries = crate::libraries::load_all_libraries(app);
     for lib in &libraries {
         index_library_recursive(&walk_conn, Path::new(&lib.path), &lib.name, 0);
+    }
+
+    // Recreate BEFORE the recompute so any concurrent live save is trigger-covered,
+    // then repopulate every note's aggregate in one pass.
+    let _ = create_outgoing_link_triggers(&walk_conn);
+    if let Err(e) = crate::links_backfill::recompute_all_outgoing(&walk_conn) {
+        eprintln!("[links_backfill] recompute_all_outgoing after reconcile failed: {}", e);
     }
 
     let note_count: u32 = walk_conn.query_row(
