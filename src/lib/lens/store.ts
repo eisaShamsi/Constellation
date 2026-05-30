@@ -119,6 +119,16 @@ export async function updateNoteProperty(filePath: string, key: string, value: s
 	await invoke('update_note_property', { filePath, key, value });
 }
 
+/**
+ * MIG-065 — convert an OLD Constellation `.base` (the MVP's `BaseDefinition`
+ * JSON) to the new `LensDefinition` YAML. `write = true` upgrades the file in
+ * place (only on the user's explicit choice — otherwise the file is untouched);
+ * returns the translated YAML. Rejects for a foreign / non-Constellation base.
+ */
+export async function convertBase(filePath: string, write: boolean): Promise<string> {
+	return await invoke<string>('convert_base', { filePath, write });
+}
+
 /** One Five Acts host note entry from the sidebar enumerator. */
 export interface FiveActsNoteEntry {
 	/** File stem (filename without `.md`), e.g. "Observation — Recent Captures". */

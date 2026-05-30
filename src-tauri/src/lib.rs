@@ -483,6 +483,9 @@ pub fn run() {
             watcher::unwatch_library,
             bases::update_note_property,
             bases::create_base,
+            // MIG-065 — convert an old MVP `.base` (BaseDefinition JSON) to the
+            // new LensDefinition YAML (in place, on the user's explicit choice).
+            bases::convert_base,
             bases::list_workspace_bases,
             bases::create_workspace_base,
             bases::save_workspace_base,

@@ -6,7 +6,8 @@ use std::time::Instant;
 // MIG-065 §I-b — base CREATION now writes a minimal LensDefinition YAML (the
 // unified engine's format), not the old BaseDefinition JSON.
 use crate::lens::definition::{
-    FederationMode, LensColumn, LensDefinition, LensScope, LensView, LibrariesSelector,
+    FederationMode, LensColumn, LensDefinition, LensFilter, LensScope, LensSort, LensView,
+    LibrariesSelector, SortDirection,
 };
 // tauri::Manager unused — removed
 
@@ -556,6 +557,94 @@ fn minimal_base_yaml(display_name: String, libraries: Vec<String>) -> Result<Str
         view: LensView::Table,
     };
     serde_yaml::to_string(&def).map_err(|e| format!("Failed to serialize base: {}", e))
+}
+
+/// Map an old MVP filter operator to the new `prop.*` text-filter op. Numeric
+/// `gt`/`lt` have no equivalent in the v1 frontmatter text filters → dropped.
+fn convert_filter_op(old: &str) -> Option<&'static str> {
+    match old {
+        "is" => Some("is"),
+        "is_not" => Some("is_not"),
+        "contains" => Some("contains"),
+        "not_contains" => Some("does_not_contain"),
+        "is_empty" => Some("is_empty"),
+        "is_not_empty" => Some("is_not_empty"),
+        _ => None,
+    }
+}
+
+/// MIG-065 — convert an OLD Constellation `.base` (the MVP's `BaseDefinition`
+/// JSON) to the new `LensDefinition` YAML. With `write = true`, upgrades the
+/// file in place — only after the user explicitly chooses to convert (the file
+/// is otherwise left untouched). Returns the translated YAML (also used for a
+/// read-only preview when `write = false`). A foreign/non-Constellation base
+/// fails the `BaseDefinition` parse → Err (caller shows the calm notice). The
+/// old columns/filters/sorts (frontmatter keys) become `prop.<key>` dimensions;
+/// `note.name` is prepended as the clickable first column.
+#[tauri::command]
+pub fn convert_base(app: tauri::AppHandle, file_path: String, write: bool) -> Result<String, String> {
+    validate_base_path(&app, &file_path)?;
+    let content = fs::read_to_string(&file_path)
+        .map_err(|e| format!("Failed to read base file: {}", e))?;
+    let old: BaseDefinition = serde_json::from_str(&content)
+        .map_err(|_| "This isn't a convertible Constellation base.".to_string())?;
+
+    let mut columns = vec![LensColumn {
+        dimension: "note.name".to_string(),
+    }];
+    for c in &old.columns {
+        columns.push(LensColumn {
+            dimension: format!("prop.{}", c.property),
+        });
+    }
+    let order: Vec<LensSort> = old
+        .sorts
+        .iter()
+        .map(|s| LensSort {
+            dimension: format!("prop.{}", s.property),
+            direction: if s.direction.eq_ignore_ascii_case("desc") {
+                SortDirection::Desc
+            } else {
+                SortDirection::Asc
+            },
+        })
+        .collect();
+    let where_clauses: Vec<LensFilter> = old
+        .filters
+        .iter()
+        .filter_map(|f| {
+            convert_filter_op(&f.operator).map(|op| LensFilter {
+                dimension: format!("prop.{}", f.property),
+                op: op.to_string(),
+                value: f.value.clone().unwrap_or_default(),
+            })
+        })
+        .collect();
+    let libraries = if old.source.selected_vaults.is_empty() {
+        LibrariesSelector::All
+    } else {
+        LibrariesSelector::Subset(old.source.selected_vaults.clone())
+    };
+    let def = LensDefinition {
+        schema: 1,
+        lens: old.name,
+        template: None,
+        scope: LensScope {
+            libraries,
+            federation: FederationMode::Auto,
+        },
+        where_clauses,
+        order,
+        columns,
+        view: LensView::Table,
+    };
+    let yaml = serde_yaml::to_string(&def)
+        .map_err(|e| format!("Failed to serialize base: {}", e))?;
+    if write {
+        fs::write(&file_path, &yaml)
+            .map_err(|e| format!("Failed to write base file: {}", e))?;
+    }
+    Ok(yaml)
 }
 
 #[tauri::command]

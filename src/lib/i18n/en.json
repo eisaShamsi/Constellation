@@ -3078,7 +3078,10 @@
 		"addSort": "Add a column to sort by",
 		"allSorted": "Every sortable column is already in the sort.",
 		"editCell": "Double-click to edit",
-		"legacyBase": "This base is in an older format and can’t be shown here. Create a new base to replace it."
+		"legacyBase": "This base is in an older format and can’t be shown here. Create a new base to replace it.",
+		"legacyBaseConvert": "This base is in an older format. Your file is untouched — convert it to a Constellation Base to view and edit it.",
+		"convertBase": "Convert to Constellation Base",
+		"converting": "Converting…"
 	},
 	"federation": {
 		"warningBadge": "cUniverses unavailable",

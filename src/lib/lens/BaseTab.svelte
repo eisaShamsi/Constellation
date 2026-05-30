@@ -26,6 +26,7 @@
 		updateBaseColumns,
 		updateBaseOrder,
 		updateNoteProperty,
+		convertBase,
 		type LensResult,
 		type LensRow,
 		type LensSort,
@@ -57,6 +58,8 @@
 	let result = $state<LensResult | null>(null);
 	let error = $state<string | null>(null);
 	let legacy = $state(false); // §J — an old-MVP JSON `.base` (calm notice, not a raw error)
+	let converting = $state(false); // a legacy → new-format conversion in flight
+	let convertError = $state<string | null>(null);
 	let loading = $state(true);
 	let pickerOpen = $state(false);
 	let sortPanelOpen = $state(false);
@@ -264,6 +267,24 @@
 		dropCol = null;
 	}
 
+	// ─── legacy → new-format conversion ───
+	// On the user's explicit choice, upgrade an old-MVP `.base` (BaseDefinition
+	// JSON) to the new LensDefinition YAML in place, then render it. Until they
+	// click Convert the file is left untouched.
+	async function convertLegacy() {
+		converting = true;
+		convertError = null;
+		try {
+			const yaml = await convertBase(path, true);
+			baseYaml = yaml; // re-render as the converted base; the query effect re-runs
+			legacy = false;
+		} catch (e: unknown) {
+			convertError = typeof e === 'string' ? e : (e as Error)?.message ?? String(e);
+		} finally {
+			converting = false;
+		}
+	}
+
 	// MIG-065 §F.2 — render cap (CLAUDE.md Performance Rule 3: virtualize/limit
 	// lists that can exceed 50 items). `execute_lens` returns ALL matching rows
 	// (no SQL LIMIT yet), so over a 7,600-note universe an unscoped base would
@@ -301,9 +322,19 @@
 	{#if loading && !result}
 		<div class="base-state">{$t('lensBlock.loading') || 'Loading…'}</div>
 	{:else if legacy}
-		<div class="base-state base-legacy" dir="auto">
-			{$t('lensBlock.legacyBase') ||
-				'This base is in an older format and can’t be shown here. Create a new base to replace it.'}
+		<div class="base-state base-legacy">
+			<p dir="auto">
+				{$t('lensBlock.legacyBaseConvert') ||
+					'This base is in an older format. Your file is untouched — convert it to a Constellation Base to view and edit it.'}
+			</p>
+			<button class="convert-btn" disabled={converting} onclick={convertLegacy}>
+				{converting
+					? $t('lensBlock.converting') || 'Converting…'
+					: $t('lensBlock.convertBase') || 'Convert to Constellation Base'}
+			</button>
+			{#if convertError}
+				<p class="base-save-error" dir="auto">{convertError}</p>
+			{/if}
 		</div>
 	{:else if error}
 		<div class="base-state base-error">
@@ -707,6 +738,25 @@
 	.base-legacy {
 		max-width: 48ch;
 		line-height: 1.5;
+	}
+	.convert-btn {
+		margin-top: 10px;
+		background: var(--interactive-accent);
+		color: #fff;
+		border: none;
+		border-radius: 6px;
+		padding: 7px 14px;
+		font: inherit;
+		font-size: 0.86rem;
+		font-weight: 600;
+		cursor: pointer;
+	}
+	.convert-btn:hover:not(:disabled) {
+		filter: brightness(1.08);
+	}
+	.convert-btn:disabled {
+		opacity: 0.6;
+		cursor: default;
 	}
 	.base-error {
 		display: flex;
