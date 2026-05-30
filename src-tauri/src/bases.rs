@@ -616,7 +616,7 @@ pub fn convert_base(app: tauri::AppHandle, file_path: String, write: bool) -> Re
             convert_filter_op(&f.operator).map(|op| LensFilter {
                 dimension: format!("prop.{}", f.property),
                 op: op.to_string(),
-                value: f.value.clone().unwrap_or_default(),
+                value: f.value.clone(),
             })
         })
         .collect();
