@@ -301,3 +301,49 @@ Double-click a `prop.*` (your-field) cell → edit the note's frontmatter value 
 - **Backend:** enhanced the existing `bases::update_note_property` (the MVP command the Architect specified reusing; its only other caller was the orphaned BaseView) — after the frontmatter write it now calls `search::reindex_single_note` (resolved the library name from the path) so `note_meta` is fresh and a later sort/add-column re-query doesn't revert the edited cell. Best-effort (disk write is source of truth). **Not a new write path** — reuses the command's existing in-a-registered-library validation; **§J must verify federated-row edit safety** (a cUniverse note is read-only per MIG-062).
 - **Frontend:** `store.updateNoteProperty` wrapper; BaseTab edit state (`editing`/`editValue`) + `startEdit`/`commitEdit`/`cancelEdit`/`onEditKey` + `focusSelect` action. Editable cells: double-click → input (Enter commits, Esc cancels, blur commits), `dir="auto"`, hover affordance (`.editable-cell`, inset accent border + text cursor); commit = `update_note_property` then **optimistic** single-cell update (no full re-query — Rule 3). i18n `lensBlock.editCell` (en+ar).
 - **Verify:** cargo check --lib exit 0; svelte-check clean. Boss test pending.
+
+**§H Boss test — PASS** ("Pass"): edit-in-place, read-only guard (Created/Name not editable), Escape-cancel, persistence-after-sort all confirmed. Federation pre-checked: Eisa Cognitive Knowledge `universe.json children: []` (NOT federated) — all 18 libraries own/writable, so §H editing is clean here; federated-row edit safety remains a §J audit item.
+
+---
+
+## MIG-065 §I — retire the old `query_base` live-scan engine
+
+**Predecessor → Replacement (rule fires hard — written BEFORE cutting). Dependency map: Explore agent, 100% confidence.**
+
+- **What's retired (the Rule-8 violation + its orphaned UI):** `bases::query_base` (live filesystem walk + frontmatter parse) — invoked ONLY by `BaseView.svelte`, which is **orphaned** (never mounted; the whole `BaseView`/`BaseTableView`/`BaseCardView`/`BaseListView`/`BaseFilterBuilder`/`BaseSortBuilder` family has zero external imports). **Replacement: `BaseTab.svelte` + `execute_lens` (SQL, Rule-8-clean), live since §F.2.** Rule-8 is already *satisfied* (no live Base read walks the FS); §I removes the dead code.
+- **SAFE TO DELETE (orphaned; agent-confirmed):** 6 `BaseView*.svelte` files · `bases.rs`: `query_base`, `scan_folder`, `scan_by_tag`, `apply_filters`, `parse_base_file`, `save_base_file`, `parse_workspace_base` + orphaned structs (`BaseQueryResult`, `BaseRow`, `ColumnDef`, `FilterRule`, `SortRule`) · `bases/store.ts`: `parseBaseFile`/`queryBase`/`saveBaseFile`/`parseWorkspaceBase` · `bases/types.ts`: `ColumnDef`/`FilterRule`/`SortRule`/`BaseRow`/`BaseQueryResult`/`createDefaultColumn`/`detectCellType` · `lib.rs` registrations for the 4 deleted commands.
+- **MUST KEEP (live):** sidebar Base management — `list_workspace_bases`, `create_workspace_base`, `save_workspace_base`(→§I-b), `delete_workspace_base`, `create_base`, `workspace_bases_dir`, `scan_bases_dir`; `update_note_property` (+`update_frontmatter_property`/`format_yaml_value`/`parse_frontmatter`) for §H; the `.base`→BaseTab routing.
+- **MUST RE-POINT (§I-b — pre-existing gap, NOT a §I regression):** `create_base:585` + `create_workspace_base:842` + `save_workspace_base:878` write a **`BaseDefinition` JSON**, but BaseTab reads **`LensDefinition` YAML** → the sidebar "New Base" currently makes an *unreadable* base (broken since §F.2). §I-b re-points creation to a minimal `LensDefinition` YAML (mapping the dialog's `selectedLibraries` → `scope.libraries`), simplifies the `+layout` new-base handler (drop the `BaseDefinition`+`saveWorkspaceBase` step), and gives BaseTab a calm "older-format base" notice (decision #1: old JSON `.base` silently ignored). Two passes, each cargo+svelte-check verified.
+
+**§I-a — DONE + verified (commit `427cd3df`).** Deleted the 6 orphaned `BaseView*.svelte`; trimmed `bases/store.ts` + `bases/types.ts` to the live sidebar essentials; fixed a stale `saveBaseFile` import in `+layout`; unregistered `query_base`/`parse_base_file`/`save_base_file`/`parse_workspace_base` in `lib.rs`. **query_base is now uncallable → Rule-8 functionally satisfied; orphaned UI gone.** svelte-check: 3 errors, ALL pre-existing (none in changed files). cargo check: compiles (dead-code warnings on the now-unreferenced bodies).
+
+---
+
+## ⏸️ STATE OF STANDING — MIG-065 pause checkpoint (2026-05-30 ~06:15, end of marathon session)
+
+**(a) VERIFIED-SHIPPED + PROTECTED (committed, Boss-validated, on `main`, NOT pushed):**
+- The entire **"Simple" unified Base** is built + Boss-tested + committed:
+  - §F.2 standalone `.base` → full-tab table (`97a8b52d`) + render cap (`85793fdd`) — **PASS**
+  - §G tiered "+ Add column" picker + remove + save (`eef4d433`) — **PASS**
+  - §G.2a click-header sort (`57e5fc47`) + §G.2b multi-sort panel (`d4309cc1`) — **PASS** (both)
+  - §H edit-in-place on `prop.*` cells, read-only guard (`0cff54de`) — **PASS**
+  - §I-a functional retirement of `query_base` (`427cd3df`) — verified (no Boss test needed)
+- **Cognitive lens RATIFIED** (`a7b00ebc` paper + `a5661140` ratify): "four questions (Development/Altitude/Origin/Connection), one process (Five Acts), one destination (Conviction)." Memory `project_cognitive_engine_four_questions`. Doc `docs/Cognitive-Engine-One-Picture-Concept-Paper-v1.0.md`.
+
+**(b) AT-RISK / IN-FLIGHT / uncommitted:** nothing uncommitted in the worktree (only `.claude/settings.local.json`, unrelated). All work committed. **Nothing pushed yet** (push is §L).
+
+**(c) KNOWN-BROKEN / gaps:**
+- **Sidebar "New Base" makes an unreadable base** — `create_base`/`create_workspace_base` still write `BaseDefinition` JSON; BaseTab reads `LensDefinition` YAML. Pre-existing since §F.2. **Fix = §I-b.** (Eisa's existing test base `My Notes — overview` is hand-written YAML, so it works; a sidebar-created base would error.)
+- **Dead Rust bodies** in `bases.rs` (`query_base` + `scan_folder`/`scan_by_tag`/`apply_filters`/`apply_sorts_fixed` + `parse_base_file`/`save_base_file`/`parse_workspace_base` + orphaned structs `BaseRow`/`BaseQueryResult`/`ColumnDef`/`FilterRule`/`SortRule`) — uncallable but present (cargo warns). Physical sweep pending (§I-a remainder).
+
+**(d) PENDING, NOT STARTED:**
+- **§I remainder:** (i) physical Rust-body sweep; (ii) §I-b create→YAML re-point + the calm older-format notice in BaseTab.
+- **§J** — 3-agent audit (invariants/drift/migration-path). **Must include: verify federated-row edit safety in §H** (`update_note_property` on a cUniverse note — Eisa's universe isn't federated, but the general case needs checking).
+- **§K** — staged Boss test (Stage 1 open base · 2 add/filter/sort · 3 edit · 4 federated). *Note: §G never shipped a FILTER builder (only add-column + sort); §K Stage 2 "filter" → either add a filter builder (a §G.3) or descope to add+sort.*
+- **§L** — PCS: orientation vX.Y bump (Dual-World Base shipped; `query_base` retired; reference the cognitive-lens paper §6 + the rank-sort memory + §A.15-style updates), 15-locale fill of all `lensBlock.*` keys (only en+ar now), help-doc `Bases.md` rewrite, session log + MoCh, milestone tag `milestone/mig-065-unified-base-foundation`, push, ZIP.
+
+**(e) DOC DRIFT noted:**
+- 360.3D-Concept-Paper-v1.0 §3.3 calls stage "Fleeting→Literature→Permanent→Synthesis" (stale — superseded by the 6-stage Spark→Archival; fix at some doc pass).
+- Orientation still at v2.44 (pre-this-session); the MIG-065 §F.2–§I work + the cognitive-lens paper land in the §L orientation bump.
+
+**FUTURE (Cognitive-Engine-era, logged):** rank-aware sorting (memory `project_ranked_dimensions_sort_by_rank`) — maturity rank `seed→sapling→evergreen→canonical` (wilting = condition); legacy `literature`→Origin/provenance per the lens §6; the four-questions grouping of Base cognitive columns (MIG-066/067/068).
