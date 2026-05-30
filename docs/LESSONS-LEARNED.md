@@ -626,10 +626,21 @@ This is the BASIC RULE in the wiring-task domain: don't make up which file is "t
 
 **Follow-up addition (same session, GraphMindView miss):** A name-pattern grep is insufficient — the full-window "Sky View" turned out to be `<GraphMindView>` (filename doesn't contain "SkyView" at all), missed even after the first grep cycle. The fix: when wiring a feature, **enumerate every mounted component for that feature** by grep'ing the layout for `<[A-Z]\w*` template renders and reading the conditional branches around the feature flag (e.g. `showSkyView`, `showMap`). Look for components that LOOK unrelated by name but render under the feature's flag. A 2-second grep for `<[A-Z]\w*` in `+layout.svelte` filtered through the feature-flag block would have caught GraphMindView from the start.
 
+## LL-030: Tauri's WebView Eats HTML5 Drag-and-Drop — Use Pointer Events for In-Page Dragging
+
+**Symptom (2026-05-30, MIG-065 §K):** column drag-to-reorder in the Base table did nothing — the grab cursor appeared on hover, but `ondragstart`/`ondragover`/`ondrop` never fired. A first fix (changing a `<button>` sort label to a `<span>`, on the theory that the interactive button swallowed the parent header's drag) **also failed** — the second "still not working" was the signal to stop patching and find the root cause.
+
+**Root cause:** Tauri v2 enables drag-and-drop interception on the webview by **default** (no `dragDrop` key in `tauri.conf.json` = ON). When on, the native window grabs OS-level drag-and-drop (for file drops) **before the page sees it**, so HTML5 *element* drag-and-drop inside the page silently never starts. The app used no Tauri file-drop anywhere, so nothing surfaced the conflict — the drag just died with no error.
+
+**Rule:** For in-page drag interactions (column/row reorder, drag-to-sort, kanban) in a Tauri app, **do not rely on HTML5 drag-and-drop.** Prefer raw **pointer events**: `onmousedown` on the handle + window `mousemove`/`mouseup`, a small movement threshold (≈5 px) to tell a drag from a click, and `document.elementFromPoint(x,y).closest('[data-col]')` for drop-target hit-testing. This is contained to the component, survives the WebView quirk, gives full control of the drag visual, and — unlike the alternative `dragDropEnabled: false` config — does **not** disable OS file-drop app-wide. Always: remove the window listeners on unmount (Perf Rule 4); set a `suppressNextClick` flag so a drag doesn't also fire the handle's click (e.g. sort); and set `user-select: none` on the draggable elements (and the container during a drag) or the pointer-drag will text-select everything it sweeps across.
+
 ---
 
-*Last updated: 2026-05-23 (LL-028/029 added after the MIG-044 Phase 2 Sky View
-correction arc — Windows file-lock silent-build-failure during Tauri release
-build, and the BASIC RULE / Predecessor Lookup violation that wired the wrong
-.svelte file twice before grep-verifying the import graph)*
-*For: Constellation — release-build verification + file-name vs. import-graph discipline*
+*Last updated: 2026-05-30 (LL-030 added after the MIG-065 §K column-reorder arc —
+Tauri WebView intercepts HTML5 drag-and-drop by default; rebuilt on pointer events
+after a button→span patch failed to address the real cause).*
+*Earlier: 2026-05-23 (LL-028/029 — MIG-044 Phase 2 Sky View correction arc:
+Windows file-lock silent-build-failure during Tauri release build, and the BASIC
+RULE / Predecessor Lookup violation that wired the wrong .svelte file twice before
+grep-verifying the import graph).*
+*For: Constellation — in-page drag in Tauri WebViews + release-build verification + file-name vs. import-graph discipline*
