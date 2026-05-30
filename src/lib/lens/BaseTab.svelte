@@ -180,12 +180,30 @@
 	// single edit).
 	let editing = $state<{ rowPath: string; dim: string } | null>(null);
 	let editValue = $state('');
+	let editOptions = $state<string[]>([]); // existing values for a small-set column → dropdown
+
+	/** Distinct non-empty values of a column across the loaded rows — the edit
+	 *  dropdown suggestions. Only for a SMALL set (a categorical field like
+	 *  maturity / stage / source); a high-cardinality field (title) returns []
+	 *  → plain free-text input. The user can still type a value not in the list. */
+	function distinctValuesFor(dim: string, max: number): string[] {
+		if (!result) return [];
+		const set = new Set<string>();
+		for (const r of result.rows) {
+			const v = r.dimensions[dim];
+			if (v === null || v === undefined || v === '') continue;
+			set.add(String(v));
+			if (set.size > max) return []; // too many distinct → free text, no dropdown
+		}
+		return [...set].sort();
+	}
 
 	function startEdit(row: LensRow, dim: string) {
 		if (!isPropColumn(dim)) return; // cognitive / Name columns are read-only
 		editing = { rowPath: row.note_path, dim };
 		const v = row.dimensions[dim];
 		editValue = v === null || v === undefined ? '' : String(v);
+		editOptions = distinctValuesFor(dim, 50);
 	}
 	function cancelEdit() {
 		editing = null;
@@ -426,7 +444,12 @@
 			<div class="base-state">{$t('lensBlock.empty') || 'No notes match this base.'}</div>
 		{:else}
 			<div class="base-table-scroll" bind:this={scrollEl} onscroll={onTableScroll}>
-				<table class="base-table">
+				{#if editing && editOptions.length}
+						<datalist id="base-edit-options">
+							{#each editOptions as opt (opt)}<option value={opt}></option>{/each}
+						</datalist>
+					{/if}
+					<table class="base-table">
 					<thead>
 						<tr>
 							<th class="th-name">
@@ -452,17 +475,25 @@
 									ondragend={onColDragEnd}
 								>
 									<span class="th-inner">
-										<button
+										<span
 											class="th-sort"
 											class:can-sort={isSortable(c)}
+											role="button"
+											tabindex="0"
 											title={isSortable(c) ? ($t('lensBlock.sortBy') || 'Sort by this column') : ''}
 											onclick={() => cycleSort(c)}
+											onkeydown={(e) => {
+												if (e.key === 'Enter' || e.key === ' ') {
+													e.preventDefault();
+													cycleSort(c);
+												}
+											}}
 										>
 											<span class="th-label" dir="auto">{columnLabel(c, $t)}</span>
 											{#if sortDir(c)}
 												<span class="th-arrow">{sortDir(c) === 'asc' ? '↑' : '↓'}</span>
 											{/if}
-										</button>
+										</span>
 										<button
 											class="th-remove"
 											title={$t('lensBlock.removeColumn') || 'Remove column'}
@@ -504,7 +535,7 @@
 											<input
 												class="cell-edit"
 												dir="auto"
-												bind:value={editValue}
+												bind:value={editValue} list={editOptions.length ? 'base-edit-options' : undefined}
 												onblur={() => commitEdit(row, c)}
 												onkeydown={(e) => onEditKey(e, row, c)}
 												use:focusSelect
