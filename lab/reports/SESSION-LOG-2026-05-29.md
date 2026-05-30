@@ -455,3 +455,15 @@ The MIG-066 §D Plan asked Boss to ratify a canonical link-type order; Boss redi
 **§A.1 (committed):** `note_meta` gains three additive columns (idempotent `ensure_note_meta_mig066_columns`, mirroring MIG-002/003): `outgoing_count`, `outgoing_link_types` (canonical-ordered `, `-joined typed types), `outgoing_top_rank` (min canonical index 1-8, or 9 = none — the §D sort key). A shared `outgoing_aggregate_assignments(src)` builds the recompute SQL (one definition; `LINK_TYPE_IN_LIST` + `LINK_TYPE_RANK_CASE` encode Concept Paper §7). Write-time **`note_links_outgoing_ai/ad/au` triggers** recompute the SOURCE note's aggregates on any edge change (same-DB, source-side, Rule-8-clean; no WHEN guard — COUNT filters `status='active'`). Verified by `tests_mig066_outgoing::outgoing_aggregates_maintained_by_triggers` (insert/canonical-order/archive/delete/empty-sentinel; **confirms GROUP_CONCAT canonical order on bundled SQLite**). Type stored in `link_type` column (consistent with the existing stratum SQL at search.rs:204-213).
 
 **Remaining in §A:** §A.2 — the **resumable, batched background back-fill** for existing `note_links` (gated by `schema_versions.links_outgoing`, modeled on `sky_backfill`; must NOT block boot — bulk UPDATE batched per the MIG-013 boot-block lesson) + **boot/re-index perf measurement on the 7,600-note universe** (Rule 8 hard constraint). Then §B-§G.
+
+---
+
+## FRESH-START HANDOVER (Boss: "Fresh start. Prepare the handover files and prompt.")
+
+State-of-standing snapshot for the next session:
+- **Verified-shipped + pushed (origin/main `10d3caf9`):** MIG-065 unified Base (complete, validated, tagged `milestone/mig-065-unified-base-foundation`, ZIP'd); MIG-065 follow-ups (reserved-key filter, 14-lang Bases help, picker list-item fix); **Living-Link Concept Paper v1.0 RATIFIED** (canonical order locked); MIG-066 **§A.1** (outgoing-aggregate columns + write-time triggers + test).
+- **In-flight:** MIG-066 — resume at **§A.2** (resumable batched back-fill + boot/re-index perf measurement on 7,600 notes) → §B–§G. Plan approved (cascade authorized). **§E broadened** per Boss directive (reconcile EVERY Living-Link surface to the canonical order).
+- **Known-careful:** §A.2 + §B are write/boot-path — WA#4 + Rule-8 require measuring perf on the 7,600-note Universe before shipping; the 4th trigger family fires during re-index (measure overhead).
+- **Resume map:** **`docs/HANDOVER-MIG-066-continuation.md`** (the definitive §A.2→§G map + file anchors + the §E surface list) · `docs/Living-Link-Concept-Paper-v1.0.md` · `docs/MIG-066-living-links-columns-{ARCHITECT,PLAN}.md` · orientation **v2.46**.
+- **Docs current:** orientation bumped v2.45→**v2.46** (Concept Paper + MIG-066 recorded, SO #6); MoCh `docs/MoCh/MoCh-2026-05-30-1500.md` written (SO #7); this log.
+- **Next session opens by:** reading CLAUDE.md → orientation v2.46 → the handover → the Concept Paper → MIG-066 ARCHITECT/PLAN; `git pull`; resume §A.2.
