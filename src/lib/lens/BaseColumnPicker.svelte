@@ -21,6 +21,7 @@
 	import { t } from '$lib/i18n';
 	import { detectDir } from '$lib/utils';
 	import { discoverBaseProperties } from '$lib/lens/store';
+	import { getLinkTypes } from '$lib/libraries/linkTypeRegistry';
 	import { ADDABLE_REGISTERED_DIMS, columnLabel } from '$lib/lens/tableModel';
 
 	let {
@@ -60,7 +61,17 @@
 		});
 	});
 
-	const nothingLeft = $derived(!loading && yourFields.length === 0 && constellationFields.length === 0);
+	// MIG-067 §F — Link types = the registry's types (8 + custom) not already shown
+	// as a `note.link.<id>` per-type count column, matching the search.
+	const linkTypeFields = $derived.by(() => {
+		const q = search.trim().toLowerCase();
+		return getLinkTypes()
+			.map((lt) => 'note.link.' + lt.id)
+			.filter((d) => !currentColumns.includes(d))
+			.filter((d) => !q || columnLabel(d, $t).toLowerCase().includes(q) || d.toLowerCase().includes(q));
+	});
+
+	const nothingLeft = $derived(!loading && yourFields.length === 0 && constellationFields.length === 0 && linkTypeFields.length === 0);
 
 	function pick(dim: string) {
 		onAdd(dim);
@@ -135,6 +146,18 @@
 					<button class="cp-item cp-item-power" onclick={() => pick(dim)}>
 						<span class="cp-item-name">{columnLabel(dim, $t)}</span>
 						<span class="cp-readonly">{$t('lensBlock.readOnly') || 'read-only'}</span>
+					</button>
+				{/each}
+			{/if}
+
+			{#if linkTypeFields.length > 0}
+				<div class="cp-section-head cp-section-power">
+					{$t('lensBlock.linkTypeFields') || 'Link types'}
+				</div>
+				{#each linkTypeFields as dim (dim)}
+					<button class="cp-item cp-item-power" onclick={() => pick(dim)}>
+						<span class="cp-item-name">{columnLabel(dim, $t)}</span>
+						<span class="cp-readonly">{$t('lensBlock.count') || 'count'}</span>
 					</button>
 				{/each}
 			{/if}

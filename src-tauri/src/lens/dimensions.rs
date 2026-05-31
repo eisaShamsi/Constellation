@@ -166,6 +166,13 @@ pub fn dimension_names() -> Vec<&'static str> {
 /// keeps the namespace convention consistent with `note.` / future `link.`.
 pub const PROP_PREFIX: &str = "prop.";
 
+/// Prefix marking a per-type outgoing-link COUNT column. MIG-067 §F:
+/// `note.link.<typeid>` → `COALESCE(json_extract(note_meta.outgoing_link_types_json,
+/// '$."<id>"'), 0)` — how many active outgoing links of that type the note has as a
+/// source (MIG-066 §B materialised the `{type:count}` JSON write-time; this surfaces
+/// it as a sortable Base column). Read-only Number; an absent type ⇒ 0.
+pub const LINK_PREFIX: &str = "note.link.";
+
 /// Filter operators available on a raw frontmatter (Text) property column —
 /// the familiar Obsidian/Notion operator set.
 const PROP_FILTER_OPS: &[&str] = &[
@@ -224,6 +231,32 @@ pub fn resolve_dim(name: &str) -> Option<ResolvedDim> {
             filterable: true,
             filter_ops: PROP_FILTER_OPS.to_vec(),
             is_property: true,
+        });
+    }
+    // MIG-067 §F — per-type outgoing-link count column (`note.link.<typeid>`).
+    if let Some(id) = name.strip_prefix(LINK_PREFIX) {
+        let id = id.trim();
+        if id.is_empty() {
+            return None;
+        }
+        let safe = sanitize_json_key(id);
+        if safe.is_empty() {
+            return None;
+        }
+        return Some(ResolvedDim {
+            kind: DimensionKind::Number,
+            sql_expression: format!(
+                "COALESCE(json_extract(note_meta.outgoing_link_types_json, '$.\"{}\"'), 0)",
+                safe
+            ),
+            requires_join: None,
+            sortable: true,
+            // v1: a count column is sortable but not filterable (no "supports > 5"
+            // operator yet); filtering is a future phase.
+            filterable: false,
+            filter_ops: vec![],
+            // Not an editable frontmatter property — a read-only computed aggregate.
+            is_property: false,
         });
     }
     None
@@ -385,6 +418,24 @@ mod tests {
         assert!(r.sortable && r.filterable);
         assert!(r.filter_ops.contains(&"contains"));
         assert!(r.filter_ops.contains(&"is_empty"));
+    }
+
+    #[test]
+    fn resolve_dim_link_count_builds_coalesced_json_extract() {
+        // MIG-067 §F — note.link.<typeid> → a sortable Number count column.
+        let r = resolve_dim("note.link.supports").unwrap();
+        assert_eq!(r.kind, DimensionKind::Number);
+        assert!(r.sql_expression.contains("json_extract(note_meta.outgoing_link_types_json"));
+        assert!(r.sql_expression.contains("\"supports\""));
+        assert!(r.sql_expression.starts_with("COALESCE("), "absent type ⇒ 0: {}", r.sql_expression);
+        assert!(r.sortable, "count columns sort");
+        assert!(!r.filterable, "v1: count columns are not filterable");
+        assert!(!r.is_property, "a computed aggregate, not editable frontmatter");
+        // a custom (hyphenated) id resolves the same way
+        assert!(resolve_dim("note.link.evidence-for").unwrap().sql_expression.contains("\"evidence-for\""));
+        // empty / blank id → None
+        assert!(resolve_dim("note.link.").is_none());
+        assert!(resolve_dim("note.link.   ").is_none());
     }
 
     #[test]

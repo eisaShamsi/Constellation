@@ -16,11 +16,27 @@
  * Pure module: no DOM, no Svelte, no Tauri. Safe to import anywhere.
  */
 import type { DimensionValue } from './store';
+import { linkTypeLabel } from '$lib/libraries/linkTypeRegistry';
 
 /** Frontmatter columns ride in the `dimension` field as `prop.<key>` (the
  *  MIG-065 §C+§D deviation from the Architect's separate `property:` key —
  *  same outcome, zero struct churn). Mirrors `PROP_PREFIX` in `dimensions.rs`. */
 const PROP_PREFIX = 'prop.';
+
+/** Per-type link-count columns ride as `note.link.<typeid>` (MIG-067 §F — the
+ *  count of active outgoing links of that type). Mirrors `LINK_PREFIX` in
+ *  `dimensions.rs`. */
+const LINK_PREFIX = 'note.link.';
+
+/** A `note.link.<typeid>` per-type count column. */
+export function isLinkColumn(dim: string): boolean {
+	return dim.startsWith(LINK_PREFIX);
+}
+
+/** The link-type id behind a `note.link.<id>` column. */
+export function linkColumnId(dim: string): string {
+	return dim.slice(LINK_PREFIX.length);
+}
 
 /** A `prop.<key>` column maps to the note's frontmatter key `<key>`. */
 export function isPropColumn(dim: string): boolean {
@@ -95,6 +111,14 @@ export function isSortable(dim: string): boolean {
  */
 export function columnLabel(dim: string, translate: (key: string) => string): string {
 	if (isPropColumn(dim)) return propKey(dim);
+	// MIG-067 §F — a per-type count column shows that type's label (localized via
+	// `linkTypes.<id>` when the locale carries it, else the registry label; §H i18n).
+	if (isLinkColumn(dim)) {
+		const id = linkColumnId(dim);
+		const k = `linkTypes.${id}`;
+		const s = translate(k);
+		return s && s !== k ? s : linkTypeLabel(id);
+	}
 	const reg = REGISTERED_LABELS[dim];
 	if (reg) {
 		const s = translate(reg.key);
