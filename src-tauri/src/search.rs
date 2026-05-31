@@ -642,14 +642,18 @@ const LINK_TYPE_RANK_CASE: &str = "CASE link_type \
 /// expression `src` (e.g. `NEW.source_path` in a trigger, or `note_meta.path` for a
 /// correlated back-fill UPDATE). Used inside the triggers and the back-fill. `count`
 /// includes untyped links; `types`/`top_rank` cover only the 8 canonical types, in
-/// canonical order.
+/// canonical order. `outgoing_link_types` stores each type with its PER-TYPE active
+/// count — e.g. `"supports (358), derives-from (106), contradicts (1)"` — so the
+/// Base shows not just which relations a note participates in but how many of each
+/// (the load-bearing-ness of each kind). The English type id + ` (N)` is the stored
+/// form; the render layer (§C) localizes the id while keeping the count.
 pub(crate) fn outgoing_aggregate_assignments(src: &str) -> String {
     format!(
         "outgoing_count = (SELECT COUNT(*) FROM note_links WHERE source_path = {src} AND status = 'active'), \
-         outgoing_link_types = (SELECT COALESCE(GROUP_CONCAT(lt, ', '), '') FROM \
-            (SELECT DISTINCT link_type AS lt FROM note_links \
+         outgoing_link_types = (SELECT COALESCE(GROUP_CONCAT(lt || ' (' || cnt || ')', ', '), '') FROM \
+            (SELECT link_type AS lt, COUNT(*) AS cnt FROM note_links \
              WHERE source_path = {src} AND status = 'active' AND link_type IN {list} \
-             ORDER BY {rank})), \
+             GROUP BY link_type ORDER BY {rank})), \
          outgoing_top_rank = COALESCE((SELECT MIN({rank}) FROM note_links \
              WHERE source_path = {src} AND status = 'active' AND link_type IN {list}), 9)",
         src = src,
@@ -3346,18 +3350,20 @@ mod tests_mig066_outgoing {
         }
         let (count, types, rank) = read(&conn);
         assert_eq!(count, 3, "all active outgoing counted (incl. untyped)");
-        assert_eq!(types, "supports, contradicts", "GROUP_CONCAT in canonical order: supports(1) before contradicts(2)");
+        // per-type count format, canonical order (supports rank 1 before contradicts rank 2);
+        // here each type has exactly one active link → "(1)".
+        assert_eq!(types, "supports (1), contradicts (1)");
         assert_eq!(rank, 1, "top rank = supports = 1");
 
         // archive the supports edge → types/rank fall back to contradicts; count drops
         conn.execute("UPDATE note_links SET status='archived' WHERE source_path='/a.md' AND link_type='supports'", []).unwrap();
         let (count2, types2, rank2) = read(&conn);
-        assert_eq!((count2, types2.as_str(), rank2), (2, "contradicts", 2), "archived edge excluded");
+        assert_eq!((count2, types2.as_str(), rank2), (2, "contradicts (1)", 2), "archived edge excluded");
 
         // delete the untyped edge → count 1, types unchanged
         conn.execute("DELETE FROM note_links WHERE source_path='/a.md' AND link_type=''", []).unwrap();
         let (count3, types3, _) = read(&conn);
-        assert_eq!((count3, types3.as_str()), (1, "contradicts"));
+        assert_eq!((count3, types3.as_str()), (1, "contradicts (1)"));
 
         // archive the last typed edge → no typed links: empty types, sentinel rank 9
         conn.execute("UPDATE note_links SET status='archived' WHERE source_path='/a.md' AND link_type='contradicts'", []).unwrap();
@@ -3388,7 +3394,7 @@ mod tests_mig066_outgoing {
             [],
         )
         .unwrap();
-        assert_eq!(read(&conn), (1, "supports".to_string(), 1), "trigger maintains aggregate when present");
+        assert_eq!(read(&conn), (1, "supports (1)".to_string(), 1), "trigger maintains aggregate when present");
 
         // Triggers DROPPED (the reconcile bulk window) → edge change NOT reflected.
         drop_outgoing_link_triggers(&conn).unwrap();
@@ -3397,14 +3403,14 @@ mod tests_mig066_outgoing {
             [],
         )
         .unwrap();
-        assert_eq!(read(&conn), (1, "supports".to_string(), 1), "no maintenance while triggers are dropped");
+        assert_eq!(read(&conn), (1, "supports (1)".to_string(), 1), "no maintenance while triggers are dropped");
 
         // Recreate + recompute_all → columns restored from note_links (both edges).
         create_outgoing_link_triggers(&conn).unwrap();
         crate::links_backfill::recompute_all_outgoing(&conn).unwrap();
         assert_eq!(
             read(&conn),
-            (2, "supports, contradicts".to_string(), 1),
+            (2, "supports (1), contradicts (1)".to_string(), 1),
             "recompute_all restores the aggregate after the paused window"
         );
     }

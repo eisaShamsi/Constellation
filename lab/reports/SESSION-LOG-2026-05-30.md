@@ -87,8 +87,21 @@ Root cause: the **"ZERO BOOT-TIME WALKS"** rule (2026-04-15 perf panel, `+layout
 
 **Trade-off (honest):** this re-opens the aggressive zero-boot-walks optimization — every boot now does a cheap background stat-scan (~1–3s, deferred, off the critical path). Justified by the auto-detect requirement. First post-conversion boot does the heavy re-index (7,512 changed files) in the background; subsequent boots find nothing changed → cheap. Perf to confirm on Eisa's relaunch (boot stays instant).
 
+## §B CONFIRMED + per-type counts + recompute hardened
+
+After the auto-reconcile build + overnight: B2 was STILL blank — but `diag_mig066.py` showed `note_links` was now **fully real-typed** (supports 87,922 · derives-from 82,967 · … · 196,009 canonical links). The auto-reconcile worked; the failure was **downstream**: `note_meta.outgoing_link_types` (the materialized column the Base reads) was stale — only 1/7,655 notes populated, Ancient history still `count=525, types='', rank=9` (the OLD back-fill's values from the `'relates'` era). Root cause: my §A.2 `recompute_all_outgoing` was a **single whole-table UPDATE** that silently failed under boot DB lock-contention (the error was `eprintln!`'d, not in diagnostics.log).
+
+**Repair + hardening:**
+- **Stopgap** (`recompute_notemeta.py`, batched + lock-tolerant): recomputed `note_meta` from the now-correct `note_links` on the live DB → column populated immediately. Eisa confirmed **§B works** (Ancient history → real types, English + Arabic notes).
+- **Per-type counts (Eisa request):** `outgoing_link_types` now stores each type WITH its active count — `"supports (358), contradicts (1), causes (29), exemplifies (36), derives-from (106), part-of (1)"`, canonical order. `outgoing_aggregate_assignments` changed from `GROUP_CONCAT(DISTINCT lt)` to `GROUP_CONCAT(lt||' ('||cnt||')')` over `GROUP BY link_type`. Eisa confirmed perfect.
+- **Durable recompute fix:** `recompute_all_outgoing` rewritten **batched (500-row windows) + retry-on-SQLITE_BUSY** — the bug behind the overnight blank. 5 §A tests updated to the count format + green. Built 05:29.
+
+**Lesson:** a swallowed `eprintln!` error on a write-path recompute hid the failure for an overnight. Write-path failures must be loud (diag_log) + the operation lock-tolerant. The chain was THREE bugs — link-type *syntax*, missing *auto-reindex*, fragile *recompute* — each masking the next.
+
 ## Open / next
-- **Resume §B Boss test** on the auto-reconcile build — relaunch, wait for the deferred reconcile (~5s + background re-index of the converted files), then reopen the Base → **Link types** populates with real types in canonical order.
+- **Eisa to relaunch** the 05:29 counts build (durable: app produces the count format itself + the recompute self-heals via the batched retry). Current view already correct from the stopgap.
+- **§C (localization):** render `outgoing_link_types` localizing each English type id → locale term while KEEPING the ` (count)` (e.g. `يدعم (358)`). Parse on ` (`; the 8 ids are a fixed set.
+- **NEW (awaiting Eisa's steer):** "sub-type + sort each" request — clarifying between per-type sortable columns vs. custom link sub-types vs. sort-one-column-by-type. (Eisa's AskUserQuestion click was a misclick; re-asking.)
 - Editor A2 caveat: Eisa's screenshot showed raw `[[supports::…]]` (likely active-line/source view; he passed A2) — re-confirm clean badge rendering in live-preview after the re-index.
 - Possible follow-up: a manual "Rebuild Index" button (Settings → Index) as a belt-and-suspenders backstop; smarter dirty-check to skip the stat-scan when nothing changed.
 - §C/§D/§E/§F/§G per the approved Plan. §D groundwork mapped: rank-aware sort hooks via an optional `sort_expression` on `ResolvedDim`/`DimensionDef` (link_types sorts on the materialized `outgoing_top_rank`); `sql_builder.rs` resolves sort cols at `build_per_schema_body` + outer ORDER BY by ordinal.

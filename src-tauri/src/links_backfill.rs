@@ -199,24 +199,57 @@ pub(crate) fn recompute_range(conn: &Connection, after_path: &str, last_path: &s
     conn.execute(&sql, params![after_path, last_path])
 }
 
-/// MIG-066 §A.2 — recompute the three outgoing aggregates for EVERY note from
-/// `note_links` in one pass (no range bound). `reconcile_filesystem` calls this
-/// after a deliberately trigger-free full re-index to restore the columns in a
-/// single cheap UPDATE — far cheaper than letting the per-edge triggers fire
-/// across a whole-universe DELETE+re-INSERT rebuild (O(N²); +17s measured on a
-/// 216k-link universe). Same SQL the triggers + the batched back-fill use, so
-/// the three population paths can never drift. Returns rows touched.
+/// MIG-066 §A.2 — recompute the outgoing aggregates for EVERY note from
+/// `note_links`. `reconcile_filesystem` calls this after a deliberately
+/// trigger-free full re-index to restore the columns. Same SQL the triggers +
+/// the batched back-fill use, so the three population paths can never drift.
+/// Returns rows touched.
 ///
-/// One statement (not batched): it runs on the reconcile thread's dedicated
-/// connection AFTER the bulk walk, so it never touches the boot/IPC path; the
-/// reconcile that precedes it already re-read every file, so one more UPDATE
-/// pass is negligible beside it.
+/// **BATCHED + lock-tolerant** (was a single whole-table UPDATE — which silently
+/// failed under boot DB contention on a large universe, leaving the column stale:
+/// the 2026-05-30 overnight blank). It now walks `note_meta` in 500-row windows,
+/// each its own short UPDATE (so it never holds a long write lock), and retries a
+/// batch on SQLITE_BUSY/locked instead of aborting the whole pass.
 pub(crate) fn recompute_all_outgoing(conn: &Connection) -> rusqlite::Result<usize> {
-    let sql = format!(
-        "UPDATE note_meta SET {assign}",
-        assign = outgoing_aggregate_assignments("note_meta.path"),
-    );
-    conn.execute(&sql, [])
+    let mut after = String::new();
+    let mut total = 0usize;
+    loop {
+        let paths: Vec<String> = {
+            let mut stmt =
+                conn.prepare("SELECT path FROM note_meta WHERE path > ?1 ORDER BY path LIMIT 500")?;
+            let rows = stmt.query_map(params![after], |r| r.get::<_, String>(0))?;
+            let mut v = Vec::with_capacity(500);
+            for r in rows {
+                v.push(r?);
+            }
+            v
+        };
+        if paths.is_empty() {
+            break;
+        }
+        let last = paths.last().cloned().unwrap_or_default();
+        // One short UPDATE per window; retry on transient lock contention.
+        let mut attempt = 0;
+        loop {
+            match recompute_range(conn, &after, &last) {
+                Ok(_) => break,
+                Err(e) if is_busy_error(&e) && attempt < 8 => {
+                    attempt += 1;
+                    thread::sleep(Duration::from_millis(400));
+                }
+                Err(e) => return Err(e),
+            }
+        }
+        total += paths.len();
+        after = last;
+    }
+    Ok(total)
+}
+
+/// True for SQLITE_BUSY / SQLITE_LOCKED (the transient contention worth retrying).
+fn is_busy_error(e: &rusqlite::Error) -> bool {
+    let s = e.to_string().to_lowercase();
+    s.contains("locked") || s.contains("busy")
 }
 
 fn ensure_cursor_table(conn: &Connection) -> Result<(), String> {
@@ -351,9 +384,9 @@ mod tests {
 
         // /a.md: archived 'causes' excluded → count 3 (supports/contradicts/untyped),
         // types in canonical order (supports=1 before contradicts=2), top rank = 1.
-        assert_eq!(read(&conn, "/a.md"), (3, "supports, contradicts".to_string(), 1));
+        assert_eq!(read(&conn, "/a.md"), (3, "supports (1), contradicts (1)".to_string(), 1));
         // /b.md: one typed link.
-        assert_eq!(read(&conn, "/b.md"), (1, "exemplifies".to_string(), 4));
+        assert_eq!(read(&conn, "/b.md"), (1, "exemplifies (1)".to_string(), 4));
         // /c.md: genuinely no links → recompute yields the same default sentinel.
         assert_eq!(read(&conn, "/c.md"), (0, String::new(), 9));
     }
@@ -364,7 +397,7 @@ mod tests {
         // Recompute only (after "", up to and including "/a.md") — paths sort
         // "/a.md" < "/b.md" < "/c.md", so only /a.md is in range.
         recompute_range(&conn, "", "/a.md").unwrap();
-        assert_eq!(read(&conn, "/a.md"), (3, "supports, contradicts".to_string(), 1));
+        assert_eq!(read(&conn, "/a.md"), (3, "supports (1), contradicts (1)".to_string(), 1));
         assert_eq!(read(&conn, "/b.md"), (0, String::new(), 9), "/b.md is outside the range — untouched");
     }
 
