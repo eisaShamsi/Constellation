@@ -212,6 +212,19 @@
 			"linkDistance": "Link distance",
 			"linkDistanceDesc": "Target distance between connected nodes"
 		},
+		"linkTypes": {
+			"title": "Link Types",
+			"desc": "Add your own link types — top-level, or nested under one of the eight built-ins — to match how you think. They flow into the editor, autocomplete, 360.3D, and Base columns. The eight built-ins can be recoloured but not deleted.",
+			"builtin": "built-in",
+			"topLevel": "Top-level",
+			"parent": "Parent",
+			"add": "Add",
+			"willCreate": "Will create",
+			"newLabel": "New type name…",
+			"newColor": "New type colour",
+			"idTaken": "A type with that id already exists.",
+			"saving": "Saving…"
+		},
 		"appearance": {
 			"colorScheme": "Color scheme",
 			"colorSchemeDesc": "Choose between light and dark mode, or follow your OS",
