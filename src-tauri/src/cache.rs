@@ -1120,6 +1120,26 @@ pub fn cache_reconcile(app: tauri::AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+/// MIG-067 — the boot-time, WALK-FREE counterpart to `cache_reconcile`. Ensures
+/// the search DB connection is ready and fires the same `cache-reconciled` event
+/// the frontend listens for (which loads incoming link counts, marks search
+/// ready, and runs link decay) — but WITHOUT `reconcile_filesystem`'s stat-every-
+/// file walk. That walk is what the ZERO BOOT-TIME WALKS rule forbids on boot;
+/// it belongs only to the live watcher or an explicit Settings → Rebuild Index.
+/// (A §B-era boot `cache_reconcile` re-introduced the walk and was the audible
+/// background thrash; this replaces it.)
+#[tauri::command]
+pub fn cache_mark_search_ready(app: tauri::AppHandle) -> Result<(), String> {
+    use tauri::Emitter;
+    crate::search::ensure_search_db_ready(&app)?;
+    let _ = app.emit("cache-reconciled", serde_json::json!({
+        "was_cold": false,
+        "note_count": 0i64,
+        "elapsed_ms": 0u64,
+    }));
+    Ok(())
+}
+
 // ════════════════════════════════════════════════════════════════════
 // MIG-061 §G — Federation tests for the sky_* reader path.
 //

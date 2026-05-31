@@ -427,6 +427,7 @@ pub fn run() {
             cache::cache_boot_snapshot_sky,
             cache::cache_is_populated,
             cache::cache_reconcile,
+            cache::cache_mark_search_ready,
             cache::write_boot_perf_report,
             cache::read_boot_perf_report,
             search::constellation_search_init,

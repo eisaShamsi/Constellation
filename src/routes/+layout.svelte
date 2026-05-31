@@ -2149,14 +2149,13 @@
 				})
 				.catch(() => { loadAllStatsWallMs = Math.round(performance.now() - t0); });
 		}
-		// Auto self-heal: catch bulk external changes (a sync, a restore, or an
-		// external bulk edit made while the app was CLOSED — the live watcher only
-		// sees changes while running). Deferred + background so boot stays instant:
-		// the critical path already hydrated above; this fires ~5s later on
-		// cache_reconcile's own thread and re-reads ONLY files whose mtime changed
-		// (cheap when nothing did). It emits 'cache-reconciled' (listened below) to
-		// refresh the snapshot when done. Runs on boot AND universe-switch.
-		setTimeout(() => { invoke('cache_reconcile').catch(() => {}); }, 5000);
+		// MIG-067 — search-ready WITHOUT a filesystem walk. A §B-era cache_reconcile()
+		// fired here re-walked every file on EVERY boot (the audible thrash, violating
+		// the ZERO BOOT-TIME WALKS rule above). cache_mark_search_ready just ensures the
+		// DB + emits 'cache-reconciled', so the listeners below load incoming link counts
+		// + mark search ready — no walk. Bulk closed-time changes: Settings → Rebuild
+		// Index; live changes: the file watcher.
+		setTimeout(() => { invoke('cache_mark_search_ready').catch(() => {}); }, 800);
 	}
 
 	async function handleUniverseCreated(entry: UniverseEntry) {
