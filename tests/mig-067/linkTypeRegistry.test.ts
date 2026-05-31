@@ -82,6 +82,19 @@ describe('linkTypeRegistry §C', () => {
 		expect(reg.isLinkTypeValue('unknown')).toBe(false);
 	});
 
+	it('stripLinkTypePrefix strips a known type:: prefix, preserves the rest', () => {
+		// known types (seed + custom + associative) → stripped to the target
+		expect(reg.stripLinkTypePrefix('supports::Apple')).toBe('Apple');
+		expect(reg.stripLinkTypePrefix('evidence-for::Note')).toBe('Note');
+		expect(reg.stripLinkTypePrefix('associative::X')).toBe('X');
+		// display alias + fragment ride along (the caller splits them off after)
+		expect(reg.stripLinkTypePrefix('supports::Apple|My alias')).toBe('Apple|My alias');
+		// no prefix / unknown prefix / a real "::" in a name → untouched
+		expect(reg.stripLinkTypePrefix('Apple')).toBe('Apple');
+		expect(reg.stripLinkTypePrefix('Apple|supports')).toBe('Apple|supports');
+		expect(reg.stripLinkTypePrefix('C++::vector')).toBe('C++::vector');
+	});
+
 	it('notifies subscribers on re-seed and stops after unsubscribe', () => {
 		let n = 0;
 		const off = reg.subscribe(() => { n++; });

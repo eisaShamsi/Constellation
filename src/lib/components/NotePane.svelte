@@ -10,6 +10,7 @@
 	import { appSettings, getEffectiveScriptFonts } from '$lib/libraries/store';
 	import { lookupStageEmoji, stageLabel, nextStage, prevStage } from '$lib/libraries/store';
 	import type { FrontmatterProperty } from '$lib/libraries/store';
+	import { stripLinkTypePrefix } from '$lib/libraries/linkTypeRegistry';
 	import PropertyEditor from './PropertyEditor.svelte';
 	import { EditorView, keymap, drawSelection, Decoration, type DecorationSet } from '@codemirror/view';
 	import { EditorState, Compartment, Prec, StateField, StateEffect, RangeSetBuilder } from '@codemirror/state';
@@ -652,7 +653,9 @@
 				if (offset >= innerStart && offset <= innerEnd) {
 					event.preventDefault();
 					event.stopPropagation();
-					const link = match[1].split('|')[0].split('#')[0].trim();
+					// MIG-067 — predicate-first [[type::target]]: strip the known type:: prefix
+					// so the click opens the TARGET, not a note named "type::target".
+					const link = stripLinkTypePrefix(match[1]).split('|')[0].split('#')[0].trim();
 					const newTab = event.ctrlKey || event.metaKey;
 					if (onlinkclick) {
 						onlinkclick(link, newTab);

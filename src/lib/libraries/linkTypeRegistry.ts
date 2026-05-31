@@ -138,6 +138,21 @@ export function isLinkTypeValue(id: string): boolean {
 	return id === 'associative' || isKnownLinkType(id);
 }
 
+/** Strip a predicate-first `type::` prefix from a wikilink's inner text when the
+ *  prefix is a KNOWN link type. `supports::Apple` → `Apple` (any `|display` and
+ *  `#fragment` are preserved); `Apple|alias`, `Apple`, and `C++::vector` (unknown
+ *  prefix) pass through unchanged. Used by the editor- and HTML-click resolvers so
+ *  a typed link `[[type::target]]` opens its TARGET, not a note literally named
+ *  "type::target". Guarded by isLinkTypeValue so a `::` inside a real note name is
+ *  never mistaken for a type prefix. */
+export function stripLinkTypePrefix(inner: string): string {
+	const i = inner.indexOf('::');
+	if (i > 0 && isLinkTypeValue(inner.slice(0, i).trim().toLowerCase())) {
+		return inner.slice(i + 2);
+	}
+	return inner;
+}
+
 /** Inline/badge color for a type id (neutral default for unknown ids). */
 export function linkTypeColor(id: string): string {
 	return byId.get(id)?.color ?? DEFAULT_COLOR;

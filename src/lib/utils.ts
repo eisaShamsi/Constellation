@@ -1,6 +1,7 @@
 import { marked, type TokenizerAndRendererExtension, type Tokens } from 'marked';
 import hljs from 'highlight.js';
 import DOMPurify from 'dompurify';
+import { stripLinkTypePrefix } from '$lib/libraries/linkTypeRegistry';
 
 // ─── WikiLink extension for marked ───
 const wikilinkExtension: TokenizerAndRendererExtension = {
@@ -34,8 +35,15 @@ const wikilinkExtension: TokenizerAndRendererExtension = {
 		return undefined;
 	},
 	renderer(token: any) {
-		const target = token.target as string;
+		let target = token.target as string;
 		let display = token.display as string;
+		// MIG-067 — predicate-first [[type::target]]: strip a known type:: prefix
+		// so the link resolves to (and, with no explicit alias, displays) the target.
+		const _strippedTarget = stripLinkTypePrefix(target);
+		if (_strippedTarget !== target) {
+			if (display === target) display = _strippedTarget;
+			target = _strippedTarget;
+		}
 
 		// Parse fragment (#heading or #^block-id)
 		let fragment = '';
