@@ -171,45 +171,32 @@ const htmlSupDeco  = Decoration.mark({ class: 'cm-html-sup' });
 const htmlMarkDeco = Decoration.mark({ class: 'cm-html-mark' });
 const htmlDecoMap: Record<string, Decoration> = { u: htmlUDeco, sub: htmlSubDeco, sup: htmlSupDeco, mark: htmlMarkDeco };
 
-// Typed link decorations — one per semantic link type (CE Phase 1)
-// MIG-022 §A.2 (D-A1.β, 2026-05-11) — `supersedes` added as 9th type.
-// MIG-067 §D — typed-link MEMBERSHIP now reads the Link-Type Registry
-// (isLinkTypeValue: the 8 typed acts + custom + `associative`). The
-// per-type decoration COLORS below stay hardcoded until §E.
-const typedLinkDecos: Record<string, ReturnType<typeof Decoration.mark>> = {
-	supports:       Decoration.mark({ class: 'cm-md-link cm-link-supports' }),
-	contradicts:    Decoration.mark({ class: 'cm-md-link cm-link-contradicts' }),
-	causes:         Decoration.mark({ class: 'cm-md-link cm-link-causes' }),
-	exemplifies:    Decoration.mark({ class: 'cm-md-link cm-link-exemplifies' }),
-	generalizes:    Decoration.mark({ class: 'cm-md-link cm-link-generalizes' }),
-	'derives-from': Decoration.mark({ class: 'cm-md-link cm-link-derives-from' }),
-	'part-of':      Decoration.mark({ class: 'cm-md-link cm-link-part-of' }),
+// MIG-067 §E — every typed link is coloured by an INLINE style read from the
+// Link-Type Registry, built-ins AND custom alike. (The earlier `cm-link-*`
+// CSS-class path silently stopped applying — every typed link rendered the default
+// link blue.) Inline `!important` always wins; reading the colour from the registry
+// means recolouring any of the 8 in §G reflects here too. SEED_COLORS is the
+// canonical fallback for the 8 before the registry has seeded (boot edge).
+const SEED_COLORS: Record<string, string> = {
+	supports: '#4A9EFF', contradicts: '#FF4A4A', causes: '#FF8C42', exemplifies: '#4AFF88',
+	generalizes: '#A44AFF', 'derives-from': '#FFD700', 'part-of': '#AAAAAA', supersedes: '#5B7A8A',
 };
 
-// MIG-067 §E — per-type colours for CUSTOM link types. The 8 built-ins use the
-// pre-defined `cm-link-*` CSS classes above; a user-defined type has no class, so
-// it gets a registry-colour INLINE-style decoration. Pre-cached (Rule 1: never
-// built inside buildDecorations) and rebuilt only when the vocabulary changes.
-// Built lazily on first render of a custom-type link from the CURRENT registry
-// (which has the type — the `type::` prefix only strips when it's known), then
-// cached. Cleared on any vocabulary change (recolour / add / remove) so the next
-// render picks up the new colour. Lazy (not eager-prebuilt) so it can't race the
-// boot seed: the deco is created the first time the id is actually drawn.
-const customDecoCache = new Map<string, ReturnType<typeof Decoration.mark>>();
-subscribeLinkTypes(() => customDecoCache.clear());
+// Lazily built per id (the type is known by render time), cached, cleared on any
+// vocabulary change so recolours take effect.
+const typeDecoCache = new Map<string, ReturnType<typeof Decoration.mark>>();
+subscribeLinkTypes(() => typeDecoCache.clear());
 
-/** Decoration for a typed-link id: a built-in `cm-link-*` class, else the custom
- *  type's registry-colour inline style (cached), else the plain link decoration. */
+/** Decoration for a typed-link id: an inline registry/seed colour (`!important`),
+ *  or the plain link decoration for the null/untyped `associative` and unknowns. */
 function typeDeco(id: string): ReturnType<typeof Decoration.mark> {
-	const builtin = typedLinkDecos[id];
-	if (builtin) return builtin;
-	let d = customDecoCache.get(id);
+	let d = typeDecoCache.get(id);
 	if (d === undefined) {
-		const lt = getLinkType(id);
-		d = lt
-			? Decoration.mark({ class: 'cm-md-link', attributes: { style: `color:${lt.color};text-decoration-color:${lt.color}66` } })
+		const color = getLinkType(id)?.color ?? SEED_COLORS[id];
+		d = color
+			? Decoration.mark({ class: 'cm-md-link', attributes: { style: `color:${color} !important;text-decoration-color:${color}66 !important` } })
 			: linkDeco;
-		customDecoCache.set(id, d);
+		typeDecoCache.set(id, d);
 	}
 	return d;
 }
