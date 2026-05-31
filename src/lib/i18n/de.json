@@ -4,6 +4,25 @@
 		"tagline": "Eine Bibliothek der Bibliotheken"
 	},
 	"settings": {
+		"linkTypes": {
+			"title": "Verbindungstypen",
+			"desc": "Füge eigene Verbindungstypen hinzu – auf oberster Ebene oder unter einem der acht integrierten Typen – passend zu deiner Denkweise. Sie fließen in den Editor, die Autovervollständigung, 360.3D und die Base-Spalten ein. Die acht integrierten Typen lassen sich umfärben, aber nicht löschen.",
+			"builtin": "integriert",
+			"topLevel": "Oberste Ebene",
+			"parent": "Übergeordnet",
+			"add": "Hinzufügen",
+			"willCreate": "Erstellt",
+			"newLabel": "Name des neuen Typs…",
+			"newColor": "Farbe des neuen Typs",
+			"idTaken": "Ein Typ mit dieser ID existiert bereits.",
+			"saving": "Wird gespeichert…",
+			"displayHeading": "Anzeige typisierter Verbindungen",
+			"displayDesc": "Wie typisierte Verbindungen im Editor erscheinen – den Typnamen über jeder Verbindung anzeigen, sie nach Typ einfärben oder beides, damit eine Beziehung nie übersehen oder falsch verstanden wird.",
+			"showLabel": "Typnamen über jeder Verbindung anzeigen",
+			"showLabelDesc": "Zeigt den Verbindungstyp (z. B. „widerspricht“) als kleine Beschriftung über jeder typisierten Verbindung an, damit seine Bedeutung unmissverständlich ist.",
+			"colourByType": "Verbindungen nach Typ einfärben",
+			"colourByTypeDesc": "Färbt jede typisierte Verbindung in der Farbe ihres Typs. Wenn deaktiviert, verwenden typisierte Verbindungen die Standardfarbe, und der Typ wird allein durch die Beschriftung angezeigt."
+		},
 		"title": "Einstellungen",
 		"sections": {
 			"dashboard": "Dashboard",

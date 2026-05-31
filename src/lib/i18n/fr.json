@@ -4,6 +4,25 @@
 		"tagline": "Un Coffre de Coffres"
 	},
 	"settings": {
+		"linkTypes": {
+			"title": "Types de lien",
+			"desc": "Ajoutez vos propres types de lien – au premier niveau ou imbriqués sous l'un des huit types intégrés – pour correspondre à votre façon de penser. Ils se répercutent dans l'éditeur, l'autocomplétion, 360.3D et les colonnes Base. Les huit types intégrés peuvent être recolorés mais pas supprimés.",
+			"builtin": "intégré",
+			"topLevel": "Premier niveau",
+			"parent": "Parent",
+			"add": "Ajouter",
+			"willCreate": "Créera",
+			"newLabel": "Nom du nouveau type…",
+			"newColor": "Couleur du nouveau type",
+			"idTaken": "Un type avec cet identifiant existe déjà.",
+			"saving": "Enregistrement…",
+			"displayHeading": "Affichage des liens typés",
+			"displayDesc": "Comment les liens typés apparaissent dans l'éditeur – afficher le nom du type au-dessus de chaque lien, le colorer par type, ou les deux, afin qu'une relation ne soit jamais manquée ni mal interprétée.",
+			"showLabel": "Afficher le nom du type au-dessus de chaque lien",
+			"showLabelDesc": "Affiche le type de lien (p. ex. « contredit ») sous forme de petite étiquette au-dessus de chaque lien typé, pour que son sens soit sans ambiguïté.",
+			"colourByType": "Colorer les liens par type",
+			"colourByTypeDesc": "Teinte chaque lien typé avec la couleur de son type. Lorsque l'option est désactivée, les liens typés utilisent la couleur de lien standard et le type est indiqué par la seule étiquette."
+		},
 		"title": "Paramètres",
 		"sections": {
 			"dashboard": "Tableau de bord",

@@ -4,6 +4,25 @@
 		"tagline": "Um Cofre de Cofres"
 	},
 	"settings": {
+		"linkTypes": {
+			"title": "Tipos de ligação",
+			"desc": "Adicione os seus próprios tipos de ligação – de nível superior ou aninhados sob um dos oito integrados – para corresponder à sua forma de pensar. Eles fluem para o editor, o preenchimento automático, o 360.3D e as colunas Base. Os oito tipos integrados podem ser recoloridos, mas não eliminados.",
+			"builtin": "integrado",
+			"topLevel": "Nível superior",
+			"parent": "Principal",
+			"add": "Adicionar",
+			"willCreate": "Vai criar",
+			"newLabel": "Nome do novo tipo…",
+			"newColor": "Cor do novo tipo",
+			"idTaken": "Já existe um tipo com esse identificador.",
+			"saving": "A guardar…",
+			"displayHeading": "Apresentação de ligações tipadas",
+			"displayDesc": "Como as ligações tipadas aparecem no editor – mostrar o nome do tipo sobre cada ligação, colori-la por tipo, ou ambos, para que uma relação nunca seja ignorada nem mal interpretada.",
+			"showLabel": "Mostrar o nome do tipo sobre cada ligação",
+			"showLabelDesc": "Apresenta o tipo de ligação (p. ex. «contradiz») como uma pequena etiqueta sobre cada ligação tipada, para que o seu significado seja inequívoco.",
+			"colourByType": "Colorir as ligações por tipo",
+			"colourByTypeDesc": "Tinge cada ligação tipada com a cor do seu tipo. Quando desativado, as ligações tipadas usam a cor de ligação padrão e o tipo é indicado apenas pela etiqueta."
+		},
 		"title": "Configurações",
 		"sections": {
 			"dashboard": "Painel",

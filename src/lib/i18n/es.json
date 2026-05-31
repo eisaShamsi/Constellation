@@ -4,6 +4,25 @@
 		"tagline": "Una Biblioteca de Bibliotecas"
 	},
 	"settings": {
+		"linkTypes": {
+			"title": "Tipos de enlace",
+			"desc": "Añade tus propios tipos de enlace – de nivel superior o anidados bajo uno de los ocho integrados – para que se ajusten a tu forma de pensar. Se reflejan en el editor, el autocompletado, 360.3D y las columnas de Base. Los ocho tipos integrados pueden recolorearse, pero no eliminarse.",
+			"builtin": "integrado",
+			"topLevel": "Nivel superior",
+			"parent": "Principal",
+			"add": "Añadir",
+			"willCreate": "Creará",
+			"newLabel": "Nombre del nuevo tipo…",
+			"newColor": "Color del nuevo tipo",
+			"idTaken": "Ya existe un tipo con ese identificador.",
+			"saving": "Guardando…",
+			"displayHeading": "Visualización de enlaces tipados",
+			"displayDesc": "Cómo aparecen los enlaces tipados en el editor – mostrar el nombre del tipo sobre cada enlace, colorearlo por tipo, o ambos, para que una relación nunca se pase por alto ni se malinterprete.",
+			"showLabel": "Mostrar el nombre del tipo sobre cada enlace",
+			"showLabelDesc": "Muestra el tipo de enlace (p. ej. «contradice») como una pequeña etiqueta sobre cada enlace tipado, para que su significado sea inconfundible.",
+			"colourByType": "Colorear los enlaces por tipo",
+			"colourByTypeDesc": "Tiñe cada enlace tipado con el color de su tipo. Cuando está desactivado, los enlaces tipados usan el color de enlace estándar y el tipo se indica solo mediante la etiqueta."
+		},
 		"title": "Ajustes",
 		"sections": {
 			"dashboard": "Panel",
