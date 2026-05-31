@@ -74,6 +74,14 @@ describe('linkTypeRegistry §C', () => {
 		expect(reg.isKnownLinkType('unknown')).toBe(false);
 	});
 
+	it('isLinkTypeValue accepts typed acts + the null associative (§D)', () => {
+		expect(reg.isLinkTypeValue('supports')).toBe(true);   // typed act
+		expect(reg.isLinkTypeValue('evidence-for')).toBe(true); // custom
+		expect(reg.isLinkTypeValue('associative')).toBe(true); // the null default
+		expect(reg.isKnownLinkType('associative')).toBe(false); // but NOT a typed act
+		expect(reg.isLinkTypeValue('unknown')).toBe(false);
+	});
+
 	it('notifies subscribers on re-seed and stops after unsubscribe', () => {
 		let n = 0;
 		const off = reg.subscribe(() => { n++; });
