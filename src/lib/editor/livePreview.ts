@@ -194,7 +194,7 @@ function typeDeco(id: string): ReturnType<typeof Decoration.mark> {
 	if (d === undefined) {
 		const color = getLinkType(id)?.color ?? SEED_COLORS[id];
 		d = color
-			? Decoration.mark({ class: 'cm-md-link', attributes: { style: `color:${color} !important;text-decoration-color:${color}66 !important` } })
+			? Decoration.mark({ class: 'cm-md-link cm-ltyped', attributes: { style: `--ltc:${color};color:${color} !important;text-decoration-color:${color}66 !important` } })
 			: linkDeco;
 		typeDecoCache.set(id, d);
 	}
@@ -1696,17 +1696,15 @@ export const livePreviewTheme = EditorView.theme({
 	'.cm-md-link:hover': {
 		color: 'var(--link-color-hover, var(--link-color, var(--interactive-accent-hover)))',
 	},
-	// CE Phase 1 — Typed Link colors (underline tint matches GraphMind + BacklinksPanel badges)
-	'.cm-link-supports':     { color: '#4A9EFF', textDecorationColor: '#4A9EFF66' },
-	'.cm-link-contradicts':  { color: '#FF4A4A', textDecorationColor: '#FF4A4A66' },
-	'.cm-link-causes':       { color: '#FF8C42', textDecorationColor: '#FF8C4266' },
-	'.cm-link-exemplifies':  { color: '#4AFF88', textDecorationColor: '#4AFF8866' },
-	'.cm-link-generalizes':  { color: '#A44AFF', textDecorationColor: '#A44AFF66' },
-	'.cm-link-derives-from': { color: '#FFD700', textDecorationColor: '#FFD70066' },
-	'.cm-link-part-of':      { color: '#AAAAAA', textDecorationColor: '#AAAAAA66' },
-	// MIG-022 §A.2 (D-A1.β) — slate blue-gray for supersedes; matches
-	// the linkPills.fill default in store.ts. User-overrideable via Settings.
-	'.cm-link-supersedes':   { color: '#5B7A8A', textDecorationColor: '#5B7A8A66' },
+	// MIG-067 §E — typed-link colour, painted from the inline `--ltc` custom property
+	// (set by typeDeco from the registry) onto the link AND any nested text inside it.
+	// The `.cm-ltyped *` descendant rule is the crux: the wikilink target renders in a
+	// CHILD element whose own (standard link) colour otherwise wins the visible text —
+	// an element-level override only reached the underline (the reported "underline
+	// coloured, text still blue" bug). `!important` beats the standard `.cm-md-link`
+	// colour; reading `--ltc` means recolouring any of the 8 in §G reflects here too.
+	'.cm-ltyped':   { color: 'var(--ltc) !important', textDecorationColor: 'color-mix(in srgb, var(--ltc) 40%, transparent) !important' },
+	'.cm-ltyped *': { color: 'var(--ltc) !important' },
 	'.cm-md-align':  { display: 'block', width: '100%' },
 	'.cm-html-hidden': { fontSize: '0', lineHeight: '0', overflow: 'hidden', display: 'inline', width: '0' },
 	'.cm-html-u':    { textDecoration: 'underline' },
