@@ -65,6 +65,7 @@ pub mod lexicon;
 mod search;
 mod sky_backfill;
 mod links_backfill;
+mod link_types;
 mod map;
 mod maturity;
 mod perf_trace;
@@ -534,6 +535,9 @@ pub fn run() {
             universe::save_universe_workspaces,
             universe::read_universe_property_types,
             universe::save_universe_property_types,
+            link_types::read_universe_link_types,
+            link_types::save_universe_link_types,
+            link_types::list_link_types,
             universe::migrate_legacy_data,
             universe::open_existing_universe,
             universe::get_child_universes,

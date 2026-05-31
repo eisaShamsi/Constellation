@@ -3615,13 +3615,9 @@ struct TypedLink {
     annotation: String,   // user's reasoning (from |annotation syntax)
 }
 
-/// The 8 canonical typed-link names the parser recognizes (Living-Link Concept
-/// Paper §7). `associative` is the null/untyped default — NOT in this set. Same
-/// 8 as `LINK_TYPE_IN_LIST` (the SQL membership form used by the §A aggregates).
-const PARSER_LINK_TYPES: &[&str] = &[
-    "supports", "contradicts", "causes", "exemplifies",
-    "generalizes", "derives-from", "part-of", "supersedes",
-];
+// MIG-067 §A — the parser recognizes a type id via the Link-Type Registry
+// (`link_types::is_known_type` — the 8 built-in seeds + any user-defined types),
+// not a hardcoded list. `associative` remains the null/untyped default.
 
 /// Extract typed links from note content. Accepts BOTH forms:
 ///   - canonical predicate-FIRST: `[[type::target]]`, `[[type::target|display]]`
@@ -3652,7 +3648,7 @@ fn extract_typed_links(content: &str) -> Vec<TypedLink> {
 /// `None` only when there is no usable target. `annotation` carries the display
 /// / middle segment (preserved as before). Shared by the indexer + its tests.
 fn parse_link_body(body: &str) -> Option<(String, String, String)> {
-    let is_type = |s: &str| PARSER_LINK_TYPES.contains(&s);
+    let is_type = |s: &str| crate::link_types::is_known_type(s);
 
     // Predicate-FIRST: "type::rest" where the head is a canonical type.
     if let Some((head, rest)) = body.split_once("::") {
@@ -5995,6 +5991,12 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
     if needs_rebuild {
         let _ = std::fs::write(&version_path, current_version);
     }
+    // MIG-067 §A: load the active universe's link-type vocabulary (the 8 seeds +
+    // .constellation/link-types.json deltas) into the registry BEFORE the
+    // background reconcile/parser run. Cheap, idempotent, reloads on
+    // universe-switch (this fn re-runs when the state DB is reset).
+    crate::link_types::load_active(app);
+
     // MIG-001 Step 5: schedule the Sky View back-fill on a background
     // thread. No-op if schema_versions.sky is already at target. Returns
     // immediately so this doesn't extend boot time.
