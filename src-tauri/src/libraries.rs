@@ -2016,6 +2016,9 @@ fn scan_links_recursive(dir: &Path, re: &regex::Regex, links: &mut Vec<NoteLink>
         Ok(rd) => rd,
         Err(_) => return,
     };
+    // MIG-067 §D — registry membership (8 typed acts + custom + `associative`),
+    // snapshot once per directory instead of a hardcoded list (see strata.rs).
+    let reg = crate::link_types::snapshot();
     for entry in read_dir.flatten() {
         let path = entry.path();
         let name = entry.file_name().to_string_lossy().to_string();
@@ -2041,17 +2044,12 @@ fn scan_links_recursive(dir: &Path, re: &regex::Regex, links: &mut Vec<NoteLink>
                     //   [[note|causes]]          → direct type name
                     //   [[note|type:causes]]      → legacy explicit prefix (backward compat)
                     //   [[note|Display Text]]     → display alias, not a type → None
-                    const KNOWN_LINK_TYPES: &[&str] = &[
-                        "supports", "contradicts", "causes", "exemplifies",
-                        "generalizes", "derives-from", "part-of", "associative",
-                        "supersedes",  // MIG-022 §A.2 (D-A1.β)
-                    ];
                     let link_type = cap.get(2).and_then(|alias| {
                         let alias_str = alias.as_str().trim();
                         let lower = alias_str.to_lowercase();
                         if lower.starts_with("type:") {
                             Some(lower[5..].trim().to_string())
-                        } else if KNOWN_LINK_TYPES.contains(&lower.as_str()) {
+                        } else if reg.is_link_type_value(lower.as_str()) {
                             Some(lower)
                         } else {
                             None

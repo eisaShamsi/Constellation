@@ -67,11 +67,6 @@ pub struct Note360View {
     pub used_link_types: Vec<String>,
 }
 
-const ALL_LINK_TYPES: &[&str] = &[
-    "supports", "contradicts", "causes", "exemplifies",
-    "generalizes", "derives-from", "part-of",
-];
-
 /// Get the complete 360° view for a single note.
 #[tauri::command]
 pub fn get_360_view(
@@ -213,9 +208,14 @@ pub fn get_360_view(
         .unwrap_or_default();
 
     // ─── Gaps ───
-    let missing_link_types: Vec<String> = ALL_LINK_TYPES.iter()
-        .filter(|t| !used_types.contains(**t))
-        .map(|t| t.to_string())
+    // MIG-067 §D — the typed acts a note lacks come from the active registry
+    // (the 8 seeds + custom, ordered), not a hardcoded 7. This is the drift fix:
+    // `supersedes` (and any custom type) now appears as a possible gap.
+    let all_link_types = crate::link_types::snapshot().ids();
+    let missing_link_types: Vec<String> = all_link_types
+        .iter()
+        .filter(|t| !used_types.contains(t.as_str()))
+        .cloned()
         .collect();
 
     let word_count = target_info.map(|i| i.word_count).unwrap_or(0);
@@ -266,6 +266,11 @@ fn scan_all_notes(
     notes: &mut HashMap<String, NoteInfo>,
 ) {
     let read_dir = match fs::read_dir(dir) { Ok(rd) => rd, Err(_) => return };
+    // MIG-067 §D — snapshot the link-type registry once per directory (not a
+    // hardcoded set rebuilt per note); `is_link_type_value` accepts the 8 typed
+    // acts + custom + the null `associative`, so custom types and `supersedes`
+    // are recognized here too. Off-lock clone, reused across this dir's notes.
+    let reg = crate::link_types::snapshot();
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()
@@ -287,13 +292,12 @@ fn scan_all_notes(
                 let word_count = body.split_whitespace().count();
 
                 let mut outgoing: Vec<(String, Option<String>)> = Vec::new();
-                let known: HashSet<&str> = ["supports","contradicts","causes","exemplifies","generalizes","derives-from","part-of","associative"].iter().cloned().collect();
 
                 for cap in link_re.captures_iter(&content) {
                     let target = cap[1].trim().to_lowercase();
                     let link_type = cap.get(2).and_then(|a| {
                         let lower = a.as_str().trim().to_lowercase();
-                        if known.contains(lower.as_str()) { Some(lower) } else { None }
+                        if reg.is_link_type_value(lower.as_str()) { Some(lower) } else { None }
                     });
                     outgoing.push((target, link_type));
                 }

@@ -124,6 +124,16 @@ impl LinkTypeRegistry {
     pub fn is_known(&self, id: &str) -> bool {
         self.types.iter().any(|t| t.id == id)
     }
+    /// True if `id` is a recognized stored `note_links.link_type` value — a typed
+    /// act in the registry OR the null/default `associative`. The analytics
+    /// surfaces (strata / tension / libraries link-type filters) historically
+    /// counted `associative` alongside the 8, so they use this (not `is_known`,
+    /// which is the 8 typed acts only) to stay byte-identical while still picking
+    /// up custom types. Snapshot once per call site, then check in the loop — no
+    /// per-link lock. MIG-067 §D.
+    pub fn is_link_type_value(&self, id: &str) -> bool {
+        id == "associative" || self.is_known(id)
+    }
     pub fn ordered(&self) -> &[LinkTypeDef] {
         &self.types
     }

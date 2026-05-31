@@ -65,13 +65,6 @@ pub struct NoteStratum {
     pub inbound_links: usize,
 }
 
-/// Known semantic link types (same as libraries.rs KNOWN_LINK_TYPES).
-const KNOWN_LINK_TYPES: &[&str] = &[
-    "supports", "contradicts", "causes", "exemplifies",
-    "generalizes", "derives-from", "part-of", "associative",
-    "supersedes",  // MIG-022 §A.2 (D-A1.β) — see tension.rs for rationale.
-];
-
 /// Internal note record used during computation.
 struct NoteRecord {
     path: String,
@@ -167,6 +160,10 @@ fn scan_notes_recursive(
         Err(_) => return,
     };
 
+    // MIG-067 §D — registry membership (8 typed acts + custom + the null
+    // `associative`), snapshot once per directory instead of a hardcoded list.
+    let reg = crate::link_types::snapshot();
+
     for entry in read_dir.flatten() {
         let path = entry.path();
         let name = entry.file_name().to_string_lossy().to_string();
@@ -203,7 +200,7 @@ fn scan_notes_recursive(
                         let lower = alias.as_str().trim().to_lowercase();
                         let type_str = if lower.starts_with("type:") {
                             lower[5..].trim().to_string()
-                        } else if KNOWN_LINK_TYPES.contains(&lower.as_str()) {
+                        } else if reg.is_link_type_value(lower.as_str()) {
                             lower
                         } else {
                             continue;

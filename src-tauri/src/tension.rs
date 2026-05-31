@@ -42,17 +42,6 @@ pub struct GapItem {
     pub severity: String,
 }
 
-const KNOWN_LINK_TYPES: &[&str] = &[
-    "supports", "contradicts", "causes", "exemplifies",
-    "generalizes", "derives-from", "part-of", "associative",
-    // MIG-022 §A.2 (D-A1.β, 2026-05-11) — `supersedes` added as the
-    // 9th typed-link name (8 cognitive + associative). Per the gap
-    // analysis §6.1, "this note replaces an earlier stance" is a
-    // first-class relationship between notes, not a YAML scalar.
-    // Living Link Architecture treats it like any other typed link.
-    "supersedes",
-];
-
 struct NoteInfo {
     path: String,
     name: String,
@@ -233,6 +222,9 @@ fn scan_notes_recursive(
     notes: &mut HashMap<String, NoteInfo>,
 ) {
     let read_dir = match fs::read_dir(dir) { Ok(rd) => rd, Err(_) => return };
+    // MIG-067 §D — registry membership (8 typed acts + custom + `associative`),
+    // snapshot once per directory instead of a hardcoded list (see strata.rs).
+    let reg = crate::link_types::snapshot();
     for entry in read_dir.flatten() {
         let path = entry.path();
         let fname = entry.file_name().to_string_lossy().to_string();
@@ -254,7 +246,7 @@ fn scan_notes_recursive(
                     let target = cap[1].trim().to_lowercase();
                     let link_type = cap.get(2).and_then(|alias| {
                         let lower = alias.as_str().trim().to_lowercase();
-                        if KNOWN_LINK_TYPES.contains(&lower.as_str()) { Some(lower) } else { None }
+                        if reg.is_link_type_value(lower.as_str()) { Some(lower) } else { None }
                     });
                     outgoing.push((target, link_type));
                 }
