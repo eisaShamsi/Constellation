@@ -95,7 +95,7 @@ export function createWikilinkCompletion(getNotes: () => NoteInfo[]) {
 				if (lower.includes(query)) {
 					const insert = `[[${typeId}::${n.name}]]`;
 					options.push(linkReplaceOption(n.name, n.libraryName ? ` — ${n.libraryName}` : undefined, 'text', before.from, insert, insert.length));
-					if (options.length >= 20) break;
+					if (options.length >= 16) break;
 				}
 			}
 			if (options.length === 0) return null;
@@ -118,7 +118,7 @@ export function createWikilinkCompletion(getNotes: () => NoteInfo[]) {
 			if (lower.includes(query)) {
 				const insert = `[[${n.name}]]`;
 				options.push(linkReplaceOption(n.name, n.libraryName ? ` — ${n.libraryName}` : undefined, 'text', before.from, insert, insert.length));
-				if (options.length >= 28) break;
+				if (options.length >= 16) break;
 			}
 		}
 		return { from: before.from, options, filter: false };

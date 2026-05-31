@@ -382,7 +382,11 @@
 							: [typedLinkCompletion, wikilinkCompletion, tagCompletion, slashCompletion]
 					),
 					activateOnTyping: true,
-					maxRenderedOptions: 20,
+					// MIG-067 — the dropdown re-builds + bidi-lays-out this many rows
+					// every keystroke; on a mixed-script library that DOM work (not the
+					// note search, measured at 0.12 ms) is the autocomplete lag. Fewer
+					// rendered rows = lighter redraw; scroll still reaches the rest.
+					maxRenderedOptions: 8,
 				}),
 				// Prec.highest: runs before @codemirror/lang-markdown's built-in
 				// blockquote-continue keymap (which auto-adds "> " on every Enter).
