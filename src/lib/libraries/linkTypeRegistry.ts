@@ -38,13 +38,37 @@ export interface LinkTypeDef {
 /** The 8 seed ids in canonical order — the fallback when nothing is loaded yet
  *  (keeps the editor/columns working before the bundle seeds, and if an IPC
  *  fails). Mirrors `link_types::SEED_IDS`. */
-const SEED_IDS = [
+export const SEED_IDS = [
 	'supports', 'contradicts', 'causes', 'exemplifies',
 	'generalizes', 'derives-from', 'part-of', 'supersedes',
 ] as const;
 
 /** Neutral fallback color for an unknown id (matches the editor's default). */
 const DEFAULT_COLOR = '#AAAAAA';
+
+/** The 8 built-in defaults (id → presentation), mirroring Rust `seeds()`. Used to
+ *  compute minimal deltas: a seed is persisted only when its presentation differs
+ *  from the default, so a future change to a default still reaches the user. */
+const SEED_DEFAULTS: Record<string, { label: string; color: string; order: number }> = {
+	supports: { label: 'Supports', color: '#4A9EFF', order: 1 },
+	contradicts: { label: 'Contradicts', color: '#FF4A4A', order: 2 },
+	causes: { label: 'Causes', color: '#FF8C42', order: 3 },
+	exemplifies: { label: 'Exemplifies', color: '#4AFF88', order: 4 },
+	generalizes: { label: 'Generalizes', color: '#A44AFF', order: 5 },
+	'derives-from': { label: 'Derives From', color: '#FFD700', order: 6 },
+	'part-of': { label: 'Part Of', color: '#AAAAAA', order: 7 },
+	supersedes: { label: 'Supersedes', color: '#5B7A8A', order: 8 },
+};
+
+/** Reduce a working list to the minimal deltas for `link-types.json`: every custom
+ *  type, plus only the seeds whose label / colour / order differs from the default. */
+export function toLinkTypeDeltas(types: LinkTypeDef[]): LinkTypeDef[] {
+	return types.filter((t) => {
+		const d = SEED_DEFAULTS[t.id];
+		if (!d) return true; // custom → always a delta
+		return t.label !== d.label || t.color !== d.color || t.order !== d.order;
+	});
+}
 
 /** Resolved, ordered list (top-level types each followed by their children). */
 let cache: LinkTypeDef[] = [];

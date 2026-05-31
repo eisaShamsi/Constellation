@@ -14,6 +14,7 @@
 	import ArabicOverridesPanel from './ArabicOverridesPanel.svelte';
 	import PerLibraryCalibrationView from './PerLibraryCalibrationView.svelte';
 	import ConfirmDialog from './ConfirmDialog.svelte';
+	import LinkTypesEditor from './LinkTypesEditor.svelte';
 	import { notifySettingsChanged } from '$lib/secondScreen';
 	import { aiSettings, updateAISettings, setProvider } from '$lib/ai/store';
 	import { validateConnection } from '$lib/ai/engine';
@@ -2344,6 +2345,9 @@
 							<span class="slider-val">{$appSettings.fontSize}px</span>
 						</div>
 					</div>
+
+					<!-- ═══ LINK TYPES (the Living Vocabulary — MIG-067 §G) ═══ -->
+					<LinkTypesEditor />
 
 					<!-- ═══ LIVING LINK PILLS ═══ -->
 					<div class="setting-section-heading">{$t('settings.appearance.livingLinkPills') || 'Living Link Pills'}</div>

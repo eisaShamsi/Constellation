@@ -82,6 +82,21 @@ describe('linkTypeRegistry §C', () => {
 		expect(reg.isLinkTypeValue('unknown')).toBe(false);
 	});
 
+	it('toLinkTypeDeltas keeps custom + changed seeds, drops unchanged seeds (§G)', () => {
+		const seed = (id: string, label: string, color: string, order: number): Def => ({
+			id, label, parent: null, color, order, builtin: true, emoji: null, desc: null,
+		});
+		const types: Def[] = [
+			seed('supports', 'Supports', '#4A9EFF', 1),       // == default → dropped
+			seed('contradicts', 'Contradicts', '#00FF00', 2), // recoloured → kept
+			def('inspires', null, 999, '#33CC99'),            // custom → kept
+		];
+		const ids = reg.toLinkTypeDeltas(types).map((d) => d.id);
+		expect(ids).toContain('contradicts');
+		expect(ids).toContain('inspires');
+		expect(ids).not.toContain('supports');
+	});
+
 	it('stripLinkTypePrefix strips a known type:: prefix, preserves the rest', () => {
 		// known types (seed + custom + associative) → stripped to the target
 		expect(reg.stripLinkTypePrefix('supports::Apple')).toBe('Apple');
