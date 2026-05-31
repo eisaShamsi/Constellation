@@ -2039,22 +2039,12 @@ fn scan_links_recursive(dir: &Path, re: &regex::Regex, links: &mut Vec<NoteLink>
                     file_stem
                 };
                 for cap in re.captures_iter(&content) {
-                    let target = cap[1].trim().to_string();
-                    // Extract link type from alias:
-                    //   [[note|causes]]          → direct type name
-                    //   [[note|type:causes]]      → legacy explicit prefix (backward compat)
-                    //   [[note|Display Text]]     → display alias, not a type → None
-                    let link_type = cap.get(2).and_then(|alias| {
-                        let alias_str = alias.as_str().trim();
-                        let lower = alias_str.to_lowercase();
-                        if lower.starts_with("type:") {
-                            Some(lower[5..].trim().to_string())
-                        } else if reg.is_link_type_value(lower.as_str()) {
-                            Some(lower)
-                        } else {
-                            None
-                        }
-                    });
+                    // MIG-067 — predicate-first aware ([[type::target]] AND the legacy
+                    // [[note|causes]] / [[note|type:causes]] alias forms). Target keeps
+                    // its case (matches the prior cap[1] behaviour).
+                    let (target, link_type) = crate::link_types::resolve_wikilink_type(
+                        &reg, &cap[1], cap.get(2).map(|m| m.as_str()), true,
+                    );
                     // Extract context: the line containing the link
                     let pos = cap.get(0).map(|m| m.start()).unwrap_or(0);
                     let line_start = content[..pos].rfind('\n').map(|i| i + 1).unwrap_or(0);

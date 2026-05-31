@@ -243,12 +243,12 @@ fn scan_notes_recursive(
 
                 let mut outgoing: Vec<(String, Option<String>)> = Vec::new();
                 for cap in link_re.captures_iter(&content) {
-                    let target = cap[1].trim().to_lowercase();
-                    let link_type = cap.get(2).and_then(|alias| {
-                        let lower = alias.as_str().trim().to_lowercase();
-                        if reg.is_link_type_value(lower.as_str()) { Some(lower) } else { None }
-                    });
-                    outgoing.push((target, link_type));
+                    // MIG-067 — predicate-first aware ([[type::target]] AND the
+                    // legacy [[target|type]] / [[target|type:X]] forms).
+                    let (target, link_type) = crate::link_types::resolve_wikilink_type(
+                        &reg, &cap[1], cap.get(2).map(|m| m.as_str()), true,
+                    );
+                    outgoing.push((target.to_lowercase(), link_type));
                 }
 
                 let mut tags: HashSet<String> = HashSet::new();

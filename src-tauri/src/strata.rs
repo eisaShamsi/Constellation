@@ -192,20 +192,14 @@ fn scan_notes_recursive(
                 let mut outgoing_types: HashSet<String> = HashSet::new();
 
                 for cap in re.captures_iter(&content) {
-                    let target = cap[1].trim().to_string();
+                    // MIG-067 — predicate-first aware ([[type::target]] AND the
+                    // legacy [[target|type]] / [[target|type:X]] forms).
+                    let (target, link_type) = crate::link_types::resolve_wikilink_type(
+                        &reg, &cap[1], cap.get(2).map(|m| m.as_str()), true,
+                    );
                     outgoing.push(target.to_lowercase());
-
-                    // Extract link type if present
-                    if let Some(alias) = cap.get(2) {
-                        let lower = alias.as_str().trim().to_lowercase();
-                        let type_str = if lower.starts_with("type:") {
-                            lower[5..].trim().to_string()
-                        } else if reg.is_link_type_value(lower.as_str()) {
-                            lower
-                        } else {
-                            continue;
-                        };
-                        outgoing_types.insert(type_str);
+                    if let Some(lt) = link_type {
+                        outgoing_types.insert(lt);
                     }
                 }
 

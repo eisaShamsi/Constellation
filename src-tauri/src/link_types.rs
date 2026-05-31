@@ -242,6 +242,52 @@ pub fn is_known_type(id: &str) -> bool {
         .unwrap_or_else(|_| SEED_IDS.contains(&id))
 }
 
+/// Resolve `(target, Option<type>)` from a wikilink's regex capture groups —
+/// `before_pipe` = group 1 (text before any `|`), `after_pipe` = group 2 (the
+/// optional alias / legacy type after `|`). Understands BOTH link orders:
+///   - predicate-FIRST  `[[type::target]]`  → type from the `type::` prefix on
+///     `before_pipe`, target = the remainder;
+///   - predicate-LAST   `[[target|type]]`   → type from `after_pipe`, target =
+///     `before_pipe`.
+/// `include_associative` chooses the membership: `true` accepts the null
+/// `associative` alongside the typed acts (the Tension / Strata / library scans,
+/// which historically counted it); `false` recognizes only the 8 cognitive acts
+/// (the 360.3D matrix, where `associative` is "untyped"). Unknown / absent ⇒
+/// untyped, target = `before_pipe`. Target keeps its case; callers lowercase.
+///
+/// MIG-067 — the single predicate-first-aware parser the content re-readers share
+/// so they can never drift from the indexed `note_links` again (the §A switch to
+/// `[[type::target]]` left these re-readers parsing the old order → everything
+/// read as untyped; this is the fix).
+pub fn resolve_wikilink_type(
+    reg: &LinkTypeRegistry,
+    before_pipe: &str,
+    after_pipe: Option<&str>,
+    include_associative: bool,
+) -> (String, Option<String>) {
+    let known = |c: &str| {
+        if include_associative { reg.is_link_type_value(c) } else { reg.is_known(c) }
+    };
+    // Predicate-first: a known `type::` prefix on the pre-pipe segment.
+    if let Some(idx) = before_pipe.find("::") {
+        let candidate = before_pipe[..idx].trim().to_lowercase();
+        if known(&candidate) {
+            return (before_pipe[idx + 2..].trim().to_string(), Some(candidate));
+        }
+    }
+    // Predicate-last: a known type in the alias slot. Also accepts the legacy
+    // explicit `type:` prefix (`[[note|type:supports]]`) that strata/libraries
+    // recognized, so folding them onto this helper loses no old form.
+    if let Some(a) = after_pipe {
+        let raw = a.trim().to_lowercase();
+        let lower = raw.strip_prefix("type:").map(|r| r.trim().to_string()).unwrap_or(raw);
+        if known(&lower) {
+            return (before_pipe.trim().to_string(), Some(lower));
+        }
+    }
+    (before_pipe.trim().to_string(), None)
+}
+
 /// Replace the active registry from user deltas (8 seeds + these).
 pub fn set_active(deltas: Vec<LinkTypeDef>) {
     if let Ok(mut g) = cell().write() {
@@ -326,6 +372,26 @@ mod tests {
         assert_eq!(r.rank("supports"), 1);
         assert_eq!(r.rank("supersedes"), 8);
         assert!(r.ordered().iter().all(|t| t.builtin && t.parent.is_none()));
+    }
+
+    #[test]
+    fn resolve_wikilink_type_handles_both_orders() {
+        let reg = LinkTypeRegistry::seeds_only();
+        let s = |x: &str| Some(x.to_string());
+        // predicate-FIRST (the canonical form; the Boss-reported supersedes case)
+        assert_eq!(resolve_wikilink_type(&reg, "supersedes::apple", None, false), ("apple".into(), s("supersedes")));
+        assert_eq!(resolve_wikilink_type(&reg, "supports::apple", None, false), ("apple".into(), s("supports")));
+        // predicate-LAST (bare alias) + the legacy `type:` prefix
+        assert_eq!(resolve_wikilink_type(&reg, "apple", Some("supports"), false), ("apple".into(), s("supports")));
+        assert_eq!(resolve_wikilink_type(&reg, "apple", Some("type:supports"), false), ("apple".into(), s("supports")));
+        // untyped: no alias, or a display alias that isn't a type
+        assert_eq!(resolve_wikilink_type(&reg, "apple", None, false), ("apple".into(), None));
+        assert_eq!(resolve_wikilink_type(&reg, "apple", Some("My Note"), false), ("apple".into(), None));
+        // a real "::" in a note name (unknown prefix) is left intact
+        assert_eq!(resolve_wikilink_type(&reg, "C++::vector", None, false), ("C++::vector".into(), None));
+        // associative: untyped for the matrix (false), a type for the analytics (true)
+        assert_eq!(resolve_wikilink_type(&reg, "associative::apple", None, false), ("associative::apple".into(), None));
+        assert_eq!(resolve_wikilink_type(&reg, "associative::apple", None, true), ("apple".into(), s("associative")));
     }
 
     #[test]
