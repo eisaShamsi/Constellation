@@ -1751,7 +1751,7 @@ export const livePreviewTheme = EditorView.theme({
 		textDecorationColor: 'color-mix(in srgb, var(--link-color, var(--library-accent, var(--interactive-accent))) 40%, transparent) !important',
 	},
 	'.cm-lt-plain .cm-ltyped::before': {
-		color: 'var(--link-color, var(--library-accent, var(--interactive-accent)))',
+		color: 'var(--link-color, var(--library-accent, var(--interactive-accent))) !important',
 	},
 	'.cm-md-align':  { display: 'block', width: '100%' },
 	'.cm-html-hidden': { fontSize: '0', lineHeight: '0', overflow: 'hidden', display: 'inline', width: '0' },
