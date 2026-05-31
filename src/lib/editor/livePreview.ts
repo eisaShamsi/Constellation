@@ -1724,14 +1724,14 @@ export const livePreviewTheme = EditorView.theme({
 	// so the relationship is unmistakable — no need to recall what a colour means.
 	// Lines get a little top room so the label never collides with the line above.
 	// (The cursor line shows raw `[[type::target]]` with no `.cm-ltyped`, so no label.)
-	'.cm-lt-labels .cm-line': { paddingTop: '0.72em' },
+	'.cm-lt-labels .cm-line': { paddingTop: 'calc(0.72em + 4px)' },
 	'.cm-lt-labels .cm-ltyped': { position: 'relative' },
 	'.cm-lt-labels .cm-ltyped::before': {
 		content: 'attr(data-ltype)',
 		position: 'absolute',
 		insetInlineStart: '0',
-		bottom: '100%',
-		fontSize: '0.62em',
+		bottom: 'calc(100% - 2px)',
+		fontSize: '0.31em',
 		fontWeight: '600',
 		lineHeight: '1.1',
 		letterSpacing: '0.01em',
