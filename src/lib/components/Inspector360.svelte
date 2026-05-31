@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
 	import { lookupStageEmoji } from '$lib/libraries/store';
+	import { getLinkTypes } from '$lib/libraries/linkTypeRegistry';
 	import HelpTip from './HelpTip.svelte';
 
 	interface LinkedNote { name: string; path: string; depth: number; stratum: number; }
@@ -40,28 +41,24 @@
 	// direction column. Empty cells are visually present (dashed stripes) so
 	// gaps read as a first-class signal — see 360.3D Concept Paper §4.3.
 
-	const TYPE_ORDER = ['supports', 'contradicts', 'causes', 'derives-from', 'generalizes', 'exemplifies', 'part-of', 'untyped'] as const;
-	type LinkType = typeof TYPE_ORDER[number];
+	// MIG-067 §D — the typed-act columns come from the active Link-Type Registry
+	// (the 8 seeds + any custom types, canonical order) + the 'untyped' bucket for
+	// null/associative links. Was a hardcoded 7 (missing supersedes); 360.3D now
+	// shows supersedes and any user-defined type. Read at setup — the registry is
+	// boot-seeded before this panel can open.
+	const REG_TYPES = getLinkTypes();
+	type LinkType = string;
+	const TYPE_ORDER: LinkType[] = [...REG_TYPES.map((t) => t.id), 'untyped'];
 
-	const TYPE_COLORS: Record<LinkType, string> = {
-		supports: '#4A9EFF',
-		contradicts: '#FF4A4A',
-		causes: '#FF8C42',
-		'derives-from': '#FFD700',
-		generalizes: '#A44AFF',
-		exemplifies: '#4AFF88',
-		'part-of': '#AAAAAA',
+	const TYPE_COLORS: Record<string, string> = {
+		...Object.fromEntries(REG_TYPES.map((t): [string, string] => [t.id, t.color])),
 		untyped: '#888888',
 	};
 
-	const TYPE_LABEL_KEYS: Record<LinkType, string> = {
-		supports: 'link_supports',
-		contradicts: 'link_contradicts',
-		causes: 'link_causes',
-		'derives-from': 'link_derives_from',
-		generalizes: 'link_generalizes',
-		exemplifies: 'link_exemplifies',
-		'part-of': 'link_part_of',
+	// i18n key per type: built-ins keep their `link_<id>` keys; 'untyped' its own.
+	// Custom types have no key → typeLabels falls back to the registry label.
+	const TYPE_LABEL_KEYS: Record<string, string> = {
+		...Object.fromEntries(REG_TYPES.map((t): [string, string] => [t.id, `link_${t.id.replace(/-/g, '_')}`])),
 		untyped: 'untyped',
 	};
 
@@ -117,7 +114,7 @@
 
 		const cells: Record<number, Record<LinkType, LinkedNote[]>> = {};
 		for (const s of STRATA) {
-			cells[s] = { supports: [], contradicts: [], causes: [], 'derives-from': [], generalizes: [], exemplifies: [], 'part-of': [], untyped: [] };
+			cells[s] = Object.fromEntries(TYPE_ORDER.map((t): [string, LinkedNote[]] => [t, []]));
 		}
 
 		const seen = new Set<string>();
@@ -135,7 +132,7 @@
 		}
 		for (const n of data.untyped_links) place(n, 'untyped');
 
-		const colTotals: Record<LinkType, number> = { supports: 0, contradicts: 0, causes: 0, 'derives-from': 0, generalizes: 0, exemplifies: 0, 'part-of': 0, untyped: 0 };
+		const colTotals: Record<string, number> = Object.fromEntries(TYPE_ORDER.map((t): [string, number] => [t, 0]));
 		const rowTotals: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0 };
 		let grandTotal = 0;
 		for (const s of STRATA) {
@@ -157,7 +154,7 @@
 	// the same widths but the readable signal moves to the percent text.
 	const compactBars = $derived.by(() => {
 		if (!data) return null;
-		const counts: Record<LinkType, number> = { supports: 0, contradicts: 0, causes: 0, 'derives-from': 0, generalizes: 0, exemplifies: 0, 'part-of': 0, untyped: 0 };
+		const counts: Record<string, number> = Object.fromEntries(TYPE_ORDER.map((t): [string, number] => [t, 0]));
 		for (const [type, notes] of Object.entries(data.typed_links)) {
 			if (!(TYPE_ORDER as readonly string[]).includes(type)) continue;
 			counts[type as LinkType] = notes.length;
@@ -222,12 +219,10 @@
 	// hardcoded English values stay as the final defensive fallback.
 	// (Loop variable is `lt` instead of `t` because the imported i18n store
 	// is `t` and shadowing it breaks $-auto-subscription.)
-	const typeLabels: Record<LinkType, string> = $derived.by(() => {
-		const m: Record<LinkType, string> = {
-			supports: 'Supports', contradicts: 'Contradicts', causes: 'Causes',
-			'derives-from': 'Derives From', generalizes: 'Generalizes',
-			exemplifies: 'Exemplifies', 'part-of': 'Part Of', untyped: 'Untyped',
-		};
+	const typeLabels: Record<string, string> = $derived.by(() => {
+		// Fallback labels from the registry (covers custom types); 'untyped' fixed.
+		const m: Record<string, string> = { untyped: 'Untyped' };
+		for (const rt of REG_TYPES) m[rt.id] = rt.label;
 		for (const lt of TYPE_ORDER) {
 			const key = lt === 'untyped' ? 'inspector360.untyped' : `inspector360.${TYPE_LABEL_KEYS[lt]}`;
 			const tr = $t(key);
