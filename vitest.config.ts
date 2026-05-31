@@ -10,8 +10,16 @@
  *   - EXCLUDE: node_modules + build (default)
  */
 import { defineConfig } from 'vitest/config';
+import { fileURLToPath } from 'node:url';
 
 export default defineConfig({
+	// Resolve SvelteKit's `$lib` alias so tests can import modules that use it
+	// (e.g. editor/completions.ts → $lib/libraries/linkTypeRegistry).
+	resolve: {
+		alias: {
+			$lib: fileURLToPath(new URL('./src/lib', import.meta.url)),
+		},
+	},
 	test: {
 		include: [
 			'tests/sight-v6/perf.test.ts',
@@ -26,6 +34,8 @@ export default defineConfig({
 			'tests/mig-060/host-note-gestures.test.ts',
 			// MIG-067 §C (2026-05-31) — frontend Link-Type Registry getters.
 			'tests/mig-067/linkTypeRegistry.test.ts',
+			// MIG-067 §E (2026-05-31) — type-first wikilink autocomplete phases.
+			'tests/mig-067/wikilinkCompletion.test.ts',
 		],
 		exclude: [
 			'**/node_modules/**',

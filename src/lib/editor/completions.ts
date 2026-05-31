@@ -2,10 +2,10 @@
  * Shared autocompletion functions for NotePane and CodeMirrorEditor.
  * Factory pattern: each function takes data as params, returns a CompletionSource.
  */
-import { type CompletionContext, type Completion } from '@codemirror/autocomplete';
+import { type CompletionContext, type Completion, startCompletion } from '@codemirror/autocomplete';
 import { EditorView } from '@codemirror/view';
 import { generateTable } from './tableUtils';
-import { getLinkTypes } from '$lib/libraries/linkTypeRegistry';
+import { getLinkTypes, isLinkTypeValue } from '$lib/libraries/linkTypeRegistry';
 
 export const SLASH_COMMANDS: { label: string; detail: string; apply: string }[] = [
 	{ label: '/heading1', detail: 'H1', apply: '# ' },
@@ -26,30 +26,99 @@ export const SLASH_COMMANDS: { label: string; detail: string; apply: string }[] 
 
 type NoteInfo = { name: string; path: string; libraryName?: string };
 
-/** Wikilink autocomplete: type [[ → search notes. Handles trailing ]] from closeBrackets. */
+/** Consume a trailing `]]` (or stray `]`) left by closeBrackets, returning the
+ *  end offset the replacement should cover. */
+function consumeTrailingBrackets(v: EditorView, to: number): number {
+	const after = v.state.doc.sliceString(to, Math.min(to + 2, v.state.doc.length));
+	if (after === ']]') return to + 2;
+	if (after[0] === ']') return to + 1;
+	return to;
+}
+
+/** A completion that replaces from the opening `[[` (at `fromBracket`) with
+ *  `insert`, placing the cursor at `fromBracket + caret`. */
+function linkReplaceOption(
+	label: string, detail: string | undefined, ctype: string,
+	fromBracket: number, insert: string, caret: number, boost?: number, retrigger?: boolean,
+): Completion {
+	return {
+		label, detail, type: ctype, boost,
+		apply: (v: EditorView, _c: Completion, _f: number, to: number) => {
+			const end = consumeTrailingBrackets(v, to);
+			v.dispatch({ changes: { from: fromBracket, to: end, insert }, selection: { anchor: fromBracket + caret } });
+			if (retrigger) setTimeout(() => startCompletion(v), 0);
+		},
+	};
+}
+
+/**
+ * Wikilink autocomplete (MIG-067 §E — type-first, canonical Type→Note order).
+ *
+ * Two phases off one trigger (`[[` … with no `|`):
+ *  1. `[[partial`  → the link TYPES (to start a typed link, boosted to the top)
+ *     PLUS the matching NOTES (for a plain untyped link). Picking a type writes
+ *     `[[type::]]` and re-opens the menu on the target; picking a note writes
+ *     `[[Note]]`.
+ *  2. `[[type::partial` → the TARGET notes for that type. Picking one writes
+ *     `[[type::Note]]`; typing a name that doesn't exist is fine (it resolves /
+ *     creates on click).
+ *
+ * Perf: the note list is lowercased ONCE per source array (not per keystroke),
+ * and the trigger excludes the post-`|` region so it never churns while the
+ * legacy `[[note|type]]` menu is open.
+ */
 export function createWikilinkCompletion(getNotes: () => NoteInfo[]) {
+	let cachedSrc: NoteInfo[] | null = null;
+	let cachedLower: { n: NoteInfo; lower: string }[] = [];
+	const notesLower = () => {
+		const notes = getNotes();
+		if (notes !== cachedSrc) {
+			cachedSrc = notes;
+			cachedLower = notes.map(n => ({ n, lower: n.name.toLowerCase() }));
+		}
+		return cachedLower;
+	};
+
 	return function wikilinkCompletion(context: CompletionContext) {
-		const before = context.matchBefore(/\[\[[^\]]*$/);
+		const before = context.matchBefore(/\[\[[^\]|]*$/);
 		if (!before) return null;
-		const query = before.text.slice(2).toLowerCase();
+		const inner = before.text.slice(2);
+		const ci = inner.indexOf('::');
+
+		// Phase 2 — [[type::target : suggest the target note for a known type.
+		if (ci >= 0) {
+			const typeId = inner.slice(0, ci).trim().toLowerCase();
+			if (!isLinkTypeValue(typeId)) return null; // a real "::" in a name, not a type
+			const query = inner.slice(ci + 2).toLowerCase();
+			const options: Completion[] = [];
+			for (const { n, lower } of notesLower()) {
+				if (lower.includes(query)) {
+					const insert = `[[${typeId}::${n.name}]]`;
+					options.push(linkReplaceOption(n.name, n.libraryName ? ` — ${n.libraryName}` : undefined, 'text', before.from, insert, insert.length));
+					if (options.length >= 20) break;
+				}
+			}
+			if (options.length === 0) return null;
+			return { from: before.from + 2 + ci + 2, options, filter: false };
+		}
+
+		// Phase 1 — [[partial : link types first (start a typed link), then notes.
+		const query = inner.toLowerCase();
 		const options: Completion[] = [];
-		for (const n of getNotes()) {
-			if (n.name.toLowerCase().includes(query)) {
-				options.push({
-					label: n.name,
-					detail: n.libraryName ? ` — ${n.libraryName}` : undefined,
-					type: 'text',
-					apply: (v: EditorView, _c: Completion, from: number, to: number) => {
-						/* Consume any trailing ]] left by closeBrackets */
-						let end = to;
-						const after = v.state.doc.sliceString(to, Math.min(to + 2, v.state.doc.length));
-						if (after === ']]') end = to + 2;
-						else if (after[0] === ']') end = to + 1;
-						const insert = `[[${n.name}]]`;
-						v.dispatch({ changes: { from: before.from, to: end, insert }, selection: { anchor: before.from + insert.length } });
-					}
-				});
-				if (options.length >= 20) break;
+		for (const t of getLinkTypes()) {
+			if (t.id.startsWith(query)) {
+				const head = `[[${t.id}::`;
+				options.push(linkReplaceOption(
+					t.id, t.desc ? `${t.desc} — typed link` : 'typed link', 'keyword',
+					before.from, head + ']]', head.length, /* boost */ 2, /* retrigger */ true,
+				));
+			}
+		}
+		for (const { n, lower } of notesLower()) {
+			if (lower.includes(query)) {
+				const insert = `[[${n.name}]]`;
+				options.push(linkReplaceOption(n.name, n.libraryName ? ` — ${n.libraryName}` : undefined, 'text', before.from, insert, insert.length));
+				if (options.length >= 28) break;
 			}
 		}
 		return { from: before.from, options, filter: false };
