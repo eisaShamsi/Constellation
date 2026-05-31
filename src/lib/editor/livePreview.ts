@@ -18,7 +18,7 @@ import { get } from 'svelte/store';
 import { t } from '$lib/i18n';
 import { detectDir } from '$lib/utils';
 import { appSettings, skyNodePathSet } from '$lib/libraries/store';
-import { isLinkTypeValue, getLinkTypes, subscribe as subscribeLinkTypes } from '$lib/libraries/linkTypeRegistry';
+import { isLinkTypeValue, getLinkType, subscribe as subscribeLinkTypes } from '$lib/libraries/linkTypeRegistry';
 import type { LensResult, LensRow, DimensionValue } from '$lib/lens/store';
 import { dataColumns, columnLabel, renderCellValue } from '$lib/lens/tableModel';
 
@@ -190,26 +190,28 @@ const typedLinkDecos: Record<string, ReturnType<typeof Decoration.mark>> = {
 // pre-defined `cm-link-*` CSS classes above; a user-defined type has no class, so
 // it gets a registry-colour INLINE-style decoration. Pre-cached (Rule 1: never
 // built inside buildDecorations) and rebuilt only when the vocabulary changes.
-let customTypeDecos = new Map<string, ReturnType<typeof Decoration.mark>>();
-function rebuildCustomTypeDecos() {
-	const m = new Map<string, ReturnType<typeof Decoration.mark>>();
-	for (const t of getLinkTypes()) {
-		if (!(t.id in typedLinkDecos)) {
-			m.set(t.id, Decoration.mark({
-				class: 'cm-md-link',
-				attributes: { style: `color:${t.color};text-decoration-color:${t.color}66` },
-			}));
-		}
-	}
-	customTypeDecos = m;
-}
-rebuildCustomTypeDecos();
-subscribeLinkTypes(rebuildCustomTypeDecos);
+// Built lazily on first render of a custom-type link from the CURRENT registry
+// (which has the type — the `type::` prefix only strips when it's known), then
+// cached. Cleared on any vocabulary change (recolour / add / remove) so the next
+// render picks up the new colour. Lazy (not eager-prebuilt) so it can't race the
+// boot seed: the deco is created the first time the id is actually drawn.
+const customDecoCache = new Map<string, ReturnType<typeof Decoration.mark>>();
+subscribeLinkTypes(() => customDecoCache.clear());
 
-/** Decoration for a typed-link id: a built-in `cm-link-*` class, else a custom
- *  registry-colour inline style, else the plain link decoration. */
+/** Decoration for a typed-link id: a built-in `cm-link-*` class, else the custom
+ *  type's registry-colour inline style (cached), else the plain link decoration. */
 function typeDeco(id: string): ReturnType<typeof Decoration.mark> {
-	return typedLinkDecos[id] ?? customTypeDecos.get(id) ?? linkDeco;
+	const builtin = typedLinkDecos[id];
+	if (builtin) return builtin;
+	let d = customDecoCache.get(id);
+	if (d === undefined) {
+		const lt = getLinkType(id);
+		d = lt
+			? Decoration.mark({ class: 'cm-md-link', attributes: { style: `color:${lt.color};text-decoration-color:${lt.color}66` } })
+			: linkDeco;
+		customDecoCache.set(id, d);
+	}
+	return d;
 }
 
 class CheckboxWidget extends WidgetType {
