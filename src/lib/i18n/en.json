@@ -223,7 +223,13 @@
 			"newLabel": "New type name…",
 			"newColor": "New type colour",
 			"idTaken": "A type with that id already exists.",
-			"saving": "Saving…"
+			"saving": "Saving…",
+			"displayHeading": "Typed link display",
+			"displayDesc": "How typed links appear in the editor — show the type name above each link, colour it by type, or both, so a relationship is never missed or misread.",
+			"showLabel": "Show the type name above each link",
+			"showLabelDesc": "Display the link type (e.g. “contradicts”) as a small label above each typed link, so its meaning is unmistakable.",
+			"colourByType": "Colour links by type",
+			"colourByTypeDesc": "Tint each typed link with its type’s colour. When off, typed links use the standard link colour and the type is shown by the label alone."
 		},
 		"appearance": {
 			"colorScheme": "Color scheme",

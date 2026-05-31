@@ -15,10 +15,10 @@ import { syntaxTree } from '@codemirror/language';
 import { EditorState, RangeSetBuilder, StateField, StateEffect } from '@codemirror/state';
 import { convertFileSrc, invoke } from '@tauri-apps/api/core';
 import { get } from 'svelte/store';
-import { t } from '$lib/i18n';
+import { t, locale } from '$lib/i18n';
 import { detectDir } from '$lib/utils';
 import { appSettings, skyNodePathSet } from '$lib/libraries/store';
-import { isLinkTypeValue, getLinkType, subscribe as subscribeLinkTypes } from '$lib/libraries/linkTypeRegistry';
+import { isLinkTypeValue, getLinkType, linkTypeLabel, subscribe as subscribeLinkTypes } from '$lib/libraries/linkTypeRegistry';
 import type { LensResult, LensRow, DimensionValue } from '$lib/lens/store';
 import { dataColumns, columnLabel, renderCellValue } from '$lib/lens/tableModel';
 
@@ -185,7 +185,20 @@ const SEED_COLORS: Record<string, string> = {
 // Lazily built per id (the type is known by render time), cached, cleared on any
 // vocabulary change so recolours take effect.
 const typeDecoCache = new Map<string, ReturnType<typeof Decoration.mark>>();
+// Rebuild typed-link decorations when the vocabulary changes (recolour / rename /
+// add / remove) OR the UI language changes — the label above each link (§E.2) is
+// localized, so a language switch must re-render it.
 subscribeLinkTypes(() => typeDecoCache.clear());
+locale.subscribe(() => typeDecoCache.clear());
+
+/** The label shown above a typed link (§E.2 "show type name above link"): the
+ *  localized type name (`linkTypes.<id>` — lowercase, the cognitive-vocabulary
+ *  style), falling back to the registry label for a custom type with no i18n key. */
+function typedLinkLabel(id: string): string {
+	const key = 'linkTypes.' + id;
+	const tr = get(t)(key);
+	return tr !== key ? tr : linkTypeLabel(id);
+}
 
 /** Decoration for a typed-link id: an inline registry/seed colour (`!important`),
  *  or the plain link decoration for the null/untyped `associative` and unknowns. */
@@ -194,7 +207,7 @@ function typeDeco(id: string): ReturnType<typeof Decoration.mark> {
 	if (d === undefined) {
 		const color = getLinkType(id)?.color ?? SEED_COLORS[id];
 		d = color
-			? Decoration.mark({ class: 'cm-md-link cm-ltyped', attributes: { style: `--ltc:${color};color:${color} !important;text-decoration-color:${color}66 !important` } })
+			? Decoration.mark({ class: 'cm-md-link cm-ltyped', attributes: { 'data-ltype': typedLinkLabel(id), style: `--ltc:${color};color:${color} !important;text-decoration-color:${color}66 !important` } })
 			: linkDeco;
 		typeDecoCache.set(id, d);
 	}
@@ -1705,6 +1718,41 @@ export const livePreviewTheme = EditorView.theme({
 	// colour; reading `--ltc` means recolouring any of the 8 in §G reflects here too.
 	'.cm-ltyped':   { color: 'var(--ltc) !important', textDecorationColor: 'color-mix(in srgb, var(--ltc) 40%, transparent) !important' },
 	'.cm-ltyped *': { color: 'var(--ltc) !important' },
+	// MIG-067 §E.2 — "Show type name above link" (the `cm-lt-labels` content class,
+	// driven by the showTypedLinkLabels setting). Each RENDERED typed link gets its
+	// localized type name as a small label riding just above it, in the type colour,
+	// so the relationship is unmistakable — no need to recall what a colour means.
+	// Lines get a little top room so the label never collides with the line above.
+	// (The cursor line shows raw `[[type::target]]` with no `.cm-ltyped`, so no label.)
+	'.cm-lt-labels .cm-line': { paddingTop: '0.72em' },
+	'.cm-lt-labels .cm-ltyped': { position: 'relative' },
+	'.cm-lt-labels .cm-ltyped::before': {
+		content: 'attr(data-ltype)',
+		position: 'absolute',
+		insetInlineStart: '0',
+		bottom: '100%',
+		fontSize: '0.62em',
+		fontWeight: '600',
+		lineHeight: '1.1',
+		letterSpacing: '0.01em',
+		color: 'var(--ltc)',
+		whiteSpace: 'nowrap',
+		pointerEvents: 'none',
+		opacity: '0.85',
+	},
+	// MIG-067 §E.2 — "Colour links by type" OFF (the `cm-lt-plain` content class):
+	// typed links revert to the standard wikilink colour (text, underline, and the
+	// label), so the type is carried by the LABEL alone. Two classes + !important
+	// out-rank the single-class `.cm-ltyped` colour rules above.
+	'.cm-lt-plain .cm-ltyped, .cm-lt-plain .cm-ltyped *': {
+		color: 'var(--link-color, var(--library-accent, var(--interactive-accent))) !important',
+	},
+	'.cm-lt-plain .cm-ltyped': {
+		textDecorationColor: 'color-mix(in srgb, var(--link-color, var(--library-accent, var(--interactive-accent))) 40%, transparent) !important',
+	},
+	'.cm-lt-plain .cm-ltyped::before': {
+		color: 'var(--link-color, var(--library-accent, var(--interactive-accent)))',
+	},
 	'.cm-md-align':  { display: 'block', width: '100%' },
 	'.cm-html-hidden': { fontSize: '0', lineHeight: '0', overflow: 'hidden', display: 'inline', width: '0' },
 	'.cm-html-u':    { textDecoration: 'underline' },

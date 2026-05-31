@@ -186,7 +186,18 @@
 	let linkClickHandler: EventListener | null = null;
 	const dirCompartment = new Compartment();
 	const livePreviewCompartment = new Compartment();
+	const typedLinkModeCompartment = new Compartment();
 	let livePreviewEnabled = $state(true);
+
+	/** §E.2 — the content-DOM classes that drive typed-link display in the editor:
+	 *  `cm-lt-labels` shows each type's name above its link; `cm-lt-plain` reverts
+	 *  to the standard wikilink colour (colour-by-type off). Driven by appSettings. */
+	function typedLinkModeClass(colour: boolean, labels: boolean): string {
+		const c: string[] = [];
+		if (labels) c.push('cm-lt-labels');
+		if (!colour) c.push('cm-lt-plain');
+		return c.join(' ');
+	}
 
 	/* ─── Table toolbar state ─── */
 	let tableToolbarX = $state(0);
@@ -399,6 +410,9 @@
 				]),
 				dirCompartment.of(EditorView.editorAttributes.of({ dir: dir || 'auto' })),
 				EditorView.contentAttributes.of({ dir: 'auto' }),
+				typedLinkModeCompartment.of(EditorView.contentAttributes.of({
+					class: typedLinkModeClass($appSettings.colourTypedLinks, $appSettings.showTypedLinkLabels),
+				})),
 				EditorView.lineWrapping,
 				EditorView.updateListener.of((update) => {
 					if (update.docChanged) {
@@ -785,6 +799,20 @@
 					livePreviewEnabled ? [livePreviewPlugin, livePreviewTheme, calloutPlugin, calloutTheme, baseLensField] : []
 				)
 			});
+		}
+	});
+
+	/* ─── Typed-link display mode (§E.2: colour-by-type / label-above) ─── */
+	// Guard on a key of just the two booleans — appSettings is a store, so a bare
+	// $effect would re-run on ANY setting change; only reconfigure when these flip.
+	let _prevTypedLinkModeKey = `${$appSettings.colourTypedLinks}|${$appSettings.showTypedLinkLabels}`;
+	$effect(() => {
+		const key = `${$appSettings.colourTypedLinks}|${$appSettings.showTypedLinkLabels}`;
+		if (view && key !== _prevTypedLinkModeKey) {
+			_prevTypedLinkModeKey = key;
+			view.dispatch({ effects: typedLinkModeCompartment.reconfigure(EditorView.contentAttributes.of({
+				class: typedLinkModeClass($appSettings.colourTypedLinks, $appSettings.showTypedLinkLabels),
+			})) });
 		}
 	});
 

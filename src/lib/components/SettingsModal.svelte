@@ -2349,6 +2349,28 @@
 					<!-- ═══ LINK TYPES (the Living Vocabulary — MIG-067 §G) ═══ -->
 					<LinkTypesEditor />
 
+					<!-- ═══ TYPED LINK DISPLAY (MIG-067 §E.2) ═══ -->
+					<div class="setting-section-heading">{$t('settings.linkTypes.displayHeading')}</div>
+					<div class="setting-desc" style="margin-bottom: 8px;">{$t('settings.linkTypes.displayDesc')}</div>
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.linkTypes.showLabel')}</div>
+							<div class="setting-desc">{$t('settings.linkTypes.showLabelDesc')}</div>
+						</div>
+						<input type="checkbox" class="setting-toggle"
+							checked={$appSettings.showTypedLinkLabels}
+							onchange={(e) => updateSettings({ showTypedLinkLabels: (e.target as HTMLInputElement).checked })} />
+					</div>
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.linkTypes.colourByType')}</div>
+							<div class="setting-desc">{$t('settings.linkTypes.colourByTypeDesc')}</div>
+						</div>
+						<input type="checkbox" class="setting-toggle"
+							checked={$appSettings.colourTypedLinks}
+							onchange={(e) => updateSettings({ colourTypedLinks: (e.target as HTMLInputElement).checked })} />
+					</div>
+
 					<!-- ═══ LIVING LINK PILLS ═══ -->
 					<div class="setting-section-heading">{$t('settings.appearance.livingLinkPills') || 'Living Link Pills'}</div>
 					<div class="setting-desc" style="margin-bottom: 8px;">

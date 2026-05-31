@@ -3231,6 +3231,11 @@ export interface AppSettings {
 	linkFormat: 'shortest' | 'relative' | 'absolute';
 	autoUpdateLinks: boolean;
 	useWikilinks: boolean;
+	/** MIG-067 §E.2 — tint each typed link with its type's colour in the editor.
+	 *  Off → typed links use the standard wikilink colour (type carried by the label). */
+	colourTypedLinks: boolean;
+	/** MIG-067 §E.2 — show the type name as a small label above each typed link. */
+	showTypedLinkLabels: boolean;
 	confirmDelete: boolean;
 	trashDestination: 'system' | 'local' | 'permanent';
 
@@ -3617,6 +3622,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
 	linkFormat: 'shortest',
 	autoUpdateLinks: true,
 	useWikilinks: true,
+	colourTypedLinks: true,
+	showTypedLinkLabels: true,
 	confirmDelete: true,
 	trashDestination: 'system',
 	titleAlignment: 'center',
