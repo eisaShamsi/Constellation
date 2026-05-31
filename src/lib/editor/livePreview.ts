@@ -18,6 +18,7 @@ import { get } from 'svelte/store';
 import { t } from '$lib/i18n';
 import { detectDir } from '$lib/utils';
 import { appSettings, skyNodePathSet } from '$lib/libraries/store';
+import { isLinkTypeValue } from '$lib/libraries/linkTypeRegistry';
 import type { LensResult, LensRow, DimensionValue } from '$lib/lens/store';
 import { dataColumns, columnLabel, renderCellValue } from '$lib/lens/tableModel';
 
@@ -172,10 +173,9 @@ const htmlDecoMap: Record<string, Decoration> = { u: htmlUDeco, sub: htmlSubDeco
 
 // Typed link decorations — one per semantic link type (CE Phase 1)
 // MIG-022 §A.2 (D-A1.β, 2026-05-11) — `supersedes` added as 9th type.
-const TYPED_LINK_TYPES = new Set([
-	'supports', 'contradicts', 'causes', 'exemplifies',
-	'generalizes', 'derives-from', 'part-of', 'associative', 'supersedes',
-]);
+// MIG-067 §D — typed-link MEMBERSHIP now reads the Link-Type Registry
+// (isLinkTypeValue: the 8 typed acts + custom + `associative`). The
+// per-type decoration COLORS below stay hardcoded until §E.
 const typedLinkDecos: Record<string, ReturnType<typeof Decoration.mark>> = {
 	supports:       Decoration.mark({ class: 'cm-md-link cm-link-supports' }),
 	contradicts:    Decoration.mark({ class: 'cm-md-link cm-link-contradicts' }),
@@ -1415,7 +1415,7 @@ function buildDecorations(view: EditorView): DecorationSet {
 					const pipeIndex = raw.indexOf('|');
 					// Predicate-FIRST (canonical): [[type::target]] / [[type::target|display]].
 					const colonIdx = raw.indexOf('::');
-					const firstType = (colonIdx > 0 && TYPED_LINK_TYPES.has(raw.slice(0, colonIdx).trim().toLowerCase()))
+					const firstType = (colonIdx > 0 && isLinkTypeValue(raw.slice(0, colonIdx).trim().toLowerCase()))
 						? raw.slice(0, colonIdx).trim().toLowerCase() : '';
 					// Target = first segment, after any `type::` prefix (for the traversal chip).
 					const linkTarget = (firstType
@@ -1451,7 +1451,7 @@ function buildDecorations(view: EditorView): DecorationSet {
 						// rendered alias text (the reported bug).
 						const lastPipeIndex = raw.lastIndexOf('|');
 						const afterLastPipe = raw.slice(lastPipeIndex + 1).trim().toLowerCase();
-						const isTyped = lastPipeIndex > 0 && TYPED_LINK_TYPES.has(afterLastPipe);
+						const isTyped = lastPipeIndex > 0 && isLinkTypeValue(afterLastPipe);
 						if (isTyped && lastPipeIndex === pipeIndex) {
 							// 2-part typed: [[note|type]]. Show the note name in the
 							// type color; hide [[ and |type]].

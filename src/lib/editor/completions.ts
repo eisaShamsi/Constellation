@@ -5,6 +5,7 @@
 import { type CompletionContext, type Completion } from '@codemirror/autocomplete';
 import { EditorView } from '@codemirror/view';
 import { generateTable } from './tableUtils';
+import { getLinkTypes } from '$lib/libraries/linkTypeRegistry';
 
 export const SLASH_COMMANDS: { label: string; detail: string; apply: string }[] = [
 	{ label: '/heading1', detail: 'H1', apply: '# ' },
@@ -78,18 +79,11 @@ export function createTagCompletion(getTags: () => string[]) {
 	};
 }
 
-/** Typed link autocomplete: [[note| → suggests semantic link types (CE Phase 1) */
+/** Typed link autocomplete: [[note| → suggests semantic link types.
+ *  MIG-067 §D — the list comes from the active Link-Type Registry (the 8 seeds +
+ *  any user-defined types, with their `desc` as the hint), read fresh per
+ *  invocation so a vocabulary change shows up without reloading the editor. */
 export function createTypedLinkCompletion() {
-	const LINK_TYPES = [
-		{ label: 'supports',     detail: 'Evidence for a claim'      },
-		{ label: 'contradicts',  detail: 'Tension / opposition'       },
-		{ label: 'causes',       detail: 'Causal relationship'        },
-		{ label: 'exemplifies',  detail: 'Instance-of'                },
-		{ label: 'generalizes',  detail: 'Abstraction'                },
-		{ label: 'derives-from', detail: 'Provenance / source'        },
-		{ label: 'part-of',      detail: 'Compositional hierarchy'    },
-		{ label: 'supersedes',   detail: 'Replaces an earlier stance' },
-	];
 	return function typedLinkCompletion(context: CompletionContext) {
 		// Match [[note_name| with optional partial type already typed
 		const before = context.matchBefore(/\[\[[^\]\|]+\|[^\]]*$/);
@@ -97,11 +91,11 @@ export function createTypedLinkCompletion() {
 		const pipeIdx = before.text.lastIndexOf('|');
 		const typed = before.text.slice(pipeIdx + 1).toLowerCase();
 		const from = before.from + pipeIdx + 1;
-		const options = LINK_TYPES
-			.filter(t => t.label.startsWith(typed))
+		const options = getLinkTypes()
+			.filter(t => t.id.startsWith(typed))
 			.map(t => ({
-				label: t.label,
-				detail: t.detail,
+				label: t.id,
+				detail: t.desc ?? undefined,
 				type: 'keyword',
 				apply: (v: EditorView, _c: Completion, _f: number, to: number) => {
 					// Consume existing ]] if present, then re-add after type
@@ -114,7 +108,7 @@ export function createTypedLinkCompletion() {
 					const segs = before.text.slice(2).split('|');
 					const target = segs[0];
 					const display = segs.slice(1, -1).join('|');
-					const insert = display ? `[[${t.label}::${target}|${display}]]` : `[[${t.label}::${target}]]`;
+					const insert = display ? `[[${t.id}::${target}|${display}]]` : `[[${t.id}::${target}]]`;
 					v.dispatch({
 						changes: { from: before.from, to: end, insert },
 						selection: { anchor: before.from + insert.length }

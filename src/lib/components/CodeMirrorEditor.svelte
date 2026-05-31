@@ -732,36 +732,13 @@
 	}
 
 	// Wikilink autocomplete
-	const LINK_TYPES = ['related-to', 'prerequisite', 'see-also', 'contradicts', 'supports', 'extends'];
-
 	function wikilinkCompletion(context: CompletionContext): any {
 		const before = context.matchBefore(/\[\[[^\]]*$/);
 		if (!before) return null;
 		const inner = before.text.slice(2);
 
-		// Link type autocomplete: [[note|type:query
-		const pipeIdx = inner.indexOf('|');
-		if (pipeIdx >= 0) {
-			const afterPipe = inner.slice(pipeIdx + 1);
-			if (afterPipe.toLowerCase().startsWith('type:')) {
-				const noteName = inner.slice(0, pipeIdx);
-				const typeQuery = afterPipe.slice(5).toLowerCase();
-				const options: Completion[] = LINK_TYPES
-					.filter(t => t.includes(typeQuery))
-					.map(t => ({
-						label: t,
-						type: 'keyword',
-						apply: (view: EditorView, _completion: Completion, from: number, to: number) => {
-							const insert = `[[${noteName}|type:${t}]]`;
-							view.dispatch({
-								changes: { from: before.from, to, insert },
-								selection: { anchor: before.from + insert.length }
-							});
-						}
-					}));
-				return { from: before.from, options, filter: false };
-			}
-		}
+		// MIG-067 §D — legacy `[[note|type:X]]` completion (obsolete taxonomy)
+		// retired; canonical typed-link autocomplete lives in completions.ts.
 
 		// Heading autocomplete: [[note#query
 		const hashIdx = inner.indexOf('#');

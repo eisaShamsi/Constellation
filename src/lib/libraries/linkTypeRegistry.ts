@@ -124,9 +124,18 @@ export function getLinkType(id: string): LinkTypeDef | undefined {
 	return byId.get(id);
 }
 
-/** True if `id` is a known type (seed or custom). */
+/** True if `id` is a known typed act (seed or custom). */
 export function isKnownLinkType(id: string): boolean {
 	return byId.has(id) || (cache.length === 0 && (SEED_IDS as readonly string[]).includes(id));
+}
+
+/** True if `id` is a recognized stored `link_type` value — a typed act OR the
+ *  null/default `associative`. Mirror of Rust `is_link_type_value`: the panels
+ *  and editor membership checks historically accepted `associative` alongside
+ *  the typed acts, so they use this (not `isKnownLinkType`) to stay byte-identical
+ *  while still recognizing custom types. */
+export function isLinkTypeValue(id: string): boolean {
+	return id === 'associative' || isKnownLinkType(id);
 }
 
 /** Inline/badge color for a type id (neutral default for unknown ids). */

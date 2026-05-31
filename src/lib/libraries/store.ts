@@ -6,6 +6,7 @@ import { writable, derived, get } from 'svelte/store';
 import { invoke } from '@tauri-apps/api/core';
 import { emit } from '@tauri-apps/api/event';
 import { normalizePathKey } from '$lib/utils';
+import { getLinkTypes, isLinkTypeValue } from './linkTypeRegistry';
 
 export interface LibraryInfo {
 	id: string;
@@ -2380,22 +2381,19 @@ export function effectiveLinkWeight(
  *  GraphMind, and the livePreview decorator. Kept in sync with the
  *  `KNOWN_LINK_TYPES` slice in `src-tauri/src/libraries.rs` and the
  *  `TYPED_LINK_TYPES` set in `src/lib/editor/livePreview.ts`. */
-const KNOWN_LINK_TYPES = new Set([
-	'supports', 'contradicts', 'causes', 'exemplifies',
-	'generalizes', 'derives-from', 'part-of', 'associative',
-]);
-
 /** Resolve which typed name to show on a link's badge. Prefers the
  *  `annotation` field (populated by the DB-indexed parser) when it
- *  matches a known type; falls back to `link_type` if THAT matches a
- *  known type; otherwise returns `undefined` so the UI can skip the
- *  badge. Drops the vacuous default `"relates"` that every DB row
- *  carries at rest. */
+ *  matches a known link-type value; falls back to `link_type` if THAT
+ *  matches; otherwise returns `undefined` so the UI can skip the badge.
+ *  Drops the vacuous default `"relates"` that every DB row carries at rest.
+ *  MIG-067 §D — membership reads the Link-Type Registry (isLinkTypeValue: the
+ *  8 typed acts + custom + `associative`), so `supersedes` now badges too and
+ *  custom types are recognized. */
 function displayLinkType(l: NoteLink): string | undefined {
 	const ann = l.annotation?.trim().toLowerCase();
-	if (ann && KNOWN_LINK_TYPES.has(ann)) return ann;
+	if (ann && isLinkTypeValue(ann)) return ann;
 	const lt = l.link_type?.trim().toLowerCase();
-	if (lt && KNOWN_LINK_TYPES.has(lt)) return lt;
+	if (lt && isLinkTypeValue(lt)) return lt;
 	return undefined;
 }
 
@@ -3829,10 +3827,13 @@ export const DEFAULT_SETTINGS: AppSettings = {
  *  MIG-022 §A.2 (D-A1.β, 2026-05-11) — `supersedes` added as the 9th.
  *  Per the gap analysis §6.1, "this note replaces an earlier stance"
  *  is a first-class typed relationship, not a flat YAML scalar. */
-export const LINK_TYPE_NAMES = [
-	'supports', 'contradicts', 'causes', 'exemplifies',
-	'generalizes', 'derives-from', 'part-of', 'associative', 'supersedes',
-] as const;
+/** Link-type names for Settings iteration — the registry's typed acts (8 seeds
+ *  + custom, in canonical order) plus the null `associative`. MIG-067 §D: was a
+ *  hardcoded 9-tuple; now registry-derived so custom types appear. Read at call
+ *  time (the registry is boot-seeded; a vocabulary edit re-seeds it). */
+export function linkTypeNames(): string[] {
+	return [...getLinkTypes().map((t) => t.id), 'associative'];
+}
 
 export const appSettings = writable<AppSettings>(DEFAULT_SETTINGS);
 

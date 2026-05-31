@@ -5,7 +5,7 @@
 	import { check } from '@tauri-apps/plugin-updater';
 	import { relaunch } from '@tauri-apps/plugin-process';
 	import { t, locale, setLocale, SUPPORTED_LOCALES, type Locale } from '$lib/i18n';
-	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats, SCRIPT_UNICODE_RANGES, SCRIPT_LABELS, SCRIPT_SAMPLES, getAllFontSets, getFontSetById, type FontSet, TYPEWRITER_FONTS, BUILTIN_THEMES, type ConstellationTheme, LINK_TYPE_NAMES, DEFAULT_SETTINGS, backfillLinkConfidence, type PanelId, type PanelSlot, clearIndexHistory } from '$lib/libraries/store';
+	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats, SCRIPT_UNICODE_RANGES, SCRIPT_LABELS, SCRIPT_SAMPLES, getAllFontSets, getFontSetById, type FontSet, TYPEWRITER_FONTS, BUILTIN_THEMES, type ConstellationTheme, linkTypeNames, DEFAULT_SETTINGS, backfillLinkConfidence, type PanelId, type PanelSlot, clearIndexHistory } from '$lib/libraries/store';
 	import ObsidianThemeBrowser from './ObsidianThemeBrowser.svelte';
 	import StyleSettingsPanel from './StyleSettingsPanel.svelte';
 	import { getEffectiveStyleBlocks } from '$lib/theme/constellationStyleSettings';
@@ -2352,7 +2352,7 @@
 					</div>
 
 					<!-- Per-type colors -->
-					{#each LINK_TYPE_NAMES as type}
+					{#each linkTypeNames() as type}
 						{@const fill = $appSettings.linkPills?.fill?.[type] ?? '#888'}
 						{@const text = $appSettings.linkPills?.text?.[type] ?? '#fff'}
 						{@const localized = $t(`linkTypes.${type}`) || type}
