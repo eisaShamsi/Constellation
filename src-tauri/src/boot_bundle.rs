@@ -34,6 +34,9 @@ pub struct BootBundle {
     pub bookmarks: serde_json::Value,
     pub workspaces: serde_json::Value,
     pub property_types: serde_json::Value,
+    /// MIG-067 §C — the resolved Link-Type Registry (8 seeds + custom, ordered +
+    /// nested) so the frontend `linkTypeRegistry` seeds without a separate IPC.
+    pub link_types: Vec<crate::link_types::LinkTypeDef>,
     pub workspace_bases: Vec<crate::bases::WorkspaceBaseEntry>,
     pub child_universes: Vec<ChildUniverseInfo>,
     /// Keyed by child universe path → list of library paths (normalized
@@ -97,6 +100,12 @@ pub fn constellation_boot_bundle(app: tauri::AppHandle) -> Result<BootBundle, St
         crate::universe::read_universe_property_types(app.clone())
             .unwrap_or(serde_json::Value::Object(serde_json::Map::new()))
     );
+    // MIG-067 §C — resolved link-type vocabulary (self-loads the active universe's
+    // deltas, so it's correct regardless of whether ensure_search_db_ready has run).
+    let link_types = time_step!(
+        "list_link_types",
+        crate::link_types::list_link_types(app.clone()).unwrap_or_default()
+    );
     let workspace_bases = time_step!(
         "list_workspace_bases",
         crate::bases::list_workspace_bases(app.clone()).unwrap_or_default()
@@ -129,6 +138,7 @@ pub fn constellation_boot_bundle(app: tauri::AppHandle) -> Result<BootBundle, St
         bookmarks,
         workspaces,
         property_types,
+        link_types,
         workspace_bases,
         child_universes,
         child_universe_lib_paths,

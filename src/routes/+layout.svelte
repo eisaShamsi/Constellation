@@ -1937,6 +1937,7 @@
 			bookmarks: unknown[];
 			workspaces: unknown[];
 			property_types: Record<string, unknown>;
+			link_types?: unknown[];
 			workspace_bases: any[];
 			child_universes: ChildUniverseInfo[];
 			child_universe_lib_paths: Record<string, string[]>;
@@ -2006,6 +2007,14 @@
 				const reg = await import('$lib/libraries/propertyTypeRegistry');
 				reg.seedFromBundle(bundle.property_types);
 			} catch { /* on-demand load on first use */ }
+
+			// Link types (MIG-067 §C) — seed the link-type registry from the
+			// bundle so the editor colors + Base per-type columns read the
+			// resolved vocabulary (8 seeds + custom) without a separate IPC.
+			try {
+				const ltReg = await import('$lib/libraries/linkTypeRegistry');
+				ltReg.seedFromBundle(bundle.link_types);
+			} catch { /* falls back to on-demand loadLinkTypes() */ }
 
 			workspaceBases = bundle.workspace_bases;
 			// MIG-055 §F — load Five Acts host notes alongside the boot bundle.

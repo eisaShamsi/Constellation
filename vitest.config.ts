@@ -24,6 +24,8 @@ export default defineConfig({
 			'tests/sight-v6/v7-stack.test.ts',
 			// MIG-060 §E (2026-05-28) — Lens-row threading gestures.
 			'tests/mig-060/host-note-gestures.test.ts',
+			// MIG-067 §C (2026-05-31) — frontend Link-Type Registry getters.
+			'tests/mig-067/linkTypeRegistry.test.ts',
 		],
 		exclude: [
 			'**/node_modules/**',
