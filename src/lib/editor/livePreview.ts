@@ -18,7 +18,7 @@ import { get } from 'svelte/store';
 import { t } from '$lib/i18n';
 import { detectDir } from '$lib/utils';
 import { appSettings, skyNodePathSet } from '$lib/libraries/store';
-import { isLinkTypeValue } from '$lib/libraries/linkTypeRegistry';
+import { isLinkTypeValue, getLinkTypes, subscribe as subscribeLinkTypes } from '$lib/libraries/linkTypeRegistry';
 import type { LensResult, LensRow, DimensionValue } from '$lib/lens/store';
 import { dataColumns, columnLabel, renderCellValue } from '$lib/lens/tableModel';
 
@@ -184,9 +184,33 @@ const typedLinkDecos: Record<string, ReturnType<typeof Decoration.mark>> = {
 	generalizes:    Decoration.mark({ class: 'cm-md-link cm-link-generalizes' }),
 	'derives-from': Decoration.mark({ class: 'cm-md-link cm-link-derives-from' }),
 	'part-of':      Decoration.mark({ class: 'cm-md-link cm-link-part-of' }),
-	associative:    linkDeco,
-	supersedes:     Decoration.mark({ class: 'cm-md-link cm-link-supersedes' }),
 };
+
+// MIG-067 §E — per-type colours for CUSTOM link types. The 8 built-ins use the
+// pre-defined `cm-link-*` CSS classes above; a user-defined type has no class, so
+// it gets a registry-colour INLINE-style decoration. Pre-cached (Rule 1: never
+// built inside buildDecorations) and rebuilt only when the vocabulary changes.
+let customTypeDecos = new Map<string, ReturnType<typeof Decoration.mark>>();
+function rebuildCustomTypeDecos() {
+	const m = new Map<string, ReturnType<typeof Decoration.mark>>();
+	for (const t of getLinkTypes()) {
+		if (!(t.id in typedLinkDecos)) {
+			m.set(t.id, Decoration.mark({
+				class: 'cm-md-link',
+				attributes: { style: `color:${t.color};text-decoration-color:${t.color}66` },
+			}));
+		}
+	}
+	customTypeDecos = m;
+}
+rebuildCustomTypeDecos();
+subscribeLinkTypes(rebuildCustomTypeDecos);
+
+/** Decoration for a typed-link id: a built-in `cm-link-*` class, else a custom
+ *  registry-colour inline style, else the plain link decoration. */
+function typeDeco(id: string): ReturnType<typeof Decoration.mark> {
+	return typedLinkDecos[id] ?? customTypeDecos.get(id) ?? linkDeco;
+}
 
 class CheckboxWidget extends WidgetType {
 	checked: boolean;
@@ -1423,7 +1447,7 @@ function buildDecorations(view: EditorView): DecorationSet {
 						: (pipeIndex >= 0 ? raw.slice(0, pipeIndex) : raw)
 					).trim().toLowerCase();
 					if (firstType) {
-						const fdeco = typedLinkDecos[firstType] ?? linkDeco;
+						const fdeco = typeDeco(firstType);
 						const rest = raw.slice(colonIdx + 2);
 						const restPipe = rest.indexOf('|');
 						if (restPipe >= 0) {
@@ -1457,7 +1481,7 @@ function buildDecorations(view: EditorView): DecorationSet {
 							// type color; hide [[ and |type]].
 							const noteEnd = innerFrom + pipeIndex;
 							ranges.push({ from: absFrom, to: innerFrom, deco: replaceDeco }); // hide [[
-							ranges.push({ from: innerFrom, to: noteEnd, deco: typedLinkDecos[afterLastPipe] ?? linkDeco });
+							ranges.push({ from: innerFrom, to: noteEnd, deco: typeDeco(afterLastPipe) });
 							ranges.push({ from: noteEnd, to: absTo, deco: replaceDeco }); // hide |type]]
 						} else if (isTyped) {
 							// 3-part typed: [[note|alias|type]]. Show the alias in the
@@ -1465,7 +1489,7 @@ function buildDecorations(view: EditorView): DecorationSet {
 							const aliasStart = innerFrom + pipeIndex + 1;
 							const aliasEnd = innerFrom + lastPipeIndex;
 							ranges.push({ from: absFrom, to: aliasStart, deco: replaceDeco }); // hide [[note|
-							ranges.push({ from: aliasStart, to: aliasEnd, deco: typedLinkDecos[afterLastPipe] ?? linkDeco });
+							ranges.push({ from: aliasStart, to: aliasEnd, deco: typeDeco(afterLastPipe) });
 							ranges.push({ from: aliasEnd, to: absTo, deco: replaceDeco }); // hide |type]]
 						} else {
 							// Display alias: [[note|alias]] (alias may contain pipes).
