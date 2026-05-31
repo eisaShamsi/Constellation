@@ -83,8 +83,10 @@ Live-preview colors are **hardcoded CSS classes** `.cm-link-<type>` — you can'
 ### 4.6 Autocomplete + the editor write form
 `completions.ts` lists the registry (id + `desc`), emits the canonical `[[type::target]]` form (already done for the 8). Sub-type ids are just longer slugs. **Effort: ◐ low.**
 
-### 4.7 The other consumers (Sight, CECE, stratum, tension, Inspector360)
-These weight/score/analyze by type (e.g. CECE graph weights, Sight centrality, tension = `contradicts`). Most already have a `_ => default` fallback (custom types get neutral weight) — **acceptable v1**: custom types are first-class for *linking + columns*, and inherit a sensible default in the analytic surfaces (a v2 can let users assign a custom type's "semantic axis"/weight). Inspector360's `ALL_LINK_TYPES` + matrix must read the registry (and gains `supersedes` — the existing gap). **Effort: ◐◐ (many sites, mostly mechanical).**
+### 4.7 The other consumers (360.3D / Inspector360, CECE, stratum, tension)
+These weight/score/analyze by type (CECE graph weights `cece/catalogers/graph.rs`; tension = `contradicts` `tension.rs`; stratum signals `strata.rs`). Most already have a `_ => default` fallback (custom types get neutral weight) — **acceptable v1**: custom types are first-class for *linking + columns*, and inherit a sensible default in the analytic surfaces (a v2 can let users assign a custom type's "semantic axis"/weight). **360.3D (Inspector360)** is the active visual analytic: `inspector360.rs` `ALL_LINK_TYPES` + `Inspector360.svelte` `TYPE_ORDER/TYPE_COLORS/TYPE_LABEL_KEYS` must read the registry (and gain `supersedes` — the existing gap). **Effort: ◐◐ (mostly mechanical).**
+
+**OUT OF SCOPE — disabled "Sight" surfaces.** Sight (the whole-universe visual) is **no longer in core** — replaced by 360.3D (Eisa, 2026-05-31; cf. MIG-038 disable 2026-05-19, re-categorized as a "Constellation Wing"). Its files (`src-tauri/src/sight.rs`, `src/lib/sight/**`, `SightPanel.svelte`, `ConstellationSight.svelte`, `ConstellationSight2.svelte`) carry their own link-type color/weight maps but are **disabled / flags-off**, so — exactly like the `ConstellationEditor/` legacy subtree — they are **excluded from v1 reconciliation**. They'd read the registry only if/when Sight re-ships as a Wing. (The Explore sweep counted them in its "~25 surfaces"; the *active* count is lower.)
 
 ---
 
@@ -114,7 +116,7 @@ The Concept Paper (RATIFIED) calls the 8 "the cognitive vocabulary." This migrat
 3. **Custom-type ordering:** appended after the 8 in creation order, or **user-draggable**? Recommend **user-draggable** (a small reorder UI; matters because order = the canonical sort key).
 4. **Sub-type depth:** one level (child of a canonical 8) in v1, or arbitrary nesting? Recommend **one level** for v1 (covers your example; arbitrary trees are a v2).
 5. **Per-type columns: leaf-only** in v1, with **parent-sums deferred to v2**? Recommend **yes**.
-6. **Analytic surfaces (Sight/CECE/tension weights) for custom types:** neutral default in v1, user-assignable "semantic weight/axis" in v2? Recommend **yes** (keeps v1 shippable).
+6. **Analytic surfaces (360.3D / CECE / tension weights) for custom types:** neutral default in v1, user-assignable "semantic weight/axis" in v2? Recommend **yes** (keeps v1 shippable). [Sight is out of core — see §4.7.]
 7. **Where users manage the vocabulary:** a new **Settings → Link Types** editor (add/color/order/nest/delete), reusing the linkPills color UI? Recommend **yes**.
 
 ---
