@@ -85,14 +85,44 @@ pub fn maybe_schedule(app: tauri::AppHandle) {
 /// the version is stamped only at `finalize` (completion), so an interrupted run
 /// leaves it below target and re-runs, resuming from the cursor.
 fn is_needed(conn: &Connection) -> bool {
-    let stored_version: i64 = conn
+    if !version_current(conn) {
+        return true;
+    }
+    // MIG-067 §B — vocabulary-change gate. The materialized columns (rank order,
+    // per-type counts, the JSON) are derived from the active link-type vocabulary;
+    // when it changes (a user adds / reorders / removes a type) the stored
+    // aggregates go stale. We stamp the vocabulary fingerprint at each completed
+    // back-fill; a mismatch re-runs the SAME resumable machinery to re-materialize
+    // every row. This also covers the §A→§B upgrade: a universe last back-filled
+    // under §A has no `links_vocab` stamp (fingerprint 0), so the seed registry's
+    // non-zero fingerprint mismatches → a one-time pass fills the new JSON column.
+    stored_vocab_fingerprint(conn) != crate::link_types::snapshot().fingerprint()
+}
+
+/// True once the §A.2 back-fill version stamp has reached target — i.e. a completed
+/// pass. Distinguishes a fresh first-time back-fill (version behind → keep the
+/// cursor so an interrupted run resumes) from a vocabulary-change re-run (version
+/// current → the cursor refers to the old vocabulary's pass and must reset).
+fn version_current(conn: &Connection) -> bool {
+    let v: i64 = conn
         .query_row(
             "SELECT version FROM schema_versions WHERE module = 'links_outgoing'",
             [],
             |row| row.get(0),
         )
         .unwrap_or(0);
-    stored_version < LINKS_OUTGOING_SCHEMA_VERSION
+    v >= LINKS_OUTGOING_SCHEMA_VERSION
+}
+
+/// The vocabulary fingerprint stamped at the last completed back-fill (0 if never
+/// — e.g. a universe back-filled under §A, before the `links_vocab` stamp existed).
+fn stored_vocab_fingerprint(conn: &Connection) -> i64 {
+    conn.query_row(
+        "SELECT version FROM schema_versions WHERE module = 'links_vocab'",
+        [],
+        |row| row.get(0),
+    )
+    .unwrap_or(0)
 }
 
 /// The back-fill loop. Re-locks the DB mutex per batch so frontend IPC stays
@@ -123,14 +153,35 @@ fn run(app: &tauri::AppHandle) -> Result<u64, String> {
             .map_err(|e| format!("ANALYZE: {}", e))?;
     }
 
+    // MIG-067 §B — capture the vocabulary fingerprint for THIS run up-front; it is
+    // stamped at finalize. If the vocabulary changes again mid-run, the stamp will
+    // differ from the then-current fingerprint and `is_needed` re-runs us next time
+    // (eventual consistency, without tracking the vocabulary per batch).
+    let run_fp = crate::link_types::snapshot().fingerprint();
+
+    // MIG-067 §B — if the version is already current, this run was triggered purely
+    // by the vocabulary-change gate; any cursor left by a prior run belongs to the
+    // OLD vocabulary's pass, so reset it and re-materialize every row (not just the
+    // tail). A first-time back-fill (version behind) keeps its cursor so an
+    // interrupted run resumes from where it stopped.
+    {
+        let mut guard = state.db.lock().map_err(|e| e.to_string())?;
+        let conn = guard.as_mut().ok_or("DB not initialized")?;
+        if version_current(conn) {
+            conn.execute("DELETE FROM links_outgoing_backfill_cursor", [])
+                .map_err(|e| format!("vocab-change cursor reset: {}", e))?;
+        }
+    }
+
     let mut last_path = read_cursor(&state.db)?;
     let mut total: u64 = 0;
 
     loop {
         let (batch_count, new_last_path) = process_batch(&state.db, &last_path)?;
         if batch_count == 0 {
-            // Drained. Stamp the version and clear the cursor atomically.
-            finalize(&state.db)?;
+            // Drained. Stamp the version + vocabulary fingerprint and clear the
+            // cursor atomically.
+            finalize(&state.db, run_fp)?;
             return Ok(total);
         }
         total += batch_count as u64;
@@ -287,7 +338,7 @@ fn write_cursor(db: &Mutex<Option<Connection>>, last_path: &str) -> Result<(), S
     Ok(())
 }
 
-fn finalize(db: &Mutex<Option<Connection>>) -> Result<(), String> {
+fn finalize(db: &Mutex<Option<Connection>>, vocab_fingerprint: i64) -> Result<(), String> {
     let mut guard = db.lock().map_err(|e| e.to_string())?;
     let conn = guard.as_mut().ok_or("DB not initialized")?;
     // Stamp + cursor clear in one transaction so a crash between them can't
@@ -300,6 +351,16 @@ fn finalize(db: &Mutex<Option<Connection>>) -> Result<(), String> {
         params![LINKS_OUTGOING_SCHEMA_VERSION],
     )
     .map_err(|e| format!("finalize stamp: {}", e))?;
+    // MIG-067 §B — stamp the vocabulary fingerprint these aggregates were
+    // materialized under, so a later vocabulary change re-triggers the back-fill
+    // (see `is_needed`). Stored in `schema_versions` (version column = fingerprint)
+    // — no new table; the value is an opaque i64 token, not an ordered version.
+    tx.execute(
+        "INSERT OR REPLACE INTO schema_versions (module, version, updated_at)
+         VALUES ('links_vocab', ?1, strftime('%s','now'))",
+        params![vocab_fingerprint],
+    )
+    .map_err(|e| format!("finalize vocab stamp: {}", e))?;
     tx.execute("DELETE FROM links_outgoing_backfill_cursor", [])
         .map_err(|e| format!("finalize cursor: {}", e))?;
     tx.commit().map_err(|e| format!("finalize commit: {}", e))?;
@@ -333,7 +394,7 @@ mod tests {
             "CREATE TABLE note_meta (
                 path TEXT PRIMARY KEY,
                 outgoing_count INTEGER NOT NULL DEFAULT 0,
-                outgoing_link_types TEXT NOT NULL DEFAULT '',
+                outgoing_link_types TEXT NOT NULL DEFAULT '', outgoing_link_types_json TEXT NOT NULL DEFAULT '{}',
                 outgoing_top_rank INTEGER NOT NULL DEFAULT 9
              );
              CREATE TABLE note_links (
@@ -389,6 +450,48 @@ mod tests {
         assert_eq!(read(&conn, "/b.md"), (1, "exemplifies (1)".to_string(), 4));
         // /c.md: genuinely no links → recompute yields the same default sentinel.
         assert_eq!(read(&conn, "/c.md"), (0, String::new(), 9));
+    }
+
+    /// MIG-067 §B — the vocabulary-change gate. With the version already at target,
+    /// `is_needed` is driven purely by the stored-vs-current vocabulary fingerprint:
+    /// absent (a §A-era universe) → needed; matching → not needed; differing (a
+    /// vocabulary edit) → needed again. (The global registry defaults to the 8 seeds
+    /// in tests, so `snapshot().fingerprint()` is stable here.)
+    #[test]
+    fn vocab_fingerprint_gate_triggers_rematerialize() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE schema_versions (module TEXT PRIMARY KEY, version INTEGER, updated_at INTEGER);",
+        )
+        .unwrap();
+        // §A.2 version satisfied — the only remaining driver is the fingerprint.
+        conn.execute(
+            "INSERT INTO schema_versions (module, version) VALUES ('links_outgoing', ?1)",
+            params![LINKS_OUTGOING_SCHEMA_VERSION],
+        )
+        .unwrap();
+
+        // No `links_vocab` stamp (a universe back-filled under §A) → stored 0 ≠ the
+        // seed registry's non-zero fingerprint → re-trigger (fills the JSON column).
+        assert!(is_needed(&conn), "missing vocab stamp must re-trigger the back-fill");
+
+        // Stamp the CURRENT fingerprint → in sync → not needed.
+        let fp = crate::link_types::snapshot().fingerprint();
+        assert_ne!(fp, 0, "seed registry fingerprint is non-zero");
+        conn.execute(
+            "INSERT OR REPLACE INTO schema_versions (module, version) VALUES ('links_vocab', ?1)",
+            params![fp],
+        )
+        .unwrap();
+        assert!(!is_needed(&conn), "matching vocab stamp must NOT re-trigger");
+
+        // Simulate a vocabulary edit: a different stored fingerprint → needed again.
+        conn.execute(
+            "UPDATE schema_versions SET version = ?1 WHERE module = 'links_vocab'",
+            params![fp ^ 0x5555],
+        )
+        .unwrap();
+        assert!(is_needed(&conn), "changed vocab fingerprint must re-trigger");
     }
 
     #[test]
@@ -463,7 +566,7 @@ mod tests {
             "CREATE TABLE note_meta (
                 path TEXT PRIMARY KEY, name TEXT, library_name TEXT,
                 outgoing_count INTEGER NOT NULL DEFAULT 0,
-                outgoing_link_types TEXT NOT NULL DEFAULT '',
+                outgoing_link_types TEXT NOT NULL DEFAULT '', outgoing_link_types_json TEXT NOT NULL DEFAULT '{}',
                 outgoing_top_rank INTEGER NOT NULL DEFAULT 9);
              CREATE TABLE note_links (
                 source_path TEXT, source_name TEXT, target_name TEXT,

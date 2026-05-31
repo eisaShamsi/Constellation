@@ -597,6 +597,7 @@ fn ensure_note_meta_mig066_columns(conn: &Connection) -> rusqlite::Result<()> {
     let mut have_count = false;
     let mut have_types = false;
     let mut have_rank = false;
+    let mut have_json = false;
     {
         let mut stmt = conn.prepare("PRAGMA table_info(note_meta)")?;
         let rows = stmt.query_map([], |row| row.get::<_, String>(1))?;
@@ -605,6 +606,7 @@ fn ensure_note_meta_mig066_columns(conn: &Connection) -> rusqlite::Result<()> {
                 "outgoing_count" => have_count = true,
                 "outgoing_link_types" => have_types = true,
                 "outgoing_top_rank" => have_rank = true,
+                "outgoing_link_types_json" => have_json = true,
                 _ => {}
             }
         }
@@ -624,41 +626,47 @@ fn ensure_note_meta_mig066_columns(conn: &Connection) -> rusqlite::Result<()> {
             "ALTER TABLE note_meta ADD COLUMN outgoing_top_rank INTEGER NOT NULL DEFAULT 9;",
         )?;
     }
+    // MIG-067 §B — per-type counts as JSON {"type":count} for the dynamic
+    // `note.link.<id>` sortable columns (§F json_extract). Materialized write-time.
+    if !have_json {
+        conn.execute_batch(
+            "ALTER TABLE note_meta ADD COLUMN outgoing_link_types_json TEXT NOT NULL DEFAULT '{}';",
+        )?;
+    }
     Ok(())
 }
 
-/// MIG-066 §A — the 8 canonical typed-link names (Living-Link Concept Paper §7),
-/// as the SQL `WHERE … IN (…)` membership list and a `CASE … END` rank (1..=8).
-/// Shared by the `note_links_outgoing_*` triggers and the back-fill so the
-/// materialized aggregates and their order have one definition.
-const LINK_TYPE_IN_LIST: &str = "('supports','contradicts','causes','exemplifies','generalizes','derives-from','part-of','supersedes')";
-const LINK_TYPE_RANK_CASE: &str = "CASE link_type \
-    WHEN 'supports' THEN 1 WHEN 'contradicts' THEN 2 WHEN 'causes' THEN 3 \
-    WHEN 'exemplifies' THEN 4 WHEN 'generalizes' THEN 5 WHEN 'derives-from' THEN 6 \
-    WHEN 'part-of' THEN 7 WHEN 'supersedes' THEN 8 END";
-
-/// MIG-066 §A — SQL `UPDATE … SET` assignments (no trailing comma) that recompute
-/// the three outgoing aggregates for the note whose `path` matches the source path
-/// expression `src` (e.g. `NEW.source_path` in a trigger, or `note_meta.path` for a
-/// correlated back-fill UPDATE). Used inside the triggers and the back-fill. `count`
-/// includes untyped links; `types`/`top_rank` cover only the 8 canonical types, in
-/// canonical order. `outgoing_link_types` stores each type with its PER-TYPE active
-/// count — e.g. `"supports (358), derives-from (106), contradicts (1)"` — so the
-/// Base shows not just which relations a note participates in but how many of each
-/// (the load-bearing-ness of each kind). The English type id + ` (N)` is the stored
-/// form; the render layer (§C) localizes the id while keeping the count.
+/// MIG-067 §B — SQL `UPDATE … SET` assignments (no trailing comma) that recompute
+/// the outgoing aggregates for the note whose `path` matches `src` (`NEW.source_path`
+/// in a trigger, or `note_meta.path` for a correlated back-fill UPDATE). The type
+/// membership list, the rank `CASE`, and the empty-sentinel are generated **from the
+/// active Link-Type Registry** (the 8 seeds + any user-defined types, in canonical
+/// order) — not a hardcoded 8 — so the materialization tracks the vocabulary. `count`
+/// includes untyped links. `outgoing_link_types` = the display string
+/// `"type (count), …"` (canonical order); `outgoing_link_types_json` = the machine
+/// `{"type":count}` for the per-type sortable columns (§F). The render layer (§C)
+/// localizes the id while keeping the count.
 pub(crate) fn outgoing_aggregate_assignments(src: &str) -> String {
+    let reg = crate::link_types::snapshot();
+    let list = reg.sql_in_list();
+    let rank = reg.sql_rank_case();
+    let sentinel = reg.sentinel_rank();
     format!(
         "outgoing_count = (SELECT COUNT(*) FROM note_links WHERE source_path = {src} AND status = 'active'), \
          outgoing_link_types = (SELECT COALESCE(GROUP_CONCAT(lt || ' (' || cnt || ')', ', '), '') FROM \
             (SELECT link_type AS lt, COUNT(*) AS cnt FROM note_links \
              WHERE source_path = {src} AND status = 'active' AND link_type IN {list} \
              GROUP BY link_type ORDER BY {rank})), \
+         outgoing_link_types_json = (SELECT COALESCE(json_group_object(link_type, cnt), '{{}}') FROM \
+            (SELECT link_type, COUNT(*) AS cnt FROM note_links \
+             WHERE source_path = {src} AND status = 'active' AND link_type IN {list} \
+             GROUP BY link_type)), \
          outgoing_top_rank = COALESCE((SELECT MIN({rank}) FROM note_links \
-             WHERE source_path = {src} AND status = 'active' AND link_type IN {list}), 9)",
+             WHERE source_path = {src} AND status = 'active' AND link_type IN {list}), {sentinel})",
         src = src,
-        list = LINK_TYPE_IN_LIST,
-        rank = LINK_TYPE_RANK_CASE,
+        list = list,
+        rank = rank,
+        sentinel = sentinel,
     )
 }
 
@@ -677,6 +685,10 @@ pub(crate) fn outgoing_aggregate_assignments(src: &str) -> String {
 /// runs `links_backfill::recompute_all_outgoing` once. Live single-edge edits
 /// keep maintaining the columns write-time.
 pub(crate) fn create_outgoing_link_triggers(conn: &Connection) -> Result<(), String> {
+    // MIG-067 §B — drop first so the triggers always carry the CURRENT registry's
+    // rank CASE + IN-list (the vocabulary may have changed since they were last
+    // created). Cheap; runs on every boot via init_db.
+    drop_outgoing_link_triggers(conn)?;
     conn.execute_batch(&format!("
         CREATE TRIGGER IF NOT EXISTS note_links_outgoing_ai
         AFTER INSERT ON note_links
@@ -718,6 +730,34 @@ pub(crate) fn drop_outgoing_link_triggers(conn: &Connection) -> Result<(), Strin
          DROP TRIGGER IF EXISTS note_links_outgoing_au;",
     )
     .map_err(|e| format!("drop outgoing-link triggers: {}", e))
+}
+
+/// MIG-067 §B — react to a change in the active link-type vocabulary (a live
+/// `save_universe_link_types`). Two effects, both idempotent and non-blocking:
+///   1. Recreate the outgoing-link triggers so subsequent live edge writes use the
+///      new rank `CASE` + IN-list (drop+recreate reads the now-current registry).
+///   2. Schedule the background re-materialize of existing `note_meta` rows — the
+///      fingerprint gate in `links_backfill::is_needed` now reports "needed", and
+///      the batched / resumable pass refreshes every row under the new vocabulary.
+/// The boot + universe-switch paths already get (1)+(2) via `init_db` +
+/// `maybe_schedule`; this covers the in-session edit. Trigger recreation holds the
+/// DB lock only briefly; the re-materialize runs on a background thread.
+pub fn on_link_vocabulary_changed(app: &tauri::AppHandle) {
+    {
+        let state = app.state::<SearchState>();
+        // Bind the lock result to a local so it drops before `state` (locals drop
+        // in reverse declaration order) — otherwise the guard's borrow of `state`
+        // outlives `state` at the block's end.
+        let locked = state.db.lock();
+        if let Ok(mut guard) = locked {
+            if let Some(conn) = guard.as_mut() {
+                if let Err(e) = create_outgoing_link_triggers(conn) {
+                    eprintln!("[link_types] trigger refresh after vocab change failed: {e}");
+                }
+            }
+        }
+    }
+    crate::links_backfill::maybe_schedule(app.clone());
 }
 
 /// MIG-041 — purge every bigram row from `term_vocab`.
@@ -3303,7 +3343,7 @@ mod tests_mig066_outgoing {
             "CREATE TABLE note_meta (
                 path TEXT PRIMARY KEY,
                 outgoing_count INTEGER NOT NULL DEFAULT 0,
-                outgoing_link_types TEXT NOT NULL DEFAULT '',
+                outgoing_link_types TEXT NOT NULL DEFAULT '', outgoing_link_types_json TEXT NOT NULL DEFAULT '{}',
                 outgoing_top_rank INTEGER NOT NULL DEFAULT 9
              );
              CREATE TABLE note_links (
@@ -3354,6 +3394,15 @@ mod tests_mig066_outgoing {
         // here each type has exactly one active link → "(1)".
         assert_eq!(types, "supports (1), contradicts (1)");
         assert_eq!(rank, 1, "top rank = supports = 1");
+        // MIG-067 §B — the machine JSON {"type":count} materializes alongside (the
+        // §F per-type sortable columns read it). Order is unspecified → check membership.
+        let json: String = conn
+            .query_row("SELECT outgoing_link_types_json FROM note_meta WHERE path='/a.md'", [], |r| r.get(0))
+            .unwrap();
+        assert!(
+            json.contains("\"supports\":1") && json.contains("\"contradicts\":1"),
+            "json group object: {json}"
+        );
 
         // archive the supports edge → types/rank fall back to contradicts; count drops
         conn.execute("UPDATE note_links SET status='archived' WHERE source_path='/a.md' AND link_type='supports'", []).unwrap();
@@ -3380,7 +3429,7 @@ mod tests_mig066_outgoing {
         conn.execute_batch(
             "CREATE TABLE note_meta (path TEXT PRIMARY KEY,
                 outgoing_count INTEGER NOT NULL DEFAULT 0,
-                outgoing_link_types TEXT NOT NULL DEFAULT '',
+                outgoing_link_types TEXT NOT NULL DEFAULT '', outgoing_link_types_json TEXT NOT NULL DEFAULT '{}',
                 outgoing_top_rank INTEGER NOT NULL DEFAULT 9);
              CREATE TABLE note_links (source_path TEXT, target_name TEXT, link_type TEXT, status TEXT DEFAULT 'active');",
         )
@@ -5983,6 +6032,11 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
     if needs_rebuild {
         let _ = std::fs::remove_file(&path);
     }
+    // MIG-067 §A/§B: load the active universe's link-type vocabulary (8 seeds +
+    // .constellation/link-types.json deltas) into the registry BEFORE init_db, so
+    // the outgoing-aggregate triggers init_db creates carry the right rank CASE +
+    // IN-list. Cheap; reloads on universe-switch (this fn re-runs when state.db resets).
+    crate::link_types::load_active(app);
     let conn = init_db(&path)?;
     {
         let mut db = state.db.lock().map_err(|e| e.to_string())?;
@@ -5991,12 +6045,6 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
     if needs_rebuild {
         let _ = std::fs::write(&version_path, current_version);
     }
-    // MIG-067 §A: load the active universe's link-type vocabulary (the 8 seeds +
-    // .constellation/link-types.json deltas) into the registry BEFORE the
-    // background reconcile/parser run. Cheap, idempotent, reloads on
-    // universe-switch (this fn re-runs when the state DB is reset).
-    crate::link_types::load_active(app);
-
     // MIG-001 Step 5: schedule the Sky View back-fill on a background
     // thread. No-op if schema_versions.sky is already at target. Returns
     // immediately so this doesn't extend boot time.

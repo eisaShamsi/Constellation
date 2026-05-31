@@ -92,9 +92,11 @@ impl LinkTypeRegistry {
         let mut by_id: std::collections::BTreeMap<String, LinkTypeDef> =
             seeds().into_iter().map(|d| (d.id.clone(), d)).collect();
         for mut d in deltas {
-            if d.id.trim().is_empty() {
+            d.id = sanitize_id(&d.id);
+            if d.id.is_empty() {
                 continue;
             }
+            d.parent = d.parent.map(|p| sanitize_id(&p)).filter(|p| !p.is_empty());
             if seed_set.contains(d.id.as_str()) {
                 d.builtin = true;
                 d.parent = None;
@@ -132,6 +134,62 @@ impl LinkTypeRegistry {
     pub fn ids(&self) -> Vec<String> {
         self.types.iter().map(|t| t.id.clone()).collect()
     }
+
+    /// SQL `(...)` membership list of all known type ids (single-quote-escaped).
+    /// Ids are slug-sanitized at merge, so this is injection-safe.
+    pub fn sql_in_list(&self) -> String {
+        let parts: Vec<String> = self
+            .types
+            .iter()
+            .map(|t| format!("'{}'", t.id.replace('\'', "''")))
+            .collect();
+        format!("({})", parts.join(","))
+    }
+
+    /// SQL `CASE link_type WHEN 'id' THEN <rank> ... END` — 1-based flattened rank
+    /// (canonical order; custom types after/under the 8). The materialization sort key.
+    pub fn sql_rank_case(&self) -> String {
+        let mut s = String::from("CASE link_type ");
+        for (i, t) in self.types.iter().enumerate() {
+            s.push_str(&format!("WHEN '{}' THEN {} ", t.id.replace('\'', "''"), i + 1));
+        }
+        s.push_str("END");
+        s
+    }
+
+    /// Sentinel rank when a note has no canonical typed links = `len()+1`.
+    pub fn sentinel_rank(&self) -> usize {
+        self.types.len() + 1
+    }
+
+    /// Version-stable fingerprint of the vocabulary (ordered ids) — gates the
+    /// re-materialization of `note_meta` when the vocabulary changes. FNV-1a so it
+    /// is identical across binary upgrades (a hash that drifts would force a
+    /// spurious recompute on every update).
+    pub fn fingerprint(&self) -> i64 {
+        let mut h: u64 = 0xcbf2_9ce4_8422_2325;
+        for t in &self.types {
+            for b in t.id.bytes() {
+                h ^= b as u64;
+                h = h.wrapping_mul(0x100_0000_01b3);
+            }
+            h ^= 0xff; // id separator
+            h = h.wrapping_mul(0x100_0000_01b3);
+        }
+        (h >> 1) as i64 // 63-bit, fits i64 positively
+    }
+}
+
+/// Reduce a user id to a safe slug: lowercase ASCII alphanumerics + hyphen.
+/// Ids flow into generated SQL (the IN-list + rank CASE) and into stored
+/// `note_links.link_type` + `note.link.<id>` column names, so this is the
+/// defensive floor (the §G editor slugifies on input).
+fn sanitize_id(raw: &str) -> String {
+    raw.trim()
+        .to_lowercase()
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric() || *c == '-')
+        .collect()
 }
 
 /// Order: top-level (parent None) by `order` then id; each immediately followed by
@@ -220,7 +278,12 @@ pub fn save_universe_link_types(app: tauri::AppHandle, deltas: Vec<LinkTypeDef>)
     let path = link_types_path(&app)?;
     let json = serde_json::to_string_pretty(&deltas).map_err(|e| e.to_string())?;
     std::fs::write(&path, json).map_err(|e| format!("Failed to save link types: {}", e))?;
-    set_active(deltas); // reflect immediately
+    set_active(deltas); // reflect immediately (parser + SQL generators see it now)
+    // MIG-067 §B — re-materialize the outgoing-link aggregates under the new
+    // vocabulary: recreate the triggers (so live edge writes use the new rank) and
+    // schedule the background re-materialize of existing rows (gated, batched,
+    // never blocks). No-op cost when the vocabulary did not actually change.
+    crate::search::on_link_vocabulary_changed(&app);
     Ok(())
 }
 
