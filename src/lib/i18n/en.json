@@ -3079,6 +3079,8 @@
 		"yourFields": "Your fields",
 		"constellationFields": "Constellation",
 		"readOnly": "read-only",
+		"linkTypeFields": "Link types",
+		"count": "count",
 		"allFieldsAdded": "All fields added.",
 		"sortBy": "Sort by this column",
 		"sort": "Sort",
