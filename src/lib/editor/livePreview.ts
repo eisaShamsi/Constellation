@@ -15,8 +15,8 @@ import { syntaxTree } from '@codemirror/language';
 import { EditorState, RangeSetBuilder, StateField, StateEffect } from '@codemirror/state';
 import { convertFileSrc, invoke } from '@tauri-apps/api/core';
 import { get } from 'svelte/store';
-import { t, locale } from '$lib/i18n';
-import { detectDir } from '$lib/utils';
+import { t, tIn } from '$lib/i18n';
+import { detectDir, dominantLocale } from '$lib/utils';
 import { appSettings, skyNodePathSet } from '$lib/libraries/store';
 import { isLinkTypeValue, getLinkType, linkTypeLabel, subscribe as subscribeLinkTypes } from '$lib/libraries/linkTypeRegistry';
 import type { LensResult, LensRow, DimensionValue } from '$lib/lens/store';
@@ -186,30 +186,31 @@ const SEED_COLORS: Record<string, string> = {
 // vocabulary change so recolours take effect.
 const typeDecoCache = new Map<string, ReturnType<typeof Decoration.mark>>();
 // Rebuild typed-link decorations when the vocabulary changes (recolour / rename /
-// add / remove) OR the UI language changes — the label above each link (§E.2) is
-// localized, so a language switch must re-render it.
+// add / remove). Labels are keyed by the NOTE's language, not the UI language
+// (§E.2), so a UI language switch does NOT invalidate them.
 subscribeLinkTypes(() => typeDecoCache.clear());
-locale.subscribe(() => typeDecoCache.clear());
 
-/** The label shown above a typed link (§E.2 "show type name above link"): the
- *  localized type name (`linkTypes.<id>` — lowercase, the cognitive-vocabulary
- *  style), falling back to the registry label for a custom type with no i18n key. */
-function typedLinkLabel(id: string): string {
+/** The label above a typed link (§E.2): the type name in the NOTE's language `loc`
+ *  (`linkTypes.<id>` — lowercase), so a link reads in its note's own language no
+ *  matter the UI language. Falls back to the registry label for a custom type. */
+function typedLinkLabel(id: string, loc: string): string {
 	const key = 'linkTypes.' + id;
-	const tr = get(t)(key);
+	const tr = tIn(loc, key);
 	return tr !== key ? tr : linkTypeLabel(id);
 }
 
-/** Decoration for a typed-link id: an inline registry/seed colour (`!important`),
- *  or the plain link decoration for the null/untyped `associative` and unknowns. */
-function typeDeco(id: string): ReturnType<typeof Decoration.mark> {
-	let d = typeDecoCache.get(id);
+/** Decoration for a typed-link id, labelled in the note's language `loc`: an inline
+ *  registry/seed colour (`!important`) + the localized type name as data-ltype, or the
+ *  plain link decoration for the null `associative` and unknowns. Cached per id|loc. */
+function typeDeco(id: string, loc: string): ReturnType<typeof Decoration.mark> {
+	const ckey = id + '|' + loc;
+	let d = typeDecoCache.get(ckey);
 	if (d === undefined) {
 		const color = getLinkType(id)?.color ?? SEED_COLORS[id];
 		d = color
-			? Decoration.mark({ class: 'cm-md-link cm-ltyped', attributes: { 'data-ltype': typedLinkLabel(id), style: `--ltc:${color};color:${color} !important;text-decoration-color:${color}66 !important` } })
+			? Decoration.mark({ class: 'cm-md-link cm-ltyped', attributes: { 'data-ltype': typedLinkLabel(id, loc), style: `--ltc:${color};color:${color} !important;text-decoration-color:${color}66 !important` } })
 			: linkDeco;
-		typeDecoCache.set(id, d);
+		typeDecoCache.set(ckey, d);
 	}
 	return d;
 }
@@ -1229,6 +1230,9 @@ class DataviewLabelWidget extends WidgetType {
 
 function buildDecorations(view: EditorView): DecorationSet {
 	const doc = view.state.doc;
+	// §E.2 — labels above typed links read in the NOTE's own language (detected from
+	// its content), independent of the UI language. Sampled once per rebuild (cheap).
+	const noteLoc = dominantLocale(doc.sliceString(0, Math.min(doc.length, 2000)));
 	const cursorLine = doc.lineAt(view.state.selection.main.head).number;
 	const libPath  = view.state.field(libraryPathField, false) || '';
 	const notePath = view.state.field(notePathField,    false) || '';
@@ -1449,7 +1453,7 @@ function buildDecorations(view: EditorView): DecorationSet {
 						: (pipeIndex >= 0 ? raw.slice(0, pipeIndex) : raw)
 					).trim().toLowerCase();
 					if (firstType) {
-						const fdeco = typeDeco(firstType);
+						const fdeco = typeDeco(firstType, noteLoc);
 						const rest = raw.slice(colonIdx + 2);
 						const restPipe = rest.indexOf('|');
 						if (restPipe >= 0) {
@@ -1483,7 +1487,7 @@ function buildDecorations(view: EditorView): DecorationSet {
 							// type color; hide [[ and |type]].
 							const noteEnd = innerFrom + pipeIndex;
 							ranges.push({ from: absFrom, to: innerFrom, deco: replaceDeco }); // hide [[
-							ranges.push({ from: innerFrom, to: noteEnd, deco: typeDeco(afterLastPipe) });
+							ranges.push({ from: innerFrom, to: noteEnd, deco: typeDeco(afterLastPipe, noteLoc) });
 							ranges.push({ from: noteEnd, to: absTo, deco: replaceDeco }); // hide |type]]
 						} else if (isTyped) {
 							// 3-part typed: [[note|alias|type]]. Show the alias in the
@@ -1491,7 +1495,7 @@ function buildDecorations(view: EditorView): DecorationSet {
 							const aliasStart = innerFrom + pipeIndex + 1;
 							const aliasEnd = innerFrom + lastPipeIndex;
 							ranges.push({ from: absFrom, to: aliasStart, deco: replaceDeco }); // hide [[note|
-							ranges.push({ from: aliasStart, to: aliasEnd, deco: typeDeco(afterLastPipe) });
+							ranges.push({ from: aliasStart, to: aliasEnd, deco: typeDeco(afterLastPipe, noteLoc) });
 							ranges.push({ from: aliasEnd, to: absTo, deco: replaceDeco }); // hide |type]]
 						} else {
 							// Display alias: [[note|alias]] (alias may contain pipes).

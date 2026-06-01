@@ -317,6 +317,48 @@ export function detectDir(text: string): 'rtl' | 'ltr' {
 	return rtlChars > sample.length * 0.3 ? 'rtl' : 'ltr';
 }
 
+/**
+ * Detect the dominant script of a text and map it to the locale whose typed-link
+ * labels best fit it (MIG-067 \u00A7E.2). This lets a note's link labels read in the
+ * note's OWN language, independent of the UI language \u2014 an English note shows
+ * `supports`, an Arabic note shows `\u064A\u062F\u0639\u0645`, even when the app is set to the other.
+ *
+ * Coarse by design: script detection, not full language ID. Latin \u2192 en (the
+ * English type names \u2014 German/French/etc. can't be told apart by script alone).
+ * The Arabic-script trio is split by language-specific letters: Urdu-only letters
+ * (\u0679 \u0688 \u0691 \u06D2 \u06BA \u06C1) \u2192 ur, Persian letters
+ * (\u06AF \u0686 \u067E \u0698) \u2192 fa, otherwise \u2192 ar.
+ */
+export function dominantLocale(text: string): string {
+	const clean = (text || '').replace(/^---[\s\S]*?---\n?/, '').slice(0, 4000);
+	let arabic = 0, hebrew = 0, cyrillic = 0, devanagari = 0, hangul = 0, kana = 0, han = 0, latin = 0;
+	let fa = false, ur = false;
+	for (const ch of clean) {
+		const c = ch.codePointAt(0) ?? 0;
+		if ((c >= 0x0600 && c <= 0x06FF) || (c >= 0x0750 && c <= 0x077F) || (c >= 0x08A0 && c <= 0x08FF) || (c >= 0xFB50 && c <= 0xFDFF) || (c >= 0xFE70 && c <= 0xFEFF)) {
+			arabic++;
+			if (c === 0x0679 || c === 0x0688 || c === 0x0691 || c === 0x06D2 || c === 0x06BA || c === 0x06C1) ur = true;
+			else if (c === 0x06AF || c === 0x0686 || c === 0x067E || c === 0x0698) fa = true;
+		} else if (c >= 0x0590 && c <= 0x05FF) hebrew++;
+		else if (c >= 0x0400 && c <= 0x04FF) cyrillic++;
+		else if (c >= 0x0900 && c <= 0x097F) devanagari++;
+		else if (c >= 0xAC00 && c <= 0xD7AF) hangul++;
+		else if ((c >= 0x3040 && c <= 0x309F) || (c >= 0x30A0 && c <= 0x30FF)) kana++;
+		else if ((c >= 0x4E00 && c <= 0x9FFF) || (c >= 0x3400 && c <= 0x4DBF)) han++;
+		else if ((c >= 0x41 && c <= 0x5A) || (c >= 0x61 && c <= 0x7A) || (c >= 0xC0 && c <= 0x024F)) latin++;
+	}
+	const max = Math.max(arabic, hebrew, cyrillic, devanagari, hangul, kana, han, latin);
+	if (max === 0) return 'en';
+	if (max === arabic) return ur ? 'ur' : fa ? 'fa' : 'ar';
+	if (max === hebrew) return 'he';
+	if (max === cyrillic) return 'ru';
+	if (max === devanagari) return 'hi';
+	if (max === hangul) return 'ko';
+	if (max === kana) return 'ja';
+	if (max === han) return 'zh';
+	return 'en';
+}
+
 /** Convert digits to Arabic-Indic numerals */
 const HINDI_DIGITS = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
 

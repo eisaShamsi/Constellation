@@ -143,6 +143,23 @@ export function setLocale(newLocale: Locale) {
 	locale.set(newLocale);
 }
 
+/**
+ * Translate a key in a SPECIFIC locale (not the reactive UI locale), with the same
+ * active-locale → en → key fallback chain as `t`. Used where the content language
+ * differs from the UI language — e.g. typed-link labels that must read in the
+ * NOTE's own language regardless of the interface language (MIG-067 §E.2).
+ */
+export function tIn(loc: string, key: string, params?: Record<string, string>): string {
+	const l = (loc in translations ? loc : 'en') as Locale;
+	const localeResult = lookup(translations[l] ?? translations.en, key, params);
+	if (localeResult !== key) return localeResult;
+	if (l !== 'en') {
+		const enResult = lookup(translations.en, key, params);
+		if (enResult !== key) return enResult;
+	}
+	return key;
+}
+
 /** Get the searchOps map for the current locale (for query canonicalization). */
 export function getSearchOps(): Record<string, string> | null {
 	const loc = get(locale);

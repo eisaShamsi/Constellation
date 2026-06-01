@@ -17,7 +17,7 @@
 	 * a colour-only change is cheap (the registry fingerprint is over ids).
 	 */
 	import { onMount } from 'svelte';
-	import { t } from '$lib/i18n';
+	import { t, locale } from '$lib/i18n';
 	import { detectDir } from '$lib/utils';
 	import {
 		getLinkTypes, loadLinkTypes, saveLinkTypes, toLinkTypeDeltas, SEED_IDS, type LinkTypeDef,
@@ -35,6 +35,15 @@
 
 	const SEED_SET = new Set(SEED_IDS as readonly string[]);
 	const isSeed = (id: string) => SEED_SET.has(id);
+
+	// §H — show each type's name localized (linkTypes.<id>), falling back to the
+	// registry label for custom types with no i18n key; flip the nesting arrow in RTL.
+	const isRtl = $derived(['ar', 'fa', 'he', 'ur'].includes($locale));
+	function typeName(tp: LinkTypeDef): string {
+		const k = 'linkTypes.' + tp.id;
+		const tr = $t(k);
+		return tr !== k ? tr : tp.label;
+	}
 
 	/** The 8 built-ins (top-level seeds), for the parent dropdown. */
 	const seedTypes = $derived(types.filter((tp) => isSeed(tp.id)));
@@ -121,7 +130,7 @@
 		<div class="lte-list">
 			{#each ordered as { def, depth } (def.id)}
 				<div class="lte-row" class:lte-child={depth === 1}>
-					{#if depth === 1}<span class="lte-nest">↳</span>{/if}
+					{#if depth === 1}<span class="lte-nest">{isRtl ? '↲' : '↳'}</span>{/if}
 					<input
 						type="color"
 						class="color-input"
@@ -129,7 +138,7 @@
 						aria-label={`Colour for ${def.label}`}
 						onchange={(e) => recolor(def.id, (e.target as HTMLInputElement).value)}
 					/>
-					<span class="lte-name" dir={detectDir(def.label)}>{def.label}</span>
+					<span class="lte-name" dir={detectDir(typeName(def))}>{typeName(def)}</span>
 					<span class="lte-id">· {def.id}</span>
 					{#if isSeed(def.id)}
 						<span class="lte-locked">{$t('settings.linkTypes.builtin') || 'built-in'}</span>
@@ -159,7 +168,7 @@
 			<select class="lte-add-parent" bind:value={newParent} aria-label={$t('settings.linkTypes.parent') || 'Parent'}>
 				<option value="">{$t('settings.linkTypes.topLevel') || 'Top-level'}</option>
 				{#each seedTypes as st (st.id)}
-					<option value={st.id}>↳ {st.label}</option>
+					<option value={st.id}>{isRtl ? '↲' : '↳'} {typeName(st)}</option>
 				{/each}
 			</select>
 			<button class="lte-add-btn" disabled={!newId || newIdTaken} onclick={addType}>
