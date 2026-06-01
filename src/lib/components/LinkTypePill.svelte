@@ -1,43 +1,71 @@
 <script lang="ts">
 	/**
-	 * MIG-067 §H.2 — the ONE typed-link pill.
+	 * The Typed-Link Pill — the ONE, self-contained source for every typed-link type
+	 * badge in the app (Backlinks, Outgoing Links, the Knowledge-Health dashboard, …).
 	 *
-	 * The single source for the coloured type badge shown in the Backlinks + Outgoing Links
-	 * panels (Eisa: "the pills should come from one source" — so they can never drift apart
-	 * again, which is exactly what produced the Backlinks-vs-Outgoing alignment mismatch).
+	 * Redesigned from scratch (Eisa: "one source serves all"): the pill is IMMUNE to its
+	 * host. It sets its own font, text direction, size, colour, shape, and centring, so it
+	 * renders pixel-identically no matter which panel — with whatever inherited font /
+	 * direction / flex alignment — it is dropped into. The drift between the Backlinks and
+	 * Outgoing pills came precisely from inheriting those things from two different rows.
 	 *
-	 *  • Colour comes from the Link-Type Registry (the §G editor — single source of truth),
-	 *    with an auto-contrasted text colour.
-	 *  • The label reads in the NOTE's language (§H), not the UI's — pass `loc`.
-	 *  • Shape (radius / height / weight) comes from the `--pill-*` vars the host panel sets
-	 *    from appSettings, so the user's pill-shape preference still applies.
-	 *  • Centred by construction (align-self + justify-content + vertical-align), so no parent
-	 *    row or ancestor can push the text off-centre.
+	 *   <LinkTypePill id="supports" loc="ar" />   →  يدعم     (note-language label)
+	 *   <LinkTypePill id="derives-from" />         →  derives-from  (UI-language fallback)
+	 *
+	 * Colour + auto-contrast text come from the Link-Type Registry (the §G editor — the one
+	 * colour source), so a recolour reflects here live. Shape is the user's pill preference
+	 * in appSettings, read here directly (not via host-set CSS vars). Nothing is inherited.
 	 */
-	import { tIn } from '$lib/i18n';
-	import { linkTypesStore, linkTypeTextColor } from '$lib/libraries/linkTypeRegistry';
+	import { tIn, locale } from '$lib/i18n';
+	import { appSettings } from '$lib/libraries/store';
+	import { linkTypesStore, linkTypeColor, linkTypeTextColor } from '$lib/libraries/linkTypeRegistry';
 
-	let { id, loc = 'en' }: { id: string; loc?: string } = $props();
+	let { id, loc = '' }: { id: string; loc?: string } = $props();
 
-	const fill = $derived($linkTypesStore.find((tp) => tp.id === id)?.color ?? '#888');
-	const txt = $derived(linkTypeTextColor(id) ?? '#ffffff');
-	// Localized type name in the note's language; raw-id fallback if no translation exists.
+	// `void $linkTypesStore` makes colour reactive to a §G recolour while delegating the
+	// actual lookup to the registry helpers (the single colour source + auto-contrast).
+	const fill = $derived.by(() => { void $linkTypesStore; return linkTypeColor(id); });
+	const text = $derived.by(() => { void $linkTypesStore; return linkTypeTextColor(id); });
+	const shape = $derived($appSettings.linkPills?.shape ?? { radius: 10, height: 20, fontWeight: 700 });
+	// Label in the note's language when given, else the UI language; raw id if untranslated.
 	const label = $derived.by(() => {
-		const k = `linkTypes.${id.toLowerCase()}`;
-		const tr = tIn(loc, k);
-		return tr !== k ? tr : id;
+		const lc = loc || $locale;
+		const key = `linkTypes.${id.toLowerCase()}`;
+		const tr = tIn(lc, key);
+		return tr !== key ? tr : id;
 	});
 </script>
 
-<span class="link-type-pill" style="color:{txt};background:{fill};border-color:{fill}">{label}</span>
+<span
+	class="ltpill"
+	dir="auto"
+	style="--f:{fill};--t:{text};--r:{shape.radius}px;--h:{shape.height}px;--w:{shape.fontWeight}"
+>{label}</span>
 
 <style>
-	.link-type-pill {
-		display: inline-flex; align-items: center; justify-content: center; align-self: center;
-		box-sizing: border-box; flex-shrink: 0; vertical-align: middle;
-		font-size: 0.65rem; font-weight: var(--pill-weight, 700); line-height: 1;
-		padding: 0 8px; height: var(--pill-height, 20px);
-		border-radius: var(--pill-radius, 10px); border: 1px solid;
-		white-space: nowrap; text-transform: lowercase; letter-spacing: 0.02em;
+	.ltpill {
+		/* Self-centring inline badge — immune to the host row's flex align / baseline. */
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		align-self: center;
+		vertical-align: middle;
+		flex: 0 0 auto;
+		box-sizing: border-box;
+		height: var(--h, 20px);
+		padding: 0 8px;
+		/* Type colour from the registry, with auto-contrast text. */
+		background: var(--f, #888);
+		color: var(--t, #fff);
+		border-radius: var(--r, 10px);
+		/* Fixed text metrics + the app's interface font, so rendering never depends on
+		   whatever font / size / line-height the host panel happens to inherit. */
+		font-family: var(--font-interface-theme, system-ui, sans-serif);
+		font-size: 0.65rem;
+		font-weight: var(--w, 700);
+		line-height: 1;
+		letter-spacing: 0.02em;
+		text-transform: lowercase;
+		white-space: nowrap;
 	}
 </style>

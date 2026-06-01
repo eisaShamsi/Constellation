@@ -2,6 +2,8 @@
 	import { t } from '$lib/i18n';
 	import { invoke } from '@tauri-apps/api/core';
 	import { onMount } from 'svelte';
+	import LinkTypePill from './LinkTypePill.svelte';
+	import { linkTypeColor } from '$lib/libraries/linkTypeRegistry';
 
 	let {
 		onClose,
@@ -67,11 +69,9 @@
 		if (e.key === 'Escape') onClose();
 	}
 
-	const typeColors: Record<string, string> = {
-		relates: '#94a3b8', supports: '#16a34a', contradicts: '#ef4444',
-		causes: '#f59e0b', exemplifies: '#3b82f6', generalizes: '#7c3aed',
-		'derives-from': '#06b6d4', 'part-of': '#ec4899',
-	};
+	// MIG-067 §H.3 — link-type colours come from the §G registry (the single colour source),
+	// via linkTypeColor() for the bar fills + the shared LinkTypePill for the badges. The old
+	// hardcoded map drifted from the registry (supports was green here, blue everywhere else).
 
 	const confidenceColors: Record<string, string> = {
 		hypothesis: '#94a3b8', evidence: '#3b82f6', established: '#16a34a', contested: '#ef4444',
@@ -124,7 +124,7 @@
 						<div class="khd-bar-row">
 							<span class="khd-bar-label">{type}</span>
 							<div class="khd-bar-track">
-								<div class="khd-bar-fill" style:width="{Math.max(2, (count / stats.total_links) * 100)}%" style:background={typeColors[type] ?? '#94a3b8'}></div>
+								<div class="khd-bar-fill" style:width="{Math.max(2, (count / stats.total_links) * 100)}%" style:background={linkTypeColor(type)}></div>
 							</div>
 							<span class="khd-bar-num">{count.toLocaleString()}</span>
 						</div>
@@ -169,7 +169,7 @@
 						{#each emerging as item}
 							<div class="khd-insight-row">
 								<span class="khd-insight-name" dir="auto">{item.source_name}</span>
-								<span class="khd-insight-badge" style:background={typeColors[item.link_type] ?? '#94a3b8'}>{item.link_type}</span>
+								<LinkTypePill id={item.link_type} />
 								<span class="khd-insight-name" dir="auto">{item.target_name}</span>
 								<span class="khd-insight-meta">w:{item.weight.toFixed(1)}</span>
 							</div>
@@ -342,14 +342,6 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
-	}
-	.khd-insight-badge {
-		font-size: 0.65rem;
-		color: white;
-		padding: 1px 6px;
-		border-radius: 4px;
-		font-weight: 600;
-		flex-shrink: 0;
 	}
 	.khd-insight-meta {
 		font-size: 0.68rem;
