@@ -196,8 +196,11 @@ export async function applyPreset(preset: StylePreset): Promise<void> {
 			Object.assign(partial, payload as Record<string, unknown>);
 		}
 	}
-	if (Object.keys(partial).length) updateSettings(partial as Parameters<typeof updateSettings>[0]);
+	// Apply link colours FIRST (registry → live editor/panel rebuild) while the editor is
+	// idle, THEN appSettings — so the appSettings reactivity can't race the registry's live
+	// update (the Boss-found "themes apply live, link colours need a relaunch" bug).
 	if (linkDeltas) await saveLinkTypes(linkDeltas);
+	if (Object.keys(partial).length) updateSettings(partial as Parameters<typeof updateSettings>[0]);
 }
 
 /** Which sections a preset carries (catalogue order) — for display + apply summaries. */

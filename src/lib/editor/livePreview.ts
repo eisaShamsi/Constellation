@@ -1598,7 +1598,11 @@ class LivePreviewPlugin {
 		// Rebuild on a vocabulary change (recolour / rename / add / remove) so typed-link
 		// colours + labels update LIVE here, matching the panels — not on reopen.
 		this.unsubVocab = subscribeLinkTypes(() => {
-			try { this.view.dispatch({ effects: linkVocabChanged.of(null) }); } catch { /* view tearing down */ }
+			// Defer to a microtask so we never dispatch DURING an in-progress editor update
+			// (re-entrancy) — e.g. when applying a Style changes appSettings + the registry
+			// together; a synchronous dispatch there would be swallowed and the colours
+			// wouldn't refresh until reopen.
+			queueMicrotask(() => { try { this.view.dispatch({ effects: linkVocabChanged.of(null) }); } catch { /* view gone */ } });
 		});
 	}
 
