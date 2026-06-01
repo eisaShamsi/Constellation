@@ -13,8 +13,8 @@
  */
 import { invoke } from '@tauri-apps/api/core';
 import { get } from 'svelte/store';
-import { appSettings, updateSettings } from './store';
-import { getLinkTypes, toLinkTypeDeltas, saveLinkTypes, type LinkTypeDef } from './linkTypeRegistry';
+import { appSettings, updateSettings, BUILTIN_THEMES } from './store';
+import { getLinkTypes, toLinkTypeDeltas, saveLinkTypes, linkTypeColor, SEED_IDS, type LinkTypeDef } from './linkTypeRegistry';
 
 /** Bump the minor when adding sections (back-compatible); the major when the apply
  *  contract changes (so importers can refuse a too-new file gracefully). */
@@ -220,6 +220,45 @@ export async function applyPreset(preset: StylePreset): Promise<void> {
 /** Which sections a preset carries (catalogue order) — for display + apply summaries. */
 export function presetSectionKeys(preset: StylePreset): SectionKey[] {
 	return SECTION_CATALOGUE.map((s) => s.key).filter((k) => k in preset.sections);
+}
+
+// ─── Preview (MIG-069 §G — visual cards) ───
+
+/** A small visual self-portrait of a style, derived from its captured sections. */
+export interface StylePreview {
+	bg: string;
+	text: string;
+	accent: string;
+	font: string;
+	/** The 8 seed link-type colours, in canonical order — the Constellation signature. */
+	dots: string[];
+	radius: number;
+}
+
+/** Resolve a preset's preview. Falls back to the CURRENT universe's values for any section
+ *  the preset doesn't carry, so a card always renders something sensible. */
+export function stylePreview(preset: StylePreset): StylePreview {
+	/* eslint-disable @typescript-eslint/no-explicit-any */
+	const cur = get(appSettings) as Record<string, any>;
+	const ct = preset.sections.colorsTheme as any;
+	const fn = preset.sections.fonts as any;
+	const lc = preset.sections.linkColors as { deltas?: { id: string; color: string }[] } | undefined;
+	const ps = preset.sections.pillShape as any;
+
+	const themeId = ct?.activeThemeId ?? cur.activeThemeId;
+	const themes = [...(BUILTIN_THEMES ?? []), ...((ct?.customThemes ?? cur.customThemes) ?? [])];
+	const theme = themes.find((t: any) => t.id === themeId);
+	const dark = theme ? theme.type === 'dark' : ((ct?.colorScheme ?? cur.colorScheme) === 'dark');
+	const bg = theme?.colors?.background ?? (dark ? '#1e1e1e' : '#fbfbfa');
+	const text = theme?.colors?.text ?? (dark ? '#dcddde' : '#2e3338');
+	const accent = ct?.accentColor ?? theme?.colors?.accent ?? cur.accentColor ?? '#7c3aed';
+	const font = fn?.textFont ?? cur.textFont ?? 'inherit';
+
+	const byId = new Map((lc?.deltas ?? getLinkTypes()).map((d: any) => [d.id, d.color]));
+	const dots = (SEED_IDS as readonly string[]).map((id) => byId.get(id) ?? linkTypeColor(id));
+	const radius = ps?.shape?.radius ?? cur.linkPills?.shape?.radius ?? 10;
+	return { bg, text, accent, font, dots, radius };
+	/* eslint-enable @typescript-eslint/no-explicit-any */
 }
 
 /** The newest schema MAJOR this build can apply; a file from a newer major is refused. */
