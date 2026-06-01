@@ -1735,7 +1735,7 @@ export const livePreviewTheme = EditorView.theme({
 		position: 'absolute',
 		insetInlineStart: '0',
 		bottom: 'calc(100% - 2px)',
-		fontSize: '0.31em',
+		fontSize: '0.62em',
 		fontWeight: '600',
 		lineHeight: '1.1',
 		letterSpacing: '0.01em',
