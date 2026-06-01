@@ -227,9 +227,12 @@ export function presetSectionKeys(preset: StylePreset): SectionKey[] {
 /** A small visual self-portrait of a style, derived from its captured sections. */
 export interface StylePreview {
 	bg: string;
+	surface: string;
+	border: string;
 	text: string;
 	accent: string;
 	font: string;
+	interfaceFont: string;
 	/** The 8 seed link-type colours, in canonical order — the Constellation signature. */
 	dots: string[];
 	radius: number;
@@ -250,14 +253,17 @@ export function stylePreview(preset: StylePreset): StylePreview {
 	const theme = themes.find((t: any) => t.id === themeId);
 	const dark = theme ? theme.type === 'dark' : ((ct?.colorScheme ?? cur.colorScheme) === 'dark');
 	const bg = theme?.colors?.background ?? (dark ? '#1e1e1e' : '#fbfbfa');
+	const surface = theme?.colors?.surface ?? (dark ? '#252526' : '#f1f1ef');
+	const border = theme?.colors?.border ?? (dark ? '#3a3a3c' : '#e3e3e1');
 	const text = theme?.colors?.text ?? (dark ? '#dcddde' : '#2e3338');
 	const accent = ct?.accentColor ?? theme?.colors?.accent ?? cur.accentColor ?? '#7c3aed';
 	const font = fn?.textFont ?? cur.textFont ?? 'inherit';
+	const interfaceFont = fn?.interfaceFont ?? cur.interfaceFont ?? 'inherit';
 
 	const byId = new Map((lc?.deltas ?? getLinkTypes()).map((d: any) => [d.id, d.color]));
 	const dots = (SEED_IDS as readonly string[]).map((id) => byId.get(id) ?? linkTypeColor(id));
 	const radius = ps?.shape?.radius ?? cur.linkPills?.shape?.radius ?? 10;
-	return { bg, text, accent, font, dots, radius };
+	return { bg, surface, border, text, accent, font, interfaceFont, dots, radius };
 	/* eslint-enable @typescript-eslint/no-explicit-any */
 }
 

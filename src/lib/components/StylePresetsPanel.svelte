@@ -106,15 +106,27 @@
 				{#each presets as p (p.id)}
 					{@const pv = stylePreview(p)}
 					<div class="sp-card" class:sp-applied={appliedId === p.id}>
-						<!-- A generated self-portrait: theme paper + text/font sample, the accent
-						     pill at the captured corner-radius, and the 8 link-type colours. -->
-						<div class="sp-portrait" style="background:{pv.bg}; font-family:{pv.font};" aria-hidden="true">
-							<div class="sp-pv-top">
-								<span class="sp-pv-aa" style="color:{pv.text}">Aa</span>
-								<span class="sp-pv-pill" style="background:{pv.accent}; border-radius:{Math.min(pv.radius, 8)}px;"></span>
+						<!-- A mini-mockup of the Constellation interface in this Style: a sidebar + a note
+						     (title, heading, body, a link, a typed-link pill) + the link palette, all live. -->
+						<div class="sp-portrait" style="background:{pv.bg}" aria-hidden="true">
+							<div class="sp-ui-side" style="background:{pv.surface}; border-color:{pv.border}; color:{pv.text}; font-family:{pv.interfaceFont};">
+								<span class="sp-ui-dot" style="background:{pv.accent}"></span>
+								<span class="sp-ui-frow" style="background:{pv.text}"></span>
+								<span class="sp-ui-frow" style="background:{pv.text}"></span>
+								<span class="sp-ui-frow" style="background:{pv.text}"></span>
 							</div>
-							<div class="sp-pv-dots">
-								{#each pv.dots as d, i (i)}<span class="sp-pv-dot" style="background:{d}"></span>{/each}
+							<div class="sp-ui-main" style="color:{pv.text}; font-family:{pv.font};">
+								<span class="sp-ui-title">Aa</span>
+								<span class="sp-ui-h" style="background:{pv.accent}"></span>
+								<span class="sp-ui-line" style="background:{pv.text}"></span>
+								<span class="sp-ui-line sp-ui-short" style="background:{pv.text}"></span>
+								<span class="sp-ui-linkrow">
+									<span class="sp-ui-link" style="background:{pv.accent}"></span>
+									<span class="sp-ui-pill" style="background:{pv.dots[0]}; border-radius:{Math.min(pv.radius, 6)}px;"></span>
+								</span>
+								<span class="sp-ui-palette">
+									{#each pv.dots as d, di (di)}<span class="sp-ui-pdot" style="background:{d}"></span>{/each}
+								</span>
 							</div>
 						</div>
 						<div class="sp-card-body">
@@ -185,15 +197,26 @@
 	.sp-card.sp-applied { border-color: var(--interactive-accent); box-shadow: inset 0 0 0 1px var(--interactive-accent); }
 	/* The generated self-portrait — theme paper, text/font sample, accent pill, link palette. */
 	.sp-portrait {
-		height: 60px; padding: 8px 10px; display: flex; flex-direction: column;
-		justify-content: space-between; overflow: hidden;
+		height: 96px; display: flex; overflow: hidden;
 		border-bottom: 1px solid var(--background-modifier-border);
 	}
-	.sp-pv-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-	.sp-pv-aa { font-size: 19px; font-weight: 600; line-height: 1; letter-spacing: 0.3px; }
-	.sp-pv-pill { display: inline-block; width: 32px; height: 9px; flex: none; }
-	.sp-pv-dots { display: flex; gap: 3px; }
-	.sp-pv-dot { width: 9px; height: 9px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.14); }
+	/* A mini Constellation interface — sidebar + note + link palette, in the Style's look. */
+	.sp-ui-side {
+		width: 30px; flex: none; border-right: 1px solid;
+		display: flex; flex-direction: column; gap: 5px; padding: 8px 6px;
+	}
+	.sp-ui-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+	.sp-ui-frow { height: 3px; border-radius: 2px; opacity: 0.4; }
+	.sp-ui-main { flex: 1; min-width: 0; padding: 9px 10px; display: flex; flex-direction: column; gap: 5px; overflow: hidden; }
+	.sp-ui-title { font-size: 14px; font-weight: 700; line-height: 1; letter-spacing: 0.2px; }
+	.sp-ui-h { height: 5px; width: 52%; border-radius: 2px; }
+	.sp-ui-line { height: 3px; border-radius: 2px; opacity: 0.5; }
+	.sp-ui-short { width: 68%; }
+	.sp-ui-linkrow { display: flex; align-items: center; gap: 5px; margin-top: 1px; }
+	.sp-ui-link { height: 4px; width: 26px; border-radius: 2px; opacity: 0.85; }
+	.sp-ui-pill { height: 9px; width: 22px; flex: none; }
+	.sp-ui-palette { display: flex; gap: 2px; margin-top: 3px; }
+	.sp-ui-pdot { width: 7px; height: 7px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12); }
 	.sp-card-body { padding: 7px 9px 9px; display: flex; flex-direction: column; gap: 5px; }
 	.sp-name {
 		font-size: 0.86rem; font-weight: 600; color: var(--text-normal);
