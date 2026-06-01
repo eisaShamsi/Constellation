@@ -1,0 +1,16 @@
+# Session Log — 2026-06-01
+
+Continues from `SESSION-LOG-2026-05-31.md` (MIG-067 Living Vocabulary §A–§H shipped + the registry-colour single-source follow-up). Today: the live-colour follow-ups close out, and a new feature — **MIG-069 Style Presets** — begins.
+
+## Registry-colour follow-ups (close-out)
+- **Live editor update on recolour — Boss Test 1 PASS.** Recolouring a type in the §G editor now updates the editor links AND the Backlinks/Outgoing pills together (the livePreview plugin subscribes to the vocabulary + dispatches a `linkVocabChanged` StateEffect → rebuilds decorations live; commit `bposk52lk`-build at 11:19).
+- **Reset-colours button — i18n key fix.** The §G "Reset colours to default" button rendered the literal key `settings.linkTypes.resetColours`: the insert script's anchor (`"saving": "Saving…",`) matched an EARLIER `saving` key, so the value landed in the wrong section. Moved it into `settings.linkTypes` (1 occurrence). Shows correctly in the next build (the MIG-069 §C build).
+
+## MIG-069 — Style Presets (new /migration) — Phases A–C
+Eisa's idea: named, app-global, switchable **Styles** (the VS Code Profiles model), exportable/importable as `.json`, reusable across universes — beats Obsidian's per-vault friction. Researched (VS Code Profiles / Obsidian / Power BI theme.json) before designing. Scope chosen: **section-choosable per preset**. Architect+Plan doc: `docs/MIG-069-style-presets-ARCHITECT-PLAN.md` (approved).
+
+- **§A Foundation (`60a38542`-range):** `src-tauri/style_presets.rs` — `load`/`save_style_presets`, app-GLOBAL at `{app_data_dir}/style-presets.json` (mirrors the universe registry; dumb JSON store, graceful empty fallback). Frontend `stylePresets.ts` — types + the 8-section CATALOGUE (→ appSettings fields / pill shape / link registry). Privacy invariant baked in (behaviour excludes security/token/folder-paths). cargo check + svelte-check clean.
+- **§B Engine:** `captureCurrentStyle` / `applyPreset` (one `updateSettings` + `saveLinkTypes` for colours, partial apply) / `newPresetFromCurrent` / `clonePreset` / `isValidPreset`. **Vitest 5/5** (`tests/mig-069/`) — incl. the privacy-invariant test (no secrets/paths leak).
+- **§C Styles UI:** `StylePresetsPanel.svelte` atop the Appearance tab — list (name + sections), Apply / Rename / Duplicate / Delete, "Save current style…" with per-section tick-boxes. `styles.*` i18n keys (en.json; 14-lang = §E). Building for the **first Boss test**.
+
+**Remaining on MIG-069:** §D export/import (`.json` file, rfd dialogs + validation, the share story) → §E built-in starter + 15-language i18n + help docs + orientation → §F 3-agent audit + PCS (tag/ZIP).
