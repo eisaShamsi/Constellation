@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { openNoteTab, libraries, readNote, appSettings, setLinkConfidence, archiveLink, type LinkConfidence } from '$lib/libraries/store';
-	import { t } from '$lib/i18n';
+	import { t, tIn } from '$lib/i18n';
+	import { dominantLocale } from '$lib/utils';
 	import { linkTypesStore, linkTypeTextColor } from '$lib/libraries/linkTypeRegistry';
 	import { get } from 'svelte/store';
 	import { invoke } from '@tauri-apps/api/core';
@@ -15,15 +16,18 @@
 	const LINK_TYPE_TEXT   = $derived(Object.fromEntries($linkTypesStore.map((tp) => [tp.id, linkTypeTextColor(tp.id)])));
 	const pillShape        = $derived($appSettings.linkPills?.shape ?? { radius: 10, height: 20, fontWeight: 700 });
 
-	/** MIG-022 §A.4.d — same shape as OutgoingLinksPanel.displayAnnotation.
-	 *  Translates known link-type names that land in the annotation
-	 *  slot via $t('linkTypes.<name>'); raw fallback otherwise. */
+	/** The active NOTE's language (from its title) — so the type pills + annotations read in
+	 *  the NOTE's language, matching the editor labels (§H note-language principle), not the
+	 *  UI's (Boss: the pills should follow the note language, like the editor). */
+	function noteLoc(): string { return dominantLocale(activeNoteName); }
+	/** A link type's name in the note's language (linkTypes.<id>); raw fallback otherwise. */
+	function typeName(id: string): string {
+		const k = `linkTypes.${id.toLowerCase()}`;
+		const tr = tIn(noteLoc(), k);
+		return tr !== k ? tr : id;
+	}
 	function displayAnnotation(annotation: string): string {
-		if (!annotation) return annotation;
-		const key = `linkTypes.${annotation.toLowerCase()}`;
-		const translated = $t(key);
-		if (translated && translated !== key) return translated;
-		return annotation;
+		return annotation ? typeName(annotation) : annotation;
 	}
 
 	/** Format ISO-8601 last_traversed to a short relative label for the tooltip. */
@@ -197,7 +201,7 @@
 							{@const txt = LINK_TYPE_TEXT[lt] ?? '#ffffff'}
 							<span class="bl-link-type-badge"
 								style="color:{txt};background:{fill};border-color:{fill}"
-							>{$t(`linkTypes.${lt}`) || lt}</span>
+							>{typeName(lt)}</span>
 						{/each}
 						{#if (bl.traversalCount ?? 0) > 0}
 							{@const ltLabel = fmtTraversed(bl.lastTraversed ?? '')}

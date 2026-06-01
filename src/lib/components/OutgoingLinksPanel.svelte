@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { openNoteTab, libraries, resolveWikilinkCrossLibrary, appSettings, setLinkConfidence, archiveLink, type LinkConfidence } from '$lib/libraries/store';
-	import { t } from '$lib/i18n';
+	import { t, tIn } from '$lib/i18n';
+	import { dominantLocale } from '$lib/utils';
 	import { linkTypesStore, linkTypeTextColor } from '$lib/libraries/linkTypeRegistry';
 	import { get } from 'svelte/store';
 	// MIG-044 Phase 2 — NSC summary headlines under each outgoing-link row.
@@ -41,6 +42,7 @@
 	};
 	let {
 		outgoingLinks = [] as OutgoingRow[],
+		activeNoteName = '',
 		activeNotePath = '',
 		libraryPath = '',
 		libraryColorMap = {} as Record<string, string>,
@@ -48,6 +50,7 @@
 		onArchive = undefined as undefined | ((sourcePath: string, targetName: string) => void),
 	}: {
 		outgoingLinks: OutgoingRow[];
+		activeNoteName?: string;
 		activeNotePath?: string;
 		libraryPath?: string;
 		libraryColorMap?: Record<string, string>;
@@ -60,21 +63,22 @@
 		return link.linkType ? [link.linkType] : [];
 	}
 
-	/** MIG-022 §A.4.d (Boss-Test Gate 3 Stage 4.1 catch, 2026-05-12):
-	 *  the annotation slot in this panel sometimes carries a known
-	 *  link-type name (e.g. "supersedes", "supports") rather than a
-	 *  user-written annotation. That happens for legacy index data
-	 *  + for the search.rs::parse_typed_links path which treats
-	 *  pipe-aliases as annotation rather than link_type. When the
-	 *  annotation matches a known type, render its localized label
-	 *  via $t('linkTypes.<name>') so non-en locales don't see the
-	 *  raw English. Otherwise pass through verbatim. */
+	/** The active NOTE's language (from its title) — so the type pills + annotations read in
+	 *  the NOTE's language (§H note-language principle), not the UI's. Matches BacklinksPanel. */
+	function noteLoc(): string { return dominantLocale(activeNoteName); }
+	/** A link type's name in the note's language (linkTypes.<id>); raw fallback otherwise. */
+	function typeName(id: string): string {
+		const k = `linkTypes.${id.toLowerCase()}`;
+		const tr = tIn(noteLoc(), k);
+		return tr !== k ? tr : id;
+	}
+	/** MIG-022 §A.4.d (Boss-Test Gate 3 Stage 4.1 catch, 2026-05-12): the annotation slot in
+	 *  this panel sometimes carries a known link-type name (e.g. "supersedes") rather than a
+	 *  user-written annotation — legacy index data + the search.rs::parse_typed_links path
+	 *  that treats pipe-aliases as annotation. Localize it in the note's language when it
+	 *  matches a known type; otherwise pass through verbatim. */
 	function displayAnnotation(annotation: string): string {
-		if (!annotation) return annotation;
-		const key = `linkTypes.${annotation.toLowerCase()}`;
-		const translated = $t(key);
-		if (translated && translated !== key) return translated;
-		return annotation;
+		return annotation ? typeName(annotation) : annotation;
 	}
 
 	let showOutgoing = $state(true);
@@ -185,7 +189,7 @@
 						{@const txt = LINK_TYPE_TEXT[lt] ?? '#ffffff'}
 						<span class="ol-link-type-badge"
 							style="color:{txt};background:{fill};border-color:{fill}"
-						>{$t(`linkTypes.${lt}`) || lt}</span>
+						>{typeName(lt)}</span>
 					{/each}
 					{#if (link.traversalCount ?? 0) > 0}
 						{@const ltLabel = fmtTraversed(link.lastTraversed ?? '')}

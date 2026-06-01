@@ -6088,6 +6088,7 @@
 											{#if outgoingOnLeft}
 												<OutgoingLinksPanel
 													outgoingLinks={currentOutgoing}
+													activeNoteName={$activeTab?.name ?? ''}
 													activeNotePath={$activeTab?.path ?? ''}
 													libraryPath={$activeTab?.libraryPath ?? ''}
 													{libraryColorMap}
@@ -6210,6 +6211,7 @@
 											{#if outgoingOnRight}
 												<OutgoingLinksPanel
 													outgoingLinks={currentOutgoing}
+													activeNoteName={$activeTab?.name ?? ''}
 													activeNotePath={$activeTab?.path ?? ''}
 													libraryPath={$activeTab?.libraryPath ?? ''}
 													{libraryColorMap}
@@ -6509,6 +6511,7 @@
 						<div class="rs-header">{$t('panels.outgoingLinksHeader')}</div>
 						<OutgoingLinksPanel
 							outgoingLinks={currentOutgoing}
+							activeNoteName={sidebarTab?.name ?? ''}
 							activeNotePath={sidebarTab?.path ?? ''}
 							libraryPath={sidebarTab?.libraryPath ?? ''}
 							{libraryColorMap}
