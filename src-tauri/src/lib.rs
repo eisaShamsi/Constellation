@@ -66,6 +66,7 @@ mod search;
 mod sky_backfill;
 mod links_backfill;
 mod link_types;
+mod style_presets;
 mod map;
 mod maturity;
 mod perf_trace;
@@ -539,6 +540,8 @@ pub fn run() {
             link_types::read_universe_link_types,
             link_types::save_universe_link_types,
             link_types::list_link_types,
+            style_presets::load_style_presets,
+            style_presets::save_style_presets,
             universe::migrate_legacy_data,
             universe::open_existing_universe,
             universe::get_child_universes,
