@@ -1726,9 +1726,13 @@ export const livePreviewTheme = EditorView.theme({
 	// driven by the showTypedLinkLabels setting). Each RENDERED typed link gets its
 	// localized type name as a small label riding just above it, in the type colour,
 	// so the relationship is unmistakable — no need to recall what a colour means.
-	// Lines get a little top room so the label never collides with the line above.
+	// In label mode the editor LEADING is widened (line-height) so every label has room
+	// above its OWN visual row — ruby/furigana-style. (padding-top was wrong: a CM
+	// `.cm-line` is one LOGICAL line that wraps into many visual rows, so padding only
+	// spaced each paragraph's first row and mid-paragraph labels still grazed the row
+	// above.) Scoped to `.cm-lt-labels`, so non-label notes keep the tight 1.75 leading.
 	// (The cursor line shows raw `[[type::target]]` with no `.cm-ltyped`, so no label.)
-	'.cm-lt-labels .cm-line': { paddingTop: 'calc(0.72em + 7px)' },
+	'.cm-lt-labels .cm-line': { lineHeight: '2.3' },
 	'.cm-lt-labels .cm-ltyped': { position: 'relative' },
 	'.cm-lt-labels .cm-ltyped::before': {
 		content: 'attr(data-ltype)',
@@ -1737,7 +1741,7 @@ export const livePreviewTheme = EditorView.theme({
 		bottom: 'calc(100% - 2px)',
 		fontSize: '0.62em',
 		fontWeight: '600',
-		lineHeight: '1.1',
+		lineHeight: '1',
 		letterSpacing: '0.01em',
 		color: 'var(--ltc)',
 		whiteSpace: 'nowrap',
