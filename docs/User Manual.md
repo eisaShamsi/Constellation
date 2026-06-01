@@ -1420,6 +1420,20 @@ The format matches Obsidian's Style Settings plugin exactly, so you can share se
 
 Changes auto-save to the active theme; if you edit a built-in theme, it is auto-cloned into your custom themes so changes persist without modifying the original.
 
+### Styles
+
+A **Style** is a complete, named look — theme, fonts, link colors, pill shape, typed-link display, Sky View, layout, and behaviour — saved under one name and switchable with a click. Styles are **app-global** (shared across every Universe) and shown at the top of **Settings → Appearance** as **preview cards**, each a small self-portrait (theme background, font sample, accent, and the eight link-type colors as dots).
+
+- **Save** — *+ Save current style…* → name it, tick which sections to include, Save.
+- **Apply / Rename / Duplicate / Delete** — on each card.
+- **Export / Import** — share a Style as a `{name}.constellation-style.json` file (⤓ on a card to export; *Import…* at the bottom to add one).
+
+Applying a Style **merges** its link colors into the current Universe (your custom link types are never deleted). A Style carries only visual preferences — never secrets, tokens, or paths — so it is safe to share. (Distinct from a *Theme*, which is colors + CSS, and *Style Settings*, which are per-theme tweaks: a Style bundles all of those, plus behaviour, under one switchable name.)
+
+### Link Types
+
+Settings → **Link Types** is where each link type's **colour** is set. Click a type's swatch to recolour it; the change reflects **live** everywhere — the typed links in the editor and the coloured pills in the Backlinks / Outgoing panels. **Reset colours to default** restores the original eight. Two display toggles (both on by default) control how typed links appear: **Colour typed links** (draw each in its type's colour) and **Show the label above** (the type name above the link in the editor). The label and pills are shown in the **note's main language**, not the interface language — an Arabic note shows `يدعم`, an English note shows `supports`.
+
 ### Language
 
 A dedicated tab consolidating all language-related settings:

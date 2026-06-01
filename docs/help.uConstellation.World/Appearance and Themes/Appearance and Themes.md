@@ -2,11 +2,15 @@
 aliases:
   - Themes
   - Style Settings
+  - Styles
+  - Style Presets
+  - Link Types editor
+  - Typed link colours
   - Custom theme
   - Import Obsidian theme
   - Delete theme
   - Export style settings
-description: Personalize every visible part of Constellation — themes, colors, typography, and component styling via Appearance and the native Style Settings tab.
+description: Personalize every visible part of Constellation — themes, colors, typography, component styling, named switchable Styles, and typed-link colours — via Appearance, the native Style Settings tab, and the Link Types editor.
 ---
 
 # Appearance and Themes
@@ -140,6 +144,67 @@ Every setting lives under one of the five blocks above. Highlights:
 - Background (primary / alt), surfaces, hover background, borders, input background
 - Text (normal / muted / faint / on-accent), error / warning / success states
 - Accent (interactive accent + hover), accent text
+
+## Styles (named, switchable looks)
+
+A **Style** is a complete, named "look" for Constellation that you save, switch to with one click, and reuse across every Universe — like a profile. Where a *theme* is just colors and CSS, a Style can capture your whole configuration: theme, fonts, the eight link-type colors, pill shape, typed-link display, Sky View look, layout, and behaviour preferences. Save the look you like, name it, and jump between looks anytime.
+
+Styles live in **Settings → Appearance**, at the top, shown as **preview cards**. Each card is a small self-portrait of the Style — its theme background, a font sample, the accent, and the eight link-type colors as dots — so you can see a Style's appearance at a glance instead of guessing from a name.
+
+### Save your current look as a Style
+
+1. Open **Settings → Appearance**. The **Styles** section is at the top.
+2. Click **+ Save current style…**.
+3. Type a name (for example, `Midnight`).
+4. Tick which **sections** to include — Theme, Fonts, Link colors, Pill shape, Typed-link display, Sky View, Layout, Behaviour. (Leave them all on to capture everything.)
+5. Click **Save**. A card appears with a live preview of the look you just saved.
+
+### Apply, rename, duplicate, delete
+
+Each Style card has:
+- **Apply** — switches the app to that look immediately.
+- **✎ Rename**, **⧉ Duplicate**, **✕ Delete** — manage your Styles.
+- **⤓ Export** — see below.
+
+### Share a Style (export / import)
+
+- **Export:** click **⤓** on a card and choose where to save. You get a `{name}.constellation-style.json` file you can send to anyone.
+- **Import:** click **Import…** at the bottom of the Styles section and pick a `.constellation-style.json` file. It is added as a new Style, ready to apply.
+
+Styles are **app-global** — stored once for your whole Constellation install (not inside any one Universe), so every Universe you open can use them. Applying a Style **merges** its link-type colors into the current Universe: your Universe keeps any custom link types it already has — a Style never deletes them.
+
+> **Privacy:** a Style never carries secrets, tokens, or folder paths — only visual preferences. It is safe to share.
+
+### Styles vs. Themes vs. Style Settings
+
+- A **Theme** is colors + CSS — one ingredient of the look.
+- **Style Settings** are fine-grained per-theme tweaks (sliders, color pickers).
+- A **Style** is the whole bundle — theme *and* fonts *and* link colors *and* shape *and* behaviour — saved under one name, switchable in a click, and reusable across Universes.
+
+## Typed-link colours and labels
+
+Constellation's links can carry a **type** — *supports*, *contradicts*, *causes*, *exemplifies*, *generalizes*, *derives-from*, *part-of*, *supersedes* — and the app colours each type, and can label it, so you can read a note's reasoning at a glance.
+
+### The colours
+
+Each link type has its own colour, shown wherever the type appears: the typed link in the editor, and the coloured **pills** in the Backlinks and Outgoing Links panels (and the Knowledge-Health view). The colour comes from **one source** — the Link Types editor — so changing a colour updates every surface at once.
+
+### The two display switches
+
+In **Settings**, two toggles control how typed links look (both on by default):
+- **Colour typed links** — draw each typed link in its type's colour (off = the plain wikilink colour).
+- **Show the label above** — show the type name (for example, `supports`) just above the link in the editor.
+
+### The label's language follows the note
+
+The type label and the panel pills appear in the **note's own main language**, not the interface language. An Arabic note shows `يدعم`; an English note shows `supports` — even if you have switched Constellation's menus to a different language. The look stays true to what you are reading.
+
+### Recolour a type (the Link Types editor)
+
+1. Open **Settings → Link Types**.
+2. Each type shows its name and a colour swatch. Click a swatch to pick a new colour.
+3. The change reflects **live** everywhere — the editor links and the Backlinks / Outgoing pills update as you pick.
+4. **Reset colours to default** restores the original eight colours.
 
 ## Frequently asked questions
 
