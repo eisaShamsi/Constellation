@@ -1,4 +1,32 @@
 {
+	"styles": {
+		"title": "Stile",
+		"desc": "Speichern Sie Ihr Erscheinungsbild als benannten Stil, wechseln Sie per Klick zwischen Stilen und verwenden Sie sie in jedem Universum wieder.",
+		"empty": "Noch keine Stile – speichern Sie Ihr aktuelles Erscheinungsbild, um es überall wiederzuverwenden.",
+		"saveNew": "+ Aktuellen Stil speichern…",
+		"namePlaceholder": "Stilname…",
+		"include": "Einschließen:",
+		"apply": "Anwenden",
+		"applied": "Angewendet ✓",
+		"rename": "Umbenennen",
+		"duplicate": "Duplizieren",
+		"delete": "Löschen",
+		"save": "Speichern",
+		"cancel": "Abbrechen",
+		"export": "Exportieren",
+		"import": "Importieren…",
+		"importError": "Diese Datei ist kein gültiger Constellation-Stil.",
+		"section": {
+			"colorsTheme": "Farben & Design",
+			"fonts": "Schriftarten",
+			"linkColors": "Verknüpfungstyp-Farben",
+			"pillShape": "Pillenform",
+			"typedLinkDisplay": "Anzeige typisierter Verknüpfungen",
+			"skyView": "Sky-View-Erscheinungsbild",
+			"layout": "Layout",
+			"behaviour": "Verhalten"
+		}
+	},
 	"app": {
 		"name": "Constellation",
 		"tagline": "Eine Bibliothek der Bibliotheken"

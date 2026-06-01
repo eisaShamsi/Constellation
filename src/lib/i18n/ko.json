@@ -1,4 +1,32 @@
 {
+	"styles": {
+		"title": "스타일",
+		"desc": "현재 모습을 이름이 있는 스타일로 저장하고, 클릭 한 번으로 전환하며, 모든 유니버스에서 재사용하세요.",
+		"empty": "아직 스타일이 없습니다 — 현재 모습을 저장하면 어디서나 재사용할 수 있습니다.",
+		"saveNew": "+ 현재 스타일 저장…",
+		"namePlaceholder": "스타일 이름…",
+		"include": "포함:",
+		"apply": "적용",
+		"applied": "적용됨 ✓",
+		"rename": "이름 변경",
+		"duplicate": "복제",
+		"delete": "삭제",
+		"save": "저장",
+		"cancel": "취소",
+		"export": "내보내기",
+		"import": "가져오기…",
+		"importError": "이 파일은 유효한 Constellation 스타일이 아닙니다.",
+		"section": {
+			"colorsTheme": "색상 및 테마",
+			"fonts": "글꼴",
+			"linkColors": "링크 유형 색상",
+			"pillShape": "알약 모양",
+			"typedLinkDisplay": "유형별 링크 표시",
+			"skyView": "Sky View 모습",
+			"layout": "레이아웃",
+			"behaviour": "동작"
+		}
+	},
 	"app": {
 		"name": "Constellation",
 		"tagline": "보관함의 보관함"

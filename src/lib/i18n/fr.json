@@ -1,4 +1,32 @@
 {
+	"styles": {
+		"title": "Styles",
+		"desc": "Enregistrez votre apparence sous forme de style nommé, passez d'un style à l'autre d'un clic et réutilisez-les dans chaque univers.",
+		"empty": "Aucun style pour l'instant — enregistrez votre apparence actuelle pour la réutiliser partout.",
+		"saveNew": "+ Enregistrer le style actuel…",
+		"namePlaceholder": "Nom du style…",
+		"include": "Inclure :",
+		"apply": "Appliquer",
+		"applied": "Appliqué ✓",
+		"rename": "Renommer",
+		"duplicate": "Dupliquer",
+		"delete": "Supprimer",
+		"save": "Enregistrer",
+		"cancel": "Annuler",
+		"export": "Exporter",
+		"import": "Importer…",
+		"importError": "Ce fichier n'est pas un style Constellation valide.",
+		"section": {
+			"colorsTheme": "Couleurs et thème",
+			"fonts": "Polices",
+			"linkColors": "Couleurs des types de liens",
+			"pillShape": "Forme des pastilles",
+			"typedLinkDisplay": "Affichage des liens typés",
+			"skyView": "Apparence de Sky View",
+			"layout": "Disposition",
+			"behaviour": "Comportement"
+		}
+	},
 	"app": {
 		"name": "Constellation",
 		"tagline": "Un Coffre de Coffres"

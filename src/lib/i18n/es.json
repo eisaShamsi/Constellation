@@ -1,4 +1,32 @@
 {
+	"styles": {
+		"title": "Estilos",
+		"desc": "Guarda tu aspecto como un estilo con nombre, cambia entre estilos con un clic y reutilízalos en todos los universos.",
+		"empty": "Aún no hay estilos: guarda tu aspecto actual para reutilizarlo en cualquier lugar.",
+		"saveNew": "+ Guardar estilo actual…",
+		"namePlaceholder": "Nombre del estilo…",
+		"include": "Incluir:",
+		"apply": "Aplicar",
+		"applied": "Aplicado ✓",
+		"rename": "Cambiar nombre",
+		"duplicate": "Duplicar",
+		"delete": "Eliminar",
+		"save": "Guardar",
+		"cancel": "Cancelar",
+		"export": "Exportar",
+		"import": "Importar…",
+		"importError": "Ese archivo no es un estilo válido de Constellation.",
+		"section": {
+			"colorsTheme": "Colores y tema",
+			"fonts": "Fuentes",
+			"linkColors": "Colores de tipos de enlace",
+			"pillShape": "Forma de las píldoras",
+			"typedLinkDisplay": "Visualización de enlaces tipados",
+			"skyView": "Aspecto de Sky View",
+			"layout": "Diseño",
+			"behaviour": "Comportamiento"
+		}
+	},
 	"app": {
 		"name": "Constellation",
 		"tagline": "Una Biblioteca de Bibliotecas"

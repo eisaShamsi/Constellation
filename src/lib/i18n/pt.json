@@ -1,4 +1,32 @@
 {
+	"styles": {
+		"title": "Estilos",
+		"desc": "Salve sua aparência como um estilo nomeado, alterne entre estilos com um clique e reutilize-os em todos os universos.",
+		"empty": "Ainda não há estilos — salve sua aparência atual para reutilizá-la em qualquer lugar.",
+		"saveNew": "+ Salvar estilo atual…",
+		"namePlaceholder": "Nome do estilo…",
+		"include": "Incluir:",
+		"apply": "Aplicar",
+		"applied": "Aplicado ✓",
+		"rename": "Renomear",
+		"duplicate": "Duplicar",
+		"delete": "Excluir",
+		"save": "Salvar",
+		"cancel": "Cancelar",
+		"export": "Exportar",
+		"import": "Importar…",
+		"importError": "Esse arquivo não é um estilo válido do Constellation.",
+		"section": {
+			"colorsTheme": "Cores e tema",
+			"fonts": "Fontes",
+			"linkColors": "Cores dos tipos de link",
+			"pillShape": "Formato das pílulas",
+			"typedLinkDisplay": "Exibição de links tipados",
+			"skyView": "Aparência do Sky View",
+			"layout": "Layout",
+			"behaviour": "Comportamento"
+		}
+	},
 	"app": {
 		"name": "Constellation",
 		"tagline": "Um Cofre de Cofres"

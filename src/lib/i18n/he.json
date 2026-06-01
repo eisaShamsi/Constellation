@@ -1,4 +1,32 @@
 {
+	"styles": {
+		"title": "סגנונות",
+		"desc": "שמרו את המראה שלכם כסגנון בעל שם, החליפו בין סגנונות בלחיצה, והשתמשו בהם מחדש בכל יקום.",
+		"empty": "אין סגנונות עדיין — שמרו את המראה הנוכחי כדי להשתמש בו בכל מקום.",
+		"saveNew": "+ שמירת הסגנון הנוכחי…",
+		"namePlaceholder": "שם הסגנון…",
+		"include": "כולל:",
+		"apply": "החלה",
+		"applied": "הוחל ✓",
+		"rename": "שינוי שם",
+		"duplicate": "שכפול",
+		"delete": "מחיקה",
+		"save": "שמירה",
+		"cancel": "ביטול",
+		"export": "ייצוא",
+		"import": "ייבוא…",
+		"importError": "הקובץ הזה אינו סגנון Constellation תקין.",
+		"section": {
+			"colorsTheme": "צבעים וערכת נושא",
+			"fonts": "גופנים",
+			"linkColors": "צבעי סוגי קישורים",
+			"pillShape": "צורת הגלולה",
+			"typedLinkDisplay": "תצוגת קישורים מתויגים",
+			"skyView": "מראה תצוגת השמיים",
+			"layout": "פריסה",
+			"behaviour": "התנהגות"
+		}
+	},
 	"app": {
 		"name": "Constellation",
 		"tagline": "כספת של כספות"

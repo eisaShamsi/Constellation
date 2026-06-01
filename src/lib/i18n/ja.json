@@ -1,4 +1,32 @@
 {
+	"styles": {
+		"title": "スタイル",
+		"desc": "見た目を名前付きスタイルとして保存し、クリックひとつで切り替え、すべてのユニバースで再利用できます。",
+		"empty": "スタイルがまだありません — 現在の見た目を保存すると、どこでも再利用できます。",
+		"saveNew": "+ 現在のスタイルを保存…",
+		"namePlaceholder": "スタイル名…",
+		"include": "含める項目:",
+		"apply": "適用",
+		"applied": "適用済み ✓",
+		"rename": "名前を変更",
+		"duplicate": "複製",
+		"delete": "削除",
+		"save": "保存",
+		"cancel": "キャンセル",
+		"export": "エクスポート",
+		"import": "インポート…",
+		"importError": "このファイルは有効な Constellation スタイルではありません。",
+		"section": {
+			"colorsTheme": "配色とテーマ",
+			"fonts": "フォント",
+			"linkColors": "リンクタイプの色",
+			"pillShape": "ピルの形状",
+			"typedLinkDisplay": "型付きリンクの表示",
+			"skyView": "Sky View の外観",
+			"layout": "レイアウト",
+			"behaviour": "動作"
+		}
+	},
 	"app": {
 		"name": "Constellation",
 		"tagline": "保管庫の保管庫"

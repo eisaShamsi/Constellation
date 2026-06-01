@@ -1,4 +1,32 @@
 {
+	"styles": {
+		"title": "Stiller",
+		"desc": "Görünümünüzü adlandırılmış bir stil olarak kaydedin, stiller arasında tek tıkla geçiş yapın ve her evrende yeniden kullanın.",
+		"empty": "Henüz stil yok — mevcut görünümünüzü kaydedin ve her yerde kullanın.",
+		"saveNew": "+ Mevcut stili kaydet…",
+		"namePlaceholder": "Stil adı…",
+		"include": "Dahil et:",
+		"apply": "Uygula",
+		"applied": "Uygulandı ✓",
+		"rename": "Yeniden adlandır",
+		"duplicate": "Çoğalt",
+		"delete": "Sil",
+		"save": "Kaydet",
+		"cancel": "İptal",
+		"export": "Dışa aktar",
+		"import": "İçe aktar…",
+		"importError": "Bu dosya geçerli bir Constellation stili değil.",
+		"section": {
+			"colorsTheme": "Renkler ve tema",
+			"fonts": "Yazı tipleri",
+			"linkColors": "Bağlantı türü renkleri",
+			"pillShape": "Etiket şekli",
+			"typedLinkDisplay": "Türlü bağlantı görünümü",
+			"skyView": "Sky View görünümü",
+			"layout": "Düzen",
+			"behaviour": "Davranış"
+		}
+	},
 	"app": {
 		"name": "Constellation",
 		"tagline": "Kasaların Kasası"
