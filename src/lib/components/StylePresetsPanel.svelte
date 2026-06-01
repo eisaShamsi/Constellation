@@ -6,7 +6,7 @@
 	 * include), apply one with a click, rename / duplicate / delete. Reusable across every
 	 * universe (presets live in {app_data_dir}/style-presets.json). Export / import = §D.
 	 */
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { t } from '$lib/i18n';
 	import { detectDir } from '$lib/utils';
 	import {
@@ -19,6 +19,7 @@
 	let busy = $state(false);
 	let appliedId = $state<string | null>(null);
 	let importError = $state(false);
+	let applyTimer: ReturnType<typeof setTimeout> | null = null;
 
 	// Save-new form
 	let showSave = $state(false);
@@ -33,6 +34,7 @@
 	const sectionLabel = (k: SectionKey) => $t(`styles.section.${k}`);
 
 	onMount(async () => { presets = await loadStylePresets(); loaded = true; });
+	onDestroy(() => { if (applyTimer) clearTimeout(applyTimer); });
 
 	async function persist() {
 		busy = true;
@@ -53,7 +55,8 @@
 		try {
 			await applyPreset($state.snapshot(p) as StylePreset);
 			appliedId = p.id;
-			setTimeout(() => { if (appliedId === p.id) appliedId = null; }, 1600);
+			if (applyTimer) clearTimeout(applyTimer);
+			applyTimer = setTimeout(() => { if (appliedId === p.id) appliedId = null; }, 1600);
 		} finally { busy = false; }
 	}
 
@@ -147,7 +150,7 @@
 		{:else}
 			<div class="sp-bottom">
 				<button class="sp-savebtn" onclick={openSave}>{$t('styles.saveNew') || '+ Save current style…'}</button>
-				<button class="sp-importbtn" onclick={doImport}>{$t('styles.import') || 'Import…'}</button>
+				<button class="sp-importbtn" disabled={busy} onclick={doImport}>{$t('styles.import') || 'Import…'}</button>
 			</div>
 			{#if importError}<div class="sp-state sp-warn">{$t('styles.importError') || 'That file is not a valid Constellation style.'}</div>{/if}
 		{/if}

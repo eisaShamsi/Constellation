@@ -140,7 +140,10 @@ export function captureCurrentStyle(sectionKeys: SectionKey[]): Partial<Record<S
 		const def = sectionDef(key);
 		if (!def) continue;
 		if (def.special === 'linkColors') {
-			out[key] = { deltas: toLinkTypeDeltas(getLinkTypes()) };
+			// Capture the FULL resolved palette (all 8 + customs), not just deltas, so apply
+			// can MERGE this whole palette into another universe (replacing the 8's colours)
+			// without needing that universe to already share the same overrides.
+			out[key] = { deltas: getLinkTypes().map((t) => ({ ...t })) };
 		} else if (def.special === 'pillShape') {
 			const lp = s.linkPills as { shape?: unknown } | undefined;
 			out[key] = { shape: clone(lp?.shape ?? null) };
@@ -193,13 +196,24 @@ export async function applyPreset(preset: StylePreset): Promise<void> {
 			const cur = (get(appSettings) as { linkPills?: Record<string, unknown> }).linkPills ?? {};
 			partial.linkPills = { ...cur, shape };
 		} else {
-			Object.assign(partial, payload as Record<string, unknown>);
+			// Allow-list: only write the fields this section OWNS (symmetric with capture),
+			// so a hand-edited/foreign file can't inject arbitrary settings keys (audit §F).
+			const pl = payload as Record<string, unknown>;
+			for (const f of def.appSettingsKeys) if (f in pl) partial[f] = pl[f];
 		}
 	}
 	// Apply link colours FIRST (registry → live editor/panel rebuild) while the editor is
 	// idle, THEN appSettings — so the appSettings reactivity can't race the registry's live
 	// update (the Boss-found "themes apply live, link colours need a relaunch" bug).
-	if (linkDeltas) await saveLinkTypes(linkDeltas);
+	if (linkDeltas) {
+		// MERGE the Style's palette into the current universe's link types — never replace —
+		// so applying a Style can't DELETE custom types this universe already has (audit §F:
+		// the headline data-loss risk). The Style wins on id conflicts; the universe keeps
+		// its own non-conflicting custom types.
+		const byId = new Map(getLinkTypes().map((d) => [d.id, { ...d } as LinkTypeDef]));
+		for (const d of linkDeltas) byId.set(d.id, d);
+		await saveLinkTypes(toLinkTypeDeltas([...byId.values()]));
+	}
 	if (Object.keys(partial).length) updateSettings(partial as Parameters<typeof updateSettings>[0]);
 }
 
@@ -208,16 +222,19 @@ export function presetSectionKeys(preset: StylePreset): SectionKey[] {
 	return SECTION_CATALOGUE.map((s) => s.key).filter((k) => k in preset.sections);
 }
 
-/** Structural validation for an IMPORTED preset (defensive: never apply garbage). */
+/** The newest schema MAJOR this build can apply; a file from a newer major is refused. */
+const SUPPORTED_MAJOR = 1;
+
+/** Structural validation for an IMPORTED preset (defensive: never apply garbage, and
+ *  refuse a file from a newer Constellation whose apply-contract we don't understand). */
 export function isValidPreset(x: unknown): x is StylePreset {
 	if (!x || typeof x !== 'object') return false;
 	const p = x as Record<string, unknown>;
-	return (
-		typeof p.name === 'string' &&
-		typeof p.schema === 'string' &&
-		p.schema.startsWith('constellation-style/') &&
-		typeof p.sections === 'object' && p.sections != null && !Array.isArray(p.sections)
-	);
+	if (typeof p.name !== 'string' || typeof p.schema !== 'string') return false;
+	if (!p.schema.startsWith('constellation-style/')) return false;
+	const major = parseInt(p.schema.slice('constellation-style/'.length), 10);
+	if (!Number.isFinite(major) || major > SUPPORTED_MAJOR) return false; // too new → refuse gracefully
+	return typeof p.sections === 'object' && p.sections != null && !Array.isArray(p.sections);
 }
 
 // ─── Export / import (MIG-069 §D) ───
