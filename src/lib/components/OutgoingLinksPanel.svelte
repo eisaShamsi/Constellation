@@ -2,7 +2,7 @@
 	import { openNoteTab, libraries, resolveWikilinkCrossLibrary, appSettings, setLinkConfidence, archiveLink, type LinkConfidence } from '$lib/libraries/store';
 	import { t, tIn } from '$lib/i18n';
 	import { dominantLocale } from '$lib/utils';
-	import { linkTypesStore, linkTypeTextColor } from '$lib/libraries/linkTypeRegistry';
+	import LinkTypePill from './LinkTypePill.svelte';
 	import { get } from 'svelte/store';
 	// MIG-044 Phase 2 — NSC summary headlines under each outgoing-link row.
 	import { getSummariesFor } from '$lib/nsc/summaryStore';
@@ -10,8 +10,6 @@
 	// MIG-067 — pill colours come from the Link-Type Registry (the §G editor), the
 	// single source of truth, so a recolour reflects here LIVE; text is auto-contrasted
 	// from the fill. Shape stays in appSettings (a UI pref). Matches BacklinksPanel.
-	const LINK_TYPE_COLORS = $derived(Object.fromEntries($linkTypesStore.map((tp) => [tp.id, tp.color])));
-	const LINK_TYPE_TEXT   = $derived(Object.fromEntries($linkTypesStore.map((tp) => [tp.id, linkTypeTextColor(tp.id)])));
 	const pillShape        = $derived($appSettings.linkPills?.shape ?? { radius: 10, height: 20, fontWeight: 700 });
 
 	/** Format ISO-8601 last_traversed to a short relative label for the tooltip. */
@@ -185,11 +183,7 @@
 				<span class="ol-target-row">
 					<span class="ol-target">{link.target}</span>
 					{#each rowLinkTypes(link) as lt (lt)}
-						{@const fill = LINK_TYPE_COLORS[lt] ?? '#888'}
-						{@const txt = LINK_TYPE_TEXT[lt] ?? '#ffffff'}
-						<span class="ol-link-type-badge"
-							style="color:{txt};background:{fill};border-color:{fill}"
-						>{typeName(lt)}</span>
+						<LinkTypePill id={lt} loc={noteLoc()} />
 					{/each}
 					{#if (link.traversalCount ?? 0) > 0}
 						{@const ltLabel = fmtTraversed(link.lastTraversed ?? '')}
@@ -278,15 +272,6 @@
 		overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 	}
 	.ol-empty { color: var(--color-base-40); font-size: 0.78rem; padding: 4px 0; }
-	.ol-link-type-badge {
-		display: inline-flex; align-items: center;
-		font-size: 0.65rem; font-weight: var(--pill-weight, 700); line-height: 1;
-		padding: 0 8px; height: var(--pill-height, 20px);
-		border-radius: var(--pill-radius, 10px); border: 1px solid;
-		white-space: nowrap; flex-shrink: 0;
-		text-transform: lowercase; letter-spacing: 0.02em;
-		box-sizing: border-box;
-	}
 	.ol-traversal-chip {
 		display: inline-flex; align-items: center;
 		font-size: 0.65rem; font-weight: var(--pill-weight, 700); line-height: 1;

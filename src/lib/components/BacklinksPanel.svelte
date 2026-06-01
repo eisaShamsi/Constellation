@@ -2,19 +2,17 @@
 	import { openNoteTab, libraries, readNote, appSettings, setLinkConfidence, archiveLink, type LinkConfidence } from '$lib/libraries/store';
 	import { t, tIn } from '$lib/i18n';
 	import { dominantLocale } from '$lib/utils';
-	import { linkTypesStore, linkTypeTextColor } from '$lib/libraries/linkTypeRegistry';
+	import LinkTypePill from './LinkTypePill.svelte';
 	import { get } from 'svelte/store';
 	import { invoke } from '@tauri-apps/api/core';
 	// MIG-044 Phase 2 — NSC summary headlines under each linked/unlinked row.
 	import { getSummariesFor } from '$lib/nsc/summaryStore';
 
-	// MIG-067 — pill colours come from the Link-Type Registry (the §G Link Types
-	// editor), the single source of truth, so recolouring a type reflects here LIVE.
-	// Text colour is auto-contrasted from the fill. Shape stays in appSettings (a
-	// genuine UI pref). The render-site `?? '#…'` fallbacks cover the brief boot window.
-	const LINK_TYPE_COLORS = $derived(Object.fromEntries($linkTypesStore.map((tp) => [tp.id, tp.color])));
-	const LINK_TYPE_TEXT   = $derived(Object.fromEntries($linkTypesStore.map((tp) => [tp.id, linkTypeTextColor(tp.id)])));
-	const pillShape        = $derived($appSettings.linkPills?.shape ?? { radius: 10, height: 20, fontWeight: 700 });
+	// MIG-067 §H.2 — the typed-link pill is now one shared component (LinkTypePill): it reads
+	// its colour from the Link-Type Registry (§G single source of truth) and its label in the
+	// note's language. Shape stays in appSettings (a genuine UI pref) and is handed to the
+	// pill via the --pill-* vars this panel sets on its root.
+	const pillShape = $derived($appSettings.linkPills?.shape ?? { radius: 10, height: 20, fontWeight: 700 });
 
 	/** The active NOTE's language (from its title) — so the type pills + annotations read in
 	 *  the NOTE's language, matching the editor labels (§H note-language principle), not the
@@ -197,11 +195,7 @@
 						{/if}
 						<span class="bl-name">{bl.name}</span>
 						{#each rowLinkTypes(bl) as lt (lt)}
-							{@const fill = LINK_TYPE_COLORS[lt] ?? '#888'}
-							{@const txt = LINK_TYPE_TEXT[lt] ?? '#ffffff'}
-							<span class="bl-link-type-badge"
-								style="color:{txt};background:{fill};border-color:{fill}"
-							>{typeName(lt)}</span>
+							<LinkTypePill id={lt} loc={noteLoc()} />
 						{/each}
 						{#if (bl.traversalCount ?? 0) > 0}
 							{@const ltLabel = fmtTraversed(bl.lastTraversed ?? '')}
@@ -347,15 +341,6 @@
 		color: var(--text-muted); margin-top: 4px;
 	}
 	.bl-link-btn:hover { color: var(--interactive-accent); border-color: var(--interactive-accent); }
-	.bl-link-type-badge {
-		display: inline-flex; align-items: center;
-		font-size: 0.65rem; font-weight: var(--pill-weight, 700); line-height: 1;
-		padding: 0 8px; height: var(--pill-height, 20px);
-		border-radius: var(--pill-radius, 10px); border: 1px solid;
-		white-space: nowrap; flex-shrink: 0;
-		text-transform: lowercase; letter-spacing: 0.02em;
-		box-sizing: border-box;
-	}
 	.bl-traversal-chip {
 		display: inline-flex; align-items: center;
 		font-size: 0.65rem; font-weight: var(--pill-weight, 700); line-height: 1;
