@@ -12,6 +12,9 @@
  * link-type registry (the portable link palette). Capture/apply live in Phase B.
  */
 import { invoke } from '@tauri-apps/api/core';
+import { get } from 'svelte/store';
+import { appSettings, updateSettings } from './store';
+import { getLinkTypes, toLinkTypeDeltas, saveLinkTypes, type LinkTypeDef } from './linkTypeRegistry';
 
 /** Bump the minor when adding sections (back-compatible); the major when the apply
  *  contract changes (so importers can refuse a too-new file gracefully). */
@@ -115,4 +118,101 @@ export async function loadStylePresets(): Promise<StylePreset[]> {
 /** Persist the full presets array (app-global). */
 export async function saveStylePresets(presets: StylePreset[]): Promise<void> {
 	await invoke('save_style_presets', { presets });
+}
+
+// ─── Engine: capture / apply (MIG-069 §B) ───
+
+/** Deep clone so a preset never aliases the live settings (structuredClone, JSON fallback). */
+function clone<T>(v: T): T {
+	try { return structuredClone(v); } catch { return JSON.parse(JSON.stringify(v ?? null)); }
+}
+
+/** A unique preset id (crypto.randomUUID where available; robust fallback otherwise). */
+function uid(): string {
+	try { return crypto.randomUUID(); } catch { return 'p-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8); }
+}
+
+/** Capture the CURRENT universe's values for `sectionKeys` into a preset payload. */
+export function captureCurrentStyle(sectionKeys: SectionKey[]): Partial<Record<SectionKey, unknown>> {
+	const s = get(appSettings) as unknown as Record<string, unknown>;
+	const out: Partial<Record<SectionKey, unknown>> = {};
+	for (const key of sectionKeys) {
+		const def = sectionDef(key);
+		if (!def) continue;
+		if (def.special === 'linkColors') {
+			out[key] = { deltas: toLinkTypeDeltas(getLinkTypes()) };
+		} else if (def.special === 'pillShape') {
+			const lp = s.linkPills as { shape?: unknown } | undefined;
+			out[key] = { shape: clone(lp?.shape ?? null) };
+		} else {
+			const vals: Record<string, unknown> = {};
+			for (const f of def.appSettingsKeys) vals[f] = clone(s[f]);
+			out[key] = vals;
+		}
+	}
+	return out;
+}
+
+/** Build a new preset from the current universe + the chosen sections. */
+export function newPresetFromCurrent(name: string, sectionKeys: SectionKey[], icon?: string): StylePreset {
+	const now = new Date().toISOString();
+	return {
+		id: uid(),
+		name: name.trim() || 'Untitled style',
+		icon,
+		schema: STYLE_PRESET_SCHEMA,
+		createdAt: now,
+		updatedAt: now,
+		sections: captureCurrentStyle(sectionKeys),
+	};
+}
+
+/** A copy of a preset with a fresh id + name (for "Duplicate" / accepting an import). */
+export function clonePreset(p: StylePreset, newName?: string): StylePreset {
+	const now = new Date().toISOString();
+	return { ...clone(p), id: uid(), name: newName ?? `${p.name} copy`, createdAt: now, updatedAt: now };
+}
+
+/** Apply a preset to the CURRENT universe. Each PRESENT section is written via the
+ *  existing rails — appSettings sections merge into one `updateSettings` (auto-saves +
+ *  notifies the second screen); the link-colours section goes through `saveLinkTypes`
+ *  (re-seeds the registry → editor + panels update live). Sections ABSENT from the
+ *  preset are left untouched (partial apply). */
+export async function applyPreset(preset: StylePreset): Promise<void> {
+	const partial: Record<string, unknown> = {};
+	let linkDeltas: LinkTypeDef[] | null = null;
+	for (const k of Object.keys(preset.sections) as SectionKey[]) {
+		const def = sectionDef(k);
+		const payload = preset.sections[k];
+		if (!def || payload == null) continue;
+		if (def.special === 'linkColors') {
+			const d = (payload as { deltas?: unknown }).deltas;
+			if (Array.isArray(d)) linkDeltas = d as LinkTypeDef[];
+		} else if (def.special === 'pillShape') {
+			const shape = (payload as { shape?: unknown }).shape;
+			const cur = (get(appSettings) as { linkPills?: Record<string, unknown> }).linkPills ?? {};
+			partial.linkPills = { ...cur, shape };
+		} else {
+			Object.assign(partial, payload as Record<string, unknown>);
+		}
+	}
+	if (Object.keys(partial).length) updateSettings(partial as Parameters<typeof updateSettings>[0]);
+	if (linkDeltas) await saveLinkTypes(linkDeltas);
+}
+
+/** Which sections a preset carries (catalogue order) — for display + apply summaries. */
+export function presetSectionKeys(preset: StylePreset): SectionKey[] {
+	return SECTION_CATALOGUE.map((s) => s.key).filter((k) => k in preset.sections);
+}
+
+/** Structural validation for an IMPORTED preset (defensive: never apply garbage). */
+export function isValidPreset(x: unknown): x is StylePreset {
+	if (!x || typeof x !== 'object') return false;
+	const p = x as Record<string, unknown>;
+	return (
+		typeof p.name === 'string' &&
+		typeof p.schema === 'string' &&
+		p.schema.startsWith('constellation-style/') &&
+		typeof p.sections === 'object' && p.sections != null && !Array.isArray(p.sections)
+	);
 }

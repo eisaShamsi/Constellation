@@ -36,6 +36,8 @@ export default defineConfig({
 			'tests/mig-067/linkTypeRegistry.test.ts',
 			// MIG-067 §E (2026-05-31) — type-first wikilink autocomplete phases.
 			'tests/mig-067/wikilinkCompletion.test.ts',
+			// MIG-069 §B (2026-06-01) — Style Presets capture / apply engine.
+			'tests/mig-069/stylePresets.test.ts',
 		],
 		exclude: [
 			'**/node_modules/**',
