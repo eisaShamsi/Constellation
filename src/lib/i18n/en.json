@@ -3045,6 +3045,9 @@
 		"delete": "Delete",
 		"save": "Save",
 		"cancel": "Cancel",
+		"export": "Export",
+		"import": "Import…",
+		"importError": "That file is not a valid Constellation style.",
 		"section": {
 			"colorsTheme": "Colours & theme",
 			"fonts": "Fonts",

@@ -20,7 +20,7 @@
 	import { t, locale } from '$lib/i18n';
 	import { detectDir } from '$lib/utils';
 	import {
-		getLinkTypes, loadLinkTypes, saveLinkTypes, toLinkTypeDeltas, SEED_IDS, SEED_DEFAULTS, type LinkTypeDef,
+		getLinkTypes, linkTypesStore, loadLinkTypes, saveLinkTypes, toLinkTypeDeltas, SEED_IDS, SEED_DEFAULTS, type LinkTypeDef,
 	} from '$lib/libraries/linkTypeRegistry';
 
 	let types = $state<LinkTypeDef[]>([]);
@@ -118,6 +118,13 @@
 		types = types.map((tp) => (SEED_DEFAULTS[tp.id] ? { ...tp, color: SEED_DEFAULTS[tp.id].color } : tp));
 		persist();
 	}
+
+	// §C — keep the swatches reactive to the registry so applying a Style (or any external
+	// recolour) updates them LIVE in Settings, not on reopen. The store mirrors the registry.
+	$effect(() => {
+		const reg = $linkTypesStore;
+		if (reg.length) types = reg.map((tp) => ({ ...tp }));
+	});
 
 	onMount(async () => {
 		await refresh();

@@ -11,13 +11,14 @@
 	import { detectDir } from '$lib/utils';
 	import {
 		loadStylePresets, saveStylePresets, newPresetFromCurrent, clonePreset, applyPreset,
-		presetSectionKeys, SECTION_CATALOGUE, type StylePreset, type SectionKey,
+		presetSectionKeys, exportPreset, importPreset, SECTION_CATALOGUE, type StylePreset, type SectionKey,
 	} from '$lib/libraries/stylePresets';
 
 	let presets = $state<StylePreset[]>([]);
 	let loaded = $state(false);
 	let busy = $state(false);
 	let appliedId = $state<string | null>(null);
+	let importError = $state(false);
 
 	// Save-new form
 	let showSave = $state(false);
@@ -66,6 +67,17 @@
 		await persist();
 	}
 
+	async function doImport() {
+		importError = false;
+		try {
+			const p = await importPreset();
+			if (p) { presets = [...presets, p]; await persist(); }
+		} catch {
+			importError = true;
+			setTimeout(() => (importError = false), 3500);
+		}
+	}
+
 	function startRename(p: StylePreset) { renamingId = p.id; renameValue = p.name; }
 	async function confirmRename() {
 		const id = renamingId;
@@ -104,6 +116,7 @@
 							<button class="sp-apply" disabled={busy} onclick={() => apply(p)}>
 								{appliedId === p.id ? ($t('styles.applied') || 'Applied ✓') : ($t('styles.apply') || 'Apply')}
 							</button>
+							<button class="sp-icon" title={$t('styles.export') || 'Export'} aria-label={$t('styles.export') || 'Export'} onclick={() => exportPreset(p)}>⤓</button>
 							<button class="sp-icon" title={$t('styles.rename') || 'Rename'} aria-label={$t('styles.rename') || 'Rename'} onclick={() => startRename(p)}>✎</button>
 							<button class="sp-icon" title={$t('styles.duplicate') || 'Duplicate'} aria-label={$t('styles.duplicate') || 'Duplicate'} onclick={() => duplicate(p)}>⧉</button>
 							<button class="sp-icon sp-del" title={$t('styles.delete') || 'Delete'} aria-label={$t('styles.delete') || 'Delete'} onclick={() => remove(p)}>✕</button>
@@ -132,7 +145,11 @@
 				</div>
 			</div>
 		{:else}
-			<button class="sp-savebtn" onclick={openSave}>{$t('styles.saveNew') || '+ Save current style…'}</button>
+			<div class="sp-bottom">
+				<button class="sp-savebtn" onclick={openSave}>{$t('styles.saveNew') || '+ Save current style…'}</button>
+				<button class="sp-importbtn" onclick={doImport}>{$t('styles.import') || 'Import…'}</button>
+			</div>
+			{#if importError}<div class="sp-state sp-warn">{$t('styles.importError') || 'That file is not a valid Constellation style.'}</div>{/if}
 		{/if}
 	{/if}
 </div>
@@ -171,9 +188,17 @@
 	.sp-savebtn {
 		padding: 6px 12px; font: inherit; font-size: 0.84rem; cursor: pointer;
 		border: 1px dashed var(--background-modifier-border); border-radius: 8px;
-		background: none; color: var(--text-muted); width: 100%;
+		background: none; color: var(--text-muted); flex: 1;
 	}
 	.sp-savebtn:hover { color: var(--text-normal); border-color: var(--interactive-accent); }
+	.sp-bottom { display: flex; gap: 8px; }
+	.sp-importbtn {
+		padding: 6px 14px; font: inherit; font-size: 0.84rem; cursor: pointer; white-space: nowrap;
+		border: 1px dashed var(--background-modifier-border); border-radius: 8px;
+		background: none; color: var(--text-muted);
+	}
+	.sp-importbtn:hover { color: var(--text-normal); border-color: var(--interactive-accent); }
+	.sp-warn { color: var(--text-error, #e53e3e); }
 	.sp-save {
 		padding: 10px; border: 1px solid var(--interactive-accent); border-radius: 8px;
 		display: flex; flex-direction: column; gap: 8px;

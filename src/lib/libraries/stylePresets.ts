@@ -219,3 +219,24 @@ export function isValidPreset(x: unknown): x is StylePreset {
 		typeof p.sections === 'object' && p.sections != null && !Array.isArray(p.sections)
 	);
 }
+
+// ─── Export / import (MIG-069 §D) ───
+
+/** A filesystem-safe stem from a preset name. */
+function slugName(n: string): string {
+	return (n || 'style').trim().replace(/[^\w-]+/g, '-').replace(/^-+|-+$/g, '') || 'style';
+}
+
+/** Export a preset to a user-chosen `.json` file. Returns true if saved, false if cancelled. */
+export async function exportPreset(preset: StylePreset): Promise<boolean> {
+	return await invoke<boolean>('export_style_preset', { preset, suggestedName: slugName(preset.name) });
+}
+
+/** Import a preset from a user-chosen `.json` file: returns a validated preset with a FRESH
+ *  id (keeping its name), `null` if cancelled, or throws if the file isn't a valid style. */
+export async function importPreset(): Promise<StylePreset | null> {
+	const v = await invoke<unknown>('import_style_preset');
+	if (v == null) return null; // cancelled
+	if (!isValidPreset(v)) throw new Error('invalid-style');
+	return clonePreset(v as StylePreset, (v as StylePreset).name);
+}

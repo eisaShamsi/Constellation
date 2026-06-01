@@ -542,6 +542,8 @@ pub fn run() {
             link_types::list_link_types,
             style_presets::load_style_presets,
             style_presets::save_style_presets,
+            style_presets::export_style_preset,
+            style_presets::import_style_preset,
             universe::migrate_legacy_data,
             universe::open_existing_universe,
             universe::get_child_universes,

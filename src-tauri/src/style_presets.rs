@@ -50,3 +50,47 @@ pub fn save_style_presets(app: tauri::AppHandle, presets: serde_json::Value) -> 
     let data = serde_json::to_string_pretty(&presets).map_err(|e| e.to_string())?;
     fs::write(&path, data).map_err(|e| format!("Failed to save style presets: {}", e))
 }
+
+// ─── Export / import to a shareable .json file (MIG-069 §D) ───
+
+/// Export ONE preset to a user-chosen `.json` file (the share story). Returns true if
+/// saved, false if the user cancelled the dialog.
+#[tauri::command]
+pub async fn export_style_preset(
+    preset: serde_json::Value,
+    suggested_name: String,
+) -> Result<bool, String> {
+    let stem = if suggested_name.trim().is_empty() { "style".to_string() } else { suggested_name };
+    let file = rfd::AsyncFileDialog::new()
+        .set_title("Export Style")
+        .set_file_name(format!("{stem}.constellation-style.json"))
+        .add_filter("Constellation Style", &["json"])
+        .save_file()
+        .await;
+    match file {
+        Some(f) => {
+            let data = serde_json::to_string_pretty(&preset).map_err(|e| e.to_string())?;
+            fs::write(f.path(), data).map_err(|e| format!("Failed to write style file: {}", e))?;
+            Ok(true)
+        }
+        None => Ok(false),
+    }
+}
+
+/// Import a preset from a user-chosen `.json` file. Returns the parsed JSON (the frontend
+/// validates the shape), or `null` if the user cancelled.
+#[tauri::command]
+pub async fn import_style_preset() -> Result<serde_json::Value, String> {
+    let file = rfd::AsyncFileDialog::new()
+        .set_title("Import Style")
+        .add_filter("Constellation Style", &["json"])
+        .pick_file()
+        .await;
+    match file {
+        Some(f) => {
+            let data = fs::read_to_string(f.path()).map_err(|e| format!("Failed to read file: {}", e))?;
+            serde_json::from_str(&data).map_err(|e| format!("Not a valid style file: {}", e))
+        }
+        None => Ok(serde_json::Value::Null),
+    }
+}
