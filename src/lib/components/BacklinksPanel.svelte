@@ -1,18 +1,18 @@
 <script lang="ts">
 	import { openNoteTab, libraries, readNote, appSettings, setLinkConfidence, archiveLink, type LinkConfidence } from '$lib/libraries/store';
 	import { t } from '$lib/i18n';
+	import { linkTypesStore, linkTypeTextColor } from '$lib/libraries/linkTypeRegistry';
 	import { get } from 'svelte/store';
 	import { invoke } from '@tauri-apps/api/core';
 	// MIG-044 Phase 2 — NSC summary headlines under each linked/unlinked row.
 	import { getSummariesFor } from '$lib/nsc/summaryStore';
 
-	// Pill colors + shape now come from $appSettings.linkPills so the user
-	// can tune them from Settings → Appearance → Living Link Pills. The
-	// `?? '#...'` fallbacks keep the panel rendering during the brief
-	// window between boot and settings-loaded, and cover any type the user
-	// might remove from the settings object.
-	const LINK_TYPE_COLORS = $derived($appSettings.linkPills?.fill ?? {});
-	const LINK_TYPE_TEXT   = $derived($appSettings.linkPills?.text ?? {});
+	// MIG-067 — pill colours come from the Link-Type Registry (the §G Link Types
+	// editor), the single source of truth, so recolouring a type reflects here LIVE.
+	// Text colour is auto-contrasted from the fill. Shape stays in appSettings (a
+	// genuine UI pref). The render-site `?? '#…'` fallbacks cover the brief boot window.
+	const LINK_TYPE_COLORS = $derived(Object.fromEntries($linkTypesStore.map((tp) => [tp.id, tp.color])));
+	const LINK_TYPE_TEXT   = $derived(Object.fromEntries($linkTypesStore.map((tp) => [tp.id, linkTypeTextColor(tp.id)])));
 	const pillShape        = $derived($appSettings.linkPills?.shape ?? { radius: 10, height: 20, fontWeight: 700 });
 
 	/** MIG-022 §A.4.d — same shape as OutgoingLinksPanel.displayAnnotation.

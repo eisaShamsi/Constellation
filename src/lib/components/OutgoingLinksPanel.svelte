@@ -1,14 +1,16 @@
 <script lang="ts">
 	import { openNoteTab, libraries, resolveWikilinkCrossLibrary, appSettings, setLinkConfidence, archiveLink, type LinkConfidence } from '$lib/libraries/store';
 	import { t } from '$lib/i18n';
+	import { linkTypesStore, linkTypeTextColor } from '$lib/libraries/linkTypeRegistry';
 	import { get } from 'svelte/store';
 	// MIG-044 Phase 2 — NSC summary headlines under each outgoing-link row.
 	import { getSummariesFor } from '$lib/nsc/summaryStore';
 
-	// Pill colors + shape come from $appSettings.linkPills — matches
-	// BacklinksPanel. User-configurable via Settings → Appearance.
-	const LINK_TYPE_COLORS = $derived($appSettings.linkPills?.fill ?? {});
-	const LINK_TYPE_TEXT   = $derived($appSettings.linkPills?.text ?? {});
+	// MIG-067 — pill colours come from the Link-Type Registry (the §G editor), the
+	// single source of truth, so a recolour reflects here LIVE; text is auto-contrasted
+	// from the fill. Shape stays in appSettings (a UI pref). Matches BacklinksPanel.
+	const LINK_TYPE_COLORS = $derived(Object.fromEntries($linkTypesStore.map((tp) => [tp.id, tp.color])));
+	const LINK_TYPE_TEXT   = $derived(Object.fromEntries($linkTypesStore.map((tp) => [tp.id, linkTypeTextColor(tp.id)])));
 	const pillShape        = $derived($appSettings.linkPills?.shape ?? { radius: 10, height: 20, fontWeight: 700 });
 
 	/** Format ISO-8601 last_traversed to a short relative label for the tooltip. */

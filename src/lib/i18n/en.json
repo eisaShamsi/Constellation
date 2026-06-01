@@ -270,7 +270,7 @@
 			"importTheme": "Import",
 			"resetTheme": "Reset to default",
 			"livingLinkPills": "Living Link Pills",
-			"livingLinkPillsDesc": "Customize the colors and shape of the link-type badges and traversal chips that appear in the Backlinks and Outgoing Links panels.",
+			"livingLinkPillsDesc": "Shape of the link-type badges and traversal chips in the Backlinks and Outgoing Links panels. Their colours come from the Link Types editor above.",
 			"pillFill": "Fill",
 			"pillText": "Text",
 			"pillRadius": "Corner radius",

@@ -5,7 +5,7 @@
 	import { check } from '@tauri-apps/plugin-updater';
 	import { relaunch } from '@tauri-apps/plugin-process';
 	import { t, locale, setLocale, SUPPORTED_LOCALES, type Locale } from '$lib/i18n';
-	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats, SCRIPT_UNICODE_RANGES, SCRIPT_LABELS, SCRIPT_SAMPLES, getAllFontSets, getFontSetById, type FontSet, TYPEWRITER_FONTS, BUILTIN_THEMES, type ConstellationTheme, linkTypeNames, DEFAULT_SETTINGS, backfillLinkConfidence, type PanelId, type PanelSlot, clearIndexHistory } from '$lib/libraries/store';
+	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats, SCRIPT_UNICODE_RANGES, SCRIPT_LABELS, SCRIPT_SAMPLES, getAllFontSets, getFontSetById, type FontSet, TYPEWRITER_FONTS, BUILTIN_THEMES, type ConstellationTheme, DEFAULT_SETTINGS, backfillLinkConfidence, type PanelId, type PanelSlot, clearIndexHistory } from '$lib/libraries/store';
 	import ObsidianThemeBrowser from './ObsidianThemeBrowser.svelte';
 	import StyleSettingsPanel from './StyleSettingsPanel.svelte';
 	import { getEffectiveStyleBlocks } from '$lib/theme/constellationStyleSettings';
@@ -647,23 +647,8 @@
 		} as any);
 	}
 
-	// ─── Living Link pill helpers ───
-	function updatePillFill(type: string, color: string) {
-		updateSettings({
-			linkPills: {
-				...$appSettings.linkPills,
-				fill: { ...$appSettings.linkPills.fill, [type]: color },
-			},
-		});
-	}
-	function updatePillText(type: string, color: string) {
-		updateSettings({
-			linkPills: {
-				...$appSettings.linkPills,
-				text: { ...$appSettings.linkPills.text, [type]: color },
-			},
-		});
-	}
+	// ─── Living Link pill helpers (shape only — per-type COLOURS moved to the §G Link
+	// Types editor, the single source of truth, so a recolour reflects everywhere; MIG-067) ───
 	function updatePillShape(partial: Partial<typeof $appSettings.linkPills.shape>) {
 		updateSettings({
 			linkPills: {
@@ -2374,35 +2359,13 @@
 					<!-- ═══ LIVING LINK PILLS ═══ -->
 					<div class="setting-section-heading">{$t('settings.appearance.livingLinkPills') || 'Living Link Pills'}</div>
 					<div class="setting-desc" style="margin-bottom: 8px;">
-						{$t('settings.appearance.livingLinkPillsDesc') || 'Customize the colors and shape of the link-type badges and traversal chips that appear in the Backlinks and Outgoing Links panels.'}
+						{$t('settings.appearance.livingLinkPillsDesc') || 'Shape of the link-type badges and traversal chips in the Backlinks and Outgoing Links panels. Their colours come from the Link Types editor above.'}
 					</div>
 
-					<!-- Per-type colors -->
-					{#each linkTypeNames() as type}
-						{@const fill = $appSettings.linkPills?.fill?.[type] ?? '#888'}
-						{@const text = $appSettings.linkPills?.text?.[type] ?? '#fff'}
-						{@const localized = $t(`linkTypes.${type}`) || type}
-						<div class="setting-item">
-							<div class="setting-info">
-								<div class="setting-name">{localized}<span class="ll-type-id">· {type}</span></div>
-								<div class="setting-desc">
-									<span class="ll-pill-preview" style="background:{fill};color:{text};border-radius:{$appSettings.linkPills?.shape?.radius ?? 10}px;height:{$appSettings.linkPills?.shape?.height ?? 20}px;font-weight:{$appSettings.linkPills?.shape?.fontWeight ?? 700}">{localized}</span>
-								</div>
-							</div>
-							<div class="ll-color-controls">
-								<label class="ll-color-col">
-									<span class="ll-color-label">{$t('settings.appearance.pillFill') || 'Fill'}</span>
-									<input type="color" class="color-input" value={fill}
-										onchange={(e) => updatePillFill(type, (e.target as HTMLInputElement).value)} />
-								</label>
-								<label class="ll-color-col">
-									<span class="ll-color-label">{$t('settings.appearance.pillText') || 'Text'}</span>
-									<input type="color" class="color-input" value={text}
-										onchange={(e) => updatePillText(type, (e.target as HTMLInputElement).value)} />
-								</label>
-							</div>
-						</div>
-					{/each}
+					<!-- Per-type COLOURS retired (MIG-067): the §G Link Types editor above is the
+					     single colour source — recolour a type there and the editor + both panels
+					     update at once; pill text auto-contrasts. Only the shape controls remain. -->
+
 
 					<!-- Shape: radius / height / weight -->
 					<div class="setting-item">

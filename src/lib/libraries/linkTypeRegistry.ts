@@ -16,6 +16,7 @@
  * or a universe switch) — the same spirit as `notifySettingsChanged`.
  */
 import { invoke } from '@tauri-apps/api/core';
+import { writable } from 'svelte/store';
 
 /** One resolved link type — the serialized shape of Rust `LinkTypeDef`. */
 export interface LinkTypeDef {
@@ -79,11 +80,18 @@ let loaded = false;
 /** Observers notified after the vocabulary changes (re-seed / reload / save). */
 const listeners = new Set<() => void>();
 
+/** Svelte-reactive mirror of the resolved registry — emits the current list on every
+ *  change so components can derive colours/labels that update LIVE when a type is
+ *  recoloured in the §G editor (MIG-067: the registry is the single colour source). */
+const _store = writable<LinkTypeDef[]>([]);
+export const linkTypesStore = { subscribe: _store.subscribe };
+
 function rebuildIndex(): void {
 	byId = new Map(cache.map((t) => [t.id, t]));
 }
 
 function notify(): void {
+	_store.set(cache);
 	for (const cb of listeners) {
 		try { cb(); } catch { /* a bad subscriber must not break the others */ }
 	}
@@ -180,6 +188,17 @@ export function stripLinkTypePrefix(inner: string): string {
 /** Inline/badge color for a type id (neutral default for unknown ids). */
 export function linkTypeColor(id: string): string {
 	return byId.get(id)?.color ?? DEFAULT_COLOR;
+}
+
+/** Readable text colour (black/white) auto-contrasted against a type's fill colour, so
+ *  pills/badges stay legible for ANY type — built-in or custom — without a separate
+ *  per-type text store. Threshold 0.7 reproduces the 8 built-ins' original text colours. */
+export function linkTypeTextColor(id: string): string {
+	const hex = linkTypeColor(id).replace('#', '');
+	if (hex.length < 6) return '#ffffff';
+	const r = parseInt(hex.slice(0, 2), 16), g = parseInt(hex.slice(2, 4), 16), b = parseInt(hex.slice(4, 6), 16);
+	const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+	return lum > 0.7 ? '#000000' : '#ffffff';
 }
 
 /** Display label for a type id (falls back to the id itself). */
