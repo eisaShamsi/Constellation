@@ -1579,14 +1579,27 @@ function buildDecorations(view: EditorView): DecorationSet {
 }
 
 // The ViewPlugin class
+/** Dispatched when the link-type vocabulary changes (recolour / rename / add / remove in
+ *  the §G editor) so live-preview decorations rebuild LIVE in the editor — matching the
+ *  panels — instead of only on note reopen. */
+const linkVocabChanged = StateEffect.define<null>();
+
 class LivePreviewPlugin {
 	decorations: DecorationSet;
 	private rebuildTimer: ReturnType<typeof setTimeout> | null = null;
 	private lastCursorLine = -1;
+	private view: EditorView;
+	private unsubVocab: () => void;
 
 	constructor(view: EditorView) {
+		this.view = view;
 		this.decorations = buildDecorations(view);
 		this.lastCursorLine = view.state.doc.lineAt(view.state.selection.main.head).number;
+		// Rebuild on a vocabulary change (recolour / rename / add / remove) so typed-link
+		// colours + labels update LIVE here, matching the panels — not on reopen.
+		this.unsubVocab = subscribeLinkTypes(() => {
+			try { this.view.dispatch({ effects: linkVocabChanged.of(null) }); } catch { /* view tearing down */ }
+		});
 	}
 
 	update(update: ViewUpdate) {
@@ -1598,7 +1611,7 @@ class LivePreviewPlugin {
 		const contextChanged = update.transactions.some(tr =>
 			tr.effects.some(e =>
 				e.is(setLinkTraversalMap) || e.is(setNotePath) ||
-				e.is(setLibraryPath) || e.is(setAttachmentFolder)
+				e.is(setLibraryPath) || e.is(setAttachmentFolder) || e.is(linkVocabChanged)
 			)
 		);
 		if (contextChanged) {
@@ -1645,6 +1658,7 @@ class LivePreviewPlugin {
 
 	destroy() {
 		if (this.rebuildTimer) clearTimeout(this.rebuildTimer);
+		this.unsubVocab();
 	}
 }
 

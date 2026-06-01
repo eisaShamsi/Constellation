@@ -147,6 +147,7 @@
 			"notePlaceholder": "Why does this override exist? (optional)",
 			"save": "Save",
 			"saving": "Saving…",
+			"resetColours": "Reset colours to default",
 			"cancel": "Cancel",
 			"remove": "Remove",
 			"reindexing": "Reindexing…",

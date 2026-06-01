@@ -20,7 +20,7 @@
 	import { t, locale } from '$lib/i18n';
 	import { detectDir } from '$lib/utils';
 	import {
-		getLinkTypes, loadLinkTypes, saveLinkTypes, toLinkTypeDeltas, SEED_IDS, type LinkTypeDef,
+		getLinkTypes, loadLinkTypes, saveLinkTypes, toLinkTypeDeltas, SEED_IDS, SEED_DEFAULTS, type LinkTypeDef,
 	} from '$lib/libraries/linkTypeRegistry';
 
 	let types = $state<LinkTypeDef[]>([]);
@@ -112,6 +112,13 @@
 		persist();
 	}
 
+	/** Reset every built-in (seed) type's colour to its original default — "go back to
+	 *  the original colour scheme". Custom types keep their colours (they have no default). */
+	function resetColors() {
+		types = types.map((tp) => (SEED_DEFAULTS[tp.id] ? { ...tp, color: SEED_DEFAULTS[tp.id].color } : tp));
+		persist();
+	}
+
 	onMount(async () => {
 		await refresh();
 		loaded = true;
@@ -148,6 +155,8 @@
 				</div>
 			{/each}
 		</div>
+
+		<button class="lte-reset" onclick={resetColors}>{$t('settings.linkTypes.resetColours') || 'Reset colours to default'}</button>
 
 		<!-- Add a type -->
 		<div class="lte-add">
@@ -233,4 +242,9 @@
 	.lte-hint code { font-family: var(--font-monospace, monospace); color: var(--text-normal); }
 	.lte-warn { color: var(--text-error, #e53e3e); }
 	.lte-state { color: var(--text-muted); font-size: 0.82rem; padding: 8px 2px; }
+	.lte-reset {
+		background: none; border: none; cursor: pointer; color: var(--text-muted);
+		font-size: 0.76rem; padding: 5px 2px; text-decoration: underline; text-underline-offset: 2px;
+	}
+	.lte-reset:hover { color: var(--text-normal); }
 </style>

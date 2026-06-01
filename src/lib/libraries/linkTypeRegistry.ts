@@ -50,7 +50,7 @@ const DEFAULT_COLOR = '#AAAAAA';
 /** The 8 built-in defaults (id → presentation), mirroring Rust `seeds()`. Used to
  *  compute minimal deltas: a seed is persisted only when its presentation differs
  *  from the default, so a future change to a default still reaches the user. */
-const SEED_DEFAULTS: Record<string, { label: string; color: string; order: number }> = {
+export const SEED_DEFAULTS: Record<string, { label: string; color: string; order: number }> = {
 	supports: { label: 'Supports', color: '#4A9EFF', order: 1 },
 	contradicts: { label: 'Contradicts', color: '#FF4A4A', order: 2 },
 	causes: { label: 'Causes', color: '#FF8C42', order: 3 },
