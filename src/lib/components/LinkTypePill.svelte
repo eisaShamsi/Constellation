@@ -40,7 +40,7 @@
 	class="ltpill"
 	dir="auto"
 	style="--f:{fill};--t:{text};--r:{shape.radius}px;--h:{shape.height}px;--w:{shape.fontWeight}"
->{label}</span>
+><span class="ltpill__t">{label}</span></span>
 
 <style>
 	.ltpill {
@@ -67,5 +67,11 @@
 		letter-spacing: 0.02em;
 		text-transform: lowercase;
 		white-space: nowrap;
+	}
+	.ltpill__t {
+		/* Optical centring: nudge the glyphs up 1px. With a tight line-height most fonts
+		   render a hair low, so the text reads slightly low in the pill without this. A
+		   visual transform only — it doesn't disturb the flex centring or the row layout. */
+		transform: translateY(-1px);
 	}
 </style>
