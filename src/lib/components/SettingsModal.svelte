@@ -15,6 +15,7 @@
 	import PerLibraryCalibrationView from './PerLibraryCalibrationView.svelte';
 	import ConfirmDialog from './ConfirmDialog.svelte';
 	import LinkTypesEditor from './LinkTypesEditor.svelte';
+	import StylePresetsPanel from './StylePresetsPanel.svelte';
 	import { notifySettingsChanged } from '$lib/secondScreen';
 	import { aiSettings, updateAISettings, setProvider } from '$lib/ai/store';
 	import { validateConnection } from '$lib/ai/engine';
@@ -2330,6 +2331,9 @@
 							<span class="slider-val">{$appSettings.fontSize}px</span>
 						</div>
 					</div>
+
+					<!-- ═══ STYLES (named, app-global style presets — MIG-069 §C) ═══ -->
+					<StylePresetsPanel />
 
 					<!-- ═══ LINK TYPES (the Living Vocabulary — MIG-067 §G) ═══ -->
 					<LinkTypesEditor />

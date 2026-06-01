@@ -3031,6 +3031,31 @@
 		"associative": "associative",
 		"supersedes": "supersedes"
 	},
+	"styles": {
+		"title": "Styles",
+		"desc": "Save your look as a named style, switch between styles with a click, and reuse them across every universe.",
+		"empty": "No styles yet — save your current look to reuse it anywhere.",
+		"saveNew": "+ Save current style…",
+		"namePlaceholder": "Style name…",
+		"include": "Include:",
+		"apply": "Apply",
+		"applied": "Applied ✓",
+		"rename": "Rename",
+		"duplicate": "Duplicate",
+		"delete": "Delete",
+		"save": "Save",
+		"cancel": "Cancel",
+		"section": {
+			"colorsTheme": "Colours & theme",
+			"fonts": "Fonts",
+			"linkColors": "Link-type colours",
+			"pillShape": "Pill shape",
+			"typedLinkDisplay": "Typed-link display",
+			"skyView": "Sky View look",
+			"layout": "Layout",
+			"behaviour": "Behaviour"
+		}
+	},
 	"linkConfidence": {
 		"setConfidence": "Set confidence",
 		"rightClickHint": "Right-click to set confidence",
