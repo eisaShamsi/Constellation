@@ -11,10 +11,15 @@
 	import { detectDir } from '$lib/utils';
 	import {
 		loadStylePresets, saveStylePresets, newPresetFromCurrent, clonePreset, applyPreset,
-		presetSectionKeys, exportPreset, importPreset, stylePreview, SECTION_CATALOGUE, type StylePreset, type SectionKey,
+		presetSectionKeys, exportPreset, importPreset, stylePreview, unifiedStyleList, isUserStyle,
+		SECTION_CATALOGUE, type StylePreset, type SectionKey,
 	} from '$lib/libraries/stylePresets';
 
 	let presets = $state<StylePreset[]>([]);
+	// MIG-070 §A v2 — the unified list, computed IMPERATIVELY (NEVER in a $derived — a reactive
+	// re-compute over the 150 KB+ saved Styles is what froze the app in v1). Rebuilt on open +
+	// after every save / rename / delete / apply via refresh().
+	let displayStyles = $state<StylePreset[]>([]);
 	let loaded = $state(false);
 	let busy = $state(false);
 	let appliedId = $state<string | null>(null);
@@ -32,13 +37,15 @@
 
 	const freshTicks = () => Object.fromEntries(SECTION_CATALOGUE.map((s) => [s.key, s.defaultOn]));
 	const sectionLabel = (k: SectionKey) => $t(`styles.section.${k}`);
+	/** Recompute the unified list (saved Styles + built-in/custom Themes). Imperative only. */
+	function refresh() { displayStyles = unifiedStyleList(presets); }
 
-	onMount(async () => { try { presets = await loadStylePresets(); } finally { loaded = true; } });
+	onMount(async () => { try { presets = await loadStylePresets(); refresh(); } finally { loaded = true; } });
 	onDestroy(() => { if (applyTimer) clearTimeout(applyTimer); });
 
 	async function persist() {
 		busy = true;
-		try { await saveStylePresets($state.snapshot(presets) as StylePreset[]); } finally { busy = false; }
+		try { await saveStylePresets($state.snapshot(presets) as StylePreset[]); } finally { busy = false; refresh(); }
 	}
 
 	function openSave() { newName = ''; ticks = freshTicks(); showSave = true; }
@@ -57,7 +64,7 @@
 			appliedId = p.id;
 			if (applyTimer) clearTimeout(applyTimer);
 			applyTimer = setTimeout(() => { if (appliedId === p.id) appliedId = null; }, 1600);
-		} finally { busy = false; }
+		} finally { busy = false; refresh(); }
 	}
 
 	async function duplicate(p: StylePreset) {
@@ -99,11 +106,11 @@
 	{#if !loaded}
 		<div class="sp-state">{$t('lensBlock.loading') || 'Loading…'}</div>
 	{:else}
-		{#if presets.length === 0}
+		{#if displayStyles.length === 0}
 			<div class="sp-empty">{$t('styles.empty') || 'No styles yet — save your current look to reuse it anywhere.'}</div>
 		{:else}
 			<div class="sp-grid">
-				{#each presets as p (p.id)}
+				{#each displayStyles as p (p.id)}
 					{@const pv = stylePreview(p)}
 					<div class="sp-card" class:sp-applied={appliedId === p.id}>
 						<!-- A mini-mockup of the Constellation interface in this Style: a sidebar + a note
@@ -142,9 +149,9 @@
 										{appliedId === p.id ? ($t('styles.applied') || 'Applied ✓') : ($t('styles.apply') || 'Apply')}
 									</button>
 									<button class="sp-icon" title={$t('styles.export') || 'Export'} aria-label={$t('styles.export') || 'Export'} onclick={() => exportPreset(p)}>⤓</button>
-									<button class="sp-icon" title={$t('styles.rename') || 'Rename'} aria-label={$t('styles.rename') || 'Rename'} onclick={() => startRename(p)}>✎</button>
+									{#if isUserStyle(p)}<button class="sp-icon" title={$t('styles.rename') || 'Rename'} aria-label={$t('styles.rename') || 'Rename'} onclick={() => startRename(p)}>✎</button>{/if}
 									<button class="sp-icon" title={$t('styles.duplicate') || 'Duplicate'} aria-label={$t('styles.duplicate') || 'Duplicate'} onclick={() => duplicate(p)}>⧉</button>
-									<button class="sp-icon sp-del" title={$t('styles.delete') || 'Delete'} aria-label={$t('styles.delete') || 'Delete'} onclick={() => remove(p)}>✕</button>
+									{#if isUserStyle(p)}<button class="sp-icon sp-del" title={$t('styles.delete') || 'Delete'} aria-label={$t('styles.delete') || 'Delete'} onclick={() => remove(p)}>✕</button>{/if}
 								</div>
 							{/if}
 						</div>
