@@ -55,3 +55,19 @@ Three polish fixes (commit pending, build `bo6x3wny2`):
 3. **Esc closed the whole Settings panel** — the Setter's Escape handler let the event bubble to the Settings modal. Fix: listen in the **capture** phase + `stopImmediatePropagation()` (guarded by `get(styleSetterOpen)`), so Escape closes only the Setter and is a no-op when it's shut.
 
 Stage 2 (full tour: all elements, fonts, theme cards, surface switching, Apply-to-app) to follow on the fixed build.
+
+### Stage 2 test — Boss findings (build `fbfbc9a0`)
+
+All editing passed: hover ring now visible (✓ image), font list readable (✓ image), and styling each element live works — **Text, Accent, Link, Note bg + Note font all pass** (steps 1–6, 9). Esc closes only the Setter (✓).
+
+**Failed: steps 7–8 — "Apply to app" had no effect.** Root cause found by reading the actual theme path (not guessing):
+- Constellation applies its theme variables to **`document.body.style`** (`+layout.svelte:1591` `const root = document.body.style`), not `:root`. My Apply wrote to `document.documentElement` (`:root`); since `<body>` is a descendant, its values **shadow** `:root`, so Apply was silently overridden.
+- The accent is consumed two ways: `deriveThemeVariables` (`store.ts:3100`) sets `--interactive-accent` **and** `--accent-h/s/l` + `--text-accent`. Writing only `--interactive-accent` misses every control that composes from the HSL parts.
+
+**Fix (build `b8q0ioqoy`):**
+1. `apply()` now writes to `document.body.style`.
+2. Accent is decomposed (inlined `hexToHSL`, Setter stays standalone) → also sets `--accent-h/s/l`, `--text-accent`, `--interactive-accent-hover`.
+3. `curVal()` reads the live value from `<body>` (where the vars live) so swatches seed from the real theme, not grey.
+4. Verified my var names already match the app's (`--background-primary/-secondary`, `--text-normal`, `--interactive-accent`, `--font-interface-theme/-text-theme`) — the preview already speaks the app's language; only the Apply *target* was wrong.
+
+Re-test of steps 7–8 to follow.

@@ -63,20 +63,52 @@
 		if (m) return '#' + [m[1], m[2], m[3]].map((x) => (+x).toString(16).padStart(2, '0')).join('');
 		return '#888888';
 	}
-	/** Current value of a var: the draft override, else the live :root value. */
+	/** Current value of a var: the draft override, else the live value — read from <body>,
+	    where the app sets its theme vars (:root would not see them and the swatch would be grey). */
 	function curVal(v: string): string {
 		if (v in draft) return draft[v];
-		try { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); } catch { return ''; }
+		try { return getComputedStyle(document.body).getPropertyValue(v).trim(); } catch { return ''; }
 	}
 	function setVar(v: string, val: string) { draft = { ...draft, [v]: val }; }
 	function selectEl(key: string) { selected = key; }
 	function pickSurface(s: string) { activeSurface = s; selected = null; }
 	function applyTheme(t: { name: string; vars: Record<string, string> }) { draft = { ...draft, ...t.vars }; draftName = t.name; }
 
+	/** hex → HSL (mirrors the app's own hexToHSL; inlined so the Setter stays standalone). */
+	function hexToHSL(hex: string): { h: number; s: number; l: number } | null {
+		const h6 = hexOf(hex);
+		const r = parseInt(h6.slice(1, 3), 16) / 255, g = parseInt(h6.slice(3, 5), 16) / 255, b = parseInt(h6.slice(5, 7), 16) / 255;
+		if ([r, g, b].some((x) => Number.isNaN(x))) return null;
+		const max = Math.max(r, g, b), min = Math.min(r, g, b);
+		let h = 0, s = 0; const l = (max + min) / 2;
+		if (max !== min) {
+			const d = max - min;
+			s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+			if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+			else if (max === g) h = ((b - r) / d + 2) / 6;
+			else h = ((r - g) / d + 4) / 6;
+		}
+		return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
+	}
+
 	function apply() {
 		// Iteration 1: copy the draft onto the live app for this session (direct DOM, no reactive
-		// path). Persisting as a saved theme is the next iteration.
-		for (const [k, v] of Object.entries(draft)) document.documentElement.style.setProperty(k, v);
+		// path). The app themes <body> (not :root) and shadows :root, so we MUST target body.
+		const root = document.body.style;
+		for (const [k, v] of Object.entries(draft)) root.setProperty(k, v);
+		// The accent is also consumed as --accent-h/s/l components + --text-accent by many
+		// controls, so decompose it — otherwise only elements using --interactive-accent change.
+		const acc = draft['--interactive-accent'];
+		if (acc) {
+			const hsl = hexToHSL(acc);
+			if (hsl) {
+				root.setProperty('--accent-h', String(hsl.h));
+				root.setProperty('--accent-s', `${hsl.s}%`);
+				root.setProperty('--accent-l', `${hsl.l}%`);
+				root.setProperty('--text-accent', `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`);
+				root.setProperty('--interactive-accent-hover', `hsl(${hsl.h}, ${hsl.s}%, ${Math.max(0, hsl.l - 8)}%)`);
+			}
+		}
 	}
 	function resetDraft() { draft = {}; selected = null; }
 
