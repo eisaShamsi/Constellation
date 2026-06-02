@@ -13,6 +13,7 @@
 	 * draft. Persistence (save / name / export / import) + the full surface set come next.
 	 */
 	import { onMount } from 'svelte';
+	import { get } from 'svelte/store';
 	import { styleSetterOpen, closeStyleSetter } from '$lib/stores/styleSetter';
 
 	type Ctrl = { label: string; type: 'color' | 'select'; var: string; options?: [string, string][] };
@@ -80,9 +81,17 @@
 	function resetDraft() { draft = {}; selected = null; }
 
 	onMount(() => {
-		function onKey(e: KeyboardEvent) { if (e.key === 'Escape' && $styleSetterOpen) closeStyleSetter(); }
-		window.addEventListener('keydown', onKey);
-		return () => window.removeEventListener('keydown', onKey);
+		// Capture phase + stopImmediatePropagation so Escape closes ONLY the Setter, never the
+		// Settings modal underneath it. No-op (and doesn't swallow Escape) when the Setter is shut.
+		function onKey(e: KeyboardEvent) {
+			if (e.key === 'Escape' && get(styleSetterOpen)) {
+				e.preventDefault();
+				e.stopImmediatePropagation();
+				closeStyleSetter();
+			}
+		}
+		window.addEventListener('keydown', onKey, true);
+		return () => window.removeEventListener('keydown', onKey, true);
 	});
 </script>
 
@@ -244,9 +253,12 @@
 	.ss-body { display: block; font-size: 14px; line-height: 1.75; color: var(--text-normal, #2e3338); }
 	.ss-link { color: var(--link-color, var(--interactive-accent, #2f6fed)); text-decoration: underline; }
 	.ss-pill { display: inline-flex; align-items: center; background: var(--interactive-accent, #4a9eff); color: #fff; font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 9px; text-transform: lowercase; }
-	.ss-hot { cursor: pointer; } .ss-hot:hover { outline: 1.5px dashed color-mix(in srgb, var(--c-accent) 70%, #fff); outline-offset: 1px; }
-	.ss-hot2 { cursor: pointer; border-radius: 3px; } .ss-hot2:hover { outline: 1.5px dashed color-mix(in srgb, var(--c-accent) 75%, #fff); outline-offset: 1px; }
-	.ss-sel { outline: 2px solid var(--c-accent) !important; outline-offset: 1px; }
+	/* Hover/selected rings drawn INSIDE the element (inset box-shadow) so they're never clipped
+	   by the preview's overflow:hidden — that was why the edge-touching sidebar/note showed nothing. */
+	.ss-hot { cursor: pointer; } .ss-hot:hover { box-shadow: inset 0 0 0 2px #9d8dff; }
+	.ss-hot2 { cursor: pointer; border-radius: 3px; } .ss-hot2:hover { outline: 2px dashed #9d8dff; outline-offset: 2px; }
+	.ss-sel { box-shadow: inset 0 0 0 2.5px #b9acff !important; }
+	.ss-hot2.ss-sel { box-shadow: none !important; outline: 2.5px solid #b9acff !important; outline-offset: 2px; }
 	.ss-prev-alt { width: 560px; height: 360px; border-radius: 10px; background: var(--background-primary, #fbfbfa); color: var(--text-normal, #2e3338); box-shadow: 0 14px 40px rgba(0,0,0,.45); border: 1px solid rgba(0,0,0,.25); display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
 	.ss-alt-title { font-weight: 700; font-size: 15px; color: var(--interactive-accent, #7c3aed); }
 	.ss-alt-note { font-size: 11.5px; color: var(--text-normal, #6b7280); opacity: .7; max-width: 70%; text-align: center; }
@@ -261,7 +273,8 @@
 	.ss-ctrl { margin-bottom: 14px; }
 	.ss-ctrl label { display: block; font-size: 12px; color: var(--c-muted); margin-bottom: 5px; }
 	.ss-ctrl input[type=color] { width: 100%; height: 30px; border: 1px solid var(--c-border); border-radius: 6px; background: none; cursor: pointer; }
-	.ss-ctrl select { width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--c-border); background: var(--c-surface2); color: var(--c-text); font: inherit; font-size: 13px; }
+	.ss-ctrl select { width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--c-border); background: #1d1d2a; color: #e8e9f3; font: inherit; font-size: 13px; }
+	.ss-ctrl select option { background: #1d1d2a; color: #e8e9f3; }
 	.ss-empty { color: var(--c-muted); font-size: 13px; line-height: 1.6; margin-top: 28px; text-align: center; }
 	.ss-big { font-size: 26px; opacity: .5; display: block; margin-bottom: 8px; }
 </style>

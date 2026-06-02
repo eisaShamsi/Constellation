@@ -44,3 +44,14 @@ Eisa's directive (verbatim): *"start on a clean slate. Don't even touch any prev
 - Other surfaces (Sky/Org/Index/Cataloger/Shell) are representative previews, not the real components — fine for iteration 1; richer static samples later.
 - a11y: clickable preview spans emit Svelte a11y warnings (non-blocking) — convert to role/keyboard handlers in a polish pass.
 - Apply currently sets vars on `:root` for the session; it does not yet persist or scope per-Universe (Eisa's ratified "each Universe remembers its own look" lands with persistence).
+
+### Stage 1 test — Boss findings (build `cab575ce`)
+
+**The headline:** ✅ **it opens with no freeze, and live editing works.** The clean-slate rebuild beat the freeze that killed the retrofit 4×. Steps 1, 2, 4 pass; click-to-select + instant recolour pass.
+
+Three polish fixes (commit pending, build `bo6x3wny2`):
+1. **Hover affordance invisible** — the preview's `overflow:hidden` clipped the outset `outline` on the edge-touching sidebar/note. Fix: inset `box-shadow` ring (`#9d8dff` hover / `#b9acff` selected) for big elements; outset dashed outline kept for inline elements (title/heading/link/pill), which sit inside the note padding and aren't clipped.
+2. **Font dropdown options low-contrast** (Serif/Mono nearly invisible) — `<option>`s had no explicit colours. Fix: `select` + `option` set to opaque `#1d1d2a` bg / `#e8e9f3` text.
+3. **Esc closed the whole Settings panel** — the Setter's Escape handler let the event bubble to the Settings modal. Fix: listen in the **capture** phase + `stopImmediatePropagation()` (guarded by `get(styleSetterOpen)`), so Escape closes only the Setter and is a no-op when it's shut.
+
+Stage 2 (full tour: all elements, fonts, theme cards, surface switching, Apply-to-app) to follow on the fixed build.
