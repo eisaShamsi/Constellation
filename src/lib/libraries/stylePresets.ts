@@ -13,7 +13,7 @@
  */
 import { invoke } from '@tauri-apps/api/core';
 import { get } from 'svelte/store';
-import { appSettings, updateSettings, BUILTIN_THEMES } from './store';
+import { appSettings, updateSettings, BUILTIN_THEMES, type ConstellationTheme } from './store';
 import { getLinkTypes, toLinkTypeDeltas, saveLinkTypes, linkTypeColor, SEED_IDS, type LinkTypeDef } from './linkTypeRegistry';
 
 /** Bump the minor when adding sections (back-compatible); the major when the apply
@@ -36,6 +36,11 @@ export interface StylePreset {
 	id: string;
 	name: string;
 	icon?: string;
+	/** MIG-070 §A — true for the DERIVED Styles that wrap a built-in / custom Theme (shown in
+	 *  the unified list; applyable + duplicable, but not renamable/deletable as such). */
+	builtin?: boolean;
+	/** 'builtin' | 'theme' (derived from a custom Theme) | 'style' (a saved MIG-069 Style). */
+	source?: 'builtin' | 'theme' | 'style';
 	/** STYLE_PRESET_SCHEMA at save time — used to validate/upgrade on import. */
 	schema: string;
 	createdAt?: string;
@@ -202,6 +207,15 @@ export async function applyPreset(preset: StylePreset): Promise<void> {
 			for (const f of def.appSettingsKeys) if (f in pl) partial[f] = pl[f];
 		}
 	}
+	// MIG-070 §A — applying a colours/theme section MERGES its customThemes into the universe's
+	// library (the Style wins on id), never REPLACES it — so switching theme can't drop the
+	// universe's other custom themes (the same non-destructive rule as the link colours below).
+	if (Array.isArray(partial.customThemes)) {
+		const curThemes = (get(appSettings) as { customThemes?: ConstellationTheme[] }).customThemes ?? [];
+		const byId = new Map(curThemes.map((t) => [t.id, t] as [string, ConstellationTheme]));
+		for (const t of partial.customThemes as ConstellationTheme[]) byId.set(t.id, t);
+		partial.customThemes = [...byId.values()];
+	}
 	// Apply link colours FIRST (registry → live editor/panel rebuild) while the editor is
 	// idle, THEN appSettings — so the appSettings reactivity can't race the registry's live
 	// update (the Boss-found "themes apply live, link colours need a relaunch" bug).
@@ -220,6 +234,49 @@ export async function applyPreset(preset: StylePreset): Promise<void> {
 /** Which sections a preset carries (catalogue order) — for display + apply summaries. */
 export function presetSectionKeys(preset: StylePreset): SectionKey[] {
 	return SECTION_CATALOGUE.map((s) => s.key).filter((k) => k in preset.sections);
+}
+
+// ─── MIG-070 §A — unify Themes + Styles into ONE app-global list (non-destructive) ───
+
+/** Convert a Theme (built-in or a universe's custom) into a DERIVED Style carrying just the
+ *  colours/theme aspect, so every saved look — Themes AND Styles — shows in one list.
+ *  Nothing is moved or rewritten: these are assembled at READ time from BUILTIN_THEMES + the
+ *  current universe's `customThemes`. Applying one switches to that theme (merging it into the
+ *  universe's library via applyPreset, never replacing it). */
+export function themeToStyle(theme: ConstellationTheme): StylePreset {
+	const isBuiltin = theme.source === 'builtin' || (BUILTIN_THEMES ?? []).some((t) => t.id === theme.id);
+	return {
+		id: `theme:${theme.id}`,
+		name: theme.name,
+		schema: STYLE_PRESET_SCHEMA,
+		builtin: true, // derived — not a user-saved Style (no rename/delete; duplicate to edit)
+		source: isBuiltin ? 'builtin' : 'theme',
+		sections: {
+			colorsTheme: {
+				colorScheme: theme.type,
+				accentColor: theme.colors.accent,
+				activeThemeId: theme.id,
+				// A built-in resolves from BUILTIN_THEMES; a custom theme must travel with the Style.
+				customThemes: isBuiltin ? [] : [theme],
+			},
+		},
+	};
+}
+
+/** The unified, app-global list of looks: built-in theme Styles + this universe's custom theme
+ *  Styles + the user's saved Styles. DERIVED at read time — the §A non-destructive guarantee:
+ *  no stored Theme or Style is moved or rewritten, so nothing can be lost. */
+export function unifiedStyleList(savedStyles: StylePreset[]): StylePreset[] {
+	const cur = get(appSettings) as { customThemes?: ConstellationTheme[] };
+	const builtinStyles = (BUILTIN_THEMES ?? []).map(themeToStyle);
+	const customThemeStyles = (cur.customThemes ?? []).map(themeToStyle);
+	const saved = savedStyles.map((p) => ({ ...p, source: p.source ?? ('style' as const) }));
+	return [...builtinStyles, ...customThemeStyles, ...saved];
+}
+
+/** A Style is user-owned (renamable / deletable) iff it isn't a derived built-in / theme wrapper. */
+export function isUserStyle(p: StylePreset): boolean {
+	return !p.builtin && !p.id.startsWith('theme:');
 }
 
 // ─── Preview (MIG-069 §G — visual cards) ───
