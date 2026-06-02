@@ -206,6 +206,26 @@ The type label and the panel pills appear in the **note's own main language**, n
 3. The change reflects **live** everywhere — the editor links and the Backlinks / Outgoing pills update as you pick.
 4. **Reset colours to default** restores the original eight colours.
 
+## The Style Setter
+
+The **Style Setter** is a full-page design studio for your whole interface. Instead of adjusting settings one at a time and imagining the result, you see your actual interface in the middle of the screen, click the part you want to change, and watch it update instantly.
+
+**Open it:** go to **Settings → Appearance** and click **"✦ Open Style Setter."** The studio fills the screen in three zones:
+
+- **Left** — your *Surfaces* (Editor, Sky View, OrgChart, Index, Cataloger, Shell) and your *theme cards* (Midnight, Daylight, Chocolate, Nord).
+- **Centre** — a live preview of your interface.
+- **Right** — the controls for whatever part you have selected.
+
+**Style an element.** Hover any part of the centre preview — the sidebar, the note title, a heading, a link, the note page — and a ring shows that it is clickable. Click it, and its controls appear on the right (a colour swatch, a font dropdown, and so on). Change a value and the preview updates the moment you do — no guessing.
+
+**Start from a theme.** Click a theme card on the left to seed a whole look at once. The studio itself takes on that look as you work, so you are designing *inside* the theme, and you can then tweak individual elements on top of it.
+
+**Switch surfaces.** Click a surface on the left to preview the look across different parts of the app, not only the editor.
+
+**Apply it.** When you like what you see, click **"Apply to app"** (top right). Your accent, backgrounds, text colour, and fonts are pushed onto the real Constellation. Press **Esc** or **✕** to close (this closes only the Setter, not Settings).
+
+> Today the Style Setter applies your look for the current session (a live preview on the real app). Saving a look as a permanent, named **Style** — with reusable, renameable colour swatches and export / import — is coming next.
+
 ## Frequently asked questions
 
 ### Can I style the Windows title bar ("Constellation v0.3.4 — …")?

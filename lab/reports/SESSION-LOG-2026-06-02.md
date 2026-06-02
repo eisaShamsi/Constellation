@@ -159,4 +159,16 @@ The note body font re-test **passed** (whole note — title, body, callouts, typ
 ### Tab library-label tweak (Eisa, build `b3hchhqme`)
 The library name above each tab title (`.tab-lib-name`, `+layout.svelte`) **enlarged** (`font-size 0.55rem → 0.72rem`) and **lifted 2px** (`bottom: calc(100% + 4px) → calc(100% + 6px)`). "Enlarged by 1x" read as a clear, tasteful bump (still ≤ the tab title's 0.8rem); offered to Eisa to calibrate bigger/smaller. Pending test.
 
-**Follow-up (build `bfy5ybwz6`):** the enlargement + lift made the label **touch the top border** (the `.tab-scroll` `overflow` clips above its `12px` top padding). Fix: raised `.tab-scroll` `padding-top 12px → 18px` to make headroom — keeping Eisa's enlargement (`0.72rem`) and lift (`6px`) intact rather than shrinking them. Strip is ~6px taller to hold the bigger labels; offered to trim size/lift if the height feels off.
+**Follow-up (build `bfy5ybwz6`):** the enlargement + lift made the label **touch the top border** (the `.tab-scroll` `overflow` clips above its `12px` top padding). Fix: raised `.tab-scroll` `padding-top 12px → 18px` to make headroom — keeping Eisa's enlargement (`0.72rem`) and lift (`6px`) intact rather than shrinking them. Strip is ~6px taller to hold the bigger labels; offered to trim size/lift if the height feels off. **Boss test: Pass.**
+
+---
+
+## PCS + Orientation + Handover — session close-out
+
+Eisa: *"Prepare the handover files and prompt, but after PCS + Orientation."*
+
+- **PCS** — code committed/pushed throughout (`cab575ce` … `06c7af97`). **Style Setter help shipped:** new "Style Setter" section in the Appearance help topic (`help.uConstellation.World`) + a User Manual entry; **localized to all 15 languages** (English written here; 14 translations added by 4 parallel background agents grouped RTL / European / RU-TR-HI / CJK — each reads the English source + matches the target file's conventions + keeps English UI button names in quotes since the Setter UI is still English).
+- **Orientation** — bumped **v2.49 → v2.50** (quick wins + iter-2 #1/#2 + label tweak + the PCS docs).
+- **Handover** — `docs/HANDOVER-MIG-070-iteration-2.md` (function-in-hand, what's shipped + protected, hard-won gotchas, **#3/#4 design-first notes**, process constraints, and a ready-to-paste next-session prompt). MoCh `docs/MoCh/MoCh-2026-06-02-1145.md`.
+
+**Final state:** Style Setter iteration 1 + quick wins (tab tint, Stage-3) + iteration-2 #1 (summary) / #2 (chrome adapts) + tab-label tweak — **all shipped, Boss-validated, committed, pushed, documented (v2.50)**. **Next (design-first):** #3 every-Markdown-element editing · #4 faithful per-plugin previews · then persistence (named Styles + swatches) · per-Universe scope · full font list · Setter UI i18n · retire old at parity.

@@ -1430,6 +1430,10 @@ A **Style** is a complete, named look — theme, fonts, link colors, pill shape,
 
 Applying a Style **merges** its link colors into the current Universe (your custom link types are never deleted). A Style carries only visual preferences — never secrets, tokens, or paths — so it is safe to share. (Distinct from a *Theme*, which is colors + CSS, and *Style Settings*, which are per-theme tweaks: a Style bundles all of those, plus behaviour, under one switchable name.)
 
+### The Style Setter
+
+The **Style Setter** is a full-page design studio — open it from **Settings → Appearance → "✦ Open Style Setter."** It shows your real interface in the centre; click any part (sidebar, note title, heading, link, the note page) and that element's controls appear on the right, with the preview updating instantly. Theme cards (Midnight / Daylight / Chocolate / Nord) seed a whole look — the studio itself wears it as you design — and the *Surfaces* list previews the look across the app, not just the editor. **Apply to app** pushes your accent, backgrounds, text colour, and fonts onto the real Constellation; **Esc** or **✕** closes only the Setter, not Settings. Applying is a live session preview for now — saving a look as a permanent, named Style (with reusable, renameable colour swatches and export / import) is coming next.
+
 ### Link Types
 
 Settings → **Link Types** is where each link type's **colour** is set. Click a type's swatch to recolour it; the change reflects **live** everywhere — the typed links in the editor and the coloured pills in the Backlinks / Outgoing panels. **Reset colours to default** restores the original eight. Two display toggles (both on by default) control how typed links appear: **Colour typed links** (draw each in its type's colour) and **Show the label above** (the type name above the link in the editor). The label and pills are shown in the **note's main language**, not the interface language — an Arabic note shows `يدعم`, an English note shows `supports`.
