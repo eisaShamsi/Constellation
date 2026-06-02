@@ -141,6 +141,26 @@ Her ayar yukarıdaki beş bloktan birinin altındadır. Öne çıkanlar:
 - Metin (normal/azaltılmış/soluk/vurgu üzerinde), hata/uyarı/başarı durumları
 - Vurgu (etkileşimli vurgu + üzerine gelme), vurgu üzerinde metin
 
+## Stil Ayarlayıcı
+
+**Stil Ayarlayıcı**, tüm arayüzünüz için tam ekran bir tasarım stüdyosudur. Ayarları tek tek değiştirip sonucu hayal etmek yerine, gerçek arayüzünüzü ekranın ortasında görür, değiştirmek istediğiniz bölüme tıklar ve anında güncellenmesini izlersiniz.
+
+**Açmak için:** **Ayarlar → Görünüm** bölümüne gidin ve **"✦ Open Style Setter"** düğmesine tıklayın. Stüdyo ekranı üç bölgeye ayrılmış olarak doldurur:
+
+- **Sol** — *Yüzeyleriniz* (Editör, Sky View, OrgChart, Dizin, Kataloglayıcı, Kabuk) ve *tema kartlarınız* (Midnight, Daylight, Chocolate, Nord).
+- **Orta** — arayüzünüzün canlı önizlemesi.
+- **Sağ** — seçtiğiniz bölüm için denetimler.
+
+**Bir öğeyi stillendirin.** Orta önizlemenin herhangi bir bölümünün üzerine gelin — kenar çubuğu, not başlığı, bir başlık, bir bağlantı, not sayfası — ve bir halka onun tıklanabilir olduğunu gösterir. Üzerine tıklayın, denetimleri sağda görünür (bir renk örneği, bir yazı tipi açılır menüsü vb.). Bir değeri değiştirin, önizleme tam o anda güncellenir — tahmin yok.
+
+**Bir temadan başlayın.** Soldaki bir tema kartına tıklayarak bütün bir görünümü tek seferde tohumlayın. Stüdyonun kendisi siz çalışırken o görünümü alır, böylece temanın *içinde* tasarım yaparsınız ve ardından bunun üzerine tek tek öğeleri ince ayarlayabilirsiniz.
+
+**Yüzeyleri değiştirin.** Soldaki bir yüzeye tıklayarak görünümü yalnızca editörde değil, uygulamanın farklı bölümlerinde önizleyin.
+
+**Uygulayın.** Gördüğünüzü beğendiğinizde **"Apply to app"** düğmesine (sağ üst) tıklayın. Vurgunuz, arka planlarınız, metin renginiz ve yazı tipleriniz gerçek Constellation'a aktarılır. Kapatmak için **"Esc"** veya **"✕"** tuşuna basın (bu yalnızca Ayarlayıcı'yı kapatır, Ayarlar'ı değil).
+
+> Bugün Stil Ayarlayıcı görünümünüzü geçerli oturum için uygular (gerçek uygulamada canlı bir önizleme). Bir görünümü kalıcı, adlandırılmış bir **Stil** olarak kaydetmek — yeniden kullanılabilir, yeniden adlandırılabilir renk örnekleri ve dışa / içe aktarma ile — bir sonraki sürümde gelecek.
+
 ## Sık Sorulan Sorular
 
 ### Windows başlık çubuğunu ("Constellation v0.3.4 — …") stillendirebilir miyim?

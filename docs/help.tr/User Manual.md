@@ -927,6 +927,10 @@ Biçim Obsidian'ın Style Settings eklentisiyle tam olarak eşleşir, böylece O
 
 Değişiklikler aktif temaya otomatik kaydedilir; yerleşik bir temayı düzenlerseniz, değişiklikler orijinali değiştirmeden kalıcı olacak şekilde özel temalarınıza otomatik klonlanır.
 
+### Stil Ayarlayıcı
+
+**Stil Ayarlayıcı**, tam ekran bir tasarım stüdyosudur — **Ayarlar → Görünüm → "✦ Open Style Setter"** üzerinden açın. Gerçek arayüzünüzü ortada gösterir; herhangi bir bölüme (kenar çubuğu, not başlığı, başlık, bağlantı, not sayfası) tıklayın, o öğenin denetimleri sağda belirir ve önizleme anında güncellenir. Tema kartları (Midnight / Daylight / Chocolate / Nord) bütün bir görünümü tohumlar — stüdyonun kendisi siz tasarlarken onu giyer — ve *Yüzeyler* listesi görünümü yalnızca editörde değil, uygulama genelinde önizler. **"Apply to app"** vurgunuzu, arka planlarınızı, metin renginizi ve yazı tiplerinizi gerçek Constellation'a aktarır; **"Esc"** veya **"✕"** yalnızca Ayarlayıcı'yı kapatır, Ayarlar'ı değil. Uygulama şimdilik oturum için canlı bir önizlemedir; bir görünümü kalıcı, adlandırılmış bir Stil olarak kaydetmek (yeniden kullanılabilir, yeniden adlandırılabilir renk örnekleri ve dışa / içe aktarma ile) bir sonraki sürümde gelecek.
+
 ### Arapça Geçersiz Kılmalar
 
 Arapça motorun belirli yüzey biçimlerini nasıl çözümleyeceğini sabitlediğiniz, Evren başına bir panel — kendi türettiğiniz sözcükler, yerel adlar, alana özgü ödünç sözcükler veya motorun otomatik okumasıyla aynı fikirde olmadığınız durumlar için. Her geçersiz kılma üretici FST, kaskad ve sezgisel yedeği geçer. Bir geçersiz kılma eklemek veya kaldırmak, yalnızca etkilenen yüzey biçimini içeren notların hedefli bir şekilde yeniden dizinlenmesini tetikler — tam yeniden oluşturma yoktur. Adım adım kılavuz için §19 ("RTL ve Arapça Desteği") bölümüne bakın.

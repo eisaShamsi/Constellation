@@ -141,6 +141,26 @@ Jede Einstellung gehoert zu einem der fuenf obigen Bloecke. Highlights:
 - Text (normal/gedaempft/schwach/auf Akzent), Fehler-/Warn-/Erfolg-Zustaende
 - Akzent (interaktiver Akzent + Hover), Akzenttext
 
+## Der Style Setter
+
+Der **Style Setter** ist ein bildschirmfüllendes Design-Studio für Ihre gesamte Oberfläche. Anstatt Einstellungen einzeln anzupassen und sich das Ergebnis vorzustellen, sehen Sie Ihre tatsächliche Oberfläche in der Bildschirmmitte, klicken auf den Teil, den Sie ändern möchten, und beobachten, wie er sich sofort aktualisiert.
+
+**Öffnen:** Gehen Sie zu **Einstellungen → Darstellung** und klicken Sie auf **"✦ Open Style Setter."** Das Studio füllt den Bildschirm in drei Zonen:
+
+- **Links** — Ihre *Oberflächen* (Editor, Sternenansicht, OrgChart, Index, Cataloger, Shell) und Ihre *Themenkarten* (Midnight, Daylight, Chocolate, Nord).
+- **Mitte** — eine Live-Vorschau Ihrer Oberfläche.
+- **Rechts** — die Steuerelemente für den jeweils ausgewählten Teil.
+
+**Ein Element gestalten.** Fahren Sie mit der Maus über einen beliebigen Teil der Vorschau in der Mitte — die Seitenleiste, den Notiztitel, eine Überschrift, einen Link, die Notizseite — und ein Rahmen zeigt an, dass er anklickbar ist. Klicken Sie darauf, und seine Steuerelemente erscheinen rechts (eine Farbfläche, ein Schriftart-Dropdown und so weiter). Ändern Sie einen Wert, und die Vorschau aktualisiert sich in dem Moment, in dem Sie es tun — kein Raten.
+
+**Von einem Thema ausgehen.** Klicken Sie links auf eine Themenkarte, um auf einen Schlag einen kompletten Look anzulegen. Das Studio selbst nimmt diesen Look an, während Sie arbeiten, sodass Sie *innerhalb* des Themas gestalten und anschließend einzelne Elemente darauf feinjustieren können.
+
+**Oberflächen wechseln.** Klicken Sie links auf eine Oberfläche, um den Look über verschiedene Teile der App hinweg vorzuschauen, nicht nur im Editor.
+
+**Anwenden.** Wenn Ihnen gefällt, was Sie sehen, klicken Sie auf **"Apply to app"** (oben rechts). Ihr Akzent, Ihre Hintergründe, Textfarbe und Schriftarten werden auf das echte Constellation übertragen. Drücken Sie **Esc** oder **✕**, um zu schließen (dies schließt nur den Setter, nicht die Einstellungen).
+
+> Heute wendet der Style Setter Ihren Look für die aktuelle Sitzung an (eine Live-Vorschau auf der echten App). Das Speichern eines Looks als dauerhafter, benannter **Style** — mit wiederverwendbaren, umbenennbaren Farbflächen sowie Export / Import — kommt als Nächstes.
+
 ## Haeufige Fragen
 
 ### Kann ich die Windows-Titelleiste stylen ("Constellation v0.3.4 — …")?

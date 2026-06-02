@@ -927,6 +927,10 @@ O formato corresponde exatamente ao plugin Style Settings do Obsidian, entao voc
 
 As alteracoes sao salvas automaticamente no tema ativo; se voce editar um tema integrado, ele e clonado automaticamente em seus temas personalizados para que as mudancas persistam sem modificar o original.
 
+### O Configurador de Estilo
+
+O **Configurador de Estilo** (Style Setter) e um estudio de design em tela cheia — abra-o em **Configuracoes → Aparencia → "✦ Open Style Setter."** Ele mostra a sua interface real no centro; clique em qualquer parte (barra lateral, titulo da nota, titulo, link, a pagina da nota) e os controles desse elemento aparecem a direita, com a pre-visualizacao se atualizando instantaneamente. Os cartoes de tema (Midnight / Daylight / Chocolate / Nord) semeiam todo um visual — o proprio estudio o veste enquanto voce desenha — e a lista de *Superficies* pre-visualiza o visual em todo o aplicativo, nao apenas no editor. **"Apply to app"** aplica o seu acento, fundos, cor de texto e fontes ao Constellation real; **Esc** ou **✕** fecha apenas o Configurador, nao as Configuracoes. Por enquanto, aplicar e uma pre-visualizacao ao vivo da sessao — salvar um visual como um Estilo permanente e nomeado (com amostras de cor reutilizaveis e renomeaveis, alem de exportacao / importacao) vem a seguir.
+
 ### Substituicoes do motor arabe
 
 Um painel por Universo onde voce fixa como o motor arabe analisa certas formas de superficie — as suas proprias cunhagens, nomes locais, emprestimos especificos do seu campo, ou casos em que voce discorda da leitura automatica do motor. Cada substituicao vence o FST generativo, a cascata e o recuo heuristico. Adicionar ou remover uma substituicao dispara uma reindexacao focada apenas nas notas que contem a superficie afetada — sem reconstrucao completa. Veja a secao 19 ("Suporte RTL e Arabe") para o passo a passo.

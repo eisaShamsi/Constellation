@@ -925,6 +925,10 @@ El formato coincide exactamente con el plugin Style Settings de Obsidian, por lo
 
 Los cambios se guardan automaticamente en el tema activo; si editas un tema integrado, se auto-clona en tus temas personalizados para que los cambios persistan sin modificar el original.
 
+### El Configurador de Estilo
+
+El **Configurador de Estilo** (Style Setter) es un estudio de diseno a pantalla completa — abrelo desde **Ajustes → Apariencia → "✦ Open Style Setter."** Muestra tu interfaz real en el centro; haz clic en cualquier parte (barra lateral, titulo de la nota, encabezado, enlace, la pagina de la nota) y los controles de ese elemento aparecen a la derecha, mientras la vista previa se actualiza al instante. Las tarjetas de tema (Midnight / Daylight / Chocolate / Nord) siembran todo un aspecto — el propio estudio lo lleva puesto mientras disenas — y la lista de *Superficies* previsualiza el aspecto en toda la aplicacion, no solo en el editor. **"Apply to app"** aplica tu acento, fondos, color de texto y fuentes al Constellation real; **Esc** o **✕** cierra solo el Configurador, no los Ajustes. Por ahora, aplicar es una vista previa en vivo de la sesion — guardar un aspecto como un Estilo permanente y con nombre (con muestras de color reutilizables y renombrables, ademas de exportacion / importacion) llegara a continuacion.
+
 ### Anulaciones del motor arabe
 
 Un panel por Universo donde fijas como el motor arabe analiza ciertas formas superficiales — tus propias acunaciones, nombres locales, prestamos especificos de tu campo, o casos en los que no estas de acuerdo con la lectura automatica del motor. Cada anulacion vence al FST generativo, a la cascada y al respaldo heuristico. Anadir o eliminar una anulacion dispara una reindexacion focalizada solo sobre las notas que contienen la superficie afectada — sin reconstruccion completa. Consulta la seccion 19 ("Soporte RTL y Arabe") para el paso a paso.

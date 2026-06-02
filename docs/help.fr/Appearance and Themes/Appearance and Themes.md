@@ -141,6 +141,26 @@ Chaque réglage se trouve dans l'un des cinq blocs ci-dessus. Points forts :
 - Texte (normal/atténué/faible/sur accent), états erreur/avertissement/succès
 - Accent (accent interactif + survol), texte sur accent
 
+## Le Configurateur de style
+
+Le **Configurateur de style** (Style Setter) est un studio de conception plein écran pour toute votre interface. Au lieu d'ajuster les réglages un par un et d'imaginer le résultat, vous voyez votre interface réelle au centre de l'écran, vous cliquez sur la partie que vous voulez modifier et vous la regardez se mettre à jour instantanément.
+
+**Pour l'ouvrir :** allez dans **Paramètres → Apparence** et cliquez sur **"✦ Open Style Setter."** Le studio remplit l'écran en trois zones :
+
+- **À gauche** — vos *Surfaces* (Éditeur, Vue du ciel, OrgChart, Index, Cataloger, Shell) et vos *cartes de thème* (Midnight, Daylight, Chocolate, Nord).
+- **Au centre** — un aperçu en direct de votre interface.
+- **À droite** — les commandes de la partie que vous avez sélectionnée.
+
+**Styliser un élément.** Survolez n'importe quelle partie de l'aperçu central — la barre latérale, le titre de la note, un titre, un lien, la page de la note — et un anneau indique qu'elle est cliquable. Cliquez dessus, et ses commandes apparaissent à droite (un échantillon de couleur, une liste déroulante de polices, etc.). Modifiez une valeur et l'aperçu se met à jour au moment même — sans deviner.
+
+**Partir d'un thème.** Cliquez sur une carte de thème à gauche pour amorcer tout un rendu d'un seul coup. Le studio lui-même adopte ce rendu pendant que vous travaillez, de sorte que vous concevez *à l'intérieur* du thème, puis vous pouvez peaufiner des éléments individuels par-dessus.
+
+**Changer de surface.** Cliquez sur une surface à gauche pour prévisualiser le rendu sur différentes parties de l'application, pas seulement l'éditeur.
+
+**L'appliquer.** Quand le résultat vous plaît, cliquez sur **"Apply to app"** (en haut à droite). Votre accent, vos fonds, la couleur du texte et les polices sont appliqués au véritable Constellation. Appuyez sur **Esc** ou **✕** pour fermer (cela ne ferme que le Configurateur, pas les Paramètres).
+
+> Aujourd'hui, le Configurateur de style applique votre rendu pour la session en cours (un aperçu en direct sur l'application réelle). Enregistrer un rendu comme un **Style** permanent et nommé — avec des échantillons de couleur réutilisables et renommables, ainsi que l'export / import — arrive prochainement.
+
 ## Questions fréquentes
 
 ### Puis-je styliser la barre de titre Windows (« Constellation v0.3.4 — … ») ?

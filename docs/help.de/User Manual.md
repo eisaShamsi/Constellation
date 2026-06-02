@@ -927,6 +927,10 @@ Das Format entspricht exakt dem Style-Settings-Plugin von Obsidian, sodass Sie E
 
 Aenderungen werden automatisch im aktiven Thema gespeichert; wenn Sie ein eingebautes Thema bearbeiten, wird es automatisch in Ihre benutzerdefinierten Themen geklont, sodass Aenderungen bestehen bleiben, ohne das Original zu veraendern.
 
+### Der Style Setter
+
+Der **Style Setter** ist ein bildschirmfüllendes Design-Studio — öffnen Sie ihn über **Einstellungen → Darstellung → "✦ Open Style Setter."** Er zeigt Ihre echte Oberfläche in der Mitte; klicken Sie auf einen beliebigen Teil (Seitenleiste, Notiztitel, Überschrift, Link, die Notizseite), und die Steuerelemente dieses Elements erscheinen rechts, während sich die Vorschau sofort aktualisiert. Themenkarten (Midnight / Daylight / Chocolate / Nord) legen einen kompletten Look an — das Studio selbst trägt ihn, während Sie gestalten — und die Liste der *Oberflächen* schaut den Look über die gesamte App hinweg vor, nicht nur im Editor. **"Apply to app"** überträgt Ihren Akzent, Ihre Hintergründe, Textfarbe und Schriftarten auf das echte Constellation; **Esc** oder **✕** schließt nur den Setter, nicht die Einstellungen. Das Anwenden ist vorerst eine Live-Vorschau für die Sitzung — das Speichern eines Looks als dauerhafter, benannter Style (mit wiederverwendbaren, umbenennbaren Farbflächen sowie Export / Import) kommt als Nächstes.
+
 ### Ueberschreibungen der Arabisch-Engine
 
 Ein Panel pro Universum, in dem Sie festlegen, wie die Arabisch-Engine bestimmte Oberflaechenformen analysiert — Ihre eigenen Wortschoepfungen, lokale Namen, fachspezifische Lehnwoerter oder Faelle, in denen Sie der automatischen Lesart der Engine widersprechen. Jede Ueberschreibung schlaegt den generativen FST, die Kaskade und den heuristischen Fallback. Das Hinzufuegen oder Entfernen einer Ueberschreibung loest eine gezielte Neuindizierung nur fuer die Notizen aus, die die betroffene Oberflaechenform enthalten — keine Komplettneuaufbau. Siehe Abschnitt 19 ("RTL- und Arabisch-Unterstuetzung") fuer die Schritt-fuer-Schritt-Anleitung.

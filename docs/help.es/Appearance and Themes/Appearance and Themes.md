@@ -141,6 +141,26 @@ Cada ajuste vive bajo uno de los cinco bloques anteriores. Aspectos destacados:
 - Texto (normal/atenuado/débil/sobre acento), estados de error/aviso/éxito
 - Acento (acento interactivo + hover), texto sobre acento
 
+## El Configurador de Estilo
+
+El **Configurador de Estilo** (Style Setter) es un estudio de diseño a pantalla completa para toda tu interfaz. En lugar de ajustar opciones una a una e imaginar el resultado, ves tu interfaz real en el centro de la pantalla, haces clic en la parte que quieres cambiar y observas cómo se actualiza al instante.
+
+**Ábrelo:** ve a **Ajustes → Apariencia** y haz clic en **"✦ Open Style Setter."** El estudio llena la pantalla en tres zonas:
+
+- **Izquierda** — tus *Superficies* (Editor, Vista del Cielo, OrgChart, Índice, Cataloger, Shell) y tus *tarjetas de tema* (Midnight, Daylight, Chocolate, Nord).
+- **Centro** — una vista previa en vivo de tu interfaz.
+- **Derecha** — los controles de la parte que tengas seleccionada.
+
+**Estiliza un elemento.** Pasa el cursor por cualquier parte de la vista previa central — la barra lateral, el título de la nota, un encabezado, un enlace, la página de la nota — y un anillo indica que es clicable. Haz clic, y sus controles aparecen a la derecha (una muestra de color, un desplegable de fuentes, etc.). Cambia un valor y la vista previa se actualiza en el mismo momento — sin adivinar.
+
+**Parte de un tema.** Haz clic en una tarjeta de tema a la izquierda para sembrar todo un aspecto de una vez. El propio estudio adopta ese aspecto mientras trabajas, de modo que diseñas *dentro* del tema y luego puedes retocar elementos individuales sobre él.
+
+**Cambia de superficie.** Haz clic en una superficie a la izquierda para previsualizar el aspecto en distintas partes de la aplicación, no solo en el editor.
+
+**Aplícalo.** Cuando te guste lo que ves, haz clic en **"Apply to app"** (arriba a la derecha). Tu acento, fondos, color de texto y fuentes se aplican al Constellation real. Pulsa **Esc** o **✕** para cerrar (esto cierra solo el Configurador, no los Ajustes).
+
+> Hoy el Configurador de Estilo aplica tu aspecto para la sesión actual (una vista previa en vivo sobre la aplicación real). Guardar un aspecto como un **Estilo** permanente y con nombre — con muestras de color reutilizables y renombrables, además de exportación / importación — llegará a continuación.
+
 ## Preguntas frecuentes
 
 ### ¿Puedo diseñar la barra de título de Windows ("Constellation v0.3.4 — …")?

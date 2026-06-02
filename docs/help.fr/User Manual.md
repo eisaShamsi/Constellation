@@ -922,6 +922,10 @@ Le format correspond exactement au plugin Style Settings d'Obsidian, vous pouvez
 
 Les modifications sont enregistrees automatiquement dans le theme actif ; si vous modifiez un theme integre, il est automatiquement clone dans vos themes personnalises pour que les changements persistent sans modifier l'original.
 
+### Le Configurateur de style
+
+Le **Configurateur de style** (Style Setter) est un studio de conception plein ecran — ouvrez-le depuis **Parametres → Apparence → "✦ Open Style Setter."** Il affiche votre interface reelle au centre ; cliquez sur n'importe quelle partie (barre laterale, titre de la note, titre, lien, la page de la note) et les commandes de cet element apparaissent a droite, l'apercu se mettant a jour instantanement. Les cartes de theme (Midnight / Daylight / Chocolate / Nord) amorcent tout un rendu — le studio lui-meme le porte pendant que vous concevez — et la liste des *Surfaces* previsualise le rendu sur toute l'application, pas seulement l'editeur. **"Apply to app"** applique votre accent, vos fonds, la couleur du texte et les polices au veritable Constellation ; **Esc** ou **✕** ne ferme que le Configurateur, pas les Parametres. Pour l'instant, appliquer est un apercu en direct de la session — enregistrer un rendu comme un Style permanent et nomme (avec des echantillons de couleur reutilisables et renommables, ainsi que l'export / import) arrive prochainement.
+
 ### Surcharges du moteur arabe
 
 Un panneau par Univers ou vous fixez la facon dont le moteur arabe analyse certaines formes de surface — vos propres neologismes, des noms locaux, des emprunts specifiques a un domaine, ou les cas ou vous etes en desaccord avec la lecture automatique du moteur. Chaque surcharge l'emporte sur le FST generatif, la cascade et le repli heuristique. Ajouter ou retirer une surcharge declenche une reindexation ciblee sur les seules notes qui contiennent la forme de surface concernee — pas de reconstruction complete. Voir le chapitre 19 (« Prise en charge RTL et arabe ») pour la procedure pas a pas.

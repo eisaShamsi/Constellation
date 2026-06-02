@@ -141,6 +141,26 @@ Cada configuração fica sob um dos cinco blocos acima. Destaques:
 - Texto (normal/atenuado/fraco/sobre acento), estados erro/aviso/sucesso
 - Acento (acento interativo + hover), texto sobre acento
 
+## O Configurador de Estilo
+
+O **Configurador de Estilo** (Style Setter) é um estúdio de design em tela cheia para toda a sua interface. Em vez de ajustar as configurações uma a uma e imaginar o resultado, você vê a sua interface real no centro da tela, clica na parte que quer alterar e observa-a se atualizar instantaneamente.
+
+**Abra-o:** vá em **Configurações → Aparência** e clique em **"✦ Open Style Setter."** O estúdio preenche a tela em três zonas:
+
+- **Esquerda** — as suas *Superfícies* (Editor, Vista do Céu, OrgChart, Índice, Cataloger, Shell) e os seus *cartões de tema* (Midnight, Daylight, Chocolate, Nord).
+- **Centro** — uma pré-visualização ao vivo da sua interface.
+- **Direita** — os controles da parte que você tiver selecionado.
+
+**Estilize um elemento.** Passe o cursor sobre qualquer parte da pré-visualização central — a barra lateral, o título da nota, um título, um link, a página da nota — e um anel indica que é clicável. Clique nele, e os seus controles aparecem à direita (uma amostra de cor, um menu suspenso de fontes, e assim por diante). Altere um valor e a pré-visualização se atualiza no mesmo instante — sem adivinhar.
+
+**Comece a partir de um tema.** Clique em um cartão de tema à esquerda para semear todo um visual de uma vez. O próprio estúdio assume esse visual enquanto você trabalha, de modo que você desenha *dentro* do tema e depois pode ajustar elementos individuais sobre ele.
+
+**Troque de superfície.** Clique em uma superfície à esquerda para pré-visualizar o visual em diferentes partes do aplicativo, não apenas no editor.
+
+**Aplique-o.** Quando gostar do que vê, clique em **"Apply to app"** (canto superior direito). O seu acento, fundos, cor de texto e fontes são aplicados ao Constellation real. Pressione **Esc** ou **✕** para fechar (isso fecha apenas o Configurador, não as Configurações).
+
+> Hoje o Configurador de Estilo aplica o seu visual para a sessão atual (uma pré-visualização ao vivo no aplicativo real). Salvar um visual como um **Estilo** permanente e nomeado — com amostras de cor reutilizáveis e renomeáveis, além de exportação / importação — vem a seguir.
+
 ## Perguntas frequentes
 
 ### Posso estilizar a barra de título do Windows ("Constellation v0.3.4 — …")?
