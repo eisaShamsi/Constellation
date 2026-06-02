@@ -1673,46 +1673,60 @@ export const livePreviewPlugin = ViewPlugin.fromClass(LivePreviewPlugin, {
 
 /** Theme for live preview decorations */
 export const livePreviewTheme = EditorView.theme({
+	// MIG-070 §3 — per-element colour: each heading reads its own `--hN-color`,
+	// falling back to `inherit` (today's behaviour: headings inherit the content
+	// colour) so an unset Style Setter leaves the editor looking exactly as before.
+	// H6 keeps its muted fallback. The Style Setter writes these onto <body>.
 	'.cm-md-heading1': {
 		fontSize: 'var(--h1-size, 1.8em)',
 		fontWeight: 'var(--heading-weight, 700)',
+		color: 'var(--h1-color, inherit)',
 		lineHeight: 'var(--line-height-tight, 1.3)',
 	},
 	'.cm-md-heading2': {
 		fontSize: 'var(--h2-size, 1.5em)',
 		fontWeight: 'var(--heading-weight, 700)',
+		color: 'var(--h2-color, inherit)',
 		lineHeight: 'var(--line-height-tight, 1.3)',
 	},
 	'.cm-md-heading3': {
 		fontSize: 'var(--h3-size, 1.25em)',
 		fontWeight: 'var(--heading-weight, 700)',
+		color: 'var(--h3-color, inherit)',
 		lineHeight: 'var(--line-height-tight, 1.3)',
 	},
 	'.cm-md-heading4': {
 		fontSize: 'var(--h4-size, 1.1em)',
 		fontWeight: 'var(--heading-weight, 700)',
+		color: 'var(--h4-color, inherit)',
 		lineHeight: 'var(--line-height-tight, 1.3)',
 	},
 	'.cm-md-heading5': {
 		fontSize: 'var(--h5-size, 1.0em)',
 		fontWeight: 'var(--heading-weight, 700)',
+		color: 'var(--h5-color, inherit)',
 		lineHeight: 'var(--line-height-tight, 1.3)',
 	},
 	'.cm-md-heading6': {
 		fontSize: 'var(--h6-size, 0.95em)',
 		fontWeight: 'var(--heading-weight, 700)',
-		color: 'var(--text-muted)',
+		color: 'var(--h6-color, var(--text-muted))',
 		lineHeight: 'var(--line-height-tight, 1.3)',
 	},
+	// MIG-070 §3 — bold/italic/strikethrough gain their own colour (+ bold weight),
+	// all falling back to today's hardcoded values so unset = unchanged.
 	'.cm-md-bold': {
-		fontWeight: '700',
+		fontWeight: 'var(--bold-weight, 700)',
+		color: 'var(--bold-color, inherit)',
 	},
 	'.cm-md-italic': {
 		fontStyle: 'italic',
+		color: 'var(--italic-color, inherit)',
 	},
 	'.cm-md-strikethrough': {
 		textDecoration: 'line-through',
 		opacity: '0.6',
+		color: 'var(--strikethrough-color, inherit)',
 	},
 	'.cm-md-code': {
 		fontFamily: 'var(--font-monospace-theme)',
@@ -1796,7 +1810,10 @@ export const livePreviewTheme = EditorView.theme({
 		color: 'var(--background-modifier-border)',
 	},
 	'.cm-md-blockquote': {
-		color: 'var(--text-muted)',
+		// MIG-070 §3 — blockquote text colour, falling back to muted (today's look).
+		// The coloured LEFT BAR for plain `>` quotes is a line-decoration change and
+		// lands with the §3C rendering work (callouts already own their bar).
+		color: 'var(--blockquote-text-color, var(--text-muted))',
 	},
 	'.cm-md-tag': {
 		color: 'var(--library-accent, var(--interactive-accent))',

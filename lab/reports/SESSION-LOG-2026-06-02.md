@@ -172,3 +172,19 @@ Eisa: *"Prepare the handover files and prompt, but after PCS + Orientation."*
 - **Handover** — `docs/HANDOVER-MIG-070-iteration-2.md` (function-in-hand, what's shipped + protected, hard-won gotchas, **#3/#4 design-first notes**, process constraints, and a ready-to-paste next-session prompt). MoCh `docs/MoCh/MoCh-2026-06-02-1145.md`.
 
 **Final state:** Style Setter iteration 1 + quick wins (tab tint, Stage-3) + iteration-2 #1 (summary) / #2 (chrome adapts) + tab-label tweak — **all shipped, Boss-validated, committed, pushed, documented (v2.50)**. **Next (design-first):** #3 every-Markdown-element editing · #4 faithful per-plugin previews · then persistence (named Styles + swatches) · per-Universe scope · full font list · Setter UI i18n · retire old at parity.
+
+---
+
+## MIG-070 §3 — every Markdown element editable (iteration 2)
+
+**Design-first (shown to Eisa before code).** Verified the ground truth against `livePreview.ts`'s `livePreviewTheme` (the editor element styling, wired into the real note editor at `NotePane.svelte:383/801`): which catalog vars are actually *consumed* vs dead. Findings: heading sizes (`--h1..h6-size`), `--heading-weight`, inline-code bg/text/font/size, link colour/decoration are **live**; bold/italic/strike are **hardcoded** (no colour var); H6 colour = `--text-muted`; `--blockquote-border-color` is **dead** (consumed nowhere — callouts own their bar via `calloutPlugin.ts` line decos, not `.cm-md-blockquote`, which is an inline mark = colour only); markdown pipe-tables are **not** rendered as styled tables (plain text + toolbar). Eisa decisions: **Full** per-element colour; **build** the extra table/list rendering too.
+
+### §3A — per-element colour/size + clickable preview *(this build; pending Boss test)*
+- **`livePreview.ts` `livePreviewTheme`** — additive, fallback-preserving (unset = today's look, zero regression):
+  - `.cm-md-heading1..5` gain `color: var(--hN-color, inherit)`; `.cm-md-heading6` → `var(--h6-color, var(--text-muted))`.
+  - `.cm-md-bold` → `font-weight: var(--bold-weight, 700); color: var(--bold-color, inherit)`.
+  - `.cm-md-italic` / `.cm-md-strikethrough` gain `color: var(--italic-color|--strikethrough-color, inherit)`.
+  - `.cm-md-blockquote` → `color: var(--blockquote-text-color, var(--text-muted))`.
+- **`StyleSetter.svelte`** — new `range` control type (size px / weight); `ELEMENTS` expanded to H1–H6 (own colour+size, shared weight), Bold (colour+weight), Italic, Strikethrough, Inline code (bg/text/size), Blockquote (text colour), Body text (+ size); centre preview rebuilt as a richer **mini-note** rendering all of them, each clickable. Apply still writes to `<body>` (per-element vars flow through automatically).
+- **Build** `npm run tauri build -- --no-bundle` → OK (frontend clean; only pre-existing Rust dead-code warnings). Binary mtime `2026-06-02 22:00:23` (Stage-0 fresh). Commit: pending.
+- **Deferred to §3C (needs new editor decorations — cross-check Obsidian/CM6 first per WA#5):** blockquote coloured **left bar** (line deco, exclude callouts), **list-marker** styling, **markdown table rendering** + its controls. Docs (help + User Manual, 15 langs) to land with §3 PCS once §3A+§3C validated.

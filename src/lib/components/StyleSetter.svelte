@@ -5,34 +5,85 @@
 	 * A full-page "design studio": your real interface in the centre, click any part to style
 	 * it, controls on the right, surfaces + theme cards on the left. Edits go to a DRAFT (CSS
 	 * variable overrides scoped to the preview wrapper — the live app is untouched); **Apply**
-	 * copies the draft onto the real `:root`. Deliberately independent of the old MIG-069 style
+	 * copies the draft onto the real <body>. Deliberately independent of the old MIG-069 style
 	 * code, and it renders ONE preview (never a gallery of heavy cards — that froze the old panel).
 	 *
-	 * Iteration 1: the editor surface live-edits the core variables (accent · backgrounds · text ·
-	 * link · fonts) with Apply; other surfaces are representative previews; theme presets seed the
-	 * draft. Persistence (save / name / export / import) + the full surface set come next.
+	 * Iteration 1: live-edit the core variables (accent · backgrounds · text · link · fonts).
+	 * Iteration 2 §3: every Markdown element editable — Headers H1–H6, bold, italic, strikethrough,
+	 * inline code, blockquote — each with colour / size / weight, mapped to the REAL editor vars in
+	 * `livePreview.ts`'s `livePreviewTheme` + `constellationStyleSettings.ts`. The centre preview is
+	 * a richer mini-note that renders those elements so each is clickable. (Blockquote bar, list
+	 * markers, and table rendering are §3C — they need new editor decorations, cross-checked first.)
 	 */
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
 	import { styleSetterOpen, closeStyleSetter } from '$lib/stores/styleSetter';
 
-	type Ctrl = { label: string; type: 'color' | 'select'; var: string; options?: [string, string][] };
+	// A control writes one REAL app CSS variable. `color` → hex; `select` → a stack/keyword;
+	// `range` → a number + unit (e.g. `32px`, or `700` when unit is '').
+	type Ctrl =
+		| { label: string; type: 'color'; var: string }
+		| { label: string; type: 'select'; var: string; options: [string, string][] }
+		| { label: string; type: 'range'; var: string; min: number; max: number; step: number; unit: string; def: number };
+
 	const FONTS: [string, string][] = [
 		['System', 'ui-sans-serif, system-ui, "Segoe UI", sans-serif'],
 		['Serif', 'ui-serif, Georgia, "Times New Roman", serif'],
 		['Mono', 'ui-monospace, "Courier New", monospace'],
 	];
-	// Element key → its name + controls (each control writes a REAL app CSS variable).
+	const DECOR: [string, string][] = [
+		['Underline', 'underline'],
+		['None', 'none'],
+		['Dotted', 'underline dotted'],
+	];
+	// Shared "weight (all headings)" control — `--heading-weight` is one var for every H level.
+	const HW: Ctrl = { label: 'Weight (all headings)', type: 'range', var: '--heading-weight', min: 300, max: 900, step: 100, unit: '', def: 700 };
+
+	// Element key → its name + controls (each control writes a REAL app CSS variable). The
+	// heading/emphasis/code/quote vars are read by `livePreviewTheme` in livePreview.ts; sizes
+	// default to the `constellationStyleSettings.ts` catalog defaults so the preview looks right
+	// before any edit, and colours default to `inherit` (unset = today's look, no regression).
 	const ELEMENTS: Record<string, { name: string; controls: Ctrl[] }> = {
-		accent:  { name: 'Accent',          controls: [{ label: 'Accent colour', type: 'color', var: '--interactive-accent' }] },
-		noteBg:  { name: 'Note',            controls: [
-			{ label: 'Background', type: 'color', var: '--background-primary' },
-			{ label: 'Note font', type: 'select', var: '--font-text-theme', options: FONTS } ] },
-		sidebar: { name: 'Sidebar',         controls: [
+		accent:  { name: 'Accent',   controls: [{ label: 'Accent colour', type: 'color', var: '--interactive-accent' }] },
+		noteBg:  { name: 'Note',     controls: [{ label: 'Background', type: 'color', var: '--background-primary' }] },
+		sidebar: { name: 'Sidebar',  controls: [
 			{ label: 'Sidebar background', type: 'color', var: '--background-secondary' },
 			{ label: 'Interface font', type: 'select', var: '--font-interface-theme', options: FONTS } ] },
-		text:    { name: 'Text',            controls: [{ label: 'Text colour', type: 'color', var: '--text-normal' }] },
-		link:    { name: 'Link',            controls: [{ label: 'Link colour', type: 'color', var: '--link-color' }] },
+		text:    { name: 'Body text', controls: [
+			{ label: 'Text colour', type: 'color', var: '--text-normal' },
+			{ label: 'Note font', type: 'select', var: '--font-text-theme', options: FONTS },
+			{ label: 'Text size', type: 'range', var: '--font-text-size', min: 11, max: 28, step: 1, unit: 'px', def: 16 } ] },
+		link:    { name: 'Link', controls: [
+			{ label: 'Link colour', type: 'color', var: '--link-color' },
+			{ label: 'Underline', type: 'select', var: '--link-decoration', options: DECOR } ] },
+		h1: { name: 'Heading 1', controls: [
+			{ label: 'Colour', type: 'color', var: '--h1-color' },
+			{ label: 'Size', type: 'range', var: '--h1-size', min: 18, max: 60, step: 1, unit: 'px', def: 32 }, HW ] },
+		h2: { name: 'Heading 2', controls: [
+			{ label: 'Colour', type: 'color', var: '--h2-color' },
+			{ label: 'Size', type: 'range', var: '--h2-size', min: 16, max: 48, step: 1, unit: 'px', def: 26 }, HW ] },
+		h3: { name: 'Heading 3', controls: [
+			{ label: 'Colour', type: 'color', var: '--h3-color' },
+			{ label: 'Size', type: 'range', var: '--h3-size', min: 14, max: 40, step: 1, unit: 'px', def: 22 }, HW ] },
+		h4: { name: 'Heading 4', controls: [
+			{ label: 'Colour', type: 'color', var: '--h4-color' },
+			{ label: 'Size', type: 'range', var: '--h4-size', min: 13, max: 32, step: 1, unit: 'px', def: 18 }, HW ] },
+		h5: { name: 'Heading 5', controls: [
+			{ label: 'Colour', type: 'color', var: '--h5-color' },
+			{ label: 'Size', type: 'range', var: '--h5-size', min: 12, max: 28, step: 1, unit: 'px', def: 16 }, HW ] },
+		h6: { name: 'Heading 6', controls: [
+			{ label: 'Colour', type: 'color', var: '--h6-color' },
+			{ label: 'Size', type: 'range', var: '--h6-size', min: 11, max: 24, step: 1, unit: 'px', def: 14 }, HW ] },
+		bold:   { name: 'Bold', controls: [
+			{ label: 'Colour', type: 'color', var: '--bold-color' },
+			{ label: 'Weight', type: 'range', var: '--bold-weight', min: 500, max: 900, step: 100, unit: '', def: 700 } ] },
+		italic: { name: 'Italic', controls: [{ label: 'Colour', type: 'color', var: '--italic-color' }] },
+		strike: { name: 'Strikethrough', controls: [{ label: 'Colour', type: 'color', var: '--strikethrough-color' }] },
+		code:   { name: 'Inline code', controls: [
+			{ label: 'Background', type: 'color', var: '--code-background' },
+			{ label: 'Text colour', type: 'color', var: '--code-normal' },
+			{ label: 'Code size', type: 'range', var: '--font-monospace-size', min: 10, max: 22, step: 1, unit: 'px', def: 14 } ] },
+		quote:  { name: 'Blockquote', controls: [{ label: 'Text colour', type: 'color', var: '--blockquote-text-color' }] },
 	};
 
 	const SURFACES: [string, string][] = [
@@ -50,7 +101,7 @@
 	let activeSurface = $state('editor');
 	let selected = $state<string | null>(null);
 	let draftName = $state('Untitled style');
-	/** The draft: CSS-var → override value. Scoped to the preview wrapper; Apply → :root. */
+	/** The draft: CSS-var → override value. Scoped to the preview wrapper; Apply → <body>. */
 	let draft = $state<Record<string, string>>({});
 
 	const draftStyle = $derived(Object.entries(draft).map(([k, v]) => `${k}:${v}`).join(';'));
@@ -68,6 +119,13 @@
 	function curVal(v: string): string {
 		if (v in draft) return draft[v];
 		try { return getComputedStyle(document.body).getPropertyValue(v).trim(); } catch { return ''; }
+	}
+	/** Numeric current value for a range control: the draft/live value parsed, else the catalog
+	    default. Reads `draft` first so the slider + readout track edits live. */
+	function curNum(v: string, def: number): number {
+		const raw = curVal(v);
+		const n = parseFloat(raw);
+		return Number.isFinite(n) ? n : def;
 	}
 	function setVar(v: string, val: string) { draft = { ...draft, [v]: val }; }
 	function selectEl(key: string) { selected = key; }
@@ -92,8 +150,10 @@
 	}
 
 	function apply() {
-		// Iteration 1: copy the draft onto the live app for this session (direct DOM, no reactive
-		// path). The app themes <body> (not :root) and shadows :root, so we MUST target body.
+		// Copy the draft onto the live app for this session (direct DOM, no reactive path). The
+		// app themes <body> (not :root) and shadows :root, so we MUST target body. Per-element
+		// vars (--hN-color/-size, --bold-*, --italic-color, --code-*, --blockquote-text-color, …)
+		// flow through automatically since they're plain entries in the draft.
 		const root = document.body.style;
 		for (const [k, v] of Object.entries(draft)) root.setProperty(k, v);
 		// The accent is also consumed as --accent-h/s/l components + --text-accent by many
@@ -179,12 +239,22 @@
 							</button>
 							<button class="ss-main ss-hot" class:ss-sel={selected === 'noteBg'} onclick={() => selectEl('noteBg')} aria-label="Note background">
 								<span class="ss-title ss-hot2" class:ss-sel={selected === 'text'} onclick={(e) => { e.stopPropagation(); selectEl('text'); }}>Apple (Fruit)</span>
-								<span class="ss-h ss-hot2" class:ss-sel={selected === 'accent'} onclick={(e) => { e.stopPropagation(); selectEl('accent'); }}>A crisp idea</span>
+								<span class="ss-h1 ss-hot2" class:ss-sel={selected === 'h1'} onclick={(e) => { e.stopPropagation(); selectEl('h1'); }}>Heading one</span>
+								<span class="ss-h2 ss-hot2" class:ss-sel={selected === 'h2'} onclick={(e) => { e.stopPropagation(); selectEl('h2'); }}>Heading two</span>
+								<span class="ss-h3 ss-hot2" class:ss-sel={selected === 'h3'} onclick={(e) => { e.stopPropagation(); selectEl('h3'); }}>Heading three</span>
 								<span class="ss-body">
-									An apple a day pairs well with a
+									An <b class="ss-bold ss-hot2" class:ss-sel={selected === 'bold'} onclick={(e) => { e.stopPropagation(); selectEl('bold'); }}>apple</b>
+									a day pairs with a <i class="ss-italic ss-hot2" class:ss-sel={selected === 'italic'} onclick={(e) => { e.stopPropagation(); selectEl('italic'); }}>crisp</i>
 									<span class="ss-link ss-hot2" class:ss-sel={selected === 'link'} onclick={(e) => { e.stopPropagation(); selectEl('link'); }}>[[Banana]]</span>
 									<span class="ss-pill ss-hot2" class:ss-sel={selected === 'accent'} onclick={(e) => { e.stopPropagation(); selectEl('accent'); }}>supports</span>
-									in a balanced note.
+									— see <code class="ss-code ss-hot2" class:ss-sel={selected === 'code'} onclick={(e) => { e.stopPropagation(); selectEl('code'); }}>juice()</code>,
+									<s class="ss-strike ss-hot2" class:ss-sel={selected === 'strike'} onclick={(e) => { e.stopPropagation(); selectEl('strike'); }}>an old note</s>.
+								</span>
+								<span class="ss-quote ss-hot2" class:ss-sel={selected === 'quote'} onclick={(e) => { e.stopPropagation(); selectEl('quote'); }}>“An apple a day keeps the doctor away.”</span>
+								<span class="ss-hrow">
+									<span class="ss-h4 ss-hot2" class:ss-sel={selected === 'h4'} onclick={(e) => { e.stopPropagation(); selectEl('h4'); }}>H4</span>
+									<span class="ss-h5 ss-hot2" class:ss-sel={selected === 'h5'} onclick={(e) => { e.stopPropagation(); selectEl('h5'); }}>H5</span>
+									<span class="ss-h6 ss-hot2" class:ss-sel={selected === 'h6'} onclick={(e) => { e.stopPropagation(); selectEl('h6'); }}>H6</span>
 								</span>
 							</button>
 						</div>
@@ -214,14 +284,20 @@
 				{#if sel}
 					<div class="ss-rlabel">Selected element</div>
 					<div class="ss-selname">{sel.name}</div>
-					{#each sel.controls as c (c.var)}
+					{#each sel.controls as c (c.var + '|' + c.label)}
 						<div class="ss-ctrl">
-							<label for={'ss-' + c.var}>{c.label}</label>
-							{#if c.type === 'color'}
+							{#if c.type === 'range'}
+								<label for={'ss-' + c.var}>{c.label}<span class="ss-rval">{curNum(c.var, c.def)}{c.unit}</span></label>
+								<input id={'ss-' + c.var} type="range" min={c.min} max={c.max} step={c.step}
+									value={curNum(c.var, c.def)}
+									oninput={(e) => setVar(c.var, (e.currentTarget as HTMLInputElement).value + c.unit)} />
+							{:else if c.type === 'color'}
+								<label for={'ss-' + c.var}>{c.label}</label>
 								<input id={'ss-' + c.var} type="color" value={hexOf(curVal(c.var))} oninput={(e) => setVar(c.var, (e.currentTarget as HTMLInputElement).value)} />
-							{:else if c.type === 'select'}
+							{:else}
+								<label for={'ss-' + c.var}>{c.label}</label>
 								<select id={'ss-' + c.var} onchange={(e) => setVar(c.var, (e.currentTarget as HTMLSelectElement).value)}>
-									{#each c.options ?? [] as [lbl, val] (val)}<option value={val}>{lbl}</option>{/each}
+									{#each c.options as [lbl, val] (val)}<option value={val}>{lbl}</option>{/each}
 								</select>
 							{/if}
 						</div>
@@ -281,12 +357,26 @@
 	.ss-side { background: var(--background-secondary, #f1f1ef); color: var(--text-normal, #2e3338); padding: 12px 10px; display: flex; flex-direction: column; gap: 8px; border: none; text-align: left; font-family: var(--font-interface-theme, inherit); }
 	.ss-file { font-size: 11.5px; display: flex; align-items: center; gap: 6px; } .ss-file.dim { opacity: .55; }
 	.ss-file::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--interactive-accent, #7c3aed); flex: none; } .ss-file.dim::before { background: currentColor; opacity: .4; }
-	.ss-main { background: var(--background-primary, #fbfbfa); color: var(--text-normal, #2e3338); padding: 18px 20px; text-align: left; border: none; font-family: var(--font-text-theme, inherit); display: block; }
-	.ss-title { display: block; font-weight: 800; font-size: 19px; margin-bottom: 12px; color: var(--text-normal, #2e3338); }
-	.ss-h { display: block; font-weight: 700; font-size: 22px; margin-bottom: 10px; color: var(--interactive-accent, #c0392b); }
-	.ss-body { display: block; font-size: 14px; line-height: 1.75; color: var(--text-normal, #2e3338); }
-	.ss-link { color: var(--link-color, var(--interactive-accent, #2f6fed)); text-decoration: underline; }
+	/* The note body scrolls if the chosen heading sizes overflow — the preview shows REAL sizes. */
+	.ss-main { background: var(--background-primary, #fbfbfa); color: var(--text-normal, #2e3338); padding: 16px 18px; text-align: left; border: none; font-family: var(--font-text-theme, inherit); display: flex; flex-direction: column; gap: 7px; overflow-y: auto; }
+	.ss-title { display: block; font-weight: 800; font-size: 18px; color: var(--text-normal, #2e3338); }
+	/* Headings read their own size/colour vars, with the catalog defaults + inherit as fallbacks
+	   so the preview matches a real note before any edit. Weight is shared (--heading-weight). */
+	.ss-h1 { display: block; font-size: var(--h1-size, 32px); color: var(--h1-color, inherit); font-weight: var(--heading-weight, 700); line-height: 1.2; }
+	.ss-h2 { display: block; font-size: var(--h2-size, 26px); color: var(--h2-color, inherit); font-weight: var(--heading-weight, 700); line-height: 1.2; }
+	.ss-h3 { display: block; font-size: var(--h3-size, 22px); color: var(--h3-color, inherit); font-weight: var(--heading-weight, 700); line-height: 1.2; }
+	.ss-h4 { font-size: var(--h4-size, 18px); color: var(--h4-color, inherit); font-weight: var(--heading-weight, 700); }
+	.ss-h5 { font-size: var(--h5-size, 16px); color: var(--h5-color, inherit); font-weight: var(--heading-weight, 700); }
+	.ss-h6 { font-size: var(--h6-size, 14px); color: var(--h6-color, var(--text-muted, #8a8a8a)); font-weight: var(--heading-weight, 700); }
+	.ss-hrow { display: flex; align-items: baseline; gap: 14px; }
+	.ss-body { display: block; font-size: var(--font-text-size, 14px); line-height: 1.7; color: var(--text-normal, #2e3338); }
+	.ss-bold { font-weight: var(--bold-weight, 700); color: var(--bold-color, inherit); }
+	.ss-italic { font-style: italic; color: var(--italic-color, inherit); }
+	.ss-strike { text-decoration: line-through; opacity: 0.7; color: var(--strikethrough-color, inherit); }
+	.ss-code { font-family: var(--font-monospace-theme, ui-monospace, "Courier New", monospace); font-size: var(--font-monospace-size, 13px); background: var(--code-background, rgba(0,0,0,.07)); color: var(--code-normal, inherit); border-radius: var(--radius-s, 3px); padding: 1px 5px; }
+	.ss-link { color: var(--link-color, var(--interactive-accent, #2f6fed)); text-decoration: var(--link-decoration, underline); }
 	.ss-pill { display: inline-flex; align-items: center; background: var(--interactive-accent, #4a9eff); color: #fff; font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 9px; text-transform: lowercase; }
+	.ss-quote { display: block; color: var(--blockquote-text-color, var(--text-muted, #8a8a8a)); font-style: italic; border-inline-start: 3px solid color-mix(in srgb, var(--blockquote-text-color, var(--text-muted, #8a8a8a)) 60%, transparent); padding-inline-start: 9px; }
 	/* Hover/selected rings drawn INSIDE the element (inset box-shadow) so they're never clipped
 	   by the preview's overflow:hidden — that was why the edge-touching sidebar/note showed nothing. */
 	.ss-hot { cursor: pointer; } .ss-hot:hover { box-shadow: inset 0 0 0 2px #9d8dff; }
@@ -305,10 +395,12 @@
 	.ss-right { grid-area: right; border-left: 1px solid var(--c-border); background: var(--c-surface); padding: 14px; overflow-y: auto; }
 	.ss-selname { font-size: 16px; font-weight: 700; margin-bottom: 14px; }
 	.ss-ctrl { margin-bottom: 14px; }
-	.ss-ctrl label { display: block; font-size: 12px; color: var(--c-muted); margin-bottom: 5px; }
+	.ss-ctrl label { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; color: var(--c-muted); margin-bottom: 5px; }
+	.ss-rval { font-variant-numeric: tabular-nums; color: var(--c-text); font-weight: 600; }
 	.ss-ctrl input[type=color] { width: 100%; height: 30px; border: 1px solid var(--c-border); border-radius: 6px; background: none; cursor: pointer; }
-	.ss-ctrl select { width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--c-border); background: #1d1d2a; color: #e8e9f3; font: inherit; font-size: 13px; }
-	.ss-ctrl select option { background: #1d1d2a; color: #e8e9f3; }
+	.ss-ctrl input[type=range] { width: 100%; accent-color: var(--c-accent); cursor: pointer; }
+	.ss-ctrl select { width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--c-border); background: var(--c-surface2); color: var(--c-text); font: inherit; font-size: 13px; }
+	.ss-ctrl select option { background: var(--c-surface); color: var(--c-text); }
 	.ss-empty { color: var(--c-muted); font-size: 13px; line-height: 1.6; margin-top: 28px; text-align: center; }
 	.ss-big { font-size: 26px; opacity: .5; display: block; margin-bottom: 8px; }
 </style>
