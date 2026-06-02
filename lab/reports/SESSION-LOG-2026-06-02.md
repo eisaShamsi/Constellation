@@ -158,3 +158,5 @@ The note body font re-test **passed** (whole note — title, body, callouts, typ
 
 ### Tab library-label tweak (Eisa, build `b3hchhqme`)
 The library name above each tab title (`.tab-lib-name`, `+layout.svelte`) **enlarged** (`font-size 0.55rem → 0.72rem`) and **lifted 2px** (`bottom: calc(100% + 4px) → calc(100% + 6px)`). "Enlarged by 1x" read as a clear, tasteful bump (still ≤ the tab title's 0.8rem); offered to Eisa to calibrate bigger/smaller. Pending test.
+
+**Follow-up (build `bfy5ybwz6`):** the enlargement + lift made the label **touch the top border** (the `.tab-scroll` `overflow` clips above its `12px` top padding). Fix: raised `.tab-scroll` `padding-top 12px → 18px` to make headroom — keeping Eisa's enlargement (`0.72rem`) and lift (`6px`) intact rather than shrinking them. Strip is ~6px taller to hold the bigger labels; offered to trim size/lift if the height feels off.

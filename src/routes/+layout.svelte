@@ -7502,7 +7502,7 @@
 	}
 	.tab-scroll {
 		min-width: 0; display: flex; align-items: flex-end;
-		gap: 1px; padding: 12px 4px 0; overflow-x: auto;
+		gap: 1px; padding: 18px 4px 0; overflow-x: auto;
 		flex: 1;
 	}
 	.tab-scroll::-webkit-scrollbar { height: 0; }
