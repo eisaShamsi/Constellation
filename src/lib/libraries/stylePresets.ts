@@ -244,18 +244,20 @@ export function presetSectionKeys(preset: StylePreset): SectionKey[] {
  *  current universe's `customThemes`. Applying one switches to that theme (merging it into the
  *  universe's library via applyPreset, never replacing it). */
 export function themeToStyle(theme: ConstellationTheme): StylePreset {
-	const isBuiltin = theme.source === 'builtin' || (BUILTIN_THEMES ?? []).some((t) => t.id === theme.id);
+	// Defensive: never throw on a malformed/legacy theme (a missing `colors` etc.) — that would
+	// freeze the whole Styles panel (the derived list throws → stuck on "Loading…").
+	const isBuiltin = theme?.source === 'builtin' || (BUILTIN_THEMES ?? []).some((t) => t?.id === theme?.id);
 	return {
-		id: `theme:${theme.id}`,
-		name: theme.name,
+		id: `theme:${theme?.id ?? 'unknown'}`,
+		name: theme?.name ?? theme?.id ?? 'Theme',
 		schema: STYLE_PRESET_SCHEMA,
 		builtin: true, // derived — not a user-saved Style (no rename/delete; duplicate to edit)
 		source: isBuiltin ? 'builtin' : 'theme',
 		sections: {
 			colorsTheme: {
-				colorScheme: theme.type,
-				accentColor: theme.colors.accent,
-				activeThemeId: theme.id,
+				colorScheme: theme?.type ?? 'dark',
+				accentColor: theme?.colors?.accent,
+				activeThemeId: theme?.id,
 				// A built-in resolves from BUILTIN_THEMES; a custom theme must travel with the Style.
 				customThemes: isBuiltin ? [] : [theme],
 			},
@@ -267,11 +269,17 @@ export function themeToStyle(theme: ConstellationTheme): StylePreset {
  *  Styles + the user's saved Styles. DERIVED at read time — the §A non-destructive guarantee:
  *  no stored Theme or Style is moved or rewritten, so nothing can be lost. */
 export function unifiedStyleList(savedStyles: StylePreset[]): StylePreset[] {
-	const cur = get(appSettings) as { customThemes?: ConstellationTheme[] };
-	const builtinStyles = (BUILTIN_THEMES ?? []).map(themeToStyle);
-	const customThemeStyles = (cur.customThemes ?? []).map(themeToStyle);
-	const saved = savedStyles.map((p) => ({ ...p, source: p.source ?? ('style' as const) }));
-	return [...builtinStyles, ...customThemeStyles, ...saved];
+	const saved = (savedStyles ?? []).map((p) => ({ ...p, source: p.source ?? ('style' as const) }));
+	try {
+		const cur = get(appSettings) as { customThemes?: ConstellationTheme[] };
+		const builtinStyles = (BUILTIN_THEMES ?? []).map(themeToStyle);
+		const customThemeStyles = (cur?.customThemes ?? []).map(themeToStyle);
+		return [...builtinStyles, ...customThemeStyles, ...saved];
+	} catch (e) {
+		// Never let assembling the list break the panel — fall back to the saved Styles.
+		console.error('[unifiedStyleList] failed; showing saved Styles only', e);
+		return saved;
+	}
 }
 
 /** A Style is user-owned (renamable / deletable) iff it isn't a derived built-in / theme wrapper. */

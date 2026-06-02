@@ -38,7 +38,7 @@
 	const freshTicks = () => Object.fromEntries(SECTION_CATALOGUE.map((s) => [s.key, s.defaultOn]));
 	const sectionLabel = (k: SectionKey) => $t(`styles.section.${k}`);
 
-	onMount(async () => { presets = await loadStylePresets(); loaded = true; });
+	onMount(async () => { try { presets = await loadStylePresets(); } finally { loaded = true; } });
 	onDestroy(() => { if (applyTimer) clearTimeout(applyTimer); });
 
 	async function persist() {
