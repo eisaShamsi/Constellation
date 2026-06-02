@@ -16,6 +16,7 @@
 	import ConfirmDialog from './ConfirmDialog.svelte';
 	import LinkTypesEditor from './LinkTypesEditor.svelte';
 	import StylePresetsPanel from './StylePresetsPanel.svelte';
+	import { openStyleSetter } from '$lib/stores/styleSetter';
 	import { notifySettingsChanged } from '$lib/secondScreen';
 	import { aiSettings, updateAISettings, setProvider } from '$lib/ai/store';
 	import { validateConnection } from '$lib/ai/engine';
@@ -2330,6 +2331,15 @@
 								oninput={(e) => updateSettings({ fontSize: parseInt((e.target as HTMLInputElement).value) })} />
 							<span class="slider-val">{$appSettings.fontSize}px</span>
 						</div>
+					</div>
+
+					<!-- ═══ STYLE SETTER (standalone full-page design studio — MIG-070) ═══ -->
+					<div class="setting-item ss-entry">
+						<div class="setting-info">
+							<div class="setting-name">Constellation Style Setter</div>
+							<div class="setting-desc">Design your whole look in one place — click any part of the interface and restyle it live.</div>
+						</div>
+						<button class="ss-entry-btn" style="font:inherit;font-weight:600;padding:8px 16px;border-radius:8px;border:1px solid var(--interactive-accent);background:var(--interactive-accent);color:#fff;cursor:pointer;white-space:nowrap;" onclick={() => openStyleSetter()}>✦ Open Style Setter</button>
 					</div>
 
 					<!-- ═══ STYLES (named, app-global style presets — MIG-069 §C) ═══ -->

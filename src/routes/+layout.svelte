@@ -108,6 +108,7 @@
 	import PagePreview from '$lib/components/PagePreview.svelte';
 	import WorkspaceManager from '$lib/components/WorkspaceManager.svelte';
 	import SettingsModal from '$lib/components/SettingsModal.svelte';
+	import StyleSetter from '$lib/components/StyleSetter.svelte';
 	import LockScreen from '$lib/components/LockScreen.svelte';
 	import MigrationProgressStrip from '$lib/components/MigrationProgressStrip.svelte';
 	import ClassifierScanProgressStrip from '$lib/components/ClassifierScanProgressStrip.svelte';
@@ -6814,6 +6815,9 @@
 			commands={getCommands()}
 		/>
 	{/if}
+
+	<!-- MIG-070 — standalone Style Setter (full-page; self-shows via its store) -->
+	<StyleSetter />
 
 	{#if showLibraryManager}
 		<LibraryManager
