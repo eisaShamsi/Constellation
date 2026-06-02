@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Constellation Style Setter — Interactive Mockup</title>
+<style>
+  /* ─────────────────────────────────────────────────────────────────────────
+     Constellation Style Setter — clickable design mockup (standalone).
+     Touches NO app code. Demonstrates the UX: click an element in the live
+     preview → its controls appear on the right → changes update the preview
+     instantly. Switch surfaces on the left. Apply a theme card.
+     ───────────────────────────────────────────────────────────────────────── */
+  :root {
+    --chrome-bg: #15151f;
+    --chrome-surface: #1d1d2a;
+    --chrome-surface-2: #24243440;
+    --chrome-text: #cfd0e0;
+    --chrome-muted: #8a8ba0;
+    --chrome-border: #2c2c3e;
+    --chrome-accent: #7c6cff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+    background: #0c0c14; color: var(--chrome-text);
+    display: flex; align-items: center; justify-content: center; padding: 18px;
+  }
+
+  /* ── The full-page Setter ────────────────────────────────────────────── */
+  .setter {
+    width: 100%; max-width: 1180px; height: min(92vh, 760px);
+    background: var(--chrome-bg); border: 1px solid var(--chrome-border);
+    border-radius: 14px; overflow: hidden;
+    display: grid; grid-template-rows: 52px 1fr;
+    grid-template-columns: 210px 1fr 248px;
+    grid-template-areas: "top top top" "left center right";
+    box-shadow: 0 30px 80px rgba(0,0,0,.55);
+  }
+
+  /* Top bar */
+  .top {
+    grid-area: top; display: flex; align-items: center; gap: 14px;
+    padding: 0 16px; border-bottom: 1px solid var(--chrome-border);
+    background: var(--chrome-surface);
+  }
+  .top .brand { font-weight: 700; letter-spacing: .2px; }
+  .top .brand .star { color: var(--chrome-accent); }
+  .top .draft {
+    color: var(--chrome-muted); font-size: 13px; padding: 3px 9px;
+    border: 1px solid var(--chrome-border); border-radius: 7px; background: var(--chrome-surface-2);
+  }
+  .top .draft b { color: var(--chrome-text); font-weight: 600; }
+  .top .spacer { flex: 1; }
+  .btn {
+    font: inherit; font-size: 13px; padding: 6px 13px; border-radius: 7px;
+    border: 1px solid var(--chrome-border); background: var(--chrome-surface-2);
+    color: var(--chrome-text); cursor: pointer;
+  }
+  .btn:hover { border-color: var(--chrome-accent); }
+  .btn.primary { background: var(--chrome-accent); border-color: var(--chrome-accent); color: #fff; font-weight: 600; }
+  .btn.icon { padding: 6px 9px; }
+
+  /* Left rail */
+  .left {
+    grid-area: left; border-right: 1px solid var(--chrome-border);
+    background: var(--chrome-surface); display: flex; flex-direction: column;
+    padding: 12px 10px; gap: 6px; overflow-y: auto;
+  }
+  .rail-label { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--chrome-muted); margin: 6px 4px 2px; }
+  .surface {
+    display: flex; align-items: center; gap: 9px; padding: 7px 9px; border-radius: 8px;
+    cursor: pointer; font-size: 13.5px; color: var(--chrome-text);
+  }
+  .surface:hover { background: var(--chrome-surface-2); }
+  .surface.active { background: color-mix(in srgb, var(--chrome-accent) 22%, transparent); color: #fff; }
+  .surface .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: .6; flex: none; }
+  .surface.active .dot { opacity: 1; background: var(--chrome-accent); }
+  .divider { height: 1px; background: var(--chrome-border); margin: 8px 2px; }
+  .themes { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+  .theme-card {
+    border: 1px solid var(--chrome-border); border-radius: 8px; overflow: hidden;
+    cursor: pointer; background: var(--chrome-surface-2);
+  }
+  .theme-card:hover { border-color: var(--chrome-accent); }
+  .theme-card .swatch { height: 30px; display: flex; }
+  .theme-card .swatch span { flex: 1; }
+  .theme-card .tn { font-size: 11px; padding: 4px 6px; color: var(--chrome-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .theme-card.newcard { display: flex; align-items: center; justify-content: center; min-height: 52px; color: var(--chrome-muted); font-size: 12px; border-style: dashed; }
+
+  /* Center — the live preview stage */
+  .center {
+    grid-area: center; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; padding: 20px; gap: 10px;
+    background:
+      radial-gradient(120% 120% at 50% 0%, #16161f 0%, #0e0e16 100%);
+  }
+  .stage-hint { font-size: 12px; color: var(--chrome-muted); }
+  .stage { position: relative; }
+
+  /* The MINI INTERFACE preview — everything reads --p-* vars (live editable). */
+  .preview {
+    --p-bg: #fbfbfa; --p-text: #2e3338; --p-muted: #6b7280; --p-accent: #7c3aed;
+    --p-sidebar-bg: #f1f1ef; --p-sidebar-text: #2e3338;
+    --p-heading: #c0392b; --p-heading-size: 22px; --p-text-size: 14px;
+    --p-link: #2f6fed; --p-pill: #4a9eff; --p-radius: 10px;
+    --p-font: ui-serif, Georgia, serif;
+    width: 560px; height: 360px; border-radius: 10px; overflow: hidden;
+    display: grid; grid-template-columns: 120px 1fr; background: var(--p-bg);
+    box-shadow: 0 14px 40px rgba(0,0,0,.45); border: 1px solid rgba(0,0,0,.25);
+    font-family: var(--p-font);
+  }
+  .sel { outline: 2px solid var(--chrome-accent); outline-offset: 1px; }
+  .hot { cursor: pointer; }
+  .hot:hover { outline: 1.5px dashed color-mix(in srgb, var(--chrome-accent) 70%, #fff); outline-offset: 1px; }
+
+  .pv-side { background: var(--p-sidebar-bg); color: var(--p-sidebar-text); padding: 10px 9px; display: flex; flex-direction: column; gap: 7px; }
+  .pv-side .file { font-size: 11px; opacity: .82; display: flex; align-items: center; gap: 6px; }
+  .pv-side .file::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--p-accent); flex: none; }
+  .pv-side .file.f2::before, .pv-side .file.f3::before { background: currentColor; opacity: .4; }
+  .pv-main { padding: 16px 18px; overflow: hidden; }
+  .pv-title { color: var(--p-text); font-weight: 800; font-size: 19px; margin-bottom: 12px; }
+  .pv-h { color: var(--p-heading); font-weight: 700; font-size: var(--p-heading-size); margin-bottom: 10px; }
+  .pv-body { color: var(--p-text); font-size: var(--p-text-size); line-height: 1.7; }
+  .pv-link { color: var(--p-link); text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--p-link) 45%, transparent); }
+  .pv-pill { display: inline-flex; align-items: center; background: var(--p-pill); color: #fff; font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: var(--p-radius); text-transform: lowercase; }
+
+  /* Other-surface representative previews */
+  .pv-alt { width: 560px; height: 360px; border-radius: 10px; background: var(--p-bg); color: var(--p-text);
+    box-shadow: 0 14px 40px rgba(0,0,0,.45); border: 1px solid rgba(0,0,0,.25); display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 14px; font-family: var(--p-font);
+    --p-bg: #fbfbfa; --p-text: #2e3338; --p-accent: #7c3aed; --p-pill:#4a9eff; --p-link:#2f6fed; --p-heading:#c0392b; }
+  .pv-alt .alt-title { font-weight: 700; font-size: 15px; color: var(--p-heading); }
+  .pv-alt .alt-note { font-size: 12px; color: var(--p-muted, #6b7280); }
+  .sky { display: flex; gap: 22px; }
+  .sky .node { width: 34px; height: 34px; border-radius: 50%; background: var(--p-accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--p-accent) 25%, transparent); }
+  .sky .node.b { background: var(--p-pill); box-shadow: 0 0 0 4px color-mix(in srgb, var(--p-pill) 25%, transparent); }
+  .sky .node.c { background: var(--p-link); box-shadow: 0 0 0 4px color-mix(in srgb, var(--p-link) 25%, transparent); }
+  .idx { width: 70%; display: flex; flex-direction: column; gap: 7px; }
+  .idx .row { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  .idx .row .bar { height: 6px; background: var(--p-accent); border-radius: 3px; }
+
+  /* Right rail — controls for the selected element */
+  .right { grid-area: right; border-left: 1px solid var(--chrome-border); background: var(--chrome-surface); padding: 14px 14px; overflow-y: auto; }
+  .right h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: var(--chrome-muted); margin-bottom: 4px; }
+  .right .sel-name { font-size: 16px; font-weight: 700; margin-bottom: 14px; }
+  .ctrl { margin-bottom: 14px; }
+  .ctrl label { display: block; font-size: 12px; color: var(--chrome-muted); margin-bottom: 5px; }
+  .ctrl input[type=color] { width: 100%; height: 30px; border: 1px solid var(--chrome-border); border-radius: 6px; background: none; cursor: pointer; }
+  .ctrl input[type=range] { width: 100%; accent-color: var(--chrome-accent); }
+  .ctrl select { width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--chrome-border); background: var(--chrome-surface-2); color: var(--chrome-text); font: inherit; font-size: 13px; }
+  .ctrl .val { float: right; color: var(--chrome-text); font-variant-numeric: tabular-nums; }
+  .empty { color: var(--chrome-muted); font-size: 13px; line-height: 1.6; margin-top: 30px; text-align: center; }
+  .empty .big { font-size: 26px; opacity: .5; display: block; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+  <div class="setter">
+    <!-- ── Top bar ── -->
+    <header class="top">
+      <span class="brand"><span class="star">✦</span> Style Setter</span>
+      <span class="draft">draft: <b id="draftName">Eisa Midnight</b></span>
+      <span class="spacer"></span>
+      <button class="btn">Apply to app</button>
+      <button class="btn primary">Save as theme</button>
+      <button class="btn icon">✕</button>
+    </header>
+
+    <!-- ── Left rail: surfaces + themes ── -->
+    <aside class="left">
+      <div class="rail-label">Surfaces</div>
+      <div class="surface active" data-surface="editor"><span class="dot"></span> Editor</div>
+      <div class="surface" data-surface="sky"><span class="dot"></span> Sky View</div>
+      <div class="surface" data-surface="org"><span class="dot"></span> OrgChart</div>
+      <div class="surface" data-surface="index"><span class="dot"></span> Index</div>
+      <div class="surface" data-surface="cataloger"><span class="dot"></span> Cataloger</div>
+      <div class="surface" data-surface="shell"><span class="dot"></span> Shell</div>
+      <div class="divider"></div>
+      <div class="rail-label">My themes</div>
+      <div class="themes" id="themes"></div>
+    </aside>
+
+    <!-- ── Center: live preview ── -->
+    <main class="center">
+      <div class="stage-hint">Hover a part of the interface, click to style it →</div>
+      <div class="stage" id="stage">
+        <!-- Editor surface -->
+        <div class="preview" id="preview" data-surface-view="editor">
+          <div class="pv-side hot" data-elem="sidebar" title="Sidebar">
+            <div class="file">Apple (Fruit)</div>
+            <div class="file f2">Banana</div>
+            <div class="file f3">Carrot</div>
+            <div class="file f2">Salad Recipe</div>
+          </div>
+          <div class="pv-main">
+            <div class="pv-title hot" data-elem="title" title="Title">Apple (Fruit)</div>
+            <div class="pv-h hot" data-elem="heading" title="Heading">A crisp idea</div>
+            <div class="pv-body hot" data-elem="text" title="Body text">
+              An apple a day pairs well with a
+              <span class="pv-link hot" data-elem="link" title="Link">[[Banana]]</span>
+              <span class="pv-pill hot" data-elem="pill" title="Typed-link pill">supports</span>
+              in a balanced note.
+            </div>
+          </div>
+        </div>
+        <!-- Other surfaces (representative) -->
+        <div class="pv-alt" data-surface-view="sky" style="display:none">
+          <div class="alt-title">Sky View</div>
+          <div class="sky"><span class="node hot" data-elem="accent"></span><span class="node b hot" data-elem="pill"></span><span class="node c hot" data-elem="link"></span></div>
+          <div class="alt-note">node colours follow your link-type palette · click a node to recolour its type</div>
+        </div>
+        <div class="pv-alt" data-surface-view="org" style="display:none">
+          <div class="alt-title">OrgChart</div>
+          <div class="sky"><span class="node hot" data-elem="accent"></span></div>
+          <div class="alt-note">representative snapshot · the chart inherits your accent + text colours</div>
+        </div>
+        <div class="pv-alt" data-surface-view="index" style="display:none">
+          <div class="alt-title">Index</div>
+          <div class="idx">
+            <div class="row"><span class="bar hot" data-elem="accent" style="width:70%"></span> apple</div>
+            <div class="row"><span class="bar hot" data-elem="accent" style="width:45%"></span> banana</div>
+            <div class="row"><span class="bar hot" data-elem="accent" style="width:30%"></span> carrot</div>
+          </div>
+          <div class="alt-note">term bars follow your accent</div>
+        </div>
+        <div class="pv-alt" data-surface-view="cataloger" style="display:none">
+          <div class="alt-title">Cataloger</div>
+          <div class="alt-note">representative snapshot · inherits your surface + accent colours</div>
+        </div>
+        <div class="pv-alt" data-surface-view="shell" style="display:none">
+          <div class="alt-title">Shell (sidebar · tabs · status bar)</div>
+          <div class="alt-note">click the <b style="color:var(--p-accent)">accent</b> / sidebar to restyle the chrome</div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ── Right rail: controls ── -->
+    <aside class="right" id="right">
+      <div class="empty"><span class="big">⊹</span>Click any part of the interface to style it. Its controls appear here, and changes show instantly.</div>
+    </aside>
+  </div>
+
+<script>
+  // ── Element → controls map (each control writes a --p-* var on the preview) ──
+  const CTRL = {
+    sidebar: { name: "Sidebar", controls: [
+      { label: "Background", type: "color", var: "--p-sidebar-bg" },
+      { label: "Text colour", type: "color", var: "--p-sidebar-text" } ] },
+    title: { name: "Note title", controls: [
+      { label: "Colour", type: "color", var: "--p-text" } ] },
+    heading: { name: "Heading", controls: [
+      { label: "Colour", type: "color", var: "--p-heading" },
+      { label: "Size", type: "range", var: "--p-heading-size", min: 16, max: 40, unit: "px" } ] },
+    text: { name: "Body text", controls: [
+      { label: "Colour", type: "color", var: "--p-text" },
+      { label: "Size", type: "range", var: "--p-text-size", min: 12, max: 22, unit: "px" } ] },
+    link: { name: "Link", controls: [
+      { label: "Colour", type: "color", var: "--p-link" } ] },
+    pill: { name: "Typed-link pill", controls: [
+      { label: "Colour", type: "color", var: "--p-pill" },
+      { label: "Corner radius", type: "range", var: "--p-radius", min: 0, max: 14, unit: "px" } ] },
+    accent: { name: "Accent", controls: [
+      { label: "Accent colour", type: "color", var: "--p-accent" } ] }
+  };
+  // Background + Font are "whole-surface" controls always offered too.
+  const GLOBAL = [
+    { label: "Note background", type: "color", var: "--p-bg" },
+    { label: "Font", type: "select", var: "--p-font",
+      options: [["Serif","ui-serif, Georgia, serif"],["Sans","ui-sans-serif, system-ui, sans-serif"],["Mono",'ui-monospace, "Courier New", monospace']] }
+  ];
+
+  const THEMES = [
+    { name: "Midnight", vars: { "--p-bg":"#11111b","--p-text":"#cdd6f4","--p-sidebar-bg":"#181825","--p-sidebar-text":"#bac2de","--p-heading":"#cba6f7","--p-accent":"#cba6f7","--p-link":"#89b4fa","--p-pill":"#94e2d5" } },
+    { name: "Daylight", vars: { "--p-bg":"#ffffff","--p-text":"#1f2328","--p-sidebar-bg":"#f3f3f1","--p-sidebar-text":"#1f2328","--p-heading":"#0969da","--p-accent":"#0969da","--p-link":"#0969da","--p-pill":"#1f883d" } },
+    { name: "Chocolate", vars: { "--p-bg":"#fbf3e6","--p-text":"#4a3b2a","--p-sidebar-bg":"#f2e6d2","--p-sidebar-text":"#5a4632","--p-heading":"#a8552b","--p-accent":"#b9722f","--p-link":"#8a5a2b","--p-pill":"#c98a3a" } },
+    { name: "Nord", vars: { "--p-bg":"#2e3440","--p-text":"#e5e9f0","--p-sidebar-bg":"#3b4252","--p-sidebar-text":"#d8dee9","--p-heading":"#88c0d0","--p-accent":"#88c0d0","--p-link":"#81a1c1","--p-pill":"#a3be8c" } }
+  ];
+
+  const preview = document.getElementById('preview');
+  const right = document.getElementById('right');
+  let selected = null;
+
+  function curVar(v) {
+    const root = preview;
+    return getComputedStyle(root).getPropertyValue(v).trim();
+  }
+  function setVar(v, val) {
+    // Apply to the editor preview AND any visible alt-surface preview.
+    document.querySelectorAll('[data-surface-view]').forEach(el => el.style.setProperty(v, val));
+  }
+
+  function renderControls(key) {
+    const def = CTRL[key];
+    const list = (def ? def.controls : []).concat(key === 'accent' ? [] : GLOBAL);
+    const title = def ? def.name : key;
+    let html = `<h3>Selected element</h3><div class="sel-name">${title}</div>`;
+    list.forEach((c, i) => {
+      const cur = curVar(c.var) || '';
+      if (c.type === 'color') {
+        const hex = cur.startsWith('#') ? cur : '#cccccc';
+        html += `<div class="ctrl"><label>${c.label}</label><input type="color" data-var="${c.var}" value="${hex}"></div>`;
+      } else if (c.type === 'range') {
+        const num = parseInt(cur) || c.min;
+        html += `<div class="ctrl"><label>${c.label}<span class="val">${num}${c.unit||''}</span></label>
+          <input type="range" min="${c.min}" max="${c.max}" value="${num}" data-var="${c.var}" data-unit="${c.unit||''}"></div>`;
+      } else if (c.type === 'select') {
+        const opts = c.options.map(o => `<option value="${o[1]}">${o[0]}</option>`).join('');
+        html += `<div class="ctrl"><label>${c.label}</label><select data-var="${c.var}">${opts}</select></div>`;
+      }
+    });
+    right.innerHTML = html;
+    right.querySelectorAll('input[type=color]').forEach(inp =>
+      inp.addEventListener('input', () => setVar(inp.dataset.var, inp.value)));
+    right.querySelectorAll('input[type=range]').forEach(inp =>
+      inp.addEventListener('input', () => {
+        setVar(inp.dataset.var, inp.value + inp.dataset.unit);
+        const v = inp.previousElementSibling.querySelector('.val'); if (v) v.textContent = inp.value + inp.dataset.unit;
+      }));
+    right.querySelectorAll('select').forEach(sel =>
+      sel.addEventListener('change', () => setVar(sel.dataset.var, sel.value)));
+  }
+
+  // Element selection (event delegation on the stage)
+  document.getElementById('stage').addEventListener('click', (e) => {
+    const el = e.target.closest('[data-elem]');
+    if (!el) return;
+    if (selected) selected.classList.remove('sel');
+    selected = el; el.classList.add('sel');
+    renderControls(el.dataset.elem);
+  });
+
+  // Surface switching
+  document.querySelectorAll('.surface').forEach(s => s.addEventListener('click', () => {
+    document.querySelectorAll('.surface').forEach(x => x.classList.remove('active'));
+    s.classList.add('active');
+    const which = s.dataset.surface;
+    document.querySelectorAll('[data-surface-view]').forEach(v =>
+      v.style.display = (v.dataset.surfaceView === which) ? '' : 'none');
+    if (selected) { selected.classList.remove('sel'); selected = null; }
+    right.innerHTML = '<div class="empty"><span class="big">⊹</span>Click any part of this surface to style it.</div>';
+  }));
+
+  // Theme cards
+  const themesEl = document.getElementById('themes');
+  THEMES.forEach(t => {
+    const card = document.createElement('div'); card.className = 'theme-card';
+    const sw = `<span style="background:${t.vars['--p-bg']}"></span><span style="background:${t.vars['--p-sidebar-bg']}"></span><span style="background:${t.vars['--p-accent']}"></span><span style="background:${t.vars['--p-pill']}"></span>`;
+    card.innerHTML = `<div class="swatch">${sw}</div><div class="tn">${t.name}</div>`;
+    card.addEventListener('click', () => { Object.entries(t.vars).forEach(([k,v]) => setVar(k,v)); document.getElementById('draftName').textContent = t.name; });
+    themesEl.appendChild(card);
+  });
+  const nc = document.createElement('div'); nc.className = 'theme-card newcard'; nc.textContent = '+ new'; themesEl.appendChild(nc);
+</script>
+</body>
+</html>
