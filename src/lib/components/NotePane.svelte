@@ -113,6 +113,7 @@
 		onTrailPrev,
 		onTrailNext,
 		highlightTerm = '',
+		summaryHeadline = '',
 		onlinkclick,
 		linkTraversalMap,
 	}: {
@@ -148,6 +149,7 @@
 		onTrailPrev?: () => void;
 		onTrailNext?: () => void;
 		highlightTerm?: string;
+		summaryHeadline?: string;
 		onlinkclick?: (link: string, newTab?: boolean) => void;
 		linkTraversalMap?: Map<string, number>;
 	} = $props();
@@ -1082,6 +1084,11 @@
 			onkeydown={handleTitleKeydown}
 		/>
 
+		<!-- ─── Summary (NSC headline) — under the title, inside the page ─── -->
+		{#if summaryHeadline}
+			<div class="e-summary" dir="auto" title={summaryHeadline}>{summaryHeadline}</div>
+		{/if}
+
 		<!-- ─── Properties ─── -->
 		{#if propsMode !== 'hidden' && (properties.length > 0 || rawYaml)}
 			{#if propsMode === 'source'}
@@ -1285,6 +1292,16 @@
 		margin-block: 0 24px; margin-inline: 0; text-align: start;
 	}
 	.e-title.e-title-center { text-align: center; }
+	/* NSC summary — under the title, inside the page (MIG-070 §iter2-#1, Eisa) */
+	.e-summary {
+		font-style: italic;
+		color: var(--text-muted);
+		font-size: 0.95rem;
+		line-height: 1.55;
+		margin-block: -12px 22px;
+		margin-inline: 0;
+		text-align: start;
+	}
 	.e-title::placeholder { color: var(--text-faint, #ccc); font-weight: 400; }
 
 	/* ─── Properties toggle + source view ─── */

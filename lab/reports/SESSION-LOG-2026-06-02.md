@@ -125,6 +125,12 @@ Four directions captured for the next phase (alongside the already-ratified pers
 
 Sizing: #1 focused editor fix · #2 moderate Setter-chrome · #3 large (design-first, the vision centrepiece) · #4 large (design-first, per-surface). Everything to date is committed/pushed (`04ac4f73`) + documented (orientation v2.49) — clean handoff point.
 
+### Iteration-2 #1 + #2 implemented (Eisa chose "Quick fixes first"; build `b0inwq4wp`)
+
+**#1 — note summary relocated.** The NSC headline (MIG-043) moved from the full-width `.ne-summary-band` strip (in `NoteEditor`, above NotePane, outside the page) to **inside the page, under the title, above Properties**. `NotePane` gains a `summaryHeadline` prop → renders `<div class="e-summary" dir="auto">` after `.e-title`, before the Properties block (muted italic, pulled up under the title, respects the `.e-paper` 48px padding so it's within the page). `NoteEditor` passes `summaryHeadline={activeHeadline}` and the old band + its CSS are removed. (Second screen passes nothing → prop defaults `''` → no summary, no regression.)
+
+**#2 — Setter chrome adapts to the theme.** `StyleSetter.svelte`'s fixed dark chrome vars now map to the theme: `--c-bg→var(--background-primary)`, `--c-surface→var(--background-secondary)`, `--c-surface2→var(--background-modifier-hover)`, `--c-text→var(--text-normal)`, `--c-muted→var(--text-muted)`, `--c-border→var(--background-modifier-border)`, `--c-accent→var(--interactive-accent)` (each with the original dark value as fallback); `.ss-center` backdrop → `var(--background-secondary)`. Because `.ss` carries the **draft** (`style={draftStyle}`) and otherwise inherits the app theme, the whole studio now follows the look being edited (pick *Chocolate* → the frame goes chocolate), starting from the app's current theme. Pending Boss test.
+
 ---
 
 ## ✅ MILESTONE — Style Setter iteration 1 complete end-to-end (Boss-validated 2026-06-02)

@@ -317,14 +317,9 @@
 
 {#key tab.id + '|' + tab.path + '|' + (tab.reloadVersion ?? 0)}
 <div class="ne-wrap">
-	{#if activeHeadline}
-		<!-- MIG-043 Phase 1 — NSC summary headline band. Thin, muted, italic.
-		     Hidden when empty (no summary yet / lazy-fill in flight). UX
-		     placement is the initial pass; iterate after Boss-test. -->
-		<div class="ne-summary-band" dir="auto" title={activeHeadline}>{activeHeadline}</div>
-	{/if}
 <NotePane
 	value={body}
+	summaryHeadline={activeHeadline}
 	title={tab.name.replace(/\.md$/, '')}
 	dir={noteDir}
 	initialCursorPos={tab.cursorPos ?? 0}
@@ -371,17 +366,4 @@
 		min-height: 0;
 	}
 	.ne-wrap > :global(*:last-child) { flex: 1 1 auto; min-height: 0; }
-	.ne-summary-band {
-		flex: 0 0 auto;
-		padding: 4px 12px;
-		font-size: 0.78rem;
-		font-style: italic;
-		color: var(--text-muted);
-		background: var(--background-secondary, transparent);
-		border-bottom: 1px solid var(--background-modifier-border, transparent);
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-		line-height: 1.4;
-	}
 </style>

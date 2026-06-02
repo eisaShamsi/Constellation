@@ -240,8 +240,10 @@
 		background: rgba(6, 6, 12, 0.62); backdrop-filter: blur(2px); padding: 16px;
 	}
 	.ss {
-		--c-bg: #15151f; --c-surface: #1d1d2a; --c-surface2: #24243440; --c-text: #cfd0e0;
-		--c-muted: #8a8ba0; --c-border: #2c2c3e; --c-accent: #7c6cff;
+		/* Chrome follows the theme being edited (the .ss element carries the draft + inherits the
+		   app theme), with the original dark studio look as fallback (MIG-070 §iter2-#2, Eisa). */
+		--c-bg: var(--background-primary, #15151f); --c-surface: var(--background-secondary, #1d1d2a); --c-surface2: var(--background-modifier-hover, #24243440); --c-text: var(--text-normal, #cfd0e0);
+		--c-muted: var(--text-muted, #8a8ba0); --c-border: var(--background-modifier-border, #2c2c3e); --c-accent: var(--interactive-accent, #7c6cff);
 		width: 100%; max-width: 1180px; height: min(92vh, 760px); background: var(--c-bg);
 		border: 1px solid var(--c-border); border-radius: 14px; overflow: hidden; color: var(--c-text);
 		display: grid; grid-template-rows: 52px 1fr; grid-template-columns: 210px 1fr 248px;
@@ -271,7 +273,7 @@
 	.ss-tsw { height: 28px; display: flex; } .ss-tsw span { flex: 1; }
 	.ss-tn { display: block; font-size: 11px; padding: 4px 6px; color: var(--c-muted); text-align: left; }
 	.ss-newcard { display: flex; align-items: center; justify-content: center; min-height: 50px; color: var(--c-muted); font-size: 12px; border-style: dashed; }
-	.ss-center { grid-area: center; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; gap: 10px; background: radial-gradient(120% 120% at 50% 0%, #16161f 0%, #0e0e16 100%); }
+	.ss-center { grid-area: center; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; gap: 10px; background: var(--background-secondary, #14141c); }
 	.ss-hint { font-size: 12px; color: var(--c-muted); }
 	.ss-stage { position: relative; }
 	/* The mini interface — uses the REAL app vars (overridden by the draft on .ss). */
