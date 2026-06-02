@@ -1180,7 +1180,7 @@
 	/* ─── The Desk (spec 3.1) ─── */
 	.e-desk {
 		flex: 1; display: flex; flex-direction: column; align-items: center;
-		background: #e8e8ec; padding-inline: 24px;
+		background: var(--background-secondary, #e8e8ec); padding-inline: 24px;
 		overflow-y: auto; overflow-x: hidden; min-width: 0; min-height: 0;
 	}
 
@@ -1188,7 +1188,7 @@
 	.e-breadcrumb {
 		padding: 4px 48px; font-size: 0.78rem; color: var(--text-faint);
 		display: flex; align-items: center; min-height: 28px; flex-shrink: 0;
-		width: 100%; max-width: 1200px; background: #ffffff;
+		width: 100%; max-width: 1200px; background: var(--background-primary, #ffffff);
 		border-bottom: 1px solid var(--background-modifier-border, #e0e0e0);
 	}
 	.e-bc-lib { color: var(--text-muted); }
@@ -1272,7 +1272,8 @@
 	/* ─── The Paper (spec 3.1) ─── */
 	.e-paper {
 		width: 100%; max-width: 1200px; flex: 1;
-		display: flex; flex-direction: column; background: #ffffff;
+		display: flex; flex-direction: column; background: var(--background-primary, #ffffff);
+		font-family: var(--font-text-theme, inherit);
 		padding: 48px; min-width: 0; overflow-y: auto; overflow-x: hidden;
 	}
 

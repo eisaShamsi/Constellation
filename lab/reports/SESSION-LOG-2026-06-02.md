@@ -71,3 +71,23 @@ All editing passed: hover ring now visible (✓ image), font list readable (✓ 
 4. Verified my var names already match the app's (`--background-primary/-secondary`, `--text-normal`, `--interactive-accent`, `--font-interface-theme/-text-theme`) — the preview already speaks the app's language; only the Apply *target* was wrong.
 
 Re-test of steps 7–8 to follow.
+
+### Apply re-test — Boss findings (build `6ea21aae`)
+
+✅ **Apply works** for accent, sidebar background, and text. ❌ Two hold-outs: **editor note background** and **editor note font**. Investigated (Explore agent + direct reads), root cause confirmed — both are baked into the editor, not theme-wired:
+
+- **Note background**: the editor is a deliberate "paper on a desk" (NotePane spec 3.1) — `.e-desk` is hardcoded `#e8e8ec` (NotePane:1183), `.e-paper` hardcoded `#ffffff` (NotePane:1275), `.e-breadcrumb` `#ffffff` (NotePane:1191). No CSS variable, no `.theme-dark` override. So `--background-primary` can't touch it.
+- **Note font**: `:global(body)` font-family is `var(--font-interface-theme)` (+layout:7161). NotePane's editor content is `.cm-scroller { fontFamily: 'inherit' }` (NotePane:451) → it inherits the **interface** font, and NotePane never sets `--font-text-theme`. (FocusPane:295 and CodeMirrorEditor:1195 *do* use `--font-text-theme` — NotePane is the parity outlier.) So the Setter's "Note font" (`--font-text-theme`) is ignored by the main editor.
+
+**This is a design decision, not a bug fix** — making the paper/desk/note-font theme-wired touches the core editor surface (Migration-rule territory) and changes a deliberate design. Surfaced to Eisa with a recommendation (make both themeable, aligns with the "style every element" vision + fixes the dark-theme paper gap + the font-parity outlier) vs. keep the paper fixed. Awaiting his call before touching NotePane.
+
+### Decision + fix — note paper/desk/font made themeable (build `bpwsvpafn`)
+
+Eisa chose **"Make both themeable."** Three NotePane.svelte changes, each with the current value as a fallback so the light-theme look is preserved:
+- `.e-paper` background `#ffffff` → `var(--background-primary, #ffffff)`, + `font-family: var(--font-text-theme, inherit)` (note content + title now follow the Text font — parity with FocusPane/CodeMirrorEditor).
+- `.e-desk` background `#e8e8ec` → `var(--background-secondary, #e8e8ec)`.
+- `.e-breadcrumb` background `#ffffff` → `var(--background-primary, #ffffff)`.
+
+Result: the Setter's existing "Note background" (`--background-primary`) and "Note font" (`--font-text-theme`) controls now drive the real editor; the note also finally follows dark themes (was hardcoded white = unreadable light-on-light in dark before). No Setter-side change needed — the var names already matched. Second screen mounts the same NotePane → inherits it (falls back to white paper if it doesn't set the vars → no regression). Behaviour change to note: content/title now use the **Text** font setting, not the Interface font (the correct, consistent behaviour).
+
+Known follow-ups: desk shade in light theme is now `--background-secondary` (a touch lighter than the old `#e8e8ec`); a fuller dark-theme audit of editor decorations is a separate pass.
