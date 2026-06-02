@@ -7532,10 +7532,10 @@
 		position: relative;
 	}
 	.tab.active, .tab.focused {
-		background: var(--tab-active-bg, #ffffff); color: var(--tab-active-color, var(--text));
+		background: var(--tab-active-bg, var(--background-primary, #ffffff)); color: var(--tab-active-color, var(--text));
 		border: 1px solid var(--tab-border, #d0d0d0);
 		border-top: 3px solid var(--library-color, var(--accent));
-		border-bottom: 1px solid var(--tab-active-bg, #ffffff);
+		border-bottom: 1px solid var(--tab-active-bg, var(--background-primary, #ffffff));
 		margin-bottom: -1px;
 	}
 	.tab.drag-over {

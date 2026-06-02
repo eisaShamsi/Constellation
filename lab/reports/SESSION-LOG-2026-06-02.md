@@ -107,7 +107,9 @@ Known follow-ups: desk shade in light theme is now `--background-secondary` (a t
 3. **Many font types** — the final version offers a full font list (current System/Serif/Mono are placeholders), incl. the user's installed + bundled fonts and (per Language-First) per-script fonts.
 
 ### Tab styling preference (Eisa, 2026-06-02)
-For the **chrome pass**: option **(b)** — the **active tab tints to its note's page colour** (`--background-primary`), so a yellow note gets a yellow-ish active tab; inactive tabs stay with the panel/bar colour. Not yet implemented (deferred to a focused chrome step after iteration-1 editing is confirmed).
+For the **chrome pass**: option **(b)** — the **active tab tints to its note's page colour** (`--background-primary`), so a yellow note gets a yellow-ish active tab; inactive tabs stay with the panel/bar colour.
+
+**Implemented** (build `b31oqxv29`, "Quick wins" — Eisa chose this next): `+layout.svelte` `.tab.active` `background` + `border-bottom` changed from `var(--tab-active-bg, #ffffff)` → `var(--tab-active-bg, var(--background-primary, #ffffff))`. The active tab now defaults to the note page colour and "connects" to it; an explicit `--tab-active-bg` Style-Setting override still wins (non-breaking). Pending Boss test alongside Stage 3 (theme cards + surface previews).
 
 ---
 
