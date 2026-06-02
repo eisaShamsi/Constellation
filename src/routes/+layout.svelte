@@ -1691,7 +1691,7 @@
 			const twStack = `"ConstellationTypewriter", ${TYPEWRITER_FONTS.textFont}`;
 			root.setProperty('--font-text-theme', twStack);
 			root.setProperty('--font-interface-theme', twStack);
-			css += `.cm-editor .cm-content { font-family: ${twStack} !important; }\n`;
+			css += `.cm-editor .cm-content { font-family: var(--font-text-theme, ${twStack}) !important; }\n`;
 			css += `.cm-editor .cm-scroller { font-family: ${twStack}; }\n`;
 		}
 
@@ -1759,12 +1759,12 @@
 				root.setProperty('--font-text-theme', txtStack);
 				// Directly target CM6 editor elements — CSS variables don't cascade
 				// into CodeMirror's scoped styles for @font-face virtual fonts
-				css += `.cm-editor .cm-content { font-family: ${txtStack} !important; }\n`;
+				css += `.cm-editor .cm-content { font-family: var(--font-text-theme, ${txtStack}) !important; }\n`;
 				css += `.cm-editor .cm-scroller { font-family: ${txtStack}; }\n`;
 			} else {
 				root.setProperty('--font-interface-theme', baseUI);
 				root.setProperty('--font-text-theme', baseTxt);
-				css += `.cm-editor .cm-content { font-family: ${baseTxt} !important; }\n`;
+				css += `.cm-editor .cm-content { font-family: var(--font-text-theme, ${baseTxt}) !important; }\n`;
 				css += `.cm-editor .cm-scroller { font-family: ${baseTxt}; }\n`;
 			}
 		}

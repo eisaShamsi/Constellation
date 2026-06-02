@@ -91,3 +91,17 @@ Eisa chose **"Make both themeable."** Three NotePane.svelte changes, each with t
 Result: the Setter's existing "Note background" (`--background-primary`) and "Note font" (`--font-text-theme`) controls now drive the real editor; the note also finally follows dark themes (was hardcoded white = unreadable light-on-light in dark before). No Setter-side change needed — the var names already matched. Second screen mounts the same NotePane → inherits it (falls back to white paper if it doesn't set the vars → no regression). Behaviour change to note: content/title now use the **Text** font setting, not the Interface font (the correct, consistent behaviour).
 
 Known follow-ups: desk shade in light theme is now `--background-secondary` (a touch lighter than the old `#e8e8ec`); a fuller dark-theme audit of editor decorations is a separate pass.
+
+### Note paper/font re-test — Boss findings (build `bd0a264a`)
+
+- **Note background: ✅ PASS** — the page turns the chosen colour.
+- **Note font: partial** — the chosen font reaches the **title + Properties** but NOT the **CodeMirror note content**.
+  - First hypothesis (bidiPlugin per-script fonts) **ruled out** by reading Eisa's actual settings (`.constellation/settings.json`): `scriptFonts: {}`, `textFont: ""`, `interfaceFont: ""` — all empty, so bidiPlugin sets no per-line font. (Good thing I verified instead of patching the wrong layer.)
+  - **Real root cause**: the font effect in `+layout.svelte` injects a global, **`!important`**, *direct* CM rule `.cm-editor .cm-content { font-family: <resolved-stack> !important }` (lines 1694/1762/1767). The comment at 1760 explains the intent — CSS vars "don't cascade into CodeMirror's scoped styles" so they direct-target with the resolved stack. That `!important` rule beats the inherited `.e-paper` font, so the content ignored `--font-text-theme`. Title + Properties aren't `.cm-content`, so they followed it.
+  - **Fix** (build `b847jkxpe`): change those 3 rules to `font-family: var(--font-text-theme, <same-stack>) !important`. Behaviour-identical for normal use (the effect already sets `--font-text-theme` to that exact stack, which becomes the fallback), but the content now **follows** `--font-text-theme`, so the Setter's Note-font control drives it. No regression for per-script `@font-face` users (the var still holds the `"ConstellationText", …` stack).
+- **Tab not restyled** — the note's tab in the tab bar didn't follow the look (it's chrome, likely `--background-secondary`); noted for a "chrome/tab" styling pass.
+
+### Style Setter feature requests (Eisa, 2026-06-02) — for the persistence/palette iteration
+1. **Saved colour swatches** — when the user picks a colour, save it as a reusable swatch usable on other elements.
+2. **Rename swatches** — each saved swatch can be named/renamed.
+3. **Many font types** — the final version offers a full font list (current System/Serif/Mono are placeholders), incl. the user's installed + bundled fonts and (per Language-First) per-script fonts.
