@@ -105,3 +105,27 @@ Known follow-ups: desk shade in light theme is now `--background-secondary` (a t
 1. **Saved colour swatches** — when the user picks a colour, save it as a reusable swatch usable on other elements.
 2. **Rename swatches** — each saved swatch can be named/renamed.
 3. **Many font types** — the final version offers a full font list (current System/Serif/Mono are placeholders), incl. the user's installed + bundled fonts and (per Language-First) per-script fonts.
+
+### Tab styling preference (Eisa, 2026-06-02)
+For the **chrome pass**: option **(b)** — the **active tab tints to its note's page colour** (`--background-primary`), so a yellow note gets a yellow-ish active tab; inactive tabs stay with the panel/bar colour. Not yet implemented (deferred to a focused chrome step after iteration-1 editing is confirmed).
+
+---
+
+## ✅ MILESTONE — Style Setter iteration 1 complete end-to-end (Boss-validated 2026-06-02)
+
+The note body font re-test **passed** (whole note — title, body, callouts, typed-link badges, wikilinks — consistently Mono on the cream page). **Every element the user clicks in the Style Setter now restyles the real Constellation on Apply:** accent, sidebar background, text, note background, note font. The standalone Setter opens with no freeze, edits live, and applies to the real app. Orientation bumped to **v2.49** in the same pass.
+
+### State-of-standing (SO #5)
+
+**(a) Verified-shipped & protected** (committed + pushed + Boss-validated):
+- Standalone Style Setter iteration 1 — `StyleSetter.svelte` + `styleSetter.ts`, Settings entry, top-level mount. Click-to-edit → live preview → Apply. Commits `cab575ce` → `11605aeb`.
+- Note editor made themeable — `NotePane` paper/desk/breadcrumb + content font; `+layout` content-font var fix. Boss-validated.
+- Old `StylePresetsPanel` retained + working (un-break `b561bafe`); freeze-prone retrofit abandoned per LL-014.
+
+**(b) In-flight / by-design-incomplete:** Apply is **session-only** (direct DOM; reset by the theme effect on a settings change) — durable persistence is the next phase, not a bug. Nothing uncommitted.
+
+**(c) Known-broken:** none in the Setter.
+
+**(d) Pending — not started:** persistence (save named Style + reusable/renameable colour swatches, export/import) · per-Universe apply scope · Stage-3 breadth verify (theme cards + surfaces) · tab tint (b) + chrome · full font list · full i18n (15 locales — Setter is English-only) · retire old Appearance theming + MIG-069 Presets at parity.
+
+**(e) Doc drift:** help files + User Manual not yet updated (deferred to persistence ship, per Testing-Instructions/SO #2 — the Setter is mid-iteration); orientation **body** §4 Appearance section to update at ship (the v2.49 **preamble** covers it for now).
