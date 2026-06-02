@@ -111,6 +111,20 @@ For the **chrome pass**: option **(b)** — the **active tab tints to its note's
 
 **Implemented** (build `b31oqxv29`, "Quick wins" — Eisa chose this next): `+layout.svelte` `.tab.active` `background` + `border-bottom` changed from `var(--tab-active-bg, #ffffff)` → `var(--tab-active-bg, var(--background-primary, #ffffff))`. The active tab now defaults to the note page colour and "connects" to it; an explicit `--tab-active-bg` Style-Setting override still wins (non-breaking). Pending Boss test alongside Stage 3 (theme cards + surface previews).
 
+### Quick-wins test — Boss findings (build `04ac4f73`): **All Pass** ✅
+Tab tint, theme cards (Midnight/Daylight/Chocolate/Nord), and surface switching all confirmed.
+
+## Style Setter — iteration-2 remarks (Eisa, 2026-06-02)
+
+Four directions captured for the next phase (alongside the already-ratified persistence/swatches/i18n/per-Universe roadmap):
+
+1. **Relocate the note summary** *(editor-layout fix, not strictly Setter)* — the note's summary/excerpt currently renders in the full-width **top strip** (above the breadcrumb, outside the page). Move it to render **under the note title, above the Properties block, within the page borders.** Touches `NotePane` rendering.
+2. **Setter chrome adapts to the theme** — the Style Setter's own dark frame (left rail / top bar / right rail; fixed `--c-*` chrome vars in `StyleSetter.svelte`) should **follow the selected theme**, not stay dark around a light preview (image 2: Chocolate draft, dark Setter). Need: decide adapt-to-draft vs adapt-to-app-theme.
+3. **Editor: every Markdown/CSS element editable, each with its own character** *(the core "change every element" vision)* — add a **font/text colour** control, and expand beyond title/content-font/wikilink/callout to **all** elements: **Headers (H1–H6)**, bold, italic, inline code, code blocks, blockquotes, lists, tables, HR, etc. — each with colour/font/size/weight controls. Maps to the app's existing Style-Settings vars (`constellationStyleSettings.ts`); **design-first** (element→var taxonomy + preview rows).
+4. **Each core plugin replicates its real form/shape** — the surface previews (Sky View, OrgChart, Index, Cataloger, Shell) should **look like the actual plugin**, not generic placeholders (Sky View = real bubble layout, etc.). Ratified "static representative samples", now made faithful. **Design-first** per surface.
+
+Sizing: #1 focused editor fix · #2 moderate Setter-chrome · #3 large (design-first, the vision centrepiece) · #4 large (design-first, per-surface). Everything to date is committed/pushed (`04ac4f73`) + documented (orientation v2.49) — clean handoff point.
+
 ---
 
 ## ✅ MILESTONE — Style Setter iteration 1 complete end-to-end (Boss-validated 2026-06-02)
