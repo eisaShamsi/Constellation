@@ -269,17 +269,14 @@ export function themeToStyle(theme: ConstellationTheme): StylePreset {
  *  Styles + the user's saved Styles. DERIVED at read time — the §A non-destructive guarantee:
  *  no stored Theme or Style is moved or rewritten, so nothing can be lost. */
 export function unifiedStyleList(savedStyles: StylePreset[]): StylePreset[] {
-	// Use the saved Styles BY REFERENCE — never spread/copy them (some are 150 KB+ with
-	// embedded theme CSS; copying them on a reactive tick melts the main thread). Build the
-	// derived theme-Styles fresh and prepend. Call this IMPERATIVELY (onMount + after edits),
-	// never inside a $derived (a reactive re-compute over big objects is what froze §A v1).
-	const saved = savedStyles ?? [];
+	const saved = (savedStyles ?? []).map((p) => ({ ...p, source: p.source ?? ('style' as const) }));
 	try {
 		const cur = get(appSettings) as { customThemes?: ConstellationTheme[] };
 		const builtinStyles = (BUILTIN_THEMES ?? []).map(themeToStyle);
 		const customThemeStyles = (cur?.customThemes ?? []).map(themeToStyle);
 		return [...builtinStyles, ...customThemeStyles, ...saved];
 	} catch (e) {
+		// Never let assembling the list break the panel — fall back to the saved Styles.
 		console.error('[unifiedStyleList] failed; showing saved Styles only', e);
 		return saved;
 	}
