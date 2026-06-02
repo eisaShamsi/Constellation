@@ -7545,8 +7545,8 @@
 	.tab[draggable="true"] { cursor: grab; }
 	.tab[draggable="true"]:active { cursor: grabbing; }
 	.tab-lib-name {
-		position: absolute; bottom: calc(100% + 4px); inset-inline-end: 8px;
-		font-size: 0.55rem; line-height: 1.3; letter-spacing: 0.02em;
+		position: absolute; bottom: calc(100% + 6px); inset-inline-end: 8px;
+		font-size: 0.72rem; line-height: 1.3; letter-spacing: 0.02em;
 		color: var(--text);
 		background: #e8e8ec;
 		padding: 0 5px;

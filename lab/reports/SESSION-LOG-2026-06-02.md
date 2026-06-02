@@ -151,3 +151,10 @@ The note body font re-test **passed** (whole note — title, body, callouts, typ
 **(d) Pending — not started:** persistence (save named Style + reusable/renameable colour swatches, export/import) · per-Universe apply scope · Stage-3 breadth verify (theme cards + surfaces) · tab tint (b) + chrome · full font list · full i18n (15 locales — Setter is English-only) · retire old Appearance theming + MIG-069 Presets at parity.
 
 **(e) Doc drift:** help files + User Manual not yet updated (deferred to persistence ship, per Testing-Instructions/SO #2 — the Setter is mid-iteration); orientation **body** §4 Appearance section to update at ship (the v2.49 **preamble** covers it for now).
+
+---
+
+### Iter2 #1 + #2 Boss test — **All Passed** ✅ (build `118ff93b`)
+
+### Tab library-label tweak (Eisa, build `b3hchhqme`)
+The library name above each tab title (`.tab-lib-name`, `+layout.svelte`) **enlarged** (`font-size 0.55rem → 0.72rem`) and **lifted 2px** (`bottom: calc(100% + 4px) → calc(100% + 6px)`). "Enlarged by 1x" read as a clear, tasteful bump (still ≤ the tab title's 0.8rem); offered to Eisa to calibrate bigger/smaller. Pending test.
