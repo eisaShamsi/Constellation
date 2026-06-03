@@ -98,7 +98,9 @@
 			{ label: 'Colour', type: 'color', var: '--bold-color' },
 			{ label: 'Weight', type: 'range', var: '--bold-weight', min: 500, max: 900, step: 100, unit: '', def: 700 } ] },
 		italic: { name: 'Italic', controls: [{ label: 'Colour', type: 'color', var: '--italic-color' }] },
-		strike: { name: 'Strikethrough', controls: [{ label: 'Colour', type: 'color', var: '--strikethrough-color' }] },
+		strike: { name: 'Strikethrough', controls: [
+			{ label: 'Line colour', type: 'color', var: '--strikethrough-color' },
+			{ label: 'Line thickness', type: 'range', var: '--strikethrough-thickness', min: 1, max: 6, step: 1, unit: 'px', def: 1 } ] },
 		code:   { name: 'Inline code', controls: [
 			{ label: 'Background', type: 'color', var: '--code-background' },
 			{ label: 'Text colour', type: 'color', var: '--code-normal' },
@@ -405,7 +407,7 @@
 	.ss-body { display: block; font-size: var(--font-text-size, 14px); line-height: 1.7; color: var(--editor-text-color, var(--text-normal, #2e3338)); }
 	.ss-bold { font-weight: var(--bold-weight, 700); color: var(--bold-color, #e36209); }
 	.ss-italic { font-style: italic; color: var(--italic-color, #7c3aed); }
-	.ss-strike { text-decoration: line-through; opacity: 0.7; color: var(--strikethrough-color, inherit); }
+	.ss-strike { text-decoration: line-through; text-decoration-color: var(--strikethrough-color, currentColor); text-decoration-thickness: var(--strikethrough-thickness, 1px); opacity: 0.7; }
 	.ss-code { font-family: var(--font-monospace-theme, ui-monospace, "Courier New", monospace); font-size: var(--font-monospace-size, 13px); background: var(--code-background, rgba(0,0,0,.07)); color: var(--code-normal, #16a34a); border-radius: var(--radius-s, 3px); padding: 1px 5px; }
 	.ss-link { color: var(--link-color, var(--interactive-accent, #2f6fed)); text-decoration: var(--link-decoration, underline); }
 	.ss-pill { display: inline-flex; align-items: center; background: var(--interactive-accent, #4a9eff); color: #fff; font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 9px; text-transform: lowercase; }

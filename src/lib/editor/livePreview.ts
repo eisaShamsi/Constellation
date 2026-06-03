@@ -1691,7 +1691,11 @@ export const livePreviewTheme = EditorView.theme({
 		fontStyle: 'italic',
 	},
 	'.cm-md-strikethrough': {
+		// MIG-070 §3B — strikethrough styles the LINE only (colour + thickness), not the text
+		// colour (Eisa). Fallbacks (currentColor / auto) = today's look ⇒ no regression.
 		textDecoration: 'line-through',
+		textDecorationColor: 'var(--strikethrough-color, currentColor)',
+		textDecorationThickness: 'var(--strikethrough-thickness, auto)',
 		opacity: '0.6',
 	},
 	'.cm-md-code': {

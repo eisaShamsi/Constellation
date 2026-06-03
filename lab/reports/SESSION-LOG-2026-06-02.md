@@ -214,3 +214,10 @@ After test 2, Eisa marked the 10 interface regions on a screenshot and asked to 
 - **`FileTree.svelte`** — `.folder`/`.note` gain `font-family: var(--ft-master-font-family, inherit)`, `border-radius: var(--ft-row-radius, 3px)` (was hardcoded), opt-in separators `border-bottom: var(--ft-border-width, 0px) var(--ft-border-style, solid) var(--ft-border-color, var(--background-modifier-border))`. Existing `--ft-master-color/-font-size/-weight/-row-padding-y` confirmed live. Unset = unchanged.
 - **`StyleSetter.svelte`** — `BORDER_STYLE` select; new **File tree** element (text colour, font, size, weight, row spacing, row radius, separator width/style/colour); added to `ELEMENT_ORDER` after Interface; preview file rows now clickable → File tree + read the `--ft-*` vars (live). Background noted as the Interface panel bg (shared, not duplicated — Form-Aligns-To-Purpose).
 - **Build:** lock conflict first (running test instance held the exe — `Access denied`; stopped it, rebuilt). Binary mtime `2026-06-03 11:13:16`. Next: #3 toolbar, #5 view tabs, #9 universe footer → then Milestone A Boss test.
+- **Boss test → Pass.** ✅ File-tree styling applies live + on Apply; note area untouched.
+
+### §3B refinement — Strikethrough styles the LINE, not the text *(Eisa)*
+Eisa: *"Strikethrough should affect only the line — change the line colour or thickness, not the font."* Repointed `--strikethrough-color` from the text `color` to **`text-decoration-color`**, and added **`--strikethrough-thickness`** (→ `text-decoration-thickness`).
+- `NotePane.svelte` `tags.strikethrough`: `textDecorationColor: var(--strikethrough-color, currentColor)` + `textDecorationThickness: var(--strikethrough-thickness, auto)` (removed the `color` override).
+- `livePreview.ts` `.cm-md-strikethrough`: same two decoration vars added (keeps `line-through` + `opacity .6`).
+- `StyleSetter.svelte`: Strikethrough element now has **Line colour** + **Line thickness** (1–6px); preview `.ss-strike` strikes the line via `text-decoration-color`/`-thickness`, text colour untouched. Fallbacks (currentColor / auto) = no regression. Binary mtime `2026-06-03 11:33:58`.

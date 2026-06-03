@@ -47,7 +47,7 @@
 		{ tag: tags.heading6, color: 'var(--h6-color, #d73a49)', fontWeight: 'var(--heading-weight, 600)' },
 		{ tag: tags.strong, color: 'var(--bold-color, #e36209)' },
 		{ tag: tags.emphasis, color: 'var(--italic-color, #7c3aed)' },
-		{ tag: tags.strikethrough, textDecoration: 'line-through', color: 'var(--strikethrough-color, inherit)' },
+		{ tag: tags.strikethrough, textDecoration: 'line-through', textDecorationColor: 'var(--strikethrough-color, currentColor)', textDecorationThickness: 'var(--strikethrough-thickness, auto)' },
 		{ tag: tags.monospace, color: 'var(--code-normal, #16a34a)' },
 		{ tag: tags.link, color: 'var(--link-color, #2563eb)' },
 		{ tag: tags.url, color: '#0891b2' },
