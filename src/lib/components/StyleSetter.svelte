@@ -423,24 +423,32 @@
 								<span class="ss-univ ss-hot2" class:ss-sel={selected === 'universe'} onclick={(e) => { e.stopPropagation(); selectEl('universe'); }}>◇ Universe</span>
 							</button>
 							<button class="ss-main ss-hot" class:ss-sel={selected === 'noteBg'} onclick={() => selectEl('noteBg')} aria-label="Note background">
-								<span class="ss-title ss-hot2" class:ss-sel={selected === 'text'} onclick={(e) => { e.stopPropagation(); selectEl('text'); }}>Apple (Fruit)</span>
-								<span class="ss-h1 ss-hot2" class:ss-sel={selected === 'h1'} onclick={(e) => { e.stopPropagation(); selectEl('h1'); }}>Heading one</span>
-								<span class="ss-h2 ss-hot2" class:ss-sel={selected === 'h2'} onclick={(e) => { e.stopPropagation(); selectEl('h2'); }}>Heading two</span>
-								<span class="ss-h3 ss-hot2" class:ss-sel={selected === 'h3'} onclick={(e) => { e.stopPropagation(); selectEl('h3'); }}>Heading three</span>
-								<span class="ss-body">
-									An <b class="ss-bold ss-hot2" class:ss-sel={selected === 'bold'} onclick={(e) => { e.stopPropagation(); selectEl('bold'); }}>apple</b>
-									a day pairs with a <i class="ss-italic ss-hot2" class:ss-sel={selected === 'italic'} onclick={(e) => { e.stopPropagation(); selectEl('italic'); }}>crisp</i>
-									<span class="ss-link ss-hot2" class:ss-sel={selected === 'link'} onclick={(e) => { e.stopPropagation(); selectEl('link'); }}>[[Banana]]</span>
-									<span class="ss-pill ss-hot2" class:ss-sel={selected === 'accent'} onclick={(e) => { e.stopPropagation(); selectEl('accent'); }}>supports</span>
-									— see <code class="ss-code ss-hot2" class:ss-sel={selected === 'code'} onclick={(e) => { e.stopPropagation(); selectEl('code'); }}>juice()</code>,
-									<s class="ss-strike ss-hot2" class:ss-sel={selected === 'strike'} onclick={(e) => { e.stopPropagation(); selectEl('strike'); }}>an old note</s>.
-								</span>
-								<span class="ss-quote ss-hot2" class:ss-sel={selected === 'quote'} onclick={(e) => { e.stopPropagation(); selectEl('quote'); }}>“An apple a day keeps the doctor away.”</span>
-								<span class="ss-hrow">
-									<span class="ss-h4 ss-hot2" class:ss-sel={selected === 'h4'} onclick={(e) => { e.stopPropagation(); selectEl('h4'); }}>H4</span>
-									<span class="ss-h5 ss-hot2" class:ss-sel={selected === 'h5'} onclick={(e) => { e.stopPropagation(); selectEl('h5'); }}>H5</span>
-									<span class="ss-h6 ss-hot2" class:ss-sel={selected === 'h6'} onclick={(e) => { e.stopPropagation(); selectEl('h6'); }}>H6</span>
-								</span>
+								{#if activeCategory === 'editor'}
+									<!-- Rich, clickable note — only when styling the Editor (the note's own elements). -->
+									<span class="ss-title ss-hot2" class:ss-sel={selected === 'text'} onclick={(e) => { e.stopPropagation(); selectEl('text'); }}>Apple (Fruit)</span>
+									<span class="ss-h1 ss-hot2" class:ss-sel={selected === 'h1'} onclick={(e) => { e.stopPropagation(); selectEl('h1'); }}>Heading one</span>
+									<span class="ss-h2 ss-hot2" class:ss-sel={selected === 'h2'} onclick={(e) => { e.stopPropagation(); selectEl('h2'); }}>Heading two</span>
+									<span class="ss-h3 ss-hot2" class:ss-sel={selected === 'h3'} onclick={(e) => { e.stopPropagation(); selectEl('h3'); }}>Heading three</span>
+									<span class="ss-body">
+										An <b class="ss-bold ss-hot2" class:ss-sel={selected === 'bold'} onclick={(e) => { e.stopPropagation(); selectEl('bold'); }}>apple</b>
+										a day pairs with a <i class="ss-italic ss-hot2" class:ss-sel={selected === 'italic'} onclick={(e) => { e.stopPropagation(); selectEl('italic'); }}>crisp</i>
+										<span class="ss-link ss-hot2" class:ss-sel={selected === 'link'} onclick={(e) => { e.stopPropagation(); selectEl('link'); }}>[[Banana]]</span>
+										<span class="ss-pill ss-hot2" class:ss-sel={selected === 'accent'} onclick={(e) => { e.stopPropagation(); selectEl('accent'); }}>supports</span>
+										— see <code class="ss-code ss-hot2" class:ss-sel={selected === 'code'} onclick={(e) => { e.stopPropagation(); selectEl('code'); }}>juice()</code>,
+										<s class="ss-strike ss-hot2" class:ss-sel={selected === 'strike'} onclick={(e) => { e.stopPropagation(); selectEl('strike'); }}>an old note</s>.
+									</span>
+									<span class="ss-quote ss-hot2" class:ss-sel={selected === 'quote'} onclick={(e) => { e.stopPropagation(); selectEl('quote'); }}>“An apple a day keeps the doctor away.”</span>
+									<span class="ss-hrow">
+										<span class="ss-h4 ss-hot2" class:ss-sel={selected === 'h4'} onclick={(e) => { e.stopPropagation(); selectEl('h4'); }}>H4</span>
+										<span class="ss-h5 ss-hot2" class:ss-sel={selected === 'h5'} onclick={(e) => { e.stopPropagation(); selectEl('h5'); }}>H5</span>
+										<span class="ss-h6 ss-hot2" class:ss-sel={selected === 'h6'} onclick={(e) => { e.stopPropagation(); selectEl('h6'); }}>H6</span>
+									</span>
+								{:else}
+									<!-- Styling chrome (Interface/Components/Global) — the note isn't the subject, so the
+									     content pane is a quiet placeholder, not a markdown showcase. -->
+									<span class="ss-title">Apple (Fruit)</span>
+									<span class="ss-note-hint">You're styling <b>{CATEGORIES.find((c) => c.key === activeCategory)?.name ?? ''}</b> — switch to the <b>Editor</b> category to style the note's text &amp; marks.</span>
+								{/if}
 							</button>
 							<button class="ss-statusbar ss-hot" class:ss-sel={selected === 'statusbar'} onclick={(e) => { e.stopPropagation(); selectEl('statusbar'); }} aria-label="Status bar">
 								<span>Library · Note</span>
@@ -584,6 +592,7 @@
 	.ss-h6 { font-size: var(--h6-size, 14px); color: var(--h6-color, #d73a49); font-weight: var(--heading-weight, 600); }
 	.ss-hrow { display: flex; align-items: baseline; gap: 14px; }
 	.ss-body { display: block; font-size: var(--font-text-size, 14px); line-height: 1.7; color: var(--editor-text-color, var(--text-normal, #2e3338)); }
+	.ss-note-hint { display: block; font-size: 12px; line-height: 1.6; color: var(--text-muted, #8a8a8a); opacity: .85; max-width: 92%; margin-top: 4px; }
 	.ss-bold { font-weight: var(--bold-weight, 700); color: var(--bold-color, #e36209); }
 	.ss-italic { font-style: italic; color: var(--italic-color, #7c3aed); }
 	.ss-strike { text-decoration: line-through; text-decoration-color: var(--strikethrough-color, currentColor); text-decoration-thickness: var(--strikethrough-thickness, 1px); opacity: 0.7; }
