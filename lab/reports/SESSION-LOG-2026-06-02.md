@@ -293,3 +293,8 @@ Ratified roadmap item (`project_style_setter_feature_requests.md` #1).
 - `store.ts`: `AppSettings.styleSwatches: string[]` (per-Universe) + `DEFAULT_SETTINGS []`; helpers `addStyleSwatch` (deduped, most-recent-first, cap 24) / `removeStyleSwatch`. Additive + rollback-safe.
 - `StyleSetter.svelte`: every colour control auto-saves the colour you settle on (`onchange → addStyleSwatch`); tracks `activeColorVar` (focus/input); a **"Saved colours" palette** in the right rail — click a swatch → applies to the active colour control (`applySwatch`), right-click → remove. Persists per-Universe. Binary mtime `2026-06-03 20:00:00`.
 - **Deferred (memory #2):** rename swatches.
+- **Boss test → Pass.** ✅
+
+### MIG-070 §C — Build Phase 3 (Components category) *(pending Boss test)*
+- `StyleSetter.svelte`: new **Components** category (after Interface) with elements **Ribbon dock** (`--dock-*`), **Sidebar toolbar** (`--sidebar-toolbar-*`/`--sidebar-btn-*`/`--sidebar-icon-size`), **Layout bar** (`--layout-bar-*`/`--layout-btn-*`), **Top bar & tabs** (`--topbar-*`, `--tab-bg/-color/-active-bg/-active-color/-border/-font-size/-height/-radius`), **Right sidebar** (`--right-sidebar-bg`, `--rs-*`), **Buttons** (`--button-radius/-padding-x/-padding-y`), **Tags & callouts** (`--tag-bg/-color/-radius`, `--callout-radius`), **Sidebar shell** (`--sidebar-width/-bg`). All existing catalog vars consumed by the chrome → persist via `styleOverride`. Binary mtime `2026-06-03 20:37:38`.
+- **[BOSS TEST] pending:** spot-check dock bg, active-tab colour, button radius, tag colour, right-sidebar bg change the real chrome + persist (dead-var caveat applies).

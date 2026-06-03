@@ -165,12 +165,66 @@
 			{ label: 'Border width', type: 'range', var: '--border-width', min: 0, max: 4, step: 1, unit: 'px', def: 1 },
 			{ label: 'Reading width', type: 'range', var: '--file-line-width', min: 40, max: 120, step: 1, unit: 'ch', def: 70 },
 			{ label: 'Note margins', type: 'range', var: '--file-margins', min: 0, max: 80, step: 1, unit: 'px', def: 24 } ] },
+		// §C Phase 3 — chrome Components (existing catalog vars, consumed by the app chrome).
+		cDock: { name: 'Ribbon dock', controls: [
+			{ label: 'Background', type: 'color', var: '--dock-bg' },
+			{ label: 'Icon colour', type: 'color', var: '--dock-btn-color' },
+			{ label: 'Dock width', type: 'range', var: '--dock-width', min: 32, max: 72, step: 1, unit: 'px', def: 40 },
+			{ label: 'Button size', type: 'range', var: '--dock-btn-size', min: 24, max: 56, step: 1, unit: 'px', def: 32 },
+			{ label: 'Icon size', type: 'range', var: '--dock-icon-size', min: 12, max: 32, step: 1, unit: 'px', def: 18 },
+			{ label: 'Button radius', type: 'range', var: '--dock-btn-radius', min: 0, max: 16, step: 1, unit: 'px', def: 4 } ] },
+		cToolbar: { name: 'Sidebar toolbar', controls: [
+			{ label: 'Background', type: 'color', var: '--sidebar-toolbar-bg' },
+			{ label: 'Icon colour', type: 'color', var: '--sidebar-btn-color' },
+			{ label: 'Toolbar height', type: 'range', var: '--sidebar-toolbar-height', min: 26, max: 60, step: 1, unit: 'px', def: 34 },
+			{ label: 'Button size', type: 'range', var: '--sidebar-btn-size', min: 20, max: 40, step: 1, unit: 'px', def: 26 },
+			{ label: 'Icon size', type: 'range', var: '--sidebar-icon-size', min: 10, max: 28, step: 1, unit: 'px', def: 16 },
+			{ label: 'Button radius', type: 'range', var: '--sidebar-btn-radius', min: 0, max: 14, step: 1, unit: 'px', def: 3 } ] },
+		cLayoutBar: { name: 'Layout bar', controls: [
+			{ label: 'Background', type: 'color', var: '--layout-bar-bg' },
+			{ label: 'Icon colour', type: 'color', var: '--layout-btn-color' },
+			{ label: 'Icon colour (active)', type: 'color', var: '--layout-btn-active-color' },
+			{ label: 'Bar height', type: 'range', var: '--layout-bar-height', min: 26, max: 60, step: 1, unit: 'px', def: 34 },
+			{ label: 'Button size', type: 'range', var: '--layout-btn-size', min: 20, max: 44, step: 1, unit: 'px', def: 28 },
+			{ label: 'Icon size', type: 'range', var: '--layout-icon-size', min: 10, max: 28, step: 1, unit: 'px', def: 14 },
+			{ label: 'Button radius', type: 'range', var: '--layout-btn-radius', min: 0, max: 14, step: 1, unit: 'px', def: 4 } ] },
+		cTabs: { name: 'Top bar & tabs', controls: [
+			{ label: 'Top bar background', type: 'color', var: '--topbar-bg' },
+			{ label: 'Top bar height', type: 'range', var: '--topbar-height', min: 28, max: 80, step: 1, unit: 'px', def: 38 },
+			{ label: 'Tab background', type: 'color', var: '--tab-bg' },
+			{ label: 'Tab text', type: 'color', var: '--tab-color' },
+			{ label: 'Active tab background', type: 'color', var: '--tab-active-bg' },
+			{ label: 'Active tab text', type: 'color', var: '--tab-active-color' },
+			{ label: 'Tab border', type: 'color', var: '--tab-border' },
+			{ label: 'Tab font size', type: 'range', var: '--tab-font-size', min: 10, max: 20, step: 1, unit: 'px', def: 13 },
+			{ label: 'Tab height', type: 'range', var: '--tab-height', min: 22, max: 48, step: 1, unit: 'px', def: 26 },
+			{ label: 'Tab radius', type: 'range', var: '--tab-radius', min: 0, max: 16, step: 1, unit: 'px', def: 6 } ] },
+		cRightSidebar: { name: 'Right sidebar', controls: [
+			{ label: 'Background', type: 'color', var: '--right-sidebar-bg' },
+			{ label: 'Tab row background', type: 'color', var: '--rs-tabs-bg' },
+			{ label: 'Tab icon colour', type: 'color', var: '--rs-tab-color' },
+			{ label: 'Tab icon (active)', type: 'color', var: '--rs-tab-active-color' },
+			{ label: 'Tab row height', type: 'range', var: '--rs-tab-height', min: 24, max: 56, step: 1, unit: 'px', def: 30 },
+			{ label: 'Tab icon size', type: 'range', var: '--rs-icon-size', min: 10, max: 28, step: 1, unit: 'px', def: 16 } ] },
+		cButtons: { name: 'Buttons', controls: [
+			{ label: 'Radius', type: 'range', var: '--button-radius', min: 0, max: 24, step: 1, unit: 'px', def: 6 },
+			{ label: 'Padding (horizontal)', type: 'range', var: '--button-padding-x', min: 4, max: 32, step: 1, unit: 'px', def: 12 },
+			{ label: 'Padding (vertical)', type: 'range', var: '--button-padding-y', min: 2, max: 20, step: 1, unit: 'px', def: 6 } ] },
+		cTags: { name: 'Tags & callouts', controls: [
+			{ label: 'Tag background', type: 'color', var: '--tag-bg' },
+			{ label: 'Tag text', type: 'color', var: '--tag-color' },
+			{ label: 'Tag radius', type: 'range', var: '--tag-radius', min: 0, max: 24, step: 1, unit: 'px', def: 12 },
+			{ label: 'Callout radius', type: 'range', var: '--callout-radius', min: 0, max: 24, step: 1, unit: 'px', def: 8 } ] },
+		cSidebar: { name: 'Sidebar shell', controls: [
+			{ label: 'Width', type: 'range', var: '--sidebar-width', min: 180, max: 420, step: 2, unit: 'px', def: 260 },
+			{ label: 'Background', type: 'color', var: '--sidebar-bg' } ] },
 	};
 	// §3B — the left rail is organised into CATEGORIES (a.k.a. Surfaces), each grouping its
 	// elements (Eisa). Interface + Editor both preview the main app window ('editor' surface);
 	// the heavy plugins are their own preview surfaces.
 	const CATEGORIES: { key: string; name: string; surface: string; elements: string[] }[] = [
 		{ key: 'interface', name: 'Interface', surface: 'editor', elements: ['interface', 'fileTree', 'library', 'folder', 'cuniverse', 'universe', 'statusbar'] },
+		{ key: 'components', name: 'Components', surface: 'editor', elements: ['cDock', 'cToolbar', 'cLayoutBar', 'cTabs', 'cRightSidebar', 'cButtons', 'cTags', 'cSidebar'] },
 		{ key: 'editor', name: 'Editor', surface: 'editor', elements: ['noteBg', 'text', 'accent', 'link', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'bold', 'italic', 'strike', 'code', 'quote'] },
 		{ key: 'global', name: 'Global', surface: 'editor', elements: ['gBackgrounds', 'gTextShades', 'gStatus', 'gAccent', 'gType', 'gShape'] },
 		{ key: 'sky', name: 'Sky View', surface: 'sky', elements: ['accent', 'link'] },
