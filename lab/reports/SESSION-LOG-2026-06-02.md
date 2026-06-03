@@ -280,3 +280,9 @@ Eisa approved the Plan → started the build.
 - **Build** OK (frontend clean; pre-existing Rust warnings only). Binary mtime `2026-06-03 18:29:21`.
 - **Orientation bumped v2.50 → v2.51** (NEW file, per SO #6 — captures §3 shipped + §C migration kickoff).
 - **[BOSS TEST] pending:** a Style-Setter change persists across a full quit+relaunch AND survives a theme switch.
+- **Boss test → Pass.** ✅ Persistence spine holds (survives relaunch + theme switch; Reset reverts).
+
+### MIG-070 §C — Build Phase 3 (start): "Global" category *(pending Boss test)*
+- `StyleSetter.svelte`: new **Global** category (left rail) with elements **Backgrounds** (`--background-primary-alt`, `-secondary-alt`, `-modifier-hover`, `-modifier-border`, `-modifier-form-field`), **Text shades** (`--text-muted/-faint/-on-accent`), **Status colours** (`--text-error/-warning/-success`), **Accent shades** (`--interactive-accent-hover`, `--text-accent`), **Type & rhythm** (`--font-interface-size`, `--line-height-normal/-tight`, `--paragraph-spacing`), **Shape & corners** (`--radius-s/m/l`, `--border-width`, `--file-line-width` ch, `--file-margins`). All existing catalog vars → persist via `styleOverride`, apply app-wide. Binary mtime `2026-06-03 19:12:18`.
+- **Phase 2 (catalog parity for the ~17 Setter-only vars) deferred** to just before Phase-9 retirement — it's parity plumbing for the soon-retired Style Settings tab; the Setter works via `styleOverride` regardless. (Noted reorder; doesn't block any later phase.)
+- **[BOSS TEST] pending:** the Global controls change the app (border/hover/muted colours, radii, line-height, reading width) + persist. (Dead-var caveat: if a control does nothing, that catalog var isn't wired — flag for a §3A-style wire.)

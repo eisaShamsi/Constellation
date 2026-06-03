@@ -135,6 +135,36 @@
 			{ label: 'Text colour', type: 'color', var: '--code-normal' },
 			{ label: 'Code size', type: 'range', var: '--font-monospace-size', min: 10, max: 22, step: 1, unit: 'px', def: 14 } ] },
 		quote:  { name: 'Blockquote', controls: [{ label: 'Text colour', type: 'color', var: '--blockquote-text-color' }] },
+		// §C Phase 3 — global/foundational look (catalog vars already consumed app-wide).
+		gBackgrounds: { name: 'Backgrounds', controls: [
+			{ label: 'Background (alt)', type: 'color', var: '--background-primary-alt' },
+			{ label: 'Surface (alt)', type: 'color', var: '--background-secondary-alt' },
+			{ label: 'Hover background', type: 'color', var: '--background-modifier-hover' },
+			{ label: 'Border / dividers', type: 'color', var: '--background-modifier-border' },
+			{ label: 'Input field', type: 'color', var: '--background-modifier-form-field' } ] },
+		gTextShades: { name: 'Text shades', controls: [
+			{ label: 'Muted text', type: 'color', var: '--text-muted' },
+			{ label: 'Faint text', type: 'color', var: '--text-faint' },
+			{ label: 'Text on accent', type: 'color', var: '--text-on-accent' } ] },
+		gStatus: { name: 'Status colours', controls: [
+			{ label: 'Error', type: 'color', var: '--text-error' },
+			{ label: 'Warning', type: 'color', var: '--text-warning' },
+			{ label: 'Success', type: 'color', var: '--text-success' } ] },
+		gAccent: { name: 'Accent shades', controls: [
+			{ label: 'Accent (hover)', type: 'color', var: '--interactive-accent-hover' },
+			{ label: 'Accent text', type: 'color', var: '--text-accent' } ] },
+		gType: { name: 'Type & rhythm', controls: [
+			{ label: 'Interface font size', type: 'range', var: '--font-interface-size', min: 11, max: 20, step: 1, unit: 'px', def: 14 },
+			{ label: 'Line height', type: 'range', var: '--line-height-normal', min: 1.1, max: 2.2, step: 0.05, unit: '', def: 1.6 },
+			{ label: 'Tight line height', type: 'range', var: '--line-height-tight', min: 1.0, max: 1.8, step: 0.05, unit: '', def: 1.3 },
+			{ label: 'Paragraph spacing', type: 'range', var: '--paragraph-spacing', min: 0, max: 32, step: 1, unit: 'px', def: 12 } ] },
+		gShape: { name: 'Shape & corners', controls: [
+			{ label: 'Small radius', type: 'range', var: '--radius-s', min: 0, max: 20, step: 1, unit: 'px', def: 4 },
+			{ label: 'Medium radius', type: 'range', var: '--radius-m', min: 0, max: 24, step: 1, unit: 'px', def: 8 },
+			{ label: 'Large radius', type: 'range', var: '--radius-l', min: 0, max: 32, step: 1, unit: 'px', def: 12 },
+			{ label: 'Border width', type: 'range', var: '--border-width', min: 0, max: 4, step: 1, unit: 'px', def: 1 },
+			{ label: 'Reading width', type: 'range', var: '--file-line-width', min: 40, max: 120, step: 1, unit: 'ch', def: 70 },
+			{ label: 'Note margins', type: 'range', var: '--file-margins', min: 0, max: 80, step: 1, unit: 'px', def: 24 } ] },
 	};
 	// §3B — the left rail is organised into CATEGORIES (a.k.a. Surfaces), each grouping its
 	// elements (Eisa). Interface + Editor both preview the main app window ('editor' surface);
@@ -142,6 +172,7 @@
 	const CATEGORIES: { key: string; name: string; surface: string; elements: string[] }[] = [
 		{ key: 'interface', name: 'Interface', surface: 'editor', elements: ['interface', 'fileTree', 'library', 'folder', 'cuniverse', 'universe', 'statusbar'] },
 		{ key: 'editor', name: 'Editor', surface: 'editor', elements: ['noteBg', 'text', 'accent', 'link', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'bold', 'italic', 'strike', 'code', 'quote'] },
+		{ key: 'global', name: 'Global', surface: 'editor', elements: ['gBackgrounds', 'gTextShades', 'gStatus', 'gAccent', 'gType', 'gShape'] },
 		{ key: 'sky', name: 'Sky View', surface: 'sky', elements: ['accent', 'link'] },
 		{ key: 'org', name: 'OrgChart', surface: 'org', elements: ['accent', 'link'] },
 		{ key: 'index', name: 'Index', surface: 'index', elements: ['accent'] },
