@@ -32,19 +32,24 @@
 	import { parseTable, formatTable, addRow, addColumn, deleteRow, deleteColumn, setAlignment, moveRow, moveColumn, sortByColumn, type ParsedTable } from '$lib/editor/tableUtils';
 	import { evaluateTableFormulas, indexToCol } from '$lib/editor/tableFormulas';
 
-	/* Markdown syntax colors */
+	/* Markdown syntax colors. MIG-070 §3 — per-element colour + heading weight read CSS
+	   variables (written by the Style Setter onto <body>), falling back to these original
+	   defaults so an unset Setter looks exactly as before. This HighlightStyle is applied to
+	   the syntax token and wins over livePreviewTheme, so it MUST own the per-element colour
+	   (a theme rule reading the same var was silently overridden — the §3A "only code changed"
+	   bug). Sizes still live in livePreviewTheme (the highlight sets no font-size). */
 	const markdownHighlightStyle = HighlightStyle.define([
-		{ tag: tags.heading1, color: '#d73a49', fontWeight: '700' },
-		{ tag: tags.heading2, color: '#d73a49', fontWeight: '700' },
-		{ tag: tags.heading3, color: '#d73a49', fontWeight: '600' },
-		{ tag: tags.heading4, color: '#d73a49', fontWeight: '600' },
-		{ tag: tags.heading5, color: '#d73a49', fontWeight: '600' },
-		{ tag: tags.heading6, color: '#d73a49', fontWeight: '600' },
-		{ tag: tags.strong, color: '#e36209' },
-		{ tag: tags.emphasis, color: '#7c3aed' },
-		{ tag: tags.strikethrough, textDecoration: 'line-through' },
-		{ tag: tags.monospace, color: '#16a34a' },
-		{ tag: tags.link, color: '#2563eb' },
+		{ tag: tags.heading1, color: 'var(--h1-color, #d73a49)', fontWeight: 'var(--heading-weight, 700)' },
+		{ tag: tags.heading2, color: 'var(--h2-color, #d73a49)', fontWeight: 'var(--heading-weight, 700)' },
+		{ tag: tags.heading3, color: 'var(--h3-color, #d73a49)', fontWeight: 'var(--heading-weight, 600)' },
+		{ tag: tags.heading4, color: 'var(--h4-color, #d73a49)', fontWeight: 'var(--heading-weight, 600)' },
+		{ tag: tags.heading5, color: 'var(--h5-color, #d73a49)', fontWeight: 'var(--heading-weight, 600)' },
+		{ tag: tags.heading6, color: 'var(--h6-color, #d73a49)', fontWeight: 'var(--heading-weight, 600)' },
+		{ tag: tags.strong, color: 'var(--bold-color, #e36209)' },
+		{ tag: tags.emphasis, color: 'var(--italic-color, #7c3aed)' },
+		{ tag: tags.strikethrough, textDecoration: 'line-through', color: 'var(--strikethrough-color, inherit)' },
+		{ tag: tags.monospace, color: 'var(--code-normal, #16a34a)' },
+		{ tag: tags.link, color: 'var(--link-color, #2563eb)' },
 		{ tag: tags.url, color: '#0891b2' },
 		{ tag: tags.processingInstruction, color: '#888' }, /* frontmatter fences */
 		{ tag: tags.meta, color: '#888' },

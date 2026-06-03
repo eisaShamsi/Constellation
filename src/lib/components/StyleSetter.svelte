@@ -362,18 +362,21 @@
 	.ss-title { display: block; font-weight: 800; font-size: 18px; color: var(--text-normal, #2e3338); }
 	/* Headings read their own size/colour vars, with the catalog defaults + inherit as fallbacks
 	   so the preview matches a real note before any edit. Weight is shared (--heading-weight). */
-	.ss-h1 { display: block; font-size: var(--h1-size, 32px); color: var(--h1-color, inherit); font-weight: var(--heading-weight, 700); line-height: 1.2; }
-	.ss-h2 { display: block; font-size: var(--h2-size, 26px); color: var(--h2-color, inherit); font-weight: var(--heading-weight, 700); line-height: 1.2; }
-	.ss-h3 { display: block; font-size: var(--h3-size, 22px); color: var(--h3-color, inherit); font-weight: var(--heading-weight, 700); line-height: 1.2; }
-	.ss-h4 { font-size: var(--h4-size, 18px); color: var(--h4-color, inherit); font-weight: var(--heading-weight, 700); }
-	.ss-h5 { font-size: var(--h5-size, 16px); color: var(--h5-color, inherit); font-weight: var(--heading-weight, 700); }
-	.ss-h6 { font-size: var(--h6-size, 14px); color: var(--h6-color, var(--text-muted, #8a8a8a)); font-weight: var(--heading-weight, 700); }
+	/* Colour fallbacks mirror the real note's markdownHighlightStyle (heading #d73a49, bold
+	   #e36209, italic #7c3aed, code #16a34a) so the preview looks like an actual Constellation
+	   note before any edit; the controls override via the same --vars the real editor reads. */
+	.ss-h1 { display: block; font-size: var(--h1-size, 32px); color: var(--h1-color, #d73a49); font-weight: var(--heading-weight, 700); line-height: 1.2; }
+	.ss-h2 { display: block; font-size: var(--h2-size, 26px); color: var(--h2-color, #d73a49); font-weight: var(--heading-weight, 700); line-height: 1.2; }
+	.ss-h3 { display: block; font-size: var(--h3-size, 22px); color: var(--h3-color, #d73a49); font-weight: var(--heading-weight, 600); line-height: 1.2; }
+	.ss-h4 { font-size: var(--h4-size, 18px); color: var(--h4-color, #d73a49); font-weight: var(--heading-weight, 600); }
+	.ss-h5 { font-size: var(--h5-size, 16px); color: var(--h5-color, #d73a49); font-weight: var(--heading-weight, 600); }
+	.ss-h6 { font-size: var(--h6-size, 14px); color: var(--h6-color, #d73a49); font-weight: var(--heading-weight, 600); }
 	.ss-hrow { display: flex; align-items: baseline; gap: 14px; }
 	.ss-body { display: block; font-size: var(--font-text-size, 14px); line-height: 1.7; color: var(--text-normal, #2e3338); }
-	.ss-bold { font-weight: var(--bold-weight, 700); color: var(--bold-color, inherit); }
-	.ss-italic { font-style: italic; color: var(--italic-color, inherit); }
+	.ss-bold { font-weight: var(--bold-weight, 700); color: var(--bold-color, #e36209); }
+	.ss-italic { font-style: italic; color: var(--italic-color, #7c3aed); }
 	.ss-strike { text-decoration: line-through; opacity: 0.7; color: var(--strikethrough-color, inherit); }
-	.ss-code { font-family: var(--font-monospace-theme, ui-monospace, "Courier New", monospace); font-size: var(--font-monospace-size, 13px); background: var(--code-background, rgba(0,0,0,.07)); color: var(--code-normal, inherit); border-radius: var(--radius-s, 3px); padding: 1px 5px; }
+	.ss-code { font-family: var(--font-monospace-theme, ui-monospace, "Courier New", monospace); font-size: var(--font-monospace-size, 13px); background: var(--code-background, rgba(0,0,0,.07)); color: var(--code-normal, #16a34a); border-radius: var(--radius-s, 3px); padding: 1px 5px; }
 	.ss-link { color: var(--link-color, var(--interactive-accent, #2f6fed)); text-decoration: var(--link-decoration, underline); }
 	.ss-pill { display: inline-flex; align-items: center; background: var(--interactive-accent, #4a9eff); color: #fff; font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 9px; text-transform: lowercase; }
 	.ss-quote { display: block; color: var(--blockquote-text-color, var(--text-muted, #8a8a8a)); font-style: italic; border-inline-start: 3px solid color-mix(in srgb, var(--blockquote-text-color, var(--text-muted, #8a8a8a)) 60%, transparent); padding-inline-start: 9px; }
