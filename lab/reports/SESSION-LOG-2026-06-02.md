@@ -241,3 +241,13 @@ fix-2 tied them to the note; Eisa clarified the opposite: *"The note tab text, t
 - `NotePane` `.e-bc-note` → `color: var(--text-normal)` (reverted from editor-text-color).
 - Note **title + body** stay on `--editor-text-color` (the note). Binary mtime `2026-06-03 13:54:13`.
 - **Queued (Eisa's refined scope):** Editor sub-elements **Note summary** + **Properties** (own styles, separate from content); Interface sub-elements **cUniverse / Library / Folder** rows (own styles, split from the single File-tree element).
+**Boss test:** breadcrumb note name + tab + lib-label now follow interface ✅, BUT (a) breadcrumb **library name + "/" separator** still didn't follow; (b) **"missing the Libraries and folders title color"** (no per-type control). Point 2 Pass.
+
+### §3B G1 — breadcrumb completion + per-row-type file-tree elements (Library / Folder / cUniverse)
+- **Breadcrumb completed:** `NotePane` `.e-bc-lib` + `.e-bc-sep` → `var(--text-normal)` (were `--text-muted` / `--background-modifier-border-focus`). Whole breadcrumb now follows the Interface text colour.
+- **Per-row-type split (G1):** each sidebar row type now reads `--ft-{type}-*` overriding the File-tree master `--ft-master-*` (→ today's default), wired:
+  - **Folder** (`FileTree .folder`) → `--ft-folder-color/-font-family/-font-size/-weight`.
+  - **Library** (`+layout .library-header` + `.universe-notes-item`) → `--ft-library-*`.
+  - **cUniverse** (`+layout .child-universe-item`) → `--ft-cuniverse-*`.
+- **Setter:** new **Library**, **Folder**, **cUniverse** elements (colour / font / size / weight) after File tree in `ELEMENT_ORDER`; preview sidebar gained a 📚 library header, 📁 folder, and ✦ cUniverse row (clickable, reading their vars). Unset = follows the File-tree master = no regression. Binary mtime `2026-06-03 16:49:57`.
+- **Still queued:** Editor **Note summary** + **Properties** elements (G2).

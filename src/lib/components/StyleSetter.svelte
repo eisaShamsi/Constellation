@@ -68,6 +68,23 @@
 			{ label: 'Separator width', type: 'range', var: '--ft-border-width', min: 0, max: 4, step: 1, unit: 'px', def: 0 },
 			{ label: 'Separator style', type: 'select', var: '--ft-border-style', options: BORDER_STYLE },
 			{ label: 'Separator colour', type: 'color', var: '--ft-border-color' } ] },
+		// §3B G1 — sidebar row TYPES, each its own element (Eisa). Each overrides the File-tree
+		// master (--ft-master-*); unset = follows the master = today's look.
+		library: { name: 'Library', controls: [
+			{ label: 'Text colour', type: 'color', var: '--ft-library-color' },
+			{ label: 'Font', type: 'select', var: '--ft-library-font-family', options: FONTS },
+			{ label: 'Font size', type: 'range', var: '--ft-library-font-size', min: 10, max: 22, step: 1, unit: 'px', def: 13 },
+			{ label: 'Font weight', type: 'range', var: '--ft-library-weight', min: 300, max: 900, step: 100, unit: '', def: 600 } ] },
+		folder: { name: 'Folder', controls: [
+			{ label: 'Text colour', type: 'color', var: '--ft-folder-color' },
+			{ label: 'Font', type: 'select', var: '--ft-folder-font-family', options: FONTS },
+			{ label: 'Font size', type: 'range', var: '--ft-folder-font-size', min: 10, max: 22, step: 1, unit: 'px', def: 13 },
+			{ label: 'Font weight', type: 'range', var: '--ft-folder-weight', min: 300, max: 900, step: 100, unit: '', def: 400 } ] },
+		cuniverse: { name: 'cUniverse', controls: [
+			{ label: 'Text colour', type: 'color', var: '--ft-cuniverse-color' },
+			{ label: 'Font', type: 'select', var: '--ft-cuniverse-font-family', options: FONTS },
+			{ label: 'Font size', type: 'range', var: '--ft-cuniverse-font-size', min: 10, max: 22, step: 1, unit: 'px', def: 13 },
+			{ label: 'Font weight', type: 'range', var: '--ft-cuniverse-weight', min: 300, max: 900, step: 100, unit: '', def: 600 } ] },
 		noteBg:  { name: 'Note background', controls: [{ label: 'Background', type: 'color', var: '--background-primary' }] },
 		text:    { name: 'Body text', controls: [
 			{ label: 'Text colour', type: 'color', var: '--editor-text-color' },
@@ -109,7 +126,7 @@
 	};
 	// The visible element list (left rail) — Interface at the top (Eisa), then the note + its
 	// Markdown elements. Clicking a row selects it, same as clicking the part in the preview.
-	const ELEMENT_ORDER = ['interface', 'fileTree', 'noteBg', 'text', 'accent', 'link', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'bold', 'italic', 'strike', 'code', 'quote'];
+	const ELEMENT_ORDER = ['interface', 'fileTree', 'library', 'folder', 'cuniverse', 'noteBg', 'text', 'accent', 'link', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'bold', 'italic', 'strike', 'code', 'quote'];
 
 	const SURFACES: [string, string][] = [
 		['editor', 'Editor'], ['sky', 'Sky View'], ['org', 'OrgChart'],
@@ -264,10 +281,12 @@
 					{#if activeSurface === 'editor'}
 						<div class="ss-prev">
 							<button class="ss-side ss-hot" class:ss-sel={selected === 'interface'} onclick={() => selectEl('interface')} aria-label="Interface">
+								<span class="ss-lib ss-hot2" class:ss-sel={selected === 'library'} onclick={(e) => { e.stopPropagation(); selectEl('library'); }}>📚 My Library</span>
+								<span class="ss-folder ss-hot2" class:ss-sel={selected === 'folder'} onclick={(e) => { e.stopPropagation(); selectEl('folder'); }}>📁 Ideas</span>
 								<span class="ss-file ss-hot2" class:ss-sel={selected === 'fileTree'} onclick={(e) => { e.stopPropagation(); selectEl('fileTree'); }}>Apple (Fruit)</span>
 								<span class="ss-file dim ss-hot2" class:ss-sel={selected === 'fileTree'} onclick={(e) => { e.stopPropagation(); selectEl('fileTree'); }}>Banana</span>
 								<span class="ss-file dim ss-hot2" class:ss-sel={selected === 'fileTree'} onclick={(e) => { e.stopPropagation(); selectEl('fileTree'); }}>Carrot</span>
-								<span class="ss-file dim ss-hot2" class:ss-sel={selected === 'fileTree'} onclick={(e) => { e.stopPropagation(); selectEl('fileTree'); }}>Salad Recipe</span>
+								<span class="ss-cuniverse ss-hot2" class:ss-sel={selected === 'cuniverse'} onclick={(e) => { e.stopPropagation(); selectEl('cuniverse'); }}>✦ Linked Universe</span>
 							</button>
 							<button class="ss-main ss-hot" class:ss-sel={selected === 'noteBg'} onclick={() => selectEl('noteBg')} aria-label="Note background">
 								<span class="ss-title ss-hot2" class:ss-sel={selected === 'text'} onclick={(e) => { e.stopPropagation(); selectEl('text'); }}>Apple (Fruit)</span>
@@ -388,6 +407,10 @@
 	.ss-prev { width: 560px; height: 360px; border-radius: 10px; overflow: hidden; display: grid; grid-template-columns: 124px 1fr; background: var(--background-primary, #fbfbfa); box-shadow: 0 14px 40px rgba(0,0,0,.45); border: 1px solid rgba(0,0,0,.25); }
 	.ss-side { background: var(--background-secondary, #f1f1ef); color: var(--text-normal, #2e3338); padding: 12px 10px; display: flex; flex-direction: column; gap: 8px; border: none; text-align: left; font-family: var(--font-interface-theme, inherit); }
 	.ss-file { font-size: var(--ft-master-font-size, 11.5px); color: var(--ft-master-color, var(--text-normal, #2e3338)); font-weight: var(--ft-master-weight, 400); font-family: var(--ft-master-font-family, inherit); padding: var(--ft-master-row-padding-y, 1px) 4px; border-radius: var(--ft-row-radius, 3px); border-bottom: var(--ft-border-width, 0px) var(--ft-border-style, solid) var(--ft-border-color, var(--background-modifier-border, #ddd)); display: flex; align-items: center; gap: 6px; } .ss-file.dim { opacity: .55; }
+	/* §3B G1 — sidebar row types; each reads its own --ft-{type}-* with the File-tree master as fallback. */
+	.ss-lib { font-size: var(--ft-library-font-size, var(--ft-master-font-size, 11.5px)); color: var(--ft-library-color, var(--ft-master-color, var(--text-normal, #2e3338))); font-weight: var(--ft-library-weight, var(--ft-master-weight, 600)); font-family: var(--ft-library-font-family, var(--ft-master-font-family, inherit)); display: flex; align-items: center; gap: 6px; }
+	.ss-folder { font-size: var(--ft-folder-font-size, var(--ft-master-font-size, 11.5px)); color: var(--ft-folder-color, var(--ft-master-color, var(--text-muted, #6b7280))); font-weight: var(--ft-folder-weight, var(--ft-master-weight, 400)); font-family: var(--ft-folder-font-family, var(--ft-master-font-family, inherit)); display: flex; align-items: center; gap: 6px; padding-inline-start: 8px; }
+	.ss-cuniverse { font-size: var(--ft-cuniverse-font-size, var(--ft-master-font-size, 11.5px)); color: var(--ft-cuniverse-color, var(--ft-master-color, var(--interactive-accent, #7c3aed))); font-weight: var(--ft-cuniverse-weight, var(--ft-master-weight, 600)); font-family: var(--ft-cuniverse-font-family, var(--ft-master-font-family, inherit)); display: flex; align-items: center; gap: 6px; }
 	.ss-file::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--interactive-accent, #7c3aed); flex: none; } .ss-file.dim::before { background: currentColor; opacity: .4; }
 	/* The note body scrolls if the chosen heading sizes overflow — the preview shows REAL sizes. */
 	.ss-main { background: var(--background-primary, #fbfbfa); color: var(--editor-text-color, var(--text-normal, #2e3338)); padding: 16px 18px; text-align: left; border: none; font-family: var(--font-text-theme, inherit); display: flex; flex-direction: column; gap: 7px; overflow-y: auto; }

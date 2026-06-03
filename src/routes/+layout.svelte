@@ -7358,10 +7358,12 @@
 		display: flex; align-items: center; gap: 4px; width: 100%;
 		padding: var(--ft-master-row-padding-y, 3px) 12px;
 		background: none; border: none;
-		color: var(--ft-master-color, var(--text-secondary));
-		font-size: var(--ft-master-font-size, 0.8rem);
-		font-weight: var(--ft-master-weight, 600);
-		font-family: inherit; cursor: pointer; text-align: start;
+		/* MIG-070 §3B G1 — libraries are their own element: --ft-library-* overrides the
+		   File-tree master (--ft-master-*), which falls back to today's defaults. */
+		color: var(--ft-library-color, var(--ft-master-color, var(--text-secondary)));
+		font-size: var(--ft-library-font-size, var(--ft-master-font-size, 0.8rem));
+		font-weight: var(--ft-library-weight, var(--ft-master-weight, 600));
+		font-family: var(--ft-library-font-family, var(--ft-master-font-family, inherit)); cursor: pointer; text-align: start;
 	}
 	.library-header:hover { background: var(--bg-hover); }
 	.v-chev { color: var(--text-muted); flex-shrink: 0; transition: transform 0.15s ease; }
@@ -7385,18 +7387,22 @@
 		align-items: center;
 		gap: 4px;
 		padding: var(--ft-master-row-padding-y, 3px) 12px;
-		font-size: var(--ft-master-font-size, 0.8rem);
-		color: var(--ft-master-color, var(--interactive-accent));
-		font-weight: var(--ft-master-weight, 600);
+		/* §3B G1 — universe-notes is a library row → --ft-library-* (then master, then accent). */
+		font-size: var(--ft-library-font-size, var(--ft-master-font-size, 0.8rem));
+		color: var(--ft-library-color, var(--ft-master-color, var(--interactive-accent)));
+		font-weight: var(--ft-library-weight, var(--ft-master-weight, 600));
+		font-family: var(--ft-library-font-family, var(--ft-master-font-family, inherit));
 	}
 	.child-universe-item {
 		display: flex;
 		align-items: center;
 		gap: 4px;
 		padding: var(--ft-master-row-padding-y, 3px) 12px;
-		font-size: var(--ft-master-font-size, 0.8rem);
-		color: var(--ft-master-color, var(--text-secondary));
-		font-weight: var(--ft-master-weight, 600);
+		/* §3B G1 — child-universe (cUniverse) row → --ft-cuniverse-* (then master, then secondary). */
+		font-size: var(--ft-cuniverse-font-size, var(--ft-master-font-size, 0.8rem));
+		color: var(--ft-cuniverse-color, var(--ft-master-color, var(--text-secondary)));
+		font-weight: var(--ft-cuniverse-weight, var(--ft-master-weight, 600));
+		font-family: var(--ft-cuniverse-font-family, var(--ft-master-font-family, inherit));
 	}
 	.child-universe-name {
 		flex: 1;

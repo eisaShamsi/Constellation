@@ -170,10 +170,12 @@
 		border-radius: var(--ft-row-radius, 3px);
 		border-bottom: var(--ft-border-width, 0px) var(--ft-border-style, solid) var(--ft-border-color, var(--background-modifier-border));
 		cursor: pointer;
-		color: var(--ft-master-color, var(--text-muted));
-		font-family: var(--ft-master-font-family, inherit);
-		font-size: var(--ft-master-font-size, 0.82rem);
-		font-weight: var(--ft-master-weight, 400);
+		/* MIG-070 §3B G1 — folders are their own element: --ft-folder-* overrides the
+		   File-tree master (--ft-master-*), which in turn falls back to today's defaults. */
+		color: var(--ft-folder-color, var(--ft-master-color, var(--text-muted)));
+		font-family: var(--ft-folder-font-family, var(--ft-master-font-family, inherit));
+		font-size: var(--ft-folder-font-size, var(--ft-master-font-size, 0.82rem));
+		font-weight: var(--ft-folder-weight, var(--ft-master-weight, 400));
 		user-select: none;
 	}
 	.folder:hover { background: var(--background-modifier-hover); color: var(--text-normal); }

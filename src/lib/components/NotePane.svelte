@@ -1207,8 +1207,10 @@
 		width: 100%; max-width: 1200px; background: var(--background-primary, #ffffff);
 		border-bottom: 1px solid var(--background-modifier-border, #e0e0e0);
 	}
-	.e-bc-lib { color: var(--text-muted); }
-	.e-bc-sep { margin: 0 4px; color: var(--background-modifier-border-focus); }
+	/* MIG-070 §3B — whole breadcrumb (library name + "/" separator + note name) follows the
+	   interface text colour (--text-normal), so the Interface control recolours all of it. */
+	.e-bc-lib { color: var(--text-normal); }
+	.e-bc-sep { margin: 0 4px; color: var(--text-normal); }
 	/* MIG-070 §3B — the breadcrumb is chrome → follows the interface text colour (--text-normal),
 	   NOT the note (Eisa: tab + library label + breadcrumb all follow the universal interface). */
 	.e-bc-note { color: var(--text-normal); }
