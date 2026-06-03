@@ -456,7 +456,11 @@
 					'&': { background: 'transparent', border: 'none', outline: 'none' },
 					'&.cm-focused': { outline: 'none' },
 					'.cm-scroller': { overflow: 'auto', fontFamily: 'inherit', fontSize: 'var(--font-text-size, 16px)', lineHeight: 'var(--line-height-normal, 1.75)' },
-					'.cm-content': { padding: '0', caretColor: 'var(--caret-color, var(--text-normal, #1a1a1a))' },
+					// MIG-070 §3 — the NOTE body reads its own --editor-text-color (Style Setter "Body
+				// text → Text colour"), falling back to --text-normal so unset = unchanged. This is
+				// what keeps note styling from bleeding into the chrome (file tree etc., which use
+				// --text-normal): the note has its own knob, the Interface keeps --text-normal.
+				'.cm-content': { padding: '0', color: 'var(--editor-text-color, var(--text-normal, #1a1a1a))', caretColor: 'var(--caret-color, var(--text-normal, #1a1a1a))' },
 					'.cm-cursor': { borderLeftColor: 'var(--caret-color, var(--text-normal, #1a1a1a))', borderLeftWidth: '1.5px' },
 					'.cm-line': { padding: '0' },
 					'.cm-activeLine': { background: 'transparent' },
@@ -1293,7 +1297,7 @@
 	.e-title {
 		display: block; width: 100%; border: none; outline: none; background: transparent;
 		font-size: 28px; font-weight: 700; font-family: inherit;
-		color: var(--text-normal, #1a1a1a); padding: 0;
+		color: var(--editor-text-color, var(--text-normal, #1a1a1a)); padding: 0;
 		margin-block: 0 24px; margin-inline: 0; text-align: start;
 	}
 	.e-title.e-title-center { text-align: center; }

@@ -44,13 +44,17 @@
 	// default to the `constellationStyleSettings.ts` catalog defaults so the preview looks right
 	// before any edit, and colours default to `inherit` (unset = today's look, no regression).
 	const ELEMENTS: Record<string, { name: string; controls: Ctrl[] }> = {
+		// Interface (the app chrome) is the FIRST core element (Eisa). Its text colour writes the
+		// global --text-normal; the NOTE has its own --editor-text-color, so styling the note no
+		// longer bleeds into the file tree / sidebars (which fall back to --text-normal).
+		interface: { name: 'Interface', controls: [
+			{ label: 'Interface text colour', type: 'color', var: '--text-normal' },
+			{ label: 'Interface font', type: 'select', var: '--font-interface-theme', options: FONTS },
+			{ label: 'Panel background', type: 'color', var: '--background-secondary' } ] },
 		accent:  { name: 'Accent',   controls: [{ label: 'Accent colour', type: 'color', var: '--interactive-accent' }] },
-		noteBg:  { name: 'Note',     controls: [{ label: 'Background', type: 'color', var: '--background-primary' }] },
-		sidebar: { name: 'Sidebar',  controls: [
-			{ label: 'Sidebar background', type: 'color', var: '--background-secondary' },
-			{ label: 'Interface font', type: 'select', var: '--font-interface-theme', options: FONTS } ] },
+		noteBg:  { name: 'Note background', controls: [{ label: 'Background', type: 'color', var: '--background-primary' }] },
 		text:    { name: 'Body text', controls: [
-			{ label: 'Text colour', type: 'color', var: '--text-normal' },
+			{ label: 'Text colour', type: 'color', var: '--editor-text-color' },
 			{ label: 'Note font', type: 'select', var: '--font-text-theme', options: FONTS },
 			{ label: 'Text size', type: 'range', var: '--font-text-size', min: 11, max: 28, step: 1, unit: 'px', def: 16 } ] },
 		link:    { name: 'Link', controls: [
@@ -85,6 +89,9 @@
 			{ label: 'Code size', type: 'range', var: '--font-monospace-size', min: 10, max: 22, step: 1, unit: 'px', def: 14 } ] },
 		quote:  { name: 'Blockquote', controls: [{ label: 'Text colour', type: 'color', var: '--blockquote-text-color' }] },
 	};
+	// The visible element list (left rail) — Interface at the top (Eisa), then the note + its
+	// Markdown elements. Clicking a row selects it, same as clicking the part in the preview.
+	const ELEMENT_ORDER = ['interface', 'noteBg', 'text', 'accent', 'link', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'bold', 'italic', 'strike', 'code', 'quote'];
 
 	const SURFACES: [string, string][] = [
 		['editor', 'Editor'], ['sky', 'Sky View'], ['org', 'OrgChart'],
@@ -202,6 +209,13 @@
 
 			<!-- Left rail: surfaces + themes -->
 			<aside class="ss-left">
+				<div class="ss-rlabel">Elements</div>
+				{#each ELEMENT_ORDER as key (key)}
+					<button class="ss-surface" class:active={selected === key} onclick={() => selectEl(key)}>
+						<span class="ss-sdot"></span> {ELEMENTS[key].name}
+					</button>
+				{/each}
+				<div class="ss-divider"></div>
 				<div class="ss-rlabel">Surfaces</div>
 				{#each SURFACES as [key, label] (key)}
 					<button class="ss-surface" class:active={activeSurface === key} onclick={() => pickSurface(key)}>
@@ -231,7 +245,7 @@
 				<div class="ss-stage">
 					{#if activeSurface === 'editor'}
 						<div class="ss-prev">
-							<button class="ss-side ss-hot" class:ss-sel={selected === 'sidebar'} onclick={() => selectEl('sidebar')} aria-label="Sidebar">
+							<button class="ss-side ss-hot" class:ss-sel={selected === 'interface'} onclick={() => selectEl('interface')} aria-label="Interface">
 								<span class="ss-file">Apple (Fruit)</span>
 								<span class="ss-file dim">Banana</span>
 								<span class="ss-file dim">Carrot</span>
@@ -358,8 +372,8 @@
 	.ss-file { font-size: 11.5px; display: flex; align-items: center; gap: 6px; } .ss-file.dim { opacity: .55; }
 	.ss-file::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--interactive-accent, #7c3aed); flex: none; } .ss-file.dim::before { background: currentColor; opacity: .4; }
 	/* The note body scrolls if the chosen heading sizes overflow — the preview shows REAL sizes. */
-	.ss-main { background: var(--background-primary, #fbfbfa); color: var(--text-normal, #2e3338); padding: 16px 18px; text-align: left; border: none; font-family: var(--font-text-theme, inherit); display: flex; flex-direction: column; gap: 7px; overflow-y: auto; }
-	.ss-title { display: block; font-weight: 800; font-size: 18px; color: var(--text-normal, #2e3338); }
+	.ss-main { background: var(--background-primary, #fbfbfa); color: var(--editor-text-color, var(--text-normal, #2e3338)); padding: 16px 18px; text-align: left; border: none; font-family: var(--font-text-theme, inherit); display: flex; flex-direction: column; gap: 7px; overflow-y: auto; }
+	.ss-title { display: block; font-weight: 800; font-size: 18px; color: var(--editor-text-color, var(--text-normal, #2e3338)); }
 	/* Headings read their own size/colour vars, with the catalog defaults + inherit as fallbacks
 	   so the preview matches a real note before any edit. Weight is shared (--heading-weight). */
 	/* Colour fallbacks mirror the real note's markdownHighlightStyle (heading #d73a49, bold
@@ -372,7 +386,7 @@
 	.ss-h5 { font-size: var(--h5-size, 16px); color: var(--h5-color, #d73a49); font-weight: var(--heading-weight, 600); }
 	.ss-h6 { font-size: var(--h6-size, 14px); color: var(--h6-color, #d73a49); font-weight: var(--heading-weight, 600); }
 	.ss-hrow { display: flex; align-items: baseline; gap: 14px; }
-	.ss-body { display: block; font-size: var(--font-text-size, 14px); line-height: 1.7; color: var(--text-normal, #2e3338); }
+	.ss-body { display: block; font-size: var(--font-text-size, 14px); line-height: 1.7; color: var(--editor-text-color, var(--text-normal, #2e3338)); }
 	.ss-bold { font-weight: var(--bold-weight, 700); color: var(--bold-color, #e36209); }
 	.ss-italic { font-style: italic; color: var(--italic-color, #7c3aed); }
 	.ss-strike { text-decoration: line-through; opacity: 0.7; color: var(--strikethrough-color, inherit); }
