@@ -233,3 +233,11 @@ Setting **Interface** text colour (→ `--text-normal`) turned the **active note
 - `NotePane.svelte` `.e-bc-note` → `color: var(--editor-text-color, var(--text-normal))`.
 - `+layout.svelte` `.tab.active/.focused` → `color: var(--tab-active-color, var(--editor-text-color, var(--text)))` — a dedicated tab colour (Milestone B #4) still wins; default now = the note's colour.
 Now: Interface text → chrome only (tab + breadcrumb stay); Note text → note body + its tab + breadcrumb. Binary mtime `2026-06-03 12:28:15`.
+
+### §3B fix-3 — REVERSED: tab + breadcrumb + library-label follow the INTERFACE (Eisa clarified)
+fix-2 tied them to the note; Eisa clarified the opposite: *"The note tab text, the library title text above it, and the breadcrumb should follow the universal interface text styles."* Also clarified: *"'handle the note' = the note content (minus the summary and properties); I want to handle them [summary, properties] separately, with their own elements within the editor."*
+- `+layout` `.tab.active/.focused` → `color: var(--tab-active-color, var(--text-normal, var(--text)))` (interface; dedicated tab colour still wins).
+- `+layout` `.tab-lib-name` → `color: var(--text-normal, var(--text))` (was `var(--text)` → it had no real colour and **inherited the tab's**, which is why it moved with the note once the tab was note-tied; now explicit interface).
+- `NotePane` `.e-bc-note` → `color: var(--text-normal)` (reverted from editor-text-color).
+- Note **title + body** stay on `--editor-text-color` (the note). Binary mtime `2026-06-03 13:54:13`.
+- **Queued (Eisa's refined scope):** Editor sub-elements **Note summary** + **Properties** (own styles, separate from content); Interface sub-elements **cUniverse / Library / Folder** rows (own styles, split from the single File-tree element).

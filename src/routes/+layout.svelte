@@ -7532,7 +7532,7 @@
 		position: relative;
 	}
 	.tab.active, .tab.focused {
-		background: var(--tab-active-bg, var(--background-primary, #ffffff)); color: var(--tab-active-color, var(--editor-text-color, var(--text)));
+		background: var(--tab-active-bg, var(--background-primary, #ffffff)); color: var(--tab-active-color, var(--text-normal, var(--text)));
 		border: 1px solid var(--tab-border, #d0d0d0);
 		border-top: 3px solid var(--library-color, var(--accent));
 		border-bottom: 1px solid var(--tab-active-bg, var(--background-primary, #ffffff));
@@ -7547,7 +7547,9 @@
 	.tab-lib-name {
 		position: absolute; bottom: calc(100% + 6px); inset-inline-end: 8px;
 		font-size: 0.72rem; line-height: 1.3; letter-spacing: 0.02em;
-		color: var(--text);
+		/* MIG-070 §3B — the library label above the tab is chrome → follows the interface
+		   text colour (--text-normal), not the note (it had no colour, so it inherited the tab's). */
+		color: var(--text-normal, var(--text));
 		background: #e8e8ec;
 		padding: 0 5px;
 		border-radius: 3px 3px 0 0;
