@@ -89,7 +89,8 @@
 		universe: { name: 'Universe bar', controls: [
 			{ label: 'Text colour', type: 'color', var: '--universe-bar-color' },
 			{ label: 'Background', type: 'color', var: '--universe-bar-bg' },
-			{ label: 'Font', type: 'select', var: '--universe-bar-font-family', options: FONTS } ] },
+			{ label: 'Font', type: 'select', var: '--universe-bar-font-family', options: FONTS },
+			{ label: 'Text size', type: 'range', var: '--universe-bar-font-size', min: 9, max: 18, step: 1, unit: 'px', def: 12 } ] },
 		statusbar: { name: 'Status bar', controls: [
 			{ label: 'Background', type: 'color', var: '--statusbar-bg' },
 			{ label: 'Text colour', type: 'color', var: '--statusbar-color' },
@@ -134,14 +135,21 @@
 			{ label: 'Code size', type: 'range', var: '--font-monospace-size', min: 10, max: 22, step: 1, unit: 'px', def: 14 } ] },
 		quote:  { name: 'Blockquote', controls: [{ label: 'Text colour', type: 'color', var: '--blockquote-text-color' }] },
 	};
-	// The visible element list (left rail) — Interface at the top (Eisa), then the note + its
-	// Markdown elements. Clicking a row selects it, same as clicking the part in the preview.
-	const ELEMENT_ORDER = ['interface', 'fileTree', 'library', 'folder', 'cuniverse', 'universe', 'statusbar', 'noteBg', 'text', 'accent', 'link', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'bold', 'italic', 'strike', 'code', 'quote'];
-
-	const SURFACES: [string, string][] = [
-		['editor', 'Editor'], ['sky', 'Sky View'], ['org', 'OrgChart'],
-		['index', 'Index'], ['cataloger', 'Cataloger'], ['shell', 'Shell'],
+	// §3B — the left rail is organised into CATEGORIES (a.k.a. Surfaces), each grouping its
+	// elements (Eisa). Interface + Editor both preview the main app window ('editor' surface);
+	// the heavy plugins are their own preview surfaces.
+	const CATEGORIES: { key: string; name: string; surface: string; elements: string[] }[] = [
+		{ key: 'interface', name: 'Interface', surface: 'editor', elements: ['interface', 'fileTree', 'library', 'folder', 'cuniverse', 'universe', 'statusbar'] },
+		{ key: 'editor', name: 'Editor', surface: 'editor', elements: ['noteBg', 'text', 'accent', 'link', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'bold', 'italic', 'strike', 'code', 'quote'] },
+		{ key: 'sky', name: 'Sky View', surface: 'sky', elements: ['accent', 'link'] },
+		{ key: 'org', name: 'OrgChart', surface: 'org', elements: ['accent', 'link'] },
+		{ key: 'index', name: 'Index', surface: 'index', elements: ['accent'] },
+		{ key: 'cataloger', name: 'Cataloger', surface: 'cataloger', elements: ['accent'] },
+		{ key: 'shell', name: 'Shell', surface: 'shell', elements: ['accent'] },
 	];
+	// element key → its (first) category, so clicking a part in the preview opens the right category.
+	const CATEGORY_OF: Record<string, string> = {};
+	for (const c of CATEGORIES) for (const e of c.elements) if (!(e in CATEGORY_OF)) CATEGORY_OF[e] = c.key;
 
 	const THEMES: { name: string; vars: Record<string, string> }[] = [
 		{ name: 'Midnight',  vars: { '--background-primary': '#11111b', '--background-secondary': '#181825', '--text-normal': '#cdd6f4', '--interactive-accent': '#cba6f7', '--link-color': '#89b4fa' } },
@@ -151,6 +159,7 @@
 	];
 
 	let activeSurface = $state('editor');
+	let activeCategory = $state('interface');
 	let selected = $state<string | null>(null);
 	let draftName = $state('Untitled style');
 	/** The draft: CSS-var → override value. Scoped to the preview wrapper; Apply → <body>. */
@@ -180,8 +189,17 @@
 		return Number.isFinite(n) ? n : def;
 	}
 	function setVar(v: string, val: string) { draft = { ...draft, [v]: val }; }
-	function selectEl(key: string) { selected = key; }
-	function pickSurface(s: string) { activeSurface = s; selected = null; }
+	function selectEl(key: string) {
+		selected = key;
+		// keep the open category in sync with the clicked preview part (stay if already here).
+		const cur = CATEGORIES.find((c) => c.key === activeCategory);
+		if (cur && cur.elements.includes(key)) return;
+		const c = CATEGORIES.find((c) => c.elements.includes(key));
+		if (c) activeCategory = c.key;
+	}
+	function pickCategory(c: { key: string; surface: string; elements: string[] }) {
+		activeCategory = c.key; activeSurface = c.surface; selected = c.elements[0] ?? null;
+	}
 	function applyTheme(t: { name: string; vars: Record<string, string> }) { draft = { ...draft, ...t.vars }; draftName = t.name; }
 
 	/** hex → HSL (mirrors the app's own hexToHSL; inlined so the Setter stays standalone). */
@@ -254,18 +272,16 @@
 
 			<!-- Left rail: surfaces + themes -->
 			<aside class="ss-left">
-				<div class="ss-rlabel">Elements</div>
-				{#each ELEMENT_ORDER as key (key)}
-					<button class="ss-surface" class:active={selected === key} onclick={() => selectEl(key)}>
-						<span class="ss-sdot"></span> {ELEMENTS[key].name}
-					</button>
-				{/each}
-				<div class="ss-divider"></div>
 				<div class="ss-rlabel">Surfaces</div>
-				{#each SURFACES as [key, label] (key)}
-					<button class="ss-surface" class:active={activeSurface === key} onclick={() => pickSurface(key)}>
-						<span class="ss-sdot"></span> {label}
+				{#each CATEGORIES as cat (cat.key)}
+					<button class="ss-surface" class:active={activeCategory === cat.key} onclick={() => pickCategory(cat)}>
+						<span class="ss-sdot"></span> {cat.name}
 					</button>
+					{#if activeCategory === cat.key}
+						{#each cat.elements as elKey (elKey)}
+							<button class="ss-elhead" class:active={selected === elKey} onclick={() => selectEl(elKey)}>{ELEMENTS[elKey].name}</button>
+						{/each}
+					{/if}
 				{/each}
 				<div class="ss-divider"></div>
 				<div class="ss-rlabel">My themes</div>
@@ -326,7 +342,7 @@
 						</div>
 					{:else}
 						<div class="ss-prev-alt">
-							<div class="ss-alt-title">{SURFACES.find(([k]) => k === activeSurface)?.[1]}</div>
+							<div class="ss-alt-title">{CATEGORIES.find((c) => c.surface === activeSurface)?.name}</div>
 							{#if activeSurface === 'sky' || activeSurface === 'org'}
 								<div class="ss-sky">
 									<button class="ss-node ss-hot" class:ss-sel={selected === 'accent'} onclick={() => selectEl('accent')} aria-label="accent"></button>
@@ -408,6 +424,10 @@
 	.ss-surface.active { background: color-mix(in srgb, var(--c-accent) 22%, transparent); color: #fff; }
 	.ss-sdot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: .55; flex: none; }
 	.ss-surface.active .ss-sdot { opacity: 1; background: var(--c-accent); }
+	/* §3B — element rows nested under their open category (Surface). */
+	.ss-elhead { display: block; width: 100%; text-align: start; padding: 5px 9px 5px 26px; border-radius: 7px; cursor: pointer; font: inherit; font-size: 12.5px; color: var(--c-muted); background: none; border: none; }
+	.ss-elhead:hover { background: var(--c-surface2); color: var(--c-text); }
+	.ss-elhead.active { background: color-mix(in srgb, var(--c-accent) 20%, transparent); color: #fff; }
 	.ss-divider { height: 1px; background: var(--c-border); margin: 8px 2px; }
 	.ss-themes { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
 	.ss-tcard { border: 1px solid var(--c-border); border-radius: 8px; overflow: hidden; cursor: pointer; background: var(--c-surface2); padding: 0; }
@@ -427,7 +447,7 @@
 	.ss-folder { font-size: var(--ft-folder-font-size, var(--ft-master-font-size, 11.5px)); color: var(--ft-folder-color, var(--ft-master-color, var(--text-muted, #6b7280))); font-weight: var(--ft-folder-weight, var(--ft-master-weight, 400)); font-family: var(--ft-folder-font-family, var(--ft-master-font-family, inherit)); display: flex; align-items: center; gap: 6px; padding-inline-start: 8px; }
 	.ss-cuniverse { font-size: var(--ft-cuniverse-font-size, var(--ft-master-font-size, 11.5px)); color: var(--ft-cuniverse-color, var(--ft-master-color, var(--interactive-accent, #7c3aed))); font-weight: var(--ft-cuniverse-weight, var(--ft-master-weight, 600)); font-family: var(--ft-cuniverse-font-family, var(--ft-master-font-family, inherit)); display: flex; align-items: center; gap: 6px; }
 	/* §3B — Universe switcher footer (sidebar foot) + Status bar strip (window bottom). */
-	.ss-univ { margin-top: auto; display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--universe-bar-color, var(--text-normal, #2e3338)); background: var(--universe-bar-bg, transparent); font-family: var(--universe-bar-font-family, inherit); border-top: 1px solid rgba(0,0,0,.08); padding-top: 5px; }
+	.ss-univ { margin-top: auto; display: flex; align-items: center; gap: 5px; font-size: var(--universe-bar-font-size, 11px); color: var(--universe-bar-color, var(--text-normal, #2e3338)); background: var(--universe-bar-bg, transparent); font-family: var(--universe-bar-font-family, inherit); border-top: 1px solid rgba(0,0,0,.08); padding-top: 5px; }
 	.ss-statusbar { grid-area: status; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 8px; min-height: var(--statusbar-height, 22px); background: var(--statusbar-bg, var(--background-secondary, #ececed)); color: var(--statusbar-color, var(--text-muted, #6b7280)); font-size: var(--statusbar-font-size, 10px); border: none; border-top: 1px solid rgba(0,0,0,.12); cursor: pointer; text-align: start; }
 	.ss-file::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--interactive-accent, #7c3aed); flex: none; } .ss-file.dim::before { background: currentColor; opacity: .4; }
 	/* The note body scrolls if the chosen heading sizes overflow — the preview shows REAL sizes. */

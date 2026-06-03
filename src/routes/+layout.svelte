@@ -7468,7 +7468,9 @@
 	}
 	.sidebar-footer:hover { background: var(--bg-hover); }
 	.sidebar-footer svg { color: var(--text-muted); flex-shrink: 0; }
-	.footer-name { font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); }
+	/* §3B — the "Universe" label follows the Universe bar element (it had its own colour that
+	   overrode the button's, so the colour control appeared to do nothing). */
+	.footer-name { font-size: var(--universe-bar-font-size, 0.78rem); font-weight: 600; color: var(--universe-bar-color, var(--text-secondary)); }
 
 	/* ═══ MAIN AREA ═══ */
 	.main-area {
