@@ -1209,7 +1209,9 @@
 	}
 	.e-bc-lib { color: var(--text-muted); }
 	.e-bc-sep { margin: 0 4px; color: var(--background-modifier-border-focus); }
-	.e-bc-note { color: var(--text-normal); }
+	/* MIG-070 §3B — the breadcrumb's note name identifies the open NOTE, so it follows the
+	   note's colour (--editor-text-color), not the chrome's --text-normal. */
+	.e-bc-note { color: var(--editor-text-color, var(--text-normal)); }
 	/* §136 — bidirectional stage controls (CE-spec Phase 6, post-revision).
 	 * Promote → is the canonical forward verb (prominent, accent border).
 	 * ← Demote is the legitimate-but-occasional revision verb (subdued, no
