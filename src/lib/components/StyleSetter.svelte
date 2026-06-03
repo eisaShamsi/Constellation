@@ -18,7 +18,7 @@
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
 	import { styleSetterOpen, closeStyleSetter } from '$lib/stores/styleSetter';
-	import { appSettings, mergeStyleOverride, clearAllStyleOverride } from '$lib/libraries/store';
+	import { appSettings, mergeStyleOverride, clearAllStyleOverride, addStyleSwatch, removeStyleSwatch } from '$lib/libraries/store';
 
 	// A control writes one REAL app CSS variable. `color` → hex; `select` → a stack/keyword;
 	// `range` → a number + unit (e.g. `32px`, or `700` when unit is '').
@@ -193,6 +193,8 @@
 	let activeSurface = $state('editor');
 	let activeCategory = $state('interface');
 	let selected = $state<string | null>(null);
+	// §C — the colour control most recently touched, so a clicked palette swatch knows where to apply.
+	let activeColorVar = $state<string | null>(null);
 	let draftName = $state('Untitled style');
 	/** The draft: CSS-var → override value. Scoped to the preview wrapper; Apply → <body>. */
 	let draft = $state<Record<string, string>>({});
@@ -221,6 +223,12 @@
 		return Number.isFinite(n) ? n : def;
 	}
 	function setVar(v: string, val: string) { draft = { ...draft, [v]: val }; }
+	/** §C — apply a saved swatch to the most-recently-touched colour control (or the selected
+	 *  element's first colour control if none touched yet). */
+	function applySwatch(hex: string) {
+		const target = activeColorVar ?? sel?.controls.find((c) => c.type === 'color')?.var ?? null;
+		if (target) { activeColorVar = target; setVar(target, hex); }
+	}
 	function selectEl(key: string) {
 		selected = key;
 		// keep the open category in sync with the clicked preview part (stay if already here).
@@ -420,7 +428,10 @@
 									oninput={(e) => setVar(c.var, (e.currentTarget as HTMLInputElement).value + c.unit)} />
 							{:else if c.type === 'color'}
 								<label for={'ss-' + c.var}>{c.label}</label>
-								<input id={'ss-' + c.var} type="color" value={hexOf(curVal(c.var))} oninput={(e) => setVar(c.var, (e.currentTarget as HTMLInputElement).value)} />
+								<input id={'ss-' + c.var} type="color" value={hexOf(curVal(c.var))}
+									onfocus={() => activeColorVar = c.var}
+									oninput={(e) => { activeColorVar = c.var; setVar(c.var, (e.currentTarget as HTMLInputElement).value); }}
+									onchange={(e) => addStyleSwatch((e.currentTarget as HTMLInputElement).value)} />
 							{:else}
 								<label for={'ss-' + c.var}>{c.label}</label>
 								<select id={'ss-' + c.var} onchange={(e) => setVar(c.var, (e.currentTarget as HTMLSelectElement).value)}>
@@ -429,6 +440,14 @@
 							{/if}
 						</div>
 					{/each}
+					{#if ($appSettings.styleSwatches ?? []).length}
+						<div class="ss-rlabel">Saved colours</div>
+						<div class="ss-swatches">
+							{#each $appSettings.styleSwatches as sw (sw)}
+								<button class="ss-sw" style="background:{sw}" title={sw + ' — click to apply · right-click to remove'} aria-label={sw} onclick={() => applySwatch(sw)} oncontextmenu={(e) => { e.preventDefault(); removeStyleSwatch(sw); }}></button>
+							{/each}
+						</div>
+					{/if}
 				{:else}
 					<div class="ss-empty"><span class="ss-big">⊹</span>Click any part of the interface to style it. Its controls appear here, and changes show instantly.</div>
 				{/if}
@@ -542,6 +561,10 @@
 	.ss-ctrl input[type=range] { width: 100%; accent-color: var(--c-accent); cursor: pointer; }
 	.ss-ctrl select { width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--c-border); background: var(--c-surface2); color: var(--c-text); font: inherit; font-size: 13px; }
 	.ss-ctrl select option { background: var(--c-surface); color: var(--c-text); }
+	/* §C — saved colour palette (swatches). Click to apply to the active colour control; right-click to remove. */
+	.ss-swatches { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 10px; }
+	.ss-sw { width: 22px; height: 22px; border-radius: 5px; border: 1px solid var(--c-border); cursor: pointer; padding: 0; }
+	.ss-sw:hover { outline: 2px solid var(--c-accent); outline-offset: 1px; }
 	.ss-empty { color: var(--c-muted); font-size: 13px; line-height: 1.6; margin-top: 28px; text-align: center; }
 	.ss-big { font-size: 26px; opacity: .5; display: block; margin-bottom: 8px; }
 </style>

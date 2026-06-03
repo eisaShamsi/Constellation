@@ -286,3 +286,10 @@ Eisa approved the Plan → started the build.
 - `StyleSetter.svelte`: new **Global** category (left rail) with elements **Backgrounds** (`--background-primary-alt`, `-secondary-alt`, `-modifier-hover`, `-modifier-border`, `-modifier-form-field`), **Text shades** (`--text-muted/-faint/-on-accent`), **Status colours** (`--text-error/-warning/-success`), **Accent shades** (`--interactive-accent-hover`, `--text-accent`), **Type & rhythm** (`--font-interface-size`, `--line-height-normal/-tight`, `--paragraph-spacing`), **Shape & corners** (`--radius-s/m/l`, `--border-width`, `--file-line-width` ch, `--file-margins`). All existing catalog vars → persist via `styleOverride`, apply app-wide. Binary mtime `2026-06-03 19:12:18`.
 - **Phase 2 (catalog parity for the ~17 Setter-only vars) deferred** to just before Phase-9 retirement — it's parity plumbing for the soon-retired Style Settings tab; the Setter works via `styleOverride` regardless. (Noted reorder; doesn't block any later phase.)
 - **[BOSS TEST] pending:** the Global controls change the app (border/hover/muted colours, radii, line-height, reading width) + persist. (Dead-var caveat: if a control does nothing, that catalog var isn't wired — flag for a §3A-style wire.)
+- **Boss test → Pass.** ✅
+
+### MIG-070 §C — Saved colour swatches (Eisa: "save any colour swatch I selected") *(pending Boss test)*
+Ratified roadmap item (`project_style_setter_feature_requests.md` #1). 
+- `store.ts`: `AppSettings.styleSwatches: string[]` (per-Universe) + `DEFAULT_SETTINGS []`; helpers `addStyleSwatch` (deduped, most-recent-first, cap 24) / `removeStyleSwatch`. Additive + rollback-safe.
+- `StyleSetter.svelte`: every colour control auto-saves the colour you settle on (`onchange → addStyleSwatch`); tracks `activeColorVar` (focus/input); a **"Saved colours" palette** in the right rail — click a swatch → applies to the active colour control (`applySwatch`), right-click → remove. Persists per-Universe. Binary mtime `2026-06-03 20:00:00`.
+- **Deferred (memory #2):** rename swatches.

@@ -3255,6 +3255,9 @@ export interface AppSettings {
 	 *  active theme + its styleSettingsValues (the Style Setter's persisted look). Survives
 	 *  theme switches; an empty map = the pure theme look. */
 	styleOverride: Record<string, string>;
+	/** MIG-070 §C — the user's saved colour palette (hex), built up in the Style Setter for
+	 *  re-use across controls. Most-recent first. */
+	styleSwatches: string[];
 	/** Emoji & Icon Library (core plug-in): per-slot icon overrides.
 	 *  Map<slot, ref> where ref is an emoji char or a namespaced icon id
 	 *  ("lucide:heart", "phosphor:heart", ...). Unset = use built-in default. */
@@ -3642,6 +3645,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
 	activeThemeId: '',
 	customThemes: [],
 	styleOverride: {},
+	styleSwatches: [],
 	iconOverrides: {},
 	interfaceFont: '',
 	interfaceFontSize: 14,
@@ -4103,6 +4107,25 @@ export function clearAllStyleOverride() {
 	appSettings.update(s => ({ ...s, styleOverride: {} }));
 	saveSettings();
 	emit('screen:settings-changed', get(appSettings)).catch(() => {});
+}
+
+/** MIG-070 §C — add a hex colour to the saved palette (deduped, most-recent first, capped). */
+export function addStyleSwatch(hex: string) {
+	const h = (hex || '').trim().toLowerCase();
+	if (!/^#[0-9a-f]{6}$/.test(h)) return;
+	appSettings.update(s => {
+		const cur = s.styleSwatches ?? [];
+		if (cur.includes(h)) return s;
+		return { ...s, styleSwatches: [h, ...cur].slice(0, 24) };
+	});
+	saveSettings();
+}
+
+/** MIG-070 §C — remove a hex colour from the saved palette. */
+export function removeStyleSwatch(hex: string) {
+	const h = (hex || '').trim().toLowerCase();
+	appSettings.update(s => ({ ...s, styleSwatches: (s.styleSwatches ?? []).filter(c => c !== h) }));
+	saveSettings();
 }
 
 export function updateSecuritySettings(partial: Partial<AppSettings['security']>) {
