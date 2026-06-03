@@ -251,3 +251,11 @@ fix-2 tied them to the note; Eisa clarified the opposite: *"The note tab text, t
   - **cUniverse** (`+layout .child-universe-item`) → `--ft-cuniverse-*`.
 - **Setter:** new **Library**, **Folder**, **cUniverse** elements (colour / font / size / weight) after File tree in `ELEMENT_ORDER`; preview sidebar gained a 📚 library header, 📁 folder, and ✦ cUniverse row (clickable, reading their vars). Unset = follows the File-tree master = no regression. Binary mtime `2026-06-03 16:49:57`.
 - **Still queued:** Editor **Note summary** + **Properties** elements (G2).
+**Boss test → All pass.** ✅ (breadcrumb whole + Library/Folder/cUniverse per-type colours.)
+
+### §3B Milestone B (partial) — Status bar (#10) + Universe switcher (#9) *(Eisa: "what about the Status bar and the Universe management text?")*
+Both already wired; exposed them + closed two gaps:
+- **Status bar** element — `--statusbar-bg/-color/-font-size/-height` (all live in `.status-bar`). Fixed `.sb-universe` (status-bar universe name) `color: var(--text-secondary)` → `var(--statusbar-color, var(--text-secondary))` so the whole bar's text (incl. the universe name) follows the control.
+- **Universe bar** element — the "◊ Universe" switcher at the sidebar foot (`.sidebar-footer`). Gave it `color: var(--universe-bar-color, var(--text-normal))`, `background: var(--universe-bar-bg, none)`, `font-family: var(--universe-bar-font-family, inherit)` (colour cascades to the chevron + label). New element: text colour + background + font.
+- **Preview:** the mini-window grew a **status-bar strip** (grid row, bottom, full-width) + a **◇ Universe footer** at the sidebar foot — both clickable, reading their vars. `.ss-prev` now `grid-template-areas: "side main" / "status status"`.
+- `ELEMENT_ORDER`: + `universe`, `statusbar` after `cuniverse`. Binary mtime `2026-06-03 17:08:03`. Remaining: #2 dock, #3 sidebar "New" toolbar, #4 top bar/tabs (Milestone B/C), + Editor **summary**/**properties** (G2).

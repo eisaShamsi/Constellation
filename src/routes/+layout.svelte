@@ -7461,8 +7461,10 @@
 		width: 100%;
 		border-top: 1px solid var(--border); padding: 4px 12px;
 		display: flex; align-items: center; gap: 6px; min-height: 30px;
-		background: none; border-inline: none; border-bottom: none;
-		cursor: pointer; font-family: inherit;
+		/* §3B — the "◊ Universe" switcher is its own element (colour cascades to the chevron + label). */
+		color: var(--universe-bar-color, var(--text-normal));
+		background: var(--universe-bar-bg, none); border-inline: none; border-bottom: none;
+		cursor: pointer; font-family: var(--universe-bar-font-family, inherit);
 	}
 	.sidebar-footer:hover { background: var(--bg-hover); }
 	.sidebar-footer svg { color: var(--text-muted); flex-shrink: 0; }
@@ -8244,7 +8246,8 @@
 	.sb-dot { color: var(--border); }
 	.sb-universe {
 		display: flex; align-items: center; gap: 3px;
-		border: none; background: none; color: var(--text-secondary);
+		/* §3B — the status-bar universe name follows the Status bar text colour. */
+		border: none; background: none; color: var(--statusbar-color, var(--text-secondary));
 		font-size: inherit; font-family: inherit; cursor: pointer; padding: 0;
 	}
 	.sb-universe:hover { color: var(--interactive-accent); }

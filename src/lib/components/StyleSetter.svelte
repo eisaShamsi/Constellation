@@ -85,6 +85,16 @@
 			{ label: 'Font', type: 'select', var: '--ft-cuniverse-font-family', options: FONTS },
 			{ label: 'Font size', type: 'range', var: '--ft-cuniverse-font-size', min: 10, max: 22, step: 1, unit: 'px', def: 13 },
 			{ label: 'Font weight', type: 'range', var: '--ft-cuniverse-weight', min: 300, max: 900, step: 100, unit: '', def: 600 } ] },
+		// §3B — Universe switcher ("◊ Universe", sidebar foot) + Status bar (bottom).
+		universe: { name: 'Universe bar', controls: [
+			{ label: 'Text colour', type: 'color', var: '--universe-bar-color' },
+			{ label: 'Background', type: 'color', var: '--universe-bar-bg' },
+			{ label: 'Font', type: 'select', var: '--universe-bar-font-family', options: FONTS } ] },
+		statusbar: { name: 'Status bar', controls: [
+			{ label: 'Background', type: 'color', var: '--statusbar-bg' },
+			{ label: 'Text colour', type: 'color', var: '--statusbar-color' },
+			{ label: 'Font size', type: 'range', var: '--statusbar-font-size', min: 9, max: 18, step: 1, unit: 'px', def: 11 },
+			{ label: 'Height', type: 'range', var: '--statusbar-height', min: 18, max: 48, step: 1, unit: 'px', def: 24 } ] },
 		noteBg:  { name: 'Note background', controls: [{ label: 'Background', type: 'color', var: '--background-primary' }] },
 		text:    { name: 'Body text', controls: [
 			{ label: 'Text colour', type: 'color', var: '--editor-text-color' },
@@ -126,7 +136,7 @@
 	};
 	// The visible element list (left rail) — Interface at the top (Eisa), then the note + its
 	// Markdown elements. Clicking a row selects it, same as clicking the part in the preview.
-	const ELEMENT_ORDER = ['interface', 'fileTree', 'library', 'folder', 'cuniverse', 'noteBg', 'text', 'accent', 'link', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'bold', 'italic', 'strike', 'code', 'quote'];
+	const ELEMENT_ORDER = ['interface', 'fileTree', 'library', 'folder', 'cuniverse', 'universe', 'statusbar', 'noteBg', 'text', 'accent', 'link', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'bold', 'italic', 'strike', 'code', 'quote'];
 
 	const SURFACES: [string, string][] = [
 		['editor', 'Editor'], ['sky', 'Sky View'], ['org', 'OrgChart'],
@@ -287,6 +297,7 @@
 								<span class="ss-file dim ss-hot2" class:ss-sel={selected === 'fileTree'} onclick={(e) => { e.stopPropagation(); selectEl('fileTree'); }}>Banana</span>
 								<span class="ss-file dim ss-hot2" class:ss-sel={selected === 'fileTree'} onclick={(e) => { e.stopPropagation(); selectEl('fileTree'); }}>Carrot</span>
 								<span class="ss-cuniverse ss-hot2" class:ss-sel={selected === 'cuniverse'} onclick={(e) => { e.stopPropagation(); selectEl('cuniverse'); }}>✦ Linked Universe</span>
+								<span class="ss-univ ss-hot2" class:ss-sel={selected === 'universe'} onclick={(e) => { e.stopPropagation(); selectEl('universe'); }}>◇ Universe</span>
 							</button>
 							<button class="ss-main ss-hot" class:ss-sel={selected === 'noteBg'} onclick={() => selectEl('noteBg')} aria-label="Note background">
 								<span class="ss-title ss-hot2" class:ss-sel={selected === 'text'} onclick={(e) => { e.stopPropagation(); selectEl('text'); }}>Apple (Fruit)</span>
@@ -307,6 +318,10 @@
 									<span class="ss-h5 ss-hot2" class:ss-sel={selected === 'h5'} onclick={(e) => { e.stopPropagation(); selectEl('h5'); }}>H5</span>
 									<span class="ss-h6 ss-hot2" class:ss-sel={selected === 'h6'} onclick={(e) => { e.stopPropagation(); selectEl('h6'); }}>H6</span>
 								</span>
+							</button>
+							<button class="ss-statusbar ss-hot" class:ss-sel={selected === 'statusbar'} onclick={(e) => { e.stopPropagation(); selectEl('statusbar'); }} aria-label="Status bar">
+								<span>Library · Note</span>
+								<span>7,660 notes · ✦ Universe</span>
 							</button>
 						</div>
 					{:else}
@@ -404,16 +419,19 @@
 	.ss-hint { font-size: 12px; color: var(--c-muted); }
 	.ss-stage { position: relative; }
 	/* The mini interface — uses the REAL app vars (overridden by the draft on .ss). */
-	.ss-prev { width: 560px; height: 360px; border-radius: 10px; overflow: hidden; display: grid; grid-template-columns: 124px 1fr; background: var(--background-primary, #fbfbfa); box-shadow: 0 14px 40px rgba(0,0,0,.45); border: 1px solid rgba(0,0,0,.25); }
-	.ss-side { background: var(--background-secondary, #f1f1ef); color: var(--text-normal, #2e3338); padding: 12px 10px; display: flex; flex-direction: column; gap: 8px; border: none; text-align: left; font-family: var(--font-interface-theme, inherit); }
+	.ss-prev { width: 560px; height: 360px; border-radius: 10px; overflow: hidden; display: grid; grid-template-columns: 124px 1fr; grid-template-rows: 1fr auto; grid-template-areas: "side main" "status status"; background: var(--background-primary, #fbfbfa); box-shadow: 0 14px 40px rgba(0,0,0,.45); border: 1px solid rgba(0,0,0,.25); }
+	.ss-side { grid-area: side; overflow: hidden; background: var(--background-secondary, #f1f1ef); color: var(--text-normal, #2e3338); padding: 12px 10px; display: flex; flex-direction: column; gap: 8px; border: none; text-align: left; font-family: var(--font-interface-theme, inherit); }
 	.ss-file { font-size: var(--ft-master-font-size, 11.5px); color: var(--ft-master-color, var(--text-normal, #2e3338)); font-weight: var(--ft-master-weight, 400); font-family: var(--ft-master-font-family, inherit); padding: var(--ft-master-row-padding-y, 1px) 4px; border-radius: var(--ft-row-radius, 3px); border-bottom: var(--ft-border-width, 0px) var(--ft-border-style, solid) var(--ft-border-color, var(--background-modifier-border, #ddd)); display: flex; align-items: center; gap: 6px; } .ss-file.dim { opacity: .55; }
 	/* §3B G1 — sidebar row types; each reads its own --ft-{type}-* with the File-tree master as fallback. */
 	.ss-lib { font-size: var(--ft-library-font-size, var(--ft-master-font-size, 11.5px)); color: var(--ft-library-color, var(--ft-master-color, var(--text-normal, #2e3338))); font-weight: var(--ft-library-weight, var(--ft-master-weight, 600)); font-family: var(--ft-library-font-family, var(--ft-master-font-family, inherit)); display: flex; align-items: center; gap: 6px; }
 	.ss-folder { font-size: var(--ft-folder-font-size, var(--ft-master-font-size, 11.5px)); color: var(--ft-folder-color, var(--ft-master-color, var(--text-muted, #6b7280))); font-weight: var(--ft-folder-weight, var(--ft-master-weight, 400)); font-family: var(--ft-folder-font-family, var(--ft-master-font-family, inherit)); display: flex; align-items: center; gap: 6px; padding-inline-start: 8px; }
 	.ss-cuniverse { font-size: var(--ft-cuniverse-font-size, var(--ft-master-font-size, 11.5px)); color: var(--ft-cuniverse-color, var(--ft-master-color, var(--interactive-accent, #7c3aed))); font-weight: var(--ft-cuniverse-weight, var(--ft-master-weight, 600)); font-family: var(--ft-cuniverse-font-family, var(--ft-master-font-family, inherit)); display: flex; align-items: center; gap: 6px; }
+	/* §3B — Universe switcher footer (sidebar foot) + Status bar strip (window bottom). */
+	.ss-univ { margin-top: auto; display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--universe-bar-color, var(--text-normal, #2e3338)); background: var(--universe-bar-bg, transparent); font-family: var(--universe-bar-font-family, inherit); border-top: 1px solid rgba(0,0,0,.08); padding-top: 5px; }
+	.ss-statusbar { grid-area: status; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 8px; min-height: var(--statusbar-height, 22px); background: var(--statusbar-bg, var(--background-secondary, #ececed)); color: var(--statusbar-color, var(--text-muted, #6b7280)); font-size: var(--statusbar-font-size, 10px); border: none; border-top: 1px solid rgba(0,0,0,.12); cursor: pointer; text-align: start; }
 	.ss-file::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--interactive-accent, #7c3aed); flex: none; } .ss-file.dim::before { background: currentColor; opacity: .4; }
 	/* The note body scrolls if the chosen heading sizes overflow — the preview shows REAL sizes. */
-	.ss-main { background: var(--background-primary, #fbfbfa); color: var(--editor-text-color, var(--text-normal, #2e3338)); padding: 16px 18px; text-align: left; border: none; font-family: var(--font-text-theme, inherit); display: flex; flex-direction: column; gap: 7px; overflow-y: auto; }
+	.ss-main { grid-area: main; background: var(--background-primary, #fbfbfa); color: var(--editor-text-color, var(--text-normal, #2e3338)); padding: 16px 18px; text-align: left; border: none; font-family: var(--font-text-theme, inherit); display: flex; flex-direction: column; gap: 7px; overflow-y: auto; }
 	.ss-title { display: block; font-weight: 800; font-size: 18px; color: var(--editor-text-color, var(--text-normal, #2e3338)); }
 	/* Headings read their own size/colour vars, with the catalog defaults + inherit as fallbacks
 	   so the preview matches a real note before any edit. Weight is shared (--heading-weight). */
