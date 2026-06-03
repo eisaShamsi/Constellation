@@ -165,9 +165,13 @@
 		align-items: center;
 		gap: 3px;
 		padding: var(--ft-master-row-padding-y, 2px) 6px;
-		border-radius: 3px;
+		/* MIG-070 §3B — full file-tree styling: row radius + opt-in separators (default 0 width =
+		   invisible) + per-tree font family, all falling back to today's look (no regression). */
+		border-radius: var(--ft-row-radius, 3px);
+		border-bottom: var(--ft-border-width, 0px) var(--ft-border-style, solid) var(--ft-border-color, var(--background-modifier-border));
 		cursor: pointer;
 		color: var(--ft-master-color, var(--text-muted));
+		font-family: var(--ft-master-font-family, inherit);
 		font-size: var(--ft-master-font-size, 0.82rem);
 		font-weight: var(--ft-master-weight, 400);
 		user-select: none;
@@ -187,13 +191,14 @@
 		width: 100%;
 		padding: var(--ft-master-row-padding-y, 2px) 6px var(--ft-master-row-padding-y, 2px) 20px;
 		border: none;
+		border-bottom: var(--ft-border-width, 0px) var(--ft-border-style, solid) var(--ft-border-color, var(--background-modifier-border));
 		background: none;
 		color: var(--ft-master-color, var(--text-normal));
+		font-family: var(--ft-master-font-family, inherit);
 		font-size: var(--ft-master-font-size, 0.82rem);
 		font-weight: var(--ft-master-weight, 400);
-		font-family: inherit;
 		cursor: pointer;
-		border-radius: 3px;
+		border-radius: var(--ft-row-radius, 3px);
 		text-align: start;
 		overflow: hidden;
 		text-overflow: ellipsis;

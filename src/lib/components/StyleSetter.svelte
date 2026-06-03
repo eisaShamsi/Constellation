@@ -36,6 +36,10 @@
 		['None', 'none'],
 		['Dotted', 'underline dotted'],
 	];
+	// Border styles (shared by every element's border controls — §3B full set).
+	const BORDER_STYLE: [string, string][] = [
+		['Solid', 'solid'], ['Dashed', 'dashed'], ['Dotted', 'dotted'], ['None', 'none'],
+	];
 	// Shared "weight (all headings)" control — `--heading-weight` is one var for every H level.
 	const HW: Ctrl = { label: 'Weight (all headings)', type: 'range', var: '--heading-weight', min: 300, max: 900, step: 100, unit: '', def: 700 };
 
@@ -52,6 +56,18 @@
 			{ label: 'Interface font', type: 'select', var: '--font-interface-theme', options: FONTS },
 			{ label: 'Panel background', type: 'color', var: '--background-secondary' } ] },
 		accent:  { name: 'Accent',   controls: [{ label: 'Accent colour', type: 'color', var: '--interactive-accent' }] },
+		// §3B — File tree (#6), full set. Background = the Interface panel background (shared);
+		// these are the tree-specific knobs. Row separators default to 0 width (invisible).
+		fileTree: { name: 'File tree', controls: [
+			{ label: 'Text colour', type: 'color', var: '--ft-master-color' },
+			{ label: 'Font', type: 'select', var: '--ft-master-font-family', options: FONTS },
+			{ label: 'Font size', type: 'range', var: '--ft-master-font-size', min: 10, max: 22, step: 1, unit: 'px', def: 13 },
+			{ label: 'Font weight', type: 'range', var: '--ft-master-weight', min: 300, max: 900, step: 100, unit: '', def: 400 },
+			{ label: 'Row spacing', type: 'range', var: '--ft-master-row-padding-y', min: 0, max: 12, step: 1, unit: 'px', def: 2 },
+			{ label: 'Row radius', type: 'range', var: '--ft-row-radius', min: 0, max: 14, step: 1, unit: 'px', def: 3 },
+			{ label: 'Separator width', type: 'range', var: '--ft-border-width', min: 0, max: 4, step: 1, unit: 'px', def: 0 },
+			{ label: 'Separator style', type: 'select', var: '--ft-border-style', options: BORDER_STYLE },
+			{ label: 'Separator colour', type: 'color', var: '--ft-border-color' } ] },
 		noteBg:  { name: 'Note background', controls: [{ label: 'Background', type: 'color', var: '--background-primary' }] },
 		text:    { name: 'Body text', controls: [
 			{ label: 'Text colour', type: 'color', var: '--editor-text-color' },
@@ -91,7 +107,7 @@
 	};
 	// The visible element list (left rail) — Interface at the top (Eisa), then the note + its
 	// Markdown elements. Clicking a row selects it, same as clicking the part in the preview.
-	const ELEMENT_ORDER = ['interface', 'noteBg', 'text', 'accent', 'link', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'bold', 'italic', 'strike', 'code', 'quote'];
+	const ELEMENT_ORDER = ['interface', 'fileTree', 'noteBg', 'text', 'accent', 'link', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'bold', 'italic', 'strike', 'code', 'quote'];
 
 	const SURFACES: [string, string][] = [
 		['editor', 'Editor'], ['sky', 'Sky View'], ['org', 'OrgChart'],
@@ -246,10 +262,10 @@
 					{#if activeSurface === 'editor'}
 						<div class="ss-prev">
 							<button class="ss-side ss-hot" class:ss-sel={selected === 'interface'} onclick={() => selectEl('interface')} aria-label="Interface">
-								<span class="ss-file">Apple (Fruit)</span>
-								<span class="ss-file dim">Banana</span>
-								<span class="ss-file dim">Carrot</span>
-								<span class="ss-file dim">Salad Recipe</span>
+								<span class="ss-file ss-hot2" class:ss-sel={selected === 'fileTree'} onclick={(e) => { e.stopPropagation(); selectEl('fileTree'); }}>Apple (Fruit)</span>
+								<span class="ss-file dim ss-hot2" class:ss-sel={selected === 'fileTree'} onclick={(e) => { e.stopPropagation(); selectEl('fileTree'); }}>Banana</span>
+								<span class="ss-file dim ss-hot2" class:ss-sel={selected === 'fileTree'} onclick={(e) => { e.stopPropagation(); selectEl('fileTree'); }}>Carrot</span>
+								<span class="ss-file dim ss-hot2" class:ss-sel={selected === 'fileTree'} onclick={(e) => { e.stopPropagation(); selectEl('fileTree'); }}>Salad Recipe</span>
 							</button>
 							<button class="ss-main ss-hot" class:ss-sel={selected === 'noteBg'} onclick={() => selectEl('noteBg')} aria-label="Note background">
 								<span class="ss-title ss-hot2" class:ss-sel={selected === 'text'} onclick={(e) => { e.stopPropagation(); selectEl('text'); }}>Apple (Fruit)</span>
@@ -369,7 +385,7 @@
 	/* The mini interface — uses the REAL app vars (overridden by the draft on .ss). */
 	.ss-prev { width: 560px; height: 360px; border-radius: 10px; overflow: hidden; display: grid; grid-template-columns: 124px 1fr; background: var(--background-primary, #fbfbfa); box-shadow: 0 14px 40px rgba(0,0,0,.45); border: 1px solid rgba(0,0,0,.25); }
 	.ss-side { background: var(--background-secondary, #f1f1ef); color: var(--text-normal, #2e3338); padding: 12px 10px; display: flex; flex-direction: column; gap: 8px; border: none; text-align: left; font-family: var(--font-interface-theme, inherit); }
-	.ss-file { font-size: 11.5px; display: flex; align-items: center; gap: 6px; } .ss-file.dim { opacity: .55; }
+	.ss-file { font-size: var(--ft-master-font-size, 11.5px); color: var(--ft-master-color, var(--text-normal, #2e3338)); font-weight: var(--ft-master-weight, 400); font-family: var(--ft-master-font-family, inherit); padding: var(--ft-master-row-padding-y, 1px) 4px; border-radius: var(--ft-row-radius, 3px); border-bottom: var(--ft-border-width, 0px) var(--ft-border-style, solid) var(--ft-border-color, var(--background-modifier-border, #ddd)); display: flex; align-items: center; gap: 6px; } .ss-file.dim { opacity: .55; }
 	.ss-file::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--interactive-accent, #7c3aed); flex: none; } .ss-file.dim::before { background: currentColor; opacity: .4; }
 	/* The note body scrolls if the chosen heading sizes overflow — the preview shows REAL sizes. */
 	.ss-main { background: var(--background-primary, #fbfbfa); color: var(--editor-text-color, var(--text-normal, #2e3338)); padding: 16px 18px; text-align: left; border: none; font-family: var(--font-text-theme, inherit); display: flex; flex-direction: column; gap: 7px; overflow-y: auto; }
