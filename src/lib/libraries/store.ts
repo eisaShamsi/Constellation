@@ -3115,6 +3115,12 @@ export function deriveThemeVariables(colors: ConstellationTheme['colors'], type:
 		'--background-modifier-success': '#16a34a22',
 		'--background-modifier-error': '#ef444422',
 		'--text-normal': text,
+		// MIG-070 §3 — the note body's OWN text colour, defaulted to the theme text so the note is
+		// INDEPENDENT of the chrome's text-colour controls (which write --text-normal). Without this
+		// the note fell back to --text-normal at runtime, so an Interface/global text-colour change
+		// bled into the note body. The Style Setter "Body text → Text colour" overrides this var;
+		// nothing else touches the note. (`.cm-content`/`.e-title` read `var(--editor-text-color, …)`.)
+		'--editor-text-color': text,
 		'--text-muted': adjustLightness(text, isDark ? -20 : 20),
 		'--text-faint': adjustLightness(text, isDark ? -35 : 35),
 		'--text-on-accent': isDark ? '#1e1e2e' : '#ffffff',
