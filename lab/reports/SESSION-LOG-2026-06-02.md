@@ -272,3 +272,11 @@ Eisa: *"cross-check the Style Setter with Appearance and Style Settings; merge t
 - **Phase 1 (Architect)** ran (Plan agent). Corrected 2 audit claims (second-screen doesn't mirror full styling; `libraryAppearances` loaded-but-never-applied; ~8 of 25 "new" vars already derived). Recommended A1 (per-Universe `styleOverride` merged on top in the shared apply `$effect`) / B1 (~17 new catalog vars) / C1 (unified gallery via `unifiedStyleList`) / D1 (keep the overlay, retire tabs at parity). **Eisa approved the approach.** Recorded in AUDIT §5.
 - **Phase 2 (Plan)** ran → **10 phases, ~30–32 commits**, each step with file refs + verification clauses + [BOSS TEST] flags + risk→step map + rollback. Written to **`docs/MIG-070C-PLAN.md`**. **Awaiting Boss approval to start Phase 0 (Build).**
 - MoCh for the session: `docs/MoCh/MoCh-2026-06-03-0900.md`.
+
+### MIG-070 §C — Build Phase 0 (persistence foundation) + Phase 1 (Setter persists) *(pending Boss test)*
+Eisa approved the Plan → started the build.
+- **Phase 0** — `store.ts`: `styleOverride: Record<string,string>` added to `AppSettings` + `DEFAULT_SETTINGS` (0.1); rollback-safe (older builds ignore the key via `applyParsedSettings` spread, 0.2). `+layout.svelte` apply `$effect` **refactored** (0.3, ⚠ shared path): collect-then-apply — derived theme vars applied untracked (as before), Style-Settings vars + **`styleOverride` (last writer)** tracked in `_lastStyleSettingsKeys`; override now applies in BOTH the theme and no-theme paths, survives theme switch, clears cleanly. Helpers `setStyleOverride`/`clearStyleOverride` + batch `mergeStyleOverride`/`clearAllStyleOverride` (0.4, debounced via the existing 300ms `saveSettings`).
+- **Phase 1** — `StyleSetter.svelte`: `apply()` now persists the draft via `mergeStyleOverride` (incl. decomposed accent) instead of session-only `body.style` (1.2); `resetDraft()` → `clearAllStyleOverride()` (1.3); a rising-edge `$effect` seeds the draft from `appSettings.styleOverride` on open (1.1).
+- **Build** OK (frontend clean; pre-existing Rust warnings only). Binary mtime `2026-06-03 18:29:21`.
+- **Orientation bumped v2.50 → v2.51** (NEW file, per SO #6 — captures §3 shipped + §C migration kickoff).
+- **[BOSS TEST] pending:** a Style-Setter change persists across a full quit+relaunch AND survives a theme switch.

@@ -3251,6 +3251,10 @@ export interface AppSettings {
 	accentColor: string;
 	activeThemeId: string;
 	customThemes: ConstellationTheme[];
+	/** MIG-070 §C — per-Universe style override: CSS-var → value, applied ON TOP of the
+	 *  active theme + its styleSettingsValues (the Style Setter's persisted look). Survives
+	 *  theme switches; an empty map = the pure theme look. */
+	styleOverride: Record<string, string>;
 	/** Emoji & Icon Library (core plug-in): per-slot icon overrides.
 	 *  Map<slot, ref> where ref is an emoji char or a namespaced icon id
 	 *  ("lucide:heart", "phosphor:heart", ...). Unset = use built-in default. */
@@ -3637,6 +3641,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
 	accentColor: '#7c3aed',
 	activeThemeId: '',
 	customThemes: [],
+	styleOverride: {},
 	iconOverrides: {},
 	interfaceFont: '',
 	interfaceFontSize: 14,
@@ -4061,6 +4066,42 @@ export function updateSettings(partial: Partial<AppSettings>) {
 	appSettings.update(s => ({ ...s, ...partial }));
 	saveSettings();
 	// Notify second screen of settings change
+	emit('screen:settings-changed', get(appSettings)).catch(() => {});
+}
+
+/** MIG-070 §C — set one per-Universe style override (CSS-var → value) and persist.
+ *  Debounced via saveSettings (300ms) so dragging a Style-Setter slider can't hammer IPC. */
+export function setStyleOverride(key: string, value: string) {
+	appSettings.update(s => ({ ...s, styleOverride: { ...(s.styleOverride ?? {}), [key]: value } }));
+	saveSettings();
+	emit('screen:settings-changed', get(appSettings)).catch(() => {});
+}
+
+/** MIG-070 §C — remove one per-Universe style override (revert to the theme look for that var). */
+export function clearStyleOverride(key: string) {
+	appSettings.update(s => {
+		if (!(s.styleOverride && key in s.styleOverride)) return s;
+		const next = { ...s.styleOverride };
+		delete next[key];
+		return { ...s, styleOverride: next };
+	});
+	saveSettings();
+	emit('screen:settings-changed', get(appSettings)).catch(() => {});
+}
+
+/** MIG-070 §C — merge many overrides at once (the Style Setter's "Apply"): ONE settings
+ *  update + one save + one emit, so applying a whole draft doesn't re-run the apply effect
+ *  per key. */
+export function mergeStyleOverride(partial: Record<string, string>) {
+	appSettings.update(s => ({ ...s, styleOverride: { ...(s.styleOverride ?? {}), ...partial } }));
+	saveSettings();
+	emit('screen:settings-changed', get(appSettings)).catch(() => {});
+}
+
+/** MIG-070 §C — clear ALL per-Universe overrides (the Style Setter's "Reset" → pure theme look). */
+export function clearAllStyleOverride() {
+	appSettings.update(s => ({ ...s, styleOverride: {} }));
+	saveSettings();
 	emit('screen:settings-changed', get(appSettings)).catch(() => {});
 }
 

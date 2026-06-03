@@ -18,6 +18,7 @@
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
 	import { styleSetterOpen, closeStyleSetter } from '$lib/stores/styleSetter';
+	import { appSettings, mergeStyleOverride, clearAllStyleOverride } from '$lib/libraries/store';
 
 	// A control writes one REAL app CSS variable. `color` → hex; `select` → a stack/keyword;
 	// `range` → a number + unit (e.g. `32px`, or `700` when unit is '').
@@ -220,27 +221,40 @@
 	}
 
 	function apply() {
-		// Copy the draft onto the live app for this session (direct DOM, no reactive path). The
-		// app themes <body> (not :root) and shadows :root, so we MUST target body. Per-element
-		// vars (--hN-color/-size, --bold-*, --italic-color, --code-*, --blockquote-text-color, …)
-		// flow through automatically since they're plain entries in the draft.
-		const root = document.body.style;
-		for (const [k, v] of Object.entries(draft)) root.setProperty(k, v);
-		// The accent is also consumed as --accent-h/s/l components + --text-accent by many
-		// controls, so decompose it — otherwise only elements using --interactive-accent change.
+		// MIG-070 §C — persist the draft as the per-Universe styleOverride in ONE settings update.
+		// The +layout apply $effect writes it onto <body> (one apply path) — survives reload AND
+		// theme switch. Per-element vars flow through since they're plain draft entries.
+		const merged: Record<string, string> = { ...draft };
+		// The accent is also consumed as --accent-h/s/l + --text-accent + --interactive-accent-hover,
+		// so decompose it — otherwise only --interactive-accent users would change.
 		const acc = draft['--interactive-accent'];
 		if (acc) {
 			const hsl = hexToHSL(acc);
 			if (hsl) {
-				root.setProperty('--accent-h', String(hsl.h));
-				root.setProperty('--accent-s', `${hsl.s}%`);
-				root.setProperty('--accent-l', `${hsl.l}%`);
-				root.setProperty('--text-accent', `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`);
-				root.setProperty('--interactive-accent-hover', `hsl(${hsl.h}, ${hsl.s}%, ${Math.max(0, hsl.l - 8)}%)`);
+				merged['--accent-h'] = String(hsl.h);
+				merged['--accent-s'] = `${hsl.s}%`;
+				merged['--accent-l'] = `${hsl.l}%`;
+				merged['--text-accent'] = `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`;
+				merged['--interactive-accent-hover'] = `hsl(${hsl.h}, ${hsl.s}%, ${Math.max(0, hsl.l - 8)}%)`;
 			}
 		}
+		mergeStyleOverride(merged);
 	}
-	function resetDraft() { draft = {}; selected = null; }
+	function resetDraft() {
+		draft = {};
+		selected = null;
+		// MIG-070 §C — clear the persisted per-Universe override → back to the pure theme look.
+		clearAllStyleOverride();
+	}
+
+	// MIG-070 §C — when the Setter opens, seed the draft from the persisted per-Universe override
+	// so the controls reflect the live look (not a blank slate). Rising-edge only, so editing
+	// while open isn't clobbered by the seed.
+	let _ssWasOpen = false;
+	$effect(() => {
+		if ($styleSetterOpen && !_ssWasOpen) draft = { ...(get(appSettings).styleOverride ?? {}) };
+		_ssWasOpen = $styleSetterOpen;
+	});
 
 	onMount(() => {
 		// Capture phase + stopImmediatePropagation so Escape closes ONLY the Setter, never the

@@ -1569,80 +1569,80 @@
 			}
 		}
 
-		if (!themeId) {
-			// No custom theme — but still apply accent color if set
-			if (s.accentColor && s.accentColor !== '#7c3aed') {
-				const hsl = hexToHSL(s.accentColor);
-				document.body.style.setProperty('--accent-h', String(hsl.h));
-				document.body.style.setProperty('--accent-s', `${hsl.s}%`);
-				document.body.style.setProperty('--accent-l', `${hsl.l}%`);
+		// MIG-070 §C — collect the vars whose KEYS we track for clean-up: Style-Settings vars +
+		// the per-Universe styleOverride. Derived theme vars are applied immediately and NOT
+		// tracked (overwritten on each theme apply, never cleared — pre-§C behaviour preserved).
+		const root = document.body.style;
+		const trackedVars: Record<string, string> = {};
+		let ssClasses: string[] = [];
+
+		// Find theme — customs take precedence over built-ins so a user's auto-cloned copy of a
+		// built-in theme (same id, now with their styleSettingsValues attached) is applied.
+		const theme = themeId
+			? (s.customThemes?.find(t => t.id === themeId) || BUILTIN_THEMES.find(t => t.id === themeId))
+			: undefined;
+
+		if (theme) {
+			// Apply derived CSS variables (untracked)
+			for (const [key, value] of Object.entries(deriveThemeVariables(theme.colors, theme.type))) {
+				root.setProperty(key, value);
 			}
-			return;
+			// Apply theme type class
+			document.body.classList.remove('theme-light', 'theme-dark');
+			document.body.classList.add(`theme-${theme.type}`);
+			// Apply custom CSS if present
+			let customStyleEl = document.getElementById('constellation-custom-theme-css');
+			if (theme.customCSS) {
+				if (!customStyleEl) {
+					customStyleEl = document.createElement('style');
+					customStyleEl.id = 'constellation-custom-theme-css';
+					document.head.appendChild(customStyleEl);
+				}
+				customStyleEl.textContent = theme.customCSS;
+			} else if (customStyleEl) {
+				customStyleEl.remove();
+			}
+			// Style Settings: core blocks + theme's own blocks (dedup guarded)
+			const ssBlocks = getEffectiveStyleBlocks(theme);
+			if (ssBlocks.length > 0) {
+				const ssResult = generateStyleSettingsCSS(ssBlocks, theme.styleSettingsValues ?? {}, theme.type);
+				Object.assign(trackedVars, ssResult.variables);
+				ssClasses = ssResult.classes;
+			} else if (theme.styleSettingsValues) {
+				for (const [id, value] of Object.entries(theme.styleSettingsValues)) {
+					trackedVars[`--${id}`] = value;
+				}
+			}
+		} else if (s.accentColor && s.accentColor !== '#7c3aed') {
+			// No active theme — still apply accent colour (untracked, pre-§C behaviour)
+			const hsl = hexToHSL(s.accentColor);
+			root.setProperty('--accent-h', String(hsl.h));
+			root.setProperty('--accent-s', `${hsl.s}%`);
+			root.setProperty('--accent-l', `${hsl.l}%`);
 		}
 
-		// Find theme — customs take precedence over built-ins so a user's
-		// auto-cloned copy of a built-in theme (same id, now with their
-		// styleSettingsValues attached) is the one that gets applied.
-		const theme = s.customThemes?.find(t => t.id === themeId) || BUILTIN_THEMES.find(t => t.id === themeId);
-		if (!theme) return;
+		// MIG-070 §C — per-Universe override wins over theme + Style Settings (applied LAST).
+		// Tracked, so a removed override clears on the next apply, and it re-applies after
+		// derivation on every theme switch (survives the switch).
+		Object.assign(trackedVars, s.styleOverride ?? {});
 
-		// Apply derived CSS variables
-		const vars = deriveThemeVariables(theme.colors, theme.type);
-		const root = document.body.style;
-		for (const [key, value] of Object.entries(vars)) {
+		// Clear any tracked var from the previous apply that is gone now (reset row / removed override).
+		const newKeys = new Set(Object.keys(trackedVars));
+		for (const prevKey of _lastStyleSettingsKeys) {
+			if (!newKeys.has(prevKey)) root.removeProperty(prevKey);
+		}
+		_lastStyleSettingsKeys = [...newKeys];
+		for (const [key, value] of Object.entries(trackedVars)) {
 			root.setProperty(key, value);
 		}
 
-		// Apply theme type class
-		document.body.classList.remove('theme-light', 'theme-dark');
-		document.body.classList.add(`theme-${theme.type}`);
-
-		// Apply custom CSS if present
-		let customStyleEl = document.getElementById('constellation-custom-theme-css');
-		if (theme.customCSS) {
-			if (!customStyleEl) {
-				customStyleEl = document.createElement('style');
-				customStyleEl.id = 'constellation-custom-theme-css';
-				document.head.appendChild(customStyleEl);
-			}
-			customStyleEl.textContent = theme.customCSS;
-		} else if (customStyleEl) {
-			customStyleEl.remove();
-		}
-
-		// Apply Style Settings: core blocks + theme's own blocks (dedup guarded).
-		const ssBlocks = getEffectiveStyleBlocks(theme);
-		if (ssBlocks.length > 0) {
-			const ssResult = generateStyleSettingsCSS(
-				ssBlocks,
-				theme.styleSettingsValues ?? {},
-				theme.type
-			);
-			// Clear any Style-Settings var from the previous apply that is NOT
-			// in the new set (user reset it, or cleared a tier override).
-			const newKeys = new Set(Object.keys(ssResult.variables));
-			for (const prevKey of _lastStyleSettingsKeys) {
-				if (!newKeys.has(prevKey)) root.removeProperty(prevKey);
-			}
-			_lastStyleSettingsKeys = [...newKeys];
-			// Apply CSS variables with proper format units
-			for (const [key, value] of Object.entries(ssResult.variables)) {
-				root.setProperty(key, value);
-			}
-			// Apply body classes from class-toggle and class-select
-			// Remove old style settings classes first
-			document.body.className = document.body.className
-				.split(' ')
-				.filter(c => !c.startsWith('css-settings-'))
-				.join(' ');
-			for (const cls of ssResult.classes) {
-				document.body.classList.add(cls);
-			}
-		} else if (theme.styleSettingsValues) {
-			// Fallback: simple key→value application
-			for (const [id, value] of Object.entries(theme.styleSettingsValues)) {
-				root.setProperty(`--${id}`, value);
-			}
+		// Body classes from Style-Settings class-toggle/select (cleared when none apply)
+		document.body.className = document.body.className
+			.split(' ')
+			.filter(c => !c.startsWith('css-settings-'))
+			.join(' ');
+		for (const cls of ssClasses) {
+			document.body.classList.add(cls);
 		}
 	});
 
