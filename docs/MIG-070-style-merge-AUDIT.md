@@ -99,6 +99,25 @@ This is **/migration-worthy** (storage reconciliation + frozen MIG-069 presets p
 6. **Fill the no-UI gaps:** accent picker, dark/light/system toggle, custom-CSS editor, **per-library appearance editor**.
 7. **Retire** the old Appearance styling controls + the Style Settings tab once parity is reached (Eisa: "the only Style Settings"). Behavioural toggles stay in Editor/Appearance.
 
+---
+
+## 5. Phase-1 Architect corrections + chosen approach (2026-06-03)
+
+**Eisa's decisions:** persistence = theme base **+ per-Universe override**; scope = **all in one migration**; execution = **formal /migration**.
+
+**Architect corrected two §3/§4 claims (verified against source):**
+- `SecondScreenPage.svelte` applies only the theme light/dark **class + font vars** on `documentElement` — it does **NOT** call `deriveThemeVariables`/`generateStyleSettingsCSS`. So full colour/style-var mirroring to the second screen is a **gap to build**, not an existing behaviour.
+- `libraryAppearances` (`LibraryAppearance`, store.ts ≈L2256) is **loaded but has no DOM apply path** in the frontend. Both the editor UI *and* the apply path are missing.
+- `deriveThemeVariables` (≈L3100) already emits ~8 of the "25 Setter-only" vars (`--editor-text-color`, `--text-accent`, `--interactive-accent-hover`, `--accent-h/s/l`, `--background-*-alt`, `--text-muted/-faint`). So only **~17 vars are truly new** to add to the catalog.
+
+**Chosen sub-options (architect-recommended, all low-risk):**
+- **A1** — per-Universe override = new `appSettings.styleOverride: Record<string,string>`, merged **on top** of the theme's `styleSettingsValues` in the same `+layout` apply `$effect` (after `deriveThemeVariables`), registering its keys in `_lastStyleSettingsKeys` so it survives theme switches and clears cleanly.
+- **B1** — add only the ~17 truly-new vars to `constellationStyleSettings.ts`; reuse the derived ones.
+- **C1** — fold Themes + Presets into one "Styles" gallery via the existing `unifiedStyleList` (read-time merge; keep both stores; frozen MIG-069 untouched).
+- **D1** — extend the standalone `StyleSetter.svelte` overlay; retire the old Appearance/Style-Settings styling tabs only at parity.
+
+**Top invariants:** existing themes load; `styleSettingsValues` apply unchanged; **frozen MIG-069 presets keep working until retired**; a persisted look **survives theme switch** (override re-applies after derivation); no boot/typing/IPC regression (7,600-note Universe); RTL/i18n; FocusPane plain-text exception. **Mid-migration: keep BOTH old tabs and the new surface writing the same values until parity — never delete the old apply path first (BUG-015-class race).** Rollback is non-destructive: older builds ignore the unknown `styleOverride` key (preserved in JSON round-trip), themes/presets still load.
+
 ### Open decisions for Eisa
 - **D1 — Persistence:** per-theme (`styleSettingsValues`, recommended) · app-global · per-Universe?
 - **D2 — Scope:** does the single surface absorb ALL of {catalog, themes, presets, fonts, link colours, no-UI gaps}, or a phased subset first?
