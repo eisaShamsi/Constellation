@@ -19,7 +19,6 @@
 	import { get } from 'svelte/store';
 	import { styleSetterOpen, closeStyleSetter } from '$lib/stores/styleSetter';
 	import { appSettings, mergeStyleOverride, clearAllStyleOverride, addStyleSwatch, removeStyleSwatch, setPerScriptFont } from '$lib/libraries/store';
-	import { locale, SUPPORTED_LOCALES } from '$lib/i18n';
 
 	// A control writes one REAL app CSS variable. `color` → hex; `select` → a stack/keyword;
 	// `range` → a number + unit (e.g. `32px`, or `700` when unit is '').
@@ -27,8 +26,7 @@
 		| { label: string; type: 'color'; var: string }
 		| { label: string; type: 'select'; var: string; options: [string, string][] }
 		| { label: string; type: 'range'; var: string; min: number; max: number; step: number; unit: string; def: number }
-		| { label: string; type: 'scriptfont'; script: string; options: [string, string][] }  // writes appSettings.perScriptFonts[script]
-		| { label: string; type: 'locale'; options: [string, string][] };                       // writes the i18n interface language
+		| { label: string; type: 'scriptfont'; script: string; options: [string, string][] };  // writes appSettings.perScriptFonts[script]
 
 	// §C Phase 4 — a curated typeface list (cross-platform stacks). A full installed-fonts list +
 	// per-script fonts + font-theme/numerals (from the Language tab) are the deeper follow-up.
@@ -57,8 +55,8 @@
 	const BORDER_STYLE: [string, string][] = [
 		['Solid', 'solid'], ['Dashed', 'dashed'], ['Dotted', 'dotted'], ['None', 'none'],
 	];
-	// §C Phase 4.2 — interface language + per-script font choices (each script its own face).
-	const LOCALE_OPTIONS: [string, string][] = SUPPORTED_LOCALES.map((l) => [l.label, l.code]);
+	// §C Phase 4.2 — per-script font choices (each script its own face). The interface LANGUAGE
+	// stays in Settings → Language (a locale setting, not styling) — Eisa's call.
 	const AR_FONTS: [string, string][] = [['System default', ''], ['Noto Naskh Arabic', '"Noto Naskh Arabic"'], ['Amiri', 'Amiri'], ['Scheherazade New', '"Scheherazade New"'], ['Cairo', 'Cairo'], ['Dubai', 'Dubai'], ['Tahoma', 'Tahoma'], ['Segoe UI', '"Segoe UI"'], ['Traditional Arabic', '"Traditional Arabic"']];
 	const HE_FONTS: [string, string][] = [['System default', ''], ['Noto Sans Hebrew', '"Noto Sans Hebrew"'], ['David', 'David'], ['Frank Ruehl', 'FrankRuehl'], ['Arial', 'Arial'], ['Times New Roman', '"Times New Roman"']];
 	const CJK_FONTS: [string, string][] = [['System default', ''], ['Noto Sans CJK SC', '"Noto Sans CJK SC"'], ['Microsoft YaHei', '"Microsoft YaHei"'], ['SimSun', 'SimSun'], ['Malgun Gothic', '"Malgun Gothic"'], ['MS Gothic', '"MS Gothic"']];
@@ -191,8 +189,7 @@
 			{ label: 'Note margins', type: 'range', var: '--file-margins', min: 0, max: 80, step: 1, unit: 'px', def: 24 } ] },
 		// §C Phase 4.2 — interface language + per-script fonts (Latin = the Interface/Note/Code font
 		// pickers; these are the non-Latin scripts, each rendered in its own font via the engine).
-		fonts: { name: 'Language & fonts', controls: [
-			{ label: 'Interface language', type: 'locale', options: LOCALE_OPTIONS },
+		fonts: { name: 'Per-script fonts', controls: [
 			{ label: 'Arabic font', type: 'scriptfont', script: 'arabic', options: AR_FONTS },
 			{ label: 'Hebrew font', type: 'scriptfont', script: 'hebrew', options: HE_FONTS },
 			{ label: 'CJK font (中日韓)', type: 'scriptfont', script: 'cjk', options: CJK_FONTS },
@@ -565,11 +562,6 @@
 								<label for={'ss-sf-' + c.script}>{c.label}</label>
 								<select id={'ss-sf-' + c.script} value={$appSettings.perScriptFonts?.[c.script] ?? ''} onchange={(e) => setPerScriptFont(c.script, (e.currentTarget as HTMLSelectElement).value)}>
 									{#each c.options as [lbl, val] (lbl)}<option value={val}>{lbl}</option>{/each}
-								</select>
-							{:else if c.type === 'locale'}
-								<label for="ss-locale">{c.label}</label>
-								<select id="ss-locale" value={$locale} onchange={(e) => locale.set((e.currentTarget as HTMLSelectElement).value as never)}>
-									{#each c.options as [lbl, val] (val)}<option value={val}>{lbl}</option>{/each}
 								</select>
 							{:else}
 								<label for={'ss-' + c.var}>{c.label}</label>
