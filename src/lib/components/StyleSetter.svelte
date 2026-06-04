@@ -27,10 +27,23 @@
 		| { label: string; type: 'select'; var: string; options: [string, string][] }
 		| { label: string; type: 'range'; var: string; min: number; max: number; step: number; unit: string; def: number };
 
+	// §C Phase 4 — a curated typeface list (cross-platform stacks). A full installed-fonts list +
+	// per-script fonts + font-theme/numerals (from the Language tab) are the deeper follow-up.
 	const FONTS: [string, string][] = [
 		['System', 'ui-sans-serif, system-ui, "Segoe UI", sans-serif'],
 		['Serif', 'ui-serif, Georgia, "Times New Roman", serif'],
 		['Mono', 'ui-monospace, "Courier New", monospace'],
+		['Segoe UI', '"Segoe UI", system-ui, sans-serif'],
+		['Calibri', 'Calibri, "Segoe UI", sans-serif'],
+		['Helvetica', '"Helvetica Neue", Helvetica, Arial, sans-serif'],
+		['Verdana', 'Verdana, Geneva, sans-serif'],
+		['Tahoma', 'Tahoma, sans-serif'],
+		['Trebuchet', '"Trebuchet MS", sans-serif'],
+		['Georgia', 'Georgia, "Times New Roman", serif'],
+		['Times', '"Times New Roman", Times, serif'],
+		['Garamond', 'Garamond, "EB Garamond", Georgia, serif'],
+		['Consolas', 'Consolas, "Courier New", monospace'],
+		['Courier', '"Courier New", Courier, monospace'],
 	];
 	const DECOR: [string, string][] = [
 		['Underline', 'underline'],
@@ -133,6 +146,7 @@
 		code:   { name: 'Inline code', controls: [
 			{ label: 'Background', type: 'color', var: '--code-background' },
 			{ label: 'Text colour', type: 'color', var: '--code-normal' },
+			{ label: 'Code font', type: 'select', var: '--font-monospace-theme', options: FONTS },
 			{ label: 'Code size', type: 'range', var: '--font-monospace-size', min: 10, max: 22, step: 1, unit: 'px', def: 14 } ] },
 		quote:  { name: 'Blockquote', controls: [{ label: 'Text colour', type: 'color', var: '--blockquote-text-color' }] },
 		// §C Phase 3 — global/foundational look (catalog vars already consumed app-wide).

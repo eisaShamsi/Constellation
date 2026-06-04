@@ -1769,6 +1769,15 @@
 			}
 		}
 
+		// MIG-070 §C — the per-Universe styleOverride wins for fonts too: this effect would
+		// otherwise overwrite the Style Setter's font picks (it runs after the theme-apply effect).
+		// Re-apply the override's font-family vars LAST (the `.cm-content` !important rule reads
+		// var(--font-text-theme), so the note content follows the override).
+		const _ssFontOv = s.styleOverride ?? {};
+		for (const _fk of ['--font-interface-theme', '--font-text-theme', '--font-monospace-theme']) {
+			if (_ssFontOv[_fk]) root.setProperty(_fk, _ssFontOv[_fk]);
+		}
+
 		// Inject or update the style element
 		let styleEl = document.getElementById('constellation-script-fonts');
 		if (!styleEl) {
