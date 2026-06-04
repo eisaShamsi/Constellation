@@ -3258,6 +3258,11 @@ export interface AppSettings {
 	/** MIG-070 §C — the user's saved colour palette (hex), built up in the Style Setter for
 	 *  re-use across controls. Most-recent first. */
 	styleSwatches: string[];
+	/** MIG-070 §C — the Style Setter's per-script font choices (script → font family), e.g.
+	 *  { arabic: 'Amiri', cjk: '"Noto Sans CJK SC"' }. Applied via @font-face unicode-range in the
+	 *  +layout font effect so each script renders in its own font, independent of the UI language.
+	 *  The Latin base comes from the styleOverride font vars; empty entry = system/default. */
+	perScriptFonts: Record<string, string>;
 	/** Emoji & Icon Library (core plug-in): per-slot icon overrides.
 	 *  Map<slot, ref> where ref is an emoji char or a namespaced icon id
 	 *  ("lucide:heart", "phosphor:heart", ...). Unset = use built-in default. */
@@ -3646,6 +3651,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
 	customThemes: [],
 	styleOverride: {},
 	styleSwatches: [],
+	perScriptFonts: {},
 	iconOverrides: {},
 	interfaceFont: '',
 	interfaceFontSize: 14,
@@ -4098,6 +4104,17 @@ export function clearStyleOverride(key: string) {
  *  per key. */
 export function mergeStyleOverride(partial: Record<string, string>) {
 	appSettings.update(s => ({ ...s, styleOverride: { ...(s.styleOverride ?? {}), ...partial } }));
+	saveSettings();
+	emit('screen:settings-changed', get(appSettings)).catch(() => {});
+}
+
+/** MIG-070 §C — set/clear one per-script font (empty family clears → engine/system default). */
+export function setPerScriptFont(script: string, family: string) {
+	appSettings.update(s => {
+		const next = { ...(s.perScriptFonts ?? {}) };
+		if (family) next[script] = family; else delete next[script];
+		return { ...s, perScriptFonts: next };
+	});
 	saveSettings();
 	emit('screen:settings-changed', get(appSettings)).catch(() => {});
 }

@@ -18,14 +18,17 @@
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
 	import { styleSetterOpen, closeStyleSetter } from '$lib/stores/styleSetter';
-	import { appSettings, mergeStyleOverride, clearAllStyleOverride, addStyleSwatch, removeStyleSwatch } from '$lib/libraries/store';
+	import { appSettings, mergeStyleOverride, clearAllStyleOverride, addStyleSwatch, removeStyleSwatch, setPerScriptFont } from '$lib/libraries/store';
+	import { locale, SUPPORTED_LOCALES } from '$lib/i18n';
 
 	// A control writes one REAL app CSS variable. `color` → hex; `select` → a stack/keyword;
 	// `range` → a number + unit (e.g. `32px`, or `700` when unit is '').
 	type Ctrl =
 		| { label: string; type: 'color'; var: string }
 		| { label: string; type: 'select'; var: string; options: [string, string][] }
-		| { label: string; type: 'range'; var: string; min: number; max: number; step: number; unit: string; def: number };
+		| { label: string; type: 'range'; var: string; min: number; max: number; step: number; unit: string; def: number }
+		| { label: string; type: 'scriptfont'; script: string; options: [string, string][] }  // writes appSettings.perScriptFonts[script]
+		| { label: string; type: 'locale'; options: [string, string][] };                       // writes the i18n interface language
 
 	// §C Phase 4 — a curated typeface list (cross-platform stacks). A full installed-fonts list +
 	// per-script fonts + font-theme/numerals (from the Language tab) are the deeper follow-up.
@@ -54,6 +57,13 @@
 	const BORDER_STYLE: [string, string][] = [
 		['Solid', 'solid'], ['Dashed', 'dashed'], ['Dotted', 'dotted'], ['None', 'none'],
 	];
+	// §C Phase 4.2 — interface language + per-script font choices (each script its own face).
+	const LOCALE_OPTIONS: [string, string][] = SUPPORTED_LOCALES.map((l) => [l.label, l.code]);
+	const AR_FONTS: [string, string][] = [['System default', ''], ['Noto Naskh Arabic', '"Noto Naskh Arabic"'], ['Amiri', 'Amiri'], ['Scheherazade New', '"Scheherazade New"'], ['Cairo', 'Cairo'], ['Dubai', 'Dubai'], ['Tahoma', 'Tahoma'], ['Segoe UI', '"Segoe UI"'], ['Traditional Arabic', '"Traditional Arabic"']];
+	const HE_FONTS: [string, string][] = [['System default', ''], ['Noto Sans Hebrew', '"Noto Sans Hebrew"'], ['David', 'David'], ['Frank Ruehl', 'FrankRuehl'], ['Arial', 'Arial'], ['Times New Roman', '"Times New Roman"']];
+	const CJK_FONTS: [string, string][] = [['System default', ''], ['Noto Sans CJK SC', '"Noto Sans CJK SC"'], ['Microsoft YaHei', '"Microsoft YaHei"'], ['SimSun', 'SimSun'], ['Malgun Gothic', '"Malgun Gothic"'], ['MS Gothic', '"MS Gothic"']];
+	const DEV_FONTS: [string, string][] = [['System default', ''], ['Noto Sans Devanagari', '"Noto Sans Devanagari"'], ['Mangal', 'Mangal'], ['Nirmala UI', '"Nirmala UI"']];
+	const CYR_FONTS: [string, string][] = [['System default', ''], ['Noto Sans', '"Noto Sans"'], ['Segoe UI', '"Segoe UI"'], ['Times New Roman', '"Times New Roman"'], ['Arial', 'Arial']];
 	// Shared "weight (all headings)" control — `--heading-weight` is one var for every H level.
 	const HW: Ctrl = { label: 'Weight (all headings)', type: 'range', var: '--heading-weight', min: 300, max: 900, step: 100, unit: '', def: 700 };
 
@@ -179,6 +189,15 @@
 			{ label: 'Border width', type: 'range', var: '--border-width', min: 0, max: 4, step: 1, unit: 'px', def: 1 },
 			{ label: 'Reading width', type: 'range', var: '--file-line-width', min: 40, max: 120, step: 1, unit: 'ch', def: 70 },
 			{ label: 'Note margins', type: 'range', var: '--file-margins', min: 0, max: 80, step: 1, unit: 'px', def: 24 } ] },
+		// §C Phase 4.2 — interface language + per-script fonts (Latin = the Interface/Note/Code font
+		// pickers; these are the non-Latin scripts, each rendered in its own font via the engine).
+		fonts: { name: 'Language & fonts', controls: [
+			{ label: 'Interface language', type: 'locale', options: LOCALE_OPTIONS },
+			{ label: 'Arabic font', type: 'scriptfont', script: 'arabic', options: AR_FONTS },
+			{ label: 'Hebrew font', type: 'scriptfont', script: 'hebrew', options: HE_FONTS },
+			{ label: 'CJK font (中日韓)', type: 'scriptfont', script: 'cjk', options: CJK_FONTS },
+			{ label: 'Devanagari font', type: 'scriptfont', script: 'devanagari', options: DEV_FONTS },
+			{ label: 'Cyrillic font', type: 'scriptfont', script: 'cyrillic', options: CYR_FONTS } ] },
 		// §C Phase 3 — chrome Components (existing catalog vars, consumed by the app chrome).
 		cDock: { name: 'Ribbon dock', controls: [
 			{ label: 'Background', type: 'color', var: '--dock-bg' },
@@ -240,7 +259,7 @@
 		{ key: 'interface', name: 'Interface', surface: 'editor', elements: ['interface', 'fileTree', 'library', 'folder', 'cuniverse', 'universe', 'statusbar'] },
 		{ key: 'components', name: 'Components', surface: 'editor', elements: ['cDock', 'cToolbar', 'cLayoutBar', 'cTabs', 'cRightSidebar', 'cButtons', 'cTags', 'cSidebar'] },
 		{ key: 'editor', name: 'Editor', surface: 'editor', elements: ['noteBg', 'text', 'accent', 'link', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'bold', 'italic', 'strike', 'code', 'quote'] },
-		{ key: 'global', name: 'Global', surface: 'editor', elements: ['gBackgrounds', 'gTextShades', 'gStatus', 'gAccent', 'gType', 'gShape'] },
+		{ key: 'global', name: 'Global', surface: 'editor', elements: ['gBackgrounds', 'gTextShades', 'gStatus', 'gAccent', 'gType', 'gShape', 'fonts'] },
 		{ key: 'sky', name: 'Sky View', surface: 'sky', elements: ['accent', 'link'] },
 		{ key: 'org', name: 'OrgChart', surface: 'org', elements: ['accent', 'link'] },
 		{ key: 'index', name: 'Index', surface: 'index', elements: ['accent'] },
@@ -513,6 +532,13 @@
 							<span class="ss-body">Body text with a <span class="ss-pill">pill</span> and <span class="ss-ftag">#tag</span>.</span>
 							<div class="ss-frow"><button class="ss-fbtn">Button</button><span class="ss-fbox"></span></div>
 						</div>
+					{:else if pk === 'fonts'}
+						<div class="ss-focus ss-fcard ss-fnote">
+							<span class="ss-body">The quick brown fox jumps over the lazy dog. AaBbCc 0123</span>
+							<span class="ss-body" dir="rtl">نص عربي — رؤية وتراث ومصادر المعرفة</span>
+							<span class="ss-body">中文 · 日本語 · 한국어 · हिन्दी · Кириллица</span>
+							<span class="ss-note-hint">Per-script fonts apply across the whole app — open a note in that script to see your chosen font. (This preview uses your Latin font.)</span>
+						</div>
 					{/if}
 				</div>
 			</main>
@@ -522,7 +548,7 @@
 				{#if sel}
 					<div class="ss-rlabel">Selected element</div>
 					<div class="ss-selname">{sel.name}</div>
-					{#each sel.controls as c (c.var + '|' + c.label)}
+					{#each sel.controls as c (c.label)}
 						<div class="ss-ctrl">
 							{#if c.type === 'range'}
 								<label for={'ss-' + c.var}>{c.label}<span class="ss-rval">{curNum(c.var, c.def)}{c.unit}</span></label>
@@ -535,9 +561,19 @@
 									onfocus={() => activeColorVar = c.var}
 									oninput={(e) => { activeColorVar = c.var; setVar(c.var, (e.currentTarget as HTMLInputElement).value); }}
 									onchange={(e) => addStyleSwatch((e.currentTarget as HTMLInputElement).value)} />
+							{:else if c.type === 'scriptfont'}
+								<label for={'ss-sf-' + c.script}>{c.label}</label>
+								<select id={'ss-sf-' + c.script} value={$appSettings.perScriptFonts?.[c.script] ?? ''} onchange={(e) => setPerScriptFont(c.script, (e.currentTarget as HTMLSelectElement).value)}>
+									{#each c.options as [lbl, val] (lbl)}<option value={val}>{lbl}</option>{/each}
+								</select>
+							{:else if c.type === 'locale'}
+								<label for="ss-locale">{c.label}</label>
+								<select id="ss-locale" value={$locale} onchange={(e) => locale.set((e.currentTarget as HTMLSelectElement).value as never)}>
+									{#each c.options as [lbl, val] (val)}<option value={val}>{lbl}</option>{/each}
+								</select>
 							{:else}
 								<label for={'ss-' + c.var}>{c.label}</label>
-								<select id={'ss-' + c.var} onchange={(e) => setVar(c.var, (e.currentTarget as HTMLSelectElement).value)}>
+								<select id={'ss-' + c.var} value={curVal(c.var)} onchange={(e) => setVar(c.var, (e.currentTarget as HTMLSelectElement).value)}>
 									{#each c.options as [lbl, val] (val)}<option value={val}>{lbl}</option>{/each}
 								</select>
 							{/if}

@@ -1769,13 +1769,37 @@
 			}
 		}
 
-		// MIG-070 §C — the per-Universe styleOverride wins for fonts too: this effect would
-		// otherwise overwrite the Style Setter's font picks (it runs after the theme-apply effect).
-		// Re-apply the override's font-family vars LAST (the `.cm-content` !important rule reads
-		// var(--font-text-theme), so the note content follows the override).
-		const _ssFontOv = s.styleOverride ?? {};
-		for (const _fk of ['--font-interface-theme', '--font-text-theme', '--font-monospace-theme']) {
-			if (_ssFontOv[_fk]) root.setProperty(_fk, _ssFontOv[_fk]);
+		// MIG-070 §C — the Style Setter composes the final font vars when it has any font picks:
+		// the Latin base comes from the styleOverride font vars, and per-script fonts layer on via
+		// @font-face unicode-range using a DISTINCT virtual family ("CnSetterText"/"CnSetterUI") so
+		// it never collides with the engine's "ConstellationText". This WINS over the per-language
+		// engine above (runs last). When the Setter sets no fonts, the engine's result stands.
+		{
+			const ov = s.styleOverride ?? {};
+			const psf = s.perScriptFonts ?? {};
+			const ranges = SCRIPT_UNICODE_RANGES as Record<string, string>;
+			const psfActive = ['arabic', 'hebrew', 'cjk', 'devanagari', 'cyrillic'].filter((sc) => psf[sc] && ranges[sc]);
+			if (ov['--font-text-theme'] || ov['--font-interface-theme'] || ov['--font-monospace-theme'] || psfActive.length) {
+				const latinText = ov['--font-text-theme'] || defaultUI;
+				const latinUI = ov['--font-interface-theme'] || defaultUI;
+				const latinMono = ov['--font-monospace-theme'] || defaultMono;
+				let setterCss = '';
+				for (const sc of psfActive) {
+					const name = psf[sc].split(',')[0].trim().replace(/"/g, '');
+					setterCss += `@font-face { font-family: "CnSetterText"; src: local("${name}"); unicode-range: ${ranges[sc]}; }\n`;
+					setterCss += `@font-face { font-family: "CnSetterUI"; src: local("${name}"); unicode-range: ${ranges[sc]}; }\n`;
+				}
+				if (psfActive.length) {
+					root.setProperty('--font-text-theme', `"CnSetterText", ${latinText}`);
+					root.setProperty('--font-interface-theme', `"CnSetterUI", ${latinUI}`);
+				} else {
+					root.setProperty('--font-text-theme', latinText);
+					root.setProperty('--font-interface-theme', latinUI);
+				}
+				root.setProperty('--font-monospace-theme', latinMono);
+				setterCss += `.cm-editor .cm-content { font-family: var(--font-text-theme) !important; }\n`;
+				css += setterCss;
+			}
 		}
 
 		// Inject or update the style element
