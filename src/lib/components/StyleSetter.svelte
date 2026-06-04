@@ -256,6 +256,20 @@
 	const draftStyle = $derived(Object.entries(draft).map(([k, v]) => `${k}:${v}`).join(';'));
 	const sel = $derived(selected ? ELEMENTS[selected] ?? null : null);
 
+	// §C — the centre preview replicates the EXACT selected element (Eisa). Note/tree/global
+	// elements share a sample shape; chrome widgets each have their own. (Heavy surfaces —
+	// sky/org/index — keep their own alt preview, keyed on activeSurface below.)
+	const NOTE_ELS = new Set(['noteBg', 'text', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'bold', 'italic', 'strike', 'code', 'quote', 'link', 'accent']);
+	const TREE_ELS = new Set(['interface', 'fileTree', 'library', 'folder', 'cuniverse']);
+	const GLOBAL_ELS = new Set(['gBackgrounds', 'gTextShades', 'gStatus', 'gAccent', 'gType', 'gShape']);
+	const pk = $derived(
+		!selected ? 'none'
+		: NOTE_ELS.has(selected) ? 'note'
+		: TREE_ELS.has(selected) ? 'tree'
+		: GLOBAL_ELS.has(selected) ? 'global'
+		: selected,
+	);
+
 	function hexOf(c: string): string {
 		c = (c || '').trim();
 		if (c.startsWith('#')) return c.length === 4 ? '#' + [...c.slice(1)].map((x) => x + x).join('') : c;
@@ -407,55 +421,11 @@
 				</div>
 			</aside>
 
-			<!-- Center: live preview -->
+			<!-- Center: focused preview of the SELECTED element (Eisa §C) -->
 			<main class="ss-center">
-				<div class="ss-hint">Hover a part of the interface, click to style it →</div>
+				<div class="ss-hint">{selected ? 'Previewing: ' + (sel?.name ?? '') : 'Select an element on the left to preview & style it'}</div>
 				<div class="ss-stage">
-					{#if activeSurface === 'editor'}
-						<div class="ss-prev">
-							<button class="ss-side ss-hot" class:ss-sel={selected === 'interface'} onclick={() => selectEl('interface')} aria-label="Interface">
-								<span class="ss-lib ss-hot2" class:ss-sel={selected === 'library'} onclick={(e) => { e.stopPropagation(); selectEl('library'); }}>📚 My Library</span>
-								<span class="ss-folder ss-hot2" class:ss-sel={selected === 'folder'} onclick={(e) => { e.stopPropagation(); selectEl('folder'); }}>📁 Ideas</span>
-								<span class="ss-file ss-hot2" class:ss-sel={selected === 'fileTree'} onclick={(e) => { e.stopPropagation(); selectEl('fileTree'); }}>Apple (Fruit)</span>
-								<span class="ss-file dim ss-hot2" class:ss-sel={selected === 'fileTree'} onclick={(e) => { e.stopPropagation(); selectEl('fileTree'); }}>Banana</span>
-								<span class="ss-file dim ss-hot2" class:ss-sel={selected === 'fileTree'} onclick={(e) => { e.stopPropagation(); selectEl('fileTree'); }}>Carrot</span>
-								<span class="ss-cuniverse ss-hot2" class:ss-sel={selected === 'cuniverse'} onclick={(e) => { e.stopPropagation(); selectEl('cuniverse'); }}>✦ Linked Universe</span>
-								<span class="ss-univ ss-hot2" class:ss-sel={selected === 'universe'} onclick={(e) => { e.stopPropagation(); selectEl('universe'); }}>◇ Universe</span>
-							</button>
-							<button class="ss-main ss-hot" class:ss-sel={selected === 'noteBg'} onclick={() => selectEl('noteBg')} aria-label="Note background">
-								{#if activeCategory === 'editor'}
-									<!-- Rich, clickable note — only when styling the Editor (the note's own elements). -->
-									<span class="ss-title ss-hot2" class:ss-sel={selected === 'text'} onclick={(e) => { e.stopPropagation(); selectEl('text'); }}>Apple (Fruit)</span>
-									<span class="ss-h1 ss-hot2" class:ss-sel={selected === 'h1'} onclick={(e) => { e.stopPropagation(); selectEl('h1'); }}>Heading one</span>
-									<span class="ss-h2 ss-hot2" class:ss-sel={selected === 'h2'} onclick={(e) => { e.stopPropagation(); selectEl('h2'); }}>Heading two</span>
-									<span class="ss-h3 ss-hot2" class:ss-sel={selected === 'h3'} onclick={(e) => { e.stopPropagation(); selectEl('h3'); }}>Heading three</span>
-									<span class="ss-body">
-										An <b class="ss-bold ss-hot2" class:ss-sel={selected === 'bold'} onclick={(e) => { e.stopPropagation(); selectEl('bold'); }}>apple</b>
-										a day pairs with a <i class="ss-italic ss-hot2" class:ss-sel={selected === 'italic'} onclick={(e) => { e.stopPropagation(); selectEl('italic'); }}>crisp</i>
-										<span class="ss-link ss-hot2" class:ss-sel={selected === 'link'} onclick={(e) => { e.stopPropagation(); selectEl('link'); }}>[[Banana]]</span>
-										<span class="ss-pill ss-hot2" class:ss-sel={selected === 'accent'} onclick={(e) => { e.stopPropagation(); selectEl('accent'); }}>supports</span>
-										— see <code class="ss-code ss-hot2" class:ss-sel={selected === 'code'} onclick={(e) => { e.stopPropagation(); selectEl('code'); }}>juice()</code>,
-										<s class="ss-strike ss-hot2" class:ss-sel={selected === 'strike'} onclick={(e) => { e.stopPropagation(); selectEl('strike'); }}>an old note</s>.
-									</span>
-									<span class="ss-quote ss-hot2" class:ss-sel={selected === 'quote'} onclick={(e) => { e.stopPropagation(); selectEl('quote'); }}>“An apple a day keeps the doctor away.”</span>
-									<span class="ss-hrow">
-										<span class="ss-h4 ss-hot2" class:ss-sel={selected === 'h4'} onclick={(e) => { e.stopPropagation(); selectEl('h4'); }}>H4</span>
-										<span class="ss-h5 ss-hot2" class:ss-sel={selected === 'h5'} onclick={(e) => { e.stopPropagation(); selectEl('h5'); }}>H5</span>
-										<span class="ss-h6 ss-hot2" class:ss-sel={selected === 'h6'} onclick={(e) => { e.stopPropagation(); selectEl('h6'); }}>H6</span>
-									</span>
-								{:else}
-									<!-- Styling chrome (Interface/Components/Global) — the note isn't the subject, so the
-									     content pane is a quiet placeholder, not a markdown showcase. -->
-									<span class="ss-title">Apple (Fruit)</span>
-									<span class="ss-note-hint">You're styling <b>{CATEGORIES.find((c) => c.key === activeCategory)?.name ?? ''}</b> — switch to the <b>Editor</b> category to style the note's text &amp; marks.</span>
-								{/if}
-							</button>
-							<button class="ss-statusbar ss-hot" class:ss-sel={selected === 'statusbar'} onclick={(e) => { e.stopPropagation(); selectEl('statusbar'); }} aria-label="Status bar">
-								<span>Library · Note</span>
-								<span>7,660 notes · ✦ Universe</span>
-							</button>
-						</div>
-					{:else}
+					{#if activeSurface !== 'editor'}
 						<div class="ss-prev-alt">
 							<div class="ss-alt-title">{CATEGORIES.find((c) => c.surface === activeSurface)?.name}</div>
 							{#if activeSurface === 'sky' || activeSurface === 'org'}
@@ -470,7 +440,64 @@
 									<div class="ss-irow"><span class="ss-ibar" style="width:30%"></span> carrot</div>
 								</div>
 							{/if}
-							<div class="ss-alt-note">representative snapshot · re-colours with your edits · click a part to style it</div>
+							<div class="ss-alt-note">representative snapshot · re-colours with your edits</div>
+						</div>
+					{:else if pk === 'none'}
+						<div class="ss-focus ss-focus-empty">Pick an element on the left — its preview appears here.</div>
+					{:else if pk === 'note'}
+						<div class="ss-focus ss-fcard ss-fnote">
+							<span class="ss-title ss-hot2" class:ss-sel={selected === 'text' || selected === 'noteBg'} onclick={() => selectEl('text')}>Apple (Fruit)</span>
+							<span class="ss-h1 ss-hot2" class:ss-sel={selected === 'h1'} onclick={() => selectEl('h1')}>Heading one</span>
+							<span class="ss-h2 ss-hot2" class:ss-sel={selected === 'h2'} onclick={() => selectEl('h2')}>Heading two</span>
+							<span class="ss-h3 ss-hot2" class:ss-sel={selected === 'h3'} onclick={() => selectEl('h3')}>Heading three</span>
+							<span class="ss-body">
+								An <b class="ss-bold ss-hot2" class:ss-sel={selected === 'bold'} onclick={() => selectEl('bold')}>apple</b>
+								a day pairs with a <i class="ss-italic ss-hot2" class:ss-sel={selected === 'italic'} onclick={() => selectEl('italic')}>crisp</i>
+								<span class="ss-link ss-hot2" class:ss-sel={selected === 'link'} onclick={() => selectEl('link')}>[[Banana]]</span>
+								<span class="ss-pill ss-hot2" class:ss-sel={selected === 'accent'} onclick={() => selectEl('accent')}>supports</span>
+								— see <code class="ss-code ss-hot2" class:ss-sel={selected === 'code'} onclick={() => selectEl('code')}>juice()</code>,
+								<s class="ss-strike ss-hot2" class:ss-sel={selected === 'strike'} onclick={() => selectEl('strike')}>an old note</s>.
+							</span>
+							<span class="ss-quote ss-hot2" class:ss-sel={selected === 'quote'} onclick={() => selectEl('quote')}>“An apple a day keeps the doctor away.”</span>
+							<span class="ss-hrow">
+								<span class="ss-h4 ss-hot2" class:ss-sel={selected === 'h4'} onclick={() => selectEl('h4')}>H4</span>
+								<span class="ss-h5 ss-hot2" class:ss-sel={selected === 'h5'} onclick={() => selectEl('h5')}>H5</span>
+								<span class="ss-h6 ss-hot2" class:ss-sel={selected === 'h6'} onclick={() => selectEl('h6')}>H6</span>
+							</span>
+						</div>
+					{:else if pk === 'tree'}
+						<div class="ss-focus ss-fcard ss-ftree">
+							<span class="ss-lib ss-hot2" class:ss-sel={selected === 'library' || selected === 'interface'} onclick={() => selectEl('library')}>📚 My Library</span>
+							<span class="ss-folder ss-hot2" class:ss-sel={selected === 'folder'} onclick={() => selectEl('folder')}>📁 Ideas</span>
+							<span class="ss-file ss-hot2" class:ss-sel={selected === 'fileTree'} onclick={() => selectEl('fileTree')}>Apple (Fruit)</span>
+							<span class="ss-file dim ss-hot2" class:ss-sel={selected === 'fileTree'} onclick={() => selectEl('fileTree')}>Banana</span>
+							<span class="ss-cuniverse ss-hot2" class:ss-sel={selected === 'cuniverse'} onclick={() => selectEl('cuniverse')}>✦ Linked Universe</span>
+						</div>
+					{:else if pk === 'universe'}
+						<div class="ss-focus ss-fcard"><span class="ss-univ" style="margin-top:0">◇ Universe</span></div>
+					{:else if pk === 'statusbar'}
+						<div class="ss-focus ss-fcard ss-fstrip"><div class="ss-statusbar2"><span>Library · Note</span><span>7,660 notes · ✦ Universe</span></div></div>
+					{:else if pk === 'cDock'}
+						<div class="ss-focus"><div class="ss-fdock"><i></i><i></i><i></i><i></i></div></div>
+					{:else if pk === 'cToolbar'}
+						<div class="ss-focus ss-fcard ss-fstrip"><div class="ss-ftoolbar"><b></b><b></b><b></b><b></b></div></div>
+					{:else if pk === 'cLayoutBar'}
+						<div class="ss-focus ss-fcard ss-fstrip"><div class="ss-flayout"><b></b><b class="on"></b><b></b></div></div>
+					{:else if pk === 'cTabs'}
+						<div class="ss-focus ss-fcard ss-fstrip"><div class="ss-ftabs"><span class="t">Note A</span><span class="t on">Note B</span><span class="t">Note C</span></div></div>
+					{:else if pk === 'cRightSidebar'}
+						<div class="ss-focus"><div class="ss-frs"><div class="ss-frs-tabs"><i></i><i class="on"></i><i></i></div><div class="ss-frs-body"></div></div></div>
+					{:else if pk === 'cButtons'}
+						<div class="ss-focus ss-frow"><button class="ss-fbtn">Save</button><button class="ss-fbtn ghost">Cancel</button></div>
+					{:else if pk === 'cTags'}
+						<div class="ss-focus ss-fcol"><div class="ss-frow"><span class="ss-ftag">#idea</span><span class="ss-ftag">#fruit</span></div><div class="ss-fcallout"><b>ℹ︎ Note</b> A callout box.</div></div>
+					{:else if pk === 'cSidebar'}
+						<div class="ss-focus"><div class="ss-fsidebar"><span></span><span></span><span></span><span></span></div></div>
+					{:else if pk === 'global'}
+						<div class="ss-focus ss-fcard ss-fglobal">
+							<span class="ss-h2">Heading</span>
+							<span class="ss-body">Body text with a <span class="ss-pill">pill</span> and <span class="ss-ftag">#tag</span>.</span>
+							<div class="ss-frow"><button class="ss-fbtn">Button</button><span class="ss-fbox"></span></div>
 						</div>
 					{/if}
 				</div>
@@ -628,6 +655,39 @@
 	.ss-swatches { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 10px; }
 	.ss-sw { width: 22px; height: 22px; border-radius: 5px; border: 1px solid var(--c-border); cursor: pointer; padding: 0; }
 	.ss-sw:hover { outline: 2px solid var(--c-accent); outline-offset: 1px; }
+	/* §C — focused per-element preview: the centre shows JUST the selected element (Eisa). */
+	.ss-focus { min-width: 460px; min-height: 300px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
+	.ss-focus-empty { color: var(--c-muted); font-size: 13px; }
+	.ss-fcard { background: var(--background-primary, #fbfbfa); color: var(--editor-text-color, var(--text-normal, #2e3338)); border: 1px solid rgba(0,0,0,.18); border-radius: 12px; box-shadow: 0 14px 40px rgba(0,0,0,.22); padding: 22px 26px; display: flex; flex-direction: column; gap: 9px; min-width: 320px; max-width: 460px; text-align: left; align-items: stretch; }
+	.ss-fnote { font-family: var(--font-text-theme, inherit); }
+	.ss-ftree { background: var(--background-secondary, #f1f1ef); font-family: var(--font-interface-theme, inherit); gap: 7px; }
+	.ss-fstrip { padding: 14px; min-width: 380px; }
+	.ss-statusbar2 { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; padding: 0 10px; min-height: var(--statusbar-height, 24px); background: var(--statusbar-bg, var(--background-secondary, #ececed)); color: var(--statusbar-color, var(--text-muted, #6b7280)); font-size: var(--statusbar-font-size, 11px); border-radius: 6px; }
+	.ss-fdock { background: var(--dock-bg, var(--background-secondary, #ececed)); width: var(--dock-width, 44px); border-radius: 10px; padding: 12px 0; display: flex; flex-direction: column; align-items: center; gap: 14px; box-shadow: 0 14px 40px rgba(0,0,0,.22); }
+	.ss-fdock i { width: var(--dock-icon-size, 18px); height: var(--dock-icon-size, 18px); border-radius: var(--dock-btn-radius, 4px); background: var(--dock-btn-color, var(--text-muted, #888)); display: block; }
+	.ss-ftoolbar { display: flex; gap: 8px; padding: 6px; background: var(--sidebar-toolbar-bg, var(--background-secondary, #ececed)); border-radius: 8px; min-height: var(--sidebar-toolbar-height, 34px); align-items: center; }
+	.ss-ftoolbar b { width: var(--sidebar-btn-size, 26px); height: var(--sidebar-btn-size, 26px); border-radius: var(--sidebar-btn-radius, 3px); background: color-mix(in srgb, var(--sidebar-btn-color, var(--text-muted, #888)) 22%, transparent); border: 1px solid color-mix(in srgb, var(--sidebar-btn-color, var(--text-muted, #888)) 45%, transparent); display: block; }
+	.ss-flayout { display: flex; gap: 8px; padding: 6px; background: var(--layout-bar-bg, var(--background-secondary, #ececed)); border-radius: 8px; min-height: var(--layout-bar-height, 34px); align-items: center; }
+	.ss-flayout b { width: var(--layout-btn-size, 28px); height: var(--layout-btn-size, 28px); border-radius: var(--layout-btn-radius, 4px); background: color-mix(in srgb, var(--layout-btn-color, var(--text-muted, #888)) 20%, transparent); border: 1px solid color-mix(in srgb, var(--layout-btn-color, var(--text-muted, #888)) 40%, transparent); display: block; }
+	.ss-flayout b.on { background: color-mix(in srgb, var(--layout-btn-active-color, var(--interactive-accent, #7c3aed)) 30%, transparent); border-color: var(--layout-btn-active-color, var(--interactive-accent, #7c3aed)); }
+	.ss-ftabs { display: flex; gap: 4px; padding: 8px 8px 0; background: var(--topbar-bg, var(--background-secondary, #ececed)); border-radius: 8px 8px 0 0; align-items: flex-end; }
+	.ss-ftabs .t { font-size: var(--tab-font-size, 13px); height: var(--tab-height, 26px); display: flex; align-items: center; padding: 0 10px; border-radius: var(--tab-radius, 6px) var(--tab-radius, 6px) 0 0; background: var(--tab-bg, #dcdce0); color: var(--tab-color, var(--text-muted, #555)); border: 1px solid var(--tab-border, transparent); border-bottom: none; }
+	.ss-ftabs .t.on { background: var(--tab-active-bg, var(--background-primary, #fff)); color: var(--tab-active-color, var(--text-normal, #222)); }
+	.ss-frs { display: flex; flex-direction: column; width: 220px; height: 200px; background: var(--right-sidebar-bg, var(--background-secondary, #f1f1ef)); border-radius: 10px; box-shadow: 0 14px 40px rgba(0,0,0,.22); overflow: hidden; }
+	.ss-frs-tabs { display: flex; gap: 10px; padding: 0 10px; align-items: center; height: var(--rs-tab-height, 30px); background: var(--rs-tabs-bg, var(--background-secondary-alt, #e8e8ec)); }
+	.ss-frs-tabs i { width: var(--rs-icon-size, 16px); height: var(--rs-icon-size, 16px); border-radius: 3px; background: var(--rs-tab-color, var(--text-muted, #888)); display: block; }
+	.ss-frs-tabs i.on { background: var(--rs-tab-active-color, var(--interactive-accent, #7c3aed)); }
+	.ss-frs-body { flex: 1; }
+	.ss-frow { display: flex; gap: 10px; align-items: center; }
+	.ss-fcol { display: flex; flex-direction: column; gap: 12px; align-items: center; }
+	.ss-fbtn { font: inherit; font-size: 13px; background: var(--interactive-accent, #7c6cff); color: var(--text-on-accent, #fff); border: none; border-radius: var(--button-radius, 6px); padding: var(--button-padding-y, 6px) var(--button-padding-x, 12px); cursor: default; }
+	.ss-fbtn.ghost { background: var(--background-secondary, #ececed); color: var(--text-normal, #333); border: 1px solid var(--background-modifier-border, #ccc); }
+	.ss-ftag { display: inline-flex; align-items: center; font-size: 12px; background: var(--tag-bg, color-mix(in srgb, var(--interactive-accent, #7c3aed) 12%, transparent)); color: var(--tag-color, var(--interactive-accent, #7c3aed)); border-radius: var(--tag-radius, 12px); padding: 2px 9px; }
+	.ss-fcallout { background: color-mix(in srgb, var(--interactive-accent, #4a9eff) 8%, transparent); border-inline-start: 3px solid var(--interactive-accent, #4a9eff); border-radius: var(--callout-radius, 8px); padding: 8px 12px; font-size: 13px; color: var(--text-normal, #333); }
+	.ss-fsidebar { width: clamp(120px, var(--sidebar-width, 260px), 320px); height: 200px; background: var(--sidebar-bg, var(--background-secondary, #f1f1ef)); border-radius: 10px; box-shadow: 0 14px 40px rgba(0,0,0,.22); padding: 14px 12px; display: flex; flex-direction: column; gap: 12px; }
+	.ss-fsidebar span { height: 9px; border-radius: 4px; background: color-mix(in srgb, var(--text-normal, #888) 18%, transparent); display: block; }
+	.ss-fsidebar span:nth-child(1) { width: 80%; } .ss-fsidebar span:nth-child(2) { width: 60%; } .ss-fsidebar span:nth-child(3) { width: 72%; } .ss-fsidebar span:nth-child(4) { width: 50%; }
+	.ss-fbox { width: 44px; height: 30px; border-radius: var(--radius-m, 8px); background: var(--background-secondary, #ececed); border: var(--border-width, 1px) solid var(--background-modifier-border, #ccc); display: inline-block; }
 	.ss-empty { color: var(--c-muted); font-size: 13px; line-height: 1.6; margin-top: 28px; text-align: center; }
 	.ss-big { font-size: 26px; opacity: .5; display: block; margin-bottom: 8px; }
 </style>
