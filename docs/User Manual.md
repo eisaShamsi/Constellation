@@ -1436,7 +1436,9 @@ The **Style Setter** is a full-page design studio — open it from **Settings �
 
 There are two ways you see your edits. The **Editor** category shows a **note preview in the centre** — click a heading, bold, a link, or the page and its controls appear on the right, updating instantly. **Every other category** docks the panel to one side and goes see-through, and your edits appear on the **real app, live** — change the status-bar colour or the dock width and the actual chrome restyles as you drag (a green **● live** tag marks this). The **Links** category shows each of the eight types as its real coloured **pill** — click a pill to recolour it (live everywhere) — plus the **Colour typed links** / **Show type labels** switches, the **pill shape**, and a reusable **Saved colours** palette.
 
-Click **Keep** to save the look **for this Universe** (it survives a restart); **Discard** (or **✕** / **Esc**) throws away unsaved edits and the app snaps back; **Reset** returns to the plain theme. Nothing is saved to disk until you Keep. *(Saving a look as a permanent, named **Style** reusable across Universes is coming to the Setter next — for now use the **Styles** cards above.)*
+Click **Keep** to save the look **for this Universe** (it survives a restart); **Discard** (or **✕** / **Esc**) throws away unsaved edits and the app snaps back; **Reset** returns to the plain theme. Nothing is saved to disk until you Keep.
+
+To reuse a look, save it as a named **Style.** Type a name in the top "draft:" field and click **+ Save current as a style** — it appears in the **Saved styles** list (bottom-left), is app-global (reusable across every Universe), and captures the look you designed in the Setter, not just a theme. Click a saved style to apply it; hover its row for **↻ Update** (overwrite it with your current look), **⤓ Export**, **✎ Rename**, and **✕ Delete**. *(Built-in themes — Midnight, Daylight… — stay in **Settings → Appearance**; the Setter holds your saved styles and the live look.)*
 
 ### Link Types
 

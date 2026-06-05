@@ -232,7 +232,9 @@ Below them are *theme cards* (Midnight, Daylight, Chocolate, Nord) that seed a w
 
 **Keep, Discard, Reset.** When you like what you see, click **Keep** (top right) to save the look **for this Universe** — it survives a restart. **Discard** (or simply closing with **✕** or **Esc**) throws away your unsaved edits and the real app snaps back to the saved look. **Reset** clears everything back to the plain theme. Nothing is written to disk until you Keep.
 
-> Saving a look as a permanent, **named Style** you can reuse across Universes and export / import is coming to the Setter next. (You can already do that today from the *Styles* cards at the top of **Settings → Appearance**.)
+**Save a look as a named Style.** To reuse a look, save it under a name: type a name in the top **"draft:"** field and click **"+ Save current as a style"** (bottom-left). It joins your **Saved styles** list — app-global (reusable across every Universe), and it captures the look you designed in the Setter, not just a theme. **Click a saved style to apply it.** Hover a saved-style row for its actions: **↻ Update** (overwrite that style with your *current* look — keeps its name), **⤓ Export** (share it as a `.constellation-style.json`), **✎ Rename**, and **✕ Delete**.
+
+> Built-in themes (Midnight, Daylight, …) live in **Settings → Appearance**, not the Setter — the Setter holds your **saved styles** and the live per-Universe look. The full Styles manager (with duplicate / import) is also in **Settings → Appearance → Styles**.
 
 ## Frequently asked questions
 
