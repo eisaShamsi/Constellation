@@ -172,17 +172,27 @@
 			{#each ordered as { def, depth } (def.id)}
 				<div class="lte-row" class:lte-child={depth === 1} class:lte-active={embedded && activeTypeId === def.id}>
 					{#if depth === 1}<span class="lte-nest">{isRtl ? '↲' : '↳'}</span>{/if}
-					<input
-						type="color"
-						class="color-input"
-						value={def.color}
-						aria-label={`Colour for ${def.label}`}
-						onfocus={() => (activeTypeId = def.id)}
-						onchange={(e) => recolor(def.id, (e.target as HTMLInputElement).value)}
-					/>
 					{#if embedded}
-						<LinkTypePill id={def.id} />
+						<!-- §C redesign — the pill IS the colour control (Eisa: drop the empty colour box; the
+						     exact pill already shows shape + colour + text). Click it → the native picker. -->
+						<label class="lte-pillpick" title={`Recolour ${def.label}`}>
+							<LinkTypePill id={def.id} />
+							<input
+								type="color"
+								value={def.color}
+								aria-label={`Colour for ${def.label}`}
+								onfocus={() => (activeTypeId = def.id)}
+								onchange={(e) => recolor(def.id, (e.target as HTMLInputElement).value)}
+							/>
+						</label>
 					{:else}
+						<input
+							type="color"
+							class="color-input"
+							value={def.color}
+							aria-label={`Colour for ${def.label}`}
+							onchange={(e) => recolor(def.id, (e.target as HTMLInputElement).value)}
+						/>
 						<span class="lte-name" dir={detectDir(typeName(def))}>{typeName(def)}</span>
 					{/if}
 					<span class="lte-id">· {def.id}</span>
@@ -308,6 +318,11 @@
 	}
 	.color-input::-webkit-color-swatch-wrapper { padding: 0; }
 	.color-input::-webkit-color-swatch { border: none; border-radius: 999px; }
+	/* §C redesign — the pill doubles as the colour control: a transparent native picker overlays it,
+	   so a click anywhere on the pill opens the OS colour dialog (Eisa: no separate empty colour box). */
+	.lte-pillpick { position: relative; display: inline-flex; cursor: pointer; border-radius: 999px; flex: none; }
+	.lte-pillpick input[type="color"] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; margin: 0; padding: 0; border: none; cursor: pointer; }
+	.lte-pillpick:hover { outline: 2px solid var(--background-modifier-border); outline-offset: 2px; }
 	/* The row whose colour a swatch-click will recolour (embedded Setter only). */
 	.lte-active { background: color-mix(in srgb, var(--interactive-accent) 12%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--interactive-accent) 35%, transparent); }
 	.lte-sw-label { font-size: 0.7rem; color: var(--text-muted); padding: 6px 2px 4px; line-height: 1.4; }

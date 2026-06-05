@@ -90,6 +90,10 @@ Written at the close of a long multi-day run (≈33 commits across 2026-06-02 �
 
 `npm run check` clean for both files (no errors; only the 4 pre-existing unused-CSS warnings). Rebuilt OK (1m39s); binary mtime **`10:12:52` → `11:15:45`**. Orientation v2.53 carries a dated layout-redesign addendum (LL-031, same commit). **Boss test of the redesign pending.**
 
+**Redesign — PASS. Two follow-ups (2026-06-05).** Eisa passed the redesign + approved the judgment call (in-editor representation folded away). Two points:
+1. **Drop the empty colour box; the pill IS the control.** Eisa: *"We don't need the empty pills, since the exact pills (2nd column) show shape, colour, and text."* Implemented in `LinkTypesEditor` (embedded): each row now renders just the real `<LinkTypePill>` wrapped in a `.lte-pillpick` label with a transparent `<input type=color>` overlaid (`position:absolute; inset:0; opacity:0`) — click the pill → OS picker → `recolor`. Removed the separate embedded `.color-input`. Settings tab unchanged (still uses `.color-input` + name). svelte-check clean; rebuilt OK (2m14s); binary mtime **`11:15:45` → `13:21:18`**.
+2. **Non-Editor live preview — audit + research (Eisa: "explore other design options").** Ran a background research agent (WA#5 cross-check vs Obsidian Style Settings, VS Code `colorCustomizations`, Chrome/Firefox DevTools, Figma/Material Theme Builder, Storybook, tweakcn/shadcn, Windows Terminal / macOS Appearance). Report: **`docs/MIG-070C-non-editor-preview-RESEARCH.md`**. Five options (A real-app-is-preview · B mock scene per category · C inline mini-previews · D inspect-to-style · E hybrid). **Recommendation: Option E**, incremental (A→D→C-for-Global) — A reuses the existing Apply-to-`body` path (lowest risk), avoids the mock-drift the `feedback_self_contained_components` lesson warns about, and is the only honest preview for the live Sky View/OrgChart (Form-Aligns-To-Purpose). **Awaiting Eisa's choice before building.**
+
 ---
 
 ## SO #6 process correction — orientation bump was batched (2026-06-05)
