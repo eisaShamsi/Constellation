@@ -15,7 +15,7 @@
 	 * a richer mini-note that renders those elements so each is clickable. (Blockquote bar, list
 	 * markers, and table rendering are §3C — they need new editor decorations, cross-checked first.)
 	 */
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { get } from 'svelte/store';
 	import { styleSetterOpen, closeStyleSetter } from '$lib/stores/styleSetter';
 	import { appSettings, mergeStyleOverride, clearAllStyleOverride, addStyleSwatch, removeStyleSwatch, setPerScriptFont, updateSettings, setLiveStyleDraft, clearLiveStyleDraft } from '$lib/libraries/store';
@@ -414,6 +414,22 @@
 		savedStyles = savedStyles.filter((s) => s.id !== p.id);
 		await saveStylePresets($state.snapshot(savedStyles) as StylePreset[]);
 	}
+	// §C — UPDATE an existing style with the CURRENT look (overwrite its captured sections, keep its
+	// id + name). Keep() first so the unsaved draft is captured. Distinct from "+ Save current as a
+	// style" (which makes a NEW style). A brief ✓ confirms the overwrite.
+	let updatedId = $state<string | null>(null);
+	let _updTimer: ReturnType<typeof setTimeout> | null = null;
+	async function updateStyle(p: StylePreset) {
+		keep();
+		const keys = SECTION_CATALOGUE.filter((s) => s.defaultOn).map((s) => s.key);
+		const fresh = newPresetFromCurrent(p.name, keys);
+		savedStyles = savedStyles.map((s) => (s.id === p.id ? { ...fresh, id: p.id, createdAt: p.createdAt ?? fresh.createdAt } : s));
+		await saveStylePresets($state.snapshot(savedStyles) as StylePreset[]);
+		updatedId = p.id;
+		if (_updTimer) clearTimeout(_updTimer);
+		_updTimer = setTimeout(() => { if (updatedId === p.id) updatedId = null; }, 1500);
+	}
+	onDestroy(() => { if (_updTimer) clearTimeout(_updTimer); });
 
 	// §C item 3 (REMOVED) — a built-in-theme picker in the Setter froze it AGAIN, even as a plain
 	// `<select>` over BUILTIN_THEMES (2026-06-05). LL-032 strengthened: rendering BUILTIN_THEMES /
@@ -576,6 +592,7 @@
 							<div class="ss-srow-wrap">
 								<button class="ss-srow" onclick={() => applyStyle(p)} title={'Apply ' + p.name} dir="auto">{p.name}</button>
 								<span class="ss-srow-actions">
+									<button class="ss-srow-ic" class:ss-srow-ok={updatedId === p.id} title="Update this style with the current look" aria-label="Update" onclick={() => updateStyle(p)}>{updatedId === p.id ? '✓' : '↻'}</button>
 									<button class="ss-srow-ic" title="Export" aria-label="Export" onclick={() => exportPreset(p)}>⤓</button>
 									<button class="ss-srow-ic" title="Rename" aria-label="Rename" onclick={() => startRename(p)}>✎</button>
 									<button class="ss-srow-ic ss-srow-del" title="Delete" aria-label="Delete" onclick={() => removeStyle(p)}>✕</button>
@@ -816,6 +833,7 @@
 	.ss-srow-ic { background: none; border: none; color: var(--c-muted); cursor: pointer; font-size: 12px; line-height: 1; padding: 4px 5px; border-radius: 5px; }
 	.ss-srow-ic:hover { background: var(--c-surface2); color: var(--c-text); }
 	.ss-srow-del:hover { color: var(--text-error, #e5484d); }
+	.ss-srow-ok { color: #4ade80 !important; }
 	.ss-srow-rename { flex: 1; min-width: 0; font: inherit; font-size: 12.5px; padding: 5px 8px; border: 1px solid var(--c-accent); border-radius: 6px; background: var(--c-bg); color: var(--c-text); outline: none; }
 	.ss-center { grid-area: center; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; gap: 10px; background: var(--background-secondary, #14141c); }
 	.ss-hint { font-size: 12px; color: var(--c-muted); }
