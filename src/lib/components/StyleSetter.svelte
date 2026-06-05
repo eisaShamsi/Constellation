@@ -368,8 +368,9 @@
 		const reg = $linkTypesStore;
 		return reg.length ? reg.map((t) => t.id) : [...SEED_IDS];
 	});
-	// 'supports' colour, reactive to a §G recolour, for the in-note link/label preview.
-	const supportsColor = $derived.by(() => { void $linkTypesStore; return linkTypeColor('supports'); });
+	// A type's colour by id, reactive to a §G recolour (the in-editor typed-link preview reads it
+	// live so a recolour on the right shows in the note representation too — Eisa remark 3).
+	function ltColor(id: string): string { void $linkTypesStore; return linkTypeColor(id); }
 	function selectEl(key: string) {
 		selected = key;
 		// keep the open category in sync with the clicked preview part (stay if already here).
@@ -450,6 +451,15 @@
 		return () => window.removeEventListener('keydown', onKey, true);
 	});
 </script>
+
+{#snippet tlink(id: string, text: string)}
+	<!-- §C Phase 5 — how a typed link renders INSIDE a note (Eisa remark 3): the type label above,
+	     the link text coloured + underlined in the type colour — gated by the two display toggles. -->
+	<span class="ss-tlink">
+		{#if $appSettings.showTypedLinkLabels}<span class="ss-tlabel" style="color:{ltColor(id)}">{id}</span>{/if}
+		<span class="ss-tlink-text" style={$appSettings.colourTypedLinks ? `color:${ltColor(id)};text-decoration-color:${ltColor(id)}` : ''}>{text}</span>
+	</span>
+{/snippet}
 
 {#if $styleSetterOpen}
 	<div class="ss-overlay" role="dialog" aria-label="Style Setter">
@@ -585,18 +595,19 @@
 							<div class="ss-flink-pills">
 								{#each previewLinkIds as id (id)}<LinkTypePill {id} />{/each}
 							</div>
-							<span class="ss-note-hint">These are the real pills from Backlinks, Outgoing, and the dashboard — one colour source.</span>
+							<span class="ss-flink-h">In the editor (how a typed link reads in a note)</span>
+							<span class="ss-body ss-feditor">
+								{@render tlink('supports', 'Ancient Greek')} was a {@render tlink('supports', 'Trojan')} hero; see {@render tlink('exemplifies', 'Hector')} and {@render tlink('derives-from', 'Homer')}.
+							</span>
+							<span class="ss-note-hint">The pills are Backlinks / Outgoing / the dashboard; the text is the note itself — one colour source.</span>
 						</div>
 					{:else if pk === 'linkDisplay'}
 						<div class="ss-focus ss-fcard ss-fnote ss-flinks">
-							<span class="ss-flink-h">In a note</span>
-							<span class="ss-body">
-								An apple
-								{#if $appSettings.showTypedLinkLabels}<span class="ss-flabel" style="color:{supportsColor}">supports</span>{/if}
-								<span class="ss-link" style={$appSettings.colourTypedLinks ? `color:${supportsColor}` : ''}>[[Health]]</span>
-								— a typed connection.
+							<span class="ss-flink-h">In the editor — the two switches change this live</span>
+							<span class="ss-body ss-feditor">
+								An apple {@render tlink('supports', 'Health')}; the opposite of {@render tlink('contradicts', 'Junk food')} and an {@render tlink('exemplifies', 'Orchard')}.
 							</span>
-							<span class="ss-flink-h">In the Backlinks / Outgoing panels</span>
+							<span class="ss-flink-h">In the Backlinks / Outgoing panels — the pill shape</span>
 							<div class="ss-flink-pills">
 								<LinkTypePill id="supports" /><LinkTypePill id="contradicts" /><LinkTypePill id="causes" />
 							</div>
@@ -827,5 +838,10 @@
 	.ss-flinks { gap: 14px; }
 	.ss-flink-h { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted, #8a8a8a); }
 	.ss-flink-pills { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
-	.ss-flabel { font-size: 10px; font-weight: 700; text-transform: lowercase; margin-inline-end: 2px; }
+	/* In-editor typed-link representation (Eisa remark 3): label stacked above the underlined link,
+	   inline in the paragraph — extra line-height leaves room for the labels above each line. */
+	.ss-feditor { line-height: 2.4; }
+	.ss-tlink { display: inline-flex; flex-direction: column; align-items: flex-start; vertical-align: bottom; line-height: 1.05; }
+	.ss-tlabel { font-size: 9px; font-weight: 700; text-transform: lowercase; line-height: 1; letter-spacing: .02em; }
+	.ss-tlink-text { text-decoration: underline; text-underline-offset: 2px; }
 </style>

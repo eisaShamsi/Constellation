@@ -10,6 +10,8 @@
 >
 > **Where the migration stands.** Phase 5 shipped (Boss test staged). Remaining phases: **6** unified Themes+Styles gallery (NEXT) · **7** the 4 no-UI gaps (accent picker · dark/light/system toggle · custom-CSS editor · per-library appearance + its missing apply path) · **8** second-screen full-style sync · Setter localization · **9** retire the old Appearance/Style-Settings tabs at the parity gate (+ deferred Phase-2 catalog parity). Resume from `docs/MIG-070C-HANDOVER.md` → `docs/MIG-070C-PLAN.md`. Session log `lab/reports/SESSION-LOG-2026-06-05.md`.
 >
+> *(2026-06-05, Stage-1 refinements — Boss-validated colours, then three remarks folded in)* (1) The type **colour boxes are now a fixed pill** — `LinkTypesEditor`'s `.color-input` is self-contained, so it renders identically in Settings and the Setter (the SettingsModal `.color-input` is scoped and never reached the embedded editor → native varying widths; exactly the "self-contained components" lesson). (2) Link colours **save to the universal swatch palette** — the same `styleSwatches` the interface elements use, so a colour you pick is reusable for any element; click a swatch to recolour the **highlighted** type, right-click to remove (auto-saves on pick + on add-type). (3) The focused preview now shows the **in-editor typed-link representation** — the type label stacked above the coloured, underlined link (how a note actually reads), recolouring live next to the sidebar pills and honouring the two display toggles.
+>
 > ---
 >
 > **What changed in v2.52** (**MIG-070 §C — the styling-unification /migration cascades: Phases 0–4.2 shipped + Boss-validated; handover prepared mid-migration**):

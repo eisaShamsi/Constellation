@@ -22,11 +22,18 @@
 	import {
 		getLinkTypes, linkTypesStore, loadLinkTypes, saveLinkTypes, toLinkTypeDeltas, SEED_IDS, SEED_DEFAULTS, type LinkTypeDef,
 	} from '$lib/libraries/linkTypeRegistry';
+	// MIG-070 §C Phase 5 — the universal saved-colour palette (the SAME store the interface
+	// elements use), so a link colour you pick is remembered and reusable for any element (Eisa).
+	import { appSettings, addStyleSwatch, removeStyleSwatch } from '$lib/libraries/store';
 
 	// MIG-070 §C Phase 5 — when embedded in the Style Setter's "Links" category, hide the
 	// Settings-scoped heading/desc (the Setter shows its own element name); the list/add/reset
 	// (all `.lte-*` self-styled) render unchanged. Default false → the Settings tab is untouched.
 	let { embedded = false }: { embedded?: boolean } = $props();
+
+	// The type whose colour box was last touched — so a click on the universal swatch palette
+	// knows which type to recolour (mirrors the Setter's `activeColorVar`). Embedded-only.
+	let activeTypeId = $state<string | null>(null);
 
 	let types = $state<LinkTypeDef[]>([]);
 	let loaded = $state(false);
@@ -91,14 +98,16 @@
 		const id = newId;
 		if (!id || newIdTaken) return;
 		const parent = newParent && isSeed(newParent) ? newParent : null;
+		const picked = newColor;
 		types = [
 			...types,
 			{
 				id, label: newLabel.trim() || id, parent,
-				color: newColor, order: 999, builtin: false, emoji: null, desc: null,
+				color: picked, order: 999, builtin: false, emoji: null, desc: null,
 			},
 		];
 		newLabel = ''; newColor = '#7FB8FF'; newParent = '';
+		if (embedded) addStyleSwatch(picked); // remember the colour in the universal palette
 		persist();
 	}
 
@@ -113,8 +122,15 @@
 		// `<input type=color>` onchange fires once on commit (not per drag frame),
 		// so persisting here is one save per recolour. A colour-only change doesn't
 		// shift the registry fingerprint → no Base re-materialise (cheap).
+		activeTypeId = id;
 		types = types.map((tp) => (tp.id === id ? { ...tp, color } : tp));
+		if (embedded) addStyleSwatch(color); // auto-save to the universal palette
 		persist();
+	}
+
+	/** §C Phase 5 — apply a saved swatch to the type whose colour box you last touched. */
+	function applySwatch(hex: string) {
+		if (activeTypeId) recolor(activeTypeId, hex);
 	}
 
 	/** Reset every built-in (seed) type's colour to its original default — "go back to
@@ -133,6 +149,7 @@
 
 	onMount(async () => {
 		await refresh();
+		if (!activeTypeId && types.length) activeTypeId = types[0].id; // a default target for swatch clicks
 		loaded = true;
 	});
 </script>
@@ -150,13 +167,14 @@
 	{:else}
 		<div class="lte-list">
 			{#each ordered as { def, depth } (def.id)}
-				<div class="lte-row" class:lte-child={depth === 1}>
+				<div class="lte-row" class:lte-child={depth === 1} class:lte-active={embedded && activeTypeId === def.id}>
 					{#if depth === 1}<span class="lte-nest">{isRtl ? '↲' : '↳'}</span>{/if}
 					<input
 						type="color"
 						class="color-input"
 						value={def.color}
 						aria-label={`Colour for ${def.label}`}
+						onfocus={() => (activeTypeId = def.id)}
 						onchange={(e) => recolor(def.id, (e.target as HTMLInputElement).value)}
 					/>
 					<span class="lte-name" dir={detectDir(typeName(def))}>{typeName(def)}</span>
@@ -171,6 +189,17 @@
 		</div>
 
 		<button class="lte-reset" onclick={resetColors}>{$t('settings.linkTypes.resetColours') || 'Reset colours to default'}</button>
+
+		{#if embedded && ($appSettings.styleSwatches ?? []).length}
+			<!-- §C Phase 5 — the universal saved-colour palette (shared with the interface elements):
+			     a colour you picked is reusable; click a swatch to recolour the highlighted type. -->
+			<div class="lte-sw-label">Saved colours — click to apply to the highlighted type · right-click to remove</div>
+			<div class="lte-swatches">
+				{#each $appSettings.styleSwatches as sw (sw)}
+					<button class="lte-sw" style="background:{sw}" title={sw} aria-label={sw} onclick={() => applySwatch(sw)} oncontextmenu={(e) => { e.preventDefault(); removeStyleSwatch(sw); }}></button>
+				{/each}
+			</div>
+		{/if}
 
 		<!-- Add a type -->
 		<div class="lte-add">
@@ -261,4 +290,21 @@
 		font-size: 0.76rem; padding: 5px 2px; text-decoration: underline; text-underline-offset: 2px;
 	}
 	.lte-reset:hover { color: var(--text-normal); }
+	/* MIG-070 §C Phase 5 — self-contained colour swatch: a fixed PILL, identical in Settings AND the
+	   Style Setter. SettingsModal's `.color-input` is scoped and never reached the embedded editor,
+	   so the native input took varying widths in the flex row (Eisa remark 1). `flex: none` + a fixed
+	   size pins it; the -webkit pseudo-elements fill the pill edge-to-edge (Tauri = Chromium WebView). */
+	.color-input {
+		flex: none; width: 46px; height: 22px; padding: 0;
+		border: 1px solid var(--background-modifier-border); border-radius: 999px;
+		background: none; cursor: pointer;
+	}
+	.color-input::-webkit-color-swatch-wrapper { padding: 0; }
+	.color-input::-webkit-color-swatch { border: none; border-radius: 999px; }
+	/* The row whose colour a swatch-click will recolour (embedded Setter only). */
+	.lte-active { background: color-mix(in srgb, var(--interactive-accent) 12%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--interactive-accent) 35%, transparent); }
+	.lte-sw-label { font-size: 0.7rem; color: var(--text-muted); padding: 6px 2px 4px; line-height: 1.4; }
+	.lte-swatches { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+	.lte-sw { width: 22px; height: 22px; border-radius: 5px; border: 1px solid var(--background-modifier-border); cursor: pointer; padding: 0; }
+	.lte-sw:hover { outline: 2px solid var(--interactive-accent); outline-offset: 1px; }
 </style>
