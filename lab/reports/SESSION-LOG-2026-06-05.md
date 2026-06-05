@@ -140,6 +140,10 @@ Boss-declared milestone. The Style Setter went from a session-only preview to th
 - **Backup routine:** pushed `main`; tag **`milestone/mig-070c-style-setter-live-styles`**; ZIP → `E:/Backups/Constellation/`.
 - **Still open in MIG-070 §C:** Option E **D** (inspect-to-style) · **C** (inline Global previews) · batched 14-lang help · `/simplify` · Phase 9 (retire old tabs at parity).
 
+## Post-milestone — Option E item C (2026-06-05)
+Eisa: **"C > D > E > Batched 14-language help"** → read as the research-doc options: C (inline Global) → D (inspect) → E (hybrid, completes once A+C+D done) → 14-lang help.
+- **C built:** a composite **Global preview** card (`.ss-gprev`) shown atop the right-rail controls when a Global element is selected (`GLOBAL_ELS`). Built purely from the Global CSS vars (`--background-primary-alt`, `--text-muted/-faint/-on-accent`, `--text-error/-warning/-success`, `--interactive-accent-hover`, `--text-accent`, `--radius-s/m/l`, `--border-width`, `--background-modifier-*`, `--line-height-normal`) → reflects the draft **live via the CSS cascade** (the `.ss` wrapper carries `draftStyle`). No JS; **theme-free → no freeze risk** (LL-032 clean). svelte-check clean; built OK (1m43s); mtime **`18:36:40` → `21:01:07`**. **[BOSS TEST] pending.** Next: **D** inspect-to-style.
+
 ---
 
 ## SO #6 process correction — orientation bump was batched (2026-06-05)

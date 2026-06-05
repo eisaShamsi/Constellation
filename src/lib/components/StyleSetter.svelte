@@ -699,6 +699,24 @@
 				{#if sel}
 					<div class="ss-rlabel">Selected element</div>
 					<div class="ss-selname">{sel.name}</div>
+						{#if GLOBAL_ELS.has(selected ?? '')}
+							<!-- §C Option E item C — inline composite preview for the Global atoms. A sample card
+							     built from the Global CSS vars; the .ss wrapper carries the draft, so every shade /
+							     radius / border / accent edit shows here LIVE via the CSS cascade (no JS). -->
+							<div class="ss-gprev">
+								<div class="ss-gprev-card">
+									<span class="ss-gprev-title">Aa Heading</span>
+									<span class="ss-gprev-muted">Muted body text · <span class="ss-gprev-faint">faint caption</span></span>
+									<span class="ss-gprev-row">
+										<span class="ss-gprev-chip">accent</span>
+										<span class="ss-gprev-tag">#tag</span>
+										<span class="ss-gprev-st ss-gprev-err">error</span>
+										<span class="ss-gprev-st ss-gprev-warn">warn</span>
+										<span class="ss-gprev-st ss-gprev-ok">ok</span>
+									</span>
+								</div>
+							</div>
+						{/if}
 						{#each sel.controls as c (c.label)}
 						<div class="ss-ctrl">
 							{#if c.type === 'range'}
@@ -834,6 +852,20 @@
 	.ss-srow-ic:hover { background: var(--c-surface2); color: var(--c-text); }
 	.ss-srow-del:hover { color: var(--text-error, #e5484d); }
 	.ss-srow-ok { color: #4ade80 !important; }
+	/* §C Option E item C — inline composite Global preview: built from the Global CSS vars, so it
+	   reflects the draft live (the .ss wrapper carries the draft). No JS — pure CSS cascade. */
+	.ss-gprev { margin-bottom: 14px; }
+	.ss-gprev-card { background: var(--background-primary-alt, var(--background-primary, #fbfbfa)); border: var(--border-width, 1px) solid var(--background-modifier-border, #ddd); border-radius: var(--radius-m, 8px); padding: 12px 14px; display: flex; flex-direction: column; gap: 7px; }
+	.ss-gprev-title { font-size: 15px; font-weight: 700; color: var(--text-normal, #2e3338); }
+	.ss-gprev-muted { font-size: 12.5px; color: var(--text-muted, #8a8a8a); line-height: var(--line-height-normal, 1.6); }
+	.ss-gprev-faint { color: var(--text-faint, #aaa); }
+	.ss-gprev-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+	.ss-gprev-chip { font-size: 11px; padding: 2px 9px; border-radius: var(--radius-s, 4px); background: var(--interactive-accent-hover, var(--interactive-accent, #7c3aed)); color: var(--text-on-accent, #fff); }
+	.ss-gprev-tag { font-size: 11px; padding: 2px 9px; border-radius: var(--radius-l, 12px); background: var(--background-modifier-hover, rgba(0,0,0,.06)); color: var(--text-accent, var(--interactive-accent, #7c3aed)); }
+	.ss-gprev-st { font-size: 11px; font-weight: 600; }
+	.ss-gprev-err { color: var(--text-error, #e5484d); }
+	.ss-gprev-warn { color: var(--text-warning, #f5a623); }
+	.ss-gprev-ok { color: var(--text-success, #30a46c); }
 	.ss-srow-rename { flex: 1; min-width: 0; font: inherit; font-size: 12.5px; padding: 5px 8px; border: 1px solid var(--c-accent); border-radius: 6px; background: var(--c-bg); color: var(--c-text); outline: none; }
 	.ss-center { grid-area: center; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; gap: 10px; background: var(--background-secondary, #14141c); }
 	.ss-hint { font-size: 12px; color: var(--c-muted); }
