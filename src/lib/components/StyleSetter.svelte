@@ -18,7 +18,7 @@
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
 	import { styleSetterOpen, closeStyleSetter } from '$lib/stores/styleSetter';
-	import { appSettings, mergeStyleOverride, clearAllStyleOverride, addStyleSwatch, removeStyleSwatch, setPerScriptFont, updateSettings, setLiveStyleDraft, clearLiveStyleDraft, BUILTIN_THEMES } from '$lib/libraries/store';
+	import { appSettings, mergeStyleOverride, clearAllStyleOverride, addStyleSwatch, removeStyleSwatch, setPerScriptFont, updateSettings, setLiveStyleDraft, clearLiveStyleDraft } from '$lib/libraries/store';
 	// §C Phase 5 — link styling reuses the EXISTING single source: the §G Link-Types editor (one save
 	// path → Backlinks/Outgoing/editor recolour live). Display toggles + pill shape are appSettings.
 	import LinkTypesEditor from './LinkTypesEditor.svelte';
@@ -415,15 +415,10 @@
 		await saveStylePresets($state.snapshot(savedStyles) as StylePreset[]);
 	}
 
-	// §C item 3 — a LIGHTWEIGHT built-in/custom theme picker (a NAME dropdown, never a stylePreview
-	// card gallery — LL-032). Applying sets activeThemeId/colorScheme; the +layout effect re-derives
-	// the theme and the user's styleOverride rides on top.
-	const themePickList = $derived([...BUILTIN_THEMES, ...($appSettings.customThemes ?? [])]);
-	function applyBuiltinTheme(id: string) {
-		if (!id) return;
-		const t = themePickList.find((x) => x.id === id);
-		if (t) { updateSettings({ activeThemeId: t.id, colorScheme: t.type }); draftName = t.name; }
-	}
+	// §C item 3 (REMOVED) — a built-in-theme picker in the Setter froze it AGAIN, even as a plain
+	// `<select>` over BUILTIN_THEMES (2026-06-05). LL-032 strengthened: rendering BUILTIN_THEMES /
+	// themes ANYWHERE in the Setter's render path freezes it (mechanism unreproducible). The theme
+	// stays settable from Settings → Appearance; the Setter never touches BUILTIN_THEMES.
 
 	// §C redesign — drag the corner grip to resize the panel; clamp to the viewport, persist on release.
 	function startResize(e: PointerEvent) {
@@ -568,11 +563,6 @@
 					{/if}
 				{/each}
 				<div class="ss-divider"></div>
-				<div class="ss-rlabel">Theme</div>
-				<select class="ss-theme-pick" value={$appSettings.activeThemeId ?? ''} onchange={(e) => applyBuiltinTheme((e.currentTarget as HTMLSelectElement).value)}>
-					<option value="">— pick a theme —</option>
-					{#each themePickList as t (t.id)}<option value={t.id}>{t.name}</option>{/each}
-				</select>
 				<div class="ss-rlabel">Saved styles</div>
 				<div class="ss-stylelist">
 					{#each savedStyles as p (p.id)}
@@ -827,9 +817,6 @@
 	.ss-srow-ic:hover { background: var(--c-surface2); color: var(--c-text); }
 	.ss-srow-del:hover { color: var(--text-error, #e5484d); }
 	.ss-srow-rename { flex: 1; min-width: 0; font: inherit; font-size: 12.5px; padding: 5px 8px; border: 1px solid var(--c-accent); border-radius: 6px; background: var(--c-bg); color: var(--c-text); outline: none; }
-	/* §C item 3 — lightweight theme picker (a name dropdown, never a card gallery — LL-032). */
-	.ss-theme-pick { width: 100%; padding: 6px 8px; border-radius: 7px; border: 1px solid var(--c-border); background: var(--c-surface2); color: var(--c-text); font: inherit; font-size: 12.5px; margin-bottom: 6px; cursor: pointer; }
-	.ss-theme-pick option { background: var(--c-surface); color: var(--c-text); }
 	.ss-center { grid-area: center; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; gap: 10px; background: var(--background-secondary, #14141c); }
 	.ss-hint { font-size: 12px; color: var(--c-muted); }
 	.ss-stage { position: relative; }
