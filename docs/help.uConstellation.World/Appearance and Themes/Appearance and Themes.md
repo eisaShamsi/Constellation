@@ -208,23 +208,31 @@ The type label and the panel pills appear in the **note's own main language**, n
 
 ## The Style Setter
 
-The **Style Setter** is a full-page design studio for your whole interface. Instead of adjusting settings one at a time and imagining the result, you see your actual interface in the middle of the screen, click the part you want to change, and watch it update instantly.
+The **Style Setter** is a full-page design studio for your whole interface. Instead of adjusting settings one at a time and imagining the result, you change a control and watch your **real app** restyle as you do.
 
-**Open it:** go to **Settings → Appearance** and click **"✦ Open Style Setter."** The studio fills the screen in three zones:
+**Open it:** go to **Settings → Appearance** and click **"✦ Open Style Setter."** You can **resize the panel** — drag the small grip at its bottom-right corner; it remembers the size next time.
 
-- **Left** — your *Surfaces* (Editor, Sky View, OrgChart, Index, Cataloger, Shell) and your *theme cards* (Midnight, Daylight, Chocolate, Nord).
-- **Centre** — a live preview of your interface.
-- **Right** — the controls for whatever part you have selected.
+**Pick what to style — the left list.** Down the left are the *Surfaces* you can style:
 
-**Style an element.** Hover any part of the centre preview — the sidebar, the note title, a heading, a link, the note page — and a ring shows that it is clickable. Click it, and its controls appear on the right (a colour swatch, a font dropdown, and so on). Change a value and the preview updates the moment you do — no guessing.
+- **Interface** — the file tree, status bar, and universe bar.
+- **Components** — the ribbon dock, toolbars, top bar & tabs, buttons, tags & callouts.
+- **Editor** — the note itself: headings, bold, italic, links, inline code, quotes.
+- **Global** — background and text shades, accent shades, type & spacing, corners & borders, and per-script fonts.
+- **Links** — the typed-link colours and how they display.
+- **Sky View / OrgChart / Index / Cataloger / Shell** — the plugin surfaces.
 
-**Start from a theme.** Click a theme card on the left to seed a whole look at once. The studio itself takes on that look as you work, so you are designing *inside* the theme, and you can then tweak individual elements on top of it.
+Below them are *theme cards* (Midnight, Daylight, Chocolate, Nord) that seed a whole look at once.
 
-**Switch surfaces.** Click a surface on the left to preview the look across different parts of the app, not only the editor.
+**Two ways you see your changes:**
 
-**Apply it.** When you like what you see, click **"Apply to app"** (top right). Your accent, backgrounds, text colour, and fonts are pushed onto the real Constellation. Press **Esc** or **✕** to close (this closes only the Setter, not Settings).
+- **The Editor category** shows a **note preview in the centre.** Click a heading, bold, a link, or the page and its controls appear on the right; the preview updates instantly.
+- **Every other category** docks the panel to one side and goes see-through, and your edits show on the **real app, live.** Change the status-bar colour or the dock width and the actual sidebar, dock, tabs, and status bar restyle **as you drag.** A green **● live** tag in the top bar reminds you that you are editing the real thing.
 
-> Today the Style Setter applies your look for the current session (a live preview on the real app). Saving a look as a permanent, named **Style** — with reusable, renameable colour swatches and export / import — is coming next.
+**The Links category** keeps the typed-link colours and shape in one place. Each of the eight types (supports, contradicts, …) is shown as its real coloured **pill** — **click a pill to recolour it,** and the change reflects live everywhere (the editor links and the Backlinks / Outgoing pills). Above the list are switches — **Colour typed links** and **Show type labels** — and the **pill shape** (corner radius, height, label weight). A **Saved colours** palette remembers every colour you pick so you can reuse it on any element: click a saved colour to apply it to the highlighted type, right-click to remove it.
+
+**Keep, Discard, Reset.** When you like what you see, click **Keep** (top right) to save the look **for this Universe** — it survives a restart. **Discard** (or simply closing with **✕** or **Esc**) throws away your unsaved edits and the real app snaps back to the saved look. **Reset** clears everything back to the plain theme. Nothing is written to disk until you Keep.
+
+> Saving a look as a permanent, **named Style** you can reuse across Universes and export / import is coming to the Setter next. (You can already do that today from the *Styles* cards at the top of **Settings → Appearance**.)
 
 ## Frequently asked questions
 

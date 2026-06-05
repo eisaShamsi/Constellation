@@ -100,7 +100,15 @@ Written at the close of a long multi-day run (≈33 commits across 2026-06-02 �
 - **A2** Setter live mode: extracted `mergedDraft()` (accent-decomposed, shared by Keep + live); `apply()`→`keep()` (`mergeStyleOverride` + `clearLiveStyleDraft`); new `discard()` (re-seed from saved + clear live); `resetDraft()` also clears live; a `$effect` pushes the draft → `liveStyleDraft` while open on a non-Editor category, clears it on Editor/closed. Header → **Reset · Discard · Keep · ✕** + a "● live" tag. Overlay `.ss-overlay--live` (transparent, `pointer-events:none`, dock right) + panel `.ss--twozone` translucent (`pointer-events:auto`) so the real app shows + stays interactive.
 - **A3** Editor category (twoZone=false) keeps the centred dimmed modal + 3-zone note preview; switching Editor↔non-Editor flips modal↔docked and the live effect clears/sets accordingly.
 - **Predecessor→Replacement:** the Setter's Apply path is **kept** (now `keep()` → same `mergeStyleOverride`); the centred-modal overlay is **kept for Editor** and a docked-live variant added for non-Editor (additive, class-gated). No store wrapper removed, no command retired. `liveStyleDraft` is additive + in-memory → rollback = revert the one A1 merge line.
-- svelte-check: no new errors (only the pre-existing `store.ts:2481 'fresh'`). Built OK (2m03s); binary mtime **`13:21:18` → `13:49:03`**. Orientation v2.53 carries a dated Phase-A addendum (LL-031). **[BOSS TEST] of Phase A pending.**
+- svelte-check: no new errors (only the pre-existing `store.ts:2481 'fresh'`). Built OK (2m03s); binary mtime **`13:21:18` → `13:49:03`**. Orientation v2.53 carries a dated Phase-A addendum (LL-031).
+- **Phase A — PASS** (Eisa). Live preview restyles the real app smoothly; Keep persists, Discard/close reverts cleanly. Committed `ab2782d9`.
+
+**PCS (2026-06-05).** Eisa reminder mid-Phase-6-design: "Don't forget to PCS + Orientation." Paused Phase 6, did the PCS for the shipped run (`6fea13eb` → `ab2782d9`):
+- **Orientation** bumped **v2.53 → v2.54** (NEW file; clean consolidated preamble = current Setter state: persistence spine, the 2/3-zone resizable layout, Option E Phase A live preview + `liveStyleDraft`, the Links pill-control + universal swatches, and the in-flight Phase 6 / D / C). v2.53 retained.
+- **Help (English)** `docs/help.uConstellation.World/Appearance and Themes/Appearance and Themes.md` — Setter section rewritten (resizable, 2/3-zone, live preview on the real app, Keep/Discard/Reset, the Links pill-control + Saved-colours palette). **User Manual** `docs/User Manual.md` §"The Style Setter" rewritten to match.
+- **14-language help** (`docs/help.{lang}/`) — **batched** (deliberate): the Setter is still gaining Phase 6 (named Styles) + Option E D/C, so translating the churning section 14× now then again is wasteful; queued to run once the Setter content stabilizes. *(Deviation from "all 15 every push" — surfaced to Eisa.)*
+- **/simplify** — deferred to the end of the Setter work (quality polish best applied once on near-final code, not mid-migration); the code is svelte-check-clean + Boss-validated per phase.
+- **Push** — pushing `main`.
 
 ---
 
