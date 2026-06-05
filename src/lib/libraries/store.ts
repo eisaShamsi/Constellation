@@ -4126,6 +4126,16 @@ export function clearAllStyleOverride() {
 	emit('screen:settings-changed', get(appSettings)).catch(() => {});
 }
 
+/** MIG-070 §C Option E — a transient, IN-MEMORY top layer for the Style Setter's LIVE preview.
+ *  While the Setter is open in live mode, the draft is pushed here (NOT persisted); the shared
+ *  `+layout` apply `$effect` merges it LAST (above `styleOverride`), so the REAL app restyles live.
+ *  Keep promotes it to `styleOverride`; Discard/close clears it (the same `$effect` reverts). Being
+ *  in-memory means a slider drag does ZERO IPC/disk (Rule 3) and the saved look is never touched
+ *  until Keep — and it rides the existing single apply path, so there is no second-writer race. */
+export const liveStyleDraft = writable<Record<string, string>>({});
+export function setLiveStyleDraft(vars: Record<string, string>) { liveStyleDraft.set({ ...vars }); }
+export function clearLiveStyleDraft() { liveStyleDraft.set({}); }
+
 /** MIG-070 §C — add a hex colour to the saved palette (deduped, most-recent first, capped). */
 export function addStyleSwatch(hex: string) {
 	const h = (hex || '').trim().toLowerCase();

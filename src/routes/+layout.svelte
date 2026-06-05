@@ -39,6 +39,7 @@
 	} from '$lib/libraries/store';
 	import type { LibraryStats, FileEntry, WorkspaceLayout, WorkspaceSecondScreen, FontSet, PanelId } from '$lib/libraries/store';
 	import { BUILTIN_FONT_SETS, SCRIPT_UNICODE_RANGES, TYPEWRITER_FONTS, getFontSetById, BUILTIN_THEMES, deriveThemeVariables, hexToHSL } from '$lib/libraries/store';
+	import { liveStyleDraft } from '$lib/libraries/store'; // MIG-070 §C Option E — Style Setter live-preview layer
 	import { generateStyleSettingsCSS } from '$lib/theme/styleSettings';
 	import { CORE_BLOCK_IDS, getEffectiveStyleBlocks } from '$lib/theme/constellationStyleSettings';
 	import { get } from 'svelte/store';
@@ -1625,6 +1626,12 @@
 		// Tracked, so a removed override clears on the next apply, and it re-applies after
 		// derivation on every theme switch (survives the switch).
 		Object.assign(trackedVars, s.styleOverride ?? {});
+
+		// MIG-070 §C Option E — the Style Setter's transient LIVE layer wins over everything while the
+		// Setter is open (cleared on Keep/Discard/close). Reading $liveStyleDraft here makes THIS one
+		// effect re-run on a live edit and re-apply — the same single writer, so no second-effect race
+		// (the BUG-015 guard); its keys ride _lastStyleSettingsKeys, so clearing it reverts cleanly.
+		Object.assign(trackedVars, $liveStyleDraft);
 
 		// Clear any tracked var from the previous apply that is gone now (reset row / removed override).
 		const newKeys = new Set(Object.keys(trackedVars));

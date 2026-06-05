@@ -18,7 +18,7 @@
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
 	import { styleSetterOpen, closeStyleSetter } from '$lib/stores/styleSetter';
-	import { appSettings, mergeStyleOverride, clearAllStyleOverride, addStyleSwatch, removeStyleSwatch, setPerScriptFont, updateSettings } from '$lib/libraries/store';
+	import { appSettings, mergeStyleOverride, clearAllStyleOverride, addStyleSwatch, removeStyleSwatch, setPerScriptFont, updateSettings, setLiveStyleDraft, clearLiveStyleDraft } from '$lib/libraries/store';
 	// §C Phase 5 — link styling reuses the EXISTING single source: the §G Link-Types editor (one save
 	// path → Backlinks/Outgoing/editor recolour live). Display toggles + pill shape are appSettings.
 	import LinkTypesEditor from './LinkTypesEditor.svelte';
@@ -415,13 +415,11 @@
 		return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
 	}
 
-	function apply() {
-		// MIG-070 §C — persist the draft as the per-Universe styleOverride in ONE settings update.
-		// The +layout apply $effect writes it onto <body> (one apply path) — survives reload AND
-		// theme switch. Per-element vars flow through since they're plain draft entries.
+	// MIG-070 §C — the draft with the accent decomposed (the accent is also consumed as
+	// --accent-h/s/l + --text-accent + --interactive-accent-hover). Used by BOTH Keep (persist) and
+	// the live-preview layer, so the real app and the saved look apply identically.
+	function mergedDraft(): Record<string, string> {
 		const merged: Record<string, string> = { ...draft };
-		// The accent is also consumed as --accent-h/s/l + --text-accent + --interactive-accent-hover,
-		// so decompose it — otherwise only --interactive-accent users would change.
 		const acc = draft['--interactive-accent'];
 		if (acc) {
 			const hsl = hexToHSL(acc);
@@ -433,14 +431,37 @@
 				merged['--interactive-accent-hover'] = `hsl(${hsl.h}, ${hsl.s}%, ${Math.max(0, hsl.l - 8)}%)`;
 			}
 		}
-		mergeStyleOverride(merged);
+		return merged;
+	}
+	// MIG-070 §C Option E — KEEP: persist the draft as the per-Universe styleOverride (ONE settings
+	// update; the +layout $effect writes it to <body> — survives reload + theme switch), then drop the
+	// transient live layer (styleOverride now carries the look).
+	function keep() {
+		mergeStyleOverride(mergedDraft());
+		clearLiveStyleDraft();
+	}
+	// DISCARD: abandon the unsaved edits — re-seed the draft from the saved look + drop the live layer
+	// (the +layout $effect reverts the REAL app to styleOverride). The saved look on disk is untouched.
+	function discard() {
+		draft = { ...(get(appSettings).styleOverride ?? {}) };
+		clearLiveStyleDraft();
 	}
 	function resetDraft() {
 		draft = {};
 		selected = null;
+		clearLiveStyleDraft();
 		// MIG-070 §C — clear the persisted per-Universe override → back to the pure theme look.
 		clearAllStyleOverride();
 	}
+
+	// MIG-070 §C Option E — LIVE preview: while the Setter is open on a non-Editor category, push the
+	// draft to the REAL app via the transient layer (the real chrome IS the preview). On the Editor
+	// category (its centre note-preview suffices) or when closed, clear it so the app shows the saved
+	// look. One-directional (reads draft/twoZone/open, writes the external live store) → no loop.
+	$effect(() => {
+		if ($styleSetterOpen && twoZone) setLiveStyleDraft(mergedDraft());
+		else clearLiveStyleDraft();
+	});
 
 	// MIG-070 §C — when the Setter opens, seed the draft from the persisted per-Universe override
 	// so the controls reflect the live look (not a blank slate). Rising-edge only, so editing
@@ -472,15 +493,17 @@
 </script>
 
 {#if $styleSetterOpen}
-	<div class="ss-overlay" role="dialog" aria-label="Style Setter">
+	<div class="ss-overlay" class:ss-overlay--live={twoZone} role="dialog" aria-label="Style Setter">
 		<div class="ss" class:ss--twozone={twoZone} style="width:{panelW}px;height:{panelH}px;{draftStyle}">
 			<!-- Top bar -->
 			<header class="ss-top">
 				<span class="ss-brand"><span class="ss-star">✦</span> Style Setter</span>
+				{#if twoZone}<span class="ss-livetag" title="Your edits show on the real app live — Keep to save, Discard to revert">● live</span>{/if}
 				<span class="ss-draft">draft: <input class="ss-dname" bind:value={draftName} /></span>
 				<span class="ss-spacer"></span>
-				<button class="ss-btn" onclick={resetDraft}>Reset</button>
-				<button class="ss-btn ss-primary" onclick={apply}>Apply to app</button>
+				<button class="ss-btn" onclick={resetDraft} title="Clear all overrides — back to the theme default">Reset</button>
+				<button class="ss-btn" onclick={discard} title="Abandon unsaved changes (the real app reverts)">Discard</button>
+				<button class="ss-btn ss-primary" onclick={keep} title="Save this look (per-Universe)">Keep</button>
 				<button class="ss-btn ss-icon" aria-label="Close" onclick={closeStyleSetter}>✕</button>
 			</header>
 
@@ -677,6 +700,13 @@
 		position: fixed; inset: 0; z-index: 9000; display: flex; align-items: center; justify-content: center;
 		background: rgba(6, 6, 12, 0.62); backdrop-filter: blur(2px); padding: 16px;
 	}
+	/* §C Option E — LIVE mode (non-Editor categories): the overlay no longer dims or blocks the app, so
+	   the real chrome shows AND stays interactive; the panel docks to the right, faintly translucent, so
+	   the live app IS the preview. The Editor category keeps the centred, dimmed modal (rule above). */
+	.ss-overlay--live { background: none; backdrop-filter: none; pointer-events: none; justify-content: flex-end; padding: 10px; }
+	.ss-overlay--live .ss { pointer-events: auto; }
+	.ss-overlay--live .ss--twozone { background: color-mix(in srgb, var(--c-bg) 92%, transparent); backdrop-filter: blur(7px); box-shadow: -14px 0 60px rgba(0,0,0,.45); }
+	.ss-livetag { font-size: 11px; font-weight: 700; color: #4ade80; letter-spacing: .04em; white-space: nowrap; }
 	.ss {
 		/* Chrome follows the theme being edited (the .ss element carries the draft + inherits the
 		   app theme), with the original dark studio look as fallback (MIG-070 §iter2-#2, Eisa). */
