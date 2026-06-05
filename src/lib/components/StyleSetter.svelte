@@ -22,9 +22,12 @@
 	// §C Phase 5 — link styling reuses the EXISTING single source: the §G Link-Types editor (one save
 	// path → Backlinks/Outgoing/editor recolour live). Display toggles + pill shape are appSettings.
 	import LinkTypesEditor from './LinkTypesEditor.svelte';
-	// MIG-070 §C Phase 6 — named, reusable Styles (the frozen MIG-069 engine, reused read-time):
-	// the unified gallery (built-in/custom themes + the user's saved Styles), save-current, and apply.
-	import { loadStylePresets, saveStylePresets, newPresetFromCurrent, applyPreset, unifiedStyleList, stylePreview, SECTION_CATALOGUE, type StylePreset } from '$lib/libraries/stylePresets';
+	// MIG-070 §C Phase 6 — named, reusable Styles (the frozen MIG-069 SAVE/APPLY engine, reused as-is —
+	// the same calls StylePresetsPanel uses). NOTE: we deliberately do NOT import unifiedStyleList /
+	// stylePreview here — rendering BUILTIN_THEMES through themeToStyle as a gallery of self-portrait
+	// cards is the documented main-thread FREEZE shape that the clean-slate Setter exists to avoid
+	// (orientation v2.49; LL-014). The Setter lists only the user's SAVED styles, as lightweight rows.
+	import { loadStylePresets, saveStylePresets, newPresetFromCurrent, applyPreset, SECTION_CATALOGUE, type StylePreset } from '$lib/libraries/stylePresets';
 
 	// A control writes one REAL app CSS variable. `color` → hex; `select` → a stack/keyword;
 	// `range` → a number + unit (e.g. `32px`, or `700` when unit is '').
@@ -295,7 +298,6 @@
 	// Styles + this Universe's custom-theme Styles + the user's saved Styles); clicking one APPLIES it
 	// (non-destructive merge), "+ Save current" captures the look incl. the new styleOverride section.
 	let savedStyles = $state<StylePreset[]>([]);
-	const styleList = $derived.by(() => unifiedStyleList(savedStyles));
 
 	let activeSurface = $state('editor');
 	let activeCategory = $state('interface');
@@ -540,19 +542,13 @@
 					{/if}
 				{/each}
 				<div class="ss-divider"></div>
-				<div class="ss-rlabel">Styles</div>
-				<div class="ss-styles">
-					{#each styleList as p (p.id)}
-						{@const pv = stylePreview(p)}
-						<button class="ss-scard" onclick={() => applyStyle(p)} title={'Apply ' + p.name}>
-							<span class="ss-sport" style="background:{pv.bg}">
-								<span class="ss-sport-side" style="background:{pv.surface}"><span class="ss-sport-dot" style="background:{pv.accent}"></span></span>
-								<span class="ss-sport-dots">{#each pv.dots as d, di (di)}<span style="background:{d}"></span>{/each}</span>
-							</span>
-							<span class="ss-sn" dir="auto">{p.name}</span>
-						</button>
+				<div class="ss-rlabel">Saved styles</div>
+				<div class="ss-stylelist">
+					{#each savedStyles as p (p.id)}
+						<button class="ss-srow" onclick={() => applyStyle(p)} title={'Apply ' + p.name} dir="auto">{p.name}</button>
 					{/each}
-					<button class="ss-scard ss-newcard" onclick={saveAsStyle} title="Save the current look as a named Style">+ Save current</button>
+					{#if !savedStyles.length}<div class="ss-srow-empty">Design a look, then save it as a named style you can reuse.</div>{/if}
+					<button class="ss-srow ss-srow-save" onclick={saveAsStyle}>+ Save current as a style</button>
 				</div>
 			</aside>
 
@@ -769,17 +765,13 @@
 	.ss-elhead:hover { background: var(--c-surface2); color: var(--c-text); }
 	.ss-elhead.active { background: color-mix(in srgb, var(--c-accent) 20%, transparent); color: #fff; }
 	.ss-divider { height: 1px; background: var(--c-border); margin: 8px 2px; }
-	/* §C Phase 6 — the Styles gallery: a self-portrait card per saved/derived Style. */
-	.ss-styles { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
-	.ss-scard { border: 1px solid var(--c-border); border-radius: 8px; overflow: hidden; cursor: pointer; background: var(--c-surface2); padding: 0; display: flex; flex-direction: column; text-align: left; }
-	.ss-scard:hover { border-color: var(--c-accent); }
-	.ss-sport { height: 36px; display: flex; gap: 3px; padding: 4px; }
-	.ss-sport-side { width: 26%; min-width: 16px; border-radius: 3px; padding: 3px; }
-	.ss-sport-dot { display: block; width: 7px; height: 7px; border-radius: 50%; }
-	.ss-sport-dots { flex: 1; display: flex; flex-wrap: wrap; gap: 2px; align-content: center; }
-	.ss-sport-dots span { width: 6px; height: 6px; border-radius: 50%; }
-	.ss-sn { display: block; font-size: 11px; padding: 4px 6px; color: var(--c-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-	.ss-newcard { display: flex; align-items: center; justify-content: center; min-height: 50px; color: var(--c-muted); font-size: 12px; border-style: dashed; }
+	/* §C Phase 6 — saved styles as a LIGHTWEIGHT name list. NOT a gallery of stylePreview cards over
+	   unifiedStyleList/BUILTIN_THEMES — that is the documented main-thread freeze shape (v2.49; LL-014). */
+	.ss-stylelist { display: flex; flex-direction: column; gap: 3px; }
+	.ss-srow { text-align: start; padding: 6px 9px; border-radius: 7px; border: 1px solid var(--c-border); background: var(--c-surface2); color: var(--c-text); font: inherit; font-size: 12.5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.ss-srow:hover { border-color: var(--c-accent); }
+	.ss-srow-save { border-style: dashed; color: var(--c-muted); text-align: center; }
+	.ss-srow-empty { font-size: 11.5px; color: var(--c-muted); padding: 4px 6px; line-height: 1.4; }
 	.ss-center { grid-area: center; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; gap: 10px; background: var(--background-secondary, #14141c); }
 	.ss-hint { font-size: 12px; color: var(--c-muted); }
 	.ss-stage { position: relative; }

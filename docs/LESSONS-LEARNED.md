@@ -644,7 +644,20 @@ This is the BASIC RULE in the wiring-task domain: don't make up which file is "t
 
 ---
 
-*Last updated: 2026-06-05 (LL-031 added — SO #6 orientation-bump was batched across the
+## LL-032: Cross-Check a Surface's Documented Freeze History Before Adding UI To It
+
+**Symptom (2026-06-05, MIG-070 §C Phase 6):** the Boss opened the Style Setter and *"the app became non-responsive"* — a hard main-thread freeze, **on open**. The just-shipped Phase-6 Styles gallery rendered `unifiedStyleList(savedStyles)` (which maps `BUILTIN_THEMES` through `themeToStyle`) as a grid of `stylePreview` self-portrait cards.
+
+**Root cause:** that is the **exact pattern the orientation (v2.49) documents as a known, abandoned freeze** — *"Clean-slate rebuild after the retrofit froze 4×… anything calling `unifiedStyleList`/`themeToStyle` over `BUILTIN_THEMES`… the Setter renders ONE preview, never a gallery of heavy cards — that was the freeze shape."* The clean-slate Setter **exists specifically to avoid it.** I read `stylePresets.ts` + `StylePresetsPanel` (where `stylePreview` over *saved* styles is fine) and reused them — but never cross-checked the **Setter's own** failure history, so I reintroduced the banned shape on the one surface it was banned from. (Note the asymmetry: `stylePreview` over a few *saved* styles is safe in `StylePresetsPanel`; it is `unifiedStyleList`/`themeToStyle` over `BUILTIN_THEMES` *as a gallery* that freezes.)
+
+**Rule:** before adding any UI to a surface with a **documented prior failure**, grep the orientation + Lessons-Learned for that surface's name and read what was *abandoned there and why* — a WA#4 architectural-impact step and an SO#8 cross-check that a "the engine functions exist and are used elsewhere" reading does **not** satisfy. A pattern that is safe on surface A can be a documented hard-freeze on surface B. For the Style Setter specifically: **no `unifiedStyleList` / `themeToStyle` / gallery-of-`stylePreview`-cards** — list saved styles as lightweight rows; the built-in themes do not belong in the Setter gallery.
+
+---
+
+*Last updated: 2026-06-05 (LL-032 added — MIG-070 §C Phase 6 reintroduced the documented
+`unifiedStyleList`/heavy-card gallery freeze on the Style Setter (orientation v2.49 / LL-014);
+the app went non-responsive on open. Cross-check a surface's own freeze history before adding UI).*
+*Earlier: 2026-06-05 (LL-031 added — SO #6 orientation-bump was batched across the
 MIG-070 §C feature commits and only written at handover; the tell was the Boss asking
 "Orientation file?". The bump must ride in the feature commit, never a trailing docs commit).*
 *Earlier: 2026-05-30 (LL-030 — Tauri WebView intercepts HTML5 drag-and-drop by default;
