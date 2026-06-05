@@ -634,13 +634,23 @@ This is the BASIC RULE in the wiring-task domain: don't make up which file is "t
 
 **Rule:** For in-page drag interactions (column/row reorder, drag-to-sort, kanban) in a Tauri app, **do not rely on HTML5 drag-and-drop.** Prefer raw **pointer events**: `onmousedown` on the handle + window `mousemove`/`mouseup`, a small movement threshold (≈5 px) to tell a drag from a click, and `document.elementFromPoint(x,y).closest('[data-col]')` for drop-target hit-testing. This is contained to the component, survives the WebView quirk, gives full control of the drag visual, and — unlike the alternative `dragDropEnabled: false` config — does **not** disable OS file-drop app-wide. Always: remove the window listeners on unmount (Perf Rule 4); set a `suppressNextClick` flag so a drag doesn't also fire the handle's click (e.g. sort); and set `user-select: none` on the draggable elements (and the container during a drag) or the pointer-drag will text-select everything it sweeps across.
 
+## LL-031: The Orientation Bump Rides In the Feature Commit — Never Batched at Handover
+
+**Symptom (2026-06-05, MIG-070 §C):** the Boss asked *"What about the Orientation file?"* during a PCS+O audit. That question is the **documented tell** of an SO #6 violation (memory `feedback_orientation_inline_with_commit`: *"If Eisa has to ask 'Orientation file?' — that's a SO #6 violation"*). The orientation file v2.52 **existed and was committed** — but the *process* was wrong: it had been batched and deferred.
+
+**Root cause:** the orientation v-bump was treated as **end-of-arc PCS housekeeping** instead of a **per-trigger obligation**. The migration-kickoff bump (v2.51, inline at Phase 0/1 `6d4c3e28`) felt "done," so eight subsequent §C commits were allowed to ship with **zero** orientation touch — three of them clear "subsystem ships a major feature" triggers (saved colour swatches `1a743c35`, focused per-element preview `33046ccc`, per-script fonts `e0df6063`). The bump was finally written only at handover, in a trailing docs commit (`4ce37ab2`) — i.e. batched across the very commits that should each have carried it.
+
+**Rule:** SO #6 is **per-trigger, not per-arc.** Every commit that ships a user-facing feature, opens/closes a BUG, adds an LL, rewords a top-principal, fixes a §-drift item, or bumps a version carries its orientation update **in that same commit** — a date-stamped section update at minimum, a version bump on a structural change. **Mid-migration is not an exception:** each phase that ships a major feature triggers, even though the migration as a whole is still open. The self-check: *if you are about to write a trailing "docs/handover" commit that bumps the orientation for features which shipped in earlier commits, you have already violated the rule — the bump belonged upstream.* And the loudest signal that you missed it is the Boss having to ask where the orientation file is.
+
 ---
 
-*Last updated: 2026-05-30 (LL-030 added after the MIG-065 §K column-reorder arc —
-Tauri WebView intercepts HTML5 drag-and-drop by default; rebuilt on pointer events
-after a button→span patch failed to address the real cause).*
+*Last updated: 2026-06-05 (LL-031 added — SO #6 orientation-bump was batched across the
+MIG-070 §C feature commits and only written at handover; the tell was the Boss asking
+"Orientation file?". The bump must ride in the feature commit, never a trailing docs commit).*
+*Earlier: 2026-05-30 (LL-030 — Tauri WebView intercepts HTML5 drag-and-drop by default;
+rebuilt on pointer events after a button→span patch failed to address the real cause).*
 *Earlier: 2026-05-23 (LL-028/029 — MIG-044 Phase 2 Sky View correction arc:
 Windows file-lock silent-build-failure during Tauri release build, and the BASIC
 RULE / Predecessor Lookup violation that wired the wrong .svelte file twice before
 grep-verifying the import graph).*
-*For: Constellation — in-page drag in Tauri WebViews + release-build verification + file-name vs. import-graph discipline*
+*For: Constellation — orientation/SO-#6 discipline + in-page drag in Tauri WebViews + release-build verification + file-name vs. import-graph discipline*

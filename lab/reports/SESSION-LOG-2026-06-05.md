@@ -49,3 +49,35 @@ Written at the close of a long multi-day run (≈33 commits across 2026-06-02 �
 - `docs/Constellation Orientation & Onboarding v2.52.md` — orientation bump.
 - `docs/MoCh/MoCh-2026-06-05-0848.md` — conversational trace.
 - `lab/reports/SESSION-LOG-2026-06-05.md` — this state-of-standing.
+
+---
+
+## MIG-070 §C — Phase 5 (link colours) — RESUMED 2026-06-05
+
+**Function in hand:** the Style Setter's new **"Links" category** (`src/lib/components/StyleSetter.svelte` overlay's left rail) — the 8 typed-link colours + add/delete/reset, plus the link-display toggles + pill shape. Writes through the **existing** save paths; introduces NO new storage model.
+
+**Phase-5 save path — VERIFIED (BASIC RULE, re-grepped, not from memory):**
+- Link-type colours/add/delete/reset → `saveLinkTypes(deltas)` at `src/lib/libraries/linkTypeRegistry.ts:137` → `invoke('save_universe_link_types', { deltas })` then `loadLinkTypes()` re-seed. (The plan's name `saveLinkTypes` is correct; it lives in `linkTypeRegistry.ts`, NOT `store.ts`, as the handover warned.) Reset helper `SEED_DEFAULTS`; minimal-delta reducer `toLinkTypeDeltas`. The existing editor is `src/lib/components/LinkTypesEditor.svelte` — it already does add/delete/recolour/reset via that path and reacts live via `linkTypesStore`. **Decision: REUSE it wholesale** (embed in the Setter; add an `embedded` prop to hide its SettingsModal-scoped `.setting-section-heading`/`.setting-desc`, since those classes are NOT global). Pill renderer reused: `src/lib/components/LinkTypePill.svelte`.
+- Display toggles `colourTypedLinks` (store.ts:3242, default true :3643) + `showTypedLinkLabels` (:3244, default true :3644) → `updateSettings({...})` (store.ts:4075), immediate write (matches the `scriptfont` precedent in the Setter — appSettings, not the per-Universe `styleOverride` draft).
+- Pill shape `linkPills.shape.{radius,height,fontWeight}` (store.ts:3337/3340, default :3787) → an `updatePillShape()` helper mirroring SettingsModal.svelte:654 (`updateSettings({ linkPills: { ...cur, shape: {...cur.shape, ...partial} } })`).
+
+**Predecessor → Replacement (per the Predecessor Lookup Rule — written BEFORE any edit):**
+- **Where it lives now (predecessor):** the link-styling controls are in `src/lib/components/SettingsModal.svelte` — the Link Types editor `<LinkTypesEditor/>` (Settings tab), and the display toggles + pill-shape sliders at `SettingsModal.svelte:2358–2416` (`showTypedLinkLabels` :2360, `colourTypedLinks` :2369, pill radius :2392 / height :2404 / weight :2414 via `updatePillShape`/`updateSettings`). Introduced by MIG-067 §E/§G (registry + editor) and MIG-066/P3 (pill shape).
+- **Where the replacement lives:** **the SAME place — storage/save path is UNCHANGED.** The new Setter "Links" category is an **ADDITIONAL editing front-end** that writes through the exact same `saveLinkTypes` (registry → `.constellation/link-types.json`) and `appSettings` (`updateSettings`/`updatePillShape`) paths. No store wrapper is removed, no Tauri command retired, no writable store dropped, no wiring relocated across components.
+- **What gets cut / kept:** **Nothing is cut in Phase 5.** Per the migration's BUG-015-avoidance discipline, the SettingsModal link controls stay LIVE through Phase 8; they retire only at the Phase 9.1 parity gate. Both surfaces write identical values to one storage, so the Backlinks/Outgoing/editor surfaces (which already react to `linkTypesStore` + `$appSettings.linkPills.shape`) recolour/reshape live from either surface. Frozen MIG-069 link-colours preset path (`applyPreset` merge-by-id) is NOT touched.
+
+**Plan split (matches PLAN §5, ~2 commits):**
+- **§5.1** — "Links" category + embedded `<LinkTypesEditor embedded/>` (colours/add/delete/reset) + live pill-row preview. Verify: recolour → Backlinks/Outgoing/editor update live; frozen link-colours preset still applies.
+- **§5.2** — display toggles (`colourTypedLinks`, `showTypedLinkLabels`) + pill shape (radius/height/weight). **[BOSS TEST]** colour + pill radius update live + persist.
+
+**i18n note:** Setter strings stay **plain English** (consistent with the rest of the Setter); Setter UI localization to 15 languages is the Boss-locked penultimate migration step (decision #2), done once after all content is final. The embedded `LinkTypesEditor` keeps its own `$t()` (it's the Settings component).
+
+---
+
+## SO #6 process correction — orientation bump was batched (2026-06-05)
+
+**What happened:** the orientation v-bump for the §C feature run was **batched and deferred**, violating SO #6 (TOP PRINCIPAL: the bump rides in the SAME commit as its trigger). Timeline: v2.51 bumped **inline** at Phase 0/1 (`6d4c3e28`) — correct; then **8 commits shipped with no orientation touch**, three of them "subsystem ships a major feature" triggers — saved colour swatches (`1a743c35`), focused per-element preview (`33046ccc`), per-script fonts (`e0df6063`). v2.52 was only written at handover, in a trailing docs commit (`4ce37ab2`). **The tell:** Eisa had to ask *"What about the Orientation file?"* — the documented signal of an SO #6 violation.
+
+**Why it's logged:** pushed history can't be un-batched. Recorded here + as **LL-031** so the rule is enforced durably.
+
+**Correction (in force from Phase 5):** every commit that ships a user-facing feature carries its orientation update **in the same commit** — date-stamped section update at minimum, version bump on structural change. Mid-migration is **not** an exception; each phase that ships a major feature triggers. If a trailing "docs/handover" commit is bumping the orientation for features that shipped earlier, the bump already belonged upstream. (Handover doc §9 already states this for the next session.)

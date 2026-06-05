@@ -10,6 +10,8 @@
 >
 > **Where the migration stands.** Remaining phases: **5** link colours (NEXT) · **6** unified Themes+Styles gallery · **7** the 4 no-UI gaps (accent picker · dark/light/system toggle · custom-CSS editor · per-library appearance + its missing apply path) · **8** second-screen full-style sync · Setter localization · **9** retire the old Appearance/Style-Settings tabs at a parity gate (+ the deferred Phase-2 catalog parity). **Resume from `docs/MIG-070C-HANDOVER.md`** (self-contained, with a copy-paste prompt) → `docs/MIG-070C-PLAN.md`. State-of-standing: `lab/reports/SESSION-LOG-2026-06-05.md`; MoCh `docs/MoCh/MoCh-2026-06-05-0848.md`. Frozen MIG-069 presets remain untouched; `styleOverride`/`styleSwatches`/`perScriptFonts` are additive + rollback-safe.
 >
+> *(2026-06-05, post-handover process note) **LL-031** added: the orientation bump rides in the feature commit, **never batched at handover** (SO #6) — recorded after a batching slip across the §C phase commits (v2.51 bumped inline at Phase 0/1, then 8 feature commits shipped with no orientation touch, v2.52 batched at handover). See `docs/LESSONS-LEARNED.md` §LL-031 + `lab/reports/SESSION-LOG-2026-06-05.md`.*
+>
 > ---
 >
 > **What changed in v2.51** (**MIG-070 §3 — every interface + Markdown element is editable in the Style Setter (Boss-validated); §C — the "unify all styling into the Style Setter" /migration kicks off**):
