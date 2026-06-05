@@ -73,6 +73,8 @@ Written at the close of a long multi-day run (≈33 commits across 2026-06-02 �
 
 **i18n note:** Setter strings stay **plain English** (consistent with the rest of the Setter); Setter UI localization to 15 languages is the Boss-locked penultimate migration step (decision #2), done once after all content is final. The embedded `LinkTypesEditor` keeps its own `$t()` (it's the Settings component).
 
+**Build + commit (this run).** Implemented §5.1 + §5.2 as ONE coherent commit (the Links category is one surface; the plan's "~2 commits" was an estimate). Touched: `src/lib/components/StyleSetter.svelte` (Links category + `linkColors`/`linkDisplay` elements + `toggle`/`pillrange`/`pillselect` control types + focused previews + helpers `setPillShape`/`setToggle`/`pillShape`/`previewLinkIds`/`supportsColor`) and `src/lib/components/LinkTypesEditor.svelte` (`embedded` prop). `npm run check`: **clean for both files** (the only project errors — `store.ts:2481` LinkLifecycle-dedupe + `PropertyEditor` node-type — pre-date this work). Build `npm run tauri build -- --no-bundle` OK (2m01s); binary mtime advanced **`2026-06-04 20:22:27` → `2026-06-05 09:31:17`**. **Orientation bumped v2.52 → v2.53 IN THIS COMMIT** (LL-031 — new file `docs/Constellation Orientation & Onboarding v2.53.md`, v2.52 retained). Boss test staged next (`feedback_staged_tests` — Stage 1 first). Frozen MIG-069 presets untouched; old SettingsModal link controls still live (retire at Phase 9.1).
+
 ---
 
 ## SO #6 process correction — orientation bump was batched (2026-06-05)

@@ -18,7 +18,13 @@
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
 	import { styleSetterOpen, closeStyleSetter } from '$lib/stores/styleSetter';
-	import { appSettings, mergeStyleOverride, clearAllStyleOverride, addStyleSwatch, removeStyleSwatch, setPerScriptFont } from '$lib/libraries/store';
+	import { appSettings, mergeStyleOverride, clearAllStyleOverride, addStyleSwatch, removeStyleSwatch, setPerScriptFont, updateSettings } from '$lib/libraries/store';
+	// §C Phase 5 — link styling reuses the EXISTING single sources (no new storage model): the §G
+	// Link-Types editor (one save path → Backlinks/Outgoing/editor recolour live) + the self-contained
+	// typed-link pill. The display toggles + pill shape are appSettings, written via updateSettings.
+	import LinkTypesEditor from './LinkTypesEditor.svelte';
+	import LinkTypePill from './LinkTypePill.svelte';
+	import { linkTypesStore, linkTypeColor, SEED_IDS } from '$lib/libraries/linkTypeRegistry';
 
 	// A control writes one REAL app CSS variable. `color` → hex; `select` → a stack/keyword;
 	// `range` → a number + unit (e.g. `32px`, or `700` when unit is '').
@@ -26,7 +32,13 @@
 		| { label: string; type: 'color'; var: string }
 		| { label: string; type: 'select'; var: string; options: [string, string][] }
 		| { label: string; type: 'range'; var: string; min: number; max: number; step: number; unit: string; def: number }
-		| { label: string; type: 'scriptfont'; script: string; options: [string, string][] };  // writes appSettings.perScriptFonts[script]
+		| { label: string; type: 'scriptfont'; script: string; options: [string, string][] }  // writes appSettings.perScriptFonts[script]
+		// §C Phase 5 — settings-backed controls (write appSettings immediately, like scriptfont — NOT
+		// the per-Universe styleOverride draft): a boolean toggle, and the link-pill shape (radius/height
+		// as ranges, fontWeight as a select). They flow through updateSettings → every panel reacts.
+		| { label: string; type: 'toggle'; setting: 'colourTypedLinks' | 'showTypedLinkLabels' }
+		| { label: string; type: 'pillrange'; prop: 'radius' | 'height'; min: number; max: number; step: number; unit: string }
+		| { label: string; type: 'pillselect'; prop: 'fontWeight'; options: [string, string][] };
 
 	// §C Phase 4 — a curated typeface list (cross-platform stacks). A full installed-fonts list +
 	// per-script fonts + font-theme/numerals (from the Language tab) are the deeper follow-up.
@@ -248,6 +260,17 @@
 		cSidebar: { name: 'Sidebar shell', controls: [
 			{ label: 'Width', type: 'range', var: '--sidebar-width', min: 180, max: 420, step: 2, unit: 'px', def: 260 },
 			{ label: 'Background', type: 'color', var: '--sidebar-bg' } ] },
+		// §C Phase 5 — Links. Typed-link COLOURS are the §G Link-Types registry (the single source —
+		// the right rail embeds the existing editor; recolour/add/delete/reset reflect in Backlinks,
+		// Outgoing, and the in-editor links live). Display = appSettings toggles + pill shape. None of
+		// these are CSS-var overrides, so they bypass the draft and write their own stores directly.
+		linkColors: { name: 'Typed-link colours', controls: [] },
+		linkDisplay: { name: 'Link display', controls: [
+			{ label: 'Colour typed links', type: 'toggle', setting: 'colourTypedLinks' },
+			{ label: 'Show type labels', type: 'toggle', setting: 'showTypedLinkLabels' },
+			{ label: 'Pill corner radius', type: 'pillrange', prop: 'radius', min: 0, max: 20, step: 1, unit: 'px' },
+			{ label: 'Pill height', type: 'pillrange', prop: 'height', min: 14, max: 32, step: 1, unit: 'px' },
+			{ label: 'Pill label weight', type: 'pillselect', prop: 'fontWeight', options: [['Normal', '400'], ['Semibold', '600'], ['Bold', '700'], ['Extra bold', '900']] } ] },
 	};
 	// §3B — the left rail is organised into CATEGORIES (a.k.a. Surfaces), each grouping its
 	// elements (Eisa). Interface + Editor both preview the main app window ('editor' surface);
@@ -257,6 +280,7 @@
 		{ key: 'components', name: 'Components', surface: 'editor', elements: ['cDock', 'cToolbar', 'cLayoutBar', 'cTabs', 'cRightSidebar', 'cButtons', 'cTags', 'cSidebar'] },
 		{ key: 'editor', name: 'Editor', surface: 'editor', elements: ['noteBg', 'text', 'accent', 'link', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'bold', 'italic', 'strike', 'code', 'quote'] },
 		{ key: 'global', name: 'Global', surface: 'editor', elements: ['gBackgrounds', 'gTextShades', 'gStatus', 'gAccent', 'gType', 'gShape', 'fonts'] },
+		{ key: 'links', name: 'Links', surface: 'editor', elements: ['linkColors', 'linkDisplay'] },
 		{ key: 'sky', name: 'Sky View', surface: 'sky', elements: ['accent', 'link'] },
 		{ key: 'org', name: 'OrgChart', surface: 'org', elements: ['accent', 'link'] },
 		{ key: 'index', name: 'Index', surface: 'index', elements: ['accent'] },
@@ -327,6 +351,25 @@
 		const target = activeColorVar ?? sel?.controls.find((c) => c.type === 'color')?.var ?? null;
 		if (target) { activeColorVar = target; setVar(target, hex); }
 	}
+	// §C Phase 5 — link display (appSettings, written immediately like scriptfont; NOT the draft).
+	// Pill shape feeds the LinkTypePill + Backlinks/Outgoing panels; toggles gate the in-editor look.
+	const pillShape = $derived($appSettings.linkPills?.shape ?? { radius: 10, height: 20, fontWeight: 700 });
+	function setPillShape(prop: 'radius' | 'height' | 'fontWeight', val: number) {
+		const lp = get(appSettings).linkPills;
+		const shape = { ...lp.shape, [prop]: val } as typeof lp.shape;
+		updateSettings({ linkPills: { ...lp, shape } });
+	}
+	function setToggle(setting: 'colourTypedLinks' | 'showTypedLinkLabels', val: boolean) {
+		if (setting === 'colourTypedLinks') updateSettings({ colourTypedLinks: val });
+		else updateSettings({ showTypedLinkLabels: val });
+	}
+	// Live link-type ids (incl. custom types) for the colours preview; seed fallback before load.
+	const previewLinkIds = $derived.by(() => {
+		const reg = $linkTypesStore;
+		return reg.length ? reg.map((t) => t.id) : [...SEED_IDS];
+	});
+	// 'supports' colour, reactive to a §G recolour, for the in-note link/label preview.
+	const supportsColor = $derived.by(() => { void $linkTypesStore; return linkTypeColor('supports'); });
 	function selectEl(key: string) {
 		selected = key;
 		// keep the open category in sync with the clicked preview part (stay if already here).
@@ -536,6 +579,28 @@
 							<span class="ss-body">中文 · 日本語 · 한국어 · हिन्दी · Кириллица</span>
 							<span class="ss-note-hint">Per-script fonts apply across the whole app — open a note in that script to see your chosen font. (This preview uses your Latin font.)</span>
 						</div>
+					{:else if pk === 'linkColors'}
+						<div class="ss-focus ss-fcard ss-flinks">
+							<span class="ss-flink-h">Typed-link pills — recolour, add, or delete on the right; every panel updates live</span>
+							<div class="ss-flink-pills">
+								{#each previewLinkIds as id (id)}<LinkTypePill {id} />{/each}
+							</div>
+							<span class="ss-note-hint">These are the real pills from Backlinks, Outgoing, and the dashboard — one colour source.</span>
+						</div>
+					{:else if pk === 'linkDisplay'}
+						<div class="ss-focus ss-fcard ss-fnote ss-flinks">
+							<span class="ss-flink-h">In a note</span>
+							<span class="ss-body">
+								An apple
+								{#if $appSettings.showTypedLinkLabels}<span class="ss-flabel" style="color:{supportsColor}">supports</span>{/if}
+								<span class="ss-link" style={$appSettings.colourTypedLinks ? `color:${supportsColor}` : ''}>[[Health]]</span>
+								— a typed connection.
+							</span>
+							<span class="ss-flink-h">In the Backlinks / Outgoing panels</span>
+							<div class="ss-flink-pills">
+								<LinkTypePill id="supports" /><LinkTypePill id="contradicts" /><LinkTypePill id="causes" />
+							</div>
+						</div>
 					{/if}
 				</div>
 			</main>
@@ -545,7 +610,13 @@
 				{#if sel}
 					<div class="ss-rlabel">Selected element</div>
 					<div class="ss-selname">{sel.name}</div>
-					{#each sel.controls as c (c.label)}
+					{#if selected === 'linkColors'}
+							<!-- §C Phase 5 — reuse the §G Link-Types editor verbatim (the single colour
+							     source: one save path → Backlinks/Outgoing/editor recolour live). `embedded`
+							     hides its own Settings heading/desc; recolour/add/delete/reset are unchanged. -->
+							<LinkTypesEditor embedded />
+						{:else}
+						{#each sel.controls as c (c.label)}
 						<div class="ss-ctrl">
 							{#if c.type === 'range'}
 								<label for={'ss-' + c.var}>{c.label}<span class="ss-rval">{curNum(c.var, c.def)}{c.unit}</span></label>
@@ -563,6 +634,23 @@
 								<select id={'ss-sf-' + c.script} value={$appSettings.perScriptFonts?.[c.script] ?? ''} onchange={(e) => setPerScriptFont(c.script, (e.currentTarget as HTMLSelectElement).value)}>
 									{#each c.options as [lbl, val] (lbl)}<option value={val}>{lbl}</option>{/each}
 								</select>
+							{:else if c.type === 'toggle'}
+								<label class="ss-toggle">
+									<span>{c.label}</span>
+									<input type="checkbox" checked={$appSettings[c.setting]}
+										onchange={(e) => setToggle(c.setting, (e.currentTarget as HTMLInputElement).checked)} />
+								</label>
+							{:else if c.type === 'pillrange'}
+								<label for={'ss-pill-' + c.prop}>{c.label}<span class="ss-rval">{pillShape[c.prop]}{c.unit}</span></label>
+								<input id={'ss-pill-' + c.prop} type="range" min={c.min} max={c.max} step={c.step}
+									value={pillShape[c.prop]}
+									oninput={(e) => setPillShape(c.prop, parseInt((e.currentTarget as HTMLInputElement).value))} />
+							{:else if c.type === 'pillselect'}
+								<label for={'ss-pill-' + c.prop}>{c.label}</label>
+								<select id={'ss-pill-' + c.prop} value={String(pillShape[c.prop])}
+									onchange={(e) => setPillShape(c.prop, parseInt((e.currentTarget as HTMLSelectElement).value))}>
+									{#each c.options as [lbl, val] (val)}<option value={val}>{lbl}</option>{/each}
+								</select>
 							{:else}
 								<label for={'ss-' + c.var}>{c.label}</label>
 								<select id={'ss-' + c.var} value={curVal(c.var)} onchange={(e) => setVar(c.var, (e.currentTarget as HTMLSelectElement).value)}>
@@ -571,13 +659,14 @@
 							{/if}
 						</div>
 					{/each}
-					{#if ($appSettings.styleSwatches ?? []).length}
+					{#if ($appSettings.styleSwatches ?? []).length && sel.controls.some((c) => c.type === 'color')}
 						<div class="ss-rlabel">Saved colours</div>
 						<div class="ss-swatches">
 							{#each $appSettings.styleSwatches as sw (sw)}
 								<button class="ss-sw" style="background:{sw}" title={sw + ' — click to apply · right-click to remove'} aria-label={sw} onclick={() => applySwatch(sw)} oncontextmenu={(e) => { e.preventDefault(); removeStyleSwatch(sw); }}></button>
 							{/each}
 						</div>
+					{/if}
 					{/if}
 				{:else}
 					<div class="ss-empty"><span class="ss-big">⊹</span>Click any part of the interface to style it. Its controls appear here, and changes show instantly.</div>
@@ -732,4 +821,11 @@
 	.ss-fbox { width: 44px; height: 30px; border-radius: var(--radius-m, 8px); background: var(--background-secondary, #ececed); border: var(--border-width, 1px) solid var(--background-modifier-border, #ccc); display: inline-block; }
 	.ss-empty { color: var(--c-muted); font-size: 13px; line-height: 1.6; margin-top: 28px; text-align: center; }
 	.ss-big { font-size: 26px; opacity: .5; display: block; margin-bottom: 8px; }
+	/* §C Phase 5 — Links category: the settings-backed toggle row + the typed-link previews. */
+	.ss-toggle { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px; color: var(--c-text); cursor: pointer; }
+	.ss-toggle input { width: 16px; height: 16px; accent-color: var(--c-accent); cursor: pointer; flex: none; }
+	.ss-flinks { gap: 14px; }
+	.ss-flink-h { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted, #8a8a8a); }
+	.ss-flink-pills { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
+	.ss-flabel { font-size: 10px; font-weight: 700; text-transform: lowercase; margin-inline-end: 2px; }
 </style>

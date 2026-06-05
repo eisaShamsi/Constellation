@@ -23,6 +23,11 @@
 		getLinkTypes, linkTypesStore, loadLinkTypes, saveLinkTypes, toLinkTypeDeltas, SEED_IDS, SEED_DEFAULTS, type LinkTypeDef,
 	} from '$lib/libraries/linkTypeRegistry';
 
+	// MIG-070 §C Phase 5 — when embedded in the Style Setter's "Links" category, hide the
+	// Settings-scoped heading/desc (the Setter shows its own element name); the list/add/reset
+	// (all `.lte-*` self-styled) render unchanged. Default false → the Settings tab is untouched.
+	let { embedded = false }: { embedded?: boolean } = $props();
+
 	let types = $state<LinkTypeDef[]>([]);
 	let loaded = $state(false);
 	let saving = $state(false);
@@ -133,10 +138,12 @@
 </script>
 
 <div class="lte">
-	<div class="setting-section-heading">{$t('settings.linkTypes.title') || 'Link Types'}</div>
-	<div class="setting-desc" style="margin-bottom: 10px;">
-		{$t('settings.linkTypes.desc') || 'The vocabulary of typed connections. Add your own types — top-level, or nested under one of the eight built-ins — to match how you think. They flow into the editor, autocomplete, 360.3D, and Base columns. The eight built-ins can be recoloured but not deleted.'}
-	</div>
+	{#if !embedded}
+		<div class="setting-section-heading">{$t('settings.linkTypes.title') || 'Link Types'}</div>
+		<div class="setting-desc" style="margin-bottom: 10px;">
+			{$t('settings.linkTypes.desc') || 'The vocabulary of typed connections. Add your own types — top-level, or nested under one of the eight built-ins — to match how you think. They flow into the editor, autocomplete, 360.3D, and Base columns. The eight built-ins can be recoloured but not deleted.'}
+		</div>
+	{/if}
 
 	{#if !loaded}
 		<div class="lte-state">{$t('lensBlock.loading') || 'Loading…'}</div>
