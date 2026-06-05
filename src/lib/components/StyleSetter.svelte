@@ -18,7 +18,7 @@
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
 	import { styleSetterOpen, closeStyleSetter } from '$lib/stores/styleSetter';
-	import { appSettings, mergeStyleOverride, clearAllStyleOverride, addStyleSwatch, removeStyleSwatch, setPerScriptFont, updateSettings, setLiveStyleDraft, clearLiveStyleDraft } from '$lib/libraries/store';
+	import { appSettings, mergeStyleOverride, clearAllStyleOverride, addStyleSwatch, removeStyleSwatch, setPerScriptFont, updateSettings, setLiveStyleDraft, clearLiveStyleDraft, BUILTIN_THEMES } from '$lib/libraries/store';
 	// §C Phase 5 — link styling reuses the EXISTING single source: the §G Link-Types editor (one save
 	// path → Backlinks/Outgoing/editor recolour live). Display toggles + pill shape are appSettings.
 	import LinkTypesEditor from './LinkTypesEditor.svelte';
@@ -27,7 +27,7 @@
 	// stylePreview here — rendering BUILTIN_THEMES through themeToStyle as a gallery of self-portrait
 	// cards is the documented main-thread FREEZE shape that the clean-slate Setter exists to avoid
 	// (orientation v2.49; LL-014). The Setter lists only the user's SAVED styles, as lightweight rows.
-	import { loadStylePresets, saveStylePresets, newPresetFromCurrent, applyPreset, SECTION_CATALOGUE, type StylePreset } from '$lib/libraries/stylePresets';
+	import { loadStylePresets, saveStylePresets, newPresetFromCurrent, applyPreset, exportPreset, SECTION_CATALOGUE, type StylePreset } from '$lib/libraries/stylePresets';
 
 	// A control writes one REAL app CSS variable. `color` → hex; `select` → a stack/keyword;
 	// `range` → a number + unit (e.g. `32px`, or `700` when unit is '').
@@ -399,6 +399,32 @@
 		await saveStylePresets($state.snapshot(savedStyles) as StylePreset[]);
 	}
 
+	// §C Phase 6.3 — saved-style CRUD in the Setter (rename / delete / export), mirroring the
+	// Settings → Styles panel. Lightweight rows only — NO stylePreview/unifiedStyleList (LL-032).
+	let renamingId = $state<string | null>(null);
+	let renameValue = $state('');
+	function startRename(p: StylePreset) { renamingId = p.id; renameValue = p.name; }
+	async function confirmRename() {
+		const id = renamingId;
+		savedStyles = savedStyles.map((s) => (s.id === id ? { ...s, name: renameValue.trim() || s.name } : s));
+		renamingId = null;
+		await saveStylePresets($state.snapshot(savedStyles) as StylePreset[]);
+	}
+	async function removeStyle(p: StylePreset) {
+		savedStyles = savedStyles.filter((s) => s.id !== p.id);
+		await saveStylePresets($state.snapshot(savedStyles) as StylePreset[]);
+	}
+
+	// §C item 3 — a LIGHTWEIGHT built-in/custom theme picker (a NAME dropdown, never a stylePreview
+	// card gallery — LL-032). Applying sets activeThemeId/colorScheme; the +layout effect re-derives
+	// the theme and the user's styleOverride rides on top.
+	const themePickList = $derived([...BUILTIN_THEMES, ...($appSettings.customThemes ?? [])]);
+	function applyBuiltinTheme(id: string) {
+		if (!id) return;
+		const t = themePickList.find((x) => x.id === id);
+		if (t) { updateSettings({ activeThemeId: t.id, colorScheme: t.type }); draftName = t.name; }
+	}
+
 	// §C redesign — drag the corner grip to resize the panel; clamp to the viewport, persist on release.
 	function startResize(e: PointerEvent) {
 		e.preventDefault();
@@ -542,10 +568,30 @@
 					{/if}
 				{/each}
 				<div class="ss-divider"></div>
+				<div class="ss-rlabel">Theme</div>
+				<select class="ss-theme-pick" value={$appSettings.activeThemeId ?? ''} onchange={(e) => applyBuiltinTheme((e.currentTarget as HTMLSelectElement).value)}>
+					<option value="">— pick a theme —</option>
+					{#each themePickList as t (t.id)}<option value={t.id}>{t.name}</option>{/each}
+				</select>
 				<div class="ss-rlabel">Saved styles</div>
 				<div class="ss-stylelist">
 					{#each savedStyles as p (p.id)}
-						<button class="ss-srow" onclick={() => applyStyle(p)} title={'Apply ' + p.name} dir="auto">{p.name}</button>
+						{#if renamingId === p.id}
+							<div class="ss-srow-wrap">
+								<input class="ss-srow-rename" bind:value={renameValue} dir="auto"
+									onkeydown={(e) => { if (e.key === 'Enter') confirmRename(); if (e.key === 'Escape') renamingId = null; }} />
+								<button class="ss-srow-ic" title="Save name" aria-label="Save name" onclick={confirmRename}>✓</button>
+							</div>
+						{:else}
+							<div class="ss-srow-wrap">
+								<button class="ss-srow" onclick={() => applyStyle(p)} title={'Apply ' + p.name} dir="auto">{p.name}</button>
+								<span class="ss-srow-actions">
+									<button class="ss-srow-ic" title="Export" aria-label="Export" onclick={() => exportPreset(p)}>⤓</button>
+									<button class="ss-srow-ic" title="Rename" aria-label="Rename" onclick={() => startRename(p)}>✎</button>
+									<button class="ss-srow-ic ss-srow-del" title="Delete" aria-label="Delete" onclick={() => removeStyle(p)}>✕</button>
+								</span>
+							</div>
+						{/if}
 					{/each}
 					{#if !savedStyles.length}<div class="ss-srow-empty">Design a look, then save it as a named style you can reuse.</div>{/if}
 					<button class="ss-srow ss-srow-save" onclick={saveAsStyle}>+ Save current as a style</button>
@@ -772,6 +818,18 @@
 	.ss-srow:hover { border-color: var(--c-accent); }
 	.ss-srow-save { border-style: dashed; color: var(--c-muted); text-align: center; }
 	.ss-srow-empty { font-size: 11.5px; color: var(--c-muted); padding: 4px 6px; line-height: 1.4; }
+	/* §C Phase 6.3 — per-row CRUD (export / rename / delete), revealed on hover. */
+	.ss-srow-wrap { display: flex; align-items: center; gap: 2px; }
+	.ss-srow-wrap .ss-srow { flex: 1; min-width: 0; }
+	.ss-srow-actions { display: none; flex: none; }
+	.ss-srow-wrap:hover .ss-srow-actions { display: flex; }
+	.ss-srow-ic { background: none; border: none; color: var(--c-muted); cursor: pointer; font-size: 12px; line-height: 1; padding: 4px 5px; border-radius: 5px; }
+	.ss-srow-ic:hover { background: var(--c-surface2); color: var(--c-text); }
+	.ss-srow-del:hover { color: var(--text-error, #e5484d); }
+	.ss-srow-rename { flex: 1; min-width: 0; font: inherit; font-size: 12.5px; padding: 5px 8px; border: 1px solid var(--c-accent); border-radius: 6px; background: var(--c-bg); color: var(--c-text); outline: none; }
+	/* §C item 3 — lightweight theme picker (a name dropdown, never a card gallery — LL-032). */
+	.ss-theme-pick { width: 100%; padding: 6px 8px; border-radius: 7px; border: 1px solid var(--c-border); background: var(--c-surface2); color: var(--c-text); font: inherit; font-size: 12.5px; margin-bottom: 6px; cursor: pointer; }
+	.ss-theme-pick option { background: var(--c-surface); color: var(--c-text); }
 	.ss-center { grid-area: center; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; gap: 10px; background: var(--background-secondary, #14141c); }
 	.ss-hint { font-size: 12px; color: var(--c-muted); }
 	.ss-stage { position: relative; }

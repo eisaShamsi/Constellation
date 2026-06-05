@@ -120,6 +120,12 @@ Written at the close of a long multi-day run (≈33 commits across 2026-06-02 �
 - **Fix:** removed `unifiedStyleList` + `stylePreview` from the Setter; the **Saved styles** list is now **lightweight name rows** (just `savedStyles`, click → `applyStyle`; no built-in-theme cards, no self-portraits, no `BUILTIN_THEMES`). The MIG-069 save/apply engine (`applyPreset`/`newPresetFromCurrent`/`saveStylePresets`) is untouched — that's proven-safe (it's exactly what `StylePresetsPanel` calls). The `styleOverride` preset section (6.A) stays.
 - svelte-check clean; rebuilt OK (1m58s); binary mtime **`17:12:32` → `17:30:18`**. Re-test pending. **Built-in themes are no longer shown in the Setter gallery** (a deliberate regression to stay clear of the freeze shape) — note for Eisa; a safe theme picker can return later if wanted.
 
+**Freeze fix — PASS; then items 1 > 2 > 3 (Eisa's order, 2026-06-05).** Re-test passed ("Pass. Great job!"): the Setter opens, named Styles save/apply.
+1. **Push** — `git push` (`fecc3ce9..6c6f3792`); all commits on `main`.
+2. **Phase 6.3 — saved-style CRUD in the Setter.** Added `renamingId`/`renameValue` + `startRename`/`confirmRename`/`removeStyle` and `exportPreset` per row (hover-revealed ⤓ export / ✎ rename / ✕ delete; inline rename), persisting via `saveStylePresets`. Mirrors `StylePresetsPanel`; **lightweight rows only** (LL-032 — no `stylePreview`/cards).
+3. **Item 3 — lightweight theme picker.** `themePickList = $derived([...BUILTIN_THEMES, ...customThemes])` rendered as a `<select>` NAME dropdown (no `stylePreview`, no cards — LL-032-safe); `applyBuiltinTheme(id)` → `updateSettings({ activeThemeId, colorScheme })`; the user's `styleOverride` rides on top. Recovers the built-in-themes regression from the freeze fix.
+- svelte-check clean; built OK (2m01s); binary mtime **`17:30:18` → `17:51:49`**. Orientation v2.54 carries a dated 6.3/theme-picker addendum (LL-031). **[BOSS TEST] pending.** Remaining Setter work: Option E **D** → **C**; batched 14-lang help; `/simplify`.
+
 ---
 
 ## SO #6 process correction — orientation bump was batched (2026-06-05)
