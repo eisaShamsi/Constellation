@@ -1,7 +1,7 @@
 # MIG-070 §C — HANDOVER (Unify all styling into the Style Setter)
 
-**Written:** 2026-06-05 · **At commit:** `b49658e1` · **Branch:** `main` · **Working tree:** clean (only machine-local `.claude/settings.local.json`).
-**Binary:** `src-tauri/target/release/constellation.exe` mtime `2026-06-04 20:22:27` — current (no code change since the last build; docs-only since).
+**Written:** 2026-06-05 (updated post-handover) · **Latest commit:** `3f01ce1b` (docs) · **Branch:** `main` · **Working tree:** ⚠ **NOT clean** — Phase 5 §5.1 is in-flight + uncommitted (see §4); run `git status` before assuming anything.
+**Binary:** `src-tauri/target/release/constellation.exe` mtime `2026-06-04 20:22:27` — reflects committed code only; the in-flight Phase 5 §5.1 edits are **NOT built**. Rebuild before testing §5.1.
 
 This is the single file a fresh session reads to resume MIG-070 §C cold. It is self-contained; the authoritative companions are:
 - **Architect + audit + invariants + rollback:** `docs/MIG-070-style-merge-AUDIT.md`
@@ -44,6 +44,8 @@ Constellation had **THREE styling surfaces with three storage models** — the S
 ---
 
 ## 4. Next up — Phase 5: Link colours (~2 commits)
+
+> ⚠ **In-flight (2026-06-05):** §5.1 has **already been started in this working tree (uncommitted)** by a parallel session — `LinkTypesEditor.svelte` gains an `embedded` prop, `StyleSetter.svelte` gains the "Links" category embedding `<LinkTypesEditor embedded/>`. **Do not revert or re-implement** — `git status` and read the working-tree diff first. §5.2 (display toggles + pill shape) not started. Detailed Phase-5 prep (verified save paths, Predecessor→Replacement entry) is in `lab/reports/SESSION-LOG-2026-06-05.md`.
 
 From `docs/MIG-070C-PLAN.md` §5:
 - **5.1** New **"Links" category** in the Setter: the **8 typed-link colours** + add/delete/reset, written through the **shared link-type save path** (so the panels — Backlinks/Outgoing/pills — recolour live). *Verify:* recolour → panels update live; the frozen link-colours preset still applies.

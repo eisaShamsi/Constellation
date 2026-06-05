@@ -18,8 +18,9 @@ Written at the close of a long multi-day run (≈33 commits across 2026-06-02 �
 - **Decisions locked:** (1) interface-language selector stays in **Settings → Language** (removed from the Setter; commit `b49658e1`); (2) Setter UI localization (15 langs) happens AFTER all content is final.
 
 ### (b) At-risk / in-flight / uncommitted
-- **Nothing uncommitted** beyond machine-local `.claude/settings.local.json`. No in-flight code edit. Clean handover point.
-- The last commit (`b49658e1`) was a control-removal with **no Boss test outstanding** (per-script fonts already passed).
+- **⚠ Phase 5 §5.1 is IN-FLIGHT and UNCOMMITTED in the working tree** (owned by a parallel session — **leave untouched**, per Eisa 2026-06-05): `src/lib/components/LinkTypesEditor.svelte` (+15 — new `embedded` prop hides the Settings-scoped heading/desc when reused inside the Setter) and `src/lib/components/StyleSetter.svelte` (+69 — the new "Links" category embedding `<LinkTypesEditor embedded/>`). **Not staged, not built, not tested.** A fresh session must NOT assume a clean tree — run `git status` first; do **not** revert or commit these without confirming ownership.
+- Also machine-local `.claude/settings.local.json` (never committed).
+- Last committed code change: `b49658e1` (locale-selector removal). Latest commit overall: `3f01ce1b` (SO #6 / LL-031 docs). Per-script fonts already Boss-validated; **no Boss test outstanding on committed code** (the in-flight §5.1 edits are unbuilt, so nothing to test there yet).
 
 ### (c) Known-broken / known-interim
 - **`note_links.link_type` globally `'relates'`** (memo `project_note_links_link_type_relates_bug.md`) — foundational, separate from MIG-070; Phase 5 must not assume link_type is correctly populated. Not a MIG-070 fix.
@@ -28,7 +29,7 @@ Written at the close of a long multi-day run (≈33 commits across 2026-06-02 �
 - **Deferred Phase 2** (catalog parity for ~17 Setter-only vars) — folded into Phase 9 (it's parity plumbing for the soon-retired tab; the Setter works via `styleOverride` regardless).
 
 ### (d) Pending — not started
-- **Phase 5 — link colours** (NEXT): 8 typed-link colours via the shared link-type save path (`LinkTypesEditor.svelte` / `linkTypeRegistry.ts` — confirm the exact save fn) + display toggles (`colourTypedLinks` L3242, `showTypedLinkLabels` L3244) + pill shape (`linkPills` L3337).
+- **Phase 5 — link colours** (**§5.1 IN-FLIGHT/uncommitted — see §(b); §5.2 not started**): 8 typed-link colours via the shared link-type save path (`LinkTypesEditor.svelte` / `linkTypeRegistry.ts` — confirm the exact save fn) + display toggles (`colourTypedLinks` L3242, `showTypedLinkLabels` L3244) + pill shape (`linkPills` L3337).
 - **Phase 6** — unify Themes + MIG-069 Presets into one "Styles" gallery (read-time non-destructive).
 - **Phase 7** — 4 no-UI gaps (accent picker · dark/light/system · custom-CSS editor · per-library appearance + its MISSING apply path, ⚠ LL-023 clean clear-down).
 - **Phase 8** — second-screen full-style sync + live re-sync.
