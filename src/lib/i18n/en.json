@@ -3050,6 +3050,7 @@
 		"importError": "That file is not a valid Constellation style.",
 		"section": {
 			"colorsTheme": "Colours & theme",
+			"styleOverride": "Setter look (custom styling)",
 			"fonts": "Fonts",
 			"linkColors": "Link-type colours",
 			"pillShape": "Pill shape",

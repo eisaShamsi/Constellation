@@ -23,6 +23,7 @@ export const STYLE_PRESET_SCHEMA = 'constellation-style/1';
 /** The choosable sections. Order here is the display order in the save dialog. */
 export type SectionKey =
 	| 'colorsTheme'
+	| 'styleOverride'
 	| 'fonts'
 	| 'linkColors'
 	| 'pillShape'
@@ -74,6 +75,14 @@ export const SECTION_CATALOGUE: SectionDef[] = [
 	{
 		key: 'colorsTheme', labelKey: 'styles.section.colorsTheme', defaultOn: true,
 		appSettingsKeys: ['colorScheme', 'accentColor', 'activeThemeId', 'customThemes', 'iconOverrides'],
+	},
+	{
+		// MIG-070 §C Phase 6 — the per-Universe Style Setter look: the per-element CSS-var overrides
+		// (chrome + Markdown elements) + the per-script fonts. Additive section (old presets without it
+		// still apply); captured/applied verbatim by the generic appSettingsKeys path. Visual-only →
+		// safe to share. Lets a saved Style carry the look you designed in the Setter, not just a theme.
+		key: 'styleOverride', labelKey: 'styles.section.styleOverride', defaultOn: true,
+		appSettingsKeys: ['styleOverride', 'perScriptFonts'],
 	},
 	{
 		key: 'fonts', labelKey: 'styles.section.fonts', defaultOn: true,
