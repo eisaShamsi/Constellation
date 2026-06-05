@@ -19,12 +19,9 @@
 	import { get } from 'svelte/store';
 	import { styleSetterOpen, closeStyleSetter } from '$lib/stores/styleSetter';
 	import { appSettings, mergeStyleOverride, clearAllStyleOverride, addStyleSwatch, removeStyleSwatch, setPerScriptFont, updateSettings } from '$lib/libraries/store';
-	// §C Phase 5 — link styling reuses the EXISTING single sources (no new storage model): the §G
-	// Link-Types editor (one save path → Backlinks/Outgoing/editor recolour live) + the self-contained
-	// typed-link pill. The display toggles + pill shape are appSettings, written via updateSettings.
+	// §C Phase 5 — link styling reuses the EXISTING single source: the §G Link-Types editor (one save
+	// path → Backlinks/Outgoing/editor recolour live). Display toggles + pill shape are appSettings.
 	import LinkTypesEditor from './LinkTypesEditor.svelte';
-	import LinkTypePill from './LinkTypePill.svelte';
-	import { linkTypesStore, linkTypeColor, SEED_IDS } from '$lib/libraries/linkTypeRegistry';
 
 	// A control writes one REAL app CSS variable. `color` → hex; `select` → a stack/keyword;
 	// `range` → a number + unit (e.g. `32px`, or `700` when unit is '').
@@ -260,12 +257,12 @@
 		cSidebar: { name: 'Sidebar shell', controls: [
 			{ label: 'Width', type: 'range', var: '--sidebar-width', min: 180, max: 420, step: 2, unit: 'px', def: 260 },
 			{ label: 'Background', type: 'color', var: '--sidebar-bg' } ] },
-		// §C Phase 5 — Links. Typed-link COLOURS are the §G Link-Types registry (the single source —
-		// the right rail embeds the existing editor; recolour/add/delete/reset reflect in Backlinks,
-		// Outgoing, and the in-editor links live). Display = appSettings toggles + pill shape. None of
-		// these are CSS-var overrides, so they bypass the draft and write their own stores directly.
-		linkColors: { name: 'Typed-link colours', controls: [] },
-		linkDisplay: { name: 'Link display', controls: [
+		// §C Phase 5 + redesign — Links is ONE integrated surface (left sidebar + one right space, no
+		// centre — Eisa). The display controls (toggles + pill shape) sit above the §G Link-Types editor
+		// (the single colour source); each editor row shows its LIVE pill, so the control IS the preview
+		// (the pill reflects colour + shape live) — no separate pill row / in-editor block to duplicate.
+		// All write their own stores directly (registry / appSettings), bypassing the CSS-var draft.
+		links: { name: 'Links', controls: [
 			{ label: 'Colour typed links', type: 'toggle', setting: 'colourTypedLinks' },
 			{ label: 'Show type labels', type: 'toggle', setting: 'showTypedLinkLabels' },
 			{ label: 'Pill corner radius', type: 'pillrange', prop: 'radius', min: 0, max: 20, step: 1, unit: 'px' },
@@ -280,7 +277,7 @@
 		{ key: 'components', name: 'Components', surface: 'editor', elements: ['cDock', 'cToolbar', 'cLayoutBar', 'cTabs', 'cRightSidebar', 'cButtons', 'cTags', 'cSidebar'] },
 		{ key: 'editor', name: 'Editor', surface: 'editor', elements: ['noteBg', 'text', 'accent', 'link', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'bold', 'italic', 'strike', 'code', 'quote'] },
 		{ key: 'global', name: 'Global', surface: 'editor', elements: ['gBackgrounds', 'gTextShades', 'gStatus', 'gAccent', 'gType', 'gShape', 'fonts'] },
-		{ key: 'links', name: 'Links', surface: 'editor', elements: ['linkColors', 'linkDisplay'] },
+		{ key: 'links', name: 'Links', surface: 'editor', elements: ['links'] },
 		{ key: 'sky', name: 'Sky View', surface: 'sky', elements: ['accent', 'link'] },
 		{ key: 'org', name: 'OrgChart', surface: 'org', elements: ['accent', 'link'] },
 		{ key: 'index', name: 'Index', surface: 'index', elements: ['accent'] },
@@ -306,6 +303,14 @@
 	let draftName = $state('Untitled style');
 	/** The draft: CSS-var → override value. Scoped to the preview wrapper; Apply → <body>. */
 	let draft = $state<Record<string, string>>({});
+
+	// §C redesign (Eisa) — the panel is RESIZABLE; its size persists across opens (localStorage, a
+	// pure UI pref). And only the **Editor** category keeps the 3-zone layout (left · centre note
+	// preview · right controls); every OTHER category is 2-zone (left sidebar + one wide right space,
+	// no centre — the controls integrate their own preview, e.g. the live pill in each Links row).
+	let panelW = $state(1180);
+	let panelH = $state(760);
+	const twoZone = $derived(activeCategory !== 'editor');
 
 	const draftStyle = $derived(Object.entries(draft).map(([k, v]) => `${k}:${v}`).join(';'));
 	const sel = $derived(selected ? ELEMENTS[selected] ?? null : null);
@@ -363,14 +368,6 @@
 		if (setting === 'colourTypedLinks') updateSettings({ colourTypedLinks: val });
 		else updateSettings({ showTypedLinkLabels: val });
 	}
-	// Live link-type ids (incl. custom types) for the colours preview; seed fallback before load.
-	const previewLinkIds = $derived.by(() => {
-		const reg = $linkTypesStore;
-		return reg.length ? reg.map((t) => t.id) : [...SEED_IDS];
-	});
-	// A type's colour by id, reactive to a §G recolour (the in-editor typed-link preview reads it
-	// live so a recolour on the right shows in the note representation too — Eisa remark 3).
-	function ltColor(id: string): string { void $linkTypesStore; return linkTypeColor(id); }
 	function selectEl(key: string) {
 		selected = key;
 		// keep the open category in sync with the clicked preview part (stay if already here).
@@ -383,6 +380,23 @@
 		activeCategory = c.key; activeSurface = c.surface; selected = c.elements[0] ?? null;
 	}
 	function applyTheme(t: { name: string; vars: Record<string, string> }) { draft = { ...draft, ...t.vars }; draftName = t.name; }
+
+	// §C redesign — drag the corner grip to resize the panel; clamp to the viewport, persist on release.
+	function startResize(e: PointerEvent) {
+		e.preventDefault();
+		const startX = e.clientX, startY = e.clientY, startW = panelW, startH = panelH;
+		function move(ev: PointerEvent) {
+			panelW = Math.max(760, Math.min(window.innerWidth * 0.97, startW + (ev.clientX - startX)));
+			panelH = Math.max(460, Math.min(window.innerHeight * 0.95, startH + (ev.clientY - startY)));
+		}
+		function up() {
+			window.removeEventListener('pointermove', move);
+			window.removeEventListener('pointerup', up);
+			try { localStorage.setItem('cn-style-setter-size', JSON.stringify({ w: panelW, h: panelH })); } catch { /* ignore */ }
+		}
+		window.addEventListener('pointermove', move);
+		window.addEventListener('pointerup', up);
+	}
 
 	/** hex → HSL (mirrors the app's own hexToHSL; inlined so the Setter stays standalone). */
 	function hexToHSL(hex: string): { h: number; s: number; l: number } | null {
@@ -438,6 +452,11 @@
 	});
 
 	onMount(() => {
+		// §C redesign — restore the last panel size the user dragged to (pure UI pref).
+		try {
+			const s = JSON.parse(localStorage.getItem('cn-style-setter-size') || 'null');
+			if (s && typeof s.w === 'number' && typeof s.h === 'number') { panelW = s.w; panelH = s.h; }
+		} catch { /* ignore */ }
 		// Capture phase + stopImmediatePropagation so Escape closes ONLY the Setter, never the
 		// Settings modal underneath it. No-op (and doesn't swallow Escape) when the Setter is shut.
 		function onKey(e: KeyboardEvent) {
@@ -452,18 +471,9 @@
 	});
 </script>
 
-{#snippet tlink(id: string, text: string)}
-	<!-- §C Phase 5 — how a typed link renders INSIDE a note (Eisa remark 3): the type label above,
-	     the link text coloured + underlined in the type colour — gated by the two display toggles. -->
-	<span class="ss-tlink">
-		{#if $appSettings.showTypedLinkLabels}<span class="ss-tlabel" style="color:{ltColor(id)}">{id}</span>{/if}
-		<span class="ss-tlink-text" style={$appSettings.colourTypedLinks ? `color:${ltColor(id)};text-decoration-color:${ltColor(id)}` : ''}>{text}</span>
-	</span>
-{/snippet}
-
 {#if $styleSetterOpen}
 	<div class="ss-overlay" role="dialog" aria-label="Style Setter">
-		<div class="ss" style={draftStyle}>
+		<div class="ss" class:ss--twozone={twoZone} style="width:{panelW}px;height:{panelH}px;{draftStyle}">
 			<!-- Top bar -->
 			<header class="ss-top">
 				<span class="ss-brand"><span class="ss-star">✦</span> Style Setter</span>
@@ -589,29 +599,6 @@
 							<span class="ss-body">中文 · 日本語 · 한국어 · हिन्दी · Кириллица</span>
 							<span class="ss-note-hint">Per-script fonts apply across the whole app — open a note in that script to see your chosen font. (This preview uses your Latin font.)</span>
 						</div>
-					{:else if pk === 'linkColors'}
-						<div class="ss-focus ss-fcard ss-flinks">
-							<span class="ss-flink-h">Typed-link pills — recolour, add, or delete on the right; every panel updates live</span>
-							<div class="ss-flink-pills">
-								{#each previewLinkIds as id (id)}<LinkTypePill {id} />{/each}
-							</div>
-							<span class="ss-flink-h">In the editor (how a typed link reads in a note)</span>
-							<span class="ss-body ss-feditor">
-								{@render tlink('supports', 'Ancient Greek')} was a {@render tlink('supports', 'Trojan')} hero; see {@render tlink('exemplifies', 'Hector')} and {@render tlink('derives-from', 'Homer')}.
-							</span>
-							<span class="ss-note-hint">The pills are Backlinks / Outgoing / the dashboard; the text is the note itself — one colour source.</span>
-						</div>
-					{:else if pk === 'linkDisplay'}
-						<div class="ss-focus ss-fcard ss-fnote ss-flinks">
-							<span class="ss-flink-h">In the editor — the two switches change this live</span>
-							<span class="ss-body ss-feditor">
-								An apple {@render tlink('supports', 'Health')}; the opposite of {@render tlink('contradicts', 'Junk food')} and an {@render tlink('exemplifies', 'Orchard')}.
-							</span>
-							<span class="ss-flink-h">In the Backlinks / Outgoing panels — the pill shape</span>
-							<div class="ss-flink-pills">
-								<LinkTypePill id="supports" /><LinkTypePill id="contradicts" /><LinkTypePill id="causes" />
-							</div>
-						</div>
 					{/if}
 				</div>
 			</main>
@@ -621,12 +608,6 @@
 				{#if sel}
 					<div class="ss-rlabel">Selected element</div>
 					<div class="ss-selname">{sel.name}</div>
-					{#if selected === 'linkColors'}
-							<!-- §C Phase 5 — reuse the §G Link-Types editor verbatim (the single colour
-							     source: one save path → Backlinks/Outgoing/editor recolour live). `embedded`
-							     hides its own Settings heading/desc; recolour/add/delete/reset are unchanged. -->
-							<LinkTypesEditor embedded />
-						{:else}
 						{#each sel.controls as c (c.label)}
 						<div class="ss-ctrl">
 							{#if c.type === 'range'}
@@ -670,6 +651,9 @@
 							{/if}
 						</div>
 					{/each}
+					{#if selected === 'links'}
+						<LinkTypesEditor embedded />
+					{/if}
 					{#if ($appSettings.styleSwatches ?? []).length && sel.controls.some((c) => c.type === 'color')}
 						<div class="ss-rlabel">Saved colours</div>
 						<div class="ss-swatches">
@@ -678,11 +662,12 @@
 							{/each}
 						</div>
 					{/if}
-					{/if}
 				{:else}
 					<div class="ss-empty"><span class="ss-big">⊹</span>Click any part of the interface to style it. Its controls appear here, and changes show instantly.</div>
 				{/if}
 			</aside>
+			<!-- §C redesign — corner grip to resize the whole panel (size persists across opens). -->
+			<button class="ss-resize" aria-label="Resize panel" title="Drag to resize" onpointerdown={startResize}></button>
 		</div>
 	</div>
 {/if}
@@ -697,12 +682,23 @@
 		   app theme), with the original dark studio look as fallback (MIG-070 §iter2-#2, Eisa). */
 		--c-bg: var(--background-primary, #15151f); --c-surface: var(--background-secondary, #1d1d2a); --c-surface2: var(--background-modifier-hover, #24243440); --c-text: var(--text-normal, #cfd0e0);
 		--c-muted: var(--text-muted, #8a8ba0); --c-border: var(--background-modifier-border, #2c2c3e); --c-accent: var(--interactive-accent, #7c6cff);
-		width: 100%; max-width: 1180px; height: min(92vh, 760px); background: var(--c-bg);
+		max-width: 97vw; max-height: 95vh; background: var(--c-bg); position: relative;
 		border: 1px solid var(--c-border); border-radius: 14px; overflow: hidden; color: var(--c-text);
 		display: grid; grid-template-rows: 52px 1fr; grid-template-columns: 210px 1fr 248px;
 		grid-template-areas: "top top top" "left center right"; box-shadow: 0 30px 80px rgba(0,0,0,.55);
 		font-family: ui-sans-serif, system-ui, "Segoe UI", sans-serif;
 	}
+	/* §C redesign — 2-zone for every category EXCEPT Editor: left sidebar + one wide right space,
+	   no centre column (the Editor's rendered note keeps the 3-zone grid above). */
+	.ss--twozone { grid-template-columns: 210px 1fr; grid-template-areas: "top top" "left right"; }
+	.ss--twozone .ss-center { display: none; }
+	.ss--twozone .ss-right { padding: 18px 22px; }
+	.ss--twozone .ss-ctrl, .ss--twozone .ss-selname, .ss--twozone .ss-rlabel, .ss--twozone .ss-swatches { max-width: 560px; }
+	.ss--twozone .ss-right :global(.lte) { max-width: 620px; }
+	/* Resize grip (bottom-right corner) — drag to resize the whole panel; the size persists. */
+	.ss-resize { position: absolute; right: 0; bottom: 0; width: 18px; height: 18px; padding: 0; border: none; background: none; cursor: nwse-resize; z-index: 6; touch-action: none; opacity: .5; }
+	.ss-resize:hover { opacity: .9; }
+	.ss-resize::after { content: ""; position: absolute; right: 3px; bottom: 3px; width: 9px; height: 9px; border-right: 2px solid var(--c-muted); border-bottom: 2px solid var(--c-muted); border-bottom-right-radius: 3px; }
 	.ss-top { grid-area: top; display: flex; align-items: center; gap: 12px; padding: 0 16px; border-bottom: 1px solid var(--c-border); background: var(--c-surface); }
 	.ss-brand { font-weight: 700; } .ss-star { color: var(--c-accent); }
 	.ss-draft { color: var(--c-muted); font-size: 13px; }
@@ -832,16 +828,7 @@
 	.ss-fbox { width: 44px; height: 30px; border-radius: var(--radius-m, 8px); background: var(--background-secondary, #ececed); border: var(--border-width, 1px) solid var(--background-modifier-border, #ccc); display: inline-block; }
 	.ss-empty { color: var(--c-muted); font-size: 13px; line-height: 1.6; margin-top: 28px; text-align: center; }
 	.ss-big { font-size: 26px; opacity: .5; display: block; margin-bottom: 8px; }
-	/* §C Phase 5 — Links category: the settings-backed toggle row + the typed-link previews. */
+	/* §C Phase 5 — Links category: the settings-backed toggle control (used in the right space). */
 	.ss-toggle { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px; color: var(--c-text); cursor: pointer; }
 	.ss-toggle input { width: 16px; height: 16px; accent-color: var(--c-accent); cursor: pointer; flex: none; }
-	.ss-flinks { gap: 14px; }
-	.ss-flink-h { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted, #8a8a8a); }
-	.ss-flink-pills { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
-	/* In-editor typed-link representation (Eisa remark 3): label stacked above the underlined link,
-	   inline in the paragraph — extra line-height leaves room for the labels above each line. */
-	.ss-feditor { line-height: 2.4; }
-	.ss-tlink { display: inline-flex; flex-direction: column; align-items: flex-start; vertical-align: bottom; line-height: 1.05; }
-	.ss-tlabel { font-size: 9px; font-weight: 700; text-transform: lowercase; line-height: 1; letter-spacing: .02em; }
-	.ss-tlink-text { text-decoration: underline; text-underline-offset: 2px; }
 </style>

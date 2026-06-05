@@ -25,6 +25,9 @@
 	// MIG-070 §C Phase 5 — the universal saved-colour palette (the SAME store the interface
 	// elements use), so a link colour you pick is remembered and reusable for any element (Eisa).
 	import { appSettings, addStyleSwatch, removeStyleSwatch } from '$lib/libraries/store';
+	// §C redesign — in the Setter (embedded) each row shows its LIVE pill in place of the plain
+	// name, so the control IS the preview (one integrated surface, no duplicate pill row — Eisa).
+	import LinkTypePill from './LinkTypePill.svelte';
 
 	// MIG-070 §C Phase 5 — when embedded in the Style Setter's "Links" category, hide the
 	// Settings-scoped heading/desc (the Setter shows its own element name); the list/add/reset
@@ -177,7 +180,11 @@
 						onfocus={() => (activeTypeId = def.id)}
 						onchange={(e) => recolor(def.id, (e.target as HTMLInputElement).value)}
 					/>
-					<span class="lte-name" dir={detectDir(typeName(def))}>{typeName(def)}</span>
+					{#if embedded}
+						<LinkTypePill id={def.id} />
+					{:else}
+						<span class="lte-name" dir={detectDir(typeName(def))}>{typeName(def)}</span>
+					{/if}
 					<span class="lte-id">· {def.id}</span>
 					{#if isSeed(def.id)}
 						<span class="lte-locked">{$t('settings.linkTypes.builtin') || 'built-in'}</span>

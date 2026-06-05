@@ -82,6 +82,14 @@ Written at the close of a long multi-day run (≈33 commits across 2026-06-02 �
 
 `npm run check` clean for both files (only pre-existing a11y + unused-CSS *warnings*, none new-error). Rebuilt OK (2m08s); binary mtime **`09:31:17` → `10:12:52`**. Orientation v2.53 carries a dated Stage-1-refinements addendum (LL-031, same commit). Re-test staged next.
 
+**Round 2 — PASS. Then Setter LAYOUT REDESIGN (Eisa direction, 2026-06-05).** Eisa passed Round 2, then directed: *"rethink the design — except the Editor, every element shouldn't have a centre page + right sidebar; only a left sidebar + a right space; and make the panel resizable."* Clarifying question asked (what fills the non-Editor right space); Eisa: *"Integrate the two into one. Avoid duplication."* Implemented:
+- **Resizable panel** — `panelW`/`panelH` `$state`, a bottom-right `.ss-resize` grip with a pointer-drag (`startResize`), clamped to the viewport, persisted to `localStorage` (`cn-style-setter-size`), restored on mount. `.ss` `max-width` raised to `97vw` so the inline size isn't clamped.
+- **Dynamic 2/3-zone** — `twoZone = activeCategory !== 'editor'`; `.ss--twozone` switches the grid to `210px 1fr` (`"left right"`) and `display:none`s `.ss-center`. Editor keeps the 3-zone grid (its rendered note needs the centre).
+- **Links integrated into ONE element** — merged `linkColors` + `linkDisplay` → one `links` element (controls = the toggles + pill shape). The right rail renders the controls then `<LinkTypesEditor embedded/>` BELOW them. **Each editor row now shows its LIVE `<LinkTypePill>`** in place of the plain name (embedded only) → the control *is* the preview; the pill reflects colour (registry) + shape (`linkPills.shape`) live. The separate centre pill-row + in-editor-text blocks are **removed** (de-duplicated) along with `tlink`/`ltColor`/`previewLinkIds` + the `LinkTypePill`/registry imports in StyleSetter. Right-rail restructured via PowerShell line-slicing (the special-char comment defeated tab-exact Edits).
+- **Deferred:** the other non-Editor categories' chrome/tree/global centre-preview branches remain in `StyleSetter` but are hidden by the 2-zone grid — flagged for a `/simplify` sweep once Eisa confirms the layout. Pre-existing dead CSS (`.ss-prev`/`.ss-side`/`.ss-statusbar`/`.ss-main`) also pending.
+
+`npm run check` clean for both files (no errors; only the 4 pre-existing unused-CSS warnings). Rebuilt OK (1m39s); binary mtime **`10:12:52` → `11:15:45`**. Orientation v2.53 carries a dated layout-redesign addendum (LL-031, same commit). **Boss test of the redesign pending.**
+
 ---
 
 ## SO #6 process correction — orientation bump was batched (2026-06-05)
