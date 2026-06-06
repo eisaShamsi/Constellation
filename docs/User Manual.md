@@ -1395,13 +1395,14 @@ Access Settings from the sidebar gear icon or `Ctrl+,`.
 
 - Color scheme (Light / Dark / System)
 - Accent color
-- Interface font size (11–18px)
-- Note font size
 - **Themes** — pick from six built-in themes, create custom themes (five-color editor), import themes from the Obsidian Community registry (200+ themes), or import a `.json` theme file. Delete any custom theme with the ✕ button on hover.
+- **Title alignment** (note title start / centre) and **Living Link Lifecycle** (link-weight decay on/off + half-life).
 
-### Style Settings
+*Everything else visual — fonts, sizes, the whole interface chrome, the editor look, link-type colours, and saved Styles — now lives in the **Style Setter** (its own tab in the Settings sidebar, below).*
 
-A dedicated tab for fine-grained customization of every visible interface element, applied live to the active theme.
+### Style Settings → retired into the Style Setter
+
+The standalone **Style Settings** tab has been **retired** — every control it had now lives in the **Style Setter** (below), which covers all of them and adds surfaces it never had (breadcrumb, note summary, the Universe panel, per-script fonts). For reference, that styling surface includes:
 
 - **Colors** — background, surfaces, text (normal/muted/faint), accent, borders, state colors
 - **Typography** — interface / note / code font sizes, H1–H6 sizes, heading weight, line heights, paragraph spacing
@@ -1422,7 +1423,7 @@ Changes auto-save to the active theme; if you edit a built-in theme, it is auto-
 
 ### Styles
 
-A **Style** is a complete, named look — theme, fonts, link colors, pill shape, typed-link display, Sky View, layout, and behaviour — saved under one name and switchable with a click. Styles are **app-global** (shared across every Universe) and shown at the top of **Settings → Appearance** as **preview cards**, each a small self-portrait (theme background, font sample, accent, and the eight link-type colors as dots).
+A **Style** is a complete, named look — theme, fonts, link colors, pill shape, typed-link display, Sky View, layout, and behaviour — saved under one name and switchable with a click. Styles are **app-global** (shared across every Universe) and live in the **Style Setter** as your **Saved styles** — apply one with a click; hover a row for Update / Export / Rename / Delete.
 
 - **Save** — *+ Save current style…* → name it, tick which sections to include, Save.
 - **Apply / Rename / Duplicate / Delete** — on each card.
@@ -1432,7 +1433,7 @@ Applying a Style **merges** its link colors into the current Universe (your cust
 
 ### The Style Setter
 
-The **Style Setter** is a full-page design studio — open it from **Settings → Appearance → "✦ Open Style Setter."** The panel is **resizable** (drag the bottom-right grip; it remembers the size). Down the left you pick a *Surface* to style — **Interface** (file tree, status bar), **Components** (dock, toolbars, tabs, buttons, tags), **Editor** (the note — breadcrumb, headings, bold, links, code, blockquote, and the **note summary** with its own colour/font/size/weight/italic), **Global** (shades, accent, corners, per-script fonts — with a live sample card), **Links** (typed-link colours + display), and the plugin surfaces (Sky View, OrgChart, Index, Cataloger, Shell) — with your **saved styles** listed at the bottom to apply with a click. (Built-in themes live in **Settings → Appearance**.)
+The **Style Setter** is the **single home for all styling** — a full-page design studio you open from its own **Style Setter** tab in the Settings sidebar (the ✦ entry), or the **crosshair icon above the dock's gear** to jump straight into inspect-mode (hover any part of the app and click to style it). The panel is **resizable** (drag the bottom-right grip; it remembers the size). Down the left you pick a *Surface* to style — **Interface** (file tree, status bar), **Components** (dock, toolbars, tabs, buttons, tags), **Editor** (the note — breadcrumb, headings, bold, links, code, blockquote, and the **note summary** with its own colour/font/size/weight/italic), **Global** (shades, accent, corners, per-script fonts — with a live sample card), **Links** (typed-link colours + display), and the plugin surfaces (Sky View, OrgChart, Index, Cataloger, Shell) — with your **saved styles** listed at the bottom to apply with a click. (Built-in themes live in **Settings → Appearance**.)
 
 There are two ways you see your edits. The **Editor** category shows a **note preview in the centre** — click a heading, bold, a link, or the page and its controls appear on the right, updating instantly. **Every other category** docks the panel to one side and goes see-through, and your edits appear on the **real app, live** — change the status-bar colour or the dock width and the actual chrome restyles as you drag (a green **● live** tag marks this). The **Links** category shows each of the eight types as its real coloured **pill** — click a pill to recolour it (live everywhere) — plus the **Colour typed links** / **Show type labels** switches, the **pill shape**, and a reusable **Saved colours** palette.
 
@@ -1442,7 +1443,7 @@ To reuse a look, save it as a named **Style.** Type a name in the top "draft:" f
 
 ### Link Types
 
-Settings → **Link Types** is where each link type's **colour** is set. Click a type's swatch to recolour it; the change reflects **live** everywhere — the typed links in the editor and the coloured pills in the Backlinks / Outgoing panels. **Reset colours to default** restores the original eight. Two display toggles (both on by default) control how typed links appear: **Colour typed links** (draw each in its type's colour) and **Show the label above** (the type name above the link in the editor). The label and pills are shown in the **note's main language**, not the interface language — an Arabic note shows `يدعم`, an English note shows `supports`.
+The **Style Setter → Links** category is where each link type's **colour** is set. Click a type's swatch to recolour it; the change reflects **live** everywhere — the typed links in the editor and the coloured pills in the Backlinks / Outgoing panels. **Reset colours to default** restores the original eight. Two display toggles (both on by default) control how typed links appear: **Colour typed links** (draw each in its type's colour) and **Show the label above** (the type name above the link in the editor). The label and pills are shown in the **note's main language**, not the interface language — an Arabic note shows `يدعم`, an English note shows `supports`.
 
 ### Language
 

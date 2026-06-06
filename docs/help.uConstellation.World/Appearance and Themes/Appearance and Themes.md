@@ -54,9 +54,11 @@ Click **🟣 Obsidian Themes** to browse over 200 community themes:
 3. Click **Import** — the theme's CSS is downloaded, adapted for Constellation (selector shim + variable extraction + CodeMirror syntax colors), and added to your custom themes.
 4. If the theme supports **Style Settings**, the count is shown on its card; those options appear in the Style Settings tab after import.
 
-## Style Settings
+## Style Settings → now in the Style Setter
 
-The **Style Settings** tab is Constellation's native, theme-agnostic control panel. It covers every visible piece of chrome plus the editor, and works with any theme (built-in, custom, or imported).
+> **Note:** The standalone **Style Settings** tab has been **retired**. Every control it had now lives in the **Style Setter** (its own tab in the Settings sidebar) — which covers all of them and more (breadcrumb, note summary, the Universe panel, per-script fonts). The reference below describes that styling surface, now reached through the Style Setter.
+
+The styling surface is Constellation's native, theme-agnostic control panel. It covers every visible piece of chrome plus the editor, and works with any theme (built-in, custom, or imported).
 
 ### How it's organized
 
@@ -149,11 +151,11 @@ Every setting lives under one of the five blocks above. Highlights:
 
 A **Style** is a complete, named "look" for Constellation that you save, switch to with one click, and reuse across every Universe — like a profile. Where a *theme* is just colors and CSS, a Style can capture your whole configuration: theme, fonts, the eight link-type colors, pill shape, typed-link display, Sky View look, layout, and behaviour preferences. Save the look you like, name it, and jump between looks anytime.
 
-Styles live in **Settings → Appearance**, at the top, shown as **preview cards**. Each card is a small self-portrait of the Style — its theme background, a font sample, the accent, and the eight link-type colors as dots — so you can see a Style's appearance at a glance instead of guessing from a name.
+Styles live in the **Style Setter** as your **Saved styles** list — apply one with a click; hover a row to Update, Export, Rename, or Delete it.
 
 ### Save your current look as a Style
 
-1. Open **Settings → Appearance**. The **Styles** section is at the top.
+1. Open the **Style Setter** (its tab in the Settings sidebar). Your **Saved styles** are at the bottom-left.
 2. Click **+ Save current style…**.
 3. Type a name (for example, `Midnight`).
 4. Tick which **sections** to include — Theme, Fonts, Link colors, Pill shape, Typed-link display, Sky View, Layout, Behaviour. (Leave them all on to capture everything.)
@@ -201,7 +203,7 @@ The type label and the panel pills appear in the **note's own main language**, n
 
 ### Recolour a type (the Link Types editor)
 
-1. Open **Settings → Link Types**.
+1. Open the **Style Setter → Links** category.
 2. Each type shows its name and a colour swatch. Click a swatch to pick a new colour.
 3. The change reflects **live** everywhere — the editor links and the Backlinks / Outgoing pills update as you pick.
 4. **Reset colours to default** restores the original eight colours.
