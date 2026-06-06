@@ -14,8 +14,6 @@
 	import ArabicOverridesPanel from './ArabicOverridesPanel.svelte';
 	import PerLibraryCalibrationView from './PerLibraryCalibrationView.svelte';
 	import ConfirmDialog from './ConfirmDialog.svelte';
-	import LinkTypesEditor from './LinkTypesEditor.svelte';
-	import StylePresetsPanel from './StylePresetsPanel.svelte';
 	import { openStyleSetter } from '$lib/stores/styleSetter';
 	import { notifySettingsChanged } from '$lib/secondScreen';
 	import { aiSettings, updateAISettings, setProvider } from '$lib/ai/store';
@@ -652,19 +650,6 @@
 		} as any);
 	}
 
-	// ─── Living Link pill helpers (shape only — per-type COLOURS moved to the §G Link
-	// Types editor, the single source of truth, so a recolour reflects everywhere; MIG-067) ───
-	function updatePillShape(partial: Partial<typeof $appSettings.linkPills.shape>) {
-		updateSettings({
-			linkPills: {
-				...$appSettings.linkPills,
-				shape: { ...$appSettings.linkPills.shape, ...partial },
-			},
-		});
-	}
-	function resetLinkPills() {
-		updateSettings({ linkPills: DEFAULT_SETTINGS.linkPills });
-	}
 	function updateLinkLifecycle(partial: Partial<typeof $appSettings.linkLifecycle>) {
 		updateSettings({
 			linkLifecycle: { ...$appSettings.linkLifecycle, ...partial },
@@ -2310,117 +2295,6 @@
 							<option value="center">{$t('settings.appearance.titleAlignCenter')}</option>
 						</select>
 					</div>
-
-					<!-- Interface Font Size -->
-					<div class="setting-item">
-						<div class="setting-info">
-							<div class="setting-name">{$t('settings.appearance.interfaceFontSize') || 'Interface font size'}</div>
-							<div class="setting-desc">{$t('settings.appearance.interfaceFontSizeDesc') || 'Size of sidebar, toolbar, menus, and UI elements'}</div>
-						</div>
-						<div class="slider-row">
-							<input type="range" class="setting-slider" min="11" max="18" step="1" value={$appSettings.interfaceFontSize || 14}
-								oninput={(e) => updateSettings({ interfaceFontSize: parseInt((e.target as HTMLInputElement).value) })} />
-							<span class="slider-val">{$appSettings.interfaceFontSize || 14}px</span>
-						</div>
-					</div>
-
-					<!-- Note Content Font Size -->
-					<div class="setting-item">
-						<div class="setting-info">
-							<div class="setting-name">{$t('settings.appearance.fontSize')}</div>
-							<div class="setting-desc">{$t('settings.appearance.fontSizeDesc')}</div>
-						</div>
-						<div class="slider-row">
-							<input type="range" class="setting-slider" min="12" max="24" step="1" value={$appSettings.fontSize}
-								oninput={(e) => updateSettings({ fontSize: parseInt((e.target as HTMLInputElement).value) })} />
-							<span class="slider-val">{$appSettings.fontSize}px</span>
-						</div>
-					</div>
-
-					<!-- MIG-070 §C Phase 9 — the "Open Style Setter" launcher moved OUT of here into the left
-					     Settings nav as its own "Style Setter" tab (Eisa). No button needed in Appearance now. -->
-
-					<!-- ═══ STYLES (named, app-global style presets — MIG-069 §C) ═══ -->
-					<StylePresetsPanel />
-
-					<!-- ═══ LINK TYPES (the Living Vocabulary — MIG-067 §G) ═══ -->
-					<LinkTypesEditor />
-
-					<!-- ═══ TYPED LINK DISPLAY (MIG-067 §E.2) ═══ -->
-					<div class="setting-section-heading">{$t('settings.linkTypes.displayHeading')}</div>
-					<div class="setting-desc" style="margin-bottom: 8px;">{$t('settings.linkTypes.displayDesc')}</div>
-					<div class="setting-item">
-						<div class="setting-info">
-							<div class="setting-name">{$t('settings.linkTypes.showLabel')}</div>
-							<div class="setting-desc">{$t('settings.linkTypes.showLabelDesc')}</div>
-						</div>
-						<input type="checkbox" class="setting-toggle"
-							checked={$appSettings.showTypedLinkLabels}
-							onchange={(e) => updateSettings({ showTypedLinkLabels: (e.target as HTMLInputElement).checked })} />
-					</div>
-					<div class="setting-item">
-						<div class="setting-info">
-							<div class="setting-name">{$t('settings.linkTypes.colourByType')}</div>
-							<div class="setting-desc">{$t('settings.linkTypes.colourByTypeDesc')}</div>
-						</div>
-						<input type="checkbox" class="setting-toggle"
-							checked={$appSettings.colourTypedLinks}
-							onchange={(e) => updateSettings({ colourTypedLinks: (e.target as HTMLInputElement).checked })} />
-					</div>
-
-					<!-- ═══ LIVING LINK PILLS ═══ -->
-					<div class="setting-section-heading">{$t('settings.appearance.livingLinkPills') || 'Living Link Pills'}</div>
-					<div class="setting-desc" style="margin-bottom: 8px;">
-						{$t('settings.appearance.livingLinkPillsDesc') || 'Shape of the link-type badges and traversal chips in the Backlinks and Outgoing Links panels. Their colours come from the Link Types editor above.'}
-					</div>
-
-					<!-- Per-type COLOURS retired (MIG-067): the §G Link Types editor above is the
-					     single colour source — recolour a type there and the editor + both panels
-					     update at once; pill text auto-contrasts. Only the shape controls remain. -->
-
-
-					<!-- Shape: radius / height / weight -->
-					<div class="setting-item">
-						<div class="setting-info">
-							<div class="setting-name">{$t('settings.appearance.pillRadius') || 'Corner radius'}</div>
-							<div class="setting-desc">{$t('settings.appearance.pillRadiusDesc') || 'How rounded the pill corners are (0 = sharp, 20 = fully round).'}</div>
-						</div>
-						<div class="slider-row">
-							<input type="range" class="setting-slider" min="0" max="20" step="1"
-								value={$appSettings.linkPills?.shape?.radius ?? 10}
-								oninput={(e) => updatePillShape({ radius: parseInt((e.target as HTMLInputElement).value) })} />
-							<span class="slider-val">{$appSettings.linkPills?.shape?.radius ?? 10}px</span>
-						</div>
-					</div>
-					<div class="setting-item">
-						<div class="setting-info">
-							<div class="setting-name">{$t('settings.appearance.pillHeight') || 'Pill height'}</div>
-							<div class="setting-desc">{$t('settings.appearance.pillHeightDesc') || 'Vertical size of every pill.'}</div>
-						</div>
-						<div class="slider-row">
-							<input type="range" class="setting-slider" min="14" max="32" step="1"
-								value={$appSettings.linkPills?.shape?.height ?? 20}
-								oninput={(e) => updatePillShape({ height: parseInt((e.target as HTMLInputElement).value) })} />
-							<span class="slider-val">{$appSettings.linkPills?.shape?.height ?? 20}px</span>
-						</div>
-					</div>
-					<div class="setting-item">
-						<div class="setting-info">
-							<div class="setting-name">{$t('settings.appearance.pillWeight') || 'Text weight'}</div>
-							<div class="setting-desc">{$t('settings.appearance.pillWeightDesc') || 'Font weight of pill labels (400 = normal, 700 = bold, 900 = extra bold).'}</div>
-						</div>
-						<select class="setting-control" value={String($appSettings.linkPills?.shape?.fontWeight ?? 700)}
-							onchange={(e) => updatePillShape({ fontWeight: parseInt((e.target as HTMLSelectElement).value) })}>
-							<option value="400">400 · Normal</option>
-							<option value="500">500 · Medium</option>
-							<option value="600">600 · Semi-bold</option>
-							<option value="700">700 · Bold</option>
-							<option value="800">800 · Extra-bold</option>
-							<option value="900">900 · Black</option>
-						</select>
-					</div>
-
-					<button class="btn-text" onclick={resetLinkPills}>{$t('settings.appearance.resetPillStyles') || 'Reset pill styles to default'}</button>
 
 					<!-- ═══ Living Link Lifecycle (P5) ═══ -->
 					<div class="setting-section-heading">{$t('settings.appearance.linkLifecycle') || 'Living Link Lifecycle'}</div>

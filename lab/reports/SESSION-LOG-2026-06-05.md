@@ -185,6 +185,18 @@ Eisa: **"Proceed with closing the 5 gaps + start Phase 9 retirement, and move th
 - svelte-check: no new errors (only the 2 documented pre-existing: store.ts:2481 'fresh', PropertyEditor node-type). Built OK (2m00s); mtime **`12:19:44` → `15:29:18`**. Orientation v2.54 dated addendum (LL-031). **[BOSS TEST] pending.**
 - **Still pending:** Phase 9.3 (trim Appearance pill-shape/typed-link-display/font-size dupes — UX judgment, confirm w/ Eisa) · dead-code `/simplify` · batched 14-lang help.
 
+## Phase 9.3 — Appearance-tab full consolidation (2026-06-06)
+First Eisa asked for a parity table proving the Style Settings tab fully transferred → built it from the actual catalog (`constellationStyleSettings.ts`): **100/100 controls covered**, Setter is a strict superset (doc'd inline in chat). Then "I prefer to solve the Appearance-tab duplicate before Stage 2." Offered 3 trim scopes; Eisa chose **"Everything stylistic (full consolidation)"**.
+**Predecessor → Replacement (verified before deleting — all live in the Setter):**
+- Interface font size (`interfaceFontSize`) → Setter Global → Type (`--font-interface-size`). *Same appSettings field.*
+- Note font size (`fontSize`) → Setter Editor → Body text (`--font-text-size`). *Same field.*
+- Typed-Link Display toggles (`showTypedLinkLabels`, `colourTypedLinks`) → Setter Links toggles. *Same fields.*
+- Living Link Pills shape (`linkPills.shape` via `updatePillShape`) → Setter Links → pill shape. *Same field.*
+- Styles cards (`StylePresetsPanel`) → Setter's own saved-styles UI (`savedStyles`/`saveAsStyle`, StyleSetter L339+/L691) — *same `stylePresets.ts` engine.*
+- Link Types editor (`LinkTypesEditor`) → Setter Links category renders `<LinkTypesEditor embedded />` (StyleSetter L873) — *same component + registry store.*
+**Kept in Appearance:** Themes + Customize Theme (theme authoring, Setter ≠ themes), Title alignment (layout), Living Link Lifecycle (behavioural). **Orphaned helpers removed:** `updatePillShape`, `resetLinkPills`; imports `LinkTypesEditor` + `StylePresetsPanel`.
+- Removal done via one content-anchored PowerShell pass (abort-guarded): template block 111 lines + helper fns 13 lines + 2 imports. Appearance section verified well-formed (Themes → Customize → General/title-align → Lifecycle). svelte-check clean (no dangling `DEFAULT_SETTINGS`/`updatePillShape`/`resetLinkPills`/import refs; only pre-existing a11y/CSS warnings). Built OK (2m11s); mtime **`17:37:21` → `17:58:53`**. Also folded in the earlier 15-locale `styleSetter` nav-label fix (commit `9a644a7a`). Orientation v2.54 addendum (LL-031). **[BOSS TEST] pending** — Appearance-consolidation verify + Stage 2 (5 new controls). **The Style Setter is now the single styling home.**
+
 ---
 
 ## SO #6 process correction — orientation bump was batched (2026-06-05)
