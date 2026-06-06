@@ -110,6 +110,7 @@
 	import WorkspaceManager from '$lib/components/WorkspaceManager.svelte';
 	import SettingsModal from '$lib/components/SettingsModal.svelte';
 	import StyleSetter from '$lib/components/StyleSetter.svelte';
+	import { openStyleSetterInspect } from '$lib/stores/styleSetter'; // MIG-070 §C item D — dock inspect shortcut
 	import LockScreen from '$lib/components/LockScreen.svelte';
 	import MigrationProgressStrip from '$lib/components/MigrationProgressStrip.svelte';
 	import ClassifierScanProgressStrip from '$lib/components/ClassifierScanProgressStrip.svelte';
@@ -5011,7 +5012,12 @@
 					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="2" width="14" height="10" rx="1.5" fill="var(--background-secondary, #1e1e2e)"/><rect x="9" y="10" width="14" height="10" rx="1.5" fill="var(--background-secondary, #1e1e2e)"/></svg>
 				</button>
 			{/if}
-<button class="dock-btn" class:active={showSettings} onclick={() => showSettings = !showSettings} title={$t('ribbon.settings')}>
+				<!-- MIG-070 §C item D — Style Setter / inspect-to-restyle shortcut (above Settings). Opens
+				     the Setter straight into inspect mode so you can click any chrome element to style it. -->
+				<button class="dock-btn" onclick={() => openStyleSetterInspect()} title="Style Setter — click any element to restyle it" aria-label="Style Setter — inspect & restyle">
+					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+				</button>
+				<button class="dock-btn" class:active={showSettings} onclick={() => showSettings = !showSettings} title={$t('ribbon.settings')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
 			</button>
 		</div>

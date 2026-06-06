@@ -17,7 +17,7 @@
 	 */
 	import { onMount, onDestroy } from 'svelte';
 	import { get } from 'svelte/store';
-	import { styleSetterOpen, closeStyleSetter } from '$lib/stores/styleSetter';
+	import { styleSetterOpen, closeStyleSetter, styleSetterInspectRequest } from '$lib/stores/styleSetter';
 	import { appSettings, mergeStyleOverride, clearAllStyleOverride, addStyleSwatch, removeStyleSwatch, setPerScriptFont, updateSettings, setLiveStyleDraft, clearLiveStyleDraft } from '$lib/libraries/store';
 	// §C Phase 5 — link styling reuses the EXISTING single source: the §G Link-Types editor (one save
 	// path → Backlinks/Outgoing/editor recolour live). Display toggles + pill shape are appSettings.
@@ -488,7 +488,7 @@
 		if (_updTimer) clearTimeout(_updTimer);
 		_updTimer = setTimeout(() => { if (updatedId === p.id) updatedId = null; }, 1500);
 	}
-	onDestroy(() => { if (_updTimer) clearTimeout(_updTimer); stopInspect(); });
+	onDestroy(() => { if (_updTimer) clearTimeout(_updTimer); stopInspect(); if (typeof document !== 'undefined') document.body.classList.remove('ss-inspecting'); });
 
 	// §C item 3 (REMOVED) — a built-in-theme picker in the Setter froze it AGAIN, even as a plain
 	// `<select>` over BUILTIN_THEMES (2026-06-05). LL-032 strengthened: rendering BUILTIN_THEMES /
@@ -579,6 +579,14 @@
 	// §C item D — never leave inspect on once the Setter closes (reads only $styleSetterOpen; stopInspect
 	// self-guards, so this neither loops nor reads what it writes).
 	$effect(() => { if (!$styleSetterOpen) stopInspect(); });
+	// §C item D — the dock shortcut: open straight into inspect mode (no Settings in the way).
+	$effect(() => {
+		if ($styleSetterInspectRequest && $styleSetterOpen) { styleSetterInspectRequest.set(false); startInspect(); }
+	});
+	// §C item D — while inspecting, hide the Settings modal too (the Setter is often opened from it),
+	// so the REAL app is fully hoverable however inspect was triggered. DOM-class side effect (not a
+	// reactive write), so no loop; the global CSS rule below does the hiding.
+	$effect(() => { if (typeof document !== 'undefined') document.body.classList.toggle('ss-inspecting', inspecting); });
 
 	// MIG-070 §C — when the Setter opens, seed the draft from the persisted per-Universe override
 	// so the controls reflect the live look (not a blank slate). Rising-edge only, so editing
@@ -876,6 +884,9 @@
 	.ss-inspect-cancel:hover { background: rgba(255,255,255,.32); }
 	.ss-inspect-hl { position: fixed; z-index: 9150; pointer-events: none; border: 2px solid var(--interactive-accent, #7c6cff); background: color-mix(in srgb, var(--interactive-accent, #7c6cff) 14%, transparent); border-radius: 3px; }
 	.ss-inspect-label { position: absolute; top: -22px; left: 0; background: var(--interactive-accent, #7c6cff); color: #fff; font: 11px ui-sans-serif, system-ui, sans-serif; font-weight: 600; padding: 2px 7px; border-radius: 5px; white-space: nowrap; }
+	/* §C item D — while inspecting, hide the Settings modal (the Setter is often opened from it) so the
+	   real app is fully hoverable. Global — the modal lives outside this component. */
+	:global(body.ss-inspecting .settings-overlay) { display: none !important; }
 	.ss {
 		/* Chrome follows the theme being edited (the .ss element carries the draft + inherits the
 		   app theme), with the original dark studio look as fallback (MIG-070 §iter2-#2, Eisa). */

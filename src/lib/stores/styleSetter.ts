@@ -14,3 +14,9 @@ export const styleSetterOpen = writable(false);
 /** Open / close helpers (so call sites don't import `writable` semantics). */
 export function openStyleSetter() { styleSetterOpen.set(true); }
 export function closeStyleSetter() { styleSetterOpen.set(false); }
+
+/** MIG-070 §C item D — request the Setter to OPEN straight into inspect mode (the dock shortcut:
+ *  inspect & restyle without going through Settings). The Setter watches this, calls its
+ *  startInspect on open, then resets the flag. */
+export const styleSetterInspectRequest = writable(false);
+export function openStyleSetterInspect() { styleSetterInspectRequest.set(true); styleSetterOpen.set(true); }
