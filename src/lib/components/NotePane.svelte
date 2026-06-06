@@ -1307,11 +1307,13 @@
 	.e-title.e-title-center { text-align: center; }
 	/* NSC summary — under the title, inside the page (MIG-070 §iter2-#1, Eisa) */
 	.e-summary {
-		font-style: italic;
-		/* MIG-070 §C — own colour + size (default = the muted note shade), so the Setter's "Note
-		   summary" element can restyle it; falls back to today's look when unset. */
+		/* MIG-070 §C — fully restyleable by the Setter's "Note summary" element (colour / font / size /
+		   weight / italic), each defaulting to today's look when unset. */
+		font-style: var(--summary-style, italic);
 		color: var(--summary-color, var(--text-muted));
 		font-size: var(--summary-size, 0.95rem);
+		font-family: var(--summary-font, inherit);
+		font-weight: var(--summary-weight, 400);
 		line-height: 1.55;
 		margin-block: -12px 22px;
 		margin-inline: 0;

@@ -177,7 +177,10 @@
 		// breadcrumb's colour defaults to the interface text (§3B); set it here to override.
 		summary: { name: 'Note summary', controls: [
 			{ label: 'Colour', type: 'color', var: '--summary-color' },
-			{ label: 'Text size', type: 'range', var: '--summary-size', min: 11, max: 24, step: 1, unit: 'px', def: 15 } ] },
+			{ label: 'Font', type: 'select', var: '--summary-font', options: FONTS },
+			{ label: 'Text size', type: 'range', var: '--summary-size', min: 11, max: 24, step: 1, unit: 'px', def: 15 },
+			{ label: 'Thickness', type: 'range', var: '--summary-weight', min: 300, max: 900, step: 100, unit: '', def: 400 },
+			{ label: 'Italic', type: 'select', var: '--summary-style', options: [['Italic', 'italic'], ['Normal', 'normal']] } ] },
 		breadcrumb: { name: 'Breadcrumb', controls: [
 			{ label: 'Colour', type: 'color', var: '--breadcrumb-color' },
 			{ label: 'Text size', type: 'range', var: '--breadcrumb-size', min: 9, max: 18, step: 1, unit: 'px', def: 12 } ] },
@@ -898,7 +901,7 @@
 	.ss-title { display: block; font-weight: 800; font-size: 18px; color: var(--editor-text-color, var(--text-normal, #2e3338)); }
 	/* §C — note breadcrumb + summary previews, reading the same vars as NotePane's `.e-breadcrumb`/`.e-summary`. */
 	.ss-breadcrumb { display: block; font-size: var(--breadcrumb-size, 12px); color: var(--breadcrumb-color, var(--text-normal, #2e3338)); opacity: .9; }
-	.ss-summary { display: block; font-style: italic; font-size: var(--summary-size, 15px); color: var(--summary-color, var(--text-muted, #8a8a8a)); line-height: 1.5; }
+	.ss-summary { display: block; font-style: var(--summary-style, italic); font-size: var(--summary-size, 15px); color: var(--summary-color, var(--text-muted, #8a8a8a)); font-family: var(--summary-font, inherit); font-weight: var(--summary-weight, 400); line-height: 1.5; }
 	/* Headings read their own size/colour vars, with the catalog defaults + inherit as fallbacks
 	   so the preview matches a real note before any edit. Weight is shared (--heading-weight). */
 	/* Colour fallbacks mirror the real note's markdownHighlightStyle (heading #d73a49, bold

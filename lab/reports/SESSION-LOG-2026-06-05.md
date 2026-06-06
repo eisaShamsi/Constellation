@@ -151,6 +151,8 @@ Eisa side-questions: *"Did we consider the note summary section?"* (→ no) and 
 - svelte-check clean; built OK (2m11s); binary mtime **`2026-06-05 21:01:07` → `2026-06-06 09:32:38`**. Orientation v2.54 dated note (LL-031). **[BOSS TEST] pending.**
 - **⚠ HOUSEKEEPING DEBT:** no **MoCh** written this (very long) session — owe a `docs/MoCh/` file capturing the Style-Setter Boss↔Claude arc; write at the next pause.
 
+**Note summary — full type set (2026-06-06).** Eisa: *"Besides its size and color, I want to be able to change its type, thickness, and italic."* Added to the `summary` element: **Font** (`select` of the curated FONTS → `--summary-font`), **Thickness** (`range` 300–900 → `--summary-weight`), **Italic** (`select` Italic/Normal → `--summary-style`). NotePane `.e-summary` + the `.ss-summary` preview now read `font-family`/`font-weight`/`font-style` from those vars (defaults = today's italic-muted look). svelte-check clean; built OK (2m10s); mtime **`09:32:38` → `09:59:03`**. **[BOSS TEST] pending.**
+
 ---
 
 ## SO #6 process correction — orientation bump was batched (2026-06-05)
