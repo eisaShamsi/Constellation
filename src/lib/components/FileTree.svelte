@@ -72,13 +72,13 @@
 	}
 </script>
 
-<ul class="tree" style="padding-inline-start: {depth > 0 ? '12px' : '0'}">
+<ul class="tree" data-style-target="fileTree" style="padding-inline-start: {depth > 0 ? '12px' : '0'}">
 	{#each entries as entry}
 		<li>
 			{#if entry.is_dir}
 				<details open={allExpanded && depth < 2}>
 					<!-- svelte-ignore a11y_no_static_element_interactions -->
-					<summary class="folder" oncontextmenu={(e) => handleRightClick(e, entry)} onclick={() => onFolderClick?.(entry.path)}>
+					<summary class="folder" data-style-target="folder" oncontextmenu={(e) => handleRightClick(e, entry)} onclick={() => onFolderClick?.(entry.path)}>
 						<svg class="chevron" width="10" height="10" viewBox="0 0 10 10">
 							<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
 						</svg>

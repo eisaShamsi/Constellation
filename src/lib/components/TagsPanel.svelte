@@ -69,7 +69,7 @@
 	}
 </script>
 
-<div class="tags-panel">
+<div class="tags-panel" data-style-target="cTags">
 	{#if Object.keys(tags).length > 0}
 		<div class="tp-controls">
 			<div class="tp-sort">

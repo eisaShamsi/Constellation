@@ -395,6 +395,53 @@
 	function pickCategory(c: { key: string; surface: string; elements: string[] }) {
 		activeCategory = c.key; activeSurface = c.surface; selected = c.elements[0] ?? null;
 	}
+
+	// §C Option E item D — inspect-to-style. Toggle ON → the Setter goes click-through + hides its
+	// panel so the REAL app is hoverable; the nearest `[data-style-target]` under the cursor is
+	// highlighted + named; clicking it jumps the Setter to that element's controls and exits inspect.
+	let inspecting = $state(false);
+	let inspectRect = $state<{ x: number; y: number; w: number; h: number; label: string } | null>(null);
+	function inspectTargetAt(target: EventTarget | null): HTMLElement | null {
+		return ((target as HTMLElement)?.closest?.('[data-style-target]') as HTMLElement | null) ?? null;
+	}
+	function onInspectMove(e: PointerEvent) {
+		if (!inspecting) return;
+		const el = inspectTargetAt(e.target);
+		const key = el?.getAttribute('data-style-target') ?? '';
+		if (!el || !ELEMENTS[key]) { inspectRect = null; return; }
+		const r = el.getBoundingClientRect();
+		inspectRect = { x: r.left, y: r.top, w: r.width, h: r.height, label: ELEMENTS[key].name };
+	}
+	function onInspectClick(e: MouseEvent) {
+		if (!inspecting) return;
+		const t = e.target as HTMLElement;
+		if (t?.closest?.('.ss-inspect-banner')) return; // let the banner's Cancel button work
+		// Capture (swallow) every other click while inspecting, so a stray click can't trigger an app
+		// action (open a note, switch a tab). A click ON a tagged element jumps to its controls + exits.
+		e.preventDefault();
+		e.stopPropagation();
+		const el = inspectTargetAt(t);
+		const key = el?.getAttribute('data-style-target') ?? '';
+		if (el && ELEMENTS[key]) {
+			stopInspect();
+			const cat = CATEGORIES.find((c) => c.elements.includes(key));
+			if (cat) { activeCategory = cat.key; activeSurface = cat.surface; }
+			selected = key;
+		}
+	}
+	function startInspect() {
+		if (inspecting) return;
+		inspecting = true; inspectRect = null;
+		window.addEventListener('pointermove', onInspectMove, true);
+		window.addEventListener('click', onInspectClick, true);
+	}
+	function stopInspect() {
+		if (!inspecting) return;
+		inspecting = false; inspectRect = null;
+		window.removeEventListener('pointermove', onInspectMove, true);
+		window.removeEventListener('click', onInspectClick, true);
+	}
+	function toggleInspect() { if (inspecting) stopInspect(); else startInspect(); }
 	// §C Phase 6 — apply a saved/derived Style (non-destructive merge via the MIG-069 engine), then
 	// reflect its look in the draft so the Setter + live preview show it.
 	async function applyStyle(p: StylePreset) {
@@ -441,7 +488,7 @@
 		if (_updTimer) clearTimeout(_updTimer);
 		_updTimer = setTimeout(() => { if (updatedId === p.id) updatedId = null; }, 1500);
 	}
-	onDestroy(() => { if (_updTimer) clearTimeout(_updTimer); });
+	onDestroy(() => { if (_updTimer) clearTimeout(_updTimer); stopInspect(); });
 
 	// §C item 3 (REMOVED) — a built-in-theme picker in the Setter froze it AGAIN, even as a plain
 	// `<select>` over BUILTIN_THEMES (2026-06-05). LL-032 strengthened: rendering BUILTIN_THEMES /
@@ -529,6 +576,9 @@
 		if ($styleSetterOpen && twoZone) setLiveStyleDraft(mergedDraft());
 		else clearLiveStyleDraft();
 	});
+	// §C item D — never leave inspect on once the Setter closes (reads only $styleSetterOpen; stopInspect
+	// self-guards, so this neither loops nor reads what it writes).
+	$effect(() => { if (!$styleSetterOpen) stopInspect(); });
 
 	// MIG-070 §C — when the Setter opens, seed the draft from the persisted per-Universe override
 	// so the controls reflect the live look (not a blank slate). Rising-edge only, so editing
@@ -554,7 +604,8 @@
 			if (e.key === 'Escape' && get(styleSetterOpen)) {
 				e.preventDefault();
 				e.stopImmediatePropagation();
-				closeStyleSetter();
+				if (inspecting) stopInspect();   // §C item D — Esc exits inspect first, then closes the Setter
+				else closeStyleSetter();
 			}
 		}
 		window.addEventListener('keydown', onKey, true);
@@ -563,7 +614,15 @@
 </script>
 
 {#if $styleSetterOpen}
-	<div class="ss-overlay" class:ss-overlay--live={twoZone} role="dialog" aria-label="Style Setter">
+	{#if inspecting}
+		<!-- §C item D — inspect overlay: a banner + a highlight box over the hovered chrome element.
+		     The Setter panel is hidden + click-through while inspecting, so the real app is hoverable. -->
+		<div class="ss-inspect-banner">⌖ Inspecting — click a part of the app to style it, or <button class="ss-inspect-cancel" onclick={stopInspect}>Cancel (Esc)</button></div>
+		{#if inspectRect}
+			<div class="ss-inspect-hl" style="left:{inspectRect.x}px; top:{inspectRect.y}px; width:{inspectRect.w}px; height:{inspectRect.h}px"><span class="ss-inspect-label">{inspectRect.label}</span></div>
+		{/if}
+	{/if}
+	<div class="ss-overlay" class:ss-overlay--live={twoZone} class:ss-overlay--inspect={inspecting} role="dialog" aria-label="Style Setter">
 		<div class="ss" class:ss--twozone={twoZone} style="width:{panelW}px;height:{panelH}px;{draftStyle}">
 			<!-- Top bar -->
 			<header class="ss-top">
@@ -571,6 +630,7 @@
 				{#if twoZone}<span class="ss-livetag" title="Your edits show on the real app live — Keep to save, Discard to revert">● live</span>{/if}
 				<span class="ss-draft">draft: <input class="ss-dname" bind:value={draftName} /></span>
 				<span class="ss-spacer"></span>
+				<button class="ss-btn" class:ss-primary={inspecting} onclick={toggleInspect} title="Inspect — hover the real app and click a part to jump to its controls">⌖ Inspect</button>
 				<button class="ss-btn" onclick={resetDraft} title="Clear all overrides — back to the theme default">Reset</button>
 				<button class="ss-btn" onclick={discard} title="Abandon unsaved changes (the real app reverts)">Discard</button>
 				<button class="ss-btn ss-primary" onclick={keep} title="Save this look (per-Universe)">Keep</button>
@@ -807,6 +867,15 @@
 	.ss-overlay--live .ss { pointer-events: auto; }
 	.ss-overlay--live .ss--twozone { background: color-mix(in srgb, var(--c-bg) 92%, transparent); backdrop-filter: blur(7px); box-shadow: -14px 0 60px rgba(0,0,0,.45); }
 	.ss-livetag { font-size: 11px; font-weight: 700; color: #4ade80; letter-spacing: .04em; white-space: nowrap; }
+	/* §C item D — inspect mode: hide + click-through the panel so the real app is hoverable; a banner +
+	   a highlight box (over the hovered chrome element) sit above everything. */
+	.ss-overlay--inspect { background: none; backdrop-filter: none; pointer-events: none; }
+	.ss-overlay--inspect .ss { display: none; }
+	.ss-inspect-banner { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 9200; pointer-events: auto; background: var(--interactive-accent, #7c6cff); color: #fff; font: 13px ui-sans-serif, system-ui, sans-serif; padding: 7px 14px; border-radius: 999px; box-shadow: 0 8px 30px rgba(0,0,0,.4); display: flex; align-items: center; gap: 8px; }
+	.ss-inspect-cancel { font: inherit; font-weight: 600; background: rgba(255,255,255,.2); color: #fff; border: none; border-radius: 999px; padding: 3px 10px; cursor: pointer; }
+	.ss-inspect-cancel:hover { background: rgba(255,255,255,.32); }
+	.ss-inspect-hl { position: fixed; z-index: 9150; pointer-events: none; border: 2px solid var(--interactive-accent, #7c6cff); background: color-mix(in srgb, var(--interactive-accent, #7c6cff) 14%, transparent); border-radius: 3px; }
+	.ss-inspect-label { position: absolute; top: -22px; left: 0; background: var(--interactive-accent, #7c6cff); color: #fff; font: 11px ui-sans-serif, system-ui, sans-serif; font-weight: 600; padding: 2px 7px; border-radius: 5px; white-space: nowrap; }
 	.ss {
 		/* Chrome follows the theme being edited (the .ss element carries the draft + inherits the
 		   app theme), with the original dark studio look as fallback (MIG-070 §iter2-#2, Eisa). */

@@ -4834,7 +4834,7 @@
 {:else}
 <div class="app" dir={$dir} class:resizing={resizing !== null} class:no-sidebar={!sidebarOpen} class:dark={colorScheme === 'dark'}>
 	<!-- ═══ DOCK ═══ -->
-	<div class="dock">
+	<div class="dock" data-style-target="cDock">
 		<div class="dock-top">
 			<button class="dock-btn" class:active={showSearchHub} onclick={() => {
 				showSearchHub = !showSearchHub;
@@ -5019,8 +5019,8 @@
 
 	<!-- ═══ LEFT SIDEBAR ═══ -->
 	{#if sidebarOpen && !skyViewInspectMode}
-		<aside class="sidebar" style:width="{leftSidebarWidth}px">
-			<div class="sidebar-toolbar">
+		<aside class="sidebar" data-style-target="cSidebar" style:width="{leftSidebarWidth}px">
+			<div class="sidebar-toolbar" data-style-target="cToolbar">
 				<!-- Sidebar search removed — Search Hub is the single search experience -->
 				<!-- Row 1: New Elements — always visible -->
 				<div class="toolbar-actions new-elements" style="position:relative">
@@ -5396,7 +5396,7 @@
 						activeUniverseName={activeUniverseName}
 					/>
 				{/if}
-				<button class="sidebar-footer" onmousedown={(e) => e.stopPropagation()} onclick={() => showLibrarySwitcher = !showLibrarySwitcher}>
+				<button class="sidebar-footer" data-style-target="universe" onmousedown={(e) => e.stopPropagation()} onclick={() => showLibrarySwitcher = !showLibrarySwitcher}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 10l5-5 5 5"/><path d="M7 14l5 5 5-5"/></svg>
 					<span class="footer-name">{$t('universe.title') ?? 'Universe'}</span>
 				</button>
@@ -5410,7 +5410,7 @@
 	<div class="main-area">
 		<!-- Tab Bar (unified with layout controls) -->
 		<!-- Layout bar: sidebar + split controls (disabled when full-page overlay active) -->
-		<div class="layout-bar">
+		<div class="layout-bar" data-style-target="cLayoutBar">
 			<button class="tab-action" class:active={sidebarOpen} disabled={layoutCtrlDisabled} onclick={() => sidebarOpen = !sidebarOpen} title={layoutCtrlDisabled ? layoutCtrlDisabledReason : $t('layout.leftSidebar')}>
 				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg>
 			</button>
@@ -5434,7 +5434,7 @@
 		     flush against the screen edge. Padding respects per-side placement;
 		     uses logical CSS so RTL flips automatically.
 		     `tabBarFlankLeft` / `tabBarFlankRight` derived in the script above. -->
-		<div class="tab-bar" class:tab-bar-hidden={fullPageActive} class:tab-bar-flanked-start={tabBarFlankLeft} class:tab-bar-flanked-end={tabBarFlankRight}>
+		<div class="tab-bar" data-style-target="cTabs" class:tab-bar-hidden={fullPageActive} class:tab-bar-flanked-start={tabBarFlankLeft} class:tab-bar-flanked-end={tabBarFlankRight}>
 			{#if indexReturnPending}
 				<button class="index-return-btn" onclick={() => { showIndex = true; indexReturnPending = false; }}>
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
@@ -6371,7 +6371,7 @@
 	</div>
 
 	<!-- ═══ RIGHT SIDEBAR ═══ -->
-	<aside class="right-sidebar" class:collapsed={!rightSidebarOpen || skyViewInspectMode} style:width={(rightSidebarOpen && !skyViewInspectMode) ? rightSidebarWidth + 'px' : undefined}>
+	<aside class="right-sidebar" data-style-target="cRightSidebar" class:collapsed={!rightSidebarOpen || skyViewInspectMode} style:width={(rightSidebarOpen && !skyViewInspectMode) ? rightSidebarWidth + 'px' : undefined}>
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div class="rs-resize" onmousedown={(e) => startResize('right', e)}></div>
 		<div class="rs-inner" dir={noteDir}>
@@ -7022,7 +7022,7 @@
 	{/if}
 
 	<!-- ═══ STATUS BAR ═══ -->
-	<div class="status-bar">
+	<div class="status-bar" data-style-target="statusbar">
 		<div class="sb-left">
 			{#if sidebarTab}
 				<span class="sb-item">{sidebarTab.libraryName}</span>
