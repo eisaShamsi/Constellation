@@ -2707,7 +2707,7 @@
 		display: flex;
 		background: var(--background-primary);
 		border: 1px solid var(--background-modifier-border);
-		border-radius: 12px;
+		border-radius: var(--radius-l, 12px);
 		box-shadow: var(--shadow-l);
 		overflow: hidden;
 	}
@@ -3286,7 +3286,7 @@
 		text-align: center; padding: 16px 8px;
 		background: var(--background-secondary);
 		border: 1px solid var(--background-modifier-border);
-		border-radius: 10px;
+		border-radius: var(--radius-m, 10px);
 	}
 	.stat-value { font-size: 1.2rem; font-weight: 700; color: var(--text-normal); }
 	.stat-label { font-size: 0.72rem; color: var(--text-faint); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.03em; }

@@ -7230,7 +7230,7 @@
 		grid-row: 1;
 		width: var(--dock-width, 40px);
 		background: var(--dock-bg, var(--bg-tertiary));
-		border-inline-end: 1px solid var(--border);
+		border-inline-end: var(--border-width, 1px) solid var(--border);
 		display: flex; flex-direction: column;
 		justify-content: space-between; align-items: center; padding: 6px 0;
 	}
@@ -7251,14 +7251,16 @@
 
 	/* ═══ LEFT SIDEBAR ═══ */
 	.sidebar {
-		grid-row: 1; background: var(--bg-secondary);
-		border-inline-end: 1px solid var(--border);
+		/* §C Phase 9 wiring-audit — sidebar bg is an override layered over the global panel bg
+		   (no duplication: "Panel background" is the default, "Sidebar background" the specific override). */
+		grid-row: 1; background: var(--sidebar-bg, var(--bg-secondary));
+		border-inline-end: var(--border-width, 1px) solid var(--border);
 		display: flex; flex-direction: column; overflow: hidden;
 		position: relative;
 	}
 	.sidebar-toolbar {
 		padding: 4px 6px;
-		border-bottom: 1px solid var(--border);
+		border-bottom: var(--border-width, 1px) solid var(--border);
 		min-height: var(--sidebar-toolbar-height, 34px);
 		background: var(--sidebar-toolbar-bg, transparent);
 		display: flex; flex-direction: column;
@@ -7282,7 +7284,7 @@
 	/* New Library dropdown */
 	.new-lib-drop {
 		position: absolute; top: 100%; inset-inline: 0; z-index: 100;
-		background: var(--background-primary, #fff); border: 1px solid var(--border);
+		background: var(--background-primary, #fff); border: var(--border-width, 1px) solid var(--border);
 		border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 		padding: 4px; margin-top: 2px; min-width: 220px;
 	}
@@ -7298,7 +7300,7 @@
 	.nld-desc { font-size: 0.68rem; color: var(--text-muted); display: block; margin-top: 1px; }
 	.nld-input-row { display: flex; gap: 4px; margin-top: 4px; }
 	.nld-input {
-		flex: 1; min-width: 0; padding: 3px 6px; border: 1px solid var(--border); border-radius: 4px;
+		flex: 1; min-width: 0; padding: 3px 6px; border: var(--border-width, 1px) solid var(--border); border-radius: 4px;
 		background: var(--bg); color: var(--text); font-size: 0.75rem; font-family: inherit; outline: none;
 	}
 	.nld-input:focus { border-color: var(--interactive-accent); }
@@ -7333,7 +7335,7 @@
 
 	.search-box {
 		display: flex; align-items: center; gap: 4px; width: 100%;
-		background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 0 6px;
+		background: var(--bg); border: var(--border-width, 1px) solid var(--border); border-radius: 4px; padding: 0 6px;
 	}
 	.search-icon { color: var(--text-muted); flex-shrink: 0; }
 	.search-box input {
@@ -7505,7 +7507,7 @@
 	}
 	.sidebar-footer {
 		width: 100%;
-		border-top: 1px solid var(--border); padding: 4px 12px;
+		border-top: var(--border-width, 1px) solid var(--border); padding: 4px 12px;
 		display: flex; align-items: center; gap: 6px; min-height: 30px;
 		/* §3B — the "◊ Universe" switcher is its own element (colour cascades to the chevron + label). */
 		color: var(--universe-bar-color, var(--text-normal));
@@ -7920,7 +7922,7 @@
 	.tab-bar-hidden { display: none !important; }
 	.star-header {
 		display: flex; align-items: center; gap: 4px;
-		padding: 8px 16px; border-bottom: 1px solid var(--border);
+		padding: 8px 16px; border-bottom: var(--border-width, 1px) solid var(--border);
 		background: var(--bg-secondary);
 		position: relative; z-index: 20;
 	}
@@ -8040,7 +8042,7 @@
 	}
 	.index-note-header {
 		display: flex; align-items: center; justify-content: space-between;
-		padding: 4px 12px; border-bottom: 1px solid var(--border);
+		padding: 4px 12px; border-bottom: var(--border-width, 1px) solid var(--border);
 		background: var(--bg-secondary);
 	}
 	.index-note-name {
@@ -8053,7 +8055,7 @@
 	.index-split-divider:hover { background: var(--interactive-accent); }
 	.index-header {
 		display: flex; align-items: center; justify-content: space-between;
-		padding: 8px 16px; border-bottom: 1px solid var(--border);
+		padding: 8px 16px; border-bottom: var(--border-width, 1px) solid var(--border);
 		background: var(--bg-secondary);
 	}
 	.index-title { font-weight: 600; font-size: 0.9rem; }
@@ -8101,7 +8103,7 @@
 	.w-hint-sub { font-size: 0.78rem; color: var(--text-faint); margin-top: 4px; }
 	.w-dashboard-btn {
 		margin-top: 16px; padding: 8px 16px; border-radius: 8px;
-		border: 1px solid var(--border); background: var(--bg-secondary);
+		border: var(--border-width, 1px) solid var(--border); background: var(--bg-secondary);
 		color: var(--text-muted); cursor: pointer; font-size: 0.82rem;
 		display: flex; align-items: center; gap: 6px;
 		transition: all 0.15s;
@@ -8114,7 +8116,7 @@
 	}
 	.home-dashboard-toggle {
 		width: 28px; height: 28px; border-radius: 6px;
-		border: 1px solid var(--border); background: transparent;
+		border: var(--border-width, 1px) solid var(--border); background: transparent;
 		color: var(--text-muted); cursor: pointer;
 		display: flex; align-items: center; justify-content: center;
 	}
@@ -8133,7 +8135,7 @@
 		display: flex; gap: 1.25rem; max-width: 580px; width: 100%; margin-top: 0.5rem;
 	}
 	.w-option-card {
-		flex: 1; background: var(--bg-primary); border: 1px solid var(--border);
+		flex: 1; background: var(--bg-primary); border: var(--border-width, 1px) solid var(--border);
 		border-radius: 12px; padding: 1.5rem; text-align: center;
 		display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
 		transition: border-color 0.15s, box-shadow 0.15s;
@@ -8147,7 +8149,7 @@
 	.w-option-desc { color: var(--text-muted); font-size: 0.8rem; margin: 0 0 0.75rem 0; line-height: 1.45; }
 	.w-option-form { display: flex; flex-direction: column; gap: 0.5rem; width: 100%; }
 	.w-option-input {
-		width: 100%; padding: 0.45rem 0.6rem; border: 1px solid var(--border);
+		width: 100%; padding: 0.45rem 0.6rem; border: var(--border-width, 1px) solid var(--border);
 		border-radius: 6px; font-size: 0.85rem; font-family: inherit; text-align: center;
 		color: var(--text); background: var(--bg-secondary);
 	}
@@ -8158,7 +8160,7 @@
 	}
 	.w-option-btn.primary { background: var(--accent); color: var(--text-on-accent); }
 	.w-option-btn.primary:hover { background: var(--accent-hover); }
-	.w-option-btn.secondary { background: var(--bg-secondary); color: var(--text); border: 1px solid var(--border); }
+	.w-option-btn.secondary { background: var(--bg-secondary); color: var(--text); border: var(--border-width, 1px) solid var(--border); }
 	.w-option-btn.secondary:hover { border-color: var(--accent); color: var(--accent); }
 	.w-option-btn:disabled { opacity: 0.6; cursor: default; }
 	.w-error { margin-top: 1rem; color: var(--danger, #cf222e); font-size: 0.85rem; }
@@ -8168,7 +8170,7 @@
 	/* ═══ RIGHT SIDEBAR ═══ */
 	.right-sidebar {
 		grid-row: 1; background: var(--right-sidebar-bg, var(--bg-secondary));
-		border-inline-start: 1px solid var(--border);
+		border-inline-start: var(--border-width, 1px) solid var(--border);
 		overflow: hidden;
 		transition: width 0.2s ease;
 		position: relative;
@@ -8181,7 +8183,7 @@
 
 	.rs-tabs {
 		display: flex; flex-wrap: wrap;
-		border-bottom: 1px solid var(--border); flex-shrink: 0;
+		border-bottom: var(--border-width, 1px) solid var(--border); flex-shrink: 0;
 		background: var(--rs-tabs-bg, var(--right-sidebar-bg, var(--bg-secondary)));
 		position: sticky; top: 0; z-index: 3;
 	}
@@ -8234,7 +8236,7 @@
 	}
 	.rs-tag-toggle button {
 		padding: 2px 8px; font-size: 0.68rem; font-family: inherit;
-		background: var(--bg-hover); border: 1px solid var(--border); color: var(--text-muted);
+		background: var(--bg-hover); border: var(--border-width, 1px) solid var(--border); color: var(--text-muted);
 		cursor: pointer; border-radius: 4px;
 	}
 	.rs-tag-toggle button.active {
@@ -8279,7 +8281,7 @@
 		grid-column: 1 / -1; grid-row: 2;
 		height: var(--statusbar-height, 24px);
 		background: var(--statusbar-bg, var(--bg-tertiary));
-		border-top: 1px solid var(--border);
+		border-top: var(--border-width, 1px) solid var(--border);
 		display: flex; align-items: center; justify-content: space-between;
 		padding: 0 10px;
 		font-size: var(--statusbar-font-size, 0.7rem);

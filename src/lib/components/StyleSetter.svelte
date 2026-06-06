@@ -234,8 +234,9 @@
 		gType: { name: 'Type & rhythm', controls: [
 			{ label: 'Interface font size', type: 'appnum', setting: 'interfaceFontSize', min: 11, max: 20, step: 1, unit: 'px', def: 14 },
 			{ label: 'Line height', type: 'range', var: '--line-height-normal', min: 1.1, max: 2.2, step: 0.05, unit: '', def: 1.6 },
-			{ label: 'Tight line height', type: 'range', var: '--line-height-tight', min: 1.0, max: 1.8, step: 0.05, unit: '', def: 1.3 },
-			{ label: 'Paragraph spacing', type: 'range', var: '--paragraph-spacing', min: 0, max: 32, step: 1, unit: 'px', def: 12 } ] },
+			{ label: 'Tight line height', type: 'range', var: '--line-height-tight', min: 1.0, max: 1.8, step: 0.05, unit: '', def: 1.3 } ] },
+			// §C Phase 9 wiring-audit — "Paragraph spacing" removed: the editor is a live-preview SOURCE
+			// editor (lines, not paragraphs); paragraph gaps are blank lines, so there's no honest CSS hook.
 		gShape: { name: 'Shape & corners', controls: [
 			{ label: 'Small radius', type: 'range', var: '--radius-s', min: 0, max: 20, step: 1, unit: 'px', def: 4 },
 			{ label: 'Medium radius', type: 'range', var: '--radius-m', min: 0, max: 24, step: 1, unit: 'px', def: 8 },
@@ -303,8 +304,9 @@
 			{ label: 'Tag text', type: 'color', var: '--tag-color' },
 			{ label: 'Tag radius', type: 'range', var: '--tag-radius', min: 0, max: 24, step: 1, unit: 'px', def: 12 },
 			{ label: 'Callout radius', type: 'range', var: '--callout-radius', min: 0, max: 24, step: 1, unit: 'px', def: 8 } ] },
+		// §C Phase 9 wiring-audit — "Width" removed: the sidebar is sized by its drag-resize handle
+		// (a JS inline width), which a CSS var can't override. Background is a per-sidebar override.
 		cSidebar: { name: 'Sidebar shell', controls: [
-			{ label: 'Width', type: 'range', var: '--sidebar-width', min: 180, max: 420, step: 2, unit: 'px', def: 260 },
 			{ label: 'Background', type: 'color', var: '--sidebar-bg' } ] },
 		// §C Phase 5 + redesign — Links is ONE integrated surface (left sidebar + one right space, no
 		// centre — Eisa). The display controls (toggles + pill shape) sit above the §G Link-Types editor
