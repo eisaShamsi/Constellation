@@ -142,7 +142,14 @@ Boss-declared milestone. The Style Setter went from a session-only preview to th
 
 ## Post-milestone — Option E item C (2026-06-05)
 Eisa: **"C > D > E > Batched 14-language help"** → read as the research-doc options: C (inline Global) → D (inspect) → E (hybrid, completes once A+C+D done) → 14-lang help.
-- **C built:** a composite **Global preview** card (`.ss-gprev`) shown atop the right-rail controls when a Global element is selected (`GLOBAL_ELS`). Built purely from the Global CSS vars (`--background-primary-alt`, `--text-muted/-faint/-on-accent`, `--text-error/-warning/-success`, `--interactive-accent-hover`, `--text-accent`, `--radius-s/m/l`, `--border-width`, `--background-modifier-*`, `--line-height-normal`) → reflects the draft **live via the CSS cascade** (the `.ss` wrapper carries `draftStyle`). No JS; **theme-free → no freeze risk** (LL-032 clean). svelte-check clean; built OK (1m43s); mtime **`18:36:40` → `21:01:07`**. **[BOSS TEST] pending.** Next: **D** inspect-to-style.
+- **C built:** a composite **Global preview** card (`.ss-gprev`) shown atop the right-rail controls when a Global element is selected (`GLOBAL_ELS`). Built purely from the Global CSS vars (`--background-primary-alt`, `--text-muted/-faint/-on-accent`, `--text-error/-warning/-success`, `--interactive-accent-hover`, `--text-accent`, `--radius-s/m/l`, `--border-width`, `--background-modifier-*`, `--line-height-normal`) → reflects the draft **live via the CSS cascade** (the `.ss` wrapper carries `draftStyle`). No JS; **theme-free → no freeze risk** (LL-032 clean). svelte-check clean; built OK (1m43s); mtime **`18:36:40` → `21:01:07`**. **PASS** (Eisa).
+
+## Note summary + breadcrumb styleable (2026-06-06 — marathon session crossed midnight)
+Eisa side-questions: *"Did we consider the note summary section?"* (→ no) and *"what about the note breadcrumb?"*. Checked both honestly: `.e-summary` colour followed `--text-muted` but size/italic/spacing **hardcoded**; `.e-breadcrumb` colour followed `--text-normal` (§3B chrome rule) but size hardcoded — neither was a Setter element.
+- **Wired** NotePane: `.e-summary` → `var(--summary-color, var(--text-muted))` + `var(--summary-size, 0.95rem)`; `.e-breadcrumb` font-size → `var(--breadcrumb-size, 0.78rem)`; `.e-bc-lib/-sep/-note` → `var(--breadcrumb-color, var(--text-normal))` (breadcrumb colour **defaults to interface per §3B**, now overridable — no regression).
+- **Added** to the Setter Editor category: **Note summary** (colour + size) + **Breadcrumb** (colour + size); both in `NOTE_ELS` + the centre note preview as clickable lines (`.ss-summary`, `.ss-breadcrumb`, reading the same vars). Additive (unset = today's look), theme-free → no freeze risk.
+- svelte-check clean; built OK (2m11s); binary mtime **`2026-06-05 21:01:07` → `2026-06-06 09:32:38`**. Orientation v2.54 dated note (LL-031). **[BOSS TEST] pending.**
+- **⚠ HOUSEKEEPING DEBT:** no **MoCh** written this (very long) session — owe a `docs/MoCh/` file capturing the Style-Setter Boss↔Claude arc; write at the next pause.
 
 ---
 

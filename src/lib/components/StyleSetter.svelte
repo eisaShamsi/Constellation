@@ -172,6 +172,15 @@
 			{ label: 'Code font', type: 'select', var: '--font-monospace-theme', options: FONTS },
 			{ label: 'Code size', type: 'range', var: '--font-monospace-size', min: 10, max: 22, step: 1, unit: 'px', def: 14 } ] },
 		quote:  { name: 'Blockquote', controls: [{ label: 'Text colour', type: 'color', var: '--blockquote-text-color' }] },
+		// MIG-070 §C — the NOTE summary (the italic NSC headline under the title) + the breadcrumb path
+		// line. Each writes its dedicated NotePane var (defaults to today's look when unset). The
+		// breadcrumb's colour defaults to the interface text (§3B); set it here to override.
+		summary: { name: 'Note summary', controls: [
+			{ label: 'Colour', type: 'color', var: '--summary-color' },
+			{ label: 'Text size', type: 'range', var: '--summary-size', min: 11, max: 24, step: 1, unit: 'px', def: 15 } ] },
+		breadcrumb: { name: 'Breadcrumb', controls: [
+			{ label: 'Colour', type: 'color', var: '--breadcrumb-color' },
+			{ label: 'Text size', type: 'range', var: '--breadcrumb-size', min: 9, max: 18, step: 1, unit: 'px', def: 12 } ] },
 		// §C Phase 3 — global/foundational look (catalog vars already consumed app-wide).
 		gBackgrounds: { name: 'Backgrounds', controls: [
 			{ label: 'Background (alt)', type: 'color', var: '--background-primary-alt' },
@@ -281,7 +290,7 @@
 	const CATEGORIES: { key: string; name: string; surface: string; elements: string[] }[] = [
 		{ key: 'interface', name: 'Interface', surface: 'editor', elements: ['interface', 'fileTree', 'library', 'folder', 'cuniverse', 'universe', 'statusbar'] },
 		{ key: 'components', name: 'Components', surface: 'editor', elements: ['cDock', 'cToolbar', 'cLayoutBar', 'cTabs', 'cRightSidebar', 'cButtons', 'cTags', 'cSidebar'] },
-		{ key: 'editor', name: 'Editor', surface: 'editor', elements: ['noteBg', 'text', 'accent', 'link', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'bold', 'italic', 'strike', 'code', 'quote'] },
+		{ key: 'editor', name: 'Editor', surface: 'editor', elements: ['noteBg', 'text', 'breadcrumb', 'summary', 'accent', 'link', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'bold', 'italic', 'strike', 'code', 'quote'] },
 		{ key: 'global', name: 'Global', surface: 'editor', elements: ['gBackgrounds', 'gTextShades', 'gStatus', 'gAccent', 'gType', 'gShape', 'fonts'] },
 		{ key: 'links', name: 'Links', surface: 'editor', elements: ['links'] },
 		{ key: 'sky', name: 'Sky View', surface: 'sky', elements: ['accent', 'link'] },
@@ -322,7 +331,7 @@
 	// §C — the centre preview replicates the EXACT selected element (Eisa). Note/tree/global
 	// elements share a sample shape; chrome widgets each have their own. (Heavy surfaces —
 	// sky/org/index — keep their own alt preview, keyed on activeSurface below.)
-	const NOTE_ELS = new Set(['noteBg', 'text', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'bold', 'italic', 'strike', 'code', 'quote', 'link', 'accent']);
+	const NOTE_ELS = new Set(['noteBg', 'text', 'breadcrumb', 'summary', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'bold', 'italic', 'strike', 'code', 'quote', 'link', 'accent']);
 	const TREE_ELS = new Set(['interface', 'fileTree', 'library', 'folder', 'cuniverse']);
 	const GLOBAL_ELS = new Set(['gBackgrounds', 'gTextShades', 'gStatus', 'gAccent', 'gType', 'gShape']);
 	const pk = $derived(
@@ -630,7 +639,9 @@
 						<div class="ss-focus ss-focus-empty">Pick an element on the left — its preview appears here.</div>
 					{:else if pk === 'note'}
 						<div class="ss-focus ss-fcard ss-fnote">
+							<span class="ss-breadcrumb ss-hot2" class:ss-sel={selected === 'breadcrumb'} onclick={() => selectEl('breadcrumb')}>📚 My Library / Apple (Fruit)</span>
 							<span class="ss-title ss-hot2" class:ss-sel={selected === 'text' || selected === 'noteBg'} onclick={() => selectEl('text')}>Apple (Fruit)</span>
+							<span class="ss-summary ss-hot2" class:ss-sel={selected === 'summary'} onclick={() => selectEl('summary')}>A crisp pome fruit — sweet, tart, and endlessly useful.</span>
 							<span class="ss-h1 ss-hot2" class:ss-sel={selected === 'h1'} onclick={() => selectEl('h1')}>Heading one</span>
 							<span class="ss-h2 ss-hot2" class:ss-sel={selected === 'h2'} onclick={() => selectEl('h2')}>Heading two</span>
 							<span class="ss-h3 ss-hot2" class:ss-sel={selected === 'h3'} onclick={() => selectEl('h3')}>Heading three</span>
@@ -885,6 +896,9 @@
 	/* The note body scrolls if the chosen heading sizes overflow — the preview shows REAL sizes. */
 	.ss-main { grid-area: main; background: var(--background-primary, #fbfbfa); color: var(--editor-text-color, var(--text-normal, #2e3338)); padding: 16px 18px; text-align: left; border: none; font-family: var(--font-text-theme, inherit); display: flex; flex-direction: column; gap: 7px; overflow-y: auto; }
 	.ss-title { display: block; font-weight: 800; font-size: 18px; color: var(--editor-text-color, var(--text-normal, #2e3338)); }
+	/* §C — note breadcrumb + summary previews, reading the same vars as NotePane's `.e-breadcrumb`/`.e-summary`. */
+	.ss-breadcrumb { display: block; font-size: var(--breadcrumb-size, 12px); color: var(--breadcrumb-color, var(--text-normal, #2e3338)); opacity: .9; }
+	.ss-summary { display: block; font-style: italic; font-size: var(--summary-size, 15px); color: var(--summary-color, var(--text-muted, #8a8a8a)); line-height: 1.5; }
 	/* Headings read their own size/colour vars, with the catalog defaults + inherit as fallbacks
 	   so the preview matches a real note before any edit. Weight is shared (--heading-weight). */
 	/* Colour fallbacks mirror the real note's markdownHighlightStyle (heading #d73a49, bold

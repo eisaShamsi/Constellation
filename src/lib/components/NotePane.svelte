@@ -1202,18 +1202,18 @@
 
 	/* ─── Breadcrumb (above paper) ─── */
 	.e-breadcrumb {
-		padding: 4px 48px; font-size: 0.78rem; color: var(--text-faint);
+		/* MIG-070 §C — own size (default 0.78rem), so the Setter's "Breadcrumb" element can resize it. */
+		padding: 4px 48px; font-size: var(--breadcrumb-size, 0.78rem); color: var(--text-faint);
 		display: flex; align-items: center; min-height: 28px; flex-shrink: 0;
 		width: 100%; max-width: 1200px; background: var(--background-primary, #ffffff);
 		border-bottom: 1px solid var(--background-modifier-border, #e0e0e0);
 	}
-	/* MIG-070 §3B — whole breadcrumb (library name + "/" separator + note name) follows the
-	   interface text colour (--text-normal), so the Interface control recolours all of it. */
-	.e-bc-lib { color: var(--text-normal); }
-	.e-bc-sep { margin: 0 4px; color: var(--text-normal); }
-	/* MIG-070 §3B — the breadcrumb is chrome → follows the interface text colour (--text-normal),
-	   NOT the note (Eisa: tab + library label + breadcrumb all follow the universal interface). */
-	.e-bc-note { color: var(--text-normal); }
+	/* MIG-070 §3B/§C — breadcrumb (library + "/" separator + note name) follows the interface text
+	   colour (--text-normal) BY DEFAULT (Eisa: breadcrumb is chrome), but a Setter "Breadcrumb"
+	   override (--breadcrumb-color) wins when set, so it can be styled independently if wanted. */
+	.e-bc-lib { color: var(--breadcrumb-color, var(--text-normal)); }
+	.e-bc-sep { margin: 0 4px; color: var(--breadcrumb-color, var(--text-normal)); }
+	.e-bc-note { color: var(--breadcrumb-color, var(--text-normal)); }
 	/* §136 — bidirectional stage controls (CE-spec Phase 6, post-revision).
 	 * Promote → is the canonical forward verb (prominent, accent border).
 	 * ← Demote is the legitimate-but-occasional revision verb (subdued, no
@@ -1308,8 +1308,10 @@
 	/* NSC summary — under the title, inside the page (MIG-070 §iter2-#1, Eisa) */
 	.e-summary {
 		font-style: italic;
-		color: var(--text-muted);
-		font-size: 0.95rem;
+		/* MIG-070 §C — own colour + size (default = the muted note shade), so the Setter's "Note
+		   summary" element can restyle it; falls back to today's look when unset. */
+		color: var(--summary-color, var(--text-muted));
+		font-size: var(--summary-size, 0.95rem);
 		line-height: 1.55;
 		margin-block: -12px 22px;
 		margin-inline: 0;
