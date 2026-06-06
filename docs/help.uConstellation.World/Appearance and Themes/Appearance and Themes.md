@@ -216,12 +216,12 @@ The **Style Setter** is a full-page design studio for your whole interface. Inst
 
 - **Interface** — the file tree, status bar, and universe bar.
 - **Components** — the ribbon dock, toolbars, top bar & tabs, buttons, tags & callouts.
-- **Editor** — the note itself: headings, bold, italic, links, inline code, quotes.
+- **Editor** — the note itself: the **breadcrumb** path line, headings, bold, italic, links, inline code, blockquotes, and the **note summary** (the italic line under the title — its own colour, font, size, thickness, and italic on/off).
 - **Global** — background and text shades, accent shades, type & spacing, corners & borders, and per-script fonts.
 - **Links** — the typed-link colours and how they display.
 - **Sky View / OrgChart / Index / Cataloger / Shell** — the plugin surfaces.
 
-Below them are *theme cards* (Midnight, Daylight, Chocolate, Nord) that seed a whole look at once.
+Below them are your **saved styles** — click one to apply that whole look at once (see *Save a look as a named Style*, below). *(Built-in themes are picked from Settings → Appearance, not here.)*
 
 **Two ways you see your changes:**
 
