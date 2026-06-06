@@ -203,7 +203,11 @@ Eisa flagged Stage 2 controls not reflecting; then **"check all Style Setter wir
 - **§2 (this commit):** border-width → all `var(--border)` chrome borders (+layout replace_all); sidebar-bg → `.sidebar` override over the global panel bg; radius-l → `.settings-modal`; radius-m → `.stat-card`.
 - **2 removed (Eisa's call — couldn't be honestly wired):** Sidebar **Width** (drag-resize handle owns it via a JS inline width) + **Paragraph spacing** (live-preview *source* editor has lines, not paragraphs). Avoid-duplications / form-aligns-to-purpose.
 - **The short-alias layer is clean** (`theme.css`: `--bg-secondary: var(--background-secondary)` etc. — one source of truth, no bad duplication).
-- **Re-audit: 143/143 wired, 0 DEAD.** svelte-check clean; built OK (2m14s); mtime **`19:58:11` → `21:16:45`**. **[BOSS TEST] pending** — combined §1+§2 on the fresh binary.
+- **Re-audit: 143/143 wired, 0 DEAD.** svelte-check clean; built OK (2m14s); mtime **`19:58:11` → `21:16:45`**. Combined §1+§2 **All Pass** (Eisa).
+- **PCS + milestone backup:** pushed all commits; tag `milestone/style-setter-complete`; ZIP `E:/Backups/Constellation/Constellation-style-setter-complete-20260606.zip` (146 MB). User Manual + Appearance-help (English) updated for the consolidated Setter (commit `9a059207`).
+
+## Phase 9 dead-code /simplify (2026-06-06)
+Removed the now-unreachable Style-Settings code left behind by the tab retirement (each verified to have 0 live references first): the `{:else if activeSection === 'stylesettings'}` **template block** (83 lines), the **helper cluster** (`getActiveTheme`, `ensureCustomTheme`, `exportStyleSettings`, `copyStyleSettings`, `applyStyleSettingsJSON`, `pasteStyleSettingsFromClipboard`, `importStyleSettingsFile` + `ssImport*` state, 93 lines), the 2 dead **imports** (`StyleSettingsPanel`, `getEffectiveStyleBlocks`), and the **orphaned CSS** (`.ss-toolbar*`, `.w-btn-sm*`, `.ss-import*`, 47 lines). Kept the shared `downloadJSON`/`pickJSONFile` import (used by theme export/import). **225 lines removed total.** svelte-check clean (no dangling refs); built OK (2m03s); mtime **`21:16:45` → `22:01:12`**. No user-facing change (pure cleanup). Remaining MIG-070 §C: **batched 14-language help** only.
 
 ---
 
