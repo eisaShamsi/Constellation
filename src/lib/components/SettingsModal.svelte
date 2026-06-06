@@ -267,7 +267,10 @@
 		{ id: 'index', label: $t('settings.sections.index') || 'Index', icon: 'list' },
 		{ id: 'panels', label: $t('settings.sections.panels') || 'Panels', icon: 'layout' },
 		{ id: 'appearance', label: $t('settings.sections.appearance'), icon: 'palette' },
-		{ id: 'stylesettings', label: $t('settings.sections.styleSettings') || 'Style Settings', icon: 'sliders' },
+		// MIG-070 §C Phase 9 — the Style Setter is now a left-dock nav tab (Eisa). Clicking it opens the
+		// full-page Setter overlay (handled specially in the nav onclick — there is no inline body). This
+		// REPLACES the old 'stylesettings' tab, whose ~85 catalog controls the Setter now covers (gaps closed).
+		{ id: 'stylesetter', label: $t('settings.sections.styleSetter') || 'Style Setter', icon: 'sparkles' },
 		{ id: 'iconoverrides', label: $t('settings.sections.iconOverrides') || 'App Icons', icon: 'grid' },
 		{ id: 'hotkeys', label: $t('settings.sections.hotkeys') || 'Hotkeys', icon: 'keyboard' },
 		{ id: 'templates', label: $t('settings.sections.templates') || 'Templates', icon: 'template' },
@@ -706,6 +709,7 @@
 			compass: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm2.19 12.19L6 18l3.81-8.19L18 6l-3.81 8.19z',
 			bug: 'M20 8h-2.81c-.45-.78-1.07-1.45-1.82-1.96L17 4.41 15.59 3l-2.17 2.17C12.96 5.06 12.49 5 12 5c-.49 0-.96.06-1.41.17L8.41 3 7 4.41l1.62 1.63C7.88 6.55 7.26 7.22 6.81 8H4v2h2.09c-.05.33-.09.66-.09 1v1H4v2h2v1c0 .34.04.67.09 1H4v2h2.81c1.04 1.79 2.97 3 5.19 3s4.15-1.21 5.19-3H20v-2h-2.09c.05-.33.09-.66.09-1v-1h2v-2h-2v-1c0-.34-.04-.67-.09-1H20V8zm-6 8h-4v-2h4v2zm0-4h-4v-2h4v2z',
 			layout: 'M3 3h18v4H3V3zm0 6h8v12H3V9zm10 0h8v5h-8V9zm0 7h8v5h-8v-5z',
+			sparkles: 'M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z',
 		};
 		return icons[icon] || icons.dashboard;
 	}
@@ -840,7 +844,7 @@
 				<button
 					class="settings-nav-item"
 					class:active={activeSection === section.id}
-					onclick={() => activeSection = section.id}
+					onclick={() => { if (section.id === 'stylesetter') openStyleSetter(); else activeSection = section.id; }}
 				>
 					<svg class="nav-svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d={sectionIcon(section.icon)}/></svg>
 					<span>{section.label}</span>
@@ -2333,14 +2337,8 @@
 						</div>
 					</div>
 
-					<!-- ═══ STYLE SETTER (standalone full-page design studio — MIG-070) ═══ -->
-					<div class="setting-item ss-entry">
-						<div class="setting-info">
-							<div class="setting-name">Constellation Style Setter</div>
-							<div class="setting-desc">Design your whole look in one place — click any part of the interface and restyle it live.</div>
-						</div>
-						<button class="ss-entry-btn" style="font:inherit;font-weight:600;padding:8px 16px;border-radius:8px;border:1px solid var(--interactive-accent);background:var(--interactive-accent);color:#fff;cursor:pointer;white-space:nowrap;" onclick={() => openStyleSetter()}>✦ Open Style Setter</button>
-					</div>
+					<!-- MIG-070 §C Phase 9 — the "Open Style Setter" launcher moved OUT of here into the left
+					     Settings nav as its own "Style Setter" tab (Eisa). No button needed in Appearance now. -->
 
 					<!-- ═══ STYLES (named, app-global style presets — MIG-069 §C) ═══ -->
 					<StylePresetsPanel />
@@ -2473,6 +2471,13 @@
 
 				<!-- ═══ STYLE SETTINGS ═══ -->
 				{:else if activeSection === 'stylesettings'}
+					<!-- MIG-070 §C Phase 9.2 — Style Settings tab RETIRED: removed from the nav (the Style
+					     Setter tab replaces it; the Setter now covers all ~85 catalog controls incl. the 5
+					     closed gaps). This branch is unreachable — activeSection can never be 'stylesettings'
+					     — kept as revertible dead code. /simplify will remove it + the now-orphaned helpers
+					     + the StyleSettingsPanel import. The catalog + the +layout apply path stay (existing
+					     per-theme styleSettingsValues still render); the Setter's per-Universe styleOverride
+					     is the editing replacement. -->
 					{@const activeTheme = allThemes.find(t => t.id === $appSettings.activeThemeId) ?? allThemes[0]}
 					{#if !activeTheme}
 						<div class="setting-desc">{$t('settings.appearance.noActiveTheme') || 'No active theme selected. Choose a theme in Appearance first.'}</div>
