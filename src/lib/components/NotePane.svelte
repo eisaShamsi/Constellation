@@ -1203,9 +1203,9 @@
 	/* ─── Breadcrumb (above paper) ─── */
 	.e-breadcrumb {
 		/* MIG-070 §C — own size (default 0.78rem), so the Setter's "Breadcrumb" element can resize it. */
-		padding: 4px 48px; font-size: var(--breadcrumb-size, 0.78rem); color: var(--text-faint);
+		padding: 4px var(--file-margins, 48px); font-size: var(--breadcrumb-size, 0.78rem); color: var(--text-faint);
 		display: flex; align-items: center; min-height: 28px; flex-shrink: 0;
-		width: 100%; max-width: 1200px; background: var(--background-primary, #ffffff);
+		width: 100%; max-width: var(--file-line-width, 1200px); background: var(--background-primary, #ffffff);
 		border-bottom: 1px solid var(--background-modifier-border, #e0e0e0);
 	}
 	/* MIG-070 §3B/§C — breadcrumb (library + "/" separator + note name) follows the interface text
@@ -1291,10 +1291,11 @@
 
 	/* ─── The Paper (spec 3.1) ─── */
 	.e-paper {
-		width: 100%; max-width: 1200px; flex: 1;
+		/* §C Phase 9 wiring-audit — wire the Setter's "Reading width" + "Note margins" (px, defaults = today's look). */
+		width: 100%; max-width: var(--file-line-width, 1200px); flex: 1;
 		display: flex; flex-direction: column; background: var(--background-primary, #ffffff);
 		font-family: var(--font-text-theme, inherit);
-		padding: 48px; min-width: 0; overflow-y: auto; overflow-x: hidden;
+		padding: var(--file-margins, 48px); min-width: 0; overflow-y: auto; overflow-x: hidden;
 	}
 
 	/* ─── Title (spec 0.3) ─── */
@@ -1368,7 +1369,9 @@
 	.e-editor :global(.cm-editor.cm-focused) { outline: none !important; border: none !important; }
 	/* Force cursor visibility — prevents invisible cursor on click */
 	.e-editor :global(.cm-cursor) {
-		border-left: 1.5px solid var(--text-normal, #1a1a1a) !important;
+		/* §C Phase 9 wiring-audit — honour the Setter's "Cursor & selection → Cursor colour"
+		   (--caret-color); defaults to --text-normal (today's look). */
+		border-left: 1.5px solid var(--caret-color, var(--text-normal, #1a1a1a)) !important;
 		visibility: visible !important;
 	}
 

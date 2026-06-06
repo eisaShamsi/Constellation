@@ -41,7 +41,11 @@
 		// as ranges, fontWeight as a select). They flow through updateSettings → every panel reacts.
 		| { label: string; type: 'toggle'; setting: 'colourTypedLinks' | 'showTypedLinkLabels' }
 		| { label: string; type: 'pillrange'; prop: 'radius' | 'height'; min: number; max: number; step: number; unit: string }
-		| { label: string; type: 'pillselect'; prop: 'fontWeight'; options: [string, string][] };
+		| { label: string; type: 'pillselect'; prop: 'fontWeight'; options: [string, string][] }
+		// §C Phase 9 wiring-audit — font sizes are driven by appSettings (interfaceFontSize/fontSize),
+		// which +layout applies AFTER styleOverride. A CSS-var control would be stomped, so these write
+		// appSettings directly (single source of truth — no duplicate var↔setting path).
+		| { label: string; type: 'appnum'; setting: 'interfaceFontSize' | 'fontSize'; min: number; max: number; step: number; unit: string; def: number };
 
 	// §C Phase 4 — a curated typeface list (cross-platform stacks). A full installed-fonts list +
 	// per-script fonts + font-theme/numerals (from the Language tab) are the deeper follow-up.
@@ -154,7 +158,7 @@
 		text:    { name: 'Body text', controls: [
 			{ label: 'Text colour', type: 'color', var: '--editor-text-color' },
 			{ label: 'Note font', type: 'select', var: '--font-text-theme', options: FONTS },
-			{ label: 'Text size', type: 'range', var: '--font-text-size', min: 11, max: 28, step: 1, unit: 'px', def: 16 } ] },
+			{ label: 'Text size', type: 'appnum', setting: 'fontSize', min: 11, max: 28, step: 1, unit: 'px', def: 16 } ] },
 		link:    { name: 'Link', controls: [
 			{ label: 'Link colour', type: 'color', var: '--link-color' },
 			{ label: 'Hover colour', type: 'color', var: '--link-color-hover' },
@@ -228,7 +232,7 @@
 			{ label: 'Accent (hover)', type: 'color', var: '--interactive-accent-hover' },
 			{ label: 'Accent text', type: 'color', var: '--text-accent' } ] },
 		gType: { name: 'Type & rhythm', controls: [
-			{ label: 'Interface font size', type: 'range', var: '--font-interface-size', min: 11, max: 20, step: 1, unit: 'px', def: 14 },
+			{ label: 'Interface font size', type: 'appnum', setting: 'interfaceFontSize', min: 11, max: 20, step: 1, unit: 'px', def: 14 },
 			{ label: 'Line height', type: 'range', var: '--line-height-normal', min: 1.1, max: 2.2, step: 0.05, unit: '', def: 1.6 },
 			{ label: 'Tight line height', type: 'range', var: '--line-height-tight', min: 1.0, max: 1.8, step: 0.05, unit: '', def: 1.3 },
 			{ label: 'Paragraph spacing', type: 'range', var: '--paragraph-spacing', min: 0, max: 32, step: 1, unit: 'px', def: 12 } ] },
@@ -237,8 +241,8 @@
 			{ label: 'Medium radius', type: 'range', var: '--radius-m', min: 0, max: 24, step: 1, unit: 'px', def: 8 },
 			{ label: 'Large radius', type: 'range', var: '--radius-l', min: 0, max: 32, step: 1, unit: 'px', def: 12 },
 			{ label: 'Border width', type: 'range', var: '--border-width', min: 0, max: 4, step: 1, unit: 'px', def: 1 },
-			{ label: 'Reading width', type: 'range', var: '--file-line-width', min: 40, max: 120, step: 1, unit: 'ch', def: 70 },
-			{ label: 'Note margins', type: 'range', var: '--file-margins', min: 0, max: 80, step: 1, unit: 'px', def: 24 },
+			{ label: 'Reading width', type: 'range', var: '--file-line-width', min: 600, max: 1600, step: 20, unit: 'px', def: 1200 },
+			{ label: 'Note margins', type: 'range', var: '--file-margins', min: 0, max: 96, step: 4, unit: 'px', def: 48 },
 			{ label: 'Small shadow', type: 'select', var: '--shadow-s', options: SHADOW_S_OPTS },
 			{ label: 'Large shadow', type: 'select', var: '--shadow-l', options: SHADOW_L_OPTS } ] },
 		// §C Phase 4.2 — interface language + per-script fonts (Latin = the Interface/Note/Code font
@@ -410,6 +414,12 @@
 	function setToggle(setting: 'colourTypedLinks' | 'showTypedLinkLabels', val: boolean) {
 		if (setting === 'colourTypedLinks') updateSettings({ colourTypedLinks: val });
 		else updateSettings({ showTypedLinkLabels: val });
+	}
+	// §C Phase 9 wiring-audit — font-size controls write appSettings (the working path, applied by
+	// +layout as --font-ui-size / --font-text-size). Restores sizing that Phase 9.3 inadvertently broke.
+	function setAppNum(setting: 'interfaceFontSize' | 'fontSize', val: number) {
+		if (setting === 'interfaceFontSize') updateSettings({ interfaceFontSize: val });
+		else updateSettings({ fontSize: val });
 	}
 	function selectEl(key: string) {
 		selected = key;
@@ -861,6 +871,11 @@
 									onchange={(e) => setPillShape(c.prop, parseInt((e.currentTarget as HTMLSelectElement).value))}>
 									{#each c.options as [lbl, val] (val)}<option value={val}>{lbl}</option>{/each}
 								</select>
+							{:else if c.type === 'appnum'}
+								<label for={'ss-an-' + c.setting}>{c.label}<span class="ss-rval">{$appSettings[c.setting] ?? c.def}{c.unit}</span></label>
+								<input id={'ss-an-' + c.setting} type="range" min={c.min} max={c.max} step={c.step}
+									value={$appSettings[c.setting] ?? c.def}
+									oninput={(e) => setAppNum(c.setting, parseInt((e.currentTarget as HTMLInputElement).value))} />
 							{:else}
 								<label for={'ss-' + c.var}>{c.label}</label>
 								<select id={'ss-' + c.var} value={curVal(c.var)} onchange={(e) => setVar(c.var, (e.currentTarget as HTMLSelectElement).value)}>

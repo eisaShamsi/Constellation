@@ -120,10 +120,13 @@ export const lineDecoPlugin = ViewPlugin.fromClass(LineDecoPluginClass, {
 export const lineDecoTheme = EditorView.theme({
 	'.cm-codeblock-line': {
 		backgroundColor: 'var(--background-primary-alt, #f5f5f5)',
-		borderRadius: '0',
+		// §C Phase 9 wiring-audit — wire the Setter's "Inline code → Block radius" control.
+		borderRadius: 'var(--code-block-radius, 0)',
 	},
 	'.cm-blockquote-line': {
-		borderInlineStart: '3px solid var(--text-faint, #ccc)',
+		// §C Phase 9 wiring-audit — plain `>` quote bar now honours the Setter's "Blockquote → Bar
+		// colour / Bar width" controls (defaults to today's look: 3px solid --text-faint).
+		borderInlineStart: 'var(--blockquote-border-width, 3px) solid var(--blockquote-border-color, var(--text-faint, #ccc))',
 		paddingInlineStart: '12px',
 		backgroundColor: 'color-mix(in srgb, var(--text-faint, #ccc) 5%, transparent)',
 	},
