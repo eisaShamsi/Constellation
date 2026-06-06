@@ -70,6 +70,17 @@
 	const BORDER_STYLE: [string, string][] = [
 		['Solid', 'solid'], ['Dashed', 'dashed'], ['Dotted', 'dotted'], ['None', 'none'],
 	];
+	// §C Phase 9 gap-close — shadows are box-shadow CSS strings; a non-technical user picks a
+	// preset, not a raw value. "Default" is FIRST so an unset var (curVal '') displays it (= the
+	// catalog default), and its value matches the catalog so a set-to-default var reflects too.
+	const SHADOW_S_OPTS: [string, string][] = [
+		['Default', '0 1px 2px rgba(0,0,0,0.1)'], ['None', 'none'],
+		['Soft', '0 2px 6px rgba(0,0,0,0.14)'], ['Medium', '0 3px 10px rgba(0,0,0,0.18)'], ['Strong', '0 5px 16px rgba(0,0,0,0.24)'],
+	];
+	const SHADOW_L_OPTS: [string, string][] = [
+		['Default', '0 4px 16px rgba(0,0,0,0.12)'], ['None', 'none'],
+		['Soft', '0 6px 20px rgba(0,0,0,0.16)'], ['Medium', '0 8px 28px rgba(0,0,0,0.2)'], ['Strong', '0 12px 36px rgba(0,0,0,0.26)'],
+	];
 	// §C Phase 4.2 — per-script font choices (each script its own face). The interface LANGUAGE
 	// stays in Settings → Language (a locale setting, not styling) — Eisa's call.
 	const AR_FONTS: [string, string][] = [['System default', ''], ['Noto Naskh Arabic', '"Noto Naskh Arabic"'], ['Amiri', 'Amiri'], ['Scheherazade New', '"Scheherazade New"'], ['Cairo', 'Cairo'], ['Dubai', 'Dubai'], ['Tahoma', 'Tahoma'], ['Segoe UI', '"Segoe UI"'], ['Traditional Arabic', '"Traditional Arabic"']];
@@ -146,6 +157,7 @@
 			{ label: 'Text size', type: 'range', var: '--font-text-size', min: 11, max: 28, step: 1, unit: 'px', def: 16 } ] },
 		link:    { name: 'Link', controls: [
 			{ label: 'Link colour', type: 'color', var: '--link-color' },
+			{ label: 'Hover colour', type: 'color', var: '--link-color-hover' },
 			{ label: 'Underline', type: 'select', var: '--link-decoration', options: DECOR } ] },
 		h1: { name: 'Heading 1', controls: [
 			{ label: 'Colour', type: 'color', var: '--h1-color' },
@@ -176,8 +188,15 @@
 			{ label: 'Background', type: 'color', var: '--code-background' },
 			{ label: 'Text colour', type: 'color', var: '--code-normal' },
 			{ label: 'Code font', type: 'select', var: '--font-monospace-theme', options: FONTS },
-			{ label: 'Code size', type: 'range', var: '--font-monospace-size', min: 10, max: 22, step: 1, unit: 'px', def: 14 } ] },
-		quote:  { name: 'Blockquote', controls: [{ label: 'Text colour', type: 'color', var: '--blockquote-text-color' }] },
+			{ label: 'Code size', type: 'range', var: '--font-monospace-size', min: 10, max: 22, step: 1, unit: 'px', def: 14 },
+			{ label: 'Block radius', type: 'range', var: '--code-block-radius', min: 0, max: 20, step: 1, unit: 'px', def: 6 } ] },
+		quote:  { name: 'Blockquote', controls: [
+			{ label: 'Text colour', type: 'color', var: '--blockquote-text-color' },
+			{ label: 'Bar colour', type: 'color', var: '--blockquote-border-color' },
+			{ label: 'Bar width', type: 'range', var: '--blockquote-border-width', min: 1, max: 8, step: 1, unit: 'px', def: 3 } ] },
+		caret:  { name: 'Cursor & selection', controls: [
+			{ label: 'Cursor colour', type: 'color', var: '--caret-color' },
+			{ label: 'Selection colour', type: 'color', var: '--text-selection' } ] },
 		// MIG-070 §C — the NOTE summary (the italic NSC headline under the title) + the breadcrumb path
 		// line. Each writes its dedicated NotePane var (defaults to today's look when unset). The
 		// breadcrumb's colour defaults to the interface text (§3B); set it here to override.
@@ -219,7 +238,9 @@
 			{ label: 'Large radius', type: 'range', var: '--radius-l', min: 0, max: 32, step: 1, unit: 'px', def: 12 },
 			{ label: 'Border width', type: 'range', var: '--border-width', min: 0, max: 4, step: 1, unit: 'px', def: 1 },
 			{ label: 'Reading width', type: 'range', var: '--file-line-width', min: 40, max: 120, step: 1, unit: 'ch', def: 70 },
-			{ label: 'Note margins', type: 'range', var: '--file-margins', min: 0, max: 80, step: 1, unit: 'px', def: 24 } ] },
+			{ label: 'Note margins', type: 'range', var: '--file-margins', min: 0, max: 80, step: 1, unit: 'px', def: 24 },
+			{ label: 'Small shadow', type: 'select', var: '--shadow-s', options: SHADOW_S_OPTS },
+			{ label: 'Large shadow', type: 'select', var: '--shadow-l', options: SHADOW_L_OPTS } ] },
 		// §C Phase 4.2 — interface language + per-script fonts (Latin = the Interface/Note/Code font
 		// pickers; these are the non-Latin scripts, each rendered in its own font via the engine).
 		fonts: { name: 'Per-script fonts', controls: [
@@ -299,7 +320,7 @@
 	const CATEGORIES: { key: string; name: string; surface: string; elements: string[] }[] = [
 		{ key: 'interface', name: 'Interface', surface: 'editor', elements: ['interface', 'fileTree', 'library', 'folder', 'cuniverse', 'universe', 'universePanel', 'statusbar'] },
 		{ key: 'components', name: 'Components', surface: 'editor', elements: ['cDock', 'cToolbar', 'cLayoutBar', 'cTabs', 'cRightSidebar', 'cButtons', 'cTags', 'cSidebar'] },
-		{ key: 'editor', name: 'Editor', surface: 'editor', elements: ['noteBg', 'text', 'breadcrumb', 'summary', 'accent', 'link', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'bold', 'italic', 'strike', 'code', 'quote'] },
+		{ key: 'editor', name: 'Editor', surface: 'editor', elements: ['noteBg', 'text', 'breadcrumb', 'summary', 'accent', 'link', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'bold', 'italic', 'strike', 'code', 'quote', 'caret'] },
 		{ key: 'global', name: 'Global', surface: 'editor', elements: ['gBackgrounds', 'gTextShades', 'gStatus', 'gAccent', 'gType', 'gShape', 'fonts'] },
 		{ key: 'links', name: 'Links', surface: 'editor', elements: ['links'] },
 		{ key: 'sky', name: 'Sky View', surface: 'sky', elements: ['accent', 'link'] },
