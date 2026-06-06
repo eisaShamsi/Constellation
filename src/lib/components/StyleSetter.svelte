@@ -133,6 +133,12 @@
 			{ label: 'Text colour', type: 'color', var: '--statusbar-color' },
 			{ label: 'Font size', type: 'range', var: '--statusbar-font-size', min: 9, max: 18, step: 1, unit: 'px', def: 11 },
 			{ label: 'Height', type: 'range', var: '--statusbar-height', min: 18, max: 48, step: 1, unit: 'px', def: 24 } ] },
+		// MIG-070 §C — the Universe / Libraries panel (the switcher popup: Universe header, Own Libraries
+		// list with colour dots + counts). Its bg/text/header default to the interface look; override here.
+		universePanel: { name: 'Universe panel', controls: [
+			{ label: 'Background', type: 'color', var: '--universe-panel-bg' },
+			{ label: 'Text colour', type: 'color', var: '--universe-panel-color' },
+			{ label: 'Section headers', type: 'color', var: '--universe-panel-header-color' } ] },
 		noteBg:  { name: 'Note background', controls: [{ label: 'Background', type: 'color', var: '--background-primary' }] },
 		text:    { name: 'Body text', controls: [
 			{ label: 'Text colour', type: 'color', var: '--editor-text-color' },
@@ -291,7 +297,7 @@
 	// elements (Eisa). Interface + Editor both preview the main app window ('editor' surface);
 	// the heavy plugins are their own preview surfaces.
 	const CATEGORIES: { key: string; name: string; surface: string; elements: string[] }[] = [
-		{ key: 'interface', name: 'Interface', surface: 'editor', elements: ['interface', 'fileTree', 'library', 'folder', 'cuniverse', 'universe', 'statusbar'] },
+		{ key: 'interface', name: 'Interface', surface: 'editor', elements: ['interface', 'fileTree', 'library', 'folder', 'cuniverse', 'universe', 'universePanel', 'statusbar'] },
 		{ key: 'components', name: 'Components', surface: 'editor', elements: ['cDock', 'cToolbar', 'cLayoutBar', 'cTabs', 'cRightSidebar', 'cButtons', 'cTags', 'cSidebar'] },
 		{ key: 'editor', name: 'Editor', surface: 'editor', elements: ['noteBg', 'text', 'breadcrumb', 'summary', 'accent', 'link', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'bold', 'italic', 'strike', 'code', 'quote'] },
 		{ key: 'global', name: 'Global', surface: 'editor', elements: ['gBackgrounds', 'gTextShades', 'gStatus', 'gAccent', 'gType', 'gShape', 'fonts'] },

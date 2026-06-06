@@ -956,7 +956,7 @@
 	}
 </script>
 
-<div class="e-desk" dir={dir}>
+<div class="e-desk" dir={dir} data-style-target="text">
 	<!-- ─── Breadcrumb ─── -->
 	<div class="e-breadcrumb">
 		{#if hasHistory}

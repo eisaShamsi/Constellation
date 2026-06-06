@@ -65,7 +65,7 @@
 	});
 </script>
 
-<div class="library-switcher" bind:this={popupEl}>
+<div class="library-switcher" data-style-target="universePanel" bind:this={popupEl}>
 	<!-- Universe section -->
 	<div class="vs-section-header">{$t('universe.title') ?? 'Universe'}</div>
 	<div class="vs-item vs-universe-info">
@@ -152,7 +152,8 @@
 		inset-inline-start: 0;
 		inset-inline-end: 0;
 		margin-bottom: 4px;
-		background: var(--background-primary);
+		/* MIG-070 §C — own bg, so the Setter's "Universe panel" element can restyle it (default = primary bg). */
+		background: var(--universe-panel-bg, var(--background-primary));
 		border: 1px solid var(--background-modifier-border);
 		border-radius: 8px;
 		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
@@ -163,7 +164,7 @@
 		padding: 6px 14px 2px;
 		font-size: 0.7rem;
 		font-weight: 600;
-		color: var(--text-faint);
+		color: var(--universe-panel-header-color, var(--text-faint));
 		text-transform: uppercase;
 		letter-spacing: 0.04em;
 	}
@@ -179,7 +180,7 @@
 		padding: 8px 14px;
 		background: none;
 		border: none;
-		color: var(--text-normal);
+		color: var(--universe-panel-color, var(--text-normal));
 		font-size: 0.85rem;
 		font-family: inherit;
 		cursor: pointer;

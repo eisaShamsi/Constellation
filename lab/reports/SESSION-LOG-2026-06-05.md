@@ -163,7 +163,12 @@ PCS+Orientation done first (pushed `204d8cbd..94d135aa`; help/manual synced for 
 - **(1)** `styleSetterInspectRequest` store + `openStyleSetterInspect()` (`styleSetter.ts`); a StyleSetter `$effect` (deps request+open; self-resets via `set(false)` → settles, not a loop) calls `startInspect` when the request fires on open.
 - **(2)** a **dock crosshair button above the Settings gear** (`+layout.svelte` `.dock-bottom`) → `openStyleSetterInspect()` — opens straight into inspect with no Settings in the way (Eisa's suggestion).
 - **(3)** inspect toggles `body.ss-inspecting` (a DOM-class `$effect` on `inspecting`) + a `:global(body.ss-inspecting .settings-overlay){display:none !important}` rule, so the Settings modal **hides during inspect** — the in-panel **⌖ Inspect** now works from any entry; `onDestroy` clears the class.
-- svelte-check clean; built OK (2m18s); mtime **`11:00:39` → `11:32:56`**. Orientation v2.54 dated note (LL-031). **[BOSS TEST] pending.** Remaining MIG-070 §C: batched 14-lang help · `/simplify` · Phase 9.
+- svelte-check clean; built OK (2m18s); mtime **`11:00:39` → `11:32:56`**. Orientation v2.54 dated note (LL-031). **PASS** (Eisa: "Perfect").
+
+**Coverage — editor + Universe panel (2026-06-06).** Eisa: *"What about the editor? It is not included! And the Universe panel (image) — we forgot to include it in the Style Setter."*
+- **Editor → inspect-targetable:** tagged `.e-desk` (NotePane) `data-style-target="text"` → hovering the note in inspect jumps to **Body text** / the Editor category. (The note's breadcrumb/summary/headings are reachable from the rail after; not separately inspect-tagged in v1.)
+- **Universe panel → new styleable element:** the panel is the `LibrarySwitcher` popup (Universe header · Own-Libraries list with colour dots + counts). Tagged `.library-switcher` `data-style-target="universePanel"`; wired its bg → `--universe-panel-bg`, `.vs-item` text → `--universe-panel-color`, `.vs-section-header` → `--universe-panel-header-color` (all default to interface vars). Added a **Universe panel** element to the Setter's **Interface** category (Background · Text colour · Section headers). **Caveat:** it's a popup → must be open to live-preview / inspect it.
+- Additive, theme-free → no freeze risk. svelte-check clean; built OK (2m01s); mtime **`11:32:56` → `12:19:44`**. Orientation v2.54 dated note (LL-031). **[BOSS TEST] pending.** Remaining MIG-070 §C: batched 14-lang help · `/simplify` · Phase 9.
 
 ---
 
