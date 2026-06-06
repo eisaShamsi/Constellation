@@ -67,6 +67,7 @@
 			"plugins": "코어 플러그인",
 			"templates": "템플릿",
 			"styleSettings": "스타일 설정",
+			"styleSetter": "스타일 세터",
 			"knowledge": "지식 관리",
 			"arabicOverrides": "아랍어 재정의",
 			"panels": "패널",

@@ -20,6 +20,7 @@
 			"plugins": "Core Plug-Ins",
 			"templates": "Templates",
 			"styleSettings": "Style Settings",
+			"styleSetter": "Style Setter",
 			"iconOverrides": "App Icons",
 			"knowledge": "Knowledge Management",
 			"arabicOverrides": "Arabic Overrides",

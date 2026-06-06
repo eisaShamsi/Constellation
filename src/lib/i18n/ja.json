@@ -67,6 +67,7 @@
 			"plugins": "コアプラグイン",
 			"templates": "テンプレート",
 			"styleSettings": "スタイル設定",
+			"styleSetter": "スタイルセッター",
 			"knowledge": "ナレッジ管理",
 			"arabicOverrides": "アラビア語オーバーライド",
 			"panels": "パネル",
