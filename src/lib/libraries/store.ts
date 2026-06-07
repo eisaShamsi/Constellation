@@ -2478,11 +2478,14 @@ function dedupeBySource<T extends DedupableRow>(
 		established: 3,
 		contested: 4,
 	};
+	// MIG-071 audit HIGH — 'fresh' was missing (svelte-check ERROR + NaN sort). Option B from
+	// project_link_lifecycle_dedupe_fix: full lifecycle ladder, freshest/load-bearing wins on dedupe.
 	const TIER_RANK: Record<LinkLifecycle, number> = {
-		emerging: 1,
-		established: 2,
-		'load-bearing': 3,
 		stale: 0,
+		fresh: 1,
+		emerging: 2,
+		established: 3,
+		'load-bearing': 4,
 	};
 	const map = new Map<string, T & { linkTypes: string[] }>();
 	for (const row of rows) {

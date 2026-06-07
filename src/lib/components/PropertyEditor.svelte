@@ -223,7 +223,9 @@
 	// underneath — not as a flat shuffled bag.
 	function orderTaxonomyItems(items: string[], axis: 'horizontal' | 'vertical'): Array<{ id: string; depth: number }> {
 		const pool = new Set(items);
-		const taxonomy = axis === 'horizontal' ? horizontalTaxonomy : verticalTaxonomy;
+		// MIG-071 audit HIGH — widen to the union element type so the childrenByParent Map / push /
+		// walk type-check honestly (both node kinds carry id + parent_id, the only fields used here).
+		const taxonomy: Array<HorizontalNode | VerticalNode> = axis === 'horizontal' ? horizontalTaxonomy : verticalTaxonomy;
 		if (taxonomy.length === 0) {
 			// Taxonomy not loaded yet — return items as-is at depth 0 so the
 			// pills still render before the first picker expand.
