@@ -1,20 +1,22 @@
 ---
 aliases:
   - Themen
+  - Stil-Gestalter
   - Style Settings
+  - Gespeicherte Stile
   - Benutzerdefiniertes Thema
   - Obsidian-Thema importieren
   - Thema loeschen
-  - Style Settings exportieren
-description: Passen Sie jeden sichtbaren Teil von Constellation an — Themen, Farben, Typografie und Komponenten-Styling ueber Darstellung und den nativen Style-Settings-Tab.
+  - Stil exportieren
+description: Passen Sie jeden sichtbaren Teil von Constellation an — das gesamte Styling lebt jetzt im Stil-Gestalter (Farben, Typografie, Komponenten, getypte Links, gespeicherte Stile); Themen werden unter Darstellung gewaehlt und erstellt.
 ---
 
 # Darstellung und Themen
 
 Die Darstellung von Constellation wird an zwei Stellen in den **Einstellungen** gesteuert:
 
-1. **Darstellung** — Thema waehlen oder erstellen, Themen aus Obsidians Community-Registry importieren und globale Schrift- und Layout-Einstellungen anpassen.
-2. **Style Settings** — ein eigener Tab, der jedes sichtbare Element der Constellation-Oberflaeche als live einstellbares Steuerelement (Schieberegler, Farbwaehler, Dropdowns) bereitstellt. Aenderungen werden sofort angewendet und im aktiven Thema gespeichert.
+1. **Darstellung** — Thema waehlen oder erstellen, Themen aus Obsidians Community-Registry importieren sowie ein paar wenige Voreinstellungen (Titelausrichtung, Lebenszyklus-Abklingen der Links).
+2. **Stil-Gestalter** — der eine zentrale Ort fuer das gesamte Styling. Ein eigener Tab in der Einstellungen-Seitenleiste, der jedes sichtbare Element der Constellation-Oberflaeche als live einstellbares Steuerelement (Farbwaehler, Schriftart-Dropdowns, Schieberegler) bereitstellt. Der frueher eigenstaendige **Style-Settings**-Tab wurde abgeloest und vollstaendig in den Stil-Gestalter ueberfuehrt.
 
 Gemeinsam ermoeglichen sie es, die App an Ihren Arbeitsablauf, Ihre Bildschirmgroesse und Ihren persoenlichen Geschmack anzupassen — ohne eine einzige Zeile CSS zu schreiben.
 
@@ -50,9 +52,11 @@ Klicken Sie auf **🟣 Obsidian-Themen**, um ueber 200 Community-Themen zu durch
 3. Klicken Sie auf **Import** — das CSS des Themas wird heruntergeladen, fuer Constellation angepasst (Selektor-Shim + Variablenextraktion + CodeMirror-Syntaxfarben) und zu Ihren benutzerdefinierten Themen hinzugefuegt.
 4. Unterstuetzt das Thema **Style Settings**, wird die Anzahl auf seiner Karte angezeigt; diese Optionen erscheinen nach dem Import im Style-Settings-Tab.
 
-## Style Settings
+## Style Settings → jetzt im Stil-Gestalter
 
-Der **Style-Settings-Tab** ist Constellations native, themenunabhaengige Steuerzentrale. Er umfasst jedes sichtbare Element des Rahmens sowie den Editor und funktioniert mit jedem Thema (eingebaut, benutzerdefiniert oder importiert).
+> **Hinweis:** Der eigenstaendige **Style-Settings**-Tab wurde **abgeloest**. Jedes Steuerelement, das er hatte, lebt jetzt im **Stil-Gestalter** (einem eigenen Tab in der Einstellungen-Seitenleiste) — der all diese Elemente abdeckt und mehr. Die folgende Liste beschreibt, was der Stil-Gestalter nun abdeckt; sie wird ueber den Stil-Gestalter erreicht.
+
+Diese Styling-Oberflaeche ist Constellations native, themenunabhaengige Steuerzentrale. Sie umfasst jedes sichtbare Element des Rahmens sowie den Editor und funktioniert mit jedem Thema (eingebaut, benutzerdefiniert oder importiert).
 
 ### Aufbau
 
@@ -141,25 +145,35 @@ Jede Einstellung gehoert zu einem der fuenf obigen Bloecke. Highlights:
 - Text (normal/gedaempft/schwach/auf Akzent), Fehler-/Warn-/Erfolg-Zustaende
 - Akzent (interaktiver Akzent + Hover), Akzenttext
 
-## Der Style Setter
+## Der Stil-Gestalter
 
-Der **Style Setter** ist ein bildschirmfüllendes Design-Studio für Ihre gesamte Oberfläche. Anstatt Einstellungen einzeln anzupassen und sich das Ergebnis vorzustellen, sehen Sie Ihre tatsächliche Oberfläche in der Bildschirmmitte, klicken auf den Teil, den Sie ändern möchten, und beobachten, wie er sich sofort aktualisiert.
+Der **Stil-Gestalter** ist ein bildschirmfuellendes Design-Studio fuer Ihre gesamte Oberflaeche — der eine zentrale Ort fuer das gesamte Styling. Anstatt Einstellungen einzeln anzupassen und sich das Ergebnis vorzustellen, aendern Sie ein Steuerelement und beobachten, wie sich Ihre **echte App** dabei umgestaltet.
 
-**Öffnen:** Gehen Sie zu **Einstellungen → Darstellung** und klicken Sie auf **"✦ Open Style Setter."** Das Studio füllt den Bildschirm in drei Zonen:
+**Oeffnen:** Der Stil-Gestalter hat einen **eigenen Tab in der Einstellungen-Seitenleiste** (frueher war es eine Schaltflaeche innerhalb von Darstellung). Klicken Sie diesen Tab an, um das Studio zu oeffnen.
 
-- **Links** — Ihre *Oberflächen* (Editor, Sternenansicht, OrgChart, Index, Cataloger, Shell) und Ihre *Themenkarten* (Midnight, Daylight, Chocolate, Nord).
-- **Mitte** — eine Live-Vorschau Ihrer Oberfläche.
-- **Rechts** — die Steuerelemente für den jeweils ausgewählten Teil.
+**Inspektions-Fadenkreuz.** Ueber dem Einstellungs-Zahnrad des Docks finden Sie ein **Fadenkreuz-Symbol**. Klicken Sie darauf, fahren Sie dann mit der Maus ueber einen beliebigen Teil der App und klicken Sie ihn an — der Stil-Gestalter springt direkt zu den Steuerelementen genau dieses Elements. So muessen Sie nicht erst suchen, welche Kategorie einen bestimmten Knopf, Tab oder Text steuert.
 
-**Ein Element gestalten.** Fahren Sie mit der Maus über einen beliebigen Teil der Vorschau in der Mitte — die Seitenleiste, den Notiztitel, eine Überschrift, einen Link, die Notizseite — und ein Rahmen zeigt an, dass er anklickbar ist. Klicken Sie darauf, und seine Steuerelemente erscheinen rechts (eine Farbfläche, ein Schriftart-Dropdown und so weiter). Ändern Sie einen Wert, und die Vorschau aktualisiert sich in dem Moment, in dem Sie es tun — kein Raten.
+**Was Sie gestalten — die linke Liste.** Auf der linken Seite stehen die *Oberflaechen*, die Sie gestalten koennen:
 
-**Von einem Thema ausgehen.** Klicken Sie links auf eine Themenkarte, um auf einen Schlag einen kompletten Look anzulegen. Das Studio selbst nimmt diesen Look an, während Sie arbeiten, sodass Sie *innerhalb* des Themas gestalten und anschließend einzelne Elemente darauf feinjustieren können.
+- **Oberflaeche** — Datei-Explorer, Statusleiste und Universum-Leiste.
+- **Komponenten** — Ribbon-Dock, Symbolleisten, Top-Leiste & Tabs, Buttons, Tags & Callouts.
+- **Editor** — die Notiz selbst: die **Brotkrumen**-Pfadzeile, Ueberschriften, Fett, Kursiv, Links, Inline-Code, Blockzitate und die Notiz-Zusammenfassung.
+- **Global** — Hintergrund- und Textabstufungen, Akzentabstufungen, Schrift & Abstaende, Ecken & Rahmen sowie schriftspezifische Schriftarten.
+- **Links** — die Farben getypter Links und ihre Anzeige (siehe unten).
+- **Sternenansicht / OrgChart / Index / Cataloger / Shell** — die Plug-in-Oberflaechen.
 
-**Oberflächen wechseln.** Klicken Sie links auf eine Oberfläche, um den Look über verschiedene Teile der App hinweg vorzuschauen, nicht nur im Editor.
+Darunter stehen Ihre **gespeicherten Stile** — ein Klick wendet den ganzen Look auf einen Schlag an (siehe *Einen Look als benannten Stil speichern* weiter unten). *(Eingebaute Themen werden unter Einstellungen → Darstellung gewaehlt, nicht hier.)*
 
-**Anwenden.** Wenn Ihnen gefällt, was Sie sehen, klicken Sie auf **"Apply to app"** (oben rechts). Ihr Akzent, Ihre Hintergründe, Textfarbe und Schriftarten werden auf das echte Constellation übertragen. Drücken Sie **Esc** oder **✕**, um zu schließen (dies schließt nur den Setter, nicht die Einstellungen).
+**Zwei Arten, wie Sie Ihre Aenderungen sehen:**
 
-> Heute wendet der Style Setter Ihren Look für die aktuelle Sitzung an (eine Live-Vorschau auf der echten App). Das Speichern eines Looks als dauerhafter, benannter **Style** — mit wiederverwendbaren, umbenennbaren Farbflächen sowie Export / Import — kommt als Nächstes.
+- **Die Editor-Kategorie** zeigt eine **Notiz-Vorschau in der Mitte.** Klicken Sie auf eine Ueberschrift, auf Fett, einen Link oder die Seite, und die zugehoerigen Steuerelemente erscheinen rechts; die Vorschau aktualisiert sich sofort.
+- **Jede andere Kategorie** dockt das Panel an eine Seite und wird durchscheinend, und Ihre Aenderungen erscheinen **live auf der echten App.** Aendern Sie die Statusleisten-Farbe oder die Dock-Breite, und die tatsaechliche Seitenleiste, das Dock, die Tabs und die Statusleiste gestalten sich **waehrend des Ziehens** um. Ein gruenes **● live**-Etikett in der oberen Leiste erinnert Sie daran, dass Sie am echten Ding arbeiten.
+
+**Die Links-Kategorie** haelt die Farben getypter Links und deren Form an einem Ort. Jeder der acht Typen (supports, contradicts, …) wird als seine echte farbige **Pille** angezeigt — **klicken Sie eine Pille an, um sie umzufaerben,** und die Aenderung wird live ueberall uebernommen (die Editor-Links sowie die Pillen in Backlinks / Ausgehende Links). Ueber der Liste liegen Schalter — **Getypte Links einfaerben** und **Typ-Beschriftungen anzeigen** — sowie die Steuerung der **Pillen-Form** (Eckenradius, Hoehe, Beschriftungsgewicht).
+
+**Behalten, Verwerfen, Zuruecksetzen.** Wenn Ihnen gefaellt, was Sie sehen, klicken Sie auf **Behalten** (oben rechts), um den Look **fuer dieses Universum** zu speichern — er uebersteht einen Neustart. **Verwerfen** (oder einfach das Schliessen mit **✕** oder **Esc**) wirft Ihre ungespeicherten Aenderungen weg, und die echte App springt auf den gespeicherten Look zurueck. **Zuruecksetzen** setzt alles auf das schlichte Thema zurueck. Nichts wird auf die Festplatte geschrieben, bis Sie auf Behalten klicken.
+
+**Einen Look als benannten Stil speichern.** Um einen Look wiederzuverwenden, speichern Sie ihn unter einem Namen: Geben Sie oben im Feld **"Entwurf:"** einen Namen ein und klicken Sie auf **"+ Aktuellen als Stil speichern"** (unten links). Er reiht sich in Ihre Liste **Gespeicherte Stile** ein — app-global (ueber jedes Universum hinweg wiederverwendbar) und erfasst den im Stil-Gestalter entworfenen Look, nicht nur ein Thema. **Klicken Sie einen gespeicherten Stil an, um ihn anzuwenden.** Fahren Sie mit der Maus ueber eine Stilzeile fuer ihre Aktionen: **↻ Aktualisieren** (diesen Stil mit Ihrem *aktuellen* Look ueberschreiben — behaelt den Namen), **⤓ Exportieren** (als `.constellation-style.json` teilen), **✎ Umbenennen** und **✕ Loeschen**.
 
 ## Haeufige Fragen
 
@@ -167,19 +181,19 @@ Der **Style Setter** ist ein bildschirmfüllendes Design-Studio für Ihre gesamt
 
 Nein — diese Leiste wird vom Betriebssystem (Windows/macOS/Linux) gezeichnet. Constellation hat keinen CSS-Zugriff darauf. Alles darunter ist voll stylbar.
 
-### Warum funktioniert der Seitenleistenbreiten-Schieberegler nicht?
+### Wie aendere ich die Seitenleistenbreite?
 
-Die Seitenleistenbreite wird ueber den Ziehgriff am Rand gesteuert (zum Aendern ziehen). Wir duplizieren diese Steuerung bewusst nicht in Style Settings, um konkurrierende Quellen der Wahrheit zu vermeiden.
+Ziehen Sie am Rand der Seitenleiste (am Ziehgriff zwischen Seitenleiste und Notiz). Den frueheren Schieberegler dafuer gibt es nicht mehr — die Breite wird allein ueber das Ziehen gesteuert, um konkurrierende Quellen der Wahrheit zu vermeiden.
 
-### Wo leben meine Style Settings?
+### Wo leben meine Stil-Einstellungen?
 
-In `Universe/settings.json` unter `customThemes[i].styleSettingsValues`, je Thema. Sie reisen mit Ihrem Universum — wenn Sie Ihr Universum-Verzeichnis zwischen Geraeten synchronisieren, kommt Ihr Styling mit.
+Der Look, den Sie im Stil-Gestalter mit **Behalten** speichern, wird **pro Universum** abgelegt und uebersteht einen Neustart. Er reist mit Ihrem Universum — wenn Sie Ihr Universum-Verzeichnis zwischen Geraeten synchronisieren, kommt Ihr Styling mit. **Gespeicherte Stile** hingegen sind app-global und ueber jedes Universum hinweg wiederverwendbar.
 
 ### Kann ich ein Thema mit jemandem teilen?
 
 Ja:
 - **Komplettes Thema** — im Themen-Editor auf **Exportieren** klicken. Die `.json`-Datei teilen. Der Empfaenger klickt **↓ Import** im Themen-Raster und waehlt sie aus.
-- **Nur Style-Settings-Werte** — im Style-Settings-Tab auf **Exportieren** klicken, um nur die Slider-/Farbwerte zu exportieren (nicht die Themenstruktur). Nuetzlich, um persoenliche Anpassungen ueber das Thema eines anderen zu legen.
+- **Ein kompletter Look (gespeicherter Stil)** — im Stil-Gestalter bei einem gespeicherten Stil auf **⤓ Exportieren** klicken. Sie erhalten eine `.constellation-style.json`-Datei, die Sie an jeden senden koennen; der Empfaenger importiert sie als neuen Stil. Erfasst den ganzen Look (Thema, Schriftarten, Link-Farben, Form), nicht nur einzelne Slider-Werte.
 
 ### Ein importiertes Obsidian-Thema sieht kaputt aus. Was nun?
 

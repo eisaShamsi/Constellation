@@ -1,20 +1,22 @@
 ---
 aliases:
   - Temalar
+  - Stil Tasarımcısı
+  - Style Setter
   - Style Settings
   - Özel tema
   - Obsidian teması içe aktar
   - Tema sil
-  - Stil ayarlarını dışa aktar
-description: Constellation'ın her görünür parçasını kişiselleştirin — Görünüm ve yerel Style Settings sekmesi aracılığıyla temalar, renkler, tipografi ve bileşen stili.
+  - Kayıtlı stili dışa aktar
+description: Constellation'ın her görünür parçasını kişiselleştirin — temalar Görünüm sekmesinden, tüm stilleme (renkler, tipografi, bileşenler, bağlantı türü renkleri ve kayıtlı stiller) Stil Tasarımcısı'ndan.
 ---
 
 # Görünüm ve Temalar
 
-Constellation'ın görünümü **Ayarlar** içindeki iki yerden kontrol edilir:
+Constellation'ın görünümü **Ayarlar**'dan kontrol edilir:
 
-1. **Görünüm** — bir tema seçin veya oluşturun, Obsidian'ın topluluk kayıt defterinden temalar içe aktarın ve global yazı tipi ve düzen tercihlerini ayarlayın.
-2. **Style Settings** — Constellation arayüzünün her görünür parçasını canlı ayarlanabilir bir kontrol olarak (kaydırıcılar, renk seçiciler, açılır menüler) sunan özel bir sekme. Değişiklikler anında uygulanır ve aktif temaya kaydedilir.
+1. **Görünüm** — bir tema seçin veya oluşturun, Obsidian'ın topluluk kayıt defterinden temalar içe aktarın ve başlık hizalaması ile Canlı Bağlantı yaşam döngüsünü ayarlayın.
+2. **Stil Tasarımcısı (Style Setter)** — Ayarlar kenar çubuğunda kendi sekmesi olan ve artık **tüm stillemenin tek evi** olan bölüm: arayüz kabuğunun ve editörün her rengi, boyutu, yazı tipi ve öğesi, bağlantı türü renkleri ve kayıtlı stiller. (Eski **Style Settings** sekmesi emekliye ayrıldı ve tamamen buraya katıldı.)
 
 Birlikte, uygulamayı iş akışınıza, ekran boyutunuza ve kişisel zevkinize göre yeniden şekillendirmenize izin verirler — tek bir satır CSS düzenlemeden.
 
@@ -50,9 +52,11 @@ Herhangi bir özel tema kartının üzerine gelin:
 3. **İçe aktar** tıklayın — temanın CSS'i indirilir, Constellation için uyarlanır (seçici shim'i + değişken çıkarma + CodeMirror sözdizimi renkleri) ve özel temalarınıza eklenir.
 4. Tema **Style Settings** destekliyorsa, sayı kartında gösterilir; bu seçenekler içe aktarma sonrası Style Settings sekmesinde görünür.
 
-## Style Settings
+## Style Settings → artık Stil Tasarımcısı'nın içinde
 
-**Style Settings** sekmesi, Constellation'ın yerel, tema-bağımsız kontrol panelidir. Çerçevenin her görünür parçasını artı editörü kapsar ve herhangi bir tema (yerleşik, özel veya içe aktarılmış) ile çalışır.
+> **Not:** Bağımsız **Style Settings** sekmesi emekliye ayrıldı. İçindeki her kontrol artık **Stil Tasarımcısı**'nın içinde (Ayarlar kenar çubuğundaki kendi sekmesi) — hepsini ve daha fazlasını kapsar (gezinti yolu, not ön izleme özeti, Evren paneli, yazı sistemi başına yazı tipleri). Aşağıdaki açıklama bu stilleme yüzeyini anlatır; artık Stil Tasarımcısı üzerinden açılır.
+
+Bu stilleme yüzeyi, Constellation'ın yerel, tema-bağımsız kontrol panelidir. Çerçevenin her görünür parçasını artı editörü kapsar ve herhangi bir tema (yerleşik, özel veya içe aktarılmış) ile çalışır.
 
 ### Nasıl düzenlenmiş
 
@@ -141,25 +145,21 @@ Her ayar yukarıdaki beş bloktan birinin altındadır. Öne çıkanlar:
 - Metin (normal/azaltılmış/soluk/vurgu üzerinde), hata/uyarı/başarı durumları
 - Vurgu (etkileşimli vurgu + üzerine gelme), vurgu üzerinde metin
 
-## Stil Ayarlayıcı
+## Stil Tasarımcısı (Style Setter)
 
-**Stil Ayarlayıcı**, tüm arayüzünüz için tam ekran bir tasarım stüdyosudur. Ayarları tek tek değiştirip sonucu hayal etmek yerine, gerçek arayüzünüzü ekranın ortasında görür, değiştirmek istediğiniz bölüme tıklar ve anında güncellenmesini izlersiniz.
+**Stil Tasarımcısı**, **tüm stillemenin tek evi** — arayüzünüzün tamamı için tam sayfa bir tasarım stüdyosudur. Ayarları tek tek değiştirip sonucu hayal etmek yerine, gerçek arayüzünüzün anında güncellendiğini siz tasarladıkça görürsünüz.
 
-**Açmak için:** **Ayarlar → Görünüm** bölümüne gidin ve **"✦ Open Style Setter"** düğmesine tıklayın. Stüdyo ekranı üç bölgeye ayrılmış olarak doldurur:
+**Açmak için:** Ayarlar kenar çubuğundaki **Stil Tasarımcısı** (✦) sekmesine tıklayın; ya da simge yuvasında Ayarlar dişlisinin üstündeki **artı işareti (✛)** simgesine tıklayarak doğrudan inceleme moduna girin (uygulamanın herhangi bir parçasının üzerine gelin ve tıklayın, o öğenin denetimlerine atlarsınız). Panel yeniden boyutlandırılabilir.
 
-- **Sol** — *Yüzeyleriniz* (Editör, Sky View, OrgChart, Dizin, Kataloglayıcı, Kabuk) ve *tema kartlarınız* (Midnight, Daylight, Chocolate, Nord).
-- **Orta** — arayüzünüzün canlı önizlemesi.
-- **Sağ** — seçtiğiniz bölüm için denetimler.
+Denetimler solda **kategorilere** ayrılmıştır: **Arayüz** (dosya ağacı, durum çubuğu, Evren paneli), **Bileşenler** (simge yuvası, araç çubukları, sekmeler, düğmeler, etiketler), **Editör** (not — gezinti yolu, başlıklar, bağlantılar, kod, alıntı ve notun rengi, yazı tipi ve boyutuyla ön izleme özeti), **Genel** (tonlar, vurgu rengi, köşeler, yazı sistemi başına yazı tipleri) ve **Bağlantılar** (bağlantı türü renkleri ve genişlikleri). Altta, tek tıklamayla uygulayabileceğiniz **kayıtlı stilleriniz** görünür.
 
-**Bir öğeyi stillendirin.** Orta önizlemenin herhangi bir bölümünün üzerine gelin — kenar çubuğu, not başlığı, bir başlık, bir bağlantı, not sayfası — ve bir halka onun tıklanabilir olduğunu gösterir. Üzerine tıklayın, denetimleri sağda görünür (bir renk örneği, bir yazı tipi açılır menüsü vb.). Bir değeri değiştirin, önizleme tam o anda güncellenir — tahmin yok.
+**Değişikliklerinizi görmenin iki yolu.** **Editör** kategorisi **ortada bir not ön izlemesi** gösterir — bir başlığa, bağlantıya veya sayfaya tıklayın, denetimleri sağda görünür ve anında güncellenir. Diğer **tüm kategoriler** ise paneli bir kenara yaslayıp şeffaflaştırır, böylece değişiklikleriniz **doğrudan gerçek uygulamada** ön izlenir (bunu yeşil bir **● live** etiketi belirtir): durum çubuğunun rengini ya da simge yuvasının genişliğini değiştirin, siz sürükledikçe gerçek kabuğun stillendiğini görürsünüz.
 
-**Bir temadan başlayın.** Soldaki bir tema kartına tıklayarak bütün bir görünümü tek seferde tohumlayın. Stüdyonun kendisi siz çalışırken o görünümü alır, böylece temanın *içinde* tasarım yaparsınız ve ardından bunun üzerine tek tek öğeleri ince ayarlayabilirsiniz.
+**Bağlantılar.** Bağlantılar kategorisi her türü gerçek rengiyle bir **hap (pill)** olarak gösterir — yeniden renklendirmek için bir hapa tıklayın (her yerde anında uygulanır) — ayrıca **bağlantıları renklendir** ve **etiketleri göster** anahtarları, **hap şekli** denetimi ve yeniden kullanılabilir bir **kayıtlı renkler** paleti içerir.
 
-**Yüzeyleri değiştirin.** Soldaki bir yüzeye tıklayarak görünümü yalnızca editörde değil, uygulamanın farklı bölümlerinde önizleyin.
+**Görünümünüzü kaydedin.** Görünümü **bu Evren için** kaydetmek için **Keep** düğmesine basın (yeniden başlatmadan sonra da kalır); kaydedilmemiş değişiklikleri atmak ve uygulamayı eski haline döndürmek için **Discard** (ya da **✕** / **Esc**); sade temaya geri dönmek için **Reset**. Keep'e basana kadar hiçbir şey diske kaydedilmez.
 
-**Uygulayın.** Gördüğünüzü beğendiğinizde **"Apply to app"** düğmesine (sağ üst) tıklayın. Vurgunuz, arka planlarınız, metin renginiz ve yazı tipleriniz gerçek Constellation'a aktarılır. Kapatmak için **"Esc"** veya **"✕"** tuşuna basın (bu yalnızca Ayarlayıcı'yı kapatır, Ayarlar'ı değil).
-
-> Bugün Stil Ayarlayıcı görünümünüzü geçerli oturum için uygular (gerçek uygulamada canlı bir önizleme). Bir görünümü kalıcı, adlandırılmış bir **Stil** olarak kaydetmek — yeniden kullanılabilir, yeniden adlandırılabilir renk örnekleri ve dışa / içe aktarma ile — bir sonraki sürümde gelecek.
+**Bir görünümü yeniden kullanın — stil olarak kaydedin.** Listenin üstündeki "draft:" kutusuna bir ad yazıp **+ Save current as a style** düğmesine basın — görünüm **Kayıtlı Stiller** listesinde (sol altta) belirir, tüm Evrenler arasında geneldir ve yalnızca bir temayı değil, Tasarımcı'da oluşturduğunuz görünümü yakalar. Uygulamak için kayıtlı bir stile tıklayın; satırının üzerine gelerek **↻ güncelle**, **⤓ dışa aktar**, **✎ yeniden adlandır** ve **✕ sil** işlemlerini yapın. (Yerleşik temalar **Ayarlar → Görünüm**'de kalır; Tasarımcı ise kayıtlı stillerinizi ve canlı görünümü taşır.)
 
 ## Sık Sorulan Sorular
 
@@ -167,19 +167,19 @@ Her ayar yukarıdaki beş bloktan birinin altındadır. Öne çıkanlar:
 
 Hayır — o çubuğu işletim sistemi (Windows/macOS/Linux) çizer. Constellation'ın ona CSS erişimi yoktur. Altındaki her şey tamamen stillendirilebilir.
 
-### Kenar çubuğu genişlik kaydırıcısı neden çalışmıyor?
+### Kenar çubuğu genişliğini nasıl değiştiririm?
 
-Kenar çubuğu genişliği kenar çubuğunun kenarındaki sürükleme tutamağı ile kontrol edilir (yeniden boyutlandırmak için sürükleyin). Çakışan gerçek kaynaklarından kaçınmak için bu kontrolü Style Settings'te kasıtlı olarak tekrarlamıyoruz.
+Kenar çubuğu genişliği, kenar çubuğunun kenarındaki **sürükleme tutamağı** ile kontrol edilir (yeniden boyutlandırmak için sürükleyin) — bir kaydırıcıyla değil. Genişlik kaydırıcısını Stil Tasarımcısı'ndan kasıtlı olarak kaldırdık, çünkü sürükleme tutamağını tekrarlıyordu (çakışan gerçek kaynaklarından kaçınmak için).
 
-### Style Settings'lerim nerede yaşıyor?
+### Stilim nerede yaşıyor?
 
-`Universe/settings.json` içinde `customThemes[i].styleSettingsValues` altında, her temaya özel. Evreninizle birlikte yolculuk ederler — Evren dizininizi cihazlar arasında senkronize ederseniz, stilleniz de birlikte gelir.
+Stil Tasarımcısı'nda **Keep** ile kaydettikleriniz, Evren ayarları içinde **Evren başına** (Evren düzeyinde bir stil geçersiz kılması) saklanır, böylece Evren dizininizle birlikte yolculuk eder — cihazlar arasında senkronize ederseniz, stiliniz de birlikte gelir. **Kayıtlı Stiller** ise tüm Evrenler arasında geneldir.
 
 ### Bir temayı biriyle paylaşabilir miyim?
 
 Evet:
 - **Tam tema** — tema düzenleyicide **Dışa aktar** tıklayın. `.json` dosyasını paylaşın. Alıcı tema ızgarasında **↓ İçe aktar** tıklayıp onu seçer.
-- **Yalnızca Style Settings değerleri** — Style Settings sekmesinde **Dışa aktar** tıklayın sadece kaydırıcı/renk değerlerini dışa aktarmak için (tema yapısı değil). Birinin başka temasının üstüne kişisel ayarlamalarınızı uygulamak için yararlıdır.
+- **Kayıtlı stil** — **Stil Tasarımcısı**'nda kayıtlı bir stil satırının üzerine gelin ve **⤓ dışa aktar** tıklayıp bir `.constellation-style.json` dosyası olarak paylaşın (yalnızca görünüm — sır veya yol içermez). Alıcı, stil listesinde **Import…** tıklayarak ekler.
 
 ### İçe aktarılan bir Obsidian teması bozuk görünüyor. Şimdi ne olacak?
 

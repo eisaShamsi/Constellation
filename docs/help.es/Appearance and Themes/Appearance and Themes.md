@@ -1,20 +1,20 @@
 ---
 aliases:
   - Temas
-  - Style Settings
+  - Diseñador de estilo
   - Tema personalizado
   - Importar tema de Obsidian
   - Eliminar tema
-  - Exportar ajustes de estilo
-description: Personaliza cada parte visible de Constellation — temas, colores, tipografía y estilo de componentes mediante Apariencia y la pestaña nativa Style Settings.
+  - Estilos guardados
+description: Personaliza cada parte visible de Constellation — todo el estilo (colores, tipografía, componentes, colores de tipos de enlace y estilos guardados) vive en el Diseñador de estilo; los temas viven en Apariencia.
 ---
 
 # Apariencia y Temas
 
-La apariencia de Constellation se controla desde dos lugares en **Configuración**:
+La apariencia de Constellation se controla desde **Configuración**:
 
-1. **Apariencia** — elige o crea un tema, importa temas del registro de la comunidad de Obsidian y ajusta las preferencias globales de fuente y diseño.
-2. **Style Settings** — una pestaña dedicada que expone cada pieza visible de la interfaz de Constellation como un control ajustable en vivo (deslizadores, selectores de color, menús desplegables). Los cambios se aplican al instante y se guardan en el tema activo.
+1. **Apariencia** — elige o crea un tema, importa temas del registro de la comunidad de Obsidian y ajusta la alineación del título y el ciclo de vida de los Enlaces Vivos.
+2. **Diseñador de estilo (Style Setter)** — su propia pestaña en la barra lateral de Configuración, y ahora el **único hogar de todo el estilo**: cada color, tamaño, fuente y elemento del marco de la interfaz y del editor, los colores de los tipos de enlace y los estilos guardados. (La antigua pestaña **Style Settings** fue retirada y fusionada por completo aquí.)
 
 Juntos te permiten remodelar la aplicación para que coincida con tu flujo de trabajo, tamaño de pantalla y gusto personal, sin editar una sola línea de CSS.
 
@@ -48,11 +48,13 @@ Haz clic en **🟣 Temas de Obsidian** para explorar más de 200 temas comunitar
 1. Busca por nombre o autor.
 2. Haz clic en **Vista previa** para ver una maqueta del diseño y la paleta de cinco colores.
 3. Haz clic en **Importar** — se descarga el CSS del tema, se adapta para Constellation (shim de selectores + extracción de variables + colores de sintaxis de CodeMirror) y se añade a tus temas personalizados.
-4. Si el tema admite **Style Settings**, el recuento aparece en su tarjeta; esas opciones aparecen en la pestaña Style Settings tras la importación.
+4. Si el tema admite **Style Settings**, el recuento aparece en su tarjeta; esas opciones aparecen en el Diseñador de estilo tras la importación.
 
-## Style Settings
+## Style Settings → ahora dentro del Diseñador de estilo
 
-La pestaña **Style Settings** es el panel de control nativo de Constellation, independiente del tema. Cubre cada pieza visible del marco además del editor, y funciona con cualquier tema (integrado, personalizado o importado).
+> **Nota:** la pestaña independiente **Style Settings** fue retirada. Cada control que tenía vive ahora dentro del **Diseñador de estilo** (su propia pestaña en la barra lateral de Configuración) — que los cubre todos y más (la ruta de navegación, el resumen de la nota, el panel del Universo, las fuentes por sistema de escritura). La descripción siguiente detalla esta superficie de estilo, que ahora se abre desde el Diseñador de estilo.
+
+Esta superficie de estilo es el panel de control nativo de Constellation, independiente del tema. Cubre cada pieza visible del marco además del editor, y funciona con cualquier tema (integrado, personalizado o importado).
 
 ### Cómo está organizado
 
@@ -76,12 +78,12 @@ Las secciones están plegadas por defecto. Haz clic en el chevron para expandir:
 
 - Los cambios se guardan automáticamente en los **styleSettingsValues** del tema activo.
 - Si cambias un Style Setting mientras un tema integrado está activo, Constellation **auto-clona** el integrado en tus temas personalizados (como `{Nombre} (custom)`), luego guarda tus cambios allí. El integrado no se toca.
-- La etiqueta **Guardado en:** en la parte inferior de la pestaña muestra qué tema contiene actualmente tus anulaciones.
+- La etiqueta **Guardado en:** en la parte inferior muestra qué tema contiene actualmente tus anulaciones.
 - Haz clic en **Restablecer todo a predeterminados** para borrar todas las anulaciones en el tema activo.
 
 ### Importar / Exportar Style Settings
 
-Barra de herramientas en la parte superior de la pestaña Style Settings:
+Barra de herramientas en la parte superior de esta superficie de estilo:
 
 - **📋 Pegar desde el portapapeles** — un clic: lee el portapapeles y fusiona JSON válido en el tema activo.
 - **⬆️ Importar / Pegar** — abre un área de texto; pega JSON manualmente. Elige **Fusionar** (añadir/anular) o **Reemplazar todo** (borrar, usar solo lo pegado).
@@ -141,25 +143,21 @@ Cada ajuste vive bajo uno de los cinco bloques anteriores. Aspectos destacados:
 - Texto (normal/atenuado/débil/sobre acento), estados de error/aviso/éxito
 - Acento (acento interactivo + hover), texto sobre acento
 
-## El Configurador de Estilo
+## Diseñador de estilo (Style Setter)
 
-El **Configurador de Estilo** (Style Setter) es un estudio de diseño a pantalla completa para toda tu interfaz. En lugar de ajustar opciones una a una e imaginar el resultado, ves tu interfaz real en el centro de la pantalla, haces clic en la parte que quieres cambiar y observas cómo se actualiza al instante.
+El **Diseñador de estilo** es el **único hogar de todo el estilo** — un estudio de diseño a pantalla completa para toda tu interfaz. En lugar de ajustar opciones una a una e imaginar el resultado, ves tu interfaz real actualizarse al instante mientras diseñas.
 
-**Ábrelo:** ve a **Ajustes → Apariencia** y haz clic en **"✦ Open Style Setter."** El estudio llena la pantalla en tres zonas:
+**Para abrirlo:** haz clic en la pestaña **Diseñador de estilo** (✦) en la barra lateral de Configuración; o haz clic en el icono de **mira (✛)** situado encima del engranaje de Configuración en la barra de iconos para entrar directamente en el modo de inspección (pasa el cursor por cualquier parte de la aplicación y haz clic para estilizarla). El panel es redimensionable.
 
-- **Izquierda** — tus *Superficies* (Editor, Vista del Cielo, OrgChart, Índice, Cataloger, Shell) y tus *tarjetas de tema* (Midnight, Daylight, Chocolate, Nord).
-- **Centro** — una vista previa en vivo de tu interfaz.
-- **Derecha** — los controles de la parte que tengas seleccionada.
+Los controles se organizan en **categorías** a la izquierda: **Interfaz** (árbol de archivos, barra de estado, panel del Universo), **Componentes** (barra de iconos, barras de herramientas, pestañas, botones, etiquetas), **Editor** (la nota — ruta de navegación, encabezados, enlaces, código, cita; y el resumen de la nota con su color, fuente y tamaño), **General** (los tonos, el acento, las esquinas, las fuentes por sistema de escritura) y **Enlaces** (colores y anchos de los tipos de enlace). Y abajo aparecen tus **estilos guardados** para aplicarlos con un clic.
 
-**Estiliza un elemento.** Pasa el cursor por cualquier parte de la vista previa central — la barra lateral, el título de la nota, un encabezado, un enlace, la página de la nota — y un anillo indica que es clicable. Haz clic, y sus controles aparecen a la derecha (una muestra de color, un desplegable de fuentes, etc.). Cambia un valor y la vista previa se actualiza en el mismo momento — sin adivinar.
+**Dos formas de ver tus cambios.** La categoría **Editor** muestra una **vista previa de la nota en el centro** — haz clic en un encabezado, un enlace o la página y sus controles aparecen a la derecha y se actualizan al instante. En cambio, **el resto de las categorías** ancla el panel a un lado y lo vuelve transparente, de modo que tus cambios se ven **sobre la aplicación real en directo** (una etiqueta verde **● live** lo indica): cambia el color de la barra de estado o el ancho de la barra de iconos y verás el marco real estilizarse mientras arrastras.
 
-**Parte de un tema.** Haz clic en una tarjeta de tema a la izquierda para sembrar todo un aspecto de una vez. El propio estudio adopta ese aspecto mientras trabajas, de modo que diseñas *dentro* del tema y luego puedes retocar elementos individuales sobre él.
+**Enlaces.** La categoría Enlaces muestra cada tipo como una **píldora (pill)** con su color real — haz clic en una píldora para recolorearla (en directo, en todas partes) — junto con los interruptores **Colorear enlaces** y **Mostrar etiquetas**, la **forma de la píldora** y una paleta de **colores guardados** reutilizable.
 
-**Cambia de superficie.** Haz clic en una superficie a la izquierda para previsualizar el aspecto en distintas partes de la aplicación, no solo en el editor.
+**Guarda tu aspecto.** Haz clic en **Keep** para guardar el aspecto **en este Universo** (sobrevive al reinicio); o **Discard** (o **✕** / **Esc**) para descartar los cambios sin guardar y el aspecto vuelve a como estaba; o **Reset** para regresar al tema plano. Nada se guarda en disco hasta que pulsas Keep.
 
-**Aplícalo.** Cuando te guste lo que ves, haz clic en **"Apply to app"** (arriba a la derecha). Tu acento, fondos, color de texto y fuentes se aplican al Constellation real. Pulsa **Esc** o **✕** para cerrar (esto cierra solo el Configurador, no los Ajustes).
-
-> Hoy el Configurador de Estilo aplica tu aspecto para la sesión actual (una vista previa en vivo sobre la aplicación real). Guardar un aspecto como un **Estilo** permanente y con nombre — con muestras de color reutilizables y renombrables, además de exportación / importación — llegará a continuación.
+**Reutiliza un aspecto — guárdalo como Estilo.** Escribe un nombre en la casilla "draft:" en la parte superior de la lista y haz clic en **+ Save current as a style** — aparece en tu lista de **Estilos guardados** (abajo a la izquierda), es global a todos los Universos y captura el aspecto que diseñaste en el Diseñador, no solo un tema. Haz clic en un estilo guardado para aplicarlo; y pasa el cursor por su fila para **↻ actualizar**, **⤓ exportar**, **✎ renombrar** y **✕ eliminar**. (Los temas integrados siguen en **Configuración → Apariencia**; el Diseñador alberga tus estilos guardados y el aspecto en vivo.)
 
 ## Preguntas frecuentes
 
@@ -167,19 +165,19 @@ El **Configurador de Estilo** (Style Setter) es un estudio de diseño a pantalla
 
 No — esa barra la dibuja el sistema operativo (Windows/macOS/Linux). Constellation no tiene acceso CSS a ella. Todo lo que está debajo es totalmente estilizable.
 
-### ¿Por qué no funciona el deslizador de ancho de la barra lateral?
+### ¿Cómo cambio el ancho de la barra lateral?
 
-El ancho de la barra lateral se controla mediante el manejador de arrastre en el borde de la barra (arrastra para redimensionar). Deliberadamente no duplicamos ese control en Style Settings para evitar fuentes de verdad en conflicto.
+El ancho de la barra lateral se controla mediante el **manejador de arrastre** en el borde de la barra (arrastra para redimensionar) — no mediante un deslizador. Quitamos a propósito el deslizador de ancho del Diseñador de estilo porque duplicaba el manejador de arrastre (para evitar fuentes de verdad en conflicto).
 
-### ¿Dónde viven mis Style Settings?
+### ¿Dónde vive mi estilo?
 
-Dentro de `Universe/settings.json` bajo `customThemes[i].styleSettingsValues`, ámbito por tema. Viajan con tu Universo — si sincronizas tu directorio de Universo entre dispositivos, tu estilo viene contigo.
+Lo que guardas con **Keep** en el Diseñador de estilo se almacena **por Universo** (una anulación de estilo a nivel de Universo) dentro de los ajustes del Universo, así que acompaña al directorio de tu Universo — si lo sincronizas entre dispositivos, tu estilo viene contigo. En cambio, los **Estilos guardados** son globales a todos los Universos.
 
 ### ¿Puedo compartir un tema con alguien?
 
 Sí:
 - **Tema completo** — en el editor de temas, haz clic en **Exportar**. Comparte el archivo `.json`. El destinatario hace clic en **↓ Importar** en la cuadrícula de temas y lo selecciona.
-- **Solo valores de Style Settings** — en la pestaña Style Settings, haz clic en **Exportar** para exportar solo los valores de deslizadores/colores (sin la estructura del tema). Útil para aplicar tus ajustes personales sobre el tema de otra persona.
+- **Estilo guardado** — en el **Diseñador de estilo**, pasa el cursor por la fila de un estilo guardado y haz clic en **⤓ Exportar** para compartirlo como un archivo `.constellation-style.json` (solo el aspecto — sin secretos ni rutas). El destinatario hace clic en **Import…** en la lista de estilos para añadirlo.
 
 ### Un tema de Obsidian importado se ve roto. ¿Qué hago?
 

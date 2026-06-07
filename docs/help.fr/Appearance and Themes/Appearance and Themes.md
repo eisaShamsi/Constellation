@@ -1,20 +1,20 @@
 ---
 aliases:
   - Thèmes
-  - Style Settings
+  - Concepteur de style
   - Thème personnalisé
   - Importer un thème Obsidian
   - Supprimer un thème
-  - Exporter les réglages de style
-description: Personnalisez chaque partie visible de Constellation — thèmes, couleurs, typographie et style des composants via Apparence et l'onglet natif Style Settings.
+  - Styles enregistrés
+description: Personnalisez chaque partie visible de Constellation — les thèmes via l'onglet Apparence, et tout le style (couleurs, typographie, composants, couleurs des types de liens et styles enregistrés) via le Concepteur de style.
 ---
 
 # Apparence et thèmes
 
-L'apparence de Constellation est contrôlée depuis deux endroits dans les **Paramètres** :
+L'apparence de Constellation est contrôlée depuis les **Paramètres** :
 
-1. **Apparence** — choisissez ou créez un thème, importez des thèmes depuis le registre communautaire d'Obsidian, et ajustez les préférences globales de police et de mise en page.
-2. **Style Settings** — un onglet dédié qui expose chaque pièce visible de l'interface de Constellation sous forme de contrôle ajustable en direct (curseurs, sélecteurs de couleurs, listes déroulantes). Les changements s'appliquent instantanément et sont enregistrés dans le thème actif.
+1. **Apparence** — choisissez ou créez un thème, importez des thèmes depuis le registre communautaire d'Obsidian, et ajustez l'alignement du titre ainsi que le cycle de vie des liens vivants.
+2. **Concepteur de style (Style Setter)** — son propre onglet dans la barre latérale des Paramètres, désormais **le seul foyer de tout le style** : chaque couleur, taille, police et élément de la coque de l'interface et de l'éditeur, les couleurs des types de liens et les styles enregistrés. (L'ancien onglet **Style Settings** a été retiré et entièrement fusionné dans celui-ci.)
 
 Ensemble, ils vous permettent de remodeler l'application selon votre flux de travail, votre taille d'écran et votre goût personnel — sans modifier une seule ligne de CSS.
 
@@ -48,11 +48,13 @@ Cliquez sur **🟣 Thèmes Obsidian** pour parcourir plus de 200 thèmes communa
 1. Recherchez par nom ou auteur.
 2. Cliquez sur **Aperçu** pour voir une maquette de la mise en page et la palette de cinq couleurs.
 3. Cliquez sur **Importer** — le CSS du thème est téléchargé, adapté à Constellation (shim de sélecteurs + extraction de variables + couleurs de syntaxe CodeMirror) et ajouté à vos thèmes personnalisés.
-4. Si le thème prend en charge les **Style Settings**, le nombre est affiché sur sa carte ; ces options apparaissent dans l'onglet Style Settings après l'importation.
+4. Si le thème prend en charge les **Style Settings** (le format du plugin Obsidian), le nombre est affiché sur sa carte ; ces options apparaissent dans le **Concepteur de style** après l'importation.
 
-## Style Settings
+## Style Settings → désormais dans le Concepteur de style
 
-L'onglet **Style Settings** est le panneau de contrôle natif de Constellation, indépendant du thème. Il couvre chaque élément visible du chrome ainsi que l'éditeur, et fonctionne avec n'importe quel thème (intégré, personnalisé ou importé).
+> **Note :** l'onglet **Style Settings** autonome a été retiré. Tous ses contrôles vivent maintenant dans le **Concepteur de style** (son propre onglet dans la barre latérale des Paramètres) — qui les couvre tous et davantage (chemin de navigation, aperçu de note, panneau Univers, polices par système d'écriture). La description ci-dessous décrit cette surface de style, désormais ouverte via le Concepteur de style.
+
+Cette surface de style est le panneau de contrôle natif de Constellation, indépendant du thème. Elle couvre chaque élément visible de la coque ainsi que l'éditeur, et fonctionne avec n'importe quel thème (intégré, personnalisé ou importé).
 
 ### Organisation
 
@@ -81,7 +83,7 @@ Les sections sont repliées par défaut. Cliquez sur le chevron pour les dévelo
 
 ### Importer / Exporter les Style Settings
 
-Barre d'outils en haut de l'onglet Style Settings :
+Barre d'outils en haut de cette surface de style :
 
 - **📋 Coller depuis le presse-papiers** — un clic : lit le presse-papiers et fusionne le JSON valide dans le thème actif.
 - **⬆️ Importer / Coller** — ouvre une zone de texte ; collez du JSON manuellement. Choisissez **Fusionner** (ajoute/remplace) ou **Tout remplacer** (efface, utilise uniquement le collé).
@@ -141,25 +143,21 @@ Chaque réglage se trouve dans l'un des cinq blocs ci-dessus. Points forts :
 - Texte (normal/atténué/faible/sur accent), états erreur/avertissement/succès
 - Accent (accent interactif + survol), texte sur accent
 
-## Le Configurateur de style
+## Concepteur de style (Style Setter)
 
-Le **Configurateur de style** (Style Setter) est un studio de conception plein écran pour toute votre interface. Au lieu d'ajuster les réglages un par un et d'imaginer le résultat, vous voyez votre interface réelle au centre de l'écran, vous cliquez sur la partie que vous voulez modifier et vous la regardez se mettre à jour instantanément.
+Le **Concepteur de style** est **le seul foyer de tout le style** — un studio de conception plein écran pour toute votre interface. Au lieu d'ajuster les réglages un par un et d'imaginer le résultat, vous voyez votre interface réelle se mettre à jour instantanément pendant que vous concevez.
 
-**Pour l'ouvrir :** allez dans **Paramètres → Apparence** et cliquez sur **"✦ Open Style Setter."** Le studio remplit l'écran en trois zones :
+**Pour l'ouvrir :** cliquez sur l'onglet **Concepteur de style** (✦) dans la barre latérale des Paramètres ; ou cliquez sur l'icône **viseur (✛)** située au-dessus de l'engrenage des Paramètres dans le dock pour entrer directement en mode inspection (survolez n'importe quelle partie de l'application puis cliquez dessus pour styliser cet élément). Le panneau est redimensionnable.
 
-- **À gauche** — vos *Surfaces* (Éditeur, Vue du ciel, OrgChart, Index, Cataloger, Shell) et vos *cartes de thème* (Midnight, Daylight, Chocolate, Nord).
-- **Au centre** — un aperçu en direct de votre interface.
-- **À droite** — les commandes de la partie que vous avez sélectionnée.
+Les commandes sont organisées en **catégories** sur la gauche : **Interface** (arbre des fichiers, barre d'état, panneau Univers), **Composants** (dock ruban, barres d'outils, onglets, boutons, étiquettes), **Éditeur** (la note — chemin de navigation, titres, liens, code, citation, ainsi que l'aperçu de note avec sa couleur, sa police et sa taille), **Général** (les nuances, l'accent, les coins, les polices par système d'écriture), et **Liens** (les couleurs des types de liens et leur largeur). En bas apparaissent vos **styles enregistrés**, applicables en un clic.
 
-**Styliser un élément.** Survolez n'importe quelle partie de l'aperçu central — la barre latérale, le titre de la note, un titre, un lien, la page de la note — et un anneau indique qu'elle est cliquable. Cliquez dessus, et ses commandes apparaissent à droite (un échantillon de couleur, une liste déroulante de polices, etc.). Modifiez une valeur et l'aperçu se met à jour au moment même — sans deviner.
+**Deux façons de voir vos modifications.** La catégorie **Éditeur** affiche un **aperçu de la note au centre** — cliquez sur un titre, un lien ou la page et ses commandes apparaissent à droite et se mettent à jour instantanément. Pour **toutes les autres catégories**, le panneau s'ancre sur un côté et devient translucide, de sorte que vos modifications s'affichent **en direct sur l'application réelle** (une étiquette verte **● live** le signale) : changez la couleur de la barre d'état ou la largeur du dock ruban et vous verrez la véritable coque se styliser pendant que vous glissez.
 
-**Partir d'un thème.** Cliquez sur une carte de thème à gauche pour amorcer tout un rendu d'un seul coup. Le studio lui-même adopte ce rendu pendant que vous travaillez, de sorte que vous concevez *à l'intérieur* du thème, puis vous pouvez peaufiner des éléments individuels par-dessus.
+**Liens.** La catégorie Liens affiche chaque type sous forme de **pastille (pill)** dans sa couleur réelle — cliquez sur une pastille pour la recolorer (immédiatement, partout) — avec les bascules **colorer les liens** et **afficher les libellés**, le **réglage de la forme des pastilles**, et une palette de **couleurs enregistrées** réutilisables.
 
-**Changer de surface.** Cliquez sur une surface à gauche pour prévisualiser le rendu sur différentes parties de l'application, pas seulement l'éditeur.
+**Enregistrez votre rendu.** Cliquez sur **Keep** pour enregistrer le rendu **pour cet Univers** (il survit au redémarrage) ; ou **Discard** (ou **✕** / **Esc**) pour jeter les modifications non enregistrées, l'application revenant à son état précédent ; ou **Reset** pour revenir au thème simple. Rien n'est écrit sur le disque tant que vous n'avez pas cliqué sur Keep.
 
-**L'appliquer.** Quand le résultat vous plaît, cliquez sur **"Apply to app"** (en haut à droite). Votre accent, vos fonds, la couleur du texte et les polices sont appliqués au véritable Constellation. Appuyez sur **Esc** ou **✕** pour fermer (cela ne ferme que le Configurateur, pas les Paramètres).
-
-> Aujourd'hui, le Configurateur de style applique votre rendu pour la session en cours (un aperçu en direct sur l'application réelle). Enregistrer un rendu comme un **Style** permanent et nommé — avec des échantillons de couleur réutilisables et renommables, ainsi que l'export / import — arrive prochainement.
+**Réutiliser un rendu — l'enregistrer comme Style.** Tapez un nom dans le champ « draft: » en haut de la liste et cliquez sur **+ Save current as a style** — il apparaît dans la liste des **styles enregistrés** (en bas à gauche), il est global à tous les Univers et capture le rendu que vous avez conçu dans le Concepteur, pas seulement un thème. Cliquez sur un style enregistré pour l'appliquer ; survolez sa ligne pour **↻ mettre à jour**, **⤓ exporter**, **✎ renommer** et **✕ supprimer**. (Les thèmes intégrés restent dans **Paramètres → Apparence** ; le Concepteur, lui, porte vos styles enregistrés et le rendu en direct.)
 
 ## Questions fréquentes
 
@@ -167,19 +165,19 @@ Le **Configurateur de style** (Style Setter) est un studio de conception plein �
 
 Non — cette barre est dessinée par le système d'exploitation (Windows/macOS/Linux). Constellation n'a pas d'accès CSS à celle-ci. Tout ce qui est en dessous est entièrement stylisable.
 
-### Pourquoi le curseur de largeur de barre latérale ne fonctionne-t-il pas ?
+### Comment changer la largeur de la barre latérale ?
 
-La largeur de la barre latérale est contrôlée par la poignée sur le bord (glissez pour redimensionner). Nous ne dupliquons délibérément pas ce contrôle dans Style Settings pour éviter des sources de vérité en conflit.
+La largeur de la barre latérale se règle via la **poignée de glissement** sur le bord de la barre (glissez pour redimensionner) — et non par un curseur. Nous avons retiré le curseur de largeur du Concepteur de style à dessein, car il faisait doublon avec la poignée de glissement (pour éviter des sources de vérité en conflit).
 
-### Où vivent mes Style Settings ?
+### Où vit mon style ?
 
-Dans `Universe/settings.json` sous `customThemes[i].styleSettingsValues`, par thème. Ils voyagent avec votre Univers — si vous synchronisez votre répertoire Univers entre appareils, votre style vient avec.
+Ce que vous enregistrez avec **Keep** dans le Concepteur de style est stocké **par Univers** (une surcharge de style au niveau de l'Univers) dans les paramètres de l'Univers, et accompagne donc le répertoire de l'Univers — si vous le synchronisez entre appareils, votre style vient avec. Les **styles enregistrés**, eux, sont globaux à tous les Univers.
 
 ### Puis-je partager un thème avec quelqu'un ?
 
 Oui :
 - **Thème complet** — dans l'éditeur de thème, cliquez sur **Exporter**. Partagez le fichier `.json`. Le destinataire clique sur **↓ Importer** dans la grille des thèmes et le sélectionne.
-- **Seules les valeurs Style Settings** — dans l'onglet Style Settings, cliquez sur **Exporter** pour exporter uniquement les valeurs de curseurs/couleurs (pas la structure du thème). Utile pour appliquer vos réglages personnels par-dessus le thème de quelqu'un d'autre.
+- **Style enregistré** — dans le **Concepteur de style**, survolez la ligne d'un style enregistré et cliquez sur **⤓ Exporter** pour le partager sous forme de fichier `.constellation-style.json` (rendu uniquement — sans secrets ni chemins). Le destinataire clique sur **Import…** dans la liste des styles pour l'ajouter.
 
 ### Un thème Obsidian importé paraît cassé. Que faire ?
 
