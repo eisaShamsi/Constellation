@@ -3144,39 +3144,10 @@ export function deriveThemeVariables(colors: ConstellationTheme['colors'], type:
 	};
 }
 
-/** Built-in themes */
-export const BUILTIN_THEMES: ConstellationTheme[] = [
-	{
-		id: 'constellation-light', name: 'Constellation Light', type: 'light',
-		pairedThemeId: 'constellation-dark', source: 'builtin',
-		colors: { background: '#ffffff', surface: '#f8fafc', text: '#1f2328', accent: '#7c3aed', border: '#e5e7eb' },
-	},
-	{
-		id: 'constellation-dark', name: 'Constellation Dark', type: 'dark',
-		pairedThemeId: 'constellation-light', source: 'builtin',
-		colors: { background: '#1e1e2e', surface: '#2a2a3e', text: '#cdd6f4', accent: '#b4befe', border: '#45475a' },
-	},
-	{
-		id: 'nord-light', name: 'Nord Light', type: 'light',
-		pairedThemeId: 'nord-dark', source: 'builtin',
-		colors: { background: '#eceff4', surface: '#e5e9f0', text: '#2e3440', accent: '#5e81ac', border: '#d8dee9' },
-	},
-	{
-		id: 'nord-dark', name: 'Nord Dark', type: 'dark',
-		pairedThemeId: 'nord-light', source: 'builtin',
-		colors: { background: '#2e3440', surface: '#3b4252', text: '#eceff4', accent: '#88c0d0', border: '#4c566a' },
-	},
-	{
-		id: 'solarized-light', name: 'Solarized Light', type: 'light',
-		pairedThemeId: 'solarized-dark', source: 'builtin',
-		colors: { background: '#fdf6e3', surface: '#eee8d5', text: '#657b83', accent: '#268bd2', border: '#93a1a1' },
-	},
-	{
-		id: 'solarized-dark', name: 'Solarized Dark', type: 'dark',
-		pairedThemeId: 'solarized-light', source: 'builtin',
-		colors: { background: '#002b36', surface: '#073642', text: '#839496', accent: '#2aa198', border: '#586e75' },
-	},
-];
+/** Built-in themes — REMOVED in MIG-071 (Eisa, 2026-06-07): the Appearance theme layer is retired;
+ *  all styling now lives in the Style Setter. Kept as an empty export so existing importers don't
+ *  break; the symbol + its importers are removed in the §K /simplify pass. */
+export const BUILTIN_THEMES: ConstellationTheme[] = [];
 
 /**
  * Panel-Placement system (Tier 1 of the "note as organism" redesign).
@@ -3945,12 +3916,14 @@ export function applyParsedSettings(parsed: Record<string, unknown>): void {
 		saveSettings();
 	}
 
-	// ── MIG-071 §A — activeStyleId back-fill (additive, idempotent) ──
-	// `activeStyleId` is the successor base-look pointer. Derive it from the legacy `activeThemeId`
-	// when unset so the unified resolver has a valid pointer on first boot. Pure derivation from an
-	// existing field — nothing destructive. Silent once `activeStyleId` is persisted.
-	if (parsed.activeThemeId && !parsed.activeStyleId) {
-		appSettings.update((s) => ({ ...s, activeStyleId: s.activeStyleId || ('theme:' + s.activeThemeId) }));
+	// ── MIG-071 §D — remove the theme subsystem: wipe all theme data (Eisa, 2026-06-07) ──
+	// The Appearance theme layer (built-ins + custom themes) is retired; the Style Setter is the sole
+	// styling home. Clear every theme + reset the active pointers to the plain-default base. The
+	// Setter's saved Styles (style-presets.json), styleOverride (current look), and styleSwatches are
+	// NOT touched. Self-limiting + idempotent: only fires while theme data exists; after the wipe the
+	// fields are empty so it never re-runs (and there's no UI to create new themes). No backup (Eisa).
+	if ((parsed.customThemes as unknown[] | undefined)?.length || parsed.activeThemeId || parsed.activeStyleId) {
+		appSettings.update((s) => ({ ...s, customThemes: [], activeThemeId: '', activeStyleId: '' }));
 		saveSettings();
 	}
 
