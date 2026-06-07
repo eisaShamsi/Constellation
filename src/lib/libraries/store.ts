@@ -3096,58 +3096,9 @@ function adjustLightness(hex: string, amount: number): string {
 	return `hsl(${hsl.h}, ${hsl.s}%, ${newL}%)`;
 }
 
-/** Derive all CSS variables from 5 theme colors */
-export function deriveThemeVariables(colors: ConstellationTheme['colors'], type: 'light' | 'dark'): Record<string, string> {
-	const { background, surface, text, accent, border } = colors;
-	const accentHSL = hexToHSL(accent);
-	const isDark = type === 'dark';
-
-	return {
-		'--background-primary': background,
-		'--background-primary-alt': adjustLightness(background, isDark ? 3 : -3),
-		'--background-secondary': surface,
-		'--background-secondary-alt': adjustLightness(surface, isDark ? 3 : -3),
-		'--background-modifier-border': border,
-		'--background-modifier-border-focus': accent,
-		'--background-modifier-hover': adjustLightness(surface, isDark ? 5 : -4),
-		'--background-modifier-form-field': adjustLightness(background, isDark ? 3 : -2),
-		'--background-modifier-cover': isDark ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.4)',
-		'--background-modifier-success': '#16a34a22',
-		'--background-modifier-error': '#ef444422',
-		'--text-normal': text,
-		// MIG-070 §3 — the note body's OWN text colour, defaulted to the theme text so the note is
-		// INDEPENDENT of the chrome's text-colour controls (which write --text-normal). Without this
-		// the note fell back to --text-normal at runtime, so an Interface/global text-colour change
-		// bled into the note body. The Style Setter "Body text → Text colour" overrides this var;
-		// nothing else touches the note. (`.cm-content`/`.e-title` read `var(--editor-text-color, …)`.)
-		'--editor-text-color': text,
-		'--text-muted': adjustLightness(text, isDark ? -20 : 20),
-		'--text-faint': adjustLightness(text, isDark ? -35 : 35),
-		'--text-on-accent': isDark ? '#1e1e2e' : '#ffffff',
-		'--text-error': '#ef4444',
-		'--text-warning': '#f59e0b',
-		'--text-success': '#16a34a',
-		'--text-accent': `hsl(${accentHSL.h}, ${accentHSL.s}%, ${accentHSL.l}%)`,
-		'--text-accent-hover': `hsl(${accentHSL.h}, ${accentHSL.s}%, ${Math.max(0, accentHSL.l - 10)}%)`,
-		'--interactive-normal': surface,
-		'--interactive-hover': adjustLightness(surface, isDark ? 5 : -5),
-		'--interactive-accent': `hsl(${accentHSL.h}, ${accentHSL.s}%, ${accentHSL.l}%)`,
-		'--interactive-accent-hover': `hsl(${accentHSL.h}, ${accentHSL.s}%, ${Math.max(0, accentHSL.l - 8)}%)`,
-		'--accent-h': String(accentHSL.h),
-		'--accent-s': `${accentHSL.s}%`,
-		'--accent-l': `${accentHSL.l}%`,
-		'--scrollbar-bg': 'transparent',
-		'--scrollbar-thumb-bg': adjustLightness(border, isDark ? 5 : -5),
-		'--scrollbar-active-thumb-bg': adjustLightness(border, isDark ? 10 : -10),
-		'--shadow-s': isDark ? '0 1px 2px rgba(0,0,0,0.4)' : '0 1px 2px rgba(0,0,0,0.1)',
-		'--shadow-l': isDark ? '0 4px 16px rgba(0,0,0,0.4)' : '0 4px 16px rgba(0,0,0,0.12)',
-	};
-}
-
-/** Built-in themes — REMOVED in MIG-071 (Eisa, 2026-06-07): the Appearance theme layer is retired;
- *  all styling now lives in the Style Setter. Kept as an empty export so existing importers don't
- *  break; the symbol + its importers are removed in the §K /simplify pass. */
-export const BUILTIN_THEMES: ConstellationTheme[] = [];
+// MIG-071 — `deriveThemeVariables` + `BUILTIN_THEMES` removed (Eisa, 2026-06-07): the theme layer is
+// retired. The plain default base now comes from theme.css `:root`; the Style Setter's styleOverride
+// applies on top (see the single apply $effect in +layout.svelte). No code derives theme vars anymore.
 
 /**
  * Panel-Placement system (Tier 1 of the "note as organism" redesign).
@@ -3229,10 +3180,6 @@ export interface AppSettings {
 	colorScheme: 'light' | 'dark' | 'system';
 	accentColor: string;
 	activeThemeId: string;
-	/** MIG-071 — successor pointer to `activeThemeId`: the id of the active **base-coat** look in the
-	 *  unified style list (a base preset has id `theme:<themeId>`). Kept in lockstep with
-	 *  `activeThemeId` through the migration; becomes the sole source of truth at §J. */
-	activeStyleId: string;
 	customThemes: ConstellationTheme[];
 	/** MIG-070 §C — per-Universe style override: CSS-var → value, applied ON TOP of the
 	 *  active theme + its styleSettingsValues (the Style Setter's persisted look). Survives
@@ -3631,7 +3578,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
 	colorScheme: 'light',
 	accentColor: '#7c3aed',
 	activeThemeId: '',
-	activeStyleId: '',
 	customThemes: [],
 	styleOverride: {},
 	styleSwatches: [],
@@ -3922,8 +3868,8 @@ export function applyParsedSettings(parsed: Record<string, unknown>): void {
 	// Setter's saved Styles (style-presets.json), styleOverride (current look), and styleSwatches are
 	// NOT touched. Self-limiting + idempotent: only fires while theme data exists; after the wipe the
 	// fields are empty so it never re-runs (and there's no UI to create new themes). No backup (Eisa).
-	if ((parsed.customThemes as unknown[] | undefined)?.length || parsed.activeThemeId || parsed.activeStyleId) {
-		appSettings.update((s) => ({ ...s, customThemes: [], activeThemeId: '', activeStyleId: '' }));
+	if ((parsed.customThemes as unknown[] | undefined)?.length || parsed.activeThemeId) {
+		appSettings.update((s) => ({ ...s, customThemes: [], activeThemeId: '' }));
 		saveSettings();
 	}
 

@@ -13,8 +13,8 @@
  */
 import { invoke } from '@tauri-apps/api/core';
 import { get } from 'svelte/store';
-import { appSettings, updateSettings, BUILTIN_THEMES, type ConstellationTheme } from './store';
-import { getLinkTypes, toLinkTypeDeltas, saveLinkTypes, linkTypeColor, SEED_IDS, type LinkTypeDef } from './linkTypeRegistry';
+import { appSettings, updateSettings, type ConstellationTheme } from './store';
+import { getLinkTypes, toLinkTypeDeltas, saveLinkTypes, type LinkTypeDef } from './linkTypeRegistry';
 
 /** Bump the minor when adding sections (back-compatible); the major when the apply
  *  contract changes (so importers can refuse a too-new file gracefully). */
@@ -245,118 +245,10 @@ export function presetSectionKeys(preset: StylePreset): SectionKey[] {
 	return SECTION_CATALOGUE.map((s) => s.key).filter((k) => k in preset.sections);
 }
 
-// ─── MIG-070 §A — unify Themes + Styles into ONE app-global list (non-destructive) ───
-
-/** Convert a Theme (built-in or a universe's custom) into a DERIVED Style carrying just the
- *  colours/theme aspect, so every saved look — Themes AND Styles — shows in one list.
- *  Nothing is moved or rewritten: these are assembled at READ time from BUILTIN_THEMES + the
- *  current universe's `customThemes`. Applying one switches to that theme (merging it into the
- *  universe's library via applyPreset, never replacing it). */
-export function themeToStyle(theme: ConstellationTheme): StylePreset {
-	// Defensive: never throw on a malformed/legacy theme (a missing `colors` etc.) — that would
-	// freeze the whole Styles panel (the derived list throws → stuck on "Loading…").
-	const isBuiltin = theme?.source === 'builtin' || (BUILTIN_THEMES ?? []).some((t) => t?.id === theme?.id);
-	return {
-		id: `theme:${theme?.id ?? 'unknown'}`,
-		name: theme?.name ?? theme?.id ?? 'Theme',
-		schema: STYLE_PRESET_SCHEMA,
-		builtin: true, // derived — not a user-saved Style (no rename/delete; duplicate to edit)
-		source: isBuiltin ? 'builtin' : 'theme',
-		sections: {
-			colorsTheme: {
-				colorScheme: theme?.type ?? 'dark',
-				accentColor: theme?.colors?.accent,
-				activeThemeId: theme?.id,
-				// A built-in resolves from BUILTIN_THEMES; a custom theme must travel with the Style.
-				customThemes: isBuiltin ? [] : [theme],
-			},
-		},
-	};
-}
-
-/** The unified, app-global list of looks: built-in theme Styles + this universe's custom theme
- *  Styles + the user's saved Styles. DERIVED at read time — the §A non-destructive guarantee:
- *  no stored Theme or Style is moved or rewritten, so nothing can be lost. */
-export function unifiedStyleList(savedStyles: StylePreset[]): StylePreset[] {
-	const saved = (savedStyles ?? []).map((p) => ({ ...p, source: p.source ?? ('style' as const) }));
-	try {
-		const cur = get(appSettings) as { customThemes?: ConstellationTheme[] };
-		const builtinStyles = (BUILTIN_THEMES ?? []).map(themeToStyle);
-		const customThemeStyles = (cur?.customThemes ?? []).map(themeToStyle);
-		return [...builtinStyles, ...customThemeStyles, ...saved];
-	} catch (e) {
-		// Never let assembling the list break the panel — fall back to the saved Styles.
-		console.error('[unifiedStyleList] failed; showing saved Styles only', e);
-		return saved;
-	}
-}
-
-/** A Style is user-owned (renamable / deletable) iff it isn't a derived built-in / theme wrapper. */
-export function isUserStyle(p: StylePreset): boolean {
-	return !p.builtin && !p.id.startsWith('theme:');
-}
-
-/** MIG-071 §B — is this a base-coat look (a built-in or custom-theme wrapper) rather than a saved
- *  overlay Style? Base looks carry a full theme in their `colorsTheme` section. */
-export function isBaseStyle(p: StylePreset): boolean {
-	return p.source === 'builtin' || p.source === 'theme' || p.id.startsWith('theme:');
-}
-
-/** MIG-071 §B — the currently-active base-coat look, resolved from the unified list via the new
- *  `activeStyleId` pointer (falling back to `theme:<activeThemeId>` while the legacy field is still
- *  authoritative). Read-time only — assembles nothing persistent. Returns undefined when no base
- *  matches, so the caller can fall back to the legacy activeThemeId/customThemes find (+layout §C). */
-export function resolveActiveBase(savedStyles: StylePreset[]): StylePreset | undefined {
-	const s = get(appSettings) as { activeStyleId?: string; activeThemeId?: string };
-	const wantId = s.activeStyleId || (s.activeThemeId ? `theme:${s.activeThemeId}` : '');
-	if (!wantId) return undefined;
-	return unifiedStyleList(savedStyles).find((p) => p.id === wantId && isBaseStyle(p));
-}
-
-// ─── Preview (MIG-069 §G — visual cards) ───
-
-/** A small visual self-portrait of a style, derived from its captured sections. */
-export interface StylePreview {
-	bg: string;
-	surface: string;
-	border: string;
-	text: string;
-	accent: string;
-	font: string;
-	interfaceFont: string;
-	/** The 8 seed link-type colours, in canonical order — the Constellation signature. */
-	dots: string[];
-	radius: number;
-}
-
-/** Resolve a preset's preview. Falls back to the CURRENT universe's values for any section
- *  the preset doesn't carry, so a card always renders something sensible. */
-export function stylePreview(preset: StylePreset): StylePreview {
-	/* eslint-disable @typescript-eslint/no-explicit-any */
-	const cur = get(appSettings) as Record<string, any>;
-	const ct = preset.sections.colorsTheme as any;
-	const fn = preset.sections.fonts as any;
-	const lc = preset.sections.linkColors as { deltas?: { id: string; color: string }[] } | undefined;
-	const ps = preset.sections.pillShape as any;
-
-	const themeId = ct?.activeThemeId ?? cur.activeThemeId;
-	const themes = [...(BUILTIN_THEMES ?? []), ...((ct?.customThemes ?? cur.customThemes) ?? [])];
-	const theme = themes.find((t: any) => t.id === themeId);
-	const dark = theme ? theme.type === 'dark' : ((ct?.colorScheme ?? cur.colorScheme) === 'dark');
-	const bg = theme?.colors?.background ?? (dark ? '#1e1e1e' : '#fbfbfa');
-	const surface = theme?.colors?.surface ?? (dark ? '#252526' : '#f1f1ef');
-	const border = theme?.colors?.border ?? (dark ? '#3a3a3c' : '#e3e3e1');
-	const text = theme?.colors?.text ?? (dark ? '#dcddde' : '#2e3338');
-	const accent = ct?.accentColor ?? theme?.colors?.accent ?? cur.accentColor ?? '#7c3aed';
-	const font = fn?.textFont ?? cur.textFont ?? 'inherit';
-	const interfaceFont = fn?.interfaceFont ?? cur.interfaceFont ?? 'inherit';
-
-	const byId = new Map((lc?.deltas ?? getLinkTypes()).map((d: any) => [d.id, d.color]));
-	const dots = (SEED_IDS as readonly string[]).map((id) => byId.get(id) ?? linkTypeColor(id));
-	const radius = ps?.shape?.radius ?? cur.linkPills?.shape?.radius ?? 10;
-	return { bg, surface, border, text, accent, font, interfaceFont, dots, radius };
-	/* eslint-enable @typescript-eslint/no-explicit-any */
-}
+// ─── MIG-071 — Themes removed. The unify-Themes-+-Styles scaffold (themeToStyle / unifiedStyleList /
+//     isUserStyle / isBaseStyle / resolveActiveBase) and the preview-card helper (stylePreview /
+//     StylePreview) are gone: there are no themes to assemble, and the gallery/preview cards that
+//     used them were removed. Saved Styles ARE the looks now; they apply via applyPreset (below). ───
 
 /** The newest schema MAJOR this build can apply; a file from a newer major is refused. */
 const SUPPORTED_MAJOR = 1;

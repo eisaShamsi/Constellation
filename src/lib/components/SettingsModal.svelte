@@ -2613,45 +2613,7 @@
 		color: var(--text-faint); margin-inline-start: 6px;
 	}
 
-	/* Theme gallery */
-	.theme-gallery {
-		display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-		gap: 10px; margin-bottom: 12px;
-	}
-	.theme-card {
-		display: flex; flex-direction: column; align-items: center; gap: 6px;
-		padding: 10px 8px; border-radius: 10px;
-		border: 2px solid var(--background-modifier-border);
-		background: var(--background-secondary); cursor: pointer;
-		position: relative; transition: all 0.15s;
-	}
-	.theme-card:hover { border-color: var(--interactive-accent); }
-	.theme-card.active { border-color: var(--interactive-accent); box-shadow: 0 0 0 2px var(--interactive-accent); }
-	.theme-swatches { display: flex; gap: 3px; }
-	.theme-sw { width: 20px; height: 20px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.1); }
-	.theme-card-name { font-size: 0.75rem; color: var(--text-muted); text-align: center; }
-	.theme-edit-btn {
-		position: absolute; top: 4px; inset-inline-end: 4px; background: none; border: none;
-		cursor: pointer; font-size: 12px; opacity: 0; transition: opacity 0.15s;
-	}
-	.theme-card:hover .theme-edit-btn { opacity: 1; }
-	.theme-delete-btn {
-		position: absolute; top: 4px; inset-inline-end: 24px; background: none; border: none;
-		cursor: pointer; font-size: 12px; opacity: 0; transition: opacity 0.15s; color: var(--text-muted);
-		padding: 0; line-height: 1;
-	}
-	.theme-card:hover .theme-delete-btn { opacity: 1; }
-	.theme-delete-btn:hover { color: var(--text-error, #e06666); }
-	.theme-add, .theme-import { border-style: dashed; }
-	.theme-add-icon { font-size: 1.5rem; color: var(--text-faint); }
-
-	/* Theme editor */
-	.theme-editor {
-		margin-top: 12px; padding: 14px; border-radius: 10px;
-		border: 1px solid var(--background-modifier-border);
-		background: var(--background-secondary);
-	}
-	.theme-editor-actions { display: flex; gap: 8px; margin-top: 12px; align-items: center; }
+	/* MIG-071 — theme-gallery / theme-card / theme-editor CSS removed with the theme UI. */
 	.btn-primary {
 		padding: 6px 16px; border-radius: 6px; border: none;
 		background: var(--interactive-accent); color: var(--text-on-accent);

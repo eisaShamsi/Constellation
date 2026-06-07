@@ -38,11 +38,9 @@
 		type IndexEntry
 	} from '$lib/libraries/store';
 	import type { LibraryStats, FileEntry, WorkspaceLayout, WorkspaceSecondScreen, FontSet, PanelId } from '$lib/libraries/store';
-	import { BUILTIN_FONT_SETS, SCRIPT_UNICODE_RANGES, TYPEWRITER_FONTS, getFontSetById, BUILTIN_THEMES, deriveThemeVariables, hexToHSL } from '$lib/libraries/store';
+	import { BUILTIN_FONT_SETS, SCRIPT_UNICODE_RANGES, TYPEWRITER_FONTS, getFontSetById, hexToHSL } from '$lib/libraries/store';
 	import { liveStyleDraft } from '$lib/libraries/store'; // MIG-070 §C Option E — Style Setter live-preview layer
-	import { resolveActiveBase } from '$lib/libraries/stylePresets'; // MIG-071 §C — unified active-base resolver
-	import { generateStyleSettingsCSS } from '$lib/theme/styleSettings';
-	import { CORE_BLOCK_IDS, getEffectiveStyleBlocks } from '$lib/theme/constellationStyleSettings';
+	import { CORE_BLOCK_IDS } from '$lib/theme/constellationStyleSettings';
 	import { get } from 'svelte/store';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { detectDir, eventToShortcut, normalizeShortcut, getResolvedShortcut, formatShortcut, migratePathKeyedMap, migratePathKeyedMapInPlace, normalizePathKey } from '$lib/utils';
@@ -1553,93 +1551,28 @@
 	// forever).
 	let _lastStyleSettingsKeys: string[] = [];
 
-	// Apply custom theme colors (responds to both activeThemeId and colorScheme changes)
+	// MIG-071 — the theme subsystem was removed; all styling is the Style Setter's per-Universe
+	// styleOverride applied on top of the plain default base (theme.css :root). This remains the
+	// SINGLE writer of body CSS vars (the BUG-015 guard): styleOverride, then the Setter's transient
+	// live layer, last. Responds to settings changes + live Setter edits.
 	$effect(() => {
 		if (typeof document === 'undefined') return;
 		const s = $appSettings;
-		// MIG-071 §C — key the active BASE look off the unified `activeStyleId` (a base look's id is
-		// `theme:<themeId>`); resolveActiveBase falls back to the legacy `activeThemeId`, so every
-		// existing user is byte-identical on first boot. The theme OBJECT is still resolved from
-		// customThemes / BUILTIN_THEMES below (customs win on id collision) — unchanged. Base candidates
-		// come from BUILTIN_THEMES + customThemes (appSettings), so passing [] (no saved overlays) is
-		// correct — an overlay Style is never the active base. §J drops the legacy activeThemeId fallback.
-		const _activeBase = resolveActiveBase([]);
-		let themeId = (_activeBase?.sections?.colorsTheme as { activeThemeId?: string } | undefined)?.activeThemeId ?? s.activeThemeId;
-
-		// Auto-pair: if the active theme has a counterpart for the current scheme, switch to it
-		if (themeId) {
-			const resolved = colorScheme === 'system'
-				? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-				: colorScheme;
-			const allThemes = [...BUILTIN_THEMES, ...(s.customThemes ?? [])];
-			const current = allThemes.find(t => t.id === themeId);
-			if (current && current.type !== resolved && current.pairedThemeId) {
-				const paired = allThemes.find(t => t.id === current.pairedThemeId);
-				if (paired) themeId = paired.id;
-			}
-		}
-
-		// MIG-070 §C — collect the vars whose KEYS we track for clean-up: Style-Settings vars +
-		// the per-Universe styleOverride. Derived theme vars are applied immediately and NOT
-		// tracked (overwritten on each theme apply, never cleared — pre-§C behaviour preserved).
 		const root = document.body.style;
 		const trackedVars: Record<string, string> = {};
-		let ssClasses: string[] = [];
 
-		// Find theme — customs take precedence over built-ins so a user's auto-cloned copy of a
-		// built-in theme (same id, now with their styleSettingsValues attached) is applied.
-		const theme = themeId
-			? (s.customThemes?.find(t => t.id === themeId) || BUILTIN_THEMES.find(t => t.id === themeId))
-			: undefined;
-
-		if (theme) {
-			// Apply derived CSS variables (untracked)
-			for (const [key, value] of Object.entries(deriveThemeVariables(theme.colors, theme.type))) {
-				root.setProperty(key, value);
-			}
-			// Apply theme type class
-			document.body.classList.remove('theme-light', 'theme-dark');
-			document.body.classList.add(`theme-${theme.type}`);
-			// Apply custom CSS if present
-			let customStyleEl = document.getElementById('constellation-custom-theme-css');
-			if (theme.customCSS) {
-				if (!customStyleEl) {
-					customStyleEl = document.createElement('style');
-					customStyleEl.id = 'constellation-custom-theme-css';
-					document.head.appendChild(customStyleEl);
-				}
-				customStyleEl.textContent = theme.customCSS;
-			} else if (customStyleEl) {
-				customStyleEl.remove();
-			}
-			// Style Settings: core blocks + theme's own blocks (dedup guarded)
-			const ssBlocks = getEffectiveStyleBlocks(theme);
-			if (ssBlocks.length > 0) {
-				const ssResult = generateStyleSettingsCSS(ssBlocks, theme.styleSettingsValues ?? {}, theme.type);
-				Object.assign(trackedVars, ssResult.variables);
-				ssClasses = ssResult.classes;
-			} else if (theme.styleSettingsValues) {
-				for (const [id, value] of Object.entries(theme.styleSettingsValues)) {
-					trackedVars[`--${id}`] = value;
-				}
-			}
-		} else if (s.accentColor && s.accentColor !== '#7c3aed') {
-			// No active theme — still apply accent colour (untracked, pre-§C behaviour)
+		// Accent colour (untracked) — applied when set and not the app default.
+		if (s.accentColor && s.accentColor !== '#7c3aed') {
 			const hsl = hexToHSL(s.accentColor);
 			root.setProperty('--accent-h', String(hsl.h));
 			root.setProperty('--accent-s', `${hsl.s}%`);
 			root.setProperty('--accent-l', `${hsl.l}%`);
 		}
 
-		// MIG-070 §C — per-Universe override wins over theme + Style Settings (applied LAST).
-		// Tracked, so a removed override clears on the next apply, and it re-applies after
-		// derivation on every theme switch (survives the switch).
+		// The saved per-Universe look (Style Setter "Keep") — tracked, so a removed key clears next apply.
 		Object.assign(trackedVars, s.styleOverride ?? {});
-
-		// MIG-070 §C Option E — the Style Setter's transient LIVE layer wins over everything while the
-		// Setter is open (cleared on Keep/Discard/close). Reading $liveStyleDraft here makes THIS one
-		// effect re-run on a live edit and re-apply — the same single writer, so no second-effect race
-		// (the BUG-015 guard); its keys ride _lastStyleSettingsKeys, so clearing it reverts cleanly.
+		// The Style Setter's transient LIVE layer wins while the Setter is open (same single writer;
+		// cleared on Keep/Discard/close). Reading $liveStyleDraft re-runs THIS effect on a live edit.
 		Object.assign(trackedVars, $liveStyleDraft);
 
 		// Clear any tracked var from the previous apply that is gone now (reset row / removed override).
@@ -1650,15 +1583,6 @@
 		_lastStyleSettingsKeys = [...newKeys];
 		for (const [key, value] of Object.entries(trackedVars)) {
 			root.setProperty(key, value);
-		}
-
-		// Body classes from Style-Settings class-toggle/select (cleared when none apply)
-		document.body.className = document.body.className
-			.split(' ')
-			.filter(c => !c.startsWith('css-settings-'))
-			.join(' ');
-		for (const cls of ssClasses) {
-			document.body.classList.add(cls);
 		}
 	});
 
