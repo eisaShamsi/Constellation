@@ -4235,7 +4235,13 @@ fn lexical_search_in_schema(
     let expansion = expanded_match_query(&normalized);
     let fts_query = match &expansion {
         Some(e) => e.match_expr.clone(),
-        None => format!("{}*", normalized.replace('"', "")),
+        // MIG-071 audit HIGH — FTS5-safe prefix fallback: phrase-quote the term (escapes c++, (draft),
+        // key:value, bareword AND/OR/NOT) then prefix '*'. Bare concat made special chars an invalid
+        // MATCH → conn.prepare() Err → silent zero results.
+        None => match crate::lexicon::fts::escape_fts_term(&normalized) {
+            Some(escaped) => format!("{}*", escaped),
+            None => return Vec::new(),
+        },
     };
     let bridge_terms: &[String] = expansion
         .as_ref()
@@ -4762,21 +4768,25 @@ fn structured_search(conn: &Connection, filters: &SearchFilters, limit: u32) -> 
     // Property filters
     if let Some(props) = &filters.properties {
         for pf in props {
+            // MIG-071 audit HIGH — pf.key is interpolated into the SQL string literal '$.{}'; double
+            // single-quotes so a key like `x') OR 1=1 --` can't break out of the literal (SQL injection
+            // via the public search IPC). The value is already parameterized.
+            let key = pf.key.replace('\'', "''");
             match pf.op.as_str() {
                 "=" => {
-                    conditions.push(format!("json_extract(properties_json, '$.{}') = ?", pf.key));
+                    conditions.push(format!("json_extract(properties_json, '$.{}') = ?", key));
                     params_vec.push(Box::new(pf.value.clone().unwrap_or_default()));
                 }
                 "!=" => {
-                    conditions.push(format!("(json_extract(properties_json, '$.{}') IS NULL OR json_extract(properties_json, '$.{}') != ?)", pf.key, pf.key));
+                    conditions.push(format!("(json_extract(properties_json, '$.{}') IS NULL OR json_extract(properties_json, '$.{}') != ?)", key, key));
                     params_vec.push(Box::new(pf.value.clone().unwrap_or_default()));
                 }
                 "contains" => {
-                    conditions.push(format!("json_extract(properties_json, '$.{}') LIKE '%' || ? || '%'", pf.key));
+                    conditions.push(format!("json_extract(properties_json, '$.{}') LIKE '%' || ? || '%'", key));
                     params_vec.push(Box::new(pf.value.clone().unwrap_or_default()));
                 }
                 "is_empty" => {
-                    conditions.push(format!("(json_extract(properties_json, '$.{}') IS NULL OR json_extract(properties_json, '$.{}') = '')", pf.key, pf.key));
+                    conditions.push(format!("(json_extract(properties_json, '$.{}') IS NULL OR json_extract(properties_json, '$.{}') = '')", key, key));
                 }
                 _ => {}
             }
@@ -4872,8 +4882,12 @@ fn structured_search(conn: &Connection, filters: &SearchFilters, limit: u32) -> 
     if let Some(names) = &filters.mentions {
         for name in names {
             let name_lower = name.to_lowercase();
+            // MIG-071 audit HIGH — body_text is stored Arabic-normalized (tashkeel/tatweel stripped) at
+            // index time, so a raw needle never matches a diacritic name; normalize the body needle the
+            // same way (then lowercase for the LOWER(body_text) compare).
+            let name_norm = normalize_arabic_for_search(name).to_lowercase();
             conditions.push("LOWER(body_text) LIKE '%' || ? || '%'".to_string());
-            params_vec.push(Box::new(name_lower.clone()));
+            params_vec.push(Box::new(name_norm));
             conditions.push("outgoing_links_json NOT LIKE '%\"' || ? || '\"%'".to_string());
             params_vec.push(Box::new(name_lower.clone()));
             // Exclude the note itself
@@ -6867,7 +6881,11 @@ fn execute_universal_search(conn: &Connection, query: &str, query_embedding: Opt
 }
 
 fn search_titles(conn: &Connection, query: &str, limit: u32) -> Vec<SearchResult> {
-    let fts_query = format!("name:{}*", query.replace('"', ""));
+    // MIG-071 audit HIGH — FTS5-safe: phrase-quote the term so special chars don't make an invalid MATCH.
+    let fts_query = match crate::lexicon::fts::escape_fts_term(query) {
+        Some(escaped) => format!("name:{}*", escaped),
+        None => return Vec::new(),
+    };
     let mut stmt = match conn.prepare(
         "SELECT note_meta.path, note_meta.name, note_meta.library_name, note_meta.modified,
                 bm25(notes_fts, 10.0, 0.0) as score
@@ -6897,7 +6915,11 @@ fn search_titles(conn: &Connection, query: &str, limit: u32) -> Vec<SearchResult
 }
 
 fn search_contents(conn: &Connection, query: &str, limit: u32) -> Vec<SearchResult> {
-    let fts_query = format!("body_text:{}*", query.replace('"', ""));
+    // MIG-071 audit HIGH — FTS5-safe: phrase-quote the term so special chars don't make an invalid MATCH.
+    let fts_query = match crate::lexicon::fts::escape_fts_term(query) {
+        Some(escaped) => format!("body_text:{}*", escaped),
+        None => return Vec::new(),
+    };
     let mut stmt = match conn.prepare(
         "SELECT note_meta.path, note_meta.name, note_meta.library_name, note_meta.modified,
                 bm25(notes_fts, 0.0, 1.0) as score,
