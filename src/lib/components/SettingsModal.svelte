@@ -5,8 +5,7 @@
 	import { check } from '@tauri-apps/plugin-updater';
 	import { relaunch } from '@tauri-apps/plugin-process';
 	import { t, locale, setLocale, SUPPORTED_LOCALES, type Locale } from '$lib/i18n';
-	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats, SCRIPT_UNICODE_RANGES, SCRIPT_LABELS, SCRIPT_SAMPLES, getAllFontSets, getFontSetById, type FontSet, TYPEWRITER_FONTS, BUILTIN_THEMES, type ConstellationTheme, DEFAULT_SETTINGS, backfillLinkConfidence, type PanelId, type PanelSlot, clearIndexHistory } from '$lib/libraries/store';
-	import ObsidianThemeBrowser from './ObsidianThemeBrowser.svelte';
+	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats, SCRIPT_UNICODE_RANGES, SCRIPT_LABELS, SCRIPT_SAMPLES, getAllFontSets, getFontSetById, type FontSet, TYPEWRITER_FONTS, DEFAULT_SETTINGS, backfillLinkConfidence, type PanelId, type PanelSlot, clearIndexHistory } from '$lib/libraries/store';
 	import { downloadJSON, pickJSONFile } from '$lib/utils';
 	import IconOverrideSettings from './IconOverrideSettings.svelte';
 	import ArabicOverridesPanel from './ArabicOverridesPanel.svelte';
@@ -55,68 +54,8 @@
 	// flag is left in the settings shape for backward compat but is
 	// no longer read anywhere.)
 
-	// Theme editor state
-	let editingTheme = $state<ConstellationTheme | null>(null);
-	let themeEditorOpen = $state(false);
-	let showObsidianBrowser = $state(false);
-
-	const allThemes = $derived([...BUILTIN_THEMES, ...($appSettings.customThemes ?? [])]);
-
-	function selectTheme(id: string) {
-		updateSettings({ activeThemeId: id });
-	}
-
-	function startNewTheme() {
-		const base = $appSettings.colorScheme === 'dark' ? BUILTIN_THEMES[1] : BUILTIN_THEMES[0];
-		editingTheme = {
-			id: `custom-${Date.now()}`,
-			name: 'My Theme',
-			type: base.type,
-			colors: { ...base.colors },
-		};
-		themeEditorOpen = true;
-	}
-
-	function startEditTheme(theme: ConstellationTheme) {
-		editingTheme = { ...theme, colors: { ...theme.colors } };
-		themeEditorOpen = true;
-	}
-
-	function saveTheme() {
-		if (!editingTheme) return;
-		const customs = [...($appSettings.customThemes ?? [])];
-		const idx = customs.findIndex(t => t.id === editingTheme!.id);
-		if (idx >= 0) customs[idx] = editingTheme;
-		else customs.push(editingTheme);
-		updateSettings({ customThemes: customs, activeThemeId: editingTheme.id });
-		themeEditorOpen = false;
-		editingTheme = null;
-	}
-
-	function deleteTheme(id: string) {
-		const customs = ($appSettings.customThemes ?? []).filter(t => t.id !== id);
-		updateSettings({
-			customThemes: customs,
-			activeThemeId: $appSettings.activeThemeId === id ? '' : $appSettings.activeThemeId,
-		});
-		if (editingTheme?.id === id) { editingTheme = null; themeEditorOpen = false; }
-	}
-
-	function exportTheme(theme: ConstellationTheme) {
-		downloadJSON(`${theme.name}.constellation-theme`, theme);
-	}
-
-	async function importTheme() {
-		const text = await pickJSONFile();
-		if (!text) return;
-		try {
-			const theme = JSON.parse(text) as ConstellationTheme;
-			if (!theme.id || !theme.name || !theme.colors) throw new Error('Invalid theme');
-			theme.id = `imported-${Date.now()}`;
-			const customs = [...($appSettings.customThemes ?? []), theme];
-			updateSettings({ customThemes: customs, activeThemeId: theme.id });
-		} catch {}
-	}
+	// MIG-071 — theme editor removed (2026-06-07): the Appearance theme layer is retired; all styling
+	// now lives in the Style Setter. (selectTheme / start/save/delete/export/importTheme + allThemes gone.)
 	let hotkeyFilter = $state('');
 	let testStatus = $state('');
 	let testing = $state(false);
@@ -2052,119 +1991,7 @@
 				<!-- ═══ APPEARANCE ═══ -->
 				{:else if activeSection === 'appearance'}
 
-					<!-- Theme Gallery -->
-					<div class="setting-section-heading">{$t('settings.appearance.themes') || 'Themes'}</div>
-					<div class="theme-gallery">
-						{#each allThemes as theme}
-							<button class="theme-card" class:active={$appSettings.activeThemeId === theme.id}
-								onclick={() => selectTheme(theme.id)}>
-								<div class="theme-swatches">
-									<span class="theme-sw" style="background:{theme.colors.background}"></span>
-									<span class="theme-sw" style="background:{theme.colors.surface}"></span>
-									<span class="theme-sw" style="background:{theme.colors.accent}"></span>
-									<span class="theme-sw" style="background:{theme.colors.text}"></span>
-								</div>
-								<div class="theme-card-name">{theme.name}</div>
-								{#if !BUILTIN_THEMES.find(b => b.id === theme.id)}
-									<button class="theme-edit-btn" onclick={(e) => { e.stopPropagation(); startEditTheme(theme); }} title={$t('common.edit') || 'Edit'}>✏️</button>
-									<button class="theme-delete-btn" onclick={(e) => { e.stopPropagation(); if (confirm(($t('settings.appearance.deleteThemeConfirm') || 'Delete theme') + ' "' + theme.name + '"?')) deleteTheme(theme.id); }} title={$t('common.delete') || 'Delete'}>✕</button>
-								{/if}
-							</button>
-						{/each}
-						<button class="theme-card theme-add" onclick={startNewTheme}>
-							<span class="theme-add-icon">+</span>
-							<div class="theme-card-name">{$t('settings.appearance.newTheme') || 'New Theme'}</div>
-						</button>
-						<button class="theme-card theme-import" onclick={importTheme}>
-							<span class="theme-add-icon">↓</span>
-							<div class="theme-card-name">{$t('settings.appearance.importTheme') || 'Import'}</div>
-						</button>
-						<button class="theme-card theme-obsidian" onclick={() => showObsidianBrowser = true}>
-							<span class="theme-add-icon">🟣</span>
-							<div class="theme-card-name">{$t('settings.appearance.obsidianThemes') || 'Obsidian Themes'}</div>
-						</button>
-					</div>
-
-					<!-- Reset to default -->
-					{#if $appSettings.activeThemeId}
-						<button class="btn-text" onclick={() => updateSettings({ activeThemeId: '' })}>{$t('settings.appearance.resetTheme') || 'Reset to default'}</button>
-					{/if}
-
-					<!-- Theme Editor -->
-					{#if themeEditorOpen && editingTheme}
-						<div class="theme-editor">
-							<div class="setting-section-heading">{$t('settings.appearance.customize') || 'Customize Theme'}</div>
-							<div class="setting-item">
-								<div class="setting-info"><div class="setting-name">{$t('settings.appearance.themeName') || 'Name'}</div></div>
-								<input type="text" class="setting-control" bind:value={editingTheme.name} />
-							</div>
-							<div class="setting-item">
-								<div class="setting-info"><div class="setting-name">{$t('settings.appearance.themeType') || 'Type'}</div></div>
-								<select class="setting-control" bind:value={editingTheme.type}>
-									<option value="light">{$t('settings.appearance.light')}</option>
-									<option value="dark">{$t('settings.appearance.dark')}</option>
-								</select>
-							</div>
-							<div class="setting-item">
-								<div class="setting-info"><div class="setting-name">{$t('settings.appearance.themeBackground') || 'Background'}</div></div>
-								<div class="color-row">
-									<input type="color" class="color-input" value={editingTheme.colors.background}
-										oninput={(e) => { editingTheme!.colors.background = (e.target as HTMLInputElement).value; }} />
-									<span class="color-hex">{editingTheme.colors.background}</span>
-								</div>
-							</div>
-							<div class="setting-item">
-								<div class="setting-info"><div class="setting-name">{$t('settings.appearance.themeSurface') || 'Surface'}</div></div>
-								<div class="color-row">
-									<input type="color" class="color-input" value={editingTheme.colors.surface}
-										oninput={(e) => { editingTheme!.colors.surface = (e.target as HTMLInputElement).value; }} />
-									<span class="color-hex">{editingTheme.colors.surface}</span>
-								</div>
-							</div>
-							<div class="setting-item">
-								<div class="setting-info"><div class="setting-name">{$t('settings.appearance.themeText') || 'Text'}</div></div>
-								<div class="color-row">
-									<input type="color" class="color-input" value={editingTheme.colors.text}
-										oninput={(e) => { editingTheme!.colors.text = (e.target as HTMLInputElement).value; }} />
-									<span class="color-hex">{editingTheme.colors.text}</span>
-								</div>
-							</div>
-							<div class="setting-item">
-								<div class="setting-info"><div class="setting-name">{$t('settings.appearance.themeAccent') || 'Accent'}</div></div>
-								<div class="color-row">
-									<input type="color" class="color-input" value={editingTheme.colors.accent}
-										oninput={(e) => { editingTheme!.colors.accent = (e.target as HTMLInputElement).value; }} />
-									<span class="color-hex">{editingTheme.colors.accent}</span>
-								</div>
-							</div>
-							<div class="setting-item">
-								<div class="setting-info"><div class="setting-name">{$t('settings.appearance.themeBorder') || 'Border'}</div></div>
-								<div class="color-row">
-									<input type="color" class="color-input" value={editingTheme.colors.border}
-										oninput={(e) => { editingTheme!.colors.border = (e.target as HTMLInputElement).value; }} />
-									<span class="color-hex">{editingTheme.colors.border}</span>
-								</div>
-							</div>
-							<!-- Style Settings hint -->
-							{#if editingTheme.styleSettingsBlocks && editingTheme.styleSettingsBlocks.length > 0}
-								<div class="setting-item">
-									<div class="setting-info">
-										<div class="setting-name">{$t('settings.appearance.hasStyleSettings') || 'This theme has Style Settings'}</div>
-										<div class="setting-desc">{$t('settings.appearance.seeStyleSettingsTab') || 'Open the “Style Settings” tab to customize theme options.'}</div>
-									</div>
-								</div>
-							{/if}
-
-							<div class="theme-editor-actions">
-								<button class="btn-primary" onclick={saveTheme}>Save</button>
-								<button class="btn-text" onclick={() => { themeEditorOpen = false; editingTheme = null; }}>{$t('common.cancel') || 'Cancel'}</button>
-								{#if !BUILTIN_THEMES.find(b => b.id === editingTheme?.id)}
-									<button class="btn-danger" onclick={() => deleteTheme(editingTheme!.id)}>{$t('common.delete') || 'Delete'}</button>
-									<button class="btn-text" onclick={() => exportTheme(editingTheme!)}>{$t('settings.appearance.exportTheme') || 'Export'}</button>
-								{/if}
-							</div>
-						</div>
-					{/if}
+					<!-- MIG-071: theme system removed (2026-06-07) - all styling now lives in the Style Setter. -->
 
 					<div class="setting-section-heading" style="margin-top:16px">{$t('settings.appearance.general') || 'General'}</div>
 
@@ -2468,13 +2295,6 @@
 		</div>
 	</div>
 </div>
-
-{#if showObsidianBrowser}
-	<ObsidianThemeBrowser
-		onClose={() => showObsidianBrowser = false}
-		onImported={(theme) => { showObsidianBrowser = false; }}
-	/>
-{/if}
 
 <!-- MIG-012 §Build.8-fix: localized confirm dialog. Browser-native
      confirm() forces OS-locale OK/Cancel and bypassed our i18n; this
