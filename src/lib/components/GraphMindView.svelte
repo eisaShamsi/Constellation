@@ -300,18 +300,22 @@
 	async function computeSemantic() {
 		if (semanticComputing || nodes.length < 2) return;
 		semanticComputing = true;
-		semanticProgress = 'Loading AI model...';
+		semanticProgress = `Reading notes: 0/${nodes.length}`;
 
 		try {
-			// Read note contents from disk via Tauri
+			// MIG-071 audit fix — read note contents in PARALLEL batches. This was one sequential
+			// read_file IPC per node, which on a large Universe (7,600+ notes) stalled here for many
+			// minutes BEFORE embedding even started, with the button stuck on the initial label.
 			const noteContents: { id: string; name: string; content: string }[] = [];
-			for (const n of nodes) {
-				try {
-					const content: string = await invoke('read_file', { path: n.path });
-					noteContents.push({ id: n.id, name: n.name, content });
-				} catch {
-					noteContents.push({ id: n.id, name: n.name, content: '' });
-				}
+			const READ_BATCH = 64;
+			for (let i = 0; i < nodes.length; i += READ_BATCH) {
+				const batch = nodes.slice(i, i + READ_BATCH);
+				const read = await Promise.all(batch.map(async (n) => {
+					try { return { id: n.id, name: n.name, content: await invoke<string>('read_file', { path: n.path }) }; }
+					catch { return { id: n.id, name: n.name, content: '' }; }
+				}));
+				noteContents.push(...read);
+				semanticProgress = `Reading notes: ${Math.min(i + READ_BATCH, nodes.length)}/${nodes.length}`;
 			}
 
 			const semanticResults = await computeSemanticLinks(
