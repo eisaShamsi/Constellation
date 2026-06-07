@@ -1227,7 +1227,11 @@
 		width: 100%;
 		height: 100%;
 		overflow: hidden;
-		background: var(--background-secondary);
+		/* Style Setter → Sky View → Canvas background (--skyview-bg). Unset = the
+		   panel secondary surface = today's look (no regression). The PIXI canvas
+		   is transparent (backgroundAlpha:0), so this CSS colour IS the graph
+		   background. */
+		background: var(--skyview-bg, var(--background-secondary));
 	}
 
 	/* MIG-044 Phase 2 (correction #3) — hover tooltip. Two-line layout,

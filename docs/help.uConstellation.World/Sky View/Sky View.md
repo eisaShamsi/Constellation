@@ -169,6 +169,8 @@ Click the gear icon (⚙) in the toolbar to open the settings panel. It has thre
 | **Link thickness** | Width of edge lines | 1 |
 | **Show orphan notes** | Include notes with no links | On |
 
+> **Canvas background colour.** The colour behind the bubbles is set in **Settings → Style Setter → Sky View → Canvas → Background** (not in this panel). It is independent of your sidebars/panels, so you can give the graph its own backdrop — a deep colour to make the bubbles pop, for example — without changing the rest of the interface. Left unset, the canvas matches the panel surface. See *Appearance & Themes → Sky View canvas*.
+
 ### Physics
 
 | Control | Description | Default |

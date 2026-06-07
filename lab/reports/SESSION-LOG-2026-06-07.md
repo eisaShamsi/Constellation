@@ -61,3 +61,60 @@ themes in the Setter render path), BUG-015 (one apply effect — untouched), and
 ### PCS
 - One commit: the 6 code files + this log + orientation **v2.55 → v2.56** (rides with the feature, SO #6) +
   English Appearance help + User Manual. The 14-language help is a batched follow-up (the §C-close pattern).
+
+---
+
+## MIG-071 + universal audit — landed-commit reconciliation (record)
+
+These two bodies of work shipped as commits after the §C-polish PCS but were **not** narrated in this log
+at the time (the detailed record lives in each commit message + `lab/reports/AUDIT-2026-06-07.md` + the
+day's MoCh). Captured here so a fresh session sees the trail. Verified against `git log` (hashes below):
+
+- **MIG-071 — theme subsystem removal** (Eisa: wipe ALL Appearance theme data — built-ins + custom — no
+  backup, drop to plain default; **do not touch the Style Setter**; the Setter becomes the sole styling
+  home). Commits: `de5378eb` §A (activeStyleId successor, inert) · `2388c06d` §B (unified base resolver) ·
+  `8879a7e6` §C (apply path via activeStyleId) · `db26e82e` §D (empty BUILTIN_THEMES + one-shot wipe of all
+  theme data) · `d4b69efe` §G (remove Appearance theme UI + Obsidian import) · `c5a162fd` §K (/simplify —
+  remove dead theme machinery). Architect/Plan docs in `docs/MIG-071-themes-styles-unification-*.md`.
+- **Universal audit + CRITICAL/HIGH fixes** (`lab/reports/AUDIT-2026-06-07.md`). Commits: `f77fa393`
+  CRITICAL (Git-LFS checkout `lfs:true` + clear 3 svelte-check type errors) · `e2358daf` H5/H6/H7 (search
+  hardening: SQL-injection, FTS5 escaping, Arabic mentions) · `ef9bd7ca` H1/H2/H3 (2nd-screen XSS via
+  sanitized renderMarkdown + 2nd-screen Style-Setter look + restore style Import) · `062eadd7` H10/H12/H13
+  (search-result cap + editor re-embed + @xenova offline guard) · `1fd74577` H13-proper (Sky-View semantic
+  links route through the local Rust ONNX engine; **@xenova dropped**) · `6726dc03` audit follow-up
+  (parallelize Sky View note reads — the real root cause of the offline "Loading AI model" stall).
+- **Boss-validated offline guarantee:** Sky View → Compute Semantic Links runs **fully offline** (500
+  links, internet disconnected) via the bundled `multilingual-e5-small` ONNX model. Eisa: "Pass."
+- **Deferred (not regressions):** H11 (file-tree virtualization), H4 (CSP `script-src 'unsafe-inline'` →
+  hash/nonce migration — naive removal white-screens the SvelteKit inline bootstrap; H3 sanitization is the
+  real XSS fix), embedding speed-up via reusing search's stored vectors.
+
+---
+
+## Sky View canvas background — dedicated Style Setter control
+
+**Function in hand:** the Sky View graph **canvas background** (the colour behind the node bubbles in the
+full-window Sky View and the second-screen companion).
+
+**Why:** after MIG-071 wiped all themes (Eisa-approved), the graph dropped to the plain-default panel
+surface — a flat light gray. The graph's PIXI canvas is transparent (`backgroundAlpha:0`), so the visible
+colour was whatever painted `.gm-container` — and that was `var(--background-secondary)`, the *shared* panel
+surface. Recolouring it via the Setter's existing "Panel background" also moved every sidebar/panel (same
+variable). Eisa pointed at the background; asked (AskUserQuestion) what he wanted → **"Own Style Setter
+control"** (a graph-only colour, decoupled from the chrome).
+
+**Change (frontend-only — no Rust, no schema):**
+- New CSS var **`--skyview-bg`**. Consumers: `GraphMindView.svelte` `.gm-container` (full Sky View) and
+  `LocalSkyView.svelte` `.local-star` (companion / second screen) — both `var(--skyview-bg,
+  var(--background-secondary))`, so **unset = the panel surface = today's look (no regression)**. Both
+  canvases are transparent (PIXI `backgroundAlpha:0` / 2D `clearRect`), so the CSS colour is the background.
+- New Setter element **`skyCanvas` ("Canvas" → "Background")** added to the existing **Sky View** category
+  (`elements: ['skyCanvas', 'accent', 'link']`). Writes `--skyview-bg` into the per-Universe `styleOverride`
+  via the single apply `$effect` (BUG-015 single-writer untouched).
+- Sky View **preview** now renders a `.ss-skycanvas` card reading `--skyview-bg` live; clickable to select
+  the Canvas element (nodes `stopPropagation` to still select accent/link). OrgChart preview split out
+  (kept its plain `.ss-sky`).
+- Second screen inherits it automatically — `SecondScreenPage` already applies `styleOverride` (audit H2).
+
+**Verification:** wiring audit **144 producers / 0 dead** (was 143; +1 `--skyview-bg`, three real
+consumers). `svelte-check`: **0 errors** (318 pre-existing unused-CSS warnings, none from this change).

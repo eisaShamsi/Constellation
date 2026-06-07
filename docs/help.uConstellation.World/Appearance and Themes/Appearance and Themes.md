@@ -221,7 +221,7 @@ The **Style Setter** is a full-page design studio for your whole interface. Inst
 - **Editor** — the note itself: the **breadcrumb** path line, headings, bold, italic, links, inline code, blockquotes, and the **note summary** (the italic line under the title — its own colour, font, size, thickness, and italic on/off).
 - **Global** — background and text shades, accent shades, type & spacing, corners & borders, and per-script fonts.
 - **Links** — the typed-link colours and how they display.
-- **Sky View / OrgChart / Index / Cataloger / Shell** — the plugin surfaces.
+- **Sky View / OrgChart / Index / Cataloger / Shell** — the plugin surfaces. The **Sky View** surface includes a **Canvas** element whose **Background** colour sets the backdrop behind the graph bubbles — independent of the panel colour (see *Sky View canvas*, below).
 
 Below them are your **saved styles** — click one to apply that whole look at once (see *Save a look as a named Style*, below). *(Built-in themes are picked from Settings → Appearance, not here.)*
 
@@ -235,6 +235,8 @@ Below them are your **saved styles** — click one to apply that whole look at o
 **Fonts — your installed typefaces.** Every font picker in the Setter — **Interface**, **Note**, **Code**, and the file-tree / chrome fonts — lists the fonts **actually installed on your computer**, alphabetically, with **System / Serif / Mono** kept on top. **Each name is shown in its own typeface,** so you can preview a font before choosing it. (If your system blocks font detection, the Setter falls back to a curated cross-platform list — you still get a real, usable set.)
 
 **Saved colours — a named, reusable palette.** Whenever you pick a colour, the Setter remembers it under **Saved colours** (shown for any element that has a colour control). Click a saved colour to apply it to the control you last touched — and the palette is shared everywhere, including the typed-link colours in the **Links** category. Click **Manage** next to the heading to **name** a colour (e.g. *Brand teal*), rename it, or remove it. **Removing is deliberate** — there is no accidental right-click: in **Manage**, click the **✕** on a colour, then confirm **Remove** (or **Cancel**). Your names are saved per-Universe and survive a restart.
+
+**Sky View canvas — its own background colour.** The Sky View graph draws its bubbles on a transparent canvas, so the colour you see behind them is just a backdrop. Open **Style Setter → Sky View → Canvas** and set **Background** to give the graph its own backdrop — a deep colour to make the bubbles pop, or any shade you like. It is **independent of the panel/sidebar colour**, so recolouring the graph never moves the rest of your interface. Left unset, the canvas follows the panel surface (the default look). The same colour applies to the small Sky View on the second screen, so both match. The preview card in the Setter shows your chosen colour live as you pick it.
 
 **Inspect — click the app to find its controls.** Click **⌖ Inspect** in the top bar, then hover your **real app**: the part under your cursor is highlighted and named, and clicking it jumps the Setter straight to that part's controls (then exits inspect). It reaches the dock, toolbars, tabs, sidebars, status bar, file tree and folders, note text, tags, the Universe panel, the sidebar's **library** and **child-universe** rows, and generic **buttons**. Press **Esc** to leave inspect.
 

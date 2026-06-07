@@ -319,6 +319,11 @@
 			{ label: 'Pill corner radius', type: 'pillrange', prop: 'radius', min: 0, max: 20, step: 1, unit: 'px' },
 			{ label: 'Pill height', type: 'pillrange', prop: 'height', min: 14, max: 32, step: 1, unit: 'px' },
 			{ label: 'Pill label weight', type: 'pillselect', prop: 'fontWeight', options: [['Normal', '400'], ['Semibold', '600'], ['Bold', '700'], ['Extra bold', '900']] } ] },
+		// MIG-070 §C — the Sky View graph CANVAS background. Its own var so it's independent of the
+		// panel/sidebar surface (--background-secondary): recolour the graph without touching the
+		// chrome. Consumed by GraphMindView's .gm-container and LocalSkyView's .local-star (both have
+		// a transparent canvas, so this colour IS the visible background). Unset = panel surface = today.
+		skyCanvas: { name: 'Canvas', controls: [{ label: 'Background', type: 'color', var: '--skyview-bg' }] },
 	};
 	// §3B — the left rail is organised into CATEGORIES (a.k.a. Surfaces), each grouping its
 	// elements (Eisa). Interface + Editor both preview the main app window ('editor' surface);
@@ -329,7 +334,7 @@
 		{ key: 'editor', name: 'Editor', surface: 'editor', elements: ['noteBg', 'text', 'breadcrumb', 'summary', 'accent', 'link', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'bold', 'italic', 'strike', 'code', 'quote', 'caret'] },
 		{ key: 'global', name: 'Global', surface: 'editor', elements: ['gBackgrounds', 'gTextShades', 'gStatus', 'gAccent', 'gType', 'gShape', 'fonts'] },
 		{ key: 'links', name: 'Links', surface: 'editor', elements: ['links'] },
-		{ key: 'sky', name: 'Sky View', surface: 'sky', elements: ['accent', 'link'] },
+		{ key: 'sky', name: 'Sky View', surface: 'sky', elements: ['skyCanvas', 'accent', 'link'] },
 		{ key: 'org', name: 'OrgChart', surface: 'org', elements: ['accent', 'link'] },
 		{ key: 'index', name: 'Index', surface: 'index', elements: ['accent'] },
 		{ key: 'cataloger', name: 'Cataloger', surface: 'cataloger', elements: ['accent'] },
@@ -750,7 +755,17 @@
 					{#if activeSurface !== 'editor'}
 						<div class="ss-prev-alt">
 							<div class="ss-alt-title">{CATEGORIES.find((c) => c.surface === activeSurface)?.name}</div>
-							{#if activeSurface === 'sky' || activeSurface === 'org'}
+							{#if activeSurface === 'sky'}
+								<!-- The canvas reads --skyview-bg live; click the empty canvas to style it,
+								     click a node to style accent/link. -->
+								<div class="ss-skycanvas ss-hot" class:ss-sel={selected === 'skyCanvas'}
+									role="button" tabindex="0" aria-label="canvas background"
+									onclick={() => selectEl('skyCanvas')}
+									onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectEl('skyCanvas'); } }}>
+									<button class="ss-node ss-hot" class:ss-sel={selected === 'accent'} onclick={(e) => { e.stopPropagation(); selectEl('accent'); }} aria-label="accent"></button>
+									<button class="ss-node b ss-hot" class:ss-sel={selected === 'link'} onclick={(e) => { e.stopPropagation(); selectEl('link'); }} aria-label="link"></button>
+								</div>
+							{:else if activeSurface === 'org'}
 								<div class="ss-sky">
 									<button class="ss-node ss-hot" class:ss-sel={selected === 'accent'} onclick={() => selectEl('accent')} aria-label="accent"></button>
 									<button class="ss-node b ss-hot" class:ss-sel={selected === 'link'} onclick={() => selectEl('link')} aria-label="link"></button>
@@ -1107,6 +1122,8 @@
 	.ss-alt-title { font-weight: 700; font-size: 15px; color: var(--interactive-accent, #7c3aed); }
 	.ss-alt-note { font-size: 11.5px; color: var(--text-normal, #6b7280); opacity: .7; max-width: 70%; text-align: center; }
 	.ss-sky { display: flex; gap: 22px; }
+	/* Sky View preview canvas — shows the chosen --skyview-bg live (fallback = panel surface). */
+	.ss-skycanvas { display: flex; gap: 22px; align-items: center; justify-content: center; padding: 30px 44px; border-radius: 12px; background: var(--skyview-bg, var(--background-secondary, #f1f1ef)); cursor: pointer; border: none; transition: background 0.12s; }
 	.ss-node { width: 34px; height: 34px; border-radius: 50%; border: none; cursor: pointer; background: var(--interactive-accent, #7c3aed); box-shadow: 0 0 0 4px color-mix(in srgb, var(--interactive-accent, #7c3aed) 25%, transparent); }
 	.ss-node.b { background: var(--link-color, #2f6fed); box-shadow: 0 0 0 4px color-mix(in srgb, var(--link-color, #2f6fed) 25%, transparent); }
 	.ss-idx { width: 70%; display: flex; flex-direction: column; gap: 8px; }

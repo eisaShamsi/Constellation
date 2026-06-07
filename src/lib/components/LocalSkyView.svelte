@@ -290,7 +290,10 @@
 		height: 100%;
 		min-height: 200px;
 		position: relative;
-		background: var(--background-secondary);
+		/* Shares the Style Setter → Sky View → Canvas background (--skyview-bg) with
+		   the full Sky View, so both look identical. The 2D canvas clears with
+		   clearRect (transparent), so this CSS colour shows through. */
+		background: var(--skyview-bg, var(--background-secondary));
 	}
 	canvas {
 		display: block;
