@@ -157,6 +157,7 @@
 						advancedGroups = [];
 						for (const sub of subQueries) {
 							const req = parseSearchQuery(sub);
+							req.limit = 200; // MIG-071 audit HIGH (PA) — cap rows painted (backend default 0 = up to 100k)
 							const results = await constellationSearch(req);
 							advancedGroups.push({ query: sub, results });
 						}
@@ -165,6 +166,7 @@
 						// Single advanced query: flat list
 						advancedGroups = [];
 						const req = parseSearchQuery(canonicalized);
+						req.limit = 200; // MIG-071 audit HIGH (PA) — cap rows painted (backend default 0 = up to 100k)
 						const raw = await constellationSearch(req);
 					filteredResults = raw.sort((a, b) => {
 						const sd = b.score - a.score;
@@ -180,7 +182,7 @@
 					if ($appSettings.enabledFeatures?.semanticSearch) {
 						try { qEmbed = await embedText(q); } catch {}
 					}
-					response = await universalSearch(q, qEmbed, 0);
+					response = await universalSearch(q, qEmbed, 200); // MIG-071 audit HIGH (PA) — cap rows painted (was 0 = up to 100k)
 				}
 				addSearchHistory(q);
 				history = readSearchHistory();

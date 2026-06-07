@@ -9,7 +9,14 @@
  * All computation is local — nothing leaves the user's machine.
  */
 
-import { pipeline, type Pipeline } from '@xenova/transformers';
+import { pipeline, env, type Pipeline } from '@xenova/transformers';
+
+// MIG-071 audit HIGH (OGA — Offline Guarantee) — never fetch the model from the HuggingFace CDN at
+// runtime. Constellation is offline-first; @xenova must use local model files only (if none are
+// present the feature fails offline-safely rather than phoning home). Proper follow-up: route this
+// GraphMind embedding through the bundled Rust ONNX engine (constellation_embed_*) so it works offline.
+env.allowRemoteModels = false;
+env.allowLocalModels = true;
 
 export interface SemanticLink {
 	source: string; // node id

@@ -183,6 +183,14 @@
 					notePath: filePath,
 					libraryName: tab.libraryName,
 				}).catch(() => {});
+				// MIG-071 audit HIGH (CFS) — re-embed for semantic search too (was reindex-only, so a
+				// note's vector went stale after every body edit). Mirrors store.ts saveTabContent.
+				if (get(appSettings).enabledFeatures?.semanticSearch) {
+					invoke('constellation_embed_notes', {
+						notes: [{ path: filePath, name: tab.name, content: text }],
+						force: true,
+					}).catch(() => {});
+				}
 				// MIG-021v3 V3-§10.A.1 — CECE background scan on save.
 				// When enabled in Settings, dispatch the same window event
 				// the right-click "Suggest sources & content type" context
@@ -237,6 +245,13 @@
 						notePath: filePath,
 						libraryName: tab.libraryName,
 					}).catch(() => {});
+					// MIG-071 audit HIGH (CFS) — re-embed on flush too (tab close / unload), mirroring save.
+					if (get(appSettings).enabledFeatures?.semanticSearch) {
+						invoke('constellation_embed_notes', {
+							notes: [{ path: filePath, name: tab.name, content: text }],
+							force: true,
+						}).catch(() => {});
+					}
 				})
 				.catch(() => {});
 		}
