@@ -3213,6 +3213,14 @@ export type PanelSlot =
 	| 'right-sidebar'   // existing right sidebar tab strip
 	| 'hidden';         // user chose to hide this panel entirely
 
+/** MIG-070 §C polish (Item B) — a saved colour swatch: the hex plus an optional user-given name
+ *  (e.g. "Brand teal"). Legacy palettes stored bare hex strings; `applyParsedSettings` coerces
+ *  those to `{ hex, name: '' }` on load (back-compat, idempotent). */
+export interface StyleSwatch {
+	hex: string;
+	name?: string;
+}
+
 export interface AppSettings {
 	// Editor
 	showLineNumbers: boolean;
@@ -3255,9 +3263,9 @@ export interface AppSettings {
 	 *  active theme + its styleSettingsValues (the Style Setter's persisted look). Survives
 	 *  theme switches; an empty map = the pure theme look. */
 	styleOverride: Record<string, string>;
-	/** MIG-070 §C — the user's saved colour palette (hex), built up in the Style Setter for
-	 *  re-use across controls. Most-recent first. */
-	styleSwatches: string[];
+	/** MIG-070 §C — the user's saved colour palette, built up in the Style Setter for re-use across
+	 *  controls. Most-recent first. §C-polish Item B: each swatch can carry an optional name. */
+	styleSwatches: StyleSwatch[];
 	/** MIG-070 §C — the Style Setter's per-script font choices (script → font family), e.g.
 	 *  { arabic: 'Amiri', cjk: '"Noto Sans CJK SC"' }. Applied via @font-face unicode-range in the
 	 *  +layout font effect so each script renders in its own font, independent of the UI language.
@@ -3918,6 +3926,20 @@ export function applyParsedSettings(parsed: Record<string, unknown>): void {
 		sight: { ...DEFAULT_SETTINGS.sight, ...((parsed.sight as Record<string, unknown>) || {}) },
 	});
 
+	// ── MIG-070 §C-polish Item B — styleSwatches shape upgrade ──
+	// Legacy palettes stored bare hex strings; the named-swatch UI needs { hex, name }.
+	// Coerce any string entries on load (idempotent: silent once every entry is an object).
+	const rawSwatches = parsed.styleSwatches;
+	if (Array.isArray(rawSwatches) && rawSwatches.some((sw) => typeof sw === 'string')) {
+		appSettings.update((s) => ({
+			...s,
+			styleSwatches: (s.styleSwatches as unknown as Array<string | StyleSwatch>).map((sw) =>
+				typeof sw === 'string' ? { hex: String(sw).toLowerCase(), name: '' } : sw,
+			),
+		}));
+		saveSettings();
+	}
+
 	// ── §B.10-fix-1 — proMode → extended rename migration ───────
 	// 2026-05-16, Eisa cycle-1: rename for honest naming ("Pro"
 	// overpromised). One-shot per-user; idempotent (subsequent loads
@@ -4136,22 +4158,30 @@ export const liveStyleDraft = writable<Record<string, string>>({});
 export function setLiveStyleDraft(vars: Record<string, string>) { liveStyleDraft.set({ ...vars }); }
 export function clearLiveStyleDraft() { liveStyleDraft.set({}); }
 
-/** MIG-070 §C — add a hex colour to the saved palette (deduped, most-recent first, capped). */
-export function addStyleSwatch(hex: string) {
+/** MIG-070 §C — add a hex colour to the saved palette (deduped by hex, most-recent first, capped).
+ *  §C-polish Item B: an optional name can be supplied; auto-saved picks come in unnamed. */
+export function addStyleSwatch(hex: string, name = '') {
 	const h = (hex || '').trim().toLowerCase();
 	if (!/^#[0-9a-f]{6}$/.test(h)) return;
 	appSettings.update(s => {
 		const cur = s.styleSwatches ?? [];
-		if (cur.includes(h)) return s;
-		return { ...s, styleSwatches: [h, ...cur].slice(0, 24) };
+		if (cur.some(sw => sw.hex === h)) return s;
+		return { ...s, styleSwatches: [{ hex: h, name: name.trim() }, ...cur].slice(0, 24) };
 	});
 	saveSettings();
 }
 
-/** MIG-070 §C — remove a hex colour from the saved palette. */
+/** MIG-070 §C — remove a swatch from the saved palette (matched by hex). */
 export function removeStyleSwatch(hex: string) {
 	const h = (hex || '').trim().toLowerCase();
-	appSettings.update(s => ({ ...s, styleSwatches: (s.styleSwatches ?? []).filter(c => c !== h) }));
+	appSettings.update(s => ({ ...s, styleSwatches: (s.styleSwatches ?? []).filter(sw => sw.hex !== h) }));
+	saveSettings();
+}
+
+/** MIG-070 §C polish (Item B) — name (or rename) a saved swatch, matched by hex. Blank clears it. */
+export function renameStyleSwatch(hex: string, name: string) {
+	const h = (hex || '').trim().toLowerCase();
+	appSettings.update(s => ({ ...s, styleSwatches: (s.styleSwatches ?? []).map(sw => sw.hex === h ? { ...sw, name: name.trim() } : sw) }));
 	saveSettings();
 }
 

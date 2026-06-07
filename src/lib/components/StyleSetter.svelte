@@ -18,7 +18,10 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { get } from 'svelte/store';
 	import { styleSetterOpen, closeStyleSetter, styleSetterInspectRequest } from '$lib/stores/styleSetter';
-	import { appSettings, mergeStyleOverride, clearAllStyleOverride, addStyleSwatch, removeStyleSwatch, setPerScriptFont, updateSettings, setLiveStyleDraft, clearLiveStyleDraft } from '$lib/libraries/store';
+	// MIG-070 §C polish (Item A) — real font choices: the shared catalogue (curated floor + the user's
+	// installed fonts via queryLocalFonts), reused from Settings. Drives the font pickers + live preview.
+	import { systemFonts, ensureSystemFonts, fontFamilyValue } from '$lib/fonts';
+	import { appSettings, mergeStyleOverride, clearAllStyleOverride, addStyleSwatch, removeStyleSwatch, renameStyleSwatch, setPerScriptFont, updateSettings, setLiveStyleDraft, clearLiveStyleDraft } from '$lib/libraries/store';
 	// §C Phase 5 — link styling reuses the EXISTING single source: the §G Link-Types editor (one save
 	// path → Backlinks/Outgoing/editor recolour live). Display toggles + pill shape are appSettings.
 	import LinkTypesEditor from './LinkTypesEditor.svelte';
@@ -47,24 +50,21 @@
 		// appSettings directly (single source of truth — no duplicate var↔setting path).
 		| { label: string; type: 'appnum'; setting: 'interfaceFontSize' | 'fontSize'; min: number; max: number; step: number; unit: string; def: number };
 
-	// §C Phase 4 — a curated typeface list (cross-platform stacks). A full installed-fonts list +
-	// per-script fonts + font-theme/numerals (from the Language tab) are the deeper follow-up.
+	// §C Phase 4 / §C-polish Item A — the three generic stacks stay as the top choices (with proper
+	// generic fallbacks); the user's INSTALLED fonts (or the curated floor) are appended live via
+	// `fontOptions` below. `FONTS` is what the ELEMENTS map references for font `select` controls; the
+	// template swaps in `fontOptions` (generics + installed) at render so every font picker is real.
 	const FONTS: [string, string][] = [
 		['System', 'ui-sans-serif, system-ui, "Segoe UI", sans-serif'],
 		['Serif', 'ui-serif, Georgia, "Times New Roman", serif'],
 		['Mono', 'ui-monospace, "Courier New", monospace'],
-		['Segoe UI', '"Segoe UI", system-ui, sans-serif'],
-		['Calibri', 'Calibri, "Segoe UI", sans-serif'],
-		['Helvetica', '"Helvetica Neue", Helvetica, Arial, sans-serif'],
-		['Verdana', 'Verdana, Geneva, sans-serif'],
-		['Tahoma', 'Tahoma, sans-serif'],
-		['Trebuchet', '"Trebuchet MS", sans-serif'],
-		['Georgia', 'Georgia, "Times New Roman", serif'],
-		['Times', '"Times New Roman", Times, serif'],
-		['Garamond', 'Garamond, "EB Garamond", Georgia, serif'],
-		['Consolas', 'Consolas, "Courier New", monospace'],
-		['Courier', '"Courier New", Courier, monospace'],
 	];
+	// The live font-picker options: the 3 generics on top, then every installed/curated family (each
+	// value safely quoted for CSS). A font `select` (var contains "font") renders THIS list, not FONTS.
+	const fontOptions = $derived<[string, string][]>([
+		...FONTS,
+		...$systemFonts.map((f) => [f, fontFamilyValue(f)] as [string, string]),
+	]);
 	const DECOR: [string, string][] = [
 		['Underline', 'underline'],
 		['None', 'none'],
@@ -349,6 +349,11 @@
 	let selected = $state<string | null>(null);
 	// §C — the colour control most recently touched, so a clicked palette swatch knows where to apply.
 	let activeColorVar = $state<string | null>(null);
+	// §C-polish Item B — expand the saved-colour grid into named rows (name / rename / delete).
+	let managingSwatches = $state(false);
+	// §C-polish Item B — the swatch pending delete-confirmation. Delete is a deliberate two-step
+	// (✕ → Remove/Cancel) in Manage mode only — never an accidental right-click (Eisa, 2026-06-07).
+	let confirmDeleteHex = $state<string | null>(null);
 	let draftName = $state('Untitled style');
 	/** The draft: CSS-var → override value. Scoped to the preview wrapper; Apply → <body>. */
 	let draft = $state<Record<string, string>>({});
@@ -640,6 +645,8 @@
 		// §C Phase 6 — load the user's saved Styles for the gallery (app-global; the unified list adds
 		// the built-in/custom theme Styles read-time).
 		loadStylePresets().then((s) => { savedStyles = s; });
+		// §C-polish Item A — populate the font pickers with the user's installed fonts (once/session).
+		ensureSystemFonts();
 		// §C redesign — restore the last panel size the user dragged to (pure UI pref).
 		try {
 			const s = JSON.parse(localStorage.getItem('cn-style-setter-size') || 'null');
@@ -879,9 +886,14 @@
 									value={$appSettings[c.setting] ?? c.def}
 									oninput={(e) => setAppNum(c.setting, parseInt((e.currentTarget as HTMLInputElement).value))} />
 							{:else}
+								<!-- §C-polish Item A — a font picker (var contains "font") renders the live list
+								     (generics + installed fonts) with each option in its OWN face; other selects
+								     (underline / border / shadow / italic) keep their fixed options. -->
+								{@const isFont = c.var.includes('font')}
+								{@const opts = isFont ? fontOptions : c.options}
 								<label for={'ss-' + c.var}>{c.label}</label>
 								<select id={'ss-' + c.var} value={curVal(c.var)} onchange={(e) => setVar(c.var, (e.currentTarget as HTMLSelectElement).value)}>
-									{#each c.options as [lbl, val] (val)}<option value={val}>{lbl}</option>{/each}
+									{#each opts as [lbl, val] (val)}<option value={val} style={isFont ? `font-family:${val}` : ''}>{lbl}</option>{/each}
 								</select>
 							{/if}
 						</div>
@@ -890,12 +902,38 @@
 						<LinkTypesEditor embedded />
 					{/if}
 					{#if ($appSettings.styleSwatches ?? []).length && sel.controls.some((c) => c.type === 'color')}
-						<div class="ss-rlabel">Saved colours</div>
+						<div class="ss-rlabel ss-rlabel-row">
+							<span>Saved colours</span>
+							<button class="ss-manage-tog" class:active={managingSwatches} onclick={() => { managingSwatches = !managingSwatches; confirmDeleteHex = null; }} title="Name, rename or remove saved colours">{managingSwatches ? 'Done' : 'Manage'}</button>
+						</div>
 						<div class="ss-swatches">
-							{#each $appSettings.styleSwatches as sw (sw)}
-								<button class="ss-sw" style="background:{sw}" title={sw + ' — click to apply · right-click to remove'} aria-label={sw} onclick={() => applySwatch(sw)} oncontextmenu={(e) => { e.preventDefault(); removeStyleSwatch(sw); }}></button>
+							{#each $appSettings.styleSwatches as sw (sw.hex)}
+								<button class="ss-sw" style="background:{sw.hex}" title={(sw.name ? sw.name + ' · ' : '') + sw.hex + ' — click to apply (rename / remove via Manage)'} aria-label={sw.name || sw.hex} onclick={() => applySwatch(sw.hex)}></button>
 							{/each}
 						</div>
+						{#if managingSwatches}
+							<!-- §C-polish Item B — name / rename / delete saved colours (rows mirror the saved-styles
+							     rows). Delete is a deliberate two-step (✕ → Remove / Cancel) — no accidental right-click. -->
+							<div class="ss-swatch-rows">
+								{#each $appSettings.styleSwatches as sw (sw.hex)}
+									{#if confirmDeleteHex === sw.hex}
+										<div class="ss-swatch-row ss-swatch-confirm">
+											<span class="ss-swatch-chip" style="background:{sw.hex}"></span>
+											<span class="ss-confirm-text">Remove {sw.name || sw.hex}?</span>
+											<button class="ss-confirm-yes" onclick={() => { removeStyleSwatch(sw.hex); confirmDeleteHex = null; }}>Remove</button>
+											<button class="ss-confirm-no" onclick={() => confirmDeleteHex = null}>Cancel</button>
+										</div>
+									{:else}
+										<div class="ss-swatch-row">
+											<span class="ss-swatch-chip" style="background:{sw.hex}" title={sw.hex}></span>
+											<input class="ss-swatch-name" placeholder={sw.hex} value={sw.name ?? ''} dir="auto"
+												onchange={(e) => renameStyleSwatch(sw.hex, (e.currentTarget as HTMLInputElement).value)} />
+											<button class="ss-srow-ic ss-srow-del" title="Remove colour" aria-label="Remove colour" onclick={() => confirmDeleteHex = sw.hex}>✕</button>
+										</div>
+									{/if}
+								{/each}
+							</div>
+						{/if}
 					{/if}
 				{:else}
 					<div class="ss-empty"><span class="ss-big">⊹</span>Click any part of the interface to style it. Its controls appear here, and changes show instantly.</div>
@@ -1075,6 +1113,21 @@
 	.ss-swatches { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 10px; }
 	.ss-sw { width: 22px; height: 22px; border-radius: 5px; border: 1px solid var(--c-border); cursor: pointer; padding: 0; }
 	.ss-sw:hover { outline: 2px solid var(--c-accent); outline-offset: 1px; }
+	/* §C-polish Item B — the "Manage" toggle + named-swatch rows (mirror the saved-styles row look). */
+	.ss-rlabel-row { display: flex; align-items: center; justify-content: space-between; }
+	.ss-manage-tog { font: inherit; font-size: 10.5px; text-transform: none; letter-spacing: 0; color: var(--c-muted); background: none; border: 1px solid var(--c-border); border-radius: 6px; padding: 2px 8px; cursor: pointer; }
+	.ss-manage-tog:hover { color: var(--c-text); border-color: var(--c-accent); }
+	.ss-manage-tog.active { color: #fff; background: var(--c-accent); border-color: var(--c-accent); }
+	.ss-swatch-rows { display: flex; flex-direction: column; gap: 4px; margin: 2px 0 12px; }
+	.ss-swatch-row { display: flex; align-items: center; gap: 7px; }
+	.ss-swatch-chip { width: 20px; height: 20px; border-radius: 5px; border: 1px solid var(--c-border); flex: none; }
+	.ss-swatch-name { flex: 1; min-width: 0; font: inherit; font-size: 12.5px; padding: 4px 8px; border: 1px solid var(--c-border); border-radius: 6px; background: var(--c-surface2); color: var(--c-text); outline: none; }
+	.ss-swatch-name:focus { border-color: var(--c-accent); }
+	/* §C-polish Item B — deliberate two-step delete confirm (replaces the accidental right-click). */
+	.ss-swatch-confirm { gap: 6px; }
+	.ss-confirm-text { flex: 1; min-width: 0; font-size: 12px; color: var(--c-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.ss-confirm-yes { font: inherit; font-size: 11.5px; padding: 3px 9px; border-radius: 6px; border: 1px solid var(--text-error, #e5484d); background: var(--text-error, #e5484d); color: #fff; cursor: pointer; flex: none; }
+	.ss-confirm-no { font: inherit; font-size: 11.5px; padding: 3px 9px; border-radius: 6px; border: 1px solid var(--c-border); background: var(--c-surface2); color: var(--c-text); cursor: pointer; flex: none; }
 	/* §C — focused per-element preview: the centre shows JUST the selected element (Eisa). */
 	.ss-focus { min-width: 460px; min-height: 300px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
 	.ss-focus-empty { color: var(--c-muted); font-size: 13px; }

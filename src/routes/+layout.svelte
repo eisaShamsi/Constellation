@@ -5250,7 +5250,7 @@
 					<!-- Universe Notes — folder named after the universe, shown above everything -->
 					{#if universeNotesStats}
 						<div class="library-section">
-							<button class="library-header universe-notes-item" onclick={() => toggleLibrary(universeNotesStats)} oncontextmenu={(e) => handleLibraryHeaderContextMenu(e, universeNotesStats)}>
+							<button class="library-header universe-notes-item" data-style-target="library" onclick={() => toggleLibrary(universeNotesStats)} oncontextmenu={(e) => handleLibraryHeaderContextMenu(e, universeNotesStats)}>
 								<svg class="v-chev" class:expanded={expandedLibraries.has(universeNotesStats.library_id)} width="8" height="8" viewBox="0 0 10 10">
 									<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
 								</svg>
@@ -5288,7 +5288,7 @@
 					<!-- Child Universes — expandable, with their libraries nested inside -->
 					{#each childUniverses as child}
 						<div class="library-section">
-							<button class="library-header child-universe-item" onclick={() => {
+							<button class="library-header child-universe-item" data-style-target="cuniverse" onclick={() => {
 								// Pass all child library paths for Star View highlighting
 								const libPaths = getChildUniverseLibs(child.path).map(l => l.path);
 								skyViewSelectedPath = libPaths.length > 0 ? libPaths : child.path;
@@ -5312,7 +5312,7 @@
 								<div class="child-universe-libs">
 									{#each getChildUniverseLibs(child.path) as lib}
 										<div class="library-section library-section-nested">
-											<button class="library-header" onclick={() => toggleLibrary(lib)} oncontextmenu={(e) => handleLibraryHeaderContextMenu(e, lib)}>
+											<button class="library-header" data-style-target="library" onclick={() => toggleLibrary(lib)} oncontextmenu={(e) => handleLibraryHeaderContextMenu(e, lib)}>
 												<svg class="v-chev" class:expanded={expandedLibraries.has(lib.library_id)} width="8" height="8" viewBox="0 0 10 10">
 													<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
 												</svg>
@@ -5346,7 +5346,7 @@
 					<!-- Own Libraries — only libraries NOT belonging to a child universe -->
 					{#each ownLibraries as lib}
 						<div class="library-section">
-							<button class="library-header" onclick={() => toggleLibrary(lib)} oncontextmenu={(e) => handleLibraryHeaderContextMenu(e, lib)}>
+							<button class="library-header" data-style-target="library" onclick={() => toggleLibrary(lib)} oncontextmenu={(e) => handleLibraryHeaderContextMenu(e, lib)}>
 								<svg class="v-chev" class:expanded={expandedLibraries.has(lib.library_id)} width="8" height="8" viewBox="0 0 10 10">
 									<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
 								</svg>
@@ -5376,7 +5376,7 @@
 					{#if $libraries.length === 0 && librariesLoaded}
 						<div class="empty-sidebar">
 							<p>{$t('sidebar.noLibraries')}</p>
-							<button class="add-first-btn" onclick={handleAddLibrary}>{$t('sidebar.addLibraryButton')}</button>
+							<button class="add-first-btn" data-style-target="cButtons" onclick={handleAddLibrary}>{$t('sidebar.addLibraryButton')}</button>
 						</div>
 					{:else if !librariesLoaded}
 						<div class="empty-sidebar">
@@ -6361,7 +6361,7 @@
 						{:else}
 							<p class="w-hint">{$t('welcome.selectNote')}</p>
 							<p class="w-hint-sub">{$t('welcome.quickSwitchHint')}</p>
-							<button class="w-dashboard-btn" onclick={() => updateSettings({ showDashboard: true })}>
+							<button class="w-dashboard-btn" data-style-target="cButtons" onclick={() => updateSettings({ showDashboard: true })}>
 								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
 								{$t('dashboard.show') || 'Show Dashboard'}
 							</button>
@@ -7496,8 +7496,10 @@
 	.empty-sidebar { padding: 20px 16px; text-align: center; }
 	.empty-sidebar p { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 10px; }
 	.add-first-btn {
-		background: none; border: 1px dashed var(--border); border-radius: 4px;
-		padding: 4px 12px; color: var(--text-muted); font-size: 0.82rem; cursor: pointer; font-family: inherit;
+		/* MIG-070 §C-polish Item C — also honours the "Buttons" element (--button-*); current
+		   values as fallbacks so the empty-sidebar button is unchanged until styled. */
+		background: none; border: 1px dashed var(--border); border-radius: var(--button-radius, 4px);
+		padding: var(--button-padding-y, 4px) var(--button-padding-x, 12px); color: var(--text-muted); font-size: 0.82rem; cursor: pointer; font-family: inherit;
 	}
 	.add-first-btn:hover { border-color: var(--accent); color: var(--accent); }
 	.sidebar-error { padding: 6px 12px; color: var(--danger); font-size: 0.75rem; }
@@ -8102,7 +8104,9 @@
 	.w-hint { font-size: 0.9rem; }
 	.w-hint-sub { font-size: 0.78rem; color: var(--text-faint); margin-top: 4px; }
 	.w-dashboard-btn {
-		margin-top: 16px; padding: 8px 16px; border-radius: 8px;
+		/* MIG-070 §C-polish Item C — a real main-chrome generic button: honours the Style Setter's
+		   "Buttons" element (--button-*). Current values kept as fallbacks → no change until edited. */
+		margin-top: 16px; padding: var(--button-padding-y, 8px) var(--button-padding-x, 16px); border-radius: var(--button-radius, 8px);
 		border: var(--border-width, 1px) solid var(--border); background: var(--bg-secondary);
 		color: var(--text-muted); cursor: pointer; font-size: 0.82rem;
 		display: flex; align-items: center; gap: 6px;

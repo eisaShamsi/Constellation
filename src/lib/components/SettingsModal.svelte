@@ -13,6 +13,9 @@
 	import PerLibraryCalibrationView from './PerLibraryCalibrationView.svelte';
 	import ConfirmDialog from './ConfirmDialog.svelte';
 	import { openStyleSetter } from '$lib/stores/styleSetter';
+	// MIG-070 §C polish (Item A) — shared font catalogue (curated floor + installed-font detection),
+	// reused by the Style Setter too. Replaces this file's old inline CURATED_FONTS + loadSystemFonts.
+	import { systemFonts, ensureSystemFonts } from '$lib/fonts';
 	import { notifySettingsChanged } from '$lib/secondScreen';
 	import { aiSettings, updateAISettings, setProvider } from '$lib/ai/store';
 	import { validateConnection } from '$lib/ai/engine';
@@ -294,34 +297,9 @@
 		_lastSettingsHash = hash;
 	});
 
-	// System fonts detection — start with curated list, then enhance with system fonts
-	const CURATED_FONTS = [
-		'Arial', 'Calibri', 'Cambria', 'Cascadia Code', 'Comic Sans MS', 'Consolas',
-		'Constantia', 'Corbel', 'Courier New', 'Dubai', 'Fira Code',
-		'Georgia', 'Impact', 'Inter', 'JetBrains Mono', 'Lucida Console',
-		'Noto Sans', 'Noto Sans Arabic', 'Noto Naskh Arabic', 'Noto Serif',
-		'Open Sans', 'Palatino Linotype', 'Roboto', 'Segoe UI',
-		'Tahoma', 'Times New Roman', 'Trebuchet MS', 'Verdana',
-		'Amiri', 'Cairo', 'Tajawal', 'Lora', 'Merriweather',
-		'Sakkal Majalla', 'Traditional Arabic', 'Simplified Arabic',
-	].sort((a, b) => a.localeCompare(b));
-
-	let systemFonts = $state<string[]>(CURATED_FONTS);
-
-	async function loadSystemFonts() {
-		try {
-			if ('queryLocalFonts' in window) {
-				const fonts = await (window as any).queryLocalFonts();
-				const families = new Set<string>();
-				for (const font of fonts) {
-					families.add(font.family);
-				}
-				if (families.size > 0) {
-					systemFonts = [...families].sort((a, b) => a.localeCompare(b));
-				}
-			}
-		} catch {}
-	}
+	// MIG-070 §C polish (Item A) — system-font detection moved to the shared `$lib/fonts` module
+	// (curated floor + queryLocalFonts enhancement), reused by the Style Setter. Use `$systemFonts`
+	// in the template and `ensureSystemFonts()` to populate it lazily.
 
 	// Font Sets state
 	let showCustomFontSetEditor = $state(false);
@@ -373,7 +351,7 @@
 		customSetText = '';
 		customSetMono = '';
 		showCustomFontSetEditor = true;
-		loadSystemFonts();
+		ensureSystemFonts();
 	}
 
 	function startEditFontSet(set: FontSet) {
@@ -383,7 +361,7 @@
 		customSetText = set.textFont;
 		customSetMono = set.monoFont;
 		showCustomFontSetEditor = true;
-		loadSystemFonts();
+		ensureSystemFonts();
 	}
 
 	function saveCustomFontSet() {
@@ -1315,8 +1293,8 @@
 								<label>{$t('fontSets.interfaceFont') || 'Interface Font'}</label>
 								<select value={customSetInterface} onchange={(e) => { customSetInterface = (e.target as HTMLSelectElement).value; if (!customSetName) customSetName = customSetInterface; }}>
 									<option value="">{$t('fontSets.systemDefault') || 'System Default'}</option>
-									{#each systemFonts as font}
-										<option value={font}>{font}</option>
+									{#each $systemFonts as font}
+										<option value={font} style="font-family: '{font}'">{font}</option>
 									{/each}
 								</select>
 							</div>
@@ -1324,8 +1302,8 @@
 								<label>{$t('fontSets.textFont') || 'Text Font'}</label>
 								<select value={customSetText} onchange={(e) => customSetText = (e.target as HTMLSelectElement).value}>
 									<option value="">{$t('fontSets.systemDefault') || 'System Default'}</option>
-									{#each systemFonts as font}
-										<option value={font}>{font}</option>
+									{#each $systemFonts as font}
+										<option value={font} style="font-family: '{font}'">{font}</option>
 									{/each}
 								</select>
 							</div>
@@ -1333,8 +1311,8 @@
 								<label>{$t('fontSets.monoFont') || 'Monospace Font'}</label>
 								<select value={customSetMono} onchange={(e) => customSetMono = (e.target as HTMLSelectElement).value}>
 									<option value="">{$t('fontSets.systemDefault') || 'System Default'}</option>
-									{#each systemFonts as font}
-										<option value={font}>{font}</option>
+									{#each $systemFonts as font}
+										<option value={font} style="font-family: '{font}'">{font}</option>
 									{/each}
 								</select>
 							</div>

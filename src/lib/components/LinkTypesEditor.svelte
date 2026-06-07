@@ -24,7 +24,7 @@
 	} from '$lib/libraries/linkTypeRegistry';
 	// MIG-070 §C Phase 5 — the universal saved-colour palette (the SAME store the interface
 	// elements use), so a link colour you pick is remembered and reusable for any element (Eisa).
-	import { appSettings, addStyleSwatch, removeStyleSwatch } from '$lib/libraries/store';
+	import { appSettings, addStyleSwatch } from '$lib/libraries/store';
 	// §C redesign — in the Setter (embedded) each row shows its LIVE pill in place of the plain
 	// name, so the control IS the preview (one integrated surface, no duplicate pill row — Eisa).
 	import LinkTypePill from './LinkTypePill.svelte';
@@ -210,10 +210,10 @@
 		{#if embedded && ($appSettings.styleSwatches ?? []).length}
 			<!-- §C Phase 5 — the universal saved-colour palette (shared with the interface elements):
 			     a colour you picked is reusable; click a swatch to recolour the highlighted type. -->
-			<div class="lte-sw-label">Saved colours — click to apply to the highlighted type · right-click to remove</div>
+			<div class="lte-sw-label">Saved colours — click to apply to the highlighted type (rename / remove via Manage on any colour element)</div>
 			<div class="lte-swatches">
-				{#each $appSettings.styleSwatches as sw (sw)}
-					<button class="lte-sw" style="background:{sw}" title={sw} aria-label={sw} onclick={() => applySwatch(sw)} oncontextmenu={(e) => { e.preventDefault(); removeStyleSwatch(sw); }}></button>
+				{#each $appSettings.styleSwatches as sw (sw.hex)}
+					<button class="lte-sw" style="background:{sw.hex}" title={(sw.name ? sw.name + ' · ' : '') + sw.hex + ' — click to apply'} aria-label={sw.name || sw.hex} onclick={() => applySwatch(sw.hex)}></button>
 				{/each}
 			</div>
 		{/if}
