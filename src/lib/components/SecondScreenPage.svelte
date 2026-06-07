@@ -16,10 +16,10 @@
 		scanLibraryLinks, scanLibraryTags,
 		buildSkyData,
 		libraryStats, loadAllStats,
-		SCRIPT_UNICODE_RANGES, getFontSetById,
+		SCRIPT_UNICODE_RANGES, getFontSetById, hexToHSL,
 		type SkyNode, type SkyLink
 	} from '$lib/libraries/store';
-	import { detectDir } from '$lib/utils';
+	import { detectDir, renderMarkdown } from '$lib/utils';
 	import { scanNoteTasks, toggleTask } from '$lib/tasks/store';
 	import type { TaskItem } from '$lib/tasks/types';
 	import TasksPanel from '$lib/components/TasksPanel.svelte';
@@ -50,14 +50,14 @@
 		setActiveUniverse, listUniverses, getChildUniverses,
 		type ChildUniverseInfo
 	} from '$lib/universe/store';
-	import { marked } from 'marked';
-
 	function renderMarkdownPreview(raw: string): string {
+		// MIG-071 audit HIGH (XSS) — render through the DOMPurify-sanitized renderMarkdown. Was raw
+		// marked.parse(), which let a note body's <img onerror=…>/<script> execute on the 2nd screen.
 		const body = raw.replace(/^---[\s\S]*?---\n?/, '').slice(0, 2000);
 		try {
-			return marked.parse(body, { async: false }) as string;
+			return renderMarkdown(body);
 		} catch {
-			return `<p>${body.slice(0, 800)}</p>`;
+			return `<p>${body.slice(0, 800).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>`;
 		}
 	}
 
@@ -597,6 +597,21 @@
 			document.head.appendChild(styleEl);
 		}
 		styleEl.textContent = css;
+
+		// MIG-071 audit HIGH — the second screen must show the Style Setter look too (after MIG-071,
+		// per-Universe styleOverride is the SOLE styling mechanism). Mirror the main window: standalone
+		// accent, then the saved styleOverride applied LAST so it wins over the font defaults above.
+		// styleOverride already carries the Setter's full accent decomposition (--interactive-accent /
+		// --accent-h/s/l / --text-accent), so picking colours in the Setter restyles this window too.
+		if (s.accentColor && s.accentColor !== '#7c3aed') {
+			const hsl = hexToHSL(s.accentColor);
+			root.setProperty('--accent-h', String(hsl.h));
+			root.setProperty('--accent-s', `${hsl.s}%`);
+			root.setProperty('--accent-l', `${hsl.l}%`);
+		}
+		for (const [k, v] of Object.entries(s.styleOverride ?? {})) {
+			root.setProperty(k, v as string);
+		}
 	});
 
 	// ─── Close handler ───

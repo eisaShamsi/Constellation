@@ -30,7 +30,7 @@
 	// stylePreview here — rendering BUILTIN_THEMES through themeToStyle as a gallery of self-portrait
 	// cards is the documented main-thread FREEZE shape that the clean-slate Setter exists to avoid
 	// (orientation v2.49; LL-014). The Setter lists only the user's SAVED styles, as lightweight rows.
-	import { loadStylePresets, saveStylePresets, newPresetFromCurrent, applyPreset, exportPreset, SECTION_CATALOGUE, type StylePreset } from '$lib/libraries/stylePresets';
+	import { loadStylePresets, saveStylePresets, newPresetFromCurrent, applyPreset, exportPreset, importPreset, SECTION_CATALOGUE, type StylePreset } from '$lib/libraries/stylePresets';
 
 	// A control writes one REAL app CSS variable. `color` → hex; `select` → a stack/keyword;
 	// `range` → a number + unit (e.g. `32px`, or `700` when unit is '').
@@ -502,6 +502,17 @@
 		await saveStylePresets($state.snapshot(savedStyles) as StylePreset[]);
 	}
 
+	// MIG-071 audit HIGH — restore saved-style IMPORT (its only caller, StylePresetsPanel, was deleted
+	// in §K, so Export had become a dead end). Opens a file picker, validates, appends with a fresh id.
+	async function importStyle() {
+		try {
+			const p = await importPreset();
+			if (!p) return; // cancelled
+			savedStyles = [...savedStyles, p];
+			await saveStylePresets($state.snapshot(savedStyles) as StylePreset[]);
+		} catch { /* invalid style file — ignore */ }
+	}
+
 	// §C Phase 6.3 — saved-style CRUD in the Setter (rename / delete / export), mirroring the
 	// Settings → Styles panel. Lightweight rows only — NO stylePreview/unifiedStyleList (LL-032).
 	let renamingId = $state<string | null>(null);
@@ -728,6 +739,7 @@
 					{/each}
 					{#if !savedStyles.length}<div class="ss-srow-empty">Design a look, then save it as a named style you can reuse.</div>{/if}
 					<button class="ss-srow ss-srow-save" onclick={saveAsStyle}>+ Save current as a style</button>
+					<button class="ss-srow ss-srow-save" onclick={importStyle}>↥ Import a style</button>
 				</div>
 			</aside>
 
