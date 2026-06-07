@@ -296,6 +296,23 @@ export function isUserStyle(p: StylePreset): boolean {
 	return !p.builtin && !p.id.startsWith('theme:');
 }
 
+/** MIG-071 §B — is this a base-coat look (a built-in or custom-theme wrapper) rather than a saved
+ *  overlay Style? Base looks carry a full theme in their `colorsTheme` section. */
+export function isBaseStyle(p: StylePreset): boolean {
+	return p.source === 'builtin' || p.source === 'theme' || p.id.startsWith('theme:');
+}
+
+/** MIG-071 §B — the currently-active base-coat look, resolved from the unified list via the new
+ *  `activeStyleId` pointer (falling back to `theme:<activeThemeId>` while the legacy field is still
+ *  authoritative). Read-time only — assembles nothing persistent. Returns undefined when no base
+ *  matches, so the caller can fall back to the legacy activeThemeId/customThemes find (+layout §C). */
+export function resolveActiveBase(savedStyles: StylePreset[]): StylePreset | undefined {
+	const s = get(appSettings) as { activeStyleId?: string; activeThemeId?: string };
+	const wantId = s.activeStyleId || (s.activeThemeId ? `theme:${s.activeThemeId}` : '');
+	if (!wantId) return undefined;
+	return unifiedStyleList(savedStyles).find((p) => p.id === wantId && isBaseStyle(p));
+}
+
 // ─── Preview (MIG-069 §G — visual cards) ───
 
 /** A small visual self-portrait of a style, derived from its captured sections. */
