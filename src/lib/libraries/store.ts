@@ -3258,6 +3258,10 @@ export interface AppSettings {
 	colorScheme: 'light' | 'dark' | 'system';
 	accentColor: string;
 	activeThemeId: string;
+	/** MIG-071 — successor pointer to `activeThemeId`: the id of the active **base-coat** look in the
+	 *  unified style list (a base preset has id `theme:<themeId>`). Kept in lockstep with
+	 *  `activeThemeId` through the migration; becomes the sole source of truth at §J. */
+	activeStyleId: string;
 	customThemes: ConstellationTheme[];
 	/** MIG-070 §C — per-Universe style override: CSS-var → value, applied ON TOP of the
 	 *  active theme + its styleSettingsValues (the Style Setter's persisted look). Survives
@@ -3656,6 +3660,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
 	colorScheme: 'light',
 	accentColor: '#7c3aed',
 	activeThemeId: '',
+	activeStyleId: '',
 	customThemes: [],
 	styleOverride: {},
 	styleSwatches: [],
@@ -3937,6 +3942,15 @@ export function applyParsedSettings(parsed: Record<string, unknown>): void {
 				typeof sw === 'string' ? { hex: String(sw).toLowerCase(), name: '' } : sw,
 			),
 		}));
+		saveSettings();
+	}
+
+	// ── MIG-071 §A — activeStyleId back-fill (additive, idempotent) ──
+	// `activeStyleId` is the successor base-look pointer. Derive it from the legacy `activeThemeId`
+	// when unset so the unified resolver has a valid pointer on first boot. Pure derivation from an
+	// existing field — nothing destructive. Silent once `activeStyleId` is persisted.
+	if (parsed.activeThemeId && !parsed.activeStyleId) {
+		appSettings.update((s) => ({ ...s, activeStyleId: s.activeStyleId || ('theme:' + s.activeThemeId) }));
 		saveSettings();
 	}
 
