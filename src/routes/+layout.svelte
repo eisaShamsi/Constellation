@@ -40,6 +40,7 @@
 	import type { LibraryStats, FileEntry, WorkspaceLayout, WorkspaceSecondScreen, FontSet, PanelId } from '$lib/libraries/store';
 	import { BUILTIN_FONT_SETS, SCRIPT_UNICODE_RANGES, TYPEWRITER_FONTS, getFontSetById, BUILTIN_THEMES, deriveThemeVariables, hexToHSL } from '$lib/libraries/store';
 	import { liveStyleDraft } from '$lib/libraries/store'; // MIG-070 §C Option E — Style Setter live-preview layer
+	import { resolveActiveBase } from '$lib/libraries/stylePresets'; // MIG-071 §C — unified active-base resolver
 	import { generateStyleSettingsCSS } from '$lib/theme/styleSettings';
 	import { CORE_BLOCK_IDS, getEffectiveStyleBlocks } from '$lib/theme/constellationStyleSettings';
 	import { get } from 'svelte/store';
@@ -1556,7 +1557,14 @@
 	$effect(() => {
 		if (typeof document === 'undefined') return;
 		const s = $appSettings;
-		let themeId = s.activeThemeId;
+		// MIG-071 §C — key the active BASE look off the unified `activeStyleId` (a base look's id is
+		// `theme:<themeId>`); resolveActiveBase falls back to the legacy `activeThemeId`, so every
+		// existing user is byte-identical on first boot. The theme OBJECT is still resolved from
+		// customThemes / BUILTIN_THEMES below (customs win on id collision) — unchanged. Base candidates
+		// come from BUILTIN_THEMES + customThemes (appSettings), so passing [] (no saved overlays) is
+		// correct — an overlay Style is never the active base. §J drops the legacy activeThemeId fallback.
+		const _activeBase = resolveActiveBase([]);
+		let themeId = (_activeBase?.sections?.colorsTheme as { activeThemeId?: string } | undefined)?.activeThemeId ?? s.activeThemeId;
 
 		// Auto-pair: if the active theme has a counterpart for the current scheme, switch to it
 		if (themeId) {
