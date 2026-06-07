@@ -452,6 +452,7 @@ pub fn run() {
             search::constellation_formulation_analysis,
             embeddings::constellation_init_embeddings,
             embeddings::constellation_embed_text,
+            embeddings::constellation_embed_texts,
             embeddings::constellation_embed_notes,
             embeddings::constellation_embedding_status,
             map::constellation_map_data,

@@ -1,22 +1,17 @@
 /**
  * GraphMind — Phase 2: Semantic Embedding Engine
  *
- * Uses @xenova/transformers (WASM, fully offline) to compute
- * sentence embeddings for notes, then finds semantic links
- * via cosine similarity.
+ * Computes sentence embeddings for notes via the bundled local Rust ONNX engine
+ * (`constellation_embed_texts` → multilingual-e5-small from src-tauri/models, loaded strictly from
+ * local disk), then finds semantic links via cosine similarity. Nothing leaves the machine.
  *
- * Model: Xenova/all-MiniLM-L6-v2 (~23MB, multilingual-friendly)
- * All computation is local — nothing leaves the user's machine.
+ * MIG-071 audit HIGH (OGA — Offline Guarantee): this previously used @xenova/transformers, which
+ * fetched Xenova/all-MiniLM-L6-v2 from the HuggingFace CDN on first use — a runtime network call that
+ * broke the offline guarantee and failed silently offline. It now reuses the same local model as
+ * search, so it works fully offline; @xenova is no longer a dependency of this path.
  */
 
-import { pipeline, env, type Pipeline } from '@xenova/transformers';
-
-// MIG-071 audit HIGH (OGA — Offline Guarantee) — never fetch the model from the HuggingFace CDN at
-// runtime. Constellation is offline-first; @xenova must use local model files only (if none are
-// present the feature fails offline-safely rather than phoning home). Proper follow-up: route this
-// GraphMind embedding through the bundled Rust ONNX engine (constellation_embed_*) so it works offline.
-env.allowRemoteModels = false;
-env.allowLocalModels = true;
+import { invoke } from '@tauri-apps/api/core';
 
 export interface SemanticLink {
 	source: string; // node id
@@ -34,31 +29,6 @@ export type EmbeddingProgress = {
 	current: number;
 	total: number;
 };
-
-let embedder: any = null; // FeatureExtractionPipeline from @xenova/transformers
-let modelLoading = false;
-
-/** Load the sentence embedding model (cached after first download) */
-async function getEmbedder(): Promise<any> {
-	if (embedder) return embedder;
-	if (modelLoading) {
-		// Wait for concurrent load
-		while (modelLoading) {
-			await new Promise((r) => setTimeout(r, 100));
-		}
-		return embedder!;
-	}
-
-	modelLoading = true;
-	try {
-		embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', {
-			quantized: true, // Use quantized model for speed (~23MB vs ~90MB)
-		}) as any;
-		return embedder;
-	} finally {
-		modelLoading = false;
-	}
-}
 
 /** Extract a summary from note content for embedding (title + first ~300 chars) */
 function extractSummary(name: string, content: string): string {
@@ -101,36 +71,21 @@ export async function computeEmbeddings(
 	notes: { id: string; name: string; content: string }[],
 	onProgress?: (p: EmbeddingProgress) => void
 ): Promise<EmbeddingResult[]> {
-	onProgress?.({ stage: 'loading-model', current: 0, total: notes.length });
-
-	const model = await getEmbedder();
-
 	onProgress?.({ stage: 'embedding', current: 0, total: notes.length });
 
 	const results: EmbeddingResult[] = [];
-	const BATCH_SIZE = 8;
+	const BATCH_SIZE = 32;
 
 	for (let i = 0; i < notes.length; i += BATCH_SIZE) {
 		const batch = notes.slice(i, i + BATCH_SIZE);
 		const texts = batch.map((n) => extractSummary(n.name, n.content));
-
-		const output = await model(texts, { pooling: 'mean', normalize: true });
-
-		// Extract embeddings from output tensor
+		// Local Rust ONNX engine — embeds strictly from the bundled model on disk (offline-safe);
+		// returns one number[] per text (e5 mean-pooled, normalised). Replaces the @xenova CDN path.
+		const vectors = await invoke<number[][]>('constellation_embed_texts', { texts });
 		for (let j = 0; j < batch.length; j++) {
-			const embedding = new Float32Array(output.data.slice(
-				j * output.dims[1],
-				(j + 1) * output.dims[1]
-			));
-			results.push({ id: batch[j].id, embedding });
+			results.push({ id: batch[j].id, embedding: new Float32Array(vectors[j] ?? []) });
 		}
-
 		onProgress?.({ stage: 'embedding', current: Math.min(i + BATCH_SIZE, notes.length), total: notes.length });
-
-		// Yield to main thread periodically
-		if (i % (BATCH_SIZE * 4) === 0 && i > 0) {
-			await new Promise((r) => setTimeout(r, 0));
-		}
 	}
 
 	return results;
@@ -209,9 +164,4 @@ export async function computeSemanticLinks(
 
 	const embeddings = await computeEmbeddings(notes, onProgress);
 	return findSemanticLinks(embeddings, threshold, explicitSet, maxLinks, onProgress);
-}
-
-/** Check if the model is already cached/loaded */
-export function isModelLoaded(): boolean {
-	return embedder !== null;
 }

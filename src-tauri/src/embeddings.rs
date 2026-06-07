@@ -384,6 +384,24 @@ pub fn constellation_embed_text(
     run_embedding(engine, &prefixed)
 }
 
+/// MIG-071 audit (OGA) — batch-embed arbitrary passages with the bundled local ONNX engine and
+/// RETURN the vectors (not stored). Lets the Sky-View "compute semantic links" feature run fully
+/// offline through the same local model as search, instead of @xenova/transformers (which fetched
+/// the model from the HuggingFace CDN at runtime). Caller passes already-summarised note texts.
+#[tauri::command]
+pub fn constellation_embed_texts(
+    app: tauri::AppHandle,
+    texts: Vec<String>,
+) -> Result<Vec<Vec<f32>>, String> {
+    ensure_engine(&app)?;
+    let state = app.state::<EmbeddingState>();
+    let guard = state.engine.lock().map_err(|e| e.to_string())?;
+    let engine = guard.as_ref().ok_or("Embedding engine not initialized")?;
+    // Documents use the e5 "passage: " prefix (mirrors constellation_embed_notes).
+    let prefixed: Vec<String> = texts.iter().map(|t| format!("passage: {}", t)).collect();
+    run_embedding_batch(engine, &prefixed)
+}
+
 /// Batch embed notes and store in the search database.
 /// `force`: if true, re-embed even if already exists (for edited notes).
 #[tauri::command]
