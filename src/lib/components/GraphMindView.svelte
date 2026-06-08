@@ -20,6 +20,11 @@
 	import { computeSemanticLinks, type EmbeddingProgress } from '$lib/graph/semanticEngine';
 	import { detectClusters, type ClusterResult } from '$lib/graph/clusterEngine';
 	import { invoke } from '@tauri-apps/api/core';
+	// MIG-072 — Sky View palette: resolve every graph colour from the user's --skyview-* overrides
+	// + the Link Types registry, then hand it to the engine (the engine never reads CSS).
+	import { resolveSkyPalette, hexColorToInt } from '$lib/graph/skyPalette';
+	import { appSettings, liveStyleDraft } from '$lib/libraries/store';
+	import { linkTypesStore, getLinkTypes, linkTypeColor } from '$lib/libraries/linkTypeRegistry';
 	// MIG-044 Phase 2 (correction #3) — NSC summary headline in the
 	// main full-window Sky View's hover tooltip. Earlier corrections
 	// wired LocalSkyView (the embedded panel) — but the full-window
@@ -290,6 +295,33 @@
 
 	let containerEl: HTMLDivElement;
 	let engine: GraphEngine | null = null;
+
+	// ─── MIG-072 — Sky View palette (Option B: the engine is TOLD its colours) ───
+	// isDark tracks the body theme class so the palette's dark/light defaults resolve correctly and
+	// recompute on a theme flip (an observer keeps it current — set up in onMount, cleaned in onDestroy).
+	let isDark = $state(typeof document !== 'undefined' && document.body.classList.contains('theme-dark'));
+	let skyThemeObserver: MutationObserver | null = null;
+
+	// Typed-link colours from the registry — the SINGLE source the Style Setter → Links editor writes
+	// (re-runs when the user recolours a type). Replaces the engine's old hardcoded duplicate.
+	const typedLinksMap = $derived.by(() => {
+		void $linkTypesStore; // dependency: re-resolve when the registry changes
+		const m: Record<string, number> = {};
+		for (const tdef of getLinkTypes()) {
+			const n = hexColorToInt(linkTypeColor(tdef.id));
+			if (n !== null) m[tdef.id] = n;
+		}
+		return m;
+	});
+
+	// The resolved palette: per-Universe overrides + the live Setter draft, on top of today's defaults.
+	const skyPalette = $derived(
+		resolveSkyPalette({ ...($appSettings.styleOverride ?? {}), ...$liveStyleDraft }, isDark, typedLinksMap)
+	);
+
+	// Push the palette on any change (live preview included). setPalette is a cheap assign + redraw —
+	// no per-frame CSS read (Perf Rule 3). engine?. guards the pre-init window.
+	$effect(() => { engine?.setPalette(skyPalette); });
 
 	function handleSettingChange(key: keyof EngineConfig, value: any) {
 		(engineConfig as any)[key] = value;
@@ -754,6 +786,13 @@
 		});
 
 		await engine.init();
+		// MIG-072 — hand the engine its palette immediately (before first paint), then keep it current.
+		engine.setPalette(skyPalette);
+		skyThemeObserver = new MutationObserver(() => {
+			const d = document.body.classList.contains('theme-dark');
+			if (d !== isDark) isDark = d; // recomputes skyPalette → the $effect re-pushes it
+		});
+		skyThemeObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
 		if (nodes.length > 0) {
 			prevNodeLen = nodes.length;
@@ -764,6 +803,8 @@
 	onDestroy(() => {
 		window.removeEventListener('keydown', handleKeydown);
 		window.removeEventListener('click', handleGlobalClick);
+		skyThemeObserver?.disconnect(); // MIG-072 — Rule 4: no leaked observers
+		skyThemeObserver = null;
 		// Defer PIXI teardown — app.destroy() is synchronous and expensive (~100ms).
 		// Running it on the same frame as unmount causes a visible freeze.
 		// Capture and null the reference first so nothing can call it after this point.

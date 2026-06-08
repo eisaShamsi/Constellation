@@ -20,6 +20,9 @@
 // See docs/LESSONS-LEARNED.md LL-017 for the full diagnostic story.
 import 'pixi.js/unsafe-eval';
 import { Application, Graphics, Container, Text, TextStyle } from 'pixi.js';
+// MIG-072 — palette types/defaults only (a PURE module: no Svelte/store imports, so this honours
+// the "ZERO Svelte imports" law above). The resolved palette is pushed in via setPalette().
+import { type SkyPalette, DEFAULT_SKY_PALETTE } from './skyPalette';
 
 // ─── Types ────────────────────────────────────────────────────────────
 
@@ -84,17 +87,10 @@ interface EngineLink {
 const DEFAULT_NODE_COLOR = 0xa78bfa;
 const HIGHLIGHT_EDGE_COLOR = 0xf97316;
 
-// CE Phase 1 — typed link colors (matches livePreview.ts + BacklinksPanel)
-const TYPED_LINK_COLORS: Record<string, number> = {
-	supports:       0x4A9EFF,
-	contradicts:    0xFF4A4A,
-	causes:         0xFF8C42,
-	exemplifies:    0x4AFF88,
-	generalizes:    0xA44AFF,
-	'derives-from': 0xFFD700,
-	'part-of':      0xAAAAAA,
-	associative:    0x888888,
-};
+// MIG-072 — the typed-link colours moved to the Style Setter's single source: they are read from the
+// Link Types registry (`linkTypeColor()`) in the Svelte layer and pushed in via `this.palette.typedLinks`
+// (see setPalette / skyPalette.ts). The old hardcoded `TYPED_LINK_COLORS` map was a stale duplicate that
+// ignored the user's edits — removed.
 const DIM_ALPHA = 0.12;
 const MOC_RING_COLOR = 0xf59e0b;
 const MATURITY_COLORS: Record<string, number> = {
@@ -159,6 +155,11 @@ export class GraphEngine {
 	// Highlight filter (from sidebar selection)
 	private highlightSet: Set<number> = new Set();
 	private highlightColor: number = 0x7c3aed;
+
+	// MIG-072 — the resolved Sky View palette (every colour/intensity). Built in the Svelte layer from
+	// the --skyview-* vars + the Link Types registry, pushed via setPalette(). The engine NEVER reads
+	// CSS (Perf Rule 3); it just uses these values. Defaults = today's exact look until setPalette runs.
+	private palette: SkyPalette = DEFAULT_SKY_PALETTE;
 
 	// CE Phase 8: Trail path overlay
 	private trailNodeIndices: number[] = [];
@@ -466,6 +467,17 @@ export class GraphEngine {
 
 		// Start worker
 		this.startWorker();
+	}
+
+	/**
+	 * MIG-072 — receive the resolved Sky View palette (mirrors setData: the engine is *told* its
+	 * colours, never fetches them). Called once after init and again whenever the user's --skyview-*
+	 * overrides, the live draft, the Link Types registry, or dark/light change. Pure assignment +
+	 * redraw — no allocation, no CSS read.
+	 */
+	setPalette(palette: SkyPalette): void {
+		this.palette = palette;
+		this.needsRedraw = true;
 	}
 
 	updateConfig(partial: Partial<EngineConfig>): void {
@@ -1940,7 +1952,7 @@ export class GraphEngine {
 			}
 
 			// Resolve typed link color (CE Phase 1)
-			const typedColor = link.linkType ? (TYPED_LINK_COLORS[link.linkType] ?? null) : null;
+			const typedColor = link.linkType ? (this.palette.typedLinks[link.linkType] ?? null) : null;
 
 			if (isNeighborEdge) {
 				const edgeColor = typedColor ?? HIGHLIGHT_EDGE_COLOR;
