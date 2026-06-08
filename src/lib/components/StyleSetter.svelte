@@ -390,6 +390,18 @@
 			{ label: 'Badge: Wikilink', type: 'color', var: '--skyview-badge-wikilink' },
 			{ label: 'Badge: Semantic', type: 'color', var: '--skyview-badge-semantic' },
 			{ label: 'Badge: Structured', type: 'color', var: '--skyview-badge-structured' } ] },
+		// MIG-072 §4 — node labels (full font, Eisa) + the 3D axis gizmo. Label size overrides the Sky
+		// View ⚙ "Label font size" when set; unset = the ⚙ value (Predecessor reconciliation).
+		skyLabels: { name: 'Labels', controls: [
+			{ label: 'Label colour', type: 'color', var: '--skyview-label' },
+			{ label: 'Label font', type: 'select', var: '--skyview-label-font', options: FONTS },
+			{ label: 'Label size', type: 'range', var: '--skyview-label-size', min: 8, max: 28, step: 1, unit: 'px', def: 12 },
+			{ label: 'Label thickness', type: 'range', var: '--skyview-label-weight', min: 300, max: 900, step: 100, unit: '', def: 400 } ] },
+		skyGizmo: { name: '3D gizmo', controls: [
+			{ label: 'X axis', type: 'color', var: '--skyview-gizmo-x' },
+			{ label: 'Y axis', type: 'color', var: '--skyview-gizmo-y' },
+			{ label: 'Z axis', type: 'color', var: '--skyview-gizmo-z' },
+			{ label: 'Centre dot', type: 'color', var: '--skyview-gizmo-centre' } ] },
 	};
 	// §3B — the left rail is organised into CATEGORIES (a.k.a. Surfaces), each grouping its
 	// elements (Eisa). Interface + Editor both preview the main app window ('editor' surface);
@@ -400,7 +412,7 @@
 		{ key: 'editor', name: 'Editor', surface: 'editor', elements: ['noteBg', 'text', 'breadcrumb', 'summary', 'accent', 'link', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'bold', 'italic', 'strike', 'code', 'quote', 'caret'] },
 		{ key: 'global', name: 'Global', surface: 'editor', elements: ['gBackgrounds', 'gTextShades', 'gStatus', 'gAccent', 'gType', 'gShape', 'fonts'] },
 		{ key: 'links', name: 'Links', surface: 'editor', elements: ['links'] },
-		{ key: 'sky', name: 'Sky View', surface: 'sky', elements: ['skyCanvas', 'skyNodes', 'skyMaturity', 'skyGlow', 'skyLinks', 'skyOverlays'] },
+		{ key: 'sky', name: 'Sky View', surface: 'sky', elements: ['skyCanvas', 'skyNodes', 'skyMaturity', 'skyGlow', 'skyLinks', 'skyOverlays', 'skyLabels', 'skyGizmo'] },
 		{ key: 'org', name: 'OrgChart', surface: 'org', elements: ['accent', 'link'] },
 		{ key: 'index', name: 'Index', surface: 'index', elements: ['accent'] },
 		{ key: 'cataloger', name: 'Cataloger', surface: 'cataloger', elements: ['accent'] },
@@ -939,6 +951,25 @@
 											<div class="ssn-cell"><span class="ssn-badge ssn-b-structured">?</span><span class="ssn-cap">Struct.</span></div>
 										</div>
 									</div>
+									<div class="ssn-group ss-hot" class:ss-sel={selected === 'skyLabels'}
+										role="button" tabindex="0" aria-label="labels"
+										onclick={(e) => { e.stopPropagation(); selectEl('skyLabels'); }}
+										onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); selectEl('skyLabels'); } }}>
+										<div class="ssn-title">Labels</div>
+										<div class="ssn-row"><span class="ssn-labelsample">Apple (Fruit)</span></div>
+									</div>
+									<div class="ssn-group ss-hot" class:ss-sel={selected === 'skyGizmo'}
+										role="button" tabindex="0" aria-label="3d gizmo"
+										onclick={(e) => { e.stopPropagation(); selectEl('skyGizmo'); }}
+										onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); selectEl('skyGizmo'); } }}>
+										<div class="ssn-title">3D gizmo</div>
+										<div class="ssn-row">
+											<div class="ssn-cell"><span class="ssn-gz ssn-gz-x">X</span><span class="ssn-cap">X</span></div>
+											<div class="ssn-cell"><span class="ssn-gz ssn-gz-y">Y</span><span class="ssn-cap">Y</span></div>
+											<div class="ssn-cell"><span class="ssn-gz ssn-gz-z">Z</span><span class="ssn-cap">Z</span></div>
+											<div class="ssn-cell"><span class="ssn-gz-dot"></span><span class="ssn-cap">Centre</span></div>
+										</div>
+									</div>
 								</div>
 							{:else if activeSurface === 'org'}
 								<div class="ss-sky">
@@ -1349,6 +1380,13 @@
 	.ssn-b-wikilink { background: var(--skyview-badge-wikilink, #60a5fa); }
 	.ssn-b-semantic { background: var(--skyview-badge-semantic, #7c3aed); }
 	.ssn-b-structured { background: var(--skyview-badge-structured, #94a3b8); }
+	/* §4 — label sample (live colour/font/size/weight) + 3D gizmo sample. */
+	.ssn-labelsample { color: var(--skyview-label, var(--text-normal, #1e293b)); font-family: var(--skyview-label-font, system-ui); font-size: var(--skyview-label-size, 14px); font-weight: var(--skyview-label-weight, 400); white-space: nowrap; }
+	.ssn-gz { font-weight: 700; font-size: 18px; line-height: 24px; }
+	.ssn-gz-x { color: var(--skyview-gizmo-x, #ef4444); }
+	.ssn-gz-y { color: var(--skyview-gizmo-y, #22c55e); }
+	.ssn-gz-z { color: var(--skyview-gizmo-z, #3b82f6); }
+	.ssn-gz-dot { width: 13px; height: 13px; border-radius: 50%; background: var(--skyview-gizmo-centre, #333); display: inline-block; margin: 6px 0; }
 	.ss-node { width: 34px; height: 34px; border-radius: 50%; border: none; cursor: pointer; background: var(--interactive-accent, #7c3aed); box-shadow: 0 0 0 4px color-mix(in srgb, var(--interactive-accent, #7c3aed) 25%, transparent); }
 	.ss-node.b { background: var(--link-color, #2f6fed); box-shadow: 0 0 0 4px color-mix(in srgb, var(--link-color, #2f6fed) 25%, transparent); }
 	.ss-idx { width: 70%; display: flex; flex-direction: column; gap: 8px; }

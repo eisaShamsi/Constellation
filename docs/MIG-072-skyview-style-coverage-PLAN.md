@@ -123,6 +123,13 @@ one Sky View var that does NOT flow through the JS palette.
 - `setPalette` must update the already-created gizmo `Text.style.fill`.
 - **Verify (PAUSE):** Sky View text restyles live — pick a **font**, change **size**, change **thickness**,
   change **colour**; tilt to 3D and recolour the axes + centre dot. **Full vocabulary now covered.**
+- **As-built (2026-06-08):** palette gains `labelFamily`/`labelSize`/`labelWeight` (size 0 = use the ⚙ panel,
+  family '' = `getFontForText`); node-label `TextStyle` reads them; `setPalette` rebuilds the pooled labels on
+  a label-style change (`_lastLabelKey`) so edits apply. Badge name label also reads label colour/font. Gizmo
+  axes + centre dot + axis-label fills route to `palette.gizmoX/Y/Z/Centre`. **Predecessor reconciliation
+  kept the in-place default** (Setter size wins when set; the ⚙ "Label font size" slider stays). Controls:
+  `skyLabels` (colour/font/size/thickness) + `skyGizmo` (X/Y/Z/centre); live label + gizmo samples in the
+  preview. Audit **200/0**. §4 = **full Sky View vocabulary covered**.
 
 ### §5 — LocalSkyView parity *(one source)*
 - **Delete `LIBRARY_COLORS`** (LSV ~56); pass the resolved colour map + `palette` into LSV; swap `draw()` hardcodes

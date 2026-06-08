@@ -153,6 +153,7 @@ export class GraphEngine {
 	// the --skyview-* vars + the Link Types registry, pushed via setPalette(). The engine NEVER reads
 	// CSS (Perf Rule 3); it just uses these values. Defaults = today's exact look until setPalette runs.
 	private palette: SkyPalette = DEFAULT_SKY_PALETTE;
+	private _lastLabelKey = ''; // MIG-072 §4 — detect label-style changes to rebuild pooled labels
 
 	// CE Phase 8: Trail path overlay
 	private trailNodeIndices: number[] = [];
@@ -469,7 +470,15 @@ export class GraphEngine {
 	 * redraw — no allocation, no CSS read.
 	 */
 	setPalette(palette: SkyPalette): void {
+		// MIG-072 §4 — pooled Text keeps its style, so a label font/size/weight/colour change needs a
+		// rebuild. Only rebuilds on an actual label-style change (not per frame / per unrelated edit).
+		const labelKey = palette.label + '|' + palette.labelFamily + '|' + palette.labelSize + '|' + palette.labelWeight;
 		this.palette = palette;
+		if (labelKey !== this._lastLabelKey) {
+			this._lastLabelKey = labelKey;
+			this.labelPool.forEach((t) => t.destroy());
+			this.labelPool.clear();
+		}
 		this.needsRedraw = true;
 	}
 
@@ -651,7 +660,7 @@ export class GraphEngine {
 			// Name label
 			const nameLabel = new Text({
 				text: n.name,
-				style: new TextStyle({ fontSize: 11, fill: dark ? '#e2e8f0' : '#1e293b', fontFamily: 'system-ui', fontWeight: '500' }),
+				style: new TextStyle({ fontSize: 11, fill: this.palette.label, fontFamily: this.palette.labelFamily || 'system-ui', fontWeight: '500' }), // MIG-072 §4 — match label colour/font
 			});
 			nameLabel.anchor.set(0, 0.5);
 			this.app.stage.addChild(nameLabel);
@@ -2280,9 +2289,9 @@ export class GraphEngine {
 		const rz = this.camRotZ * Math.PI / 180;
 
 		const axes = [
-			{ ux: 1, uy: 0, uz: 0, color: 0xef4444 }, // X red
-			{ ux: 0, uy: 1, uz: 0, color: 0x22c55e }, // Y green
-			{ ux: 0, uy: 0, uz: 1, color: 0x3b82f6 }, // Z blue
+			{ ux: 1, uy: 0, uz: 0, color: this.palette.gizmoX }, // X (MIG-072 §4)
+			{ ux: 0, uy: 1, uz: 0, color: this.palette.gizmoY }, // Y
+			{ ux: 0, uy: 0, uz: 1, color: this.palette.gizmoZ }, // Z
 		];
 
 		for (let i = 0; i < axes.length; i++) {
@@ -2323,6 +2332,7 @@ export class GraphEngine {
 			const dx = x !== 0 ? Math.sign(x) * labelOffset : 0;
 			const dy = y !== 0 ? Math.sign(y) * labelOffset : 0;
 			const lbl = this.gizmoLabels[i];
+			lbl.style.fill = axis.color; // MIG-072 §4 — match the palette axis colour
 			lbl.x = ex + dx;
 			lbl.y = ey + dy;
 			lbl.visible = true;
@@ -2330,7 +2340,7 @@ export class GraphEngine {
 
 		// Draw center dot
 		this.gizmoGfx.circle(cx, cy, 3);
-		this.gizmoGfx.fill({ color: dark ? 0xffffff : 0x333333, alpha: 0.5 });
+		this.gizmoGfx.fill({ color: this.palette.gizmoCentre, alpha: 0.5 }); // MIG-072 §4
 	}
 
 	private updateLabels(w: number, h: number, hovered: number, neighbors: Set<number> | null | undefined, dark: boolean): void {
@@ -2367,11 +2377,15 @@ export class GraphEngine {
 
 			let label = this.labelPool.get(i);
 			if (!label) {
-				const fontFamily = getFontForText(n.name);
+				// MIG-072 §4 — label font from the palette: family (override or script-aware), size (Setter
+				// wins over the ⚙ panel when set), weight, colour. Pooled labels are recreated on a label-
+				// style change via setPalette() so edits apply.
+				const fontFamily = this.palette.labelFamily || getFontForText(n.name);
 				const style = new TextStyle({
-					fontSize: this.config.labelFontSize,
+					fontSize: this.palette.labelSize > 0 ? this.palette.labelSize : this.config.labelFontSize,
 					fontFamily,
-					fill: dark ? '#e2e8f0' : '#1e293b',
+					fontWeight: String(this.palette.labelWeight) as any,
+					fill: this.palette.label,
 					align: n.isRTL ? 'right' : 'left',
 					// @ts-ignore — direction is a valid PixiJS TextStyle property but not in the TS types
 					direction: n.isRTL ? 'rtl' : 'ltr',

@@ -44,7 +44,10 @@ export interface SkyPalette {
 	trail: number;              // trail path overlay
 	typedLinks: Record<string, number>; // from the Link Types registry (single source), passed by caller
 	// Labels & overlays
-	label: number;              // node name text
+	label: number;              // node name text colour
+	labelFamily: string;        // node-label font family ('' = script-aware default via getFontForText)
+	labelSize: number;          // node-label font size in px (0 = use EngineConfig.labelFontSize / the ⚙ panel)
+	labelWeight: number;        // node-label font weight (400 = today)
 	gizmoX: number;
 	gizmoY: number;
 	gizmoZ: number;
@@ -165,6 +168,9 @@ export function makeDefaultSkyPalette(isDark: boolean): SkyPalette {
 	out.ringFrames = frames;
 	out.ringBase = 1.5;
 	out.ringGap = 2.6;
+	out.labelFamily = '';
+	out.labelSize = 0;
+	out.labelWeight = 400;
 	out.typedLinks = {};
 	return out as unknown as SkyPalette;
 }
@@ -208,6 +214,12 @@ export function resolveSkyPalette(
 	if (!Number.isNaN(rb) && rb >= 0) p.ringBase = Math.min(10, rb);
 	const rg = parseFloat(vars['--skyview-ring-gap']);
 	if (!Number.isNaN(rg) && rg > 0) p.ringGap = Math.min(12, rg);
+	const lf = vars['--skyview-label-font'];
+	if (lf) p.labelFamily = lf;
+	const lsz = parseFloat(vars['--skyview-label-size']);
+	if (!Number.isNaN(lsz) && lsz > 0) p.labelSize = lsz;
+	const lw = parseFloat(vars['--skyview-label-weight']);
+	if (!Number.isNaN(lw) && lw > 0) p.labelWeight = lw;
 	p.typedLinks = typedLinks;
 	return p as unknown as SkyPalette;
 }

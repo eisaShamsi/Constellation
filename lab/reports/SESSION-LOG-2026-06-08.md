@@ -66,6 +66,15 @@ Built iteratively against live Boss feedback:
   (edge lines / arrows / cluster / trail / badge chips; rows wrap). Audit **192/0**.
 - Commit (this PCS).
 
+### §4 — labels (full font) + 3D gizmo (Boss PASS)
+- Palette gains `labelFamily` / `labelSize` / `labelWeight` (size 0 = use the Sky View ⚙ "Label font size";
+  family '' = script-aware `getFontForText`). Node-label `TextStyle` reads colour/family/size/weight;
+  `setPalette` rebuilds pooled labels on a label-style change (`_lastLabelKey`). Badge name label matches.
+  Gizmo axes + centre dot + axis-label fills route to `palette.gizmoX/Y/Z/Centre`.
+- Predecessor reconciliation (label size): Setter size **wins when set**; the ⚙ slider stays (unset = ⚙ value).
+- Controls: `skyLabels` (colour · font · size · thickness) + `skyGizmo` (X/Y/Z/centre) with live samples.
+  Audit **200/0**. **§4 completes the full Sky View visual vocabulary under the Style Setter.**
+
 ### Pending
-- §4 labels (full font, per Eisa: type · size · weight · colour) + 3D gizmo · §5 LocalSkyView parity · §6 audit.
-  14-language help batched.
+- §5 LocalSkyView (2nd-screen) parity — same palette, kill the divergent `LIBRARY_COLORS` · §6 audit.
+  14-language help batched. Orientation re-bump at MIG-072 close.
