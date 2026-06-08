@@ -58,6 +58,36 @@ one Sky View var that does NOT flow through the JS palette.
   category. Add matching `var(--skyview-X, default)` rows to `skyPalette.ts`.
 - **Verify (PAUSE):** changing Active/Pinned ring, maturity, origin glow restyles live; Discard reverts; fresh
   Universe pixel-identical. *(Inv 2,5,7,8,9)*
+- **As-built deviations (2026-06-08):**
+  - **Dropped `ringSelection`** as a control — the selection ring is dynamically the *selected library's* colour
+    (`+layout.svelte:5809`), meaningful association, not a static style (Form-Aligns-To-Purpose).
+  - **Dropped `Seed` maturity** control — seed notes draw no ring by design; `--skyview-maturity-seed` stays in
+    the palette only as the unknown-state fallback.
+  - **Removed `accent`/`link`** from the `sky` category — they never reached the graph (chrome vars).
+  - **Live centre preview** added (`ss-skyprev`): the Sky surface now uses three-zone (`twoZone` excludes `sky`)
+    so the centre stage shows a labelled bubble preview (Nodes / Maturity rings / Glows & MOC) that recolours
+    live via the `.ss` `draftStyle` cascade — a focused preview beats hunting a ring-change in a 7,600-node graph.
+  - **Node frame stroke — PER-RING (Eisa 2026-06-08, 2nd pass)** — each ring has its own width + solid/dotted,
+    not one global setting. Palette holds `ringFrames: Record<id, {width, style}>` (ids: active · pinned · orphan
+    · sapling · evergreen · canonical · wilting · moc) resolved from `--skyview-frame-<id>-width/-style`
+    (literal names in `FRAME_VARS`, the audit's consumers). `strokeRing(…, frameId)` looks up the per-ring frame
+    (width multiplier + dashed-circle arc segments; PIXI has no native line-dash). The Nodes/Maturity/Glows
+    groups each carry per-ring width+style controls; preview rings use the `border` shorthand per-ring so width +
+    dotted + colour all show live. (The earlier global `--skyview-ring-width/-style` were removed.)
+  - **Node-scheme legend (Eisa)** — a collapsible "Node scheme" key in the Sky View legend (`GraphMindView`)
+    showing each ring/glow in the user's chosen colours (`skyHex(skyPalette.*)`). i18n keys use `$t(...) || 'EN'`
+    fallback; translations batched.
+  - **Clean dotted rendering (Eisa)** — dotted rings draw as round dots built into ONE `fill()` per ring
+    (was spiky per-segment arc strokes); cheaper + cleaner.
+  - **Stacked rings — MOCK-UP APPROVED (Eisa 2026-06-08)** — a node carries 2-3 rings at once
+    (maturity + MOC/orphan + interaction) drawn 0.5px apart → they merged. Root cause Eisa identified:
+    superimposition. Fix: glows draw FIRST (diffuse halos, behind), then the applicable rings are COLLECTED
+    inner→outer (maturity → MOC → orphan → pinned → open-note → selection) and drawn in EVENLY-SPACED
+    concentric bands. **Approved constants (from the interactive mock-up `docs/MIG-072-stacked-rings-mockup.html`,
+    "as-is"): first-ring gap 1.5, gap between rings 2.6, ring-width multiplier default 1.5.** orphan/MOC are
+    mutually exclusive (0 links vs ≥5 outgoing) so the realistic stack is 1-3 rings. This changes the default
+    node look (intended improvement, owner-approved) — the "unset = today's look" invariant still holds for
+    COLOURS; ring spacing/width is the approved §2 visual design. Mock-up was designed → approved before any code.
 
 ### §3 — Setter controls: links & overlays *(owner-testable)*
 - `ELEMENTS`: `skyLinks` (`--skyview-edge-normal`, `--skyview-edge-highlight`, `--skyview-arrow-out/-in`,

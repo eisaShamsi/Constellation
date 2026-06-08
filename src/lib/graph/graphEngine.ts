@@ -84,7 +84,6 @@ interface EngineLink {
 
 // ─── Constants ────────────────────────────────────────────────────────
 
-const DEFAULT_NODE_COLOR = 0xa78bfa;
 const HIGHLIGHT_EDGE_COLOR = 0xf97316;
 
 // MIG-072 — the typed-link colours moved to the Style Setter's single source: they are read from the
@@ -92,14 +91,8 @@ const HIGHLIGHT_EDGE_COLOR = 0xf97316;
 // (see setPalette / skyPalette.ts). The old hardcoded `TYPED_LINK_COLORS` map was a stale duplicate that
 // ignored the user's edits — removed.
 const DIM_ALPHA = 0.12;
-const MOC_RING_COLOR = 0xf59e0b;
-const MATURITY_COLORS: Record<string, number> = {
-	seed: 0x999999,       // gray
-	sapling: 0x4ade80,    // light green
-	evergreen: 0x16a34a,  // rich green
-	canonical: 0xf59e0b,  // gold
-	wilting: 0x16a34a,    // green (dimmed via alpha)
-};
+// MIG-072 §2 — MOC_RING_COLOR + MATURITY_COLORS moved into the palette (this.palette.mocRing /
+// this.maturityColor()), so the Style Setter controls them. Removed.
 const RTL_REGEX = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\u0590-\u05FF]/;
 const ARABIC_REGEX = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
 const HEBREW_REGEX = /[\u0590-\u05FF]/;
@@ -478,6 +471,42 @@ export class GraphEngine {
 	setPalette(palette: SkyPalette): void {
 		this.palette = palette;
 		this.needsRedraw = true;
+	}
+
+	/** MIG-072 — maturity ring colour from the palette (no per-frame allocation; called only for
+	 *  non-seed nodes, but handles every state). */
+	private maturityColor(m: string): number {
+		switch (m) {
+			case 'sapling':   return this.palette.maturitySapling;
+			case 'evergreen': return this.palette.maturityEvergreen;
+			case 'canonical': return this.palette.maturityCanonical;
+			case 'wilting':   return this.palette.maturityWilting;
+			default:          return this.palette.maturitySeed;
+		}
+	}
+
+	/** MIG-072 §2 — stroke a node ring honouring the palette's width multiplier (lighter/thicker) and
+	 *  solid/dotted style. PIXI v8 Graphics has no native line-dash, so "dotted" is drawn as short arc
+	 *  segments with gaps (same technique as the dashed semantic links). */
+	private strokeRing(gfx: Graphics, cx: number, cy: number, r: number, baseWidth: number, color: number, alpha: number, frameId: string): void {
+		const frame = this.palette.ringFrames[frameId];
+		const width = baseWidth * (frame?.width ?? 1);
+		if (frame?.style === 'dotted') {
+			// Clean round dots evenly spaced around the ring. (Earlier we stroked short arc segments,
+			// which read as spiky asterisks on small nodes.) Dot radius tracks the frame width; all dots
+			// go into ONE fill() — cheaper than the per-segment strokes AND visually clean.
+			const dotR = Math.max(0.6, width * 0.7);
+			const circ = 2 * Math.PI * r;
+			const count = Math.max(6, Math.min(28, Math.round(circ / (dotR * 5))));
+			for (let i = 0; i < count; i++) {
+				const a = (i / count) * 2 * Math.PI;
+				gfx.circle(cx + r * Math.cos(a), cy + r * Math.sin(a), dotR);
+			}
+			gfx.fill({ color, alpha });
+		} else {
+			gfx.circle(cx, cy, r);
+			gfx.stroke({ width, color, alpha });
+		}
 	}
 
 	updateConfig(partial: Partial<EngineConfig>): void {
@@ -2148,32 +2177,14 @@ export class GraphEngine {
 
 			gfx.clear();
 			gfx.circle(sx, sy, r);
-			gfx.fill({ color: n.color, alpha: alpha * luminosity });
+			// MIG-072 — base fill is the library/folder colour; when a node falls back to the app default
+			// purple, the Style Setter's "Node default" (--skyview-node-default) takes over.
+			gfx.fill({ color: n.color === 0xa78bfa ? this.palette.nodeDefault : n.color, alpha: alpha * luminosity });
 
-			// Orphan pulsing ring (dim, animated)
-			if (isOrphan && alpha > DIM_ALPHA) {
-				const pulse = 0.3 + 0.2 * Math.sin(Date.now() / 600 + i);
-				gfx.circle(sx, sy, r + 3);
-				gfx.stroke({ width: 1, color: dark ? 0x64748b : 0x94a3b8, alpha: pulse });
-			}
-
-			// Active ring
-			if (isActive) {
-				gfx.circle(sx, sy, r + 2);
-				gfx.stroke({ width: 2, color: dark ? 0xffffff : 0x333333, alpha: 0.8 });
-			}
-
-			// Highlight ring (sidebar selection)
-			if (this.highlightSet.has(i)) {
-				gfx.circle(sx, sy, r + 3);
-				gfx.stroke({ width: 2.5, color: this.highlightColor, alpha: 0.9 });
-			}
-
-			// Pinned indicator (cyan ring)
-			if (isPinned) {
-				gfx.circle(sx, sy, r + 2.5);
-				gfx.stroke({ width: 2, color: 0x06b6d4, alpha: alpha });
-			}
+			// MIG-072 §2 (mock-up-approved): glows are diffuse halos drawn FIRST (behind), then the
+			// applicable rings STACK into evenly-spaced bands just below — so 2-3 co-occurring rings stay
+			// individually legible. dense = PJ-10 r3 damping for big graphs.
+			const dense = this.nodes.length > 1500 ? 0.5 : 1;
 
 			// CE Phase 2: Stratum glow halo — complementary color for max contrast
 			if (n.stratum >= 4 && this.nodes.length >= 20) {
@@ -2183,23 +2194,30 @@ export class GraphEngine {
 
 			// CE Phase 5: Provenance origin glow — blue (received) / amber (discovered)
 			if (n.originType === 'received' || n.originType === 'discovered') {
-				const oColor = n.originType === 'received' ? 0x4A9EFF : 0xFFB347;
+				const oColor = n.originType === 'received' ? this.palette.glowReceived : this.palette.glowDiscovered;
 				gfx.circle(sx, sy, r + 6 * (this.nodes.length > 1500 ? 0.5 : 1)); // PJ-10 r3
 				gfx.fill({ color: oColor, alpha: 0.06 * alpha });
 			}
 
-			// CE Phase 3: Maturity ring — colored inner ring by lifecycle state
+			// Collect the applicable rings inner-to-outer, then draw them stacked with even gaps.
+			const ringStack: { color: number; baseWidth: number; alpha: number; frameId: string }[] = [];
 			if (n.maturity && n.maturity !== 'seed') {
-				const mColor = MATURITY_COLORS[n.maturity] ?? 0x999999;
-				const mAlpha = n.maturity === 'wilting' ? 0.3 : 0.7;
-				gfx.circle(sx, sy, r + 1 * (this.nodes.length > 1500 ? 0.5 : 1)); // PJ-10 r3
-				gfx.stroke({ width: 1.5 * (this.nodes.length > 1500 ? 0.5 : 1), color: mColor, alpha: mAlpha * alpha });
+				ringStack.push({ color: this.maturityColor(n.maturity), baseWidth: 1.5 * dense, alpha: (n.maturity === 'wilting' ? 0.3 : 0.7) * alpha, frameId: n.maturity });
 			}
+			if (n.outgoingCount >= 5) ringStack.push({ color: this.palette.mocRing, baseWidth: 1.5 * dense, alpha, frameId: 'moc' });
+			if (isOrphan && alpha > DIM_ALPHA) {
+				const pulse = 0.3 + 0.2 * Math.sin(Date.now() / 600 + i);
+				ringStack.push({ color: this.palette.ringOrphan, baseWidth: 1 * dense, alpha: pulse, frameId: 'orphan' });
+			}
+			if (isPinned) ringStack.push({ color: this.palette.ringPinned, baseWidth: 2 * dense, alpha, frameId: 'pinned' });
+			if (isActive) ringStack.push({ color: this.palette.ringActive, baseWidth: 2 * dense, alpha: 0.8, frameId: 'active' });
+			if (this.highlightSet.has(i)) ringStack.push({ color: this.highlightColor, baseWidth: 2.5 * dense, alpha: 0.9, frameId: 'selection' });
 
-			// MOC gold ring
-			if (n.outgoingCount >= 5) {
-				gfx.circle(sx, sy, r + 1.5 * (this.nodes.length > 1500 ? 0.5 : 1)); // PJ-10 r3
-				gfx.stroke({ width: 1.5 * (this.nodes.length > 1500 ? 0.5 : 1), color: MOC_RING_COLOR, alpha: alpha });
+			const ringGap = this.palette.ringGap * dense; // user-set separation between stacked rings
+			let ringR = r + this.palette.ringBase * dense; // user-set first-ring gap (from the fill)
+			for (const ring of ringStack) {
+				this.strokeRing(gfx, sx, sy, ringR, ring.baseWidth, ring.color, ring.alpha, ring.frameId);
+				ringR += ringGap;
 			}
 		}
 

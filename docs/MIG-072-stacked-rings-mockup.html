@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>MIG-072 — Sky View stacked-ring mock-up</title>
+<style>
+  :root { --bg:#f4f4f6; --panel:#ffffff; --ink:#1e293b; --muted:#64748b; --accent:#7c3aed; --line:#e2e8f0; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var(--bg); color:var(--ink); }
+  header { padding:18px 26px; border-bottom:1px solid var(--line); background:var(--panel); }
+  header h1 { margin:0 0 4px; font-size:19px; }
+  header p { margin:0; color:var(--muted); font-size:13px; max-width:900px; }
+  .wrap { display:grid; grid-template-columns:300px 1fr; gap:0; min-height:calc(100vh - 78px); }
+  .controls { padding:18px 22px; border-right:1px solid var(--line); background:var(--panel); overflow-y:auto; }
+  .controls h2 { font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin:18px 0 8px; }
+  .controls h2:first-child { margin-top:0; }
+  .row { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:7px 0; font-size:13px; }
+  .row label { flex:1; }
+  .row input[type=range] { width:120px; accent-color:var(--accent); }
+  .row .val { width:34px; text-align:right; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .chk { display:flex; align-items:center; gap:8px; margin:6px 0; font-size:13px; cursor:pointer; }
+  .chk input { accent-color:var(--accent); }
+  .swatch { width:12px; height:12px; border-radius:50%; display:inline-block; flex:none; }
+  .stage { padding:24px 28px; overflow:auto; }
+  .stage h2 { font-size:13px; margin:6px 0 10px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  .panels { display:flex; gap:26px; flex-wrap:wrap; align-items:flex-start; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px; box-shadow:0 6px 20px rgba(0,0,0,.05); }
+  .card .cap { font-size:12px; color:var(--muted); text-align:center; margin-top:8px; }
+  canvas { display:block; border-radius:8px; }
+  .legend { display:flex; flex-wrap:wrap; gap:6px 16px; font-size:12px; color:var(--muted); margin-top:14px; max-width:640px; }
+  .legend span { display:inline-flex; align-items:center; gap:6px; }
+  .note { font-size:12px; color:var(--muted); max-width:680px; line-height:1.5; margin-top:18px; }
+  .pill { display:inline-block; background:#eef2ff; color:var(--accent); border-radius:10px; padding:1px 8px; font-size:11px; font-weight:600; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Sky View — stacked-ring design <span class="pill">MIG-072 §2 mock-up</span></h1>
+  <p>A node can carry several rings at once (maturity + MOC/orphan + interaction). Today they're drawn 0.5px apart and merge into one muddy band. Proposal: draw whatever rings a node has as <b>evenly-spaced concentric bands</b>, inner→outer, each in its own slot. Tweak the controls, compare “Today vs Proposed”, and check it at real graph scale. Nothing here touches the app — it's a drawing preview.</p>
+</header>
+<div class="wrap">
+  <aside class="controls">
+    <h2>Layout</h2>
+    <div class="row"><label>First ring gap (from fill)</label><input id="base" type="range" min="0.5" max="6" step="0.5" value="1.5"><span class="val" id="baseV">1.5</span></div>
+    <div class="row"><label>Gap between rings</label><input id="gap" type="range" min="1.5" max="7" step="0.5" value="2.6"><span class="val" id="gapV">2.6</span></div>
+    <div class="row"><label>Ring width</label><input id="rw" type="range" min="0.5" max="3" step="0.25" value="1.5"><span class="val" id="rwV">1.5</span></div>
+    <div class="row"><label>Node radius</label><input id="nr" type="range" min="3" max="9" step="0.5" value="5"><span class="val" id="nrV">5</span></div>
+
+    <h2>Which rings (this node)</h2>
+    <label class="chk"><input type="checkbox" id="r_maturity" checked><span class="swatch" style="background:#16a34a"></span> Maturity (evergreen)</label>
+    <label class="chk"><input type="checkbox" id="r_moc" checked><span class="swatch" style="background:#f59e0b"></span> MOC (hub)</label>
+    <label class="chk"><input type="checkbox" id="r_orphan"><span class="swatch" style="background:#94a3b8"></span> Orphan <small style="color:#94a3b8">(excl. MOC)</small></label>
+    <label class="chk"><input type="checkbox" id="r_pinned"><span class="swatch" style="background:#06b6d4"></span> Pinned</label>
+    <label class="chk"><input type="checkbox" id="r_active" checked><span class="swatch" style="background:#333"></span> Open note</label>
+
+    <h2>Glows (diffuse halos)</h2>
+    <label class="chk"><input type="checkbox" id="g_origin" checked><span class="swatch" style="background:#4a9eff"></span> Origin (received)</label>
+    <label class="chk"><input type="checkbox" id="g_stratum"><span class="swatch" style="background:#c084fc"></span> Stratum</label>
+
+    <h2>Style</h2>
+    <label class="chk"><input type="checkbox" id="dotted"> Dotted rings (clean dots)</label>
+    <label class="chk"><input type="checkbox" id="dense"> Dense mode (&gt;1500 nodes)</label>
+  </aside>
+
+  <main class="stage">
+    <h2>Today vs Proposed — a node with maturity + MOC + open-note</h2>
+    <div class="panels">
+      <div class="card"><canvas id="cBefore" width="260" height="260"></canvas><div class="cap">Today — rings at r+1, r+1.5, r+2 (merge)</div></div>
+      <div class="card"><canvas id="cAfter" width="260" height="260"></canvas><div class="cap">Proposed — evenly-spaced stack (live with controls)</div></div>
+      <div class="card"><canvas id="cActual" width="260" height="260"></canvas><div class="cap">Proposed at real node size (zoomed view)</div></div>
+    </div>
+
+    <h2 style="margin-top:26px">Common compositions (proposed)</h2>
+    <div class="panels" id="composRow"></div>
+
+    <h2 style="margin-top:26px">Real graph scale (≈600 nodes, random mix) — Today vs Proposed</h2>
+    <div class="panels">
+      <div class="card"><canvas id="fieldBefore" width="440" height="300"></canvas><div class="cap">Today</div></div>
+      <div class="card"><canvas id="fieldAfter" width="440" height="300"></canvas><div class="cap">Proposed</div></div>
+    </div>
+
+    <div class="legend">
+      <span><span class="swatch" style="background:#16a34a"></span>Maturity</span>
+      <span><span class="swatch" style="background:#f59e0b"></span>MOC (hub)</span>
+      <span><span class="swatch" style="background:#94a3b8"></span>Orphan</span>
+      <span><span class="swatch" style="background:#06b6d4"></span>Pinned</span>
+      <span><span class="swatch" style="background:#333"></span>Open note</span>
+      <span><span class="swatch" style="background:#4a9eff"></span>Origin glow</span>
+    </div>
+    <p class="note"><b>Order (inner→outer):</b> maturity → MOC → orphan → pinned → open-note → selection. Glows are diffuse halos drawn <i>behind</i> the crisp rings, so they never compete with them. Orphan and MOC never co-occur (0 links vs ≥5 outgoing), so the realistic stack is 1–3 rings; the rare focused+pinned node can reach more. This is faithful to the code I'd write (clean dots = one fill per ring).</p>
+  </main>
+</div>
+
+<script>
+const NODE_FILL = '#a78bfa';
+const RINGS = {
+  maturity: { color:'#16a34a', w:1.5 },
+  moc:      { color:'#f59e0b', w:1.5 },
+  orphan:   { color:'#94a3b8', w:1.0 },
+  pinned:   { color:'#06b6d4', w:2.0 },
+  active:   { color:'#333333', w:2.0 },
+};
+const ORDER = ['maturity','moc','orphan','pinned','active'];
+
+function $(id){ return document.getElementById(id); }
+function val(id){ return parseFloat($(id).value); }
+function on(id){ return $(id).checked; }
+
+function strokeRing(ctx, cx, cy, r, width, color, dotted){
+  if (dotted){
+    const dotR = Math.max(0.6, width*0.7);
+    const count = Math.max(6, Math.min(28, Math.round((2*Math.PI*r)/(dotR*5))));
+    ctx.fillStyle = color;
+    for (let i=0;i<count;i++){ const a=(i/count)*2*Math.PI; ctx.beginPath(); ctx.arc(cx+r*Math.cos(a), cy+r*Math.sin(a), dotR, 0, 2*Math.PI); ctx.fill(); }
+  } else {
+    ctx.beginPath(); ctx.arc(cx,cy,r,0,2*Math.PI); ctx.lineWidth=width; ctx.strokeStyle=color; ctx.stroke();
+  }
+}
+function glow(ctx, cx, cy, r, color, a){ ctx.save(); ctx.globalAlpha=a; const g=ctx.createRadialGradient(cx,cy,r*0.4,cx,cy,r); g.addColorStop(0,color); g.addColorStop(1,'rgba(255,255,255,0)'); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,r,0,2*Math.PI); ctx.fill(); ctx.restore(); }
+
+// scale: px multiplier so the zoomed cards are readable
+function drawNode(ctx, cx, cy, r, rings, opts){
+  const dense = opts.dense ? 0.5 : 1;
+  const s = opts.scale || 1;
+  // glows behind
+  if (opts.originGlow) glow(ctx, cx, cy, (r+6*dense)*s, '#4a9eff', 0.5);
+  if (opts.stratumGlow) glow(ctx, cx, cy, (r+5*dense)*s, '#c084fc', 0.5);
+  // fill
+  ctx.beginPath(); ctx.arc(cx,cy,r*s,0,2*Math.PI); ctx.fillStyle=NODE_FILL; ctx.fill();
+  // stacked rings
+  let rr = r + opts.base*dense;
+  for (const id of ORDER){ if (!rings.includes(id)) continue; const def=RINGS[id];
+    strokeRing(ctx, cx, cy, rr*s, def.w*opts.rw*dense*s, def.color, opts.dotted);
+    rr += opts.gap*dense;
+  }
+}
+// the OLD cramped layout (fixed near-identical radii)
+function drawNodeOld(ctx, cx, cy, r, rings, opts){
+  const dense = opts.dense ? 0.5 : 1; const s = opts.scale||1;
+  if (opts.originGlow) glow(ctx, cx, cy, (r+6*dense)*s, '#4a9eff', 0.5);
+  ctx.beginPath(); ctx.arc(cx,cy,r*s,0,2*Math.PI); ctx.fillStyle=NODE_FILL; ctx.fill();
+  const fixed = { maturity:r+1, moc:r+1.5, orphan:r+3, pinned:r+2.5, active:r+2 };
+  for (const id of ORDER){ if (!rings.includes(id)) continue;
+    strokeRing(ctx, cx, cy, fixed[id]*dense*s, RINGS[id].w*opts.rw*dense*s, RINGS[id].color, opts.dotted);
+  }
+}
+
+function currentRings(){
+  const r=[];
+  if (on('r_maturity')) r.push('maturity');
+  if (on('r_moc') && !on('r_orphan')) r.push('moc');
+  if (on('r_orphan')) r.push('orphan');
+  if (on('r_pinned')) r.push('pinned');
+  if (on('r_active')) r.push('active');
+  return r;
+}
+function opts(extra){ return Object.assign({ base:val('base'), gap:val('gap'), rw:val('rw'), dotted:on('dotted'), dense:on('dense'), originGlow:on('g_origin'), stratumGlow:on('g_stratum') }, extra||{}); }
+
+function clear(ctx){ ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height); }
+
+function render(){
+  ['base','gap','rw','nr'].forEach(id=>$(id+'V').textContent=$(id).value);
+  const nr = val('nr');
+  const rings = currentRings();
+
+  // Before (today): the classic 3-ring case at zoom
+  let c=$('cBefore').getContext('2d'); clear(c);
+  drawNodeOld(c, 130, 130, nr, ['maturity','moc','active'], opts({scale:6}));
+
+  // After (proposed): live with controls, same 3-ring case
+  c=$('cAfter').getContext('2d'); clear(c);
+  drawNode(c, 130, 130, nr, ['maturity','moc','active'], opts({scale:6}));
+
+  // Actual: proposed with the user's selected rings, zoomed
+  c=$('cActual').getContext('2d'); clear(c);
+  drawNode(c, 130, 130, nr, rings, opts({scale:6}));
+
+  // Compositions row
+  const row=$('composRow'); row.innerHTML='';
+  const compos = [
+    ['Maturity only', ['maturity']],
+    ['Maturity + MOC', ['maturity','moc']],
+    ['Maturity + Orphan', ['maturity','orphan']],
+    ['Maturity + MOC + Open', ['maturity','moc','active']],
+    ['Open + Pinned + MOC', ['active','pinned','moc']],
+  ];
+  for (const [cap,rs] of compos){
+    const card=document.createElement('div'); card.className='card';
+    const cv=document.createElement('canvas'); cv.width=150; cv.height=150; card.appendChild(cv);
+    const cp=document.createElement('div'); cp.className='cap'; cp.textContent=cap; card.appendChild(cp);
+    row.appendChild(card);
+    drawNode(cv.getContext('2d'), 75, 75, nr, rs, opts({scale:5}));
+  }
+
+  // Field (graph scale) — deterministic pseudo-random mix
+  let seed=12345; const rnd=()=>{ seed=(seed*1103515245+12345)&0x7fffffff; return seed/0x7fffffff; };
+  function field(ctx, proposed){
+    clear(ctx); const W=ctx.canvas.width,H=ctx.canvas.height;
+    for (let i=0;i<600;i++){
+      const x=rnd()*W, y=rnd()*H, rr=2.5+rnd()*3;
+      const rs=[]; const m=rnd();
+      if (m<0.55) rs.push('maturity');
+      const t=rnd();
+      if (t<0.15) rs.push('moc'); else if (t<0.7) rs.push('orphan');
+      if (rnd()<0.04) rs.push('active');
+      const o = opts({scale:1, originGlow:rnd()<0.1, stratumGlow:false});
+      (proposed?drawNode:drawNodeOld)(ctx, x, y, rr, rs.filter((v,idx)=>rs.indexOf(v)===idx), o);
+    }
+  }
+  field($('fieldBefore').getContext('2d'), false);
+  field($('fieldAfter').getContext('2d'), true);
+}
+
+document.querySelectorAll('input').forEach(el=>el.addEventListener('input', render));
+render();
+</script>
+</body>
+</html>

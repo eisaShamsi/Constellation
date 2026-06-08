@@ -74,6 +74,8 @@
 	const BORDER_STYLE: [string, string][] = [
 		['Solid', 'solid'], ['Dashed', 'dashed'], ['Dotted', 'dotted'], ['None', 'none'],
 	];
+	// MIG-072 §2 — per-ring frame style (Sky View node rings). Solid first = the default look.
+	const FRAME_STYLE_OPTS: [string, string][] = [['Solid', 'solid'], ['Dotted', 'dotted']];
 	// §C Phase 9 gap-close — shadows are box-shadow CSS strings; a non-technical user picks a
 	// preset, not a raw value. "Default" is FIRST so an unset var (curVal '') displays it (= the
 	// catalog default), and its value matches the catalog so a set-to-default var reflects too.
@@ -324,6 +326,46 @@
 		// chrome. Consumed by GraphMindView's .gm-container and LocalSkyView's .local-star (both have
 		// a transparent canvas, so this colour IS the visible background). Unset = panel surface = today.
 		skyCanvas: { name: 'Canvas', controls: [{ label: 'Background', type: 'color', var: '--skyview-bg' }] },
+		// MIG-072 §2 — Sky View NODE colours. Each node's base fill is its library/folder colour (set
+		// per-library); "Default node colour" is the fallback for un-coloured nodes. The rings/glows layer
+		// on top by note property. (Selection ring is intentionally the selected library's colour — not a
+		// static style — so it has no control here.) Consumed by skyPalette.ts → setPalette → graphEngine.
+		// Each ring has its own colour + frame width + solid/dotted (Eisa 2026-06-08). Width is a multiplier
+		// (1 = today); the FRAME_STYLE_OPTS are shared. Frame vars are --skyview-frame-<id>-width/-style.
+		skyNodes: { name: 'Nodes', controls: [
+			{ label: 'Default node colour', type: 'color', var: '--skyview-node-default' },
+			{ label: 'First ring gap (all)', type: 'range', var: '--skyview-ring-base', min: 0.5, max: 6, step: 0.5, unit: '', def: 1.5 },
+			{ label: 'Gap between rings (all)', type: 'range', var: '--skyview-ring-gap', min: 1.5, max: 7, step: 0.1, unit: '', def: 2.6 },
+			{ label: 'Open-note ring', type: 'color', var: '--skyview-ring-active' },
+			{ label: 'Open-note width', type: 'range', var: '--skyview-frame-active-width', min: 0.5, max: 3, step: 0.25, unit: '', def: 1.5 },
+			{ label: 'Open-note style', type: 'select', var: '--skyview-frame-active-style', options: FRAME_STYLE_OPTS },
+			{ label: 'Pinned ring', type: 'color', var: '--skyview-ring-pinned' },
+			{ label: 'Pinned width', type: 'range', var: '--skyview-frame-pinned-width', min: 0.5, max: 3, step: 0.25, unit: '', def: 1.5 },
+			{ label: 'Pinned style', type: 'select', var: '--skyview-frame-pinned-style', options: FRAME_STYLE_OPTS },
+			{ label: 'Orphan ring', type: 'color', var: '--skyview-ring-orphan' },
+			{ label: 'Orphan width', type: 'range', var: '--skyview-frame-orphan-width', min: 0.5, max: 3, step: 0.25, unit: '', def: 1.5 },
+			{ label: 'Orphan style', type: 'select', var: '--skyview-frame-orphan-style', options: FRAME_STYLE_OPTS } ] },
+		// Seed has no maturity ring in the graph (by design — youngest state, no emphasis), so no Seed
+		// control here; --skyview-maturity-seed stays in the palette only as the unknown-state fallback.
+		skyMaturity: { name: 'Maturity rings', controls: [
+			{ label: 'Sapling', type: 'color', var: '--skyview-maturity-sapling' },
+			{ label: 'Sapling width', type: 'range', var: '--skyview-frame-sapling-width', min: 0.5, max: 3, step: 0.25, unit: '', def: 1.5 },
+			{ label: 'Sapling style', type: 'select', var: '--skyview-frame-sapling-style', options: FRAME_STYLE_OPTS },
+			{ label: 'Evergreen', type: 'color', var: '--skyview-maturity-evergreen' },
+			{ label: 'Evergreen width', type: 'range', var: '--skyview-frame-evergreen-width', min: 0.5, max: 3, step: 0.25, unit: '', def: 1.5 },
+			{ label: 'Evergreen style', type: 'select', var: '--skyview-frame-evergreen-style', options: FRAME_STYLE_OPTS },
+			{ label: 'Canonical', type: 'color', var: '--skyview-maturity-canonical' },
+			{ label: 'Canonical width', type: 'range', var: '--skyview-frame-canonical-width', min: 0.5, max: 3, step: 0.25, unit: '', def: 1.5 },
+			{ label: 'Canonical style', type: 'select', var: '--skyview-frame-canonical-style', options: FRAME_STYLE_OPTS },
+			{ label: 'Wilting', type: 'color', var: '--skyview-maturity-wilting' },
+			{ label: 'Wilting width', type: 'range', var: '--skyview-frame-wilting-width', min: 0.5, max: 3, step: 0.25, unit: '', def: 1.5 },
+			{ label: 'Wilting style', type: 'select', var: '--skyview-frame-wilting-style', options: FRAME_STYLE_OPTS } ] },
+		skyGlow: { name: 'Glows & MOC', controls: [
+			{ label: 'Received glow', type: 'color', var: '--skyview-glow-received' },
+			{ label: 'Discovered glow', type: 'color', var: '--skyview-glow-discovered' },
+			{ label: 'Map-of-content ring', type: 'color', var: '--skyview-moc-ring' },
+			{ label: 'MOC width', type: 'range', var: '--skyview-frame-moc-width', min: 0.5, max: 3, step: 0.25, unit: '', def: 1.5 },
+			{ label: 'MOC style', type: 'select', var: '--skyview-frame-moc-style', options: FRAME_STYLE_OPTS } ] },
 	};
 	// §3B — the left rail is organised into CATEGORIES (a.k.a. Surfaces), each grouping its
 	// elements (Eisa). Interface + Editor both preview the main app window ('editor' surface);
@@ -334,7 +376,7 @@
 		{ key: 'editor', name: 'Editor', surface: 'editor', elements: ['noteBg', 'text', 'breadcrumb', 'summary', 'accent', 'link', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'bold', 'italic', 'strike', 'code', 'quote', 'caret'] },
 		{ key: 'global', name: 'Global', surface: 'editor', elements: ['gBackgrounds', 'gTextShades', 'gStatus', 'gAccent', 'gType', 'gShape', 'fonts'] },
 		{ key: 'links', name: 'Links', surface: 'editor', elements: ['links'] },
-		{ key: 'sky', name: 'Sky View', surface: 'sky', elements: ['skyCanvas', 'accent', 'link'] },
+		{ key: 'sky', name: 'Sky View', surface: 'sky', elements: ['skyCanvas', 'skyNodes', 'skyMaturity', 'skyGlow'] },
 		{ key: 'org', name: 'OrgChart', surface: 'org', elements: ['accent', 'link'] },
 		{ key: 'index', name: 'Index', surface: 'index', elements: ['accent'] },
 		{ key: 'cataloger', name: 'Cataloger', surface: 'cataloger', elements: ['accent'] },
@@ -369,7 +411,10 @@
 	// no centre — the controls integrate their own preview, e.g. the live pill in each Links row).
 	let panelW = $state(1180);
 	let panelH = $state(760);
-	const twoZone = $derived(activeCategory !== 'editor');
+	// MIG-072 §2 — Sky View uses the CENTRE preview (three-zone), like the Editor: a focused, labelled
+	// bubble preview (ss-skyprev) beats hunting a ring-change in a 7,600-node live graph. The chrome
+	// surfaces keep the docked two-zone live-behind. (Editor was already three-zone.)
+	const twoZone = $derived(activeCategory !== 'editor' && activeCategory !== 'sky');
 
 	const draftStyle = $derived(Object.entries(draft).map(([k, v]) => `${k}:${v}`).join(';'));
 	const sel = $derived(selected ? ELEMENTS[selected] ?? null : null);
@@ -387,6 +432,39 @@
 		: GLOBAL_ELS.has(selected) ? 'global'
 		: selected,
 	);
+
+	// MIG-072 §2 — live "stacked example" canvas for the Sky View Nodes group: a node carrying maturity +
+	// MOC + open-note rings, drawn from the current draft so the spacing (first gap / gap between) + each
+	// ring's width + style show LIVE. Mirrors the engine's strokeRing dot logic so the preview is faithful.
+	let stackCanvas = $state<HTMLCanvasElement | null>(null);
+	function ssDrawRing(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, width: number, color: string, dotted: boolean) {
+		if (dotted) {
+			const dotR = Math.max(0.8, width * 0.7);
+			const count = Math.max(6, Math.min(48, Math.round((2 * Math.PI * r) / (dotR * 5))));
+			ctx.fillStyle = color;
+			for (let i = 0; i < count; i++) { const a = (i / count) * 2 * Math.PI; ctx.beginPath(); ctx.arc(cx + r * Math.cos(a), cy + r * Math.sin(a), dotR, 0, 2 * Math.PI); ctx.fill(); }
+		} else {
+			ctx.beginPath(); ctx.arc(cx, cy, r, 0, 2 * Math.PI); ctx.lineWidth = width; ctx.strokeStyle = color; ctx.stroke();
+		}
+	}
+	function ssDrawStack() {
+		const cv = stackCanvas; if (!cv) return;
+		const ctx = cv.getContext('2d'); if (!ctx) return;
+		ctx.clearRect(0, 0, cv.width, cv.height);
+		const cx = cv.width / 2, cy = cv.height / 2, r = 13, S = 3.0;
+		const num = (v: string, d: number) => { const x = parseFloat(draft[v] ?? ''); return Number.isNaN(x) ? d : x; };
+		const col = (v: string, d: string) => draft[v] || d;
+		const dot = (v: string) => draft[v] === 'dotted';
+		ctx.beginPath(); ctx.arc(cx, cy, r, 0, 2 * Math.PI); ctx.fillStyle = col('--skyview-node-default', '#a78bfa'); ctx.fill();
+		const rings = [
+			{ c: col('--skyview-maturity-evergreen', '#16a34a'), w: 1.5 * num('--skyview-frame-evergreen-width', 1.5), d: dot('--skyview-frame-evergreen-style') },
+			{ c: col('--skyview-moc-ring', '#f59e0b'), w: 1.5 * num('--skyview-frame-moc-width', 1.5), d: dot('--skyview-frame-moc-style') },
+			{ c: col('--skyview-ring-active', '#333333'), w: 2 * num('--skyview-frame-active-width', 1.5), d: dot('--skyview-frame-active-style') },
+		];
+		let rr = r + num('--skyview-ring-base', 1.5) * S;
+		for (const ring of rings) { ssDrawRing(ctx, cx, cy, rr, ring.w, ring.c, ring.d); rr += num('--skyview-ring-gap', 2.6) * S; }
+	}
+	$effect(() => { if (activeSurface === 'sky') { void draft; ssDrawStack(); } });
 
 	function hexOf(c: string): string {
 		c = (c || '').trim();
@@ -753,17 +831,60 @@
 				<div class="ss-hint">{selected ? 'Previewing: ' + (sel?.name ?? '') : 'Select an element on the left to preview & style it'}</div>
 				<div class="ss-stage">
 					{#if activeSurface !== 'editor'}
-						<div class="ss-prev-alt">
+						<div class="ss-prev-alt" class:ss-prev-alt--sky={activeSurface === 'sky'}>
 							<div class="ss-alt-title">{CATEGORIES.find((c) => c.surface === activeSurface)?.name}</div>
 							{#if activeSurface === 'sky'}
-								<!-- The canvas reads --skyview-bg live; click the empty canvas to style it,
-								     click a node to style accent/link. -->
-								<div class="ss-skycanvas ss-hot" class:ss-sel={selected === 'skyCanvas'}
+								<!-- MIG-072 §2 — live Sky View preview. Each bubble reads its --skyview-* var, so it
+								     recolours as you pick. Click a group to style it; click the empty canvas for the
+								     background colour. The card shows the canvas colour (--skyview-bg). -->
+								<div class="ss-skyprev ss-hot" class:ss-sel={selected === 'skyCanvas'}
 									role="button" tabindex="0" aria-label="canvas background"
 									onclick={() => selectEl('skyCanvas')}
 									onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectEl('skyCanvas'); } }}>
-									<button class="ss-node ss-hot" class:ss-sel={selected === 'accent'} onclick={(e) => { e.stopPropagation(); selectEl('accent'); }} aria-label="accent"></button>
-									<button class="ss-node b ss-hot" class:ss-sel={selected === 'link'} onclick={(e) => { e.stopPropagation(); selectEl('link'); }} aria-label="link"></button>
+									<!-- MIG-072 §2 — live stacked example: a node with maturity + MOC + open-note rings,
+									     drawn from the draft so the spacing/width/style controls show live. -->
+									<div class="ssn-stackdemo ss-hot" class:ss-sel={selected === 'skyNodes'}
+										role="button" tabindex="0" aria-label="stacked node example"
+										onclick={(e) => { e.stopPropagation(); selectEl('skyNodes'); }}
+										onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); selectEl('skyNodes'); } }}>
+										<canvas bind:this={stackCanvas} width="280" height="240"></canvas>
+										<div class="ssn-stack-cap">Stacked example · maturity → MOC → open-note (live spacing)</div>
+									</div>
+									<div class="ssn-group ss-hot" class:ss-sel={selected === 'skyNodes'}
+										role="button" tabindex="0" aria-label="nodes"
+										onclick={(e) => { e.stopPropagation(); selectEl('skyNodes'); }}
+										onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); selectEl('skyNodes'); } }}>
+										<div class="ssn-title">Nodes</div>
+										<div class="ssn-row">
+											<div class="ssn-cell"><span class="ssn-bub"></span><span class="ssn-cap">Default</span></div>
+											<div class="ssn-cell"><span class="ssn-bub ssn-active"></span><span class="ssn-cap">Open note</span></div>
+											<div class="ssn-cell"><span class="ssn-bub ssn-pinned"></span><span class="ssn-cap">Pinned</span></div>
+											<div class="ssn-cell"><span class="ssn-bub ssn-orphan"></span><span class="ssn-cap">Orphan</span></div>
+										</div>
+									</div>
+									<div class="ssn-group ss-hot" class:ss-sel={selected === 'skyMaturity'}
+										role="button" tabindex="0" aria-label="maturity rings"
+										onclick={(e) => { e.stopPropagation(); selectEl('skyMaturity'); }}
+										onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); selectEl('skyMaturity'); } }}>
+										<div class="ssn-title">Maturity rings</div>
+										<div class="ssn-row">
+											<div class="ssn-cell"><span class="ssn-bub ssn-mat-sapling"></span><span class="ssn-cap">Sapling</span></div>
+											<div class="ssn-cell"><span class="ssn-bub ssn-mat-evergreen"></span><span class="ssn-cap">Evergreen</span></div>
+											<div class="ssn-cell"><span class="ssn-bub ssn-mat-canonical"></span><span class="ssn-cap">Canonical</span></div>
+											<div class="ssn-cell"><span class="ssn-bub ssn-mat-wilting"></span><span class="ssn-cap">Wilting</span></div>
+										</div>
+									</div>
+									<div class="ssn-group ss-hot" class:ss-sel={selected === 'skyGlow'}
+										role="button" tabindex="0" aria-label="glows and moc"
+										onclick={(e) => { e.stopPropagation(); selectEl('skyGlow'); }}
+										onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); selectEl('skyGlow'); } }}>
+										<div class="ssn-title">Glows &amp; MOC</div>
+										<div class="ssn-row">
+											<div class="ssn-cell"><span class="ssn-bub ssn-glow-recv"></span><span class="ssn-cap">Received</span></div>
+											<div class="ssn-cell"><span class="ssn-bub ssn-glow-disc"></span><span class="ssn-cap">Discovered</span></div>
+											<div class="ssn-cell"><span class="ssn-bub ssn-moc"></span><span class="ssn-cap">MOC</span></div>
+										</div>
+									</div>
 								</div>
 							{:else if activeSurface === 'org'}
 								<div class="ss-sky">
@@ -1072,7 +1193,7 @@
 	.ss-srow-rename { flex: 1; min-width: 0; font: inherit; font-size: 12.5px; padding: 5px 8px; border: 1px solid var(--c-accent); border-radius: 6px; background: var(--c-bg); color: var(--c-text); outline: none; }
 	.ss-center { grid-area: center; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; gap: 10px; background: var(--background-secondary, #14141c); }
 	.ss-hint { font-size: 12px; color: var(--c-muted); }
-	.ss-stage { position: relative; }
+	.ss-stage { position: relative; flex: 1; align-self: stretch; min-height: 0; display: flex; align-items: center; justify-content: center; }
 	/* The mini interface — uses the REAL app vars (overridden by the draft on .ss). */
 	.ss-prev { width: 560px; height: 360px; border-radius: 10px; overflow: hidden; display: grid; grid-template-columns: 124px 1fr; grid-template-rows: 1fr auto; grid-template-areas: "side main" "status status"; background: var(--background-primary, #fbfbfa); box-shadow: 0 14px 40px rgba(0,0,0,.45); border: 1px solid rgba(0,0,0,.25); }
 	.ss-side { grid-area: side; overflow: hidden; background: var(--background-secondary, #f1f1ef); color: var(--text-normal, #2e3338); padding: 12px 10px; display: flex; flex-direction: column; gap: 8px; border: none; text-align: left; font-family: var(--font-interface-theme, inherit); }
@@ -1119,11 +1240,43 @@
 	.ss-sel { box-shadow: inset 0 0 0 2.5px #b9acff !important; }
 	.ss-hot2.ss-sel { box-shadow: none !important; outline: 2.5px solid #b9acff !important; outline-offset: 2px; }
 	.ss-prev-alt { width: 560px; height: 360px; border-radius: 10px; background: var(--background-primary, #fbfbfa); color: var(--text-normal, #2e3338); box-shadow: 0 14px 40px rgba(0,0,0,.45); border: 1px solid rgba(0,0,0,.25); display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
+	/* Sky View preview uses the FULL centre zone (it has the most to show) instead of the fixed card. */
+	.ss-prev-alt--sky { width: 100%; height: 100%; max-width: 1100px; }
 	.ss-alt-title { font-weight: 700; font-size: 15px; color: var(--interactive-accent, #7c3aed); }
 	.ss-alt-note { font-size: 11.5px; color: var(--text-normal, #6b7280); opacity: .7; max-width: 70%; text-align: center; }
 	.ss-sky { display: flex; gap: 22px; }
-	/* Sky View preview canvas — shows the chosen --skyview-bg live (fallback = panel surface). */
-	.ss-skycanvas { display: flex; gap: 22px; align-items: center; justify-content: center; padding: 30px 44px; border-radius: 12px; background: var(--skyview-bg, var(--background-secondary, #f1f1ef)); cursor: pointer; border: none; transition: background 0.12s; }
+	/* MIG-072 §2 — live Sky View preview card. Shows the chosen canvas colour (--skyview-bg) as the
+	   backdrop, with bubble groups that each read their --skyview-* var so the preview recolours live.
+	   Caption/title colours are fixed mid-tones so they stay readable on ANY canvas colour. */
+	/* 2-column grid: the live stacked example (col 1, spans all rows) beside the per-type groups (col 2),
+	   so the Nodes / Maturity / Glows&MOC groups all stay visible at once (no clip, no scroll). */
+	.ss-skyprev { align-self: stretch; flex: 1; margin: 6px 0; border-radius: 10px; background: var(--skyview-bg, var(--background-secondary, #f1f1ef)); border: 2px solid transparent; display: grid; grid-template-columns: auto 1fr; column-gap: 16px; row-gap: 6px; align-content: center; padding: 12px 16px; cursor: pointer; transition: background 0.12s; overflow-y: auto; }
+	.ss-skyprev > .ssn-group { grid-column: 2; }
+	.ssn-group { border-radius: 9px; padding: 7px 9px; border: 2px solid transparent; cursor: pointer; }
+	.ssn-group.ss-sel { border-color: #b9acff; background: rgba(185,172,255,0.10); }
+	.ssn-title { font-size: 11px; font-weight: 700; color: #8a93a6; margin-bottom: 7px; letter-spacing: 0.02em; }
+	.ssn-row { display: flex; gap: 18px; align-items: flex-start; }
+	.ssn-cell { display: flex; flex-direction: column; align-items: center; gap: 5px; width: 56px; }
+	.ssn-bub { width: 24px; height: 24px; border-radius: 50%; background: var(--skyview-node-default, #a78bfa); display: inline-block; flex: none; }
+	.ssn-cap { font-size: 9.5px; color: #9aa3b2; text-align: center; }
+	/* MIG-072 §2 — live stacked-node example (shows ring spacing/width/style as you drag the controls). */
+	.ssn-stackdemo { grid-column: 1; grid-row: 1 / 4; align-self: center; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px; border-radius: 10px; border: 2px solid transparent; cursor: pointer; }
+	.ssn-stackdemo.ss-sel { border-color: #b9acff; background: rgba(185,172,255,0.10); }
+	.ssn-stack-cap { font-size: 10px; color: #8a93a6; text-align: center; }
+	/* Ring frames use the `border` shorthand so each ring's live width + solid/dotted + colour show
+	   per-ring (--skyview-frame-<id>-width/-style + the colour var). Glows stay box-shadow (halos). */
+	.ssn-active, .ssn-pinned, .ssn-orphan,
+	.ssn-mat-sapling, .ssn-mat-evergreen, .ssn-mat-canonical, .ssn-mat-wilting, .ssn-moc { box-sizing: border-box; }
+	.ssn-active   { border: calc(var(--skyview-frame-active-width, 1.5) * 2.5px) var(--skyview-frame-active-style, solid) var(--skyview-ring-active, #333333); }
+	.ssn-pinned   { border: calc(var(--skyview-frame-pinned-width, 1.5) * 2.5px) var(--skyview-frame-pinned-style, solid) var(--skyview-ring-pinned, #06b6d4); }
+	.ssn-orphan   { border: calc(var(--skyview-frame-orphan-width, 1.5) * 2.5px) var(--skyview-frame-orphan-style, solid) var(--skyview-ring-orphan, #94a3b8); }
+	.ssn-mat-sapling   { border: calc(var(--skyview-frame-sapling-width, 1.5) * 2.5px) var(--skyview-frame-sapling-style, solid) var(--skyview-maturity-sapling, #4ade80); }
+	.ssn-mat-evergreen { border: calc(var(--skyview-frame-evergreen-width, 1.5) * 2.5px) var(--skyview-frame-evergreen-style, solid) var(--skyview-maturity-evergreen, #16a34a); }
+	.ssn-mat-canonical { border: calc(var(--skyview-frame-canonical-width, 1.5) * 2.5px) var(--skyview-frame-canonical-style, solid) var(--skyview-maturity-canonical, #f59e0b); }
+	.ssn-mat-wilting   { border: calc(var(--skyview-frame-wilting-width, 1.5) * 2.5px) var(--skyview-frame-wilting-style, solid) var(--skyview-maturity-wilting, #16a34a); }
+	.ssn-moc { border: calc(var(--skyview-frame-moc-width, 1.5) * 2.5px) var(--skyview-frame-moc-style, solid) var(--skyview-moc-ring, #f59e0b); }
+	.ssn-glow-recv { box-shadow: 0 0 11px 5px var(--skyview-glow-received, #4a9eff); }
+	.ssn-glow-disc { box-shadow: 0 0 11px 5px var(--skyview-glow-discovered, #ffb347); }
 	.ss-node { width: 34px; height: 34px; border-radius: 50%; border: none; cursor: pointer; background: var(--interactive-accent, #7c3aed); box-shadow: 0 0 0 4px color-mix(in srgb, var(--interactive-accent, #7c3aed) 25%, transparent); }
 	.ss-node.b { background: var(--link-color, #2f6fed); box-shadow: 0 0 0 4px color-mix(in srgb, var(--link-color, #2f6fed) 25%, transparent); }
 	.ss-idx { width: 70%; display: flex; flex-direction: column; gap: 8px; }

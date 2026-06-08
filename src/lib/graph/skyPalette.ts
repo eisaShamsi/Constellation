@@ -23,7 +23,6 @@ export interface SkyPalette {
 	// Nodes
 	nodeDefault: number;        // base fill when not coloured by library/folder
 	ringActive: number;         // the open note's ring
-	ringSelection: number;      // sidebar-selection ring
 	ringPinned: number;         // pinned ring
 	ringOrphan: number;         // orphan (0-link) pulsing ring
 	// Knowledge layers
@@ -63,6 +62,12 @@ export interface SkyPalette {
 	glowOriginAlpha: number;    // provenance glow opacity
 	stratumGlowAlphaUnit: number; // stratum glow opacity per level above 3
 	dimAlpha: number;           // dimmed (out-of-focus) opacity
+	// Per-ring frame stroke (MIG-072 §2 — Eisa): EACH node ring has its own width multiplier + solid/dotted.
+	// Keyed by ring id: active · pinned · orphan · sapling · evergreen · canonical · wilting · moc.
+	ringFrames: Record<string, { width: number; style: string }>;
+	// Ring-stack spacing (MIG-072 §2 mock-up): first-ring gap from the fill + gap between stacked rings.
+	ringBase: number;
+	ringGap: number;
 }
 
 type ModeDefault = { dark: number; light: number; var: string };
@@ -75,7 +80,6 @@ type ModeDefault = { dark: number; light: number; var: string };
 const SKY_COLOR_FIELDS: Record<string, ModeDefault> = {
 	nodeDefault:      { dark: 0xa78bfa, light: 0xa78bfa, var: '--skyview-node-default' },
 	ringActive:       { dark: 0xffffff, light: 0x333333, var: '--skyview-ring-active' },
-	ringSelection:    { dark: 0x7c3aed, light: 0x7c3aed, var: '--skyview-ring-selection' },
 	ringPinned:       { dark: 0x06b6d4, light: 0x06b6d4, var: '--skyview-ring-pinned' },
 	ringOrphan:       { dark: 0x64748b, light: 0x94a3b8, var: '--skyview-ring-orphan' },
 	glowReceived:     { dark: 0x4a9eff, light: 0x4a9eff, var: '--skyview-glow-received' },
@@ -116,6 +120,18 @@ const SKY_ALPHA_FIELDS: Record<string, { def: number; var: string }> = {
 };
 const EDGE_NORMAL_ALPHA_VAR = '--skyview-edge-normal-alpha';
 
+/** Per-ring frame: each ring id → its width + style var names (literal strings = the audit's consumers). */
+const FRAME_VARS: Record<string, { width: string; style: string }> = {
+	active:    { width: '--skyview-frame-active-width',    style: '--skyview-frame-active-style' },
+	pinned:    { width: '--skyview-frame-pinned-width',    style: '--skyview-frame-pinned-style' },
+	orphan:    { width: '--skyview-frame-orphan-width',    style: '--skyview-frame-orphan-style' },
+	sapling:   { width: '--skyview-frame-sapling-width',   style: '--skyview-frame-sapling-style' },
+	evergreen: { width: '--skyview-frame-evergreen-width', style: '--skyview-frame-evergreen-style' },
+	canonical: { width: '--skyview-frame-canonical-width', style: '--skyview-frame-canonical-style' },
+	wilting:   { width: '--skyview-frame-wilting-width',   style: '--skyview-frame-wilting-style' },
+	moc:       { width: '--skyview-frame-moc-width',       style: '--skyview-frame-moc-style' },
+};
+
 /** Audit tables — every Style-Setter `--skyview-*` control must appear here (its JS consumer). */
 export const SKY_PALETTE_COLOR_VARS: string[] = Object.values(SKY_COLOR_FIELDS).map((f) => f.var);
 export const SKY_PALETTE_ALPHA_VARS: string[] = [
@@ -144,6 +160,11 @@ export function makeDefaultSkyPalette(isDark: boolean): SkyPalette {
 	for (const [k, d] of Object.entries(SKY_COLOR_FIELDS)) out[k] = isDark ? d.dark : d.light;
 	out.edgeNormalAlpha = isDark ? 0.25 : 0.15;
 	for (const [k, a] of Object.entries(SKY_ALPHA_FIELDS)) out[k] = a.def;
+	const frames: Record<string, { width: number; style: string }> = {};
+	for (const id of Object.keys(FRAME_VARS)) frames[id] = { width: 1.5, style: 'solid' };
+	out.ringFrames = frames;
+	out.ringBase = 1.5;
+	out.ringGap = 2.6;
 	out.typedLinks = {};
 	return out as unknown as SkyPalette;
 }
@@ -161,7 +182,7 @@ export function resolveSkyPalette(
 	isDark: boolean,
 	typedLinks: Record<string, number>
 ): SkyPalette {
-	const p = makeDefaultSkyPalette(isDark) as unknown as Record<string, number | Record<string, number>>;
+	const p = makeDefaultSkyPalette(isDark) as unknown as Record<string, unknown>;
 	for (const [k, d] of Object.entries(SKY_COLOR_FIELDS)) {
 		const v = hexColorToInt(vars[d.var]);
 		if (v !== null) p[k] = v;
@@ -172,6 +193,21 @@ export function resolveSkyPalette(
 	}
 	const ena = parseAlpha(vars[EDGE_NORMAL_ALPHA_VAR]);
 	if (ena !== null) p.edgeNormalAlpha = ena;
+	// Node frame stroke — width multiplier + solid/dotted (consumers of these vars live here).
+	const frames: Record<string, { width: number; style: string }> = {};
+	for (const [id, vs] of Object.entries(FRAME_VARS)) {
+		const w = parseFloat(vars[vs.width]);
+		const s = vars[vs.style];
+		frames[id] = {
+			width: (!Number.isNaN(w) && w > 0) ? Math.min(5, Math.max(0.1, w)) : 1.5,
+			style: s === 'dotted' ? 'dotted' : 'solid',
+		};
+	}
+	p.ringFrames = frames;
+	const rb = parseFloat(vars['--skyview-ring-base']);
+	if (!Number.isNaN(rb) && rb >= 0) p.ringBase = Math.min(10, rb);
+	const rg = parseFloat(vars['--skyview-ring-gap']);
+	if (!Number.isNaN(rg) && rg > 0) p.ringGap = Math.min(12, rg);
 	p.typedLinks = typedLinks;
 	return p as unknown as SkyPalette;
 }

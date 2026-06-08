@@ -323,6 +323,9 @@
 	// no per-frame CSS read (Perf Rule 3). engine?. guards the pre-init window.
 	$effect(() => { engine?.setPalette(skyPalette); });
 
+	// int → #rrggbb for the legend's node-scheme swatches (the canvas uses ints; the DOM needs hex).
+	function skyHex(n: number): string { return '#' + (n & 0xffffff).toString(16).padStart(6, '0'); }
+
 	function handleSettingChange(key: keyof EngineConfig, value: any) {
 		(engineConfig as any)[key] = value;
 		engine?.updateConfig({ [key]: value });
@@ -1258,6 +1261,23 @@
 					{$t('graphView.showAll') || 'Show all'}
 				</button>
 			{/if}
+			<!-- MIG-072 §2 — node-scheme key: what each ring/glow means, shown in the user's chosen
+			     palette colours (skyHex reads the live palette). Rings render as a border; glows as a halo. -->
+			<details class="gm-legend-scheme">
+				<summary>{$t('graphView.nodeScheme') || 'Node scheme'}</summary>
+				<div class="gm-ns-grid">
+					<span class="gm-ns-item"><span class="gm-ns-bub gm-ns-ring" style="--ns:{skyHex(skyPalette.ringActive)}"></span>{$t('graphView.nsOpenNote') || 'Open note'}</span>
+					<span class="gm-ns-item"><span class="gm-ns-bub gm-ns-ring" style="--ns:{skyHex(skyPalette.ringPinned)}"></span>{$t('graphView.nsPinned') || 'Pinned'}</span>
+					<span class="gm-ns-item"><span class="gm-ns-bub gm-ns-ring" style="--ns:{skyHex(skyPalette.ringOrphan)}"></span>{$t('graphView.nsOrphan') || 'Orphan'}</span>
+					<span class="gm-ns-item"><span class="gm-ns-bub gm-ns-ring" style="--ns:{skyHex(skyPalette.mocRing)}"></span>{$t('graphView.nsMoc') || 'Map of content'}</span>
+					<span class="gm-ns-item"><span class="gm-ns-bub gm-ns-ring" style="--ns:{skyHex(skyPalette.maturitySapling)}"></span>{$t('graphView.nsSapling') || 'Sapling'}</span>
+					<span class="gm-ns-item"><span class="gm-ns-bub gm-ns-ring" style="--ns:{skyHex(skyPalette.maturityEvergreen)}"></span>{$t('graphView.nsEvergreen') || 'Evergreen'}</span>
+					<span class="gm-ns-item"><span class="gm-ns-bub gm-ns-ring" style="--ns:{skyHex(skyPalette.maturityCanonical)}"></span>{$t('graphView.nsCanonical') || 'Canonical'}</span>
+					<span class="gm-ns-item"><span class="gm-ns-bub gm-ns-ring" style="--ns:{skyHex(skyPalette.maturityWilting)}"></span>{$t('graphView.nsWilting') || 'Wilting'}</span>
+					<span class="gm-ns-item"><span class="gm-ns-bub gm-ns-glow" style="--ns:{skyHex(skyPalette.glowReceived)}"></span>{$t('graphView.nsReceived') || 'Received'}</span>
+					<span class="gm-ns-item"><span class="gm-ns-bub gm-ns-glow" style="--ns:{skyHex(skyPalette.glowDiscovered)}"></span>{$t('graphView.nsDiscovered') || 'Discovered'}</span>
+				</div>
+			</details>
 		</div>
 	{/if}
 </div>
@@ -1585,6 +1605,17 @@
 		margin-top: 2px;
 	}
 	.gm-legend-clear:hover { text-decoration: underline; }
+
+	/* MIG-072 §2 — node-scheme key (collapsible). Rings render as a border, glows as a halo, all in
+	   the user's chosen palette colours (--ns is set inline per item). */
+	.gm-legend-scheme { margin-top: 4px; border-top: 1px solid var(--background-modifier-border); padding-top: 4px; }
+	.gm-legend-scheme summary { font-size: 10px; font-weight: 600; color: var(--text-muted); cursor: pointer; padding: 2px 0; list-style-position: inside; }
+	.gm-legend-scheme summary:hover { color: var(--text-normal); }
+	.gm-ns-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 8px; padding: 4px 0 2px; }
+	.gm-ns-item { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--text-muted); white-space: nowrap; }
+	.gm-ns-bub { width: 11px; height: 11px; border-radius: 50%; background: var(--skyview-node-default, #a78bfa); display: inline-block; flex: none; box-sizing: border-box; }
+	.gm-ns-ring { border: 2px solid var(--ns); }
+	.gm-ns-glow { box-shadow: 0 0 5px 2px var(--ns); }
 
 	/* AI Intelligence tab */
 	.gm-ai-section { display: flex; flex-direction: column; gap: 6px; }
