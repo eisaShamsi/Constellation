@@ -84,13 +84,13 @@ interface EngineLink {
 
 // ─── Constants ────────────────────────────────────────────────────────
 
-const HIGHLIGHT_EDGE_COLOR = 0xf97316;
+// MIG-072 §3 — the hovered-edge highlight colour moved into the palette (this.palette.edgeHighlight).
 
 // MIG-072 — the typed-link colours moved to the Style Setter's single source: they are read from the
 // Link Types registry (`linkTypeColor()`) in the Svelte layer and pushed in via `this.palette.typedLinks`
 // (see setPalette / skyPalette.ts). The old hardcoded `TYPED_LINK_COLORS` map was a stale duplicate that
 // ignored the user's edits — removed.
-const DIM_ALPHA = 0.12;
+// MIG-072 §3 — this.palette.dimAlpha moved into the palette (this.palette.dimAlpha), user-adjustable.
 // MIG-072 §2 — MOC_RING_COLOR + MATURITY_COLORS moved into the palette (this.palette.mocRing /
 // this.maturityColor()), so the Style Setter controls them. Removed.
 const RTL_REGEX = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\u0590-\u05FF]/;
@@ -615,10 +615,18 @@ export class GraphEngine {
 		this.needsRedraw = true;
 	}
 
-	private readonly BADGE_COLORS: Record<string, number> = {
-		title: 0x3b82f6, content: 0x16a34a, tag: 0xf472b6,
-		property: 0xf59e0b, wikilink: 0x60a5fa, semantic: 0x7c3aed, structured: 0x94a3b8,
-	};
+	/** MIG-072 §3 — search-badge colour from the palette (was the hardcoded BADGE_COLORS map). */
+	private badgeColor(mt: string): number {
+		switch (mt) {
+			case 'title':    return this.palette.badgeTitle;
+			case 'content':  return this.palette.badgeContent;
+			case 'tag':      return this.palette.badgeTag;
+			case 'property': return this.palette.badgeProperty;
+			case 'wikilink': return this.palette.badgeWikilink;
+			case 'semantic': return this.palette.badgeSemantic;
+			default:         return this.palette.badgeStructured;
+		}
+	}
 	private readonly BADGE_CHARS: Record<string, string> = {
 		title: 'T', content: 'C', tag: '#', property: 'P', wikilink: 'W', semantic: 'S', structured: '?',
 	};
@@ -650,7 +658,7 @@ export class GraphEngine {
 
 			const badges: { gfx: Graphics; label: Text; color: number }[] = [];
 			for (const mt of types) {
-				const color = this.BADGE_COLORS[mt] ?? 0x94a3b8;
+				const color = this.badgeColor(mt);
 				const ch = this.BADGE_CHARS[mt] ?? '?';
 				const gfx = new Graphics();
 				this.app.stage.addChild(gfx);
@@ -1890,8 +1898,8 @@ export class GraphEngine {
 
 		// ─── Links ────
 		this.linkGfx.clear();
-		const normalEdgeColor = dark ? 0x475569 : 0xbcccdc;
-		const normalEdgeAlpha = dark ? 0.25 : 0.15;
+		const normalEdgeColor = this.palette.edgeNormal;       // MIG-072 §3
+		const normalEdgeAlpha = this.palette.edgeNormalAlpha;  // MIG-072 §3
 
 		// ─── Cluster boundaries (Phase 2, drawn first so links render on top) ────
 		let clusterPositions: Map<number, { xs: number[]; ys: number[] }> | null = null;
@@ -1925,7 +1933,7 @@ export class GraphEngine {
 					maxDy = Math.max(maxDy, Math.abs(pos.ys[i] - cy));
 				}
 				const rx = maxDx + 30, ry = maxDy + 30;
-				const color = this.clusterColors.get(cid) ?? 0x7c3aed;
+				const color = this.clusterColors.get(cid) ?? this.palette.cluster;
 				this.linkGfx.ellipse(cx, cy, rx, ry);
 				this.linkGfx.fill({ color, alpha: 0.06 });
 				this.linkGfx.stroke({ width: 1, color, alpha: 0.15 });
@@ -1984,7 +1992,7 @@ export class GraphEngine {
 			const typedColor = link.linkType ? (this.palette.typedLinks[link.linkType] ?? null) : null;
 
 			if (isNeighborEdge) {
-				const edgeColor = typedColor ?? HIGHLIGHT_EDGE_COLOR;
+				const edgeColor = typedColor ?? this.palette.edgeHighlight;
 				this.linkGfx.moveTo(sx, sy);
 				this.linkGfx.lineTo(tx, ty);
 				this.linkGfx.stroke({ width: this.config.linkThickness * 2, color: edgeColor, alpha: 0.9 });
@@ -2009,7 +2017,7 @@ export class GraphEngine {
 				// incoming (hovered is target). Lets the user read each
 				// connection's flow at a glance while hovering.
 				const isOutgoing = link.sourceIdx === hovered;
-				const midColor = isOutgoing ? 0x22c55e : 0xef4444; // green / red
+				const midColor = isOutgoing ? this.palette.arrowOut : this.palette.arrowIn; // green / red
 				const mx = (sx + tx) / 2;
 				const my = (sy + ty) / 2;
 				const midLen = 8;
@@ -2093,7 +2101,7 @@ export class GraphEngine {
 
 			// ─── Semantic Links (dashed, Phase 2) ────
 		if (this.config.showSemanticLinks && this.semanticLinks.length > 0 && hovered < 0 && !hasSearch) {
-			const semanticColor = dark ? 0x818cf8 : 0x6366f1; // indigo
+			const semanticColor = this.palette.semantic; // indigo (MIG-072 §3)
 			for (const sl of this.semanticLinks) {
 				if (this.hiddenIndices.has(sl.sourceIdx) || this.hiddenIndices.has(sl.targetIdx)) continue;
 				if (visibleSet && !visibleSet.has(sl.sourceIdx) && !visibleSet.has(sl.targetIdx)) continue;
@@ -2113,7 +2121,7 @@ export class GraphEngine {
 				}
 
 				// Draw dashed line
-				const alpha = (sl.similarity ?? 0.5) * 0.6;
+				const alpha = (sl.similarity ?? 0.5) * this.palette.semanticAlphaMul;
 				const dx = tx - sx, dy = ty - sy;
 				const len = Math.sqrt(dx * dx + dy * dy);
 				if (len < 1) continue;
@@ -2159,9 +2167,9 @@ export class GraphEngine {
 
 			// Determine alpha
 			let alpha = 1.0;
-			if (!inVisibleSet) alpha = DIM_ALPHA;
-			else if (hovered >= 0 && !isHovered && !isNeighbor) alpha = DIM_ALPHA;
-			else if (hasSearch && !this.searchMatchSet.has(i) && hovered < 0) alpha = DIM_ALPHA;
+			if (!inVisibleSet) alpha = this.palette.dimAlpha;
+			else if (hovered >= 0 && !isHovered && !isNeighbor) alpha = this.palette.dimAlpha;
+			else if (hasSearch && !this.searchMatchSet.has(i) && hovered < 0) alpha = this.palette.dimAlpha;
 
 			// Luminosity by recency: recently modified notes are brighter
 			let luminosity = 1.0;
@@ -2189,14 +2197,14 @@ export class GraphEngine {
 			// CE Phase 2: Stratum glow halo — complementary color for max contrast
 			if (n.stratum >= 4 && this.nodes.length >= 20) {
 				gfx.circle(sx, sy, r + 5 * (this.nodes.length > 1500 ? 0.5 : 1)); // PJ-10 r3: halve frame in dense mode
-				gfx.fill({ color: complementaryColor(n.color), alpha: (n.stratum - 3) * 0.08 * alpha });
+				gfx.fill({ color: complementaryColor(n.color), alpha: (n.stratum - 3) * this.palette.stratumGlowAlphaUnit * alpha });
 			}
 
 			// CE Phase 5: Provenance origin glow — blue (received) / amber (discovered)
 			if (n.originType === 'received' || n.originType === 'discovered') {
 				const oColor = n.originType === 'received' ? this.palette.glowReceived : this.palette.glowDiscovered;
 				gfx.circle(sx, sy, r + 6 * (this.nodes.length > 1500 ? 0.5 : 1)); // PJ-10 r3
-				gfx.fill({ color: oColor, alpha: 0.06 * alpha });
+				gfx.fill({ color: oColor, alpha: this.palette.glowOriginAlpha * alpha });
 			}
 
 			// Collect the applicable rings inner-to-outer, then draw them stacked with even gaps.
@@ -2205,7 +2213,7 @@ export class GraphEngine {
 				ringStack.push({ color: this.maturityColor(n.maturity), baseWidth: 1.5 * dense, alpha: (n.maturity === 'wilting' ? 0.3 : 0.7) * alpha, frameId: n.maturity });
 			}
 			if (n.outgoingCount >= 5) ringStack.push({ color: this.palette.mocRing, baseWidth: 1.5 * dense, alpha, frameId: 'moc' });
-			if (isOrphan && alpha > DIM_ALPHA) {
+			if (isOrphan && alpha > this.palette.dimAlpha) {
 				const pulse = 0.3 + 0.2 * Math.sin(Date.now() / 600 + i);
 				ringStack.push({ color: this.palette.ringOrphan, baseWidth: 1 * dense, alpha: pulse, frameId: 'orphan' });
 			}
@@ -2223,7 +2231,7 @@ export class GraphEngine {
 
 		// CE Phase 8: Trail path overlay — thick colored line connecting trail notes in order
 		if (this.trailNodeIndices.length >= 2 && this.app) {
-			const TRAIL_COLOR = 0xFF6B6B;
+			const TRAIL_COLOR = this.palette.trail; // MIG-072 §3
 			const w = this.app.screen.width;
 			const h = this.app.screen.height;
 			for (let i = 0; i < this.trailNodeIndices.length - 1; i++) {
@@ -2381,7 +2389,7 @@ export class GraphEngine {
 
 			// Dim if not relevant
 			if (hovered >= 0 && !isHovered && !isNeighbor) {
-				label.alpha = DIM_ALPHA;
+				label.alpha = this.palette.dimAlpha;
 			} else {
 				label.alpha = 1;
 			}

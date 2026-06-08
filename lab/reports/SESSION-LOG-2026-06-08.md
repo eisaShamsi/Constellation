@@ -56,6 +56,16 @@ Built iteratively against live Boss feedback:
   at §2 close.
 - Builds: `--no-bundle` (faster, avoids the NSIS file-lock); binary mtime verified before each Boss test (Stage 0).
 
+### §3 — links & overlays (Boss PASS)
+- Engine routed (expression-level edits): untyped edge + opacity, cluster, hover-edge highlight
+  (`HIGHLIGHT_EDGE_COLOR` removed), out/in direction arrows, semantic colour + opacity, stratum/origin glow
+  strength, `DIM_ALPHA` → `this.palette.dimAlpha` (const removed), trail, and the search badges (new
+  `badgeColor()` helper; `BADGE_COLORS` removed, `BADGE_CHARS` kept).
+- Controls: new **Edges** group (distinct name from the typed-link Links category) + **Overlays** group;
+  **Glow / Stratum strength** added to Glows & MOC; **Dimmed opacity** added to Nodes. Live preview samples
+  (edge lines / arrows / cluster / trail / badge chips; rows wrap). Audit **192/0**.
+- Commit (this PCS).
+
 ### Pending
-- **Commit §2** (this PCS). §3 links & overlays · §4 labels (full font, per Eisa) + gizmo · §5 LocalSkyView
-  parity · §6 audit. 14-language help batched. Orientation bump to record MIG-072 underway.
+- §4 labels (full font, per Eisa: type · size · weight · colour) + 3D gizmo · §5 LocalSkyView parity · §6 audit.
+  14-language help batched.

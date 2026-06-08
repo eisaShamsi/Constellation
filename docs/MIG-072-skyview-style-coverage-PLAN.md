@@ -95,6 +95,14 @@ one Sky View var that does NOT flow through the JS palette.
   Add to `sky` category + `PALETTE_VARS`.
 - **Verify (PAUSE):** hover → highlight edges / mid-arrows / semantic links honour new colours; search badges + trail
   recolour.
+- **As-built (2026-06-08):** engine routed via expression-level edits — `edgeNormal`/`edgeNormalAlpha` (1893),
+  `cluster` (1928), `edgeHighlight` (1987, `HIGHLIGHT_EDGE_COLOR` const removed), `arrowOut/In` (2012), `semantic`
+  + `semanticAlphaMul` (2096/2116), `stratumGlowAlphaUnit` + `glowOriginAlpha` (glows), `dimAlpha` (DIM_ALPHA const
+  removed → `this.palette.dimAlpha` everywhere), trail, and the search badges (new `badgeColor()` helper; hardcoded
+  `BADGE_COLORS` removed, `BADGE_CHARS` kept). Controls: new **Edges** group (named distinctly from the typed-link
+  Links category) + **Overlays** group; **glow/stratum strength** added to Glows & MOC; **dimmed opacity** added to
+  Nodes. Preview: live **edge line / arrow / cluster** samples + **badge chips** + **trail** in the centre preview
+  (rows now wrap). Audit **192/0**.
 
 ### §4 — Setter controls: labels (full font), gizmo & remaining *(owner-testable)*
 - `ELEMENTS`: `skyLabels` — **full font control on the Sky View text (Eisa, 2026-06-08):** colour

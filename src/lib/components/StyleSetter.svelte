@@ -344,7 +344,8 @@
 			{ label: 'Pinned style', type: 'select', var: '--skyview-frame-pinned-style', options: FRAME_STYLE_OPTS },
 			{ label: 'Orphan ring', type: 'color', var: '--skyview-ring-orphan' },
 			{ label: 'Orphan width', type: 'range', var: '--skyview-frame-orphan-width', min: 0.5, max: 3, step: 0.25, unit: '', def: 1.5 },
-			{ label: 'Orphan style', type: 'select', var: '--skyview-frame-orphan-style', options: FRAME_STYLE_OPTS } ] },
+			{ label: 'Orphan style', type: 'select', var: '--skyview-frame-orphan-style', options: FRAME_STYLE_OPTS },
+			{ label: 'Dimmed opacity', type: 'range', var: '--skyview-dim-alpha', min: 0, max: 0.5, step: 0.02, unit: '', def: 0.12 } ] },
 		// Seed has no maturity ring in the graph (by design — youngest state, no emphasis), so no Seed
 		// control here; --skyview-maturity-seed stays in the palette only as the unknown-state fallback.
 		skyMaturity: { name: 'Maturity rings', controls: [
@@ -365,7 +366,30 @@
 			{ label: 'Discovered glow', type: 'color', var: '--skyview-glow-discovered' },
 			{ label: 'Map-of-content ring', type: 'color', var: '--skyview-moc-ring' },
 			{ label: 'MOC width', type: 'range', var: '--skyview-frame-moc-width', min: 0.5, max: 3, step: 0.25, unit: '', def: 1.5 },
-			{ label: 'MOC style', type: 'select', var: '--skyview-frame-moc-style', options: FRAME_STYLE_OPTS } ] },
+			{ label: 'MOC style', type: 'select', var: '--skyview-frame-moc-style', options: FRAME_STYLE_OPTS },
+			{ label: 'Glow strength', type: 'range', var: '--skyview-glow-alpha', min: 0, max: 0.4, step: 0.02, unit: '', def: 0.06 },
+			{ label: 'Stratum glow strength', type: 'range', var: '--skyview-stratum-alpha', min: 0, max: 0.4, step: 0.02, unit: '', def: 0.08 } ] },
+		// MIG-072 §3 — links & overlays. "Edges" = the graph connections (named distinctly from the
+		// typed-link colour editor in the Links category). Untyped/hover edges, direction arrows, semantic
+		// (AI) links, cluster bubbles, + the in-scope opacity sliders.
+		skyLinks: { name: 'Edges', controls: [
+			{ label: 'Untyped edge', type: 'color', var: '--skyview-edge-normal' },
+			{ label: 'Untyped edge opacity', type: 'range', var: '--skyview-edge-normal-alpha', min: 0, max: 1, step: 0.02, unit: '', def: 0.2 },
+			{ label: 'Hover edge (untyped)', type: 'color', var: '--skyview-edge-highlight' },
+			{ label: 'Outgoing arrow', type: 'color', var: '--skyview-arrow-out' },
+			{ label: 'Incoming arrow', type: 'color', var: '--skyview-arrow-in' },
+			{ label: 'Semantic (AI) link', type: 'color', var: '--skyview-semantic' },
+			{ label: 'Semantic opacity', type: 'range', var: '--skyview-semantic-alpha', min: 0, max: 1, step: 0.02, unit: '', def: 0.6 },
+			{ label: 'Cluster bubble', type: 'color', var: '--skyview-cluster' } ] },
+		skyOverlays: { name: 'Overlays', controls: [
+			{ label: 'Trail path', type: 'color', var: '--skyview-trail' },
+			{ label: 'Badge: Title', type: 'color', var: '--skyview-badge-title' },
+			{ label: 'Badge: Content', type: 'color', var: '--skyview-badge-content' },
+			{ label: 'Badge: Tag', type: 'color', var: '--skyview-badge-tag' },
+			{ label: 'Badge: Property', type: 'color', var: '--skyview-badge-property' },
+			{ label: 'Badge: Wikilink', type: 'color', var: '--skyview-badge-wikilink' },
+			{ label: 'Badge: Semantic', type: 'color', var: '--skyview-badge-semantic' },
+			{ label: 'Badge: Structured', type: 'color', var: '--skyview-badge-structured' } ] },
 	};
 	// §3B — the left rail is organised into CATEGORIES (a.k.a. Surfaces), each grouping its
 	// elements (Eisa). Interface + Editor both preview the main app window ('editor' surface);
@@ -376,7 +400,7 @@
 		{ key: 'editor', name: 'Editor', surface: 'editor', elements: ['noteBg', 'text', 'breadcrumb', 'summary', 'accent', 'link', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'bold', 'italic', 'strike', 'code', 'quote', 'caret'] },
 		{ key: 'global', name: 'Global', surface: 'editor', elements: ['gBackgrounds', 'gTextShades', 'gStatus', 'gAccent', 'gType', 'gShape', 'fonts'] },
 		{ key: 'links', name: 'Links', surface: 'editor', elements: ['links'] },
-		{ key: 'sky', name: 'Sky View', surface: 'sky', elements: ['skyCanvas', 'skyNodes', 'skyMaturity', 'skyGlow'] },
+		{ key: 'sky', name: 'Sky View', surface: 'sky', elements: ['skyCanvas', 'skyNodes', 'skyMaturity', 'skyGlow', 'skyLinks', 'skyOverlays'] },
 		{ key: 'org', name: 'OrgChart', surface: 'org', elements: ['accent', 'link'] },
 		{ key: 'index', name: 'Index', surface: 'index', elements: ['accent'] },
 		{ key: 'cataloger', name: 'Cataloger', surface: 'cataloger', elements: ['accent'] },
@@ -885,6 +909,36 @@
 											<div class="ssn-cell"><span class="ssn-bub ssn-moc"></span><span class="ssn-cap">MOC</span></div>
 										</div>
 									</div>
+									<div class="ssn-group ss-hot" class:ss-sel={selected === 'skyLinks'}
+										role="button" tabindex="0" aria-label="edges"
+										onclick={(e) => { e.stopPropagation(); selectEl('skyLinks'); }}
+										onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); selectEl('skyLinks'); } }}>
+										<div class="ssn-title">Edges</div>
+										<div class="ssn-row">
+											<div class="ssn-cell"><span class="ssn-line ssn-edge-normal"></span><span class="ssn-cap">Untyped</span></div>
+											<div class="ssn-cell"><span class="ssn-line ssn-edge-hover"></span><span class="ssn-cap">Hover</span></div>
+											<div class="ssn-cell"><span class="ssn-line ssn-edge-semantic"></span><span class="ssn-cap">Semantic</span></div>
+											<div class="ssn-cell"><span class="ssn-arrow ssn-arrow-out">➜</span><span class="ssn-cap">Out</span></div>
+											<div class="ssn-cell"><span class="ssn-arrow ssn-arrow-in">➜</span><span class="ssn-cap">In</span></div>
+											<div class="ssn-cell"><span class="ssn-cbub ssn-cluster"></span><span class="ssn-cap">Cluster</span></div>
+										</div>
+									</div>
+									<div class="ssn-group ss-hot" class:ss-sel={selected === 'skyOverlays'}
+										role="button" tabindex="0" aria-label="overlays"
+										onclick={(e) => { e.stopPropagation(); selectEl('skyOverlays'); }}
+										onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); selectEl('skyOverlays'); } }}>
+										<div class="ssn-title">Overlays</div>
+										<div class="ssn-row">
+											<div class="ssn-cell"><span class="ssn-line ssn-trail"></span><span class="ssn-cap">Trail</span></div>
+											<div class="ssn-cell"><span class="ssn-badge ssn-b-title">T</span><span class="ssn-cap">Title</span></div>
+											<div class="ssn-cell"><span class="ssn-badge ssn-b-content">C</span><span class="ssn-cap">Content</span></div>
+											<div class="ssn-cell"><span class="ssn-badge ssn-b-tag">#</span><span class="ssn-cap">Tag</span></div>
+											<div class="ssn-cell"><span class="ssn-badge ssn-b-property">P</span><span class="ssn-cap">Property</span></div>
+											<div class="ssn-cell"><span class="ssn-badge ssn-b-wikilink">W</span><span class="ssn-cap">Wikilink</span></div>
+											<div class="ssn-cell"><span class="ssn-badge ssn-b-semantic">S</span><span class="ssn-cap">Semantic</span></div>
+											<div class="ssn-cell"><span class="ssn-badge ssn-b-structured">?</span><span class="ssn-cap">Struct.</span></div>
+										</div>
+									</div>
 								</div>
 							{:else if activeSurface === 'org'}
 								<div class="ss-sky">
@@ -1255,7 +1309,7 @@
 	.ssn-group { border-radius: 9px; padding: 7px 9px; border: 2px solid transparent; cursor: pointer; }
 	.ssn-group.ss-sel { border-color: #b9acff; background: rgba(185,172,255,0.10); }
 	.ssn-title { font-size: 11px; font-weight: 700; color: #8a93a6; margin-bottom: 7px; letter-spacing: 0.02em; }
-	.ssn-row { display: flex; gap: 18px; align-items: flex-start; }
+	.ssn-row { display: flex; flex-wrap: wrap; gap: 14px 18px; align-items: flex-start; }
 	.ssn-cell { display: flex; flex-direction: column; align-items: center; gap: 5px; width: 56px; }
 	.ssn-bub { width: 24px; height: 24px; border-radius: 50%; background: var(--skyview-node-default, #a78bfa); display: inline-block; flex: none; }
 	.ssn-cap { font-size: 9.5px; color: #9aa3b2; text-align: center; }
@@ -1277,6 +1331,24 @@
 	.ssn-moc { border: calc(var(--skyview-frame-moc-width, 1.5) * 2.5px) var(--skyview-frame-moc-style, solid) var(--skyview-moc-ring, #f59e0b); }
 	.ssn-glow-recv { box-shadow: 0 0 11px 5px var(--skyview-glow-received, #4a9eff); }
 	.ssn-glow-disc { box-shadow: 0 0 11px 5px var(--skyview-glow-discovered, #ffb347); }
+	/* §3 — edge + overlay samples (live, read the --skyview-* vars). */
+	.ssn-line { width: 30px; border-top-width: 3px; border-top-style: solid; margin: 10px 0 11px; display: inline-block; }
+	.ssn-edge-normal { border-top-color: var(--skyview-edge-normal, #bcccdc); }
+	.ssn-edge-hover { border-top-color: var(--skyview-edge-highlight, #f97316); }
+	.ssn-edge-semantic { border-top-style: dotted; border-top-color: var(--skyview-semantic, #6366f1); }
+	.ssn-trail { border-top-color: var(--skyview-trail, #ff6b6b); }
+	.ssn-arrow { font-size: 17px; font-weight: 700; line-height: 24px; }
+	.ssn-arrow-out { color: var(--skyview-arrow-out, #22c55e); }
+	.ssn-arrow-in { color: var(--skyview-arrow-in, #ef4444); display: inline-block; transform: scaleX(-1); }
+	.ssn-cbub { width: 24px; height: 16px; border-radius: 50%; background: color-mix(in srgb, var(--skyview-cluster, #7c3aed) 18%, transparent); border: 1px solid var(--skyview-cluster, #7c3aed); display: inline-block; }
+	.ssn-badge { width: 18px; height: 18px; border-radius: 3px; color: #fff; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+	.ssn-b-title { background: var(--skyview-badge-title, #3b82f6); }
+	.ssn-b-content { background: var(--skyview-badge-content, #16a34a); }
+	.ssn-b-tag { background: var(--skyview-badge-tag, #f472b6); }
+	.ssn-b-property { background: var(--skyview-badge-property, #f59e0b); }
+	.ssn-b-wikilink { background: var(--skyview-badge-wikilink, #60a5fa); }
+	.ssn-b-semantic { background: var(--skyview-badge-semantic, #7c3aed); }
+	.ssn-b-structured { background: var(--skyview-badge-structured, #94a3b8); }
 	.ss-node { width: 34px; height: 34px; border-radius: 50%; border: none; cursor: pointer; background: var(--interactive-accent, #7c3aed); box-shadow: 0 0 0 4px color-mix(in srgb, var(--interactive-accent, #7c3aed) 25%, transparent); }
 	.ss-node.b { background: var(--link-color, #2f6fed); box-shadow: 0 0 0 4px color-mix(in srgb, var(--link-color, #2f6fed) 25%, transparent); }
 	.ss-idx { width: 70%; display: flex; flex-direction: column; gap: 8px; }
