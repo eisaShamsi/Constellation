@@ -57,6 +57,7 @@
 			"universe": "Universum & Bibliotheken",
 			"editor": "Editor",
 			"skyview": "Sky View & Links",
+			"links": "Links",
 			"sight": "Sight",
 			"intelligence": "Intelligenz",
 			"security": "Sicherheit & Datenschutz",
@@ -378,6 +379,17 @@
 			"intro": "Konfiguriere, wie dein Universum Bibliotheken, Notizen und Vorlagen verwaltet.",
 			"noteDefaults": "Notiz-Standardeinstellungen",
 			"templates": "Vorlagen"
+		},
+		"links": {
+			"intro": "Wie sich Links verhalten — Formatierung, automatische Aktualisierung und der Living-Link-Lebenszyklus. (Linktypen & Farben befinden sich im Stil-Gestalter; die Panel-Sichtbarkeit findest du unter Panels.)",
+			"related": "Verwandt",
+			"editTypes": "Linktypen & Farben",
+			"editTypesDesc": "Lege deine Linktypen (die 8 Akte + deine eigenen) und ihre Farben im Stil-Gestalter fest.",
+			"editTypesBtn": "Stil-Gestalter öffnen →",
+			"dashboard": "Link-Dashboard",
+			"dashboardDesc": "Einzelne Links durchsuchen, durchlaufen, mit Vertrauen versehen und archivieren.",
+			"dashboardBtn": "Link-Dashboard öffnen →",
+			"panelVisibilityNote": "Tipp: Das Links-Panel kannst du unter Einstellungen → Panels ein- oder ausblenden."
 		},
 		"skyview": {
 			"intro": "Konfiguriere das Verhalten von Star Lines (bibliotheksübergreifende Links) und Sky View.",

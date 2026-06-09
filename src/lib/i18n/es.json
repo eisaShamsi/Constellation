@@ -57,6 +57,7 @@
 			"universe": "Universo y Bibliotecas",
 			"editor": "Editor",
 			"skyview": "Sky View y Enlaces",
+			"links": "Enlaces",
 			"sight": "Sight",
 			"intelligence": "Inteligencia",
 			"security": "Seguridad y Privacidad",
@@ -378,6 +379,17 @@
 			"intro": "Configura cómo tu universo gestiona bibliotecas, notas y plantillas.",
 			"noteDefaults": "Valores predeterminados de notas",
 			"templates": "Plantillas"
+		},
+		"links": {
+			"intro": "Cómo se comportan los enlaces: formato, actualizaciones automáticas y el ciclo de vida del Enlace Vivo. (Los tipos de enlace y sus colores están en el Style Setter; la visibilidad de los paneles está en Paneles.)",
+			"related": "Relacionado",
+			"editTypes": "Tipos de enlace y colores",
+			"editTypesDesc": "Define tus tipos de enlace (los 8 actos + los tuyos propios) y sus colores en el Style Setter.",
+			"editTypesBtn": "Abrir Style Setter →",
+			"dashboard": "Panel de enlaces",
+			"dashboardDesc": "Explora, recorre, asigna confianza y archiva enlaces individuales.",
+			"dashboardBtn": "Abrir Panel de enlaces →",
+			"panelVisibilityNote": "Consejo: muestra u oculta el panel de Enlaces en Ajustes → Paneles."
 		},
 		"skyview": {
 			"intro": "Configura el comportamiento de Star Lines (enlaces entre bibliotecas) y Sky View.",

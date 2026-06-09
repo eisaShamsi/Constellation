@@ -57,6 +57,7 @@
 			"universe": "Evren & Kütüphaneler",
 			"editor": "Editör",
 			"skyview": "Gökyüzü Görünümü & Bağlantılar",
+			"links": "Bağlantılar",
 			"sight": "Sight",
 			"intelligence": "Zeka",
 			"security": "Güvenlik & Gizlilik",
@@ -378,6 +379,17 @@
 			"intro": "Evrenizin kütüphaneleri, notları ve şablonları nasıl yönettiğini yapılandırın.",
 			"noteDefaults": "Not varsayılanları",
 			"templates": "Şablonlar"
+		},
+		"links": {
+			"intro": "Bağlantıların nasıl davrandığı — biçimlendirme, otomatik güncellemeler ve Yaşayan Bağlantı yaşam döngüsü. (Bağlantı türleri ve renkleri Stil Tasarımcısı'nda; panel görünürlüğü Paneller'de bulunur.)",
+			"related": "İlgili",
+			"editTypes": "Bağlantı türleri ve renkleri",
+			"editTypesDesc": "Bağlantı türlerinizi (8 eylem ve kendi türleriniz) ve renklerini Stil Tasarımcısı'nda tanımlayın.",
+			"editTypesBtn": "Stil Tasarımcısı'nı aç →",
+			"dashboard": "Bağlantı Panosu",
+			"dashboardDesc": "Tek tek bağlantılara göz atın, aralarında gezinin, güven düzeyi atayın ve arşivleyin.",
+			"dashboardBtn": "Bağlantı Panosu'nu aç →",
+			"panelVisibilityNote": "İpucu: Bağlantılar panelini Ayarlar → Paneller altından gösterin veya gizleyin."
 		},
 		"skyview": {
 			"intro": "Star Lines (kütüphaneler arası bağlantılar) ve Gökyüzü Görünümü davranışını yapılandırın.",

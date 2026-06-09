@@ -10,6 +10,7 @@
 			"universe": "Universe & Libraries",
 			"editor": "Editor",
 			"skyview": "Sky View & Links",
+			"links": "Links",
 			"sight": "Sight",
 			"intelligence": "Intelligence",
 			"security": "Security & Privacy",
@@ -188,6 +189,17 @@
 			"systemTrash": "System trash",
 			"trashFolder": ".trash folder",
 			"permanentDelete": "Permanently delete"
+		},
+		"links": {
+			"intro": "How links behave — formatting, auto-updates, and the Living-Link lifecycle. (Link types & colours live in the Style Setter; panel visibility lives in Panels.)",
+			"related": "Related",
+			"editTypes": "Link types & colours",
+			"editTypesDesc": "Define your link types (the 8 acts + your own) and their colours in the Style Setter.",
+			"editTypesBtn": "Open Style Setter →",
+			"dashboard": "Link Dashboard",
+			"dashboardDesc": "Browse, traverse, set confidence on, and archive individual links.",
+			"dashboardBtn": "Open Link Dashboard →",
+			"panelVisibilityNote": "Tip: show or hide the Links panel under Settings → Panels."
 		},
 		"skyview": {
 			"intro": "Configure how Star Lines (cross-library links) and the Sky View graph behave.",

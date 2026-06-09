@@ -112,7 +112,6 @@
 		{ id: 'knowledge', label: $t('settings.sections.knowledge') || 'Knowledge Management', icon: 'brain' },
 		{ id: 'index', label: $t('settings.sections.index') || 'Index', icon: 'list' },
 		{ id: 'panels', label: $t('settings.sections.panels') || 'Panels', icon: 'layout' },
-		{ id: 'appearance', label: $t('settings.sections.appearance'), icon: 'palette' },
 		// MIG-070 §C Phase 9 — the Style Setter is now a left-dock nav tab (Eisa). Clicking it opens the
 		// full-page Setter overlay (handled specially in the nav onclick — there is no inline body). This
 		// REPLACES the old 'stylesettings' tab, whose ~85 catalog controls the Setter now covers (gaps closed).
@@ -931,6 +930,17 @@
 
 					<div class="setting-item">
 						<div class="setting-info">
+							<div class="setting-name">{$t('settings.appearance.titleAlignment')}</div>
+							<div class="setting-desc">{$t('settings.appearance.titleAlignmentDesc')}</div>
+						</div>
+						<select class="setting-control" value={$appSettings.titleAlignment} onchange={(e) => updateSettings({ titleAlignment: (e.target as HTMLSelectElement).value as any })}>
+							<option value="start">{$t('settings.appearance.titleAlignStart')}</option>
+							<option value="center">{$t('settings.appearance.titleAlignCenter')}</option>
+						</select>
+					</div>
+
+					<div class="setting-item">
+						<div class="setting-info">
 							<div class="setting-name">{$t('settings.editor.readableLineLength')}</div>
 							<div class="setting-desc">{$t('settings.editor.readableLineLengthDesc')}</div>
 						</div>
@@ -1337,7 +1347,11 @@
 								value={$appSettings.linkLifecycle?.halfLifeDays ?? 60}
 								disabled={!($appSettings.linkLifecycle?.decayEnabled ?? true)}
 								oninput={(e) => updateLinkLifecycle({ halfLifeDays: parseInt((e.target as HTMLInputElement).value) })} />
-							<span class="slider-val">{$appSettings.linkLifecycle?.halfLifeDays ?? 60} {$t('settings.appearance.days') || 'days'}</span>
+							<input type="number" class="setting-control" style="width:72px; text-align:center" min="7" max="365" step="1"
+								value={$appSettings.linkLifecycle?.halfLifeDays ?? 60}
+								disabled={!($appSettings.linkLifecycle?.decayEnabled ?? true)}
+								onchange={(e) => updateLinkLifecycle({ halfLifeDays: Math.max(7, Math.min(365, parseInt((e.target as HTMLInputElement).value) || 60)) })} />
+							<span class="slider-val">{$t('settings.appearance.days') || 'days'}</span>
 						</div>
 					</div>
 
@@ -2058,23 +2072,6 @@
 					</div>
 
 				<!-- ═══ APPEARANCE ═══ -->
-				{:else if activeSection === 'appearance'}
-
-					<!-- MIG-071: theme system removed (2026-06-07) - all styling now lives in the Style Setter. -->
-
-					<div class="setting-section-heading" style="margin-top:16px">{$t('settings.appearance.general') || 'General'}</div>
-
-					<div class="setting-item">
-						<div class="setting-info">
-							<div class="setting-name">{$t('settings.appearance.titleAlignment')}</div>
-							<div class="setting-desc">{$t('settings.appearance.titleAlignmentDesc')}</div>
-						</div>
-						<select class="setting-control" value={$appSettings.titleAlignment} onchange={(e) => updateSettings({ titleAlignment: (e.target as HTMLSelectElement).value as any })}>
-							<option value="start">{$t('settings.appearance.titleAlignStart')}</option>
-							<option value="center">{$t('settings.appearance.titleAlignCenter')}</option>
-						</select>
-					</div>
-
 				<!-- ═══ STYLE SETTINGS ═══ -->
 				{:else if activeSection === 'iconoverrides'}
 					<IconOverrideSettings />

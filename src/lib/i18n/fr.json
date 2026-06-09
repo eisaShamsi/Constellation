@@ -57,6 +57,7 @@
 			"universe": "Univers & Bibliothèques",
 			"editor": "Éditeur",
 			"skyview": "Sky View & Liens",
+			"links": "Liens",
 			"sight": "Sight",
 			"intelligence": "Intelligence",
 			"security": "Sécurité & Confidentialité",
@@ -378,6 +379,17 @@
 			"intro": "Configurez comment votre univers gère les bibliothèques, notes et modèles.",
 			"noteDefaults": "Paramètres par défaut des notes",
 			"templates": "Modèles"
+		},
+		"links": {
+			"intro": "Comment les liens se comportent — mise en forme, mises à jour automatiques et cycle de vie des liens vivants. (Les types de lien et leurs couleurs se trouvent dans le Concepteur de style ; la visibilité des panneaux se règle dans Panneaux.)",
+			"related": "Connexe",
+			"editTypes": "Types de lien & couleurs",
+			"editTypesDesc": "Définissez vos types de lien (les 8 actes + les vôtres) et leurs couleurs dans le Concepteur de style.",
+			"editTypesBtn": "Ouvrir le Concepteur de style →",
+			"dashboard": "Tableau de bord des liens",
+			"dashboardDesc": "Parcourez, traversez, attribuez une confiance et archivez les liens individuellement.",
+			"dashboardBtn": "Ouvrir le Tableau de bord des liens →",
+			"panelVisibilityNote": "Astuce : affichez ou masquez le panneau Liens sous Paramètres → Panneaux."
 		},
 		"skyview": {
 			"intro": "Configurez le comportement des Star Lines (liens inter-bibliothèques) et de Sky View.",
