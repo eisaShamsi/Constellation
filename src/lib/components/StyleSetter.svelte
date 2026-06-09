@@ -820,19 +820,19 @@
 			<div class="ss-inspect-hl" style="left:{inspectRect.x}px; top:{inspectRect.y}px; width:{inspectRect.w}px; height:{inspectRect.h}px"><span class="ss-inspect-label">{inspectRect.label}</span></div>
 		{/if}
 	{/if}
-	<div class="ss-overlay" class:ss-overlay--live={twoZone} class:ss-overlay--inspect={inspecting} role="dialog" aria-label="Style Setter">
+	<div class="ss-overlay" class:ss-overlay--live={twoZone} class:ss-overlay--inspect={inspecting} role="dialog" aria-label={L('Style Setter')}>
 		<div class="ss" class:ss--twozone={twoZone} style="width:{panelW}px;height:{panelH}px;{draftStyle}">
 			<!-- Top bar -->
 			<header class="ss-top">
 				<span class="ss-brand"><span class="ss-star">✦</span> {L('Style Setter')}</span>
-				{#if twoZone}<span class="ss-livetag" title="Your edits show on the real app live — Keep to save, Discard to revert">● {L('live')}</span>{/if}
+				{#if twoZone}<span class="ss-livetag" title={L('Your edits show on the real app live — Keep to save, Discard to revert')}>● {L('live')}</span>{/if}
 				<span class="ss-draft">{L('draft')}: <input class="ss-dname" bind:value={draftName} /></span>
 				<span class="ss-spacer"></span>
-				<button class="ss-btn" class:ss-primary={inspecting} onclick={toggleInspect} title="Inspect — hover the real app and click a part to jump to its controls">⌖ {L('Inspect')}</button>
-				<button class="ss-btn" onclick={resetDraft} title="Clear all overrides — back to the theme default">{L('Reset')}</button>
-				<button class="ss-btn" onclick={discard} title="Abandon unsaved changes (the real app reverts)">{L('Discard')}</button>
-				<button class="ss-btn ss-primary" onclick={keep} title="Save this look (per-Universe)">{L('Keep')}</button>
-				<button class="ss-btn ss-icon" aria-label="Close" onclick={closeStyleSetter}>✕</button>
+				<button class="ss-btn" class:ss-primary={inspecting} onclick={toggleInspect} title={L('Inspect — hover the real app and click a part to jump to its controls')}>⌖ {L('Inspect')}</button>
+				<button class="ss-btn" onclick={resetDraft} title={L('Clear all overrides — back to the theme default')}>{L('Reset')}</button>
+				<button class="ss-btn" onclick={discard} title={L('Abandon unsaved changes (the real app reverts)')}>{L('Discard')}</button>
+				<button class="ss-btn ss-primary" onclick={keep} title={L('Save this look (per-Universe)')}>{L('Keep')}</button>
+				<button class="ss-btn ss-icon" aria-label={L('Close')} onclick={closeStyleSetter}>✕</button>
 			</header>
 
 			<!-- Left rail: surfaces + themes -->
@@ -856,16 +856,16 @@
 							<div class="ss-srow-wrap">
 								<input class="ss-srow-rename" bind:value={renameValue} dir="auto"
 									onkeydown={(e) => { if (e.key === 'Enter') confirmRename(); if (e.key === 'Escape') renamingId = null; }} />
-								<button class="ss-srow-ic" title="Save name" aria-label="Save name" onclick={confirmRename}>✓</button>
+								<button class="ss-srow-ic" title={L('Save name')} aria-label={L('Save name')} onclick={confirmRename}>✓</button>
 							</div>
 						{:else}
 							<div class="ss-srow-wrap">
 								<button class="ss-srow" onclick={() => applyStyle(p)} title={'Apply ' + p.name} dir="auto">{p.name}</button>
 								<span class="ss-srow-actions">
-									<button class="ss-srow-ic" class:ss-srow-ok={updatedId === p.id} title="Update this style with the current look" aria-label="Update" onclick={() => updateStyle(p)}>{updatedId === p.id ? '✓' : '↻'}</button>
-									<button class="ss-srow-ic" title="Export" aria-label="Export" onclick={() => exportPreset(p)}>⤓</button>
-									<button class="ss-srow-ic" title="Rename" aria-label="Rename" onclick={() => startRename(p)}>✎</button>
-									<button class="ss-srow-ic ss-srow-del" title="Delete" aria-label="Delete" onclick={() => removeStyle(p)}>✕</button>
+									<button class="ss-srow-ic" class:ss-srow-ok={updatedId === p.id} title={L('Update this style with the current look')} aria-label={L('Update')} onclick={() => updateStyle(p)}>{updatedId === p.id ? '✓' : '↻'}</button>
+									<button class="ss-srow-ic" title={L('Export')} aria-label={L('Export')} onclick={() => exportPreset(p)}>⤓</button>
+									<button class="ss-srow-ic" title={L('Rename')} aria-label={L('Rename')} onclick={() => startRename(p)}>✎</button>
+									<button class="ss-srow-ic ss-srow-del" title={L('Delete')} aria-label={L('Delete')} onclick={() => removeStyle(p)}>✕</button>
 								</span>
 							</div>
 						{/if}
@@ -888,20 +888,20 @@
 								     recolours as you pick. Click a group to style it; click the empty canvas for the
 								     background colour. The card shows the canvas colour (--skyview-bg). -->
 								<div class="ss-skyprev ss-hot" class:ss-sel={selected === 'skyCanvas'}
-									role="button" tabindex="0" aria-label="canvas background"
+									role="button" tabindex="0" aria-label={L('canvas background')}
 									onclick={() => selectEl('skyCanvas')}
 									onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectEl('skyCanvas'); } }}>
 									<!-- MIG-072 §2 — live stacked example: a node with maturity + MOC + open-note rings,
 									     drawn from the draft so the spacing/width/style controls show live. -->
 									<div class="ssn-stackdemo ss-hot" class:ss-sel={selected === 'skyNodes'}
-										role="button" tabindex="0" aria-label="stacked node example"
+										role="button" tabindex="0" aria-label={L('stacked node example')}
 										onclick={(e) => { e.stopPropagation(); selectEl('skyNodes'); }}
 										onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); selectEl('skyNodes'); } }}>
 										<canvas bind:this={stackCanvas} width="280" height="240"></canvas>
 										<div class="ssn-stack-cap">{L('Stacked example · maturity → MOC → open-note (live spacing)')}</div>
 									</div>
 									<div class="ssn-group ss-hot" class:ss-sel={selected === 'skyNodes'}
-										role="button" tabindex="0" aria-label="nodes"
+										role="button" tabindex="0" aria-label={L('nodes')}
 										onclick={(e) => { e.stopPropagation(); selectEl('skyNodes'); }}
 										onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); selectEl('skyNodes'); } }}>
 										<div class="ssn-title">{L('Nodes')}</div>
@@ -913,7 +913,7 @@
 										</div>
 									</div>
 									<div class="ssn-group ss-hot" class:ss-sel={selected === 'skyMaturity'}
-										role="button" tabindex="0" aria-label="maturity rings"
+										role="button" tabindex="0" aria-label={L('maturity rings')}
 										onclick={(e) => { e.stopPropagation(); selectEl('skyMaturity'); }}
 										onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); selectEl('skyMaturity'); } }}>
 										<div class="ssn-title">{L('Maturity rings')}</div>
@@ -925,7 +925,7 @@
 										</div>
 									</div>
 									<div class="ssn-group ss-hot" class:ss-sel={selected === 'skyGlow'}
-										role="button" tabindex="0" aria-label="glows and moc"
+										role="button" tabindex="0" aria-label={L('glows and moc')}
 										onclick={(e) => { e.stopPropagation(); selectEl('skyGlow'); }}
 										onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); selectEl('skyGlow'); } }}>
 										<div class="ssn-title">{L('Glows & MOC')}</div>
@@ -936,7 +936,7 @@
 										</div>
 									</div>
 									<div class="ssn-group ss-hot" class:ss-sel={selected === 'skyLinks'}
-										role="button" tabindex="0" aria-label="edges"
+										role="button" tabindex="0" aria-label={L('edges')}
 										onclick={(e) => { e.stopPropagation(); selectEl('skyLinks'); }}
 										onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); selectEl('skyLinks'); } }}>
 										<div class="ssn-title">{L('Edges')}</div>
@@ -950,7 +950,7 @@
 										</div>
 									</div>
 									<div class="ssn-group ss-hot" class:ss-sel={selected === 'skyOverlays'}
-										role="button" tabindex="0" aria-label="overlays"
+										role="button" tabindex="0" aria-label={L('overlays')}
 										onclick={(e) => { e.stopPropagation(); selectEl('skyOverlays'); }}
 										onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); selectEl('skyOverlays'); } }}>
 										<div class="ssn-title">{L('Overlays')}</div>
@@ -966,14 +966,14 @@
 										</div>
 									</div>
 									<div class="ssn-group ss-hot" class:ss-sel={selected === 'skyLabels'}
-										role="button" tabindex="0" aria-label="labels"
+										role="button" tabindex="0" aria-label={L('labels')}
 										onclick={(e) => { e.stopPropagation(); selectEl('skyLabels'); }}
 										onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); selectEl('skyLabels'); } }}>
 										<div class="ssn-title">{L('Labels')}</div>
 										<div class="ssn-row"><span class="ssn-labelsample">{L('Apple (Fruit)')}</span></div>
 									</div>
 									<div class="ssn-group ss-hot" class:ss-sel={selected === 'skyGizmo'}
-										role="button" tabindex="0" aria-label="3d gizmo"
+										role="button" tabindex="0" aria-label={L('3d gizmo')}
 										onclick={(e) => { e.stopPropagation(); selectEl('skyGizmo'); }}
 										onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); selectEl('skyGizmo'); } }}>
 										<div class="ssn-title">{L('3D gizmo')}</div>
@@ -987,12 +987,12 @@
 								</div>
 							{:else if activeSurface === 'org'}
 								<div class="ss-sky">
-									<button class="ss-node ss-hot" class:ss-sel={selected === 'accent'} onclick={() => selectEl('accent')} aria-label="accent"></button>
-									<button class="ss-node b ss-hot" class:ss-sel={selected === 'link'} onclick={() => selectEl('link')} aria-label="link"></button>
+									<button class="ss-node ss-hot" class:ss-sel={selected === 'accent'} onclick={() => selectEl('accent')} aria-label={L('accent')}></button>
+									<button class="ss-node b ss-hot" class:ss-sel={selected === 'link'} onclick={() => selectEl('link')} aria-label={L('link')}></button>
 								</div>
 							{:else if activeSurface === 'index'}
 								<div class="ss-idx">
-									<div class="ss-irow"><button class="ss-ibar ss-hot" style="width:70%" class:ss-sel={selected === 'accent'} onclick={() => selectEl('accent')} aria-label="accent"></button> apple</div>
+									<div class="ss-irow"><button class="ss-ibar ss-hot" style="width:70%" class:ss-sel={selected === 'accent'} onclick={() => selectEl('accent')} aria-label={L('accent')}></button> apple</div>
 									<div class="ss-irow"><span class="ss-ibar" style="width:45%"></span> banana</div>
 									<div class="ss-irow"><span class="ss-ibar" style="width:30%"></span> carrot</div>
 								</div>
@@ -1151,7 +1151,7 @@
 					{#if ($appSettings.styleSwatches ?? []).length && sel.controls.some((c) => c.type === 'color')}
 						<div class="ss-rlabel ss-rlabel-row">
 							<span>{L('Saved colours')}</span>
-							<button class="ss-manage-tog" class:active={managingSwatches} onclick={() => { managingSwatches = !managingSwatches; confirmDeleteHex = null; }} title="Name, rename or remove saved colours">{managingSwatches ? L('Done') : L('Manage')}</button>
+							<button class="ss-manage-tog" class:active={managingSwatches} onclick={() => { managingSwatches = !managingSwatches; confirmDeleteHex = null; }} title={L('Name, rename or remove saved colours')}>{managingSwatches ? L('Done') : L('Manage')}</button>
 						</div>
 						<div class="ss-swatches">
 							{#each $appSettings.styleSwatches as sw (sw.hex)}
@@ -1175,7 +1175,7 @@
 											<span class="ss-swatch-chip" style="background:{sw.hex}" title={sw.hex}></span>
 											<input class="ss-swatch-name" placeholder={sw.hex} value={sw.name ?? ''} dir="auto"
 												onchange={(e) => renameStyleSwatch(sw.hex, (e.currentTarget as HTMLInputElement).value)} />
-											<button class="ss-srow-ic ss-srow-del" title="Remove colour" aria-label="Remove colour" onclick={() => confirmDeleteHex = sw.hex}>✕</button>
+											<button class="ss-srow-ic ss-srow-del" title={L('Remove colour')} aria-label={L('Remove colour')} onclick={() => confirmDeleteHex = sw.hex}>✕</button>
 										</div>
 									{/if}
 								{/each}
@@ -1187,7 +1187,7 @@
 				{/if}
 			</aside>
 			<!-- §C redesign — corner grip to resize the whole panel (size persists across opens). -->
-			<button class="ss-resize" aria-label="Resize panel" title="Drag to resize" onpointerdown={startResize}></button>
+			<button class="ss-resize" aria-label={L('Resize panel')} title={L('Drag to resize')} onpointerdown={startResize}></button>
 		</div>
 	</div>
 {/if}
