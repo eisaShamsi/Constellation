@@ -1,5 +1,14 @@
 # Constellation Link Dashboard — Concept Paper v1.0
 
+> **⚠️ SUPERSEDED 2026-06-09 by `Constellation-Circulatory-System-Concept-Paper-v1.0.md`.** This was the
+> first draft. Cross-checking it against the other core-plugin concept papers (Cognitive-Engine One-Picture,
+> CNS, the Base, the Cataloger, 360.3D, Sight Subsystem) revealed two errors it makes: (1) it conflates the
+> authoring-side *"Link Dashboard"* archive panel with the diagnostic instrument; (2) it tries to own
+> *topology* (Most-Connected / hubs) that belongs to **CNS**. The instrument the project actually lacks is the
+> **circulatory** complement to CNS — `weight / decay / dormancy / lifecycle / confidence-flow / archive` — now
+> defined as **CCS (Constellation Circulatory System / الجهاز الدوري)**. Preserved here as the historical first
+> attempt; read CCS for the canonical concept.
+
 **Drafted 2026-06-09.** Status: **first concept of record.** Before this paper there was no concept, rule,
 help article, or design doc for the Link Dashboard — only one passing line in the orientation ("Archive =
 soft-delete, reversible via the Link Dashboard's Archived tab"). It grew as a right-sidebar panel without a

@@ -140,3 +140,46 @@ throughout): defines it as the diagnostic instrument for the Living-Link graph a
 reads (Load-bearing / Erosion / Isolation / Curation); §6 what-it-is-NOT vs Backlinks/360.3D/Sky View/Index/
 Cataloger/Map; §7 the home rule (first-class surface, never a note panel); §11 five questions for the Owner
 (home · section set · right-sidebar remnant · name · MIG-007 hub button). Awaiting ratification → v1.1 → MIG.
+
+## §LINKS-CORPUS + COMPLEMENTARITY CROSS-CHECK → CCS reconception (Eisa, 2026-06-09)
+
+**Eisa challenge 1:** "Have you read all links/typed-links docs?" — Honest: NO. Read the full corpus this turn:
+`Living-Link-Concept-Paper-v1.0` (ratified concept), `CONSTELLATION-KNOWLEDGE-FORMULATION` (philosophy),
+`Living-Links-Guide-v1.0`, `USER-DEFINABLE-LINK-TYPES-ARCHITECT` (the registry / "living vocabulary"),
+`LINKTYPE-SYNTAX-CORRECTION-ARCHITECT`. Key concepts my v1.0 Dashboard draft had MISSED: **untyped link = the
+question / live edge of inquiry** (not "broken"); **facts rest, formulations inquire** (never nag a fact;
+signals scope to the formulation layer); **`contradicts` = the engine**; the 8 acts + canonical order; the
+**living-vocabulary registry** (8 + custom). Plus the diagnostic-instrument canon (§V.3) + P5 "knowledge
+health dashboard / circulatory health."
+
+**Eisa challenge 2:** cross-check against the OTHER core-plugin concept papers — each function must
+*complement* the others to draw one clear picture and *formulate* (not manage). Read (self + 5 parallel
+agents): Cognitive-Engine One-Picture (the unifying frame), master Concept Paper, CECE/Cataloger, Base v2.0,
+NSC v2.0, 360.3D, Stages v1.2, Sight Subsystem, CNS (help + MIG-061).
+
+**The frame:** Cognitive Engine = one process (Five Acts) → FOUR questions mirrored back
+(**Development / Altitude / Origin / Connection**) → destination (Conviction). Instruments: Development =
+Stages/maturity · Altitude = stratum (Sky View size, 360.3D vertical) · Origin = **the Cataloger** · Connection
+= typed links + **CNS** + 360.3D (per-note) + Sky View (spatial). Cross-cutting: the **Base** (survey/compare
+table, threads into deep-read surfaces) · **NSC** (aboutness service) · Index. Sight/Map = disabled Wings.
+
+**The finding (ratified by Eisa):** the founding metaphor is a **dual** system — Nervous + Circulatory.
+**CNS** is the **Nervous** register (topology: communities/centrality/bridges/structural-blind-spots,
+ignores time/weight/traversal). The **Circulatory** register (weight/decay/dormancy/traversal/lifecycle/
+confidence-flow) is **architecturally present but had no universe-scale home** — the open slot. The new
+instrument is that circulatory complement: **CCS — Constellation Circulatory System (الجهاز الدوري)**, peer of
+CNS. *("CNS never tells you a load-bearing bridge is going stale; CCS never tells you a worn link is a
+bridge.")* Also corrected: the name "Link Dashboard" is **already** the authoring archive panel (Sight
+Subsystem §3.2/§7) — so the diagnostic needs its own identity; my v1.0 draft's "Most-Connected" section is
+**CNS's topology**, not CCS's.
+
+**Eisa ratified:** (1) placement = circulatory complement to CNS; (2) name = **CCS**.
+
+**Delivered:** `docs/Constellation-Circulatory-System-Concept-Paper-v1.0.md` (CCS v1.0) — the dual-system
+completion; CCS-vs-CNS boundary table; the circulatory diagnostics (ECG/pressure/decay/blood-test/lifecycle/
+autopsy/typed-balance); the canon guardrails (untyped-as-question, facts-rest, contradicts-as-engine,
+registry-driven); what-it-is-NOT vs every sibling; left-dock Core-Plugin home; §13 four owner questions
+(subsume Knowledge-Health? · keep a slim authoring panel? · section set · re-point MIG-007 hub). The
+`Link-Dashboard-Concept-Paper-v1.0` is banner-marked **SUPERSEDED by CCS**. Awaiting §13 answers → v1.1 → MIG.
+
+**MIG-007 still PAUSED at §6 close-out**, shippable; the hub button now re-points to CCS when CCS ships.
