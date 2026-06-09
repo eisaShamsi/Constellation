@@ -1577,6 +1577,8 @@
 		"characters": "characters"
 	},
 	"graphView": {
+		"nsSeed": "Seed",
+		"stratum": "Stratum",
 		"nodeScheme": "Node scheme",
 		"nsOpenNote": "Open note",
 		"nsPinned": "Pinned",

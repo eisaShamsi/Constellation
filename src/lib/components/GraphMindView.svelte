@@ -292,6 +292,25 @@
 		if (colorBy === 'maturity') return maturityColorMap;
 		return libraryColorMap; // 'library' default
 	});
+	// Legend label i18n — translate ONLY the data-vocabulary keys (maturity states, stratum levels);
+	// library/folder names are user data and stay verbatim. Reuses the node-scheme graphView.ns* keys.
+	function legendLabel(name: string): string {
+		if (colorBy === 'maturity') {
+			const m: Record<string, string> = {
+				seed: $t('graphView.nsSeed') || 'Seed',
+				sapling: $t('graphView.nsSapling') || 'Sapling',
+				evergreen: $t('graphView.nsEvergreen') || 'Evergreen',
+				canonical: $t('graphView.nsCanonical') || 'Canonical',
+				wilting: $t('graphView.nsWilting') || 'Wilting',
+			};
+			return m[name] || name;
+		}
+		if (colorBy === 'stratum') {
+			const s = /^Stratum (\d+)$/.exec(name);
+			if (s) return ($t('graphView.stratum') || 'Stratum') + ' ' + s[1];
+		}
+		return name;
+	}
 
 	let containerEl: HTMLDivElement;
 	let engine: GraphEngine | null = null;
@@ -1209,7 +1228,8 @@
 					}
 					return true;
 				}) as [name, color]}
-					{@const nameIsRTL = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\u0590-\u05FF]/.test(name)}
+					{@const displayName = legendLabel(name)}
+					{@const nameIsRTL = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\u0590-\u05FF]/.test(displayName)}
 					{@const isHidden = hiddenGroups.has(name)}
 					{@const showCheckbox = colorBy === 'library' || colorBy === 'folder'}
 					<label class="gm-legend-item" style:flex-direction={nameIsRTL ? 'row-reverse' : 'row'} style:opacity={showCheckbox && isHidden ? 0.4 : 1}>
@@ -1228,7 +1248,7 @@
 								}} />
 						{/if}
 						<span class="gm-legend-dot" style="background:{color}"></span>
-						<span class="gm-legend-name" dir="auto" style:text-align={nameIsRTL ? 'right' : 'left'}>{name}</span>
+						<span class="gm-legend-name" dir="auto" style:text-align={nameIsRTL ? 'right' : 'left'}>{displayName}</span>
 					</label>
 				{/each}
 				{#if Object.keys(activeColorMap).length === 0}

@@ -1566,6 +1566,8 @@
 		"characters": "أحرف"
 	},
 	"graphView": {
+		"nsSeed": "بذرة",
+		"stratum": "المستوى",
 		"nodeScheme": "مفتاح العقد",
 		"nsOpenNote": "ملاحظة مفتوحة",
 		"nsPinned": "مثبت",
