@@ -2947,6 +2947,7 @@
 	}
 
 
+
 ,
 	"styleSetter": {
 		"labels": {
@@ -2998,6 +2999,7 @@
 			"cataloger": "Catalogador",
 			"centre": "Centro",
 			"centre_dot": "Punto central",
+			"centre_zone_background": "Fondo de la zona central",
 			"cjk_font": "Fuente CJK (中日韓)",
 			"cluster": "Grupo",
 			"cluster_bubble": "Burbuja de grupo",

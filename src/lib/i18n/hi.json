@@ -2947,6 +2947,7 @@
 	}
 
 
+
 ,
 	"styleSetter": {
 		"labels": {
@@ -2998,6 +2999,7 @@
 			"cataloger": "वर्गीकारक",
 			"centre": "केंद्र",
 			"centre_dot": "केंद्र बिंदु",
+			"centre_zone_background": "केंद्रीय क्षेत्र की पृष्ठभूमि",
 			"cjk_font": "CJK फ़ॉन्ट (中日韓)",
 			"cluster": "क्लस्टर",
 			"cluster_bubble": "क्लस्टर बबल",

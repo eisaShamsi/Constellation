@@ -2947,6 +2947,7 @@
 	}
 
 
+
 ,
 	"styleSetter": {
 		"labels": {
@@ -2998,6 +2999,7 @@
 			"cataloger": "分類器",
 			"centre": "中心",
 			"centre_dot": "中心のドット",
+			"centre_zone_background": "中央領域の背景",
 			"cjk_font": "CJK フォント（中日韓）",
 			"cluster": "クラスター",
 			"cluster_bubble": "クラスターバブル",

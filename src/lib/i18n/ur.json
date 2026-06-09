@@ -2947,6 +2947,7 @@
 	}
 
 
+
 ,
 	"styleSetter": {
 		"labels": {
@@ -2998,6 +2999,7 @@
 			"cataloger": "کیٹلاگر",
 			"centre": "مرکز",
 			"centre_dot": "مرکزی نقطہ",
+			"centre_zone_background": "مرکزی حصے کا پس منظر",
 			"cjk_font": "CJK فونٹ (中日韓)",
 			"cluster": "کلسٹر",
 			"cluster_bubble": "کلسٹر بلبلہ",

@@ -3152,6 +3152,7 @@
 	}
 
 
+
 ,
 	"styleSetter": {
 		"labels": {
@@ -3203,6 +3204,7 @@
 			"cataloger": "المُصنِّف",
 			"centre": "المركز",
 			"centre_dot": "نقطة المركز",
+			"centre_zone_background": "خلفية المنطقة الوسطى",
 			"cjk_font": "خط CJK (中日韓)",
 			"cluster": "عنقود",
 			"cluster_bubble": "فقاعة العنقود",

@@ -2947,6 +2947,7 @@
 	}
 
 
+
 ,
 	"styleSetter": {
 		"labels": {
@@ -2998,6 +2999,7 @@
 			"cataloger": "분류기",
 			"centre": "중심",
 			"centre_dot": "중심 점",
+			"centre_zone_background": "중앙 영역 배경",
 			"cjk_font": "CJK 글꼴 (中日韓)",
 			"cluster": "클러스터",
 			"cluster_bubble": "클러스터 버블",

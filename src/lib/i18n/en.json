@@ -3154,6 +3154,7 @@
 	}
 
 
+
 ,
 	"styleSetter": {
 		"labels": {
@@ -3205,6 +3206,7 @@
 			"cataloger": "Cataloger",
 			"centre": "Centre",
 			"centre_dot": "Centre dot",
+			"centre_zone_background": "Centre zone background",
 			"cjk_font": "CJK font (中日韓)",
 			"cluster": "Cluster",
 			"cluster_bubble": "Cluster bubble",

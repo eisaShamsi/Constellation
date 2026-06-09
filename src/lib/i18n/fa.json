@@ -2947,6 +2947,7 @@
 	}
 
 
+
 ,
 	"styleSetter": {
 		"labels": {
@@ -2998,6 +2999,7 @@
 			"cataloger": "دسته‌بند",
 			"centre": "مرکز",
 			"centre_dot": "نقطهٔ مرکزی",
+			"centre_zone_background": "پس‌زمینهٔ ناحیهٔ مرکزی",
 			"cjk_font": "فونت CJK (中日韓)",
 			"cluster": "خوشه",
 			"cluster_bubble": "حباب خوشه",

@@ -121,7 +121,8 @@
 		interface: { name: 'Interface', controls: [
 			{ label: 'Interface text colour', type: 'color', var: '--text-normal' },
 			{ label: 'Interface font', type: 'select', var: '--font-interface-theme', options: FONTS },
-			{ label: 'Panel background', type: 'color', var: '--background-secondary' } ] },
+			{ label: 'Panel background', type: 'color', var: '--background-secondary' },
+			{ label: 'Centre zone background', type: 'color', var: '--center-zone-bg' } ] },
 		accent:  { name: 'Accent',   controls: [{ label: 'Accent colour', type: 'color', var: '--interactive-accent' }] },
 		// §3B — File tree (#6), full set. Background = the Interface panel background (shared);
 		// these are the tree-specific knobs. Row separators default to 0 width (invisible).
@@ -1248,7 +1249,7 @@
 	.ss-icon { padding: 6px 9px; }
 	.ss-left { grid-area: left; border-right: 1px solid var(--c-border); background: var(--c-surface); display: flex; flex-direction: column; padding: 12px 10px; gap: 5px; overflow-y: auto; }
 	.ss-rlabel { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--c-muted); margin: 6px 4px 2px; }
-	.ss-surface { display: flex; align-items: center; gap: 9px; padding: 7px 9px; border-radius: 8px; cursor: pointer; font: inherit; font-size: 13.5px; color: var(--c-text); background: none; border: none; text-align: left; }
+	.ss-surface { display: flex; align-items: center; gap: 9px; padding: 7px 9px; border-radius: 8px; cursor: pointer; font: inherit; font-size: 13.5px; color: var(--c-text); background: none; border: none; text-align: start; }
 	.ss-surface:hover { background: var(--c-surface2); }
 	.ss-surface.active { background: color-mix(in srgb, var(--c-accent) 22%, transparent); color: #fff; }
 	.ss-sdot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: .55; flex: none; }
@@ -1294,7 +1295,7 @@
 	.ss-stage { position: relative; flex: 1; align-self: stretch; min-height: 0; display: flex; align-items: center; justify-content: center; }
 	/* The mini interface — uses the REAL app vars (overridden by the draft on .ss). */
 	.ss-prev { width: 560px; height: 360px; border-radius: 10px; overflow: hidden; display: grid; grid-template-columns: 124px 1fr; grid-template-rows: 1fr auto; grid-template-areas: "side main" "status status"; background: var(--background-primary, #fbfbfa); box-shadow: 0 14px 40px rgba(0,0,0,.45); border: 1px solid rgba(0,0,0,.25); }
-	.ss-side { grid-area: side; overflow: hidden; background: var(--background-secondary, #f1f1ef); color: var(--text-normal, #2e3338); padding: 12px 10px; display: flex; flex-direction: column; gap: 8px; border: none; text-align: left; font-family: var(--font-interface-theme, inherit); }
+	.ss-side { grid-area: side; overflow: hidden; background: var(--background-secondary, #f1f1ef); color: var(--text-normal, #2e3338); padding: 12px 10px; display: flex; flex-direction: column; gap: 8px; border: none; text-align: start; font-family: var(--font-interface-theme, inherit); }
 	.ss-file { font-size: var(--ft-master-font-size, 11.5px); color: var(--ft-master-color, var(--text-normal, #2e3338)); font-weight: var(--ft-master-weight, 400); font-family: var(--ft-master-font-family, inherit); padding: var(--ft-master-row-padding-y, 1px) 4px; border-radius: var(--ft-row-radius, 3px); border-bottom: var(--ft-border-width, 0px) var(--ft-border-style, solid) var(--ft-border-color, var(--background-modifier-border, #ddd)); display: flex; align-items: center; gap: 6px; } .ss-file.dim { opacity: .55; }
 	/* §3B G1 — sidebar row types; each reads its own --ft-{type}-* with the File-tree master as fallback. */
 	.ss-lib { font-size: var(--ft-library-font-size, var(--ft-master-font-size, 11.5px)); color: var(--ft-library-color, var(--ft-master-color, var(--text-normal, #2e3338))); font-weight: var(--ft-library-weight, var(--ft-master-weight, 600)); font-family: var(--ft-library-font-family, var(--ft-master-font-family, inherit)); display: flex; align-items: center; gap: 6px; }
@@ -1305,7 +1306,7 @@
 	.ss-statusbar { grid-area: status; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 8px; min-height: var(--statusbar-height, 22px); background: var(--statusbar-bg, var(--background-secondary, #ececed)); color: var(--statusbar-color, var(--text-muted, #6b7280)); font-size: var(--statusbar-font-size, 10px); border: none; border-top: 1px solid rgba(0,0,0,.12); cursor: pointer; text-align: start; }
 	.ss-file::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--interactive-accent, #7c3aed); flex: none; } .ss-file.dim::before { background: currentColor; opacity: .4; }
 	/* The note body scrolls if the chosen heading sizes overflow — the preview shows REAL sizes. */
-	.ss-main { grid-area: main; background: var(--background-primary, #fbfbfa); color: var(--editor-text-color, var(--text-normal, #2e3338)); padding: 16px 18px; text-align: left; border: none; font-family: var(--font-text-theme, inherit); display: flex; flex-direction: column; gap: 7px; overflow-y: auto; }
+	.ss-main { grid-area: main; background: var(--background-primary, #fbfbfa); color: var(--editor-text-color, var(--text-normal, #2e3338)); padding: 16px 18px; text-align: start; border: none; font-family: var(--font-text-theme, inherit); display: flex; flex-direction: column; gap: 7px; overflow-y: auto; }
 	.ss-title { display: block; font-weight: 800; font-size: 18px; color: var(--editor-text-color, var(--text-normal, #2e3338)); }
 	/* §C — note breadcrumb + summary previews, reading the same vars as NotePane's `.e-breadcrumb`/`.e-summary`. */
 	.ss-breadcrumb { display: block; font-size: var(--breadcrumb-size, 12px); color: var(--breadcrumb-color, var(--text-normal, #2e3338)); opacity: .9; }
@@ -1436,7 +1437,7 @@
 	/* §C — focused per-element preview: the centre shows JUST the selected element (Eisa). */
 	.ss-focus { min-width: 460px; min-height: 300px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
 	.ss-focus-empty { color: var(--c-muted); font-size: 13px; }
-	.ss-fcard { background: var(--background-primary, #fbfbfa); color: var(--editor-text-color, var(--text-normal, #2e3338)); border: 1px solid rgba(0,0,0,.18); border-radius: 12px; box-shadow: 0 14px 40px rgba(0,0,0,.22); padding: 22px 26px; display: flex; flex-direction: column; gap: 9px; min-width: 320px; max-width: 460px; text-align: left; align-items: stretch; }
+	.ss-fcard { background: var(--background-primary, #fbfbfa); color: var(--editor-text-color, var(--text-normal, #2e3338)); border: 1px solid rgba(0,0,0,.18); border-radius: 12px; box-shadow: 0 14px 40px rgba(0,0,0,.22); padding: 22px 26px; display: flex; flex-direction: column; gap: 9px; min-width: 320px; max-width: 460px; text-align: start; align-items: stretch; }
 	.ss-fnote { font-family: var(--font-text-theme, inherit); }
 	.ss-ftree { background: var(--background-secondary, #f1f1ef); font-family: var(--font-interface-theme, inherit); gap: 7px; }
 	.ss-fstrip { padding: 14px; min-width: 380px; }

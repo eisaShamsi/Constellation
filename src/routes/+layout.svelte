@@ -7458,7 +7458,7 @@
 	/* ═══ MAIN AREA ═══ */
 	.main-area {
 		grid-row: 1; display: flex; flex-direction: column;
-		overflow: hidden; background: #e8e8ec;
+		overflow: hidden; background: var(--center-zone-bg, #e8e8ec);
 	}
 
 	/* Layout bar (sidebar + split controls, independent from tabs) */
@@ -7685,12 +7685,12 @@
 	}
 
 	/* Content */
-	.content-area { flex: 1; overflow: hidden; display: flex; flex-direction: column; background: #e8e8ec; }
+	.content-area { flex: 1; overflow: hidden; display: flex; flex-direction: column; background: var(--center-zone-bg, #e8e8ec); }
 	.content-area.content-hidden { display: none; }
 
 	/* Pane container */
 	.pane-container {
-		flex: 1; display: flex; flex-direction: row; overflow: hidden; background: #e8e8ec;
+		flex: 1; display: flex; flex-direction: row; overflow: hidden; background: var(--center-zone-bg, #e8e8ec);
 	}
 	.pane-container > :global(*) { flex: 1; min-width: 0; min-height: 0; }
 	.pane-container.horizontal { flex-direction: column; }

@@ -2947,6 +2947,7 @@
 	}
 
 
+
 ,
 	"styleSetter": {
 		"labels": {
@@ -2998,6 +2999,7 @@
 			"cataloger": "Kataloglayıcı",
 			"centre": "Merkez",
 			"centre_dot": "Merkez nokta",
+			"centre_zone_background": "Merkez bölge arka planı",
 			"cjk_font": "CJK yazı tipi (中日韓)",
 			"cluster": "Küme",
 			"cluster_bubble": "Küme balonu",

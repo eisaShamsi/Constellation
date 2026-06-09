@@ -2947,6 +2947,7 @@
 	}
 
 
+
 ,
 	"styleSetter": {
 		"labels": {
@@ -2998,6 +2999,7 @@
 			"cataloger": "Classificateur",
 			"centre": "Centre",
 			"centre_dot": "Point central",
+			"centre_zone_background": "Arrière-plan de la zone centrale",
 			"cjk_font": "Police CJK (中日韓)",
 			"cluster": "Cluster",
 			"cluster_bubble": "Bulle de cluster",

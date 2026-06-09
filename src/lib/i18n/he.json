@@ -2947,6 +2947,7 @@
 	}
 
 
+
 ,
 	"styleSetter": {
 		"labels": {
@@ -2998,6 +2999,7 @@
 			"cataloger": "מקטלג",
 			"centre": "מרכז",
 			"centre_dot": "נקודת מרכז",
+			"centre_zone_background": "רקע האזור המרכזי",
 			"cjk_font": "גופן CJK (中日韓)",
 			"cluster": "אשכול",
 			"cluster_bubble": "בועת אשכול",
