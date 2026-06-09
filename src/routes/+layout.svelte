@@ -2289,6 +2289,8 @@
 		// Listen for template picker requests from CodeMirrorEditor /template slash command
 		window.addEventListener('constellation:open-template-picker', handleTemplatePicker);
 		document.addEventListener('constellation:show-importer', () => { showImporter = true; });
+		// MIG-007 — Links Settings tab hub: open the Link Dashboard (right-sidebar 'links' tab).
+		document.addEventListener('constellation:open-link-dashboard', () => { rightSidebarTab = 'links'; rightSidebarOpen = true; });
 
 		// Universal Embed: "open this note" (from transclusion header click,
 		// or MIG-055 §D LensBlock row-click).

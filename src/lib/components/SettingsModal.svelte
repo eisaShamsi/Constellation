@@ -102,6 +102,7 @@
 		{ id: 'language', label: $t('settings.language.title') || 'Language', icon: 'translate' },
 		{ id: 'arabic-overrides', label: $t('settings.sections.arabicOverrides') || 'Arabic Overrides', icon: 'translate' },
 		{ id: 'skyview', label: $t('settings.sections.skyview'), icon: 'graph' },
+		{ id: 'links', label: $t('settings.sections.links') || 'Links', icon: 'link' },
 		// MIG-018 (PJ-038): Sight v3 section — projection toggle + future
 		// always-on labels / calendar systems / magnitude slider. Hidden
 		// when SIGHT_V3_ENABLED is false (committed default through §1E).
@@ -1271,8 +1272,8 @@
 					<ArabicOverridesPanel />
 
 				<!-- ═══ SKY VIEW & LINKS ═══ -->
-				{:else if activeSection === 'skyview'}
-					<p class="section-intro">{$t('settings.skyview.intro')}</p>
+				{:else if activeSection === 'links'}
+					<p class="section-intro">{$t('settings.links.intro') || 'How links behave — formatting, auto-updates, and the Living-Link lifecycle. (Link types & colours live in the Style Setter; panel visibility lives in Panels.)'}</p>
 
 					<div class="setting-section-heading">{$t('settings.skyview.linking')}</div>
 
@@ -1311,6 +1312,74 @@
 							<span class="toggle-slider"></span>
 						</label>
 					</div>
+
+					<!-- ═══ Living Link Lifecycle (P5) — moved here from Appearance by MIG-007 ═══ -->
+					<div class="setting-section-heading">{$t('settings.appearance.linkLifecycle') || 'Living Link Lifecycle'}</div>
+					<div class="setting-desc setting-section-desc">
+						{$t('settings.appearance.linkLifecycleDesc') || 'Links you haven\'t followed in a while drift down the Backlinks / Outgoing / Most-Traveled sort. The decay is a display concern only — the raw traversal counts in the database stay intact.'}
+					</div>
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.appearance.decayEnabled') || 'Apply weight decay to link sorts'}</div>
+							<div class="setting-desc">{$t('settings.appearance.decayEnabledDesc') || 'When off, links sort by raw traversal count only (no recency weighting).'}</div>
+						</div>
+						<input type="checkbox" class="setting-toggle"
+							checked={$appSettings.linkLifecycle?.decayEnabled ?? true}
+							onchange={(e) => updateLinkLifecycle({ decayEnabled: (e.target as HTMLInputElement).checked })} />
+					</div>
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.appearance.halfLifeDays') || 'Decay half-life'}</div>
+							<div class="setting-desc">{$t('settings.appearance.halfLifeDaysDesc') || 'Days after which an untouched link\'s effective weight halves. Lower = faster drop-off; higher = slower.'}</div>
+						</div>
+						<div class="slider-row">
+							<input type="range" class="setting-slider" min="7" max="365" step="1"
+								value={$appSettings.linkLifecycle?.halfLifeDays ?? 60}
+								disabled={!($appSettings.linkLifecycle?.decayEnabled ?? true)}
+								oninput={(e) => updateLinkLifecycle({ halfLifeDays: parseInt((e.target as HTMLInputElement).value) })} />
+							<span class="slider-val">{$appSettings.linkLifecycle?.halfLifeDays ?? 60} {$t('settings.appearance.days') || 'days'}</span>
+						</div>
+					</div>
+
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.appearance.confidenceBackfill') || 'Back-fill link confidence'}</div>
+							<div class="setting-desc">{$t('settings.appearance.confidenceBackfillDesc') || 'Promote existing links that already crossed a traversal threshold (≥3 → evidence, ≥10 → established) but never ran through the auto-promotion rule. One-shot; safe to run multiple times. Never downgrades; preserves user-set contested.'}</div>
+							{#if backfillResult}
+								<div class="setting-desc" style="margin-top:4px;color:var(--interactive-accent)">
+									{$t('settings.appearance.confidenceBackfillResult', { total: String(backfillResult.total), evidence: String(backfillResult.promoted_to_evidence), established: String(backfillResult.promoted_to_established) }) || `Promoted ${backfillResult.total} link${backfillResult.total === 1 ? '' : 's'} (→evidence: ${backfillResult.promoted_to_evidence}, →established: ${backfillResult.promoted_to_established}).`}
+								</div>
+							{/if}
+						</div>
+						<button class="w-btn" disabled={backfillBusy} onclick={runConfidenceBackfill}>
+							{#if backfillBusy}
+								{$t('settings.appearance.confidenceBackfillRunning') || 'Running…'}
+							{:else}
+								{$t('settings.appearance.confidenceBackfillBtn') || 'Run back-fill'}
+							{/if}
+						</button>
+					</div>
+
+					<!-- ═══ MIG-007 hub — types/colours stay in the Style Setter; the dashboard is the right-sidebar Links tab ═══ -->
+					<div class="setting-section-heading">{$t('settings.links.related') || 'Related'}</div>
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.links.editTypes') || 'Link types & colours'}</div>
+							<div class="setting-desc">{$t('settings.links.editTypesDesc') || 'Define your link types (the 8 acts + your own) and their colours in the Style Setter.'}</div>
+						</div>
+						<button class="w-btn" onclick={() => { onClose?.(); openStyleSetter(); }}>{$t('settings.links.editTypesBtn') || 'Open Style Setter →'}</button>
+					</div>
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.links.dashboard') || 'Link Dashboard'}</div>
+							<div class="setting-desc">{$t('settings.links.dashboardDesc') || 'Browse, traverse, set confidence on, and archive individual links.'}</div>
+						</div>
+						<button class="w-btn" onclick={() => { onClose?.(); document.dispatchEvent(new CustomEvent('constellation:open-link-dashboard')); }}>{$t('settings.links.dashboardBtn') || 'Open Link Dashboard →'}</button>
+					</div>
+					<p class="setting-desc" style="margin-top:8px;">{$t('settings.links.panelVisibilityNote') || 'Tip: show or hide the Links panel under Settings → Panels.'}</p>
+
+				{:else if activeSection === 'skyview'}
+					<p class="section-intro">{$t('settings.skyview.intro')}</p>
 
 					<div class="setting-section-heading">{$t('settings.skyview.graphAppearance')}</div>
 
@@ -2004,53 +2073,6 @@
 							<option value="start">{$t('settings.appearance.titleAlignStart')}</option>
 							<option value="center">{$t('settings.appearance.titleAlignCenter')}</option>
 						</select>
-					</div>
-
-					<!-- ═══ Living Link Lifecycle (P5) ═══ -->
-					<div class="setting-section-heading">{$t('settings.appearance.linkLifecycle') || 'Living Link Lifecycle'}</div>
-					<div class="setting-desc setting-section-desc">
-						{$t('settings.appearance.linkLifecycleDesc') || 'Links you haven\'t followed in a while drift down the Backlinks / Outgoing / Most-Traveled sort. The decay is a display concern only — the raw traversal counts in the database stay intact.'}
-					</div>
-					<div class="setting-item">
-						<div class="setting-info">
-							<div class="setting-name">{$t('settings.appearance.decayEnabled') || 'Apply weight decay to link sorts'}</div>
-							<div class="setting-desc">{$t('settings.appearance.decayEnabledDesc') || 'When off, links sort by raw traversal count only (no recency weighting).'}</div>
-						</div>
-						<input type="checkbox" class="setting-toggle"
-							checked={$appSettings.linkLifecycle?.decayEnabled ?? true}
-							onchange={(e) => updateLinkLifecycle({ decayEnabled: (e.target as HTMLInputElement).checked })} />
-					</div>
-					<div class="setting-item">
-						<div class="setting-info">
-							<div class="setting-name">{$t('settings.appearance.halfLifeDays') || 'Decay half-life'}</div>
-							<div class="setting-desc">{$t('settings.appearance.halfLifeDaysDesc') || 'Days after which an untouched link\'s effective weight halves. Lower = faster drop-off; higher = slower.'}</div>
-						</div>
-						<div class="slider-row">
-							<input type="range" class="setting-slider" min="7" max="365" step="1"
-								value={$appSettings.linkLifecycle?.halfLifeDays ?? 60}
-								disabled={!($appSettings.linkLifecycle?.decayEnabled ?? true)}
-								oninput={(e) => updateLinkLifecycle({ halfLifeDays: parseInt((e.target as HTMLInputElement).value) })} />
-							<span class="slider-val">{$appSettings.linkLifecycle?.halfLifeDays ?? 60} {$t('settings.appearance.days') || 'days'}</span>
-						</div>
-					</div>
-
-					<div class="setting-item">
-						<div class="setting-info">
-							<div class="setting-name">{$t('settings.appearance.confidenceBackfill') || 'Back-fill link confidence'}</div>
-							<div class="setting-desc">{$t('settings.appearance.confidenceBackfillDesc') || 'Promote existing links that already crossed a traversal threshold (≥3 → evidence, ≥10 → established) but never ran through the auto-promotion rule. One-shot; safe to run multiple times. Never downgrades; preserves user-set contested.'}</div>
-							{#if backfillResult}
-								<div class="setting-desc" style="margin-top:4px;color:var(--interactive-accent)">
-									{$t('settings.appearance.confidenceBackfillResult', { total: String(backfillResult.total), evidence: String(backfillResult.promoted_to_evidence), established: String(backfillResult.promoted_to_established) }) || `Promoted ${backfillResult.total} link${backfillResult.total === 1 ? '' : 's'} (→evidence: ${backfillResult.promoted_to_evidence}, →established: ${backfillResult.promoted_to_established}).`}
-								</div>
-							{/if}
-						</div>
-						<button class="w-btn" disabled={backfillBusy} onclick={runConfidenceBackfill}>
-							{#if backfillBusy}
-								{$t('settings.appearance.confidenceBackfillRunning') || 'Running…'}
-							{:else}
-								{$t('settings.appearance.confidenceBackfillBtn') || 'Run back-fill'}
-							{/if}
-						</button>
 					</div>
 
 				<!-- ═══ STYLE SETTINGS ═══ -->
