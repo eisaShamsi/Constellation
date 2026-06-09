@@ -196,3 +196,28 @@ of Inquiry**). **Eisa: "Approved."** Delivered `Constellation-Circulatory-System
 (RATIFIED); v1.0 banner-marked superseded. **Next: CCS `/migration` Architect** (frontend-mostly: stand up the
 left-dock surface, build the 7 registers, retire the panel, coordinate Knowledge-Health, re-point the hub).
 MIG-007 §6 close-out still pending in parallel.
+
+## §MIG-007 §6 CLOSE-OUT — MIG-007 CLOSED (2026-06-09)
+
+**`/simplify`** (4 cleanup agents on the diff): the diff was ~90% clean relocation + correct pattern-mirroring.
+Applied 3 in-scope fixes to `SettingsModal.svelte`: (1) half-life number input inline `width:72px` magic-px →
+named `.setting-num` class; (2) deleted the orphaned `<!-- APPEARANCE -->` banner left by the section removal;
+(3) retitled the stale `SKY VIEW & LINKS` banner over the links branch → `LINKS`. Skipped (justified): the
+two hub-button mechanisms (real scope asymmetry — `styleSetterOpen` is a global store, `rightSidebarTab` is
+local `+layout` state); merging the two StyleSetter `$effect`s (independent intents). svelte-check **0 errors**.
+
+**Filed as follow-up** (`spawn_task` `task_19b5319d`): the altitude finding — the right-sidebar `isHome &&
+sidebarTab` note-gate special-cases `tags`/`links` (hoisted) and **duplicates** `review`/`sourceReview`
+(rendered twice). Pre-existing debt my `links` hoist made visible; a larger `+layout` refactor → its own task.
+
+**Phase-4 audit (2 parallel agents):** **Invariants 6/6 HOLD** (I1 single-styling-home — Links tab has zero
+styling controls; I2 all moved controls bind to unchanged `$appSettings` paths; I3 autoUpdateLinks cascade
+untouched at `+layout:4617`; I4 i18n parity all 15; I5 no duplicates + `'appearance'` fully excised, 0 dead
+refs; I6 no `$effect` loop / no hot-path invoke). **Drift 5/5 PASS** (LinkDashboard branch exactly once;
+each moved control single-homed; one dispatcher/one listener for `open-link-dashboard`; one writer/reader for
+`styleSetterCategoryRequest`, valid `'links'` category target). Non-blocking note: the new document listener
+isn't removed in cleanup — but mirrors the pre-existing `show-importer` sibling (no *new* leak class).
+4C migration-path: light — no schema/data change; existing settings render in new sections; rollback = revert UI.
+
+**MIG-007 → CLOSED.** Architect→Plan→Build(§1–§5 + hub fixes)→/simplify→Audit all done; Boss-validated A/B.
+Commits `6752d4a8` · `5a39b6e6` · `63a6ec27` + this §6 cleanup. Orientation §8 updated → v2.62.

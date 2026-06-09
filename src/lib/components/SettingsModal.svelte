@@ -1281,7 +1281,7 @@
 				{:else if activeSection === 'arabic-overrides'}
 					<ArabicOverridesPanel />
 
-				<!-- ═══ SKY VIEW & LINKS ═══ -->
+				<!-- ═══ LINKS ═══ -->
 				{:else if activeSection === 'links'}
 					<p class="section-intro">{$t('settings.links.intro') || 'How links behave — formatting, auto-updates, and the Living-Link lifecycle. (Link types & colours live in the Style Setter; panel visibility lives in Panels.)'}</p>
 
@@ -1347,7 +1347,7 @@
 								value={$appSettings.linkLifecycle?.halfLifeDays ?? 60}
 								disabled={!($appSettings.linkLifecycle?.decayEnabled ?? true)}
 								oninput={(e) => updateLinkLifecycle({ halfLifeDays: parseInt((e.target as HTMLInputElement).value) })} />
-							<input type="number" class="setting-control" style="width:72px; text-align:center" min="7" max="365" step="1"
+							<input type="number" class="setting-control setting-num" min="7" max="365" step="1"
 								value={$appSettings.linkLifecycle?.halfLifeDays ?? 60}
 								disabled={!($appSettings.linkLifecycle?.decayEnabled ?? true)}
 								onchange={(e) => updateLinkLifecycle({ halfLifeDays: Math.max(7, Math.min(365, parseInt((e.target as HTMLInputElement).value) || 60)) })} />
@@ -2071,7 +2071,6 @@
 						</button>
 					</div>
 
-				<!-- ═══ APPEARANCE ═══ -->
 				<!-- ═══ STYLE SETTINGS ═══ -->
 				{:else if activeSection === 'iconoverrides'}
 					<IconOverrideSettings />
@@ -2654,6 +2653,7 @@
 	.slider-row { display: flex; align-items: center; gap: 10px; min-width: 180px; }
 	.setting-slider { flex: 1; accent-color: var(--interactive-accent); }
 	.slider-val { font-size: 0.82rem; color: var(--text-muted); min-width: 38px; text-align: end; }
+	.setting-num { width: 72px; text-align: center; } /* compact numeric field (e.g. half-life days), MIG-007 */
 
 	/* ═══ FONT SETS ═══ */
 	.font-mode-toggle { display: flex; gap: 2px; background: var(--background-secondary); border-radius: 6px; padding: 2px; }
