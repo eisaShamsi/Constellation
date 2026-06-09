@@ -1469,6 +1469,17 @@
 		"characters": "karakter"
 	},
 	"graphView": {
+		"nodeScheme": "Düğüm şeması",
+		"nsOpenNote": "Not aç",
+		"nsPinned": "Sabitlendi",
+		"nsOrphan": "Yetim",
+		"nsMoc": "İçerik haritası (MOC)",
+		"nsSapling": "Fidan",
+		"nsEvergreen": "Her dem yeşil",
+		"nsCanonical": "Kanonik",
+		"nsWilting": "Solan",
+		"nsReceived": "Alınan",
+		"nsDiscovered": "Keşfedilen",
 		"nodes": "düğümler",
 		"edges": "kenarlar",
 		"open": "Aç",

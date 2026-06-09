@@ -1029,6 +1029,17 @@
 		"characters": "תווים"
 	},
 	"graphView": {
+		"nodeScheme": "מקרא הצמתים",
+		"nsOpenNote": "פתק פתוח",
+		"nsPinned": "מוצמד",
+		"nsOrphan": "יתומה",
+		"nsMoc": "מפת תוכן",
+		"nsSapling": "שתיל",
+		"nsEvergreen": "ירוק-עד",
+		"nsCanonical": "קנוני",
+		"nsWilting": "נובלת",
+		"nsReceived": "מקובל",
+		"nsDiscovered": "מגולה",
 		"nodes": "צמתים",
 		"edges": "קשתות",
 		"open": "פתח",

@@ -1469,6 +1469,17 @@
 		"characters": "字符"
 	},
 	"graphView": {
+		"nodeScheme": "节点图例",
+		"nsOpenNote": "打开的笔记",
+		"nsPinned": "已固定",
+		"nsOrphan": "孤立",
+		"nsMoc": "内容地图",
+		"nsSapling": "树苗",
+		"nsEvergreen": "常青",
+		"nsCanonical": "权威",
+		"nsWilting": "枯萎",
+		"nsReceived": "接收",
+		"nsDiscovered": "发现",
 		"nodes": "节点",
 		"edges": "连线",
 		"open": "打开",

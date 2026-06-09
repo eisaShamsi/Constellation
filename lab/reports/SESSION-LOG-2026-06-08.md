@@ -122,3 +122,20 @@ All four /migration phases done (Architect → Plan → Build §1–§5 + packag
 Sky View visual vocabulary (both renderers — PIXI `graphEngine` + Canvas-2D `LocalSkyView`) is now under
 the Style Setter; the second screen renders in release builds for the first time. Remaining follow-ups
 (NOT migration phases): 14-language help (batched, the §C-close pattern) · milestone tag + ZIP backup.
+
+### Post-close follow-ups (2026-06-09)
+- **Milestone backup:** tag `milestone/mig-072-sky-style` (commit `b295e5c8`) pushed; ZIP at
+  `E:/Backups/Constellation/Constellation-mig-072-sky-style-20260609.zip` (154 MB).
+- **i18n — Node-scheme legend (all 15 languages):** the §2 legend used `$t('graphView.ns*') || 'EN'`
+  with NO keys present in ANY locale (English via fallback only). Added the 11 `graphView.ns*` keys
+  (`nodeScheme` + open-note/pinned/orphan/MOC/sapling/evergreen/canonical/wilting/received/discovered)
+  to all 15 locale files via 5 parallel agents — each reused its file's existing orphan/pinned/
+  received/discovered terms; maturity stages translated fresh where absent. Verified: all 15 parse as
+  valid JSON with 11/11 keys.
+- **Found — pre-existing gap (NOT MIG-072):** the cognitive-dimension vocab (`maturity_*`/`origin_*`/
+  `stage_*`) lives ONLY in `en.json` (+ partly `ar.json`); the other 13 locales never received it.
+  A separate backfill task; the maturity-legend (`colorByMaturity`) shows English in those languages today.
+- **Still pending (the rest of "14-language localization"):** (a) the Style Setter UI is entirely
+  hardcoded English (zero `$t(`) — localizing it is a Setter-wide CODE retrofit (wire `$t` + ~N keys ×
+  15), its own task; (b) the help-doc **Sky View** topic (`docs/help.*/Sky View`) extended with the
+  Setter coverage in 15 languages (batched help-doc pattern).

@@ -1029,6 +1029,17 @@
 		"characters": "نویسه‌ها"
 	},
 	"graphView": {
+		"nodeScheme": "طرح گره‌ها",
+		"nsOpenNote": "یادداشت باز",
+		"nsPinned": "سنجاق شده",
+		"nsOrphan": "یتیم",
+		"nsMoc": "نقشه محتوا",
+		"nsSapling": "نهال",
+		"nsEvergreen": "همیشه‌سبز",
+		"nsCanonical": "معتبر",
+		"nsWilting": "پژمرده",
+		"nsReceived": "دریافتی",
+		"nsDiscovered": "کشف شده",
 		"nodes": "گره‌ها",
 		"edges": "یال‌ها",
 		"open": "باز کردن",

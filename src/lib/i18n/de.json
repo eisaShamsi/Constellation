@@ -1029,6 +1029,17 @@
 		"characters": "Zeichen"
 	},
 	"graphView": {
+		"nodeScheme": "Knotenschema",
+		"nsOpenNote": "Offene Notiz",
+		"nsPinned": "Angeheftet",
+		"nsOrphan": "Verwaist",
+		"nsMoc": "Inhaltskarte (MOC)",
+		"nsSapling": "Setzling",
+		"nsEvergreen": "Immergrün",
+		"nsCanonical": "Kanonisch",
+		"nsWilting": "Welkend",
+		"nsReceived": "Empfangen",
+		"nsDiscovered": "Entdeckt",
 		"nodes": "Knoten",
 		"edges": "Kanten",
 		"open": "Öffnen",

@@ -1577,6 +1577,17 @@
 		"characters": "characters"
 	},
 	"graphView": {
+		"nodeScheme": "Node scheme",
+		"nsOpenNote": "Open note",
+		"nsPinned": "Pinned",
+		"nsOrphan": "Orphan",
+		"nsMoc": "Map of content",
+		"nsSapling": "Sapling",
+		"nsEvergreen": "Evergreen",
+		"nsCanonical": "Canonical",
+		"nsWilting": "Wilting",
+		"nsReceived": "Received",
+		"nsDiscovered": "Discovered",
 		"nodes": "nodes",
 		"edges": "edges",
 		"open": "Open",

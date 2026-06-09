@@ -1029,6 +1029,17 @@
 		"characters": "caracteres"
 	},
 	"graphView": {
+		"nodeScheme": "Esquema de nodos",
+		"nsOpenNote": "Nota abierta",
+		"nsPinned": "Fijada",
+		"nsOrphan": "Huérfana",
+		"nsMoc": "Mapa de contenido",
+		"nsSapling": "Retoño",
+		"nsEvergreen": "Perenne",
+		"nsCanonical": "Canónica",
+		"nsWilting": "Marchita",
+		"nsReceived": "Recibido",
+		"nsDiscovered": "Descubierto",
 		"nodes": "nodos",
 		"edges": "aristas",
 		"open": "Abrir",

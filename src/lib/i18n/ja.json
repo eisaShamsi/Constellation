@@ -1469,6 +1469,17 @@
 		"characters": "文字"
 	},
 	"graphView": {
+		"nodeScheme": "ノードの凡例",
+		"nsOpenNote": "開いているノート",
+		"nsPinned": "ピン留め",
+		"nsOrphan": "孤立",
+		"nsMoc": "コンテンツマップ",
+		"nsSapling": "若木",
+		"nsEvergreen": "常緑",
+		"nsCanonical": "正典",
+		"nsWilting": "枯れかけ",
+		"nsReceived": "受容",
+		"nsDiscovered": "発見",
 		"nodes": "ノード",
 		"edges": "エッジ",
 		"open": "開く",

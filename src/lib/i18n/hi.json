@@ -1469,6 +1469,17 @@
 		"characters": "अक्षर"
 	},
 	"graphView": {
+		"nodeScheme": "नोड योजना",
+		"nsOpenNote": "नोट खोलें",
+		"nsPinned": "पिन किया गया",
+		"nsOrphan": "अनाथ",
+		"nsMoc": "सामग्री मानचित्र (MOC)",
+		"nsSapling": "नवांकुर",
+		"nsEvergreen": "सदाबहार",
+		"nsCanonical": "कैनोनिकल",
+		"nsWilting": "मुरझाता",
+		"nsReceived": "प्राप्त",
+		"nsDiscovered": "खोजा गया",
 		"nodes": "नोड्स",
 		"edges": "किनारे",
 		"open": "खोलें",

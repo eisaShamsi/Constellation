@@ -1469,6 +1469,17 @@
 		"characters": "символов"
 	},
 	"graphView": {
+		"nodeScheme": "Схема узлов",
+		"nsOpenNote": "Открытая заметка",
+		"nsPinned": "Закреплено",
+		"nsOrphan": "Сирота",
+		"nsMoc": "Карта содержания",
+		"nsSapling": "Саженец",
+		"nsEvergreen": "Вечнозелёная",
+		"nsCanonical": "Каноническая",
+		"nsWilting": "Увядающая",
+		"nsReceived": "Полученное",
+		"nsDiscovered": "Открытое",
 		"nodes": "узлы",
 		"edges": "связи",
 		"open": "Открыть",

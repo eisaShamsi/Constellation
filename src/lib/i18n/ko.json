@@ -1469,6 +1469,17 @@
 		"characters": "문자"
 	},
 	"graphView": {
+		"nodeScheme": "노드 범례",
+		"nsOpenNote": "열린 노트",
+		"nsPinned": "고정됨",
+		"nsOrphan": "고아",
+		"nsMoc": "콘텐츠 지도",
+		"nsSapling": "묘목",
+		"nsEvergreen": "상록",
+		"nsCanonical": "정본",
+		"nsWilting": "시듦",
+		"nsReceived": "수신",
+		"nsDiscovered": "발견",
 		"nodes": "노드",
 		"edges": "엣지",
 		"open": "열기",

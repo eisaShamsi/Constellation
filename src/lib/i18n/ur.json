@@ -1029,6 +1029,17 @@
 		"characters": "حروف"
 	},
 	"graphView": {
+		"nodeScheme": "نوڈ اسکیم",
+		"nsOpenNote": "نوٹ کھولیں",
+		"nsPinned": "پن کیا گیا",
+		"nsOrphan": "یتیم",
+		"nsMoc": "نقشۂ مواد (MOC)",
+		"nsSapling": "نونہال",
+		"nsEvergreen": "سدا بہار",
+		"nsCanonical": "کیننیکل",
+		"nsWilting": "مرجھاتا",
+		"nsReceived": "وصول شدہ",
+		"nsDiscovered": "دریافت شدہ",
 		"nodes": "نوڈز",
 		"edges": "کنارے",
 		"open": "کھولیں",

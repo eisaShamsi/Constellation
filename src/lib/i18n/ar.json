@@ -1566,6 +1566,17 @@
 		"characters": "أحرف"
 	},
 	"graphView": {
+		"nodeScheme": "مفتاح العقد",
+		"nsOpenNote": "ملاحظة مفتوحة",
+		"nsPinned": "مثبت",
+		"nsOrphan": "يتيمة",
+		"nsMoc": "خريطة محتوى",
+		"nsSapling": "نبتة",
+		"nsEvergreen": "دائمة الخضرة",
+		"nsCanonical": "مرجعية",
+		"nsWilting": "ذابلة",
+		"nsReceived": "مكتسب",
+		"nsDiscovered": "مكتشف",
 		"nodes": "عقد",
 		"edges": "حواف",
 		"open": "فتح",
