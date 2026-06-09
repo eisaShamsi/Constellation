@@ -183,3 +183,16 @@ registry-driven); what-it-is-NOT vs every sibling; left-dock Core-Plugin home; �
 `Link-Dashboard-Concept-Paper-v1.0` is banner-marked **SUPERSEDED by CCS**. Awaiting §13 answers → v1.1 → MIG.
 
 **MIG-007 still PAUSED at §6 close-out**, shippable; the hub button now re-points to CCS when CCS ships.
+
+**§13 ANSWERED + CCS v1.1 RATIFIED (Eisa, 2026-06-09).** Rulings: Knowledge-Health = **coordinate** (not
+subsume); authoring "Link Dashboard" panel = **fully retire** (universe view → CCS, per-note → Backlinks/
+Outgoing); MIG-007 hub = **re-point to CCS**; section set = **No to medical labels → cognition terms**. Eisa
+then asked me to **defend the circulatory theory + produce updated terms + convince future users** — delivered
+the 4-argument "Why Circulatory" defense (the data was *built* as circulation: `weight=1+ln(1+tc)`,
+decay=vessel-narrowing, lifecycle=vessel-life; dual-system founding design; topology-can't-see-death; formulation-
+not-management) + the user pitch + the 7 cognition-named registers (**Living Connections · Load-Bearing
+Reasoning · Cooling Inquiries · Conviction & Doubt · The Life of a Connection · Retired Reasoning · The Acts
+of Inquiry**). **Eisa: "Approved."** Delivered `Constellation-Circulatory-System-Concept-Paper-v1.1.md`
+(RATIFIED); v1.0 banner-marked superseded. **Next: CCS `/migration` Architect** (frontend-mostly: stand up the
+left-dock surface, build the 7 registers, retire the panel, coordinate Knowledge-Health, re-point the hub).
+MIG-007 §6 close-out still pending in parallel.

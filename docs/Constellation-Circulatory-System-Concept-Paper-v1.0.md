@@ -1,5 +1,9 @@
 # Constellation Circulatory System (CCS / الجهاز الدوري) — Concept Paper v1.0
 
+> **⚠️ SUPERSEDED 2026-06-09 by `Constellation-Circulatory-System-Concept-Paper-v1.1.md` (RATIFIED).** v1.1
+> adds the "Why Circulatory" defense, the cognition-named section set, the user pitch, and the four ratified
+> owner rulings. Read v1.1 for the canonical concept; this v1.0 is preserved as the draft of record.
+
 **Drafted 2026-06-09.** Status: **first concept of record** for CCS. It **supersedes**
 `Constellation-Link-Dashboard-Concept-Paper-v1.0.md` — that draft was the first attempt; cross-checking it
 against the other core-plugin concept papers (the Cognitive-Engine One-Picture, CNS, the Base, the Cataloger,
