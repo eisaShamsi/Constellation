@@ -76,3 +76,67 @@ Registry) — exactly the kind of thing the reconciliation surfaces before a ses
 - New top-of-queue #1 is **PJ-060**; #3 is **PJ-063** (`link_type` 'relates', re-verify under MIG-067 first).
 - Deferred (not done here, low priority): deeper per-PJ code-audit of the ~60 carried-forward v1.12 entries;
   refresh of v1.13's stale "Cross-references" appendix.
+
+---
+
+## §MIG-007 · Links Settings tab (PJ-005) — /migration, Option A
+
+**Function in hand:** the Links Settings tab — a new consolidated 'Links' section in the Settings modal.
+**Reconciliation (SO #8):** MIG-007 confirmed STILL-OPEN-VALID (no Architect, no work started). Scope
+re-mapped post-MIG-067/070 — the Style Setter had since become the home for link types + colours, so
+"consolidate every link control" was reframed. **Eisa picked Option A** (behaviour controls + hub links;
+styling stays in the Setter → I1 single-styling-home preserved).
+
+**Phase 1 (Architect)** + **Phase 2 (Plan)** docs: `lab/reports/MIG-007-LINKS-SETTINGS-{ARCHITECT,PLAN}.md`.
+Plan approved by Eisa.
+
+**Phase 3 build — §1–§4 shipped** (commit `6752d4a8`, frontend-only):
+- New Settings 'Links' section (after Sky View).
+- Moved the whole **Sky View 'Linking'** group (link format · auto-update-on-rename · use-wikilinks) and the
+  whole **Appearance 'Living Link Lifecycle'** group (decay · half-life · confidence back-fill) into it.
+  *(Build-time discovery: the 2 plan-named controls sat inside coherent sub-sections with siblings; moved the
+  whole groups to avoid orphaning headings. Flagged to Eisa at the gate.)*
+- 'Related' hub: Open Style Setter (`openStyleSetter()`), Open Link Dashboard (new
+  `constellation:open-link-dashboard` event → `rightSidebarTab='links'` in `+layout`), + Panels pointer.
+- All moved controls keep their exact `$appSettings` bindings (no settings migration). Panel visibility
+  stayed in Panels (pointer only).
+
+**Verify:** `svelte-check` 0 errors (318 pre-existing warnings). Release binary rebuilt
+(`constellation.exe`, mtime 2026-06-09 17:03, Stage 0 fresh).
+
+**Gate:** Stage-1 functional Boss test sent (English; §5 i18n deliberately deferred until the structure is
+Boss-approved, so 15-locale translation isn't wasted on a layout that may change). §5 (i18n) + §6
+(/simplify + proportionate audit 4A/4B) follow after sign-off.
+
+**Stage-1 result (Boss):** All Pass + 5 remarks → all addressed:
+- §5 i18n shipped (`5a39b6e6`): root cause was `$t()` returns the key on miss, so inline English fallbacks
+  never fired → added `settings.sections.links` + `settings.links{}` (9 keys) to all 15 locales (14 via
+  parallel translator agents reusing each locale's terms; line endings preserved). Half-life **number-entry**
+  input added (clamped 7–365). **Appearance section retired** — Title alignment moved to Editor → Display
+  (its last control after MIG-071); default section is 'dashboard', nothing deep-links to 'appearance'.
+- Re-test result: A pass, B pass. Two refinement remarks → both fixed (`63a6ec27`): "Open Style Setter"
+  now deep-links to the **Links category** (new `styleSetterCategoryRequest` seam mirroring inspect-request);
+  "Open Link Dashboard" pulled OUT of the `isHome && sidebarTab` note-gate to a top-level branch (like Tags)
+  so it opens library-wide. (First tried weakening the gate → broke `sidebarTab` non-null narrowing for the
+  note panels → reverted; out-of-gate relocation is the correct fix.)
+
+## §STATE-OF-STANDING + PIVOT — Link Dashboard concept (Eisa, 2026-06-09)
+
+Re-test B passed mechanically, but **Eisa questioned the Link Dashboard's concept**: "could serve an open
+note, but not as a universal Link Analysis instrument… what is the concept and rule of the Link Dashboard?"
+Investigation (FACT): `LinkDashboard.svelte` is **already universe-wide** (`allLinks`+`allNotes`, no
+`activeNotePath`) with **7 sections** (Most Connected · Most Traveled · Stale · Cross-Library · Broken ·
+Orphans · Archived), but is **mounted only as a ~300px right-sidebar tab** and has **no concept doc anywhere**.
+The Owner's tension is exact: universal function, note-context vessel.
+
+**MIG-007 state:** §1–§5 + hub fixes **shipped + Boss-validated** (commits `6752d4a8`, `5a39b6e6`,
+`63a6ec27`). PAUSED before §6 close-out (/simplify + audit + orientation v2.62). The "Open Link Dashboard"
+hub button is **held as-is** pending the Dashboard's new home. Nothing is broken; MIG-007 is effectively
+shippable.
+
+**Eisa decision:** **Write a Concept Paper first** (define concept/rule/home, ratify, *then* a `/migration`
+promotes it). Delivered `docs/Constellation-Link-Dashboard-Concept-Paper-v1.0.md` (FACT vs PROPOSAL marked
+throughout): defines it as the diagnostic instrument for the Living-Link graph at universe scale; the §4
+reads (Load-bearing / Erosion / Isolation / Curation); §6 what-it-is-NOT vs Backlinks/360.3D/Sky View/Index/
+Cataloger/Map; §7 the home rule (first-class surface, never a note panel); §11 five questions for the Owner
+(home · section set · right-sidebar remnant · name · MIG-007 hub button). Awaiting ratification → v1.1 → MIG.
