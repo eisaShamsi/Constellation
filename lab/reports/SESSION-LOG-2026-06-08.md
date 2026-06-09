@@ -103,6 +103,22 @@ Built iteratively against live Boss feedback:
   Binary mtime verified before each Boss test (Stage 0). Commits: `1b67f036` (packaging fix),
   `ba3affc5` (§5 + centre-fill), docs (orientation v2.59, this log, MoCh).
 
-### Pending (MIG-072 close)
-- §6 — the /migration Phase-4 audit (invariant · drift · migration-path agents). 14-language help
-  batched. Milestone + orientation re-bump at close.
+### §6 — /migration Phase-4 audit (PASS, 2026-06-09)
+Three independent read-only auditors (invariant · drift · migration-path), all PASS:
+- **Invariants:** Perf Rule 3 (zero `getComputedStyle` in any draw path) · BUG-015 (sole body-var
+  writer = the `+layout` apply `$effect`; the 2nd screen writes its OWN `:root`, expected) · typed-link
+  single source (`TYPED_LINK_COLORS` gone; reads `palette.typedLinks`) · dark/light defaults resolve.
+- **Drift/wiring:** `LIBRARY_COLORS` only in canonical `colors.ts` · all 6 graphEngine colour consts
+  removed (`BADGE_CHARS` kept) · sky `--skyview-*` controls **57/57 wired, 0 dead, 0 orphan** · the 6
+  remaining inline `0x` literals all legitimate (highlight fallback, badge-arrow chrome, search-direction
+  indicators, the `0xa78bfa` node-colour sentinel), 0 missed · 2nd-screen build single-source, `build/` gitignored.
+- **Migration path:** fresh Universe pixel-identical (defaults = original constants: nodeDefault
+  `0xa78bfa`, edge alpha 0.25/0.15, ringFrames 1.5/solid, ringBase 1.5, ringGap 2.6, labelSize 0) · NO
+  src-tauri / Rust / IPC / schema change (git-confirmed `a59f46a0..HEAD`) · styleOverride free-form JSON
+  (no disk migration) · 2nd-screen build safe in dev + release + rollback (no data risk). **Verdict: SAFE TO CLOSE.**
+
+### MIG-072 — CLOSED (2026-06-09)
+All four /migration phases done (Architect → Plan → Build §1–§5 + packaging fix → Audit). The ENTIRE
+Sky View visual vocabulary (both renderers — PIXI `graphEngine` + Canvas-2D `LocalSkyView`) is now under
+the Style Setter; the second screen renders in release builds for the first time. Remaining follow-ups
+(NOT migration phases): 14-language help (batched, the §C-close pattern) · milestone tag + ZIP backup.
