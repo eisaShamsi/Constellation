@@ -177,3 +177,12 @@ Eisa: "Proceed with the remaining!" → all done:
 - Method: per-language parallel agents → deterministic merge scripts (English-fallback) → all-15 JSON-parse
   verify → svelte-check 0 → `--no-bundle` build, binary mtime-verified. The Sky View / Style Setter / 360.3D
   surface is now fully localized.
+
+### Milestone + handover (2026-06-09)
+- **`milestone/localization-complete`** (`56598158`) tagged + pushed + ZIP at
+  `E:/Backups/Constellation/Constellation-localization-complete-20260609.zip`.
+- **SO housekeeping (OCS):** `docs/MoCh/MoCh-2026-06-09-0000.md` (chat trace), **orientation v2.60**
+  (milestone summary + reusable localization method), `docs/handover/Handover-2026-06-09.md`
+  (state + next-step candidates + a paste-ready fresh-session kickoff prompt).
+- **Flagged for next session:** `Constellation Pending Jobs v1.9.md` is **stale** (2026-05-11, predates
+  MIG-038/065/066/068/070/071/072) — reconcile to v1.10 before actioning any PJ-NNN (SO #8).
