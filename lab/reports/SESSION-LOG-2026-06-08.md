@@ -75,6 +75,34 @@ Built iteratively against live Boss feedback:
 - Controls: `skyLabels` (colour · font · size · thickness) + `skyGizmo` (X/Y/Z/centre) with live samples.
   Audit **200/0**. **§4 completes the full Sky View visual vocabulary under the Style Setter.**
 
-### Pending
-- §5 LocalSkyView (2nd-screen) parity — same palette, kill the divergent `LIBRARY_COLORS` · §6 audit.
-  14-language help batched. Orientation re-bump at MIG-072 close.
+### §5 — LocalSkyView (2nd-screen companion) parity (Boss PASS, 2026-06-09) — commit `ba3affc5`
+- LocalSkyView now resolves the SAME `skyPalette` as GraphMindView (untyped-edge colour/opacity,
+  open-note ring, label colour, node-default fallback) via `resolveSkyPalette(styleOverride + live
+  draft, isDark, {})` + a body-class theme observer; the repaint `$effect` `untrack`s `draw()` (adds
+  no new redraw triggers); **no `getComputedStyle` on draw** (Perf Rule 3); observer disconnected onDestroy.
+- The divergent local `LIBRARY_COLORS` is deleted; LSV receives the canonical `buildLibraryColorMap`
+  map as a prop, threaded through all **4 mounts** (`+layout` + the 3 `SecondScreenPage` modes) — a
+  library is now the same colour in both renderers.
+- **Centre-zone fill (Eisa):** the SS Sky View panel `.sc-star-panel` was capped at a fixed 300px
+  (graph huddled at top, centre empty) → now `height:100%` (fills its definite-height panel body).
+
+### BUG — second screen blank in ALL release builds (fixed, commit `1b67f036`)
+- **Surfaced mid-§5** (Stage-2 test → blank white second screen). Root cause: `static/screen.html`
+  (the standalone `screen-entry.ts` entry) referenced **dev-only paths** (`/src/screen-entry.ts`,
+  `/@vite/client`); adapter-static copies `static/` verbatim and there was **no build step** for the
+  entry, so every `tauri build` shipped a `screen.html` 404ing its script → blank. Worked only under
+  `tauri dev`. **NOT a §5 regression** (diagnosed: the changed mounts don't render in the default view).
+- Fix: isolated 2nd Vite pass `vite.screen.config.js` (`root: static`, `emptyOutDir: false`) compiles
+  the entry + rewrites screen.html into `build/`, run after the SvelteKit build (`package.json`:
+  `vite build && vite build --config vite.screen.config.js`). Main SPA build verified untouched
+  (`build/index.html` still → `_app/immutable/*`). **Boss PASS** (2nd screen renders + §5 colours
+  carry across both windows + live cross-window Setter change).
+
+### Verification (§5 + fix)
+- `svelte-check` 0 errors. Standalone screen build succeeds (`build/screen.html` → hashed chunk).
+  Binary mtime verified before each Boss test (Stage 0). Commits: `1b67f036` (packaging fix),
+  `ba3affc5` (§5 + centre-fill), docs (orientation v2.59, this log, MoCh).
+
+### Pending (MIG-072 close)
+- §6 — the /migration Phase-4 audit (invariant · drift · migration-path agents). 14-language help
+  batched. Milestone + orientation re-bump at close.
