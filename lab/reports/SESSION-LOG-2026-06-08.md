@@ -159,3 +159,21 @@ All 15 verified valid JSON. svelte-check 0. Commits `fb76cbac` (283) + `c1c6fd8f
   + a new **Interface → "Centre zone background"** control (live; Interface is a twoZone category).
 - Boss-validated iteratively across the whole arc: labels → swatch+preview → editor mock-up → RTL → centre-zone.
 - **Still pending:** the help-doc Sky View topic (15 langs); the Setter's hover-tooltips/aria-labels remain English (minor).
+
+### Remaining localization — ALL swept (Boss-validated, 2026-06-09)
+Eisa: "Proceed with the remaining!" → all done:
+- **Setter tooltips + aria (`8c0f1680`):** the last hardcoded Setter strings — every `title=` tooltip +
+  `aria-label` — wrapped through `L()` (styleSetter.labels 284 → 303 keys × 15). Setter now 100% localized.
+- **Sky View legend names (`6ad5b092`):** the Color-by-Maturity/Stratum legend showed RAW English state
+  names ("sapling", "Stratum 1"); new `legendLabel()` in GraphMindView translates maturity/stratum
+  (reusing graphView.ns* + 2 new keys nsSeed/stratum × 15); library/folder names stay verbatim (user data).
+- **360.3D Inspector vocab (`6ad5b092`):** `inspector360` had 94 keys in en+ar only; the other 13 had 24
+  (missing 70: strata names, dimensions, maturity/origin/stage states, long help_* descriptions).
+  Backfilled all 70 × 13 via parallel agents (reusing existing locale terms) → all 15 at 94 keys.
+- **Sky View help article (`7325629b`):** the 317-line `Sky View.md` translated into all 14 other languages
+  (`docs/help.<lang>/Sky View/`), markdown preserved, UI terms reused. (Docs — not bundled in the app.)
+- **ja.json maturity typo (`6ad5b092`):** pre-existing `成營度` → `成熟度` in graphView (4 occ.; caught by
+  the translators, Eisa also flagged). 0 `營` remain; 85 top-level keys; valid.
+- Method: per-language parallel agents → deterministic merge scripts (English-fallback) → all-15 JSON-parse
+  verify → svelte-check 0 → `--no-bundle` build, binary mtime-verified. The Sky View / Style Setter / 360.3D
+  surface is now fully localized.
