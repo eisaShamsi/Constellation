@@ -31,6 +31,19 @@
 	// cards is the documented main-thread FREEZE shape that the clean-slate Setter exists to avoid
 	// (orientation v2.49; LL-014). The Setter lists only the user's SAVED styles, as lightweight rows.
 	import { loadStylePresets, saveStylePresets, newPresetFromCurrent, applyPreset, exportPreset, importPreset, SECTION_CATALOGUE, type StylePreset } from '$lib/libraries/stylePresets';
+	import { t } from '$lib/i18n';
+
+	// MIG-072 follow-up — Style Setter i18n. Every control label / group + category name / chrome
+	// string renders through L(en): it looks up `styleSetter.labels.<slug>` and FALLS BACK to the
+	// English text, so any untranslated string shows exactly as today (zero regression). Identical
+	// English strings (the many "Background", "Button size", …) dedupe to one shared key.
+	function ssSlug(s: string): string {
+		return (s || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+	}
+	function L(en: string | undefined | null): string {
+		if (!en) return en ?? '';
+		return $t('styleSetter.labels.' + ssSlug(en)) || en;
+	}
 
 	// A control writes one REAL app CSS variable. `color` → hex; `select` → a stack/keyword;
 	// `range` → a number + unit (e.g. `32px`, or `700` when unit is '').
@@ -573,7 +586,7 @@
 		const key = el?.getAttribute('data-style-target') ?? '';
 		if (!el || !ELEMENTS[key]) { inspectRect = null; return; }
 		const r = el.getBoundingClientRect();
-		inspectRect = { x: r.left, y: r.top, w: r.width, h: r.height, label: ELEMENTS[key].name };
+		inspectRect = { x: r.left, y: r.top, w: r.width, h: r.height, label: L(ELEMENTS[key].name) };
 	}
 	function onInspectClick(e: MouseEvent) {
 		if (!inspecting) return;
@@ -810,32 +823,32 @@
 		<div class="ss" class:ss--twozone={twoZone} style="width:{panelW}px;height:{panelH}px;{draftStyle}">
 			<!-- Top bar -->
 			<header class="ss-top">
-				<span class="ss-brand"><span class="ss-star">✦</span> Style Setter</span>
-				{#if twoZone}<span class="ss-livetag" title="Your edits show on the real app live — Keep to save, Discard to revert">● live</span>{/if}
-				<span class="ss-draft">draft: <input class="ss-dname" bind:value={draftName} /></span>
+				<span class="ss-brand"><span class="ss-star">✦</span> {L('Style Setter')}</span>
+				{#if twoZone}<span class="ss-livetag" title="Your edits show on the real app live — Keep to save, Discard to revert">● {L('live')}</span>{/if}
+				<span class="ss-draft">{L('draft')}: <input class="ss-dname" bind:value={draftName} /></span>
 				<span class="ss-spacer"></span>
-				<button class="ss-btn" class:ss-primary={inspecting} onclick={toggleInspect} title="Inspect — hover the real app and click a part to jump to its controls">⌖ Inspect</button>
-				<button class="ss-btn" onclick={resetDraft} title="Clear all overrides — back to the theme default">Reset</button>
-				<button class="ss-btn" onclick={discard} title="Abandon unsaved changes (the real app reverts)">Discard</button>
-				<button class="ss-btn ss-primary" onclick={keep} title="Save this look (per-Universe)">Keep</button>
+				<button class="ss-btn" class:ss-primary={inspecting} onclick={toggleInspect} title="Inspect — hover the real app and click a part to jump to its controls">⌖ {L('Inspect')}</button>
+				<button class="ss-btn" onclick={resetDraft} title="Clear all overrides — back to the theme default">{L('Reset')}</button>
+				<button class="ss-btn" onclick={discard} title="Abandon unsaved changes (the real app reverts)">{L('Discard')}</button>
+				<button class="ss-btn ss-primary" onclick={keep} title="Save this look (per-Universe)">{L('Keep')}</button>
 				<button class="ss-btn ss-icon" aria-label="Close" onclick={closeStyleSetter}>✕</button>
 			</header>
 
 			<!-- Left rail: surfaces + themes -->
 			<aside class="ss-left">
-				<div class="ss-rlabel">Surfaces</div>
+				<div class="ss-rlabel">{L('Surfaces')}</div>
 				{#each CATEGORIES as cat (cat.key)}
 					<button class="ss-surface" class:active={activeCategory === cat.key} onclick={() => pickCategory(cat)}>
-						<span class="ss-sdot"></span> {cat.name}
+						<span class="ss-sdot"></span> {L(cat.name)}
 					</button>
 					{#if activeCategory === cat.key}
 						{#each cat.elements as elKey (elKey)}
-							<button class="ss-elhead" class:active={selected === elKey} onclick={() => selectEl(elKey)}>{ELEMENTS[elKey].name}</button>
+							<button class="ss-elhead" class:active={selected === elKey} onclick={() => selectEl(elKey)}>{L(ELEMENTS[elKey].name)}</button>
 						{/each}
 					{/if}
 				{/each}
 				<div class="ss-divider"></div>
-				<div class="ss-rlabel">Saved styles</div>
+				<div class="ss-rlabel">{L('Saved styles')}</div>
 				<div class="ss-stylelist">
 					{#each savedStyles as p (p.id)}
 						{#if renamingId === p.id}
@@ -856,19 +869,19 @@
 							</div>
 						{/if}
 					{/each}
-					{#if !savedStyles.length}<div class="ss-srow-empty">Design a look, then save it as a named style you can reuse.</div>{/if}
-					<button class="ss-srow ss-srow-save" onclick={saveAsStyle}>+ Save current as a style</button>
-					<button class="ss-srow ss-srow-save" onclick={importStyle}>↥ Import a style</button>
+					{#if !savedStyles.length}<div class="ss-srow-empty">{L('Design a look, then save it as a named style you can reuse.')}</div>{/if}
+					<button class="ss-srow ss-srow-save" onclick={saveAsStyle}>+ {L('Save current as a style')}</button>
+					<button class="ss-srow ss-srow-save" onclick={importStyle}>↥ {L('Import a style')}</button>
 				</div>
 			</aside>
 
 			<!-- Center: focused preview of the SELECTED element (Eisa §C) -->
 			<main class="ss-center">
-				<div class="ss-hint">{selected ? 'Previewing: ' + (sel?.name ?? '') : 'Select an element on the left to preview & style it'}</div>
+				<div class="ss-hint">{selected ? L('Previewing') + ': ' + (sel?.name ? L(sel.name) : '') : L('Select an element on the left to preview & style it')}</div>
 				<div class="ss-stage">
 					{#if activeSurface !== 'editor'}
 						<div class="ss-prev-alt" class:ss-prev-alt--sky={activeSurface === 'sky'}>
-							<div class="ss-alt-title">{CATEGORIES.find((c) => c.surface === activeSurface)?.name}</div>
+							<div class="ss-alt-title">{L(CATEGORIES.find((c) => c.surface === activeSurface)?.name)}</div>
 							{#if activeSurface === 'sky'}
 								<!-- MIG-072 §2 — live Sky View preview. Each bubble reads its --skyview-* var, so it
 								     recolours as you pick. Click a group to style it; click the empty canvas for the
@@ -884,90 +897,90 @@
 										onclick={(e) => { e.stopPropagation(); selectEl('skyNodes'); }}
 										onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); selectEl('skyNodes'); } }}>
 										<canvas bind:this={stackCanvas} width="280" height="240"></canvas>
-										<div class="ssn-stack-cap">Stacked example · maturity → MOC → open-note (live spacing)</div>
+										<div class="ssn-stack-cap">{L('Stacked example · maturity → MOC → open-note (live spacing)')}</div>
 									</div>
 									<div class="ssn-group ss-hot" class:ss-sel={selected === 'skyNodes'}
 										role="button" tabindex="0" aria-label="nodes"
 										onclick={(e) => { e.stopPropagation(); selectEl('skyNodes'); }}
 										onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); selectEl('skyNodes'); } }}>
-										<div class="ssn-title">Nodes</div>
+										<div class="ssn-title">{L('Nodes')}</div>
 										<div class="ssn-row">
-											<div class="ssn-cell"><span class="ssn-bub"></span><span class="ssn-cap">Default</span></div>
-											<div class="ssn-cell"><span class="ssn-bub ssn-active"></span><span class="ssn-cap">Open note</span></div>
-											<div class="ssn-cell"><span class="ssn-bub ssn-pinned"></span><span class="ssn-cap">Pinned</span></div>
-											<div class="ssn-cell"><span class="ssn-bub ssn-orphan"></span><span class="ssn-cap">Orphan</span></div>
+											<div class="ssn-cell"><span class="ssn-bub"></span><span class="ssn-cap">{L('Default')}</span></div>
+											<div class="ssn-cell"><span class="ssn-bub ssn-active"></span><span class="ssn-cap">{L('Open note')}</span></div>
+											<div class="ssn-cell"><span class="ssn-bub ssn-pinned"></span><span class="ssn-cap">{L('Pinned')}</span></div>
+											<div class="ssn-cell"><span class="ssn-bub ssn-orphan"></span><span class="ssn-cap">{L('Orphan')}</span></div>
 										</div>
 									</div>
 									<div class="ssn-group ss-hot" class:ss-sel={selected === 'skyMaturity'}
 										role="button" tabindex="0" aria-label="maturity rings"
 										onclick={(e) => { e.stopPropagation(); selectEl('skyMaturity'); }}
 										onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); selectEl('skyMaturity'); } }}>
-										<div class="ssn-title">Maturity rings</div>
+										<div class="ssn-title">{L('Maturity rings')}</div>
 										<div class="ssn-row">
-											<div class="ssn-cell"><span class="ssn-bub ssn-mat-sapling"></span><span class="ssn-cap">Sapling</span></div>
-											<div class="ssn-cell"><span class="ssn-bub ssn-mat-evergreen"></span><span class="ssn-cap">Evergreen</span></div>
-											<div class="ssn-cell"><span class="ssn-bub ssn-mat-canonical"></span><span class="ssn-cap">Canonical</span></div>
-											<div class="ssn-cell"><span class="ssn-bub ssn-mat-wilting"></span><span class="ssn-cap">Wilting</span></div>
+											<div class="ssn-cell"><span class="ssn-bub ssn-mat-sapling"></span><span class="ssn-cap">{L('Sapling')}</span></div>
+											<div class="ssn-cell"><span class="ssn-bub ssn-mat-evergreen"></span><span class="ssn-cap">{L('Evergreen')}</span></div>
+											<div class="ssn-cell"><span class="ssn-bub ssn-mat-canonical"></span><span class="ssn-cap">{L('Canonical')}</span></div>
+											<div class="ssn-cell"><span class="ssn-bub ssn-mat-wilting"></span><span class="ssn-cap">{L('Wilting')}</span></div>
 										</div>
 									</div>
 									<div class="ssn-group ss-hot" class:ss-sel={selected === 'skyGlow'}
 										role="button" tabindex="0" aria-label="glows and moc"
 										onclick={(e) => { e.stopPropagation(); selectEl('skyGlow'); }}
 										onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); selectEl('skyGlow'); } }}>
-										<div class="ssn-title">Glows &amp; MOC</div>
+										<div class="ssn-title">{L('Glows & MOC')}</div>
 										<div class="ssn-row">
-											<div class="ssn-cell"><span class="ssn-bub ssn-glow-recv"></span><span class="ssn-cap">Received</span></div>
-											<div class="ssn-cell"><span class="ssn-bub ssn-glow-disc"></span><span class="ssn-cap">Discovered</span></div>
-											<div class="ssn-cell"><span class="ssn-bub ssn-moc"></span><span class="ssn-cap">MOC</span></div>
+											<div class="ssn-cell"><span class="ssn-bub ssn-glow-recv"></span><span class="ssn-cap">{L('Received')}</span></div>
+											<div class="ssn-cell"><span class="ssn-bub ssn-glow-disc"></span><span class="ssn-cap">{L('Discovered')}</span></div>
+											<div class="ssn-cell"><span class="ssn-bub ssn-moc"></span><span class="ssn-cap">{L('MOC')}</span></div>
 										</div>
 									</div>
 									<div class="ssn-group ss-hot" class:ss-sel={selected === 'skyLinks'}
 										role="button" tabindex="0" aria-label="edges"
 										onclick={(e) => { e.stopPropagation(); selectEl('skyLinks'); }}
 										onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); selectEl('skyLinks'); } }}>
-										<div class="ssn-title">Edges</div>
+										<div class="ssn-title">{L('Edges')}</div>
 										<div class="ssn-row">
-											<div class="ssn-cell"><span class="ssn-line ssn-edge-normal"></span><span class="ssn-cap">Untyped</span></div>
-											<div class="ssn-cell"><span class="ssn-line ssn-edge-hover"></span><span class="ssn-cap">Hover</span></div>
-											<div class="ssn-cell"><span class="ssn-line ssn-edge-semantic"></span><span class="ssn-cap">Semantic</span></div>
-											<div class="ssn-cell"><span class="ssn-arrow ssn-arrow-out">➜</span><span class="ssn-cap">Out</span></div>
-											<div class="ssn-cell"><span class="ssn-arrow ssn-arrow-in">➜</span><span class="ssn-cap">In</span></div>
-											<div class="ssn-cell"><span class="ssn-cbub ssn-cluster"></span><span class="ssn-cap">Cluster</span></div>
+											<div class="ssn-cell"><span class="ssn-line ssn-edge-normal"></span><span class="ssn-cap">{L('Untyped')}</span></div>
+											<div class="ssn-cell"><span class="ssn-line ssn-edge-hover"></span><span class="ssn-cap">{L('Hover')}</span></div>
+											<div class="ssn-cell"><span class="ssn-line ssn-edge-semantic"></span><span class="ssn-cap">{L('Semantic')}</span></div>
+											<div class="ssn-cell"><span class="ssn-arrow ssn-arrow-out">➜</span><span class="ssn-cap">{L('Out')}</span></div>
+											<div class="ssn-cell"><span class="ssn-arrow ssn-arrow-in">➜</span><span class="ssn-cap">{L('In')}</span></div>
+											<div class="ssn-cell"><span class="ssn-cbub ssn-cluster"></span><span class="ssn-cap">{L('Cluster')}</span></div>
 										</div>
 									</div>
 									<div class="ssn-group ss-hot" class:ss-sel={selected === 'skyOverlays'}
 										role="button" tabindex="0" aria-label="overlays"
 										onclick={(e) => { e.stopPropagation(); selectEl('skyOverlays'); }}
 										onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); selectEl('skyOverlays'); } }}>
-										<div class="ssn-title">Overlays</div>
+										<div class="ssn-title">{L('Overlays')}</div>
 										<div class="ssn-row">
-											<div class="ssn-cell"><span class="ssn-line ssn-trail"></span><span class="ssn-cap">Trail</span></div>
-											<div class="ssn-cell"><span class="ssn-badge ssn-b-title">T</span><span class="ssn-cap">Title</span></div>
-											<div class="ssn-cell"><span class="ssn-badge ssn-b-content">C</span><span class="ssn-cap">Content</span></div>
-											<div class="ssn-cell"><span class="ssn-badge ssn-b-tag">#</span><span class="ssn-cap">Tag</span></div>
-											<div class="ssn-cell"><span class="ssn-badge ssn-b-property">P</span><span class="ssn-cap">Property</span></div>
-											<div class="ssn-cell"><span class="ssn-badge ssn-b-wikilink">W</span><span class="ssn-cap">Wikilink</span></div>
-											<div class="ssn-cell"><span class="ssn-badge ssn-b-semantic">S</span><span class="ssn-cap">Semantic</span></div>
-											<div class="ssn-cell"><span class="ssn-badge ssn-b-structured">?</span><span class="ssn-cap">Struct.</span></div>
+											<div class="ssn-cell"><span class="ssn-line ssn-trail"></span><span class="ssn-cap">{L('Trail')}</span></div>
+											<div class="ssn-cell"><span class="ssn-badge ssn-b-title">T</span><span class="ssn-cap">{L('Title')}</span></div>
+											<div class="ssn-cell"><span class="ssn-badge ssn-b-content">C</span><span class="ssn-cap">{L('Content')}</span></div>
+											<div class="ssn-cell"><span class="ssn-badge ssn-b-tag">#</span><span class="ssn-cap">{L('Tag')}</span></div>
+											<div class="ssn-cell"><span class="ssn-badge ssn-b-property">P</span><span class="ssn-cap">{L('Property')}</span></div>
+											<div class="ssn-cell"><span class="ssn-badge ssn-b-wikilink">W</span><span class="ssn-cap">{L('Wikilink')}</span></div>
+											<div class="ssn-cell"><span class="ssn-badge ssn-b-semantic">S</span><span class="ssn-cap">{L('Semantic')}</span></div>
+											<div class="ssn-cell"><span class="ssn-badge ssn-b-structured">?</span><span class="ssn-cap">{L('Struct.')}</span></div>
 										</div>
 									</div>
 									<div class="ssn-group ss-hot" class:ss-sel={selected === 'skyLabels'}
 										role="button" tabindex="0" aria-label="labels"
 										onclick={(e) => { e.stopPropagation(); selectEl('skyLabels'); }}
 										onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); selectEl('skyLabels'); } }}>
-										<div class="ssn-title">Labels</div>
-										<div class="ssn-row"><span class="ssn-labelsample">Apple (Fruit)</span></div>
+										<div class="ssn-title">{L('Labels')}</div>
+										<div class="ssn-row"><span class="ssn-labelsample">{L('Apple (Fruit)')}</span></div>
 									</div>
 									<div class="ssn-group ss-hot" class:ss-sel={selected === 'skyGizmo'}
 										role="button" tabindex="0" aria-label="3d gizmo"
 										onclick={(e) => { e.stopPropagation(); selectEl('skyGizmo'); }}
 										onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); selectEl('skyGizmo'); } }}>
-										<div class="ssn-title">3D gizmo</div>
+										<div class="ssn-title">{L('3D gizmo')}</div>
 										<div class="ssn-row">
-											<div class="ssn-cell"><span class="ssn-gz ssn-gz-x">X</span><span class="ssn-cap">X</span></div>
-											<div class="ssn-cell"><span class="ssn-gz ssn-gz-y">Y</span><span class="ssn-cap">Y</span></div>
-											<div class="ssn-cell"><span class="ssn-gz ssn-gz-z">Z</span><span class="ssn-cap">Z</span></div>
-											<div class="ssn-cell"><span class="ssn-gz-dot"></span><span class="ssn-cap">Centre</span></div>
+											<div class="ssn-cell"><span class="ssn-gz ssn-gz-x">X</span><span class="ssn-cap">{L('X')}</span></div>
+											<div class="ssn-cell"><span class="ssn-gz ssn-gz-y">Y</span><span class="ssn-cap">{L('Y')}</span></div>
+											<div class="ssn-cell"><span class="ssn-gz ssn-gz-z">Z</span><span class="ssn-cap">{L('Z')}</span></div>
+											<div class="ssn-cell"><span class="ssn-gz-dot"></span><span class="ssn-cap">{L('Centre')}</span></div>
 										</div>
 									</div>
 								</div>
@@ -983,27 +996,27 @@
 									<div class="ss-irow"><span class="ss-ibar" style="width:30%"></span> carrot</div>
 								</div>
 							{/if}
-							<div class="ss-alt-note">representative snapshot · re-colours with your edits</div>
+							<div class="ss-alt-note">{L('representative snapshot · re-colours with your edits')}</div>
 						</div>
 					{:else if pk === 'none'}
 						<div class="ss-focus ss-focus-empty">Pick an element on the left — its preview appears here.</div>
 					{:else if pk === 'note'}
 						<div class="ss-focus ss-fcard ss-fnote">
-							<span class="ss-breadcrumb ss-hot2" class:ss-sel={selected === 'breadcrumb'} onclick={() => selectEl('breadcrumb')}>📚 My Library / Apple (Fruit)</span>
-							<span class="ss-title ss-hot2" class:ss-sel={selected === 'text' || selected === 'noteBg'} onclick={() => selectEl('text')}>Apple (Fruit)</span>
-							<span class="ss-summary ss-hot2" class:ss-sel={selected === 'summary'} onclick={() => selectEl('summary')}>A crisp pome fruit — sweet, tart, and endlessly useful.</span>
-							<span class="ss-h1 ss-hot2" class:ss-sel={selected === 'h1'} onclick={() => selectEl('h1')}>Heading one</span>
-							<span class="ss-h2 ss-hot2" class:ss-sel={selected === 'h2'} onclick={() => selectEl('h2')}>Heading two</span>
-							<span class="ss-h3 ss-hot2" class:ss-sel={selected === 'h3'} onclick={() => selectEl('h3')}>Heading three</span>
+							<span class="ss-breadcrumb ss-hot2" class:ss-sel={selected === 'breadcrumb'} onclick={() => selectEl('breadcrumb')}>📚 {L('My Library')} / {L('Apple (Fruit)')}</span>
+							<span class="ss-title ss-hot2" class:ss-sel={selected === 'text' || selected === 'noteBg'} onclick={() => selectEl('text')}>{L('Apple (Fruit)')}</span>
+							<span class="ss-summary ss-hot2" class:ss-sel={selected === 'summary'} onclick={() => selectEl('summary')}>{L('A crisp pome fruit — sweet, tart, and endlessly useful.')}</span>
+							<span class="ss-h1 ss-hot2" class:ss-sel={selected === 'h1'} onclick={() => selectEl('h1')}>{L('Heading one')}</span>
+							<span class="ss-h2 ss-hot2" class:ss-sel={selected === 'h2'} onclick={() => selectEl('h2')}>{L('Heading two')}</span>
+							<span class="ss-h3 ss-hot2" class:ss-sel={selected === 'h3'} onclick={() => selectEl('h3')}>{L('Heading three')}</span>
 							<span class="ss-body">
-								An <b class="ss-bold ss-hot2" class:ss-sel={selected === 'bold'} onclick={() => selectEl('bold')}>apple</b>
-								a day pairs with a <i class="ss-italic ss-hot2" class:ss-sel={selected === 'italic'} onclick={() => selectEl('italic')}>crisp</i>
-								<span class="ss-link ss-hot2" class:ss-sel={selected === 'link'} onclick={() => selectEl('link')}>[[Banana]]</span>
-								<span class="ss-pill ss-hot2" class:ss-sel={selected === 'accent'} onclick={() => selectEl('accent')}>supports</span>
-								— see <code class="ss-code ss-hot2" class:ss-sel={selected === 'code'} onclick={() => selectEl('code')}>juice()</code>,
-								<s class="ss-strike ss-hot2" class:ss-sel={selected === 'strike'} onclick={() => selectEl('strike')}>an old note</s>.
+								{L('An')} <b class="ss-bold ss-hot2" class:ss-sel={selected === 'bold'} onclick={() => selectEl('bold')}>{L('apple')}</b>
+								{L('a day pairs with a')} <i class="ss-italic ss-hot2" class:ss-sel={selected === 'italic'} onclick={() => selectEl('italic')}>{L('crisp')}</i>
+								<span class="ss-link ss-hot2" class:ss-sel={selected === 'link'} onclick={() => selectEl('link')}>[[{L('Banana')}]]</span>
+								<span class="ss-pill ss-hot2" class:ss-sel={selected === 'accent'} onclick={() => selectEl('accent')}>{L('supports')}</span>
+								— {L('see')} <code class="ss-code ss-hot2" class:ss-sel={selected === 'code'} onclick={() => selectEl('code')}>juice()</code>,
+								<s class="ss-strike ss-hot2" class:ss-sel={selected === 'strike'} onclick={() => selectEl('strike')}>{L('an old note')}</s>.
 							</span>
-							<span class="ss-quote ss-hot2" class:ss-sel={selected === 'quote'} onclick={() => selectEl('quote')}>“An apple a day keeps the doctor away.”</span>
+							<span class="ss-quote ss-hot2" class:ss-sel={selected === 'quote'} onclick={() => selectEl('quote')}>“{L('An apple a day keeps the doctor away.')}”</span>
 							<span class="ss-hrow">
 								<span class="ss-h4 ss-hot2" class:ss-sel={selected === 'h4'} onclick={() => selectEl('h4')}>H4</span>
 								<span class="ss-h5 ss-hot2" class:ss-sel={selected === 'h5'} onclick={() => selectEl('h5')}>H5</span>
@@ -1012,14 +1025,14 @@
 						</div>
 					{:else if pk === 'tree'}
 						<div class="ss-focus ss-fcard ss-ftree">
-							<span class="ss-lib ss-hot2" class:ss-sel={selected === 'library' || selected === 'interface'} onclick={() => selectEl('library')}>📚 My Library</span>
-							<span class="ss-folder ss-hot2" class:ss-sel={selected === 'folder'} onclick={() => selectEl('folder')}>📁 Ideas</span>
-							<span class="ss-file ss-hot2" class:ss-sel={selected === 'fileTree'} onclick={() => selectEl('fileTree')}>Apple (Fruit)</span>
-							<span class="ss-file dim ss-hot2" class:ss-sel={selected === 'fileTree'} onclick={() => selectEl('fileTree')}>Banana</span>
-							<span class="ss-cuniverse ss-hot2" class:ss-sel={selected === 'cuniverse'} onclick={() => selectEl('cuniverse')}>✦ Linked Universe</span>
+							<span class="ss-lib ss-hot2" class:ss-sel={selected === 'library' || selected === 'interface'} onclick={() => selectEl('library')}>📚 {L('My Library')}</span>
+							<span class="ss-folder ss-hot2" class:ss-sel={selected === 'folder'} onclick={() => selectEl('folder')}>📁 {L('Ideas')}</span>
+							<span class="ss-file ss-hot2" class:ss-sel={selected === 'fileTree'} onclick={() => selectEl('fileTree')}>{L('Apple (Fruit)')}</span>
+							<span class="ss-file dim ss-hot2" class:ss-sel={selected === 'fileTree'} onclick={() => selectEl('fileTree')}>{L('Banana')}</span>
+							<span class="ss-cuniverse ss-hot2" class:ss-sel={selected === 'cuniverse'} onclick={() => selectEl('cuniverse')}>✦ {L('Linked Universe')}</span>
 						</div>
 					{:else if pk === 'universe'}
-						<div class="ss-focus ss-fcard"><span class="ss-univ" style="margin-top:0">◇ Universe</span></div>
+						<div class="ss-focus ss-fcard"><span class="ss-univ" style="margin-top:0">◇ {L('Universe')}</span></div>
 					{:else if pk === 'statusbar'}
 						<div class="ss-focus ss-fcard ss-fstrip"><div class="ss-statusbar2"><span>Library · Note</span><span>7,660 notes · ✦ Universe</span></div></div>
 					{:else if pk === 'cDock'}
@@ -1058,8 +1071,8 @@
 			<!-- Right rail: controls for the selected element -->
 			<aside class="ss-right">
 				{#if sel}
-					<div class="ss-rlabel">Selected element</div>
-					<div class="ss-selname">{sel.name}</div>
+					<div class="ss-rlabel">{L('Selected element')}</div>
+					<div class="ss-selname">{L(sel.name)}</div>
 						{#if GLOBAL_ELS.has(selected ?? '')}
 							<!-- §C Option E item C — inline composite preview for the Global atoms. A sample card
 							     built from the Global CSS vars; the .ss wrapper carries the draft, so every shade /
@@ -1081,40 +1094,40 @@
 						{#each sel.controls as c (c.label)}
 						<div class="ss-ctrl">
 							{#if c.type === 'range'}
-								<label for={'ss-' + c.var}>{c.label}<span class="ss-rval">{curNum(c.var, c.def)}{c.unit}</span></label>
+								<label for={'ss-' + c.var}>{L(c.label)}<span class="ss-rval">{curNum(c.var, c.def)}{c.unit}</span></label>
 								<input id={'ss-' + c.var} type="range" min={c.min} max={c.max} step={c.step}
 									value={curNum(c.var, c.def)}
 									oninput={(e) => setVar(c.var, (e.currentTarget as HTMLInputElement).value + c.unit)} />
 							{:else if c.type === 'color'}
-								<label for={'ss-' + c.var}>{c.label}</label>
+								<label for={'ss-' + c.var}>{L(c.label)}</label>
 								<input id={'ss-' + c.var} type="color" value={hexOf(curVal(c.var))}
 									onfocus={() => activeColorVar = c.var}
 									oninput={(e) => { activeColorVar = c.var; setVar(c.var, (e.currentTarget as HTMLInputElement).value); }}
 									onchange={(e) => addStyleSwatch((e.currentTarget as HTMLInputElement).value)} />
 							{:else if c.type === 'scriptfont'}
-								<label for={'ss-sf-' + c.script}>{c.label}</label>
+								<label for={'ss-sf-' + c.script}>{L(c.label)}</label>
 								<select id={'ss-sf-' + c.script} value={$appSettings.perScriptFonts?.[c.script] ?? ''} onchange={(e) => setPerScriptFont(c.script, (e.currentTarget as HTMLSelectElement).value)}>
-									{#each c.options as [lbl, val] (lbl)}<option value={val}>{lbl}</option>{/each}
+									{#each c.options as [lbl, val] (lbl)}<option value={val}>{L(lbl)}</option>{/each}
 								</select>
 							{:else if c.type === 'toggle'}
 								<label class="ss-toggle">
-									<span>{c.label}</span>
+									<span>{L(c.label)}</span>
 									<input type="checkbox" checked={$appSettings[c.setting]}
 										onchange={(e) => setToggle(c.setting, (e.currentTarget as HTMLInputElement).checked)} />
 								</label>
 							{:else if c.type === 'pillrange'}
-								<label for={'ss-pill-' + c.prop}>{c.label}<span class="ss-rval">{pillShape[c.prop]}{c.unit}</span></label>
+								<label for={'ss-pill-' + c.prop}>{L(c.label)}<span class="ss-rval">{pillShape[c.prop]}{c.unit}</span></label>
 								<input id={'ss-pill-' + c.prop} type="range" min={c.min} max={c.max} step={c.step}
 									value={pillShape[c.prop]}
 									oninput={(e) => setPillShape(c.prop, parseInt((e.currentTarget as HTMLInputElement).value))} />
 							{:else if c.type === 'pillselect'}
-								<label for={'ss-pill-' + c.prop}>{c.label}</label>
+								<label for={'ss-pill-' + c.prop}>{L(c.label)}</label>
 								<select id={'ss-pill-' + c.prop} value={String(pillShape[c.prop])}
 									onchange={(e) => setPillShape(c.prop, parseInt((e.currentTarget as HTMLSelectElement).value))}>
-									{#each c.options as [lbl, val] (val)}<option value={val}>{lbl}</option>{/each}
+									{#each c.options as [lbl, val] (val)}<option value={val}>{L(lbl)}</option>{/each}
 								</select>
 							{:else if c.type === 'appnum'}
-								<label for={'ss-an-' + c.setting}>{c.label}<span class="ss-rval">{$appSettings[c.setting] ?? c.def}{c.unit}</span></label>
+								<label for={'ss-an-' + c.setting}>{L(c.label)}<span class="ss-rval">{$appSettings[c.setting] ?? c.def}{c.unit}</span></label>
 								<input id={'ss-an-' + c.setting} type="range" min={c.min} max={c.max} step={c.step}
 									value={$appSettings[c.setting] ?? c.def}
 									oninput={(e) => setAppNum(c.setting, parseInt((e.currentTarget as HTMLInputElement).value))} />
@@ -1124,9 +1137,9 @@
 								     (underline / border / shadow / italic) keep their fixed options. -->
 								{@const isFont = c.var.includes('font')}
 								{@const opts = isFont ? fontOptions : c.options}
-								<label for={'ss-' + c.var}>{c.label}</label>
+								<label for={'ss-' + c.var}>{L(c.label)}</label>
 								<select id={'ss-' + c.var} value={curVal(c.var)} onchange={(e) => setVar(c.var, (e.currentTarget as HTMLSelectElement).value)}>
-									{#each opts as [lbl, val] (val)}<option value={val} style={isFont ? `font-family:${val}` : ''}>{lbl}</option>{/each}
+									{#each opts as [lbl, val] (val)}<option value={val} style={isFont ? `font-family:${val}` : ''}>{L(lbl)}</option>{/each}
 								</select>
 							{/if}
 						</div>
@@ -1136,8 +1149,8 @@
 					{/if}
 					{#if ($appSettings.styleSwatches ?? []).length && sel.controls.some((c) => c.type === 'color')}
 						<div class="ss-rlabel ss-rlabel-row">
-							<span>Saved colours</span>
-							<button class="ss-manage-tog" class:active={managingSwatches} onclick={() => { managingSwatches = !managingSwatches; confirmDeleteHex = null; }} title="Name, rename or remove saved colours">{managingSwatches ? 'Done' : 'Manage'}</button>
+							<span>{L('Saved colours')}</span>
+							<button class="ss-manage-tog" class:active={managingSwatches} onclick={() => { managingSwatches = !managingSwatches; confirmDeleteHex = null; }} title="Name, rename or remove saved colours">{managingSwatches ? L('Done') : L('Manage')}</button>
 						</div>
 						<div class="ss-swatches">
 							{#each $appSettings.styleSwatches as sw (sw.hex)}
@@ -1152,7 +1165,7 @@
 									{#if confirmDeleteHex === sw.hex}
 										<div class="ss-swatch-row ss-swatch-confirm">
 											<span class="ss-swatch-chip" style="background:{sw.hex}"></span>
-											<span class="ss-confirm-text">Remove {sw.name || sw.hex}?</span>
+											<span class="ss-confirm-text">{L('Remove')} {sw.name || sw.hex}?</span>
 											<button class="ss-confirm-yes" onclick={() => { removeStyleSwatch(sw.hex); confirmDeleteHex = null; }}>Remove</button>
 											<button class="ss-confirm-no" onclick={() => confirmDeleteHex = null}>Cancel</button>
 										</div>
