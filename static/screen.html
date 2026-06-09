@@ -9,11 +9,12 @@
       body { margin: 0; padding: 0; overflow: hidden; }
       #app { display: contents; }
     </style>
-    <!-- Vite HMR client (dev mode only, ignored in production) -->
-    <script type="module" src="/@vite/client"></script>
   </head>
   <body class="theme-light">
     <div id="app"></div>
-    <script type="module" src="/src/screen-entry.ts"></script>
+    <!-- MIG-072 §5 fix: relative path resolves in BOTH dev (served at /screen.html →
+         /src/screen-entry.ts) and the standalone production build (vite.screen.config.js,
+         root=static → src/screen-entry.ts), so the built second screen is no longer blank. -->
+    <script type="module" src="../src/screen-entry.ts"></script>
   </body>
 </html>
