@@ -17,7 +17,7 @@
 	 */
 	import { onMount, onDestroy } from 'svelte';
 	import { get } from 'svelte/store';
-	import { styleSetterOpen, closeStyleSetter, styleSetterInspectRequest } from '$lib/stores/styleSetter';
+	import { styleSetterOpen, closeStyleSetter, styleSetterInspectRequest, styleSetterCategoryRequest } from '$lib/stores/styleSetter';
 	// MIG-070 §C polish (Item A) — real font choices: the shared catalogue (curated floor + the user's
 	// installed fonts via queryLocalFonts), reused from Settings. Drives the font pickers + live preview.
 	import { systemFonts, ensureSystemFonts, fontFamilyValue } from '$lib/fonts';
@@ -770,6 +770,15 @@
 	// §C item D — the dock shortcut: open straight into inspect mode (no Settings in the way).
 	$effect(() => {
 		if ($styleSetterInspectRequest && $styleSetterOpen) { styleSetterInspectRequest.set(false); startInspect(); }
+	});
+	// MIG-007 — open straight to a category (the Links Settings hub deep-links to the Links category's
+	// Link-Type editor). Reads request + open, clears the request, then navigates via pickCategory.
+	$effect(() => {
+		if ($styleSetterCategoryRequest && $styleSetterOpen) {
+			const target = CATEGORIES.find((cat) => cat.key === $styleSetterCategoryRequest);
+			styleSetterCategoryRequest.set(null);
+			if (target) pickCategory(target);
+		}
 	});
 	// §C item D — while inspecting, hide the Settings modal too (the Setter is often opened from it),
 	// so the REAL app is fully hoverable however inspect was triggered. DOM-class side effect (not a

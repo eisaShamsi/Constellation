@@ -20,3 +20,8 @@ export function closeStyleSetter() { styleSetterOpen.set(false); }
  *  startInspect on open, then resets the flag. */
 export const styleSetterInspectRequest = writable(false);
 export function openStyleSetterInspect() { styleSetterInspectRequest.set(true); styleSetterOpen.set(true); }
+
+/** MIG-007 — open the Setter straight to a given category (e.g. 'links' for the Link-Type editor),
+ *  used by the Links Settings tab hub. The Setter watches this on open, navigates there, then clears it. */
+export const styleSetterCategoryRequest = writable<string | null>(null);
+export function openStyleSetterToCategory(cat: string) { styleSetterCategoryRequest.set(cat); styleSetterOpen.set(true); }

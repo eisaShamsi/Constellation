@@ -11,7 +11,7 @@
 	import ArabicOverridesPanel from './ArabicOverridesPanel.svelte';
 	import PerLibraryCalibrationView from './PerLibraryCalibrationView.svelte';
 	import ConfirmDialog from './ConfirmDialog.svelte';
-	import { openStyleSetter } from '$lib/stores/styleSetter';
+	import { openStyleSetter, openStyleSetterToCategory } from '$lib/stores/styleSetter';
 	// MIG-070 §C polish (Item A) — shared font catalogue (curated floor + installed-font detection),
 	// reused by the Style Setter too. Replaces this file's old inline CURATED_FONTS + loadSystemFonts.
 	import { systemFonts, ensureSystemFonts } from '$lib/fonts';
@@ -1381,7 +1381,7 @@
 							<div class="setting-name">{$t('settings.links.editTypes') || 'Link types & colours'}</div>
 							<div class="setting-desc">{$t('settings.links.editTypesDesc') || 'Define your link types (the 8 acts + your own) and their colours in the Style Setter.'}</div>
 						</div>
-						<button class="w-btn" onclick={() => { onClose?.(); openStyleSetter(); }}>{$t('settings.links.editTypesBtn') || 'Open Style Setter →'}</button>
+						<button class="w-btn" onclick={() => { onClose?.(); openStyleSetterToCategory('links'); }}>{$t('settings.links.editTypesBtn') || 'Open Style Setter →'}</button>
 					</div>
 					<div class="setting-item">
 						<div class="setting-info">

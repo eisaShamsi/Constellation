@@ -6435,6 +6435,19 @@
 					{/if}
 					</div>
 				</div>
+			{:else if rightSidebarTab === 'links'}
+				<!-- MIG-007 — Link Dashboard is library-wide; pulled OUT of the isHome&&sidebarTab note-gate
+				     (like Tags) so it opens with or without an open note. -->
+				<div class="rs-section rs-full-height">
+					<LinkDashboard
+						allLinks={effectiveLibraryLinks}
+						allNotes={allNotes}
+						visible={rightSidebarOpen && rightSidebarTab === 'links'}
+						onNoteClick={(path, libraryName) => {
+							openNoteTab(path, libraryName, libraryColorMap[libraryName] || '#7c3aed');
+						}}
+					/>
+				</div>
 			{:else if isHome && sidebarTab}
 				{#if rightSidebarTab === 'properties'}
 					<!-- Properties Panel (interactive editor) -->
@@ -6584,17 +6597,6 @@
 							onNoteClick={(path, name) => {
 								const lib = $libraryStats.find(l => path.startsWith(l.path));
 								if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
-							}}
-						/>
-					</div>
-				{:else if rightSidebarTab === 'links'}
-					<div class="rs-section rs-full-height">
-						<LinkDashboard
-							allLinks={effectiveLibraryLinks}
-							allNotes={allNotes}
-							visible={rightSidebarOpen && rightSidebarTab === 'links'}
-							onNoteClick={(path, libraryName) => {
-								openNoteTab(path, libraryName, libraryColorMap[libraryName] || '#7c3aed');
 							}}
 						/>
 					</div>
