@@ -139,3 +139,23 @@ the Style Setter; the second screen renders in release builds for the first time
   hardcoded English (zero `$t(`) — localizing it is a Setter-wide CODE retrofit (wire `$t` + ~N keys ×
   15), its own task; (b) the help-doc **Sky View** topic (`docs/help.*/Sky View`) extended with the
   Setter coverage in 15 languages (batched help-doc pattern).
+
+### Style Setter — FULL UI localization + RTL + Centre-zone control (Boss-validated, 2026-06-09)
+Item (a) above is now DONE. The Setter was 100% hardcoded English (0 `$t(`). Wired EVERY user-facing
+string via an English-fallback helper `L(en)=$t('styleSetter.labels.<slug>')||en` (+ `ssSlug()`
+matching the key generator) → untranslated = English (zero regression). Coverage: all control labels,
+group + category names, chrome (Keep/Discard/Reset/Inspect/Surfaces/Saved styles/Save/Import/live/
+draft), the colour-swatch panel (Selected element/Saved colours/Manage/Done/Remove), the live preview
+pane (Sky bubble titles+captions), the editor NOTE MOCK-UP (breadcrumb/title/summary/headings/body/
+quote — native proverb for the quote), the tree+universe mock-ups, and dropdown OPTIONS (Solid/Dotted/
+Dashed/None, weights). Fonts stay native. `styleSetter.labels` = **284 keys** in en.json; translated
+into all 14 other languages (parallel agents, reusing each locale's existing terms incl. graphView.ns*).
+All 15 verified valid JSON. svelte-check 0. Commits `fb76cbac` (283) + `c1c6fd8f` (RTL + centre-zone → 284).
+- **RTL fix (Boss):** preview cards forced `text-align: left` → Arabic rendered left-aligned in the RTL
+  interface. All 4 `text-align: left` → `start` (cards already inherit `dir=rtl` from the app) → previews
+  now follow the interface direction (right in RTL, left in LTR).
+- **Centre-zone control (Boss):** the main content area (`.main-area`/`.content-area`/`.pane-container`)
+  hardcoded `#e8e8ec` and was uncontrollable. Now `var(--center-zone-bg, #e8e8ec)` (unset = today's gray)
+  + a new **Interface → "Centre zone background"** control (live; Interface is a twoZone category).
+- Boss-validated iteratively across the whole arc: labels → swatch+preview → editor mock-up → RTL → centre-zone.
+- **Still pending:** the help-doc Sky View topic (15 langs); the Setter's hover-tooltips/aria-labels remain English (minor).
