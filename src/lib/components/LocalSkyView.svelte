@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount, onDestroy, untrack } from 'svelte';
 	// MIG-044 Phase 2 (correction #2) — NSC summary headline in the hover
 	// tooltip. The two earlier corrections wired SkyView.svelte and
 	// FullSkyView.svelte; both turned out to be dead code (no static
@@ -7,6 +7,9 @@
 	// The component actually mounted in the right-side panel AND the second
 	// screen is THIS file, LocalSkyView. Wiring lands here.
 	import { getSummaryFor } from '$lib/nsc/summaryStore';
+	// MIG-072 §5 — second-screen parity: LocalSkyView shares the full Sky View palette.
+	import { resolveSkyPalette } from '$lib/graph/skyPalette';
+	import { appSettings, liveStyleDraft } from '$lib/libraries/store';
 
 	interface SkyNode {
 		id: string;
@@ -26,11 +29,16 @@
 		links,
 		activeNodeId = '',
 		onNodeClick,
+		libraryColorMap = {},
 	}: {
 		nodes: SkyNode[];
 		links: SkyLink[];
 		activeNodeId?: string;
 		onNodeClick: (id: string) => void;
+		// MIG-072 §5 — the SAME canonical { libraryName → colour } map the full Sky View uses
+		// (built once via buildLibraryColorMap($libraries) at the mount). Replaces LSV's old
+		// divergent LIBRARY_COLORS so a library is the same colour in both renderers.
+		libraryColorMap?: Record<string, string>;
 	} = $props();
 
 	let containerEl: HTMLDivElement;
@@ -53,12 +61,15 @@
 	let tooltipHeadlinePath = '';
 	let tooltipHeadlineToken = 0;
 
-	const LIBRARY_COLORS = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#06b6d4', '#84cc16'];
-	let libraryColorMap = new Map<string, string>();
-
-	function isDark(): boolean {
-		return document.body.classList.contains('theme-dark');
-	}
+	// MIG-072 §5 — palette resolved in the Svelte layer exactly as GraphMindView does, so the
+	// companion graph honours the Style Setter and matches the full Sky View. draw() never calls
+	// getComputedStyle (Perf Rule 3). LSV draws no typed edges, so typedLinks is empty ({}).
+	let isDark = $state(typeof document !== 'undefined' && document.body.classList.contains('theme-dark'));
+	let skyThemeObserver: MutationObserver | null = null;
+	const skyPalette = $derived(
+		resolveSkyPalette({ ...($appSettings.styleOverride ?? {}), ...$liveStyleDraft }, isDark, {})
+	);
+	function skyHex(n: number): string { return '#' + n.toString(16).padStart(6, '0'); }
 
 	function layout() {
 		if (!containerEl || !canvasEl) return;
@@ -74,11 +85,6 @@
 		canvasEl.style.height = height + 'px';
 		ctx = canvasEl.getContext('2d');
 		if (!ctx) return;
-
-		// Assign library colors
-		const libraryNames = [...new Set(nodes.map(n => n.libraryName))];
-		libraryColorMap = new Map();
-		libraryNames.forEach((v, i) => libraryColorMap.set(v, LIBRARY_COLORS[i % LIBRARY_COLORS.length]));
 
 		// Position nodes: active at center, others in circle
 		const cx = width / 2;
@@ -107,15 +113,15 @@
 	function draw(dpr?: number) {
 		if (!ctx || !canvasEl) return;
 		dpr = dpr || window.devicePixelRatio || 1;
-		const dark = isDark();
+		const dark = isDark;
 
 		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 		ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
 
 		const posMap = new Map(nodePositions.map(p => [p.node.id, p]));
 
-		// Draw links
-		ctx.strokeStyle = dark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)';
+		// Draw links — MIG-072 §5: untyped edge colour + opacity from the shared palette.
+		ctx.strokeStyle = adjustAlpha(skyHex(skyPalette.edgeNormal), skyPalette.edgeNormalAlpha);
 		ctx.lineWidth = 1;
 		for (const link of links) {
 			const s = posMap.get(link.source);
@@ -132,7 +138,8 @@
 		for (const pos of nodePositions) {
 			const isActive = pos.node.id === activeNodeId;
 			const isHovered = hoveredNode === pos.node;
-			const color = libraryColorMap.get(pos.node.libraryName) || '#6b7280';
+			// MIG-072 §5: canonical library colour (prop) → palette node-default fallback.
+			const color = libraryColorMap[pos.node.libraryName] || skyHex(skyPalette.nodeDefault);
 			const r = isActive ? 8 : isHovered ? 7 : 5;
 
 			ctx.beginPath();
@@ -141,7 +148,8 @@
 			ctx.fill();
 
 			if (isActive) {
-				ctx.strokeStyle = dark ? '#fff' : '#333';
+				// MIG-072 §5: the open-note ring colour from the shared palette.
+				ctx.strokeStyle = skyHex(skyPalette.ringActive);
 				ctx.lineWidth = 2;
 				ctx.stroke();
 			}
@@ -158,9 +166,10 @@
 			const label = pos.node.name.replace(/\.md$/, '');
 			const textWidth = ctx.measureText(label).width;
 
-			ctx.fillStyle = (isActive || isHovered)
-				? (dark ? '#fff' : '#000')
-				: (dark ? '#bbb' : '#555');
+			// MIG-072 §5: label colour from the shared palette; active/hovered at full strength,
+			// the rest faded — preserves the companion's "active note stands out" affordance.
+			const labelHex = skyHex(skyPalette.label);
+			ctx.fillStyle = (isActive || isHovered) ? labelHex : adjustAlpha(labelHex, 0.6);
 			ctx.fillText(label, pos.x, pos.y + (isActive ? 12 : 9) + fontSize - 1);
 		}
 	}
@@ -246,6 +255,13 @@
 			requestAnimationFrame(layout);
 		});
 		if (containerEl) resizeObserver.observe(containerEl);
+		// MIG-072 §5 — track the body theme class so the palette's dark/light defaults resolve
+		// correctly (mirrors GraphMindView); a change flips isDark → redraw via the palette $effect.
+		skyThemeObserver = new MutationObserver(() => {
+			const d = document.body.classList.contains('theme-dark');
+			if (d !== isDark) isDark = d;
+		});
+		skyThemeObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
 		// Initial layout deferred
 		requestAnimationFrame(layout);
 	});
@@ -253,6 +269,17 @@
 	onDestroy(() => {
 		resizeObserver?.disconnect();
 		resizeObserver = null;
+		skyThemeObserver?.disconnect(); // MIG-072 §5 — Rule 4: no leaked observers
+		skyThemeObserver = null;
+	});
+
+	// MIG-072 §5 — repaint when the Style Setter palette or the theme changes (positions are
+	// unchanged, so a draw() is enough). This is the live-preview path with the Setter open.
+	// Track ONLY palette + theme; untrack draw() so we add no new redraw triggers for the
+	// props it reads (links/activeNodeId keep their existing redraw paths untouched).
+	$effect(() => {
+		void skyPalette; void isDark;
+		untrack(() => { if (ctx) draw(); });
 	});
 
 	// Re-layout when nodes change

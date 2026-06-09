@@ -1320,6 +1320,7 @@
 											<LocalSkyView
 												nodes={panel.localSkyNodes}
 												links={panel.localSkyLinks}
+												libraryColorMap={libraryColorMap}
 												activeNodeId={panel.noteName.replace(/\.md$/, '').toLowerCase()}
 												onNodeClick={(id) => {
 													const note = allNotes.find(n => n.name.toLowerCase() === id);
@@ -1451,6 +1452,7 @@
 									<LocalSkyView
 										nodes={epLocalSkyNodes}
 										links={epLocalSkyLinks}
+										libraryColorMap={libraryColorMap}
 										activeNodeId={editorPanelsData.noteName?.replace(/\.md$/, '').toLowerCase() || ''}
 										onNodeClick={(id) => {
 											const note = allNotes.find(n => n.name.toLowerCase() === id);
@@ -1604,6 +1606,7 @@
 								<LocalSkyView
 									nodes={skyviewLocalNodes}
 									links={skyviewLocalLinks}
+									libraryColorMap={libraryColorMap}
 									activeNodeId={skyviewNode.name.replace(/\.md$/, '').toLowerCase()}
 									onNodeClick={async (id) => {
 										const note = allNotes.find(n => n.name.replace(/\.md$/, '').toLowerCase() === id);
@@ -2249,7 +2252,11 @@
 	.split-compare-col-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.split-compare-col-body { flex: 1; overflow-y: auto; padding: 10px 12px; }
 	.sc-panel { min-height: 100px; }
-	.sc-star-panel { height: 300px; }
+	/* MIG-072 §5 — the 2nd-screen Sky View companion fills the whole panel body (was a fixed
+	   300px cap that left most of the centre zone empty). Parents are definite-height flex items
+	   (.split-compare-col-body / .split-companion-body), so height:100% resolves; the min-height
+	   floor keeps the graph usable if the window is very short. */
+	.sc-star-panel { height: 100%; min-height: 240px; }
 	.sc-empty { color: var(--text-faint); font-size: 13px; padding: 16px 0; text-align: center; }
 	.sc-info { font-size: 13px; color: var(--text-muted); margin-bottom: 12px; }
 	.sc-props-list { display: flex; flex-direction: column; gap: 6px; }

@@ -6505,6 +6505,7 @@
 							<LocalSkyView
 								nodes={localSkyNodes}
 								links={localSkyLinks}
+								libraryColorMap={libraryColorMap}
 								onNodeClick={(nodeId) => {
 									const note = allNotes.find(n => n.path === nodeId || n.name.replace(/\.md$/, '').toLowerCase() === nodeId);
 									if (note) openNoteTab(note.path, note.libraryName, libraryColorMap[note.libraryName] || '#7c3aed');
