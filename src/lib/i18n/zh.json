@@ -2885,7 +2885,8 @@
 		"derives-from": "源自",
 		"part-of": "部分",
 		"associative": "关联",
-		"supersedes": "取代"
+		"supersedes": "取代",
+		"relates": "相关"
 	},
 	"linkConfidence": {
 		"setConfidence": "设置置信度",

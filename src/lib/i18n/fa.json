@@ -2445,7 +2445,8 @@
 		"derives-from": "مشتق از",
 		"part-of": "بخشی از",
 		"associative": "تداعی",
-		"supersedes": "جایگزین می‌کند"
+		"supersedes": "جایگزین می‌کند",
+		"relates": "مرتبط است"
 	},
 	"linkConfidence": {
 		"setConfidence": "تنظیم اعتماد",

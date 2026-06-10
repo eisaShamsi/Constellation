@@ -2885,7 +2885,8 @@
 		"derives-from": "व्युत्पन्न",
 		"part-of": "का-हिस्सा",
 		"associative": "साहचर्य",
-		"supersedes": "प्रतिस्थापित करता है"
+		"supersedes": "प्रतिस्थापित करता है",
+		"relates": "संबंधित"
 	},
 	"linkConfidence": {
 		"setConfidence": "आत्मविश्वास सेट करें",

@@ -18,7 +18,7 @@
 	 */
 	import { tIn, locale } from '$lib/i18n';
 	import { appSettings } from '$lib/libraries/store';
-	import { linkTypesStore, linkTypeColor, linkTypeTextColor } from '$lib/libraries/linkTypeRegistry';
+	import { linkTypesStore, linkTypeColor, linkTypeTextColor, getLinkType } from '$lib/libraries/linkTypeRegistry';
 
 	let { id, loc = '' }: { id: string; loc?: string } = $props();
 
@@ -27,12 +27,14 @@
 	const fill = $derived.by(() => { void $linkTypesStore; return linkTypeColor(id); });
 	const text = $derived.by(() => { void $linkTypesStore; return linkTypeTextColor(id); });
 	const shape = $derived($appSettings.linkPills?.shape ?? { radius: 10, height: 20, fontWeight: 700 });
-	// Label in the note's language when given, else the UI language; raw id if untranslated.
+	// Label in the note's language when given, else the UI language. Untranslated
+	// (custom registry types): the registry's user-given label, then the raw id.
 	const label = $derived.by(() => {
+		void $linkTypesStore;
 		const lc = loc || $locale;
 		const key = `linkTypes.${id.toLowerCase()}`;
 		const tr = tIn(lc, key);
-		return tr !== key ? tr : id;
+		return tr !== key ? tr : (getLinkType(id)?.label ?? id);
 	});
 </script>
 

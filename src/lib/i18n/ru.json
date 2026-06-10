@@ -2885,7 +2885,8 @@
 		"derives-from": "происходит-от",
 		"part-of": "часть-от",
 		"associative": "ассоциативный",
-		"supersedes": "заменяет"
+		"supersedes": "заменяет",
+		"relates": "связан"
 	},
 	"linkConfidence": {
 		"setConfidence": "Задать уверенность",

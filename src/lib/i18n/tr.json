@@ -2885,7 +2885,8 @@
 		"derives-from": "türetilir",
 		"part-of": "parçası",
 		"associative": "ilişkili",
-		"supersedes": "yerine geçer"
+		"supersedes": "yerine geçer",
+		"relates": "ilgili"
 	},
 	"linkConfidence": {
 		"setConfidence": "Güveni ayarla",

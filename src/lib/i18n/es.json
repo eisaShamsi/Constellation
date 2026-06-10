@@ -2445,7 +2445,8 @@
 		"derives-from": "deriva-de",
 		"part-of": "parte-de",
 		"associative": "asociativo",
-		"supersedes": "reemplaza"
+		"supersedes": "reemplaza",
+		"relates": "se relaciona"
 	},
 	"linkConfidence": {
 		"setConfidence": "Establecer confianza",

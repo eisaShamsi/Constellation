@@ -3,7 +3,7 @@
 	import { invoke } from '@tauri-apps/api/core';
 	import { onMount } from 'svelte';
 	import LinkTypePill from './LinkTypePill.svelte';
-	import { linkTypeColor } from '$lib/libraries/linkTypeRegistry';
+	import { linkTypesStore, linkTypeColor, getLinkType } from '$lib/libraries/linkTypeRegistry';
 
 	let {
 		onClose,
@@ -128,9 +128,11 @@
 	// established notePane.stage.* vocabulary (the 6 link-lifecycle stages
 	// live there alongside the note stages).
 	const typeLabel = $derived((id: string) => {
+		void $linkTypesStore; // re-resolve when the registry loads/changes
 		const k = `linkTypes.${id.toLowerCase()}`;
 		const tr = $t(k);
-		return tr === k ? id : tr;
+		// Untranslated (custom registry types): the user-given registry label, then the raw id.
+		return tr === k ? (getLinkType(id)?.label ?? id) : tr;
 	});
 	const stageLabel = $derived((id: string) => {
 		const k = `notePane.stage.${id}`;
@@ -409,6 +411,11 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+		/* The span stretches (flex:1) and carries dir="auto" for the note name's
+		   own bidi — but the LINE must align to the ROW's direction, not the
+		   name's resolved one. Without this, Latin names hug the left edge of
+		   the stretched span and RTL rows look left-packed (Boss, 2026-06-10). */
+		text-align: match-parent;
 	}
 	.khd-insight-meta {
 		font-size: 0.68rem;

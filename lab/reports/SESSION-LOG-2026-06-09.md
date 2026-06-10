@@ -394,6 +394,20 @@ contradicts is 0 by the query's HAVING) — no IPC/payload change. RTL: inherite
 `title`/`aria-label` = common.close. svelte-check **0 errors** (warnings 318→317 — the unused `t` import
 finding self-resolved). Boss test next (EN + ar visual).
 
+**Boss test:** Part A (EN) PASS. Part B (ar): two findings → fixed:
+1. **`relates`/`inspires` pills + bar labels stayed English.** `relates` (the legacy default type id —
+   301 live links) was simply MISSING from `linkTypes.*` → added ×15, register-matched (ar يرتبط · zh 相关 ·
+   he קשור …), delta proven +1/−0/~0. `inspires` is **Eisa's custom registry type** (builtin:false,
+   label "Inspires") — custom types are user content and can't live in locale files; the fallback chain in
+   LinkTypePill AND KHD's typeLabel now prefers **the registry's user-given label** over the raw id
+   (locale → registry label → id; `void $linkTypesStore` for load reactivity). App-wide pill improvement
+   (shared component) — fallback-path only, locale-hit behavior unchanged. Per-locale labels for CUSTOM
+   types would need registry schema support — noted as a future MIG-066-family item, not invented here.
+2. **RTL: section rows looked left-packed.** Root cause: `.khd-insight-name` is `flex:1` (stretches) with
+   `dir="auto"` — Latin names align to the stretched span's LEFT edge, so RTL rows read left-packed with
+   dead space. Fix: `text-align: match-parent` on the span — the LINE aligns to the ROW's direction while
+   dir=auto keeps the name's internal bidi. LTR rendering byte-identical. svelte-check 0 errors.
+
 **P3 shipped (as-built deviations logged in the Plan doc §P3):** reconcile-walk hook → **unconditional**
 recompute (the true bulk settle point); `links_backfill` hook **dropped** (verified: it never mutates
 `note_links` — hooking it adds nothing); freshness window **10 → 2 min** (plan-marked tunable; open-driven

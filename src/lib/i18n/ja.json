@@ -2885,7 +2885,8 @@
 		"derives-from": "派生",
 		"part-of": "一部",
 		"associative": "連想",
-		"supersedes": "置き換える"
+		"supersedes": "置き換える",
+		"relates": "関連"
 	},
 	"linkConfidence": {
 		"setConfidence": "信頼度を設定",

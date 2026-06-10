@@ -2885,7 +2885,8 @@
 		"derives-from": "파생",
 		"part-of": "일부",
 		"associative": "연관",
-		"supersedes": "대체함"
+		"supersedes": "대체함",
+		"relates": "관련"
 	},
 	"linkConfidence": {
 		"setConfidence": "신뢰도 설정",

@@ -3056,7 +3056,8 @@
 		"derives-from": "derives-from",
 		"part-of": "part-of",
 		"associative": "associative",
-		"supersedes": "supersedes"
+		"supersedes": "supersedes",
+		"relates": "relates"
 	},
 	"styles": {
 		"title": "Styles",

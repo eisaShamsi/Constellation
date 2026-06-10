@@ -3046,7 +3046,8 @@
 		"derives-from": "مشتق من",
 		"part-of": "جزء من",
 		"associative": "ترابطي",
-		"supersedes": "يحلّ محلّ"
+		"supersedes": "يحلّ محلّ",
+		"relates": "يرتبط"
 	},
 	"linkConfidence": {
 		"setConfidence": "تعيين الثقة",

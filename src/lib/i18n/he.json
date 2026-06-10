@@ -2445,7 +2445,8 @@
 		"derives-from": "נגזר-מ",
 		"part-of": "חלק-מ",
 		"associative": "אסוציאטיבי",
-		"supersedes": "מחליף"
+		"supersedes": "מחליף",
+		"relates": "קשור"
 	},
 	"linkConfidence": {
 		"setConfidence": "הגדרת ביטחון",
