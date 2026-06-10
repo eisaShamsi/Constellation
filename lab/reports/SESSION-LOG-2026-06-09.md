@@ -329,6 +329,11 @@ the whole list" remark — same family bug), `.prov-panel`. All three → `flex:
 contradicts "ISBN (identifier)" ×~40) — `detect_tensions` emits one row per wikilink occurrence, not per
 (source,target) pair; dedupe offered, awaiting Boss call (semantics change, not silently shipped).
 
+**Scroll Stage-3 Boss test: PASS** (tension + Review Pulse lists scroll; full content reachable).
+**Dedupe: Boss-approved → shipped.** Detection-1 now aggregates per (source_path, target) pair with a ×N
+suffix on repeats + a stable sort (count desc, then source name — HashMap order was random per open).
+Orphans/single-points unaffected (`inbound_sources` was already a per-source set). cargo check 0 errors.
+
 **P3 shipped (as-built deviations logged in the Plan doc §P3):** reconcile-walk hook → **unconditional**
 recompute (the true bulk settle point); `links_backfill` hook **dropped** (verified: it never mutates
 `note_links` — hooking it adds nothing); freshness window **10 → 2 min** (plan-marked tunable; open-driven

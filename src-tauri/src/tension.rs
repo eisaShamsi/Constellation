@@ -102,22 +102,44 @@ pub fn detect_tensions(
         });
     }
 
-    // Detection 1: Contradictions
-    let mut contradictions: Vec<TensionItem> = Vec::new();
+    // Detection 1: Contradictions — deduped to ONE row per (source, target)
+    // pair (Boss-approved 2026-06-10). A bibliography-style note can carry
+    // dozens of identical [[target|…|contradicts]] occurrences; per-occurrence
+    // emission flooded the panel with repeats. Repeats now surface as a ×N
+    // suffix. (Orphans/single-points are unaffected: inbound_sources is
+    // already a per-source set.)
+    // key: (source_path, target_lower) → (source_name, target_display, count)
+    let mut contradiction_pairs: HashMap<(String, String), (String, String, usize)> = HashMap::new();
     for info in notes.values() {
         for (target, link_type) in &info.outgoing {
             if link_type.as_deref() == Some("contradicts") {
                 if let Some(target_info) = notes.get(target) {
-                    contradictions.push(TensionItem {
-                        note_name: info.name.clone(),
-                        note_path: info.path.clone(),
-                        severity: "high".to_string(),
-                        detail: format!("contradicts \"{}\"", target_info.name),
-                    });
+                    contradiction_pairs
+                        .entry((info.path.clone(), target.clone()))
+                        .or_insert_with(|| (info.name.clone(), target_info.name.clone(), 0))
+                        .2 += 1;
                 }
             }
         }
     }
+    // Stable order — heaviest repeat first, then source name (HashMap order
+    // is random per run; the panel should not reshuffle on every open).
+    let mut pair_rows: Vec<((String, String), (String, String, usize))> =
+        contradiction_pairs.into_iter().collect();
+    pair_rows.sort_by(|a, b| b.1.2.cmp(&a.1.2).then_with(|| a.1.0.cmp(&b.1.0)));
+    let contradictions: Vec<TensionItem> = pair_rows
+        .into_iter()
+        .map(|((path, _), (name, target_display, count))| TensionItem {
+            note_name: name,
+            note_path: path,
+            severity: "high".to_string(),
+            detail: if count > 1 {
+                format!("contradicts \"{}\" ×{}", target_display, count)
+            } else {
+                format!("contradicts \"{}\"", target_display)
+            },
+        })
+        .collect();
 
     // Detection 2: Orphans (0 inbound links, has content)
     let mut orphans: Vec<TensionItem> = Vec::new();
