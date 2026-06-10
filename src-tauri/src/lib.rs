@@ -450,6 +450,7 @@ pub fn run() {
             search::constellation_link_unarchive,
             search::constellation_link_archived,
             search::constellation_formulation_analysis,
+            search::constellation_knowledge_health_snapshot,
             embeddings::constellation_init_embeddings,
             embeddings::constellation_embed_text,
             embeddings::constellation_embed_texts,

@@ -2432,6 +2432,16 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
         -- 217k rows makes it non-selective, and all current queries filter by
         -- source_path or target_name (covered above) with link_type as payload.
         -- Reinstate if a pure `WHERE link_type=?` query ever shows up.
+
+        -- MIG-073 — circulatory-aggregate snapshot cache (Perf Rule 8). Holds the
+        -- Knowledge Health aggregates (and, later, CCS register data) as JSON
+        -- payloads recomputed in the BACKGROUND (never on panel open). Purely
+        -- derived: droppable + rebuildable from note_links at any time.
+        CREATE TABLE IF NOT EXISTS link_stats_cache (
+            stat_key TEXT PRIMARY KEY,
+            payload TEXT NOT NULL,
+            computed_at TEXT NOT NULL DEFAULT ''
+        );
     ").map_err(|e| format!("Failed to create sky_* tables: {}", e))?;
 
     // MIG-002: idempotent ALTER for pre-v2 DBs that already have
@@ -5096,7 +5106,12 @@ pub fn constellation_link_stats(app: tauri::AppHandle) -> Result<LinkStats, Stri
     let state = app.state::<SearchState>();
     let db = state.db.lock().map_err(|e| e.to_string())?;
     let conn = db.as_ref().ok_or("Search DB not initialized")?;
+    compute_link_stats(conn)
+}
 
+/// MIG-073 — query body extracted from `constellation_link_stats` so the
+/// background cache recompute and the live IPC share ONE set of SQL.
+pub(crate) fn compute_link_stats(conn: &Connection) -> Result<LinkStats, String> {
     let total_links: usize = conn.query_row(
         "SELECT COUNT(*) FROM note_links WHERE status = 'active'", [], |r| r.get(0)
     ).unwrap_or(0);
@@ -5342,13 +5357,22 @@ pub fn constellation_formulation_analysis(
     let state = app.state::<SearchState>();
     let db = state.db.lock().map_err(|e| e.to_string())?;
     let conn = db.as_ref().ok_or("Search DB not initialized")?;
+    compute_formulation_analysis(conn, &query_type, target.as_deref())
+}
 
-    let target_lower = target.as_deref().unwrap_or("").to_lowercase();
+/// MIG-073 — query body extracted from `constellation_formulation_analysis` so
+/// the background cache recompute and the live IPC share ONE set of SQL.
+pub(crate) fn compute_formulation_analysis(
+    conn: &Connection,
+    query_type: &str,
+    target: Option<&str>,
+) -> Result<Vec<FormulationInsight>, String> {
+    let target_lower = target.unwrap_or("").to_lowercase();
     let confidence_weight = |c: &str| -> f64 {
         match c { "established" => 3.0, "evidence" => 2.0, "hypothesis" => 1.0, "contested" => 0.5, _ => 1.0 }
     };
 
-    match query_type.as_str() {
+    match query_type {
         "strongest_evidence" => {
             // Top supports for a target, ranked by weight × confidence multiplier
             let mut stmt = conn.prepare(
@@ -5486,30 +5510,29 @@ fn query_insights(
     Ok(rows.filter_map(|r| r.ok()).collect())
 }
 
-/// Apply weight decay to all active links.
-/// Formula: weight = weight × 0.95^(months_since_last_traversal)
-/// Only decays links not traversed in the last 30 days.
-/// Also derives lifecycle stage from weight + traversal data.
+/// READ-ONLY lifecycle-distribution report (legacy name kept for IPC back-compat).
+/// The old Step-1 write-decay loop was REMOVED 2026-06-10: it mutated the raw `weight`
+/// column although decay is DISPLAY-ONLY (Living-Links-Guide §7 / `effectiveLinkWeight`),
+/// COMPOUNDED on every call (re-decaying the already-decayed weight), and scanned 234k
+/// rows with per-row `julianday()` (~11s) + one UPDATE per row. Weight decay now lives
+/// entirely in the read-time display path; this command only counts lifecycle stages.
 #[tauri::command]
 pub fn constellation_link_decay(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
     let state = app.state::<SearchState>();
     let db = state.db.lock().map_err(|e| e.to_string())?;
     let conn = db.as_ref().ok_or("Search DB not initialized")?;
+    compute_lifecycle_distribution(conn)
+}
 
-    // Step 1 REMOVED (2026-06-10, Knowledge-Health decay fix). The old write-decay loop UPDATEd every
-    // link untraversed 30+ days — a Perf-Rule-8 write on a read-time diagnostic that:
-    //   (a) mutated the raw `weight` column, but decay is DISPLAY-ONLY (Living-Links-Guide §7 /
-    //       `effectiveLinkWeight` computes it at read time; the stored weight is the immutable integral);
-    //   (b) COMPOUNDED — it re-read the already-decayed weight and decayed it again, so every call
-    //       (panel open, boot, the periodic job) silently tanked those links' weights;
-    //   (c) scanned 234k rows with per-row `julianday()` (~11s) then did one UPDATE per row.
-    // This IPC is now strictly READ-ONLY: it reports the lifecycle distribution (Step 2) only. Weight
-    // decay lives entirely in the read-time display path. `decayed`/`new_dormant` stay 0 to keep the
-    // return shape unchanged (no caller reads them — the dashboard uses `lifecycle` only).
+/// MIG-073 — lifecycle census extracted from `constellation_link_decay` so the
+/// background cache recompute and the live IPC share ONE set of SQL.
+/// `decayed`/`new_dormant` stay 0 to keep the legacy return shape (no caller
+/// reads them — the dashboard uses `lifecycle` only).
+pub(crate) fn compute_lifecycle_distribution(conn: &Connection) -> Result<serde_json::Value, String> {
     let decayed: usize = 0;
     let dormant_count: usize = 0;
 
-    // Step 2: Count lifecycle stage distribution.
+    // Count lifecycle stage distribution.
     //
     // MIG-014 §2F — buckets aligned with the Living Link 6-stage taxonomy
     // (`LIVING_LINK_BASELINE` in `src/lib/libraries/store.ts`):
@@ -5574,6 +5597,183 @@ pub fn constellation_link_decay(app: tauri::AppHandle) -> Result<serde_json::Val
         "decayed": decayed,
         "new_dormant": dormant_count,
         "lifecycle": stages,
+    }))
+}
+
+// ─── MIG-073: circulatory-aggregate snapshot cache ──────────────────────────
+//
+// The Knowledge Health panel used to fire its 6 aggregates at the live
+// note_links table on every open; on a 1.7 GB universe the first query
+// cold-reads the table (~11s) while holding the DB mutex. Perf Rule 8:
+// persist the derived view, recompute in the background, read cheap lookups.
+// This layer is also what the CCS registers (CCS Concept Paper §8) will
+// consume — general circulatory aggregates, not KH-specific.
+
+/// The 6 snapshot keys (= what KnowledgeHealthDashboard renders today).
+const KH_CACHE_KEYS: [&str; 6] = [
+    "stats", "lifecycle", "fmt_emerging", "fmt_bias_check",
+    "fmt_most_connected", "fmt_weak_foundations",
+];
+
+/// Snapshots older than this trigger a background refresh on read
+/// (stale-while-revalidate). The time-driven buckets (spark→birth at 7 days,
+/// dormancy windows) tolerate minutes of staleness by design.
+const KH_CACHE_FRESH_MINUTES: f64 = 10.0;
+
+/// One recompute at a time, process-wide. Boot population, stale-revalidate,
+/// and post-reconcile can race; extras are dropped, not queued.
+static KH_RECOMPUTE_IN_FLIGHT: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+
+/// Run the 6 aggregates ONCE and persist each result as a JSON payload.
+/// This is the only full scan of note_links — always called off the open
+/// path, on a dedicated connection (never the SearchState mutex).
+pub(crate) fn recompute_link_stats_cache(conn: &Connection) -> Result<(), String> {
+    // Belt-and-braces for the dedicated-connection path on a DB where
+    // init_db hasn't created the table yet.
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS link_stats_cache (
+            stat_key TEXT PRIMARY KEY,
+            payload TEXT NOT NULL,
+            computed_at TEXT NOT NULL DEFAULT ''
+        )", [],
+    ).map_err(|e| e.to_string())?;
+
+    let stats = compute_link_stats(conn)?;
+    let lifecycle = compute_lifecycle_distribution(conn)?;
+    let emerging = compute_formulation_analysis(conn, "emerging", None)?;
+    let bias = compute_formulation_analysis(conn, "bias_check", None)?;
+    let most = compute_formulation_analysis(conn, "most_connected", None)?;
+    let weak = compute_formulation_analysis(conn, "weak_foundations", None)?;
+
+    let now: String = conn.query_row(
+        "SELECT strftime('%Y-%m-%dT%H:%M:%SZ', 'now')", [], |r| r.get(0)
+    ).map_err(|e| e.to_string())?;
+
+    let payloads: [(&str, String); 6] = [
+        ("stats", serde_json::to_string(&stats).map_err(|e| e.to_string())?),
+        ("lifecycle", serde_json::to_string(&lifecycle).map_err(|e| e.to_string())?),
+        ("fmt_emerging", serde_json::to_string(&emerging).map_err(|e| e.to_string())?),
+        ("fmt_bias_check", serde_json::to_string(&bias).map_err(|e| e.to_string())?),
+        ("fmt_most_connected", serde_json::to_string(&most).map_err(|e| e.to_string())?),
+        ("fmt_weak_foundations", serde_json::to_string(&weak).map_err(|e| e.to_string())?),
+    ];
+    for (key, payload) in payloads {
+        conn.execute(
+            "INSERT OR REPLACE INTO link_stats_cache (stat_key, payload, computed_at) VALUES (?1, ?2, ?3)",
+            params![key, payload, now],
+        ).map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+/// Recompute on THIS thread via a dedicated connection (callers are already on
+/// a background thread, e.g. cache_reconcile's walker). `only_if_empty` makes
+/// it the one-off first-time population (Rule 8): when the cache already
+/// exists the call is a single COUNT — no recurring boot scan, so MIG-067's
+/// zero-boot-walks rule stays honored.
+pub(crate) fn kh_cache_recompute_blocking(app: &tauri::AppHandle, only_if_empty: bool) {
+    use std::sync::atomic::Ordering;
+    if KH_RECOMPUTE_IN_FLIGHT
+        .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+        .is_err()
+    {
+        return; // a recompute is already running — drop, don't queue
+    }
+    let run = || -> Result<bool, String> {
+        let path = db_path(app)?;
+        let conn = Connection::open(&path).map_err(|e| e.to_string())?;
+        let _ = conn.busy_timeout(std::time::Duration::from_secs(10));
+        if only_if_empty {
+            let n: i64 = conn
+                .query_row("SELECT COUNT(*) FROM link_stats_cache", [], |r| r.get(0))
+                .unwrap_or(0);
+            if n > 0 {
+                return Ok(false);
+            }
+        }
+        recompute_link_stats_cache(&conn)?;
+        Ok(true)
+    };
+    match run() {
+        Ok(true) => {
+            use tauri::Emitter;
+            let _ = app.emit("kh-snapshot-ready", serde_json::json!({}));
+        }
+        Ok(false) => {}
+        Err(e) => eprintln!("[kh-cache] recompute failed: {}", e),
+    }
+    KH_RECOMPUTE_IN_FLIGHT.store(false, Ordering::SeqCst);
+}
+
+/// Fire-and-forget wrapper for callers not already on a background thread.
+pub(crate) fn spawn_kh_cache_recompute(app: &tauri::AppHandle, only_if_empty: bool) {
+    let app = app.clone();
+    std::thread::spawn(move || kh_cache_recompute_blocking(&app, only_if_empty));
+}
+
+/// MIG-073 — the ONE call KnowledgeHealthDashboard makes on open. Reads the
+/// cached snapshot (6 tiny rows — no note_links scan). Returns
+/// `{ ready: false }` while the first-ever population is still running (the
+/// frontend listens for `kh-snapshot-ready`). A stale snapshot is STILL
+/// returned instantly, with a background refresh kicked for the next read
+/// (stale-while-revalidate).
+#[tauri::command]
+pub fn constellation_knowledge_health_snapshot(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
+    let (mut payloads, max_age_minutes) = {
+        let state = app.state::<SearchState>();
+        let db = state.db.lock().map_err(|e| e.to_string())?;
+        let conn = db.as_ref().ok_or("Search DB not initialized")?;
+        let mut payloads: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+        let mut max_age: f64 = 0.0;
+        let mut stmt = conn.prepare(
+            "SELECT stat_key, payload, (julianday('now') - julianday(computed_at)) * 1440.0 \
+             FROM link_stats_cache"
+        ).map_err(|e| e.to_string())?;
+        let rows = stmt.query_map([], |r| {
+            Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, Option<f64>>(2)?))
+        }).map_err(|e| e.to_string())?;
+        for row in rows.flatten() {
+            let (key, payload, age) = row;
+            payloads.insert(key, payload);
+            // A NULL age (unparseable computed_at) counts as maximally stale.
+            max_age = max_age.max(age.unwrap_or(f64::MAX));
+        }
+        (payloads, max_age)
+    }; // SearchState lock dropped before any spawn below
+
+    if !KH_CACHE_KEYS.iter().all(|k| payloads.contains_key(*k)) {
+        // First boot after MIG-073 (or a dropped/partial cache): populate in
+        // the background; the panel shows its loading state until the
+        // `kh-snapshot-ready` event.
+        spawn_kh_cache_recompute(&app, false);
+        return Ok(serde_json::json!({ "ready": false }));
+    }
+
+    if max_age_minutes > KH_CACHE_FRESH_MINUTES {
+        spawn_kh_cache_recompute(&app, false); // refresh lands for the NEXT read
+    }
+
+    let mut take = |k: &str| -> serde_json::Value {
+        payloads.remove(k)
+            .and_then(|p| serde_json::from_str(&p).ok())
+            .unwrap_or(serde_json::Value::Null)
+    };
+    let stats = take("stats");
+    let lifecycle = take("lifecycle");
+    let emerging = take("fmt_emerging");
+    let bias_check = take("fmt_bias_check");
+    let most_connected = take("fmt_most_connected");
+    let weak_foundations = take("fmt_weak_foundations");
+    Ok(serde_json::json!({
+        "ready": true,
+        "stale_minutes": max_age_minutes,
+        "stats": stats,
+        "lifecycle": lifecycle,
+        "emerging": emerging,
+        "bias_check": bias_check,
+        "most_connected": most_connected,
+        "weak_foundations": weak_foundations,
     }))
 }
 

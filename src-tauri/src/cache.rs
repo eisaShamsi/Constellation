@@ -1116,6 +1116,10 @@ pub fn cache_reconcile(app: tauri::AppHandle) -> Result<(), String> {
             "note_count": note_count,
             "elapsed_ms": started.elapsed().as_millis() as u64,
         }));
+        // MIG-073 — first-time population of the Knowledge Health snapshot
+        // cache (no-op when the cache already exists). Already on the walker
+        // thread; uses its own dedicated connection.
+        crate::search::kh_cache_recompute_blocking(&app_clone, true);
     });
     Ok(())
 }
@@ -1137,6 +1141,11 @@ pub fn cache_mark_search_ready(app: tauri::AppHandle) -> Result<(), String> {
         "note_count": 0i64,
         "elapsed_ms": 0u64,
     }));
+    // MIG-073 — first-time population of the Knowledge Health snapshot cache.
+    // One-off backfill (Rule 8): a single COUNT on every later boot, the full
+    // recompute only when the cache is empty. Spawned + dedicated connection —
+    // never blocks the boot pipeline, so MIG-067's walk-free boot stays intact.
+    crate::search::spawn_kh_cache_recompute(&app, true);
     Ok(())
 }
 
