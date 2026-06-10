@@ -267,3 +267,31 @@ export, harmless). Dormancy count no longer auto-written — moot on this data (
 
 **Decision (Eisa):** commit this fix, **then a Rule-8 write-time-caching `/migration`** for KH so the panel
 reads precomputed counts (no cold scan; also makes dormancy read-time-derived). Migration Architect opens next.
+
+## §MIG-073 — KH snapshot cache: Architect + Plan + P1 + P2 (2026-06-10)
+
+**Architect** (`MIG-073-KH-CACHE-ARCHITECT.md`): recon mapped 11 `note_links` write paths + the 12 existing
+triggers/3 derived surfaces (sky_links, note_meta.outgoing_*, sky_nodes.stratum/maturity) + the FTS trigger
+blueprint. Scope finding: KHD's content IS CCS's circulatory domain (CCS §8 mandates exactly this layer) →
+build the cache GENERAL, KH = first consumer. Crux: write-driven vs **time-driven** buckets (spark→birth at
+7d — no write event) → pure triggers can't work. Options A/B/C; **Eisa picked B + general scope.**
+
+**Plan** (`MIG-073-KH-CACHE-PLAN.md`, approved): stale-while-revalidate snapshot (`link_stats_cache`),
+10-min freshness, recompute always background on a dedicated connection. P1 backend → P2 panel (Boss test)
+→ P3 refresh hooks (Boss test) → P4 simplify+audit.
+
+**P1 shipped `556d401e`:** table in init_db; query bodies extracted to `&Connection` helpers (IPCs stay as
+wrappers — one set of SQL); `recompute_link_stats_cache()`; `constellation_knowledge_health_snapshot` IPC
+(missing keys → `{ready:false}` + background populate + `kh-snapshot-ready`; stale → instant return +
+background refresh); first-time population on both `cache-reconciled` emitters (`only_if_empty` — single
+COUNT on later boots, MIG-067 walk-free boot intact); AtomicBool in-flight guard. cargo check 0 errors;
+SQL dry-run on a copied test DB: snapshot read **0.17 ms**, payload round-trip + NULL-age edge verified.
+
+**P2 shipped `77ed2786`:** KHD onMount → ONE snapshot call; cold-cache → loading state + event listener +
+5s self-healing poll; listener/interval cleaned on destroy. svelte-check 0 errors.
+
+**⚠ Architect mis-map found during P2 (logged in the Architect doc):** the right-sidebar **'health' tab =
+`TensionPanel`** (`detect_tensions`, `+layout:3293`) — NOT KnowledgeHealthDashboard (the full-screen overlay
+via command palette 🧠 / dock). Eisa's tab screenshot is the **TensionPanel** "Loading…" (null report on
+error — separate pre-existing bug, out of MIG-073 scope; triage after). KHD i18n drift also noted (panel is
+hardcoded EN — pre-existing, for P4/PJ). Binary building; P2 Boss test next (points at the OVERLAY).
