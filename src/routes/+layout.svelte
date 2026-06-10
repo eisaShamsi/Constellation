@@ -2435,17 +2435,10 @@
 			}
 		} catch { /* localStorage unavailable */ }
 
-		// Living Link P3: run weight decay job once per 24h (fire-and-forget,
-		// gated by localStorage timestamp). Operates on the SQLite
-		// note_links table; does not block any IPC.
-		try {
-			const lastDecay = Number(localStorage.getItem('constellation:last-link-decay') ?? '0');
-			if (Date.now() - lastDecay > 86_400_000) {
-				const { linkDecay } = await import('$lib/libraries/store');
-				linkDecay().then(() => localStorage.setItem('constellation:last-link-decay', String(Date.now())))
-					.catch(() => { /* index not ready yet — try again next launch */ });
-			}
-		} catch { /* localStorage unavailable */ }
+		// Living Link P3 periodic decay job REMOVED (2026-06-10). Weight decay is DISPLAY-ONLY
+		// (`effectiveLinkWeight` computes it at read time; the stored `weight` is the immutable
+		// integral of traversals) — there is no stored-decay job to run. The old `linkDecay()` call
+		// mutated + compounded raw weights on a 24h timer. See `constellation_link_decay` (now read-only).
 
 		// 1. Check universe state
 		let universes: UniverseEntry[] = [];
@@ -2705,8 +2698,7 @@
 				const counts: Record<string, number> = await invoke('constellation_search_link_counts');
 				searchLinkCounts = new Map(Object.entries(counts).map(([k, v]) => [k, { incoming: v }]));
 			} catch {}
-			// Living Link System: apply weight decay on startup (background)
-			invoke('constellation_link_decay').catch(() => {});
+			// (Living Link decay-on-startup REMOVED 2026-06-10 — decay is display-only; no boot job.)
 		});
 		cleanupFns.push(() => { try { unlistenSearchReady(); } catch {} });
 

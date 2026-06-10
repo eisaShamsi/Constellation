@@ -242,3 +242,28 @@ loads via its own `onMount` (`khd-loading`), mount condition unchanged. Chip `ta
 
 **Next (Eisa):** investigate the pre-existing **Knowledge Health stuck-on-Loading** (read-time diagnostics on
 the 7,600-note / 656k-link universe — a §12 read-time CE surface).
+
+## §KH-DECAY FIX — Knowledge Health "Loading…" root-caused (2026-06-10)
+
+Investigated the pre-existing KH freeze. Root cause was worse than slow: `constellation_link_decay` —
+called on **panel open + boot (`+layout:2709`) + a 24h periodic job (`+layout:2444`)** — ran a **write**
+loop on a read-time diagnostic. It (a) UPDATEd the raw `weight` column though decay is **display-only**
+(Living-Links-Guide §7 / `effectiveLinkWeight`), (b) **compounded** — re-reading the already-decayed weight
+and decaying it again every call → silent weight corruption, (c) scanned 234k rows with per-row `julianday`.
+
+**Measured on the real DB** (`Eisa Cognitive Knowledge`, **234,061 links**, read-only Python): decay SELECT
+~11s; `most_connected`/`bias_check` GROUP-BY-target_name ~3s/~1s; serialized on one mutex → ~18–20s frozen +
+DB-lock held. **Correction logged:** the residual freeze is NOT julianday CPU — a "string-threshold" rewrite
+was *also* 11s cold / 161ms warm. It's a **cold read of the 1.7 GB `search.db`** (whichever query hits
+`note_links` first pays ~11s; `spark`/`birth` match `traversal_count=0` = 234,040/234,061 ≈ all rows). The
+1.7 GB DB is itself suspect (FTS bloat; LL-XXX vacuum history) — flagged separately.
+
+**Fix shipped (focused — Eisa-approved):** `constellation_link_decay` → **read-only** (Step-1 write loop
+deleted; `decayed`/`new_dormant` kept 0; Step-2 lifecycle counts unchanged). Removed the boot
+(`+layout:2709`) + periodic (`+layout:2444`) decay triggers (decay is display-only — no job to run). The
+useless julianday→string rewrite was **reverted** (cold-read, not CPU). `cargo check` 0 errors (pre-existing
+warnings only); `svelte-check` 0 errors. **Note:** `store.ts:1610 linkDecay()` wrapper now unused (dead
+export, harmless). Dormancy count no longer auto-written — moot on this data (0 traversed-then-idle links).
+
+**Decision (Eisa):** commit this fix, **then a Rule-8 write-time-caching `/migration`** for KH so the panel
+reads precomputed counts (no cold scan; also makes dormancy read-time-derived). Migration Architect opens next.

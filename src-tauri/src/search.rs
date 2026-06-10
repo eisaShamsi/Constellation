@@ -5496,59 +5496,18 @@ pub fn constellation_link_decay(app: tauri::AppHandle) -> Result<serde_json::Val
     let db = state.db.lock().map_err(|e| e.to_string())?;
     let conn = db.as_ref().ok_or("Search DB not initialized")?;
 
-    // Step 1: Apply weight decay to links not traversed in 30+ days
-    // Calculate months since last traversal for each link
-    let mut decayed: usize = 0;
-    let mut dormant_count: usize = 0;
-
-    if let Ok(mut stmt) = conn.prepare(
-        "SELECT id, weight, last_traversed, traversal_count, status
-         FROM note_links
-         WHERE status IN ('active', 'dormant')
-           AND last_traversed != ''
-           AND julianday('now') - julianday(last_traversed) >= 30"
-    ) {
-        let links: Vec<(i64, f64, String, i64, String)> = stmt.query_map([], |row| {
-            Ok((
-                row.get::<_, i64>(0)?,
-                row.get::<_, f64>(1)?,
-                row.get::<_, String>(2)?,
-                row.get::<_, i64>(3)?,
-                row.get::<_, String>(4)?,
-            ))
-        }).map_err(|e| e.to_string())?
-          .filter_map(|r| r.ok())
-          .collect();
-
-        for (id, weight, last_traversed, _tc, status) in &links {
-            // Calculate months since last traversal
-            let months = conn.query_row(
-                "SELECT (julianday('now') - julianday(?1)) / 30.0",
-                params![last_traversed],
-                |row| row.get::<_, f64>(0),
-            ).unwrap_or(0.0);
-
-            if months < 1.0 { continue; }
-
-            // Apply decay: weight × 0.95^months
-            let new_weight = weight * (0.95_f64).powf(months);
-            let new_weight = (new_weight * 1000.0).round() / 1000.0; // round to 3 decimals
-
-            // Determine lifecycle status
-            let new_status = if months >= 3.0 && *status == "active" {
-                dormant_count += 1;
-                "dormant"
-            } else {
-                status.as_str()
-            };
-
-            conn.execute(
-                "UPDATE note_links SET weight = ?1, status = ?2 WHERE id = ?3",
-                params![new_weight, new_status, id],
-            ).map_err(|e| format!("Failed to decay link: {}", e))?;
-            decayed += 1;
-        }
-    }
+    // Step 1 REMOVED (2026-06-10, Knowledge-Health decay fix). The old write-decay loop UPDATEd every
+    // link untraversed 30+ days — a Perf-Rule-8 write on a read-time diagnostic that:
+    //   (a) mutated the raw `weight` column, but decay is DISPLAY-ONLY (Living-Links-Guide §7 /
+    //       `effectiveLinkWeight` computes it at read time; the stored weight is the immutable integral);
+    //   (b) COMPOUNDED — it re-read the already-decayed weight and decayed it again, so every call
+    //       (panel open, boot, the periodic job) silently tanked those links' weights;
+    //   (c) scanned 234k rows with per-row `julianday()` (~11s) then did one UPDATE per row.
+    // This IPC is now strictly READ-ONLY: it reports the lifecycle distribution (Step 2) only. Weight
+    // decay lives entirely in the read-time display path. `decayed`/`new_dormant` stay 0 to keep the
+    // return shape unchanged (no caller reads them — the dashboard uses `lifecycle` only).
+    let decayed: usize = 0;
+    let dormant_count: usize = 0;
 
     // Step 2: Count lifecycle stage distribution.
     //
