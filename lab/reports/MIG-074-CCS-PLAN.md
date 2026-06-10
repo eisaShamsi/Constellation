@@ -45,6 +45,16 @@ buckets stay mutually exclusive, totals preserved. Existing 6 keys' shapes are o
 
 ## §A — Backend: ccs_* keys + Q3 dormancy repair + the CCS snapshot IPC (one commit; not Boss-visible)
 
+> **AS-BUILT (2026-06-10) — one deviation, found by measurement during the dry-run:** the stale/warm
+> boundary is expressed as a **direct string range on `last_traversed`** (vs the planned
+> `julianday()` arithmetic) — `CCS_STALE_PREDICATE` / `CCS_WARM_PREDICATE`, one shared definition for
+> the registers AND the Q3 buckets. Reason: the julianday form defeats `idx_link_last_traversed`; the
+> cooling list walked the whole 234k-row index (~2.4 s even with zero matches). The range form plans as
+> `SEARCH … USING INDEX idx_link_last_traversed` — measured **37 ms** on the real-size DB copy. Sound
+> because `constellation_link_traverse` is the column's only writer (RFC3339, lexicographically
+> chronological); empty/non-comparable values land warm (the least-destruction principle). Also: the
+> Retired rows reuse the existing `"abandoned"` formulation query rather than new SQL (one set of SQL).
+
 1. Extend `recompute_link_stats_cache` (search.rs:5633) with the 6 keys above (same transaction, same
    dedicated background connection).
 2. Apply the Q3 bucket repair in `compute_lifecycle_distribution` (NULL-safe `julianday` idle predicate).

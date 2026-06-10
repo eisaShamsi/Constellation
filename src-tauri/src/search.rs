@@ -5538,9 +5538,17 @@ pub(crate) fn compute_lifecycle_distribution(conn: &Connection) -> Result<serde_
     // (`LIVING_LINK_BASELINE` in `src/lib/libraries/store.ts`):
     //   spark    — traversal_count = 0 AND created within last 7 days
     //   birth    — traversal_count = 0 AND created ≥ 7 days ago
-    //   growth   — traversal_count > 0 AND weight < 5.0
-    //   maturity — weight >= 5.0
-    //   dormancy — status = 'dormant'
+    //   growth   — traversal_count > 0 AND weight < 5.0, still warm
+    //   maturity — weight >= 5.0, still warm
+    //   dormancy — status = 'dormant' (historical rows) OR DERIVED at read
+    //              time: active, traversed at least once, idle > 90 days
+    //              (MIG-074 Q3 — nothing writes 'dormant' since the decay
+    //              fix made `constellation_link_decay` read-only; dormancy
+    //              is a read-time judgment of `last_traversed` now, per the
+    //              CCS Concept Paper. "Warm" below = NOT in that derived
+    //              window; an unparseable/empty `last_traversed` counts as
+    //              warm — the store.ts `linkLifecycle()` least-destruction
+    //              principle.)
     //   archival — status = 'archived' (DB enum stays 'archived'; dashboard
     //              key is `archival` to match the lifecycle name)
     let mut stages: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
@@ -5564,23 +5572,30 @@ pub(crate) fn compute_lifecycle_distribution(conn: &Connection) -> Result<serde_
     ).unwrap_or(0);
     stages.insert("birth".to_string(), birth);
 
-    // Growth: traversed at least once, not yet mature.
+    // Growth: traversed at least once, not yet mature, still warm.
+    // (CCS_WARM_PREDICATE / CCS_STALE_PREDICATE — MIG-074's single 90-day
+    // boundary definition, shared with the CCS registers below.)
     let growth: usize = conn.query_row(
-        "SELECT COUNT(*) FROM note_links WHERE status = 'active' AND traversal_count > 0 AND weight < 5.0",
+        &format!("SELECT COUNT(*) FROM note_links WHERE status = 'active' \
+           AND traversal_count > 0 AND weight < 5.0 AND {}", CCS_WARM_PREDICATE),
         [], |r| r.get(0)
     ).unwrap_or(0);
     stages.insert("growth".to_string(), growth);
 
-    // Maturity.
+    // Maturity: high weight, still warm.
     let maturity: usize = conn.query_row(
-        "SELECT COUNT(*) FROM note_links WHERE status = 'active' AND weight >= 5.0",
+        &format!("SELECT COUNT(*) FROM note_links WHERE status = 'active' \
+           AND weight >= 5.0 AND {}", CCS_WARM_PREDICATE),
         [], |r| r.get(0)
     ).unwrap_or(0);
     stages.insert("maturity".to_string(), maturity);
 
-    // Dormancy.
+    // Dormancy: historical 'dormant' rows + the MIG-074 Q3 read-time
+    // derivation — active, traversed once upon a time, idle > 90 days.
+    // (Traverse still flips a historical 'dormant' row back to 'active'.)
     let dormant: usize = conn.query_row(
-        "SELECT COUNT(*) FROM note_links WHERE status = 'dormant'",
+        &format!("SELECT COUNT(*) FROM note_links WHERE status = 'dormant' \
+            OR (status = 'active' AND traversal_count > 0 AND {})", CCS_STALE_PREDICATE),
         [], |r| r.get(0)
     ).unwrap_or(0);
     stages.insert("dormancy".to_string(), dormant);
@@ -5627,6 +5642,249 @@ const KH_CACHE_FRESH_MINUTES: f64 = 2.0;
 static KH_RECOMPUTE_IN_FLIGHT: std::sync::atomic::AtomicBool =
     std::sync::atomic::AtomicBool::new(false);
 
+// ─── MIG-074: the CCS register payloads (additive keys on the same cache) ───
+
+/// The 8 keys the CCS snapshot needs (`stats`/`lifecycle` are shared with KH;
+/// the `ccs_*` six are MIG-074 additions computed in the SAME recompute pass).
+const CCS_CACHE_KEYS: [&str; 8] = [
+    "stats", "lifecycle", "ccs_living", "ccs_load_bearing", "ccs_cooling",
+    "ccs_contested", "ccs_tiers", "ccs_retired",
+];
+
+/// The 90-day staleness boundary (mirrors `LINK_STALE_DAYS` in
+/// `src/lib/libraries/store.ts`, the Guide §8 tier line), expressed as a
+/// DIRECT string range on `last_traversed` so `idx_link_last_traversed` can
+/// seek instead of evaluating per-row `julianday()` over all 234k rows
+/// (measured: the julianday form walked the whole index in ~2.4 s even with
+/// zero matches; this form is index-bounded). Sound because the column has
+/// exactly one writer — `constellation_link_traverse`'s RFC3339 timestamps —
+/// which are lexicographically chronological against the strftime threshold;
+/// `> ''` excludes the never-traversed default. An empty or non-comparable
+/// value lands on the WARM side — the store.ts `linkLifecycle()`
+/// least-destruction principle. The two predicates are exact complements
+/// over traversed rows; every stale/warm split below uses ONLY these.
+const CCS_STALE_PREDICATE: &str = "(last_traversed > '' \
+     AND last_traversed < strftime('%Y-%m-%dT%H:%M:%S', 'now', '-90 days'))";
+const CCS_WARM_PREDICATE: &str = "(last_traversed = '' \
+     OR last_traversed >= strftime('%Y-%m-%dT%H:%M:%S', 'now', '-90 days'))";
+
+/// MIG-074 — one CCS list register: `{ total, rows }` where `rows` reuse the
+/// `FormulationInsight` shape (top 20 by the register's own sort) and `total`
+/// counts the register's full population. All predicates are status-scoped
+/// and indexed (`idx_link_status` / `_traversal_count` / `_weight` /
+/// `_confidence` / `_last_traversed`); this runs ONLY inside the background
+/// recompute, never on a panel open.
+pub(crate) fn compute_ccs_register(conn: &Connection, kind: &str) -> Result<serde_json::Value, String> {
+    let warm = CCS_WARM_PREDICATE;
+    let (where_clause, order_clause): (String, &str) = match kind {
+        // "What am I actively thinking through?" — most-walked, still warm.
+        "living" => (
+            format!("status = 'active' AND traversal_count > 0 AND {}", warm),
+            "ORDER BY traversal_count DESC, last_traversed DESC",
+        ),
+        // "What does my understanding rest on?" — heaviest earned weight, still warm.
+        "load_bearing" => (
+            format!("status = 'active' AND traversal_count > 0 AND {}", warm),
+            "ORDER BY weight DESC, last_traversed DESC",
+        ),
+        // "What have I stopped returning to?" — traversed once upon a time,
+        // idle past the window; coldest first (the ORDER BY rides the same
+        // last_traversed index the range predicate seeks on).
+        "cooling" => (
+            format!(
+                "status = 'active' AND traversal_count > 0 AND {}",
+                CCS_STALE_PREDICATE
+            ),
+            "ORDER BY last_traversed ASC",
+        ),
+        // "How settled is my thinking?" — the doubt that is still alive.
+        "contested" => (
+            "status = 'active' AND confidence = 'contested'".to_string(),
+            "ORDER BY weight DESC",
+        ),
+        _ => return Err(format!("Unknown CCS register: {}", kind)),
+    };
+
+    let total: usize = conn.query_row(
+        &format!("SELECT COUNT(*) FROM note_links WHERE {}", where_clause),
+        [], |r| r.get(0),
+    ).unwrap_or(0);
+
+    let mut stmt = conn.prepare(&format!(
+        "SELECT source_name, target_name, link_type, annotation, weight, confidence, traversal_count, last_traversed, library_name \
+         FROM note_links WHERE {} {} LIMIT 20",
+        where_clause, order_clause
+    )).map_err(|e| e.to_string())?;
+    let rows = query_insights(&mut stmt, &[])?;
+
+    Ok(serde_json::json!({ "total": total, "rows": rows }))
+}
+
+/// MIG-074 — "The Life of a Connection": the 5-tier USAGE census of the
+/// ratified CCS Concept §6 (Guide §8; the SQL port of store.ts
+/// `linkLifecycle()`): fresh (never traversed) · emerging (1–2, warm) ·
+/// established (3–9, warm) · load-bearing (10+, warm) · stale (traversed,
+/// idle > 90d). Scope: everything not archived (archived links live in the
+/// Retired Reasoning register). Distinct from the 6-stage life ARC the
+/// `lifecycle` key carries — both are canon; CCS renders this one.
+pub(crate) fn compute_ccs_tiers(conn: &Connection) -> Result<serde_json::Value, String> {
+    let warm = CCS_WARM_PREDICATE;
+    let count = |sql: String| -> usize {
+        conn.query_row(&sql, [], |r| r.get(0)).unwrap_or(0)
+    };
+    let fresh = count(
+        "SELECT COUNT(*) FROM note_links WHERE status != 'archived' AND traversal_count = 0".into(),
+    );
+    let emerging = count(format!(
+        "SELECT COUNT(*) FROM note_links WHERE status != 'archived' \
+         AND traversal_count BETWEEN 1 AND 2 AND {}", warm
+    ));
+    let established = count(format!(
+        "SELECT COUNT(*) FROM note_links WHERE status != 'archived' \
+         AND traversal_count BETWEEN 3 AND 9 AND {}", warm
+    ));
+    let load_bearing = count(format!(
+        "SELECT COUNT(*) FROM note_links WHERE status != 'archived' \
+         AND traversal_count >= 10 AND {}", warm
+    ));
+    let stale = count(format!(
+        "SELECT COUNT(*) FROM note_links WHERE status != 'archived' \
+         AND traversal_count > 0 AND {}", CCS_STALE_PREDICATE
+    ));
+    Ok(serde_json::json!({
+        "fresh": fresh,
+        "emerging": emerging,
+        "established": established,
+        "load_bearing": load_bearing,
+        "stale": stale,
+    }))
+}
+
+#[cfg(test)]
+mod tests_mig074_ccs {
+    //! MIG-074 — pins the CCS register predicates (warm/stale boundaries, the
+    //! NULL-is-warm least-destruction rule) and the Q3 derived-dormancy
+    //! accounting in `compute_lifecycle_distribution` against the bundled
+    //! SQLite, on an in-memory `note_links` seeded across every tier.
+    use super::*;
+    use rusqlite::Connection;
+
+    /// Seeded fixture — one link per row, `last_traversed` set relative to
+    /// 'now' so the 90-day boundary is exercised from both sides:
+    ///   fresh-new     tc=0, created now            → spark / tiers.fresh
+    ///   fresh-old     tc=0, created 30d ago        → birth / tiers.fresh
+    ///   emerging      tc=1,  walked 5d ago         → growth / tiers.emerging
+    ///   established   tc=5,  walked 10d ago        → growth / tiers.established
+    ///   load-bearing  tc=12, walked 1d ago, w=6    → maturity / tiers.load_bearing
+    ///   stale-light   tc=4,  walked 100d ago       → DERIVED dormancy / tiers.stale
+    ///   stale-heavy   tc=20, walked 200d ago, w=6  → DERIVED dormancy / tiers.stale
+    ///   no-date       tc=2,  last_traversed ''     → warm (NULL-is-warm) / tiers.emerging
+    ///   dormant-row   status='dormant'             → dormancy (historical)
+    ///   archived-row  status='archived'            → archival; excluded from tiers
+    ///   contested-row tc=1, walked 2d ago, contested → tiers.emerging + ccs_contested
+    fn seeded_db() -> Connection {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE note_links (
+                source_name TEXT DEFAULT '', target_name TEXT DEFAULT '',
+                link_type TEXT DEFAULT 'relates', annotation TEXT DEFAULT '',
+                weight REAL DEFAULT 1.0, confidence TEXT DEFAULT 'hypothesis',
+                traversal_count INTEGER DEFAULT 0, last_traversed TEXT DEFAULT '',
+                library_name TEXT DEFAULT '', status TEXT DEFAULT 'active',
+                created TEXT DEFAULT ''
+             );",
+        ).unwrap();
+        let mut insert = |tc: i64, lt_days: Option<i64>, weight: f64, status: &str,
+                          confidence: &str, created_days: i64, name: &str| {
+            // 'T'-separated ISO like production's RFC3339 (traverse is the
+            // column's only writer) — the string-range predicates compare
+            // against a strftime('%Y-%m-%dT%H:%M:%S', …) threshold.
+            let lt = match lt_days {
+                Some(d) => format!("(strftime('%Y-%m-%dT%H:%M:%S', 'now', '-{} days'))", d),
+                None => "''".to_string(),
+            };
+            conn.execute(&format!(
+                "INSERT INTO note_links (source_name, target_name, traversal_count, last_traversed, weight, status, confidence, created)
+                 VALUES (?1, ?2, {}, {}, {}, '{}', '{}', datetime('now', '-{} days'))",
+                tc, lt, weight, status, confidence, created_days
+            ), rusqlite::params![name, name]).unwrap();
+        };
+        insert(0,  None,      1.0, "active",   "hypothesis", 0,   "fresh-new");
+        insert(0,  None,      1.0, "active",   "hypothesis", 30,  "fresh-old");
+        insert(1,  Some(5),   1.7, "active",   "hypothesis", 40,  "emerging");
+        insert(5,  Some(10),  2.8, "active",   "evidence",   40,  "established");
+        insert(12, Some(1),   6.0, "active",   "established", 40, "load-bearing");
+        insert(4,  Some(100), 2.6, "active",   "evidence",   200, "stale-light");
+        insert(20, Some(200), 6.0, "active",   "established", 400, "stale-heavy");
+        insert(2,  None,      2.1, "active",   "hypothesis", 40,  "no-date");
+        insert(3,  Some(120), 2.4, "dormant",  "evidence",   200, "dormant-row");
+        insert(9,  Some(50),  0.0, "archived", "evidence",   200, "archived-row");
+        insert(1,  Some(2),   1.7, "active",   "contested",  10,  "contested-row");
+        conn
+    }
+
+    fn tier(v: &serde_json::Value, k: &str) -> u64 { v[k].as_u64().unwrap() }
+
+    #[test]
+    fn ccs_tiers_census_matches_linklifecycle_semantics() {
+        let conn = seeded_db();
+        let t = compute_ccs_tiers(&conn).unwrap();
+        assert_eq!(tier(&t, "fresh"), 2, "tc=0 rows (spark+birth population)");
+        // emerging: tc 1–2 warm = emerging + no-date (NULL-is-warm) + contested-row
+        assert_eq!(tier(&t, "emerging"), 3);
+        // established: tc 3–9 warm = 'established' only (stale-light is idle>90;
+        // dormant-row is tc=3 but status-scoped IN (≠archived) and idle>90 → stale)
+        assert_eq!(tier(&t, "established"), 1);
+        assert_eq!(tier(&t, "load_bearing"), 1);
+        // stale: traversed, idle>90, not archived = stale-light + stale-heavy + dormant-row
+        assert_eq!(tier(&t, "stale"), 3);
+    }
+
+    #[test]
+    fn ccs_registers_respect_warm_and_stale_boundaries() {
+        let conn = seeded_db();
+
+        let living = compute_ccs_register(&conn, "living").unwrap();
+        // warm traversed actives: emerging, established, load-bearing, no-date, contested-row
+        assert_eq!(living["total"].as_u64().unwrap(), 5);
+        let names: Vec<String> = living["rows"].as_array().unwrap().iter()
+            .map(|r| r["source_name"].as_str().unwrap().to_string()).collect();
+        assert!(!names.contains(&"stale-light".to_string()), "stale links are never 'living'");
+        assert_eq!(names[0], "load-bearing", "most-traversed first");
+
+        let load = compute_ccs_register(&conn, "load_bearing").unwrap();
+        assert_eq!(load["rows"][0]["source_name"], "load-bearing", "heaviest warm first");
+
+        let cooling = compute_ccs_register(&conn, "cooling").unwrap();
+        assert_eq!(cooling["total"].as_u64().unwrap(), 2, "only idle>90 actives cool (dormant-row is not 'active')");
+        assert_eq!(cooling["rows"][0]["source_name"], "stale-heavy", "coldest first");
+
+        let contested = compute_ccs_register(&conn, "contested").unwrap();
+        assert_eq!(contested["total"].as_u64().unwrap(), 1);
+        assert_eq!(contested["rows"][0]["source_name"], "contested-row");
+    }
+
+    #[test]
+    fn q3_dormancy_is_derived_and_buckets_stay_disjoint() {
+        let conn = seeded_db();
+        let v = compute_lifecycle_distribution(&conn).unwrap();
+        let s = &v["lifecycle"];
+        assert_eq!(tier(s, "spark"), 1);
+        assert_eq!(tier(s, "birth"), 1);
+        // growth: warm traversed, weight<5 → emerging, established, no-date, contested-row
+        assert_eq!(tier(s, "growth"), 4);
+        // maturity: warm, weight≥5 → load-bearing (stale-heavy is w=6 but idle>90 → dormancy)
+        assert_eq!(tier(s, "maturity"), 1);
+        // dormancy: historical 'dormant' + DERIVED (active, traversed, idle>90)
+        assert_eq!(tier(s, "dormancy"), 3, "1 historical + 2 derived");
+        assert_eq!(tier(s, "archival"), 1);
+        // Disjointness/accounting: the six buckets sum to the seeded population.
+        let sum = ["spark","birth","growth","maturity","dormancy","archival"]
+            .iter().map(|k| tier(s, k)).sum::<u64>();
+        assert_eq!(sum, 11);
+    }
+}
+
 /// Run the 6 aggregates ONCE and persist each result as a JSON payload.
 /// This is the only full scan of note_links — always called off the open
 /// path, on a dedicated connection (never the SearchState mutex).
@@ -5648,17 +5906,38 @@ pub(crate) fn recompute_link_stats_cache(conn: &Connection) -> Result<(), String
     let most = compute_formulation_analysis(conn, "most_connected", None)?;
     let weak = compute_formulation_analysis(conn, "weak_foundations", None)?;
 
+    // MIG-074 — the CCS register payloads, same pass, same transaction-free
+    // INSERT OR REPLACE discipline (per-key atomicity self-heals interrupts).
+    let ccs_living = compute_ccs_register(conn, "living")?;
+    let ccs_load_bearing = compute_ccs_register(conn, "load_bearing")?;
+    let ccs_cooling = compute_ccs_register(conn, "cooling")?;
+    let ccs_contested = compute_ccs_register(conn, "contested")?;
+    let ccs_tiers = compute_ccs_tiers(conn)?;
+    // Retired Reasoning rows reuse the existing "abandoned" query (archived,
+    // most-recently-walked first) + a population count.
+    let retired_rows = compute_formulation_analysis(conn, "abandoned", None)?;
+    let retired_total: usize = conn.query_row(
+        "SELECT COUNT(*) FROM note_links WHERE status = 'archived'", [], |r| r.get(0),
+    ).unwrap_or(0);
+    let ccs_retired = serde_json::json!({ "total": retired_total, "rows": retired_rows });
+
     let now: String = conn.query_row(
         "SELECT strftime('%Y-%m-%dT%H:%M:%SZ', 'now')", [], |r| r.get(0)
     ).map_err(|e| e.to_string())?;
 
-    let payloads: [(&str, String); 6] = [
+    let payloads: [(&str, String); 12] = [
         ("stats", serde_json::to_string(&stats).map_err(|e| e.to_string())?),
         ("lifecycle", serde_json::to_string(&lifecycle).map_err(|e| e.to_string())?),
         ("fmt_emerging", serde_json::to_string(&emerging).map_err(|e| e.to_string())?),
         ("fmt_bias_check", serde_json::to_string(&bias).map_err(|e| e.to_string())?),
         ("fmt_most_connected", serde_json::to_string(&most).map_err(|e| e.to_string())?),
         ("fmt_weak_foundations", serde_json::to_string(&weak).map_err(|e| e.to_string())?),
+        ("ccs_living", serde_json::to_string(&ccs_living).map_err(|e| e.to_string())?),
+        ("ccs_load_bearing", serde_json::to_string(&ccs_load_bearing).map_err(|e| e.to_string())?),
+        ("ccs_cooling", serde_json::to_string(&ccs_cooling).map_err(|e| e.to_string())?),
+        ("ccs_contested", serde_json::to_string(&ccs_contested).map_err(|e| e.to_string())?),
+        ("ccs_tiers", serde_json::to_string(&ccs_tiers).map_err(|e| e.to_string())?),
+        ("ccs_retired", serde_json::to_string(&ccs_retired).map_err(|e| e.to_string())?),
     ];
     for (key, payload) in payloads {
         conn.execute(
@@ -5715,47 +5994,60 @@ pub(crate) fn spawn_kh_cache_recompute(app: &tauri::AppHandle, only_if_empty: bo
     std::thread::spawn(move || kh_cache_recompute_blocking(&app, only_if_empty));
 }
 
+/// Read every `link_stats_cache` row + the oldest row's age in minutes.
+/// `None` = the table itself is missing (restored / pre-MIG-073 DB where
+/// init_db hasn't run) — treated exactly like an empty cache by the callers:
+/// fall through to the background populate, whose CREATE TABLE IF NOT EXISTS
+/// self-heals the schema (MIG-073 P4-audit Scenario 2 — never a silent dead
+/// panel). Shared by the KH and CCS snapshot IPCs (MIG-074) — ONE reader.
+fn read_link_stats_cache(app: &tauri::AppHandle)
+    -> Result<Option<(std::collections::HashMap<String, String>, f64)>, String>
+{
+    let state = app.state::<SearchState>();
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let conn = db.as_ref().ok_or("Search DB not initialized")?;
+    // (Bound to a local first: a match-scrutinee temporary would outlive
+    // the block-local lock guards and trip E0597.)
+    let prepared = conn.prepare(
+        "SELECT stat_key, payload, (julianday('now') - julianday(computed_at)) * 1440.0 \
+         FROM link_stats_cache"
+    );
+    match prepared {
+        Err(_) => Ok(None),
+        Ok(mut stmt) => {
+            let mut payloads: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+            let mut max_age: f64 = 0.0;
+            let rows = stmt.query_map([], |r| {
+                Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, Option<f64>>(2)?))
+            }).map_err(|e| e.to_string())?;
+            for row in rows.flatten() {
+                let (key, payload, age) = row;
+                payloads.insert(key, payload);
+                // A NULL age (unparseable computed_at) counts as maximally stale.
+                max_age = max_age.max(age.unwrap_or(f64::MAX));
+            }
+            Ok(Some((payloads, max_age)))
+        }
+    }
+} // SearchState lock dropped on return — callers may spawn freely
+
+/// Parse one cached payload out of the row map (Null if absent/corrupt).
+fn take_cached(payloads: &mut std::collections::HashMap<String, String>, k: &str) -> serde_json::Value {
+    payloads.remove(k)
+        .and_then(|p| serde_json::from_str(&p).ok())
+        .unwrap_or(serde_json::Value::Null)
+}
+
 /// MIG-073 — the ONE call KnowledgeHealthDashboard makes on open. Reads the
-/// cached snapshot (6 tiny rows — no note_links scan). Returns
+/// cached snapshot (tiny rows — no note_links scan). Returns
 /// `{ ready: false }` while the first-ever population is still running (the
 /// frontend listens for `kh-snapshot-ready`). A stale snapshot is STILL
 /// returned instantly, with a background refresh kicked for the next read
-/// (stale-while-revalidate).
+/// (stale-while-revalidate). Completeness is judged on the 6 KH keys ONLY —
+/// missing MIG-074 `ccs_*` keys can never push this panel to not-ready.
 #[tauri::command]
 pub fn constellation_knowledge_health_snapshot(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
-    let snapshot = {
-        let state = app.state::<SearchState>();
-        let db = state.db.lock().map_err(|e| e.to_string())?;
-        let conn = db.as_ref().ok_or("Search DB not initialized")?;
-        // A missing table (restored / pre-MIG-073 DB where init_db hasn't run)
-        // is treated exactly like an empty cache: fall through to the
-        // background populate, whose CREATE TABLE IF NOT EXISTS self-heals the
-        // schema (P4-audit Scenario 2 — never a silent dead-end in the panel).
-        // (Bound to a local first: a match-scrutinee temporary would outlive
-        // the block-local lock guards and trip E0597.)
-        let prepared = conn.prepare(
-            "SELECT stat_key, payload, (julianday('now') - julianday(computed_at)) * 1440.0 \
-             FROM link_stats_cache"
-        );
-        match prepared {
-            Err(_) => None,
-            Ok(mut stmt) => {
-                let mut payloads: std::collections::HashMap<String, String> = std::collections::HashMap::new();
-                let mut max_age: f64 = 0.0;
-                let rows = stmt.query_map([], |r| {
-                    Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, Option<f64>>(2)?))
-                }).map_err(|e| e.to_string())?;
-                for row in rows.flatten() {
-                    let (key, payload, age) = row;
-                    payloads.insert(key, payload);
-                    // A NULL age (unparseable computed_at) counts as maximally stale.
-                    max_age = max_age.max(age.unwrap_or(f64::MAX));
-                }
-                Some((payloads, max_age))
-            }
-        }
-    }; // SearchState lock dropped before any spawn below
-    let Some((mut payloads, max_age_minutes)) = snapshot else {
+    let Some((mut payloads, max_age_minutes)) = read_link_stats_cache(&app)? else {
         spawn_kh_cache_recompute(&app, false);
         return Ok(serde_json::json!({ "ready": false }));
     };
@@ -5772,17 +6064,12 @@ pub fn constellation_knowledge_health_snapshot(app: tauri::AppHandle) -> Result<
         spawn_kh_cache_recompute(&app, false); // refresh lands for the NEXT read
     }
 
-    let mut take = |k: &str| -> serde_json::Value {
-        payloads.remove(k)
-            .and_then(|p| serde_json::from_str(&p).ok())
-            .unwrap_or(serde_json::Value::Null)
-    };
-    let stats = take("stats");
-    let lifecycle = take("lifecycle");
-    let emerging = take("fmt_emerging");
-    let bias_check = take("fmt_bias_check");
-    let most_connected = take("fmt_most_connected");
-    let weak_foundations = take("fmt_weak_foundations");
+    let stats = take_cached(&mut payloads, "stats");
+    let lifecycle = take_cached(&mut payloads, "lifecycle");
+    let emerging = take_cached(&mut payloads, "fmt_emerging");
+    let bias_check = take_cached(&mut payloads, "fmt_bias_check");
+    let most_connected = take_cached(&mut payloads, "fmt_most_connected");
+    let weak_foundations = take_cached(&mut payloads, "fmt_weak_foundations");
     Ok(serde_json::json!({
         "ready": true,
         "stale_minutes": max_age_minutes,
@@ -5792,6 +6079,50 @@ pub fn constellation_knowledge_health_snapshot(app: tauri::AppHandle) -> Result<
         "bias_check": bias_check,
         "most_connected": most_connected,
         "weak_foundations": weak_foundations,
+    }))
+}
+
+/// MIG-074 — the ONE call the CCS surface makes on open. Same
+/// stale-while-revalidate mechanics as the KH snapshot (same cache, same
+/// `kh-snapshot-ready` event, same self-healing on a missing table), but
+/// completeness is judged on the 8 CCS keys — on the first boot after
+/// MIG-074 the 6 `ccs_*` keys are absent, so CCS reports `{ ready: false }`
+/// and self-populates while KH (whose 6 keys exist) stays ready.
+#[tauri::command]
+pub fn constellation_ccs_snapshot(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
+    let Some((mut payloads, max_age_minutes)) = read_link_stats_cache(&app)? else {
+        spawn_kh_cache_recompute(&app, false);
+        return Ok(serde_json::json!({ "ready": false }));
+    };
+
+    if !CCS_CACHE_KEYS.iter().all(|k| payloads.contains_key(*k)) {
+        spawn_kh_cache_recompute(&app, false);
+        return Ok(serde_json::json!({ "ready": false }));
+    }
+
+    if max_age_minutes > KH_CACHE_FRESH_MINUTES {
+        spawn_kh_cache_recompute(&app, false); // refresh lands for the NEXT read
+    }
+
+    let stats = take_cached(&mut payloads, "stats");
+    let lifecycle = take_cached(&mut payloads, "lifecycle");
+    let living = take_cached(&mut payloads, "ccs_living");
+    let load_bearing = take_cached(&mut payloads, "ccs_load_bearing");
+    let cooling = take_cached(&mut payloads, "ccs_cooling");
+    let contested = take_cached(&mut payloads, "ccs_contested");
+    let tiers = take_cached(&mut payloads, "ccs_tiers");
+    let retired = take_cached(&mut payloads, "ccs_retired");
+    Ok(serde_json::json!({
+        "ready": true,
+        "stale_minutes": max_age_minutes,
+        "stats": stats,
+        "lifecycle": lifecycle,
+        "living": living,
+        "load_bearing": load_bearing,
+        "cooling": cooling,
+        "contested": contested,
+        "tiers": tiers,
+        "retired": retired,
     }))
 }
 

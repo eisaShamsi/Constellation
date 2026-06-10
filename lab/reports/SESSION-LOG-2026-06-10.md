@@ -84,3 +84,33 @@ pure theme vars). Risk register + rollback per phase.
 
 **State: awaiting Eisa's Plan approval** → then the build cascades (Plan-Approval = Build-Approval),
 stopping only at the three ★ Boss-test clauses.
+
+## §MIG-074 §A — Backend shipped (15:05–15:35)
+
+**Eisa: "Approved"** (the Plan) → cascade opened. §A landed in one commit:
+
+- **6 additive `ccs_*` keys** in `recompute_link_stats_cache` (same single background pass):
+  `ccs_living` / `ccs_load_bearing` / `ccs_cooling` / `ccs_contested` (via the new
+  `compute_ccs_register`, `{total, rows}` payloads reusing `FormulationInsight`), `ccs_tiers` (the
+  5-tier usage census, `compute_ccs_tiers`), `ccs_retired` (reuses the existing `"abandoned"` query +
+  a COUNT — no new SQL family).
+- **Q3 dormancy repair** in `compute_lifecycle_distribution`: `dormancy = status='dormant' OR (active ∧
+  tc>0 ∧ idle>90d)`; `growth`/`maturity` gain the warm-guard; `spark`/`birth`/`archival` untouched.
+- **`constellation_ccs_snapshot` IPC** (registered in lib.rs): same SWR mechanics via a new shared
+  `read_link_stats_cache` helper + `take_cached` (the KH IPC refactored onto the same reader —
+  behavior frozen, completeness still judged on its own 6 keys; missing `ccs_*` keys can never push
+  KH to not-ready).
+- **AS-BUILT deviation (measured, logged in the Plan §A):** stale/warm as a **string-range predicate**
+  on `last_traversed` instead of `julianday()` — the julianday form walked the whole index (~2.4 s);
+  the range form is a bounded `SEARCH … USING INDEX idx_link_last_traversed` (**37 ms** on the
+  real-size copy). One shared boundary definition (`CCS_STALE_PREDICATE`/`CCS_WARM_PREDICATE`) used by
+  the registers AND the Q3 buckets.
+
+**Verification (clause met):** `cargo check` 0 errors (53 pre-existing warnings only). **3 new unit
+tests** (`tests_mig074_ccs`) pin the tier census, the register warm/stale boundaries (incl.
+NULL-is-warm), and the Q3 derived-dormancy disjoint accounting — 3/3 pass. **Dry-run on a COPY of the
+real 1.7 GB DB** (234,062 rows): spark/birth byte-identical (8 / 234,040); accounting identity holds
+(moved growth+maturity == derived stale == 0 on this data — all 14 traversed links are warm);
+tc=0∧weight≥5 anomaly = 0 rows; tiers census {fresh 234,048 · emerging 13 · established 1 ·
+load-bearing 0 · stale 0}; all register queries ≤140 ms warm (cooling fixed 2,387→37 ms); snapshot
+table read 55 ms cold-file / sub-ms in-app. KH payload shapes untouched.
