@@ -1745,7 +1745,9 @@
 		"structuralGaps": "فجوات هيكلية",
 		"singlePoints": "نقاط ضعف وحيدة",
 		"none": "لم يتم العثور على أي شيء",
-		"more": "المزيد"
+		"more": "المزيد",
+		"analyzing": "جارٍ تحليل المكتبة…",
+		"unavailable": "التحليل غير متاح — بدّل التبويب ثم عُد للمحاولة مجددًا."
 	},
 	"provenancePanel": {
 		"loading": "جارٍ التحميل...",
@@ -3163,12 +3165,7 @@
 		"popupTitle": "تحذيرات الاتحاد",
 		"cuniverseLabel": "كون فرعي",
 		"reasonLabel": "السبب"
-	}
-
-
-
-
-,
+	},
 	"styleSetter": {
 		"labels": {
 			"3d_gizmo": "أداة 3D",

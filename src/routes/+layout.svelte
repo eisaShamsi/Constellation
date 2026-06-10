@@ -430,6 +430,8 @@
 	let inspector360BackStack = $state<Array<{path: string; name: string}>>([]);
 	let trailIndex = $state(0); // CE Phase 8: current note index in trail
 	let tensionReport = $state<any>(null); // CE Phase 4: TensionReport
+	let tensionLoading = $state(false); // analyzing state for the health tab
+	let _tensionLibPath: string | null = null; // cache guard — re-fetch only when the library changes
 	let provenanceChain = $state<any>(null); // CE Phase 5: ProvenanceChain
 	let _lastProvenancePath = ''; // cache guard — only re-fetch when note changes
 
@@ -3287,13 +3289,42 @@
 		// §139: SvelteMap — replace contents in-place (see maturityMap above).
 		stageMap.clear();
 		for (const [k, v] of newStageMap) stageMap.set(k, v);
-		// Lenses + tensions (cheap, once)
+		// Lenses (cheap, once). The tension load that used to sit here was
+		// re-homed to loadTensionReport() — tab-activated, active-note-scoped
+		// (this function only runs from the on-demand Sky View enrichment, so
+		// a boot-era tension load here left the health tab "Loading…" forever).
 		try { availableLenses = await invoke('list_lenses'); } catch { availableLenses = []; }
-		try {
-			tensionReport = await invoke('detect_tensions', { libraryPath: libPaths[0], libraryName: libNames[0] });
-		} catch { tensionReport = null; }
 		skyVersion++;
 	}
+
+	// CE Phase 4 — Tension report for the right-sidebar Knowledge Health tab.
+	// Loaded lazily when the tab activates with a note open (the boot-time
+	// loader was removed by the zero-boot-walks rule and the tab was never
+	// re-pointed — it showed "Loading…" forever). Scoped to the ACTIVE note's
+	// library (the old wiring scanned libPaths[0] — the wrong library in any
+	// multi-library universe); cached per library path; a failed run clears
+	// the guard so the next activation retries.
+	async function loadTensionReport(notePath: string) {
+		const lib = $libraryStats.find(l => notePath.startsWith(l.path));
+		if (!lib) return;
+		if (_tensionLibPath === lib.path && (tensionReport || tensionLoading)) return;
+		_tensionLibPath = lib.path;
+		tensionLoading = true;
+		try {
+			tensionReport = await invoke('detect_tensions', { libraryPath: lib.path, libraryName: lib.name });
+		} catch (e) {
+			console.error('detect_tensions failed:', e);
+			tensionReport = null;
+			_tensionLibPath = null; // allow retry on next activation
+		}
+		tensionLoading = false;
+	}
+	$effect(() => {
+		if (rightSidebarTab === 'health' && isHome && sidebarTab) {
+			const p = sidebarTab.path;
+			untrack(() => { void loadTensionReport(p); });
+		}
+	});
 
 	function mergeIndexEntries(entries: IndexEntry[]): IndexEntry[] {
 		const map = new Map<string, IndexEntry>();
@@ -6582,6 +6613,7 @@
 					<div class="rs-section rs-full-height">
 						<TensionPanel
 							report={tensionReport}
+							loading={tensionLoading}
 							{libraryColorMap}
 							onNoteClick={(path, name) => {
 								const lib = $libraryStats.find(l => path.startsWith(l.path));

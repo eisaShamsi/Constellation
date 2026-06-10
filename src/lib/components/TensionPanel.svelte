@@ -25,10 +25,12 @@
 
 	let {
 		report = null as TensionReport | null,
+		loading = false,
 		libraryColorMap = {} as Record<string, string>,
 		onNoteClick,
 	}: {
 		report?: TensionReport | null;
+		loading?: boolean;
 		libraryColorMap?: Record<string, string>;
 		onNoteClick?: (path: string, name: string) => void;
 	} = $props();
@@ -48,8 +50,12 @@
 </script>
 
 <div class="tension-panel">
-	{#if !report}
-		<div class="tp-empty">{$t('tensionPanel.loading') || 'Loading...'}</div>
+	{#if loading}
+		<div class="tp-empty">{$t('tensionPanel.analyzing') || 'Analyzing library…'}</div>
+	{:else if !report}
+		<!-- Distinct from `analyzing`: the load finished without a report
+		     (error or no run yet). Never an eternal "Loading…". -->
+		<div class="tp-empty">{$t('tensionPanel.unavailable') || 'Analysis unavailable — switch tabs and back to retry.'}</div>
 	{:else if !report.active}
 		<div class="tp-inactive">
 			<div class="tp-inactive-icon">🩺</div>

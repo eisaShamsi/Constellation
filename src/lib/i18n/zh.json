@@ -1637,7 +1637,9 @@
 		"structuralGaps": "结构性缺口",
 		"singlePoints": "单点故障",
 		"none": "未找到",
-		"more": "更多"
+		"more": "更多",
+		"analyzing": "正在分析文库…",
+		"unavailable": "分析不可用——切换标签页后返回即可重试。"
 	},
 	"provenancePanel": {
 		"loading": "加载中...",
@@ -3028,12 +3030,7 @@
 		"popupTitle": "联邦警告",
 		"cuniverseLabel": "cUniverse",
 		"reasonLabel": "原因"
-	}
-
-
-
-
-,
+	},
 	"styleSetter": {
 		"labels": {
 			"3d_gizmo": "3D 控件",

@@ -1197,7 +1197,9 @@
 		"structuralGaps": "פערים מבניים",
 		"singlePoints": "נקודות כשל בודדות",
 		"none": "לא נמצאו",
-		"more": "עוד"
+		"more": "עוד",
+		"analyzing": "מנתח את הספרייה…",
+		"unavailable": "הניתוח אינו זמין — החלף לשונית וחזור כדי לנסות שוב."
 	},
 	"provenancePanel": {
 		"loading": "טוען...",
@@ -3028,12 +3030,7 @@
 		"popupTitle": "אזהרות פדרציה",
 		"cuniverseLabel": "יקום-בן",
 		"reasonLabel": "סיבה"
-	}
-
-
-
-
-,
+	},
 	"styleSetter": {
 		"labels": {
 			"3d_gizmo": "כלי תלת-ממד",

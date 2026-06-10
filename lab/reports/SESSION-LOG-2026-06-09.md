@@ -296,6 +296,29 @@ via command palette 🧠 / dock). Eisa's tab screenshot is the **TensionPanel** 
 error — separate pre-existing bug, out of MIG-073 scope; triage after). KHD i18n drift also noted (panel is
 hardcoded EN — pre-existing, for P4/PJ). Binary building; P2 Boss test next (points at the OVERLAY).
 
+## §HEALTH-TAB FIX — the REAL original complaint root-caused + fixed (2026-06-10)
+
+**Boss verdict on MIG-073 Stage 1:** core Knowledge Health overlay renders full data (screenshot) — pass.
+**Boss correction:** the original issue was never the overlay — it's the right-sidebar tab *labeled*
+"Knowledge Health" (note-scoped), stuck on "Loading…". + Observation: the overlay's big card numbers
+(234,061 / 142,348) bleed past the card edges.
+
+**Tab root cause:** the tab renders `TensionPanel` fed by `tensionReport`, which was loaded ONLY inside
+`enrichNodesBackground` — removed from boot by the zero-boot-walks rule and now reachable solely from the
+on-demand Sky View legend action (`+layout:5789`). Loader disconnected, tab never re-pointed → eternal
+"Loading…". Also: the old call scanned `libPaths[0]` — the wrong library in any multi-library universe.
+(`detect_tensions` itself is MIG-067-correct on link types via `resolve_wikilink_type` — no detector rewrite;
+its fs-walk Rule-8 modernization belongs to the CNS/CCS reorganization, queued there.)
+
+**Fix:** `loadTensionReport(notePath)` — lazy, fired by a `$effect` when the health tab activates with a
+note open (`untrack`ed call; guards in plain vars — no loops); scoped to the **active note's library**;
+cached per library path; failure clears the guard (retry on next activation). `TensionPanel` gains a
+`loading` prop + two honest states: `analyzing` (spinner copy) and `unavailable` (error/no-run — never an
+eternal "Loading…"). i18n: `tensionPanel.analyzing` + `.unavailable` added to ALL 15 locales (merge script;
+verified +2/-0/~0 per file; CRLF en+ar / LF others preserved; pre-existing `}\n\n\n\n,` wart + missing EOF
+newline normalized). **CSS:** `.khd-card` `flex:1` → `flex:1 1 auto` (basis=content → 7-digit counts widen
+their card instead of bleeding; wrap absorbs). svelte-check 0 errors.
+
 **P3 shipped (as-built deviations logged in the Plan doc §P3):** reconcile-walk hook → **unconditional**
 recompute (the true bulk settle point); `links_backfill` hook **dropped** (verified: it never mutates
 `note_links` — hooking it adds nothing); freshness window **10 → 2 min** (plan-marked tunable; open-driven

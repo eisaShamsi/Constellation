@@ -1637,7 +1637,9 @@
 		"structuralGaps": "संरचनात्मक अंतराल",
 		"singlePoints": "एकल विफलता बिंदु",
 		"none": "कोई नहीं मिला",
-		"more": "और"
+		"more": "और",
+		"analyzing": "लाइब्रेरी का विश्लेषण हो रहा है…",
+		"unavailable": "विश्लेषण उपलब्ध नहीं — पुनः प्रयास के लिए टैब बदलकर वापस आएँ।"
 	},
 	"provenancePanel": {
 		"loading": "लोड हो रहा है...",
@@ -3028,12 +3030,7 @@
 		"popupTitle": "फेडरेशन चेतावनी",
 		"cuniverseLabel": "cUniverse",
 		"reasonLabel": "कारण"
-	}
-
-
-
-
-,
+	},
 	"styleSetter": {
 		"labels": {
 			"3d_gizmo": "3D गिज़्मो",

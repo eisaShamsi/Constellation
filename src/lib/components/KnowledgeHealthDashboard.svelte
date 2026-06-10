@@ -294,7 +294,10 @@
 		margin-bottom: 24px;
 	}
 	.khd-card {
-		flex: 1;
+		/* 1 1 auto: basis = content width, so a 7-digit count widens its own
+		   card instead of bleeding past the rounded edge (flex:1 squeezed all
+		   cards equal regardless of content); flex-wrap handles overflow. */
+		flex: 1 1 auto;
 		min-width: 100px;
 		background: var(--background-secondary);
 		border-radius: 10px;

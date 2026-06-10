@@ -1637,7 +1637,9 @@
 		"structuralGaps": "構造的ギャップ",
 		"singlePoints": "単一障害点",
 		"none": "見つかりません",
-		"more": "もっと"
+		"more": "もっと",
+		"analyzing": "ライブラリを分析中…",
+		"unavailable": "分析を利用できません。タブを切り替えてから戻ると再試行します。"
 	},
 	"provenancePanel": {
 		"loading": "読み込み中...",
@@ -3028,12 +3030,7 @@
 		"popupTitle": "フェデレーション警告",
 		"cuniverseLabel": "cUniverse",
 		"reasonLabel": "理由"
-	}
-
-
-
-
-,
+	},
 	"styleSetter": {
 		"labels": {
 			"3d_gizmo": "3D ギズモ",

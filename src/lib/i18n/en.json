@@ -1756,7 +1756,9 @@
 		"structuralGaps": "Structural Gaps",
 		"singlePoints": "Single Points of Failure",
 		"none": "None found",
-		"more": "more"
+		"more": "more",
+		"analyzing": "Analyzing library…",
+		"unavailable": "Analysis unavailable — switch tabs and back to retry."
 	},
 	"provenancePanel": {
 		"loading": "Loading...",
@@ -3165,12 +3167,7 @@
 		"popupTitle": "Federation warnings",
 		"cuniverseLabel": "cUniverse",
 		"reasonLabel": "Reason"
-	}
-
-
-
-
-,
+	},
 	"styleSetter": {
 		"labels": {
 			"3d_gizmo": "3D gizmo",

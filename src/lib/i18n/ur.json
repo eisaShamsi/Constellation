@@ -1197,7 +1197,9 @@
 		"structuralGaps": "ساختی خلا",
 		"singlePoints": "واحد ناکامی کے مقامات",
 		"none": "کچھ نہیں ملا",
-		"more": "مزید"
+		"more": "مزید",
+		"analyzing": "لائبریری کا تجزیہ جاری ہے…",
+		"unavailable": "تجزیہ دستیاب نہیں — دوبارہ کوشش کے لیے ٹیب بدل کر واپس آئیں۔"
 	},
 	"provenancePanel": {
 		"loading": "لوڈ ہو رہا ہے...",
@@ -3028,12 +3030,7 @@
 		"popupTitle": "فیڈریشن انتباہات",
 		"cuniverseLabel": "cUniverse",
 		"reasonLabel": "وجہ"
-	}
-
-
-
-
-,
+	},
 	"styleSetter": {
 		"labels": {
 			"3d_gizmo": "3D گیزمو",

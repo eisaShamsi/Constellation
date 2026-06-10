@@ -1637,7 +1637,9 @@
 		"structuralGaps": "Yapısal boşluklar",
 		"singlePoints": "Tek hata noktaları",
 		"none": "Hiçbiri bulunamadı",
-		"more": "daha fazla"
+		"more": "daha fazla",
+		"analyzing": "Kitaplık analiz ediliyor…",
+		"unavailable": "Analiz kullanılamıyor — yeniden denemek için sekme değiştirip geri dönün."
 	},
 	"provenancePanel": {
 		"loading": "Yükleniyor...",
@@ -3028,12 +3030,7 @@
 		"popupTitle": "Federasyon uyarıları",
 		"cuniverseLabel": "cUniverse",
 		"reasonLabel": "Neden"
-	}
-
-
-
-
-,
+	},
 	"styleSetter": {
 		"labels": {
 			"3d_gizmo": "3D gizmo",

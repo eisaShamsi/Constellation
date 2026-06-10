@@ -1208,7 +1208,9 @@
 		"structuralGaps": "Strukturelle Lücken",
 		"singlePoints": "Einzelne Ausfallpunkte",
 		"none": "Keine gefunden",
-		"more": "mehr"
+		"more": "mehr",
+		"analyzing": "Bibliothek wird analysiert …",
+		"unavailable": "Analyse nicht verfügbar – Tab wechseln und zurückkehren, um es erneut zu versuchen."
 	},
 	"provenancePanel": {
 		"loading": "Wird geladen...",
@@ -3028,12 +3030,7 @@
 		"popupTitle": "Föderationswarnungen",
 		"cuniverseLabel": "cUniverse",
 		"reasonLabel": "Grund"
-	}
-
-
-
-
-,
+	},
 	"styleSetter": {
 		"labels": {
 			"3d_gizmo": "3D-Gizmo",

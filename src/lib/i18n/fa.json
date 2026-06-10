@@ -1208,7 +1208,9 @@
 		"structuralGaps": "شکاف‌های ساختاری",
 		"singlePoints": "نقاط شکست تکی",
 		"none": "هیچ موردی یافت نشد",
-		"more": "بیشتر"
+		"more": "بیشتر",
+		"analyzing": "در حال تحلیل کتابخانه…",
+		"unavailable": "تحلیل در دسترس نیست — برای تلاش دوباره، زبانه را عوض کنید و برگردید."
 	},
 	"provenancePanel": {
 		"loading": "در حال بارگذاری...",
@@ -3028,12 +3030,7 @@
 		"popupTitle": "هشدارهای اتحاد",
 		"cuniverseLabel": "گیتی فرعی",
 		"reasonLabel": "دلیل"
-	}
-
-
-
-
-,
+	},
 	"styleSetter": {
 		"labels": {
 			"3d_gizmo": "ابزار 3D",

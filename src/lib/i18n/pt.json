@@ -1637,7 +1637,9 @@
 		"structuralGaps": "Lacunas estruturais",
 		"singlePoints": "Pontos únicos de falha",
 		"none": "Nenhum encontrado",
-		"more": "mais"
+		"more": "mais",
+		"analyzing": "Analisando a biblioteca…",
+		"unavailable": "Análise indisponível — troque de aba e volte para tentar novamente."
 	},
 	"provenancePanel": {
 		"loading": "Carregando...",
@@ -3028,12 +3030,7 @@
 		"popupTitle": "Avisos de federação",
 		"cuniverseLabel": "cUniverso",
 		"reasonLabel": "Motivo"
-	}
-
-
-
-
-,
+	},
 	"styleSetter": {
 		"labels": {
 			"3d_gizmo": "Gizmo 3D",

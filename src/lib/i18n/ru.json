@@ -1637,7 +1637,9 @@
 		"structuralGaps": "Структурные пробелы",
 		"singlePoints": "Единственные точки отказа",
 		"none": "Ничего не найдено",
-		"more": "ещё"
+		"more": "ещё",
+		"analyzing": "Анализ библиотеки…",
+		"unavailable": "Анализ недоступен — переключите вкладку и вернитесь, чтобы повторить."
 	},
 	"provenancePanel": {
 		"loading": "Загрузка...",
@@ -3028,12 +3030,7 @@
 		"popupTitle": "Предупреждения федерации",
 		"cuniverseLabel": "cUniverse",
 		"reasonLabel": "Причина"
-	}
-
-
-
-
-,
+	},
 	"styleSetter": {
 		"labels": {
 			"3d_gizmo": "3D-гизмо",
