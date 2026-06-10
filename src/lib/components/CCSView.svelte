@@ -211,6 +211,20 @@
 	const pct = (n: number, total: number) => `${Math.max(2, total > 0 ? (n / total) * 100 : 0)}%`;
 </script>
 
+{#snippet linkRows(rows: CcsRow[], meta: (r: CcsRow) => string)}
+	<!-- The shared register row: source → type pill → target → meta. Clicking
+	     opens the source note (never a traversal — I2b). /simplify: one
+	     snippet serves Living / Load-Bearing / Cooling / the contested list. -->
+	{#each rows as row}
+		<button class="ccs-row" class:ccs-row-link={!!row.source_path} onclick={() => openRow(row)}>
+			<span class="ccs-row-name" dir="auto">{row.source_name}</span>
+			<LinkTypePill id={row.link_type} />
+			<span class="ccs-row-name" dir="auto">{row.target_name}</span>
+			<span class="ccs-row-meta">{meta(row)}</span>
+		</button>
+	{/each}
+{/snippet}
+
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="ccs-overlay" onkeydown={handleKeydown} tabindex="-1" role="dialog">
 	<div class="ccs-container">
@@ -240,14 +254,9 @@
 					{#if living.rows.length === 0}
 						<p class="ccs-empty">{$t('ccs.living.empty')}</p>
 					{:else}
-						{#each living.rows as row}
-							<button class="ccs-row" class:ccs-row-link={!!row.source_path} onclick={() => openRow(row)}>
-								<span class="ccs-row-name" dir="auto">{row.source_name}</span>
-								<LinkTypePill id={row.link_type} />
-								<span class="ccs-row-name" dir="auto">{row.target_name}</span>
-								<span class="ccs-row-meta">{$t('ccs.meta.walks', { n: row.traversal_count.toLocaleString() })}{#if walkedDate(row.last_traversed)} · {$t('ccs.meta.lastWalked', { date: walkedDate(row.last_traversed) })}{/if}</span>
-							</button>
-						{/each}
+						{@render linkRows(living.rows, (r) =>
+							$t('ccs.meta.walks', { n: r.traversal_count.toLocaleString() })
+							+ (walkedDate(r.last_traversed) ? ` · ${$t('ccs.meta.lastWalked', { date: walkedDate(r.last_traversed) })}` : ''))}
 					{/if}
 				</div>
 
@@ -258,14 +267,8 @@
 					{#if loadBearing.rows.length === 0}
 						<p class="ccs-empty">{$t('ccs.loadBearing.empty')}</p>
 					{:else}
-						{#each loadBearing.rows as row}
-							<button class="ccs-row" class:ccs-row-link={!!row.source_path} onclick={() => openRow(row)}>
-								<span class="ccs-row-name" dir="auto">{row.source_name}</span>
-								<LinkTypePill id={row.link_type} />
-								<span class="ccs-row-name" dir="auto">{row.target_name}</span>
-								<span class="ccs-row-meta">{$t('knowledgeHealth.weightAbbrev')}:{row.weight.toFixed(1)} · {$t('ccs.meta.walks', { n: row.traversal_count.toLocaleString() })}</span>
-							</button>
-						{/each}
+						{@render linkRows(loadBearing.rows, (r) =>
+							`${$t('knowledgeHealth.weightAbbrev')}:${r.weight.toFixed(1)} · ${$t('ccs.meta.walks', { n: r.traversal_count.toLocaleString() })}`)}
 					{/if}
 				</div>
 
@@ -276,14 +279,8 @@
 					{#if cooling.rows.length === 0}
 						<p class="ccs-empty">{$t('ccs.cooling.empty')}</p>
 					{:else}
-						{#each cooling.rows as row}
-							<button class="ccs-row" class:ccs-row-link={!!row.source_path} onclick={() => openRow(row)}>
-								<span class="ccs-row-name" dir="auto">{row.source_name}</span>
-								<LinkTypePill id={row.link_type} />
-								<span class="ccs-row-name" dir="auto">{row.target_name}</span>
-								<span class="ccs-row-meta">{$t('ccs.meta.idleDays', { n: idleDays(row.last_traversed).toLocaleString() })}</span>
-							</button>
-						{/each}
+						{@render linkRows(cooling.rows, (r) =>
+							$t('ccs.meta.idleDays', { n: idleDays(r.last_traversed).toLocaleString() }))}
 						{#if cooling.total > cooling.rows.length}
 							<p class="ccs-more-note">{$t('ccs.meta.total', { n: cooling.total.toLocaleString() })}</p>
 						{/if}
@@ -307,14 +304,7 @@
 					{#if contested.rows.length === 0}
 						<p class="ccs-empty">{$t('ccs.conviction.empty')}</p>
 					{:else}
-						{#each contested.rows.slice(0, 8) as row}
-							<button class="ccs-row" class:ccs-row-link={!!row.source_path} onclick={() => openRow(row)}>
-								<span class="ccs-row-name" dir="auto">{row.source_name}</span>
-								<LinkTypePill id={row.link_type} />
-								<span class="ccs-row-name" dir="auto">{row.target_name}</span>
-								<span class="ccs-row-meta">{confLabel('contested')}</span>
-							</button>
-						{/each}
+						{@render linkRows(contested.rows.slice(0, 8), () => confLabel('contested'))}
 					{/if}
 				</div>
 

@@ -5323,6 +5323,13 @@ pub fn constellation_link_dormant(
 
 // ─── P4: Formulation Analysis (Knowledge Diagnostics) ────────
 
+/// The shared SELECT column list every `FormulationInsight` row reader uses
+/// (must stay in lock-step with `query_insights`'s column indexes) — ONE
+/// place to extend when the struct gains a field (MIG-074 /simplify).
+const INSIGHT_COLUMNS: &str = "source_name, source_path, target_name, \
+     COALESCE(target_path, ''), link_type, annotation, weight, confidence, \
+     traversal_count, last_traversed, library_name";
+
 /// A formulation insight — one row from a diagnostic query.
 /// MIG-074 §B added the two path fields (additive serde — existing consumers
 /// ignore them) so the CCS registers can OPEN a row's note; aggregate rows
@@ -5380,12 +5387,11 @@ pub(crate) fn compute_formulation_analysis(
     match query_type {
         "strongest_evidence" => {
             // Top supports for a target, ranked by weight × confidence multiplier
-            let mut stmt = conn.prepare(
-                "SELECT source_name, source_path, target_name, COALESCE(target_path, ''), link_type, annotation, weight, confidence, traversal_count, last_traversed, library_name
-                 FROM note_links WHERE link_type = 'supports' AND status = 'active'
+            let mut stmt = conn.prepare(&format!(
+                "SELECT {} FROM note_links WHERE link_type = 'supports' AND status = 'active'
                  AND (?1 = '' OR LOWER(target_name) LIKE '%' || ?1 || '%')
-                 ORDER BY weight DESC LIMIT 50"
-            ).map_err(|e| e.to_string())?;
+                 ORDER BY weight DESC LIMIT 50", INSIGHT_COLUMNS
+            )).map_err(|e| e.to_string())?;
             let mut results = query_insights(&mut stmt, &[&target_lower as &dyn rusqlite::types::ToSql])?;
             // Re-sort by weight × confidence
             results.sort_by(|a, b| {
@@ -5397,48 +5403,43 @@ pub(crate) fn compute_formulation_analysis(
         }
         "weak_foundations" => {
             // hypothesis links with high weight — building on uncertain ground
-            let mut stmt = conn.prepare(
-                "SELECT source_name, source_path, target_name, COALESCE(target_path, ''), link_type, annotation, weight, confidence, traversal_count, last_traversed, library_name
-                 FROM note_links WHERE confidence = 'hypothesis' AND weight > 2.0 AND status = 'active'
-                 ORDER BY weight DESC LIMIT 50"
-            ).map_err(|e| e.to_string())?;
+            let mut stmt = conn.prepare(&format!(
+                "SELECT {} FROM note_links WHERE confidence = 'hypothesis' AND weight > 2.0 AND status = 'active'
+                 ORDER BY weight DESC LIMIT 50", INSIGHT_COLUMNS
+            )).map_err(|e| e.to_string())?;
             query_insights(&mut stmt, &[])
         }
         "tensions" => {
             // contradicts links for a target
-            let mut stmt = conn.prepare(
-                "SELECT source_name, source_path, target_name, COALESCE(target_path, ''), link_type, annotation, weight, confidence, traversal_count, last_traversed, library_name
-                 FROM note_links WHERE link_type = 'contradicts' AND status = 'active'
+            let mut stmt = conn.prepare(&format!(
+                "SELECT {} FROM note_links WHERE link_type = 'contradicts' AND status = 'active'
                  AND (?1 = '' OR LOWER(target_name) LIKE '%' || ?1 || '%')
-                 ORDER BY weight DESC LIMIT 50"
-            ).map_err(|e| e.to_string())?;
+                 ORDER BY weight DESC LIMIT 50", INSIGHT_COLUMNS
+            )).map_err(|e| e.to_string())?;
             query_insights(&mut stmt, &[&target_lower as &dyn rusqlite::types::ToSql])
         }
         "stagnating" => {
             // high-weight links gone dormant
-            let mut stmt = conn.prepare(
-                "SELECT source_name, source_path, target_name, COALESCE(target_path, ''), link_type, annotation, weight, confidence, traversal_count, last_traversed, library_name
-                 FROM note_links WHERE status = 'dormant' AND weight > 2.0
-                 ORDER BY weight DESC LIMIT 50"
-            ).map_err(|e| e.to_string())?;
+            let mut stmt = conn.prepare(&format!(
+                "SELECT {} FROM note_links WHERE status = 'dormant' AND weight > 2.0
+                 ORDER BY weight DESC LIMIT 50", INSIGHT_COLUMNS
+            )).map_err(|e| e.to_string())?;
             query_insights(&mut stmt, &[])
         }
         "abandoned" => {
             // archived links
-            let mut stmt = conn.prepare(
-                "SELECT source_name, source_path, target_name, COALESCE(target_path, ''), link_type, annotation, weight, confidence, traversal_count, last_traversed, library_name
-                 FROM note_links WHERE status = 'archived'
-                 ORDER BY last_traversed DESC LIMIT 50"
-            ).map_err(|e| e.to_string())?;
+            let mut stmt = conn.prepare(&format!(
+                "SELECT {} FROM note_links WHERE status = 'archived'
+                 ORDER BY last_traversed DESC LIMIT 50", INSIGHT_COLUMNS
+            )).map_err(|e| e.to_string())?;
             query_insights(&mut stmt, &[])
         }
         "emerging" => {
             // hypothesis + recently traversed (curiosity without proof yet)
-            let mut stmt = conn.prepare(
-                "SELECT source_name, source_path, target_name, COALESCE(target_path, ''), link_type, annotation, weight, confidence, traversal_count, last_traversed, library_name
-                 FROM note_links WHERE confidence = 'hypothesis' AND traversal_count > 0 AND status = 'active'
-                 ORDER BY traversal_count DESC, weight DESC LIMIT 50"
-            ).map_err(|e| e.to_string())?;
+            let mut stmt = conn.prepare(&format!(
+                "SELECT {} FROM note_links WHERE confidence = 'hypothesis' AND traversal_count > 0 AND status = 'active'
+                 ORDER BY traversal_count DESC, weight DESC LIMIT 50", INSIGHT_COLUMNS
+            )).map_err(|e| e.to_string())?;
             query_insights(&mut stmt, &[])
         }
         "bias_check" => {
@@ -5722,9 +5723,8 @@ pub(crate) fn compute_ccs_register(conn: &Connection, kind: &str) -> Result<serd
     ).unwrap_or(0);
 
     let mut stmt = conn.prepare(&format!(
-        "SELECT source_name, source_path, target_name, COALESCE(target_path, ''), link_type, annotation, weight, confidence, traversal_count, last_traversed, library_name \
-         FROM note_links WHERE {} {} LIMIT 20",
-        where_clause, order_clause
+        "SELECT {} FROM note_links WHERE {} {} LIMIT 20",
+        INSIGHT_COLUMNS, where_clause, order_clause
     )).map_err(|e| e.to_string())?;
     let rows = query_insights(&mut stmt, &[])?;
 
