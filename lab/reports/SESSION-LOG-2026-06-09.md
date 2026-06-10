@@ -319,6 +319,16 @@ verified +2/-0/~0 per file; CRLF en+ar / LF others preserved; pre-existing `}\n\
 newline normalized). **CSS:** `.khd-card` `flex:1` → `flex:1 1 auto` (basis=content → 7-digit counts widen
 their card instead of bleeding; wrap absorbs). svelte-check 0 errors.
 
+**Boss test (health tab + bleed):** Part A PASS (tab analyzes + renders 434 contradictions etc.) — but
+**no scroll**; Part B PASS (cards no longer bleed; ANNOTATED wraps to its own row — Boss-accepted).
+**Scroll root cause:** the `.rs-full-height` host column is `overflow:hidden` (children own their scroll) —
+and THREE panel roots never did: `.tension-panel`, `.rp-panel` (= Eisa's earlier "Review Pulse not displaying
+the whole list" remark — same family bug), `.prov-panel`. All three → `flex:1; min-height:0; overflow-y:auto`
+(self-contained, identical pattern). svelte-check 0 errors.
+**Observation parked for Eisa:** the contradictions list shows mass-duplicate rows (Thomas Aquinas
+contradicts "ISBN (identifier)" ×~40) — `detect_tensions` emits one row per wikilink occurrence, not per
+(source,target) pair; dedupe offered, awaiting Boss call (semantics change, not silently shipped).
+
 **P3 shipped (as-built deviations logged in the Plan doc §P3):** reconcile-walk hook → **unconditional**
 recompute (the true bulk settle point); `links_backfill` hook **dropped** (verified: it never mutates
 `note_links` — hooking it adds nothing); freshness window **10 → 2 min** (plan-marked tunable; open-driven

@@ -149,7 +149,10 @@
 </div>
 
 <style>
-	.tension-panel { padding: 8px 0; }
+	/* Self-scrolling: the right-sidebar host (.rs-full-height) is a flex
+	   column with overflow:hidden — children own their scroll, and this
+	   panel can hold hundreds of rows. */
+	.tension-panel { padding: 8px 0; flex: 1; min-height: 0; overflow-y: auto; }
 	.tp-empty, .tp-none, .tp-more { font-size: 0.78rem; color: var(--text-faint); padding: 4px 12px; }
 	.tp-inactive { text-align: center; padding: 24px 16px; }
 	.tp-inactive-icon { font-size: 2rem; margin-bottom: 8px; }

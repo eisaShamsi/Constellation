@@ -148,7 +148,7 @@
 </div>
 
 <style>
-	.rp-panel { padding: 8px 0; }
+	.rp-panel { padding: 8px 0; flex: 1; min-height: 0; overflow-y: auto; } /* self-scrolling — host column is overflow:hidden */
 	.rp-empty { text-align: center; padding: 24px 16px; }
 	.rp-empty-icon { font-size: 2rem; margin-bottom: 8px; }
 	.rp-empty-text { font-size: 0.82rem; color: var(--text-muted); line-height: 1.4; }

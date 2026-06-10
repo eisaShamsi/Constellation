@@ -80,7 +80,7 @@
 </div>
 
 <style>
-	.prov-panel { padding: 8px 0; }
+	.prov-panel { padding: 8px 0; flex: 1; min-height: 0; overflow-y: auto; } /* self-scrolling — host column is overflow:hidden */
 	.prov-empty { font-size: 0.78rem; color: var(--text-faint); padding: 8px 12px; }
 	.prov-empty-state { text-align: center; padding: 24px 16px; }
 	.prov-empty-icon { font-size: 1.5rem; margin-bottom: 8px; }
