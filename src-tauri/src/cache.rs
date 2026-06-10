@@ -1116,10 +1116,11 @@ pub fn cache_reconcile(app: tauri::AppHandle) -> Result<(), String> {
             "note_count": note_count,
             "elapsed_ms": started.elapsed().as_millis() as u64,
         }));
-        // MIG-073 — first-time population of the Knowledge Health snapshot
-        // cache (no-op when the cache already exists). Already on the walker
-        // thread; uses its own dedicated connection.
-        crate::search::kh_cache_recompute_blocking(&app_clone, true);
+        // MIG-073 §P3 — a completed reconcile walk is the bulk-link-change
+        // settle point: note_links may have changed arbitrarily, so refresh
+        // the Knowledge Health snapshot unconditionally. Already on the
+        // walker thread; uses its own dedicated connection.
+        crate::search::kh_cache_recompute_blocking(&app_clone, false);
     });
     Ok(())
 }

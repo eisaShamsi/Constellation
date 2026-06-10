@@ -295,3 +295,13 @@ SQL dry-run on a copied test DB: snapshot read **0.17 ms**, payload round-trip +
 via command palette 🧠 / dock). Eisa's tab screenshot is the **TensionPanel** "Loading…" (null report on
 error — separate pre-existing bug, out of MIG-073 scope; triage after). KHD i18n drift also noted (panel is
 hardcoded EN — pre-existing, for P4/PJ). Binary building; P2 Boss test next (points at the OVERLAY).
+
+**P3 shipped (as-built deviations logged in the Plan doc §P3):** reconcile-walk hook → **unconditional**
+recompute (the true bulk settle point); `links_backfill` hook **dropped** (verified: it never mutates
+`note_links` — hooking it adds nothing); freshness window **10 → 2 min** (plan-marked tunable; open-driven
+kick, background dedicated-connection recompute); the panel now listens for `kh-snapshot-ready` the whole
+time it's open (registered before the first fetch — no missed-event race) so a stale snapshot renders
+instantly then **updates in place**. Plan's original P3 test corrected: single-note saves go via
+`reindex_single_note` (never `cache_reconcile`) and no live Rebuild-Index invoke exists — SWR is the
+propagation path for single-link changes. svelte-check 0 / cargo errors 0. One binary carries P2+P3;
+staged Boss tests (Stage 1 instant-open, Stage 2 freshness) at the stop.

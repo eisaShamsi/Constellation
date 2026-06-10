@@ -5616,9 +5616,11 @@ const KH_CACHE_KEYS: [&str; 6] = [
 ];
 
 /// Snapshots older than this trigger a background refresh on read
-/// (stale-while-revalidate). The time-driven buckets (spark→birth at 7 days,
-/// dormancy windows) tolerate minutes of staleness by design.
-const KH_CACHE_FRESH_MINUTES: f64 = 10.0;
+/// (stale-while-revalidate). The kick is open-driven and the recompute runs
+/// on a dedicated background connection, so the worst case is one warm scan
+/// per window while the panel is actively used. The panel re-renders in
+/// place when the refresh lands (`kh-snapshot-ready`).
+const KH_CACHE_FRESH_MINUTES: f64 = 2.0;
 
 /// One recompute at a time, process-wide. Boot population, stale-revalidate,
 /// and post-reconcile can race; extras are dropped, not queued.

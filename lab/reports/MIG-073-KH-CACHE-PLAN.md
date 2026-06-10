@@ -67,16 +67,32 @@ still instant. *Fail:* if it still hangs 10s+ every open, the panel isn't readin
 ## Phase 3 — Refresh hooks (writes + time-drift propagate) ★ Boss test
 **One commit. Boss-testable: changes show up.**
 
-1. Call `recompute_link_stats_cache` from the `links_backfill` post-settle hook (after reconcile / bulk link
-   changes), on the background thread — never on the open path. Honor the drop/recreate discipline (no per-edge
-   recompute during a 234k-link reindex; recompute once after).
-2. Stale-while-revalidate already wired in P1 covers time-drift + single-link writes (traverse/archive/confidence):
-   the next open past the 10-min window refreshes in the background.
+> **AS-BUILT (2026-06-10) — four deviations from the text below, all within the approved architecture
+> (no new write path, no hot-path work); surfaced to Eisa at the test stop:**
+> 1. **`links_backfill` hook DROPPED** — verified it never mutates `note_links` (it derives
+>    `note_meta.outgoing_*` FROM it), so hooking it adds nothing. The bulk settle point is the reconcile
+>    walk; that hook (P1) flipped to **unconditional**.
+> 2. **Freshness window 10 → 2 min** (the plan marked it tunable). The kick is open-driven + the recompute
+>    is background on a dedicated connection — worst case one warm scan per 2 min of active use.
+> 3. **The panel listens for `kh-snapshot-ready` the WHOLE time it's open** (registered before the first
+>    fetch — no missed-event race): a stale snapshot renders instantly, then **updates in place** when the
+>    background refresh lands.
+> 4. The original test promised "add a link → wait a moment → updated" — wrong on two counts found in
+>    build: single-note saves go through `reindex_single_note` (never `cache_reconcile`), and the frontend
+>    has **no live Rebuild-Index invoke** (comment-level only). The honest propagation path for single-link
+>    changes is SWR: next open past the window kicks the refresh; the in-place update makes it visible in
+>    one open.
 
-**Verify (Boss tutorial):** *What it is* — the vitals stay current as you work. **Steps:** (1) note the **Total
-Links** number in **health**. (2) In a note, add a new `[[wikilink]]` and save; wait a moment (the background
-sync). (3) Reopen **health** → Total Links reflects the new link (instantly, from the refreshed snapshot).
-*Fail:* the number never updates even after reopening across the 10-min window.
+1. ~~links_backfill hook~~ → the `cache_reconcile` walk-completion hook recomputes **unconditionally** (bulk
+   settle), on the walker thread, dedicated connection — never the open path.
+2. Stale-while-revalidate covers time-drift + single-link writes (traverse/archive/confidence/save): the next
+   open past the **2-min** window kicks a background refresh and the open panel re-renders in place.
+
+**Verify (Boss tutorial):** *What it is* — the vitals stay current as you work. **Steps:** (1) open **health**,
+note **Total Links**. (2) In a note, add a new `[[wikilink]]` and save. (3) Wait ~2–3 minutes (do anything).
+(4) Reopen **health** → it opens instantly (possibly with the old number), then within a few seconds the
+numbers refresh in place — Total Links now reflects the new link. *Fail:* the number never updates across
+two opens separated by 3+ minutes.
 
 ## Phase 4 — `/simplify` + Audit (Migration Rule Phase 4)
 - `/simplify` the full MIG-073 diff.

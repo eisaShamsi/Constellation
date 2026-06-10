@@ -86,15 +86,18 @@
 			} catch (e) { console.error('[KHD]', e); loading = false; stopRetry(); }
 		};
 		(async () => {
-			await tryLoad();
-			if (disposed || !loading) return;
-			// First-ever open: the cache is populating in the background. Wait
-			// for the ready event, with a slow poll as self-healing fallback
-			// (the snapshot IPC re-kicks a failed recompute on every call).
+			// §P3 — listen the whole time the panel is open (registered BEFORE
+			// the first fetch so no event is missed): a stale-while-revalidate
+			// refresh that lands mid-view updates the numbers in place.
 			const { listen } = await import('@tauri-apps/api/event');
 			const un = await listen('kh-snapshot-ready', tryLoad);
 			if (disposed) { un(); return; }
 			unlisten = un;
+			await tryLoad();
+			if (disposed || !loading) return;
+			// First-ever open: the cache is populating in the background. The
+			// event above delivers it; the slow poll is a self-healing fallback
+			// (the snapshot IPC re-kicks a failed recompute on every call).
 			retryTimer = setInterval(tryLoad, 5000);
 		})();
 		return () => { disposed = true; stopRetry(); unlisten?.(); };
