@@ -221,3 +221,24 @@ isn't removed in cleanup — but mirrors the pre-existing `show-importer` siblin
 
 **MIG-007 → CLOSED.** Architect→Plan→Build(§1–§5 + hub fixes)→/simplify→Audit all done; Boss-validated A/B.
 Commits `6752d4a8` · `5a39b6e6` · `63a6ec27` + this §6 cleanup. Orientation §8 updated → v2.62.
+
+## §NOTE-GATE REFACTOR — task_19b5319d DONE (2026-06-10)
+
+Eisa directed the filed follow-up. `+layout.svelte` right-sidebar tab content: replaced the ad-hoc
+`isHome && sidebarTab` note-gate (which hoisted `tags`/`links` above it and **duplicated** `review`/
+`sourceReview` inside + outside it) with a declarative `const NOTE_SCOPED_TABS = new Set([properties,
+backlinks, star, tasks, calendar, health, provenance, inspector360])`, gated ONCE:
+`{#if NOTE_SCOPED_TABS.has(rightSidebarTab) && !(isHome && sidebarTab)}` → "no note selected"; else each tab
+renders **once**. Verified the two `review` copies byte-identical and the two `sourceReview` copies merge
+under `activeNotePath={sidebarTab?.path ?? null}` (SourceReviewPanel defaults that prop null + treats falsy as
+no-note, `:671/:715`). `properties` keeps `sidebarTab` non-null via `&& sidebarTab` (only branch that
+dereferences it). Diff: **11 insertions / 32 deletions**, all gating. svelte-check **0 errors**.
+
+**Boss test:** Stage 2 (the actual gating test) **PASS** — universe-wide tabs (Tags/Links/Review/SourceReview)
+render with no note; note-scoped show "No note selected." Stage-1 findings (Knowledge Health "Loading…",
+Provenance/Review partial) **VERIFIED pre-existing, not regressions** — the diff proves those panel bodies are
+untouched (only NOTE_SCOPED_TABS *names* them + the duplicate ReviewPulsePanel was *deleted*); KnowledgeHealth
+loads via its own `onMount` (`khd-loading`), mount condition unchanged. Chip `task_19b5319d` dismissed.
+
+**Next (Eisa):** investigate the pre-existing **Knowledge Health stuck-on-Loading** (read-time diagnostics on
+the 7,600-note / 656k-link universe — a §12 read-time CE surface).

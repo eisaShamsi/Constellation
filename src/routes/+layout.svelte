@@ -353,6 +353,11 @@
 	// Right sidebar
 	let rightSidebarOpen = $state(false);
 	let rightSidebarTab = $state<'properties' | 'backlinks' | 'tags' | 'star' | 'tasks' | 'calendar' | 'health' | 'provenance' | 'review' | 'links' | 'inspector360' | 'sourceReview'>('properties');
+	// MIG-007 follow-up (task_19b5319d) — which right-sidebar tabs require an open note. The rest
+	// (tags / links / review / sourceReview) are universe-wide and render with or without a note.
+	// Gated ONCE in the content area below, replacing the old `isHome && sidebarTab` note-gate that
+	// hoisted tags/links above it and duplicated review/sourceReview inside + outside it.
+	const NOTE_SCOPED_TABS = new Set(['properties', 'backlinks', 'star', 'tasks', 'calendar', 'health', 'provenance', 'inspector360']);
 	// Tag Browser (#12): the right-sidebar Tags tab toggles between the open
 	// note's tags ('note') and the universe-wide federated tag tree ('all',
 	// fed by allLibraryTags via the reusable TagsPanel).
@@ -6399,7 +6404,9 @@
 				</button>
 			</div>
 
-			{#if rightSidebarTab === 'tags'}
+			{#if NOTE_SCOPED_TABS.has(rightSidebarTab) && !(isHome && sidebarTab)}
+				<div class="rs-empty-full">{$t('panels.noNoteSelected')}</div>
+			{:else if rightSidebarTab === 'tags'}
 				<!-- Tags tab — universe-wide; pulled OUT of the note-gate so it
 				     renders with or without an open note, and so the gate below
 				     keeps narrowing sidebarTab non-null for the other panels. -->
@@ -6448,8 +6455,9 @@
 						}}
 					/>
 				</div>
-			{:else if isHome && sidebarTab}
-				{#if rightSidebarTab === 'properties'}
+				{:else if rightSidebarTab === 'properties' && sidebarTab}
+					<!-- note-scoped: the empty-guard above already shows "no note" when !(isHome && sidebarTab);
+					     the `&& sidebarTab` here narrows it non-null for the panel's tabId/path/libraryName. -->
 					<!-- Properties Panel (interactive editor) -->
 					<div class="rs-section">
 						<PropertyEditor
@@ -6649,35 +6657,6 @@
 							}}
 						/>
 					</div>
-				{/if}
-			{:else if rightSidebarTab === 'review'}
-				<!-- Review Pulse works without a note open (library-level feature) -->
-				<div class="rs-section rs-full-height">
-					<ReviewPulsePanel
-						{dueNotes}
-						onNoteClick={(path, name) => {
-							const lib = $libraryStats.find(l => path.startsWith(l.path));
-							if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
-						}}
-						onRefresh={() => {
-							const lib = get(libraries)[0];
-							if (lib) invoke<any[]>('get_due_notes', { libraryPath: lib.path })
-								.then(notes => { dueNotes = notes; }).catch(() => {});
-						}}
-					/>
-				</div>
-			{:else if rightSidebarTab === 'sourceReview'}
-				<!-- MIG-021 §1C — Source Review queue (works without an active note). -->
-				<div class="rs-section rs-full-height">
-					<SourceReviewPanel
-						onNoteClick={(path, name) => {
-							const lib = $libraryStats.find(l => path.startsWith(l.path));
-							if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
-						}}
-					/>
-				</div>
-			{:else}
-				<div class="rs-empty-full">{$t('panels.noNoteSelected')}</div>
 			{/if}
 		</div>
 	</aside>
