@@ -365,6 +365,15 @@ two sentences into chapters that don't exist is meaningless; flagged for a dedic
 **Orientation v2.63 written** (new file; v2.62 preserved): preamble (decay corruption · MIG-073 · tab fix ·
 polish set), §8 MIG-073 row → ✅ Closed. **MIG-073 → CLOSED.**
 
+## §PCS CHECKPOINT + NEXT TASK (2026-06-10 12:40)
+
+Boss directed the **KnowledgeHealthDashboard i18n wiring** (the task_5b7f7272 chip scope: hardcoded-EN
+overlay → `$t()` via the dormant `knowledgeHealth.*` block, ×15 locales, stage/link-type names via the
+established pattern, RTL per detectDir) — with **"But first PCS + Orientation."** This checkpoint: tree
+verified clean through `9ca1d04c` (pushed + tagged + ZIP'd); orientation v2.63 live; final binary 12:36
+carries the close-out code; **MoCh-2026-06-10-1240 written** (catch-up — the intra-day cadence was missed,
+noted as an SO #7 slip). i18n work starts next.
+
 **P3 shipped (as-built deviations logged in the Plan doc §P3):** reconcile-walk hook → **unconditional**
 recompute (the true bulk settle point); `links_backfill` hook **dropped** (verified: it never mutates
 `note_links` — hooking it adds nothing); freshness window **10 → 2 min** (plan-marked tunable; open-driven
