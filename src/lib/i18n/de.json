@@ -386,10 +386,9 @@
 			"editTypes": "Linktypen & Farben",
 			"editTypesDesc": "Lege deine Linktypen (die 8 Akte + deine eigenen) und ihre Farben im Stil-Gestalter fest.",
 			"editTypesBtn": "Stil-Gestalter öffnen →",
-			"dashboard": "Link-Dashboard",
-			"dashboardDesc": "Einzelne Links durchsuchen, durchlaufen, mit Vertrauen versehen und archivieren.",
-			"dashboardBtn": "Link-Dashboard öffnen →",
-			"panelVisibilityNote": "Tipp: Das Links-Panel kannst du unter Einstellungen → Panels ein- oder ausblenden."
+			"ccs": "Kreislaufsystem (CCS)",
+			"ccsDesc": "Deine Verbindungen als lebendiger Kreislauf — was lebt, abkühlt, gefestigt, umstritten oder im Ruhestand ist.",
+			"ccsBtn": "Kreislaufsystem öffnen →"
 		},
 		"skyview": {
 			"intro": "Konfiguriere das Verhalten von Star Lines (bibliotheksübergreifende Links) und Sky View.",
@@ -533,8 +532,6 @@
 			"panelProvenanceDesc": "Notizhistorie und Herkunftsverfolgung",
 			"panelReview": "Wiederholung",
 			"panelReviewDesc": "Wiederholungswarteschlange für Karteikarten",
-			"panelLinks": "Link-Dashboard",
-			"panelLinksDesc": "Living Link-Analysen und -Verwaltung",
 			"resetDefault": "Auf Standard zurücksetzen",
 			"resetDefaultDesc": "Standard-Panel-Layout wiederherstellen (Rückverweise links, Ausgehende rechts)"
 		},
@@ -815,8 +812,7 @@
 		"provenance": "Herkunft",
 		"review": "Überprüfungspuls",
 		"inspector360": "360.3D",
-		"skyView": "Sky View",
-		"links": "Link-Dashboard"
+		"skyView": "Sky View"
 	},
 	"tasksPanel": {
 		"all": "Alle",
@@ -860,26 +856,6 @@
 		"groupByDue": "Nach Fälligkeitsdatum gruppieren",
 		"sortByFile": "Nach Datei sortieren",
 		"search": "Aufgaben suchen..."
-	},
-	"linkDashboard": {
-		"mostConnected": "Meistverbunden",
-		"crossLibrary": "Bibliotheksübergreifend",
-		"broken": "Defekt",
-		"orphans": "Verwaiste Notizen",
-		"noCrossLibrary": "Keine bibliotheksübergreifenden Links",
-		"noBroken": "Keine defekten Links",
-		"noOrphans": "Keine verwaisten Notizen",
-		"mostTraveled": "Meist begangen",
-		"noTraveled": "Noch keine begangenen Pfade",
-		"stale": "Veraltet",
-		"noStale": "Keine veralteten Links — jeder begangene Pfad ist frisch",
-		"staleDays": "vor {n} T",
-		"staleMonths": "vor {n} Mo",
-		"staleYears": "vor {n} J",
-		"archived": "Archiviert",
-		"noArchived": "Keine archivierten Links.",
-		"unarchiveTitle": "Diesen Link wiederherstellen",
-		"loading": "Lädt…"
 	},
 	"dialogs": {
 		"confirmDelete": "Möchten Sie \"{name}\" wirklich löschen?",

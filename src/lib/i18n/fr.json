@@ -386,10 +386,9 @@
 			"editTypes": "Types de lien & couleurs",
 			"editTypesDesc": "Définissez vos types de lien (les 8 actes + les vôtres) et leurs couleurs dans le Concepteur de style.",
 			"editTypesBtn": "Ouvrir le Concepteur de style →",
-			"dashboard": "Tableau de bord des liens",
-			"dashboardDesc": "Parcourez, traversez, attribuez une confiance et archivez les liens individuellement.",
-			"dashboardBtn": "Ouvrir le Tableau de bord des liens →",
-			"panelVisibilityNote": "Astuce : affichez ou masquez le panneau Liens sous Paramètres → Panneaux."
+			"ccs": "Système circulatoire (CCS)",
+			"ccsDesc": "Vos liens comme une circulation vivante — ce qui vit, refroidit, se pose, se conteste ou se retire.",
+			"ccsBtn": "Ouvrir le système circulatoire →"
 		},
 		"skyview": {
 			"intro": "Configurez le comportement des Star Lines (liens inter-bibliothèques) et de Sky View.",
@@ -533,8 +532,6 @@
 			"panelProvenanceDesc": "Historique et suivi de l'origine de la note",
 			"panelReview": "Révision",
 			"panelReviewDesc": "File d'attente de révision par répétition espacée",
-			"panelLinks": "Tableau de bord des liens",
-			"panelLinksDesc": "Analyses et gestion des Living Links",
 			"resetDefault": "Réinitialiser les paramètres par défaut",
 			"resetDefaultDesc": "Restaurer la disposition par défaut (Rétroliens à gauche, Sortants à droite)"
 		},
@@ -815,8 +812,7 @@
 		"provenance": "Provenance",
 		"review": "Impulsion de révision",
 		"inspector360": "360.3D",
-		"skyView": "Sky View",
-		"links": "Tableau des liens"
+		"skyView": "Sky View"
 	},
 	"tasksPanel": {
 		"all": "Toutes",
@@ -860,26 +856,6 @@
 		"groupByDue": "Grouper par date d'échéance",
 		"sortByFile": "Trier par fichier",
 		"search": "Rechercher des tâches..."
-	},
-	"linkDashboard": {
-		"mostConnected": "Les plus connectées",
-		"crossLibrary": "Inter-bibliothèques",
-		"broken": "Brisés",
-		"orphans": "Orphelines",
-		"noCrossLibrary": "Aucun lien inter-bibliothèques",
-		"noBroken": "Aucun lien brisé",
-		"noOrphans": "Aucune note orpheline",
-		"mostTraveled": "Les plus empruntés",
-		"noTraveled": "Aucun chemin emprunté",
-		"stale": "Obsolètes",
-		"noStale": "Aucun lien obsolète — chaque chemin emprunté est récent",
-		"staleDays": "il y a {n} j",
-		"staleMonths": "il y a {n} mo",
-		"staleYears": "il y a {n} a",
-		"archived": "Archivés",
-		"noArchived": "Aucun lien archivé.",
-		"unarchiveTitle": "Restaurer ce lien",
-		"loading": "Chargement…"
 	},
 	"dialogs": {
 		"confirmDelete": "Êtes-vous sûr de vouloir supprimer \"{name}\" ?",

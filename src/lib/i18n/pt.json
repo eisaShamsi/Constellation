@@ -386,10 +386,9 @@
 			"editTypes": "Tipos de link e cores",
 			"editTypesDesc": "Defina seus tipos de link (os 8 atos + os seus próprios) e suas cores no Style Setter.",
 			"editTypesBtn": "Abrir Style Setter →",
-			"dashboard": "Painel de links",
-			"dashboardDesc": "Navegue, percorra, defina a confiança e arquive links individuais.",
-			"dashboardBtn": "Abrir Painel de links →",
-			"panelVisibilityNote": "Dica: mostre ou oculte o painel de Links em Configurações → Painéis."
+			"ccs": "Sistema circulatório (CCS)",
+			"ccsDesc": "Seus links como uma circulação viva — o que vive, esfria, assenta, é contestado ou se aposenta.",
+			"ccsBtn": "Abrir o sistema circulatório →"
 		},
 		"skyview": {
 			"intro": "Configure o comportamento de Star Lines (links entre bibliotecas) e Sky View.",
@@ -533,8 +532,6 @@
 			"panelProvenanceDesc": "Histórico e rastreamento da origem da nota",
 			"panelReview": "Revisão",
 			"panelReviewDesc": "Fila de revisão com repetição espaçada",
-			"panelLinks": "Painel de links",
-			"panelLinksDesc": "Análise e gestão de Living Links",
 			"resetDefault": "Redefinir para padrão",
 			"resetDefaultDesc": "Restaurar o layout padrão de painéis"
 		},
@@ -815,8 +812,7 @@
 		"provenance": "Proveniência",
 		"review": "Pulso de revisão",
 		"inspector360": "360.3D",
-		"skyView": "Sky View",
-		"links": "Painel de Ligações"
+		"skyView": "Sky View"
 	},
 	"cece": {
 		"_comment": "MIG-021v3 V3-§8.r1.e + r5 — CECE chrome. The catalog of six lenses + the synthesis-regime UI. Plain-English labels per UX agent recommendation. r5 added the dot-cluster, rule-label translations, and trust-calibration banner.",
@@ -1300,26 +1296,6 @@
 		"search": "Pesquisar tarefas...",
 		"allLibraries": "Todos os cofres",
 		"groupByLibrary": "Agrupar por cofre"
-	},
-	"linkDashboard": {
-		"mostConnected": "Mais conectadas",
-		"broken": "Quebrados",
-		"orphans": "Órfãs",
-		"noBroken": "Sem links quebrados",
-		"noOrphans": "Sem notas órfãs",
-		"crossLibrary": "Entre cofres",
-		"noCrossLibrary": "Sem links entre cofres",
-		"mostTraveled": "Mais percorridos",
-		"noTraveled": "Nenhum caminho percorrido",
-		"stale": "Desatualizados",
-		"noStale": "Sem ligações desatualizadas — cada caminho percorrido está fresco",
-		"staleDays": "há {n}d",
-		"staleMonths": "há {n}m",
-		"staleYears": "há {n}a",
-		"archived": "Arquivados",
-		"noArchived": "Nenhum link arquivado.",
-		"unarchiveTitle": "Restaurar este link",
-		"loading": "Carregando…"
 	},
 	"dialogs": {
 		"confirmDelete": "Tem certeza de que deseja excluir \"{name}\"?",

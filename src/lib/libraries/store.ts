@@ -2302,7 +2302,7 @@ export interface NoteLink {
  *  - `stale`: previously traversed but untouched for LINK_STALE_DAYS+
  *
  *  The UI uses this to color-tier chips, list stale links in the
- *  LinkDashboard, and (future) apply weight decay. No DB write yet —
+ *  CCS registers, and (future) apply weight decay. No DB write yet —
  *  tier is recomputed on every read so threshold changes apply
  *  immediately without a migration. */
 export type LinkLifecycle = 'fresh' | 'emerging' | 'established' | 'load-bearing' | 'stale';
@@ -3125,7 +3125,6 @@ export type PanelId =
 	| 'health'
 	| 'provenance'
 	| 'review'
-	| 'links'
 	| 'inspector360';
 
 export type PanelSlot =
@@ -3765,7 +3764,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
 		health:     'right-sidebar',
 		provenance: 'right-sidebar',
 		review:     'right-sidebar',
-		links:      'right-sidebar',
+		// MIG-074 §D — 'links' (the Link Dashboard tab) retired into CCS; a
+		// stored user value for it stays inert via the spread-merge below.
 		inspector360: 'right-sidebar',
 	},
 	leftOfNoteWidth: 280,

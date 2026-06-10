@@ -386,10 +386,9 @@
 			"editTypes": "लिंक प्रकार और रंग",
 			"editTypesDesc": "अपने लिंक प्रकार (8 क्रियाएँ और आपके अपने) तथा उनके रंग स्टाइल सेटर में परिभाषित करें।",
 			"editTypesBtn": "स्टाइल सेटर खोलें →",
-			"dashboard": "लिंक डैशबोर्ड",
-			"dashboardDesc": "अलग-अलग लिंक ब्राउज़ करें, उनमें यात्रा करें, उन पर आत्मविश्वास सेट करें, और संग्रहित करें।",
-			"dashboardBtn": "लिंक डैशबोर्ड खोलें →",
-			"panelVisibilityNote": "सुझाव: सेटिंग्स → पैनल के अंतर्गत लिंक पैनल दिखाएँ या छिपाएँ।"
+			"ccs": "परिसंचरण तंत्र (CCS)",
+			"ccsDesc": "आपकी कड़ियाँ एक जीवित परिसंचरण के रूप में — क्या जीवित है, ठंडा पड़ रहा है, स्थिर, विवादित या सेवानिवृत्त।",
+			"ccsBtn": "परिसंचरण तंत्र खोलें →"
 		},
 		"skyview": {
 			"intro": "स्टार लाइन्स (क्रॉस-लाइब्रेरी लिंक) और स्काई व्यू कैसे काम करें, कॉन्फ़िगर करें।",
@@ -533,8 +532,6 @@
 			"panelProvenanceDesc": "नोट इतिहास और मूल ट्रैकिंग",
 			"panelReview": "समीक्षा",
 			"panelReviewDesc": "स्पेस्ड रिपीटिशन समीक्षा कतार",
-			"panelLinks": "लिंक डैशबोर्ड",
-			"panelLinksDesc": "Living Link विश्लेषण और प्रबंधन",
 			"resetDefault": "डिफ़ॉल्ट पर रीसेट करें",
 			"resetDefaultDesc": "डिफ़ॉल्ट पैनल लेआउट पुनर्स्थापित करें"
 		},
@@ -815,8 +812,7 @@
 		"provenance": "उत्पत्ति",
 		"review": "समीक्षा पल्स",
 		"inspector360": "360.3D",
-		"skyView": "Sky View",
-		"links": "लिंक डैशबोर्ड"
+		"skyView": "Sky View"
 	},
 	"cece": {
 		"_comment": "MIG-021v3 V3-§8.r1.e + r5 — CECE chrome. The catalog of six lenses + the synthesis-regime UI. Plain-English labels per UX agent recommendation. r5 added the dot-cluster, rule-label translations, and trust-calibration banner.",
@@ -1300,26 +1296,6 @@
 		"search": "कार्य खोजें...",
 		"allLibraries": "सभी तिजोरियाँ",
 		"groupByLibrary": "तिजोरी के अनुसार समूहित करें"
-	},
-	"linkDashboard": {
-		"mostConnected": "सर्वाधिक जुड़े",
-		"broken": "टूटे हुए",
-		"orphans": "अकेले नोट्स",
-		"noBroken": "कोई टूटे हुए लिंक नहीं",
-		"noOrphans": "कोई अकेले नोट नहीं",
-		"crossLibrary": "क्रॉस-वॉल्ट",
-		"noCrossLibrary": "कोई क्रॉस-वॉल्ट लिंक नहीं",
-		"mostTraveled": "सबसे अधिक यात्रा",
-		"noTraveled": "अभी तक कोई यात्रा पथ नहीं",
-		"stale": "पुराने",
-		"noStale": "कोई पुरानी कड़ी नहीं — प्रत्येक चला हुआ पथ अभी भी सक्रिय है",
-		"staleDays": "{n} दिन पहले",
-		"staleMonths": "{n} माह पहले",
-		"staleYears": "{n} वर्ष पहले",
-		"archived": "संग्रहित",
-		"noArchived": "कोई संग्रहित लिंक नहीं।",
-		"unarchiveTitle": "इस लिंक को पुनर्स्थापित करें",
-		"loading": "लोड हो रहा है…"
 	},
 	"dialogs": {
 		"confirmDelete": "क्या आप वाकई \"{name}\" को हटाना चाहते हैं?",

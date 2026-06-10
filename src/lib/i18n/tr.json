@@ -386,10 +386,9 @@
 			"editTypes": "Bağlantı türleri ve renkleri",
 			"editTypesDesc": "Bağlantı türlerinizi (8 eylem ve kendi türleriniz) ve renklerini Stil Tasarımcısı'nda tanımlayın.",
 			"editTypesBtn": "Stil Tasarımcısı'nı aç →",
-			"dashboard": "Bağlantı Panosu",
-			"dashboardDesc": "Tek tek bağlantılara göz atın, aralarında gezinin, güven düzeyi atayın ve arşivleyin.",
-			"dashboardBtn": "Bağlantı Panosu'nu aç →",
-			"panelVisibilityNote": "İpucu: Bağlantılar panelini Ayarlar → Paneller altından gösterin veya gizleyin."
+			"ccs": "Dolaşım Sistemi (CCS)",
+			"ccsDesc": "Bağlantılarınız canlı bir dolaşım olarak — ne canlı, ne soğuyor, ne oturmuş, ne ihtilaflı, ne emekli.",
+			"ccsBtn": "Dolaşım sistemini aç →"
 		},
 		"skyview": {
 			"intro": "Star Lines (kütüphaneler arası bağlantılar) ve Gökyüzü Görünümü davranışını yapılandırın.",
@@ -533,8 +532,6 @@
 			"panelProvenanceDesc": "Not geçmişi ve köken takibi",
 			"panelReview": "Gözden Geçirme",
 			"panelReviewDesc": "Aralıklı tekrar gözden geçirme kuyruğu",
-			"panelLinks": "Bağlantı Paneli",
-			"panelLinksDesc": "Living Link analizleri ve yönetimi",
 			"resetDefault": "Varsayılana sıfırla",
 			"resetDefaultDesc": "Varsayılan panel düzenini geri yükle"
 		},
@@ -815,8 +812,7 @@
 		"provenance": "Köken",
 		"review": "Gözden Geçirme Nabzı",
 		"inspector360": "360.3D",
-		"skyView": "Sky View",
-		"links": "Bağlantı Panosu"
+		"skyView": "Sky View"
 	},
 	"cece": {
 		"_comment": "MIG-021v3 V3-§8.r1.e + r5 — CECE chrome. The catalog of six lenses + the synthesis-regime UI. Plain-English labels per UX agent recommendation. r5 added the dot-cluster, rule-label translations, and trust-calibration banner.",
@@ -1300,26 +1296,6 @@
 		"search": "Görev ara...",
 		"allLibraries": "Tüm kasalar",
 		"groupByLibrary": "Kasaya göre grupla"
-	},
-	"linkDashboard": {
-		"mostConnected": "En Çok Bağlantılı",
-		"broken": "Kırık",
-		"orphans": "Yalnız Notlar",
-		"noBroken": "Kırık bağlantı yok",
-		"noOrphans": "Yalnız not yok",
-		"crossLibrary": "Kasalar Arası",
-		"noCrossLibrary": "Kasalar arası bağlantı yok",
-		"mostTraveled": "En Çok Geçilen",
-		"noTraveled": "Henüz geçilen yol yok",
-		"stale": "Eskimiş",
-		"noStale": "Eskimiş bağlantı yok — her geçilen yol hâlâ taze",
-		"staleDays": "{n} gün önce",
-		"staleMonths": "{n} ay önce",
-		"staleYears": "{n} yıl önce",
-		"archived": "Arşivlenmiş",
-		"noArchived": "Arşivlenmiş bağlantı yok.",
-		"unarchiveTitle": "Bu bağlantıyı geri yükle",
-		"loading": "Yükleniyor…"
 	},
 	"dialogs": {
 		"confirmDelete": "\"{name}\" öğesini silmek istediğinizden emin misiniz?",

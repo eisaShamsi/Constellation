@@ -196,10 +196,9 @@
 			"editTypes": "Link types & colours",
 			"editTypesDesc": "Define your link types (the 8 acts + your own) and their colours in the Style Setter.",
 			"editTypesBtn": "Open Style Setter →",
-			"dashboard": "Link Dashboard",
-			"dashboardDesc": "Browse, traverse, set confidence on, and archive individual links.",
-			"dashboardBtn": "Open Link Dashboard →",
-			"panelVisibilityNote": "Tip: show or hide the Links panel under Settings → Panels."
+			"ccs": "Circulatory System (CCS)",
+			"ccsDesc": "Your links as a living circulation — what is alive, cooling, settled, contested, or retired.",
+			"ccsBtn": "Open the Circulatory System →"
 		},
 		"skyview": {
 			"intro": "Configure how Star Lines (cross-library links) and the Sky View graph behave.",
@@ -546,8 +545,6 @@
 			"panelProvenanceDesc": "Note history and origin tracking",
 			"panelReview": "Review",
 			"panelReviewDesc": "Spaced repetition review queue",
-			"panelLinks": "Link Dashboard",
-			"panelLinksDesc": "Living Link analytics and management",
 			"resetDefault": "Reset to defaults",
 			"resetDefaultDesc": "Restore the default panel layout (Backlinks left, Outgoing right)"
 		},
@@ -885,7 +882,6 @@
 		"review": "Review Pulse",
 		"inspector360": "360.3D",
 		"skyView": "Sky View",
-		"links": "Link Dashboard",
 		"sourceReview": "Source Review"
 	},
 	"cece": {
@@ -1468,26 +1464,6 @@
 		"groupByDue": "Group by due date",
 		"sortByFile": "Sort by file",
 		"search": "Search tasks..."
-	},
-	"linkDashboard": {
-		"mostConnected": "Top Connected",
-		"crossLibrary": "Cross-Library",
-		"broken": "Broken",
-		"orphans": "Orphans",
-		"noCrossLibrary": "No cross-library links",
-		"noBroken": "No broken links",
-		"noOrphans": "No orphan notes",
-		"mostTraveled": "Most Traveled",
-		"noTraveled": "No traveled paths yet",
-		"stale": "Stale",
-		"noStale": "No stale links — every traversed path is fresh",
-		"staleDays": "{n}d ago",
-		"staleMonths": "{n}mo ago",
-		"staleYears": "{n}y ago",
-		"archived": "Archived",
-		"noArchived": "No archived links.",
-		"unarchiveTitle": "Restore this link",
-		"loading": "Loading…"
 	},
 	"dialogs": {
 		"confirmDelete": "Are you sure you want to delete \"{name}\"?",

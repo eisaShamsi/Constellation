@@ -386,10 +386,9 @@
 			"editTypes": "Типы ссылок и цвета",
 			"editTypesDesc": "Задайте свои типы ссылок (8 актов и собственные) и их цвета в Настройщике стиля.",
 			"editTypesBtn": "Открыть Настройщик стиля →",
-			"dashboard": "Панель ссылок",
-			"dashboardDesc": "Просматривайте, переходите, задавайте уверенность и архивируйте отдельные ссылки.",
-			"dashboardBtn": "Открыть Панель ссылок →",
-			"panelVisibilityNote": "Совет: показать или скрыть панель «Ссылки» можно в разделе Настройки → Панели."
+			"ccs": "Кровеносная система (CCS)",
+			"ccsDesc": "Ваши связи как живое кровообращение — что живёт, остывает, устоялось, оспаривается или на покое.",
+			"ccsBtn": "Открыть кровеносную систему →"
 		},
 		"skyview": {
 			"intro": "Настройте поведение Star Lines (межбиблиотечных ссылок) и Sky View.",
@@ -533,8 +532,6 @@
 			"panelProvenanceDesc": "История и отслеживание происхождения заметки",
 			"panelReview": "Повторение",
 			"panelReviewDesc": "Очередь повторения с интервальным повторением",
-			"panelLinks": "Панель ссылок",
-			"panelLinksDesc": "Аналитика и управление Living Links",
 			"resetDefault": "Сбросить до умолчаний",
 			"resetDefaultDesc": "Восстановить расположение панелей по умолчанию"
 		},
@@ -815,8 +812,7 @@
 		"provenance": "Происхождение",
 		"review": "Пульс обзора",
 		"inspector360": "360.3D",
-		"skyView": "Sky View",
-		"links": "Панель ссылок"
+		"skyView": "Sky View"
 	},
 	"cece": {
 		"_comment": "MIG-021v3 V3-§8.r1.e + r5 — CECE chrome. The catalog of six lenses + the synthesis-regime UI. Plain-English labels per UX agent recommendation. r5 added the dot-cluster, rule-label translations, and trust-calibration banner.",
@@ -1300,26 +1296,6 @@
 		"search": "Поиск задач...",
 		"allLibraries": "Все хранилища",
 		"groupByLibrary": "Группировать по хранилищу"
-	},
-	"linkDashboard": {
-		"mostConnected": "Наиболее связанные",
-		"broken": "Битые",
-		"orphans": "Изолированные заметки",
-		"noBroken": "Нет битых ссылок",
-		"noOrphans": "Нет изолированных заметок",
-		"crossLibrary": "Меж-хранилище",
-		"noCrossLibrary": "Нет меж-хранилищных ссылок",
-		"mostTraveled": "Наиболее пройденные",
-		"noTraveled": "Пока нет пройденных путей",
-		"stale": "Устаревшие",
-		"noStale": "Нет устаревших ссылок — каждый пройденный путь свежий",
-		"staleDays": "{n} дн. назад",
-		"staleMonths": "{n} мес. назад",
-		"staleYears": "{n} г. назад",
-		"archived": "В архиве",
-		"noArchived": "Нет архивных ссылок.",
-		"unarchiveTitle": "Восстановить эту ссылку",
-		"loading": "Загрузка…"
 	},
 	"dialogs": {
 		"confirmDelete": "Вы уверены, что хотите удалить \"{name}\"?",

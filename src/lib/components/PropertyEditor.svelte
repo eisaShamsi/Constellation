@@ -9,7 +9,7 @@
 	import { appSettings } from '$lib/libraries/store';
 
 	// Share the user's configured pill shape with BacklinksPanel /
-	// OutgoingLinksPanel / LinkDashboard so frontmatter tag pills track
+	// OutgoingLinksPanel / CCSView so frontmatter tag pills track
 	// the same radius / height / weight as every other pill in the app.
 	const pillShape = $derived($appSettings.linkPills?.shape ?? { radius: 10, height: 20, fontWeight: 700 });
 	import { formatDate } from '$lib/utils';

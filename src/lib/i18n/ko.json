@@ -386,10 +386,9 @@
 			"editTypes": "링크 유형 및 색상",
 			"editTypesDesc": "링크 유형(8가지 행위와 직접 만든 유형)과 그 색상을 스타일 세터에서 정의합니다.",
 			"editTypesBtn": "스타일 세터 열기 →",
-			"dashboard": "링크 대시보드",
-			"dashboardDesc": "개별 링크를 탐색하고 이동하며, 신뢰도를 설정하고, 보관합니다.",
-			"dashboardBtn": "링크 대시보드 열기 →",
-			"panelVisibilityNote": "팁: 설정 → 패널 에서 링크 패널을 표시하거나 숨길 수 있습니다."
+			"ccs": "순환계 (CCS)",
+			"ccsDesc": "링크를 살아 있는 순환으로 — 무엇이 살아 있고, 식어 가고, 자리 잡았고, 쟁점이며, 은퇴했는지.",
+			"ccsBtn": "순환계 열기 →"
 		},
 		"skyview": {
 			"intro": "스타 라인(크로스 라이브러리 링크)과 스카이 뷰의 동작을 구성합니다.",
@@ -533,8 +532,6 @@
 			"panelProvenanceDesc": "노트 기록 및 출처 추적",
 			"panelReview": "복습",
 			"panelReviewDesc": "간격 반복 복습 대기열",
-			"panelLinks": "링크 대시보드",
-			"panelLinksDesc": "Living Link 분석 및 관리",
 			"resetDefault": "기본값으로 재설정",
 			"resetDefaultDesc": "기본 패널 레이아웃 복원"
 		},
@@ -815,8 +812,7 @@
 		"provenance": "출처",
 		"review": "리뷰 펄스",
 		"inspector360": "360.3D",
-		"skyView": "Sky View",
-		"links": "링크 대시보드"
+		"skyView": "Sky View"
 	},
 	"cece": {
 		"_comment": "MIG-021v3 V3-§8.r1.e + r5 — CECE chrome. The catalog of six lenses + the synthesis-regime UI. Plain-English labels per UX agent recommendation. r5 added the dot-cluster, rule-label translations, and trust-calibration banner.",
@@ -1300,26 +1296,6 @@
 		"search": "작업 검색...",
 		"allLibraries": "모든 보관함",
 		"groupByLibrary": "보관함별 그룹"
-	},
-	"linkDashboard": {
-		"mostConnected": "최다 연결",
-		"broken": "끊긴 링크",
-		"orphans": "고아 노트",
-		"noBroken": "끊긴 링크 없음",
-		"noOrphans": "고아 노트 없음",
-		"crossLibrary": "보관함 간",
-		"noCrossLibrary": "보관함 간 링크 없음",
-		"mostTraveled": "가장 많이 이동",
-		"noTraveled": "자주 다닌 경로가 없습니다",
-		"stale": "오래됨",
-		"noStale": "오래된 링크 없음 — 모든 이동 경로가 신선합니다",
-		"staleDays": "{n}일 전",
-		"staleMonths": "{n}개월 전",
-		"staleYears": "{n}년 전",
-		"archived": "보관됨",
-		"noArchived": "보관된 링크가 없습니다.",
-		"unarchiveTitle": "이 링크 복원",
-		"loading": "로드 중…"
 	},
 	"dialogs": {
 		"confirmDelete": "\"{name}\"을(를) 삭제하시겠습니까?",

@@ -386,10 +386,9 @@
 			"editTypes": "Tipos de enlace y colores",
 			"editTypesDesc": "Define tus tipos de enlace (los 8 actos + los tuyos propios) y sus colores en el Style Setter.",
 			"editTypesBtn": "Abrir Style Setter →",
-			"dashboard": "Panel de enlaces",
-			"dashboardDesc": "Explora, recorre, asigna confianza y archiva enlaces individuales.",
-			"dashboardBtn": "Abrir Panel de enlaces →",
-			"panelVisibilityNote": "Consejo: muestra u oculta el panel de Enlaces en Ajustes → Paneles."
+			"ccs": "Sistema circulatorio (CCS)",
+			"ccsDesc": "Tus enlaces como una circulación viva: qué vive, se enfría, se asienta, se disputa o se retira.",
+			"ccsBtn": "Abrir el sistema circulatorio →"
 		},
 		"skyview": {
 			"intro": "Configura el comportamiento de Star Lines (enlaces entre bibliotecas) y Sky View.",
@@ -533,8 +532,6 @@
 			"panelProvenanceDesc": "Historial y seguimiento del origen de la nota",
 			"panelReview": "Revisión",
 			"panelReviewDesc": "Cola de revisión con repetición espaciada",
-			"panelLinks": "Panel de enlaces",
-			"panelLinksDesc": "Análisis y gestión de Living Links",
 			"resetDefault": "Restablecer valores predeterminados",
 			"resetDefaultDesc": "Restaurar el diseño predeterminado (Backlinks izquierda, Salientes derecha)"
 		},
@@ -815,8 +812,7 @@
 		"provenance": "Procedencia",
 		"review": "Pulso de revisión",
 		"inspector360": "360.3D",
-		"skyView": "Sky View",
-		"links": "Panel de Enlaces"
+		"skyView": "Sky View"
 	},
 	"tasksPanel": {
 		"all": "Todas",
@@ -860,26 +856,6 @@
 		"groupByDue": "Agrupar por fecha de vencimiento",
 		"sortByFile": "Ordenar por archivo",
 		"search": "Buscar tareas..."
-	},
-	"linkDashboard": {
-		"mostConnected": "Más conectadas",
-		"crossLibrary": "Entre bibliotecas",
-		"broken": "Rotos",
-		"orphans": "Huérfanas",
-		"noCrossLibrary": "Sin enlaces entre bibliotecas",
-		"noBroken": "Sin enlaces rotos",
-		"noOrphans": "Sin notas huérfanas",
-		"mostTraveled": "Más transitados",
-		"noTraveled": "Aún no hay rutas transitadas",
-		"stale": "Obsoletos",
-		"noStale": "Sin enlaces obsoletos — cada ruta transitada está fresca",
-		"staleDays": "hace {n} d",
-		"staleMonths": "hace {n} me",
-		"staleYears": "hace {n} a",
-		"archived": "Archivados",
-		"noArchived": "No hay enlaces archivados.",
-		"unarchiveTitle": "Restaurar este enlace",
-		"loading": "Cargando…"
 	},
 	"dialogs": {
 		"confirmDelete": "¿Estás seguro de que quieres eliminar \"{name}\"?",

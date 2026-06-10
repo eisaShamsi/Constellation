@@ -98,7 +98,6 @@
 	import ProvenancePanel from '$lib/components/ProvenancePanel.svelte';
 	import ReviewPulsePanel from '$lib/components/ReviewPulsePanel.svelte';
 	import SourceReviewPanel from '$lib/components/SourceReviewPanel.svelte';
-	import LinkDashboard from '$lib/components/LinkDashboard.svelte';
 	import ExpressionForge from '$lib/components/ExpressionForge.svelte';
 	import SenseMakingCanvas from '$lib/components/SenseMakingCanvas.svelte';
 	import ConstellationMap from '$lib/components/ConstellationMap.svelte';
@@ -353,7 +352,7 @@
 
 	// Right sidebar
 	let rightSidebarOpen = $state(false);
-	let rightSidebarTab = $state<'properties' | 'backlinks' | 'tags' | 'star' | 'tasks' | 'calendar' | 'health' | 'provenance' | 'review' | 'links' | 'inspector360' | 'sourceReview'>('properties');
+	let rightSidebarTab = $state<'properties' | 'backlinks' | 'tags' | 'star' | 'tasks' | 'calendar' | 'health' | 'provenance' | 'review' | 'inspector360' | 'sourceReview'>('properties');
 	// MIG-007 follow-up (task_19b5319d) — which right-sidebar tabs require an open note. The rest
 	// (tags / links / review / sourceReview) are universe-wide and render with or without a note.
 	// Gated ONCE in the content area below, replacing the old `isHome && sidebarTab` note-gate that
@@ -1426,7 +1425,6 @@
 			health:     inSidebar('health'),
 			provenance: inSidebar('provenance'),
 			review:     inSidebar('review'),
-			links:      inSidebar('links'),
 			inspector360: inSidebar('inspector360'),
 			// MIG-021 §1C — Source Review panel is always visible (not yet
 			// in panelPlacements; force-visible until the Settings → Panels
@@ -1435,7 +1433,7 @@
 		};
 
 		if (!tabVisible[rightSidebarTab]) {
-			const order = ['properties', 'backlinks', 'tags', 'star', 'tasks', 'calendar', 'health', 'provenance', 'review', 'links', 'inspector360', 'sourceReview'] as const;
+			const order = ['properties', 'backlinks', 'tags', 'star', 'tasks', 'calendar', 'health', 'provenance', 'review', 'inspector360', 'sourceReview'] as const;
 			const first = order.find(tab => tabVisible[tab]);
 			rightSidebarTab = (first ?? 'properties') as typeof rightSidebarTab;
 		}
@@ -2300,8 +2298,13 @@
 		// Listen for template picker requests from CodeMirrorEditor /template slash command
 		window.addEventListener('constellation:open-template-picker', handleTemplatePicker);
 		document.addEventListener('constellation:show-importer', () => { showImporter = true; });
-		// MIG-007 — Links Settings tab hub: open the Link Dashboard (right-sidebar 'links' tab).
-		document.addEventListener('constellation:open-link-dashboard', () => { rightSidebarTab = 'links'; rightSidebarOpen = true; });
+		// MIG-007 hub, re-pointed by MIG-074 §D (Architect ruling 7): the Settings →
+		// Links button now opens CCS — the Link Dashboard tab is retired into it.
+		document.addEventListener('constellation:open-ccs', () => {
+			if ($appSettings.enabledFeatures?.ccs === false) return;
+			showCCS = true;
+			showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showCataloger = false; showKnowledgeHealth = false; showInspector360 = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; sightV6Active = false;
+		});
 
 		// Universal Embed: "open this note" (from transclusion header click,
 		// or MIG-055 §D LensBlock row-click).
@@ -6428,11 +6431,6 @@
 						{#if dueNotes.length > 0}<span class="rs-tab-badge">{dueNotes.length}</span>{/if}
 					</button>
 				{/if}
-				{#if ($appSettings.panelPlacements?.links ?? 'right-sidebar') === 'right-sidebar'}
-					<button class="rs-tab" class:active={rightSidebarTab === 'links'} onclick={() => rightSidebarTab = 'links'} title={$t('panels.links') || 'Link Dashboard'}>
-						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-					</button>
-				{/if}
 				{#if ($appSettings.panelPlacements?.inspector360 ?? 'right-sidebar') === 'right-sidebar'}
 					<button class="rs-tab" class:active={rightSidebarTab === 'inspector360'} onclick={() => rightSidebarTab = 'inspector360'} title={$t('panels.inspector360') || $t('inspector360.title') || '360° Inspector'}>
 						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="3" x2="12" y2="9"/><line x1="12" y1="15" x2="12" y2="21"/><line x1="3" y1="12" x2="9" y2="12"/><line x1="15" y1="12" x2="21" y2="12"/></svg>
@@ -6482,20 +6480,7 @@
 					{/if}
 					</div>
 				</div>
-			{:else if rightSidebarTab === 'links'}
-				<!-- MIG-007 — Link Dashboard is library-wide; pulled OUT of the isHome&&sidebarTab note-gate
-				     (like Tags) so it opens with or without an open note. -->
-				<div class="rs-section rs-full-height">
-					<LinkDashboard
-						allLinks={effectiveLibraryLinks}
-						allNotes={allNotes}
-						visible={rightSidebarOpen && rightSidebarTab === 'links'}
-						onNoteClick={(path, libraryName) => {
-							openNoteTab(path, libraryName, libraryColorMap[libraryName] || '#7c3aed');
-						}}
-					/>
-				</div>
-				{:else if rightSidebarTab === 'properties' && sidebarTab}
+			{:else if rightSidebarTab === 'properties' && sidebarTab}
 					<!-- note-scoped: the empty-guard above already shows "no note" when !(isHome && sidebarTab);
 					     the `&& sidebarTab` here narrows it non-null for the panel's tabId/path/libraryName. -->
 					<!-- Properties Panel (interactive editor) -->

@@ -386,10 +386,9 @@
 			"editTypes": "链接类型与颜色",
 			"editTypesDesc": "在样式设计器中定义你的链接类型(8 种行为加上你自己的)及其颜色。",
 			"editTypesBtn": "打开样式设计器 →",
-			"dashboard": "链接仪表盘",
-			"dashboardDesc": "浏览、遍历单个链接,为其设置置信度,以及归档单个链接。",
-			"dashboardBtn": "打开链接仪表盘 →",
-			"panelVisibilityNote": "提示:在 设置 → 面板 下显示或隐藏链接面板。"
+			"ccs": "循环系统（CCS）",
+			"ccsDesc": "你的链接是一个活的循环——什么是活的、正在冷却、安定、存疑或已退役。",
+			"ccsBtn": "打开循环系统 →"
 		},
 		"skyview": {
 			"intro": "配置星线（跨资料库链接）和天空视图的行为。",
@@ -533,8 +532,6 @@
 			"panelProvenanceDesc": "笔记历史和来源追踪",
 			"panelReview": "复习",
 			"panelReviewDesc": "间隔重复复习队列",
-			"panelLinks": "链接仪表板",
-			"panelLinksDesc": "Living Link 分析和管理",
 			"resetDefault": "重置为默认",
 			"resetDefaultDesc": "恢复默认面板布局（反向链接居左，出站链接居右）"
 		},
@@ -815,8 +812,7 @@
 		"provenance": "来源",
 		"review": "复习脉搏",
 		"inspector360": "360.3D",
-		"skyView": "Sky View",
-		"links": "链接仪表盘"
+		"skyView": "Sky View"
 	},
 	"cece": {
 		"_comment": "MIG-021v3 V3-§8.r1.e + r5 — CECE chrome. The catalog of six lenses + the synthesis-regime UI. Plain-English labels per UX agent recommendation. r5 added the dot-cluster, rule-label translations, and trust-calibration banner.",
@@ -1300,26 +1296,6 @@
 		"search": "搜索任务...",
 		"allLibraries": "所有仓库",
 		"groupByLibrary": "按仓库分组"
-	},
-	"linkDashboard": {
-		"mostConnected": "连接最多",
-		"broken": "失效链接",
-		"orphans": "孤立笔记",
-		"noBroken": "无失效链接",
-		"noOrphans": "无孤立笔记",
-		"crossLibrary": "跨仓库",
-		"noCrossLibrary": "无跨仓库链接",
-		"mostTraveled": "最常通行",
-		"noTraveled": "暂无常走路径",
-		"stale": "已冷落",
-		"noStale": "没有冷落的链接 — 每条走过的路径都仍在活跃",
-		"staleDays": "{n}天前",
-		"staleMonths": "{n}个月前",
-		"staleYears": "{n}年前",
-		"archived": "已归档",
-		"noArchived": "没有已归档的链接。",
-		"unarchiveTitle": "恢复此链接",
-		"loading": "加载中…"
 	},
 	"dialogs": {
 		"confirmDelete": "确定要删除 \"{name}\" 吗？",

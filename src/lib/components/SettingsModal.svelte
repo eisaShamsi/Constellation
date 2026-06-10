@@ -1376,7 +1376,8 @@
 						</button>
 					</div>
 
-					<!-- ═══ MIG-007 hub — types/colours stay in the Style Setter; the dashboard is the right-sidebar Links tab ═══ -->
+					<!-- ═══ MIG-007 hub — types/colours stay in the Style Setter; the universe-wide
+					     link view is CCS (MIG-074 §D re-point, Architect ruling 7) ═══ -->
 					<div class="setting-section-heading">{$t('settings.links.related') || 'Related'}</div>
 					<div class="setting-item">
 						<div class="setting-info">
@@ -1387,12 +1388,11 @@
 					</div>
 					<div class="setting-item">
 						<div class="setting-info">
-							<div class="setting-name">{$t('settings.links.dashboard') || 'Link Dashboard'}</div>
-							<div class="setting-desc">{$t('settings.links.dashboardDesc') || 'Browse, traverse, set confidence on, and archive individual links.'}</div>
+							<div class="setting-name">{$t('settings.links.ccs') || 'Circulatory System (CCS)'}</div>
+							<div class="setting-desc">{$t('settings.links.ccsDesc') || 'Your links as a living circulation — what is alive, cooling, settled, contested, or retired.'}</div>
 						</div>
-						<button class="w-btn" onclick={() => { onClose?.(); document.dispatchEvent(new CustomEvent('constellation:open-link-dashboard')); }}>{$t('settings.links.dashboardBtn') || 'Open Link Dashboard →'}</button>
+						<button class="w-btn" onclick={() => { onClose?.(); document.dispatchEvent(new CustomEvent('constellation:open-ccs')); }}>{$t('settings.links.ccsBtn') || 'Open the Circulatory System →'}</button>
 					</div>
-					<p class="setting-desc" style="margin-top:8px;">{$t('settings.links.panelVisibilityNote') || 'Tip: show or hide the Links panel under Settings → Panels.'}</p>
 
 				{:else if activeSection === 'skyview'}
 					<p class="section-intro">{$t('settings.skyview.intro')}</p>
@@ -2038,7 +2038,6 @@
 						['health',     $t('settings.panels.panelHealth'),     $t('settings.panels.panelHealthDesc')],
 						['provenance', $t('settings.panels.panelProvenance'), $t('settings.panels.panelProvenanceDesc')],
 						['review',     $t('settings.panels.panelReview'),     $t('settings.panels.panelReviewDesc')],
-						['links',      $t('settings.panels.panelLinks'),      $t('settings.panels.panelLinksDesc')],
 					] as [PanelId, string, string][]) as [panelId, panelName, panelDesc]}
 						<div class="setting-item">
 							<div class="setting-info">

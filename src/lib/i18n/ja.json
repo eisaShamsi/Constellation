@@ -386,10 +386,9 @@
 			"editTypes": "リンクタイプと色",
 			"editTypesDesc": "リンクタイプ(8つの行為とあなた独自のもの)とその色をスタイルセッターで定義します。",
 			"editTypesBtn": "スタイルセッターを開く →",
-			"dashboard": "リンクダッシュボード",
-			"dashboardDesc": "個々のリンクを閲覧・移動し、信頼度を設定し、アーカイブします。",
-			"dashboardBtn": "リンクダッシュボードを開く →",
-			"panelVisibilityNote": "ヒント:設定 → パネル でリンクパネルの表示/非表示を切り替えられます。"
+			"ccs": "循環系（CCS）",
+			"ccsDesc": "リンクを生きた循環として — 何が生きていて、冷え、定着し、係争中で、引退したか。",
+			"ccsBtn": "循環系を開く →"
 		},
 		"skyview": {
 			"intro": "スターライン（クロスライブラリリンク）とスカイビューの動作を設定します。",
@@ -533,8 +532,6 @@
 			"panelProvenanceDesc": "ノートの履歴と出所の追跡",
 			"panelReview": "レビュー",
 			"panelReviewDesc": "間隔反復レビューキュー",
-			"panelLinks": "リンクダッシュボード",
-			"panelLinksDesc": "Living Linkの分析と管理",
 			"resetDefault": "デフォルトにリセット",
 			"resetDefaultDesc": "デフォルトのパネルレイアウトを復元する"
 		},
@@ -815,8 +812,7 @@
 		"provenance": "来歴",
 		"review": "レビューパルス",
 		"inspector360": "360.3D",
-		"skyView": "Sky View",
-		"links": "リンクダッシュボード"
+		"skyView": "Sky View"
 	},
 	"cece": {
 		"_comment": "MIG-021v3 V3-§8.r1.e + r5 — CECE chrome. The catalog of six lenses + the synthesis-regime UI. Plain-English labels per UX agent recommendation. r5 added the dot-cluster, rule-label translations, and trust-calibration banner.",
@@ -1300,26 +1296,6 @@
 		"search": "タスクを検索...",
 		"allLibraries": "すべての保管庫",
 		"groupByLibrary": "保管庫でグループ化"
-	},
-	"linkDashboard": {
-		"mostConnected": "最多接続",
-		"broken": "リンク切れ",
-		"orphans": "孤立ノート",
-		"noBroken": "リンク切れなし",
-		"noOrphans": "孤立ノートなし",
-		"crossLibrary": "保管庫間",
-		"noCrossLibrary": "保管庫間リンクなし",
-		"mostTraveled": "最多通過",
-		"noTraveled": "よく通るパスはまだありません",
-		"stale": "休眠中",
-		"noStale": "休眠中のリンクはありません — 通ったパスはすべて活動中です",
-		"staleDays": "{n}日前",
-		"staleMonths": "{n}ヶ月前",
-		"staleYears": "{n}年前",
-		"archived": "アーカイブ済み",
-		"noArchived": "アーカイブされたリンクはありません。",
-		"unarchiveTitle": "このリンクを復元",
-		"loading": "読み込み中…"
 	},
 	"dialogs": {
 		"confirmDelete": "「{name}」を削除してもよろしいですか？",

@@ -220,3 +220,71 @@ Living-Links-Guide §10 says restore loses none of the 8 properties, but the cod
 on archive and resets it to 1.0 on restore — earned weight does not survive the round-trip (e.g. a
 tc=20 link returns at weight 1.0, not 1+ln(21)≈4.0). Doc-vs-code drift logged for the close-out's
 drift list; changing the write semantics is out of MIG-074's contracts.
+
+## §MIG-074 — Stage-2 PASS + §D Predecessor re-confirmation (19:20)
+
+**Boss verdict on Stage 2: "You create a great function. Pass."** One remark: the **associative pill**
+renders the raw English id in the Arabic UI — same family as the KHD `relates` catch:
+`linkTypes.associative` is missing ×15 AND `associative` is not a registry entry (the null-type
+synonym), so LinkTypePill's chain falls through to the raw id. Fix: add `linkTypes.associative` ×15
+(rides the §D locale pass; ar **ترابط**).
+
+**Predecessor Lookup — §D re-confirmation (every site read first-hand this hour, BEFORE any edit):**
+
+| Cut | Site |
+|---|---|
+| Tab-id `'links'` in the rightSidebarTab union | +layout:356 |
+| `links: inSidebar('links')` tabVisible row | +layout:1429 |
+| `'links'` in the safety-reset `order` array | +layout:1438 |
+| The hub listener (re-point, not cut): `constellation:open-link-dashboard` → `rightSidebarTab='links'` | +layout:2303–2304 → becomes `constellation:open-ccs` → opens CCS with the dock exclusion list |
+| The `links` rs-tab button (gated `panelPlacements?.links`) | +layout:6431–6435 |
+| The `links` render branch + `<LinkDashboard allLinks={effectiveLibraryLinks} allNotes …>` mount | +layout:6485–6497 |
+| The LinkDashboard import | +layout:100 |
+| `LinkDashboard.svelte` (deleted; archived browse/restore live in CCS §C via the same two IPCs) | src/lib/components/ |
+| `'links'` in the `PanelId` union + the panelPlacements default row (stored user values stay inert via the spread-merge) | store.ts:3128 / :3768 |
+| The Settings → Panels placement row `['links', panelLinks…]` | SettingsModal:2041 |
+| The hub dispatch + label (`settings.links.dashboardBtn` → `settings.links.ccsBtn`) | SettingsModal:1391 |
+| Locale keys ×15: `panels.links` · `settings.panels.panelLinks(+Desc)` · `settings.links.dashboardBtn` · the whole `linkDashboard.*` block | all 15 i18n files (machine-applied + parse-verified) |
+| Stale comment mentions of LinkDashboard | PropertyEditor:12 · SourceReviewPanel:504 |
+
+**Kept:** `allLinks`/`effectiveLibraryLinks`/`allNotes` plumbing (other consumers; /simplify re-checks),
+`linkLifecycle`/`effectiveLinkWeight`/`listArchivedLinks`/`unarchiveLink` store exports (CCS + panels
+consume), `settings.links.*` (the MIG-007 Settings section itself stays — only its dashboard button
+re-points), NOTE_SCOPED_TABS (links was never note-gated). Replacement destinations per the Architect
+§2.4 map; `crossLibrary` + `broken` drop per Boss Q6.
+
+## §MIG-074 §D — the retire SHIPPED (19:25–20:05) ★ Boss Stage 3 staged
+
+**The associative-pill remark — root cause is NOT a missing key (assumption corrected mid-fix):**
+`linkTypes.associative` already exists in all 15 locales (ar **ترابطي**). The pill in the screenshot
+obeys the **ratified §H rule (MIG-067, Eisa's own)** — *pills speak the NOTE's language, not the UI's* —
+and the note in question ("CSS with CSS") is English-titled, so the pill renders English. An
+Arabic-titled note already shows ترابطي. **The locale-merge delta gate caught the wrong fix before it
+landed** (a duplicate-key insert would have been silently shadowed). No code change shipped for this
+item; the §H design question (note-language vs UI-language pills) is surfaced to Eisa as HIS call —
+it would affect every pill, and it's out of MIG-074's scope unless he rules otherwise.
+
+**§D — one atomic commit, exactly per the Predecessor map above:**
+- +layout: `links` tab-id removed from the rightSidebarTab union (356) + tabVisible (1429) + the
+  safety-reset order (1438); the tab button (6431) + the render branch & LinkDashboard mount (6485)
+  removed; the import dropped; the hub listener is now **`constellation:open-ccs`** → opens CCS with
+  the full dock exclusion list (gated `enabledFeatures.ccs`).
+- SettingsModal: the placement row `['links', …]` removed from Settings → Panels; the MIG-007 hub row
+  re-pointed — name/desc/button = `settings.links.ccs`/`ccsDesc`/`ccsBtn` dispatching the new event;
+  the stale "Tip: show or hide the Links panel" line removed (its subject no longer exists).
+- store.ts: `'links'` out of the `PanelId` union + the panelPlacements default (stored user values
+  stay inert via the spread-merge — commented at the site).
+- **`LinkDashboard.svelte` deleted** (378 lines). Stale comment mentions fixed (PropertyEditor:12,
+  SourceReviewPanel:504, store.ts:2305).
+- **Locales ×15 (machine-applied + gated):** `settings.links.dashboard{,Desc,Btn}` →
+  `settings.links.ccs{,Desc,Btn}` (native names: الجهاز الدوري · 循环系统 · Кровеносная система · מערכת
+  הדם · دستگاه گردشی …; RTL locales get ← arrows); `panels.links`, `settings.panels.panelLinks{,Desc}`,
+  `panelVisibilityNote`, and the whole `linkDashboard.*` block (18 leaves) removed. Per-file delta
+  **−22 exactly**, JSON parse OK, CRLF en/ar + LF others preserved, untouched top-level blocks
+  byte-identical.
+
+**Verify (clauses met):** repo-wide grep → **zero** references to LinkDashboard /
+`open-link-dashboard` / `panelPlacements.links` / `panels.links` / `dashboardBtn`; `svelte-check`
+**0 errors** (1,456 files — one fewer than §C). The Q6 drops (`crossLibrary`, `broken`) and the
+`mostConnected`/`orphan` hand-offs (already living in KH / TensionPanel) are documented for §E's
+help/manual update.

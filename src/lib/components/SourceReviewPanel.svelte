@@ -501,7 +501,7 @@
     const i18nKey = `cece.reasoning.${trail.reasoning_template.key}`;
     // $t(key, params) — Constellation's i18n passes params as the
     // second argument's top-level fields (verified against
-    // ImporterModal/LibraryManager/LinkDashboard call sites).
+    // ImporterModal/LibraryManager/CCSView call sites).
     // MIG-022 §E.3.f (Boss-Test Gate 2 Stage 2 catch, 2026-05-11):
     // resolve taxonomy ID params to localized labels via cece.taxonomy
     // BEFORE substituting into the reasoning template, so non-en
