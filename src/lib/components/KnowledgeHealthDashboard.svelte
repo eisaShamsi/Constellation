@@ -45,24 +45,59 @@
 	let weakFoundations = $state<FormulationInsight[]>([]);
 	let loading = $state(true);
 
-	onMount(async () => {
-		try {
-			const [s, l, e, b, m, w] = await Promise.all([
-				invoke<LinkStats>('constellation_link_stats'),
-				invoke<LifecycleData>('constellation_link_decay'),
-				invoke<FormulationInsight[]>('constellation_formulation_analysis', { queryType: 'emerging', target: null }),
-				invoke<FormulationInsight[]>('constellation_formulation_analysis', { queryType: 'bias_check', target: null }),
-				invoke<FormulationInsight[]>('constellation_formulation_analysis', { queryType: 'most_connected', target: null }),
-				invoke<FormulationInsight[]>('constellation_formulation_analysis', { queryType: 'weak_foundations', target: null }),
-			]);
-			stats = s;
-			lifecycle = l;
-			emerging = e.slice(0, 10);
-			biasAlerts = b.slice(0, 10);
-			mostConnected = m.slice(0, 10);
-			weakFoundations = w.slice(0, 10);
-		} catch (e) { console.error('[KHD]', e); }
-		loading = false;
+	// MIG-073 — the panel reads ONE cached snapshot (6 tiny rows) instead of
+	// firing six live aggregates at note_links on every open (the old path
+	// cold-read a 1.7 GB table for ~11s while holding the DB mutex). The
+	// backend keeps the snapshot fresh (stale-while-revalidate + reconcile
+	// hooks); `ready: false` only happens on the first-ever open while the
+	// one-off background population runs.
+	interface KhSnapshot {
+		ready: boolean;
+		stats?: LinkStats | null;
+		lifecycle?: LifecycleData | null;
+		emerging?: FormulationInsight[] | null;
+		bias_check?: FormulationInsight[] | null;
+		most_connected?: FormulationInsight[] | null;
+		weak_foundations?: FormulationInsight[] | null;
+	}
+
+	async function loadSnapshot(): Promise<boolean> {
+		const snap = await invoke<KhSnapshot>('constellation_knowledge_health_snapshot');
+		if (!snap.ready) return false;
+		stats = snap.stats ?? null;
+		lifecycle = snap.lifecycle ?? null;
+		emerging = (snap.emerging ?? []).slice(0, 10);
+		biasAlerts = (snap.bias_check ?? []).slice(0, 10);
+		mostConnected = (snap.most_connected ?? []).slice(0, 10);
+		weakFoundations = (snap.weak_foundations ?? []).slice(0, 10);
+		return true;
+	}
+
+	onMount(() => {
+		let unlisten: (() => void) | null = null;
+		let retryTimer: ReturnType<typeof setInterval> | null = null;
+		let disposed = false;
+		const stopRetry = () => {
+			if (retryTimer) { clearInterval(retryTimer); retryTimer = null; }
+		};
+		const tryLoad = async () => {
+			try {
+				if (await loadSnapshot()) { loading = false; stopRetry(); }
+			} catch (e) { console.error('[KHD]', e); loading = false; stopRetry(); }
+		};
+		(async () => {
+			await tryLoad();
+			if (disposed || !loading) return;
+			// First-ever open: the cache is populating in the background. Wait
+			// for the ready event, with a slow poll as self-healing fallback
+			// (the snapshot IPC re-kicks a failed recompute on every call).
+			const { listen } = await import('@tauri-apps/api/event');
+			const un = await listen('kh-snapshot-ready', tryLoad);
+			if (disposed) { un(); return; }
+			unlisten = un;
+			retryTimer = setInterval(tryLoad, 5000);
+		})();
+		return () => { disposed = true; stopRetry(); unlisten?.(); };
 	});
 
 	function handleKeydown(e: KeyboardEvent) {
