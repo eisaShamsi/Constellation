@@ -408,6 +408,12 @@ finding self-resolved). Boss test next (EN + ar visual).
    dead space. Fix: `text-align: match-parent` on the span — the LINE aligns to the ROW's direction while
    dir=auto keeps the name's internal bidi. LTR rendering byte-identical. svelte-check 0 errors.
 
+**Re-test (ar, round 2): PASS — KHD-i18n task CLOSED end-to-end** (`20e333b0` + `848c3049`). The
+Knowledge Health overlay now satisfies the full-localization TOP PRINCIPAL (joins Style Setter / Sky
+View / 360.3D in the localized set). Record lands in the next orientation version's preamble per the
+post-close convention. **Queued next (Boss to direct): CCS `/migration` Architect, or PJ-060.** Open
+future item noted: per-locale labels for CUSTOM registry types (registry schema extension).
+
 **P3 shipped (as-built deviations logged in the Plan doc §P3):** reconcile-walk hook → **unconditional**
 recompute (the true bulk settle point); `links_backfill` hook **dropped** (verified: it never mutates
 `note_links` — hooking it adds nothing); freshness window **10 → 2 min** (plan-marked tunable; open-driven
