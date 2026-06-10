@@ -288,3 +288,49 @@ it would affect every pill, and it's out of MIG-074's scope unless he rules othe
 **0 errors** (1,456 files — one fewer than §C). The Q6 drops (`crossLibrary`, `broken`) and the
 `mostConnected`/`orphan` hand-offs (already living in KH / TensionPanel) are documented for §E's
 help/manual update.
+
+## §MIG-074 §E + §F + CLOSE — docs · /simplify · audit · perf · close-out (20:30–21:30)
+
+**Stage-3 Boss verdict: "Pass."** → the cascade closed without further stops.
+
+**§E docs (`00adb27c`):** new EN help topic **"Constellation Circulatory System"** (the pitch, the
+three doors, the seven-register table, restore flow, the freshness rhythm, where the old Dashboard
+went); User Manual — the types list gains `supersedes`, archive/restore tutorials re-pointed to CCS,
+Tutorial 10 = the seven registers, the panels list updated; Panels.md + Knowledge Formulation.md
+updated likewise. The 14-language help translation rides the standing batched translation-sync debt.
+
+**/simplify (`04064454`, 4 parallel agents):** reuse CLEAN (the KHD mirrors are deliberate), altitude
+CLEAN (predicate consts, snapshot-IPC factoring, exclusion pattern all at right depth). Applied:
+**`INSIGHT_COLUMNS`** const — the FormulationInsight SELECT list now lives in ONE place (was 7 sites);
+the **`linkRows` parametric snippet** in CCSView — Living/Load-Bearing/Cooling/contested share one row
+shape (−70 lines). Skipped with reasons: the living/load_bearing duplicate COUNT (~0.2 ms warm in a
+2-min background pass; consolidation = needless coupling); the KHD-listener extraction (different
+loadSnapshot shapes; deliberate mirror). svelte-check 0; tests 3/3.
+
+**Phase-4 audit (3 parallel agents):**
+- **Invariants 16/16 + Rule-2/Rule-4 — ALL HOLD** (incl. I2b: zero `_link_traverse` calls from CCS;
+  I9: the KH IPC's shape + 6-key readiness untouched; I11: the §D commit verified atomic).
+- **Drift 9/9 CLEAN**: one `kh-snapshot-ready` emitter / exactly two intended listeners; one
+  `constellation_ccs_snapshot` registration + one caller; one `constellation:open-ccs`
+  dispatcher/listener pair + zero old-event leftovers; the 12 cache keys single-sourced; all 10
+  `showCCS` writers accounted for in +layout; locale parity 15/15 with zero retired keys surviving;
+  no CSS leakage; the `enabledFeatures.ccs` gate uniform across all 5 entry points.
+- **Migration path 6/6 PASS**: first-boot-after-update self-heals per-key (KH stays ready while
+  ccs_* populate); the missing-table Scenario-2 behavior preserved through the §A refactor; a
+  mid-recompute partial key-set heals on first panel open (the snapshot IPCs' completeness checks
+  spawn `recompute(false)` — boot's `only_if_empty` correctly skips); pre-MIG-074 rollback tolerates
+  the extra rows (Q3 lives in the binary, not the DB); stored `panelPlacements.links` /
+  `enabledFeatures`-without-ccs merge inert/ON; universe switch unmounts + re-reads cleanly.
+
+**Perf (I13 closed):** the live universe's `boot-perf.latest.json` (the Stage-3 boot, 7,661 notes /
+25-cUniverse federation): **paint 595 ms** (Criterion 1 ✓), **hydrated 26.3 s** — within the
+documented **28 s federated baseline** (MIG-061 Boss test; the 811 ms criterion is the single-universe
+trial corpus). MIG-074 added zero boot-path work (the only boot hook remains MIG-073's
+`only_if_empty` COUNT). Typing: no editor-path code touched across the whole migration.
+
+**Close-out:** orientation **v2.66** (new file; v2.65 preserved) — preamble + §8 row → ✅ CLOSED +
+§14 row updated; milestone tag `milestone/mig-074-ccs` + ZIP backup; MoCh-2026-06-10-2130. **MIG-074
+is CLOSED.** Onward items recorded: the future CNS MIG carries the Boss-approved panel-boundary
+cleanup + detect_tensions Rule-8; parked for Eisa — the §H pill-language question and the
+archive-weight Guide-§10 drift; the 14-language help batch; the 1.7 GB search.db investigation
+(pre-existing flag).
