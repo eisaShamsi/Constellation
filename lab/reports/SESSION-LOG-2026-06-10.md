@@ -187,3 +187,36 @@ semantic moves: tiers `حامل`→**`ركيزة`** (matches the ركائز ال
 `استقرار`→`رسوخ` (matches راسخ); the open-inquiries hint recast as `روابط ما تزال تسأل: كيف نتّصل؟ —
 تلك طليعة التفكير الحيّة.`; walks meta `{n} عبور`→`مرّات العبور: {n}` (numeral-grammar-proof). Binary
 rebuilding; ar round-2 Boss re-test staged.
+
+## §MIG-074 — Boss rulings on round-2 + §C shipped (18:45–19:15)
+
+**Three Boss rulings (verbatim):** *"I approve your CNS recommendation. The retired register =
+الإستدلال المنقطع. Stale tier = خامل."*
+
+1. **CNS recommendation APPROVED** → recorded as a dated addendum in `MIG-074-CCS-ARCHITECT.md` §3-a:
+   the future CNS-modernization MIG now carries TWO queued items — detect_tensions' Rule-8 rewrite AND
+   the CNS-panel boundary cleanup (shed "Link Health BY TYPE"/"BY CONFIDENCE" → "Circulation → CCS"
+   deep-link; the raw `lens.link*` key rendering + non-registry custom-type labels vanish with the
+   shed; caption convention for the 233,538-vs-234,062 layer difference; Universe-Health-score inputs
+   review). No CNS code touched in MIG-074.
+2. **ar round-3 terms applied** (5 substitutions, parse OK, CRLF preserved): retired register →
+   **الاستدلال المنقطع** (Boss's term المنقطع; standard hamzat-wasl spelling of الاستدلال kept,
+   consistent with the rest of the locale) + its empty-state and the tagline aligned to the انقطع
+   family; stale tier reverted to Boss's **خامل** + the idle-days meta back to خامل.
+3. **§C shipped** — Retired Reasoning actions in `CCSView.svelte`: rows are now static divs (no
+   nested-button markup) each carrying a **Restore** button → the existing `unarchiveLink` lifecycle
+   command (I2 — no new write path) with per-row in-flight guard + optimistic local removal (both the
+   cached top-20 and the live list) + local total decrement; cached totals true-up on the next SWR
+   refresh (the MIG-073 P3 propagation model — and the `kh-snapshot-ready` in-place update can never
+   resurrect a restored row, since the event only fires after a recompute that already sees the
+   restore). **"Show all"** appears when total > the cached slice → ONE live `listArchivedLinks` call
+   (the documented I1 carve-out, bounded + indexed). i18n keys (showAll/restore/restored) shipped with
+   §B — §C touches no locale files. svelte-check 0 errors.
+
+**Round-trip property check (clause met, one honest flag):** archive writes `status='archived',
+weight=0`; unarchive writes `status='active', weight=1.0`; annotation · confidence · traversal_count ·
+last_traversed are untouched by both (search.rs:5872/5894). **Flag (pre-existing, NOT §C's):**
+Living-Links-Guide §10 says restore loses none of the 8 properties, but the code zeroes raw `weight`
+on archive and resets it to 1.0 on restore — earned weight does not survive the round-trip (e.g. a
+tc=20 link returns at weight 1.0, not 1+ln(21)≈4.0). Doc-vs-code drift logged for the close-out's
+drift list; changing the write semantics is out of MIG-074's contracts.

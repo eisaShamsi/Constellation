@@ -13,6 +13,7 @@
 	import { onMount } from 'svelte';
 	import LinkTypePill from './LinkTypePill.svelte';
 	import { linkTypesStore, linkTypeColor, getLinkType, getLinkTypes } from '$lib/libraries/linkTypeRegistry';
+	import { listArchivedLinks, unarchiveLink, type ArchivedLink } from '$lib/libraries/store';
 
 	let {
 		onClose,
@@ -112,6 +113,42 @@
 
 	function openRow(row: CcsRow) {
 		if (row.source_path && onNoteClick) onNoteClick(row.source_path, row.library_name);
+	}
+
+	// ── §C — Retired Reasoning actions ──────────────────────────────────────
+	// "Show all" is the user-initiated drill-down (the I1 carve-out): ONE
+	// bounded, indexed live query (`constellation_link_archived`). Restore
+	// goes through the EXISTING lifecycle command (`_link_unarchive`) — no
+	// new write path (I2) — and removes the row locally; the cached totals
+	// true-up on the next stale-while-revalidate refresh (the MIG-073 P3
+	// single-link-write propagation model).
+	let showAllRetired = $state(false);
+	let archivedFull = $state<ArchivedLink[]>([]);
+	let archivedLoading = $state(false);
+	let restoreBusy = $state<Set<string>>(new Set());
+	const rowKey = (r: { source_path: string; target_name: string }) => `${r.source_path}|${r.target_name}`;
+
+	async function loadAllRetired() {
+		archivedLoading = true;
+		try {
+			archivedFull = await listArchivedLinks();
+			showAllRetired = true;
+		} catch (e) { console.error('[CCS] show-all retired', e); }
+		archivedLoading = false;
+	}
+
+	async function restoreRow(row: { source_path: string; target_name: string }) {
+		const key = rowKey(row);
+		if (restoreBusy.has(key)) return;
+		restoreBusy = new Set(restoreBusy).add(key);
+		try {
+			await unarchiveLink(row.source_path, row.target_name);
+			// Optimistic local removal from both data layers; the snapshot
+			// catches up on the next background refresh.
+			archivedFull = archivedFull.filter(r => rowKey(r) !== key);
+			retired = { total: Math.max(0, retired.total - 1), rows: retired.rows.filter(r => rowKey(r) !== key) };
+		} catch (e) { console.error('[CCS] restore', e); }
+		const next = new Set(restoreBusy); next.delete(key); restoreBusy = next;
 	}
 
 	// ── label resolvers (the KHD pattern: locale → registry label → raw id) ──
@@ -299,24 +336,26 @@
 					{/if}
 				</div>
 
-				<!-- 6 · Retired Reasoning -->
+				<!-- 6 · Retired Reasoning (§C: rows are static divs + a Restore
+				     action — no nested-button markup; restoring removes the row
+				     locally and reappears in the note's Backlinks/Outgoing) -->
 				<div class="ccs-section">
 					<h3>{$t('ccs.retired.title')}</h3>
 					<p class="ccs-question">{$t('ccs.retired.question')}</p>
-					{#if retired.rows.length === 0}
+					{#each (showAllRetired ? archivedFull : retired.rows.slice(0, 20)) as row (rowKey(row))}
+						<div class="ccs-row">
+							<span class="ccs-row-name" dir="auto">{row.source_name}</span>
+							<LinkTypePill id={row.link_type} />
+							<span class="ccs-row-name" dir="auto">{row.target_name}</span>
+							<span class="ccs-row-meta">{#if walkedDate(row.last_traversed)}{$t('ccs.meta.lastWalked', { date: walkedDate(row.last_traversed) })}{/if}</span>
+							<button class="ccs-restore" disabled={restoreBusy.has(rowKey(row))} onclick={() => restoreRow(row)}>{$t('ccs.restore')}</button>
+						</div>
+					{/each}
+					{#if (showAllRetired ? archivedFull.length : retired.rows.length) === 0}
 						<p class="ccs-empty">{$t('ccs.retired.empty')}</p>
-					{:else}
-						{#each retired.rows.slice(0, 20) as row}
-							<button class="ccs-row" class:ccs-row-link={!!row.source_path} onclick={() => openRow(row)}>
-								<span class="ccs-row-name" dir="auto">{row.source_name}</span>
-								<LinkTypePill id={row.link_type} />
-								<span class="ccs-row-name" dir="auto">{row.target_name}</span>
-								<span class="ccs-row-meta">{#if walkedDate(row.last_traversed)}{$t('ccs.meta.lastWalked', { date: walkedDate(row.last_traversed) })}{/if}</span>
-							</button>
-						{/each}
-						{#if retired.total > 20}
-							<p class="ccs-more-note">{$t('ccs.meta.total', { n: retired.total.toLocaleString() })}</p>
-						{/if}
+					{/if}
+					{#if !showAllRetired && retired.total > Math.min(retired.rows.length, 20)}
+						<button class="ccs-show-all" disabled={archivedLoading} onclick={loadAllRetired}>{$t('ccs.showAll')} ({retired.total.toLocaleString()})</button>
 					{/if}
 				</div>
 
@@ -518,4 +557,27 @@
 		color: var(--text-faint);
 		flex-shrink: 0;
 	}
+	.ccs-restore {
+		flex-shrink: 0;
+		background: var(--background-primary);
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 5px;
+		color: var(--text-muted);
+		font-size: 0.68rem;
+		padding: 2px 8px;
+		cursor: pointer;
+	}
+	.ccs-restore:hover:not(:disabled) { color: var(--text-normal); border-color: var(--interactive-accent); }
+	.ccs-restore:disabled { opacity: 0.5; cursor: default; }
+	.ccs-show-all {
+		margin-top: 8px;
+		background: none;
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 6px;
+		color: var(--text-muted);
+		font-size: 0.72rem;
+		padding: 4px 10px;
+		cursor: pointer;
+	}
+	.ccs-show-all:hover:not(:disabled) { color: var(--text-normal); }
 </style>
