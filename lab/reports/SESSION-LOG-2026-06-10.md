@@ -62,3 +62,25 @@ written for this block.
 
 **Next decision point (Eisa):** answer Q1–Q8 in `MIG-074-CCS-ARCHITECT.md` §8 (each carries a
 recommendation) → then Phase 2 (Plan).
+
+## §MIG-074 RATIFIED + PLAN — Phase 2 produced, awaiting Plan approval (14:50–15:05)
+
+**Eisa: "Approved"** — the Architect is ratified with **all Q1–Q8 as recommended**: Q1 dock adjacent to
+CNS + ECG pulse-waveform icon · Q2 the 5-tier usage census (`ccs_tiers`) · Q3 YES repair the shared
+`lifecycle` dormancy bucket (derived; KH numbers change honestly) · Q4 trends deferred · Q5 mutual
+deep-links · Q6 drop `crossLibrary`+`broken` with the panel (documented) · Q7 detect_tensions OUT ·
+Q8 Option B (extend the cache).
+
+**Plan produced:** `lab/reports/MIG-074-CCS-PLAN.md` — six phases, each one commit:
+**§A** backend (6 `ccs_*` keys in the existing recompute + Q3 bucket repair + `constellation_ccs_snapshot`
+IPC with its own per-key ready logic — KH's check untouched) → **§B** the CCS surface (CCSView.svelte on
+the Cataloger overlay pattern; dock button after CNS; seven registers read-only; `ccs.*` ×15 same commit;
+★ Boss Stage 1) → **§C** Retired-Reasoning actions (live show-all + Restore via existing IPCs; ★ Stage 2)
+→ **§D** atomic retire (LinkDashboard + tab + `constellation:open-link-dashboard`→`open-ccs` re-point +
+`linkDashboard.*` drop ×15; ★ Stage 3) → **§E** docs/PCS → **§F** /simplify + 3-agent audit + perf
+measurement on the big universe. Scope trims stated in the Plan (v1 write surface = unarchive only;
+facts-rest ships as invitation framing, stratum-filter deferred with trends; Setter category deferred —
+pure theme vars). Risk register + rollback per phase.
+
+**State: awaiting Eisa's Plan approval** → then the build cascades (Plan-Approval = Build-Approval),
+stopping only at the three ★ Boss-test clauses.
