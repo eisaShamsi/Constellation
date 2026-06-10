@@ -3073,28 +3073,28 @@
 	},
 	"knowledgeHealth": {
 		"title": "صحة المعرفة",
-		"subtitle": "لقطة تشخيصية لبنية الروابط الحية.",
 		"loading": "جارٍ احتساب لقطة الصحة…",
-		"refresh": "تحديث",
-		"emptyTitle": "لا توجد روابط بعد",
-		"emptyDesc": "أنشئ روابط ويكي بين الملاحظات — سيتتبع نظام الروابط الحية نوعها ووزنها ودورة حياتها تلقائياً.",
-		"universeHealth": "صحة الكون",
-		"activeLinks": "روابط نشطة",
-		"linkTypes": "أنواع الروابط المستخدمة",
 		"annotated": "موضّحة بتعليقات",
-		"matureLinks": "روابط ناضجة",
 		"byType": "حسب النوع المعرفي",
-		"lifecycle": "توزيع دورة الحياة",
 		"byConfidence": "حسب مستوى الثقة",
-		"strongest": "أقوى سلاسل الأدلة",
-		"tensions": "التوترات النشطة",
 		"connected": "الملاحظات الأكثر ارتباطاً",
-		"stagnating": "روابط عالية الوزن راكدة",
-		"stagnatingDesc": "اتصالات ثقيلة لم تُراجَع — معرفة معرّضة لخطر الاضمحلال.",
 		"weakFoundations": "أسس ضعيفة",
-		"weakFoundationsDesc": "أفكار عالية الوزن مبنية على أدلة افتراضية — فحصها قبل التوثيق.",
 		"bias": "تحيز محتمل (لا وجهة نظر مخالفة)",
-		"biasDesc": "أهداف لها دعم فقط وصفر تناقضات — ابحث عن وجهات نظر مخالفة."
+		"totalLinks": "إجمالي الروابط",
+		"connectedEmpty": "لا توجد محاور معرفية بعد",
+		"emerging": "أفكار ناشئة",
+		"emergingEmpty": "لا أفكار ناشئة بعد — تتبّع المزيد من الروابط!",
+		"weakFoundationsEmpty": "لا توجد أسس واهية",
+		"biasEmpty": "لا غرف صدى مكتشفة",
+		"incomingLinks": "{n} روابط واردة",
+		"supportsOnly": "{n} مؤيدة، 0 معارضة",
+		"weightAbbrev": "وزن",
+		"confidence": {
+			"hypothesis": "فرضية",
+			"evidence": "دليل",
+			"established": "راسخ",
+			"contested": "متنازع عليه"
+		}
 	},
 	"migrationProgress": {
 		"termVocabV2": {

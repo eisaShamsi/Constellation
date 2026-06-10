@@ -2912,28 +2912,28 @@
 	},
 	"knowledgeHealth": {
 		"title": "知識の健全性",
-		"subtitle": "リビングリンクアーキテクチャの診断スナップショット。",
 		"loading": "健全性スナップショットを計算中…",
-		"refresh": "更新",
-		"emptyTitle": "まだリンクがありません",
-		"emptyDesc": "ノート間にウィキリンクを作成してください — リビングリンクシステムが種類、重み、ライフサイクルを自動で追跡します。",
-		"universeHealth": "ユニバースの健全性",
-		"activeLinks": "アクティブリンク",
-		"linkTypes": "使用中のリンクタイプ",
 		"annotated": "注釈付き",
-		"matureLinks": "成熟したリンク",
 		"byType": "認知タイプ別",
-		"lifecycle": "ライフサイクル分布",
 		"byConfidence": "信頼レベル別",
-		"strongest": "最強の証拠連鎖",
-		"tensions": "アクティブな緊張",
 		"connected": "最も接続されたノート",
-		"stagnating": "停滞している高重みリンク",
-		"stagnatingDesc": "再訪されていない重い接続 — 薄れるリスクのある知識。",
 		"weakFoundations": "弱い基盤",
-		"weakFoundationsDesc": "仮説レベルの証拠に基づく高重みのアイデア — 形式化前に検証してください。",
 		"bias": "潜在的バイアス（反対意見なし）",
-		"biasDesc": "サポートのみでゼロの矛盾のあるターゲット — 反対の視点を探してください。"
+		"totalLinks": "リンク総数",
+		"connectedEmpty": "ナレッジハブはまだありません",
+		"emerging": "芽生えつつあるアイデア",
+		"emergingEmpty": "まだありません — もっとリンクをたどりましょう！",
+		"weakFoundationsEmpty": "脆弱な基盤は検出されませんでした",
+		"biasEmpty": "エコーチェンバーは検出されませんでした",
+		"incomingLinks": "被リンク {n} 件",
+		"supportsOnly": "支持 {n} 件、反証 0 件",
+		"weightAbbrev": "重み",
+		"confidence": {
+			"hypothesis": "仮説",
+			"evidence": "証拠",
+			"established": "確立",
+			"contested": "係争中"
+		}
 	},
 	"migrationProgress": {
 		"termVocabV2": {

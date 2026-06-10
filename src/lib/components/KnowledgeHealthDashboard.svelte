@@ -121,46 +121,67 @@
 	const stageColors: Record<string, string> = {
 		spark: '#a78bfa', birth: '#94a3b8', growth: '#16a34a', maturity: '#7c3aed', dormancy: '#f59e0b', archival: '#ef4444',
 	};
+
+	// i18n label resolvers — reactive to the UI locale via $t; each falls back
+	// to the raw id when untranslated (custom registry types / unexpected
+	// values), mirroring LinkTypePill's lookup. Stage names reuse the
+	// established notePane.stage.* vocabulary (the 6 link-lifecycle stages
+	// live there alongside the note stages).
+	const typeLabel = $derived((id: string) => {
+		const k = `linkTypes.${id.toLowerCase()}`;
+		const tr = $t(k);
+		return tr === k ? id : tr;
+	});
+	const stageLabel = $derived((id: string) => {
+		const k = `notePane.stage.${id}`;
+		const tr = $t(k);
+		return tr === k ? id : tr;
+	});
+	const confLabel = $derived((id: string) => {
+		const k = `knowledgeHealth.confidence.${id}`;
+		const tr = $t(k);
+		return tr === k ? id : tr;
+	});
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="khd-overlay" onkeydown={handleKeydown} tabindex="-1" role="dialog">
 	<div class="khd-container">
 		<div class="khd-header">
-			<h1>Knowledge Health</h1>
-			<button class="khd-close" onclick={onClose}>
+			<h1>{$t('knowledgeHealth.title')}</h1>
+			<button class="khd-close" onclick={onClose} title={$t('common.close')} aria-label={$t('common.close')}>
 				<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
 			</button>
 		</div>
 
 		{#if loading}
-			<div class="khd-loading">Loading diagnostics...</div>
+			<div class="khd-loading">{$t('knowledgeHealth.loading')}</div>
 		{:else if stats && lifecycle}
 			<!-- Lifecycle Cards -->
 			<div class="khd-cards">
 				{#each Object.entries(lifecycle.lifecycle) as [stage, count]}
 					<div class="khd-card">
 						<div class="khd-card-num" style:color={stageColors[stage] ?? '#666'}>{count.toLocaleString()}</div>
-						<div class="khd-card-label">{stage}</div>
+						<div class="khd-card-label">{stageLabel(stage)}</div>
 					</div>
 				{/each}
 				<div class="khd-card">
 					<div class="khd-card-num" style:color="#7c3aed">{stats.total_links.toLocaleString()}</div>
-					<div class="khd-card-label">Total Links</div>
+					<div class="khd-card-label">{$t('knowledgeHealth.totalLinks')}</div>
 				</div>
 				<div class="khd-card">
 					<div class="khd-card-num" style:color="#3b82f6">{stats.with_annotation.toLocaleString()}</div>
-					<div class="khd-card-label">Annotated</div>
+					<div class="khd-card-label">{$t('knowledgeHealth.annotated')}</div>
 				</div>
 			</div>
 
 			<div class="khd-grid">
 				<!-- Link Types -->
 				<div class="khd-section">
-					<h3>Link Types</h3>
+					<h3>{$t('knowledgeHealth.byType')}</h3>
 					{#each Object.entries(stats.by_type).sort((a, b) => b[1] - a[1]) as [type, count]}
 						<div class="khd-bar-row">
-							<span class="khd-bar-label">{type}</span>
+							<span class="khd-bar-label" dir="auto">{typeLabel(type)}</span>
 							<div class="khd-bar-track">
 								<div class="khd-bar-fill" style:width="{Math.max(2, (count / stats.total_links) * 100)}%" style:background={linkTypeColor(type)}></div>
 							</div>
@@ -171,10 +192,10 @@
 
 				<!-- Confidence -->
 				<div class="khd-section">
-					<h3>Confidence Distribution</h3>
+					<h3>{$t('knowledgeHealth.byConfidence')}</h3>
 					{#each Object.entries(stats.by_confidence).sort((a, b) => b[1] - a[1]) as [conf, count]}
 						<div class="khd-bar-row">
-							<span class="khd-bar-label">{conf}</span>
+							<span class="khd-bar-label" dir="auto">{confLabel(conf)}</span>
 							<div class="khd-bar-track">
 								<div class="khd-bar-fill" style:width="{Math.max(2, (count / stats.total_links) * 100)}%" style:background={confidenceColors[conf] ?? '#94a3b8'}></div>
 							</div>
@@ -185,14 +206,16 @@
 
 				<!-- Most Connected -->
 				<div class="khd-section">
-					<h3>Knowledge Hubs</h3>
+					<h3>{$t('knowledgeHealth.connected')}</h3>
 					{#if mostConnected.length === 0}
-						<p class="khd-empty">No knowledge hubs yet</p>
+						<p class="khd-empty">{$t('knowledgeHealth.connectedEmpty')}</p>
 					{:else}
 						{#each mostConnected as item}
 							<div class="khd-insight-row">
 								<span class="khd-insight-name" dir="auto">{item.target_name}</span>
-								<span class="khd-insight-meta">{item.annotation}</span>
+								<!-- Built from traversal_count (= the incoming count for this
+								     query) instead of the Rust-side English `annotation`. -->
+								<span class="khd-insight-meta">{$t('knowledgeHealth.incomingLinks', { n: item.traversal_count.toLocaleString() })}</span>
 							</div>
 						{/each}
 					{/if}
@@ -200,16 +223,16 @@
 
 				<!-- Emerging Ideas -->
 				<div class="khd-section">
-					<h3>Emerging Ideas</h3>
+					<h3>{$t('knowledgeHealth.emerging')}</h3>
 					{#if emerging.length === 0}
-						<p class="khd-empty">No emerging ideas yet — follow more links!</p>
+						<p class="khd-empty">{$t('knowledgeHealth.emergingEmpty')}</p>
 					{:else}
 						{#each emerging as item}
 							<div class="khd-insight-row">
 								<span class="khd-insight-name" dir="auto">{item.source_name}</span>
 								<LinkTypePill id={item.link_type} />
 								<span class="khd-insight-name" dir="auto">{item.target_name}</span>
-								<span class="khd-insight-meta">w:{item.weight.toFixed(1)}</span>
+								<span class="khd-insight-meta">{$t('knowledgeHealth.weightAbbrev')}:{item.weight.toFixed(1)}</span>
 							</div>
 						{/each}
 					{/if}
@@ -217,14 +240,14 @@
 
 				<!-- Weak Foundations -->
 				<div class="khd-section">
-					<h3>Weak Foundations</h3>
+					<h3>{$t('knowledgeHealth.weakFoundations')}</h3>
 					{#if weakFoundations.length === 0}
-						<p class="khd-empty">No weak foundations detected</p>
+						<p class="khd-empty">{$t('knowledgeHealth.weakFoundationsEmpty')}</p>
 					{:else}
 						{#each weakFoundations as item}
 							<div class="khd-insight-row">
 								<span class="khd-insight-name" dir="auto">{item.source_name} → {item.target_name}</span>
-								<span class="khd-insight-meta">hypothesis, w:{item.weight.toFixed(1)}</span>
+								<span class="khd-insight-meta">{confLabel('hypothesis')}, {$t('knowledgeHealth.weightAbbrev')}:{item.weight.toFixed(1)}</span>
 							</div>
 						{/each}
 					{/if}
@@ -232,14 +255,17 @@
 
 				<!-- Bias Alerts -->
 				<div class="khd-section">
-					<h3>Bias Alerts</h3>
+					<h3>{$t('knowledgeHealth.bias')}</h3>
 					{#if biasAlerts.length === 0}
-						<p class="khd-empty">No echo chambers detected</p>
+						<p class="khd-empty">{$t('knowledgeHealth.biasEmpty')}</p>
 					{:else}
 						{#each biasAlerts as item}
 							<div class="khd-insight-row">
 								<span class="khd-insight-name" dir="auto">{item.target_name}</span>
-								<span class="khd-insight-meta">{item.annotation}</span>
+								<!-- Built from weight (= the support count for bias rows;
+								     contradicts is 0 by the query's definition) instead of
+								     the Rust-side English `annotation`. -->
+								<span class="khd-insight-meta">{$t('knowledgeHealth.supportsOnly', { n: Math.round(item.weight).toLocaleString() })}</span>
 							</div>
 						{/each}
 					{/if}

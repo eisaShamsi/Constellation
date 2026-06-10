@@ -2912,28 +2912,28 @@
 	},
 	"knowledgeHealth": {
 		"title": "Saúde do conhecimento",
-		"subtitle": "Uma captura diagnóstica da sua arquitetura de Living Links.",
 		"loading": "Calculando captura de saúde…",
-		"refresh": "Atualizar",
-		"emptyTitle": "Ainda sem ligações",
-		"emptyDesc": "Crie wikilinks entre notas — o Sistema de Living Links rastreará tipo, peso e ciclo de vida automaticamente.",
-		"universeHealth": "Saúde do universo",
-		"activeLinks": "ligações ativas",
-		"linkTypes": "tipos de link em uso",
 		"annotated": "anotados",
-		"matureLinks": "ligações maduras",
 		"byType": "Por tipo cognitivo",
-		"lifecycle": "Distribuição do ciclo de vida",
 		"byConfidence": "Por nível de confiança",
-		"strongest": "Cadeias de evidências mais fortes",
-		"tensions": "Tensões ativas",
 		"connected": "Notas mais conectadas",
-		"stagnating": "Ligações de alto peso estagnadas",
-		"stagnatingDesc": "Conexões pesadas não revisitadas — conhecimento em risco de desaparecer.",
 		"weakFoundations": "Fundações fracas",
-		"weakFoundationsDesc": "Ideias de alto peso construídas em evidências hipotéticas — examinar antes de formalizar.",
 		"bias": "Viés potencial (sem visão oposta)",
-		"biasDesc": "Alvos com apenas suportes e zero contradições — procurar perspectivas opostas."
+		"totalLinks": "Total de ligações",
+		"connectedEmpty": "Ainda não há polos de conhecimento",
+		"emerging": "Ideias emergentes",
+		"emergingEmpty": "Ainda não há ideias emergentes — siga mais ligações!",
+		"weakFoundationsEmpty": "Nenhuma fundação frágil detetada",
+		"biasEmpty": "Nenhuma câmara de eco detetada",
+		"incomingLinks": "{n} ligações recebidas",
+		"supportsOnly": "{n} apoia, 0 contradiz",
+		"weightAbbrev": "p",
+		"confidence": {
+			"hypothesis": "hipótese",
+			"evidence": "evidência",
+			"established": "estabelecido",
+			"contested": "contestado"
+		}
 	},
 	"migrationProgress": {
 		"termVocabV2": {

@@ -2912,28 +2912,28 @@
 	},
 	"knowledgeHealth": {
 		"title": "Bilgi Sağlığı",
-		"subtitle": "Yaşayan bağlantı mimarinizin tanı anlık görüntüsü.",
 		"loading": "Sağlık anlık görüntüsü hesaplanıyor…",
-		"refresh": "Yenile",
-		"emptyTitle": "Henüz bağlantı yok",
-		"emptyDesc": "Notlar arasında wikilink oluşturun — Living Link Sistemi tür, ağırlık ve yaşam döngüsünü otomatik olarak takip edecek.",
-		"universeHealth": "Evren Sağlığı",
-		"activeLinks": "aktif bağlantı",
-		"linkTypes": "kullanılan bağlantı türleri",
 		"annotated": "açıklamalı",
-		"matureLinks": "olgun bağlantılar",
 		"byType": "Bilişsel türe göre",
-		"lifecycle": "Yaşam döngüsü dağılımı",
 		"byConfidence": "Güven düzeyine göre",
-		"strongest": "En güçlü kanıt zincirleri",
-		"tensions": "Aktif gerilimler",
 		"connected": "En çok bağlantılı notlar",
-		"stagnating": "Durağan yüksek ağırlıklı bağlantılar",
-		"stagnatingDesc": "Yeniden ziyaret edilmemiş ağır bağlantılar — solma riski taşıyan bilgiler.",
 		"weakFoundations": "Zayıf temeller",
-		"weakFoundationsDesc": "Hipotez düzeyinde kanıtlara dayanan yüksek ağırlıklı fikirler — resmileştirmeden önce inceleyin.",
 		"bias": "Potansiyel önyargı (karşı görüş yok)",
-		"biasDesc": "Yalnızca destekleyici ve sıfır çelişkili hedefler — karşıt perspektifler arayın."
+		"totalLinks": "Toplam bağlantı",
+		"connectedEmpty": "Henüz bilgi merkezi yok",
+		"emerging": "Filizlenen fikirler",
+		"emergingEmpty": "Henüz yok — daha fazla bağlantı izleyin!",
+		"weakFoundationsEmpty": "Zayıf temel bulunamadı",
+		"biasEmpty": "Yankı odası bulunamadı",
+		"incomingLinks": "{n} gelen bağlantı",
+		"supportsOnly": "{n} destekliyor, 0 çelişiyor",
+		"weightAbbrev": "ağırlık",
+		"confidence": {
+			"hypothesis": "hipotez",
+			"evidence": "kanıt",
+			"established": "yerleşik",
+			"contested": "tartışmalı"
+		}
 	},
 	"migrationProgress": {
 		"termVocabV2": {

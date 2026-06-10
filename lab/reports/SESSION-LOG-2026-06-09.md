@@ -374,6 +374,26 @@ verified clean through `9ca1d04c` (pushed + tagged + ZIP'd); orientation v2.63 l
 carries the close-out code; **MoCh-2026-06-10-1240 written** (catch-up — the intra-day cadence was missed,
 noted as an SO #7 slip). i18n work starts next.
 
+## §KHD-I18N — KnowledgeHealthDashboard wired to $t() ×15 (2026-06-10)
+
+The overlay was hardcoded EN with `t` imported-but-unused, while a dormant `knowledgeHealth.*` block
+(designed for an earlier panel iteration) sat unconsumed in all 15 locales. **Shipped:** every template
+string → `$t()`. Reused 8 existing keys WITH their existing translations (title · loading · annotated ·
+byType · byConfidence · connected · weakFoundations · bias — so a few EN headings adopt the key copy:
+"By cognitive type", "Most-connected notes", "Potential bias (no opposing view)", "Computing health
+snapshot…"). Added 13 keys ×15 (totalLinks, 4 section empties, emerging, incomingLinks "{n}…",
+supportsOnly "{n}…", weightAbbrev, confidence.{4}). Dropped 15 genuinely-unused keys ×15 (refresh,
+subtitle, universeHealth, strongest, tensions, stagnating…) — delta proven per file (+13/−15/~0; reused
+values byte-identical). **Data names follow established patterns:** link-type bars mirror LinkTypePill
+(`linkTypes.{id}` → raw-id fallback for custom types); stage cards reuse `notePane.stage.*` (the 6
+link-lifecycle stages already live there, all 15 locales verified); confidence gets
+`knowledgeHealth.confidence.*`. **Rust-built English annotations replaced client-side:** hubs rows render
+`incomingLinks` from `traversal_count`; bias rows render `supportsOnly` from `weight` (= support count;
+contradicts is 0 by the query's HAVING) — no IPC/payload change. RTL: inherited from the global
+`documentElement.dir` convention; `dir="auto"` added on bar labels. Close button gains
+`title`/`aria-label` = common.close. svelte-check **0 errors** (warnings 318→317 — the unused `t` import
+finding self-resolved). Boss test next (EN + ar visual).
+
 **P3 shipped (as-built deviations logged in the Plan doc §P3):** reconcile-walk hook → **unconditional**
 recompute (the true bulk settle point); `links_backfill` hook **dropped** (verified: it never mutates
 `note_links` — hooking it adds nothing); freshness window **10 → 2 min** (plan-marked tunable; open-driven

@@ -2912,28 +2912,28 @@
 	},
 	"knowledgeHealth": {
 		"title": "지식 건강",
-		"subtitle": "리빙 링크 아키텍처의 진단 스냅샷.",
 		"loading": "건강 스냅샷 계산 중…",
-		"refresh": "새로고침",
-		"emptyTitle": "아직 링크가 없습니다",
-		"emptyDesc": "노트 간 위키링크를 만드세요 — 리빙 링크 시스템이 유형, 가중치, 생명주기를 자동으로 추적합니다.",
-		"universeHealth": "유니버스 건강",
-		"activeLinks": "활성 링크",
-		"linkTypes": "사용 중인 링크 유형",
 		"annotated": "주석 달린",
-		"matureLinks": "성숙한 링크",
 		"byType": "인지 유형별",
-		"lifecycle": "생명주기 분포",
 		"byConfidence": "신뢰 수준별",
-		"strongest": "가장 강한 증거 체인",
-		"tensions": "활성 긴장",
 		"connected": "가장 연결된 노트",
-		"stagnating": "정체된 고가중치 링크",
-		"stagnatingDesc": "재방문되지 않은 무거운 연결 — 사라질 위험이 있는 지식.",
 		"weakFoundations": "약한 기반",
-		"weakFoundationsDesc": "가설 수준 증거 위에 구축된 고가중치 아이디어 — 공식화 전에 검토하세요.",
 		"bias": "잠재적 편향 (반대 관점 없음)",
-		"biasDesc": "지지만 있고 모순이 없는 대상 — 반대 관점을 찾으세요."
+		"totalLinks": "전체 링크",
+		"connectedEmpty": "아직 지식 허브가 없습니다",
+		"emerging": "떠오르는 아이디어",
+		"emergingEmpty": "아직 없습니다 — 링크를 더 따라가 보세요!",
+		"weakFoundationsEmpty": "취약한 토대가 발견되지 않았습니다",
+		"biasEmpty": "에코 체임버가 발견되지 않았습니다",
+		"incomingLinks": "들어오는 링크 {n}개",
+		"supportsOnly": "지지 {n}건, 반박 0건",
+		"weightAbbrev": "가중치",
+		"confidence": {
+			"hypothesis": "가설",
+			"evidence": "증거",
+			"established": "확립됨",
+			"contested": "논쟁 중"
+		}
 	},
 	"migrationProgress": {
 		"termVocabV2": {
