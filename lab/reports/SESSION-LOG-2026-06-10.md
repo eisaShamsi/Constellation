@@ -334,3 +334,18 @@ is CLOSED.** Onward items recorded: the future CNS MIG carries the Boss-approved
 cleanup + detect_tensions Rule-8; parked for Eisa — the §H pill-language question and the
 archive-weight Guide-§10 drift; the 14-language help batch; the 1.7 GB search.db investigation
 (pre-existing flag).
+
+## §SESSION CLOSE — PCS + the CNS handover (21:45)
+
+Boss: *"PCS + Orientation. We will work on the future CNS migration in a new session. So, prepare the
+handover files & prompt."* Delivered in one close-out commit:
+- **`docs/handover/Handover-2026-06-10-CNS.md`** — state of play (MIG-074 closed end-to-end), repo/
+  build facts (binary 21:00; CRLF/LF map; the live-universe numbers), open follow-ups (PJ-060 = the
+  morning handover's Task B, still pending in its own session; the §H pill question; the
+  archive-weight drift; the help batch; the 1.7 GB DB; PJ v1.13 staleness), the **CNS-MIG brief**
+  (the two Boss-approved items + four in/out candidates c–f), and the **verbatim §5 kickoff prompt**
+  (Phase-1-Architect-only; verify-the-MIG-number; SO #8; STOP for ratification).
+- **Orientation v2.66 dated addendum** (same commit, LL-031): session close + the handover pointer +
+  the PJ-060 reminder.
+- **MoCh-2026-06-10-2150** (this closing block). Tree in sync at close; the final binary (21:00)
+  carries HEAD's code. Session ends here — the next sessions start from the two handover prompts.
