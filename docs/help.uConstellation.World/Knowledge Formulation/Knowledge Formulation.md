@@ -154,11 +154,11 @@ To see the confidence level, **right-click** a link row in Backlinks or Outgoing
 **What it does**: Brings an archived link back to life. Traversal count and confidence are restored; weight resets to 1.0 (the link has to earn its weight again).
 
 **Steps**:
-1. Open the right-sidebar **Link Dashboard** (share-2 icon, last in the tab row).
-2. Click the **Archived** tab (last tab, rightmost).
-3. The list of archived links appears. Source names are italic and muted to signal inactivity.
-4. Click the circular-arrow button at the end of the row you want to restore.
-5. The row disappears from Archived. Open the source note — the link is back in Outgoing Links.
+1. Open the **Constellation Circulatory System** (the pulse-line icon in the left dock, below CNS).
+2. Find the **Retired Reasoning** register ("What did I set aside — and can revive?").
+3. The archived links are listed newest-first. If you have more than twenty, click **Show all**.
+4. Click **Restore** on the row you want back.
+5. The row leaves the register. Open the source note — the link is back in Outgoing Links.
 
 ---
 
@@ -193,21 +193,27 @@ To see the confidence level, **right-click** a link row in Backlinks or Outgoing
 
 ---
 
-## Tutorial 10 — The Link Dashboard
+## Tutorial 10 — The Circulatory System (CCS)
 
-**How to open**: Right sidebar → share-2 icon (last tab in the row).
+**How to open**: the pulse-line icon in the left dock (below CNS), the command palette, or
+Settings → Links → Related.
 
-The Dashboard has seven tabs. Each answers a specific diagnostic question about your knowledge network:
+CCS replaces the former Link Dashboard tab with seven **registers** — each a question you already ask
+about your own thinking:
 
-| Tab | Question it answers |
+| Register | Question it answers |
 |---|---|
-| **Most Connected** | Which notes have the most links in or out? Your thinking hubs. |
-| **Most Traveled** | Which links have you actually walked most often? (Not the same as "most connected" — a much-traveled link is a *worn path*.) |
-| **Stale** | Which links haven't been touched in 90+ days? Candidates to revisit, update, or retire. |
-| **Cross-Library** | Which links cross library boundaries? Your federation in action. |
-| **Broken** | Which links point to notes that don't exist? Targets to create or wikilinks to fix. |
-| **Orphans** | Which notes have zero links? Isolated cells in need of integration. |
-| **Archived** | Which links did you soft-delete? Listed newest-first with a one-click restore button. |
+| **Living Connections** | What am I actively thinking through? Your most-walked, still-warm links. |
+| **Load-Bearing Reasoning** | What does my understanding rest on? The warm links with the highest earned weight — your arteries. |
+| **Cooling Inquiries** | What have I stopped returning to? Links idle 90+ days, coldest first — an invitation, never an accusation. |
+| **Conviction & Doubt** | How settled is my thinking? The confidence spread plus your live contested links. |
+| **The Life of a Connection** | Where are my links in their lifecycle? The fresh → emerging → established → load-bearing → stale census. |
+| **Retired Reasoning** | What did I set aside — and can revive? Archived links with one-click Restore. |
+| **The Acts of Inquiry** | What kinds of thinking am I doing? Your typed links in canonical order, plus the open (untyped) inquiries. |
+
+For the full guide, see the dedicated topic: **Constellation Circulatory System**. (Of the old
+Dashboard's tabs: most-connected stays in Knowledge Health; orphans live in the right-sidebar tension
+panel; cross-library and broken were retired.)
 
 ---
 

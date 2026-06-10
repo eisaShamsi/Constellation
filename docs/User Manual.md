@@ -46,14 +46,14 @@ Constellation is built on a simple belief: **knowledge is not about storage — 
 
 In Constellation, a link between two notes is not a dead pointer. It is a **living vessel** that carries meaning:
 
-- **Type** — the kind of relationship (supports, contradicts, causes, exemplifies, generalizes, derives-from, part-of).
+- **Type** — the kind of relationship (supports, contradicts, causes, exemplifies, generalizes, derives-from, part-of, supersedes).
 - **Annotation** — the *why*. Your reasoning at the moment of linking, authored inline via `[[type::Target|your reasoning]]` and displayed in italic purple text under the link in Backlinks / Outgoing panels.
 - **Weight** — how significant the connection is. Starts at 1.0, grows logarithmically with each traversal, and decays exponentially when neglected.
 - **Confidence** — how certain you are. Four tiers (Hypothesis → Evidence → Established → Contested). Auto-promotes as you traverse; right-click any link to override.
 - **Tier (visual)** — derived from traversal count: *emerging* (×1–2), *established* (×3–9), *load-bearing* (×10+), *stale* (≥90d untouched).
-- **Archive** — every operation is reversible. Archived links are soft-deleted (hidden everywhere, preserved in history) and can be restored from the Link Dashboard.
+- **Archive** — every operation is reversible. Archived links are soft-deleted (hidden everywhere, preserved in history) and can be restored from the Circulatory System's **Retired Reasoning** register.
 
-Detailed step-by-step tutorials for every Living Link function — authoring, contesting, archiving, decay settings, the back-fill one-shot, and the Link Dashboard's seven tabs — live in the dedicated help file: [Knowledge Formulation](help.uConstellation.World/Knowledge%20Formulation/Knowledge%20Formulation.md).
+Detailed step-by-step tutorials for every Living Link function — authoring, contesting, archiving, decay settings, the back-fill one-shot, and the Circulatory System's seven registers — live in the dedicated help file: [Knowledge Formulation](help.uConstellation.World/Knowledge%20Formulation/Knowledge%20Formulation.md).
 
 ### The Five Acts of Knowledge Creation
 
@@ -120,13 +120,13 @@ Auto-promotion: ×1–2 → Hypothesis, ×3–9 → Evidence, ×10+ → Establis
 #### Tutorial 6 — Archiving a link (soft delete)
 1. Right-click the link row.
 2. Below the four confidence options, click **Archive link**.
-3. Row disappears from Backlinks / Outgoing / Most-Traveled / Stale. Traversal count and confidence are preserved.
+3. Row disappears from Backlinks / Outgoing and from the Circulatory System's registers. Traversal count and confidence are preserved.
 
 #### Tutorial 7 — Restoring an archived link
-1. Right sidebar → **Link Dashboard** (share-2 icon, last tab).
-2. Click the **Archived** tab (rightmost).
-3. Click the circular-arrow button at the end of the row.
-4. Link returns to active status with weight reset to 1.0.
+1. Open the **Circulatory System** (the pulse-line icon in the left dock, below CNS).
+2. Find the **Retired Reasoning** register.
+3. Click **Restore** on the row you want back (use **Show all** if you have more than twenty archived links).
+4. Link returns to active status — type, annotation, confidence, and traversal history intact; weight restarts at 1.0.
 
 #### Tutorial 8 — One-shot confidence back-fill
 Use this when you imported notes from elsewhere, or if links existed before auto-promotion shipped: they may have high traversal counts but stale confidence.
@@ -146,17 +146,21 @@ Settings → **Appearance** → **Living Link Lifecycle**:
 
 Guideline: 30 days (aggressive — "what's alive now?") · 60 days (balanced default) · 120 days (gentle, slow research) · 365 days (nearly off).
 
-#### Tutorial 10 — The Link Dashboard (seven tabs)
+#### Tutorial 10 — The Circulatory System (seven registers)
 
-| Tab | Question it answers |
+Open from the left dock (the pulse-line icon below CNS), the command palette, or Settings → Links.
+
+| Register | Question it answers |
 |---|---|
-| Most Connected | Which notes have the most links? |
-| Most Traveled | Which links have you walked most often? |
-| Stale | 90+ days untouched — revisit or retire. |
-| Cross-Library | Links crossing library boundaries. |
-| Broken | Links pointing to notes that don't exist. |
-| Orphans | Notes with zero links — isolated cells. |
-| Archived | Soft-deleted links with one-click restore. |
+| Living Connections | What am I actively thinking through? |
+| Load-Bearing Reasoning | What does my understanding rest on? |
+| Cooling Inquiries | What have I stopped returning to? (90+ days) |
+| Conviction & Doubt | How settled is my thinking? |
+| The Life of a Connection | Where are my links in their lifecycle? |
+| Retired Reasoning | What did I set aside — and can revive? |
+| The Acts of Inquiry | What kinds of thinking am I doing? |
+
+(The former Link Dashboard tab retired into these registers; most-connected stays in Knowledge Health, orphans in the tension panel.)
 
 #### Tutorial 11 — Searching your knowledge
 All operators work in 15 languages:
@@ -1351,7 +1355,7 @@ The older Lens panel (filter by tags, folders, properties; save configurations) 
 
 ## 15b. Panels
 
-Constellation's panels — Backlinks, Outgoing Links, Properties, Tags, Sky View, Tasks, Calendar, Knowledge Health, Provenance, Review Pulse, and Link Dashboard — can each be placed in one of four positions via **Settings → Panels**.
+Constellation's panels — Backlinks, Outgoing Links, Properties, Tags, Sky View, Tasks, Calendar, Knowledge Health, Provenance, and Review Pulse — can each be placed in one of four positions via **Settings → Panels**. (The former Link Dashboard panel retired into the Circulatory System, a full-page view opened from the left dock.)
 
 ### Panel slots
 

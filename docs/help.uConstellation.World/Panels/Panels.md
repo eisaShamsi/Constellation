@@ -21,7 +21,7 @@ description: Learn how to arrange Constellation's panels — Backlinks, Outgoing
 
 # Panels
 
-Constellation's information panels — Backlinks, Outgoing Links, Properties, Tags, Sky View, Tasks, Calendar, Knowledge Health, Provenance, Review Pulse, and Link Dashboard — can each be placed in one of four positions via **Settings → Panels**.
+Constellation's information panels — Backlinks, Outgoing Links, Properties, Tags, Sky View, Tasks, Calendar, Knowledge Health, Provenance, and Review Pulse — can each be placed in one of four positions via **Settings → Panels**. (The former Link Dashboard panel retired into the Constellation Circulatory System, a full-page view opened from the left dock.)
 
 ---
 
@@ -54,7 +54,6 @@ By default, Constellation places the two link panels as flanking columns beside 
 | Knowledge Health | Right sidebar |
 | Provenance | Right sidebar |
 | Review Pulse | Right sidebar |
-| Link Dashboard | Right sidebar |
 
 To reset everything to defaults, click **Reset to default** at the bottom of the Panels settings section.
 
