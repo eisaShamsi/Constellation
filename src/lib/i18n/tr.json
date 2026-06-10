@@ -2911,6 +2911,64 @@
 		"reset": "Sıfırla",
 		"resetAll": "Tümünü sıfırla"
 	},
+	"ccs": {
+		"title": "Takımyıldız Dolaşım Sistemi (CCS)",
+		"tagline": "Düşüncenizin nabzı — hangi bağlantılar canlı, hangileri soğuyor, oturdu ya da emekli oldu.",
+		"computing": "Bilginizin nabzı ölçülüyor…",
+		"scope": "Bu evren",
+		"openFromKh": "Dolaşım sistemi",
+		"living": {
+			"title": "Canlı Bağlantılar",
+			"question": "Şu anda etkin olarak neyi düşünüyorum?",
+			"empty": "Henüz etkin dolaşımda bir şey yok — notları açın, bağlantıları izleyin ve ısıtın."
+		},
+		"loadBearing": {
+			"title": "Yük Taşıyan Akıl Yürütme",
+			"question": "Anlayışım neyin üzerine oturuyor?",
+			"empty": "Henüz yük taşıyan bağlantı yok — ağırlık bir bağlantıya geri dönerek kazanılır."
+		},
+		"cooling": {
+			"title": "Soğuyan Sorgular",
+			"question": "Neye geri dönmeyi bıraktım?",
+			"empty": "Soğuyan bir şey yok — yürünen her bağlantı hâlâ sıcak."
+		},
+		"conviction": {
+			"title": "Kanaat ve Şüphe",
+			"question": "Düşüncem ne kadar oturmuş?",
+			"empty": "İhtilaflı bağlantı yok — şu anda canlı bir tartışma yok."
+		},
+		"life": {
+			"title": "Bir Bağlantının Yaşamı",
+			"question": "Bağlantılarım yaşam döngüsünün neresinde?"
+		},
+		"retired": {
+			"title": "Emekli Akıl Yürütme",
+			"question": "Neyi kenara koydum — ve canlandırabilirim?",
+			"empty": "Emekli bir şey yok — arşivlenmiş bağlantı yok."
+		},
+		"acts": {
+			"title": "Sorgulama Edimleri",
+			"question": "Ne tür düşünme biçimleri kullanıyorum?"
+		},
+		"openInquiries": "Açık sorgular",
+		"openInquiriesHint": "Nasıl bağlandığını hâlâ soran bağlantılar — düşüncenin canlı kıyısı.",
+		"tier": {
+			"fresh": "Taze",
+			"emerging": "Filizlenen",
+			"established": "Yerleşik",
+			"loadBearing": "Yük taşıyan",
+			"stale": "Bayat"
+		},
+		"meta": {
+			"walks": "{n} geçiş",
+			"lastWalked": "son geçiş {date}",
+			"idleDays": "{n} gündür hareketsiz",
+			"total": "toplam {n}"
+		},
+		"showAll": "Tümünü göster",
+		"restore": "Geri getir",
+		"restored": "Geri getirildi"
+	},
 	"knowledgeHealth": {
 		"title": "Bilgi Sağlığı",
 		"loading": "Sağlık anlık görüntüsü hesaplanıyor…",

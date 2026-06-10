@@ -2911,6 +2911,64 @@
 		"reset": "リセット",
 		"resetAll": "すべてリセット"
 	},
+	"ccs": {
+		"title": "星座循環系（CCS）",
+		"tagline": "思考の脈拍 — どのつながりが生きていて、冷えつつあり、定着し、引退したか。",
+		"computing": "知識の脈を測っています…",
+		"scope": "この宇宙",
+		"openFromKh": "循環系",
+		"living": {
+			"title": "生きているつながり",
+			"question": "いま能動的に考えているのは何か？",
+			"empty": "まだ活発な循環はありません — ノートを開きリンクをたどって温めましょう。"
+		},
+		"loadBearing": {
+			"title": "支える推論",
+			"question": "私の理解は何の上に載っているか？",
+			"empty": "支えとなるつながりはまだありません — 重みはリンクに戻ることで得られます。"
+		},
+		"cooling": {
+			"title": "冷えつつある問い",
+			"question": "戻らなくなったものは何か？",
+			"empty": "冷えつつあるものはありません — 歩いたつながりはどれもまだ温かい。"
+		},
+		"conviction": {
+			"title": "確信と疑い",
+			"question": "私の思考はどれほど定まっているか？",
+			"empty": "係争中のリンクはありません — いま生きた対立はありません。"
+		},
+		"life": {
+			"title": "つながりの一生",
+			"question": "リンクはライフサイクルのどこにいるか？"
+		},
+		"retired": {
+			"title": "引退した推論",
+			"question": "脇に置いたものは何か — 蘇らせられるか？",
+			"empty": "引退したものはありません — アーカイブされたリンクはありません。"
+		},
+		"acts": {
+			"title": "探究の行為",
+			"question": "どんな種類の思考をしているか？"
+		},
+		"openInquiries": "開かれた問い",
+		"openInquiriesHint": "どう関わるかをまだ尋ねているつながり — 思考の生きた縁。",
+		"tier": {
+			"fresh": "新規",
+			"emerging": "萌芽",
+			"established": "確立",
+			"loadBearing": "支柱",
+			"stale": "停滞"
+		},
+		"meta": {
+			"walks": "{n} 回の通過",
+			"lastWalked": "最終通過 {date}",
+			"idleDays": "{n} 日間停滞",
+			"total": "合計 {n}"
+		},
+		"showAll": "すべて表示",
+		"restore": "復元",
+		"restored": "復元済み"
+	},
 	"knowledgeHealth": {
 		"title": "知識の健全性",
 		"loading": "健全性スナップショットを計算中…",

@@ -7,8 +7,12 @@
 
 	let {
 		onClose,
+		onOpenCcs,
 	}: {
 		onClose: () => void;
+		// MIG-074 Q5 — mutual deep-link to the Circulatory System (CCS).
+		// Optional: absent when the CCS plug-in is disabled.
+		onOpenCcs?: () => void;
 	} = $props();
 
 	interface LinkStats {
@@ -151,9 +155,14 @@
 	<div class="khd-container">
 		<div class="khd-header">
 			<h1>{$t('knowledgeHealth.title')}</h1>
-			<button class="khd-close" onclick={onClose} title={$t('common.close')} aria-label={$t('common.close')}>
-				<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-			</button>
+			<div class="khd-header-actions">
+				{#if onOpenCcs}
+					<button class="khd-ccs-link" onclick={onOpenCcs}>{$t('ccs.openFromKh')} →</button>
+				{/if}
+				<button class="khd-close" onclick={onClose} title={$t('common.close')} aria-label={$t('common.close')}>
+					<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+				</button>
+			</div>
 		</div>
 
 		{#if loading}
@@ -301,6 +310,21 @@
 		font-size: 1.4rem;
 		font-weight: 700;
 	}
+	.khd-header-actions {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+	.khd-ccs-link {
+		background: var(--background-secondary);
+		border: 1px solid var(--background-modifier-border);
+		border-radius: 6px;
+		color: var(--text-muted);
+		font-size: 0.75rem;
+		padding: 5px 10px;
+		cursor: pointer;
+	}
+	.khd-ccs-link:hover { color: var(--text-normal); }
 	.khd-close {
 		background: none;
 		border: none;

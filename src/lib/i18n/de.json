@@ -2471,6 +2471,64 @@
 		"reset": "Zurücksetzen",
 		"resetAll": "Alles zurücksetzen"
 	},
+	"ccs": {
+		"title": "Constellation-Kreislaufsystem (CCS)",
+		"tagline": "Der Puls deines Denkens — welche Verbindungen leben, abkühlen, gefestigt sind oder im Ruhestand.",
+		"computing": "Wissenspuls wird gemessen…",
+		"scope": "Dieses Universum",
+		"openFromKh": "Kreislaufsystem",
+		"living": {
+			"title": "Lebendige Verbindungen",
+			"question": "Worüber denke ich gerade aktiv nach?",
+			"empty": "Noch nichts im aktiven Kreislauf — öffne Notizen und folge Links, um sie zu wärmen."
+		},
+		"loadBearing": {
+			"title": "Tragendes Denken",
+			"question": "Worauf ruht mein Verständnis?",
+			"empty": "Noch keine tragenden Verbindungen — Gewicht entsteht durch Wiederkehr zu einem Link."
+		},
+		"cooling": {
+			"title": "Abkühlende Fragen",
+			"question": "Wohin kehre ich nicht mehr zurück?",
+			"empty": "Nichts kühlt ab — jede begangene Verbindung ist noch warm."
+		},
+		"conviction": {
+			"title": "Überzeugung & Zweifel",
+			"question": "Wie gefestigt ist mein Denken?",
+			"empty": "Keine umstrittenen Verbindungen — derzeit keine lebendigen Dispute."
+		},
+		"life": {
+			"title": "Das Leben einer Verbindung",
+			"question": "Wo stehen meine Verbindungen in ihrem Lebenszyklus?"
+		},
+		"retired": {
+			"title": "Denken im Ruhestand",
+			"question": "Was habe ich beiseitegelegt — und kann es wiederbeleben?",
+			"empty": "Nichts im Ruhestand — keine archivierten Verbindungen."
+		},
+		"acts": {
+			"title": "Die Akte des Fragens",
+			"question": "Welche Arten des Denkens betreibe ich?"
+		},
+		"openInquiries": "Offene Fragen",
+		"openInquiriesHint": "Verbindungen, die noch fragen, wie sie zusammengehören — die lebendige Kante des Denkens.",
+		"tier": {
+			"fresh": "Frisch",
+			"emerging": "Aufkommend",
+			"established": "Etabliert",
+			"loadBearing": "Tragend",
+			"stale": "Veraltet"
+		},
+		"meta": {
+			"walks": "{n} Begehungen",
+			"lastWalked": "zuletzt begangen {date}",
+			"idleDays": "{n} Tage ruhend",
+			"total": "{n} gesamt"
+		},
+		"showAll": "Alle anzeigen",
+		"restore": "Wiederherstellen",
+		"restored": "Wiederhergestellt"
+	},
 	"knowledgeHealth": {
 		"title": "Wissensgesundheit",
 		"loading": "Gesundheitssnapshot wird berechnet…",

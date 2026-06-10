@@ -2911,6 +2911,64 @@
 		"reset": "重置",
 		"resetAll": "全部重置"
 	},
+	"ccs": {
+		"title": "星座循环系统（CCS）",
+		"tagline": "你思考的脉搏——哪些连接是活的、正在冷却、已经安定，或已退役。",
+		"computing": "正在为你的知识把脉…",
+		"scope": "本宇宙",
+		"openFromKh": "循环系统",
+		"living": {
+			"title": "活跃的连接",
+			"question": "我此刻正在主动思考什么？",
+			"empty": "尚无活跃循环——打开笔记、沿链接行走，让它们暖起来。"
+		},
+		"loadBearing": {
+			"title": "承重的推理",
+			"question": "我的理解建立在什么之上？",
+			"empty": "尚无承重连接——重量靠不断回访一条链接而积累。"
+		},
+		"cooling": {
+			"title": "正在冷却的追问",
+			"question": "我不再回访什么？",
+			"empty": "没有正在冷却的连接——每条走过的连接都还温热。"
+		},
+		"conviction": {
+			"title": "确信与怀疑",
+			"question": "我的思考有多安定？",
+			"empty": "没有存疑链接——眼下没有活跃的争议。"
+		},
+		"life": {
+			"title": "一条连接的一生",
+			"question": "我的链接处于生命周期的哪个阶段？"
+		},
+		"retired": {
+			"title": "退役的推理",
+			"question": "我搁置了什么——还能复苏吗？",
+			"empty": "没有退役内容——没有已归档的链接。"
+		},
+		"acts": {
+			"title": "探究的行为",
+			"question": "我在进行哪些类型的思考？"
+		},
+		"openInquiries": "开放的追问",
+		"openInquiriesHint": "仍在追问彼此如何关联的连接——思考的活跃边缘。",
+		"tier": {
+			"fresh": "新建",
+			"emerging": "萌发",
+			"established": "确立",
+			"loadBearing": "承重",
+			"stale": "陈旧"
+		},
+		"meta": {
+			"walks": "{n} 次走访",
+			"lastWalked": "最近走访 {date}",
+			"idleDays": "闲置 {n} 天",
+			"total": "共 {n}"
+		},
+		"showAll": "显示全部",
+		"restore": "恢复",
+		"restored": "已恢复"
+	},
 	"knowledgeHealth": {
 		"title": "知识健康",
 		"loading": "正在计算健康快照…",

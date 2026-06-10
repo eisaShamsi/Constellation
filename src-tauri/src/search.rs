@@ -5324,10 +5324,15 @@ pub fn constellation_link_dormant(
 // ─── P4: Formulation Analysis (Knowledge Diagnostics) ────────
 
 /// A formulation insight — one row from a diagnostic query.
+/// MIG-074 §B added the two path fields (additive serde — existing consumers
+/// ignore them) so the CCS registers can OPEN a row's note; aggregate rows
+/// (bias_check / most_connected) carry empty paths.
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct FormulationInsight {
     pub source_name: String,
+    pub source_path: String,
     pub target_name: String,
+    pub target_path: String,
     pub link_type: String,
     pub annotation: String,
     pub weight: f64,
@@ -5376,7 +5381,7 @@ pub(crate) fn compute_formulation_analysis(
         "strongest_evidence" => {
             // Top supports for a target, ranked by weight × confidence multiplier
             let mut stmt = conn.prepare(
-                "SELECT source_name, target_name, link_type, annotation, weight, confidence, traversal_count, last_traversed, library_name
+                "SELECT source_name, source_path, target_name, COALESCE(target_path, ''), link_type, annotation, weight, confidence, traversal_count, last_traversed, library_name
                  FROM note_links WHERE link_type = 'supports' AND status = 'active'
                  AND (?1 = '' OR LOWER(target_name) LIKE '%' || ?1 || '%')
                  ORDER BY weight DESC LIMIT 50"
@@ -5393,7 +5398,7 @@ pub(crate) fn compute_formulation_analysis(
         "weak_foundations" => {
             // hypothesis links with high weight — building on uncertain ground
             let mut stmt = conn.prepare(
-                "SELECT source_name, target_name, link_type, annotation, weight, confidence, traversal_count, last_traversed, library_name
+                "SELECT source_name, source_path, target_name, COALESCE(target_path, ''), link_type, annotation, weight, confidence, traversal_count, last_traversed, library_name
                  FROM note_links WHERE confidence = 'hypothesis' AND weight > 2.0 AND status = 'active'
                  ORDER BY weight DESC LIMIT 50"
             ).map_err(|e| e.to_string())?;
@@ -5402,7 +5407,7 @@ pub(crate) fn compute_formulation_analysis(
         "tensions" => {
             // contradicts links for a target
             let mut stmt = conn.prepare(
-                "SELECT source_name, target_name, link_type, annotation, weight, confidence, traversal_count, last_traversed, library_name
+                "SELECT source_name, source_path, target_name, COALESCE(target_path, ''), link_type, annotation, weight, confidence, traversal_count, last_traversed, library_name
                  FROM note_links WHERE link_type = 'contradicts' AND status = 'active'
                  AND (?1 = '' OR LOWER(target_name) LIKE '%' || ?1 || '%')
                  ORDER BY weight DESC LIMIT 50"
@@ -5412,7 +5417,7 @@ pub(crate) fn compute_formulation_analysis(
         "stagnating" => {
             // high-weight links gone dormant
             let mut stmt = conn.prepare(
-                "SELECT source_name, target_name, link_type, annotation, weight, confidence, traversal_count, last_traversed, library_name
+                "SELECT source_name, source_path, target_name, COALESCE(target_path, ''), link_type, annotation, weight, confidence, traversal_count, last_traversed, library_name
                  FROM note_links WHERE status = 'dormant' AND weight > 2.0
                  ORDER BY weight DESC LIMIT 50"
             ).map_err(|e| e.to_string())?;
@@ -5421,7 +5426,7 @@ pub(crate) fn compute_formulation_analysis(
         "abandoned" => {
             // archived links
             let mut stmt = conn.prepare(
-                "SELECT source_name, target_name, link_type, annotation, weight, confidence, traversal_count, last_traversed, library_name
+                "SELECT source_name, source_path, target_name, COALESCE(target_path, ''), link_type, annotation, weight, confidence, traversal_count, last_traversed, library_name
                  FROM note_links WHERE status = 'archived'
                  ORDER BY last_traversed DESC LIMIT 50"
             ).map_err(|e| e.to_string())?;
@@ -5430,7 +5435,7 @@ pub(crate) fn compute_formulation_analysis(
         "emerging" => {
             // hypothesis + recently traversed (curiosity without proof yet)
             let mut stmt = conn.prepare(
-                "SELECT source_name, target_name, link_type, annotation, weight, confidence, traversal_count, last_traversed, library_name
+                "SELECT source_name, source_path, target_name, COALESCE(target_path, ''), link_type, annotation, weight, confidence, traversal_count, last_traversed, library_name
                  FROM note_links WHERE confidence = 'hypothesis' AND traversal_count > 0 AND status = 'active'
                  ORDER BY traversal_count DESC, weight DESC LIMIT 50"
             ).map_err(|e| e.to_string())?;
@@ -5450,7 +5455,9 @@ pub(crate) fn compute_formulation_analysis(
             let rows = stmt.query_map([], |row| {
                 Ok(FormulationInsight {
                     source_name: String::new(),
+                    source_path: String::new(),
                     target_name: row.get(0)?,
+                    target_path: String::new(),
                     link_type: "bias".to_string(),
                     annotation: format!("{} supports, {} contradicts", row.get::<_, i64>(1)?, row.get::<_, i64>(2)?),
                     weight: row.get::<_, i64>(1)? as f64,
@@ -5473,7 +5480,9 @@ pub(crate) fn compute_formulation_analysis(
             let rows = stmt.query_map([], |row| {
                 Ok(FormulationInsight {
                     source_name: String::new(),
+                    source_path: String::new(),
                     target_name: row.get(0)?,
+                    target_path: String::new(),
                     link_type: row.get::<_, String>(2).unwrap_or_default(),
                     annotation: format!("{} incoming links", row.get::<_, i64>(1)?),
                     weight: row.get::<_, f64>(3).unwrap_or(1.0),
@@ -5497,14 +5506,16 @@ fn query_insights(
     let rows = stmt.query_map(params, |row| {
         Ok(FormulationInsight {
             source_name: row.get(0)?,
-            target_name: row.get(1)?,
-            link_type: row.get(2)?,
-            annotation: row.get(3)?,
-            weight: row.get(4)?,
-            confidence: row.get(5)?,
-            traversal_count: row.get(6)?,
-            last_traversed: row.get(7)?,
-            library_name: row.get(8)?,
+            source_path: row.get(1)?,
+            target_name: row.get(2)?,
+            target_path: row.get(3)?,
+            link_type: row.get(4)?,
+            annotation: row.get(5)?,
+            weight: row.get(6)?,
+            confidence: row.get(7)?,
+            traversal_count: row.get(8)?,
+            last_traversed: row.get(9)?,
+            library_name: row.get(10)?,
         })
     }).map_err(|e| e.to_string())?;
     Ok(rows.filter_map(|r| r.ok()).collect())
@@ -5711,7 +5722,7 @@ pub(crate) fn compute_ccs_register(conn: &Connection, kind: &str) -> Result<serd
     ).unwrap_or(0);
 
     let mut stmt = conn.prepare(&format!(
-        "SELECT source_name, target_name, link_type, annotation, weight, confidence, traversal_count, last_traversed, library_name \
+        "SELECT source_name, source_path, target_name, COALESCE(target_path, ''), link_type, annotation, weight, confidence, traversal_count, last_traversed, library_name \
          FROM note_links WHERE {} {} LIMIT 20",
         where_clause, order_clause
     )).map_err(|e| e.to_string())?;
@@ -5786,7 +5797,8 @@ mod tests_mig074_ccs {
         let conn = Connection::open_in_memory().unwrap();
         conn.execute_batch(
             "CREATE TABLE note_links (
-                source_name TEXT DEFAULT '', target_name TEXT DEFAULT '',
+                source_name TEXT DEFAULT '', source_path TEXT DEFAULT '',
+                target_name TEXT DEFAULT '', target_path TEXT,
                 link_type TEXT DEFAULT 'relates', annotation TEXT DEFAULT '',
                 weight REAL DEFAULT 1.0, confidence TEXT DEFAULT 'hypothesis',
                 traversal_count INTEGER DEFAULT 0, last_traversed TEXT DEFAULT '',
@@ -5794,7 +5806,7 @@ mod tests_mig074_ccs {
                 created TEXT DEFAULT ''
              );",
         ).unwrap();
-        let mut insert = |tc: i64, lt_days: Option<i64>, weight: f64, status: &str,
+        let insert = |tc: i64, lt_days: Option<i64>, weight: f64, status: &str,
                           confidence: &str, created_days: i64, name: &str| {
             // 'T'-separated ISO like production's RFC3339 (traverse is the
             // column's only writer) — the string-range predicates compare

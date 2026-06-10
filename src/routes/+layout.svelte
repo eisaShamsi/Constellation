@@ -90,6 +90,7 @@
 	import { embedNotes, embeddingStatus } from '$lib/libraries/store';
 	import DashboardView from '$lib/components/DashboardView.svelte';
 	import KnowledgeHealthDashboard from '$lib/components/KnowledgeHealthDashboard.svelte';
+	import CCSView from '$lib/components/CCSView.svelte';
 	import TasksPanel from '$lib/components/TasksPanel.svelte';
 	import CalendarPanel from '$lib/components/CalendarPanel.svelte';
 	import GlobalTasksView from '$lib/components/GlobalTasksView.svelte';
@@ -412,6 +413,7 @@
 	let showConstellationMap = $state(false);
 	let showSearchHub = $state(false);
 	let showKnowledgeHealth = $state(false);
+	let showCCS = $state(false); // MIG-074 — CCS (Constellation Circulatory System) left-dock Core Plug-in
 	let showPicker = $state(false);
 	let searchHubMatchIds = $state<Set<string> | null>(null);
 	let searchHubReturnPending = $state(false);
@@ -1823,7 +1825,8 @@
 			{ id: 'expression-forge', name: $t('commands.expressionForge') || 'Expression Forge', icon: '✨', action: () => { showCommandPalette = false; showExpressionForge = !showExpressionForge; showSkyView = false; showGlobalTasks = false; showIndex = false; showSenseMakingCanvas = false; showConstellationMap = false; showInspector360 = false; }, category: 'View' },
 			...($appSettings.enabledFeatures?.constellationMap === true ? [{ id: 'constellation-map', name: $t('commands.constellationMap') || 'Constellation Map', icon: '🗺️', action: () => { showCommandPalette = false; showConstellationMap = !showConstellationMap; showSkyView = false; showGlobalTasks = false; showIndex = false; showExpressionForge = false; showSenseMakingCanvas = false; showInspector360 = false; mapReturnPending = false; }, category: 'View' }] : []),
 			{ id: 'sense-making-canvas', name: $t('commands.senseMakingCanvas') || 'Sense-Making Canvas', icon: '🎨', action: () => { showCommandPalette = false; showSenseMakingCanvas = !showSenseMakingCanvas; showSkyView = false; showGlobalTasks = false; showIndex = false; showExpressionForge = false; showConstellationMap = false; showInspector360 = false; }, category: 'View' },
-			{ id: 'knowledge-health', name: 'Knowledge Health', icon: '🧠', action: () => { showCommandPalette = false; showKnowledgeHealth = true; }, category: 'View' },
+			{ id: 'knowledge-health', name: 'Knowledge Health', icon: '🧠', action: () => { showCommandPalette = false; showKnowledgeHealth = true; showCCS = false; }, category: 'View' },
+			...($appSettings.enabledFeatures?.ccs !== false ? [{ id: 'ccs', name: $t('ccs.title') || 'Constellation Circulatory System', icon: '🫀', action: () => { showCommandPalette = false; showCCS = true; showKnowledgeHealth = false; }, category: 'View' }] : []),
 			{ id: 'import-notes', name: $t('commands.importNotes'), shortcut: sc('import-notes'), icon: '📥', action: () => { showCommandPalette = false; showImporter = true; }, category: 'App' },
 			{ id: 'settings', name: $t('commands.settings'), shortcut: sc('settings'), icon: '⚙️', action: () => { showCommandPalette = false; showSettings = true; }, category: 'App' },
 			{ id: 'add-property', name: $t('commands.addProperty'), shortcut: sc('add-property'), icon: '✎', action: () => { showCommandPalette = false; document.dispatchEvent(new CustomEvent('constellation:add-property')); }, category: 'Editor' },
@@ -2239,6 +2242,7 @@
 		inspector360Data = null;
 		inspector360BackStack = [];
 		mapFocusNode = null;
+		showCCS = false; // MIG-074 — close CCS on universe switch ({#if} unmount re-reads the new universe's snapshot on next open)
 
 		// Reset cache guard so refreshLibraryCaches can run for the new universe
 		cacheRefreshing = false;
@@ -2352,7 +2356,7 @@
 				case '360.3d':
 					showSkyView = false; showGlobalTasks = false; showIndex = false;
 					showConstellationMap = false; showOrgChart = false; showCataloger = false;
-					showKnowledgeHealth = false; showSearchHub = false;
+					showKnowledgeHealth = false; showCCS = false; showSearchHub = false;
 					showExpressionForge = false; showSenseMakingCanvas = false;
 					lensActive = false; sightV3Active = false; sightV4Active = false;
 					sightV5Active = false; sightV6Active = false;
@@ -2367,7 +2371,7 @@
 					showSkyView = false; showGlobalTasks = false; showIndex = false;
 					showConstellationMap = false; showOrgChart = false; showCataloger = false;
 					showInspector360 = false;
-					showKnowledgeHealth = false; showSearchHub = false;
+					showKnowledgeHealth = false; showCCS = false; showSearchHub = false;
 					showExpressionForge = false; showSenseMakingCanvas = false;
 					sightV3Active = false; sightV4Active = false;
 					sightV5Active = false; sightV6Active = false;
@@ -2382,7 +2386,7 @@
 				case 'cataloger':
 					showSkyView = false; showGlobalTasks = false; showIndex = false;
 					showConstellationMap = false; showOrgChart = false; showInspector360 = false;
-					showKnowledgeHealth = false; showSearchHub = false;
+					showKnowledgeHealth = false; showCCS = false; showSearchHub = false;
 					showExpressionForge = false; showSenseMakingCanvas = false;
 					lensActive = false; sightV3Active = false; sightV4Active = false;
 					sightV5Active = false; sightV6Active = false;
@@ -4825,7 +4829,7 @@
 			<button class="dock-btn" class:active={showKnowledgeHealth} onclick={() => {
 				showKnowledgeHealth = !showKnowledgeHealth;
 				if (showKnowledgeHealth) {
-					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showCataloger = false; showInspector360 = false;
+					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showCataloger = false; showInspector360 = false; showCCS = false;
 				}
 			}} title={$t('ribbon.knowledgeHealth') || 'Knowledge Health'}>
 				<SlotIcon slot="dock.knowledgeHealth">
@@ -4840,7 +4844,7 @@
 				</SlotIcon>
 			</button>
 			{#if $appSettings.enabledFeatures?.skyView !== false}
-			<button class="dock-btn" class:active={showSkyView} onclick={() => { showSkyView = !showSkyView; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showKnowledgeHealth = false; showInspector360 = false; showCataloger = false; }} title={$t('ribbon.graphView') || 'Sky View'}>
+			<button class="dock-btn" class:active={showSkyView} onclick={() => { showSkyView = !showSkyView; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showKnowledgeHealth = false; showCCS = false; showInspector360 = false; showCataloger = false; }} title={$t('ribbon.graphView') || 'Sky View'}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><circle cx="18" cy="6" r="3"/><path d="M6 9v6M9 6h6M15 18h-6"/></svg>
 			</button>
 			{/if}
@@ -4863,7 +4867,7 @@
 			<button class="dock-btn" class:active={showCataloger} onclick={() => {
 				showCataloger = !showCataloger;
 				if (showCataloger) {
-					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showKnowledgeHealth = false; showInspector360 = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; sightV6Active = false;
+					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showKnowledgeHealth = false; showCCS = false; showInspector360 = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; sightV6Active = false;
 				}
 				/* fullPageActive $effect handles sidebar snapshot */
 			}} title={$t('ribbon.cataloger') || 'The Cataloger'}>
@@ -4887,6 +4891,19 @@
 				/* fullPageActive $effect handles sidebar snapshot */
 			}} title={$t('lens.title') || 'Constellation Sight'}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.5"/><line x1="12" y1="9.5" x2="12" y2="5"/><circle cx="12" cy="3.5" r="1.5"/><line x1="10.2" y1="13.8" x2="5.5" y2="18.5"/><circle cx="4" cy="20" r="1.5"/><line x1="13.8" y1="13.8" x2="18.5" y2="18.5"/><circle cx="20" cy="20" r="1.5"/></svg>
+			</button>
+			{/if}
+			<!-- MIG-074 — CCS (Constellation Circulatory System), the circulatory
+			     complement of CNS: placed directly after it (Q1 ruling). ECG
+			     pulse-waveform icon — "the pulse of your thinking". -->
+			{#if $appSettings.enabledFeatures?.ccs !== false}
+			<button class="dock-btn" class:active={showCCS} onclick={() => {
+				showCCS = !showCCS;
+				if (showCCS) {
+					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showCataloger = false; showKnowledgeHealth = false; showInspector360 = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV5Active = false; sightV6Active = false;
+				}
+			}} title={$t('ccs.title') || 'Constellation Circulatory System'}>
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4l2-6 4 12 2-6h2"/><path d="M19.5 12a2.5 2.5 0 1 0 0-.01"/></svg>
 			</button>
 			{/if}
 			<!-- MIG-018 (PJ-038): v3 Sight dock button (star-chart engine) — RETIRED.
@@ -4960,7 +4977,7 @@
 				if (showInspector360) {
 					showSkyView = false; showGlobalTasks = false; showIndex = false;
 					showConstellationMap = false; showOrgChart = false; showCataloger = false; lensActive = false;
-					showKnowledgeHealth = false; showSearchHub = false;
+					showKnowledgeHealth = false; showCCS = false; showSearchHub = false;
 					showExpressionForge = false; showSenseMakingCanvas = false;
 				}
 			}} title={$t('inspector360.title') || '360° Inspector'}>
@@ -6863,7 +6880,27 @@
 	{/if}
 
 	{#if showKnowledgeHealth}
-		<KnowledgeHealthDashboard onClose={() => showKnowledgeHealth = false} />
+		<KnowledgeHealthDashboard
+			onClose={() => showKnowledgeHealth = false}
+			onOpenCcs={$appSettings.enabledFeatures?.ccs !== false ? (() => { showKnowledgeHealth = false; showCCS = true; }) : undefined}
+		/>
+	{/if}
+
+	<!-- MIG-074 — CCS full-page surface. Plain {#if} mount (the KHD pattern):
+	     a closed CCS is unmounted, so it does ZERO IPC while closed (LL-022);
+	     reopening re-reads the cached snapshot (one ~ms call). -->
+	{#if showCCS}
+		<CCSView
+			onClose={() => showCCS = false}
+			onNoteClick={(path, libraryName) => {
+				const lib = $libraryStats.find(l => l.name === libraryName) ?? $libraryStats.find(l => path.startsWith(l.path));
+				if (lib) {
+					openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed');
+					showCCS = false;
+				}
+			}}
+			onOpenKnowledgeHealth={() => { showCCS = false; showKnowledgeHealth = true; }}
+		/>
 	{/if}
 
 	{#if showPicker}

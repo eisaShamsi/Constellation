@@ -163,6 +163,8 @@
 				// MIG-039 — The Cataloger (CECE) Core Plug-in. id maps to enabledFeatures.cece;
 				// reuses the already-localized cataloger.title / cataloger.tagline keys.
 				{ id: 'cece', name: $t('cataloger.title') || 'The Cataloger', desc: $t('cataloger.tagline') || 'Classify each note by its kind of knowledge and its source.', icon: '🗃️' },
+				// MIG-074 — CCS (Constellation Circulatory System) Core Plug-in. id maps to enabledFeatures.ccs.
+				{ id: 'ccs', name: $t('ccs.title') || 'Constellation Circulatory System', desc: $t('ccs.tagline') || 'The pulse of your thinking — which connections are alive, cooling, settled, or retired.', icon: '🫀' },
 				{ id: 'semanticSearch', name: $t('settings.plugins.semanticSearch') || 'Semantic Search', desc: $t('settings.plugins.semanticSearchDesc') || 'Find conceptually related notes using AI', icon: '🧠' },
 			]
 		},

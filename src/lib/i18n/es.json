@@ -2471,6 +2471,64 @@
 		"reset": "Restablecer",
 		"resetAll": "Restablecer todo"
 	},
+	"ccs": {
+		"title": "Sistema Circulatorio de Constellation (CCS)",
+		"tagline": "El pulso de tu pensamiento: qué conexiones viven, se enfrían, se asientan o se retiran.",
+		"computing": "Tomando el pulso de tu conocimiento…",
+		"scope": "Este universo",
+		"openFromKh": "Sistema circulatorio",
+		"living": {
+			"title": "Conexiones vivas",
+			"question": "¿En qué estoy pensando activamente?",
+			"empty": "Nada en circulación activa aún: abre notas y sigue enlaces para calentarlos."
+		},
+		"loadBearing": {
+			"title": "Razonamiento que sostiene",
+			"question": "¿Sobre qué descansa mi comprensión?",
+			"empty": "Aún no hay conexiones que sostengan: el peso se gana volviendo a un enlace."
+		},
+		"cooling": {
+			"title": "Indagaciones que se enfrían",
+			"question": "¿A qué he dejado de volver?",
+			"empty": "Nada se enfría: cada conexión recorrida sigue cálida."
+		},
+		"conviction": {
+			"title": "Convicción y duda",
+			"question": "¿Qué tan asentado está mi pensamiento?",
+			"empty": "Sin enlaces en disputa: no hay desacuerdos vivos ahora."
+		},
+		"life": {
+			"title": "La vida de una conexión",
+			"question": "¿Dónde están mis enlaces en su ciclo de vida?"
+		},
+		"retired": {
+			"title": "Razonamiento retirado",
+			"question": "¿Qué aparté — y puedo revivir?",
+			"empty": "Nada retirado: no hay enlaces archivados."
+		},
+		"acts": {
+			"title": "Los actos de indagación",
+			"question": "¿Qué tipos de pensamiento practico?"
+		},
+		"openInquiries": "Indagaciones abiertas",
+		"openInquiriesHint": "Conexiones que aún preguntan cómo se relacionan: el borde vivo del pensamiento.",
+		"tier": {
+			"fresh": "Nueva",
+			"emerging": "Emergente",
+			"established": "Establecida",
+			"loadBearing": "De carga",
+			"stale": "Inactiva"
+		},
+		"meta": {
+			"walks": "{n} recorridos",
+			"lastWalked": "último recorrido {date}",
+			"idleDays": "{n} días inactiva",
+			"total": "{n} en total"
+		},
+		"showAll": "Mostrar todo",
+		"restore": "Restaurar",
+		"restored": "Restaurada"
+	},
 	"knowledgeHealth": {
 		"title": "Salud del conocimiento",
 		"loading": "Calculando instantánea de salud…",

@@ -2471,6 +2471,64 @@
 		"reset": "Réinitialiser",
 		"resetAll": "Tout réinitialiser"
 	},
+	"ccs": {
+		"title": "Système circulatoire Constellation (CCS)",
+		"tagline": "Le pouls de votre pensée — quelles connexions vivent, refroidissent, se posent ou prennent leur retraite.",
+		"computing": "Prise du pouls de votre savoir…",
+		"scope": "Cet univers",
+		"openFromKh": "Système circulatoire",
+		"living": {
+			"title": "Connexions vivantes",
+			"question": "À quoi suis-je en train de penser activement ?",
+			"empty": "Rien en circulation active pour l'instant — ouvrez des notes et suivez des liens pour les réchauffer."
+		},
+		"loadBearing": {
+			"title": "Raisonnement porteur",
+			"question": "Sur quoi repose ma compréhension ?",
+			"empty": "Pas encore de connexions porteuses — le poids se gagne en revenant à un lien."
+		},
+		"cooling": {
+			"title": "Questions qui refroidissent",
+			"question": "Vers quoi ai-je cessé de revenir ?",
+			"empty": "Rien ne refroidit — chaque connexion parcourue est encore chaude."
+		},
+		"conviction": {
+			"title": "Conviction et doute",
+			"question": "À quel point ma pensée est-elle posée ?",
+			"empty": "Aucun lien contesté — pas de désaccord vivant pour l'instant."
+		},
+		"life": {
+			"title": "La vie d'une connexion",
+			"question": "Où en sont mes liens dans leur cycle de vie ?"
+		},
+		"retired": {
+			"title": "Raisonnement retraité",
+			"question": "Qu'ai-je mis de côté — et que puis-je raviver ?",
+			"empty": "Rien de retraité — aucun lien archivé."
+		},
+		"acts": {
+			"title": "Les actes de l'enquête",
+			"question": "Quels genres de pensée est-ce que je pratique ?"
+		},
+		"openInquiries": "Questions ouvertes",
+		"openInquiriesHint": "Des connexions qui demandent encore comment elles se relient — le bord vivant de la pensée.",
+		"tier": {
+			"fresh": "Neuve",
+			"emerging": "Émergente",
+			"established": "Établie",
+			"loadBearing": "Porteuse",
+			"stale": "Inactive"
+		},
+		"meta": {
+			"walks": "{n} parcours",
+			"lastWalked": "dernier parcours {date}",
+			"idleDays": "inactive depuis {n} jours",
+			"total": "{n} au total"
+		},
+		"showAll": "Tout afficher",
+		"restore": "Restaurer",
+		"restored": "Restaurée"
+	},
 	"knowledgeHealth": {
 		"title": "Santé des connaissances",
 		"loading": "Calcul de la capture de santé…",

@@ -686,6 +686,64 @@
 		"reset": "Reset",
 		"resetAll": "Reset all"
 	},
+	"ccs": {
+		"title": "Constellation Circulatory System (CCS)",
+		"tagline": "The pulse of your thinking — which connections are alive, cooling, settled, or retired.",
+		"computing": "Taking your knowledge pulse…",
+		"scope": "This universe",
+		"openFromKh": "Circulatory System",
+		"living": {
+			"title": "Living Connections",
+			"question": "What am I actively thinking through?",
+			"empty": "Nothing is in active circulation yet — open notes and follow links to warm them."
+		},
+		"loadBearing": {
+			"title": "Load-Bearing Reasoning",
+			"question": "What does my understanding rest on?",
+			"empty": "No load-bearing connections yet — weight is earned by returning to a link."
+		},
+		"cooling": {
+			"title": "Cooling Inquiries",
+			"question": "What have I stopped returning to?",
+			"empty": "Nothing is cooling — every walked connection is still warm."
+		},
+		"conviction": {
+			"title": "Conviction & Doubt",
+			"question": "How settled is my thinking?",
+			"empty": "No contested links — no live disputes right now."
+		},
+		"life": {
+			"title": "The Life of a Connection",
+			"question": "Where are my links in their lifecycle?"
+		},
+		"retired": {
+			"title": "Retired Reasoning",
+			"question": "What did I set aside — and can revive?",
+			"empty": "Nothing retired — no archived links."
+		},
+		"acts": {
+			"title": "The Acts of Inquiry",
+			"question": "What kinds of thinking am I doing?"
+		},
+		"openInquiries": "Open inquiries",
+		"openInquiriesHint": "Connections still asking how they relate — the live edge of thinking.",
+		"tier": {
+			"fresh": "Fresh",
+			"emerging": "Emerging",
+			"established": "Established",
+			"loadBearing": "Load-bearing",
+			"stale": "Stale"
+		},
+		"meta": {
+			"walks": "{n} walks",
+			"lastWalked": "last walked {date}",
+			"idleDays": "idle {n} days",
+			"total": "{n} total"
+		},
+		"showAll": "Show all",
+		"restore": "Restore",
+		"restored": "Restored"
+	},
 	"knowledgeHealth": {
 		"title": "Knowledge Health",
 		"loading": "Computing health snapshot…",

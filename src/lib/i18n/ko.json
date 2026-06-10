@@ -2911,6 +2911,64 @@
 		"reset": "초기화",
 		"resetAll": "모두 초기화"
 	},
+	"ccs": {
+		"title": "별자리 순환계 (CCS)",
+		"tagline": "당신 사고의 맥박 — 어떤 연결이 살아 있고, 식어 가고, 자리 잡았고, 은퇴했는지.",
+		"computing": "지식의 맥박을 재는 중…",
+		"scope": "이 우주",
+		"openFromKh": "순환계",
+		"living": {
+			"title": "살아 있는 연결",
+			"question": "지금 무엇을 활발히 생각하고 있는가?",
+			"empty": "아직 활발히 순환하는 것이 없습니다 — 노트를 열고 링크를 따라가 데워 보세요."
+		},
+		"loadBearing": {
+			"title": "하중을 받치는 추론",
+			"question": "내 이해는 무엇 위에 놓여 있는가?",
+			"empty": "아직 받치는 연결이 없습니다 — 무게는 링크로 되돌아갈 때 쌓입니다."
+		},
+		"cooling": {
+			"title": "식어 가는 물음",
+			"question": "무엇으로 더는 돌아가지 않는가?",
+			"empty": "식어 가는 것이 없습니다 — 걸어 본 연결은 모두 아직 따뜻합니다."
+		},
+		"conviction": {
+			"title": "확신과 의심",
+			"question": "내 사고는 얼마나 자리 잡았는가?",
+			"empty": "쟁점이 된 링크가 없습니다 — 지금 살아 있는 논쟁이 없습니다."
+		},
+		"life": {
+			"title": "연결의 일생",
+			"question": "내 링크는 생애 주기의 어디에 있는가?"
+		},
+		"retired": {
+			"title": "은퇴한 추론",
+			"question": "무엇을 제쳐 두었나 — 되살릴 수 있나?",
+			"empty": "은퇴한 것이 없습니다 — 보관된 링크가 없습니다."
+		},
+		"acts": {
+			"title": "탐구의 행위",
+			"question": "나는 어떤 종류의 사고를 하고 있는가?"
+		},
+		"openInquiries": "열린 물음",
+		"openInquiriesHint": "어떻게 이어지는지 아직 묻고 있는 연결 — 사고의 살아 있는 가장자리.",
+		"tier": {
+			"fresh": "새 연결",
+			"emerging": "움트는",
+			"established": "자리 잡은",
+			"loadBearing": "받치는",
+			"stale": "식은"
+		},
+		"meta": {
+			"walks": "{n}회 통과",
+			"lastWalked": "마지막 통과 {date}",
+			"idleDays": "{n}일 휴면",
+			"total": "총 {n}"
+		},
+		"showAll": "모두 보기",
+		"restore": "복원",
+		"restored": "복원됨"
+	},
 	"knowledgeHealth": {
 		"title": "지식 건강",
 		"loading": "건강 스냅샷 계산 중…",
