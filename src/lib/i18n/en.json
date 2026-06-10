@@ -1748,7 +1748,6 @@
 		"toggle": "Toolbar On/Off"
 	},
 	"tensionPanel": {
-		"loading": "Loading...",
 		"inactive": "Add more links to activate knowledge health monitoring.",
 		"linkedNotes": "linked notes",
 		"contradictions": "Contradictions",

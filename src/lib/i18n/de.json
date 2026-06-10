@@ -1200,7 +1200,6 @@
 		"toggle": "Symbolleiste Ein/Aus"
 	},
 	"tensionPanel": {
-		"loading": "Wird geladen...",
 		"inactive": "Fügen Sie mehr Links hinzu, um die Wissensgesundheitsüberwachung zu aktivieren.",
 		"linkedNotes": "verknüpfte Notizen",
 		"contradictions": "Widersprüche",

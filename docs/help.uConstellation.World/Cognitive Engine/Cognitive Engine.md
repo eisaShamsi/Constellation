@@ -206,7 +206,7 @@ There is no manual tagging. The states are computed every time you open your lib
 
 ### What it is
 
-The Tension Detector analyzes your knowledge network for structural problems that you cannot see by reading individual notes. It surfaces four types of issues:
+The Tension Detector analyzes your knowledge network for structural problems that you cannot see by reading individual notes. It runs on demand: opening its right-sidebar tab with a note active analyzes that note's library (a brief *"Analyzing library…"* appears, then the result is reused). It surfaces four types of issues:
 
 1. **Contradictions** — pairs of notes you have explicitly linked with `|contradicts`
 2. **Orphan Notes** — notes with meaningful content but zero inbound links
@@ -223,7 +223,7 @@ The Tension Detector makes these invisible problems visible. It does not tell yo
 
 **Contradictions**
 
-These are notes you have linked with `[[note|contradicts]]`. The Tension Detector collects them in one place so you can see all acknowledged tensions at a glance. Contradictions are not errors — they are signs of intellectual honesty. A knowledge base with zero contradictions is either very small or suspiciously tidy.
+These are notes you have linked with `[[note|contradicts]]`. The Tension Detector collects them in one place so you can see all acknowledged tensions at a glance. A pair linked as contradicting several times shows as one row with a ×N count. Contradictions are not errors — they are signs of intellectual honesty. A knowledge base with zero contradictions is either very small or suspiciously tidy.
 
 Each contradiction is marked as **high severity** because it represents an unresolved intellectual tension.
 

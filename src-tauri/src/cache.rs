@@ -1127,8 +1127,8 @@ pub fn cache_reconcile(app: tauri::AppHandle) -> Result<(), String> {
 
 /// MIG-067 — the boot-time, WALK-FREE counterpart to `cache_reconcile`. Ensures
 /// the search DB connection is ready and fires the same `cache-reconciled` event
-/// the frontend listens for (which loads incoming link counts, marks search
-/// ready, and runs link decay) — but WITHOUT `reconcile_filesystem`'s stat-every-
+/// the frontend listens for (which loads incoming link counts and marks search
+/// ready) — but WITHOUT `reconcile_filesystem`'s stat-every-
 /// file walk. That walk is what the ZERO BOOT-TIME WALKS rule forbids on boot;
 /// it belongs only to the live watcher or an explicit Settings → Rebuild Index.
 /// (A §B-era boot `cache_reconcile` re-introduced the walk and was the audible

@@ -1200,7 +1200,6 @@
 		"toggle": "Barre d'outils On/Off"
 	},
 	"tensionPanel": {
-		"loading": "Chargement...",
 		"inactive": "Ajoutez plus de liens pour activer la surveillance de la santé des connaissances.",
 		"linkedNotes": "notes liées",
 		"contradictions": "Contradictions",

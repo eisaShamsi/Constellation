@@ -334,6 +334,37 @@ contradicts "ISBN (identifier)" ×~40) — `detect_tensions` emits one row per w
 suffix on repeats + a stable sort (count desc, then source name — HashMap order was random per open).
 Orphans/single-points unaffected (`inbound_sources` was already a per-source set). cargo check 0 errors.
 
+## §MIG-073 P4 + CLOSE — /simplify + 3-agent audit + close-out (2026-06-10)
+
+**Stage-4 Boss tests: BOTH PASS** (deduped ×N list; freshness — Total Links updates in place after a new link).
+
+**Audit (4 parallel agents):** invariants **8/8 PASS** (I1 no open-scan · I2 lock-drop-before-spawn · I3 bulk
+reindex · I4 reversible · I5 background population · I9 decay display-only · Rule-2 no $effect loop ·
+Rule-4 no leaks); drift **10/10 CLEAN** (single emitter/listener `kh-snapshot-ready`; single IPC reg/caller;
+key-set single-sourced; locale parity 15/15; no CSS leakage); migration-path 4 PASS + 2 RISK — **Scenario 2
+(medium) FIXED in close-out**: a missing `link_stats_cache` table (restored/pre-MIG DB) hard-errored the
+snapshot IPC into a silent dead panel → now treated as empty cache (`{ready:false}` + self-healing populate;
+match-scrutinee-lifetime E0597 dodged via a bound local). Scenario 4 (universe switch mid-recompute)
+ACCEPTED-benign (derived data; 5s poll + SWR self-correct; documented).
+
+**/simplify fix-set shipped:** dead `linkDecay()` wrapper + `LinkDecayResult` removed (P1 — its only caller
+died with the decay job); stale comments fixed (cache.rs "runs link decay"; store.ts `getLinkStage` doc →
+`compute_lifecycle_distribution` + dormancy marked historical-only; `kh_cache_recompute_blocking` doc names
+which caller passes which mode); orphaned `tensionPanel.loading` key removed ×15 (verified −1/+0/~0 per
+file). **Notable /simplify finding:** nothing writes `status='dormant'` anymore (the write-decay set it) —
+dormancy is historical-rows-only until a read-time derivation ships (CCS-era). Skipped as out-of-scope: the
+pre-dead Sight wrapper cluster (linkStats/formulationAnalysis/getLinkStage — possible future Wings API);
+dynamic-import → static (cosmetic); `decayed`/`new_dormant` vestigial zeros (back-compat shape). The agent
+filed chip task_5b7f7272 for the KHD hardcoded-EN i18n drift (pre-existing).
+
+**Docs:** EN User Manual §18.4 + EN help topic (Cognitive Engine Feature 4) updated — on-demand analyzing,
+active-note's-library scope, ×N dedupe, scrolling. **Translation debt logged:** the 14 `docs/help.{lang}/`
+manuals are stale snapshots (e.g. fr 1,338 lines vs EN 2,078) and mostly LACK the Tension chapter — patching
+two sentences into chapters that don't exist is meaningless; flagged for a dedicated translation-sync pass.
+
+**Orientation v2.63 written** (new file; v2.62 preserved): preamble (decay corruption · MIG-073 · tab fix ·
+polish set), §8 MIG-073 row → ✅ Closed. **MIG-073 → CLOSED.**
+
 **P3 shipped (as-built deviations logged in the Plan doc §P3):** reconcile-walk hook → **unconditional**
 recompute (the true bulk settle point); `links_backfill` hook **dropped** (verified: it never mutates
 `note_links` — hooking it adds nothing); freshness window **10 → 2 min** (plan-marked tunable; open-driven

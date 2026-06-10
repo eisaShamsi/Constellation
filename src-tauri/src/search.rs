@@ -5669,11 +5669,12 @@ pub(crate) fn recompute_link_stats_cache(conn: &Connection) -> Result<(), String
     Ok(())
 }
 
-/// Recompute on THIS thread via a dedicated connection (callers are already on
-/// a background thread, e.g. cache_reconcile's walker). `only_if_empty` makes
-/// it the one-off first-time population (Rule 8): when the cache already
-/// exists the call is a single COUNT — no recurring boot scan, so MIG-067's
-/// zero-boot-walks rule stays honored.
+/// Recompute on THIS thread via a dedicated connection. Two callers:
+/// cache_reconcile's walker passes `only_if_empty = false` (a finished walk is
+/// the bulk-link-change settle point — refresh unconditionally), while
+/// cache_mark_search_ready's boot spawn passes `true` — the one-off first-time
+/// population (Rule 8): once the cache exists, every later boot is a single
+/// COUNT, so MIG-067's zero-boot-walks rule stays honored.
 pub(crate) fn kh_cache_recompute_blocking(app: &tauri::AppHandle, only_if_empty: bool) {
     use std::sync::atomic::Ordering;
     if KH_RECOMPUTE_IN_FLIGHT
@@ -5722,27 +5723,42 @@ pub(crate) fn spawn_kh_cache_recompute(app: &tauri::AppHandle, only_if_empty: bo
 /// (stale-while-revalidate).
 #[tauri::command]
 pub fn constellation_knowledge_health_snapshot(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
-    let (mut payloads, max_age_minutes) = {
+    let snapshot = {
         let state = app.state::<SearchState>();
         let db = state.db.lock().map_err(|e| e.to_string())?;
         let conn = db.as_ref().ok_or("Search DB not initialized")?;
-        let mut payloads: std::collections::HashMap<String, String> = std::collections::HashMap::new();
-        let mut max_age: f64 = 0.0;
-        let mut stmt = conn.prepare(
+        // A missing table (restored / pre-MIG-073 DB where init_db hasn't run)
+        // is treated exactly like an empty cache: fall through to the
+        // background populate, whose CREATE TABLE IF NOT EXISTS self-heals the
+        // schema (P4-audit Scenario 2 — never a silent dead-end in the panel).
+        // (Bound to a local first: a match-scrutinee temporary would outlive
+        // the block-local lock guards and trip E0597.)
+        let prepared = conn.prepare(
             "SELECT stat_key, payload, (julianday('now') - julianday(computed_at)) * 1440.0 \
              FROM link_stats_cache"
-        ).map_err(|e| e.to_string())?;
-        let rows = stmt.query_map([], |r| {
-            Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, Option<f64>>(2)?))
-        }).map_err(|e| e.to_string())?;
-        for row in rows.flatten() {
-            let (key, payload, age) = row;
-            payloads.insert(key, payload);
-            // A NULL age (unparseable computed_at) counts as maximally stale.
-            max_age = max_age.max(age.unwrap_or(f64::MAX));
+        );
+        match prepared {
+            Err(_) => None,
+            Ok(mut stmt) => {
+                let mut payloads: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+                let mut max_age: f64 = 0.0;
+                let rows = stmt.query_map([], |r| {
+                    Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, Option<f64>>(2)?))
+                }).map_err(|e| e.to_string())?;
+                for row in rows.flatten() {
+                    let (key, payload, age) = row;
+                    payloads.insert(key, payload);
+                    // A NULL age (unparseable computed_at) counts as maximally stale.
+                    max_age = max_age.max(age.unwrap_or(f64::MAX));
+                }
+                Some((payloads, max_age))
+            }
         }
-        (payloads, max_age)
     }; // SearchState lock dropped before any spawn below
+    let Some((mut payloads, max_age_minutes)) = snapshot else {
+        spawn_kh_cache_recompute(&app, false);
+        return Ok(serde_json::json!({ "ready": false }));
+    };
 
     if !KH_CACHE_KEYS.iter().all(|k| payloads.contains_key(*k)) {
         // First boot after MIG-073 (or a dropped/partial cache): populate in

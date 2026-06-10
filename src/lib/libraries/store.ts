@@ -1580,12 +1580,6 @@ export interface LinkStats {
 	sample_links: Array<{ source: string; target: string; type: string; annotation: string; confidence: string; weight: number }>;
 }
 
-export interface LinkDecayResult {
-	decayed: number;
-	new_dormant: number;
-	lifecycle: { birth: number; growth: number; maturity: number; dormancy: number; archived: number };
-}
-
 export interface FormulationInsight {
 	source_name: string;
 	target_name: string;
@@ -1606,9 +1600,9 @@ export async function linkStats(): Promise<LinkStats> {
 	return invoke('constellation_link_stats');
 }
 
-export async function linkDecay(): Promise<LinkDecayResult> {
-	return invoke('constellation_link_decay');
-}
+// (linkDecay() wrapper removed 2026-06-10 with MIG-073: its only caller — the
+// 24h decay job — was deleted when stored decay was retired; decay is
+// display-only via effectiveLinkWeight. The Rust IPC remains, read-only.)
 
 export type LinkConfidence = 'hypothesis' | 'evidence' | 'established' | 'contested';
 
@@ -1669,13 +1663,15 @@ export async function formulationAnalysis(queryType: FormulationQueryType, targe
 /**
  * Map a NoteLink-like row (with weight, traversal_count, last_traversed, status fields)
  * to its current lifecycle stage. Mirrors the Rust classification in
- * `constellation_link_decay` so the UI doesn't need a roundtrip per row.
+ * `compute_lifecycle_distribution` (search.rs) so the UI doesn't need a
+ * roundtrip per row.
  *
  *   spark      — created < 7 days ago, no traversal yet
  *   birth      — traversal_count = 0 (or weight ≤ 1)
  *   growth     — traversed at least once, weight < 5
  *   maturity   — weight ≥ 5
- *   dormancy   — status = 'dormant' (set by decay job after 90 days idle)
+ *   dormancy   — status = 'dormant' (historical rows only: the write-decay job
+ *                that set it was retired 2026-06-10 — decay is display-only)
  *   archival   — status = 'archived'
  */
 export type LinkStage = 'spark' | 'birth' | 'growth' | 'maturity' | 'dormancy' | 'archival';

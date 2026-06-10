@@ -428,7 +428,8 @@
       "Bash(Arabian Standard Time\"\\))",
       "Bash(bash regenerate.sh)",
       "Bash(grep -v \"^$\")",
-      "Bash(git rm *)"
+      "Bash(git rm *)",
+      "Bash(git pull *)"
     ]
   }
 }

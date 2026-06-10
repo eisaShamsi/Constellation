@@ -1796,9 +1796,9 @@ A library of notes can develop blind spots just like a person's thinking can. Yo
 
 **How to use it**
 
-1. Open the **Tension** tab in the right sidebar (it appears as a panel alongside your note properties).
+1. Open a note, then open the **Tension** tab in the right sidebar (it appears as a panel alongside your note properties). The analysis starts the moment the tab opens — you will briefly see *"Analyzing library…"* while Constellation scans the library the open note belongs to. The result is reused instantly until you move to a note from a different library.
 2. If your library has fewer than 50 linked notes, you will see a progress indicator showing how close you are to activation.
-3. Once active, the panel shows four collapsible sections: Contradictions, Orphan Notes, Structural Gaps, and Single Points of Failure.
+3. Once active, the panel shows four collapsible sections: Contradictions, Orphan Notes, Structural Gaps, and Single Points of Failure. If the same pair of notes is linked as contradicting more than once, it appears as a single row with a ×N count instead of repeated entries, and long lists scroll.
 4. Each issue has a severity indicator (red for high, amber for medium, gray for low).
 5. Click any item to open the relevant note directly.
 6. To resolve issues:

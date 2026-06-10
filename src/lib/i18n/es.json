@@ -1200,7 +1200,6 @@
 		"toggle": "Barra de herramientas On/Off"
 	},
 	"tensionPanel": {
-		"loading": "Cargando...",
 		"inactive": "Agregue más enlaces para activar el monitoreo de salud del conocimiento.",
 		"linkedNotes": "notas enlazadas",
 		"contradictions": "Contradicciones",
