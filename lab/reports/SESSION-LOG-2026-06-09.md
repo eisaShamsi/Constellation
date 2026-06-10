@@ -414,6 +414,21 @@ View / 360.3D in the localized set). Record lands in the next orientation versio
 post-close convention. **Queued next (Boss to direct): CCS `/migration` Architect, or PJ-060.** Open
 future item noted: per-locale labels for CUSTOM registry types (registry schema extension).
 
+## §SESSION CLOSE — PCS + Orientation + two-task handover (2026-06-10 ~14:15)
+
+Boss: *"PCS + Orientation, then prepare the handover files & prompt to start the CCS /migration
+Architect, and the PJ-060 on a fresh session."* Delivered in one close-out commit:
+- **Orientation v2.64** (new file; v2.63 preserved): preamble records the KHD localization ×15 + the
+  Arabic-pass fixes (relates ×15 · registry-label pill fallback app-wide · RTL match-parent) + this handover.
+- **`docs/handover/Handover-2026-06-10.md`**: state of play (MIG-073 closed; decay corruption killed —
+  dormancy now write-orphaned; tab fix; polish set; KHD localized), repo/build facts (binary 13:48;
+  1.7 GB search.db flag; CRLF/LF map), open follow-ups, and **two verbatim kickoff prompts** —
+  **Prompt A: CCS Architect** (Phase 1 only; ratify before Plan; explicit in/out rulings for
+  detect_tensions Rule-8 + read-time dormancy + the §15 opens; MIG number allocated from orientation §8)
+  and **Prompt B: PJ-060** (SO #8 cross-check mandated first; propose-before-code; acceptance stated).
+- **MoCh-2026-06-10-1245** (the i18n block + this close).
+Tree in sync at close; session ends here — next sessions start from the handover prompts.
+
 **P3 shipped (as-built deviations logged in the Plan doc §P3):** reconcile-walk hook → **unconditional**
 recompute (the true bulk settle point); `links_backfill` hook **dropped** (verified: it never mutates
 `note_links` — hooking it adds nothing); freshness window **10 → 2 min** (plan-marked tunable; open-driven
