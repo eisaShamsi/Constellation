@@ -153,3 +153,37 @@ table read 55 ms cold-file / sub-ms in-app. KH payload shapes untouched.
 **Noted while wiring (pre-existing, not §B's):** the CNS dock title (`lens.title`) is untranslated
 English in ar.json (and likely other locales) — drift against the full-localization TOP PRINCIPAL;
 parked for the localization debt list, not patched mid-§B.
+
+## §MIG-074 §B Stage-1 Boss test — PASS + two remarks (17:20–17:50)
+
+**Boss verdict: "Pass."** (Screenshots: CCS renders all seven registers on the real universe — EN and
+AR; the Acts bars carry the full type distribution incl. the 301-link "open inquiries" line; the
+Conviction spread reads hypothesis 234,061 / evidence 1; the 5-tier census fresh 234,048 · emerging 13
+· established 1.) Two remarks:
+
+**Remark 1 — "cross-check CCS + Knowledge Health with CNS, recommend."** Done against the CNS
+screenshot + code knowledge; the recommendation (delivered in chat, summarized here):
+- **CNS's right panel carries two CIRCULATORY blocks** — "Link Health BY TYPE" and "BY CONFIDENCE" —
+  which are exactly CCS's Acts-of-Inquiry + Conviction-&-Doubt registers. Under the ratified boundary
+  (CCS Concept §4: CNS reads structure, ignores weight/confidence; I4 complement-not-overlap) those two
+  blocks now belong to CCS. CNS keeps its true registers: orphans, bridges, entropy, links/note,
+  communities (topology).
+- **The same CNS blocks expose two pre-existing defects CCS already solves:** raw i18n keys shown
+  verbatim (`lens.linkAssoc…`, `lens.linkRelates`, `lens.linkSuper…`, `lens.linkInspires`) and a
+  non-registry label path (a custom type renders as its key, not its user-given label).
+- **Number coherence (explainable, not a bug):** CNS header says 233,538 links (resolved sky-graph
+  edges) vs CCS/KH 234,062 (all recorded `note_links` rows incl. unresolved targets). Recommend a
+  one-line caption convention when the CNS cleanup happens.
+- **Scope ruling kept honest:** CNS code is OUT of MIG-074's ratified scope (Architect §7). Options
+  offered to Eisa: (a) queue "CNS sheds the two circulatory blocks + gains a 'Circulation → CCS'
+  deep-link" as the opening §-step of the future CNS MIG (alongside detect_tensions Rule-8) ★recommended,
+  or (b) a small Boss-approved scope-extension §-step inside MIG-074 (frontend-only). Awaiting his call;
+  no CNS code touched.
+
+**Remark 2 — "Arabic CCS is literal, not semantic" → round-2 shipped.** 20 ccs.* values revised in
+ar.json (machine-applied, parse OK, CRLF preserved, all non-ccs blocks byte-identical). The notable
+semantic moves: tiers `حامل`→**`ركيزة`** (matches the ركائز الاستدلال register) and `خامل`→**`راكد`**
+(the stopped-water circulation metaphor); `ما الذي أفكّر فيه فعليًا الآن؟`→`ما الذي يشغل فكري الآن؟`;
+`استقرار`→`رسوخ` (matches راسخ); the open-inquiries hint recast as `روابط ما تزال تسأل: كيف نتّصل؟ —
+تلك طليعة التفكير الحيّة.`; walks meta `{n} عبور`→`مرّات العبور: {n}` (numeral-grammar-proof). Binary
+rebuilding; ar round-2 Boss re-test staged.
