@@ -77,12 +77,23 @@
 	<!-- Section 1: Overview -->
 	<div class="sp-overview">
 		{#if health}
+			<!-- §B3: renamed per the ratified paper Q3 — "Structural Cohesion"
+			     (the topology composite; ends the collision with the Knowledge
+			     Health plug-in) — and all FOUR sub-metrics readable (paper §5). -->
 			<div class="sp-health">
 				<div class="sp-health-score">
 					<span class="sp-health-num" style="color:{healthColor(health.score)}">{Math.round(health.score)}</span>
-					<span class="sp-health-label">{$t('lens.universeHealth') || 'Universe Health'}</span>
+					<span class="sp-health-label">{$t('lens.structuralCohesion') || 'Structural Cohesion'}</span>
 				</div>
 				<div class="sp-health-grid">
+					<div class="sp-health-metric">
+						<span class="sp-health-val">{health.modularity.toFixed(2)}</span>
+						<span class="sp-health-key">{$t('lens.modularity') || 'Modularity'}</span>
+					</div>
+					<div class="sp-health-metric">
+						<span class="sp-health-val">{Math.round(health.dominance * 100)}%</span>
+						<span class="sp-health-key">{$t('lens.dominance') || 'Dominance'}</span>
+					</div>
 					<div class="sp-health-metric">
 						<span class="sp-health-val">{(health.connectivity).toFixed(1)}</span>
 						<span class="sp-health-key">{$t('lens.connectivity') || 'Links/Note'}</span>

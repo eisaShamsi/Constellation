@@ -2257,8 +2257,11 @@
 		}
 	},
 	"lens": {
-		"title": "Constellation Nervous System (CNS)",
-		"universeHealth": "Salud del universo",
+		"structuralCohesion": "Cohesión estructural",
+		"linksSection": "Enlaces",
+		"legendLinkTypes": "Tipos de enlace",
+		"linkCountNote": "conexiones resueltas · este universo",
+		"title": "Sistema nervioso del conocimiento",
 		"modularity": "Modularidad",
 		"dominance": "Dominancia",
 		"entropy": "Entropía",

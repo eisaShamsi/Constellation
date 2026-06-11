@@ -318,4 +318,17 @@ cache-or-compute + the exclusion list), gated `SIGHT_V2_ENABLED && enabledFeatur
 first run found ZERO written files on a matcher miss — the leaf key `ribbon.knowledgeHealth` shadowed the
 block; fixed to require the `": {"` opener; second run ALL 15 OK). svelte-check **0 errors**; stale-grep
 clean (the long-flagged dead `store.ts` formulation wrapper stays for §F /simplify per the MIG-073
-precedent).
+precedent). → `7994519a`
+
+**§B3 SHIPPED — the names.** `lens.title` goes NATIVE ×14 (en keeps the brand form per the 2026-05-14
+ruling): ar **الجهاز العصبي للمعرفة** (Eisa's v1.2 term) · de Nervensystem des Wissens · ru Нервная
+система знаний · zh 知识神经系统 · ja 知識の神経系 · he מערכת העצבים של הידע … (all follow the
+of-Knowledge semantic). **"Universe Health" → "Structural Cohesion"** (ratified Q3): new
+`lens.structuralCohesion` ×15 (ar التماسك البنيوي), `lens.universeHealth` dropped ×15 (zero consumers
+verified); the score card now shows **all four sub-metrics** (modularity + dominance added to
+connectivity + entropy; presence of all four label keys verified ×15 first — no leak risk). **DF-08
+fixed**: the legend + settings headers stop borrowing `searchHub.linksTo` ("الربط إلى") — proper
+`lens.legendLinkTypes` + `lens.linksSection` ×15. **The scope caption** (paper ruling d): a faint
+`lens.linkCountNote` ×15 under the header count ("resolved connections · this universe" / "روابط محلولة
+· هذا الكون"). Locale gates ALL 15 OK (+4 −1 per lens block; title value-replace ×14; CRLF/LF
+preserved). svelte-check **0 errors**.

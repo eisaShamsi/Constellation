@@ -1036,8 +1036,12 @@
 	<!-- Header -->
 	<div class="sight2-header">
 		<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-		<span class="sight2-title">{$t('lens.title') || 'Constellation Sight'}</span>
-		<span class="sight2-stats">{simNodes.length} {$t('lens.nodes') || 'nodes'} · {simLinks.length} {$t('lens.links') || 'links'}</span>
+		<span class="sight2-title">{$t('lens.title') || 'Constellation Nervous System (CNS)'}</span>
+		<span class="sight2-stats">{simNodes.length} {$t('lens.nodes') || 'nodes'} · {simLinks.length} {$t('lens.links') || 'links'}
+			<!-- §B3 (paper ruling d): the graph-layer scope caption — CNS counts
+			     resolved on-graph edges; CCS/KH count recorded link rows. -->
+			<span class="sight2-caption">· {$t('lens.linkCountNote') || 'resolved connections · this universe'}</span>
+		</span>
 		<div class="sight2-toolbar">
 			<!-- Search toggle -->
 			<button class="sight2-btn" class:active={searchVisible} onclick={() => { searchVisible = !searchVisible; if (!searchVisible) closeSearch(); }} title={$t('layout.search') || 'Search'}>
@@ -1133,7 +1137,7 @@
 						<span>{$t("lens.legend") || "Legend"}</span>
 						<button class:active={showLegend} onclick={() => { showLegend = !showLegend; persistSettings(); }}>{showLegend ? 'On' : 'Off'}</button>
 					</label>
-					<div class="sight2-settings-title" style="margin-top:4px">{$t('searchHub.linksTo') || 'Links'}</div>
+					<div class="sight2-settings-title" style="margin-top:4px">{$t('lens.linksSection') || 'Links'}</div>
 					<label class="sight2-settings-slider">
 						<span>{$t("lens.settingStroke") || "Stroke"}: {linkStrokeMul.toFixed(1)}×</span>
 						<input type="range" min="0.5" max="4" step="0.25" bind:value={linkStrokeMul} oninput={() => { requestDraw(); persistSettings(); }} />
@@ -1182,7 +1186,10 @@
 					</div>
 					<div class="sight2-legend-divider"></div>
 					<!-- Link types -->
-					<div class="sight2-legend-title">{$t('searchHub.linksTo') || 'Link Types'}</div>
+					<!-- §B3 DF-08 fix: this header borrowed searchHub.linksTo ("Links
+					     to") — the UI literally said "الربط إلى" where "Link Types"
+					     was meant. Proper key now. -->
+					<div class="sight2-legend-title">{$t('lens.legendLinkTypes') || 'Link Types'}</div>
 					<div class="sight2-legend-row">
 						<svg width="20" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke="#4A9EFF" stroke-width="2"/><polygon points="16,0 20,2 16,4" fill="#4A9EFF"/></svg>
 						<span>{$t("lens.linkSupports") || "supports"}</span>
@@ -1277,6 +1284,7 @@
 	.sight2-header svg { color: var(--text-muted, #64748b); }
 	.sight2-title { font-size: 14px; font-weight: 700; color: var(--text-normal, #1a1a1a); }
 	.sight2-stats { font-size: 11px; color: var(--text-muted, #64748b); }
+	.sight2-caption { font-size: 10px; color: var(--text-faint, #94a3b8); }
 	.sight2-toolbar { display: flex; gap: 2px; margin-inline-start: auto; }
 	.sight2-btn {
 		width: 28px; height: 28px; border: none; border-radius: 4px;

@@ -2697,8 +2697,11 @@
 		}
 	},
 	"lens": {
-		"title": "Constellation Nervous System (CNS)",
-		"universeHealth": "宇宙健康度",
+		"structuralCohesion": "结构凝聚度",
+		"linksSection": "链接",
+		"legendLinkTypes": "链接类型",
+		"linkCountNote": "已解析连接 · 当前宇宙",
+		"title": "知识神经系统",
 		"modularity": "模块性",
 		"dominance": "支配度",
 		"entropy": "熵",

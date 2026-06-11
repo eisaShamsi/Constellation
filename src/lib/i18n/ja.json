@@ -2697,8 +2697,11 @@
 		}
 	},
 	"lens": {
-		"title": "Constellation Nervous System (CNS)",
-		"universeHealth": "ユニバースの健全性",
+		"structuralCohesion": "構造的凝集度",
+		"linksSection": "リンク",
+		"legendLinkTypes": "リンクの種類",
+		"linkCountNote": "解決済みリンク · このユニバース",
+		"title": "知識の神経系",
 		"modularity": "モジュラリティ",
 		"dominance": "支配度",
 		"entropy": "エントロピー",

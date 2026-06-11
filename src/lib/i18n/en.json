@@ -2923,8 +2923,11 @@
 		}
 	},
 	"lens": {
+		"structuralCohesion": "Structural Cohesion",
+		"linksSection": "Links",
+		"legendLinkTypes": "Link Types",
+		"linkCountNote": "resolved connections · this universe",
 		"title": "Constellation Nervous System (CNS)",
-		"universeHealth": "Universe Health",
 		"modularity": "Modularity",
 		"dominance": "Dominance",
 		"entropy": "Entropy",

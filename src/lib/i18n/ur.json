@@ -2257,8 +2257,11 @@
 		}
 	},
 	"lens": {
-		"title": "Constellation Nervous System (CNS)",
-		"universeHealth": "کائنات کی صحت",
+		"structuralCohesion": "ساختی ہم آہنگی",
+		"linksSection": "روابط",
+		"legendLinkTypes": "روابط کی اقسام",
+		"linkCountNote": "حل شدہ روابط · یہ کائنات",
+		"title": "علم کا اعصابی نظام",
 		"modularity": "ماڈیولریٹی",
 		"dominance": "غلبہ",
 		"entropy": "اینٹروپی",

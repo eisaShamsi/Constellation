@@ -2257,8 +2257,11 @@
 		}
 	},
 	"lens": {
-		"title": "Constellation Nervous System (CNS)",
-		"universeHealth": "בריאות היקום",
+		"structuralCohesion": "לכידות מבנית",
+		"linksSection": "קישורים",
+		"legendLinkTypes": "סוגי קישורים",
+		"linkCountNote": "קשרים פתורים · היקום הזה",
+		"title": "מערכת העצבים של הידע",
 		"modularity": "מודולריות",
 		"dominance": "דומיננטיות",
 		"entropy": "אנטרופיה",

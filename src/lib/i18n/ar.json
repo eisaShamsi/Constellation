@@ -2857,8 +2857,11 @@
 		}
 	},
 	"lens": {
-		"title": "Constellation Nervous System (CNS)",
-		"universeHealth": "صحة الكون المعرفي",
+		"structuralCohesion": "التماسك البنيوي",
+		"linksSection": "الروابط",
+		"legendLinkTypes": "أنواع الروابط",
+		"linkCountNote": "روابط محلولة · هذا الكون",
+		"title": "الجهاز العصبي للمعرفة",
 		"modularity": "التماسك",
 		"dominance": "الهيمنة",
 		"entropy": "التنوع",

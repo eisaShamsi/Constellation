@@ -2697,8 +2697,11 @@
 		}
 	},
 	"lens": {
-		"title": "Constellation Nervous System (CNS)",
-		"universeHealth": "유니버스 건강도",
+		"structuralCohesion": "구조적 응집도",
+		"linksSection": "링크",
+		"legendLinkTypes": "링크 유형",
+		"linkCountNote": "해석된 연결 · 이 유니버스",
+		"title": "지식의 신경계",
 		"modularity": "모듈성",
 		"dominance": "지배도",
 		"entropy": "엔트로피",
