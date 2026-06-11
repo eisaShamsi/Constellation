@@ -1426,7 +1426,9 @@
 		flex-direction: column;
 		width: 100%;
 		height: 100%;
-		background: var(--background-primary, #fafafa);
+		/* FU-3: the Style Setter's CNS background var layers over the theme —
+		   unset = today's look (the Sky View --skyview-bg precedent). */
+		background: var(--cns-bg, var(--background-primary, #fafafa));
 		overflow: hidden;
 	}
 	.sight2-header {

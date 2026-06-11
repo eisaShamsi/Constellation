@@ -416,6 +416,14 @@
 			{ label: 'Y axis', type: 'color', var: '--skyview-gizmo-y' },
 			{ label: 'Z axis', type: 'color', var: '--skyview-gizmo-z' },
 			{ label: 'Centre dot', type: 'color', var: '--skyview-gizmo-centre' } ] },
+		// MIG-075 FU-3 — the CNS gravity well's minimal wired set (key = its
+		// data-style-target, so the ⌖ inspect jumps here). Background applies
+		// live; the two hover-label colors are read once at CNS mount
+		// (Perf Rule 3) so they apply on the next CNS open.
+		cns: { name: 'Nervous System (CNS)', controls: [
+			{ label: 'Background', type: 'color', var: '--cns-bg' },
+			{ label: 'Hover label background', type: 'color', var: '--cns-label-bg' },
+			{ label: 'Hover label text', type: 'color', var: '--cns-label-text' } ] },
 	};
 	// §3B — the left rail is organised into CATEGORIES (a.k.a. Surfaces), each grouping its
 	// elements (Eisa). Interface + Editor both preview the main app window ('editor' surface);
@@ -427,6 +435,7 @@
 		{ key: 'global', name: 'Global', surface: 'editor', elements: ['gBackgrounds', 'gTextShades', 'gStatus', 'gAccent', 'gType', 'gShape', 'fonts'] },
 		{ key: 'links', name: 'Links', surface: 'editor', elements: ['links'] },
 		{ key: 'sky', name: 'Sky View', surface: 'sky', elements: ['skyCanvas', 'skyNodes', 'skyMaturity', 'skyGlow', 'skyLinks', 'skyOverlays', 'skyLabels', 'skyGizmo'] },
+		{ key: 'cns', name: 'CNS', surface: 'cns', elements: ['cns'] },
 		{ key: 'org', name: 'OrgChart', surface: 'org', elements: ['accent', 'link'] },
 		{ key: 'index', name: 'Index', surface: 'index', elements: ['accent'] },
 		{ key: 'cataloger', name: 'Cataloger', surface: 'cataloger', elements: ['accent'] },
@@ -1005,6 +1014,16 @@
 									<div class="ss-irow"><span class="ss-ibar" style="width:45%"></span> banana</div>
 									<div class="ss-irow"><span class="ss-ibar" style="width:30%"></span> carrot</div>
 								</div>
+							{:else if activeSurface === 'cns'}
+								<!-- MIG-075 FU-3 — a mini gravity-well: the card IS the preview.
+								     Background + the hover-label chip read the three --cns-* vars
+								     live off the draft (the Links-pill lesson: no second copy). -->
+								<button class="ss-cnsprev ss-hot" class:ss-sel={selected === 'cns'} onclick={() => selectEl('cns')} aria-label={L('Nervous System (CNS)')}>
+									<span class="ss-cns-ring r1"></span>
+									<span class="ss-cns-ring r2"></span>
+									<span class="ss-cns-ring r3"></span>
+									<span class="ss-cns-label">{L('Apple (Fruit)')}</span>
+								</button>
 							{/if}
 							<div class="ss-alt-note">{L('representative snapshot · re-colours with your edits')}</div>
 						</div>
@@ -1415,6 +1434,22 @@
 	.ss-idx { width: 70%; display: flex; flex-direction: column; gap: 8px; }
 	.ss-irow { display: flex; align-items: center; gap: 8px; font-size: 12px; }
 	.ss-ibar { height: 7px; background: var(--interactive-accent, #7c3aed); border-radius: 3px; border: none; cursor: pointer; }
+	/* MIG-075 FU-3 — the mini gravity-well preview: reads the --cns-* vars live. */
+	.ss-cnsprev {
+		position: relative; width: 180px; height: 140px; border: 1px solid var(--c-border);
+		border-radius: 10px; cursor: pointer; overflow: hidden;
+		background: var(--cns-bg, var(--background-primary, #fafafa));
+		display: grid; place-items: center;
+	}
+	.ss-cns-ring { position: absolute; border: 1px dashed rgba(148, 163, 184, 0.45); border-radius: 50%; }
+	.ss-cns-ring.r1 { width: 36px; height: 36px; }
+	.ss-cns-ring.r2 { width: 76px; height: 76px; }
+	.ss-cns-ring.r3 { width: 116px; height: 116px; }
+	.ss-cns-label {
+		position: relative; font-size: 10px; padding: 2px 8px; border-radius: 4px;
+		background: var(--cns-label-bg, rgba(30,30,40,0.9));
+		color: var(--cns-label-text, #ffffff);
+	}
 	.ss-right { grid-area: right; border-left: 1px solid var(--c-border); background: var(--c-surface); padding: 14px; overflow-y: auto; }
 	.ss-selname { font-size: 16px; font-weight: 700; margin-bottom: 14px; }
 	.ss-ctrl { margin-bottom: 14px; }
