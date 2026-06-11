@@ -558,3 +558,50 @@ text predated even Sky View's MIG-072 preview), and a "CNS — style the gravity
 (four controls + apply timing); the User Manual §The Style Setter mirrors the same two corrections.
 The 14 translated manuals + any translated mirrors of this help topic remain the standing batched
 debt (logged at MIG-074; not expanded here). MoCh-1500 written (the FU-3 re-test saga block).
+
+---
+
+## State-of-standing snapshot (SO #5 — Eisa asked "What do we have next?")
+
+**(a) Verified-shipped + protected (today):** MIG-075 CLOSED (milestone `milestone/mig-075-cns` + ZIP);
+FU-1 (28 translated help files ×14 langs) · FU-2/FU-4 (null-type predicate + diversivity drop) ·
+FU-3 corrected through 3 Boss rounds → the Setter CNS category at 4 controls, ALL Boss-validated;
+the Style Setter Preview Rule written (CLAUDE.md + memory + code); EN help topic + User Manual
+updated; binary 17:09 current. Tree clean, all pushed through `7c6e0097`.
+
+**(b) At-risk / in-flight / uncommitted:** none. No open migration phase, no uncommitted work.
+
+**(c) Known-broken (orientation §13):** BUG-013 open-editor cascade race (documented limitation);
+**title-heading rename gap** (NoteEditor.svelte:179 rename does NOT call updateLinksOnRename — only
+file-tree renames cascade; user-facing); sidebar active-item ~10s highlight lag (origin unresolved);
+MIG-006 §4–§11 (cascade completeness) pending.
+
+**(d) Pending, not started (reconciled against PJ v1.13 + orientation §8):**
+- **PJ-060** `index_note` cache-hit short-circuit (search.rs:3004 returns early on matching mtime →
+  write-time refresh skipped) — P1, "single most-leveraged open fix", mini-MIG. Queue #1.
+- **MIG-063/064** — the remaining ~6 of 14 federation surfaces (Unlinked Mentions/Index/KH reads;
+  Cataloger/Classifier/NSC writes with FK constraints). Reserved.
+- **PJ-002** cid_cn collision scrub + **PJ-003** rename-collision popup (Override/Rename/Cancel) — P1 mini-MIGs.
+- **PJ-008/PJ-009** Backlinks/Outgoing typed-link duplication + **PJ-010** Unlinked Mentions double-count — P2 panel fixes.
+- **PJ-017/018/019** MIG-013 cleanup bundle (one MIG).
+- **lenses.rs::apply_lens deletion** (Eisa decision 2026-05-09; Rule-8 hybrid per §12; cleanup MIG never opened).
+- **PJ-041–043** CECE i18n + **PJ-044–050** MIG-022 polish backlog.
+- **MIG-023** Warrant Research (reserved, Concept-Paper-first, multi-month) · **MIG-033** plugin sandbox
+  (Architect-deferred) · **MIG-068** rank-aware sort (lands with CE columns) · MIG-002 §7–§10 (deprioritized).
+- Dormant under Wings: Sight family (MIG-029/034/035/036/037, PJ-059, PJ-057.b) + Map (PJ-011).
+- Standing docs debt: 14 translated User Manuals stale; Appearance-and-Themes (and other topics) translated
+  mirrors; the MIG-014 P2/P3 six-item memory bundle still awaits PJ numbers.
+
+**(e) Documentation drift:**
+- **PJ-063 CLOSED BY EVIDENCE TODAY**: live DB GROUP BY link_type → supports 104,719 · derives-from 97,958 ·
+  exemplifies 17,350 · part-of 5,693 · causes 5,185 · contradicts 1,794 · generalizes 1,019 · supersedes 4 ·
+  inspires 1 (custom) · relates 301 + associative 38 (the null family, handled by is_null_type). The
+  "globally 'relates'" bug died with MIG-067. Ledger still says Open → v1.14 flips it.
+- **PJ-005 DONE** (MIG-007 closed 2026-06-09) and **PJ-064 effectively DONE** (fonts.ts installed-fonts
+  shipped) — both still queued in v1.13's top-five → v1.14 flips both.
+- Pending Jobs needs a **v1.14 bump** (the three flips + MIG-073/074/075 fold-in + today's state).
+- Orientation §12's "no frontend test harness" row is itself stale (vitest since MIG-030; 58 sight-v6 +
+  52 Base tests) → fix at next orientation bump.
+- Memory hygiene done this turn: 5 stale memories deleted (relates-bug → resolved; user-definable link
+  types → MIG-067; autoupdate-toggle placement → §12 v1.2 correction; 360.3D matrix doc → PJ-015 abandoned
+  2026-05-18; Setter feature requests → both shipped).
