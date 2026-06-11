@@ -778,3 +778,34 @@ corrections ADOPTED: a per-path single-writer queue under everything, and a dual
 freshness, hash-on-mtime-ambiguity per racy-git). Design = locks L0–L4 + journal + quarantine +
 refusal UX + cid backfill + lifecycle regression suite; invariants I1–I10; phases §A–§F with ★
 Stages 1–3; ~5–6 sessions. STOP point per the Migration Rule: Plan presented to Eisa for approval.
+
+## PLAN APPROVED (Eisa): "Approved. But not at the expense of speed."
+
+The speed rider becomes a per-phase verification clause: all gate costs live on the ≥1.5s-debounced
+save path (one uncontended lock + one fsync + one small CAS pre-read); ZERO keystroke-path work,
+ZERO boot-path work; the §B3 backfill is background+throttled. Build cascade §A1 → §F under
+Plan-Approval-Equals-Build-Approval; stops at ★ Stages 1–3.
+
+## MIG-076 §A1 — write_gate.rs (L0 + L1 + journal) — building
+
+Design refinements vs the Plan text (recorded per the genuine-surprise rule, both LESS invasive):
+(1) journal = append-only JSONL at app-data dir (`write-journal.jsonl`, 5MB rotation) instead of a
+search.db table — works for every writer with no connection threading, and survives exactly the
+DB-unavailable moments when forensics matter most; (2) quarantine = Dropbox-style SIBLING files
+next to the note (the proven in-place conflict-copy pattern) instead of a central folder.
+ReplaceFileW (manual kernel32 extern, no new dependency) preserves the target's creation time —
+plain temp+rename would have RESET fs creation time, which note_meta.created_at reads (a silent
+§A1 regression caught at design time).
+
+**§A1 SHIPPED — write_gate.rs (L0 per-path serialization + L1 atomic replace + JSONL journal).**
+`gate_write(path, content, expect: Option<Expectation>, surface)` + `gate_create_exclusive`:
+per-path lock registry (case/separator-normalized keys; poisoned-lock recovery so a panicked writer
+can never wedge a file); same-dir temp → fsync → **ReplaceFileW** swap (manual kernel32 extern, zero
+new deps; preserves target creation time — note_meta.created_at regression caught at design) with
+5× backoff retry for the AV sharing-violation class; watcher_suppress marks BOTH temp+final;
+append-only `write-journal.jsonl` (app-data dir via a new `.setup()` hook, 5MB rotation, fnv1a
+content fingerprint, best-effort — never blocks a write). The §B Expectation seam is in place.
+**Tests 5/5** (fresh write+journal · atomic replace + zero temp litter · 50-write two-thread
+torture: never torn · create-exclusive refuses existing/creates fresh · timing print). **Full suite
+914/914.** Speed rider: ~6.5ms/write debug incl. fsync, debounced-save path only; cascade worst case
+N×6.5ms noted as the §A2 watch item (bulk-fsync lever available if Boss-test shows lag).

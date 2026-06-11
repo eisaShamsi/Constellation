@@ -79,6 +79,7 @@ mod tasks;
 mod universe;
 mod watcher;
 mod watcher_suppress;
+pub mod write_gate;
 
 use tauri::{Emitter, Manager};
 
@@ -275,6 +276,15 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
+        // MIG-076 §A1 — point the WriteGate's journal at the app-data dir
+        // (best-effort: a missing dir only disables journaling, never writes).
+        .setup(|app| {
+            use tauri::Manager;
+            if let Ok(dir) = app.path().app_data_dir() {
+                crate::write_gate::init_journal(dir);
+            }
+            Ok(())
+        })
         .manage(watcher::WatcherState::new())
         .manage(universe::UniverseState::new())
         .manage(search::SearchState::new())
