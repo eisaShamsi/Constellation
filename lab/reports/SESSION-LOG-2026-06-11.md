@@ -239,4 +239,16 @@ retired fs resolver returned `None` → both map to `None` so untyped edges keep
 list is `detect_tensions`' per the paper §5) — toggleLens step 9 + `lensContradictions` + the Sight2
 prop removed with it. 3 new tests (`tests_mig075_sight`): bridge-ranks-highest · row hygiene +
 occurrence-dedupe (the documented delta) · empty payload — **3/3 pass**; cargo check clean;
-svelte-check **0 errors** (317-warning baseline unchanged).
+svelte-check **0 errors** (317-warning baseline unchanged). → `76597676`
+
+**§A2 SHIPPED** — `detect_tensions` re-sourced from the DB: `load_notes_from_db()` (three scoped reads —
+note_meta name/path/word_count · note_links active rows attached via a path→key map · tags via
+`json_each(tags_json)`) feeding the UNCHANGED four detections, extracted as the pure `detect_from_notes()`.
+Command async; `library_name` now does the scoping (was `_`-ignored); `validate_path_in_any_library` kept
+(cUniverse paths still refuse → the tab's honest `unavailable`, parity). The fs walk + both regexes
+deleted. TensionReport shape byte-identical; TensionPanel untouched. Deltas documented in the module doc
+(tag coverage widens · per-pair contradictions without ×N · archived excluded · stripped-markdown
+word_count at the severity margins). 4 new tests (`tests_mig075_tension`): the 3-input loader + library
+scoping + active-only · the <50 gate · per-pair-no-multiplier · orphan/gap/SPOF on a 51-note chain
+fixture — **7/7 MIG-075 tests pass** (with §A1's). *(Transient LNK1104 file-lock on the test exe ×2 —
+cleared by retry; not a code issue.)*
