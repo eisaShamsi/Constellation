@@ -411,3 +411,53 @@ reads ONE indexed query). The CNS panel open: **zero live link IPCs** (was 3, in
 GROUP BYs of the pre-MIG-073 KH-freeze family + a LIMIT-200 julianday scan). The health tab: DB-sourced,
 async, Stage-1 PASS. Boot/typing: **zero boot-path changes** (audit-verified); editor untouched. Tests:
 903/903 lib + 7/7 MIG-075. The S3 Louvain-worker question: **closed not-needed** at Eisa's <3s verdict.
+
+---
+
+## Follow-up block — "Pass. Proceed with the follow-ups" (afternoon)
+
+Eisa's final Stage-3 verdict ("Pass") authorized the four noted follow-ups. All four shipped:
+
+**FU-2 + FU-4 — `57f230c4` — the null-type predicate centralized + diversivity dropped.**
+The ONE definition of "a null link type" (untyped / the open question, vs a typed cognitive act) now
+lives in exactly two mirrored places: `src-tauri/src/link_types.rs::is_null_type(id)` (matches
+`associative` | legacy `relates` | empty) and `src/lib/libraries/linkTypeRegistry.ts::isNullLinkType(id)`
+(same membership + undefined/null defensively). Both prior inline call sites re-pointed: sight.rs's
+centrality row-mapper (None-out null types so the edge renders as the untyped tint) and Sight2's
+`edgeColorFor` (ASSOCIATIVE_TINT for `associative`, null for legacy/empty → base edge color). The
+/simplify finding that motivated it is closed — membership can never drift between Rust and TS again.
+FU-4 in the same commit: `diversivity` removed from `LensCentralityData` + its computation loop +
+the test assertion — it was serialized on every centrality response and read by nothing (audit 4B
+finding; the paper's §11 no-dark-compute rule applied to the payload itself). Tests 7/7; svelte-check 0.
+
+**FU-3 — `aa8626bf` — the Style Setter CNS category.**
+ELEMENTS gains `cns` (3 wired controls: `--cns-bg` — live on `.sight2-root` via the FU-3 root CSS
+fallback chain; `--cns-label-bg` / `--cns-label-text` — mount-read by the canvas, documented
+apply-on-next-CNS-open); CATEGORIES gains the `cns` row after Sky View (surface `cns` → the ⌖ inspect
+crosshair finds the well via the §B-era `data-style-target="cns"` tag); the preview pane gains a
+`{:else if activeSurface === 'cns'}` mini gravity-well (`.ss-cnsprev`: 3 dashed percentile rings +
+a hover-label chip reading the three vars live). Caveat logged: the 3 control labels ride the
+built-in English fallback (`L(en)`) until the next `styleSetter.labels` batch ×15. svelte-check 0.
+
+**FU-1 — the 14-language help batch (28 files).**
+14 parallel translator agents, one per locale (ar de es fa fr he hi ja ko pt ru tr ur zh), each writing:
+(1) `docs/help.{lang}/Constellation Nervous System/Constellation Nervous System.md` — OVERWRITE of the
+stale 2026-05-16 mirror (which still described the retired Communities/Universe-Health CNS) with the
+full translation of the rewritten English topic (gravity well, five registers, Regions lens, Structural
+Cohesion, interaction table, CNS-vs-neighbors); (2) `docs/help.{lang}/Constellation Circulatory System/
+Constellation Circulatory System.md` — NEW (first translation of the MIG-074 topic; directory created).
+Convention held by all 14: English folder/filenames; locale-verbatim UI vocabulary lifted from each
+`{lang}.json` (lens.title natives — ar الجهاز العصبي للمعرفة per the v1.2 paper; the seven CCS register
+titles + questions; sightPanel/cohesion/lifecycle/confidence terms); English + translated aliases in
+frontmatter; `language: {lang}` · `source:` · `translation_status: AI-generated 2026-06-11 —
+native-speaker review recommended`. Two source-vs-UI notes consistently resolved against the running
+code by the agents: the doc's "Diversity" ingredient renders the `lens.entropy` UI label; the Regions
+register uses `sightPanel.regions`. Verified on disk: 28/28 exist + frontmatter fields present.
+Known-noted, NOT in scope: the 14 translated User Manuals remain stale snapshots (pre-existing debt,
+logged at MIG-074); Panels/KF topics have no translated mirrors anywhere (logged).
+
+**Orientation v2.71** amended in-place with a dated follow-through line (the four "noted follow-ups"
+are closed) — same commit as the FU-1 batch per LL-031.
+
+**Release binary**: `npm run tauri build -- --no-bundle` rebuilt after FU-2/3/4 (the 14:19 binary
+pre-dated them — Stage-0 mtime rule).

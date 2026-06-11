@@ -1,113 +1,117 @@
 ---
-translation_status: AI-generated 2026-05-16 — native-speaker review recommended
+translation_status: AI-generated 2026-06-11 — native-speaker review recommended
 language: pt
 source: docs/help.uConstellation.World/Constellation Nervous System/Constellation Nervous System.md
 aliases:
   - Constellation Nervous System
   - CNS
-  - Sistema Nervoso Constellation
-description: Constellation Nervous System (CNS) é a visão de travessia-de-conexões do seu universo. Analisa o grafo de links entre suas notas e traz à tona métricas de Saúde do Universo, comunidades, pontes principais entre clusters, e "Pontos Cegos" de lacunas estruturais. CNS é a visão complementar ao Constellation Sight — se Sight é a forma sensorial do seu universo, CNS são suas conexões neurais.
+  - Structural Cohesion
+  - Regions
+  - Top Bridges
+  - Hubs
+  - Blind Spots
+  - Gravity Well
+  - Sistema nervoso do conhecimento
+  - Coesão estrutural
+  - Regiões
+  - Pontes principais
+  - Núcleos
+  - Pontos cegos
+  - Poço de gravidade
+description: Constellation Nervous System (CNS) é o instrumento de topologia da pergunta da Conexão — o diagrama de fiação do seu universo. Ele renderiza cada nota em um poço de gravidade onde a profundidade significa centralidade estrutural, e lê o grafo através de quatro registros — Regiões, Pontes, Pontos cegos e a pontuação de Coesão estrutural — além dos Núcleos. O CNS é o irmão estrutural do Sistema Circulatório (CCS) — o CNS lê a fiação; o CCS lê o fluxo.
 ---
 
 # Constellation Nervous System (CNS)
 
+> Na interface em português: **Sistema nervoso do conhecimento**.
+
 ## O que é?
 
-**Constellation Nervous System** é a visão de **travessia-de-conexões** do seu universo. Enquanto Constellation Sight mostra a *forma* das suas notas (estrato × tempo × codificação de canal), CNS mostra a *fiação* — o grafo de links tipados que as conecta e os padrões estruturais ocultos nesse grafo.
+O Constellation Nervous System é o **diagrama de fiação do seu universo**. Ele responde a uma única pergunta:
 
-Responde: **"Como as ideias no meu universo estão conectadas, e onde estão as lacunas?"**
+> **"Qual é a FORMA do meu pensamento — suas regiões, suas pontes, seus silêncios?"**
 
-A visão é construída em torno de quatro superfícies analíticas:
-- **Saúde do Universo** — pontuações globais e por métrica de quão conectado, equilibrado e modular é seu conhecimento.
-- **Comunidades** — grupos de notas densamente interconectadas ("clusters ideológicos").
-- **Pontes Principais** — as poucas notas que ligam comunidades de outra forma separadas ("conectores portantes").
-- **Pontos Cegos** — lacunas estruturais onde você esperaria conexões mas ainda não tem.
+Ele aplica análise de redes a todo o seu grafo de links e o lê através de cinco registros:
 
-O nome "Nervous System" é anatômico: nervos são vias de conexão carregando sinais entre partes distantes de um organismo. CNS trata seu grafo de links tipados da mesma forma.
+- **Regiões** — as vizinhanças que os seus links realmente formaram (encontradas pela análise, não declaradas pelas pastas).
+- **Pontes** — as notas que mantêm a sua estrutura de pé: corte-as, e as regiões se desfazem.
+- **Núcleos** — as suas notas mais conectadas (com mais links recebidos).
+- **Pontos cegos** — pares de regiões bem desenvolvidas que deveriam se tocar e não se tocam, cada um com notas-ponte sugeridas.
+- **Coesão estrutural** — um índice composto de 0–100 que mede quão bem formada está a fiação como um todo.
+
+O CNS lê **apenas estrutura** — quem se conecta a quem. Ele nunca lê fluxo (com que frequência um link é percorrido, quanto peso ele ganhou, quão assentada está a afirmação): esse é o trabalho do seu irmão, o **Sistema Circulatório (CCS)**. Os dois são uma só anatomia: o CNS são os nervos, o CCS é o sangue. Juntos, respondem por inteiro à pergunta da Conexão.
 
 ## Por que importa?
 
-A maioria dos apps de notas trata links como encanamento (saltar daqui para lá). Constellation os trata como **arquitetura de conhecimento**:
+Todas as outras superfícies de conexão do Constellation — Backlinks, Links de saída, o Sistema circulatório, a Saúde do conhecimento — registram conexões que você **já fez**. O registro de Pontos cegos é o único instrumento que aponta para conexões que você **ainda não fez**: duas regiões do seu pensamento, ambas bem desenvolvidas, sem nenhum tecido de ligação entre elas. É nessa fronteira que a síntese acontece.
 
-- Uma nota com muitos links de entrada é **portante** — muitas ideias dependem dela.
-- Uma nota que faz ponte entre duas comunidades é um **ponto de síntese**.
-- Uma comunidade com ligação interna fraca é **frágil**.
-- Um "Ponto Cego" é um lugar onde a estrutura DEVERIA ter uma conexão mas não tem — uma hipótese para explorar.
+E só o CNS consegue mostrar a diferença entre a sua ordem *declarada* (bibliotecas e pastas) e a sua ordem *encontrada* (as regiões que os seus links de fato formaram). Onde uma biblioteca abriga várias regiões, o seu pensamento dentro dela se dividiu em temas. Onde uma região atravessa bibliotecas, um tema seu vive espalhado pelo seu arquivamento.
 
 ## Como abrir
 
-1. Clique no **ícone de neurônio** (pequena forma de célula nervosa ramificada — corpo celular no meio com três ramos dendríticos e terminais sinápticos) na doca à esquerda.
-2. CNS abre em sobreposição de janela completa, estilo poço de gravidade — grafo direcionado por força onde cada nota é um nó e cada link tipado uma aresta.
-3. Para fechar: clique em **(×)** no topo, ou pressione **Esc**.
+1. Clique no **botão CNS** (o ícone de célula nervosa ramificada) na doca à esquerda — ele fica ao lado do ícone de pulso do Sistema circulatório.
+2. O poço de gravidade abre em janela completa. Em um universo grande, a análise leva um instante; a janela continua respondendo.
+3. Para fechar: o **×** no canto superior direito, ou **Esc**.
 
-## O que você vê
+Você também pode chegar a partir do CCS — o cabeçalho dele traz o botão **Sistema nervoso do conhecimento →** — e voltar: o painel do CNS traz uma linha **"Circulação → Sistema circulatório"**.
 
-### O Cartão de Saúde do Universo
+## O poço de gravidade
 
-Painel de resumo mostrando a saúde de conectividade global do seu universo, com roundel dourado de uma pontuação composta (e.g., **91 / 100**) e quatro métricas:
+O layout É a leitura — nada nele é decorativo:
 
-- **Modularity** — quão limpamente suas notas se agrupam em comunidades distintas.
-- **Dominance** — se uma comunidade domina o universo.
-- **Entropy** — variedade de tamanhos de comunidades.
-- **Connectivity** — links médios por nota.
+- **Distância do centro = centralidade estrutural.** As notas pelas quais a sua fiação passa ficam no fundo do poço; o pensamento periférico fica na borda.
+- **Setor angular = a sua própria organização.** Cada biblioteca é dona de uma fatia do círculo. A posição sempre segue a *sua* ordem — a análise nunca move uma nota.
+- **Cor do nó = biblioteca** — até você ativar a **lente de Regiões** (abaixo), que recolore os nós pela região encontrada. A cor é a lente; a posição nunca muda.
+- **Calma em repouso.** Os links permanecem ocultos até você pedir: passe o mouse ou clique em uma nota para acender as suas conexões, ou faça uma busca.
+- O cabeçalho mostra as contagens de nós e links com uma pequena legenda — *"conexões resolvidas · este universo"* — porque o CNS conta as conexões que se resolvem entre notas existentes no grafo, enquanto o CCS e a Saúde do conhecimento contam todos os registros de link gravados. Os dois números são verdadeiros; eles respondem a perguntas diferentes.
 
-Cada métrica tem uma pílula de status colorida: **HEALTHY** (verde) / **CAUTION** (amarelo) / **IMBALANCED** (vermelho).
+## Coesão estrutural
 
-### O Poço de Gravidade
+O cartão no topo do painel é a pontuação de **Coesão estrutural** (0–100) — quão bem formada está a fiação como um todo — com seus quatro ingredientes legíveis:
 
-Visualização principal: notas flutuam como nós, links as puxam juntos, repulsão as separa. Comunidades se auto-organizam em clusters.
+- **Modularidade** — quão claramente as suas notas se agrupam em regiões distintas.
+- **Dominância** — quanto do universo a maior região engole (quanto menor, mais saudável).
+- **Entropia** — com que uniformidade o seu pensamento se distribui entre as regiões.
+- **Links/Nota** — a conectividade média.
 
-- **Tamanho do nó** = contagem de links.
-- **Cor do nó** = pertencimento à comunidade.
-- **Aresta** = link tipado entre duas notas.
+## A lente de Regiões
 
-### Pontes Principais
+O botão de três círculos no cabeçalho alterna a **lente de Regiões**: cada nó é recolorido das cores de biblioteca para as cores de região, e a legenda lista as principais regiões com seus nomes encontrados e tamanhos. Desative-a e as cores de biblioteca voltam. As posições nunca se movem, em nenhum dos dois sentidos.
 
-Lista das notas que ligam as comunidades mais distintas — esses são seus pontos de síntese.
+## Os registros do painel
 
-### Comunidades
+O botão de grade (dashboard) abre o painel de análise:
 
-Lista de clusters de notas detectados.
-
-### Pontos Cegos (Lacunas Estruturais)
-
-Conexões faltantes sugeridas — pares de notas que o algoritmo do grafo pensa que DEVERIAM estar linkadas.
+- **Visão geral** — o cartão de Coesão, as contagens de notas/links/órfãos e a divisão por biblioteca.
+- **Circulação → Sistema circulatório** — a passagem para o CCS para tudo que pertence ao lado do fluxo (tipos de ligação, confiança, esfriamento, ciclo de vida).
+- **Regiões** — as vizinhanças encontradas, da maior para a menor, cada uma com seu tamanho e sua maturidade dominante. **Passe o mouse** sobre uma linha e o poço silencia tudo fora daquela região em preto e branco. **Clique** em uma linha para **fixá-la**: a região permanece acesa enquanto você trabalha — passe o mouse e clique nas notas normalmente dentro dela (as conexões de uma nota selecionada mantêm a cor mesmo quando cruzam para outras regiões — essas travessias são exatamente o que vale a pena ver). Clique na linha de novo para desafixar.
+- **Pontes principais** — as notas de maior centralidade. Clique em uma para selecioná-la e centralizá-la.
+- **Núcleos** — as notas mais conectadas por links recebidos. Este é o seu único lar (o antigo cartão da Saúde do conhecimento aposentou-se aqui).
+- **Pontos cegos** — pares de regiões sem tecido de ligação, escritos *Região A ↮ Região B*, cada um com até três **pontes sugeridas** — notas exibidas como chips clicáveis. Uma lista vazia é boa notícia.
 
 ## Interação
 
-CNS usa um padrão **clique-simples-pré-visualiza / duplo-clique-abre** (diferente do clique-simples-abre do Sight):
-
 | Gesto | Efeito |
 |---|---|
-| **Clique simples em nó** | Seleciona-o. Painel lateral direito desliza com título, comunidade, ranque de centralidade, links de entrada/saída. A nota NÃO é aberta. |
-| **Duplo clique em nó** | Abre a nota no editor. Botão **"Return to CNS"** aparece. |
-| **Hover em nó** | Tooltip com título. |
-| **Clique em área vazia** | Limpa a seleção. |
-| **Roda do mouse** | Zoom in/out. |
-| **Clique + arrastar** | Pan. |
-| **Clique em comunidade na lista** | Destaca notas dessa comunidade no poço. |
-| **Clique em entrada de Ponte Principal** | Foca na nota ponte. |
-| **Esc** | Fecha CNS. |
+| **Passar o mouse sobre um nó** | Tooltip com o título da nota; seus links se acendem. |
+| **Clique simples em um nó** | Seleciona-o e acende a sua vizinhança — nada é aberto. |
+| **Clique duplo em um nó** | Abre a nota no editor. |
+| **Clique no espaço vazio** | Limpa a seleção. |
+| **Roda do mouse** | Zoom. **Arrastar** desloca a vista. O botão dos cantos **ajusta à tela** em qualquer tamanho de janela. |
+| **Passar o mouse / clicar em uma linha de Regiões** | Silencia o resto em preto e branco / fixa o silenciamento. |
+| **Clicar em um chip de ponte ou em uma linha de Núcleos/Pontes** | Seleciona e centraliza essa nota no poço. |
+| **Esc** | Fecha o CNS. |
 
-O clique-simples-pré-visualiza é deliberado: permite que você escaneie detalhes de muitas notas (e suas conexões) sem se comprometer a abrir cada uma no editor.
+## Quando o CNS é mais útil
 
-## Quando CNS é Mais Útil
+- **Antes da síntese** — abra os Pontos cegos e pergunte qual lacuna cabe a você atravessar em seguida.
+- **Auditoria da arquitetura** — Pontes e Núcleos mostram quais notas sustentam a estrutura; a Coesão diz se o todo é um corpo único ou ilhas espalhadas.
+- **Conferir o seu arquivamento contra o seu pensamento** — a lente de Regiões contra os setores de biblioteca.
 
-- **Auditar sua densidade de conexão** — Universe Health dá uma leitura num relance.
-- **Encontrar seus pontos de síntese** — Top Bridges mostra as notas fazendo o trabalho arquitetônico.
-- **Descobrir comunidades que você não sabia que existiam** — clusters emergindo do grafo.
-- **Remendar Pontos Cegos** — quando o grafo sugere duas notas DEVERIAM estar linkadas mas não estão.
-- **Planejar reorganização** — comunidades mapeiam naturalmente para estrutura de pastas.
+## O CNS e seus vizinhos
 
-## CNS vs Sight — Quando Usar Qual
-
-- **Sight** = "Como meu universo está MOLDADO?" Análise espacial / categórica.
-- **CNS** = "Como meu universo está CONECTADO?" Análise de rede / topológica.
-
-São complementares: Sight lê a superfície; CNS lê a fiação por baixo.
-
-## Superfícies Relacionadas
-
-- **Constellation Sight** — a visualização irmã (ícone olho na doca).
-- **Sky View** — também visão de grafo, mas construída diferentemente.
-- **Painéis Backlinks / Outgoing Links** — listas de conexão por nota.
+- **Sky View** — o *retrato* espacial de tudo (todo o vocabulário visual, exploração livre). O CNS é o *instrumento*: seu layout codifica a análise. O Sky View mostra o céu; o CNS diz o que o céu significa estruturalmente.
+- **CCS** — o lado do fluxo (peso, travessia, esfriamento, convicção, ciclo de vida). O CNS nunca mostra fluxo; o CCS nunca mostra topologia.
+- **Saúde do conhecimento** — os cartões de contagem de relance. O CNS é a fiação em que essas contagens vivem.
+- **A aba de saúde (barra lateral direita)** — *listas* de tensão por biblioteca (pares de contradições, órfãos, lacunas entre clusters de tags). Os Pontos cegos do CNS são geometria de regiões no nível do grafo — uma leitura de lacunas diferente e complementar.
+- **360.3D** — a assinatura de conexões de uma única nota. O CNS é o universo inteiro.
