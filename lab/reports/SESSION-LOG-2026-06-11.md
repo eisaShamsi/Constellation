@@ -847,3 +847,20 @@ is the §F1 flip. `write_note` IPC gains an optional camelCase `expect` param (s
 legacy callers unchanged). **Tests +6** (identity-mismatch shadow-writes · fresh-pass · stale-detect
 (size catches same-second mtime) · hash-escalation · no-cid unverified · missing-file refusal).
 **Full suite 920/920.** Next: §B2 frontend expectations + §B3 cid backfill → ★Stage 1.
+
+**§B2 SHIPPED — SELF-ATTESTATION (a Plan improvement, logged as such) + §B3 VERIFIED-EXISTING.**
+§B2 as planned would have plumbed expectations from the frontend — but the incoming content already
+CARRIES its identity (frontmatter cid_cn). The gate now self-attests when no explicit Expectation
+arrives: extract the incoming cid → compare against the disk's cid under the lock. Verdicts:
+ok_self_attested · would_refuse_identity (the BUG-023 write would have produced EXACTLY this) ·
+unverified_no_cid · created_by_write (write-to-missing-path with a cid — the soak decides which
+surfaces move to create-exclusive) · ok_unchecked (cid-free content). EVERY writer is identity-
+protected today — PropertyEditor, FocusPane, second screen, importers, the cascade — with ZERO
+frontend changes and no second composition source (the content IS the snapshot). The explicit-
+Expectation path (§B1) remains for freshness; full freshness attestation rides §C's snapshot work
+where it belongs (revised sequencing logged: more coverage sooner, no double-build). Journal records
+expected (explicit or self) + found cids on every line.
+**§B3 — the cid backfill ALREADY EXISTS**: `mig003_backfill_cid_cn` runs from init_db at every boot
+(Phase A injects via the §A2-gated ensure_cid_cn for files lacking a valid cid; Phase B dedup = the
+gated cid_dedupe healer). Live-DB check: 7,663 notes, exactly 1 missing cid_cn — heals on next boot.
+No new code; verified + recorded. **Tests +3 (suite 923/923).** → ★Stage 1.

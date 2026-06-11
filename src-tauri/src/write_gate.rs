@@ -81,6 +81,16 @@ pub enum WriteOutcome {
     /// §B1 — identity expected, but the on-disk note has no cid_cn yet
     /// (legacy population; the §B3 backfill closes this). Journaled, allowed.
     UnverifiedNoCid,
+    /// §B2 — no explicit Expectation, but the INCOMING content carries a
+    /// cid_cn and it MATCHES the disk's: identity self-attested. The content
+    /// is the snapshot — this protection needs no caller plumbing and covers
+    /// every writer (it is the check that would have caught BUG-023's write).
+    SelfAttestedOk,
+    /// §B2 — the incoming content carries a cid_cn but no file exists at the
+    /// path: this write CREATED the file. Either a legitimate create-via-write
+    /// surface or the §140 deleted-note class — the journal + soak decide
+    /// which surfaces should move to create-exclusive (§F).
+    CreatedByWrite,
 }
 
 impl WriteOutcome {
@@ -94,6 +104,8 @@ impl WriteOutcome {
             WriteOutcome::WouldRefuseIdentity => "would_refuse_identity",
             WriteOutcome::WouldRefuseStale => "would_refuse_stale",
             WriteOutcome::UnverifiedNoCid => "unverified_no_cid",
+            WriteOutcome::SelfAttestedOk => "ok_self_attested",
+            WriteOutcome::CreatedByWrite => "created_by_write",
         }
     }
 }
@@ -381,8 +393,32 @@ pub fn gate_write(
     };
 
     let (outcome, found_cid) = match expect {
-        None => (WriteOutcome::OkUnchecked, None),
         Some(exp) => check_expectation(path, exp),
+        // §B2 — SELF-ATTESTATION: no caller expectation, but the incoming
+        // content names the note it belongs to (its frontmatter cid_cn).
+        // Compare against the disk's identity under the lock. The content IS
+        // the snapshot — no plumbing, no second composition source, and every
+        // writer is covered.
+        None => match crate::search::extract_frontmatter_cid_cn(content) {
+            None => (WriteOutcome::OkUnchecked, None),
+            Some(incoming_cid) => {
+                if !path.exists() {
+                    (WriteOutcome::CreatedByWrite, None)
+                } else {
+                    let disk_cid = fs::read_to_string(path)
+                        .ok()
+                        .as_deref()
+                        .and_then(crate::search::extract_frontmatter_cid_cn);
+                    match disk_cid {
+                        Some(ref d) if *d != incoming_cid => {
+                            (WriteOutcome::WouldRefuseIdentity, disk_cid.clone())
+                        }
+                        Some(_) => (WriteOutcome::SelfAttestedOk, disk_cid.clone()),
+                        None => (WriteOutcome::UnverifiedNoCid, None),
+                    }
+                }
+            }
+        },
     };
 
     // SHADOW mode: would-refuse verdicts journal loudly but the write
@@ -392,13 +428,19 @@ pub fn gate_write(
     let _ = WRITE_GATE_ENFORCE; // referenced now; consumed by the §F1 flip
 
     atomic_write(path, content)?;
+    // The journal's "expected" = the explicit attestation, or the incoming
+    // content's own cid when the verdict came from self-attestation.
+    let journal_expected: Option<String> = match expect {
+        Some(e) => e.expected_cid.clone(),
+        None => crate::search::extract_frontmatter_cid_cn(content),
+    };
     journal_ext(
         path,
         surface,
         outcome,
         content.len(),
         fnv1a(content.as_bytes()),
-        expect.and_then(|e| e.expected_cid.as_deref()),
+        journal_expected.as_deref(),
         found_cid.as_deref(),
     );
     Ok(outcome)
@@ -643,6 +685,41 @@ mod tests_write_gate {
         let e = exp(Some("NOTE_AAAA"), 0, 0, None);
         let out = gate_write(&p, "resurrect?", Some(&e), "test").unwrap();
         assert_eq!(out, WriteOutcome::WouldRefuseIdentity);
+        let _ = fs::remove_dir_all(&d);
+    }
+
+    #[test]
+    fn self_attested_identity_mismatch_detected_without_any_expectation() {
+        let d = tdir("self_id");
+        let p = d.join("note.md");
+        let out = gate_write(&p, "---\ncid_cn: NOTE_AAAA\n---\nmine", None, "test").unwrap();
+        assert_eq!(out, WriteOutcome::CreatedByWrite); // fresh path, cid-carrying
+        // A Frankenstein write: content composed for ANOTHER note, no caller
+        // attestation at all — the content itself betrays it.
+        let out = gate_write(&p, "---\ncid_cn: NOTE_ZZZZ\n---\nfrankenstein", None, "test").unwrap();
+        assert_eq!(out, WriteOutcome::WouldRefuseIdentity);
+        // Shadow: still written (enforcement is §F1).
+        assert!(fs::read_to_string(&p).unwrap().contains("frankenstein"));
+        let _ = fs::remove_dir_all(&d);
+    }
+
+    #[test]
+    fn self_attested_match_passes() {
+        let d = tdir("self_ok");
+        let p = d.join("note.md");
+        gate_write(&p, "---\ncid_cn: NOTE_AAAA\n---\nv1", None, "test").unwrap();
+        let out = gate_write(&p, "---\ncid_cn: NOTE_AAAA\n---\nv2", None, "test").unwrap();
+        assert_eq!(out, WriteOutcome::SelfAttestedOk);
+        let _ = fs::remove_dir_all(&d);
+    }
+
+    #[test]
+    fn cid_free_content_stays_unchecked() {
+        let d = tdir("self_plain");
+        let p = d.join("note.md");
+        gate_write(&p, "plain v1", None, "test").unwrap();
+        let out = gate_write(&p, "plain v2", None, "test").unwrap();
+        assert_eq!(out, WriteOutcome::OkUnchecked);
         let _ = fs::remove_dir_all(&d);
     }
 
