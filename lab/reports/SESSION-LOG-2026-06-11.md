@@ -736,3 +736,28 @@ NotePane spec §2.6, the BUG-015 forensics (lab/forensics/), and the Rename Func
 required reading BEFORE the Architect phase. Working Agreement #4 was violated in spirit: the static
 input analysis passed for a lifecycle problem. The lesson is the same as BUG-015's: every write-path
 change that touches editor lifecycle gets the architectural-impact review, not an input check.
+
+---
+
+## STOP-EVERYTHING DIRECTIVE (Eisa, verbatim) → MIG-076 OPENS
+
+**"We have to STOP EVERYTHING, and put our ALL EFFORTS into solving this BUG, once and forever.
+It is an app KILLER. If a user faces this kind of issue, they will lose confidence in Constellation.
+My target is 200% guarantee that you will solve it."**
+
+**State at the stop (SO #5):** quick-wins bundle PAUSED mid-Boss-test (shipped+safe: PJ-060,
+archive-weight, §H docs, PJ-010, PJ-008/009 evidence-closed; Test B alias-bleed untested; PJ-003
+awaiting the Override ruling — all parked). BUG-023 vector reverted (`e99a2f56`); safe binary 19:10.
+The corruption CLASS (write composed from divergent identities: tab-id props + pane text + captured
+path) has now fired through 4 windows (BUG-012/§140 wab · BUG-015 §115 · F2 cascade-stomp · BUG-023)
+— LL-014's three-strike law invoked: no fifth guard; root-cause migration MANDATORY.
+
+## MIG-076 — Write Integrity / "Single Write Authority" — Phase 1 (Architect) OPEN
+
+Target guarantee (the engineering form of Eisa's 200%): a cross-identity write CANNOT reach disk —
+layered: (C) identity-verified write boundary (refuse+quarantine on mismatch — the backstop that
+holds even against unknown future bugs), (A) single-snapshot write composition (kill the
+three-identity assembly), (B) rename/cascade quiesces the editor (kill the race at its source),
+plus a write journal (forensics) and lifecycle regression tests. Four parallel Architect agents
+launched: W1 every-writer map, W2 identity/tab/WAB model, W3 NotePane lifecycle + BUG-023
+interleaving pin, W4 proven-methods cross-check (WA #5).
