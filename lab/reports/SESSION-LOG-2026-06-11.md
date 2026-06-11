@@ -823,3 +823,15 @@ mig003_step4. New gate primitive: `gate_rename` (both paths locked in sorted-key
 free; AV retry; journaled). **Exit audit CLEAN**: remaining bare fs::write/rename are all non-note
 (.base defs, json configs, .canvas, lexicon binaries, markers, panic log, tests) or universe-
 directory restructure ops — allow-list recorded in this entry. **Full suite 914/914.**
+
+## Eisa ruling — name collisions: the conventional dialog (PJ-003 RULED, folded into MIG-076 §E)
+
+**"I prefer the conventional way. The user will be notified and asked to change the name or
+overwrite it."** Applies to BOTH flows (create-with-existing-name + rename-onto-existing-name —
+the April PJ-003 ask covered both). Implementation semantics (recorded now, built in §E):
+collision → modal "A note named X already exists" with **[Change name] (pre-filled suggestion) /
+[Overwrite] / [Cancel]**; **Overwrite = move the existing note to .trash first** (recoverable —
+the reversibility principle holds under conventional UX), then create/rename proceeds through the
+gate. Sequencing: built in MIG-076 §E (same modal family + i18n batch as the refusal dialog; the
+rename flow is §D-rebuilt first so it's built once). Until §E: create auto-suffixes, rename refuses
+(both safe post-§A2). PJ-003 → resolved-by-ruling, lands with §E.

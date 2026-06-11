@@ -39,11 +39,12 @@
 
 ★ **Stage 2 (Boss):** the exact test that caught BUG-023, re-run — create the two probe notes, rename via the TITLE, inspect both files (tutorial spells the click path). Expected: link healed in A; B keeps its own identity; a brief freeze shimmer during the cascade is the only visible change. Plus a sidebar-rename regression pass.
 
-## §E — Refusal / recovery UX + i18n
+## §E — Refusal / recovery / collision UX + i18n
 
 **§E1 — The refusal surface.** Identity refusal → quarantine + a clear dialog (what happened, where the quarantined copy lives, open-folder button). Freshness conflict → Compare / Overwrite / Keep both (VS Code semantics; minimal compare = open both versions side by side). A Settings → diagnostics line: writes journaled / anomalies count.
+**§E1b — The name-collision dialog (PJ-003, Eisa ruling 2026-06-11: "the conventional way").** Creating a note with an existing name, or renaming onto one, opens a modal — "A note named X already exists" with **Change name** (input pre-filled with the suggestion) / **Overwrite** / **Cancel**. Overwrite moves the existing note to `.trash` first (recoverable — reversibility holds under conventional UX), then proceeds through the gate. Replaces create's silent auto-suffix and rename's swallowed refusal in BOTH flows.
 **§E2 — i18n ×15** for every new string (gated locale insertion).
-*Verify:* forced-refusal dev test shows the dialog + produces the quarantine file; locale parse gates 15/15.
+*Verify:* forced-refusal dev test shows the dialog + produces the quarantine file; collision dialog covers create AND rename paths (Boss-staged); locale parse gates 15/15.
 
 ## §F — Enforcement flip + regression suite + audit + close
 
