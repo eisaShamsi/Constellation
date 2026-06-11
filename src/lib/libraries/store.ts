@@ -2172,6 +2172,29 @@ export async function renameItem(oldPath: string, newPath: string): Promise<stri
 		}
 		return t;
 	}));
+
+	// MIG-076 ★Stage-1 finding (journal-proven, 2026-06-11 22:01): rename_item
+	// rewrites the frontmatter title on disk, so any PRE-rename state for this
+	// file is stale BY DEFINITION — the migrated write-ahead buffer and the
+	// tab's in-memory content both still carry the OLD title, and the next
+	// flush writes them back over the renamed file (the 349 ms stomp the
+	// journal caught: rename_title 209 B → write_note 176 B). Two-part cure:
+	// (1) drop the stale buffer (the recentWrites migration above stands —
+	// §140's old-path-poisoning defense is preserved by clearing BOTH keys);
+	// (2) refresh any open tab from disk with a reloadVersion bump — the
+	// sanctioned reloadTabsFromDisk / D6 recreate shape — so the remounted
+	// pane + PropertyEditor can never resurrect the pre-rename frontmatter.
+	clearWriteAhead(oldPath);
+	clearWriteAhead(effectivePath);
+	try {
+		const fresh = await readNote(effectivePath);
+		openTabs.update(ts => ts.map(t =>
+			t.path === effectivePath && t.content !== fresh
+				? { ...t, content: fresh, reloadVersion: (t.reloadVersion ?? 0) + 1 }
+				: t
+		));
+	} catch { /* folder rename / unreadable target — tabs stay as set above */ }
+
 	return effectivePath;
 }
 

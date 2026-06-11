@@ -864,3 +864,20 @@ expected (explicit or self) + found cids on every line.
 (Phase A injects via the §A2-gated ensure_cid_cn for files lacking a valid cid; Phase B dedup = the
 gated cid_dedupe healer). Live-DB check: 7,663 notes, exactly 1 missing cid_cn — heals on next boot.
 No new code; verified + recorded. **Tests +3 (suite 923/923).** → ★Stage 1.
+
+## ★Stage-1 FINDING #1 — the rename-title stomp (journal-proven; pre-existing; FIXED same hour)
+
+Eisa: created "New Note T1", sidebar-renamed to "New Note T1 v2", switched away, came back — the
+title/properties showed v1. **The journal's FIRST real case nailed it in one read**:
+`22:01:55.066 rename_title 209B` (title v2 + alias) → `22:01:55.066 rename_item → v2.md` →
+**`22:01:55.415 write_note 176B ok_self_attested`** — the pre-rename content (byte-identical to the
+21:58:41 save) stomping the fresh title 349ms later. Disk confirmed: title v1, alias line erased.
+**Mechanism**: the §140 wab migration faithfully carried a PRE-rename buffer to the new path;
+flushAllTabsInLibrary flushed it over rename_item's title write. Identity check passed (same cid —
+correctly); this is the SAME-NOTE FRESHNESS class (§C's exact scope), pre-existing (all machinery
+predates MIG-076 — the journal made it visible for the first time).
+**Fix (sanctioned primitives only — the BUG-023 lesson)**: in store.renameItem after the IPC:
+clearWriteAhead(old+new) — a pre-rename buffer is stale BY DEFINITION once the title is rewritten
+(§140's old-path defense preserved by clearing both keys); then re-read the renamed file and refresh
+matching tabs with a reloadVersion bump (the reloadTabsFromDisk / D6 recreate shape) so the
+remounted pane + PropertyEditor can never resurrect v1. svelte-check 0 errors.
