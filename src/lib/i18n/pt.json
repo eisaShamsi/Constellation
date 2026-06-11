@@ -2780,6 +2780,8 @@
 		"topBridges": "Pontes principais",
 		"hubs": "Núcleos",
 		"regions": "Regiões",
+		"blindSpots": "Pontos cegos",
+		"suggestedBridges": "Pontes sugeridas",
 		"noResults": "Sem resultados"
 	},
 	"canonical": {

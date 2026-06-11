@@ -2780,6 +2780,8 @@
 		"topBridges": "トップブリッジ",
 		"hubs": "ハブ",
 		"regions": "領域",
+		"blindSpots": "盲点",
+		"suggestedBridges": "提案ブリッジ",
 		"noResults": "結果なし"
 	},
 	"canonical": {

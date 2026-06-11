@@ -192,6 +192,9 @@
 	let highlightRegionId = $state<number | null>(null);
 	// The Regions register rows (top-10 by size), built once in onMount.
 	let panelRegions = $state<{ id: number; name: string; color: string; count: number; maturity: string | null }[]>([]);
+	// §C2 — the Blind Spots register rows (top-8 gaps, bridge ids resolved
+	// to display names), built once in onMount.
+	let panelGaps = $state<{ c1: string; c2: string; bridges: string[] }[]>([]);
 
 	function nodeFill(n: SimNode): string {
 		if (colorByRegions) {
@@ -1008,6 +1011,16 @@
 				return { id: c.id, name: c.suggestedName, color: c.color, count: c.memberIds.length, maturity };
 			});
 
+		// §C2 — the Blind Spots register: the founding "dark sky between
+		// constellations" read, finally rendered. Bridge ids (lowercase note
+		// names) resolve to display names through the sim-node lookup.
+		const idToName = new Map(simNodes.map(n => [n.id, n.name]));
+		panelGaps = gaps.slice(0, 8).map(g => ({
+			c1: g.community1Name,
+			c2: g.community2Name,
+			bridges: g.potentialBridges.slice(0, 3).map(id => idToName.get(id) ?? id),
+		}));
+
 		performance.mark('sight:mount:layout:start');
 		computeGravityWellLayout();
 		performance.mark('sight:mount:layout:end');
@@ -1300,6 +1313,7 @@
 				{health}
 				{bridges}
 				regions={panelRegions}
+				gapRows={panelGaps}
 				onRegionHover={(id) => { highlightRegionId = id; requestDraw(); }}
 				libraryBreakdown={[...libMap.values()].sort((a, b) => b.count - a.count)}
 				onNoteClick={(name) => {

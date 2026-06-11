@@ -331,4 +331,21 @@ fixed**: the legend + settings headers stop borrowing `searchHub.linksTo` ("ال
 `lens.legendLinkTypes` + `lens.linksSection` ×15. **The scope caption** (paper ruling d): a faint
 `lens.linkCountNote` ×15 under the header count ("resolved connections · this universe" / "روابط محلولة
 · هذا الكون"). Locale gates ALL 15 OK (+4 −1 per lens block; title value-replace ×14; CRLF/LF
-preserved). svelte-check **0 errors**.
+preserved). svelte-check **0 errors**. → `7c59f323`
+
+**§C1 SHIPPED — the Regions lens + register** (`9e7def9f`). The header gains a Regions toggle: node fill
+switches library-colors ↔ region-colors — **Louvain's output finally consumed** (the ratified Q2: a color
+LENS; position never moves). The legend's color block goes live under the lens (top-5 regions: dot +
+suggested name + count). The panel gains the **Regions register** (top-10 by size; dot · name `dir=auto` ·
+count · the dominant-maturity character hint via the localized `graphView.ns*` vocabulary — presence
+verified ×15 first); hovering a row dims the well to that region (`highlightRegionId` alpha branch).
+`sightPanel.regions` ×15 gated. One new a11y warning caught and fixed (`role="list"`) — the 313 baseline
+restored, not grown.
+
+**§C2 SHIPPED — Blind Spots, the founding register restored.** The panel renders the top-8 structural
+gaps — *Region A ↮ Region B* — each with up to 3 **suggested bridge notes** as clickable chips
+(`onNoteClick` → select + center, the existing path); bridge ids resolve to display names via the
+sim-node lookup. An empty list reads as good news (`noResults`). `panelGaps` built once per mount;
+**every formerly-dark prop is now consumed** (communities, assignments, colors, profiles, gaps +
+suggestions) — the paper §11's no-dark-compute rule is satisfied in full.
+`sightPanel.blindSpots`/`suggestedBridges` ×15 gated. svelte-check **0 errors** (313 baseline).

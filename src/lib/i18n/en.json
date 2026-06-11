@@ -3006,6 +3006,8 @@
 		"topBridges": "Top Bridges",
 		"hubs": "Hubs",
 		"regions": "Regions",
+		"blindSpots": "Blind Spots",
+		"suggestedBridges": "Suggested bridges",
 		"noResults": "No results"
 	},
 	"canonical": {

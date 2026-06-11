@@ -2780,6 +2780,8 @@
 		"topBridges": "顶级桥梁",
 		"hubs": "枢纽",
 		"regions": "区域",
+		"blindSpots": "盲点",
+		"suggestedBridges": "建议的桥梁",
 		"noResults": "无结果"
 	},
 	"canonical": {

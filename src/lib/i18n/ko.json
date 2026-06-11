@@ -2780,6 +2780,8 @@
 		"topBridges": "상위 브리지",
 		"hubs": "허브",
 		"regions": "영역",
+		"blindSpots": "맹점",
+		"suggestedBridges": "제안된 다리",
 		"noResults": "결과 없음"
 	},
 	"canonical": {

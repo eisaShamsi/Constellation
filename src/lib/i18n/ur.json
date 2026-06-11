@@ -2340,6 +2340,8 @@
 		"topBridges": "اہم پل",
 		"hubs": "مرکزی نکات",
 		"regions": "علاقے",
+		"blindSpots": "اندھے مقامات",
+		"suggestedBridges": "تجویز کردہ پل",
 		"noResults": "کوئی نتائج نہیں"
 	},
 	"canonical": {

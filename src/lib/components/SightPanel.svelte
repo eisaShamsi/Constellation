@@ -24,6 +24,7 @@
 		bridges = [] as { id: string; name: string; centrality: number }[],
 		regions = [] as { id: number; name: string; color: string; count: number; maturity: string | null }[],
 		onRegionHover,
+		gapRows = [] as { c1: string; c2: string; bridges: string[] }[],
 		libraryBreakdown = [] as { name: string; color: string; count: number }[],
 		onNoteClick,
 	}: {
@@ -36,6 +37,9 @@
 		// dominant-maturity character hint). Hover dims the well to the region.
 		regions?: { id: number; name: string; color: string; count: number; maturity: string | null }[];
 		onRegionHover?: (id: number | null) => void;
+		// §C2 — the Blind Spots register: region pairs that should touch and
+		// don't, each with suggested bridge notes (clickable).
+		gapRows?: { c1: string; c2: string; bridges: string[] }[];
 		libraryBreakdown?: { name: string; color: string; count: number }[];
 		onNoteClick?: (name: string) => void;
 	} = $props();
@@ -58,6 +62,7 @@
 	let showRegions = $state(true);
 	let showBridges = $state(true);
 	let showHubs = $state(true);
+	let showBlindSpots = $state(true);
 
 	// CCS hand-off gate — mirrors the +layout open-ccs listener's gate.
 	const ccsEnabled = $derived($appSettings.enabledFeatures?.ccs !== false);
@@ -237,6 +242,40 @@
 			</div>
 		{/if}
 	</div>
+
+	<!-- Section: Blind Spots (§C2 — the founding register restored: region
+	     pairs with dense interiors and no connecting tissue, each with the
+	     notes that could bridge them. An EMPTY list is good news. -->
+	<div class="sp-section">
+		<button class="sp-header" onclick={() => showBlindSpots = !showBlindSpots}>
+			<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class:rotated={!showBlindSpots}><polyline points="6 9 12 15 18 9"/></svg>
+			<span>{$t('sightPanel.blindSpots') || 'Blind Spots'}</span>
+			<span class="sp-count">{gapRows.length}</span>
+		</button>
+		{#if showBlindSpots}
+			<div class="sp-list">
+				{#each gapRows as gap}
+					<div class="sp-gap-row">
+						<div class="sp-gap-pair" dir="auto">
+							<span class="sp-gap-name">{gap.c1}</span>
+							<span class="sp-gap-sep" aria-hidden="true">↮</span>
+							<span class="sp-gap-name">{gap.c2}</span>
+						</div>
+						{#if gap.bridges.length > 0}
+							<div class="sp-gap-bridges">
+								<span class="sp-gap-hint">{$t('sightPanel.suggestedBridges') || 'Suggested bridges'}:</span>
+								{#each gap.bridges as bridge}
+									<button class="sp-bridge-chip" onclick={() => onNoteClick?.(bridge)} dir="auto">{bridge}</button>
+								{/each}
+							</div>
+						{/if}
+					</div>
+				{:else}
+					<div class="sp-empty">{$t('sightPanel.noResults') || 'No results'}</div>
+				{/each}
+			</div>
+		{/if}
+	</div>
 </div>
 
 <style>
@@ -285,6 +324,20 @@
 	/* Regions rows (§C1) */
 	.sp-region-row { cursor: default; }
 	.sp-region-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+	/* Blind Spots rows (§C2) */
+	.sp-gap-row { padding: 4px 8px 6px; display: flex; flex-direction: column; gap: 3px; }
+	.sp-gap-pair { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-normal, #1a1a1a); }
+	.sp-gap-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.sp-gap-sep { color: #ef4444; font-weight: 700; flex-shrink: 0; }
+	.sp-gap-bridges { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+	.sp-gap-hint { font-size: 9px; color: var(--text-faint, #94a3b8); }
+	.sp-bridge-chip {
+		font-size: 10px; padding: 1px 7px; border-radius: 8px; cursor: pointer;
+		border: 1px solid var(--background-modifier-border, #e5e7eb);
+		background: none; color: var(--interactive-accent, #7c3aed); font-family: inherit;
+		max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+	}
+	.sp-bridge-chip:hover { background: var(--background-modifier-hover, #f1f5f9); }
 	/* List items */
 	.sp-list { display: flex; flex-direction: column; gap: 1px; padding: 0 4px 6px; }
 	.sp-item {

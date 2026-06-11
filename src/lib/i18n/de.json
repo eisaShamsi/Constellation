@@ -2340,6 +2340,8 @@
 		"topBridges": "Top-Brücken",
 		"hubs": "Knotenpunkte",
 		"regions": "Regionen",
+		"blindSpots": "Blinde Flecken",
+		"suggestedBridges": "Vorgeschlagene Brücken",
 		"noResults": "Keine Ergebnisse"
 	},
 	"canonical": {

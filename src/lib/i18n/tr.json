@@ -2780,6 +2780,8 @@
 		"topBridges": "En Önemli Köprüler",
 		"hubs": "Merkezler",
 		"regions": "Bölgeler",
+		"blindSpots": "Kör Noktalar",
+		"suggestedBridges": "Önerilen Köprüler",
 		"noResults": "Sonuç yok"
 	},
 	"canonical": {

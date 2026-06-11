@@ -2780,6 +2780,8 @@
 		"topBridges": "शीर्ष पुल",
 		"hubs": "केंद्र",
 		"regions": "क्षेत्र",
+		"blindSpots": "अंध बिंदु",
+		"suggestedBridges": "सुझाए गए सेतु",
 		"noResults": "कोई परिणाम नहीं"
 	},
 	"canonical": {

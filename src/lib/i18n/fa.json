@@ -2340,6 +2340,8 @@
 		"topBridges": "پل‌های برتر",
 		"hubs": "کانون‌ها",
 		"regions": "ناحیه‌ها",
+		"blindSpots": "نقاط کور",
+		"suggestedBridges": "پل‌های پیشنهادی",
 		"noResults": "بدون نتیجه"
 	},
 	"canonical": {

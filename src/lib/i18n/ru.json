@@ -2780,6 +2780,8 @@
 		"topBridges": "Главные мосты",
 		"hubs": "Центры связей",
 		"regions": "Области",
+		"blindSpots": "Слепые зоны",
+		"suggestedBridges": "Предлагаемые мосты",
 		"noResults": "Нет результатов"
 	},
 	"canonical": {

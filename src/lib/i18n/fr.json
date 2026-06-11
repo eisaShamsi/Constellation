@@ -2340,6 +2340,8 @@
 		"topBridges": "Ponts principaux",
 		"hubs": "Carrefours",
 		"regions": "Régions",
+		"blindSpots": "Angles morts",
+		"suggestedBridges": "Ponts suggérés",
 		"noResults": "Aucun résultat"
 	},
 	"canonical": {

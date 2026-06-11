@@ -2940,6 +2940,8 @@
 		"topBridges": "أهم الجسور",
 		"hubs": "المحاور",
 		"regions": "المناطق",
+		"blindSpots": "النقاط العمياء",
+		"suggestedBridges": "جسور مقترحة",
 		"noResults": "لا نتائج"
 	},
 	"canonical": {
