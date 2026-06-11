@@ -28,7 +28,7 @@
 	import type { SkyNode, SkyLink } from '$lib/libraries/store';
 	import type { ClusterInfo, StructuralGap, UniverseHealth, CommunityProfile } from '$lib/graph/clusterEngine';
 	// §D1 — the one color/label source for typed links (MIG-067 registry).
-	import { linkTypeColor, getLinkTypes, linkTypeLabel, subscribe as subscribeLinkTypes } from '$lib/libraries/linkTypeRegistry';
+	import { linkTypeColor, getLinkTypes, linkTypeLabel, isNullLinkType, subscribe as subscribeLinkTypes } from '$lib/libraries/linkTypeRegistry';
 
 	// ─── Types ────────────────────────────────────────────────
 	interface SimNode extends d3.SimulationNodeDatum {
@@ -65,9 +65,14 @@
 	// untyped tint; legacy 'relates' renders as plain untyped.
 	const ASSOCIATIVE_TINT = '#A78BFA'; // today's value, now named
 	function edgeColorFor(linkType: string | undefined): string | null {
-		if (!linkType || linkType === 'relates') return null;
-		if (linkType === 'associative') return ASSOCIATIVE_TINT;
-		return linkTypeColor(linkType);
+		// Null-type membership is defined ONCE in the registry (the MIG-075
+		// follow-up predicate); locally we only decide what null looks like:
+		// the canonical 'associative' keeps its open-question tint, the rest
+		// of the null family renders plain untyped.
+		if (isNullLinkType(linkType)) {
+			return linkType === 'associative' ? ASSOCIATIVE_TINT : null;
+		}
+		return linkTypeColor(linkType!);
 	}
 
 	const MATURITY_COLORS: Record<string, string> = {

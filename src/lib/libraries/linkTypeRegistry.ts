@@ -185,6 +185,16 @@ export function stripLinkTypePrefix(inner: string): string {
 	return inner;
 }
 
+/** MIG-075 follow-up — the ONE definition of "a null type": ids that mean
+ *  untyped / the open question rather than a typed cognitive act.
+ *  `associative` is the canonical null id (MIG-067), `relates` the legacy
+ *  one; empty/undefined count as null defensively. Callers decide what
+ *  null MEANS for them (untyped tint, default weight, …); membership is
+ *  defined here once. (Rust mirror: link_types.rs::is_null_type.) */
+export function isNullLinkType(id: string | undefined | null): boolean {
+	return !id || id === 'associative' || id === 'relates';
+}
+
 /** Inline/badge color for a type id (neutral default for unknown ids). */
 export function linkTypeColor(id: string): string {
 	return byId.get(id)?.color ?? DEFAULT_COLOR;

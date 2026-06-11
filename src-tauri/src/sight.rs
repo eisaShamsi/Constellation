@@ -43,14 +43,14 @@ fn link_type_weight(link_type: &Option<String>) -> f64 {
 
 /// Result of centrality computation — sent to frontend via IPC.
 /// (MIG-075 §A1 dropped the `contradictions` field — its only frontend
-/// consumer was a dead prop; the contradiction pair list is
-/// `detect_tensions`' per the ratified CNS paper §5.)
+/// consumer was a dead prop; the pair list is `detect_tensions`' per the
+/// ratified CNS paper §5. The MIG-075 audit follow-up dropped
+/// `diversivity` — computed + serialized for ~7.6k nodes per open with
+/// zero readers; reinstate from history if a register ever wants it.)
 #[derive(Debug, Clone, Serialize)]
 pub struct LensCentralityData {
     /// Map from note_id (lowercase name) to normalized betweenness centrality (0.0–1.0).
     pub centrality: HashMap<String, f64>,
-    /// Diversivity: betweenness centrality / degree. High = disproportionately influential.
-    pub diversivity: HashMap<String, f64>,
     pub node_count: u32,
     pub edge_count: u32,
 }
@@ -105,10 +105,10 @@ pub(crate) fn compute_centrality_from_links(
         // Weight parity with the retired fs walk: the indexer stores plain
         // untyped links as 'associative' (and legacy rows as 'relates'),
         // while the walk's resolver returned None for them → default
-        // weight. Map both back to None so untyped edges keep weight 1.0.
-        let link_type = match link_type.as_deref() {
-            Some("associative") | Some("relates") | Some("") => None,
-            _ => link_type,
+        // weight. Null-type membership is defined ONCE in link_types.rs.
+        let link_type = match link_type {
+            Some(ref lt) if crate::link_types::is_null_type(lt) => None,
+            other => other,
         };
         all_links.push(RawLink { source, target, link_type });
     }
@@ -148,7 +148,6 @@ pub(crate) fn compute_centrality_from_links(
     if n == 0 {
         return LensCentralityData {
             centrality: HashMap::new(),
-            diversivity: HashMap::new(),
             node_count: 0,
             edge_count: 0,
         };
@@ -168,23 +167,15 @@ pub(crate) fn compute_centrality_from_links(
     // 4. Normalize centrality to 0.0–1.0
     let max_score = centrality_scores.values().cloned().fold(0.0_f64, f64::max);
     let mut centrality: HashMap<String, f64> = HashMap::new();
-    let mut diversivity: HashMap<String, f64> = HashMap::new();
 
     for (idx, score) in &centrality_scores {
         let name = &graph[*idx];
         let normalized = if max_score > 0.0 { score / max_score } else { 0.0 };
         centrality.insert(name.clone(), normalized);
-
-        // Diversivity = betweenness centrality / degree (InfraNodus metric)
-        // Identifies "VIP nodes" with disproportionate influence despite few connections
-        let degree = graph.neighbors(*idx).count() as f64;
-        let div = if degree > 0.0 { normalized / degree } else { 0.0 };
-        diversivity.insert(name.clone(), div);
     }
 
     LensCentralityData {
         centrality,
-        diversivity,
         node_count: n as u32,
         edge_count: e as u32,
     }
@@ -411,6 +402,6 @@ mod tests_mig075_sight {
     fn empty_rows_empty_payload() {
         let data = compute_centrality_from_links(vec![]);
         assert_eq!((data.node_count, data.edge_count), (0, 0));
-        assert!(data.centrality.is_empty() && data.diversivity.is_empty());
+        assert!(data.centrality.is_empty());
     }
 }

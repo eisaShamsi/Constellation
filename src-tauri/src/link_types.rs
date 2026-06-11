@@ -295,6 +295,16 @@ pub fn set_active(deltas: Vec<LinkTypeDef>) {
     }
 }
 
+/// MIG-075 follow-up — the ONE definition of "a null type": ids that mean
+/// untyped / the open question rather than a typed cognitive act.
+/// `associative` is the canonical null id (MIG-067), `relates` the legacy
+/// one, `""` the defensive empty. Callers decide what null MEANS for them
+/// (default weight, untyped tint, …); membership is defined here once.
+/// (TS mirror: linkTypeRegistry.ts::isNullLinkType.)
+pub fn is_null_type(id: &str) -> bool {
+    matches!(id, "associative" | "relates" | "")
+}
+
 /// A clone of the active registry for off-lock reads (parser snapshot / SQL gen).
 pub fn snapshot() -> LinkTypeRegistry {
     cell()
