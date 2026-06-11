@@ -898,3 +898,13 @@ his second probe). Three fixes:
    prop_save / flush_all / focus_pane / template_create / daily_template / template_insert /
    link_mention / bulk_tag / expression_forge / canvas_export) → the NEXT anomaly names its author
    in one journal line. svelte-check 0 errors; gate tests 14/14.
+
+## ★Stage 1 — PASS (Eisa "Passed"; journal verdict 42 writes / 0 anomalies)
+
+Re-test: rename → switch → return holds title+alias+BODY across the full cycle (3 screenshots).
+Journal totals for the day: 42 writes — ok_self_attested 32 · created_exclusive 6 · renamed 4 ·
+would_refuse_* **0** · unverified_no_cid **0**. The 2 newest entries already carry origin labels
+(editor_save). Stage-1's two criteria met: behavior unchanged + clean journal — AND the stage
+caught two pre-existing data-loss bugs (findings #1 #2), both fixed same-hour, both re-validated.
+The soak continues passively on the 22:39 binary toward the §F1 enforcement flip. Next: §C
+(single-snapshot composition + single store writer + WAB fail-closed).
