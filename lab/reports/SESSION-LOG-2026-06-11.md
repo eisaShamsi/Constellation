@@ -619,3 +619,39 @@ missing from (d):
   weight (1+ln(tc+1)) is exactly recomputable on restore → a small contract-restoring code fix is
   possible; alternative is documenting the reset in the Guide. Pending Eisa's ruling; recommended: fix
   the code (mini-MIG with tests).
+
+---
+
+## Eisa rulings (the two MIG-074 calls) + the work order approved
+
+1. **§H pill-language: KEEP note-language** (the MIG-067 rule stands — pills speak the NOTE's
+   language). Work: one help-file sentence documenting the behavior → quick-wins bundle.
+2. **Archive-weight drift: FIX THE CODE — recompute earned weight from traversal_count on restore**
+   (the Guide §10 / reversibility-principle contract restored; lossless since tc survives the
+   round-trip). → quick-wins bundle, mini-MIG with round-trip tests.
+3. **Slotting approved.** Order of work: **PJ-060 first**, then the remaining as presented
+   (quick-wins bundle incl. the two rulings above + PJ-008/009/010 + PJ-003 + the title-heading
+   rename gap → MIG-063/064 federation → housekeeping: PJ v1.14 · apply_lens deletion · translation debt).
+
+## PJ-060 — OPEN (mini-MIG): index_note cache-hit short-circuit
+
+Working on: **the `index_note` cache-hit short-circuit** — search.rs:3004 returns early when the
+stored mtime matches, so a re-save with unchanged mtime never refreshes `note_meta` (the write-time-
+derivation blocker flagged 2026-05-19; acceptance = unchanged-mtime re-save still refreshes
+note_meta + every derived surface; no boot/typing regression on the 7,600-note universe).
+
+**PJ-060 SHIPPED.** `index_note` gains a `force` flag: the bulk walk (`index_library_recursive`)
+passes `false` — the mtime gate is byte-identical there, boot untouched; `reindex_single_note`
+passes `true` — every one of its callers (the save IPC `constellation_search_reindex`, the rename
+reindex libraries.rs:1020, the wikilink-cascade rewrite libraries.rs:4291 — whose own comment
+records the stale-Outgoing-panel symptom this gate caused — and the Base cell edit bases.rs:748)
+is a "this file just changed" context, and second-resolution mtime cannot prove it didn't.
+The same-second blindspot (save → programmatic rewrite landing in the same second → note_meta and
+every derived surface silently stale) is structurally closed. Idempotency verified in-code: the
+note_meta UPSERT fires the FTS au-trigger; links delete+reinsert preserves earned properties;
+the CTSE delta hook sees old==new → zero delta on a content-identical force.
+**Perf:** boot path unchanged (gate intact); the forced path adds one bounded file read per
+explicit save/rename/cascade-file — off the keystroke path (saves debounced 1500ms). 
+**Tests:** new `tests_pj060_index_gate` ×3 (gate holds for the walk on a deterministic mtime-collision
+fixture; force refreshes through the collision; fresh file indexes ungated). **Full lib suite 906/906**
+(903 + 3). PJ ledger flip → the v1.14 bump (housekeeping, queued).

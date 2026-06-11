@@ -3920,7 +3920,7 @@ fn strip_markdown(text: &str) -> String {
 }
 
 /// Index a single note into the database.
-fn index_note(conn: &Connection, note_path: &str, library_name: &str) -> Result<(), String> {
+fn index_note(conn: &Connection, note_path: &str, library_name: &str, force: bool) -> Result<(), String> {
     let path = Path::new(note_path);
     if !path.exists() || path.extension().map(|e| e != "md").unwrap_or(true) {
         return Ok(());
@@ -3934,19 +3934,30 @@ fn index_note(conn: &Connection, note_path: &str, library_name: &str) -> Result<
     // checked the cache — meaning every unchanged file was still read from
     // disk on every boot. On a 7,600-note Universe that's 7,600 wasted reads.
     // Now: stat the file, compare to cached mtime, read content only if stale.
+    //
+    // PJ-060 — the gate is bulk-walk-only (`force: false`). The stored mtime
+    // has SECOND resolution, so a write landing in the same second as the
+    // cached one is invisible to it: a save followed by a programmatic
+    // rewrite (frontmatter injection, rename cascade, Base cell edit) left
+    // note_meta — and every surface derived from it — silently stale.
+    // Single-note callers reach here through `reindex_single_note`, where
+    // every call site is a "this file just changed" context, so they pass
+    // `force: true` and skip the gate entirely.
     let modified = std::fs::metadata(path)
         .and_then(|m| m.modified())
         .map(|t| t.duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs())
         .unwrap_or(0);
 
-    let existing_mod: Option<u64> = conn.query_row(
-        "SELECT modified FROM note_meta WHERE path = ?1",
-        params![note_path],
-        |row| row.get(0),
-    ).ok();
+    if !force {
+        let existing_mod: Option<u64> = conn.query_row(
+            "SELECT modified FROM note_meta WHERE path = ?1",
+            params![note_path],
+            |row| row.get(0),
+        ).ok();
 
-    if existing_mod == Some(modified) {
-        return Ok(()); // Cache hit — no disk read needed.
+        if existing_mod == Some(modified) {
+            return Ok(()); // Cache hit — no disk read needed.
+        }
     }
 
     let content = std::fs::read_to_string(path).map_err(|e| e.to_string())?;
@@ -4161,7 +4172,7 @@ fn index_library_recursive(conn: &Connection, dir: &Path, library_name: &str, de
         if path.is_dir() {
             index_library_recursive(conn, &path, library_name, depth + 1);
         } else if path.extension().map(|e| e == "md").unwrap_or(false) {
-            let _ = index_note(conn, &path.to_string_lossy(), library_name);
+            let _ = index_note(conn, &path.to_string_lossy(), library_name, false);
         }
     }
 }
@@ -6914,6 +6925,12 @@ pub fn reindex_delete_note(state: &SearchState, note_path: &str) -> Result<(), S
 }
 
 /// Reindex a single note — callable from other modules without Tauri command overhead.
+///
+/// PJ-060: forces the refresh (bypasses the mtime cache gate). Every caller —
+/// the save-path IPC (`constellation_search_reindex`), the rename reindex,
+/// the wikilink-cascade rewrite, the Base cell edit — invokes this BECAUSE
+/// the file just changed; second-resolution mtime cannot be trusted to
+/// prove that it didn't.
 pub fn reindex_single_note(
     state: &SearchState,
     note_path: &str,
@@ -6934,7 +6951,7 @@ pub fn reindex_single_note(
             )
             .ok();
 
-        index_note(conn, note_path, library_name)?;
+        index_note(conn, note_path, library_name, /* force */ true)?;
 
         // Post-COMMIT (index_note's BEGIN IMMEDIATE/COMMIT block has
         // already returned). Read the freshly-written body and apply
@@ -7697,6 +7714,106 @@ pub fn constellation_search_link_counts(
 // directly against a tempfile SQLite DB initialized via `init_db`.
 // This matches the M8c scope split (ship the integration test without
 // the Settings → Debug UI scorecard, which is tracked as M8d).
+
+#[cfg(test)]
+mod tests_pj060_index_gate {
+    //! PJ-060 — pins the `index_note` mtime-gate semantics. The stored mtime
+    //! has SECOND resolution, so a write landing in the same second as the
+    //! cached one is invisible to the gate: the bulk-walk path (force=false)
+    //! must keep skipping unchanged files (the boot perf contract — 7,600
+    //! avoided reads), while the single-note path (force=true; every caller
+    //! is a "this file just changed" context) must refresh note_meta even
+    //! when the mtimes collide.
+    use super::*;
+    use rusqlite::Connection;
+
+    fn test_db() -> Connection {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE note_meta (
+                path TEXT PRIMARY KEY, name TEXT, library_name TEXT,
+                modified INTEGER, properties_json TEXT, tags_json TEXT,
+                outgoing_links_json TEXT, headings_json TEXT, body_text TEXT,
+                word_count INTEGER, created_at INTEGER, cid_cn TEXT DEFAULT '',
+                sources TEXT, content_type TEXT
+             );
+             CREATE TABLE note_aliases (path TEXT, alias_lower TEXT, source TEXT, cid_cn TEXT);
+             CREATE TABLE note_links (
+                source_path TEXT, source_name TEXT, target_name TEXT,
+                link_type TEXT, annotation TEXT, confidence TEXT,
+                weight REAL, created TEXT, last_traversed TEXT,
+                traversal_count INTEGER, library_name TEXT, status TEXT,
+                source_cid_cn TEXT, target_cid_cn TEXT
+             );",
+        )
+        .unwrap();
+        conn
+    }
+
+    /// Index a note, rewrite its CONTENT on disk, then pin the cached
+    /// `note_meta.modified` to the file's current mtime — the deterministic
+    /// reproduction of the same-second race (DB says "current", disk is newer).
+    fn raced_fixture(dir: &std::path::Path) -> (Connection, String) {
+        let conn = test_db();
+        let p = dir.join("raced.md");
+        std::fs::write(&p, "first body").unwrap();
+        let ps = p.to_string_lossy().to_string();
+        index_note(&conn, &ps, "TestLib", false).unwrap();
+        std::fs::write(&p, "second body").unwrap();
+        let file_mtime = std::fs::metadata(&p).unwrap().modified().unwrap()
+            .duration_since(std::time::UNIX_EPOCH).unwrap().as_secs();
+        conn.execute(
+            "UPDATE note_meta SET modified = ?1 WHERE path = ?2",
+            params![file_mtime, ps],
+        )
+        .unwrap();
+        (conn, ps)
+    }
+
+    fn body_of(conn: &Connection, path: &str) -> String {
+        conn.query_row(
+            "SELECT body_text FROM note_meta WHERE path = ?1",
+            params![path],
+            |r| r.get(0),
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn bulk_walk_gate_skips_unchanged_mtime() {
+        let dir = std::env::temp_dir().join(format!("pj060_skip_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let (conn, ps) = raced_fixture(&dir);
+        index_note(&conn, &ps, "TestLib", false).unwrap();
+        // The gate held: the raced second write stays invisible to the walk.
+        assert!(body_of(&conn, &ps).contains("first"));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn forced_reindex_refreshes_despite_mtime_collision() {
+        let dir = std::env::temp_dir().join(format!("pj060_force_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let (conn, ps) = raced_fixture(&dir);
+        index_note(&conn, &ps, "TestLib", true).unwrap();
+        // Forced: note_meta reflects the second write even though mtimes match.
+        assert!(body_of(&conn, &ps).contains("second"));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn fresh_file_indexes_without_force() {
+        let dir = std::env::temp_dir().join(format!("pj060_fresh_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let conn = test_db();
+        let p = dir.join("fresh.md");
+        std::fs::write(&p, "hello world").unwrap();
+        let ps = p.to_string_lossy().to_string();
+        index_note(&conn, &ps, "TestLib", false).unwrap();
+        assert!(body_of(&conn, &ps).contains("hello"));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+}
 
 #[cfg(test)]
 mod tests_m8c {
