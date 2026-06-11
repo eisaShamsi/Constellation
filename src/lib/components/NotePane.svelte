@@ -8,7 +8,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { t } from '$lib/i18n';
 	import { appSettings, getEffectiveScriptFonts } from '$lib/libraries/store';
-	import { lookupStageEmoji, stageLabel, nextStage, prevStage } from '$lib/libraries/store';
+	import { lookupStageEmoji, stageLabel, nextStage, prevStage, buildFullContent } from '$lib/libraries/store';
 	import type { FrontmatterProperty } from '$lib/libraries/store';
 	import { stripLinkTypePrefix } from '$lib/libraries/linkTypeRegistry';
 	import PropertyEditor from './PropertyEditor.svelte';
@@ -259,19 +259,40 @@
 	// dirty) its on-disk content. Route through `mountedFilePath` so the
 	// save always lands on the note this editor was actually editing.
 	let mountedFilePath = filePath ?? '';
+
+	// MIG-076 §C — the pane is the SOLE COMPOSER for its file. The snapshot's
+	// props come from THIS epoch: frozen at mount (same lifecycle as
+	// mountedFilePath — the {#key} recreates the pane on any path/reload
+	// change), updated only by the embedded PropertyEditor's edits routed
+	// through onPropsEditedByUser below. The body comes from THIS pane's CM6
+	// doc. No store-by-tab-id lookup can ever contribute to a write again —
+	// the three-source composition behind BUG-012/015/023 is structurally gone.
+	const mountedProps: FrontmatterProperty[] = (properties ?? []).map((p) => ({ ...p }));
+	let liveProps: FrontmatterProperty[] | null = null;
+	function composeFull(text: string): string {
+		return buildFullContent(liveProps ?? mountedProps, text);
+	}
+	// Embedded-PropertyEditor edits land here (already 800ms-debounced by the
+	// editor): adopt the props for this epoch and save the full snapshot now.
+	function onPropsEditedByUser(props: FrontmatterProperty[]) {
+		liveProps = props.map((p) => ({ ...p }));
+		dirty = true;
+		doSave();
+	}
+
 	function doSave() {
 		if (!dirty) return;
 		dirty = false;
 		// Snapshot text here — the one place we pay the O(N) toString() cost,
 		// at most once per autosave cycle (1.5s), never on individual keystrokes.
 		if (view) latestText = view.state.doc.toString();
-		onsave?.(latestText, mountedFilePath);
+		onsave?.(composeFull(latestText), mountedFilePath);
 	}
 	function doFlush() {
 		if (view) latestText = view.state.doc.toString();
 		const cursorPos = view ? view.state.selection.main.head : 0;
 		const scrollTop = view ? view.scrollDOM.scrollTop : 0;
-		onflush?.(latestText, dirty, cursorPos, scrollTop, mountedFilePath);
+		onflush?.(composeFull(latestText), dirty, cursorPos, scrollTop, mountedFilePath);
 	}
 	function handleVisibilityChange() { if (document.hidden && dirty) doSave(); }
 	function handleBeforeUnload() { doFlush(); }
@@ -1119,6 +1140,7 @@
 					collapsed={propsCollapsed}
 					onToggle={() => propsCollapsed = !propsCollapsed}
 					onstagechange={(s) => { onpromote?.(s); }}
+					onPropsEdited={onPropsEditedByUser}
 				/>
 			{/if}
 			<hr class="e-props-divider" />

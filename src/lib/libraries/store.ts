@@ -1021,14 +1021,30 @@ export async function getOldTitleForCascade(oldPath: string): Promise<string> {
 	return oldPath.split(/[\\/]/).pop()?.replace(/\.md$/, '') ?? '';
 }
 
-export function updateTabContent(tabId: string, newContent: string) {
+/** MIG-076 §C — THE single store writer for tab content. Every content
+ *  mutation flows through here (editor flush, stage promote, property saves,
+ *  FocusPane, the second-screen reload) — the six scattered `tab.content =`
+ *  direct mutations are gone. `origin` is a dev-trace label. */
+export function updateTabContent(
+	tabId: string,
+	newContent: string,
+	opts?: { cursorPos?: number; scrollTop?: number; origin?: string },
+) {
 	const tabs = get(openTabs);
 	const tab = tabs.find(t => t.id === tabId);
 	/* Skip store update if tab doesn't exist or content is unchanged —
 	   avoids triggering a full reactivity cascade (3800+ line layout) */
-	if (!tab || tab.content === newContent) return;
+	if (!tab) return;
+	if (tab.content === newContent && opts?.cursorPos === undefined && opts?.scrollTop === undefined) return;
 	openTabs.update(ts =>
-		ts.map(t => t.id === tabId ? { ...t, content: newContent } : t)
+		ts.map(t => t.id === tabId
+			? {
+				...t,
+				content: newContent,
+				...(opts?.cursorPos !== undefined ? { cursorPos: opts.cursorPos } : {}),
+				...(opts?.scrollTop !== undefined ? { scrollTop: opts.scrollTop } : {}),
+			}
+			: t)
 	);
 }
 
@@ -1172,26 +1188,24 @@ async function resolveNoteContent(filePath: string): Promise<{ content: string; 
 	let diskContent: string | null = null;
 	try { diskContent = await invoke<string>('read_note', { filePath }); } catch { /* disk unreachable; trust wab */ }
 	if (diskContent !== null) {
+		// MIG-076 §C — FAIL-CLOSED (the W2 finding: the old check rejected the
+		// buffer only when BOTH cids were readable AND differed, so any
+		// unreadable identity let a stale buffer through). The buffer is
+		// restored only when BOTH identities are present AND equal AND it
+		// isn't resurrecting an empty body over real disk content (★Stage-1
+		// finding #2). Anything less proven → the disk wins.
 		const wabCid = extractCidCn(wab.content);
 		const diskCid = extractCidCn(diskContent);
-		if (wabCid && diskCid && wabCid !== diskCid) {
-			// Stale wab — buffer is for a different (deleted/renamed-away) note
-			// that previously occupied this path. Disk is the truth, and the
-			// wab cursor/scroll are for the old note so drop them too.
-			console.warn('[resolveNoteContent] stale write-ahead-buffer for', filePath, '— preferring disk');
-			clearWriteAhead(filePath);
-			return { content: diskContent, cursorPos: 0, scrollTop: 0 };
-		}
-		// MIG-076 ★Stage-1 finding #2 — same identity, but the buffer's BODY is
-		// empty while the disk has one. A write-ahead buffer exists to preserve
-		// unsaved EDITS; an empty body preserves nothing worth keeping when the
-		// disk holds content — restoring it resurrects emptiness over a real
-		// note (the body-less tab Eisa hit after rename → switch → return).
-		// Same-cid freshness is §C's full job; this closes the destructive case.
+		const identityProven = !!wabCid && !!diskCid && wabCid === diskCid;
 		const wabBody = parseFrontmatter(wab.content).body.trim();
 		const diskBody = parseFrontmatter(diskContent).body.trim();
-		if (wabBody === '' && diskBody !== '') {
-			console.warn('[resolveNoteContent] empty-body write-ahead-buffer for', filePath, '— preferring disk');
+		const emptyResurrection = wabBody === '' && diskBody !== '';
+		if (!identityProven || emptyResurrection) {
+			console.warn(
+				'[resolveNoteContent] write-ahead-buffer rejected for', filePath,
+				identityProven ? '(empty-body resurrection)' : '(identity unproven)',
+				'— preferring disk',
+			);
 			clearWriteAhead(filePath);
 			return { content: diskContent, cursorPos: 0, scrollTop: 0 };
 		}

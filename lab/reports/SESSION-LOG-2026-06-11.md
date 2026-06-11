@@ -908,3 +908,27 @@ would_refuse_* **0** · unverified_no_cid **0**. The 2 newest entries already ca
 caught two pre-existing data-loss bugs (findings #1 #2), both fixed same-hour, both re-validated.
 The soak continues passively on the 22:39 binary toward the §F1 enforcement flip. Next: §C
 (single-snapshot composition + single store writer + WAB fail-closed).
+
+**§C SHIPPED — the composition lock (single-snapshot composition + single store writer + WAB fail-closed).**
+- **NotePane is the SOLE COMPOSER**: `mountedProps` epoch-frozen at mount (the mountedFilePath
+  lifecycle — {#key} recreates the pane on any path/reload change); the embedded PropertyEditor's
+  edits route through `onPropsEdited` → the pane adopts them as `liveProps` and saves the FULL
+  snapshot (`composeFull` = buildFullContent(liveProps ?? mountedProps, its own CM6 doc)).
+  doSave/doFlush emit full content. The three-source composition (props-by-tab-id + pane text +
+  captured path) behind BUG-012/015/023 is structurally GONE from the save path.
+- **NoteEditor**: handleSave/handleFlush write the pane's snapshot verbatim — freshProps() joins
+  deleted from both; handlePromote routes through the single store writer (its compose stays —
+  folded fully in §C1b, current-tab-only risk window unchanged; documented).
+- **PropertyEditor**: embedded mode (onPropsEdited set) never writes disk/store itself; standalone
+  sidebar mode keeps saveTabContent but through updateTabContent; the re-seed $effect now keys on
+  PATH as well as tab id (tab-reuse keeps the id — the W2 finding).
+- **ONE store writer**: `updateTabContent(tabId, content, {cursorPos?, scrollTop?, origin?})` —
+  all six direct `tab.content =` mutations replaced (editor_flush · stage_promote · prop saves ×2 ·
+  focus_pane · second_screen_reload). One commented exception: NoteEditor's local TabLike mutation
+  for non-store hosts (Index-panel preview).
+- **WAB FAIL-CLOSED**: the buffer restores ONLY when both cids present AND equal AND not an
+  empty-body resurrection; anything less proven → disk wins (was: rejected only when both readable
+  and different — the W2 fail-open hole).
+svelte-check 0 errors (314 warnings = 313 baseline + 1 intentional epoch-capture info, the
+mountedFilePath-pattern). Boss round next: typing perf (Rule 7) + property/stage saves + the
+rename cycle regression.

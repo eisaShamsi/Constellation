@@ -12,7 +12,7 @@
 	import {
 		parseFrontmatter, buildFullContent,
 		writeNote, markRecentWrite, setWriteAhead, clearWriteAhead,
-		renameItem, openTabs, openNoteTab,
+		renameItem, openTabs, openNoteTab, updateTabContent,
 		resolveWikilinkCrossLibrary,
 		createNote, buildDefaultFrontmatter, appSettings, libraries,
 		isCascading,
@@ -143,13 +143,10 @@
 			if (!updated) newProps.push({ key: 'stage', value: nextStage, type: 'text' as any });
 		}
 		const fc = buildFullContent(newProps, bd);
-		// Update in-store tab if it exists there
-		const ct = get(openTabs).find(x => x.id === tab.id);
-		if (ct) {
-			ct.content = fc;
-			openTabs.update(tabs => tabs);
-		}
-		// Also update the local tab reference
+		// MIG-076 §C — through the single store writer (no direct mutation).
+		updateTabContent(tab.id, fc, { origin: 'stage_promote' });
+		// Also update the local tab reference (non-store hosts, e.g. the
+		// Index-panel preview tab, hold their own TabLike object).
 		tab.content = fc;
 		markRecentWrite(tab.path);
 		writeNote(tab.path, fc, 'stage_promote').catch(() => {});
@@ -164,14 +161,17 @@
 	// + old-tab body` — corruption — and (b) write that corruption to the
 	// wrong file on disk, or at minimum poison `setWriteAhead` for the new
 	// tab. Bail in that case.
+	// MIG-076 §C — `text` IS the full note content now: NotePane composes the
+	// snapshot (its epoch props + its doc) before calling. No freshProps()
+	// store-by-tab-id lookup contributes to this write anymore — the
+	// three-source composition behind BUG-012/015/023 is gone from this path.
 	function handleSave(text: string, filePath: string) {
 		if (saving) return;
 		if (!filePath || filePath !== tab.path) return;
 		if (isCascading(filePath)) return; // see isCascading() — F2 post-cascade-stomp gate
 		saving = true;
-		const props = freshProps();
 		markRecentWrite(filePath);
-		const content = buildFullContent(props, text);
+		const content = text;
 		writeNote(filePath, content, 'editor_save')
 			.then(() => {
 				broadcastNoteSaved(filePath);
@@ -218,20 +218,16 @@
 			.finally(() => { saving = false; });
 	}
 
+	// MIG-076 §C — `text` is the pane-composed FULL content (see handleSave).
 	function handleFlush(text: string, needsDiskSave: boolean, cursorPos: number, scrollTop: number, filePath: string) {
 		if (!filePath || filePath !== tab.path) return;
 		// Flush fires on tab close, visibility change, and the {#key}-bump
 		// destroy itself — all paths must respect the cascade gate.
 		if (isCascading(filePath)) return; // see isCascading() — F2 post-cascade-stomp gate
-		const props = freshProps();
-		const content = buildFullContent(props, text);
-		// Update store tab if present
-		const ct = get(openTabs).find(x => x.id === tab.id);
-		if (ct) {
-			ct.content = content;
-			ct.cursorPos = cursorPos;
-			ct.scrollTop = scrollTop;
-		}
+		const content = text;
+		// Store sync on flush (spec §2.2-sanctioned) — through the single
+		// store writer, never a direct mutation.
+		updateTabContent(tab.id, content, { cursorPos, scrollTop, origin: 'editor_flush' });
 		setWriteAhead(filePath, content, cursorPos, scrollTop);
 		if (needsDiskSave) {
 			markRecentWrite(filePath);

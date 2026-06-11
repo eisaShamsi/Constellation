@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { FrontmatterProperty, PropertyType } from '$lib/libraries/store';
-	import { saveTabContent, normalizeDateValue, buildFullContent, openTabs } from '$lib/libraries/store';
+	import { saveTabContent, normalizeDateValue, buildFullContent, openTabs, updateTabContent } from '$lib/libraries/store';
 	import { LIVING_LINK_BASELINE, lookupStageEmoji, splitStage, stageLabel } from '$lib/libraries/store';
 	import { setRegisteredType, getRegisteredType } from '$lib/libraries/propertyTypeRegistry';
 	import { t, locale } from '$lib/i18n';
@@ -34,6 +34,7 @@
 		collapsed = false,
 		onToggle,
 		onstagechange,
+		onPropsEdited,
 	}: {
 		properties: FrontmatterProperty[];
 		body: string;
@@ -45,6 +46,13 @@
 		collapsed?: boolean;
 		onToggle?: () => void;
 		onstagechange?: (stage: string) => void;
+		/** MIG-076 §C — EMBEDDED mode (set by NotePane): property edits are
+		 *  routed to the owning pane, which composes the full snapshot from
+		 *  ITS doc + these props and saves. This editor never writes to disk
+		 *  or tab memory itself in this mode — the single-composer principle.
+		 *  Absent (the right-sidebar standalone instance): the editor saves
+		 *  via saveTabContent as before, through the single store writer. */
+		onPropsEdited?: (props: FrontmatterProperty[]) => void;
 	} = $props();
 
 	const TYPE_ICONS: Record<PropertyType, string> = {
@@ -115,6 +123,7 @@
 	let focusRaf: number | null = null;
 	let saving = $state(false);
 	let prevTabId = $state('');
+	let prevPath = $state('');
 	let tagInputs = $state<Record<number, string>>({});
 
 	// Drag-to-reorder state
@@ -310,7 +319,11 @@
 	}
 	$effect(() => {
 		const currentSnapshot = JSON.stringify(properties.map(p => ({ k: p.key, v: p.value, t: p.type })));
-		const tabChanged = tabId !== prevTabId;
+		// MIG-076 §C — key the re-seed on PATH as well as tab id: tab REUSE
+		// keeps the id while the note changes (the W2 identity finding), so an
+		// id-only key let stale editableProps survive a note swap when the
+		// props snapshot raced. Path change = different note = always re-seed.
+		const tabChanged = tabId !== prevTabId || filePath !== prevPath;
 		const propsChanged = currentSnapshot !== prevPropsSnapshot;
 
 		if (tabChanged || propsChanged) {
@@ -328,6 +341,7 @@
 			prevPropsSnapshot = currentSnapshot;
 			if (tabChanged) {
 				prevTabId = tabId;
+				prevPath = filePath;
 				tagInputs = {};
 			}
 		}
@@ -430,10 +444,12 @@
 		// Flush any pending save before the component is destroyed
 		if (saveTimeout) {
 			clearTimeout(saveTimeout);
-			if (tabId && filePath) {
-				/* Direct mutation so onflush reads fresh properties */
-				const tab = get(openTabs).find(t => t.id === tabId);
-				if (tab) tab.content = buildFullContent(editableProps, body);
+			if (onPropsEdited) {
+				// MIG-076 §C embedded mode — the pane (destroyed after its
+				// children) folds these props into its own destroy-flush.
+				onPropsEdited(editableProps);
+			} else if (tabId && filePath) {
+				updateTabContent(tabId, buildFullContent(editableProps, body));
 				saveTabContent(tabId, filePath, editableProps, body).catch((e) => console.error('[PropertyEditor] Flush save failed:', e));
 			}
 		}
@@ -686,11 +702,15 @@
 		saveTimeout = setTimeout(async () => {
 			saving = true;
 			try {
-				/* Update tab content in store via direct mutation (no store.update = no cascade).
-				   This ensures onflush reads fresh properties when the tab is closed. */
-				const tab = get(openTabs).find(t => t.id === tabId);
-				if (tab) tab.content = buildFullContent(editableProps, body);
-				await saveTabContent(tabId, filePath, editableProps, body);
+				if (onPropsEdited) {
+					// MIG-076 §C embedded mode — hand the props to the owning
+					// pane; it composes the snapshot with ITS doc and saves.
+					onPropsEdited(editableProps);
+				} else {
+					// Standalone (right sidebar): single store writer, then disk.
+					updateTabContent(tabId, buildFullContent(editableProps, body));
+					await saveTabContent(tabId, filePath, editableProps, body);
+				}
 			} catch (err) {
 				console.error('Failed to save:', err);
 			}
