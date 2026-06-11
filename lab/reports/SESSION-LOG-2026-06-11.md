@@ -461,3 +461,38 @@ are closed) — same commit as the FU-1 batch per LL-031.
 
 **Release binary**: `npm run tauri build -- --no-bundle` rebuilt after FU-2/3/4 (the 14:19 binary
 pre-dated them — Stage-0 mtime rule).
+
+---
+
+## FU-3 fix — Boss screenshot caught two defects (same afternoon)
+
+Eisa's first look at the Setter CNS category: **"The name!"** (raw `styleSetter.labels.cns` /
+`...nervous_system_cns` / `...hover_label_*` strings rendered as the category chip, element header,
+and two control labels) and **"There is NO miniature gravity well."**
+
+**Root causes** (both mine, both FU-3):
+1. **The L() fallback was dead code on a miss.** `L(en) = $t('styleSetter.labels.'+slug) || en` —
+   but svelte-i18n returns the KEY ITSELF (truthy) when the id is missing, so `|| en` could never
+   fire. It never showed before because all 303 prior labels had keys in en.json from day one;
+   FU-3 added 4 unkeyed strings and exposed it.
+2. **The preview branch was unreachable.** `twoZone = activeCategory !== 'editor' && !== 'sky'` —
+   every other category renders NO centre stage (the live-behind app is the preview). My
+   `{:else if activeSurface === 'cns'}` mini-well sat inside the centre stage → never rendered.
+
+**Fixes:**
+- `L()` made miss-robust: key-echo treated as a miss → English fallback. Protects every FUTURE
+  unkeyed label, not just these 4 (altitude: the mechanism, not the instance).
+- The 4 keys added **natively ×15** (gated python insertion before the unique `"label_thickness"`
+  anchor; parse + leaf-delta(+4) + EOL(CRLF en/ar, LF rest) + outside-block-identity gates ALL
+  green): `cns` (chip — ar = Eisa's الجهاز العصبي للمعرفة; others = native short form + "(CNS)"),
+  `nervous_system_cns`, `hover_label_background`, `hover_label_text` — each composed from the
+  locale's OWN existing vocabulary (its lens.title + its background/label/hover/text terms).
+- **CNS joined the three-zone set** (`twoZone` now also excludes 'cns') — same rationale as
+  MIG-072 §2 gave Sky View (a focused labelled preview beats hunting a live canvas), plus a harder
+  one: the hover-label vars are mount-read by the canvas, so the live-behind app structurally
+  CANNOT preview them; only the mini-well (CSS-read off the draft) can. Behavior shift logged:
+  on the CNS category the Setter no longer live-pushes the draft to the real app; the mini-well
+  previews live, Keep applies (background immediate via CSS var; labels next CNS open).
+
+svelte-check 0 errors (313-warning baseline). Orientation v2.71 follow-through line amended in the
+same commit. Fresh release binary rebuilt for the re-test.

@@ -42,7 +42,12 @@
 	}
 	function L(en: string | undefined | null): string {
 		if (!en) return en ?? '';
-		return $t('styleSetter.labels.' + ssSlug(en)) || en;
+		const key = 'styleSetter.labels.' + ssSlug(en);
+		const v = $t(key);
+		// svelte-i18n returns the KEY ITSELF on a miss (truthy — `|| en` never fired), so an
+		// unkeyed label used to render as a raw `styleSetter.labels.*` string. Treat key-echo
+		// as a miss and fall back to the English text.
+		return !v || v === key ? en : v;
 	}
 
 	// A control writes one REAL app CSS variable. `color` → hex; `select` → a stack/keyword;
@@ -473,7 +478,10 @@
 	// MIG-072 §2 — Sky View uses the CENTRE preview (three-zone), like the Editor: a focused, labelled
 	// bubble preview (ss-skyprev) beats hunting a ring-change in a 7,600-node live graph. The chrome
 	// surfaces keep the docked two-zone live-behind. (Editor was already three-zone.)
-	const twoZone = $derived(activeCategory !== 'editor' && activeCategory !== 'sky');
+	// MIG-075 FU-3 — CNS joins the three-zone set for the same reason, plus a harder one: the well's
+	// hover-label vars are read once at canvas mount, so the live-behind app CANNOT preview them —
+	// only the mini gravity-well (ss-cnsprev), which reads the draft vars as CSS, can.
+	const twoZone = $derived(activeCategory !== 'editor' && activeCategory !== 'sky' && activeCategory !== 'cns');
 
 	const draftStyle = $derived(Object.entries(draft).map(([k, v]) => `${k}:${v}`).join(';'));
 	const sel = $derived(selected ? ELEMENTS[selected] ?? null : null);
