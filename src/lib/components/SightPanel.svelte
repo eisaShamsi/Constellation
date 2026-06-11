@@ -280,7 +280,9 @@
 
 <style>
 	.sp-root {
-		width: 280px; height: 100%; overflow-y: auto; overflow-x: hidden;
+		/* §C-fix-1 (Eisa, Stage 2): 280 → 380px — the Blind Spots pair rows
+		   need the breath; matches the app right-sidebar width convention. */
+		width: 380px; height: 100%; overflow-y: auto; overflow-x: hidden;
 		background: var(--background-primary, #fff);
 		border-inline-start: 1px solid var(--background-modifier-border, #e5e7eb);
 		font-size: 11px; display: flex; flex-direction: column; gap: 0;
@@ -335,7 +337,7 @@
 		font-size: 10px; padding: 1px 7px; border-radius: 8px; cursor: pointer;
 		border: 1px solid var(--background-modifier-border, #e5e7eb);
 		background: none; color: var(--interactive-accent, #7c3aed); font-family: inherit;
-		max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+		max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 	}
 	.sp-bridge-chip:hover { background: var(--background-modifier-hover, #f1f5f9); }
 	/* List items */

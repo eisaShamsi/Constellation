@@ -204,6 +204,28 @@
 		return n.libraryColor;
 	}
 
+	// §C-fix-2 (Eisa, Stage 2): hovering a Regions row mutes everything
+	// OUTSIDE that region to black-and-white (luminance gray), so the
+	// hovered region keeps its color against a monochrome backdrop.
+	// Memoized per hex — no per-frame parsing (Perf Rule 1 family).
+	const _grayMemo = new Map<string, string>();
+	function toGray(hex: string): string {
+		let g = _grayMemo.get(hex);
+		if (!g) {
+			const m = /^#?([0-9a-f]{6})/i.exec(hex);
+			if (m) {
+				const v = parseInt(m[1], 16);
+				const lum = Math.round(0.299 * ((v >> 16) & 255) + 0.587 * ((v >> 8) & 255) + 0.114 * (v & 255));
+				const h = lum.toString(16).padStart(2, '0');
+				g = `#${h}${h}${h}`;
+			} else {
+				g = '#9ca3af';
+			}
+			_grayMemo.set(hex, g);
+		}
+		return g;
+	}
+
 	const isRTL = $derived($dir === 'rtl');
 
 	// Syntax chips (reactive to locale)
@@ -693,16 +715,21 @@
 			const isCurrent = currentMatch?.id === n.id;
 			const isNeighbor = selectedNode && (n === selectedNode || neighborIds.has(n.id));
 			const maturityAlpha: Record<string, number> = { seed: 0.5, sapling: 0.7, evergreen: 0.9, canonical: 1.0, wilting: 0.4 };
-			// Dim logic: search dims non-matches, neighborhood dims non-neighbors,
-			// a hovered Regions row dims everything outside that region (§C1).
+			// Dim logic: search dims non-matches, neighborhood dims non-neighbors.
+			// §C-fix-2 (Eisa, Stage 2): a hovered Regions row MUTES everything
+			// outside that region to black-and-white (gray fill, modest alpha,
+			// no decorations) instead of near-invisibility — the hovered region
+			// keeps its color against a monochrome backdrop.
+			const mutedByRegion = highlightRegionId !== null
+				&& communityAssignments.get(n.id) !== highlightRegionId;
 			const baseAlpha = maturityAlpha[n.maturity ?? 'seed'] ?? 0.6;
 			const alpha = hasSearch ? (isMatch ? 1.0 : 0.15)
 				: selectedNode ? (isNeighbor ? 1.0 : 0.12)
-				: highlightRegionId !== null ? (communityAssignments.get(n.id) === highlightRegionId ? 1.0 : 0.08)
+				: highlightRegionId !== null ? (mutedByRegion ? 0.35 : 1.0)
 				: baseAlpha;
 
-			// Bridge emphasis
-			if (n.centrality > 0.4 && alpha > 0.3) {
+			// Bridge emphasis (skipped for B/W-muted nodes — color would leak)
+			if (n.centrality > 0.4 && alpha > 0.3 && !mutedByRegion) {
 				ctx!.beginPath();
 				ctx!.arc(x, y, n.r + 4 / zoom, 0, Math.PI * 2);
 				ctx!.fillStyle = nodeFill(n) + '33';
@@ -727,23 +754,24 @@
 				ctx!.stroke();
 			}
 
-			// Node circle — colored by library, or by region under the §C1 lens
+			// Node circle — colored by library, by region under the §C1 lens,
+			// or luminance-gray when muted by a hovered Regions row (§C-fix-2)
 			ctx!.globalAlpha = alpha;
 			ctx!.beginPath();
 			ctx!.arc(x, y, n.r, 0, Math.PI * 2);
-			ctx!.fillStyle = nodeFill(n);
+			ctx!.fillStyle = mutedByRegion ? toGray(nodeFill(n)) : nodeFill(n);
 			ctx!.fill();
 			ctx!.globalAlpha = 1.0;
 
-			// Maturity border
-			if (n.maturity && MATURITY_COLORS[n.maturity] && (!hasSearch || isMatch)) {
+			// Maturity border (colored — skipped on B/W-muted nodes)
+			if (n.maturity && MATURITY_COLORS[n.maturity] && (!hasSearch || isMatch) && !mutedByRegion) {
 				ctx!.strokeStyle = MATURITY_COLORS[n.maturity];
 				ctx!.lineWidth = 1.5 / zoom;
 				ctx!.stroke();
 			}
 
-			// Bridge ring
-			if (n.centrality > 0.5 && (!hasSearch || isMatch)) {
+			// Bridge ring (colored — skipped on B/W-muted nodes)
+			if (n.centrality > 0.5 && (!hasSearch || isMatch) && !mutedByRegion) {
 				ctx!.strokeStyle = '#7c3aed';
 				ctx!.lineWidth = 2 / zoom;
 				ctx!.stroke();
