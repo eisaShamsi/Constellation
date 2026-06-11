@@ -367,4 +367,47 @@ registry-driven list** (canonical order, custom types included, labels via the l
 (inspect-find-able; the Setter CATEGORY wiring — which CNS controls to expose — is a noted follow-up,
 not silently built); the hover-label colors read optional `--cns-label-bg/-text` theme vars ONCE at
 mount (Rule 3 — never on the draw path; unset = today's look). svelte-check **0 errors**;
-`LINK_TYPE_COLORS` grep = gone from CNS.
+`LINK_TYPE_COLORS` grep = gone from CNS. → `b8a5f411`
+
+**★ STAGE 3 VERDICT (Eisa): "Perfect! Pass."** + a feature add → **§C-fix-3** (`4045d014`): **pinnable
+regions** — clicking a Regions row pins its B/W mute (toggle; accent bar + dot on the pinned row); hover
+previews over the pin; node hover/click work as usual inside the pinned view, and a selected node's
+neighbors keep full color across regions (the cross-region read). Rows became real buttons.
+
+**§E SHIPPED** (`1d9873ad`) — the EN CNS help topic rewritten in full to the ratified paper (the five
+registers as built incl. hover-mute + pin; the layout grammar; the caption; the CCS dual-organ framing;
+CNS-vs-neighbors replacing the stale CNS-vs-Sight; the old doc's over-claims corrected); User Manual §8b
+rewritten likewise (incl. الجهاز العصبي للمعرفة). The 14-language help mirrors ride the standing batched
+debt (the ar mirror is now stale against the rewrite — logged).
+
+**§F /simplify** (`4a2b2d6f`) — 4 agents (reuse/simplification/efficiency/altitude): **2 real fixes
+applied** (the unreachable ×N branch in tension.rs removed — the pair map stays as the defensive dedupe;
+ONE `communityAssignments.get` per node in the draw loop + the maturity-alpha literal hoisted) — the rest
+verified clean or skipped with reason (DB-lock idiom = codebase norm; toGray vs linkTypeTextColor =
+different outputs, extraction not worth it; the null-type predicate centralization = REAL but needs
+shared Rust+TS semantics → **noted follow-up**). svelte-check 0; MIG tests 7/7; **FULL Rust suite
+903/903**. *(Process note: a PowerShell `-replace`+`Set-Content -NoNewline` attempt flattened Sight2's
+newlines mid-fix — caught immediately, restored from HEAD, redone via the Edit tool. Dedicated tools for
+source edits, always.)*
+
+**§F 3-AGENT AUDIT — PASS.** **Invariants 11/11 HOLD** (4A delivered 8 HOLD + 3 cannot-determine on
+file-access grounds; all 3 closed first-hand: I6 = the Predecessor records in this log's §B1/§B2; I10 =
+`resizeObs?.disconnect()` + `unsubLinkTypes?.()` both in onDestroy, grep-verified; I11 = ZERO new
+`$effect` in the whole range, diff-verified). **Drift CLEAN** (4B: single caller per changed IPC,
+correct shapes; removed surfaces zero live references; added keys 15/15 per file; dropped keys zero
+consumers; the open-ccs event = 2 document dispatchers → 1 document listener; the onOpenCns gate matches
+the dock's; searchHub.linksTo's remaining consumers all legitimate) — **one finding followed through**:
+the 7 `lens.link*` keys went dead when the legend turned registry-driven → **dropped ×15** (gated, −7
+per lens block, zero consumers confirmed). 4B also noted `diversivity` is computed+serialized but
+frontend-unread — left in the payload (harmless; possible future read), noted. **Migration path 8/8
+PASS, zero risk** (4C: empty-universe paths, pre-MIG-067 NULL/'relates' rows, locale rollback both
+directions via the fallback chains, no persisted state anywhere on the new paths, the cUniverse
+`unavailable` parity, both feature gates, the snapshot self-heal).
+
+**§F PERF RECORD (honest, no invented numbers):** CNS first-open — **Eisa's lived Stage-1 measurement:
+"less than 3 seconds from click to paint"** on the 7,661-note / 234k-link universe (was: a corpus
+re-read of every .md on the UI thread + per-edit recurrence; the walk is structurally gone — the engine
+reads ONE indexed query). The CNS panel open: **zero live link IPCs** (was 3, incl. two full-table
+GROUP BYs of the pre-MIG-073 KH-freeze family + a LIMIT-200 julianday scan). The health tab: DB-sourced,
+async, Stage-1 PASS. Boot/typing: **zero boot-path changes** (audit-verified); editor untouched. Tests:
+903/903 lib + 7/7 MIG-075. The S3 Louvain-worker question: **closed not-needed** at Eisa's <3s verdict.
