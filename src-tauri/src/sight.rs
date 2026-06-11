@@ -1,23 +1,30 @@
-//! Constellation Sight — CE Layer 3: Network Analysis Engine.
+//! CNS (Constellation Nervous System) — the network-analysis engine.
 //!
 //! (File renamed from `lens.rs` to `sight.rs` 2026-04-27 per MIG-009 to
-//! match the user-facing surface name. The `Lens*` type names below
-//! are internal Rust-side identifiers; renaming them too would churn
-//! the wire format unnecessarily — they're only ever consumed by the
-//! `+layout.svelte` `toggleLens()` flow as a typed JSON payload.)
+//! match the then-current surface name. The `Lens*` type names below
+//! are internal Rust-side identifiers; renaming them would churn the
+//! wire format unnecessarily — they're only ever consumed by the
+//! `+layout.svelte` `toggleLens()` flow as a typed JSON payload. The
+//! surface itself is the CNS gravity well, `ConstellationSight2.svelte`,
+//! per the ratified Constellation-Nervous-System-Concept-Paper.)
 //!
-//! Applies graph algorithms to the user's knowledge graph:
-//! - Betweenness centrality (Brandes' algorithm) — finds bridge notes
-//! - Shared-tag edges — implicit connections between notes sharing tags
-//! - Returns per-note centrality scores for the frontend to overlay on
-//!   the Constellation Sight visualization (PIXI / GraphMind engine).
+//! - Betweenness centrality (Brandes' algorithm) — finds Bridge notes.
 //!
-//! The frontend handles community detection (Louvain, already in clusterEngine.ts),
-//! structural gap detection, entropy, and universe health scoring.
+//! MIG-075 §A1 — the centrality input is read from `note_links` (the
+//! write-time-maintained link record, MIG-067-correct) instead of
+//! re-reading every .md via scan_library_links (Perf Rule 8: reads are
+//! cheap indexed lookups; the corpus is never walked on the open path).
+//! The command is async so Brandes never blocks the WebView2 UI thread.
+//! The DB lock is held for the row read only, released before any
+//! graph computation.
+//!
+//! The frontend handles community detection (Louvain, clusterEngine.ts),
+//! structural gap detection, entropy, and the cohesion score.
 
 use petgraph::graph::{NodeIndex, UnGraph};
 use serde::Serialize;
 use std::collections::{HashMap, VecDeque};
+use tauri::Manager;
 
 /// Weight for each typed link — higher = stronger connection.
 fn link_type_weight(link_type: &Option<String>) -> f64 {
@@ -35,47 +42,75 @@ fn link_type_weight(link_type: &Option<String>) -> f64 {
 }
 
 /// Result of centrality computation — sent to frontend via IPC.
+/// (MIG-075 §A1 dropped the `contradictions` field — its only frontend
+/// consumer was a dead prop; the contradiction pair list is
+/// `detect_tensions`' per the ratified CNS paper §5.)
 #[derive(Debug, Clone, Serialize)]
 pub struct LensCentralityData {
     /// Map from note_id (lowercase name) to normalized betweenness centrality (0.0–1.0).
     pub centrality: HashMap<String, f64>,
     /// Diversivity: betweenness centrality / degree. High = disproportionately influential.
     pub diversivity: HashMap<String, f64>,
-    /// Contradiction edges: pairs of notes connected by "contradicts" links.
-    pub contradictions: Vec<(String, String)>,
     pub node_count: u32,
     pub edge_count: u32,
 }
 
-/// Compute betweenness centrality for all notes across the given libraries.
+/// Compute betweenness centrality for the active universe's link graph.
 ///
-/// Uses Brandes' algorithm (O(VE)) on an undirected graph built from wikilinks.
-/// Node IDs are lowercase note names (matching StarNode.id in the frontend).
-#[tauri::command]
+/// Reads `(source_name, target_name, link_type)` from `note_links`
+/// (`status='active'`) — one indexed read; the DB lock is released
+/// before any computation. Uses Brandes' algorithm (O(VE)) on an
+/// undirected graph. Node IDs are lowercase note names (matching the
+/// frontend's SimNode ids). Scope = the active universe's own DB —
+/// exact parity with the retired fs walk, whose cUniverse scans failed
+/// library validation and were silently swallowed.
+#[tauri::command(async)]
 pub fn constellation_sight_centrality(
     app: tauri::AppHandle,
-    library_paths: Vec<(String, String)>, // (library_path, library_name) pairs
 ) -> Result<LensCentralityData, String> {
-    // 1. Collect all links with types across all libraries
+    let rows: Vec<(String, String, Option<String>)> = {
+        let state = app.state::<crate::search::SearchState>();
+        let db = state.db.lock().map_err(|e| e.to_string())?;
+        let conn = db.as_ref().ok_or("Search DB not initialized")?;
+        let mut stmt = conn
+            .prepare("SELECT source_name, target_name, link_type FROM note_links WHERE status = 'active'")
+            .map_err(|e| e.to_string())?;
+        let mapped = stmt
+            .query_map([], |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, Option<String>>(2)?,
+                ))
+            })
+            .map_err(|e| e.to_string())?;
+        mapped.filter_map(|r| r.ok()).collect()
+    };
+
+    Ok(compute_centrality_from_links(rows))
+}
+
+/// Pure core (testable without an AppHandle): build the weighted
+/// undirected graph from link rows and run Brandes.
+pub(crate) fn compute_centrality_from_links(
+    rows: Vec<(String, String, Option<String>)>,
+) -> LensCentralityData {
     struct RawLink { source: String, target: String, link_type: Option<String> }
-    let mut all_links: Vec<RawLink> = Vec::new();
-    let mut contradictions: Vec<(String, String)> = Vec::new();
+    let mut all_links: Vec<RawLink> = Vec::with_capacity(rows.len());
 
-    for (lib_path, lib_name) in &library_paths {
-        let links = crate::libraries::scan_library_links(
-            app.clone(), lib_path.clone(), lib_name.clone(),
-        ).unwrap_or_default();
-
-        for link in links {
-            let source = link.source_name.to_lowercase();
-            let target = link.target.to_lowercase();
-            if source == target { continue; }
-            // Track contradictions
-            if link.link_type.as_deref() == Some("contradicts") {
-                contradictions.push((source.clone(), target.clone()));
-            }
-            all_links.push(RawLink { source, target, link_type: link.link_type });
-        }
+    for (source, target, link_type) in rows {
+        let source = source.to_lowercase();
+        let target = target.to_lowercase(); // lowered at index time; defensive
+        if source.is_empty() || target.is_empty() || source == target { continue; }
+        // Weight parity with the retired fs walk: the indexer stores plain
+        // untyped links as 'associative' (and legacy rows as 'relates'),
+        // while the walk's resolver returned None for them → default
+        // weight. Map both back to None so untyped edges keep weight 1.0.
+        let link_type = match link_type.as_deref() {
+            Some("associative") | Some("relates") | Some("") => None,
+            _ => link_type,
+        };
+        all_links.push(RawLink { source, target, link_type });
     }
 
     // 2. Build weighted petgraph undirected graph (edge weight = typed link weight)
@@ -111,13 +146,12 @@ pub fn constellation_sight_centrality(
     let e = graph.edge_count();
 
     if n == 0 {
-        return Ok(LensCentralityData {
+        return LensCentralityData {
             centrality: HashMap::new(),
             diversivity: HashMap::new(),
-            contradictions: Vec::new(),
             node_count: 0,
             edge_count: 0,
-        });
+        };
     }
 
     // 3. Brandes' betweenness centrality
@@ -148,13 +182,12 @@ pub fn constellation_sight_centrality(
         diversivity.insert(name.clone(), div);
     }
 
-    Ok(LensCentralityData {
+    LensCentralityData {
         centrality,
         diversivity,
-        contradictions,
         node_count: n as u32,
         edge_count: e as u32,
-    })
+    }
 }
 
 /// Brandes' algorithm for betweenness centrality on an undirected unweighted graph.
@@ -421,5 +454,78 @@ fn scan_note_tags_recursive(
                 note_tags.insert(note_name, tags);
             }
         }
+    }
+}
+
+// ─── MIG-075 §A1 tests ─────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests_mig075_sight {
+    //! Pins the DB-sourced centrality core: graph shape, the known-bridge
+    //! ranking, the untyped-weight parity mapping, and row hygiene
+    //! (self-links / empty targets skipped; per-pair edge dedupe).
+    use super::*;
+
+    fn row(s: &str, t: &str, lt: Option<&str>) -> (String, String, Option<String>) {
+        (s.to_string(), t.to_string(), lt.map(|x| x.to_string()))
+    }
+
+    /// Two clusters joined ONLY through "bridge" — Brandes must rank the
+    /// bridge note strictly highest (normalized 1.0).
+    #[test]
+    fn bridge_note_ranks_highest() {
+        let rows = vec![
+            // cluster 1
+            row("a1", "a2", Some("supports")),
+            row("a2", "a3", None),
+            row("a3", "a1", Some("associative")), // untyped-stored form
+            // the bridge
+            row("a1", "bridge", Some("derives-from")),
+            row("bridge", "b1", Some("supports")),
+            // cluster 2
+            row("b1", "b2", None),
+            row("b2", "b3", Some("contradicts")),
+            row("b3", "b1", None),
+        ];
+        let data = compute_centrality_from_links(rows);
+        assert_eq!(data.node_count, 7, "7 distinct notes");
+        assert_eq!(data.edge_count, 8, "8 deduped undirected edges");
+        assert_eq!(
+            data.centrality.get("bridge").copied(),
+            Some(1.0),
+            "the sole connector normalizes to 1.0: {:?}",
+            data.centrality
+        );
+        // Every other note routes fewer shortest paths than the bridge.
+        for (name, score) in &data.centrality {
+            if name != "bridge" {
+                assert!(*score < 1.0, "{name} must rank below the bridge");
+            }
+        }
+    }
+
+    /// Self-links and empty targets are dropped; duplicate (source,target)
+    /// rows collapse to ONE edge (max weight wins) — the documented
+    /// occurrence-dedup delta vs the retired fs walk.
+    #[test]
+    fn row_hygiene_and_edge_dedupe() {
+        let rows = vec![
+            row("x", "x", None),            // self-link → dropped
+            row("x", "", Some("supports")), // empty target → dropped
+            row("x", "y", None),
+            row("x", "y", Some("supports")), // same pair, typed → one edge
+            row("y", "x", Some("causes")),   // reverse direction → same undirected pair
+        ];
+        let data = compute_centrality_from_links(rows);
+        assert_eq!(data.node_count, 2);
+        assert_eq!(data.edge_count, 1, "one undirected edge for the x↔y pair");
+    }
+
+    /// The empty universe returns an empty payload, not an error.
+    #[test]
+    fn empty_rows_empty_payload() {
+        let data = compute_centrality_from_links(vec![]);
+        assert_eq!((data.node_count, data.edge_count), (0, 0));
+        assert!(data.centrality.is_empty() && data.diversivity.is_empty());
     }
 }

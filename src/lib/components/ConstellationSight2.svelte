@@ -94,7 +94,6 @@
 		bridges = [] as { id: string; name: string; centrality: number }[],
 		communities = [] as ClusterInfo[],
 		communityProfiles = [] as CommunityProfile[],
-		contradictions = [] as [string, string][],
 		libraryColorMap = {} as Record<string, string>,
 		searchMatchIds = null as Set<string> | null,
 		onNoteClick,
@@ -111,7 +110,6 @@
 		bridges?: { id: string; name: string; centrality: number }[];
 		communities?: ClusterInfo[];
 		communityProfiles?: CommunityProfile[];
-		contradictions?: [string, string][];
 		libraryColorMap?: Record<string, string>;
 		searchMatchIds?: Set<string> | null;
 		onNoteClick?: (path: string, name: string, highlightTerm?: string) => void;

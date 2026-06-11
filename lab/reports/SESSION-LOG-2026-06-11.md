@@ -212,4 +212,31 @@ recommended.
 
 **Next: Eisa's Plan approval → the build cascades §A1 → §F.**
 
-**Commit:** paper v1.1 + the Plan + this log §4 + orientation v2.70 (same commit per LL-031).
+**Commit:** paper v1.1 + the Plan + this log §4 + orientation v2.70 (same commit per LL-031). → `6f788cf6`
+
+## §MIG-075 BUILD — Plan APPROVED + the Q7 amendment; the cascade opens (11:05 →)
+
+**Eisa (verbatim): "Approved. But, I will use 'الجهاز العصبي للمعرفة' as the Arabic equivalent to
+'CNS'."** → Plan approved; the Arabic title is HIS term — **الجهاز العصبي للمعرفة** (the Nervous System
+of Knowledge) — amending the recommended للكوكبة. Paper revised at
+`docs/Constellation-Nervous-System-Concept-Paper-v1.2.md` (one-ruling revision; v1.0/v1.1 preserved);
+orientation v2.70 carries the dated addendum. **Judgment surfaced, not hidden:** the 13 non-ar locales
+will follow Eisa's semantic (*of Knowledge*, native forms) rather than the للكوكبة pattern; en keeps the
+brand form per the 2026-05-14 ruling. This lands at §B3 and is called out in the Stage-2 tutorial for
+cheap correction if Eisa wants different.
+
+**Build order (per the approved Plan):** §A1 → §A2 → §A3 → §B1 → ★ Stage 1 → §B2 → §B3 → §C1 → §C2 →
+★ Stage 2 → §D1 → ★ Stage 3 → §E → §F. Each § = one commit; Predecessor records land here before each
+retiring edit.
+
+**§A1 SHIPPED** — `constellation_sight_centrality` re-sourced from `note_links` (one indexed read,
+`status='active'`; the DB lock held for the read only) + `#[tauri::command(async)]` + the `library_paths`
+param dropped (scope = the active universe, exact parity — cUniverse scans previously failed validation
+silently). The pure core extracted as `compute_centrality_from_links()` for tests. **Weight-parity
+mapping**: the indexer stores plain untyped links as `'associative'` (legacy `'relates'`) while the
+retired fs resolver returned `None` → both map to `None` so untyped edges keep weight 1.0. The
+`contradictions` field dropped from `LensCentralityData` (its only consumer was a dead prop; the pair
+list is `detect_tensions`' per the paper §5) — toggleLens step 9 + `lensContradictions` + the Sight2
+prop removed with it. 3 new tests (`tests_mig075_sight`): bridge-ranks-highest · row hygiene +
+occurrence-dedupe (the documented delta) · empty payload — **3/3 pass**; cargo check clean;
+svelte-check **0 errors** (317-warning baseline unchanged).

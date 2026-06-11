@@ -819,7 +819,6 @@
 	let lensPeelCount = $state(0);
 	let lensTagEdges = $state<{ source: string; target: string; shared_tags: string[]; weight: number }[]>([]);
 	let lensCommunityProfiles = $state<CommunityProfile[]>([]);
-	let lensContradictions = $state<[string, string][]>([]);
 	/** WTD cache flag: true = lens data is stale and must be recomputed on next open.
 	 *  Starts true (no data yet). Flipped to false after a successful computation,
 	 *  back to true whenever skyVersion increments (graph topology changed). */
@@ -3846,11 +3845,11 @@
 		// runs the build, opens DevTools console, copies the table to me.
 		performance.mark('sight:toggle:start');
 		try {
-			// 1. Compute centrality in Rust
+			// 1. Compute centrality in Rust — MIG-075 §A1: DB-sourced (note_links)
+			// + async; no library paths, no fs walk. Scope = the active universe.
 			performance.mark('sight:rust-centrality:start');
-			const libPaths = $libraries.map(l => [l.path, l.name] as [string, string]);
 			const result = await invoke<{ centrality: Record<string, number>; node_count: number; edge_count: number }>(
-				'constellation_sight_centrality', { libraryPaths: libPaths }
+				'constellation_sight_centrality'
 			);
 			lensCentrality = new Map(Object.entries(result.centrality));
 			performance.mark('sight:rust-centrality:end');
@@ -3933,8 +3932,9 @@
 			performance.mark('sight:bridge-suggestions:end');
 			performance.measure('sight:bridge-suggestions', 'sight:bridge-suggestions:start', 'sight:bridge-suggestions:end');
 
-			// 9. Contradictions from Rust (Feature 3)
-			lensContradictions = (result as any).contradictions ?? [];
+			// (The old step 9 — contradiction pairs from the centrality IPC —
+			// was removed in MIG-075 §A1: its only consumer was a dead prop.
+			// The pair list is detect_tensions' per the ratified CNS paper §5.)
 
 			// Mark cache fresh only if the graph didn't change mid-computation.
 			if (skyVersion === computeVersion) {
@@ -5759,7 +5759,6 @@
 					bridges={lensBridges}
 					communities={lensCommunities}
 					communityProfiles={lensCommunityProfiles}
-					contradictions={lensContradictions}
 					{libraryColorMap}
 					searchMatchIds={searchHubMatchIds}
 					focusNoteId={pendingCnsFocusPath ?? undefined}
