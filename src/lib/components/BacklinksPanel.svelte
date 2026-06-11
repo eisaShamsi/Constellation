@@ -164,7 +164,7 @@
 			const re = new RegExp(`\\b(${activeNoteName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})\\b`, 'i');
 			const newContent = content.replace(re, `[[${activeNoteName}]]`);
 			if (newContent !== content) {
-				await invoke('write_note', { filePath: mentionPath, content: newContent });
+				await invoke('write_note', { filePath: mentionPath, content: newContent, origin: 'link_mention' });
 			}
 		} catch { /* ignore */ }
 	}

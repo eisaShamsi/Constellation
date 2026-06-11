@@ -141,7 +141,7 @@
 
 		try {
 			const newPath = await createNote(libraryPath, fileName);
-			await writeNote(newPath, content);
+			await writeNote(newPath, content, 'expression_forge');
 			onClose?.();
 		} catch (e) {
 			console.error('Export failed:', e);

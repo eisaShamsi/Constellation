@@ -268,7 +268,7 @@
 		const frontmatter = `---\nstage: growth\ncanvas_origin: "${canvasTitle}"\n${item.quadrant ? `canvas_quadrant: ${item.quadrant}\n` : ''}---\n`;
 		try {
 			const newPath = await createNote(targetPath, fileName);
-			await writeNote(newPath, frontmatter + item.content);
+			await writeNote(newPath, frontmatter + item.content, 'canvas_export');
 			const noteName = promoteNoteName.trim();
 			item.content = `[[${noteName}]]`;
 			item.type = 'link';

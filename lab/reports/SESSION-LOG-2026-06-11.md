@@ -881,3 +881,20 @@ clearWriteAhead(old+new) — a pre-rename buffer is stale BY DEFINITION once the
 (§140's old-path defense preserved by clearing both keys); then re-read the renamed file and refresh
 matching tabs with a reloadVersion bump (the reloadTabsFromDisk / D6 recreate shape) so the
 remounted pane + PropertyEditor can never resurrect v1. svelte-check 0 errors.
+
+**★Stage-1 FINDING #2 — the empty-body resurrection (rename → switch → return); FIXED + journal upgraded.**
+Eisa's re-test: title fix HELD (v2 + alias + body immediately after rename ✓ ✓ ✓), but returning to
+the note after a switch showed an EMPTY body. Journal: rename_title 190B (fm v2+alias+BODY ✓) →
++11.4s write_note 159B = fm-v2-with-alias + NO body (disk confirmed body-less; same shape +0.5s on
+his second probe). Three fixes:
+1. **renameItem single-update**: my finding-#1 fix updated the tab twice (path, then content+bump) —
+   the instantly-destroyed middle pane was a ZOMBIE able to flush its empty initial doc. Now ONE
+   openTabs.update folds path+name+content+reloadVersion → exactly one remount, no zombie window.
+2. **resolveNoteContent empty-body guard**: a same-cid wab whose BODY is empty while disk has one is
+   never restored (a buffer preserves EDITS; empty preserves nothing) — disk wins, warn logged. The
+   full same-cid freshness fix remains §C; this closes the destructive case.
+3. **Journal origin granularity** (the gap this hunt exposed): write_note carries an optional
+   `origin` — all 14 frontend writer sites labeled (editor_save / editor_flush / stage_promote /
+   prop_save / flush_all / focus_pane / template_create / daily_template / template_insert /
+   link_mention / bulk_tag / expression_forge / canvas_export) → the NEXT anomaly names its author
+   in one journal line. svelte-check 0 errors; gate tests 14/14.

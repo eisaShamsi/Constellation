@@ -241,7 +241,7 @@
 				} else {
 					newContent = `---\ntags:\n  - ${tagClean}\n---\n` + content;
 				}
-				await invoke('write_note', { filePath: path, content: newContent });
+				await invoke('write_note', { filePath: path, content: newContent, origin: 'bulk_tag' });
 				success++;
 			} catch { /* skip failed */ }
 		}

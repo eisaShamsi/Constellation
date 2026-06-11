@@ -523,7 +523,7 @@ export async function flushAllTabsInLibrary(libraryPath: string): Promise<void> 
 		if (!wab) continue; // not dirty — nothing to flush
 		markRecentWrite(tab.path);
 		writes.push(
-			writeNote(tab.path, wab.content)
+			writeNote(tab.path, wab.content, 'flush_all')
 				.then(() => clearWriteAhead(tab.path))
 				.catch((err) => {
 					console.error('[flushAllTabsInLibrary] write failed for', tab.path, err);
@@ -561,7 +561,7 @@ export async function saveTabContent(
 		// Do NOT update the store during autosave — it triggers full reactivity cascade.
 		// The editor owns the content. Store is synced on tab switch / note reload.
 		recentWrites.set(filePath, Date.now());
-		await writeNote(filePath, newContent);
+		await writeNote(filePath, newContent, 'prop_save');
 		emit('screen:note-saved', { path: filePath }).catch(() => {});
 		// Reindex for search (non-blocking) — updates FTS5, tags, links
 		const tab = get(openTabs).find(t => t.path === filePath);
@@ -984,8 +984,11 @@ export function buildFullContent(properties: FrontmatterProperty[], body: string
 	return frontmatter + '\n' + body;
 }
 
-export async function writeNote(filePath: string, content: string): Promise<void> {
-	await invoke('write_note', { filePath, content });
+export async function writeNote(filePath: string, content: string, origin?: string): Promise<void> {
+	// MIG-076 — `origin` labels the writer in the write journal so an anomaly
+	// names its author in one line (the Stage-1 lesson: "write_note" alone
+	// hid five different writers behind one tag).
+	await invoke('write_note', { filePath, content, origin });
 }
 
 /**
@@ -1176,6 +1179,19 @@ async function resolveNoteContent(filePath: string): Promise<{ content: string; 
 			// that previously occupied this path. Disk is the truth, and the
 			// wab cursor/scroll are for the old note so drop them too.
 			console.warn('[resolveNoteContent] stale write-ahead-buffer for', filePath, '— preferring disk');
+			clearWriteAhead(filePath);
+			return { content: diskContent, cursorPos: 0, scrollTop: 0 };
+		}
+		// MIG-076 ★Stage-1 finding #2 — same identity, but the buffer's BODY is
+		// empty while the disk has one. A write-ahead buffer exists to preserve
+		// unsaved EDITS; an empty body preserves nothing worth keeping when the
+		// disk holds content — restoring it resurrects emptiness over a real
+		// note (the body-less tab Eisa hit after rename → switch → return).
+		// Same-cid freshness is §C's full job; this closes the destructive case.
+		const wabBody = parseFrontmatter(wab.content).body.trim();
+		const diskBody = parseFrontmatter(diskContent).body.trim();
+		if (wabBody === '' && diskBody !== '') {
+			console.warn('[resolveNoteContent] empty-body write-ahead-buffer for', filePath, '— preferring disk');
 			clearWriteAhead(filePath);
 			return { content: diskContent, cursorPos: 0, scrollTop: 0 };
 		}
@@ -2157,13 +2173,39 @@ export async function renameItem(oldPath: string, newPath: string): Promise<stri
 	migratePathKeyedAuxStateOnRename(oldPath, effectivePath);
 	const derivedName =
 		newPath.split(/[\\/]/).pop()?.replace(/\.md$/, '') ?? '';
-	// Update any open tabs that reference the old path.
+	// MIG-076 ★Stage-1 findings (journal-proven, 2026-06-11 22:01 + 22:20):
+	// rename_item rewrites the frontmatter title on disk, so any PRE-rename
+	// state for this file is stale BY DEFINITION — the migrated write-ahead
+	// buffer and the tab's in-memory content both still carry the OLD title,
+	// and the next flush writes them back over the renamed file (the 349 ms
+	// 176 B stomp). Cure: drop the stale buffer (the recentWrites migration
+	// above stands — §140's old-path defense is preserved by clearing BOTH
+	// keys), read the renamed file ONCE, and fold path+name+content+
+	// reloadVersion into a SINGLE tab update → exactly ONE {#key} remount
+	// with fresh disk content. (Finding #2: the first fix updated the tab
+	// twice — path, then content — and the instantly-destroyed middle editor
+	// instance was a zombie that could flush an EMPTY initial doc over the
+	// renamed file: the 159 B body-less write at 22:20:08.)
+	clearWriteAhead(oldPath);
+	clearWriteAhead(effectivePath);
+	let fresh: string | null = null;
+	try {
+		fresh = await readNote(effectivePath);
+	} catch { /* folder rename / unreadable target — path/name update only */ }
+
 	openTabs.update(tabs => tabs.map(t => {
 		if (t.path === oldPath) {
 			// Path comes from Rust (may equal oldPath for canonical files).
 			// Display name follows the user's intent — for canonical files
 			// the title changed even though the filename didn't.
-			return { ...t, path: effectivePath, name: derivedName || t.name };
+			return {
+				...t,
+				path: effectivePath,
+				name: derivedName || t.name,
+				...(fresh !== null
+					? { content: fresh, reloadVersion: (t.reloadVersion ?? 0) + 1 }
+					: {}),
+			};
 		}
 		// If a folder was renamed, update paths that start with the old folder path
 		if (t.path.startsWith(oldPath + '/') || t.path.startsWith(oldPath + '\\')) {
@@ -2172,29 +2214,6 @@ export async function renameItem(oldPath: string, newPath: string): Promise<stri
 		}
 		return t;
 	}));
-
-	// MIG-076 ★Stage-1 finding (journal-proven, 2026-06-11 22:01): rename_item
-	// rewrites the frontmatter title on disk, so any PRE-rename state for this
-	// file is stale BY DEFINITION — the migrated write-ahead buffer and the
-	// tab's in-memory content both still carry the OLD title, and the next
-	// flush writes them back over the renamed file (the 349 ms stomp the
-	// journal caught: rename_title 209 B → write_note 176 B). Two-part cure:
-	// (1) drop the stale buffer (the recentWrites migration above stands —
-	// §140's old-path-poisoning defense is preserved by clearing BOTH keys);
-	// (2) refresh any open tab from disk with a reloadVersion bump — the
-	// sanctioned reloadTabsFromDisk / D6 recreate shape — so the remounted
-	// pane + PropertyEditor can never resurrect the pre-rename frontmatter.
-	clearWriteAhead(oldPath);
-	clearWriteAhead(effectivePath);
-	try {
-		const fresh = await readNote(effectivePath);
-		openTabs.update(ts => ts.map(t =>
-			t.path === effectivePath && t.content !== fresh
-				? { ...t, content: fresh, reloadVersion: (t.reloadVersion ?? 0) + 1 }
-				: t
-		));
-	} catch { /* folder rename / unreadable target — tabs stay as set above */ }
-
 	return effectivePath;
 }
 

@@ -152,7 +152,7 @@
 		// Also update the local tab reference
 		tab.content = fc;
 		markRecentWrite(tab.path);
-		writeNote(tab.path, fc).catch(() => {});
+		writeNote(tab.path, fc, 'stage_promote').catch(() => {});
 		onStageChanged?.(tab.path, nextStage);
 	}
 
@@ -172,7 +172,7 @@
 		const props = freshProps();
 		markRecentWrite(filePath);
 		const content = buildFullContent(props, text);
-		writeNote(filePath, content)
+		writeNote(filePath, content, 'editor_save')
 			.then(() => {
 				broadcastNoteSaved(filePath);
 				// Reindex for search (non-blocking) — updates FTS5, tags, links,
@@ -235,7 +235,7 @@
 		setWriteAhead(filePath, content, cursorPos, scrollTop);
 		if (needsDiskSave) {
 			markRecentWrite(filePath);
-			writeNote(filePath, content)
+			writeNote(filePath, content, 'editor_flush')
 				.then(() => {
 					clearWriteAhead(filePath);
 					broadcastNoteSaved(filePath);

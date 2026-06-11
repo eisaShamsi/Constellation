@@ -3495,7 +3495,7 @@
 					return key && !canonicalFields.some(cf => cf.startsWith(key + ':'));
 				})].join('\n');
 				const fullContent = `---\n${mergedFM}\n---\n${result.content}`;
-				await invoke('write_note', { filePath: newPath, content: fullContent });
+				await invoke('write_note', { filePath: newPath, content: fullContent, origin: 'template_create' });
 			} catch { /* template write failed — note still created */ }
 		}
 
@@ -3712,7 +3712,7 @@
 						const ctx = { title: fileName, folder: $appSettings.dailyNoteFolder || '', library: firstLib.name, filePath: path };
 						const result = await processTemplateAsync(tplBody, ctx, buildTemplateCallbacks());
 						const newContent = noteContent.trimEnd() + '\n' + result.content;
-						await invoke('write_note', { filePath: path, content: newContent });
+						await invoke('write_note', { filePath: path, content: newContent, origin: 'daily_template' });
 					}
 				} catch { /* template not found — OK */ }
 			}
@@ -3783,7 +3783,7 @@
 				// Fallback: append to note content
 				const currentContent = tab.content || '';
 				const newContent = currentContent + '\n' + result.content;
-				await invoke('write_note', { filePath: tab.path, content: newContent });
+				await invoke('write_note', { filePath: tab.path, content: newContent, origin: 'template_insert' });
 				openTabs.update(tabs => tabs.map(t => t.id === tab.id ? { ...t, content: newContent } : t));
 			}
 		} catch (e) {
@@ -6071,7 +6071,7 @@
 									const fc = buildFullContent(props, text);
 									if (currentTab) currentTab.content = fc;
 									markRecentWrite($activeTab!.path);
-									writeNote($activeTab!.path, fc).catch(() => {});
+									writeNote($activeTab!.path, fc, 'focus_pane').catch(() => {});
 								}}
 								onexit={() => { focusMode = false; }}
 							/>

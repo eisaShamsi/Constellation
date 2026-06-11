@@ -334,6 +334,9 @@ pub fn write_note(
     // MIG-076 §B1 — optional identity/freshness attestation (camelCase
     // `expect` from the frontend; absent on legacy callers → unchecked).
     expect: Option<crate::write_gate::Expectation>,
+    // ★Stage-1 finding #3 — the journal's surface for write_note was too
+    // coarse (five frontend writers shared one tag). Callers label themselves.
+    origin: Option<String>,
 ) -> Result<(), String> {
     validate_path_in_any_library(&app, &file_path)?;
     let path = Path::new(&file_path);
@@ -359,7 +362,8 @@ pub fn write_note(
 
     // MIG-076 §A2/§B1 — through the WriteGate (serialized + atomic +
     // journaled; identity/freshness checked when the caller attests).
-    crate::write_gate::gate_write(path, &content, expect.as_ref(), "write_note").map(|_| ())
+    let surface = origin.as_deref().unwrap_or("write_note");
+    crate::write_gate::gate_write(path, &content, expect.as_ref(), surface).map(|_| ())
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
