@@ -542,3 +542,19 @@ Eisa: **"Pass. I want you to add 'Text Size'"** — a fourth CNS control sizing 
 
 svelte-check 0 errors. Orientation v2.71 FU-3 clause updated (3 → 4 wired controls).
 Mount-read caveat unchanged: size applies on next CNS open (the preview shows it live).
+
+---
+
+## "Text size" PASS — the Setter CNS category closes (4 controls, Boss-validated)
+
+Eisa: **"Pass"** on the Text size control (17:09 binary). The FU-3 arc closes fully validated:
+category + element + control names native ×15, the full-zone mini gravity-well preview (the new
+Preview Rule), Background / Hover label background / Hover label text / Text size all live in the
+preview, Keep-apply semantics confirmed.
+
+**SO close-out in this commit:** the EN help topic (`Appearance and Themes.md`) gains the CNS
+surface in the category list, the corrected centre-preview rule (Editor + Sky View + CNS — the old
+text predated even Sky View's MIG-072 preview), and a "CNS — style the gravity well" paragraph
+(four controls + apply timing); the User Manual §The Style Setter mirrors the same two corrections.
+The 14 translated manuals + any translated mirrors of this help topic remain the standing batched
+debt (logged at MIG-074; not expanded here). MoCh-1500 written (the FU-3 re-test saga block).
