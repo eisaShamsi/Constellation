@@ -2134,7 +2134,7 @@ pub fn scan_unlinked_mentions(
 
     // Pull candidate (path, library_name) from the index. Capped generously —
     // the verification loop stops at `cap` real matches.
-    let candidates: Vec<(String, String)> = {
+    let (candidates, alias_holders): (Vec<(String, String)>, std::collections::HashSet<String>) = {
         use tauri::Manager;
         crate::search::ensure_search_db_ready(&app)?;
         let search_state = app.state::<crate::search::SearchState>();
@@ -2155,7 +2155,25 @@ pub fn scan_unlinked_mentions(
                 Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
             })
             .map_err(|e| format!("query unlinked-mentions FTS: {}", e))?;
-        rows.filter_map(|r| r.ok()).collect()
+        let candidates: Vec<(String, String)> = rows.filter_map(|r| r.ok()).collect();
+
+        // PJ-010 — notes that DECLARE the active title among their own
+        // frontmatter aliases are self-alias-matches, not unlinked mentions:
+        // their body saying the word is the note referring to itself by its
+        // alias (MIG-004 already counts them as alias-aware backlinks).
+        // Indexed write-time table, one lookup (Rule 8) — `alias_lower`
+        // stores normalize_alias_for_match output, so match it exactly.
+        let alias_key = crate::search::normalize_alias_for_match(&note_name);
+        let mut alias_stmt = conn
+            .prepare("SELECT path FROM note_aliases WHERE alias_lower = ?1 AND source = 'frontmatter'")
+            .map_err(|e| format!("prepare alias-holder lookup: {}", e))?;
+        let alias_holders: std::collections::HashSet<String> = alias_stmt
+            .query_map(rusqlite::params![alias_key], |row| row.get::<_, String>(0))
+            .map_err(|e| format!("query alias holders: {}", e))?
+            .filter_map(|r| r.ok())
+            .collect();
+
+        (candidates, alias_holders)
     };
 
     // ── Verify each candidate against the RAW file (UNCHANGED logic): strip
@@ -2167,6 +2185,7 @@ pub fn scan_unlinked_mentions(
     for (path, library_name) in candidates {
         if results.len() >= cap { break; }
         if path == note_path { continue; } // skip self
+        if alias_holders.contains(&path) { continue; } // PJ-010: self-alias-match, not a mention
         if !scoped_paths.is_empty() && !scoped_paths.iter().any(|lp| path.starts_with(lp.as_str())) {
             continue;
         }

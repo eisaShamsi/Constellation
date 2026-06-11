@@ -679,3 +679,18 @@ the help's "Recognized types" line still listed 7 types + "anything else parsed 
 (pre-MIG-022/067) → now the 8 built-ins + custom vocabulary types, unrecognized prefix = plain note
 name, untyped = associative. KF topic is EN-only (no mirrors — logged at FU-1); Manual translations
 are the standing stale-snapshot debt.
+
+**PJ-008 + PJ-009 — CLOSED BY EVIDENCE (no code change).** SO#8 cross-check before tackling:
+`getBacklinks` dedupes by source path, `getOutgoingLinks` by target name, type badges accumulate
+into `linkTypes[]`, rendered as accumulated pills (`rowLinkTypes`) — exactly both PJs' acceptance
+criteria. Shipped in **§89 `5c34b9ee` (2026-04-27)** — the SAME DAY the memories were filed; the
+ledger entries were created from the memories and never flipped. → v1.14 flips both. The two stale
+memories deleted (+ the long-superseded unlinked-mentions double-count one).
+
+**PJ-010 SHIPPED — the frontmatter-alias bleed (the one genuine remaining gap).** scan_unlinked_mentions
+already skips self and scans title-only via FTS (name+body_text — frontmatter-only matches structurally
+impossible). The remaining case: a candidate whose body says the word AND who DECLARES the active title
+among its own `aliases:` — that's the note referring to itself by its alias (MIG-004 already counts it
+as an alias-aware backlink), not an unlinked mention. Fix: one indexed lookup on the write-time
+`note_aliases` table (`alias_lower = normalize_alias_for_match(note_name) AND source='frontmatter'`,
+Rule 8 — no file parsing) → those paths skipped in the verify loop. Suite 909/909.
