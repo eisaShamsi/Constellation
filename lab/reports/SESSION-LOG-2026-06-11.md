@@ -761,3 +761,20 @@ three-identity assembly), (B) rename/cascade quiesces the editor (kill the race 
 plus a write journal (forensics) and lifecycle regression tests. Four parallel Architect agents
 launched: W1 every-writer map, W2 identity/tab/WAB model, W3 NotePane lifecycle + BUG-023
 interleaving pin, W4 proven-methods cross-check (WA #5).
+
+## MIG-076 Architect + Plan WRITTEN — awaiting Plan approval
+
+Four agents returned (W1 writers · W2 identity · W3 lifecycle+law · W4 prior art). Distilled into
+`lab/reports/MIG-076-WRITE-INTEGRITY-ARCHITECT.md` (+ PLAN). Headlines: the class = writes assembled
+from THREE independently-mutating identity sources (props-by-tab-id + pane text + captured path);
+six write_note call sites; ten Rust writer sites; plain fs::write (no identity check / atomicity /
+serialization); tab.id is a SLOT not a note identity (openNoteTab reuse); SIX direct tab.content=
+mutation sites; the WAB identity check FAILS OPEN; two PropertyEditor instances (the sidebar one
+survives tab switches). BUG-023: the fatal write is the ordinary flush shape with a poisoned store
+input (proven); the store bridge = 5 ranked candidates (journal will pin at first dev recurrence).
+W4 verdict: A+B+C+journal matches named industry ancestors (VS Code snapshot/sequentializer ·
+Obsidian Vault.process · If-Match/409 CAS · WAL serialization · Dropbox conflict copies) with two
+corrections ADOPTED: a per-path single-writer queue under everything, and a dual token (identity +
+freshness, hash-on-mtime-ambiguity per racy-git). Design = locks L0–L4 + journal + quarantine +
+refusal UX + cid backfill + lifecycle regression suite; invariants I1–I10; phases §A–§F with ★
+Stages 1–3; ~5–6 sessions. STOP point per the Migration Rule: Plan presented to Eisa for approval.
