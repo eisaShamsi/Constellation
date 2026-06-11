@@ -886,32 +886,39 @@ Switch to that tradition's chip → your note lands in its named sector instead 
 
 ## 8b. Constellation Nervous System (CNS)
 
-The complementary visualization to Constellation Sight. While Sight shows the *shape* of your universe (stratum × time × channels), CNS shows the *wiring* — the typed-link graph and the structural patterns hidden in it.
+The **wiring diagram of your universe** — the topology instrument of the Connection question, and the structural sibling of the Circulatory System (CCS): CNS reads the wiring (who connects to whom); CCS reads the flow (how the connections live). In Arabic the surface is **الجهاز العصبي للمعرفة** — the Nervous System of Knowledge.
 
-It answers: **"How are the ideas in my universe connected, and where are the gaps?"**
+It answers: **"What is the SHAPE of my thinking — its regions, its bridges, its silences?"**
 
 ### Opening CNS
 
-Click the **neuron icon** in the dock — a small branching nerve-cell shape (cell body in the middle with three dendrite branches ending in synaptic terminals). It sits near the Sight eye icon.
+Click the **CNS button** (the branching nerve-cell icon) in the left dock — beside the Circulatory System's pulse icon. You can also cross between the two organs: CCS's header carries a CNS button, and CNS's panel carries a "Circulation → Circulatory System" row.
 
-### What CNS surfaces
+### The gravity well — the layout IS the reading
 
-- **Universe Health card** — overall score + four metrics (Modularity, Dominance, Entropy, Connectivity) with HEALTHY / CAUTION / IMBALANCED status pills.
-- **Gravity well** — force-directed graph where each note is a node, each typed link is an edge, communities self-organize into colored clusters.
-- **Top Bridges** — notes that link the most distinct communities (your synthesis points / load-bearing connectors).
-- **Communities** — clusters of densely-interlinked notes.
-- **Blind Spots** — suggested missing connections where the graph algorithm thinks two notes SHOULD be linked but aren't.
+- **Distance from the center = structural centrality** (the notes your wiring routes through sit deep).
+- **Angular sector = your own libraries** — position always follows *your* order; analysis never moves a note.
+- **Node color = library**, until the header's **Regions lens** (three-circles button) recolors nodes by their *found* region of thought. Color is the lens; position never changes.
+- Links stay hidden until you hover, select, or search (the resting state is calm).
+- The header caption — *resolved connections · this universe* — marks that CNS counts the connections that resolve on the graph, while CCS and Knowledge Health count every recorded link record.
 
-### CNS interaction pattern (note: different from Sight)
+### The panel registers
 
-CNS uses **single-click for preview, double-click to open** — deliberately different from Sight's plain-click-opens behavior. This lets you scan many notes' details and their connections without committing to open each one in the editor.
+- **Structural Cohesion** — the 0–100 score of how well-formed the wiring is, with Modularity, Dominance, Diversity, and Links/Note readable.
+- **Regions** — the found neighborhoods, with size and dominant maturity. **Hover** a row → everything outside the region mutes to black-and-white. **Click** a row → the mute **pins** while you work inside the region (re-click to unpin); a selected note's connections keep their color even across regions.
+- **Top Bridges** — the notes that hold the structure together (highest centrality).
+- **Hubs** — the most-connected notes (this is their one home).
+- **Blind Spots** — region pairs that should touch and don't (*A ↮ B*), each with up to three clickable **suggested bridge notes**. An empty list is good news.
+
+### Interaction
 
 | Gesture | Effect |
 |---|---|
-| **Single click a node** | Selects it. Right-side panel slides in with title, community, centrality rank, incoming/outgoing links. Note IS NOT opened. |
-| **Double click a node** | Opens the note in the editor. "Return to CNS" button appears in the note's tab bar. |
-| **Hover a node** | Tooltip with the note's title. |
-| **Wheel / drag** | Zoom / pan. |
+| **Hover a node** | Title tooltip; its links light up. |
+| **Single click a node** | Selects it + lights its neighborhood. Nothing opens. |
+| **Double click a node** | Opens the note in the editor. |
+| **Wheel / drag / corners button** | Zoom / pan / fit to screen at any window size. |
+| **Hover / click a Regions row** | Black-and-white mute / pin the mute. |
 | **Click empty space** | Clears the selection. |
 | **Esc** | Closes CNS. |
 

@@ -2,115 +2,104 @@
 aliases:
   - Constellation Nervous System
   - CNS
-  - Universe Health
+  - Structural Cohesion
+  - Regions
   - Top Bridges
-  - Communities
+  - Hubs
   - Blind Spots
-  - Sight v2
-description: Constellation Nervous System (CNS) is the connection-traversal view of your universe. It analyzes the link graph between your notes and surfaces Universe Health metrics, communities, top bridges between clusters, and structural-gap "Blind Spots". CNS is the complementary view to Constellation Sight — if Sight is the sensory shape of your universe, CNS is its neural connections.
+  - Gravity Well
+description: Constellation Nervous System (CNS) is the topology instrument of the Connection question — the wiring diagram of your universe. It renders every note in a gravity well where depth means structural centrality, and reads the graph through four registers — Regions, Bridges, Blind Spots, and the Structural Cohesion score — plus Hubs. CNS is the structural sibling of the Circulatory System (CCS) — CNS reads the wiring; CCS reads the flow.
 ---
 
 # Constellation Nervous System (CNS)
 
 ## What Is It?
 
-Constellation Nervous System is the **connection-traversal** view of your universe. While Constellation Sight shows the *shape* of your notes (stratum × time × channel encoding), CNS shows the *wiring* — the typed-link graph that connects them and the structural patterns hidden in that graph.
+The Constellation Nervous System is the **wiring diagram of your universe**. It answers one question:
 
-It answers: **"How are the ideas in my universe connected, and where are the gaps?"**
+> **"What is the SHAPE of my thinking — its regions, its bridges, its silences?"**
 
-The view is built around four analytical surfaces:
-- **Universe Health** — overall and per-metric scores for how connected, balanced, and modular your knowledge is.
-- **Communities** — groups of densely-interlinked notes (your "ideological clusters").
-- **Top Bridges** — the few notes that link otherwise-separate communities (your "load-bearing connectors").
-- **Blind Spots** — structural gaps where you'd expect connections but don't have them yet.
+It applies network analysis to your whole link graph and reads it through five registers:
 
-The name "Nervous System" is anatomical: nerves are connection pathways carrying signals between distant parts of an organism. The CNS visualization treats your typed-link graph the same way — the lines between notes are the "neural" carriers of meaning across your universe.
+- **Regions** — the neighborhoods your linking has actually formed (found by analysis, not declared by folders).
+- **Bridges** — the notes that hold your structure together: cut them, and regions fall apart.
+- **Hubs** — your most-connected notes (the most incoming links).
+- **Blind Spots** — pairs of well-developed regions that should touch and don't, each with suggested bridge notes.
+- **Structural Cohesion** — a 0–100 composite of how well-formed the whole wiring is.
+
+CNS reads **structure only** — who connects to whom. It never reads flow (how often a link is walked, how heavy it has grown, how settled the claim is): that is the work of its sibling, the **Circulatory System (CCS)**. The two are one anatomy: CNS is the nerves, CCS is the blood. Together they answer the Connection question whole.
 
 ## Why Does It Matter?
 
-Most note-taking apps treat links as plumbing (jump from here to there). Constellation treats them as **knowledge architecture**:
+Every other connection surface in Constellation — Backlinks, Outgoing Links, the Circulatory System, Knowledge Health — records connections you **already made**. The Blind Spots register is the one instrument that points at connections you **haven't made yet**: two regions of your thinking, each well developed, with no connecting tissue between them. That boundary is where synthesis happens.
 
-- A note with many incoming links is **load-bearing** — many ideas depend on it.
-- A note that bridges two communities is a **synthesis point** — it ties domains together.
-- A community with weak internal linking is **fragile** — risks losing coherence over time.
-- A "Blind Spot" is a place where the structure SHOULD have a connection but doesn't — a hypothesis worth exploring.
-
-CNS makes these structural features explicit. You don't have to read every note to understand the shape of your thinking — the network reveals it.
+And only CNS can show you the difference between your *declared* order (libraries and folders) and your *found* order (the regions your actual linking formed). Where one library holds several regions, your thinking inside it has split into themes. Where one region spans libraries, a theme of yours lives across your filing.
 
 ## How to Open It
 
-1. Click the **neuron icon** (small branching nerve-cell shape — cell body in the middle with three dendrite branches and small synaptic terminals) in the dock at the left edge of Constellation. It sits near the Sight eye icon.
-2. CNS opens in a full-window overlay, gravity-well style — a force-directed graph where each note is a node and each typed link is an edge.
-3. To close: click the **(×)** at the top, or press **Esc**.
+1. Click the **CNS button** (the branching nerve-cell icon) in the left dock — it sits beside the Circulatory System's pulse icon.
+2. The gravity well opens full-window. On a large universe the analysis takes a moment; the window stays responsive.
+3. To close: the **×** at the top right, or **Esc**.
 
-## What You See
+You can also arrive from CCS — its header carries a **CNS button** — and return: CNS's panel carries a **"Circulation → Circulatory System"** row.
 
-### The Universe Health Card
+## The Gravity Well
 
-A summary panel showing your universe's overall connectivity health, with the gold roundel showing a composite score (e.g., **91 / 100**) and four metrics:
+The layout IS the reading — nothing about it is decorative:
 
-- **Modularity** — how cleanly your notes cluster into distinct communities. High = well-organized into themes; low = single tangled mass.
-- **Dominance** — whether one community dominates the universe. High = one cluster has most notes (specialist); balanced = healthier mix.
-- **Entropy** — variety of community sizes. Balanced communities = healthy diversity; one giant + many tiny = unbalanced.
-- **Connectivity** — average links per note. Higher = more interconnected ideas.
+- **Distance from the center = structural centrality.** The notes your wiring routes through sit deep in the well; peripheral thinking sits at the rim.
+- **Angular sector = your own organization.** Each library owns a slice of the circle. Position always follows *your* order — analysis never moves a note.
+- **Node color = library** — until you switch the **Regions lens** (below), which recolors nodes by their found region. Color is the lens; position never changes.
+- **Resting calm.** Links stay hidden until you ask: hover or click a note to light its connections, or run a search.
+- The header shows the node and link counts with a small caption — *"resolved connections · this universe"* — because CNS counts the connections that resolve between existing notes on the graph, while CCS and Knowledge Health count every recorded link record. Both numbers are true; they answer different questions.
 
-Each metric has a colored status pill: **HEALTHY** (green) / **CAUTION** (yellow) / **IMBALANCED** (red).
+## Structural Cohesion
 
-### The Gravity Well
+The panel's top card is the **Structural Cohesion** score (0–100) — how well-formed the wiring is as a whole — with its four ingredients readable:
 
-The main visualization: notes float as nodes, links pull them together, repulsion pushes them apart. Communities self-organize into clusters. The layout settles in a few seconds.
+- **Modularity** — how cleanly your notes cluster into distinct regions.
+- **Dominance** — how much of the universe the largest region swallows (lower is healthier).
+- **Diversity** — how evenly your thinking spreads across regions.
+- **Links/Note** — average connectedness.
 
-- **Node size** = link count (highly-linked notes are bigger).
-- **Node color** = community membership (notes in the same cluster share a color).
-- **Edge** = typed link between two notes.
+## The Regions Lens
 
-### Top Bridges
+The header's three-circles button toggles the **Regions lens**: every node recolors from library-colors to region-colors, and the legend lists the top regions with their found names and sizes. Toggle off and library colors return. Positions never move either way.
 
-A list of the notes that link the most distinct communities — these are your synthesis points, the connectors between separate domains. Click any to focus on it.
+## The Panel Registers
 
-### Communities
+The dashboard-grid button opens the analytics panel:
 
-A list of detected note clusters. Click any community to highlight its notes in the gravity well.
-
-### Blind Spots (Structural Gaps)
-
-Suggested missing connections — pairs of notes the graph algorithm thinks SHOULD be linked based on shared neighbors or topical clustering. These are hypotheses for you to evaluate: a Blind Spot might be a genuine missing link to add, or it might be a coincidence to dismiss.
+- **Overview** — the Cohesion card, note/link/orphan counts, and the library breakdown.
+- **Circulation → Circulatory System** — the hand-off to CCS for everything flow-side (link types, confidence, cooling, lifecycle).
+- **Regions** — the found neighborhoods, largest first, each with its size and dominant maturity. **Hover** a row and the well mutes everything outside that region to black-and-white. **Click** a row to **pin** it: the region stays lit while you work — hover and click notes as usual inside it (a selected note's connections keep their color even when they cross into other regions — those crossings are exactly worth seeing). Click the row again to unpin.
+- **Top Bridges** — the highest-centrality notes. Click one to select and center it.
+- **Hubs** — the most-connected notes by incoming links. This is their one home (the old Knowledge Health card retired here).
+- **Blind Spots** — region pairs with no connecting tissue, written *Region A ↮ Region B*, each with up to three **suggested bridge notes** as clickable chips. An empty list is good news.
 
 ## Interaction
 
-CNS uses a **single-click preview / double-click open** pattern (different from Sight's plain-click-opens):
-
 | Gesture | Effect |
 |---|---|
-| **Single click a node** | Selects it. A right-side panel slides in showing the note's title, community, centrality rank, incoming links, and outgoing links. The note IS NOT opened in the editor. |
-| **Double click a node** | Opens the note in the editor. A **"Return to CNS"** button appears in the note's tab bar so you can jump back. |
-| **Hover a node** | Tooltip shows the note's title. |
-| **Click empty space** | Clears the selection; side panel slides out. |
-| **Mouse wheel** | Zoom in / out. |
-| **Click + drag** | Pan the view. |
-| **Click a community in the list** | Highlights that community's notes in the gravity well. |
-| **Click a Top Bridge entry** | Focuses on that bridge note + highlights the communities it connects. |
+| **Hover a node** | Tooltip with the note's title; its links light up. |
+| **Single-click a node** | Selects it and lights its neighborhood — nothing opens. |
+| **Double-click a node** | Opens the note in the editor. |
+| **Click empty space** | Clears the selection. |
+| **Mouse wheel** | Zoom. **Drag** pans. The corners button **fits to screen** at any window size. |
+| **Hover / click a Regions row** | Mutes the rest to black-and-white / pins the mute. |
+| **Click a bridge chip or Hubs/Bridges row** | Selects and centers that note in the well. |
 | **Esc** | Closes CNS. |
-
-The single-click-preview is deliberate: it lets you scan many notes' details (and their connections) without committing to opening each one in the editor. Double-click is the "I want to read/edit this one" gesture.
 
 ## When CNS Is Most Useful
 
-- **Audit your connection density** — Universe Health gives a one-glance read on whether your universe is well-wired.
-- **Find your synthesis points** — Top Bridges shows you the notes doing the most architectural work.
-- **Discover communities you didn't know existed** — clusters that emerge from the graph might surface implicit themes in your thinking.
-- **Patch Blind Spots** — when the graph suggests two notes SHOULD link but don't, evaluate the gap.
-- **Plan re-organization** — communities map naturally to folder structure; weak modularity might tell you a re-org would help.
+- **Before synthesis** — open Blind Spots and ask which gap is yours to bridge next.
+- **Auditing the architecture** — Bridges and Hubs show which notes carry the structure; Cohesion says whether the whole is one body or scattered islands.
+- **Checking your filing against your thinking** — the Regions lens against the library sectors.
 
-## CNS vs Sight — When to Use Which
+## CNS vs Its Neighbors
 
-- **Sight** = "How is my universe SHAPED?" Spatial / categorical analysis. Stratum × time × channels.
-- **CNS** = "How is my universe CONNECTED?" Network / topological analysis. Communities × bridges × gaps.
-
-They're complementary: Sight reads the surface; CNS reads the wiring underneath. Most analysis benefits from looking at both.
-
-## Related Surfaces
-
-- **Constellation Sight** — the sister visualization (eye icon in the dock). Sight shows stratum × time × channel encoding; CNS shows the link graph.
-- **Sky View** — also a graph view, but built differently — Sky View is for free-form link exploration; CNS is structured around metrics and communities.
-- **Backlinks / Outgoing Links panels** — per-note connection lists. CNS is the universe-wide view of the same data.
+- **Sky View** — the spatial *picture* of everything (all visual vocabulary, free exploration). CNS is the *instrument*: its layout encodes the analysis. Sky View shows you the sky; CNS tells you what the sky means structurally.
+- **CCS** — the flow side (weight, traversal, cooling, conviction, lifecycle). CNS never shows flow; CCS never shows topology.
+- **Knowledge Health** — the at-a-glance count cards. CNS is the wiring those counts live in.
+- **The health tab (right sidebar)** — per-library tension *lists* (contradiction pairs, orphans, tag-cluster gaps). CNS's Blind Spots are graph-level region geometry — a different, complementary gap read.
+- **360.3D** — one note's connection signature. CNS is the whole universe.
