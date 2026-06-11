@@ -417,7 +417,6 @@ pub fn run() {
             canvas::list_canvases,
             inspector360::get_360_view,
             sight::constellation_sight_centrality,
-            sight::constellation_sight_tag_edges,
             sight_layout::constellation_sight_v3_layout,
             sight_layout::constellation_sight_v3_invalidate_layout,
             sight_layout::constellation_sight_v3_density_field,

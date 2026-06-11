@@ -815,9 +815,9 @@
 	let lensGaps = $state<StructuralGap[]>([]);
 	let lensHealth = $state<UniverseHealth | null>(null);
 	let lensBridges = $state<{ id: string; name: string; centrality: number }[]>([]);
-	let lensShowTagEdges = $state(false);
-	let lensPeelCount = $state(0);
-	let lensTagEdges = $state<{ source: string; target: string; shared_tags: string[]; weight: number }[]>([]);
+	// (MIG-075 §A3 removed the dead lensShowTagEdges / lensPeelCount /
+	// lensTagEdges states — the tag-edges/layer-peeling era leftovers with
+	// zero readers; layer peeling stays on the CNS roadmap per paper Q5.)
 	let lensCommunityProfiles = $state<CommunityProfile[]>([]);
 	/** WTD cache flag: true = lens data is stale and must be recomputed on next open.
 	 *  Starts true (no data yet). Flipped to false after a successful computation,

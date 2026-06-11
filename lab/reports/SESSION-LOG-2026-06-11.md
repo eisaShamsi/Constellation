@@ -251,4 +251,12 @@ deleted. TensionReport shape byte-identical; TensionPanel untouched. Deltas docu
 word_count at the severity margins). 4 new tests (`tests_mig075_tension`): the 3-input loader + library
 scoping + active-only · the <50 gate · per-pair-no-multiplier · orphan/gap/SPOF on a 51-note chain
 fixture — **7/7 MIG-075 tests pass** (with §A1's). *(Transient LNK1104 file-lock on the test exe ×2 —
-cleared by retry; not a code issue.)*
+cleared by retry; not a code issue.)* → `2bab0cfd`
+
+**§A3 SHIPPED** — dead-surface deletion, all verified zero-callers/zero-importers BEFORE deleting:
+`constellation_sight_tag_edges` + `scan_note_tags_recursive` + `TagEdge` (sight.rs §Shared-Tag-Edges —
+an fs walk with no frontend caller) + the lib.rs registration; **`ConstellationSight.svelte` (v1)** —
+zero importers; **`LensPanel.svelte`** — its v1-era sidebar, zero importers (found in the §A3 verify
+sweep, same family); the three dead `+layout` states (`lensShowTagEdges`/`lensPeelCount`/`lensTagEdges` —
+zero readers; layer peeling stays roadmap per paper Q5). cargo check clean; svelte-check **0 errors**,
+warnings 317→313 (the dead files carried 4); repo-grep zero live references.
