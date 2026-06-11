@@ -42,13 +42,11 @@
 		stratum?: number;
 	}
 
+	// (MIG-075 §B1 trimmed SimLink to structure only — weight/confidence/
+	// annotation/traversal/status were circulatory paint fed by a ≤10-link
+	// enrichment sample; the flow data lives in CCS per the CNS paper §6.)
 	interface SimLink extends d3.SimulationLinkDatum<SimNode> {
 		linkType?: string;
-		weight?: number;
-		confidence?: string;
-		annotation?: string;
-		traversalCount?: number;
-		status?: string;
 	}
 
 	interface SearchMatch {
@@ -69,12 +67,11 @@
 		canonical: '#f59e0b', wilting: '#ef4444',
 	};
 
-	const CONFIDENCE_STYLE: Record<string, { dash: number[]; widthMul: number }> = {
-		hypothesis: { dash: [4, 3], widthMul: 0.7 },
-		evidence: { dash: [], widthMul: 1.0 },
-		established: { dash: [], widthMul: 1.5 },
-		contested: { dash: [2, 2], widthMul: 1.2 },
-	};
+	// Uniform stroke multiplier — the retired per-link confidence styling's
+	// hypothesis default (0.7), which ≥99.99% of edges rendered with anyway
+	// (the enrichment sample covered ≤10 of 234k links). Keeps the §B1 shed
+	// pixel-equivalent at scale.
+	const LINK_WIDTH_MUL = 0.7;
 
 	const CAT_COLORS: Record<string, string> = {
 		T: '#3b82f6', C: '#16a34a', '#': '#f472b6', P: '#f59e0b', S: '#7c3aed',
@@ -147,10 +144,6 @@
 	let isPanning = false;
 	let panStartX = 0, panStartY = 0;
 	let hoveredNode: SimNode | null = null;
-	let hoveredLink: SimLink | null = null;
-
-	// Living Link enrichment map: "source::target" → link data
-	let linkEnrichment = new Map<string, { weight: number; confidence: string; annotation: string; traversalCount: number; status: string }>();
 
 	// Search
 	let searchVisible = $state(false);
@@ -248,17 +241,10 @@
 			const src = nodeMap.get(l.source);
 			const tgt = nodeMap.get(l.target);
 			if (src && tgt && src !== tgt) {
-				const key = `${src.name.toLowerCase()}::${tgt.name.toLowerCase()}`;
-				const enriched = linkEnrichment.get(key);
 				simLinks.push({
 					source: src,
 					target: tgt,
-					linkType: l.linkType || enriched?.status === 'active' ? (l.linkType || 'relates') : undefined,
-					weight: enriched?.weight ?? 1.0,
-					confidence: enriched?.confidence ?? 'hypothesis',
-					annotation: enriched?.annotation ?? '',
-					traversalCount: enriched?.traversalCount ?? 0,
-					status: enriched?.status ?? 'active',
+					linkType: l.linkType || undefined,
 				});
 				if (!neighborMap.has(src.id)) neighborMap.set(src.id, new Set());
 				if (!neighborMap.has(tgt.id)) neighborMap.set(tgt.id, new Set());
@@ -266,25 +252,6 @@
 				neighborMap.get(tgt.id)!.add(src.id);
 			}
 		}
-	}
-
-	// ─── Load Living Link Enrichment from note_links ──────────
-	async function loadLinkEnrichment() {
-		try {
-			const stats: any = await invoke('constellation_link_stats');
-			if (stats?.sample_links) {
-				for (const link of stats.sample_links) {
-					const key = `${link.source?.toLowerCase()}::${link.target?.toLowerCase()}`;
-					linkEnrichment.set(key, {
-						weight: link.weight ?? 1.0,
-						confidence: link.confidence ?? 'hypothesis',
-						annotation: link.annotation ?? '',
-						traversalCount: link.traversal_count ?? 0,
-						status: 'active',
-					});
-				}
-			}
-		} catch {}
 	}
 
 	// ─── Gravity-Well Layout ──────────────────────────────────
@@ -574,13 +541,11 @@
 		const needsEdgeDraw =
 			hoveredNode !== null
 			|| selectedNode !== null
-			|| hasSearch
-			|| hoveredLink !== null;
+			|| hasSearch;
 		if (needsEdgeDraw) drawLinks();
 		drawNodes();
 		drawSearchBadges();
 		if (hoveredNode) drawHoverLabel(hoveredNode);
-		if (hoveredLink) drawLinkAnnotation(hoveredLink);
 
 		ctx.restore();
 	}
@@ -613,10 +578,9 @@
 		// MIG-016 §1B — when hovering or selecting a single node, restrict
 		// the iteration to that node's neighborhood. Drops the cost from
 		// O(E) to O(degree). Falls back to full iteration when search is
-		// active (per-link search-classification needs the full set) or
-		// a link annotation is being hovered.
+		// active (per-link search-classification needs the full set).
 		const focusNodeId = hoveredNode?.id ?? selectedNode?.id ?? null;
-		const focusOnly = focusNodeId !== null && !hasSearch && hoveredLink === null;
+		const focusOnly = focusNodeId !== null && !hasSearch;
 
 		for (const link of simLinks) {
 			const src = link.source as SimNode;
@@ -652,13 +616,13 @@
 				color = typed ? LINK_TYPE_COLORS[link.linkType!] : '#94a3b8';
 			}
 
-			const w = link.weight ?? 1.0;
-			const baseWidth = (typed ? Math.max(0.8, Math.min(4, w * 0.5)) : 0.7) * linkStrokeMul
+			// §B1: the per-link weight/confidence/dormancy styling was fed by a
+			// ≤10-link enrichment sample — every other edge already rendered
+			// with these exact constants. Same look, no circulatory inputs.
+			const baseWidth = (typed ? 0.8 : 0.7) * linkStrokeMul
 				* (searchHighlight ? 3.0 : 1.0);  // 3× thicker for search-matched links
-			const conf = CONFIDENCE_STYLE[link.confidence ?? 'hypothesis'] ?? CONFIDENCE_STYLE.hypothesis;
 
-			const isDormant = link.status === 'dormant';
-			const baseAlpha = searchHighlight ? 1.0 : searchDim ? 0.06 : neighborDim ? 0.06 : isDormant ? 0.27 : linkOpacity;
+			const baseAlpha = searchHighlight ? 1.0 : searchDim ? 0.06 : neighborDim ? 0.06 : linkOpacity;
 			const alphaHex = Math.round(baseAlpha * 255).toString(16).padStart(2, '0');
 
 			// All lines solid — no dashes
@@ -666,7 +630,7 @@
 			ctx!.moveTo(sx, sy);
 			ctx!.lineTo(tx, ty);
 			ctx!.strokeStyle = color + alphaHex;
-			ctx!.lineWidth = (baseWidth * conf.widthMul) / zoom;
+			ctx!.lineWidth = (baseWidth * LINK_WIDTH_MUL) / zoom;
 			ctx!.stroke();
 
 			// Direction arrows along the link line (ALL links, not just typed)
@@ -855,27 +819,8 @@
 		ctx!.fillText(label, x, ly + lh / 2);
 	}
 
-	function drawLinkAnnotation(link: SimLink) {
-		if (!link.annotation) return;
-		const src = link.source as SimNode;
-		const tgt = link.target as SimNode;
-		const mx = ((src.x ?? 0) + (tgt.x ?? 0)) / 2;
-		const my = ((src.y ?? 0) + (tgt.y ?? 0)) / 2;
-
-		const text = `${link.linkType ?? 'relates'}: ${link.annotation}`;
-		ctx!.font = `${10 / zoom}px system-ui, sans-serif`;
-		const tw = Math.min(ctx!.measureText(text).width + 10 / zoom, 200 / zoom);
-		const th = 16 / zoom;
-
-		ctx!.fillStyle = 'rgba(30,30,40,0.85)';
-		ctx!.beginPath();
-		ctx!.roundRect(mx - tw / 2, my - th - 4 / zoom, tw, th, 3 / zoom);
-		ctx!.fill();
-		ctx!.fillStyle = '#ffffff';
-		ctx!.textAlign = 'center';
-		ctx!.textBaseline = 'middle';
-		ctx!.fillText(text.length > 40 ? text.slice(0, 40) + '...' : text, mx, my - th / 2 - 4 / zoom);
-	}
+	// (§B1 removed drawLinkAnnotation — annotations were enrichment-fed for
+	// ≤10 links; per-link reading lives in Backlinks/Outgoing and CCS.)
 
 	// ─── Interaction ──────────────────────────────────────────
 	function onMouseDown(e: MouseEvent) {
@@ -896,7 +841,6 @@
 		const my = (e.clientY - rect.top - rect.height / 2 - panY) / zoom;
 
 		hoveredNode = null;
-		hoveredLink = null;
 		for (const n of simNodes) {
 			const dx = (n.x ?? 0) - mx, dy = (n.y ?? 0) - my;
 			if (dx * dx + dy * dy < (n.r + 4) * (n.r + 4)) {
@@ -905,27 +849,7 @@
 			}
 		}
 
-		if (!hoveredNode) {
-			for (const link of simLinks) {
-				if (!link.annotation) continue;
-				const src = link.source as SimNode;
-				const tgt = link.target as SimNode;
-				const sx = src.x ?? 0, sy = src.y ?? 0;
-				const tx = tgt.x ?? 0, ty = tgt.y ?? 0;
-				const dx = tx - sx, dy = ty - sy;
-				const len2 = dx * dx + dy * dy;
-				if (len2 === 0) continue;
-				const t = Math.max(0, Math.min(1, ((mx - sx) * dx + (my - sy) * dy) / len2));
-				const px = sx + t * dx, py = sy + t * dy;
-				const dist = Math.sqrt((mx - px) * (mx - px) + (my - py) * (my - py));
-				if (dist < 6 / zoom) {
-					hoveredLink = link;
-					break;
-				}
-			}
-		}
-
-		canvasEl.style.cursor = hoveredNode ? 'pointer' : hoveredLink ? 'help' : 'grab';
+		canvasEl.style.cursor = hoveredNode ? 'pointer' : 'grab';
 		requestDraw();
 	}
 
@@ -1053,22 +977,8 @@
 		console.log('[MIG-016 §1A] Sight mount trace:');
 		console.table(mountMeasures);
 
-		loadLinkEnrichment().then(() => {
-			for (const link of simLinks) {
-				const src = link.source as SimNode;
-				const tgt = link.target as SimNode;
-				const key = `${src.name.toLowerCase()}::${tgt.name.toLowerCase()}`;
-				const enriched = linkEnrichment.get(key);
-				if (enriched) {
-					link.weight = enriched.weight;
-					link.confidence = enriched.confidence;
-					link.annotation = enriched.annotation;
-					link.traversalCount = enriched.traversalCount;
-					link.status = enriched.status;
-				}
-			}
-			requestDraw();
-		});
+		// (§B1 removed the loadLinkEnrichment pass — one live IPC per open
+		// feeding ≤10 of 234k links. CNS reads structure only; flow is CCS's.)
 	});
 
 	onDestroy(() => {
@@ -1252,15 +1162,8 @@
 						<span>{$t("lens.linkDerivesFrom") || "derives-from"}</span>
 					</div>
 					<div class="sight2-legend-divider"></div>
-					<!-- Confidence = thickness -->
-					<div class="sight2-legend-row">
-						<svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="#94a3b8" stroke-width="1"/></svg>
-						<span>{$t("lens.thinHypothesis") || "thin = hypothesis"}</span>
-					</div>
-					<div class="sight2-legend-row">
-						<svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="#4A9EFF" stroke-width="3"/></svg>
-						<span>{$t("lens.thickEstablished") || "thick = established"}</span>
-					</div>
+					<!-- (§B1 removed the thin/thick confidence rows — the styling they
+					     advertised was enrichment-fed for ≤10 links; confidence is CCS's.) -->
 					<div class="sight2-legend-row">
 						<svg width="20" height="6"><polygon points="0,3 6,0 6,6" fill="#4A9EFF"/><polygon points="8,3 14,0 14,6" fill="#4A9EFF"/></svg>
 						<span>{$t("lens.arrowsDirection") || "arrows = direction"}</span>

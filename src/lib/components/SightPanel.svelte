@@ -1,13 +1,18 @@
 <script lang="ts">
 	/**
-	 * SightPanel — Knowledge analytics sidebar for Constellation Sight.
+	 * SightPanel — the CNS analytics sidebar (the registers' home).
 	 *
-	 * Answers: "How healthy is my knowledge system?"
-	 * Shows: overview, link health, top bridges, knowledge insights.
+	 * Answers: "What is the SHAPE of my thinking?" — structure only,
+	 * per the ratified Constellation-Nervous-System-Concept-Paper §5/§6.
+	 * Shows: overview, top bridges, knowledge insights (§B2 recomposes),
+	 * and the "Circulation → CCS" hand-off for everything flow-side
+	 * (MIG-075 §B1 shed the BY TYPE / BY CONFIDENCE / dormant blocks —
+	 * they duplicated CCS's Acts-of-Inquiry + Conviction-&-Doubt registers).
 	 */
 	import { onMount } from 'svelte';
 	import { invoke } from '@tauri-apps/api/core';
 	import { t, dir } from '$lib/i18n';
+	import { appSettings } from '$lib/libraries/store';
 
 	import type { UniverseHealth } from '$lib/graph/clusterEngine';
 
@@ -36,13 +41,12 @@
 	const isRTL = $derived($dir === 'rtl');
 
 	// ─── Collapsible sections ──────────────────────────────
-	let showLinkHealth = $state(true);
 	let showBridges = $state(true);
 	let showInsights = $state(false);
 
-	// ─── Link Stats (fetched from Rust) ────────────────────
-	let linkStats = $state<any>(null);
-	let dormantCount = $state(0);
+	// CCS hand-off gate — mirrors the +layout open-ccs listener's gate.
+	const ccsEnabled = $derived($appSettings.enabledFeatures?.ccs !== false);
+
 	let insights = $state<any[]>([]);
 	let insightType = $state('strongest_evidence');
 
@@ -52,26 +56,22 @@
 		'part-of': '#94A3B8', associative: '#A78BFA',
 	};
 
-	const CONFIDENCE_COLORS: Record<string, string> = {
-		hypothesis: '#94a3b8', evidence: '#3b82f6', established: '#16a34a', contested: '#ef4444',
-	};
-
 	const INSIGHT_TYPES = [
 		'strongest_evidence', 'weak_foundations', 'tensions',
 		'stagnating', 'most_connected', 'knowledge_gaps',
 	];
 
 	onMount(async () => {
-		// Fetch link stats
-		try { linkStats = await invoke('constellation_link_stats'); } catch {}
-		// Fetch dormant count
-		try {
-			const dormant: any[] = await invoke('constellation_link_dormant');
-			dormantCount = dormant?.length ?? 0;
-		} catch {}
-		// Fetch initial insights
+		// (§B1 removed the constellation_link_stats + constellation_link_dormant
+		// fetches — live full-table aggregates feeding circulatory blocks that
+		// now live in CCS. Zero live link IPCs remain on the panel-open path
+		// besides the insights query, which §B2 re-points to the cache.)
 		loadInsights(insightType);
 	});
+
+	function openCcs() {
+		window.dispatchEvent(new CustomEvent('constellation:open-ccs'));
+	}
 
 	async function loadInsights(type: string) {
 		insightType = type;
@@ -140,48 +140,17 @@
 		{/if}
 	</div>
 
-	<!-- Section 2: Link Health -->
-	<div class="sp-section">
-		<button class="sp-header" onclick={() => showLinkHealth = !showLinkHealth}>
-			<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class:rotated={!showLinkHealth}><polyline points="6 9 12 15 18 9"/></svg>
-			<span>{$t('sightPanel.linkHealth') || 'Link Health'}</span>
-		</button>
-		{#if showLinkHealth && linkStats}
-			<div class="sp-bars">
-				<!-- By Type -->
-				<div class="sp-bar-title">{$t('sightPanel.byType') || 'By Type'}</div>
-				{#each Object.entries(linkStats.by_type ?? {}) as [type, count]}
-					{@const maxCount = Math.max(...Object.values(linkStats.by_type ?? {}).map(Number))}
-					<div class="sp-bar-row">
-						<span class="sp-bar-label">{$t(`lens.link${type.charAt(0).toUpperCase() + type.slice(1).replace(/-./g, c => c[1].toUpperCase())}`) || type}</span>
-						<div class="sp-bar-track">
-							<div class="sp-bar-fill" style="width:{Math.max(2, (Number(count) / Math.max(maxCount, 1)) * 100)}%;background:{LINK_TYPE_COLORS[type] ?? '#94a3b8'}"></div>
-						</div>
-						<span class="sp-bar-val">{count}</span>
-					</div>
-				{/each}
-				<!-- By Confidence -->
-				<div class="sp-bar-title" style="margin-top:8px">{$t('sightPanel.byConfidence') || 'By Confidence'}</div>
-				{#each Object.entries(linkStats.by_confidence ?? {}) as [conf, count]}
-					{@const maxConf = Math.max(...Object.values(linkStats.by_confidence ?? {}).map(Number))}
-					<div class="sp-bar-row">
-						<span class="sp-bar-label">{conf}</span>
-						<div class="sp-bar-track">
-							<div class="sp-bar-fill" style="width:{Math.max(2, (Number(count) / Math.max(maxConf, 1)) * 100)}%;background:{CONFIDENCE_COLORS[conf] ?? '#94a3b8'}"></div>
-						</div>
-						<span class="sp-bar-val">{count}</span>
-					</div>
-				{/each}
-				<!-- Dormant -->
-				{#if dormantCount > 0}
-					<div class="sp-dormant">
-						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-						<span>{dormantCount} {$t('sightPanel.dormantLinks') || 'dormant links (90+ days)'}</span>
-					</div>
-				{/if}
-			</div>
-		{/if}
-	</div>
+	<!-- Section 2: Circulation → CCS (the §B1 hand-off — the BY TYPE /
+	     BY CONFIDENCE / dormant blocks now live in the Circulatory System) -->
+	{#if ccsEnabled}
+		<div class="sp-section">
+			<button class="sp-header sp-ccs-link" onclick={openCcs}>
+				<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h4l2-7 4 14 2-7h6"/></svg>
+				<span>{$t('sightPanel.openCcs') || 'Circulation → Circulatory System'}</span>
+				<span class="sp-ccs-arrow" aria-hidden="true">›</span>
+			</button>
+		</div>
+	{/if}
 
 	<!-- Section 3: Top Bridges -->
 	<div class="sp-section">
@@ -273,15 +242,9 @@
 	.sp-header svg { color: var(--text-muted, #64748b); transition: transform 0.15s; }
 	.sp-header svg.rotated { transform: rotate(-90deg); }
 	.sp-count { font-size: 10px; color: var(--text-faint); margin-inline-start: auto; background: var(--background-modifier-border); padding: 0 5px; border-radius: 6px; }
-	/* Bars */
-	.sp-bars { padding: 4px 12px 10px; }
-	.sp-bar-title { font-size: 9px; font-weight: 600; color: var(--text-faint, #94a3b8); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-	.sp-bar-row { display: flex; align-items: center; gap: 6px; height: 18px; }
-	.sp-bar-label { width: 70px; font-size: 10px; color: var(--text-muted, #64748b); text-align: end; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 0; }
-	.sp-bar-track { flex: 1; height: 6px; background: var(--background-modifier-border, #e5e7eb); border-radius: 3px; overflow: hidden; }
-	.sp-bar-fill { height: 100%; border-radius: 3px; min-width: 2px; }
-	.sp-bar-val { width: 28px; font-size: 10px; color: var(--text-faint, #94a3b8); text-align: end; flex-shrink: 0; }
-	.sp-dormant { display: flex; align-items: center; gap: 6px; margin-top: 6px; padding: 4px 6px; background: rgba(245, 158, 11, 0.08); border-radius: 4px; color: #f59e0b; font-size: 10px; }
+	/* The CCS hand-off row */
+	.sp-ccs-link { color: var(--interactive-accent, #7c3aed); }
+	.sp-ccs-arrow { margin-inline-start: auto; font-size: 13px; color: var(--text-faint, #94a3b8); }
 	/* List items */
 	.sp-list { display: flex; flex-direction: column; gap: 1px; padding: 0 4px 6px; }
 	.sp-item {

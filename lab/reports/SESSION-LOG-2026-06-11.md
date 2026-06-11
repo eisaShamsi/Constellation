@@ -259,4 +259,21 @@ an fs walk with no frontend caller) + the lib.rs registration; **`ConstellationS
 zero importers; **`LensPanel.svelte`** — its v1-era sidebar, zero importers (found in the §A3 verify
 sweep, same family); the three dead `+layout` states (`lensShowTagEdges`/`lensPeelCount`/`lensTagEdges` —
 zero readers; layer peeling stays roadmap per paper Q5). cargo check clean; svelte-check **0 errors**,
-warnings 317→313 (the dead files carried 4); repo-grep zero live references.
+warnings 317→313 (the dead files carried 4); repo-grep zero live references. → `7c9bb6c6`
+
+**§B1 SHIPPED — the circulatory shed + "Circulation → CCS".** Predecessor → Replacement (recorded with
+the retiring commit): SightPanel "Link Health" section — BY TYPE bars → **CCS Acts of Inquiry** · BY
+CONFIDENCE bars → **CCS Conviction & Doubt** · the dormant chip (LIMIT-200-capped count) → **CCS Cooling
+Inquiries** — replaced by ONE "Circulation → CCS" row dispatching the existing `constellation:open-ccs`
+(gated `enabledFeatures.ccs !== false`, mirroring the +layout listener). The two onMount live IPCs
+(`constellation_link_stats` + `constellation_link_dormant`) removed; `CONFIDENCE_COLORS` died with the
+bars. ConstellationSight2: `loadLinkEnrichment` + the ≤10-link enrichment map + the second application
+pass + `drawLinkAnnotation` + the hoveredLink hover loop + the thin/thick legend rows removed; SimLink
+trimmed to `linkType` only; the draw constants fold in the values ≥99.99% of edges already rendered with
+(`LINK_WIDTH_MUL = 0.7`; typed base 0.8) — pixel-equivalent at scale; the DF-15 ternary quirk died with
+the enrichment branch (`linkType: l.linkType || undefined`). **Locales ×15 machine-gated** (parse OK ·
+sightPanel leaves 18→15 = −4 dropped {linkHealth, byType, byConfidence, dormantLinks} +1 `openCcs` ·
+en/ar CRLF + 13 LF preserved · outside-block bytes identical): `sightPanel.openCcs` = "Circulation →
+Circulatory System" / "الدورة ← الجهاز الدوري" (RTL arrows per the MIG-074 hub precedent) /
+"Циркуляция → Кровеносная система" / "循环 → 循环系统" …. svelte-check **0 errors**; zero stale key
+consumers (repo-grep).
