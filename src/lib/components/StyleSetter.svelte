@@ -428,7 +428,8 @@
 		cns: { name: 'Nervous System (CNS)', controls: [
 			{ label: 'Background', type: 'color', var: '--cns-bg' },
 			{ label: 'Hover label background', type: 'color', var: '--cns-label-bg' },
-			{ label: 'Hover label text', type: 'color', var: '--cns-label-text' } ] },
+			{ label: 'Hover label text', type: 'color', var: '--cns-label-text' },
+			{ label: 'Text size', type: 'range', var: '--cns-label-size', min: 9, max: 24, step: 1, unit: 'px', def: 12 } ] },
 	};
 	// §3B — the left rail is organised into CATEGORIES (a.k.a. Surfaces), each grouping its
 	// elements (Eisa). Interface + Editor both preview the main app window ('editor' surface);
@@ -1460,7 +1461,8 @@
 	.ss-cns-ring.r2 { height: 56%; }
 	.ss-cns-ring.r3 { height: 84%; }
 	.ss-cns-label {
-		position: relative; font-size: 13px; padding: 4px 12px; border-radius: 6px;
+		/* font + em-padding track the "Text size" control like the real well's box does */
+		position: relative; font-size: var(--cns-label-size, 12px); padding: 0.3em 0.9em; border-radius: 6px;
 		background: var(--cns-label-bg, rgba(30,30,40,0.9));
 		color: var(--cns-label-text, #ffffff);
 	}

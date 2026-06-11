@@ -523,3 +523,22 @@ svelte-check 0 errors (313 baseline). Release binary rebuilt for the re-test. No
 (not touched): the org/index centre-preview branches are currently unreachable (those categories
 are two-zone) — a future sweep candidate if they ever rejoin three-zone, at which point the
 Preview Rule governs them too.
+
+---
+
+## Full-zone preview PASS + "Text size" added to the CNS category (Eisa's post-pass ask)
+
+Eisa: **"Pass. I want you to add 'Text Size'"** — a fourth CNS control sizing the hover label.
+
+- **StyleSetter** cns ELEMENTS: `{ label: 'Text size', type: 'range', var: '--cns-label-size',
+  min: 9, max: 24, step: 1, unit: 'px', def: 12 }`. The label slug `text_size` ALREADY exists in
+  all 15 locales (the universe-bar control introduced it in the 303-key batch) — zero locale work.
+- **ConstellationSight2** drawHoverLabel: font 12px-fixed → `labelSize` (mount-read
+  `--cns-label-size`, clamped 8–32, fallback 12 = no visual change when unset, the §D1/DF-16
+  pattern); the label BOX scales proportionally (`k = labelSize/12` on the 10px pad + 18px height),
+  so a 24px label never clips. Comment updated colors→vars.
+- **Preview chip**: `font-size: var(--cns-label-size, 12px)` + em-padding — the mini-well chip
+  grows/shrinks live as the slider drags, mirroring the real box's proportional scaling.
+
+svelte-check 0 errors. Orientation v2.71 FU-3 clause updated (3 → 4 wired controls).
+Mount-read caveat unchanged: size applies on next CNS open (the preview shows it live).

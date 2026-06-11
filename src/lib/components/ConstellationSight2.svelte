@@ -894,19 +894,21 @@
 		}
 	}
 
-	// §D1 (DF-16): the hover-label colors read theme vars ONCE at mount
+	// §D1 (DF-16): the hover-label vars read ONCE at mount
 	// (Perf Rule 3 — never getComputedStyle on the draw path); today's
 	// values stand as fallbacks, so unset = no visual change.
 	let labelBg = 'rgba(30,30,40,0.9)';
 	let labelText = '#ffffff';
+	let labelSize = 12; // px at zoom 1 — the Setter's "Text size" (--cns-label-size)
 
 	function drawHoverLabel(n: SimNode) {
 		const x = n.x ?? 0, y = n.y ?? 0;
 		const label = n.name;
-		ctx!.font = `${12 / zoom}px system-ui, sans-serif`;
+		const k = labelSize / 12; // box + padding scale with the font
+		ctx!.font = `${labelSize / zoom}px system-ui, sans-serif`;
 		const metrics = ctx!.measureText(label);
-		const lw = metrics.width + 10 / zoom;
-		const lh = 18 / zoom;
+		const lw = metrics.width + (10 * k) / zoom;
+		const lh = (18 * k) / zoom;
 		const lx = x - lw / 2;
 		const ly = y - n.r - lh - 6 / zoom;
 
@@ -1075,6 +1077,7 @@
 		const cs = getComputedStyle(canvasEl);
 		labelBg = cs.getPropertyValue('--cns-label-bg').trim() || labelBg;
 		labelText = cs.getPropertyValue('--cns-label-text').trim() || labelText;
+		labelSize = Math.max(8, Math.min(32, parseFloat(cs.getPropertyValue('--cns-label-size')))) || labelSize;
 
 		performance.mark('sight:mount:buildSimData:start');
 		buildSimData();
