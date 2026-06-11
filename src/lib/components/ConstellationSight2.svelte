@@ -27,6 +27,8 @@
 	import { get } from 'svelte/store';
 	import type { SkyNode, SkyLink } from '$lib/libraries/store';
 	import type { ClusterInfo, StructuralGap, UniverseHealth, CommunityProfile } from '$lib/graph/clusterEngine';
+	// §D1 — the one color/label source for typed links (MIG-067 registry).
+	import { linkTypeColor, getLinkTypes, linkTypeLabel, subscribe as subscribeLinkTypes } from '$lib/libraries/linkTypeRegistry';
 
 	// ─── Types ────────────────────────────────────────────────
 	interface SimNode extends d3.SimulationNodeDatum {
@@ -55,12 +57,18 @@
 		matchCategories: string[];
 	}
 
-	// ─── Link Type Colors (Living Link System) ────────────────
-	const LINK_TYPE_COLORS: Record<string, string> = {
-		supports: '#4A9EFF', contradicts: '#FF4A4A', causes: '#FF8C42',
-		exemplifies: '#4AFF88', generalizes: '#C084FC', 'derives-from': '#FACC15',
-		'part-of': '#94A3B8', associative: '#A78BFA', relates: '#94a3b8',
-	};
+	// ─── Link Type Colors — ONE source: the Link-Type Registry ─
+	// §D1 (paper §8.6 / DF-06): the hardcoded map is gone. Typed edges and
+	// the legend read linkTypeColor()/the registry list, so Style-Setter
+	// recolors and custom types reach CNS like every other surface.
+	// 'associative' (the null type — the open question) keeps its soft
+	// untyped tint; legacy 'relates' renders as plain untyped.
+	const ASSOCIATIVE_TINT = '#A78BFA'; // today's value, now named
+	function edgeColorFor(linkType: string | undefined): string | null {
+		if (!linkType || linkType === 'relates') return null;
+		if (linkType === 'associative') return ASSOCIATIVE_TINT;
+		return linkTypeColor(linkType);
+	}
 
 	const MATURITY_COLORS: Record<string, string> = {
 		seed: '#d1d5db', sapling: '#86efac', evergreen: '#16a34a',
@@ -195,6 +203,17 @@
 	// §C2 — the Blind Spots register rows (top-8 gaps, bridge ids resolved
 	// to display names), built once in onMount.
 	let panelGaps = $state<{ c1: string; c2: string; bridges: string[] }[]>([]);
+
+	// §D1 — the legend's type rows come from the registry (canonical order,
+	// custom types included) and follow live recolors via the subscription.
+	let registryTypes = $state(getLinkTypes());
+	// UI-language label with the standard miss-guard chain:
+	// locale (linkTypes.{id}) → registry user-label → raw id.
+	function typeLegendLabel(id: string): string {
+		const key = `linkTypes.${id}`;
+		const loc = $t(key);
+		return loc && loc !== key ? loc : (linkTypeLabel(id) || id);
+	}
 
 	function nodeFill(n: SimNode): string {
 		if (colorByRegions) {
@@ -646,7 +665,10 @@
 			const searchDim = hasSearch && !searchPartial;        // neither → dim
 			const neighborDim = selectedNode != null && src.id !== selectedNode.id && tgt.id !== selectedNode.id;
 
-			const typed = link.linkType && link.linkType !== 'relates' && LINK_TYPE_COLORS[link.linkType];
+			// §D1: typed-edge color from the Link-Type Registry (custom types
+			// included); 'associative' keeps its tint; 'relates'/empty = untyped.
+			const typedColor = edgeColorFor(link.linkType);
+			const typed = typedColor !== null;
 
 			// Search-highlighted links: colored by direction relative to target
 			// Green = inward (result → target), Red = outward (target → result)
@@ -656,7 +678,7 @@
 				const tgtIsTarget = searchTargetIds.has(tgt.id);
 				color = tgtIsTarget ? '#16a34a' : srcIsTarget ? '#ef4444' : '#f59e0b'; // green inward, red outward, amber other
 			} else {
-				color = typed ? LINK_TYPE_COLORS[link.linkType!] : '#94a3b8';
+				color = typed ? typedColor! : '#94a3b8';
 			}
 
 			// §B1: the per-link weight/confidence/dormancy styling was fed by a
@@ -850,6 +872,12 @@
 		}
 	}
 
+	// §D1 (DF-16): the hover-label colors read theme vars ONCE at mount
+	// (Perf Rule 3 — never getComputedStyle on the draw path); today's
+	// values stand as fallbacks, so unset = no visual change.
+	let labelBg = 'rgba(30,30,40,0.9)';
+	let labelText = '#ffffff';
+
 	function drawHoverLabel(n: SimNode) {
 		const x = n.x ?? 0, y = n.y ?? 0;
 		const label = n.name;
@@ -860,11 +888,11 @@
 		const lx = x - lw / 2;
 		const ly = y - n.r - lh - 6 / zoom;
 
-		ctx!.fillStyle = 'rgba(30,30,40,0.9)';
+		ctx!.fillStyle = labelBg;
 		ctx!.beginPath();
 		ctx!.roundRect(lx, ly, lw, lh, 3 / zoom);
 		ctx!.fill();
-		ctx!.fillStyle = '#ffffff';
+		ctx!.fillStyle = labelText;
 		ctx!.textAlign = 'center';
 		ctx!.textBaseline = 'middle';
 		ctx!.fillText(label, x, ly + lh / 2);
@@ -970,6 +998,7 @@
 	// maximize / sidebar / panel change left the well off-center and
 	// clipped content outside the stale box (Stage-1 finding, 2026-06-11).
 	let resizeObs: ResizeObserver | null = null;
+	let unsubLinkTypes: (() => void) | null = null;
 	// True once the user pans or zooms — resizes then preserve their view
 	// instead of snapping back to fit.
 	let userAdjustedView = false;
@@ -1013,6 +1042,17 @@
 		// (maximize, dock/sidebar/panel changes). Disconnected in onDestroy.
 		resizeObs = new ResizeObserver(() => syncCanvasSize());
 		if (canvasEl.parentElement) resizeObs.observe(canvasEl.parentElement);
+
+		// §D1 — live registry recolors reach the well + legend while open.
+		unsubLinkTypes = subscribeLinkTypes(() => {
+			registryTypes = getLinkTypes();
+			requestDraw();
+		});
+
+		// §D1 (DF-16) — one mount-time read of the optional label theme vars.
+		const cs = getComputedStyle(canvasEl);
+		labelBg = cs.getPropertyValue('--cns-label-bg').trim() || labelBg;
+		labelText = cs.getPropertyValue('--cns-label-text').trim() || labelText;
 
 		performance.mark('sight:mount:buildSimData:start');
 		buildSimData();
@@ -1110,10 +1150,14 @@
 		simulation?.stop();
 		resizeObs?.disconnect();
 		resizeObs = null;
+		unsubLinkTypes?.();
+		unsubLinkTypes = null;
 	});
 </script>
 
-<div class="sight2-root" dir={isRTL ? 'rtl' : 'ltr'}>
+<!-- §D1 (DF-16): style-target tagged — the Style Setter's inspect can find
+     CNS; its category wiring is a follow-up noted in the session log. -->
+<div class="sight2-root" dir={isRTL ? 'rtl' : 'ltr'} data-style-target="cns">
 	<!-- Header -->
 	<div class="sight2-header">
 		<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -1291,30 +1335,15 @@
 					     to") — the UI literally said "الربط إلى" where "Link Types"
 					     was meant. Proper key now. -->
 					<div class="sight2-legend-title">{$t('lens.legendLinkTypes') || 'Link Types'}</div>
-					<div class="sight2-legend-row">
-						<svg width="20" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke="#4A9EFF" stroke-width="2"/><polygon points="16,0 20,2 16,4" fill="#4A9EFF"/></svg>
-						<span>{$t("lens.linkSupports") || "supports"}</span>
-					</div>
-					<div class="sight2-legend-row">
-						<svg width="20" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke="#FF4A4A" stroke-width="2"/><polygon points="16,0 20,2 16,4" fill="#FF4A4A"/></svg>
-						<span>{$t("lens.linkContradicts") || "contradicts"}</span>
-					</div>
-					<div class="sight2-legend-row">
-						<svg width="20" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke="#FF8C42" stroke-width="2"/><polygon points="16,0 20,2 16,4" fill="#FF8C42"/></svg>
-						<span>{$t("lens.linkCauses") || "causes"}</span>
-					</div>
-					<div class="sight2-legend-row">
-						<svg width="20" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke="#4AFF88" stroke-width="2"/><polygon points="16,0 20,2 16,4" fill="#4AFF88"/></svg>
-						<span>{$t("lens.linkExemplifies") || "exemplifies"}</span>
-					</div>
-					<div class="sight2-legend-row">
-						<svg width="20" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke="#C084FC" stroke-width="2"/><polygon points="16,0 20,2 16,4" fill="#C084FC"/></svg>
-						<span>{$t("lens.linkGeneralizes") || "generalizes"}</span>
-					</div>
-					<div class="sight2-legend-row">
-						<svg width="20" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke="#FACC15" stroke-width="2"/><polygon points="16,0 20,2 16,4" fill="#FACC15"/></svg>
-						<span>{$t("lens.linkDerivesFrom") || "derives-from"}</span>
-					</div>
+					<!-- §D1: registry-driven — canonical order, custom types included,
+					     user recolors live. The old six hardcoded rows are gone. -->
+					{#each registryTypes as lt (lt.id)}
+						{@const c = linkTypeColor(lt.id)}
+						<div class="sight2-legend-row">
+							<svg width="20" height="4"><line x1="0" y1="2" x2="16" y2="2" stroke={c} stroke-width="2"/><polygon points="16,0 20,2 16,4" fill={c}/></svg>
+							<span dir="auto">{typeLegendLabel(lt.id)}</span>
+						</div>
+					{/each}
 					<div class="sight2-legend-divider"></div>
 					<!-- (§B1 removed the thin/thick confidence rows — the styling they
 					     advertised was enrichment-fed for ≤10 links; confidence is CCS's.) -->

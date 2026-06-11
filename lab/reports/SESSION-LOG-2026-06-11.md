@@ -349,3 +349,22 @@ sim-node lookup. An empty list reads as good news (`noResults`). `panelGaps` bui
 **every formerly-dark prop is now consumed** (communities, assignments, colors, profiles, gaps +
 suggestions) — the paper §11's no-dark-compute rule is satisfied in full.
 `sightPanel.blindSpots`/`suggestedBridges` ×15 gated. svelte-check **0 errors** (313 baseline).
+→ `8d38acfb` (+ orientation addendum `e1ecc9f6`)
+
+**★ STAGE 2 VERDICT (Eisa): "App Passed."** Two remarks → **§C-fix-1+2** (`6699430d`): the CNS panel
+widens 280→380px (the Blind Spots pair rows were choking — screenshot; matches the app right-sidebar
+convention; bridge chips widen too) + **the B/W region mute** — hovering a Regions row now renders
+everything OUTSIDE the region in luminance-gray at 0.35 alpha with colored decorations skipped (was
+near-invisible 0.08); gray conversion memoized per hex (no per-frame parsing).
+
+**§D1 SHIPPED — one color source + Style-Setter reach.** The hardcoded `LINK_TYPE_COLORS` is GONE from
+CNS: typed-edge colors read **`linkTypeColor()`** (custom types finally colored, not gray);
+`'associative'` keeps its named tint (`ASSOCIATIVE_TINT`, today's value — the open-question edge);
+legacy `'relates'` = plain untyped. **The legend's six hardcoded rows are replaced by the
+registry-driven list** (canonical order, custom types included, labels via the locale → registry-label
+→ id miss-guard chain, `dir=auto`). **Live recolors** reach the open well via `subscribeLinkTypes`
+(unsubscribed in onDestroy, Rule 4). **DF-16**: the root carries `data-style-target="cns"`
+(inspect-find-able; the Setter CATEGORY wiring — which CNS controls to expose — is a noted follow-up,
+not silently built); the hover-label colors read optional `--cns-label-bg/-text` theme vars ONCE at
+mount (Rule 3 — never on the draw path; unset = today's look). svelte-check **0 errors**;
+`LINK_TYPE_COLORS` grep = gone from CNS.
