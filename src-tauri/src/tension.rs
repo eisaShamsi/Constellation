@@ -218,42 +218,36 @@ fn detect_from_notes(notes: HashMap<String, NoteInfo>) -> TensionReport {
         };
     }
 
-    // Detection 1: Contradictions — deduped to ONE row per (source, target)
-    // pair (Boss-approved 2026-06-10). A bibliography-style note can carry
-    // dozens of identical [[target|…|contradicts]] occurrences; per-occurrence
-    // emission flooded the panel with repeats. Repeats now surface as a ×N
-    // suffix. (Orphans/single-points are unaffected: inbound_sources is
-    // already a per-source set.)
-    // key: (source_path, target_lower) → (source_name, target_display, count)
-    let mut contradiction_pairs: HashMap<(String, String), (String, String, usize)> = HashMap::new();
+    // Detection 1: Contradictions — ONE row per (source, target) pair
+    // (Boss-approved dedupe, 2026-06-10). The §A2 DB re-source made the
+    // input row-unique per (source, type, target), so the old ×N
+    // occurrence counter became unreachable and was removed in /simplify;
+    // the map stays as the defensive pair-dedupe + stable-sort anchor.
+    // key: (source_path, target_lower) → (source_name, target_display)
+    let mut contradiction_pairs: HashMap<(String, String), (String, String)> = HashMap::new();
     for info in notes.values() {
         for (target, link_type) in &info.outgoing {
             if link_type.as_deref() == Some("contradicts") {
                 if let Some(target_info) = notes.get(target) {
                     contradiction_pairs
                         .entry((info.path.clone(), target.clone()))
-                        .or_insert_with(|| (info.name.clone(), target_info.name.clone(), 0))
-                        .2 += 1;
+                        .or_insert_with(|| (info.name.clone(), target_info.name.clone()));
                 }
             }
         }
     }
-    // Stable order — heaviest repeat first, then source name (HashMap order
-    // is random per run; the panel should not reshuffle on every open).
-    let mut pair_rows: Vec<((String, String), (String, String, usize))> =
+    // Stable order by source name (HashMap order is random per run; the
+    // panel should not reshuffle on every open).
+    let mut pair_rows: Vec<((String, String), (String, String))> =
         contradiction_pairs.into_iter().collect();
-    pair_rows.sort_by(|a, b| b.1.2.cmp(&a.1.2).then_with(|| a.1.0.cmp(&b.1.0)));
+    pair_rows.sort_by(|a, b| a.1.0.cmp(&b.1.0));
     let contradictions: Vec<TensionItem> = pair_rows
         .into_iter()
-        .map(|((path, _), (name, target_display, count))| TensionItem {
+        .map(|((path, _), (name, target_display))| TensionItem {
             note_name: name,
             note_path: path,
             severity: "high".to_string(),
-            detail: if count > 1 {
-                format!("contradicts \"{}\" ×{}", target_display, count)
-            } else {
-                format!("contradicts \"{}\"", target_display)
-            },
+            detail: format!("contradicts \"{}\"", target_display),
         })
         .collect();
 

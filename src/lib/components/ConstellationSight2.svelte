@@ -221,10 +221,11 @@
 		return loc && loc !== key ? loc : (linkTypeLabel(id) || id);
 	}
 
-	function nodeFill(n: SimNode): string {
-		if (colorByRegions) {
-			const cid = communityAssignments.get(n.id);
-			if (cid !== undefined) return communityColors.get(cid) ?? n.libraryColor;
+	// /simplify: takes the node's community id (already looked up by the
+	// caller's mute check) so the draw loop does ONE Map.get per node.
+	function nodeFill(n: SimNode, cid: number | undefined): string {
+		if (colorByRegions && cid !== undefined) {
+			return communityColors.get(cid) ?? n.libraryColor;
 		}
 		return n.libraryColor;
 	}
@@ -728,6 +729,10 @@
 		}
 	}
 
+	// /simplify: hoisted out of the per-node loop (was re-created per node
+	// per frame; pre-existing, moved while the loop was under edit).
+	const MATURITY_ALPHA: Record<string, number> = { seed: 0.5, sapling: 0.7, evergreen: 0.9, canonical: 1.0, wilting: 0.4 };
+
 	function drawNodes() {
 		const hw = width / 2 / zoom, hh = height / 2 / zoom;
 		const vpLeft = -panX / zoom - hw - 20, vpRight = -panX / zoom + hw + 20;
@@ -742,7 +747,6 @@
 			const isMatch = hasSearch && searchMatchSet.has(n.id);
 			const isCurrent = currentMatch?.id === n.id;
 			const isNeighbor = selectedNode && (n === selectedNode || neighborIds.has(n.id));
-			const maturityAlpha: Record<string, number> = { seed: 0.5, sapling: 0.7, evergreen: 0.9, canonical: 1.0, wilting: 0.4 };
 			// Dim logic: search dims non-matches, neighborhood dims non-neighbors.
 			// §C-fix-2 (Eisa, Stage 2): a hovered Regions row MUTES everything
 			// outside that region to black-and-white (gray fill, modest alpha,
@@ -753,10 +757,11 @@
 			// keep full color even outside the region (cross-region edges are
 			// the read).
 			const activeRegionId = highlightRegionId ?? pinnedRegionId;
+			const cid = communityAssignments.get(n.id); // one lookup per node (/simplify)
 			const mutedByRegion = activeRegionId !== null
-				&& communityAssignments.get(n.id) !== activeRegionId
+				&& cid !== activeRegionId
 				&& !isMatch && !isNeighbor;
-			const baseAlpha = maturityAlpha[n.maturity ?? 'seed'] ?? 0.6;
+			const baseAlpha = MATURITY_ALPHA[n.maturity ?? 'seed'] ?? 0.6;
 			const alpha = hasSearch ? (isMatch ? 1.0 : 0.15)
 				: selectedNode ? (isNeighbor ? 1.0 : (mutedByRegion ? 0.3 : 0.12))
 				: activeRegionId !== null ? (mutedByRegion ? 0.35 : 1.0)
@@ -766,7 +771,7 @@
 			if (n.centrality > 0.4 && alpha > 0.3 && !mutedByRegion) {
 				ctx!.beginPath();
 				ctx!.arc(x, y, n.r + 4 / zoom, 0, Math.PI * 2);
-				ctx!.fillStyle = nodeFill(n) + '33';
+				ctx!.fillStyle = nodeFill(n, cid) + '33';
 				ctx!.fill();
 			}
 
@@ -793,7 +798,7 @@
 			ctx!.globalAlpha = alpha;
 			ctx!.beginPath();
 			ctx!.arc(x, y, n.r, 0, Math.PI * 2);
-			ctx!.fillStyle = mutedByRegion ? toGray(nodeFill(n)) : nodeFill(n);
+			ctx!.fillStyle = mutedByRegion ? toGray(nodeFill(n, cid)) : nodeFill(n, cid);
 			ctx!.fill();
 			ctx!.globalAlpha = 1.0;
 
