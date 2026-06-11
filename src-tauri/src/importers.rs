@@ -320,7 +320,7 @@ fn import_notion_folder(source: &str, dest: &Path) -> Result<ImportResult, Strin
                         match fs::read_to_string(&path) {
                             Ok(content) => {
                                 let cleaned = clean_notion_content(&content);
-                                match fs::write(&target, cleaned) {
+                                match crate::write_gate::gate_write(&target, &cleaned, None, "import") {
                                     Ok(_) => {
                                         result.imported += 1;
                                         result.files.push(target.to_string_lossy().to_string());
@@ -391,7 +391,7 @@ fn import_enex(source: &str, dest: &Path) -> Result<ImportResult, String> {
             result.skipped += 1;
         } else {
             let full_content = format!("{}{}", frontmatter, md);
-            match fs::write(&target, full_content) {
+            match crate::write_gate::gate_write(&target, &full_content, None, "import") {
                 Ok(_) => {
                     result.imported += 1;
                     result.files.push(target.to_string_lossy().to_string());
@@ -426,7 +426,7 @@ fn import_html_files(source: &str, dest: &Path) -> Result<ImportResult, String> 
         match fs::read_to_string(path) {
             Ok(html) => {
                 let md = html_to_markdown(&html);
-                match fs::write(&target, md) {
+                match crate::write_gate::gate_write(&target, &md, None, "import") {
                     Ok(_) => {
                         result.imported += 1;
                         result.files.push(target.to_string_lossy().to_string());
@@ -484,7 +484,7 @@ fn import_csv(source: &str, dest: &Path) -> Result<ImportResult, String> {
             result.skipped += 1;
         } else {
             let body = format!("{}# {}\n", frontmatter, display_title);
-            match fs::write(&target, body) {
+            match crate::write_gate::gate_write(&target, &body, None, "import") {
                 Ok(_) => {
                     result.imported += 1;
                     result.files.push(target.to_string_lossy().to_string());
@@ -517,7 +517,7 @@ fn import_text_files(source: &str, dest: &Path) -> Result<ImportResult, String> 
         match fs::read_to_string(path) {
             Ok(text) => {
                 let md = format!("# {}\n\n{}", name, text);
-                match fs::write(&target, md) {
+                match crate::write_gate::gate_write(&target, &md, None, "import") {
                     Ok(_) => {
                         result.imported += 1;
                         result.files.push(target.to_string_lossy().to_string());
@@ -909,7 +909,7 @@ pub async fn import_with_canonical(
                     };
                     let enriched = inject_frontmatter(&content, &fields);
 
-                    match fs::write(&dest_path, enriched) {
+                    match crate::write_gate::gate_write(&dest_path, &enriched, None, "import") {
                         Ok(_) => {
                             result.imported += 1;
                             result.files.push(dest_path.to_string_lossy().to_string());

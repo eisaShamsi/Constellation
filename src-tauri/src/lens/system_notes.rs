@@ -117,13 +117,15 @@ pub(crate) fn init_at(universe_root: &Path) -> Result<(), String> {
         return Ok(());
     }
 
-    fs::write(&target_path, RECENT_CAPTURES_CONTENT).map_err(|e| {
-        format!(
-            "Failed to write Five Acts system note {}: {}",
-            target_path.display(),
-            e
-        )
-    })?;
+    // MIG-076 §A2 — gated.
+    crate::write_gate::gate_write(&target_path, RECENT_CAPTURES_CONTENT, None, "system_note")
+        .map_err(|e| {
+            format!(
+                "Failed to write Five Acts system note {}: {}",
+                target_path.display(),
+                e
+            )
+        })?;
 
     Ok(())
 }

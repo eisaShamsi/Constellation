@@ -550,7 +550,8 @@ pub fn canonicalize_execute(
                         ),
                     };
                     let enriched = inject_frontmatter(&content, &fields);
-                    if let Err(e) = fs::write(&item.new_path, enriched) {
+                    // MIG-076 §A2 — gated.
+                    if let Err(e) = crate::write_gate::gate_write(&item.new_path, &enriched, None, "canonicalize") {
                         result
                             .errors
                             .push(format!("{}: write failed: {}", item.old_path.display(), e));
@@ -568,7 +569,7 @@ pub fn canonicalize_execute(
             }
         } else {
             // Non-markdown: rename + create sidecar
-            if let Err(e) = fs::rename(&item.old_path, &item.new_path) {
+            if let Err(e) = crate::write_gate::gate_rename(&item.old_path, &item.new_path, "canonicalize") {
                 result
                     .errors
                     .push(format!("{}: rename failed: {}", item.old_path.display(), e));
@@ -733,7 +734,8 @@ pub fn auto_canonicalize_all(app: tauri::AppHandle) -> Result<CanonicalizeResult
                         original_filename: Some(original_filename),
                     };
                     let enriched = inject_frontmatter(&content, &fields);
-                    if let Err(e) = fs::write(&new_path, enriched) {
+                    // MIG-076 §A2 — gated.
+                    if let Err(e) = crate::write_gate::gate_write(&new_path, &enriched, None, "import_adopt") {
                         total.errors.push(format!("{}: write: {}", file_path.display(), e));
                         continue;
                     }
@@ -743,7 +745,7 @@ pub fn auto_canonicalize_all(app: tauri::AppHandle) -> Result<CanonicalizeResult
                 Err(e) => { total.errors.push(format!("{}: read: {}", file_path.display(), e)); }
             }
         } else {
-            if let Err(e) = fs::rename(file_path, &new_path) {
+            if let Err(e) = crate::write_gate::gate_rename(file_path, &new_path, "import_adopt") {
                 total.errors.push(format!("{}: rename: {}", file_path.display(), e));
                 continue;
             }
@@ -828,7 +830,7 @@ pub fn inject_cid_library(app: tauri::AppHandle, library_path: String) -> Result
         if content.contains("\ncid:") || content.starts_with("cid:") {
             let migrated = migrate_cid_to_cid_cn(&content);
             if migrated != content {
-                if let Err(e) = fs::write(file_path, &migrated) {
+                if let Err(e) = crate::write_gate::gate_write(file_path, &migrated, None, "cid_migrate_bulk") {
                     result.errors.push(format!("{}: migrate cid→cid_cn: {}", file_path.display(), e));
                 } else {
                     result.renamed += 1;
@@ -858,7 +860,7 @@ pub fn inject_cid_library(app: tauri::AppHandle, library_path: String) -> Result
             format!("---\ncid_cn: {}\n---\n\n{}", canonical.stem, content)
         };
 
-        if let Err(e) = fs::write(file_path, &updated) {
+        if let Err(e) = crate::write_gate::gate_write(file_path, &updated, None, "cid_inject_bulk") {
             result.errors.push(format!("{}: write: {}", file_path.display(), e));
         } else {
             result.renamed += 1;
@@ -942,7 +944,7 @@ pub fn de_canonicalize_library(
                     let parent = file_path.parent().unwrap_or(lib_path);
                     let target = unique_path(parent, &clean);
 
-                    if let Err(e) = fs::write(&target, cleaned) {
+                    if let Err(e) = crate::write_gate::gate_write(&target, &cleaned, None, "decanonicalize") {
                         result.errors.push(format!("{}: write: {}", file_path.display(), e));
                         continue;
                     }
@@ -978,7 +980,7 @@ pub fn de_canonicalize_library(
             let parent = file_path.parent().unwrap_or(lib_path);
             let target = unique_path(parent, &orig);
 
-            if let Err(e) = fs::rename(file_path, &target) {
+            if let Err(e) = crate::write_gate::gate_rename(file_path, &target, "decanonicalize") {
                 result.errors.push(format!("{}: rename: {}", file_path.display(), e));
                 continue;
             }
@@ -1227,7 +1229,12 @@ pub fn ensure_cid_cn(file_path: &Path, content: &str) -> std::io::Result<String>
     // Legacy key — migrate in place
     if content.contains("\ncid:") || content.trim_start().starts_with("cid:") {
         let migrated = migrate_cid_to_cid_cn(content);
-        if migrated != content { fs::write(file_path, &migrated)?; }
+        if migrated != content {
+            // MIG-076 §A2 — gated (this runs on the note-OPEN pipeline; the
+            // gate serializes it against any concurrent save of the same file).
+            crate::write_gate::gate_write(file_path, &migrated, None, "ensure_cid_cn")
+                .map_err(std::io::Error::other)?;
+        }
         return Ok(migrated);
     }
     // Neither present — synthesise a new CID from the file's creation time
@@ -1245,7 +1252,9 @@ pub fn ensure_cid_cn(file_path: &Path, content: &str) -> std::io::Result<String>
     } else {
         format!("---\ncid_cn: {}\n---\n\n{}", canonical.stem, content)
     };
-    fs::write(file_path, &updated)?;
+    // MIG-076 §A2 — gated.
+    crate::write_gate::gate_write(file_path, &updated, None, "ensure_cid_cn")
+        .map_err(std::io::Error::other)?;
     Ok(updated)
 }
 

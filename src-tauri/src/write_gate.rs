@@ -60,6 +60,8 @@ pub enum WriteOutcome {
     /// this to its own collision behavior; the gate guarantees "write to
     /// path" can never silently become "create file".
     RefusedExists,
+    /// A gated filesystem rename/move (both paths were locked).
+    Renamed,
 }
 
 impl WriteOutcome {
@@ -69,6 +71,7 @@ impl WriteOutcome {
             WriteOutcome::OkUnchecked => "ok_unchecked",
             WriteOutcome::CreatedExclusive => "created_exclusive",
             WriteOutcome::RefusedExists => "refused_exists",
+            WriteOutcome::Renamed => "renamed",
         }
     }
 }
@@ -316,6 +319,45 @@ pub fn gate_create_exclusive(
     atomic_write(path, content)?;
     journal(path, surface, WriteOutcome::CreatedExclusive, content.len(), fnv1a(content.as_bytes()));
     Ok(WriteOutcome::CreatedExclusive)
+}
+
+/// Rename/move a note file under BOTH paths' locks (acquired in sorted-key
+/// order so two concurrent renames can never deadlock). The bounded retry
+/// covers the same AV/indexer sharing-violation class as writes.
+pub fn gate_rename(old: &Path, new: &Path, surface: &str) -> Result<WriteOutcome, String> {
+    let (ka, kb) = (lock_key(old), lock_key(new));
+    let (first, second) = if ka <= kb { (old, new) } else { (new, old) };
+    let l1 = path_lock(first);
+    let _g1 = match l1.lock() {
+        Ok(g) => g,
+        Err(p) => p.into_inner(),
+    };
+    // Same path (case/separator variant) → one lock is enough. The Arc is
+    // hoisted to function scope so the guard's borrow outlives the block.
+    let l2 = if ka != kb { Some(path_lock(second)) } else { None };
+    let _g2 = l2.as_ref().map(|l| match l.lock() {
+        Ok(g) => g,
+        Err(p) => p.into_inner(),
+    });
+
+    crate::watcher_suppress::mark(old);
+    crate::watcher_suppress::mark(new);
+
+    let mut attempt: u64 = 0;
+    loop {
+        match fs::rename(old, new) {
+            Ok(()) => break,
+            Err(e) => {
+                attempt += 1;
+                if attempt >= 5 {
+                    return Err(format!("Failed to rename file: {}", e));
+                }
+                std::thread::sleep(Duration::from_millis(50 * attempt));
+            }
+        }
+    }
+    journal(new, surface, WriteOutcome::Renamed, 0, fnv1a(old.to_string_lossy().as_bytes()));
+    Ok(WriteOutcome::Renamed)
 }
 
 // ─── Tests ─────────────────────────────────────────────────────────────────

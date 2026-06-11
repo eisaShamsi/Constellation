@@ -464,8 +464,8 @@ pub fn toggle_task(
         new_content
     };
 
-    fs::write(path, &final_content)
-        .map_err(|e| format!("Failed to write file: {}", e))?;
+    // MIG-076 §A2 — through the WriteGate (serialized + atomic + journaled).
+    crate::write_gate::gate_write(path, &final_content, None, "task_toggle")?;
 
     Ok(final_content)
 }

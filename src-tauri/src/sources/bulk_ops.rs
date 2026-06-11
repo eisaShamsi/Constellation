@@ -303,7 +303,8 @@ fn accept_one(app: &AppHandle, note_path: &str) -> Result<(), String> {
         .map_err(|e| format!("read: {}", e))?;
     let after_h = rewrite_frontmatter_sources(&content, &horizontal_ids);
     let after_both = rewrite_frontmatter_content_type(&after_h, &vertical_ids);
-    std::fs::write(path, after_both).map_err(|e| format!("write: {}", e))?;
+    // MIG-076 §A2 — gated (bulk programmatic frontmatter rewrite).
+    crate::write_gate::gate_write(path, &after_both, None, "bulk_accept")?;
 
     // 4. Update the SQLite mirror + clear the suggestion row.
     let search_state = app.state::<crate::search::SearchState>();

@@ -734,8 +734,8 @@ pub fn update_note_property(
 
     let new_content = update_frontmatter_property(&content, &key, &value);
 
-    fs::write(&file_path, new_content)
-        .map_err(|e| format!("Failed to write note: {}", e))?;
+    // MIG-076 §A2 — through the WriteGate (serialized + atomic + journaled).
+    crate::write_gate::gate_write(Path::new(&file_path), &new_content, None, "base_edit_cell")?;
 
     // MIG-065 §H — refresh the search index so the Base table (and any later
     // sort / add-column re-query, which reads `note_meta` — not the file)

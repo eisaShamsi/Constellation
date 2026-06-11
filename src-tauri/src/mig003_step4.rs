@@ -266,7 +266,7 @@ pub(crate) fn run(conn: &mut Connection, db_path: &Path) -> rusqlite::Result<()>
 
                 // fs::rename FIRST. If it fails (file locked, perms,
                 // long path), log and skip — DB updates won't fire.
-                if let Err(e) = fs::rename(&old_path_str, &new_path_str) {
+                if let Err(e) = crate::write_gate::gate_rename(Path::new(&old_path_str), Path::new(&new_path_str), "mig003_step4") {
                     crate::search::diag_log(
                         db_path,
                         &format!(

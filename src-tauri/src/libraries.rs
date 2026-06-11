@@ -350,7 +350,8 @@ pub fn write_note(app: tauri::AppHandle, file_path: String, content: String) -> 
         }
     }
 
-    fs::write(path, content).map_err(|e| format!("Failed to write file: {}", e))
+    // MIG-076 §A2 — through the WriteGate (serialized + atomic + journaled).
+    crate::write_gate::gate_write(path, &content, None, "write_note").map(|_| ())
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -754,8 +755,18 @@ pub fn create_note(app: tauri::AppHandle, folder_path: String, file_name: String
     }
 
     let content = format!("---\n{}\n---\n\n", fm_lines.join("\n"));
-    fs::write(&file_path, &content)
-        .map_err(|e| format!("Failed to create note: {}", e))?;
+    // MIG-076 §A2 — create-exclusive: if a race created this path between the
+    // collision resolver above and now, REFUSE instead of silently overwriting
+    // another note (previously fs::write would have clobbered it).
+    match crate::write_gate::gate_create_exclusive(&file_path, &content, "create_note")? {
+        crate::write_gate::WriteOutcome::RefusedExists => {
+            return Err(format!(
+                "A note already exists at {} (created concurrently).",
+                file_path.display()
+            ));
+        }
+        _ => {}
+    }
     Ok(file_path.to_string_lossy().to_string())
 }
 
@@ -919,7 +930,8 @@ pub fn rename_item(app: tauri::AppHandle, old_path: String, new_path: String) ->
         if new_p.exists() {
             return Err("An item with this name already exists.".to_string());
         }
-        fs::rename(old, new_p).map_err(|e| format!("Failed to rename: {}", e))?;
+        // MIG-076 §A2 — gated (journal + AV retry; folder-level).
+        crate::write_gate::gate_rename(old, new_p, "rename_folder")?;
         return Ok(new_path);
     }
 
@@ -960,13 +972,13 @@ pub fn rename_item(app: tauri::AppHandle, old_path: String, new_path: String) ->
     // moved.
     if old_title != new_title {
         let updated = update_frontmatter_title(&content, &new_title, &old_title);
-        fs::write(old, &updated)
-            .map_err(|e| format!("Failed to write frontmatter: {}", e))?;
+        // MIG-076 §A2 — gated (serialized with any in-flight editor flush).
+        crate::write_gate::gate_write(old, &updated, None, "rename_title")?;
     }
 
-    // Step 3: rename on disk.
+    // Step 3: rename on disk — gated under BOTH paths' locks.
     if old != new_p {
-        fs::rename(old, new_p).map_err(|e| format!("Failed to rename file: {}", e))?;
+        crate::write_gate::gate_rename(old, new_p, "rename_item")?;
     }
 
     // Steps 4+5: DB cascade + 'rename' alias stamp.
@@ -1440,8 +1452,8 @@ pub fn move_item(app: tauri::AppHandle, source_path: String, target_folder: Stri
     if dest.exists() {
         return Err("An item with this name already exists in the target folder.".to_string());
     }
-    fs::rename(source, &dest)
-        .map_err(|e| format!("Failed to move: {}", e))?;
+    // MIG-076 §A2 — gated rename (both paths locked, AV retry, journaled).
+    crate::write_gate::gate_rename(source, &dest, "move_item")?;
     Ok(dest.to_string_lossy().to_string())
 }
 
@@ -4196,7 +4208,9 @@ pub fn get_daily_note_path(app: tauri::AppHandle, library_path: String, format: 
     // Create the file if it doesn't exist
     if !file_path.exists() {
         let content = format!("---\ndate: {}\n---\n", now.format("%Y-%m-%d"));
-        fs::write(&file_path, content).map_err(|e| e.to_string())?;
+        // MIG-076 §A2 — create-exclusive; RefusedExists means another writer
+        // created today's note in the race window — that IS the goal, proceed.
+        crate::write_gate::gate_create_exclusive(&file_path, &content, "daily_note")?;
     }
 
     Ok(file_path.to_string_lossy().to_string())
@@ -4232,7 +4246,13 @@ pub fn quick_capture(app: tauri::AppHandle, library_path: String, inbox_folder: 
     }
 
     let content = format!("---\ncreated: {}\n---\n\n", now.format("%Y-%m-%d"));
-    fs::write(&file_path, &content).map_err(|e| e.to_string())?;
+    // MIG-076 §A2 — create-exclusive: a race past the uniqueness loop above
+    // refuses instead of overwriting the other note.
+    if crate::write_gate::gate_create_exclusive(&file_path, &content, "new_note")?
+        == crate::write_gate::WriteOutcome::RefusedExists
+    {
+        return Err("A note already exists at this path (created concurrently).".to_string());
+    }
 
     Ok(file_path.to_string_lossy().to_string())
 }
@@ -4342,14 +4362,13 @@ fn update_links_recursive(dir: &Path, re: &regex::Regex, new_name: &str, result:
             if let Ok(content) = fs::read_to_string(&path) {
                 let updated = rewrite_wikilinks_in_text(&content, re, new_name);
                 if updated != content {
-                    // §3-redo.2 — mark the path as recent-write before fs::write
-                    // so the file watcher's emit path skips it. Without this the
-                    // cascade's writes bubble back as external-edit events and
-                    // re-trigger reload, which re-triggers cascade. Closes
-                    // F3-watcher-loop in the Rename Function Concept Paper.
-                    crate::watcher_suppress::mark(&path);
-                    match fs::write(&path, updated) {
-                        Ok(()) => result.rewritten.push(path.to_string_lossy().to_string()),
+                    // MIG-076 §A2 — through the WriteGate, which serializes
+                    // against any in-flight editor flush on this path, writes
+                    // atomically, and marks watcher_suppress itself (the
+                    // §3-redo.2 F3-watcher-loop suppression now lives in the
+                    // gate for every writer, not just the cascade).
+                    match crate::write_gate::gate_write(&path, &updated, None, "cascade") {
+                        Ok(_) => result.rewritten.push(path.to_string_lossy().to_string()),
                         Err(e) => {
                             if result.failed.len() < MAX_FAILED_REPORTED {
                                 result.failed.push((
@@ -4668,8 +4687,9 @@ pub fn move_to_trash(app: tauri::AppHandle, path: String, library_path: String) 
         .ok_or("Invalid path")?;
     let dest = trash_dir.join(file_name);
 
-    fs::rename(&source, &dest)
-        .map_err(|e| format!("Failed to move to trash: {}", e))?;
+    // MIG-076 §A2 — gated: a trash move serializes against any in-flight
+    // editor flush of the same file (delete-vs-save race).
+    crate::write_gate::gate_rename(source, &dest, "trash")?;
 
     Ok(())
 }

@@ -1416,7 +1416,8 @@ pub(crate) fn mig003_backfill_cid_cn(
                 }
             };
             let stripped = strip_cid_cn_line(&content);
-            if std::fs::write(path_obj, &stripped).is_err() {
+            // MIG-076 §A2 — gated (rewrites a live note's frontmatter).
+            if crate::write_gate::gate_write(path_obj, &stripped, None, "cid_dedupe").is_err() {
                 plans[loser_idx].1 = Plan::Error;
                 continue;
             }

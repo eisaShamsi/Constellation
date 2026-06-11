@@ -809,3 +809,17 @@ content fingerprint, best-effort — never blocks a write). The §B Expectation 
 torture: never torn · create-exclusive refuses existing/creates fresh · timing print). **Full suite
 914/914.** Speed rider: ~6.5ms/write debug incl. fsync, debounced-save path only; cascade worst case
 N×6.5ms noted as the §A2 watch item (bulk-fsync lever available if Boss-test shows lag).
+
+**§A2 SHIPPED — every Rust note-writer routed through the WriteGate.** The W1 map undercounted:
+the exit audit found a second tier, ~24 note-content write sites total, ALL now gated:
+write_note · create_note (create-exclusive: a resolver race now REFUSES instead of silently
+overwriting) · rename_item (frontmatter write + gate_rename under both paths' locks) · move_item ·
+the cascade walker (its own watcher_suppress::mark absorbed into the gate) · ensure_cid_cn ×2 ·
+base_edit_cell · task_toggle · the classifier rewrites (sources_rewrite / content_type_rewrite /
+bulk_accept — the programmatic-frontmatter class) · cid_dedupe (search.rs healer) · daily_note +
+new_note (create-exclusive) · trash + rename_folder (gated renames) · canonicalize/de-canonicalize
++ import_adopt ×8 (canonical.rs bulk flows) · importers ×6 · welcome_note · system_note ·
+mig003_step4. New gate primitive: `gate_rename` (both paths locked in sorted-key order — deadlock-
+free; AV retry; journaled). **Exit audit CLEAN**: remaining bare fs::write/rename are all non-note
+(.base defs, json configs, .canvas, lexicon binaries, markers, panic log, tests) or universe-
+directory restructure ops — allow-list recorded in this entry. **Full suite 914/914.**

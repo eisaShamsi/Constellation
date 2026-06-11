@@ -529,8 +529,9 @@ fn rewrite_note_sources_on_disk(note_path: &str, sources: &[String]) -> Result<(
     let content = std::fs::read_to_string(path)
         .map_err(|e| format!("Failed to read {}: {}", note_path, e))?;
     let rewritten = rewrite_frontmatter_sources(&content, sources);
-    std::fs::write(path, rewritten)
-        .map_err(|e| format!("Failed to write {}: {}", note_path, e))?;
+    // MIG-076 §A2 — gated: this is a programmatic frontmatter rewrite of a
+    // possibly-open note (the exact class the gate serializes).
+    crate::write_gate::gate_write(path, &rewritten, None, "sources_rewrite")?;
     Ok(())
 }
 
@@ -1031,8 +1032,8 @@ fn rewrite_note_content_type_on_disk(
     let content = std::fs::read_to_string(path)
         .map_err(|e| format!("Failed to read {}: {}", note_path, e))?;
     let rewritten = rewrite_frontmatter_content_type(&content, content_type);
-    std::fs::write(path, rewritten)
-        .map_err(|e| format!("Failed to write {}: {}", note_path, e))?;
+    // MIG-076 §A2 — gated (programmatic frontmatter rewrite).
+    crate::write_gate::gate_write(path, &rewritten, None, "content_type_rewrite")?;
     Ok(())
 }
 

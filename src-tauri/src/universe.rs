@@ -1476,7 +1476,8 @@ pub fn scaffold_starter_library(library_path: String) -> Result<(), String> {
             "---\ncreated: {}\nstatus: seedling\n---\n\n# Welcome to Constellation\n\nYour knowledge universe is ready. Here's a quick guide to get started:\n\n## Folder Structure\n\n- **Atlas** — Maps of Content, dashboards, and indexes\n- **Calendar** — Daily notes and time-based entries\n- **Efforts** — Active projects and tasks\n- **+** — Quick capture inbox (Ctrl+Shift+N)\n\n## Tips\n\n- Use `[[wikilinks]]` to connect your notes\n- Press `Ctrl+N` to create a new note\n- Press `Ctrl+Shift+N` to quick-capture into your inbox\n- Open the Star View to see your knowledge network\n\nHappy exploring!\n",
             now
         );
-        fs::write(&welcome_path, &content)
+        // MIG-076 §A2 — gated.
+        crate::write_gate::gate_write(&welcome_path, &content, None, "welcome_note")
             .map_err(|e| format!("Failed to write Welcome.md: {}", e))?;
     }
 
