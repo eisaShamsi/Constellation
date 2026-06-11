@@ -1,6 +1,12 @@
 # MIG-075 — The CNS Modernization (Architect / Phase 1)
 
-**Status: ARCHITECT (Phase 1) — produced 2026-06-11, AWAITING EISA'S RATIFICATION. No Plan, no code.**
+> **⚠ RE-SCOPED 2026-06-11 (Boss correction):** Eisa ruled the Q1–Q8 gate below too narrow — "fully audit
+> its concept, functions, and purpose, all against the CCS, KH, and the remaining core plugins. Also …
+> fix its slowness and design bugs/issues." The audit is **`lab/reports/MIG-075-CNS-AUDIT.md`** — it is
+> now the ratification document (decisions D1–D7). **This file's §2 territory facts remain the factual
+> base** (all read first-hand, all cited); its §3/§8 ruling framing is superseded by the audit.
+
+**Status: ARCHITECT (Phase 1) — produced 2026-06-11; ruling framing superseded same day by the AUDIT (see banner). No Plan, no code.**
 **Function in hand: the CNS (Constellation Nervous System) — `ConstellationSight2.svelte`, its `SightPanel`
 insight sidebar, and the tension subsystem (`tension.rs`) — carrying the TWO Boss-approved items from
 `MIG-074-CCS-ARCHITECT.md` §3-a (detect_tensions Rule-8 re-sourcing + the CNS-panel boundary cleanup) plus

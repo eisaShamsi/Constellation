@@ -70,4 +70,55 @@ the contradictions ×N occurrence suffix is not reproducible from note_links (wr
 
 **Next:** awaiting Eisa's Q1–Q8 answers → Phase 2 Plan.
 
-**Commit:** MIG-075 Architect + this log + orientation v2.67 (same commit per LL-031/SO #6).
+**Commit:** MIG-075 Architect + this log + orientation v2.67 (same commit per LL-031/SO #6). → `73ca61b0`
+
+## §MIG-075 RE-SCOPED — Boss correction → the full CNS audit (midday)
+
+**Boss (verbatim):** *"No. Since we are reviewing the CNS, I want you to fully audit its concept,
+functions, and purpose, all against the CCS, KH, and the remaining core plugins. Also, I want you to fix
+its slowness and design bugs/issues."*
+
+**Stop-On-Correction applied:** all in-flight work stopped (none was code — the cascade had stopped at the
+Architect gate); changes since last approval enumerated (the `73ca61b0` docs only); corrected understanding
+stated; the Q1–Q8 framing withdrawn. The v1 Architect's §2 territory facts stand; a supersession banner was
+added to `MIG-075-CNS-ARCHITECT.md`.
+
+**The audit (5 parallel read-only agents + first-hand verification): `lab/reports/MIG-075-CNS-AUDIT.md`.**
+Agents covered Sky View (full inventory — registry/skyPalette colors, themed, worker-simulated), KH + CCS
+section inventories, the remaining dock plug-ins (orthogonality rows), CNS design-fact checks, and the
+concept-doc sweep. Verified centerpiece findings:
+
+1. **4 of 9 toggleLens pipeline outputs are computed and never rendered** — `communityAssignments`,
+   `communityColors`, `communityProfiles`, `gaps` (+ bridge suggestions), `contradictions` are declared
+   props (Sight2:90–97) with zero further references. The help topic documents "Communities" and "Blind
+   Spots (Structural Gaps)" sections that do not exist in the UI. CNS's unique analytical promise is
+   ~half dark.
+2. **No CNS concept paper exists** (file sweep) — the only core plug-in whose "why" was never ratified
+   (gap G1); the help topic still frames CNS vs the Wings-disabled Sight (G2).
+3. **Naming collisions:** CNS "Universe Health" vs the "Knowledge Health" plug-in (G3); "load-bearing"
+   structural (CE paper, bridges) vs circulatory (CCS register) (G4).
+4. **Triplication:** by_type + by_confidence render in KH AND CCS AND CNS today; most_connected +
+   weak_foundations duplicated KH/CNS-insights.
+5. **Sky View boundary:** CNS's rendered subset = a poorer, unthemed, registry-blind node-link canvas;
+   its differentiators are the slow/unrendered half. Target re-asserted: the layout IS the answer.
+6. **New visible bug (DF-08):** the Link-Types legend + a settings header render `searchHub.linksTo` —
+   the UI literally says "Links to"/"الربط إلى" where "Link Types" is meant (Sight2:1231/:1184).
+7. Theme story corrected vs the v2.27-era note: Sight2/SightPanel chrome uses theme vars with fallbacks
+   (NOT dark-only); but zero `data-style-target` (not inspect-targetable) + hardcoded canvas label colors.
+8. CAT_COLORS badge parity Sight2↔ConstellationMap: **identical** — the Badge-Taxonomy invariant HOLDS.
+9. Orphans: the well renders ALL notes (no linked-subgraph filter in the component); SightPanel's orphan
+   stat is real. (Corrects the MIG-060-era "CNS only shows the linked subgraph" note as it applies today.)
+10. skyVersion invalidation fires on index updates/tag changes → the S1 walk recurs in normal editing use.
+
+**Deliverable structure:** §1 canon + 4 identity gaps · §2 promise-vs-delivery (9 computed / 5 rendered) ·
+§3 boundary matrix vs every core plug-in (+ WA#5 cross-check: Gephi/Obsidian/Burt) · §4 slowness anatomy
+S1–S4 · §5 defect register DF-01…DF-18 · §6 the CNS purpose statement (Concept-Paper-v1.0 candidate) ·
+§7 the directed fix set · §8 decisions D1–D7 · §9 STOP.
+
+**Gate:** D1 concept paper · D2 render-vs-cut the dark analytics (recommend render: communities paint the
+well + a Blind-Spots register; contradictions stay cut from CNS) · D3 rename "Universe Health" (recommend
+"Structural Cohesion") · D4 most_connected home · D5 insights-strip fate · D6 tension re-source + the ×N
+delta · D7 the Arabic CNS title. Slowness fixes S1–S3 + defect sweep = directed by the Boss, sequenced by
+the Plan — not re-asked.
+
+**Commit:** the audit + the Architect banner + this log §2 + orientation v2.68 (same commit per LL-031).
