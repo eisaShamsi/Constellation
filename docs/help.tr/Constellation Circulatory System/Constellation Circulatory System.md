@@ -77,8 +77,7 @@ asla değiştirmez — bir kayıttan not açmak, bağlantıyı yürümek sayılm
 3. Satır kayıttan ayrılır; bağlantı, notun Geri Bağlantılar / Giden Bağlantılar panellerinde yeniden
    görünür.
 
-Geri getirilen bir bağlantı türünü, açıklamasını, güvenini ve tüm geçiş geçmişini korur. Ağırlığı
-1,0'dan yeniden başlar ve kullanımla yeniden kazanılır.
+Geri getirilen bir bağlantı hiçbir şey kaybetmez — türü, açıklaması, güveni ve tüm geçiş geçmişi onunla birlikte geri gelir; ağırlığı bu geçmişten yeniden hesaplanır, böylece çok geçilmiş bir bağlantı gittiği günkü kadar güçlü döner.
 
 ## Tazelik ritmi
 

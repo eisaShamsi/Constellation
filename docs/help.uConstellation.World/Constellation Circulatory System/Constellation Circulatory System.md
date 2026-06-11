@@ -57,8 +57,9 @@ opening a note from a register does not count as walking the link.
 2. Click **Restore** on the row you want back.
 3. The row leaves the register; the link reappears in the note's Backlinks / Outgoing panels.
 
-A restored link keeps its type, annotation, confidence, and full traversal history. Its weight restarts
-at 1.0 and is earned again through use.
+A restored link loses nothing — its type, annotation, confidence, and full traversal history all come
+back, and its weight is recomputed from that history, so a well-traveled link returns exactly as
+strong as it left.
 
 ## The freshness rhythm
 

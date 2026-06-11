@@ -75,8 +75,7 @@ Begehung des Links.
 3. Die Zeile verlässt das Register; der Link erscheint wieder in den Panels „Rückverweise" /
    „Ausgehende Links" der Notiz.
 
-Ein wiederhergestellter Link behält seinen Typ, seine Anmerkung, sein Vertrauen und seine vollständige
-Begehungshistorie. Sein Gewicht beginnt wieder bei 1,0 und wird durch Gebrauch neu erarbeitet.
+Ein wiederhergestellter Link verliert nichts — Typ, Anmerkung, Vertrauen und die vollständige Begehungshistorie kommen zurück, und sein Gewicht wird aus dieser Historie neu berechnet: Ein viel begangener Link kehrt genauso stark zurück, wie er gegangen ist.
 
 ## Der Rhythmus der Frische
 

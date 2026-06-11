@@ -655,3 +655,18 @@ explicit save/rename/cascade-file — off the keystroke path (saves debounced 15
 **Tests:** new `tests_pj060_index_gate` ×3 (gate holds for the walk on a deterministic mtime-collision
 fixture; force refreshes through the collision; fresh file indexes ungated). **Full lib suite 906/906**
 (903 + 3). PJ ledger flip → the v1.14 bump (housekeeping, queued).
+
+**Archive-weight fix SHIPPED (Eisa ruling: recompute from traversal_count).** One shared curve
+`earned_link_weight(tc) = 1 + ln(1 + tc)` extracted (search.rs — traverse now calls it; the Guide §7
+formula verbatim); `constellation_link_unarchive` → new testable core `unarchive_link_rows`:
+two-step read-tc → compute-in-Rust → per-row UPDATE (the traverse pattern — no SQLite math-fn
+dependency). A tc=20 link now restores at ≈4.04, not 1.0; tc=0 restores at exactly 1.0 (unchanged).
+Archive-side zeroing untouched (scope per the ruling — restore-side only). Guide §10's promise
+("restored without losing any of the 8 properties") is now TRUE as written — no Guide edit.
+**Doc-truth flips:** the EN CCS help "weight restarts at 1.0" sentence + User Manual Tutorial-7
+line rewritten to the new truth, AND the same sentence flipped in all 14 translations (gated
+line-surgery, marker + outside-block gates, 14/14 OK — the FU-1 files were translated this morning
+with the old behavior). **Tests:** `tests_archive_weight_roundtrip` ×3 (tc=20 round-trip ≈4.04 +
+history preserved; tc=0 baseline; multi-typed-row pair coverage). **Full suite 909/909.**
+*(Build note: one mid-edit E0433 — the helper initially landed between `#[tauri::command]` and
+constellation_link_traverse, stealing the attribute; moved above the doc block, clean rebuild.)*

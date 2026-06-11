@@ -126,7 +126,7 @@ Auto-promotion: ×1–2 → Hypothesis, ×3–9 → Evidence, ×10+ → Establis
 1. Open the **Circulatory System** (the pulse-line icon in the left dock, below CNS).
 2. Find the **Retired Reasoning** register.
 3. Click **Restore** on the row you want back (use **Show all** if you have more than twenty archived links).
-4. Link returns to active status — type, annotation, confidence, and traversal history intact; weight restarts at 1.0.
+4. Link returns to active status — type, annotation, confidence, and traversal history intact; weight is recomputed from the traversal history, so a well-traveled link returns as strong as it left.
 
 #### Tutorial 8 — One-shot confidence back-fill
 Use this when you imported notes from elsewhere, or if links existed before auto-promotion shipped: they may have high traversal counts but stale confidence.

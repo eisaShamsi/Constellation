@@ -54,7 +54,7 @@ Hacer clic en cualquier fila abre la nota donde vive ese enlace. Hojear CCS nunc
 2. Haz clic en **Restaurar** en la fila que quieras recuperar.
 3. La fila sale del registro; el enlace reaparece en los paneles Backlinks / Enlaces salientes de la nota.
 
-Un enlace restaurado conserva su tipo, su anotación, su confianza y todo su historial de recorridos. Su peso vuelve a empezar en 1.0 y se gana de nuevo con el uso.
+Un enlace restaurado no pierde nada: su tipo, su anotación, su confianza y todo su historial de recorridos vuelven con él, y su peso se recalcula a partir de ese historial, de modo que un enlace muy recorrido regresa exactamente tan fuerte como se fue.
 
 ## El ritmo de frescura
 

@@ -5166,6 +5166,15 @@ pub(crate) fn compute_link_stats(conn: &Connection) -> Result<LinkStats, String>
     Ok(LinkStats { total_links, by_type, by_confidence, with_annotation, sample_links })
 }
 
+/// The Living-Link earned-weight curve — logarithmic growth on traversal
+/// (Guide §7: weight is earned through use). ONE definition: traverse grows
+/// with it, unarchive restores with it. Raw weight is a pure function of
+/// traversal_count (decay is display-only since MIG-073), which is what makes
+/// the archive→restore round-trip lossless (Guide §10).
+pub(crate) fn earned_link_weight(traversal_count: i64) -> f64 {
+    1.0 + (1.0 + traversal_count as f64).ln()
+}
+
 /// Record a link traversal: user followed a link from source to target.
 /// Updates last_traversed, increments traversal_count, recalculates weight.
 /// Weight formula: 1.0 + ln(1 + traversal_count) — logarithmic, early traversals matter most.
@@ -5197,7 +5206,7 @@ pub fn constellation_link_traverse(
     let mut updated: usize = 0;
     for (id, tc) in &links {
         let new_tc = tc + 1;
-        let new_weight = 1.0 + (1.0 + new_tc as f64).ln();
+        let new_weight = earned_link_weight(new_tc);
         // P5 slice 3: confidence auto-promotion on traversal.
         // Tiers align with the frontend `LinkLifecycle` thresholds:
         //   3+ traversals  → "evidence"     (matches UI tier "established")
@@ -6230,9 +6239,38 @@ pub fn constellation_link_archive(
     Ok(())
 }
 
-/// Resurrect an archived link. Resets weight to 1.0 (baseline) and status
-/// back to 'active'. Traversal count and confidence are preserved so the
-/// link's history isn't lost.
+/// Resurrect an archived link. Restores status to 'active' and RECOMPUTES
+/// the earned weight from the preserved traversal_count (Eisa ruling
+/// 2026-06-11, closing the Guide-§10 drift: restore loses none of the 8
+/// properties — the old reset-to-1.0 forgot a link's entire earned history;
+/// a tc=20 link now returns at 1+ln(21)≈4.0, not 1.0). Annotation,
+/// confidence, traversal_count, last_traversed were already preserved.
+pub(crate) fn unarchive_link_rows(
+    conn: &Connection,
+    source_path: &str,
+    target_lower: &str,
+) -> Result<usize, String> {
+    // Two-step like constellation_link_traverse: read traversal_count, compute
+    // the weight in Rust (no SQLite math-function dependency), write per row.
+    let mut stmt = conn.prepare(
+        "SELECT id, traversal_count FROM note_links
+         WHERE source_path = ?1 AND LOWER(target_name) = ?2",
+    ).map_err(|e| e.to_string())?;
+    let rows: Vec<(i64, i64)> = stmt.query_map(params![source_path, target_lower], |row| {
+        Ok((row.get::<_, i64>(0)?, row.get::<_, i64>(1)?))
+    }).map_err(|e| e.to_string())?
+      .filter_map(|r| r.ok())
+      .collect();
+
+    for (id, tc) in &rows {
+        conn.execute(
+            "UPDATE note_links SET status = 'active', weight = ?1 WHERE id = ?2",
+            params![earned_link_weight(*tc), id],
+        ).map_err(|e| format!("Failed to unarchive link: {}", e))?;
+    }
+    Ok(rows.len())
+}
+
 #[tauri::command]
 pub fn constellation_link_unarchive(
     app: tauri::AppHandle,
@@ -6244,10 +6282,7 @@ pub fn constellation_link_unarchive(
     let conn = db.as_ref().ok_or("Search DB not initialized")?;
 
     let target_lower = target_name.to_lowercase();
-    conn.execute(
-        "UPDATE note_links SET status = 'active', weight = 1.0 WHERE source_path = ?1 AND LOWER(target_name) = ?2",
-        params![source_path, target_lower],
-    ).map_err(|e| format!("Failed to unarchive link: {}", e))?;
+    unarchive_link_rows(conn, &source_path, &target_lower)?;
 
     Ok(())
 }
@@ -7812,6 +7847,108 @@ mod tests_pj060_index_gate {
         index_note(&conn, &ps, "TestLib", false).unwrap();
         assert!(body_of(&conn, &ps).contains("hello"));
         let _ = std::fs::remove_dir_all(&dir);
+    }
+}
+
+#[cfg(test)]
+mod tests_archive_weight_roundtrip {
+    //! Eisa ruling 2026-06-11 (the MIG-074 archive-weight drift): restore
+    //! recomputes the earned weight from the preserved traversal_count, so the
+    //! archive→restore round-trip loses none of the 8 link properties
+    //! (Guide §10). Pins the shared curve (`earned_link_weight`) and the
+    //! `unarchive_link_rows` write against an in-memory note_links.
+    use super::*;
+    use rusqlite::Connection;
+
+    fn db_with_links() -> Connection {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE note_links (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                source_path TEXT, source_name TEXT, target_name TEXT,
+                link_type TEXT DEFAULT 'associative', annotation TEXT DEFAULT '',
+                weight REAL DEFAULT 1.0, confidence TEXT DEFAULT 'hypothesis',
+                traversal_count INTEGER DEFAULT 0, last_traversed TEXT DEFAULT '',
+                library_name TEXT DEFAULT '', status TEXT DEFAULT 'active',
+                created TEXT DEFAULT ''
+             );",
+        )
+        .unwrap();
+        conn
+    }
+
+    fn seed(conn: &Connection, target: &str, tc: i64, link_type: &str) {
+        conn.execute(
+            "INSERT INTO note_links (source_path, target_name, link_type, traversal_count, weight)
+             VALUES ('lib/a.md', ?1, ?2, ?3, ?4)",
+            params![target, link_type, tc, earned_link_weight(tc)],
+        )
+        .unwrap();
+    }
+
+    fn row(conn: &Connection, link_type: &str) -> (String, f64, i64) {
+        conn.query_row(
+            "SELECT status, weight, traversal_count FROM note_links WHERE link_type = ?1",
+            params![link_type],
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn restore_recomputes_earned_weight_from_traversal_count() {
+        let conn = db_with_links();
+        seed(&conn, "Apple Tree", 20, "supports");
+        // The production archive write (search.rs constellation_link_archive).
+        conn.execute(
+            "UPDATE note_links SET status = 'archived', weight = 0.0 WHERE source_path = 'lib/a.md'",
+            [],
+        )
+        .unwrap();
+
+        let n = unarchive_link_rows(&conn, "lib/a.md", "apple tree").unwrap();
+        assert_eq!(n, 1);
+        let (status, weight, tc) = row(&conn, "supports");
+        assert_eq!(status, "active");
+        assert_eq!(tc, 20); // history preserved
+        let expected = earned_link_weight(20); // 1 + ln(21) ≈ 4.04
+        assert!((weight - expected).abs() < 1e-9, "weight {} != earned {}", weight, expected);
+        assert!(weight > 4.0 && weight < 4.1);
+    }
+
+    #[test]
+    fn never_traversed_link_restores_at_baseline() {
+        let conn = db_with_links();
+        seed(&conn, "Lunch Plan", 0, "contradicts");
+        conn.execute(
+            "UPDATE note_links SET status = 'archived', weight = 0.0 WHERE source_path = 'lib/a.md'",
+            [],
+        )
+        .unwrap();
+
+        unarchive_link_rows(&conn, "lib/a.md", "lunch plan").unwrap();
+        let (status, weight, _) = row(&conn, "contradicts");
+        assert_eq!(status, "active");
+        assert!((weight - 1.0).abs() < 1e-9); // 1 + ln(1) = 1.0 — unchanged behavior
+    }
+
+    #[test]
+    fn restore_covers_every_typed_row_of_the_pair() {
+        let conn = db_with_links();
+        seed(&conn, "Apple Tree", 5, "supports");
+        seed(&conn, "Apple Tree", 2, "exemplifies");
+        conn.execute(
+            "UPDATE note_links SET status = 'archived', weight = 0.0 WHERE source_path = 'lib/a.md'",
+            [],
+        )
+        .unwrap();
+
+        let n = unarchive_link_rows(&conn, "lib/a.md", "apple tree").unwrap();
+        assert_eq!(n, 2);
+        let (_, w_sup, _) = row(&conn, "supports");
+        let (_, w_ex, _) = row(&conn, "exemplifies");
+        assert!((w_sup - earned_link_weight(5)).abs() < 1e-9);
+        assert!((w_ex - earned_link_weight(2)).abs() < 1e-9);
     }
 }
 

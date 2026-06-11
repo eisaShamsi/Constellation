@@ -54,7 +54,7 @@ Clicar em qualquer linha abre a nota onde aquele link vive. Navegar pelo CCS nun
 2. Clique em **Restaurar** na linha que você quer de volta.
 3. A linha sai do registro; o link reaparece nos painéis de Backlinks / Links de saída da nota.
 
-Um link restaurado mantém seu tipo, sua anotação, sua confiança e todo o histórico de travessias. Seu peso recomeça em 1.0 e volta a ser conquistado pelo uso.
+Um link restaurado não perde nada: seu tipo, sua anotação, sua confiança e todo o histórico de travessias voltam com ele, e seu peso é recalculado a partir desse histórico — um link muito percorrido retorna exatamente tão forte quanto saiu.
 
 ## O ritmo de atualização
 

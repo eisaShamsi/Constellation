@@ -59,7 +59,7 @@ Cliquer n'importe quelle ligne ouvre la note où vit ce lien. Parcourir CCS ne m
 2. Cliquez **Restaurer** sur la ligne que vous voulez récupérer.
 3. La ligne quitte le registre ; le lien réapparaît dans les panneaux Rétroliens / Liens sortants de la note.
 
-Un lien restauré garde son type, son annotation, sa confiance et tout son historique de parcours. Son poids repart à 1,0 et se regagne par l'usage.
+Un lien restauré ne perd rien : son type, son annotation, sa confiance et tout son historique de parcours reviennent avec lui, et son poids est recalculé à partir de cet historique — un lien très parcouru revient exactement aussi fort qu'il était parti.
 
 ## Le rythme de fraîcheur
 
