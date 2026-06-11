@@ -122,3 +122,52 @@ delta · D7 the Arabic CNS title. Slowness fixes S1–S3 + defect sweep = direct
 the Plan — not re-asked.
 
 **Commit:** the audit + the Architect banner + this log §2 + orientation v2.68 (same commit per LL-031).
+→ `22f93e3f`
+
+## §MIG-075 — Boss direction: the CNS Concept Paper FIRST, built from the origin (10:10–10:30)
+
+**Boss (verbatim):** *"Let's first develop a complete CNS Concept paper, and we will go from there. To
+develop this paper, I want you to go all the way back to when I first created the Constellation Sight
+concept. Originally, the CNS was one of many Sight failed projects. You have to UNDERSTAND the whole
+idea."*
+
+**The lineage read (3 parallel agents + first-hand reads):** read MYSELF in full —
+`Constellation-Sight-Concept-Paper-v1.1.md` (the port of Eisa's April-2026 original; 447 lines) +
+`Constellation-Sight-Subsystem-Concept-Paper-v1.0.md` (2026-05-19; 284 lines) + the original PDF's opening
+pages via pypdf (port verified faithful). Agents covered: the v2.0→v3.1 papers arc, the v4.0/v4.1 +
+redesign-v0.x + v5-audit arc, and the session-log chronology 2026-05-05→20 (MIG-016/017/018/019/024/025/
+026/027/028/038 + the A/B verdict).
+
+**The decisive records recovered:**
+- April 2026: Eisa's founding paper — "The Constellation Lens — A Text Network Analysis Engine for
+  Knowledge Discovery"; the question *"What patterns and gaps exist in my thinking?"*; Brandes + Louvain +
+  Burt structural holes + the M/D/E/C composite; local-first; the plain-language label rule.
+- 2026-05-07: v1.1 truth-status scores v2 at "~70–80% of the analytical promise delivered"; Eisa's
+  secure-don't-muddle ruling shelves v2 as the known-good fallback (MIG-017).
+- The odyssey: v3 died on architecture (13 close-button iterations → "abandon v3, start from scratch as
+  v4"); v5 REVOKED the network-science framing ("Brandes… Louvain… universe-health metrics is OUT") and
+  failed the outcome test ("What is unique about Sight? NOTHING!"); v6 = the 24-tradition domes.
+- **2026-05-14 (SESSION-LOG-2026-05-14:298–359): the A/B verdict — "Sight v2 = Working. I decided to keep
+  it." + Eisa's own naming: "Then, it is going to be: Constellation Nervous System (CNS)"** (anatomical
+  pair with Sight=sensory; SME proposals rejected).
+- 2026-05-19: Sight v6 + Map → Wings (MIG-038); the Core-Plug-in taxonomy ruling keeps CNS in the dock.
+  **The Subsystem paper written that day omits CNS from its own diagnostic-subsystem list** — the identity
+  gap made visible.
+- Code-truth pinned for the paper: today's well = deterministic gravity-well (centrality rings × library
+  sectors; "No community detection. Libraries are the user's own organization." — Sight2:292–294) + a
+  15-tick collide-only relaxation; the original free force layout is gone.
+
+**Deliverable: `docs/Constellation-Nervous-System-Concept-Paper-v1.0.md` (DRAFT for ratification).**
+Thesis: **CNS is not a failed Sight project — it is the ORIGINAL project** (Eisa's April-2026 analytical
+engine), which survived every Sight redesign because "it worked," while the Sight name wandered to the
+taxonomy/domes and was externalized. Structure: §0 why this paper exists · §2 the full dated lineage ·
+§3 Why "Nervous" · §4 the gravity well (the layout IS the answer) · §5 the four registers (Regions ·
+Bridges · Blind Spots · Structural Cohesion) · §6 the CCS dual-organ boundary + the "load-bearing belongs
+to CCS" vocabulary ruling · §8 the founding principles restated · §11 the truth-status matrix (founding
+mechanics vs today: communities/gaps computed-but-dark; tags/similarity/peeling unbuilt; PJ-037 rejected
+forever) · §13 the Q1–Q7 ratification gate (identity · Regions-as-color-lens · the score rename ·
+Blind Spots restore · peeling/similarity disposition · Hubs/KH · the Arabic title الجهاز العصبي للكوكبة).
+
+**STOPPED — awaiting Eisa's Q1–Q7 on the paper. MIG-075's Plan follows the ratified paper.**
+
+**Commit:** the paper + this log §3 + orientation v2.69 + MoCh (same commit per LL-031).
