@@ -670,3 +670,12 @@ with the old behavior). **Tests:** `tests_archive_weight_roundtrip` ×3 (tc=20 r
 history preserved; tc=0 baseline; multi-typed-row pair coverage). **Full suite 909/909.**
 *(Build note: one mid-edit E0433 — the helper initially landed between `#[tauri::command]` and
 constellation_link_traverse, stealing the attribute; moved above the doc block, clean rebuild.)*
+
+**§H ruling documented (keep note-language).** The Knowledge Formulation help topic (Tutorial 1)
+and the User Manual typed-link tutorial now state the rule in user terms: the badge speaks the
+NOTE's language, not the interface's (en note → *supports* even in ar UI; ar note → يدعم); switching
+the app language never re-labels links inside notes. Adjacent factual drift fixed in the same touch:
+the help's "Recognized types" line still listed 7 types + "anything else parsed as untyped relates"
+(pre-MIG-022/067) → now the 8 built-ins + custom vocabulary types, unrecognized prefix = plain note
+name, untyped = associative. KF topic is EN-only (no mirrors — logged at FU-1); Manual translations
+are the standing stale-snapshot debt.

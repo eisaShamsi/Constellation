@@ -83,7 +83,7 @@ Every Living Link function, step by step.
 #### Tutorial 1 — Your first typed link
 1. Open any note. Place cursor where you want the link.
 2. Type: `[[supports::Mughal Empire]]`
-3. Save. The link renders with a small **supports** badge in the Backlinks and Outgoing Links panels.
+3. Save. The link renders with a small **supports** badge in the Backlinks and Outgoing Links panels. The badge follows the **note's** language, not the interface's — an English note shows *supports* even in an Arabic interface; an Arabic note shows **يدعم**. The badge is part of the note's content, so switching the app language never re-labels the links inside your notes.
 
 Recognized types: `supports`, `contradicts`, `causes`, `exemplifies`, `generalizes`, `derives-from`, `part-of`. Anything else is parsed as an untyped `relates` link.
 

@@ -61,7 +61,9 @@ Every Living Link function, step by step.
 3. Type: `[[supports::Mughal Empire]]` (two square brackets, the type, two colons, the target note name, two square brackets).
 4. Save. In Live Preview, the link renders as the target's name with a small **supports** badge beside it in Backlinks / Outgoing panels.
 
-**Recognized types**: `supports`, `contradicts`, `causes`, `exemplifies`, `generalizes`, `derives-from`, `part-of`. Anything else is parsed as an untyped `relates` link.
+**The badge speaks the note's language, not the interface's.** A typed link inside an English-titled note shows its English type name (*supports*) even when your interface runs in Arabic; a link inside an Arabic note shows **يدعم**. The badge is part of the note's content, so it follows the note — switching the app language does not re-label the links inside your notes. (Design ruling, reaffirmed 2026-06-11.)
+
+**Recognized types**: the eight built-in acts — `supports`, `contradicts`, `causes`, `exemplifies`, `generalizes`, `derives-from`, `part-of`, `supersedes` — plus any custom types you have defined in the link-type vocabulary. An unrecognized prefix is not treated as a type: the whole text is read as a plain note name, and a link written without any type stays untyped (associative).
 
 ---
 
