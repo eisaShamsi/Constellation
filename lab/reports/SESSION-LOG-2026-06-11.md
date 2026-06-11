@@ -170,4 +170,46 @@ Blind Spots restore · peeling/similarity disposition · Hubs/KH · the Arabic t
 
 **STOPPED — awaiting Eisa's Q1–Q7 on the paper. MIG-075's Plan follows the ratified paper.**
 
-**Commit:** the paper + this log §3 + orientation v2.69 + MoCh (same commit per LL-031).
+**Commit:** the paper + this log §3 + orientation v2.69 + MoCh (same commit per LL-031). → `81a28111`
+
+## §MIG-075 — the KEEP decision + paper RATIFIED + Plan produced (10:30–11:00)
+
+**Boss asked the existential question (verbatim):** *"I want you to give me your honest opinion. I want
+to avoid patching an earlier version. Instead, I want you to provide me with a decision: Does the
+Constellation Cognitive system need it? And why?"*
+
+**The delivered decision: YES — keep CNS as the structural organ of the Connection question, rebuilt to
+its own founding spec, never patched.** Three reasons: (1) the Connection question is constitutionally
+two-sided (KF §1.1) and CCS just shipped the flow side — killing CNS orphans the ratified CCS §4 boundary
+("the blood shipped, the nerves amputated"); (2) **Blind Spots is the only forward-looking instrument in
+the entire Cognitive system** — everything else records connections already made; structural gaps point
+at connections NOT yet made (the Five Acts' Synthesis step instrumented; Burt; the founding paper's "dark
+sky"); (3) the emergent-vs-declared overlay (found Regions over the user's declared library sectors)
+exists nowhere else. Alternatives stated honestly: merge-into-Sky-View rejected (the exact modes shape
+that killed Sight v5 — "What is unique about Sight? NOTHING!"); retire-to-Wings stated as the consistent
+kill-path but not recommended; keeping CNS AS-IS ruled out absolutely.
+
+**Boss (verbatim): "I accept your logic. Proceed!"** → the paper is RATIFIED with Q1–Q7 all as
+recommended.
+
+**Shipped this hour:**
+1. **`docs/Constellation-Nervous-System-Concept-Paper-v1.1.md` — RATIFIED** (new file; v1.0 draft
+   preserved). v1.1 locks the identity, adds **§2.1 The keep decision** (the question + the three-reason
+   verdict + the rejected alternatives, verbatim-quoted), and converts §13 to the ratified rulings:
+   Q1 identity ✅ · Q2 Regions = a color LENS (position untouched) ✅ · Q3 **Structural Cohesion /
+   التماسك البنيوي** ✅ · Q4 Blind Spots restored with suggested bridges ✅ · Q5 layer peeling = roadmap,
+   similarity = deferred ✅ · Q6 **CNS carries Hubs; KH's most-connected card retires** (explicit MIG-073
+   reversal) ✅ · Q7 the native title ×15, ar **الجهاز العصبي للكوكبة** ✅.
+2. **`lab/reports/MIG-075-CNS-PLAN.md` — Phase 2 produced, awaiting Plan approval.** §A engine (A1
+   centrality DB-re-source + async + drop the dead contradictions field · A2 tension re-source, contract
+   frozen · A3 delete tag_edges + v1 component) → §B boundary (B1 the shed + "Circulation → CCS" ·
+   B2 insights strip → cached Hubs + the atomic KH-card retirement · B3 Cohesion rename + native titles +
+   four sub-metrics + DF-08 headers + the scope caption) → §C registers (C1 Regions lens + list ·
+   C2 Blind Spots + suggested bridges) → §D registry/theme alignment (one color source +
+   data-style-target) → §E docs → §F /simplify + 3-agent audit + the perf gate (Louvain worker decision
+   measured-not-assumed). ★ Boss stages: 1 speed+shed · 2 registers · 3 colors/AR. Accepted-delta class
+   documented (§A1 occurrence-dedup; §A2 ×N + tag-coverage + archived-filter).
+
+**Next: Eisa's Plan approval → the build cascades §A1 → §F.**
+
+**Commit:** paper v1.1 + the Plan + this log §4 + orientation v2.70 (same commit per LL-031).
