@@ -70,7 +70,9 @@
 	});
 
 	function openCcs() {
-		window.dispatchEvent(new CustomEvent('constellation:open-ccs'));
+		// The +layout listener is registered on document (the MIG-007 hub
+		// dispatches there too) — window-dispatched events never reach it.
+		document.dispatchEvent(new CustomEvent('constellation:open-ccs'));
 	}
 
 	async function loadInsights(type: string) {

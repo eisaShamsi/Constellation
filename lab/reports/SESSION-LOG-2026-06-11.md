@@ -276,4 +276,25 @@ sightPanel leaves 18→15 = −4 dropped {linkHealth, byType, byConfidence, dorm
 en/ar CRLF + 13 LF preserved · outside-block bytes identical): `sightPanel.openCcs` = "Circulation →
 Circulatory System" / "الدورة ← الجهاز الدوري" (RTL arrows per the MIG-074 hub precedent) /
 "Циркуляция → Кровеносная система" / "循环 → 循环系统" …. svelte-check **0 errors**; zero stale key
-consumers (repo-grep).
+consumers (repo-grep). → `63b097c8`
+
+**★ STAGE 1 VERDICT (Eisa):** Test 1 **PASS** — "less than 3 seconds from click to paint" (the corpus-walk
+freeze is gone; the S3 worker question parks as not-needed-now). Test 3 **PASS**. Test 2 **FAIL** —
+clicking the CCS row did nothing. Plus two findings with screenshots: (1) the well not centered in the
+center zone; (2) zooming revealed clusters hidden beyond the right edge — "I want to take advantage of
+the whole available space."
+
+**§B1-fix-1 — the dead CCS click, root-caused:** the +layout listener is registered on **`document`**
+(+layout:2302; the MIG-007 hub dispatches on document too, SettingsModal:1394) — SightPanel dispatched on
+**`window`**, and window-dispatched events never reach document listeners. One-line fix:
+`document.dispatchEvent`.
+
+**§B1-fix-2 — the off-center well + hidden content, root-caused:** the canvas was sized ONCE at mount
+(`getBoundingClientRect` → inline `style="width:{width}px;height:{height}px"`) with **no resize handling
+at all** — any later size change (maximize, dock/sidebar/panel width) left a stale coordinate space:
+well off-center in the grown wrap, content clipped beyond the frozen box (the Stage-1 screenshots; the
+PJ-062-family "fixed-size layout assumptions" bug, pulled into MIG-075 per the Boss's Stage-1 directive).
+Fix: the canvas box is CSS-bound (`width/height: 100%`); a **ResizeObserver** on the wrap keeps the
+bitmap + dpr transform (`setTransform`) + the view in step; `userAdjustedView` (set by wheel/pan/the
+MIG-060 focus gesture, cleared by Fit-to-screen) decides re-fit vs preserve-view on resize; observer
+disconnected in onDestroy (Rule 4). svelte-check 0 errors.

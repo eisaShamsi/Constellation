@@ -833,6 +833,7 @@
 		if (isPanning) {
 			panX = e.clientX - panStartX;
 			panY = e.clientY - panStartY;
+			userAdjustedView = true;
 			requestDraw();
 			return;
 		}
@@ -858,6 +859,7 @@
 	function onWheel(e: WheelEvent) {
 		e.preventDefault();
 		zoom = Math.max(0.1, Math.min(5, zoom + (e.deltaY > 0 ? -0.08 : 0.08)));
+		userAdjustedView = true;
 		requestDraw();
 	}
 
@@ -905,7 +907,39 @@
 		zoom = Math.min(width / rangeX, height / rangeY) * 0.93;
 		zoom = Math.max(0.1, Math.min(3, zoom));
 		panX = 0; panY = 0;
+		// Fit IS the default view again — resizes may re-fit automatically.
+		userAdjustedView = false;
 		requestDraw();
+	}
+
+	// ─── Canvas size sync (§B1-fix-2) ─────────────────────────
+	// The canvas box is CSS-bound (100%/100%); this keeps the BITMAP, the
+	// dpr transform, and the centered view in step with the box. Before
+	// this fix the size was measured once at mount and frozen, so a
+	// maximize / sidebar / panel change left the well off-center and
+	// clipped content outside the stale box (Stage-1 finding, 2026-06-11).
+	let resizeObs: ResizeObserver | null = null;
+	// True once the user pans or zooms — resizes then preserve their view
+	// instead of snapping back to fit.
+	let userAdjustedView = false;
+
+	function syncCanvasSize() {
+		const rect = canvasEl?.parentElement?.getBoundingClientRect();
+		if (!rect || rect.width < 2 || rect.height < 2) return;
+		const w = Math.round(rect.width);
+		const h = Math.round(rect.height);
+		if (w === width && h === height) return;
+		width = w;
+		height = h;
+		canvasEl.width = w * devicePixelRatio;
+		canvasEl.height = h * devicePixelRatio;
+		// Resizing the bitmap resets the context — re-establish the dpr scale.
+		ctx?.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+		if (userAdjustedView) {
+			requestDraw(); // keep the user's pan/zoom; the center tracks width/2
+		} else {
+			fitToScreen(); // still at the default view — keep the well fitted
+		}
 	}
 
 	// ─── Lifecycle ────────────────────────────────────────────
@@ -917,12 +951,17 @@
 		performance.mark('sight:mount:start');
 
 		const rect = canvasEl.parentElement?.getBoundingClientRect();
-		width = rect?.width ?? 800;
-		height = rect?.height ?? 600;
+		width = Math.round(rect?.width ?? 800);
+		height = Math.round(rect?.height ?? 600);
 		canvasEl.width = width * devicePixelRatio;
 		canvasEl.height = height * devicePixelRatio;
 		ctx = canvasEl.getContext('2d');
 		if (ctx) ctx.scale(devicePixelRatio, devicePixelRatio);
+
+		// §B1-fix-2 — track the wrap's size for the life of the surface
+		// (maximize, dock/sidebar/panel changes). Disconnected in onDestroy.
+		resizeObs = new ResizeObserver(() => syncCanvasSize());
+		if (canvasEl.parentElement) resizeObs.observe(canvasEl.parentElement);
 
 		performance.mark('sight:mount:buildSimData:start');
 		buildSimData();
@@ -962,6 +1001,9 @@
 				// panX = -focusNode.x * zoom. Same logic for panY.
 				panX = -(focusNode.x ?? 0) * zoom;
 				panY = -(focusNode.y ?? 0) * zoom;
+				// The gesture-centered view is not the default fit — a later
+				// resize must preserve it, not snap back (§B1-fix-2).
+				userAdjustedView = true;
 				requestDraw();
 			}
 		}
@@ -985,6 +1027,8 @@
 		destroyed = true;
 		if (animFrame) cancelAnimationFrame(animFrame);
 		simulation?.stop();
+		resizeObs?.disconnect();
+		resizeObs = null;
 	});
 </script>
 
@@ -1105,8 +1149,10 @@
 				</div>
 			{/if}
 
-			<!-- Canvas -->
-			<canvas bind:this={canvasEl} style="width:{width}px;height:{height}px"
+			<!-- Canvas — CSS-bound to the wrap (100%/100%); the bitmap follows via
+			     the ResizeObserver in onMount (§B1-fix-2: the box was frozen at its
+			     mount-time size, mis-centering the well and clipping content). -->
+			<canvas bind:this={canvasEl}
 				onmousedown={onMouseDown} onmousemove={onMouseMove} onmouseup={onMouseUp}
 				onmouseleave={onMouseUp} onwheel={onWheel} onclick={onClick}>
 			</canvas>
@@ -1254,6 +1300,8 @@
 	}
 	.sight2-canvas-wrap canvas {
 		display: block;
+		width: 100%;
+		height: 100%;
 		cursor: grab;
 	}
 	.sight2-canvas-wrap canvas:active { cursor: grabbing; }
