@@ -1531,7 +1531,7 @@ fn strip_cid_cn_line(content: &str) -> String {
 /// at the start of file content. Returns None if frontmatter is
 /// absent / malformed / lacks the field. Mirrors the simple style of
 /// `libraries::extract_frontmatter_title`.
-fn extract_frontmatter_cid_cn(content: &str) -> Option<String> {
+pub(crate) fn extract_frontmatter_cid_cn(content: &str) -> Option<String> {
     let trimmed = content.trim_start();
     if !trimmed.starts_with("---") { return None; }
     let after = &trimmed[3..];

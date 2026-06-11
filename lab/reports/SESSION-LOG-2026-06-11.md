@@ -835,3 +835,15 @@ the reversibility principle holds under conventional UX), then create/rename pro
 gate. Sequencing: built in MIG-076 §E (same modal family + i18n batch as the refusal dialog; the
 rename flow is §D-rebuilt first so it's built once). Until §E: create auto-suffixes, rename refuses
 (both safe post-§A2). PJ-003 → resolved-by-ruling, lands with §E.
+
+**§B1 SHIPPED — identity/freshness CAS in the gate (SHADOW mode).** `check_expectation` runs UNDER
+the path lock (no TOCTOU): identity first (expected_cid vs the disk's frontmatter cid_cn — reusing
+search.rs::extract_frontmatter_cid_cn, now pub(crate)), then freshness (mtime+size; the racy-git
+hash escalation forgives metadata-only drift when base_hash matches the disk bytes). Verdicts:
+would_refuse_identity (incl. file-gone — the §140 class) · would_refuse_stale · unverified_no_cid
+(legacy population, closes via §B3) · ok. SHADOW: would-refuse verdicts journal loudly (journal now
+carries expected_cid + found_cid) but the write proceeds — invariant I6; `WRITE_GATE_ENFORCE=false`
+is the §F1 flip. `write_note` IPC gains an optional camelCase `expect` param (serde-default —
+legacy callers unchanged). **Tests +6** (identity-mismatch shadow-writes · fresh-pass · stale-detect
+(size catches same-second mtime) · hash-escalation · no-cid unverified · missing-file refusal).
+**Full suite 920/920.** Next: §B2 frontend expectations + §B3 cid backfill → ★Stage 1.

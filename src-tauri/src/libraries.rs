@@ -327,7 +327,14 @@ pub fn get_note_headings(app: tauri::AppHandle, file_path: String) -> Result<Vec
 
 /// Write content to a markdown file inside a library.
 #[tauri::command]
-pub fn write_note(app: tauri::AppHandle, file_path: String, content: String) -> Result<(), String> {
+pub fn write_note(
+    app: tauri::AppHandle,
+    file_path: String,
+    content: String,
+    // MIG-076 §B1 — optional identity/freshness attestation (camelCase
+    // `expect` from the frontend; absent on legacy callers → unchecked).
+    expect: Option<crate::write_gate::Expectation>,
+) -> Result<(), String> {
     validate_path_in_any_library(&app, &file_path)?;
     let path = Path::new(&file_path);
 
@@ -350,8 +357,9 @@ pub fn write_note(app: tauri::AppHandle, file_path: String, content: String) -> 
         }
     }
 
-    // MIG-076 §A2 — through the WriteGate (serialized + atomic + journaled).
-    crate::write_gate::gate_write(path, &content, None, "write_note").map(|_| ())
+    // MIG-076 §A2/§B1 — through the WriteGate (serialized + atomic +
+    // journaled; identity/freshness checked when the caller attests).
+    crate::write_gate::gate_write(path, &content, expect.as_ref(), "write_note").map(|_| ())
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

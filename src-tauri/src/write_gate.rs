@@ -34,17 +34,26 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-/// §B1 (L2) seam — what the caller believes about the file it is replacing.
-/// Carried now so §A2 call-site routing doesn't churn when CAS lands.
-#[allow(dead_code)]
+/// §B2 — when true, identity/freshness mismatches REFUSE (and quarantine);
+/// until then the gate runs in SHADOW mode: journal the would-refuse verdict,
+/// perform the write anyway. Flipped only after the ★Stage-1 soak shows a
+/// clean journal (Plan §F1, invariant I6/I10).
+pub const WRITE_GATE_ENFORCE: bool = false;
+
+/// §B1 (L2) — what the caller believes about the file it is replacing.
+#[derive(Debug, Clone, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Expectation {
     /// The note identity the caller composed this content FOR (frontmatter
     /// `cid_cn`). Mismatch with the on-disk identity = the Frankenstein class.
     pub expected_cid: Option<String>,
     /// Freshness token of the disk state the caller last read (racy-git rule:
-    /// mtime+size, escalate to hash on ambiguity — §B1).
+    /// mtime+size, escalate to hash on ambiguity).
     pub base_mtime: u64,
     pub base_size: u64,
+    /// fnv1a-64 hex of the disk content the caller last read (as reported by
+    /// the gate/journal fingerprint). When mtime+size drift but this matches
+    /// the current disk content, the drift was metadata-only (AV touch) — fresh.
     pub base_hash: Option<String>,
 }
 
@@ -62,6 +71,16 @@ pub enum WriteOutcome {
     RefusedExists,
     /// A gated filesystem rename/move (both paths were locked).
     Renamed,
+    /// §B1 shadow — the on-disk note carries a DIFFERENT cid_cn than the one
+    /// this content was composed for (the Frankenstein class), or the file is
+    /// gone. Written anyway in shadow mode; refused once enforcement flips.
+    WouldRefuseIdentity,
+    /// §B1 shadow — same note, but the disk is newer than the state the
+    /// caller composed against (the lost-update/stomp class).
+    WouldRefuseStale,
+    /// §B1 — identity expected, but the on-disk note has no cid_cn yet
+    /// (legacy population; the §B3 backfill closes this). Journaled, allowed.
+    UnverifiedNoCid,
 }
 
 impl WriteOutcome {
@@ -72,6 +91,9 @@ impl WriteOutcome {
             WriteOutcome::CreatedExclusive => "created_exclusive",
             WriteOutcome::RefusedExists => "refused_exists",
             WriteOutcome::Renamed => "renamed",
+            WriteOutcome::WouldRefuseIdentity => "would_refuse_identity",
+            WriteOutcome::WouldRefuseStale => "would_refuse_stale",
+            WriteOutcome::UnverifiedNoCid => "unverified_no_cid",
         }
     }
 }
@@ -128,12 +150,24 @@ fn journal_lock() -> &'static Mutex<()> {
 
 /// Best-effort: journal failure must never fail or delay the user's write.
 fn journal(path: &Path, surface: &str, outcome: WriteOutcome, bytes: usize, hash: u64) {
+    journal_ext(path, surface, outcome, bytes, hash, None, None);
+}
+
+fn journal_ext(
+    path: &Path,
+    surface: &str,
+    outcome: WriteOutcome,
+    bytes: usize,
+    hash: u64,
+    expected_cid: Option<&str>,
+    found_cid: Option<&str>,
+) {
     let Some(jp) = journal_path().get() else { return };
     let ts = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_millis() as u64)
         .unwrap_or(0);
-    let line = serde_json::json!({
+    let mut line = serde_json::json!({
         "ts": ts,
         "path": path.to_string_lossy(),
         "surface": surface,
@@ -141,6 +175,12 @@ fn journal(path: &Path, surface: &str, outcome: WriteOutcome, bytes: usize, hash
         "bytes": bytes,
         "hash": format!("{:016x}", hash),
     });
+    if let Some(e) = expected_cid {
+        line["expected_cid"] = serde_json::json!(e);
+    }
+    if let Some(f) = found_cid {
+        line["found_cid"] = serde_json::json!(f);
+    }
     let _guard = match journal_lock().lock() {
         Ok(g) => g,
         Err(p) => p.into_inner(),
@@ -273,9 +313,61 @@ fn replace_file(target: &Path, replacement: &Path) -> Result<(), String> {
 
 // ─── The gate ──────────────────────────────────────────────────────────────
 
-/// Write `content` to `path` through the gate: path lock → (§B: CAS check)
-/// → atomic replace → journal. `surface` names the caller for the journal
-/// (e.g. "write_note", "cascade", "rename_title", "base_edit_cell").
+/// §B1 — the verdict, computed UNDER the path lock (no TOCTOU): identity
+/// first (cid_cn — the Frankenstein class), then freshness (mtime+size, with
+/// the racy-git hash escalation for metadata-only drift). Returns the verdict
+/// and the cid found on disk (for the journal).
+fn check_expectation(path: &Path, exp: &Expectation) -> (WriteOutcome, Option<String>) {
+    let Ok(meta) = fs::metadata(path) else {
+        // The note this content was composed for is GONE from this path
+        // (deleted or renamed mid-flight) — the §140 class.
+        return (WriteOutcome::WouldRefuseIdentity, None);
+    };
+
+    let disk_mtime = meta
+        .modified()
+        .ok()
+        .and_then(|t| t.duration_since(UNIX_EPOCH).ok())
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    let disk_size = meta.len();
+    let fresh_by_meta = disk_mtime == exp.base_mtime && disk_size == exp.base_size;
+
+    // Read the disk content only when a check needs it (identity expected,
+    // or freshness needs the hash escalation).
+    let need_content = exp.expected_cid.is_some() || (!fresh_by_meta && exp.base_hash.is_some());
+    let disk_content = if need_content { fs::read_to_string(path).ok() } else { None };
+
+    let found_cid = disk_content
+        .as_deref()
+        .and_then(crate::search::extract_frontmatter_cid_cn);
+
+    if let Some(ref expected) = exp.expected_cid {
+        match found_cid {
+            Some(ref found) if found != expected => {
+                return (WriteOutcome::WouldRefuseIdentity, Some(found.clone()));
+            }
+            None => return (WriteOutcome::UnverifiedNoCid, None),
+            _ => {} // identity confirmed — fall through to freshness
+        }
+    }
+
+    if fresh_by_meta {
+        return (WriteOutcome::Ok, found_cid);
+    }
+    if let (Some(base_hash), Some(content)) = (&exp.base_hash, &disk_content) {
+        if format!("{:016x}", fnv1a(content.as_bytes())) == *base_hash {
+            // Metadata drifted (AV/indexer touch) but the bytes are exactly
+            // what the caller composed against — fresh.
+            return (WriteOutcome::Ok, found_cid);
+        }
+    }
+    (WriteOutcome::WouldRefuseStale, found_cid)
+}
+
+/// Write `content` to `path` through the gate: path lock → CAS check (§B,
+/// SHADOW until `WRITE_GATE_ENFORCE`) → atomic replace → journal. `surface`
+/// names the caller for the journal (e.g. "write_note", "cascade").
 pub fn gate_write(
     path: &Path,
     content: &str,
@@ -288,12 +380,27 @@ pub fn gate_write(
         Err(p) => p.into_inner(), // a panicked earlier writer must not wedge this file forever
     };
 
-    // §B1 lands here: when `expect` is Some, re-read the target under the
-    // lock and compare identity (cid_cn) + freshness (mtime+size→hash).
-    let outcome = if expect.is_some() { WriteOutcome::Ok } else { WriteOutcome::OkUnchecked };
+    let (outcome, found_cid) = match expect {
+        None => (WriteOutcome::OkUnchecked, None),
+        Some(exp) => check_expectation(path, exp),
+    };
+
+    // SHADOW mode: would-refuse verdicts journal loudly but the write
+    // proceeds — invariant I6 (no legitimate save blocked before the soak
+    // proves the verdicts trustworthy). Enforcement (refuse + quarantine +
+    // dialog) flips in §F1.
+    let _ = WRITE_GATE_ENFORCE; // referenced now; consumed by the §F1 flip
 
     atomic_write(path, content)?;
-    journal(path, surface, outcome, content.len(), fnv1a(content.as_bytes()));
+    journal_ext(
+        path,
+        surface,
+        outcome,
+        content.len(),
+        fnv1a(content.as_bytes()),
+        expect.and_then(|e| e.expected_cid.as_deref()),
+        found_cid.as_deref(),
+    );
     Ok(outcome)
 }
 
@@ -443,6 +550,99 @@ mod tests_write_gate {
             WriteOutcome::CreatedExclusive
         );
         assert_eq!(fs::read_to_string(&fresh).unwrap(), "born");
+        let _ = fs::remove_dir_all(&d);
+    }
+
+    fn stat(p: &Path) -> (u64, u64) {
+        let m = fs::metadata(p).unwrap();
+        let mt = m.modified().unwrap().duration_since(UNIX_EPOCH).unwrap().as_secs();
+        (mt, m.len())
+    }
+
+    fn exp(cid: Option<&str>, mtime: u64, size: u64, hash: Option<String>) -> Expectation {
+        Expectation {
+            expected_cid: cid.map(|s| s.to_string()),
+            base_mtime: mtime,
+            base_size: size,
+            base_hash: hash,
+        }
+    }
+
+    #[test]
+    fn cas_identity_mismatch_shadow_journals_but_writes() {
+        let d = tdir("cas_id");
+        let p = d.join("note.md");
+        gate_write(&p, "---\ncid_cn: NOTE_AAAA\n---\nbody", None, "test").unwrap();
+        let (mt, sz) = stat(&p);
+        // Composed for NOTE_BBBB — the disk holds NOTE_AAAA: the Frankenstein class.
+        let e = exp(Some("NOTE_BBBB"), mt, sz, None);
+        let out = gate_write(&p, "---\ncid_cn: NOTE_BBBB\n---\nintruder", Some(&e), "test").unwrap();
+        assert_eq!(out, WriteOutcome::WouldRefuseIdentity);
+        // SHADOW: the write still happened (enforcement is §F1).
+        assert!(fs::read_to_string(&p).unwrap().contains("intruder"));
+        let _ = fs::remove_dir_all(&d);
+    }
+
+    #[test]
+    fn cas_fresh_and_matching_passes() {
+        let d = tdir("cas_ok");
+        let p = d.join("note.md");
+        gate_write(&p, "---\ncid_cn: NOTE_AAAA\n---\nv1", None, "test").unwrap();
+        let (mt, sz) = stat(&p);
+        let e = exp(Some("NOTE_AAAA"), mt, sz, None);
+        let out = gate_write(&p, "---\ncid_cn: NOTE_AAAA\n---\nv2", Some(&e), "test").unwrap();
+        assert_eq!(out, WriteOutcome::Ok);
+        let _ = fs::remove_dir_all(&d);
+    }
+
+    #[test]
+    fn cas_stale_disk_detected() {
+        let d = tdir("cas_stale");
+        let p = d.join("note.md");
+        gate_write(&p, "---\ncid_cn: NOTE_AAAA\n---\nv1", None, "test").unwrap();
+        let (mt, sz) = stat(&p);
+        // Disk moves on (size changes — catches same-second mtime too).
+        gate_write(&p, "---\ncid_cn: NOTE_AAAA\n---\nv2 newer and longer", None, "test").unwrap();
+        let e = exp(Some("NOTE_AAAA"), mt, sz, None);
+        let out = gate_write(&p, "---\ncid_cn: NOTE_AAAA\n---\nstomp", Some(&e), "test").unwrap();
+        assert_eq!(out, WriteOutcome::WouldRefuseStale);
+        let _ = fs::remove_dir_all(&d);
+    }
+
+    #[test]
+    fn cas_hash_escalation_forgives_metadata_drift() {
+        let d = tdir("cas_hash");
+        let p = d.join("note.md");
+        let v1 = "---\ncid_cn: NOTE_AAAA\n---\nv1";
+        gate_write(&p, v1, None, "test").unwrap();
+        let (_, sz) = stat(&p);
+        // Wrong mtime (metadata drift) but the content hash matches the disk.
+        let h = format!("{:016x}", fnv1a(v1.as_bytes()));
+        let e = exp(Some("NOTE_AAAA"), 1, sz, Some(h));
+        let out = gate_write(&p, "---\ncid_cn: NOTE_AAAA\n---\nv2", Some(&e), "test").unwrap();
+        assert_eq!(out, WriteOutcome::Ok);
+        let _ = fs::remove_dir_all(&d);
+    }
+
+    #[test]
+    fn cas_no_cid_on_disk_is_unverified() {
+        let d = tdir("cas_nocid");
+        let p = d.join("note.md");
+        gate_write(&p, "no frontmatter at all", None, "test").unwrap();
+        let (mt, sz) = stat(&p);
+        let e = exp(Some("NOTE_AAAA"), mt, sz, None);
+        let out = gate_write(&p, "still none", Some(&e), "test").unwrap();
+        assert_eq!(out, WriteOutcome::UnverifiedNoCid);
+        let _ = fs::remove_dir_all(&d);
+    }
+
+    #[test]
+    fn cas_missing_file_is_identity_refusal() {
+        let d = tdir("cas_gone");
+        let p = d.join("gone.md");
+        let e = exp(Some("NOTE_AAAA"), 0, 0, None);
+        let out = gate_write(&p, "resurrect?", Some(&e), "test").unwrap();
+        assert_eq!(out, WriteOutcome::WouldRefuseIdentity);
         let _ = fs::remove_dir_all(&d);
     }
 
