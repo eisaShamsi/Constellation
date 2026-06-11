@@ -297,4 +297,25 @@ PJ-062-family "fixed-size layout assumptions" bug, pulled into MIG-075 per the B
 Fix: the canvas box is CSS-bound (`width/height: 100%`); a **ResizeObserver** on the wrap keeps the
 bitmap + dpr transform (`setTransform`) + the view in step; `userAdjustedView` (set by wheel/pan/the
 MIG-060 focus gesture, cleared by Fit-to-screen) decides re-fit vs preserve-view on resize; observer
-disconnected in onDestroy (Rule 4). svelte-check 0 errors.
+disconnected in onDestroy (Rule 4). svelte-check 0 errors. → `4395c52c`
+
+**★ STAGE 1 RE-TEST (Eisa): A PASS · B PASS** — with one new ask folded into §B2: *"I want to be able to
+go back to the CNS from the CCS."*
+
+**§B2 SHIPPED — Hubs to CNS · KH's card retired (atomic, ratified Q6) · the CCS→CNS back-link.**
+Predecessor → Replacement: the SightPanel six-tab insights strip — strongest_evidence → **CCS
+Load-Bearing** · weak_foundations → **KH's card (stays)** · stagnating → data-dead (CCS Cooling is the
+live read) · tensions → **TensionPanel** · most_connected → **the new CNS Hubs register** (canonical
+home; KH's Most-Connected card retired in the SAME commit — its `onOpenCcs` deep-link lives in the KH
+HEADER, untouched) · knowledge_gaps → retired (no ratified register; documented). Hubs reads the
+**cached** snapshot (`constellation_knowledge_health_snapshot` → `most_connected`, one ~0.17 ms call) —
+**zero live link IPCs remain on the CNS panel-open path**; rows reuse the parametrized
+`knowledgeHealth.incomingLinks` meta. SightPanel's `LINK_TYPE_COLORS` + the insight-tab CSS died with the
+strip. **The back-link (Eisa's Stage-1 ask):** CCSView gains `onOpenCns` — a `{lens.title} →` header
+button beside the KH one; wired in +layout mirroring the CNS dock button's open path (toggleLens
+cache-or-compute + the exclusion list), gated `SIGHT_V2_ENABLED && enabledFeatures.constellationSight`.
+**Locales ×15 machine-gated** (sightPanel −7 +`hubs`; knowledgeHealth −2 {connected, connectedEmpty};
+first run found ZERO written files on a matcher miss — the leaf key `ribbon.knowledgeHealth` shadowed the
+block; fixed to require the `": {"` opener; second run ALL 15 OK). svelte-check **0 errors**; stale-grep
+clean (the long-flagged dead `store.ts` formulation wrapper stays for §F /simplify per the MIG-073
+precedent).

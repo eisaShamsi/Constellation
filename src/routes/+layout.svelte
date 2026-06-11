@@ -6884,6 +6884,14 @@
 				}
 			}}
 			onOpenKnowledgeHealth={() => { showCCS = false; showKnowledgeHealth = true; }}
+			onOpenCns={SIGHT_V2_ENABLED && $appSettings.enabledFeatures?.constellationSight !== false ? (() => {
+				// MIG-075 §B2 (Eisa, Stage 1): the way back — mirrors the CNS
+				// dock button's open path (toggleLens serves cache or computes).
+				showCCS = false;
+				if (!lensActive) {
+					toggleLens(); showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showCataloger = false; showInspector360 = false; lensReturnPending = false;
+				}
+			}) : undefined}
 		/>
 	{/if}
 

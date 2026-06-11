@@ -19,10 +19,14 @@
 		onClose,
 		onNoteClick,
 		onOpenKnowledgeHealth,
+		onOpenCns,
 	}: {
 		onClose: () => void;
 		onNoteClick?: (path: string, libraryName: string) => void;
 		onOpenKnowledgeHealth?: () => void;
+		// MIG-075 §B2 (Eisa, Stage 1): the way back — CCS → CNS, completing
+		// the dual-organ mutual deep-links. Absent when CNS is disabled.
+		onOpenCns?: () => void;
 	} = $props();
 
 	interface CcsRow {
@@ -234,6 +238,9 @@
 				<span class="ccs-scope">{$t('ccs.scope')} · {$t('ccs.meta.total', { n: totalLinks.toLocaleString() })}</span>
 			</div>
 			<div class="ccs-header-actions">
+				{#if onOpenCns}
+					<button class="ccs-kh-link" onclick={onOpenCns}>{$t('lens.title')} →</button>
+				{/if}
 				{#if onOpenKnowledgeHealth}
 					<button class="ccs-kh-link" onclick={onOpenKnowledgeHealth}>{$t('knowledgeHealth.title')} →</button>
 				{/if}

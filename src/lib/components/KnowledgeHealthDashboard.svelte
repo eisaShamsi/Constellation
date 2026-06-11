@@ -45,7 +45,8 @@
 	let lifecycle = $state<LifecycleData | null>(null);
 	let emerging = $state<FormulationInsight[]>([]);
 	let biasAlerts = $state<FormulationInsight[]>([]);
-	let mostConnected = $state<FormulationInsight[]>([]);
+	// (MIG-075 §B2 retired the Most-Connected card — ratified Q6: hubs are
+	// topology and live in CNS's Hubs register now; same cached data.)
 	let weakFoundations = $state<FormulationInsight[]>([]);
 	let loading = $state(true);
 
@@ -72,7 +73,6 @@
 		lifecycle = snap.lifecycle ?? null;
 		emerging = (snap.emerging ?? []).slice(0, 10);
 		biasAlerts = (snap.bias_check ?? []).slice(0, 10);
-		mostConnected = (snap.most_connected ?? []).slice(0, 10);
 		weakFoundations = (snap.weak_foundations ?? []).slice(0, 10);
 		return true;
 	}
@@ -215,22 +215,7 @@
 					{/each}
 				</div>
 
-				<!-- Most Connected -->
-				<div class="khd-section">
-					<h3>{$t('knowledgeHealth.connected')}</h3>
-					{#if mostConnected.length === 0}
-						<p class="khd-empty">{$t('knowledgeHealth.connectedEmpty')}</p>
-					{:else}
-						{#each mostConnected as item}
-							<div class="khd-insight-row">
-								<span class="khd-insight-name" dir="auto">{item.target_name}</span>
-								<!-- Built from traversal_count (= the incoming count for this
-								     query) instead of the Rust-side English `annotation`. -->
-								<span class="khd-insight-meta">{$t('knowledgeHealth.incomingLinks', { n: item.traversal_count.toLocaleString() })}</span>
-							</div>
-						{/each}
-					{/if}
-				</div>
+				<!-- (Most-Connected retired by MIG-075 §B2 — Q6: hubs live in CNS.) -->
 
 				<!-- Emerging Ideas -->
 				<div class="khd-section">

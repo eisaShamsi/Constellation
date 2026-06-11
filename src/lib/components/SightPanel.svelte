@@ -42,45 +42,30 @@
 
 	// ─── Collapsible sections ──────────────────────────────
 	let showBridges = $state(true);
-	let showInsights = $state(false);
+	let showHubs = $state(true);
 
 	// CCS hand-off gate — mirrors the +layout open-ccs listener's gate.
 	const ccsEnabled = $derived($appSettings.enabledFeatures?.ccs !== false);
 
-	let insights = $state<any[]>([]);
-	let insightType = $state('strongest_evidence');
-
-	const LINK_TYPE_COLORS: Record<string, string> = {
-		supports: '#4A9EFF', contradicts: '#FF4A4A', causes: '#FF8C42',
-		exemplifies: '#4AFF88', generalizes: '#C084FC', 'derives-from': '#FACC15',
-		'part-of': '#94A3B8', associative: '#A78BFA',
-	};
-
-	const INSIGHT_TYPES = [
-		'strongest_evidence', 'weak_foundations', 'tensions',
-		'stagnating', 'most_connected', 'knowledge_gaps',
-	];
+	// Hubs — the most-connected notes (in-degree; topology). The canonical
+	// home per the ratified CNS paper Q6 (KH's card retired in the same
+	// commit). Read from the CACHED snapshot — zero live aggregate queries.
+	let hubs = $state<any[]>([]);
 
 	onMount(async () => {
 		// (§B1 removed the constellation_link_stats + constellation_link_dormant
-		// fetches — live full-table aggregates feeding circulatory blocks that
-		// now live in CCS. Zero live link IPCs remain on the panel-open path
-		// besides the insights query, which §B2 re-points to the cache.)
-		loadInsights(insightType);
+		// fetches; §B2 replaced the live formulation_analysis insights strip
+		// with the cached Hubs read. Zero live link IPCs on the panel open.)
+		try {
+			const snap: any = await invoke('constellation_knowledge_health_snapshot');
+			if (snap?.ready) hubs = (snap.most_connected ?? []).slice(0, 10);
+		} catch {}
 	});
 
 	function openCcs() {
 		// The +layout listener is registered on document (the MIG-007 hub
 		// dispatches there too) — window-dispatched events never reach it.
 		document.dispatchEvent(new CustomEvent('constellation:open-ccs'));
-	}
-
-	async function loadInsights(type: string) {
-		insightType = type;
-		try {
-			const result: any[] = await invoke('constellation_formulation_analysis', { queryType: type });
-			insights = result?.slice(0, 10) ?? [];
-		} catch { insights = []; }
 	}
 
 	function linksPerNote(): string {
@@ -175,30 +160,27 @@
 		{/if}
 	</div>
 
-	<!-- Section 4: Knowledge Insights -->
+	<!-- Section 4: Hubs — most-connected notes (topology; the canonical home
+	     per the ratified CNS paper Q6). §B2 replaced the six-tab insights
+	     strip: strongest_evidence → CCS Load-Bearing · weak_foundations →
+	     KH's card · stagnating → data-dead (CCS Cooling is the live read) ·
+	     tensions → the health tab's TensionPanel · knowledge_gaps → retired. -->
 	<div class="sp-section">
-		<button class="sp-header" onclick={() => showInsights = !showInsights}>
-			<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class:rotated={!showInsights}><polyline points="6 9 12 15 18 9"/></svg>
-			<span>{$t('sightPanel.insights') || 'Knowledge Insights'}</span>
+		<button class="sp-header" onclick={() => showHubs = !showHubs}>
+			<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class:rotated={!showHubs}><polyline points="6 9 12 15 18 9"/></svg>
+			<span>{$t('sightPanel.hubs') || 'Hubs'}</span>
+			<span class="sp-count">{hubs.length}</span>
 		</button>
-		{#if showInsights}
-			<div class="sp-insight-tabs">
-				{#each INSIGHT_TYPES as itype}
-					<button class="sp-insight-tab" class:active={insightType === itype} onclick={() => loadInsights(itype)}>
-						{$t(`sightPanel.${itype}`) || itype.replace(/_/g, ' ')}
-					</button>
-				{/each}
-			</div>
+		{#if showHubs}
 			<div class="sp-list">
-				{#each insights as insight}
-					<button class="sp-item" onclick={() => onNoteClick?.(insight.source_name)} dir="auto">
-						<span class="sp-item-name">{insight.source_name} → {insight.target_name}</span>
-						<span class="sp-item-score" style="color:{LINK_TYPE_COLORS[insight.link_type] ?? '#94a3b8'}">{insight.link_type ?? ''}</span>
+				{#each hubs as hub}
+					<button class="sp-item" onclick={() => onNoteClick?.(hub.target_name)} dir="auto">
+						<span class="sp-item-name">{hub.target_name}</span>
+						<span class="sp-item-score">{$t('knowledgeHealth.incomingLinks', { n: (hub.traversal_count ?? 0).toLocaleString() })}</span>
 					</button>
-				{/each}
-				{#if insights.length === 0}
+				{:else}
 					<div class="sp-empty">{$t('sightPanel.noResults') || 'No results'}</div>
-				{/if}
+				{/each}
 			</div>
 		{/if}
 	</div>
@@ -259,14 +241,5 @@
 	.sp-item-bar { position: absolute; inset-inline-start: 0; top: 0; bottom: 0; background: var(--interactive-accent, #7c3aed); opacity: 0.06; border-radius: 3px; }
 	.sp-item-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; position: relative; }
 	.sp-item-score { font-size: 10px; color: var(--text-faint, #94a3b8); position: relative; flex-shrink: 0; }
-	/* Insight tabs */
-	.sp-insight-tabs { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px 12px; }
-	.sp-insight-tab {
-		padding: 2px 8px; border-radius: 4px; border: 1px solid var(--background-modifier-border, #e5e7eb);
-		background: none; color: var(--text-muted, #64748b); font-size: 9px; cursor: pointer;
-		font-family: inherit; white-space: nowrap;
-	}
-	.sp-insight-tab:hover { background: var(--background-modifier-hover, #f1f5f9); }
-	.sp-insight-tab.active { background: var(--interactive-accent, #7c3aed); color: white; border-color: var(--interactive-accent); }
 	.sp-empty { padding: 12px; text-align: center; color: var(--text-faint, #94a3b8); font-size: 11px; }
 </style>
