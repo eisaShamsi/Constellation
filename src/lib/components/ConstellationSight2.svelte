@@ -198,6 +198,12 @@
 	let colorByRegions = $state(false);
 	// Panel-row hover → dim everything outside that region.
 	let highlightRegionId = $state<number | null>(null);
+	// §C-fix-3 (Eisa, Stage 3): click a Regions row to PIN it — the B/W
+	// mute persists after the hover ends, and node hover/click work as
+	// usual inside the pinned view (a selected node's neighbors keep
+	// their color even across regions — the cross-region connections are
+	// exactly what a pinned read surfaces). Re-click the row to unpin.
+	let pinnedRegionId = $state<number | null>(null);
 	// The Regions register rows (top-10 by size), built once in onMount.
 	let panelRegions = $state<{ id: number; name: string; color: string; count: number; maturity: string | null }[]>([]);
 	// §C2 — the Blind Spots register rows (top-8 gaps, bridge ids resolved
@@ -740,14 +746,20 @@
 			// Dim logic: search dims non-matches, neighborhood dims non-neighbors.
 			// §C-fix-2 (Eisa, Stage 2): a hovered Regions row MUTES everything
 			// outside that region to black-and-white (gray fill, modest alpha,
-			// no decorations) instead of near-invisibility — the hovered region
-			// keeps its color against a monochrome backdrop.
-			const mutedByRegion = highlightRegionId !== null
-				&& communityAssignments.get(n.id) !== highlightRegionId;
+			// no decorations) instead of near-invisibility — the region keeps
+			// its color against a monochrome backdrop.
+			// §C-fix-3 (Eisa, Stage 3): a CLICKED row pins that mute; hover
+			// temporarily overrides the pin; the selected node + its neighbors
+			// keep full color even outside the region (cross-region edges are
+			// the read).
+			const activeRegionId = highlightRegionId ?? pinnedRegionId;
+			const mutedByRegion = activeRegionId !== null
+				&& communityAssignments.get(n.id) !== activeRegionId
+				&& !isMatch && !isNeighbor;
 			const baseAlpha = maturityAlpha[n.maturity ?? 'seed'] ?? 0.6;
 			const alpha = hasSearch ? (isMatch ? 1.0 : 0.15)
-				: selectedNode ? (isNeighbor ? 1.0 : 0.12)
-				: highlightRegionId !== null ? (mutedByRegion ? 0.35 : 1.0)
+				: selectedNode ? (isNeighbor ? 1.0 : (mutedByRegion ? 0.3 : 0.12))
+				: activeRegionId !== null ? (mutedByRegion ? 0.35 : 1.0)
 				: baseAlpha;
 
 			// Bridge emphasis (skipped for B/W-muted nodes — color would leak)
@@ -1372,6 +1384,8 @@
 				regions={panelRegions}
 				gapRows={panelGaps}
 				onRegionHover={(id) => { highlightRegionId = id; requestDraw(); }}
+				onRegionPin={(id) => { pinnedRegionId = pinnedRegionId === id ? null : id; requestDraw(); }}
+				pinnedRegionId={pinnedRegionId}
 				libraryBreakdown={[...libMap.values()].sort((a, b) => b.count - a.count)}
 				onNoteClick={(name) => {
 					// Find node by name and trigger neighborhood highlight

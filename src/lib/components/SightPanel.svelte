@@ -24,6 +24,8 @@
 		bridges = [] as { id: string; name: string; centrality: number }[],
 		regions = [] as { id: number; name: string; color: string; count: number; maturity: string | null }[],
 		onRegionHover,
+		onRegionPin,
+		pinnedRegionId = null,
 		gapRows = [] as { c1: string; c2: string; bridges: string[] }[],
 		libraryBreakdown = [] as { name: string; color: string; count: number }[],
 		onNoteClick,
@@ -37,6 +39,10 @@
 		// dominant-maturity character hint). Hover dims the well to the region.
 		regions?: { id: number; name: string; color: string; count: number; maturity: string | null }[];
 		onRegionHover?: (id: number | null) => void;
+		// §C-fix-3 — click pins the region's B/W mute (toggle); the pinned
+		// row is marked. Hover still previews other regions over the pin.
+		onRegionPin?: (id: number) => void;
+		pinnedRegionId?: number | null;
 		// §C2 — the Blind Spots register: region pairs that should touch and
 		// don't, each with suggested bridge notes (clickable).
 		gapRows?: { c1: string; c2: string; bridges: string[] }[];
@@ -183,14 +189,17 @@
 			{#if showRegions}
 				<div class="sp-list" role="list" onmouseleave={() => onRegionHover?.(null)}>
 					{#each regions as region}
-						<div class="sp-item sp-region-row" role="listitem"
-							onmouseenter={() => onRegionHover?.(region.id)}>
+						<!-- §C-fix-3: click pins the region's B/W mute (toggle); hover previews. -->
+						<button class="sp-item sp-region-row" class:sp-region-pinned={pinnedRegionId === region.id}
+							onmouseenter={() => onRegionHover?.(region.id)}
+							onclick={() => onRegionPin?.(region.id)}>
 							<span class="sp-region-dot" style="background:{region.color}"></span>
 							<span class="sp-item-name" dir="auto">{region.name}</span>
 							<span class="sp-item-score">
 								{region.count}{#if region.maturity && MATURITY_KEY[region.maturity]}&nbsp;· {$t(MATURITY_KEY[region.maturity]) || region.maturity}{/if}
 							</span>
-						</div>
+							{#if pinnedRegionId === region.id}<span class="sp-pin-mark" aria-hidden="true">●</span>{/if}
+						</button>
 					{/each}
 				</div>
 			{/if}
@@ -323,8 +332,13 @@
 	/* The CCS hand-off row */
 	.sp-ccs-link { color: var(--interactive-accent, #7c3aed); }
 	.sp-ccs-arrow { margin-inline-start: auto; font-size: 13px; color: var(--text-faint, #94a3b8); }
-	/* Regions rows (§C1) */
-	.sp-region-row { cursor: default; }
+	/* Regions rows (§C1; §C-fix-3 made them pinnable buttons) */
+	.sp-region-row { cursor: pointer; }
+	.sp-region-pinned {
+		background: var(--background-modifier-hover, #f1f5f9);
+		box-shadow: inset 2.5px 0 0 var(--interactive-accent, #7c3aed);
+	}
+	.sp-pin-mark { color: var(--interactive-accent, #7c3aed); font-size: 8px; flex-shrink: 0; }
 	.sp-region-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
 	/* Blind Spots rows (§C2) */
 	.sp-gap-row { padding: 4px 8px 6px; display: flex; flex-direction: column; gap: 3px; }
