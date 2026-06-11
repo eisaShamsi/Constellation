@@ -5887,7 +5887,7 @@ A new session reads only the highest-version file. But the trail behind it is du
 | **BUG-013** open-editor cascade race | Open. Documented limitation: switch tabs before renaming a target whose source is visible. |
 | **BUG-014** orphan `cid_cn` (collateral from BUG-012) | Closed §118 (2026-04-25). |
 | **BUG-015** target-body corruption from §115 value-sync `$effect` | Vector removed at §116 (`5afe0c2`). Forensics in `lab/forensics/`. |
-| Title-heading rename gap | **CONFIRMED**: [`NoteEditor.svelte:179-204`](src/lib/components/NoteEditor.svelte:179) handler calls `renameItem(filePath, newPath)` only — does **NOT** call `updateLinksOnRename`. The cascade is gated only by file-tree rename ([+layout.svelte:3807-3808](src/routes/+layout.svelte:3807) — conditional on `$appSettings.autoUpdateLinks && !isDir`). |
+| Title-heading rename gap | **FIXED 2026-06-11** (the quick-wins bundle): `NoteEditor.handleTitleChange` now delegates to the host's `handleRenameComplete` via the new `onTitleRename` prop (passed at all 3 main-window mounts) — a title rename runs the SAME full orchestration as a file-tree rename (renameItem + wikilink cascade + path-keyed map migration + tree refresh + tab reload). Second-screen mounts keep the direct-renameItem fallback (document/window boundary — pre-existing behavior, noted follow-up). Was: title renames called `renameItem` only, silently breaking every `[[link]]` to the note. |
 | Sidebar active-item highlight ~10 s lag | **Origin unresolved.** No reactive source / debounce / async refresh found that accounts for the 10 s; further forensics needed when it next reproduces. |
 
 ### 13.1 Badge taxonomy

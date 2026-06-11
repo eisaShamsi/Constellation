@@ -694,3 +694,23 @@ among its own `aliases:` — that's the note referring to itself by its alias (M
 as an alias-aware backlink), not an unlinked mention. Fix: one indexed lookup on the write-time
 `note_aliases` table (`alias_lower = normalize_alias_for_match(note_name) AND source='frontmatter'`,
 Rule 8 — no file parsing) → those paths skipped in the verify loop. Suite 909/909.
+
+**Title-heading rename gap SHIPPED (the §13 confirmed bug).** Predecessor map: the rename
+orchestration lives in +layout `handleRenameComplete` (renameItem → path-keyed map migration →
+tree refresh → cascade gate `autoUpdateLinks && !isDir` → mark-cascading/flush/updateLinksOnRename/
+reloadTabsFromDisk/graph-refetch — the §3-redo + §137/§139/§144 stack); NoteEditor.handleTitleChange
+called bare `renameItem` only. Fix at the right altitude — DELEGATION, not duplication: NoteEditor
+gains an optional `onTitleRename(oldPath, newName)` prop; when provided, handleTitleChange hands the
+whole rename to the host (its own staleness + no-op guards stay); +layout passes
+`handleRenameComplete` at its 3 NoteEditor mounts (active tab, split tabs, Index-panel note).
+Verified safe: at title-blur `tab.name` still holds the OLD title (the equality bail proves it), so
+`getOldTitleForCascade` resolves correctly; canonical-file path-stability rides the same renameItem
+both paths always shared. **Second screen kept on the direct-renameItem fallback** (7 mounts; the
+orchestration is main-window state — a cross-window Tauri-event channel is the proper future fix;
+pre-existing behavior preserved exactly, noted follow-up). svelte-check 0 errors. Orientation §13
+row flipped in the same commit.
+
+**PJ-003 (rename-collision popup) — NOT started; design question surfaced instead.** "Override"
+semantics on a collision = replacing an EXISTING note (its cid_cn identity, its links, its index
+row, possibly an open tab) — destructive, cross-subsystem, and underspecified. Surfacing to Eisa
+with the bundle report rather than inventing semantics mid-cascade (Working Agreement #4).

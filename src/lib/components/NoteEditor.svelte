@@ -63,6 +63,7 @@
 		onnavigateforward,
 		onmoreaction,
 		onStageChanged,
+		onTitleRename,
 		linkTraversalMap,
 	}: {
 		tab: TabLike;
@@ -77,6 +78,12 @@
 		onnavigateforward?: () => void;
 		onmoreaction?: (action: string) => void;
 		onStageChanged?: (path: string, stage: string) => void;
+		/** §13 title-heading rename gap — when the host provides this, the title
+		 *  rename delegates to the host's FULL rename orchestration (the same
+		 *  handleRenameComplete the file-tree rename uses: wikilink cascade,
+		 *  path-keyed map migration, tree refresh). Without it (second screen),
+		 *  the direct renameItem fallback keeps today's behavior. */
+		onTitleRename?: (oldPath: string, newName: string) => void | Promise<void>;
 		linkTraversalMap?: Map<string, number>;
 	} = $props();
 
@@ -270,7 +277,22 @@
 		const currentName = tab.name.replace(/\.md$/, '');
 		if (newTitle === currentName) return;
 
-		// Skip rename if the file doesn't exist (e.g., during initial load)
+		// §13 title-heading rename gap — delegate to the host's full rename
+		// orchestration when provided (the SAME path as a file-tree rename:
+		// renameItem + wikilink cascade + path-keyed map migration + tree
+		// refresh). Before this, a title rename called renameItem only, so
+		// every [[link]] to the note silently broke (orientation §13).
+		if (onTitleRename) {
+			try {
+				await onTitleRename(filePath, newTitle);
+			} catch (e) {
+				console.error('[NoteEditor] Title rename failed:', e);
+			}
+			return;
+		}
+
+		// Fallback (second screen — no host orchestration): direct rename,
+		// today's behavior unchanged.
 		const newPath = filePath.replace(/[^/\\]+$/, newTitle + '.md');
 		try {
 			await renameItem(filePath, newPath);
