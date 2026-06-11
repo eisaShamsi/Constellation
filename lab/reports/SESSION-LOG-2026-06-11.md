@@ -695,22 +695,44 @@ as an alias-aware backlink), not an unlinked mention. Fix: one indexed lookup on
 `note_aliases` table (`alias_lower = normalize_alias_for_match(note_name) AND source='frontmatter'`,
 Rule 8 — no file parsing) → those paths skipped in the verify loop. Suite 909/909.
 
-**Title-heading rename gap SHIPPED (the §13 confirmed bug).** Predecessor map: the rename
-orchestration lives in +layout `handleRenameComplete` (renameItem → path-keyed map migration →
-tree refresh → cascade gate `autoUpdateLinks && !isDir` → mark-cascading/flush/updateLinksOnRename/
-reloadTabsFromDisk/graph-refetch — the §3-redo + §137/§139/§144 stack); NoteEditor.handleTitleChange
-called bare `renameItem` only. Fix at the right altitude — DELEGATION, not duplication: NoteEditor
-gains an optional `onTitleRename(oldPath, newName)` prop; when provided, handleTitleChange hands the
-whole rename to the host (its own staleness + no-op guards stay); +layout passes
-`handleRenameComplete` at its 3 NoteEditor mounts (active tab, split tabs, Index-panel note).
-Verified safe: at title-blur `tab.name` still holds the OLD title (the equality bail proves it), so
-`getOldTitleForCascade` resolves correctly; canonical-file path-stability rides the same renameItem
-both paths always shared. **Second screen kept on the direct-renameItem fallback** (7 mounts; the
-orchestration is main-window state — a cross-window Tauri-event channel is the proper future fix;
-pre-existing behavior preserved exactly, noted follow-up). svelte-check 0 errors. Orientation §13
-row flipped in the same commit.
+---
 
-**PJ-003 (rename-collision popup) — NOT started; design question surfaced instead.** "Override"
-semantics on a collision = replacing an EXISTING note (its cid_cn identity, its links, its index
-row, possibly an open tab) — destructive, cross-subsystem, and underspecified. Surfacing to Eisa
-with the bundle report rather than inventing semantics mid-cascade (Working Agreement #4).
+## BUG-023 — the title-rename fix CORRUPTED DATA in Boss test; REVERTED same-hour
+
+**Eisa's Stage-1 Test A verdict, verbatim: "This is NOT A BUG, this is a Disaster! FIX IT."**
+
+Three screenshots: (1) after the title rename, the "Rename Probe v2" tab displayed PROBE POINTER's
+properties (title: Probe Pointer, cid_cn ..._901F) with Probe Pointer's PRE-cascade body; (2) the
+real Probe Pointer opened from the tree shows its body correctly cascaded to [[Rename Probe v2]];
+(3) "Rename Probe v2" reopened from the tree shows Probe Pointer's title + cid and an EMPTY body.
+
+**Forensic disk snapshots (read before any fix, both files mtime 18:53:27):**
+- `Probe Pointer.md` — INTACT: own frontmatter (title: Probe Pointer, cid_cn 20260611T145216Z_NOTE_901F),
+  body `[[Rename Probe v2]]` (the cascade worked).
+- `Rename Probe v2.md` — CORRUPTED: **Probe Pointer's entire frontmatter** (its title, its cid_cn —
+  the other note's identity) **and an empty body**. The renamed note's own identity + content destroyed.
+
+**Action taken (same hour):** `git revert a086e1ee` — the `onTitleRename` delegation is OUT; title
+renames return to the pre-existing bare-renameItem behavior (missing cascade, but never corrupting).
+Orientation §13: the gap row re-opened with the BUG-023 record; a BUG-023 row added. Fresh safe
+binary built for Eisa.
+
+**Why the original record stays (history):** the reverted commit's session-log block described the
+design as "verified safe" on two static arguments (tab.name still old at blur; canonical no-op
+parity). Both arguments were about the INPUTS to the rename — neither examined the EDITOR LIFECYCLE
+around the rename (the title-blur fires inside a live NotePane whose debounced save, flush, and
+{#key} destroy/remount all interleave with the cascade's markCascading/flush/reload sequence — the
+exact BUG-015 class the orchestration's own comments warn about, §3-redo (a)-(e)). The sidebar
+rename never has this shape: its rename originates OUTSIDE the editor.
+
+**Mechanism hypothesis (UNVERIFIED — recorded for the root-cause session, not as fact):** something
+wrote `buildFullContent(<Probe Pointer's props>, "")` to the renamed path — the handleSave/handleFlush
+shape with another tab's freshProps() and an empty doc. Candidates: the {#key} destroy flush of a
+repurposed tab id; reloadTabsFromDisk interleaving with the in-flight title-blur save; freshProps()
+resolving via tab.id against a tab whose content was swapped mid-cascade. NONE confirmed.
+
+**Standing instruction (orientation §13 row):** no re-attempt without the full /migration treatment —
+NotePane spec §2.6, the BUG-015 forensics (lab/forensics/), and the Rename Function Concept Paper are
+required reading BEFORE the Architect phase. Working Agreement #4 was violated in spirit: the static
+input analysis passed for a lifecycle problem. The lesson is the same as BUG-015's: every write-path
+change that touches editor lifecycle gets the architectural-impact review, not an input check.

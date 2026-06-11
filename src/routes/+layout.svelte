@@ -5570,7 +5570,7 @@
 							<span class="index-note-name" dir="auto">{indexNoteTab.name}</span>
 							<button class="index-close" onclick={() => { indexNoteTab = null; indexActiveNotePath = ''; }} title="Close note">×</button>
 						</div>
-						<NoteEditor tab={indexNoteTab} noteNames={allNotes} allTags={allTagsList} {linkTraversalMap} onTitleRename={handleRenameComplete} />
+						<NoteEditor tab={indexNoteTab} noteNames={allNotes} allTags={allTagsList} {linkTraversalMap} />
 					</div>
 					<div class="index-split-divider"></div>
 				{/if}
@@ -6034,7 +6034,6 @@
 									onnavigateback={() => { setFocusedTab(tab.id); navigateBack(); }}
 									onnavigateforward={() => { setFocusedTab(tab.id); navigateForward(); }}
 									onStageChanged={handleStageChanged}
-									onTitleRename={handleRenameComplete}
 								/>
 							{:else}
 								<div class="new-tab-screen"><p>{$t('tabs.newTab')}</p></div>
@@ -6158,7 +6157,6 @@
 								noteNames={allNotes}
 								allTags={allTagsList}
 								{linkTraversalMap}
-								onTitleRename={handleRenameComplete}
 								trail={activeTrail ? activeTrail.title : ''}
 								{trailIndex}
 								trailTotal={activeTrail ? activeTrail.notes.length : 0}
