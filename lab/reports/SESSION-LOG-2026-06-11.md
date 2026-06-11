@@ -605,3 +605,17 @@ MIG-006 §4–§11 (cascade completeness) pending.
 - Memory hygiene done this turn: 5 stale memories deleted (relates-bug → resolved; user-definable link
   types → MIG-067; autoupdate-toggle placement → §12 v1.2 correction; 360.3D matrix doc → PJ-015 abandoned
   2026-05-18; Setter feature requests → both shipped).
+
+**Snapshot correction (Eisa caught the omission):** two MIG-074-close "Eisa's later calls" were
+missing from (d):
+- **The §H pill-language question** — MIG-067's ratified rule (Eisa's own): *pills speak the NOTE's
+  language, not the UI's*. Surfaced for re-ruling at MIG-074 Stage 2 (the "associative" pill on the
+  English-titled "CSS with CSS" note rendered English in the Arabic UI — correct under §H; an
+  Arabic-titled note shows ترابطي). Decision: keep note-language (zero code) vs switch to
+  interface-language (affects every pill). Eisa's call; no work until ruled.
+- **The archive-weight Guide-§10 drift** — the Guide (and the CLAUDE.md Living-Link principle "every
+  link operation must be reversible") promises restore loses none of the 8 properties; the code zeroes
+  raw weight on archive and restores at 1.0 (search.rs:5872/5894). traversal_count survives, so earned
+  weight (1+ln(tc+1)) is exactly recomputable on restore → a small contract-restoring code fix is
+  possible; alternative is documenting the reset in the Guide. Pending Eisa's ruling; recommended: fix
+  the code (mini-MIG with tests).
