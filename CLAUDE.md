@@ -157,6 +157,14 @@ Every visual element, interaction, or computational layer in Constellation must 
 
 This rule sits alongside Constraint as Design (which forbids adding features without justification). Form-Aligns-To-Purpose forbids adding *visual / structural noise* within features without cognitive justification. Together they mean: every feature must justify its existence AND every part of every feature must justify its presence within it.
 
+### Style Setter Preview Rule *(Boss-dictated 2026-06-11)*
+
+**Take advantage of the entire center zone. Never squeeze an element mimicry into a tiny box.**
+
+When a Style Setter category renders a centre preview (the three-zone layout), the preview card stretches to fill the stage (the `--sky` / `--cns` modifier pattern: `width/height: 100%`, capped ~1100px) and the mimicry inside scales to the card — rings, chips, bars, and samples sized relative to the available space, never fixed thumbnail pixels. A preview the user must squint at fails its one job: showing the edit at a glance.
+
+Canonical violation: 2026-06-11 — the first CNS preview shipped as a fixed 180×140 well floating inside a fixed 560×360 card in a ~1100×600 stage. Eisa: *"Taking advantage of the entire center zone. Not to squeeze any element mimicry in a tiny box."*
+
 ### Language-First by Design
 - Constellation supports all languages simultaneously, from the ground up by design.
 - Per-line bidirectional text (bidiPlugin) is a core architectural feature, not an add-on.

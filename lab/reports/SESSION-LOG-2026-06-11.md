@@ -496,3 +496,30 @@ and two control labels) and **"There is NO miniature gravity well."**
 
 svelte-check 0 errors (313-warning baseline). Orientation v2.71 follow-through line amended in the
 same commit. Fresh release binary rebuilt for the re-test.
+
+---
+
+## Style Setter Preview Rule (Boss-dictated) + the CNS preview resized to the full zone
+
+Mid-re-test, Eisa dictated a new standing rule before proceeding: **"Taking advantage of the entire
+center zone. Not to squeeze any element mimicry in a tiny box."** The fixed CNS preview (correct
+names, correct three-zone layout) still violated it: a 180×140 well inside the default 560×360
+`.ss-prev-alt` card, floating in a ~1100×600 stage.
+
+**Rule written durably** (Eisa: "Write this Style Setter rule"):
+- `CLAUDE.md` → new **§ Style Setter Preview Rule** (after Form-Aligns-To-Purpose; canonical
+  violation recorded).
+- Memory: `feedback_style_setter_full_center_zone.md` + MEMORY.md index line.
+- Code comments at the `.ss-prev-alt--cns` / `.ss-cnsprev` CSS (the point of application).
+
+**Fix applied** (the `--sky` precedent generalized):
+- New `.ss-prev-alt--cns` modifier — the card stretches to the stage (width/height 100%,
+  max-width 1100px, padded), exactly like `--sky` already did.
+- `.ss-cnsprev` — fixed 180×140 → `align-self: stretch; flex: 1` (fills the card);
+  rings fixed 36/76/116px → **28% / 56% / 84% of the well height** (`aspect-ratio: 1`,
+  max-width 94% guard); label chip 10px/2×8 → 13px/4×12.
+
+svelte-check 0 errors (313 baseline). Release binary rebuilt for the re-test. Noted in passing
+(not touched): the org/index centre-preview branches are currently unreachable (those categories
+are two-zone) — a future sweep candidate if they ever rejoin three-zone, at which point the
+Preview Rule governs them too.

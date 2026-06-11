@@ -907,7 +907,7 @@
 				<div class="ss-hint">{selected ? L('Previewing') + ': ' + (sel?.name ? L(sel.name) : '') : L('Select an element on the left to preview & style it')}</div>
 				<div class="ss-stage">
 					{#if activeSurface !== 'editor'}
-						<div class="ss-prev-alt" class:ss-prev-alt--sky={activeSurface === 'sky'}>
+						<div class="ss-prev-alt" class:ss-prev-alt--sky={activeSurface === 'sky'} class:ss-prev-alt--cns={activeSurface === 'cns'}>
 							<div class="ss-alt-title">{L(CATEGORIES.find((c) => c.surface === activeSurface)?.name)}</div>
 							{#if activeSurface === 'sky'}
 								<!-- MIG-072 §2 — live Sky View preview. Each bubble reads its --skyview-* var, so it
@@ -1377,6 +1377,10 @@
 	.ss-prev-alt { width: 560px; height: 360px; border-radius: 10px; background: var(--background-primary, #fbfbfa); color: var(--text-normal, #2e3338); box-shadow: 0 14px 40px rgba(0,0,0,.45); border: 1px solid rgba(0,0,0,.25); display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
 	/* Sky View preview uses the FULL centre zone (it has the most to show) instead of the fixed card. */
 	.ss-prev-alt--sky { width: 100%; height: 100%; max-width: 1100px; }
+	/* Style Setter Preview Rule (Eisa, 2026-06-11): take advantage of the ENTIRE centre
+	   zone — never squeeze an element mimicry into a tiny box. Every preview card
+	   stretches to the stage like --sky; the mimicry inside scales to the card. */
+	.ss-prev-alt--cns { width: 100%; height: 100%; max-width: 1100px; padding: 18px 22px; }
 	.ss-alt-title { font-weight: 700; font-size: 15px; color: var(--interactive-accent, #7c3aed); }
 	.ss-alt-note { font-size: 11.5px; color: var(--text-normal, #6b7280); opacity: .7; max-width: 70%; text-align: center; }
 	.ss-sky { display: flex; gap: 22px; }
@@ -1442,19 +1446,21 @@
 	.ss-idx { width: 70%; display: flex; flex-direction: column; gap: 8px; }
 	.ss-irow { display: flex; align-items: center; gap: 8px; font-size: 12px; }
 	.ss-ibar { height: 7px; background: var(--interactive-accent, #7c3aed); border-radius: 3px; border: none; cursor: pointer; }
-	/* MIG-075 FU-3 — the mini gravity-well preview: reads the --cns-* vars live. */
+	/* MIG-075 FU-3 — the gravity-well preview: reads the --cns-* vars live. Preview Rule
+	   (Eisa, 2026-06-11): the well FILLS the card (flex: 1, stretched), and the percentile
+	   rings scale to the available height — no fixed thumbnail pixels. */
 	.ss-cnsprev {
-		position: relative; width: 180px; height: 140px; border: 1px solid var(--c-border);
-		border-radius: 10px; cursor: pointer; overflow: hidden;
+		position: relative; align-self: stretch; flex: 1; min-height: 0;
+		border: 1px solid var(--c-border);
+		border-radius: 12px; cursor: pointer; overflow: hidden;
 		background: var(--cns-bg, var(--background-primary, #fafafa));
 		display: grid; place-items: center;
 	}
-	.ss-cns-ring { position: absolute; border: 1px dashed rgba(148, 163, 184, 0.45); border-radius: 50%; }
-	.ss-cns-ring.r1 { width: 36px; height: 36px; }
-	.ss-cns-ring.r2 { width: 76px; height: 76px; }
-	.ss-cns-ring.r3 { width: 116px; height: 116px; }
+	.ss-cns-ring { position: absolute; border: 1px dashed rgba(148, 163, 184, 0.5); border-radius: 50%; height: 28%; aspect-ratio: 1; max-width: 94%; }
+	.ss-cns-ring.r2 { height: 56%; }
+	.ss-cns-ring.r3 { height: 84%; }
 	.ss-cns-label {
-		position: relative; font-size: 10px; padding: 2px 8px; border-radius: 4px;
+		position: relative; font-size: 13px; padding: 4px 12px; border-radius: 6px;
 		background: var(--cns-label-bg, rgba(30,30,40,0.9));
 		color: var(--cns-label-text, #ffffff);
 	}
