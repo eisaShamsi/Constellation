@@ -22,6 +22,8 @@
 		orphanCount = 0,
 		health = null as UniverseHealth | null,
 		bridges = [] as { id: string; name: string; centrality: number }[],
+		regions = [] as { id: number; name: string; color: string; count: number; maturity: string | null }[],
+		onRegionHover,
 		libraryBreakdown = [] as { name: string; color: string; count: number }[],
 		onNoteClick,
 	}: {
@@ -30,9 +32,21 @@
 		orphanCount?: number;
 		health?: UniverseHealth | null;
 		bridges?: { id: string; name: string; centrality: number }[];
+		// §C1 — the Regions register (top communities by size, with the
+		// dominant-maturity character hint). Hover dims the well to the region.
+		regions?: { id: number; name: string; color: string; count: number; maturity: string | null }[];
+		onRegionHover?: (id: number | null) => void;
 		libraryBreakdown?: { name: string; color: string; count: number }[];
 		onNoteClick?: (name: string) => void;
 	} = $props();
+
+	// Dominant-maturity → the localized Sky View vocabulary (graphView.ns*,
+	// present in all 15 locales — verified before use).
+	const MATURITY_KEY: Record<string, string> = {
+		seed: 'graphView.nsSeed', sapling: 'graphView.nsSapling',
+		evergreen: 'graphView.nsEvergreen', canonical: 'graphView.nsCanonical',
+		wilting: 'graphView.nsWilting',
+	};
 
 	function healthColor(score: number): string {
 		return score >= 70 ? '#16a34a' : score >= 40 ? '#f59e0b' : '#ef4444';
@@ -41,6 +55,7 @@
 	const isRTL = $derived($dir === 'rtl');
 
 	// ─── Collapsible sections ──────────────────────────────
+	let showRegions = $state(true);
 	let showBridges = $state(true);
 	let showHubs = $state(true);
 
@@ -150,6 +165,33 @@
 		</div>
 	{/if}
 
+	<!-- Section: Regions (§C1 — the emergent neighborhoods of thought,
+	     Louvain over the link graph; rendered at last after computing dark
+	     since the v2 era. Hover a row → the well dims to that region. -->
+	{#if regions.length > 0}
+		<div class="sp-section">
+			<button class="sp-header" onclick={() => showRegions = !showRegions}>
+				<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class:rotated={!showRegions}><polyline points="6 9 12 15 18 9"/></svg>
+				<span>{$t('sightPanel.regions') || 'Regions'}</span>
+				<span class="sp-count">{regions.length}</span>
+			</button>
+			{#if showRegions}
+				<div class="sp-list" role="list" onmouseleave={() => onRegionHover?.(null)}>
+					{#each regions as region}
+						<div class="sp-item sp-region-row" role="listitem"
+							onmouseenter={() => onRegionHover?.(region.id)}>
+							<span class="sp-region-dot" style="background:{region.color}"></span>
+							<span class="sp-item-name" dir="auto">{region.name}</span>
+							<span class="sp-item-score">
+								{region.count}{#if region.maturity && MATURITY_KEY[region.maturity]}&nbsp;· {$t(MATURITY_KEY[region.maturity]) || region.maturity}{/if}
+							</span>
+						</div>
+					{/each}
+				</div>
+			{/if}
+		</div>
+	{/if}
+
 	<!-- Section 3: Top Bridges -->
 	<div class="sp-section">
 		<button class="sp-header" onclick={() => showBridges = !showBridges}>
@@ -240,6 +282,9 @@
 	/* The CCS hand-off row */
 	.sp-ccs-link { color: var(--interactive-accent, #7c3aed); }
 	.sp-ccs-arrow { margin-inline-start: auto; font-size: 13px; color: var(--text-faint, #94a3b8); }
+	/* Regions rows (§C1) */
+	.sp-region-row { cursor: default; }
+	.sp-region-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
 	/* List items */
 	.sp-list { display: flex; flex-direction: column; gap: 1px; padding: 0 4px 6px; }
 	.sp-item {

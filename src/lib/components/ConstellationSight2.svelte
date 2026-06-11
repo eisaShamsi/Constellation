@@ -183,6 +183,24 @@
 	// SightPanel
 	let panelVisible = $state(false);
 
+	// ─── Regions lens (§C1 — ratified paper Q2) ───────────────
+	// Color is the lens; POSITION never moves ("libraries are the user's
+	// own organization"). OFF = library colors (today's look); ON = node
+	// fill switches to the found region's color.
+	let colorByRegions = $state(false);
+	// Panel-row hover → dim everything outside that region.
+	let highlightRegionId = $state<number | null>(null);
+	// The Regions register rows (top-10 by size), built once in onMount.
+	let panelRegions = $state<{ id: number; name: string; color: string; count: number; maturity: string | null }[]>([]);
+
+	function nodeFill(n: SimNode): string {
+		if (colorByRegions) {
+			const cid = communityAssignments.get(n.id);
+			if (cid !== undefined) return communityColors.get(cid) ?? n.libraryColor;
+		}
+		return n.libraryColor;
+	}
+
 	const isRTL = $derived($dir === 'rtl');
 
 	// Syntax chips (reactive to locale)
@@ -672,17 +690,19 @@
 			const isCurrent = currentMatch?.id === n.id;
 			const isNeighbor = selectedNode && (n === selectedNode || neighborIds.has(n.id));
 			const maturityAlpha: Record<string, number> = { seed: 0.5, sapling: 0.7, evergreen: 0.9, canonical: 1.0, wilting: 0.4 };
-			// Dim logic: search dims non-matches, neighborhood dims non-neighbors
+			// Dim logic: search dims non-matches, neighborhood dims non-neighbors,
+			// a hovered Regions row dims everything outside that region (§C1).
 			const baseAlpha = maturityAlpha[n.maturity ?? 'seed'] ?? 0.6;
 			const alpha = hasSearch ? (isMatch ? 1.0 : 0.15)
 				: selectedNode ? (isNeighbor ? 1.0 : 0.12)
+				: highlightRegionId !== null ? (communityAssignments.get(n.id) === highlightRegionId ? 1.0 : 0.08)
 				: baseAlpha;
 
 			// Bridge emphasis
 			if (n.centrality > 0.4 && alpha > 0.3) {
 				ctx!.beginPath();
 				ctx!.arc(x, y, n.r + 4 / zoom, 0, Math.PI * 2);
-				ctx!.fillStyle = n.libraryColor + '33';
+				ctx!.fillStyle = nodeFill(n) + '33';
 				ctx!.fill();
 			}
 
@@ -704,11 +724,11 @@
 				ctx!.stroke();
 			}
 
-			// Node circle — colored by library
+			// Node circle — colored by library, or by region under the §C1 lens
 			ctx!.globalAlpha = alpha;
 			ctx!.beginPath();
 			ctx!.arc(x, y, n.r, 0, Math.PI * 2);
-			ctx!.fillStyle = n.libraryColor;
+			ctx!.fillStyle = nodeFill(n);
 			ctx!.fill();
 			ctx!.globalAlpha = 1.0;
 
@@ -968,6 +988,26 @@
 		performance.mark('sight:mount:buildSimData:end');
 		performance.measure('sight:mount:buildSimData', 'sight:mount:buildSimData:start', 'sight:mount:buildSimData:end');
 
+		// §C1 — the Regions register rows (top-10 by size, with the dominant-
+		// maturity character hint from the community profiles). Props are
+		// stable for the life of the mount ({#if lensActive} remounts), so
+		// once is enough.
+		panelRegions = communities
+			.slice()
+			.sort((a, b) => b.memberIds.length - a.memberIds.length)
+			.slice(0, 10)
+			.map(c => {
+				const prof = communityProfiles.find(p => p.id === c.id);
+				let maturity: string | null = null;
+				if (prof) {
+					let mx = 0;
+					for (const [m, cnt] of Object.entries(prof.maturityBreakdown)) {
+						if (cnt > mx) { mx = cnt; maturity = m; }
+					}
+				}
+				return { id: c.id, name: c.suggestedName, color: c.color, count: c.memberIds.length, maturity };
+			});
+
 		performance.mark('sight:mount:layout:start');
 		computeGravityWellLayout();
 		performance.mark('sight:mount:layout:end');
@@ -1052,6 +1092,10 @@
 				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
 			</button>
 			<!-- Panel toggle -->
+			<!-- Regions lens toggle (§C1 — Q2): color by found regions; position untouched -->
+			<button class="sight2-btn" class:active={colorByRegions} onclick={() => { colorByRegions = !colorByRegions; requestDraw(); }} title={$t('sightPanel.regions') || 'Regions'}>
+				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7" cy="8" r="3.2"/><circle cx="16.5" cy="6.5" r="2.4"/><circle cx="14.5" cy="16" r="3.6"/></svg>
+			</button>
 			<button class="sight2-btn" class:active={panelVisible} onclick={() => panelVisible = !panelVisible} title={$t('sightPanel.overview') || 'Analytics'}>
 				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="4" rx="1"/><rect x="14" y="10" width="7" height="11" rx="1"/><rect x="3" y="13" width="7" height="8" rx="1"/></svg>
 			</button>
@@ -1174,12 +1218,28 @@
 						<span class="sight2-lg-dot sight2-lg-small"></span>
 						<span>{$t("lens.smallNode") || "Small"} — {$t("lens.peripheralDesc") || "peripheral"}</span>
 					</div>
-					<div class="sight2-legend-row">
-						<span class="sight2-lg-dot" style="background:#a78bfa"></span>
-						<span class="sight2-lg-dot" style="background:#34d399"></span>
-						<span class="sight2-lg-dot" style="background:#60a5fa"></span>
-						<span>{$t("lens.colorLibrary") || "Color = library"}</span>
-					</div>
+					{#if colorByRegions && panelRegions.length > 0}
+						<!-- §C1: the lens is ON — the color legend speaks regions, live -->
+						<div class="sight2-legend-row">
+							{#each panelRegions.slice(0, 3) as r}
+								<span class="sight2-lg-dot" style="background:{r.color}"></span>
+							{/each}
+							<span>{$t('sightPanel.regions') || 'Regions'}</span>
+						</div>
+						{#each panelRegions.slice(0, 5) as r}
+							<div class="sight2-legend-row">
+								<span class="sight2-lg-dot" style="background:{r.color}"></span>
+								<span dir="auto">{r.name} · {r.count}</span>
+							</div>
+						{/each}
+					{:else}
+						<div class="sight2-legend-row">
+							<span class="sight2-lg-dot" style="background:#a78bfa"></span>
+							<span class="sight2-lg-dot" style="background:#34d399"></span>
+							<span class="sight2-lg-dot" style="background:#60a5fa"></span>
+							<span>{$t("lens.colorLibrary") || "Color = library"}</span>
+						</div>
+					{/if}
 					<div class="sight2-legend-row">
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>
 						<span>{$t("lens.clickConnections") || "Click = show connections"}</span>
@@ -1239,6 +1299,8 @@
 				orphanCount={orphans}
 				{health}
 				{bridges}
+				regions={panelRegions}
+				onRegionHover={(id) => { highlightRegionId = id; requestDraw(); }}
 				libraryBreakdown={[...libMap.values()].sort((a, b) => b.count - a.count)}
 				onNoteClick={(name) => {
 					// Find node by name and trigger neighborhood highlight
