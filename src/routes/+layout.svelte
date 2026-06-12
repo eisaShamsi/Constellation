@@ -2736,8 +2736,8 @@
 			if (tab) {
 				try {
 					const content = await invoke<string>('read_note', { filePath: path });
-					// MIG-076 §C — the single store writer (no direct mutation).
-					updateTabContent(tab.id, content, { origin: 'second_screen_reload' });
+					tab.content = content;
+					openTabs.update(tabs => tabs);
 				} catch {}
 			}
 		});
@@ -6069,8 +6069,7 @@
 									const currentTab = get(openTabs).find(x => x.id === $activeTab!.id);
 									const props = currentTab ? parseFrontmatter(currentTab.content || '').properties : _parsed.properties;
 									const fc = buildFullContent(props, text);
-									// MIG-076 §C — the single store writer (no direct mutation).
-									updateTabContent($activeTab!.id, fc, { origin: 'focus_pane' });
+									if (currentTab) currentTab.content = fc;
 									markRecentWrite($activeTab!.path);
 									writeNote($activeTab!.path, fc, 'focus_pane').catch(() => {});
 								}}
