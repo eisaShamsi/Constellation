@@ -13,7 +13,7 @@
 	import { stripLinkTypePrefix } from '$lib/libraries/linkTypeRegistry';
 	import PropertyEditor from './PropertyEditor.svelte';
 	import { EditorView, keymap, drawSelection, Decoration, type DecorationSet } from '@codemirror/view';
-	import { EditorState, Compartment, Prec, StateField, StateEffect, RangeSetBuilder } from '@codemirror/state';
+	import { EditorState, Compartment, Prec, StateField, StateEffect, RangeSetBuilder, Text } from '@codemirror/state';
 	import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 	import { syntaxHighlighting, HighlightStyle } from '@codemirror/language';
 	import { tags } from '@lezer/highlight';
@@ -103,6 +103,7 @@
 		allTags = [] as string[],
 		/* Callbacks */
 		onchange,
+		onDocChange,
 		onsave,
 		onflush,
 		ontitlechange,
@@ -139,6 +140,11 @@
 		noteNames?: { name: string; path: string; libraryName?: string }[];
 		allTags?: string[];
 		onchange?: (value: string) => void;
+		/* MIG-076 §C — O(1) live push of the CM6 doc to the note model on every
+		   change. Passes the immutable Text rope (no toString()), so the model
+		   stays current per-keystroke without paying the hot-path cost `onchange`
+		   deliberately avoids. */
+		onDocChange?: (doc: Text) => void;
 		onsave?: (value: string, filePath: string) => void;
 		onflush?: (text: string, needsDiskSave: boolean, cursorPos: number, scrollTop: number, filePath: string) => void;
 		ontitlechange?: (newTitle: string, filePath: string) => void;
@@ -428,6 +434,10 @@
 						// latestText is refreshed in doSave/doFlush at the moment of writing.
 						dirty = true;
 						onchange?.('');
+						// MIG-076 §C — O(1) live push of the doc rope to the note model
+						// (no toString()). Keeps single-ownership current per change so a
+						// view that mounts mid-edit always seeds from fresh content.
+						onDocChange?.(update.state.doc);
 						// Debounced save: 1500ms after last keystroke.
 						// Ensures content is saved even if the idle timer (30s) hasn't fired.
 						if (debouncedSaveTimer) clearTimeout(debouncedSaveTimer);

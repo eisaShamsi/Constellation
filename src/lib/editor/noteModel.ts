@@ -111,12 +111,18 @@ export function modelCount(): number {
 	return models.size;
 }
 
-/** Editor → model: replace the body (I1). O(1) for Text; no-op if unchanged. */
+/**
+ * Editor → model: replace the body (I1). Designed for the keystroke hot path:
+ * accepts the CM6 `Text` rope directly (O(1) ref assignment, never toString()).
+ * The guard is a pure reference check — CM6 produces a NEW doc object on every
+ * real change, so an unchanged push (same ref) no-ops, and we never pay an
+ * O(N) content comparison per keystroke (CLAUDE.md Rule 1).
+ */
 export function setBody(id: string, body: string | Text): void {
 	const m = models.get(id);
 	if (!m) return;
 	const next = typeof body === 'string' ? toText(body) : body;
-	if (next.length === m.body.length && next.eq(m.body)) return;
+	if (next === m.body) return;
 	m.body = next;
 	m.version++;
 }

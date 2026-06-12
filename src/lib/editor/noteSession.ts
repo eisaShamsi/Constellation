@@ -16,6 +16,7 @@
  * the only thing the Boss test still has to confirm; the logic is proven here.
  */
 import * as M from './noteModel';
+import type { Text } from '@codemirror/state';
 import type { FrontmatterProperty } from '$lib/libraries/store';
 
 export type DiskWriter = (path: string, content: string, origin: string) => void | Promise<void>;
@@ -26,8 +27,22 @@ export function open(id: string, path: string, diskContent: string): void {
 	M.openModel(id, path, diskContent);
 }
 
-/** Any editor view (NotePane OR FocusPane) → the one model. */
-export function editBody(id: string, text: string): void {
+/**
+ * Create the model if absent, or re-seed it when the host has demonstrably
+ * moved this session id to a DIFFERENT note (path changed) without going
+ * through open(). Hosts that never call open() — index preview, dashboard,
+ * a second-screen NoteEditor — get a correct model here. An existing model on
+ * the SAME path is left untouched, so its live edits always win.
+ */
+export function ensure(id: string, path: string, diskContent: string): void {
+	const m = M.getModel(id);
+	if (m && m.path === path) return;
+	M.openModel(id, path, diskContent);
+}
+
+/** Any editor view (NotePane OR FocusPane) → the one model. Accepts the CM6
+ *  `Text` rope (O(1), the keystroke hot path) or a plain string. */
+export function editBody(id: string, text: string | Text): void {
 	M.setBody(id, text);
 }
 

@@ -19,6 +19,12 @@
 		type FrontmatterProperty
 	} from '$lib/libraries/store';
 	import { broadcastNoteSaved } from '$lib/secondScreen';
+	// MIG-076 §C — single content ownership. This step (foundation) only
+	// MAINTAINS the model (ensure on tab change + live push per edit); the
+	// model is not yet READ for seed/save — that swap lands flag-gated next,
+	// so the app behaves identically to the §C-1 safe state right now.
+	import { ensure as ensureModel, editBody } from '$lib/editor/noteSession';
+	import type { Text } from '@codemirror/state';
 	import { buildLibraryColorMap } from '$lib/libraries/colors';
 	import { detectDir } from '$lib/utils';
 	import { get } from 'svelte/store';
@@ -109,6 +115,16 @@
 			// Guard: tab may have switched while we awaited; only commit if still current.
 			if (tab.path === p) activeHeadline = entry?.headline ?? '';
 		}).catch(() => { /* keep prior value on transient errors */ });
+	});
+
+	// MIG-076 §C — keep this tab's note model alive and current. `ensure`
+	// creates it from the tab's own content when absent (covers every host:
+	// main window, split, index preview, dashboard, second screen) and leaves
+	// an existing same-path model untouched so live edits win. Writes only to
+	// the non-reactive model Map — no store update, so this cannot re-enter a
+	// {#key} teardown (the §C-2 lesson). Runs before any keystroke can arrive.
+	$effect(() => {
+		ensureModel(tab.id, tab.path, tab.content ?? '');
 	});
 
 	// Save guard — prevents double saves
@@ -357,6 +373,7 @@
 	canGoForward={(tab.historyIndex ?? 0) < (tab.history?.length ?? 1) - 1}
 	{linkTraversalMap}
 	onchange={() => {}}
+	onDocChange={(doc: Text) => editBody(tab.id, doc)}
 	onpromote={handlePromote}
 	onsave={handleSave}
 	onflush={handleFlush}

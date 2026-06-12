@@ -1147,3 +1147,25 @@ integration gets the runtime proof before it touches the live editor.
 NEXT (step 3 integration — the part that failed as §CB, now thin wiring over a proven controller):
 make NoteEditor/FocusPane/PropertyEditor/+layout/openNoteTab call noteSession + seed from
 bodyForView; retire tab.content + the WAB; behind a toggle. Then Boss test on the real universe.
+
+## §C integration — Commit 1: ADDITIVE FOUNDATION (model goes live in the real app; not yet used)
+
+Applying the §CB lesson (don't bundle): the integration is split into the additive foundation
+(this commit) and the flag-gated behavioral swap (next). After this commit the app behaves
+IDENTICALLY to the §C-1 safe state — the model is maintained but nothing reads it for seed/save
+(the safe §CB-1 shape that passed its gate).
+- NEW src/lib/editor/ownershipFlag.ts — SINGLE_OWNERSHIP toggle (default true; flip+rebuild =
+  instant rollback, no half-state). Unused until the swap.
+- noteModel.setBody — keystroke-hot-path safe: ref-check only (CM6 yields a new doc per change),
+  no O(N) eq; accepts the Text rope.
+- noteSession — ensure(id, path, content): create-if-absent / re-seed on path change; existing
+  same-path model untouched (live edits win). editBody accepts string | Text.
+- NotePane — new onDocChange?(doc: Text) fired O(1) in the updateListener (passes the rope, no
+  toString()).
+- NoteEditor — $effect ensures the model per tab (covers ALL hosts) + onDocChange→editBody live
+  push. Writes only the non-reactive Map → cannot re-enter a {#key} teardown (§C-2 lesson).
+- svelte-check 0/1460; mig-076 harness 23/23. No binary (nothing visible changed) — the binary
+  ships with the swap.
+NEXT (Commit 2, flag-gated): NoteEditor seed=bodyForView + save=compose; FocusPane seed +
+onchange→editBody + focusNoteId capture (kills the in-focus-switch cross-write); PropertyEditor
+save via the model; store lifecycle (close/repath/reload). Then build + Boss test.
