@@ -1021,14 +1021,32 @@ export async function getOldTitleForCascade(oldPath: string): Promise<string> {
 	return oldPath.split(/[\\/]/).pop()?.replace(/\.md$/, '') ?? '';
 }
 
-export function updateTabContent(tabId: string, newContent: string) {
+/** MIG-076 §C-2 — THE single store writer for tab content. Every content
+ *  mutation flows through here (editor flush, stage promote, property saves,
+ *  FocusPane, the second-screen reload) — direct `tab.content =` mutations
+ *  are abolished. `origin` is a trace label; cursor/scroll ride along when
+ *  the caller has them (the flush path). Composition is the CALLER's job —
+ *  this function only writes. */
+export function updateTabContent(
+	tabId: string,
+	newContent: string,
+	opts?: { cursorPos?: number; scrollTop?: number; origin?: string },
+) {
 	const tabs = get(openTabs);
 	const tab = tabs.find(t => t.id === tabId);
-	/* Skip store update if tab doesn't exist or content is unchanged —
+	/* Skip store update if tab doesn't exist or nothing changes —
 	   avoids triggering a full reactivity cascade (3800+ line layout) */
-	if (!tab || tab.content === newContent) return;
+	if (!tab) return;
+	if (tab.content === newContent && opts?.cursorPos === undefined && opts?.scrollTop === undefined) return;
 	openTabs.update(ts =>
-		ts.map(t => t.id === tabId ? { ...t, content: newContent } : t)
+		ts.map(t => t.id === tabId
+			? {
+				...t,
+				content: newContent,
+				...(opts?.cursorPos !== undefined ? { cursorPos: opts.cursorPos } : {}),
+				...(opts?.scrollTop !== undefined ? { scrollTop: opts.scrollTop } : {}),
+			}
+			: t)
 	);
 }
 
