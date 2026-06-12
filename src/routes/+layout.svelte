@@ -6087,7 +6087,7 @@
 									// cross-note write, closed structurally).
 									if (SINGLE_OWNERSHIP) {
 										if (!focusSessionId) return;
-										editNoteBody(focusSessionId, text);
+										editNoteBody(focusSessionId, text, focusSessionPath);
 										const r = composeNoteModel(focusSessionId, focusSessionPath);
 										if (!r.ok) return;
 										markNoteSaved(focusSessionId, r.version);

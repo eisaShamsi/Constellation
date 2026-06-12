@@ -16,7 +16,7 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as S from '$lib/editor/noteSession';
-import { parseFrontmatter } from '$lib/libraries/store';
+import { parseFrontmatter, type FrontmatterProperty } from '$lib/libraries/store';
 
 const note = (cid: string, body: string, extra = '') =>
 	`---\ntitle: T\ncid_cn: ${cid}\n${extra}---\n${body}`;
@@ -142,6 +142,35 @@ describe('Recipe F — restart / workspace restore', () => {
 		expect(S.bodyForView('a')).toBe('A edited');
 		expect(S.bodyForView('b')).toBe('B edited');
 		expect(S.bodyForView('a')).not.toBe(S.bodyForView('b'));
+	});
+});
+
+describe('Recipe G — new note created while another is open (the 2026-06-12 Boss-test leak)', () => {
+	it('a stale prop-save from the PREVIOUS note cannot poison the reused tab’s model', async () => {
+		// 1. Note A open on a tab; user edited its properties.
+		S.open('t', '/A.md', note('NA', 'A body'));
+		// 2. User creates note B — the SAME tab is reused (openNoteTab reuse →
+		//    open() now drives the model synchronously to B's identity).
+		S.open('t', '/B.md', note('NB', ''));
+		// 3. The torn-down PropertyEditor for A fires its last save, addressing
+		//    A's path — this is the poison. The write-side identity guard must
+		//    REJECT it because the model now holds B.
+		S.editProps('t', [{ key: 'cid_cn', value: 'NA', type: 'text' } as FrontmatterProperty], '/A.md');
+		// 4. User types B's body and it saves.
+		S.editBody('t', 'B body typed', '/B.md');
+		await S.save('t', '/B.md', write);
+		// B's file carries ONLY B's identity — never A's (the leak that put
+		// §C test's cid into §C Eisa No. 2.md).
+		expect(diskCid('/B.md')).toBe('NB');
+		expect(diskBody('/B.md')).toBe('B body typed');
+		expect(disk.get('/B.md')).not.toContain('NA');
+	});
+
+	it('a stale BODY flush from the previous note is rejected too', () => {
+		S.open('t', '/A.md', note('NA', 'A body'));
+		S.open('t', '/B.md', note('NB', 'B body'));
+		S.editBody('t', 'A late flush', '/A.md'); // stale path → rejected
+		expect(S.bodyForView('t')).toBe('B body'); // model still B's
 	});
 });
 

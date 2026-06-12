@@ -1190,3 +1190,24 @@ rollback (legacy path preserved in the else branch of each chokepoint — no hal
   fn declarations; no module-init use).
 RESIDUAL (Boss test closes it): the template wiring the headless harness can't mount. Building the
 binary now for the full 8-surface gate.
+
+## §C — new-note-while-open identity leak: DIAGNOSED + FIXED (flag still off; harness-proven)
+
+Boss test (flag on) surfaced it; rolled back to safe (flag off, commit fa27cc40) per Boss order.
+ROOT CAUSE (confirmed by journal + code, not guessed): saveTabContent (PropertyEditor's path)
+lacked the filePath===tab.path guard that handleSave/handleFlush have. New note reuses the active
+tab; the torn-down PropertyEditor for the PREVIOUS note fires a last saveTabContent → editProps
+poisoned the ALREADY-repurposed model with the old note's props (cid). compose then refused the
+old path but the model was left poisoned; the next save to the NEW path composed the stale cid →
+new note's file got the open note's identity (§C Eisa No. 2.md ← §C test's cid 9E76). Rust shadow
+CAS flagged would_refuse_identity; real notes untouched.
+FIX (structural, both directions now identity-guarded):
+- setBody/setProps take expectPath; reject the write when model.path !== expectPath (the write-in
+  mirror of compose's read-out guard). A stale caller can no longer poison a repurposed model.
+- saveTabContent passes expectPath=filePath (THE fix); handleSave/handleFlush/handlePromote +
+  FocusPane + onDocChange pass their path too (defense in depth).
+- openNoteTab (reuse + new) + loadTabHistoryEntry now openNoteModel() SYNCHRONOUSLY — the model
+  is driven by the explicit note-open event, not the async ensure $effect (closes the timing gap).
+- Harness Recipe G reproduces the exact poison (stale prop-save + stale body-flush from the
+  previous note) → both rejected; B's file keeps only B's identity. 25/25 mig-076; svelte-check 0.
+Fix is committed behind SINGLE_OWNERSHIP=false (inert). Next: flip on + rebuild → corrected re-test.

@@ -163,7 +163,7 @@
 		}
 		let fc: string;
 		if (SINGLE_OWNERSHIP) {
-			editProps(tab.id, newProps);
+			editProps(tab.id, newProps, tab.path);
 			const r = compose(tab.id, tab.path);
 			if (!r.ok) return; // identity refusal — never write a frankenstein
 			fc = r.content;
@@ -202,7 +202,7 @@
 		// snapshot). A path mismatch is REFUSED, never composed.
 		let content: string;
 		if (SINGLE_OWNERSHIP) {
-			editBody(tab.id, text);
+			editBody(tab.id, text, filePath);
 			const r = compose(tab.id, filePath);
 			if (!r.ok) { saving = false; return; }
 			content = r.content;
@@ -266,7 +266,7 @@
 		// ops are inert Map writes, safe at this teardown moment (the §C-2 lesson).
 		let content: string;
 		if (SINGLE_OWNERSHIP) {
-			editBody(tab.id, text);
+			editBody(tab.id, text, filePath);
 			const r = compose(tab.id, filePath);
 			if (!r.ok) return; // identity refusal
 			content = r.content;
@@ -406,7 +406,7 @@
 	canGoForward={(tab.historyIndex ?? 0) < (tab.history?.length ?? 1) - 1}
 	{linkTraversalMap}
 	onchange={() => {}}
-	onDocChange={(doc: Text) => editBody(tab.id, doc)}
+	onDocChange={(doc: Text) => editBody(tab.id, doc, tab.path)}
 	onpromote={handlePromote}
 	onsave={handleSave}
 	onflush={handleFlush}

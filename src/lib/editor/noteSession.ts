@@ -41,14 +41,16 @@ export function ensure(id: string, path: string, diskContent: string): void {
 }
 
 /** Any editor view (NotePane OR FocusPane) → the one model. Accepts the CM6
- *  `Text` rope (O(1), the keystroke hot path) or a plain string. */
-export function editBody(id: string, text: string | Text): void {
-	M.setBody(id, text);
+ *  `Text` rope (O(1), the keystroke hot path) or a plain string. `expectPath`
+ *  (the caller's target note) identity-guards the write: a stale caller
+ *  addressing a repurposed model is rejected, never poisons it. */
+export function editBody(id: string, text: string | Text, expectPath?: string): void {
+	M.setBody(id, text, expectPath);
 }
 
-/** Property editor → the one model. */
-export function editProps(id: string, props: FrontmatterProperty[]): void {
-	M.setProps(id, props);
+/** Property editor → the one model. `expectPath` identity-guards the write (see editBody). */
+export function editProps(id: string, props: FrontmatterProperty[], expectPath?: string): void {
+	M.setProps(id, props, expectPath);
 }
 
 /**

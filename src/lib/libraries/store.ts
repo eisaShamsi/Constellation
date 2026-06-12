@@ -574,7 +574,10 @@ export async function saveTabContent(
 		let newContent: string;
 		let embedBody = body;
 		if (SINGLE_OWNERSHIP) {
-			editNoteProps(tabId, updatedProps);
+			// expectPath guards the write: a stale PropertyEditor teardown for the
+			// PREVIOUS note (its filePath) is rejected once the tab's model has been
+			// repurposed to a new note — the new-note-while-open poison fix.
+			editNoteProps(tabId, updatedProps, filePath);
 			const r = composeNoteModel(tabId, filePath);
 			if (!r.ok) return; // identity refusal — finally{} still releases the lock
 			newContent = r.content;
@@ -738,6 +741,7 @@ async function loadTabHistoryEntry(tabId: string, filePath: string, newHistoryIn
 				...(resolvedLibrary ? { libraryName: resolvedLibrary.name, libraryPath: resolvedLibrary.path } : {}),
 			};
 		}));
+		openNoteModel(tabId, filePath, content); // MIG-076 §C — Alt-nav reuse drives the model synchronously
 		_traceNav('loadTabHistoryEntry:applied', tabId, filePath);
 	} catch { /* file may have been deleted */ }
 }
@@ -1356,6 +1360,11 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 				scrollTop,
 			};
 		}));
+		// MIG-076 §C — drive the model from THIS explicit open, synchronously, so
+		// the reused tab's model carries the NEW note's identity immediately. Not
+		// relying on NoteEditor's async ensure $effect closes the window where a
+		// stale teardown save could land between reuse and ensure.
+		openNoteModel(currentTab.id, filePath, content);
 		// Auto-enable editing mode (WYSIWYG is always edit-ready)
 		editingTabIds.update(set => { const next = new Set(set); next.add(currentTab.id); return next; });
 		_traceNav('openNoteTab:applied', currentTab.id, filePath);
@@ -1371,6 +1380,7 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 		scrollTop,
 	};
 	openTabs.update(tabs => [...tabs, tab]);
+	openNoteModel(id, filePath, content); // MIG-076 §C — model born with the tab, synchronously
 
 	// Auto-enable editing mode (WYSIWYG is always edit-ready)
 	editingTabIds.update(set => { const next = new Set(set); next.add(id); return next; });

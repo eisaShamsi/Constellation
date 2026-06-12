@@ -118,9 +118,15 @@ export function modelCount(): number {
  * real change, so an unchanged push (same ref) no-ops, and we never pay an
  * O(N) content comparison per keystroke (CLAUDE.md Rule 1).
  */
-export function setBody(id: string, body: string | Text): void {
+export function setBody(id: string, body: string | Text, expectPath?: string): void {
 	const m = models.get(id);
 	if (!m) return;
+	// Identity guard on the WRITE-IN side (mirror of compose's read-out guard):
+	// a caller addressing a DIFFERENT path than the model now holds is stale
+	// (e.g. a torn-down editor's last flush after its tab was repurposed) and
+	// must NOT poison the repurposed model. This closes the new-note-while-open
+	// identity leak the 2026-06-12 Boss test surfaced.
+	if (expectPath !== undefined && m.path !== expectPath) return;
 	const next = typeof body === 'string' ? toText(body) : body;
 	if (next === m.body) return;
 	m.body = next;
@@ -128,9 +134,13 @@ export function setBody(id: string, body: string | Text): void {
 }
 
 /** Props editor → model: replace props, re-extract identity (I1). */
-export function setProps(id: string, props: FrontmatterProperty[]): void {
+export function setProps(id: string, props: FrontmatterProperty[], expectPath?: string): void {
 	const m = models.get(id);
 	if (!m) return;
+	// Identity guard (see setBody): a stale PropertyEditor teardown save for the
+	// PREVIOUS note must not write its props into a model whose tab has already
+	// been repurposed to a new note — the exact poison behind the new-note leak.
+	if (expectPath !== undefined && m.path !== expectPath) return;
 	m.props = cloneProps(props);
 	m.cid = cidOf(m.props);
 	m.version++;
