@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { FrontmatterProperty, PropertyType } from '$lib/libraries/store';
-	import { saveTabContent, normalizeDateValue, buildFullContent, openTabs, updateTabContent } from '$lib/libraries/store';
+	import { saveTabContent, normalizeDateValue, buildFullContent, openTabs } from '$lib/libraries/store';
 	import { LIVING_LINK_BASELINE, lookupStageEmoji, splitStage, stageLabel } from '$lib/libraries/store';
 	import { setRegisteredType, getRegisteredType } from '$lib/libraries/propertyTypeRegistry';
 	import { t, locale } from '$lib/i18n';
@@ -431,9 +431,9 @@
 		if (saveTimeout) {
 			clearTimeout(saveTimeout);
 			if (tabId && filePath) {
-				// MIG-076 §C-2 — through the single store writer (composition
-				// unchanged; the writer skips when content is identical).
-				updateTabContent(tabId, buildFullContent(editableProps, body), { origin: 'prop_destroy' });
+				/* Direct mutation so onflush reads fresh properties */
+				const tab = get(openTabs).find(t => t.id === tabId);
+				if (tab) tab.content = buildFullContent(editableProps, body);
 				saveTabContent(tabId, filePath, editableProps, body).catch((e) => console.error('[PropertyEditor] Flush save failed:', e));
 			}
 		}
@@ -686,12 +686,10 @@
 		saveTimeout = setTimeout(async () => {
 			saving = true;
 			try {
-				// MIG-076 §C-2 — through the single store writer. This DOES fire
-				// store reactivity where the old direct mutation deliberately
-				// didn't; the re-seed $effect is protected by the `saving` flag
-				// while the save is in flight, and afterwards the round-tripped
-				// props snapshot matches editableProps (no spurious re-seed).
-				updateTabContent(tabId, buildFullContent(editableProps, body), { origin: 'prop_save' });
+				/* Update tab content in store via direct mutation (no store.update = no cascade).
+				   This ensures onflush reads fresh properties when the tab is closed. */
+				const tab = get(openTabs).find(t => t.id === tabId);
+				if (tab) tab.content = buildFullContent(editableProps, body);
 				await saveTabContent(tabId, filePath, editableProps, body);
 			} catch (err) {
 				console.error('Failed to save:', err);

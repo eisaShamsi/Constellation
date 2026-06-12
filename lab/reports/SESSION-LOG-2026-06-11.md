@@ -939,19 +939,16 @@ with the rejected snapshot). Zero editor-lifecycle change — read-path policy o
 this step can only return MORE-authoritative content. svelte-check 0 errors / 313 baseline.
 Boss gate next: open notes incl. large/federated ones + one rename cycle.
 
-## §C-1 — Boss gate PASS (3/3)
+## §C-2 — Boss gate FAIL → REVERTED same hour. THE §C KILLER IS NAMED (journal-proven).
 
-Step 1 (multi-library render incl. big federated Architecture + Arabic notes) PASS · Step 2 (rename
-cycle: title v2 + alias + body intact, screenshots) PASS · Step 3 (crash recovery) PASS. → §C-2.
-
-## MIG-076 §C-2 SHIPPED (step 2 of 5) — the single store writer
-
-updateTabContent(tabId, content, {cursorPos?, scrollTop?, origin?}) is THE tab-content writer; the
-six direct `tab.content =` mutations replaced (editor_flush · stage_promote · prop_save ·
-prop_destroy · focus_pane · second_screen_reload). COMPOSITIONS UNCHANGED — every caller writes
-exactly what it wrote before; this step is pure plumbing. One documented exception: NoteEditor's
-local TabLike mutation for non-store hosts (Index-panel preview). Known behavioral delta (analyzed
-+ commented in code): the PE property save now fires store reactivity where the old direct mutation
-deliberately didn't — the re-seed $effect is guarded by the `saving` flag in flight, and the
-round-tripped snapshot matches editableProps afterwards (no spurious re-seed). svelte-check 0
-errors / 313 baseline. Boss gate: typing perf · property edit · stage change · (second screen).
+Symptom: every note's pane painted with the same content (tab-memory contamination). **Journal:
+zero writes to any real note** — only the 3 test probes, each with its own typed content. Disk safe.
+**ROOT CAUSE (both §C failures)**: handleFlush routed through updateTabContent → openTabs.update
+fires INSIDE the {#key} pane TEARDOWN that the store itself drives → re-entrant render → panes
+bind the wrong document. The old direct mutation's comment WAS the warning: "no store.update = no
+cascade". §C-2's one-change diff + identical symptom = the proof the monolith lacked.
+**Bonus finding (journal)**: FocusPane writes DISK PER KEYSTROKE (~170 writes/35s, +1B each) —
+pre-existing perf bug, now on record (PJ at next ledger bump).
+§C-2 reverted (`git revert e9788ce1`); §C-1 (passed) stays. The §C-2 re-design must keep flush
+store-sync OUT of teardown (defer to a microtask/queued write, or flush-to-store only outside
+{#key} transitions).

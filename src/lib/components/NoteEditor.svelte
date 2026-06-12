@@ -12,7 +12,7 @@
 	import {
 		parseFrontmatter, buildFullContent,
 		writeNote, markRecentWrite, setWriteAhead, clearWriteAhead,
-		renameItem, openTabs, openNoteTab, updateTabContent,
+		renameItem, openTabs, openNoteTab,
 		resolveWikilinkCrossLibrary,
 		createNote, buildDefaultFrontmatter, appSettings, libraries,
 		isCascading,
@@ -143,10 +143,13 @@
 			if (!updated) newProps.push({ key: 'stage', value: nextStage, type: 'text' as any });
 		}
 		const fc = buildFullContent(newProps, bd);
-		// MIG-076 §C-2 — through the single store writer (no direct mutation).
-		updateTabContent(tab.id, fc, { origin: 'stage_promote' });
-		// Also update the local tab reference (non-store hosts, e.g. the
-		// Index-panel preview tab, hold their own TabLike object).
+		// Update in-store tab if it exists there
+		const ct = get(openTabs).find(x => x.id === tab.id);
+		if (ct) {
+			ct.content = fc;
+			openTabs.update(tabs => tabs);
+		}
+		// Also update the local tab reference
 		tab.content = fc;
 		markRecentWrite(tab.path);
 		writeNote(tab.path, fc, 'stage_promote').catch(() => {});
@@ -222,9 +225,13 @@
 		if (isCascading(filePath)) return; // see isCascading() — F2 post-cascade-stomp gate
 		const props = freshProps();
 		const content = buildFullContent(props, text);
-		// MIG-076 §C-2 — store sync on flush through the single store writer
-		// (spec §2.2-sanctioned moment; composition unchanged).
-		updateTabContent(tab.id, content, { cursorPos, scrollTop, origin: 'editor_flush' });
+		// Update store tab if present
+		const ct = get(openTabs).find(x => x.id === tab.id);
+		if (ct) {
+			ct.content = content;
+			ct.cursorPos = cursorPos;
+			ct.scrollTop = scrollTop;
+		}
 		setWriteAhead(filePath, content, cursorPos, scrollTop);
 		if (needsDiskSave) {
 			markRecentWrite(filePath);
