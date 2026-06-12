@@ -974,3 +974,33 @@ tab.content at WRITE TIME (pane life), teardown persists cursor/scroll only — 
 Options to Boss: (2) Obsidian discipline now (minimal, staged §C continues) + (1) EditorState-per-
 tab buffer pattern queued as the architectural follow-up (kills string round-trip + hand-rolled
 history). Awaiting Boss ruling. No code written.
+
+## MIG-076 §CB — Boss ruling: Option B, the Buffer Pattern (PRIORITY One; all else frozen)
+
+Eisa: "I'll go with Option B. Proceed. This is PRIORITY One. We will NOT do anything until we
+solve this issue for good." + side request: TWO ways to list open notes (tabs at top AND on the
+side) — folded in as §CB-6 (buffer pattern makes both viewports of one metadata list).
+Docs: ARCHITECT §7 addendum (design, D1-D6 decisions, territory census, risks R1-R5) + PLAN §C
+rewritten as §CB-1..6 (each: own commit + own binary + own Boss gate; sandbox pre-gate on
+lifecycle steps). Old §C-2..5 superseded. Memory: project_mig076_buffer_pattern_ruling.md.
+
+## §CB-1 — the buffer registry (scaffolding, zero behavior change) — BUILT
+
+- NEW src/lib/editor/noteBuffers.ts: NON-reactive Map<tabId, NoteBuffer{path, cid, props
+  (snapshot-cloned), body: CM6 Text rope, paneState? (§CB-3)}>. Dependency LEAF (type-only
+  store import; runtime dep = @codemirror/state only). Inert by construction at any lifecycle
+  moment — a Map.set announces nothing (the §C-2 lesson, structurally enforced).
+- 16 writer sites mirrored: store.ts openNoteTab (reuse+create), createEmptyTab,
+  loadTabHistoryEntry (Alt-nav — census found it), reloadTabsFromDisk, renameItem (note:
+  content+path; folder: path-only), moveItem, saveTabContent, restoreWorkspace (clearAll);
+  NoteEditor handleSave/handleFlush/handlePromote; PropertyEditor debouncedSave + onDestroy;
+  +layout second-screen onNoteSaved + FocusPane onchange; SecondScreenPage workspace-restore
+  (clearAll). closeTab → deleteBuffer.
+- DEV-only parityProbe at 4 paired sites (openNoteTab:reuse, handleFlush, handlePromote,
+  PE:debouncedSave) — compares PARSED pieces (exact body + canonically-serialized props; raw
+  string compare would false-alarm on legacy YAML quote/date normalization — caught in design).
+- DEAD CODE deleted: store.ts updateTabContent (the §C-2-era writer, zero callers) + its dead
+  +layout import.
+- Tests: tests/mig-076/noteBuffers.test.ts — 12/12 green (round-trip incl. trailing-newline
+  edges, snapshot-clone, cid extraction, paneState preservation, probe verdicts). vitest
+  include + test:mig-076 script added. svelte-check: 0 errors (1456 files).

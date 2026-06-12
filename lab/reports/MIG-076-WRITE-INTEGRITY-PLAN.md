@@ -27,20 +27,33 @@
 
 ## §C — Frontend single-snapshot composition + single store writer (L3)
 
-> **RESTRUCTURED 2026-06-12 (Boss order after the §C-monolith display regression and revert).**
-> The original §C bundled six lifecycle-touching changes in ONE commit — when the display broke,
-> nothing could be isolated. §C now lands as **five separate steps, smallest risk first, one
-> commit + one binary + one Boss gate each**. No step starts before the previous one passes.
-> The composer (the prime suspect) goes LAST and is additionally gated behind a sandbox
-> reproduction test on real-shaped notes (the `E:\ConstellationSandbox` copies) BEFORE any
-> Boss test.
+> **RESTRUCTURED AGAIN 2026-06-12 (Boss ruling: Option B — the Buffer Pattern. PRIORITY One).**
+> History: the §C monolith (6 changes, 1 commit) failed → reverted → restructured into §C-1..5
+> step-gated pieces. §C-1 (WAB fail-closed) PASSED and stays. §C-2 (single store writer) failed
+> its Boss gate — the journal + one-change diff named the root cause: ANY store announcement
+> from the teardown flush re-enters the `{#key}` render. Research-first (Working Agreement #5,
+> Boss order) across Obsidian / VS Code / CM6-author / Emacs-Vim returned the converged industry
+> pattern: **buffers own content; views own nothing; teardown carries nothing.** Boss ruled
+> Option B (full buffer pattern) over Option A (Obsidian-discipline minimal fix).
+> Full mapping: ARCHITECT doc §7. Old §C-2..5 are SUPERSEDED by §CB-1..6 below.
+> Protocol unchanged: one commit + one binary + one Boss gate per step; sandbox repro pre-gate
+> on lifecycle-touching steps; no step starts before the previous passes.
 
-**§C-1 — WAB fail-closed restore.** store.ts only; the buffer restores ONLY when both cids are present AND equal AND it isn't an empty-body resurrection; otherwise disk wins. Zero editor-lifecycle change. *Boss gate: open notes incl. large/federated ones; rename cycle; everything renders.*
-**§C-2 — One store writer.** `updateTabContent(tabId, content, opts)` replaces the six direct `tab.content =` mutations — callers keep composing EXACTLY what they compose today (no composition change). *Boss gate: typing perf; property edit; stage change; second screen.*
-**§C-3 — PropertyEditor re-seed keyed on path.** The one-line guard (`|| filePath !== prevPath`) closing the tab-reuse stale-props window. *Boss gate: tab-reuse property correctness.*
-**§C-4 — PropertyEditor embedded routing.** The embedded instance stops writing disk/store itself; edits flow to the host save path. Composition still today's shape. *Boss gate: property edits save + survive restart.*
-**§C-5 — The pane composer (the prime suspect — LAST).** NotePane composes `{props-of-this-epoch + its own doc}`; freshProps joins die. **Pre-gate: reproduce + pass on the sandbox universe (real-shaped notes, console open) BEFORE any Boss build.** *Boss gate: full round — typing, properties, stage, rename, restart.*
-*Each step: own commit, own binary, Boss verdict before the next.*
+**§C-1 — WAB fail-closed restore. ✅ SHIPPED + Boss-validated** (f194b282, 2026-06-12 gates 1–3 passed). Stays as-is.
+
+**§CB-1 — The buffer registry (scaffolding, zero behavior change).** New `src/lib/editor/noteBuffers.ts`: non-reactive `Map<tabId, NoteBuffer{path, cid, props, body: Text, paneState?}>` + create/mirror/get/delete/compose API. All 9 live writer sites ALSO mirror into the buffer (inert Map writes — safe even inside teardown); `closeTab` deletes. Dev-only parity assertion (buffer compose === tab.content at save points) + vitest round-trip tests. Dead `updateTabContent` (store.ts:1024, zero callers) deleted. *Verify: svelte-check 0 / vitest green / typing perf unchanged. Boss gate: smoke — type, switch, property edit, stage, restart; NOTHING visibly changes.*
+
+**§CB-2 — Saves compose from the buffer (identity travels with content).** `composeBuffer(tabId, expectPath)` becomes the ONLY content source for handleSave / handleFlush / handlePromote / PropertyEditor saves / saveTabContent: props + body from ONE object, REFUSED (journaled, not composed) when the callback's filePath ≠ buffer.path. freshProps()/freshBody() joins die. tab.content mirror updated at the same points via today's mechanics (direct mutation — no reactivity change in this step). *Boss gate: typing, property edit, stage change, second screen, restart.*
+
+**§CB-3 — Panes mount from the buffer; the teardown flush DIES (the heart).** NotePane receives the buffer's `Text` (no string round-trip); updateListener maintains `buffer.body` per keystroke (O(1) ref assign); switch-time captures `view.state` into `buffer.paneState` — restored on return (UNDO SURVIVES TAB SWITCHES — new user-visible capability); `{#key}` recreation stays; handleFlush content-half deleted (cursor/scroll + WAB-from-buffer only). **Pre-gate: sandbox universe repro (typing burst + rapid switching + the §C-2 failure scenario) BEFORE any Boss build.** *Boss gate: the full §C-2 gate re-run + undo-across-switch demo.*
+
+**§CB-4 — Readers re-point; `tab.content` retires.** All 30 reader occurrences (4 files) re-point to buffer accessors or metadata; `OpenTab.content` field deleted; reloadTabsFromDisk updates the buffer + bumps reloadVersion; WAB feeds/hydrates via the buffer. *Verify: grep-zero clause — no `.content` reads on tab objects remain. Boss gate: second screen, split view, search/preview surfaces, restart.*
+
+**§CB-5 — FocusPane on the buffer + the per-keystroke disk-write fix (journal finding, 2026-06-12).** Focus onchange updates buffer.body + rides the same ≥1.5s debounced save; disk writes leave the keystroke path; mode switch NotePane↔Focus shares the buffer's Text — no string round-trip. *Boss gate: focus typing burst (journal shows ≤1 write per pause, not 170), mode switch round-trip.*
+
+**§CB-6 — The side tab list (Boss request 2026-06-12: two ways to list open notes).** With openTabs metadata-only, add the optional vertical open-notes list (sidebar) as a SECOND viewport on the same list — switch/close/reorder parity with the top strip, zero content logic. i18n ×15 + RTL. *Boss gate: visual + both surfaces stay in sync.*
+
+*Each step: own commit, own binary, Boss verdict before the next. §D (quiesce rename) then proceeds on buffer identity (cid-keyed, ≈ Obsidian's TFile).*
 
 ## §D — Quiesce protocol for rename/cascade (L4) + the title-rename re-land
 

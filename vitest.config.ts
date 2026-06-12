@@ -38,6 +38,8 @@ export default defineConfig({
 			'tests/mig-067/wikilinkCompletion.test.ts',
 			// MIG-069 §B (2026-06-01) — Style Presets capture / apply engine.
 			'tests/mig-069/stylePresets.test.ts',
+			// MIG-076 §CB-1 (2026-06-12) — the noteBuffers document-model layer.
+			'tests/mig-076/noteBuffers.test.ts',
 		],
 		exclude: [
 			'**/node_modules/**',

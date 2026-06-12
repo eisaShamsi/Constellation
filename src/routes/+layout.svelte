@@ -15,7 +15,7 @@
 		type ConstellationSearchResult,
 		openNoteTab, closeTab, switchTab, reorderTab, closeNote, createEmptyTab,
 		toggleSplit, toggleSplitDirection, setFocusedTab,
-		parseFrontmatter, extractHeadings, saveTabContent, updateTabContent, buildFullContent, writeNote, markRecentWrite, setWriteAhead, getWriteAhead, clearWriteAhead,
+		parseFrontmatter, extractHeadings, saveTabContent, buildFullContent, writeNote, markRecentWrite, setWriteAhead, getWriteAhead, clearWriteAhead,
 		createNote, createFolder, renameItem, deleteItem,
 		startWatchingLibrary, wasRecentlyWritten,
 		loadLibraryAppearance, libraryAppearances,
@@ -40,6 +40,7 @@
 	import type { LibraryStats, FileEntry, WorkspaceLayout, WorkspaceSecondScreen, FontSet, PanelId } from '$lib/libraries/store';
 	import { BUILTIN_FONT_SETS, SCRIPT_UNICODE_RANGES, TYPEWRITER_FONTS, getFontSetById, hexToHSL } from '$lib/libraries/store';
 	import { liveStyleDraft } from '$lib/libraries/store'; // MIG-070 §C Option E — Style Setter live-preview layer
+	import { setBuffer } from '$lib/editor/noteBuffers'; // MIG-076 §CB-1 — buffer mirror
 	import { CORE_BLOCK_IDS } from '$lib/theme/constellationStyleSettings';
 	import { get } from 'svelte/store';
 	import { SvelteMap } from 'svelte/reactivity';
@@ -2738,6 +2739,9 @@
 					const content = await invoke<string>('read_note', { filePath: path });
 					tab.content = content;
 					openTabs.update(tabs => tabs);
+					// MIG-076 §CB-1 — second-screen save lands in the buffer too
+					const fp = parseFrontmatter(content);
+					setBuffer(tab.id, tab.path, fp.properties, fp.body);
 				} catch {}
 			}
 		});
@@ -6069,7 +6073,12 @@
 									const currentTab = get(openTabs).find(x => x.id === $activeTab!.id);
 									const props = currentTab ? parseFrontmatter(currentTab.content || '').properties : _parsed.properties;
 									const fc = buildFullContent(props, text);
-									if (currentTab) currentTab.content = fc;
+									if (currentTab) {
+										currentTab.content = fc;
+										// MIG-076 §CB-1 — mirror (this path is already
+										// per-keystroke; §CB-5 debounces BOTH together)
+										setBuffer(currentTab.id, currentTab.path, props, text);
+									}
 									markRecentWrite($activeTab!.path);
 									writeNote($activeTab!.path, fc, 'focus_pane').catch(() => {});
 								}}
