@@ -1231,3 +1231,14 @@ view-vs-disk parity across every recipe. SINGLE_OWNERSHIP=true shipped (4cc77c2a
 REMAINING MIG-076 scope: §D quiesce-rename (+ the 7s rename UX) + title-rename re-land · §E
 refusal/recovery/collision UX + i18n ×15 · §F enforcement flip (WRITE_GATE_ENFORCE=true after
 soak) + permanent regression suite + 3-agent audit + /simplify + close.
+
+## SESSION CLOSE (2026-06-12 night) — PCS + Orientation + Handover
+
+PCS done: Orientation **v2.74** (new file; v2.73 preserved) — §C single content ownership SHIPPED +
+Boss-validated, final architecture (noteModel/noteSession/ownershipFlag), the new-note leak find+fix,
+remaining §D/E/F. MoCh-2026-06-12-1515.md written (the §C build arc). Handover: lab/reports/
+HANDOVER-2026-06-12.md (state-of-standing + §D next + fresh-session prompt). Help files + User Manual:
+NO change this version — §C is an invisible reliability fix (no user-facing strings); §E's recovery/
+collision surfaces will carry help updates. Memory project_mig076_buffer_pattern_ruling.md updated to
+VALIDATED. Milestone tagged + ZIP-backed. HEAD after this commit pushed to origin/main.
+NEXT SESSION: MIG-076 §D (quiesce-rename + title-rename re-land) — see the handover.
