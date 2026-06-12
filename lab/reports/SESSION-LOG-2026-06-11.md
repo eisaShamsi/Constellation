@@ -1211,3 +1211,23 @@ FIX (structural, both directions now identity-guarded):
 - Harness Recipe G reproduces the exact poison (stale prop-save + stale body-flush from the
   previous note) → both rejected; B's file keeps only B's identity. 25/25 mig-076; svelte-check 0.
 Fix is committed behind SINGLE_OWNERSHIP=false (inert). Next: flip on + rebuild → corrected re-test.
+
+## §C SINGLE CONTENT OWNERSHIP — BOSS GATE PASSED (5/5, corrected binary 20:56, re-test 21:xx)
+
+Steps 1-5 all PASS, INCLUDING Step 2 (new-note-while-open — the exact flow that leaked §C test's
+identity into §C Eisa No. 2 last round). Journal verdict for the re-test session: 90 writes, ZERO
+anomalies (no would_refuse_identity, all ok_self_attested), only the 4 §D test notes written, real
+notes untouched. Step 4 rename ~7s: journal proves rename_title + rename_item 1 MILLISECOND apart
+(21:22:14.081/.082) — the 7s is the pre-existing whole-universe cascade title-scan + refresh,
+unchanged by §C; owned by §D quiesce-rename (freeze overlay + progress).
+
+**The content-integrity bug class (BUG-012/015/019/023, F2, the §C/§CB regressions) is now
+STRUCTURALLY CLOSED and Boss-validated on the running app:** single content ownership — one model
+per open note; identity-guarded BOTH directions (compose refuses read-out mismatch; setBody/
+setProps refuse write-in mismatch); model driven synchronously by the explicit open event; focus
+bound to a captured session identity. Harness 25/25 incl. the new-note poison reproduction +
+view-vs-disk parity across every recipe. SINGLE_OWNERSHIP=true shipped (4cc77c2a).
+
+REMAINING MIG-076 scope: §D quiesce-rename (+ the 7s rename UX) + title-rename re-land · §E
+refusal/recovery/collision UX + i18n ×15 · §F enforcement flip (WRITE_GATE_ENFORCE=true after
+soak) + permanent regression suite + 3-agent audit + /simplify + close.
