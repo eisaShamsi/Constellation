@@ -39,8 +39,11 @@ export default defineConfig({
 			// MIG-069 §B (2026-06-01) — Style Presets capture / apply engine.
 			'tests/mig-069/stylePresets.test.ts',
 			// MIG-076 §C (2026-06-12) — single content ownership: the cure's
-			// acceptance harness + characterization of the current defects.
+			// acceptance harness, the runtime recipe harness (view-vs-disk
+			// parity across every failure recipe), + characterization of the
+			// current defects.
 			'tests/mig-076/noteModel.test.ts',
+			'tests/mig-076/runtimeHarness.test.ts',
 			'tests/mig-076/currentBugRepro.test.ts',
 		],
 		exclude: [

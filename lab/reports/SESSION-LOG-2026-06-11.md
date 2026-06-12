@@ -1126,3 +1126,24 @@ components to read/write the model, retire tab.content + the WAB; preceded by th
 view-vs-disk harness (Editor-Surface Gate, 8 surfaces incl. Focus round-trip + in-focus switch),
 then the Boss test behind a toggle. The engine being green is necessary, NOT sufficient — the
 integration gets the runtime proof before it touches the live editor.
+
+## §C rebuilt — step 2 COMPLETE: the runtime recipe harness is green (still additive, zero live-code change)
+
+- NEW src/lib/editor/noteSession.ts — the BEHAVIOR layer over noteModel: the thin testable glue
+  the components will call (open/editBody/editProps/bodyForView/save(identity-bound, injected
+  DiskWriter)/repath/externalChange/isDirty/close/closeAll). The structural answer to "the §CB
+  bugs hid in .svelte lifecycle" — glue pulled into plain TS where a harness can drive it.
+- NEW tests/mig-076/runtimeHarness.test.ts — plays every named failure as a FULL RECIPE through
+  the real noteSession path against an in-memory fake disk, asserting screen===disk + no
+  cross-note contamination after each transition: A focus-on-fresh-note (symptom 1), B switch-
+  away/return (symptom 2), C in-focus tab switch (the landmine — own-content save + REFUSED
+  cross-path), D rename-with-link (BUG-023 shape), E second-screen freshness, F restart, +
+  global "disk never holds a foreign cid". 7 scenarios.
+- Suite: 23/23 mig-076 (14 acceptance + 7 runtime + 2 characterization); svelte-check 0/1459.
+- SCOPE HONESTY (recorded): the harness proves content-flow LOGIC + GLUE headlessly; it does NOT
+  mount Svelte/CM6, so a pure-template wiring slip at integration (seeding a view from tab.content
+  instead of bodyForView) is the one residual the Boss test closes. Single ownership removes the
+  stale alternative, shrinking that residual.
+NEXT (step 3 integration — the part that failed as §CB, now thin wiring over a proven controller):
+make NoteEditor/FocusPane/PropertyEditor/+layout/openNoteTab call noteSession + seed from
+bodyForView; retire tab.content + the WAB; behind a toggle. Then Boss test on the real universe.
