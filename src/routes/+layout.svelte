@@ -40,7 +40,7 @@
 	import type { LibraryStats, FileEntry, WorkspaceLayout, WorkspaceSecondScreen, FontSet, PanelId } from '$lib/libraries/store';
 	import { BUILTIN_FONT_SETS, SCRIPT_UNICODE_RANGES, TYPEWRITER_FONTS, getFontSetById, hexToHSL } from '$lib/libraries/store';
 	import { liveStyleDraft } from '$lib/libraries/store'; // MIG-070 §C Option E — Style Setter live-preview layer
-	import { setBuffer, setBufferBody, composeBuffer } from '$lib/editor/noteBuffers'; // MIG-076 §CB-1/2 — buffer mirror + compose
+	import { setBuffer } from '$lib/editor/noteBuffers'; // MIG-076 §CB-1 — buffer mirror
 	import { CORE_BLOCK_IDS } from '$lib/theme/constellationStyleSettings';
 	import { get } from 'svelte/store';
 	import { SvelteMap } from 'svelte/reactivity';
@@ -6070,18 +6070,17 @@
 								title={$activeTab.name.replace(/\.md$/, '')}
 								dir={noteDir}
 								onchange={(text) => {
-									// MIG-076 §CB-2 — body to the buffer, write composed from
-									// it alone (the per-keystroke parseFrontmatter died here).
-									// No tab = no identity = no write. Still per-keystroke
-									// until §CB-5 debounces this path.
 									const currentTab = get(openTabs).find(x => x.id === $activeTab!.id);
-									if (!currentTab) return;
-									setBufferBody(currentTab.id, text);
-									const r = composeBuffer(currentTab.id, currentTab.path, 'focus_pane');
-									if (!r.ok) return;
-									currentTab.content = r.content;
-									markRecentWrite(currentTab.path);
-									writeNote(currentTab.path, r.content, 'focus_pane').catch(() => {});
+									const props = currentTab ? parseFrontmatter(currentTab.content || '').properties : _parsed.properties;
+									const fc = buildFullContent(props, text);
+									if (currentTab) {
+										currentTab.content = fc;
+										// MIG-076 §CB-1 — mirror (this path is already
+										// per-keystroke; §CB-5 debounces BOTH together)
+										setBuffer(currentTab.id, currentTab.path, props, text);
+									}
+									markRecentWrite($activeTab!.path);
+									writeNote($activeTab!.path, fc, 'focus_pane').catch(() => {});
 								}}
 								onexit={() => { focusMode = false; }}
 							/>

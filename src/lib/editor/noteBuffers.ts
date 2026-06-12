@@ -28,10 +28,7 @@
  */
 import { Text } from '@codemirror/state';
 import type { EditorState } from '@codemirror/state';
-import { invoke } from '@tauri-apps/api/core';
-// §CB-2 — the frontmatter cluster lives in a sibling leaf now, so this
-// module can parse/compose itself with zero store dependency.
-import { parseFrontmatter, buildFullContent, type FrontmatterProperty } from '$lib/editor/frontmatter';
+import type { FrontmatterProperty } from '$lib/libraries/store';
 
 export interface NoteBuffer {
 	tabId: string;
@@ -102,89 +99,6 @@ export function setBuffer(
 	});
 }
 
-/**
- * §CB-2 — create-if-absent (or re-seed when the buffer demonstrably
- * belongs to a different path than the host's CURRENT target). Hosts
- * that never pass through openNoteTab — index preview, dashboard,
- * ad-hoc TabLike objects — get their buffer here, seeded from their own
- * content copy. Genuine stale-callback refusals are untouched: those
- * are filtered by the callers' `filePath !== tab.path` guards BEFORE
- * this runs, so a path mismatch here can only mean "the host moved its
- * slot to a new note without openNoteTab", where the host's copy IS
- * the truth.
- */
-export function ensureBuffer(tabId: string, path: string, content: string): void {
-	if (!tabId) return;
-	const b = buffers.get(tabId);
-	if (b && b.path === path) return;
-	const fp = parseFrontmatter(content || '');
-	setBuffer(tabId, path, fp.properties, fp.body);
-}
-
-/**
- * §CB-2 — update the BODY half only (the pane's hand-off path). Props,
- * path, cid, paneState untouched. No buffer → dev-warn and drop: a body
- * without an identity is exactly the Frankenstein ingredient this
- * migration exists to refuse.
- */
-export function setBufferBody(tabId: string, body: string | Text): void {
-	const b = buffers.get(tabId);
-	if (!b) {
-		if (import.meta.env.DEV) console.error(`[noteBuffers] setBufferBody: no buffer for tab=${tabId}`);
-		return;
-	}
-	b.body = typeof body === 'string' ? toText(body) : body;
-	b.updatedAt = Date.now();
-}
-
-/**
- * §CB-2 — update the PROPS half only (PropertyEditor / stage-promote
- * path). Body untouched; cid re-extracted (props carry identity).
- */
-export function setBufferProps(tabId: string, props: FrontmatterProperty[]): void {
-	const b = buffers.get(tabId);
-	if (!b) {
-		if (import.meta.env.DEV) console.error(`[noteBuffers] setBufferProps: no buffer for tab=${tabId}`);
-		return;
-	}
-	b.props = cloneProps(props);
-	b.cid = cidOf(b.props);
-	b.updatedAt = Date.now();
-}
-
-export type ComposeResult =
-	| { ok: true; content: string; body: string; path: string; cid: string | null }
-	| { ok: false; reason: 'no_buffer' | 'path_mismatch'; bufferPath?: string };
-
-/**
- * §CB-2 — THE single content source for every editor-originated save.
- * Composes {props + body} from ONE buffer object, and only after the
- * caller's intended target path matches the buffer's own identity —
- * content and target travel together (the Obsidian TFile discipline).
- * A mismatch means the callback outlived its tab slot (wikilink click,
- * Alt-nav repurposing): composing would manufacture a Frankenstein
- * write, so it is REFUSED and journaled into the same write-journal
- * stream the Rust gate uses (one forensic timeline).
- */
-export function composeBuffer(tabId: string, expectPath: string, surface: string): ComposeResult {
-	const b = buffers.get(tabId);
-	if (!b) {
-		journalRefusal(surface, expectPath, 'no_buffer');
-		return { ok: false, reason: 'no_buffer' };
-	}
-	if (expectPath && b.path !== expectPath) {
-		journalRefusal(surface, expectPath, 'path_mismatch');
-		return { ok: false, reason: 'path_mismatch', bufferPath: b.path };
-	}
-	const body = b.body.toString();
-	return { ok: true, content: buildFullContent(b.props, body), body, path: b.path, cid: b.cid };
-}
-
-function journalRefusal(surface: string, path: string, reason: string): void {
-	console.error(`[noteBuffers] compose REFUSED (${reason}) surface=${surface} path=${path}`);
-	invoke('journal_compose_refusal', { surface, path, reason }).catch(() => {});
-}
-
 /** Path-only identity update (folder rename, move) — content untouched. */
 export function updateBufferPath(tabId: string, newPath: string): void {
 	const b = buffers.get(tabId);
@@ -220,11 +134,13 @@ export function bufferCount(): number {
  * Compares PARSED pieces, not raw strings: parse→serialize is not
  * byte-identical for legacy YAML (quote stripping, date normalization),
  * so the body is compared exactly while props are compared through the
- * canonical serializer (buildFullContent with an empty body).
+ * caller's canonical serializer (buildFullContent with an empty body) —
+ * passed in so this module stays a dependency leaf until §CB-2.
  */
 export function parityProbe(
 	tabId: string,
 	legacy: { props: FrontmatterProperty[]; body: string },
+	serialize: (props: FrontmatterProperty[], body: string) => string,
 	where: string,
 ): void {
 	if (!import.meta.env.DEV) return;
@@ -234,7 +150,7 @@ export function parityProbe(
 		return;
 	}
 	const bodyMatch = b.body.toString() === legacy.body;
-	const propsMatch = buildFullContent(b.props, '') === buildFullContent(legacy.props, '');
+	const propsMatch = serialize(b.props, '') === serialize(legacy.props, '');
 	if (!bodyMatch || !propsMatch) {
 		console.error(
 			`[noteBuffers] PARITY MISMATCH at ${where} tab=${tabId} path=${b.path} ` +

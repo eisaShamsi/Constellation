@@ -1025,30 +1025,19 @@ in-flight, explicit "no user-facing changes yet" (help/manual untouched by desig
 MoCh-2026-06-12-1030.md written (block 10:30-15:15). Docs-only commit — the §CB-2 WIP Rust edit
 (write_gate journal refactor) stays in the worktree for the §CB-2 commit.
 
-## §CB-2 — saves compose from the buffer (identity travels with content) — BUILT
+## §CB-2 — Boss gate FAIL at step 4 (Focus mode) → REVERTED. Real notes safe (journal-proven).
 
-- frontmatter cluster EXTRACTED VERBATIM store.ts → src/lib/editor/frontmatter.ts (types, key
-  sets, normalizeDateValue, detectPropertyType, parseFrontmatter, quoteIfNeeded,
-  reconstructFrontmatter, buildFullContent — 230 lines); store.ts re-exports → ZERO call-site
-  churn app-wide. noteBuffers is now fully self-sufficient (parse+compose internally).
-- noteBuffers §CB-2 API: setBufferBody / setBufferProps (half-updates; refuse-if-absent),
-  ensureBuffer (create-if-absent or re-seed on host-slot move — covers non-store NoteEditor
-  hosts: index preview/dashboard, which never pass openNoteTab; genuine stale callbacks remain
-  refused because callers' filePath!==tab.path guards run FIRST), composeBuffer(tabId,
-  expectPath, surface) → ok{content,body,path,cid} | REFUSED{no_buffer|path_mismatch} with the
-  refusal journaled into the SAME write-journal stream via new journal_compose_refusal IPC
-  (write_gate.rs journal_ext→journal_line refactor + journal_event; libraries.rs command;
-  lib.rs registered).
-- Call sites flipped — compose-from-buffer is now the ONLY content source: NoteEditor
-  handleSave/handleFlush/handlePromote (freshProps/freshBody DELETED — the Frankenstein joins
-  are gone), PropertyEditor debouncedSave/onDestroy (props→buffer, mirror composed),
-  saveTabContent (auto-date props→buffer; embed uses composed body), FocusPane onchange
-  (per-keystroke parseFrontmatter DIED — perf win ahead of §CB-5). tab.content mirrors update
-  via the same direct-mutation mechanics as today (no reactivity change this step).
-- parityProbe simplified (internal buildFullContent); §CB-1 probes at flipped sites retired
-  (tautological once the mirror derives from the compose); openNoteTab:reuse probe stays.
-- Tests 21/21 (tests/mig-076: + partial setters, ensureBuffer trio, compose ok/path_mismatch/
-  no_buffer); svelte-check 0/1457; Rust 923/923 (write_gate 14/14).
-- Full-suite note: tests/sight-v6/tradition-isolation.test.ts has ONE failure — verified
-  PRE-EXISTING via git stash (fails identically without §CB changes). Out of MIG-076 scope
-  (Priority One freeze); flagged as background task chip task_30a68ac6.
+Steps 1-3 PASS. Step 4: FocusPane opened showing ANOTHER note's body ("Hello Constellation
+Base / [[1011]]"); typing in focus wrote {§CB2's correct props+cid + the WRONG body} to disk
+(15:43:41, 564B→233B), later a THIRD note's body (15:47:01, 804B — link-test content).
+**Journal: every write since the 15:09 binary touched ONLY §CB2 test.md** — all real notes
+untouched. ZERO refused_compose entries: the §CB-2 identity guard (which-note/which-path)
+passed honestly — the poison was the buffer's BODY VALUE, swapped at the focus enter/exit
+transitions. Mechanism class = the §CB-3 disease (panes seeded from stale tab.content;
+teardown hand-offs inject pane text via live-prop lookups); §CB-2's ensureBuffer re-seed +
+focus seeding interacted with it instead of containing it.
+DIAGNOSIS RULE (twice-burned, now standing): REPRODUCE in the dev sandbox with instrumentation
+BEFORE any §CB-2 re-attempt — the §CB-3 sandbox pre-gate discipline now applies to EVERY
+remaining §CB step, not just §CB-3.
+Reverted `git revert 8ae4451f` (§CB-1 validated state restored; orientation v2.73 §CB-2 line
+to be re-stamped FAILED+REVERTED in the same commit).

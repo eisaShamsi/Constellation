@@ -10,7 +10,7 @@
 	import { invoke } from '@tauri-apps/api/core';
 	import { dir } from '$lib/i18n';
 	import {
-		parseFrontmatter,
+		parseFrontmatter, buildFullContent,
 		writeNote, markRecentWrite, setWriteAhead, clearWriteAhead,
 		renameItem, openTabs, openNoteTab,
 		resolveWikilinkCrossLibrary,
@@ -19,13 +19,11 @@
 		type FrontmatterProperty
 	} from '$lib/libraries/store';
 	import { broadcastNoteSaved } from '$lib/secondScreen';
-	// MIG-076 §CB-2 — the buffer is the ONLY composition source for every
-	// save/flush/promote: body and props land in the buffer first, the
-	// write is composed from that ONE object, and a path mismatch (a
-	// callback that outlived its repurposed tab slot) is REFUSED and
-	// journaled instead of composed. All buffer ops are plain Map writes —
-	// inert from any lifecycle moment, including onDestroy-driven flushes.
-	import { getBuffer, ensureBuffer, setBufferBody, setBufferProps, composeBuffer } from '$lib/editor/noteBuffers';
+	// MIG-076 §CB-1 — buffer mirror (write-through only in this step;
+	// §CB-2 makes saves COMPOSE from the buffer, §CB-3 deletes the
+	// teardown flush). setBuffer is a plain Map write — inert from any
+	// lifecycle moment, including onDestroy-driven flushes.
+	import { setBuffer, parityProbe } from '$lib/editor/noteBuffers';
 	import { buildLibraryColorMap } from '$lib/libraries/colors';
 	import { detectDir } from '$lib/utils';
 	import { get } from 'svelte/store';
@@ -121,20 +119,23 @@
 	// Save guard — prevents double saves
 	let saving = false;
 
-	// MIG-076 §CB-2 — freshProps()/freshBody() (the store re-lookup joins
-	// that could pair a repurposed tab's props with another note's body —
-	// the Frankenstein composition at the heart of BUG-015/023) are GONE.
-	// The buffer is the one snapshot both halves come from.
+	/** Re-read the latest tab content from the openTabs store (properties may have changed) */
+	function freshProps(): FrontmatterProperty[] {
+		const ct = get(openTabs).find(x => x.id === tab.id);
+		return ct ? parseFrontmatter(ct.content || '').properties : parsed.properties;
+	}
+	function freshBody(): string {
+		const ct = get(openTabs).find(x => x.id === tab.id);
+		return ct ? parseFrontmatter(ct.content || '').body : parsed.body;
+	}
 
 	function handlePromote(nextStage: string) {
 		// Stage promote/demote writes to disk via writeNote like saveTabContent
 		// does, so the same F2 post-cascade-stomp gate applies here too.
 		// See `isCascading` for the full rationale.
 		if (isCascading(tab.path)) return;
-		// Hosts that never pass through openNoteTab (index preview,
-		// dashboard) get their buffer seeded from their own copy here.
-		ensureBuffer(tab.id, tab.path, tab.content ?? '');
-		const props = getBuffer(tab.id)?.props ?? parsed.properties;
+		const props = freshProps();
+		const bd = freshBody();
 		let newProps: FrontmatterProperty[];
 		if (!nextStage) {
 			newProps = props.filter(p => p.key.toLowerCase() !== 'stage');
@@ -146,19 +147,19 @@
 			});
 			if (!updated) newProps.push({ key: 'stage', value: nextStage, type: 'text' as any });
 		}
-		setBufferProps(tab.id, newProps);
-		const r = composeBuffer(tab.id, tab.path, 'stage_promote');
-		if (!r.ok) return;
+		const fc = buildFullContent(newProps, bd);
 		// Update in-store tab if it exists there
 		const ct = get(openTabs).find(x => x.id === tab.id);
 		if (ct) {
-			ct.content = r.content;
+			ct.content = fc;
 			openTabs.update(tabs => tabs);
 		}
 		// Also update the local tab reference
-		tab.content = r.content;
+		tab.content = fc;
+		setBuffer(tab.id, tab.path, newProps, bd); // MIG-076 §CB-1 mirror
+		parityProbe(tab.id, { props: newProps, body: bd }, buildFullContent, 'handlePromote');
 		markRecentWrite(tab.path);
-		writeNote(tab.path, r.content, 'stage_promote').catch(() => {});
+		writeNote(tab.path, fc, 'stage_promote').catch(() => {});
 		onStageChanged?.(tab.path, nextStage);
 	}
 
@@ -175,14 +176,13 @@
 		if (!filePath || filePath !== tab.path) return;
 		if (isCascading(filePath)) return; // see isCascading() — F2 post-cascade-stomp gate
 		saving = true;
-		// MIG-076 §CB-2 — the pane hands its doc to the buffer; the write
-		// is composed from the buffer ALONE (props + body, one snapshot).
-		ensureBuffer(tab.id, tab.path, tab.content ?? '');
-		setBufferBody(tab.id, text);
-		const r = composeBuffer(tab.id, filePath, 'editor_save');
-		if (!r.ok) { saving = false; return; }
+		const props = freshProps();
 		markRecentWrite(filePath);
-		writeNote(filePath, r.content, 'editor_save')
+		const content = buildFullContent(props, text);
+		// MIG-076 §CB-1 — the buffer absorbs save-cadence state (legacy
+		// tab.content deliberately stays flush-cadence; no probe here).
+		setBuffer(tab.id, filePath, props, text);
+		writeNote(filePath, content, 'editor_save')
 			.then(() => {
 				broadcastNoteSaved(filePath);
 				// Reindex for search (non-blocking) — updates FTS5, tags, links,
@@ -233,24 +233,24 @@
 		// Flush fires on tab close, visibility change, and the {#key}-bump
 		// destroy itself — all paths must respect the cascade gate.
 		if (isCascading(filePath)) return; // see isCascading() — F2 post-cascade-stomp gate
-		// MIG-076 §CB-2 — body to the buffer, then ONE composition from it.
-		// All buffer ops are inert Map writes — safe at the teardown moment
-		// (the §C-2 lesson). §CB-3 deletes this hand-off entirely.
-		ensureBuffer(tab.id, tab.path, tab.content ?? '');
-		setBufferBody(tab.id, text);
-		const r = composeBuffer(tab.id, filePath, 'editor_flush');
-		if (!r.ok) return;
+		const props = freshProps();
+		const content = buildFullContent(props, text);
 		// Update store tab if present
 		const ct = get(openTabs).find(x => x.id === tab.id);
 		if (ct) {
-			ct.content = r.content;
+			ct.content = content;
 			ct.cursorPos = cursorPos;
 			ct.scrollTop = scrollTop;
 		}
-		setWriteAhead(filePath, r.content, cursorPos, scrollTop);
+		// MIG-076 §CB-1 — mirror at the teardown moment is SAFE here by
+		// construction (plain Map write, no store announcement — the §C-2
+		// lesson). §CB-3 deletes this entire content hand-off.
+		setBuffer(tab.id, filePath, props, text);
+		parityProbe(tab.id, { props, body: text }, buildFullContent, 'handleFlush');
+		setWriteAhead(filePath, content, cursorPos, scrollTop);
 		if (needsDiskSave) {
 			markRecentWrite(filePath);
-			writeNote(filePath, r.content, 'editor_flush')
+			writeNote(filePath, content, 'editor_flush')
 				.then(() => {
 					clearWriteAhead(filePath);
 					broadcastNoteSaved(filePath);
