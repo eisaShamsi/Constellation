@@ -331,6 +331,7 @@ pub fn run() {
             libraries::read_note_title,
             libraries::get_note_headings,
             libraries::write_note,
+            libraries::journal_compose_refusal,
             libraries::pick_folder,
             libraries::create_new_library,
             libraries::create_new_library_at,

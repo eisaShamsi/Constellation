@@ -1,10 +1,10 @@
 <script lang="ts">
 	import type { FrontmatterProperty, PropertyType } from '$lib/libraries/store';
 	import { saveTabContent, normalizeDateValue, buildFullContent, openTabs } from '$lib/libraries/store';
-	// MIG-076 §CB-1 — buffer mirror (inert Map write; saveTabContent also
-	// mirrors, but mirroring HERE keeps the pair atomic with the legacy
-	// `tab.content =` line so the parity probe is meaningful).
-	import { setBuffer, parityProbe } from '$lib/editor/noteBuffers';
+	// MIG-076 §CB-2 — property edits land in the buffer's PROPS half; the
+	// tab.content mirror is composed from the buffer (one snapshot), and
+	// saveTabContent composes the disk write from the same buffer.
+	import { ensureBuffer, setBufferProps, composeBuffer } from '$lib/editor/noteBuffers';
 	import { LIVING_LINK_BASELINE, lookupStageEmoji, splitStage, stageLabel } from '$lib/libraries/store';
 	import { setRegisteredType, getRegisteredType } from '$lib/libraries/propertyTypeRegistry';
 	import { t, locale } from '$lib/i18n';
@@ -435,10 +435,17 @@
 		if (saveTimeout) {
 			clearTimeout(saveTimeout);
 			if (tabId && filePath) {
-				/* Direct mutation so onflush reads fresh properties */
-				const tab = get(openTabs).find(t => t.id === tabId);
-				if (tab) tab.content = buildFullContent(editableProps, body);
-				setBuffer(tabId, filePath, editableProps, body); // MIG-076 §CB-1 mirror (inert at teardown)
+				/* MIG-076 §CB-2 — props to the buffer, mirror composed from it
+				   (direct mutation so onflush reads fresh properties; inert at
+				   teardown). saveTabContent composes the disk write from the
+				   same buffer. */
+				ensureBuffer(tabId, filePath, buildFullContent(editableProps, body));
+				setBufferProps(tabId, editableProps);
+				const r = composeBuffer(tabId, filePath, 'prop_destroy');
+				if (r.ok) {
+					const tab = get(openTabs).find(t => t.id === tabId);
+					if (tab) tab.content = r.content;
+				}
 				saveTabContent(tabId, filePath, editableProps, body).catch((e) => console.error('[PropertyEditor] Flush save failed:', e));
 			}
 		}
@@ -691,13 +698,17 @@
 		saveTimeout = setTimeout(async () => {
 			saving = true;
 			try {
-				/* Update tab content in store via direct mutation (no store.update = no cascade).
-				   This ensures onflush reads fresh properties when the tab is closed. */
-				const tab = get(openTabs).find(t => t.id === tabId);
-				if (tab) tab.content = buildFullContent(editableProps, body);
-				// MIG-076 §CB-1 — mirror paired with the line above
-				setBuffer(tabId, filePath, editableProps, body);
-				parityProbe(tabId, { props: editableProps, body }, buildFullContent, 'PE:debouncedSave');
+				/* MIG-076 §CB-2 — props to the buffer, tab.content mirror composed
+				   from it (direct mutation: no store.update = no cascade — the
+				   §C-2 lesson). saveTabContent composes the disk write from the
+				   same buffer; its auto-date props refinement lands there. */
+				ensureBuffer(tabId, filePath, buildFullContent(editableProps, body));
+				setBufferProps(tabId, editableProps);
+				const r = composeBuffer(tabId, filePath, 'prop_save');
+				if (r.ok) {
+					const tab = get(openTabs).find(t => t.id === tabId);
+					if (tab) tab.content = r.content;
+				}
 				await saveTabContent(tabId, filePath, editableProps, body);
 			} catch (err) {
 				console.error('Failed to save:', err);

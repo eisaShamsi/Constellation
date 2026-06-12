@@ -174,6 +174,24 @@ fn journal_ext(
     expected_cid: Option<&str>,
     found_cid: Option<&str>,
 ) {
+    journal_line(path, surface, outcome.as_str(), bytes, hash, expected_cid, found_cid);
+}
+
+/// MIG-076 §CB-2 — frontend compose-refusals share this journal so forensics
+/// reads ONE stream. Raw outcome string; no gate, no write involved.
+pub fn journal_event(path: &Path, surface: &str, outcome: &str) {
+    journal_line(path, surface, outcome, 0, 0, None, None);
+}
+
+fn journal_line(
+    path: &Path,
+    surface: &str,
+    outcome: &str,
+    bytes: usize,
+    hash: u64,
+    expected_cid: Option<&str>,
+    found_cid: Option<&str>,
+) {
     let Some(jp) = journal_path().get() else { return };
     let ts = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -183,7 +201,7 @@ fn journal_ext(
         "ts": ts,
         "path": path.to_string_lossy(),
         "surface": surface,
-        "outcome": outcome.as_str(),
+        "outcome": outcome,
         "bytes": bytes,
         "hash": format!("{:016x}", hash),
     });

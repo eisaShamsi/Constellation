@@ -325,6 +325,18 @@ pub fn get_note_headings(app: tauri::AppHandle, file_path: String) -> Result<Vec
     Ok(headings)
 }
 
+/// MIG-076 §CB-2 — the frontend's composeBuffer REFUSED a save (no buffer /
+/// path mismatch). No write happens; this records the refusal in the same
+/// write-journal stream so forensics reads one timeline.
+#[tauri::command]
+pub fn journal_compose_refusal(surface: String, path: String, reason: String) {
+    crate::write_gate::journal_event(
+        Path::new(&path),
+        &surface,
+        &format!("refused_compose_{}", reason),
+    );
+}
+
 /// Write content to a markdown file inside a library.
 #[tauri::command]
 pub fn write_note(
