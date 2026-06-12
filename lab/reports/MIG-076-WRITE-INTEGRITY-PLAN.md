@@ -27,9 +27,20 @@
 
 ## §C — Frontend single-snapshot composition + single store writer (L3)
 
-**§C1 — The snapshot.** NotePane becomes the sole composer for its file: at save/flush it builds one immutable `{path: mountedFilePath, cid, base, content, docVersion}` from its own epoch state (its doc + the embedded PropertyEditor's props routed through the pane). `freshProps()`-by-tab-id joins in NoteEditor are abolished; handleSave/handleFlush submit the snapshot as-is. `docVersion` guards the dirty-clear (no marking-clean over keystrokes typed mid-save).
-**§C2 — One store writer.** A single `updateTabContent(tabId, content, origin)` authority replaces the six direct `tab.content =` mutation sites (PropertyEditor ×2, NoteEditor ×2, FocusPane, second-screen listener); each origin is journal-tagged in dev. The WAB identity check flips **fail-closed** (buffer restored only when both cids present AND equal). The sidebar PropertyEditor re-seeds keyed on path (not tabId) and submits CAS-carrying saves.
-*Verify:* svelte-check; the 10-keystroke typing test (Perf Rule 7) in NotePane + FocusPane; grep proves zero direct `.content =` outside the authority; a vitest covering the WAB fail-closed verdicts.
+> **RESTRUCTURED 2026-06-12 (Boss order after the §C-monolith display regression and revert).**
+> The original §C bundled six lifecycle-touching changes in ONE commit — when the display broke,
+> nothing could be isolated. §C now lands as **five separate steps, smallest risk first, one
+> commit + one binary + one Boss gate each**. No step starts before the previous one passes.
+> The composer (the prime suspect) goes LAST and is additionally gated behind a sandbox
+> reproduction test on real-shaped notes (the `E:\ConstellationSandbox` copies) BEFORE any
+> Boss test.
+
+**§C-1 — WAB fail-closed restore.** store.ts only; the buffer restores ONLY when both cids are present AND equal AND it isn't an empty-body resurrection; otherwise disk wins. Zero editor-lifecycle change. *Boss gate: open notes incl. large/federated ones; rename cycle; everything renders.*
+**§C-2 — One store writer.** `updateTabContent(tabId, content, opts)` replaces the six direct `tab.content =` mutations — callers keep composing EXACTLY what they compose today (no composition change). *Boss gate: typing perf; property edit; stage change; second screen.*
+**§C-3 — PropertyEditor re-seed keyed on path.** The one-line guard (`|| filePath !== prevPath`) closing the tab-reuse stale-props window. *Boss gate: tab-reuse property correctness.*
+**§C-4 — PropertyEditor embedded routing.** The embedded instance stops writing disk/store itself; edits flow to the host save path. Composition still today's shape. *Boss gate: property edits save + survive restart.*
+**§C-5 — The pane composer (the prime suspect — LAST).** NotePane composes `{props-of-this-epoch + its own doc}`; freshProps joins die. **Pre-gate: reproduce + pass on the sandbox universe (real-shaped notes, console open) BEFORE any Boss build.** *Boss gate: full round — typing, properties, stage, rename, restart.*
+*Each step: own commit, own binary, Boss verdict before the next.*
 
 ## §D — Quiesce protocol for rename/cascade (L4) + the title-rename re-land
 

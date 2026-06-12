@@ -918,3 +918,15 @@ self-attestation) and the Stage-1 findings #1+#2 fixes REMAIN (they were in the 
 binary). The SC display-layer bug remains UNDIAGNOSED (interrupted by the order — disk proven
 intact throughout; zero journal writes from the SC binary). MIG-076 SC status -> REVERTED,
 re-land only after the dev-console reproduction identifies the display failure. SD onward paused.
+
+## Boss order (morning): "Re-structure §C, and we will take it step by step." — DONE
+
+Forensic agent stopped per order (verdict not yet produced). §C restructured in the Plan from one
+six-change monolith into FIVE separately-shipped steps, smallest risk first, one commit + one
+binary + one Boss gate each: §C-1 WAB fail-closed → §C-2 single store writer (no composition
+change) → §C-3 PE re-seed path key → §C-4 PE embedded routing → §C-5 the pane composer (the prime
+suspect, LAST, pre-gated behind a sandbox repro on the real-shaped note copies before any Boss
+build). The §C-monolith lesson recorded: bundling six lifecycle changes made the regression
+un-isolatable. Sandbox (E:\ConstellationSandbox, 8 copied notes) + the §C worktree
+(Constellation-wtSC) stay inert for §C-5's pre-gate. Code untouched — each step starts only on
+Eisa's go.
