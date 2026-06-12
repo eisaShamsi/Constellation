@@ -932,3 +932,26 @@ The soak continues passively on the 22:39 binary toward the §F1 enforcement fli
 svelte-check 0 errors (314 warnings = 313 baseline + 1 intentional epoch-capture info, the
 mountedFilePath-pattern). Boss round next: typing perf (Rule 7) + property/stage saves + the
 rename cycle regression.
+
+## ★Stage-1 §C FINDING #3 — "All my notes have lost their contents" (DISPLAY-ONLY; disk PROVEN intact; root cause LIVE-REPRODUCED; FIXED)
+
+**Eisa (after the §C binary): "A disaster. All my notes have lost their contents."**
+
+**Triage, evidence-first:** (1) the write journal shows ZERO writes from the 23:29 binary — nothing
+touched disk; (2) disk spot-checks intact. Display-only — communicated immediately.
+
+**Live reproduction (computer-use on the DEV build + devtools console — release hides the console):**
+opening notes showed STALE/WRONG bodies (a months-old image body on one note; an empty doc on
+another — `document.querySelector('.cm-content').textContent` = '' while the status bar counted the
+real chars); NO console errors. localStorage dump: **`constellation-wab` is a GRAVEYARD** — dozens
+of entries from months of sessions. The restore path (`resolveNoteContent`) sees same-note cids →
+identityProven → resurrects the ANCIENT snapshot over today's disk. Eisa's release profile seeded
+the same way by the evening's test sessions (incl. empty-body zombie products from the pre-22:39
+binaries). Controlled experiment: cleared the wab → reload → A→B→A navigation renders PERFECTLY and
+§C's own flush entries are CORRECT (326B, cid present, body 68 chars) — **§C itself is healthy; the
+vector is buffer IMMORTALITY, pre-existing and merely unmasked by the day's churn.**
+
+**Fix — the buffer is for crash recovery IN THE MOMENT:** entries now timestamped; `getWriteAhead`
+enforces a 10-minute restore TTL — expired or timestamp-less (the ENTIRE legacy population) entries
+are cleared and disk wins. The graveyard self-purges on first touch; bonus hardening: expired
+entries can no longer feed flushAllTabsInLibrary (the finding-#1 stomp family). svelte-check 0.

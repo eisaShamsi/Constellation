@@ -206,13 +206,18 @@ export function markRecentWrite(filePath: string) {
 
 /** Write-ahead buffer: holds content/cursor/scroll that hasn't been written to disk yet.
  *  When opening a note, check this first — it's synchronous and always has the latest data. */
-const writeAheadBuffer = new Map<string, { content: string; cursorPos: number; scrollTop: number }>();
+const writeAheadBuffer = new Map<string, { content: string; cursorPos: number; scrollTop: number; ts?: number }>();
 /** localStorage key for the crash-safe wab backup. Single source of truth so
  *  the five readers/writers can't drift apart on a typo. */
 const WAB_LS_KEY = 'constellation-wab';
 
 export function setWriteAhead(filePath: string, content: string, cursorPos: number, scrollTop: number) {
-	const entry = { content, cursorPos, scrollTop };
+	// MIG-076 ★Stage-1 finding #3 — entries are timestamped: the buffer exists
+	// for CRASH RECOVERY IN THE MOMENT, and an entry that outlives the
+	// WAB_RESTORE_TTL_MS window must never resurrect old content over the
+	// disk (the "graveyard" class: months of accumulated same-cid snapshots
+	// restored on first-open — Eisa's "all my notes have lost their contents").
+	const entry = { content, cursorPos, scrollTop, ts: Date.now() };
 	writeAheadBuffer.set(filePath, entry);
 	/* Also persist to localStorage as crash-safe backup (survives app restart).
 	   This is synchronous and fast for single-note content. */
@@ -223,15 +228,29 @@ export function setWriteAhead(filePath: string, content: string, cursorPos: numb
 	} catch {}
 }
 
-export function getWriteAhead(filePath: string): { content: string; cursorPos: number; scrollTop: number } | undefined {
+/** Crash-recovery restore window. A buffered snapshot older than this is
+ *  stale BY DEFINITION (the disk has long since been written or the content
+ *  abandoned) — restoring it would resurrect old content over the truth.
+ *  Entries WITHOUT a timestamp (the pre-fix population) are ancient → reject. */
+const WAB_RESTORE_TTL_MS = 10 * 60 * 1000;
+
+export function getWriteAhead(filePath: string): { content: string; cursorPos: number; scrollTop: number; ts?: number } | undefined {
 	/* Check in-memory buffer first (faster), fall back to localStorage */
-	const mem = writeAheadBuffer.get(filePath);
-	if (mem) return mem;
-	try {
-		const all = JSON.parse(localStorage.getItem(WAB_LS_KEY) || '{}');
-		return all[filePath];
-	} catch {}
-	return undefined;
+	const entry = writeAheadBuffer.get(filePath) ?? (() => {
+		try {
+			const all = JSON.parse(localStorage.getItem(WAB_LS_KEY) || '{}');
+			return all[filePath];
+		} catch { return undefined; }
+	})();
+	if (!entry) return undefined;
+	// MIG-076 ★Stage-1 finding #3 — TTL gate. Expired (or timestamp-less
+	// legacy) entries are dropped, not returned: disk wins, and the graveyard
+	// self-purges as its entries are touched.
+	if (typeof entry.ts !== 'number' || Date.now() - entry.ts > WAB_RESTORE_TTL_MS) {
+		clearWriteAhead(filePath);
+		return undefined;
+	}
+	return entry;
 }
 
 export function clearWriteAhead(filePath: string) {
