@@ -40,6 +40,10 @@
 	import type { LibraryStats, FileEntry, WorkspaceLayout, WorkspaceSecondScreen, FontSet, PanelId } from '$lib/libraries/store';
 	import { BUILTIN_FONT_SETS, SCRIPT_UNICODE_RANGES, TYPEWRITER_FONTS, getFontSetById, hexToHSL } from '$lib/libraries/store';
 	import { liveStyleDraft } from '$lib/libraries/store'; // MIG-070 §C Option E — Style Setter live-preview layer
+	// MIG-076 §C — single content ownership (FocusPane seeds from / saves through the model).
+	import { editBody as editNoteBody, seedBody, externalChange as externalChangeNoteModel } from '$lib/editor/noteSession';
+	import { compose as composeNoteModel, markSaved as markNoteSaved } from '$lib/editor/noteModel';
+	import { SINGLE_OWNERSHIP } from '$lib/editor/ownershipFlag';
 	import { CORE_BLOCK_IDS } from '$lib/theme/constellationStyleSettings';
 	import { get } from 'svelte/store';
 	import { SvelteMap } from 'svelte/reactivity';
@@ -1245,6 +1249,11 @@
 	let focusMode = $state(false);
 	let _focusModeTabId = '';
 	$effect(() => { const id = $activeTab?.id ?? ''; if (id !== _focusModeTabId) { _focusModeTabId = id; focusMode = false; } });
+	// MIG-076 §C — the focus note's identity, captured at focus entry and held
+	// for the whole session so FocusPane's body push + save always target the
+	// note focus was opened for, even as the active tab changes underneath.
+	let focusSessionId = $state('');
+	let focusSessionPath = $state('');
 	let currentBacklinks = $state<{ name: string; path: string; context: string; libraryName: string; linkType?: string; linkTypes?: string[]; traversalCount?: number }[]>([]);
 	let currentOutgoing = $state<{ target: string; context: string; traversalCount?: number; linkType?: string; linkTypes?: string[] }[]>([]);
 	let activeNoteTags = $state<string[]>([]);
@@ -2738,6 +2747,10 @@
 					const content = await invoke<string>('read_note', { filePath: path });
 					tab.content = content;
 					openTabs.update(tabs => tabs);
+					// MIG-076 §C — the second screen wrote this note; the main
+					// window's model adopts it (freshness-gated: a dirty local
+					// model is never clobbered).
+					if (SINGLE_OWNERSHIP) externalChangeNoteModel(tab.id, content);
 				} catch {}
 			}
 		});
@@ -6062,16 +6075,34 @@
 						{:else if focusMode}
 							{@const _parsed = parseFrontmatter($activeTab.content || '')}
 							<FocusPane
-								value={_parsed.body}
+								value={SINGLE_OWNERSHIP ? seedBody(focusSessionId, focusSessionPath, _parsed.body) : _parsed.body}
 								title={$activeTab.name.replace(/\.md$/, '')}
 								dir={noteDir}
 								onchange={(text) => {
-									const currentTab = get(openTabs).find(x => x.id === $activeTab!.id);
-									const props = currentTab ? parseFrontmatter(currentTab.content || '').properties : _parsed.properties;
-									const fc = buildFullContent(props, text);
-									if (currentTab) currentTab.content = fc;
-									markRecentWrite($activeTab!.path);
-									writeNote($activeTab!.path, fc, 'focus_pane').catch(() => {});
+									// MIG-076 §C — push the body to the model for the note FOCUS
+									// WAS OPENED FOR (captured session id/path), never the live
+									// $activeTab. The save composes from the model and is REFUSED on
+									// a path mismatch, so a tab switch while in focus can never write
+									// this body under another note's identity (the in-focus-switch
+									// cross-note write, closed structurally).
+									if (SINGLE_OWNERSHIP) {
+										if (!focusSessionId) return;
+										editNoteBody(focusSessionId, text);
+										const r = composeNoteModel(focusSessionId, focusSessionPath);
+										if (!r.ok) return;
+										markNoteSaved(focusSessionId, r.version);
+										const ft = get(openTabs).find(x => x.id === focusSessionId);
+										if (ft) ft.content = r.content;
+										markRecentWrite(focusSessionPath);
+										writeNote(focusSessionPath, r.content, 'focus_pane').catch(() => {});
+									} else {
+										const currentTab = get(openTabs).find(x => x.id === $activeTab!.id);
+										const props = currentTab ? parseFrontmatter(currentTab.content || '').properties : _parsed.properties;
+										const fc = buildFullContent(props, text);
+										if (currentTab) currentTab.content = fc;
+										markRecentWrite($activeTab!.path);
+										writeNote($activeTab!.path, fc, 'focus_pane').catch(() => {});
+									}
 								}}
 								onexit={() => { focusMode = false; }}
 							/>
@@ -6202,6 +6233,14 @@
 											window.dispatchEvent(new CustomEvent('constellation:add-property', { detail: { path: $activeTab!.path } }));
 											break;
 										case 'switchToFocus':
+											// MIG-076 §C — capture the focus note's identity for the
+											// whole focus session. The auto-exit $effect resets
+											// _focusModeTabId during a switch, so these dedicated
+											// captures are what bind FocusPane's writes to the note it
+											// was opened for — never the note the user switched to
+											// (the in-focus-switch cross-note write).
+											focusSessionId = $activeTab?.id ?? '';
+											focusSessionPath = $activeTab?.path ?? '';
 											focusMode = true;
 											break;
 									}

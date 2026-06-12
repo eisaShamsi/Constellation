@@ -1169,3 +1169,24 @@ IDENTICALLY to the §C-1 safe state — the model is maintained but nothing read
 NEXT (Commit 2, flag-gated): NoteEditor seed=bodyForView + save=compose; FocusPane seed +
 onchange→editBody + focusNoteId capture (kills the in-focus-switch cross-write); PropertyEditor
 save via the model; store lifecycle (close/repath/reload). Then build + Boss test.
+
+## §C integration — Commit 2: THE SWAP (flag-gated; model is now the seed + save source)
+
+SINGLE_OWNERSHIP=true flips every editor surface to the model; flag off+rebuild = instant
+rollback (legacy path preserved in the else branch of each chokepoint — no half-state).
+- NoteEditor: NotePane value = seedBody(tab.id, tab.path, fallback); handleSave/handleFlush =
+  editBody + compose(identity-bound) + markSaved (REFUSE on path mismatch); handlePromote =
+  editProps + compose. freshProps/freshBody only feed the legacy else-branch now.
+- FocusPane (+layout): value = seedBody(focusSessionId, focusSessionPath, fallback); onchange =
+  editBody + compose for the CAPTURED focus-session identity (set at focus entry, held through
+  teardown) — never live $activeTab → the in-focus-switch cross-note write is closed structurally.
+- store.saveTabContent (PropertyEditor's path, both instances): editProps(auto-dated) + compose
+  from the model (ignores PropertyEditor's possibly-stale body; embed uses the model body).
+- store lifecycle: closeTab→close; renameItem→open(fresh)/repath; moveItem→repath;
+  reloadTabsFromDisk→open(fresh, cascade-authored). Model identity follows every path change so
+  compose never refuses a legitimate save.
+- second-screen onNoteSaved→externalChange (freshness-gated adopt).
+- svelte-check 0/1460; mig-076 harness 23/23. Import cycle store↔noteModel is eval-safe (hoisted
+  fn declarations; no module-init use).
+RESIDUAL (Boss test closes it): the template wiring the headless harness can't mount. Building the
+binary now for the full 8-surface gate.

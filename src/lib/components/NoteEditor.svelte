@@ -23,7 +23,9 @@
 	// MAINTAINS the model (ensure on tab change + live push per edit); the
 	// model is not yet READ for seed/save — that swap lands flag-gated next,
 	// so the app behaves identically to the §C-1 safe state right now.
-	import { ensure as ensureModel, editBody } from '$lib/editor/noteSession';
+	import { ensure as ensureModel, editBody, editProps, seedBody } from '$lib/editor/noteSession';
+	import { compose, markSaved, getModel } from '$lib/editor/noteModel';
+	import { SINGLE_OWNERSHIP } from '$lib/editor/ownershipFlag';
 	import type { Text } from '@codemirror/state';
 	import { buildLibraryColorMap } from '$lib/libraries/colors';
 	import { detectDir } from '$lib/utils';
@@ -145,8 +147,9 @@
 		// does, so the same F2 post-cascade-stomp gate applies here too.
 		// See `isCascading` for the full rationale.
 		if (isCascading(tab.path)) return;
-		const props = freshProps();
-		const bd = freshBody();
+		// MIG-076 §C — props come from the model (single source) when on;
+		// the body is already live in the model, so compose pulls both.
+		const props = SINGLE_OWNERSHIP ? (getModel(tab.id)?.props ?? freshProps()) : freshProps();
 		let newProps: FrontmatterProperty[];
 		if (!nextStage) {
 			newProps = props.filter(p => p.key.toLowerCase() !== 'stage');
@@ -158,7 +161,16 @@
 			});
 			if (!updated) newProps.push({ key: 'stage', value: nextStage, type: 'text' as any });
 		}
-		const fc = buildFullContent(newProps, bd);
+		let fc: string;
+		if (SINGLE_OWNERSHIP) {
+			editProps(tab.id, newProps);
+			const r = compose(tab.id, tab.path);
+			if (!r.ok) return; // identity refusal — never write a frankenstein
+			fc = r.content;
+			markSaved(tab.id, r.version);
+		} else {
+			fc = buildFullContent(newProps, freshBody());
+		}
 		// Update in-store tab if it exists there
 		const ct = get(openTabs).find(x => x.id === tab.id);
 		if (ct) {
@@ -185,9 +197,20 @@
 		if (!filePath || filePath !== tab.path) return;
 		if (isCascading(filePath)) return; // see isCascading() — F2 post-cascade-stomp gate
 		saving = true;
-		const props = freshProps();
+		// MIG-076 §C — push this view's body to the model, then compose the
+		// write from the model ALONE (props + body, one identity-checked
+		// snapshot). A path mismatch is REFUSED, never composed.
+		let content: string;
+		if (SINGLE_OWNERSHIP) {
+			editBody(tab.id, text);
+			const r = compose(tab.id, filePath);
+			if (!r.ok) { saving = false; return; }
+			content = r.content;
+			markSaved(tab.id, r.version);
+		} else {
+			content = buildFullContent(freshProps(), text);
+		}
 		markRecentWrite(filePath);
-		const content = buildFullContent(props, text);
 		writeNote(filePath, content, 'editor_save')
 			.then(() => {
 				broadcastNoteSaved(filePath);
@@ -239,8 +262,18 @@
 		// Flush fires on tab close, visibility change, and the {#key}-bump
 		// destroy itself — all paths must respect the cascade gate.
 		if (isCascading(filePath)) return; // see isCascading() — F2 post-cascade-stomp gate
-		const props = freshProps();
-		const content = buildFullContent(props, text);
+		// MIG-076 §C — same single-source composition as handleSave; the buffer
+		// ops are inert Map writes, safe at this teardown moment (the §C-2 lesson).
+		let content: string;
+		if (SINGLE_OWNERSHIP) {
+			editBody(tab.id, text);
+			const r = compose(tab.id, filePath);
+			if (!r.ok) return; // identity refusal
+			content = r.content;
+			markSaved(tab.id, r.version);
+		} else {
+			content = buildFullContent(freshProps(), text);
+		}
 		// Update store tab if present
 		const ct = get(openTabs).find(x => x.id === tab.id);
 		if (ct) {
@@ -349,7 +382,7 @@
 {#key tab.id + '|' + tab.path + '|' + (tab.reloadVersion ?? 0)}
 <div class="ne-wrap">
 <NotePane
-	value={body}
+	value={SINGLE_OWNERSHIP ? seedBody(tab.id, tab.path, body) : body}
 	summaryHeadline={activeHeadline}
 	title={tab.name.replace(/\.md$/, '')}
 	dir={noteDir}

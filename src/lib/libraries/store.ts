@@ -7,6 +7,13 @@ import { invoke } from '@tauri-apps/api/core';
 import { emit } from '@tauri-apps/api/event';
 import { normalizePathKey } from '$lib/utils';
 import { getLinkTypes, isLinkTypeValue } from './linkTypeRegistry';
+// MIG-076 §C — single content ownership. noteModel/noteSession use this
+// module's parseFrontmatter/buildFullContent (hoisted fn declarations, so the
+// import cycle is eval-safe) and are used here only inside functions (never at
+// module init). The model is the save source when SINGLE_OWNERSHIP is on.
+import { editProps as editNoteProps, close as closeNoteModel, repath as repathNoteModel, open as openNoteModel } from '$lib/editor/noteSession';
+import { compose as composeNoteModel, markSaved as markNoteSaved, getModel as getNoteModel } from '$lib/editor/noteModel';
+import { SINGLE_OWNERSHIP } from '$lib/editor/ownershipFlag';
 
 export interface LibraryInfo {
 	id: string;
@@ -487,6 +494,9 @@ export async function reloadTabsFromDisk(filePaths: string[]): Promise<void> {
 			const newContent = byPath.get(t.path);
 			if (newContent === undefined || newContent === t.content) return t;
 			mutated = true;
+			// MIG-076 §C — the cascade authored canonical disk content; force the
+			// model to adopt it so the next save composes from the cascade result.
+			openNoteModel(t.id, t.path, newContent);
 			return { ...t, content: newContent, reloadVersion: (t.reloadVersion ?? 0) + 1 };
 		});
 		return mutated ? next : ts;
@@ -557,7 +567,22 @@ export async function saveTabContent(
 			return p;
 		});
 
-		const newContent = buildFullContent(updatedProps, body);
+		// MIG-076 §C — props go to the model (with the auto-date applied); the
+		// disk write is composed from the model ALONE, so the body is the live
+		// one the editor pane maintains, NOT the (possibly stale) `body` param
+		// PropertyEditor passed. A path mismatch is REFUSED, never composed.
+		let newContent: string;
+		let embedBody = body;
+		if (SINGLE_OWNERSHIP) {
+			editNoteProps(tabId, updatedProps);
+			const r = composeNoteModel(tabId, filePath);
+			if (!r.ok) return; // identity refusal — finally{} still releases the lock
+			newContent = r.content;
+			markNoteSaved(tabId, r.version);
+			embedBody = getNoteModel(tabId)?.body.toString() ?? body;
+		} else {
+			newContent = buildFullContent(updatedProps, body);
+		}
 		// Do NOT update the store during autosave — it triggers full reactivity cascade.
 		// The editor owns the content. Store is synced on tab switch / note reload.
 		recentWrites.set(filePath, Date.now());
@@ -573,7 +598,7 @@ export async function saveTabContent(
 			const tab = get(openTabs).find(t => t.path === filePath);
 			if (tab) {
 				invoke('constellation_embed_notes', {
-					notes: [{ path: filePath, name: tab.name, content: body }],
+					notes: [{ path: filePath, name: tab.name, content: embedBody }],
 					force: true
 				}).catch(() => {});
 			}
@@ -1371,6 +1396,7 @@ export function closeTab(tabId: string) {
 
 	// Clean up non-reactive state first (no cascade)
 	saveLocks.delete(tabId);
+	closeNoteModel(tabId); // MIG-076 §C — dispose this tab's content model
 	const editSet = get(editingTabIds);
 	if (editSet.has(tabId)) {
 		const next = new Set(editSet);
@@ -2195,6 +2221,12 @@ export async function renameItem(oldPath: string, newPath: string): Promise<stri
 
 	openTabs.update(tabs => tabs.map(t => {
 		if (t.path === oldPath) {
+			// MIG-076 §C — the model's identity must follow the rename, or the
+			// next save's compose would refuse the new path. A rename rewrites
+			// frontmatter (title), so re-seed from fresh disk content when we
+			// have it; otherwise just move the path.
+			if (fresh !== null) openNoteModel(t.id, effectivePath, fresh);
+			else repathNoteModel(t.id, effectivePath);
 			// Path comes from Rust (may equal oldPath for canonical files).
 			// Display name follows the user's intent — for canonical files
 			// the title changed even though the filename didn't.
@@ -2210,6 +2242,7 @@ export async function renameItem(oldPath: string, newPath: string): Promise<stri
 		// If a folder was renamed, update paths that start with the old folder path
 		if (t.path.startsWith(oldPath + '/') || t.path.startsWith(oldPath + '\\')) {
 			const relative = t.path.substring(oldPath.length);
+			repathNoteModel(t.id, effectivePath + relative); // MIG-076 §C
 			return { ...t, path: effectivePath + relative };
 		}
 		return t;
@@ -2225,11 +2258,13 @@ export async function moveItem(sourcePath: string, targetFolder: string): Promis
 	openTabs.update(tabs => tabs.map(t => {
 		if (t.path === sourcePath) {
 			const newName = newPath.split(/[\\/]/).pop()?.replace('.md', '') ?? t.name;
+			repathNoteModel(t.id, newPath); // MIG-076 §C — model identity follows the move
 			return { ...t, path: newPath, name: newName };
 		}
 		// If a folder was moved, update paths under it
 		if (t.path.startsWith(sourcePath + '/') || t.path.startsWith(sourcePath + '\\')) {
 			const relative = t.path.substring(sourcePath.length);
+			repathNoteModel(t.id, targetFolder + relative); // MIG-076 §C
 			return { ...t, path: targetFolder + relative };
 		}
 		return t;

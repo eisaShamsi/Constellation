@@ -62,6 +62,18 @@ export function bodyForView(id: string): string {
 }
 
 /**
+ * Seed a view safely: the model's body when a model for THIS id exists AND it
+ * holds THIS path; otherwise the caller's fallback (the host's own content).
+ * The path guard means a not-yet-ensured or repurposed slot falls back to the
+ * host content instead of seeding another note's body — robust at every mount
+ * timing (the model may be created by an $effect that runs after first render).
+ */
+export function seedBody(id: string, path: string, fallback: string): string {
+	const m = M.getModel(id);
+	return m && m.path === path ? m.body.toString() : fallback;
+}
+
+/**
  * Save: compose from THIS id for THIS path (REFUSES a mismatch — the identity
  * guard that kills the cross-note write), write through the injected writer,
  * record the saved version. Returns the compose result so the caller can
