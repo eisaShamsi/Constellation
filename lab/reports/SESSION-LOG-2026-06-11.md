@@ -1004,3 +1004,13 @@ lifecycle steps). Old §C-2..5 superseded. Memory: project_mig076_buffer_pattern
 - Tests: tests/mig-076/noteBuffers.test.ts — 12/12 green (round-trip incl. trailing-newline
   edges, snapshot-clone, cid extraction, paneState preservation, probe verdicts). vitest
   include + test:mig-076 script added. svelte-check: 0 errors (1456 files).
+
+## §CB-1 — Boss gate PASSED (all 6 steps, 14:24-14:31 session, binary 13:49:53 standalone)
+
+Steps 1-6 all Pass. Step 5 observation: rename took ~7s to update. Journal forensics: rename_title
+14:30:46.904 + rename_item 14:30:46.905 — disk ops took 1 MILLISECOND; the 7s is the pre-existing
+post-rename cascade title-scan (reads whole universe) + refresh, untouched by §CB-1 (which added
+one parseFrontmatter to the path). §D quiesce-rename owns that UX (freeze overlay + progress).
+NSIS bundling note: §CB-1 setup.exe never packaged (Boss launched the fresh standalone exe 9s
+after link — file lock). Boss tested on standalone constellation.exe 13:49:53 = correct binary
+(process start 13:50:02 verified). Proceeding to §CB-2 per Plan-Approval-=-Build-Approval.
