@@ -930,3 +930,11 @@ build). The §C-monolith lesson recorded: bundling six lifecycle changes made th
 un-isolatable. Sandbox (E:\ConstellationSandbox, 8 copied notes) + the §C worktree
 (Constellation-wtSC) stay inert for §C-5's pre-gate. Code untouched — each step starts only on
 Eisa's go.
+
+## MIG-076 §C-1 SHIPPED (the restructured cascade, step 1 of 5) — WAB fail-closed restore
+
+ONE change, store.ts resolveNoteContent only: the buffer restores ONLY when both cids present AND
+equal AND not an empty-body resurrection; anything less proven → disk wins (cursor/scroll dropped
+with the rejected snapshot). Zero editor-lifecycle change — read-path policy only; by construction
+this step can only return MORE-authoritative content. svelte-check 0 errors / 313 baseline.
+Boss gate next: open notes incl. large/federated ones + one rename cycle.
