@@ -1,10 +1,6 @@
 <script lang="ts">
 	import type { FrontmatterProperty, PropertyType } from '$lib/libraries/store';
 	import { saveTabContent, normalizeDateValue, buildFullContent, openTabs } from '$lib/libraries/store';
-	// MIG-076 §CB-1 — buffer mirror (inert Map write; saveTabContent also
-	// mirrors, but mirroring HERE keeps the pair atomic with the legacy
-	// `tab.content =` line so the parity probe is meaningful).
-	import { setBuffer, parityProbe } from '$lib/editor/noteBuffers';
 	import { LIVING_LINK_BASELINE, lookupStageEmoji, splitStage, stageLabel } from '$lib/libraries/store';
 	import { setRegisteredType, getRegisteredType } from '$lib/libraries/propertyTypeRegistry';
 	import { t, locale } from '$lib/i18n';
@@ -438,7 +434,6 @@
 				/* Direct mutation so onflush reads fresh properties */
 				const tab = get(openTabs).find(t => t.id === tabId);
 				if (tab) tab.content = buildFullContent(editableProps, body);
-				setBuffer(tabId, filePath, editableProps, body); // MIG-076 §CB-1 mirror (inert at teardown)
 				saveTabContent(tabId, filePath, editableProps, body).catch((e) => console.error('[PropertyEditor] Flush save failed:', e));
 			}
 		}
@@ -695,9 +690,6 @@
 				   This ensures onflush reads fresh properties when the tab is closed. */
 				const tab = get(openTabs).find(t => t.id === tabId);
 				if (tab) tab.content = buildFullContent(editableProps, body);
-				// MIG-076 §CB-1 — mirror paired with the line above
-				setBuffer(tabId, filePath, editableProps, body);
-				parityProbe(tabId, { props: editableProps, body }, buildFullContent, 'PE:debouncedSave');
 				await saveTabContent(tabId, filePath, editableProps, body);
 			} catch (err) {
 				console.error('Failed to save:', err);

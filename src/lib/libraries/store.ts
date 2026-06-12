@@ -7,10 +7,6 @@ import { invoke } from '@tauri-apps/api/core';
 import { emit } from '@tauri-apps/api/event';
 import { normalizePathKey } from '$lib/utils';
 import { getLinkTypes, isLinkTypeValue } from './linkTypeRegistry';
-// MIG-076 §CB-1 — the buffer layer (write-through mirror in this step; see
-// noteBuffers.ts header). noteBuffers imports NOTHING from this module at
-// runtime (type-only), so this is not a cycle.
-import { setBuffer, updateBufferPath, deleteBuffer, clearAllBuffers, parityProbe } from '$lib/editor/noteBuffers';
 
 export interface LibraryInfo {
 	id: string;
@@ -495,14 +491,6 @@ export async function reloadTabsFromDisk(filePaths: string[]): Promise<void> {
 		});
 		return mutated ? next : ts;
 	});
-	// MIG-076 §CB-1 — cascade-authored disk content replaces the buffer too
-	for (const t of get(openTabs)) {
-		const nc = byPath.get(t.path);
-		if (nc !== undefined) {
-			const fp = parseFrontmatter(nc);
-			setBuffer(t.id, t.path, fp.properties, fp.body);
-		}
-	}
 	// The cascade just authored canonical disk content; any in-flight
 	// write-ahead buffer for these paths is now stale.
 	for (const fp of byPath.keys()) clearWriteAhead(fp);
@@ -572,9 +560,6 @@ export async function saveTabContent(
 		const newContent = buildFullContent(updatedProps, body);
 		// Do NOT update the store during autosave — it triggers full reactivity cascade.
 		// The editor owns the content. Store is synced on tab switch / note reload.
-		// MIG-076 §CB-1 — the buffer, being non-reactive, CAN absorb the save-
-		// cadence state the store comment above deliberately skips.
-		setBuffer(tabId, filePath, updatedProps, body);
 		recentWrites.set(filePath, Date.now());
 		await writeNote(filePath, newContent, 'prop_save');
 		emit('screen:note-saved', { path: filePath }).catch(() => {});
@@ -728,11 +713,6 @@ async function loadTabHistoryEntry(tabId: string, filePath: string, newHistoryIn
 				...(resolvedLibrary ? { libraryName: resolvedLibrary.name, libraryPath: resolvedLibrary.path } : {}),
 			};
 		}));
-		// MIG-076 §CB-1 — Alt+←/→ nav repurposes the tab slot; buffer follows
-		{
-			const fp = parseFrontmatter(content);
-			setBuffer(tabId, filePath, fp.properties, fp.body);
-		}
 		_traceNav('loadTabHistoryEntry:applied', tabId, filePath);
 	} catch { /* file may have been deleted */ }
 }
@@ -1041,8 +1021,16 @@ export async function getOldTitleForCascade(oldPath: string): Promise<string> {
 	return oldPath.split(/[\\/]/).pop()?.replace(/\.md$/, '') ?? '';
 }
 
-// MIG-076 §CB-1 — `updateTabContent` (the §C-2-era single store writer)
-// deleted: zero callers, and the buffer pattern replaces its role.
+export function updateTabContent(tabId: string, newContent: string) {
+	const tabs = get(openTabs);
+	const tab = tabs.find(t => t.id === tabId);
+	/* Skip store update if tab doesn't exist or content is unchanged —
+	   avoids triggering a full reactivity cascade (3800+ line layout) */
+	if (!tab || tab.content === newContent) return;
+	openTabs.update(ts =>
+		ts.map(t => t.id === tabId ? { ...t, content: newContent } : t)
+	);
+}
 
 // ─── Outline (headings) extraction ───
 export interface HeadingItem {
@@ -1101,7 +1089,6 @@ export function createEmptyTab() {
 		history: [], historyIndex: -1,
 	};
 	openTabs.update(tabs => [...tabs, tab]);
-	setBuffer(id, '', [], ''); // MIG-076 §CB-1 — empty tab, empty buffer
 	// Auto-enable editing mode (WYSIWYG is always edit-ready)
 	editingTabIds.update(set => { const next = new Set(set); next.add(id); return next; });
 	if (get(splitActive)) {
@@ -1346,12 +1333,6 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 		}));
 		// Auto-enable editing mode (WYSIWYG is always edit-ready)
 		editingTabIds.update(set => { const next = new Set(set); next.add(currentTab.id); return next; });
-		// MIG-076 §CB-1 — mirror the tab slot's new identity+content into its buffer
-		{
-			const fp = parseFrontmatter(content);
-			setBuffer(currentTab.id, filePath, fp.properties, fp.body);
-			parityProbe(currentTab.id, { props: fp.properties, body: fp.body }, buildFullContent, 'openNoteTab:reuse');
-		}
 		_traceNav('openNoteTab:applied', currentTab.id, filePath);
 		return;
 	}
@@ -1365,11 +1346,6 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 		scrollTop,
 	};
 	openTabs.update(tabs => [...tabs, tab]);
-	// MIG-076 §CB-1 — buffer is born with the tab
-	{
-		const fp = parseFrontmatter(content);
-		setBuffer(id, filePath, fp.properties, fp.body);
-	}
 
 	// Auto-enable editing mode (WYSIWYG is always edit-ready)
 	editingTabIds.update(set => { const next = new Set(set); next.add(id); return next; });
@@ -1395,7 +1371,6 @@ export function closeTab(tabId: string) {
 
 	// Clean up non-reactive state first (no cascade)
 	saveLocks.delete(tabId);
-	deleteBuffer(tabId); // MIG-076 §CB-1 — buffer dies with the tab
 	const editSet = get(editingTabIds);
 	if (editSet.has(tabId)) {
 		const next = new Set(editSet);
@@ -2223,14 +2198,6 @@ export async function renameItem(oldPath: string, newPath: string): Promise<stri
 			// Path comes from Rust (may equal oldPath for canonical files).
 			// Display name follows the user's intent — for canonical files
 			// the title changed even though the filename didn't.
-			// MIG-076 §CB-1 — buffer follows the rename (inert Map write;
-			// safe inside this update callback).
-			if (fresh !== null) {
-				const fp = parseFrontmatter(fresh);
-				setBuffer(t.id, effectivePath, fp.properties, fp.body);
-			} else {
-				updateBufferPath(t.id, effectivePath);
-			}
 			return {
 				...t,
 				path: effectivePath,
@@ -2243,7 +2210,6 @@ export async function renameItem(oldPath: string, newPath: string): Promise<stri
 		// If a folder was renamed, update paths that start with the old folder path
 		if (t.path.startsWith(oldPath + '/') || t.path.startsWith(oldPath + '\\')) {
 			const relative = t.path.substring(oldPath.length);
-			updateBufferPath(t.id, effectivePath + relative); // MIG-076 §CB-1
 			return { ...t, path: effectivePath + relative };
 		}
 		return t;
@@ -2259,7 +2225,6 @@ export async function moveItem(sourcePath: string, targetFolder: string): Promis
 	openTabs.update(tabs => tabs.map(t => {
 		if (t.path === sourcePath) {
 			const newName = newPath.split(/[\\/]/).pop()?.replace('.md', '') ?? t.name;
-			updateBufferPath(t.id, newPath); // MIG-076 §CB-1 — buffer follows the move
 			return { ...t, path: newPath, name: newName };
 		}
 		// If a folder was moved, update paths under it
@@ -4289,7 +4254,6 @@ export function saveWorkspace(name: string, layout?: WorkspaceLayout, secondScre
 export async function restoreWorkspace(ws: Workspace): Promise<{ layout?: WorkspaceLayout; secondScreen?: WorkspaceSecondScreen }> {
 	// Close all current tabs
 	openTabs.set([]);
-	clearAllBuffers(); // MIG-076 §CB-1 — openNoteTab below re-creates each buffer
 	activeTabId.set(null);
 	focusedTabId.set(null);
 

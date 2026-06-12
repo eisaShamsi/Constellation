@@ -16,8 +16,7 @@
 		"test:sight-v6:perf": "vitest run tests/sight-v6/perf.test.ts tests/sight-v6/tradition-perf.test.ts",
 		"test:sight-v6:layout": "echo 'Layout-fidelity playwright runner still deferred. See tests/sight-v6/README.md.' && exit 0",
 		"test:sight-v6": "vitest run tests/sight-v6/",
-		"test:mig-060": "vitest run tests/mig-060/",
-		"test:mig-076": "vitest run tests/mig-076/"
+		"test:mig-060": "vitest run tests/mig-060/"
 	},
 	"license": "MIT",
 	"dependencies": {

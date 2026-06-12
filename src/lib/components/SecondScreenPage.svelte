@@ -20,7 +20,6 @@
 		type SkyNode, type SkyLink
 	} from '$lib/libraries/store';
 	import { detectDir, renderMarkdown } from '$lib/utils';
-	import { clearAllBuffers } from '$lib/editor/noteBuffers'; // MIG-076 §CB-1
 	import { scanNoteTasks, toggleTask } from '$lib/tasks/store';
 	import type { TaskItem } from '$lib/tasks/types';
 	import TasksPanel from '$lib/components/TasksPanel.svelte';
@@ -737,7 +736,6 @@
 		// Listen for workspace restore from main
 		const u7 = await onWorkspaceRestore(async (state: ScreenState) => {
 			openTabs.set([]);
-			clearAllBuffers(); // MIG-076 §CB-1 — openNoteTab below re-creates each buffer
 			activeTabId.set(null);
 			for (const saved of state.tabs) {
 				try {

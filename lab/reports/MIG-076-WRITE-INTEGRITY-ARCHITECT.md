@@ -73,37 +73,3 @@ I1 typing latency unchanged · I2 boot time unchanged · I3 CM6 ownership laws (
 
 ## 6. Phase skeleton (detail in the Plan)
 §A WriteGate (L0+L1) + journal, all Rust writers routed, tests · §B CAS tokens (L2) shadow mode + create-exclusive + cid backfill · §C frontend snapshots + single store writer + WAB fail-closed (L3) · §D quiesce rename/cascade (L4) + title-rename re-land · §E refuse/recovery UX + i18n ×15 · §F enforcement flip after soak + lifecycle regression suite (the BUG-023/015 interleavings as automated tests) + /simplify + 3-agent audit + Boss stages.
-
----
-
-## 7. Option B addendum — the Buffer Pattern (Boss-ruled 2026-06-12, PRIORITY One)
-
-**Trigger:** §C-2 (single store writer) failed its Boss gate — panes painted with shared content. Journal proved tab-memory-only (zero real-note disk writes). Root cause named with a one-change diff: routing the teardown flush through `openTabs.update` re-enters the `{#key}` render the store drives. Boss ordered research-first (Working Agreement #5): 3 parallel agents — Obsidian (docs + 1.7.2 deferred views + obsidian-api), VS Code (textFileEditorModel.ts / fileService.ts / Working-Copies wiki), CM6 author guidance + Emacs/Vim.
-
-**Research verdict (sources in SESSION-LOG-2026-06-11):** every mature editor separates the document model (buffer) from the view. Buffers own content, one per open file; tabs/views are disposable viewports owning nothing; saves read the MODEL never the view; **no system carries content across a view-teardown boundary — the moment doesn't exist.** VS Code: tabs are stateless pointers, per-resource write queue (≡ our WriteGate L0). CM6 (Marijn, discuss t/2946): keep an EditorState per buffer, swap on switch; string round-trips lose undo and are the documented anti-pattern. Obsidian (closest shape to ours): per-view copy survives ONLY because content travels WITH its file identity (`onUnloadFile(oldFile)`) and the 2s debounce makes close-saves a formality. **Boss ruled Option B: adopt the buffer pattern fully.**
-
-### The design
-
-`src/lib/editor/noteBuffers.ts` — a module-level **non-reactive** `Map<tabId, NoteBuffer>`:
-
-```
-NoteBuffer {
-  tabId, path, cid,            // identity travels with content (Obsidian TFile discipline)
-  props: FrontmatterProperty[],// structured frontmatter half
-  body: Text,                  // CM6 immutable rope — NOT a string
-  paneState?: EditorState,     // captured at switch — undo survives tab switches
-  savedAt
-}
-```
-
-**Decisions:**
-- **D1** Content lives OUTSIDE Svelte reactivity (plain Map). Teardown re-entrancy becomes structurally impossible — a Map.set announces nothing. `openTabs` keeps metadata only (id/path/name/library*/cursor/scroll/nav-history/reloadVersion).
-- **D2** Keystroke path: updateListener assigns `buffer.body = update.state.doc` — O(1) immutable ref, zero serialization. Speed rider satisfied (today's flush does doc.toString() composition; this is cheaper).
-- **D3** Save path (cadence unchanged, ≥1.5s debounce): compose from THE BUFFER ALONE (`props + body.toString()`) → WriteGate carrying `buffer.cid` — single-snapshot composition, freshProps() joins die (absorbs old §C-5).
-- **D4** One buffer per TAB (not per note): same note in two tabs = two buffers, disk + reload reconcile (Obsidian leaf semantics). Documented, not accidental.
-- **D5** Second screen is a separate WebView context — buffers are per-window; cross-window sync stays event-based (display-not-domain preserved).
-- **D6** Boss side-request folded in: with openTabs metadata-only, the tab strip becomes one viewport on the open-notes list; a SIDE tab list becomes a second viewport (§CB-6) — two surfaces, one list, zero content logic.
-
-**Territory (verified by grep 2026-06-12):** 9 writer sites (openNoteTab create+reuse, reloadTabsFromDisk, NoteEditor handleFlush/handlePromote, PropertyEditor debouncedSave + onDestroy, +layout second-screen onNoteSaved + FocusPane onchange; `updateTabContent` store.ts:1024 is DEAD — zero callers — retires). 30 reader occurrences in exactly 4 files (+layout 17, NoteEditor 7, store.ts 4, PropertyEditor 2). Tabs are NOT persisted across restarts (only the WAB is) — no restore-format migration. `tab.history` is the NAV trail (paths), not content — untouched.
-
-**Risks owned:** R1 NotePane value-prop contract changes in §CB-3 (pane stops receiving live value updates; reloadVersion remount covers external change — cleaner than the BUG-015 $effect class). R2 split-view duplicate-note semantics = D4. R3 WAB becomes the buffer's crash mirror (hydrate at openNoteTab via resolveNoteContent — §C-1 fail-closed logic intact). R4 missed readers — §CB-4 closes with a grep-zero verification clause. R5 journal finding: FocusPane writes disk PER KEYSTROKE today — fixed by §CB-5 (buffer + debounce).

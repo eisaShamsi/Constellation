@@ -1059,3 +1059,11 @@ likely the same family. Diagnosis target NAMED: the FocusPane mount/seed/onchang
 tab.content poisoning at focus transitions. Next: code-read FocusPane + focus branch wiring;
 instrumented dev repro with the Boss recipe; THEN the §CB-2 redo designed against the named
 injector. All disk files verified safe — display contamination only this round.
+
+## BOSS ORDER (17:0x): "Revert back to safety. Use SME agents to audit what has been done."
+
+§CB-1 reverted too (git revert bb3dc883; session-log conflict resolved keep-ours — history stays).
+Code now = §C-1 validated state + §A/§B WriteGate+journal (Rust forensic net stays — it is what
+proved disk safety all day). noteBuffers.ts + tests deleted; ARCHITECT §7 + PLAN §CB sections
+reverted with the commit (history preserved in git + this log). Stop-On-Correction in force:
+no fixes until the SME audit reports.

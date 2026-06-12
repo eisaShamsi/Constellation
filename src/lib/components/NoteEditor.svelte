@@ -19,11 +19,6 @@
 		type FrontmatterProperty
 	} from '$lib/libraries/store';
 	import { broadcastNoteSaved } from '$lib/secondScreen';
-	// MIG-076 §CB-1 — buffer mirror (write-through only in this step;
-	// §CB-2 makes saves COMPOSE from the buffer, §CB-3 deletes the
-	// teardown flush). setBuffer is a plain Map write — inert from any
-	// lifecycle moment, including onDestroy-driven flushes.
-	import { setBuffer, parityProbe } from '$lib/editor/noteBuffers';
 	import { buildLibraryColorMap } from '$lib/libraries/colors';
 	import { detectDir } from '$lib/utils';
 	import { get } from 'svelte/store';
@@ -156,8 +151,6 @@
 		}
 		// Also update the local tab reference
 		tab.content = fc;
-		setBuffer(tab.id, tab.path, newProps, bd); // MIG-076 §CB-1 mirror
-		parityProbe(tab.id, { props: newProps, body: bd }, buildFullContent, 'handlePromote');
 		markRecentWrite(tab.path);
 		writeNote(tab.path, fc, 'stage_promote').catch(() => {});
 		onStageChanged?.(tab.path, nextStage);
@@ -179,9 +172,6 @@
 		const props = freshProps();
 		markRecentWrite(filePath);
 		const content = buildFullContent(props, text);
-		// MIG-076 §CB-1 — the buffer absorbs save-cadence state (legacy
-		// tab.content deliberately stays flush-cadence; no probe here).
-		setBuffer(tab.id, filePath, props, text);
 		writeNote(filePath, content, 'editor_save')
 			.then(() => {
 				broadcastNoteSaved(filePath);
@@ -242,11 +232,6 @@
 			ct.cursorPos = cursorPos;
 			ct.scrollTop = scrollTop;
 		}
-		// MIG-076 §CB-1 — mirror at the teardown moment is SAFE here by
-		// construction (plain Map write, no store announcement — the §C-2
-		// lesson). §CB-3 deletes this entire content hand-off.
-		setBuffer(tab.id, filePath, props, text);
-		parityProbe(tab.id, { props, body: text }, buildFullContent, 'handleFlush');
 		setWriteAhead(filePath, content, cursorPos, scrollTop);
 		if (needsDiskSave) {
 			markRecentWrite(filePath);
