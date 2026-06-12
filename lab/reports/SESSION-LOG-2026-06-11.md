@@ -952,3 +952,25 @@ pre-existing perf bug, now on record (PJ at next ledger bump).
 §C-2 reverted (`git revert e9788ce1`); §C-1 (passed) stays. The §C-2 re-design must keep flush
 store-sync OUT of teardown (defer to a microtask/queued write, or flush-to-store only outside
 {#key} transitions).
+
+## §C-2 re-design — RESEARCH-FIRST (Boss order: "don't reinvent the wheel — check Obsidian, cross-check")
+
+3 parallel agents: Obsidian (docs.obsidian.md, 1.7.2 deferred views, obsidian-api d.ts), VS Code
+(source: textFileEditorModel.ts, fileService.ts, Working-Copies wiki), CM6 official + Emacs/Vim.
+**Converged industry pattern:** document model (buffer) owns content, one per open file; tabs/views
+are disposable VIEWPORTS holding zero content; saves read the MODEL, never the view; **no system
+has a "flush content from view at teardown" step — the model is always-current at write time.**
+VS Code: tabs = stateless pointers; save = model snapshot; per-resource write queue (≡ our
+WriteGate L0 — validates §A). CM6 (Marijn, t/2946): keep one EditorState per "buffer", swap via
+view.setState — string round-trip on switch is the documented anti-pattern (loses undo). Emacs/Vim:
+buffer vs window, 40 years old. Obsidian = the middle case CLOSEST to ours: per-view string copy
+(TextFileView.data) + 2s requestSave debounce + save-on-close — BUT content always travels WITH its
+file identity (onUnloadFile(oldFile) receives the TFile; rename keeps identity-stable TFile object,
+no path-string keying).
+**Honest cross-check verdict:** §C-2 as shipped was at the WRONG LAYER — it decorated the teardown
+flush (announce via store during teardown); mature editors don't make teardown carry content at all.
+Correct §C-2 re-design = Rule-8 applied to the tab record: the debounced save path maintains
+tab.content at WRITE TIME (pane life), teardown persists cursor/scroll only — nothing to announce.
+Options to Boss: (2) Obsidian discipline now (minimal, staged §C continues) + (1) EditorState-per-
+tab buffer pattern queued as the architectural follow-up (kills string round-trip + hand-rolled
+history). Awaiting Boss ruling. No code written.
