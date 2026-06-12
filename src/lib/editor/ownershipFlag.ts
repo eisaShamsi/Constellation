@@ -11,4 +11,4 @@
  * integration wiring is the one thing the headless harness cannot cover
  * (CLAUDE.md Editor-Surface Gate) — so it must be reversible in one keystroke.
  */
-export const SINGLE_OWNERSHIP = true;
+export const SINGLE_OWNERSHIP = false;
