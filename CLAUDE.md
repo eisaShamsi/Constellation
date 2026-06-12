@@ -308,6 +308,33 @@ No pivot-and-power-through. No "let me ask three clarifying questions and start 
 
 Canonical violation (2026-05-05): when the Boss wrote "SearchHub? But we are working on the Index!" the right move was to stop, list everything I'd changed in the SearchHub direction, and wait for confirmation. Instead I asked three clarifying questions and immediately started laying down IndexPanel-restoration code while the questions were still unanswered. Same drift pattern that put the feature in SearchHub in the first place.
 
+## Reproduce-First Rule (top principal)
+
+**No defect-targeting change ships — or is even designed — before the defect is reproduced on demand.** A diagnosis is a *named recipe* (exact steps, surfaces, timings) that fires the failure reliably under instrumentation (the write journal + console tracing, or a test harness), **plus** the mechanism read off that trace. A plausible mechanism is not a diagnosis; fixing one is guessing in a plan's vocabulary. If the bug cannot be reproduced yet, the ONLY shippable work is the instrumentation that makes it reproducible.
+
+`svelte-check`, `vitest`, and the Rust suite are **NOT** runtime verification for editor-lifecycle / save-composition / mode-tab-rename-transition bugs. On 2026-06-11/12 all three passed green while four such changes corrupted the display (BUG-023, §C, §C-2, §CB-2). Canonical violation: the §C/§CB arc shipped four fixes on green static checks; the breakthrough came only when the bug was reproduced on the running app. This rule overrides delivery pressure and overrides "the code looks right."
+
+## Solve-the-Class, Not-the-Instance (top principal)
+
+For the **content-integrity class** (a note's on-screen or on-disk content acquiring another note's data, or losing its own), the fix is the STRUCTURAL end-state — **single content ownership**: one always-current in-memory authority per open note that every reader and every writer goes through — never another symptom patch, and never a sequence of live half-migrations. LL-014's three-strike law is already spent on this class (BUG-012 / 015 / 019 / 023, F2, the §C series); patching it again is forbidden.
+
+The end-state is **designed whole, built and proven in isolation against the reproduction harness (every known failure recipe red→green), and landed as ONE validated swap behind a toggle** — not as live incremental steps that leave the app half on the old model and half on the new (the §CB failure shape). "Build the finished correct thing and prove it" beats "evolve the live thing in safe-looking steps" for this class, because every intermediate half-state is itself a fragile seam.
+
+## The Editor-Surface Gate Checklist (top principal)
+
+Any change to the Note's content, save, or lifecycle layer must pass — in the reproduction harness AND in any Boss test — EVERY one of these. **Focus mode is not optional**; it is one of the two editor surfaces and was the site of the 2026-06-12 corruption.
+
+1. NotePane type-burst → debounced save persists.
+2. Focus enter → type → exit round-trip; body intact; **no spurious write at enter**.
+3. Tab switch-away + return, in BOTH NotePane and Focus (the `{#key}` teardown).
+4. Tab switch **WHILE in Focus mode** (the cross-note disk-write landmine).
+5. PropertyEditor (both the embedded and standalone instances) + stage promote.
+6. Rename cycle with a **linked probe pair** (the BUG-023 shape: A links B, rename B, assert both files' identities intact).
+7. Second-screen edit + sync.
+8. Restart / workspace restore.
+
+After every transition the harness asserts **on-screen content === disk content** for that note (the journal alone cannot see display contamination — all four 2026-06 failures were display-level). Final verdict required: zero journal anomalies, real notes untouched.
+
 ## Backup Routine
 After each successful milestone:
 1. **Git tag**: `git tag milestone/<name> <commit>` then `git push origin --tags`

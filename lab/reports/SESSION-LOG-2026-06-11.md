@@ -1090,3 +1090,15 @@ disease PRE-DATES it; standing still is not safety) — NO-GO on any code until:
 runtime-confirmed in sandbox via the Boss recipe, (2) a scripted runtime harness with view-vs-disk
 parity gates EVERY step, (3) Reproduce-First + 8-surface gate checklist + one-writer-path-per-step
 land in CLAUDE.md. Awaiting Boss ruling; Stop-On-Correction in force.
+
+## BOSS RULING (17:2x): "Forget the clean slate. Solve this issue for good. NO more patching."
+
+Interpretation: not clean-slate (keep the working editor/rendering), not symptom-patching, not live
+half-step migrations. Deliver the STRUCTURAL end-state (single content ownership) built whole +
+proven against a reproduction harness, landed as ONE validated swap behind a toggle. The §CB
+direction (buffer = single ownership) was CONFIRMED-right by the audit; what failed was the live
+incremental method. Three audit preconditions now adopted as top-principal CLAUDE.md rules
+(Reproduce-First; Solve-the-Class-Not-the-Instance; the Editor-Surface Gate Checklist incl.
+mandatory Focus). Path: rules locked (this commit) → harness + reproduce every recipe RED →
+build single-ownership end-state → harness GREEN on all 8 surfaces → Boss test on real universe
+LAST, behind a toggle. NotePane/editor live code untouched until the harness is green.
