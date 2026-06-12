@@ -1102,3 +1102,27 @@ incremental method. Three audit preconditions now adopted as top-principal CLAUD
 mandatory Focus). Path: rules locked (this commit) → harness + reproduce every recipe RED →
 build single-ownership end-state → harness GREEN on all 8 surfaces → Boss test on real universe
 LAST, behind a toggle. NotePane/editor live code untouched until the harness is green.
+
+## §C rebuilt — step 2+3a: the single-ownership ENGINE built + proven in isolation (additive, zero live-code change)
+
+Path step 2 (harness + reproduce) and the engine half of step 3, landed as PURELY ADDITIVE new
+files — no live component or store.ts touched, so the running app is byte-identical to the
+reverted §C-1 safe state.
+- NEW src/lib/editor/noteModel.ts — SINGLE CONTENT OWNERSHIP, the one authority per open note
+  (path, cid, props, body: CM6 Text, version, savedVersion). API: openModel/getModel/setBody/
+  setProps/setPath/compose(identity-bound)/markSaved/isDirty/adoptDisk(freshness)/close/clearAll.
+  Non-reactive module Map (the §C-2 lesson). Imports parse/build from store for now (leaf-extract
+  deferred to integration to avoid a cycle); nothing live imports it yet.
+- NEW tests/mig-076/noteModel.test.ts — the ACCEPTANCE HARNESS: I1 always-current (symptom 1),
+  I2 freshness incl. echo-ignore + dirty-wins (symptom 2), I3 identity-bound compose REFUSES
+  path mismatch (the in-focus-switch cross-note write), I4 single deterministic composition,
+  I5 model independence, dirty tracking, lifecycle. 14 tests.
+- NEW tests/mig-076/currentBugRepro.test.ts — CHARACTERIZATION against real store primitives:
+  the WAB entry has no freshness field (symptom-2 root); buildFullContent(propsA, bodyB) is an
+  unguarded frankenstein (the landmine). 2 tests. Deleted when the cure removes those structures.
+- 16/16 vitest green; svelte-check 0/1457. vitest.config + both files registered.
+WHAT REMAINS (the part that failed as §CB, now properly gated): integration — wire the live
+components to read/write the model, retire tab.content + the WAB; preceded by the runtime
+view-vs-disk harness (Editor-Surface Gate, 8 surfaces incl. Focus round-trip + in-focus switch),
+then the Boss test behind a toggle. The engine being green is necessary, NOT sufficient — the
+integration gets the runtime proof before it touches the live editor.
