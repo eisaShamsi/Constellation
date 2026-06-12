@@ -1067,3 +1067,26 @@ Code now = §C-1 validated state + §A/§B WriteGate+journal (Rust forensic net 
 proved disk safety all day). noteBuffers.ts + tests deleted; ARCHITECT §7 + PLAN §CB sections
 reverted with the commit (history preserved in git + this log). Stop-On-Correction in force:
 no fixes until the SME audit reports.
+
+## SME AUDIT (3 agents, Boss-ordered) — verdicts recorded
+
+AGENT 1 (forensics): reverts VERIFIED COMPLETE (HEAD vs pre-§CB-1 = docs-only delta; zero buffer
+code remains). Disk-safety claims confirmed; refinements: إختبار الملاحظة final body is byte-
+identical to التجربة الأولى body (paste vs disease — journal cannot discriminate); the
+"pre-existing" proof ran on the §CB-1-state binary (inert mirrors) — pre-today is sound inference.
+AGENT 2 (root cause, file:line mapped): S1 body-empty-at-focus-enter = FocusPane seeds from
+tab.content which debounced saves NEVER update + Svelte 5 renders the NEW branch BEFORE old-branch
+teardown flush back-fills it → focus opens empty → first keystroke writes frontmatter+empty (134B)
+undebounced. S2 wrong-content-on-return = focus-enter flush plants a WAB snapshot never cleared on
+the not-dirty path; resolveNoteContent gate checks IDENTITY not FRESHNESS → obsolete same-cid
+snapshot legitimately restores over newer disk (one-shot, display-only). Landmine: tab-switch
+WHILE in focus → FocusPane onDestroy composes new-note frontmatter + old-note body → REAL
+cross-note disk write (likely the §CB-2 step-4 shape). Focus per-keystroke writes confirmed;
+FocusPane saveTimer = dead code.
+AGENT 3 (method): gate omitted Focus despite it being 1-of-2 surfaces + the morning write-storm
+flag — negligent by the project constitution; §CB-2 = disguised multi-change (11 files +682/-421);
+static checks 0-for-4 in this territory in 24h. VERDICT: Conditional GO for Buffer Pattern (the
+disease PRE-DATES it; standing still is not safety) — NO-GO on any code until: (1) root cause
+runtime-confirmed in sandbox via the Boss recipe, (2) a scripted runtime harness with view-vs-disk
+parity gates EVERY step, (3) Reproduce-First + 8-surface gate checklist + one-writer-path-per-step
+land in CLAUDE.md. Awaiting Boss ruling; Stop-On-Correction in force.
