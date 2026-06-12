@@ -1041,3 +1041,21 @@ BEFORE any §CB-2 re-attempt — the §CB-3 sandbox pre-gate discipline now appl
 remaining §CB step, not just §CB-3.
 Reverted `git revert 8ae4451f` (§CB-1 validated state restored; orientation v2.73 §CB-2 line
 to be re-stamped FAILED+REVERTED in the same commit).
+
+## BREAKTHROUGH — Boss repro'd the disease ON THE SAFE §CB-1 BINARY (16:33-16:38)
+
+Recipe (reliable, ~30s): new note → type content → enter Focus → add line → exit → switch to
+another note (file tree) → return → the returned view shows wrong content (display-level).
+Journal forensics (16:02 binary):
+- 16:36:05 focus_pane wrote **134B over the 282B note at FOCUS-ENTER** — body EMPTIED before
+  any typing. The old code's focus path emitted a spurious write at mount. Disk recovered at
+  16:37:22 (editor_save 317B — the pane still held the doc).
+- Final 16:38:40 write = 607B = the note's OWN correct content (disk verified ✓).
+- ZERO writes to any other note; مكتبة بودلي (step-2 focus test) intact 9414B ✓.
+**VERDICT: the focus-transition bug is PRE-EXISTING** — present on the old validated code; the
+§CB-2 step-4 failure was this same disease surfacing through the new compose path (its 15:43:41
+233B write = the same focus-enter spurious-write shape). The §C-era display contaminations are
+likely the same family. Diagnosis target NAMED: the FocusPane mount/seed/onchange ordering +
+tab.content poisoning at focus transitions. Next: code-read FocusPane + focus branch wiring;
+instrumented dev repro with the Boss recipe; THEN the §CB-2 redo designed against the named
+injector. All disk files verified safe — display contamination only this round.
