@@ -1014,3 +1014,13 @@ one parseFrontmatter to the path). §D quiesce-rename owns that UX (freeze overl
 NSIS bundling note: §CB-1 setup.exe never packaged (Boss launched the fresh standalone exe 9s
 after link — file lock). Boss tested on standalone constellation.exe 13:49:53 = correct binary
 (process start 13:50:02 verified). Proceeding to §CB-2 per Plan-Approval-=-Build-Approval.
+
+## PCS + Orientation (Boss reminder 15:10 — SO #6 violation acknowledged)
+
+Eisa had to ask "Don't forget to PCS + Orientation" — by the standing rule, that IS the violation:
+the v-bump belonged inside the §CB-1 commit. Remediation: Orientation v2.73 written as a NEW file
+(v2.72 preserved) — preamble covers §C/§C-2 failures + root cause, research verdict, Option B
+PRIORITY One ruling + §CB-6 side-tabs, §CB-1 shipped + 6/6 gate, 7s-rename forensics, §CB-2
+in-flight, explicit "no user-facing changes yet" (help/manual untouched by design this version).
+MoCh-2026-06-12-1030.md written (block 10:30-15:15). Docs-only commit — the §CB-2 WIP Rust edit
+(write_gate journal refactor) stays in the worktree for the §CB-2 commit.
