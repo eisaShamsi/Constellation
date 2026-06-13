@@ -1,4 +1,7 @@
 {
+	"cascade": {
+		"updating": "Bağlantılar güncelleniyor…"
+	},
 	"styles": {
 		"title": "Stiller",
 		"desc": "Görünümünüzü adlandırılmış bir stil olarak kaydedin, stiller arasında tek tıkla geçiş yapın ve her evrende yeniden kullanın.",

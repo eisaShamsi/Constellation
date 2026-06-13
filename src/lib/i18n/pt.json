@@ -1,4 +1,7 @@
 {
+	"cascade": {
+		"updating": "Atualizando links…"
+	},
 	"styles": {
 		"title": "Estilos",
 		"desc": "Salve sua aparência como um estilo nomeado, alterne entre estilos com um clique e reutilize-os em todos os universos.",

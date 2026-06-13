@@ -1,4 +1,7 @@
 {
+	"cascade": {
+		"updating": "Updating links…"
+	},
 	"app": {
 		"name": "Constellation",
 		"tagline": "A Vault of Vaults"

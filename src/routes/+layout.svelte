@@ -26,7 +26,7 @@
 		buildSkyData, readNotePreview,
 		getDailyNotePath, updateLinksOnRename, getOldTitleForCascade, reloadTabsFromDisk,
 		flushAllTabsInLibrary, markCascading, clearCascading, clearAllCascading,
-		tabsInLibrary, quickCapture,
+		tabsInLibrary, quickCapture, cascadeFreeze,
 		loadBookmarks, addBookmark, removeBookmark, isBookmarked, bookmarks,
 		loadSettings, updateSettings, appSettings, DEFAULT_SETTINGS, applyParsedSettings,
 		loadWorkspaces, workspaces,
@@ -62,6 +62,7 @@
 	import NoteEditor from '$lib/components/NoteEditor.svelte';
 	import FocusPane from '$lib/components/FocusPane.svelte';
 	import BaseTab from '$lib/lens/BaseTab.svelte';
+	import CascadeFreezeOverlay from '$lib/components/CascadeFreezeOverlay.svelte';
 	import ContextMenu from '$lib/components/ContextMenu.svelte';
 	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
 	import CreateItemDialog, { type CreateKind } from '$lib/components/CreateItemDialog.svelte';
@@ -4619,9 +4620,10 @@
 		renamingPath = '';
 		if (!oldPath || !newName) return;
 
+		const isDir = !oldPath.endsWith('.md');
+
 		try {
 			const parentDir = oldPath.substring(0, oldPath.lastIndexOf('\\') === -1 ? oldPath.lastIndexOf('/') : oldPath.lastIndexOf('\\'));
-			const isDir = !oldPath.endsWith('.md');
 			const newPath = parentDir + (oldPath.includes('\\') ? '\\' : '/') + (isDir ? newName : newName + '.md');
 
 			// MIG-006 §1: resolve the OLD human title BEFORE the rename.
@@ -4660,9 +4662,18 @@
 			if (linkCountNext) searchLinkCounts = linkCountNext;
 			const lib = $libraryStats.find(v => oldPath.startsWith(v.path));
 			if (lib) {
+				const willCascade = $appSettings.autoUpdateLinks && !isDir;
+				// MIG-076 §D1 (instant-freeze v2, 2026-06-13): raise the read-only
+				// freeze NOW (after renameItem, BEFORE the slow tree refresh) so the
+				// overlay is near-instant. Stays in the proven-safe POST-rename
+				// reactive context; raising it BEFORE renameItem aborted the cascade
+				// when an edited tab was open (bisection-proven this session). Path-
+				// keyed: the renamed tab already holds its new path here.
+				if (willCascade) cascadeFreeze.set(new Set(tabsInLibrary(lib.path).map(t => t.path)));
+				try {
 				await refreshLibraryTree(lib.library_id);
 				// Auto-update links — wikilink rename cascade.
-				if ($appSettings.autoUpdateLinks && !isDir) {
+				if (willCascade) {
 					// §3-redo.5: orchestrate the cascade with full open-editor
 					// coherence per Rename Function Concept Paper P4 / D2 / D6.
 					// (a) Mark every open tab in the library as "cascading"
@@ -4730,6 +4741,9 @@
 					} finally {
 						for (const t of tabs) clearCascading(t.path);
 					}
+				}
+				} finally {
+					if (willCascade) cascadeFreeze.set(new Set()); // §D1 — lift the freeze
 				}
 			}
 		} catch (e) {
@@ -5583,7 +5597,8 @@
 							<span class="index-note-name" dir="auto">{indexNoteTab.name}</span>
 							<button class="index-close" onclick={() => { indexNoteTab = null; indexActiveNotePath = ''; }} title="Close note">×</button>
 						</div>
-						<NoteEditor tab={indexNoteTab} noteNames={allNotes} allTags={allTagsList} {linkTraversalMap} />
+						<NoteEditor tab={indexNoteTab} noteNames={allNotes} allTags={allTagsList} {linkTraversalMap} onTitleRename={handleRenameComplete} />
+						<CascadeFreezeOverlay path={indexNoteTab?.path} />
 					</div>
 					<div class="index-split-divider"></div>
 				{/if}
@@ -6047,10 +6062,12 @@
 									onnavigateback={() => { setFocusedTab(tab.id); navigateBack(); }}
 									onnavigateforward={() => { setFocusedTab(tab.id); navigateForward(); }}
 									onStageChanged={handleStageChanged}
+									onTitleRename={handleRenameComplete}
 								/>
 							{:else}
 								<div class="new-tab-screen"><p>{$t('tabs.newTab')}</p></div>
 							{/if}
+							<CascadeFreezeOverlay path={tab.path} />
 							</div>
 						{/each}
 					{:else if $activeTab && !$activeTab.path}
@@ -6216,6 +6233,7 @@
 								onnavigateback={() => navigateBack()}
 								onnavigateforward={() => navigateForward()}
 								onStageChanged={handleStageChanged}
+								onTitleRename={handleRenameComplete}
 								onmoreaction={async (action) => {
 									switch (action) {
 										case 'rename': {
@@ -6246,6 +6264,7 @@
 									}
 								}}
 							/>
+								<CascadeFreezeOverlay path={$activeTab?.path} />
 								</div>
 								{#if backlinksOnRight || outgoingOnRight}
 									<!-- Drag handle + collapse toggle between center editor and right flank -->
@@ -8437,4 +8456,13 @@
 	.cd-base-libs-dot {
 		width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
 	}
+
+	/* MIG-076 §D1 — positioning context for the quiesced-rename freeze overlay
+	   (CascadeFreezeOverlay absolutely fills its pane container). These are the
+	   editor-leaf containers reachable by a main-window sidebar rename; each owns
+	   only its editor, so anchoring here re-anchors nothing else. Focus mode is
+	   intentionally excluded: a rename cannot originate while the sidebar-less
+	   Focus surface is active, so the freeze never reaches it (§C identity-binding
+	   covers Focus content; Editor-Surface Gate item 4). */
+	.flank-center, .split-pane-wrap, .index-note-pane { position: relative; }
 </style>

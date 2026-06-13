@@ -416,27 +416,41 @@ pub fn constellation_embed_notes(
     let engine = guard.as_ref().ok_or("Embedding engine not initialized")?;
 
     let search_state = app.state::<crate::search::SearchState>();
-    let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
-    let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
 
     let force = force.unwrap_or(false);
     let mut count = 0u32;
     for note in &notes {
-        // Skip if already embedded (unless force re-embed)
+        // MIG-076 §D (2026-06-13) — the search DB lock is now scoped to the
+        // existence check and the INSERT only. PREVIOUSLY a single db_guard was
+        // held across the whole loop INCLUDING run_embedding (the CPU-bound,
+        // multi-second model inference): a save's background embed therefore
+        // held the lock for the full inference and BLOCKED every other DB op —
+        // notably a subsequent rename's reindex_single_note — for ~10s (the
+        // "slow rename after edit" Boss saw). Inference now runs lock-free.
+
+        // Skip if already embedded (unless force re-embed) — brief lock.
         if !force {
-            let existing: bool = conn.query_row(
-                "SELECT COUNT(*) > 0 FROM note_embeddings WHERE path = ?1",
-                params![note.path],
-                |row| row.get(0),
-            ).unwrap_or(false);
+            let existing: bool = {
+                let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
+                let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
+                conn.query_row(
+                    "SELECT COUNT(*) > 0 FROM note_embeddings WHERE path = ?1",
+                    params![note.path],
+                    |row| row.get(0),
+                ).unwrap_or(false)
+            };
             if existing { count += 1; continue; }
         }
 
+        // Model inference — NO DB lock held (the whole point of this scoping).
         let text = format!("passage: {} {}", note.name.replace(".md", ""), note.content);
         match run_embedding(engine, &text) {
             Ok(embedding) => {
                 let bytes = vec_to_blob(&embedding);
                 let dims = embedding.len() as i32;
+                // Write — brief lock.
+                let db_guard = search_state.db.lock().map_err(|e| e.to_string())?;
+                let conn = db_guard.as_ref().ok_or("Search database not initialized")?;
                 conn.execute(
                     "INSERT OR REPLACE INTO note_embeddings (path, embedding, dimensions, model_id, cid_cn) VALUES (?1, ?2, ?3, ?4, (SELECT cid_cn FROM note_meta WHERE path = ?1))",
                     params![note.path, bytes, dims, "multilingual-e5-small"],

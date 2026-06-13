@@ -40,3 +40,21 @@ describe('the landmine — composition from two sources has no identity guard', 
 		expect(frankenstein).toContain('B body'); // … but carries note B's body — corruption
 	});
 });
+
+describe('the §D title-rename poison — the unguarded flush has no path identity (RED, pre-cure)', () => {
+	it('a stale flush for the renamed-away OLD path cannot be refused by the composition layer', () => {
+		// Pre-cure mechanism behind BUG-023: after B is title-renamed (/b.md →
+		// /B-renamed.md), a torn-down editor for B's OLD path composes via
+		// buildFullContent — which takes NO target-path / identity parameter, so
+		// NOTHING can refuse a write to the renamed-away old path (a resurrected
+		// ghost) or to A's path (cross-identity). Under single ownership,
+		// noteSession.save(id, oldPath) REFUSES exactly this — proven GREEN in
+		// runtimeHarness Recipe H. This test pins the hole the guard fills.
+		const b = parseFrontmatter('---\ntitle: B\ncid_cn: NOTE_B\n---\nB content');
+		const ghost = buildFullContent(b.properties, b.body);
+		// The composition is happy to be written to ANY path the stale caller still
+		// holds — the layer is identity-blind. (§C's compose adds the missing guard.)
+		expect(ghost).toContain('cid_cn: NOTE_B');
+		expect(ghost).toContain('B content');
+	});
+});

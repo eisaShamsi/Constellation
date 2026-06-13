@@ -1,4 +1,7 @@
 {
+	"cascade": {
+		"updating": "Links werden aktualisiert…"
+	},
 	"styles": {
 		"title": "Stile",
 		"desc": "Speichern Sie Ihr Erscheinungsbild als benannten Stil, wechseln Sie per Klick zwischen Stilen und verwenden Sie sie in jedem Universum wieder.",

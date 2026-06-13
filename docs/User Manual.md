@@ -494,6 +494,8 @@ The classic file tree for browsing notes and folders:
 - Right-click for context menu (New Note, New Folder, Rename, Delete)
 - Drag and drop to move notes between folders
 
+**Renaming updates links automatically.** When you rename a note — from the file tree (right-click → Rename) or by editing its title at the top of the page — Constellation rewrites every `[[link]]` pointing to it across the library to the new name, so links never silently break. A brief "Updating links…" overlay appears on the affected note(s) while this runs (the editor pauses typing for that moment); the old title is kept as an alias so existing links still resolve.
+
 ### List Mode (Notes Navigator)
 
 A dual-pane browser for advanced note browsing:

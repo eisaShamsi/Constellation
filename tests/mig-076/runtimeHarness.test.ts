@@ -174,6 +174,62 @@ describe('Recipe G — new note created while another is open (the 2026-06-12 Bo
 	});
 });
 
+describe('Recipe H — title-rename re-land through the quiesce path (the §D BUG-023 sequence)', () => {
+	it('renaming B by title cascades A’s link, and a stale pre-rename flush is REFUSED — both identities intact', async () => {
+		// A links B; both open; both persisted as themselves.
+		S.open('a', '/a.md', note('NA', 'see [[B]]'));
+		S.open('b', '/b.md', note('NB', 'B content'));
+		await S.save('a', '/a.md', write);
+		await S.save('b', '/b.md', write);
+
+		// 1) TITLE RENAME of B → /B-renamed.md. The live flow (store.renameItem under
+		//    §C) rewrites B's frontmatter on disk, fs-renames the old path away, and
+		//    RE-SEEDS the model at the new path (openNoteModel). Modeled here:
+		const bRenamed = note('NB', 'B content');
+		disk.delete('/b.md');             // fs::rename moved the file away
+		disk.set('/B-renamed.md', bRenamed);
+		S.open('b', '/B-renamed.md', disk.get('/B-renamed.md')!); // = renameItem's re-seed
+
+		// 2) THE POISON VECTOR — a torn-down editor / late callback for B's OLD path
+		//    fires a flush DURING the cascade window (the exact in-flight write behind
+		//    BUG-023). Under §C the compose REFUSES it because the model now holds the
+		//    new path. Without the guard this would RESURRECT a ghost at /b.md (or, with
+		//    A's content captured, write a cross-identity file).
+		const stale = await S.save('b', '/b.md', write);
+		expect(stale.ok).toBe(false);
+		if (!stale.ok) expect(stale.reason).toBe('path_mismatch');
+		expect(disk.has('/b.md')).toBe(false); // refused → no resurrected ghost at the old path
+
+		// 3) The cascade rewrites A's [[B]] → [[B-renamed]] on disk and reloadTabsFromDisk
+		//    re-seeds A's model from the rewritten content.
+		const aRewritten = note('NA', 'see [[B-renamed]]');
+		disk.set('/a.md', aRewritten);
+		S.open('a', '/a.md', disk.get('/a.md')!); // = reloadTabsFromDisk's re-seed
+
+		// 4) Post-cascade saves compose each note's OWN content for its OWN path.
+		const ra = await S.save('a', '/a.md', write);
+		const rb = await S.save('b', '/B-renamed.md', write);
+		expect(ra.ok && rb.ok).toBe(true);
+
+		// view === disk, and NEITHER file acquired the other's identity (the BUG-023 wound):
+		expect(diskCid('/B-renamed.md')).toBe('NB');
+		expect(diskBody('/B-renamed.md')).toBe('B content');
+		expect(diskCid('/a.md')).toBe('NA');
+		expect(diskBody('/a.md')).toBe('see [[B-renamed]]');
+		expect(disk.get('/a.md')).not.toContain('NB');
+		expect(disk.get('/B-renamed.md')).not.toContain('NA');
+		expect(S.bodyForView('a')).toBe(diskBody('/a.md'));
+		expect(S.bodyForView('b')).toBe(diskBody('/B-renamed.md'));
+	});
+
+	it('the freeze invariant: an edit addressing the pre-rename epoch cannot reach the repurposed model', () => {
+		S.open('b', '/b.md', note('NB', 'B content'));
+		S.repath('b', '/B-renamed.md');                                 // rename moved identity
+		S.editBody('b', 'edit from a stale pre-rename view', '/b.md');  // stale path → ignored
+		expect(S.bodyForView('b')).toBe('B content');                  // model untouched by the stale write
+	});
+});
+
 describe('Global invariant — disk never holds a foreign identity', () => {
 	it('after a mixed session, every file on disk carries only its own cid', async () => {
 		S.open('a', '/a.md', note('NA', 'alpha'));

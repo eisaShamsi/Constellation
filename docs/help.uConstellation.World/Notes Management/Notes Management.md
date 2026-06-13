@@ -81,6 +81,12 @@ Right-clicking surfaces the same dialog from these surfaces:
 | **A library row** (the universe-notes header, an own library, or a child-universe library) | New Note · New Folder · New Base | Opens the Create dialog with that library's root pre-filled as Location. Library rows do not offer Rename or Delete here — those operations live in the Library Manager. |
 | **A note in the file tree** | Rename · Delete | Notes don't host children, so no "create new" options are offered. |
 
+### Renaming a note updates every link to it
+
+When you rename a note — either from the **file tree** (right-click → Rename) or by **editing its title** at the top of the page — Constellation rewrites every `[[wikilink]]` that points to it, across the whole library, to the new name. You don't fix links by hand, and links never silently break.
+
+While those links are being updated you'll see a brief read-only **"Updating links…"** overlay on the affected note(s); the editor accepts no typing for that moment, so nothing is lost while the note reloads. On a small library this is near-instant; on a very large library it may take a second or two. The note that previously linked to the old name still resolves afterward, because the old title is kept as an **alias** on the renamed note.
+
 ### Templates apply uniformly
 
 When you create a new note, Constellation looks up any folder template configured for the parent folder and applies it. **This now happens regardless of how you invoked the create** — the toolbar button, the right-click menu, and the command palette all run the same path. Earlier versions skipped templates on the right-click path; that inconsistency is fixed.

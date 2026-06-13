@@ -11,7 +11,7 @@ import { getLinkTypes, isLinkTypeValue } from './linkTypeRegistry';
 // module's parseFrontmatter/buildFullContent (hoisted fn declarations, so the
 // import cycle is eval-safe) and are used here only inside functions (never at
 // module init). The model is the save source when SINGLE_OWNERSHIP is on.
-import { editProps as editNoteProps, close as closeNoteModel, repath as repathNoteModel, open as openNoteModel } from '$lib/editor/noteSession';
+import { editProps as editNoteProps, close as closeNoteModel, repath as repathNoteModel, open as openNoteModel, save as saveNoteSession, isDirty as isNoteDirty } from '$lib/editor/noteSession';
 import { compose as composeNoteModel, markSaved as markNoteSaved, getModel as getNoteModel } from '$lib/editor/noteModel';
 import { SINGLE_OWNERSHIP } from '$lib/editor/ownershipFlag';
 
@@ -434,6 +434,15 @@ export function isCascading(path: string): boolean {
  *  stale entries that gate edits in the new Universe. */
 export function clearAllCascading() { cascadingPaths.clear(); }
 
+/** MIG-076 §D1: the REACTIVE freeze signal for the quiesce overlay. Holds the
+ *  `tab.path` strings of every open pane currently inside a rename/cascade window.
+ *  The rename orchestrator (`handleRenameComplete`) sets it inside the cascade
+ *  block and clears it in the inner `finally`. SEPARATE from `cascadingPaths` (the
+ *  non-reactive write-gate Map) on purpose: the editor surfaces subscribe to this
+ *  for the read-only overlay, while the hot-path save gate stays a plain Map
+ *  lookup (no reactivity on the keystroke path, Rule 1). */
+export const cascadeFreeze = writable<Set<string>>(new Set());
+
 /** §3-redo.7 — open tabs whose path lies under `libraryPath`. Both sides
  *  are normalised to forward-slash form, and the prefix match enforces a
  *  separator boundary so a sibling library with a shared name prefix
@@ -529,16 +538,38 @@ export async function reloadTabsFromDisk(filePaths: string[]): Promise<void> {
 export async function flushAllTabsInLibrary(libraryPath: string): Promise<void> {
 	const writes: Promise<void>[] = [];
 	for (const tab of tabsInLibrary(libraryPath)) {
-		const wab = getWriteAhead(tab.path);
-		if (!wab) continue; // not dirty — nothing to flush
-		markRecentWrite(tab.path);
-		writes.push(
-			writeNote(tab.path, wab.content, 'flush_all')
-				.then(() => clearWriteAhead(tab.path))
-				.catch((err) => {
-					console.error('[flushAllTabsInLibrary] write failed for', tab.path, err);
-				})
-		);
+		if (SINGLE_OWNERSHIP) {
+			// MIG-076 §D1 — under single ownership the MODEL is the keystroke
+			// authority; the write-ahead buffer is filled only on tab teardown
+			// (NoteEditor.handleFlush), NEVER per keystroke. Reading the WAB here
+			// would miss a tab being actively edited, so the cascade walker would
+			// rewrite that tab's STALE disk content and leave freshly-typed
+			// [[links]] to the renamed note broken (the sub-1.5s pre-autosave
+			// race the §D1 review surfaced). Compose the pre-cascade flush from
+			// the model instead: `saveNoteSession` composes + writes + marks
+			// saved, and REFUSES (skips) any tab whose model identity no longer
+			// matches its path — the same identity guard the rest of §C uses.
+			if (!isNoteDirty(tab.id)) continue; // clean — disk already current
+			markRecentWrite(tab.path);
+			writes.push(
+				saveNoteSession(tab.id, tab.path, (p, c) => writeNote(p, c, 'flush_all'), 'flush_all')
+					.then(() => {})
+					.catch((err) => {
+						console.error('[flushAllTabsInLibrary] model flush failed for', tab.path, err);
+					})
+			);
+		} else {
+			const wab = getWriteAhead(tab.path);
+			if (!wab) continue; // not dirty — nothing to flush
+			markRecentWrite(tab.path);
+			writes.push(
+				writeNote(tab.path, wab.content, 'flush_all')
+					.then(() => clearWriteAhead(tab.path))
+					.catch((err) => {
+						console.error('[flushAllTabsInLibrary] write failed for', tab.path, err);
+					})
+			);
+		}
 	}
 	await Promise.all(writes);
 }

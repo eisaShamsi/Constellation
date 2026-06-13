@@ -71,6 +71,7 @@
 		onnavigateforward,
 		onmoreaction,
 		onStageChanged,
+		onTitleRename,
 		linkTraversalMap,
 	}: {
 		tab: TabLike;
@@ -85,6 +86,13 @@
 		onnavigateforward?: () => void;
 		onmoreaction?: (action: string) => void;
 		onStageChanged?: (path: string, stage: string) => void;
+		/** MIG-076 §D2 — when the host provides this AND single ownership is on, a
+		 *  title rename delegates to the host's full quiesced-rename orchestration
+		 *  (handleRenameComplete: freeze overlay + flush-through-model + rename_item
+		 *  + wikilink cascade + deliberate remount), closing the orientation-§13
+		 *  gap on the §C/§D-safe foundation. Without it (or under rollback) the
+		 *  direct-renameItem fallback keeps today's behavior. */
+		onTitleRename?: (oldPath: string, newName: string) => void | Promise<void>;
 		linkTraversalMap?: Map<string, number>;
 	} = $props();
 
@@ -318,6 +326,24 @@
 		if (!filePath || filePath !== tab.path) return;
 		const currentName = tab.name.replace(/\.md$/, '');
 		if (newTitle === currentName) return;
+
+		// MIG-076 §D2 — when the host wires the full rename orchestration AND single
+		// ownership is on, delegate the whole title rename to it (the SAME quiesced
+		// path a sidebar rename uses: freeze overlay → model flush → rename_item →
+		// wikilink cascade → deliberate remount). This closes the orientation-§13
+		// gap — a bare renameItem here never ran the cascade, so every [[link]] to
+		// a title-renamed note silently broke. The earlier re-land (a086e1ee) caused
+		// BUG-023 because the pre-§C cascade composed writes from drifting parts;
+		// §C's identity-bound compose + §D1's freeze make this safe now. Under
+		// rollback (SINGLE_OWNERSHIP off) the direct-renameItem fallback runs.
+		if (onTitleRename && SINGLE_OWNERSHIP) {
+			try {
+				await onTitleRename(filePath, newTitle);
+			} catch (e) {
+				console.error('[NoteEditor] Title rename (delegated) failed:', e);
+			}
+			return;
+		}
 
 		// Skip rename if the file doesn't exist (e.g., during initial load)
 		const newPath = filePath.replace(/[^/\\]+$/, newTitle + '.md');
