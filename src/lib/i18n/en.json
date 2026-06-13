@@ -71,6 +71,18 @@
 			"templates": "Templates"
 		},
 		"security": {
+			"writeIntegrity": {
+				"lastAnomaly": "Most recent anomaly",
+				"heading": "Write integrity",
+				"title": "Note-write journal",
+				"desc": "Every note write is logged, so any anomaly stays traceable to a single file.",
+				"writes": "Writes journaled",
+				"anomalies": "Anomalies",
+				"monitoring": "Monitoring (shadow mode)",
+				"enforced": "Enforced",
+				"openFolder": "Open journal folder",
+				"noJournal": "No writes journaled yet"
+			},
 			"intro": "Protect your data, secure API keys, and lock the app when idle.",
 			"libraryEncryption": "Library encryption",
 			"libraryEncryptionDesc": "Encrypt cached library data at rest on this device",

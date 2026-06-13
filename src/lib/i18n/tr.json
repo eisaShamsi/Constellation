@@ -106,6 +106,18 @@
 			"githubTokenDesc": "Özel repo güncellemeleri için kişisel erişim jetonu (repo kapsamı gerekli)"
 		},
 		"security": {
+			"writeIntegrity": {
+				"lastAnomaly": "En son anormallik",
+				"heading": "Yazma bütünlüğü",
+				"title": "Not yazma günlüğü",
+				"desc": "Her not yazımı günlüğe kaydedilir, böylece herhangi bir anormallik tek bir dosyaya kadar izlenebilir kalır.",
+				"writes": "Günlüğe kaydedilen yazmalar",
+				"anomalies": "Anormallikler",
+				"monitoring": "İzleme (gölge mod)",
+				"enforced": "Zorunlu",
+				"openFolder": "Günlük klasörünü aç",
+				"noJournal": "Henüz kaydedilen yazma yok"
+			},
 			"intro": "Verilerinizi koruyun, API anahtarlarını güvence altına alın ve boşta kaldığında uygulamayı kilitleyin.",
 			"enabled": "Etkin",
 			"disabled": "Devre dışı",

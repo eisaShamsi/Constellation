@@ -470,6 +470,92 @@ pub fn gate_create_exclusive(
     Ok(WriteOutcome::CreatedExclusive)
 }
 
+// ─── §E-2: write-integrity diagnostics ──────────────────────────────────────
+
+/// A snapshot of the write journal for the Settings → Security & Privacy
+/// "Write integrity" line. Counts across the live journal AND its one rotated
+/// `.old` generation. `anomalies` = the SHADOW-mode would-refuse verdicts
+/// (`would_refuse_identity` + `would_refuse_stale`) — the numbers that must be
+/// ZERO before the §F1 enforcement flip (the clean-soak precondition).
+#[derive(serde::Serialize, Default)]
+pub struct JournalStats {
+    /// Total journal lines (every gated write appends one).
+    pub writes: u64,
+    /// would_refuse_identity + would_refuse_stale — must be 0 for the §F flip.
+    pub anomalies: u64,
+    pub would_refuse_identity: u64,
+    pub would_refuse_stale: u64,
+    /// Unix-millis of the MOST RECENT anomaly — lets the UI distinguish a stale
+    /// red (historical, pre-fix) from a live one. `None` when anomalies == 0.
+    pub last_anomaly_ts: Option<u64>,
+    /// Create races the gate correctly refused (the gate WORKING — informational).
+    pub refused_exists: u64,
+    /// Writes with no cid_cn to verify against (templates / non-notes).
+    pub unverified_no_cid: u64,
+    /// Files first created via a write/create-exclusive surface.
+    pub created: u64,
+    /// `WRITE_GATE_ENFORCE` — false = shadow (monitor), true = enforced (§F1).
+    pub enforce: bool,
+    /// Whether any journal file exists yet.
+    pub exists: bool,
+    /// Whether a rotated `.old` generation was also counted.
+    pub rotated: bool,
+    /// The journal's directory (app-data dir) — for the "open folder" button.
+    pub dir: String,
+}
+
+/// Stream one journal file line-by-line (a 5 MB file never loads whole into
+/// memory), folding each line's outcome into the running tally.
+fn count_journal_file(path: &Path, stats: &mut JournalStats) {
+    use std::io::{BufRead, BufReader};
+    let Ok(f) = fs::File::open(path) else { return };
+    for line in BufReader::new(f).lines().map_while(Result::ok) {
+        let line = line.trim();
+        if line.is_empty() { continue; }
+        let Ok(v) = serde_json::from_str::<serde_json::Value>(line) else { continue };
+        stats.writes += 1;
+        match v.get("outcome").and_then(|o| o.as_str()).unwrap_or("") {
+            "would_refuse_identity" => {
+                stats.would_refuse_identity += 1; stats.anomalies += 1;
+                let ts = v.get("ts").and_then(|t| t.as_u64()).unwrap_or(0);
+                if ts > stats.last_anomaly_ts.unwrap_or(0) { stats.last_anomaly_ts = Some(ts); }
+            }
+            "would_refuse_stale" => {
+                stats.would_refuse_stale += 1; stats.anomalies += 1;
+                let ts = v.get("ts").and_then(|t| t.as_u64()).unwrap_or(0);
+                if ts > stats.last_anomaly_ts.unwrap_or(0) { stats.last_anomaly_ts = Some(ts); }
+            }
+            "refused_exists" => stats.refused_exists += 1,
+            "unverified_no_cid" => stats.unverified_no_cid += 1,
+            "created_exclusive" | "created_by_write" => stats.created += 1,
+            _ => {}
+        }
+    }
+}
+
+/// §E-2 — read the write-journal stats for the diagnostics line. Read-only,
+/// opened on demand from Settings (never a hot path), counting the live journal
+/// plus its one rotated `.old` generation.
+#[tauri::command]
+pub fn read_write_journal_stats() -> JournalStats {
+    let mut stats = JournalStats { enforce: WRITE_GATE_ENFORCE, ..Default::default() };
+    let Some(jp) = journal_path().get() else { return stats };
+    if let Some(dir) = jp.parent() {
+        stats.dir = dir.to_string_lossy().to_string();
+    }
+    if jp.exists() {
+        stats.exists = true;
+        count_journal_file(jp, &mut stats);
+    }
+    let old = jp.with_extension("jsonl.old");
+    if old.exists() {
+        stats.rotated = true;
+        stats.exists = true;
+        count_journal_file(&old, &mut stats);
+    }
+    stats
+}
+
 /// Rename/move a note file under BOTH paths' locks (acquired in sorted-key
 /// order so two concurrent renames can never deadlock). The bounded retry
 /// covers the same AV/indexer sharing-violation class as writes.

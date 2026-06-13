@@ -2333,6 +2333,33 @@ export async function moveToTrash(path: string, libraryPath: string): Promise<vo
 	await invoke('move_to_trash', { path, libraryPath });
 }
 
+/** MIG-076 §E-2 — write-journal diagnostics snapshot for Settings → Security &
+ *  Privacy. `anomalies` = the shadow-mode would-refuse verdicts (identity +
+ *  stale); they must be 0 before the §F enforcement flip. */
+export interface WriteJournalStats {
+	writes: number;
+	anomalies: number;
+	would_refuse_identity: number;
+	would_refuse_stale: number;
+	last_anomaly_ts: number | null;
+	refused_exists: number;
+	unverified_no_cid: number;
+	created: number;
+	enforce: boolean;
+	exists: boolean;
+	rotated: boolean;
+	dir: string;
+}
+
+export async function readWriteJournalStats(): Promise<WriteJournalStats> {
+	return await invoke('read_write_journal_stats');
+}
+
+/** Open a file or folder in the OS file manager (tauri_plugin_opener). */
+export async function openPath(path: string): Promise<void> {
+	await invoke('open_path', { path });
+}
+
 // ─── Wikilink resolution ───
 export interface ResolvedLink {
 	path: string;

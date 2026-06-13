@@ -106,6 +106,18 @@
 			"githubTokenDesc": "비공개 저장소 업데이트용 개인 액세스 토큰 (repo 범위 필요)"
 		},
 		"security": {
+			"writeIntegrity": {
+				"lastAnomaly": "최근 이상",
+				"heading": "쓰기 무결성",
+				"title": "노트 쓰기 저널",
+				"desc": "모든 노트 쓰기를 기록하여 어떤 이상도 단일 파일에서 추적할 수 있습니다.",
+				"writes": "기록된 쓰기",
+				"anomalies": "이상",
+				"monitoring": "모니터링(섀도 모드)",
+				"enforced": "적용됨",
+				"openFolder": "저널 폴더 열기",
+				"noJournal": "아직 기록된 쓰기가 없습니다"
+			},
 			"intro": "데이터를 보호하고, API 키를 안전하게 보관하며, 유휴 시 앱을 잠급니다.",
 			"enabled": "활성화됨",
 			"disabled": "비활성화됨",

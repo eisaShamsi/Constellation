@@ -5,7 +5,7 @@
 	import { check } from '@tauri-apps/plugin-updater';
 	import { relaunch } from '@tauri-apps/plugin-process';
 	import { t, locale, setLocale, SUPPORTED_LOCALES, type Locale } from '$lib/i18n';
-	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats, SCRIPT_UNICODE_RANGES, SCRIPT_LABELS, SCRIPT_SAMPLES, getAllFontSets, getFontSetById, type FontSet, TYPEWRITER_FONTS, DEFAULT_SETTINGS, backfillLinkConfidence, type PanelId, type PanelSlot, clearIndexHistory } from '$lib/libraries/store';
+	import { appSettings, updateSettings, updateSecuritySettings, libraries, libraryStats, SCRIPT_UNICODE_RANGES, SCRIPT_LABELS, SCRIPT_SAMPLES, getAllFontSets, getFontSetById, type FontSet, TYPEWRITER_FONTS, DEFAULT_SETTINGS, backfillLinkConfidence, type PanelId, type PanelSlot, clearIndexHistory, readWriteJournalStats, openPath, type WriteJournalStats } from '$lib/libraries/store';
 	import { downloadJSON, pickJSONFile } from '$lib/utils';
 	import IconOverrideSettings from './IconOverrideSettings.svelte';
 	import ArabicOverridesPanel from './ArabicOverridesPanel.svelte';
@@ -92,6 +92,20 @@
 	let pinConfirm = $state('');
 	let pinError = $state('');
 	let pinChanging = $state(false);
+
+	// MIG-076 §E-2 — write-integrity diagnostics (Settings → Security & Privacy).
+	// Lazy-loaded when the Security section is first viewed; never a hot path.
+	let journalStats = $state<WriteJournalStats | null>(null);
+	async function loadJournalStats() {
+		try { journalStats = await readWriteJournalStats(); } catch { /* journal unreadable — leave null */ }
+	}
+	$effect(() => {
+		// Re-read each time the Security section is entered (including reopening
+		// Settings) so the readout is always current. This effect reads only
+		// activeSection — NOT journalStats — so reassigning journalStats inside
+		// loadJournalStats can't re-trigger it (no loop).
+		if (activeSection === 'security') loadJournalStats();
+	});
 	let editingHotkey = $state<string | null>(null);
 	let hotkeyListening = $state(false);
 
@@ -1789,6 +1803,41 @@
 				{:else if activeSection === 'security'}
 					<p class="section-intro">{$t('settings.security.intro')}</p>
 
+					<div class="setting-heading">{$t('settings.security.writeIntegrity.heading')}</div>
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.security.writeIntegrity.title')}</div>
+							<div class="setting-desc">{$t('settings.security.writeIntegrity.desc')}</div>
+						</div>
+						<div class="wi-readout">
+							{#if journalStats === null}
+								<span class="setting-desc">…</span>
+							{:else if !journalStats.exists}
+								<span class="setting-desc">{$t('settings.security.writeIntegrity.noJournal')}</span>
+							{:else}
+								<div class="wi-line">
+									<span class="wi-label">{$t('settings.security.writeIntegrity.writes')}</span>
+									<span class="wi-value">{journalStats.writes.toLocaleString()}</span>
+								</div>
+								<div class="wi-line">
+									<span class="wi-label">{$t('settings.security.writeIntegrity.anomalies')}</span>
+									<span class="wi-value" class:wi-ok={journalStats.anomalies === 0} class:wi-bad={journalStats.anomalies > 0}>
+										{journalStats.anomalies === 0 ? '✓' : '⚠'} {journalStats.anomalies.toLocaleString()}
+									</span>
+								</div>
+								{#if journalStats.anomalies > 0 && journalStats.last_anomaly_ts}
+									<div class="wi-mode">{$t('settings.security.writeIntegrity.lastAnomaly')}: {new Date(journalStats.last_anomaly_ts).toLocaleString()}</div>
+								{/if}
+								<div class="wi-mode">{journalStats.enforce ? $t('settings.security.writeIntegrity.enforced') : $t('settings.security.writeIntegrity.monitoring')}</div>
+							{/if}
+							{#if journalStats?.dir}
+								<div class="wi-actions">
+									<button class="setting-btn" onclick={() => journalStats && openPath(journalStats.dir)}>{$t('settings.security.writeIntegrity.openFolder')}</button>
+								</div>
+							{/if}
+						</div>
+					</div>
+
 					<div class="setting-item">
 						<div class="setting-info">
 							<div class="setting-name">{$t('settings.security.libraryEncryption')}</div>
@@ -3118,6 +3167,21 @@
 		background: color-mix(in srgb, var(--color-green, #4ade80) 15%, transparent);
 		color: var(--color-green, #4ade80);
 	}
+	/* MIG-076 §E-2 — write-integrity readout */
+	.wi-readout {
+		display: flex; flex-direction: column; gap: 4px; align-items: flex-end;
+		min-width: 170px;
+	}
+	.wi-line {
+		display: flex; gap: 12px; align-items: baseline; justify-content: space-between;
+		width: 100%;
+	}
+	.wi-label { font-size: 0.8rem; color: var(--text-muted); }
+	.wi-value { font-size: 0.9rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+	.wi-value.wi-ok { color: var(--color-green, #4ade80); }
+	.wi-value.wi-bad { color: var(--text-error, #e5484d); }
+	.wi-mode { font-size: 0.72rem; color: var(--text-faint); margin-top: 2px; }
+	.wi-actions { display: flex; gap: 8px; margin-top: 8px; }
 	.sub-setting {
 		padding-inline-start: 16px;
 		border-inline-start: 2px solid var(--background-modifier-border);

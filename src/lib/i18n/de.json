@@ -106,6 +106,18 @@
 			"githubTokenDesc": "Persönliches Zugriffstoken für Updates privater Repos (Repo-Berechtigung erforderlich)"
 		},
 		"security": {
+			"writeIntegrity": {
+				"lastAnomaly": "Neueste Anomalie",
+				"heading": "Schreibintegrität",
+				"title": "Notiz-Schreibjournal",
+				"desc": "Jeder Notiz-Schreibvorgang wird protokolliert, sodass jede Anomalie auf eine einzige Datei zurückführbar bleibt.",
+				"writes": "Protokollierte Schreibvorgänge",
+				"anomalies": "Anomalien",
+				"monitoring": "Überwachung (Schattenmodus)",
+				"enforced": "Erzwungen",
+				"openFolder": "Journalordner öffnen",
+				"noJournal": "Noch keine Schreibvorgänge protokolliert"
+			},
 			"intro": "Schütze deine Daten, sichere API-Schlüssel und sperre die App bei Inaktivität.",
 			"libraryEncryption": "Bibliothek-Verschlüsselung",
 			"libraryEncryptionDesc": "Gespeicherte Bibliotheksdaten auf diesem Gerät verschlüsseln",

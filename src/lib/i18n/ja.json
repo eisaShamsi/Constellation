@@ -106,6 +106,18 @@
 			"githubTokenDesc": "プライベートリポジトリ更新用の個人アクセストークン（repoスコープが必要）"
 		},
 		"security": {
+			"writeIntegrity": {
+				"lastAnomaly": "最新の異常",
+				"heading": "書き込み整合性",
+				"title": "ノート書き込みジャーナル",
+				"desc": "すべてのノート書き込みを記録し、異常を単一のファイルから追跡できるようにします。",
+				"writes": "記録された書き込み",
+				"anomalies": "異常",
+				"monitoring": "監視（シャドウモード）",
+				"enforced": "適用済み",
+				"openFolder": "ジャーナルフォルダーを開く",
+				"noJournal": "まだ書き込みは記録されていません"
+			},
 			"intro": "データを保護し、APIキーを安全に保管し、アイドル時にアプリをロックします。",
 			"enabled": "有効",
 			"disabled": "無効",

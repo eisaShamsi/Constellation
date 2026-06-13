@@ -1615,6 +1615,17 @@ Overrides are stored per Universe at `<universe>/.constellation/arabic-overrides
 - **Optional updates** — check for updates manually via Settings
 - **Open source** — inspect the code at [github.com/eisaShamsi/Constellation](https://github.com/eisaShamsi/Constellation)
 
+### Write integrity
+
+Settings → **Security & Privacy** shows a **Write integrity** readout — a window into Constellation's *write journal*, the behind-the-scenes log that records every note-write so any data anomaly is traceable to a single file (the safety system built after a corruption incident).
+
+- **Writes journaled** — how many note-writes the journal has recorded.
+- **Anomalies** — writes that looked wrong (an incoming note's identity not matching the file on disk). A healthy system shows **✓ 0**; if any were ever recorded, the count turns red and shows the **most-recent-anomaly date**, so a long-since-fixed incident reads as stale, not current.
+- **Monitoring (shadow mode)** — the journal currently watches and logs but doesn't block writes; full enforcement is a later step.
+- **Open journal folder** — opens the folder holding `write-journal.jsonl` for inspection.
+
+The readout re-reads every time you open the section. You don't need to act on it — it's a transparency window confirming the write-safety machinery is healthy.
+
 ---
 
 ## 20. Constellation Map

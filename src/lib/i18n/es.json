@@ -106,6 +106,18 @@
 			"githubTokenDesc": "Token de acceso personal para actualizaciones de repositorio privado (requiere alcance repo)"
 		},
 		"security": {
+			"writeIntegrity": {
+				"lastAnomaly": "Anomalía más reciente",
+				"heading": "Integridad de escritura",
+				"title": "Registro de escritura de notas",
+				"desc": "Cada escritura de nota se registra, de modo que cualquier anomalía sea rastreable hasta un único archivo.",
+				"writes": "Escrituras registradas",
+				"anomalies": "Anomalías",
+				"monitoring": "Supervisión (modo en sombra)",
+				"enforced": "Aplicado",
+				"openFolder": "Abrir carpeta del registro",
+				"noJournal": "Aún no hay escrituras registradas"
+			},
 			"intro": "Protege tus datos, asegura las claves API y bloquea la app cuando esté inactiva.",
 			"libraryEncryption": "Cifrado de biblioteca",
 			"libraryEncryptionDesc": "Cifrar datos de biblioteca almacenados en este dispositivo",

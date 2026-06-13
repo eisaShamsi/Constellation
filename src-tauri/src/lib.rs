@@ -476,6 +476,7 @@ pub fn run() {
             lenses::apply_lens,
             libraries::export_note_html,
             libraries::move_to_trash,
+            write_gate::read_write_journal_stats,
             libraries::scan_library_index,
             libraries::read_index_entries,
             libraries::read_term_mentions,

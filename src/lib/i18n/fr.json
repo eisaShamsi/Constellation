@@ -106,6 +106,18 @@
 			"githubTokenDesc": "Jeton d'accès personnel pour les mises à jour du dépôt privé (portée repo requise)"
 		},
 		"security": {
+			"writeIntegrity": {
+				"lastAnomaly": "Anomalie la plus récente",
+				"heading": "Intégrité d'écriture",
+				"title": "Journal d'écriture des notes",
+				"desc": "Chaque écriture de note est journalisée, afin que toute anomalie reste traçable jusqu'à un seul fichier.",
+				"writes": "Écritures journalisées",
+				"anomalies": "Anomalies",
+				"monitoring": "Surveillance (mode fantôme)",
+				"enforced": "Appliqué",
+				"openFolder": "Ouvrir le dossier du journal",
+				"noJournal": "Aucune écriture journalisée pour l'instant"
+			},
 			"intro": "Protégez vos données, sécurisez les clés API et verrouillez l'application en cas d'inactivité.",
 			"libraryEncryption": "Chiffrement de bibliothèque",
 			"libraryEncryptionDesc": "Chiffrer les données de bibliothèque stockées sur cet appareil",
