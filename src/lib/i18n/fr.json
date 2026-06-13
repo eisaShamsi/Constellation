@@ -1,4 +1,14 @@
 {
+	"collision": {
+		"title": "Une note nommée {name} existe déjà",
+		"desc": "Choisissez comment résoudre le conflit de nom.",
+		"nameLabel": "Nouveau nom",
+		"changeNameTitle": "Changer le nom",
+		"changeNameDesc": "L'enregistrer sous le nom différent ci-dessus.",
+		"overwriteTitle": "Remplacer",
+		"overwriteDesc": "Remplacer la note existante — elle est déplacée vers .trash et peut être restaurée.",
+		"inLibrary": "Déjà dans : {library}"
+	},
 	"cascade": {
 		"updating": "Mise à jour des liens…"
 	},

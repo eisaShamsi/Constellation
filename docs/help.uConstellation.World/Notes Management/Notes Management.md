@@ -66,7 +66,7 @@ The dialog won't let you click *Create* with a name that won't work on disk:
 
 - **Empty name** — *Create* is disabled. The dialog shows "Name cannot be empty."
 - **Illegal characters** — `\`, `/`, `:`, `*`, `?`, `"`, `<`, `>`, `|` are blocked at the input. The dialog shows the full character list inline. *Create* is disabled until you remove them.
-- **Folder/file already exists at the location** — when you click *Create*, the system reports the conflict back into the dialog's error region. The dialog stays open so you can rename and try again.
+- **A note title already exists** *(anywhere in the universe)* — clicking *Create* opens the **collision dialog** (Change name / Overwrite / Cancel), described under *When a name already exists* below, rather than an inline error. For **folders**, a name that already exists at the location is reported back into the dialog's error region, and the dialog stays open so you can rename and try again.
 
 > [!info]
 > The dialog also blocks names containing `..` (parent-directory escapes) — this is enforced both in the dialog and in the create operation itself, so a slip of the keyboard cannot accidentally place a folder outside the location you picked.
@@ -86,6 +86,19 @@ Right-clicking surfaces the same dialog from these surfaces:
 When you rename a note — either from the **file tree** (right-click → Rename) or by **editing its title** at the top of the page — Constellation rewrites every `[[wikilink]]` that points to it, across the whole library, to the new name. You don't fix links by hand, and links never silently break.
 
 While those links are being updated you'll see a brief read-only **"Updating links…"** overlay on the affected note(s); the editor accepts no typing for that moment, so nothing is lost while the note reloads. On a small library this is near-instant; on a very large library it may take a second or two. The note that previously linked to the old name still resolves afterward, because the old title is kept as an **alias** on the renamed note.
+
+### When a name already exists — the collision dialog
+
+Constellation keeps every note title unique **across your whole universe** — every library, and every linked child universe. Unique titles are what let `[[wikilinks]]` resolve to exactly one note; two notes sharing a title would make a link ambiguous.
+
+So when you **create** a note with a name you typed, or **rename** a note, and that name already belongs to another note *anywhere* in the universe, a dialog appears instead of silently changing your name or failing:
+
+- **Header** — "A note named *Foo* already exists", with a line beneath showing **which library** it already lives in (e.g. "Already in: History"). That can be a *different* library than the one you're working in — the check spans the entire universe, child universes included.
+- **Change name** — a box is pre-filled with a free suggestion (e.g. *Foo 1*). Edit it if you like, then confirm to create or rename under that name instead.
+- **Overwrite** — replaces the existing note. The displaced note is **moved to its library's `.trash`** first, so it stays recoverable — never hard-deleted. If a same-named note is already in that `.trash`, the new one is filed alongside it with a numeric suffix (*Foo 1*, *Foo 2*), so trashing never overwrites an earlier discarded copy.
+- **Cancel** (button, *Escape*, or click outside) — closes the dialog and does nothing.
+
+This applies only to a name you **type**. Quick Capture, which auto-names notes, keeps its own automatic numbering and never interrupts you. Folders are not affected — only notes carry titles that links resolve against.
 
 ### Templates apply uniformly
 

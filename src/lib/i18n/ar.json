@@ -1,4 +1,14 @@
 {
+	"collision": {
+		"title": "توجد ملاحظة بالاسم {name} بالفعل",
+		"desc": "اختر طريقة حل تعارض الاسم.",
+		"nameLabel": "اسم جديد",
+		"changeNameTitle": "تغيير الاسم",
+		"changeNameDesc": "احفظها بالاسم المختلف أعلاه.",
+		"overwriteTitle": "استبدال",
+		"overwriteDesc": "استبدل الملاحظة الموجودة — تُنقل إلى ‎.trash ويمكن استعادتها.",
+		"inLibrary": "موجودة في: {library}"
+	},
 	"cascade": {
 		"updating": "جارٍ تحديث الروابط…"
 	},

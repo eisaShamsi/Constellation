@@ -1,4 +1,14 @@
 {
+	"collision": {
+		"title": "{name} という名前のノートは既に存在します",
+		"desc": "名前の競合の解決方法を選択してください。",
+		"nameLabel": "新しい名前",
+		"changeNameTitle": "名前を変更",
+		"changeNameDesc": "上記の別の名前で保存します。",
+		"overwriteTitle": "上書き",
+		"overwriteDesc": "既存のノートを置き換えます — .trash に移動され、復元できます。",
+		"inLibrary": "既に存在: {library}"
+	},
 	"cascade": {
 		"updating": "リンクを更新しています…"
 	},

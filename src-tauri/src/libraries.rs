@@ -4697,7 +4697,34 @@ pub fn move_to_trash(app: tauri::AppHandle, path: String, library_path: String) 
     let source = Path::new(&path);
     let file_name = source.file_name()
         .ok_or("Invalid path")?;
-    let dest = trash_dir.join(file_name);
+    let mut dest = trash_dir.join(file_name);
+
+    // MIG-076 §E1b — de-collide on a name clash inside .trash (Obsidian-style
+    // numeric suffix, Boss-approved 2026-06-13). Without this, trashing a second
+    // note that shares a filename with one already in .trash atomically
+    // replaces — and silently loses — the earlier trashed copy (observed in the
+    // §E-1 Stage-2 validation). Suffix the stem with " {n}" to match
+    // Constellation's own create-collision naming. Never clobber.
+    if dest.exists() {
+        let stem = source.file_stem().and_then(|s| s.to_str()).unwrap_or("note");
+        let ext = source.extension().and_then(|s| s.to_str());
+        let mut placed = false;
+        for n in 1..=9999 {
+            let candidate_name = match ext {
+                Some(e) => format!("{} {}.{}", stem, n, e),
+                None => format!("{} {}", stem, n),
+            };
+            let candidate = trash_dir.join(&candidate_name);
+            if !candidate.exists() {
+                dest = candidate;
+                placed = true;
+                break;
+            }
+        }
+        if !placed {
+            return Err("Trash already holds too many notes with this name.".to_string());
+        }
+    }
 
     // MIG-076 §A2 — gated: a trash move serializes against any in-flight
     // editor flush of the same file (delete-vs-save race).

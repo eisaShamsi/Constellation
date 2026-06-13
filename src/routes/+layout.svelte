@@ -16,7 +16,7 @@
 		openNoteTab, closeTab, switchTab, reorderTab, closeNote, createEmptyTab,
 		toggleSplit, toggleSplitDirection, setFocusedTab,
 		parseFrontmatter, extractHeadings, saveTabContent, updateTabContent, buildFullContent, writeNote, markRecentWrite, setWriteAhead, getWriteAhead, clearWriteAhead,
-		createNote, createFolder, renameItem, deleteItem,
+		createNote, createFolder, renameItem, deleteItem, moveToTrash,
 		startWatchingLibrary, wasRecentlyWritten,
 		loadLibraryAppearance, libraryAppearances,
 		toggleEditMode, editingTabIds,
@@ -66,6 +66,7 @@
 	import ContextMenu from '$lib/components/ContextMenu.svelte';
 	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
 	import CreateItemDialog, { type CreateKind } from '$lib/components/CreateItemDialog.svelte';
+	import CollisionDialog from '$lib/components/CollisionDialog.svelte';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
 	import QuickSwitcher from '$lib/components/QuickSwitcher.svelte';
 	import TemplatePicker from '$lib/components/TemplatePicker.svelte';
@@ -3462,7 +3463,32 @@
 		lib: { id: string; name: string; path: string },
 		location: string,
 		name: string,
+		force = false,
 	): Promise<void> {
+		// MIG-076 §E1b — a typed title that already exists ANYWHERE in the universe
+		// (any library or cUniverse) opens the conventional dialog (Change name /
+		// Overwrite-to-trash / Cancel) instead of silently auto-suffixing — a
+		// duplicate title makes [[wikilinks]] ambiguous (Boss ruling 2026-06-13,
+		// universe-wide). Authoritative via the same resolver the wikilinks use.
+		// `force` skips it (the Overwrite re-attempt, after the existing note has
+		// been moved to .trash).
+		if (!force) {
+			const existing = await resolveWikilinkCrossLibrary(lib.path, name);
+			if (existing) {
+				collisionDialog = {
+					existingName: name,
+					existingLibrary: existing.library_name,
+					suggestedName: suggestFreeName(name),
+					onChangeName: (newName) => { collisionDialog = null; createNoteWithTemplate(lib, location, newName); },
+					onOverwrite: async () => {
+						collisionDialog = null;
+						await moveToTrash(existing.path, existing.library_path);
+						await createNoteWithTemplate(lib, location, name, true);
+					},
+				};
+				return;
+			}
+		}
 		const defaultFM = buildDefaultFrontmatter($appSettings);
 		const newPath = await createNote(location, name, defaultFM);
 		if (!newPath) return;
@@ -4392,6 +4418,34 @@
 		onCreate: (args: { name: string; location: string }) => Promise<boolean | void>;
 	} | null>(null);
 
+	// MIG-076 §E1b — the name-collision dialog (create + rename). The host owns
+	// the actual create/rename re-attempt; the dialog only surfaces the choice
+	// (Change name / Overwrite-to-trash / Cancel) and the edited name.
+	let collisionDialog = $state<{
+		existingName: string;
+		existingLibrary: string;
+		suggestedName: string;
+		onChangeName: (newName: string) => void;
+		onOverwrite: () => void;
+	} | null>(null);
+
+	/** First "{base} N" whose title is free UNIVERSE-WIDE — a fast best-effort
+	 *  suggestion off the in-memory note list. The actual create/rename re-checks
+	 *  authoritatively via resolveWikilinkCrossLibrary, so an imperfect pick just
+	 *  re-prompts (no correctness risk). */
+	function suggestFreeName(base: string): string {
+		const taken = new Set(allNotes.map(n => n.name.toLowerCase()));
+		for (let n = 1; n <= 99; n++) {
+			const candidate = `${base} ${n}`;
+			if (!taken.has(candidate.toLowerCase())) return candidate;
+		}
+		return `${base} ${Date.now()}`;
+	}
+	/** Normalize a path for self-match comparison (separator + trailing slash + case). */
+	function normPathLC(p: string): string {
+		return p.replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase();
+	}
+
 	// State for Base's library multi-select extras. Reset on each base-create
 	// open. Empty list means "all libraries". `baseSelectedSet` is a $derived
 	// O(1)-lookup view used by the snippet's per-library `class:active` and
@@ -4616,16 +4670,40 @@
 		confirmDelete = null;
 	}
 
-	async function handleRenameComplete(oldPath: string, newName: string) {
+	async function handleRenameComplete(oldPath: string, newName: string, force = false) {
 		renamingPath = '';
 		if (!oldPath || !newName) return;
 
 		const isDir = !oldPath.endsWith('.md');
+		const parentDir = oldPath.substring(0, oldPath.lastIndexOf('\\') === -1 ? oldPath.lastIndexOf('/') : oldPath.lastIndexOf('\\'));
+		const newPath = parentDir + (oldPath.includes('\\') ? '\\' : '/') + (isDir ? newName : newName + '.md');
+
+		// MIG-076 §E1b — renaming a note onto a title that already exists ANYWHERE
+		// in the universe (any library or cUniverse) opens the conventional dialog
+		// instead of the swallowed "already exists" failure (universe-wide, Boss
+		// 2026-06-13 — duplicate titles make wikilinks ambiguous). Skip folders and
+		// the Overwrite re-attempt (force); exclude a self-match (the title
+		// resolving back to the note being renamed — e.g. an alias).
+		if (!force && !isDir) {
+			const lib = $libraryStats.find(v => oldPath.startsWith(v.path));
+			const existing = await resolveWikilinkCrossLibrary(lib?.path ?? parentDir, newName);
+			if (existing && normPathLC(existing.path) !== normPathLC(oldPath)) {
+				collisionDialog = {
+					existingName: newName,
+					existingLibrary: existing.library_name,
+					suggestedName: suggestFreeName(newName),
+					onChangeName: (n) => { collisionDialog = null; handleRenameComplete(oldPath, n); },
+					onOverwrite: async () => {
+						collisionDialog = null;
+						await moveToTrash(existing.path, existing.library_path);
+						await handleRenameComplete(oldPath, newName, true);
+					},
+				};
+				return;
+			}
+		}
 
 		try {
-			const parentDir = oldPath.substring(0, oldPath.lastIndexOf('\\') === -1 ? oldPath.lastIndexOf('/') : oldPath.lastIndexOf('\\'));
-			const newPath = parentDir + (oldPath.includes('\\') ? '\\' : '/') + (isDir ? newName : newName + '.md');
-
 			// MIG-006 §1: resolve the OLD human title BEFORE the rename.
 			// Pre-§1, this line was `oldPath.split(...).pop()?.replace('.md','')`,
 			// which for canonical-filename notes (e.g. `20260424T054559Z_NOTE_C3A4.md`)
@@ -7040,6 +7118,17 @@
 			extras={createDialog.extrasKind === 'baseLibraryPicker' ? baseLibraryPickerExtras : undefined}
 			onClose={() => createDialog = null}
 			onCreate={createDialog.onCreate}
+		/>
+	{/if}
+
+	{#if collisionDialog}
+		<CollisionDialog
+			existingName={collisionDialog.existingName}
+			existingLibrary={collisionDialog.existingLibrary}
+			suggestedName={collisionDialog.suggestedName}
+			onChangeName={collisionDialog.onChangeName}
+			onOverwrite={collisionDialog.onOverwrite}
+			onCancel={() => collisionDialog = null}
 		/>
 	{/if}
 

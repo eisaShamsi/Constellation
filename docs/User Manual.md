@@ -496,6 +496,8 @@ The classic file tree for browsing notes and folders:
 
 **Renaming updates links automatically.** When you rename a note — from the file tree (right-click → Rename) or by editing its title at the top of the page — Constellation rewrites every `[[link]]` pointing to it across the library to the new name, so links never silently break. A brief "Updating links…" overlay appears on the affected note(s) while this runs (the editor pauses typing for that moment); the old title is kept as an alias so existing links still resolve.
 
+**Name collisions are caught universe-wide.** Every note title stays unique across your whole universe — all libraries and any linked child universes — so `[[wikilinks]]` always resolve to exactly one note. When you create a note with a typed name, or rename one, onto a title that already exists *anywhere*, a dialog appears: **Change name** (pre-filled with a free suggestion like *Foo 1*), **Overwrite** (the displaced note is moved to its library's `.trash` first — recoverable, and given a numeric suffix if a same-named note is already trashed, so trash is never clobbered), or **Cancel**. The dialog names which library the existing note already lives in. Quick Capture's auto-named notes are not interrupted; folders are unaffected.
+
 ### List Mode (Notes Navigator)
 
 A dual-pane browser for advanced note browsing:

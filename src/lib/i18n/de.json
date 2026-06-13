@@ -1,4 +1,14 @@
 {
+	"collision": {
+		"title": "Eine Notiz namens {name} existiert bereits",
+		"desc": "Wählen Sie, wie der Namenskonflikt gelöst werden soll.",
+		"nameLabel": "Neuer Name",
+		"changeNameTitle": "Namen ändern",
+		"changeNameDesc": "Unter dem geänderten Namen oben speichern.",
+		"overwriteTitle": "Überschreiben",
+		"overwriteDesc": "Die vorhandene Notiz ersetzen — sie wird in .trash verschoben und kann wiederhergestellt werden.",
+		"inLibrary": "Bereits in: {library}"
+	},
 	"cascade": {
 		"updating": "Links werden aktualisiert…"
 	},

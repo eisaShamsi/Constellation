@@ -1,4 +1,14 @@
 {
+	"collision": {
+		"title": "כבר קיימת פתקה בשם {name}",
+		"desc": "בחר כיצד לפתור את התנגשות השם.",
+		"nameLabel": "שם חדש",
+		"changeNameTitle": "שינוי שם",
+		"changeNameDesc": "שמור אותה בשם השונה שלמעלה.",
+		"overwriteTitle": "החלפה",
+		"overwriteDesc": "החלף את הפתקה הקיימת — היא תועבר אל ‎.trash וניתן לשחזר אותה.",
+		"inLibrary": "כבר ב: {library}"
+	},
 	"cascade": {
 		"updating": "מעדכן קישורים…"
 	},

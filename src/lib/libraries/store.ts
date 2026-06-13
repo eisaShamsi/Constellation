@@ -2327,6 +2327,12 @@ export async function deleteItem(path: string, permanent = false): Promise<void>
 	}));
 }
 
+/** MIG-076 §E1b — move an existing note to the library's `.trash` (recoverable),
+ *  used by the collision dialog's "Overwrite" before the create/rename proceeds. */
+export async function moveToTrash(path: string, libraryPath: string): Promise<void> {
+	await invoke('move_to_trash', { path, libraryPath });
+}
+
 // ─── Wikilink resolution ───
 export interface ResolvedLink {
 	path: string;

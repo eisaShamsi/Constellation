@@ -1,4 +1,14 @@
 {
+	"collision": {
+		"title": "{name} नाम का नोट पहले से मौजूद है",
+		"desc": "नाम टकराव को हल करने का तरीका चुनें।",
+		"nameLabel": "नया नाम",
+		"changeNameTitle": "नाम बदलें",
+		"changeNameDesc": "इसे ऊपर दिए अलग नाम से सहेजें।",
+		"overwriteTitle": "अधिलेखित करें",
+		"overwriteDesc": "मौजूदा नोट को बदलें — यह .trash में चला जाता है और पुनर्स्थापित किया जा सकता है।",
+		"inLibrary": "पहले से {library} में"
+	},
 	"cascade": {
 		"updating": "लिंक अपडेट हो रहे हैं…"
 	},

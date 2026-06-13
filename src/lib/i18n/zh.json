@@ -1,4 +1,14 @@
 {
+	"collision": {
+		"title": "已存在名为 {name} 的笔记",
+		"desc": "选择如何解决名称冲突。",
+		"nameLabel": "新名称",
+		"changeNameTitle": "更改名称",
+		"changeNameDesc": "以上面的不同名称保存。",
+		"overwriteTitle": "覆盖",
+		"overwriteDesc": "替换现有笔记 — 它会移到 .trash，可以恢复。",
+		"inLibrary": "已在: {library}"
+	},
 	"cascade": {
 		"updating": "正在更新链接…"
 	},

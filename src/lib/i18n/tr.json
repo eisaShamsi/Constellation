@@ -1,4 +1,14 @@
 {
+	"collision": {
+		"title": "{name} adlı bir not zaten var",
+		"desc": "Ad çakışmasını nasıl çözeceğinizi seçin.",
+		"nameLabel": "Yeni ad",
+		"changeNameTitle": "Adı değiştir",
+		"changeNameDesc": "Yukarıdaki farklı adla kaydet.",
+		"overwriteTitle": "Üzerine yaz",
+		"overwriteDesc": "Mevcut notu değiştir — .trash klasörüne taşınır ve geri yüklenebilir.",
+		"inLibrary": "Zaten burada: {library}"
+	},
 	"cascade": {
 		"updating": "Bağlantılar güncelleniyor…"
 	},
