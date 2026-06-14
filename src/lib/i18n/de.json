@@ -980,6 +980,7 @@
 		"sortCount": "Nach Anzahl sortieren"
 	},
 	"indexPanel": {
+		"hiddenTerms": "Ausgeblendete Begriffe: {count}",
 		"hideTerm": "Begriff ausblenden",
 		"showTerm": "Begriff einblenden",
 		"filterPlaceholder": "Begriffe filtern...",

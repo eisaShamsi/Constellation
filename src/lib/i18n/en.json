@@ -1583,6 +1583,7 @@
 		"sortCount": "Sort by count"
 	},
 	"indexPanel": {
+		"hiddenTerms": "Hidden terms: {count}",
 		"hideTerm": "Hide term",
 		"showTerm": "Show term",
 		"filterPlaceholder": "Filter terms...",

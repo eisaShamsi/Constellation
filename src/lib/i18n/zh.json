@@ -1420,6 +1420,7 @@
 		"sortCount": "按数量排序"
 	},
 	"indexPanel": {
+		"hiddenTerms": "隐藏的词条：{count}",
 		"hideTerm": "隐藏词条",
 		"showTerm": "显示词条",
 		"filterPlaceholder": "筛选术语...",

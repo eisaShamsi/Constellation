@@ -980,6 +980,7 @@
 		"sortCount": "تعداد کے لحاظ سے ترتیب"
 	},
 	"indexPanel": {
+		"hiddenTerms": "چھپے اصطلاحات: {count}",
 		"hideTerm": "اصطلاح چھپائیں",
 		"showTerm": "اصطلاح دکھائیں",
 		"filterPlaceholder": "اصطلاحات فلٹر کریں...",

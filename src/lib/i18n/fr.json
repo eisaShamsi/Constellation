@@ -980,6 +980,7 @@
 		"sortCount": "Trier par nombre"
 	},
 	"indexPanel": {
+		"hiddenTerms": "Termes masqués : {count}",
 		"hideTerm": "Masquer le terme",
 		"showTerm": "Afficher le terme",
 		"filterPlaceholder": "Filtrer les termes...",

@@ -1420,6 +1420,7 @@
 		"sortCount": "Сортировать по количеству"
 	},
 	"indexPanel": {
+		"hiddenTerms": "Скрытые термины: {count}",
 		"hideTerm": "Скрыть термин",
 		"showTerm": "Показать термин",
 		"filterPlaceholder": "Фильтр терминов...",

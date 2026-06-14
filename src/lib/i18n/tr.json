@@ -1420,6 +1420,7 @@
 		"sortCount": "Sayıya göre sırala"
 	},
 	"indexPanel": {
+		"hiddenTerms": "Gizli terimler: {count}",
 		"hideTerm": "Terimi gizle",
 		"showTerm": "Terimi göster",
 		"filterPlaceholder": "Terimleri filtrele...",

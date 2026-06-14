@@ -1420,6 +1420,7 @@
 		"sortCount": "Ordenar por contagem"
 	},
 	"indexPanel": {
+		"hiddenTerms": "Termos ocultos: {count}",
 		"hideTerm": "Ocultar termo",
 		"showTerm": "Mostrar termo",
 		"filterPlaceholder": "Filtrar termos...",

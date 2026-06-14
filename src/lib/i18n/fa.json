@@ -980,6 +980,7 @@
 		"sortCount": "مرتب‌سازی بر اساس تعداد"
 	},
 	"indexPanel": {
+		"hiddenTerms": "واژه‌های پنهان: {count}",
 		"hideTerm": "پنهان کردن واژه",
 		"showTerm": "نمایش واژه",
 		"filterPlaceholder": "فیلتر اصطلاحات...",
