@@ -39,3 +39,6 @@ npm-debug.log*
 # MIG-019 stray build logs (one-off — never commit raw build logs)
 lab/build-log-*.txt
 lab/scripts/__pycache__/
+
+# Throwaway scratch files (i18n insert scripts, commit-message files) — never commit
+_tmp_*
