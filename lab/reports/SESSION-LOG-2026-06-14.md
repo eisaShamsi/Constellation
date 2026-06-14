@@ -168,3 +168,24 @@ name** alongside Rename / Suggest (md) / Delete; folders gain **Move** + the cre
 roots unchanged (create-only). **Rename stays INLINE** (the tree's native `renamingPath` edit, not
 the dialog — the per-surface contextual difference); Reveal-in-tree omitted (this IS the tree).
 - svelte-check 0 errors / 315 warnings; `npm run build` → `cargo build --release`; binary 20:44.
+
+**Boss GATE — file-tree Move PASS; OrgChart Move worked but left the chart STALE** (the move
+happened on disk + showed in the file tree, but the OC kept the old node; acting on it failed with
+"doesn't exist"). Plus a general "some lag" observation.
+
+### A3-R3 follow-up — OrgChart staleness fix
+
+The fullscreen OrgChart cached `constellation_map_universe` into `mapRoot` and never reloaded.
+- **OrgChart** gains a `refreshKey` prop + `reloadFullscreenData()` that re-fetches the tree
+  **preserving the user's expand set + pan/zoom** (a move no longer collapses the chart); stale
+  expanded paths in the Set are harmless.
+- **+layout** `markOrgChartDirty()`: bumps `refreshKey` if the chart is open (reload in place), else
+  sets `orgChartDirty` for the next open. Called from `handleMoveConfirm`, `handleDeleteConfirm`,
+  `handleRenameComplete` (rename suppresses the watcher, so it needs the explicit mark), AND the
+  `library-changed` watcher (catch-all for create + external). On dock **re-open**, reload only if
+  `orgChartDirty` — so an unchanged re-open does NOT trigger a redundant whole-universe reload (lag-
+  conscious).
+- svelte-check 0 errors / 315 warnings; build green; binary 21:50.
+- **Lag:** asked Eisa to pinpoint (opening Move / opening the chart / the menu / moving). The OC
+  reload is now gated to actual changes to avoid redundant heavy reloads; further perf work pending
+  a specific locus.

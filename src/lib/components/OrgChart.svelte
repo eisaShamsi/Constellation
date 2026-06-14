@@ -18,6 +18,7 @@
 		onNoteClick,
 		onClose,
 		onNodeMenuAction,
+		refreshKey = 0,
 	}: {
 		libraryColorMap?: Record<string, string>;
 		universeName?: string;
@@ -30,6 +31,11 @@
 		// Expand/Collapse (local tree state); every other op is performed by the
 		// host (+layout) which owns the operations. One callback, host dispatches.
 		onNodeMenuAction?: (action: string, target: ContextTarget) => void;
+		// MIG-077 A3-R3 follow-up — bumped by the host when the universe tree
+		// changed (a move/delete/rename/create, or on re-open after such). Triggers
+		// a reload so the chart never shows a stale node (acting on a stale node
+		// failed with "doesn't exist" after a move).
+		refreshKey?: number;
 	} = $props();
 
 	// ─── State ─────────────────────────────────────────────
@@ -774,6 +780,32 @@
 	// Load fullscreen data on mount if fullscreen mode
 	$effect(() => {
 		if (fullscreen && !mapRoot && !loading) loadFullscreenData();
+	});
+
+	// MIG-077 A3-R3 follow-up — reload when the host signals the tree changed,
+	// PRESERVING the user's expand set + pan/zoom (so a move doesn't collapse the
+	// chart). Stale expanded paths in the Set are harmless (they match no node).
+	async function reloadFullscreenData() {
+		if (!fullscreen) return;
+		const keepExpanded = new Set(fsExpandedPaths);
+		try {
+			const next = await invoke<MapNode>('constellation_map_universe', {
+				universeName: universeName || 'Universe',
+				maxDepth: 20,
+			});
+			mapRoot = next;
+			if (next) { keepExpanded.add(next.path); fsExpandedPaths = keepExpanded; }
+		} catch (e) {
+			console.error('[OrgChart] reloadFullscreenData failed:', e);
+		}
+	}
+	let lastRefreshKey = -1; // sentinel; never equals a real key, so mount is a no-op
+	$effect(() => {
+		const k = refreshKey;
+		if (k !== lastRefreshKey) {
+			lastRefreshKey = k;
+			if (fullscreen && mapRoot) reloadFullscreenData();
+		}
 	});
 
 	/** Compute zoom to fit inner content to canvas width. */

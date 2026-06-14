@@ -2668,6 +2668,10 @@
 					await refreshLibraryTree(vid);
 				}
 				await loadAllStats();
+				// MIG-077 A3-R3 follow-up — any on-disk change (create/move/delete/
+				// external) makes the cached OrgChart tree stale; reload it if open,
+				// else mark dirty for the next open.
+				markOrgChartDirty();
 
 				// Reload open tabs whose files changed
 				const tabs = get(openTabs);
@@ -4427,6 +4431,16 @@
 	let renameDialog = $state<{ path: string; name: string } | null>(null);
 	// MIG-077 A3-R3 — Move destination-folder picker (universe-wide).
 	let moveDialog = $state<{ path: string; name: string; libraryId: string; loading: boolean; folders: { path: string; name: string; depth: number; isLibraryRoot?: boolean }[] } | null>(null);
+	// MIG-077 A3-R3 follow-up — the fullscreen OrgChart caches the universe tree
+	// and never reloaded, so a move/delete/rename left stale nodes (acting on one
+	// failed with "doesn't exist"). Bump refreshKey to reload it; gate on "dirty"
+	// so an unchanged re-open does NOT trigger a redundant whole-universe reload.
+	let orgChartRefreshKey = $state(0);
+	let orgChartDirty = $state(false);
+	function markOrgChartDirty() {
+		if (showOrgChart) orgChartRefreshKey++; // reload in place
+		else orgChartDirty = true; // defer to next open
+	}
 
 	// MIG-008 §Build.1: shared create dialog state. Single component for
 	// Folder / Note / Base / Library so the four flows don't drift.
@@ -4774,6 +4788,7 @@
 		if (libraryId) await refreshLibraryTree(libraryId);
 		if (targetLibId && targetLibId !== libraryId) await refreshLibraryTree(targetLibId);
 		await loadAllStats();
+		markOrgChartDirty();
 		moveDialog = null;
 	}
 
@@ -4872,6 +4887,7 @@
 			await deleteWithSetting(confirmDelete.path);
 			if (lib) await refreshLibraryTree(lib.library_id);
 			await loadAllStats();
+			markOrgChartDirty();
 		} catch (e) {
 			console.error('Failed to delete:', e);
 		}
@@ -4928,6 +4944,7 @@
 				: await getOldTitleForCascade(oldPath);
 
 			const effectivePath = await renameItem(oldPath, newPath);
+			markOrgChartDirty(); // MIG-077 A3-R3 follow-up — reload the chart if open
 			// §137 (Rule 8 — Write-Time Derivation): every reactive Map keyed
 			// by a file path must follow that path in the same transaction as
 			// the rename. Without this, derived UI surfaces (file-tree stage
@@ -5136,6 +5153,9 @@
 				orgChartReturnPending = false;
 				if (showOrgChart) {
 					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showInspector360 = false;
+					// MIG-077 A3-R3 follow-up — reload the chart on re-open ONLY if the
+					// tree changed while it was closed (no redundant whole-universe reload).
+					if (orgChartDirty) { orgChartRefreshKey++; orgChartDirty = false; }
 				}
 				/* fullPageActive $effect handles sidebar snapshot */
 			}} title={$t('navigator.orgChart') || 'Organization Chart'}>
@@ -6001,6 +6021,7 @@
 						orgChartReturnPending = true;
 					}}
 					onNodeMenuAction={handleOrgNodeMenuAction}
+					refreshKey={orgChartRefreshKey}
 					onClose={() => { showOrgChart = false; orgChartReturnPending = false; }}
 				/>
 			</div>
