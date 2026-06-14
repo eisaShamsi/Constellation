@@ -980,6 +980,8 @@
 		"sortCount": "Trier par nombre"
 	},
 	"indexPanel": {
+		"hideTerm": "Masquer le terme",
+		"showTerm": "Afficher le terme",
 		"filterPlaceholder": "Filtrer les termes...",
 		"terms": "termes",
 		"noTerms": "Aucun terme de glossaire trouvé",

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
 	import { untrack } from 'svelte';
+	import ContextMenu from './ContextMenu.svelte';
 	import {
 		SNIPPET_MARK_START,
 		SNIPPET_MARK_END,
@@ -1009,6 +1010,17 @@
 		contextMenu = null;
 	}
 
+	// MIG-077 A2 — the Index term menu via the shared ContextMenu (was inline +
+	// hardcoded English). One dynamic Hide/Show item.
+	function getIndexTermMenuItems(term: string) {
+		const lower = term.toLowerCase();
+		return [
+			excludedTerms.has(lower)
+				? { label: $t('indexPanel.showTerm'), action: () => unhideTerm(lower) }
+				: { label: $t('indexPanel.hideTerm'), action: () => hideTerm(lower) },
+		];
+	}
+
 	// ─── Export ───
 	// Mentions are lazy-loaded per term; export walks the filtered list and
 	// loads any not-yet-cached ones before assembling the markdown. On very
@@ -1331,15 +1343,14 @@
 	{/if}
 </div>
 
-<!-- Context menu -->
+<!-- Context menu (MIG-077 A2 — shared ContextMenu) -->
 {#if contextMenu}
-	<div class="gp-context-menu" style="left: {contextMenu.x}px; top: {contextMenu.y}px">
-		{#if excludedTerms.has(contextMenu.term.toLowerCase())}
-			<button onclick={() => { unhideTerm(contextMenu!.term.toLowerCase()); contextMenu = null; }}>Show term</button>
-		{:else}
-			<button onclick={() => hideTerm(contextMenu!.term.toLowerCase())}>Hide term</button>
-		{/if}
-	</div>
+	<ContextMenu
+		x={contextMenu.x}
+		y={contextMenu.y}
+		items={getIndexTermMenuItems(contextMenu.term)}
+		onClose={closeContextMenu}
+	/>
 {/if}
 
 <style>
@@ -1900,34 +1911,6 @@
 		font-size: 0.62rem;
 		color: var(--text-faint);
 		font-variant-numeric: tabular-nums;
-	}
-
-	/* ── Context menu ── */
-	.gp-context-menu {
-		position: fixed;
-		z-index: 9999;
-		background: var(--background-primary);
-		border: 1px solid var(--border);
-		border-radius: 6px;
-		padding: 4px;
-		box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-		min-width: 120px;
-	}
-	.gp-context-menu button {
-		display: block;
-		width: 100%;
-		background: none;
-		border: none;
-		cursor: pointer;
-		font-family: inherit;
-		font-size: 0.78rem;
-		color: var(--text-normal);
-		padding: 6px 10px;
-		border-radius: 4px;
-		text-align: start;
-	}
-	.gp-context-menu button:hover {
-		background: var(--background-modifier-hover);
 	}
 
 	/* ── RTL support ── */

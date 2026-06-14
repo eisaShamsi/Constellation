@@ -1420,6 +1420,8 @@
 		"sortCount": "Ordenar por contagem"
 	},
 	"indexPanel": {
+		"hideTerm": "Ocultar termo",
+		"showTerm": "Mostrar termo",
 		"filterPlaceholder": "Filtrar termos...",
 		"terms": "termos",
 		"noTerms": "Nenhum termo do glossário encontrado",

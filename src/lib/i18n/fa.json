@@ -980,6 +980,8 @@
 		"sortCount": "مرتب‌سازی بر اساس تعداد"
 	},
 	"indexPanel": {
+		"hideTerm": "پنهان کردن واژه",
+		"showTerm": "نمایش واژه",
 		"filterPlaceholder": "فیلتر اصطلاحات...",
 		"terms": "اصطلاحات",
 		"noTerms": "اصطلاحی یافت نشد",

@@ -1420,6 +1420,8 @@
 		"sortCount": "गिनती के अनुसार क्रमबद्ध"
 	},
 	"indexPanel": {
+		"hideTerm": "शब्द छिपाएँ",
+		"showTerm": "शब्द दिखाएँ",
 		"filterPlaceholder": "शब्द फ़िल्टर करें...",
 		"terms": "शब्द",
 		"noTerms": "कोई शब्दावली शब्द नहीं मिले",

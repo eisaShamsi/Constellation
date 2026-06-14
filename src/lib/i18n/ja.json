@@ -1420,6 +1420,8 @@
 		"sortCount": "数で並べ替え"
 	},
 	"indexPanel": {
+		"hideTerm": "用語を非表示",
+		"showTerm": "用語を表示",
 		"filterPlaceholder": "用語を絞り込み...",
 		"terms": "件の用語",
 		"noTerms": "用語が見つかりません",

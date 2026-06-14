@@ -980,6 +980,8 @@
 		"sortCount": "מיון לפי כמות"
 	},
 	"indexPanel": {
+		"hideTerm": "הסתר מונח",
+		"showTerm": "הצג מונח",
 		"filterPlaceholder": "סנן מונחים...",
 		"terms": "מונחים",
 		"noTerms": "לא נמצאו מונחים",

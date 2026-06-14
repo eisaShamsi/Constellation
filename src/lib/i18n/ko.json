@@ -1420,6 +1420,8 @@
 		"sortCount": "개수순 정렬"
 	},
 	"indexPanel": {
+		"hideTerm": "용어 숨기기",
+		"showTerm": "용어 표시",
 		"filterPlaceholder": "용어 필터...",
 		"terms": "개 용어",
 		"noTerms": "용어를 찾을 수 없습니다",
