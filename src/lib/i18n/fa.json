@@ -886,6 +886,17 @@
 		"sortByFile": "مرتب‌سازی بر اساس فایل",
 		"search": "جستجوی وظایف..."
 	},
+	"tabContextMenu": {
+		"pin": "سنجاق کردن",
+		"unpin": "برداشتن سنجاق",
+		"close": "بستن",
+		"closeOthers": "بستن بقیه",
+		"closeToRight": "بستن موارد سمت راست",
+		"closeToLeft": "بستن موارد سمت چپ",
+		"closeAll": "بستن همه",
+		"copyPath": "کپی مسیر",
+		"copyName": "کپی نام"
+	},
 	"dialogs": {
 		"batchDeleteTrash": "حذف {count} یادداشت؟ به پوشهٔ .trash منتقل می‌شوند.",
 		"batchDeleteSystem": "حذف {count} یادداشت؟ به سطل بازیافت منتقل می‌شوند.",

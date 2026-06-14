@@ -1326,6 +1326,17 @@
 		"allLibraries": "所有仓库",
 		"groupByLibrary": "按仓库分组"
 	},
+	"tabContextMenu": {
+		"pin": "固定",
+		"unpin": "取消固定",
+		"close": "关闭",
+		"closeOthers": "关闭其他",
+		"closeToRight": "关闭右侧",
+		"closeToLeft": "关闭左侧",
+		"closeAll": "全部关闭",
+		"copyPath": "复制路径",
+		"copyName": "复制名称"
+	},
 	"dialogs": {
 		"batchDeleteTrash": "删除 {count} 条笔记？它们将被移至 .trash 文件夹。",
 		"batchDeleteSystem": "删除 {count} 条笔记？它们将被移至回收站。",

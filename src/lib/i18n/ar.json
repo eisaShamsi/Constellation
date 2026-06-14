@@ -1425,6 +1425,17 @@
 		"sortByFile": "ترتيب حسب الملف",
 		"search": "البحث في المهام..."
 	},
+	"tabContextMenu": {
+		"pin": "تثبيت",
+		"unpin": "إلغاء التثبيت",
+		"close": "إغلاق",
+		"closeOthers": "إغلاق الأخرى",
+		"closeToRight": "إغلاق ما على اليمين",
+		"closeToLeft": "إغلاق ما على اليسار",
+		"closeAll": "إغلاق الكل",
+		"copyPath": "نسخ المسار",
+		"copyName": "نسخ الاسم"
+	},
 	"dialogs": {
 		"batchDeleteTrash": "حذف {count} ملاحظة؟ ستُنقل إلى مجلد .trash.",
 		"batchDeleteSystem": "حذف {count} ملاحظة؟ ستُنقل إلى سلة المحذوفات.",

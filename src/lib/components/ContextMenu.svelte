@@ -1,11 +1,17 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 
+	// MIG-077 A0 — Tier-1 additive extension: `separator` renders a divider (no
+	// label/action); `disabled` renders a greyed, non-interactive row. label and
+	// action are optional so a separator can be just `{ separator: true }`;
+	// existing action items still pass both, unchanged.
 	interface MenuItem {
-		label: string;
+		label?: string;
 		icon?: string;
-		action: () => void;
+		action?: () => void;
 		danger?: boolean;
+		disabled?: boolean;
+		separator?: boolean;
 	}
 
 	let {
@@ -53,14 +59,19 @@
 
 <div class="ctx-menu" bind:this={menuEl} style="left: {adjustedX}px; top: {adjustedY}px;">
 	{#each items as item}
-		<button
-			class="ctx-item"
-			class:danger={item.danger}
-			onclick={() => { item.action(); onClose(); }}
-		>
-			{#if item.icon}<span class="ctx-icon">{item.icon}</span>{/if}
-			<span>{item.label}</span>
-		</button>
+		{#if item.separator}
+			<div class="ctx-separator"></div>
+		{:else}
+			<button
+				class="ctx-item"
+				class:danger={item.danger}
+				disabled={item.disabled}
+				onclick={() => { item.action?.(); onClose(); }}
+			>
+				{#if item.icon}<span class="ctx-icon">{item.icon}</span>{/if}
+				<span>{item.label}</span>
+			</button>
+		{/if}
 	{/each}
 </div>
 
@@ -107,4 +118,17 @@
 		text-align: center;
 		flex-shrink: 0;
 	}
+		/* MIG-077 A0 — separator + disabled */
+		.ctx-separator {
+			height: 1px;
+			margin: 4px 6px;
+			background: var(--background-modifier-border);
+		}
+		.ctx-item:disabled {
+			opacity: 0.4;
+			cursor: default;
+		}
+		.ctx-item:disabled:hover {
+			background: none;
+		}
 </style>

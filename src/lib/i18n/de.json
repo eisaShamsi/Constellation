@@ -886,6 +886,17 @@
 		"sortByFile": "Nach Datei sortieren",
 		"search": "Aufgaben suchen..."
 	},
+	"tabContextMenu": {
+		"pin": "Anheften",
+		"unpin": "Lösen",
+		"close": "Schließen",
+		"closeOthers": "Andere schließen",
+		"closeToRight": "Rechts schließen",
+		"closeToLeft": "Links schließen",
+		"closeAll": "Alle schließen",
+		"copyPath": "Pfad kopieren",
+		"copyName": "Namen kopieren"
+	},
 	"dialogs": {
 		"batchDeleteTrash": "{count} Notizen löschen? Sie werden in den .trash-Ordner verschoben.",
 		"batchDeleteSystem": "{count} Notizen löschen? Sie werden in den Papierkorb verschoben.",

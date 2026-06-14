@@ -886,6 +886,17 @@
 		"allLibraries": "تمام خزانے",
 		"groupByLibrary": "خزانے کے مطابق گروپ"
 	},
+	"tabContextMenu": {
+		"pin": "پن کریں",
+		"unpin": "پن ہٹائیں",
+		"close": "بند کریں",
+		"closeOthers": "دیگر بند کریں",
+		"closeToRight": "دائیں جانب بند کریں",
+		"closeToLeft": "بائیں جانب بند کریں",
+		"closeAll": "سب بند کریں",
+		"copyPath": "راستہ کاپی کریں",
+		"copyName": "نام کاپی کریں"
+	},
 	"dialogs": {
 		"batchDeleteTrash": "{count} نوٹ حذف کریں؟ انہیں .trash فولڈر میں منتقل کر دیا جائے گا۔",
 		"batchDeleteSystem": "{count} نوٹ حذف کریں؟ انہیں ری سائیکل بِن میں منتقل کر دیا جائے گا۔",

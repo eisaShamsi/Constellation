@@ -1326,6 +1326,17 @@
 		"allLibraries": "모든 보관함",
 		"groupByLibrary": "보관함별 그룹"
 	},
+	"tabContextMenu": {
+		"pin": "고정",
+		"unpin": "고정 해제",
+		"close": "닫기",
+		"closeOthers": "다른 탭 닫기",
+		"closeToRight": "오른쪽 닫기",
+		"closeToLeft": "왼쪽 닫기",
+		"closeAll": "모두 닫기",
+		"copyPath": "경로 복사",
+		"copyName": "이름 복사"
+	},
 	"dialogs": {
 		"batchDeleteTrash": "{count}개의 노트를 삭제할까요? .trash 폴더로 이동합니다.",
 		"batchDeleteSystem": "{count}개의 노트를 삭제할까요? 휴지통으로 이동합니다.",

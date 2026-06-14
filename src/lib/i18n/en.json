@@ -1492,6 +1492,17 @@
 		"sortByFile": "Sort by file",
 		"search": "Search tasks..."
 	},
+	"tabContextMenu": {
+		"pin": "Pin",
+		"unpin": "Unpin",
+		"close": "Close",
+		"closeOthers": "Close Others",
+		"closeToRight": "Close to the Right",
+		"closeToLeft": "Close to the Left",
+		"closeAll": "Close All",
+		"copyPath": "Copy Path",
+		"copyName": "Copy Name"
+	},
 	"dialogs": {
 		"batchDeleteTrash": "Delete {count} notes? They will be moved to the .trash folder.",
 		"batchDeleteSystem": "Delete {count} notes? They will be moved to the Recycle Bin.",

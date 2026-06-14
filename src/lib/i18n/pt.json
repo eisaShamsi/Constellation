@@ -1326,6 +1326,17 @@
 		"allLibraries": "Todos os cofres",
 		"groupByLibrary": "Agrupar por cofre"
 	},
+	"tabContextMenu": {
+		"pin": "Fixar",
+		"unpin": "Desafixar",
+		"close": "Fechar",
+		"closeOthers": "Fechar as outras",
+		"closeToRight": "Fechar à direita",
+		"closeToLeft": "Fechar à esquerda",
+		"closeAll": "Fechar todas",
+		"copyPath": "Copiar caminho",
+		"copyName": "Copiar nome"
+	},
 	"dialogs": {
 		"batchDeleteTrash": "Excluir {count} notas? Elas serão movidas para a pasta .trash.",
 		"batchDeleteSystem": "Excluir {count} notas? Elas serão movidas para a Lixeira.",

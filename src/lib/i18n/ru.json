@@ -1326,6 +1326,17 @@
 		"allLibraries": "Все хранилища",
 		"groupByLibrary": "Группировать по хранилищу"
 	},
+	"tabContextMenu": {
+		"pin": "Закрепить",
+		"unpin": "Открепить",
+		"close": "Закрыть",
+		"closeOthers": "Закрыть другие",
+		"closeToRight": "Закрыть справа",
+		"closeToLeft": "Закрыть слева",
+		"closeAll": "Закрыть все",
+		"copyPath": "Копировать путь",
+		"copyName": "Копировать имя"
+	},
 	"dialogs": {
 		"batchDeleteTrash": "Удалить {count} заметок? Они будут перемещены в папку .trash.",
 		"batchDeleteSystem": "Удалить {count} заметок? Они будут перемещены в Корзину.",

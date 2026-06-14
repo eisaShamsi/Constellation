@@ -232,9 +232,8 @@
 
 	function showTabContextMenu(e: MouseEvent, tabId: string) {
 		e.preventDefault();
+		// ContextMenu (MIG-077 A1) owns its own click-outside + Escape close.
 		tabCtxMenu = { x: e.clientX, y: e.clientY, tabId };
-		const close = () => { tabCtxMenu = null; window.removeEventListener('click', close); };
-		setTimeout(() => window.addEventListener('click', close), 0);
 	}
 
 	function tabCtxAction(action: string) {
@@ -273,6 +272,24 @@
 				break;
 		}
 		tabCtxMenu = null;
+	}
+
+	// MIG-077 A1 — the tab context menu via the shared ContextMenu (was an inline
+	// hardcoded-English menu). tabCtxAction (above) still performs every op.
+	function getTabContextMenuItems(tabId: string) {
+		const tab = get(openTabs).find(t => t.id === tabId);
+		return [
+			{ label: tab?.pinned ? $t('tabContextMenu.unpin') : $t('tabContextMenu.pin'), action: () => tabCtxAction('pin') },
+			{ separator: true },
+			{ label: $t('tabContextMenu.close'), action: () => tabCtxAction('close'), disabled: tab?.pinned },
+			{ label: $t('tabContextMenu.closeOthers'), action: () => tabCtxAction('closeOthers') },
+			{ label: $t('tabContextMenu.closeToRight'), action: () => tabCtxAction('closeRight') },
+			{ label: $t('tabContextMenu.closeToLeft'), action: () => tabCtxAction('closeLeft') },
+			{ label: $t('tabContextMenu.closeAll'), action: () => tabCtxAction('closeAll') },
+			{ separator: true },
+			{ label: $t('tabContextMenu.copyPath'), action: () => tabCtxAction('copyPath') },
+			{ label: $t('tabContextMenu.copyName'), action: () => tabCtxAction('copyName') },
+		];
 	}
 	// searchMode removed — Search Hub is the single search experience
 	let sidebarMode = $state<'tree' | 'list' | 'skyview' | 'digest'>('tree');
@@ -5644,24 +5661,14 @@
 				{/if}
 				</div>
 
-				<!-- Tab context menu -->
+				<!-- Tab context menu (MIG-077 A1 — shared ContextMenu) -->
 				{#if tabCtxMenu}
-					{#each [$openTabs.find(t => t.id === tabCtxMenu!.tabId)] as ctxTab}
-						<div class="tab-ctx-menu" style="left:{tabCtxMenu.x}px;top:{tabCtxMenu.y}px">
-							<button class="tab-ctx-item" onclick={() => tabCtxAction('pin')}>
-								{ctxTab?.pinned ? 'Unpin' : 'Pin'}
-							</button>
-							<div class="tab-ctx-sep"></div>
-							<button class="tab-ctx-item" onclick={() => tabCtxAction('close')} disabled={ctxTab?.pinned}>Close</button>
-							<button class="tab-ctx-item" onclick={() => tabCtxAction('closeOthers')}>Close Others</button>
-							<button class="tab-ctx-item" onclick={() => tabCtxAction('closeRight')}>Close to the Right</button>
-							<button class="tab-ctx-item" onclick={() => tabCtxAction('closeLeft')}>Close to the Left</button>
-							<button class="tab-ctx-item" onclick={() => tabCtxAction('closeAll')}>Close All</button>
-							<div class="tab-ctx-sep"></div>
-							<button class="tab-ctx-item" onclick={() => tabCtxAction('copyPath')}>Copy Path</button>
-							<button class="tab-ctx-item" onclick={() => tabCtxAction('copyName')}>Copy Name</button>
-						</div>
-					{/each}
+					<ContextMenu
+						x={tabCtxMenu.x}
+						y={tabCtxMenu.y}
+						items={getTabContextMenuItems(tabCtxMenu.tabId)}
+						onClose={() => tabCtxMenu = null}
+					/>
 				{/if}
 			{/if}
 		</div>
@@ -7771,25 +7778,6 @@
 	.tab-action.active { color: var(--layout-btn-active-color, var(--accent)); }
 	.tab-action:disabled { opacity: 0.3; cursor: not-allowed; }
 	.tab-spacer { flex: 1; }
-	.tab-ctx-menu {
-		position: fixed; z-index: 9999;
-		background: var(--background-primary);
-		border: 1px solid var(--background-modifier-border);
-		border-radius: 8px; padding: 4px 0;
-		min-width: 180px;
-		box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-		direction: ltr;
-	}
-	.tab-ctx-item {
-		display: block; width: 100%; padding: 6px 14px;
-		border: none; background: none; cursor: pointer;
-		font-size: 13px; color: var(--text-normal);
-		text-align: left; font-family: var(--font-interface-theme);
-	}
-	.tab-ctx-item:hover { background: var(--background-modifier-hover); }
-	.tab-ctx-item:disabled { opacity: 0.4; cursor: default; }
-	.tab-ctx-item:disabled:hover { background: none; }
-	.tab-ctx-sep { height: 1px; margin: 4px 8px; background: var(--background-modifier-border); }
 	.tab-new {
 		min-width: 32px !important; max-width: 32px;
 		padding: 4px 0 !important; justify-content: center;

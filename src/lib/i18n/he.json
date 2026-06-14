@@ -886,6 +886,17 @@
 		"allLibraries": "כל הכספות",
 		"groupByLibrary": "קבץ לפי כספת"
 	},
+	"tabContextMenu": {
+		"pin": "הצמד",
+		"unpin": "בטל הצמדה",
+		"close": "סגור",
+		"closeOthers": "סגור אחרים",
+		"closeToRight": "סגור מימין",
+		"closeToLeft": "סגור משמאל",
+		"closeAll": "סגור הכול",
+		"copyPath": "העתק נתיב",
+		"copyName": "העתק שם"
+	},
 	"dialogs": {
 		"batchDeleteTrash": "למחוק {count} פתקים? הם יועברו לתיקיית ‎.trash.",
 		"batchDeleteSystem": "למחוק {count} פתקים? הם יועברו לסל המיחזור.",

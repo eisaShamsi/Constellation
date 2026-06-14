@@ -1326,6 +1326,17 @@
 		"allLibraries": "Tüm kasalar",
 		"groupByLibrary": "Kasaya göre grupla"
 	},
+	"tabContextMenu": {
+		"pin": "Sabitle",
+		"unpin": "Sabitlemeyi kaldır",
+		"close": "Kapat",
+		"closeOthers": "Diğerlerini kapat",
+		"closeToRight": "Sağdakileri kapat",
+		"closeToLeft": "Soldakileri kapat",
+		"closeAll": "Tümünü kapat",
+		"copyPath": "Yolu kopyala",
+		"copyName": "Adı kopyala"
+	},
 	"dialogs": {
 		"batchDeleteTrash": "{count} not silinsin mi? .trash klasörüne taşınacaklar.",
 		"batchDeleteSystem": "{count} not silinsin mi? Geri Dönüşüm Kutusu'na taşınacaklar.",

@@ -886,6 +886,17 @@
 		"sortByFile": "Trier par fichier",
 		"search": "Rechercher des tâches..."
 	},
+	"tabContextMenu": {
+		"pin": "Épingler",
+		"unpin": "Désépingler",
+		"close": "Fermer",
+		"closeOthers": "Fermer les autres",
+		"closeToRight": "Fermer à droite",
+		"closeToLeft": "Fermer à gauche",
+		"closeAll": "Tout fermer",
+		"copyPath": "Copier le chemin",
+		"copyName": "Copier le nom"
+	},
 	"dialogs": {
 		"batchDeleteTrash": "Supprimer {count} notes ? Elles seront déplacées vers le dossier .trash.",
 		"batchDeleteSystem": "Supprimer {count} notes ? Elles seront déplacées vers la Corbeille.",
