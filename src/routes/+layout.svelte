@@ -16,7 +16,7 @@
 		openNoteTab, closeTab, switchTab, reorderTab, closeNote, createEmptyTab,
 		toggleSplit, toggleSplitDirection, setFocusedTab,
 		parseFrontmatter, extractHeadings, saveTabContent, updateTabContent, buildFullContent, writeNote, markRecentWrite, setWriteAhead, getWriteAhead, clearWriteAhead,
-		createNote, createFolder, renameItem, deleteItem, moveToTrash,
+		createNote, createFolder, renameItem, deleteWithSetting, moveToTrash,
 		startWatchingLibrary, wasRecentlyWritten,
 		loadLibraryAppearance, libraryAppearances,
 		toggleEditMode, editingTabIds,
@@ -4661,7 +4661,7 @@
 		if (!confirmDelete) return;
 		try {
 			const lib = $libraryStats.find(v => confirmDelete!.path.startsWith(v.path));
-			await deleteItem(confirmDelete.path, true);
+			await deleteWithSetting(confirmDelete.path);
 			if (lib) await refreshLibraryTree(lib.library_id);
 			await loadAllStats();
 		} catch (e) {

@@ -2327,6 +2327,46 @@ export async function deleteItem(path: string, permanent = false): Promise<void>
 	}));
 }
 
+/** MIG-076 §E-follow-up — the raw routing command (see `delete_path` in
+ *  libraries.rs). Most callers want `deleteWithSetting`. */
+export async function deletePath(path: string, mode: 'permanent' | 'trash' | 'system', trashRoot: string | null): Promise<void> {
+	await invoke('delete_path', { path, mode, trashRoot });
+}
+
+/** MIG-076 §E-follow-up — delete a note/folder HONORING the user's "Deleted
+ *  files" setting (permanent · .trash folder [library|universe scope] · OS
+ *  Recycle Bin). Replaces the old always-permanent delete at every call site.
+ *  Resolves the .trash root from the libraries list, then closes any open tabs
+ *  + clears path-keyed aux state, exactly as `deleteItem` did. */
+export async function deleteWithSetting(path: string): Promise<void> {
+	const s = get(appSettings);
+	// 'permanent' is no longer a user choice (Boss 2026-06-14 — deletes are always
+	// recoverable); anything not 'local' resolves to System trash.
+	const dest = s.trashDestination === 'local' ? 'local' : 'system';
+	let mode: 'trash' | 'system' = 'system';
+	let trashRoot: string | null = null;
+	if (dest === 'local') {
+		mode = 'trash';
+		if (s.trashFolderScope === 'universe') {
+			trashRoot = get(libraries).find(v => v.is_universe_notes)?.path ?? null;
+		} else {
+			const matches = get(libraryStats).filter(v => path.startsWith(v.path));
+			trashRoot = matches.length
+				? matches.reduce((a, b) => (b.path.length > a.path.length ? b : a)).path
+				: null;
+		}
+		if (!trashRoot) throw new Error('Could not resolve a .trash location for this path.');
+	}
+	await deletePath(path, mode, trashRoot);
+	// §140 — drop the path's aux state + close any tabs at/under it (as deleteItem did).
+	clearPathKeyedAuxStateOnDelete(path);
+	openTabs.update(tabs => tabs.filter(t => {
+		if (t.path === path) return false;
+		if (t.path.startsWith(path + '/') || t.path.startsWith(path + '\\')) return false;
+		return true;
+	}));
+}
+
 /** MIG-076 §E1b — move an existing note to the library's `.trash` (recoverable),
  *  used by the collision dialog's "Overwrite" before the create/rename proceeds. */
 export async function moveToTrash(path: string, libraryPath: string): Promise<void> {
@@ -3322,7 +3362,12 @@ export interface AppSettings {
 	/** MIG-067 §E.2 — show the type name as a small label above each typed link. */
 	showTypedLinkLabels: boolean;
 	confirmDelete: boolean;
-	trashDestination: 'system' | 'local' | 'permanent';
+	/** Boss 2026-06-14 — 'permanent' dropped as a user choice; deletes are always
+	 *  recoverable. Legacy 'permanent' is migrated to 'system' on load + at use. */
+	trashDestination: 'system' | 'local';
+	/** MIG-076 §E-follow-up — when trashDestination is 'local' (.trash folder),
+	 *  whether .trash lives in the note's own library or at the universe root. */
+	trashFolderScope: 'library' | 'universe';
 
 	// Appearance & Themes
 	titleAlignment: 'start' | 'center';
@@ -3726,6 +3771,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
 	showTypedLinkLabels: true,
 	confirmDelete: true,
 	trashDestination: 'system',
+	trashFolderScope: 'library',
 	titleAlignment: 'center',
 	colorScheme: 'light',
 	accentColor: '#7c3aed',
@@ -3970,6 +4016,10 @@ export function applyParsedSettings(parsed: Record<string, unknown>): void {
 	// Migrate: old default nodeSize was 4, new default is 1.5
 	const savedSkyView = (parsed.skyView as Record<string, unknown>) || {};
 	if (savedSkyView.nodeSize === 4) savedSkyView.nodeSize = 1.5;
+
+	// Boss 2026-06-14 — 'permanent' is no longer a valid delete destination
+	// (deletes are always recoverable). Migrate any saved 'permanent' to System trash.
+	if (parsed.trashDestination === 'permanent') parsed.trashDestination = 'system';
 
 	appSettings.set({
 		...DEFAULT_SETTINGS,

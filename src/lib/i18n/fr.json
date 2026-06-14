@@ -248,6 +248,10 @@
 			"systemTrash": "Corbeille du système",
 			"trashFolder": "Dossier .trash",
 			"permanentDelete": "Supprimer définitivement",
+			"trashFolderScope": "Emplacement du dossier corbeille",
+			"trashFolderScopeDesc": "Où se trouve le dossier .trash lorsque les fichiers supprimés y sont déplacés",
+			"scopeLibrary": "Dans la bibliothèque de la note",
+			"scopeUniverse": "À la racine de l'univers",
 			"libraryRoot": "Racine de la bibliothèque"
 		},
 		"appearance": {

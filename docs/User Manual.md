@@ -498,6 +498,8 @@ The classic file tree for browsing notes and folders:
 
 **Name collisions are caught universe-wide.** Every note title stays unique across your whole universe — all libraries and any linked child universes — so `[[wikilinks]]` always resolve to exactly one note. When you create a note with a typed name, or rename one, onto a title that already exists *anywhere*, a dialog appears: **Change name** (pre-filled with a free suggestion like *Foo 1*), **Overwrite** (the displaced note is moved to its library's `.trash` first — recoverable, and given a numeric suffix if a same-named note is already trashed, so trash is never clobbered), or **Cancel**. The dialog names which library the existing note already lives in. Quick Capture's auto-named notes are not interrupted; folders are unaffected.
 
+**Deleting notes is recoverable.** When you delete a note or folder — right-click → **Delete** in the file tree, or multi-select **Delete** in List mode — where it goes is set by **Settings → Universe & Libraries → "Deleted files"**: the **Windows Recycle Bin** (the default), or a **`.trash` folder** kept either inside the note's own library or at the universe root (your choice, in the same setting). Either way the note is recoverable, and it disappears from your tree and search immediately. There is deliberately **no "permanently delete" option** — routine deletes are always reversible.
+
 ### List Mode (Notes Navigator)
 
 A dual-pane browser for advanced note browsing:

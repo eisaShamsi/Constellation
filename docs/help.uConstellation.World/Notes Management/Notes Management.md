@@ -100,6 +100,15 @@ So when you **create** a note with a name you typed, or **rename** a note, and t
 
 This applies only to a name you **type**. Quick Capture, which auto-names notes, keeps its own automatic numbering and never interrupts you. Folders are not affected — only notes carry titles that links resolve against.
 
+### Deleting notes is recoverable
+
+When you delete a note or folder — right-click → **Delete** in the file tree, or the multi-select **Delete** in List mode — where it goes is governed by **Settings → Universe & Libraries → "Deleted files"**:
+
+- **System trash** *(the default)* — the OS Recycle Bin / Trash, recoverable through your operating system.
+- **`.trash` folder** — a hidden `.trash` kept either **inside the note's own library** or **at the universe root** (a sub-option appears when you pick this). Recoverable on disk; the `.trash` folder is hidden from your tree and search.
+
+Either way the note disappears from the tree and search immediately but is **not** erased. There is deliberately **no "permanently delete"** choice — routine deletes are always reversible. (A displaced note from an Overwrite, or a same-named note already in `.trash`, is kept with a numeric suffix so nothing in the trash is ever clobbered.)
+
 ### Templates apply uniformly
 
 When you create a new note, Constellation looks up any folder template configured for the parent folder and applies it. **This now happens regardless of how you invoked the create** — the toolbar button, the right-click menu, and the command palette all run the same path. Earlier versions skipped templates on the right-click path; that inconsistency is fixed.

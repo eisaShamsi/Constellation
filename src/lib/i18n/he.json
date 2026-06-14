@@ -248,6 +248,10 @@
 			"systemTrash": "סל המחזור של המערכת",
 			"trashFolder": "תיקיית .trash",
 			"permanentDelete": "מחיקה לצמיתות",
+			"trashFolderScope": "מיקום תיקיית האשפה",
+			"trashFolderScopeDesc": "היכן נמצאת תיקיית ‎.trash כשקבצים שנמחקו מועברים אליה",
+			"scopeLibrary": "בתוך הספרייה של הפתק",
+			"scopeUniverse": "בשורש היקום",
 			"libraryRoot": "תיקיית שורש הספריה"
 		},
 		"appearance": {

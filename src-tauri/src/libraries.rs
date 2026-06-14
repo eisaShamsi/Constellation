@@ -4733,6 +4733,118 @@ pub fn move_to_trash(app: tauri::AppHandle, path: String, library_path: String) 
     Ok(())
 }
 
+/// MIG-076 §E-follow-up — unified delete that honors the user's "Deleted files"
+/// setting (closes the gap where `delete_item` always hard-deleted regardless).
+/// `mode` routes the destination:
+///   - "permanent" → remove the file/folder (the only non-recoverable mode);
+///   - "trash"     → move into `<trash_root>/.trash`, de-colliding on a name
+///                   clash; `trash_root` is the note's LIBRARY root or the
+///                   UNIVERSE root, chosen by the frontend per `trashFolderScope`;
+///   - "system"    → move to the OS Recycle Bin (the `trash` crate).
+/// Every mode drops the note from the search index — it no longer lives at its
+/// indexed path (gone, or in an excluded `.trash`/OS-trash dir).
+#[tauri::command]
+pub fn delete_path(
+    app: tauri::AppHandle,
+    path: String,
+    mode: String,
+    trash_root: Option<String>,
+) -> Result<(), String> {
+    validate_path_in_any_library(&app, &path)?;
+    let target = Path::new(&path);
+    if !target.exists() {
+        return Err("Item does not exist.".to_string());
+    }
+
+    match mode.as_str() {
+        "permanent" => {
+            if target.is_dir() {
+                fs::remove_dir_all(target).map_err(|e| format!("Failed to delete folder: {}", e))?;
+            } else {
+                fs::remove_file(target).map_err(|e| format!("Failed to delete file: {}", e))?;
+            }
+        }
+        "system" => {
+            trash::delete(target).map_err(|e| format!("Failed to move to system trash: {}", e))?;
+        }
+        "trash" => {
+            let root = trash_root.ok_or("No trash root provided for a .trash-folder delete.")?;
+            move_into_trash_folder(target, Path::new(&root))?;
+        }
+        other => return Err(format!("Unknown delete mode: {}", other)),
+    }
+
+    // Drop the note from the search index in every case.
+    {
+        use tauri::Manager;
+        let search_state = app.state::<crate::search::SearchState>();
+        let _ = crate::search::reindex_delete_note(&search_state, &path);
+    }
+    Ok(())
+}
+
+/// Move `source` into `<trash_root>/.trash`, de-colliding on a name clash
+/// (Obsidian-style numeric suffix) so an earlier trashed item is never
+/// clobbered — the same rule as `move_to_trash`. Cross-volume-safe: a rename
+/// that can't cross the device boundary (the universe-root scope where the
+/// library lives on a different drive) falls back to copy + remove.
+fn move_into_trash_folder(source: &Path, trash_root: &Path) -> Result<(), String> {
+    let trash_dir = trash_root.join(".trash");
+    if !trash_dir.exists() {
+        fs::create_dir_all(&trash_dir)
+            .map_err(|e| format!("Failed to create .trash folder: {}", e))?;
+    }
+    let file_name = source.file_name().ok_or("Invalid path")?;
+    let mut dest = trash_dir.join(file_name);
+    if dest.exists() {
+        let stem = source.file_stem().and_then(|s| s.to_str()).unwrap_or("item");
+        let ext = source.extension().and_then(|s| s.to_str());
+        let mut placed = false;
+        for n in 1..=9999 {
+            let candidate_name = match ext {
+                Some(e) => format!("{} {}.{}", stem, n, e),
+                None => format!("{} {}", stem, n),
+            };
+            let candidate = trash_dir.join(&candidate_name);
+            if !candidate.exists() { dest = candidate; placed = true; break; }
+        }
+        if !placed {
+            return Err("Trash already holds too many items with this name.".to_string());
+        }
+    }
+    // Gate against an in-flight editor flush of the same file, then move.
+    // On a cross-device failure, fall back to copy + remove.
+    if crate::write_gate::gate_rename(source, &dest, "delete_trash").is_err() {
+        if source.is_dir() {
+            copy_dir_recursive(source, &dest)?;
+            fs::remove_dir_all(source)
+                .map_err(|e| format!("Failed to remove source folder after copy: {}", e))?;
+        } else {
+            fs::copy(source, &dest).map_err(|e| format!("Failed to copy to trash: {}", e))?;
+            fs::remove_file(source)
+                .map_err(|e| format!("Failed to remove source file after copy: {}", e))?;
+        }
+    }
+    Ok(())
+}
+
+/// Recursive directory copy (std has no built-in) — for the cross-volume
+/// trash fallback when a folder is deleted to a different-drive trash root.
+fn copy_dir_recursive(src: &Path, dst: &Path) -> Result<(), String> {
+    fs::create_dir_all(dst).map_err(|e| format!("Failed to create dir: {}", e))?;
+    for entry in fs::read_dir(src).map_err(|e| format!("Failed to read dir: {}", e))? {
+        let entry = entry.map_err(|e| format!("Failed to read entry: {}", e))?;
+        let from = entry.path();
+        let to = dst.join(entry.file_name());
+        if from.is_dir() {
+            copy_dir_recursive(&from, &to)?;
+        } else {
+            fs::copy(&from, &to).map_err(|e| format!("Failed to copy file: {}", e))?;
+        }
+    }
+    Ok(())
+}
+
 // ─── File Metadata ───
 
 #[derive(Debug, Clone, serde::Serialize)]

@@ -248,6 +248,10 @@
 			"systemTrash": "システムのごみ箱",
 			"trashFolder": ".trash フォルダ",
 			"permanentDelete": "完全に削除",
+			"trashFolderScope": "ゴミ箱フォルダーの場所",
+			"trashFolderScopeDesc": "削除したファイルを移動する .trash フォルダーの場所",
+			"scopeLibrary": "ノートのライブラリ内",
+			"scopeUniverse": "ユニバースのルート",
 			"libraryRoot": "ライブラリルートフォルダ"
 		},
 		"appearance": {

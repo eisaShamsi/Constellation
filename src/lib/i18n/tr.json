@@ -248,6 +248,10 @@
 			"systemTrash": "Sistem geri dönüşüm kutusu",
 			"trashFolder": ".trash klasörü",
 			"permanentDelete": "Kalıcı olarak sil",
+			"trashFolderScope": "Çöp klasörü konumu",
+			"trashFolderScopeDesc": "Silinen dosyalar taşındığında .trash klasörünün bulunduğu yer",
+			"scopeLibrary": "Notun kitaplığında",
+			"scopeUniverse": "Evren kökünde",
 			"libraryRoot": "Kütüphane kök klasörü"
 		},
 		"appearance": {

@@ -248,6 +248,10 @@
 			"systemTrash": "سسٹم ری سائیکل بن",
 			"trashFolder": ".trash فولڈر",
 			"permanentDelete": "مستقل حذف",
+			"trashFolderScope": "ردی فولڈر کا مقام",
+			"trashFolderScopeDesc": "حذف شدہ فائلیں جہاں منتقل ہوتی ہیں وہ .trash فولڈر کہاں ہے",
+			"scopeLibrary": "نوٹ کی لائبریری کے اندر",
+			"scopeUniverse": "کائنات کی جڑ میں",
 			"libraryRoot": "لائبریری روٹ فولڈر"
 		},
 		"appearance": {

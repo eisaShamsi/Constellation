@@ -248,6 +248,10 @@
 			"systemTrash": "Papelera del sistema",
 			"trashFolder": "Carpeta .trash",
 			"permanentDelete": "Eliminar permanentemente",
+			"trashFolderScope": "Ubicación de la carpeta de papelera",
+			"trashFolderScopeDesc": "Dónde se encuentra la carpeta .trash cuando se mueven a ella los archivos eliminados",
+			"scopeLibrary": "Dentro de la biblioteca de la nota",
+			"scopeUniverse": "En la raíz del universo",
 			"libraryRoot": "Carpeta raíz de la biblioteca"
 		},
 		"appearance": {

@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { invoke } from '@tauri-apps/api/core';
 	import { t } from '$lib/i18n';
-	import { libraries, collectLibraryNotesWithMeta, type NoteWithMeta, type FileEntry } from '$lib/libraries/store';
+	import { libraries, appSettings, deleteWithSetting, collectLibraryNotesWithMeta, type NoteWithMeta, type FileEntry } from '$lib/libraries/store';
 	import { getChildUniverses, type ChildUniverseInfo } from '$lib/universe/store';
 	import NavBrowserPane from './navigator/NavBrowserPane.svelte';
 	import NavFileList from './navigator/NavFileList.svelte';
@@ -269,11 +269,13 @@
 	}
 
 	async function handleBatchDelete() {
-		if (!confirm(`Delete ${selectedPaths.size} notes? This cannot be undone.`)) return;
+		const dest = $appSettings.trashDestination ?? 'system';
+		const where = dest === 'local' ? 'moved to the .trash folder' : 'moved to the Recycle Bin';
+		if (!confirm(`Delete ${selectedPaths.size} notes? They will be ${where}.`)) return;
 		let success = 0;
 		for (const path of selectedPaths) {
 			try {
-				await invoke('delete_item', { path, permanent: false });
+				await deleteWithSetting(path);
 				success++;
 			} catch { /* skip failed */ }
 		}

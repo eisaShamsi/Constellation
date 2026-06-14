@@ -82,6 +82,11 @@ dirs = "5"
 # rusqlite / hashbrown); promoting to a direct dep so the analyzer can
 # name the type. MIT/Apache-2.0 licensed.
 smallvec = "1"
+# MIG-076 §E-follow-up: move deleted notes to the OS Recycle Bin for the
+# "System trash" option of the Deleted-files setting. The de-facto cross-platform
+# Rust crate for OS trash (Windows Recycle Bin / macOS Trash / freedesktop).
+# Apache-2.0/MIT licensed.
+trash = "5"
 
 # M9-mmap: memory-map the baked Arabic FST byte buffers so they live
 # in the OS page cache rather than the process heap. Applied only on

@@ -248,6 +248,10 @@
 			"systemTrash": "سلة مهملات النظام",
 			"trashFolder": "مجلد .trash",
 			"permanentDelete": "حذف نهائي",
+			"trashFolderScope": "موقع مجلد المهملات",
+			"trashFolderScopeDesc": "أين يوجد مجلد .trash عند نقل الملفات المحذوفة إليه",
+			"scopeLibrary": "داخل مكتبة الملاحظة",
+			"scopeUniverse": "في جذر الكون",
 			"libraryRoot": "جذر المكتبة"
 		},
 		"appearance": {
