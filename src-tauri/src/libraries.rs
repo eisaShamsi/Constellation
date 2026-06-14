@@ -1510,6 +1510,12 @@ pub fn move_item(app: tauri::AppHandle, source_path: String, target_folder: Stri
 fn collect_md_paths(dir: &Path, out: &mut Vec<std::path::PathBuf>) {
     if let Ok(rd) = fs::read_dir(dir) {
         for entry in rd.flatten() {
+            // Skip symlinks/junctions to prevent circular recursion (mirrors
+            // read_dir_recursive). Without this a directory junction loop blows
+            // the walk up and OOM-crashes the app.
+            if entry.file_type().map(|ft| ft.is_symlink()).unwrap_or(false) {
+                continue;
+            }
             let p = entry.path();
             if p.is_dir() {
                 collect_md_paths(&p, out);
@@ -1551,6 +1557,14 @@ fn collect_folders(dir: &Path, lib_id: &str, lib_name: &str, depth: u32, out: &m
     }
     if let Ok(rd) = fs::read_dir(dir) {
         for entry in rd.flatten() {
+            // Skip symlinks/junctions BEFORE touching the path — mirrors
+            // read_dir_recursive's "prevent circular recursion" guard. A real
+            // directory-junction loop on the user's machine made the link-
+            // following `path.is_dir()` walk blow up exponentially and OOM-crash
+            // the app (the Move picker hung on "…" until the crash).
+            if entry.file_type().map(|ft| ft.is_symlink()).unwrap_or(false) {
+                continue;
+            }
             let p = entry.path();
             if !p.is_dir() {
                 continue;

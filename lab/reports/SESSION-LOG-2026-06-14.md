@@ -132,3 +132,15 @@ universe" (cross-library).** Reworked to universe-wide:
   and the (possibly different) target library tree.
 - svelte-check 0 errors / 315 warnings; Rust release clean; `npm run build` → `cargo build --release`
   (re-embed); binary 19:19; `list_universe_folders` bundle-confirmed.
+
+**CRASH (Boss test of universe-wide Move) — diagnosed + fixed (Reproduce-First).** The Move dialog
+hung on "…" and the app crashed. No fresh `constellation-crash.log` (both on disk were stale —
+05-26 / 04-08) → an **OOM/abort, not a catchable panic**. `find` over the user's tree reported a
+real **filesystem junction loop**. Root cause (read off the proven walker, not guessed): my new
+`collect_folders` / `collect_md_paths` used the link-FOLLOWING `path.is_dir()` with **no symlink
+skip**, while the proven `read_dir_recursive` has an explicit *"Skip symlinks to prevent circular
+recursion"* guard. Following a directory junction loop → exponential folder visits → OOM crash; the
+walk never returned, so the picker hung on "…". **Fix:** both walkers now skip symlinks
+(`entry.file_type().is_symlink()`) BEFORE touching the path — mirrors `read_dir_recursive` exactly.
+Rust release rebuilt; binary 20:22. (The dialog was always cancellable via Escape/click-outside —
+the lock was the Rust walk, not the UI.)
