@@ -750,6 +750,7 @@
 			actions.open = fire('open');
 			actions.openInNewTab = fire('openInNewTab');
 			actions.rename = fire('rename');
+			actions.move = fire('move');
 			actions.copyPath = fire('copyPath');
 			actions.copyName = fire('copyName');
 			actions.revealInTree = fire('revealInTree');
@@ -762,6 +763,7 @@
 			actions.toggleExpand = () => toggleFsExpand(node.path);
 			if (kind === 'folder') {
 				actions.rename = fire('rename');
+				actions.move = fire('move');
 				actions.revealInTree = fire('revealInTree');
 				actions.delete = fire('delete');
 			}

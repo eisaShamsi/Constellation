@@ -16,7 +16,7 @@
 		openNoteTab, closeTab, switchTab, reorderTab, closeNote, createEmptyTab,
 		toggleSplit, toggleSplitDirection, setFocusedTab,
 		parseFrontmatter, extractHeadings, saveTabContent, updateTabContent, buildFullContent, writeNote, markRecentWrite, setWriteAhead, getWriteAhead, clearWriteAhead,
-		createNote, createFolder, renameItem, deleteWithSetting, moveToTrash,
+		createNote, createFolder, renameItem, moveItem, deleteWithSetting, moveToTrash,
 		startWatchingLibrary, wasRecentlyWritten,
 		loadLibraryAppearance, libraryAppearances,
 		toggleEditMode, editingTabIds,
@@ -86,6 +86,7 @@
 	import OrgChart from '$lib/components/OrgChart.svelte';
 	import type { ContextTarget } from '$lib/components/contextMenuBuilder';
 	import RenameDialog from '$lib/components/RenameDialog.svelte';
+	import MoveDialog from '$lib/components/MoveDialog.svelte';
 	import CatalogerView from '$lib/components/CatalogerView.svelte';
 	import EmojiIconPicker from '$lib/components/EmojiIconPicker.svelte';
 	import SlotIcon from '$lib/components/SlotIcon.svelte';
@@ -4424,6 +4425,8 @@
 	// MIG-077 A3-R — rename driven from a full-page surface (OrgChart etc.) where
 	// there is no inline tree row; hands the new name to handleRenameComplete.
 	let renameDialog = $state<{ path: string; name: string } | null>(null);
+	// MIG-077 A3-R3 — Move destination-folder picker.
+	let moveDialog = $state<{ path: string; name: string; libraryId: string; folders: { path: string; name: string; depth: number }[] } | null>(null);
 
 	// MIG-008 §Build.1: shared create dialog state. Single component for
 	// Folder / Note / Base / Library so the four flows don't drift.
@@ -4645,6 +4648,9 @@
 			case 'rename':
 				renameDialog = { path, name: target.name };
 				break;
+			case 'move':
+				openMoveDialog(target.path, target.name);
+				break;
 			case 'revealInTree':
 				showOrgChart = false;
 				revealInTree(path);
@@ -4725,6 +4731,52 @@
 		el.style.outline = '2px solid var(--interactive-accent)';
 		el.style.outlineOffset = '-2px';
 		setTimeout(() => { el.style.outline = ''; el.style.outlineOffset = ''; }, 1600);
+	}
+
+	// MIG-077 A3-R3 — open the Move picker. Loads the source library's folder list
+	// (full depth), excluding the source itself + its descendants + its current
+	// parent (a no-op move). move_item rejects cross-library targets, so the picker
+	// is correctly scoped to one library.
+	async function openMoveDialog(sourcePath: string, sourceName: string) {
+		const norm = (p: string) => p.replace(/\\/g, '/').toLowerCase();
+		const np = norm(sourcePath);
+		let lib: LibraryStats | null = null;
+		for (const l of $libraryStats) {
+			const lp = norm(l.path);
+			if (np === lp || np.startsWith(lp.endsWith('/') ? lp : lp + '/')) {
+				if (!lib || l.path.length > lib.path.length) lib = l;
+			}
+		}
+		if (!lib) return;
+		let tree: FileEntry[];
+		try {
+			tree = await invoke<FileEntry[]>('read_library_tree', { path: lib.path, maxDepth: 20 });
+		} catch { return; }
+		const sourceIsDir = !/\.(md|base)$/i.test(sourcePath);
+		const lastSep = Math.max(sourcePath.lastIndexOf('\\'), sourcePath.lastIndexOf('/'));
+		const sourceParent = lastSep >= 0 ? sourcePath.substring(0, lastSep) : '';
+		const folders: { path: string; name: string; depth: number }[] = [{ path: lib.path, name: lib.name, depth: 0 }];
+		const walk = (entries: FileEntry[], depth: number) => {
+			for (const e of entries) {
+				if (!e.is_dir) continue;
+				const ne = norm(e.path);
+				if (sourceIsDir && (ne === np || ne.startsWith(np + '/'))) continue; // can't move into self/descendant
+				folders.push({ path: e.path, name: e.name, depth });
+				if (e.children) walk(e.children, depth + 1);
+			}
+		};
+		walk(tree, 1);
+		const filtered = folders.filter((f) => norm(f.path) !== norm(sourceParent)); // drop the no-op (current folder)
+		moveDialog = { path: sourcePath, name: sourceName, libraryId: lib.library_id, folders: filtered };
+	}
+
+	async function handleMoveConfirm(targetFolder: string) {
+		if (!moveDialog) return;
+		const { path, libraryId } = moveDialog;
+		await moveItem(path, targetFolder); // throws on collision -> shown inline by MoveDialog
+		await refreshLibraryTree(libraryId);
+		await loadAllStats();
+		moveDialog = null;
 	}
 
 	// task_bd6d4802 — listen for the reveal-in-tree event (editor breadcrumb +
@@ -7245,6 +7297,15 @@
 				if (r && newName && newName !== r.name) handleRenameComplete(r.path, newName);
 			}}
 			onCancel={() => renameDialog = null}
+		/>
+	{/if}
+
+	{#if moveDialog}
+		<MoveDialog
+			sourceName={moveDialog.name}
+			folders={moveDialog.folders}
+			onConfirm={handleMoveConfirm}
+			onCancel={() => moveDialog = null}
 		/>
 	{/if}
 

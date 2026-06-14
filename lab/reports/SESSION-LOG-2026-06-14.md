@@ -95,3 +95,21 @@ NotePane → `+layout:6333`) but **had no listener anywhere in src**. Fix:
   "Reveal in tree" is added back to the OrgChart contextual menu (notes + folders), no longer omitted.
 - svelte-check 0 errors / 315 warnings; build green; binary 17:28; `data-tree-path` + `reveal-in-tree`
   bundle-confirmed.
+
+**Boss GATE — A3-R2 OrgChart rich menu + reveal-in-tree: PASS** (2026-06-14).
+
+### A3-R3 — Move (destination-folder picker) — SHIPPED (awaiting Boss gate)
+
+`moveItem(source, target)` existed but was drag-drop-only (NotebookNavigator + OrgChart internal);
+right-click Move needed a picker. The Rust `move_item` already guards: both paths must be inside a
+library (a note can't escape the universe) and it errors on a destination name collision.
+
+- **NEW `MoveDialog.svelte`** — a searchable, indented folder list scoped to the source's own library
+  (move_item rejects cross-library anyway). Single-select + Move; double-click a folder = move. The
+  collision error from `move_item` is shown **inline** (dialog stays open). RTL-safe. No new i18n
+  (reuses `contextMenu.move` / `layout.search` / `dialogs.cancel`).
+- **`+layout`**: `openMoveDialog(path, name)` loads the source library's full-depth tree, flattens to
+  folders, and **excludes** the source itself + its descendants (can't move into own subtree) + its
+  current parent (a no-op). `handleMoveConfirm` → `moveItem` → `refreshLibraryTree` + `loadAllStats`.
+- **Menu**: `move` added to notes + folders in the OrgChart contextual menu.
+- svelte-check 0 errors / 315 warnings; build green; binary 18:41; MoveDialog bundle-confirmed.
