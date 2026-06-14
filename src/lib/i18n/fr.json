@@ -887,6 +887,8 @@
 		"search": "Rechercher des tâches..."
 	},
 	"dialogs": {
+		"batchDeleteTrash": "Supprimer {count} notes ? Elles seront déplacées vers le dossier .trash.",
+		"batchDeleteSystem": "Supprimer {count} notes ? Elles seront déplacées vers la Corbeille.",
 		"confirmDelete": "Êtes-vous sûr de vouloir supprimer \"{name}\" ?",
 		"delete": "Supprimer",
 		"cancel": "Annuler"

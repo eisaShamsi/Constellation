@@ -1327,6 +1327,8 @@
 		"groupByLibrary": "Kasaya göre grupla"
 	},
 	"dialogs": {
+		"batchDeleteTrash": "{count} not silinsin mi? .trash klasörüne taşınacaklar.",
+		"batchDeleteSystem": "{count} not silinsin mi? Geri Dönüşüm Kutusu'na taşınacaklar.",
 		"confirmDelete": "\"{name}\" öğesini silmek istediğinizden emin misiniz?",
 		"delete": "Sil",
 		"cancel": "İptal"

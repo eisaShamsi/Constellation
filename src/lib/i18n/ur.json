@@ -887,6 +887,8 @@
 		"groupByLibrary": "خزانے کے مطابق گروپ"
 	},
 	"dialogs": {
+		"batchDeleteTrash": "{count} نوٹ حذف کریں؟ انہیں .trash فولڈر میں منتقل کر دیا جائے گا۔",
+		"batchDeleteSystem": "{count} نوٹ حذف کریں؟ انہیں ری سائیکل بِن میں منتقل کر دیا جائے گا۔",
 		"confirmDelete": "کیا آپ واقعی \"{name}\" کو حذف کرنا چاہتے ہیں؟",
 		"delete": "حذف کریں",
 		"cancel": "منسوخ"

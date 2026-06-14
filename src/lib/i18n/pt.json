@@ -1327,6 +1327,8 @@
 		"groupByLibrary": "Agrupar por cofre"
 	},
 	"dialogs": {
+		"batchDeleteTrash": "Excluir {count} notas? Elas serão movidas para a pasta .trash.",
+		"batchDeleteSystem": "Excluir {count} notas? Elas serão movidas para a Lixeira.",
 		"confirmDelete": "Tem certeza de que deseja excluir \"{name}\"?",
 		"delete": "Excluir",
 		"cancel": "Cancelar"

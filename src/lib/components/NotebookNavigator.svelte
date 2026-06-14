@@ -7,6 +7,7 @@
 	import NavBrowserPane from './navigator/NavBrowserPane.svelte';
 	import NavFileList from './navigator/NavFileList.svelte';
 	import NavBatchBar from './navigator/NavBatchBar.svelte';
+	import ConfirmDialog from './ConfirmDialog.svelte';
 
 	let {
 		mode = 'main' as 'main' | 'second',
@@ -268,10 +269,20 @@
 		}
 	}
 
-	async function handleBatchDelete() {
+	// MIG-076 §E-follow-up (Boss 2026-06-14) — the batch-delete confirmation uses
+	// Constellation's styled ConfirmDialog, not the native confirm() box. The
+	// message states the destination per the "Deleted files" setting.
+	let batchDeleteConfirm = $state<string | null>(null);
+
+	function handleBatchDelete() {
+		if (selectedPaths.size === 0) return;
 		const dest = $appSettings.trashDestination ?? 'system';
-		const where = dest === 'local' ? 'moved to the .trash folder' : 'moved to the Recycle Bin';
-		if (!confirm(`Delete ${selectedPaths.size} notes? They will be ${where}.`)) return;
+		const key = dest === 'local' ? 'dialogs.batchDeleteTrash' : 'dialogs.batchDeleteSystem';
+		batchDeleteConfirm = $t(key, { count: String(selectedPaths.size) });
+	}
+
+	async function confirmBatchDelete() {
+		batchDeleteConfirm = null;
 		let success = 0;
 		for (const path of selectedPaths) {
 			try {
@@ -382,6 +393,15 @@
 			onBatchMove={handleBatchMove}
 			onBatchDelete={handleBatchDelete}
 			onClearSelection={() => selectedPaths = new Set()}
+		/>
+	{/if}
+	{#if batchDeleteConfirm}
+		<ConfirmDialog
+			message={batchDeleteConfirm}
+			confirmLabel={$t('dialogs.delete')}
+			cancelLabel={$t('dialogs.cancel')}
+			onConfirm={confirmBatchDelete}
+			onCancel={() => batchDeleteConfirm = null}
 		/>
 	{/if}
 </div>

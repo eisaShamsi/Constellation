@@ -887,6 +887,8 @@
 		"search": "Aufgaben suchen..."
 	},
 	"dialogs": {
+		"batchDeleteTrash": "{count} Notizen löschen? Sie werden in den .trash-Ordner verschoben.",
+		"batchDeleteSystem": "{count} Notizen löschen? Sie werden in den Papierkorb verschoben.",
 		"confirmDelete": "Möchten Sie \"{name}\" wirklich löschen?",
 		"delete": "Löschen",
 		"cancel": "Abbrechen"

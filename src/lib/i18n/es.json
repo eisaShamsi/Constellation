@@ -887,6 +887,8 @@
 		"search": "Buscar tareas..."
 	},
 	"dialogs": {
+		"batchDeleteTrash": "¿Eliminar {count} notas? Se moverán a la carpeta .trash.",
+		"batchDeleteSystem": "¿Eliminar {count} notas? Se moverán a la papelera de reciclaje.",
 		"confirmDelete": "¿Estás seguro de que quieres eliminar \"{name}\"?",
 		"delete": "Eliminar",
 		"cancel": "Cancelar"

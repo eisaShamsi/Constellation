@@ -1327,6 +1327,8 @@
 		"groupByLibrary": "保管庫でグループ化"
 	},
 	"dialogs": {
+		"batchDeleteTrash": "{count} 件のノートを削除しますか？ .trash フォルダーに移動します。",
+		"batchDeleteSystem": "{count} 件のノートを削除しますか？ ごみ箱に移動します。",
 		"confirmDelete": "「{name}」を削除してもよろしいですか？",
 		"delete": "削除",
 		"cancel": "キャンセル"

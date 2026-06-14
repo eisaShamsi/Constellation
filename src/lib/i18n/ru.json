@@ -1327,6 +1327,8 @@
 		"groupByLibrary": "Группировать по хранилищу"
 	},
 	"dialogs": {
+		"batchDeleteTrash": "Удалить {count} заметок? Они будут перемещены в папку .trash.",
+		"batchDeleteSystem": "Удалить {count} заметок? Они будут перемещены в Корзину.",
 		"confirmDelete": "Вы уверены, что хотите удалить \"{name}\"?",
 		"delete": "Удалить",
 		"cancel": "Отмена"

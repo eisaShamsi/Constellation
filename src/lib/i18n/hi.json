@@ -1327,6 +1327,8 @@
 		"groupByLibrary": "तिजोरी के अनुसार समूहित करें"
 	},
 	"dialogs": {
+		"batchDeleteTrash": "{count} नोट हटाएँ? उन्हें .trash फ़ोल्डर में ले जाया जाएगा।",
+		"batchDeleteSystem": "{count} नोट हटाएँ? उन्हें रीसायकल बिन में ले जाया जाएगा।",
 		"confirmDelete": "क्या आप वाकई \"{name}\" को हटाना चाहते हैं?",
 		"delete": "हटाएँ",
 		"cancel": "रद्द करें"

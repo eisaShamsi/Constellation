@@ -1426,6 +1426,8 @@
 		"search": "البحث في المهام..."
 	},
 	"dialogs": {
+		"batchDeleteTrash": "حذف {count} ملاحظة؟ ستُنقل إلى مجلد .trash.",
+		"batchDeleteSystem": "حذف {count} ملاحظة؟ ستُنقل إلى سلة المحذوفات.",
 		"confirmDelete": "هل أنت متأكد من حذف \"{name}\"؟",
 		"delete": "حذف",
 		"cancel": "إلغاء"

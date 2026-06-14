@@ -1493,6 +1493,8 @@
 		"search": "Search tasks..."
 	},
 	"dialogs": {
+		"batchDeleteTrash": "Delete {count} notes? They will be moved to the .trash folder.",
+		"batchDeleteSystem": "Delete {count} notes? They will be moved to the Recycle Bin.",
 		"confirmDelete": "Are you sure you want to delete \"{name}\"?",
 		"delete": "Delete",
 		"cancel": "Cancel"

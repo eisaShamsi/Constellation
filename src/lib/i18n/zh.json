@@ -1327,6 +1327,8 @@
 		"groupByLibrary": "按仓库分组"
 	},
 	"dialogs": {
+		"batchDeleteTrash": "删除 {count} 条笔记？它们将被移至 .trash 文件夹。",
+		"batchDeleteSystem": "删除 {count} 条笔记？它们将被移至回收站。",
 		"confirmDelete": "确定要删除 \"{name}\" 吗？",
 		"delete": "删除",
 		"cancel": "取消"

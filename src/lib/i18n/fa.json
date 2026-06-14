@@ -887,6 +887,8 @@
 		"search": "جستجوی وظایف..."
 	},
 	"dialogs": {
+		"batchDeleteTrash": "حذف {count} یادداشت؟ به پوشهٔ .trash منتقل می‌شوند.",
+		"batchDeleteSystem": "حذف {count} یادداشت؟ به سطل بازیافت منتقل می‌شوند.",
 		"confirmDelete": "آیا مطمئن هستید که می‌خواهید \"{name}\" را حذف کنید؟",
 		"delete": "حذف",
 		"cancel": "لغو"
