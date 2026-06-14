@@ -144,3 +144,27 @@ walk never returned, so the picker hung on "…". **Fix:** both walkers now skip
 (`entry.file_type().is_symlink()`) BEFORE touching the path — mirrors `read_dir_recursive` exactly.
 Rust release rebuilt; binary 20:22. (The dialog was always cancellable via Escape/click-outside —
 the lock was the Rust walk, not the UI.)
+
+**STILL CRASHED on 20:22 → REPRODUCED → REAL root cause found (the symlink fix was treating the
+wrong thing).** Per LL-014 (three-strike) I stopped guessing and reproduced against Eisa's ACTUAL
+universe (`Eisa Cognitive Knowledge`, 19 libraries) with a Node script mirroring the walk:
+- The walk is **fast (≤12ms/library) and loop-free** — 130 folders total, **0 reparse points, 0
+  cycles**. So `collect_folders` was never the cause; the symlink guards (still kept — correct
+  defensive code for other machines) were irrelevant here.
+- A second repro built the picker's entry list and found **1 DUPLICATE path**:
+  `…/Eisa Cognitive Knowledge/New Library Test`. That library is **nested inside the universe root**,
+  and the `universe_notes` library's path **IS** the universe root — so it appeared **twice** (once
+  from the root's walk, once as its own library root). The dialog's keyed `{#each shown as f
+  (f.path)}` **crashes Svelte on a duplicate key** → "froze and crash." The Node walk-repro missed
+  it because it didn't render; the second repro (entry-build) caught it.
+- **Fix:** `openMoveDialog` **dedupes entries by normalized path** (Set, keep first). Crash gone;
+  the nested library now shows once.
+
+### File-tree right-click → shared rich menu (Boss: "why can't I move a note from the file tree?")
+
+The file tree still used its old menu (Rename / Suggest / Delete). Routed `getContextMenuItems`
+through the shared `buildContextMenu`: notes gain **Open · Open in new tab · Move · Copy path · Copy
+name** alongside Rename / Suggest (md) / Delete; folders gain **Move** + the create set; library
+roots unchanged (create-only). **Rename stays INLINE** (the tree's native `renamingPath` edit, not
+the dialog — the per-surface contextual difference); Reveal-in-tree omitted (this IS the tree).
+- svelte-check 0 errors / 315 warnings; `npm run build` → `cargo build --release`; binary 20:44.

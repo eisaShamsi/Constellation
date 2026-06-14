@@ -84,7 +84,7 @@
 	import { SIGHT_V2_ENABLED, SIGHT_V3_ENABLED, SIGHT_V4_ENABLED, SIGHT_V6_ENABLED, SIGHT_V7_ENABLED } from '$lib/sight/engine';
 	import { detectClusters, computeStructuralGaps, computeUniverseHealth, buildCommunityProfiles, stratumWeightedCentrality, suggestBridges, type StructuralGap, type UniverseHealth, type ClusterInfo, type CommunityProfile } from '$lib/graph/clusterEngine';
 	import OrgChart from '$lib/components/OrgChart.svelte';
-	import type { ContextTarget } from '$lib/components/contextMenuBuilder';
+	import { buildContextMenu, type ContextTarget, type ContextActions, type NodeKind } from '$lib/components/contextMenuBuilder';
 	import RenameDialog from '$lib/components/RenameDialog.svelte';
 	import MoveDialog from '$lib/components/MoveDialog.svelte';
 	import CatalogerView from '$lib/components/CatalogerView.svelte';
@@ -4523,89 +4523,50 @@
 	}
 
 	function getContextMenuItems(entry: FileEntry, libraryId: string, isLibraryRoot = false) {
-		const items: { label: string; icon?: string; action: () => void; danger?: boolean }[] = [];
-
-		// Workspace bases have a simplified context menu
+		// Workspace bases keep their simplified menu (just Delete).
 		if (libraryId === '__workspace__') {
-			items.push({
-				label: $t('actions.delete'),
-				icon: '🗑️',
-				action: () => handleDeleteWorkspaceBase(entry.path),
-				danger: true,
-			});
-			return items;
+			return [{ label: $t('actions.delete'), icon: '🗑️', action: () => handleDeleteWorkspaceBase(entry.path), danger: true }];
 		}
 
-		// MIG-008 §Build.6 follow-up — library/universe root right-click was
-		// falling through to the WebView default context menu (Back/Refresh/
-		// Save as/Print) because no oncontextmenu was wired. Now wired via
-		// `handleLibraryHeaderContextMenu`; we render a slim version of the
-		// folder menu (New Note / New Folder / New Base — the create
-		// affordances) but suppress Rename/Delete since library-management
-		// operations live elsewhere (Library Manager, command palette).
-		if (isLibraryRoot) {
-			items.push({
-				label: $t('actions.newNote'),
-				icon: '📄',
-				action: () => handleCreateNote(entry.path, libraryId),
-			});
-			items.push({
-				label: $t('actions.newFolder'),
-				icon: '📁',
-				action: () => handleCreateFolder(entry.path, libraryId),
-			});
-			items.push({
-				label: $t('actions.newBase'),
-				icon: '▦',
-				action: () => handleCreateBase(entry.path, libraryId),
-			});
-			return items;
+		// MIG-077 A3-R — the file tree now shares the contextual menu builder, so
+		// it gains Open / Open in new tab / Move / Copy path / Copy name alongside
+		// the existing Rename / Suggest sources / Delete (Boss: "why can't I move a
+		// note from the file tree?"). Per-surface contextual wiring:
+		//   - Rename stays INLINE (the tree's native edit via renamingPath), NOT the
+		//     dialog — that's what distinguishes the tree from OrgChart/Search.
+		//   - Reveal-in-tree is omitted here (this IS the tree).
+		//   - Library roots keep create-only (rename/delete live in the Library
+		//     Manager, unchanged from MIG-008 §Build.6).
+		const isMd = !entry.is_dir && entry.name.toLowerCase().endsWith('.md');
+		const kind: NodeKind = isLibraryRoot ? 'library' : entry.is_dir ? 'folder' : 'note';
+		const displayName = entry.is_dir ? entry.name : (entry.display_title || entry.name.replace(/\.(md|base)$/, ''));
+		const target: ContextTarget = { kind, path: entry.path, name: displayName, isMarkdown: isMd };
+		const actions: ContextActions = {};
+		if (kind === 'library') {
+			actions.newNote = () => handleCreateNote(entry.path, libraryId);
+			actions.newFolder = () => handleCreateFolder(entry.path, libraryId);
+			actions.newBase = () => handleCreateBase(entry.path, libraryId);
+		} else if (kind === 'folder') {
+			actions.newNote = () => handleCreateNote(entry.path, libraryId);
+			actions.newFolder = () => handleCreateFolder(entry.path, libraryId);
+			actions.newBase = () => handleCreateBase(entry.path, libraryId);
+			actions.rename = () => { renamingPath = entry.path; };
+			actions.move = () => openMoveDialog(entry.path, entry.name);
+			actions.delete = () => { confirmDelete = { path: entry.path, name: entry.name }; };
+		} else {
+			actions.open = () => handleNoteClick(entry.path, displayName);
+			actions.openInNewTab = () => {
+				const lib = $libraryStats.find(l => entry.path.startsWith(l.path));
+				if (lib) openNoteTab(entry.path, lib.name, libraryColorMap[lib.name] || '#7c3aed', undefined, true);
+			};
+			actions.rename = () => { renamingPath = entry.path; };
+			actions.move = () => openMoveDialog(entry.path, displayName);
+			actions.copyPath = () => navigator.clipboard.writeText(entry.path).catch(() => {});
+			actions.copyName = () => navigator.clipboard.writeText(displayName).catch(() => {});
+			if (isMd) actions.suggestSources = () => handleSuggestSourcesForNote(entry.path);
+			actions.delete = () => { confirmDelete = { path: entry.path, name: entry.name }; };
 		}
-
-		if (entry.is_dir) {
-			items.push({
-				label: $t('actions.newNote'),
-				icon: '📄',
-				action: () => handleCreateNote(entry.path, libraryId)
-			});
-			items.push({
-				label: $t('actions.newFolder'),
-				icon: '📁',
-				action: () => handleCreateFolder(entry.path, libraryId)
-			});
-			// MIG-008 §Build.6 follow-up — New Base was missing from the folder
-			// context menu (Boss flagged during §Build verification). Folder-based
-			// bases are a real flow but had no right-click affordance, only the
-			// command palette / sidebar toolbar. Adding here for parity with the
-			// other create operations.
-			items.push({
-				label: $t('actions.newBase'),
-				icon: '▦',
-				action: () => handleCreateBase(entry.path, libraryId)
-			});
-		}
-		items.push({
-			label: $t('actions.rename'),
-			icon: '✏️',
-			action: () => { renamingPath = entry.path; }
-		});
-		// MIG-021v2 §1E' — right-click "Suggest sources & content type" on
-		// any markdown note. Triggers Tier-2 classification and surfaces the
-		// result in the Source Review panel. Files only, not folders.
-		if (!entry.is_dir && entry.name.toLowerCase().endsWith('.md')) {
-			items.push({
-				label: $t('sources.contextMenu.suggest') || 'Suggest sources & content type',
-				icon: '✨',
-				action: () => handleSuggestSourcesForNote(entry.path),
-			});
-		}
-		items.push({
-			label: $t('actions.delete'),
-			icon: '🗑️',
-			action: () => { confirmDelete = { path: entry.path, name: entry.name }; },
-			danger: true
-		});
-		return items;
+		return buildContextMenu(target, actions);
 	}
 
 	// MIG-077 A3-R — longest-prefix library lookup for a node path (correct with
@@ -4766,9 +4727,22 @@
 			byLib.get(f.library_id)!.push(f);
 		}
 		const entries: { path: string; name: string; depth: number; isLibraryRoot?: boolean }[] = [];
+		// Dedupe by path: a library nested INSIDE another (e.g. a library at the
+		// universe root, where universe_notes' own path IS the root) would otherwise
+		// appear twice — once from the parent's walk, once as its own root — and a
+		// duplicate key crashes the dialog's keyed {#each}. (BUG: froze+crashed on
+		// Eisa's "New Library Test" nested under the universe root.)
+		const seen = new Set<string>();
 		for (const lib of $libraryStats) {
-			entries.push({ path: lib.path, name: lib.name, depth: 0, isLibraryRoot: true });
+			const rk = norm(lib.path);
+			if (!seen.has(rk)) {
+				seen.add(rk);
+				entries.push({ path: lib.path, name: lib.name, depth: 0, isLibraryRoot: true });
+			}
 			for (const f of byLib.get(lib.library_id) ?? []) {
+				const k = norm(f.path);
+				if (seen.has(k)) continue;
+				seen.add(k);
 				entries.push({ path: f.path, name: f.name, depth: f.depth });
 			}
 		}
