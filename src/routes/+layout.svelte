@@ -15,7 +15,7 @@
 		type ConstellationSearchResult,
 		openNoteTab, closeTab, switchTab, reorderTab, closeNote, createEmptyTab,
 		toggleSplit, toggleSplitDirection, setFocusedTab,
-		parseFrontmatter, extractHeadings, saveTabContent, updateTabContent, buildFullContent, writeNote, markRecentWrite, setWriteAhead, getWriteAhead, clearWriteAhead,
+		parseFrontmatter, extractHeadings, saveTabContent, updateTabContent, buildFullContent, writeNote, readNote, reindexNote, markRecentWrite, setWriteAhead, getWriteAhead, clearWriteAhead,
 		createNote, createFolder, renameItem, moveItem, deleteWithSetting, moveToTrash,
 		startWatchingLibrary, wasRecentlyWritten,
 		loadLibraryAppearance, libraryAppearances,
@@ -4437,6 +4437,8 @@
 	// so an unchanged re-open does NOT trigger a redundant whole-universe reload.
 	let orgChartRefreshKey = $state(0);
 	let orgChartDirty = $state(false);
+	// MIG-077 A3-R4 — Add-tag input (reuses the single-input RenameDialog).
+	let tagDialog = $state<{ path: string; name: string } | null>(null);
 	function markOrgChartDirty() {
 		if (showOrgChart) orgChartRefreshKey++; // reload in place
 		else orgChartDirty = true; // defer to next open
@@ -4575,6 +4577,7 @@
 			};
 			actions.rename = () => { renamingPath = entry.path; };
 			actions.move = () => openMoveDialog(entry.path, displayName);
+			actions.addTag = () => { tagDialog = { path: entry.path, name: displayName }; };
 			actions.copyPath = () => navigator.clipboard.writeText(entry.path).catch(() => {});
 			actions.copyName = () => navigator.clipboard.writeText(displayName).catch(() => {});
 			if (isMd) actions.suggestSources = () => handleSuggestSourcesForNote(entry.path);
@@ -4625,6 +4628,9 @@
 				break;
 			case 'move':
 				openMoveDialog(target.path, target.name);
+				break;
+			case 'addTag':
+				tagDialog = { path, name: target.name };
 				break;
 			case 'revealInTree':
 				showOrgChart = false;
@@ -4790,6 +4796,48 @@
 		await loadAllStats();
 		markOrgChartDirty();
 		moveDialog = null;
+	}
+
+	// MIG-077 A3-R4 — add a tag to a note's frontmatter `tags:` list. Mirrors
+	// PropertyEditor.addTag's list semantics (dedup, value = items.join(', ')).
+	function addTagToProps(props: FrontmatterProperty[], tag: string): FrontmatterProperty[] {
+		const idx = props.findIndex(p => p.key.toLowerCase() === 'tags');
+		if (idx >= 0) {
+			const p = props[idx];
+			const existing = p.listItems ?? (p.value ? String(p.value).split(',').map(s => s.trim()).filter(Boolean) : []);
+			if (existing.some(x => x.toLowerCase() === tag.toLowerCase())) return props; // already present
+			const items = [...existing, tag];
+			return props.map((q, i) => i === idx ? { ...q, type: 'list', listItems: items, value: items.join(', ') } : q);
+		}
+		return [...props, { key: 'tags', value: tag, type: 'list', listItems: [tag] } as FrontmatterProperty];
+	}
+
+	// MIG-077 A3-R4 — content-integrity-safe tag add. OPEN notes go through the
+	// model (saveTabContent — the SAME path PropertyEditor uses; preserves unsaved
+	// body edits, identity-guarded). CLOSED notes use the gated writeNote +
+	// reindex. A disk write behind an open model is NEVER done (the model would
+	// later overwrite it, losing the tag).
+	async function addTagToNote(path: string, tag: string) {
+		const t = tag.trim().replace(/^#+/, '').trim();
+		if (!t) return;
+		const tab = get(openTabs).find(tb => tb.path === path);
+		try {
+			if (tab) {
+				const r = composeNoteModel(tab.id, path);
+				if (!r.ok) return; // identity refusal — don't write
+				const { properties, body } = parseFrontmatter(r.content);
+				await saveTabContent(tab.id, path, addTagToProps(properties, t), body);
+			} else {
+				const content = await readNote(path);
+				const { properties, body } = parseFrontmatter(content);
+				await writeNote(path, buildFullContent(addTagToProps(properties, t), body), 'add_tag');
+				const lib = $libraryStats.find(l => path.startsWith(l.path));
+				if (lib) await reindexNote(path, lib.name);
+			}
+			markOrgChartDirty();
+		} catch (e) {
+			console.error('Failed to add tag:', e);
+		}
 	}
 
 	// task_bd6d4802 — listen for the reveal-in-tree event (editor breadcrumb +
@@ -7326,6 +7374,21 @@
 			loading={moveDialog.loading}
 			onConfirm={handleMoveConfirm}
 			onCancel={() => moveDialog = null}
+		/>
+	{/if}
+
+	{#if tagDialog}
+		<RenameDialog
+			initialValue=""
+			title={`${$t('contextMenu.addTag')} — ${tagDialog.name}`}
+			confirmLabel={$t('contextMenu.addTag')}
+			cancelLabel={$t('dialogs.cancel')}
+			onConfirm={(tag) => {
+				const d = tagDialog;
+				tagDialog = null;
+				if (d && tag.trim()) addTagToNote(d.path, tag);
+			}}
+			onCancel={() => tagDialog = null}
 		/>
 	{/if}
 

@@ -757,6 +757,7 @@
 			actions.openInNewTab = fire('openInNewTab');
 			actions.rename = fire('rename');
 			actions.move = fire('move');
+			actions.addTag = fire('addTag');
 			actions.copyPath = fire('copyPath');
 			actions.copyName = fire('copyName');
 			actions.revealInTree = fire('revealInTree');

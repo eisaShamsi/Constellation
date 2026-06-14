@@ -189,3 +189,27 @@ The fullscreen OrgChart cached `constellation_map_universe` into `mapRoot` and n
 - **Lag:** asked Eisa to pinpoint (opening Move / opening the chart / the menu / moving). The OC
   reload is now gated to actual changes to avoid redundant heavy reloads; further perf work pending
   a specific locus.
+
+**Boss GATE — staleness fix + file-tree Move: (pending re-test).** Lag loci named: chart-open + the
+right-click menu + general. Diagnosis: general lag is almost certainly CPU contention from my
+back-to-back release builds ON Eisa's machine (each `cargo build --release` ~2min at full CPU) —
+process fix: build then go idle for tests. Chart-open heaviness (`constellation_map_universe` full
+depth every open) is pre-existing, not a MIG-077 regression. Spawned a measured perf task
+(`task_a75e6a23`) for chart-open + menu render. Eisa chose: **continue A3-R4**, perf as its own task.
+
+### A3-R4 — Add tag (content-integrity-safe) — SHIPPED (awaiting Boss gate)
+
+The last A3 action; writes a note's frontmatter `tags:` — the content-integrity class (MIG-076), so
+the write path is the careful part:
+- **OPEN note** → goes through the **model** (`composeNoteModel` to read current content,
+  `addTagToProps`, then `saveTabContent` — the SAME identity-guarded path PropertyEditor uses).
+  Preserves unsaved body edits; a path mismatch is refused. A disk write behind an open model is
+  **never** done (the model would later overwrite it and lose the tag).
+- **CLOSED note** → gated `writeNote(…, 'add_tag')` (the WriteGate path, self-attesting + journaled)
+  + `reindexNote`.
+- `addTagToProps` mirrors PropertyEditor's list semantics (dedup case-insensitive; `value =
+  items.join(', ')`; strips a leading `#`). Input via the reused single-input `RenameDialog`
+  (title "Add tag — {note}"). Menu item wired on notes in OrgChart + the file tree.
+- svelte-check 0 errors / 315 warnings; build green; binary 22:29; `add_tag` origin bundle-confirmed.
+- **Gate must exercise the Editor-Surface checklist**: closed-note add, OPEN-note add with unsaved
+  edits (no loss), existing-tags preserved, RTL tag.
