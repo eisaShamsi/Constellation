@@ -77,3 +77,21 @@ keys carry forward. Re-scoped: A3-R1 shared builder → A3-R2 OrgChart ready set
   localized phrasing). Bundle-confirmed (`openInNewTab:"Open in new tab"`, `addTag:"إضافة وسم"`).
 - **Known minor (logged):** deleting/creating from the full-page chart doesn't auto-refresh the
   chart (the node lingers until reopened) — cosmetic; the file op itself is correct. Follow-up.
+
+### task_bd6d4802 — "Reveal in file tree" listener (was dead app-wide) — SHIPPED
+
+Interleaved on Boss's action of the chip I spawned during A3-R2 (the menu omitted Reveal-in-tree
+because it was dead). Root cause: `constellation:reveal-in-tree` was **dispatched** (editor breadcrumb,
+NotePane → `+layout:6333`) but **had no listener anywhere in src**. Fix:
+
+- **`+layout` `revealInTree(path)` + listener** (`onMount`, cleaned up on destroy): switch to tree
+  mode → longest-prefix library match over `$libraryStats` → expand the child universe (if nested)
+  and the library (`toggleLibrary` lazy-loads the tree) → after `tick()` + 2 frames, find the row by
+  `[data-tree-path]`, DOM-open every ancestor `<details>` (persists — Svelte only applies `open` at
+  creation), `scrollIntoView({block:'center'})`, brief outline flash (1.6 s).
+- **`FileTree`**: `data-tree-path={entry.path}` added to the note button + folder summary (rows were
+  previously un-locatable by path).
+- **Now functional everywhere:** the editor breadcrumb (⋯) "Reveal in file tree" works, AND
+  "Reveal in tree" is added back to the OrgChart contextual menu (notes + folders), no longer omitted.
+- svelte-check 0 errors / 315 warnings; build green; binary 17:28; `data-tree-path` + `reveal-in-tree`
+  bundle-confirmed.

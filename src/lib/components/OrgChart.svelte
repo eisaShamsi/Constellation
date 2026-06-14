@@ -752,6 +752,7 @@
 			actions.rename = fire('rename');
 			actions.copyPath = fire('copyPath');
 			actions.copyName = fire('copyName');
+			actions.revealInTree = fire('revealInTree');
 			actions.suggestSources = fire('suggestSources');
 			actions.delete = fire('delete');
 		} else {
@@ -761,6 +762,7 @@
 			actions.toggleExpand = () => toggleFsExpand(node.path);
 			if (kind === 'folder') {
 				actions.rename = fire('rename');
+				actions.revealInTree = fire('revealInTree');
 				actions.delete = fire('delete');
 			}
 		}

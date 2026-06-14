@@ -4645,6 +4645,10 @@
 			case 'rename':
 				renameDialog = { path, name: target.name };
 				break;
+			case 'revealInTree':
+				showOrgChart = false;
+				revealInTree(path);
+				break;
 			case 'delete':
 				confirmDelete = { path, name: target.name };
 				break;
@@ -4665,6 +4669,74 @@
 			}
 		}
 	}
+
+	// task_bd6d4802 — "Reveal in file tree" was a dead no-op: the editor breadcrumb
+	// dispatched `constellation:reveal-in-tree` but nothing listened. This is the
+	// listener — switch to tree mode, expand the containing library (+ its child
+	// universe if nested) and every ancestor folder, then scroll the row into view
+	// and flash it. Also unblocks adding "Reveal in tree" to the MIG-077 menus.
+	async function revealInTree(path: string) {
+		if (!path) return;
+		if (sidebarMode !== 'tree') { sidebarMode = 'tree'; leftSidebarWidth = calcContentWidth(100); emitSidebarModeChanged('tree'); }
+		const norm = (p: string) => p.replace(/\\/g, '/').toLowerCase();
+		const np = norm(path);
+		// longest-prefix library match (correct with nested libraries)
+		let lib: LibraryStats | null = null;
+		for (const l of $libraryStats) {
+			const lp = norm(l.path);
+			if (np === lp || np.startsWith(lp.endsWith('/') ? lp : lp + '/')) {
+				if (!lib || l.path.length > lib.path.length) lib = l;
+			}
+		}
+		if (!lib) return;
+		// expand the child universe first if the library lives inside one
+		if (isChildUniverseLib(lib.path)) {
+			for (const [cuPath, paths] of childUniverseLibPaths.entries()) {
+				if (paths.has(norm(lib.path)) && !expandedChildUniverses.has(cuPath)) {
+					expandedChildUniverses = new Set(expandedChildUniverses).add(cuPath);
+					break;
+				}
+			}
+			await tick();
+		}
+		// ensure the library is expanded (toggleLibrary lazy-loads its tree)
+		if (!expandedLibraries.has(lib.library_id)) await toggleLibrary(lib);
+		await tick();
+		// two frames for the freshly-mounted tree to lay out, then reveal
+		requestAnimationFrame(() => requestAnimationFrame(() => revealRowInDom(path)));
+	}
+
+	function revealRowInDom(path: string) {
+		const np = path.replace(/\\/g, '/').toLowerCase();
+		let found: HTMLElement | null = null;
+		for (const node of document.querySelectorAll<HTMLElement>('[data-tree-path]')) {
+			if ((node.getAttribute('data-tree-path') || '').replace(/\\/g, '/').toLowerCase() === np) { found = node; break; }
+		}
+		if (!found) return;
+		const el: HTMLElement = found;
+		// open every ancestor <details> so the row is actually visible
+		let p: HTMLElement | null = el.parentElement;
+		while (p) {
+			if (p.tagName === 'DETAILS') (p as HTMLDetailsElement).open = true;
+			p = p.parentElement;
+		}
+		el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+		// brief flash — outline only (no layout shift, no background conflict)
+		el.style.outline = '2px solid var(--interactive-accent)';
+		el.style.outlineOffset = '-2px';
+		setTimeout(() => { el.style.outline = ''; el.style.outlineOffset = ''; }, 1600);
+	}
+
+	// task_bd6d4802 — listen for the reveal-in-tree event (editor breadcrumb +
+	// the MIG-077 menus). Cleaned up on destroy.
+	onMount(() => {
+		const handler = (e: Event) => {
+			const detail = (e as CustomEvent<{ path?: string }>).detail;
+			if (detail?.path) revealInTree(detail.path);
+		};
+		window.addEventListener('constellation:reveal-in-tree', handler);
+		return () => window.removeEventListener('constellation:reveal-in-tree', handler);
+	});
 
 	// MIG-021v2 §1E' — right-click action handler. Opens the Source Review
 	// panel and emits a window event the panel listens for; the panel fires

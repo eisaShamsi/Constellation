@@ -78,7 +78,7 @@
 			{#if entry.is_dir}
 				<details open={allExpanded && depth < 2}>
 					<!-- svelte-ignore a11y_no_static_element_interactions -->
-					<summary class="folder" data-style-target="folder" oncontextmenu={(e) => handleRightClick(e, entry)} onclick={() => onFolderClick?.(entry.path)}>
+					<summary class="folder" data-style-target="folder" data-tree-path={entry.path} oncontextmenu={(e) => handleRightClick(e, entry)} onclick={() => onFolderClick?.(entry.path)}>
 						<svg class="chevron" width="10" height="10" viewBox="0 0 10 10">
 							<path d="M3 1 L7 5 L3 9" stroke="currentColor" fill="none" stroke-width="1.5"/>
 						</svg>
@@ -120,6 +120,7 @@
 					{@const entryMat = maturityMap.get(entry.path.replace(/\\/g, '/').toLowerCase()) ?? ''}
 					<button
 						class="note"
+						data-tree-path={entry.path}
 						class:active={$splitActive ? $openTabs.some(t => t.path === entry.path) : $activeTab?.path === entry.path}
 						class:base-file={entry.name.endsWith('.base')}
 						class:mat-sapling={entryMat === 'sapling'}
