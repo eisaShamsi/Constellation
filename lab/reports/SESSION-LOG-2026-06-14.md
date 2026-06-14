@@ -113,3 +113,22 @@ library (a note can't escape the universe) and it errors on a destination name c
   current parent (a no-op). `handleMoveConfirm` → `moveItem` → `refreshLibraryTree` + `loadAllStats`.
 - **Menu**: `move` added to notes + folders in the OrgChart contextual menu.
 - svelte-check 0 errors / 315 warnings; build green; binary 18:41; MoveDialog bundle-confirmed.
+
+**Boss GATE — A3-R3 same-library move: directional pass, but "I want to move across the WHOLE
+universe" (cross-library).** Reworked to universe-wide:
+
+- **Two correctness gaps found + fixed in Rust** (`move_item` previously did NOT reindex — a latent
+  bug for ALL moves incl. drag-drop): after a move the FTS/links index kept the OLD path, and a
+  cross-library move would index the note under the wrong library. `move_item` now **reindexes on
+  move** (mirrors `rename_item` Step 6): drop the old entry + add the moved note(s) under the
+  destination library. Folder move walks every `.md` descendant (`collect_md_paths`) and reindexes
+  each at its new path.
+- **NEW IPC `list_universe_folders`** — a lightweight Rust-side walk returning folders ONLY across
+  every library + federated child universe (skips dot-folders). Keeps the heavy enumeration in Rust
+  (Rule 3) — the frontend never reads thousands of note rows just to build the picker.
+- **MoveDialog now universe-wide**: folders grouped under each library root (library-root rows are
+  bold with a universe glyph), a `loading` state while the IPC runs, exclusions applied across all
+  libraries (source + descendants + current parent). `handleMoveConfirm` refreshes BOTH the source
+  and the (possibly different) target library tree.
+- svelte-check 0 errors / 315 warnings; Rust release clean; `npm run build` → `cargo build --release`
+  (re-embed); binary 19:19; `list_universe_folders` bundle-confirmed.

@@ -1466,7 +1466,110 @@ pub fn move_item(app: tauri::AppHandle, source_path: String, target_folder: Stri
     }
     // MIG-076 §A2 — gated rename (both paths locked, AV retry, journaled).
     crate::write_gate::gate_rename(source, &dest, "move_item")?;
+
+    // MIG-077 A3-R3 — reindex on move (mirrors rename_item Step 6). move_item
+    // previously did NOT reindex, so the FTS/links index kept the old path and a
+    // cross-library move would index the note under the wrong library. Drop the
+    // old entry, add the moved note(s) under the destination library. Handles a
+    // folder move by reindexing every .md descendant at its new path.
+    {
+        use tauri::Manager;
+        let search_state = app.state::<crate::search::SearchState>();
+        let libs = load_all_libraries(&app);
+        let dest_str = dest.to_string_lossy().to_string();
+        let dest_lib_name = libs
+            .iter()
+            .filter(|l| dest_str.starts_with(&l.path))
+            .max_by_key(|l| l.path.len())
+            .map(|l| l.name.clone());
+        if dest.is_dir() {
+            let mut md_paths: Vec<std::path::PathBuf> = Vec::new();
+            collect_md_paths(&dest, &mut md_paths);
+            for new_p in &md_paths {
+                if let Ok(rel) = new_p.strip_prefix(&dest) {
+                    let old_p = source.join(rel);
+                    let _ = crate::search::reindex_delete_note(&search_state, &old_p.to_string_lossy());
+                }
+                if let Some(name) = &dest_lib_name {
+                    let _ = crate::search::reindex_single_note(&search_state, &new_p.to_string_lossy(), name);
+                }
+            }
+        } else {
+            let _ = crate::search::reindex_delete_note(&search_state, &source_path);
+            if let Some(name) = &dest_lib_name {
+                let _ = crate::search::reindex_single_note(&search_state, &dest_str, name);
+            }
+        }
+    }
+
     Ok(dest.to_string_lossy().to_string())
+}
+
+/// Recursively collect every `.md` file path under `dir` (MIG-077 A3-R3 — used to
+/// reindex all descendants after a folder move).
+fn collect_md_paths(dir: &Path, out: &mut Vec<std::path::PathBuf>) {
+    if let Ok(rd) = fs::read_dir(dir) {
+        for entry in rd.flatten() {
+            let p = entry.path();
+            if p.is_dir() {
+                collect_md_paths(&p, out);
+            } else if p.extension().map(|e| e == "md").unwrap_or(false) {
+                out.push(p);
+            }
+        }
+    }
+}
+
+/// MIG-077 A3-R3 — a folder destination for the universe-wide Move picker. One
+/// row per folder across every library (incl. federated child universes). Depth
+/// is relative to the library root (the root itself is added by the frontend).
+#[derive(serde::Serialize)]
+pub struct UniverseFolder {
+    pub library_id: String,
+    pub library_name: String,
+    pub path: String,
+    pub name: String,
+    pub depth: u32,
+}
+
+/// List every folder across the whole universe (all libraries + federated child
+/// universes), folders ONLY — a lightweight Rust-side walk so the frontend never
+/// reads thousands of note rows just to populate the Move picker (Rule 3).
+#[tauri::command]
+pub fn list_universe_folders(app: tauri::AppHandle) -> Result<Vec<UniverseFolder>, String> {
+    let libs = load_all_libraries(&app);
+    let mut out: Vec<UniverseFolder> = Vec::new();
+    for lib in &libs {
+        collect_folders(Path::new(&lib.path), &lib.id, &lib.name, 1, &mut out);
+    }
+    Ok(out)
+}
+
+fn collect_folders(dir: &Path, lib_id: &str, lib_name: &str, depth: u32, out: &mut Vec<UniverseFolder>) {
+    if depth > 30 {
+        return;
+    }
+    if let Ok(rd) = fs::read_dir(dir) {
+        for entry in rd.flatten() {
+            let p = entry.path();
+            if !p.is_dir() {
+                continue;
+            }
+            let name = p.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
+            // skip hidden / system folders (.trash, .constellation, .git, .obsidian…)
+            if name.starts_with('.') {
+                continue;
+            }
+            out.push(UniverseFolder {
+                library_id: lib_id.to_string(),
+                library_name: lib_name.to_string(),
+                path: p.to_string_lossy().to_string(),
+                name,
+                depth,
+            });
+            collect_folders(&p, lib_id, lib_name, depth + 1, out);
+        }
+    }
 }
 
 /// Delete a file or folder (permanent delete).

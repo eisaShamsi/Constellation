@@ -13,11 +13,13 @@
 	let {
 		sourceName,
 		folders,
+		loading = false,
 		onConfirm,
 		onCancel,
 	}: {
 		sourceName: string;
-		folders: { path: string; name: string; depth: number }[];
+		folders: { path: string; name: string; depth: number; isLibraryRoot?: boolean }[];
+		loading?: boolean;
 		onConfirm: (targetFolder: string) => Promise<void> | void;
 		onCancel: () => void;
 	} = $props();
@@ -67,20 +69,29 @@
 			dir={detectDir(filter)}
 		/>
 		<div class="folder-list">
-			{#each shown as f (f.path)}
-				<button
-					class="folder-row"
-					class:selected={selected === f.path}
-					style="padding-inline-start: {8 + f.depth * 14}px"
-					onclick={() => { selected = f.path; error = ''; }}
-					ondblclick={() => { selected = f.path; submit(); }}
-				>
-					<svg class="folder-ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-					<span class="folder-row-name" dir={detectDir(f.name)}>{f.name}</span>
-				</button>
+			{#if loading}
+				<p class="folder-empty">…</p>
 			{:else}
-				<p class="folder-empty">—</p>
-			{/each}
+				{#each shown as f (f.path)}
+					<button
+						class="folder-row"
+						class:selected={selected === f.path}
+						class:is-library={f.isLibraryRoot}
+						style="padding-inline-start: {8 + f.depth * 14}px"
+						onclick={() => { selected = f.path; error = ''; }}
+						ondblclick={() => { selected = f.path; submit(); }}
+					>
+						{#if f.isLibraryRoot}
+							<svg class="folder-ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--interactive-accent)" stroke-width="1.6"><circle cx="12" cy="12" r="6"/><line x1="6" y1="12" x2="18" y2="12"/><ellipse cx="12" cy="12" rx="11" ry="3.5" transform="rotate(-25 12 12)" stroke-dasharray="2,2"/></svg>
+						{:else}
+							<svg class="folder-ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+						{/if}
+						<span class="folder-row-name" dir={detectDir(f.name)}>{f.name}</span>
+					</button>
+				{:else}
+					<p class="folder-empty">—</p>
+				{/each}
+			{/if}
 		</div>
 		{#if error}<p class="dialog-error">{error}</p>{/if}
 		<div class="dialog-actions">
@@ -164,6 +175,7 @@
 	}
 	.folder-row:hover { background: var(--background-modifier-hover); }
 	.folder-row.selected { background: color-mix(in srgb, var(--interactive-accent) 18%, transparent); color: var(--interactive-accent); }
+	.folder-row.is-library { font-weight: 600; margin-top: 2px; }
 	.folder-ic { flex-shrink: 0; opacity: 0.7; }
 	.folder-row-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.folder-empty { text-align: center; color: var(--text-faint); margin: 12px 0; }

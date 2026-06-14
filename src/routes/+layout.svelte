@@ -4425,8 +4425,8 @@
 	// MIG-077 A3-R — rename driven from a full-page surface (OrgChart etc.) where
 	// there is no inline tree row; hands the new name to handleRenameComplete.
 	let renameDialog = $state<{ path: string; name: string } | null>(null);
-	// MIG-077 A3-R3 — Move destination-folder picker.
-	let moveDialog = $state<{ path: string; name: string; libraryId: string; folders: { path: string; name: string; depth: number }[] } | null>(null);
+	// MIG-077 A3-R3 — Move destination-folder picker (universe-wide).
+	let moveDialog = $state<{ path: string; name: string; libraryId: string; loading: boolean; folders: { path: string; name: string; depth: number; isLibraryRoot?: boolean }[] } | null>(null);
 
 	// MIG-008 §Build.1: shared create dialog state. Single component for
 	// Folder / Note / Base / Library so the four flows don't drift.
@@ -4733,48 +4733,72 @@
 		setTimeout(() => { el.style.outline = ''; el.style.outlineOffset = ''; }, 1600);
 	}
 
-	// MIG-077 A3-R3 — open the Move picker. Loads the source library's folder list
-	// (full depth), excluding the source itself + its descendants + its current
-	// parent (a no-op move). move_item rejects cross-library targets, so the picker
-	// is correctly scoped to one library.
+	// MIG-077 A3-R3 — open the Move picker. Lists folders across the WHOLE universe
+	// (all libraries + federated child universes), grouped under each library root,
+	// excluding the source itself + its descendants + its current parent (a no-op).
+	// Folder enumeration is a lightweight Rust walk (list_universe_folders) so the
+	// frontend never reads thousands of note rows just to build the picker.
 	async function openMoveDialog(sourcePath: string, sourceName: string) {
 		const norm = (p: string) => p.replace(/\\/g, '/').toLowerCase();
 		const np = norm(sourcePath);
-		let lib: LibraryStats | null = null;
+		let srcLib: LibraryStats | null = null;
 		for (const l of $libraryStats) {
 			const lp = norm(l.path);
 			if (np === lp || np.startsWith(lp.endsWith('/') ? lp : lp + '/')) {
-				if (!lib || l.path.length > lib.path.length) lib = l;
+				if (!srcLib || l.path.length > srcLib.path.length) srcLib = l;
 			}
 		}
-		if (!lib) return;
-		let tree: FileEntry[];
+		moveDialog = { path: sourcePath, name: sourceName, libraryId: srcLib?.library_id ?? '', loading: true, folders: [] };
+		let all: { library_id: string; library_name: string; path: string; name: string; depth: number }[];
 		try {
-			tree = await invoke<FileEntry[]>('read_library_tree', { path: lib.path, maxDepth: 20 });
-		} catch { return; }
+			all = await invoke('list_universe_folders');
+		} catch {
+			moveDialog = null;
+			return;
+		}
+		if (!moveDialog) return; // cancelled while loading
 		const sourceIsDir = !/\.(md|base)$/i.test(sourcePath);
 		const lastSep = Math.max(sourcePath.lastIndexOf('\\'), sourcePath.lastIndexOf('/'));
-		const sourceParent = lastSep >= 0 ? sourcePath.substring(0, lastSep) : '';
-		const folders: { path: string; name: string; depth: number }[] = [{ path: lib.path, name: lib.name, depth: 0 }];
-		const walk = (entries: FileEntry[], depth: number) => {
-			for (const e of entries) {
-				if (!e.is_dir) continue;
-				const ne = norm(e.path);
-				if (sourceIsDir && (ne === np || ne.startsWith(np + '/'))) continue; // can't move into self/descendant
-				folders.push({ path: e.path, name: e.name, depth });
-				if (e.children) walk(e.children, depth + 1);
+		const sourceParent = norm(lastSep >= 0 ? sourcePath.substring(0, lastSep) : '');
+		const byLib = new Map<string, typeof all>();
+		for (const f of all) {
+			if (!byLib.has(f.library_id)) byLib.set(f.library_id, []);
+			byLib.get(f.library_id)!.push(f);
+		}
+		const entries: { path: string; name: string; depth: number; isLibraryRoot?: boolean }[] = [];
+		for (const lib of $libraryStats) {
+			entries.push({ path: lib.path, name: lib.name, depth: 0, isLibraryRoot: true });
+			for (const f of byLib.get(lib.library_id) ?? []) {
+				entries.push({ path: f.path, name: f.name, depth: f.depth });
 			}
-		};
-		walk(tree, 1);
-		const filtered = folders.filter((f) => norm(f.path) !== norm(sourceParent)); // drop the no-op (current folder)
-		moveDialog = { path: sourcePath, name: sourceName, libraryId: lib.library_id, folders: filtered };
+		}
+		const filtered = entries.filter((e) => {
+			const ne = norm(e.path);
+			if (sourceIsDir && (ne === np || ne.startsWith(np + '/'))) return false; // self / descendant
+			if (ne === sourceParent) return false; // no-op (current folder)
+			return true;
+		});
+		moveDialog = { ...moveDialog, loading: false, folders: filtered };
 	}
 
 	async function handleMoveConfirm(targetFolder: string) {
 		if (!moveDialog) return;
 		const { path, libraryId } = moveDialog;
 		await moveItem(path, targetFolder); // throws on collision -> shown inline by MoveDialog
-		await refreshLibraryTree(libraryId);
+		// refresh BOTH the source and the (possibly different) target library
+		const norm = (p: string) => p.replace(/\\/g, '/').toLowerCase();
+		const nt = norm(targetFolder);
+		let targetLibId = libraryId;
+		let best: LibraryStats | null = null;
+		for (const l of $libraryStats) {
+			const lp = norm(l.path);
+			if (nt === lp || nt.startsWith(lp.endsWith('/') ? lp : lp + '/')) {
+				if (!best || l.path.length > best.path.length) best = l;
+			}
+		}
+		if (best) targetLibId = best.library_id;
+		if (libraryId) await refreshLibraryTree(libraryId);
+		if (targetLibId && targetLibId !== libraryId) await refreshLibraryTree(targetLibId);
 		await loadAllStats();
 		moveDialog = null;
 	}
@@ -7304,6 +7328,7 @@
 		<MoveDialog
 			sourceName={moveDialog.name}
 			folders={moveDialog.folders}
+			loading={moveDialog.loading}
 			onConfirm={handleMoveConfirm}
 			onCancel={() => moveDialog = null}
 		/>
