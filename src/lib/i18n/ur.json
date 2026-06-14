@@ -1743,6 +1743,9 @@
 		"description": "لائبریریوں کے درمیان نوٹس اور فہرستیں"
 	},
 	"contextMenu": {
+		"open": "کھولیں",
+		"expand": "پھیلائیں",
+		"collapse": "سمیٹیں",
 		"bold": "بولڈ",
 		"italic": "ترچھا",
 		"strikethrough": "خط کشیدہ",

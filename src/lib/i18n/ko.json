@@ -2183,6 +2183,9 @@
 		"description": "라이브러리 간 노트 및 색인"
 	},
 	"contextMenu": {
+		"open": "열기",
+		"expand": "펼치기",
+		"collapse": "접기",
 		"bold": "굵게",
 		"italic": "기울임",
 		"strikethrough": "취소선",

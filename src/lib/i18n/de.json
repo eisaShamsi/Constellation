@@ -1743,6 +1743,9 @@
 		"description": "Bibliotheksübergreifende Notizen und Verzeichnisse"
 	},
 	"contextMenu": {
+		"open": "Öffnen",
+		"expand": "Aufklappen",
+		"collapse": "Einklappen",
 		"bold": "Fett",
 		"italic": "Kursiv",
 		"strikethrough": "Durchgestrichen",

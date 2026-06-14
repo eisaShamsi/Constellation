@@ -1743,6 +1743,9 @@
 		"description": "یادداشت‌ها و فهرست‌های میان‌کتابخانه‌ای"
 	},
 	"contextMenu": {
+		"open": "باز کردن",
+		"expand": "باز کردن",
+		"collapse": "جمع کردن",
 		"bold": "پررنگ",
 		"italic": "مورب",
 		"strikethrough": "خط‌خورده",

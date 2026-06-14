@@ -2183,6 +2183,9 @@
 		"description": "Kütüphaneler arası notlar ve dizinler"
 	},
 	"contextMenu": {
+		"open": "Aç",
+		"expand": "Genişlet",
+		"collapse": "Daralt",
 		"bold": "Kalın",
 		"italic": "İtalik",
 		"strikethrough": "Üstü çizili",

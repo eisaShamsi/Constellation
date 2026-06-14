@@ -2183,6 +2183,9 @@
 		"description": "ライブラリ横断ノートとインデックス"
 	},
 	"contextMenu": {
+		"open": "開く",
+		"expand": "展開",
+		"collapse": "折りたたむ",
 		"bold": "太字",
 		"italic": "斜体",
 		"strikethrough": "取り消し線",

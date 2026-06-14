@@ -2333,6 +2333,9 @@
 		"description": "Cross-library notes and indexes"
 	},
 	"contextMenu": {
+		"open": "Open",
+		"expand": "Expand",
+		"collapse": "Collapse",
 		"bold": "Bold",
 		"italic": "Italic",
 		"strikethrough": "Strikethrough",

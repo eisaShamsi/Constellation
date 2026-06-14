@@ -2281,6 +2281,9 @@
 		"description": "ملاحظات وفهارس عابرة للمكتبات"
 	},
 	"contextMenu": {
+		"open": "فتح",
+		"expand": "توسيع",
+		"collapse": "طي",
 		"bold": "غامق",
 		"italic": "مائل",
 		"strikethrough": "يتوسطه خط",

@@ -1743,6 +1743,9 @@
 		"description": "Notes et index inter-bibliothèques"
 	},
 	"contextMenu": {
+		"open": "Ouvrir",
+		"expand": "Développer",
+		"collapse": "Réduire",
 		"bold": "Gras",
 		"italic": "Italique",
 		"strikethrough": "Barré",

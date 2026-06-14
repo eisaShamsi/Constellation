@@ -6,6 +6,7 @@
 	import { getChildUniverses, type ChildUniverseInfo } from '$lib/universe/store';
 	import { detectDir } from '$lib/utils';
 	import { readSearchHistory, addSearchHistory } from '$lib/libraries/searchHistory';
+	import ContextMenu from './ContextMenu.svelte';
 
 	let {
 		libraryColorMap = {} as Record<string, string>,
@@ -720,15 +721,22 @@
 		ctxMenu = null;
 	}
 
-	async function handleCtxAction(action: string) {
-		if (!ctxMenu) return;
-		const node = ctxMenu.node;
-		closeContextMenu();
-		if (action === 'open') {
-			onNoteClick?.(node.path, node.name + '.md');
-		} else if (action === 'open-tab') {
-			onNoteClick?.(node.path, node.name + '.md', undefined, undefined);
+	// MIG-077 A3 — the OrgChart node menu via the shared ContextMenu (was inline +
+	// hardcoded English; the bare `contextMenu.open` key was missing, so the old
+	// `$t('contextMenu.open') || 'Open'` actually rendered the literal key string).
+	// Open for a note; an Expand/Collapse toggle for a container.
+	function getOrgNodeMenuItems(node: MapNode) {
+		if (node.node_type === 'note') {
+			return [
+				{ label: $t('contextMenu.open'), action: () => onNoteClick?.(node.path, node.name + '.md') },
+			];
 		}
+		return [
+			{
+				label: fsExpandedPaths.has(node.path) ? $t('contextMenu.collapse') : $t('contextMenu.expand'),
+				action: () => toggleFsExpand(node.path),
+			},
+		];
 	}
 
 	// Load fullscreen data on mount if fullscreen mode
@@ -974,15 +982,14 @@
 		{/if}
 	</div>
 
-	<!-- Context menu -->
+	<!-- Context menu (MIG-077 A3 — shared ContextMenu) -->
 	{#if ctxMenu}
-		<div class="oc-fs-ctx" style="left:{ctxMenu.x}px; top:{ctxMenu.y}px">
-			{#if ctxMenu.node.node_type === 'note'}
-				<button onclick={() => handleCtxAction('open')}>{$t('contextMenu.open') || 'Open'}</button>
-			{:else}
-				<button onclick={() => toggleFsExpand(ctxMenu!.node.path)}>{fsExpandedPaths.has(ctxMenu!.node.path) ? ($t('sidebar.collapseAll') || 'Collapse') : ($t('sidebar.expandAll') || 'Expand')}</button>
-			{/if}
-		</div>
+		<ContextMenu
+			x={ctxMenu.x}
+			y={ctxMenu.y}
+			items={getOrgNodeMenuItems(ctxMenu.node)}
+			onClose={closeContextMenu}
+		/>
 	{/if}
 </div>
 
@@ -1585,16 +1592,4 @@
 	.oc-sr-note-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.oc-sr-note-meta { font-size: 11px; color: var(--text-faint); flex-shrink: 0; }
 
-	/* Context menu */
-	.oc-fs-ctx {
-		position: fixed; z-index: 9999; min-width: 140px;
-		background: var(--background-primary); border: 1px solid var(--background-modifier-border);
-		border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 4px;
-	}
-	.oc-fs-ctx button {
-		display: block; width: 100%; text-align: start; padding: 6px 12px;
-		border: none; border-radius: 4px; background: none; cursor: pointer;
-		font-size: 13px; color: var(--text-normal); font-family: inherit;
-	}
-	.oc-fs-ctx button:hover { background: var(--background-modifier-hover); }
 </style>

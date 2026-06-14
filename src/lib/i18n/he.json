@@ -1743,6 +1743,9 @@
 		"description": "הערות ואינדקסים חוצי ספריות"
 	},
 	"contextMenu": {
+		"open": "פתח",
+		"expand": "הרחב",
+		"collapse": "כווץ",
 		"bold": "מודגש",
 		"italic": "נטוי",
 		"strikethrough": "קו חוצה",

@@ -2183,6 +2183,9 @@
 		"description": "Notas e índices entre bibliotecas"
 	},
 	"contextMenu": {
+		"open": "Abrir",
+		"expand": "Expandir",
+		"collapse": "Recolher",
 		"bold": "Negrito",
 		"italic": "Itálico",
 		"strikethrough": "Tachado",
