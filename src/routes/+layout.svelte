@@ -262,7 +262,10 @@
 				tabs.filter(t => !t.pinned).forEach(t => closeTab(t.id));
 				break;
 			case 'pin':
-				if (tab) tab.pinned = !tab.pinned;
+				// MIG-077 A1 — reactive toggle via openTabs.update (was an in-place
+				// `tab.pinned = !tab.pinned` that never notified the store, so the
+				// tab's 📌 icon didn't appear until the next unrelated re-render).
+				openTabs.update(ts => ts.map(t => t.id === id ? { ...t, pinned: !t.pinned } : t));
 				break;
 			case 'copyPath':
 				if (tab) navigator.clipboard.writeText(tab.path).catch(() => {});
