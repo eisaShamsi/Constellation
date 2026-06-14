@@ -2333,6 +2333,9 @@
 		"description": "Cross-library notes and indexes"
 	},
 	"contextMenu": {
+		"openInNewTab": "Open in new tab",
+		"move": "Move",
+		"addTag": "Add tag",
 		"open": "Open",
 		"expand": "Expand",
 		"collapse": "Collapse",

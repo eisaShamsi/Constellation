@@ -1743,6 +1743,9 @@
 		"description": "Notas e índices entre bibliotecas"
 	},
 	"contextMenu": {
+		"openInNewTab": "Abrir en una pestaña nueva",
+		"move": "Mover",
+		"addTag": "Añadir etiqueta",
 		"open": "Abrir",
 		"expand": "Expandir",
 		"collapse": "Contraer",

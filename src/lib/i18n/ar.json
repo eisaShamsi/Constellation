@@ -2281,6 +2281,9 @@
 		"description": "ملاحظات وفهارس عابرة للمكتبات"
 	},
 	"contextMenu": {
+		"openInNewTab": "فتح في علامة تبويب جديدة",
+		"move": "نقل",
+		"addTag": "إضافة وسم",
 		"open": "فتح",
 		"expand": "توسيع",
 		"collapse": "طي",

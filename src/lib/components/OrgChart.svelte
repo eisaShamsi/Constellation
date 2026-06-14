@@ -7,6 +7,7 @@
 	import { detectDir } from '$lib/utils';
 	import { readSearchHistory, addSearchHistory } from '$lib/libraries/searchHistory';
 	import ContextMenu from './ContextMenu.svelte';
+	import { buildContextMenu, type ContextTarget, type ContextActions, type NodeKind } from './contextMenuBuilder';
 
 	let {
 		libraryColorMap = {} as Record<string, string>,
@@ -16,6 +17,7 @@
 		selectedPath = $bindable(null as string | string[] | null),
 		onNoteClick,
 		onClose,
+		onNodeMenuAction,
 	}: {
 		libraryColorMap?: Record<string, string>;
 		universeName?: string;
@@ -24,6 +26,10 @@
 		selectedPath?: string | string[] | null;
 		onNoteClick?: (path: string, name: string, highlightTerm?: string, e?: MouseEvent) => void;
 		onClose?: () => void;
+		// MIG-077 A3-R — the rich, contextual right-click menu. OrgChart owns
+		// Expand/Collapse (local tree state); every other op is performed by the
+		// host (+layout) which owns the operations. One callback, host dispatches.
+		onNodeMenuAction?: (action: string, target: ContextTarget) => void;
 	} = $props();
 
 	// ─── State ─────────────────────────────────────────────
@@ -721,22 +727,44 @@
 		ctxMenu = null;
 	}
 
-	// MIG-077 A3 — the OrgChart node menu via the shared ContextMenu (was inline +
-	// hardcoded English; the bare `contextMenu.open` key was missing, so the old
-	// `$t('contextMenu.open') || 'Open'` actually rendered the literal key string).
-	// Open for a note; an Expand/Collapse toggle for a container.
+	// MIG-077 A3-R — the rich, CONTEXTUAL node menu via the shared builder.
+	// Notes get the full action set; folders add create + rename + delete;
+	// libraries get create + expand/collapse only (management lives in the
+	// Library Manager). Expand/Collapse is OrgChart-local; everything else is
+	// dispatched to the host (+layout) via onNodeMenuAction. (Rename, Move,
+	// Add tag, Reveal-in-tree are wired in the follow-up A3-R steps — they need
+	// a dialog / a listener that doesn't exist yet, so they're omitted here
+	// rather than shipped dead.)
 	function getOrgNodeMenuItems(node: MapNode) {
-		if (node.node_type === 'note') {
-			return [
-				{ label: $t('contextMenu.open'), action: () => onNoteClick?.(node.path, node.name + '.md') },
-			];
+		const kind: NodeKind = node.node_type === 'note' ? 'note' : node.node_type === 'folder' ? 'folder' : 'library';
+		const target: ContextTarget = {
+			kind,
+			path: node.path,
+			name: node.name,
+			isMarkdown: kind === 'note',
+			expanded: fsExpandedPaths.has(node.path),
+		};
+		const fire = (action: string) => () => onNodeMenuAction?.(action, target);
+		const actions: ContextActions = {};
+		if (kind === 'note') {
+			actions.open = fire('open');
+			actions.openInNewTab = fire('openInNewTab');
+			actions.rename = fire('rename');
+			actions.copyPath = fire('copyPath');
+			actions.copyName = fire('copyName');
+			actions.suggestSources = fire('suggestSources');
+			actions.delete = fire('delete');
+		} else {
+			actions.newNote = fire('newNote');
+			actions.newFolder = fire('newFolder');
+			actions.newBase = fire('newBase');
+			actions.toggleExpand = () => toggleFsExpand(node.path);
+			if (kind === 'folder') {
+				actions.rename = fire('rename');
+				actions.delete = fire('delete');
+			}
 		}
-		return [
-			{
-				label: fsExpandedPaths.has(node.path) ? $t('contextMenu.collapse') : $t('contextMenu.expand'),
-				action: () => toggleFsExpand(node.path),
-			},
-		];
+		return buildContextMenu(target, actions);
 	}
 
 	// Load fullscreen data on mount if fullscreen mode

@@ -2183,6 +2183,9 @@
 		"description": "跨库笔记和索引"
 	},
 	"contextMenu": {
+		"openInNewTab": "在新标签页中打开",
+		"move": "移动",
+		"addTag": "添加标签",
 		"open": "打开",
 		"expand": "展开",
 		"collapse": "折叠",

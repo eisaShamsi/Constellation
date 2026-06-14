@@ -80,3 +80,28 @@ Standing invariants for EVERY step (from the Architect §3): the 2 working menus
 
 ## Rollback
 Each step is an independent commit; revert any single commit to undo that surface. A0's `MenuItem` extension is additive (no consumer breaks if reverted after later steps are also reverted). No schema, no data-path, no IPC contract change — pure render layer.
+
+---
+
+## ADDENDUM — Boss steer 2026-06-14 (after the A3 thin gate): menus must be RICH + CONTEXTUAL
+
+**The steer.** At the A3 gate Eisa rejected the faithful 1–2-item consolidation: *"What is the use of a right-click with only one command? I want the full list, like: Delete, Rename, Move, etc."* (notes) and *"Same thing!"* (containers). This is MIG-077's origin observation #3 — *"right-click should include every aspect of the app."* The Plan's Phase-A "faithful consolidation" framing is **superseded** for the note/folder/library surfaces.
+
+**Three Boss decisions (AskUserQuestion, 2026-06-14):**
+1. **Note menu = FULL, build everything now** — Open · Open in new tab · Rename · Move · Add tag · Copy path · Copy name · Reveal in tree · Suggest sources (md only) · Delete.
+2. **Container menu = RICH** — New Note · New Folder · New Base · Rename · Delete · Expand/Collapse. (Library roots keep Rename/Delete out, as today.)
+3. **Contextual, NOT identical-everywhere** — Eisa: *"It should be contextual and adapt to each type of function."* The menu is a function of **(object kind × surface capability)**: a note shows note actions; a folder shows folder actions; a tree node can Expand/Collapse, a flat search result cannot; the file tree won't show "Reveal in tree" (it *is* the tree). ONE shared builder, contextual output.
+
+**The architecture (replaces the per-surface `getXContextMenuItems` idiom for note/folder/library surfaces):**
+- New shared module **`contextMenuBuilder.ts`** — `buildContextMenu(target, actions): MenuItem[]`. `target = {kind, path, name, isMarkdown?, expanded?}`. `actions` = a bag of optional callbacks; the builder includes an item ONLY when its callback is provided AND it fits the kind. Group-based separators (no leading/trailing/double). This delivers "contextual": each surface passes the callbacks it can fulfill.
+- Operation reuse (all exist): rename → `renamingPath`; delete/reveal → window events `constellation:delete-note` / `constellation:reveal-in-tree`; copyPath/copyName → clipboard; openInNewTab → `openNoteTab(…, newTab=true)`; suggest → `handleSuggestSourcesForNote`; new* → `handleCreate*`. **New work:** Move (a folder-picker dialog over the existing `moveItem`) and Add tag (a tag input that writes frontmatter **through the safe MIG-076 write path**, never a raw append).
+- `+layout.getContextMenuItems` (file tree) + `OrgChart` + List-mode + Search + Sky View all route through the shared builder with their own `actions` bag → the file tree gets enriched too, contextually.
+
+**Re-scoped step order (gates staged per `feedback_staged_tests`):**
+- **A3-R1** shared `contextMenuBuilder.ts` + i18n `contextMenu.{openInNewTab,move,addTag}` ×15 *(internal)*.
+- **A3-R2** apply to OrgChart with the READY actions (Open · Open in new tab · Rename · Copy path/name · Reveal · Suggest · Delete · container New*/Rename/Delete/Expand-Collapse). **[GATE]**
+- **A3-R3** Move folder-picker dialog → add Move to the builder. **[GATE]**
+- **A3-R4** Add-tag input + safe frontmatter write → add Add tag to the builder. **[GATE — content-integrity, Editor-Surface Gate Checklist applies to the write]**
+- Then the file tree adopts the enriched builder; then Phase B (B1 List-mode, B2 Search, B5 Sky View) routes through it. A4 (ConfidencePicker) + A5 (GraphMind) unchanged.
+
+The thin A3 (`2e95b04a`) stays in history; its `ContextMenu` wiring + `contextMenu.{open,expand,collapse}` keys carry forward.

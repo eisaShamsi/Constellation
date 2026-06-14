@@ -1743,6 +1743,9 @@
 		"description": "Bibliotheksübergreifende Notizen und Verzeichnisse"
 	},
 	"contextMenu": {
+		"openInNewTab": "In neuem Tab öffnen",
+		"move": "Verschieben",
+		"addTag": "Tag hinzufügen",
 		"open": "Öffnen",
 		"expand": "Aufklappen",
 		"collapse": "Einklappen",

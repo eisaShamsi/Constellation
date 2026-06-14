@@ -34,3 +34,46 @@ cascading A3 → A4 → A5 → Phase B → Phase 4, stopping only at the [GATE] 
 - **Bundle proof:** `build/` contains `open:"Open",expand:"Expand",collapse:"Collapse"` in BOTH
   the main app chunk (`_app/immutable/chunks/D7b8oqZV.js`) and the second-screen bundle
   (`assets/screen-CMUc73KQ.js`) — fresh frontend embedded. Binary mtime 14:31 == build time.
+
+### BOSS STEER (after the A3 thin gate): menus must be RICH + CONTEXTUAL
+
+At the A3 gate Eisa rejected the faithful 1-item consolidation: *"What is the use of a right-click
+with only one command? I want the full list, like: Delete, Rename, Move, etc."* (notes) and *"Same
+thing!"* (containers) — MIG-077's origin observation #3. AskUserQuestion settled three decisions:
+**(1)** note menu = FULL, build everything now; **(2)** container menu = RICH; **(3)** NOT
+identical-everywhere but **contextual** — *"it should be contextual and adapt to each type of
+function."* Plan updated with the ADDENDUM; the thin A3 (`2e95b04a`) stays in history, its wiring +
+keys carry forward. Re-scoped: A3-R1 shared builder → A3-R2 OrgChart ready set+rename → A3-R3 Move
+→ A3-R4 Add tag (each its own gate, staged).
+
+### A3-R1/R2 — contextual rich menu + OrgChart — SHIPPED (awaiting Boss gate)
+
+**Commit:** `<pending>` · svelte-check **0 errors / 315 warnings** (baseline) · `npm run build` +
+`cargo build --release` (2m18s) green · bundle-confirmed · binary mtime 17:12.
+
+- **NEW `src/lib/components/contextMenuBuilder.ts`** — `buildContextMenu(target, actions)`: ONE
+  shared source, contextual output by **(object kind × surface capability)**. An item appears only
+  when its callback is provided AND fits the kind; group-based separators stay clean regardless of
+  which items are present. This IS the "contextual" mechanism (each surface passes the callbacks it
+  can fulfil). Reused later by the file tree, List-mode, Search, Sky View.
+- **NEW `src/lib/components/RenameDialog.svelte`** — a small reusable rename dialog (RTL-aware via
+  `detectDir`; reuses `actions.rename`/`dialogs.cancel` — no new strings). Full-page surfaces have
+  no inline tree row, so they rename through this → the host's existing `handleRenameComplete`
+  (rename + wikilink cascade + collision dialog all reused).
+- **OrgChart** now builds its menu via `buildContextMenu` and emits a single `onNodeMenuAction(action,
+  target)` to `+layout`'s new `handleOrgNodeMenuAction` (every op reuses an existing handler —
+  openNoteTab / clipboard / handleSuggestSourcesForNote / confirmDelete / handleCreate* /
+  handleRenameComplete; Expand/Collapse stays OrgChart-local). `libIdForPath` = longest-prefix lib
+  lookup (correct with nested libraries).
+- **R2 menu:** notes → Open · Open in new tab · Rename · Copy path · Copy name · Suggest sources ·
+  Delete. Folders → New Note/Folder/Base · Expand/Collapse · Rename · Delete. Libraries → New
+  Note/Folder/Base · Expand/Collapse. (**Move + Add tag** = A3-R3/R4.)
+- **Reveal in tree OMITTED — it is dead app-wide.** Repo-wide grep: `constellation:reveal-in-tree`
+  is dispatched (editor breadcrumb, `+layout:6333`) but **has no listener anywhere**. Shipping it in
+  the menu would be a dead item — against Eisa's "useful menus." Flagged as a separate fix
+  (`spawn_task` task_bd6d4802); will be added to the menus once the listener exists.
+- **i18n ×15:** `contextMenu.{openInNewTab,move,addTag}` added natively (move = `tableToolbar.move`
+  verbatim; addTag = `addProperty` grammar with the native "tag" noun; openInNewTab = standard
+  localized phrasing). Bundle-confirmed (`openInNewTab:"Open in new tab"`, `addTag:"إضافة وسم"`).
+- **Known minor (logged):** deleting/creating from the full-page chart doesn't auto-refresh the
+  chart (the node lingers until reopened) — cosmetic; the file op itself is correct. Follow-up.

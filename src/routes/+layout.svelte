@@ -84,6 +84,8 @@
 	import { SIGHT_V2_ENABLED, SIGHT_V3_ENABLED, SIGHT_V4_ENABLED, SIGHT_V6_ENABLED, SIGHT_V7_ENABLED } from '$lib/sight/engine';
 	import { detectClusters, computeStructuralGaps, computeUniverseHealth, buildCommunityProfiles, stratumWeightedCentrality, suggestBridges, type StructuralGap, type UniverseHealth, type ClusterInfo, type CommunityProfile } from '$lib/graph/clusterEngine';
 	import OrgChart from '$lib/components/OrgChart.svelte';
+	import type { ContextTarget } from '$lib/components/contextMenuBuilder';
+	import RenameDialog from '$lib/components/RenameDialog.svelte';
 	import CatalogerView from '$lib/components/CatalogerView.svelte';
 	import EmojiIconPicker from '$lib/components/EmojiIconPicker.svelte';
 	import SlotIcon from '$lib/components/SlotIcon.svelte';
@@ -4419,6 +4421,9 @@
 	// ─── Context menu state ───
 	let contextMenu = $state<{ x: number; y: number; entry: FileEntry; libraryId: string; isLibraryRoot?: boolean } | null>(null);
 	let confirmDelete = $state<{ path: string; name: string } | null>(null);
+	// MIG-077 A3-R — rename driven from a full-page surface (OrgChart etc.) where
+	// there is no inline tree row; hands the new name to handleRenameComplete.
+	let renameDialog = $state<{ path: string; name: string } | null>(null);
 
 	// MIG-008 §Build.1: shared create dialog state. Single component for
 	// Folder / Note / Base / Library so the four flows don't drift.
@@ -4598,6 +4603,67 @@
 			danger: true
 		});
 		return items;
+	}
+
+	// MIG-077 A3-R — longest-prefix library lookup for a node path (correct with
+	// nested libraries; the bare startsWith elsewhere returns the first match).
+	function libIdForPath(path: string): string | null {
+		let best: { path: string; library_id: string } | null = null;
+		for (const lib of $libraryStats) {
+			if (path === lib.path || path.startsWith(lib.path)) {
+				if (!best || lib.path.length > best.path.length) best = lib;
+			}
+		}
+		return best?.library_id ?? null;
+	}
+
+	// MIG-077 A3-R — the host-side dispatcher for the contextual node menu
+	// emitted by full-page surfaces (OrgChart now; List/Search later). Every op
+	// reuses an existing handler — nothing reinvented. Expand/Collapse stays in
+	// the surface (local tree state). Rename/Move/Add tag arrive in A3-R3/R4/R5.
+	function handleOrgNodeMenuAction(action: string, target: ContextTarget) {
+		const path = target.path;
+		switch (action) {
+			case 'open':
+			case 'openInNewTab': {
+				const lib = $libraryStats.find(l => path.startsWith(l.path));
+				if (lib) openNoteTab(path, lib.name, libraryColorMap[lib.name] || '#7c3aed', undefined, action === 'openInNewTab');
+				showOrgChart = false;
+				orgChartReturnPending = true;
+				break;
+			}
+			case 'copyPath':
+				navigator.clipboard.writeText(path).catch(() => {});
+				break;
+			case 'copyName':
+				navigator.clipboard.writeText(target.name).catch(() => {});
+				break;
+			case 'suggestSources':
+				handleSuggestSourcesForNote(path);
+				showOrgChart = false;
+				break;
+			case 'rename':
+				renameDialog = { path, name: target.name };
+				break;
+			case 'delete':
+				confirmDelete = { path, name: target.name };
+				break;
+			case 'newNote': {
+				const libId = libIdForPath(path);
+				if (libId) handleCreateNote(path, libId);
+				break;
+			}
+			case 'newFolder': {
+				const libId = libIdForPath(path);
+				if (libId) handleCreateFolder(path, libId);
+				break;
+			}
+			case 'newBase': {
+				const libId = libIdForPath(path);
+				if (libId) handleCreateBase(path, libId);
+				break;
+			}
+		}
 	}
 
 	// MIG-021v2 §1E' — right-click action handler. Opens the Source Review
@@ -5812,6 +5878,7 @@
 						showOrgChart = false;
 						orgChartReturnPending = true;
 					}}
+					onNodeMenuAction={handleOrgNodeMenuAction}
 					onClose={() => { showOrgChart = false; orgChartReturnPending = false; }}
 				/>
 			</div>
@@ -7091,6 +7158,21 @@
 			cancelLabel={$t('dialogs.cancel')}
 			onConfirm={handleDeleteConfirm}
 			onCancel={() => confirmDelete = null}
+		/>
+	{/if}
+
+	{#if renameDialog}
+		<RenameDialog
+			initialValue={renameDialog.name}
+			title={$t('actions.rename')}
+			confirmLabel={$t('actions.rename')}
+			cancelLabel={$t('dialogs.cancel')}
+			onConfirm={(newName) => {
+				const r = renameDialog;
+				renameDialog = null;
+				if (r && newName && newName !== r.name) handleRenameComplete(r.path, newName);
+			}}
+			onCancel={() => renameDialog = null}
 		/>
 	{/if}
 

@@ -1743,6 +1743,9 @@
 		"description": "הערות ואינדקסים חוצי ספריות"
 	},
 	"contextMenu": {
+		"openInNewTab": "פתח בכרטיסייה חדשה",
+		"move": "הזז",
+		"addTag": "הוסף תגית",
 		"open": "פתח",
 		"expand": "הרחב",
 		"collapse": "כווץ",

@@ -2183,6 +2183,9 @@
 		"description": "ライブラリ横断ノートとインデックス"
 	},
 	"contextMenu": {
+		"openInNewTab": "新しいタブで開く",
+		"move": "移動",
+		"addTag": "タグを追加",
 		"open": "開く",
 		"expand": "展開",
 		"collapse": "折りたたむ",
