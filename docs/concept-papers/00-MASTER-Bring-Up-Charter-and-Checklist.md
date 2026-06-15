@@ -188,7 +188,8 @@ Each phase is re-enabled (flag on) and validated against its concept-paper check
 - **Method:** Boss-approved 2026-06-15. Flags-not-scissors confirmed (extends MIG-038 Wings pattern).
 - **MIG-079** (Boot graph WTD + single-owner activation) — Architect done ([doc](../MIG-079-Architect-Boot-WTD-Graph-Snapshot.md)); Boss decisions captured (links: **defer off boot**; tags: **maintain in the indexer**; sequencing: **activation fix first**). It is the Phase-3 fix in this program.
 - **Concept papers:** **ALL 31 per-function papers (02–32) written 2026-06-15** + the 3 foundation docs (00-Constellation core, 00-MASTER, 01-Editor). The ☐ in §4's CP column now tracks *bring-up* status (enabled + budget-met), **not** paper-written. Consolidated findings → §7.
-- **`safeBootMode` flag:** designed (§2); not yet built.
+- **`safeBootMode` flag:** SHIPPED (MIG-079 §B.1, `+layout.svelte` + `store.ts`) — gates the 4 satellite boot IPCs.
+- **★ THE EDITOR BASELINE (measured 2026-06-15, minimal mode on the live 1.83 GB / 7,653-note universe) — the bring-up's regression reference:** `paint 452 ms · hydrated 588 ms · graph_ready 603 ms` (vs full mode `941 / 1671 / 32,519`). The graph/sky/federation/Five-Acts IPCs never fired. **The editor + file-tree spine boots in ~0.6 s** — the entire ~32 s was satellites. Every function re-enabled in §D must keep full boot close to this; §C removes the 30 s recompute so full boot approaches it.
 
 ---
 
