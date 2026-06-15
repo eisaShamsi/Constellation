@@ -42,3 +42,7 @@ lab/scripts/__pycache__/
 
 # Throwaway scratch files (i18n insert scripts, commit-message files) — never commit
 _tmp_*
+lab/tmp_*
+
+# Note-repair backups (MIG-078 importer cleanup) — large note .bak copies, keep local only
+lab/backups/
