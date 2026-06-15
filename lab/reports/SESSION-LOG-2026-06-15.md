@@ -103,3 +103,19 @@ Active universe "Eisa Cognitive Knowledge" (`E:\Constellation Universes\Eisa Cog
 
 ### Done =
 - One `init_db` per boot; no doubled mig003 sweep; no "database is locked"; `أولي (كائن)` reindexed → `cid_cn=20260414T092241Z_NOTE_B85A`, EXISTS→false, sweep stops firing; no "0 notes" flicker; OrgChart still <2 s. (The 19 cleaned files reflect via an explicit Rebuild Index — surfaced as a handover correction.)
+
+### SHIPPED (3 commits, all on main; release binary rebuilt 2026-06-15)
+- **`fe01e3db`** — init mutex. `SearchState.init_lock: Mutex<()>` + double-checked locking in `ensure_search_db_ready` (fast-path → init_lock → re-check → init body under lock). Poison-tolerant (`into_inner`). NOT holding `state.db` across `init_db`.
+- **`44a230fd`** — parser root cause + index-friendly sweep. `parse_frontmatter`/`body_after_frontmatter` → line-anchored `\n---` (EOF bounds-guarded). `mig003_step3` probe `cid_cn=''` (index, not the `IS NULL OR` full SCAN) + force-reindex empty rows via `index_note` + path-scoped dependent updates. +2 parser tests.
+- **`a7590837`** — Phase-4 audit hardening (see below). Shared `split_frontmatter` helper (one source of truth, fixes the `trim_start` divergence); universe-switch generation re-check before storing the conn; `index_note` Result captured + cleaner diag log; corrected the stale FTS-prewarm doc comment; fixed the pre-existing §BL.1 test gap (`tests_pj060_index_gate` lacked `note_body`). +2 tests.
+
+### Phase-4 adversarial audit (4-lens workflow `wf_56f7f310-41d`) — VERDICT PASS_WITH_NOTES, no P0
+Lenses: invariants / drift / migration-paths / adversary → synthesis (independently re-verified each P1/cross-cutting claim). No corruption / panic / boot-hang / sweep-never-stops. UTF-8 boundary safety confirmed (fences are ASCII; slices land on char boundaries; `.get()` guards EOF). Findings addressed in `a7590837` (P2-1/2-2/2-3 + P3 observability). **Remaining deferred (logged, NOT blocking):**
+- P3 — a genuinely-cid_cn-less note (file lacks `cid_cn:`) stays `still_empty` and is re-reindexed each boot — bounded to ≤1 row by the UNIQUE index (can't be the full-scan sweep); not present in this universe (the one note HAS a cid_cn). Convergent fix (inject via `canonical::ensure_cid_cn`) deferred — avoids adding a file-write to boot init for a non-occurring case.
+- P3 — `ensure_search_db_ready`'s two `state.db.lock()` are still `map_err` (not poison-tolerant) like the rest of the file; pre-existing, optional.
+- Follow-up PJ — **active-index FTS5 optimize**: the active universe has NO routine FTS5 segment maintenance (the old "boot write merges segments" belief was always false — `note_meta_au` gates on name/body_text, not cid_cn). If active search ever fragments, add a background segid-gated `optimize` mirroring `federation_prewarm`. (Couldn't measure segid from Python — FTS5 shadow column; needs the Rust conn.)
+- Follow-up PJ — the 4 naive `find("---")` copies in `libraries.rs` (2424/3515/4251/4272), preview/tag surfaces only (display, not corruption); when fixed, route them through `split_frontmatter` too.
+
+### Verification status
+- **Static:** `cargo check --lib` clean; `cargo test --lib search::` **65/65** (incl. 4 new parser regression tests). Query plans confirmed `cid_cn=''` rides `idx_note_meta_cid_cn` vs `IS NULL OR` → full `SCAN`. cid_cn `20260414T092241Z_NOTE_B85A` is unique (no reindex collision).
+- **Pending (runtime, Boss launch + Claude DB re-check):** one `init_db`; `أولي (كائن)`.cid_cn populated; empty-cid_cn count 0; `diagnostics.log` shows `stale=1 reindexed=1 … still_empty=0`, no doubled sweep, no "database is locked"; body_text no longer leaks YAML; no/short "0 notes" flicker; OrgChart <2 s.
