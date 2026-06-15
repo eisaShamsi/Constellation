@@ -65,6 +65,7 @@ pub mod lexicon;
 mod search;
 mod sky_backfill;
 mod links_backfill;
+mod note_body_backfill;
 mod reconcile;
 mod link_types;
 mod style_presets;

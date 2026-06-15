@@ -1932,6 +1932,20 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
         );
     ").map_err(|e| format!("Failed to create note_meta: {}", e))?;
 
+    // MIG-078 Phase BL §BL.1 — the relocated home for note bodies. body_text is
+    // being moved OUT of note_meta (it inflated the row store to ~1.7 GB and
+    // taxed every wide-row read) into this narrow side table, bridged on `path`
+    // (shared PK with note_meta). §BL.1 only ADDS this table and dual-writes to
+    // it (see index_note); reads + the FTS triggers still source body from
+    // note_meta.body_text until §BL.2 flips them. notes_fts stays
+    // content=note_meta (never rebuilt) — see docs/MIG-078-Phase-BL-Design.md.
+    conn.execute_batch("
+        CREATE TABLE IF NOT EXISTS note_body (
+            path TEXT PRIMARY KEY,
+            body_text TEXT NOT NULL DEFAULT ''
+        );
+    ").map_err(|e| format!("Failed to create note_body: {}", e))?;
+
     // MIG-002: idempotent ALTER for pre-v2 DBs. SQLite lacks IF NOT EXISTS
     // on ADD COLUMN, so we probe table_info. Cheap (one row per column,
     // runs once per boot).
@@ -4075,6 +4089,18 @@ fn index_note(conn: &Connection, note_path: &str, library_name: &str, force: boo
     // the FTS5 row on update.
     conn.execute_batch("BEGIN IMMEDIATE").map_err(|e| e.to_string())?;
     let result = (|| -> Result<(), String> {
+        // MIG-078 §BL.1 — dual-write the body into note_body FIRST (before the
+        // note_meta UPSERT). Ordering matters for §BL.2: once the FTS-sync
+        // triggers source body from note_body, the AFTER-INSERT trigger's
+        // subquery must find the fresh row. Writing it first now means §BL.2
+        // need not re-touch this call site. In §BL.1 the triggers still read
+        // note_meta.body_text, so this is a harmless shadow write today.
+        conn.execute(
+            "INSERT INTO note_body (path, body_text) VALUES (?1, ?2)
+             ON CONFLICT(path) DO UPDATE SET body_text = excluded.body_text",
+            params![note_path, plain_body],
+        ).map_err(|e| format!("Failed to write note_body {}: {}", note_path, e))?;
+
         conn.execute(
             "INSERT INTO note_meta (path, name, library_name, modified, properties_json, tags_json, outgoing_links_json, headings_json, body_text, word_count, created_at, cid_cn, sources, content_type)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)
@@ -6660,6 +6686,11 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
     // batched, never blocks boot (the MIG-013 lesson).
     crate::links_backfill::maybe_schedule(app.clone());
 
+    // MIG-078 §BL.1: schedule the one-time body copy note_meta.body_text →
+    // note_body on a background thread. No-op once stamped. Resumable; the body
+    // is copied inside SQLite (the 123 MB outlier never crosses into Rust).
+    crate::note_body_backfill::maybe_schedule(app.clone());
+
     // MIG-078 §A′.2: schedule the note_meta↔disk reconcile on a background
     // thread. Removes stale rows whose .md file no longer exists (exposed now
     // that the Map/OrgChart tree is built from note_meta). Runs lock-free
@@ -6974,6 +7005,10 @@ pub fn reindex_delete_note(state: &SearchState, note_path: &str) -> Result<(), S
             .ok();
         let _ = conn.execute("DELETE FROM note_links WHERE source_path = ?1", params![note_path]);
         let _ = conn.execute("DELETE FROM note_meta WHERE path = ?1", params![note_path]);
+        // MIG-078 §BL.1 — drop the body shadow row too. Ordered AFTER the
+        // note_meta delete so the (future §BL.2) note_meta AFTER-DELETE trigger
+        // can still read old body from note_body before it's gone.
+        let _ = conn.execute("DELETE FROM note_body WHERE path = ?1", params![note_path]);
         if let Some(body) = old_body {
             // Best-effort: term_vocab maintenance failure must not fail
             // the file-level deletion. The file is gone; correctness is
