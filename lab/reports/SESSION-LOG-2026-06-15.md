@@ -151,3 +151,42 @@ Boss directive: disable all functions (via FLAGS not scissors), keep only the ed
 - **The boot-perf HISTORY TOOL (commit `c8f7ff9a`):** `write_boot_perf_report` (cache.rs) now ALSO appends each report to `.constellation/boot-perf.history.jsonl` (append-only, NEVER overwritten — captures every boot, cold+warm, many per session); `buildBootPerfReport` adds `boot_id`/`phase`/`safe_boot_mode`; reader `lab/boot-perf/read-boot-history.py`. Built to MEASURE instead of infer.
 - **MEASURED (3 boots, cold via PC restart):** cold-minimal **1.7 s** (DB read only 0.65 s); warm-full 5.6 s; **cold-full 33 s** = graph reads (read_links **11.3 s** / read_tags **5.7 s** / queue **12 s**). **Conclusion: the editor spine is fast cold+warm; the ENTIRE boot cost is the graph reads → §C is the whole fix, cold+warm.** The "13 s" did not reproduce (pre-tool binary); not chased.
 - **§C.1 VERIFIED + designed, NOT built** (checkpointed — write-path change, not rushed at session tail): `index_note`:4266 is the SOLE `tags_json` writer (grep-confirmed) → Rust ±delta is complete; delete decrement in `reindex_delete_note`:7217. Design = `tag_counts(tag,n)` + ±delta gated on `schema_versions.tag_counts` + non-blocking own-conn backfill + read-flip-with-live-fallback + reconcile recompute. MUST DO before save-path: live-DB rehearsal (counts == read_tags), adversarial audit of the backfill-coexistence race, delta unit test, Editor-Surface Gate. Pickup: HANDOVER addendum.
+
+---
+
+## MIG-079 §C.1 — write-time `tag_counts` BUILT + proven (next-session pickup, executed)
+
+**Working on:** the **boot-graph tag aggregate** — `cache::read_tags` (the 5.6 s full-`tags_json` scan on every boot, CLAUDE.md Rule 8 violation), replaced by a persisted `tag_counts(tag, n)` summary maintained write-time.
+
+### Ground-truth data shape FIRST (Reproduce-First / Walk-Through-Writes)
+Read-only analysis of the live 7,653-note universe (`lab/tag-counts/analyze-live-tags.py`, dumps the serde target to `live-read-tags-target.json`):
+- **All 7,653 `tags_json` rows are clean JSON string-arrays.** 0 NULL, 0 malformed, 0 non-array, 0 non-string-element, 0 empty-string, 0 duplicate-within-note. (Structural: `index_note` always writes `serde_json::to_string(&Vec<String>)`.)
+- **`serde` (the `read_tags` path) and `json_each` aggregates are byte-identical** here: distinct **19,542**, occurrences **36,193**, ZERO diffs.
+- **Raw `SELECT tags_json FROM note_meta` alone = 5.77 s** — the cost is SQLite's wide-row traversal (inline `body_text`), NOT JSON parsing. The summary table (~19.5k rows) reads in ms.
+
+### What shipped (one proven unit)
+- **`src-tauri/src/tag_counts.rs`** (new module; `mod tag_counts;` in lib.rs). Holds: `recompute_all_in` (the shared `json_each` aggregate SQL — single source of truth for backfill + reconcile), `tag_multiset` (the exact `read_tags` semantics: per-occurrence count, skip empty, malformed→empty), `apply_delta` (the ±delta with `old==new` fast-path + zero-prune), `is_stamped`/`is_stamped_in_schema`, and `maybe_schedule`/`run` (the atomic backfill).
+- **Schema:** `CREATE TABLE tag_counts(tag PRIMARY KEY, n)` in `init_db` (inert until stamped).
+- **Write path:** `index_note` captures old `tags_json` before its UPSERT and calls `apply_delta` after — INSIDE the existing `BEGIN IMMEDIATE` (atomic with the note_meta write), gated on the stamp. `reindex_delete_note` reads old tags before the row delete and applies `old → []` (best-effort).
+- **Read flip:** `cache::read_tags_in_schema` reads `{schema}.tag_counts WHERE n>0` when that schema is stamped, **else falls back to the legacy live scan** (zero-risk; an un-upgraded attached cUniverse just scans). Any read error also falls through.
+- **Backfill:** scheduled in `ensure_search_db_ready` (after `note_body_backfill`). Builds the whole table from `note_meta` in a SINGLE `json_each` aggregate inside ONE `IMMEDIATE` transaction on a **dedicated connection** (the proven reconcile `walk_conn` pattern), then stamps, then commits.
+- **Self-heal:** `reconcile_filesystem` rebuilds `tag_counts` authoritatively (one txn, when stamped) after its walk + the outgoing-link recompute.
+
+### Design refinement vs the "locked" handover (surfaced for Eisa)
+Handover said "non-blocking own-connection backfill modeled on `note_body_backfill` (batched)". I made the backfill a **single atomic aggregate** instead of a batch loop. Reason: `tag_counts` is an *additive* aggregate, so a batched build racing live ±deltas is the exact double-count race the handover flagged as audit item (b). Atomicity **eliminates** the race instead of bounding it, and tags have no giant-row problem (unlike `note_body`'s 128 MB outlier) so one statement is cheap. Same module *shape* (own-connection background thread, gated on `schema_versions`, completeness implicit in the single aggregate, non-fatal, read-flip-with-fallback, reconcile recompute).
+
+### Adversarial audit of the coexistence race (mandatory item b) — race ELIMINATED, proof by cases
+SQLite single-writer + `busy_timeout` serialize a concurrent save **S** and the backfill **B**:
+- **S commits before B:** when S ran, table not stamped → S's delta gated off → S writes only note_meta. B then aggregates the current note_meta (sees S) → correct → stamp. ✓
+- **S commits after B:** B built+stamped first. S sees stamped → reads old tags (the value B counted) inside its own txn → applies `new−old` → final = B's count + (new−old) = correct. ✓
+- **Contention:** IMMEDIATE + busy_timeout(30 s) force one of the two above; a writer can't observe a half-built B (B holds the write lock to COMMIT; WAL readers see only committed state). ✓
+- **The one wart (~6 s write-lock hold):** one-time (stamp-gated), background (post-paint), readers unaffected (WAL), a save in the window waits ≤30 s then succeeds (no loss). Measured aggregate = **5.79 s**.
+- **Also audited:** reconcile self-heal is DELETE+rebuild (not additive → can't double-count); first-boot-after-ship falls back to scan then stamps (no regression, matches note_body rollout); cold/empty stamps an empty table maintained by deltas; federation checks each schema's own stamp; delete-path decrement is best-effort (reconcile is the net); a delta error in `index_note` rolls back the whole index (fail-safe).
+
+### Verification done (Claude-side)
+- **Unit tests (mandatory item c):** 4 new in `tag_counts.rs` — multiset semantics, add/remove/rename+prune, no-op-on-unchanged, and **backfill==sum-of-deltas==live-aggregate + idempotent**. `cargo test --lib` **930 passed / 0 failed** (incl. the 65 search tests — save path intact).
+- **Live-DB rehearsal (mandatory item a):** `tag_counts::tests::rehearse_against_live_copy` runs the REAL `recompute_all_in` against a copy of the 1.74 GB live DB and asserts equality to `live-read-tags-target.json`: **PASS byte-for-byte** (19,542 distinct / 36,193 occ, 0 diffs; aggregate 5.79 s).
+- **Editor-Surface Gate (mandatory item d):** tags are a *derived* view — the delta never touches note content/body/display, so the content-integrity class is structurally untouched; covered by the save-path tests + the Boss test tutorial (NotePane save, Focus round-trip, tab switch, rename probe-pair — asserting tags display correct AND body intact).
+
+### Pending (runtime — Boss launch + Claude DB re-check)
+Boss launches the rebuilt binary → diagnostics.log shows `[tag_counts_backfill] completed: 19542 distinct tags`; next boot `read_tags` timing drops 5.7 s → ~ms (boot-history tool); add/remove a tag in a note → sidebar tag count moves live; body intact across the gate. Then **§C.2** (defer the 234k `read_links` — the big 11 s) + **§C.3** (covering index).

@@ -63,3 +63,19 @@ Built because `boot-perf.latest.json` kept only the last boot, so every cold dia
 - **Then §C.2** (defer the 234k `read_links` off the graphReady critical path — read persisted `sky_links` + `note_meta.outgoing_*` at boot, lazy full-edge load on first graph open) + **§C.3** (covering index on note_links). **Verify §C end-to-end via the boot-history tool: cold graph_ready 33 s → toward the ~1.7 s floor.**
 
 ### Then §D — phase-by-phase bring-up per the concept-papers §7 Debt Register (each function: write-time cure + shared right-click + i18n + gate). Confirmed defects to fix in-phase: Calendar day-click opens TODAY; Tasks toggle bypasses the reindex gate; Review-Pulse dead code; Command-Palette stubs. Tasks REFRAMED (kept) as "open epistemic loops".
+
+---
+
+## ADDENDUM (session 3 — §C.1 BUILT + proven; §C.2 is the precise pickup)
+
+**Orientation now v2.85** · all on `main` (binary rebuilt 2026-06-15 23:21, pure-Rust → no `npm`).
+
+### §C.1 SHIPPED (Claude-verified; pending Boss runtime validation)
+Write-time `tag_counts` replaces the 5.6 s boot tag scan. Files: new `src-tauri/src/tag_counts.rs` (+`mod tag_counts;`); `tag_counts(tag,n)` in `init_db`; ±delta in `index_note` (capture old tags before the UPSERT, apply after — inside the existing `BEGIN IMMEDIATE`) + `reindex_delete_note` (old→[]); read-flip in `cache::read_tags_in_schema` (table when `{schema}` stamped, else legacy scan); backfill scheduled in `ensure_search_db_ready`; authoritative recompute in `reconcile_filesystem`.
+
+- **Backfill = ONE atomic `json_each` aggregate** (refinement of the "batched like note_body" handover line — atomicity ELIMINATES the additive-aggregate race, item b; proof-by-cases in SESSION-LOG-2026-06-15 §C.1 + orientation v2.85). Dedicated connection, `IMMEDIATE`, aggregate+stamp in one txn; ~6 s one-time lock hold, post-paint, WAL keeps readers unblocked.
+- **Gates met:** (a) live-DB rehearsal byte-identical (`tag_counts::tests::rehearse_against_live_copy` vs `lab/tag-counts/live-read-tags-target.json`, gitignored — regen via `lab/tag-counts/analyze-live-tags.py`); (b) race audit; (c) 4 ±delta unit tests; `cargo test --lib` **930/0**; (d) Editor-Surface reasoning (tags = derived view, content untouched).
+- **Boss validation pending:** launch → `diagnostics.log` `[tag_counts_backfill] completed: 19542 distinct tags`; 2nd boot `read_tags` 5.7 s → ~ms (boot-history tool); add/remove a tag → sidebar count moves live; body intact across the gate.
+
+### §C.2 — defer the 234k `read_links` (THE PICKUP — the BIG win, 11.3 s cold)
+- `cache::read_links_in_schema` (cache.rs:924) reads ALL 234k `note_links` rows on the `graphReady` critical path. Boss decision (locked): **defer it** — boot reads the persisted `sky_links` + `note_meta.outgoing_*` aggregates (already write-time maintained), and the full edge list loads **lazily on first graph/panel open**. Then **§C.3** (covering index on `note_links` for any residual in-order read). **Verify cold `graph_ready` 33 s → toward the ~1.7 s floor via the boot-history tool.** This is a bigger architectural change than §C.1 (it changes WHAT boot loads, not just how a view is stored) — give it the same full-care treatment: map every consumer of the boot `links` payload, confirm the lazy-load path, prove no graph/Sky/backlink regression.

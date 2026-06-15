@@ -1,0 +1,7 @@
+# MIG-079 §C.1 rehearsal artifacts — regenerated on demand from the live DB by
+# analyze-live-tags.py. The target JSON embeds the live universe's tag list
+# (personal knowledge content) and DB copies are large — keep both local only.
+live-read-tags-target.json
+*.db
+*.db-wal
+*.db-shm

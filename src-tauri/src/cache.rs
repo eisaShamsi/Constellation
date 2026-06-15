@@ -1029,6 +1029,34 @@ fn read_tags_in_schema(
     schema: &str,
     tags: &mut HashMap<String, u32>,
 ) -> Result<(), String> {
+    // MIG-079 §C.1 — write-time path: when this schema's `tag_counts` summary is
+    // stamped current, read the O(distinct-tags) table (~ms) instead of scanning
+    // every note's `tags_json` (5.6 s on the live universe — the inline body_text
+    // makes each note_meta row read expensive). The table is maintained by the
+    // ±delta in index_note/reindex_delete_note and rebuilt by reconcile, so it is
+    // always current. Any read error falls through to the legacy scan, so a fresh
+    // or un-upgraded (e.g. older attached cUniverse) schema is never wrong.
+    if crate::tag_counts::is_stamped_in_schema(conn, schema) {
+        let sql = format!("SELECT tag, n FROM {}.tag_counts WHERE n > 0", schema);
+        let read = (|| -> Result<(), String> {
+            let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
+            let rows = stmt
+                .query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?)))
+                .map_err(|e| e.to_string())?;
+            for r in rows.flatten() {
+                let (tag, n) = r;
+                if !tag.is_empty() && n > 0 {
+                    *tags.entry(tag).or_insert(0) += n as u32;
+                }
+            }
+            Ok(())
+        })();
+        if read.is_ok() {
+            return Ok(());
+        }
+        // else: fall through to the legacy scan below.
+    }
+
     let sql = format!("SELECT tags_json FROM {}.note_meta", schema);
     let mut stmt = conn.prepare(&sql).map_err(|e| format!("prepare tags ({}): {}", schema, e))?;
     let rows = stmt

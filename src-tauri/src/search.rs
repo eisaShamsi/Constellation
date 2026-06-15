@@ -2042,6 +2042,17 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
         );
     ").map_err(|e| format!("Failed to create note_body: {}", e))?;
 
+    // MIG-079 §C.1 — write-time tag-count summary. Kept current by the ±delta in
+    // index_note / reindex_delete_note (gated on schema_versions.tag_counts), built
+    // once by the background backfill (tag_counts.rs), and read at boot instead of
+    // the 5.6 s full tags_json scan. Adding the table is inert until stamped.
+    conn.execute_batch("
+        CREATE TABLE IF NOT EXISTS tag_counts (
+            tag TEXT PRIMARY KEY,
+            n   INTEGER NOT NULL DEFAULT 0
+        );
+    ").map_err(|e| format!("Failed to create tag_counts: {}", e))?;
+
     // MIG-002: idempotent ALTER for pre-v2 DBs. SQLite lacks IF NOT EXISTS
     // on ADD COLUMN, so we probe table_info. Cheap (one row per column,
     // runs once per boot).
@@ -4250,6 +4261,23 @@ fn index_note(conn: &Connection, note_path: &str, library_name: &str, force: boo
     // the FTS5 row on update.
     conn.execute_batch("BEGIN IMMEDIATE").map_err(|e| e.to_string())?;
     let result = (|| -> Result<(), String> {
+        // MIG-079 §C.1 — capture the note's PRIOR tags BEFORE the UPSERT overwrites
+        // `tags_json`, so the write-time `tag_counts` ±delta can move only what
+        // changed. Gated on the stamp: until the backfill has built the table, the
+        // legacy live scan is the source of truth and this is skipped entirely.
+        // None on a first-time INSERT (no prior row) → old multiset empty → +new.
+        let tag_counts_on = crate::tag_counts::is_stamped(conn);
+        let old_tags_json: Option<String> = if tag_counts_on {
+            conn.query_row(
+                "SELECT tags_json FROM note_meta WHERE path = ?1",
+                params![note_path],
+                |row| row.get(0),
+            )
+            .ok()
+        } else {
+            None
+        };
+
         // MIG-078 §BL.1 — dual-write the body into note_body FIRST (before the
         // note_meta UPSERT). Ordering matters for §BL.2: once the FTS-sync
         // triggers source body from note_body, the AFTER-INSERT trigger's
@@ -4281,6 +4309,19 @@ fn index_note(conn: &Connection, note_path: &str, library_name: &str, force: boo
                content_type        = excluded.content_type",
             params![note_path, name, library_name, modified, props_json, tags_json, links_json, headings_json, plain_body, word_count, created_at, cid_cn, sources_json, content_type_json],
         ).map_err(|e| format!("Failed to index note {}: {}", note_path, e))?;
+
+        // MIG-079 §C.1 — apply the write-time tag_counts ±delta inside this same
+        // transaction (atomic with the note_meta write). O(tags-on-note); a
+        // body-only save (old == new) is a no-op. Skipped until the table is
+        // stamped (see the capture above).
+        if tag_counts_on {
+            crate::tag_counts::apply_delta(
+                conn,
+                old_tags_json.as_deref().unwrap_or("[]"),
+                &tags_json,
+            )
+            .map_err(|e| format!("tag_counts delta for {}: {}", note_path, e))?;
+        }
 
         // MIG-004 §2: clear+repopulate frontmatter-sourced aliases for
         // this path. The DELETE is partitioned by `source` so any
@@ -6916,6 +6957,12 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
     // is copied inside SQLite (the 123 MB outlier never crosses into Rust).
     crate::note_body_backfill::maybe_schedule(app.clone());
 
+    // MIG-079 §C.1: schedule the one-shot tag_counts backfill on a background
+    // thread. No-op once stamped. Builds the whole summary from note_meta in one
+    // atomic json_each aggregate (own connection); thereafter index_note maintains
+    // it write-time. Boot's read_tags then becomes an O(distinct-tags) lookup.
+    crate::tag_counts::maybe_schedule(app.clone());
+
     // MIG-078 §A′.2: schedule the note_meta↔disk reconcile on a background
     // thread. Removes stale rows whose .md file no longer exists (exposed now
     // that the Map/OrgChart tree is built from note_meta). Runs lock-free
@@ -7183,6 +7230,22 @@ pub fn reconcile_filesystem(app: &tauri::AppHandle) -> Result<SearchIndexStats, 
         eprintln!("[links_backfill] recompute_all_outgoing after reconcile failed: {}", e);
     }
 
+    // MIG-079 §C.1 — rebuild tag_counts authoritatively from the just-reconciled
+    // note_meta (the periodic self-heal). Only when stamped — before the backfill
+    // has run, the table isn't in use and the live scan is the source of truth.
+    // One short transaction; the live ±delta keeps it current between reconciles.
+    if crate::tag_counts::is_stamped(&walk_conn) {
+        match walk_conn.transaction() {
+            Ok(tx) => {
+                let r = crate::tag_counts::recompute_all_in(&tx);
+                if let Err(e) = r.and_then(|_| tx.commit()) {
+                    eprintln!("[tag_counts] reconcile recompute failed: {}", e);
+                }
+            }
+            Err(e) => eprintln!("[tag_counts] reconcile txn begin failed: {}", e),
+        }
+    }
+
     let note_count: u32 = walk_conn.query_row(
         "SELECT COUNT(*) FROM note_meta", [], |row| row.get(0)
     ).unwrap_or(0);
@@ -7228,8 +7291,25 @@ pub fn reindex_delete_note(state: &SearchState, note_path: &str) -> Result<(), S
                 |row| row.get(0),
             )
             .ok();
+        // MIG-079 §C.1 — decrement this note's tags from `tag_counts` before its
+        // row is gone. Read old tags now (mirrors old_body), apply old → [] after
+        // the delete. Gated on the stamp; self-healed by reconcile if it drifts.
+        let tag_counts_on = crate::tag_counts::is_stamped(conn);
+        let old_tags_json: Option<String> = if tag_counts_on {
+            conn.query_row(
+                "SELECT tags_json FROM note_meta WHERE path = ?1",
+                params![note_path],
+                |row| row.get(0),
+            )
+            .ok()
+        } else {
+            None
+        };
         let _ = conn.execute("DELETE FROM note_links WHERE source_path = ?1", params![note_path]);
         let _ = conn.execute("DELETE FROM note_meta WHERE path = ?1", params![note_path]);
+        if let Some(old) = old_tags_json {
+            let _ = crate::tag_counts::apply_delta(conn, &old, "[]");
+        }
         // MIG-078 §BL.1 — drop the body shadow row too. Ordered AFTER the
         // note_meta delete so the (future §BL.2) note_meta AFTER-DELETE trigger
         // can still read old body from note_body before it's gone.
