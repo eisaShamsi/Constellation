@@ -237,3 +237,18 @@ tree trim).
   because the DB file is **1.7 GB** and untouched-by-OS-cache; a covering index drops the query to
   **35 ms** (noted as a further optimization — not added, no schema change; warm ~1.4 s is already
   the fix). Rust release clean; binary 09:19. Frontend unchanged.
+
+**Boss re-test: STILL 26 s.** The "warm ~1.4 s" assumption was wrong — the FIRST open is COLD and the DB
+is 1.7 GB, so even the column read scans the bloated table cold. The covering index IS required (wrongly
+deferred). Added `idx_note_meta_map` on note_meta(path, name, word_count, modified, created_at,
+outgoing_links_json) in init_db (IF NOT EXISTS, no version bump). PROVEN on the live DB: EXPLAIN QUERY
+PLAN = "SCAN note_meta USING COVERING INDEX idx_note_meta_map", query 33 ms (index-only, never touches
+the 1.7 GB table), negligible size. Pre-created on Eisa's DB so the next boot skips the one-time ~21 s
+build. OrgChart open now ~= 33 ms (query) + ~761 ms (readdir) ~= <1 s. Binary 09:47. (readdir is the
+remaining floor; eliminable later by building the tree from DB paths.)
+
+SEPARATE boot issue flagged (Eisa): on launch notes populate (~28 s), then the count ZEROS (~18 s
+later), then takes minutes to repopulate (notes remain accessible). Not a MIG-077 change; likely the
+1.7 GB DB + a boot re-scan/snapshot rebuild. Spawned a Reproduce-First task. The 1.7 GB DB (inline
+body_text + FTS) is the common root of the slow cold reads — worth its own look (VACUUM / externalize
+body_text).

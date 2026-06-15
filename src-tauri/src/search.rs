@@ -2300,6 +2300,18 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
             ON note_meta(name, path, library_name);
     ").map_err(|e| format!("Failed to create idx_note_boot_snapshot: {}", e))?;
 
+    // MIG-077 perf — covering index for the OrgChart/Map tree build
+    // (constellation_map_universe -> load_note_records). Without it, the column
+    // read scans the whole note_meta table, which is bloated by the inline
+    // body_text (the user's DB is ~1.7 GB), so a COLD first open took ~26 s. This
+    // index holds exactly the map's columns, so the query is index-only (~35 ms
+    // warm, and bounded by the small index size even cold). IF NOT EXISTS + no
+    // version bump => picked up on the next launch, no DB rebuild.
+    conn.execute_batch("
+        CREATE INDEX IF NOT EXISTS idx_note_meta_map
+            ON note_meta(path, name, word_count, modified, created_at, outgoing_links_json);
+    ").map_err(|e| format!("Failed to create idx_note_meta_map: {}", e))?;
+
     // ─── Living Link System (Knowledge Formulation) ─────────────────────
     // note_links: stores typed, directed, annotated links with lifecycle data.
     // Source of truth: LINK files on disk. This table is the fast index.
