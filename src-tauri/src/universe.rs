@@ -599,6 +599,32 @@ pub fn create_universe(
 /// Set the active universe by ID. Auto-migrates old format if needed.
 #[tauri::command]
 pub fn set_active_universe(app: tauri::AppHandle, id: String) -> Result<(), String> {
+    // MIG-079 §A — idempotent activation guard. Re-activating the universe that is
+    // ALREADY active is a no-op: do NOT tear down + rebuild the search DB. Without
+    // this, the main window's boot restore AND the second screen both call this for
+    // the SAME universe, and the second call's invalidate_search_state bumps the
+    // federation generation → the in-flight init_db's connection is discarded and a
+    // full SECOND init_db + boot-graph recompute runs (the observed double-init,
+    // ~+34s). We compare the requested universe's registry path to the active path:
+    // a genuine SWITCH has a different path and falls through; a cold start has
+    // active_path = None and falls through. The search-DB lifecycle is owned by
+    // ensure_search_db_ready independently, so skipping the redundant re-activation
+    // never leaves the DB unopened.
+    {
+        let registry = load_registry(&app);
+        if let Some(entry) = registry.entries.iter().find(|e| e.id == id) {
+            let requested = PathBuf::from(&entry.path);
+            let state = app.state::<UniverseState>();
+            let already_active = state
+                .active_path
+                .lock()
+                .map(|g| g.as_deref() == Some(requested.as_path()))
+                .unwrap_or(false);
+            if already_active {
+                return Ok(());
+            }
+        }
+    }
     let mut registry = load_registry(&app);
 
     let entry = registry

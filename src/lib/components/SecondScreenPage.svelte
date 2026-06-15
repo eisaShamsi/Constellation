@@ -47,7 +47,7 @@
 		type MapCompanionData, type EditorPanelsData, type MonitorInfo
 	} from '$lib/secondScreen';
 	import {
-		setActiveUniverse, listUniverses, getChildUniverses,
+		listUniverses, getChildUniverses,
 		type ChildUniverseInfo
 	} from '$lib/universe/store';
 	function renderMarkdownPreview(raw: string): string {
@@ -920,7 +920,10 @@
 		try {
 			const universes = await listUniverses();
 			if (universes.length > 0) {
-				await setActiveUniverse(universes[0].id);
+				// MIG-079 §A — Display-Not-Domain: the second screen must NOT activate
+				// the universe (that re-inits the search DB = the double-init). The main
+				// window owns activation and listUniverses() returns the active universe
+				// first, so we only READ its name to title this display window.
 				universeName = universes[0].name || '';
 				await win.setTitle(`Constellation - ${universeName}`).catch(() => {});
 			}
