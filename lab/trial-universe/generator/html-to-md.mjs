@@ -254,12 +254,27 @@ function renderList($, $ul, depth, bullet) {
 	return `\n\n${items.join('\n')}\n\n`;
 }
 
+// Defensive backstop: no legitimate Wikipedia table approaches this many rows.
+// With the two fixes below the explosion can't occur (output is linear in the
+// real table size); this is a belt-and-suspenders guard against any other
+// pathological input.
+const MAX_TABLE_ROWS = 2000;
+
 function renderTable($, $table) {
 	const rows = [];
-	$table.find('tr').each((_, tr) => {
+	// FIX (Bug A): `.find('tr')` is a DESCENDANT selector — for a table nested
+	// N deep (Wikipedia {{clade}} phylogeny trees nest <table> 10-15 levels),
+	// the OUTER table grabbed every <tr> in the entire subtree. Combined with
+	// the per-cell re-render below, the same rows were emitted combinatorially
+	// (Spirochete.md exploded to 122.9 MB: `| --- | --- |` × 1,078,846). Restrict
+	// to rows whose NEAREST <table> ancestor IS this table → each table renders
+	// its own rows exactly once.
+	const self = $table.get(0);
+	$table.find('tr').filter((_, tr) => $(tr).closest('table').get(0) === self).each((_, tr) => {
+		if (rows.length >= MAX_TABLE_ROWS) return false; // defensive hard stop
 		const cells = $(tr).children('th, td').map((_, c) => {
 			const $c = $(c);
-			const t = $c.contents().map((_, child) => render($, child, 0)).get().join('').trim().replace(/\n+/g, ' ');
+			const t = $c.contents().map((_, child) => renderCell($, child)).get().join('').trim().replace(/\n+/g, ' ');
 			return t || ' ';
 		}).get();
 		if (cells.length) rows.push(cells);
@@ -274,6 +289,17 @@ function renderTable($, $table) {
 		...body.map(r => `| ${r.join(' | ')} |`),
 	];
 	return `\n\n${lines.join('\n')}\n\n`;
+}
+
+// Render a single table-cell child. FIX (Bug B): a nested <table> inside a cell
+// (the clade-tree pattern) is flattened to its plain text — GFM has no nested
+// tables, and re-rendering nested tables as grids is what fed the combinatorial
+// blow-up. Everything else renders normally.
+function renderCell($, child) {
+	if (child.type === 'tag' && child.name === 'table') {
+		return $(child).text().replace(/\s+/g, ' ').trim();
+	}
+	return render($, child, 0);
 }
 
 function cleanup(md) {

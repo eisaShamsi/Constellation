@@ -77,7 +77,18 @@ function pickStage(maturity) {
  * @param {object} [args.heroImageInfo]
  */
 export function buildNote({ title, summary, parsed, libraryContext, heroImageLocalPath, heroImageInfo, lang = 'en', isContradictionTarget = false }) {
-	const { markdown, links, properties, typedLinkHints } = htmlToMarkdown(parsed.text);
+	let { markdown, links, properties, typedLinkHints } = htmlToMarkdown(parsed.text);
+
+	// Defensive backstop (import table-explosion fix): a real article body is
+	// well under ~300 KB. If conversion still yields something pathological,
+	// refuse to write megabytes of garbage — log loudly and truncate at a sane
+	// bound so one bad page can never bloat the universe again. With the
+	// renderTable fixes this should never trigger; it's the last line of defence.
+	const MAX_BODY_BYTES = 600_000;
+	if (markdown.length > MAX_BODY_BYTES) {
+		console.warn(`[build-note] "${title}" produced ${(markdown.length / 1048576).toFixed(1)} MB of markdown — truncating to ${MAX_BODY_BYTES} bytes (suspected table-conversion blow-up).`);
+		markdown = markdown.slice(0, MAX_BODY_BYTES) + '\n\n_[content truncated — conversion produced an abnormally large body]_\n';
+	}
 
 	const maturity = pickMaturity();
 	const stage = pickStage(maturity);
