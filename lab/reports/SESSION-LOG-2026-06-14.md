@@ -252,3 +252,37 @@ later), then takes minutes to repopulate (notes remain accessible). Not a MIG-07
 1.7 GB DB + a boot re-scan/snapshot rebuild. Spawned a Reproduce-First task. The 1.7 GB DB (inline
 body_text + FTS) is the common root of the slow cold reads — worth its own look (VACUUM / externalize
 body_text).
+
+### §PERF — Three performance fixes (OrgChart 26s + boot zero-flicker + thundering herd)
+
+**SME audit results (session-continued 2026-06-15):** four parallel agents diagnosed three root causes.
+
+**Fix 1 — OrgChart 26s open (fullscreen mode).** `loadData()` in `onMount` runs even in fullscreen,
+loading all 19 library trees via `read_library_tree` (7,666 file reads, ~30s cold on Eisa's drive due
+to antivirus I/O). Fullscreen mode uses `loadFullscreenData()` → `constellation_map_universe` (the fast
+DB path) — `loadData()`'s output (`rootNode`) is **never rendered** in fullscreen.
+**Applied:** `if (!fullscreen) loadData();` in `OrgChart.svelte:onMount`. One-line gate — fullscreen
+gets instant load via the existing DB-based path.
+
+**Fix 2 — `mig003_step3_soft_rebackfill` full-table scan every boot.** Five UPDATE statements scan
+note_meta (1.7 GB, 7,600 rows with inline body_text) unconditionally every boot to repair NULL/empty
+cid_cn values. In steady state (MIG-003 Step 3 shipped long ago) there are 0 rows to repair — but the
+scan still reads 1.7 GB of pages.
+**Applied:** Added an `EXISTS` pre-check at the top using the existing `idx_note_meta_cid_cn` unique
+index. When no rows have NULL/empty cid_cn (the steady-state case), the check is O(1) via index
+lookup and the function returns instantly. The repair sweeps only run when actually needed.
+
+**Fix 3 — `ensure_search_db_ready` thundering-herd race — REVERTED.**
+Originally restructured to hold the lock across `init_db`. Boss test showed OrgChart went from 26s to
+2+ minutes. Root cause: the thundering-herd fix was NOT the problem (and may have made things worse
+by holding the lock longer). The REAL issue is Fix 4 below.
+
+**Fix 4 — Child-universe disk-walk fallback in `constellation_map_universe`.** When the fullscreen
+`loadData()` gate (Fix 1) eliminated the 26s sidebar tree load, it also eliminated the OS disk cache
+warming that `loadData()` inadvertently provided. Without that cache warming,
+`constellation_map_universe`'s `collect_notes_recursive` fallback for child-universe libraries — which
+reads EVERY `.md` file from disk — ran cold: 2+ minutes on Eisa's universe (per-file AV scanning).
+The fix: `load_note_records_for_child_universe(cu_path)` opens each child universe's own `search.db`
+(read-only) and reads `note_meta` via the same covering-index-friendly query. The records are merged
+into `db_records` BEFORE `build_library_node` runs, so NO library falls back to the disk walk.
+Extracted the shared row-parsing into `load_note_records_from_conn(conn, out)`.

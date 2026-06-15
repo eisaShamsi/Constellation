@@ -77,9 +77,9 @@ Right-clicking surfaces the same dialog from these surfaces:
 
 | Right-click on | Menu shows | What happens |
 |----------------|------------|--------------|
-| **A folder in the file tree** | New Note · New Folder · New Base · Rename · Delete | The first three open the Create dialog with that folder pre-filled as Location. |
+| **A note in the file tree** | Open · Open in new tab · Rename · Move · Add tag · Copy path · Copy name · Reveal in tree · Suggest sources · Delete | Opens, renames, moves (universe-wide folder picker), adds a tag to frontmatter, copies path/name to clipboard, reveals in tree, classifies, or deletes the note. |
+| **A folder in the file tree** | New Note · New Folder · New Base · Rename · Move · Delete | The first three open the Create dialog with that folder pre-filled as Location. Move opens a universe-wide folder picker. |
 | **A library row** (the universe-notes header, an own library, or a child-universe library) | New Note · New Folder · New Base | Opens the Create dialog with that library's root pre-filled as Location. Library rows do not offer Rename or Delete here — those operations live in the Library Manager. |
-| **A note in the file tree** | Rename · Delete | Notes don't host children, so no "create new" options are offered. |
 
 ### Renaming a note updates every link to it
 
@@ -177,8 +177,9 @@ The PiP provides a focused view of a subset of your graph without losing the ful
 The classic file tree for browsing notes and folders within your libraries:
 
 - Expand and collapse folders by clicking or using arrow keys
-- Right-click for context menu (New Note, New Folder, Rename, Delete)
+- Right-click for a contextual menu — notes get Open, Open in new tab, Rename, Move, Add tag, Copy path/name, Reveal in tree, Suggest sources, Delete; folders get New note, New folder, New base, Rename, Move, Delete; library roots get New note, New folder, New base
 - Drag and drop to move notes between folders
+- **Move** opens a universe-wide folder picker spanning all libraries — search or scroll, double-click to move instantly
 - Folders and notes are grouped by child universe membership
 
 ---
@@ -243,6 +244,9 @@ Switch the hierarchy source using the dropdown:
 |--------|--------|
 | **Click a folder** | Expand or collapse its children |
 | **Click a note** | Opens it in the editor |
+| **Right-click a note** | Context menu: Open, Open in new tab, Rename, Move, Add tag, Copy path, Copy name, Reveal in tree, Suggest sources, Delete |
+| **Right-click a folder** | Context menu: New note, New folder, New base, Expand/Collapse, Rename, Move, Reveal in tree, Delete |
+| **Right-click a library** | Context menu: New note, New folder, New base, Expand/Collapse |
 | **Double-click a folder** | Drill down — re-roots the chart at that folder |
 | **Breadcrumb trail** | Navigate back up after drilling down |
 | **Ctrl+F** | Search — highlights the path from root to matching nodes |

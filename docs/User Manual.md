@@ -491,8 +491,9 @@ When Sky View is open and you click a child universe, library, or folder in the 
 The classic file tree for browsing notes and folders:
 
 - Expand/collapse folders with click or arrow keys
-- Right-click for context menu (New Note, New Folder, Rename, Delete)
+- Right-click for context menu — **notes:** Open, Open in new tab, Rename, Move, Add tag, Copy path, Copy name, Reveal in tree, Suggest sources, Delete; **folders:** New note, New folder, New base, Rename, Move, Delete; **library roots:** New note, New folder, New base
 - Drag and drop to move notes between folders
+- **Move** opens a universe-wide folder picker (all libraries) — search or scroll, double-click to move instantly
 
 **Renaming updates links automatically.** When you rename a note — from the file tree (right-click → Rename) or by editing its title at the top of the page — Constellation rewrites every `[[link]]` pointing to it across the library to the new name, so links never silently break. A brief "Updating links…" overlay appears on the affected note(s) while this runs (the editor pauses typing for that moment); the old title is kept as an alias so existing links still resolve.
 
@@ -519,6 +520,7 @@ An interactive tree-list visualization of your entire knowledge base hierarchy:
 
 - Click to expand/collapse branches
 - Click a note to open it in the editor
+- Right-click for a contextual menu — **notes:** Open, Open in new tab, Rename, Move, Add tag, Copy path, Copy name, Reveal in tree, Suggest sources, Delete; **folders:** New note, New folder, New base, Expand/Collapse, Rename, Move, Reveal in tree, Delete; **library roots:** New note, New folder, New base, Expand/Collapse
 - Supports folder, tag, MOC link, and parent-property hierarchy sources
 
 ---

@@ -1658,6 +1658,15 @@ pub(crate) fn mig003_step3_soft_rebackfill(
     conn: &mut Connection,
     db_dir: &Path,
 ) -> rusqlite::Result<()> {
+    // Early exit via the cid_cn unique index — O(1) when nothing to repair.
+    let needs_repair: bool = conn.query_row(
+        "SELECT EXISTS(SELECT 1 FROM note_meta WHERE cid_cn IS NULL OR cid_cn = '')",
+        [],
+        |row| row.get(0),
+    ).unwrap_or(false);
+    if !needs_repair {
+        return Ok(());
+    }
     use std::time::Instant;
     let t = Instant::now();
     let nm = conn.execute(

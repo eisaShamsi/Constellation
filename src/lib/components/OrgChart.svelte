@@ -364,7 +364,11 @@
 	// ─── Lifecycle ─────────────────────────────────────────
 	onMount(() => {
 		window.addEventListener('keydown', handleKeydown);
-		loadData();
+		if (!fullscreen) {
+			loadData();
+		} else {
+			loading = false;
+		}
 	});
 
 	onDestroy(() => {
@@ -950,7 +954,7 @@
 		onmousedown={onCanvasMouseDown} onmousemove={onCanvasMouseMove} onmouseup={onCanvasMouseUp}
 		onwheel={onCanvasWheel}>
 		{#if loading}
-			<div class="oc-fs-loading">{$t('layout.loading') || 'Loading...'}</div>
+			<div class="oc-fs-loading">{$t('common.loading') || 'Loading...'}</div>
 		{:else if mapRoot}
 			<div class="oc-canvas-inner" role="tree" aria-label="Knowledge hierarchy" bind:this={innerEl} use:autoFitWidth style="transform: translate({panX}px, {panY}px) scale({zoom}); transform-origin: center center;">
 				{#snippet orgNode(node: MapNode, depth: number)}
@@ -1091,7 +1095,7 @@
 	{#if loading}
 		<div class="oc-loading">
 			<div class="oc-spinner"></div>
-			<span>{$t('layout.loading') || 'Loading...'}</span>
+			<span>{$t('common.loading') || 'Loading...'}</span>
 		</div>
 	{:else if rootNode}
 		<div class="oc-tree-scroll">

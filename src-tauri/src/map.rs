@@ -9,6 +9,7 @@
 //!
 //! Based on the Constellation Map Concept Paper (April 2026).
 
+use rusqlite;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::fs;
@@ -76,11 +77,40 @@ fn load_note_records(app: &tauri::AppHandle) -> Vec<NoteRecord> {
     let state = app.state::<crate::search::SearchState>();
     let guard = match state.db.lock() { Ok(g) => g, Err(_) => return out };
     let conn = match guard.as_ref() { Some(c) => c, None => return out };
+    load_note_records_from_conn(conn, &mut out);
+    out
+}
+
+/// Load note records from a child universe's own search.db. Each child
+/// universe maintains its own `note_meta` table; the active universe's
+/// DB has no entries for them. Without this, the Map falls back to
+/// `collect_notes_recursive` (read every .md file from disk) for child
+/// universe libraries — measured 2+ minutes on Eisa's 7,600-note
+/// universe with per-file antivirus scanning.
+fn load_note_records_for_child_universe(cu_path: &str) -> Vec<NoteRecord> {
+    let mut out: Vec<NoteRecord> = Vec::new();
+    let db_path = std::path::Path::new(cu_path)
+        .join(".constellation")
+        .join("search.db");
+    if !db_path.exists() { return out; }
+    let conn = match rusqlite::Connection::open_with_flags(
+        &db_path,
+        rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY | rusqlite::OpenFlags::SQLITE_OPEN_NO_MUTEX,
+    ) {
+        Ok(c) => c,
+        Err(_) => return out,
+    };
+    let _ = conn.execute_batch("PRAGMA mmap_size=268435456;");
+    load_note_records_from_conn(&conn, &mut out);
+    out
+}
+
+fn load_note_records_from_conn(conn: &rusqlite::Connection, out: &mut Vec<NoteRecord>) {
     let mut stmt = match conn.prepare(
         "SELECT path, name, word_count, outgoing_links_json, modified, created_at FROM note_meta",
     ) {
         Ok(s) => s,
-        Err(_) => return out,
+        Err(_) => return,
     };
     let rows = match stmt.query_map([], |r| {
         Ok((
@@ -93,13 +123,11 @@ fn load_note_records(app: &tauri::AppHandle) -> Vec<NoteRecord> {
         ))
     }) {
         Ok(rs) => rs,
-        Err(_) => return out,
+        Err(_) => return,
     };
     for row in rows.flatten() {
         let (path, name, word_count, links_json, modified, created) = row;
         if path.is_empty() { continue; }
-        // outgoing_links_json is a JSON array of "[type::]target" strings; the Map
-        // wants the bare target name, lowercased (mirrors collect_notes_recursive).
         let outgoing_links: Vec<String> = serde_json::from_str::<Vec<String>>(&links_json)
             .unwrap_or_default()
             .into_iter()
@@ -112,7 +140,6 @@ fn load_note_records(app: &tauri::AppHandle) -> Vec<NoteRecord> {
         let created = if created > 0 { created } else { modified };
         out.push(NoteRecord { path, name, word_count, outgoing_links, modified, created });
     }
-    out
 }
 
 /// A node in the Map tree — universe, child_universe, library, folder, or note.
@@ -245,6 +272,18 @@ pub fn constellation_map_data(
     Ok(tree)
 }
 
+/// MIG-078 §A′ — when true, the universe Map/OrgChart tree is assembled from
+/// the indexed `note_meta` records (the folder hierarchy is derived from each
+/// note's path, a materialized-path column) with NO filesystem walk. This
+/// removes the `build_tree` read_dir/stat walk that made the OrgChart/Map open
+/// take minutes on a large universe (the disk walk's cost was exposed when the
+/// incidental `loadData()` FS-cache warm-up was removed). Flip to `false` to
+/// fall back to the legacy disk-walk path for one rollback cycle. The legacy
+/// `build_tree`/`collect_notes_recursive` remain in use by
+/// `constellation_map_data` (single-library command), so this const only
+/// switches the universe-level path.
+const MAP_TREE_FROM_INDEX: bool = true;
+
 /// Build a library MapNode from a library path — reusable for both top-level and child universe libs.
 ///
 /// `alias_to_path` is loaded once per command at the call-site (universe-
@@ -270,7 +309,10 @@ fn build_library_node(
         .filter(|r| r.path.replace('\\', "/").to_lowercase().starts_with(&lib_prefix))
         .cloned()
         .collect();
-    if all_notes.is_empty() {
+    // MIG-078 §A′ — the disk-walk fallback only runs in legacy mode. In
+    // index mode an empty filtered set means the library simply has no
+    // indexed notes (shown empty), never a 7,600-file content read.
+    if !MAP_TREE_FROM_INDEX && all_notes.is_empty() {
         collect_notes_recursive(root, &mut all_notes);
     }
 
@@ -328,10 +370,166 @@ fn build_library_node(
         ));
     }
 
-    let mut tree = build_tree(root, &note_meta, 0, depth_limit);
+    let mut tree = if MAP_TREE_FROM_INDEX {
+        // MIG-078 §A′ — assemble from the indexed records; no filesystem walk.
+        build_tree_from_records(lib_path, &all_notes, &note_meta, depth_limit)
+    } else {
+        build_tree(root, &note_meta, 0, depth_limit)
+    };
     tree.name = lib_name.to_string();
     tree.node_type = "library".to_string();
     Some(tree)
+}
+
+/// MIG-078 §A′ — Build a library's MapNode tree purely from indexed note
+/// records (no filesystem walk). The folder hierarchy is derived from each
+/// note's path (a materialized-path column in `note_meta`); subtree aggregates
+/// roll up in one pass. Designed to produce output identical to `build_tree`
+/// for the same note set, minus the disk I/O:
+///   * depth cutoff mirrors `build_tree` (a note is included iff its
+///     folder-depth from the library root is `< depth_limit`);
+///   * children of each folder are sorted by their on-disk path segment
+///     (folder name / note filename), mirroring `entries.sort_by(file_name)`;
+///   * empty folders are excluded (a folder only exists if it contains a note);
+///   * folder paths are reconstructed with the native separator (PathBuf),
+///     and note paths are emitted verbatim from `note_meta`, matching the
+///     native paths the disk walk produced.
+fn build_tree_from_records(
+    lib_path: &str,
+    notes: &[NoteRecord],
+    note_meta: &HashMap<String, (u32, u32, String, Option<u8>, u64, String)>,
+    depth_limit: u32,
+) -> MapNode {
+    use std::collections::BTreeMap;
+    use std::path::PathBuf;
+
+    // Intermediate folder accumulator built from note paths.
+    struct Folder {
+        sub: BTreeMap<String, Folder>, // child folders keyed by path segment
+        notes: Vec<(String, MapNode)>, // (filename segment, note node)
+    }
+    impl Folder {
+        fn new() -> Self {
+            Folder { sub: BTreeMap::new(), notes: Vec::new() }
+        }
+    }
+
+    // Segment count of the library root — used to slice each note's path into
+    // the part relative to the library (robust to case/separator differences,
+    // and never panics on a UTF-8 boundary).
+    let lib_seg_count = lib_path
+        .split(|c| c == '/' || c == '\\')
+        .filter(|s| !s.is_empty())
+        .count();
+
+    let mut root = Folder::new();
+
+    for note in notes {
+        let all_segs: Vec<&str> = note
+            .path
+            .split(|c| c == '/' || c == '\\')
+            .filter(|s| !s.is_empty())
+            .collect();
+        if all_segs.len() <= lib_seg_count {
+            continue; // not under this library (shouldn't happen post-filter)
+        }
+        let rel = &all_segs[lib_seg_count..];
+        let folder_segs = &rel[..rel.len() - 1];
+        let file_seg = rel[rel.len() - 1];
+
+        // Depth cutoff identical to build_tree's `depth < max_depth` descent.
+        if (folder_segs.len() as u32) >= depth_limit {
+            continue;
+        }
+
+        let key = note.path.replace('\\', "/").to_lowercase();
+        let (wc, lc, maturity, stratum, modified, note_name) = match note_meta.get(&key) {
+            Some(t) => t.clone(),
+            None => continue,
+        };
+        let weight = compute_weight(wc, lc, modified);
+        let node = MapNode {
+            name: note_name,
+            path: note.path.clone(),
+            is_dir: false,
+            node_type: "note".to_string(),
+            weight,
+            note_count: 1,
+            word_count: wc,
+            link_count: lc,
+            maturity: Some(maturity),
+            stratum,
+            modified: Some(modified),
+            children: None,
+        };
+
+        let mut cur = &mut root;
+        for seg in folder_segs {
+            cur = cur.sub.entry((*seg).to_string()).or_insert_with(Folder::new);
+        }
+        cur.notes.push((file_seg.to_string(), node));
+    }
+
+    // Recursively materialize a Folder accumulator into a MapNode, rolling up
+    // aggregates and sorting children by their on-disk segment name.
+    fn convert(folder: &Folder, dir_path: &str, dir_name: &str) -> MapNode {
+        let mut children: Vec<(String, MapNode)> = Vec::new();
+        let mut total_weight: f64 = 0.0;
+        let mut total_notes: u32 = 0;
+        let mut total_words: u32 = 0;
+        let mut total_links: u32 = 0;
+        let mut latest_modified: u64 = 0;
+
+        for (seg, sub) in &folder.sub {
+            let mut child_pb = PathBuf::from(dir_path);
+            child_pb.push(seg);
+            let child_path = child_pb.to_string_lossy().to_string();
+            let child = convert(sub, &child_path, seg);
+            if child.note_count > 0 {
+                total_weight += child.weight;
+                total_notes += child.note_count;
+                total_words += child.word_count;
+                total_links += child.link_count;
+                if child.modified.unwrap_or(0) > latest_modified {
+                    latest_modified = child.modified.unwrap_or(0);
+                }
+                children.push((seg.clone(), child));
+            }
+        }
+        for (seg, node) in &folder.notes {
+            total_weight += node.weight;
+            total_notes += node.note_count;
+            total_words += node.word_count;
+            total_links += node.link_count;
+            if node.modified.unwrap_or(0) > latest_modified {
+                latest_modified = node.modified.unwrap_or(0);
+            }
+            children.push((seg.clone(), node.clone()));
+        }
+        children.sort_by(|a, b| a.0.cmp(&b.0));
+        let kids: Vec<MapNode> = children.into_iter().map(|(_, n)| n).collect();
+
+        MapNode {
+            name: dir_name.to_string(),
+            path: dir_path.to_string(),
+            is_dir: true,
+            node_type: "folder".to_string(),
+            weight: total_weight.max(0.1),
+            note_count: total_notes,
+            word_count: total_words,
+            link_count: total_links,
+            maturity: None,
+            stratum: None,
+            modified: if latest_modified > 0 { Some(latest_modified) } else { None },
+            children: if kids.is_empty() { None } else { Some(kids) },
+        }
+    }
+
+    let dir_name = Path::new(lib_path)
+        .file_name()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_else(|| lib_path.to_string());
+    convert(&root, lib_path, &dir_name)
 }
 
 /// Compute the Constellation Map tree for the entire universe (all libraries + child universes).
@@ -382,10 +580,17 @@ pub fn constellation_map_universe(
     // build_library_node re-read every file on disk; measured tens of seconds on a
     // 7,600-note universe, on every open + every reload). Threaded into each
     // build_library_node; empty => that library falls back to the disk walk.
-    let db_records = load_note_records(&app);
+    let mut db_records = load_note_records(&app);
 
     // Get child universes
     let child_universes = crate::universe::get_child_universes(app.clone()).unwrap_or_default();
+
+    // Load note records from each child universe's own search.db so their
+    // libraries don't fall back to the slow disk walk.
+    for cu in &child_universes {
+        let cu_records = load_note_records_for_child_universe(&cu.path);
+        db_records.extend(cu_records);
+    }
 
     // Collect library paths that belong to child universes (to exclude from top-level)
     let mut child_lib_paths: std::collections::HashSet<String> = std::collections::HashSet::new();
