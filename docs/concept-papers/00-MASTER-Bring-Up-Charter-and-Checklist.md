@@ -187,5 +187,52 @@ Each phase is re-enabled (flag on) and validated against its concept-paper check
 
 - **Method:** Boss-approved 2026-06-15. Flags-not-scissors confirmed (extends MIG-038 Wings pattern).
 - **MIG-079** (Boot graph WTD + single-owner activation) — Architect done ([doc](../MIG-079-Architect-Boot-WTD-Graph-Snapshot.md)); Boss decisions captured (links: **defer off boot**; tags: **maintain in the indexer**; sequencing: **activation fix first**). It is the Phase-3 fix in this program.
-- **Concept papers:** template defined (this doc §3); `01-Note-Editor` drafted. Remainder pending template sign-off, then produced one per function.
+- **Concept papers:** **ALL 31 per-function papers (02–32) written 2026-06-15** + the 3 foundation docs (00-Constellation core, 00-MASTER, 01-Editor). The ☐ in §4's CP column now tracks *bring-up* status (enabled + budget-met), **not** paper-written. Consolidated findings → §7.
 - **`safeBootMode` flag:** designed (§2); not yet built.
+
+---
+
+## 7. Findings — the Debt Register (the concept-paper pass became an app-wide audit)
+
+Writing one paper per function surfaced **systemic** debt across the app. This register is the prioritized work the bring-up pays down, function by function. Each item is grounded in code by the per-function paper; **all are to be re-verified live in bring-up** (Reproduce-First) before a fix lands.
+
+### A. Rule 8 violations (recompute-on-read) — the core disease, confirmed systemic
+The boot graph snapshot was **not** the only offender. Read-time recompute is the dominant pattern across satellites:
+- **Graph snapshot** (Backlinks/Tags/Sky data) — 234k links + tags rebuilt per boot. → **MIG-079** (Phase 3).
+- **File Tree** — stage emoji + maturity border recompute on every expand (`scan_note_stages` re-reads every `.md`).
+- **Outgoing Links** — full link array filtered/sorted per tab switch.
+- **Tags** — tag→count re-aggregated from `tags_json` per boot (the MIG-079 `tag_counts` target).
+- **Constellation Map** — whole tree recomputed per open (`constellation_map_universe`).
+- **Constellation Sight** — `sight_v6_get_layout` **rebuilds the ENTIRE `sight_v6_layout` table** from a universe-wide JOIN on every call (invalidate only DELETEs).
+- **OrgChart** — tree recompute (MIG-078 is the active fix).
+- **Inspector360** — two full disk walks per open.
+- **Tasks / Global Tasks** — `scan_library_tasks` re-walks the library per open.
+- **Calendar** — `scan_library_note_dates` full-tree walk per open.
+- **Review Pulse** — `scan_due_recursive` reads every note per open.
+- **Provenance** — full fs walk per note focus; **Tension** — report recomputed per focus.
+- **Second Screen** — companion data re-walked on each load.
+- **Federation** — re-attaches every cUniverse `search.db` + 10–15 s/cUniverse FTS5 pre-warm per boot.
+> **The cure is one pattern** (the in-house triggers: notes_fts, sky_nodes, outgoing aggregates): persist + maintain at write time + resumable backfill + schema_versions gate. Each function's bring-up applies it.
+
+### B. Right-click / context-menu gaps — MIG-077 is incomplete
+- **Hand-rolled menus to fold into the shared `<ContextMenu>`:** Backlinks + Outgoing (duplicated confidence/archive popover), Sky View (`.gm-context-menu`), Workspace Bases (Delete bypasses `buildContextMenu`).
+- **Missing entirely (add shared menu, or formally rule out):** Properties, Search Hub, Quick Switcher, Tags, Constellation Map, Sight, Inspector360, CCS, Knowledge Health, Tasks, Calendar, Review Pulse, Tension/Provenance/Source, Forge/Canvas, Federation, Second Screen, Style Setter, Universe/Library Mgmt. (Per the core paper's *right-clickable everywhere* contract.)
+
+### C. Multilingual gaps (hardcoded English / unverified ×15) — against multilingual-by-default
+Hardcoded English (tooltips/placeholders/labels bypassing `$t()`) found in: Tabs, Index, Backlinks, Outgoing, Tags, Sky View, Map, OrgChart, Inspector360, Calendar, Review Pulse, Forge/Canvas, Federation (`FederationWarning.reason` raw English from Rust), Second Screen, Command Palette, Style Setter, Universe/Library Mgmt. Plus pervasive `$t('key') || 'English'` inline fallbacks (Index, Settings, CCS, Knowledge Health) that mask missing-key gaps — every key must be verified present in all 15 locales.
+
+### D. Missing feature gates (can't be flipped in minimal mode)
+- **The 4 unconditional boot IPCs** (the `safeBootMode` targets, §2): `cache_boot_snapshot_graph`, the `federation:ready` listener, `listFiveActsNotes`, `getFederationWarnings`.
+- **No `enabledFeatures` gate exists for:** **Search Hub** (the charter wrongly assumed `enabledFeatures.search` — the dock button is unconditional), Quick Switcher, Knowledge Health, Tasks, Tension/Provenance, Forge/Canvas, Second Screen, Style Setter.
+
+### E. Confirmed defects the audit surfaced (verify, then fix — highest priority)
+1. **Calendar — clicking a day always opens TODAY's note.** `get_daily_note_path` (`libraries.rs:4318`) uses `chrono::Local::now()` and ignores the clicked `dateStr`. *(Real functional bug.)*
+2. **Tasks — `toggle_task` bypasses the Editor gate.** Writes via WriteGate directly without `write_note` + reindex → search/backlinks/tags drift after a checkbox toggle. *(Content-integrity-adjacent.)*
+3. **Second Screen — `setActiveUniverse(...)` at `SecondScreenPage.svelte:923`** — a display re-activating the universe (the double-init culprit + Display-Not-Domain breach). Fixed by MIG-079's single-owner activation.
+4. **Review Pulse — `record_note_visit` is dead code** (registered, never called); last-reviewed only advances via the explicit checkmark.
+5. **Command Palette — 6 no-op command stubs** (toggle-bold/italic, insert-link, duplicate-line, toggle-comment, select-next) — wire or remove.
+
+### F. Boss decisions the papers raised
+- **Tasks (§2 self-justification):** a task list is a management/file-manager affordance — does it belong in a *formulation* system, or is it out of scope? (The paper flagged it can't cleanly trace to a Five Act.)
+- **Quick Capture / Command Palette labels:** localize vs treat as brand names (the full-localization top-principal vs §A.15 brand-names-stay-English).
+- **Read-only navigators (Outline, Quick Switcher, Properties):** right-click "none-OK" vs add a shared menu — confirm per surface.
