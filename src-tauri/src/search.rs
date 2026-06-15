@@ -6660,6 +6660,12 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
     // batched, never blocks boot (the MIG-013 lesson).
     crate::links_backfill::maybe_schedule(app.clone());
 
+    // MIG-078 §A′.2: schedule the note_meta↔disk reconcile on a background
+    // thread. Removes stale rows whose .md file no longer exists (exposed now
+    // that the Map/OrgChart tree is built from note_meta). Runs lock-free
+    // existence checks, guarded by a safety cap; no-op when nothing is stale.
+    crate::reconcile::maybe_schedule(app.clone());
+
     // MIG-041: schedule the one-time term_vocab bigram purge on a
     // background thread. No-op if the schema stamp is already at v3 OR if
     // no bigram rows remain. On a large library (~5.2M bigram rows) the

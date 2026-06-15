@@ -95,6 +95,12 @@
 - **Do:** OrgChart sidebar + fullscreen render the root level, then load each folder's children from a `parent_path` DB query on expand (no eager `max_depth: 20`). Expansion state persists.
 - **Verify:** expanding a deep folder is instant; nothing renders that isn't visible/expanded.
 
+### §D1b — Stable-skeleton expansion (sibling-drift = 0)  *(added 2026-06-15, Boss-approved)*
+- **Why:** the OrgChart full-screen `toggleFsExpand` (`OrgChart.svelte:463`) currently re-runs `fitToWidth()` + re-centers the WHOLE chart on every expand — the "Dagre full re-layout" anti-pattern (ref: graph-playground.aisloppy.com layout-stability lab). Expanding a folder makes the chart rescale/jump.
+- **Do:** adopt **stable skeleton + in-slot expansion** (the lab's "Custom lanes" / the field's *constrained incremental layout*): reserve a lane for each node's subtree and grow its children **inside that reserved slot**, WITHOUT a global `fitToWidth`/re-center. Anchor pan/zoom on the expanded node only. (Industry equivalents: Cytoscape `fcose` incremental, ELK incremental, d3-force `.fx/.fy` pinning.)
+- **Verify (acceptance criterion — hard):** **expanding a folder MUST NOT move its siblings** — measure max sibling displacement (a tiny internal "drift meter" dev assertion, the lab's metric); target **0 px**. Expanding deep in a large library feels solid, no whole-chart jump.
+- **Out of scope for MIG-078 (logged follow-ons):** the same principle for **GraphMind** (pin on-screen nodes, lay out only new neighbors) and **Sky View** (pin settled bubbles via `.fx/.fy` once Write-Time Derivation makes it incremental, instead of "reheat"). Constellation Map (sunburst) is NOT a fit (radial re-partition is its nature — Form-Aligns-To-Purpose).
+
 ### §D2 — Virtualize tree rows
 - **Do:** Virtualize the tree row list (Rule 3: "virtualize every list that can exceed 50 items") so a folder with thousands of children renders only the viewport.
 - **Verify:** a 5,000-child folder scrolls smoothly; no frame stutter.

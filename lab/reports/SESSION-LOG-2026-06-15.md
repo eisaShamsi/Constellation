@@ -32,6 +32,14 @@ The "7,600 notes / 1.7 GB" figures were inherited assumptions — verified again
 - **Finding surfaced:** the universe-root scratch library mismatched by **+14 phantom notes** — these are **stale `note_meta` rows** (rename/delete test notes whose old rows lingered; files confirmed missing on disk). Total drift = **14 / 7,667 (0.18 %)**, all in the two test-scratch libraries; the 15 real knowledge libraries have **zero** drift. The disk-walk masked this; pure-index exposes it. → Reconcile (plan §B5) brought forward as the immediate next step (§A′.2).
 - i18n fix: OrgChart loading text used a non-existent key `layout.loading` (rendered raw — what Eisa saw) → switched both occurrences to `common.loading` (present in all 15 locales).
 
+### §A′.2 — Reconcile note_meta ↔ disk (stale-row self-heal)  [SHIPPED + verified]
+- New module `src-tauri/src/reconcile.rs` (`mod reconcile;` in lib.rs; `crate::reconcile::maybe_schedule` called from `ensure_search_db_ready` alongside the other background tasks). Background, after first paint; lock-free existence checks; reuses the canonical `reindex_delete_note` (drops note_links + note_meta, triggers cascade FTS/sky, CTSE term cleanup).
+- **Safety (WA #4):** a row is a candidate only if it sits under a *currently-accessible* library root (offline drive → skipped, never purged); hard cap aborts the pass if > max(200, 10 %) of rows look stale (transient sync/mount glitch protection).
+- **Verified on the live DB (Claude-side, WA #1):** note_meta 7,667 → **7,653** (exactly 14 removed); all 14 stale paths gone; **0** rows now point at a missing file (no phantoms left, no real note wrongly deleted); real libs intact (Physics 550 / Philosophy 548 / History 549 / Biology 550). Diagnostics log: `[reconcile] removed 14 stale note_meta rows`. Safety brake did not trip.
+
+### Graph-tech assessment (Eisa-requested) — graph-playground.aisloppy.com
+- The site is a **layout-stability lab** (not a library): it shows that expanding a node in a DAG/tree should use **stable skeleton + in-slot expansion** so siblings don't move ("sibling drift" = 0), vs Dagre full re-layout (the jump). Cross-checks to the field's *constrained incremental layout* (Cytoscape fcose, ELK incremental, d3-force `.fx/.fy`). No public repo/license — adopt the **principle**, not code.
+- **Decision (Boss-approved):** fold "siblings stay put on expand (drift = 0)" into **MIG-078 Phase D as §D1b** (acceptance criterion + a tiny internal drift check). Grounded in our actual code: `OrgChart.toggleFsExpand` (`OrgChart.svelte:463`) currently re-fits + re-centers the whole chart on every expand — the exact anti-pattern. GraphMind + Sky View (pin via `.fx/.fy` once incremental) logged as follow-ons; sunburst excluded (Form-Aligns-To-Purpose).
+
 ### Open / next
-- §A′.2 — reconcile: remove the 14 stale `note_meta` rows (delete cascades via triggers to FTS/sky), guarded so an offline drive can't trigger mass-deletion. Boss-test: phantoms gone.
-- Then Phase BL (body_text de-bloat + VACUUM), Phase B (persisted tree), Phase D (lazy/virtualized).
+- Phase BL (body_text → note_body + VACUUM — reclaims ~404 MB body + 379 MB freelist), Phase B (persisted tree_node + folder_stats, write-time triggers), Phase D (lazy/virtualized + §D1b stable-skeleton expand).
