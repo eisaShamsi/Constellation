@@ -3526,6 +3526,12 @@ export interface AppSettings {
 	/** Width of the right-of-note flanking column in px. Tier 1b — set by drag handle. */
 	rightOfNoteWidth: number;
 
+	/** MIG-079 §B — minimal/safe boot. When true, boot skips the satellite IPCs
+	 * (the graph snapshot, federation, Five Acts, federation warnings) so the app
+	 * comes up editor + file-tree only — the clean bring-up baseline. Satellites
+	 * re-enable on demand / on the next normal boot. Default false. */
+	safeBootMode: boolean;
+
 	// Built-in features
 	enabledFeatures: {
 		dailyNotes: boolean;
@@ -3836,6 +3842,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
 		showOrphans: true,
 		colorByLibrary: true,
 	},
+	safeBootMode: false,
 	enabledFeatures: {
 		dailyNotes: true,
 		templates: true,

@@ -2035,11 +2035,16 @@
 			// MIG-055 §F — load Five Acts host notes alongside the boot bundle.
 			// Not yet part of the bundle IPC (deferred to §J or a future MIG);
 			// fire-and-forget here keeps boot time unchanged (single fs read).
-			listFiveActsNotes().then(n => fiveActsNotes = n).catch(() => {});
-			// MIG-056 §H — load federation warnings. Fire-and-forget; the
-			// status-bar badge appears once warnings.length > 0. Refreshed
-			// later via setTimeout to catch the background-attach completion.
-			loadFederationWarnings();
+			// MIG-079 §B — minimal/safe boot skips the satellite IPCs (Five Acts +
+			// federation warnings here; the graph/sky snapshot + federation:ready
+			// re-invoke are gated below) so the app comes up editor + file-tree only.
+			if (!get(appSettings)?.safeBootMode) {
+				listFiveActsNotes().then(n => fiveActsNotes = n).catch(() => {});
+				// MIG-056 §H — load federation warnings. Fire-and-forget; the
+				// status-bar badge appears once warnings.length > 0. Refreshed
+				// later via setTimeout to catch the background-attach completion.
+				loadFederationWarnings();
+			}
 			childUniverses = bundle.child_universes;
 			const map = new Map<string, Set<string>>();
 			for (const cu of bundle.child_universes) {
@@ -2550,6 +2555,9 @@
 		// data we already have. The guard preserves prior allLibraryLinks
 		// when the new payload is smaller AND the current is non-empty.
 		const unlistenFederationReady = await listen('federation:ready', async () => {
+			// MIG-079 §B — minimal/safe boot: do not re-invoke the satellite
+			// snapshots (the graph re-fetch is the 30s recompute we are skipping).
+			if (get(appSettings)?.safeBootMode) return;
 			// Refresh sky (CNS / Sky View) — listener already guards isReady.
 			try {
 				type SkySnapshot = {
@@ -3133,6 +3141,7 @@
 					timingsMs: Array<[string, number]>;
 				};
 				const skyPromise = (async (): Promise<SkySnapshot | null> => {
+					if (get(appSettings)?.safeBootMode) return null; // MIG-079 §B — minimal boot
 					try {
 						return await invoke<SkySnapshot>('cache_boot_snapshot_sky');
 					} catch (err) {
@@ -3141,7 +3150,11 @@
 					}
 				})();
 				try {
-					graph = await invoke('cache_boot_snapshot_graph');
+					// MIG-079 §B — minimal/safe boot skips the ~30s graph recompute
+					// (read_links 234k rows + read_tags). Editor + file tree only.
+					graph = get(appSettings)?.safeBootMode
+						? { links: [], tags: {} }
+						: await invoke('cache_boot_snapshot_graph');
 				} catch {
 					graph = { links: [], tags: {} };
 				}
