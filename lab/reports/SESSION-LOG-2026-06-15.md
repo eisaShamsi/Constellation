@@ -56,6 +56,17 @@ The "7,600 notes / 1.7 GB" figures were inherited assumptions — verified again
 - **Stage 2 — the 19 bloated notes cleaned on disk (backup-first).** Byte-based detection (a `|`-block > 80 KB = explosion — catches BOTH shapes: many rows AND the few-enormous-lines shape, e.g. Brown algae line 92 = 2.4 MB with 21,349 `| --- |` in one row); excise the garbage block (→ `> [!warning] Table omitted` marker), keep frontmatter + prose + legit small tables. **19 notes, 146.8 MB → 1.68 MB (~145 MB reclaimed).** Legit-large spared (Fourier transform, Permian-Triassic, Philippines, Reading, Women in Islam). Originals backed up to `lab/backups/importer-cleanup-2026-06-15/` (gitignored; Spirochete.md.bak = 128 MB). Cleaned-note content verified valid (frontmatter/cid_cn/TL;DR/prose/typed-links/footer intact).
 - **DB reflects on next §BL.1-binary launch:** boot `cache_reconcile → reconcile_filesystem` reindexes the 19 (fresh mtime, `force:false` mtime cache) → note_meta.body_text shrinks 404 → ~258 MB + note_body dual-write gets clean bodies. The freed pages reclaim at §BL.3 VACUUM. **To verify: Eisa launches the §BL.1 binary; Claude re-checks the DB.**
 
-### Open / next
-- §BL.2 (flip reads + FTS triggers to note_body; the search-identity Boss-test gate) → §BL.3 (drop body_text + VACUUM, after a DB-copy harness pass + ZIP backup). Then Phase B (persisted tree_node + folder_stats), Phase D (lazy/virtualized + §D1b stable-skeleton expand).
-- Follow-up: fix the trial-generator renderTable + re-import the 19 bloated notes (Boss to schedule).
+### §BL.1 live boot verification — backfill works, but a BOOT-CONTENTION BLOCKER surfaced
+Eisa launched the §BL.1 binary (mtime 14:25, note_body code grep-confirmed). Verified the live DB:
+- **§BL.1 backfill works:** `note_body` = 7,653 rows, 0 missing, 0 divergent, sentinel stamped. ✓
+- **BUT the cleaned files were NOT re-indexed:** `note_meta` still 404 MB; Spirochete still 122.9 MB with `modified=2026-05-30` (disk = 19.2 KB, mtime 15:48 today). So note_body copied the *pre-cleanup* bodies. The boot's `reconcile_filesystem` (which would reindex changed files by mtime) **did not run / left no log trace**.
+- **Root blocker — the thundering-herd `init_db` race (the deferred §B1 item), now confirmed live in diagnostics.log:** `init_db` ran 8+ times concurrently (16:26:00–16:26:42); `mig003_step3_soft_rebackfill` ran **twice (26 s + 41 s)**; `[note_body_backfill] FAILED: database is locked` then retried. The contention is why the backfill locked and (likely) why reconcile didn't complete. NOTE: a prior attempt to fix this (hold `state.db` lock across `init_db`) was REVERTED as too invasive — the proper fix is `std::sync::Once` / a dedicated init mutex (careful design, = §B1).
+- **Secondary finding:** the 26–41 s mig003 sweep fires every boot because **one note has a persistently-empty `cid_cn`** (`repaired note_meta=1` each pass). Worth isolating — it's a recurring boot cost and likely a contributor to the original "0 notes" flicker.
+- The FTS search-identity check can't be run from plain Python (the `constellation` custom FTS5 tokenizer is Rust-only) — defer search verification to the in-app test at §BL.2.
+
+### Open / next (priority order revised by the live finding)
+1. **Fix the thundering-herd `init_db` race (§B1, brought forward — it's hurting every boot + blocked the cleanup reflection + explains the "0 notes" flicker).** `std::sync::Once`/init-mutex so `init_db` runs exactly once; ensure `reconcile_filesystem` reindexes the 19 cleaned files (mtime-newer) on a clean boot → note_meta 404→~258 MB + note_body re-synced clean.
+2. Isolate the 1 note with empty `cid_cn` causing the recurring 26–41 s mig003 sweep.
+3. §BL.2 (flip reads + FTS triggers to note_body; search-identity Boss-test gate) → §BL.3 (drop body_text + VACUUM — now reclaims the freelist + the ~145 MB freed by the cleanup, once reindexed).
+4. Phase B (persisted tree_node + folder_stats) → Phase D (lazy/virtualized + §D1b stable-skeleton expand).
+- The 19 notes are clean on disk + backed up regardless; the reflection just awaits a clean re-index.
