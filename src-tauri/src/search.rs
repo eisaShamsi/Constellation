@@ -1660,77 +1660,113 @@ fn ensure_note_embeddings_mig003_columns(conn: &Connection) -> rusqlite::Result<
     Ok(())
 }
 
-/// MIG-003 Step 3 — boot-time soft re-backfill. Cheap UPDATE that
-/// finds 0 rows in steady state (every writer site populates cid_cn
-/// directly per Step 3) but repairs any row that escaped — e.g. a
-/// dependent-table row written by a path the indexer hadn't reached
-/// yet, or a note_meta row whose frontmatter cid_cn was missing at
-/// index time. Idempotent and free when there's nothing to do.
+/// MIG-003 Step 3 — boot-time soft re-backfill of cid_cn. In steady
+/// state this is an O(log n) index probe that finds 0 rows and returns
+/// immediately. When a note_meta row DID escape with an empty cid_cn
+/// (indexed before its frontmatter cid_cn existed, or — the 2026-06-15
+/// case — a `---` inside a YAML value truncated the frontmatter before
+/// the cid_cn line; fixed in parse_frontmatter), it FORCE-REINDEXES that
+/// note from disk so the row picks up the real cid_cn + body + props +
+/// tags, then propagates the value to the dependent tables for that path.
+///
+/// `cid_cn` is `TEXT NOT NULL DEFAULT ''`, so the only "missing" state is
+/// the empty string — NEVER NULL. The probe uses `cid_cn = ''` ALONE so it
+/// rides idx_note_meta_cid_cn; the previous `IS NULL OR cid_cn = ''` form
+/// defeated the index and forced a full SCAN of the 1.7 GB note_meta
+/// (inline body_text) on EVERY boot — the 26-41 s sweep that fired even
+/// when nothing needed repair.
 pub(crate) fn mig003_step3_soft_rebackfill(
     conn: &mut Connection,
     db_dir: &Path,
 ) -> rusqlite::Result<()> {
-    // Early exit via the cid_cn unique index — O(1) when nothing to repair.
-    let needs_repair: bool = conn.query_row(
-        "SELECT EXISTS(SELECT 1 FROM note_meta WHERE cid_cn IS NULL OR cid_cn = '')",
-        [],
-        |row| row.get(0),
-    ).unwrap_or(false);
-    if !needs_repair {
-        return Ok(());
+    // Index-friendly probe (see doc comment): `cid_cn = ''`, NOT
+    // `IS NULL OR cid_cn = ''`. Collect the offending paths so we can repair
+    // them at the source rather than from the (possibly truncated)
+    // properties_json the old COALESCE(json_extract(...)) UPDATE relied on.
+    let stale: Vec<(String, String)> = {
+        let mut stmt =
+            conn.prepare("SELECT path, library_name FROM note_meta WHERE cid_cn = ''")?;
+        let rows =
+            stmt.query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))?;
+        rows.filter_map(Result::ok).collect()
+    };
+    if stale.is_empty() {
+        return Ok(()); // steady state — O(log n) index probe, no table scan
     }
     use std::time::Instant;
     let t = Instant::now();
-    let nm = conn.execute(
-        "UPDATE note_meta \
-         SET cid_cn = COALESCE((SELECT NULLIF(json_extract(properties_json, '$.cid_cn'), '')), cid_cn) \
-         WHERE cid_cn IS NULL OR cid_cn = ''",
-        [],
-    ).unwrap_or(0);
-    let nl_src = conn.execute(
-        "UPDATE note_links \
-         SET source_cid_cn = (SELECT cid_cn FROM note_meta WHERE note_meta.path = note_links.source_path) \
-         WHERE (source_cid_cn IS NULL OR source_cid_cn = '') \
-           AND EXISTS (SELECT 1 FROM note_meta WHERE note_meta.path = note_links.source_path)",
-        [],
-    ).unwrap_or(0);
-    // NOTE: target_cid_cn re-backfill DELIBERATELY OMITTED here. The
-    // resolver `LOWER(note_meta.name) = LOWER(target_name)` has no
-    // supporting index — running it across 232k+ link rows × 7600+
-    // notes was a multi-billion-comparison hang on first boot. New
-    // links written after Step 3 ship populate target_cid_cn at INSERT
-    // time. Bulk back-fill of pre-existing target_cid_cn=NULL rows
-    // is deferred to a later step that builds the necessary index
-    // first (or batches with a path-keyed predicate).
-    let nl_tgt = 0usize;
-    let sn = conn.execute(
-        "UPDATE sky_nodes \
-         SET cid_cn = (SELECT cid_cn FROM note_meta WHERE note_meta.path = sky_nodes.path) \
-         WHERE (cid_cn IS NULL OR cid_cn = '') \
-           AND EXISTS (SELECT 1 FROM note_meta WHERE note_meta.path = sky_nodes.path)",
-        [],
-    ).unwrap_or(0);
-    let na = conn.execute(
-        "UPDATE note_aliases \
-         SET cid_cn = (SELECT cid_cn FROM note_meta WHERE note_meta.path = note_aliases.path) \
-         WHERE cid_cn = '' \
-           AND EXISTS (SELECT 1 FROM note_meta WHERE note_meta.path = note_aliases.path)",
-        [],
-    ).unwrap_or(0);
-    let ne = conn.execute(
-        "UPDATE note_embeddings \
-         SET cid_cn = (SELECT cid_cn FROM note_meta WHERE note_meta.path = note_embeddings.path) \
-         WHERE (cid_cn IS NULL OR cid_cn = '') \
-           AND EXISTS (SELECT 1 FROM note_meta WHERE note_meta.path = note_embeddings.path)",
-        [],
-    ).unwrap_or(0);
-    let total = nm + nl_src + nl_tgt + sn + na + ne;
-    if total > 0 {
-        diag_log(db_dir, &format!(
-            "[search] mig003_step3_soft_rebackfill: repaired note_meta={} note_links src={} tgt={} sky_nodes={} note_aliases={} note_embeddings={} — elapsed={:?}",
-            nm, nl_src, nl_tgt, sn, na, ne, t.elapsed(),
-        ));
+    // Force a full re-index from the now-correctly-parsed file. Reuses
+    // index_note (the single indexing source of truth); bounded to the stale
+    // set (normally 0-1 rows); index_note brackets its own BEGIN IMMEDIATE /
+    // COMMIT, and conn is in autocommit here (called from init_db, no open tx).
+    let mut reindexed = 0usize;
+    let mut still_empty = 0usize;
+    for (path, lib) in &stale {
+        let _ = index_note(conn, path, lib, true);
+        let now_cid: String = conn
+            .query_row(
+                "SELECT cid_cn FROM note_meta WHERE path = ?1",
+                params![path],
+                |r| r.get(0),
+            )
+            .unwrap_or_default();
+        if now_cid.is_empty() {
+            // File genuinely lacks a frontmatter cid_cn (a legacy note that
+            // never went through canonical::ensure_cid_cn). Leave it — injecting
+            // one is mig003_backfill_cid_cn's job, not this soft pass — but count
+            // it so a recurring empty row is visible rather than silent.
+            still_empty += 1;
+        } else {
+            reindexed += 1;
+        }
     }
+    // Propagate the freshly-populated cid_cn into the dependent tables for the
+    // repaired paths ONLY — path-keyed point updates (all index-backed; no
+    // full-table scan). index_note already rewrote note_links + frontmatter
+    // aliases for these paths; this catches sky_nodes / note_embeddings /
+    // rename-or-import aliases whose cid_cn lagged.
+    let mut dep = 0usize;
+    for (path, _) in &stale {
+        dep += conn
+            .execute(
+                "UPDATE note_links \
+                 SET source_cid_cn = (SELECT cid_cn FROM note_meta WHERE note_meta.path = note_links.source_path) \
+                 WHERE source_path = ?1 AND (source_cid_cn IS NULL OR source_cid_cn = '')",
+                params![path],
+            )
+            .unwrap_or(0);
+        dep += conn
+            .execute(
+                "UPDATE sky_nodes \
+                 SET cid_cn = (SELECT cid_cn FROM note_meta WHERE note_meta.path = sky_nodes.path) \
+                 WHERE path = ?1 AND (cid_cn IS NULL OR cid_cn = '')",
+                params![path],
+            )
+            .unwrap_or(0);
+        dep += conn
+            .execute(
+                "UPDATE note_aliases \
+                 SET cid_cn = (SELECT cid_cn FROM note_meta WHERE note_meta.path = note_aliases.path) \
+                 WHERE path = ?1 AND cid_cn = ''",
+                params![path],
+            )
+            .unwrap_or(0);
+        dep += conn
+            .execute(
+                "UPDATE note_embeddings \
+                 SET cid_cn = (SELECT cid_cn FROM note_meta WHERE note_meta.path = note_embeddings.path) \
+                 WHERE path = ?1 AND (cid_cn IS NULL OR cid_cn = '')",
+                params![path],
+            )
+            .unwrap_or(0);
+    }
+    diag_log(
+        db_dir,
+        &format!(
+            "[search] mig003_step3_soft_rebackfill: stale-cid_cn reindexed={} dependent_rows={} still_empty={} — elapsed={:?}",
+            reindexed, dep, still_empty, t.elapsed(),
+        ),
+    );
     Ok(())
 }
 
@@ -3318,8 +3354,19 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
 /// shape so back-fill and writer agree byte-for-byte.
 pub(crate) fn body_after_frontmatter(content: &str) -> &str {
     if content.starts_with("---") {
-        if let Some(end) = content[3..].find("---") {
-            return &content[3 + end + 3..];
+        // Detect the CLOSING fence as a line of its own (`\n---`), NOT the first
+        // bare `---` substring. A frontmatter VALUE may legitimately contain
+        // `---` (e.g. an importer-generated tag like
+        // `cite-q---cites-a-work-with-an-erratum`); the naive `find("---")`
+        // truncated the block there, leaking the rest of the YAML into the body
+        // and dropping every key below it (incl. cid_cn). Mirrors the
+        // line-anchored logic already used by extract_frontmatter_cid_cn.
+        if let Some(end) = content[3..].find("\n---") {
+            // `end` indexes the '\n' that begins the closing fence line (within
+            // content[3..]); skip past "\n---" (4 bytes) to land where the old
+            // logic did — right after the closing dashes. `.get(..)` guards a
+            // fence at EOF with no trailing newline (would otherwise panic).
+            return content.get(3 + end + 4..).unwrap_or("");
         }
     }
     content
@@ -3332,7 +3379,10 @@ fn parse_frontmatter(content: &str) -> (HashMap<String, String>, Vec<String>, St
     let mut body = content.to_string();
 
     if content.starts_with("---") {
-        if let Some(end) = content[3..].find("---") {
+        // Line-anchored closing-fence detection — see body_after_frontmatter.
+        // `\n---` so a `---` inside a YAML value (e.g. a `cite-q---...` tag)
+        // doesn't truncate the block before later keys like cid_cn.
+        if let Some(end) = content[3..].find("\n---") {
             let fm = &content[3..3 + end];
             body = body_after_frontmatter(content).trim().to_string();
 
@@ -3597,6 +3647,51 @@ mod tests_mig065_base_columns {
         assert!(!props.contains_key("tags"));
         assert!(tags.contains(&"x".to_string()));
         assert_eq!(props.get("status").map(String::as_str), Some("open"));
+    }
+
+    #[test]
+    fn inner_triple_dash_in_value_does_not_truncate_frontmatter() {
+        // 2026-06-15 regression (the empty-cid_cn / recurring-sweep root cause):
+        // a `---` INSIDE a quoted YAML value (here an importer-generated tag)
+        // must NOT be mistaken for the closing fence. Before the line-anchored
+        // `\n---` fix, parse_frontmatter cut the block at the inner `---`, so
+        // cid_cn (a LATER line) was never parsed -> note_meta.cid_cn='', and the
+        // YAML tail leaked into body_text (polluting the FTS index).
+        let md = "---\n\
+title: أولي (كائن)\n\
+tags:\n  \
+- \"cite-q---cites-a-work-with-an-erratum\"\n  \
+- أوليات\n\
+maturity: evergreen\n\
+cid_cn: 20260414T092241Z_NOTE_B85A\n\
+---\n\
+# أولي (كائن)\n\nReal body text here.";
+        let (props, tags, body) = parse_frontmatter(md);
+        // The cid_cn line BELOW the inner `---` is now reached.
+        assert_eq!(
+            props.get("cid_cn").map(String::as_str),
+            Some("20260414T092241Z_NOTE_B85A")
+        );
+        assert_eq!(props.get("maturity").map(String::as_str), Some("evergreen"));
+        assert_eq!(props.get("title").map(String::as_str), Some("أولي (كائن)"));
+        // The real tag is captured, not the truncated `"cite-q` fragment.
+        assert!(tags.iter().any(|t| t.contains("cites-a-work-with-an-erratum")));
+        assert!(tags.iter().any(|t| t.contains("أوليات")));
+        // The body is the REAL body, with no leaked frontmatter.
+        assert!(body.contains("Real body text here."));
+        assert!(!body.contains("maturity"));
+        assert!(!body.contains("cid_cn"));
+    }
+
+    #[test]
+    fn closing_fence_at_eof_without_trailing_newline_is_safe() {
+        // Bounds-guard pin: a closing fence as the final bytes (no trailing
+        // newline) must yield an empty body, never panic on the body slice.
+        let md = "---\ntitle: X\n---";
+        let (props, _t, body) = parse_frontmatter(md);
+        assert_eq!(props.get("title").map(String::as_str), Some("X"));
+        assert_eq!(body, "");
+        assert_eq!(super::body_after_frontmatter(md), "");
     }
 }
 
