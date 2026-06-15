@@ -37,3 +37,29 @@ Re-enable each function in dependency order (concept-papers §5) only when its p
 - **Reproduce-First + the rules** ("commit to auditing and research" — Boss's standing instruction this session): measure before optimizing; WA#5 research before inventive fixes; `/migration` four phases with the Phase-4 audit; the Editor-Surface Gate where the write path is touched (§C).
 - The **19 cleaned files** (~145 MB) still await a reflect into the DB — boot is walk-free (MIG-067), so they reflect via Settings → Rebuild Index or the §BL.2/§BL.3 controlled reconcile, NOT a normal boot. (MIG-078 §BL.2/§BL.3 remain after MIG-079.)
 - The §B1 deferred PJs: active-index FTS5 optimize; the 4 naive `find("---")` copies in `libraries.rs` (preview/tag surfaces).
+
+---
+
+## ADDENDUM (session 2 — §A + §B SHIPPED+validated; §C.1 is the precise pickup)
+
+### Measured ground truth (the boot-perf history TOOL — `boot-perf.history.jsonl`, append-only, never overwritten; reader `lab/boot-perf/read-boot-history.py`)
+Built because `boot-perf.latest.json` kept only the last boot, so every cold diagnosis was inference. Measured on the live universe (3 boots captured):
+
+| boot | mode | tree ready | fully ready | where the time is (MEASURED) |
+|---|---|---|---|---|
+| cold-minimal | editor only | 1.7 s | **1.7 s** | DB read only 0.65 s (ensure_db 172 + read_notes 295) |
+| warm-full | everything | 0.5 s | 5.6 s | graph: read_links 0.4 s + read_tags 0.06 s + queue 1.2 s |
+| cold-full | everything | 1.5 s | **33 s** | graph: read_links **11.3 s** + read_tags **5.7 s** + queue **12 s** |
+
+**Conclusion (measured, not guessed):** the editor spine is fast cold AND warm (~1.7 s / ~0.6 s). The **entire** boot cost — cold 33 s / warm 5.6 s — is the **graph snapshot reads** (`note_links` 234k rows + `tags`). The DB open + note-list read is ~0.5 s regardless. A prior "13 s cold (minimal)" claim was on the pre-tool binary, UNMEASURED, and did **not** reproduce — do not chase it. **§C is the whole fix, cold + warm.** (Correction logged: an earlier "the 13 s is the cold 1.83 GB file read" was a GUESS and WRONG — the measurement disproved it. Eisa's standing order: never state a cause without a measurement behind it.)
+
+### §A SHIPPED+validated (`256d7c5f`): single-owner activation — `init_db` now runs ONCE (was twice). Boss: "no freezes."
+### §B SHIPPED+validated (`3d115ef0`/`bb8ab1bf`/`c8f7ff9a`): `safeBootMode` switch (gates the 4 satellite boot IPCs) + the editor baseline measured + the append-only boot-history tool.
+
+### §C.1 — write-time `tag_counts` (THE PICKUP). VERIFIED, designed, NOT yet built:
+- **SAFETY VERIFIED:** `index_note`'s UPSERT (search.rs:4266) is the SOLE writer of `note_meta.tags_json` (grep-confirmed; rename moves path not tags; Add-tag routes through reindex). So a Rust ±delta is COMPLETE. The delete decrement goes in `reindex_delete_note` (search.rs:7217, which already reads old state before deleting — mirror it for tags).
+- **DESIGN:** `tag_counts(tag TEXT PRIMARY KEY, n INTEGER)` in init_db; Rust ±delta (old multiset → new multiset) in those 2 paths, **gated on `schema_versions.tag_counts`**; a **non-blocking own-connection backfill** (aggregate `note_meta.tags_json`, stamp) modeled on `note_body_backfill.rs`; `read_tags_in_schema` (cache.rs:1027) reads the table when stamped, **else falls back to the live scan** (zero-risk rollout); `reconcile_filesystem` recomputes authoritatively (the periodic self-heal).
+- **MUST DO before it touches the save path:** (a) **rehearse on a copy of the live DB** that `tag_counts` == the live `read_tags` aggregate EXACTLY (§BL.1 discipline); (b) **adversarial audit the backfill-coexistence race** (a note edited during the ~6 s backfill window — bound it; it's the additive-aggregate variant of the race `links_backfill` accepts); (c) a unit test for the ±delta multiset math; (d) Editor-Surface Gate (the write path is touched).
+- **Then §C.2** (defer the 234k `read_links` off the graphReady critical path — read persisted `sky_links` + `note_meta.outgoing_*` at boot, lazy full-edge load on first graph open) + **§C.3** (covering index on note_links). **Verify §C end-to-end via the boot-history tool: cold graph_ready 33 s → toward the ~1.7 s floor.**
+
+### Then §D — phase-by-phase bring-up per the concept-papers §7 Debt Register (each function: write-time cure + shared right-click + i18n + gate). Confirmed defects to fix in-phase: Calendar day-click opens TODAY; Tasks toggle bypasses the reindex gate; Review-Pulse dead code; Command-Palette stubs. Tasks REFRAMED (kept) as "open epistemic loops".
