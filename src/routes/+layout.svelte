@@ -2839,6 +2839,9 @@
 	 */
 	let bootPerfCorePhaseWritten = false;
 	let bootPerfGraphPhaseWritten = false;
+	// MIG-079 §B — a unique id per page-load (boot) so the two writes (core +
+	// graph phase) of the SAME launch can be grouped in the append-only history.
+	const bootPerfBootId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 	/** Per-step timings captured inside Rust's constellation_boot_bundle.
 	 *  Populated once on first paint; written to boot-perf.latest.json so
 	 *  cold-boot attribution is possible without rebuilds. See
@@ -2936,6 +2939,11 @@
 			graph_ready_ms: includeGraphPhase ? Math.round(graphReadyMark) : null,
 			note_count: allNotes.length,
 			timestamp: new Date().toISOString(),
+			// MIG-079 §B — durable-history fields: boot_id groups a launch's two
+			// writes; phase = core|graph; safe_boot_mode flags minimal-mode boots.
+			boot_id: bootPerfBootId,
+			phase: includeGraphPhase ? 'graph' : 'core',
+			safe_boot_mode: get(appSettings)?.safeBootMode === true,
 			// Criteria from lab/boot-perf/BOOT-BUDGET.md
 			criterion_1_paint: paint <= 2500 ? 'PASS' : 'FAIL',
 			criterion_2_hydrated: hyd <= 6000 ? 'PASS' : 'FAIL',

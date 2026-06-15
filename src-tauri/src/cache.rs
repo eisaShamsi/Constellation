@@ -1054,8 +1054,21 @@ fn read_tags_in_schema(
 pub fn write_boot_perf_report(app: tauri::AppHandle, report_json: String) -> Result<(), String> {
     let cdir = crate::universe::active_constellation_dir(&app)?;
     let _ = std::fs::create_dir_all(&cdir);
+    // `latest` is overwritten each write (Settings → Debug + the lab harness read it).
     let path = cdir.join("boot-perf.latest.json");
-    std::fs::write(&path, report_json).map_err(|e| e.to_string())
+    std::fs::write(&path, &report_json).map_err(|e| e.to_string())?;
+    // MIG-079 §B — durable, APPEND-ONLY per-boot history (NEVER overwritten), so
+    // every launch (cold + warm, many per session) is captured and no measurement
+    // is lost to the latest.json overwrite. One compact JSON object per line — the
+    // frontend sends `JSON.stringify(report)` (single line) → valid JSON Lines.
+    // Best-effort: a history write must never fail the boot or the latest write.
+    let history = cdir.join("boot-perf.history.jsonl");
+    if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(&history) {
+        use std::io::Write;
+        let _ = f.write_all(report_json.as_bytes());
+        let _ = f.write_all(b"\n");
+    }
+    Ok(())
 }
 
 /// Read the most recent boot-perf report — used by Settings → Debug.
