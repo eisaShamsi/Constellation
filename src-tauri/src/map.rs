@@ -63,6 +63,58 @@ fn load_alias_map(app: &tauri::AppHandle) -> HashMap<String, String> {
     map
 }
 
+/// MIG-077 perf — load note records from the indexed `note_meta` table instead
+/// of reading every file on disk. The OrgChart/Map's per-file walk
+/// (`collect_notes_recursive`) read the WHOLE universe (measured: 419 MB / 7,664
+/// files ≈ 40–58 s with per-file AV scanning) on EVERY open AND every reload — a
+/// Rule-8 violation. note_meta already holds word_count + outgoing links +
+/// timestamps. Returns empty on any error, so callers fall back to the disk walk
+/// (preserves correctness for federated child-universe libs not in this DB, and
+/// is a no-op-safe degrade if the index is unavailable).
+fn load_note_records(app: &tauri::AppHandle) -> Vec<NoteRecord> {
+    let mut out: Vec<NoteRecord> = Vec::new();
+    let state = app.state::<crate::search::SearchState>();
+    let guard = match state.db.lock() { Ok(g) => g, Err(_) => return out };
+    let conn = match guard.as_ref() { Some(c) => c, None => return out };
+    let mut stmt = match conn.prepare(
+        "SELECT path, name, word_count, outgoing_links_json, modified, created_at FROM note_meta",
+    ) {
+        Ok(s) => s,
+        Err(_) => return out,
+    };
+    let rows = match stmt.query_map([], |r| {
+        Ok((
+            r.get::<_, Option<String>>(0)?.unwrap_or_default(),
+            r.get::<_, Option<String>>(1)?.unwrap_or_default(),
+            r.get::<_, Option<i64>>(2)?.unwrap_or(0) as u32,
+            r.get::<_, Option<String>>(3)?.unwrap_or_default(),
+            r.get::<_, Option<i64>>(4)?.unwrap_or(0) as u64,
+            r.get::<_, Option<i64>>(5)?.unwrap_or(0) as u64,
+        ))
+    }) {
+        Ok(rs) => rs,
+        Err(_) => return out,
+    };
+    for row in rows.flatten() {
+        let (path, name, word_count, links_json, modified, created) = row;
+        if path.is_empty() { continue; }
+        // outgoing_links_json is a JSON array of "[type::]target" strings; the Map
+        // wants the bare target name, lowercased (mirrors collect_notes_recursive).
+        let outgoing_links: Vec<String> = serde_json::from_str::<Vec<String>>(&links_json)
+            .unwrap_or_default()
+            .into_iter()
+            .map(|s| match s.find("::") {
+                Some(i) => s[i + 2..].trim().to_lowercase(),
+                None => s.trim().to_lowercase(),
+            })
+            .filter(|t| !t.is_empty())
+            .collect();
+        let created = if created > 0 { created } else { modified };
+        out.push(NoteRecord { path, name, word_count, outgoing_links, modified, created });
+    }
+    out
+}
+
 /// A node in the Map tree — universe, child_universe, library, folder, or note.
 #[derive(Debug, Clone, Serialize)]
 pub struct MapNode {
@@ -81,6 +133,7 @@ pub struct MapNode {
 }
 
 /// Internal record for a note, built during the first pass.
+#[derive(Clone)]
 struct NoteRecord {
     path: String,
     name: String,
@@ -202,12 +255,24 @@ fn build_library_node(
     lib_name: &str,
     depth_limit: u32,
     alias_to_path: &HashMap<String, String>,
+    db_records: &[NoteRecord],
 ) -> Option<MapNode> {
     let root = Path::new(lib_path);
     if !root.is_dir() { return None; }
 
-    let mut all_notes: Vec<NoteRecord> = Vec::new();
-    collect_notes_recursive(root, &mut all_notes);
+    // MIG-077 perf — prefer the indexed note_meta records (db_records) over reading
+    // every file on disk. Filter to this library's subtree. Fall back to the disk
+    // walk only when the DB has no rows for it (federated child-universe libs whose
+    // notes live in another DB, or a cold/empty index) — preserving correctness.
+    let lib_prefix = format!("{}/", lib_path.replace('\\', "/").to_lowercase());
+    let mut all_notes: Vec<NoteRecord> = db_records
+        .iter()
+        .filter(|r| r.path.replace('\\', "/").to_lowercase().starts_with(&lib_prefix))
+        .cloned()
+        .collect();
+    if all_notes.is_empty() {
+        collect_notes_recursive(root, &mut all_notes);
+    }
 
     // Build name ↔ path maps for 3-tier alias resolution (mirrors
     // constellation_map_data above).
@@ -313,6 +378,12 @@ pub fn constellation_map_universe(
     // build_library_node call so they all see the same alias view.
     let alias_to_path = load_alias_map(&app);
 
+    // MIG-077 perf — load all note records from the index ONCE (was: each
+    // build_library_node re-read every file on disk; measured tens of seconds on a
+    // 7,600-note universe, on every open + every reload). Threaded into each
+    // build_library_node; empty => that library falls back to the disk walk.
+    let db_records = load_note_records(&app);
+
     // Get child universes
     let child_universes = crate::universe::get_child_universes(app.clone()).unwrap_or_default();
 
@@ -341,7 +412,7 @@ pub fn constellation_map_universe(
 
         for lib in &cu_libs {
             child_lib_paths.insert(lib.path.replace('\\', "/").to_lowercase());
-            if let Some(node) = build_library_node(&lib.path, &lib.name, depth_limit, &alias_to_path) {
+            if let Some(node) = build_library_node(&lib.path, &lib.name, depth_limit, &alias_to_path, &db_records) {
                 cu_weight += node.weight;
                 cu_notes += node.note_count;
                 cu_words += node.word_count;
@@ -382,7 +453,7 @@ pub fn constellation_map_universe(
         let key = lib.path.replace('\\', "/").to_lowercase();
         if child_lib_paths.contains(&key) { continue; }
 
-        if let Some(node) = build_library_node(&lib.path, &lib.name, depth_limit, &alias_to_path) {
+        if let Some(node) = build_library_node(&lib.path, &lib.name, depth_limit, &alias_to_path, &db_records) {
             total_weight += node.weight;
             total_notes += node.note_count;
             total_words += node.word_count;

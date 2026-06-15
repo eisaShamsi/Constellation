@@ -213,3 +213,27 @@ the write path is the careful part:
 - svelte-check 0 errors / 315 warnings; build green; binary 22:29; `add_tag` origin bundle-confirmed.
 - **Gate must exercise the Editor-Surface checklist**: closed-note add, OPEN-note add with unsaved
   edits (no loss), existing-tags preserved, RTL tag.
+
+**Boss GATE — A3-R4 Add tag: ALL 5 STEPS PASS** (incl. the 🔴 open-note-unsaved-edits content-
+integrity case). **A3 COMPLETE** — every surface's note menu is rich + contextual + safe.
+
+### OrgChart open perf — the 40–58s lag, root-caused + fixed (Rule 8 DB re-source)
+
+`task_a75e6a23` (the spawned perf task). **Measured first (Reproduce-First):** opening the fullscreen
+OrgChart calls `constellation_map_universe`, whose `collect_notes_recursive` reads **every** note file
+— **7,664 files / 419 MB / 77M words = ~40–58 s** on Eisa's universe (per-file AV scanning on E:,
+language-independent) — on EVERY open AND every `refreshKey` reload. A long-standing Rule-8 violation
+(orientation flags "Map" as read-time). `depth_limit` does NOT bound it (the full read runs before the
+tree trim).
+- **Fix (`map.rs`):** `load_note_records(app)` reads the needed fields (path, name, word_count,
+  outgoing_links, modified, created_at) from the indexed **`note_meta`** table ONCE per command;
+  `build_library_node` filters those records by library-path prefix instead of walking files, with a
+  **disk-walk fallback** when a library has no DB rows (federated child-universe libs / cold index) →
+  worst case = current behavior, never worse. `outgoing_links_json`'s `[type::]target` strings are
+  parsed to bare lowercased targets (mirrors the old regex). `build_tree`'s cheap `readdir` (folder
+  structure, no file reads) is kept.
+- **Measured AFTER (warm — the app keeps the DB loaded for search):** DB query **~634 ms** + readdir
+  **~761 ms** ≈ **~1.4 s** (was 40–58 s — a **~30–40×** win). The first cold query was 29 s only
+  because the DB file is **1.7 GB** and untouched-by-OS-cache; a covering index drops the query to
+  **35 ms** (noted as a further optimization — not added, no schema change; warm ~1.4 s is already
+  the fix). Rust release clean; binary 09:19. Frontend unchanged.
