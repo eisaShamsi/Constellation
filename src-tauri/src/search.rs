@@ -383,6 +383,17 @@ pub struct SearchIndexStats {
 
 pub struct SearchState {
     pub db: Mutex<Option<Connection>>,
+    /// MIG-078 §B1 — dedicated init serialization lock (the thundering-herd
+    /// fix). `ensure_search_db_ready` takes this BEFORE running `init_db` so
+    /// the slow (20-40s on a cold 1.7 GB universe) one-time init runs EXACTLY
+    /// ONCE even when N boot callers race in. It is SEPARATE from `db` on
+    /// purpose: `init_db` runs WITHOUT holding the query lock, so frontend
+    /// readers that take `db` never block on it (the 2026-06-14 attempt that
+    /// held `db` across `init_db` was reverted for exactly that reason). A
+    /// per-state `Mutex` (not a process-global `std::sync::Once`) so the init
+    /// state re-runs after a universe switch, where `invalidate_search_state`
+    /// clears `db` back to `None`.
+    pub init_lock: Mutex<()>,
     /// MIG-056 §A — per-boot cross-universe federation state.
     /// Created empty in `new()`; populated by `federation::attach::attach_all`
     /// (§B) once boot reaches the background-attach stage. Reset on
@@ -430,6 +441,7 @@ impl SearchState {
     pub fn new() -> Self {
         SearchState {
             db: Mutex::new(None),
+            init_lock: Mutex::new(()),
             federation: Mutex::new(crate::federation::FederationContext::new()),
             federated_conn: Mutex::new(None),
             federation_generation: std::sync::atomic::AtomicU64::new(0),
@@ -6644,6 +6656,33 @@ fn federation_prewarm(
 
 pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
     let state = app.state::<SearchState>();
+    // Fast path: the DB is already live for the active universe — return
+    // instantly without touching the init lock. This is the steady-state path
+    // for every call after the first on a given universe.
+    {
+        let guard = state.db.lock().map_err(|e| e.to_string())?;
+        if guard.is_some() {
+            return Ok(());
+        }
+    }
+    // MIG-078 §B1 — slow path, serialized through the dedicated init lock so
+    // `init_db` (+ the one-time backfill schedules + federation spawn below)
+    // runs EXACTLY ONCE even when N boot callers (cache_boot_snapshot_*,
+    // cache_mark_search_ready, the §A′.2 reconcile, note_body_backfill, the
+    // federation thread) all race here on a cold/just-switched universe.
+    // Holding this lock does NOT block `state.db` readers — `init_db` runs on
+    // a local `conn` and `db` is only briefly locked to store the result.
+    //
+    // Poison-tolerant (`into_inner`): the guarded region is `()`, so even if a
+    // prior `init_db` panicked while holding the lock, a later universe switch
+    // can still re-init rather than staying search-dead until restart.
+    let _init_guard = state
+        .init_lock
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    // Double-checked: another caller may have completed init while we waited on
+    // the init lock. If the DB is now live, there is nothing to do — and we
+    // must NOT re-run the schedules / re-spawn the federation attach.
     {
         let guard = state.db.lock().map_err(|e| e.to_string())?;
         if guard.is_some() {
@@ -8091,6 +8130,7 @@ mod tests_m8c {
         .expect("seed note_meta");
         SearchState {
             db: std::sync::Mutex::new(Some(conn)),
+            init_lock: std::sync::Mutex::new(()),
             federation: std::sync::Mutex::new(crate::federation::FederationContext::new()),
             federated_conn: std::sync::Mutex::new(None),
             federation_generation: std::sync::atomic::AtomicU64::new(0),
@@ -8285,6 +8325,7 @@ mod tests_m8c {
         }
         let state = SearchState {
             db: std::sync::Mutex::new(Some(conn)),
+            init_lock: std::sync::Mutex::new(()),
             federation: std::sync::Mutex::new(crate::federation::FederationContext::new()),
             federated_conn: std::sync::Mutex::new(None),
             federation_generation: std::sync::atomic::AtomicU64::new(0),

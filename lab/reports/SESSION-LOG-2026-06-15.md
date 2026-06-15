@@ -70,3 +70,36 @@ Eisa launched the §BL.1 binary (mtime 14:25, note_body code grep-confirmed). Ve
 3. §BL.2 (flip reads + FTS triggers to note_body; search-identity Boss-test gate) → §BL.3 (drop body_text + VACUUM — now reclaims the freelist + the ~145 MB freed by the cleanup, once reindexed).
 4. Phase B (persisted tree_node + folder_stats) → Phase D (lazy/virtualized + §D1b stable-skeleton expand).
 - The 19 notes are clean on disk + backed up regardless; the reflection just awaits a clean re-index.
+
+---
+
+## §B1 — The startup-race fix (thundering-herd `init_db`) — diagnosis + plan  [in progress, next-session pickup]
+
+**Working on:** the **startup-race fix** — the thundering-herd `init_db` boot race (`ensure_search_db_ready`, `src-tauri/src/search.rs:6645`), brought forward as MIG-078 §B1.
+
+### Ground-truth reproduction (Reproduce-First) — read off the LIVE DB + diagnostics.log
+Active universe "Eisa Cognitive Knowledge" (`E:\Constellation Universes\Eisa Cognitive Knowledge\.constellation\search.db`, 1.83 GB; app not running, WAL 0 B → read-only Python queries safe).
+
+1. **Thundering herd confirmed in `diagnostics.log`:** many concurrent `init_db` blocks; `mig003_step3_soft_rebackfill` ran repeatedly (28s, 24s, 26s, **41s**) on the same boot; `[note_body_backfill] FAILED (non-fatal): copy range: database is locked` then later `completed: 253 bodies copied`. Each `init_db` re-runs the full mig003 sweep.
+
+2. **The recurring 26–41 s sweep — ROOT CAUSE FOUND (a frontmatter-parser bug, NOT a one-note quirk).**
+   - Exactly **1** `note_meta` row has empty `cid_cn`: **`أولي (كائن)`** at `E:\Cognitive Knowledge\العالم العربي\libraries\جغرافيا\شبه الجزيرة العربية\أولي (كائن).md`.
+   - Its `properties_json` = `{"title":"أولي (كائن)"}` (only title), `tags_json` = `["\"cite-q"]` (a garbage fragment), and `body_text` **starts with** `cites-a-work-with-an-erratum"\n  - "مجموعات-...` — i.e. the rest of the YAML leaked into the body.
+   - The file on disk DOES have `cid_cn: 20260414T092241Z_NOTE_B85A`. The note's **first tag is `"cite-q---cites-a-work-with-an-erratum"`** (importer-generated). The indexer's `parse_frontmatter` (search.rs:3323) + `body_after_frontmatter` (3309) detect the closing fence with the naive `content[3..].find("---")` — which matches the `---` **inside that quoted tag value**, truncating the frontmatter before the `cid_cn:` line. So `index_note` (4018) sets `cid_cn = properties.get("cid_cn") = ''`.
+   - The mig003_step3 `EXISTS(empty cid_cn)` pre-check (added v2.80) therefore returns true **every boot** → the full sweep (5 UPDATEs scanning note_links 232k+ rows, sky_nodes, aliases, embeddings) runs = the 26–41 s. The `UPDATE … COALESCE(json_extract(properties_json,'$.cid_cn'), cid_cn)` can never fix it (props has no cid_cn → stays `''`, but `changes()`=1 → "repaired note_meta=1" forever).
+   - The proven-correct reference already exists: `extract_frontmatter_cid_cn` (1538) uses line-anchored `find("\n---")`.
+
+3. **Handover premise CORRECTED — boot is WALK-FREE (MIG-067).** `+layout.svelte:2167-2173` calls only `cache_mark_search_ready` (no walk); `cache_reconcile`/`reconcile_filesystem` fire ONLY via the file watcher, Settings → Rebuild Index, `add_library`, or the BUG-022 empty-index auto-recover. diagnostics.log shows **no `reconcile_filesystem` trace** on boot (only the §A′.2 `[reconcile] removed 14 stale rows`). ⇒ **Nothing reindexes the 19 cleaned files NOR the empty-cid_cn note on a normal boot.** The note's disk mtime == stored `modified` (both 2026-05-30 22:15:50), so even a walk's `force:false` mtime gate would skip it. The empty-cid_cn note must be **actively reindexed** by the fix; the 19 cleaned files reflect via an explicit Rebuild Index (or a controlled reconcile at the §BL.2/§BL.3 gate).
+
+### Plan (two independent commits)
+- **Commit 1 — init mutex (the race).** Add `init_lock: Mutex<()>` to `SearchState`; restructure `ensure_search_db_ready`: fast-path `db.is_some()` → take `init_lock` → **double-check** `db.is_some()` → run `init_db` (NOT holding `state.db`) → store → schedules → federation spawn, all under `init_lock`. Per-state Mutex (not process-global `Once`) so it re-runs on universe switch (`invalidate_search_state` clears `state.db`). NOT holding `state.db` across `init_db` — that 2026-06-14 "Fix 3" was reverted. Deadlock-checked: nothing under the lock calls `ensure_search_db_ready` synchronously (`init_five_acts_system_notes` = fs only; schedules spawn threads + run after `state.db` stored → fast-path).
+- **Commit 2 — the parser root-cause + the empty-cid_cn reindex.** (a) `parse_frontmatter` + `body_after_frontmatter` switch the closing-fence search to line-anchored `\n---` (mirrors `extract_frontmatter_cid_cn`); +unit test for the `cite-q---cites` shape. (b) `mig003_step3_soft_rebackfill`: when empty-`cid_cn` rows exist, **force-reindex** them via `index_note(force:true)` (re-reads file with the fixed parser → correct cid_cn + body + props + tags; bounded to the stale set; tokenizer+note_body+FTS triggers all created before the call at 3209). Then EXISTS→false next boot → sweep gone.
+
+### Predecessor → Replacement (Predecessor Lookup Rule)
+- **`SearchState` (search.rs:384)** — add `init_lock` field + init in `new()` (436). Same place; additive.
+- **`ensure_search_db_ready` (search.rs:6645)** — restructure in place; behavior preserved (init still runs once, schedules+federation still spawned once). No call-site changes (45+ callers unaffected — signature identical).
+- **`parse_frontmatter` (3317) / `body_after_frontmatter` (3307)** — fix closing-fence detection in place; callers unchanged.
+- **`mig003_step3_soft_rebackfill` (1657)** — repair logic now reindexes from file instead of the `json_extract` UPDATE that could never reach the unparsed cid_cn; same call site (init_db:3209).
+
+### Done =
+- One `init_db` per boot; no doubled mig003 sweep; no "database is locked"; `أولي (كائن)` reindexed → `cid_cn=20260414T092241Z_NOTE_B85A`, EXISTS→false, sweep stops firing; no "0 notes" flicker; OrgChart still <2 s. (The 19 cleaned files reflect via an explicit Rebuild Index — surfaced as a handover correction.)
