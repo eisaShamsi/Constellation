@@ -1539,16 +1539,43 @@ fn strip_cid_cn_line(content: &str) -> String {
     )
 }
 
+/// Split markdown into `(frontmatter_yaml, body)` using LINE-ANCHORED closing-
+/// fence detection — the SINGLE source of truth for every frontmatter reader in
+/// this module (`parse_frontmatter`, `body_after_frontmatter`,
+/// `extract_frontmatter_cid_cn`). Keeping them on one helper stops the call
+/// sites from drifting (per CLAUDE.md "one source of truth").
+///
+/// The closing fence is the first `\n---` AFTER the opening `---`, NOT the first
+/// bare `---` substring: a YAML VALUE may legitimately contain `---` (e.g. an
+/// importer-generated tag `cite-q---cites-a-work-with-an-erratum`), and matching
+/// the bare substring truncated the block there — dropping every key below it
+/// (incl. cid_cn) and leaking the YAML tail into the body. `trim_start` tolerates
+/// leading whitespace / BOM before the opening fence (so the body offset stays
+/// consistent across all three callers). Returns None when there is no
+/// well-formed frontmatter (no opening fence, or no closing fence).
+///
+/// `body` is the slice immediately after the closing `---` dashes (callers trim
+/// as needed); `.get(..)` guards a fence at EOF with no trailing newline. Both
+/// slices borrow `content`; the returned offsets always land on UTF-8 char
+/// boundaries (the fences are ASCII).
+pub(crate) fn split_frontmatter(content: &str) -> Option<(&str, &str)> {
+    let trimmed = content.trim_start();
+    if !trimmed.starts_with("---") {
+        return None;
+    }
+    let after = &trimmed[3..];
+    let end = after.find("\n---")?;
+    let fm = &after[..end];
+    let body = after.get(end + 4..).unwrap_or("");
+    Some((fm, body))
+}
+
 /// MIG-003 Step 1 — extract `cid_cn:` from a YAML frontmatter block
 /// at the start of file content. Returns None if frontmatter is
 /// absent / malformed / lacks the field. Mirrors the simple style of
 /// `libraries::extract_frontmatter_title`.
 pub(crate) fn extract_frontmatter_cid_cn(content: &str) -> Option<String> {
-    let trimmed = content.trim_start();
-    if !trimmed.starts_with("---") { return None; }
-    let after = &trimmed[3..];
-    let end = after.find("\n---")?;
-    let fm = &after[..end];
+    let (fm, _) = split_frontmatter(content)?;
     for line in fm.lines() {
         let t = line.trim();
         if let Some(rest) = t.strip_prefix("cid_cn:") {
@@ -1701,8 +1728,17 @@ pub(crate) fn mig003_step3_soft_rebackfill(
     // COMMIT, and conn is in autocommit here (called from init_db, no open tx).
     let mut reindexed = 0usize;
     let mut still_empty = 0usize;
+    let mut errors: Vec<String> = Vec::new();
     for (path, lib) in &stale {
-        let _ = index_note(conn, path, lib, true);
+        // Capture the Result (P3 audit): index_note ROLLBACKs + returns Err on a
+        // file-read failure or a cid_cn UNIQUE-index collision. Swallowing it
+        // ('let _') made a failed repair indistinguishable from 'file has no
+        // cid_cn' — both leave the row empty. Record it so a recurring failure
+        // is diagnosable rather than silent.
+        if let Err(e) = index_note(conn, path, lib, true) {
+            errors.push(format!("{} -> {}", path, e));
+            continue;
+        }
         let now_cid: String = conn
             .query_row(
                 "SELECT cid_cn FROM note_meta WHERE path = ?1",
@@ -1711,10 +1747,12 @@ pub(crate) fn mig003_step3_soft_rebackfill(
             )
             .unwrap_or_default();
         if now_cid.is_empty() {
-            // File genuinely lacks a frontmatter cid_cn (a legacy note that
-            // never went through canonical::ensure_cid_cn). Leave it — injecting
-            // one is mig003_backfill_cid_cn's job, not this soft pass — but count
-            // it so a recurring empty row is visible rather than silent.
+            // File genuinely lacks a frontmatter cid_cn (a legacy/external note
+            // that never went through canonical::ensure_cid_cn), or its path no
+            // longer exists (index_note no-ops). Left for mig003_backfill_cid_cn
+            // / Settings -> Rebuild Index to inject one (or the §A'.2 reconcile
+            // to drop a phantom row); bounded to <=1 row by the UNIQUE
+            // idx_note_meta_cid_cn, so this never recreates the full-scan sweep.
             still_empty += 1;
         } else {
             reindexed += 1;
@@ -1763,8 +1801,18 @@ pub(crate) fn mig003_step3_soft_rebackfill(
     diag_log(
         db_dir,
         &format!(
-            "[search] mig003_step3_soft_rebackfill: stale-cid_cn reindexed={} dependent_rows={} still_empty={} — elapsed={:?}",
-            reindexed, dep, still_empty, t.elapsed(),
+            "[search] mig003_step3_soft_rebackfill: stale={} reindexed={} dependent_rows={} still_empty={} errors={}{} — elapsed={:?}",
+            stale.len(),
+            reindexed,
+            dep,
+            still_empty,
+            errors.len(),
+            if errors.is_empty() {
+                String::new()
+            } else {
+                format!(" :: {}", errors.join("; "))
+            },
+            t.elapsed(),
         ),
     );
     Ok(())
@@ -3353,23 +3401,11 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
 /// the body for word counting). Single source of truth for the strip
 /// shape so back-fill and writer agree byte-for-byte.
 pub(crate) fn body_after_frontmatter(content: &str) -> &str {
-    if content.starts_with("---") {
-        // Detect the CLOSING fence as a line of its own (`\n---`), NOT the first
-        // bare `---` substring. A frontmatter VALUE may legitimately contain
-        // `---` (e.g. an importer-generated tag like
-        // `cite-q---cites-a-work-with-an-erratum`); the naive `find("---")`
-        // truncated the block there, leaking the rest of the YAML into the body
-        // and dropping every key below it (incl. cid_cn). Mirrors the
-        // line-anchored logic already used by extract_frontmatter_cid_cn.
-        if let Some(end) = content[3..].find("\n---") {
-            // `end` indexes the '\n' that begins the closing fence line (within
-            // content[3..]); skip past "\n---" (4 bytes) to land where the old
-            // logic did — right after the closing dashes. `.get(..)` guards a
-            // fence at EOF with no trailing newline (would otherwise panic).
-            return content.get(3 + end + 4..).unwrap_or("");
-        }
-    }
-    content
+    // Single source of truth — see split_frontmatter. Returns the whole content
+    // when there is no well-formed frontmatter (unchanged behavior).
+    split_frontmatter(content)
+        .map(|(_, body)| body)
+        .unwrap_or(content)
 }
 
 /// Parse frontmatter properties from YAML block.
@@ -3378,13 +3414,9 @@ fn parse_frontmatter(content: &str) -> (HashMap<String, String>, Vec<String>, St
     let mut tags = Vec::new();
     let mut body = content.to_string();
 
-    if content.starts_with("---") {
-        // Line-anchored closing-fence detection — see body_after_frontmatter.
-        // `\n---` so a `---` inside a YAML value (e.g. a `cite-q---...` tag)
-        // doesn't truncate the block before later keys like cid_cn.
-        if let Some(end) = content[3..].find("\n---") {
-            let fm = &content[3..3 + end];
-            body = body_after_frontmatter(content).trim().to_string();
+    if let Some((fm, body_slice)) = split_frontmatter(content) {
+        {
+            body = body_slice.trim().to_string();
 
             let mut in_tags = false;
             for line in fm.lines() {
@@ -3692,6 +3724,28 @@ cid_cn: 20260414T092241Z_NOTE_B85A\n\
         assert_eq!(props.get("title").map(String::as_str), Some("X"));
         assert_eq!(body, "");
         assert_eq!(super::body_after_frontmatter(md), "");
+    }
+
+    #[test]
+    fn leading_whitespace_before_fence_parses_and_agrees_with_cid_extractor() {
+        // P2-2 audit: parse_frontmatter/body_after_frontmatter now share
+        // split_frontmatter (incl. trim_start) with extract_frontmatter_cid_cn,
+        // so a note with leading whitespace before the opening `---` parses its
+        // frontmatter — previously the raw starts_with("---") missed it, so
+        // index_note wrote cid_cn='' while extract_frontmatter_cid_cn (used by
+        // the backfill) saw the real value. All three must now agree.
+        let md = "\n\n---\ntitle: X\ncid_cn: 20260101T000000Z_NOTE_AAAA\n---\nbody";
+        let (props, _t, body) = parse_frontmatter(md);
+        assert_eq!(props.get("title").map(String::as_str), Some("X"));
+        assert_eq!(
+            props.get("cid_cn").map(String::as_str),
+            Some("20260101T000000Z_NOTE_AAAA")
+        );
+        assert_eq!(body, "body");
+        assert_eq!(
+            super::extract_frontmatter_cid_cn(md).as_deref(),
+            Some("20260101T000000Z_NOTE_AAAA")
+        );
     }
 }
 
@@ -6573,17 +6627,27 @@ pub fn invalidate_search_state(app: &tauri::AppHandle) {
 ///
 /// ## The actual problem
 ///
-/// Active-mode `init_db` writes 1 row to `note_meta` every boot via
-/// `mig003_step3_soft_rebackfill`. Each write fires FTS5 triggers
-/// that touch the index. Over time, this incrementally merges FTS5
-/// segments — keeping the index in ~1-3 segments total.
+/// The ACTIVE-universe FTS5 index is kept merged by FTS5's own automerge,
+/// which runs incrementally on the writes that real note edits (saves /
+/// reindexes) make to `note_meta` — those fire the `note_meta_ai/au` triggers
+/// and feed automerge. (NOTE: this used to read "every boot `mig003_step3`
+/// writes 1 row and that merges segments" — that was never true: the old soft
+/// re-backfill did a cid_cn-ONLY UPDATE, and `note_meta_au` only fires WHEN
+/// name or body_text changes, so it never touched the FTS index. MIG-078 §B1
+/// made the active universe write ZERO rows on a steady-state boot, so do not
+/// rely on a boot write for FTS maintenance — it never existed.)
 ///
-/// cUniverses NEVER run that boot-time write. Their FTS5 index
-/// accumulates segments forever (one per indexing burst), never
-/// getting merged. Eisa's cu1 has 7650 notes likely spread across
+/// cUniverses are READ-ONLY in normal use: nothing edits their notes, so their
+/// FTS5 index never gets the incremental automerge that active editing
+/// provides. It accumulates segments (one per historical indexing burst),
+/// never getting merged. Eisa's cu1 has 7650 notes likely spread across
 /// 50+ segments. Every OR-of-9-terms query has to iterate 9 doclists
 /// PER SEGMENT — that's 450+ doclist iterations against scattered
 /// FTS5 shadow pages. THAT is the 15-25s.
+///
+/// (Follow-up PJ: if the active index ever fragments on a read-mostly universe,
+/// add a background, segid-gated, idempotent `INSERT INTO notes_fts(notes_fts)
+/// VALUES('optimize')` on the active DB mirroring this per-cUniverse path.)
 ///
 /// ## The documented fix
 ///
@@ -6799,13 +6863,40 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
     // the outgoing-aggregate triggers init_db creates carry the right rank CASE +
     // IN-list. Cheap; reloads on universe-switch (this fn re-runs when state.db resets).
     crate::link_types::load_active(app);
+    // MIG-078 §B1 audit (P2-3) — capture the federation generation BEFORE the
+    // slow init_db. A universe switch during init_db bumps this (via
+    // invalidate_search_state, which also sets state.db = None); without a
+    // re-check we would store THIS now-stale universe's connection, and the
+    // next ensure call for the NEW universe would fast-path on db.is_some() and
+    // read the WRONG universe's data until restart. Serializing init made that
+    // outcome deterministic, so we guard it (the federation thread already does
+    // the same generation dance for its own connection).
+    let init_gen = state
+        .federation_generation
+        .load(std::sync::atomic::Ordering::SeqCst);
     let conn = init_db(&path)?;
-    {
-        let mut db = state.db.lock().map_err(|e| e.to_string())?;
-        *db = Some(conn);
-    }
+    // Stamp the schema version now that init_db (incl. any rebuild) succeeded —
+    // before the store/discard decision below, so a discarded-stale rebuild is
+    // not repeated on the next open of this universe.
     if needs_rebuild {
         let _ = std::fs::write(&version_path, current_version);
+    }
+    {
+        let mut db = state.db.lock().map_err(|e| e.to_string())?;
+        let cur_gen = state
+            .federation_generation
+            .load(std::sync::atomic::Ordering::SeqCst);
+        if cur_gen != init_gen {
+            // Universe switched during init_db — discard this connection so the
+            // next ensure_search_db_ready re-initializes for the active
+            // universe. `conn` drops here (closes the stale handle); db stays None.
+            eprintln!(
+                "[search] ensure_search_db_ready: universe switched during init (gen {} -> {}); discarding stale connection",
+                init_gen, cur_gen
+            );
+            return Ok(());
+        }
+        *db = Some(conn);
     }
     // MIG-001 Step 5: schedule the Sky View back-fill on a background
     // thread. No-op if schema_versions.sky is already at target. Returns
@@ -7970,6 +8061,7 @@ mod tests_pj060_index_gate {
                 sources TEXT, content_type TEXT
              );
              CREATE TABLE note_aliases (path TEXT, alias_lower TEXT, source TEXT, cid_cn TEXT);
+             CREATE TABLE note_body (path TEXT PRIMARY KEY, body_text TEXT NOT NULL DEFAULT '');
              CREATE TABLE note_links (
                 source_path TEXT, source_name TEXT, target_name TEXT,
                 link_type TEXT, annotation TEXT, confidence TEXT,
