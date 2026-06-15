@@ -188,5 +188,18 @@ SQLite single-writer + `busy_timeout` serialize a concurrent save **S** and the 
 - **Live-DB rehearsal (mandatory item a):** `tag_counts::tests::rehearse_against_live_copy` runs the REAL `recompute_all_in` against a copy of the 1.74 GB live DB and asserts equality to `live-read-tags-target.json`: **PASS byte-for-byte** (19,542 distinct / 36,193 occ, 0 diffs; aggregate 5.79 s).
 - **Editor-Surface Gate (mandatory item d):** tags are a *derived* view — the delta never touches note content/body/display, so the content-integrity class is structurally untouched; covered by the save-path tests + the Boss test tutorial (NotePane save, Focus round-trip, tab switch, rename probe-pair — asserting tags display correct AND body intact).
 
-### Pending (runtime — Boss launch + Claude DB re-check)
-Boss launches the rebuilt binary → diagnostics.log shows `[tag_counts_backfill] completed: 19542 distinct tags`; next boot `read_tags` timing drops 5.7 s → ~ms (boot-history tool); add/remove a tag in a note → sidebar tag count moves live; body intact across the gate. Then **§C.2** (defer the 234k `read_links` — the big 11 s) + **§C.3** (covering index).
+### Runtime validation — Boss-tested this session (Steps 1 & 2 PASS)
+- **Step 1 PASS — counts correct + backfill ran.** Boss opened right sidebar → Tags → "All tags": header total reads **19,542** (exact match to §C.1's computed/rehearsed distinct count); per-tag counts correct (e.g. `1423-births`=3). `diagnostics.log`: `[tag_counts_backfill] completed: 19542 distinct tags` — the atomic backfill ran AND stamped on the first launch (stamp is in the same txn as the build, so "completed" ⟹ stamped).
+- **Step 2 PASS — measured on the REAL instrument** (boot-perf history tool, not a side-channel): `read_tags` **5,658 ms → 4 ms / 36 ms**.
+  | entry (local, UTC+4) | which | read_tags | read_links | graph_ready |
+  |---|---|---|---|---|
+  | 22:07 | cold, **pre-§C.1** | **5,658 ms** | 11,336 | 33,100 |
+  | 23:29 | Step 1 (§C.1) | **4 ms** | 11,399 | 28,553 |
+  | 23:37 | Step 2 (§C.1) | **36 ms** | 9,494 | 20,264 |
+  Step 1's 4 ms on a *first* launch (a fallback scan would be cold ≈ 5,658 ms) confirms the table-read path is live — the backfill stamped ~2 s into that boot (diagnostics timestamp matches entry [4]).
+- **Correction logged (standing order: measure, don't guess).** I first read the history tool's UTC (`Z`) timestamps as "old 19:37 entries" and wrongly side-noted "the logger didn't capture your launches." The timestamps are UTC; the machine is UTC+4, so `19:37Z` = `23:37` local = the Step-2 launch. The logger captured both launches correctly. Boss caught the loose end and required reading the actual log instead of trusting my copy-measurement — exactly right.
+
+### Remaining for §C.1 (optional; Boss-directed)
+- Steps 3–4 (live add/remove a tag → count maintained) + Step 5 (content-integrity gate). Step 3 next.
+- A guaranteed-COLD §C.1 boot would lock the cold before/after (entry [5] was likely warm); optional.
+- Then **§C.2** (defer the 234k `read_links` — the big 11 s) + **§C.3** (covering index).
