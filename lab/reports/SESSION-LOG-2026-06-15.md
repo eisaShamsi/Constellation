@@ -119,3 +119,23 @@ Lenses: invariants / drift / migration-paths / adversary → synthesis (independ
 ### Verification status
 - **Static:** `cargo check --lib` clean; `cargo test --lib search::` **65/65** (incl. 4 new parser regression tests). Query plans confirmed `cid_cn=''` rides `idx_note_meta_cid_cn` vs `IS NULL OR` → full `SCAN`. cid_cn `20260414T092241Z_NOTE_B85A` is unique (no reindex collision).
 - **Pending (runtime, Boss launch + Claude DB re-check):** one `init_db`; `أولي (كائن)`.cid_cn populated; empty-cid_cn count 0; `diagnostics.log` shows `stale=1 reindexed=1 … still_empty=0`, no doubled sweep, no "database is locked"; body_text no longer leaks YAML; no/short "0 notes" flicker; OrgChart <2 s.
+
+---
+
+## The bring-up pivot + concept-paper governance (afternoon)
+
+### From §B1 to the real boot bottleneck (Reproduce-First)
+Boss-tested the §B1 binary: data fixes confirmed (empty-cid_cn 0; `أولي` self-healed; no thundering herd; no lock errors), BUT boot still ~70s/3-freezes. Read the trace, not inference: `init_db` ran TWICE (17:50:02 + 17:50:36). Cause: only `invalidate_search_state` resets `state.db`, only `set_active_universe` calls it, and the boot calls it redundantly (main window `+layout.svelte:2515` + second screen `SecondScreenPage.svelte:923`). Then `boot-perf.latest.json` gave the real number: paint 0.9s / hydrated 1.7s PASS, but **`graph_ready_ms`=32,519** — `cache_boot_snapshot_graph` recomputes the graph every boot (`read_links` 11.6s over **233,995** links [measured, all `status='active'`, full SCAN — NOT the "656k" an old doc assumed], `read_tags` 5.6s, +11.25s queue). A Rule-8 (Write-Time Derivation) violation.
+
+### Boss correction → MIG-079 Architect (commit the rules)
+Boss: *"a solid fix at the root, not a patch."* Then: *"commit to the rules for auditing and research."* Ran the 8-agent Architect workflow (`wf_86695058-176`) + WA#5 web research (incremental view maintenance, Obsidian/Logseq/Roam backlink persistence, VS Code/Tauri backend-owns-state). Verdict: extend the in-house write-time trigger pattern (notes_fts/sky_nodes/outgoing aggregates), don't invent. Doc: `docs/MIG-079-Architect-Boot-WTD-Graph-Snapshot.md`. Boss decisions: links **defer off boot**; tags **maintained in the indexer (Rust)**; **activation fix first**.
+
+### Boss method: minimal-editor bring-up + concept-paper-per-function
+Boss directive: disable all functions (via FLAGS not scissors), keep only the editor (the gate), measure the baseline, re-enable one at a time, fixing lag/wiring per step — and **every function gets a concept paper defining its purpose, acting as the checklist**. Plus: each paper covers the element's **right-click** and **multilingual** conformance; and a **core Constellation concept paper** sits above all.
+- Foundation (commit `c4106927`): `docs/concept-papers/00-Constellation-Core-Concept-Paper.md` (core), `00-MASTER-Bring-Up-Charter-and-Checklist.md` (charter + 11-section template incl. Right-click §5 + Multilingual §6 + inventory + bring-up order + safeBootMode design), `01-Note-Editor.md` (the gate).
+- 31 per-function papers (commit `e9f809bc`, workflow `wf_9d8697c5-2f6`) — each grounded in code (component + context menu + i18n). **The pass became an app-wide audit** → 00-MASTER §7 Debt Register: Rule-8 recompute is SYSTEMIC (~14 functions); MIG-077 right-click incomplete (4 hand-rolled + ~19 missing); hardcoded English ~17 surfaces; missing feature gates (incl. Search Hub has none). **Confirmed defects:** Calendar day-click always opens TODAY (`get_daily_note_path` ignores the date); Tasks `toggle_task` bypasses the Editor reindex gate; Second Screen `:923` re-activation; Review-Pulse `record_note_visit` dead; 6 no-op Command-Palette stubs.
+
+### Boss rulings + MIG-079 §A shipped
+- Boss: **start the bring-up build**; **reframe Tasks** (→ "open epistemic loops" serving Tension→Synthesis→Conviction; kept, not removed — paper updated).
+- **MIG-079 §A SHIPPED (commit `256d7c5f`)** — single-owner activation: (A.1) idempotency guard at the top of `set_active_universe` (requested path == active → no-op, no invalidate/re-init); (A.2) second screen display-only (removed `setActiveUniverse:923` + unused import). Plan: `docs/MIG-079-Plan.md`. `cargo check --lib` clean. **Pending: Boss relaunch (2nd screen open) → diagnostics.log shows `init_db` ONCE.** Building (npm+cargo).
+- Next: §B safeBootMode + missing gates → measure editor baseline → §C boot-graph WTD (tag_counts in indexer + defer links) → §D phase-by-phase bring-up (write-time cure + right-click + i18n per concept paper).
