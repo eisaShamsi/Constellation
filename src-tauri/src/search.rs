@@ -648,6 +648,53 @@ fn ensure_note_meta_mig066_columns(conn: &Connection) -> rusqlite::Result<()> {
     Ok(())
 }
 
+/// MIG-079 §C.2a — ensure `note_meta` has the INCOMING-link aggregate columns: the
+/// mirror of MIG-066's outgoing set, maintained write-time by the
+/// `note_links_incoming_*` + `note_aliases_incoming_*` triggers (keyed on
+/// `target_name` + the note's aliases, distinct-source — matching `getBacklinks`).
+/// Idempotent (probes `PRAGMA table_info`). Inert (schema defaults) until the
+/// §C.2a backfill populates them.
+///   - `incoming_count`            — DISTINCT source notes linking to this note (by
+///                                   name or alias, status != 'archived').
+///   - `incoming_link_types`       — display string `"type (count), …"` (canonical order).
+///   - `incoming_link_types_json`  — machine `{"type":count}` for sortable columns.
+///   - `incoming_top_rank`         — seniority rank of the note's highest incoming type.
+fn ensure_note_meta_mig079_incoming_columns(conn: &Connection) -> rusqlite::Result<()> {
+    let (mut have_count, mut have_types, mut have_rank, mut have_json) = (false, false, false, false);
+    {
+        let mut stmt = conn.prepare("PRAGMA table_info(note_meta)")?;
+        let rows = stmt.query_map([], |row| row.get::<_, String>(1))?;
+        for col in rows {
+            match col?.as_str() {
+                "incoming_count" => have_count = true,
+                "incoming_link_types" => have_types = true,
+                "incoming_top_rank" => have_rank = true,
+                "incoming_link_types_json" => have_json = true,
+                _ => {}
+            }
+        }
+    }
+    if !have_count {
+        conn.execute_batch("ALTER TABLE note_meta ADD COLUMN incoming_count INTEGER NOT NULL DEFAULT 0;")?;
+    }
+    if !have_types {
+        conn.execute_batch("ALTER TABLE note_meta ADD COLUMN incoming_link_types TEXT NOT NULL DEFAULT '';")?;
+    }
+    if !have_rank {
+        conn.execute_batch("ALTER TABLE note_meta ADD COLUMN incoming_top_rank INTEGER NOT NULL DEFAULT 9;")?;
+    }
+    if !have_json {
+        conn.execute_batch("ALTER TABLE note_meta ADD COLUMN incoming_link_types_json TEXT NOT NULL DEFAULT '{}';")?;
+    }
+    // §C.2a — expression index on LOWER(target_name) so the incoming recompute's
+    // `LOWER(target_name) IN (note's names)` match is index-served, not a 234k scan
+    // per hub-note recompute (isbn has 5,358 incoming).
+    conn.execute_batch(
+        "CREATE INDEX IF NOT EXISTS idx_note_links_target_name_lower ON note_links(LOWER(target_name), status);",
+    )?;
+    Ok(())
+}
+
 /// MIG-067 §B — SQL `UPDATE … SET` assignments (no trailing comma) that recompute
 /// the outgoing aggregates for the note whose `path` matches `src` (`NEW.source_path`
 /// in a trigger, or `note_meta.path` for a correlated back-fill UPDATE). The type
@@ -2067,6 +2114,11 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
     // MIG-066 §A — outgoing-link aggregate columns (write-time materialized).
     ensure_note_meta_mig066_columns(&conn)
         .map_err(|e| format!("Failed to ensure note_meta MIG-066 columns: {}", e))?;
+    // MIG-079 §C.2a — incoming-link aggregate columns (write-time materialized;
+    // the mirror of MIG-066 outgoing, keyed on target_name + aliases). Inert until
+    // the §C.2a triggers + backfill populate them (gated schema_versions.incoming_links).
+    ensure_note_meta_mig079_incoming_columns(&conn)
+        .map_err(|e| format!("Failed to ensure note_meta MIG-079 incoming columns: {}", e))?;
     let stored_note_meta_version: i64 = conn
         .query_row(
             "SELECT version FROM schema_versions WHERE module = 'note_meta'",
