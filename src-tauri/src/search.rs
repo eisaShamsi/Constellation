@@ -700,13 +700,58 @@ fn ensure_note_meta_mig079_incoming_columns(conn: &Connection) -> rusqlite::Resu
 /// MUST be called AFTER `CREATE TABLE note_links` (a column-add before the table
 /// aborts a fresh-DB init — cf. the BUG-021 `idx_link_target_path` note).
 fn ensure_note_links_target_name_lower(conn: &Connection) -> rusqlite::Result<()> {
-    if !column_exists(conn, "note_links", "target_name_lower")? {
+    // Detect via PRAGMA table_xinfo, NOT column_exists()/table_info — table_info
+    // HIDES VIRTUAL generated columns, so on the 2nd boot the column looks absent,
+    // the ALTER re-runs, and "duplicate column" aborts init_db → repeated-init →
+    // the app shows 0 notes (the §C.2a regression, Boss-caught 2026-06-16). xinfo
+    // lists generated/hidden columns, so this guard is correctly idempotent.
+    let exists = {
+        let mut stmt = conn.prepare("PRAGMA table_xinfo(note_links)")?;
+        let mut rows = stmt.query([])?;
+        let mut found = false;
+        while let Some(row) = rows.next()? {
+            if row.get::<_, String>(1)? == "target_name_lower" {
+                found = true;
+                break;
+            }
+        }
+        found
+    };
+    if !exists {
         conn.execute_batch(
             "ALTER TABLE note_links ADD COLUMN target_name_lower TEXT \
              GENERATED ALWAYS AS (LOWER(target_name)) VIRTUAL;",
         )?;
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests_c2a_target_name_lower_idempotent {
+    //! MIG-079 §C.2a regression — the virtual-column ensure MUST be idempotent
+    //! across boots. table_info hides VIRTUAL columns, so a column_exists() guard
+    //! re-ran the ALTER on the 2nd boot → "duplicate column" → init_db loop →
+    //! 0 notes (Boss-caught 2026-06-16). This pins the 2nd-call no-op.
+    use super::*;
+    use rusqlite::Connection;
+
+    #[test]
+    fn ensure_note_links_target_name_lower_is_idempotent() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch("CREATE TABLE note_links (source_path TEXT, target_name TEXT, status TEXT);")
+            .unwrap();
+        ensure_note_links_target_name_lower(&conn).unwrap(); // 1st boot: adds it
+        ensure_note_links_target_name_lower(&conn).unwrap(); // 2nd boot: MUST be a no-op
+        conn.execute(
+            "INSERT INTO note_links(source_path,target_name,status) VALUES ('/s','Foo','active')",
+            [],
+        )
+        .unwrap();
+        let lower: String = conn
+            .query_row("SELECT target_name_lower FROM note_links", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(lower, "foo", "virtual column computes LOWER(target_name)");
+    }
 }
 
 /// MIG-067 §B — SQL `UPDATE … SET` assignments (no trailing comma) that recompute
