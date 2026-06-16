@@ -199,7 +199,16 @@ SQLite single-writer + `busy_timeout` serialize a concurrent save **S** and the 
   Step 1's 4 ms on a *first* launch (a fallback scan would be cold ≈ 5,658 ms) confirms the table-read path is live — the backfill stamped ~2 s into that boot (diagnostics timestamp matches entry [4]).
 - **Correction logged (standing order: measure, don't guess).** I first read the history tool's UTC (`Z`) timestamps as "old 19:37 entries" and wrongly side-noted "the logger didn't capture your launches." The timestamps are UTC; the machine is UTC+4, so `19:37Z` = `23:37` local = the Step-2 launch. The logger captured both launches correctly. Boss caught the loose end and required reading the actual log instead of trusting my copy-measurement — exactly right.
 
-### Remaining for §C.1 (optional; Boss-directed)
-- Steps 3–4 (live add/remove a tag → count maintained) + Step 5 (content-integrity gate). Step 3 next.
-- A guaranteed-COLD §C.1 boot would lock the cold before/after (entry [5] was likely warm); optional.
-- Then **§C.2** (defer the 234k `read_links` — the big 11 s) + **§C.3** (covering index).
+### Steps 3–5 — Boss-tested, PASS (§C.1 fully validated end-to-end)
+- **Step 3 (live add) PASS — stronger than planned.** Boss added `test-c1-tag` to the "Franks" note. DB after save: `tag_counts['test-c1-tag']=1`, total 19,542→**19,544**. The +2 (not +1) is CORRECT: saving Franks de-quoted its importer-mangled tags (`"frankish-people"` → `frankish-people`, etc.). The ±delta correctly tracked a COMPLEX one-save change — 6 removes (5 pruned to zero + `"early-germanic-peoples"` 6→5 since 5 other notes keep the quoted form) and 7 adds (6 clean + test-c1-tag). Every number reconciled (19,542 + 7 − 5 = 19,544). This validated add + decrement + **prune** in one atomic save. Sidebar panel does NOT auto-refresh (re-reads on the This-note↔All-tags toggle) — pre-existing, not a §C.1 regression; §C.1 makes that re-read fast (table, not scan).
+- **Step 4 (remove) PASS.** Boss removed the tag + saved → `test-c1-tag` **pruned** (gone, not a 0-row), total back to **19,543**, **0** dead `≤0` rows in the whole table.
+- **Step 5 (content-integrity gate) PASS.** Franks: `note_meta.body == note_body.body` (80,447 chars each — dual-write consistent); matches the on-disk `.md` (modulo the expected markdown-strip of `# Franks`→`  Franks`); genuinely Franks content (no contamination); tag removal persisted to disk. Boss confirmed Franks reads correctly **on screen**.
+- **Verdict: §C.1 fully validated** — build → fast boot read → live add (complex add/decrement/prune) → prune-on-remove → content-integrity. Commits `e372381a` (code) + `3fe5e11b` (Steps 1–2 log).
+
+---
+
+## Right Sidebar → Note-Context-Only — design decision (Boss 2026-06-16)
+Mid-session, before §C.2, Boss opened a design discussion: **the right sidebar should be a live extension of the OPEN NOTE only**, not mixed with general/universe use. Ran two workflows — a scope audit (`wf_29860fe0`) + PKM-placement research (`wf_e09ede1a`, web-cited) — then Boss gave per-panel dispositions. **Decision recorded in `docs/Right-Sidebar-Note-Context-Design-Decision.md`.** Summary: right rail = the open note's diagnostic suite (Properties, Backlinks, Tags-this-note, Sky-local, Provenance, 360.3D, + **note-scoped REDESIGNS** of Knowledge Health, Review Pulse, Source Review — Knowledge-Health and 360.3D stay **distinct**); universe functions relocate (All-tags → Search Hub + Dashboard; Calendar → left launcher; Tasks → with the left Calendar; Cataloger → left; universe Health → Dashboard; universe Review → full-page reviewer). 0 new dock buttons, 1 new overlay; fixes the Calendar wrong-library + Review `record_note_visit` defects; reuses §C.1 `tag_counts`. **Sequencing: its own `/migration` AFTER §C.2/§C.3.**
+
+### Next: MIG-079 §C.2 — defer the 234k `read_links` off the boot critical path (the big ~11 s)
+Strategy locked: boot reads persisted `sky_links` + `note_meta.outgoing_*` aggregates; full edge list lazy-loads on first graph/panel open; + §C.3 covering index. Opening with a consumer-impact analysis (crosses the Rust↔Svelte boot contract).
