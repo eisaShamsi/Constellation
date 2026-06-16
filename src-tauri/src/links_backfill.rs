@@ -297,6 +297,58 @@ pub(crate) fn recompute_all_outgoing(conn: &Connection) -> rusqlite::Result<usiz
     Ok(total)
 }
 
+/// MIG-079 §C.2a — recompute the INCOMING-link aggregates for a `(after, last]`
+/// path window from `note_links` (the same `incoming_aggregate_assignments` SQL
+/// the triggers use — single source of truth, can't drift). Shared by
+/// `recompute_all_incoming` and the §C.2a backfill.
+pub(crate) fn recompute_incoming_range(conn: &Connection, after: &str, last: &str) -> rusqlite::Result<usize> {
+    let sql = format!(
+        "UPDATE note_meta SET {assign} WHERE path > ?1 AND path <= ?2",
+        assign = crate::search::incoming_aggregate_assignments("note_meta"),
+    );
+    conn.execute(&sql, params![after, last])
+}
+
+/// MIG-079 §C.2a — recompute EVERY note's incoming aggregate from `note_links`.
+/// `reconcile_filesystem` calls this after the trigger-free walk; the §C.2a
+/// backfill calls it once on first upgrade. Batched (500-row windows, each its own
+/// short UPDATE) + busy-retry — mirrors `recompute_all_outgoing` so it never holds
+/// a long write lock on a large universe. Idempotent (reads current note_links).
+pub(crate) fn recompute_all_incoming(conn: &Connection) -> rusqlite::Result<usize> {
+    let mut after = String::new();
+    let mut total = 0usize;
+    loop {
+        let paths: Vec<String> = {
+            let mut stmt =
+                conn.prepare("SELECT path FROM note_meta WHERE path > ?1 ORDER BY path LIMIT 500")?;
+            let rows = stmt.query_map(params![after], |r| r.get::<_, String>(0))?;
+            let mut v = Vec::with_capacity(500);
+            for r in rows {
+                v.push(r?);
+            }
+            v
+        };
+        if paths.is_empty() {
+            break;
+        }
+        let last = paths.last().cloned().unwrap_or_default();
+        let mut attempt = 0;
+        loop {
+            match recompute_incoming_range(conn, &after, &last) {
+                Ok(_) => break,
+                Err(e) if is_busy_error(&e) && attempt < 8 => {
+                    attempt += 1;
+                    thread::sleep(Duration::from_millis(400));
+                }
+                Err(e) => return Err(e),
+            }
+        }
+        total += paths.len();
+        after = last;
+    }
+    Ok(total)
+}
+
 /// True for SQLITE_BUSY / SQLITE_LOCKED (the transient contention worth retrying).
 fn is_busy_error(e: &rusqlite::Error) -> bool {
     let s = e.to_string().to_lowercase();

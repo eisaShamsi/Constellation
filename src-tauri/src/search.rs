@@ -686,12 +686,26 @@ fn ensure_note_meta_mig079_incoming_columns(conn: &Connection) -> rusqlite::Resu
     if !have_json {
         conn.execute_batch("ALTER TABLE note_meta ADD COLUMN incoming_link_types_json TEXT NOT NULL DEFAULT '{}';")?;
     }
-    // §C.2a — expression index on LOWER(target_name) so the incoming recompute's
-    // `LOWER(target_name) IN (note's names)` match is index-served, not a 234k scan
-    // per hub-note recompute (isbn has 5,358 incoming).
-    conn.execute_batch(
-        "CREATE INDEX IF NOT EXISTS idx_note_links_target_name_lower ON note_links(LOWER(target_name), status);",
-    )?;
+    Ok(())
+}
+
+/// MIG-079 §C.2a — add the VIRTUAL generated column `LOWER(target_name)` on
+/// `note_links`, so the incoming recompute matches a note's name + aliases via a
+/// plain-column equality/JOIN that SEEKS its index (an EXPRESSION index does NOT
+/// seek a JOIN — measured: the OR/expr form full-scanned 234k rows PER note,
+/// 33 CPU-min; this form recomputes all notes in ~60 s). VIRTUAL ⇒ computed from
+/// `target_name`, so no write-path change, no populate, no trigger churn. The
+/// index over it (`idx_nl_tnl`) is built by the §C.2a backfill (off the boot path).
+///
+/// MUST be called AFTER `CREATE TABLE note_links` (a column-add before the table
+/// aborts a fresh-DB init — cf. the BUG-021 `idx_link_target_path` note).
+fn ensure_note_links_target_name_lower(conn: &Connection) -> rusqlite::Result<()> {
+    if !column_exists(conn, "note_links", "target_name_lower")? {
+        conn.execute_batch(
+            "ALTER TABLE note_links ADD COLUMN target_name_lower TEXT \
+             GENERATED ALWAYS AS (LOWER(target_name)) VIRTUAL;",
+        )?;
+    }
     Ok(())
 }
 
@@ -789,6 +803,108 @@ pub(crate) fn drop_outgoing_link_triggers(conn: &Connection) -> Result<(), Strin
          DROP TRIGGER IF EXISTS note_links_outgoing_au;",
     )
     .map_err(|e| format!("drop outgoing-link triggers: {}", e))
+}
+
+/// MIG-079 §C.2a — SQL `UPDATE … SET` assignments that recompute the INCOMING
+/// aggregates for the note row `{np}` (the table-qualifier of the outer UPDATE —
+/// always `"note_meta"`). The mirror of `outgoing_aggregate_assignments`, but
+/// matched on the TARGET side, **keyed exactly like `getBacklinks`**: an active
+/// edge (`status != 'archived'`) whose `LOWER(target_name)` equals this note's
+/// name OR any of its aliases. `incoming_count` is **DISTINCT source_path** (a
+/// source that links twice counts once — `getBacklinks`' `dedupeBySource`). The
+/// subqueries are over `note_links`/`note_aliases`, so the bare `note_meta.*`
+/// references bind to the outer UPDATE row (no shadowing). Type breakdown filters
+/// `link_type IN {list}` (registry types) like outgoing.
+pub(crate) fn incoming_aggregate_assignments(np: &str) -> String {
+    let reg = crate::link_types::snapshot();
+    let list = reg.sql_in_list();
+    let rank = reg.sql_rank_case();
+    let sentinel = reg.sentinel_rank();
+    // Match: active edge whose target_name (lowercased) is this note's name or an alias.
+    // Matched incoming edges = active edges whose `target_name_lower` (the VIRTUAL
+    // LOWER(target_name) column) equals this note's name OR any alias — expressed as
+    // a UNION of two INDEX-SEEKING branches (name equality + alias JOIN on idx_nl_tnl).
+    // A plain-column equality/JOIN seeks; the prior `OR LOWER(target_name)=…` form
+    // full-scanned. UNION dedupes identical (source_path, link_type) pairs. The
+    // subqueries are over note_links/note_aliases so `note_meta.*` binds to the outer
+    // UPDATE row. COUNT is DISTINCT source_path (getBacklinks' dedupeBySource).
+    let matched = format!(
+        "(SELECT nl.source_path, nl.link_type FROM note_links nl \
+            WHERE nl.status != 'archived' AND nl.target_name_lower = LOWER({np}.name) \
+          UNION \
+          SELECT nl.source_path, nl.link_type FROM note_aliases a \
+            JOIN note_links nl ON nl.target_name_lower = a.alias_lower \
+            WHERE a.path = {np}.path AND nl.status != 'archived')",
+        np = np,
+    );
+    format!(
+        "incoming_count = (SELECT COUNT(DISTINCT source_path) FROM {matched}), \
+         incoming_link_types = (SELECT COALESCE(GROUP_CONCAT(link_type || ' (' || cnt || ')', ', '), '') FROM \
+            (SELECT link_type, COUNT(DISTINCT source_path) AS cnt FROM {matched} \
+             WHERE link_type IN {list} GROUP BY link_type ORDER BY {rank})), \
+         incoming_link_types_json = (SELECT COALESCE(json_group_object(link_type, cnt), '{{}}') FROM \
+            (SELECT link_type, COUNT(DISTINCT source_path) AS cnt FROM {matched} \
+             WHERE link_type IN {list} GROUP BY link_type)), \
+         incoming_top_rank = COALESCE((SELECT MIN({rank}) FROM {matched} WHERE link_type IN {list}), {sentinel})",
+        matched = matched, list = list, rank = rank, sentinel = sentinel,
+    )
+}
+
+/// MIG-079 §C.2a — create the INCOMING-link aggregate triggers. Unlike the
+/// outgoing triggers (keyed on the note's own `source_path`), incoming must
+/// REVERSE-resolve a changed edge's `target_name` to the note(s) it points at
+/// (by name OR alias), then recompute their incoming aggregate. A SECOND family
+/// on `note_aliases` keeps a note's incoming current when its aliases change
+/// (every reindex churns frontmatter aliases). Same O(N²)-during-bulk-walk caveat
+/// as outgoing → `reconcile_filesystem` drops these for the walk then runs
+/// `recompute_all_incoming`. Updating only the aggregate columns does NOT fire the
+/// FTS/Sky note_meta triggers (they gate on name/body_text/word_count/modified).
+pub(crate) fn create_incoming_link_triggers(conn: &Connection) -> Result<(), String> {
+    drop_incoming_link_triggers(conn)?;
+    let assign = incoming_aggregate_assignments("note_meta");
+    // The note(s) a given lowercased target name resolves to (name or alias).
+    let resolve = |tn: &str| -> String {
+        format!(
+            "(SELECT path FROM note_meta WHERE LOWER(name) = LOWER({tn}) \
+              UNION SELECT path FROM note_aliases WHERE alias_lower = LOWER({tn}))",
+            tn = tn,
+        )
+    };
+    conn.execute_batch(&format!(
+        "CREATE TRIGGER IF NOT EXISTS note_links_incoming_ai \
+         AFTER INSERT ON note_links BEGIN \
+           UPDATE note_meta SET {assign} WHERE path IN {res_new}; END; \
+         CREATE TRIGGER IF NOT EXISTS note_links_incoming_ad \
+         AFTER DELETE ON note_links BEGIN \
+           UPDATE note_meta SET {assign} WHERE path IN {res_old}; END; \
+         CREATE TRIGGER IF NOT EXISTS note_links_incoming_au \
+         AFTER UPDATE ON note_links BEGIN \
+           UPDATE note_meta SET {assign} WHERE path IN {res_old}; \
+           UPDATE note_meta SET {assign} WHERE path IN {res_new}; END; \
+         CREATE TRIGGER IF NOT EXISTS note_aliases_incoming_ai \
+         AFTER INSERT ON note_aliases BEGIN \
+           UPDATE note_meta SET {assign} WHERE path = NEW.path; END; \
+         CREATE TRIGGER IF NOT EXISTS note_aliases_incoming_ad \
+         AFTER DELETE ON note_aliases BEGIN \
+           UPDATE note_meta SET {assign} WHERE path = OLD.path; END;",
+        assign = assign,
+        res_new = resolve("NEW.target_name"),
+        res_old = resolve("OLD.target_name"),
+    ))
+    .map_err(|e| format!("create incoming-link triggers: {}", e))
+}
+
+/// MIG-079 §C.2a — drop the five INCOMING-link aggregate triggers (for the
+/// reconcile bulk-walk pause; idempotent; recreated by `init_db` on next boot).
+pub(crate) fn drop_incoming_link_triggers(conn: &Connection) -> Result<(), String> {
+    conn.execute_batch(
+        "DROP TRIGGER IF EXISTS note_links_incoming_ai;
+         DROP TRIGGER IF EXISTS note_links_incoming_ad;
+         DROP TRIGGER IF EXISTS note_links_incoming_au;
+         DROP TRIGGER IF EXISTS note_aliases_incoming_ai;
+         DROP TRIGGER IF EXISTS note_aliases_incoming_ad;",
+    )
+    .map_err(|e| format!("drop incoming-link triggers: {}", e))
 }
 
 /// MIG-067 §B — react to a change in the active link-type vocabulary (a live
@@ -2530,6 +2646,11 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
         CREATE INDEX IF NOT EXISTS idx_link_traversal_count ON note_links(traversal_count);
     ").map_err(|e| format!("Failed to create note_links: {}", e))?;
 
+    // MIG-079 §C.2a — the incoming-aggregate match column (LOWER(target_name)).
+    // AFTER the note_links CREATE so a fresh-DB init doesn't abort (BUG-021 shape).
+    ensure_note_links_target_name_lower(&conn)
+        .map_err(|e| format!("Failed to ensure note_links.target_name_lower: {}", e))?;
+
     // Drop any leftover tables from the aborted custom-index experiment
     // (2026-04-16). The Index panel now reads directly from the FTS5 vocab
     // virtual table `notes_vocab` above; these tables are no longer used.
@@ -3131,6 +3252,10 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
     // them around a full re-index (per-edge recompute is O(N²) on a bulk rebuild
     // — see reconcile_filesystem). Live single-edge edits maintain them write-time.
     create_outgoing_link_triggers(&conn)?;
+    // MIG-079 §C.2a — incoming-link aggregate triggers (note_links + note_aliases),
+    // recreated each boot so they carry the current registry's rank/IN-list. Same
+    // reconcile-pause discipline as outgoing. Inert until the §C.2a backfill stamps.
+    create_incoming_link_triggers(&conn)?;
 
     // The one-shot stratum + maturity back-fill for existing sky_nodes
     // rows runs in sky_backfill.rs on a background thread — NOT here.
@@ -7015,6 +7140,12 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
     // it write-time. Boot's read_tags then becomes an O(distinct-tags) lookup.
     crate::tag_counts::maybe_schedule(app.clone());
 
+    // MIG-079 §C.2a: schedule the one-shot incoming-link aggregate backfill on a
+    // background thread. No-op once stamped. Recomputes note_meta.incoming_* from
+    // note_links (convergent with the live triggers); thereafter the badge reads a
+    // narrow column instead of inverting outgoing_links_json (the drift fix).
+    crate::incoming_links_backfill::maybe_schedule(app.clone());
+
     // MIG-078 §A′.2: schedule the note_meta↔disk reconcile on a background
     // thread. Removes stale rows whose .md file no longer exists (exposed now
     // that the Map/OrgChart tree is built from note_meta). Runs lock-free
@@ -7269,6 +7400,9 @@ pub fn reconcile_filesystem(app: &tauri::AppHandle) -> Result<SearchIndexStats, 
         .busy_timeout(std::time::Duration::from_secs(30))
         .map_err(|e| format!("walk_conn busy_timeout: {}", e))?;
     let _ = drop_outgoing_link_triggers(&walk_conn);
+    // MIG-079 §C.2a — pause the incoming-link triggers for the same bulk walk
+    // (reverse-resolve recompute is O(N²) across a per-source rebuild, like outgoing).
+    let _ = drop_incoming_link_triggers(&walk_conn);
 
     let libraries = crate::libraries::load_all_libraries(app);
     for lib in &libraries {
@@ -7280,6 +7414,21 @@ pub fn reconcile_filesystem(app: &tauri::AppHandle) -> Result<SearchIndexStats, 
     let _ = create_outgoing_link_triggers(&walk_conn);
     if let Err(e) = crate::links_backfill::recompute_all_outgoing(&walk_conn) {
         eprintln!("[links_backfill] recompute_all_outgoing after reconcile failed: {}", e);
+    }
+
+    // MIG-079 §C.2a — recreate the incoming triggers, then recompute every note's
+    // incoming aggregate authoritatively (only when the §C.2a backfill has stamped;
+    // before that the columns are inert and reads fall back to getBacklinks).
+    let _ = create_incoming_link_triggers(&walk_conn);
+    if crate::incoming_links_backfill::is_stamped(&walk_conn) {
+        // Defensive: the §C.2a backfill builds this; ensure it exists so the
+        // recompute seeks (it persists, so normally a no-op here).
+        let _ = walk_conn.execute_batch(
+            "CREATE INDEX IF NOT EXISTS idx_nl_tnl ON note_links(target_name_lower, status);",
+        );
+        if let Err(e) = crate::links_backfill::recompute_all_incoming(&walk_conn) {
+            eprintln!("[links_backfill] recompute_all_incoming after reconcile failed: {}", e);
+        }
     }
 
     // MIG-079 §C.1 — rebuild tag_counts authoritatively from the just-reconciled
@@ -8124,6 +8273,36 @@ pub fn constellation_search_link_counts(
         Some(c) => c,
         None => return Ok(std::collections::HashMap::new()),
     };
+
+    // MIG-079 §C.2a — when the write-time incoming aggregate is stamped, read the
+    // maintained note_meta.incoming_count (typed, alias-aware, distinct-source —
+    // matches the Backlinks panel) instead of inverting the legacy outgoing_links_json,
+    // which CANNOT parse typed [[type::target]] links and so wildly undercounts (47
+    // total vs ~413k on the reference universe). Falls through to the legacy path
+    // until the §C.2a backfill stamps (zero-risk rollout).
+    if crate::incoming_links_backfill::is_stamped(conn) {
+        let mut counts: std::collections::HashMap<String, u32> = std::collections::HashMap::new();
+        let read = (|| -> Result<(), String> {
+            let mut stmt = conn
+                .prepare("SELECT LOWER(name), incoming_count FROM note_meta")
+                .map_err(|e| e.to_string())?;
+            let rows = stmt
+                .query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?)))
+                .map_err(|e| e.to_string())?;
+            for r in rows.flatten() {
+                let (name, n) = r;
+                // Names are effectively unique; on a rare collision keep the MAX so
+                // the name-keyed badge shows the larger note's backlink count.
+                let entry = counts.entry(name).or_insert(0);
+                *entry = (*entry).max(n.max(0) as u32);
+            }
+            Ok(())
+        })();
+        if read.is_ok() {
+            return Ok(counts);
+        }
+        // else: fall through to the legacy inversion below.
+    }
 
     // Initialize counts for all notes
     let mut counts: std::collections::HashMap<String, u32> = std::collections::HashMap::new();
