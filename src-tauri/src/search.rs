@@ -752,6 +752,52 @@ mod tests_c2a_target_name_lower_idempotent {
             .unwrap();
         assert_eq!(lower, "foo", "virtual column computes LOWER(target_name)");
     }
+
+    /// MIG-079 §C.2a — the save-path diff recomputes ONLY targets whose edge
+    /// changed, and a text-only edit (old == new signature) recomputes NOTHING
+    /// (the fix for the 5-7 s freeze). Pins both.
+    #[test]
+    fn maintain_incoming_touches_only_changed_targets() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE note_meta (path TEXT PRIMARY KEY, name TEXT,
+                incoming_count INTEGER NOT NULL DEFAULT 0,
+                incoming_link_types TEXT NOT NULL DEFAULT '',
+                incoming_link_types_json TEXT NOT NULL DEFAULT '{}',
+                incoming_top_rank INTEGER NOT NULL DEFAULT 9);
+             CREATE TABLE note_aliases (path TEXT, alias_lower TEXT);
+             CREATE TABLE note_links (source_path TEXT, source_name TEXT, target_name TEXT,
+                link_type TEXT, status TEXT,
+                target_name_lower TEXT GENERATED ALWAYS AS (LOWER(target_name)) VIRTUAL);
+             CREATE INDEX idx_nl_tnl ON note_links(target_name_lower, status);
+             INSERT INTO note_meta(path,name) VALUES ('/X.md','X'),('/A.md','Alpha'),('/B.md','Beta');
+             INSERT INTO note_links(source_path,source_name,target_name,link_type,status)
+               VALUES ('/X.md','X','Alpha','supports','active');",
+        )
+        .unwrap();
+        // Capture X's signature (targets={alpha}), then X also links Beta (a save that
+        // added [[Beta]]). Only Beta should recompute; Alpha must stay untouched.
+        let (old_t, old_n, old_a) = incoming_signature(&conn, "/X.md").unwrap();
+        conn.execute(
+            "INSERT INTO note_links(source_path,source_name,target_name,link_type,status)
+               VALUES ('/X.md','X','Beta','supports','active')",
+            [],
+        )
+        .unwrap();
+        maintain_incoming_after_save(&conn, "/X.md", &old_t, &old_n, &old_a).unwrap();
+        let beta: i64 = conn.query_row("SELECT incoming_count FROM note_meta WHERE path='/B.md'", [], |r| r.get(0)).unwrap();
+        let alpha: i64 = conn.query_row("SELECT incoming_count FROM note_meta WHERE path='/A.md'", [], |r| r.get(0)).unwrap();
+        assert_eq!(beta, 1, "newly-linked target recomputed");
+        assert_eq!(alpha, 0, "unchanged target NOT touched — only changed targets recompute");
+
+        // Text-only edit: signature unchanged → recompute NOTHING. Sentinel Beta, re-run
+        // with old == new, assert Beta is left exactly as-is (instant save, zero work).
+        conn.execute("UPDATE note_meta SET incoming_count=99 WHERE path='/B.md'", []).unwrap();
+        let (t2, n2, a2) = incoming_signature(&conn, "/X.md").unwrap();
+        maintain_incoming_after_save(&conn, "/X.md", &t2, &n2, &a2).unwrap();
+        let beta2: i64 = conn.query_row("SELECT incoming_count FROM note_meta WHERE path='/B.md'", [], |r| r.get(0)).unwrap();
+        assert_eq!(beta2, 99, "text-only edit recomputes nothing");
+    }
 }
 
 /// MIG-067 §B — SQL `UPDATE … SET` assignments (no trailing comma) that recompute
@@ -895,48 +941,102 @@ pub(crate) fn incoming_aggregate_assignments(np: &str) -> String {
     )
 }
 
-/// MIG-079 §C.2a — create the INCOMING-link aggregate triggers. Unlike the
-/// outgoing triggers (keyed on the note's own `source_path`), incoming must
-/// REVERSE-resolve a changed edge's `target_name` to the note(s) it points at
-/// (by name OR alias), then recompute their incoming aggregate. A SECOND family
-/// on `note_aliases` keeps a note's incoming current when its aliases change
-/// (every reindex churns frontmatter aliases). Same O(N²)-during-bulk-walk caveat
-/// as outgoing → `reconcile_filesystem` drops these for the walk then runs
-/// `recompute_all_incoming`. Updating only the aggregate columns does NOT fire the
-/// FTS/Sky note_meta triggers (they gate on name/body_text/word_count/modified).
-pub(crate) fn create_incoming_link_triggers(conn: &Connection) -> Result<(), String> {
-    drop_incoming_link_triggers(conn)?;
-    let assign = incoming_aggregate_assignments("note_meta");
-    // The note(s) a given lowercased target name resolves to (name or alias).
-    let resolve = |tn: &str| -> String {
-        format!(
-            "(SELECT path FROM note_meta WHERE LOWER(name) = LOWER({tn}) \
-              UNION SELECT path FROM note_aliases WHERE alias_lower = LOWER({tn}))",
-            tn = tn,
-        )
-    };
-    conn.execute_batch(&format!(
-        "CREATE TRIGGER IF NOT EXISTS note_links_incoming_ai \
-         AFTER INSERT ON note_links BEGIN \
-           UPDATE note_meta SET {assign} WHERE path IN {res_new}; END; \
-         CREATE TRIGGER IF NOT EXISTS note_links_incoming_ad \
-         AFTER DELETE ON note_links BEGIN \
-           UPDATE note_meta SET {assign} WHERE path IN {res_old}; END; \
-         CREATE TRIGGER IF NOT EXISTS note_links_incoming_au \
-         AFTER UPDATE ON note_links BEGIN \
-           UPDATE note_meta SET {assign} WHERE path IN {res_old}; \
-           UPDATE note_meta SET {assign} WHERE path IN {res_new}; END; \
-         CREATE TRIGGER IF NOT EXISTS note_aliases_incoming_ai \
-         AFTER INSERT ON note_aliases BEGIN \
-           UPDATE note_meta SET {assign} WHERE path = NEW.path; END; \
-         CREATE TRIGGER IF NOT EXISTS note_aliases_incoming_ad \
-         AFTER DELETE ON note_aliases BEGIN \
-           UPDATE note_meta SET {assign} WHERE path = OLD.path; END;",
-        assign = assign,
-        res_new = resolve("NEW.target_name"),
-        res_old = resolve("OLD.target_name"),
-    ))
-    .map_err(|e| format!("create incoming-link triggers: {}", e))
+/// MIG-079 §C.2a — capture a note's "incoming signature" for the save-path diff:
+/// the set of distinct lowercased target names of its ACTIVE outgoing links, plus
+/// its own lowercased name + alias set. Comparing old (pre-save) vs new (post-save)
+/// tells us which OTHER notes' backlink counts changed, and whether THIS note's own
+/// incoming changed (its name/aliases moved).
+fn incoming_signature(
+    conn: &Connection,
+    path: &str,
+) -> rusqlite::Result<(std::collections::HashSet<String>, String, std::collections::HashSet<String>)> {
+    let mut targets = std::collections::HashSet::new();
+    {
+        let mut stmt = conn.prepare(
+            "SELECT DISTINCT LOWER(target_name) FROM note_links WHERE source_path = ?1 AND status != 'archived'",
+        )?;
+        let rows = stmt.query_map([path], |r| r.get::<_, String>(0))?;
+        for r in rows {
+            targets.insert(r?);
+        }
+    }
+    let name: String = conn
+        .query_row("SELECT LOWER(name) FROM note_meta WHERE path = ?1", [path], |r| r.get(0))
+        .unwrap_or_default();
+    let mut aliases = std::collections::HashSet::new();
+    {
+        let mut stmt = conn.prepare("SELECT alias_lower FROM note_aliases WHERE path = ?1")?;
+        let rows = stmt.query_map([path], |r| r.get::<_, String>(0))?;
+        for r in rows {
+            aliases.insert(r?);
+        }
+    }
+    Ok((targets, name, aliases))
+}
+
+/// MIG-079 §C.2a — resolve a lowercased target name to the note path(s) it refers
+/// to (by name OR alias), accumulating into `out`.
+fn resolve_incoming_target_paths(
+    conn: &Connection,
+    name_lower: &str,
+    out: &mut std::collections::HashSet<String>,
+) -> rusqlite::Result<()> {
+    {
+        let mut stmt = conn.prepare("SELECT path FROM note_meta WHERE LOWER(name) = ?1")?;
+        let rows = stmt.query_map([name_lower], |r| r.get::<_, String>(0))?;
+        for r in rows {
+            out.insert(r?);
+        }
+    }
+    {
+        let mut stmt = conn.prepare("SELECT path FROM note_aliases WHERE alias_lower = ?1")?;
+        let rows = stmt.query_map([name_lower], |r| r.get::<_, String>(0))?;
+        for r in rows {
+            out.insert(r?);
+        }
+    }
+    Ok(())
+}
+
+/// MIG-079 §C.2a — incoming-aggregate maintenance on the SAVE path. REPLACES the
+/// per-edge triggers, which recomputed EVERY target of the saved note on EVERY save
+/// (index_note rebuilds ALL of a note's links even on a text-only edit) — a measured
+/// 5–7 s freeze on a 119-link note. This recomputes ONLY the notes whose
+/// backlink-from-`note_path` actually changed: `old_*` is captured BEFORE
+/// index_note, this runs AFTER. A text-only edit leaves the target set + name +
+/// aliases unchanged → zero recomputes → instant save (the §C.1 old==new fast path).
+/// Each affected note's recompute is the index-seeking `incoming_aggregate_assignments`
+/// (~ms). Gated on the incoming stamp by the caller; best-effort (reconcile is the
+/// authoritative self-heal).
+fn maintain_incoming_after_save(
+    conn: &Connection,
+    note_path: &str,
+    old_targets: &std::collections::HashSet<String>,
+    old_name: &str,
+    old_aliases: &std::collections::HashSet<String>,
+) -> rusqlite::Result<()> {
+    let (new_targets, new_name, new_aliases) = incoming_signature(conn, note_path)?;
+    let mut affected: std::collections::HashSet<String> = std::collections::HashSet::new();
+    // Targets this note started/stopped linking to → their backlink count changed.
+    for t in old_targets.symmetric_difference(&new_targets) {
+        resolve_incoming_target_paths(conn, t, &mut affected)?;
+    }
+    // If this note's own name/aliases changed, the links that match IT changed →
+    // recompute its own incoming too.
+    if old_name != new_name || old_aliases != &new_aliases {
+        affected.insert(note_path.to_string());
+    }
+    if affected.is_empty() {
+        return Ok(());
+    }
+    let sql = format!(
+        "UPDATE note_meta SET {assign} WHERE path = ?1",
+        assign = incoming_aggregate_assignments("note_meta"),
+    );
+    for p in &affected {
+        conn.execute(&sql, params![p])?;
+    }
+    Ok(())
 }
 
 /// MIG-079 §C.2a — drop the five INCOMING-link aggregate triggers (for the
@@ -3297,10 +3397,12 @@ pub(crate) fn init_db(path: &Path) -> Result<Connection, String> {
     // them around a full re-index (per-edge recompute is O(N²) on a bulk rebuild
     // — see reconcile_filesystem). Live single-edge edits maintain them write-time.
     create_outgoing_link_triggers(&conn)?;
-    // MIG-079 §C.2a — incoming-link aggregate triggers (note_links + note_aliases),
-    // recreated each boot so they carry the current registry's rank/IN-list. Same
-    // reconcile-pause discipline as outgoing. Inert until the §C.2a backfill stamps.
-    create_incoming_link_triggers(&conn)?;
+    // MIG-079 §C.2a — incoming maintenance moved OFF per-edge triggers (they
+    // recomputed every target on every save → a 5–7 s freeze on link-heavy notes).
+    // Drop any incoming triggers a prior §C.2a build left in this DB; maintenance
+    // now runs as a save-path Rust diff (maintain_incoming_after_save) that
+    // recomputes ONLY changed targets, and reconcile recomputes all authoritatively.
+    let _ = drop_incoming_link_triggers(&conn);
 
     // The one-shot stratum + maturity back-fill for existing sky_nodes
     // rows runs in sky_backfill.rs on a background thread — NOT here.
@@ -7445,8 +7547,8 @@ pub fn reconcile_filesystem(app: &tauri::AppHandle) -> Result<SearchIndexStats, 
         .busy_timeout(std::time::Duration::from_secs(30))
         .map_err(|e| format!("walk_conn busy_timeout: {}", e))?;
     let _ = drop_outgoing_link_triggers(&walk_conn);
-    // MIG-079 §C.2a — pause the incoming-link triggers for the same bulk walk
-    // (reverse-resolve recompute is O(N²) across a per-source rebuild, like outgoing).
+    // MIG-079 §C.2a — incoming maintenance is a save-path Rust diff, not triggers;
+    // drop any incoming triggers a prior build left (harmless cleanup).
     let _ = drop_incoming_link_triggers(&walk_conn);
 
     let libraries = crate::libraries::load_all_libraries(app);
@@ -7461,10 +7563,10 @@ pub fn reconcile_filesystem(app: &tauri::AppHandle) -> Result<SearchIndexStats, 
         eprintln!("[links_backfill] recompute_all_outgoing after reconcile failed: {}", e);
     }
 
-    // MIG-079 §C.2a — recreate the incoming triggers, then recompute every note's
-    // incoming aggregate authoritatively (only when the §C.2a backfill has stamped;
-    // before that the columns are inert and reads fall back to getBacklinks).
-    let _ = create_incoming_link_triggers(&walk_conn);
+    // MIG-079 §C.2a — recompute every note's incoming aggregate authoritatively
+    // (only when the §C.2a backfill has stamped; before that the columns are inert
+    // and reads fall back to getBacklinks). No triggers to recreate — maintenance
+    // is a save-path Rust diff; this full pass is the periodic self-heal.
     if crate::incoming_links_backfill::is_stamped(&walk_conn) {
         // Defensive: the §C.2a backfill builds this; ensure it exists so the
         // recompute seeks (it persists, so normally a no-op here).
@@ -7551,6 +7653,14 @@ pub fn reindex_delete_note(state: &SearchState, note_path: &str) -> Result<(), S
         } else {
             None
         };
+        // MIG-079 §C.2a — capture this note's outgoing targets BEFORE deleting its
+        // links, so afterward we recompute those targets (they lose this note as a
+        // backlink source). None until the incoming aggregate is stamped.
+        let inc_targets = if crate::incoming_links_backfill::is_stamped(conn) {
+            incoming_signature(conn, note_path).ok().map(|(t, _, _)| t)
+        } else {
+            None
+        };
         let _ = conn.execute("DELETE FROM note_links WHERE source_path = ?1", params![note_path]);
         let _ = conn.execute("DELETE FROM note_meta WHERE path = ?1", params![note_path]);
         if let Some(old) = old_tags_json {
@@ -7567,6 +7677,21 @@ pub fn reindex_delete_note(state: &SearchState, note_path: &str) -> Result<(), S
             // same terms.
             if let Err(e) = crate::ctse::hooks::on_note_deleted(conn, note_path, &body) {
                 eprintln!("[ctse] on_note_deleted failed for {}: {}", note_path, e);
+            }
+        }
+        // MIG-079 §C.2a — the deleted note's former targets each lose it as a
+        // backlink source → recompute them. Best-effort; reconcile is the self-heal.
+        if let Some(targets) = inc_targets {
+            let mut affected = std::collections::HashSet::new();
+            for t in &targets {
+                let _ = resolve_incoming_target_paths(conn, t, &mut affected);
+            }
+            let sql = format!(
+                "UPDATE note_meta SET {} WHERE path = ?1",
+                incoming_aggregate_assignments("note_meta")
+            );
+            for p in &affected {
+                let _ = conn.execute(&sql, params![p]);
             }
         }
     }
@@ -7600,6 +7725,15 @@ pub fn reindex_single_note(
             )
             .ok();
 
+        // MIG-079 §C.2a — capture the incoming signature BEFORE the rebuild so the
+        // post-save diff recomputes only the notes whose backlink-from-this-note
+        // changed. None (skip) until the incoming aggregate is stamped.
+        let inc_old = if crate::incoming_links_backfill::is_stamped(conn) {
+            incoming_signature(conn, note_path).ok()
+        } else {
+            None
+        };
+
         index_note(conn, note_path, library_name, /* force */ true)?;
 
         // Post-COMMIT (index_note's BEGIN IMMEDIATE/COMMIT block has
@@ -7627,6 +7761,16 @@ pub fn reindex_single_note(
                 &new_body,
             ) {
                 eprintln!("[ctse] on_note_indexed failed for {}: {}", note_path, e);
+            }
+        }
+
+        // MIG-079 §C.2a — maintain backlink counts write-time: recompute ONLY the
+        // notes whose backlink-from-this-note changed (a text-only edit changes no
+        // targets/name/aliases → zero recomputes → instant save). Best-effort;
+        // reconcile is the authoritative self-heal if it ever drifts.
+        if let Some((old_t, old_n, old_a)) = inc_old {
+            if let Err(e) = maintain_incoming_after_save(conn, note_path, &old_t, &old_n, &old_a) {
+                eprintln!("[incoming] maintain after save failed for {}: {}", note_path, e);
             }
         }
     }
