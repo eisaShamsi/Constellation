@@ -1409,7 +1409,7 @@
 			return;
 		}
 
-		_sidebarDebounce = setTimeout(async () => {
+		_sidebarDebounce = setTimeout(() => {
 			// Headings
 			sidebarHeadings = body ? extractHeadings(body) : [];
 			// Direction
@@ -1423,32 +1423,12 @@
 				decayEnabled: lifecycle?.decayEnabled ?? true,
 			};
 			// Backlinks (MIG-004 §9: alias-aware via notePathToAliases lookup).
-			const aliasesForActive = notePathToAliases.get(tab.path) ?? [];
-			if ($appSettings.perNoteLinkQueries) {
-				// MIG-079 §C.2c — fetch ONLY this note's links (no 234k array). The
-				// debounce keeps this off the keystroke hot path. getBacklinks/
-				// getOutgoingLinks run their unchanged sort/dedupe/tier logic on the
-				// per-note set (proven == the array path by the §C.2c-1 rehearsal).
-				perNoteLinksLoading = true;
-				try {
-					const [blRows, ogRows] = await Promise.all([
-						invoke<NoteLink[]>('get_backlink_rows', { noteName: tab.name, aliases: aliasesForActive }),
-						invoke<NoteLink[]>('get_outgoing_rows', { notePath: tab.path }),
-					]);
-					// The active tab may have changed during the await — discard stale.
-					if (sidebarTab?.path === tab.path) {
-						currentBacklinks = getBacklinks(blRows, tab.name, decayCfg, aliasesForActive);
-						currentOutgoing = getOutgoingLinks(ogRows, tab.path, decayCfg);
-						activeOutgoingRows = ogRows; // feeds the editor ×N traversal map
-					}
-				} catch {
-					if (sidebarTab?.path === tab.path) {
-						currentBacklinks = []; currentOutgoing = []; activeOutgoingRows = [];
-					}
-				} finally {
-					if (sidebarTab?.path === tab.path) perNoteLinksLoading = false;
-				}
-			} else {
+			// MIG-079 §C.2c — the PER-NOTE path is owned by a dedicated tab-keyed
+			// effect (below) that fires IMMEDIATELY on a note switch (no typing
+			// debounce) and never re-runs on a keystroke. Only the legacy array
+			// path stays here (it filters in-memory, so the debounce is fine).
+			if (!$appSettings.perNoteLinkQueries) {
+				const aliasesForActive = notePathToAliases.get(tab.path) ?? [];
 				currentBacklinks = getBacklinks(effectiveLibraryLinks, tab.name, decayCfg, aliasesForActive);
 				// CE Phase 5: Provenance fetched on tab click only (not here — no IPC on typing path)
 				// Outgoing links
@@ -1474,6 +1454,57 @@
 			}
 			activeNoteTags = [...new Set(tags)];
 		}, 500);
+	});
+
+	// MIG-079 §C.2c — the per-note Backlinks/Outgoing fetch, keyed on the ACTIVE
+	// TAB (path/name/aliases) — NOT on body. So a note switch populates links
+	// IMMEDIATELY (no 500 ms typing debounce → the §C.2c-2 switch lag), and typing
+	// never fires a link IPC (the DB only changes on save+reindex, which re-runs
+	// this via perNoteRefreshNonce). Only active when the flag is on; the legacy
+	// array path stays in the body-debounced effect above.
+	$effect(() => {
+		if (!$appSettings.perNoteLinkQueries) return;
+		const tab = sidebarTab;
+		void perNoteRefreshNonce; // re-fetch after confidence/archive (+ post-reindex bump)
+		if (!tab) {
+			currentBacklinks = [];
+			currentOutgoing = [];
+			activeOutgoingRows = [];
+			perNoteLinksLoading = false;
+			return;
+		}
+		const tabName = tab.name;
+		const tabPath = tab.path;
+		const aliasesForActive = notePathToAliases.get(tabPath) ?? [];
+		const lifecycle = $appSettings.linkLifecycle;
+		const decayCfg = {
+			nowMs: Date.now(),
+			halfLifeDays: lifecycle?.halfLifeDays ?? 60,
+			decayEnabled: lifecycle?.decayEnabled ?? true,
+		};
+		perNoteLinksLoading = true;
+		(async () => {
+			try {
+				const [blRows, ogRows] = await Promise.all([
+					invoke<NoteLink[]>('get_backlink_rows', { noteName: tabName, aliases: aliasesForActive }),
+					invoke<NoteLink[]>('get_outgoing_rows', { notePath: tabPath }),
+				]);
+				// Discard if the user switched notes during the await.
+				if (sidebarTab?.path === tabPath) {
+					currentBacklinks = getBacklinks(blRows, tabName, decayCfg, aliasesForActive);
+					currentOutgoing = getOutgoingLinks(ogRows, tabPath, decayCfg);
+					activeOutgoingRows = ogRows; // feeds the editor ×N traversal map
+				}
+			} catch {
+				if (sidebarTab?.path === tabPath) {
+					currentBacklinks = [];
+					currentOutgoing = [];
+					activeOutgoingRows = [];
+				}
+			} finally {
+				if (sidebarTab?.path === tabPath) perNoteLinksLoading = false;
+			}
+		})();
 	});
 
 	// Unlinked mentions for current note (already debounced — no change needed)
