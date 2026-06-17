@@ -441,6 +441,8 @@ pub fn run() {
             cache::cache_boot_snapshot_core,
             cache::cache_boot_snapshot_graph,
             cache::cache_full_links,
+            cache::get_backlink_rows,
+            cache::get_outgoing_rows,
             cache::cache_boot_snapshot_sky,
             cache::cache_is_populated,
             cache::cache_reconcile,

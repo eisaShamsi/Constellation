@@ -444,6 +444,188 @@ pub fn cache_full_links(app: tauri::AppHandle) -> Result<BootLinks, String> {
     Ok(BootLinks { links, timings_ms: timings, server_return_unix_ms, server_start_unix_ms })
 }
 
+// ─── MIG-079 §C.2c — per-note link ROW queries ───────────────────────────
+// The Backlinks/Outgoing panels need only ONE note's links, but today the
+// frontend holds all 234k edges in a JS array and filters it per note (the
+// in-memory-everything anti-pattern that froze scrolling). These commands
+// return just the active note's rows from SQLite — a bounded, index-seeking
+// lookup (the inverted-index "posting list" for the note's name): backlinks
+// ride `idx_nl_tnl` (target_name_lower), outgoing rides `idx_link_source`.
+// COUNT stays write-time (§C.2a); ROWS are a read-time indexed query (WA#5).
+// Returns the SAME `NoteLink` shape `read_links_in_schema` does (context left
+// empty/lazy), so the frontend `getBacklinks`/`getOutgoingLinks` sort+dedupe+
+// tier logic is unchanged below the data source.
+
+/// Backlink rows for one note in one schema: active edges whose lowercased
+/// `target_name` is the note's name OR any alias (passed pre-lowercased).
+/// `target_name_lower` is a VIRTUAL generated column indexed by `idx_nl_tnl`,
+/// so `IN (...)` seeks. Defensive: a cUniverse on an older schema may lack the
+/// column — skip it gracefully (Ok(empty)) rather than fail the whole query.
+fn backlink_rows_in_schema(
+    conn: &Connection,
+    schema: &str,
+    targets_lower: &[String],
+) -> Result<Vec<NoteLink>, String> {
+    if targets_lower.is_empty() {
+        return Ok(Vec::new());
+    }
+    let placeholders = targets_lower.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+    let sql = format!(
+        "SELECT source_path, source_name, target_name, link_type, library_name, \
+                weight, traversal_count, annotation, last_traversed, confidence \
+         FROM {}.note_links \
+         WHERE status != 'archived' AND target_name_lower IN ({})",
+        schema, placeholders
+    );
+    let mut stmt = match conn.prepare(&sql) {
+        Ok(s) => s,
+        Err(_) => return Ok(Vec::new()), // older schema w/o target_name_lower — skip
+    };
+    let rows = stmt
+        .query_map(rusqlite::params_from_iter(targets_lower.iter()), map_note_link_row)
+        .map_err(|e| format!("query backlink rows ({}): {}", schema, e))?;
+    let mut out = Vec::new();
+    for r in rows.flatten() {
+        out.push(r);
+    }
+    Ok(out)
+}
+
+/// Outgoing rows for one note in one schema: active edges whose `source_path`
+/// is this note's path (seeks `idx_link_source`).
+fn outgoing_rows_in_schema(
+    conn: &Connection,
+    schema: &str,
+    source_path: &str,
+) -> Result<Vec<NoteLink>, String> {
+    let sql = format!(
+        "SELECT source_path, source_name, target_name, link_type, library_name, \
+                weight, traversal_count, annotation, last_traversed, confidence \
+         FROM {}.note_links \
+         WHERE source_path = ? AND status != 'archived'",
+        schema
+    );
+    let mut stmt = match conn.prepare(&sql) {
+        Ok(s) => s,
+        Err(_) => return Ok(Vec::new()),
+    };
+    let rows = stmt
+        .query_map([source_path], map_note_link_row)
+        .map_err(|e| format!("query outgoing rows ({}): {}", schema, e))?;
+    let mut out = Vec::new();
+    for r in rows.flatten() {
+        out.push(r);
+    }
+    Ok(out)
+}
+
+/// Shared row → NoteLink projection for the per-note row queries. Mirrors
+/// `read_links_in_schema` exactly (context lazy/empty).
+fn map_note_link_row(row: &rusqlite::Row) -> rusqlite::Result<NoteLink> {
+    let link_type: String = row.get(3)?;
+    Ok(NoteLink {
+        source_path: row.get(0)?,
+        source_name: row.get(1)?,
+        target: row.get(2)?,
+        context: String::new(),
+        library_name: row.get(4)?,
+        link_type: if link_type.is_empty() { None } else { Some(link_type) },
+        annotation: row.get(7)?,
+        weight: row.get(5)?,
+        traversal_count: row.get(6)?,
+        last_traversed: row.get(8)?,
+        confidence: row.get(9)?,
+    })
+}
+
+/// MIG-079 §C.2c — backlink rows for the active note (federated). `aliases`
+/// are the note's alias set (the frontend passes `notePathToAliases`); the
+/// match is name + aliases, lowercased + de-duplicated. Replaces the frontend
+/// `getBacklinks(allLibraryLinks, …)` array filter with a per-note indexed read.
+#[tauri::command]
+pub fn get_backlink_rows(
+    app: tauri::AppHandle,
+    note_name: String,
+    aliases: Vec<String>,
+) -> Result<Vec<NoteLink>, String> {
+    let mut targets: Vec<String> = Vec::new();
+    let primary = note_name.to_lowercase();
+    if !primary.is_empty() {
+        targets.push(primary);
+    }
+    for a in aliases {
+        let al = a.to_lowercase();
+        if !al.is_empty() && !targets.contains(&al) {
+            targets.push(al);
+        }
+    }
+    if targets.is_empty() {
+        return Ok(Vec::new());
+    }
+    let _ = crate::search::ensure_search_db_ready(&app);
+    let schemas = get_federated_schemas(&app);
+    let is_federated = schemas.len() > 1;
+    let state = app.state::<crate::search::SearchState>();
+    let bare_conn;
+    let fed_guard;
+    let conn: &Connection;
+    if is_federated {
+        fed_guard = state.federated_conn.lock().map_err(|e| format!("federated_conn lock poisoned: {}", e))?;
+        match fed_guard.as_ref() {
+            Some(c) => conn = c,
+            None => return Ok(Vec::new()),
+        }
+    } else {
+        bare_conn = match open_reader(&app) {
+            Ok(c) => c,
+            Err(_) => return Ok(Vec::new()),
+        };
+        conn = &bare_conn;
+    }
+    let mut out: Vec<NoteLink> = Vec::new();
+    for schema in &schemas {
+        out.extend(backlink_rows_in_schema(conn, schema, &targets)?);
+    }
+    Ok(out)
+}
+
+/// MIG-079 §C.2c — outgoing rows for the active note (federated). Replaces the
+/// frontend `getOutgoingLinks(allLibraryLinks, notePath)` array filter.
+#[tauri::command]
+pub fn get_outgoing_rows(
+    app: tauri::AppHandle,
+    note_path: String,
+) -> Result<Vec<NoteLink>, String> {
+    if note_path.is_empty() {
+        return Ok(Vec::new());
+    }
+    let _ = crate::search::ensure_search_db_ready(&app);
+    let schemas = get_federated_schemas(&app);
+    let is_federated = schemas.len() > 1;
+    let state = app.state::<crate::search::SearchState>();
+    let bare_conn;
+    let fed_guard;
+    let conn: &Connection;
+    if is_federated {
+        fed_guard = state.federated_conn.lock().map_err(|e| format!("federated_conn lock poisoned: {}", e))?;
+        match fed_guard.as_ref() {
+            Some(c) => conn = c,
+            None => return Ok(Vec::new()),
+        }
+    } else {
+        bare_conn = match open_reader(&app) {
+            Ok(c) => c,
+            Err(_) => return Ok(Vec::new()),
+        };
+        conn = &bare_conn;
+    }
+    let mut out: Vec<NoteLink> = Vec::new();
+    for schema in &schemas {
+        out.extend(outgoing_rows_in_schema(conn, schema, &note_path)?);
+    }
+    Ok(out)
+}
+
 fn read_aliases(conn: &Connection) -> Result<Vec<NoteAliasOut>, String> {
     read_aliases_in_schema(conn, "main")
 }
@@ -1856,5 +2038,181 @@ mod tests {
         assert_eq!(paths.len(), 2);
         assert!(paths.contains("/m/foobar.md"));
         assert!(paths.contains("/cu/foobar.md"));
+    }
+}
+
+#[cfg(test)]
+mod tests_c2c_per_note_rows {
+    //! MIG-079 §C.2c Step-1 proof. The per-note row queries must return the SAME
+    //! edge set the frontend getBacklinks/getOutgoingLinks array-filter produces.
+    //! The in-memory test pins the match semantics; the ignored rehearsal proves
+    //! it on a COPY of the live universe (the §C.1/§C.2a discipline):
+    //!   C2C_REHEARSAL_DB="E:\\Backups\\Constellation\\rehearsal\\c2c.db" \
+    //!   cargo test --release --lib tests_c2c_per_note_rows::rehearse -- --ignored --nocapture
+    use super::*;
+
+    #[test]
+    fn backlink_and_outgoing_rows_match_filter_semantics() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE note_links (
+                source_path TEXT, source_name TEXT, target_name TEXT, link_type TEXT,
+                library_name TEXT DEFAULT '', annotation TEXT DEFAULT '', weight REAL DEFAULT 1.0,
+                traversal_count INTEGER DEFAULT 0, last_traversed TEXT DEFAULT '',
+                confidence TEXT DEFAULT 'hypothesis', status TEXT DEFAULT 'active',
+                target_name_lower TEXT GENERATED ALWAYS AS (LOWER(target_name)) VIRTUAL);
+             CREATE INDEX idx_nl_tnl ON note_links(target_name_lower, status);
+             CREATE INDEX idx_link_source ON note_links(source_path);
+             INSERT INTO note_links(source_path,source_name,target_name,link_type,status) VALUES
+               ('/S1.md','S1','Alpha','supports','active'),
+               ('/S1.md','S1','al','','active'),
+               ('/S2.md','S2','alpha','supports','active'),
+               ('/S3.md','S3','Beta','causes','active'),
+               ('/S4.md','S4','Alpha','supports','archived'),
+               ('/A.md','Alpha','Gamma','relates','active'),
+               ('/A.md','Alpha','Delta','relates','archived');",
+        )
+        .unwrap();
+        // Backlinks to Alpha (name 'alpha' + alias 'al'): raw matched edges =
+        // S1(name) + S1(alias) + S2(case-insensitive); archived S4 excluded.
+        let targets = vec!["alpha".to_string(), "al".to_string()];
+        let bl = backlink_rows_in_schema(&conn, "main", &targets).unwrap();
+        assert_eq!(bl.len(), 3, "S1(name)+S1(alias)+S2; archived excluded");
+        let srcs: Vec<&str> = bl.iter().map(|l| l.source_path.as_str()).collect();
+        assert!(srcs.contains(&"/S1.md") && srcs.contains(&"/S2.md"));
+        assert!(!srcs.contains(&"/S4.md"));
+        // link_type empty string maps to None (matches read_links_in_schema).
+        assert!(bl.iter().any(|l| l.link_type.as_deref() == Some("supports")));
+        assert!(bl.iter().any(|l| l.link_type.is_none()));
+        // Outgoing of A: Gamma active; Delta archived excluded.
+        let og = outgoing_rows_in_schema(&conn, "main", "/A.md").unwrap();
+        assert_eq!(og.len(), 1);
+        assert_eq!(og[0].target, "Gamma");
+    }
+
+    #[test]
+    #[ignore = "rehearsal — needs a live-DB copy via C2C_REHEARSAL_DB"]
+    fn rehearse_rows_match_count_and_bruteforce() {
+        use std::collections::HashSet;
+        let db = std::env::var("C2C_REHEARSAL_DB").expect("set C2C_REHEARSAL_DB");
+        let conn = Connection::open(&db).unwrap();
+
+        // Load ALL active edges once for the independent brute-force oracle.
+        let all: Vec<(String, String)> = {
+            let mut stmt = conn
+                .prepare("SELECT source_path, LOWER(target_name) FROM note_links WHERE status != 'archived'")
+                .unwrap();
+            stmt.query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))
+                .unwrap()
+                .filter_map(|r| r.ok())
+                .collect()
+        };
+        eprintln!("[c2c-rehearsal] loaded {} active edges for the oracle", all.len());
+
+        // Sample: the 40 biggest hubs + 40 mid notes (covers hub + leaf + aliased).
+        let sample: Vec<(String, String, i64)> = {
+            let mut stmt = conn
+                .prepare("SELECT path, name, incoming_count FROM note_meta ORDER BY incoming_count DESC LIMIT 40")
+                .unwrap();
+            let mut v: Vec<(String, String, i64)> = stmt
+                .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, i64>(2)?)))
+                .unwrap()
+                .filter_map(|r| r.ok())
+                .collect();
+            let mut stmt2 = conn
+                .prepare("SELECT path, name, incoming_count FROM note_meta WHERE incoming_count > 0 ORDER BY name LIMIT 40 OFFSET 1000")
+                .unwrap();
+            v.extend(
+                stmt2
+                    .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, i64>(2)?)))
+                    .unwrap()
+                    .filter_map(|r| r.ok()),
+            );
+            v
+        };
+
+        let mut checked = 0usize;
+        let mut count_mismatch = 0usize;
+        let mut set_mismatch = 0usize;
+        for (path, name, incoming) in &sample {
+            // targets = lower(name) + aliases (note_aliases.alias_lower).
+            let mut targets: Vec<String> = vec![name.to_lowercase()];
+            {
+                let mut astmt = conn.prepare("SELECT alias_lower FROM note_aliases WHERE path = ?").unwrap();
+                let al: Vec<String> = astmt
+                    .query_map([path], |r| r.get::<_, String>(0))
+                    .unwrap()
+                    .filter_map(|r| r.ok())
+                    .collect();
+                for a in al {
+                    if !a.is_empty() && !targets.contains(&a) {
+                        targets.push(a);
+                    }
+                }
+            }
+            let tset: HashSet<&String> = targets.iter().collect();
+
+            // ACTUAL — the §C.2c query, deduped by source (getBacklinks dedupeBySource).
+            let actual = backlink_rows_in_schema(&conn, "main", &targets).unwrap();
+            let actual_srcs: HashSet<String> = actual.iter().map(|l| l.source_path.clone()).collect();
+
+            // ORACLE — independent brute-force scan of all active edges.
+            let oracle_srcs: HashSet<String> = all
+                .iter()
+                .filter(|(_, t)| tset.contains(t))
+                .map(|(s, _)| s.clone())
+                .collect();
+
+            checked += 1;
+            if actual_srcs != oracle_srcs {
+                set_mismatch += 1;
+                if set_mismatch <= 8 {
+                    eprintln!("   SET MISMATCH {name}: query={} oracle={}", actual_srcs.len(), oracle_srcs.len());
+                }
+            }
+            // Rows-tie-to-count: deduped sources == the §C.2a incoming_count
+            // (which the §C.2a rehearsal already proved == getBacklinks).
+            if actual_srcs.len() as i64 != *incoming {
+                count_mismatch += 1;
+                if count_mismatch <= 8 {
+                    eprintln!("   COUNT MISMATCH {name}: query={} incoming_count={}", actual_srcs.len(), incoming);
+                }
+            }
+        }
+        eprintln!(
+            "[c2c-rehearsal] checked {} notes — set_mismatch={} count_mismatch={}",
+            checked, set_mismatch, count_mismatch
+        );
+        assert_eq!(set_mismatch, 0, "per-note query must equal the brute-force filter");
+        assert_eq!(count_mismatch, 0, "deduped backlink sources must equal incoming_count");
+
+        // Outgoing — distinct-target count must equal note_meta.outgoing_count
+        // for the same sample (MIG-066 write-time aggregate).
+        let mut og_mismatch = 0usize;
+        for (path, name, _) in &sample {
+            let outc: i64 = conn
+                .query_row("SELECT outgoing_count FROM note_meta WHERE path = ?", [path], |r| r.get(0))
+                .unwrap_or(-1);
+            if outc < 0 {
+                continue;
+            }
+            // get_outgoing_rows returns the active outgoing EDGES (status!='archived',
+            // == status='active' on this all-active DB). outgoing_count (MIG-066) is
+            // COUNT(*) of those edges. So edge-count must equal outgoing_count. (The
+            // PANEL later dedupes by raw target — distinct targets ≤ edges — which is a
+            // frontend concern, not this row query.) Independent oracle: brute-force
+            // active edges from `all` for this source.
+            let og = outgoing_rows_in_schema(&conn, "main", path).unwrap();
+            let oracle = all.iter().filter(|(s, _)| s == path).count();
+            if og.len() != oracle || og.len() as i64 != outc {
+                og_mismatch += 1;
+                if og_mismatch <= 8 {
+                    eprintln!("   OUTGOING MISMATCH {name}: query_edges={} oracle_edges={} outgoing_count={}", og.len(), oracle, outc);
+                }
+            }
+        }
+        eprintln!("[c2c-rehearsal] outgoing edge-count mismatch={}", og_mismatch);
+        assert_eq!(og_mismatch, 0, "outgoing edge count must equal the brute-force oracle AND outgoing_count");
+        eprintln!("[c2c-rehearsal] PASS — per-note rows == filter == write-time counts");
     }
 }
