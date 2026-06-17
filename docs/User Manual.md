@@ -631,6 +631,8 @@ Sky View visualizes your notes as an interactive 3D graph powered by the **Graph
 - Press `Ctrl+G`
 - Mission Control (`Ctrl+P`) > "Sky View"
 
+> **Note — the graph now loads when you open Sky View, not at startup.** To keep Constellation's startup fast on large libraries, the knowledge graph is no longer read at launch. It loads the first time you open Sky View (or the Lens / Sight views) and is quietly pre-loaded in the background a moment after the app is ready — so it's usually there instantly. If you open Sky View within a second or two of launching, you may briefly see a small "Loading graph…" indicator while it finishes loading.
+
 ### Navigation
 
 | Input | Action |

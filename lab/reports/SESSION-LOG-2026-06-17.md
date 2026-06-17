@@ -144,3 +144,22 @@ Boss chose **Lazy + background warm-up** (over pure-lazy). Steps: §C.2d-1 async
 - **Invariants:** all 8 PASS. **Migration-path:** all 5 scenarios PASS (is_ready=false retry correctly armed). **Editor-Surface Gate:** read-path only (zero content/save/lifecycle).
 - **P1 found + FIXED (adversarial):** double-write race — a `federation:ready` `ensureSky(true)` nulls the memo + starts a 2nd same-epoch read while the warm-up read is in flight; a slow parent-only warm-up could resolve last and clobber fresh federated data. Fix: `_skyGeneration` counter — force bumps it, each load captures it at entry + discards if superseded (epoch guarded universe switches only; generation guards same-epoch double-loads). Catch branch also generation-guarded.
 - **P2 found + FIXED (drift):** the v2 Lens (`toggleLens`) computed clusters on EMPTY sky if opened during the cold warm-up window. Fix: `if (!skyReady) await ensureSky();` before the cluster compute (memoised; instant once warm). svelte-check still 0 errors after both fixes.
+
+## Claude-side verification + commits
+svelte-check **0 errors / 315 pre-existing warnings**; `cargo build --release` clean (1m 46s); `cargo test --lib` **936 passed / 0 failed / 7 ignored** (first run hit a transient Windows LNK1104 file-lock on the test exe; retry green). Binary mtime 2026-06-17 18:46. Commits: Architect+Plan `41781d71`, §C.2d-1 `23fdd45f`, §C.2d-2 `cff8f827`.
+
+## ⚑ Boss Stage-1 result — MEASURED WIN (2026-06-17 ~15:04, cold boot via PC restart)
+Boot-perf history boot **[22]** (`mqi7brj1`, cold after PC restart) vs the prior cold boots [20]/[21]:
+- **graph_ready: ~11,000–11,300 ms → 1,555 ms** (~7× reduction).
+- **cache_snapshot_graph_queue_ms: ~9,500–9,700 ms → 178 ms** (the sky no longer monopolises the IPC thread).
+- `read_tags=7 ms`; `hydrated=1,316 ms` (unchanged — responsiveness preserved).
+- **Boss observation:** "Sky View opened instantly" → the after-idle warm-up loaded the graph on the worker thread before the open, no freeze. Option B+ confirmed working.
+- **Stage 1 PASS.** Stage 2 (Editor-Surface Gate + Lens P2 + on-open spinner path + universe-switch stale-guard) pending.
+
+## ⚑ Boss Stage-2 result — ALL PASS (2026-06-17)
+Boss ran Stage 2 on the validated binary: **all pass.** Notes untouched (Editor-Surface Gate — Focus round-trip + tab switch, body intact); Lens shows real clusters (P2 fix confirmed); **opening Sky View in TWO universes opened instantly** (the per-universe warm-up + the `_skyEpoch` stale-guard both confirmed — each universe shows its own graph). **§C.2d is fully Boss-validated.**
+
+## §C.2d-3 — close-out (/simplify + SO #6 + manual)
+- **/simplify (4 cleanup agents on the diff):** code is CLEAN. Reuse — no action (`ensureSky`/`_skyEpoch`/open-trap intentionally mirror `ensureFullLinks`/`_linksEpoch`/`mapEverOpened`, idiomatic per-domain). Efficiency — no concerns (warm-up coalesces via `_skyPromise`; effects tightly gated; closure captures 2 ints; warm-up off the critical path). Altitude — correct depth (frontend deferral + async command); `graphReady`/`skyReady` cleanly separated. **3 optional micro-refactors DEFERRED** (not applied — would change the compiled bundle and invalidate the just-validated binary; secure-don't-muddle): (a) merge the open-trap + load-trigger into one `$effect` (marginal; but `skyEverOpened` IS read by the two federation guards, so it must stay a flag); (b) `skyReady`→`$derived` (declined — keeping a plain flag mirrors `linksReady`; the derived form is riskier); (c) extract a `refreshSkyIfOpen()` helper for the two federation re-route sites (trivial DRY; defer). Allocate a PJ at the next Pending Jobs bump if desired.
+- **SO #6:** orientation **v2.89** (NEW file, preserving v2.88) — preamble + §9.2 boot primitives + §15.2 boot pipeline + §17 (the `cache_boot_snapshot_sky`-bypass "mystery" resolved → now deferred by design). **User Manual** — Sky View "loads on open, not at startup" note (EN; ×15 rides the translation debt).
+- **State:** §C.2d-1 `23fdd45f`, §C.2d-2 `cff8f827`, docs close-out commit next. Validated binary unchanged (docs-only close-out).
