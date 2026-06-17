@@ -4666,62 +4666,108 @@ fn index_note(conn: &Connection, note_path: &str, library_name: &str, force: boo
             }
         }
 
-        // Populate note_links — preserve existing weight/traversal data on re-index
-        // Step 1: Snapshot existing traversal data before deleting
+        // Populate note_links. MIG-079 (perf, Boss-caught 2026-06-16): the DELETE-all
+        // + INSERT-all rebuild fires the per-edge Sky/stratum/maturity/outgoing triggers
+        // for EVERY link on EVERY save — O(N²) on a link-heavy note (measured ~40 s on a
+        // 531-link note). So compute the would-be edge set FIRST and SKIP the whole
+        // rebuild when it is byte-identical to what's stored (the overwhelmingly common
+        // text-only edit changes no links → zero edge writes → zero triggers → instant
+        // save). The skip is CONSERVATIVE: we rebuild unless every parse-derived field
+        // the rebuild would write (annotation, target_cid_cn, source_name, source_cid_cn,
+        // library_name) matches and every stored edge is already status='active' (the
+        // rebuild forces 'active', so an archived edge would NOT be a no-op).
+
+        // Fresh ("would-be") edges, deduped by (target_name, link_type) exactly like the
+        // INSERT OR IGNORE below (first wins), with the resolved target_cid_cn.
+        let mut new_edges: std::collections::HashMap<(String, String), (String, Option<String>)> =
+            std::collections::HashMap::new();
+        for tl in &typed_links {
+            let key = (tl.target.clone(), tl.link_type.clone());
+            if new_edges.contains_key(&key) {
+                continue;
+            }
+            // MIG-003 Step 3: target_cid_cn via note_meta.name (case-folded); NULL when
+            // the target is unresolved (orphan), same as before.
+            let target_cid_cn: Option<String> = conn
+                .query_row(
+                    "SELECT cid_cn FROM note_meta WHERE LOWER(name) = LOWER(?1) LIMIT 1",
+                    params![tl.target],
+                    |row| row.get(0),
+                )
+                .ok();
+            new_edges.insert(key, (tl.annotation.clone(), target_cid_cn));
+        }
+
+        // Stored edges + preserved traversal data, in one read.
         let mut preserved: std::collections::HashMap<String, (f64, String, i64, String, String)> =
+            std::collections::HashMap::new();
+        let mut old_edges: std::collections::HashMap<(String, String), (String, Option<String>, String, Option<String>, String, String)> =
             std::collections::HashMap::new();
         {
             let mut stmt = conn.prepare(
-                "SELECT target_name, link_type, weight, last_traversed, traversal_count, confidence, created
-                 FROM note_links WHERE source_path = ?1"
+                "SELECT target_name, link_type, annotation, target_cid_cn, source_name, source_cid_cn, library_name, status, weight, last_traversed, traversal_count, confidence, created
+                 FROM note_links WHERE source_path = ?1",
             ).map_err(|e| e.to_string())?;
             let rows = stmt.query_map(params![note_path], |row| {
                 Ok((
-                    row.get::<_, String>(0)?,  // target_name
-                    row.get::<_, String>(1)?,  // link_type
-                    row.get::<_, f64>(2)?,     // weight
-                    row.get::<_, String>(3)?,  // last_traversed
-                    row.get::<_, i64>(4)?,     // traversal_count
-                    row.get::<_, String>(5)?,  // confidence
-                    row.get::<_, String>(6)?,  // created
+                    row.get::<_, String>(0)?,            // target_name
+                    row.get::<_, String>(1)?,            // link_type
+                    row.get::<_, String>(2)?,            // annotation
+                    row.get::<_, Option<String>>(3)?,    // target_cid_cn
+                    row.get::<_, String>(4)?,            // source_name
+                    row.get::<_, Option<String>>(5)?,    // source_cid_cn
+                    row.get::<_, String>(6)?,            // library_name
+                    row.get::<_, String>(7)?,            // status
+                    row.get::<_, f64>(8)?,               // weight
+                    row.get::<_, String>(9)?,            // last_traversed
+                    row.get::<_, i64>(10)?,              // traversal_count
+                    row.get::<_, String>(11)?,           // confidence
+                    row.get::<_, String>(12)?,           // created
                 ))
             }).map_err(|e| e.to_string())?;
-            for row in rows {
-                if let Ok((target, ltype, w, lt, tc, conf, created)) = row {
-                    // Only preserve if link was actually traversed (tc > 0)
-                    if tc > 0 || w != 1.0 {
-                        let key = format!("{}::{}", ltype, target);
-                        preserved.insert(key, (w, lt, tc, conf, created));
-                    }
+            for row in rows.flatten() {
+                let (target, ltype, ann, tcc, sname, scc, lib, status, w, lt, tc, conf, created) = row;
+                if tc > 0 || w != 1.0 {
+                    preserved.insert(format!("{}::{}", ltype, target), (w, lt, tc, conf, created));
                 }
+                old_edges.insert((target, ltype), (ann, tcc, sname, scc, lib, status));
             }
         }
-        // Step 2: Delete and re-insert, restoring preserved data
-        conn.execute("DELETE FROM note_links WHERE source_path = ?1", params![note_path])
-            .map_err(|e| e.to_string())?;
-        for tl in &typed_links {
-            let key = format!("{}::{}", tl.link_type, tl.target);
-            // MIG-003 Step 3: target_cid_cn looked up via note_meta.name
-            // (case-folded against the wikilink target). NULL when the
-            // target is unresolved — caller is responsible for treating
-            // unresolved links as orphans, same as before.
-            let target_cid_cn: Option<String> = conn.query_row(
-                "SELECT cid_cn FROM note_meta WHERE LOWER(name) = LOWER(?1) LIMIT 1",
-                params![tl.target],
-                |row| row.get(0),
-            ).ok();
-            if let Some((w, lt, tc, conf, created)) = preserved.get(&key) {
-                conn.execute(
-                    "INSERT OR IGNORE INTO note_links (source_path, source_name, target_name, link_type, annotation, confidence, weight, created, last_traversed, traversal_count, library_name, status, source_cid_cn, target_cid_cn)
-                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, 'active', ?12, ?13)",
-                    params![note_path, name, tl.target, tl.link_type, tl.annotation, conf, w, created, lt, tc, library_name, cid_cn, target_cid_cn],
-                ).map_err(|e| format!("Failed to index link: {}", e))?;
-            } else {
-                conn.execute(
-                    "INSERT OR IGNORE INTO note_links (source_path, source_name, target_name, link_type, annotation, confidence, weight, created, last_traversed, traversal_count, library_name, status, source_cid_cn, target_cid_cn)
-                     VALUES (?1, ?2, ?3, ?4, ?5, 'hypothesis', 1.0, ?6, ?6, 0, ?7, 'active', ?8, ?9)",
-                    params![note_path, name, tl.target, tl.link_type, tl.annotation, now, library_name, cid_cn, target_cid_cn],
-                ).map_err(|e| format!("Failed to index link: {}", e))?;
+
+        // Would the rebuild be a no-op? (same key set; per key the annotation +
+        // target_cid_cn + source_name + source_cid_cn + library_name match; all active.)
+        let src_cid = cid_cn.as_str();
+        let unchanged = new_edges.len() == old_edges.len()
+            && new_edges.iter().all(|(k, (ann, tcc))| {
+                old_edges.get(k).map_or(false, |(o_ann, o_tcc, o_sname, o_scc, o_lib, o_status)| {
+                    o_status == "active"
+                        && o_ann == ann
+                        && o_tcc == tcc
+                        && o_sname == &name
+                        && o_scc.as_deref().unwrap_or("") == src_cid
+                        && o_lib == &library_name
+                })
+            });
+
+        if !unchanged {
+            conn.execute("DELETE FROM note_links WHERE source_path = ?1", params![note_path])
+                .map_err(|e| e.to_string())?;
+            for (key, (annotation, target_cid_cn)) in &new_edges {
+                let (target, link_type) = key;
+                let pkey = format!("{}::{}", link_type, target);
+                if let Some((w, lt, tc, conf, created)) = preserved.get(&pkey) {
+                    conn.execute(
+                        "INSERT OR IGNORE INTO note_links (source_path, source_name, target_name, link_type, annotation, confidence, weight, created, last_traversed, traversal_count, library_name, status, source_cid_cn, target_cid_cn)
+                         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, 'active', ?12, ?13)",
+                        params![note_path, name, target, link_type, annotation, conf, w, created, lt, tc, library_name, cid_cn, target_cid_cn],
+                    ).map_err(|e| format!("Failed to index link: {}", e))?;
+                } else {
+                    conn.execute(
+                        "INSERT OR IGNORE INTO note_links (source_path, source_name, target_name, link_type, annotation, confidence, weight, created, last_traversed, traversal_count, library_name, status, source_cid_cn, target_cid_cn)
+                         VALUES (?1, ?2, ?3, ?4, ?5, 'hypothesis', 1.0, ?6, ?6, 0, ?7, 'active', ?8, ?9)",
+                        params![note_path, name, target, link_type, annotation, now, library_name, cid_cn, target_cid_cn],
+                    ).map_err(|e| format!("Failed to index link: {}", e))?;
+                }
             }
         }
 
