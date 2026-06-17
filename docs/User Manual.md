@@ -128,6 +128,15 @@ Auto-promotion: ×1–2 → Hypothesis, ×3–9 → Evidence, ×10+ → Establis
 3. Click **Restore** on the row you want back (use **Show all** if you have more than twenty archived links).
 4. Link returns to active status — type, annotation, confidence, and traversal history intact; weight is recomputed from the traversal history, so a well-traveled link returns as strong as it left.
 
+#### Backlinks / Outgoing performance + summary toggles
+On notes with thousands of backlinks (a hub like *ISBN*), the Backlinks and Outgoing Links panels render only the rows currently on screen — the list gets its own scrollbar past ~50 items, so opening and scrolling a hub stays smooth no matter how many thousands of links it has.
+
+Two optional one-line **note summaries** are available, both **off by default** (for a leaner, faster view):
+- **Backlink/outgoing row summaries** — Settings → **Panels** → **Summaries** → *Note summaries*. When on, a one-line AI summary appears under each linked note in the Backlinks/Outgoing panels (for the first ~120 rows on very large lists).
+- **Note-title summary** — Settings → **Editor** → *Note title summary*. When on, the open note's own one-line summary shows directly under its title in the editor.
+
+Toggle either on or off at any time; turning a toggle off removes its summaries immediately.
+
 #### Tutorial 8 — One-shot confidence back-fill
 Use this when you imported notes from elsewhere, or if links existed before auto-promotion shipped: they may have high traversal counts but stale confidence.
 
