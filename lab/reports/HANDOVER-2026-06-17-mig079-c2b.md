@@ -1,3 +1,5 @@
+> **STATUS UPDATE (2026-06-17, later): §C.2b + §C.3 are BUILT + Claude-verified + committed+pushed (`6a4d5e20`), pending Boss runtime validation.** This file's "THE TASK" below is now DONE. See `lab/reports/SESSION-LOG-2026-06-17.md` for the build/verify/review record (svelte-check 0, cargo test 935/0, covering-index test, live-DB EXPLAIN rehearsal, adversarial review + 2 P1 fixes) and orientation v2.87. Next: Boss validates the rebuilt binary (mtime 10:30) → boot-history `graph_ready` drop + never-empty panels + the one-time `[link_boot_index]` diag line + Editor-Surface Gate; then close-out.
+
 # Handover — next session: MIG-079 §C.2b (defer the 234k `read_links` off boot) + §C.3
 
 **Prepared:** 2026-06-17 (after a long §C.2a session). **Branch:** `main` (all pushed). **Active universe:** "Eisa Cognitive Knowledge" (`E:\Constellation Universes\Eisa Cognitive Knowledge`, 7,653 notes, 1.83 GB). **Binary:** `src-tauri/target/release/constellation.exe` (rebuild: pure-Rust → `cargo build --release`; frontend change → `npm run build` first; close the app — the running `.exe` locks cargo).

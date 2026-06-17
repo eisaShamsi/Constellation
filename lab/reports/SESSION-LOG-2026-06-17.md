@@ -50,3 +50,19 @@
 
 ## Pending Boss runtime validation (the gate before "validated")
 Launch the rebuilt binary (mtime 2026-06-17 10:30). Stage 1: boot is faster (boot-history `graph_ready` drops from ~33 s) + Backlinks/Outgoing/Sky never-empty after open + the one-time `[link_boot_index]` diag line. Stage 2: Editor-Surface Gate (Focus round-trip, tab switch, body intact).
+
+## ⚑ Boss Stage-1 result + MEASURED pivot (SO #5 state-of-standing) — 2026-06-17 ~10:45
+
+**Boss findings (10:45 boot of the 10:30 binary):** boot ~20 s to populate (not the hoped ~2 s floor); backlink rows appear then a **~7 s freeze** before the list scrolls (Boss: pre-existing, "since we created it"); Sky View **PASS**; step-5 **lag/non-responsiveness/thrashing** within a note + switching notes (pre-existing).
+
+**Measured (boot-perf history `[15]` = the 10:45 boot — times are UTC `Z`, so `06:45:57Z` = 10:45 local; file mtime confirms):**
+- `read_links = None`, `cache_snapshot_graph_server_timings = [ensure_db=0, open_reader=0, read_tags=164, read_aliases=0]` → **§C.2b deferral WORKS** — the 234k link read is off the boot graph IPC; its body is **164 ms** (was ~11,500 ms).
+- `[link_boot_index] idx_link_boot built + stamped` in `diagnostics.log`; `idx_link_boot` confirmed present on the live DB → **§C.3 WORKS.**
+- **BUT `graph_ready = 16,935 ms`, of which `cache_snapshot_graph_queue_ms = 14,991 ms`** — the graph IPC sat ~15 s in the dispatcher QUEUE before its (now-trivial) body ran. The `ipc_arrival_log` shows `cache_boot_snapshot_sky` invoked at +2094 ms then a ~14.3 s gap with no other IPC → the graph waits behind **`cache_boot_snapshot_sky`**.
+- **`sky_links` = 233,995 rows** (measured) — the IDENTICAL twin of `note_links`. So §C.2b deferred ONE 234k cold read and the boot now waits ~15 s on its untouched twin (the Sky read).
+
+**Honest conclusion:** the Plan/handover mis-attributed the boot cost ENTIRELY to `read_links` (11 s). The data shows it was ~7 s of a ~24 s boot; the **Sky read (~15 s) is the co-equal/bigger half**, and the **234k-edge → JS main-thread load is the root of the panel/editor freezes** (deferring moved its timing, not its cost). §C.2b is a correct, committed ~7 s improvement — NOT the headline win.
+
+**Boss ruling (pivot):** **Kill the 234k in-memory edge array.** Switch Backlinks/Outgoing to **per-note SQLite queries** (like the write-time count badges) so the app NEVER holds all 234k links in JS. Cures the scroll-freeze + thrashing at the root; likely removes the Sky boot cost as a side effect. → opened as **MIG-079 §C.2c** (read-path change crossing Rust↔Svelte → `/migration`: Architect → Plan → approval → Build → Audit). WA#5 note: per-note backlink queries are the STANDARD PKM pattern (Obsidian/Logseq), not invention.
+
+**State protected on `main` (`6a4d5e20`):** §C.2b (edge deferral + `cache_full_links` + guards + 2 P1 fixes) + §C.3 (`idx_link_boot` covering index, built on the live DB). Functionally correct + never-empty verified by Boss (rows appear, Sky passes). Editor-Surface Gate (Stage 2) NOT yet run — deferred (the content path is structurally untouched, so low risk, but run it before final close).
