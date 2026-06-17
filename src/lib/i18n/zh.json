@@ -174,7 +174,9 @@
 			"indentWithTabs": "使用制表符缩进",
 			"indentWithTabsDesc": "按\"Tab\"键时使用制表符缩进。关闭后将使用 4 个空格缩进",
 			"tabSize": "制表符大小",
-			"tabSizeDesc": "一个制表符字符显示的空格数"
+			"tabSizeDesc": "一个制表符字符显示的空格数",
+			"noteTitleSummary": "笔记标题摘要",
+			"noteTitleSummaryDesc": "在编辑器中，将笔记的一行 AI 摘要直接显示在其标题下方。为使标题区域更简洁，默认关闭。"
 		},
 		"language": {
 			"title": "语言",
@@ -562,7 +564,10 @@
 			"panelReview": "复习",
 			"panelReviewDesc": "间隔重复复习队列",
 			"resetDefault": "重置为默认",
-			"resetDefaultDesc": "恢复默认面板布局（反向链接居左，出站链接居右）"
+			"resetDefaultDesc": "恢复默认面板布局（反向链接居左，出站链接居右）",
+			"summariesHeading": "摘要",
+			"noteSummaries": "笔记摘要",
+			"noteSummariesDesc": "在反向链接和出站链接面板中，于每条笔记下方显示一行 AI 摘要。默认关闭——为每一行获取摘要会使链接较多的笔记中的面板变慢。"
 		},
 		"debug": {
 			"intro": "只读诊断视图。启动性能评分卡根据 lab/boot-perf/BOOT-BUDGET.md 中定义的五个发布标准评估活跃宇宙的最后一次启动。",

@@ -174,7 +174,9 @@
 			"indentWithTabs": "Mit Tabs einrücken",
 			"indentWithTabsDesc": "Tabs zum Einrücken verwenden, wenn die \"Tab\"-Taste gedrückt wird. Deaktivieren, um mit 4 Leerzeichen einzurücken",
 			"tabSize": "Tab-Größe",
-			"tabSizeDesc": "Anzahl der Leerzeichen, die ein Tabulator-Zeichen darstellt"
+			"tabSizeDesc": "Anzahl der Leerzeichen, die ein Tabulator-Zeichen darstellt",
+			"noteTitleSummary": "Notiztitel-Zusammenfassung",
+			"noteTitleSummaryDesc": "Zeigt die einzeilige KI-Zusammenfassung der Notiz direkt unter ihrem Titel im Editor an. Standardmäßig deaktiviert für einen schlankeren Titelbereich."
 		},
 		"language": {
 			"title": "Sprache",
@@ -562,7 +564,10 @@
 			"panelReview": "Wiederholung",
 			"panelReviewDesc": "Wiederholungswarteschlange für Karteikarten",
 			"resetDefault": "Auf Standard zurücksetzen",
-			"resetDefaultDesc": "Standard-Panel-Layout wiederherstellen (Rückverweise links, Ausgehende rechts)"
+			"resetDefaultDesc": "Standard-Panel-Layout wiederherstellen (Rückverweise links, Ausgehende rechts)",
+			"summariesHeading": "Zusammenfassungen",
+			"noteSummaries": "Notiz-Zusammenfassungen",
+			"noteSummariesDesc": "Zeigt unter jeder Notiz in den Bereichen „Rückverweise“ und „Ausgehende Links“ eine einzeilige KI-Zusammenfassung an. Standardmäßig deaktiviert – das Abrufen einer Zusammenfassung pro Zeile verlangsamt die Bereiche bei stark verlinkten Notizen."
 		},
 		"debug": {
 			"intro": "Schreibgeschützte Diagnoseansicht. Die Boot-Leistungsbewertung prüft die fünf Versandkriterien aus lab/boot-perf/BOOT-BUDGET.md gegen den letzten Start im aktiven Universum.",

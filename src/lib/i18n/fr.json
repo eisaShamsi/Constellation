@@ -174,7 +174,9 @@
 			"indentWithTabs": "Indenter avec des tabulations",
 			"indentWithTabsDesc": "Utiliser des tabulations pour indenter en appuyant sur la touche \"Tab\". Désactiver pour indenter avec 4 espaces",
 			"tabSize": "Taille de tabulation",
-			"tabSizeDesc": "Nombre d'espaces qu'un caractère de tabulation représente"
+			"tabSizeDesc": "Nombre d'espaces qu'un caractère de tabulation représente",
+			"noteTitleSummary": "Résumé du titre de la note",
+			"noteTitleSummaryDesc": "Affiche le résumé d'une ligne généré par IA de la note directement sous son titre dans l'éditeur. Désactivé par défaut pour une zone de titre plus épurée."
 		},
 		"language": {
 			"title": "Langue",
@@ -562,7 +564,10 @@
 			"panelReview": "Révision",
 			"panelReviewDesc": "File d'attente de révision par répétition espacée",
 			"resetDefault": "Réinitialiser les paramètres par défaut",
-			"resetDefaultDesc": "Restaurer la disposition par défaut (Rétroliens à gauche, Sortants à droite)"
+			"resetDefaultDesc": "Restaurer la disposition par défaut (Rétroliens à gauche, Sortants à droite)",
+			"summariesHeading": "Résumés",
+			"noteSummaries": "Résumés de notes",
+			"noteSummariesDesc": "Affiche un résumé d'une ligne généré par IA sous chaque note dans les panneaux Rétroliens et Liens sortants. Désactivé par défaut — récupérer un résumé pour chaque ligne ralentit les panneaux sur les notes très liées."
 		},
 		"debug": {
 			"intro": "Vue diagnostique en lecture seule. La fiche de performance au démarrage évalue les cinq critères définis dans lab/boot-perf/BOOT-BUDGET.md par rapport au dernier lancement sur l'Univers actif.",

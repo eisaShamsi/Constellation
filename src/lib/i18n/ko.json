@@ -174,7 +174,9 @@
 			"indentWithTabs": "탭으로 들여쓰기",
 			"indentWithTabsDesc": "\"Tab\" 키를 눌러 탭으로 들여쓰기합니다. 끄면 4개의 공백으로 들여쓰기합니다",
 			"tabSize": "탭 크기",
-			"tabSizeDesc": "탭 문자가 표시되는 공백 수"
+			"tabSizeDesc": "탭 문자가 표시되는 공백 수",
+			"noteTitleSummary": "노트 제목 요약",
+			"noteTitleSummaryDesc": "편집기에서 노트의 한 줄 AI 요약을 제목 바로 아래에 표시합니다. 더 간결한 제목 영역을 위해 기본값은 끄기입니다."
 		},
 		"language": {
 			"title": "언어",
@@ -562,7 +564,10 @@
 			"panelReview": "복습",
 			"panelReviewDesc": "간격 반복 복습 대기열",
 			"resetDefault": "기본값으로 재설정",
-			"resetDefaultDesc": "기본 패널 레이아웃 복원"
+			"resetDefaultDesc": "기본 패널 레이아웃 복원",
+			"summariesHeading": "요약",
+			"noteSummaries": "노트 요약",
+			"noteSummariesDesc": "백링크 및 발신 링크 패널에서 각 노트 아래에 한 줄 AI 요약을 표시합니다. 기본값은 끄기 — 모든 행에 대해 요약을 가져오면 링크가 많은 노트에서 패널이 느려집니다."
 		},
 		"debug": {
 			"intro": "읽기 전용 진단 보기. 부트 성능 스코어카드는 lab/boot-perf/BOOT-BUDGET.md에 정의된 5가지 출시 기준을 활성 유니버스의 마지막 실행과 비교해 평가합니다.",

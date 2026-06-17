@@ -174,7 +174,9 @@
 			"indentWithTabs": "Sangrar con tabulaciones",
 			"indentWithTabsDesc": "Usar tabulaciones para sangrar al presionar la tecla \"Tab\". Desactivar para sangrar con 4 espacios",
 			"tabSize": "Tamaño de tabulación",
-			"tabSizeDesc": "Número de espacios que representa un carácter de tabulación"
+			"tabSizeDesc": "Número de espacios que representa un carácter de tabulación",
+			"noteTitleSummary": "Resumen del título de la nota",
+			"noteTitleSummaryDesc": "Muestra el resumen de una línea generado por IA de la nota directamente bajo su título en el editor. Desactivado por defecto para un área de título más ligera."
 		},
 		"language": {
 			"title": "Idioma",
@@ -562,7 +564,10 @@
 			"panelReview": "Revisión",
 			"panelReviewDesc": "Cola de revisión con repetición espaciada",
 			"resetDefault": "Restablecer valores predeterminados",
-			"resetDefaultDesc": "Restaurar el diseño predeterminado (Backlinks izquierda, Salientes derecha)"
+			"resetDefaultDesc": "Restaurar el diseño predeterminado (Backlinks izquierda, Salientes derecha)",
+			"summariesHeading": "Resúmenes",
+			"noteSummaries": "Resúmenes de notas",
+			"noteSummariesDesc": "Muestra un resumen de una línea generado por IA bajo cada nota en los paneles Backlinks y Enlaces salientes. Desactivado por defecto: obtener un resumen para cada fila ralentiza los paneles en notas con muchos enlaces."
 		},
 		"debug": {
 			"intro": "Vista de diagnóstico de solo lectura. La tarjeta de rendimiento de arranque evalúa los cinco criterios definidos en lab/boot-perf/BOOT-BUDGET.md contra el último inicio en el Universo activo.",

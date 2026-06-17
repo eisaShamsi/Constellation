@@ -174,7 +174,9 @@
 			"indentWithTabs": "Recuar com tabulações",
 			"indentWithTabsDesc": "Usar tabulações para recuar ao pressionar a tecla \"Tab\". Desative para recuar com 4 espaços",
 			"tabSize": "Tamanho da tabulação",
-			"tabSizeDesc": "Número de espaços que um caractere de tabulação representa"
+			"tabSizeDesc": "Número de espaços que um caractere de tabulação representa",
+			"noteTitleSummary": "Resumo do título da nota",
+			"noteTitleSummaryDesc": "Mostra o resumo de uma linha gerado por IA da nota diretamente sob o seu título no editor. Desativado por padrão para uma área de título mais enxuta."
 		},
 		"language": {
 			"title": "Idioma",
@@ -562,7 +564,10 @@
 			"panelReview": "Revisão",
 			"panelReviewDesc": "Fila de revisão com repetição espaçada",
 			"resetDefault": "Redefinir para padrão",
-			"resetDefaultDesc": "Restaurar o layout padrão de painéis"
+			"resetDefaultDesc": "Restaurar o layout padrão de painéis",
+			"summariesHeading": "Resumos",
+			"noteSummaries": "Resumos de notas",
+			"noteSummariesDesc": "Mostra um resumo de uma linha gerado por IA sob cada nota nos painéis Backlinks e Links de saída. Desativado por padrão — buscar um resumo para cada linha torna os painéis lentos em notas com muitos links."
 		},
 		"debug": {
 			"intro": "Visualização de diagnóstico somente leitura. O scorecard de desempenho de inicialização avalia os cinco critérios de envio definidos em lab/boot-perf/BOOT-BUDGET.md em relação à última inicialização no Universo ativo.",

@@ -174,7 +174,9 @@
 			"indentWithTabs": "タブでインデント",
 			"indentWithTabsDesc": "「Tab」キーを押してタブでインデントします。オフにすると4つのスペースでインデントします",
 			"tabSize": "タブサイズ",
-			"tabSizeDesc": "タブ文字が表示されるスペース数"
+			"tabSizeDesc": "タブ文字が表示されるスペース数",
+			"noteTitleSummary": "ノートタイトルの要約",
+			"noteTitleSummaryDesc": "エディターでノートの1行AI要約をタイトルの直下に表示します。タイトル領域をすっきりさせるため、既定ではオフです。"
 		},
 		"language": {
 			"title": "言語",
@@ -562,7 +564,10 @@
 			"panelReview": "レビュー",
 			"panelReviewDesc": "間隔反復レビューキュー",
 			"resetDefault": "デフォルトにリセット",
-			"resetDefaultDesc": "デフォルトのパネルレイアウトを復元する"
+			"resetDefaultDesc": "デフォルトのパネルレイアウトを復元する",
+			"summariesHeading": "要約",
+			"noteSummaries": "ノートの要約",
+			"noteSummariesDesc": "バックリンクと発リンクのパネルで、各ノートの下に1行のAI要約を表示します。既定ではオフ — 各行の要約を取得すると、リンクの多いノートでパネルが遅くなります。"
 		},
 		"debug": {
 			"intro": "読み取り専用の診断ビュー。ブートパフォーマンススコアカードは、lab/boot-perf/BOOT-BUDGET.mdで定義された5つの出荷基準をアクティブユニバースでの最後の起動と照合して評価します。",

@@ -174,7 +174,9 @@
 			"indentWithTabs": "Sekmelerle girintile",
 			"indentWithTabsDesc": "\"Tab\" tuşuna basarak sekmelerle girintileyin. 4 boşlukla girintilemek için kapatın",
 			"tabSize": "Sekme boyutu",
-			"tabSizeDesc": "Bir sekme karakterinin görüntüleneceği boşluk sayısı"
+			"tabSizeDesc": "Bir sekme karakterinin görüntüleneceği boşluk sayısı",
+			"noteTitleSummary": "Not başlığı özeti",
+			"noteTitleSummaryDesc": "Notun tek satırlık yapay zekâ özetini düzenleyicide doğrudan başlığının altında gösterir. Daha sade bir başlık alanı için varsayılan olarak kapalı."
 		},
 		"language": {
 			"title": "Dil",
@@ -562,7 +564,10 @@
 			"panelReview": "Gözden Geçirme",
 			"panelReviewDesc": "Aralıklı tekrar gözden geçirme kuyruğu",
 			"resetDefault": "Varsayılana sıfırla",
-			"resetDefaultDesc": "Varsayılan panel düzenini geri yükle"
+			"resetDefaultDesc": "Varsayılan panel düzenini geri yükle",
+			"summariesHeading": "Özetler",
+			"noteSummaries": "Not özetleri",
+			"noteSummariesDesc": "Geri Bağlantılar ve Giden Bağlantılar panellerinde her notun altında tek satırlık yapay zekâ özeti gösterir. Varsayılan olarak kapalı — her satır için özet getirmek, çok bağlantılı notlarda panelleri yavaşlatır."
 		},
 		"debug": {
 			"intro": "Salt okunur tanı görünümü. Önyükleme performansı puan kartı, lab/boot-perf/BOOT-BUDGET.md'de tanımlanan beş sevkiyat kriteri gatini aktif Evrendeki son başlatmaya karşı değerlendirir.",
