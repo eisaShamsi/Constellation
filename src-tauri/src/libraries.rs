@@ -4315,15 +4315,32 @@ fn collect_notes_meta_recursive(
 
 /// Get daily note path for today.
 #[tauri::command]
-pub fn get_daily_note_path(app: tauri::AppHandle, library_path: String, format: String, folder: String) -> Result<String, String> {
+pub fn get_daily_note_path(app: tauri::AppHandle, library_path: String, format: String, folder: String, date: Option<String>) -> Result<String, String> {
     validate_path_in_any_library(&app, &library_path)?;
     if !folder.is_empty() {
         if folder.contains("..") || folder.contains('\\') || folder.starts_with('/') {
             return Err("Folder name contains invalid characters.".to_string());
         }
     }
-    let now = chrono::Local::now();
-    let filename = now.format(&format).to_string();
+    // MIG-079 §D (Calendar day-click bug): honour the explicitly-clicked date when
+    // provided (YYYY-MM-DD from CalendarPanel); otherwise default to today. Previously
+    // this ALWAYS used `Local::now()` and ignored the clicked date — so clicking any
+    // day opened/created TODAY's note. `None` preserves the "open today" callers
+    // (handleOpenDailyNote). Format applied to a midnight datetime so date-only AND
+    // any time specifiers in `format` render correctly.
+    let (filename, fm_date) = match date.as_deref().filter(|d| !d.is_empty()) {
+        Some(d) => {
+            let nd = chrono::NaiveDate::parse_from_str(d, "%Y-%m-%d")
+                .map_err(|e| format!("Invalid daily-note date '{}': {}", d, e))?;
+            let dt = nd.and_hms_opt(0, 0, 0)
+                .ok_or_else(|| "Invalid date components".to_string())?;
+            (dt.format(&format).to_string(), nd.format("%Y-%m-%d").to_string())
+        }
+        None => {
+            let now = chrono::Local::now();
+            (now.format(&format).to_string(), now.format("%Y-%m-%d").to_string())
+        }
+    };
     let daily_folder = if folder.is_empty() {
         Path::new(&library_path).to_path_buf()
     } else {
@@ -4336,9 +4353,9 @@ pub fn get_daily_note_path(app: tauri::AppHandle, library_path: String, format: 
 
     // Create the file if it doesn't exist
     if !file_path.exists() {
-        let content = format!("---\ndate: {}\n---\n", now.format("%Y-%m-%d"));
+        let content = format!("---\ndate: {}\n---\n", fm_date);
         // MIG-076 §A2 — create-exclusive; RefusedExists means another writer
-        // created today's note in the race window — that IS the goal, proceed.
+        // created the note in the race window — that IS the goal, proceed.
         crate::write_gate::gate_create_exclusive(&file_path, &content, "daily_note")?;
     }
 

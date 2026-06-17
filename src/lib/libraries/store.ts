@@ -3121,8 +3121,9 @@ export function buildSkyData(
 }
 
 // ─── Daily notes ───
-export async function getDailyNotePath(libraryPath: string, format = '%Y-%m-%d', folder = ''): Promise<string> {
-	return await invoke('get_daily_note_path', { libraryPath, format, folder });
+export async function getDailyNotePath(libraryPath: string, format = '%Y-%m-%d', folder = '', date?: string): Promise<string> {
+	// MIG-079 §D: `date` (YYYY-MM-DD) opens that day's daily note; omit it for today.
+	return await invoke('get_daily_note_path', { libraryPath, format, folder, date });
 }
 
 // ─── Link update on rename ───

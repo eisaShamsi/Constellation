@@ -153,7 +153,10 @@
 				class:has-notes={cell.noteCount > 0}
 				class:has-tasks={cell.taskCount > 0}
 				onclick={() => onDayClick(cell.dateStr)}
-				title={cell.noteCount > 0 ? `${cell.noteCount} notes` : ''}
+				title={[
+					cell.noteCount > 0 ? $t('calendarPanel.notesCount', { count: cell.noteCount.toLocaleString() }) : '',
+					cell.taskCount > 0 ? $t('calendarPanel.tasksCount', { count: cell.taskCount.toLocaleString() }) : ''
+				].filter(Boolean).join(' · ')}
 			>
 				<span class="cp-day-num">{cell.day}</span>
 				{#if cell.noteCount > 0 || cell.taskCount > 0}

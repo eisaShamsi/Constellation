@@ -171,3 +171,19 @@ Cross-checked each handover-deferred item against the CURRENT code before touchi
 - **status-predicate nit — DEFERRED.** Confirmed `!= 'archived'` (per-note, cache.rs:477/505) vs `= 'active'` (legacy, 1218/2113); **identical on the all-active DB** (zero observable change). Explicitly a "later, if a 3rd lifecycle state is added" alignment — not worth a rebuild today.
 - **split-pane ×N chips — DEFERRED.** That's a *feature* completion (P1), not a cleanup; needs its own build+test.
 - **§C.2d micro-refactors — DEFERRED.** Marginal (merge 2 effects — but `skyEverOpened` is read by the federation guards, so it must stay a flag; `skyReady`→derived declined for `linksReady` parity; extract `refreshSkyIfOpen()` — trivial DRY). Not worth touching the validated binary.
+
+---
+
+# §D — Phase-by-phase bring-up (Boss: "Start §D bring-up now")
+
+> **Function in hand (D-1):** the **Calendar** panel's day-click → daily-note open (`CalendarPanel.svelte` + `+layout.svelte:7261` `onDayClick` + `get_daily_note_path`). Concept paper `docs/concept-papers/21-Calendar.md`; confirmed defect §7.E.1.
+
+§D = re-enable each function against its concept-paper §10 checklist; the confirmed defects (§7.E) are fixed in their phase. Phases 1–3 (core / search / backlinks-graph-tags) are effectively done (the §C.2b/c/d work). Started with the highest-value confirmed defect.
+
+## D-1 — Calendar day-click bug (BUILT; pending Boss test)
+- **Reproduce-First (deterministic logic bug, traced end-to-end):** `CalendarPanel.svelte:61` emits `dateStr` as `YYYY-MM-DD` → `+layout.svelte:7261 onDayClick(dateStr)` → the `invoke('get_daily_note_path', …)` **dropped `dateStr`** → `libraries.rs:4318` used `chrono::Local::now()` for BOTH the filename and the `date:` frontmatter, taking no date param. So clicking ANY day created/opened **today's** note. Boss recipe: click a non-today day → today's note opens.
+- **WA#4 impact (all callers checked):** only 3 primary-location callers — `store.ts:3124` wrapper, `+layout.svelte:4007` (`handleOpenDailyNote` — the "open TODAY" command, must stay today), `+layout.svelte:7266` (Calendar). (The nested `ConstellationEditor/` copies are ignored per WA#2.)
+- **Fix (backward-compatible optional param):** `get_daily_note_path` gains `date: Option<String>` — `Some(YYYY-MM-DD)` → parse `NaiveDate`, format a midnight `NaiveDateTime` for the filename + `%Y-%m-%d` for the frontmatter; `None` → `Local::now()` (preserves `handleOpenDailyNote`). `store.ts` wrapper gains optional `date?`; the Calendar `invoke` now passes `date: dateStr`. Same sanctioned create path (`gate_create_exclusive`) — content-integrity model untouched (creates a fresh dated daily note, same as before).
+- **Folded-in (same component, §10 multilingual checklist):** the hardcoded English `\`${count} notes\`` day tooltip → `$t('calendarPanel.notesCount', { count })` + added the missing `tasksCount` tooltip (both keys already in all 15 locales; `.toLocaleString()` for locale digits). svelte-check caught a `number`→`string` `$t`-values typing error → fixed before build (Test-Before-Commit).
+- **Not /migration** (local bug fix per the Migration Rule; covered under the approved MIG-079 §D umbrella). svelte-check **0 errors**; `cargo check` clean. Binary rebuild in progress.
+- **Remaining Calendar §10 items (documented, not in this fix):** right-click menu via shared `<ContextMenu>` (MIG-077 "genuinely missing"); Rule-8 WTD for the dot-scan (`scan_library_note_dates`/`scan_library_tasks` re-walk on panel open → persist per-date counts).

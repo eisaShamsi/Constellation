@@ -7267,6 +7267,7 @@
 										libraryPath: lib.path,
 										format: get(appSettings).dailyNoteFormat || '%Y-%m-%d',
 										folder: get(appSettings).dailyNoteFolder || '',
+										date: dateStr, // MIG-079 §D — open the CLICKED day's note, not today's
 									});
 									const vc = libraryColorMap[lib.name] || '#7c3aed';
 									await openNoteTab(dailyPath, lib.name, vc);
