@@ -23,7 +23,7 @@
 		navigateBack, navigateForward,
 		scanLibraryLinks, scanLibraryTags, getBacklinks, getOutgoingLinks, scanUnlinkedMentions,
 		scanLibraryIndex, readIndexEntries, readTermMentions, readCooccurringTerms,
-		buildSkyData, readNotePreview,
+		readNotePreview,
 		getDailyNotePath, updateLinksOnRename, getOldTitleForCascade, reloadTabsFromDisk,
 		flushAllTabsInLibrary, markCascading, clearCascading, clearAllCascading,
 		tabsInLibrary, quickCapture, cascadeFreeze,
@@ -934,6 +934,81 @@
 	// shows a "loading" state instead of a misleading empty one while edges load.
 	// The COUNT badges are independent (write-time `incoming_count`/`outgoing_count`).
 	let linksReady = $state(false);
+
+	// ═══ MIG-079 §C.2d — deferred Sky read (lazy on first open + after-idle warm-up) ═══
+	// The 234k-row sky_links read is no longer on the boot critical path (it was the
+	// remaining ~11s boot stall — a synchronous IPC that monopolised the dispatch
+	// thread; measured off the IPC arrival trace). It now loads the first time ANY
+	// sky-data surface becomes visible (the open-trap $effect below), AND is warmed up
+	// in the background after boot:graph-ready (see loadGraph). Both paths funnel
+	// through the memoised `ensureSky()`; an explicit open before the warm-up finishes
+	// coalesces onto the same in-flight load. `cache_boot_snapshot_sky` is async
+	// (§C.2d-1) so neither path blocks the IPC/main thread.
+	let skyEverOpened = $state(false);
+	let skyReady = $state(false);
+	// Mirrors `_linksEpoch`: bumped on universe switch so an in-flight sky load from
+	// the OLD universe that resolves AFTER the switch is discarded (never writes the
+	// previous universe's bubbles into the new one).
+	let _skyEpoch = 0;
+	let _skyPromise: Promise<void> | null = null;
+	// Bumped on every forced refresh (federation:ready re-fetch). A force nulls the
+	// memo and starts a NEW read; without this counter a SLOWER in-flight read from
+	// the SAME epoch (e.g. the boot warm-up, started before cUniverses attached and
+	// returning parent-only data) could resolve AFTER the forced federated read and
+	// clobber it — the epoch guard only covers universe switches, not same-epoch
+	// double-loads. Each load captures the generation at entry and discards itself if
+	// a later force superseded it. (Audit P1, MIG-079 §C.2d.)
+	let _skyGeneration = 0;
+	async function ensureSky(force = false): Promise<void> {
+		// Safe boot is editor-only — no sky surfaces, no read.
+		if (get(appSettings)?.safeBootMode) { skyReady = true; return; }
+		if (force) { _skyPromise = null; _skyGeneration++; }
+		if (_skyPromise) return _skyPromise;
+		const epoch = _skyEpoch;
+		const generation = _skyGeneration;
+		_skyPromise = (async () => {
+			try {
+				const sky = await invoke<{ nodes: SkyNode[]; links: SkyLink[]; isReady: boolean }>('cache_boot_snapshot_sky');
+				// Discard if a universe switch (epoch) OR a newer forced refresh
+				// (generation) superseded this read while it was in flight.
+				if (epoch !== _skyEpoch || generation !== _skyGeneration) return;
+				if (sky && sky.isReady) {
+					skyNodes = sky.nodes;
+					skyLinks = sky.links;
+					skyVersion++;
+					skyReady = true;
+				} else {
+					// Mid-backfill (is_ready=false): not ready yet. Clear the memo so a
+					// later trigger (federation:ready / next open) retries. Do NOT use the
+					// buildSkyData fallback — it is a no-op under perNoteLinkQueries.
+					_skyPromise = null;
+				}
+			} catch (e) {
+				console.warn('[sky] ensureSky failed:', e);
+				// Allow a later retry — but only if neither a universe switch nor a
+				// newer forced refresh has already taken ownership of _skyPromise.
+				if (epoch === _skyEpoch && generation === _skyGeneration) _skyPromise = null;
+			}
+		})();
+		return _skyPromise;
+	}
+	// Open-trap: the first time any sky-data surface becomes visible, flip the flag
+	// (mirrors the mapEverOpened/orgChartEverOpened LL-022 pattern at :654-657).
+	$effect(() => {
+		if (
+			showSkyView || lensActive || sightV3Active || sightV4Active ||
+			sightV6Active || sightV7Active || showWiW || showExpressionForge ||
+			(rightSidebarOpen && rightSidebarTab === 'star')
+		) {
+			skyEverOpened = true;
+		}
+	});
+	// Load-trigger: once opened, lazily load the sky snapshot (memoised; coalesces
+	// with the background warm-up). Re-runs harmlessly once skyReady flips true.
+	$effect(() => {
+		if (skyEverOpened && !skyReady) void ensureSky();
+	});
+
 	let searchLinkCounts = $state(new Map<string, { incoming: number }>());
 	// §139: SvelteMap (Svelte 5 explicitly-reactive Map). Mutations like
 	// .set() / .delete() trigger reactivity at the operation level — no
@@ -2457,6 +2532,19 @@
 		mapEverOpened = false;
 		orgChartEverOpened = false;
 		catalogerEverOpened = false;
+		// MIG-079 §C.2d — reset the deferred-sky state so the new universe re-loads
+		// its own graph on first open (and the warm-up re-fires). Bump the epoch so an
+		// in-flight OLD-universe sky load that resolves after this reset is discarded
+		// (INV-3 — closes a pre-existing stale-sky race: skyNodes was never reset here).
+		skyNodes = [];
+		skyLinks = [];
+		skyVersion++;
+		skyEverOpened = false;
+		skyReady = false;
+		_skyEpoch++;
+		_skyPromise = null;
+		localSkyNodes = [];
+		localSkyLinks = [];
 		inspector360EverOpened = false;
 		inspector360Data = null;
 		inspector360BackStack = [];
@@ -2741,21 +2829,11 @@
 			// MIG-079 §B — minimal/safe boot: do not re-invoke the satellite
 			// snapshots (the graph re-fetch is the 30s recompute we are skipping).
 			if (get(appSettings)?.safeBootMode) return;
-			// Refresh sky (CNS / Sky View) — listener already guards isReady.
-			try {
-				type SkySnapshot = {
-					nodes: SkyNode[];
-					links: SkyLink[];
-					isReady: boolean;
-					timingsMs: Array<[string, number]>;
-				};
-				const sky = await invoke<SkySnapshot>('cache_boot_snapshot_sky');
-				if (sky && sky.isReady && sky.nodes.length >= skyNodes.length) {
-					skyNodes = sky.nodes;
-					skyLinks = sky.links;
-					skyVersion++;
-				}
-			} catch {}
+			// MIG-079 §C.2d — refresh sky ONLY if a sky surface is open; otherwise the
+			// read stays deferred (don't re-introduce the boot read for a closed view).
+			// ensureSky(true) resets the memo, re-invokes the now-async command, and is
+			// epoch-guarded against universe switches.
+			if (skyEverOpened) { try { await ensureSky(true); } catch {} }
 			// Refresh graph (Backlinks / Outgoing / Tags / Aliases).
 			// BootSnapshotGraph has no isReady field; the §M code returns
 			// empty arrays when federated_conn is None mid-race. So we
@@ -2806,20 +2884,9 @@
 		// MIG-061 §N — defensive re-invoke after initializeApp.
 		// Refreshes BOTH sky and graph (§N extends §J.2 to cover the graph
 		// payload that feeds Backlinks/Outgoing).
-		try {
-			type SkySnapshot2 = {
-				nodes: SkyNode[];
-				links: SkyLink[];
-				isReady: boolean;
-				timingsMs: Array<[string, number]>;
-			};
-			const sky2 = await invoke<SkySnapshot2>('cache_boot_snapshot_sky');
-			if (sky2 && sky2.isReady && sky2.nodes.length > skyNodes.length) {
-				skyNodes = sky2.nodes;
-				skyLinks = sky2.links;
-				skyVersion++;
-			}
-		} catch {}
+		// MIG-079 §C.2d — defensive post-init sky refresh, deferred unless a sky
+		// surface is already open (ensureSky is memoised + epoch-guarded).
+		if (skyEverOpened) { try { await ensureSky(true); } catch {} }
 		try {
 			type GraphSnapshot2 = {
 				links: NoteLink[];
@@ -3325,28 +3392,14 @@
 				};
 				const graphInvokeStart = performance.now();
 				const graphInvokeStartUnixMs = Date.now();
-				// MIG-001 Step 9 (parallel): kick off the pre-shaped sky_*
-				// payload invoke CONCURRENTLY with the classic graph IPC.
-				// SQLite WAL allows both read commands to hit their own
-				// dedicated connections without contention. Total wall time
-				// becomes max(graph_ipc, sky_ipc) instead of their sum — on
-				// the target universe this is bounded by the slower graph
-				// IPC (~7s) and makes the sky IPC effectively free.
-				type SkySnapshot = {
-					nodes: SkyNode[];
-					links: SkyLink[];
-					isReady: boolean;
-					timingsMs: Array<[string, number]>;
-				};
-				const skyPromise = (async (): Promise<SkySnapshot | null> => {
-					if (get(appSettings)?.safeBootMode) return null; // MIG-079 §B — minimal boot
-					try {
-						return await invoke<SkySnapshot>('cache_boot_snapshot_sky');
-					} catch (err) {
-						console.warn('[sky] cache_boot_snapshot_sky failed, falling back to buildSkyData:', err);
-						return null;
-					}
-				})();
+				// MIG-079 §C.2d — the sky_* snapshot is NO LONGER read at boot.
+				// It was the remaining ~11s boot stall (the synchronous
+				// cache_boot_snapshot_sky monopolised the IPC dispatch thread —
+				// measured: an 11.4s gap with no other IPC). The sky read now
+				// happens lazily on first Sky-surface open (the open-trap $effect)
+				// and is warmed up in the background after boot:graph-ready (below),
+				// both via the memoised ensureSky(). loadGraph fetches only the
+				// graph payload (tags + aliases) now.
 				try {
 					// MIG-079 §B — minimal/safe boot skips the ~30s graph recompute
 					// (read_links 234k rows + read_tags). Editor + file tree only.
@@ -3396,50 +3449,13 @@
 						notePathToAliases.set(a.path, list);
 					}
 				}
-				const libraryList = $libraries;
-				// Resolve the parallel sky snapshot kicked off earlier.
-				// If the graph IPC took longer (common), this await is
-				// free — the sky payload is already in hand. Fallback
-				// to buildSkyData when the back-fill hasn't stamped
-				// schema_versions.sky yet or the IPC errored.
-				const sky = await skyPromise;
-				// Enter this block if EITHER source can produce a graph:
-				// graph IPC returned links, OR sky IPC is ready. The old
-				// guard skipped sky assignment entirely when graph failed
-				// (links=[]) even if sky had data — the graph-failure
-				// fallback path would leave Sky View empty.
-				// MIG-079 §C.2b: edges deferred — Sky uses the write-time sky_*
-				// payload; the buildSkyData fallback below awaits ensureFullLinks().
-				if (libraryList.length > 0) {
-					if (sky && sky.isReady) {
-						// Trust the readiness flag — a zero-node Universe
-						// with isReady=true is legitimately empty; falling
-						// back would produce the same empty result.
-						skyNodes = sky.nodes;
-						skyLinks = sky.links;
-						skyVersion++;
-					} else {
-						// MIG-005-PARITY: pass notePathToAliases so the
-						// buildSkyData fallback can resolve renamed-target
-						// wikilinks via the alias map — same alias-aware
-						// resolution the cache_boot_snapshot_sky path
-						// performs server-side. Without this, the fallback
-						// silently drops every edge whose target was renamed.
-						// MIG-079 §C.2b — source edges from the deferred lazy load.
-						await ensureFullLinks();
-						if (allLibraryLinks.length > 0) {
-							const { nodes, links: gLinks } = buildSkyData(allLibraryLinks, allNotes, notePathToAliases);
-							skyNodes = nodes;
-							skyLinks = gLinks;
-							skyVersion++;
-						}
-					}
-				}
+				// MIG-079 §C.2d — sky is no longer assigned here. Skywards rendering
+				// (Sky View / CNS / Lens / Sight) loads via ensureSky() on first open
+				// + the after-idle warm-up below; boot:graph-ready no longer waits on
+				// the 234k-row sky read.
 
-				// Measure how long applying the graph to reactive state took.
-				// Captured AFTER buildSkyData since that synchronously iterates
-				// the full link set on the main thread (store.ts:1504-1543) and
-				// is part of the "cost of receiving the graph payload" bucket.
+				// Measure how long applying the graph (tags + aliases) to reactive
+				// state took. Cheap now that the sky assignment moved off this path.
 				cacheSnapshotGraphAssignMs = Math.round(performance.now() - graphPostInvokePerfMs);
 
 				// Signal: Sky View / backlinks / tag browser can now use the
@@ -3454,6 +3470,12 @@
 					// one invoke. requestIdleCallback keeps it off the paint that
 					// just completed; the panels guard on `linksReady` meanwhile.
 					schedule(() => { void ensureFullLinks(); });
+					// MIG-079 §C.2d — after-idle background warm-up of the deferred sky
+					// read (Boss-approved Option B+). Memoized: a Sky-surface open that
+					// lands first coalesces onto this same invoke. Runs on the worker
+					// thread (async command), AFTER graph-ready, so it never blocks boot;
+					// makes the first Sky/CNS/Lens/Sight open instant when it has finished.
+					schedule(() => { void ensureSky().catch(() => {}); });
 			} finally {
 				cacheRefreshing = false;
 			}
@@ -4123,7 +4145,14 @@
 		}
 
 		lensLoading = true;
+		// MIG-079 §C.2d — sky is deferred (lazy on open + after-idle warm-up). The
+		// Lens analytics below (detectClusters / structural gaps) read skyNodes/
+		// skyLinks, so ensure the snapshot is loaded first or they compute on an
+		// EMPTY graph. ensureSky() is memoised — it coalesces with the warm-up and
+		// returns instantly once sky is ready. (Audit P2.)
+		if (!skyReady) await ensureSky();
 		// Snapshot the graph version so we can detect a mid-computation change.
+		// Captured AFTER ensureSky so it reflects the just-loaded graph.
 		const computeVersion = skyVersion;
 		// MIG-016 §1A — performance.mark instrumentation. Calibrates the
 		// per-phase budgets for §1B (edges-on-hover) / §1C (worker offload)
@@ -6470,7 +6499,10 @@
 					searchMatchIds={searchHubMatchIds}
 					{allNotes}
 				/>
-				{#if !graphReady}
+				<!-- MIG-079 §C.2d — gate on skyReady (the deferred sky load), not graphReady.
+				     graphReady now fires sub-second before the sky snapshot lands; the Sky
+				     View's own readiness is skyReady. Reuses layout.skyViewLoading (all locales). -->
+				{#if !skyReady}
 					<div class="sky-loading" role="status" aria-live="polite" dir="auto">
 						<svg class="sky-loading-spinner" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
 							<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2.5" fill="none" opacity="0.25"/>

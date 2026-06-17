@@ -113,3 +113,34 @@ Launch the rebuilt binary (mtime 2026-06-17 10:30). Stage 1: boot is faster (boo
 - **The headline finding:** §C.2b's boot win was partial — the real remaining boot bottleneck is the **Sky read** (`cache_boot_snapshot_sky` over 233,995 `sky_links`), NOT links. That's **§C.2d** (defer the Sky read off boot, same model) — the next session's task.
 - **PCS done:** orientation **v2.88** (NEW file), this session log, **MoCh** `docs/MoCh/MoCh-2026-06-17-0930.md`, handover `lab/reports/HANDOVER-2026-06-17-c2c-done.md`, `lab/reports/NEXT-SESSION-PROMPT.md` (points at §C.2d), User Manual (the two summary toggles + panel-perf note, EN; ×15 rides the debt).
 - **Deferred (documented):** split-pane ×N chips (P1), the `status` predicate nit, the §C.2b cleanup (retire `cache_full_links`/`ensureFullLinks`/`idx_link_boot`), the ×15 i18n for the two toggles.
+
+---
+
+# §C.2d — Defer the Sky read off the boot critical path (the remaining boot win)
+
+> **Function in hand:** the boot Sky read — `cache_boot_snapshot_sky` reading the 233,995-row `sky_links` table at boot. Full `/migration` (Rust↔Svelte boot contract). Continues from the §C.2c close handover.
+
+## Measured root cause (the pivot grounding — measure-don't-guess)
+Boot-perf history (active universe), post-§C.2c boots [16]–[21]: `hydrated ≈ 1.1 s` (good), but `graph_ready ≈ 11 s` of which `queue ≈ 10 s` — the graph IPC body is now trivial (`read_links=None`, `read_tags≈80 ms`). The IPC arrival trace (cold boot `mqfizrd9`) shows the smoking gun: `cache_boot_snapshot_sky` fires at +879 ms, then an **11,374 ms gap with NO other IPC dispatched** — a synchronous command monopolising the single IPC thread. Warm boot (`mqfj19sm`): the same sky read is **250 ms** → the 11.4 s is purely cold disk reads of 234k `sky_links`. The twin of the `note_links` read §C.2b deferred.
+
+## Architect (Phase 1) — `docs/MIG-079-C2d-Architect-Defer-Sky-Read.md`
+4 parallel mapping agents (Rust sky path / frontend consumers / render+cross-window / WA#5 prior-art). Findings:
+- `cache_boot_snapshot_sky` was `#[tauri::command]` (sync); `constellation_map_universe` is `(async)` — the §9.1 precedent. Only the frontend boot + tests consume the sky read; `sky_*` is fully write-time-maintained (triggers) → Rule 8 already satisfied (defer the READ, not the maintenance). The read is a full-table scan; a covering index can't help the cold read (I/O-bound).
+- Every sky consumer (Sky View/CNS/Lens/Sight/WiW/LocalSky/ExpressionForge) is already behind a visibility gate; `skyNodePathSet` degrades permissively at boot. No `skyEverOpened` existed. `ensureFullLinks` is a no-op under `perNoteLinkQueries` → the legacy `buildSkyData` fallback is already dead under defaults.
+- **Render primitive: Option C (nodes-now/edges-later) RULED OUT** — the d3-force/PIXI engine needs all edges at init (no streaming/LOD). Edges + nodes load together on open.
+- **Second screen independent** (builds its own sky) → no cross-window constraint.
+- **WA#5:** defer-to-open is the STANDARD (Obsidian v1.7.2 DeferredView; lazy-bootstrap); eager-at-boot is the documented anti-pattern (Logseq/Obsidian freeze on large vaults). Refinement: after-idle background warm-up so first open is warm.
+
+## Plan (Phase 2) — `docs/MIG-079-C2d-Plan.md` — Boss-approved **Option B+**
+Boss chose **Lazy + background warm-up** (over pure-lazy). Steps: §C.2d-1 async-ify; §C.2d-2 defer-to-open + `_skyEpoch` guard + universe-switch reset + after-idle warm-up; §C.2d-3 `/simplify` + docs. Architect+Plan committed `41781d71`.
+
+## §C.2d-1 — async-ify (SHIPPED, `23fdd45f`)
+`cache.rs:788` `#[tauri::command]` → `#[tauri::command(async)]`. Body unchanged. `cargo check` clean. Foundation for the on-open load + warm-up (both must be async to not freeze the app).
+
+## §C.2d-2 — defer-to-open + warm-up (BUILT; pending Boss test)
+`+layout.svelte`: new `skyEverOpened`/`skyReady`/`_skyEpoch`/`_skyGeneration`/`_skyPromise`; `ensureSky(force?)` memoised async loader; open-trap `$effect` (flips `skyEverOpened` when any sky surface visible); load-trigger `$effect` (`if (skyEverOpened && !skyReady) void ensureSky()`); `loadGraph` boot sky kick-off + assignment REMOVED (graphReady fires on graph payload only) + after-idle warm-up `schedule(() => ensureSky())`; `handleUniverseSwitch` resets sky state + bumps `_skyEpoch`; `federation:ready` + post-init re-fetches routed through `ensureSky(true)` (only if `skyEverOpened`); Sky View spinner gates on `!skyReady` (reuses existing `layout.skyViewLoading` — **zero new i18n**); unused `buildSkyData` import removed. svelte-check **0 errors / 315 pre-existing warnings**.
+
+## Audit (Phase 4) — 4 parallel agents on the diff, BEFORE Boss test
+- **Invariants:** all 8 PASS. **Migration-path:** all 5 scenarios PASS (is_ready=false retry correctly armed). **Editor-Surface Gate:** read-path only (zero content/save/lifecycle).
+- **P1 found + FIXED (adversarial):** double-write race — a `federation:ready` `ensureSky(true)` nulls the memo + starts a 2nd same-epoch read while the warm-up read is in flight; a slow parent-only warm-up could resolve last and clobber fresh federated data. Fix: `_skyGeneration` counter — force bumps it, each load captures it at entry + discards if superseded (epoch guarded universe switches only; generation guards same-epoch double-loads). Catch branch also generation-guarded.
+- **P2 found + FIXED (drift):** the v2 Lens (`toggleLens`) computed clusters on EMPTY sky if opened during the cold warm-up window. Fix: `if (!skyReady) await ensureSky();` before the cluster compute (memoised; instant once warm). svelte-check still 0 errors after both fixes.
