@@ -3532,6 +3532,14 @@ export interface AppSettings {
 	 * re-enable on demand / on the next normal boot. Default false. */
 	safeBootMode: boolean;
 
+	/** MIG-079 §C.2c — when true, the Backlinks/Outgoing panels (and the editor
+	 * ×N traversal chips) fetch ONLY the active note's links via per-note SQLite
+	 * queries (`get_backlink_rows`/`get_outgoing_rows`) instead of filtering the
+	 * full in-memory 234k-edge array — so that array is never loaded (kills the
+	 * scroll-freeze + thrashing). Default true. The old array path stays behind
+	 * `false` for rollback until §C.2c-4 removes it. */
+	perNoteLinkQueries: boolean;
+
 	// Built-in features
 	enabledFeatures: {
 		dailyNotes: boolean;
@@ -3843,6 +3851,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
 		colorByLibrary: true,
 	},
 	safeBootMode: false,
+	perNoteLinkQueries: true,
 	enabledFeatures: {
 		dailyNotes: true,
 		templates: true,

@@ -728,6 +728,9 @@
 	 *  menu's "current" marker reflects the new value without a full rescan.
 	 *  Everything else reads from this array via `effectiveLibraryLinks`. */
 	function applyConfidenceLocally(sourcePath: string, targetName: string, confidence: string) {
+		// MIG-079 §C.2c — with per-note queries there is no array to patch; the DB
+		// was already written by setLinkConfidence, so re-fetch the active note.
+		if (get(appSettings)?.perNoteLinkQueries) { perNoteRefreshNonce++; return; }
 		const target = targetName.toLowerCase();
 		allLibraryLinks = allLibraryLinks.map(l =>
 			l.source_path === sourcePath && l.target.toLowerCase() === target
@@ -741,6 +744,9 @@
 	 *  filters elsewhere). Mirror the DB write into memory so the row
 	 *  disappears immediately without a full rescan. */
 	function applyArchiveLocally(sourcePath: string, targetName: string) {
+		// MIG-079 §C.2c — re-fetch the active note (the archive was already written
+		// to the DB by archiveLink; there is no in-memory array to mutate).
+		if (get(appSettings)?.perNoteLinkQueries) { perNoteRefreshNonce++; return; }
 		const target = targetName.toLowerCase();
 		allLibraryLinks = allLibraryLinks.map(l =>
 			l.source_path === sourcePath && l.target.toLowerCase() === target
@@ -758,7 +764,11 @@
 	// the server's already-updated values.
 	const linkTraversalMap = $derived.by(() => {
 		const m = new Map<string, number>();
-		for (const l of allLibraryLinks) {
+		// MIG-079 §C.2c — the ×N chips render only in the OPEN note's body, so the
+		// open note's outgoing rows (fetched per-note) carry every count needed —
+		// no 234k array. Falls back to the full array when the flag is off.
+		const src = $appSettings.perNoteLinkQueries ? activeOutgoingRows : allLibraryLinks;
+		for (const l of src) {
 			const count = l.traversal_count ?? 0;
 			if (count <= 0 || !l.source_path || !l.target) continue;
 			m.set(l.source_path.toLowerCase() + '|' + l.target.toLowerCase(), count);
@@ -803,6 +813,11 @@
 	// still retry.
 	let _linksRetryAfter = 0;
 	async function ensureFullLinks(force = false): Promise<void> {
+		// MIG-079 §C.2c — when per-note queries are on, the panels fetch only the
+		// active note's rows; the full 234k array is never loaded (that load was
+		// the scroll-freeze). No-op here; linksReady=true keeps the (unused) panel
+		// loading prop from spinning.
+		if (get(appSettings)?.perNoteLinkQueries) { linksReady = true; return; }
 		// Safe boot intentionally skips the edge load (editor-only). Flip the flag
 		// so guarded panels show an honest empty state, not a perpetual spinner.
 		if (get(appSettings)?.safeBootMode) { linksReady = true; return; }
@@ -1343,6 +1358,15 @@
 	let currentBacklinks = $state<{ name: string; path: string; context: string; libraryName: string; linkType?: string; linkTypes?: string[]; traversalCount?: number }[]>([]);
 	let currentOutgoing = $state<{ target: string; context: string; traversalCount?: number; linkType?: string; linkTypes?: string[] }[]>([]);
 	let activeNoteTags = $state<string[]>([]);
+	// MIG-079 §C.2c — per-note query state. `activeOutgoingRows` are the open
+	// note's raw outgoing edges (feeds the editor ×N traversal map without the
+	// 234k array). `perNoteLinksLoading` drives the panel loading state during the
+	// per-note fetch. `perNoteRefreshNonce` re-runs the sidebar effect after a
+	// confidence/archive change (re-fetch instead of mutating the absent array).
+	let activeOutgoingRows = $state<NoteLink[]>([]);
+	let perNoteLinksLoading = $state(false);
+	let perNoteRefreshNonce = $state(0);
+	const panelLoading = $derived($appSettings.perNoteLinkQueries ? perNoteLinksLoading : !linksReady);
 	let _sidebarDebounce: ReturnType<typeof setTimeout> | undefined;
 
 	$effect(() => {
@@ -1363,6 +1387,9 @@
 		// focused before edges arrive auto-fills (the .length dep also covers it,
 		// but linksReady makes the loading→ready transition explicit).
 		void linksReady;
+		// MIG-079 §C.2c — re-run after a confidence/archive change so the per-note
+		// fetch reflects the just-written DB value (no array to mutate in place).
+		void perNoteRefreshNonce;
 		clearTimeout(_sidebarDebounce);
 
 		// MIG-079 §C.2b — opening/focusing a note is a first-class trigger to
@@ -1382,7 +1409,7 @@
 			return;
 		}
 
-		_sidebarDebounce = setTimeout(() => {
+		_sidebarDebounce = setTimeout(async () => {
 			// Headings
 			sidebarHeadings = body ? extractHeadings(body) : [];
 			// Direction
@@ -1397,10 +1424,36 @@
 			};
 			// Backlinks (MIG-004 §9: alias-aware via notePathToAliases lookup).
 			const aliasesForActive = notePathToAliases.get(tab.path) ?? [];
-			currentBacklinks = getBacklinks(effectiveLibraryLinks, tab.name, decayCfg, aliasesForActive);
-			// CE Phase 5: Provenance fetched on tab click only (not here — no IPC on typing path)
-			// Outgoing links
-			currentOutgoing = getOutgoingLinks(effectiveLibraryLinks, tab.path, decayCfg);
+			if ($appSettings.perNoteLinkQueries) {
+				// MIG-079 §C.2c — fetch ONLY this note's links (no 234k array). The
+				// debounce keeps this off the keystroke hot path. getBacklinks/
+				// getOutgoingLinks run their unchanged sort/dedupe/tier logic on the
+				// per-note set (proven == the array path by the §C.2c-1 rehearsal).
+				perNoteLinksLoading = true;
+				try {
+					const [blRows, ogRows] = await Promise.all([
+						invoke<NoteLink[]>('get_backlink_rows', { noteName: tab.name, aliases: aliasesForActive }),
+						invoke<NoteLink[]>('get_outgoing_rows', { notePath: tab.path }),
+					]);
+					// The active tab may have changed during the await — discard stale.
+					if (sidebarTab?.path === tab.path) {
+						currentBacklinks = getBacklinks(blRows, tab.name, decayCfg, aliasesForActive);
+						currentOutgoing = getOutgoingLinks(ogRows, tab.path, decayCfg);
+						activeOutgoingRows = ogRows; // feeds the editor ×N traversal map
+					}
+				} catch {
+					if (sidebarTab?.path === tab.path) {
+						currentBacklinks = []; currentOutgoing = []; activeOutgoingRows = [];
+					}
+				} finally {
+					if (sidebarTab?.path === tab.path) perNoteLinksLoading = false;
+				}
+			} else {
+				currentBacklinks = getBacklinks(effectiveLibraryLinks, tab.name, decayCfg, aliasesForActive);
+				// CE Phase 5: Provenance fetched on tab click only (not here — no IPC on typing path)
+				// Outgoing links
+				currentOutgoing = getOutgoingLinks(effectiveLibraryLinks, tab.path, decayCfg);
+			}
 			// Tags (from frontmatter + inline)
 			const tags: string[] = [];
 			for (const p of props) {
@@ -6617,7 +6670,7 @@
 										{#if !leftFlankCollapsed}
 											{#if backlinksOnLeft}
 												<BacklinksPanel
-													loading={!linksReady}
+													loading={panelLoading}
 													backlinks={currentBacklinks}
 													unlinkedMentions={currentUnlinkedMentions}
 													activeNoteName={$activeTab?.name ?? ''}
@@ -6629,7 +6682,7 @@
 											{/if}
 											{#if outgoingOnLeft}
 												<OutgoingLinksPanel
-													loading={!linksReady}
+													loading={panelLoading}
 													outgoingLinks={currentOutgoing}
 													activeNoteName={$activeTab?.name ?? ''}
 													activeNotePath={$activeTab?.path ?? ''}
@@ -6763,7 +6816,7 @@
 										{#if !rightFlankCollapsed}
 											{#if outgoingOnRight}
 												<OutgoingLinksPanel
-													loading={!linksReady}
+													loading={panelLoading}
 													outgoingLinks={currentOutgoing}
 													activeNoteName={$activeTab?.name ?? ''}
 													activeNotePath={$activeTab?.path ?? ''}
@@ -6775,7 +6828,7 @@
 											{/if}
 											{#if backlinksOnRight}
 												<BacklinksPanel
-													loading={!linksReady}
+													loading={panelLoading}
 													backlinks={currentBacklinks}
 													unlinkedMentions={currentUnlinkedMentions}
 													activeNoteName={$activeTab?.name ?? ''}
@@ -7051,7 +7104,7 @@
 					<div class="rs-section rs-section--flush">
 						<div class="rs-header">{$t('panels.backlinksHeader')}</div>
 						<BacklinksPanel
-							loading={!linksReady}
+							loading={panelLoading}
 							backlinks={currentBacklinks}
 							unlinkedMentions={currentUnlinkedMentions}
 							activeNoteName={sidebarTab?.name ?? ''}
@@ -7064,7 +7117,7 @@
 					<div class="rs-section rs-section--flush">
 						<div class="rs-header">{$t('panels.outgoingLinksHeader')}</div>
 						<OutgoingLinksPanel
-							loading={!linksReady}
+							loading={panelLoading}
 							outgoingLinks={currentOutgoing}
 							activeNoteName={sidebarTab?.name ?? ''}
 							activeNotePath={sidebarTab?.path ?? ''}
