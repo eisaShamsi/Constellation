@@ -169,7 +169,12 @@
 	// cap render without a headline (a soft enhancement).
 	const HEADLINE_FETCH_CAP = 120;
 	$effect(() => {
-		if (!$appSettings.noteSummariesEnabled) return;
+		if (!$appSettings.noteSummariesEnabled) {
+			// Toggled OFF — clear any already-fetched headlines so they stop
+			// rendering (the early return alone leaves the stale map populated).
+			if (summaryHeadlines.size > 0) summaryHeadlines = new Map();
+			return;
+		}
 		const paths = new Set<string>();
 		for (const bl of filteredBacklinks.slice(0, HEADLINE_FETCH_CAP)) if (bl.path) paths.add(bl.path);
 		for (const ul of filteredUnlinked.slice(0, HEADLINE_FETCH_CAP))  if (ul.path) paths.add(ul.path);

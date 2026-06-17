@@ -112,7 +112,11 @@
 	// form fired thousands of resolve IPCs on tab-open. Cap to the head window.
 	const HEADLINE_FETCH_CAP = 120;
 	$effect(() => {
-		if (!$appSettings.noteSummariesEnabled) return;
+		if (!$appSettings.noteSummariesEnabled) {
+			// Toggled OFF — clear already-fetched headlines so they stop rendering.
+			if (summaryHeadlines.size > 0) summaryHeadlines = new Map();
+			return;
+		}
 		const visibleTargets = outgoingLinks.slice(0, HEADLINE_FETCH_CAP).map(l => l.target).filter(Boolean);
 		if (visibleTargets.length === 0 || !libraryPath) return;
 		(async () => {
