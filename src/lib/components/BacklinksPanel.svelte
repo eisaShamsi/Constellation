@@ -61,6 +61,7 @@
 		libraryColorMap = {} as Record<string, string>,
 		onConfidenceChange = undefined as undefined | ((sourcePath: string, targetName: string, confidence: LinkConfidence) => void),
 		onArchive = undefined as undefined | ((sourcePath: string, targetName: string) => void),
+		loading = false,
 	}: {
 		backlinks: BacklinkRow[];
 		unlinkedMentions: { name: string; path: string; context: string; libraryName: string }[];
@@ -69,6 +70,9 @@
 		libraryColorMap?: Record<string, string>;
 		onConfidenceChange?: (sourcePath: string, targetName: string, confidence: LinkConfidence) => void;
 		onArchive?: (sourcePath: string, targetName: string) => void;
+		/** MIG-079 §C.2b — the deferred edge list is still loading. Show a
+		 *  "Loading…" state instead of a misleading "no backlinks" empty. */
+		loading?: boolean;
 	} = $props();
 
 	/** Resolve the row's link-type list — prefers the post-dedupe
@@ -215,6 +219,8 @@
 					{/if}
 				</button>
 			{/each}
+		{:else if showLinked && loading}
+			<div class="bl-empty">{$t('common.loading')}</div>
 		{:else if showLinked}
 			<div class="bl-empty">{$t('backlinksPanel.noBacklinks')}</div>
 		{/if}

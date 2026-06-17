@@ -782,6 +782,59 @@
 			return bump ? { ...l, traversal_count: (l.traversal_count ?? 0) + bump } : l;
 		});
 	});
+
+	// MIG-079 §C.2b — the lazy edge loader. The 234k-row link list is no longer
+	// in the boot graph payload; it loads on demand via `cache_full_links`.
+	// Memoized: concurrent callers (idle pre-fetch + a panel open landing at the
+	// same time) share ONE in-flight invoke. `force` resets the memo to re-fetch
+	// (federation settles / rename cascade / universe switch). On success it
+	// populates `allLibraryLinks`, clears the optimistic traversal bumps (the
+	// canonical counts have now landed), and flips `linksReady`.
+	let _fullLinksPromise: Promise<void> | null = null;
+	// Bumped on universe switch so an in-flight load from the OLD universe that
+	// resolves AFTER the switch is discarded (never writes stale edges into the
+	// new universe — the empty-overwrite guard can't catch this since old edges
+	// are non-empty). Captured at call entry, re-checked before every assignment.
+	let _linksEpoch = 0;
+	// Failure backoff: the sidebar $effect re-runs per keystroke, so on a
+	// persistent cache_full_links failure an un-gated retry would fire one IPC
+	// per character (the keystroke-hot-path IPC ban). Block keystroke-driven
+	// retries for a cooldown after a failure; the idle pre-fetch / force paths
+	// still retry.
+	let _linksRetryAfter = 0;
+	async function ensureFullLinks(force = false): Promise<void> {
+		// Safe boot intentionally skips the edge load (editor-only). Flip the flag
+		// so guarded panels show an honest empty state, not a perpetual spinner.
+		if (get(appSettings)?.safeBootMode) { linksReady = true; return; }
+		if (force) _fullLinksPromise = null;
+		if (_fullLinksPromise) return _fullLinksPromise;
+		const epoch = _linksEpoch;
+		_fullLinksPromise = (async () => {
+			try {
+				const res = await invoke<{ links: NoteLink[] }>('cache_full_links');
+				// Universe switched mid-flight — these are the OLD universe's edges.
+				// Discard without touching the new universe's state.
+				if (epoch !== _linksEpoch) return;
+				const next = res?.links ?? [];
+				// Empty-overwrite guard (mirrors the federation:ready handler): a
+				// mid-race empty payload must not clobber an already-good list.
+				if (next.length > 0 || allLibraryLinks.length === 0) {
+					allLibraryLinks = next;
+				}
+				clearLinkTraversalBumps();
+				linksReady = true;
+			} catch (e) {
+				// Only clear the memo / arm the backoff if still the same universe.
+				if (epoch === _linksEpoch) {
+					_fullLinksPromise = null; // allow a later retry (panel open / pre-fetch)
+					_linksRetryAfter = Date.now() + 3000;
+				}
+				throw e;
+			}
+		})();
+		return _fullLinksPromise;
+	}
+
 	let allLibraryTags = $state<Record<string, number>>({});
 	let allNotes = $state<{ name: string; path: string; libraryName: string }[]>([]);
 	let allIndexEntries = $state<IndexEntry[]>([]);
@@ -858,6 +911,14 @@
 	// degraded state while the graph is still loading (Sky View shell, tag
 	// browser) can read this flag to flip to the full UI when it arrives.
 	let graphReady = $state(false);
+	// MIG-079 §C.2b: `linksReady` flips to true once the deferred 234k-row edge
+	// list has lazy-loaded via `ensureFullLinks()`. SEPARATE from `graphReady`
+	// (which now flips after the cheap tags+aliases boot payload, edges excluded).
+	// Every consumer of the full edge list (Backlinks/Outgoing panel ROWS, the
+	// buildSkyData fallback, the live traversal `×N` chips) guards on this so it
+	// shows a "loading" state instead of a misleading empty one while edges load.
+	// The COUNT badges are independent (write-time `incoming_count`/`outgoing_count`).
+	let linksReady = $state(false);
 	let searchLinkCounts = $state(new Map<string, { incoming: number }>());
 	// §139: SvelteMap (Svelte 5 explicitly-reactive Map). Mutations like
 	// .set() / .delete() trigger reactivity at the operation level — no
@@ -1298,7 +1359,18 @@
 		// refresh live when the user follows a wikilink (P4.2 follow-up).
 		void allLibraryLinks.length;
 		void $linkTraversalBumps.size;
+		// MIG-079 §C.2b — re-run when the lazy edge load flips ready, so a panel
+		// focused before edges arrive auto-fills (the .length dep also covers it,
+		// but linksReady makes the loading→ready transition explicit).
+		void linksReady;
 		clearTimeout(_sidebarDebounce);
+
+		// MIG-079 §C.2b — opening/focusing a note is a first-class trigger to
+		// load the deferred edge list (idempotent; memoized). The .length dep
+		// above re-runs this effect once edges land so the panels fill in.
+		// This effect also re-runs per keystroke (it tracks sidebarBody), so the
+		// retry-cooldown gate stops a failed load from firing one IPC/character.
+		if (tab && !linksReady && Date.now() >= _linksRetryAfter) void ensureFullLinks();
 
 		// Immediate reset when no tab
 		if (!tab) {
@@ -2257,6 +2329,14 @@
 		libraries.set([]);
 		libraryStats.set([]);
 		allLibraryLinks = [];
+		// MIG-079 §C.2b — reset the lazy-edge state so the new universe's edges
+		// re-fetch from scratch (don't let a stale memo serve the old universe).
+		// Bump the epoch so an in-flight OLD-universe load that resolves after
+		// this reset is discarded instead of writing stale edges (P1-1).
+		_linksEpoch++;
+		linksReady = false;
+		_fullLinksPromise = null;
+		_linksRetryAfter = 0;
 		allLibraryTags = {};
 		allNotes = [];
 		clearLinkTraversalBumps();
@@ -2585,13 +2665,13 @@
 					aliases?: Array<{ path: string; aliasLower: string }>;
 				};
 				const graph = await invoke<GraphSnapshot>('cache_boot_snapshot_graph');
-				const newLinksLen = graph?.links?.length ?? 0;
-				const newIsValid = newLinksLen > 0 || allLibraryLinks.length === 0;
-				if (graph && newIsValid) {
-					allLibraryLinks = graph.links ?? [];
-					allLibraryTags = graph.tags ?? {};
-					notePathToAliases = new Map();
-					if (Array.isArray(graph.aliases)) {
+				// MIG-079 §C.2b — `graph` carries tags + aliases only now. Refresh
+				// them when the federated payload is non-empty (never clobber good
+				// data with a mid-race empty), then force-reload the deferred edge list.
+				if (graph) {
+					if (graph.tags && Object.keys(graph.tags).length > 0) allLibraryTags = graph.tags;
+					if (Array.isArray(graph.aliases) && graph.aliases.length > 0) {
+						notePathToAliases = new Map();
 						for (const a of graph.aliases) {
 							const list = notePathToAliases.get(a.path) ?? [];
 							list.push(a.aliasLower);
@@ -2600,6 +2680,10 @@
 					}
 				}
 			} catch {}
+			// MIG-079 §C.2b — re-fetch the edge list now cUniverses are attached
+			// (force resets the memo; ensureFullLinks's empty-overwrite guard keeps
+			// prior edges if a race returns empty).
+			try { await ensureFullLinks(true); } catch {}
 			// MIG-062 §E — re-fetch the federated filesystem-walk surfaces so
 			// cUniverse Five Acts notes + Workspace Bases appear once federation
 			// settles. Manifest-based enum means they're usually present at the
@@ -2640,10 +2724,13 @@
 				aliases?: Array<{ path: string; aliasLower: string }>;
 			};
 			const graph2 = await invoke<GraphSnapshot2>('cache_boot_snapshot_graph');
-			if (graph2 && graph2.links.length > allLibraryLinks.length) {
-				allLibraryLinks = graph2.links;
-				allLibraryTags = graph2.tags ?? {};
-				if (Array.isArray(graph2.aliases)) {
+			// MIG-079 §C.2b — defensive post-init refresh of tags + aliases only
+			// (the edge array is no longer in this payload; the boot loadGraph idle
+			// pre-fetch + the federation:ready handler own edge loading). This drops
+			// the redundant second full-graph load that used to run here at boot.
+			if (graph2) {
+				if (graph2.tags && Object.keys(graph2.tags).length > 0) allLibraryTags = graph2.tags;
+				if (Array.isArray(graph2.aliases) && graph2.aliases.length > 0) {
 					notePathToAliases = new Map();
 					for (const a of graph2.aliases) {
 						const list = notePathToAliases.get(a.path) ?? [];
@@ -3187,7 +3274,10 @@
 					? Math.max(0, graph.server_return_unix_ms - graph.server_start_unix_ms)
 					: 0;
 
-				allLibraryLinks = graph.links;
+				// MIG-079 §C.2b — edges are no longer in this payload;
+				// `allLibraryLinks` is owned by `ensureFullLinks()` (the idle
+				// pre-fetch scheduled after boot:graph-ready, below). Tags +
+				// aliases still land here.
 				allLibraryTags = graph.tags;
 				// MIG-004 §9: build path → aliases[] map for alias-aware
 				// Backlinks / Outgoing / Map / Sight queries. Frontend
@@ -3203,12 +3293,6 @@
 						notePathToAliases.set(a.path, list);
 					}
 				}
-				// Boot graph carries the canonical counts from the DB, which
-				// already absorbed every traversal that was fired since the
-				// last fetch — drop our optimistic bumps so they don't add
-				// on top.
-				clearLinkTraversalBumps();
-
 				const libraryList = $libraries;
 				// Resolve the parallel sky snapshot kicked off earlier.
 				// If the graph IPC took longer (common), this await is
@@ -3221,7 +3305,9 @@
 				// guard skipped sky assignment entirely when graph failed
 				// (links=[]) even if sky had data — the graph-failure
 				// fallback path would leave Sky View empty.
-				if (libraryList.length > 0 && (graph.links.length > 0 || (sky && sky.isReady))) {
+				// MIG-079 §C.2b: edges deferred — Sky uses the write-time sky_*
+				// payload; the buildSkyData fallback below awaits ensureFullLinks().
+				if (libraryList.length > 0) {
 					if (sky && sky.isReady) {
 						// Trust the readiness flag — a zero-node Universe
 						// with isReady=true is legitimately empty; falling
@@ -3236,10 +3322,14 @@
 						// resolution the cache_boot_snapshot_sky path
 						// performs server-side. Without this, the fallback
 						// silently drops every edge whose target was renamed.
-						const { nodes, links: gLinks } = buildSkyData(graph.links, allNotes, notePathToAliases);
-						skyNodes = nodes;
-						skyLinks = gLinks;
-						skyVersion++;
+						// MIG-079 §C.2b — source edges from the deferred lazy load.
+						await ensureFullLinks();
+						if (allLibraryLinks.length > 0) {
+							const { nodes, links: gLinks } = buildSkyData(allLibraryLinks, allNotes, notePathToAliases);
+							skyNodes = nodes;
+							skyLinks = gLinks;
+							skyVersion++;
+						}
 					}
 				}
 
@@ -3255,6 +3345,12 @@
 				graphReady = true;
 				performance.mark('boot:graph-ready');
 				recordBootPerfGraphPhase();
+					// MIG-079 §C.2b — idle pre-fetch the deferred 234k-row edge
+					// list right after boot:graph-ready (Boss call). Memoized, so
+					// a Backlinks/Outgoing/Graph open that lands first shares this
+					// one invoke. requestIdleCallback keeps it off the paint that
+					// just completed; the panels guard on `linksReady` meanwhile.
+					schedule(() => { void ensureFullLinks(); });
 			} finally {
 				cacheRefreshing = false;
 			}
@@ -5095,7 +5191,9 @@
 									tags: Record<string, number>;
 									aliases: Array<{ note_path: string; alias: string }>;
 								}>('cache_boot_snapshot_graph');
-								allLibraryLinks = graph.links;
+								// MIG-079 §C.2b — graph.links is empty now; force-re-fetch the
+								// deferred edge list so the post-cascade note_links state lands.
+								await ensureFullLinks(true);
 								// Refresh the alias index too — renames stamp a
 								// new alias entry on the renamed file, which the
 								// alias-aware Backlinks reader needs to see.
@@ -6519,6 +6617,7 @@
 										{#if !leftFlankCollapsed}
 											{#if backlinksOnLeft}
 												<BacklinksPanel
+													loading={!linksReady}
 													backlinks={currentBacklinks}
 													unlinkedMentions={currentUnlinkedMentions}
 													activeNoteName={$activeTab?.name ?? ''}
@@ -6530,6 +6629,7 @@
 											{/if}
 											{#if outgoingOnLeft}
 												<OutgoingLinksPanel
+													loading={!linksReady}
 													outgoingLinks={currentOutgoing}
 													activeNoteName={$activeTab?.name ?? ''}
 													activeNotePath={$activeTab?.path ?? ''}
@@ -6663,6 +6763,7 @@
 										{#if !rightFlankCollapsed}
 											{#if outgoingOnRight}
 												<OutgoingLinksPanel
+													loading={!linksReady}
 													outgoingLinks={currentOutgoing}
 													activeNoteName={$activeTab?.name ?? ''}
 													activeNotePath={$activeTab?.path ?? ''}
@@ -6674,6 +6775,7 @@
 											{/if}
 											{#if backlinksOnRight}
 												<BacklinksPanel
+													loading={!linksReady}
 													backlinks={currentBacklinks}
 													unlinkedMentions={currentUnlinkedMentions}
 													activeNoteName={$activeTab?.name ?? ''}
@@ -6949,6 +7051,7 @@
 					<div class="rs-section rs-section--flush">
 						<div class="rs-header">{$t('panels.backlinksHeader')}</div>
 						<BacklinksPanel
+							loading={!linksReady}
 							backlinks={currentBacklinks}
 							unlinkedMentions={currentUnlinkedMentions}
 							activeNoteName={sidebarTab?.name ?? ''}
@@ -6961,6 +7064,7 @@
 					<div class="rs-section rs-section--flush">
 						<div class="rs-header">{$t('panels.outgoingLinksHeader')}</div>
 						<OutgoingLinksPanel
+							loading={!linksReady}
 							outgoingLinks={currentOutgoing}
 							activeNoteName={sidebarTab?.name ?? ''}
 							activeNotePath={sidebarTab?.path ?? ''}

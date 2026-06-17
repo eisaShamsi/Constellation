@@ -46,6 +46,7 @@
 		libraryColorMap = {} as Record<string, string>,
 		onConfidenceChange = undefined as undefined | ((sourcePath: string, targetName: string, confidence: LinkConfidence) => void),
 		onArchive = undefined as undefined | ((sourcePath: string, targetName: string) => void),
+		loading = false,
 	}: {
 		outgoingLinks: OutgoingRow[];
 		activeNoteName?: string;
@@ -54,6 +55,9 @@
 		libraryColorMap?: Record<string, string>;
 		onConfidenceChange?: (sourcePath: string, targetName: string, confidence: LinkConfidence) => void;
 		onArchive?: (sourcePath: string, targetName: string) => void;
+		/** MIG-079 §C.2b — the deferred edge list is still loading; show
+		 *  "Loading…" instead of a misleading "no outgoing links" empty. */
+		loading?: boolean;
 	} = $props();
 
 	function rowLinkTypes(link: OutgoingRow): string[] {
@@ -200,6 +204,8 @@
 				{/if}
 			</button>
 		{/each}
+	{:else if showOutgoing && loading}
+		<div class="ol-empty">{$t('common.loading')}</div>
 	{:else if showOutgoing}
 		<div class="ol-empty">{$t('outgoingLinksPanel.noLinks')}</div>
 	{/if}

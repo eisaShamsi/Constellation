@@ -218,12 +218,14 @@ pub fn cache_boot_snapshot_core(app: tauri::AppHandle) -> Result<BootSnapshotCor
     Ok(BootSnapshotCore { notes, is_cold, timings_ms: timings, server_return_unix_ms, server_start_unix_ms })
 }
 
-/// Heavy boot payload — link edges + tag counts. Deferred to
-/// `requestIdleCallback` so the ~656k-row payload never blocks first paint.
-///
-/// Reads the typed-link `note_links` table when populated (current indexer)
-/// and falls back to the legacy `outgoing_links_json` blob in `note_meta`
-/// for indices built before typed links existed.
+/// Boot graph payload — **tags + aliases only** since MIG-079 §C.2b. The
+/// 234k-row typed-link edge array used to be read here too (a full
+/// `note_links` scan, ~11.3 s cold — the bulk of the cold `graph_ready`
+/// cost); it is now deferred off boot to `cache_full_links` (lazy, behind
+/// the frontend's `ensureFullLinks()` / `linksReady` guard). After §C.1 the
+/// tag read is a `tag_counts` summary lookup (~ms) and aliases are ~1.4k
+/// rows, so this command returns sub-second even cold. `links` is returned
+/// as an empty vec for back-compat with the field's existing consumers.
 #[tauri::command]
 pub fn cache_boot_snapshot_graph(app: tauri::AppHandle) -> Result<BootSnapshotGraph, String> {
     // Stamp command-body entry FIRST. See `cache_boot_snapshot_core` for
@@ -299,34 +301,18 @@ pub fn cache_boot_snapshot_graph(app: tauri::AppHandle) -> Result<BootSnapshotGr
     }
     timings.push(("open_reader".into(), t1.elapsed().as_millis() as u64));
 
-    // Detect cold cache by counting note_meta rows ACROSS ALL SCHEMAS
-    // — if every schema is empty, the index hasn't been built yet and
-    // the fallback is pointless.
-    let t2 = Instant::now();
-    let mut note_count: i64 = 0;
-    for schema in &schemas {
-        let sql = format!("SELECT COUNT(*) FROM {}.note_meta", schema);
-        note_count += conn.query_row(&sql, params![], |row| row.get::<_, i64>(0)).unwrap_or(0);
-    }
-    timings.push(("count_notes".into(), t2.elapsed().as_millis() as u64));
-
-    // MIG-061 §M — read links per schema, concatenate.
-    let t3 = Instant::now();
-    let mut links: Vec<NoteLink> = Vec::new();
-    for schema in &schemas {
-        links.extend(read_links_in_schema(conn, schema)?);
-    }
-    timings.push(("read_links".into(), t3.elapsed().as_millis() as u64));
-
-    // Legacy fallback: if no typed-link rows in any schema but notes
-    // exist, parse outgoing_links_json from note_meta. Per-schema too.
-    if links.is_empty() && note_count > 0 {
-        let t3b = Instant::now();
-        for schema in &schemas {
-            links.extend(read_untyped_links_fallback_in_schema(conn, schema)?);
-        }
-        timings.push(("read_untyped_links_fallback".into(), t3b.elapsed().as_millis() as u64));
-    }
+    // MIG-079 §C.2b — the 234k-row edge array is NO LONGER read at boot.
+    // It was the ~11.3 s-cold cost on this command (a full `note_links`
+    // scan, plus the now-removed cold-detection `COUNT(*)` per schema). Sky
+    // View renders from the write-time `sky_*` payload
+    // (`cache_boot_snapshot_sky`); the Backlinks/Outgoing COUNT badges read
+    // the write-time `note_meta.incoming_count`/`outgoing_count` (§C.2a /
+    // MIG-066). The full edge LIST (panel rows, the buildSkyData fallback,
+    // live traversal chips) lazy-loads via the dedicated `cache_full_links`
+    // command behind the frontend's memoized `ensureFullLinks()` + a
+    // `linksReady` guard (idle pre-fetch right after `boot:graph-ready`).
+    // The legacy untyped-links cold-detection now lives in `cache_full_links`.
+    let links: Vec<NoteLink> = Vec::new();
 
     // MIG-061 §M — read tags per schema, accumulate counts into one map.
     let t4 = Instant::now();
@@ -349,6 +335,113 @@ pub fn cache_boot_snapshot_graph(app: tauri::AppHandle) -> Result<BootSnapshotGr
         .map(|d| d.as_millis())
         .unwrap_or(0);
     Ok(BootSnapshotGraph { links, tags, aliases, timings_ms: timings, server_return_unix_ms, server_start_unix_ms })
+}
+
+/// MIG-079 §C.2b — the deferred edge list. Returns the full typed-link
+/// `note_links` edge array (the payload `cache_boot_snapshot_graph` used to
+/// carry). Invoked lazily off the boot critical path by the frontend's
+/// memoized `ensureFullLinks()` (idle pre-fetch right after
+/// `boot:graph-ready`, plus on first Backlinks/Outgoing/Graph open). The
+/// scan itself is the same federated `read_links_in_schema` per schema +
+/// the legacy `outgoing_links_json` fallback; §C.3's `idx_link_boot`
+/// covering index keeps it index-only so the lazy scan reads leaf pages
+/// only.
+#[derive(Debug, Serialize)]
+pub struct BootLinks {
+    pub links: Vec<NoteLink>,
+    pub timings_ms: Vec<(String, u64)>,
+    pub server_return_unix_ms: u128,
+    pub server_start_unix_ms: u128,
+}
+
+#[tauri::command]
+pub fn cache_full_links(app: tauri::AppHandle) -> Result<BootLinks, String> {
+    let server_start_unix_ms = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_millis())
+        .unwrap_or(0);
+    let mut timings: Vec<(String, u64)> = Vec::new();
+
+    let t0 = Instant::now();
+    let _ = crate::search::ensure_search_db_ready(&app);
+    timings.push(("ensure_db".into(), t0.elapsed().as_millis() as u64));
+
+    // Same federated-connection acquisition as `cache_boot_snapshot_graph`
+    // / `cache_boot_snapshot_sky`: pick the bare reader for a single
+    // universe, the attached `federated_conn` when cUniverses are present.
+    let schemas = get_federated_schemas(&app);
+    let is_federated = schemas.len() > 1;
+
+    let t1 = Instant::now();
+    let state = app.state::<crate::search::SearchState>();
+    let bare_conn;
+    let fed_guard;
+    let conn: &Connection;
+    if is_federated {
+        fed_guard = state
+            .federated_conn
+            .lock()
+            .map_err(|e| format!("federated_conn lock poisoned: {}", e))?;
+        if let Some(c) = fed_guard.as_ref() {
+            conn = c;
+        } else {
+            // Federation not yet attached — return empty; the frontend's
+            // federation:ready handler force-re-invokes once it settles.
+            timings.push(("federated_conn_none".into(), t1.elapsed().as_millis() as u64));
+            let server_return_unix_ms = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .map(|d| d.as_millis())
+                .unwrap_or(0);
+            return Ok(BootLinks { links: Vec::new(), timings_ms: timings, server_return_unix_ms, server_start_unix_ms });
+        }
+    } else {
+        bare_conn = match open_reader(&app) {
+            Ok(c) => c,
+            Err(_) => {
+                timings.push(("open_reader_err".into(), t1.elapsed().as_millis() as u64));
+                let server_return_unix_ms = SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .map(|d| d.as_millis())
+                    .unwrap_or(0);
+                return Ok(BootLinks { links: Vec::new(), timings_ms: timings, server_return_unix_ms, server_start_unix_ms });
+            }
+        };
+        conn = &bare_conn;
+    }
+    timings.push(("open_reader".into(), t1.elapsed().as_millis() as u64));
+
+    // Per-schema typed-link read, concatenated (MIG-061 §M concatenation —
+    // each universe's edges are independent).
+    let t3 = Instant::now();
+    let mut links: Vec<NoteLink> = Vec::new();
+    for schema in &schemas {
+        links.extend(read_links_in_schema(conn, schema)?);
+    }
+    timings.push(("read_links".into(), t3.elapsed().as_millis() as u64));
+
+    // Legacy fallback: pre-typed-link indices have no `note_links` rows —
+    // parse `outgoing_links_json` from `note_meta` when the typed table is
+    // empty but notes exist (per schema).
+    if links.is_empty() {
+        let mut note_count: i64 = 0;
+        for schema in &schemas {
+            let sql = format!("SELECT COUNT(*) FROM {}.note_meta", schema);
+            note_count += conn.query_row(&sql, params![], |row| row.get::<_, i64>(0)).unwrap_or(0);
+        }
+        if note_count > 0 {
+            let t3b = Instant::now();
+            for schema in &schemas {
+                links.extend(read_untyped_links_fallback_in_schema(conn, schema)?);
+            }
+            timings.push(("read_untyped_links_fallback".into(), t3b.elapsed().as_millis() as u64));
+        }
+    }
+
+    let server_return_unix_ms = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_millis())
+        .unwrap_or(0);
+    Ok(BootLinks { links, timings_ms: timings, server_return_unix_ms, server_start_unix_ms })
 }
 
 fn read_aliases(conn: &Connection) -> Result<Vec<NoteAliasOut>, String> {
@@ -880,10 +973,14 @@ pub fn cache_boot_snapshot(app: tauri::AppHandle) -> Result<BootSnapshot, String
     // don't consume them; only the boot-perf scorecard does, and the boot
     // path no longer goes through this shim.
     let core = cache_boot_snapshot_core(app.clone())?;
-    let graph = cache_boot_snapshot_graph(app)?;
+    let graph = cache_boot_snapshot_graph(app.clone())?;
+    // MIG-079 §C.2b — `graph.links` is now empty (edges deferred); fetch the
+    // full edge list explicitly so ambient callers of this back-compat shim
+    // keep the original combined shape.
+    let full = cache_full_links(app)?;
     Ok(BootSnapshot {
         notes: core.notes,
-        links: graph.links,
+        links: full.links,
         tags: graph.tags,
         is_cold: core.is_cold,
     })

@@ -7339,6 +7339,13 @@ pub fn ensure_search_db_ready(app: &tauri::AppHandle) -> Result<(), String> {
     // narrow column instead of inverting outgoing_links_json (the drift fix).
     crate::incoming_links_backfill::maybe_schedule(app.clone());
 
+    // MIG-079 §C.3: schedule the one-shot build of the `idx_link_boot` COVERING
+    // index on a background thread. No-op once stamped. Lets the deferred
+    // `cache_full_links` edge scan read index leaf pages only (USING COVERING
+    // INDEX) instead of the wide note_links row-store. Own module (not the §C.2a
+    // backfill, whose stamp is already set on existing universes).
+    crate::link_boot_index::maybe_schedule(app.clone());
+
     // MIG-078 §A′.2: schedule the note_meta↔disk reconcile on a background
     // thread. Removes stale rows whose .md file no longer exists (exposed now
     // that the Map/OrgChart tree is built from note_meta). Runs lock-free

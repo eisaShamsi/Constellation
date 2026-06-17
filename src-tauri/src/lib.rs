@@ -68,6 +68,7 @@ mod links_backfill;
 mod note_body_backfill;
 mod tag_counts;
 mod incoming_links_backfill;
+mod link_boot_index;
 mod reconcile;
 mod link_types;
 mod style_presets;
@@ -439,6 +440,7 @@ pub fn run() {
             cache::cache_boot_snapshot,
             cache::cache_boot_snapshot_core,
             cache::cache_boot_snapshot_graph,
+            cache::cache_full_links,
             cache::cache_boot_snapshot_sky,
             cache::cache_is_populated,
             cache::cache_reconcile,
