@@ -575,7 +575,10 @@
 			"panelReview": "Review",
 			"panelReviewDesc": "Spaced repetition review queue",
 			"resetDefault": "Reset to defaults",
-			"resetDefaultDesc": "Restore the default panel layout (Backlinks left, Outgoing right)"
+			"resetDefaultDesc": "Restore the default panel layout (Backlinks left, Outgoing right)",
+			"summariesHeading": "Summaries",
+			"noteSummaries": "Note summaries",
+			"noteSummariesDesc": "Show a one-line AI summary under each note in the Backlinks and Outgoing panels. Off by default — fetching a summary for every row slows panels on heavily-linked notes."
 		},
 		"sight": {
 			"intro": "Constellation Sight — anchor-dome view of your universe with stratum × time positioning, density-gradient at default zoom, and per-channel mini-domes.",

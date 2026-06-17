@@ -3540,6 +3540,13 @@ export interface AppSettings {
 	 * `false` for rollback until §C.2c-4 removes it. */
 	perNoteLinkQueries: boolean;
 
+	/** When true, the Backlinks/Outgoing panels (and other surfaces) show the
+	 * one-line NSC note-summary "headline" under each row, fetched on demand.
+	 * Default FALSE — the per-row summary fetch is the second-biggest cost on a
+	 * hub note (SME-1), and many users don't want the extra line. Opt-in via
+	 * Settings → Panels → Note summaries. */
+	noteSummariesEnabled: boolean;
+
 	// Built-in features
 	enabledFeatures: {
 		dailyNotes: boolean;
@@ -3852,6 +3859,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
 	},
 	safeBootMode: false,
 	perNoteLinkQueries: true,
+	noteSummariesEnabled: false,
 	enabledFeatures: {
 		dailyNotes: true,
 		templates: true,

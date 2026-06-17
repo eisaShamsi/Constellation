@@ -3,6 +3,7 @@
 	import { t, tIn } from '$lib/i18n';
 	import { dominantLocale } from '$lib/utils';
 	import LinkTypePill from './LinkTypePill.svelte';
+	import VirtualList from './VirtualList.svelte';
 	import { get } from 'svelte/store';
 	import { invoke } from '@tauri-apps/api/core';
 	// MIG-044 Phase 2 — NSC summary headlines under each linked/unlinked row.
@@ -125,15 +126,53 @@
 			: unlinkedMentions
 	);
 
+	// MIG-079 §C.2c-3 — virtualize the lists (render only the visible window) so a
+	// hub note with thousands of backlinks doesn't build ~55k DOM nodes per switch
+	// (SME-1). At/above the threshold the list goes through VirtualList; below it,
+	// the plain {#each} keeps today's exact behavior + natural height. Per-note
+	// rows have empty `context`, so the base row is one line; annotation + the NSC
+	// headline (only when summaries are on) each add a line — getItemHeight mirrors
+	// the {#if} branches in the row snippets (keep them in sync — LL-class trap).
+	const VIRTUALIZE_THRESHOLD = 50;
+	const ROW_BASE = 26;       // .bl-item padding + one .bl-name-row line
+	const ROW_CONTEXT = 16;    // .bl-context line (usually empty for per-note rows)
+	const ROW_ANNOTATION = 16; // .bl-annotation line
+	const ROW_HEADLINE = 16;   // .bl-headline line (only once a summary arrives)
+	const ROW_MIN = 24;
+	function blRowHeight(bl: BacklinkRow): number {
+		let h = ROW_BASE;
+		if (bl.context) h += ROW_CONTEXT;
+		if (bl.annotation) h += ROW_ANNOTATION;
+		if (summaryHeadlines.get(bl.path)) h += ROW_HEADLINE;
+		return Math.max(ROW_MIN, h);
+	}
+	function ulRowHeight(ul: { path: string; context: string }): number {
+		let h = ROW_BASE;
+		if (ul.context) h += ROW_CONTEXT;            // unlinked rows usually have context
+		if (summaryHeadlines.get(ul.path)) h += ROW_HEADLINE;
+		return Math.max(ROW_MIN, h);
+	}
+	// Re-fire VirtualList's height derivation when headlines arrive (IndexPanel's
+	// `void summaryHeadlines.size` signal) — items unchanged, the ref change re-runs
+	// getItemHeight over the now-taller rows.
+	const blRows = $derived.by(() => { void summaryHeadlines.size; return filteredBacklinks; });
+	const ulRows = $derived.by(() => { void summaryHeadlines.size; return filteredUnlinked; });
+
 	// MIG-044 Phase 2 — NSC summary headlines.
 	// Cache-first, batched fetch via the shared store; merges into the local
 	// Map with a `changed` guard so identical fetches don't re-fire the
 	// downstream renders. Path is the row's `path` (note path on disk).
 	let summaryHeadlines = $state<Map<string, string>>(new Map());
+	// MIG-079 §C.2c-3 — note summaries are OFF by default (the per-row fetch is the
+	// second-biggest hub cost, SME-1) and capped to a head window when on (SME-2 3b)
+	// so a heavily-linked note never fires a thousands-of-paths IPC. Rows past the
+	// cap render without a headline (a soft enhancement).
+	const HEADLINE_FETCH_CAP = 120;
 	$effect(() => {
+		if (!$appSettings.noteSummariesEnabled) return;
 		const paths = new Set<string>();
-		for (const bl of filteredBacklinks) if (bl.path) paths.add(bl.path);
-		for (const ul of filteredUnlinked)  if (ul.path) paths.add(ul.path);
+		for (const bl of filteredBacklinks.slice(0, HEADLINE_FETCH_CAP)) if (bl.path) paths.add(bl.path);
+		for (const ul of filteredUnlinked.slice(0, HEADLINE_FETCH_CAP))  if (ul.path) paths.add(ul.path);
 		if (paths.size === 0) return;
 		const list = Array.from(paths);
 		(async () => {
@@ -174,6 +213,64 @@
 	}
 </script>
 
+<!-- MIG-079 §C.2c-3 — ONE source of truth for each row, rendered by both the
+     plain {#each} (small notes) and the VirtualList (hub notes). -->
+{#snippet backlinkRow(bl: BacklinkRow)}
+	<button class="bl-item" onclick={(e) => openLink(bl.path, bl.libraryName, e)}
+		oncontextmenu={(e) => openConfMenu(e, bl.path, activeNoteName, bl.confidence ?? 'hypothesis')}
+		title={$t('linkConfidence.rightClickHint') || 'Right-click to set confidence'}>
+		<span class="bl-name-row">
+			{#if bl.libraryName}
+				<span class="bl-library-dot" style="background:{getLibraryColor(bl.libraryName)}"></span>
+			{/if}
+			<span class="bl-name">{bl.name}</span>
+			{#each rowLinkTypes(bl) as lt (lt)}
+				<LinkTypePill id={lt} loc={noteLoc()} />
+			{/each}
+			{#if (bl.traversalCount ?? 0) > 0}
+				{@const ltLabel = fmtTraversed(bl.lastTraversed ?? '')}
+				<span class="bl-traversal-chip bl-tier-{bl.tier ?? 'emerging'}"
+					title={`Traversed ${bl.traversalCount} time${bl.traversalCount === 1 ? '' : 's'} · ${bl.tier ?? 'emerging'}${ltLabel ? ' · Last: ' + ltLabel : ''}`}>×{bl.traversalCount}</span>
+			{/if}
+			{#if bl.libraryName}
+				<span class="bl-library-label">{bl.libraryName}</span>
+			{/if}
+		</span>
+		<span class="bl-context">{bl.context}</span>
+		{#if bl.annotation}
+			<span class="bl-annotation" title={bl.annotation}>“{displayAnnotation(bl.annotation)}”</span>
+		{/if}
+		{#if summaryHeadlines.get(bl.path)}
+			<span class="bl-headline" dir="auto" title={summaryHeadlines.get(bl.path)}>{summaryHeadlines.get(bl.path)}</span>
+		{/if}
+	</button>
+{/snippet}
+
+{#snippet unlinkedRow(ul: { name: string; path: string; context: string; libraryName: string })}
+	<div class="bl-item-row">
+		<button class="bl-item" onclick={(e) => openLink(ul.path, ul.libraryName, e)}>
+			<span class="bl-name-row">
+				{#if ul.libraryName}
+					<span class="bl-library-dot" style="background:{getLibraryColor(ul.libraryName)}"></span>
+				{/if}
+				<span class="bl-name">{ul.name}</span>
+				{#if ul.libraryName}
+					<span class="bl-library-label">{ul.libraryName}</span>
+				{/if}
+			</span>
+			<span class="bl-context">{ul.context}</span>
+			{#if summaryHeadlines.get(ul.path)}
+				<span class="bl-headline" dir="auto" title={summaryHeadlines.get(ul.path)}>{summaryHeadlines.get(ul.path)}</span>
+			{/if}
+		</button>
+		<button class="bl-link-btn" title="Link it" onclick={(e) => linkMention(ul.path, e)}>
+			<svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+				<path d="M6.5 10.5L9.5 7.5M5 8.5L3.5 10a2.12 2.12 0 003 3L8 11.5M8 7.5l1.5-1.5a2.12 2.12 0 013 3L11 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+			</svg>
+		</button>
+	</div>
+{/snippet}
+
 <div class="backlinks-panel" style="--pill-radius:{pillShape.radius}px;--pill-height:{pillShape.height}px;--pill-weight:{pillShape.fontWeight}">
 	{#if backlinks.length + unlinkedMentions.length > 3}
 		<div class="bl-filter">
@@ -189,36 +286,17 @@
 			<span class="bl-count">{filteredBacklinks.length}</span>
 		</button>
 		{#if showLinked && filteredBacklinks.length > 0}
-			{#each filteredBacklinks as bl}
-				<button class="bl-item" onclick={(e) => openLink(bl.path, bl.libraryName, e)}
-					oncontextmenu={(e) => openConfMenu(e, bl.path, activeNoteName, bl.confidence ?? 'hypothesis')}
-					title={$t('linkConfidence.rightClickHint') || 'Right-click to set confidence'}>
-					<span class="bl-name-row">
-						{#if bl.libraryName}
-							<span class="bl-library-dot" style="background:{getLibraryColor(bl.libraryName)}"></span>
-						{/if}
-						<span class="bl-name">{bl.name}</span>
-						{#each rowLinkTypes(bl) as lt (lt)}
-							<LinkTypePill id={lt} loc={noteLoc()} />
-						{/each}
-						{#if (bl.traversalCount ?? 0) > 0}
-							{@const ltLabel = fmtTraversed(bl.lastTraversed ?? '')}
-							<span class="bl-traversal-chip bl-tier-{bl.tier ?? 'emerging'}"
-								title={`Traversed ${bl.traversalCount} time${bl.traversalCount === 1 ? '' : 's'} · ${bl.tier ?? 'emerging'}${ltLabel ? ' · Last: ' + ltLabel : ''}`}>×{bl.traversalCount}</span>
-						{/if}
-						{#if bl.libraryName}
-							<span class="bl-library-label">{bl.libraryName}</span>
-						{/if}
-					</span>
-					<span class="bl-context">{bl.context}</span>
-					{#if bl.annotation}
-						<span class="bl-annotation" title={bl.annotation}>“{displayAnnotation(bl.annotation)}”</span>
-					{/if}
-					{#if summaryHeadlines.get(bl.path)}
-						<span class="bl-headline" dir="auto" title={summaryHeadlines.get(bl.path)}>{summaryHeadlines.get(bl.path)}</span>
-					{/if}
-				</button>
-			{/each}
+			{#if filteredBacklinks.length > VIRTUALIZE_THRESHOLD}
+				<div class="bl-vlist-wrap">
+					<VirtualList items={blRows} getItemHeight={blRowHeight} scrollResetKey={filterQuery} overscan={10}>
+						{#snippet row(bl, _i)}{@render backlinkRow(bl)}{/snippet}
+					</VirtualList>
+				</div>
+			{:else}
+				{#each filteredBacklinks as bl}
+					{@render backlinkRow(bl)}
+				{/each}
+			{/if}
 		{:else if showLinked && loading}
 			<div class="bl-empty">{$t('common.loading')}</div>
 		{:else if showLinked}
@@ -235,30 +313,17 @@
 			<span class="bl-count">{filteredUnlinked.length}</span>
 		</button>
 		{#if showUnlinked && filteredUnlinked.length > 0}
-			{#each filteredUnlinked as ul}
-				<div class="bl-item-row">
-					<button class="bl-item" onclick={(e) => openLink(ul.path, ul.libraryName, e)}>
-						<span class="bl-name-row">
-							{#if ul.libraryName}
-								<span class="bl-library-dot" style="background:{getLibraryColor(ul.libraryName)}"></span>
-							{/if}
-							<span class="bl-name">{ul.name}</span>
-							{#if ul.libraryName}
-								<span class="bl-library-label">{ul.libraryName}</span>
-							{/if}
-						</span>
-						<span class="bl-context">{ul.context}</span>
-						{#if summaryHeadlines.get(ul.path)}
-							<span class="bl-headline" dir="auto" title={summaryHeadlines.get(ul.path)}>{summaryHeadlines.get(ul.path)}</span>
-						{/if}
-					</button>
-					<button class="bl-link-btn" title="Link it" onclick={(e) => linkMention(ul.path, e)}>
-						<svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-							<path d="M6.5 10.5L9.5 7.5M5 8.5L3.5 10a2.12 2.12 0 003 3L8 11.5M8 7.5l1.5-1.5a2.12 2.12 0 013 3L11 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-						</svg>
-					</button>
+			{#if filteredUnlinked.length > VIRTUALIZE_THRESHOLD}
+				<div class="bl-vlist-wrap">
+					<VirtualList items={ulRows} getItemHeight={ulRowHeight} scrollResetKey={filterQuery} overscan={10}>
+						{#snippet row(ul, _i)}{@render unlinkedRow(ul)}{/snippet}
+					</VirtualList>
 				</div>
-			{/each}
+			{:else}
+				{#each filteredUnlinked as ul}
+					{@render unlinkedRow(ul)}
+				{/each}
+			{/if}
 		{/if}
 	</div>
 </div>
@@ -292,6 +357,12 @@
 	.bl-filter input:focus { border-color: var(--interactive-accent); }
 	.bl-filter input::placeholder { color: var(--text-faint); }
 	.bl-section { margin-bottom: 4px; }
+	/* MIG-079 §C.2c-3 — the bounded-height scroller that lets VirtualList window.
+	   VirtualList claims flex:1/min-height:0 of THIS; the max-height cap gives it a
+	   real clientHeight (the panels otherwise grow to natural height + the flank
+	   scrolls). Do NOT remove the max-height/display:flex — without it VirtualList
+	   sees clientHeight≈0 and renders ~1 row (silent de-virtualization). */
+	.bl-vlist-wrap { display: flex; flex-direction: column; max-height: 60vh; min-height: 0; }
 	.bl-header {
 		display: flex; align-items: center; gap: 4px;
 		padding: 4px 0; font-weight: 600; color: var(--text-muted); font-size: 0.75rem;

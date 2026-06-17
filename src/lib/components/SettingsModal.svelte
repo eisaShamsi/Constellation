@@ -2133,6 +2133,19 @@
 						</button>
 					</div>
 
+					<div class="setting-section-heading">{$t('settings.panels.summariesHeading') || 'Summaries'}</div>
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.panels.noteSummaries') || 'Note summaries'}</div>
+							<div class="setting-desc">{$t('settings.panels.noteSummariesDesc') || 'Show a one-line AI summary under each note in the Backlinks and Outgoing panels. Off by default — fetching a summary for every row slows panels on heavily-linked notes.'}</div>
+						</div>
+						<label class="toggle">
+							<input type="checkbox" checked={$appSettings.noteSummariesEnabled}
+								onchange={(e) => updateSettings({ noteSummariesEnabled: (e.target as HTMLInputElement).checked })} />
+							<span class="toggle-slider"></span>
+						</label>
+					</div>
+
 				<!-- ═══ STYLE SETTINGS ═══ -->
 				{:else if activeSection === 'iconoverrides'}
 					<IconOverrideSettings />

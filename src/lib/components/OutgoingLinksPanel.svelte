@@ -3,6 +3,7 @@
 	import { t, tIn } from '$lib/i18n';
 	import { dominantLocale } from '$lib/utils';
 	import LinkTypePill from './LinkTypePill.svelte';
+	import VirtualList from './VirtualList.svelte';
 	import { get } from 'svelte/store';
 	// MIG-044 Phase 2 — NSC summary headlines under each outgoing-link row.
 	import { getSummariesFor } from '$lib/nsc/summaryStore';
@@ -65,6 +66,20 @@
 		return link.linkType ? [link.linkType] : [];
 	}
 
+	// MIG-079 §C.2c-3 — virtualize the list (render only the visible window) so a
+	// note with thousands of outgoing links doesn't build the whole DOM per switch.
+	// getItemHeight mirrors the {#if} branches in the outgoingRow snippet.
+	const VIRTUALIZE_THRESHOLD = 50;
+	const ROW_BASE = 26, ROW_CONTEXT = 16, ROW_ANNOTATION = 16, ROW_HEADLINE = 16, ROW_MIN = 24;
+	function olRowHeight(link: OutgoingRow): number {
+		let h = ROW_BASE;
+		if (link.context) h += ROW_CONTEXT;
+		if (link.annotation) h += ROW_ANNOTATION;
+		if (summaryHeadlines.get(link.target)) h += ROW_HEADLINE;
+		return Math.max(ROW_MIN, h);
+	}
+	const olRows = $derived.by(() => { void summaryHeadlines.size; return outgoingLinks; });
+
 	/** The active NOTE's language (from its title) — so the type pills + annotations read in
 	 *  the NOTE's language (§H note-language principle), not the UI's. Matches BacklinksPanel. */
 	function noteLoc(): string { return dominantLocale(activeNoteName); }
@@ -91,8 +106,14 @@
 	// changes ref) — NOT on every render — so the per-target resolve calls
 	// + one batched summaries fetch are bounded to ~once-per-tab-open.
 	let summaryHeadlines = $state<Map<string, string>>(new Map());
+	// MIG-079 §C.2c-3 — summaries OFF by default + capped to a head window. This
+	// panel's fetch is the HEAVIER one (a per-target resolveWikilinkCrossLibrary
+	// IPC each), so on a note with thousands of outgoing links the old "all targets"
+	// form fired thousands of resolve IPCs on tab-open. Cap to the head window.
+	const HEADLINE_FETCH_CAP = 120;
 	$effect(() => {
-		const visibleTargets = outgoingLinks.map(l => l.target).filter(Boolean);
+		if (!$appSettings.noteSummariesEnabled) return;
+		const visibleTargets = outgoingLinks.slice(0, HEADLINE_FETCH_CAP).map(l => l.target).filter(Boolean);
 		if (visibleTargets.length === 0 || !libraryPath) return;
 		(async () => {
 			try {
@@ -171,6 +192,33 @@
 	}
 </script>
 
+<!-- MIG-079 §C.2c-3 — ONE source of truth for the row (plain {#each} for small
+     notes, VirtualList for large). -->
+{#snippet outgoingRow(link: OutgoingRow)}
+	<button class="ol-item" onclick={(e) => openLink(link.target, e)} dir="auto"
+		oncontextmenu={(e) => openConfMenu(e, activeNotePath, link.target, link.confidence ?? 'hypothesis')}
+		title={$t('linkConfidence.rightClickHint') || 'Right-click to set confidence'}>
+		<span class="ol-target-row">
+			<span class="ol-target">{link.target}</span>
+			{#each rowLinkTypes(link) as lt (lt)}
+				<LinkTypePill id={lt} loc={noteLoc()} />
+			{/each}
+			{#if (link.traversalCount ?? 0) > 0}
+				{@const ltLabel = fmtTraversed(link.lastTraversed ?? '')}
+				<span class="ol-traversal-chip ol-tier-{link.tier ?? 'emerging'}"
+					title={`Traversed ${link.traversalCount} time${link.traversalCount === 1 ? '' : 's'} · ${link.tier ?? 'emerging'}${ltLabel ? ' · Last: ' + ltLabel : ''}`}>×{link.traversalCount}</span>
+			{/if}
+		</span>
+		<span class="ol-context">{link.context}</span>
+		{#if link.annotation}
+			<span class="ol-annotation" title={link.annotation}>“{displayAnnotation(link.annotation)}”</span>
+		{/if}
+		{#if summaryHeadlines.get(link.target)}
+			<span class="ol-headline" dir="auto" title={summaryHeadlines.get(link.target)}>{summaryHeadlines.get(link.target)}</span>
+		{/if}
+	</button>
+{/snippet}
+
 <div class="outgoing-panel" style="--pill-radius:{pillShape.radius}px;--pill-height:{pillShape.height}px;--pill-weight:{pillShape.fontWeight}">
 	<button class="ol-header ol-toggle" onclick={() => showOutgoing = !showOutgoing}>
 		<svg class="ol-chev" class:expanded={showOutgoing} width="8" height="8" viewBox="0 0 10 10">
@@ -180,30 +228,17 @@
 		<span class="ol-count">{outgoingLinks.length}</span>
 	</button>
 	{#if showOutgoing && outgoingLinks.length > 0}
-		{#each outgoingLinks as link}
-			<button class="ol-item" onclick={(e) => openLink(link.target, e)} dir="auto"
-				oncontextmenu={(e) => openConfMenu(e, activeNotePath, link.target, link.confidence ?? 'hypothesis')}
-				title={$t('linkConfidence.rightClickHint') || 'Right-click to set confidence'}>
-				<span class="ol-target-row">
-					<span class="ol-target">{link.target}</span>
-					{#each rowLinkTypes(link) as lt (lt)}
-						<LinkTypePill id={lt} loc={noteLoc()} />
-					{/each}
-					{#if (link.traversalCount ?? 0) > 0}
-						{@const ltLabel = fmtTraversed(link.lastTraversed ?? '')}
-						<span class="ol-traversal-chip ol-tier-{link.tier ?? 'emerging'}"
-							title={`Traversed ${link.traversalCount} time${link.traversalCount === 1 ? '' : 's'} · ${link.tier ?? 'emerging'}${ltLabel ? ' · Last: ' + ltLabel : ''}`}>×{link.traversalCount}</span>
-					{/if}
-				</span>
-				<span class="ol-context">{link.context}</span>
-				{#if link.annotation}
-					<span class="ol-annotation" title={link.annotation}>“{displayAnnotation(link.annotation)}”</span>
-				{/if}
-				{#if summaryHeadlines.get(link.target)}
-					<span class="ol-headline" dir="auto" title={summaryHeadlines.get(link.target)}>{summaryHeadlines.get(link.target)}</span>
-				{/if}
-			</button>
-		{/each}
+		{#if outgoingLinks.length > VIRTUALIZE_THRESHOLD}
+			<div class="ol-vlist-wrap">
+				<VirtualList items={olRows} getItemHeight={olRowHeight} scrollResetKey={activeNotePath} overscan={10}>
+					{#snippet row(link, _i)}{@render outgoingRow(link)}{/snippet}
+				</VirtualList>
+			</div>
+		{:else}
+			{#each outgoingLinks as link}
+				{@render outgoingRow(link)}
+			{/each}
+		{/if}
 	{:else if showOutgoing && loading}
 		<div class="ol-empty">{$t('common.loading')}</div>
 	{:else if showOutgoing}
@@ -232,6 +267,9 @@
 
 <style>
 	.outgoing-panel { font-size: 0.8rem; }
+	/* MIG-079 §C.2c-3 — bounded-height scroller so VirtualList can window (see
+	   BacklinksPanel .bl-vlist-wrap). Do NOT remove max-height/display:flex. */
+	.ol-vlist-wrap { display: flex; flex-direction: column; max-height: 60vh; min-height: 0; }
 	.ol-header {
 		display: flex; align-items: center; gap: 4px;
 		padding: 4px 0; font-weight: 600; color: var(--text-muted); font-size: 0.75rem;
