@@ -119,7 +119,10 @@
 	let activeHeadline = $state<string>('');
 	$effect(() => {
 		const p = tab.path;
-		if (!p) { activeHeadline = ''; return; }
+		// MIG-079 §C.2c-3 follow-up — the note-title summary (the NSC headline line
+		// under the title) is gated by its own toggle. Off → skip the NSC IPC and
+		// hide the line. Reading $appSettings here makes this re-run when toggled.
+		if (!p || !$appSettings.noteTitleSummaryEnabled) { activeHeadline = ''; return; }
 		// Read-and-write of different reactive vars — no Rule 2 loop.
 		void getSummaryFor(p).then((entry) => {
 			// Guard: tab may have switched while we awaited; only commit if still current.

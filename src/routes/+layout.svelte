@@ -1366,6 +1366,11 @@
 	let activeOutgoingRows = $state<NoteLink[]>([]);
 	let perNoteLinksLoading = $state(false);
 	let perNoteRefreshNonce = $state(0);
+	// MIG-079 §C.2c-3 follow-up — leading-edge coalesce: a settled single open
+	// fires near-immediately; only a burst (a fetch within the last window) falls
+	// back to the trailing debounce. Removes the ~180 ms felt lag on a single open
+	// while preserving rapid-switch coalescing (the §C.2c-2b regression guard).
+	let _lastPerNoteFetchAt = 0;
 	const panelLoading = $derived($appSettings.perNoteLinkQueries ? perNoteLinksLoading : !linksReady);
 	let _sidebarDebounce: ReturnType<typeof setTimeout> | undefined;
 
@@ -1484,12 +1489,17 @@
 		};
 		perNoteLinksLoading = true;
 		// COALESCE rapid note-switches into ONE fetch (the last note). The §C.2c-2b
-		// regression was firing fetch + getBacklinks + activeOutgoingRows (→ editor
+		// regression fired fetch + getBacklinks + activeOutgoingRows (→ editor
 		// re-decorate) on EVERY switch with no batching, so a burst piled up and
-		// locked the thread. ~180 ms is below the perceptual threshold for a single
-		// switch but absorbs fast clicking. The $effect cleanup clears the pending
-		// timer before each re-run (and on destroy), so only the latest tab fetches.
+		// locked the thread. LEADING-EDGE: a settled single open (no fetch in the
+		// last 180 ms) fires almost immediately so it doesn't feel laggy; a burst
+		// (fetch fired recently) uses the 180 ms trailing debounce to coalesce. The
+		// stale-guard (sidebarTab?.path === tabPath) discards any early fire whose
+		// note was switched away from, so correctness holds. The $effect cleanup
+		// clears the pending timer before each re-run (and on destroy).
+		const delay = (Date.now() - _lastPerNoteFetchAt > 180) ? 0 : 180;
 		const timer = setTimeout(() => {
+			_lastPerNoteFetchAt = Date.now();
 			(async () => {
 				try {
 					const [blRows, ogRows] = await Promise.all([
@@ -1512,7 +1522,7 @@
 					if (sidebarTab?.path === tabPath) perNoteLinksLoading = false;
 				}
 			})();
-		}, 180);
+		}, delay);
 		return () => clearTimeout(timer);
 	});
 

@@ -3547,6 +3547,12 @@ export interface AppSettings {
 	 * Settings → Panels → Note summaries. */
 	noteSummariesEnabled: boolean;
 
+	/** When true, the editor shows the note's own one-line NSC summary "headline"
+	 * directly under its title. Default FALSE — consistent with the sibling
+	 * `noteSummariesEnabled` (panel rows) and the leaner-by-default editor. Toggle
+	 * in Settings → Editor → Note title summary. */
+	noteTitleSummaryEnabled: boolean;
+
 	// Built-in features
 	enabledFeatures: {
 		dailyNotes: boolean;
@@ -3860,6 +3866,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
 	safeBootMode: false,
 	perNoteLinkQueries: true,
 	noteSummariesEnabled: false,
+	noteTitleSummaryEnabled: false,
 	enabledFeatures: {
 		dailyNotes: true,
 		templates: true,

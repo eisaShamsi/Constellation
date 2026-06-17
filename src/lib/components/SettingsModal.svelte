@@ -1005,6 +1005,18 @@
 
 					<div class="setting-item">
 						<div class="setting-info">
+							<div class="setting-name">{$t('settings.editor.noteTitleSummary') || 'Note title summary'}</div>
+							<div class="setting-desc">{$t('settings.editor.noteTitleSummaryDesc') || 'Show the note’s one-line AI summary directly under its title in the editor. Off by default for a leaner title area.'}</div>
+						</div>
+						<label class="toggle">
+							<input type="checkbox" checked={$appSettings.noteTitleSummaryEnabled}
+								onchange={(e) => updateSettings({ noteTitleSummaryEnabled: (e.target as HTMLInputElement).checked })} />
+							<span class="toggle-slider"></span>
+						</label>
+					</div>
+
+					<div class="setting-item">
+						<div class="setting-info">
 							<div class="setting-name">{$t('settings.editor.indentationGuides')}</div>
 							<div class="setting-desc">{$t('settings.editor.indentationGuidesDesc')}</div>
 						</div>

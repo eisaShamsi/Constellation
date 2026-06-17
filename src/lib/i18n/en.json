@@ -139,7 +139,9 @@
 			"foldIndent": "Fold indent",
 			"foldIndentDesc": "Allow folding indented content",
 			"indentWithTabs": "Indent with tabs",
-			"indentWithTabsDesc": "Use tabs instead of spaces for indentation"
+			"indentWithTabsDesc": "Use tabs instead of spaces for indentation",
+			"noteTitleSummary": "Note title summary",
+			"noteTitleSummaryDesc": "Show the note’s one-line AI summary directly under its title in the editor. Off by default for a leaner title area."
 		},
 		"language": {
 			"title": "Language",
