@@ -785,7 +785,17 @@ fn is_federated_sky_ready(conn: &Connection, schemas: &[String]) -> bool {
 ///
 /// Single-universe (no cUniverses) behavior is byte-identical to the
 /// pre-MIG-061 path: schemas=["main"], no extra overhead.
-#[tauri::command]
+///
+/// **MIG-079 §C.2d:** `async` (the §9.1 lever). The body is synchronous
+/// rusqlite, but `#[tauri::command(async)]` makes Tauri run it on its
+/// worker thread pool instead of the single IPC dispatch thread — so the
+/// cold 234k-row `sky_links` scan (~11 s on the reference universe) no
+/// longer monopolises that thread and stalls every other boot IPC behind
+/// it (measured: an 11.4 s gap in the IPC arrival trace). With §C.2d the
+/// read is also deferred off boot (lazy on first Sky-surface open + an
+/// after-idle background warm-up) — and both the on-open load and the
+/// warm-up rely on this async attribute to avoid freezing the app.
+#[tauri::command(async)]
 pub fn cache_boot_snapshot_sky(app: tauri::AppHandle) -> Result<BootSnapshotSky, String> {
     let mut timings: Vec<(String, u64)> = Vec::new();
 
