@@ -1483,28 +1483,37 @@
 			decayEnabled: lifecycle?.decayEnabled ?? true,
 		};
 		perNoteLinksLoading = true;
-		(async () => {
-			try {
-				const [blRows, ogRows] = await Promise.all([
-					invoke<NoteLink[]>('get_backlink_rows', { noteName: tabName, aliases: aliasesForActive }),
-					invoke<NoteLink[]>('get_outgoing_rows', { notePath: tabPath }),
-				]);
-				// Discard if the user switched notes during the await.
-				if (sidebarTab?.path === tabPath) {
-					currentBacklinks = getBacklinks(blRows, tabName, decayCfg, aliasesForActive);
-					currentOutgoing = getOutgoingLinks(ogRows, tabPath, decayCfg);
-					activeOutgoingRows = ogRows; // feeds the editor ×N traversal map
+		// COALESCE rapid note-switches into ONE fetch (the last note). The §C.2c-2b
+		// regression was firing fetch + getBacklinks + activeOutgoingRows (→ editor
+		// re-decorate) on EVERY switch with no batching, so a burst piled up and
+		// locked the thread. ~180 ms is below the perceptual threshold for a single
+		// switch but absorbs fast clicking. The $effect cleanup clears the pending
+		// timer before each re-run (and on destroy), so only the latest tab fetches.
+		const timer = setTimeout(() => {
+			(async () => {
+				try {
+					const [blRows, ogRows] = await Promise.all([
+						invoke<NoteLink[]>('get_backlink_rows', { noteName: tabName, aliases: aliasesForActive }),
+						invoke<NoteLink[]>('get_outgoing_rows', { notePath: tabPath }),
+					]);
+					// Discard if the user switched notes during the await.
+					if (sidebarTab?.path === tabPath) {
+						currentBacklinks = getBacklinks(blRows, tabName, decayCfg, aliasesForActive);
+						currentOutgoing = getOutgoingLinks(ogRows, tabPath, decayCfg);
+						activeOutgoingRows = ogRows; // feeds the editor ×N traversal map
+					}
+				} catch {
+					if (sidebarTab?.path === tabPath) {
+						currentBacklinks = [];
+						currentOutgoing = [];
+						activeOutgoingRows = [];
+					}
+				} finally {
+					if (sidebarTab?.path === tabPath) perNoteLinksLoading = false;
 				}
-			} catch {
-				if (sidebarTab?.path === tabPath) {
-					currentBacklinks = [];
-					currentOutgoing = [];
-					activeOutgoingRows = [];
-				}
-			} finally {
-				if (sidebarTab?.path === tabPath) perNoteLinksLoading = false;
-			}
-		})();
+			})();
+		}, 180);
+		return () => clearTimeout(timer);
 	});
 
 	// Unlinked mentions for current note (already debounced — no change needed)
