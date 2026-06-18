@@ -101,7 +101,6 @@
 	import KnowledgeHealthDashboard from '$lib/components/KnowledgeHealthDashboard.svelte';
 	import CCSView from '$lib/components/CCSView.svelte';
 	import TasksPanel from '$lib/components/TasksPanel.svelte';
-	import CalendarPanel from '$lib/components/CalendarPanel.svelte';
 	import GlobalTasksView from '$lib/components/GlobalTasksView.svelte';
 	import TensionPanel from '$lib/components/TensionPanel.svelte';
 	import ProvenancePanel from '$lib/components/ProvenancePanel.svelte';
@@ -386,7 +385,8 @@
 	// (tags / links / review / sourceReview) are universe-wide and render with or without a note.
 	// Gated ONCE in the content area below, replacing the old `isHome && sidebarTab` note-gate that
 	// hoisted tags/links above it and duplicated review/sourceReview inside + outside it.
-	const NOTE_SCOPED_TABS = new Set(['properties', 'backlinks', 'star', 'tasks', 'calendar', 'health', 'provenance', 'inspector360']);
+	// MIG-080 §A — 'calendar' removed (relocated to the left daily-note launcher).
+	const NOTE_SCOPED_TABS = new Set(['properties', 'backlinks', 'star', 'tasks', 'health', 'provenance', 'inspector360']);
 	// Tag Browser (#12): the right-sidebar Tags tab toggles between the open
 	// note's tags ('note') and the universe-wide federated tag tree ('all',
 	// fed by allLibraryTags via the reusable TagsPanel).
@@ -1704,7 +1704,7 @@
 			tags:       inSidebar('tags'),
 			star:       inSidebar('sky'),
 			tasks:      inSidebar('tasks'),
-			calendar:   inSidebar('calendar'),
+			calendar:   false, // MIG-080 §A — relocated to the left launcher; never a right-rail tab now (a stale saved rightSidebarTab='calendar' resets below)
 			health:     inSidebar('health'),
 			provenance: inSidebar('provenance'),
 			review:     inSidebar('review'),
@@ -1716,7 +1716,7 @@
 		};
 
 		if (!tabVisible[rightSidebarTab]) {
-			const order = ['properties', 'backlinks', 'tags', 'star', 'tasks', 'calendar', 'health', 'provenance', 'review', 'inspector360', 'sourceReview'] as const;
+			const order = ['properties', 'backlinks', 'tags', 'star', 'tasks', 'health', 'provenance', 'review', 'inspector360', 'sourceReview'] as const;
 			const first = order.find(tab => tabVisible[tab]);
 			rightSidebarTab = (first ?? 'properties') as typeof rightSidebarTab;
 		}
@@ -4000,11 +4000,15 @@
 		}
 	}
 
-	async function handleOpenDailyNote() {
+	// MIG-080 §A — open the daily note for a specific date (YYYY-MM-DD) or, when
+	// omitted, today. The daily-note home is the first library (the configured home);
+	// the left launcher always opens here, which removes the old right-rail Calendar's
+	// wrong-library ambiguity (dots aggregated across libraries but open used [0]).
+	async function openDailyNote(dateStr?: string) {
 		const firstLib = $libraries[0];
 		if (!firstLib) return;
 		try {
-			const path = await getDailyNotePath(firstLib.path, $appSettings.dailyNoteFormat, $appSettings.dailyNoteFolder);
+			const path = await getDailyNotePath(firstLib.path, $appSettings.dailyNoteFormat, $appSettings.dailyNoteFolder, dateStr);
 			const libraryColor = libraryColorMap[firstLib.name] ?? '#7c3aed';
 
 			// Apply daily note template if configured and note was just created (has only date frontmatter)
@@ -4031,6 +4035,11 @@
 			console.error('Failed to open daily note:', e);
 		}
 	}
+	// Back-compat: existing callers (command palette) open TODAY's note.
+	function handleOpenDailyNote() { return openDailyNote(); }
+	// MIG-080 §A — the left daily-note launcher (replaces the right-rail Calendar tab).
+	let showDailyLauncher = $state(false);
+	const dailyLauncherToday = () => new Date().toISOString().slice(0, 10);
 
 	/** Cached universe-level templates list */
 	let cachedTemplates = $state<{ name: string; path: string; libraryName: string }[]>([]);
@@ -5484,9 +5493,26 @@
 			</button>
 			{/if}
 			{#if $appSettings.enabledFeatures?.dailyNotes !== false}
-			<button class="dock-btn" onclick={handleOpenDailyNote} title={$t('ribbon.dailyNote')}>
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-			</button>
+			<!-- MIG-080 §A — daily-note launcher (replaces the right-rail Calendar tab):
+			     opens today, or pick any day → that day's daily note. -->
+			<div class="daily-launcher-wrap">
+				<button class="dock-btn" class:active={showDailyLauncher} onclick={() => showDailyLauncher = !showDailyLauncher} title={$t('ribbon.dailyNote')}>
+					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+				</button>
+				{#if showDailyLauncher}
+					<button class="daily-launcher-backdrop" aria-label={$t('common.close') || 'Close'} onclick={() => showDailyLauncher = false}></button>
+					<div class="daily-launcher-pop">
+						<button class="dl-row dl-today" onclick={() => { showDailyLauncher = false; openDailyNote(); }}>{$t('calendarPanel.today')}</button>
+						<input
+							type="date"
+							class="dl-date"
+							value={dailyLauncherToday()}
+							title={$t('ribbon.dailyNote')}
+							onchange={(e) => { const v = (e.currentTarget as HTMLInputElement).value; showDailyLauncher = false; if (v) openDailyNote(v); }}
+						/>
+					</div>
+				{/if}
+			</div>
 			{/if}
 			{#if $appSettings.enabledFeatures?.aiSkills !== false}
 			<a href="/skills" class="dock-btn" class:active={page.url.pathname === '/skills'} title={$t('ribbon.aiSkills')}>
@@ -7057,11 +7083,7 @@
 						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
 					</button>
 				{/if}
-				{#if ($appSettings.panelPlacements?.calendar ?? 'right-sidebar') === 'right-sidebar'}
-					<button class="rs-tab" class:active={rightSidebarTab === 'calendar'} onclick={() => rightSidebarTab = 'calendar'} title={$t('panels.calendar')}>
-						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-					</button>
-				{/if}
+				<!-- MIG-080 §A — Calendar relocated to the left daily-note launcher (no right-rail tab). -->
 				{#if ($appSettings.panelPlacements?.health ?? 'right-sidebar') === 'right-sidebar'}
 					<button class="rs-tab" class:active={rightSidebarTab === 'health'} onclick={() => rightSidebarTab = 'health'} title={$t('panels.health') || 'Knowledge Health'}>
 						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
@@ -7252,28 +7274,6 @@
 						{:else}
 							<div class="rs-empty-full">{$t('tasksPanel.noTasks')}</div>
 						{/if}
-					</div>
-				{:else if rightSidebarTab === 'calendar'}
-					<div class="rs-section rs-full-height">
-						<CalendarPanel
-							noteDates={calendarNoteDates}
-							taskDueDates={calendarTaskDates}
-							onDayClick={async (dateStr) => {
-								const libraryList = get(libraries);
-								if (libraryList.length === 0) return;
-								const lib = libraryList[0];
-								try {
-									const dailyPath: string = await invoke('get_daily_note_path', {
-										libraryPath: lib.path,
-										format: get(appSettings).dailyNoteFormat || '%Y-%m-%d',
-										folder: get(appSettings).dailyNoteFolder || '',
-										date: dateStr, // MIG-079 §D — open the CLICKED day's note, not today's
-									});
-									const vc = libraryColorMap[lib.name] || '#7c3aed';
-									await openNoteTab(dailyPath, lib.name, vc);
-								} catch (e) { console.error('Daily note failed:', e); }
-							}}
-						/>
 					</div>
 				{:else if rightSidebarTab === 'health'}
 					<div class="rs-section rs-full-height">
@@ -7933,6 +7933,30 @@
 	}
 	.dock-btn:hover { background: var(--border); color: var(--text); }
 	.dock-btn.active { color: var(--accent); }
+
+	/* MIG-080 §A — daily-note launcher popover (anchored to the dock button). */
+	.daily-launcher-wrap { position: relative; }
+	.daily-launcher-backdrop {
+		position: fixed; inset: 0; z-index: 120;
+		background: transparent; border: none; padding: 0; margin: 0; cursor: default;
+	}
+	.daily-launcher-pop {
+		position: absolute; inset-inline-start: calc(100% + 6px); top: 0; z-index: 121;
+		display: flex; flex-direction: column; gap: 6px;
+		background: var(--bg-secondary, #fff);
+		border: var(--border-width, 1px) solid var(--border);
+		border-radius: 8px; padding: 8px; min-width: 168px;
+		box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+	}
+	.dl-row, .dl-date {
+		font: inherit; font-size: 0.85rem;
+		padding: 6px 10px; border-radius: 6px;
+		border: var(--border-width, 1px) solid var(--border);
+		background: var(--bg-primary, #fff); color: var(--text);
+		text-align: start;
+	}
+	.dl-today { cursor: pointer; }
+	.dl-today:hover { background: var(--border); }
 
 	/* ═══ LEFT SIDEBAR ═══ */
 	.sidebar {

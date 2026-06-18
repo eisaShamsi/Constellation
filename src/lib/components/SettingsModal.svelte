@@ -2107,7 +2107,7 @@
 						['tags',       $t('settings.panels.panelTags'),       $t('settings.panels.panelTagsDesc')],
 						['sky',        $t('settings.panels.panelSky'),        $t('settings.panels.panelSkyDesc')],
 						['tasks',      $t('settings.panels.panelTasks'),      $t('settings.panels.panelTasksDesc')],
-						['calendar',   $t('settings.panels.panelCalendar'),   $t('settings.panels.panelCalendarDesc')],
+						// MIG-080 §A — 'calendar' removed (relocated to the left daily-note launcher).
 						['health',     $t('settings.panels.panelHealth'),     $t('settings.panels.panelHealthDesc')],
 						['provenance', $t('settings.panels.panelProvenance'), $t('settings.panels.panelProvenanceDesc')],
 						['review',     $t('settings.panels.panelReview'),     $t('settings.panels.panelReviewDesc')],
