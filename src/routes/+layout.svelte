@@ -101,6 +101,7 @@
 	import KnowledgeHealthDashboard from '$lib/components/KnowledgeHealthDashboard.svelte';
 	import CCSView from '$lib/components/CCSView.svelte';
 	import TasksPanel from '$lib/components/TasksPanel.svelte';
+	import CalendarPanel from '$lib/components/CalendarPanel.svelte'; // MIG-080 §A.2 — full-page Calendar view
 	import GlobalTasksView from '$lib/components/GlobalTasksView.svelte';
 	import TensionPanel from '$lib/components/TensionPanel.svelte';
 	import ProvenancePanel from '$lib/components/ProvenancePanel.svelte';
@@ -439,6 +440,7 @@
 	let showExpressionForge = $state(false); // CE Phase 10
 	let showSenseMakingCanvas = $state(false); // CE Phase 11
 	let showConstellationMap = $state(false);
+	let showCalendarPage = $state(false); // MIG-080 §A.2 — full-page Calendar view (distinct from the Daily-Note launcher)
 	let showSearchHub = $state(false);
 	let showKnowledgeHealth = $state(false);
 	let showCCS = $state(false); // MIG-074 — CCS (Constellation Circulatory System) left-dock Core Plug-in
@@ -651,9 +653,11 @@
 	let mapEverOpened = $state(false);
 	let orgChartEverOpened = $state(false);
 	let catalogerEverOpened = $state(false);
+	let calendarPageEverOpened = $state(false); // MIG-080 §A.2
 	$effect(() => { if (showConstellationMap) mapEverOpened = true; });
 	$effect(() => { if (showOrgChart) orgChartEverOpened = true; });
 	$effect(() => { if (showCataloger) catalogerEverOpened = true; });
+	$effect(() => { if (showCalendarPage) calendarPageEverOpened = true; });
 	$effect(() => { if (showInspector360) inspector360EverOpened = true; });
 
 	// Sky View inspect-mode lockout recovery. When the user clicks an SV node,
@@ -1325,7 +1329,15 @@
 	const isHome = $derived(page.url.pathname === '/');
 	const isDashboardVisible = $derived(isHome && !$activeTab && $libraries.length > 0 && $appSettings.showDashboard);
 	/** True when any full-page function is active — disables sidebars and split pane */
-	const fullPageActive = $derived(showSkyView || showGlobalTasks || showIndex || showExpressionForge || showSenseMakingCanvas || showConstellationMap || showOrgChart || showCataloger || showKnowledgeHealth || lensActive || sightV3Active || sightV4Active || sightV5Active || sightV6Active || showSearchHub || showInspector360 || isDashboardVisible);
+	const fullPageActive = $derived(showSkyView || showGlobalTasks || showIndex || showExpressionForge || showSenseMakingCanvas || showConstellationMap || showOrgChart || showCataloger || showKnowledgeHealth || lensActive || sightV3Active || sightV4Active || sightV5Active || sightV6Active || showSearchHub || showInspector360 || isDashboardVisible || showCalendarPage);
+	// MIG-080 §A.2 — the Calendar page is a full-page overlay; if another full-page
+	// overlay opens while it's up, close the Calendar (the dock buttons close it the
+	// other direction). Settles: once false, the guard is inert (no loop).
+	$effect(() => {
+		if (showCalendarPage && (showSkyView || showGlobalTasks || showIndex || showExpressionForge || showSenseMakingCanvas || showConstellationMap || showOrgChart || showCataloger || showKnowledgeHealth || lensActive || sightV3Active || sightV4Active || sightV6Active || showSearchHub || showInspector360 || isDashboardVisible)) {
+			showCalendarPage = false;
+		}
+	});
 
 	// Shared disable/title logic for the three layout-bar buttons (left sidebar,
 	// split-view, right sidebar). Any overlay mode that takes over the editor
@@ -1722,10 +1734,12 @@
 		}
 	});
 
-	// Calendar sidebar: load note dates when Calendar tab is visible
+	// MIG-080 §A.2 — load note/task date counts when the Calendar PAGE is open
+	// (was the right-rail Calendar tab, removed in §A). Populates the highlighted
+	// events on the full-page month grid.
 	let _calTimer: ReturnType<typeof setTimeout> | undefined;
 	$effect(() => {
-		const isVisible = rightSidebarOpen && rightSidebarTab === 'calendar';
+		const isVisible = showCalendarPage;
 		clearTimeout(_calTimer);
 		if (!isVisible) return;
 		_calTimer = setTimeout(async () => {
@@ -2532,6 +2546,7 @@
 		mapEverOpened = false;
 		orgChartEverOpened = false;
 		catalogerEverOpened = false;
+		showCalendarPage = false; calendarPageEverOpened = false; // MIG-080 §A.2
 		// MIG-079 §C.2d — reset the deferred-sky state so the new universe re-loads
 		// its own graph on first open (and the warm-up re-fires). Bump the epoch so an
 		// in-flight OLD-universe sky load that resolves after this reset is discarded
@@ -5514,6 +5529,18 @@
 				{/if}
 			</div>
 			{/if}
+			{#if $appSettings.enabledFeatures?.dailyNotes !== false}
+			<!-- MIG-080 §A.2 — Calendar page (distinct from the Daily-Note launcher above):
+			     a full-page month view with highlighted note/task events. -->
+			<button class="dock-btn" class:active={showCalendarPage} onclick={() => {
+				showCalendarPage = !showCalendarPage;
+				if (showCalendarPage) {
+					showSkyView = false; showGlobalTasks = false; showIndex = false; showConstellationMap = false; showOrgChart = false; showKnowledgeHealth = false; showCCS = false; showInspector360 = false; showCataloger = false; showSearchHub = false; showExpressionForge = false; showSenseMakingCanvas = false; lensActive = false; sightV3Active = false; sightV4Active = false; sightV6Active = false;
+				}
+			}} title={$t('panels.calendar')}>
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><circle cx="8" cy="15" r="0.6" fill="currentColor" stroke="none"/><circle cx="12" cy="15" r="0.6" fill="currentColor" stroke="none"/><circle cx="16" cy="15" r="0.6" fill="currentColor" stroke="none"/></svg>
+			</button>
+			{/if}
 			{#if $appSettings.enabledFeatures?.aiSkills !== false}
 			<a href="/skills" class="dock-btn" class:active={page.url.pathname === '/skills'} title={$t('ribbon.aiSkills')}>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01z"/></svg>
@@ -6306,6 +6333,26 @@
 		{/if}
 
 		<!-- 360° Inspector overlay — lazy-mounted (LL-022). CE Phase 12. -->
+		<!-- MIG-080 §A.2 — Calendar page overlay (lazy-mounted, LL-022): full-page month
+		     view with highlighted note/task events; click a day → that day's daily note. -->
+		{#if calendarPageEverOpened}
+			<div class="calendar-overlay" class:calendar-visible={showCalendarPage}>
+				<div class="calendar-page">
+					<div class="calendar-page-header">
+						<span class="calendar-page-title">{$t('panels.calendar')}</span>
+						<button class="star-close" onclick={() => showCalendarPage = false} aria-label={$t('common.close') || 'Close'}>×</button>
+					</div>
+					<div class="calendar-page-body">
+						<CalendarPanel
+							noteDates={calendarNoteDates}
+							taskDueDates={calendarTaskDates}
+							onDayClick={(dateStr) => { showCalendarPage = false; openDailyNote(dateStr); }}
+						/>
+					</div>
+				</div>
+			</div>
+		{/if}
+
 		{#if inspector360EverOpened}
 			<div class="inspector360-overlay" class:inspector360-visible={showInspector360}>
 				<Inspector360
@@ -6460,7 +6507,7 @@
 		</div>
 
 		<!-- Content -->
-		<div class="content-area" class:content-hidden={showIndex || showConstellationMap || showOrgChart || showCataloger || lensActive || showSearchHub || showInspector360} onmouseover={handleWikilinkHover} onmouseout={handleWikilinkLeave}>
+		<div class="content-area" class:content-hidden={showIndex || showConstellationMap || showOrgChart || showCataloger || lensActive || showSearchHub || showInspector360 || showCalendarPage} onmouseover={handleWikilinkHover} onmouseout={handleWikilinkLeave}>
 			{#if showSkyView}
 				<div class="star-fullscreen">
 					<div class="star-header">
@@ -8554,12 +8601,37 @@
 		overflow: hidden;
 	}
 
-	.index-overlay, .map-overlay, .orgchart-overlay, .inspector360-overlay, .cataloger-overlay {
+	.index-overlay, .map-overlay, .orgchart-overlay, .inspector360-overlay, .cataloger-overlay, .calendar-overlay {
 		display: none; flex: 1; overflow: hidden;
 		background: var(--background-primary, #fff);
 		min-height: 0;
 	}
-	.index-overlay.index-visible, .map-overlay.map-visible, .orgchart-overlay.orgchart-visible, .inspector360-overlay.inspector360-visible, .cataloger-overlay.cataloger-visible { display: flex; flex-direction: column; }
+	.index-overlay.index-visible, .map-overlay.map-visible, .orgchart-overlay.orgchart-visible, .inspector360-overlay.inspector360-visible, .cataloger-overlay.cataloger-visible, .calendar-overlay.calendar-visible { display: flex; flex-direction: column; }
+
+	/* MIG-080 §A.2 — full-page Calendar (uses the whole center zone, per the Style-Setter rule). */
+	.calendar-page { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+	.calendar-page-header {
+		display: flex; align-items: center; justify-content: space-between;
+		padding: 10px 18px; border-bottom: var(--border-width, 1px) solid var(--border);
+		background: var(--bg-secondary);
+	}
+	.calendar-page-title { font-weight: 600; font-size: 1rem; }
+	.calendar-page-body {
+		flex: 1; min-height: 0; overflow: auto;
+		display: flex; justify-content: center; align-items: flex-start;
+		padding: 24px;
+	}
+	.calendar-page-body :global(.calendar-panel) { width: 100%; max-width: 1100px; }
+	.calendar-page-body :global(.cp-header) { padding: 4px 0 16px; }
+	.calendar-page-body :global(.cp-month) { font-size: 1.15rem; }
+	.calendar-page-body :global(.cp-nav) { width: 40px; height: 40px; font-size: 1.5rem; }
+	.calendar-page-body :global(.cp-weekday) { font-size: 0.85rem; padding: 8px 0; }
+	.calendar-page-body :global(.cp-grid) { gap: 4px; }
+	.calendar-page-body :global(.cp-day) { min-height: 84px; border: var(--border-width, 1px) solid var(--border); border-radius: 8px; justify-content: flex-start; padding: 8px; }
+	.calendar-page-body :global(.cp-day-num) { font-size: 1rem; align-self: flex-start; }
+	.calendar-page-body :global(.cp-day.today .cp-day-num) { width: 28px; height: 28px; font-size: 0.95rem; }
+	.calendar-page-body :global(.cp-dots) { position: static; margin-top: auto; gap: 4px; }
+	.calendar-page-body :global(.cp-dot) { width: 7px; height: 7px; }
 
 	.index-return-btn {
 		display: flex; align-items: center; gap: 4px;
