@@ -276,3 +276,10 @@ Rewrote CalendarPanel to the rich design (ported from Eisa's app), using buildRi
 - **All colours/fonts via --cal-* CSS variables** (defaults = Eisa's app palette: header #14553f→#1a6b4f, gold today, teal sub, Amiri/Cairo) → Style-Setter-ready (§C.2d wires the catalog).
 - New **calendarShowWeekNumbers** setting (default true) + a Settings → Calendar toggle; §A.2 page passes primarySystem/weekStart/showWeekNumbers. i18n: calendarPanel.weekAbbrev + settings.calendar.showWeekNumbers(Desc) added to en.json (×15 rides §E). svelte-check 0; binary rebuild in progress.
 - Remaining MIG-081: §C.2d Style-Setter Calendar token group (the --cal-* vars → catalog + preview); §C.2e Amiri/Cairo fonts + ×15 i18n + audit.
+
+
+## ⚑ Boss §C.2b result + 4 NEW asks + SESSION CLOSE (full PCS) — 2026-06-17
+- **§C.2b Boss test: "Perfect!"** The rich calendar (Eisa's app look) renders. MIG-081 §A/§B/§C/§C.2a/§C.2b SHIPPED + validated.
+- **Boss's 4 NEW Calendar asks (next session — see handover):** (1) Month Correction ±/month + list + Clear All (engine has setCorrection/getCorrection/clearCorrections/getAllCorrections); (2) Calculation Mode selector (Astronomical/Tabular al-Tawfīqāt al-Ilhāmiyyah; engine default astronomical; verify the public mode setter); (3) a Style-Setter "Calendar" tab (wire the --cal-* tokens; full-center-zone preview rule); (4) RETIRE the Daily-Note dock button — the Calendar fully serves daily notes (keep handleOpenDailyNote/openDailyNote for the command palette + the page).
+- **Full session-close PCS done:** orientation **v2.90** (NEW file), this session log, **MoCh** docs/MoCh/MoCh-2026-06-17-1800.md, **handover** lab/reports/HANDOVER-2026-06-17-mig081-rich-calendar.md, **next-prompt** lab/reports/NEXT-SESSION-PROMPT.md, **User Manual** §14 Calendar (cultural calendars + left-dock + Gregorian-ISO-filename note). All pushed.
+- **State protected on main (9e6ae75f→close commit):** MIG-079 §C.2d + cleanups (validated); MIG-080 §A/§A.2 + file-tree fix (validated); MIG-081 §A/§B/§C/§C.2a/§C.2b (validated "Perfect!"). Pending: the 4 Calendar asks, §C.2e fonts/×15, MIG-080 §B–§F.

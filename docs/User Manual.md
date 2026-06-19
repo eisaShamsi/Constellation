@@ -1300,13 +1300,13 @@ Go to **Settings > Importer** to start an import.
 
 ## 14. Calendar
 
-The Calendar view shows notes organized by date:
+The **Calendar** is a full-page month view, opened from the **left dock** (the calendar icon). Clicking any day opens (or creates) that day's **daily note**. Days with notes or due tasks are marked with dots.
 
-- Notes with a `date` property appear on their respective days
-- Daily notes can be created for any date
-- Navigate months with arrow buttons
+**Cultural calendars.** In **Settings → Calendar** you can set the **calendar system** — **Gregorian, Hijri (Islamic), Solar Hijri (Persian), or Hebrew** — and the whole month grid switches to it, showing both the chosen-calendar date (large) and the Gregorian date (small) in each cell, plus the moon phase. The Hijri calendar uses an accurate astronomical engine; sacred months are highlighted and Islamic events are marked. You can also choose the **week start** (Sunday/Monday) and toggle the **week-number column**.
 
-Open the Calendar from the sidebar.
+> **Daily-note filenames always stay Gregorian** (`YYYY-MM-DD`) regardless of the displayed calendar — so your files stay portable and sort correctly. The cultural date is shown in the calendar (and can be recorded in the note's frontmatter).
+
+The separate **Daily Note** launcher also lives on the left dock (open today, or pick a date).
 
 ---
 
