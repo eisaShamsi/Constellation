@@ -44,10 +44,10 @@ async function getHijri(): Promise<any> {
 	return _Hijri;
 }
 
-/** Preload only the engine(s) the chosen systems need. Resolves when ready. */
+/** Preload the engine(s) needed. Hijri is ALWAYS loaded — the rich grid uses its
+ *  getMoonPhase (astronomical → universal, shown for every system) + Hijri events. */
 export async function ensureCalendarEngines(systems: CalendarSystem[]): Promise<void> {
-	const tasks: Promise<any>[] = [];
-	if (systems.includes('hijri')) tasks.push(getHijri());
+	const tasks: Promise<any>[] = [getHijri()];
 	if (systems.some((s) => s === 'solar-hijri' || s === 'hebrew')) tasks.push(getTemporal());
 	await Promise.all(tasks);
 }
@@ -251,4 +251,116 @@ export function frontmatterKey(system: CalendarSystem): string | null {
 		case 'hebrew': return 'hebrew';
 		default: return null;
 	}
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// MIG-081 §C.2 — RICH grid (ports Eisa's app: dual dates + moon phase + events
+// + week number + AH/sacred). Additive over buildMonthGrid so the plain §C path
+// is untouched. Engines must be loaded (ensureCalendarEngines — always loads Hijri).
+// ═══════════════════════════════════════════════════════════════════════
+
+export interface RichCell extends GridCell {
+	subLabel: string;       // cross-reference date: Gregorian day (non-Greg primary) | Hijri day (Greg primary)
+	weekNumber: number;     // ISO-8601 week of this cell's Gregorian date
+	moonSymbol: string;     // ●◗◑◕○◔◐◖ from the engine's astronomical phase (universal)
+	moonName: string;
+	eventType?: 'holiday' | 'observance' | 'special'; // Hijri only
+	eventName?: string;     // Hijri only
+}
+
+export interface RichMonthGrid {
+	cells: RichCell[];
+	monthLabel: string;     // primary-calendar month + year
+	suffix: string;         // 'AH' | 'SH' | 'AM' | '' (era marker)
+	gregorianRange: string; // e.g. "June – July 2026"
+	isSacred: boolean;      // Hijri sacred month → gold pill
+	displayYear: number;
+	displayMonth: number;
+	weekdayLabels: string[];
+}
+
+/** ISO-8601 week number for a Gregorian ISO date. */
+function isoWeek(iso: string): number {
+	const [y, m, d] = iso.split('-').map(Number);
+	const dt = new Date(Date.UTC(y, m - 1, d));
+	const day = (dt.getUTCDay() + 6) % 7;            // Mon=0..Sun=6
+	dt.setUTCDate(dt.getUTCDate() - day + 3);         // Thursday of this ISO week
+	const firstThu = new Date(Date.UTC(dt.getUTCFullYear(), 0, 4));
+	const ftDay = (firstThu.getUTCDay() + 6) % 7;
+	firstThu.setUTCDate(firstThu.getUTCDate() - ftDay + 3);
+	return 1 + Math.round((dt.getTime() - firstThu.getTime()) / (7 * 86400000));
+}
+
+/** "June – July 2026" (or "June 2026") from the grid's first/last Gregorian ISO cells. */
+function gregRange(firstISO: string, lastISO: string, locale: string): string {
+	const f = new Date(firstISO), l = new Date(lastISO);
+	const mf = new Intl.DateTimeFormat(locale, { month: 'long' });
+	const my = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' });
+	if (f.getFullYear() === l.getFullYear() && f.getMonth() === l.getMonth()) return my.format(l);
+	if (f.getFullYear() === l.getFullYear()) return `${mf.format(f)} – ${my.format(l)}`;
+	return `${my.format(f)} – ${my.format(l)}`;
+}
+
+/** Build the RICH grid (dual dates, moon phase, week numbers, Hijri events/sacred). */
+export function buildRichMonthGrid(
+	system: CalendarSystem,
+	displayYear: number,
+	displayMonth: number,
+	locale: string,
+	weekStart: 0 | 1 = 0,
+): RichMonthGrid {
+	const base = buildMonthGrid(system, displayYear, displayMonth, locale, weekStart);
+	const H = _Hijri;
+	const isAr = locale.startsWith('ar');
+
+	const cells: RichCell[] = base.cells.map((c) => {
+		const [gy, gm, gd] = c.iso.split('-').map(Number);
+		const moon = H ? H.getMoonPhase(gy, gm, gd) : null;
+		// Cross-reference sub-date: show Gregorian under a non-Greg primary; under a
+		// Gregorian primary, show the Hijri day (so both systems are always visible).
+		let subLabel: string;
+		if (system === 'gregorian') {
+			const h = H ? H.gregorianToHijri(gy, gm, gd) : null;
+			subLabel = h ? localeNum(h.day, locale) : '';
+		} else {
+			subLabel = localeNum(gd, locale);
+		}
+		let eventType: RichCell['eventType'];
+		let eventName: string | undefined;
+		if (system === 'hijri' && H && c.inCurrentMonth) {
+			const h = H.gregorianToHijri(gy, gm, gd);
+			const ev = H.getEvent(h.month, h.day);
+			if (ev) { eventType = ev.type; eventName = ev.name; }
+		}
+		return {
+			...c,
+			subLabel,
+			weekNumber: isoWeek(c.iso),
+			moonSymbol: moon?.symbol ?? '',
+			moonName: moon?.name ?? '',
+			eventType,
+			eventName,
+		};
+	});
+
+	let suffix = '';
+	if (system === 'hijri') suffix = isAr ? 'هـ' : 'AH';
+	else if (system === 'solar-hijri') suffix = locale.startsWith('fa') ? 'ه‍.ش' : 'SH';
+	else if (system === 'hebrew') suffix = 'AM';
+	const isSacred = system === 'hijri' && !!H && H.isSacredMonth(displayMonth);
+
+	const firstISO = base.cells[0]?.iso ?? '';
+	const lastISO = base.cells[base.cells.length - 1]?.iso ?? '';
+	const gregorianRange = firstISO && lastISO ? gregRange(firstISO, lastISO, locale) : '';
+
+	return {
+		cells,
+		monthLabel: base.monthLabel,
+		suffix,
+		gregorianRange,
+		isSacred,
+		displayYear: base.displayYear,
+		displayMonth: base.displayMonth,
+		weekdayLabels: base.weekdayLabels,
+	};
 }
