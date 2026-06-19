@@ -1,177 +1,112 @@
 <script lang="ts">
-	import { t, dir } from '$lib/i18n';
+	// MIG-081 §C — renders the month grid in the chosen calendar SYSTEM (Gregorian,
+	// Hijri [Eisa's astronomical engine], Solar-Hijri/Persian, Hebrew). All cells key
+	// back to Gregorian ISO (onDayClick + the note/task dots); display labels are
+	// localised (month name + day numbers in the locale's numbering system). RTL follows
+	// the UI locale. Engines (hijri.js, Temporal) are lazy-loaded via calendarMath.
+	import { t, dir, locale } from '$lib/i18n';
+	import {
+		ensureCalendarEngines, buildMonthGrid, todayInSystem, stepMonth,
+		type CalendarSystem, type MonthGrid,
+	} from '$lib/calendar/calendarMath';
 
 	let {
 		noteDates = {} as Record<string, number>,
 		taskDueDates = {} as Record<string, number>,
 		onDayClick,
+		primarySystem = 'gregorian' as CalendarSystem,
+		weekStart = 0 as 0 | 1,
 	}: {
 		noteDates: Record<string, number>;
 		taskDueDates: Record<string, number>;
 		onDayClick: (date: string) => void;
+		primarySystem?: CalendarSystem;
+		weekStart?: 0 | 1;
 	} = $props();
 
-	let viewYear = $state(new Date().getFullYear());
-	let viewMonth = $state(new Date().getMonth()); // 0-indexed
+	let viewYear = $state(0); // 0 = not yet initialised
+	let viewMonth = $state(0);
+	let enginesReady = $state(false);
 
-	const todayStr = $derived(new Date().toISOString().slice(0, 10));
-
-	const monthName = $derived(
-		new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' }).format(
-			new Date(viewYear, viewMonth, 1)
-		)
-	);
-
-	const weekDays = $derived.by(() => {
-		const formatter = new Intl.DateTimeFormat(undefined, { weekday: 'narrow' });
-		const days: string[] = [];
-		// Start from Sunday (0) through Saturday (6)
-		for (let i = 0; i < 7; i++) {
-			const d = new Date(2024, 0, i); // Jan 2024 starts on Monday, Jan 0 = Sun Dec 31
-			// Adjust: Jan 7 = Sun, Jan 1 = Mon, etc
-			const date = new Date(2024, 6, 7 + i); // Jul 7 2024 is Sunday
-			days.push(formatter.format(date));
-		}
-		return days;
+	// Load the engine(s) the chosen system needs, then anchor the view on today-in-system.
+	// Re-runs only when `primarySystem` changes (not on month-nav — it doesn't read the view).
+	$effect(() => {
+		const sys = primarySystem;
+		let cancelled = false;
+		enginesReady = false;
+		ensureCalendarEngines([sys])
+			.then(() => todayInSystem(sys))
+			.then((tdy) => {
+				if (cancelled) return;
+				viewYear = tdy.year;
+				viewMonth = tdy.month;
+				enginesReady = true;
+			})
+			.catch(() => { if (!cancelled) enginesReady = true; });
+		return () => { cancelled = true; };
 	});
 
-	interface CalendarDay {
-		day: number;
-		dateStr: string;
-		isCurrentMonth: boolean;
-		isToday: boolean;
-		noteCount: number;
-		taskCount: number;
-	}
-
-	const calendarDays = $derived.by(() => {
-		const firstDay = new Date(viewYear, viewMonth, 1);
-		const lastDay = new Date(viewYear, viewMonth + 1, 0);
-		const startDow = firstDay.getDay(); // 0=Sun
-		const daysInMonth = lastDay.getDate();
-
-		const days: CalendarDay[] = [];
-
-		// Fill leading days from previous month
-		const prevMonthLastDay = new Date(viewYear, viewMonth, 0).getDate();
-		for (let i = startDow - 1; i >= 0; i--) {
-			const d = prevMonthLastDay - i;
-			const m = viewMonth === 0 ? 12 : viewMonth;
-			const y = viewMonth === 0 ? viewYear - 1 : viewYear;
-			const dateStr = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-			days.push({
-				day: d,
-				dateStr,
-				isCurrentMonth: false,
-				isToday: dateStr === todayStr,
-				noteCount: noteDates[dateStr] || 0,
-				taskCount: taskDueDates[dateStr] || 0,
-			});
-		}
-
-		// Current month days
-		for (let d = 1; d <= daysInMonth; d++) {
-			const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-			days.push({
-				day: d,
-				dateStr,
-				isCurrentMonth: true,
-				isToday: dateStr === todayStr,
-				noteCount: noteDates[dateStr] || 0,
-				taskCount: taskDueDates[dateStr] || 0,
-			});
-		}
-
-		// Fill trailing days
-		const remaining = 42 - days.length; // 6 rows × 7
-		for (let d = 1; d <= remaining; d++) {
-			const m = viewMonth === 11 ? 1 : viewMonth + 2;
-			const y = viewMonth === 11 ? viewYear + 1 : viewYear;
-			const dateStr = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-			days.push({
-				day: d,
-				dateStr,
-				isCurrentMonth: false,
-				isToday: dateStr === todayStr,
-				noteCount: noteDates[dateStr] || 0,
-				taskCount: taskDueDates[dateStr] || 0,
-			});
-		}
-
-		return days;
+	// Synchronous once the engines are loaded; re-derives on view/locale/weekStart change.
+	const grid = $derived.by<MonthGrid | null>(() => {
+		void $locale; // re-derive when the locale (numerals/month names) changes
+		if (!enginesReady || !viewYear) return null;
+		try { return buildMonthGrid(primarySystem, viewYear, viewMonth, $locale, weekStart); }
+		catch { return null; }
 	});
 
-	function prevMonth() {
-		if (viewMonth === 0) {
-			viewMonth = 11;
-			viewYear--;
-		} else {
-			viewMonth--;
-		}
-	}
+	function prevMonth() { const n = stepMonth(primarySystem, viewYear, viewMonth, -1); viewYear = n.year; viewMonth = n.month; }
+	function nextMonth() { const n = stepMonth(primarySystem, viewYear, viewMonth, 1); viewYear = n.year; viewMonth = n.month; }
+	async function goToToday() { const tdy = await todayInSystem(primarySystem); viewYear = tdy.year; viewMonth = tdy.month; }
 
-	function nextMonth() {
-		if (viewMonth === 11) {
-			viewMonth = 0;
-			viewYear++;
-		} else {
-			viewMonth++;
-		}
-	}
-
-	function goToToday() {
-		const now = new Date();
-		viewYear = now.getFullYear();
-		viewMonth = now.getMonth();
-	}
+	function localeCount(n: number): string { try { return n.toLocaleString($locale); } catch { return String(n); } }
 </script>
 
 <div class="calendar-panel" dir={$dir}>
 	<!-- Navigation header -->
 	<div class="cp-header">
 		<button class="cp-nav" onclick={prevMonth} title={$t('calendarPanel.prevMonth')}>‹</button>
-		<button class="cp-month" onclick={goToToday} title={$t('calendarPanel.today')}>
-			{monthName}
-		</button>
+		<button class="cp-month" onclick={goToToday} title={$t('calendarPanel.today')}>{grid?.monthLabel ?? ''}</button>
 		<button class="cp-nav" onclick={nextMonth} title={$t('calendarPanel.nextMonth')}>›</button>
 	</div>
 
-	<!-- Weekday headers -->
-	<div class="cp-weekdays">
-		{#each weekDays as day}
-			<div class="cp-weekday">{day}</div>
-		{/each}
-	</div>
+	{#if grid}
+		<!-- Weekday headers -->
+		<div class="cp-weekdays">
+			{#each grid.weekdayLabels as day}
+				<div class="cp-weekday">{day}</div>
+			{/each}
+		</div>
 
-	<!-- Calendar grid -->
-	<div class="cp-grid">
-		{#each calendarDays as cell}
-			<button
-				class="cp-day"
-				class:other-month={!cell.isCurrentMonth}
-				class:today={cell.isToday}
-				class:has-notes={cell.noteCount > 0}
-				class:has-tasks={cell.taskCount > 0}
-				onclick={() => onDayClick(cell.dateStr)}
-				title={[
-					cell.noteCount > 0 ? $t('calendarPanel.notesCount', { count: cell.noteCount.toLocaleString() }) : '',
-					cell.taskCount > 0 ? $t('calendarPanel.tasksCount', { count: cell.taskCount.toLocaleString() }) : ''
-				].filter(Boolean).join(' · ')}
-			>
-				<span class="cp-day-num">{cell.day}</span>
-				{#if cell.noteCount > 0 || cell.taskCount > 0}
-					<div class="cp-dots">
-						{#if cell.noteCount > 0}
-							<span class="cp-dot note-dot"></span>
-						{/if}
-						{#if cell.taskCount > 0}
-							<span class="cp-dot task-dot"></span>
-						{/if}
-					</div>
-				{/if}
-			</button>
-		{/each}
-	</div>
+		<!-- Calendar grid -->
+		<div class="cp-grid">
+			{#each grid.cells as cell}
+				{@const nc = noteDates[cell.iso] || 0}
+				{@const tc = taskDueDates[cell.iso] || 0}
+				<button
+					class="cp-day"
+					class:other-month={!cell.inCurrentMonth}
+					class:today={cell.isToday}
+					class:has-notes={nc > 0}
+					class:has-tasks={tc > 0}
+					onclick={() => onDayClick(cell.iso)}
+					title={[
+						nc > 0 ? $t('calendarPanel.notesCount', { count: localeCount(nc) }) : '',
+						tc > 0 ? $t('calendarPanel.tasksCount', { count: localeCount(tc) }) : ''
+					].filter(Boolean).join(' · ')}
+				>
+					<span class="cp-day-num">{cell.dayLabel}</span>
+					{#if nc > 0 || tc > 0}
+						<div class="cp-dots">
+							{#if nc > 0}<span class="cp-dot note-dot"></span>{/if}
+							{#if tc > 0}<span class="cp-dot task-dot"></span>{/if}
+						</div>
+					{/if}
+				</button>
+			{/each}
+		</div>
+	{:else}
+		<div class="cp-loading">{$t('common.loading') || '…'}</div>
+	{/if}
 </div>
 
 <style>
@@ -288,5 +223,11 @@
 	}
 	.cp-dot.task-dot {
 		background: #ef4444;
+	}
+	.cp-loading {
+		text-align: center;
+		color: var(--text-faint, #888);
+		font-size: 0.8rem;
+		padding: 24px 0;
 	}
 </style>

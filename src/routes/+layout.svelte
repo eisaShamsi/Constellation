@@ -6357,6 +6357,8 @@
 						<CalendarPanel
 							noteDates={calendarNoteDates}
 							taskDueDates={calendarTaskDates}
+							primarySystem={$appSettings.calendarPrimarySystem ?? 'gregorian'}
+							weekStart={$appSettings.calendarWeekStart ?? 0}
 							onDayClick={(dateStr) => { showCalendarPage = false; openDailyNote(dateStr); }}
 						/>
 					</div>
