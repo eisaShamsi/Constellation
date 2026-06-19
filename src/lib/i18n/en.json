@@ -614,6 +614,23 @@
 				"label": "Show constellation labels at rest",
 				"hint": "Off (default): labels appear on hover or selection. On: labels stay visible at territory centroids."
 			}
+		},
+		"calendar": {
+			"heading": "Calendar",
+			"intro": "Choose the calendar system for the Calendar page (Gregorian, Hijri, Solar Hijri, Hebrew). Daily-note filenames always stay Gregorian (YYYY-MM-DD).",
+			"primary": "Calendar system",
+			"primaryDesc": "Show the Calendar in this system. Daily-note filenames always stay Gregorian (YYYY-MM-DD).",
+			"secondary": "Secondary calendar (alongside)",
+			"secondaryDesc": "Also show a second date under each day, in this calendar. None to disable.",
+			"secondaryNone": "None",
+			"weekStart": "Week starts on",
+			"weekStartDesc": "First column of the month grid.",
+			"weekSunday": "Sunday",
+			"weekMonday": "Monday",
+			"dailyFormat": "Daily-note filename format",
+			"dailyFormatDesc": "strftime format (stays Gregorian), e.g. %Y-%m-%d.",
+			"dailyFolder": "Daily-note folder",
+			"dailyFolderDesc": "Subfolder for daily notes (blank = library root)."
 		}
 	},
 	"commands": {
