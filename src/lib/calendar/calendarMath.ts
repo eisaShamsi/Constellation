@@ -243,6 +243,45 @@ export async function culturalDateParts(
 	return { year: p.year, month: p.month, day: p.day };
 }
 
+// ─── MIG-081 §C.2f — Hijri engine prefs (corrections + calculation mode) ──────
+// Source of truth is appSettings (synced with the universe), NOT the engine's own
+// per-device localStorage. We PUSH appSettings into the singleton engine on load /
+// on change, overriding whatever it read from localStorage. Both corrections and
+// mode flow through the engine's unified gregorianToHijri/hijriToGregorian/daysInMonth
+// (verified: _engine() switches mode; hijriToJDN applies _getCumulativeCorrection),
+// which are exactly the functions buildMonthGrid uses → the grid reflects them.
+
+export type CalculationMode = 'astronomical' | 'tabular';
+
+/** Push the universe's calendar prefs into the (loaded) Hijri engine. Always sets mode
+ *  explicitly (so a stale localStorage value can't linger) and replaces the full
+ *  corrections set. Idempotent; safe to call on every render-prefs change.
+ *  NOTE: appSettings is the single synced source of truth. The engine's own
+ *  setCorrection/clearCorrections still mirror into localStorage['hijri-corrections']
+ *  as a side effect — that mirror is DISCARDED (always overwritten from appSettings on
+ *  every load), never read as authoritative once this runs. Don't mistake it for a 2nd source. */
+export async function applyCalendarPrefs(
+	corrections: Record<string, number>,
+	mode: CalculationMode,
+): Promise<void> {
+	const H = await getHijri();
+	H.clearCorrections();
+	for (const [key, off] of Object.entries(corrections ?? {})) {
+		const [y, m] = key.split('-').map(Number);
+		if (Number.isFinite(y) && Number.isFinite(m) && off) H.setCorrection(y, m, off);
+	}
+	H.setMode(mode);
+}
+
+/** The 12 Hijri month names for the locale (Muharram … Dhul-Hijjah). Engine must be
+ *  loaded (call ensureCalendarEngines first). Used by the Calendar Settings month picker. */
+export function hijriMonthNames(locale: string): string[] {
+	const H = _Hijri;
+	if (!H) return Array.from({ length: 12 }, (_, i) => `M${i + 1}`);
+	const arr = (locale.startsWith('ar') ? H.MONTH_NAMES : H.MONTH_NAMES_EN) as string[] | undefined;
+	return arr && arr.length === 12 ? arr.slice() : Array.from({ length: 12 }, (_, i) => `M${i + 1}`);
+}
+
 /** The frontmatter field name for a system (gregorian writes none). */
 export function frontmatterKey(system: CalendarSystem): string | null {
 	switch (system) {
@@ -272,7 +311,8 @@ export interface RichMonthGrid {
 	cells: RichCell[];
 	monthLabel: string;     // primary-calendar month + year
 	suffix: string;         // 'AH' | 'SH' | 'AM' | '' (era marker)
-	gregorianRange: string; // e.g. "June – July 2026"
+	subtitleRange: string;  // the CROSS-REFERENCE range in the OTHER calendar: Gregorian range when
+	                        // the primary is non-Gregorian, Hijri range when the primary IS Gregorian.
 	isSacred: boolean;      // Hijri sacred month → gold pill
 	displayYear: number;
 	displayMonth: number;
@@ -299,6 +339,25 @@ function gregRange(firstISO: string, lastISO: string, locale: string): string {
 	if (f.getFullYear() === l.getFullYear() && f.getMonth() === l.getMonth()) return my.format(l);
 	if (f.getFullYear() === l.getFullYear()) return `${mf.format(f)} – ${my.format(l)}`;
 	return `${my.format(f)} – ${my.format(l)}`;
+}
+
+/** "Dhū al-Ḥijjah 1447 – Muḥarram 1448 AH" — the Hijri-month range spanning the grid's
+ *  first/last Gregorian ISO cells (correction/mode-aware via the engine). Used as the
+ *  cross-reference subtitle when the PRIMARY system is Gregorian (the mirror of gregRange). */
+function hijriRange(firstISO: string, lastISO: string, locale: string): string {
+	const H = _Hijri;
+	if (!H) return '';
+	const isAr = locale.startsWith('ar');
+	const names = (isAr ? H.MONTH_NAMES : H.MONTH_NAMES_EN) as string[] | undefined;
+	const suffix = isAr ? 'هـ' : 'AH';
+	const [fy, fm, fd] = firstISO.split('-').map(Number);
+	const [ly, lm, ld] = lastISO.split('-').map(Number);
+	const a = H.gregorianToHijri(fy, fm, fd);
+	const b = H.gregorianToHijri(ly, lm, ld);
+	const nm = (h: { year: number; month: number }) => `${names?.[h.month - 1] ?? `M${h.month}`} ${localeNum(h.year, locale)}`;
+	if (a.year === b.year && a.month === b.month) return `${nm(a)} ${suffix}`;
+	if (a.year === b.year) return `${names?.[a.month - 1] ?? `M${a.month}`} – ${nm(b)} ${suffix}`;
+	return `${nm(a)} – ${nm(b)} ${suffix}`;
 }
 
 /** Build the RICH grid (dual dates, moon phase, week numbers, Hijri events/sacred). */
@@ -351,13 +410,17 @@ export function buildRichMonthGrid(
 
 	const firstISO = base.cells[0]?.iso ?? '';
 	const lastISO = base.cells[base.cells.length - 1]?.iso ?? '';
-	const gregorianRange = firstISO && lastISO ? gregRange(firstISO, lastISO, locale) : '';
+	// The subtitle shows the OTHER calendar (cross-reference): Gregorian range for a non-Gregorian
+	// primary, Hijri range for a Gregorian primary — so the pill (primary) is never just repeated.
+	const subtitleRange = firstISO && lastISO
+		? (system === 'gregorian' ? hijriRange(firstISO, lastISO, locale) : gregRange(firstISO, lastISO, locale))
+		: '';
 
 	return {
 		cells,
 		monthLabel: base.monthLabel,
 		suffix,
-		gregorianRange,
+		subtitleRange,
 		isSacred,
 		displayYear: base.displayYear,
 		displayMonth: base.displayMonth,

@@ -8,8 +8,8 @@
 	// (§C.2d). Cells key onDayClick + the note/task dots on Gregorian ISO. RTL via dir.
 	import { t, dir, locale } from '$lib/i18n';
 	import {
-		ensureCalendarEngines, buildRichMonthGrid, todayInSystem, stepMonth,
-		type CalendarSystem, type RichMonthGrid,
+		ensureCalendarEngines, buildRichMonthGrid, todayInSystem, stepMonth, applyCalendarPrefs,
+		type CalendarSystem, type RichMonthGrid, type CalculationMode,
 	} from '$lib/calendar/calendarMath';
 
 	let {
@@ -19,6 +19,8 @@
 		primarySystem = 'gregorian' as CalendarSystem,
 		weekStart = 0 as 0 | 1,
 		showWeekNumbers = true,
+		corrections = {} as Record<string, number>,
+		calculationMode = 'astronomical' as CalculationMode,
 	}: {
 		noteDates: Record<string, number>;
 		taskDueDates: Record<string, number>;
@@ -26,6 +28,8 @@
 		primarySystem?: CalendarSystem;
 		weekStart?: 0 | 1;
 		showWeekNumbers?: boolean;
+		corrections?: Record<string, number>;
+		calculationMode?: CalculationMode;
 	} = $props();
 
 	let viewYear = $state(0);
@@ -34,9 +38,12 @@
 
 	$effect(() => {
 		const sys = primarySystem;
+		const corr = corrections;       // §C.2f — re-run when prefs change (engine is a singleton;
+		const mode = calculationMode;   // applyCalendarPrefs pushes them in, then we re-anchor + re-derive).
 		let cancelled = false;
 		enginesReady = false;
 		ensureCalendarEngines([sys])
+			.then(() => applyCalendarPrefs(corr, mode))
 			.then(() => todayInSystem(sys))
 			.then((tdy) => { if (cancelled) return; viewYear = tdy.year; viewMonth = tdy.month; enginesReady = true; })
 			.catch(() => { if (!cancelled) enginesReady = true; });
@@ -67,7 +74,7 @@
 	function localeCount(n: number): string { try { return n.toLocaleString($locale); } catch { return String(n); } }
 </script>
 
-<div class="cal-root" dir={$dir}>
+<div class="cal-root" dir={$dir} data-style-target="calendar">
 	{#if grid}
 		<!-- Ornate header -->
 		<div class="cal-header">
@@ -79,7 +86,7 @@
 				<div class="cal-pill" class:sacred={grid.isSacred}>
 					{grid.monthLabel}{#if grid.suffix}&nbsp;<span class="cal-suffix">{grid.suffix}</span>{/if}
 				</div>
-				{#if grid.gregorianRange}<div class="cal-greg-range">{grid.gregorianRange}</div>{/if}
+				{#if grid.subtitleRange}<div class="cal-greg-range">{grid.subtitleRange}</div>{/if}
 			</div>
 			<div class="cal-head-right">
 				<button class="cal-circ" onclick={nextMonth} title={$t('calendarPanel.nextMonth')} aria-label={$t('calendarPanel.nextMonth')}>›</button>
@@ -131,52 +138,30 @@
 </div>
 
 <style>
+	/* §C.2d — Style-Setter tokens are consumed as `var(--cal-X, default)` inline fallbacks (NOT
+	   declared on .cal-root), so a body-level styleOverride (or the Setter preview's draft wrapper)
+	   INHERITS down and wins — a local declaration would block it. Defaults = Eisa's app palette.
+	   Layout-only --cal-wk-col stays local (it has its own Wk toggle, not a theme colour). */
 	.cal-root {
-		/* Style-Setter tokens (defaults = Eisa's app palette). §C.2d wires these to the catalog. */
-		--cal-header-from: #14553f;
-		--cal-header-to: #1a6b4f;
-		--cal-pill-bg: #d4a017;
-		--cal-pill-text: #ffffff;
-		--cal-pill-border: #c49440;
-		--cal-pill-sacred-from: #f5e6c8;
-		--cal-pill-sacred-to: #eedbb5;
-		--cal-pill-sacred-text: #6b4400;
-		--cal-today-from: #b8860b;
-		--cal-today-to: #d4a017;
-		--cal-today-text: #ffffff;
-		--cal-primary-color: var(--text, #0d3b2e);
-		--cal-sub-color: #0e7490;
-		--cal-weekday-color: #1a6b4f;
-		--cal-othermonth-text: var(--text-faint, #b8c0cc);
-		--cal-grid-border: var(--border, #e2e8f0);
-		--cal-event-holiday: #ef4444;
-		--cal-event-observance: #d4a017;
-		--cal-event-special: #8b5cf6;
-		--cal-moon-color: var(--text-faint, #6b7280);
-		--cal-wk-color: var(--text-faint, #94a3b8);
-		--cal-note-dot: var(--accent, #7c3aed);
-		--cal-task-dot: #ef4444;
-		--cal-cell-bg: var(--bg-primary, #fff);
 		--cal-wk-col: 44px;
-
 		width: 100%;
 		max-width: 1100px;
 		display: flex;
 		flex-direction: column;
-		font-family: 'Amiri', 'Cairo', var(--text-font, inherit);
+		font-family: var(--cal-font, 'Amiri', 'Cairo', var(--text-font, inherit));
 	}
 
 	/* Header */
 	.cal-header {
 		display: flex; align-items: center; justify-content: space-between;
 		gap: 12px; padding: 14px 18px;
-		background: linear-gradient(135deg, var(--cal-header-from), var(--cal-header-to));
+		background: linear-gradient(135deg, var(--cal-header-from, #14553f), var(--cal-header-to, #1a6b4f));
 		color: #fff; border-radius: 12px 12px 0 0;
 	}
 	.cal-head-left, .cal-head-right { display: flex; align-items: center; gap: 10px; }
 	.cal-head-center { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
 	.cal-today {
-		font: inherit; font-size: 0.85rem; color: #fff;
+		font: inherit; font-size: var(--cal-today-size, 0.85rem); color: #fff;
 		background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.25);
 		padding: 6px 14px; border-radius: 999px; cursor: pointer;
 	}
@@ -185,66 +170,66 @@
 		width: 40px; height: 40px; border-radius: 50%;
 		display: flex; align-items: center; justify-content: center;
 		background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.25);
-		color: #fff; font-size: 1.4rem; cursor: pointer; line-height: 1;
+		color: #fff; font-size: var(--cal-nav-size, 1.4rem); cursor: pointer; line-height: 1;
 	}
 	.cal-circ:hover { background: rgba(255, 255, 255, 0.22); }
 	.cal-pill {
-		font-size: 1.5rem; font-weight: 700; padding: 6px 22px; border-radius: 14px;
-		background: var(--cal-pill-bg); color: var(--cal-pill-text);
-		border: 2px solid var(--cal-pill-border); white-space: nowrap;
+		font-size: var(--cal-pill-size, 1.5rem); font-weight: 700; padding: 6px 22px; border-radius: 14px;
+		background: var(--cal-pill-bg, #d4a017); color: var(--cal-pill-text, #ffffff);
+		border: 2px solid var(--cal-pill-border, #c49440); white-space: nowrap;
 	}
 	.cal-pill.sacred {
-		background: linear-gradient(to bottom, var(--cal-pill-sacred-from), var(--cal-pill-sacred-to));
-		color: var(--cal-pill-sacred-text);
+		background: linear-gradient(to bottom, var(--cal-pill-sacred-from, #f5e6c8), var(--cal-pill-sacred-to, #eedbb5));
+		color: var(--cal-pill-sacred-text, #6b4400);
 	}
 	.cal-suffix { font-size: 0.75em; opacity: 0.85; }
-	.cal-greg-range { font-size: 0.82rem; opacity: 0.9; }
+	.cal-greg-range { font-size: var(--cal-subtitle-size, 0.82rem); opacity: 0.9; }
 
 	/* Weekday header */
 	.cal-weekrow {
 		display: grid; grid-template-columns: repeat(7, 1fr);
-		background: color-mix(in srgb, var(--cal-header-to) 8%, transparent);
+		background: color-mix(in srgb, var(--cal-header-to, #1a6b4f) 8%, transparent);
 	}
 	.cal-weekrow.with-wk { grid-template-columns: var(--cal-wk-col) repeat(7, 1fr); }
 	.cal-wk-head, .cal-weekday {
-		text-align: center; padding: 8px 0; font-size: 0.78rem; font-weight: 600;
-		color: var(--cal-weekday-color);
+		text-align: center; padding: 8px 0; font-size: var(--cal-weekday-size, 0.78rem); font-weight: 600;
+		color: var(--cal-weekday-color, #1a6b4f);
 	}
-	.cal-wk-head { color: var(--cal-wk-color); font-size: 0.7rem; }
+	.cal-wk-head { color: var(--cal-wk-color, var(--text-faint, #94a3b8)); font-size: var(--cal-week-size, 0.7rem); }
 
 	/* Grid body */
-	.cal-body { display: flex; flex-direction: column; border: 1px solid var(--cal-grid-border); border-top: none; border-radius: 0 0 12px 12px; overflow: hidden; }
+	.cal-body { display: flex; flex-direction: column; border: 1px solid var(--cal-grid-border, var(--border, #e2e8f0)); border-top: none; border-radius: 0 0 12px 12px; overflow: hidden; }
 	.cal-row { display: grid; grid-template-columns: repeat(7, 1fr); }
 	.cal-row.with-wk { grid-template-columns: var(--cal-wk-col) repeat(7, 1fr); }
 	.cal-wk {
 		display: flex; align-items: center; justify-content: center;
-		font-size: 0.72rem; font-weight: 600; color: var(--cal-wk-color);
-		border-top: 1px solid var(--cal-grid-border);
-		background: color-mix(in srgb, var(--cal-grid-border) 25%, transparent);
+		font-size: var(--cal-week-size, 0.72rem); font-weight: 600; color: var(--cal-wk-color, var(--text-faint, #94a3b8));
+		border-top: 1px solid var(--cal-grid-border, var(--border, #e2e8f0));
+		background: color-mix(in srgb, var(--cal-grid-border, var(--border, #e2e8f0)) 25%, transparent);
 	}
 	.cal-cell {
 		position: relative; min-height: 76px;
 		display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-		background: var(--cal-cell-bg); color: var(--cal-primary-color);
-		border: none; border-top: 1px solid var(--cal-grid-border); border-inline-start: 1px solid var(--cal-grid-border);
+		background: var(--cal-cell-bg, var(--bg-primary, #fff)); color: var(--cal-primary-color, var(--text, #0d3b2e));
+		border: none; border-top: 1px solid var(--cal-grid-border, var(--border, #e2e8f0)); border-inline-start: 1px solid var(--cal-grid-border, var(--border, #e2e8f0));
 		cursor: pointer; padding: 6px; font: inherit;
 	}
-	.cal-cell:hover { background: color-mix(in srgb, var(--cal-header-to) 6%, var(--cal-cell-bg)); }
+	.cal-cell:hover { background: color-mix(in srgb, var(--cal-header-to, #1a6b4f) 6%, var(--cal-cell-bg, var(--bg-primary, #fff))); }
 	.cal-cell.other { opacity: 0.4; }
 	.cal-cell.today {
-		background: linear-gradient(135deg, var(--cal-today-from), var(--cal-today-to));
-		color: var(--cal-today-text);
+		background: linear-gradient(135deg, var(--cal-today-from, #b8860b), var(--cal-today-to, #d4a017));
+		color: var(--cal-today-text, #ffffff);
 	}
 	.cal-cell.today .cal-sub, .cal-cell.today .cal-moon { color: rgba(255, 255, 255, 0.85); }
-	.cal-primary { font-size: 1.2rem; font-weight: 700; line-height: 1; }
-	.cal-sub { font-size: 0.68rem; color: var(--cal-sub-color); line-height: 1; }
-	.cal-moon { position: absolute; top: 3px; inset-inline-end: 5px; font-size: 0.72rem; color: var(--cal-moon-color); }
+	.cal-primary { font-size: var(--cal-day-size, 1.2rem); font-weight: 700; line-height: 1; }
+	.cal-sub { font-size: var(--cal-subdate-size, 0.68rem); color: var(--cal-sub-color, #0e7490); line-height: 1; }
+	.cal-moon { position: absolute; top: 3px; inset-inline-end: 5px; font-size: var(--cal-moon-size, 0.72rem); color: var(--cal-moon-color, var(--text-faint, #6b7280)); }
 	.cal-dots { position: absolute; bottom: 4px; display: flex; gap: 3px; }
 	.cal-dot { width: 6px; height: 6px; border-radius: 50%; }
-	.cal-note { background: var(--cal-note-dot); }
-	.cal-task { background: var(--cal-task-dot); }
-	.cal-event-holiday { background: var(--cal-event-holiday); }
-	.cal-event-observance { background: var(--cal-event-observance); }
-	.cal-event-special { background: var(--cal-event-special); }
+	.cal-note { background: var(--cal-note-dot, var(--accent, #7c3aed)); }
+	.cal-task { background: var(--cal-task-dot, #ef4444); }
+	.cal-event-holiday { background: var(--cal-event-holiday, #ef4444); }
+	.cal-event-observance { background: var(--cal-event-observance, #d4a017); }
+	.cal-event-special { background: var(--cal-event-special, #8b5cf6); }
 	.cal-loading { text-align: center; color: var(--text-faint, #888); font-size: 0.85rem; padding: 40px 0; }
 </style>

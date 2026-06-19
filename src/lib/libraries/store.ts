@@ -3438,6 +3438,12 @@ export interface AppSettings {
 	calendarSecondarySystem: 'none' | 'gregorian' | 'hijri' | 'solar-hijri' | 'hebrew';
 	calendarWeekStart: 0 | 1; // 0 = Sunday, 1 = Monday
 	calendarShowWeekNumbers: boolean; // MIG-081 §C.2b — the "Wk" column
+	// MIG-081 §C.2f — Hijri engine prefs, stored here (synced with the universe) NOT in the
+	// engine's per-device localStorage. Pushed into the engine on load via applyCalendarPrefs.
+	// Corrections: key "year-month" (Hijri) → ±day offset (moon-sighting adjustment, cumulative
+	// from that month forward). Mode: astronomical (lunar conjunction) | tabular (al-Tawfīqāt).
+	calendarCorrections: Record<string, number>;
+	calendarCalculationMode: 'astronomical' | 'tabular';
 
 	// Templates
 	templateFolder: string;
@@ -3847,6 +3853,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
 	calendarSecondarySystem: 'none' as const,
 	calendarWeekStart: 0 as const,
 	calendarShowWeekNumbers: true,
+	calendarCorrections: {},
+	calendarCalculationMode: 'astronomical' as const,
 	templateFolder: 'Templates',
 	folderTemplates: {},
 	templateHotkeys: {},

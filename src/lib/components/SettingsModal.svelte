@@ -20,6 +20,9 @@
 	import { validateConnection } from '$lib/ai/engine';
 	import { PROVIDER_INFO, DEFAULT_MODELS, type ProviderId } from '$lib/ai/provider';
 	import { SIGHT_V2_ENABLED, SIGHT_V3_ENABLED } from '$lib/sight/engine';
+	// MIG-081 §C.2f — Hijri calendar prefs (corrections + calculation mode). Engine loads lazily
+	// when the Calendar settings section opens; appSettings is the synced source of truth.
+	import { ensureCalendarEngines, applyCalendarPrefs, hijriMonthNames, todayInSystem } from '$lib/calendar/calendarMath';
 
 	let {
 		onClose,
@@ -30,6 +33,46 @@
 	} = $props();
 
 	let activeSection = $state('dashboard');
+
+	// MIG-081 §C.2f — Hijri month-correction picker state. Engine loads lazily when the Calendar
+	// section opens; defaults the picker to the current Hijri month. appSettings is the source of
+	// truth (synced); writes go through updateSettings → CalendarPanel re-applies them to the engine.
+	let calEnginesLoaded = $state(false);
+	let corrYear = $state(1448);
+	let corrMonth = $state(1);
+	let corrOffset = $state(0); // default 0 (no change); the picker is an editor — see the reflect effect below
+	$effect(() => {
+		if (activeSection !== 'calendar' || calEnginesLoaded) return;
+		ensureCalendarEngines(['hijri'])
+			.then(() => applyCalendarPrefs($appSettings.calendarCorrections ?? {}, $appSettings.calendarCalculationMode ?? 'astronomical'))
+			.then(() => todayInSystem('hijri'))
+			.then((tdy) => { corrYear = tdy.year; corrMonth = tdy.month; calEnginesLoaded = true; })
+			.catch(() => { calEnginesLoaded = true; });
+	});
+	// Reflect the chosen month's EXISTING correction in the offset dropdown (0 if none) so the picker
+	// edits, not just adds. Reads year/month/corrections, writes only corrOffset → no loop.
+	$effect(() => {
+		const key = `${corrYear}-${corrMonth}`;
+		corrOffset = ($appSettings.calendarCorrections ?? {})[key] ?? 0;
+	});
+	const hijriMonths = $derived(calEnginesLoaded ? hijriMonthNames($locale) : []);
+	const corrEntries = $derived(
+		Object.entries($appSettings.calendarCorrections ?? {})
+			.map(([key, off]) => { const [cy, cm] = key.split('-').map(Number); return { key, cy, cm, off: off as number }; })
+			.sort((a, b) => a.cy - b.cy || a.cm - b.cm),
+	);
+	function setCorrectionEntry() {
+		const key = `${corrYear}-${corrMonth}`;
+		const next = { ...($appSettings.calendarCorrections ?? {}) };
+		if (corrOffset === 0) delete next[key]; else next[key] = corrOffset;
+		updateSettings({ calendarCorrections: next });
+	}
+	function removeCorrectionEntry(key: string) {
+		const next = { ...($appSettings.calendarCorrections ?? {}) };
+		delete next[key];
+		updateSettings({ calendarCorrections: next });
+	}
+	function clearAllCorrections() { updateSettings({ calendarCorrections: {} }); }
 
 	// MIG-012 §Build.8-fix — fully-localized confirm dialog state.
 	// Replaces browser-native confirm() which forces OS-locale OK/Cancel
@@ -2272,6 +2315,62 @@
 						<input class="setting-input" type="text" value={$appSettings.dailyNoteFolder}
 							oninput={(e) => updateSettings({ dailyNoteFolder: (e.target as HTMLInputElement).value })} />
 					</div>
+
+					<!-- ═══ MIG-081 §C.2f — Hijri-specific: calculation mode + month corrections ═══ -->
+					<div class="setting-section-heading">{$t('settings.calendar.hijriHeading') || 'Hijri calendar (Islamic)'}</div>
+					<p class="section-intro">{$t('settings.calendar.hijriIntro') || 'These options apply when the Calendar shows the Hijri (Islamic) system.'}</p>
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.calendar.calcMode') || 'Calculation method'}</div>
+							<div class="setting-desc">{$t('settings.calendar.calcModeDesc') || 'Astronomical follows the true lunar conjunction (most accurate). Tabular uses the arithmetic al-Tawfīqāt al-Ilhāmiyyah cycle.'}</div>
+						</div>
+						<select class="setting-control" value={$appSettings.calendarCalculationMode ?? 'astronomical'}
+							onchange={(e) => updateSettings({ calendarCalculationMode: (e.target as HTMLSelectElement).value as 'astronomical'|'tabular' })}>
+							<option value="astronomical">{$t('settings.calendar.calcAstronomical') || 'Astronomical (Lunar Conjunction)'}</option>
+							<option value="tabular">{$t('settings.calendar.calcTabular') || 'Tabular (al-Tawfīqāt al-Ilhāmiyyah)'}</option>
+						</select>
+					</div>
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.calendar.correction') || 'Month correction'}</div>
+							<div class="setting-desc">{$t('settings.calendar.correctionDesc') || 'Shift the start of a Hijri month by 1 or 2 days to match a local moon sighting. The correction applies to that month and every following month.'}</div>
+						</div>
+					</div>
+					<div class="corr-picker" dir="ltr">
+						<input class="setting-input corr-year" type="number" min="1300" max="1600" value={corrYear}
+							oninput={(e) => corrYear = Number((e.target as HTMLInputElement).value) || corrYear}
+							aria-label={$t('settings.calendar.correctionYear') || 'Hijri year'} />
+						<select class="setting-control corr-month" value={String(corrMonth)}
+							onchange={(e) => corrMonth = Number((e.target as HTMLSelectElement).value)}
+							aria-label={$t('settings.calendar.correctionMonth') || 'Hijri month'}>
+							{#each hijriMonths as name, i}
+								<option value={String(i + 1)}>{name}</option>
+							{/each}
+						</select>
+						<select class="setting-control corr-offset" value={String(corrOffset)}
+							onchange={(e) => corrOffset = Number((e.target as HTMLSelectElement).value)}
+							aria-label={$t('settings.calendar.correctionOffset') || 'Offset (days)'}>
+							<option value="2">+2</option>
+							<option value="1">+1</option>
+							<option value="0">0</option>
+							<option value="-1">−1</option>
+							<option value="-2">−2</option>
+						</select>
+						<button class="corr-set-btn" onclick={setCorrectionEntry}>{$t('settings.calendar.correctionSet') || 'Set'}</button>
+					</div>
+					{#if corrEntries.length}
+						<div class="corr-list">
+							{#each corrEntries as c (c.key)}
+								<div class="corr-row">
+									<span class="corr-label">{hijriMonths[c.cm - 1] ?? ('M' + c.cm)} {c.cy} {$t('settings.calendar.ahSuffix') || 'AH'} · {c.off > 0 ? '+' : ''}{c.off} {Math.abs(c.off) === 1 ? ($t('settings.calendar.day') || 'day') : ($t('settings.calendar.days') || 'days')}</span>
+									<button class="corr-remove" onclick={() => removeCorrectionEntry(c.key)} aria-label={$t('common.remove') || 'Remove'}>×</button>
+								</div>
+							{/each}
+							<button class="corr-clear" onclick={clearAllCorrections}>{$t('settings.calendar.correctionClearAll') || 'Clear all'}</button>
+						</div>
+					{:else}
+						<p class="corr-empty">{$t('settings.calendar.correctionNone') || 'No corrections set.'}</p>
+					{/if}
 				{:else if activeSection === 'templates'}
 					<p class="section-intro">{$t('settings.templates.intro') || 'Manage note templates. Templates let you insert predefined content into new notes.'}</p>
 					<div class="setting-row">
@@ -2615,6 +2714,31 @@
 		font-size: 0.85rem; font-family: inherit;
 	}
 	.setting-input:focus { border-color: var(--interactive-accent); outline: none; }
+
+	/* MIG-081 §C.2f — month-correction picker + list */
+	.corr-picker { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 4px 0 12px; }
+	.corr-picker .corr-year { min-width: 90px; max-width: 100px; }
+	.corr-picker .corr-month { min-width: 150px; }
+	.corr-picker .corr-offset { min-width: 64px; }
+	.corr-set-btn, .corr-clear {
+		padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-family: inherit;
+		border: 1px solid var(--background-modifier-border); background: var(--interactive-normal); color: var(--text-normal);
+	}
+	.corr-set-btn:hover, .corr-clear:hover { background: var(--interactive-hover); }
+	.corr-list { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 14px; }
+	.corr-row {
+		display: flex; align-items: center; justify-content: space-between; gap: 10px;
+		padding: 6px 10px; border-radius: 6px; background: var(--background-secondary);
+		border: 1px solid var(--background-modifier-border);
+	}
+	.corr-label { font-size: 0.85rem; color: var(--text-normal); }
+	.corr-remove {
+		flex: none; width: 24px; height: 24px; border-radius: 4px; cursor: pointer; line-height: 1;
+		border: none; background: transparent; color: var(--text-muted); font-size: 1.1rem;
+	}
+	.corr-remove:hover { background: var(--background-modifier-error-hover, rgba(220,60,60,0.15)); color: var(--text-error, #d33); }
+	.corr-clear { align-self: flex-start; margin-top: 2px; }
+	.corr-empty { font-size: 0.82rem; color: var(--text-muted); margin: 2px 0 12px; }
 
 	.setting-input-browse {
 		display: flex; align-items: center; gap: 6px;

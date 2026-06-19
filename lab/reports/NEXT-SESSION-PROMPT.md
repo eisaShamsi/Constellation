@@ -1,21 +1,21 @@
 # Next-session kickoff prompt — paste this to resume
 
-> Ready-to-paste prompt for the session that picks up MIG-081's 4 new Calendar functions. Copy everything in the box.
+> Ready-to-paste prompt for the session that picks up MIG-080 §B–§F (the right-rail note-context cascade). Copy everything in the box.
 
 ---
 
-Working on: MIG-081 — the Calendar's 4 new functions (Boss-requested 2026-06-17), then the rest of MIG-081 + the MIG-080 right-rail cascade.
+Working on: **MIG-080 §B–§F** — the right-sidebar note-context cascade (the right rail becomes the OPEN NOTE's context only; universe functions relocate). The Plan is already approved.
 
-First read docs/Constellation Orientation & Onboarding v2.90.md, then lab/reports/HANDOVER-2026-06-17-mig081-rich-calendar.md, then lab/reports/SESSION-LOG-2026-06-17.md.
+First read `docs/Constellation Orientation & Onboarding v2.91.md`, then `lab/reports/HANDOVER-2026-06-19-mig081-complete.md`, then `lab/reports/SESSION-LOG-2026-06-19.md`, then the Plan `docs/MIG-080-Plan.md` (+ Architect `docs/MIG-080-Architect-Right-Sidebar-Note-Context.md`).
 
-Context (all SHIPPED + on main, through 9e6ae75f): MIG-079 §C.2d (Sky read off boot, validated); MIG-080 §A/§A.2 (Calendar → left dock launcher + full-page view, validated); MIG-081 §A/§B/§C/§C.2a/§C.2b — Eisa's astronomical Hijri engine vendored (src/lib/calendar/hijri.js, pinned @a06be50e) + @js-temporal/polyfill + calendarMath.ts (buildRichMonthGrid) + a Calendar Settings category + a RICH CalendarPanel ported from Eisa's hijri-calendar app (ornate header, gold AH/sacred pill, Gregorian-range subtitle, dual-date cells, moon glyphs, event dots, Wk column). Boss: "Perfect!" Cultural calendars work; daily-note filenames stay Gregorian ISO.
+Context (all SHIPPED + on `main`): MIG-079 §C.2a–d (per-note link queries + virtualized panels + Sky deferred; boot freeze fixed). MIG-080 §A/§A.2 (Calendar → left dock launcher + full-page view, validated). **MIG-081 COMPLETE + Boss-validated** — Eisa's astronomical Hijri engine + cultural calendars + a rich CalendarPanel + Month Correction + Calculation Mode + a per-element Style-Setter "Calendar" category + the Daily-Note launcher retired + full ×15 localization + a clean 3-agent migration audit.
 
-THE TASK — Eisa's 4 new asks (in order):
-1. Month Correction (±1 day per Hijri month + corrections list + Clear All). The engine ALREADY exposes setCorrection/getCorrection/clearCorrections/getAllCorrections — wire them into the Calendar page (correct the viewed month) and/or Calendar settings. Decide localStorage (engine's own) vs appSettings mirror (cross-device) — Boss call.
-2. Calculation Mode selector — Astronomical (Lunar Conjunction) ⟷ Tabular (al-Tawfīqāt al-Ilhāmiyyah). Engine default 'astronomical'. VERIFY the public mode setter in the vendored hijri.js (internal currentMode + localStorage 'hijri-mode'; confirm/add an exported setter). Put it in Calendar settings.
-3. Style Setter → new "Calendar" tab — wire the --cal-* CSS variables already in CalendarPanel.svelte into the Style Setter catalog + apply path, as a Calendar category. HONOR the full-center-zone preview rule (CLAUDE.md). (This was the planned §C.2d.)
-4. Retire the Daily-Note dock button — the Calendar fully serves daily notes. Remove the §A launcher dock button + popover (+layout.svelte showDailyLauncher/.daily-launcher-*); KEEP handleOpenDailyNote/openDailyNote (command palette + the Calendar page use openDailyNote). Left dock = the Calendar button only.
+THE TASK — MIG-080 §B–§F (approved Plan; cascade, stop at each phase's Boss test):
+- **§B** Tags "All tags" → Dashboard (reuse §C.1 `tag_counts`).
+- **§C** Tasks split — contextual open-note tasks in the right rail + a left agenda; fix `toggle_task` bypassing the Editor reindex gate.
+- **§D** Source Review split — note-scoped right rail + the universe Cataloger on the left.
+- **§E** Knowledge Health split — note tensions/health in the right rail | universe → Dashboard.
+- **§F** Review Pulse split — this note's review status in the right rail | universe queue → a full-page reviewer; fix the dead `record_note_visit`.
+- **§G** reconcile + a 3-agent audit + the **deferred inspector360 Settings-UI bug** (it's missing from the Settings → Panels placement list; needs ×15 i18n) + ×15.
 
-Then: MIG-081 §C.2e (Amiri/Cairo fonts + ×15 i18n for settings.calendar.*/calendarPanel.weekAbbrev + 3-agent audit), then the MIG-080 §B–§F right-rail note-context cascade (Plan approved: docs/MIG-080-Plan.md) — Tags→Dashboard, Tasks/Source/Health/Review splits, + the deferred inspector360 Settings-UI bug.
-
-Standing orders that bit last session — honor them: measure-don't-guess; WA#5 cross-check (and check Eisa's own repos/intent first — he has his own engines); SO #8 cross-check a deferred item against orientation BODY + session logs before tackling; Stop-On-Correction; the i18n EN-key gotcha ($t returns the key for missing → always add EN keys); Edit-tool whitespace mismatches on tab files → use Python string-replace; test instructions LITERAL (exact click/type + expected); git pull first; close the app before cargo build --release; frontend change → npm run build THEN cargo, grep build/ for a new string. Do the full closing PCS + handover + next prompt at session end.
+Standing orders that bit last session — honor them: **cargo runs from `src-tauri/`** (root has no Cargo.toml); close the app before `cargo build --release`; frontend change → `npm run build` THEN cargo, grep `build/` for a new string. **Full-localization is a TOP PRINCIPAL** — any new UI label gets added to its i18n block ×15 (Settings AND `styleSetter.labels` if it's a Style-Setter control), not just EN. Staged Boss tests (one stage, wait, next). Stop-On-Correction. Measure-don't-guess. SO #8 cross-check a deferred item against the orientation BODY + session logs before tackling. Plan-approval = build-approval (cascade; stop only at Boss-testable verification points + genuine architectural surprise). Do the full closing PCS + handover + next prompt at session end (commit to `main`; orientation v-bump in the SAME commit).

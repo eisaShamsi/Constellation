@@ -25,6 +25,9 @@
 	// §C Phase 5 — link styling reuses the EXISTING single source: the §G Link-Types editor (one save
 	// path → Backlinks/Outgoing/editor recolour live). Display toggles + pill shape are appSettings.
 	import LinkTypesEditor from './LinkTypesEditor.svelte';
+	// MIG-081 §C.2d — the real CalendarPanel as the Calendar category's centre preview. It reads
+	// the draft --cal-* (set on the .ss root) → recolours live; engine loads lazily on open.
+	import CalendarPanel from './CalendarPanel.svelte';
 	// MIG-070 §C Phase 6 — named, reusable Styles (the frozen MIG-069 SAVE/APPLY engine, reused as-is —
 	// the same calls StylePresetsPanel uses). NOTE: we deliberately do NOT import unifiedStyleList /
 	// stylePreview here — rendering BUILTIN_THEMES through themeToStyle as a gallery of self-portrait
@@ -430,6 +433,43 @@
 			{ label: 'Hover label background', type: 'color', var: '--cns-label-bg' },
 			{ label: 'Hover label text', type: 'color', var: '--cns-label-text' },
 			{ label: 'Text size', type: 'range', var: '--cns-label-size', min: 9, max: 24, step: 1, unit: 'px', def: 12 } ] },
+		// MIG-081 §C.2d — the rich Calendar (CalendarPanel). Every token is consumed as
+		// var(--cal-X, default) in CalendarPanel, so these apply live on Apply (and in the
+		// centre preview, which renders the real CalendarPanel under the draft wrapper).
+		calendar: { name: 'Calendar', controls: [
+			{ label: 'Calendar font', type: 'select', var: '--cal-font', options: FONTS },
+			{ label: 'Header gradient start', type: 'color', var: '--cal-header-from' },
+			{ label: 'Header gradient end', type: 'color', var: '--cal-header-to' },
+			{ label: 'Month pill background', type: 'color', var: '--cal-pill-bg' },
+			{ label: 'Month pill text', type: 'color', var: '--cal-pill-text' },
+			{ label: 'Month pill border', type: 'color', var: '--cal-pill-border' },
+			{ label: 'Month pill size', type: 'range', var: '--cal-pill-size', min: 14, max: 44, step: 1, unit: 'px', def: 24 },
+			{ label: 'Sacred-month pill start', type: 'color', var: '--cal-pill-sacred-from' },
+			{ label: 'Sacred-month pill end', type: 'color', var: '--cal-pill-sacred-to' },
+			{ label: 'Sacred-month pill text', type: 'color', var: '--cal-pill-sacred-text' },
+			{ label: 'Subtitle size', type: 'range', var: '--cal-subtitle-size', min: 8, max: 24, step: 1, unit: 'px', def: 13 },
+			{ label: 'Today button size', type: 'range', var: '--cal-today-size', min: 9, max: 22, step: 1, unit: 'px', def: 14 },
+			{ label: 'Nav arrow size', type: 'range', var: '--cal-nav-size', min: 12, max: 40, step: 1, unit: 'px', def: 22 },
+			{ label: 'Day number', type: 'color', var: '--cal-primary-color' },
+			{ label: 'Day number size', type: 'range', var: '--cal-day-size', min: 12, max: 36, step: 1, unit: 'px', def: 19 },
+			{ label: 'Cross-reference date', type: 'color', var: '--cal-sub-color' },
+			{ label: 'Cross-reference date size', type: 'range', var: '--cal-subdate-size', min: 7, max: 22, step: 1, unit: 'px', def: 11 },
+			{ label: 'Moon glyph', type: 'color', var: '--cal-moon-color' },
+			{ label: 'Moon glyph size', type: 'range', var: '--cal-moon-size', min: 7, max: 22, step: 1, unit: 'px', def: 12 },
+			{ label: 'Today gradient start', type: 'color', var: '--cal-today-from' },
+			{ label: 'Today gradient end', type: 'color', var: '--cal-today-to' },
+			{ label: 'Today text', type: 'color', var: '--cal-today-text' },
+			{ label: 'Cell background', type: 'color', var: '--cal-cell-bg' },
+			{ label: 'Weekday header', type: 'color', var: '--cal-weekday-color' },
+			{ label: 'Weekday header size', type: 'range', var: '--cal-weekday-size', min: 8, max: 22, step: 1, unit: 'px', def: 12 },
+			{ label: 'Week number', type: 'color', var: '--cal-wk-color' },
+			{ label: 'Week number size', type: 'range', var: '--cal-week-size', min: 7, max: 20, step: 1, unit: 'px', def: 12 },
+			{ label: 'Grid lines', type: 'color', var: '--cal-grid-border' },
+			{ label: 'Note dot', type: 'color', var: '--cal-note-dot' },
+			{ label: 'Task dot', type: 'color', var: '--cal-task-dot' },
+			{ label: 'Holiday dot', type: 'color', var: '--cal-event-holiday' },
+			{ label: 'Observance dot', type: 'color', var: '--cal-event-observance' },
+			{ label: 'Special-day dot', type: 'color', var: '--cal-event-special' } ] },
 	};
 	// §3B — the left rail is organised into CATEGORIES (a.k.a. Surfaces), each grouping its
 	// elements (Eisa). Interface + Editor both preview the main app window ('editor' surface);
@@ -442,6 +482,7 @@
 		{ key: 'links', name: 'Links', surface: 'editor', elements: ['links'] },
 		{ key: 'sky', name: 'Sky View', surface: 'sky', elements: ['skyCanvas', 'skyNodes', 'skyMaturity', 'skyGlow', 'skyLinks', 'skyOverlays', 'skyLabels', 'skyGizmo'] },
 		{ key: 'cns', name: 'CNS', surface: 'cns', elements: ['cns'] },
+		{ key: 'calendar', name: 'Calendar', surface: 'calendar', elements: ['calendar'] },
 		{ key: 'org', name: 'OrgChart', surface: 'org', elements: ['accent', 'link'] },
 		{ key: 'index', name: 'Index', surface: 'index', elements: ['accent'] },
 		{ key: 'cataloger', name: 'Cataloger', surface: 'cataloger', elements: ['accent'] },
@@ -482,7 +523,7 @@
 	// MIG-075 FU-3 — CNS joins the three-zone set for the same reason, plus a harder one: the well's
 	// hover-label vars are read once at canvas mount, so the live-behind app CANNOT preview them —
 	// only the mini gravity-well (ss-cnsprev), which reads the draft vars as CSS, can.
-	const twoZone = $derived(activeCategory !== 'editor' && activeCategory !== 'sky' && activeCategory !== 'cns');
+	const twoZone = $derived(activeCategory !== 'editor' && activeCategory !== 'sky' && activeCategory !== 'cns' && activeCategory !== 'calendar');
 
 	const draftStyle = $derived(Object.entries(draft).map(([k, v]) => `${k}:${v}`).join(';'));
 	const sel = $derived(selected ? ELEMENTS[selected] ?? null : null);
@@ -908,7 +949,7 @@
 				<div class="ss-hint">{selected ? L('Previewing') + ': ' + (sel?.name ? L(sel.name) : '') : L('Select an element on the left to preview & style it')}</div>
 				<div class="ss-stage">
 					{#if activeSurface !== 'editor'}
-						<div class="ss-prev-alt" class:ss-prev-alt--sky={activeSurface === 'sky'} class:ss-prev-alt--cns={activeSurface === 'cns'}>
+						<div class="ss-prev-alt" class:ss-prev-alt--sky={activeSurface === 'sky'} class:ss-prev-alt--cns={activeSurface === 'cns'} class:ss-prev-alt--calendar={activeSurface === 'calendar'}>
 							<div class="ss-alt-title">{L(CATEGORIES.find((c) => c.surface === activeSurface)?.name)}</div>
 							{#if activeSurface === 'sky'}
 								<!-- MIG-072 §2 — live Sky View preview. Each bubble reads its --skyview-* var, so it
@@ -1033,6 +1074,25 @@
 									<span class="ss-cns-ring r3"></span>
 									<span class="ss-cns-label">{L('Apple (Fruit)')}</span>
 								</button>
+							{:else if activeSurface === 'calendar'}
+								<!-- §C.2d — the REAL CalendarPanel, filling the centre zone (full-center-zone rule).
+								     It inherits the draft --cal-* from .ss, so it recolours live as you pick. One
+								     element → any click selects it (header nav still works to scrub months). -->
+								<div class="ss-calprev ss-hot" class:ss-sel={selected === 'calendar'}
+									role="button" tabindex="0" aria-label={L('Calendar')}
+									onclick={() => selectEl('calendar')}
+									onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectEl('calendar'); } }}>
+									<CalendarPanel
+										primarySystem={$appSettings.calendarPrimarySystem ?? 'gregorian'}
+										weekStart={$appSettings.calendarWeekStart ?? 0}
+										showWeekNumbers={$appSettings.calendarShowWeekNumbers ?? true}
+										corrections={$appSettings.calendarCorrections ?? {}}
+										calculationMode={$appSettings.calendarCalculationMode ?? 'astronomical'}
+										noteDates={{}}
+										taskDueDates={{}}
+										onDayClick={() => selectEl('calendar')}
+									/>
+								</div>
 							{/if}
 							<div class="ss-alt-note">{L('representative snapshot · re-colours with your edits')}</div>
 						</div>
@@ -1382,6 +1442,12 @@
 	   zone — never squeeze an element mimicry into a tiny box. Every preview card
 	   stretches to the stage like --sky; the mimicry inside scales to the card. */
 	.ss-prev-alt--cns { width: 100%; height: 100%; max-width: 1100px; padding: 18px 22px; }
+	/* §C.2d — Calendar preview fills the whole centre zone (full-center-zone rule); the real
+	   CalendarPanel scales to it. The wrapper is the single click-target (selects calendar). */
+	.ss-prev-alt--calendar { width: 100%; height: 100%; max-width: 1100px; padding: 14px 18px; }
+	.ss-calprev { align-self: stretch; flex: 1; width: 100%; min-height: 0; overflow: auto; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; border-radius: 10px; border: 2px solid transparent; cursor: pointer; }
+	.ss-calprev.ss-sel { border-color: #b9acff; }
+	.ss-calprev :global(.cal-root) { max-width: 100%; }
 	.ss-alt-title { font-weight: 700; font-size: 15px; color: var(--interactive-accent, #7c3aed); }
 	.ss-alt-note { font-size: 11.5px; color: var(--text-normal, #6b7280); opacity: .7; max-width: 70%; text-align: center; }
 	.ss-sky { display: flex; gap: 22px; }

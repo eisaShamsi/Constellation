@@ -4061,11 +4061,9 @@
 			console.error('Failed to open daily note:', e);
 		}
 	}
-	// Back-compat: existing callers (command palette) open TODAY's note.
+	// Back-compat: existing callers (command palette) open TODAY's note. (MIG-081 §C.2g retired the
+	// left daily-note LAUNCHER button; openDailyNote stays — the Calendar page + command palette use it.)
 	function handleOpenDailyNote() { return openDailyNote(); }
-	// MIG-080 §A — the left daily-note launcher (replaces the right-rail Calendar tab).
-	let showDailyLauncher = $state(false);
-	const dailyLauncherToday = () => new Date().toISOString().slice(0, 10);
 
 	/** Cached universe-level templates list */
 	let cachedTemplates = $state<{ name: string; path: string; libraryName: string }[]>([]);
@@ -5518,28 +5516,9 @@
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><circle cx="18" cy="6" r="3"/><path d="M6 9v6M9 6h6M15 18h-6"/></svg>
 			</button>
 			{/if}
-			{#if $appSettings.enabledFeatures?.dailyNotes !== false}
-			<!-- MIG-080 §A — daily-note launcher (replaces the right-rail Calendar tab):
-			     opens today, or pick any day → that day's daily note. -->
-			<div class="daily-launcher-wrap">
-				<button class="dock-btn" class:active={showDailyLauncher} onclick={() => showDailyLauncher = !showDailyLauncher} title={$t('ribbon.dailyNote')}>
-					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-				</button>
-				{#if showDailyLauncher}
-					<button class="daily-launcher-backdrop" aria-label={$t('common.close') || 'Close'} onclick={() => showDailyLauncher = false}></button>
-					<div class="daily-launcher-pop">
-						<button class="dl-row dl-today" onclick={() => { showDailyLauncher = false; openDailyNote(); }}>{$t('calendarPanel.today')}</button>
-						<input
-							type="date"
-							class="dl-date"
-							value={dailyLauncherToday()}
-							title={$t('ribbon.dailyNote')}
-							onchange={(e) => { const v = (e.currentTarget as HTMLInputElement).value; showDailyLauncher = false; if (v) openDailyNote(v); }}
-						/>
-					</div>
-				{/if}
-			</div>
-			{/if}
+			<!-- MIG-081 §C.2g — the Daily-Note launcher dock button was RETIRED: the Calendar page below
+			     fully serves daily notes (click any day -> its note; Today button). The command palette
+			     "Daily Note" command still opens today via openDailyNote(). -->
 			{#if $appSettings.enabledFeatures?.dailyNotes !== false}
 			<!-- MIG-080 §A.2 — Calendar page (distinct from the Daily-Note launcher above):
 			     a full-page month view with highlighted note/task events. -->
@@ -6360,6 +6339,8 @@
 							primarySystem={$appSettings.calendarPrimarySystem ?? 'gregorian'}
 							weekStart={$appSettings.calendarWeekStart ?? 0}
 							showWeekNumbers={$appSettings.calendarShowWeekNumbers ?? true}
+							corrections={$appSettings.calendarCorrections ?? {}}
+							calculationMode={$appSettings.calendarCalculationMode ?? 'astronomical'}
 							onDayClick={(dateStr) => { showCalendarPage = false; openDailyNote(dateStr); }}
 						/>
 					</div>
@@ -7995,29 +7976,8 @@
 	.dock-btn:hover { background: var(--border); color: var(--text); }
 	.dock-btn.active { color: var(--accent); }
 
-	/* MIG-080 §A — daily-note launcher popover (anchored to the dock button). */
-	.daily-launcher-wrap { position: relative; }
-	.daily-launcher-backdrop {
-		position: fixed; inset: 0; z-index: 120;
-		background: transparent; border: none; padding: 0; margin: 0; cursor: default;
-	}
-	.daily-launcher-pop {
-		position: absolute; inset-inline-start: calc(100% + 6px); top: 0; z-index: 121;
-		display: flex; flex-direction: column; gap: 6px;
-		background: var(--bg-secondary, #fff);
-		border: var(--border-width, 1px) solid var(--border);
-		border-radius: 8px; padding: 8px; min-width: 168px;
-		box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
-	}
-	.dl-row, .dl-date {
-		font: inherit; font-size: 0.85rem;
-		padding: 6px 10px; border-radius: 6px;
-		border: var(--border-width, 1px) solid var(--border);
-		background: var(--bg-primary, #fff); color: var(--text);
-		text-align: start;
-	}
-	.dl-today { cursor: pointer; }
-	.dl-today:hover { background: var(--border); }
+	/* MIG-081 §C.2g — the daily-note launcher popover CSS (.daily-launcher-*, .dl-*) was removed
+	   with the launcher button; the Calendar dock button now serves daily notes. */
 
 	/* ═══ LEFT SIDEBAR ═══ */
 	.sidebar {

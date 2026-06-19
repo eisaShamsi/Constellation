@@ -1300,13 +1300,22 @@ Go to **Settings > Importer** to start an import.
 
 ## 14. Calendar
 
-The **Calendar** is a full-page month view, opened from the **left dock** (the calendar icon). Clicking any day opens (or creates) that day's **daily note**. Days with notes or due tasks are marked with dots.
+The **Calendar** is a full-page month view, opened from the **left dock** (the calendar icon). Clicking any day opens (or creates) that day's **daily note**. Days with notes or due tasks are marked with dots. The header shows the month in your chosen calendar, and a subtitle below it shows the **equivalent range in the other calendar** — e.g. a Hijri month shows its Gregorian span ("June – July 2026"), and a Gregorian month shows its Hijri span ("Dhul-Hijjah 1447 – Muharram 1448 AH").
 
 **Cultural calendars.** In **Settings → Calendar** you can set the **calendar system** — **Gregorian, Hijri (Islamic), Solar Hijri (Persian), or Hebrew** — and the whole month grid switches to it, showing both the chosen-calendar date (large) and the Gregorian date (small) in each cell, plus the moon phase. The Hijri calendar uses an accurate astronomical engine; sacred months are highlighted and Islamic events are marked. You can also choose the **week start** (Sunday/Monday) and toggle the **week-number column**.
 
+**Hijri calendar options.** Under **Settings → Calendar → "Hijri calendar (Islamic)"** there are two extra controls:
+
+- **Calculation method** — **Astronomical (Lunar Conjunction)**, which follows the true new-moon (most accurate, the default), or **Tabular (al-Tawfīqāt al-Ilhāmiyyah)**, the classical arithmetic cycle.
+- **Month correction** — nudge a Hijri month's start by ±1 or ±2 days to match a **local moon sighting**. Pick the Hijri year and month, choose an offset, and click **Set**; the correction applies to that month and every month after it. Your corrections are listed (each removable), with a **Clear all** button.
+
+Both settings (and your corrections) are saved **with your universe**, so they travel across your devices.
+
+**Styling the calendar.** Open the **Style Setter** (left dock, or **Settings → Style Setter**) and pick the **Calendar** surface to restyle every part — each element has its own **colour and text size** (day numbers, the cross-reference date, the month pill, weekday headers, week numbers, the moon glyph, the Today highlight, grid lines, and the note/task/event dots), plus the calendar **font**. A live, full-size preview updates as you edit; click **Keep** to apply.
+
 > **Daily-note filenames always stay Gregorian** (`YYYY-MM-DD`) regardless of the displayed calendar — so your files stay portable and sort correctly. The cultural date is shown in the calendar (and can be recorded in the note's frontmatter).
 
-The separate **Daily Note** launcher also lives on the left dock (open today, or pick a date).
+The Calendar fully serves daily notes: click any day to open it, or run the **"Daily Note"** command (command palette) to jump to today.
 
 ---
 
