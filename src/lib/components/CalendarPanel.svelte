@@ -1,13 +1,15 @@
 <script lang="ts">
-	// MIG-081 §C — renders the month grid in the chosen calendar SYSTEM (Gregorian,
-	// Hijri [Eisa's astronomical engine], Solar-Hijri/Persian, Hebrew). All cells key
-	// back to Gregorian ISO (onDayClick + the note/task dots); display labels are
-	// localised (month name + day numbers in the locale's numbering system). RTL follows
-	// the UI locale. Engines (hijri.js, Temporal) are lazy-loaded via calendarMath.
+	// MIG-081 §C.2b — RICH calendar, ported from Eisa's hijri-calendar app
+	// (eisaShamsi/hijri-calendar). Renders the chosen system via the vendored engine:
+	// ornate header + gold "AH" pill (cream when a sacred month), Gregorian-range
+	// subtitle, dual-date cells (primary day large + Gregorian sub-number), moon-phase
+	// glyphs, Islamic-event dots (Hijri only), note/task dots, optional Wk column.
+	// All colours/fonts are CSS variables (--cal-*) so the Style Setter can retheme it
+	// (§C.2d). Cells key onDayClick + the note/task dots on Gregorian ISO. RTL via dir.
 	import { t, dir, locale } from '$lib/i18n';
 	import {
-		ensureCalendarEngines, buildMonthGrid, todayInSystem, stepMonth,
-		type CalendarSystem, type MonthGrid,
+		ensureCalendarEngines, buildRichMonthGrid, todayInSystem, stepMonth,
+		type CalendarSystem, type RichMonthGrid,
 	} from '$lib/calendar/calendarMath';
 
 	let {
@@ -16,218 +18,233 @@
 		onDayClick,
 		primarySystem = 'gregorian' as CalendarSystem,
 		weekStart = 0 as 0 | 1,
+		showWeekNumbers = true,
 	}: {
 		noteDates: Record<string, number>;
 		taskDueDates: Record<string, number>;
 		onDayClick: (date: string) => void;
 		primarySystem?: CalendarSystem;
 		weekStart?: 0 | 1;
+		showWeekNumbers?: boolean;
 	} = $props();
 
-	let viewYear = $state(0); // 0 = not yet initialised
+	let viewYear = $state(0);
 	let viewMonth = $state(0);
 	let enginesReady = $state(false);
 
-	// Load the engine(s) the chosen system needs, then anchor the view on today-in-system.
-	// Re-runs only when `primarySystem` changes (not on month-nav — it doesn't read the view).
 	$effect(() => {
 		const sys = primarySystem;
 		let cancelled = false;
 		enginesReady = false;
 		ensureCalendarEngines([sys])
 			.then(() => todayInSystem(sys))
-			.then((tdy) => {
-				if (cancelled) return;
-				viewYear = tdy.year;
-				viewMonth = tdy.month;
-				enginesReady = true;
-			})
+			.then((tdy) => { if (cancelled) return; viewYear = tdy.year; viewMonth = tdy.month; enginesReady = true; })
 			.catch(() => { if (!cancelled) enginesReady = true; });
 		return () => { cancelled = true; };
 	});
 
-	// Synchronous once the engines are loaded; re-derives on view/locale/weekStart change.
-	const grid = $derived.by<MonthGrid | null>(() => {
-		void $locale; // re-derive when the locale (numerals/month names) changes
+	const grid = $derived.by<RichMonthGrid | null>(() => {
+		void $locale;
 		if (!enginesReady || !viewYear) return null;
-		try { return buildMonthGrid(primarySystem, viewYear, viewMonth, $locale, weekStart); }
+		try { return buildRichMonthGrid(primarySystem, viewYear, viewMonth, $locale, weekStart); }
 		catch { return null; }
+	});
+
+	// Split the flat 42-cell list into 6 rows so we can show one Wk number per row.
+	const rows = $derived.by(() => {
+		const g = grid; if (!g) return [];
+		const out: { week: number; cells: typeof g.cells }[] = [];
+		for (let i = 0; i < g.cells.length; i += 7) {
+			const slice = g.cells.slice(i, i + 7);
+			out.push({ week: slice[0]?.weekNumber ?? 0, cells: slice });
+		}
+		return out;
 	});
 
 	function prevMonth() { const n = stepMonth(primarySystem, viewYear, viewMonth, -1); viewYear = n.year; viewMonth = n.month; }
 	function nextMonth() { const n = stepMonth(primarySystem, viewYear, viewMonth, 1); viewYear = n.year; viewMonth = n.month; }
 	async function goToToday() { const tdy = await todayInSystem(primarySystem); viewYear = tdy.year; viewMonth = tdy.month; }
-
 	function localeCount(n: number): string { try { return n.toLocaleString($locale); } catch { return String(n); } }
 </script>
 
-<div class="calendar-panel" dir={$dir}>
-	<!-- Navigation header -->
-	<div class="cp-header">
-		<button class="cp-nav" onclick={prevMonth} title={$t('calendarPanel.prevMonth')}>‹</button>
-		<button class="cp-month" onclick={goToToday} title={$t('calendarPanel.today')}>{grid?.monthLabel ?? ''}</button>
-		<button class="cp-nav" onclick={nextMonth} title={$t('calendarPanel.nextMonth')}>›</button>
-	</div>
-
+<div class="cal-root" dir={$dir}>
 	{#if grid}
-		<!-- Weekday headers -->
-		<div class="cp-weekdays">
-			{#each grid.weekdayLabels as day}
-				<div class="cp-weekday">{day}</div>
-			{/each}
+		<!-- Ornate header -->
+		<div class="cal-header">
+			<div class="cal-head-left">
+				<button class="cal-today" onclick={goToToday}>{$t('calendarPanel.today')}</button>
+				<button class="cal-circ" onclick={prevMonth} title={$t('calendarPanel.prevMonth')} aria-label={$t('calendarPanel.prevMonth')}>‹</button>
+			</div>
+			<div class="cal-head-center">
+				<div class="cal-pill" class:sacred={grid.isSacred}>
+					{grid.monthLabel}{#if grid.suffix}&nbsp;<span class="cal-suffix">{grid.suffix}</span>{/if}
+				</div>
+				{#if grid.gregorianRange}<div class="cal-greg-range">{grid.gregorianRange}</div>{/if}
+			</div>
+			<div class="cal-head-right">
+				<button class="cal-circ" onclick={nextMonth} title={$t('calendarPanel.nextMonth')} aria-label={$t('calendarPanel.nextMonth')}>›</button>
+			</div>
 		</div>
 
-		<!-- Calendar grid -->
-		<div class="cp-grid">
-			{#each grid.cells as cell}
-				{@const nc = noteDates[cell.iso] || 0}
-				{@const tc = taskDueDates[cell.iso] || 0}
-				<button
-					class="cp-day"
-					class:other-month={!cell.inCurrentMonth}
-					class:today={cell.isToday}
-					class:has-notes={nc > 0}
-					class:has-tasks={tc > 0}
-					onclick={() => onDayClick(cell.iso)}
-					title={[
-						nc > 0 ? $t('calendarPanel.notesCount', { count: localeCount(nc) }) : '',
-						tc > 0 ? $t('calendarPanel.tasksCount', { count: localeCount(tc) }) : ''
-					].filter(Boolean).join(' · ')}
-				>
-					<span class="cp-day-num">{cell.dayLabel}</span>
-					{#if nc > 0 || tc > 0}
-						<div class="cp-dots">
-							{#if nc > 0}<span class="cp-dot note-dot"></span>{/if}
-							{#if tc > 0}<span class="cp-dot task-dot"></span>{/if}
-						</div>
-					{/if}
-				</button>
+		<!-- Weekday header row -->
+		<div class="cal-weekrow" class:with-wk={showWeekNumbers}>
+			{#if showWeekNumbers}<div class="cal-wk-head">{$t('calendarPanel.weekAbbrev') || 'Wk'}</div>{/if}
+			{#each grid.weekdayLabels as wd}<div class="cal-weekday">{wd}</div>{/each}
+		</div>
+
+		<!-- Weeks -->
+		<div class="cal-body">
+			{#each rows as row}
+				<div class="cal-row" class:with-wk={showWeekNumbers}>
+					{#if showWeekNumbers}<div class="cal-wk">{localeCount(row.week)}</div>{/if}
+					{#each row.cells as cell}
+						{@const nc = noteDates[cell.iso] || 0}
+						{@const tc = taskDueDates[cell.iso] || 0}
+						<button
+							class="cal-cell"
+							class:other={!cell.inCurrentMonth}
+							class:today={cell.isToday}
+							onclick={() => onDayClick(cell.iso)}
+							title={[
+								cell.eventName ?? '',
+								cell.moonName ?? '',
+								nc > 0 ? $t('calendarPanel.notesCount', { count: localeCount(nc) }) : '',
+								tc > 0 ? $t('calendarPanel.tasksCount', { count: localeCount(tc) }) : ''
+							].filter(Boolean).join(' · ')}
+						>
+							{#if cell.moonSymbol}<span class="cal-moon">{cell.moonSymbol}</span>{/if}
+							<span class="cal-primary">{cell.dayLabel}</span>
+							{#if cell.subLabel}<span class="cal-sub">{cell.subLabel}</span>{/if}
+							<span class="cal-dots">
+								{#if cell.eventType}<span class="cal-dot cal-event cal-event-{cell.eventType}"></span>{/if}
+								{#if nc > 0}<span class="cal-dot cal-note"></span>{/if}
+								{#if tc > 0}<span class="cal-dot cal-task"></span>{/if}
+							</span>
+						</button>
+					{/each}
+				</div>
 			{/each}
 		</div>
 	{:else}
-		<div class="cp-loading">{$t('common.loading') || '…'}</div>
+		<div class="cal-loading">{$t('common.loading') || '…'}</div>
 	{/if}
 </div>
 
 <style>
-	.calendar-panel {
-		padding: 8px;
-	}
-	.cp-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 4px 0 8px;
-	}
-	.cp-nav {
-		width: 28px;
-		height: 28px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background: none;
-		border: none;
-		color: var(--text-faint, #888);
-		font-size: 1.1rem;
-		cursor: pointer;
-		border-radius: 4px;
-	}
-	.cp-nav:hover {
-		background: var(--bg-hover, rgba(255, 255, 255, 0.05));
-		color: var(--text-normal, #ccc);
-	}
-	.cp-month {
-		font-size: 0.82rem;
-		font-weight: 600;
-		color: var(--text-normal, #ccc);
-		background: none;
-		border: none;
-		cursor: pointer;
-		padding: 4px 8px;
-		border-radius: 4px;
-	}
-	.cp-month:hover {
-		background: var(--bg-hover, rgba(255, 255, 255, 0.05));
-	}
-	.cp-weekdays {
-		display: grid;
-		grid-template-columns: repeat(7, 1fr);
-		gap: 1px;
-		margin-bottom: 2px;
-	}
-	.cp-weekday {
-		text-align: center;
-		font-size: 0.65rem;
-		color: var(--text-faint, #666);
-		font-weight: 600;
-		padding: 2px 0;
-		text-transform: uppercase;
-	}
-	.cp-grid {
-		display: grid;
-		grid-template-columns: repeat(7, 1fr);
-		gap: 1px;
-	}
-	.cp-day {
-		aspect-ratio: 1;
+	.cal-root {
+		/* Style-Setter tokens (defaults = Eisa's app palette). §C.2d wires these to the catalog. */
+		--cal-header-from: #14553f;
+		--cal-header-to: #1a6b4f;
+		--cal-pill-bg: #d4a017;
+		--cal-pill-text: #ffffff;
+		--cal-pill-border: #c49440;
+		--cal-pill-sacred-from: #f5e6c8;
+		--cal-pill-sacred-to: #eedbb5;
+		--cal-pill-sacred-text: #6b4400;
+		--cal-today-from: #b8860b;
+		--cal-today-to: #d4a017;
+		--cal-today-text: #ffffff;
+		--cal-primary-color: var(--text, #0d3b2e);
+		--cal-sub-color: #0e7490;
+		--cal-weekday-color: #1a6b4f;
+		--cal-othermonth-text: var(--text-faint, #b8c0cc);
+		--cal-grid-border: var(--border, #e2e8f0);
+		--cal-event-holiday: #ef4444;
+		--cal-event-observance: #d4a017;
+		--cal-event-special: #8b5cf6;
+		--cal-moon-color: var(--text-faint, #6b7280);
+		--cal-wk-color: var(--text-faint, #94a3b8);
+		--cal-note-dot: var(--accent, #7c3aed);
+		--cal-task-dot: #ef4444;
+		--cal-cell-bg: var(--bg-primary, #fff);
+		--cal-wk-col: 44px;
+
+		width: 100%;
+		max-width: 1100px;
 		display: flex;
 		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		background: none;
-		border: none;
-		border-radius: 4px;
-		cursor: pointer;
-		padding: 2px;
-		position: relative;
-		min-height: 30px;
+		font-family: 'Amiri', 'Cairo', var(--text-font, inherit);
 	}
-	.cp-day:hover {
-		background: var(--bg-hover, rgba(255, 255, 255, 0.05));
+
+	/* Header */
+	.cal-header {
+		display: flex; align-items: center; justify-content: space-between;
+		gap: 12px; padding: 14px 18px;
+		background: linear-gradient(135deg, var(--cal-header-from), var(--cal-header-to));
+		color: #fff; border-radius: 12px 12px 0 0;
 	}
-	.cp-day.other-month {
-		opacity: 0.3;
+	.cal-head-left, .cal-head-right { display: flex; align-items: center; gap: 10px; }
+	.cal-head-center { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
+	.cal-today {
+		font: inherit; font-size: 0.85rem; color: #fff;
+		background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.25);
+		padding: 6px 14px; border-radius: 999px; cursor: pointer;
 	}
-	.cp-day.today .cp-day-num {
-		background: var(--accent, #7c3aed);
-		color: white;
-		border-radius: 50%;
-		width: 22px;
-		height: 22px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
+	.cal-today:hover { background: rgba(255, 255, 255, 0.22); }
+	.cal-circ {
+		width: 40px; height: 40px; border-radius: 50%;
+		display: flex; align-items: center; justify-content: center;
+		background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.25);
+		color: #fff; font-size: 1.4rem; cursor: pointer; line-height: 1;
 	}
-	.cp-day.has-notes {
-		font-weight: 600;
+	.cal-circ:hover { background: rgba(255, 255, 255, 0.22); }
+	.cal-pill {
+		font-size: 1.5rem; font-weight: 700; padding: 6px 22px; border-radius: 14px;
+		background: var(--cal-pill-bg); color: var(--cal-pill-text);
+		border: 2px solid var(--cal-pill-border); white-space: nowrap;
 	}
-	.cp-day-num {
-		font-size: 0.75rem;
-		color: var(--text-normal, #ccc);
-		line-height: 1;
+	.cal-pill.sacred {
+		background: linear-gradient(to bottom, var(--cal-pill-sacred-from), var(--cal-pill-sacred-to));
+		color: var(--cal-pill-sacred-text);
 	}
-	.cp-dots {
-		display: flex;
-		gap: 2px;
-		margin-top: 2px;
-		position: absolute;
-		bottom: 2px;
+	.cal-suffix { font-size: 0.75em; opacity: 0.85; }
+	.cal-greg-range { font-size: 0.82rem; opacity: 0.9; }
+
+	/* Weekday header */
+	.cal-weekrow {
+		display: grid; grid-template-columns: repeat(7, 1fr);
+		background: color-mix(in srgb, var(--cal-header-to) 8%, transparent);
 	}
-	.cp-dot {
-		width: 4px;
-		height: 4px;
-		border-radius: 50%;
+	.cal-weekrow.with-wk { grid-template-columns: var(--cal-wk-col) repeat(7, 1fr); }
+	.cal-wk-head, .cal-weekday {
+		text-align: center; padding: 8px 0; font-size: 0.78rem; font-weight: 600;
+		color: var(--cal-weekday-color);
 	}
-	.cp-dot.note-dot {
-		background: var(--accent, #7c3aed);
+	.cal-wk-head { color: var(--cal-wk-color); font-size: 0.7rem; }
+
+	/* Grid body */
+	.cal-body { display: flex; flex-direction: column; border: 1px solid var(--cal-grid-border); border-top: none; border-radius: 0 0 12px 12px; overflow: hidden; }
+	.cal-row { display: grid; grid-template-columns: repeat(7, 1fr); }
+	.cal-row.with-wk { grid-template-columns: var(--cal-wk-col) repeat(7, 1fr); }
+	.cal-wk {
+		display: flex; align-items: center; justify-content: center;
+		font-size: 0.72rem; font-weight: 600; color: var(--cal-wk-color);
+		border-top: 1px solid var(--cal-grid-border);
+		background: color-mix(in srgb, var(--cal-grid-border) 25%, transparent);
 	}
-	.cp-dot.task-dot {
-		background: #ef4444;
+	.cal-cell {
+		position: relative; min-height: 76px;
+		display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+		background: var(--cal-cell-bg); color: var(--cal-primary-color);
+		border: none; border-top: 1px solid var(--cal-grid-border); border-inline-start: 1px solid var(--cal-grid-border);
+		cursor: pointer; padding: 6px; font: inherit;
 	}
-	.cp-loading {
-		text-align: center;
-		color: var(--text-faint, #888);
-		font-size: 0.8rem;
-		padding: 24px 0;
+	.cal-cell:hover { background: color-mix(in srgb, var(--cal-header-to) 6%, var(--cal-cell-bg)); }
+	.cal-cell.other { opacity: 0.4; }
+	.cal-cell.today {
+		background: linear-gradient(135deg, var(--cal-today-from), var(--cal-today-to));
+		color: var(--cal-today-text);
 	}
+	.cal-cell.today .cal-sub, .cal-cell.today .cal-moon { color: rgba(255, 255, 255, 0.85); }
+	.cal-primary { font-size: 1.2rem; font-weight: 700; line-height: 1; }
+	.cal-sub { font-size: 0.68rem; color: var(--cal-sub-color); line-height: 1; }
+	.cal-moon { position: absolute; top: 3px; inset-inline-end: 5px; font-size: 0.72rem; color: var(--cal-moon-color); }
+	.cal-dots { position: absolute; bottom: 4px; display: flex; gap: 3px; }
+	.cal-dot { width: 6px; height: 6px; border-radius: 50%; }
+	.cal-note { background: var(--cal-note-dot); }
+	.cal-task { background: var(--cal-task-dot); }
+	.cal-event-holiday { background: var(--cal-event-holiday); }
+	.cal-event-observance { background: var(--cal-event-observance); }
+	.cal-event-special { background: var(--cal-event-special); }
+	.cal-loading { text-align: center; color: var(--text-faint, #888); font-size: 0.85rem; padding: 40px 0; }
 </style>

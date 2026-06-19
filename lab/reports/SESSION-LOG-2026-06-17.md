@@ -267,3 +267,12 @@ Boss tested §C, wants the rich design from his hijri-calendar app (screenshot):
 
 ## MIG-081 §C.2a — rich grid data in calendarMath (BUILT + Node-verified; additive)
 Added buildRichMonthGrid (wraps buildMonthGrid, leaves it untouched) + RichCell/RichMonthGrid: per cell — subLabel (Gregorian cross-ref day; Hijri day under Greg primary), ISO-8601 weekNumber, moonSymbol/moonName (getMoonPhase — universal), eventType/eventName (Hijri only, getEvent); header — suffix (AH/SH/AM), gregorianRange ("June – July 2026"), isSacred (Hijri). ensureCalendarEngines now ALWAYS loads Hijri (moon phases are universal). Node-verified: 2026-06-19 → moon ◗ Waxing Crescent, ISO week 25, Hijri 1448-01-05 (Muharram, sacred=true), getEvent(1,1)=Islamic New Year/holiday, (1,10)=Ashura/observance. svelte-check 0. Next: §C.2b rich CalendarPanel render (the visible payoff).
+
+
+## MIG-081 §C.2b — RICH CalendarPanel (BUILT; pending Boss test)
+Rewrote CalendarPanel to the rich design (ported from Eisa's app), using buildRichMonthGrid:
+- **Ornate header:** green gradient bar; Today pill + circular ‹ › nav; centre gold **AH/SH/AM pill** (cream gradient when isSacred Hijri month) with monthLabel+suffix; **Gregorian-range subtitle** ("June – July 2026").
+- **Grid:** optional **Wk column** (ISO week per row) + weekday headers; **dual-date cells** — primary day (large) + Gregorian sub-number (teal) + **moon glyph** (top-corner) + bottom **dots** (Islamic-event [Hijri], note, task). today = gold gradient; other-month muted.
+- **All colours/fonts via --cal-* CSS variables** (defaults = Eisa's app palette: header #14553f→#1a6b4f, gold today, teal sub, Amiri/Cairo) → Style-Setter-ready (§C.2d wires the catalog).
+- New **calendarShowWeekNumbers** setting (default true) + a Settings → Calendar toggle; §A.2 page passes primarySystem/weekStart/showWeekNumbers. i18n: calendarPanel.weekAbbrev + settings.calendar.showWeekNumbers(Desc) added to en.json (×15 rides §E). svelte-check 0; binary rebuild in progress.
+- Remaining MIG-081: §C.2d Style-Setter Calendar token group (the --cal-* vars → catalog + preview); §C.2e Amiri/Cairo fonts + ×15 i18n + audit.

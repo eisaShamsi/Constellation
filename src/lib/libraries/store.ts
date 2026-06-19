@@ -3437,6 +3437,7 @@ export interface AppSettings {
 	calendarPrimarySystem: 'gregorian' | 'hijri' | 'solar-hijri' | 'hebrew';
 	calendarSecondarySystem: 'none' | 'gregorian' | 'hijri' | 'solar-hijri' | 'hebrew';
 	calendarWeekStart: 0 | 1; // 0 = Sunday, 1 = Monday
+	calendarShowWeekNumbers: boolean; // MIG-081 §C.2b — the "Wk" column
 
 	// Templates
 	templateFolder: string;
@@ -3845,6 +3846,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
 	calendarPrimarySystem: 'gregorian' as const,
 	calendarSecondarySystem: 'none' as const,
 	calendarWeekStart: 0 as const,
+	calendarShowWeekNumbers: true,
 	templateFolder: 'Templates',
 	folderTemplates: {},
 	templateHotkeys: {},

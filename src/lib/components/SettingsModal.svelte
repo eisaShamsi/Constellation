@@ -2247,6 +2247,16 @@
 					</div>
 					<div class="setting-item">
 						<div class="setting-info">
+							<div class="setting-name">{$t('settings.calendar.showWeekNumbers') || 'Show week numbers'}</div>
+							<div class="setting-desc">{$t('settings.calendar.showWeekNumbersDesc') || 'Show the week-number (Wk) column in the Calendar.'}</div>
+						</div>
+						<button class="toggle-btn" class:on={$appSettings.calendarShowWeekNumbers ?? true}
+							onclick={() => updateSettings({ calendarShowWeekNumbers: !($appSettings.calendarShowWeekNumbers ?? true) })}>
+							{($appSettings.calendarShowWeekNumbers ?? true) ? ($t('settings.plugins.on') || 'On') : ($t('settings.plugins.off') || 'Off')}
+						</button>
+					</div>
+					<div class="setting-item">
+						<div class="setting-info">
 							<div class="setting-name">{$t('settings.calendar.dailyFormat') || 'Daily-note filename format'}</div>
 							<div class="setting-desc">{$t('settings.calendar.dailyFormatDesc') || 'strftime format (stays Gregorian), e.g. %Y-%m-%d.'}</div>
 						</div>

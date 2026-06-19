@@ -630,7 +630,9 @@
 			"dailyFormat": "Daily-note filename format",
 			"dailyFormatDesc": "strftime format (stays Gregorian), e.g. %Y-%m-%d.",
 			"dailyFolder": "Daily-note folder",
-			"dailyFolderDesc": "Subfolder for daily notes (blank = library root)."
+			"dailyFolderDesc": "Subfolder for daily notes (blank = library root).",
+			"showWeekNumbers": "Show week numbers",
+			"showWeekNumbersDesc": "Show the week-number (Wk) column in the Calendar."
 		}
 	},
 	"commands": {
@@ -1495,7 +1497,8 @@
 		"nextMonth": "Next month",
 		"createDailyNote": "Create daily note",
 		"notesCount": "{count} notes",
-		"tasksCount": "{count} tasks due"
+		"tasksCount": "{count} tasks due",
+		"weekAbbrev": "Wk"
 	},
 	"globalTasks": {
 		"title": "Global Tasks",

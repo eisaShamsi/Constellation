@@ -6359,6 +6359,7 @@
 							taskDueDates={calendarTaskDates}
 							primarySystem={$appSettings.calendarPrimarySystem ?? 'gregorian'}
 							weekStart={$appSettings.calendarWeekStart ?? 0}
+							showWeekNumbers={$appSettings.calendarShowWeekNumbers ?? true}
 							onDayClick={(dateStr) => { showCalendarPage = false; openDailyNote(dateStr); }}
 						/>
 					</div>
