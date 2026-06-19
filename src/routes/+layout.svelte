@@ -4046,6 +4046,17 @@
 			}
 
 			await openNoteTab(path, firstLib.name, libraryColor);
+			// MIG-080 §A.2 fix — surface the (possibly newly-created) daily note in the
+			// file tree: refresh the owning library's tree + ensure it's expanded so the
+			// note is visible (creation via gate_create_exclusive doesn't update the tree).
+			const stat = $libraryStats.find(v => path.startsWith(v.path));
+			if (stat) {
+				if (!expandedLibraries.has(stat.library_id)) {
+					expandedLibraries.add(stat.library_id);
+					expandedLibraries = new Set(expandedLibraries);
+				}
+				await refreshLibraryTree(stat.library_id);
+			}
 		} catch (e) {
 			console.error('Failed to open daily note:', e);
 		}

@@ -216,3 +216,17 @@ Cross-checked each handover-deferred item against the CURRENT code before touchi
 - **Full-page overlay** (mirrors the map/cataloger `*-overlay` + `*-visible` lazy pattern): renders `CalendarPanel` scaled to the **full center zone** (`:global` overrides — 84px day cells, bigger nav/weekday/dots, max-width 1100px — per the Style-Setter "don't cram" rule). Day-click → close the page + `openDailyNote(dateStr)`.
 - Repurposed the (previously dead) calendar dot-scan `$effect` to gate on `showCalendarPage` → populates the highlighted events. `handleUniverseSwitch` resets the page + EverOpened flag.
 - svelte-check **0 errors**; zero new i18n (reused `panels.calendar`, `common.close`). Binary rebuild in progress.
+- **§A.2 Boss-test: Steps 1–6 ALL PASS.** Three follow-ups raised → (#1) a bug, (#2/#3) → MIG-081.
+
+## §A.2 follow-up #1 — file-tree didn't show the daily note (BUG; FIXED, pending re-test)
+Boss: opening/creating a daily note via the launcher or the Calendar page didn't appear in the left file tree. Cause: `get_daily_note_path`→`gate_create_exclusive` creates the file in Rust, but `openDailyNote` never refreshed the frontend tree (the sanctioned `handleNewNote` path calls `refreshLibraryTree`; the daily-note path didn't). **Fix:** after `openNoteTab`, resolve the note's library via `$libraryStats.find(v => path.startsWith(v.path))`, ensure it's in `expandedLibraries`, and `await refreshLibraryTree(stat.library_id)`. Covers BOTH the launcher and the page (both call `openDailyNote`). svelte-check 0; binary 13:20.
+
+## MIG-081 OPENED — Cultural Calendars + Calendar Settings (Boss: "build #2+#3 now as a /migration")
+Boss follow-ups #2 (Calendar settings don't exist) + #3 (Constellation is multilingual → provide cultures' own calendars, integrated or standalone). **WA#5 research done** (a01e938727b623301): the proven approach —
+- **Intl** (`-u-ca-`) for display + **Temporal API (polyfilled ~20KB, lazy into the Calendar chunk)** for non-Gregorian grid math (`Date` can't do Hijri/Hebrew/Persian month lengths).
+- **UX:** Primary calendar (switches grid = standalone) + optional Secondary (shown alongside = integrated); per-locale defaults (ar→`islamic-umalqura`, fa→`persian`, he→`hebrew`, …) overridable.
+- **Storage:** daily-note filename stays **Gregorian ISO `YYYY-MM-DD`** always (File-Over-App/sync); cultural date is display-only (optional `hijri:` frontmatter). Reuses §D-1.
+- **Hijri default `islamic-umalqura`** (NOT bare `islamic`). Numerals: `nu-arab` (Arabic) vs `nu-arabext` (Persian) — different digits. Grid direction from UI locale via `detectDir()`.
+- **Scope:** ship Hijri/Persian/Hebrew/Indian/Buddhist first; **defer Chinese/Korean** (lunisolar leap-months don't fit a fixed grid).
+- **#2 Calendar settings** is the host for #3's selector + the existing daily-note format/folder/template + week-start.
+- Proper four-phase /migration (multilingual + write-path-adjacent + new dep). Sources in the research result. Right-rail cascade §B–§F resumes after MIG-081 (or interleaved per Boss).
