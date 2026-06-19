@@ -904,6 +904,64 @@
 							oninput={(e) => updateSettings({ dailyNoteTemplate: (e.target as HTMLInputElement).value })} />
 					</div>
 
+					<!-- MIG-081 §B — Calendar settings (cultural calendars + daily-note format/folder). -->
+					<div class="setting-section-heading">{$t('settings.calendar.heading') || 'Calendar'}</div>
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.calendar.primary') || 'Calendar system'}</div>
+							<div class="setting-desc">{$t('settings.calendar.primaryDesc') || 'Show the Calendar in this system. Daily-note filenames always stay Gregorian (YYYY-MM-DD).'}</div>
+						</div>
+						<select class="setting-control" value={$appSettings.calendarPrimarySystem}
+							onchange={(e) => updateSettings({ calendarPrimarySystem: (e.target as HTMLSelectElement).value as 'gregorian'|'hijri'|'solar-hijri'|'hebrew' })}>
+						<option value="gregorian">{$t('settings.sight.calendarSystems.gregorian') || 'Gregorian'}</option>
+						<option value="hijri">{$t('settings.sight.calendarSystems.hijri') || 'Hijri (Islamic)'}</option>
+						<option value="solar-hijri">{$t('settings.sight.calendarSystems.solarHijri') || 'Solar Hijri'}</option>
+						<option value="hebrew">{$t('settings.sight.calendarSystems.hebrew') || 'Hebrew'}</option>
+						</select>
+					</div>
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.calendar.secondary') || 'Secondary calendar (alongside)'}</div>
+							<div class="setting-desc">{$t('settings.calendar.secondaryDesc') || 'Also show a second date under each day, in this calendar. None to disable.'}</div>
+						</div>
+						<select class="setting-control" value={$appSettings.calendarSecondarySystem}
+							onchange={(e) => updateSettings({ calendarSecondarySystem: (e.target as HTMLSelectElement).value as 'none'|'gregorian'|'hijri'|'solar-hijri'|'hebrew' })}>
+							<option value="none">{$t('settings.calendar.secondaryNone') || 'None'}</option>
+						<option value="gregorian">{$t('settings.sight.calendarSystems.gregorian') || 'Gregorian'}</option>
+						<option value="hijri">{$t('settings.sight.calendarSystems.hijri') || 'Hijri (Islamic)'}</option>
+						<option value="solar-hijri">{$t('settings.sight.calendarSystems.solarHijri') || 'Solar Hijri'}</option>
+						<option value="hebrew">{$t('settings.sight.calendarSystems.hebrew') || 'Hebrew'}</option>
+						</select>
+					</div>
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.calendar.weekStart') || 'Week starts on'}</div>
+							<div class="setting-desc">{$t('settings.calendar.weekStartDesc') || 'First column of the month grid.'}</div>
+						</div>
+						<select class="setting-control" value={String($appSettings.calendarWeekStart ?? 0)}
+							onchange={(e) => updateSettings({ calendarWeekStart: Number((e.target as HTMLSelectElement).value) as 0 | 1 })}>
+							<option value="0">{$t('settings.calendar.weekSunday') || 'Sunday'}</option>
+							<option value="1">{$t('settings.calendar.weekMonday') || 'Monday'}</option>
+						</select>
+					</div>
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.calendar.dailyFormat') || 'Daily-note filename format'}</div>
+							<div class="setting-desc">{$t('settings.calendar.dailyFormatDesc') || 'strftime format (stays Gregorian), e.g. %Y-%m-%d.'}</div>
+						</div>
+						<input class="setting-input" type="text" value={$appSettings.dailyNoteFormat}
+							placeholder="%Y-%m-%d"
+							oninput={(e) => updateSettings({ dailyNoteFormat: (e.target as HTMLInputElement).value })} />
+					</div>
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.calendar.dailyFolder') || 'Daily-note folder'}</div>
+							<div class="setting-desc">{$t('settings.calendar.dailyFolderDesc') || 'Subfolder for daily notes (blank = library root).'}</div>
+						</div>
+						<input class="setting-input" type="text" value={$appSettings.dailyNoteFolder}
+							oninput={(e) => updateSettings({ dailyNoteFolder: (e.target as HTMLInputElement).value })} />
+					</div>
+
 					<div class="setting-item">
 						<div class="setting-info">
 							<div class="setting-name">{$t('settings.templates.variables')}</div>

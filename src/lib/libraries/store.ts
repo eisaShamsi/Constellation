@@ -3431,6 +3431,13 @@ export interface AppSettings {
 	dailyNoteFolder: string;
 	dailyNoteTemplate: string;
 
+	// MIG-081 — Calendar systems (cultural calendars). Primary switches the whole grid
+	// (standalone); secondary shows a date alongside (integrated). Filenames stay
+	// Gregorian ISO regardless. Hijri uses Eisa's engine; Persian/Hebrew via Temporal.
+	calendarPrimarySystem: 'gregorian' | 'hijri' | 'solar-hijri' | 'hebrew';
+	calendarSecondarySystem: 'none' | 'gregorian' | 'hijri' | 'solar-hijri' | 'hebrew';
+	calendarWeekStart: 0 | 1; // 0 = Sunday, 1 = Monday
+
 	// Templates
 	templateFolder: string;
 	folderTemplates: Record<string, string>;
@@ -3835,6 +3842,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
 	dailyNoteFormat: '%Y-%m-%d',
 	dailyNoteFolder: '',
 	dailyNoteTemplate: '',
+	calendarPrimarySystem: 'gregorian' as const,
+	calendarSecondarySystem: 'none' as const,
+	calendarWeekStart: 0 as const,
 	templateFolder: 'Templates',
 	folderTemplates: {},
 	templateHotkeys: {},
