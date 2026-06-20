@@ -1,21 +1,22 @@
 # Next-session kickoff prompt — paste this to resume
 
-> Ready-to-paste prompt for the session that picks up MIG-080 §B–§F (the right-rail note-context cascade). Copy everything in the box.
+> Ready-to-paste prompt for the session after MIG-082 (the clickable, 8-calendar Calendar) completed. Copy everything in the box.
 
 ---
 
-Working on: **MIG-080 §B–§F** — the right-sidebar note-context cascade (the right rail becomes the OPEN NOTE's context only; universe functions relocate). The Plan is already approved.
+We just completed **MIG-082 — the clickable, 8-calendar Calendar** (Gregorian, Hijri, Solar-Hijri, Hebrew, Indian, Buddhist, Chinese, Korean): interactive day cells, per-calendar year + native/phonetic month-name settings, the daily-note Hijri stamp, and a Gregorian→cultural date converter in any note's Properties. It's fully committed (HEAD `5925e783`), Phase-4 **audited** (3 P1s found + fixed, including a real BUG-015 F2 fix to already-shipped §A.3 code), and `/simplify`-clean.
 
-First read `docs/Constellation Orientation & Onboarding v2.91.md`, then `lab/reports/HANDOVER-2026-06-19-mig081-complete.md`, then `lab/reports/SESSION-LOG-2026-06-19.md`, then the Plan `docs/MIG-080-Plan.md` (+ Architect `docs/MIG-080-Architect-Right-Sidebar-Note-Context.md`).
+Before anything, please:
+1. `git pull origin main` (sync).
+2. Read **`docs/Constellation Orientation & Onboarding v2.93.md`** FIRST — the preamble carries the full MIG-082 picture.
+3. Skim **`lab/reports/HANDOVER-2026-06-20-mig082-complete.md`** (state + what's next) and **`lab/reports/SESSION-LOG-2026-06-19.md`** (the shipped record).
 
-Context (all SHIPPED + on `main`): MIG-079 §C.2a–d (per-note link queries + virtualized panels + Sky deferred; boot freeze fixed). MIG-080 §A/§A.2 (Calendar → left dock launcher + full-page view, validated). **MIG-081 COMPLETE + Boss-validated** — Eisa's astronomical Hijri engine + cultural calendars + a rich CalendarPanel + Month Correction + Calculation Mode + a per-element Style-Setter "Calendar" category + the Daily-Note launcher retired + full ×15 localization + a clean 3-agent migration audit.
+Then we pick the next move (your call):
+- **Docs translation catch-up** — the in-app i18n is complete ×15, but the **User Manual §14** + the **help-site** calendar topic were updated **EN-only**; the ×14 translations are pending (a Workflow fan-out would clear them).
+- The deferred **inspector360 Settings-UI bug**.
+- **Boot performance** — the remaining boot cost is the Sky read (~234k sky_links); defer it off boot / move to write-time derivation (per `project_mig079_boot_wtd`).
+- A new feature you have in mind.
 
-THE TASK — MIG-080 §B–§F (approved Plan; cascade, stop at each phase's Boss test):
-- **§B** Tags "All tags" → Dashboard (reuse §C.1 `tag_counts`).
-- **§C** Tasks split — contextual open-note tasks in the right rail + a left agenda; fix `toggle_task` bypassing the Editor reindex gate.
-- **§D** Source Review split — note-scoped right rail + the universe Cataloger on the left.
-- **§E** Knowledge Health split — note tensions/health in the right rail | universe → Dashboard.
-- **§F** Review Pulse split — this note's review status in the right rail | universe queue → a full-page reviewer; fix the dead `record_note_visit`.
-- **§G** reconcile + a 3-agent audit + the **deferred inspector360 Settings-UI bug** (it's missing from the Settings → Panels placement list; needs ×15 i18n) + ×15.
+What would you like to tackle?
 
-Standing orders that bit last session — honor them: **cargo runs from `src-tauri/`** (root has no Cargo.toml); close the app before `cargo build --release`; frontend change → `npm run build` THEN cargo, grep `build/` for a new string. **Full-localization is a TOP PRINCIPAL** — any new UI label gets added to its i18n block ×15 (Settings AND `styleSetter.labels` if it's a Style-Setter control), not just EN. Staged Boss tests (one stage, wait, next). Stop-On-Correction. Measure-don't-guess. SO #8 cross-check a deferred item against the orientation BODY + session logs before tackling. Plan-approval = build-approval (cascade; stop only at Boss-testable verification points + genuine architectural surprise). Do the full closing PCS + handover + next prompt at session end (commit to `main`; orientation v-bump in the SAME commit).
+---

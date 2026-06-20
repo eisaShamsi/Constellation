@@ -1308,7 +1308,7 @@ The **Calendar** is a full-page month view, opened from the **left dock** (the c
 - **Click a dot** → opens that specific item. A **gold** dot is the daily note; a **purple** dot is another note edited that day; a **red** dot is a task due that day. (Colours are themable in the Style Setter → Calendar.) If a day has several notes or tasks, clicking the dot shows a small **list** to pick from.
 - **Click a task dot** → opens the note **scrolled to that task's line**, ready to edit. In the task list you can also **tick a task's checkbox to complete it** right from the calendar — completed tasks drop off immediately. Only tasks that carry their own `📅 YYYY-MM-DD` appear on the calendar (the date is what places them on a day).
 
-**Cultural calendars.** In **Settings → Calendar** you can set the **calendar system** — **Gregorian, Hijri (Islamic), Solar Hijri (Persian), or Hebrew** — and the whole month grid switches to it, showing both the chosen-calendar date (large) and the Gregorian date (small) in each cell, plus the moon phase. The Hijri calendar uses an accurate astronomical engine; sacred months are highlighted and Islamic events are marked. You can also choose the **week start** (Sunday/Monday) and toggle the **week-number column**.
+**Cultural calendars (eight).** In **Settings → Calendar** you can set the **calendar system** — **Gregorian, Hijri (Islamic), Solar Hijri (Persian), Hebrew, Indian (Saka), Buddhist, Chinese, or Korean** — and the whole month grid switches to it, showing both the chosen-calendar date (large) and the Gregorian date (small) in each cell, plus the moon phase. Each month header shows the month **name, its number in parentheses, and the year** — the number helps with calendars whose month order is unfamiliar. The **Chinese and Korean** calendars are *lunisolar*: they sometimes insert a **leap month** (闰六月 / 윤6월), which the calendar shows as its own page so navigation never skips or doubles it. The Hijri calendar uses an accurate astronomical engine; sacred months are highlighted and Islamic events are marked. You can also choose the **week start** (Sunday/Monday) and toggle the **week-number column**.
 
 **Hijri calendar options.** Under **Settings → Calendar → "Hijri calendar (Islamic)"** there are two extra controls:
 
@@ -1317,11 +1317,18 @@ The **Calendar** is a full-page month view, opened from the **left dock** (the c
 
 Both settings (and your corrections) are saved **with your universe**, so they travel across your devices.
 
+**Chinese & Korean display options.** Korea uses the Chinese lunar calendar, so the two share identical dates — what distinguishes them is the script and the year. When either is your main or secondary calendar, **Settings → Calendar** shows two extra controls: a **year display** (Chinese: the sexagenary cycle 丙午年, the plain year, or both; Korean: the **Dangi** era 단기 4359, the year, or the sexagenary 병오년) and **month names** — *native script* (五月 / 5월) or *phonetic*, the month's pronunciation written in your own language (English "Wǔyuè / Owol"; Arabic "وُو-يوي / أوه-وُل").
+
 **Styling the calendar.** Open the **Style Setter** (left dock, or **Settings → Style Setter**) and pick the **Calendar** surface to restyle every part — each element has its own **colour and text size** (day numbers, the cross-reference date, the month pill, weekday headers, week numbers, the moon glyph, the Today highlight, grid lines, and the note/task/event dots), plus the calendar **font**. A live, full-size preview updates as you edit; click **Keep** to apply.
 
 > **Daily-note filenames always stay Gregorian** (`YYYY-MM-DD`) regardless of the displayed calendar — so your files stay portable and sort correctly. The cultural date is shown in the calendar (and can be recorded in the note's frontmatter).
 
 The Calendar fully serves daily notes: click any day to open it, or run the **"Daily Note"** command (command palette) to jump to today.
+
+**Recording a cultural date in a note.** Two opt-in tools write the cultural date into a note's **properties** (the filename always stays Gregorian `YYYY-MM-DD`):
+
+- **Daily-note Hijri stamp** — *Settings → Calendar → "Stamp the Hijri date in daily notes."* When on (available only while the Hijri calendar is your **main or secondary**), every **new** daily note gets a `hijri:` line, e.g. `hijri: 1448-01-06`. Notes you already have are never touched.
+- **"+ Hijri" in a note's Properties** — open any note's **Properties**, hover the date, and a small **"+ Hijri"** button appears (plus "+ Jalali", "+ Hebrew", and so on — **one button per non-Gregorian calendar you've selected**). Click it and Constellation reads the note's Gregorian date and adds the equivalent, e.g. `jalali: 1405-03-30`. The Korean button writes the **Dangi** year; a Chinese/Korean **leap month** is marked with an `L` (e.g. `chinese: 2025-06L-17`). If the note has no date property, it uses the file's creation date.
 
 ---
 
