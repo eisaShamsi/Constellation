@@ -94,7 +94,6 @@
 	import LocalSkyView from '$lib/components/LocalSkyView.svelte';
 	import NoteGrid from '$lib/components/NoteGrid.svelte';
 	import BacklinksPanel from '$lib/components/BacklinksPanel.svelte';
-	import TagsPanel from '$lib/components/TagsPanel.svelte';
 
 	import { embedNotes, embeddingStatus } from '$lib/libraries/store';
 	import DashboardView from '$lib/components/DashboardView.svelte';
@@ -388,11 +387,11 @@
 	// Gated ONCE in the content area below, replacing the old `isHome && sidebarTab` note-gate that
 	// hoisted tags/links above it and duplicated review/sourceReview inside + outside it.
 	// MIG-080 §A — 'calendar' removed (relocated to the left daily-note launcher).
-	const NOTE_SCOPED_TABS = new Set(['properties', 'backlinks', 'star', 'tasks', 'health', 'provenance', 'inspector360']);
-	// Tag Browser (#12): the right-sidebar Tags tab toggles between the open
-	// note's tags ('note') and the universe-wide federated tag tree ('all',
-	// fed by allLibraryTags via the reusable TagsPanel).
-	let tagView = $state<'note' | 'all'>('note');
+	// MIG-080 §B — 'tags' is now note-scoped (the right rail shows ONLY the open note's tags; the universe All-tags view moved to the Dashboard).
+	const NOTE_SCOPED_TABS = new Set(['properties', 'backlinks', 'star', 'tasks', 'health', 'provenance', 'inspector360', 'tags']);
+	// MIG-080 §B — the right-sidebar Tags tab is note-scoped (the open note's tags only).
+	// The universe-wide All-tags browse moved to the Dashboard (DashboardView, reading the
+	// tag_counts-derived allLibraryTags). The 'note'/'all' toggle was removed.
 
 	// ── Sidebar overlay snapshots ───────────────────────────────────────────
 	// Every overlay mode that takes over the editor area (full-page view,
@@ -7100,6 +7099,7 @@
 								</div>
 								<DashboardView
 									universeName={activeUniverseName}
+									allTags={allLibraryTags}
 									{libraryColorMap}
 									onNoteClick={(path, name, libraryName) => openNoteTab(path, libraryName, libraryColorMap[libraryName] || '#7c3aed')}
 									onNoteToScreen={(note) => {
@@ -7215,20 +7215,15 @@
 			{#if NOTE_SCOPED_TABS.has(rightSidebarTab) && !(isHome && sidebarTab)}
 				<div class="rs-empty-full">{$t('panels.noNoteSelected')}</div>
 			{:else if rightSidebarTab === 'tags'}
-				<!-- Tags tab — universe-wide; pulled OUT of the note-gate so it
-				     renders with or without an open note, and so the gate below
-				     keeps narrowing sidebarTab non-null for the other panels. -->
+				<!-- MIG-080 §B — Tags is note-scoped: the open note's tags only (the empty-
+				     guard above shows "no note selected" when none is open). The universe
+				     All-tags browse moved to the Dashboard. -->
 				<div class="rs-section rs-full-height">
-					<div class="rs-header rs-header-with-toggle rs-tags-header">
-						<span>{$t('panels.tags')}{#if tagView === 'all' && Object.keys(allLibraryTags).length > 0} <span class="rs-tags-total">{Object.keys(allLibraryTags).length}</span>{/if}</span>
-						<span class="rs-tag-toggle">
-							<button class:active={tagView === 'note'} onclick={() => tagView = 'note'}>{$t('panels.tagsThisNote') || 'This note'}</button>
-							<button class:active={tagView === 'all'} onclick={() => tagView = 'all'}>{$t('panels.tagsAll') || 'All tags'}</button>
-						</span>
+					<div class="rs-header">
+						<span>{$t('panels.tags')}</span>
 					</div>
 					<div class="rs-tags-body">
-					{#if tagView === 'note'}
-						{#if sidebarTab && activeNoteTags.length > 0}
+						{#if activeNoteTags.length > 0}
 							<div class="rs-note-tags">
 								{#each activeNoteTags as tag}
 									<button class="rs-tag-chip" onclick={() => handleTagClick(tag)}>
@@ -7237,17 +7232,8 @@
 								{/each}
 							</div>
 						{:else}
-							<div class="rs-empty">{sidebarTab ? $t('panels.noTags') : $t('panels.noNoteSelected')}</div>
-						{/if}
-					{:else}
-						<!-- Universe-wide federated tags (allLibraryTags). Click →
-						     handleTagClick → federated Search Hub. -->
-						{#if Object.keys(allLibraryTags).length > 0}
-							<TagsPanel tags={allLibraryTags} onTagClick={handleTagClick} />
-						{:else}
 							<div class="rs-empty">{$t('panels.noTags')}</div>
 						{/if}
-					{/if}
 					</div>
 				</div>
 			{:else if rightSidebarTab === 'properties' && sidebarTab}

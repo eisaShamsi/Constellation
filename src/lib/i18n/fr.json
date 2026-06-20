@@ -563,6 +563,8 @@
 			"panelProvenanceDesc": "Historique et suivi de l'origine de la note",
 			"panelReview": "Révision",
 			"panelReviewDesc": "File d'attente de révision par répétition espacée",
+			"panelInspector360": "Inspecteur 360.3D",
+			"panelInspector360Desc": "Vue matricielle 360° de la note actuelle",
 			"resetDefault": "Réinitialiser les paramètres par défaut",
 			"resetDefaultDesc": "Restaurer la disposition par défaut (Rétroliens à gauche, Sortants à droite)",
 			"summariesHeading": "Résumés",

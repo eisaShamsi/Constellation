@@ -9,11 +9,12 @@
 	} from '$lib/libraries/store';
 	import { getChildUniverses, type ChildUniverseInfo } from '$lib/universe/store';
 	import { getRecentLists, type RecentOpenedNote, type RecentEditedNote } from '$lib/libraries/recentNotes';
-	import { scanAllLibraryTags, type DashboardTag } from '$lib/libraries/tagUtils';
+	import { type DashboardTag } from '$lib/libraries/tagUtils';
 	import { get } from 'svelte/store';
 
 	let {
 		universeName = '',
+		allTags = {} as Record<string, number>,
 		libraryColorMap = {} as Record<string, string>,
 		onNoteClick,
 		onNoteToMain,
@@ -21,6 +22,7 @@
 		onTagSelect,
 	}: {
 		universeName?: string;
+		allTags?: Record<string, number>;
 		libraryColorMap?: Record<string, string>;
 		onNoteClick?: (path: string, name: string, libraryName: string) => void;
 		onNoteToMain?: (note: { path: string; name: string; libraryName: string; libraryPath: string; libraryColor: string }) => void;
@@ -31,7 +33,13 @@
 	// Dashboard state
 	let childUniverses = $state<ChildUniverseInfo[]>([]);
 	let childUniverseLibs = $state<Record<string, { name: string; path: string }[]>>({});
-	let dashboardTags = $state<DashboardTag[]>([]);
+	// MIG-080 §B — the universe tag list reads the write-time tag_counts map
+	// (allLibraryTags, passed in) instead of a per-library filesystem walk (Rule 8).
+	let dashboardTags = $derived<DashboardTag[]>(
+		Object.entries(allTags)
+			.map(([tag, count]) => ({ tag, count }))
+			.sort((a, b) => b.count - a.count)
+	);
 	let selectedTag = $state<string | null>(null);
 	let selectedTagNotes = $state<{ name: string; path: string; libraryName: string }[]>([]);
 	let loadingTagNotes = $state(false);
@@ -100,9 +108,6 @@
 				}
 				childUniverseLibs = libMap;
 			} catch { childUniverses = []; childUniverseLibs = {}; }
-			try {
-				dashboardTags = await scanAllLibraryTags();
-			} catch { dashboardTags = []; }
 		} catch {}
 		loaded = true;
 	}

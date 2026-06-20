@@ -563,6 +563,8 @@
 			"panelProvenanceDesc": "नोट इतिहास और मूल ट्रैकिंग",
 			"panelReview": "समीक्षा",
 			"panelReviewDesc": "स्पेस्ड रिपीटिशन समीक्षा कतार",
+			"panelInspector360": "360.3D इंस्पेक्टर",
+			"panelInspector360Desc": "वर्तमान नोट का 360° मैट्रिक्स दृश्य",
 			"resetDefault": "डिफ़ॉल्ट पर रीसेट करें",
 			"resetDefaultDesc": "डिफ़ॉल्ट पैनल लेआउट पुनर्स्थापित करें",
 			"summariesHeading": "सारांश",

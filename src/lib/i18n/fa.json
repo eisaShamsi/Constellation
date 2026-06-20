@@ -563,6 +563,8 @@
 			"panelProvenanceDesc": "تاریخچه و ردیابی منشأ یادداشت",
 			"panelReview": "مرور",
 			"panelReviewDesc": "صف مرور با تکرار فاصله‌دار",
+			"panelInspector360": "بازرس 360.3D",
+			"panelInspector360Desc": "نمای ماتریسی 360° یادداشت فعلی",
 			"resetDefault": "بازنشانی به پیش‌فرض",
 			"resetDefaultDesc": "بازگرداندن چیدمان پیش‌فرض پانل",
 			"summariesHeading": "خلاصه‌ها",

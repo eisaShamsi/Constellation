@@ -563,6 +563,8 @@
 			"panelProvenanceDesc": "היסטוריה ומעקב אחר מקור הפתק",
 			"panelReview": "חזרה",
 			"panelReviewDesc": "תור חזרה עם חזרות מרווחות",
+			"panelInspector360": "מפקח 360.3D",
+			"panelInspector360Desc": "תצוגת מטריצה 360° של הפתק הנוכחי",
 			"resetDefault": "איפוס לברירת מחדל",
 			"resetDefaultDesc": "שחזור פריסת הפאנל ברירת המחדל",
 			"summariesHeading": "סיכומים",

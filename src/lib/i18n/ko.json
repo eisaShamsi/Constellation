@@ -563,6 +563,8 @@
 			"panelProvenanceDesc": "노트 기록 및 출처 추적",
 			"panelReview": "복습",
 			"panelReviewDesc": "간격 반복 복습 대기열",
+			"panelInspector360": "360.3D 인스펙터",
+			"panelInspector360Desc": "현재 노트의 360° 매트릭스 보기",
 			"resetDefault": "기본값으로 재설정",
 			"resetDefaultDesc": "기본 패널 레이아웃 복원",
 			"summariesHeading": "요약",

@@ -576,6 +576,8 @@
 			"panelProvenanceDesc": "Note history and origin tracking",
 			"panelReview": "Review",
 			"panelReviewDesc": "Spaced repetition review queue",
+			"panelInspector360": "360.3D Inspector",
+			"panelInspector360Desc": "360° matrix view of the current note",
 			"resetDefault": "Reset to defaults",
 			"resetDefaultDesc": "Restore the default panel layout (Backlinks left, Outgoing right)",
 			"summariesHeading": "Summaries",

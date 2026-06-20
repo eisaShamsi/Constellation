@@ -563,6 +563,8 @@
 			"panelProvenanceDesc": "История и отслеживание происхождения заметки",
 			"panelReview": "Повторение",
 			"panelReviewDesc": "Очередь повторения с интервальным повторением",
+			"panelInspector360": "Инспектор 360.3D",
+			"panelInspector360Desc": "Матричный вид 360° текущей заметки",
 			"resetDefault": "Сбросить до умолчаний",
 			"resetDefaultDesc": "Восстановить расположение панелей по умолчанию",
 			"summariesHeading": "Сводки",

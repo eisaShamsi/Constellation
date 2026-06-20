@@ -563,6 +563,8 @@
 			"panelProvenanceDesc": "笔记历史和来源追踪",
 			"panelReview": "复习",
 			"panelReviewDesc": "间隔重复复习队列",
+			"panelInspector360": "360.3D 检查器",
+			"panelInspector360Desc": "当前笔记的 360° 矩阵视图",
 			"resetDefault": "重置为默认",
 			"resetDefaultDesc": "恢复默认面板布局（反向链接居左，出站链接居右）",
 			"summariesHeading": "摘要",

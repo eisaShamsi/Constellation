@@ -563,6 +563,8 @@
 			"panelProvenanceDesc": "Historial y seguimiento del origen de la nota",
 			"panelReview": "Revisión",
 			"panelReviewDesc": "Cola de revisión con repetición espaciada",
+			"panelInspector360": "Inspector 360.3D",
+			"panelInspector360Desc": "Vista de matriz 360° de la nota actual",
 			"resetDefault": "Restablecer valores predeterminados",
 			"resetDefaultDesc": "Restaurar el diseño predeterminado (Backlinks izquierda, Salientes derecha)",
 			"summariesHeading": "Resúmenes",

@@ -563,6 +563,8 @@
 			"panelProvenanceDesc": "Not geçmişi ve köken takibi",
 			"panelReview": "Gözden Geçirme",
 			"panelReviewDesc": "Aralıklı tekrar gözden geçirme kuyruğu",
+			"panelInspector360": "360.3D Denetleyici",
+			"panelInspector360Desc": "Geçerli notun 360° matris görünümü",
 			"resetDefault": "Varsayılana sıfırla",
 			"resetDefaultDesc": "Varsayılan panel düzenini geri yükle",
 			"summariesHeading": "Özetler",

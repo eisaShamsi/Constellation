@@ -2155,6 +2155,8 @@
 						['health',     $t('settings.panels.panelHealth'),     $t('settings.panels.panelHealthDesc')],
 						['provenance', $t('settings.panels.panelProvenance'), $t('settings.panels.panelProvenanceDesc')],
 						['review',     $t('settings.panels.panelReview'),     $t('settings.panels.panelReviewDesc')],
+						// MIG-080 §0 — inspector360 was in the schema + tab strip but missing from this Settings UI list (the deferred "inspector360 Settings-UI bug").
+						['inspector360', $t('settings.panels.panelInspector360'), $t('settings.panels.panelInspector360Desc')],
 					] as [PanelId, string, string][]) as [panelId, panelName, panelDesc]}
 						<div class="setting-item">
 							<div class="setting-info">

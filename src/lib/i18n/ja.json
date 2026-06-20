@@ -563,6 +563,8 @@
 			"panelProvenanceDesc": "ノートの履歴と出所の追跡",
 			"panelReview": "レビュー",
 			"panelReviewDesc": "間隔反復レビューキュー",
+			"panelInspector360": "360.3D インスペクター",
+			"panelInspector360Desc": "現在のノートの360°マトリックス表示",
 			"resetDefault": "デフォルトにリセット",
 			"resetDefaultDesc": "デフォルトのパネルレイアウトを復元する",
 			"summariesHeading": "要約",

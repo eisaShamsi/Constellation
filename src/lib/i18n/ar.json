@@ -580,6 +580,8 @@
 			"panelProvenanceDesc": "تتبع تاريخ الملاحظة ومصدرها",
 			"panelReview": "المراجعة",
 			"panelReviewDesc": "قائمة انتظار المراجعة بالتكرار المتباعد",
+			"panelInspector360": "مُفتِّش 360.3D",
+			"panelInspector360Desc": "عرض مصفوفي 360° للملاحظة الحالية",
 			"resetDefault": "إعادة الضبط الافتراضي",
 			"resetDefaultDesc": "استعادة تخطيط اللوحة الافتراضي (الروابط الواردة يساراً، الصادرة يميناً)",
 			"summariesHeading": "الملخصات",

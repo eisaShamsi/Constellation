@@ -563,6 +563,8 @@
 			"panelProvenanceDesc": "Notizhistorie und Herkunftsverfolgung",
 			"panelReview": "Wiederholung",
 			"panelReviewDesc": "Wiederholungswarteschlange für Karteikarten",
+			"panelInspector360": "360.3D-Inspektor",
+			"panelInspector360Desc": "360°-Matrixansicht der aktuellen Notiz",
 			"resetDefault": "Auf Standard zurücksetzen",
 			"resetDefaultDesc": "Standard-Panel-Layout wiederherstellen (Rückverweise links, Ausgehende rechts)",
 			"summariesHeading": "Zusammenfassungen",
