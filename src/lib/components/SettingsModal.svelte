@@ -2256,11 +2256,13 @@
 							<div class="setting-desc">{$t('settings.calendar.primaryDesc') || 'Show the Calendar in this system. Daily-note filenames always stay Gregorian (YYYY-MM-DD).'}</div>
 						</div>
 						<select class="setting-control" value={$appSettings.calendarPrimarySystem}
-							onchange={(e) => updateSettings({ calendarPrimarySystem: (e.target as HTMLSelectElement).value as 'gregorian'|'hijri'|'solar-hijri'|'hebrew' })}>
+							onchange={(e) => updateSettings({ calendarPrimarySystem: (e.target as HTMLSelectElement).value as 'gregorian'|'hijri'|'solar-hijri'|'hebrew'|'indian'|'buddhist' })}>
 						<option value="gregorian">{$t('settings.sight.calendarSystems.gregorian') || 'Gregorian'}</option>
 						<option value="hijri">{$t('settings.sight.calendarSystems.hijri') || 'Hijri (Islamic)'}</option>
 						<option value="solar-hijri">{$t('settings.sight.calendarSystems.solarHijri') || 'Solar Hijri'}</option>
 						<option value="hebrew">{$t('settings.sight.calendarSystems.hebrew') || 'Hebrew'}</option>
+						<option value="indian">{$t('settings.sight.calendarSystems.indian') || 'Indian (Saka)'}</option>
+						<option value="buddhist">{$t('settings.sight.calendarSystems.buddhist') || 'Buddhist'}</option>
 						</select>
 					</div>
 					<div class="setting-item">
@@ -2269,12 +2271,14 @@
 							<div class="setting-desc">{$t('settings.calendar.secondaryDesc') || 'Also show a second date under each day, in this calendar. None to disable.'}</div>
 						</div>
 						<select class="setting-control" value={$appSettings.calendarSecondarySystem}
-							onchange={(e) => updateSettings({ calendarSecondarySystem: (e.target as HTMLSelectElement).value as 'none'|'gregorian'|'hijri'|'solar-hijri'|'hebrew' })}>
+							onchange={(e) => updateSettings({ calendarSecondarySystem: (e.target as HTMLSelectElement).value as 'none'|'gregorian'|'hijri'|'solar-hijri'|'hebrew'|'indian'|'buddhist' })}>
 							<option value="none">{$t('settings.calendar.secondaryNone') || 'None'}</option>
 						<option value="gregorian">{$t('settings.sight.calendarSystems.gregorian') || 'Gregorian'}</option>
 						<option value="hijri">{$t('settings.sight.calendarSystems.hijri') || 'Hijri (Islamic)'}</option>
 						<option value="solar-hijri">{$t('settings.sight.calendarSystems.solarHijri') || 'Solar Hijri'}</option>
 						<option value="hebrew">{$t('settings.sight.calendarSystems.hebrew') || 'Hebrew'}</option>
+						<option value="indian">{$t('settings.sight.calendarSystems.indian') || 'Indian (Saka)'}</option>
+						<option value="buddhist">{$t('settings.sight.calendarSystems.buddhist') || 'Buddhist'}</option>
 						</select>
 					</div>
 					<div class="setting-item">

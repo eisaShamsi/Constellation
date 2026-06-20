@@ -16,12 +16,17 @@
  * path (Perf Rules 3/6). Call `ensureCalendarEngines(systems)` before rendering.
  */
 
-export type CalendarSystem = 'gregorian' | 'hijri' | 'solar-hijri' | 'hebrew';
+export type CalendarSystem = 'gregorian' | 'hijri' | 'solar-hijri' | 'hebrew' | 'indian' | 'buddhist';
 
-/** Our system id → the Temporal/Intl calendar id (only for the Temporal-backed ones). */
+/** Our system id → the Temporal/Intl calendar id (only for the Temporal-backed ones).
+ *  §A.4 — indian (Saka) + buddhist are solar (fixed 12-month structure), so the generic
+ *  Temporal branch handles them with no per-system grid code. (Chinese/Korean are §B — the
+ *  polyfill throws on their leap months, so they get a separate Intl-only branch.) */
 const TEMPORAL_CAL: Partial<Record<CalendarSystem, string>> = {
 	'solar-hijri': 'persian',
 	hebrew: 'hebrew',
+	indian: 'indian',
+	buddhist: 'buddhist',
 };
 
 // ─── lazy engine loaders ───────────────────────────────────────────────
@@ -48,7 +53,7 @@ async function getHijri(): Promise<any> {
  *  getMoonPhase (astronomical → universal, shown for every system) + Hijri events. */
 export async function ensureCalendarEngines(systems: CalendarSystem[]): Promise<void> {
 	const tasks: Promise<any>[] = [getHijri()];
-	if (systems.some((s) => s === 'solar-hijri' || s === 'hebrew')) tasks.push(getTemporal());
+	if (systems.some((s) => !!TEMPORAL_CAL[s])) tasks.push(getTemporal()); // any Temporal-backed system
 	await Promise.all(tasks);
 }
 
@@ -140,8 +145,9 @@ export function buildMonthGrid(
 	if (system === 'gregorian') {
 		firstISO = isoOf(displayYear, displayMonth, 1);
 		daysInThisMonth = new Date(displayYear, displayMonth, 0).getDate();
-		monthLabel = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' })
-			.format(new Date(displayYear, displayMonth - 1, 1));
+		// §A.4b — month number beside the name (Eisa: include Gregorian too, for consistency).
+		const monthName = new Intl.DateTimeFormat(locale, { month: 'long' }).format(new Date(displayYear, displayMonth - 1, 1));
+		monthLabel = `${monthName} (${localeNum(displayMonth, locale)}) ${localeNum(displayYear, locale)}`;
 		isoForDay = (d) => isoOf(displayYear, displayMonth, d);
 	} else if (system === 'hijri') {
 		const H = _Hijri;
@@ -149,7 +155,8 @@ export function buildMonthGrid(
 		const g1 = H.hijriToGregorian(displayYear, displayMonth, 1);
 		firstISO = isoOf(g1.year, g1.month, g1.day);
 		const names = (locale.startsWith('ar') ? H.MONTH_NAMES : H.MONTH_NAMES_EN) as string[];
-		monthLabel = `${names?.[displayMonth - 1] ?? `M${displayMonth}`} ${localeNum(displayYear, locale)}`;
+		// §A.4b — month number beside the name (helps with unfamiliar cultural months).
+		monthLabel = `${names?.[displayMonth - 1] ?? `M${displayMonth}`} (${localeNum(displayMonth, locale)}) ${localeNum(displayYear, locale)}`;
 		isoForDay = (d) => { const g = H.hijriToGregorian(displayYear, displayMonth, d); return isoOf(g.year, g.month, g.day); };
 	} else {
 		const T = _Temporal;
@@ -158,8 +165,11 @@ export function buildMonthGrid(
 		daysInThisMonth = first.daysInMonth;
 		const g1 = first.withCalendar('iso8601');
 		firstISO = isoOf(g1.year, g1.month, g1.day);
-		monthLabel = new Intl.DateTimeFormat(locale, { calendar: cal, month: 'long', year: 'numeric' })
-			.format(new Date(firstISO));
+		// §A.4 + §A.4b — build "MonthName (N) Year" ourselves: `{month:'long'}` gives the bare name
+		// (no ERA — Intl appended "AP"/"Śaka"/"BE" which the rich header's suffix would DOUBLE), plus
+		// the month NUMBER (helps with unfamiliar cultural months) + the year.
+		const monthName = new Intl.DateTimeFormat(locale, { calendar: cal, month: 'long' }).format(new Date(firstISO));
+		monthLabel = `${monthName} (${localeNum(displayMonth, locale)}) ${localeNum(displayYear, locale)}`;
 		isoForDay = (d) => { const g = first.with({ day: d }).withCalendar('iso8601'); return isoOf(g.year, g.month, g.day); };
 	}
 
@@ -333,14 +343,16 @@ function isoWeek(iso: string): number {
 	return 1 + Math.round((dt.getTime() - firstThu.getTime()) / (7 * 86400000));
 }
 
-/** "June – July 2026" (or "June 2026") from the grid's first/last Gregorian ISO cells. */
+/** "June (6) 2026" (or a range) from the grid's first/last Gregorian ISO cells.
+ *  §A.4b — month number beside each name, in the secondary subtitle too. */
 function gregRange(firstISO: string, lastISO: string, locale: string): string {
 	const f = new Date(firstISO), l = new Date(lastISO);
 	const mf = new Intl.DateTimeFormat(locale, { month: 'long' });
-	const my = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' });
-	if (f.getFullYear() === l.getFullYear() && f.getMonth() === l.getMonth()) return my.format(l);
-	if (f.getFullYear() === l.getFullYear()) return `${mf.format(f)} – ${my.format(l)}`;
-	return `${my.format(f)} – ${my.format(l)}`;
+	const mn = (dt: Date) => `${mf.format(dt)} (${localeNum(dt.getMonth() + 1, locale)})`;
+	const myr = (dt: Date) => `${mn(dt)} ${localeNum(dt.getFullYear(), locale)}`;
+	if (f.getFullYear() === l.getFullYear() && f.getMonth() === l.getMonth()) return myr(l);
+	if (f.getFullYear() === l.getFullYear()) return `${mn(f)} – ${myr(l)}`;
+	return `${myr(f)} – ${myr(l)}`;
 }
 
 /** "Dhū al-Ḥijjah 1447 – Muḥarram 1448 AH" — the Hijri-month range spanning the grid's
@@ -356,10 +368,11 @@ function hijriRange(firstISO: string, lastISO: string, locale: string): string {
 	const [ly, lm, ld] = lastISO.split('-').map(Number);
 	const a = H.gregorianToHijri(fy, fm, fd);
 	const b = H.gregorianToHijri(ly, lm, ld);
-	const nm = (h: { year: number; month: number }) => `${names?.[h.month - 1] ?? `M${h.month}`} ${localeNum(h.year, locale)}`;
-	if (a.year === b.year && a.month === b.month) return `${nm(a)} ${suffix}`;
-	if (a.year === b.year) return `${names?.[a.month - 1] ?? `M${a.month}`} – ${nm(b)} ${suffix}`;
-	return `${nm(a)} – ${nm(b)} ${suffix}`;
+	const mn = (h: { month: number }) => `${names?.[h.month - 1] ?? `M${h.month}`} (${localeNum(h.month, locale)})`;
+	const myr = (h: { year: number; month: number }) => `${mn(h)} ${localeNum(h.year, locale)}`;
+	if (a.year === b.year && a.month === b.month) return `${myr(a)} ${suffix}`;
+	if (a.year === b.year) return `${mn(a)} – ${myr(b)} ${suffix}`;
+	return `${myr(a)} – ${myr(b)} ${suffix}`;
 }
 
 /** The month-year range of [firstISO, lastISO] expressed in `system` — used for the SECONDARY-
@@ -373,11 +386,12 @@ function systemRange(system: CalendarSystem, firstISO: string, lastISO: string, 
 		const a = _Temporal.PlainDate.from(firstISO).withCalendar(cal);
 		const b = _Temporal.PlainDate.from(lastISO).withCalendar(cal);
 		const df = new Date(firstISO), dl = new Date(lastISO);
-		const mf = new Intl.DateTimeFormat(locale, { calendar: cal, month: 'long' });
-		const my = new Intl.DateTimeFormat(locale, { calendar: cal, month: 'long', year: 'numeric' });
-		if (a.year === b.year && a.month === b.month) return my.format(dl);
-		if (a.year === b.year) return `${mf.format(df)} – ${my.format(dl)}`;
-		return `${my.format(df)} – ${my.format(dl)}`;
+		const mf = new Intl.DateTimeFormat(locale, { calendar: cal, month: 'long' }); // bare name (no era)
+		const mn = (dt: Date, mon: number) => `${mf.format(dt)} (${localeNum(mon, locale)})`;
+		const myr = (dt: Date, mon: number, yr: number) => `${mn(dt, mon)} ${localeNum(yr, locale)}`;
+		if (a.year === b.year && a.month === b.month) return myr(dl, b.month, b.year);
+		if (a.year === b.year) return `${mn(df, a.month)} – ${myr(dl, b.month, b.year)}`;
+		return `${myr(df, a.month, a.year)} – ${myr(dl, b.month, b.year)}`;
 	} catch { return ''; }
 }
 
@@ -425,6 +439,8 @@ export function buildRichMonthGrid(
 	if (system === 'hijri') suffix = isAr ? 'هـ' : 'AH';
 	else if (system === 'solar-hijri') suffix = locale.startsWith('fa') ? 'ه‍.ش' : 'SH';
 	else if (system === 'hebrew') suffix = 'AM';
+	else if (system === 'indian') suffix = 'SE';   // §A.4 — Saka Era
+	else if (system === 'buddhist') suffix = 'BE';  // §A.4 — Buddhist Era
 	const isSacred = system === 'hijri' && !!H && H.isSacredMonth(displayMonth);
 
 	const firstISO = base.cells[0]?.iso ?? '';

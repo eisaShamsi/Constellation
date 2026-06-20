@@ -1,7 +1,7 @@
 /**
  * Hijri calendar engine — VENDORED from Eisa's accurate astronomical Hijri calendar.
  * Source: https://github.com/eisaShamsi/hijri-calendar  (hijri.js)
- * Synced @ commit a06be50ebd2b3864f128a640e48e9c52e68a3320  (re-sync on upstream update; a future npm package would replace this vendor).
+ * Synced @ commit 0436e32 (was a06be50e; the only delta is MONTH_NAMES[0] المحرَّم→محرم, made upstream + here together — Boss-requested 2026-06-20). Re-sync on upstream update; a future npm package would replace this vendor.
  * Astronomical engine (default mode): real new-moon conjunctions (Meeus newMoonJDE) → month
  * starts via Julian Day Numbers + user moon-sighting corrections. More accurate than Intl
  * islamic-umalqura. MIG-081. Only the conversion API is used by Constellation:
@@ -25,7 +25,7 @@ const HijriCalendar = (() => {
     const DAYS_IN_30_YEAR_CYCLE = 10631;
 
     const MONTH_NAMES = [
-        'المحرَّم', 'صفر', 'ربيع الأوَّل', 'ربيع الآخِر',
+        'محرم', 'صفر', 'ربيع الأوَّل', 'ربيع الآخِر',
         'جمادى الأولى', 'جمادى الآخِرة', 'رجب', 'شعبان',
         'رمضان', 'شوَّال', 'ذو القَعدة', 'ذو الحِجَّة'
     ];

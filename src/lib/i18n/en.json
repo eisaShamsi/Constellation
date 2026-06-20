@@ -605,6 +605,8 @@
 				"hijri": "Hijri (Islamic)",
 				"solarHijri": "Solar Hijri",
 				"hebrew": "Hebrew",
+				"indian": "Indian (Saka)",
+				"buddhist": "Buddhist",
 				"placeholderNote": "* Solar Hijri and Hebrew render Gregorian month names with a placeholder marker until PJ-014 backfill ships full localization."
 			},
 			"labels": {

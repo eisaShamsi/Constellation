@@ -3476,8 +3476,8 @@ export interface AppSettings {
 	// MIG-081 — Calendar systems (cultural calendars). Primary switches the whole grid
 	// (standalone); secondary shows a date alongside (integrated). Filenames stay
 	// Gregorian ISO regardless. Hijri uses Eisa's engine; Persian/Hebrew via Temporal.
-	calendarPrimarySystem: 'gregorian' | 'hijri' | 'solar-hijri' | 'hebrew';
-	calendarSecondarySystem: 'none' | 'gregorian' | 'hijri' | 'solar-hijri' | 'hebrew';
+	calendarPrimarySystem: 'gregorian' | 'hijri' | 'solar-hijri' | 'hebrew' | 'indian' | 'buddhist';
+	calendarSecondarySystem: 'none' | 'gregorian' | 'hijri' | 'solar-hijri' | 'hebrew' | 'indian' | 'buddhist';
 	calendarWeekStart: 0 | 1; // 0 = Sunday, 1 = Monday
 	calendarShowWeekNumbers: boolean; // MIG-081 §C.2b — the "Wk" column
 	// MIG-081 §C.2f — Hijri engine prefs, stored here (synced with the universe) NOT in the
