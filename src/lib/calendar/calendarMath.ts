@@ -66,9 +66,11 @@ function dowOfISO(iso: string): number {
 	return new Date(y, m - 1, d).getDay();
 }
 
-/** Localised number (honours the locale's numbering system, e.g. Arabic-Indic). */
+/** Localised number (honours the locale's numbering system, e.g. Arabic-Indic).
+ *  useGrouping:false — calendar numbers (year, day, week) must NOT get a thousands
+ *  separator (a Hijri year is "1448", never "1,448"). Days/weeks are <1000 anyway. */
 export function localeNum(n: number, locale: string): string {
-	try { return n.toLocaleString(locale); } catch { return String(n); }
+	try { return n.toLocaleString(locale, { useGrouping: false }); } catch { return String(n); }
 }
 
 export interface GridCell {
@@ -360,6 +362,25 @@ function hijriRange(firstISO: string, lastISO: string, locale: string): string {
 	return `${nm(a)} – ${nm(b)} ${suffix}`;
 }
 
+/** The month-year range of [firstISO, lastISO] expressed in `system` — used for the SECONDARY-
+ *  calendar subtitle. Gregorian/Hijri reuse their dedicated formatters; Temporal systems via Intl. */
+function systemRange(system: CalendarSystem, firstISO: string, lastISO: string, locale: string): string {
+	if (system === 'gregorian') return gregRange(firstISO, lastISO, locale);
+	if (system === 'hijri') return hijriRange(firstISO, lastISO, locale);
+	const cal = TEMPORAL_CAL[system];
+	if (!cal || !_Temporal) return '';
+	try {
+		const a = _Temporal.PlainDate.from(firstISO).withCalendar(cal);
+		const b = _Temporal.PlainDate.from(lastISO).withCalendar(cal);
+		const df = new Date(firstISO), dl = new Date(lastISO);
+		const mf = new Intl.DateTimeFormat(locale, { calendar: cal, month: 'long' });
+		const my = new Intl.DateTimeFormat(locale, { calendar: cal, month: 'long', year: 'numeric' });
+		if (a.year === b.year && a.month === b.month) return my.format(dl);
+		if (a.year === b.year) return `${mf.format(df)} – ${my.format(dl)}`;
+		return `${my.format(df)} – ${my.format(dl)}`;
+	} catch { return ''; }
+}
+
 /** Build the RICH grid (dual dates, moon phase, week numbers, Hijri events/sacred). */
 export function buildRichMonthGrid(
 	system: CalendarSystem,
@@ -367,6 +388,7 @@ export function buildRichMonthGrid(
 	displayMonth: number,
 	locale: string,
 	weekStart: 0 | 1 = 0,
+	secondary: CalendarSystem | 'none' = 'none',
 ): RichMonthGrid {
 	const base = buildMonthGrid(system, displayYear, displayMonth, locale, weekStart);
 	const H = _Hijri;
@@ -375,14 +397,11 @@ export function buildRichMonthGrid(
 	const cells: RichCell[] = base.cells.map((c) => {
 		const [gy, gm, gd] = c.iso.split('-').map(Number);
 		const moon = H ? H.getMoonPhase(gy, gm, gd) : null;
-		// Cross-reference sub-date: show Gregorian under a non-Greg primary; under a
-		// Gregorian primary, show the Hijri day (so both systems are always visible).
-		let subLabel: string;
-		if (system === 'gregorian') {
-			const h = H ? H.gregorianToHijri(gy, gm, gd) : null;
-			subLabel = h ? localeNum(h.day, locale) : '';
-		} else {
-			subLabel = localeNum(gd, locale);
+		// Per-cell second date = the user's chosen SECONDARY system ("none" → single calendar,
+		// no second date under the day). Skipped when it would just repeat the primary.
+		let subLabel = '';
+		if (secondary !== 'none' && secondary !== system) {
+			try { subLabel = displayDayNum(secondary, c.iso, locale); } catch { subLabel = ''; }
 		}
 		let eventType: RichCell['eventType'];
 		let eventName: string | undefined;
@@ -410,10 +429,10 @@ export function buildRichMonthGrid(
 
 	const firstISO = base.cells[0]?.iso ?? '';
 	const lastISO = base.cells[base.cells.length - 1]?.iso ?? '';
-	// The subtitle shows the OTHER calendar (cross-reference): Gregorian range for a non-Gregorian
-	// primary, Hijri range for a Gregorian primary — so the pill (primary) is never just repeated.
-	const subtitleRange = firstISO && lastISO
-		? (system === 'gregorian' ? hijriRange(firstISO, lastISO, locale) : gregRange(firstISO, lastISO, locale))
+	// The subtitle = the SECONDARY calendar's month range. 'none' → no subtitle (single calendar);
+	// skipped if it would just repeat the primary. Governed by the same setting as the per-cell 2nd date.
+	const subtitleRange = (secondary !== 'none' && secondary !== system && firstISO && lastISO)
+		? systemRange(secondary, firstISO, lastISO, locale)
 		: '';
 
 	return {

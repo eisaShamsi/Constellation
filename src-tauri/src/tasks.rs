@@ -37,6 +37,25 @@ pub struct NoteDateEntry {
     pub file_name: String,
     pub date: String,        // YYYY-MM-DD
     pub date_source: String, // "modified", "created", "frontmatter"
+    pub library_name: String, // MIG-082 §A.1 — so a calendar dot can open in the right library
+    pub is_daily: bool,       // MIG-082 §A.1 — true if THIS file is the daily note FOR this date
+                              // (matches get_daily_note_path: daily_folder + format(date).md)
+}
+
+/// MIG-082 §A.1 — is `path` the daily note FOR `date`? Mirrors get_daily_note_path's
+/// filename construction (the daily folder + `dailyNoteFormat` applied to a midnight datetime),
+/// so the truth lives in one place and the frontend never re-implements strftime.
+fn is_daily_note_for(path: &Path, date: &str, daily_dir: &Path, daily_format: &str) -> bool {
+    let nd = match chrono::NaiveDate::parse_from_str(date, "%Y-%m-%d") {
+        Ok(d) => d,
+        Err(_) => return false,
+    };
+    let dt = match nd.and_hms_opt(0, 0, 0) {
+        Some(d) => d,
+        None => return false,
+    };
+    let stem = dt.format(daily_format).to_string();
+    path == daily_dir.join(format!("{}.md", stem))
 }
 
 // ─── Task Parsing ───
@@ -263,6 +282,8 @@ fn scan_tasks_recursive(
 fn scan_dates_recursive(
     dir: &Path,
     library_name: &str,
+    daily_dir: &Path,      // MIG-082 §A.1 — the resolved daily-note folder (for is_daily)
+    daily_format: &str,    // MIG-082 §A.1 — dailyNoteFormat (for is_daily)
     entries: &mut Vec<NoteDateEntry>,
 ) {
     let read_dir = match fs::read_dir(dir) {
@@ -276,7 +297,7 @@ fn scan_dates_recursive(
             continue;
         }
         if path.is_dir() {
-            scan_dates_recursive(&path, library_name, entries);
+            scan_dates_recursive(&path, library_name, daily_dir, daily_format, entries);
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
             let file_path_str = path.to_string_lossy().to_string();
             // MIG-008 Step 4: scan_library_note_dates label uses frontmatter
@@ -292,11 +313,14 @@ fn scan_dates_recursive(
                         .unwrap_or_default()
                         .as_secs();
                     let date = timestamp_to_date(secs);
+                    let is_daily = is_daily_note_for(&path, &date, daily_dir, daily_format);
                     entries.push(NoteDateEntry {
                         file_path: file_path_str.clone(),
                         file_name: file_name.clone(),
                         date,
                         date_source: "modified".to_string(),
+                        library_name: library_name.to_string(),
+                        is_daily,
                     });
                 }
             }
@@ -307,11 +331,15 @@ fn scan_dates_recursive(
                     if let Some(date_val) = props.get("date") {
                         let d = date_val.trim();
                         if d.len() >= 10 && is_valid_date(&d[..10]) {
+                            let date = d[..10].to_string();
+                            let is_daily = is_daily_note_for(&path, &date, daily_dir, daily_format);
                             entries.push(NoteDateEntry {
                                 file_path: file_path_str.clone(),
                                 file_name: file_name.clone(),
-                                date: d[..10].to_string(),
+                                date,
                                 date_source: "frontmatter".to_string(),
+                                library_name: library_name.to_string(),
+                                is_daily,
                             });
                         }
                     }
@@ -319,11 +347,15 @@ fn scan_dates_recursive(
                     if let Some(date_val) = props.get("created") {
                         let d = date_val.trim();
                         if d.len() >= 10 && is_valid_date(&d[..10]) {
+                            let date = d[..10].to_string();
+                            let is_daily = is_daily_note_for(&path, &date, daily_dir, daily_format);
                             entries.push(NoteDateEntry {
                                 file_path: file_path_str.clone(),
                                 file_name: file_name.clone(),
-                                date: d[..10].to_string(),
+                                date,
                                 date_source: "frontmatter".to_string(),
+                                library_name: library_name.to_string(),
+                                is_daily,
                             });
                         }
                     }
@@ -477,10 +509,19 @@ pub fn scan_library_note_dates(
     app: tauri::AppHandle,
     library_path: String,
     library_name: String,
+    daily_format: Option<String>, // MIG-082 §A.1 — dailyNoteFormat; default %Y-%m-%d (so is_daily is correct)
+    daily_folder: Option<String>, // MIG-082 §A.1 — dailyNoteFolder ("" = library root)
 ) -> Result<HashMap<String, Vec<NoteDateEntry>>, String> {
     validate_path_in_any_library(&app, &library_path)?;
+    let fmt = daily_format.filter(|s| !s.is_empty()).unwrap_or_else(|| "%Y-%m-%d".to_string());
+    let folder = daily_folder.unwrap_or_default();
+    let daily_dir = if folder.is_empty() {
+        Path::new(&library_path).to_path_buf()
+    } else {
+        Path::new(&library_path).join(&folder)
+    };
     let mut entries = Vec::new();
-    scan_dates_recursive(Path::new(&library_path), &library_name, &mut entries);
+    scan_dates_recursive(Path::new(&library_path), &library_name, &daily_dir, &fmt, &mut entries);
 
     let mut map: HashMap<String, Vec<NoteDateEntry>> = HashMap::new();
     for entry in entries {

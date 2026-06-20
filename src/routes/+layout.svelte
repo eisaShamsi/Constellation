@@ -112,7 +112,7 @@
 	import ConstellationMap from '$lib/components/ConstellationMap.svelte';
 	import Inspector360 from '$lib/components/Inspector360.svelte';
 	import { scanNoteTasks, toggleTask, scanLibraryNoteDates } from '$lib/tasks/store';
-	import type { TaskItem } from '$lib/tasks/types';
+	import type { TaskItem, NoteDateEntry } from '$lib/tasks/types';
 	import PropertyEditor from '$lib/components/PropertyEditor.svelte';
 	import PagePreview from '$lib/components/PagePreview.svelte';
 	import WorkspaceManager from '$lib/components/WorkspaceManager.svelte';
@@ -682,9 +682,10 @@
 
 	// Tasks sidebar data
 	let sidebarTasks = $state<TaskItem[]>([]);
-	// Calendar sidebar data
-	let calendarNoteDates = $state<Record<string, number>>({});
-	let calendarTaskDates = $state<Record<string, number>>({});
+	// Calendar data — MIG-082 §A.1: keep the full per-date item lists (not counts) so dots are
+	// clickable. Notes de-duped by file_path per date (the scanner emits up to 3 sources/file).
+	let calendarNoteEntries = $state<Record<string, NoteDateEntry[]>>({});
+	let calendarTaskEntries = $state<Record<string, TaskItem[]>>({});
 
 	// Workspace manager
 	let showWorkspaces = $state(false);
@@ -1745,17 +1746,28 @@
 		_calTimer = setTimeout(async () => {
 			try {
 				const libraryList = get(libraries);
-				const dateCounts: Record<string, number> = {};
-				const taskCounts: Record<string, number> = {};
+				const fmt = $appSettings.dailyNoteFormat;
+				const folder = $appSettings.dailyNoteFolder;
+				// MIG-082 §A.1 — keep the full entry lists; de-dup notes by file_path per date
+				// (the scanner emits modified + frontmatter date: + created: per file) and OR is_daily.
+				const noteEntries: Record<string, NoteDateEntry[]> = {};
+				const byKey: Record<string, Map<string, NoteDateEntry>> = {};
 				const results = await Promise.all(
-					libraryList.map(v => scanLibraryNoteDates(v.path, v.name))
+					libraryList.map(v => scanLibraryNoteDates(v.path, v.name, fmt, folder))
 				);
 				for (const dateMap of results) {
 					for (const [date, entries] of Object.entries(dateMap)) {
-						dateCounts[date] = (dateCounts[date] || 0) + entries.length;
+						const m = (byKey[date] ??= new Map<string, NoteDateEntry>());
+						for (const e of entries) {
+							const existing = m.get(e.file_path);
+							if (existing) existing.is_daily = existing.is_daily || e.is_daily;
+							else m.set(e.file_path, { ...e });
+						}
 					}
 				}
-				// Also scan tasks for due dates
+				for (const [date, m] of Object.entries(byKey)) noteEntries[date] = [...m.values()];
+				// Tasks: keep the incomplete, due-dated tasks per date.
+				const taskEntries: Record<string, TaskItem[]> = {};
 				const { scanLibraryTasks } = await import('$lib/tasks/store');
 				const taskResults = await Promise.all(
 					libraryList.map(v => scanLibraryTasks(v.path, v.name))
@@ -1763,12 +1775,12 @@
 				for (const result of taskResults) {
 					for (const task of result.tasks) {
 						if (task.due_date && !task.completed) {
-							taskCounts[task.due_date] = (taskCounts[task.due_date] || 0) + 1;
+							(taskEntries[task.due_date] ??= []).push(task);
 						}
 					}
 				}
-				calendarNoteDates = dateCounts;
-				calendarTaskDates = taskCounts;
+				calendarNoteEntries = noteEntries;
+				calendarTaskEntries = taskEntries;
 			} catch { /* Calendar scan failed */ }
 		}, 200);
 	});
@@ -6334,14 +6346,17 @@
 					</div>
 					<div class="calendar-page-body">
 						<CalendarPanel
-							noteDates={calendarNoteDates}
-							taskDueDates={calendarTaskDates}
+							noteEntries={calendarNoteEntries}
+							taskEntries={calendarTaskEntries}
 							primarySystem={$appSettings.calendarPrimarySystem ?? 'gregorian'}
+							secondarySystem={$appSettings.calendarSecondarySystem ?? 'none'}
 							weekStart={$appSettings.calendarWeekStart ?? 0}
 							showWeekNumbers={$appSettings.calendarShowWeekNumbers ?? true}
 							corrections={$appSettings.calendarCorrections ?? {}}
 							calculationMode={$appSettings.calendarCalculationMode ?? 'astronomical'}
 							onDayClick={(dateStr) => { showCalendarPage = false; openDailyNote(dateStr); }}
+							onOpenNote={(e) => { showCalendarPage = false; openNoteTab(e.file_path, e.library_name, libraryColorMap[e.library_name] || '#7c3aed'); }}
+							onOpenTask={(tk) => { showCalendarPage = false; openNoteTab(tk.file_path, tk.library_name, libraryColorMap[tk.library_name] || '#7c3aed'); }}
 						/>
 					</div>
 				</div>

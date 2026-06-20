@@ -1514,7 +1514,8 @@
 		"createDailyNote": "Create daily note",
 		"notesCount": "{count} notes",
 		"tasksCount": "{count} tasks due",
-		"weekAbbrev": "Wk"
+		"weekAbbrev": "Wk",
+		"dailyNote": "Daily note"
 	},
 	"globalTasks": {
 		"title": "Global Tasks",

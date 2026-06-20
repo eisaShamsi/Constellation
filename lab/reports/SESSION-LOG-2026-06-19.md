@@ -64,6 +64,26 @@
 - Final verification: svelte-check **0 errors / 315 pre-existing warnings**; `cargo build --release` clean (52 pre-existing dead-code warnings); i18n re-embed confirmed in `build/` (`calcTabular` + Arabic `التوفيقات`).
 - **NEXT:** MIG-080 §B–§F right-rail note-context cascade (Plan approved) + the deferred inspector360 Settings-UI bug.
 
+---
+
+# MIG-082 — Clickable Calendar + 4 New Calendars + Open-at-Line (OPENED 2026-06-19)
+
+> Boss asks (post-MIG-081): (1) the OTHER calendars (Indian/Buddhist/Chinese/Korean — Boss wants ALL incl. the hard lunisolar); (2) clickable dots — note/task dot → open the item, empty cell → daily note, task dot → open at its line to add/edit; (3) the duplicate question (answered: clicking an existing date OPENS, never duplicates). Note dot = any note edited that day, daily note distinguished by colour.
+
+## Recon + Architect + Plan (Boss-approved)
+- **Recon** (`wf_c51636b5-6f9`): verified the no-duplicate behavior (deterministic Gregorian-ISO filename + open-if-exists gate + tab reuse); the Rust scans ALREADY return full per-item data (only the frontend collapses to counts); openNoteTab has no line param; 4 calendars wired (Persian/Hebrew already render richly).
+- **Architect** (`wf_f0c6d756-1f3`, doc `docs/MIG-082-Architect-Calendar-Interactions.md`): 4-agent design + WA#5 prior-art. **Key Node-verified finding:** the installed Temporal polyfill WORKS for Indian/Buddhist but THROWS for Chinese/Korean (leap-month codes) — host `Intl` renders them perfectly → Chinese/Korean get a self-contained Intl-only lunisolar branch.
+- **Plan** (`docs/MIG-082-Plan.md`): §A (clickable + Indian/Buddhist) → §B (Chinese/Korean lunisolar) → §C (close-out). **Boss approved** ("Approved").
+
+## §A.1 — Cell restructure + per-item dots + daily-note flag (BUILT + reviewed; pending Boss test)
+- **Rust (`tasks.rs`):** `NoteDateEntry` gains `is_daily` + `library_name`; `scan_library_note_dates` takes `daily_format`/`daily_folder` (Option) → `is_daily_note_for` mirrors `get_daily_note_path` (the single source of truth for "which file is the daily note for date D").
+- **Frontend:** `+layout` calendar scan keeps full `NoteDateEntry[]`/`TaskItem[]` per date (de-dups notes by `file_path`, ORs `is_daily`); `CalendarPanel` cell → `role="gridcell"` div with a full-bleed bg button (empty/number → daily note) + per-dot `<button>`s (stopPropagation → open item / popover). Daily-note dot distinct via `--cal-daily-dot`; `--cal-dot-size`; multi-item popover (single → open directly). StyleSetter: +2 tokens. en.json `calendarPanel.dailyNote`.
+- **Verify:** svelte-check **0 errors**; `cargo check` clean (2 pre-existing warnings). **Independent review: no P0/P1** (click routing sound; `is_daily` path-keyed, no false positives, Windows-safe; de-dup correct; prop rename complete; today gradient survives the transparent overlay; no nested buttons). Binary rebuild in progress.
+- **§A.1 Boss test: "All pass"** + 2 observations → fixed (§A.1b):
+  1. **Hijri year comma** ("1,448" → "1448"): `calendarMath.localeNum` now uses `useGrouping: false` (years never group; day/week <1000 unaffected). Fixes the pill + the cross-ref Hijri range.
+  2. **"Secondary calendar = None" was ignored** (the rich cell always showed a 2nd date — the Architect's dead-wiring item). **Now WIRED** (resolves the §C open decision = ACTIVATE): `buildRichMonthGrid` takes `secondary`; the per-cell second date = the chosen secondary system ('none' → single calendar, no 2nd date; skipped if it would repeat the primary). CalendarPanel gains `secondarySystem`, loads its engine, passes it through; +layout + StyleSetter preview pass `$appSettings.calendarSecondarySystem`. svelte-check 0; frontend-only.
+  - **§A.1b re-test: Pass.** Follow-up: Eisa — when only one calendar is selected, the header **subtitle** (the secondary calendar's range) shouldn't show either. **Fixed:** the subtitle is now ALSO governed by the secondary setting — `subtitleRange = secondary==='none' ? '' : systemRange(secondary,…)` (new general `systemRange` for any system; Greg/Hijri reuse gregRange/hijriRange, Temporal systems via Intl). So Secondary=None → single calendar everywhere (no per-cell 2nd date AND no subtitle); pick a secondary → both its day (per cell) and its range (subtitle) appear. (Generalizes the §C.2g cross-ref subtitle into the user-controlled secondary.) svelte-check 0; binary rebuild in progress.
+
 ## Pending (after §C.2e close-out)
 - Full PCS: commit, orientation v-bump (SAME commit per SO #6), MoCh, handover, next-session prompt, User Manual.
 - Still queued after MIG-081: the MIG-080 §B–§F right-rail note-context cascade (Plan approved: `docs/MIG-080-Plan.md`) + the deferred inspector360 Settings-UI bug.

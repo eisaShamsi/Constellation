@@ -26,4 +26,6 @@ export interface NoteDateEntry {
 	file_name: string;
 	date: string;
 	date_source: string;
+	library_name: string; // MIG-082 §A.1 — open the dot's note in the right library
+	is_daily: boolean;    // MIG-082 §A.1 — this file IS the daily note for `date`
 }

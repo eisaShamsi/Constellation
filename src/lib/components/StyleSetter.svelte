@@ -465,8 +465,10 @@
 			{ label: 'Week number', type: 'color', var: '--cal-wk-color' },
 			{ label: 'Week number size', type: 'range', var: '--cal-week-size', min: 7, max: 20, step: 1, unit: 'px', def: 12 },
 			{ label: 'Grid lines', type: 'color', var: '--cal-grid-border' },
+			{ label: 'Daily-note dot', type: 'color', var: '--cal-daily-dot' },
 			{ label: 'Note dot', type: 'color', var: '--cal-note-dot' },
 			{ label: 'Task dot', type: 'color', var: '--cal-task-dot' },
+			{ label: 'Dot size', type: 'range', var: '--cal-dot-size', min: 4, max: 12, step: 1, unit: 'px', def: 6 },
 			{ label: 'Holiday dot', type: 'color', var: '--cal-event-holiday' },
 			{ label: 'Observance dot', type: 'color', var: '--cal-event-observance' },
 			{ label: 'Special-day dot', type: 'color', var: '--cal-event-special' } ] },
@@ -1084,12 +1086,13 @@
 									onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectEl('calendar'); } }}>
 									<CalendarPanel
 										primarySystem={$appSettings.calendarPrimarySystem ?? 'gregorian'}
+										secondarySystem={$appSettings.calendarSecondarySystem ?? 'none'}
 										weekStart={$appSettings.calendarWeekStart ?? 0}
 										showWeekNumbers={$appSettings.calendarShowWeekNumbers ?? true}
 										corrections={$appSettings.calendarCorrections ?? {}}
 										calculationMode={$appSettings.calendarCalculationMode ?? 'astronomical'}
-										noteDates={{}}
-										taskDueDates={{}}
+										noteEntries={{}}
+										taskEntries={{}}
 										onDayClick={() => selectEl('calendar')}
 									/>
 								</div>

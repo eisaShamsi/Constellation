@@ -11,21 +11,28 @@
 		ensureCalendarEngines, buildRichMonthGrid, todayInSystem, stepMonth, applyCalendarPrefs,
 		type CalendarSystem, type RichMonthGrid, type CalculationMode,
 	} from '$lib/calendar/calendarMath';
+	import type { NoteDateEntry, TaskItem } from '$lib/tasks/types';
 
 	let {
-		noteDates = {} as Record<string, number>,
-		taskDueDates = {} as Record<string, number>,
+		noteEntries = {} as Record<string, NoteDateEntry[]>,
+		taskEntries = {} as Record<string, TaskItem[]>,
 		onDayClick,
+		onOpenNote = (() => {}) as (entry: NoteDateEntry) => void,
+		onOpenTask = (() => {}) as (task: TaskItem) => void,
 		primarySystem = 'gregorian' as CalendarSystem,
+		secondarySystem = 'none' as CalendarSystem | 'none',
 		weekStart = 0 as 0 | 1,
 		showWeekNumbers = true,
 		corrections = {} as Record<string, number>,
 		calculationMode = 'astronomical' as CalculationMode,
 	}: {
-		noteDates: Record<string, number>;
-		taskDueDates: Record<string, number>;
-		onDayClick: (date: string) => void;
+		noteEntries: Record<string, NoteDateEntry[]>;
+		taskEntries: Record<string, TaskItem[]>;
+		onDayClick: (date: string) => void;          // empty cell space → create/open the daily note
+		onOpenNote?: (entry: NoteDateEntry) => void;  // a note dot → open that note
+		onOpenTask?: (task: TaskItem) => void;        // a task dot → open that task (§A.2 adds line-jump)
 		primarySystem?: CalendarSystem;
+		secondarySystem?: CalendarSystem | 'none'; // the "second date under each day" ('none' = single calendar)
 		weekStart?: 0 | 1;
 		showWeekNumbers?: boolean;
 		corrections?: Record<string, number>;
@@ -38,11 +45,12 @@
 
 	$effect(() => {
 		const sys = primarySystem;
+		const sec = secondarySystem;    // §A.1b — load the secondary engine too (for the second date)
 		const corr = corrections;       // §C.2f — re-run when prefs change (engine is a singleton;
 		const mode = calculationMode;   // applyCalendarPrefs pushes them in, then we re-anchor + re-derive).
 		let cancelled = false;
 		enginesReady = false;
-		ensureCalendarEngines([sys])
+		ensureCalendarEngines(sec === 'none' ? [sys] : [sys, sec])
 			.then(() => applyCalendarPrefs(corr, mode))
 			.then(() => todayInSystem(sys))
 			.then((tdy) => { if (cancelled) return; viewYear = tdy.year; viewMonth = tdy.month; enginesReady = true; })
@@ -53,7 +61,7 @@
 	const grid = $derived.by<RichMonthGrid | null>(() => {
 		void $locale;
 		if (!enginesReady || !viewYear) return null;
-		try { return buildRichMonthGrid(primarySystem, viewYear, viewMonth, $locale, weekStart); }
+		try { return buildRichMonthGrid(primarySystem, viewYear, viewMonth, $locale, weekStart, secondarySystem); }
 		catch { return null; }
 	});
 
@@ -72,6 +80,30 @@
 	function nextMonth() { const n = stepMonth(primarySystem, viewYear, viewMonth, 1); viewYear = n.year; viewMonth = n.month; }
 	async function goToToday() { const tdy = await todayInSystem(primarySystem); viewYear = tdy.year; viewMonth = tdy.month; }
 	function localeCount(n: number): string { try { return n.toLocaleString($locale); } catch { return String(n); } }
+
+	// MIG-082 §A.1 — per-cell dot partition: the daily note (gold) vs other edited notes (purple) vs tasks (red).
+	function dailyNotes(iso: string): NoteDateEntry[] { return (noteEntries[iso] ?? []).filter((e) => e.is_daily); }
+	function otherNotes(iso: string): NoteDateEntry[] { return (noteEntries[iso] ?? []).filter((e) => !e.is_daily); }
+	function tasksFor(iso: string): TaskItem[] { return taskEntries[iso] ?? []; }
+
+	// Single item → open directly; 2+ → a small popover anchored to the dot (FullCalendar pattern).
+	let popover = $state<{ x: number; y: number; notes: NoteDateEntry[]; tasks: TaskItem[] } | null>(null);
+	function anchorFor(e: MouseEvent): { x: number; y: number } {
+		const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+		return { x: r.left, y: r.bottom + 4 };
+	}
+	function clickNotes(e: MouseEvent, list: NoteDateEntry[]) {
+		e.stopPropagation();
+		if (list.length === 1) { onOpenNote(list[0]); return; }
+		const a = anchorFor(e); popover = { x: a.x, y: a.y, notes: list, tasks: [] };
+	}
+	function clickTasks(e: MouseEvent, list: TaskItem[]) {
+		e.stopPropagation();
+		if (list.length === 1) { onOpenTask(list[0]); return; }
+		const a = anchorFor(e); popover = { x: a.x, y: a.y, notes: [], tasks: list };
+	}
+	function pickNote(n: NoteDateEntry) { popover = null; onOpenNote(n); }
+	function pickTask(tk: TaskItem) { popover = null; onOpenTask(tk); }
 </script>
 
 <div class="cal-root" dir={$dir} data-style-target="calendar">
@@ -105,35 +137,59 @@
 				<div class="cal-row" class:with-wk={showWeekNumbers}>
 					{#if showWeekNumbers}<div class="cal-wk">{localeCount(row.week)}</div>{/if}
 					{#each row.cells as cell}
-						{@const nc = noteDates[cell.iso] || 0}
-						{@const tc = taskDueDates[cell.iso] || 0}
-						<button
-							class="cal-cell"
-							class:other={!cell.inCurrentMonth}
-							class:today={cell.isToday}
-							onclick={() => onDayClick(cell.iso)}
-							title={[
-								cell.eventName ?? '',
-								cell.moonName ?? '',
-								nc > 0 ? $t('calendarPanel.notesCount', { count: localeCount(nc) }) : '',
-								tc > 0 ? $t('calendarPanel.tasksCount', { count: localeCount(tc) }) : ''
-							].filter(Boolean).join(' · ')}
-						>
+						{@const dailies = dailyNotes(cell.iso)}
+						{@const others = otherNotes(cell.iso)}
+						{@const tks = tasksFor(cell.iso)}
+						{@const nc = dailies.length + others.length}
+						<!-- §A.1 — gridcell: empty space + day number → daily note (bg button); each dot is its own button. -->
+						<div class="cal-cell" class:other={!cell.inCurrentMonth} class:today={cell.isToday} role="gridcell">
+							<button
+								class="cal-cell-bg"
+								onclick={() => onDayClick(cell.iso)}
+								aria-label={cell.iso}
+								title={[
+									cell.eventName ?? '',
+									cell.moonName ?? '',
+									nc > 0 ? $t('calendarPanel.notesCount', { count: localeCount(nc) }) : '',
+									tks.length > 0 ? $t('calendarPanel.tasksCount', { count: localeCount(tks.length) }) : ''
+								].filter(Boolean).join(' · ')}
+							></button>
 							{#if cell.moonSymbol}<span class="cal-moon">{cell.moonSymbol}</span>{/if}
 							<span class="cal-primary">{cell.dayLabel}</span>
 							{#if cell.subLabel}<span class="cal-sub">{cell.subLabel}</span>{/if}
 							<span class="cal-dots">
-								{#if cell.eventType}<span class="cal-dot cal-event cal-event-{cell.eventType}"></span>{/if}
-								{#if nc > 0}<span class="cal-dot cal-note"></span>{/if}
-								{#if tc > 0}<span class="cal-dot cal-task"></span>{/if}
+								{#if cell.eventType}<span class="cal-dot cal-event cal-event-{cell.eventType}" title={cell.eventName}></span>{/if}
+								{#if dailies.length}<button class="cal-dot cal-note cal-daily" onclick={(e) => clickNotes(e, dailies)} title={$t('calendarPanel.dailyNote') || 'Daily note'} aria-label={$t('calendarPanel.dailyNote') || 'Daily note'}></button>{/if}
+								{#if others.length}<button class="cal-dot cal-note" onclick={(e) => clickNotes(e, others)} title={$t('calendarPanel.notesCount', { count: localeCount(others.length) })} aria-label={$t('calendarPanel.notesCount', { count: localeCount(others.length) })}></button>{/if}
+								{#if tks.length}<button class="cal-dot cal-task" onclick={(e) => clickTasks(e, tks)} title={$t('calendarPanel.tasksCount', { count: localeCount(tks.length) })} aria-label={$t('calendarPanel.tasksCount', { count: localeCount(tks.length) })}></button>{/if}
 							</span>
-						</button>
+						</div>
 					{/each}
 				</div>
 			{/each}
 		</div>
 	{:else}
 		<div class="cal-loading">{$t('common.loading') || '…'}</div>
+	{/if}
+
+	<!-- §A.1 — popover for a date with 2+ notes/tasks; pick one to open. -->
+	{#if popover}
+		<button class="cal-pop-backdrop" aria-label={$t('common.close') || 'Close'} onclick={() => popover = null}></button>
+		<div class="cal-pop" style="left:{popover.x}px; top:{popover.y}px;" dir={$dir}>
+			{#each popover.notes as n (n.file_path)}
+				<button class="cal-pop-row" onclick={() => pickNote(n)}>
+					<span class="cal-pop-dot cal-note" class:cal-daily={n.is_daily}></span>
+					<span class="cal-pop-label" dir="auto">{n.file_name}</span>
+					{#if n.is_daily}<span class="cal-pop-badge">{$t('calendarPanel.dailyNote') || 'Daily note'}</span>{/if}
+				</button>
+			{/each}
+			{#each popover.tasks as tk (tk.file_path + ':' + tk.line_number)}
+				<button class="cal-pop-row" onclick={() => pickTask(tk)}>
+					<span class="cal-pop-dot cal-task"></span>
+					<span class="cal-pop-label" dir="auto">{tk.text}</span>
+				</button>
+			{/each}
+		</div>
 	{/if}
 </div>
 
@@ -211,8 +267,8 @@
 		position: relative; min-height: 76px;
 		display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
 		background: var(--cal-cell-bg, var(--bg-primary, #fff)); color: var(--cal-primary-color, var(--text, #0d3b2e));
-		border: none; border-top: 1px solid var(--cal-grid-border, var(--border, #e2e8f0)); border-inline-start: 1px solid var(--cal-grid-border, var(--border, #e2e8f0));
-		cursor: pointer; padding: 6px; font: inherit;
+		border-top: 1px solid var(--cal-grid-border, var(--border, #e2e8f0)); border-inline-start: 1px solid var(--cal-grid-border, var(--border, #e2e8f0));
+		padding: 6px;
 	}
 	.cal-cell:hover { background: color-mix(in srgb, var(--cal-header-to, #1a6b4f) 6%, var(--cal-cell-bg, var(--bg-primary, #fff))); }
 	.cal-cell.other { opacity: 0.4; }
@@ -221,15 +277,36 @@
 		color: var(--cal-today-text, #ffffff);
 	}
 	.cal-cell.today .cal-sub, .cal-cell.today .cal-moon { color: rgba(255, 255, 255, 0.85); }
-	.cal-primary { font-size: var(--cal-day-size, 1.2rem); font-weight: 700; line-height: 1; }
-	.cal-sub { font-size: var(--cal-subdate-size, 0.68rem); color: var(--cal-sub-color, #0e7490); line-height: 1; }
-	.cal-moon { position: absolute; top: 3px; inset-inline-end: 5px; font-size: var(--cal-moon-size, 0.72rem); color: var(--cal-moon-color, var(--text-faint, #6b7280)); }
-	.cal-dots { position: absolute; bottom: 4px; display: flex; gap: 3px; }
-	.cal-dot { width: 6px; height: 6px; border-radius: 50%; }
+	/* §A.1 — full-bleed click target = empty space + day number → daily note; sits BEHIND the dots. */
+	.cal-cell-bg { position: absolute; inset: 0; z-index: 0; background: transparent; border: none; cursor: pointer; }
+	/* Day number / sub-date / moon are display-only — clicks fall through to the bg button. */
+	.cal-primary { position: relative; z-index: 1; pointer-events: none; font-size: var(--cal-day-size, 1.2rem); font-weight: 700; line-height: 1; }
+	.cal-sub { position: relative; z-index: 1; pointer-events: none; font-size: var(--cal-subdate-size, 0.68rem); color: var(--cal-sub-color, #0e7490); line-height: 1; }
+	.cal-moon { position: absolute; top: 3px; inset-inline-end: 5px; z-index: 1; pointer-events: none; font-size: var(--cal-moon-size, 0.72rem); color: var(--cal-moon-color, var(--text-faint, #6b7280)); }
+	/* Dots: the row ignores pointer events; each dot button is its own ≥14px hit target. */
+	.cal-dots { position: absolute; bottom: 4px; z-index: 2; display: flex; gap: 3px; pointer-events: none; }
+	.cal-dot { width: var(--cal-dot-size, 6px); height: var(--cal-dot-size, 6px); border-radius: 50%; }
+	button.cal-dot { box-sizing: content-box; padding: 4px; border: none; background-clip: content-box; cursor: pointer; pointer-events: auto; transition: transform 0.1s; }
+	button.cal-dot:hover { transform: scale(1.25); }
 	.cal-note { background: var(--cal-note-dot, var(--accent, #7c3aed)); }
+	.cal-daily { background: var(--cal-daily-dot, #d4a017); }
 	.cal-task { background: var(--cal-task-dot, #ef4444); }
 	.cal-event-holiday { background: var(--cal-event-holiday, #ef4444); }
 	.cal-event-observance { background: var(--cal-event-observance, #d4a017); }
 	.cal-event-special { background: var(--cal-event-special, #8b5cf6); }
 	.cal-loading { text-align: center; color: var(--text-faint, #888); font-size: 0.85rem; padding: 40px 0; }
+	/* §A.1 — multi-item popover (a date with 2+ notes/tasks) */
+	.cal-pop-backdrop { position: fixed; inset: 0; z-index: 1000; background: transparent; border: none; padding: 0; margin: 0; cursor: default; }
+	.cal-pop {
+		position: fixed; z-index: 1001; min-width: 180px; max-width: 340px; max-height: 50vh; overflow-y: auto;
+		background: var(--bg-secondary, #fff); border: 1px solid var(--cal-grid-border, var(--border, #e2e8f0));
+		border-radius: 8px; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18); padding: 4px;
+		display: flex; flex-direction: column; gap: 2px;
+		font-family: var(--cal-font, 'Amiri', 'Cairo', var(--text-font, inherit));
+	}
+	.cal-pop-row { display: flex; align-items: center; gap: 8px; padding: 7px 9px; border: none; background: transparent; border-radius: 6px; cursor: pointer; text-align: start; font: inherit; color: var(--text, #1e293b); }
+	.cal-pop-row:hover { background: color-mix(in srgb, var(--cal-header-to, #1a6b4f) 8%, transparent); }
+	.cal-pop-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; }
+	.cal-pop-label { flex: 1; font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.cal-pop-badge { flex: none; font-size: 0.65rem; color: var(--cal-daily-dot, #d4a017); border: 1px solid var(--cal-daily-dot, #d4a017); border-radius: 4px; padding: 1px 5px; }
 </style>
