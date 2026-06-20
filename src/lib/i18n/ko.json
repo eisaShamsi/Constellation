@@ -670,6 +670,8 @@
 			"monthNamesDesc": "중국어/한국어 월을 원어 문자로 표시 (五月) 하거나 사용 언어로 음역하여 표시 (Wǔyuè).",
 			"monthNamesNative": "원어 문자 (五月 / 5월)",
 			"monthNamesPhonetic": "음역 (Wǔyuè / Owol)",
+			"stampCulturalDate": "일일 노트에 히즈라력 날짜 기록",
+			"stampCulturalDateDesc": "새 일일 노트의 속성에 히즈라력 날짜(예: hijri: 1448-01-06)를 기록합니다. 히즈라력이 기본 또는 보조 달력일 때만 사용할 수 있으며, 파일 이름은 그레고리력으로 유지됩니다.",
 			"weekStart": "주 시작 요일",
 			"weekStartDesc": "월간 달력 격자의 첫 번째 열입니다.",
 			"weekSunday": "일요일",
@@ -1366,7 +1368,9 @@
 		"createDailyNote": "일일 노트 만들기",
 		"notesCount": "{count}개 노트",
 		"tasksCount": "{count}개 작업 마감",
-		"weekAbbrev": "주"
+		"weekAbbrev": "주",
+		"dailyNote": "데일리 노트",
+		"completeTask": "완료"
 	},
 	"globalTasks": {
 		"title": "글로벌 작업",
@@ -1519,6 +1523,8 @@
 		"valuePlaceholder": "값",
 		"delete": "삭제",
 		"addProperty": "속성 추가",
+		"hijri": "히즈리력",
+		"addHijri": "히즈리 날짜 추가",
 		"true": "참",
 		"false": "거짓",
 		"reorder": "드래그하여 재정렬",

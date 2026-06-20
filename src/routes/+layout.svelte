@@ -102,6 +102,7 @@
 	import CCSView from '$lib/components/CCSView.svelte';
 	import TasksPanel from '$lib/components/TasksPanel.svelte';
 	import CalendarPanel from '$lib/components/CalendarPanel.svelte'; // MIG-080 §A.2 — full-page Calendar view
+	import { culturalDateParts, applyCalendarPrefs } from '$lib/calendar/calendarMath'; // §C — Hijri-date stamp on new daily notes
 	import GlobalTasksView from '$lib/components/GlobalTasksView.svelte';
 	import TensionPanel from '$lib/components/TensionPanel.svelte';
 	import ProvenancePanel from '$lib/components/ProvenancePanel.svelte';
@@ -4047,7 +4048,20 @@
 		const firstLib = $libraries[0];
 		if (!firstLib) return;
 		try {
-			const path = await getDailyNotePath(firstLib.path, $appSettings.dailyNoteFormat, $appSettings.dailyNoteFolder, dateStr);
+			// §C — optional non-authoritative HIJRI-date stamp (opt-in). Hijri-only, and ONLY when the
+			// Hijri calendar is the user's main or secondary (else the setting is disabled). The engine is
+			// JS-side, so we compute the line here; Rust writes it ONLY when the note is created.
+			let culturalDate: string | undefined;
+			const hijriSelected = $appSettings.calendarPrimarySystem === 'hijri' || $appSettings.calendarSecondarySystem === 'hijri';
+			if (($appSettings.calendarStampCulturalDate ?? 'off') === 'hijri' && hijriSelected) {
+				try {
+					await applyCalendarPrefs($appSettings.calendarCorrections ?? {}, $appSettings.calendarCalculationMode ?? 'astronomical');
+					const iso = dateStr || new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD (local), matches Rust's fm_date
+					const p = await culturalDateParts('hijri', iso);
+					culturalDate = `hijri: ${p.year}-${String(p.month).padStart(2, '0')}-${String(p.day).padStart(2, '0')}`;
+				} catch { /* engine unavailable — skip the stamp, never block note creation */ }
+			}
+			const path = await getDailyNotePath(firstLib.path, $appSettings.dailyNoteFormat, $appSettings.dailyNoteFolder, dateStr, culturalDate);
 			const libraryColor = libraryColorMap[firstLib.name] ?? '#7c3aed';
 
 			// Apply daily note template if configured and note was just created (has only date frontmatter)

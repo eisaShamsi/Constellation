@@ -7,6 +7,8 @@
 	import { get } from 'svelte/store';
 	import { onMount, onDestroy } from 'svelte';
 	import { appSettings } from '$lib/libraries/store';
+	import { culturalDateParts, applyCalendarPrefs } from '$lib/calendar/calendarMath'; // §C — Gregorian→Hijri property converter
+	import { invoke } from '@tauri-apps/api/core';
 
 	// Share the user's configured pill shape with BacklinksPanel /
 	// OutgoingLinksPanel / CCSView so frontmatter tag pills track
@@ -112,6 +114,7 @@
 
 	let editableProps = $state<FrontmatterProperty[]>([]);
 	let saveTimeout: ReturnType<typeof setTimeout>;
+	let mounted = true; // §C — guards the async Hijri converter from writing after teardown
 	let focusRaf: number | null = null;
 	let saving = $state(false);
 	let prevTabId = $state('');
@@ -424,6 +427,7 @@
 		document.addEventListener('click', handleDocClick);
 	});
 	onDestroy(() => {
+		mounted = false; // §C — block any in-flight Hijri-converter write from landing on a torn-down instance
 		document.removeEventListener('constellation:add-property', handleAddPropertyEvent);
 		document.removeEventListener('click', handleDocClick);
 		if (focusRaf !== null) cancelAnimationFrame(focusRaf);
@@ -524,6 +528,41 @@
 	function removeProperty(idx: number) {
 		editableProps = editableProps.filter((_, i) => i !== idx);
 		debouncedSave();
+	}
+
+	// §C — Gregorian→Hijri property converter. The note's primary date = `date:` if present, else `created:`;
+	// if neither, fall back to the file's creation date. The button shows only while there's no `hijri:` yet.
+	// Writes through the SAME path as a manual edit (mutate editableProps → debouncedSave → saveTabContent).
+	const primaryDateKey = $derived(
+		editableProps.some((p) => p.key === 'date') ? 'date'
+		: editableProps.some((p) => p.key === 'created') ? 'created'
+		: null
+	);
+	const hasHijriProp = $derived(editableProps.some((p) => p.key === 'hijri'));
+	async function addHijriDate() {
+		let iso: string | undefined;
+		if (primaryDateKey) {
+			const dp = editableProps.find((p) => p.key === primaryDateKey);
+			const m = String(dp?.value ?? '').match(/\d{4}-\d{2}-\d{2}/);
+			if (m) iso = m[0];
+		}
+		if (!iso) {
+			try {
+				const meta = await invoke<{ created: number }>('get_file_metadata', { filePath });
+				if (meta?.created) iso = new Date(meta.created * 1000).toLocaleDateString('en-CA'); // YYYY-MM-DD (local)
+			} catch { /* metadata unavailable — skip */ }
+		}
+		if (!iso) return;
+		try {
+			await applyCalendarPrefs($appSettings.calendarCorrections ?? {}, $appSettings.calendarCalculationMode ?? 'astronomical');
+			const p = await culturalDateParts('hijri', iso);
+			if (!mounted) return; // teardown happened during the await — don't write to a detached instance (onDestroy already flushed)
+			const val = `${p.year}-${String(p.month).padStart(2, '0')}-${String(p.day).padStart(2, '0')}`;
+			const i = editableProps.findIndex((pp) => pp.key === 'hijri');
+			if (i >= 0) editableProps = editableProps.map((pp, j) => (j === i ? { ...pp, value: val } : pp));
+			else editableProps = [...editableProps, { key: 'hijri', value: val, type: 'text' as PropertyType }];
+			debouncedSave();
+		} catch { /* engine unavailable — never block */ }
 	}
 
 	function addTag(idx: number, tag: string) {
@@ -979,12 +1018,18 @@
 					oninput={(e) => updateValue(idx, (e.target as HTMLInputElement).value)} />
 			{/if}
 
+			{#if !hasHijriProp && prop.key === primaryDateKey}
+				<button class="pe-hijri-btn" onclick={addHijriDate} title={$t('propertyEditor.addHijri') || 'Add the Hijri equivalent'}>+ {$t('propertyEditor.hijri') || 'Hijri'}</button>
+			{/if}
 			<button class="pe-del" onclick={() => removeProperty(idx)} title={$t('propertyEditor.delete')}>
 				<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
 			</button>
 		</div>
 	{/each}
 
+	{#if !hasHijriProp && primaryDateKey === null}
+		<button class="pe-add pe-hijri-add" onclick={addHijriDate}>+ {$t('propertyEditor.addHijri') || 'Add Hijri date'}</button>
+	{/if}
 	<button class="pe-add" bind:this={addBtnRef} onclick={addProperty}>
 		+ {$t('propertyEditor.addProperty')}
 	</button>
@@ -1246,6 +1291,19 @@
 	}
 	.pe-row:hover .pe-del { opacity: 1; }
 	.pe-del:hover { background: var(--background-modifier-error-hover); color: var(--text-error); }
+
+	/* §C — inline "+ Hijri" converter button (shows on the note's date row, hover-revealed) */
+	.pe-hijri-btn {
+		flex-shrink: 0; height: 20px; padding: 0 7px;
+		display: inline-flex; align-items: center; gap: 2px;
+		border: 1px solid var(--background-modifier-border); border-radius: 10px;
+		background: none; color: var(--text-muted, var(--color-base-50));
+		font-size: 11px; line-height: 1; white-space: nowrap; cursor: pointer;
+		opacity: 0; transition: opacity 0.15s;
+	}
+	.pe-row:hover .pe-hijri-btn { opacity: 0.85; }
+	.pe-hijri-btn:hover { opacity: 1; background: var(--background-modifier-hover); color: var(--text-normal); }
+	.pe-hijri-add { color: var(--text-muted, var(--color-base-50)); }
 
 	/* Add button */
 	.pe-add {

@@ -670,6 +670,8 @@
 			"monthNamesDesc": "Chinesische/koreanische Monate in der Originalschrift (五月) oder phonetisch in Ihrer Sprache (Wǔyuè) anzeigen.",
 			"monthNamesNative": "Originalschrift (五月 / 5월)",
 			"monthNamesPhonetic": "Phonetisch (Wǔyuè / Owol)",
+			"stampCulturalDate": "Hidschra-Datum in Tagesnotizen eintragen",
+			"stampCulturalDateDesc": "Schreibt das Hidschra-Datum (z. B. hijri: 1448-01-06) in die Eigenschaften neuer Tagesnotizen. Nur verfügbar, wenn der islamische Kalender Ihr Haupt- oder Zweitkalender ist; der Dateiname bleibt gregorianisch.",
 			"weekStart": "Woche beginnt am",
 			"weekStartDesc": "Erste Spalte des Monatsrasters.",
 			"weekSunday": "Sonntag",
@@ -926,7 +928,9 @@
 		"createDailyNote": "Tägliche Notiz erstellen",
 		"notesCount": "{count} Notizen",
 		"tasksCount": "{count} fällige Aufgaben",
-		"weekAbbrev": "KW"
+		"weekAbbrev": "KW",
+		"dailyNote": "Tagesnotiz",
+		"completeTask": "Aufgabe abschließen"
 	},
 	"globalTasks": {
 		"title": "Globale Aufgaben",
@@ -1079,6 +1083,8 @@
 		"valuePlaceholder": "Wert",
 		"delete": "Löschen",
 		"addProperty": "Eigenschaft hinzufügen",
+		"hijri": "Hidschri",
+		"addHijri": "Hidschri-Datum hinzufügen",
 		"true": "Wahr",
 		"false": "Falsch",
 		"reorder": "Zum Neuordnen ziehen",

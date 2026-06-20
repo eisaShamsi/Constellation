@@ -3163,9 +3163,10 @@ export function buildSkyData(
 }
 
 // ─── Daily notes ───
-export async function getDailyNotePath(libraryPath: string, format = '%Y-%m-%d', folder = '', date?: string): Promise<string> {
+export async function getDailyNotePath(libraryPath: string, format = '%Y-%m-%d', folder = '', date?: string, culturalDate?: string): Promise<string> {
 	// MIG-079 §D: `date` (YYYY-MM-DD) opens that day's daily note; omit it for today.
-	return await invoke('get_daily_note_path', { libraryPath, format, folder, date });
+	// MIG-082 §C: `culturalDate` (e.g. "hijri: 1447-12-03") is stamped into the frontmatter ON CREATION only.
+	return await invoke('get_daily_note_path', { libraryPath, format, folder, date, culturalDate });
 }
 
 // ─── Link update on rename ───
@@ -3488,6 +3489,9 @@ export interface AppSettings {
 	// MIG-082 §B.2 — lunisolar month names: native script (五月/5월) or PHONETIC, the pronunciation in
 	// the UI script (Wǔyuè / Owol; Arabic pending Boss-verified table). The Hijri "Muharram" pattern.
 	calendarMonthNameStyle: 'native' | 'phonetic';
+	// MIG-082 §C — stamp the non-authoritative HIJRI date into NEW daily notes' frontmatter (filename
+	// stays Gregorian). Hijri-only, and only effective when the Hijri calendar is the main or secondary.
+	calendarStampCulturalDate: 'off' | 'hijri';
 	// MIG-081 §C.2f — Hijri engine prefs, stored here (synced with the universe) NOT in the
 	// engine's per-device localStorage. Pushed into the engine on load via applyCalendarPrefs.
 	// Corrections: key "year-month" (Hijri) → ±day offset (moon-sighting adjustment, cumulative
@@ -3908,6 +3912,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
 	calendarChineseYearStyle: 'sexagenary-gregorian' as const,
 	calendarKoreanYearStyle: 'dangi' as const,
 	calendarMonthNameStyle: 'native' as const,
+	calendarStampCulturalDate: 'off' as const,
 	templateFolder: 'Templates',
 	folderTemplates: {},
 	templateHotkeys: {},

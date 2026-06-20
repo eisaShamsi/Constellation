@@ -2350,6 +2350,18 @@
 					</div>
 					<div class="setting-item">
 						<div class="setting-info">
+							<div class="setting-name">{$t('settings.calendar.stampCulturalDate') || 'Stamp the Hijri date in daily notes'}</div>
+							<div class="setting-desc">{$t('settings.calendar.stampCulturalDateDesc') || 'Write the Hijri date (e.g. hijri: 1448-01-06) into the properties of new daily notes. Available only when the Hijri calendar is your main or secondary; the filename stays Gregorian.'}</div>
+						</div>
+						<button class="toggle-btn" class:on={($appSettings.calendarStampCulturalDate ?? 'off') === 'hijri'}
+							disabled={$appSettings.calendarPrimarySystem !== 'hijri' && $appSettings.calendarSecondarySystem !== 'hijri'}
+							style:opacity={($appSettings.calendarPrimarySystem !== 'hijri' && $appSettings.calendarSecondarySystem !== 'hijri') ? '0.45' : '1'}
+							onclick={() => updateSettings({ calendarStampCulturalDate: ($appSettings.calendarStampCulturalDate ?? 'off') === 'hijri' ? 'off' : 'hijri' })}>
+							{($appSettings.calendarStampCulturalDate ?? 'off') === 'hijri' ? ($t('settings.plugins.on') || 'On') : ($t('settings.plugins.off') || 'Off')}
+						</button>
+					</div>
+					<div class="setting-item">
+						<div class="setting-info">
 							<div class="setting-name">{$t('settings.calendar.dailyFormat') || 'Daily-note filename format'}</div>
 							<div class="setting-desc">{$t('settings.calendar.dailyFormatDesc') || 'strftime format (stays Gregorian), e.g. %Y-%m-%d.'}</div>
 						</div>

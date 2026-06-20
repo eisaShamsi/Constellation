@@ -670,6 +670,8 @@
 			"monthNamesDesc": "中国・韓国の月を現地の文字（五月）で表示するか、自分の言語の音写（Wǔyuè）で表示するか。",
 			"monthNamesNative": "現地の文字（五月 / 5월）",
 			"monthNamesPhonetic": "音写（Wǔyuè / Owol）",
+			"stampCulturalDate": "デイリーノートにヒジュラ暦の日付を記録",
+			"stampCulturalDateDesc": "新しいデイリーノートのプロパティにヒジュラ暦の日付（例: hijri: 1448-01-06）を書き込みます。ヒジュラ暦を主暦または副暦に設定している場合のみ利用でき、ファイル名は西暦のままです。",
 			"weekStart": "週の開始曜日",
 			"weekStartDesc": "月間グリッドの最初の列になります。",
 			"weekSunday": "日曜日",
@@ -1366,7 +1368,9 @@
 		"createDailyNote": "デイリーノートを作成",
 		"notesCount": "{count} 件のノート",
 		"tasksCount": "{count} 件のタスク期限",
-		"weekAbbrev": "週"
+		"weekAbbrev": "週",
+		"dailyNote": "デイリーノート",
+		"completeTask": "完了"
 	},
 	"globalTasks": {
 		"title": "グローバルタスク",
@@ -1519,6 +1523,8 @@
 		"valuePlaceholder": "値",
 		"delete": "削除",
 		"addProperty": "プロパティを追加",
+		"hijri": "ヒジュラ暦",
+		"addHijri": "ヒジュラ暦の日付を追加",
 		"true": "真",
 		"false": "偽",
 		"reorder": "ドラッグして並べ替え",

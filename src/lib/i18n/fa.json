@@ -670,6 +670,8 @@
 			"monthNamesDesc": "نمایش ماه‌های چینی/کره‌ای به خط بومی (五月) یا آوانگاری در زبان شما (Wǔyuè).",
 			"monthNamesNative": "خط بومی (五月 / 5월)",
 			"monthNamesPhonetic": "آوانگاری (Wǔyuè / Owol)",
+			"stampCulturalDate": "درج تاریخ هجری قمری در یادداشت‌های روزانه",
+			"stampCulturalDateDesc": "نوشتن تاریخ هجری قمری (مثلاً hijri: 1448-01-06) در ویژگی‌های یادداشت‌های روزانهٔ جدید. فقط زمانی در دسترس است که تقویم هجری قمری تقویم اصلی یا فرعی شما باشد؛ نام فایل میلادی باقی می‌ماند.",
 			"weekStart": "آغاز هفته از",
 			"weekStartDesc": "نخستین ستون جدول ماه.",
 			"weekSunday": "یکشنبه",
@@ -926,7 +928,9 @@
 		"createDailyNote": "ایجاد یادداشت روزانه",
 		"notesCount": "{count} یادداشت",
 		"tasksCount": "{count} وظیفه سررسید",
-		"weekAbbrev": "ه"
+		"weekAbbrev": "ه",
+		"dailyNote": "یادداشت روزانه",
+		"completeTask": "تکمیل وظیفه"
 	},
 	"globalTasks": {
 		"title": "وظایف کلی",
@@ -1079,6 +1083,8 @@
 		"valuePlaceholder": "مقدار",
 		"delete": "حذف",
 		"addProperty": "افزودن ویژگی",
+		"hijri": "هجری قمری",
+		"addHijri": "افزودن تاریخ هجری قمری",
 		"true": "درست",
 		"false": "نادرست",
 		"reorder": "برای مرتب‌سازی بکشید",

@@ -4315,7 +4315,7 @@ fn collect_notes_meta_recursive(
 
 /// Get daily note path for today.
 #[tauri::command]
-pub fn get_daily_note_path(app: tauri::AppHandle, library_path: String, format: String, folder: String, date: Option<String>) -> Result<String, String> {
+pub fn get_daily_note_path(app: tauri::AppHandle, library_path: String, format: String, folder: String, date: Option<String>, cultural_date: Option<String>) -> Result<String, String> {
     validate_path_in_any_library(&app, &library_path)?;
     if !folder.is_empty() {
         if folder.contains("..") || folder.contains('\\') || folder.starts_with('/') {
@@ -4353,7 +4353,16 @@ pub fn get_daily_note_path(app: tauri::AppHandle, library_path: String, format: 
 
     // Create the file if it doesn't exist
     if !file_path.exists() {
-        let content = format!("---\ndate: {}\n---\n", fm_date);
+        // MIG-082 §C — optional non-authoritative cultural-date stamp (opt-in). The frontend computes
+        // it (the Hijri/Temporal engines are JS-side, correction/mode-aware) as a single
+        // "key: YYYY-MM-DD" line. Sanitised: anything with a newline/CR or a `---` fence is dropped so
+        // a stray value can never break out of the frontmatter block. Only stamped at CREATION.
+        let cultural_line = cultural_date.as_deref()
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty() && !s.contains('\n') && !s.contains('\r') && !s.contains("---"))
+            .map(|s| format!("{}\n", s))
+            .unwrap_or_default();
+        let content = format!("---\ndate: {}\n{}---\n", fm_date, cultural_line);
         // MIG-076 §A2 — create-exclusive; RefusedExists means another writer
         // created the note in the race window — that IS the goal, proceed.
         crate::write_gate::gate_create_exclusive(&file_path, &content, "daily_note")?;

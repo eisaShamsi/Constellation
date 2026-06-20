@@ -670,6 +670,8 @@
 			"monthNamesDesc": "以原文字显示农历/韩历月份（五月），或以您的语言音译显示（Wǔyuè）。",
 			"monthNamesNative": "原文字（五月 / 5월）",
 			"monthNamesPhonetic": "音译（Wǔyuè / Owol）",
+			"stampCulturalDate": "在日记中标注伊斯兰历日期",
+			"stampCulturalDateDesc": "在新建的日记属性中写入伊斯兰历日期（例如 hijri: 1448-01-06）。仅当伊斯兰历为主历法或辅助历法时可用；文件名仍保持公历。",
 			"weekStart": "每周起始日",
 			"weekStartDesc": "月历网格的第一列。",
 			"weekSunday": "星期日",
@@ -1366,7 +1368,9 @@
 		"createDailyNote": "创建日记",
 		"notesCount": "{count} 篇笔记",
 		"tasksCount": "{count} 个任务到期",
-		"weekAbbrev": "周"
+		"weekAbbrev": "周",
+		"dailyNote": "每日笔记",
+		"completeTask": "完成任务"
 	},
 	"globalTasks": {
 		"title": "全局任务",
@@ -1519,6 +1523,8 @@
 		"valuePlaceholder": "值",
 		"delete": "删除",
 		"addProperty": "添加属性",
+		"hijri": "希吉来历",
+		"addHijri": "添加希吉来历日期",
 		"true": "真",
 		"false": "假",
 		"reorder": "拖动以重新排序",

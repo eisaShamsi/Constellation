@@ -670,6 +670,8 @@
 			"monthNamesDesc": "Çince/Korece ayları yerel yazıyla (五月) ya da kendi dilinizde fonetik olarak (Wǔyuè) gösterin.",
 			"monthNamesNative": "Yerel yazı (五月 / 5월)",
 			"monthNamesPhonetic": "Fonetik (Wǔyuè / Owol)",
+			"stampCulturalDate": "Günlük notlara Hicri tarihi ekle",
+			"stampCulturalDateDesc": "Yeni günlük notların özelliklerine Hicri tarihi yaz (ör. hijri: 1448-01-06). Yalnızca Hicri takvim birincil veya ikincil takviminiz olduğunda kullanılabilir; dosya adı Miladi olarak kalır.",
 			"weekStart": "Hafta başlangıcı",
 			"weekStartDesc": "Ay ızgarasının ilk sütunu.",
 			"weekSunday": "Pazar",
@@ -1366,7 +1368,9 @@
 		"createDailyNote": "Günlük not oluştur",
 		"notesCount": "{count} not",
 		"tasksCount": "{count} görev bitmeli",
-		"weekAbbrev": "Hf"
+		"weekAbbrev": "Hf",
+		"dailyNote": "Günlük not",
+		"completeTask": "Görevi tamamla"
 	},
 	"globalTasks": {
 		"title": "Genel Görevler",
@@ -1519,6 +1523,8 @@
 		"valuePlaceholder": "Değer",
 		"delete": "Sil",
 		"addProperty": "Özellik ekle",
+		"hijri": "Hicri",
+		"addHijri": "Hicri tarihi ekle",
 		"true": "Doğru",
 		"false": "Yanlış",
 		"reorder": "Yeniden sıralamak için sürükle",

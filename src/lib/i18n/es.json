@@ -670,6 +670,8 @@
 			"monthNamesDesc": "Mostrar los meses chinos/coreanos en escritura nativa (五月) o fonéticamente en tu idioma (Wǔyuè).",
 			"monthNamesNative": "Escritura nativa (五月 / 5월)",
 			"monthNamesPhonetic": "Fonético (Wǔyuè / Owol)",
+			"stampCulturalDate": "Incluir la fecha hégira en las notas diarias",
+			"stampCulturalDateDesc": "Escribe la fecha hégira (p. ej. hijri: 1448-01-06) en las propiedades de las notas diarias nuevas. Solo disponible cuando el calendario de la hégira es tu calendario principal o secundario; el nombre del archivo se mantiene en el calendario gregoriano.",
 			"weekStart": "La semana empieza en",
 			"weekStartDesc": "Primera columna de la cuadrícula del mes.",
 			"weekSunday": "Domingo",
@@ -926,7 +928,9 @@
 		"createDailyNote": "Crear nota diaria",
 		"notesCount": "{count} notas",
 		"tasksCount": "{count} tareas pendientes",
-		"weekAbbrev": "Sem"
+		"weekAbbrev": "Sem",
+		"dailyNote": "Nota diaria",
+		"completeTask": "Completar tarea"
 	},
 	"globalTasks": {
 		"title": "Tareas Globales",
@@ -1079,6 +1083,8 @@
 		"valuePlaceholder": "Valor",
 		"delete": "Eliminar",
 		"addProperty": "Añadir propiedad",
+		"hijri": "Hégira",
+		"addHijri": "Añadir fecha hégira",
 		"true": "Verdadero",
 		"false": "Falso",
 		"reorder": "Arrastrar para reordenar",

@@ -670,6 +670,8 @@
 			"monthNamesDesc": "चीनी/कोरियाई माह को मूल लिपि में (五月) या अपनी भाषा में ध्वन्यात्मक रूप से (Wǔyuè) दिखाएँ।",
 			"monthNamesNative": "मूल लिपि (五月 / 5월)",
 			"monthNamesPhonetic": "ध्वन्यात्मक (Wǔyuè / Owol)",
+			"stampCulturalDate": "दैनिक नोट्स में हिजरी तिथि दर्ज करें",
+			"stampCulturalDateDesc": "नए दैनिक नोट्स के गुणों में हिजरी तिथि लिखें (जैसे hijri: 1448-01-06)। केवल तभी उपलब्ध जब हिजरी कैलेंडर आपका मुख्य या द्वितीयक हो; फ़ाइल का नाम ग्रेगोरियन ही रहता है।",
 			"weekStart": "सप्ताह शुरू होता है",
 			"weekStartDesc": "माह ग्रिड का पहला कॉलम।",
 			"weekSunday": "रविवार",
@@ -1366,7 +1368,9 @@
 		"createDailyNote": "दैनिक नोट बनाएँ",
 		"notesCount": "{count} नोट्स",
 		"tasksCount": "{count} देय कार्य",
-		"weekAbbrev": "स"
+		"weekAbbrev": "स",
+		"dailyNote": "दैनिक नोट",
+		"completeTask": "कार्य पूर्ण करें"
 	},
 	"globalTasks": {
 		"title": "वैश्विक कार्य",
@@ -1519,6 +1523,8 @@
 		"valuePlaceholder": "मान",
 		"delete": "हटाएँ",
 		"addProperty": "गुण जोड़ें",
+		"hijri": "हिजरी",
+		"addHijri": "हिजरी तिथि जोड़ें",
 		"true": "सत्य",
 		"false": "असत्य",
 		"reorder": "पुनर्क्रम के लिए खींचें",
