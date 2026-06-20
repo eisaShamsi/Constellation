@@ -14,6 +14,7 @@ import { getLinkTypes, isLinkTypeValue } from './linkTypeRegistry';
 import { editProps as editNoteProps, close as closeNoteModel, repath as repathNoteModel, open as openNoteModel, save as saveNoteSession, isDirty as isNoteDirty } from '$lib/editor/noteSession';
 import { compose as composeNoteModel, markSaved as markNoteSaved, getModel as getNoteModel } from '$lib/editor/noteModel';
 import { SINGLE_OWNERSHIP } from '$lib/editor/ownershipFlag';
+import { setPendingLineJump } from '$lib/editor/lineJump'; // §A.2 — one-shot line jump (CM6-free)
 
 export interface LibraryInfo {
 	id: string;
@@ -1260,7 +1261,7 @@ async function resolveNoteContent(filePath: string): Promise<{ content: string; 
 	return { content: wab.content, cursorPos: wab.cursorPos, scrollTop: wab.scrollTop };
 }
 
-export async function openNoteTab(filePath: string, libraryName: string, color: string = '#7c3aed', highlightTerm?: string, newTab?: boolean, fromNotePath?: string) {
+export async function openNoteTab(filePath: string, libraryName: string, color: string = '#7c3aed', highlightTerm?: string, newTab?: boolean, fromNotePath?: string, targetLine?: number) {
 	const tabs = get(openTabs);
 
 	// If the same file is already the active tab, just update highlight
@@ -1269,6 +1270,11 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 	if (currentTab && currentTab.path === filePath) {
 		if (highlightTerm) {
 			openTabs.update(tabs => tabs.map(t => t.id === currentTab.id ? { ...t, highlightTerm } : t));
+		}
+		// §A.2 — note already active (no remount): jump the live editor to the line imperatively
+		// (path-verified inside; selection-only, no save).
+		if (targetLine && targetLine > 0) {
+			import('$lib/editor/activeEditor').then(m => m.goToLineIfActive(filePath, targetLine!)).catch(() => {});
 		}
 		_traceNav('openNoteTab:earlyReturn', currentTab.id, filePath);
 		return;
@@ -1396,6 +1402,8 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 		// relying on NoteEditor's async ensure $effect closes the window where a
 		// stale teardown save could land between reuse and ensure.
 		openNoteModel(currentTab.id, filePath, content);
+		// §A.2 — the {#key} remount (path changed) re-runs NotePane's mount; arm the one-shot line jump.
+		if (targetLine && targetLine > 0) setPendingLineJump(currentTab.id, targetLine);
 		// Auto-enable editing mode (WYSIWYG is always edit-ready)
 		editingTabIds.update(set => { const next = new Set(set); next.add(currentTab.id); return next; });
 		_traceNav('openNoteTab:applied', currentTab.id, filePath);
@@ -1412,6 +1420,7 @@ export async function openNoteTab(filePath: string, libraryName: string, color: 
 	};
 	openTabs.update(tabs => [...tabs, tab]);
 	openNoteModel(id, filePath, content); // MIG-076 §C — model born with the tab, synchronously
+	if (targetLine && targetLine > 0) setPendingLineJump(id, targetLine); // §A.2 — arm the one-shot jump for the new tab's mount
 
 	// Auto-enable editing mode (WYSIWYG is always edit-ready)
 	editingTabIds.update(set => { const next = new Set(set); next.add(id); return next; });

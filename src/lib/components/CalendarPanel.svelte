@@ -288,7 +288,7 @@
 	.cal-dot { width: var(--cal-dot-size, 6px); height: var(--cal-dot-size, 6px); border-radius: 50%; }
 	button.cal-dot { box-sizing: content-box; padding: 4px; border: none; background-clip: content-box; cursor: pointer; pointer-events: auto; transition: transform 0.1s; }
 	button.cal-dot:hover { transform: scale(1.25); }
-	.cal-note { background: var(--cal-note-dot, var(--accent, #7c3aed)); }
+	.cal-note { background: var(--cal-note-dot, #7c3aed); }
 	.cal-daily { background: var(--cal-daily-dot, #d4a017); }
 	.cal-task { background: var(--cal-task-dot, #ef4444); }
 	.cal-event-holiday { background: var(--cal-event-holiday, #ef4444); }

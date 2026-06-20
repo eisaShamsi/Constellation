@@ -25,6 +25,7 @@
 	import { lineDecoPlugin, lineDecoTheme } from '$lib/editor/lineDecoPlugin';
 	import { bidiPlugin, bidiTheme, scriptFontsField, setScriptFonts } from '$lib/editor/bidiPlugin';
 	import { registerActiveEditor, unregisterActiveEditor } from '$lib/editor/activeEditor';
+	import { takePendingLineJump } from '$lib/editor/lineJump';
 	import { Highlight as HighlightExt } from '$lib/editor/markdownHighlight';
 	import { createWikilinkCompletion, createTagCompletion, createSlashCompletion, createTypedLinkCompletion } from '$lib/editor/completions';
 	import { shortcodeCompletion } from '$lib/editor/shortcodeAutocomplete';
@@ -724,13 +725,21 @@
 		// and strips livePreview decorations from the clicked line
 		editorEl!.addEventListener('mousedown', linkClickHandler, true);
 
-		if (initialCursorPos > 0 && initialCursorPos <= view.state.doc.length) {
+		// §A.2 — a one-shot line jump (from a calendar task dot / Tasks panel) takes priority over
+		// the saved cursor/scroll. Selection-only dispatch → no doc change, no save (Gate #2).
+		const pendingLine = takePendingLineJump(tabId);
+		if (pendingLine && pendingLine > 0) {
+			const n = Math.min(Math.max(1, Math.floor(pendingLine)), view.state.doc.lines);
+			const pos = view.state.doc.line(n).from;
+			view.dispatch({ selection: { anchor: pos }, effects: EditorView.scrollIntoView(pos, { y: 'center' }) });
+			view.focus();
+		} else if (initialCursorPos > 0 && initialCursorPos <= view.state.doc.length) {
 			view.dispatch({ selection: { anchor: initialCursorPos } });
 			view.focus();
 		} else {
 			titleEl?.focus();
 		}
-		if (initialScrollTop > 0) {
+		if (!pendingLine && initialScrollTop > 0) {
 			// Single RAF — double-RAF leaked the outer handle on cleanup.
 			// setTimeout(0) gives CM6 one frame to layout, then we scroll.
 			rafHandle = requestAnimationFrame(() => {
@@ -745,11 +754,11 @@
 		// Register this editor with the global active-editor registry so the
 		// emoji/icon picker (and any future global command) can insert into it.
 		view?.dom.addEventListener('focusin', onEditorFocusIn);
-		if (view) registerActiveEditor(view);
+		if (view) registerActiveEditor(view, filePath);
 	});
 
 	function onEditorFocusIn() {
-		if (view) registerActiveEditor(view);
+		if (view) registerActiveEditor(view, filePath);
 	}
 
 

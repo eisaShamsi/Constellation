@@ -138,7 +138,8 @@
 	async function openTask(task: TaskItem, e?: MouseEvent) {
 		const newTab = e ? (e.ctrlKey || e.metaKey || e.button === 1) : false;
 		const vc = libraryColorMap[task.library_name] || '#7c3aed';
-		await openNoteTab(task.file_path, task.library_name, vc, undefined, newTab);
+		// §A.2 — open AT the task's line (the reuse win: the panel jumps to the line too).
+		await openNoteTab(task.file_path, task.library_name, vc, undefined, newTab, undefined, task.line_number);
 	}
 
 	function cleanText(text: string): string {
