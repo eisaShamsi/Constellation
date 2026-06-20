@@ -532,18 +532,20 @@ export async function reloadTabsFromDisk(filePaths: string[]): Promise<void> {
  */
 export async function toggleTaskReconciled(filePath: string, lineNumber: number): Promise<void> {
 	const openTab = get(openTabs).find((t) => t.path === filePath);
-	if (openTab && isNoteDirty(openTab.id)) {
-		markRecentWrite(openTab.path);
-		await saveNoteSession(openTab.id, openTab.path, (p, c) => writeNote(p, c, 'task_toggle_flush'), 'task_toggle_flush');
-	}
-	await toggleTask(filePath, lineNumber);
-	// CRITICAL (BUG-015 F2 class): reloadTabsFromDisk bumps reloadVersion → {#key} remount → the OLD
-	// NotePane's onDestroy doFlush/handleFlush would write the editor's PRE-toggle body back, reverting
-	// the toggle on a dirty open note. markCascading suppresses that teardown flush + any in-flight
-	// debounced save across the reload window — the SAME guard the rename-cascade reload uses.
+	// CRITICAL (BUG-015 F2 class): gate the WHOLE op — mark BEFORE the flush + toggle + reload, exactly
+	// like the rename cascade (mark-then-flush-then-mutate-then-reload). Otherwise the open dirty note's
+	// armed NotePane autosave can fire during the `await toggleTask(...)` window, pass its un-gated
+	// handleSave, write the editor's PRE-toggle body, and REVERT the toggle on disk. The explicit flush
+	// below uses saveNoteSession (a DIRECT write, NOT gated by isCascading), so it still flushes correctly
+	// inside the cascading window — identical to how flushAllTabsInLibrary runs inside the rename cascade.
 	if (openTab) markCascading(openTab.path);
 	try {
-		await reloadTabsFromDisk([filePath]);
+		if (openTab && isNoteDirty(openTab.id)) {
+			markRecentWrite(openTab.path);
+			await saveNoteSession(openTab.id, openTab.path, (p, c) => writeNote(p, c, 'task_toggle_flush'), 'task_toggle_flush');
+		}
+		await toggleTask(filePath, lineNumber);
+		await reloadTabsFromDisk([filePath]); // model ADOPTS the toggled disk + {#key} remount
 	} finally {
 		if (openTab) clearCascading(openTab.path);
 	}

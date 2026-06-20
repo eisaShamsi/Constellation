@@ -102,7 +102,7 @@
 	import CCSView from '$lib/components/CCSView.svelte';
 	import TasksPanel from '$lib/components/TasksPanel.svelte';
 	import CalendarPanel from '$lib/components/CalendarPanel.svelte'; // MIG-080 §A.2 — full-page Calendar view
-	import { culturalDateParts, applyCalendarPrefs } from '$lib/calendar/calendarMath'; // §C — Hijri-date stamp on new daily notes
+	import { culturalDateString, applyCalendarPrefs } from '$lib/calendar/calendarMath'; // §C — Hijri-date stamp on new daily notes
 	import GlobalTasksView from '$lib/components/GlobalTasksView.svelte';
 	import TensionPanel from '$lib/components/TensionPanel.svelte';
 	import ProvenancePanel from '$lib/components/ProvenancePanel.svelte';
@@ -4057,8 +4057,8 @@
 				try {
 					await applyCalendarPrefs($appSettings.calendarCorrections ?? {}, $appSettings.calendarCalculationMode ?? 'astronomical');
 					const iso = dateStr || new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD (local), matches Rust's fm_date
-					const p = await culturalDateParts('hijri', iso);
-					culturalDate = `hijri: ${p.year}-${String(p.month).padStart(2, '0')}-${String(p.day).padStart(2, '0')}`;
+					const s = await culturalDateString('hijri', iso);
+					if (s) culturalDate = `hijri: ${s}`;
 				} catch { /* engine unavailable — skip the stamp, never block note creation */ }
 			}
 			const path = await getDailyNotePath(firstLib.path, $appSettings.dailyNoteFormat, $appSettings.dailyNoteFolder, dateStr, culturalDate);

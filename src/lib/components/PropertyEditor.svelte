@@ -7,7 +7,7 @@
 	import { get } from 'svelte/store';
 	import { onMount, onDestroy } from 'svelte';
 	import { appSettings } from '$lib/libraries/store';
-	import { culturalDateParts, applyCalendarPrefs, frontmatterKey, type CalendarSystem } from '$lib/calendar/calendarMath'; // §C — Gregorian→cultural property converter
+	import { culturalDateString, applyCalendarPrefs, frontmatterKey, type CalendarSystem } from '$lib/calendar/calendarMath'; // §C — Gregorian→cultural property converter
 	import { invoke } from '@tauri-apps/api/core';
 
 	// Share the user's configured pill shape with BacklinksPanel /
@@ -555,6 +555,7 @@
 	);
 	const hasProp = (key: string) => editableProps.some((p) => p.key === key);
 	async function addCulturalDate(system: CalendarSystem, key: string) {
+		const entryTab = tabId, entryPath = filePath; // capture identity — re-verified after the awaits below
 		let iso: string | undefined;
 		if (primaryDateKey) {
 			const dp = editableProps.find((p) => p.key === primaryDateKey);
@@ -570,9 +571,11 @@
 		if (!iso) return;
 		try {
 			await applyCalendarPrefs($appSettings.calendarCorrections ?? {}, $appSettings.calendarCalculationMode ?? 'astronomical');
-			const p = await culturalDateParts(system, iso);
-			if (!mounted) return; // teardown during the await — don't write to a detached instance (onDestroy already flushed)
-			const val = `${p.year}-${String(p.month).padStart(2, '0')}${p.leap ? 'L' : ''}-${String(p.day).padStart(2, '0')}`;
+			const val = await culturalDateString(system, iso);
+			// teardown OR a tab switch during the await — the standalone Properties panel isn't {#key}-remounted,
+			// so `mounted` alone misses a tab switch; re-verify the live tab identity before writing.
+			if (!mounted || tabId !== entryTab || filePath !== entryPath) return;
+			if (!val) return;
 			const i = editableProps.findIndex((pp) => pp.key === key);
 			if (i >= 0) editableProps = editableProps.map((pp, j) => (j === i ? { ...pp, value: val } : pp));
 			else editableProps = [...editableProps, { key, value: val, type: 'text' as PropertyType }];

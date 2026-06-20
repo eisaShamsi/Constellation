@@ -96,7 +96,7 @@ const LUNAR_LEAP_PREFIX: Record<'chinese' | 'korean', Partial<Record<PhoneticScr
 };
 let _monthNameStyle: 'native' | 'phonetic' = 'native';
 export function setMonthNameStyle(s: string | undefined): void { _monthNameStyle = s === 'phonetic' ? 'phonetic' : 'native'; }
-/** A lunisolar month's display name: native script (五월/5월) OR — if the user picked 'phonetic' —
+/** A lunisolar month's display name: native script (五月/5월) OR — if the user picked 'phonetic' —
  *  the romanized/transliterated form in the UI's script (Wǔyuè / Owol; Arabic falls back to Latin). */
 function lunarMonthName(system: CalendarSystem, iso: string, locale: string): string {
 	const cal = LUNISOLAR_CAL[system]!;
@@ -405,13 +405,26 @@ export async function culturalDateParts(
 	if (system === 'hijri') { const H = await getHijri(); const h = H.gregorianToHijri(y, m, d); return { year: h.year, month: h.month, day: h.day }; }
 	if (system === 'chinese' || system === 'korean') {
 		// §B — lunisolar: relatedYear + month number + day. §C — `leap` lets the converter append an
-		// 'L' marker (2026-05L-06) so a leap month is distinguishable from its non-leap sibling.
+		// 'L' marker (2026-05L-06) so a leap month is distinguishable from its non-leap sibling. Korean
+		// stamps the DANGI era (+2333) to match its `dangi:` key + the calendar header (단기 4359);
+		// Chinese keeps the Gregorian-aligned year (its `chinese:` key has no era convention).
 		const nv = lunarNav(iso, LUNISOLAR_CAL[system]!);
-		return { year: nv.relatedYear, month: nv.monthNum, day: nv.day, leap: nv.isLeap };
+		const year = system === 'korean' ? nv.relatedYear + DANGI_OFFSET : nv.relatedYear;
+		return { year, month: nv.monthNum, day: nv.day, leap: nv.isLeap };
 	}
 	const T = await getTemporal();
 	const p = T.PlainDate.from(iso).withCalendar(TEMPORAL_CAL[system]!);
 	return { year: p.year, month: p.month, day: p.day };
+}
+
+/** §C — the canonical stored cultural-date STRING for a note property: "YYYY-MM-DD" (+ an 'L' month
+ *  marker for a lunisolar leap month). null for Gregorian (already the filename + the `date:` field).
+ *  Single source for BOTH the daily-note Hijri stamp and the Properties converter — keeps the format
+ *  and the leap-marker convention in one place. */
+export async function culturalDateString(system: CalendarSystem, iso: string): Promise<string | null> {
+	if (system === 'gregorian') return null;
+	const p = await culturalDateParts(system, iso);
+	return `${p.year}-${pad(p.month)}${p.leap ? 'L' : ''}-${pad(p.day)}`;
 }
 
 // ─── MIG-081 §C.2f — Hijri engine prefs (corrections + calculation mode) ──────
