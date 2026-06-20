@@ -850,13 +850,35 @@ Diğer PKM araçlarından notları içe aktarın:
 
 ## 15. Takvim
 
-Takvim görünümü, notları tarihe göre düzenlenmiş olarak gösterir:
+**Takvim**, **sol dock**'tan (takvim simgesi) açılan tam sayfa bir ay görünümüdür. Notu veya teslim tarihi olan görevi bulunan günler renkli **noktalar** ile işaretlenir. Başlık, ayı seçtiğiniz takvimde gösterir; bir **ikincil takvim** ayarladıysanız, altındaki alt başlık o takvimin denk gelen aralığını gösterir (örneğin bir Miladi ay, Hicri karşılığı olan "Zilhicce 1447 – Muharrem 1448 AH" aralığını gösterir).
 
-- `date` özelliği olan notlar ilgili günlerinde görünür
-- Herhangi bir tarih için günlük notlar oluşturulabilir
-- Ok düğmeleriyle aylar arasında gezinin
+**Bir güne tıklama.** Her gün hücresi etkileşimlidir:
 
-Takvimi kenar çubuğundan açın.
+- **Boş alana (veya gün numarasına) tıklayın** → o günün **günlük notunu** açar (veya oluşturur). Zaten bir günlük notu olan bir tarihe tıklamak yalnızca onu **açar** — asla bir kopya oluşturmaz.
+- **Bir noktaya tıklayın** → o belirli öğeyi açar. **Altın** nokta günlük nottur; **mor** nokta o gün düzenlenen başka bir nottur; **kırmızı** nokta o gün teslim tarihi olan bir görevdir. (Renkler Style Setter → Takvim'den temalandırılabilir.) Bir günde birkaç not veya görev varsa, noktaya tıklamak seçim yapabileceğiniz küçük bir **liste** gösterir.
+- **Bir görev noktasına tıklayın** → notu **o görevin satırına kaydırılmış** olarak, düzenlemeye hazır şekilde açar. Görev listesinde, doğrudan takvimden **bir görevin onay kutusunu işaretleyerek onu tamamlayabilirsiniz** — tamamlanan görevler anında listeden düşer. Takvimde yalnızca kendi `📅 YYYY-MM-DD` tarihini taşıyan görevler görünür (onları bir güne yerleştiren şey bu tarihtir).
+
+**Kültürel takvimler (sekiz).** **Ayarlar → Takvim** bölümünde **takvim sistemini** ayarlayabilirsiniz — **Miladi, Hicri (İslami), Şemsi Hicri (İran/Farsça), İbrani, Hint (Saka), Budist, Çin veya Kore** — ve tüm ay ızgarası ona geçer; her hücrede hem seçilen takvim tarihini (büyük) hem de Miladi tarihi (küçük) ve ayrıca ay evresini gösterir. Her ay başlığı ayın **adını, parantez içinde numarasını ve yılı** gösterir — numara, ay sırası tanıdık olmayan takvimlerde yardımcı olur. **Çin ve Kore** takvimleri *ay-güneş* takvimleridir: bazen bir **artık ay** (闰六月 / 윤6월) eklerler; takvim bunu kendi sayfası olarak gösterir, böylece gezinme asla bir ayı atlamaz veya ikilemez. Hicri takvim, doğru bir astronomik motor kullanır; mübarek aylar vurgulanır ve İslami olaylar işaretlenir. Ayrıca **hafta başlangıcını** (Pazar/Pazartesi) seçebilir ve **hafta numarası sütununu** açıp kapatabilirsiniz.
+
+**Hicri takvim seçenekleri.** **Ayarlar → Takvim → "Hicri takvim (İslami)"** altında iki ek denetim vardır:
+
+- **Hesaplama yöntemi** — gerçek yeni ayı (hilâl kavuşumu) izleyen **Astronomik (Ay Kavuşumu)** (en doğru olan, varsayılan), ya da klasik aritmetik döngü olan **Tablo Bazlı (al-Tawfīqāt al-Ilhāmiyyah)** (İlham edilmiş tevfikler).
+- **Ay düzeltmesi** — bir Hicri ayın başlangıcını **yerel hilâl gözlemine** uydurmak için ±1 veya ±2 gün kaydırın. Hicri yılı ve ayı seçin, bir kayma değeri belirleyin ve **Set** (Ayarla) düğmesine tıklayın; düzeltme o aya ve ondan sonraki her aya uygulanır. Düzeltmeleriniz listelenir (her biri kaldırılabilir) ve bir **Clear all** (Tümünü temizle) düğmesi bulunur.
+
+Her iki ayar da (ve düzeltmeleriniz) **evreninizle birlikte** kaydedilir, böylece cihazlarınız arasında taşınırlar.
+
+**Çin ve Kore görüntüleme seçenekleri.** Kore, Çin ay takvimini kullanır, dolayısıyla ikisi aynı tarihleri paylaşır — onları ayıran şey yazı ve yıldır. İkisinden biri ana veya ikincil takviminiz olduğunda, **Ayarlar → Takvim** iki ek denetim gösterir: bir **yıl gösterimi** (Çin: altmışlık döngü 丙午年, sade yıl veya her ikisi; Kore: **Dangi** dönemi 단기 4359, yıl veya altmışlık 병오년) ve **ay adları** — *yerel yazı* (五月 / 5월) veya *fonetik*, yani ayın telaffuzunun kendi dilinizde yazılmış hali (İngilizce "Wǔyuè / Owol"; Arapça "وُو-يوي / أوه-وُل").
+
+**Takvimi biçimlendirme.** **Style Setter**'ı (sol dock veya **Ayarlar → Style Setter**) açın ve her parçayı yeniden biçimlendirmek için **Takvim** yüzeyini seçin — her öğenin kendi **rengi ve metin boyutu** vardır (gün numaraları, çapraz referans tarihi, ay hapı, hafta günü başlıkları, hafta numaraları, ay simgesi, Bugün vurgusu, ızgara çizgileri ve not/görev/olay noktaları), ayrıca takvim **yazı tipi**. Siz düzenledikçe canlı, tam boyutlu bir önizleme güncellenir; uygulamak için **Keep** (Koru) düğmesine tıklayın.
+
+> **Günlük not dosya adları, görüntülenen takvimden bağımsız olarak her zaman Miladi kalır** (`YYYY-MM-DD`) — böylece dosyalarınız taşınabilir kalır ve doğru sıralanır. Kültürel tarih takvimde gösterilir (ve notun frontmatter'ına kaydedilebilir).
+
+Takvim, günlük notlara tam olarak hizmet eder: herhangi bir güne tıklayarak onu açın, ya da bugüne atlamak için **"Günlük Not"** komutunu (komut paleti) çalıştırın.
+
+**Bir notta kültürel tarih kaydetme.** İki isteğe bağlı araç, kültürel tarihi bir notun **özelliklerine** yazar (dosya adı her zaman Miladi `YYYY-MM-DD` kalır):
+
+- **Günlük not Hicri damgası** — *Ayarlar → Takvim → "Hicri tarihi günlük notlara damgala."* Açık olduğunda (yalnızca Hicri takvim **ana veya ikincil** takviminizken kullanılabilir), her **yeni** günlük not bir `hijri:` satırı alır, örneğin `hijri: 1448-01-06`. Zaten sahip olduğunuz notlara asla dokunulmaz.
+- **Bir notun Özellikler bölümündeki "+ Hijri"** — herhangi bir notun **Özellikler** bölümünü açın, tarihin üzerine gelin ve küçük bir **"+ Hijri"** düğmesi belirir (ayrıca "+ Jalali", "+ Hebrew" vb. — **seçtiğiniz her Miladi olmayan takvim için bir düğme**). Buna tıklayın; Constellation notun Miladi tarihini okur ve karşılığını ekler, örneğin `jalali: 1405-03-30`. Kore düğmesi **Dangi** yılını yazar; bir Çin/Kore **artık ayı** bir `L` ile işaretlenir (örneğin `chinese: 2025-06L-17`). Notun bir tarih özelliği yoksa, dosyanın oluşturulma tarihi kullanılır.
 
 ---
 

@@ -850,13 +850,35 @@ Va para **Configuracoes > Importador** para iniciar uma importacao.
 
 ## 15. Calendario
 
-A visualizacao do Calendario mostra as notas organizadas por data:
+O **Calendário** é uma visualização mensal em página inteira, aberta a partir da **doca esquerda** (o ícone de calendário). Os dias com notas ou tarefas pendentes são assinalados com **pontos** coloridos. O cabeçalho mostra o mês no calendário que escolheu; se tiver definido um **calendário secundário**, um subtítulo por baixo mostra o intervalo equivalente nesse calendário (por exemplo, um mês gregoriano mostra o seu período em Hijri, "Dhul-Hijjah 1447 – Muharram 1448 AH").
 
-- Notas com uma propriedade `date` aparecem nos seus respectivos dias
-- Notas diarias podem ser criadas para qualquer data
-- Navegue entre meses com os botoes de seta
+**Clicar num dia.** Cada célula de dia é interativa:
 
-Abra o Calendario na barra lateral.
+- **Clicar no espaço vazio (ou no número do dia)** → abre (ou cria) a **nota diária** desse dia. Clicar numa data que já tem uma nota diária simplesmente a **abre** — nunca cria um duplicado.
+- **Clicar num ponto** → abre esse item específico. Um ponto **dourado** é a nota diária; um ponto **roxo** é outra nota editada nesse dia; um ponto **vermelho** é uma tarefa pendente nesse dia. (As cores são personalizáveis no Style Setter → Calendário.) Se um dia tiver várias notas ou tarefas, clicar no ponto mostra uma pequena **lista** para escolher.
+- **Clicar num ponto de tarefa** → abre a nota **com o ecrã posicionado na linha dessa tarefa**, pronta a editar. Na lista de tarefas pode também **marcar a caixa de uma tarefa para a concluir** diretamente a partir do calendário — as tarefas concluídas desaparecem de imediato. Só as tarefas que têm a sua própria data `📅 YYYY-MM-DD` aparecem no calendário (é a data que as coloca num dia).
+
+**Calendários culturais (oito).** Em **Definições → Calendário** pode definir o **sistema de calendário** — **Gregoriano, Hijri (Islâmico), Hijri Solar (Persa), Hebraico, Indiano (Saka), Budista, Chinês ou Coreano** — e toda a grelha mensal muda para esse calendário, mostrando em cada célula tanto a data do calendário escolhido (grande) como a data gregoriana (pequena), além da fase da lua. Cada cabeçalho de mês mostra o **nome do mês, o seu número entre parênteses e o ano** — o número ajuda nos calendários cuja ordem de meses é pouco familiar. Os calendários **Chinês e Coreano** são *lunissolares*: por vezes inserem um **mês intercalar** (闰六月 / 윤6월), que o calendário mostra como uma página própria, para que a navegação nunca o salte nem o duplique. O calendário Hijri usa um motor astronómico preciso; os meses sagrados são realçados e os eventos islâmicos são assinalados. Pode também escolher o **início da semana** (domingo/segunda-feira) e ativar a **coluna do número da semana**.
+
+**Opções do calendário Hijri.** Em **Definições → Calendário → "Hijri calendar (Islamic)"** existem dois controlos adicionais:
+
+- **Método de cálculo** — **Astronómico (Conjunção Lunar)**, que segue a verdadeira lua nova (o mais preciso, e a predefinição), ou **Tabular (al-Tawfīqāt al-Ilhāmiyyah)** (o ciclo aritmético clássico).
+- **Correção do mês** — ajuste o início de um mês Hijri em ±1 ou ±2 dias para corresponder a um **avistamento local da lua**. Escolha o ano e o mês Hijri, selecione um deslocamento e clique em **Set**; a correção aplica-se a esse mês e a todos os meses seguintes. As suas correções são listadas (cada uma removível), com um botão **Clear all**.
+
+Ambas as definições (e as suas correções) são guardadas **com o seu universo**, pelo que acompanham os seus dispositivos.
+
+**Opções de exibição Chinesa e Coreana.** A Coreia usa o calendário lunar chinês, por isso os dois partilham datas idênticas — o que os distingue é a escrita e o ano. Quando qualquer um deles é o seu calendário principal ou secundário, **Definições → Calendário** mostra dois controlos adicionais: uma **exibição do ano** (Chinês: o ciclo sexagesimal 丙午年, o ano simples, ou ambos; Coreano: a era **Dangi** 단기 4359, o ano, ou o sexagesimal 병오년) e os **nomes dos meses** — *escrita nativa* (五月 / 5월) ou *fonética*, a pronúncia do mês escrita na sua própria língua (Português "Wǔyuè / Owol"; Árabe "وُو-يوي / أوه-وُل").
+
+**Estilizar o calendário.** Abra o **Style Setter** (doca esquerda, ou **Definições → Style Setter**) e escolha a superfície **Calendário** para reestilizar cada parte — cada elemento tem a sua própria **cor e tamanho de texto** (números dos dias, a data de referência cruzada, a pílula do mês, os cabeçalhos dos dias da semana, os números das semanas, o glifo da lua, o destaque de Hoje, as linhas da grelha e os pontos de nota/tarefa/evento), além da **fonte** do calendário. Uma pré-visualização ao vivo, em tamanho real, atualiza-se à medida que edita; clique em **Keep** para aplicar.
+
+> **Os nomes dos ficheiros das notas diárias permanecem sempre gregorianos** (`YYYY-MM-DD`), independentemente do calendário exibido — para que os seus ficheiros se mantenham portáteis e ordenem corretamente. A data cultural é mostrada no calendário (e pode ser registada no frontmatter da nota).
+
+O Calendário serve plenamente as notas diárias: clique em qualquer dia para a abrir, ou execute o comando **"Daily Note"** (paleta de comandos) para saltar para hoje.
+
+**Registar uma data cultural numa nota.** Duas ferramentas opcionais escrevem a data cultural nas **propriedades** de uma nota (o nome do ficheiro permanece sempre gregoriano `YYYY-MM-DD`):
+
+- **Carimbo Hijri da nota diária** — *Definições → Calendário → "Stamp the Hijri date in daily notes."* Quando ativo (disponível apenas enquanto o calendário Hijri for o seu **principal ou secundário**), cada **nova** nota diária recebe uma linha `hijri:`, por exemplo `hijri: 1448-01-06`. As notas que já tem nunca são alteradas.
+- **"+ Hijri" nas Propriedades de uma nota** — abra as **Propriedades** de qualquer nota, passe o rato sobre a data e aparece um pequeno botão **"+ Hijri"** (além de "+ Jalali", "+ Hebrew" e assim por diante — **um botão por cada calendário não-gregoriano que tenha selecionado**). Clique nele e o Constellation lê a data gregoriana da nota e adiciona o equivalente, por exemplo `jalali: 1405-03-30`. O botão coreano escreve o ano **Dangi**; um **mês intercalar** chinês/coreano é marcado com um `L` (por exemplo `chinese: 2025-06L-17`). Se a nota não tiver propriedade de data, usa a data de criação do ficheiro.
 
 ---
 
