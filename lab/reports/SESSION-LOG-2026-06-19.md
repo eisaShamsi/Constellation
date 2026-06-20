@@ -91,6 +91,12 @@
 - **Verify:** svelte-check **0 errors**. **Adversarial editor-path review: no P0/P1** — confirmed selection-only (can't dirty/save); pending keyed-correctly + consumed-once; path-verified imperative + split-safe; 1-indexed clamp (tasks.rs:19 `// 1-indexed`); 7th param breaks none of ~55 call sites; no scroll/focus fight; no circular import. 2 P2s (theoretical 1-entry map leak; pre-existing split last-focused-pane) — left per secure-don't-muddle.
 - **Pending Boss test §A.2 (full Editor-Surface Gate — Reproduce-First):** task dot → note opens at the task's line + scrolled into view; Tasks panel jumps too; THEN the gate (type-burst persists, Focus round-trip, tab switch, body intact — clicking a task must NOT corrupt/save). Binary rebuild in progress.
 
+## ⚑ PCS CHECKPOINT (Boss: "PCS + Orientation", session continues — 2026-06-20)
+- **All code SHIPPED + Boss-validated + pushed on `main`:** MIG-081 complete (`8dfa1a06`); MIG-082 §A.1 (`951a464d`), §A.2 (`1c7c1f44`), §A.3 (`e5c18617`).
+- **Docs (this checkpoint commit):** orientation **v2.92** (NEW file, v2.91 retained) — MIG-082 OPENED + §A.1/§A.2/§A.3; **MoCh** `docs/MoCh/MoCh-2026-06-19-2100.md` (the MIG-082 block); **User Manual §14** — the clickable-calendar features (dots open items, empty→daily, task→open-at-line, complete-from-popover, no-duplicate note). (×14 manual translations ride the standing debt.)
+- **Boss explicitly excluded the handover + next-session prompt** (the session is NOT being handed off — keeping it open).
+- **REMAINING in MIG-082:** §A.4 (Indian + Buddhist + Persian double-era fix), §B (Chinese + Korean lunisolar — Intl-only branch), §C (cultural-date frontmatter + ×15 i18n + audit + deferred inspector360 bug). Plan: `docs/MIG-082-Plan.md`.
+
 ## §A.3 — Task toggle from the calendar + single-ownership reconcile (BUILT + reviewed; P1 caught+fixed; pending Boss test)
 - **`store.ts` `toggleTaskReconciled(file, line)`** — the safe toggle for an OPEN note: flush-if-dirty (`saveNoteSession`) → `toggleTask` (Rust gate-write) → **`reloadTabsFromDisk`** (model adopts the toggled disk + `{#key}` remount). Reused by the calendar popover, the Tasks panel, and GlobalTasksView — **fixes the pre-existing latent reconcile gap** (Tasks panel wrongly updated `tab.content` under SINGLE_OWNERSHIP; GlobalTasksView didn't reconcile at all).
 - **Live-refresh:** the calendar scan body extracted to `refreshCalendarData()`; a popover toggle (and the Tasks-panel toggle) re-scan so a completed task drops off immediately (was: only on calendar reopen — the stale-dot confusion).

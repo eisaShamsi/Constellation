@@ -1300,7 +1300,13 @@ Go to **Settings > Importer** to start an import.
 
 ## 14. Calendar
 
-The **Calendar** is a full-page month view, opened from the **left dock** (the calendar icon). Clicking any day opens (or creates) that day's **daily note**. Days with notes or due tasks are marked with dots. The header shows the month in your chosen calendar, and a subtitle below it shows the **equivalent range in the other calendar** — e.g. a Hijri month shows its Gregorian span ("June – July 2026"), and a Gregorian month shows its Hijri span ("Dhul-Hijjah 1447 – Muharram 1448 AH").
+The **Calendar** is a full-page month view, opened from the **left dock** (the calendar icon). Days with notes or due tasks are marked with coloured **dots**. The header shows the month in your chosen calendar; if you've set a **secondary calendar**, a subtitle below shows that calendar's equivalent range (e.g. a Gregorian month shows its Hijri span, "Dhul-Hijjah 1447 – Muharram 1448 AH").
+
+**Clicking a day.** Each day cell is interactive:
+
+- **Click the empty space (or the day number)** → opens (or creates) that day's **daily note**. Clicking a date that already has a daily note simply **opens** it — it never makes a duplicate.
+- **Click a dot** → opens that specific item. A **gold** dot is the daily note; a **purple** dot is another note edited that day; a **red** dot is a task due that day. (Colours are themable in the Style Setter → Calendar.) If a day has several notes or tasks, clicking the dot shows a small **list** to pick from.
+- **Click a task dot** → opens the note **scrolled to that task's line**, ready to edit. In the task list you can also **tick a task's checkbox to complete it** right from the calendar — completed tasks drop off immediately. Only tasks that carry their own `📅 YYYY-MM-DD` appear on the calendar (the date is what places them on a day).
 
 **Cultural calendars.** In **Settings → Calendar** you can set the **calendar system** — **Gregorian, Hijri (Islamic), Solar Hijri (Persian), or Hebrew** — and the whole month grid switches to it, showing both the chosen-calendar date (large) and the Gregorian date (small) in each cell, plus the moon phase. The Hijri calendar uses an accurate astronomical engine; sacred months are highlighted and Islamic events are marked. You can also choose the **week start** (Sunday/Monday) and toggle the **week-number column**.
 
