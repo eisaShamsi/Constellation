@@ -6366,6 +6366,9 @@
 							showWeekNumbers={$appSettings.calendarShowWeekNumbers ?? true}
 							corrections={$appSettings.calendarCorrections ?? {}}
 							calculationMode={$appSettings.calendarCalculationMode ?? 'astronomical'}
+							chineseYearStyle={$appSettings.calendarChineseYearStyle ?? 'sexagenary-gregorian'}
+							koreanYearStyle={$appSettings.calendarKoreanYearStyle ?? 'dangi'}
+							monthNameStyle={$appSettings.calendarMonthNameStyle ?? 'native'}
 							onDayClick={(dateStr) => { showCalendarPage = false; openDailyNote(dateStr); }}
 							onOpenNote={(e) => { showCalendarPage = false; openNoteTab(e.file_path, e.library_name, libraryColorMap[e.library_name] || '#7c3aed'); }}
 							onOpenTask={(tk) => { showCalendarPage = false; openNoteTab(tk.file_path, tk.library_name, libraryColorMap[tk.library_name] || '#7c3aed', undefined, undefined, undefined, tk.line_number); }}

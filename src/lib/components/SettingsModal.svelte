@@ -2256,13 +2256,15 @@
 							<div class="setting-desc">{$t('settings.calendar.primaryDesc') || 'Show the Calendar in this system. Daily-note filenames always stay Gregorian (YYYY-MM-DD).'}</div>
 						</div>
 						<select class="setting-control" value={$appSettings.calendarPrimarySystem}
-							onchange={(e) => updateSettings({ calendarPrimarySystem: (e.target as HTMLSelectElement).value as 'gregorian'|'hijri'|'solar-hijri'|'hebrew'|'indian'|'buddhist' })}>
+							onchange={(e) => updateSettings({ calendarPrimarySystem: (e.target as HTMLSelectElement).value as 'gregorian'|'hijri'|'solar-hijri'|'hebrew'|'indian'|'buddhist'|'chinese'|'korean' })}>
 						<option value="gregorian">{$t('settings.sight.calendarSystems.gregorian') || 'Gregorian'}</option>
 						<option value="hijri">{$t('settings.sight.calendarSystems.hijri') || 'Hijri (Islamic)'}</option>
 						<option value="solar-hijri">{$t('settings.sight.calendarSystems.solarHijri') || 'Solar Hijri'}</option>
 						<option value="hebrew">{$t('settings.sight.calendarSystems.hebrew') || 'Hebrew'}</option>
 						<option value="indian">{$t('settings.sight.calendarSystems.indian') || 'Indian (Saka)'}</option>
 						<option value="buddhist">{$t('settings.sight.calendarSystems.buddhist') || 'Buddhist'}</option>
+						<option value="chinese">{$t('settings.sight.calendarSystems.chinese') || 'Chinese'}</option>
+						<option value="korean">{$t('settings.sight.calendarSystems.korean') || 'Korean'}</option>
 						</select>
 					</div>
 					<div class="setting-item">
@@ -2271,7 +2273,7 @@
 							<div class="setting-desc">{$t('settings.calendar.secondaryDesc') || 'Also show a second date under each day, in this calendar. None to disable.'}</div>
 						</div>
 						<select class="setting-control" value={$appSettings.calendarSecondarySystem}
-							onchange={(e) => updateSettings({ calendarSecondarySystem: (e.target as HTMLSelectElement).value as 'none'|'gregorian'|'hijri'|'solar-hijri'|'hebrew'|'indian'|'buddhist' })}>
+							onchange={(e) => updateSettings({ calendarSecondarySystem: (e.target as HTMLSelectElement).value as 'none'|'gregorian'|'hijri'|'solar-hijri'|'hebrew'|'indian'|'buddhist'|'chinese'|'korean' })}>
 							<option value="none">{$t('settings.calendar.secondaryNone') || 'None'}</option>
 						<option value="gregorian">{$t('settings.sight.calendarSystems.gregorian') || 'Gregorian'}</option>
 						<option value="hijri">{$t('settings.sight.calendarSystems.hijri') || 'Hijri (Islamic)'}</option>
@@ -2279,8 +2281,52 @@
 						<option value="hebrew">{$t('settings.sight.calendarSystems.hebrew') || 'Hebrew'}</option>
 						<option value="indian">{$t('settings.sight.calendarSystems.indian') || 'Indian (Saka)'}</option>
 						<option value="buddhist">{$t('settings.sight.calendarSystems.buddhist') || 'Buddhist'}</option>
+						<option value="chinese">{$t('settings.sight.calendarSystems.chinese') || 'Chinese'}</option>
+						<option value="korean">{$t('settings.sight.calendarSystems.korean') || 'Korean'}</option>
 						</select>
 					</div>
+					{#if $appSettings.calendarPrimarySystem === 'chinese' || $appSettings.calendarSecondarySystem === 'chinese'}
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.calendar.chineseYear') || 'Chinese year display'}</div>
+							<div class="setting-desc">{$t('settings.calendar.chineseYearDesc') || 'How the year shows in the Chinese calendar (the dates are identical to Korean).'}</div>
+						</div>
+						<select class="setting-control" value={$appSettings.calendarChineseYearStyle ?? 'sexagenary-gregorian'}
+							onchange={(e) => updateSettings({ calendarChineseYearStyle: (e.target as HTMLSelectElement).value as 'sexagenary-gregorian' | 'sexagenary' | 'gregorian' })}>
+							<option value="sexagenary-gregorian">{$t('settings.calendar.chineseYearSexaGreg') || 'Sexagenary + year (丙午年 2026)'}</option>
+							<option value="sexagenary">{$t('settings.calendar.chineseYearSexa') || 'Sexagenary only (丙午年)'}</option>
+							<option value="gregorian">{$t('settings.calendar.yearGregOnly') || 'Year only (2026)'}</option>
+						</select>
+					</div>
+					{/if}
+					{#if $appSettings.calendarPrimarySystem === 'korean' || $appSettings.calendarSecondarySystem === 'korean'}
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.calendar.koreanYear') || 'Korean year display'}</div>
+							<div class="setting-desc">{$t('settings.calendar.koreanYearDesc') || 'How the year shows in the Korean calendar (the dates are identical to Chinese).'}</div>
+						</div>
+						<select class="setting-control" value={$appSettings.calendarKoreanYearStyle ?? 'dangi'}
+							onchange={(e) => updateSettings({ calendarKoreanYearStyle: (e.target as HTMLSelectElement).value as 'dangi' | 'dangi-gregorian' | 'gregorian' | 'sexagenary' })}>
+							<option value="dangi">{$t('settings.calendar.koreanYearDangi') || 'Dangi era (단기 4359)'}</option>
+							<option value="dangi-gregorian">{$t('settings.calendar.koreanYearDangiGreg') || 'Dangi + year (단기 4359 (2026))'}</option>
+							<option value="gregorian">{$t('settings.calendar.yearGregOnly') || 'Year only (2026)'}</option>
+							<option value="sexagenary">{$t('settings.calendar.koreanYearSexa') || 'Sexagenary (병오년)'}</option>
+						</select>
+					</div>
+					{/if}
+					{#if $appSettings.calendarPrimarySystem === 'chinese' || $appSettings.calendarSecondarySystem === 'chinese' || $appSettings.calendarPrimarySystem === 'korean' || $appSettings.calendarSecondarySystem === 'korean'}
+					<div class="setting-item">
+						<div class="setting-info">
+							<div class="setting-name">{$t('settings.calendar.monthNames') || 'Month names'}</div>
+							<div class="setting-desc">{$t('settings.calendar.monthNamesDesc') || 'Show Chinese/Korean months in native script (五月) or phonetically in your language (Wǔyuè).'}</div>
+						</div>
+						<select class="setting-control" value={$appSettings.calendarMonthNameStyle ?? 'native'}
+							onchange={(e) => updateSettings({ calendarMonthNameStyle: (e.target as HTMLSelectElement).value as 'native' | 'phonetic' })}>
+							<option value="native">{$t('settings.calendar.monthNamesNative') || 'Native script (五月 / 5월)'}</option>
+							<option value="phonetic">{$t('settings.calendar.monthNamesPhonetic') || 'Phonetic (Wǔyuè / Owol)'}</option>
+						</select>
+					</div>
+					{/if}
 					<div class="setting-item">
 						<div class="setting-info">
 							<div class="setting-name">{$t('settings.calendar.weekStart') || 'Week starts on'}</div>

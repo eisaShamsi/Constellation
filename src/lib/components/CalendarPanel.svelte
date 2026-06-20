@@ -8,7 +8,7 @@
 	// (§C.2d). Cells key onDayClick + the note/task dots on Gregorian ISO. RTL via dir.
 	import { t, dir, locale } from '$lib/i18n';
 	import {
-		ensureCalendarEngines, buildRichMonthGrid, todayInSystem, stepMonth, applyCalendarPrefs,
+		ensureCalendarEngines, buildRichMonthGrid, todayInSystem, stepMonth, applyCalendarPrefs, setLunarYearStyles, setMonthNameStyle,
 		type CalendarSystem, type RichMonthGrid, type CalculationMode,
 	} from '$lib/calendar/calendarMath';
 	import type { NoteDateEntry, TaskItem } from '$lib/tasks/types';
@@ -26,6 +26,9 @@
 		showWeekNumbers = true,
 		corrections = {} as Record<string, number>,
 		calculationMode = 'astronomical' as CalculationMode,
+		chineseYearStyle = 'sexagenary-gregorian',  // §B — lunisolar year-display preference (Chinese)
+		koreanYearStyle = 'dangi',                   // §B — lunisolar year-display preference (Korean)
+		monthNameStyle = 'native',                   // §B.2 — lunisolar month names: native | phonetic
 	}: {
 		noteEntries: Record<string, NoteDateEntry[]>;
 		taskEntries: Record<string, TaskItem[]>;
@@ -39,6 +42,9 @@
 		showWeekNumbers?: boolean;
 		corrections?: Record<string, number>;
 		calculationMode?: CalculationMode;
+		chineseYearStyle?: string;
+		koreanYearStyle?: string;
+		monthNameStyle?: string;
 	} = $props();
 
 	let viewYear = $state(0);
@@ -63,6 +69,10 @@
 	const grid = $derived.by<RichMonthGrid | null>(() => {
 		void $locale;
 		if (!enginesReady || !viewYear) return null;
+		// §B — push the user's lunisolar year-display prefs (module state, like applyCalendarPrefs) right
+		// before building; reading the props here also makes the grid re-derive when they change.
+		setLunarYearStyles({ chinese: chineseYearStyle, korean: koreanYearStyle });
+		setMonthNameStyle(monthNameStyle); // §B.2 — native | phonetic
 		try { return buildRichMonthGrid(primarySystem, viewYear, viewMonth, $locale, weekStart, secondarySystem); }
 		catch { return null; }
 	});

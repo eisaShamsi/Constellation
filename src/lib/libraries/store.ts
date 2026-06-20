@@ -3476,10 +3476,18 @@ export interface AppSettings {
 	// MIG-081 — Calendar systems (cultural calendars). Primary switches the whole grid
 	// (standalone); secondary shows a date alongside (integrated). Filenames stay
 	// Gregorian ISO regardless. Hijri uses Eisa's engine; Persian/Hebrew via Temporal.
-	calendarPrimarySystem: 'gregorian' | 'hijri' | 'solar-hijri' | 'hebrew' | 'indian' | 'buddhist';
-	calendarSecondarySystem: 'none' | 'gregorian' | 'hijri' | 'solar-hijri' | 'hebrew' | 'indian' | 'buddhist';
+	calendarPrimarySystem: 'gregorian' | 'hijri' | 'solar-hijri' | 'hebrew' | 'indian' | 'buddhist' | 'chinese' | 'korean';
+	calendarSecondarySystem: 'none' | 'gregorian' | 'hijri' | 'solar-hijri' | 'hebrew' | 'indian' | 'buddhist' | 'chinese' | 'korean';
 	calendarWeekStart: 0 | 1; // 0 = Sunday, 1 = Monday
 	calendarShowWeekNumbers: boolean; // MIG-081 §C.2b — the "Wk" column
+	// MIG-082 §B — the lunisolar (Chinese/Korean) YEAR-display preference. The two calendars share
+	// identical lunar dates, so the year is what gives each its identity. Chinese: sexagenary cycle
+	// (丙午年) ± Gregorian year. Korean: Dangi era (단기 4359) | Gregorian | sexagenary (병오년).
+	calendarChineseYearStyle: 'sexagenary-gregorian' | 'sexagenary' | 'gregorian';
+	calendarKoreanYearStyle: 'dangi' | 'dangi-gregorian' | 'gregorian' | 'sexagenary';
+	// MIG-082 §B.2 — lunisolar month names: native script (五月/5월) or PHONETIC, the pronunciation in
+	// the UI script (Wǔyuè / Owol; Arabic pending Boss-verified table). The Hijri "Muharram" pattern.
+	calendarMonthNameStyle: 'native' | 'phonetic';
 	// MIG-081 §C.2f — Hijri engine prefs, stored here (synced with the universe) NOT in the
 	// engine's per-device localStorage. Pushed into the engine on load via applyCalendarPrefs.
 	// Corrections: key "year-month" (Hijri) → ±day offset (moon-sighting adjustment, cumulative
@@ -3897,6 +3905,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
 	calendarShowWeekNumbers: true,
 	calendarCorrections: {},
 	calendarCalculationMode: 'astronomical' as const,
+	calendarChineseYearStyle: 'sexagenary-gregorian' as const,
+	calendarKoreanYearStyle: 'dangi' as const,
+	calendarMonthNameStyle: 'native' as const,
 	templateFolder: 'Templates',
 	folderTemplates: {},
 	templateHotkeys: {},

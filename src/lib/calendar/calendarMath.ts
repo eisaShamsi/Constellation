@@ -16,7 +16,7 @@
  * path (Perf Rules 3/6). Call `ensureCalendarEngines(systems)` before rendering.
  */
 
-export type CalendarSystem = 'gregorian' | 'hijri' | 'solar-hijri' | 'hebrew' | 'indian' | 'buddhist';
+export type CalendarSystem = 'gregorian' | 'hijri' | 'solar-hijri' | 'hebrew' | 'indian' | 'buddhist' | 'chinese' | 'korean';
 
 /** Our system id → the Temporal/Intl calendar id (only for the Temporal-backed ones).
  *  §A.4 — indian (Saka) + buddhist are solar (fixed 12-month structure), so the generic
@@ -55,6 +55,130 @@ export async function ensureCalendarEngines(systems: CalendarSystem[]): Promise<
 	const tasks: Promise<any>[] = [getHijri()];
 	if (systems.some((s) => !!TEMPORAL_CAL[s])) tasks.push(getTemporal()); // any Temporal-backed system
 	await Promise.all(tasks);
+	// chinese/korean need NO engine — they're driven entirely by the host Intl (the Temporal polyfill
+	// THROWS on their leap-month codes; ICU's Intl handles them). §B.
+}
+
+// ─── §B — LUNISOLAR (chinese, korean/dangi) via host Intl ONLY ──────────────
+// The Temporal polyfill throws on chinese/dangi leap months, but ICU's Intl renders them perfectly
+// (闰二月 / 윤2월). We drive the grid by ISO day-walking + Intl.formatToParts. The display "month" is
+// an ORDINAL (1..12 or 1..13 in a leap year), so a leap month is its own page; navigation never skips
+// or duplicates it. Node-verified against the 2023 leap-2 year. All Intl-call walks are memoised per
+// (calendar, relatedYear) and run only on month-nav (off the keystroke hot path — Perf Rule 3).
+const LUNISOLAR_CAL: Partial<Record<CalendarSystem, string>> = { chinese: 'chinese', korean: 'dangi' };
+// Month names are rendered in each calendar's OWN script regardless of UI language — a Chinese month
+// IS 五月 (not the English "Fifth Month", and not the Arabic placeholder "M04" that ICU emits when a
+// UI locale lacks the names). This is also what visibly distinguishes Chinese (五月) from Korean (5월),
+// since the two share IDENTICAL lunar dates (Korea uses the Chinese calendar). Boss-directed 2026-06-20.
+const LUNISOLAR_NAME_LOCALE: Partial<Record<CalendarSystem, string>> = { chinese: 'zh', korean: 'ko' };
+
+// §B.2 — PHONETIC month names (Boss-directed 2026-06-20): the native month's PRONUNCIATION written in
+// the UI's script — the Hijri "Muharram" pattern generalised. The OS cannot transliterate (verified:
+// zh-Latn still yields 五月; no Intl transliterator), so these are AUTHORED tables. Latin = standard
+// romanization (Chinese Pinyin / Korean Revised Romanization — 6월→yuwol, 10월→siwol verified against
+// sources). Arabic ('arab') is PENDING Boss verification → omitted for now, so it falls back to Latin
+// until the verified table is added. Months are numbered (12 each) + a leap prefix, so the tables are tiny.
+type PhoneticScript = 'latn' | 'arab';
+const LUNAR_PHONETIC: Record<'chinese' | 'korean', Partial<Record<PhoneticScript, string[]>>> = {
+	chinese: {
+		latn: ['Yīyuè', 'Èryuè', 'Sānyuè', 'Sìyuè', 'Wǔyuè', 'Liùyuè', 'Qīyuè', 'Bāyuè', 'Jiǔyuè', 'Shíyuè', 'Shíyīyuè', 'Shí\'èryuè'],
+		// Boss-verified 2026-06-20 (months 2,3,6,7,8,9 = accepted drafts; Boss corrected 1,4,5,10,11,12).
+		arab: ['إي-يوي', 'أر-يوي', 'سان-يوي', 'سُه-يوي', 'وُو-يوي', 'ليو-يوي', 'تشي-يوي', 'با-يوي', 'جيو-يوي', 'شِر-يوي', 'شِر-إي-يوي', 'شِر-أر-يوي'],
+	},
+	korean: {
+		latn: ['Irwol', 'Iwol', 'Samwol', 'Sawol', 'Owol', 'Yuwol', 'Chirwol', 'Parwol', 'Guwol', 'Siwol', 'Sibirwol', 'Sibiwol'],
+		arab: ['إر-وُل', 'آي-وُل', 'سام-وُل', 'سا-وُل', 'أوه-وُل', 'يو-وُل', 'تشير-وُل', 'بار-وُل', 'گو-وُل', 'سي-وُل', 'سي-بِر-وُل', 'سي-بي-وُل'], // Boss-verified 2026-06-20 (#4 damma fix)
+	},
+};
+const LUNAR_LEAP_PREFIX: Record<'chinese' | 'korean', Partial<Record<PhoneticScript, string>>> = {
+	chinese: { latn: 'Rùn ', arab: 'رون ' },   // 闰 — leap-month marker (arab: my draft, pending Boss ok)
+	korean:  { latn: 'Yun ', arab: 'يون ' },   // 윤 (arab: my draft, pending Boss ok)
+};
+let _monthNameStyle: 'native' | 'phonetic' = 'native';
+export function setMonthNameStyle(s: string | undefined): void { _monthNameStyle = s === 'phonetic' ? 'phonetic' : 'native'; }
+/** A lunisolar month's display name: native script (五월/5월) OR — if the user picked 'phonetic' —
+ *  the romanized/transliterated form in the UI's script (Wǔyuè / Owol; Arabic falls back to Latin). */
+function lunarMonthName(system: CalendarSystem, iso: string, locale: string): string {
+	const cal = LUNISOLAR_CAL[system]!;
+	if (_monthNameStyle === 'phonetic' && (system === 'chinese' || system === 'korean')) {
+		const nv = lunarNav(iso, cal);
+		const script: PhoneticScript = locale.startsWith('ar') ? 'arab' : 'latn';
+		const tbl = LUNAR_PHONETIC[system];
+		const base = tbl[script]?.[nv.monthNum - 1] ?? tbl.latn?.[nv.monthNum - 1];
+		if (base) return (nv.isLeap ? (LUNAR_LEAP_PREFIX[system][script] ?? LUNAR_LEAP_PREFIX[system].latn ?? '') : '') + base;
+	}
+	return new Intl.DateTimeFormat(LUNISOLAR_NAME_LOCALE[system], { timeZone: 'UTC', calendar: cal, month: 'long' }).format(new Date(iso));
+}
+const DANGI_OFFSET = 2333; // Korean Dangi (단기/檀紀) era = Gregorian-aligned year + 2333.
+// The user's per-lunisolar-calendar YEAR-display preference (Boss-directed 2026-06-20 — "give users the
+// option in Calendar Settings"). Set by CalendarPanel from appSettings via setLunarYearStyles (same
+// module-prefs pattern as applyCalendarPrefs). Chinese: sexagenary-gregorian|sexagenary|gregorian.
+// Korean: dangi|dangi-gregorian|gregorian|sexagenary.
+export type LunarYearStyles = { chinese: string; korean: string };
+const LUNAR_YEAR_DEFAULT: LunarYearStyles = { chinese: 'sexagenary-gregorian', korean: 'dangi' };
+let _lunarYearStyles: LunarYearStyles = { ...LUNAR_YEAR_DEFAULT };
+export function setLunarYearStyles(s: Partial<LunarYearStyles> | undefined): void {
+	_lunarYearStyles = { chinese: s?.chinese || LUNAR_YEAR_DEFAULT.chinese, korean: s?.korean || LUNAR_YEAR_DEFAULT.korean };
+}
+/** Sexagenary cycle name (干支) in the calendar's own script — "丙午" (zh/chinese) / "병오" (ko/dangi). */
+function sexagenaryName(iso: string, cal: string, nameLocale: string): string {
+	// 'yearName' is a valid Intl part for chinese/dangi but absent from the TS lib's part-type registry.
+	for (const p of new Intl.DateTimeFormat(nameLocale, { timeZone: 'UTC', calendar: cal, year: 'numeric' }).formatToParts(new Date(iso))) if ((p.type as string) === 'yearName') return p.value;
+	return '';
+}
+/** The year/era label for a lunisolar header, honouring the user's per-calendar preference.
+ *  The era words (단기 / 年 / 년) stay in their own script — they ARE the calendar's identity. */
+function lunarYearLabel(system: CalendarSystem, iso: string, relatedYear: number, locale: string): string {
+	const style = (system === 'korean' ? _lunarYearStyles.korean : _lunarYearStyles.chinese) || LUNAR_YEAR_DEFAULT[system as 'chinese' | 'korean'];
+	const greg = localeNum(relatedYear, locale);
+	const sexa = () => { const s = sexagenaryName(iso, LUNISOLAR_CAL[system]!, LUNISOLAR_NAME_LOCALE[system]!); return s ? s + (system === 'korean' ? '년' : '年') : greg; };
+	const dangi = `단기 ${localeNum(relatedYear + DANGI_OFFSET, locale)}`;
+	switch (style) {
+		case 'gregorian': return greg;
+		case 'sexagenary': return sexa();
+		case 'dangi': return dangi;
+		case 'dangi-gregorian': return `${dangi} (${greg})`;
+		default: return `${sexa()} ${greg}`; // 'sexagenary-gregorian' (chinese default)
+	}
+}
+
+/** en-locale numeric parts → stable tokens for navigation ("2"/"2bis", numeric relatedYear/day). */
+function lunarNav(iso: string, cal: string): { relatedYear: number; monthNum: number; isLeap: boolean; day: number } {
+	const o: Record<string, string> = {};
+	// timeZone:'UTC' — `new Date(isoDateOnly)` is UTC midnight; without this the formatter would use the
+	// system TZ and report the PREVIOUS day west of UTC, throwing off the day-1 detection the walk relies on.
+	for (const p of new Intl.DateTimeFormat('en-u-ca-' + cal, { timeZone: 'UTC', year: 'numeric', month: 'numeric', day: 'numeric' }).formatToParts(new Date(iso))) o[p.type] = p.value;
+	const m = o.month ?? '1';
+	return { relatedYear: parseInt(o.relatedYear ?? '0', 10), monthNum: parseInt(m, 10), isLeap: m.includes('bis'), day: parseInt(o.day ?? '1', 10) };
+}
+const _lunarYearCache = new Map<string, string[]>(); // key `${cal}:${relatedYear}` → [day-1 ISO of each ordinal]
+/** The day-1 ISO of every month in `relatedYear` (12 or 13 entries), memoised. */
+function lunarMonths(relatedYear: number, cal: string): string[] {
+	const key = `${cal}:${relatedYear}`;
+	const hit = _lunarYearCache.get(key);
+	if (hit) return hit;
+	// New year = the first Gregorian date whose relatedYear === target (relatedYear flips at month-1 day-1).
+	let iso = `${relatedYear}-01-01`;
+	for (let i = 0; i < 75 && lunarNav(iso, cal).relatedYear !== relatedYear; i++) iso = isoShift(iso, 1);
+	const months: string[] = [];
+	while (lunarNav(iso, cal).relatedYear === relatedYear) {
+		months.push(iso);
+		// Next month's day-1: a lunar month is 29–30 days, so jump 28 then walk to the day-1 reset.
+		let probe = isoShift(iso, 28);
+		while (lunarNav(probe, cal).day !== 1) probe = isoShift(probe, 1);
+		iso = probe;
+		if (months.length > 14) break; // safety
+	}
+	_lunarYearCache.set(key, months);
+	return months;
+}
+/** {relatedYear, ordinal(1-based)} of the lunar month containing `iso`. */
+function lunarOrdinalOf(iso: string, cal: string): { relatedYear: number; ordinal: number } {
+	const relatedYear = lunarNav(iso, cal).relatedYear;
+	const ms = lunarMonths(relatedYear, cal);
+	let ordinal = ms.length;
+	for (let i = 0; i < ms.length; i++) { if (iso < (ms[i + 1] ?? '9999-99-99')) { ordinal = i + 1; break; } }
+	return { relatedYear, ordinal };
 }
 
 // ─── helpers ───────────────────────────────────────────────────────────
@@ -105,6 +229,11 @@ export async function todayInSystem(system: CalendarSystem): Promise<{ year: num
 		const H = await getHijri();
 		const h = H.gregorianToHijri(n.getFullYear(), n.getMonth() + 1, n.getDate());
 		return { year: h.year, month: h.month, day: h.day };
+	}
+	if (system === 'chinese' || system === 'korean') {
+		const cal = LUNISOLAR_CAL[system]!;
+		const { relatedYear, ordinal } = lunarOrdinalOf(todayISO(), cal); // year=relatedYear, month=ordinal
+		return { year: relatedYear, month: ordinal, day: lunarNav(todayISO(), cal).day };
 	}
 	const T = await getTemporal();
 	const p = T.PlainDate.from(todayISO()).withCalendar(TEMPORAL_CAL[system]!);
@@ -158,6 +287,21 @@ export function buildMonthGrid(
 		// §A.4b — month number beside the name (helps with unfamiliar cultural months).
 		monthLabel = `${names?.[displayMonth - 1] ?? `M${displayMonth}`} (${localeNum(displayMonth, locale)}) ${localeNum(displayYear, locale)}`;
 		isoForDay = (d) => { const g = H.hijriToGregorian(displayYear, displayMonth, d); return isoOf(g.year, g.month, g.day); };
+	} else if (system === 'chinese' || system === 'korean') {
+		// §B — lunisolar: displayMonth is an ORDINAL (1..12/13). Drive the grid by ISO from Intl.
+		const cal = LUNISOLAR_CAL[system]!;
+		const months = lunarMonths(displayYear, cal);
+		const ord = Math.min(Math.max(1, displayMonth), months.length);
+		firstISO = months[ord - 1];
+		const nextISO = (ord < months.length) ? months[ord] : lunarMonths(displayYear + 1, cal)[0];
+		daysInThisMonth = Math.round((Date.parse(nextISO) - Date.parse(firstISO)) / 86400000);
+		const nv = lunarNav(firstISO, cal);
+		// Localised name carries the leap marker (闰二月 / 윤2월); (N) is the month number (a leap month
+		// shares its sibling's number); relatedYear is the Gregorian-ish year (no Latin era suffix).
+		// Name: native script (五月) OR the user's phonetic choice (Wǔyuè); number + year stay in the UI locale.
+		const monthName = lunarMonthName(system, firstISO, locale);
+		monthLabel = `${monthName} (${localeNum(nv.monthNum, locale)}) · ${lunarYearLabel(system, firstISO, nv.relatedYear, locale)}`;
+		isoForDay = (d) => isoShift(firstISO, d - 1);
 	} else {
 		const T = _Temporal;
 		const cal = TEMPORAL_CAL[system]!;
@@ -219,6 +363,7 @@ function displayDayNum(system: CalendarSystem, iso: string, locale: string): str
 	const [y, m, d] = iso.split('-').map(Number);
 	if (system === 'gregorian') return localeNum(d, locale);
 	if (system === 'hijri') { const h = _Hijri.gregorianToHijri(y, m, d); return localeNum(h.day, locale); }
+	if (system === 'chinese' || system === 'korean') return localeNum(lunarNav(iso, LUNISOLAR_CAL[system]!).day, locale);
 	const p = _Temporal.PlainDate.from(iso).withCalendar(TEMPORAL_CAL[system]!);
 	return localeNum(p.day, locale);
 }
@@ -230,6 +375,14 @@ export function stepMonth(system: CalendarSystem, year: number, month: number, d
 		let m = month + dir, y = year;
 		if (m > 12) { m = 1; y++; } else if (m < 1) { m = 12; y--; }
 		return { year: y, month: m };
+	}
+	if (system === 'chinese' || system === 'korean') {
+		// §B — lunisolar: `month` is an ORDINAL; the year has 12 OR 13 months (a leap year).
+		const cal = LUNISOLAR_CAL[system]!;
+		const total = lunarMonths(year, cal).length;
+		let o = month + dir, y = year;
+		if (o > total) { y++; o = 1; } else if (o < 1) { y--; o = lunarMonths(y, cal).length; }
+		return { year: y, month: o };
 	}
 	// Persian/Hebrew: month count varies (Hebrew leap years have 13) — use Temporal.
 	const T = _Temporal;
@@ -250,6 +403,12 @@ export async function culturalDateParts(
 	const [y, m, d] = iso.split('-').map(Number);
 	if (system === 'gregorian') return { year: y, month: m, day: d };
 	if (system === 'hijri') { const H = await getHijri(); const h = H.gregorianToHijri(y, m, d); return { year: h.year, month: h.month, day: h.day }; }
+	if (system === 'chinese' || system === 'korean') {
+		// §B — lunisolar: relatedYear + month number + day. (Leap-month disambiguation for the
+		// frontmatter field is a §C concern — the display path uses displayDayNum, not this.)
+		const nv = lunarNav(iso, LUNISOLAR_CAL[system]!);
+		return { year: nv.relatedYear, month: nv.monthNum, day: nv.day };
+	}
 	const T = await getTemporal();
 	const p = T.PlainDate.from(iso).withCalendar(TEMPORAL_CAL[system]!);
 	return { year: p.year, month: p.month, day: p.day };
@@ -375,11 +534,27 @@ function hijriRange(firstISO: string, lastISO: string, locale: string): string {
 	return `${myr(a)} – ${myr(b)} ${suffix}`;
 }
 
+/** §B — the lunisolar (chinese/korean) month range for a SECONDARY subtitle, "MonthName (N) Year"
+ *  with the leap marker carried by the localised name (闰二月 / 윤2월). Uses lunarNav on the boundary
+ *  ISOs directly (no ordinal math needed — the boundary date's own month is what we label). */
+function lunarRange(system: CalendarSystem, firstISO: string, lastISO: string, locale: string): string {
+	const cal = LUNISOLAR_CAL[system]!;
+	const fnv = lunarNav(firstISO, cal), lnv = lunarNav(lastISO, cal);
+	const name = (iso: string) => lunarMonthName(system, iso, locale);
+	const mn = (iso: string, nv: typeof fnv) => `${name(iso)} (${localeNum(nv.monthNum, locale)})`;
+	const myr = (iso: string, nv: typeof fnv) => `${mn(iso, nv)} ${lunarYearLabel(system, iso, nv.relatedYear, locale)}`;
+	const same = fnv.relatedYear === lnv.relatedYear && fnv.monthNum === lnv.monthNum && fnv.isLeap === lnv.isLeap;
+	if (same) return myr(lastISO, lnv);
+	if (fnv.relatedYear === lnv.relatedYear) return `${mn(firstISO, fnv)} – ${myr(lastISO, lnv)}`;
+	return `${myr(firstISO, fnv)} – ${myr(lastISO, lnv)}`;
+}
+
 /** The month-year range of [firstISO, lastISO] expressed in `system` — used for the SECONDARY-
  *  calendar subtitle. Gregorian/Hijri reuse their dedicated formatters; Temporal systems via Intl. */
 function systemRange(system: CalendarSystem, firstISO: string, lastISO: string, locale: string): string {
 	if (system === 'gregorian') return gregRange(firstISO, lastISO, locale);
 	if (system === 'hijri') return hijriRange(firstISO, lastISO, locale);
+	if (system === 'chinese' || system === 'korean') return lunarRange(system, firstISO, lastISO, locale);
 	const cal = TEMPORAL_CAL[system];
 	if (!cal || !_Temporal) return '';
 	try {
