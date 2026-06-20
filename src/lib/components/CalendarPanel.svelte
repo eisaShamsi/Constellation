@@ -19,6 +19,7 @@
 		onDayClick,
 		onOpenNote = (() => {}) as (entry: NoteDateEntry) => void,
 		onOpenTask = (() => {}) as (task: TaskItem) => void,
+		onToggleTask = (() => {}) as (task: TaskItem) => void,
 		primarySystem = 'gregorian' as CalendarSystem,
 		secondarySystem = 'none' as CalendarSystem | 'none',
 		weekStart = 0 as 0 | 1,
@@ -31,6 +32,7 @@
 		onDayClick: (date: string) => void;          // empty cell space → create/open the daily note
 		onOpenNote?: (entry: NoteDateEntry) => void;  // a note dot → open that note
 		onOpenTask?: (task: TaskItem) => void;        // a task dot → open that task (§A.2 adds line-jump)
+		onToggleTask?: (task: TaskItem) => void;      // §A.3 — check a task complete from the popover
 		primarySystem?: CalendarSystem;
 		secondarySystem?: CalendarSystem | 'none'; // the "second date under each day" ('none' = single calendar)
 		weekStart?: 0 | 1;
@@ -104,6 +106,9 @@
 	}
 	function pickNote(n: NoteDateEntry) { popover = null; onOpenNote(n); }
 	function pickTask(tk: TaskItem) { popover = null; onOpenTask(tk); }
+	// §A.3 — check off a task from the popover: complete it, then close (a completed task drops
+	// off the calendar, which the parent live-refreshes).
+	function toggleTaskFromPopover(tk: TaskItem) { popover = null; onToggleTask(tk); }
 </script>
 
 <div class="cal-root" dir={$dir} data-style-target="calendar">
@@ -184,10 +189,13 @@
 				</button>
 			{/each}
 			{#each popover.tasks as tk (tk.file_path + ':' + tk.line_number)}
-				<button class="cal-pop-row" onclick={() => pickTask(tk)}>
-					<span class="cal-pop-dot cal-task"></span>
-					<span class="cal-pop-label" dir="auto">{tk.text}</span>
-				</button>
+				<div class="cal-pop-row cal-pop-taskrow">
+					<input type="checkbox" class="cal-pop-check" aria-label={$t('calendarPanel.completeTask') || 'Complete task'} onclick={() => toggleTaskFromPopover(tk)} />
+					<button class="cal-pop-taskmain" onclick={() => pickTask(tk)}>
+						<span class="cal-pop-dot cal-task"></span>
+						<span class="cal-pop-label" dir="auto">{tk.text}</span>
+					</button>
+				</div>
 			{/each}
 		</div>
 	{/if}
@@ -306,6 +314,10 @@
 	}
 	.cal-pop-row { display: flex; align-items: center; gap: 8px; padding: 7px 9px; border: none; background: transparent; border-radius: 6px; cursor: pointer; text-align: start; font: inherit; color: var(--text, #1e293b); }
 	.cal-pop-row:hover { background: color-mix(in srgb, var(--cal-header-to, #1a6b4f) 8%, transparent); }
+	/* §A.3 — task rows pair a complete-checkbox with the open-button */
+	.cal-pop-taskrow { cursor: default; }
+	.cal-pop-check { flex: none; width: 15px; height: 15px; cursor: pointer; accent-color: var(--cal-task-dot, #ef4444); }
+	.cal-pop-taskmain { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; border: none; background: transparent; padding: 0; cursor: pointer; text-align: start; font: inherit; color: inherit; }
 	.cal-pop-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; }
 	.cal-pop-label { flex: 1; font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.cal-pop-badge { flex: none; font-size: 0.65rem; color: var(--cal-daily-dot, #d4a017); border: 1px solid var(--cal-daily-dot, #d4a017); border-radius: 4px; padding: 1px 5px; }

@@ -15,6 +15,7 @@ import { editProps as editNoteProps, close as closeNoteModel, repath as repathNo
 import { compose as composeNoteModel, markSaved as markNoteSaved, getModel as getNoteModel } from '$lib/editor/noteModel';
 import { SINGLE_OWNERSHIP } from '$lib/editor/ownershipFlag';
 import { setPendingLineJump } from '$lib/editor/lineJump'; // §A.2 — one-shot line jump (CM6-free)
+import { toggleTask } from '$lib/tasks/store'; // §A.3 — reconciled task toggle (tasks/store has no store dep → no cycle)
 
 export interface LibraryInfo {
 	id: string;
@@ -514,6 +515,38 @@ export async function reloadTabsFromDisk(filePaths: string[]): Promise<void> {
 	// The cascade just authored canonical disk content; any in-flight
 	// write-ahead buffer for these paths is now stale.
 	for (const fp of byPath.keys()) clearWriteAhead(fp);
+}
+
+/**
+ * MIG-082 §A.3 — toggle a task checkbox SAFELY when its note may be open.
+ *
+ * `toggle_task` (Rust) reads the file FROM DISK, flips the checkbox, and gate-writes it.
+ * Under Single-Ownership (MIG-076) the open editor's in-memory model is the save source — so a
+ * naked toggle would (1) operate on stale disk if the note has unsaved edits and (2) let the next
+ * debounced save REVERT the toggle (the model never learned about it). This helper closes both:
+ *   1. if the note is open AND dirty, FLUSH its model to disk first (so toggle reads the latest);
+ *   2. toggle on disk;
+ *   3. reloadTabsFromDisk → the model ADOPTS the toggled disk content + the {#key} remounts.
+ * Reuse this from EVERY toggle site (calendar, Tasks panel, GlobalTasksView) — it also fixes the
+ * pre-existing latent reconcile gap those sites had.
+ */
+export async function toggleTaskReconciled(filePath: string, lineNumber: number): Promise<void> {
+	const openTab = get(openTabs).find((t) => t.path === filePath);
+	if (openTab && isNoteDirty(openTab.id)) {
+		markRecentWrite(openTab.path);
+		await saveNoteSession(openTab.id, openTab.path, (p, c) => writeNote(p, c, 'task_toggle_flush'), 'task_toggle_flush');
+	}
+	await toggleTask(filePath, lineNumber);
+	// CRITICAL (BUG-015 F2 class): reloadTabsFromDisk bumps reloadVersion → {#key} remount → the OLD
+	// NotePane's onDestroy doFlush/handleFlush would write the editor's PRE-toggle body back, reverting
+	// the toggle on a dirty open note. markCascading suppresses that teardown flush + any in-flight
+	// debounced save across the reload window — the SAME guard the rename-cascade reload uses.
+	if (openTab) markCascading(openTab.path);
+	try {
+		await reloadTabsFromDisk([filePath]);
+	} finally {
+		if (openTab) clearCascading(openTab.path);
+	}
 }
 
 /** §3-redo.1 — flush every dirty tab in the affected library to disk

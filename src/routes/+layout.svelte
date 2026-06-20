@@ -24,7 +24,7 @@
 		scanLibraryLinks, scanLibraryTags, getBacklinks, getOutgoingLinks, scanUnlinkedMentions,
 		scanLibraryIndex, readIndexEntries, readTermMentions, readCooccurringTerms,
 		readNotePreview,
-		getDailyNotePath, updateLinksOnRename, getOldTitleForCascade, reloadTabsFromDisk,
+		getDailyNotePath, updateLinksOnRename, getOldTitleForCascade, reloadTabsFromDisk, toggleTaskReconciled,
 		flushAllTabsInLibrary, markCascading, clearCascading, clearAllCascading,
 		tabsInLibrary, quickCapture, cascadeFreeze,
 		loadBookmarks, addBookmark, removeBookmark, isBookmarked, bookmarks,
@@ -111,7 +111,7 @@
 	import SenseMakingCanvas from '$lib/components/SenseMakingCanvas.svelte';
 	import ConstellationMap from '$lib/components/ConstellationMap.svelte';
 	import Inspector360 from '$lib/components/Inspector360.svelte';
-	import { scanNoteTasks, toggleTask, scanLibraryNoteDates } from '$lib/tasks/store';
+	import { scanNoteTasks, scanLibraryNoteDates } from '$lib/tasks/store';
 	import type { TaskItem, NoteDateEntry } from '$lib/tasks/types';
 	import PropertyEditor from '$lib/components/PropertyEditor.svelte';
 	import PagePreview from '$lib/components/PagePreview.svelte';
@@ -1739,51 +1739,63 @@
 	// (was the right-rail Calendar tab, removed in §A). Populates the highlighted
 	// events on the full-page month grid.
 	let _calTimer: ReturnType<typeof setTimeout> | undefined;
+	// MIG-082 §A.1/§A.3 — scan the libraries for the calendar's per-date note/task entries.
+	// Extracted so a task toggle (§A.3) can LIVE-REFRESH the dots, not just on calendar reopen.
+	async function refreshCalendarData() {
+		try {
+			const libraryList = get(libraries);
+			const fmt = $appSettings.dailyNoteFormat;
+			const folder = $appSettings.dailyNoteFolder;
+			// Keep the full entry lists; de-dup notes by file_path per date (the scanner emits
+			// modified + frontmatter date: + created: per file) and OR is_daily.
+			const noteEntries: Record<string, NoteDateEntry[]> = {};
+			const byKey: Record<string, Map<string, NoteDateEntry>> = {};
+			const results = await Promise.all(
+				libraryList.map(v => scanLibraryNoteDates(v.path, v.name, fmt, folder))
+			);
+			for (const dateMap of results) {
+				for (const [date, entries] of Object.entries(dateMap)) {
+					const m = (byKey[date] ??= new Map<string, NoteDateEntry>());
+					for (const e of entries) {
+						const existing = m.get(e.file_path);
+						if (existing) existing.is_daily = existing.is_daily || e.is_daily;
+						else m.set(e.file_path, { ...e });
+					}
+				}
+			}
+			for (const [date, m] of Object.entries(byKey)) noteEntries[date] = [...m.values()];
+			// Tasks: keep the incomplete, due-dated tasks per date.
+			const taskEntries: Record<string, TaskItem[]> = {};
+			const { scanLibraryTasks } = await import('$lib/tasks/store');
+			const taskResults = await Promise.all(
+				libraryList.map(v => scanLibraryTasks(v.path, v.name))
+			);
+			for (const result of taskResults) {
+				for (const task of result.tasks) {
+					if (task.due_date && !task.completed) {
+						(taskEntries[task.due_date] ??= []).push(task);
+					}
+				}
+			}
+			calendarNoteEntries = noteEntries;
+			calendarTaskEntries = taskEntries;
+		} catch { /* Calendar scan failed */ }
+	}
 	$effect(() => {
 		const isVisible = showCalendarPage;
 		clearTimeout(_calTimer);
 		if (!isVisible) return;
-		_calTimer = setTimeout(async () => {
-			try {
-				const libraryList = get(libraries);
-				const fmt = $appSettings.dailyNoteFormat;
-				const folder = $appSettings.dailyNoteFolder;
-				// MIG-082 §A.1 — keep the full entry lists; de-dup notes by file_path per date
-				// (the scanner emits modified + frontmatter date: + created: per file) and OR is_daily.
-				const noteEntries: Record<string, NoteDateEntry[]> = {};
-				const byKey: Record<string, Map<string, NoteDateEntry>> = {};
-				const results = await Promise.all(
-					libraryList.map(v => scanLibraryNoteDates(v.path, v.name, fmt, folder))
-				);
-				for (const dateMap of results) {
-					for (const [date, entries] of Object.entries(dateMap)) {
-						const m = (byKey[date] ??= new Map<string, NoteDateEntry>());
-						for (const e of entries) {
-							const existing = m.get(e.file_path);
-							if (existing) existing.is_daily = existing.is_daily || e.is_daily;
-							else m.set(e.file_path, { ...e });
-						}
-					}
-				}
-				for (const [date, m] of Object.entries(byKey)) noteEntries[date] = [...m.values()];
-				// Tasks: keep the incomplete, due-dated tasks per date.
-				const taskEntries: Record<string, TaskItem[]> = {};
-				const { scanLibraryTasks } = await import('$lib/tasks/store');
-				const taskResults = await Promise.all(
-					libraryList.map(v => scanLibraryTasks(v.path, v.name))
-				);
-				for (const result of taskResults) {
-					for (const task of result.tasks) {
-						if (task.due_date && !task.completed) {
-							(taskEntries[task.due_date] ??= []).push(task);
-						}
-					}
-				}
-				calendarNoteEntries = noteEntries;
-				calendarTaskEntries = taskEntries;
-			} catch { /* Calendar scan failed */ }
-		}, 200);
+		_calTimer = setTimeout(() => { void refreshCalendarData(); }, 200);
 	});
+
+	// §A.3 — toggle a task complete from the calendar popover: reconciled (safe for an open note)
+	// then live-refresh the dots so a completed task drops off the calendar immediately.
+	async function handleCalendarToggleTask(task: TaskItem) {
+		try {
+			await toggleTaskReconciled(task.file_path, task.line_number);
+			if (showCalendarPage) await refreshCalendarData();
+		} catch (e) { console.error('Calendar task toggle failed:', e); }
+	}
 
 	// Status bar stats from focused tab (debounced to avoid per-keystroke recompute)
 	let wordCount = $state(0);
@@ -6357,6 +6369,7 @@
 							onDayClick={(dateStr) => { showCalendarPage = false; openDailyNote(dateStr); }}
 							onOpenNote={(e) => { showCalendarPage = false; openNoteTab(e.file_path, e.library_name, libraryColorMap[e.library_name] || '#7c3aed'); }}
 							onOpenTask={(tk) => { showCalendarPage = false; openNoteTab(tk.file_path, tk.library_name, libraryColorMap[tk.library_name] || '#7c3aed', undefined, undefined, undefined, tk.line_number); }}
+							onToggleTask={handleCalendarToggleTask}
 						/>
 					</div>
 				</div>
@@ -7313,15 +7326,14 @@
 								tasks={sidebarTasks}
 								onToggle={async (filePath, lineNumber) => {
 									try {
-										const newContent = await toggleTask(filePath, lineNumber);
-										const activeTab = get(focusedTab);
-										if (activeTab && activeTab.path === filePath) {
-											openTabs.update(tabs => tabs.map(t => t.path === filePath ? { ...t, content: newContent } : t));
-										}
+										// §A.3 — reconciled toggle (flush-if-dirty → toggle → reloadTabsFromDisk) so an
+										// OPEN note's model adopts the change and the next save can't revert it.
+										await toggleTaskReconciled(filePath, lineNumber);
 										if (sidebarTab?.path) {
 											const result = await scanNoteTasks(sidebarTab.path, sidebarTab.libraryName, sidebarTab.libraryPath);
 											sidebarTasks = result.tasks;
 										}
+										if (showCalendarPage) await refreshCalendarData();
 										// Notify SS so it can refresh its panels
 										if (secondScreenOpen) broadcastNoteSaved(filePath);
 									} catch (e) { console.error('Toggle task failed:', e); }

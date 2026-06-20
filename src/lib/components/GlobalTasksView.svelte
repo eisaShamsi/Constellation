@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { t, dir } from '$lib/i18n';
-	import { libraries, openNoteTab } from '$lib/libraries/store';
+	import { libraries, openNoteTab, toggleTaskReconciled } from '$lib/libraries/store';
 	import { get } from 'svelte/store';
-	import { scanLibraryTasks, toggleTask } from '$lib/tasks/store';
+	import { scanLibraryTasks } from '$lib/tasks/store';
 	import type { TaskItem } from '$lib/tasks/types';
 
 	let {
@@ -127,7 +127,9 @@
 
 	async function handleToggle(filePath: string, lineNumber: number) {
 		try {
-			await toggleTask(filePath, lineNumber);
+			// §A.3 — reconciled toggle so an OPEN note's model adopts the change (was a latent
+			// single-ownership gap: a plain toggle could be reverted by the note's next save).
+			await toggleTaskReconciled(filePath, lineNumber);
 			// Refresh
 			await loadAllTasks();
 		} catch (e) {

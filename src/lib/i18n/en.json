@@ -1515,7 +1515,8 @@
 		"notesCount": "{count} notes",
 		"tasksCount": "{count} tasks due",
 		"weekAbbrev": "Wk",
-		"dailyNote": "Daily note"
+		"dailyNote": "Daily note",
+		"completeTask": "Complete task"
 	},
 	"globalTasks": {
 		"title": "Global Tasks",
