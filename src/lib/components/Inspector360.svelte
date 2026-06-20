@@ -531,7 +531,11 @@
 	.i360-bars { display: flex; flex-direction: column; gap: 6px; }
 	.i360-bar-row {
 		display: grid;
-		grid-template-columns: 130px 1fr 60px;
+		/* MIG-080 §0b — label column shrinkable (minmax floor 0) so the fixed
+		   count column can't overflow a narrow sidebar and clip against the edge;
+		   keeps the .i360.compact 12px side inset intact (count stays 60px so
+		   the bars still align across rows). */
+		grid-template-columns: minmax(0, 130px) 1fr 60px;
 		align-items: center;
 		gap: 10px;
 		font-size: 1.4rem;
