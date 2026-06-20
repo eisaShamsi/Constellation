@@ -399,15 +399,15 @@ export function stepMonth(system: CalendarSystem, year: number, month: number, d
 export async function culturalDateParts(
 	system: CalendarSystem,
 	iso: string,
-): Promise<{ year: number; month: number; day: number }> {
+): Promise<{ year: number; month: number; day: number; leap?: boolean }> {
 	const [y, m, d] = iso.split('-').map(Number);
 	if (system === 'gregorian') return { year: y, month: m, day: d };
 	if (system === 'hijri') { const H = await getHijri(); const h = H.gregorianToHijri(y, m, d); return { year: h.year, month: h.month, day: h.day }; }
 	if (system === 'chinese' || system === 'korean') {
-		// §B — lunisolar: relatedYear + month number + day. (Leap-month disambiguation for the
-		// frontmatter field is a §C concern — the display path uses displayDayNum, not this.)
+		// §B — lunisolar: relatedYear + month number + day. §C — `leap` lets the converter append an
+		// 'L' marker (2026-05L-06) so a leap month is distinguishable from its non-leap sibling.
 		const nv = lunarNav(iso, LUNISOLAR_CAL[system]!);
-		return { year: nv.relatedYear, month: nv.monthNum, day: nv.day };
+		return { year: nv.relatedYear, month: nv.monthNum, day: nv.day, leap: nv.isLeap };
 	}
 	const T = await getTemporal();
 	const p = T.PlainDate.from(iso).withCalendar(TEMPORAL_CAL[system]!);
@@ -459,6 +459,10 @@ export function frontmatterKey(system: CalendarSystem): string | null {
 		case 'hijri': return 'hijri';
 		case 'solar-hijri': return 'jalali';
 		case 'hebrew': return 'hebrew';
+		case 'indian': return 'saka';
+		case 'buddhist': return 'buddhist';
+		case 'chinese': return 'chinese';
+		case 'korean': return 'dangi';
 		default: return null;
 	}
 }

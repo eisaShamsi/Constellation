@@ -7,7 +7,7 @@
 	import { get } from 'svelte/store';
 	import { onMount, onDestroy } from 'svelte';
 	import { appSettings } from '$lib/libraries/store';
-	import { culturalDateParts, applyCalendarPrefs } from '$lib/calendar/calendarMath'; // §C — Gregorian→Hijri property converter
+	import { culturalDateParts, applyCalendarPrefs, frontmatterKey, type CalendarSystem } from '$lib/calendar/calendarMath'; // §C — Gregorian→cultural property converter
 	import { invoke } from '@tauri-apps/api/core';
 
 	// Share the user's configured pill shape with BacklinksPanel /
@@ -530,16 +530,31 @@
 		debouncedSave();
 	}
 
-	// §C — Gregorian→Hijri property converter. The note's primary date = `date:` if present, else `created:`;
-	// if neither, fall back to the file's creation date. The button shows only while there's no `hijri:` yet.
-	// Writes through the SAME path as a manual edit (mutate editableProps → debouncedSave → saveTabContent).
+	// §C — Gregorian→cultural-date converter (ALL selected calendars). The note's primary date = `date:` if
+	// present, else `created:`; if neither, fall back to the file's creation date. A "+ X" button appears per
+	// non-Gregorian calendar the user has selected (primary/secondary), only while that calendar's property
+	// is absent. Writes through the SAME path as a manual edit (mutate editableProps → debouncedSave).
+	const CAL_LABEL_KEY: Record<string, string> = {
+		hijri: 'propertyEditor.hijri', 'solar-hijri': 'propertyEditor.jalali', hebrew: 'propertyEditor.hebrew',
+		indian: 'propertyEditor.saka', buddhist: 'propertyEditor.buddhist', chinese: 'propertyEditor.chinese', korean: 'propertyEditor.korean',
+	};
+	const selectedCulturalCals = $derived.by(() => {
+		const out: { system: CalendarSystem; key: string; labelKey: string }[] = [];
+		const seen = new Set<string>();
+		for (const s of [$appSettings.calendarPrimarySystem, $appSettings.calendarSecondarySystem]) {
+			if (!s || s === 'gregorian' || s === 'none' || seen.has(s)) continue;
+			const k = frontmatterKey(s as CalendarSystem);
+			if (k) { seen.add(s); out.push({ system: s as CalendarSystem, key: k, labelKey: CAL_LABEL_KEY[s] ?? 'propertyEditor.hijri' }); }
+		}
+		return out;
+	});
 	const primaryDateKey = $derived(
 		editableProps.some((p) => p.key === 'date') ? 'date'
 		: editableProps.some((p) => p.key === 'created') ? 'created'
 		: null
 	);
-	const hasHijriProp = $derived(editableProps.some((p) => p.key === 'hijri'));
-	async function addHijriDate() {
+	const hasProp = (key: string) => editableProps.some((p) => p.key === key);
+	async function addCulturalDate(system: CalendarSystem, key: string) {
 		let iso: string | undefined;
 		if (primaryDateKey) {
 			const dp = editableProps.find((p) => p.key === primaryDateKey);
@@ -555,12 +570,12 @@
 		if (!iso) return;
 		try {
 			await applyCalendarPrefs($appSettings.calendarCorrections ?? {}, $appSettings.calendarCalculationMode ?? 'astronomical');
-			const p = await culturalDateParts('hijri', iso);
-			if (!mounted) return; // teardown happened during the await — don't write to a detached instance (onDestroy already flushed)
-			const val = `${p.year}-${String(p.month).padStart(2, '0')}-${String(p.day).padStart(2, '0')}`;
-			const i = editableProps.findIndex((pp) => pp.key === 'hijri');
+			const p = await culturalDateParts(system, iso);
+			if (!mounted) return; // teardown during the await — don't write to a detached instance (onDestroy already flushed)
+			const val = `${p.year}-${String(p.month).padStart(2, '0')}${p.leap ? 'L' : ''}-${String(p.day).padStart(2, '0')}`;
+			const i = editableProps.findIndex((pp) => pp.key === key);
 			if (i >= 0) editableProps = editableProps.map((pp, j) => (j === i ? { ...pp, value: val } : pp));
-			else editableProps = [...editableProps, { key: 'hijri', value: val, type: 'text' as PropertyType }];
+			else editableProps = [...editableProps, { key, value: val, type: 'text' as PropertyType }];
 			debouncedSave();
 		} catch { /* engine unavailable — never block */ }
 	}
@@ -1018,8 +1033,12 @@
 					oninput={(e) => updateValue(idx, (e.target as HTMLInputElement).value)} />
 			{/if}
 
-			{#if !hasHijriProp && prop.key === primaryDateKey}
-				<button class="pe-hijri-btn" onclick={addHijriDate} title={$t('propertyEditor.addHijri') || 'Add the Hijri equivalent'}>+ {$t('propertyEditor.hijri') || 'Hijri'}</button>
+			{#if prop.key === primaryDateKey}
+				{#each selectedCulturalCals as cal (cal.key)}
+					{#if !hasProp(cal.key)}
+						<button class="pe-hijri-btn" onclick={() => addCulturalDate(cal.system, cal.key)} title={$t('propertyEditor.addCulturalDate') || 'Add the equivalent date'}>+ {$t(cal.labelKey)}</button>
+					{/if}
+				{/each}
 			{/if}
 			<button class="pe-del" onclick={() => removeProperty(idx)} title={$t('propertyEditor.delete')}>
 				<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
@@ -1027,8 +1046,12 @@
 		</div>
 	{/each}
 
-	{#if !hasHijriProp && primaryDateKey === null}
-		<button class="pe-add pe-hijri-add" onclick={addHijriDate}>+ {$t('propertyEditor.addHijri') || 'Add Hijri date'}</button>
+	{#if primaryDateKey === null}
+		{#each selectedCulturalCals as cal (cal.key)}
+			{#if !hasProp(cal.key)}
+				<button class="pe-add pe-hijri-add" onclick={() => addCulturalDate(cal.system, cal.key)}>+ {$t(cal.labelKey)}</button>
+			{/if}
+		{/each}
 	{/if}
 	<button class="pe-add" bind:this={addBtnRef} onclick={addProperty}>
 		+ {$t('propertyEditor.addProperty')}
