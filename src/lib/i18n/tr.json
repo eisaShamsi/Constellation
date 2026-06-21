@@ -1734,7 +1734,17 @@
 		"none": "Hiçbiri bulunamadı",
 		"more": "daha fazla",
 		"analyzing": "Kitaplık analiz ediliyor…",
-		"unavailable": "Analiz kullanılamıyor — yeniden denemek için sekme değiştirip geri dönün."
+		"unavailable": "Analiz kullanılamıyor — yeniden denemek için sekme değiştirip geri dönün.",
+		"analyzingNote": "Bu notun sağlığı analiz ediliyor…",
+		"noteHealthy": "Bu not için herhangi bir düşünsel gerilim bulunamadı — iyi bağlantılı.",
+		"noteNotAnalyzed": "Bu not henüz analiz edilmedi — yeni oluşturulmuş ya da hâlâ dizine ekleniyor olabilir.",
+		"noteAmbiguous": "Bu not başlığını başka bir notla paylaşıyor — durumu güvenilir biçimde değerlendirilemiyor.",
+		"detail": {
+			"contradicts": "\"{0}\" ile çelişiyor",
+			"contradictedBy": "\"{0}\" tarafından çürütülüyor",
+			"orphan": "{0} kelime, gelen bağlantı yok",
+			"singlePoint": "{0} not tarafından atıf yapılıyor, yalnızca {1} kaynak"
+		}
 	},
 	"provenancePanel": {
 		"loading": "Yükleniyor...",

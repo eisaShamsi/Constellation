@@ -1734,7 +1734,17 @@
 		"none": "未找到",
 		"more": "更多",
 		"analyzing": "正在分析文库…",
-		"unavailable": "分析不可用——切换标签页后返回即可重试。"
+		"unavailable": "分析不可用——切换标签页后返回即可重试。",
+		"analyzingNote": "正在分析这条笔记的健康状况…",
+		"noteHealthy": "未发现这条笔记存在思想张力 — 它的关联很完善。",
+		"noteNotAnalyzed": "此笔记尚未分析——它可能是新建的，或仍在索引中。",
+		"noteAmbiguous": "此笔记与另一条笔记标题相同——无法可靠地评估其健康状况。",
+		"detail": {
+			"contradicts": "与“{0}”矛盾",
+			"contradictedBy": "被“{0}”反驳",
+			"orphan": "{0} 个字，无入站链接",
+			"singlePoint": "被 {0} 条笔记引用，仅 {1} 个来源"
+		}
 	},
 	"provenancePanel": {
 		"loading": "加载中...",

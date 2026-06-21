@@ -421,6 +421,7 @@ pub fn run() {
             strata::compute_note_strata,
             maturity::compute_note_maturity,
             tension::detect_tensions,
+            tension::note_tension_status,
             provenance::get_provenance_chain,
             provenance::compute_note_origins,
             review::get_due_notes,

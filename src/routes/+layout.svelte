@@ -464,9 +464,16 @@
 	// one entry. Click-back walks all the way to the original source.
 	let inspector360BackStack = $state<Array<{path: string; name: string}>>([]);
 	let trailIndex = $state(0); // CE Phase 8: current note index in trail
-	let tensionReport = $state<any>(null); // CE Phase 4: TensionReport
+	let tensionReportFull = $state<any>(null); // MIG-080 §E: the LIBRARY-wide TensionReport. The heavy detection runs ONCE per library and is cached (Rule 8 — NOT re-run per note-switch); the note-scoped Health tab slices it client-side (the `tensionReport` $derived, after sidebarTab).
 	let tensionLoading = $state(false); // analyzing state for the health tab
-	let _tensionLibPath: string | null = null; // cache guard — re-fetch only when the library changes
+	let _tensionLibPath: string | null = null; // cache guard — re-detect only when the LIBRARY changes
+	let _tensionSeq = 0; // §E cancel-previous guard
+	// MIG-080 §E — O(1) reliability status for the open note (indexed? title shared?).
+	// Gates the positive "healthy" state so an unindexed or duplicate-titled note shows
+	// an honest "not analyzed / shared title" state instead of a false clean bill.
+	let tensionNoteStatus = $state<{ indexed: boolean; ambiguous_title: boolean } | null>(null);
+	let _tensionStatusSeq = 0;
+	let _tensionSaveTimer: ReturnType<typeof setTimeout> | null = null; // §E-fix #2 — debounce the save-driven re-detect
 	let provenanceChain = $state<any>(null); // CE Phase 5: ProvenanceChain
 	let _lastProvenancePath = ''; // cache guard — only re-fetch when note changes
 
@@ -1393,6 +1400,10 @@
 
 	// Sidebar data: derived from focused tab (whichever pane has focus)
 	const sidebarTab = $derived($focusedTab);
+	// MIG-080 §E — the right-rail Health tab shows the LIBRARY tension report sliced
+	// to the OPEN note (cheap, reactive; the heavy detection is cached per-library in
+	// tensionReportFull). Re-derives on note-switch without re-invoking Rust.
+	const tensionReport = $derived(filterTensionsForNote(tensionReportFull, sidebarTab?.name ?? null, sidebarTab?.path ?? null));
 
 	// CE Phase 12 — fetch Note360View when Inspector 360 is visible.
 	// Read through $derived string values so identity-change of sidebarTab
@@ -3042,6 +3053,37 @@
 		});
 		cleanupFns.push(() => { try { unlistenCacheReconciled(); } catch {} });
 
+		// MIG-080 §E (#7) — when the note whose Health is currently shown is saved, its
+		// tensions may have changed (added/removed a `contradicts` link, grew past an
+		// orphan word-count tier, gained/lost an inbound link). Invalidate the per-library
+		// tension cache + reload so the right-rail Health reflects the edit without a
+		// manual note-switch. Scoped to the OPEN note + an active Health tab so it does
+		// NOT re-detect the library on every unrelated save.
+		const unlistenTensionSave = await listen<{ path?: string }>('screen:note-saved', (event) => {
+			const savedPath = event.payload?.path;
+			if (!savedPath) return;
+			// §E-fix #6 — match the health-trigger $effect's gate exactly (incl. isHome).
+			if (rightSidebarTab === 'health' && isHome && sidebarTab && savedPath === sidebarTab.path) {
+				// §E-fix #2 — a typing session fires 'screen:note-saved' every ~1.5 s (the
+				// NotePane autosave). Debounce so a burst coalesces into ONE full-library
+				// re-detect ~2.5 s after edits settle, not one scan per autosave tick (Rule 8).
+				if (_tensionSaveTimer) clearTimeout(_tensionSaveTimer);
+				_tensionSaveTimer = setTimeout(() => {
+					_tensionSaveTimer = null;
+					// Re-check the note is still the open one + Health still active.
+					if (rightSidebarTab === 'health' && isHome && sidebarTab && sidebarTab.path === savedPath) {
+						_tensionLibPath = null; // force a fresh detect for this library
+						void loadTensionReport(savedPath);
+						void loadNoteTensionStatus(savedPath);
+					}
+				}, 2500);
+			}
+		});
+		cleanupFns.push(() => {
+			try { unlistenTensionSave(); } catch {}
+			if (_tensionSaveTimer) { clearTimeout(_tensionSaveTimer); _tensionSaveTimer = null; }
+		});
+
 		// Search engine init is driven by cache_reconcile() (which invokes
 		// constellation_search_init on a background thread). When it finishes
 		// the cache-reconciled event fires; we load link counts then.
@@ -3636,25 +3678,77 @@
 	// library (the old wiring scanned libPaths[0] — the wrong library in any
 	// multi-library universe); cached per library path; a failed run clears
 	// the guard so the next activation retries.
+	// MIG-080 §E — slice a LIBRARY TensionReport down to ONE note (the right-rail
+	// Health tab). TensionItems (contradictions / orphans / single_points) match on
+	// note_path; structural_gaps match on FULL cluster membership (member_names,
+	// lower-cased) — NOT the truncated 5-name display list. The counts
+	// (total_linked_notes / active) stay library-wide so the "<50 linked notes"
+	// inactive state still reads. Cheap array filter — runs client-side, reactively.
+	function filterTensionsForNote(report: any, noteName: string | null, notePath: string | null): any {
+		if (!report || !notePath) return report;
+		const nm = noteName ? noteName.toLowerCase() : null;
+		return {
+			...report,
+			contradictions: (report.contradictions ?? []).filter((t: any) => t.note_path === notePath),
+			orphans: (report.orphans ?? []).filter((t: any) => t.note_path === notePath),
+			single_points: (report.single_points ?? []).filter((t: any) => t.note_path === notePath),
+			structural_gaps: nm
+				? (report.structural_gaps ?? []).filter((g: any) =>
+						((g.member_names ?? g.notes ?? []) as string[]).some((n) => n.toLowerCase() === nm))
+				: [],
+		};
+	}
+
 	async function loadTensionReport(notePath: string) {
 		const lib = $libraryStats.find(l => notePath.startsWith(l.path));
 		if (!lib) return;
-		if (_tensionLibPath === lib.path && (tensionReport || tensionLoading)) return;
+		// MIG-080 §E — detect ONCE per library and cache (Rule 8: NOT per note-switch —
+		// the note-scoped slice happens client-side in the `tensionReport` $derived).
+		// The cancel-previous `seq` guard prevents a slow detect overwriting a newer one.
+		if (_tensionLibPath === lib.path && (tensionReportFull || tensionLoading)) return;
 		_tensionLibPath = lib.path;
+		const seq = ++_tensionSeq;
 		tensionLoading = true;
 		try {
-			tensionReport = await invoke('detect_tensions', { libraryPath: lib.path, libraryName: lib.name });
+			const r = await invoke('detect_tensions', { libraryPath: lib.path, libraryName: lib.name });
+			if (seq !== _tensionSeq) return; // superseded by a newer library
+			tensionReportFull = r;
 		} catch (e) {
+			if (seq !== _tensionSeq) return;
 			console.error('detect_tensions failed:', e);
-			tensionReport = null;
+			tensionReportFull = null;
 			_tensionLibPath = null; // allow retry on next activation
 		}
-		tensionLoading = false;
+		if (seq === _tensionSeq) tensionLoading = false;
 	}
+
+	// MIG-080 §E — the O(1) reliability check (whether the open note was reliably
+	// analyzed). Cheap two-lookup IPC; cancel-previous guard for rapid switches.
+	async function loadNoteTensionStatus(notePath: string) {
+		const lib = $libraryStats.find(l => notePath.startsWith(l.path));
+		if (!lib) { tensionNoteStatus = null; return; }
+		const seq = ++_tensionStatusSeq;
+		// §E-fix #1 — clear the PREVIOUS note's status before the await. The report
+		// slice + noteContext are synchronous $derived (flip instantly on switch), so
+		// without this the panel would briefly judge the new note's report against the
+		// old note's status (a false "healthy" / false "shared title" flash). Null →
+		// the panel shows the pending state until this O(1) lookup resolves.
+		tensionNoteStatus = null;
+		try {
+			const s = await invoke('note_tension_status', { libraryName: lib.name, notePath });
+			if (seq !== _tensionStatusSeq) return;
+			tensionNoteStatus = s as { indexed: boolean; ambiguous_title: boolean };
+		} catch (e) {
+			if (seq !== _tensionStatusSeq) return;
+			console.error('note_tension_status failed:', e);
+			tensionNoteStatus = null;
+		}
+	}
+
 	$effect(() => {
 		if (rightSidebarTab === 'health' && isHome && sidebarTab) {
 			const p = sidebarTab.path;
-			untrack(() => { void loadTensionReport(p); });
+			untrack(() => { void loadTensionReport(p); void loadNoteTensionStatus(p); });
 		}
 	});
 
@@ -7377,6 +7471,8 @@
 						<TensionPanel
 							report={tensionReport}
 							loading={tensionLoading}
+							noteContext={sidebarTab?.name ?? null}
+							noteStatus={tensionNoteStatus}
 							{libraryColorMap}
 							onNoteClick={(path, name) => {
 								const lib = $libraryStats.find(l => path.startsWith(l.path));

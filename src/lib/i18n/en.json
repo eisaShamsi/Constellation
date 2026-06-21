@@ -1909,7 +1909,17 @@
 		"none": "None found",
 		"more": "more",
 		"analyzing": "Analyzing library…",
-		"unavailable": "Analysis unavailable — switch tabs and back to retry."
+		"unavailable": "Analysis unavailable — switch tabs and back to retry.",
+		"analyzingNote": "Analyzing this note’s health…",
+		"noteHealthy": "No tensions detected for this note — it’s well-connected.",
+		"noteNotAnalyzed": "This note isn’t analyzed yet — it may be newly created or still indexing.",
+		"noteAmbiguous": "This note shares its title with another — its health can’t be reliably assessed.",
+		"detail": {
+			"contradicts": "contradicts \"{0}\"",
+			"contradictedBy": "contradicted by \"{0}\"",
+			"orphan": "{0} words, no inbound links",
+			"singlePoint": "referenced by {0} notes, only {1} source"
+		}
 	},
 	"provenancePanel": {
 		"loading": "Loading...",

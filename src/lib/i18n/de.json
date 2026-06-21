@@ -1305,7 +1305,17 @@
 		"none": "Keine gefunden",
 		"more": "mehr",
 		"analyzing": "Bibliothek wird analysiert …",
-		"unavailable": "Analyse nicht verfügbar – Tab wechseln und zurückkehren, um es erneut zu versuchen."
+		"unavailable": "Analyse nicht verfügbar – Tab wechseln und zurückkehren, um es erneut zu versuchen.",
+		"analyzingNote": "Gesundheit dieser Notiz wird analysiert…",
+		"noteHealthy": "Keine Spannungen für diese Notiz gefunden – sie ist gut vernetzt.",
+		"noteNotAnalyzed": "Diese Notiz wurde noch nicht analysiert — sie ist möglicherweise neu erstellt oder wird noch indexiert.",
+		"noteAmbiguous": "Diese Notiz teilt ihren Titel mit einer anderen — ihr Zustand lässt sich nicht zuverlässig bewerten.",
+		"detail": {
+			"contradicts": "widerspricht \"{0}\"",
+			"contradictedBy": "wird widersprochen von \"{0}\"",
+			"orphan": "{0} Wörter, keine eingehenden Verknüpfungen",
+			"singlePoint": "von {0} Notizen referenziert, nur {1} Quelle"
+		}
 	},
 	"provenancePanel": {
 		"loading": "Wird geladen...",

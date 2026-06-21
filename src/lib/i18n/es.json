@@ -1305,7 +1305,17 @@
 		"none": "No se encontró ninguno",
 		"more": "más",
 		"analyzing": "Analizando la biblioteca…",
-		"unavailable": "Análisis no disponible: cambia de pestaña y vuelve para reintentar."
+		"unavailable": "Análisis no disponible: cambia de pestaña y vuelve para reintentar.",
+		"analyzingNote": "Analizando la salud de esta nota…",
+		"noteHealthy": "No se detectaron tensiones en esta nota: está bien conectada.",
+		"noteNotAnalyzed": "Esta nota aún no se ha analizado — puede ser nueva o estar indexándose todavía.",
+		"noteAmbiguous": "Esta nota comparte su título con otra — no se puede evaluar su estado de forma fiable.",
+		"detail": {
+			"contradicts": "contradice \"{0}\"",
+			"contradictedBy": "contradicha por \"{0}\"",
+			"orphan": "{0} palabras, sin enlaces entrantes",
+			"singlePoint": "referenciada por {0} notas, solo {1} fuente"
+		}
 	},
 	"provenancePanel": {
 		"loading": "Cargando...",

@@ -44,14 +44,25 @@ pub struct TensionItem {
     pub note_name: String,
     pub note_path: String,
     pub severity: String, // "low" | "medium" | "high"
-    pub detail: String,
+    pub detail: String,   // English fallback + the Rust-test oracle
+    // MIG-080 §E — localization handle: the frontend renders the user-facing detail
+    // from `detail_kind` + `detail_args` via $t (the hardcoded `detail` above was the
+    // only un-i18n'd user string on the Health surface). kinds:
+    // "contradicts" | "contradicted_by" | "orphan" | "single_point".
+    pub detail_kind: String,
+    pub detail_args: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
 pub struct GapItem {
     pub tag: String,
-    pub notes: Vec<String>, // note names in the cluster with no cross-links
+    pub notes: Vec<String>, // note names in the cluster (top 5, for display)
     pub severity: String,
+    // MIG-080 §E — the FULL cluster membership (lower-cased note names). The
+    // note-scoped Health tab tests whether the open note is in THIS gap against
+    // this list — `notes` is truncated to 5 for display and must NOT be used for
+    // membership (a note in a >5-member gap would be missed non-deterministically).
+    pub member_names: Vec<String>,
 }
 
 struct NoteInfo {
@@ -86,6 +97,65 @@ pub fn detect_tensions(
     };
 
     Ok(detect_from_notes(notes))
+}
+
+/// MIG-080 §E — whether the open note can be RELIABLY analyzed for note-scoped
+/// Health. The library tension detection is name-keyed (links resolve by note
+/// name), so two notes sharing a title collapse (last-wins) and the loser would
+/// look "healthy"; and a not-yet-indexed note isn't in the analyzed set at all.
+/// Two O(1) indexed lookups — NOT the full detection — so this is cheap to call
+/// per note-switch alongside the cached library report.
+#[derive(Debug, Clone, Serialize)]
+pub struct NoteTensionStatus {
+    pub indexed: bool,        // the note has a note_meta row (it was indexed)
+    pub ambiguous_title: bool, // another note in the library shares its (case-insensitive) title
+}
+
+#[tauri::command(async)]
+pub fn note_tension_status(
+    app: tauri::AppHandle,
+    library_name: String,
+    note_path: String,
+) -> Result<NoteTensionStatus, String> {
+    let state = app.state::<crate::search::SearchState>();
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let conn = db.as_ref().ok_or("Search DB not initialized")?;
+    compute_note_tension_status(conn, &library_name, &note_path)
+}
+
+/// Pure core of `note_tension_status` (testable against an in-memory DB).
+fn compute_note_tension_status(
+    conn: &rusqlite::Connection,
+    library_name: &str,
+    note_path: &str,
+) -> Result<NoteTensionStatus, String> {
+    let name: Option<String> = match conn.query_row(
+        "SELECT name FROM note_meta WHERE path = ?1",
+        rusqlite::params![note_path],
+        |r| r.get::<_, String>(0),
+    ) {
+        Ok(n) => Some(n),
+        Err(rusqlite::Error::QueryReturnedNoRows) => None,
+        Err(e) => return Err(e.to_string()),
+    };
+
+    let ambiguous_title = if let Some(ref n) = name {
+        let cnt: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM note_meta WHERE library_name = ?1 AND LOWER(name) = LOWER(?2)",
+                rusqlite::params![library_name, n],
+                |r| r.get(0),
+            )
+            .map_err(|e| e.to_string())?;
+        cnt > 1
+    } else {
+        false
+    };
+
+    Ok(NoteTensionStatus {
+        indexed: name.is_some(),
+        ambiguous_title,
+    })
 }
 
 /// Build the per-library `NoteInfo` map from the DB — the same shape the
@@ -223,33 +293,60 @@ fn detect_from_notes(notes: HashMap<String, NoteInfo>) -> TensionReport {
     // input row-unique per (source, type, target), so the old ×N
     // occurrence counter became unreachable and was removed in /simplify;
     // the map stays as the defensive pair-dedupe + stable-sort anchor.
-    // key: (source_path, target_lower) → (source_name, target_display)
-    let mut contradiction_pairs: HashMap<(String, String), (String, String)> = HashMap::new();
+    // key: (source_path, target_lower) → (source_name, target_name, target_path)
+    let mut contradiction_pairs: HashMap<(String, String), (String, String, String)> =
+        HashMap::new();
     for info in notes.values() {
         for (target, link_type) in &info.outgoing {
             if link_type.as_deref() == Some("contradicts") {
                 if let Some(target_info) = notes.get(target) {
                     contradiction_pairs
                         .entry((info.path.clone(), target.clone()))
-                        .or_insert_with(|| (info.name.clone(), target_info.name.clone()));
+                        .or_insert_with(|| {
+                            (
+                                info.name.clone(),
+                                target_info.name.clone(),
+                                target_info.path.clone(),
+                            )
+                        });
                 }
             }
         }
     }
     // Stable order by source name (HashMap order is random per run; the
     // panel should not reshuffle on every open).
-    let mut pair_rows: Vec<((String, String), (String, String))> =
+    let mut pair_rows: Vec<((String, String), (String, String, String))> =
         contradiction_pairs.into_iter().collect();
-    pair_rows.sort_by(|a, b| a.1.0.cmp(&b.1.0));
-    let contradictions: Vec<TensionItem> = pair_rows
-        .into_iter()
-        .map(|((path, _), (name, target_display))| TensionItem {
-            note_name: name,
-            note_path: path,
+    pair_rows.sort_by(|a, b| a.1 .0.cmp(&b.1 .0));
+    // MIG-080 §E — emit BOTH perspectives so the note-scoped Health tab surfaces the
+    // tension whether the open note is the SOURCE (it contradicts X) or the TARGET
+    // (it is contradicted by Y) of the `contradicts` link. A contradicted note is
+    // NOT healthy. (`detect_tensions` is now consumed only by the note-scoped filter,
+    // so the per-pair duplication is sliced back apart per note.)
+    let mut contradictions: Vec<TensionItem> = Vec::new();
+    for ((source_path, _), (source_name, target_name, target_path)) in pair_rows {
+        // A note that `contradicts`-links itself has no meaningful "contradicted by"
+        // counterpart — emit one row, not two near-identical ones.
+        let is_self = source_path == target_path;
+        contradictions.push(TensionItem {
+            note_name: source_name.clone(),
+            note_path: source_path,
             severity: "high".to_string(),
-            detail: format!("contradicts \"{}\"", target_display),
-        })
-        .collect();
+            detail: format!("contradicts \"{}\"", target_name),
+            detail_kind: "contradicts".to_string(),
+            detail_args: vec![target_name.clone()],
+        });
+        if !is_self {
+            contradictions.push(TensionItem {
+                note_name: target_name,
+                note_path: target_path,
+                severity: "high".to_string(),
+                detail: format!("contradicted by \"{}\"", source_name),
+                detail_kind: "contradicted_by".to_string(),
+                detail_args: vec![source_name],
+            });
+        }
+    }
 
     // Detection 2: Orphans (0 inbound links, has content)
     let mut orphans: Vec<TensionItem> = Vec::new();
@@ -264,6 +361,8 @@ fn detect_from_notes(notes: HashMap<String, NoteInfo>) -> TensionReport {
                 note_path: info.path.clone(),
                 severity: severity.to_string(),
                 detail: format!("{} words, no inbound links", info.word_count),
+                detail_kind: "orphan".to_string(),
+                detail_args: vec![info.word_count.to_string()],
             });
         }
     }
@@ -300,16 +399,24 @@ fn detect_from_notes(notes: HashMap<String, NoteInfo>) -> TensionReport {
         // If fewer than 20% of possible links exist, it's a gap
         let possible = members.len() * (members.len() - 1);
         if possible > 0 && cross_links * 5 < possible {
-            let note_names: Vec<String> = members.iter()
+            // Deterministic display: sort the resolved names, then take 5 (the
+            // HashMap-iteration order of `members` is otherwise random per run).
+            let mut all_names: Vec<String> = members.iter()
                 .filter_map(|m| notes.get(m).map(|i| i.name.clone()))
-                .take(5)
                 .collect();
+            all_names.sort();
+            let note_names: Vec<String> = all_names.iter().take(5).cloned().collect();
+            // MIG-080 §E — full membership (lower-cased keys) for note-scoped filtering.
+            let mut member_names = members.clone();
+            member_names.sort();
+            member_names.dedup();
             structural_gaps.push(GapItem {
                 tag: tag.clone(),
                 notes: note_names,
                 severity: if members.len() >= 8 { "high".to_string() }
                     else if members.len() >= 5 { "medium".to_string() }
                     else { "low".to_string() },
+                member_names,
             });
         }
     }
@@ -330,6 +437,8 @@ fn detect_from_notes(notes: HashMap<String, NoteInfo>) -> TensionReport {
                         severity: if sources.len() >= 10 { "high".to_string() }
                             else { "medium".to_string() },
                         detail: format!("referenced by {} notes, only {} source", sources.len(), derives_count),
+                        detail_kind: "single_point".to_string(),
+                        detail_args: vec![sources.len().to_string(), derives_count.to_string()],
                     });
                 }
             }
@@ -434,11 +543,27 @@ mod tests_mig075_tension {
         add_link(&conn, "A", "n0", "n5", "contradicts", "active");
         let report = detect_from_notes(load_notes_from_db(&conn, "A").unwrap());
         assert!(report.active);
-        assert_eq!(report.contradictions.len(), 1);
-        let row = &report.contradictions[0];
-        assert_eq!(row.note_name, "n0");
-        assert!(row.detail.contains("contradicts"), "{}", row.detail);
-        assert!(!row.detail.contains('×'), "no occurrence multiplier from row-unique input: {}", row.detail);
+        // MIG-080 §E — TWO rows per pair: the SOURCE ("contradicts") and the TARGET
+        // ("contradicted by"), so a contradicted note also surfaces the tension in its
+        // note-scoped Health tab. Still NO ×N occurrence multiplier (the old bug).
+        assert_eq!(report.contradictions.len(), 2);
+        let source = report
+            .contradictions
+            .iter()
+            .find(|r| r.note_name == "n0")
+            .expect("source row");
+        assert!(source.detail.contains("contradicts"), "{}", source.detail);
+        assert_eq!(source.detail_kind, "contradicts");
+        let target = report
+            .contradictions
+            .iter()
+            .find(|r| r.note_name == "n5")
+            .expect("target row");
+        assert!(target.detail.contains("contradicted by"), "{}", target.detail);
+        assert_eq!(target.detail_kind, "contradicted_by");
+        for row in &report.contradictions {
+            assert!(!row.detail.contains('×'), "no occurrence multiplier: {}", row.detail);
+        }
     }
 
     #[test]
@@ -461,5 +586,43 @@ mod tests_mig075_tension {
         assert!(report.orphans.iter().any(|o| o.note_name == "Lonely"), "orphan found");
         assert!(report.structural_gaps.iter().any(|g| g.tag == "cluster"), "tag-cluster gap found");
         assert!(report.single_points.iter().any(|s| s.note_name == "Hub"), "SPOF found");
+    }
+
+    #[test]
+    fn note_tension_status_indexed_and_ambiguous() {
+        let conn = mem_db();
+        add_note(&conn, "A", "Unique", 30, "[]"); // /A/Unique.md
+        // Two notes sharing a (case-insensitive) title within library A, distinct paths:
+        conn.execute(
+            "INSERT INTO note_meta (path, name, library_name, word_count, tags_json) VALUES (?1,?2,?3,?4,?5)",
+            rusqlite::params!["/A/dup1.md", "Twin", "A", 30, "[]"],
+        ).unwrap();
+        conn.execute(
+            "INSERT INTO note_meta (path, name, library_name, word_count, tags_json) VALUES (?1,?2,?3,?4,?5)",
+            rusqlite::params!["/A/dup2.md", "twin", "A", 30, "[]"], // case-insensitive collision
+        ).unwrap();
+        // Same title in a DIFFERENT library must NOT count as ambiguous within A:
+        add_note(&conn, "B", "Unique", 30, "[]");
+
+        let absent = compute_note_tension_status(&conn, "A", "/A/missing.md").unwrap();
+        assert!(!absent.indexed && !absent.ambiguous_title, "absent path → not indexed");
+
+        let unique = compute_note_tension_status(&conn, "A", "/A/Unique.md").unwrap();
+        assert!(unique.indexed && !unique.ambiguous_title, "unique title, cross-lib twin ignored");
+
+        let dup = compute_note_tension_status(&conn, "A", "/A/dup1.md").unwrap();
+        assert!(dup.indexed && dup.ambiguous_title, "shared title within library → ambiguous");
+    }
+
+    #[test]
+    fn self_contradiction_emits_single_row() {
+        let conn = mem_db();
+        add_chain(&conn, "A");
+        add_link(&conn, "A", "n0", "n0", "contradicts", "active"); // self-link
+        let report = detect_from_notes(load_notes_from_db(&conn, "A").unwrap());
+        // One row (the "contradicts" source perspective), NOT a duplicate "contradicted by".
+        let n0_rows: Vec<_> = report.contradictions.iter().filter(|r| r.note_name == "n0").collect();
+        assert_eq!(n0_rows.len(), 1, "self-contradiction is one row, not two");
+        assert_eq!(n0_rows[0].detail_kind, "contradicts");
     }
 }
